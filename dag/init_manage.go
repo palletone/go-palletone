@@ -30,7 +30,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"go.dedis.ch/kyber/v3/sign/bls"
 )
@@ -167,32 +166,22 @@ func (d *Dag) IsIrreversibleUnit(hash common.Hash) bool {
 		return false
 	}
 
-	gasToken := dagconfig.DagConfig.GetGasToken()
-	_, idx, err := d.stablePropRep.GetNewestUnit(gasToken)
-	if err != nil {
-		log.Debugf("stableUnitRep GetUnit error:%s", err.Error())
-		return false
-	}
-
-	if unit.NumberU64() > idx.Index {
+	if unit.NumberU64() > d.GetIrreversibleUnitNum(unit.GetAssetId()) {
 		return false
 	}
 
 	return true
-
-	//exist, err := d.stableUnitRep.IsHeaderExist(hash)
-	//if err != nil {
-	//	log.Errorf("IsHeaderExist execute error:%s", err.Error())
-	//	return false
-	//}
-	//
-	//return exist
 }
 
-//func (d *Dag) GetIrreversibleUnit(id modules.AssetId) (*modules.ChainIndex, error) {
-//	_, idx, err := d.stablePropRep.GetNewestUnit(id)
-//	return idx, err
-//}
+func (d *Dag) GetIrreversibleUnitNum(id modules.AssetId) uint64 {
+	_, idx, err := d.stablePropRep.GetNewestUnit(id)
+	if err != nil {
+		log.Debugf("stableUnitRep GetNewestUnit error:%s", err.Error())
+		return 0
+	}
+
+	return idx.Index
+}
 
 func (d *Dag) VerifyUnitGroupSign(unitHash common.Hash, groupSign []byte) error {
 	unit, err := d.GetUnitByHash(unitHash)

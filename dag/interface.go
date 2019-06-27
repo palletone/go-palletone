@@ -133,7 +133,8 @@ type IDag interface {
 	SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription
 	GetPrecedingMediatorNodes() map[string]*discover.Node
 	UnitIrreversibleTime() time.Duration
-	GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+	GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string,
+		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 
 	QueryDbByKey(key []byte) ([]byte, error)
 	QueryDbByPrefix(prefix []byte) ([]*modules.DbRow, error)
@@ -160,7 +161,7 @@ type IDag interface {
 	HeadUnitTime() int64
 	HeadUnitNum() uint64
 	HeadUnitHash() common.Hash
-
+	GetIrreversibleUnitNum(id modules.AssetId) uint64
 	ValidateUnitExceptGroupSig(unit *modules.Unit) error
 
 	SaveChaincode(contractId common.Address, cc *list.CCInfo) error

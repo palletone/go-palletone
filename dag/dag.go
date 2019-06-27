@@ -164,6 +164,7 @@ func (d *Dag) GetUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error)
 	//log.Debug("Dag", "GetUnitByNumber getChainUnit(hash):", hash)
 	return d.unstableUnitRep.GetUnit(hash)
 }
+
 func (d *Dag) GetUnstableUnits() []*modules.Unit {
 	units := d.Memdag.GetChainUnits()
 	result := modules.Units{}

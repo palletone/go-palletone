@@ -18,21 +18,21 @@
 package modules
 
 import (
-	"strings"
-	"time"
-	"unsafe"
-
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"go.dedis.ch/kyber/v3"
+	"strings"
+	"time"
+	"unsafe"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core"
+	"go.dedis.ch/kyber/v3"
 )
 
 // validate unit state
@@ -243,6 +243,14 @@ type Unit struct {
 	// inter-peer block relay.
 	ReceivedAt   time.Time
 	ReceivedFrom interface{}
+}
+
+func (h *Header) GetAssetId() AssetId {
+	return h.Number.AssetID
+}
+
+func (unit *Unit) GetAssetId() AssetId {
+	return unit.UnitHeader.GetAssetId()
 }
 
 func (h *Header) Author() common.Address {

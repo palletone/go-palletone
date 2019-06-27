@@ -25,6 +25,7 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // @author Albert·Gou
@@ -34,7 +35,7 @@ type producer interface {
 	SubscribeNewProducedUnitEvent(ch chan<- mp.NewProducedUnitEvent) event.Subscription
 
 	// AddToTBLSSignBufs is to TBLS sign the unit
-	//AddToTBLSSignBufs(newUnit *modules.Unit)
+	AddToTBLSSignBufs(newUnit *modules.Unit)
 
 	SubscribeSigShareEvent(ch chan<- mp.SigShareEvent) event.Subscription
 	AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare []byte) error

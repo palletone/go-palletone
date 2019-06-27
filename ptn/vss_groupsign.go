@@ -23,6 +23,8 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
@@ -46,15 +48,35 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 func (pm *ProtocolManager) toGroupSignEventRecvLoop() {
 	for {
 		select {
-		// todo albert
-		//case event := <-pm.toGroupSignCh:
-		//	go pm.switchMediatorConnect(event.IsChanged)
+		case event := <-pm.toGroupSignCh:
+			go pm.toGroupSign(event)
 
 		// Err() channel will be closed when unsubscribing.
 		case <-pm.toGroupSignSub.Err():
 			return
 		}
 	}
+}
+
+func (pm *ProtocolManager) toGroupSign(event modules.ToGroupSignEvent) {
+	if !pm.dag.IsSynced() {
+		return
+	}
+
+	if !pm.producer.LocalHaveActiveMediator() && !pm.producer.LocalHavePrecedingMediator() {
+		return
+	}
+
+	gasToken := dagconfig.DagConfig.GetGasToken()
+	iun := pm.dag.GetIrreversibleUnitNum(gasToken)
+
+	newUnit, err := pm.dag.GetUnitByNumber(&modules.ChainIndex{gasToken, iun + 1})
+	if err != nil {
+		log.Debugf(err.Error())
+		return
+	}
+
+	go pm.producer.AddToTBLSSignBufs(newUnit)
 }
 
 // @author Albert·Gou
