@@ -26,13 +26,12 @@ PutStatus
 
 Payout
     Given Unlock token holder succeed
-    ${reqId} =    When User transfer PTN to contractpay
+    When User transfer PTN to contractpay
     And wait for transaction being packaged
-    And Wait for unit abount contract to be confirmed by unit height    ${reqId}
     And Query contract balance
     ${newAddr}    ${reqId}=    And Use contractpay to transfer PTN to user2
     And wait for transaction being packaged
-    ${reqId} =    And Wait for unit abount contract to be confirmed by unit height    ${reqId}
+    And Wait for unit abount contract to be confirmed by unit height    ${reqId}
     Then Query user2 balance
 
 *** Keywords ***
@@ -82,6 +81,7 @@ User transfer PTN to contractpay
     wait for transaction being packaged
 
 Query contract balance
+    Set Global Variable    ${gasToken}    PTN
     ${amount}=    getBalance    ${gContractId}
     Should Be Equal    ${amount}    10000
     Log    ${amount}
@@ -92,7 +92,8 @@ Use contractpay to transfer PTN to user2
     ${args}=    Create List    payout    ${newAddr}    PTN    100
     ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
     ...    ${args}
-    ${reqId}=    Get From Dictionary    ${respJson}    reqId
+    ${result}=    Get From Dictionary    ${respJson}    result
+    ${reqId}=    Get From Dictionary    ${result}    reqId
     [Return]    ${newAddr}    ${reqId}
 
 Query user2 balance
