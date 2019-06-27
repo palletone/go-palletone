@@ -745,7 +745,7 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction, n
 // pricing constraints.
 func (pool *TxPool) AddLocal(tx *modules.Transaction) error {
 	if tx.IsNewContractInvokeRequest() { //Request不能进入交易池
-		log.Infof("Tx[%s] is a request, do not allow add to txpool")
+		log.Infof("Tx[%s] is a request, do not allow add to txpool", tx.Hash().String())
 		return nil
 	}
 	pool_tx := TxtoTxpoolTx(tx)
@@ -760,7 +760,7 @@ func (pool *TxPool) addLocal(tx *modules.TxPoolTransaction) error {
 // apply.
 func (pool *TxPool) AddRemote(tx *modules.Transaction) error {
 	if tx.IsNewContractInvokeRequest() { //Request不能进入交易池
-		log.Infof("Tx[%s] is a request, do not allow add to txpool")
+		log.Infof("Tx[%s] is a request, do not allow add to txpool", tx.Hash().String())
 		return nil
 	}
 	if tx.TxMessages[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
