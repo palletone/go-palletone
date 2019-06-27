@@ -206,7 +206,7 @@ matrix:
         - ./deploy.sh 3
         - ./start.sh 3
         - sleep 20
-        - ip addr
+        #- ip addr
         - cd $BASE_DIR
         - python -m robot.run -d ${BDD_LOG_PATH}/${USER_CONTRACT_DIR} ./bdd/UserContract/Testcases;
         #- docker stats
