@@ -718,7 +718,21 @@ func (p *Processor) createContractTxReq(contractId, from, to common.Address, dao
 	log.Debugf("[%s]createContractTxReq, contractId[%s], tx[%v]", shortId(tx.RequestHash().String()), contractId.String(), tx)
 	return p.signAndExecute(contractId, from, tx, isLocalInstall)
 }
-
+func (p *Processor) SignAndExecuteAndSendRequest(from common.Address, tx *modules.Transaction) (*modules.Transaction, error) {
+	requestMsg := tx.TxMessages[tx.GetRequestMsgIndex()]
+	if requestMsg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
+		request := requestMsg.Payload.(*modules.ContractInvokeRequestPayload)
+		contractId := common.NewAddress(request.ContractId, common.ContractHash)
+		reqId, tx, err := p.signAndExecute(contractId, from, tx, false)
+		if err != nil {
+			return nil, err
+		}
+		//broadcast
+		go p.ptn.ContractBroadcast(ContractEvent{Ele: p.mtx[reqId].eleInf, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
+		return tx, nil
+	}
+	return nil, errors.New("Not support request")
+}
 func (p *Processor) signAndExecute(contractId common.Address, from common.Address, tx *modules.Transaction, isLocalInstall bool) (common.Hash, *modules.Transaction, error) {
 	tx, err := p.ptn.SignGenericTransaction(from, tx)
 	if err != nil {

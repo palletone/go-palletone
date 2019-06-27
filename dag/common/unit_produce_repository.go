@@ -41,7 +41,7 @@ import (
 type IUnitProduceRepository interface {
 	PushUnit(nextUnit *modules.Unit) error
 	ApplyUnit(nextUnit *modules.Unit) error
-	MediatorVotedResults() map[string]uint64
+	//MediatorVotedResults() map[string]uint64
 	Close()
 	SubscribeChainMaintenanceEvent(ob AfterChainMaintenanceEventFunc)
 	SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription
@@ -491,7 +491,7 @@ func (dag *UnitProduceRepository) performAccountMaintenance() {
 	dag.mediatorVoteTally = make([]*voteTally, 0, len(mediators))
 
 	// 遍历所有账户
-	mediatorVoteCount := dag.MediatorVotedResults()
+	mediatorVoteCount, _ := dag.stateRep.GetMediatorVotedResults()
 
 	// 初始化 mediator 的投票数据
 	for mediator, _ := range mediators {
@@ -502,20 +502,20 @@ func (dag *UnitProduceRepository) performAccountMaintenance() {
 	}
 }
 
-func (dag *UnitProduceRepository) MediatorVotedResults() map[string]uint64 {
-	mediatorVoteCount := make(map[string]uint64)
-
-	allAccount := dag.stateRep.LookupAccount()
-	for _, info := range allAccount {
-		// 遍历该账户投票的mediator
-		for med, _ := range info.VotedMediators {
-			// 累加投票数量
-			mediatorVoteCount[med] += info.Balance
-		}
-	}
-
-	return mediatorVoteCount
-}
+//func (dag *UnitProduceRepository) MediatorVotedResults() map[string]uint64 {
+//	mediatorVoteCount := make(map[string]uint64)
+//
+//	allAccount := dag.stateRep.LookupAccount()
+//	for _, info := range allAccount {
+//		// 遍历该账户投票的mediator
+//		for med, _ := range info.VotedMediators {
+//			// 累加投票数量
+//			mediatorVoteCount[med] += info.Balance
+//		}
+//	}
+//
+//	return mediatorVoteCount
+//}
 
 func (dag *UnitProduceRepository) updateActiveMediators() bool {
 	// 1. 统计出活跃mediator数量n

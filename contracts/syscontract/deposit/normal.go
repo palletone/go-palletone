@@ -27,13 +27,14 @@ func normalNodePledgeVote(stub shim.ChaincodeStubInterface, args []string) pb.Re
 	if err != nil {
 		return shim.Error(err.Error())
 	}
+	pledgeAmount := invokeTokens.Amount
 	//  获取请求地址
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 	//  添加进入质押记录
-	err = pledgeDeposit(stub, invokeAddr, invokeTokens.Amount)
+	err = pledgeDeposit(stub, invokeAddr, pledgeAmount)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -107,9 +108,9 @@ func normalNodeExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.R
 		extPtnLis = make(map[string]*extractPtn)
 	}
 	if extPtn, ok := extPtnLis[inAddr.String()]; ok {
-		extPtn.Amount=ptnAccount
-	}else{
-		extPtnLis[inAddr.String()]=&extractPtn{Amount:ptnAccount}
+		extPtn.Amount = ptnAccount
+	} else {
+		extPtnLis[inAddr.String()] = &extractPtn{Amount: ptnAccount}
 	}
 	//fees, err := stub.GetInvokeFees()
 	//if err != nil {

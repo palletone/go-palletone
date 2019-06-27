@@ -21,15 +21,15 @@ import (
 	"strings"
 	"time"
 
+	"errors"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/constants"
-	"github.com/palletone/go-palletone/dag/modules"
-	"errors"
 	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 //  保存相关列表
@@ -573,10 +573,10 @@ func getAccountMediatorVote(stub shim.ChaincodeStubInterface, invokeA string) ([
 
 //  保存普通节点
 func saveMediatorVote(stub shim.ChaincodeStubInterface, invokeA string, mediators []string) error {
-	config,_:= stub.GetSystemConfig()
-	maxVote:= config.MaximumMediatorCount
-	if len(mediators)>int(maxVote){
-		return errors.New(fmt.Sprintf( "Too many mediators, must less or equal than %d",maxVote))
+	config, _ := stub.GetSystemConfig()
+	maxVote := config.MaximumMediatorCount
+	if len(mediators) > int(maxVote) {
+		return errors.New(fmt.Sprintf("Too many mediators, must less or equal than %d", maxVote))
 	}
 	b, err := json.Marshal(mediators)
 	if err != nil {
@@ -856,21 +856,21 @@ func handleEachDayAward(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 //	return shim.Success(nil)
 //}
 
-func getAllMember1(stub shim.ChaincodeStubInterface) (map[string][]*Member, error) {
-	b, err := stub.GetState(MemberList)
-	if err != nil {
-		return nil, err
-	}
-	if b == nil {
-		return nil, nil
-	}
-	allM := make(map[string][]*Member)
-	err = json.Unmarshal(b, allM)
-	if err != nil {
-		return nil, err
-	}
-	return allM, nil
-}
+//func getAllMember1(stub shim.ChaincodeStubInterface) (map[string][]*Member, error) {
+//	b, err := stub.GetState(MemberList)
+//	if err != nil {
+//		return nil, err
+//	}
+//	if b == nil {
+//		return nil, nil
+//	}
+//	allM := make(map[string][]*Member)
+//	err = json.Unmarshal(b, allM)
+//	if err != nil {
+//		return nil, err
+//	}
+//	return allM, nil
+//}
 
 //func savePledgeList(stub shim.ChaincodeStubInterface, allM map[string][]*Members) error {
 //	b, err := json.Marshal(allM)
@@ -962,68 +962,71 @@ func getMediatorsFromeAllMember(stub shim.ChaincodeStubInterface) ([]*MediatorDe
 //
 //获得质押列表的最后更新日期yyyyMMdd
 func getLastPledgeListDate(stub shim.ChaincodeStubInterface) (string, error) {
-	date, err := stub.GetState(MemberListLastDate)
+	date, err := stub.GetState(constants.PledgeListLastDate)
 	if err != nil {
 		return "", err
 	}
 	if date == nil {
 		return "", nil
 	}
-	return string(date),nil
+	return string(date), nil
 }
+
 //获得最新的质押列表
-func getPledgeList(stub shim.ChaincodeStubInterface) (*PledgeList, error) {
+func getPledgeList(stub shim.ChaincodeStubInterface) (*modules.PledgeList, error) {
 	date, err := getLastPledgeListDate(stub)
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := stub.GetState(MemberList+date)
+	b, err := stub.GetState(constants.PledgeList + date)
 	if err != nil {
 		return nil, err
 	}
 	if b == nil {
 		return nil, nil
 	}
-	allM := &PledgeList{}
+	allM := &modules.PledgeList{}
 	err = json.Unmarshal(b, allM)
 	if err != nil {
 		return nil, err
 	}
 	return allM, nil
 }
+
 //查询历史上的所有质押列表记录
-func getAllPledgeRewardHistory(stub shim.ChaincodeStubInterface) ([]*PledgeList, error) {
-	b, err := stub.GetStateByPrefix(MemberList)
+func getAllPledgeRewardHistory(stub shim.ChaincodeStubInterface) ([]*modules.PledgeList, error) {
+	b, err := stub.GetStateByPrefix(constants.PledgeList)
 	if err != nil {
 		return nil, err
 	}
 	if b == nil {
 		return nil, nil
 	}
-	result:=[]*PledgeList{}
-	for _,kv:=range b{
-		allM := &PledgeList{}
+	result := []*modules.PledgeList{}
+	for _, kv := range b {
+		allM := &modules.PledgeList{}
 		err = json.Unmarshal(kv.Value, allM)
 		if err != nil {
 			return nil, err
 		}
-		result=append(result,allM)
+		result = append(result, allM)
 	}
 
 	return result, nil
 }
+
 //保存最新的质押列表
-func savePledgeList(stub shim.ChaincodeStubInterface, allM *PledgeList) error {
+func savePledgeList(stub shim.ChaincodeStubInterface, allM *modules.PledgeList) error {
 	b, err := json.Marshal(allM)
 	if err != nil {
 		return err
 	}
-	err = stub.PutState(MemberList+allM.Date, b)
+	err = stub.PutState(constants.PledgeList+allM.Date, b)
 	if err != nil {
 		return err
 	}
-	return stub.PutState(MemberListLastDate,[]byte(allM.Date))
+	return stub.PutState(constants.PledgeListLastDate, []byte(allM.Date))
 
 }
 func isHandled(stub shim.ChaincodeStubInterface) bool {
@@ -1046,7 +1049,7 @@ func isHandled(stub shim.ChaincodeStubInterface) bool {
 	}
 	return false
 }
-func savePledgeRecord(stub shim.ChaincodeStubInterface, node *AddressAmount) error {
+func savePledgeRecord(stub shim.ChaincodeStubInterface, node *modules.AddressAmount) error {
 	b, err := json.Marshal(node)
 	if err != nil {
 		return err
@@ -1059,11 +1062,11 @@ func savePledgeRecord(stub shim.ChaincodeStubInterface, node *AddressAmount) err
 }
 
 func delPledgeRecord(stub shim.ChaincodeStubInterface, addr string) error {
-	 key:=string(constants.DEPOSIT_AWARD_PREFIX) + addr
-		return stub.DelState(key)
+	key := string(constants.DEPOSIT_AWARD_PREFIX) + addr
+	return stub.DelState(key)
 }
 
-func getPledgeRecord(stub shim.ChaincodeStubInterface, addr string) (*AddressAmount, error) {
+func getPledgeRecord(stub shim.ChaincodeStubInterface, addr string) (*modules.AddressAmount, error) {
 	b, err := stub.GetState(string(constants.DEPOSIT_AWARD_PREFIX) + addr)
 	if err != nil {
 		return nil, err
@@ -1071,25 +1074,29 @@ func getPledgeRecord(stub shim.ChaincodeStubInterface, addr string) (*AddressAmo
 	if b == nil {
 		return nil, nil
 	}
-	node := &AddressAmount{}
+	node := &modules.AddressAmount{}
 	err = json.Unmarshal(b, node)
 	if err != nil {
 		return nil, err
 	}
 	return node, nil
 }
-func getToday(stub shim.ChaincodeStubInterface) string{
-	t,_:= stub.GetTxTimestamp(10)
-	ti:= time.Unix(t.Seconds,0)
-	return ti.Format("20060102")
+func getToday(stub shim.ChaincodeStubInterface) string {
+	t, _ := stub.GetTxTimestamp(10)
+
+	ti := time.Unix(t.Seconds, 0)
+	str := ti.Format("20060102")
+	log.Debugf("getToday GetTxTimestamp 10 result:%d, format string:%s", t.Seconds, str)
+	return str
 }
+
 //质押分红处理
 func handleRewardAllocation(stub shim.ChaincodeStubInterface) error {
 	//  判断当天是否处理过
-	today:=getToday(stub)
-	lastDate,err:= getLastPledgeListDate(stub)
+	today := getToday(stub)
+	lastDate, err := getLastPledgeListDate(stub)
 
-	if lastDate==today {
+	if lastDate == today {
 		return fmt.Errorf("had handled")
 	}
 	allM, err := getPledgeList(stub)
@@ -1103,10 +1110,11 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface) error {
 			return err
 		}
 		depositDailyReward := cp.DepositDailyReward
-		allM= pledgeRewardAllocation(allM,depositDailyReward)
-	}else {
-		allM = &PledgeList{}
+		allM = pledgeRewardAllocation(allM, depositDailyReward)
+	} else {
+		allM = &modules.PledgeList{}
 	}
+	allM.Date=today
 	// 增加新的质押
 	awards, err := stub.GetStateByPrefix(string(constants.DEPOSIT_AWARD_PREFIX))
 	if err != nil {
@@ -1114,13 +1122,13 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface) error {
 	}
 	if awards != nil {
 		for _, a := range awards {
-			awardNode := AddressAmount{}
+			awardNode := modules.AddressAmount{}
 			err = json.Unmarshal(a.Value, &awardNode)
 			if err != nil {
 				return err
 			}
-			allM.Add(awardNode.Address,awardNode.Amount)
-			err = delPledgeRecord(stub,awardNode.Address)
+			allM.Add(awardNode.Address, awardNode.Amount)
+			err = delPledgeRecord(stub, awardNode.Address)
 			if err != nil {
 				return err
 			}
@@ -1135,11 +1143,11 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface) error {
 	if err != nil {
 		return err
 	}
-	gasToken:=dagconfig.DagConfig.GetGasToken().ToAsset()
-	for addr,v:=range extPtnLis{
-		withdrawAmt,_:= allM.Reduce(addr,v.Amount)
-		if withdrawAmt>0{
-			err := stub.PayOutToken(addr, modules.NewAmountAsset( v.Amount,gasToken), 0)
+	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
+	for addr, v := range extPtnLis {
+		withdrawAmt, _ := allM.Reduce(addr, v.Amount)
+		if withdrawAmt > 0 {
+			err := stub.PayOutToken(addr, modules.NewAmountAsset(v.Amount, gasToken), 0)
 			if err != nil {
 				return err
 			}
@@ -1147,7 +1155,7 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface) error {
 		}
 	}
 	//清空提取请求列表
-	saveExtPtn(stub,make(map[string]*extractPtn))
+	saveExtPtn(stub, make(map[string]*extractPtn))
 	//} else {
 	//	//  需要先计算集合里的收益
 	//	//  获取每天总奖励
@@ -1212,13 +1220,13 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface) error {
 	return nil
 }
 
-func isExist(node *AddressAmount, nodes []*AddressAmount) bool {
-	for _, a := range nodes {
-		//  直接更新余额
-		if a.Address == node.Address {
-			a.Amount += node.Amount
-			return true
-		}
-	}
-	return false
-}
+//func isExist(node *AddressAmount, nodes []*AddressAmount) bool {
+//	for _, a := range nodes {
+//		//  直接更新余额
+//		if a.Address == node.Address {
+//			a.Amount += node.Amount
+//			return true
+//		}
+//	}
+//	return false
+//}

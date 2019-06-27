@@ -103,8 +103,8 @@ func (a *PublicMediatorAPI) ListVoteResults() map[string]uint64 {
 	for address, _ := range a.Dag().GetMediators() {
 		mediatorVoteCount[address.String()] = 0
 	}
-
-	for med, stake := range a.Dag().MediatorVotedResults() {
+	voteResult, _ := a.Dag().MediatorVotedResults()
+	for med, stake := range voteResult {
 		mediatorVoteCount[med] = stake
 	}
 
@@ -410,14 +410,14 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, amount decimal.Decimal, media
 	}
 
 	// 创建交易
-	amtDao:= ptnjson.Ptn2Dao(amount)
-	tx, fee, err := a.Dag().GenVoteMediatorTx(voter,amtDao, mp, a.TxPool())
+	amtDao := ptnjson.Ptn2Dao(amount)
+	tx, fee, err := a.Dag().GenVoteMediatorTx(voter, amtDao, mp, a.TxPool())
 	if err != nil {
 		return nil, err
 	}
 
 	// 签名和发送交易
-	err = a.SignAndSendTransaction(voter, tx)
+	err = a.SignAndSendRequest(voter, tx)
 	if err != nil {
 		return nil, err
 	}

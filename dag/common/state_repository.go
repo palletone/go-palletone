@@ -21,9 +21,13 @@
 package common
 
 import (
+	"encoding/json"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 )
@@ -46,7 +50,8 @@ type IStateRepository interface {
 	GetAccountBalance(address common.Address) uint64
 	LookupAccount() map[common.Address]*modules.AccountInfo
 	GetAccountVotedMediators(addr common.Address) map[string]bool
-
+	GetPledgeList() (*modules.PledgeList, error)
+	GetMediatorVotedResults() (map[string]uint64, error)
 	RetrieveMediator(address common.Address) (*core.Mediator, error)
 	StoreMediator(med *core.Mediator) error
 	GetMediators() map[common.Address]bool
@@ -179,7 +184,50 @@ func (rep *StateRepository) GetAccountBalance(address common.Address) uint64 {
 func (rep *StateRepository) LookupAccount() map[common.Address]*modules.AccountInfo {
 	return rep.statedb.LookupAccount()
 }
+func (rep *StateRepository) GetPledgeList() (*modules.PledgeList, error) {
+	dd, _, err := rep.statedb.GetContractState(syscontract.DepositContractAddress.Bytes(), constants.PledgeListLastDate)
+	if err != nil {
+		return nil, err
+	}
+	date := string(dd)
+	key := constants.PledgeList + date
+	data, _, err := rep.statedb.GetContractState(syscontract.DepositContractAddress.Bytes(), key)
+	if err != nil {
+		return nil, err
+	}
+	pledgeList := &modules.PledgeList{}
+	err = json.Unmarshal(data, pledgeList)
+	if err != nil {
+		return nil, err
+	}
+	return pledgeList, nil
+}
+func (rep *StateRepository) GetMediatorVotedResults() (map[string]uint64, error) {
+	mediatorVoteCount := make(map[string]uint64)
 
+	pledgeList, err := rep.GetPledgeList()
+	if err != nil {
+		log.Warn("GetPledgeList error" + err.Error())
+		return nil, err
+	}
+	for _, account := range pledgeList.Members {
+		// 遍历该账户投票的mediator
+		key := string(constants.DEPOSIT_MEDIATOR_VOTE_PREFIX) + account.Address
+		mdata, _, err := rep.GetContractState(syscontract.DepositContractAddress.Bytes(), key)
+		if err != nil {
+			log.Warnf("Get Account[%s] mediator vote result error:%s", account.Address, err.Error())
+			continue
+		}
+		mediators := []string{}
+		json.Unmarshal(mdata, &mediators)
+		for _, med := range mediators {
+			// 累加投票数量
+			mediatorVoteCount[med] += account.Amount
+		}
+	}
+
+	return mediatorVoteCount, nil
+}
 func (rep *StateRepository) RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error) {
 	return rep.statedb.RetrieveMediatorInfo(address)
 }

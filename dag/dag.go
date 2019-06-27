@@ -1479,8 +1479,8 @@ func (d *Dag) Close() {
 	log.Debug("Close all dag database connections")
 }
 
-func (dag *Dag) MediatorVotedResults() map[string]uint64 {
-	return dag.unstableUnitProduceRep.MediatorVotedResults()
+func (dag *Dag) MediatorVotedResults() (map[string]uint64, error) {
+	return dag.unstableStateRep.GetMediatorVotedResults()
 }
 
 func (dag *Dag) StoreDataVersion(dv *modules.DataVersion) error {
@@ -1489,6 +1489,6 @@ func (dag *Dag) StoreDataVersion(dv *modules.DataVersion) error {
 func (dag *Dag) GetDataVersion() (*modules.DataVersion, error) {
 	return dag.stableStateRep.GetDataVersion()
 }
-func (dag *Dag) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error){
+func (dag *Dag) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error) {
 	return dag.stableUnitRep.QueryProofOfExistenceByReference(ref)
 }
