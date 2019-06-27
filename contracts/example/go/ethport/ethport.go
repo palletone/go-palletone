@@ -79,11 +79,6 @@ type JuryMsgAddr struct {
 	Answer  []byte
 }
 
-//Method:GetJuryETHAddr, return address string
-type ETHAddress_GetJuryETHAddr struct {
-	Method string `json:"method"`
-}
-
 const symbolsJuryAddress = "juryAddress"
 
 const symbolsETHAsset = "eth_asset"
@@ -130,16 +125,11 @@ func _initDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 		return shim.Success([]byte("DepositAddr has been init"))
 	}
 
-	//
-	getETHAddrParams := ETHAddress_GetJuryETHAddr{Method: "GetJuryETHAddr"}
-	getETHAddrReqBytes, err := json.Marshal(getETHAddrParams)
+	//Method:GetJuryETHAddr, return address string
+	result, err := stub.OutChainCall("eth", "GetJuryETHAddr", []byte(""))
 	if err != nil {
-		return shim.Error(err.Error())
-	}
-	result, err := stub.OutChainAddress("eth", getETHAddrReqBytes)
-	if err != nil {
-		log.Debugf("OutChainAddress GetJuryETHAddr err: %s", err.Error())
-		return shim.Success([]byte("OutChainAddress GetJuryETHAddr failed"))
+		log.Debugf("OutChainCall GetJuryETHAddr err: %s", err.Error())
+		return shim.Success([]byte("OutChainCall GetJuryETHAddr failed"))
 	}
 
 	//
@@ -245,9 +235,7 @@ func getETHContract(stub shim.ChaincodeStubInterface) string {
 }
 
 //refer to the struct GetBestHeaderParams in "github.com/palletone/adaptor/AdaptorETH.go",
-//add 'method' member.
 type ETHQuery_GetBestHeader struct { //GetBestHeaderParams
-	Method string `json:"method"`
 	Number string `json:"Number"` //if empty, return the best header
 }
 
@@ -257,14 +245,14 @@ type GetBestHeaderResult struct {
 
 func getHight(stub shim.ChaincodeStubInterface) (string, string, error) {
 	//
-	getheader := ETHQuery_GetBestHeader{Method: "GetBestHeader"} //get best hight
+	getheader := ETHQuery_GetBestHeader{""} //get best hight
 	//
 	reqBytes, err := json.Marshal(getheader)
 	if err != nil {
 		return "", "", err
 	}
 	//
-	result, err := stub.OutChainQuery("eth", reqBytes)
+	result, err := stub.OutChainCall("eth", "GetBestHeader", reqBytes)
 	if err != nil {
 		return "", "", err
 	}
@@ -323,7 +311,7 @@ func getDepositETHInfo(contractAddr, ptnAddr string, stub shim.ChaincodeStubInte
 	}
 	log.Debugf("startHeight %s, endHeight %s", startHeight, endHeight)
 	//get doposit event log
-	getevent := ETHTransaction_getevent{Method: "GetEventByAddress"} // GetJuryAddress
+	var getevent ETHTransaction_getevent // GetJuryAddress
 	getevent.ContractABI = contractABI
 	getevent.ContractAddr = contractAddr
 	getevent.ConcernAddr = ptnAddr
@@ -336,7 +324,7 @@ func getDepositETHInfo(contractAddr, ptnAddr string, stub shim.ChaincodeStubInte
 		return nil, err
 	}
 	//
-	result, err := stub.OutChainTransaction("eth", reqBytes)
+	result, err := stub.OutChainCall("eth", "GetEventByAddress", reqBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -554,9 +542,8 @@ func getFee(stub shim.ChaincodeStubInterface) uint64 {
 }
 
 //refer to the struct Keccak256HashPackedSigParams in "github.com/palletone/adaptor/AdaptorETH.go",
-//add 'method' member. Remove 'PrivateKeyHex', Jury will set itself when sign.
+//Remove 'PrivateKeyHex', Jury will set it when sign.
 type ETHTransaction_Keccak256HashPackedSig struct {
-	Method     string `json:"method"`
 	ParamTypes string `json:"paramtypes"`
 	Params     string `json:"params"`
 }
@@ -587,13 +574,13 @@ func calSig(contractAddr, reqid, ethAddr string, ethAmount uint64, stub shim.Cha
 	}
 	log.Debugf("paramsJson %s", string(paramsJson))
 
-	ethTX := ETHTransaction_Keccak256HashPackedSig{"Keccak256HashPackedSig", string(paramTypesJson), string(paramsJson)}
+	ethTX := ETHTransaction_Keccak256HashPackedSig{string(paramTypesJson), string(paramsJson)}
 	reqBytes, err := json.Marshal(ethTX)
 	if err != nil {
 		return "", "", err
 	}
 	//
-	result, err := stub.OutChainTransaction("eth", reqBytes)
+	result, err := stub.OutChainCall("eth", "Keccak256HashPackedSig", reqBytes)
 	if err != nil {
 		return "", "", errors.New("Keccak256HashPackedSig error")
 	}
@@ -607,9 +594,7 @@ func calSig(contractAddr, reqid, ethAddr string, ethAmount uint64, stub shim.Cha
 }
 
 //refer to the struct RecoverParams in "github.com/palletone/adaptor/AdaptorETH.go",
-//add 'method' member.
 type ETHTransaction_RecoverAddr struct {
-	Method    string `json:"method"`
 	Hash      string `json:"hash"`
 	Signature string `json:"signature"`
 }
@@ -618,13 +603,13 @@ type RecoverResult struct {
 }
 
 func recoverAddr(hash, sig string, stub shim.ChaincodeStubInterface) (string, error) {
-	ethTX := ETHTransaction_RecoverAddr{"RecoverAddr", hash, sig}
+	ethTX := ETHTransaction_RecoverAddr{hash, sig}
 	reqBytes, err := json.Marshal(ethTX)
 	if err != nil {
 		return "", err
 	}
 	//
-	result, err := stub.OutChainTransaction("eth", reqBytes)
+	result, err := stub.OutChainCall("eth", "RecoverAddr", reqBytes)
 	if err != nil {
 		return "", errors.New("RecoverAddr error")
 	}
