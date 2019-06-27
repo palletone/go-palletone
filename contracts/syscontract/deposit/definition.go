@@ -15,14 +15,15 @@
 package deposit
 
 import (
-	"github.com/palletone/go-palletone/dag/modules"
 	"errors"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 const (
-	ListForCashback   = "ListForCashback"
-	ListForForfeiture = "ListForForfeiture"
-
+	ListForQuit                = "ListForQuit"
+	ListForForfeiture          = "ListForForfeiture"
+	JuryApplyQuit              = "JuryApplyQuit"
+	DeveloperApplyQuit         = "DeveloperApplyQuit"
 	ListForApplyBecomeMediator = "ListForApplyBecomeMediator"
 	ListForAgreeBecomeMediator = "ListForAgreeBecomeMediator"
 	ListForApplyQuitMediator   = "ListForApplyQuitMediator"
@@ -39,9 +40,10 @@ const (
 	DTimeDuration              = 1800
 	//获取Mediator候选列表
 	GetListForMediatorCandidate = "GetListForMediatorCandidate"
+	GetQuitApplyList            = "GetQuitApplyList"
 	//查看是否在候选列表中
 	IsInMediatorCandidateList       = "IsInMediatorCandidateList"
-	GetQuitMediatorApplyList        = "GetQuitMediatorApplyList"
+	GetQuitList                     = "GetQuitList"
 	GetAgreeForBecomeMediatorList   = "GetAgreeForBecomeMediatorList"
 	GetBecomeMediatorApplyList      = "GetBecomeMediatorApplyList"
 	GetListForDeveloperCandidate    = "GetListForDeveloperCandidate"
@@ -57,28 +59,32 @@ const (
 	HandleForMediatorApplyCashback  = "HandleForMediatorApplyCashback"
 	DeveloperPayToDepositContract   = "DeveloperPayToDepositContract"
 	JuryPayToDepositContract        = "JuryPayToDepositContract"
-	HandleForApplyQuitMediator      = "HandleForApplyQuitMediator"
-	HandleForApplyBecomeMediator    = "HandleForApplyBecomeMediator"
-	IsInMediatorQuitList            = "IsInMediatorQuitList"
-	IsInCashbackList                = "IsInCashbackList"
-	IsInJuryCandidateList           = "IsInJuryCandidateList"
-	IsInDeveloperCandidateList      = "IsInDeveloperCandidateList"
-	GetDeposit                      = "GetNodeBalance"
-	NormalNodePledgeVote            = "normalNodePledgeVote"
-	NormalNodeChangeVote            = "normalNodeChangeVote"
-	NormalNodeExtractVote           = "normalNodeExtractVote"
-	NormalNodeList                  = "normalNodeList"
-	ExtractPtnList                  = "extractPtnList"
-	HandleExtractVote               = "handleExtractVote"
-	HandleEachDayAward              = "handleEachDayAward"
-	AllPledgeVotes                  = "allPledgeVotes"
-	HandleEachDay                   = "handleEachDay"
-	MemberList                      = "MemberList"
-	MemberListLastDate                      = "MemberListLastDate"
-	Apply                           = "applying"
-	Agree                           = "approved"
-	Quitting                        = "quitting"
-	Quited                          = "quited"
+
+	HandleForApplyQuitMediator = "HandleForApplyQuitMediator"
+	HandleForApplyQuitJury     = "HandleForApplyQuitJury"
+	HandleForApplyQuitDev      = "HandleForApplyQuitDev"
+
+	HandleForApplyBecomeMediator = "HandleForApplyBecomeMediator"
+	IsInMediatorQuitList         = "IsInMediatorQuitList"
+	IsInCashbackList             = "IsInCashbackList"
+	IsInJuryCandidateList        = "IsInJuryCandidateList"
+	IsInDeveloperCandidateList   = "IsInDeveloperCandidateList"
+	GetDeposit                   = "GetNodeBalance"
+	NormalNodePledgeVote         = "normalNodePledgeVote"
+	NormalNodeChangeVote         = "normalNodeChangeVote"
+	NormalNodeExtractVote        = "normalNodeExtractVote"
+	NormalNodeList               = "normalNodeList"
+	ExtractPtnList               = "extractPtnList"
+	HandleExtractVote            = "handleExtractVote"
+	HandleEachDayAward           = "handleEachDayAward"
+	AllPledgeVotes               = "allPledgeVotes"
+	HandleEachDay                = "handleEachDay"
+	MemberList                   = "MemberList"
+	MemberListLastDate           = "MemberListLastDate"
+	Apply                        = "applying"
+	Agree                        = "approved"
+	Quitting                     = "quitting"
+	Quited                       = "quited"
 	//  时间格式
 	//  Layout1 = "2006-01-02 15"
 	//  Layout2 = "2006-01-02 15:04"
@@ -88,12 +94,11 @@ const (
 	Layout2 = "2006-01-02 15:04:05"
 )
 
-//申请提保证金
+//申请退出
 type Cashback struct {
-	//CashbackAddress string               `json:"cashback_address"` //请求地址
-	CashbackTokens *modules.AmountAsset `json:"cashback_tokens"` //请求数量
-	Role           string               `json:"role"`            //请求角色
-	CashbackTime   string               `json:"cashback_time"`   //请求时间
+	CashbackAddress string `json:"cashback_address"` //请求地址
+	Role            string `json:"role"`             //请求角色
+	CashbackTime    string `json:"cashback_time"`    //请求时间
 }
 
 //申请没收保证金
@@ -139,8 +144,7 @@ type MediatorDeposit struct {
 
 func NewMediatorDeposit() *MediatorDeposit {
 	return &MediatorDeposit{
-		ApplyEnterTime: TimeStr(),
-		Status:         Quited,
+		Status: Quited,
 	}
 }
 
@@ -150,52 +154,56 @@ type NorNodBal struct {
 }
 
 type extractPtn struct {
-	Time   string               `json:"time"`   //提取质押时间
+	Time   string `json:"time"`   //提取质押时间
 	Amount uint64 `json:"amount"` //提取质押数量
 }
+
 //质押列表
 type PledgeList struct {
 	TotalAmount uint64           `json:"total_amount"`
 	Date        string           `json:"date"` //质押列表所在的日期yyyyMMdd
 	Members     []*AddressAmount `json:"members"`
 }
+
 //账户质押情况
 type AddressAmount struct {
 	Address string `json:"address"`
 	Amount  uint64 `json:"amount"`
 }
 
-func (pl *PledgeList)Add(addr string,amount uint64){
-	pl.TotalAmount+=amount
-	for _,p:=range pl.Members{
-		if p.Address==addr{
-			p.Amount+=amount
+func (pl *PledgeList) Add(addr string, amount uint64) {
+	pl.TotalAmount += amount
+	for _, p := range pl.Members {
+		if p.Address == addr {
+			p.Amount += amount
 			return
 		}
 	}
-	pl.Members=append(pl.Members,&AddressAmount{Address:addr,Amount:amount})
+	pl.Members = append(pl.Members, &AddressAmount{Address: addr, Amount: amount})
 }
+
 //从质押列表中提币，Amount 0表示全部提取
-func (pl *PledgeList) Reduce(addr string,amount uint64) (uint64, error){
-	for i,p:=range pl.Members{
-		if p.Address==addr{
-			if amount==0{
-				amount=p.Amount//如果是0表示全部提取
+func (pl *PledgeList) Reduce(addr string, amount uint64) (uint64, error) {
+	for i, p := range pl.Members {
+		if p.Address == addr {
+			if amount == 0 {
+				amount = p.Amount //如果是0表示全部提取
 			}
-			if p.Amount<amount{
-				return 0,errors.New("Not enough amount")
+			if p.Amount < amount {
+				return 0, errors.New("Not enough amount")
 			}
-			pl.TotalAmount-=amount
-			if p.Amount==amount{
-				pl.Members=append(pl.Members[:i],pl.Members[i+1:]...)
+			pl.TotalAmount -= amount
+			if p.Amount == amount {
+				pl.Members = append(pl.Members[:i], pl.Members[i+1:]...)
 				return amount, nil
 			}
-			p.Amount-=amount
+			p.Amount -= amount
 			return amount, nil
 		}
 	}
-	return 0,errors.New("Address not found")
+	return 0, errors.New("Address not found")
 }
+
 type Member struct {
 	Key   string `json:"key"`
 	Value []byte `json;"value"`
