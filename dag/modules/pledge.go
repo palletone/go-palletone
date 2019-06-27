@@ -22,6 +22,7 @@ package modules
 
 import (
 	"errors"
+	"github.com/palletone/go-palletone/common/math"
 )
 
 type PledgeStatus struct{
@@ -65,12 +66,12 @@ func (pl *PledgeList) GetAmount(addr string) uint64{
 	}
 	return 0
 }
-//从质押列表中提币，Amount 0表示全部提取
+//从质押列表中提币，Amount =MaxUint64表示全部提取
 func (pl *PledgeList) Reduce(addr string, amount uint64) (uint64, error) {
 	for i, p := range pl.Members {
 		if p.Address == addr {
-			if amount == 0 {
-				amount = p.Amount //如果是0表示全部提取
+			if amount == math.MaxUint64 {
+				amount = p.Amount //如果是MaxUint64表示全部提取
 			}
 			if p.Amount < amount {
 				return 0, errors.New("Not enough amount")

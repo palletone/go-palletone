@@ -23,7 +23,6 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 
 	"github.com/palletone/go-palletone/dag/modules"
-	"strconv"
 )
 
 type DepositChaincode struct {
@@ -301,23 +300,23 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	case QueryPledgeStatusByAddr:
 		log.Info("Enter DepositChaincode Contract " + QueryPledgeStatusByAddr + " Query")
 		return queryPledgeStatusByAddr(stub, args)
-	//case HandleExtractVote:
-	//	log.Info("Enter DepositChaincode Contract " + HandleExtractVote + " Invoke")
-	//	return d.handleExtractVote(stub, args)
+	case QueryAllPledgeHistory:
+		log.Info("Enter DepositChaincode Contract " + QueryAllPledgeHistory + " Invoke")
+		return queryAllPledgeHistory(stub, args)
 	//质押分红处理
-	case HandleEachDayAward:
-		log.Info("Enter DepositChaincode Contract " + HandleEachDayAward + " Invoke")
-		return d.handleEachDayAward(stub, args)
+	case HandlePledgeReward:
+		log.Info("Enter DepositChaincode Contract " + HandlePledgeReward + " Invoke")
+		return handlePledgeReward(stub, args)
 		//TODO Devin 查询质押分红历史
 		//TODO Devin查询当前质押分红情况
 		//TODO Devin一个用户，怎么查看自己的流水账？
-	case AllPledgeVotes:
-		b, err := getVotes(stub)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-		st := strconv.FormatInt(b, 10)
-		return shim.Success([]byte(st))
+	//case AllPledgeVotes:
+	//	b, err := getVotes(stub)
+	//	if err != nil {
+	//		return shim.Error(err.Error())
+	//	}
+	//	st := strconv.FormatInt(b, 10)
+	//	return shim.Success([]byte(st))
 	case GetPledgeList:
 		log.Info("Enter DepositChaincode Contract " + GetPledgeList + " Invoke")
 		return d.getPledgeList(stub, args)
@@ -428,5 +427,5 @@ func (d DepositChaincode) normalNodeExtractVote(stub shim.ChaincodeStubInterface
 //}
 
 func (d DepositChaincode) handleEachDayAward(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return handleEachDayAward(stub, args)
+	return handlePledgeReward(stub, args)
 }

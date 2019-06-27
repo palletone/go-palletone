@@ -484,38 +484,38 @@ func isFoundationInvoke(stub shim.ChaincodeStubInterface) bool {
 //}
 
 //  获取当前PTN总量
-func getVotes(stub shim.ChaincodeStubInterface) (int64, error) {
-	b, err := stub.GetState(AllPledgeVotes)
-	if err != nil {
-		return 0, err
-	}
-	if b == nil {
-		return 0, nil
-	}
-	votes, err := strconv.ParseInt(string(b), 10, 64)
-	if err != nil {
-		return 0, err
-	}
-	return votes, nil
-}
+//func getVotes(stub shim.ChaincodeStubInterface) (int64, error) {
+//	b, err := stub.GetState(AllPledgeVotes)
+//	if err != nil {
+//		return 0, err
+//	}
+//	if b == nil {
+//		return 0, nil
+//	}
+//	votes, err := strconv.ParseInt(string(b), 10, 64)
+//	if err != nil {
+//		return 0, err
+//	}
+//	return votes, nil
+//}
 
 //  保存PTN总量
-func saveVotes(stub shim.ChaincodeStubInterface, votes int64) error {
-	cur, err := getVotes(stub)
-	if err != nil {
-		return err
-	}
-	cur += votes
-	str := strconv.FormatInt(cur, 10)
-	err = stub.PutState(AllPledgeVotes, []byte(str))
-	if err != nil {
-		return err
-	}
-	return nil
-}
+//func saveVotes(stub shim.ChaincodeStubInterface, votes int64) error {
+//	cur, err := getVotes(stub)
+//	if err != nil {
+//		return err
+//	}
+//	cur += votes
+//	str := strconv.FormatInt(cur, 10)
+//	err = stub.PutState(AllPledgeVotes, []byte(str))
+//	if err != nil {
+//		return err
+//	}
+//	return nil
+//}
 
 //  每天计算各节点收益
-func handleEachDayAward(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func handlePledgeReward(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	if len(args) != 0 {
 		return shim.Error("need 0 args")
 	}
@@ -525,72 +525,6 @@ func handleEachDayAward(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 	}
 	return shim.Success(nil)
 
-	////  判断是否是基金会
-	//if !isFoundationInvoke(stub) {
-	//	return shim.Error("please use foundation address")
-	//}
-	////
-	////  判断当天是否处理过
-	//if isHandled(stub) {
-	//	return shim.Error("had handled")
-	//}
-	////  通过前缀获取所有mediator
-	//mediators, err := stub.GetStateByPrefix(string(constants.MEDIATOR_INFO_PREFIX) + string(constants.DEPOSIT_BALANCE_PREFIX))
-	//if err != nil {
-	//	return shim.Error(err.Error())
-	//}
-	////  通过前缀获取所有jury/dev
-	//juryAndDevs, err := stub.GetStateByPrefix(string(constants.DEPOSIT_BALANCE_PREFIX))
-	//if err != nil {
-	//	return shim.Error(err.Error())
-	//}
-	////  通过前缀获取所有普通节点
-	//normalNodes, err := stub.GetStateByPrefix(string(constants.DEPOSIT_MEDIATOR_VOTE_PREFIX))
-	//if err != nil {
-	//	return shim.Error(err.Error())
-	//}
-	////  获取每天总奖励
-	//cp, err := stub.GetSystemConfig()
-	//if err != nil {
-	//	return shim.Error(err.Error())
-	//}
-	//depositExtraReward := cp.DepositExtraReward
-	////  获取当前总的质押数量
-	//pledgeVotes, err := getVotes(stub)
-	//if err != nil {
-	//	return shim.Error(err.Error())
-	//}
-	//rate := float64(depositExtraReward) / float64(pledgeVotes)
-	////  计算mediators
-	//for _, m := range mediators {
-	//	mediatorDeposit := MediatorDeposit{}
-	//	_ = json.Unmarshal(m.Value, &mediators)
-	//	dayAward := rate * float64(mediatorDeposit.DepositBalance.Balance)
-	//	mediatorDeposit.DepositBalance.Balance += uint64(dayAward)
-	//	_ = SaveMediatorDeposit(stub, m.Key, &mediatorDeposit)
-	//}
-	////  计算jury/dev
-	//for _, jd := range juryAndDevs {
-	//	depositBalance := DepositBalance{}
-	//	_ = json.Unmarshal(jd.Value, &depositBalance)
-	//	dayAward := rate * float64(depositBalance.Balance)
-	//	depositBalance.Balance += uint64(dayAward)
-	//	_ = SaveNodeBalance(stub, jd.Key, &depositBalance)
-	//}
-	////  计算normalNode
-	//for _, nor := range normalNodes {
-	//	norNodBal := NorNodBal{}
-	//	_ = json.Unmarshal(nor.Value, &norNodBal)
-	//	dayAward := rate * float64(norNodBal.AmountAsset.Amount)
-	//	norNodBal.AmountAsset.Amount += uint64(dayAward)
-	//	_ = saveNor(stub, nor.Key, &norNodBal)
-	//}
-	//nDay := time.Now().UTC().Day()
-	//err = stub.PutState(HandleEachDay, []byte(strconv.Itoa(nDay)))
-	//if err != nil {
-	//	return shim.Error(err.Error())
-	//}
-	//return shim.Success(nil)
 }
 
 //  每天计算各节点收益
@@ -825,7 +759,7 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface) error {
 	lastDate, err := getLastPledgeListDate(stub)
 
 	if lastDate == today {
-		return fmt.Errorf("had handled")
+		return fmt.Errorf("%s pledge reward has been allocated before",today)
 	}
 	allM, err := getLastPledgeList(stub)
 	if err != nil {

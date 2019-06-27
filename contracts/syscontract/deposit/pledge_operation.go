@@ -109,3 +109,12 @@ func queryPledgeStatusByAddr(stub shim.ChaincodeStubInterface, args []string) pb
 	data,_:= json.Marshal(status)
 	return shim.Success(data)
 }
+func queryAllPledgeHistory(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+
+	history,err:= getAllPledgeRewardHistory(stub)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	data,_:= json.Marshal(history)
+	return shim.Success(data)
+}
