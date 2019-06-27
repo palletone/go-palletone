@@ -137,26 +137,19 @@ func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2
 	return chain.tempdbunitRep, chain.tempUtxoRep, chain.tempStateRep, chain.tempPropRep, chain.tempUnitProduceRep
 }
 
-//func (chain *MemDag) SetUnstableRepositories(tunitRep common2.IUnitRepository, tutxoRep common2.IUtxoRepository, tstateRep common2.IStateRepository, tpropRep common2.IPropRepository, tUnitProduceRep common2.IUnitProduceRepository) {
-//	chain.tempdbunitRep = tunitRep
-//	chain.tempUtxoRep = tutxoRep
-//	chain.tempStateRep = tstateRep
-//	chain.tempPropRep = tpropRep
-//	chain.tempUnitProduceRep = tUnitProduceRep
-//}
 func (chain *MemDag) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
-	chain_units := chain.getChainUnits()
-	unit, has := chain_units[hash]
-	if has {
-		return unit.Header(), nil
-	}
+	//chain_units := chain.getChainUnits()
+	//unit, has := chain_units[hash]
+	//if has {
+	//	return unit.Header(), nil
+	//}
 	return chain.tempdbunitRep.GetHeaderByHash(hash)
 }
 func (chain *MemDag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error) {
-	unit, err := chain.getHeaderByNumber(number)
-	if err == nil {
-		return unit, nil
-	}
+	//unit, err := chain.getHeaderByNumber(number)
+	//if err == nil {
+	//	return unit, nil
+	//}
 	return chain.tempdbunitRep.GetHeaderByNumber(number)
 }
 
@@ -277,7 +270,7 @@ func (chain *MemDag) checkStableCondition(txpool txspool.ITxPool) bool {
 
 //清空Tempdb，然后基于稳定单元到最新主链单元的路径，构建新的Tempdb
 func (chain *MemDag) rebuildTempdb() {
-	log.Infof("MemDag[%s] clear tempdb and rebuild data", chain.token.String())
+	log.Debugf("MemDag[%s] clear tempdb and rebuild data", chain.token.String())
 	// 删除stable unit ,保留从stable unit 到 last unit 之间的数据。
 	chain.tempdb.Clear()
 	//if last_unit != nil {
