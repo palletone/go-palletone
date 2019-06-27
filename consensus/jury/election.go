@@ -423,7 +423,7 @@ func (p *Processor) processElectionSigRequestEvent(evt *ElectionSigRequestEvent)
 	//if !crypto.VerifySignature(pk, hash.Bytes(), sig) {
 	//	log.Debugf("[%s]processElectionSigRequestEvent, VerifySignature fail", shortId(reqId.String()))
 	//}
-	log.Debug("processElectionSigRequestEvent", "reqId", shortId(reqId.String()), "evt", evt, "PubKey", pk, "Signature", sig, "hash", hash)
+	//log.Debug("processElectionSigRequestEvent", "reqId", shortId(reqId.String()), "evt", evt, "PubKey", pk, "Signature", sig, "hash", hash)
 	if e, ok := p.mel[reqId]; ok {
 		e.brded = true //关闭签名广播请求
 		e.sigReqEd = true
