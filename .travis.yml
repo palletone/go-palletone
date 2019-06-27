@@ -197,6 +197,7 @@ matrix:
       go: 1.12.5
       services: docker
       script:
+        - ip addr
         - make gptn
         - make golang-baseimage-dev
         - docker images
@@ -205,8 +206,7 @@ matrix:
         - chmod +x ./start.sh
         - ./deploy.sh 3
         - ./start.sh 3
-        - sleep 20
-        #- ip addr
+        - sleep 30
         - cd $BASE_DIR
         - python -m robot.run -d ${BDD_LOG_PATH}/${USER_CONTRACT_DIR} ./bdd/UserContract/Testcases;
         #- docker stats
