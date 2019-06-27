@@ -25,7 +25,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	// "reflect"
+
+	"reflect"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -34,7 +37,6 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
-	"reflect"
 )
 
 func (statedb *StateDb) SaveContract(contract *modules.Contract) error {
@@ -192,7 +194,7 @@ func (statedb *StateDb) GetContractStatesById(id []byte) (map[string]*modules.Co
 	key := append(constants.CONTRACT_STATE_PREFIX, id...)
 	data := getprefix(statedb.db, key)
 	if data == nil || len(data) == 0 {
-		return nil, errors.New(fmt.Sprintf("the contract %s state is null.", id))
+		return nil, errors.New(fmt.Sprintf("the contract %x state is null.", id))
 	}
 	var err error
 	result := make(map[string]*modules.ContractStateValue, 0)
@@ -218,7 +220,7 @@ func (statedb *StateDb) GetContractStatesByPrefix(id []byte, prefix string) (map
 	key := append(constants.CONTRACT_STATE_PREFIX, id...)
 	data := getprefix(statedb.db, append(key, []byte(prefix)...))
 	if data == nil || len(data) == 0 {
-		return nil, errors.New(fmt.Sprintf("the contract %s state is null.", id))
+		return nil, errors.New(fmt.Sprintf("the contract %x state is null.", id))
 	}
 	var err error
 	result := make(map[string]*modules.ContractStateValue, 0)

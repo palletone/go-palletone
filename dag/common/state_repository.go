@@ -22,6 +22,7 @@ package common
 
 import (
 	"encoding/json"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
@@ -241,24 +242,22 @@ func (rep *StateRepository) GetPledgeWithdrawApplyList() ([]*modules.AddressAmou
 func (rep *StateRepository) GetPledgeListWithNew() (*modules.PledgeList, error) {
 
 	pledgeList, err := rep.GetPledgeList()
-	if err != nil {
-		return nil, err
+	if err != nil || pledgeList == nil {
+		pledgeList = &modules.PledgeList{}
 	}
-	newDepositList, err := rep.GetPledgeDepositApplyList()
-	if err != nil {
-		return nil, err
+	newDepositList, _ := rep.GetPledgeDepositApplyList()
+	if newDepositList != nil {
+		for _, deposit := range newDepositList {
+			pledgeList.Add(deposit.Address, deposit.Amount)
+		}
 	}
-	newWithdrawList, err := rep.GetPledgeWithdrawApplyList()
-	if err != nil {
-		return nil, err
+	newWithdrawList, _ := rep.GetPledgeWithdrawApplyList()
+	if newWithdrawList != nil {
+		for _, withdraw := range newWithdrawList {
+			pledgeList.Reduce(withdraw.Address, withdraw.Amount)
+		}
 	}
-	//Merge all
-	for _, deposit := range newDepositList {
-		pledgeList.Add(deposit.Address, deposit.Amount)
-	}
-	for _, withdraw := range newWithdrawList {
-		pledgeList.Reduce(withdraw.Address, withdraw.Amount)
-	}
+
 	return pledgeList, nil
 }
 func (rep *StateRepository) GetMediatorVotedResults() (map[string]uint64, error) {
@@ -266,9 +265,13 @@ func (rep *StateRepository) GetMediatorVotedResults() (map[string]uint64, error)
 
 	pledgeList, err := rep.GetPledgeListWithNew()
 	if err != nil {
-		log.Warn("GetPledgeList error" + err.Error())
+		log.Warn("GetPledgeListWithNew error" + err.Error())
 		return nil, err
 	}
+	log.DebugDynamic(func() string {
+		data, _ := json.Marshal(pledgeList)
+		return "GetPledgeListWithNew result:\r\n" + string(data)
+	})
 	for _, account := range pledgeList.Members {
 		// 遍历该账户投票的mediator
 		addr, _ := common.StringToAddress(account.Address)
