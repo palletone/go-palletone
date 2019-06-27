@@ -1469,6 +1469,12 @@ func (d *Dag) SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMedia
 
 func (d *Dag) Close() {
 	d.unstableUnitProduceRep.Close()
+	d.Memdag.Close()
+
+	for _, pmg := range d.PartitionMemDag {
+		pmg.Close()
+	}
+
 	d.Db.Close()
 	log.Debug("Close all dag database connections")
 }

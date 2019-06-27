@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	common2 "github.com/palletone/go-palletone/dag/common"
@@ -55,6 +56,18 @@ type MemDag struct {
 	tempdb            *Tempdb
 	saveHeaderOnly    bool
 	lock              sync.RWMutex
+
+	// append by albert·gou 用于通知群签名
+	toGroupSignFeed  event.Feed
+	toGroupSignScope event.SubscriptionScope
+}
+
+func (pmg *MemDag) Close() {
+	pmg.toGroupSignScope.Close()
+}
+
+func (pmg *MemDag) SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription {
+	return pmg.toGroupSignScope.Track(pmg.toGroupSignFeed.Subscribe(ch))
 }
 
 //
@@ -178,6 +191,12 @@ func (chain *MemDag) SetUnitGroupSign(uHash common.Hash /*, groupPubKey []byte*/
 	//header.GroupPubKey = groupPubKey
 	header.GroupSign = groupSign
 	log.Debugf("Try to update unit[%s] header group sign", uHash.String())
+
+	// 下一个unit的群签名
+	if err == nil {
+		go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
+	}
+
 	return chain.ldbunitRep.SaveHeader(header)
 }
 
@@ -366,7 +385,8 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 		time.Since(start), unit.NumberU64())
 
 	if err == nil {
-		// todo albert 通知群签名
+		// 下一个unit的群签名
+		go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
 	}
 
 	return err
@@ -394,6 +414,9 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 				chain.saveUnitToDb(chain.tempdbunitRep, chain.tempUnitProduceRep, unit)
 				//这个单元不是稳定单元，需要加入Tempdb
 			} else {
+				// 下一个unit的群签名
+				go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
+
 				log.Debugf("unit[%s] checkStableCondition =true", unit.Hash().String())
 			}
 		} else { //Fork unit
