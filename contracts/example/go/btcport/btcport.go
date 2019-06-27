@@ -73,15 +73,8 @@ type JuryMsgAddr struct {
 	Answer  []byte
 }
 
-//Method:GetJuryBTCPubkey, return pubkey string
-type BTCAddress_GetJuryBTCPubkey struct {
-	Method string `json:"method"`
-}
-
 //refer to the struct CreateMultiSigParams in "github.com/palletone/adaptor/AdaptorBTC.go",
-//add 'method' member.
 type BTCAddress_createMultiSig struct {
-	Method     string   `json:"method"`
 	PublicKeys []string `json:"publicKeys"`
 	N          int      `json:"n"`
 	M          int      `json:"m"`
@@ -103,7 +96,7 @@ func creatMulti(juryMsg []JuryMsgAddr, stub shim.ChaincodeStubInterface) ([]byte
 	a := sort.StringSlice(answers[0:])
 	sort.Sort(a)
 	//
-	createMultiSigParams := BTCAddress_createMultiSig{Method: "CreateMultiSigAddress"}
+	var createMultiSigParams BTCAddress_createMultiSig
 	createMultiSigParams.M = 3
 	createMultiSigParams.N = 4
 	for i := range answers {
@@ -113,11 +106,11 @@ func creatMulti(juryMsg []JuryMsgAddr, stub shim.ChaincodeStubInterface) ([]byte
 	if err != nil {
 		return nil, err
 	}
-	createMultiResult, err := stub.OutChainAddress("btc", creteMultiReqBytes)
+	createMultiResult, err := stub.OutChainCall("btc", "CreateMultiSigAddress", creteMultiReqBytes)
 	if err != nil {
-		return nil, errors.New("OutChainAddress CreateMultiSigAddress failed: " + err.Error())
+		return nil, errors.New("OutChainCall CreateMultiSigAddress failed: " + err.Error())
 	}
-	log.Debugf("OutChainAddress CreateMultiSigAddress createMultiResult ==== ===== %s", string(createMultiResult))
+	log.Debugf("OutChainCall CreateMultiSigAddress createMultiResult ==== ===== %s", string(createMultiResult))
 
 	return nil, nil
 }
@@ -140,16 +133,11 @@ func _initDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 		return shim.Success([]byte("DepositAddr has been init"))
 	}
 
-	//
-	getPubkeyParams := BTCAddress_GetJuryBTCPubkey{Method: "GetJuryBTCPubkey"}
-	getPubkeyReqBytes, err := json.Marshal(getPubkeyParams)
+	//Method:GetJuryBTCPubkey, return pubkey string
+	result, err := stub.OutChainCall("btc", "GetJuryBTCPubkey", []byte(""))
 	if err != nil {
-		return shim.Error(err.Error())
-	}
-	result, err := stub.OutChainAddress("btc", getPubkeyReqBytes)
-	if err != nil {
-		log.Debugf("OutChainAddress GetJuryBTCPubkey err: %s", err.Error())
-		return shim.Success([]byte("OutChainAddress GetJuryBTCPubkey failed"))
+		log.Debugf("OutChainCall GetJuryBTCPubkey err: %s", err.Error())
+		return shim.Success([]byte("OutChainCall GetJuryBTCPubkey failed"))
 	}
 
 	//
@@ -235,9 +223,7 @@ func _getDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respons
 }
 
 //refer to the struct GetTransactionHttpParams in "github.com/palletone/adaptor/AdaptorBTC.go",
-//add 'method' member.
 type BTCTransaction_getTxHTTP struct { //GetTransactionHttpParams
-	Method string `json:"method"`
 	TxHash string `json:"txhash"`
 }
 
@@ -260,8 +246,7 @@ type OutputIndex struct {
 
 func getDepositBTCInfo(btcTxHash string, stub shim.ChaincodeStubInterface) (uint64, string, error, []OutputIndex) {
 	//
-	getTxHttp := BTCTransaction_getTxHTTP{Method: "GetTransactionHttp"}
-	getTxHttp.TxHash = btcTxHash
+	getTxHttp := BTCTransaction_getTxHTTP{btcTxHash}
 
 	var outputs []OutputIndex
 	//
@@ -269,7 +254,7 @@ func getDepositBTCInfo(btcTxHash string, stub shim.ChaincodeStubInterface) (uint
 	if err != nil {
 		return 0, "", err, outputs
 	}
-	getTxHttpResult, err := stub.OutChainTransaction("btc", reqBytes)
+	getTxHttpResult, err := stub.OutChainCall("btc", "GetTransactionHttp", reqBytes)
 	if err != nil {
 		return 0, "", err, outputs
 	}
@@ -307,9 +292,7 @@ func getDepositBTCInfo(btcTxHash string, stub shim.ChaincodeStubInterface) (uint
 }
 
 //refer to the struct VerifyMessageParams in "github.com/palletone/adaptor/AdaptorBTC.go",
-//add 'method' member.
 type BTCTransaction_VerifyMessage struct {
-	Method    string `json:"method"`
 	Message   string `json:"message"`
 	Signature string `json:"signature"`
 	Address   string `json:"address"`
@@ -322,7 +305,7 @@ type VerifyMessageResult struct {
 
 func verifySig(btcTxHash, btcTxHashSig, btcAddr string, stub shim.ChaincodeStubInterface) (bool, error) {
 	//
-	verifyMessage := BTCTransaction_VerifyMessage{Method: "VerifyMessage"}
+	var verifyMessage BTCTransaction_VerifyMessage
 	verifyMessage.Message = btcTxHash
 	verifyMessage.Signature = btcTxHashSig
 	verifyMessage.Address = btcAddr
@@ -332,7 +315,7 @@ func verifySig(btcTxHash, btcTxHashSig, btcAddr string, stub shim.ChaincodeStubI
 	if err != nil {
 		return false, err
 	}
-	verifyResultByte, err := stub.OutChainTransaction("btc", reqBytes)
+	verifyResultByte, err := stub.OutChainCall("btc", "VerifyMessage", reqBytes)
 	if err != nil {
 		return false, err
 	}
@@ -510,9 +493,7 @@ func getUnspends(btcAmout int64, stub shim.ChaincodeStubInterface) []Unspend {
 }
 
 //refer to the struct RawTransactionGenParams in "github.com/palletone/adaptor/AdaptorBTC.go",
-//add 'method' member.
 type BTCTransaction_rawTransactionGen struct { //GetTransactionHttpParams
-	Method   string   `json:"method"`
 	Inputs   []Input  `json:"inputs"`
 	Outputs  []Output `json:"outputs"`
 	Locktime int64    `json:"locktime"`
@@ -532,7 +513,7 @@ func converAmount(a int64) float64 {
 }
 func genRawTx(btcAmout, btcFee int64, btcAddr string, unspends []Unspend, stub shim.ChaincodeStubInterface) (string, error) {
 	//
-	rawTxGen := BTCTransaction_rawTransactionGen{Method: "RawTransactionGen"}
+	var rawTxGen BTCTransaction_rawTransactionGen
 	totalAmount := int64(0)
 	for i := range unspends {
 		rawTxGen.Inputs = append(rawTxGen.Inputs, Input{Txid: unspends[i].Txid, Vout: uint32(unspends[i].Vout)})
@@ -553,7 +534,7 @@ func genRawTx(btcAmout, btcFee int64, btcAddr string, unspends []Unspend, stub s
 	if err != nil {
 		return "", err
 	}
-	resultByte, err := stub.OutChainTransaction("btc", reqBytes)
+	resultByte, err := stub.OutChainCall("btc", "RawTransactionGen", reqBytes)
 	if err != nil {
 		return "", err
 	}
@@ -569,9 +550,7 @@ func genRawTx(btcAmout, btcFee int64, btcAddr string, unspends []Unspend, stub s
 }
 
 //refer to the struct SignTransactionParams in "github.com/palletone/adaptor/AdaptorBTC.go",
-//add 'method' member.
 type BTCTransaction_signTransaction struct { //SignTransactionParams
-	Method           string   `json:"method"`
 	TransactionHex   string   `json:"transactionhex"`
 	InputRedeemIndex []int    `json:"inputredeemindex"`
 	RedeemHex        []string `json:"redeemhex"`
@@ -585,7 +564,7 @@ type SignTransactionResult struct {
 
 func signTx(rawTx string, inputRedeemIndex []int, redeemHex []string, stub shim.ChaincodeStubInterface) (string, error) {
 	//
-	signTx := BTCTransaction_signTransaction{Method: "SignTransaction"}
+	var signTx BTCTransaction_signTransaction
 	signTx.TransactionHex = rawTx
 	signTx.InputRedeemIndex = inputRedeemIndex
 	signTx.RedeemHex = redeemHex
@@ -595,7 +574,7 @@ func signTx(rawTx string, inputRedeemIndex []int, redeemHex []string, stub shim.
 	if err != nil {
 		return "", err
 	}
-	resultByte, err := stub.OutChainTransaction("btc", reqBytes)
+	resultByte, err := stub.OutChainCall("btc", "SignTransaction", reqBytes)
 	if err != nil {
 		return "", err
 	}
@@ -611,9 +590,7 @@ func signTx(rawTx string, inputRedeemIndex []int, redeemHex []string, stub shim.
 }
 
 //refer to the struct MergeTransactionParams in "github.com/palletone/adaptor/AdaptorBTC.go",
-//add 'method' member.
 type BTCTransaction_mergeTransaction struct {
-	Method               string   `json:"method"`
 	UserTransactionHex   string   `json:"usertransactionhex"`
 	MergeTransactionHexs []string `json:"mergetransactionhexs"`
 	InputRedeemIndex     []int    `json:"inputredeemindex"`
@@ -628,7 +605,7 @@ type MergeTransactionResult struct {
 
 func mergeTx(rawTx string, inputRedeemIndex []int, redeemHex []string, juryMsg []JuryMsgAddr, stub shim.ChaincodeStubInterface) (string, error) {
 	//
-	mergeTx := BTCTransaction_mergeTransaction{Method: "MergeTransaction"}
+	var mergeTx BTCTransaction_mergeTransaction
 	mergeTx.UserTransactionHex = rawTx
 	mergeTx.InputRedeemIndex = inputRedeemIndex
 	mergeTx.RedeemHex = redeemHex
@@ -657,7 +634,7 @@ func mergeTx(rawTx string, inputRedeemIndex []int, redeemHex []string, juryMsg [
 		if err != nil {
 			continue
 		}
-		resultByte, err := stub.OutChainTransaction("btc", reqBytes)
+		resultByte, err := stub.OutChainCall("btc", "MergeTransaction", reqBytes)
 		if err != nil {
 			continue
 		}
@@ -677,9 +654,7 @@ func mergeTx(rawTx string, inputRedeemIndex []int, redeemHex []string, juryMsg [
 }
 
 //refer to the struct SendTransactionHttpParams in "github.com/palletone/adaptor/AdaptorBTC.go",
-//add 'method' member.
 type BTCTransaction_sendTransactionHttp struct {
-	Method         string `json:"method"`
 	TransactionHex string `json:"transactionhex"`
 }
 
@@ -690,15 +665,14 @@ type SendTransactionHttpResult struct {
 
 func sendTx(tx string, stub shim.ChaincodeStubInterface) (string, error) {
 	//
-	rawTxGen := BTCTransaction_sendTransactionHttp{Method: "SendTransactionHttp"}
-	rawTxGen.TransactionHex = tx
+	rawTxGen := BTCTransaction_sendTransactionHttp{tx}
 
 	//
 	reqBytes, err := json.Marshal(rawTxGen)
 	if err != nil {
 		return "", err
 	}
-	resultByte, err := stub.OutChainTransaction("btc", reqBytes)
+	resultByte, err := stub.OutChainCall("btc", "SendTransactionHttp", reqBytes)
 	if err != nil {
 		return "", err
 	}
