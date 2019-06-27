@@ -166,7 +166,7 @@ func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, nm string
 			ContractId: val.ContractId,
 		}
 		deploy.ReadSet = append(deploy.ReadSet, rs)
-		log.Info("RwTxResult2DagDeployUnit", "ReadSet: idx", idx, "fun", args[2], "key", val.GetKey(), "val", *val.GetVersion())
+		log.Info("RwTxResult2DagDeployUnit", "ReadSet: idx", idx, "args", args, "key", val.GetKey(), "val", *val.GetVersion())
 	}
 	for idx, val := range wt {
 		ws := md.ContractWriteSet{
@@ -176,7 +176,7 @@ func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, nm string
 			ContractId: val.ContractId,
 		}
 		deploy.WriteSet = append(deploy.WriteSet, ws)
-		log.Info("RwTxResult2DagDeployUnit", "WriteSet: idx", idx, "fun", args[2], "key", val.GetKey(), "val", val.GetValue(), "delete", val.GetIsDelete())
+		log.Info("RwTxResult2DagDeployUnit", "WriteSet: idx", idx, "args", args, "key", val.GetKey(), "val", val.GetValue(), "delete", val.GetIsDelete())
 	}
 
 	return deploy, nil
