@@ -34,7 +34,7 @@ import (
 )
 
 //质押充币
-func pledgeDeposit(stub shim.ChaincodeStubInterface, addr common.Address, amount uint64) error {
+func pledgeDepositRep(stub shim.ChaincodeStubInterface, addr common.Address, amount uint64) error {
 	addrStr := addr.String()
 	node, err := getPledgeDepositRecord(stub, addrStr)
 	if err != nil {
@@ -47,7 +47,17 @@ func pledgeDeposit(stub shim.ChaincodeStubInterface, addr common.Address, amount
 	node.Address = addrStr
 	return savePledgeDepositRecord(stub, node)
 }
-
+//质押提币，以当天最后一次为准
+func
+pledgeWithdrawRep(stub shim.ChaincodeStubInterface, addr common.Address, amount uint64) error {
+	err := savePledgeWithdrawRecord(stub, modules.NewAddressAmount(addr.String(), amount))
+	return err
+}
+//撤销当天的提币请求
+func pledgeWithdrawCancelRep(stub shim.ChaincodeStubInterface, addr common.Address) error {
+	err := delPledgeWithdrawRecord(stub, addr.String())
+	return err
+}
 //质押分红,按持仓比例分固定金额
 func pledgeRewardAllocation(pledgeList *modules.PledgeList, rewardAmount uint64) *modules.PledgeList {
 	newPledgeList := &modules.PledgeList{TotalAmount: 0, Members: []*modules.AddressAmount{}}
@@ -58,4 +68,31 @@ func pledgeRewardAllocation(pledgeList *modules.PledgeList, rewardAmount uint64)
 		newPledgeList.TotalAmount += newAmount
 	}
 	return newPledgeList
+}
+//查询一个账户的质押状态
+func getPledgeStatus(stub shim.ChaincodeStubInterface, addr string) (*modules.PledgeStatus,error){
+	d,err:= getPledgeDepositRecord(stub,addr)
+	if err!=nil{
+		return nil,err
+	}
+	w,err:=getPledgeWithdrawRecord(stub,addr)
+	if err!=nil{
+		return nil,err
+	}
+	list,err:=getLastPledgeList(stub)
+	if err!=nil{
+		return nil,err
+	}
+	status:=&modules.PledgeStatus{}
+	if d!=nil{
+		status.NewDepositAmount=d.Amount
+	}
+	if w!=nil{
+		status.WithdrawApplyAmount=w.Amount
+	}
+	if list!=nil{
+		status.PledgeAmount=list.GetAmount(addr)
+	}
+	//TODO 保证金部分？
+	return status,nil
 }

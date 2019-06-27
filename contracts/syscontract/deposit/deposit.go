@@ -291,17 +291,16 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		return shim.Success([]byte("not in the jury candidate list"))
 
 		//  普通用户质押投票
-	case NormalNodePledgeVote:
-		log.Info("Enter DepositChaincode Contract " + NormalNodePledgeVote + " Invoke")
-		return d.normalNodePledgeVote(stub, args)
-		//修改质押投票的Mediator
-	//case NormalNodeChangeVote:
-	//	log.Info("Enter DepositChaincode Contract " + NormalNodeChangeVote + " Invoke")
-	//	return d.normalNodeChangeVote(stub, args)
-	//TODO Devin提币质押申请（如果提币申请金额为0表示全部提现）
-	//case NormalNodeExtractVote:
-	//	log.Info("Enter DepositChaincode Contract " + NormalNodeExtractVote + " Invoke")
-	//	return d.normalNodeExtractVote(stub, args)
+	case PledgeDeposit:
+		log.Info("Enter DepositChaincode Contract " + PledgeDeposit + " Invoke")
+		return processPledgeDeposit(stub, args)
+	case PledgeWithdraw: //提币质押申请（如果提币申请金额为MaxUint64表示全部提现）
+		log.Info("Enter DepositChaincode Contract " + PledgeWithdraw + " Invoke")
+		return processPledgeWithdraw(stub, args)
+
+	case QueryPledgeStatusByAddr:
+		log.Info("Enter DepositChaincode Contract " + QueryPledgeStatusByAddr + " Query")
+		return queryPledgeStatusByAddr(stub, args)
 	//case HandleExtractVote:
 	//	log.Info("Enter DepositChaincode Contract " + HandleExtractVote + " Invoke")
 	//	return d.handleExtractVote(stub, args)
@@ -413,7 +412,7 @@ func (d DepositChaincode) applyForForfeitureDeposit(stub shim.ChaincodeStubInter
 
 //
 func (d DepositChaincode) normalNodePledgeVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return normalNodePledgeVote(stub, args)
+	return processPledgeDeposit(stub, args)
 }
 
 //func (d DepositChaincode) normalNodeChangeVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
@@ -421,7 +420,7 @@ func (d DepositChaincode) normalNodePledgeVote(stub shim.ChaincodeStubInterface,
 //}
 
 func (d DepositChaincode) normalNodeExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return normalNodeExtractVote(stub, args)
+	return processPledgeWithdraw(stub, args)
 }
 
 //func (d DepositChaincode) handleExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {

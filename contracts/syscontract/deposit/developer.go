@@ -45,7 +45,7 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 		return shim.Error(err.Error())
 	}
 	//  添加进入质押记录
-	err = pledgeDeposit(stub, invokeAddr, invokeTokens.Amount)
+	err = pledgeDepositRep(stub, invokeAddr, invokeTokens.Amount)
 	if err != nil {
 		return shim.Error(err.Error())
 	}

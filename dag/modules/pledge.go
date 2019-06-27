@@ -20,7 +20,16 @@
 
 package modules
 
-import "errors"
+import (
+	"errors"
+)
+
+type PledgeStatus struct{
+	NewDepositAmount uint64
+	PledgeAmount uint64
+	WithdrawApplyAmount uint64
+	OtherAmount uint64
+}
 
 //质押列表
 type PledgeList struct {
@@ -48,7 +57,14 @@ func (pl *PledgeList) Add(addr string, amount uint64) {
 	}
 	pl.Members = append(pl.Members, &AddressAmount{Address: addr, Amount: amount})
 }
-
+func (pl *PledgeList) GetAmount(addr string) uint64{
+	for _,row:=range pl.Members{
+		if row.Address==addr{
+			return row.Amount
+		}
+	}
+	return 0
+}
 //从质押列表中提币，Amount 0表示全部提取
 func (pl *PledgeList) Reduce(addr string, amount uint64) (uint64, error) {
 	for i, p := range pl.Members {
