@@ -401,7 +401,7 @@ func (dl *downloadTester) CurrentHeader(token modules.AssetId) *modules.Header {
 }
 
 // CurrentBlock retrieves the current head block from the canonical chain.
-func (dl *downloadTester) CurrentUnit(token modules.AssetId) *modules.Unit {
+func (dl *downloadTester) GetCurrentUnit(token modules.AssetId) *modules.Unit {
 	dl.lock.RLock()
 	defer dl.lock.RUnlock()
 
@@ -1458,7 +1458,7 @@ func testInvalidHeaderRollback(t *testing.T, protocol int, mode SyncMode) {
 		t.Errorf("rollback head mismatch: have %v, want at most %v", head, 2*fsHeaderSafetyNet+MaxHeaderFetch)
 	}
 	if mode == FastSync {
-		if head := tester.CurrentUnit(token).NumberU64(); head != 0 {
+		if head := tester.GetCurrentUnit(token).NumberU64(); head != 0 {
 			t.Errorf("fast sync pivot block #%d not rolled back", head)
 		}
 	}
@@ -1482,7 +1482,7 @@ func testInvalidHeaderRollback(t *testing.T, protocol int, mode SyncMode) {
 		t.Errorf("rollback head mismatch: have %v, want at most %v", head, 2*fsHeaderSafetyNet+MaxHeaderFetch)
 	}
 	if mode == FastSync {
-		if head := tester.CurrentUnit(token).NumberU64(); head != 0 {
+		if head := tester.GetCurrentUnit(token).NumberU64(); head != 0 {
 			t.Errorf("fast sync pivot block #%d not rolled back", head)
 		}
 	}
