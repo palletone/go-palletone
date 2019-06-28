@@ -33,15 +33,20 @@ const (
 
 	Ok = "ok"
 	No = "no"
+
 	//获取候选列表
 	GetListForMediatorCandidate  = "GetListForMediatorCandidate"
 	GetListForJuryCandidate      = "GetListForJuryCandidate"
 	GetListForDeveloperCandidate = "GetListForDeveloperCandidate"
 	//查看是否在候选列表中
-	IsInQuitList               = "IsInQuitList"
 	IsInMediatorCandidateList  = "IsInMediatorCandidateList"
 	IsInJuryCandidateList      = "IsInJuryCandidateList"
 	IsInDeveloperCandidateList = "IsInDeveloperCandidateList"
+	//  是否在相应列表中
+	IsInBecomeList     = "IsInBecomeList"
+	IsInAgressList     = "IsInAgressList"
+	IsInQuitList       = "IsInQuitList"
+	IsInForfeitureList = "IsInForfeitureList"
 	//获取列表
 	GetBecomeMediatorApplyList      = "GetBecomeMediatorApplyList"
 	GetAgreeForBecomeMediatorList   = "GetAgreeForBecomeMediatorList"
@@ -51,7 +56,7 @@ const (
 	ApplyForForfeitureDeposit     = "ApplyForForfeitureDeposit"
 	DeveloperPayToDepositContract = "DeveloperPayToDepositContract"
 	JuryPayToDepositContract      = "JuryPayToDepositContract"
-	//处理
+	//基金会处理
 	HandleForForfeitureApplication = "HandleForForfeitureApplication"
 	HandleForApplyQuitMediator     = "HandleForApplyQuitMediator"
 	HandleForApplyBecomeMediator   = "HandleForApplyBecomeMediator"
@@ -60,6 +65,7 @@ const (
 
 	GetDeposit = "GetNodeBalance"
 
+	//  质押相关
 	PledgeDeposit           = "PledgeDeposit"
 	PledgeWithdraw          = "PledgeWithdraw"
 	QueryPledgeStatusByAddr = "QueryPledgeStatusByAddr"
@@ -68,6 +74,7 @@ const (
 	AllPledgeVotes          = "allPledgeVotes"
 	QueryPledgeList         = "QueryPledgeList"
 
+	//  mediator状态
 	Apply    = "applying"
 	Agree    = "approved"
 	Quitting = "quitting"
@@ -138,11 +145,6 @@ func NewMediatorDeposit() *MediatorDeposit {
 type NorNodBal struct {
 	AmountAsset  *modules.AmountAsset `json:"amount_asset"`
 	MediatorAddr string               `json:"mediator_address"`
-}
-
-type extractPtn struct {
-	Time   string `json:"time"`   //提取质押时间
-	Amount uint64 `json:"amount"` //提取质押数量
 }
 
 type Member struct {

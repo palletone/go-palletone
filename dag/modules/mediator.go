@@ -27,7 +27,7 @@ import (
 
 const (
 	ApplyMediator           = "ApplyBecomeMediator"
-	IsApproved              = "IsSelected"
+	IsApproved              = "IsInAgressList"
 	MediatorPayDeposit      = "MediatorPayToDepositContract"
 	MediatorList            = "MediatorList"
 	GetMediatorDeposit      = "GetMediatorDeposit"
