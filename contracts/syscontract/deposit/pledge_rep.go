@@ -30,6 +30,8 @@ import (
 	//"github.com/palletone/go-palletone/dag/constants"
 	//"github.com/palletone/go-palletone/dag/modules"
 	//"github.com/shopspring/decimal"
+	"fmt"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -70,6 +72,71 @@ func pledgeRewardAllocation(pledgeList *modules.PledgeList, rewardAmount uint64)
 		newPledgeList.TotalAmount += newAmount
 	}
 	return newPledgeList
+}
+
+//质押分红处理
+func handleRewardAllocation(stub shim.ChaincodeStubInterface) error {
+	//  判断当天是否处理过
+	today := getToday(stub)
+	lastDate, err := getLastPledgeListDate(stub)
+
+	if lastDate == today {
+		return fmt.Errorf("%s pledge reward has been allocated before", today)
+	}
+	allM, err := getLastPledgeList(stub)
+	if err != nil {
+		return err
+	}
+	//计算分红
+	if allM != nil {
+		cp, err := stub.GetSystemConfig()
+		if err != nil {
+			return err
+		}
+		depositDailyReward := cp.DepositDailyReward
+		allM = pledgeRewardAllocation(allM, depositDailyReward)
+	} else {
+		allM = &modules.PledgeList{}
+	}
+	allM.Date = today
+	// 增加新的质押
+	depositList, err := getAllPledgeDepositRecords(stub)
+	if err != nil {
+		return err
+	}
+
+	for _, awardNode := range depositList {
+
+		allM.Add(awardNode.Address, awardNode.Amount)
+		err = delPledgeDepositRecord(stub, awardNode.Address)
+		if err != nil {
+			return err
+		}
+	}
+	//处理提币请求
+	withdrawList, err := getAllPledgeWithdrawRecords(stub)
+	if err != nil {
+		return err
+	}
+	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
+	for _, withdraw := range withdrawList {
+		withdrawAmt, _ := allM.Reduce(withdraw.Address, withdraw.Amount)
+		if withdrawAmt > 0 {
+			err := stub.PayOutToken(withdraw.Address, modules.NewAmountAsset(withdraw.Amount, gasToken), 0)
+			if err != nil {
+				return err
+			}
+			err = delPledgeWithdrawRecord(stub, withdraw.Address) //清空提取请求列表
+			if err != nil {
+				return err
+			}
+		}
+	}
+	err = saveLastPledgeList(stub, allM)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 //查询一个账户的质押状态
