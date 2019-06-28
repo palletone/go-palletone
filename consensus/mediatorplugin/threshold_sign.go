@@ -273,15 +273,19 @@ func (mp *MediatorPlugin) recoverUnitsTBLS(localMed common.Address) {
 	}
 }
 
-// todo Albert 待调用
 func (mp *MediatorPlugin) AddToTBLSSignBufs(newUnit *modules.Unit) {
 	if !mp.groupSigningEnabled {
 		return
 	}
 
-	lams := mp.GetLocalActiveMediators()
+	var ms []common.Address
+	if newUnit.Timestamp() <= mp.dag.LastMaintenanceTime() {
+		ms = mp.GetLocalPrecedingMediators()
+	} else {
+		ms = mp.GetLocalActiveMediators()
+	}
 
-	for _, localMed := range lams {
+	for _, localMed := range ms {
 		log.Debugf("the mediator(%v) received a unit(%v) to be group-signed",
 			localMed.Str(), newUnit.UnitHash.TerminalString())
 		go mp.addToTBLSSignBuf(localMed, newUnit)

@@ -31,11 +31,6 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 	for {
 		select {
 		case event := <-self.newProducedUnitCh:
-			// 广播给其他活跃 mediator，进行验证并群签名
-			//if self.producer.IsEnabledGroupSign() {
-			//	self.BroadcastNewProducedUnit(event.Unit)
-			//}
-
 			self.BroadcastUnit(event.Unit, true)
 			//self.BroadcastCorsHeader(event.Unit.Header(), self.SubProtocols[0].Name)
 
@@ -59,6 +54,7 @@ func (pm *ProtocolManager) toGroupSignEventRecvLoop() {
 }
 
 func (pm *ProtocolManager) toGroupSign(event modules.ToGroupSignEvent) {
+	// 判断是否满足群签名的条件
 	if !pm.dag.IsSynced() {
 		return
 	}
@@ -67,9 +63,15 @@ func (pm *ProtocolManager) toGroupSign(event modules.ToGroupSignEvent) {
 		return
 	}
 
+	if !pm.producer.IsEnabledGroupSign() {
+		return
+	}
+
+	// 获取最高稳定单元的高度
 	gasToken := dagconfig.DagConfig.GetGasToken()
 	iun := pm.dag.GetIrreversibleUnitNum(gasToken)
 
+	// 对稳定单元后一个unit进行群签名
 	newUnit, err := pm.dag.GetUnitByNumber(&modules.ChainIndex{gasToken, iun + 1})
 	if err != nil {
 		log.Debugf(err.Error())
@@ -78,47 +80,6 @@ func (pm *ProtocolManager) toGroupSign(event modules.ToGroupSignEvent) {
 
 	go pm.producer.AddToTBLSSignBufs(newUnit)
 }
-
-// @author Albert·Gou
-// BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
-//func (pm *ProtocolManager) BroadcastNewProducedUnit(newUnit *modules.Unit) {
-//	peers := pm.GetActiveMediatorPeers()
-//	for _, peer := range peers {
-//		if peer == nil {
-//			//data, err := json.Marshal(newUnit)
-//			//if err != nil {
-//			//	log.Debug(err.Error())
-//			//	return
-//			//}
-//			//
-//			//size, reader, err := rlp.EncodeToReader(data)
-//			//if err != nil {
-//			//	return
-//			//}
-//			//
-//			//data = make([]byte, 0)
-//			//stream := rlp.NewStream(reader, uint64(size))
-//			//if err := stream.Decode(&data); err != nil {
-//			//	log.Debug(err.Error())
-//			//}
-//			//
-//			//var unit modules.Unit
-//			//if err := json.Unmarshal(data, &unit); err != nil {
-//			//	log.Debug(err.Error())
-//			//	return
-//			//}
-//			//pm.producer.AddToTBLSSignBufs(&unit)
-//
-//			pm.producer.AddToTBLSSignBufs(newUnit)
-//			continue
-//		}
-//
-//		err := peer.SendNewProducedUnit(newUnit)
-//		if err != nil {
-//			log.Debug(err.Error())
-//		}
-//	}
-//}
 
 // @author Albert·Gou
 func (self *ProtocolManager) sigShareTransmitLoop() {
@@ -354,19 +315,6 @@ func (pm *ProtocolManager) GetActiveMediatorPeers() map[string]*peer {
 
 	return list
 }
-
-// SendNewProducedUnit propagates an entire new produced unit to a remote mediator peer.
-// @author Albert·Gou
-//func (p *peer) SendNewProducedUnit(newUnit *modules.Unit) error {
-//	data, err := json.Marshal(newUnit)
-//	if err != nil {
-//		log.Debug(err.Error())
-//		return err
-//	}
-//
-//	//p.knownBlocks.Add(newUnit.UnitHash)
-//	return p2p.Send(p.rw, NewProducedUnitMsg, data)
-//}
 
 // @author Albert·Gou
 //func (p *peer) SendVSSDeal(deal *vssMsg) error {
