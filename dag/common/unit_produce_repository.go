@@ -52,6 +52,7 @@ type UnitProduceRepository struct {
 	unitRep  IUnitRepository
 	propRep  IPropRepository
 	stateRep IStateRepository
+
 	// append by albert·gou 用于活跃mediator更新时的事件订阅
 	activeMediatorsUpdatedFeed  event.Feed
 	activeMediatorsUpdatedScope event.SubscriptionScope

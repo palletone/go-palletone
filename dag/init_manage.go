@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
@@ -34,8 +35,11 @@ import (
 )
 
 func (d *Dag) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
-	unitState := d.validate.ValidateUnitExceptGroupSig(unit)
-	return unitState
+	return d.validate.ValidateUnitExceptGroupSig(unit)
+}
+
+func (d *Dag) SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription {
+	return d.Memdag.SubscribeToGroupSignEvent(ch)
 }
 func (d *Dag) ValidateUnitExceptPayment(unit *modules.Unit) error {
 	return d.validate.ValidateUnitExceptPayment(unit)
@@ -133,7 +137,7 @@ func (dag *Dag) IsSynced() bool {
 	//nowFine := time.Now()
 	//now := time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
 	now := time.Now()
-	nextSlotTime := dag.stablePropRep.GetSlotTime(gp, dgp, 1)
+	nextSlotTime := dag.unstablePropRep.GetSlotTime(gp, dgp, 1)
 
 	if nextSlotTime.Before(now) {
 		return false
@@ -158,18 +162,27 @@ func (d *Dag) UnitIrreversibleTime() time.Duration {
 }
 
 func (d *Dag) IsIrreversibleUnit(hash common.Hash) bool {
-	exist, err := d.stableUnitRep.IsHeaderExist(hash)
+	unit, err := d.stableUnitRep.GetUnit(hash)
 	if err != nil {
-		log.Errorf("IsHeaderExist execute error:%s", err.Error())
+		log.Debugf("stableUnitRep GetUnit error:%s", err.Error())
 		return false
 	}
 
-	return exist
+	if unit.NumberU64() > d.GetIrreversibleUnitNum(unit.GetAssetId()) {
+		return false
+	}
+
+	return true
 }
 
-func (d *Dag) GetIrreversibleUnit(id modules.AssetId) (*modules.ChainIndex, error) {
+func (d *Dag) GetIrreversibleUnitNum(id modules.AssetId) uint64 {
 	_, idx, err := d.stablePropRep.GetNewestUnit(id)
-	return idx, err
+	if err != nil {
+		log.Debugf("stableUnitRep GetNewestUnit error:%s", err.Error())
+		return 0
+	}
+
+	return idx.Index
 }
 
 func (d *Dag) VerifyUnitGroupSign(unitHash common.Hash, groupSign []byte) error {

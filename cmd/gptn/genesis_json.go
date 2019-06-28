@@ -230,7 +230,7 @@ func modifyConfig(ctx *cli.Context, mediators []*mp.MediatorConf) error {
 	cfg.MediatorPlugin.EnableStaleProduction = true
 	cfg.MediatorPlugin.EnableConsecutiveProduction = false
 	cfg.MediatorPlugin.RequiredParticipation = 0
-	cfg.MediatorPlugin.EnableGroupSigning = false
+	cfg.MediatorPlugin.EnableGroupSigning = true
 	cfg.MediatorPlugin.Mediators = mediators
 
 	// change log

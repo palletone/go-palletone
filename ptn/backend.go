@@ -453,9 +453,9 @@ func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal, text *s
 	}
 
 	// 判断本节点是否同步完成，数据是否最新
-	//if !p.dag.IsSynced() {
-	//	return nil, fmt.Errorf("the data of this node is not synced, and can't transfer now")
-	//}
+	if !p.dag.IsSynced() {
+		return nil, fmt.Errorf("the data of this node is not synced, and can't transfer now")
+	}
 
 	// 1. 创建交易
 	tx, fee, err := p.dag.GenTransferPtnTx(fromAdd, toAdd, ptnjson.Ptn2Dao(amount), text, p.txPool)

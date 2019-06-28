@@ -44,7 +44,7 @@ func GetETHAdaptor() interface{} {
 }
 
 func ProcessOutChainCall(chaincodeID string, outChainCall *pb.OutChainCall) (string, error) {
-	log.Debugf(modName, "Get Request method : ", outChainCall.Method)
+	log.Debugf("Get Request method : %s", outChainCall.Method)
 
 	chainName := strings.ToLower(outChainCall.OutChainName)
 	if _, existChain := exceptMethond[chainName]; existChain {

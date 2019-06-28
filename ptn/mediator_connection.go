@@ -33,6 +33,7 @@ type producer interface {
 	// SubscribeNewProducedUnitEvent should return an event subscription of
 	// NewProducedUnitEvent and send events to the given channel.
 	SubscribeNewProducedUnitEvent(ch chan<- mp.NewProducedUnitEvent) event.Subscription
+
 	// AddToTBLSSignBufs is to TBLS sign the unit
 	AddToTBLSSignBufs(newUnit *modules.Unit)
 

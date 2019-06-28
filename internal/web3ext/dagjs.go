@@ -192,6 +192,11 @@ web3._extend({
             params: 1,
             // inputFormatter: [null]
         }),
+        new web3._extend.Method({
+            name: 'stableUnitNum',
+            call: 'dag_stableUnitNum',
+            params: 0,
+        }),
 	],
 	properties: [
 		new web3._extend.Property({

@@ -18,15 +18,15 @@
 package modules
 
 import (
+	"bytes"
 	"encoding/binary"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"strings"
 	"time"
 	"unsafe"
 
-	"bytes"
-	"encoding/json"
-	"errors"
-	"fmt"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -244,6 +244,14 @@ type Unit struct {
 	// inter-peer block relay.
 	ReceivedAt   time.Time
 	ReceivedFrom interface{}
+}
+
+func (h *Header) GetAssetId() AssetId {
+	return h.Number.AssetID
+}
+
+func (unit *Unit) GetAssetId() AssetId {
+	return unit.UnitHeader.GetAssetId()
 }
 
 func (h *Header) Author() common.Address {
