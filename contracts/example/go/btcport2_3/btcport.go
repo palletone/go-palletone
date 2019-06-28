@@ -136,8 +136,8 @@ const sep = "_"
 const symbolsWithdrawPrepare = "withdrawPrepare_"
 const symbolsWithdraw = "withdraw_"
 
-const consultM = 3
-const consultN = 4
+const consultM = 2
+const consultN = 2
 
 func _initDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//

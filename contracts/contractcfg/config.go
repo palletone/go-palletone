@@ -11,7 +11,7 @@ var DefaultConfig = Config{
 	ContractFileSystemPath: "./chaincodes",
 	ContractAddress:        "127.0.0.1:12345",
 	ContractExecutetimeout: time.Duration(20) * time.Second,
-	ContractDeploytimeout:  time.Duration(40) * time.Second,
+	ContractDeploytimeout:  time.Duration(180) * time.Second,
 	VmEndpoint:             "unix:///var/run/docker.sock",
 	ContractBuilder:        "palletone/goimg",
 	SysContract:            map[string]string{"deposit_syscc": "true", "sample_syscc": "true", "createToken_sycc": "true"},

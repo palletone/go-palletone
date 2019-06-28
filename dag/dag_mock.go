@@ -1276,6 +1276,20 @@ func (mr *MockIDagMockRecorder) ValidateUnitExceptGroupSig(unit interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateUnitExceptGroupSig", reflect.TypeOf((*MockIDag)(nil).ValidateUnitExceptGroupSig), unit)
 }
 
+// ValidateUnitExceptPayment mocks base method
+func (m *MockIDag) ValidateUnitExceptPayment(unit *modules.Unit) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ValidateUnitExceptPayment", unit)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ValidateUnitExceptPayment indicates an expected call of ValidateUnitExceptPayment
+func (mr *MockIDagMockRecorder) ValidateUnitExceptPayment(unit interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateUnitExceptPayment", reflect.TypeOf((*MockIDag)(nil).ValidateUnitExceptPayment), unit)
+}
+
 // SaveChaincode mocks base method
 func (m *MockIDag) SaveChaincode(contractId common.Address, cc *list.CCInfo) error {
 	m.ctrl.T.Helper()
