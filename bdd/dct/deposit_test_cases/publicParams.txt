@@ -34,4 +34,4 @@ ${Url}            http://127.0.0.1:8545
 ${depositContractAddress}    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM
 ${amount}         0
 ${fee}            1000000000
-${medDepositAmount}    500000000000000
+${medDepositAmount}    50000000000000

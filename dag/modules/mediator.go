@@ -32,7 +32,7 @@ const (
 	MediatorList            = "MediatorList"
 	GetMediatorDeposit      = "GetMediatorDeposit"
 	MediatorWithdrawDeposit = "MediatorApplyCashback"
-	MediatorApplyQuitList   = "MediatorApplyQuitMediator"
+	MediatorApplyQuitList   = "MediatorApplyQuit"
 )
 
 type MediatorInfo struct {

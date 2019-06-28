@@ -13,7 +13,7 @@ ${developerAddr_02}    ${EMPTY}
 
 *** Test Cases ***
 Business_01
-    [Documentation]    mediator 交付 5000000 0000 0000 及以上才可以加入候选列表
+    [Documentation]    mediator 交付 50 0000 0000 0000 及以上才可以加入候选列表
     ...
     ...    某节点申请加入mediator-》进入申请列表-》基金会同意-》进入同意列表-》节点加入保证金（足够）-》进入候选列表-》节点增加保证金-》节点申请退出部分保证金-》基金会同意-》节点申请退出候选列表-》进入退出列表-》基金会同意。
     ${result}    getBalance    ${mediatorAddr_01}
@@ -41,7 +41,7 @@ Business_01
     ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
     log    ${mDeposit}
     Should Not Be Equal    ${mDeposit["balance"]}    ${0}    #有余额
-    ${result}    applyQuitMediator    ${mediatorAddr_01}    MediatorApplyQuitMediator    #该节点申请退出mediator候选列表    #10
+    ${result}    applyQuitMediator    ${mediatorAddr_01}    MediatorApplyQuit    #该节点申请退出mediator候选列表    #10
     log    ${result}
     ${addressMap4}    getQuitMediatorApplyList
     log    ${addressMap4}
@@ -115,8 +115,8 @@ Business_02
     log    ${resul}
 
 Business_03
-    [Documentation]    jury 交付 1000000 0000 0000 及以上才可以加入候选列表
-    ${resul}    juryPayToDepositContract    ${juryAddr_01}    100000000000000
+    [Documentation]    jury 交付 10 0000 0000 0000 及以上才可以加入候选列表
+    ${resul}    juryPayToDepositContract    ${juryAddr_01}    10000000000000
     log    ${resul}
     ${result}    getCandidateBalanceWithAddr    ${juryAddr_01}    #获取该地址保证金账户详情
     log    ${result}    #余额为100000000000000
@@ -140,7 +140,7 @@ Business_03
 
 Business_04
     [Documentation]    没收jury节点
-    ${resul}    juryPayToDepositContract    ${juryAddr_02}    100000000000000
+    ${resul}    juryPayToDepositContract    ${juryAddr_02}    10000000000000
     log    ${resul}
     ${result}    getCandidateBalanceWithAddr    ${juryAddr_02}    #获取该地址保证金账户详情
     log    ${result}
@@ -163,7 +163,7 @@ Business_04
     log    ${resul}
 
 Business_05
-    [Documentation]    dev 交付 10000 0000 0000 及以上才可以加入候选列表
+    [Documentation]    dev 交付 1 0000 0000 0000 及以上才可以加入候选列表
     ${resul}    developerPayToDepositContract    ${developerAddr_01}    1000000000000
     log    ${resul}
     ${result}    getCandidateBalanceWithAddr    ${developerAddr_01}    #获取该地址保证金账户详情

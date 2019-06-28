@@ -29,8 +29,8 @@ const (
 	DefaultRewardHeight              = 50
 	DefaultGenerateUnitReward        = 150000000
 	DefaultDepositPeriod             = 0
-	DefaultDepositAmountForMediator  = 5000000 * 100000000
-	DefaultDepositAmountForJury      = 1000000 * 100000000
+	DefaultDepositAmountForMediator  = 500000 * 100000000
+	DefaultDepositAmountForJury      = 100000 * 100000000
 	DefaultDepositAmountForDeveloper = 10000 * 100000000
 	DefaultFoundationAddress         = "P1LA8TkEWxU6FcMzkyeSbf9b9FwZwxrYRuF"
 
