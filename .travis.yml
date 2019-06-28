@@ -204,7 +204,10 @@ matrix:
         - cd ./cmd/deployment
         - chmod +x ./deploy.sh
         - chmod +x ./start.sh
+        - cp $BASE_DIR/bdd/UserContract/editConfig.sh ./
+        - chmod +x editConfig.sh
         - ./deploy.sh 3
+        - ./editConfig.sh
         - ./start.sh 3
         - sleep 30
         - cd $BASE_DIR
