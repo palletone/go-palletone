@@ -209,7 +209,7 @@ matrix:
         - sleep 30
         - cd $BASE_DIR
         - python -m robot.run -d ${BDD_LOG_PATH}/${USER_CONTRACT_DIR} ./bdd/UserContract/Testcases;
-        #- docker stats
+        - docker ps -a
       after_script:
         - killall gptn
         - sleep 2

@@ -18,7 +18,7 @@ startProduce
     \    Run Keyword If    ${n}==${0}    startNodeProduce    ${host}
     \    Continue For Loop If    ${n}==${0}
     \    ${newport}=    Evaluate    ${port}+10*(${n}+1)
-    \    ${url}=    Catenate    SEPARATOR=    http://123.126.106.82:5    ${newport}    /
+    \    ${url}=    Catenate    SEPARATOR=    http://${ip}:5    ${newport}    /
     \    Append To List    ${hosts}    ${url}
     \    startNodeProduce    ${url}
     Set Global Variable    ${juryHosts}    ${hosts}
