@@ -151,54 +151,54 @@ matrix:
         - sudo -H apt-get install expect
         - sudo -H apt-get install lftp
         - chmod +x bdd/upload2Ftp.sh
-    - os: linux
-      dist: xenial
-      go: 1.12.5
-      env: multiple_nodes_bdd
-      script:
+    #- os: linux
+    #  dist: xenial
+    #  go: 1.12.5
+    #  env: multiple_nodes_bdd
+    #  script:
         #- go build ./cmd/gptn
-        - make gptn
-        - cp bdd/light/testcases/!(preset.sh) bdd/node
-        - cp build/bin/gptn bdd/node
-        - cd bdd/node
-        - chmod -R +x *
-        - sudo -H chmod +w /etc/hosts
-        - sudo -H sed -i 's/127.0.0.1 localhost/127.0.0.1/g' /etc/hosts
-        - sudo -H sed -i '$a0.0.0.0 localhost' /etc/hosts
-        - ./launchMultipleNodes.sh
-        - netstat -ap | grep gptn
-        - cat /etc/hosts
-        - vi ptn-genesis.json
-        - cd ${BASE_DIR}/bdd
-        - mkdir -p ${BDD_LOG_PATH}
-        - if [ $IS_RUN_MULTIPLE == 'true' ]; then
-          python -m robot.run -d ${BDD_LOG_PATH}/${MULTIPLE_DIR} -i normal ./testcase/zMulti-node;
-          fi
-      after_script:
-        - killall gptn
-        - sleep 2
-        - cd ${BASE_DIR}
-        - zip -j ./bdd/logs/zMulti-node.zip ./bdd/logs/*
-        - |
-          if [ $IS_UPLOAD == 'true' ]; then
-            # uplaod all log
-            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
-            # echo ftp address
-            echo "The path of all bdd log in vsftpd is 'ftp://47.74.209.46"
-            echo "If you want to open it in explorer, you should close VPN first."
-            echo "If you want to open in windows explorer, you should open Internet Explorer and open Settings->Adanced-Enable FTP Folder view"
-          fi
-      install:
-        - sudo -H pip install --upgrade pip
-        - sudo -H pip install robotframework==2.8.5
-        - sudo -H pip install requests
-        - sudo -H pip install robotframework-requests
-        - sudo -H pip install demjson
-        - sudo -H pip install pexpect
-        - sudo -H apt-get install jq
-        - sudo -H apt-get install tcl tk expect
-        - sudo -H apt-get install lftp
-        - chmod +x bdd/upload2Ftp.sh
+    #    - make gptn
+    #    - cp bdd/light/testcases/!(preset.sh) bdd/node
+    #    - cp build/bin/gptn bdd/node
+    #    - cd bdd/node
+    #    - chmod -R +x *
+    #    - sudo -H chmod +w /etc/hosts
+    #    - sudo -H sed -i 's/127.0.0.1 localhost/127.0.0.1/g' /etc/hosts
+    #    - sudo -H sed -i '$a0.0.0.0 localhost' /etc/hosts
+    #    - ./launchMultipleNodes.sh
+    #    - netstat -ap | grep gptn
+    #    - cat /etc/hosts
+    #
+    #    - cd ${BASE_DIR}/bdd
+    #    - mkdir -p ${BDD_LOG_PATH}
+    #    - if [ $IS_RUN_MULTIPLE == 'true' ]; then
+    #      python -m robot.run -d ${BDD_LOG_PATH}/${MULTIPLE_DIR} -i normal ./testcase/zMulti-node;
+    #      fi
+    #  after_script:
+    #    - killall gptn
+    #    - sleep 2
+    #    - cd ${BASE_DIR}
+    #    - zip -j ./bdd/logs/zMulti-node.zip ./bdd/logs/*
+    #    - |
+    #      if [ $IS_UPLOAD == 'true' ]; then
+    #        # uplaod all log
+    #        ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
+    #        # echo ftp address
+    #        echo "The path of all bdd log in vsftpd is 'ftp://47.74.209.46"
+    #        echo "If you want to open it in explorer, you should close VPN first."
+    #        echo "If you want to open in windows explorer, you should open Internet Explorer and open Settings->Adanced-Enable FTP Folder view"
+    #      fi
+    #  install:
+    #    - sudo -H pip install --upgrade pip
+    #    - sudo -H pip install robotframework==2.8.5
+    #    - sudo -H pip install requests
+    #    - sudo -H pip install robotframework-requests
+    #    - sudo -H pip install demjson
+    #    - sudo -H pip install pexpect
+    #    - sudo -H apt-get install jq
+    #    - sudo -H apt-get install tcl tk expect
+    #    - sudo -H apt-get install lftp
+    #    - chmod +x bdd/upload2Ftp.sh
     - os: linux
       dist: xenial
       go: 1.12.5
