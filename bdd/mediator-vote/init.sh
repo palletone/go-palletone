@@ -19,10 +19,10 @@ EOF
 jsonFile="ptn-genesis.json"
 if [ -e "$jsonFile" ]; then
     #file already exist, modify
-    sed -i "s/\"activeMediatorCount\": \"5\"/\"activeMediatorCount\": \"3\"/g" $jsonFile
-    sed -i "s/\"initialActiveMediators\": \"5\"/\"initialActiveMediators\": \"3\"/g" $jsonFile
-    sed -i "s/\"minMediatorCount\": \"5\"/\"minMediatorCount\": \"3\"/g" $jsonFile
-    sed -i "s/\"maintenanceInterval\": \"600\"/\"maintenanceInterval\": \"150\"/g" $jsonFile
+    sed -i "s/\"active_mediator_count\": \"5\"/\"active_mediator_count\": \"3\"/g" $jsonFile
+    sed -i "s/\"initial_active_mediators\": \"5\"/\"initial_active_mediators\": \"3\"/g" $jsonFile
+    sed -i "s/\"min_mediator_count\": \"5\"/\"min_mediator_count\": \"3\"/g" $jsonFile
+    sed -i "s/\"maintenance_interval\": \"600\"/\"maintenance_interval\": \"150\"/g" $jsonFile
 else
     #file not found, new file
     echo "no $jsonFile"

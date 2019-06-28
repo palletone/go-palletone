@@ -381,7 +381,7 @@ func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis comm
 			return p2p.DiscReadTimeout
 		}
 	}
-
+	log.Debug("peer Handshake", "p.id", p.id, "index", index.Index)
 	p.SetHead(status.CurrentHeader, status.Index)
 	return nil
 }
