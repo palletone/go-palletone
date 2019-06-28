@@ -19,9 +19,9 @@
 package mediatorplugin
 
 import (
-	"go.dedis.ch/kyber/v3/share/dkg/pedersen"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
+	"go.dedis.ch/kyber/v3/share/dkg/pedersen"
 )
 
 // NewUnitEvent is posted when a unit has been produced.
@@ -35,7 +35,7 @@ type SigShareEvent struct {
 }
 
 type VSSDealEvent struct {
-	DstIndex int
+	DstIndex uint
 	Deal     *dkg.Deal
 }
 

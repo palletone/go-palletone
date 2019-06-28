@@ -164,7 +164,7 @@ func (self *ProtocolManager) vssDealTransmitLoop() {
 	for {
 		select {
 		case event := <-self.vssDealCh:
-			node := self.dag.GetActiveMediatorNode(event.DstIndex)
+			node := self.dag.GetActiveMediatorNode(int(event.DstIndex))
 			self.TransmitVSSDeal(node, &event)
 
 			// Err() channel will be closed when unsubscribing.
