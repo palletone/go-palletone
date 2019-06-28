@@ -119,7 +119,7 @@ const (
 	PalletOne1Percent              = PalletOne100Percent / 100
 	PalletOneIrreversibleThreshold = 70 * PalletOne1Percent
 
-	DefaultMediatorInterval     = 2       /* seconds */
+	DefaultMediatorInterval     = 2       // 5  /* seconds */
 	DefaultMaintenanceInterval  = 60 * 60 //60 * 60 * 24 // seconds, aka: 1 day
 	DefaultMaintenanceSkipSlots = 1       //3 // number of slots to skip for maintenance interval
 

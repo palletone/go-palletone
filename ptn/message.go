@@ -353,6 +353,12 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		log.Info("ProtocolManager", "NewBlockMsg json ummarshal err:", err, "data", string(data))
 		return err
 	}
+
+	if unit.IsEmpty() {
+		log.Errorf("unit is nil/empty")
+		return nil
+	}
+
 	unitHash := unit.Hash()
 	if pm.IsExistInCache(unitHash.Bytes()) {
 		//log.Debugf("Received unit(%v) again, ignore it", unitHash.TerminalString())

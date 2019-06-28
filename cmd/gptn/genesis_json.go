@@ -151,6 +151,8 @@ func createGenesisJson(ctx *cli.Context) error {
 	genesisState.TokenHolder = account
 	genesisState.InitialParameters.FoundationAddress = genesisState.TokenHolder
 	genesisState.InitialMediatorCandidates = initialMediatorCandidates(mcs, nodeStr)
+	genesisState.InitialParameters.MediatorInterval = 3
+	genesisState.InitialParameters.MaintenanceInterval = 60 * 10
 
 	// set root ca holder
 	genesisState.DigitalIdentityConfig.RootCAHolder = genesisState.TokenHolder
