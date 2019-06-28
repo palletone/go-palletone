@@ -12,7 +12,7 @@ testprepare
 
 *** Keywords ***
 startProduce
-    ${port}    set variable    ${8645}
+    ${port}    set variable    ${8545}
     ${hosts}    Create List
     : FOR    ${n}    IN RANGE    ${nodenum}
     \    Run Keyword If    ${n}==${0}    startNodeProduce    ${host}
