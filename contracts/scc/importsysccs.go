@@ -12,19 +12,14 @@
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/*
- * Copyright IBM Corp. All Rights Reserved.
- * @author PalletOne core developers <dev@pallet.one>
- * @date 2018
- */
-
 package scc
 
 import (
-	"github.com/palletone/go-palletone/contracts/syscontract/deposit"
 	"github.com/palletone/go-palletone/contracts/example/go/samplesyscc"
 	"github.com/palletone/go-palletone/contracts/syscontract"
+	"github.com/palletone/go-palletone/contracts/syscontract/coinbasecc"
 	"github.com/palletone/go-palletone/contracts/syscontract/debugcc"
+	"github.com/palletone/go-palletone/contracts/syscontract/deposit"
 	"github.com/palletone/go-palletone/contracts/syscontract/digitalidcc"
 	"github.com/palletone/go-palletone/contracts/syscontract/partitioncc"
 	"github.com/palletone/go-palletone/contracts/syscontract/prc20"
@@ -136,6 +131,15 @@ var systemChaincodes = []*SystemChaincode{
 		Version:   "ptn001",
 		InitArgs:  [][]byte{},
 		Chaincode: &debugcc.DebugChainCode{},
+	},
+	{
+		Id:        syscontract.CoinbaseContractAddress.Bytes(),
+		Enabled:   true,
+		Name:      "coinbase_sycc",
+		Path:      "",
+		Version:   "ptn001",
+		InitArgs:  [][]byte{},
+		Chaincode: &coinbasecc.CoinbaseChainCode{},
 	},
 	//TODO add other system chaincodes ...
 }

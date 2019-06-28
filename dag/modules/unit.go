@@ -19,6 +19,7 @@ package modules
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -324,12 +325,12 @@ func (height *ChainIndex) String() string {
 //Index 8Bytes + AssetID 16Bytes
 func (height *ChainIndex) Bytes() []byte {
 	idx := make([]byte, 8)
-	littleEndian.PutUint64(idx, height.Index)
+	binary.LittleEndian.PutUint64(idx, height.Index)
 	return append(idx, height.AssetID.Bytes()...)
 }
 
 func (height *ChainIndex) SetBytes(data []byte) {
-	height.Index = littleEndian.Uint64(data[:8])
+	height.Index = binary.LittleEndian.Uint64(data[:8])
 	height.AssetID.SetBytes(data[8:])
 }
 

@@ -1,0 +1,10 @@
+*** Settings ***
+Resource          publicParams.txt
+
+*** Keywords ***
+handleEachDay
+    [Arguments]    ${address}
+    ${one}    Create List    handleEachDayAward
+    ${two}    Create List    ${address}    ${address}    ${amount}    ${fee}    ${one}
+    ${result}    创建公用的POST请求    ${depositContractInvoke}    handleEachDayAward    ${two}
+    sleep    8

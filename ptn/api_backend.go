@@ -422,17 +422,17 @@ func (b *PtnApiBackend) GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransact
 	return tx, err
 }
 
-func (b *PtnApiBackend) QueryProofOfExistenceByReference(ref string) ([]*ptnjson.ProofOfExistenceJson, error){
+func (b *PtnApiBackend) QueryProofOfExistenceByReference(ref string) ([]*ptnjson.ProofOfExistenceJson, error) {
 	poes, err := b.ptn.dag.QueryProofOfExistenceByReference([]byte(ref))
-	if err!=nil{
-		return nil,err
+	if err != nil {
+		return nil, err
 	}
-	result:=[]*ptnjson.ProofOfExistenceJson{}
-	for _,poe:=range poes{
-		j:= ptnjson.ConvertProofOfExistence2Json(poe)
-		result=append(result,j)
+	result := []*ptnjson.ProofOfExistenceJson{}
+	for _, poe := range poes {
+		j := ptnjson.ConvertProofOfExistence2Json(poe)
+		result = append(result, j)
 	}
-	return result,nil
+	return result, nil
 }
 
 func (b *PtnApiBackend) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
@@ -578,6 +578,10 @@ func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage b
 func (b *PtnApiBackend) ContractStartChaincodeContainer(deployId []byte, txid string) ([]byte, error) {
 	log.Debugf("======>ContractStartChaincodeContainer:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
 	return b.ptn.contract.StartChaincodeContainer("palletone", deployId, txid)
+}
+func (b *PtnApiBackend) SignAndSendRequest(addr common.Address, tx *modules.Transaction) error {
+	_, err := b.ptn.contractPorcessor.SignAndExecuteAndSendRequest(addr, tx)
+	return err
 }
 
 //

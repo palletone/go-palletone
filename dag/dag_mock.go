@@ -5,6 +5,9 @@
 package dag
 
 import (
+	reflect "reflect"
+	time "time"
+
 	gomock "github.com/golang/mock/gomock"
 	common "github.com/palletone/go-palletone/common"
 	event "github.com/palletone/go-palletone/common/event"
@@ -13,8 +16,6 @@ import (
 	core "github.com/palletone/go-palletone/core"
 	modules "github.com/palletone/go-palletone/dag/modules"
 	txspool "github.com/palletone/go-palletone/dag/txspool"
-	reflect "reflect"
-	time "time"
 )
 
 // MockIDag is a mock of IDag interface
@@ -1305,10 +1306,12 @@ func (mr *MockIDagMockRecorder) GetMediatorInfo(address interface{}) *gomock.Cal
 }
 
 // MediatorVotedResults mocks base method
-func (m *MockIDag) MediatorVotedResults() map[string]uint64 {
+func (m *MockIDag) MediatorVotedResults() (map[string]uint64, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MediatorVotedResults")
 	ret0, _ := ret[0].(map[string]uint64)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // MediatorVotedResults indicates an expected call of MediatorVotedResults

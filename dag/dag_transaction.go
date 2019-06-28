@@ -21,10 +21,10 @@
 package dag
 
 import (
-	"encoding/json"
 	"fmt"
 	"math/big"
 
+	"encoding/json"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"

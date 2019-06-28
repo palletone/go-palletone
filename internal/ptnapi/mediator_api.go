@@ -103,8 +103,8 @@ func (a *PublicMediatorAPI) ListVoteResults() map[string]uint64 {
 	for address, _ := range a.Dag().GetMediators() {
 		mediatorVoteCount[address.String()] = 0
 	}
-
-	for med, stake := range a.Dag().MediatorVotedResults() {
+	result, _ := a.Dag().MediatorVotedResults()
+	for med, stake := range result {
 		mediatorVoteCount[med] = stake
 	}
 

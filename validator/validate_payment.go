@@ -22,6 +22,8 @@ package validator
 
 import (
 	"encoding/json"
+	"math"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -29,7 +31,6 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
-	"math"
 )
 
 //验证一个Payment
@@ -39,10 +40,10 @@ import (
 //3. Unlock correct
 func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx int,
 	payment *modules.PaymentPayload, usedUtxo map[string]bool) ValidationCode {
-
-	if payment.LockTime > 0 {
-		// TODO check locktime
-	}
+	txId:=tx.Hash()
+	//if payment.LockTime > 0 {
+	//	// TODO check locktime
+	//}
 	gasToken := dagconfig.DagConfig.GetGasToken()
 	var asset *modules.Asset
 	totalInput := uint64(0)
@@ -69,6 +70,9 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 			if in == nil || in.PreviousOutPoint == nil {
 				log.Error("payment input is null.", "payment.input", payment.Inputs)
 				return TxValidationCode_INVALID_PAYMMENT_INPUT
+			}
+			if in.PreviousOutPoint.TxHash.IsZero(){
+				in.PreviousOutPoint.TxHash=txId
 			}
 			usedUtxoKey := in.PreviousOutPoint.String()
 			if _, exist := usedUtxo[usedUtxoKey]; exist {
@@ -149,7 +153,7 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 	//Check payment
 	//rule:
 	//	1. all outputs have same asset id
-	if len(payment.Outputs)>0 {
+	if len(payment.Outputs) > 0 {
 		asset0 := payment.Outputs[0].Asset
 		for _, out := range payment.Outputs {
 			if !asset0.IsSameAssetId(out.Asset) {
@@ -166,9 +170,9 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 			if !asset.IsSameAssetId(asset0) {
 				return TxValidationCode_INVALID_ASSET
 			}
-			//if msgIdx != 0 && totalOutput > totalInput { //相当于进行了增发
-			//	return TxValidationCode_INVALID_AMOUNT
-			//}
+			if msgIdx != 0 && totalOutput > totalInput { //相当于进行了增发
+				return TxValidationCode_INVALID_AMOUNT
+			}
 		}
 	}
 	return TxValidationCode_VALID

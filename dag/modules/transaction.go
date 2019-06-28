@@ -20,7 +20,6 @@
 package modules
 
 import (
-	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -31,11 +30,8 @@ import (
 	"sync"
 	"time"
 
-	"bytes"
-
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/award"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/obj"
@@ -85,16 +81,6 @@ func newTransaction(msg []*Message) *Transaction {
 // AddTxIn adds a transaction input to the message.
 func (tx *Transaction) AddMessage(msg *Message) {
 	tx.TxMessages = append(tx.TxMessages, msg)
-}
-
-// AddTxIn adds a transaction input to the message.
-func (pld *PaymentPayload) AddTxIn(ti *Input) {
-	pld.Inputs = append(pld.Inputs, ti)
-}
-
-// AddTxOut adds a transaction output to the message.
-func (pld *PaymentPayload) AddTxOut(to *Output) {
-	pld.Outputs = append(pld.Outputs, to)
 }
 
 type TransactionWithUnitInfo struct {
@@ -441,19 +427,21 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc, unitTime int64) (*A
 			return nil, fmt.Errorf("Compute fees: txin total overflow")
 		}
 		inAmount += utxo.Amount
-		if unitTime > 0 {
-			//计算币龄利息
-			rate := parameter.CurrentSysParameters.TxCoinDayInterest
-			if bytes.Equal(utxo.PkScript, DepositContractLockScript) {
-				rate = parameter.CurrentSysParameters.DepositContractInterest
-			}
 
-			interest := award.GetCoinDayInterest(utxo.GetTimestamp(), unitTime, utxo.Amount, rate)
-			if interest > 0 {
-				//	log.Infof("Calculate tx fee,Add interest value:%d to tx[%s] fee", interest, tx.Hash().String())
-				inAmount += interest
-			}
-		}
+		//if unitTime > 0 {
+		//	//计算币龄利息
+		//	rate := parameter.CurrentSysParameters.TxCoinDayInterest
+		//	if bytes.Equal(utxo.PkScript, DepositContractLockScript) {
+		//		rate = parameter.CurrentSysParameters.DepositContractInterest
+		//	}
+		//
+		//	interest := award.GetCoinDayInterest(utxo.GetTimestamp(), unitTime, utxo.Amount, rate)
+		//	if interest > 0 {
+		//		//	log.Infof("Calculate tx fee,Add interest value:%d to tx[%s] fee", interest, tx.Hash().String())
+		//		inAmount += interest
+		//	}
+		//}
+
 	}
 
 	for _, txout := range payload.Outputs {
@@ -786,8 +774,6 @@ func (tx *Transaction) Clone() Transaction {
 	return *newTx
 }
 
-const defaultTxInOutAlloc = 15
-
 // SerializeNoWitness encodes the transaction to w in an identical manner to
 // Serialize, however even if the source transaction has inputs with witness
 // data, the old serialization format will still be used.
@@ -814,7 +800,7 @@ func (tx *Transaction) IsSystemContract() bool {
 		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
 			contractId := msg.Payload.(*ContractInvokeRequestPayload).ContractId
 			contractAddr := common.NewAddress(contractId, common.ContractHash)
-			log.Debug("isSystemContract", "contract id", contractAddr, "len", len(contractAddr))
+			//log.Debug("isSystemContract", "contract id", contractAddr, "len", len(contractAddr))
 			return contractAddr.IsSystemContractAddress() //, nil
 
 		} else if msg.App == APP_CONTRACT_TPL_REQUEST {
@@ -943,184 +929,185 @@ func (tx *Transaction) SerializeSizeStripped() int {
 
 // WriteVarBytes serializes a variable length byte array to w as a varInt
 // containing the number of bytes, followed by the bytes themselves.
-func WriteVarBytes(w io.Writer, pver uint32, bytes []byte) error {
-	slen := uint64(len(bytes))
-	err := WriteVarInt(w, pver, slen)
-	if err != nil {
-		return err
-	}
-	_, err = w.Write(bytes)
-	return err
-}
+//func WriteVarBytes(w io.Writer, pver uint32, bytes []byte) error {
+//	slen := uint64(len(bytes))
+//	err := WriteVarInt(w, pver, slen)
+//	if err != nil {
+//		return err
+//	}
+//	_, err = w.Write(bytes)
+//	return err
+//}
 
-const binaryFreeListMaxItems = 1024
-
-type binaryFreeList chan []byte
-
-var binarySerializer binaryFreeList = make(chan []byte, binaryFreeListMaxItems)
-
-// WriteVarInt serializes val to w using a variable number of bytes depending
-// on its value.
-func WriteVarInt(w io.Writer, pver uint32, val uint64) error {
-	if val < 0xfd {
-		return binarySerializer.PutUint8(w, uint8(val))
-	}
-	if val <= math.MaxUint16 {
-		err := binarySerializer.PutUint8(w, 0xfd)
-		if err != nil {
-			return err
-		}
-		return binarySerializer.PutUint16(w, littleEndian, uint16(val))
-	}
-	if val <= math.MaxUint32 {
-		err := binarySerializer.PutUint8(w, 0xfe)
-		if err != nil {
-			return err
-		}
-		return binarySerializer.PutUint32(w, littleEndian, uint32(val))
-	}
-	err := binarySerializer.PutUint8(w, 0xff)
-	if err != nil {
-		return err
-	}
-	return binarySerializer.PutUint64(w, littleEndian, val)
-}
-
-// Borrow returns a byte slice from the free list with a length of 8.  A new
-// buffer is allocated if there are not any available on the free list.
-func (l binaryFreeList) Borrow() []byte {
-	var buf []byte
-	select {
-	case buf = <-l:
-	default:
-		buf = make([]byte, 8)
-	}
-	return buf[:8]
-}
-
-// Return puts the provided byte slice back on the free list.  The buffer MUST
-// have been obtained via the Borrow function and therefore have a cap of 8.
-func (l binaryFreeList) Return(buf []byte) {
-	select {
-	case l <- buf:
-	default:
-		// Let it go to the garbage collector.
-	}
-}
-
-// Uint8 reads a single byte from the provided reader using a buffer from the
-// free list and returns it as a uint8.
-func (l binaryFreeList) Uint8(r io.Reader) (uint8, error) {
-	buf := l.Borrow()[:1]
-	if _, err := io.ReadFull(r, buf); err != nil {
-		l.Return(buf)
-		return 0, err
-	}
-	rv := buf[0]
-	l.Return(buf)
-	return rv, nil
-}
-
-// Uint16 reads two bytes from the provided reader using a buffer from the
-// free list, converts it to a number using the provided byte order, and returns
-// the resulting uint16.
-func (l binaryFreeList) Uint16(r io.Reader, byteOrder binary.ByteOrder) (uint16, error) {
-	buf := l.Borrow()[:2]
-	if _, err := io.ReadFull(r, buf); err != nil {
-		l.Return(buf)
-		return 0, err
-	}
-	rv := byteOrder.Uint16(buf)
-	l.Return(buf)
-	return rv, nil
-}
-
-// Uint32 reads four bytes from the provided reader using a buffer from the
-// free list, converts it to a number using the provided byte order, and returns
-// the resulting uint32.
-func (l binaryFreeList) Uint32(r io.Reader, byteOrder binary.ByteOrder) (uint32, error) {
-	buf := l.Borrow()[:4]
-	if _, err := io.ReadFull(r, buf); err != nil {
-		l.Return(buf)
-		return 0, err
-	}
-	rv := byteOrder.Uint32(buf)
-	l.Return(buf)
-	return rv, nil
-}
-
-// Uint64 reads eight bytes from the provided reader using a buffer from the
-// free list, converts it to a number using the provided byte order, and returns
-// the resulting uint64.
-func (l binaryFreeList) Uint64(r io.Reader, byteOrder binary.ByteOrder) (uint64, error) {
-	buf := l.Borrow()[:8]
-	if _, err := io.ReadFull(r, buf); err != nil {
-		l.Return(buf)
-		return 0, err
-	}
-	rv := byteOrder.Uint64(buf)
-	l.Return(buf)
-	return rv, nil
-}
-
-// PutUint8 copies the provided uint8 into a buffer from the free list and
-// writes the resulting byte to the given writer.
-func (l binaryFreeList) PutUint8(w io.Writer, val uint8) error {
-	buf := l.Borrow()[:1]
-	buf[0] = val
-	_, err := w.Write(buf)
-	l.Return(buf)
-	return err
-}
-
-var (
-	// littleEndian is a convenience variable since binary.LittleEndian is
-	// quite long.
-	littleEndian = binary.LittleEndian
-	// bigEndian is a convenience variable since binary.BigEndian is quite
-	// long.
-	bigEndian = binary.BigEndian
-)
-
-// PutUint16 serializes the provided uint16 using the given byte order into a
-// buffer from the free list and writes the resulting two bytes to the given
-// writer.
-func (l binaryFreeList) PutUint16(w io.Writer, byteOrder binary.ByteOrder, val uint16) error {
-	buf := l.Borrow()[:2]
-	byteOrder.PutUint16(buf, val)
-	_, err := w.Write(buf)
-	l.Return(buf)
-	return err
-}
-
-// PutUint32 serializes the provided uint32 using the given byte order into a
-// buffer from the free list and writes the resulting four bytes to the given
-// writer.
-func (l binaryFreeList) PutUint32(w io.Writer, byteOrder binary.ByteOrder, val uint32) error {
-	buf := l.Borrow()[:4]
-	byteOrder.PutUint32(buf, val)
-	_, err := w.Write(buf)
-	l.Return(buf)
-	return err
-}
-
-// PutUint64 serializes the provided uint64 using the given byte order into a
-// buffer from the free list and writes the resulting eight bytes to the given
-// writer.
-func (l binaryFreeList) PutUint64(w io.Writer, byteOrder binary.ByteOrder, val uint64) error {
-	buf := l.Borrow()[:8]
-	byteOrder.PutUint64(buf, val)
-	_, err := w.Write(buf)
-	l.Return(buf)
-	return err
-}
-func WriteTxOut(w io.Writer, pver uint32, version int32, to *Output) error {
-	err := binarySerializer.PutUint64(w, littleEndian, to.Value)
-	if err != nil {
-		return err
-	}
-	return WriteVarBytes(w, pver, to.PkScript)
-}
+//
+//const binaryFreeListMaxItems = 1024
+//
+//type binaryFreeList chan []byte
+//
+//var binarySerializer binaryFreeList = make(chan []byte, binaryFreeListMaxItems)
+//
+//// WriteVarInt serializes val to w using a variable number of bytes depending
+//// on its value.
+//func WriteVarInt(w io.Writer, pver uint32, val uint64) error {
+//	if val < 0xfd {
+//		return binarySerializer.PutUint8(w, uint8(val))
+//	}
+//	if val <= math.MaxUint16 {
+//		err := binarySerializer.PutUint8(w, 0xfd)
+//		if err != nil {
+//			return err
+//		}
+//		return binarySerializer.PutUint16(w, littleEndian, uint16(val))
+//	}
+//	if val <= math.MaxUint32 {
+//		err := binarySerializer.PutUint8(w, 0xfe)
+//		if err != nil {
+//			return err
+//		}
+//		return binarySerializer.PutUint32(w, littleEndian, uint32(val))
+//	}
+//	err := binarySerializer.PutUint8(w, 0xff)
+//	if err != nil {
+//		return err
+//	}
+//	return binarySerializer.PutUint64(w, littleEndian, val)
+//}
+//
+//// Borrow returns a byte slice from the free list with a length of 8.  A new
+//// buffer is allocated if there are not any available on the free list.
+//func (l binaryFreeList) Borrow() []byte {
+//	var buf []byte
+//	select {
+//	case buf = <-l:
+//	default:
+//		buf = make([]byte, 8)
+//	}
+//	return buf[:8]
+//}
+//
+//// Return puts the provided byte slice back on the free list.  The buffer MUST
+//// have been obtained via the Borrow function and therefore have a cap of 8.
+//func (l binaryFreeList) Return(buf []byte) {
+//	select {
+//	case l <- buf:
+//	default:
+//		// Let it go to the garbage collector.
+//	}
+//}
+//
+//// Uint8 reads a single byte from the provided reader using a buffer from the
+//// free list and returns it as a uint8.
+//func (l binaryFreeList) Uint8(r io.Reader) (uint8, error) {
+//	buf := l.Borrow()[:1]
+//	if _, err := io.ReadFull(r, buf); err != nil {
+//		l.Return(buf)
+//		return 0, err
+//	}
+//	rv := buf[0]
+//	l.Return(buf)
+//	return rv, nil
+//}
+//
+//// Uint16 reads two bytes from the provided reader using a buffer from the
+//// free list, converts it to a number using the provided byte order, and returns
+//// the resulting uint16.
+//func (l binaryFreeList) Uint16(r io.Reader, byteOrder binary.ByteOrder) (uint16, error) {
+//	buf := l.Borrow()[:2]
+//	if _, err := io.ReadFull(r, buf); err != nil {
+//		l.Return(buf)
+//		return 0, err
+//	}
+//	rv := byteOrder.Uint16(buf)
+//	l.Return(buf)
+//	return rv, nil
+//}
+//
+//// Uint32 reads four bytes from the provided reader using a buffer from the
+//// free list, converts it to a number using the provided byte order, and returns
+//// the resulting uint32.
+//func (l binaryFreeList) Uint32(r io.Reader, byteOrder binary.ByteOrder) (uint32, error) {
+//	buf := l.Borrow()[:4]
+//	if _, err := io.ReadFull(r, buf); err != nil {
+//		l.Return(buf)
+//		return 0, err
+//	}
+//	rv := byteOrder.Uint32(buf)
+//	l.Return(buf)
+//	return rv, nil
+//}
+//
+//// Uint64 reads eight bytes from the provided reader using a buffer from the
+//// free list, converts it to a number using the provided byte order, and returns
+//// the resulting uint64.
+//func (l binaryFreeList) Uint64(r io.Reader, byteOrder binary.ByteOrder) (uint64, error) {
+//	buf := l.Borrow()[:8]
+//	if _, err := io.ReadFull(r, buf); err != nil {
+//		l.Return(buf)
+//		return 0, err
+//	}
+//	rv := byteOrder.Uint64(buf)
+//	l.Return(buf)
+//	return rv, nil
+//}
+//
+//// PutUint8 copies the provided uint8 into a buffer from the free list and
+//// writes the resulting byte to the given writer.
+//func (l binaryFreeList) PutUint8(w io.Writer, val uint8) error {
+//	buf := l.Borrow()[:1]
+//	buf[0] = val
+//	_, err := w.Write(buf)
+//	l.Return(buf)
+//	return err
+//}
+//
+//var (
+//	// littleEndian is a convenience variable since binary.LittleEndian is
+//	// quite long.
+//	littleEndian = binary.LittleEndian
+//	// bigEndian is a convenience variable since binary.BigEndian is quite
+//	// long.
+//	bigEndian = binary.BigEndian
+//)
+//
+//// PutUint16 serializes the provided uint16 using the given byte order into a
+//// buffer from the free list and writes the resulting two bytes to the given
+//// writer.
+//func (l binaryFreeList) PutUint16(w io.Writer, byteOrder binary.ByteOrder, val uint16) error {
+//	buf := l.Borrow()[:2]
+//	byteOrder.PutUint16(buf, val)
+//	_, err := w.Write(buf)
+//	l.Return(buf)
+//	return err
+//}
+//
+//// PutUint32 serializes the provided uint32 using the given byte order into a
+//// buffer from the free list and writes the resulting four bytes to the given
+//// writer.
+//func (l binaryFreeList) PutUint32(w io.Writer, byteOrder binary.ByteOrder, val uint32) error {
+//	buf := l.Borrow()[:4]
+//	byteOrder.PutUint32(buf, val)
+//	_, err := w.Write(buf)
+//	l.Return(buf)
+//	return err
+//}
+//
+//// PutUint64 serializes the provided uint64 using the given byte order into a
+//// buffer from the free list and writes the resulting eight bytes to the given
+//// writer.
+//func (l binaryFreeList) PutUint64(w io.Writer, byteOrder binary.ByteOrder, val uint64) error {
+//	buf := l.Borrow()[:8]
+//	byteOrder.PutUint64(buf, val)
+//	_, err := w.Write(buf)
+//	l.Return(buf)
+//	return err
+//}
+//func WriteTxOut(w io.Writer, pver uint32, version int32, to *Output) error {
+//	err := binarySerializer.PutUint64(w, littleEndian, to.Value)
+//	if err != nil {
+//		return err
+//	}
+//	return WriteVarBytes(w, pver, to.PkScript)
+//}
 
 func (a *Addition) IsEqualStyle(b *Addition) (bool, error) {
 	if b == nil {

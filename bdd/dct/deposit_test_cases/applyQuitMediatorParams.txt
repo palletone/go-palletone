@@ -4,15 +4,10 @@ Resource          publicParams.txt
 *** Variables ***
 
 *** Keywords ***
-申请退出Mediator候选节点所需参数
-    [Arguments]    ${mediatorAddr}
-    ${one}    Create List    MediatorApplyQuitMediator
-    ${two}    Create List    ${mediatorAddr}    ${mediatorAddr}    ${amount}    ${fee}    ${one}
-    [Return]    ${two}
-
 applyQuitMediator
-    [Arguments]    ${mediatorAddr}
-    ${申请退出Mediator候选节点所需参数}    申请退出Mediator候选节点所需参数    ${mediatorAddr}
-    ${result}    创建公用的POST请求    ${depositContractInvoke}    ApplyBecomeMediator    ${申请退出Mediator候选节点所需参数}
+    [Arguments]    ${mediatorAddr}    ${apply}
+    ${one}    Create List    ${apply}
+    ${two}    Create List    ${mediatorAddr}    ${mediatorAddr}    ${amount}    ${fee}    ${one}
+    ${result}    创建公用的POST请求    ${depositContractInvoke}    ${apply}    ${two}
     sleep    6
     [Return]    ${result}

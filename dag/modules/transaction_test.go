@@ -371,7 +371,7 @@ func TestTransaction_GetTxFee(t *testing.T) {
 	}
 	fee, err := tx.GetTxFee(utxoQueryFn, time.Now().Unix())
 	assert.Nil(t, err)
-	assert.True(t, fee.Amount >= Ptn2Dao(1))
+	assert.True(t, fee.Amount == Ptn2Dao(1))
 	t.Log(fee.String())
 	fee2, err := tx.GetTxFee(utxoQueryFn, 0)
 	assert.Nil(t, err)

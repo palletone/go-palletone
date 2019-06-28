@@ -185,7 +185,7 @@ type IDag interface {
 	GetAccountVotedMediators(addr common.Address) map[string]bool
 	GetMediatorInfo(address common.Address) *modules.MediatorInfo
 
-	MediatorVotedResults() map[string]uint64
+	MediatorVotedResults() (map[string]uint64, error)
 	LookupMediatorInfo() []*modules.MediatorInfo
 	IsActiveMediator(add common.Address) bool
 

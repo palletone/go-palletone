@@ -24,15 +24,14 @@ const (
 	DefaultTokenAmount = "100000000000000000"
 	//DefaultTokenDecimal              = 8
 	DefaultChainID                   = 1
-	DefaultDepositRate               = 0.02
-	DefaultTxCoinYearRate            = 0.01
+	DefaultDepositDailyReward        = 2887450000000
+	DefaultTxCoinYearRate            = 0
 	DefaultRewardHeight              = 50
-	DefaultGenerateUnitReward        = 100000000
+	DefaultGenerateUnitReward        = 150000000
 	DefaultDepositPeriod             = 0
-	DefaultDepositExtraReward        = 1000000
-	DefaultDepositAmountForMediator  = 200000000000
-	DefaultDepositAmountForJury      = 100000000000
-	DefaultDepositAmountForDeveloper = 80000000000
+	DefaultDepositAmountForMediator  = 5000000 * 100000000
+	DefaultDepositAmountForJury      = 1000000 * 100000000
+	DefaultDepositAmountForDeveloper = 10000 * 100000000
 	DefaultFoundationAddress         = "P1LA8TkEWxU6FcMzkyeSbf9b9FwZwxrYRuF"
 
 	DefaultUccMemory     = 1073741824 //物理内存  1073741824  1G
