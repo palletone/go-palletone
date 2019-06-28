@@ -39,7 +39,7 @@ var (
 var DefaultConfig = Config{
 	DbPath: "./leveldb",
 	// txpool
-	UnitTxSize: 1024 * 1000 * 5, //5mb
+	//UnitTxSize: 1024 * 1000 * 5, //5mb
 
 	// utxo
 	UtxoIndex: true,
@@ -83,7 +83,7 @@ type Config struct {
 	RedisDb     int
 
 	// txpool
-	UnitTxSize float64
+	//UnitTxSize float64
 
 	// utxo
 	UtxoIndex bool
