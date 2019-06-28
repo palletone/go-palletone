@@ -129,6 +129,7 @@ type contractTx struct {
 	rcvTx    []*modules.Transaction //the local has not received the request contract, the cache has signed the contract
 	tm       time.Time              //create time
 	valid    bool                   //contract request valid identification
+	reqRcvEd bool                   //contract request received
 	adaChan  chan bool              //adapter event chan
 	adaInf   map[uint32]*AdapterInf //adapter event data information
 }
