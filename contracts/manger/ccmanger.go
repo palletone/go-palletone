@@ -163,7 +163,7 @@ func peerServerInit(jury core.IAdapterJury) error {
 	}
 	ccStartupTimeout := cfg.GetConfig().ContractDeploytimeout
 	if ccStartupTimeout <= 0 {
-		ccStartupTimeout = time.Duration(40) * time.Second
+		ccStartupTimeout = time.Duration(180) * time.Second
 	}
 	ca, err := accesscontrol.NewCA()
 	if err != nil {

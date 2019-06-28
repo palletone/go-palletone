@@ -196,7 +196,7 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId, sync
 	}
 
 	//if index >= pindex && pindex > 0 && err == nil {
-	if index >= pindex && err == nil {
+	if index > pindex && err == nil {
 		if atomic.LoadUint32(&pm.fastSync) == 1 {
 			log.Debug("Fast sync complete, auto disabling")
 			atomic.StoreUint32(&pm.fastSync, 0)
@@ -230,9 +230,9 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId, sync
 	}
 	atomic.StoreUint32(&pm.acceptTxs, 1) // Mark initial sync done
 
-	head := pm.dag.CurrentUnit(assetId)
-	if head != nil && head.UnitHeader.Number.Index > 0 {
-		go pm.BroadcastUnit(head, false)
+	//head := pm.dag.CurrentUnit(assetId)
+	if currentUnit != nil && currentUnit.UnitHeader.Number.Index > 0 {
+		go pm.BroadcastUnit(currentUnit, false)
 		//TODO notice light protocol to sync corsheader
 		if syncCh != nil {
 			syncCh <- true

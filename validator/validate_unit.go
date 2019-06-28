@@ -121,6 +121,25 @@ func (validate *Validate) validateMediatorSchedule(header *modules.Header) Valid
 
 	return TxValidationCode_VALID
 }
+func (validate *Validate) ValidateUnitExceptPayment(unit *modules.Unit) error {
+	unitHeaderValidateResult := validate.validateHeaderExceptGroupSig(unit.UnitHeader)
+	if unitHeaderValidateResult != TxValidationCode_VALID &&
+		unitHeaderValidateResult != UNIT_STATE_AUTHOR_SIGNATURE_PASSED &&
+		unitHeaderValidateResult != UNIT_STATE_ORPHAN {
+		log.Debug("Validate unit's header failed.", "error code", unitHeaderValidateResult)
+		return NewValidateError(unitHeaderValidateResult)
+	}
+	//validate tx root
+	root := core.DeriveSha(unit.Txs)
+	if root != unit.UnitHeader.TxRoot {
+		log.Debugf("Validate unit's header failed, root:[%#x],  unit.UnitHeader.TxRoot:[%#x], txs:[%#x]", root, unit.UnitHeader.TxRoot, unit.Txs.GetTxIds())
+		return NewValidateError(UNIT_STATE_INVALID_HEADER_TXROOT)
+	}
+	if unitHeaderValidateResult != TxValidationCode_VALID {
+		return NewValidateError(unitHeaderValidateResult)
+	}
+	return nil
+}
 
 /**
 验证Unit
