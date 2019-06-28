@@ -216,13 +216,14 @@ matrix:
       after_script:
         - killall gptn
         - sleep 2
-        - cd ${BASE_DIR}
-        - zip -j ./bdd/logs/oneNode_log.zip ./bdd/node/log/*
-        - zip -j ./bdd/logs/gasToken_log.zip ./bdd/GasToken/node/log/*
-        - |
-          if [ $IS_UPLOAD == 'true' ]; then
-            # uplaod all log
-            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
+        - cat /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/user_contract_logs/log.html
+        #- cd ${BASE_DIR}
+        #- zip -j ./bdd/logs/oneNode_log.zip ./bdd/node/log/*
+        #- zip -j ./bdd/logs/gasToken_log.zip ./bdd/GasToken/node/log/*
+        #- |
+        #  if [ $IS_UPLOAD == 'true' ]; then
+        #    # uplaod all log
+        #    ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
       install:
         - sudo -H pip install --upgrade pip
         - sudo -H pip install robotframework==2.8.5

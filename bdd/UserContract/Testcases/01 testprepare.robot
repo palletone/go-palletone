@@ -12,13 +12,13 @@ testprepare
 
 *** Keywords ***
 startProduce
-    ${port}    set variable    ${8545}
+    ${port}    set variable    ${8645}
     ${hosts}    Create List
     : FOR    ${n}    IN RANGE    ${nodenum}
     \    Run Keyword If    ${n}==${0}    startNodeProduce    ${host}
     \    Continue For Loop If    ${n}==${0}
     \    ${newport}=    Evaluate    ${port}+10*(${n}+1)
-    \    ${url}=    Catenate    SEPARATOR=    http://${ip}:    ${newport}    /
+    \    ${url}=    Catenate    SEPARATOR=    http://${ip}:5    ${newport}    /
     \    Append To List    ${hosts}    ${url}
     \    startNodeProduce    ${url}
     Set Global Variable    ${juryHosts}    ${hosts}
