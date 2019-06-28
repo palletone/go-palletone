@@ -50,33 +50,33 @@ const (
 	ApplyForForfeitureDeposit       = "ApplyForForfeitureDeposit"
 	DeveloperApplyCashback          = "DeveloperApplyCashback"
 	JuryApplyCashback               = "JuryApplyCashback"
-	DeveloperPayToDepositContract = "DeveloperPayToDepositContract"
-	JuryPayToDepositContract      = "JuryPayToDepositContract"
-	HandleForApplyQuitMediator    = "HandleForApplyQuitMediator"
-	HandleForApplyBecomeMediator  = "HandleForApplyBecomeMediator"
-	IsInMediatorQuitList          = "IsInMediatorQuitList"
-	IsInCashbackList           = "IsInCashbackList"
-	IsInJuryCandidateList      = "IsInJuryCandidateList"
-	IsInDeveloperCandidateList = "IsInDeveloperCandidateList"
-	GetDeposit                 = "GetNodeBalance"
-	PledgeDeposit              = "PledgeDeposit"
-	PledgeWithdraw             = "PledgeWithdraw"
-	QueryPledgeStatusByAddr    = "QueryPledgeStatusByAddr"
-	QueryAllPledgeHistory      = "QueryAllPledgeHistory"
-	ExtractPtnList             = "extractPtnList"
-	HandleExtractVote          = "handleExtractVote"
-	HandlePledgeReward         = "HandlePledgeReward"
-	AllPledgeVotes             = "allPledgeVotes"
-	HandleEachDay              = "handleEachDay"
-	QueryPledgeList            = "QueryPledgeList"
-	HandleForApplyQuitJury     = "HandleForApplyQuitJury"
-	HandleForApplyQuitDev      = "HandleForApplyQuitDev"
-	MemberList                 = "MemberList"
-	MemberListLastDate         = "MemberListLastDate"
-	Apply                      = "applying"
-	Agree                      = "approved"
-	Quitting                   = "quitting"
-	Quited                     = "quited"
+	DeveloperPayToDepositContract   = "DeveloperPayToDepositContract"
+	JuryPayToDepositContract        = "JuryPayToDepositContract"
+	HandleForApplyQuitMediator      = "HandleForApplyQuitMediator"
+	HandleForApplyBecomeMediator    = "HandleForApplyBecomeMediator"
+	IsInMediatorQuitList            = "IsInMediatorQuitList"
+	IsInCashbackList                = "IsInCashbackList"
+	IsInJuryCandidateList           = "IsInJuryCandidateList"
+	IsInDeveloperCandidateList      = "IsInDeveloperCandidateList"
+	GetDeposit                      = "GetNodeBalance"
+	PledgeDeposit                   = "PledgeDeposit"
+	PledgeWithdraw                  = "PledgeWithdraw"
+	QueryPledgeStatusByAddr         = "QueryPledgeStatusByAddr"
+	QueryAllPledgeHistory           = "QueryAllPledgeHistory"
+	ExtractPtnList                  = "extractPtnList"
+	HandleExtractVote               = "handleExtractVote"
+	HandlePledgeReward              = "HandlePledgeReward"
+	AllPledgeVotes                  = "allPledgeVotes"
+	HandleEachDay                   = "handleEachDay"
+	QueryPledgeList                 = "QueryPledgeList"
+	HandleForApplyQuitJury          = "HandleForApplyQuitJury"
+	HandleForApplyQuitDev           = "HandleForApplyQuitDev"
+	MemberList                      = "MemberList"
+	MemberListLastDate              = "MemberListLastDate"
+	Apply                           = "applying"
+	Agree                           = "approved"
+	Quitting                        = "quitting"
+	Quited                          = "quited"
 
 	//  时间格式
 	//  Layout1 = "2006-01-02 15"
@@ -96,12 +96,11 @@ type QuitNode struct {
 
 //申请没收保证金
 type Forfeiture struct {
-	ApplyAddress      string               `json:"apply_address"`      //谁发起的
-	ForfeitureAddress string               `json:"forfeiture_address"` //没收节点地址
-	ApplyTokens       *modules.AmountAsset `json:"apply_tokens"`       //没收数量
-	ForfeitureRole    string               `json:"forfeiture_role"`    //没收角色
-	Extra             string               `json:"extra"`              //备注
-	ApplyTime         string               `json:"apply_time"`         //请求时间
+	ApplyAddress      string `json:"apply_address"`      //谁发起的
+	ForfeitureAddress string `json:"forfeiture_address"` //没收节点地址
+	ForfeitureRole    string `json:"forfeiture_role"`    //没收角色
+	Extra             string `json:"extra"`              //备注
+	ApplyTime         string `json:"apply_time"`         //请求时间
 }
 
 //交易的内容

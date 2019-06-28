@@ -115,11 +115,11 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		log.Error("get invoke address err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	//  添加进入质押记录
-	err = pledgeDepositRep(stub, invokeAddr, invokeTokens.Amount)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
+	//  TODO 添加进入质押记录
+	//err = pledgeDepositRep(stub, invokeAddr, invokeTokens.Amount)
+	//if err != nil {
+	//	return shim.Error(err.Error())
+	//}
 	//  判断是否已经申请了
 	md, err := GetMediatorDeposit(stub, invokeAddr.String())
 	if err != nil {

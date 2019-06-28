@@ -44,11 +44,11 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 		log.Error("get invoke address err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	//  添加进入质押记录
-	err = pledgeDepositRep(stub, invokeAddr, invokeTokens.Amount)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
+	//  TODO 添加进入质押记录
+	//err = pledgeDepositRep(stub, invokeAddr, invokeTokens.Amount)
+	//if err != nil {
+	//	return shim.Error(err.Error())
+	//}
 	//获取账户
 	balance, err := GetNodeBalance(stub, invokeAddr.String())
 	if err != nil {

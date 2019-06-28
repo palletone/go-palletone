@@ -11,8 +11,9 @@ Resource          publicParams.txt
     [Return]    ${one}
 
 applyForForfeitureDeposit
-    [Arguments]    ${whoApply}    ${forfeitureAddr}    ${forfertureAmounts}    ${role}    ${extra}
-    ${某节点申请没收候选列表某账户所需参数 }    某节点申请没收候选列表某账户所需参数    ${whoApply}    ${forfeitureAddr}    ${role}    ${forfertureAmounts}    ${extra}
-    ${result}    创建公用的POST请求    ${depositContractInvoke}    ApplyForForfeitureDeposit    ${某节点申请没收候选列表某账户所需参数}
+    [Arguments]    ${whoApply}    ${forfeitureAddr}    ${role}    ${extra}
+    ${lala}    Create List    ApplyForForfeitureDeposit    ${forfeitureAddr}    ${role}    ${extra}
+    ${one}    Create List    ${whoApply}    ${whoApply}    ${amount}    ${fee}    ${lala}
+    ${result}    创建公用的POST请求    ${depositContractInvoke}    ApplyForForfeitureDeposit    ${one}
     sleep    6
     [Return]    ${result}

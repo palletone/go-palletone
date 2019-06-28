@@ -24,9 +24,6 @@ Resource          juryPayToDepositContractParams.txt
 Resource          mediatorApplyCashbackParams.txt
 Resource          mediatorPayToDepositContractParams.txt
 Resource          postRequest.txt
-Resource          normalNodePledgeVote.txt
-Resource          NormalNode.txt
-Resource          normalNodeChangeVote.txt
 Resource          handleEachDay.txt
 
 *** Variables ***

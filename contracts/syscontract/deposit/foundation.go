@@ -15,12 +15,12 @@
 package deposit
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -220,57 +220,6 @@ func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string)
 	return shim.Success(nil)
 }
 
-//  处理普通节点提取质押PTN
-//func handleExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-//	if len(args) != 0 {
-//		return shim.Error("need 0 args")
-//	}
-//	//  判断是否是基金会
-//	if !isFoundationInvoke(stub) {
-//		return shim.Error("please use foundation address")
-//	}
-//	//  保存质押提取
-//	extPtnLis, err := getExtPtn(stub)
-//	if err != nil {
-//		return shim.Error(err.Error())
-//	}
-//	if extPtnLis == nil {
-//		return shim.Error("list is nil")
-//	}
-//	cp, err := stub.GetSystemConfig()
-//	if err != nil {
-//		return shim.Error(err.Error())
-//	}
-//	day := cp.DepositPeriod
-//	for k, v := range extPtnLis {
-//		tim := StrToTime(v.Time)
-//		dur := int(time.Since(tim).Hours())
-//		if dur/24 < day {
-//			continue
-//		}
-//		err := stub.PayOutToken(k, v.Amount, 0)
-//		if err != nil {
-//			return shim.Error(err.Error())
-//		}
-//	}
-//	return shim.Success(nil)
-//}
-
-//同意申请没收请求
-func agreeForApplyForfeiture(stub shim.ChaincodeStubInterface, foundationA string, forfeitureNode *Forfeiture) error {
-	log.Info("Start entering agreeForApplyForfeiture func.")
-	//判断节点类型
-	switch {
-	case forfeitureNode.ForfeitureRole == Mediator:
-		return handleMediatorForfeitureDeposit(stub, foundationA, forfeitureNode)
-	case forfeitureNode.ForfeitureRole == Jury:
-		return handleJuryForfeitureDeposit(stub, foundationA, forfeitureNode)
-	case forfeitureNode.ForfeitureRole == Developer:
-		return handleDevForfeitureDeposit(stub, foundationA, forfeitureNode)
-	default:
-		return fmt.Errorf("please enter validate role.")
-	}
-}
 func handleForForfeitureApplication(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	log.Info("handleForForfeitureApplication")
 	//  地址，是否同意
@@ -283,17 +232,17 @@ func handleForForfeitureApplication(stub shim.ChaincodeStubInterface, args []str
 		log.Error("please use foundation address")
 		return shim.Error("please use foundation address")
 	}
-	//  获取基金会地址
-	invokeAddr, err := stub.GetInvokeAddress()
-	if err != nil {
-		log.Error("get invoke address err: ", "error", err)
-		return shim.Error(err.Error())
-	}
 	//  处理没收地址
 	addr := args[0]
 	//  判断没收地址是否正确
 	f, err := common.StringToAddress(addr)
 	if err != nil {
+		return shim.Error(err.Error())
+	}
+	//  获取基金会地址
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		log.Error("get invoke address err: ", "error", err)
 		return shim.Error(err.Error())
 	}
 	//  需要判断是否在列表
@@ -329,20 +278,28 @@ func handleForForfeitureApplication(stub shim.ChaincodeStubInterface, args []str
 	}
 	//  不管同意与否都需要从列表中移除
 	delete(listForForfeiture, addr)
-	listForForfeitureByte, err := json.Marshal(listForForfeiture)
+	err = SaveListForForfeiture(stub, listForForfeiture)
 	if err != nil {
-		log.Error("Json.Marshal err:", "error", err)
 		return shim.Error(err.Error())
 	}
-	//更新列表
-	err = stub.PutState(ListForForfeiture, listForForfeitureByte)
-	if err != nil {
-		log.Error("Stub.PutState err:", "error", err)
-		return shim.Error(err.Error())
-	}
-	return shim.Success([]byte(nil))
+	return shim.Success(nil)
 }
 
+//同意申请没收请求
+func agreeForApplyForfeiture(stub shim.ChaincodeStubInterface, foundationA string, forfeitureNode *Forfeiture) error {
+	log.Info("Start entering agreeForApplyForfeiture func.")
+	//判断节点类型
+	switch {
+	case forfeitureNode.ForfeitureRole == Mediator:
+		return handleMediatorForfeitureDeposit(stub, foundationA, forfeitureNode)
+	case forfeitureNode.ForfeitureRole == Jury:
+		return handleJuryForfeitureDeposit(stub, foundationA, forfeitureNode)
+	case forfeitureNode.ForfeitureRole == Developer:
+		return handleDevForfeitureDeposit(stub, foundationA, forfeitureNode)
+	default:
+		return fmt.Errorf("please enter validate role.")
+	}
+}
 func handleJuryForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA string, forfeiture *Forfeiture) error {
 	node, err := GetNodeBalance(stub, forfeiture.ForfeitureAddress)
 	if err != nil {
@@ -351,58 +308,25 @@ func handleJuryForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA s
 	if node == nil {
 		return fmt.Errorf("node is nil")
 	}
-	//depositAmountsForJuryStr, err := stub.GetSystemConfig(DepositAmountForJury)
-	//if err != nil {
-	//	log.Error("Stub.GetSystemConfig with DepositAmountForJury err:", "error", err)
-	//	return err
-	//}
-	////转换
-	//depositAmountsForJury, err := strconv.ParseUint(depositAmountsForJuryStr, 10, 64)
-	//if err != nil {
-	//	log.Error("Strconv.ParseUint err:", "error", err)
-	//	return err
-	//}
+	//  移除列表
+	err = moveCandidate(modules.JuryList, forfeiture.ForfeitureAddress, stub)
+	if err != nil {
+		return err
+	}
 
+	//  退还保证金
 	cp, err := stub.GetSystemConfig()
 	if err != nil {
-		//log.Error("strconv.ParseUint err:", "error", err)
 		return err
 	}
-	depositAmountsForJury := cp.DepositAmountForJury
-	//计算余额
-	result := node.Balance - forfeiture.ApplyTokens.Amount
-	//判断是否没收全部，即在列表中移除该节点
-	if result < depositAmountsForJury {
-		//  移除列表
-		err = moveCandidate(modules.JuryList, forfeiture.ForfeitureAddress, stub)
-		if err != nil {
-			return err
-		}
-		//  如果没收全部，则删除该节点
-		if result == 0 {
-			err := stub.PayOutToken(foundationA, forfeiture.ApplyTokens, 0)
-			if err != nil {
-				log.Error("Stub.PayOutToken err:", "error", err)
-				return err
-			}
-			err = DelNodeBalance(stub, forfeiture.ForfeitureAddress)
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-		//  更新
-		node.EnterTime = ""
-	} else {
-	}
-	node.Balance -= forfeiture.ApplyTokens.Amount
-	node.LastModifyTime = getTiem(stub)
-	err = stub.PayOutToken(foundationA, forfeiture.ApplyTokens, 0)
+	//  调用从合约把token转到请求地址
+	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
+	err = stub.PayOutToken(foundationA, modules.NewAmountAsset(cp.DepositAmountForJury, gasToken), 0)
 	if err != nil {
-		log.Error("Stub.PayOutToken err:", "error", err)
+		log.Error("stub.PayOutToken err:", "error", err)
 		return err
 	}
-	err = SaveNodeBalance(stub, forfeiture.ForfeitureAddress, node)
+	err = DelNodeBalance(stub, forfeiture.ForfeitureAddress)
 	if err != nil {
 		return err
 	}
@@ -417,58 +341,24 @@ func handleDevForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA st
 	if node == nil {
 		return fmt.Errorf("node is nil")
 	}
-	//depositAmountsForDevStr, err := stub.GetSystemConfig(DepositAmountForDeveloper)
-	//if err != nil {
-	//	log.Error("Stub.GetSystemConfig with DepositAmountForJury err:", "error", err)
-	//	return err
-	//}
-	////转换
-	//depositAmountsForDev, err := strconv.ParseUint(depositAmountsForDevStr, 10, 64)
-	//if err != nil {
-	//	log.Error("Strconv.ParseUint err:", "error", err)
-	//	return err
-	//}
-
+	//  移除列表
+	err = moveCandidate(modules.DeveloperList, forfeiture.ForfeitureAddress, stub)
+	if err != nil {
+		return err
+	}
+	//  退还保证金
 	cp, err := stub.GetSystemConfig()
 	if err != nil {
-		//log.Error("strconv.ParseUint err:", "error", err)
 		return err
 	}
-	depositAmountsForDev := cp.DepositAmountForDeveloper
-	//计算余额
-	result := node.Balance - forfeiture.ApplyTokens.Amount
-	//判断是否没收全部，即在列表中移除该节点
-	if result < depositAmountsForDev {
-		//  移除列表
-		err = moveCandidate(modules.DeveloperList, forfeiture.ForfeitureAddress, stub)
-		if err != nil {
-			return err
-		}
-		//  如果没收全部，则删除该节点
-		if result == 0 {
-			err := stub.PayOutToken(foundationA, forfeiture.ApplyTokens, 0)
-			if err != nil {
-				log.Error("Stub.PayOutToken err:", "error", err)
-				return err
-			}
-			err = DelNodeBalance(stub, forfeiture.ForfeitureAddress)
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-		//  更新
-		node.EnterTime = ""
-	} else {
-	}
-	node.Balance -= forfeiture.ApplyTokens.Amount
-	node.LastModifyTime = getTiem(stub)
-	err = stub.PayOutToken(foundationA, forfeiture.ApplyTokens, 0)
+	//  调用从合约把token转到请求地址
+	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
+	err = stub.PayOutToken(foundationA, modules.NewAmountAsset(cp.DepositAmountForDeveloper, gasToken), 0)
 	if err != nil {
-		log.Error("Stub.PayOutToken err:", "error", err)
+		log.Error("stub.PayOutToken err:", "error", err)
 		return err
 	}
-	err = SaveNodeBalance(stub, forfeiture.ForfeitureAddress, node)
+	err = DelNodeBalance(stub, forfeiture.ForfeitureAddress)
 	if err != nil {
 		return err
 	}
@@ -485,59 +375,34 @@ func handleMediatorForfeitureDeposit(stub shim.ChaincodeStubInterface, foundatio
 	if md == nil {
 		return fmt.Errorf("node is nil")
 	}
-	//  计算余额
-	result := md.Balance - forfeiture.ApplyTokens.Amount
-	//  判断是否需要移除列表
-	//  获取保证金下线，在状态数据库中
-	//depositAmountsForMediatorStr, err := stub.GetSystemConfig(modules.DepositAmountForMediator)
-	//if err != nil {
-	//	log.Error("get deposit amount for mediator err: ", "error", err)
-	//	return err
-	//}
-	////  转换保证金数量
-	//depositAmountsForMediator, err := strconv.ParseUint(depositAmountsForMediatorStr, 10, 64)
-
 	cp, err := stub.GetSystemConfig()
 	if err != nil {
 		//log.Error("strconv.ParseUint err:", "error", err)
 		return err
 	}
-	depositAmountsForMediator := cp.DepositAmountForMediator
-	//  需要移除列表forfeiture.ApplyTokens.Amount
-	if result < depositAmountsForMediator {
-		//  调用从合约把token转到请求地址
-		forfeiture.ApplyTokens.Amount = md.Balance
-		//  没收到基金会地址
-		err := stub.PayOutToken(foundationA, forfeiture.ApplyTokens, 0)
-		if err != nil {
-			log.Error("Stub.PayOutToken err:", "error", err)
-			return err
-		}
-		//  移除列表
-		err = moveCandidate(modules.MediatorList, forfeiture.ForfeitureAddress, stub)
-		if err != nil {
-			log.Error("MoveCandidate err:", "error", err)
-			return err
-		}
-		err = moveCandidate(modules.JuryList, forfeiture.ForfeitureAddress, stub)
-		if err != nil {
-			log.Error("MoveCandidate err:", "error", err)
-			return err
-		}
-		//  更新
-		md.Status = Quited
-		md.Balance = 0
-		md.EnterTime = ""
-		md.LastModifyTime = ""
-	} else {
-		//  没收到基金会地址
-		err := stub.PayOutToken(foundationA, forfeiture.ApplyTokens, 0)
-		if err != nil {
-			log.Error("Stub.PayOutToken err:", "error", err)
-			return err
-		}
-		md.Balance -= forfeiture.ApplyTokens.Amount
+	//  调用从合约把token转到请求地址
+	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
+	err = stub.PayOutToken(foundationA, modules.NewAmountAsset(cp.DepositAmountForMediator, gasToken), 0)
+	if err != nil {
+		log.Error("stub.PayOutToken err:", "error", err)
+		return err
 	}
+	//  移除列表
+	err = moveCandidate(modules.MediatorList, forfeiture.ForfeitureAddress, stub)
+	if err != nil {
+		log.Error("MoveCandidate err:", "error", err)
+		return err
+	}
+	err = moveCandidate(modules.JuryList, forfeiture.ForfeitureAddress, stub)
+	if err != nil {
+		log.Error("MoveCandidate err:", "error", err)
+		return err
+	}
+	//  更新
+	md.Status = Quited
+	md.Balance = 0
+	md.EnterTime = ""
+	md.LastModifyTime = ""
 	//  保存
 	err = SaveMediatorDeposit(stub, forfeiture.ForfeitureAddress, md)
 	if err != nil {
