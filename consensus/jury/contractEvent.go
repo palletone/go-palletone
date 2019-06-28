@@ -57,14 +57,14 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) error {
 	broadcast := false
 	var err error
 	switch event.CType {
-	case CONTRACT_EVENT_ELE:
-		return p.contractEleEvent(event.Tx)
 	case CONTRACT_EVENT_EXEC:
 		broadcast, err = p.contractExecEvent(event.Tx, event.Ele)
 	case CONTRACT_EVENT_SIG:
 		broadcast, err = p.contractSigEvent(event.Tx, event.Ele)
 	case CONTRACT_EVENT_COMMIT:
 		broadcast, err = p.contractCommitEvent(event.Tx)
+	case CONTRACT_EVENT_ELE:
+		return p.contractEleEvent(event.Tx)
 	}
 	if broadcast {
 		go p.ptn.ContractBroadcast(*event, false)
