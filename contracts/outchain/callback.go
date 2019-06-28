@@ -44,7 +44,7 @@ func GetETHAdaptor() interface{} {
 }
 
 func ProcessOutChainCall(chaincodeID string, outChainCall *pb.OutChainCall) (string, error) {
-	log.Debug(modName, "Get Request method : ", outChainCall.Method)
+	log.Debugf(modName, "Get Request method : ", outChainCall.Method)
 
 	chainName := strings.ToLower(outChainCall.OutChainName)
 	if _, existChain := exceptMethond[chainName]; existChain {
@@ -77,7 +77,6 @@ func SignTransaction(chaincodeID string, methodName string, params []byte) (stri
 		return "", err
 	}
 	signTransactionParams.Privkeys = append(signTransactionParams.Privkeys, prikey)
-	//log.Debug(modName, "SignTransaction Privkeys ==== ==== ", signTransactionParams.Privkeys)
 
 	var btcAdaptor adaptorbtc.AdaptorBTC
 	btcAdaptor.NetID = cfg.Ada.Btc.NetID
@@ -105,7 +104,6 @@ func Keccak256HashPackedSig(chaincodeID string, methodName string, params []byte
 		return "", err
 	}
 	sigParams.PrivateKeyHex = prikey
-	//log.Debug(modName, "Keccak256HashPackedSig Privkeys ==== ==== ", sigParams.PrivateKeyHex)
 
 	var ethAdaptor adaptoreth.AdaptorETH
 	ethAdaptor.NetID = cfg.Ada.Eth.NetID
@@ -115,19 +113,19 @@ func Keccak256HashPackedSig(chaincodeID string, methodName string, params []byte
 func adaptorCall(chainName, methodName string, params []byte) (string, error) {
 	f, has := allChain[chainName]
 	if !has {
-		log.Debug("Not implement this Chain")
+		log.Debugf("Not implement this Chain")
 		return "", errors.New("Not implement this Chain")
 	}
 	adaptorObj := f()
 	adaptorObjValue := reflect.ValueOf(adaptorObj)
 	adaptorObjMethod := adaptorObjValue.MethodByName(methodName)
 	if !adaptorObjMethod.IsValid() {
-		log.Debug("Not exist this Method")
+		log.Debugf("Not exist this Method")
 		return "", errors.New("Not exist this Method")
 	}
-	log.Debug("method parms's num %d", adaptorObjMethod.Type().NumIn())
+	log.Debugf("method parms's num %d", adaptorObjMethod.Type().NumIn())
 	if adaptorObjMethod.Type().NumIn() > 1 {
-		log.Debug("Implement of method %s is invalid, only support one params", methodName)
+		log.Debugf("Implement of method %s is invalid, only support one params", methodName)
 		return "", errors.New("Implement of method is invalid, only support one params")
 	}
 
@@ -140,7 +138,7 @@ func adaptorCall(chainName, methodName string, params []byte) (string, error) {
 			rvf := reflect.New(inParaType.Elem())
 			err := json.Unmarshal(params, rvf.Interface())
 			if nil != err {
-				log.Debug("Method's param is invalid")
+				log.Debugf("Method's param is invalid")
 				return "", errors.New("Method's param is invalid")
 			}
 			params := []reflect.Value{rvf}
@@ -150,7 +148,7 @@ func adaptorCall(chainName, methodName string, params []byte) (string, error) {
 			params := []reflect.Value{targetValue}
 			res = adaptorObjMethod.Call(params)
 		} else {
-			log.Debug("Implement of method %s is invalid", methodName)
+			log.Debugf("Implement of method %s is invalid", methodName)
 			return "", errors.New("Implement of method is invalid")
 		}
 	}
