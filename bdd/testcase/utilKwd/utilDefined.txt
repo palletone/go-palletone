@@ -48,8 +48,8 @@ getMultiNodeGeneAdd
     log    ${resp.content}
     ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
     ${jsonRes}    To Json    ${jsonRes}
-    #${log}    evaluate    str(${resp.content}['result'][1])
-    [Return]    ${jsonRes['result'][1]}
+    Set Suite Variable    ${geneAdd}    ${jsonRes['result'][1]}
+    [Return]    ${geneAdd}
 
 getlistAccounts
     [Arguments]    ${host}=${host}

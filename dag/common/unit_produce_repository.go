@@ -337,14 +337,14 @@ func (dag *UnitProduceRepository) RefreshSysParameters() {
 
 	//deposit, _, _ := rep.GetConfig("DepositRate")
 	//depositYearRate, _ := strconv.ParseFloat(deposit, 64)
-	parameter.CurrentSysParameters.DepositDailyReward = cp.DepositDailyReward
-	log.Debugf("Load SysParameter DepositDailyReward value:%d",
+	parameter.CurrentSysParameters.DepositDailyReward = cp.PledgeDailyReward
+	log.Debugf("Load SysParameter PledgeDailyReward value:%d",
 		parameter.CurrentSysParameters.DepositDailyReward)
-
+	parameter.CurrentSysParameters.UnitMaxSize = cp.UnitMaxSize
 	//txCoinYearRateStr, _, _ := rep.GetConfig("TxCoinYearRate")
 	//txCoinYearRate, _ := strconv.ParseFloat(string(txCoinYearRateStr), 64)
-	parameter.CurrentSysParameters.TxCoinDayInterest = cp.TxCoinYearRate / 365
-	log.Debugf("Load SysParameter TxCoinDayInterest value:%f", parameter.CurrentSysParameters.TxCoinDayInterest)
+	// parameter.CurrentSysParameters.TxCoinDayInterest = cp.TxCoinYearRate / 365
+	// log.Debugf("Load SysParameter TxCoinDayInterest value:%f", parameter.CurrentSysParameters.TxCoinDayInterest)
 
 	//generateUnitRewardStr, _, _ := rep.GetConfig("GenerateUnitReward")
 	//generateUnitReward, _ := strconv.ParseUint(string(generateUnitRewardStr), 10, 64)

@@ -162,7 +162,7 @@ func (p *Processor) contractSigEvent(tx *modules.Transaction, ele []modules.Elec
 		p.mtx[reqId].rcvTx = append(p.mtx[reqId].rcvTx, tx)
 		p.locker.Unlock()
 
-		go p.runContractReq(reqId, ele)
+		//go p.runContractReq(reqId, ele) //del
 		return true, nil
 	}
 	ctx := p.mtx[reqId]

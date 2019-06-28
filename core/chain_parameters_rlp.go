@@ -29,7 +29,7 @@ import (
 type chainParameters struct {
 	ChainParametersBase
 
-	TxCoinYearRate     string
+	// TxCoinYearRate     string
 	DepositDailyReward string
 	DepositPeriod      string
 
@@ -58,8 +58,8 @@ func (cp *ChainParameters) getCPT() *chainParameters {
 	return &chainParameters{
 		ChainParametersBase: cp.ChainParametersBase,
 
-		TxCoinYearRate:     strconv.FormatFloat(float64(cp.TxCoinYearRate), 'f', -1, 64),
-		DepositDailyReward: strconv.FormatInt(int64(cp.DepositDailyReward), 10),
+		// TxCoinYearRate:     strconv.FormatFloat(float64(cp.TxCoinYearRate), 'f', -1, 64),
+		DepositDailyReward: strconv.FormatInt(int64(cp.PledgeDailyReward), 10),
 		DepositPeriod:      strconv.FormatInt(int64(cp.DepositPeriod), 10),
 
 		UccMemory:     strconv.FormatInt(int64(cp.UccMemory), 10),
@@ -81,17 +81,17 @@ func (cp *ChainParameters) getCPT() *chainParameters {
 func (cpt *chainParameters) getCP(cp *ChainParameters) error {
 	cp.ChainParametersBase = cpt.ChainParametersBase
 
-	TxCoinYearRate, err := strconv.ParseFloat(cpt.TxCoinYearRate, 64)
-	if err != nil {
-		return err
-	}
-	cp.TxCoinYearRate = float64(TxCoinYearRate)
+	// TxCoinYearRate, err := strconv.ParseFloat(cpt.TxCoinYearRate, 64)
+	// if err != nil {
+	// 	return err
+	// }
+	// cp.TxCoinYearRate = float64(TxCoinYearRate)
 
 	DepositDailyReward, err := strconv.ParseInt(cpt.DepositDailyReward, 10, 64)
 	if err != nil {
 		return err
 	}
-	cp.DepositDailyReward = uint64(DepositDailyReward)
+	cp.PledgeDailyReward = uint64(DepositDailyReward)
 
 	DepositPeriod, err := strconv.ParseInt(cpt.DepositPeriod, 10, 64)
 	if err != nil {
