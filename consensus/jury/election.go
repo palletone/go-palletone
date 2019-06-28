@@ -448,6 +448,10 @@ func (p *Processor) processElectionSigResultEvent(evt *ElectionSigResultEvent) e
 	if mel == nil || mel.nType != 1 {
 		return nil
 	}
+	if len(mel.sigs) >= p.dag.ChainThreshold() {
+		log.Debugf("[%s]processElectionSigResultEvent, sig  number is enough", shortId(reqId.String()))
+		return nil
+	}
 	//检查签名是否重复，收集签名，数量满足则广播请求交易
 	for _, sig := range mel.sigs {
 		if bytes.Equal(sig.PubKey, evt.Sig.PubKey) {

@@ -33,8 +33,8 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/parameter"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/tokenengine"
 )
@@ -289,7 +289,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 	//  test GetSortedTxs{}
 	unit_hash := common.HexToHash("0x0e7e7e3bd7c1e9ce440089712d61de38f925eb039f152ae03c6688ed714af729")
 	defer func(p *TxPool) {
-		if txs, total := p.GetSortedTxs(unit_hash, 1); total.Float64() > dagconfig.DagConfig.UnitTxSize {
+		if txs, total := p.GetSortedTxs(unit_hash, 1); uint64(total.Float64()) > parameter.CurrentSysParameters.UnitMaxSize {
 			all = len(txs)
 			msg := fmt.Sprintf("total %v:total sizeof transactions is unexpected", total.Float64())
 			t.Error(msg)

@@ -115,8 +115,8 @@ Business_02
     log    ${resul}
 
 Business_03
-    [Documentation]    jury 交付 10 0000 0000 0000 及以上才可以加入候选列表
-    ${resul}    juryPayToDepositContract    ${juryAddr_01}    10000000000000
+    [Documentation]    jury 交付 1000000 0000 0000 及以上才可以加入候选列表
+    ${resul}    juryPayToDepositContract    ${juryAddr_01}    1000000000
     log    ${resul}
     ${result}    getCandidateBalanceWithAddr    ${juryAddr_01}    #获取该地址保证金账户详情
     log    ${result}    #余额为100000000000000
@@ -140,7 +140,7 @@ Business_03
 
 Business_04
     [Documentation]    没收jury节点
-    ${resul}    juryPayToDepositContract    ${juryAddr_02}    10000000000000
+    ${resul}    juryPayToDepositContract    ${juryAddr_02}    1000000000
     log    ${resul}
     ${result}    getCandidateBalanceWithAddr    ${juryAddr_02}    #获取该地址保证金账户详情
     log    ${result}
@@ -163,8 +163,8 @@ Business_04
     log    ${resul}
 
 Business_05
-    [Documentation]    dev 交付 1 0000 0000 0000 及以上才可以加入候选列表
-    ${resul}    developerPayToDepositContract    ${developerAddr_01}    1000000000000
+    [Documentation]    dev 交付 10000 0000 0000 及以上才可以加入候选列表
+    ${resul}    developerPayToDepositContract    ${developerAddr_01}    100000000
     log    ${resul}
     ${result}    getCandidateBalanceWithAddr    ${developerAddr_01}    #获取该地址保证金账户详情
     log    ${result}
@@ -188,7 +188,7 @@ Business_05
 
 Business_06
     [Documentation]    没收dev节点
-    ${resul}    developerPayToDepositContract    ${developerAddr_02}    1000000000000
+    ${resul}    developerPayToDepositContract    ${developerAddr_02}    100000000
     log    ${resul}
     ${result}    getCandidateBalanceWithAddr    ${developerAddr_02}    #获取该地址保证金账户详情
     log    ${result}

@@ -315,6 +315,7 @@ func (dag *UnitProduceRepository) performChainMaintenance(nextUnit *modules.Unit
 	isChanged := dag.updateActiveMediators()
 
 	// 发送更新活跃 mediator 事件，以方便其他模块做相应处理
+	log.Debugf("send ActiveMediatorsUpdated event")
 	go dag.activeMediatorsUpdatedFeed.Send(modules.ActiveMediatorsUpdatedEvent{IsChanged: isChanged})
 
 	// 更新要修改的区块链参数

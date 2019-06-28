@@ -236,9 +236,10 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	}
 
 	// 3. 开始完成 vss 协议
-	if mp.groupSigningEnabled {
-		go mp.startVSSProtocol()
-	}
+	// todo albert 待优化
+	//if mp.groupSigningEnabled {
+	//	go mp.startVSSProtocol()
+	//}
 
 	log.Debugf("mediator plugin startup end")
 	return nil
@@ -257,6 +258,8 @@ func (mp *MediatorPlugin) unlockLocalMediators() {
 }
 
 func (mp *MediatorPlugin) UpdateMediatorsDKG(isRenew bool) {
+	log.Debugf("UpdateMediatorsDKG when after performChainMaintenance")
+
 	if !mp.groupSigningEnabled {
 		return
 	}
@@ -265,9 +268,10 @@ func (mp *MediatorPlugin) UpdateMediatorsDKG(isRenew bool) {
 	mp.precedingDKGs = mp.activeDKGs
 
 	// 判断是否重新 初始化DKG 和 VSS 协议
-	if !isRenew {
-		return
-	}
+	// todo albert 待优化
+	//if !isRenew {
+	//	return
+	//}
 
 	// 2. 初始化当前节点控制的活跃mediator对应的DKG.
 	mp.newActiveMediatorsDKG()

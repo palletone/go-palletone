@@ -71,7 +71,7 @@ func (mp *MediatorPlugin) BroadcastVSSDeals() {
 
 		for index, deal := range deals {
 			event := VSSDealEvent{
-				DstIndex: index,
+				DstIndex: uint(index),
 				Deal:     deal,
 			}
 
@@ -90,7 +90,7 @@ func (mp *MediatorPlugin) ProcessVSSDeal(dealEvent *VSSDealEvent) error {
 	}
 
 	dag := mp.dag
-	localMed := dag.GetActiveMediatorAddr(dealEvent.DstIndex)
+	localMed := dag.GetActiveMediatorAddr(int(dealEvent.DstIndex))
 
 	dkgr, err := mp.getLocalActiveDKG(localMed)
 	if err != nil {
