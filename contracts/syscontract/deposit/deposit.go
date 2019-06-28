@@ -297,28 +297,28 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		log.Info("Enter DepositChaincode Contract " + PledgeWithdraw + " Invoke")
 		return processPledgeWithdraw(stub, args)
 
-	case QueryPledgeStatusByAddr://查询某用户的质押状态
+	case QueryPledgeStatusByAddr: //查询某用户的质押状态
 		log.Info("Enter DepositChaincode Contract " + QueryPledgeStatusByAddr + " Query")
 		return queryPledgeStatusByAddr(stub, args)
-	case QueryAllPledgeHistory://查询质押分红历史
+	case QueryAllPledgeHistory: //查询质押分红历史
 		log.Info("Enter DepositChaincode Contract " + QueryAllPledgeHistory + " Query")
 		return queryAllPledgeHistory(stub, args)
 
-	case HandlePledgeReward://质押分红处理
+	case HandlePledgeReward: //质押分红处理
 		log.Info("Enter DepositChaincode Contract " + HandlePledgeReward + " Invoke")
 		return handlePledgeReward(stub, args)
-
-		//TODO Devin一个用户，怎么查看自己的流水账？
-	//case AllPledgeVotes:
-	//	b, err := getVotes(stub)
-	//	if err != nil {
-	//		return shim.Error(err.Error())
-	//	}
-	//	st := strconv.FormatInt(b, 10)
-	//	return shim.Success([]byte(st))
 	case QueryPledgeList:
 		log.Info("Enter DepositChaincode Contract " + QueryPledgeList + " Query")
-		return d.queryPledgeList(stub, args)
+		return queryPledgeList(stub, args)
+		//TODO Devin一个用户，怎么查看自己的流水账？
+		//case AllPledgeVotes:
+		//	b, err := getVotes(stub)
+		//	if err != nil {
+		//		return shim.Error(err.Error())
+		//	}
+		//	st := strconv.FormatInt(b, 10)
+		//	return shim.Success([]byte(st))
+
 		//case ExtractPtnList:
 		//	b, err := stub.GetState(ExtractPtnList)
 		//	if err != nil {

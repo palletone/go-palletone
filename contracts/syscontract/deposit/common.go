@@ -27,7 +27,6 @@ import (
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/constants"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -515,19 +514,6 @@ func isFoundationInvoke(stub shim.ChaincodeStubInterface) bool {
 //}
 
 //  每天计算各节点收益
-func handlePledgeReward(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	if len(args) != 0 {
-		return shim.Error("need 0 args")
-	}
-	err := handleRewardAllocation(stub)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	return shim.Success(nil)
-
-}
-
-//  每天计算各节点收益
 //func handleEachDayAward1(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 //	if len(args) != 0 {
 //		return shim.Error("need 0 args")
@@ -750,70 +736,4 @@ func getToday(stub shim.ChaincodeStubInterface) string {
 	str := ti.Format("20060102")
 	log.Debugf("getToday GetTxTimestamp 10 result:%d, format string:%s", t.Seconds, str)
 	return str
-}
-
-//质押分红处理
-func handleRewardAllocation(stub shim.ChaincodeStubInterface) error {
-	//  判断当天是否处理过
-	today := getToday(stub)
-	lastDate, err := getLastPledgeListDate(stub)
-
-	if lastDate == today {
-		return fmt.Errorf("%s pledge reward has been allocated before",today)
-	}
-	allM, err := getLastPledgeList(stub)
-	if err != nil {
-		return err
-	}
-	//计算分红
-	if allM != nil {
-		cp, err := stub.GetSystemConfig()
-		if err != nil {
-			return err
-		}
-		depositDailyReward := cp.DepositDailyReward
-		allM = pledgeRewardAllocation(allM, depositDailyReward)
-	} else {
-		allM = &modules.PledgeList{}
-	}
-	allM.Date = today
-	// 增加新的质押
-	depositList, err := getAllPledgeDepositRecords(stub)
-	if err != nil {
-		return err
-	}
-
-	for _, awardNode := range depositList {
-
-		allM.Add(awardNode.Address, awardNode.Amount)
-		err = delPledgeDepositRecord(stub, awardNode.Address)
-		if err != nil {
-			return err
-		}
-	}
-	err = saveLastPledgeList(stub, allM)
-	if err != nil {
-		return err
-	}
-
-	//处理提币请求
-	withdrawList, err := getAllPledgeWithdrawRecords(stub)
-	if err != nil {
-		return err
-	}
-	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
-	for _, withdraw := range withdrawList {
-		withdrawAmt, _ := allM.Reduce(withdraw.Address, withdraw.Amount)
-		if withdrawAmt > 0 {
-			err := stub.PayOutToken(withdraw.Address, modules.NewAmountAsset(withdraw.Amount, gasToken), 0)
-			if err != nil {
-				return err
-			}
-			err = delPledgeWithdrawRecord(stub, withdraw.Address) //清空提取请求列表
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
 }

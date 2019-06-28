@@ -30,6 +30,8 @@ import (
 	//"github.com/palletone/go-palletone/dag/constants"
 	//"github.com/palletone/go-palletone/dag/modules"
 	//"github.com/shopspring/decimal"
+	"fmt"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -47,17 +49,19 @@ func pledgeDepositRep(stub shim.ChaincodeStubInterface, addr common.Address, amo
 	node.Address = addrStr
 	return savePledgeDepositRecord(stub, node)
 }
+
 //质押提币，以当天最后一次为准
-func
-pledgeWithdrawRep(stub shim.ChaincodeStubInterface, addr common.Address, amount uint64) error {
+func pledgeWithdrawRep(stub shim.ChaincodeStubInterface, addr common.Address, amount uint64) error {
 	err := savePledgeWithdrawRecord(stub, modules.NewAddressAmount(addr.String(), amount))
 	return err
 }
+
 //撤销当天的提币请求
 func pledgeWithdrawCancelRep(stub shim.ChaincodeStubInterface, addr common.Address) error {
 	err := delPledgeWithdrawRecord(stub, addr.String())
 	return err
 }
+
 //质押分红,按持仓比例分固定金额
 func pledgeRewardAllocation(pledgeList *modules.PledgeList, rewardAmount uint64) *modules.PledgeList {
 	newPledgeList := &modules.PledgeList{TotalAmount: 0, Members: []*modules.AddressAmount{}}
@@ -69,30 +73,96 @@ func pledgeRewardAllocation(pledgeList *modules.PledgeList, rewardAmount uint64)
 	}
 	return newPledgeList
 }
+
+//质押分红处理
+func handleRewardAllocation(stub shim.ChaincodeStubInterface) error {
+	//  判断当天是否处理过
+	today := getToday(stub)
+	lastDate, err := getLastPledgeListDate(stub)
+
+	if lastDate == today {
+		return fmt.Errorf("%s pledge reward has been allocated before", today)
+	}
+	allM, err := getLastPledgeList(stub)
+	if err != nil {
+		return err
+	}
+	//计算分红
+	if allM != nil {
+		cp, err := stub.GetSystemConfig()
+		if err != nil {
+			return err
+		}
+		depositDailyReward := cp.DepositDailyReward
+		allM = pledgeRewardAllocation(allM, depositDailyReward)
+	} else {
+		allM = &modules.PledgeList{}
+	}
+	allM.Date = today
+	// 增加新的质押
+	depositList, err := getAllPledgeDepositRecords(stub)
+	if err != nil {
+		return err
+	}
+
+	for _, awardNode := range depositList {
+
+		allM.Add(awardNode.Address, awardNode.Amount)
+		err = delPledgeDepositRecord(stub, awardNode.Address)
+		if err != nil {
+			return err
+		}
+	}
+	//处理提币请求
+	withdrawList, err := getAllPledgeWithdrawRecords(stub)
+	if err != nil {
+		return err
+	}
+	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
+	for _, withdraw := range withdrawList {
+		withdrawAmt, _ := allM.Reduce(withdraw.Address, withdraw.Amount)
+		if withdrawAmt > 0 {
+			err := stub.PayOutToken(withdraw.Address, modules.NewAmountAsset(withdraw.Amount, gasToken), 0)
+			if err != nil {
+				return err
+			}
+			err = delPledgeWithdrawRecord(stub, withdraw.Address) //清空提取请求列表
+			if err != nil {
+				return err
+			}
+		}
+	}
+	err = saveLastPledgeList(stub, allM)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 //查询一个账户的质押状态
-func getPledgeStatus(stub shim.ChaincodeStubInterface, addr string) (*modules.PledgeStatus,error){
-	d,err:= getPledgeDepositRecord(stub,addr)
-	if err!=nil{
-		return nil,err
+func getPledgeStatus(stub shim.ChaincodeStubInterface, addr string) (*modules.PledgeStatus, error) {
+	d, err := getPledgeDepositRecord(stub, addr)
+	if err != nil {
+		return nil, err
 	}
-	w,err:=getPledgeWithdrawRecord(stub,addr)
-	if err!=nil{
-		return nil,err
+	w, err := getPledgeWithdrawRecord(stub, addr)
+	if err != nil {
+		return nil, err
 	}
-	list,err:=getLastPledgeList(stub)
-	if err!=nil{
-		return nil,err
+	list, err := getLastPledgeList(stub)
+	if err != nil {
+		return nil, err
 	}
-	status:=&modules.PledgeStatus{}
-	if d!=nil{
-		status.NewDepositAmount=d.Amount
+	status := &modules.PledgeStatus{}
+	if d != nil {
+		status.NewDepositAmount = d.Amount
 	}
-	if w!=nil{
-		status.WithdrawApplyAmount=w.Amount
+	if w != nil {
+		status.WithdrawApplyAmount = w.Amount
 	}
-	if list!=nil{
-		status.PledgeAmount=list.GetAmount(addr)
+	if list != nil {
+		status.PledgeAmount = list.GetAmount(addr)
 	}
 	//TODO 保证金部分？
-	return status,nil
+	return status, nil
 }

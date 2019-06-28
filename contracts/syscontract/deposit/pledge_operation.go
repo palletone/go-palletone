@@ -17,9 +17,9 @@ package deposit
 import (
 	"strconv"
 
+	"encoding/json"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"encoding/json"
 )
 
 //  质押PTN
@@ -46,6 +46,19 @@ func processPledgeDeposit(stub shim.ChaincodeStubInterface, args []string) pb.Re
 	//	return shim.Error(err.Error())
 	//}
 	return shim.Success(nil)
+}
+
+//  每天计算各节点收益
+func handlePledgeReward(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	if len(args) != 0 {
+		return shim.Error("need 0 args")
+	}
+	err := handleRewardAllocation(stub)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	return shim.Success(nil)
+
 }
 
 //  普通节点修改质押mediator
@@ -92,7 +105,7 @@ func processPledgeWithdraw(stub shim.ChaincodeStubInterface, args []string) pb.R
 		return shim.Error(err.Error())
 	}
 	//  保存质押提取
-	err= pledgeWithdrawRep(stub,inAddr,ptnAccount)
+	err = pledgeWithdrawRep(stub, inAddr, ptnAccount)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -102,23 +115,23 @@ func queryPledgeStatusByAddr(stub shim.ChaincodeStubInterface, args []string) pb
 	if len(args) != 1 {
 		return shim.Error("need 1 arg, Address")
 	}
-	status,err:= getPledgeStatus(stub,args[0])
+	status, err := getPledgeStatus(stub, args[0])
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	data,_:= json.Marshal(status)
+	data, _ := json.Marshal(status)
 	return shim.Success(data)
 }
 func queryAllPledgeHistory(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 
-	history,err:= getAllPledgeRewardHistory(stub)
+	history, err := getAllPledgeRewardHistory(stub)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	data,_:= json.Marshal(history)
+	data, _ := json.Marshal(history)
 	return shim.Success(data)
 }
-func (d *DepositChaincode) queryPledgeList(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func queryPledgeList(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	list, err := getLastPledgeList(stub)
 	if err != nil {
 		return shim.Error(err.Error())
