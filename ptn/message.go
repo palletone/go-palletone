@@ -369,6 +369,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	log.Infof("Received unit(%v) #%v parent(%v) @%v signed by %v", unitHash.TerminalString(),
 		unit.NumberU64(), unit.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
 		unit.Author().Str())
+
 	latency := time.Now().Sub(timestamp)
 	if latency < -3*time.Second {
 		errStr := fmt.Sprintf("Rejecting unit #%v with timestamp(%v) in the future signed by %v",
@@ -376,6 +377,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		log.Debugf(errStr)
 		return fmt.Errorf(errStr)
 	}
+
 	log.DebugDynamic(func() string {
 		txids := []common.Hash{}
 		for _, tx := range unit.Txs {
