@@ -23,25 +23,28 @@ package ptnjson
 
 import (
 	"github.com/palletone/go-palletone/common"
-	"time"
 	"github.com/palletone/go-palletone/dag/modules"
+	"time"
 )
 
-type ProofOfExistenceJson struct{
-	MainData  string`json:"main_data"`
-	ExtraData string `json:"extra_data"`
-	Reference string `json:"reference"`
-	TxId common.Hash `json:"tx_id"`
-	UnitHash common.Hash `json:"unit_hash"`
-	Timestamp time.Time `json:"timestamp"`
+type ProofOfExistenceJson struct {
+	Creator   string      `json:"creator"`
+	MainData  string      `json:"main_data"`
+	ExtraData string      `json:"extra_data"`
+	Reference string      `json:"reference"`
+	TxId      common.Hash `json:"tx_id"`
+	UnitHash  common.Hash `json:"unit_hash"`
+	Timestamp time.Time   `json:"timestamp"`
 }
-func ConvertProofOfExistence2Json(poe *modules.ProofOfExistence) *ProofOfExistenceJson{
+
+func ConvertProofOfExistence2Json(poe *modules.ProofOfExistence) *ProofOfExistenceJson {
 	return &ProofOfExistenceJson{
-		MainData:string(poe.MainData),
-		ExtraData:string(poe.ExtraData),
-		Reference:string(poe.Reference),
-		TxId:poe.TxId,
-		UnitHash:poe.UnitHash,
-		Timestamp:time.Unix(int64(poe.Timestamp),0),
+		Creator:   poe.Creator.String(),
+		MainData:  string(poe.MainData),
+		ExtraData: string(poe.ExtraData),
+		Reference: string(poe.Reference),
+		TxId:      poe.TxId,
+		UnitHash:  poe.UnitHash,
+		Timestamp: time.Unix(int64(poe.Timestamp), 0),
 	}
 }
