@@ -29,9 +29,9 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/parameter"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
@@ -1607,7 +1607,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 	stxs := pool.GetSequenTxs()
 	poolTxs := pool.AllTxpoolTxs()
 	orphanTxs := pool.AllOrphanTxs()
-	unit_size := common.StorageSize(dagconfig.DagConfig.UnitTxSize)
+	unit_size := common.StorageSize(parameter.CurrentSysParameters.UnitMaxSize)
 	for _, tx := range stxs {
 		list = append(list, tx)
 		total += tx.Tx.Size()

@@ -342,6 +342,7 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 	}).AnyTimes()
 
 	dag.EXPECT().SubscribeActiveMediatorsUpdatedEvent(gomock.Any()).Return(&rpc.ClientSubscription{}).AnyTimes()
+	dag.EXPECT().SubscribeToGroupSignEvent(gomock.Any()).Return(&rpc.ClientSubscription{}).AnyTimes()
 	pro.EXPECT().LocalHaveActiveMediator().Return(false).AnyTimes()
 	/*
 		pro.EXPECT().SubscribeNewUnitEvent(gomock.Any()).DoAndReturn(func(ch chan<- mp.NewUnitEvent) event.Subscription {

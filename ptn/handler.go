@@ -413,7 +413,7 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 		go pm.ceBroadcastLoop()
 	}
 	if runtime.GOOS == "linux" {
-		go pm.dockerLoop()
+		//go pm.dockerLoop()
 	}
 }
 

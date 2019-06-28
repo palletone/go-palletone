@@ -93,7 +93,7 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface) error {
 		if err != nil {
 			return err
 		}
-		depositDailyReward := cp.DepositDailyReward
+		depositDailyReward := cp.PledgeDailyReward
 		allM = pledgeRewardAllocation(allM, depositDailyReward)
 	} else {
 		allM = &modules.PledgeList{}

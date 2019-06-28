@@ -283,8 +283,8 @@ func (repository *UtxoRepository) destoryUtxo(txid common.Hash, txins []*modules
 		if outpoint == nil || outpoint.IsEmpty() { //Coinbase
 			continue
 		}
-		if outpoint.TxHash.IsZero(){//TxHash为0，表示花费当前Tx产生的UTXO
-			outpoint.TxHash=txid
+		if outpoint.TxHash.IsZero() { //TxHash为0，表示花费当前Tx产生的UTXO
+			outpoint.TxHash = txid
 		}
 		// get utxo info
 		utxo, err := repository.utxodb.GetUtxoEntry(outpoint)
@@ -619,7 +619,7 @@ To compute transactions' fees
 // 				//	return 0, err
 // 				//}
 // 				t1, _ := time.Parse("2006-01-02 15:04:05", time.Unix(timestamp, 0).UTC().Format("2006-01-02 15:04:05"))
-// 				depositRate := repository.propDb.GetChainParameters().DepositDailyReward
+// 				depositRate := repository.propDb.GetChainParameters().PledgeDailyReward
 // 				award := award2.GetAwardsWithCoins(utxo.Amount, t1, depositRate)
 // 				awards += award
 // 			}
