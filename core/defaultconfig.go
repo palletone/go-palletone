@@ -29,9 +29,9 @@ const (
 	DefaultRewardHeight              = 100
 	DefaultGenerateUnitReward        = 15000
 	DefaultDepositPeriod             = 0
-	DefaultDepositAmountForMediator  = 500000 * 100000000
-	DefaultDepositAmountForJury      = 100000 * 100000000
-	DefaultDepositAmountForDeveloper = 10000 * 100000000
+	DefaultDepositAmountForMediator  = 50 * 100000000
+	DefaultDepositAmountForJury      = 10 * 100000000
+	DefaultDepositAmountForDeveloper = 1 * 100000000
 	DefaultFoundationAddress         = "P1LA8TkEWxU6FcMzkyeSbf9b9FwZwxrYRuF"
 
 	DefaultUccMemory         = 2147483648 //物理内存  1073741824  1G 2147483648 2G
