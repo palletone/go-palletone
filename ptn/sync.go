@@ -230,9 +230,9 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId, sync
 	}
 	atomic.StoreUint32(&pm.acceptTxs, 1) // Mark initial sync done
 
-	head := pm.dag.GetCurrentUnit(assetId)
-	if head != nil && head.UnitHeader.Number.Index > 0 {
-		go pm.BroadcastUnit(currentUnit, false)
+	cunit := pm.dag.GetCurrentUnit(assetId)
+	if cunit != nil && cunit.UnitHeader.Number.Index > 0 {
+		go pm.BroadcastUnit(cunit, false)
 		//TODO notice light protocol to sync corsheader
 		if syncCh != nil {
 			syncCh <- true

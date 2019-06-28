@@ -163,7 +163,7 @@ type LightDag interface {
 type BlockDag interface {
 	LightDag
 	GetUnitByHash(common.Hash) (*modules.Unit, error)
-	CurrentUnit(token modules.AssetId) *modules.Unit
+	GetCurrentUnit(token modules.AssetId) *modules.Unit
 	FastSyncCommitHead(common.Hash) error
 	//SaveDag(unit modules.Unit, isGenesis bool) (int, error)
 	//InsertDag(modules.Units) (int, error)
@@ -1241,7 +1241,7 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 				// L: Request new headers up from 11 (R's TD was higher, it must have something)
 				// R: Nothing to give
 				if d.mode != LightSync {
-					unit := d.dag.CurrentUnit(assetId)
+					unit := d.dag.GetCurrentUnit(assetId)
 					//dbhead, _ := d.dag.GetHeaderByHash(head.Hash())
 					if !gotHeaders && index > unit.Number().Index {
 						return errStallingPeer

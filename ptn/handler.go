@@ -716,7 +716,7 @@ type NodeInfo struct {
 
 // NodeInfo retrieves some protocol metadata about the running host node.
 func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
-	unit := self.dag.CurrentUnit(self.mainAssetId)
+	unit := self.dag.GetCurrentUnit(self.mainAssetId)
 	var (
 		index = uint64(0)
 		hash  = common.Hash{}
