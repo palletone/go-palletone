@@ -582,11 +582,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// Transactions arrived, make sure we have a valid and fresh chain to handle them
 		return pm.TxMsg(msg, p)
 
-		// append by Albert·Gou
-	//case msg.Code == NewProducedUnitMsg:
-	//	// Retrieve and decode the propagated new produced unit
-	//	return pm.NewProducedUnitMsg(msg, p)
-
 	// append by Albert·Gou
 	case msg.Code == SigShareMsg:
 		return pm.SigShareMsg(msg, p)
