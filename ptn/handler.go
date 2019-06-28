@@ -479,7 +479,7 @@ func (pm *ProtocolManager) LocalHandle(p *peer) error {
 		log.Info("ProtocolManager", "handler DiscTooManyPeers:", p2p.DiscTooManyPeers)
 		return p2p.DiscTooManyPeers
 	}
-	log.Debug("PalletOne peer connected", "name", p.Name())
+	log.Debug("PalletOne peer connected", "name", p.id)
 	// @分区后需要用token获取
 	//head := pm.dag.CurrentHeader(pm.mainAssetId)
 	var (
@@ -490,7 +490,7 @@ func (pm *ProtocolManager) LocalHandle(p *peer) error {
 		number = head.Number
 		hash = head.Hash()
 	}
-
+	log.Debug("ProtocolManager LocalHandle pre Handshake", "index", number.Index)
 	// Execute the PalletOne handshake
 	if err := p.Handshake(pm.networkId, number, pm.genesis.Hash(), hash); err != nil {
 		log.Debug("PalletOne handshake failed", "err", err)
