@@ -379,9 +379,9 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxEx
 	}
 
 	// 判断本节点是否同步完成，数据是否最新
-	//if !a.dag.IsSynced() {
-	//	return nil, fmt.Errorf("the data of this node is not synced, and can't vote now")
-	//}
+	if !a.Dag().IsSynced() {
+		return nil, fmt.Errorf("the data of this node is not synced, and can't vote now")
+	}
 
 	maxMediatorCount := int(a.Dag().GetChainParameters().MaximumMediatorCount)
 	mediatorCount := len(mediatorStrs)

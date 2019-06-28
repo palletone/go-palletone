@@ -170,7 +170,7 @@ func (statedb *StateDb) SaveContractStates(id []byte, wset []modules.ContractWri
 			batch.Delete(key)
 			log.Debugf("Delete contract state by key:[%s]", write.Key)
 		} else {
-			log.Debugf("Save contract state by key:[%s],value:%x;db key %x", write.Key, write.Value, key)
+			//log.Debugf("Save contract state by key:[%s],value:%x;db key %x", write.Key, write.Value, key)
 			if err := storeBytesWithVersion(batch, key, version, write.Value); err != nil {
 				return err
 			}

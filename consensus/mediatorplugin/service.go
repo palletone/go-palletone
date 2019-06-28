@@ -71,6 +71,7 @@ type iDag interface {
 
 	IsPrecedingMediator(add common.Address) bool
 	IsIrreversibleUnit(hash common.Hash) bool
+	IsMediator(address common.Address) bool
 
 	PrecedingThreshold() int
 	PrecedingMediatorsCount() int
@@ -163,12 +164,6 @@ func (mp *MediatorPlugin) APIs() []rpc.API {
 	}
 }
 
-func (mp *MediatorPlugin) isLocalMediator(add common.Address) bool {
-	_, ok := mp.mediators[add]
-
-	return ok
-}
-
 func (mp *MediatorPlugin) ScheduleProductionLoop() {
 	// 1. 判断是否满足生产unit的条件，主要判断本节点是否控制至少一个mediator账户
 	if len(mp.mediators) == 0 {
@@ -255,7 +250,7 @@ func (mp *MediatorPlugin) unlockLocalMediators() {
 	for add, medAcc := range mp.mediators {
 		err := ks.Unlock(accounts.Account{Address: add}, medAcc.Password)
 		if err != nil {
-			log.Infof("fail to unlock the mediator(%v), error: %v", add.Str(), err.Error())
+			log.Errorf("fail to unlock the mediator(%v), error: %v", add.Str(), err.Error())
 			delete(mp.mediators, add)
 		}
 	}

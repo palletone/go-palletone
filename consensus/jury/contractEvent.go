@@ -126,9 +126,14 @@ func (p *Processor) contractExecEvent(tx *modules.Transaction, ele []modules.Ele
 			valid:  true,
 			adaInf: make(map[uint32]*AdapterInf),
 		}
+	} else {
+		if p.mtx[reqId].reqRcvEd {
+			return false, nil
+		}
 	}
 	p.mtx[reqId].reqTx = tx.GetRequestTx()
 	p.mtx[reqId].eleInf = ele
+	p.mtx[reqId].reqRcvEd = true
 	//关闭mel
 	if e, ok := p.mel[reqId]; ok {
 		e.invalid = true

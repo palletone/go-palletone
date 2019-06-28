@@ -800,7 +800,7 @@ func (tx *Transaction) IsSystemContract() bool {
 		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
 			contractId := msg.Payload.(*ContractInvokeRequestPayload).ContractId
 			contractAddr := common.NewAddress(contractId, common.ContractHash)
-			log.Debug("isSystemContract", "contract id", contractAddr, "len", len(contractAddr))
+			//log.Debug("isSystemContract", "contract id", contractAddr, "len", len(contractAddr))
 			return contractAddr.IsSystemContractAddress() //, nil
 
 		} else if msg.App == APP_CONTRACT_TPL_REQUEST {

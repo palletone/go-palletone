@@ -26,9 +26,13 @@ import (
 
 func (mp *MediatorPlugin) LocalMediators() []common.Address {
 	addrs := make([]common.Address, 0)
+
 	for add, _ := range mp.mediators {
-		addrs = append(addrs, mp.mediators[add].Address)
+		if mp.dag.IsMediator(add) {
+			addrs = append(addrs, mp.mediators[add].Address)
+		}
 	}
+
 	return addrs
 }
 
@@ -39,9 +43,20 @@ func (mp *MediatorPlugin) IsEnabledGroupSign() bool {
 func (mp *MediatorPlugin) GetLocalActiveMediators() []common.Address {
 	lams := make([]common.Address, 0)
 
-	dag := mp.dag
 	for add := range mp.mediators {
-		if dag.IsActiveMediator(add) {
+		if mp.dag.IsActiveMediator(add) {
+			lams = append(lams, add)
+		}
+	}
+
+	return lams
+}
+
+func (mp *MediatorPlugin) GetLocalPrecedingMediators() []common.Address {
+	lams := make([]common.Address, 0)
+
+	for add := range mp.mediators {
+		if mp.dag.IsPrecedingMediator(add) {
 			lams = append(lams, add)
 		}
 	}
@@ -61,7 +76,7 @@ func (mp *MediatorPlugin) LocalHaveActiveMediator() bool {
 }
 
 func (mp *MediatorPlugin) IsLocalActiveMediator(add common.Address) bool {
-	if mp.isLocalMediator(add) {
+	if _, ok := mp.mediators[add]; ok {
 		return mp.dag.IsActiveMediator(add)
 	}
 

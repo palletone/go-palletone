@@ -22,6 +22,7 @@ package memunit
 
 import (
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/event"
 	common2 "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
@@ -47,10 +48,14 @@ type IMemDag interface {
 	GetLastMainChainUnit() *modules.Unit
 	GetChainUnits() map[common.Hash]*modules.Unit
 	SetStableThreshold(threshold int)
-	GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository, common2.IPropRepository, common2.IUnitProduceRepository)
-	SetUnitGroupSign(uHash common.Hash, groupPubKey []byte, groupSign []byte, txpool txspool.ITxPool) error
+	GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository,
+		common2.IPropRepository, common2.IUnitProduceRepository)
+	SetUnitGroupSign(uHash common.Hash /*, groupPubKey []byte*/, groupSign []byte, txpool txspool.ITxPool) error
 	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
 	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)
+
+	SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription
+	Close()
 }
 
 //type IPartitionMemDag interface {
