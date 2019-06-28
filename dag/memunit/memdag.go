@@ -194,6 +194,7 @@ func (chain *MemDag) SetUnitGroupSign(uHash common.Hash /*, groupPubKey []byte*/
 
 	// 下一个unit的群签名
 	if err == nil {
+		log.Debugf("sent toGroupSign event")
 		go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
 	}
 
@@ -388,6 +389,7 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 
 	if err == nil {
 		// 下一个unit的群签名
+		log.Debugf("sent toGroupSign event")
 		go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
 	}
 
@@ -423,6 +425,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 				//这个单元不是稳定单元，需要加入Tempdb
 			} else {
 				// 下一个unit的群签名
+				log.Debugf("sent toGroupSign event")
 				go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
 
 				log.Debugf("unit[%s] checkStableCondition =true", unit.Hash().String())

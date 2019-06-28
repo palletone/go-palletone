@@ -41,6 +41,7 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 }
 
 func (pm *ProtocolManager) toGroupSignEventRecvLoop() {
+	log.Debugf("toGroupSignEventRecvLoop")
 	for {
 		select {
 		case event := <-pm.toGroupSignCh:
@@ -54,16 +55,21 @@ func (pm *ProtocolManager) toGroupSignEventRecvLoop() {
 }
 
 func (pm *ProtocolManager) toGroupSign(event modules.ToGroupSignEvent) {
+	log.Debugf("receive toGroupSign event")
+
 	// 判断是否满足群签名的条件
 	if !pm.dag.IsSynced() {
+		log.Debugf("dag is not synced")
 		return
 	}
 
 	if !pm.producer.LocalHaveActiveMediator() && !pm.producer.LocalHavePrecedingMediator() {
+		log.Debugf("the current node has no mediator")
 		return
 	}
 
 	if !pm.producer.IsEnabledGroupSign() {
+		log.Debugf("the current node is enabled groupSign")
 		return
 	}
 

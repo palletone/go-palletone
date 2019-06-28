@@ -43,44 +43,24 @@ const ProtocolMaxMsgSize = 10 * 1024 * 1024 // Maximum cap on the size of a prot
 // ptn protocol message codes
 const (
 	// Protocol messages belonging to ptn/1
-	StatusMsg = iota
-	NewBlockHashesMsg
-	TxMsg
-	GetBlockHeadersMsg
-	BlockHeadersMsg
-	GetBlockBodiesMsg
-	BlockBodiesMsg
-	NewBlockMsg
-	NewBlockHeaderMsg
-	VSSDealMsg
-	VSSResponseMsg
-	SigShareMsg
-	GroupSigMsg
-	GetLeafNodesMsg
-	LeafNodesMsg
-	ContractMsg
-	ElectionMsg
-	AdapterMsg
-
-	//StatusMsg          = 0x00
-	//NewBlockHashesMsg  = 0x01
-	//TxMsg              = 0x02
-	//GetBlockHeadersMsg = 0x03
-	//BlockHeadersMsg    = 0x04
-	//GetBlockBodiesMsg  = 0x05
-	//BlockBodiesMsg     = 0x06
-	//NewBlockMsg        = 0x07
-	//NewBlockHeaderMsg  = 0x08
-	////NewProducedUnitMsg = 0x09
-	//VSSDealMsg         = 0x0a
-	//VSSResponseMsg     = 0x0b
-	//SigShareMsg        = 0x0c
-	//GroupSigMsg        = 0x0d
-	//GetLeafNodesMsg    = 0x0e
-	//LeafNodesMsg       = 0x0f
-	//ContractMsg        = 0x10
-	//ElectionMsg        = 0x11
-	//AdapterMsg         = 0x12
+	StatusMsg          = 0x00
+	NewBlockHashesMsg  = 0x01
+	TxMsg              = 0x02
+	GetBlockHeadersMsg = 0x03
+	BlockHeadersMsg    = 0x04
+	GetBlockBodiesMsg  = 0x05
+	BlockBodiesMsg     = 0x06
+	NewBlockMsg        = 0x07
+	NewBlockHeaderMsg  = 0x08
+	VSSDealMsg         = 0x09
+	VSSResponseMsg     = 0x0a
+	SigShareMsg        = 0x0b
+	GroupSigMsg        = 0x0c
+	GetLeafNodesMsg    = 0x0d
+	LeafNodesMsg       = 0x0e
+	ContractMsg        = 0x0f
+	ElectionMsg        = 0x10
+	AdapterMsg         = 0x11
 
 	GetNodeDataMsg = 0x20
 	NodeDataMsg    = 0x21
