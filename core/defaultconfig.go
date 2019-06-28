@@ -23,11 +23,11 @@ package core
 const (
 	DefaultTokenAmount = "100000000000000000"
 	//DefaultTokenDecimal              = 8
-	DefaultChainID                   = 1
-	DefaultDepositDailyReward        = 2887450000000
-	DefaultTxCoinYearRate            = 0
-	DefaultRewardHeight              = 50
-	DefaultGenerateUnitReward        = 150000000
+	DefaultChainID           = 1
+	DefaultPledgeDailyReward = 288745000
+	// DefaultTxCoinYearRate            = 0
+	DefaultRewardHeight              = 100
+	DefaultGenerateUnitReward        = 15000
 	DefaultDepositPeriod             = 0
 	DefaultDepositAmountForMediator  = 500000 * 100000000
 	DefaultDepositAmountForJury      = 100000 * 100000000
@@ -58,7 +58,7 @@ const (
 
 	DefaultJuryAddr = "P16bXzewsexHwhGYdt1c1qbzjBirCqDg8mN"
 
-	DefaultMaxMediatorCount    = 30
+	DefaultMaxMediatorCount    = 1
 	DefaultActiveMediatorCount = 5 //21
 	DefaultMinMediatorCount    = 5 //21
 	DefaultMinMediatorInterval = 1
@@ -126,4 +126,5 @@ const (
 	DefaultAccountUpdateFee         = 20
 	DefaultTransferPtnBaseFee       = 20
 	DefaultTransferPtnPricePerKByte = 20
+	DefaultUnitMaxSize              = 5 * 1024 * 1024 //5M
 )

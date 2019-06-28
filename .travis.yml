@@ -1,4 +1,4 @@
-language: go
+language: go 
 sudo: required
 env:
   global:
@@ -11,19 +11,21 @@ env:
     - SEQENCE721_DIR=crt721Seqence
     - UDID721_DIR=crt721UDID
     - VOTECONTRACT_DIR=voteContract
+    - MULTIPLE_DIR=zMulti-node
     - DIGITAL_IDENTITY_DIR=DigitalIdentityCert
     - DEPOSIT_DIR=deposit
     - GAS_TOKEN_DIR=gasToken
     - MEDIATOR_VOTE_DIR=meidatorvote
     - LOG_NAME=log.html
     - REPORT_NAME=report.html
-    ##########  control testcase  ##############
+##########  control testcase  ##############
     - IS_RUN_DEPOSIT=true
     - IS_RUN_TESTCONTRACTCASES=true
     - IS_RUN_CREATE_TRANS=true
     - IS_RUN_20CONTRACT=true
     - IS_RUN_721SEQENCE=true
     - IS_RUN_721UDID=true
+    - IS_RUN_MULTIPLE=true
     - IS_RUN_DIGITAL=true
     - IS_RUN_VOTE=true
     - IS_RUN_GASTOKEN=true
@@ -31,7 +33,6 @@ env:
     - GO111MODULE=on
     - IS_UPLOAD=true
 #    - 'SFTP_KEY=[base64-encoded-rsa-key]'
-
 matrix:
   include:
     - os: linux
@@ -43,26 +44,26 @@ matrix:
         - go build ./cmd/gptn
         - make gptn
         - $GOPATH/bin/goveralls -service=travis-ci
-    # - os: linux
-    #   dist: xenial
-    #   go: 1.11.x
-    #   env: UT
-    #   script:
+    #- os: linux
+    #  dist: xenial
+    #  go: 1.11.x
+    #  env: UT
+    #  script:
     #     - go build ./cmd/gptn
     #     - make gptn
     #     - go test ./...
-    # - os: linux
-    #   dist: xenial
-    #   go: 1.12.x
-    #   env: UT
-    #   script:
+    #- os: linux
+    #  dist: xenial
+    #  go: 1.12.x
+    #  env: UT
+    #  script:
     #     - go build ./cmd/gptn
     #     - make gptn
     #     - go test ./...
-    # - os: osx
-    #   go: 1.12.x
-    #   env: UT
-    #   script:
+    #- os: osx
+    #  go: 1.12.x
+    #  env: UT
+    #  script:
     #     - go build ./cmd/gptn
     #     - make gptn
     #     - go test ./...
@@ -78,6 +79,7 @@ matrix:
         - cd bdd/node
         - chmod +x gptn
         - python init.py
+        #- sed -i 's/"mediatorInterval": 5,/"mediatorInterval": 2,/g' ptn-genesis.json
         - nohup ./gptn &
         - sleep 15
         - netstat -ap | grep gptn
@@ -85,13 +87,11 @@ matrix:
           cd ../dct;
           ./deposit_test.sh 5;
           fi
-
         - if [ $IS_RUN_TESTCONTRACTCASES == 'true' ];then
           cd ../contract/testcases;
           chmod +x ./test_start.sh;
           ./test_start.sh;
           fi
-
         # into bdd path, all testcases is here
         - cd ${BASE_DIR}/bdd
         - mkdir -p ${BDD_LOG_PATH}
@@ -136,7 +136,6 @@ matrix:
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
             ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
-
             # echo ftp address
             echo "The path of all bdd log in vsftpd is 'ftp://47.74.209.46"
             echo "If you want to open it in explorer, you should close VPN first."
@@ -152,7 +151,52 @@ matrix:
         - sudo -H apt-get install expect
         - sudo -H apt-get install lftp
         - chmod +x bdd/upload2Ftp.sh
-        #- sudo -H apt-get install jq tcl tk
+    - os: linux
+      dist: xenial
+      go: 1.12.5
+      env: multiple_nodes_bdd
+      script:
+        #- go build ./cmd/gptn
+        - make gptn
+        - cp bdd/light/testcases/!(preset.sh) bdd/node
+        - cp build/bin/gptn bdd/node
+        - cd bdd/node
+        - chmod -R +x *
+        - sudo -H chmod +w /etc/hosts
+        - sudo -H sed -i 's/127.0.0.1 localhost/127.0.0.1/g' /etc/hosts
+        - sudo -H sed -i '$a0.0.0.0 localhost' /etc/hosts
+        - ./launchMultipleNodes.sh
+        - netstat -ap | grep gptn
+        - cd ${BASE_DIR}/bdd
+        - mkdir -p ${BDD_LOG_PATH}
+        - if [ $IS_RUN_MULTIPLE == 'true' ]; then
+          python -m robot.run -d ${BDD_LOG_PATH}/${MULTIPLE_DIR} -i normal ./testcase/zMulti-node;
+          fi
+      after_script:
+        - killall gptn
+        - sleep 2
+        - cd ${BASE_DIR}
+        - zip -j ./bdd/logs/zMulti-node.zip ./bdd/logs/*
+        - |
+          if [ $IS_UPLOAD == 'true' ]; then
+            # uplaod all log
+            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
+            # echo ftp address
+            echo "The path of all bdd log in vsftpd is 'ftp://47.74.209.46"
+            echo "If you want to open it in explorer, you should close VPN first."
+            echo "If you want to open in windows explorer, you should open Internet Explorer and open Settings->Adanced-Enable FTP Folder view"
+          fi
+      install:
+        - sudo -H pip install --upgrade pip
+        - sudo -H pip install robotframework==2.8.5
+        - sudo -H pip install requests
+        - sudo -H pip install robotframework-requests
+        - sudo -H pip install demjson
+        - sudo -H pip install pexpect
+        - sudo -H apt-get install jq
+        - sudo -H apt-get install tcl tk expect
+        - sudo -H apt-get install lftp
+        - chmod +x bdd/upload2Ftp.sh
     - os: linux
       dist: xenial
       go: 1.12.5
@@ -189,16 +233,13 @@ matrix:
         - sudo -H apt-get install expect
         - sudo -H apt-get install lftp
         - chmod +x bdd/upload2Ftp.sh
-        #- sudo -H apt-get install jq tcl tk
 before_install:
-  - go get -u github.com/palletone/adaptor
-  - go get -u github.com/palletone/btc-adaptor
-  - go get -u github.com/palletone/eth-adaptor
-  - source ./build/goget_by_version.sh
-  - source ./gomockgen.sh
-
-
-
+    - go get -u github.com/palletone/adaptor
+    - go get -u github.com/palletone/btc-adaptor
+    - go get -u github.com/palletone/eth-adaptor
+    - source ./build/goget_by_version.sh
+    #- source ./gomockgen.sh
+    
 addons:
   apt:
     update: true
