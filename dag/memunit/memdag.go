@@ -181,8 +181,14 @@ func (chain *MemDag) SetUnitGroupSign(uHash common.Hash /*, groupPubKey []byte*/
 	//1. Set this unit as stable
 	unit, err := chain.getChainUnit(uHash)
 	if err != nil {
+		log.Debugf("get Chain Unit error: %v", err.Error())
 		return err
 	}
+
+	if !(unit.NumberU64() > chain.stableUnitHeight) {
+		return nil
+	}
+
 	chain.lock.Lock()
 	defer chain.lock.Unlock()
 	chain.setStableUnit(uHash, unit.NumberU64(), txpool)
