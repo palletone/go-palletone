@@ -432,7 +432,7 @@ func (s *PublicContractAPI) SysConfigContractInvoke(ctx context.Context, from, t
 
 	// 检查参数
 	if param[0] == sysconfigcc.UpdateSysParamWithoutVote {
-		field, value := param[0], param[1]
+		field, value := param[1], param[2]
 		err := core.CheckSysConfigArgs(field, value)
 		if err != nil {
 			log.Debugf(err.Error())
