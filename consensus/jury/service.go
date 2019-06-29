@@ -315,6 +315,7 @@ func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf)
 			return fmt.Errorf("runContractReq, GenContractSigTransctions error, reqId[%s], err:%s", reqId, err.Error())
 		}
 		ctx.sigTx = sigTx
+		log.Debugf("[%s]runContractReq, gen local signature tx[%s]", shortId(reqId.String()), sigTx.Hash().String())
 		//如果rcvTx存在，则比较执行结果，并将结果附加到sigTx上,并删除rcvTx
 		if len(ctx.rcvTx) > 0 {
 			for _, rtx := range ctx.rcvTx {
@@ -322,12 +323,12 @@ func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf)
 				if err != nil {
 					log.Debugf("[%s]runContractReq, checkAndAddTxSigMsgData error:%s", shortId(reqId.String()), err.Error())
 				} else if ok {
-					log.Debugf("[%s]runContractReq, checkAndAddTxSigMsgData ok", shortId(reqId.String()))
+					log.Debugf("[%s]runContractReq, checkAndAddTxSigMsgData ok, tx[%s]", shortId(reqId.String()), rtx.Hash().String())
 				} else {
 					log.Debugf("[%s]runContractReq, checkAndAddTxSigMsgData fail", shortId(reqId.String()))
 				}
 			}
-			ctx.rcvTx = nil
+			//ctx.rcvTx = nil
 		}
 
 		sigNum := getTxSigNum(ctx.sigTx)
