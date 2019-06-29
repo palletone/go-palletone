@@ -64,8 +64,8 @@ func NewChainParametersBase() ChainParametersBase {
 		AccountUpdateFee:          DefaultAccountUpdateFee,
 		TransferPtnBaseFee:        DefaultTransferPtnBaseFee,
 		TransferPtnPricePerKByte:  DefaultTransferPtnPricePerKByte,
-		ContractInvokeFee:         DefaultContractInvokeFee,
-		UnitMaxSize:               DefaultUnitMaxSize,
+		// ContractInvokeFee:         DefaultContractInvokeFee,
+		UnitMaxSize: DefaultUnitMaxSize,
 	}
 }
 
@@ -102,7 +102,7 @@ type ChainParametersBase struct {
 	AccountUpdateFee         uint64 `json:"account_update_fee"`
 	TransferPtnBaseFee       uint64 `json:"transfer_ptn_base_fee"`
 	TransferPtnPricePerKByte uint64 `json:"transfer_ptn_price_per_KByte"`
-	ContractInvokeFee        uint64 `json:"contract_invoke_fee"`
+	// ContractInvokeFee        uint64 `json:"contract_invoke_fee"`
 }
 
 func NewChainParams() ChainParameters {
