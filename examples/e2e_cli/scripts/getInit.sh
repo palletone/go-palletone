@@ -5,5 +5,5 @@ set timeout 30
 #(2)执行init
 spawn ./gptn init
 expect "Passphrase:"
-send "1\r"
+send "1\n"
 interact
