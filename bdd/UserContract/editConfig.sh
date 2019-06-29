@@ -8,26 +8,21 @@ baseAddr="ContractAddress = \""
 newAddr="$baseAddr$local_host"
 echo $newAddr
 
-sed -i "s/8545/8645/g" node1/ptn-config.toml
-sed -i "s/HTTPHost = \"localhost\"/HTTPHost = \"0.0.0.0\"/g" node1/ptn-config.toml
-sed -i "s/ElectionNum = 2/ElectionNum = 3/g" node1/ptn-config.toml
-sed -i "s/ContractAddress\s*=\s*\"127.0.0.1/$newAddr/g" node1/ptn-config.toml
-sed -i "s/ContractSigNum\s*=\s*2/ContractSigNum = 3/g" node1/ptn-config.toml
+NUM=$1
+SIG=$2
 
-sed -i "s/8565/8665/g" node2/ptn-config.toml
-sed -i "s/HTTPHost = \"localhost\"/HTTPHost = \"0.0.0.0\"/g" node2/ptn-config.toml
-sed -i "s/ElectionNum = 2/ElectionNum = 3/g" node2/ptn-config.toml
-sed -i "s/ContractAddress\s*=\s*\"127.0.0.1/$newAddr/g" node2/ptn-config.toml
-sed -i "s/ContractSigNum\s*=\s*2/ContractSigNum = 3/g" node2/ptn-config.toml
-
-sed -i "s/8575/8675/g" node3/ptn-config.toml
-sed -i "s/HTTPHost = \"localhost\"/HTTPHost = \"0.0.0.0\"/g" node3/ptn-config.toml
-sed -i "s/ElectionNum = 2/ElectionNum = 3/g" node3/ptn-config.toml
-sed -i "s/ContractAddress\s*=\s*\"127.0.0.1/$newAddr/g" node3/ptn-config.toml
-sed -i "s/ContractSigNum\s*=\s*2/ContractSigNum = 3/g" node3/ptn-config.toml
-
-sed -i "s/ContractAddress\s*=\s*\"127.0.0.1/$newAddr/g" node_test4/ptn-config.toml
-sed -i "s/ContractAddress\s*=\s*\"127.0.0.1/$newAddr/g" node_test5/ptn-config.toml
-sed -i "s/ContractAddress\s*=\s*\"127.0.0.1/$newAddr/g" node_test6/ptn-config.toml
-sed -i "s/ContractAddress\s*=\s*\"127.0.0.1/$newAddr/g" node_test7/ptn-config.toml
-sed -i "s/ContractAddress\s*=\s*\"127.0.0.1/$newAddr/g" node_test8/ptn-config.toml
+for ((i=1; i<=$NUM; i++))
+do
+if [ $i == 1 ]
+then
+sed -i "s/8545/8645/g" node$i/ptn-config.toml
+else
+let "originPort=8545+$i*10"
+let "newPort=8645+$i*10"
+sed -i "s/$originPort/$newPort/g" node$i/ptn-config.toml
+fi
+sed -i "s/HTTPHost = \"localhost\"/HTTPHost = \"0.0.0.0\"/g" node$i/ptn-config.toml
+sed -i "s/ContractAddress\s*=\s*\"127.0.0.1/$newAddr/g" node$i/ptn-config.toml
+sed -i "s/ElectionNum = [0-9]*/ElectionNum = $NUM/g" node$i/ptn-config.toml
+sed -i "s/ContractSigNum\s*=\s*[0-9]*/ContractSigNum = $SIG/g" node$i/ptn-config.toml
+done
