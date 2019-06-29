@@ -402,7 +402,6 @@ func handleMediatorForfeitureDeposit(stub shim.ChaincodeStubInterface, foundatio
 	md.Status = Quited
 	md.Balance = 0
 	md.EnterTime = ""
-	md.LastModifyTime = ""
 	//  保存
 	err = SaveMediatorDeposit(stub, forfeiture.ForfeitureAddress, md)
 	if err != nil {

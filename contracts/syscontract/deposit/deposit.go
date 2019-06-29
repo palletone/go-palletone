@@ -398,17 +398,9 @@ func (d DepositChaincode) normalNodePledgeVote(stub shim.ChaincodeStubInterface,
 	return processPledgeDeposit(stub, args)
 }
 
-//func (d DepositChaincode) normalNodeChangeVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-//	return normalNodeChangeVote(stub, args)
-//}
-
 func (d DepositChaincode) normalNodeExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return processPledgeWithdraw(stub, args)
 }
-
-//func (d DepositChaincode) handleExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-//	return handleExtractVote(stub, args)
-//}
 
 func (d DepositChaincode) handleEachDayAward(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return handlePledgeReward(stub, args)

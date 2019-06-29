@@ -177,6 +177,12 @@ matrix:
       after_script:
         - killall gptn
         - sleep 2
+        - cd ${BASE_DIR}
+        - zip -j ./bdd/logs/zMulti-node.zip ./bdd/logs/*
+        - |
+          if [ $IS_UPLOAD == 'true' ]; then
+            # uplaod all log
+            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
         - cd ${BASE_DIR}/bdd
         - source ./targz_node.sh
         - |
