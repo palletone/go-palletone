@@ -25,26 +25,27 @@ func NewMigrations(db ptndb.Database) map[string]IMigration {
 	// 将所有待升级的migration版本，在这里实例化。
 	migrations := make(map[string]IMigration)
 	/* version: 0615 */
-	m_0615 := NewMigration0615_100(db)
-	if ver := m_0615.FromVersion(); ver != "" {
-		migrations[ver] = m_0615
-	}
-	/* version: 0615 end*/
+	// m_0615 := NewMigration0615_100(db)
+	// if ver := m_0615.FromVersion(); ver != "" {
+	// 	migrations[ver] = m_0615
+	// }
+	// /* version: 0615 end*/
 
-	/* version: 1.0.0-beta */
-	m_100_beta := NewMigration100_100(db)
-	migrations[m_100_beta.FromVersion()] = m_100_beta
-	/* version: 1.0.0-beta end */
-	/* version: 1.0.0-beta */
-	m_101_beta := NewNothingMigration("1.0.1-beta", "1.0.2-beta")
-	migrations[m_101_beta.FromVersion()] = m_101_beta
+	// /* version: 1.0.0-beta */
+	// m_100_beta := NewMigration100_100(db)
+	// migrations[m_100_beta.FromVersion()] = m_100_beta
+	// /* version: 1.0.0-beta end */
+	// /* version: 1.0.0-beta */
+	// m_101_beta := NewNothingMigration("1.0.1-beta", "1.0.2-beta")
+	// migrations[m_101_beta.FromVersion()] = m_101_beta
 	/* version: 1.0.0-beta end */
 	return migrations
 }
-func NewMigration0615_100(db ptndb.Database) *Migration0615_100 {
-	return &Migration0615_100{dagdb: db, idxdb: db, utxodb: db, statedb: db, propdb: db}
-}
 
-func NewMigration100_100(db ptndb.Database) *Migration100_100 {
-	return &Migration100_100{dagdb: db, idxdb: db, utxodb: db, statedb: db, propdb: db}
-}
+// func NewMigration0615_100(db ptndb.Database) *Migration0615_100 {
+// 	return &Migration0615_100{dagdb: db, idxdb: db, utxodb: db, statedb: db, propdb: db}
+// }
+
+// func NewMigration100_100(db ptndb.Database) *Migration100_100 {
+// 	return &Migration100_100{dagdb: db, idxdb: db, utxodb: db, statedb: db, propdb: db}
+// }

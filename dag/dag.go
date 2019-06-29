@@ -606,16 +606,14 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 func checkDbMigration(db ptndb.Database, stateDb storage.IStateDb) error {
 	// 获取旧的gptn版本号
 	t := time.Now()
-	defer func(t1 time.Time) {
-		log.Infof("exec migration spent time:%s", time.Since(t1))
-	}(t)
 	old_vertion, err := stateDb.GetDataVersion()
 	if err != nil {
 		old_vertion = &modules.DataVersion{Version: "0.6.15"}
 	}
-	log.Infof("the old version:%s", old_vertion.Version)
+	log.Debugf("the database version is:%s", old_vertion.Version)
 	// 获取当前gptn版本号
 	now_version := configure.Version
+	log.Debugf("the program version is:%s", now_version)
 	next_version := old_vertion.Version
 	if next_version != now_version {
 		log.Infof("start migration,upgrade gtpn vertion[%s] to [%s]", next_version, now_version)
@@ -641,6 +639,7 @@ func checkDbMigration(db ptndb.Database, stateDb storage.IStateDb) error {
 				break
 			}
 		}
+		log.Infof("exec migration spent time:%s", time.Since(t))
 		return nil
 	}
 	return nil
