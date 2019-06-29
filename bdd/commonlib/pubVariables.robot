@@ -2,9 +2,9 @@
 Library           RequestsLibrary
 
 *** Variables ***
-#${ip}            123.126.106.82
-${ip}             127.0.0.1
-${host}           http://${ip}:8645/
+${ip}             123.126.106.82
+#${ip}            127.0.0.1
+${host}           http://${ip}:58645/
 ${juryHosts}      Create List
 ${gastokenHost}    http://localhost:8545
 ${nodenum}        3
