@@ -806,7 +806,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 	if !fee.IsPositive() {
 		return "", fmt.Errorf("fee is invalid")
 	}
-        daolimit , _ := decimal.NewFromString("0.0001")
+	daolimit, _ := decimal.NewFromString("0.0001")
 	if !fee.GreaterThanOrEqual(daolimit) {
 		return "", fmt.Errorf("fee cannot less than 100000 Dao ")
 	}
@@ -833,7 +833,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 
 	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &LockTime)
 	result, _ := CreateRawTransaction(arg)
-	fmt.Println(result)
+	// fmt.Println(result)
 	return result, nil
 }
 func convertUtxoMap2Utxos(maps map[modules.OutPoint]*modules.Utxo) (core.Utxos, *modules.Asset) {
@@ -1552,6 +1552,7 @@ func (s *PublicTransactionPoolAPI) SendJsonTransaction(ctx context.Context, json
 	}
 	return submitTransaction(ctx, s.b, tx)
 }
+
 // Sign calculates an ECDSA signature for:
 // keccack256("\x19Ethereum Signed Message:\n" + len(message) + message).
 //

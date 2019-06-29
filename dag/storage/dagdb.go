@@ -21,18 +21,19 @@
 package storage
 
 import (
-	"fmt"
 	"math/big"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+
 	//"github.com/ethereum/go-ethereum/rlp"
 	// "github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/constants"
 	//"github.com/palletone/go-palletone/dag/errors"
-	"github.com/palletone/go-palletone/dag/modules"
 	"reflect"
+
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 //对DAG对象的操作，包括：Unit，Tx等
@@ -132,9 +133,9 @@ func (dagdb *DagDb) GetCommonByPrefix(prefix []byte) map[string][]byte {
 		// result[*(*string)(unsafe.Pointer(&key))] = append(value, iter.Value()...)
 		result[string(key)] = append(value, iter.Value()...)
 	}
-	for k, val := range result {
-		fmt.Println("key:::::::::  ", k, string(val))
-	}
+	// for k, val := range result {
+	// 	fmt.Println("key:::::::::  ", k, string(val))
+	// }
 	return result
 }
 func (dagdb *DagDb) GetGenesisUnitHash() (common.Hash, error) {
