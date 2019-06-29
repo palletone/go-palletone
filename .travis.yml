@@ -43,7 +43,8 @@ matrix:
         - go get github.com/mattn/goveralls
         - go build ./cmd/gptn
         - make gptn
-        - $GOPATH/bin/goveralls -service=travis-ci
+        - go test ./...
+        # - $GOPATH/bin/goveralls -service=travis-ci
     #- os: linux
     #  dist: xenial
     #  go: 1.11.x
@@ -79,8 +80,8 @@ matrix:
         - cd bdd/node
         - chmod +x gptn
         - python init.py
-        - sed -i 's/"mediator_interval": 3,/"mediator_interval": 2,/g' ptn-genesis.json
-        - sed -i 's/"maintenance_skip_slots": 1,/"maintenance_skip_slots": 0,/g' ptn-genesis.json
+        - sed -i "s/\"mediator_interval\": 3,/\"mediator_interval\": 2,/g" ptn-genesis.json
+        - sed -i "s/\"maintenance_skip_slots\": 1,/\"maintenance_skip_slots\": 0,/g" ptn-genesis.json
         - nohup ./gptn &
         - sleep 15
         - netstat -ap | grep gptn
