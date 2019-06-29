@@ -216,7 +216,9 @@ matrix:
       after_script:
         - killall gptn
         - sleep 2
-        - cat /home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/user_contract_logs/log.html
+        - docker stop $(docker ps -a -q)
+        - docker rm $(docker ps -a -q)
+        - docker rmi -f $(docker images -q)
         #- cd ${BASE_DIR}
         #- zip -j ./bdd/logs/oneNode_log.zip ./bdd/node/log/*
         #- zip -j ./bdd/logs/gasToken_log.zip ./bdd/GasToken/node/log/*
