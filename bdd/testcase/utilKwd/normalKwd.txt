@@ -19,7 +19,7 @@ Request sign transaction
     #${jsonRes}    To Json    ${jsonRes}
     #Should Contain    ${jsonRes['jsonrpc']}    2.0    msg="jsonrpc:failed"
     #Should Contain    str(${jsonRes['id']})    1    msg="id:failed"
-    #log    ${resp}
+    log    ${resp}
     Should Contain    ${resp.content}['jsonrpc']    2.0    msg="jsonrpc:failed"
     Should Contain    ${resp.content}['id']    1    msg="id:failed"
     [Return]    ${resp}
@@ -28,6 +28,7 @@ Request send transaction
     [Arguments]    ${ret}
     ${sendList}    Create List    ${ret}
     ${resp}    setPostRequest    ${host}    ptn_sendRawTransaction    ${sendList}
+    log    ${resp}
     Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
     Should Contain    ${resp.content}['id']    1    msg="id:failed"
     #Should Match Regexp    ${resp.content}['result']    ${sendResult}    msg="result:does't match expression"
@@ -117,6 +118,7 @@ Request CcinvokePass
     ${ccinvokeList}    Create List    ${senderAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}    ${ContractId}
     ...    ${ccList}    ${pwd}    ${duration}    ${EMPTY}
     ${resp}    setPostRequest    ${host}    ${invokePsMethod}    ${ccinvokeList}
+    log    ${resp.content}
     Should Contain    ${resp.content}['jsonrpc']    2.0    msg="jsonrpc:failed"
     Should Contain    ${resp.content}['id']    1    msg="id:failed"
     [Return]    ${resp}

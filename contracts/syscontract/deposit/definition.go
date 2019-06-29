@@ -19,79 +19,80 @@ import (
 )
 
 const (
-	ListForQuit                = "ListForQuit"
-	ListForForfeiture          = "ListForForfeiture"
-	JuryApplyQuit              = "JuryApplyQuit"
-	DeveloperApplyQuit         = "DeveloperApplyQuit"
 	ListForApplyBecomeMediator = "ListForApplyBecomeMediator"
 	ListForAgreeBecomeMediator = "ListForAgreeBecomeMediator"
-	ListForApplyQuitMediator   = "ListForApplyQuitMediator"
-	DepositAmountForJury       = "DepositAmountForJury"
-	DepositAmountForDeveloper  = "DepositAmountForDeveloper"
-	DepositPeriod              = "DepositPeriod"
-	Developer                  = "Developer"
-	Jury                       = "Jury"
+	ListForQuit                = "ListForQuit"
+	ListForForfeiture          = "ListForForfeiture"
 
-	Mediator      = "Mediator"
-	Ok            = "ok"
-	No            = "no"
-	DTimeDuration = 1800
-	//获取Mediator候选列表
-	GetListForMediatorCandidate = "GetListForMediatorCandidate"
-	GetQuitApplyList            = "GetQuitApplyList"
+	JuryApplyQuit      = "JuryApplyQuit"
+	DeveloperApplyQuit = "DeveloperApplyQuit"
+
+	Developer = "Developer"
+	Jury      = "Jury"
+	Mediator  = "Mediator"
+
+	Ok = "ok"
+	No = "no"
+
+	//获取候选列表
+	GetListForMediatorCandidate  = "GetListForMediatorCandidate"
+	GetListForJuryCandidate      = "GetListForJuryCandidate"
+	GetListForDeveloperCandidate = "GetListForDeveloperCandidate"
 	//查看是否在候选列表中
-	IsInMediatorCandidateList       = "IsInMediatorCandidateList"
-	GetAgreeForBecomeMediatorList   = "GetAgreeForBecomeMediatorList"
+	IsInMediatorCandidateList  = "IsInMediatorCandidateList"
+	IsInJuryCandidateList      = "IsInJuryCandidateList"
+	IsInDeveloperCandidateList = "IsInDeveloperCandidateList"
+	//  是否在相应列表中
+	IsInBecomeList     = "IsInBecomeList"
+	IsInAgressList     = "IsInAgressList"
+	IsInQuitList       = "IsInQuitList"
+	IsInForfeitureList = "IsInForfeitureList"
+	//获取列表
 	GetBecomeMediatorApplyList      = "GetBecomeMediatorApplyList"
-	GetListForDeveloperCandidate    = "GetListForDeveloperCandidate"
-	GetListForJuryCandidate         = "GetListForJuryCandidate"
+	GetAgreeForBecomeMediatorList   = "GetAgreeForBecomeMediatorList"
+	GetQuitApplyList                = "GetQuitApplyList"
 	GetListForForfeitureApplication = "GetListForForfeitureApplication"
-	HandleForForfeitureApplication  = "HandleForForfeitureApplication"
-	ApplyForForfeitureDeposit       = "ApplyForForfeitureDeposit"
-	DeveloperApplyCashback          = "DeveloperApplyCashback"
-	JuryApplyCashback               = "JuryApplyCashback"
-	DeveloperPayToDepositContract   = "DeveloperPayToDepositContract"
-	JuryPayToDepositContract        = "JuryPayToDepositContract"
-	HandleForApplyQuitMediator      = "HandleForApplyQuitMediator"
-	HandleForApplyBecomeMediator    = "HandleForApplyBecomeMediator"
-	IsInMediatorQuitList            = "IsInMediatorQuitList"
-	IsInCashbackList                = "IsInCashbackList"
-	IsInJuryCandidateList           = "IsInJuryCandidateList"
-	IsInDeveloperCandidateList      = "IsInDeveloperCandidateList"
-	GetDeposit                      = "GetNodeBalance"
-	PledgeDeposit                   = "PledgeDeposit"
-	PledgeWithdraw                  = "PledgeWithdraw"
-	QueryPledgeStatusByAddr         = "QueryPledgeStatusByAddr"
-	QueryAllPledgeHistory           = "QueryAllPledgeHistory"
-	ExtractPtnList                  = "extractPtnList"
-	HandleExtractVote               = "handleExtractVote"
-	HandlePledgeReward              = "HandlePledgeReward"
-	AllPledgeVotes                  = "allPledgeVotes"
-	HandleEachDay                   = "handleEachDay"
-	QueryPledgeList                 = "QueryPledgeList"
-	HandleForApplyQuitJury          = "HandleForApplyQuitJury"
-	HandleForApplyQuitDev           = "HandleForApplyQuitDev"
-	MemberList                      = "MemberList"
-	MemberListLastDate              = "MemberListLastDate"
-	Apply                           = "applying"
-	Agree                           = "approved"
-	Quitting                        = "quitting"
-	Quited                          = "quited"
+	//申请
+	ApplyForForfeitureDeposit     = "ApplyForForfeitureDeposit"
+	DeveloperPayToDepositContract = "DeveloperPayToDepositContract"
+	JuryPayToDepositContract      = "JuryPayToDepositContract"
+	//基金会处理
+	HandleForForfeitureApplication = "HandleForForfeitureApplication"
+	HandleForApplyQuitMediator     = "HandleForApplyQuitMediator"
+	HandleForApplyBecomeMediator   = "HandleForApplyBecomeMediator"
+	HandleForApplyQuitJury         = "HandleForApplyQuitJury"
+	HandleForApplyQuitDev          = "HandleForApplyQuitDev"
+
+	GetDeposit = "GetNodeBalance"
+
+	//  质押相关
+	PledgeDeposit           = "PledgeDeposit"
+	PledgeWithdraw          = "PledgeWithdraw"
+	QueryPledgeStatusByAddr = "QueryPledgeStatusByAddr"
+	QueryAllPledgeHistory   = "QueryAllPledgeHistory"
+	HandlePledgeReward      = "HandlePledgeReward"
+	AllPledgeVotes          = "allPledgeVotes"
+	QueryPledgeList         = "QueryPledgeList"
+
+	//  mediator状态
+	Apply    = "applying"
+	Agree    = "approved"
+	Quitting = "quitting"
+	Quited   = "quited"
 
 	//  时间格式
 	//  Layout1 = "2006-01-02 15"
 	//  Layout2 = "2006-01-02 15:04"
 	//  Layout3 = "2006-01-02 15:04:05"
 	//  目前使用 time.Now().UTC().Format(Layout) 返回字符串
-	Layout1 = "2006-01-02 15"
 	Layout2 = "2006-01-02 15:04:05"
 )
 
 //申请退出
 type QuitNode struct {
-	Address string `json:"address"` //请求地址
-	Role    string `json:"role"`    //请求角色
-	Time    string `json:"time"`    //请求时间
+	//Address string `json:"address"` //请求地址
+	Role string `json:"role"` //请求角色
+	Time string `json:"time"` //请求时间
 }
 
 //申请没收保证金
@@ -110,20 +111,9 @@ type PayValue struct {
 	//PayExtra  string        `json:"pay_extra"`  //额外内容
 }
 
-//节点状态数据库保存值
-//type DepositBalance struct {
-//	TotalAmount      uint64        `json:"total_amount"`      //保证金总量
-//	LastModifyTime   int64         `json:"last_modify_time"`  //最后一次改变，主要来计算币龄收益
-//	EnterTime        string        `json:"enter_time"`        //这是加入列表时的时间
-//	PayValues        []*PayValue   `json:"pay_values"`        //交付的历史记录
-//	CashbackValues   []*Cashback   `json:"cashback_values"`   //退款的历史记录
-//	ForfeitureValues []*Forfeiture `json:"forfeiture_values"` //被没收的历史记录
-//}
-
 type DepositBalance struct {
-	Balance        uint64 `json:"balance"`          //  保证金余额
-	EnterTime      string `json:"enter_time"`       //  交保证金的时间
-	LastModifyTime string `json:"last_modify_time"` //  计算币龄时间
+	Balance   uint64 `json:"balance"`    //  保证金余额
+	EnterTime string `json:"enter_time"` //  交保证金的时间
 }
 
 type MediatorDeposit struct {
@@ -143,11 +133,6 @@ func NewMediatorDeposit() *MediatorDeposit {
 type NorNodBal struct {
 	AmountAsset  *modules.AmountAsset `json:"amount_asset"`
 	MediatorAddr string               `json:"mediator_address"`
-}
-
-type extractPtn struct {
-	Time   string `json:"time"`   //提取质押时间
-	Amount uint64 `json:"amount"` //提取质押数量
 }
 
 type Member struct {

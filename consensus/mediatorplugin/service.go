@@ -119,6 +119,7 @@ type MediatorPlugin struct {
 	precedingDKGs map[common.Address]*dkg.DistKeyGenerator
 
 	// dkg 完成 vss 协议相关
+	// todo 待加锁，防止写冲突
 	respBuf map[common.Address]map[common.Address]chan *dkg.Response
 
 	// 广播和处理 vss 协议 deal
@@ -251,7 +252,7 @@ func (mp *MediatorPlugin) unlockLocalMediators() {
 	for add, medAcc := range mp.mediators {
 		err := ks.Unlock(accounts.Account{Address: add}, medAcc.Password)
 		if err != nil {
-			log.Errorf("fail to unlock the mediator(%v), error: %v", add.Str(), err.Error())
+			log.Debugf("fail to unlock the mediator(%v), error: %v", add.Str(), err.Error())
 			delete(mp.mediators, add)
 		}
 	}
@@ -322,12 +323,12 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 
 	if ptn == nil || dag == nil || cfg == nil {
 		err := "pointer parameters of NewMediatorPlugin are nil!"
-		log.Error(err)
+		log.Errorf(err)
 		panic(err)
 	}
 
 	mss := cfg.Mediators
-	msm := make(map[common.Address]*MediatorAccount, 0)
+	msm := make(map[common.Address]*MediatorAccount, len(mss))
 
 	for _, medConf := range mss {
 		medAcc := medConf.configToAccount()

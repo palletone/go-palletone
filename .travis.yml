@@ -79,7 +79,7 @@ matrix:
         - cd bdd/node
         - chmod +x gptn
         - python init.py
-        #- sed -i 's/"mediatorInterval": 5,/"mediatorInterval": 2,/g' ptn-genesis.json
+        #- sed -i 's/"mediator_interval": 5,/"mediator_interval": 2,/g' ptn-genesis.json
         - nohup ./gptn &
         - sleep 15
         - netstat -ap | grep gptn
@@ -168,7 +168,7 @@ matrix:
         - ./launchMultipleNodes.sh
         - netstat -ap | grep gptn
         - cat /etc/hosts
-        - sed -i 's/"mediatorInterval": 3,/"mediatorInterval": 2,/g' node1/ptn-genesis.json
+        - grep "mediator_interval" node1/ptn-genesis.json
         - cd ${BASE_DIR}/bdd
         - mkdir -p ${BDD_LOG_PATH}
         - if [ $IS_RUN_MULTIPLE == 'true' ]; then
@@ -183,6 +183,12 @@ matrix:
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
             ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
+        - cd ${BASE_DIR}/bdd
+        - source ./targz_node.sh
+        - |
+          if [ $IS_UPLOAD == 'true' ]; then
+            # uplaod all log
+            ./upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
             # echo ftp address
             echo "The path of all bdd log in vsftpd is 'ftp://47.74.209.46"
             echo "If you want to open it in explorer, you should close VPN first."
@@ -245,11 +251,6 @@ before_install:
 addons:
   apt:
     update: true
-
-# deploy:
-#   skip_cleanup: true
-#    provider:
-#    all_branches: true
 
 notifications:
   email:

@@ -132,7 +132,6 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 	//  TODO 退出后，再交付的状态
 	if md.Status == Quited {
 		md.Status = Agree
-		md.AgreeTime = getTiem(stub)
 		md.ApplyQuitTime = ""
 	}
 	//  判断是否已经获得同意状态
@@ -165,7 +164,6 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		//  处理数据
 		md.EnterTime = getTiem(stub)
 		md.Balance = invokeTokens.Amount
-		md.LastModifyTime = getTiem(stub)
 		//  保存账户信息
 		err = SaveMediatorDeposit(stub, invokeAddr.String(), md)
 		if err != nil {
@@ -253,8 +251,6 @@ func handleMediator(stub shim.ChaincodeStubInterface, quitAddr common.Address) e
 	md.Status = Quited
 	md.Balance = 0
 	md.EnterTime = ""
-	md.LastModifyTime = ""
-	md.AgreeTime = ""
 	//  保存
 	err = SaveMediatorDeposit(stub, quitAddr.Str(), md)
 	if err != nil {

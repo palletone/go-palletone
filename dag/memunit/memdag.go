@@ -207,6 +207,10 @@ func (chain *MemDag) setStableUnit(hash common.Hash, height uint64, txpool txspo
 	log.Debugf("Set stable unit to %s,height:%d", hash.String(), height)
 	stable_height := chain.stableUnitHeight
 	stableCount := int(height - stable_height)
+	if stableCount < 0 {
+		log.Errorf("Current stable height is %d, impossible set stable height to %d", stable_height, height)
+		return
+	}
 	newStableUnits := make([]*modules.Unit, stableCount)
 	stbHash := hash
 	for i := 0; i < stableCount; i++ {
