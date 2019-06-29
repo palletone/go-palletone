@@ -806,6 +806,10 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 	if !fee.IsPositive() {
 		return "", fmt.Errorf("fee is invalid")
 	}
+        daolimit , _ := decimal.NewFromString("0.0001")
+	if !fee.GreaterThanOrEqual(daolimit) {
+		return "", fmt.Errorf("fee cannot less than 100000 Dao ")
+	}
 	daoAmount := ptnjson.Ptn2Dao(amount.Add(fee))
 	allutxos, _ := convertUtxoMap2Utxos(resultUtxo)
 	taken_utxo, change, err := core.Select_utxo_Greedy(allutxos, daoAmount)

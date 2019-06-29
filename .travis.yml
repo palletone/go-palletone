@@ -79,7 +79,8 @@ matrix:
         - cd bdd/node
         - chmod +x gptn
         - python init.py
-        #- sed -i 's/"mediator_interval": 5,/"mediator_interval": 2,/g' ptn-genesis.json
+        - sed -i 's/"mediator_interval": 3,/"mediator_interval": 2,/g' ptn-genesis.json
+        - sed -i 's/"maintenance_skip_slots": 1,/"maintenance_skip_slots": 0,/g' ptn-genesis.json
         - nohup ./gptn &
         - sleep 15
         - netstat -ap | grep gptn
@@ -167,8 +168,8 @@ matrix:
         - sudo -H sed -i '$a0.0.0.0 localhost' /etc/hosts
         - ./launchMultipleNodes.sh
         - netstat -ap | grep gptn
-        - cat /etc/hosts
         - grep "mediator_interval" node1/ptn-genesis.json
+        - grep "maintenance_skip_slots" /node1/ptn-genesis.json
         - cd ${BASE_DIR}/bdd
         - mkdir -p ${BDD_LOG_PATH}
         - if [ $IS_RUN_MULTIPLE == 'true' ]; then
@@ -178,7 +179,7 @@ matrix:
         - killall gptn
         - sleep 2
         - cd ${BASE_DIR}
-        - zip -j ./bdd/logs/zMulti-node.zip ./bdd/logs/*
+        - zip -j ./bdd/logs/zMulti-node.zip ./logs/zMulti-node/*
         - |
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log

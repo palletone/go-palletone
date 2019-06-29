@@ -104,7 +104,7 @@ func (statedb *StateDb) GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)
 
 func (statedb *StateDb) GetMinFee() (*modules.AmountAsset, error) {
 	assetId := dagconfig.DagConfig.GetGasToken()
-	return &modules.AmountAsset{Amount: 0, Asset: assetId.ToAsset()}, nil
+	return &modules.AmountAsset{Amount: 1, Asset: assetId.ToAsset()}, nil
 }
 
 func (statedb *StateDb) GetPartitionChains() ([]*modules.PartitionChain, error) {
