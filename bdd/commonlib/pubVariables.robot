@@ -8,7 +8,7 @@ ${ip}             127.0.0.1
 ${host}           http://${ip}:8645/
 ${juryHosts}      Create List
 ${gastokenHost}    http://localhost:8545
-${nodenum}        5
+${nodenum}        3
 # methods
 ${invokeMethod}    contract_ccinvoketx
 ${queryMethod}    contract_ccquery
