@@ -74,7 +74,7 @@ func isContainDepositContractAddr(stub shim.ChaincodeStubInterface) (invokeToken
 }
 
 //  处理部分保证金逻辑
-func applyQuitList(role string, stub shim.ChaincodeStubInterface, args []string) error {
+func applyQuitList(role string, stub shim.ChaincodeStubInterface) error {
 	//  获取请求调用地址
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
@@ -338,8 +338,8 @@ func getToday(stub shim.ChaincodeStubInterface) string {
 func applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	log.Info("applyForForfeitureDeposit")
 	if len(args) != 3 {
-		log.Error("args need four parameters")
-		return shim.Error("args need four parameters")
+		log.Error("args need three parameters")
+		return shim.Error("args need three parameters")
 	}
 	//  需要判断是否基金会发起的
 	//if !isFoundationInvoke(stub) {
@@ -381,7 +381,6 @@ func applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, args []string) 
 	//  存储信息
 	forfeiture := &Forfeiture{}
 	forfeiture.ApplyAddress = invokeAddr.String()
-	forfeiture.ForfeitureAddress = forfeitureAddr
 	forfeiture.ForfeitureRole = role
 	forfeiture.Extra = extra
 	forfeiture.ApplyTime = getTiem(stub)
