@@ -25,6 +25,7 @@ Resource          mediatorApplyCashbackParams.txt
 Resource          mediatorPayToDepositContractParams.txt
 Resource          postRequest.txt
 Resource          handleEachDay.txt
+Resource          getBalance.txt
 
 *** Variables ***
 ${depositContractQuery}    contract_depositContractQuery
