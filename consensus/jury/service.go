@@ -275,6 +275,8 @@ func (p *Processor) localHaveActiveJury() bool {
 //}
 
 func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf) error {
+	log.Debugf("[%s]runContractReq enter", shortId(reqId.String()))
+	defer log.Debugf("[%s]runContractReq exit", shortId(reqId.String()))
 	p.locker.Lock()
 	ctx := p.mtx[reqId]
 	if ctx == nil {
