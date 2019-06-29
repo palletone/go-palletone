@@ -170,7 +170,7 @@ matrix:
         - ./launchMultipleNodes.sh
         - netstat -ap | grep gptn
         - grep "mediator_interval" node1/ptn-genesis.json
-        - grep "maintenance_skip_slots" /node1/ptn-genesis.json
+        - grep "maintenance_skip_slots" node1/ptn-genesis.json
         - cd ${BASE_DIR}/bdd
         - mkdir -p ${BDD_LOG_PATH}
         - if [ $IS_RUN_MULTIPLE == 'true' ]; then
