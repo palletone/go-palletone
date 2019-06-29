@@ -128,6 +128,7 @@ func (p *Processor) contractExecEvent(tx *modules.Transaction, ele []modules.Ele
 		}
 	} else {
 		if p.mtx[reqId].reqRcvEd {
+			p.locker.Unlock()
 			return false, nil
 		}
 	}
