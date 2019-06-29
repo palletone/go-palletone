@@ -353,6 +353,12 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		log.Info("ProtocolManager", "NewBlockMsg json ummarshal err:", err, "data", string(data))
 		return err
 	}
+
+	if unit.IsEmpty() {
+		log.Errorf("unit is nil/empty")
+		return nil
+	}
+
 	unitHash := unit.Hash()
 	if pm.IsExistInCache(unitHash.Bytes()) {
 		//log.Debugf("Received unit(%v) again, ignore it", unitHash.TerminalString())
@@ -363,6 +369,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	log.Infof("Received unit(%v) #%v parent(%v) @%v signed by %v", unitHash.TerminalString(),
 		unit.NumberU64(), unit.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
 		unit.Author().Str())
+
 	latency := time.Now().Sub(timestamp)
 	if latency < -3*time.Second {
 		errStr := fmt.Sprintf("Rejecting unit #%v with timestamp(%v) in the future signed by %v",
@@ -370,6 +377,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		log.Debugf(errStr)
 		return fmt.Errorf(errStr)
 	}
+
 	log.DebugDynamic(func() string {
 		txids := []common.Hash{}
 		for _, tx := range unit.Txs {
@@ -467,42 +475,6 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 	return nil
 }
 
-// todo 待合并 NewBlockMsg
-func (pm *ProtocolManager) NewProducedUnitMsg(msg p2p.Msg, p *peer) error {
-	// Retrieve and decode the propagated new produced unit
-	data := []byte{}
-	if err := msg.Decode(&data); err != nil {
-		errStr := fmt.Sprintf("NewProducedUnitMsg: %v, err: %v", msg, err)
-		log.Debugf(errStr)
-
-		//return fmt.Errorf(errStr)
-		return nil
-	}
-
-	var unit modules.Unit
-	if err := json.Unmarshal(data, &unit); err != nil {
-		errStr := fmt.Sprintf("NewProducedUnitMsg json ummarshal err: %v", err)
-		log.Debugf(errStr)
-
-		//return fmt.Errorf(errStr)
-		return nil
-	}
-
-	timestamp := time.Unix(unit.Timestamp(), 0)
-	latency := time.Now().Sub(timestamp)
-	if latency < -3*time.Second {
-		errStr := fmt.Sprintf("Rejecting unit #%v with timestamp(%v) in the future signed by %v",
-			unit.NumberU64(), timestamp.Format("2006-01-02 15:04:05"), unit.Author().Str())
-		log.Debugf(errStr)
-
-		return fmt.Errorf(errStr)
-		//return nil
-	}
-
-	pm.producer.AddToTBLSSignBufs(&unit)
-	return nil
-}
-
 func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 	var sigShare mp.SigShareEvent
 	if err := msg.Decode(&sigShare); err != nil {
@@ -568,7 +540,7 @@ func (pm *ProtocolManager) GroupSigMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	pm.dag.SetUnitGroupSign(gSign.UnitHash, gSign.GroupSig, pm.txpool)
+	go pm.dag.SetUnitGroupSign(gSign.UnitHash, gSign.GroupSig, pm.txpool)
 	return nil
 }
 

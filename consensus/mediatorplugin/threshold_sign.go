@@ -23,15 +23,15 @@ import (
 	"sync"
 	"time"
 
-	"go.dedis.ch/kyber/v3/share"
-	"go.dedis.ch/kyber/v3/share/dkg/pedersen"
-	"go.dedis.ch/kyber/v3/share/vss/pedersen"
-	"go.dedis.ch/kyber/v3/sign/tbls"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
+	"go.dedis.ch/kyber/v3/share"
+	"go.dedis.ch/kyber/v3/share/dkg/pedersen"
+	"go.dedis.ch/kyber/v3/share/vss/pedersen"
+	"go.dedis.ch/kyber/v3/sign/tbls"
 )
 
 func (mp *MediatorPlugin) startVSSProtocol() {
@@ -71,7 +71,7 @@ func (mp *MediatorPlugin) BroadcastVSSDeals() {
 
 		for index, deal := range deals {
 			event := VSSDealEvent{
-				DstIndex: index,
+				DstIndex: uint(index),
 				Deal:     deal,
 			}
 
@@ -90,7 +90,7 @@ func (mp *MediatorPlugin) ProcessVSSDeal(dealEvent *VSSDealEvent) error {
 	}
 
 	dag := mp.dag
-	localMed := dag.GetActiveMediatorAddr(dealEvent.DstIndex)
+	localMed := dag.GetActiveMediatorAddr(int(dealEvent.DstIndex))
 
 	dkgr, err := mp.getLocalActiveDKG(localMed)
 	if err != nil {
@@ -278,9 +278,14 @@ func (mp *MediatorPlugin) AddToTBLSSignBufs(newUnit *modules.Unit) {
 		return
 	}
 
-	lams := mp.GetLocalActiveMediators()
+	var ms []common.Address
+	if newUnit.Timestamp() <= mp.dag.LastMaintenanceTime() {
+		ms = mp.GetLocalPrecedingMediators()
+	} else {
+		ms = mp.GetLocalActiveMediators()
+	}
 
-	for _, localMed := range lams {
+	for _, localMed := range ms {
 		log.Debugf("the mediator(%v) received a unit(%v) to be group-signed",
 			localMed.Str(), newUnit.UnitHash.TerminalString())
 		go mp.addToTBLSSignBuf(localMed, newUnit)
@@ -366,10 +371,11 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 		}
 
 		// 2. 验证本 unit
-		if dag.ValidateUnitExceptGroupSig(newUnit) != nil {
-			log.Debugf("the unit validate except group sig fail: %v", newUnit.UnitHash.TerminalString())
-			return
-		}
+		// 已经被验证了，不需要再验证了
+		//if dag.ValidateUnitExceptGroupSig(newUnit) != nil {
+		//	log.Debugf("the unit validate except group sig fail: %v", newUnit.UnitHash.TerminalString())
+		//	return
+		//}
 
 		// 3. 判断父 unit 是否不可逆
 		parentHash := newUnit.ParentHash()[0]

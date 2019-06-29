@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	common2 "github.com/palletone/go-palletone/dag/common"
@@ -55,6 +56,18 @@ type MemDag struct {
 	tempdb            *Tempdb
 	saveHeaderOnly    bool
 	lock              sync.RWMutex
+
+	// append by albert·gou 用于通知群签名
+	toGroupSignFeed  event.Feed
+	toGroupSignScope event.SubscriptionScope
+}
+
+func (pmg *MemDag) Close() {
+	pmg.toGroupSignScope.Close()
+}
+
+func (pmg *MemDag) SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription {
+	return pmg.toGroupSignScope.Track(pmg.toGroupSignFeed.Subscribe(ch))
 }
 
 //
@@ -152,6 +165,7 @@ func (chain *MemDag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Hea
 	//}
 	return chain.tempdbunitRep.GetHeaderByNumber(number)
 }
+
 func (chain *MemDag) getHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error) {
 	chain_units := chain.getChainUnits()
 	for _, unit := range chain_units {
@@ -161,7 +175,9 @@ func (chain *MemDag) getHeaderByNumber(number *modules.ChainIndex) (*modules.Hea
 	}
 	return nil, fmt.Errorf("the header[%s] not exist.", number.String())
 }
-func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupPubKey []byte, groupSign []byte, txpool txspool.ITxPool) error {
+
+func (chain *MemDag) SetUnitGroupSign(uHash common.Hash /*, groupPubKey []byte*/, groupSign []byte,
+	txpool txspool.ITxPool) error {
 	//1. Set this unit as stable
 	unit, err := chain.getChainUnit(uHash)
 	if err != nil {
@@ -172,9 +188,16 @@ func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupPubKey []byte, gro
 	chain.setStableUnit(uHash, unit.NumberU64(), txpool)
 	//2. Update unit.groupSign
 	header := unit.Header()
-	header.GroupPubKey = groupPubKey
+	//header.GroupPubKey = groupPubKey
 	header.GroupSign = groupSign
 	log.Debugf("Try to update unit[%s] header group sign", uHash.String())
+
+	// 下一个unit的群签名
+	if err == nil {
+		log.Debugf("sent toGroupSign event")
+		go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
+	}
+
 	return chain.ldbunitRep.SaveHeader(header)
 }
 
@@ -184,6 +207,10 @@ func (chain *MemDag) setStableUnit(hash common.Hash, height uint64, txpool txspo
 	log.Debugf("Set stable unit to %s,height:%d", hash.String(), height)
 	stable_height := chain.stableUnitHeight
 	stableCount := int(height - stable_height)
+	if stableCount < 0 {
+		log.Errorf("Current stable height is %d, impossible set stable height to %d", stable_height, height)
+		return
+	}
 	newStableUnits := make([]*modules.Unit, stableCount)
 	stbHash := hash
 	for i := 0; i < stableCount; i++ {
@@ -238,6 +265,7 @@ func (chain *MemDag) checkStableCondition(txpool txspool.ITxPool) bool {
 	ustbHash := unit.Hash()
 	childrenCofirmAddrs[unit.Author()] = true
 	units := chain.getChainUnits()
+	// todo Albert·gou 待重做 优化逻辑
 	for i := 0; i < unstableCount; i++ {
 		u := units[ustbHash]
 		hs := unstableCofirmAddrs[ustbHash]
@@ -360,9 +388,18 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 	chain.lock.Lock()
 	defer chain.lock.Unlock()
 	err := chain.addUnit(unit, txpool)
-	log.Infof("MemDag[%s] AddUnit cost time: %v ,index: %d", chain.token.String(), time.Since(start), unit.NumberU64())
+	log.Debugf("MemDag[%s] AddUnit cost time: %v ,index: %d", chain.token.String(),
+		time.Since(start), unit.NumberU64())
+
+	if err == nil {
+		// 下一个unit的群签名
+		log.Debugf("sent toGroupSign event")
+		go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
+	}
+
 	return err
 }
+
 func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 	parentHash := unit.ParentHash()[0]
 	uHash := unit.Hash()
@@ -385,9 +422,17 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 				go txpool.SetPendingTxs(unit.Hash(), unit.NumberU64(), unit.Txs)
 			}
 			//增加了单元后检查是否满足稳定单元的条件
+			// todo Albert·gou 待重做 优化逻辑
 			if !chain.checkStableCondition(txpool) {
 				//没有产生稳定单元，加入Tempdb
 				chain.saveUnitToDb(chain.tempdbunitRep, chain.tempUnitProduceRep, unit)
+				//这个单元不是稳定单元，需要加入Tempdb
+			} else {
+				// 下一个unit的群签名
+				log.Debugf("sent toGroupSign event")
+				go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
+
+				log.Debugf("unit[%s] checkStableCondition =true", unit.Hash().String())
 			}
 		} else { //Fork unit
 			chain.chainUnits.Store(uHash, unit)

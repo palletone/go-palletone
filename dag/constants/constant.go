@@ -48,6 +48,9 @@ var (
 	TEXTCOIN_ASSET_CLAIM_MESSAGE_FEE  int = 209
 	TEXTCOIN_ASSET_CLAIM_BASE_MSG_FEE int = 158
 	VOTED_MEDIATORS                       = "VotedMediators"
+
+	PledgeListLastDate = "PledgeListLastDate"
+	PledgeList         = "PledgeList-"
 )
 
 func init() {

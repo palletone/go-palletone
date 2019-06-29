@@ -22,33 +22,30 @@ import (
 type DepositInterface interface {
 	//  申请加入超级节点
 	applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Response
-	//  交付保证金
+	//  超级节点交付规定保证金
 	mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) pb.Response
-	//  申请退还部分保证金
-	mediatorApplyCashback(stub shim.ChaincodeStubInterface, args []string) pb.Response
-	//  申请退出超级节点候选列表
+	//  超级节点申请退出候选列表
 	mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) pb.Response
 
-	//  交付保证金
+	//  Jury节点交付规定保证金
 	juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) pb.Response
-	//  申请退还部分保证金
-	juryApplyCashback(stub shim.ChaincodeStubInterface, args []string) pb.Response
+	//  Jury节点申请退出候选列表
+	juryApplyQuit(stub shim.ChaincodeStubInterface, args []string) pb.Response
 
-	//  交付保证金
+	//  dev节点交付规定保证金
 	developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) pb.Response
-	//  申请退还部分保证金
-	developerApplyCashback(stub shim.ChaincodeStubInterface, args []string) pb.Response
+	//  dev节点申请退出候选列表
+	devApplyQuit(stub shim.ChaincodeStubInterface, args []string) pb.Response
 
 	//  处理超级节点的申请
 	handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Response
-	//  处理退还部分保证金的申请
-	handleForMediatorApplyCashback(stub shim.ChaincodeStubInterface, args []string) pb.Response
-	//  处理退还部分保证金的申请
-	handleForJuryApplyCashback(stub shim.ChaincodeStubInterface, args []string) pb.Response
-	//  处理退还部分保证金的申请
-	handleForDeveloperApplyCashback(stub shim.ChaincodeStubInterface, args []string) pb.Response
-	//  处理退出超级节点列表的申请
+	//  处理超级节点退出
 	handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) pb.Response
+	//  处理Jury节点退出
+	handleForApplyQuitJury(stub shim.ChaincodeStubInterface, args []string) pb.Response
+	//  处理dev节点退出
+	handleForApplyQuitDev(stub shim.ChaincodeStubInterface, args []string) pb.Response
+
 	//  处理没收申请
 	handleForForfeitureApplication(stub shim.ChaincodeStubInterface, args []string) pb.Response
 
@@ -58,12 +55,12 @@ type DepositInterface interface {
 	//  普通节点质押PTN投票某个mediator
 	normalNodePledgeVote(stub shim.ChaincodeStubInterface, args []string) pb.Response
 	//  普通节点修改所质押的mediator
-	normalNodeChangeVote(stub shim.ChaincodeStubInterface, args []string) pb.Response
+	//normalNodeChangeVote(stub shim.ChaincodeStubInterface, args []string) pb.Response
 	//  普通节点提取质押PTN
 	normalNodeExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.Response
 
 	//
-	handleExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.Response
+	//handleExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.Response
 	//
 	handleEachDayAward(stub shim.ChaincodeStubInterface, args []string) pb.Response
 }

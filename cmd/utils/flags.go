@@ -594,7 +594,7 @@ func setBootstrapNodes(ctx *cli.Context, cfg *p2p.Config) {
 		}
 	case ctx.GlobalBool(TestnetFlag.Name):
 		urls = configure.TestnetBootnodes
-	case cfg.BootstrapNodes != nil:
+	case len(cfg.BootstrapNodes) > 0:
 		return // already set, don't apply defaults.
 	}
 
@@ -751,7 +751,7 @@ func MakePasswordList(ctx *cli.Context) []string {
 	lines := strings.Split(string(text), "\n")
 	// Sanitise DOS line endings.
 	for i := range lines {
-		lines[i] = strings.TrimRight(lines[i], "\r")
+		lines[i] = strings.TrimRight(lines[i], "\n")
 	}
 	return lines
 }

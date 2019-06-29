@@ -126,9 +126,15 @@ func (p *Processor) contractExecEvent(tx *modules.Transaction, ele []modules.Ele
 			valid:  true,
 			adaInf: make(map[uint32]*AdapterInf),
 		}
+	} else {
+		if p.mtx[reqId].reqRcvEd {
+			p.locker.Unlock()
+			return false, nil
+		}
 	}
 	p.mtx[reqId].reqTx = tx.GetRequestTx()
 	p.mtx[reqId].eleInf = ele
+	p.mtx[reqId].reqRcvEd = true
 	//关闭mel
 	if e, ok := p.mel[reqId]; ok {
 		e.invalid = true
@@ -143,10 +149,17 @@ func (p *Processor) contractExecEvent(tx *modules.Transaction, ele []modules.Ele
 }
 
 func (p *Processor) contractSigEvent(tx *modules.Transaction, ele []modules.ElectionInf) (broadcast bool, err error) {
+	p.locker.Lock()
+	defer p.locker.Unlock()
 	reqId := tx.RequestHash()
+	if _, ok := p.mtx[reqId];ok {
+		if checkTxReceived(p.mtx[reqId].rcvTx, tx) {
+			return false, nil
+		}
+	}
+	log.Debugf("[%s]contractSigEvent, receive sig tx[%s]", shortId(reqId.String()), tx.Hash().String())
 	if _, ok := p.mtx[reqId]; !ok {
-		//log.Debug("contractSigEvent", "local not find reqId,create it", reqId)
-		p.locker.Lock()
+		log.Debugf("[%s]contractSigEvent, local not find reqId,create it", shortId(reqId.String()))
 		p.mtx[reqId] = &contractTx{
 			reqTx:  tx.GetRequestTx(),
 			eleInf: ele,
@@ -155,19 +168,13 @@ func (p *Processor) contractSigEvent(tx *modules.Transaction, ele []modules.Elec
 			adaInf: make(map[uint32]*AdapterInf),
 		}
 		p.mtx[reqId].rcvTx = append(p.mtx[reqId].rcvTx, tx)
-		p.locker.Unlock()
-
-		go p.runContractReq(reqId, ele)
+		//go p.runContractReq(reqId, ele) //del
 		return true, nil
 	}
 	ctx := p.mtx[reqId]
-
-	if checkTxReceived(ctx.rcvTx, tx) {
-		return false, nil
-	}
 	ctx.rcvTx = append(ctx.rcvTx, tx)
 
-	//如果是jury，将接收到tx与本地执行后的tx进行对比，相同则添加签名到sigTx，如果满足三个签名且签名值最小则广播tx，否则函数返回
+	//如果是jury，将接收到tx与本地执行后的tx进行对比，相同则添加签名到sigTx，如果满足签名数量且签名值最小则广播tx，否则函数返回
 	if ok, err := checkAndAddTxSigMsgData(ctx.sigTx, tx); err == nil && ok {
 		if getTxSigNum(ctx.sigTx) >= p.contractSigNum {
 			if localIsMinSignature(ctx.sigTx) { //todo

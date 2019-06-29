@@ -70,7 +70,14 @@ func (h Hash) TerminalString() string {
 func (h Hash) String() string {
 	return h.Hex()
 }
-
+func (h Hash) IsZero() bool {
+	for _, v := range h {
+		if v != byte(0) {
+			return false
+		}
+	}
+	return true
+}
 // Format implements fmt.Formatter, forcing the byte slice to be formatted as is,
 // without going through the stringer interface used for logging.
 func (h Hash) Format(s fmt.State, c rune) {

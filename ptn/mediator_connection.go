@@ -23,6 +23,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -33,6 +34,7 @@ type producer interface {
 	// SubscribeNewProducedUnitEvent should return an event subscription of
 	// NewProducedUnitEvent and send events to the given channel.
 	SubscribeNewProducedUnitEvent(ch chan<- mp.NewProducedUnitEvent) event.Subscription
+
 	// AddToTBLSSignBufs is to TBLS sign the unit
 	AddToTBLSSignBufs(newUnit *modules.Unit)
 
@@ -55,6 +57,7 @@ type producer interface {
 }
 
 func (pm *ProtocolManager) activeMediatorsUpdatedEventRecvLoop() {
+	log.Debugf("activeMediatorsUpdatedEventRecvLoop")
 	for {
 		select {
 		case event := <-pm.activeMediatorsUpdatedCh:
@@ -68,15 +71,19 @@ func (pm *ProtocolManager) activeMediatorsUpdatedEventRecvLoop() {
 }
 
 func (pm *ProtocolManager) switchMediatorConnect(isChanged bool) {
+	log.Debugf("switchMediatorConnect")
+
 	// 1. 若干数据还没同步完成，则忽略本次切换，继续同步
 	if !pm.dag.IsSynced() {
+		log.Debugf("this node is not synced")
 		return
 	}
 
-	if !isChanged {
-		go pm.producer.UpdateMediatorsDKG(false)
-		return
-	}
+	// todo albert 待优化
+	//if !isChanged {
+	//	go pm.producer.UpdateMediatorsDKG(false)
+	//	return
+	//}
 
 	// 2. 和新的活跃mediator节点相连
 	go pm.connectWitchActiveMediators()

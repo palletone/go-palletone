@@ -24,9 +24,8 @@ Resource          juryPayToDepositContractParams.txt
 Resource          mediatorApplyCashbackParams.txt
 Resource          mediatorPayToDepositContractParams.txt
 Resource          postRequest.txt
-Resource          normalNodePledgeVote.txt
-Resource          NormalNode.txt
-Resource          normalNodeChangeVote.txt
+Resource          handleEachDay.txt
+Resource          getBalance.txt
 
 *** Variables ***
 ${depositContractQuery}    contract_depositContractQuery
@@ -35,4 +34,4 @@ ${Url}            http://127.0.0.1:8545
 ${depositContractAddress}    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM
 ${amount}         0
 ${fee}            10
-${medDepositAmount}    200000000000
+${medDepositAmount}    5000000000

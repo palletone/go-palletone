@@ -13,6 +13,7 @@ ${voteMediator}    mediator_vote
 ${mediatorVoteResults}    mediator_listVoteResults
 ${personalListAccountsMethod}    personal_listAccounts
 ${IsActiveMediator}    mediator_isActive
+${pledgeDeposit}    contract_ccinvoketx
 # common variables
 ${userAccount}    ${null}
 ${userAccount2}    ${null}
@@ -20,6 +21,7 @@ ${userAccount3}    ${null}
 ${userAccount4}    ${null}
 ${userAccount5}    ${null}
 ${tokenHolder}    ${null}
+${strnull}        ${null}
 ${mediatorHolder1}    ${null}
 ${mediatorHolder2}    ${null}
 ${mediatorHolder3}    ${null}
@@ -35,6 +37,8 @@ ${mediator4Result}    ${null}
 ${mediator5Result}    ${null}
 ${activeAccount1}    ${null}
 ${activeAccount2}    ${null}
+${contractAddr}    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM
+${pledgeMethod}    PledgeDeposit
 ${amount}         10000
 ${amount2}        20000
 ${amount3}        30000

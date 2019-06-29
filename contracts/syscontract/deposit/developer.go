@@ -20,6 +20,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -31,18 +32,6 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 		log.Error("isContainDepositContractAddr err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	//  获取jury交付保证金的下线
-	//depositAmountsForDevStr, err := stub.GetSystemConfig(DepositAmountForDeveloper)
-	//if err != nil {
-	//	log.Error("get deposit amount for dev err: ", "error", err)
-	//	return shim.Error(err.Error())
-	//}
-	////  转换
-	//depositAmountsForDev, err := strconv.ParseUint(depositAmountsForDevStr, 10, 64)
-	//if err != nil {
-	//	log.Error("strconv.ParseUint err: ", "error", err)
-	//	return shim.Error(err.Error())
-	//}
 	cp, err := stub.GetSystemConfig()
 	if err != nil {
 		//log.Error("strconv.ParseUint err:", "error", err)
@@ -55,6 +44,11 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 		log.Error("get invoke address err: ", "error", err)
 		return shim.Error(err.Error())
 	}
+	//  TODO 添加进入质押记录
+	//err = pledgeDepositRep(stub, invokeAddr, invokeTokens.Amount)
+	//if err != nil {
+	//	return shim.Error(err.Error())
+	//}
 	//获取账户
 	balance, err := GetNodeBalance(stub, invokeAddr.String())
 	if err != nil {
@@ -65,132 +59,75 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 	if balance == nil {
 		balance = &DepositBalance{}
 		//  可以加入列表
-		if invokeTokens.Amount >= depositAmountsForDev {
-			//  加入候选列表
-			err = addCandaditeList(stub, invokeAddr, modules.DeveloperList)
-			if err != nil {
-				log.Error("addCandaditeList err: ", "error", err)
-				return shim.Error(err.Error())
-			}
-			balance.EnterTime = TimeStr()
+		if invokeTokens.Amount != depositAmountsForDev {
+			return shim.Error("Not enough")
 		}
+		//  加入候选列表
+		err = addCandaditeList(stub, invokeAddr, modules.DeveloperList)
+		if err != nil {
+			log.Error("addCandaditeList err: ", "error", err)
+			return shim.Error(err.Error())
+		}
+		balance.EnterTime = getTiem(stub)
 		//  没有
-		balance.Balance += invokeTokens.Amount
+		balance.Balance = invokeTokens.Amount
+		err = SaveNodeBalance(stub, invokeAddr.String(), balance)
+		if err != nil {
+			log.Error("save node balance err: ", "error", err)
+			return shim.Error(err.Error())
+		}
+		return shim.Success(nil)
 	} else {
-		//  TODO 再次交付保证金时，先计算当前余额的币龄奖励
-		//  如果在候选列表当中，即可享受利息
-		if balance.EnterTime != "" {
-			awards := caculateAwards(stub, balance.Balance, balance.LastModifyTime)
-			balance.Balance += awards
-		}
-		//  处理交付保证金数据
-		balance.Balance += invokeTokens.Amount
+		return shim.Error("Only once")
 	}
-	//  判断再次交付后是否可以加入列表
-	if balance.EnterTime == "" {
-		//  判断此时交了保证金后是否超过了jury
-		if balance.Balance >= depositAmountsForDev {
-			//  加入候选列表
-			err = addCandaditeList(stub, invokeAddr, modules.DeveloperList)
-			if err != nil {
-				log.Error("addCandaditeList err: ", "error", err)
-				return shim.Error(err.Error())
-			}
-			balance.EnterTime = TimeStr()
-		}
-	}
-	balance.LastModifyTime = TimeStr()
-	err = SaveNodeBalance(stub, invokeAddr.String(), balance)
-	if err != nil {
-		log.Error("save node balance err: ", "error", err)
-		return shim.Error(err.Error())
-	}
-	return shim.Success([]byte(nil))
 }
 
-func developerApplyCashback(stub shim.ChaincodeStubInterface, args []string) peer.Response {
-	log.Info("developerApplyCashback")
+//  申请
+func devApplyQuit(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+	log.Info("devApplyQuit")
 	//  处理逻辑
-	err := applyCashbackList(Developer, stub, args)
+	err := applyQuitList(Developer, stub, args)
 	if err != nil {
-		log.Error("applyCashbackList err: ", "error", err)
+		log.Error("devApplyQuit err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	return shim.Success([]byte(nil))
+	return shim.Success(nil)
 }
 
-//Developer已在列表中
-func handleDeveloperFromList(stub shim.ChaincodeStubInterface, cashbackAddr common.Address, cashbackValue *Cashback, balance *DepositBalance) error {
-	//epositAmountsForDevStr, err := stub.GetSystemConfig(DepositAmountForDeveloper)
-	//if err != nil {
-	//	log.Error("Stub.GetSystemConfig with DepositAmountForJury err:", "error", err)
-	//	return err
-	//}
-	////  转换
-	//depositAmountsForDev, err := strconv.ParseUint(epositAmountsForDevStr, 10, 64)
-	//if err != nil {
-	//	log.Error("Strconv.ParseUint err:", "error", err)
-	//	return err
-	//}
-	cp, err := stub.GetSystemConfig()
+//  处理
+func handleDev(stub shim.ChaincodeStubInterface, quitAddr common.Address) error {
+	//  移除退出列表
+	listForQuit, err := GetListForQuit(stub)
 	if err != nil {
-		//log.Error("strconv.ParseUint err:", "error", err)
 		return err
 	}
-	depositAmountsForDev := cp.DepositAmountForDeveloper
-	//  这里计算这一次操作的币龄利息
-	awards := caculateAwards(stub, balance.Balance, balance.LastModifyTime)
-	//  剩下的余额
-	result := balance.Balance - cashbackValue.CashbackTokens.Amount
-	// 需要删除节点和移除列表
-	if result == 0 {
-		//
-		cashbackValue.CashbackTokens.Amount += awards
-		//  调用从合约把token转到请求地址
-		err := stub.PayOutToken(cashbackAddr.String(), cashbackValue.CashbackTokens, 0)
-		if err != nil {
-			log.Error("stub.PayOutToken err:", "error", err)
-			return err
-		}
-		//  移除出列表
-		err = moveCandidate(modules.DeveloperList, cashbackAddr.String(), stub)
-		if err != nil {
-			log.Error("moveCandidate err:", "error", err)
-			return err
-		}
-		//  删除节点
-		err = stub.DelState(string(constants.DEPOSIT_BALANCE_PREFIX) + cashbackAddr.String())
-		if err != nil {
-			log.Error("stub.DelState err:", "error", err)
-			return err
-		}
-		//  特殊处理
-		return nil
-	} else if result < depositAmountsForDev {
-		//  移除列表并更新
-		err = moveCandidate(modules.DeveloperList, cashbackAddr.String(), stub)
-		if err != nil {
-			log.Error("moveCandidate err:", "error", err)
-			return err
-		}
-		balance.EnterTime = ""
-		balance.LastModifyTime = TimeStr()
-	} else {
-		//  只更新账户
-		balance.LastModifyTime = TimeStr()
-
+	delete(listForQuit, quitAddr.String())
+	err = SaveListForQuit(stub, listForQuit)
+	if err != nil {
+		return err
+	}
+	//  退还保证金
+	cp, err := stub.GetSystemConfig()
+	if err != nil {
+		return err
 	}
 	//  调用从合约把token转到请求地址
-	err = stub.PayOutToken(cashbackAddr.String(), cashbackValue.CashbackTokens, 0)
+	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
+	err = stub.PayOutToken(quitAddr.String(), modules.NewAmountAsset(cp.DepositAmountForDeveloper, gasToken), 0)
 	if err != nil {
 		log.Error("stub.PayOutToken err:", "error", err)
 		return err
 	}
-	balance.Balance -= cashbackValue.CashbackTokens.Amount
-	balance.Balance += awards
-	err = SaveNodeBalance(stub, cashbackAddr.String(), balance)
+	//  移除候选列表
+	err = moveCandidate(modules.DeveloperList, quitAddr.String(), stub)
 	if err != nil {
-		log.Error("SaveMedInfo err:", "error", err)
+		log.Error("moveCandidate err:", "error", err)
+		return err
+	}
+	//  删除节点
+	err = stub.DelState(string(constants.DEPOSIT_BALANCE_PREFIX) + quitAddr.String())
+	if err != nil {
+		log.Error("stub.DelState err:", "error", err)
 		return err
 	}
 	return nil

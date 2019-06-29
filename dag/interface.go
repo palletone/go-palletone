@@ -127,12 +127,14 @@ type IDag interface {
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
 	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
 	SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error
+	SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription
 
 	IsSynced() bool
 	SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription
 	GetPrecedingMediatorNodes() map[string]*discover.Node
 	UnitIrreversibleTime() time.Duration
-	GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+	GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string,
+		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 
 	QueryDbByKey(key []byte) ([]byte, error)
 	QueryDbByPrefix(prefix []byte) ([]*modules.DbRow, error)
@@ -159,7 +161,7 @@ type IDag interface {
 	HeadUnitTime() int64
 	HeadUnitNum() uint64
 	HeadUnitHash() common.Hash
-
+	GetIrreversibleUnitNum(id modules.AssetId) uint64
 	ValidateUnitExceptGroupSig(unit *modules.Unit) error
 	ValidateUnitExceptPayment(unit *modules.Unit) error
 
@@ -183,7 +185,7 @@ type IDag interface {
 	GetAccountVotedMediators(addr common.Address) map[string]bool
 	GetMediatorInfo(address common.Address) *modules.MediatorInfo
 
-	MediatorVotedResults() map[string]uint64
+	MediatorVotedResults() (map[string]uint64, error)
 	LookupMediatorInfo() []*modules.MediatorInfo
 	IsActiveMediator(add common.Address) bool
 

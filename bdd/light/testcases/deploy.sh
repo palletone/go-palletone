@@ -53,16 +53,16 @@ function ExecInit()
 function replacejson()
 {
     length=`cat $1 |jq '.initialMediatorCandidates| length'`
-    minMediatorCount="minMediatorCount"
+    minMediatorCount="min_mediator_count"
     line=`awk "/$minMediatorCount/{print NR}" $1`
     content=`cat $1| awk "NR==$line"`
     strsub=","
     result=$(echo $content | grep "${strsub}")
     if [[ "$result" != "" ]]
     then
-        newMinMediatorCount="\"minMediatorCount\":$length,"
+        newMinMediatorCount="\"min_mediator_count\":$length,"
     else
-        newMinMediatorCount="\"minMediatorCount\":$length"
+        newMinMediatorCount="\"min_mediator_count\":$length"
     fi
 
     replace=`sed -e "${line}c $newMinMediatorCount" $1`
@@ -71,7 +71,7 @@ function replacejson()
     jq -r . t.json >> $1
     rm t.json
 
-    add=`cat $1 | jq ".initialParameters.activeMediatorCount = $length"`
+    add=`cat $1 | jq ".initialParameters.active_mediator_count = $length"`
 
 : << !
     add=`cat $1 | 

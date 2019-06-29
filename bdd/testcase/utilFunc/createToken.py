@@ -7,7 +7,7 @@ import string
 from time import sleep
 
 class createToken(object):
-    #host = 'http://192.168.0.128:8545/'
+    #host = 'http://192.168.0.105:8545/'
     host = 'http://localhost:8545/'
     def __init__(self):
         self.domain = createToken.host
@@ -304,21 +304,16 @@ class createToken(object):
                     print key
                     return key
 
+    def getAssetFromDict(self,dict):
+        dict = json.loads(dict)
+        print "Asset is: " + dict['info']['payment'][1]['outputs'][0]['asset']
+        return dict['info']['payment'][1]['outputs'][0]['asset']
+
 if __name__ == '__main__':
     pass
-    #createToken().assertDict()
-    #dict = "{\"IsVoteEnd\":false,\"CreateAddr\":\"P1D4GXUcrcT7tAhMPvTxTQk7vQQSJkiad54\",\"TotalSupply\":60000,\"SupportResults\":[{\"TopicIndex\":1,\"TopicTitle\":\"vote your love blockchain\",\"VoteResults\":[{\"SelectOption\":\"ptn0\",\"Num\":1},{\"SelectOption\":\"btc0\",\"Num\":0},{\"SelectOption\":\"eth0\",\"Num\":0},{\"SelectOption\":\"eos0\",\"Num\":0}]},{\"TopicIndex\":2,\"TopicTitle\":\"vote your hate blockchain\",\"VoteResults\":[{\"SelectOption\":\"ptn1\",\"Num\":1},{\"SelectOption\":\"btc1\",\"Num\":1},{\"SelectOption\":\"eth1\",\"Num\":0},{\"SelectOption\":\"eos1\",\"Num\":0}]}],\"AssetID\":\"VOTE+0GWEXZZNEM91F1MJL3X\"}"
-    #data = createToken().ccqueryVoteResult(dict,CreateAddr='P1D4GXUcrcT7tAhMPvTxTQk7vQQSJkiad54',AssetID='VOTE+0GWEXZZNEM91F1MJL3X',TokenAmount=60000)
-    dict = '{"VOTE+0GB77ABWKPPOPZW3TVP": "8000", "PTN": "16000.002241", "VOTE+0GEXCOMQDBK5XK9W7XF": "60000", "VOTE+0GK301J75JEKVBJTAS4": "60000"}'
-    dict = json.loads(dict)
-    
-    ctObj = createToken()
-    
-    print ctObj.getTokenIdByNum('VOTE', dict,3)
-    
-    result = ctObj.getOneTokenInfo('btc')
-    result1 = json.loads(result)
-    print result1['Status']
-    
-    print ctObj.getTokenStatus(result)
-    
+    # createToken().assertDict()
+    # dict1 = "{\"IsVoteEnd\":false,\"CreateAddr\":\"P1D4GXUcrcT7tAhMPvTxTQk7vQQSJkiad54\",\"TotalSupply\":60000,\"SupportResults\":[{\"TopicIndex\":1,\"TopicTitle\":\"vote your love blockchain\",\"VoteResults\":[{\"SelectOption\":\"ptn0\",\"Num\":1},{\"SelectOption\":\"btc0\",\"Num\":0},{\"SelectOption\":\"eth0\",\"Num\":0},{\"SelectOption\":\"eos0\",\"Num\":0}]},{\"TopicIndex\":2,\"TopicTitle\":\"vote your hate blockchain\",\"VoteResults\":[{\"SelectOption\":\"ptn1\",\"Num\":1},{\"SelectOption\":\"btc1\",\"Num\":1},{\"SelectOption\":\"eth1\",\"Num\":0},{\"SelectOption\":\"eos1\",\"Num\":0}]}],\"AssetID\":\"VOTE+0GWEXZZNEM91F1MJL3X\"}"
+    # data = createToken().ccqueryVoteResult(dict,CreateAddr='P1D4GXUcrcT7tAhMPvTxTQk7vQQSJkiad54',AssetID='VOTE+0GWEXZZNEM91F1MJL3X',TokenAmount=60000)
+    # dict2 = '{"VOTE+0GB77ABWKPPOPZW3TVP": "8000", "PTN": "16000.002241", "VOTE+0GEXCOMQDBK5XK9W7XF": "60000", "VOTE+0GK301J75JEKVBJTAS4": "60000"}'
+    dict = "{\"item\":\"transaction_info\",\"info\":{\"tx_hash\":\"0x1d264c6c6be069df692f59a2ff1f57a5d07dcedb249fe952ade91fbd4a95eea0\",\"tx_size\":2812,\"payment\":[{\"inputs\":[{\"txid\":\"0x8806301b14ecff7d28c04407262f158a1cbd61579ef19c42e3785dbc0b8c8353\",\"message_index\":0,\"out_index\":1,\"unlock_script\":\"304402203605c14e6515c2f5b21801c328c96caacd65950768cc112b9571f314fe35943a02207815eb379de90dd4dbd28ce7e07cc48fe90e57432fc453d8fe6814b850276afe01 03561de31fb449c459fe3112f0cab84447b4731c36a20a589a7a19d9d5361ad64a\",\"from_address\":\"P16Q7ZwJUh9ujMWk6xoK8pHQJJeoBktT7jZ\"}],\"outputs\":[{\"amount\":25000,\"asset\":\"PTN\",\"to_address\":\"P1QL7vY6tMUXEuqrHqtBktiZdyiRRwic7Qc\",\"lock_script\":\"OP_DUP OP_HASH160 ffe8934af2ea8a410fa8c46753f2943f1e74d66b OP_EQUALVERIFY OP_CHECKSIG\"},{\"amount\":99915996199808454,\"asset\":\"PTN\",\"to_address\":\"P16Q7ZwJUh9ujMWk6xoK8pHQJJeoBktT7jZ\",\"lock_script\":\"OP_DUP OP_HASH160 3b37adb9f13d85631d7a528e8ac6c43a04c28d06 OP_EQUALVERIFY OP_CHECKSIG\"}],\"locktime\":0,\"number\":0},{\"inputs\":[],\"outputs\":[{\"amount\":2000,\"asset\":\"VOTE+0GCM5TH22D23AZB2WW6\",\"to_address\":\"P16Q7ZwJUh9ujMWk6xoK8pHQJJeoBktT7jZ\",\"lock_script\":\"OP_DUP OP_HASH160 3b37adb9f13d85631d7a528e8ac6c43a04c28d06 OP_EQUALVERIFY OP_CHECKSIG\"}],\"locktime\":0,\"number\":3}],\"fee\":1,\"account_state_update\":null,\"data\":[],\"contract_tpl\":null,\"contract_deploy\":null,\"contract_invoke\":{\"row_number\":2,\"contract_id\":\"PCGTta3M4t3yXu8uRgkKvaWd2d8DRLGbeyd\",\"args\":[\"{\\\"invoke_address\\\":\\\"P16Q7ZwJUh9ujMWk6xoK8pHQJJeoBktT7jZ\\\",\\\"invoke_tokens\\\":[{\\\"amount\\\":25000,\\\"asset\\\":\\\"PTN\\\",\\\"address\\\":\\\"P1QL7vY6tMUXEuqrHqtBktiZdyiRRwic7Qc\\\"}],\\\"invoke_fees\\\":{\\\"amount\\\":1,\\\"asset\\\":\\\"PTN\\\"}}\",\"\",\"createToken\",\"zxl test description\",\"1\",\"2000\",\"2022-02-16 20:00:00\",\"[{\\\"TopicTitle\\\":\\\"vote your love blockchain\\\",\\\"SelectOptions\\\":[\\\"ptn0\\\",\\\"btc0\\\",\\\"eth0\\\",\\\"eos0\\\"],\\\"SelectMax\\\":2},{\\\"TopicTitle\\\":\\\"vote your hate blockchain\\\",\\\"SelectOptions\\\":[\\\"ptn1\\\",\\\"btc1\\\",\\\"eth1\\\",\\\"eos1\\\"],\\\"SelectMax\\\":1}]\"],\"read_set\":\"[]\",\"write_set\":\"[{\\\"is_delete\\\":false,\\\"key\\\":\\\"symbol_VOTE+0GCM5TH22D23AZB2WW6\\\",\\\"value\\\":\\\"eyJOYW1lIjoienhsIHRlc3QgZGVzY3JpcHRpb24iLCJTeW1ib2wiOiJWT1RFIiwiQ3JlYXRlQWRkciI6IlAxNlE3WndKVWg5dWpNV2s2eG9LOHBIUUpKZW9Ca3RUN2paIiwiVm90ZVR5cGUiOjEsIlRvdGFsU3VwcGx5IjoyMDAwLCJWb3RlRW5kVGltZSI6IjIwMjItMDItMTZUMjA6MDA6MDBaIiwiVm90ZUNvbnRlbnQiOiJXM3NpVkc5d2FXTlVhWFJzWlNJNkluWnZkR1VnZVc5MWNpQnNiM1psSUdKc2IyTnJZMmhoYVc0aUxDSldiM1JsVW1WemRXeDBjeUk2VzNzaVUyVnNaV04wVDNCMGFXOXVJam9pY0hSdU1DSXNJazUxYlNJNk1IMHNleUpUWld4bFkzUlBjSFJwYjI0aU9pSmlkR013SWl3aVRuVnRJam93ZlN4N0lsTmxiR1ZqZEU5d2RHbHZiaUk2SW1WMGFEQWlMQ0pPZFcwaU9qQjlMSHNpVTJWc1pXTjBUM0IwYVc5dUlqb2laVzl6TUNJc0lrNTFiU0k2TUgxZExDSlRaV3hsWTNSTllYZ2lPako5TEhzaVZHOXdhV05VYVhSc1pTSTZJblp2ZEdVZ2VXOTFjaUJvWVhSbElHSnNiMk5yWTJoaGFXNGlMQ0pXYjNSbFVtVnpkV3gwY3lJNlczc2lVMlZzWldOMFQzQjBhVzl1SWpvaWNIUnVNU0lzSWs1MWJTSTZNSDBzZXlKVFpXeGxZM1JQY0hScGIyNGlPaUppZEdNeElpd2lUblZ0SWpvd2ZTeDdJbE5sYkdWamRFOXdkR2x2YmlJNkltVjBhREVpTENKT2RXMGlPakI5TEhzaVUyVnNaV04wVDNCMGFXOXVJam9pWlc5ek1TSXNJazUxYlNJNk1IMWRMQ0pUWld4bFkzUk5ZWGdpT2pGOVhRPT0iLCJBc3NldElEIjoiVk9URSswR0NNNVRIMjJEMjNBWkIyV1c2In0=\\\"}]\",\"payload\":\"{\\\"name\\\":\\\"zxl test description\\\",\\\"symbol\\\":\\\"VOTE\\\",\\\"vote_type\\\":1,\\\"vote_end_time\\\":\\\"2022-02-16T20:00:00Z\\\",\\\"vote_content\\\":\\\"W3siVG9waWNUaXRsZSI6InZvdGUgeW91ciBsb3ZlIGJsb2NrY2hhaW4iLCJWb3RlUmVzdWx0cyI6W3siU2VsZWN0T3B0aW9uIjoicHRuMCIsIk51bSI6MH0seyJTZWxlY3RPcHRpb24iOiJidGMwIiwiTnVtIjowfSx7IlNlbGVjdE9wdGlvbiI6ImV0aDAiLCJOdW0iOjB9LHsiU2VsZWN0T3B0aW9uIjoiZW9zMCIsIk51bSI6MH1dLCJTZWxlY3RNYXgiOjJ9LHsiVG9waWNUaXRsZSI6InZvdGUgeW91ciBoYXRlIGJsb2NrY2hhaW4iLCJWb3RlUmVzdWx0cyI6W3siU2VsZWN0T3B0aW9uIjoicHRuMSIsIk51bSI6MH0seyJTZWxlY3RPcHRpb24iOiJidGMxIiwiTnVtIjowfSx7IlNlbGVjdE9wdGlvbiI6ImV0aDEiLCJOdW0iOjB9LHsiU2VsZWN0T3B0aW9uIjoiZW9zMSIsIk51bSI6MH1dLCJTZWxlY3RNYXgiOjF9XQ==\\\",\\\"total_supply\\\":2000,\\\"supply_address\\\":\\\"\\\"}\",\"error_code\":0,\"error_message\":\"\"},\"contract_stop\":null,\"signature\":{\"row_number\":4,\"signature_set\":[\"pubkey:03d531b99f854031c4bb026f405a92f8c6be4abc2981d4e18c189c67d70ab2a513,signature:3045022100d164c748dadd22eb6e0f1aab941d54bb4b26360ad81c36964aa685a3dee8c48302204a4108e4d261a5bf88e4993a9f09f0e69c434adfd2be5e8a921178af23e181e5\"]},\"install_request\":null,\"deploy_request\":null,\"invoke_request\":{\"row_number\":1,\"contract_addr\":\"PCGTta3M4t3yXu8uRgkKvaWd2d8DRLGbeyd\",\"Args\":[\"createToken\",\"zxl test description\",\"1\",\"2000\",\"2022-02-16 20:00:00\",\"[{\\\"TopicTitle\\\":\\\"vote your love blockchain\\\",\\\"SelectOptions\\\":[\\\"ptn0\\\",\\\"btc0\\\",\\\"eth0\\\",\\\"eos0\\\"],\\\"SelectMax\\\":2},{\\\"TopicTitle\\\":\\\"vote your hate blockchain\\\",\\\"SelectOptions\\\":[\\\"ptn1\\\",\\\"btc1\\\",\\\"eth1\\\",\\\"eos1\\\"],\\\"SelectMax\\\":1}]\"],\"timeout\":0},\"stop_request\":null,\"unit_hash\":\"0x6b2d7d0023cea89f317772dd4573c881281af3e2e2f9dbe08915e70bf14fdc63\",\"unit_height\":2327,\"timestamp\":\"2019-06-25T18:07:39+08:00\",\"tx_index\":1},\"hex\":\"\"}"
+    createToken().getAssetFromDict(dict)

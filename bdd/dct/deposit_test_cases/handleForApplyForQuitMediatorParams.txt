@@ -10,8 +10,9 @@ Resource          publicParams.txt
     [Return]    ${two}
 
 handleForApplyForQuitMediator
-    [Arguments]    ${foundationAddr}    ${mediatorAddr}    ${isAgree}
-    ${基金会处理申请退出Mediator列表的所需参数}    基金会处理申请退出Mediator列表的所需参数    ${foundationAddr}    ${mediatorAddr}    ${isAgree}
-    ${result}    创建公用的POST请求    ${depositContractInvoke}    HandleForApplyForQuitMediator    ${基金会处理申请退出Mediator列表的所需参数}
+    [Arguments]    ${foundationAddr}    ${mediatorAddr}    ${isAgree}    ${handle}
+    ${one}    Create List    ${handle}    ${mediatorAddr}    ${isAgree}
+    ${two}    Create List    ${foundationAddr}    ${foundationAddr}    ${amount}    ${fee}    ${one}
+    ${result}    创建公用的POST请求    ${depositContractInvoke}    ${handle}    ${two}
     sleep    6
     [Return]    ${result}

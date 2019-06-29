@@ -49,14 +49,14 @@ type LesApiBackend struct {
 	//gpo *gasprice.Oracle
 }
 
-//func (b *LesApiBackend) ChainConfig() *params.ChainConfig {
-//	return b.eth.chainConfig
-//}
+func (b *LesApiBackend) SignAndSendRequest(addr common.Address, tx *modules.Transaction) error {
+	return nil
+}
 
 func (b *LesApiBackend) CurrentBlock() *modules.Unit {
 	return &modules.Unit{}
 }
-func (b *LesApiBackend) QueryProofOfExistenceByReference(ref string) ([]*ptnjson.ProofOfExistenceJson, error){
+func (b *LesApiBackend) QueryProofOfExistenceByReference(ref string) ([]*ptnjson.ProofOfExistenceJson, error) {
 	return nil, nil
 }
 func (b *LesApiBackend) SetHead(number uint64) {

@@ -8,11 +8,11 @@ Library           /usr/lib/python2.7/decimal.py
 ${port1}    8545
 ${port2}    8565
 ${port3}    8575
-#${domain}    192.168.0.128
-${host}        http://localhost:${port1}/
-#${host}         http://${domain}:${port1}/
-#${mutiHost1}    http://${domain}:${port2}/
-#${mutiHost2}    http://${domain}:${port3}/
+#${domain}    192.168.0.105
+${domain}    localhost
+${host}         http://localhost:${port1}/
+${mutiHost1}    http://localhost:${port2}/
+${mutiHost2}    http://localhost:${port3}/
 ${id}    ${1}
 
 # methods

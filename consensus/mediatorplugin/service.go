@@ -71,6 +71,7 @@ type iDag interface {
 
 	IsPrecedingMediator(add common.Address) bool
 	IsIrreversibleUnit(hash common.Hash) bool
+	IsMediator(address common.Address) bool
 
 	PrecedingThreshold() int
 	PrecedingMediatorsCount() int
@@ -118,6 +119,7 @@ type MediatorPlugin struct {
 	precedingDKGs map[common.Address]*dkg.DistKeyGenerator
 
 	// dkg 完成 vss 协议相关
+	// todo 待加锁，防止写冲突
 	respBuf map[common.Address]map[common.Address]chan *dkg.Response
 
 	// 广播和处理 vss 协议 deal
@@ -161,12 +163,6 @@ func (mp *MediatorPlugin) APIs() []rpc.API {
 			Public:    false,
 		},
 	}
-}
-
-func (mp *MediatorPlugin) isLocalMediator(add common.Address) bool {
-	_, ok := mp.mediators[add]
-
-	return ok
 }
 
 func (mp *MediatorPlugin) ScheduleProductionLoop() {
@@ -241,9 +237,10 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	}
 
 	// 3. 开始完成 vss 协议
-	if mp.groupSigningEnabled {
-		go mp.startVSSProtocol()
-	}
+	// todo albert 待优化
+	//if mp.groupSigningEnabled {
+	//	go mp.startVSSProtocol()
+	//}
 
 	log.Debugf("mediator plugin startup end")
 	return nil
@@ -255,13 +252,15 @@ func (mp *MediatorPlugin) unlockLocalMediators() {
 	for add, medAcc := range mp.mediators {
 		err := ks.Unlock(accounts.Account{Address: add}, medAcc.Password)
 		if err != nil {
-			log.Infof("fail to unlock the mediator(%v), error: %v", add.Str(), err.Error())
+			log.Debugf("fail to unlock the mediator(%v), error: %v", add.Str(), err.Error())
 			delete(mp.mediators, add)
 		}
 	}
 }
 
 func (mp *MediatorPlugin) UpdateMediatorsDKG(isRenew bool) {
+	log.Debugf("UpdateMediatorsDKG when after performChainMaintenance")
+
 	if !mp.groupSigningEnabled {
 		return
 	}
@@ -270,9 +269,10 @@ func (mp *MediatorPlugin) UpdateMediatorsDKG(isRenew bool) {
 	mp.precedingDKGs = mp.activeDKGs
 
 	// 判断是否重新 初始化DKG 和 VSS 协议
-	if !isRenew {
-		return
-	}
+	// todo albert 待优化
+	//if !isRenew {
+	//	return
+	//}
 
 	// 2. 初始化当前节点控制的活跃mediator对应的DKG.
 	mp.newActiveMediatorsDKG()
@@ -323,12 +323,12 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 
 	if ptn == nil || dag == nil || cfg == nil {
 		err := "pointer parameters of NewMediatorPlugin are nil!"
-		log.Error(err)
+		log.Errorf(err)
 		panic(err)
 	}
 
 	mss := cfg.Mediators
-	msm := make(map[common.Address]*MediatorAccount, 0)
+	msm := make(map[common.Address]*MediatorAccount, len(mss))
 
 	for _, medConf := range mss {
 		medAcc := medConf.configToAccount()

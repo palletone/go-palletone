@@ -19,11 +19,11 @@
 package ptn
 
 import (
-	"encoding/json"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -31,11 +31,6 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 	for {
 		select {
 		case event := <-self.newProducedUnitCh:
-			// 广播给其他活跃 mediator，进行验证并群签名
-			if self.producer.IsEnabledGroupSign() {
-				self.BroadcastNewProducedUnit(event.Unit)
-			}
-
 			self.BroadcastUnit(event.Unit, true)
 			//self.BroadcastCorsHeader(event.Unit.Header(), self.SubProtocols[0].Name)
 
@@ -45,45 +40,51 @@ func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
 	}
 }
 
-// @author Albert·Gou
-// BroadcastNewProducedUnit will propagate a new produced unit to all of active mediator's peers
-func (pm *ProtocolManager) BroadcastNewProducedUnit(newUnit *modules.Unit) {
-	peers := pm.GetActiveMediatorPeers()
-	for _, peer := range peers {
-		if peer == nil {
-			//data, err := json.Marshal(newUnit)
-			//if err != nil {
-			//	log.Debug(err.Error())
-			//	return
-			//}
-			//
-			//size, reader, err := rlp.EncodeToReader(data)
-			//if err != nil {
-			//	return
-			//}
-			//
-			//data = make([]byte, 0)
-			//stream := rlp.NewStream(reader, uint64(size))
-			//if err := stream.Decode(&data); err != nil {
-			//	log.Debug(err.Error())
-			//}
-			//
-			//var unit modules.Unit
-			//if err := json.Unmarshal(data, &unit); err != nil {
-			//	log.Debug(err.Error())
-			//	return
-			//}
-			//pm.producer.AddToTBLSSignBufs(&unit)
+func (pm *ProtocolManager) toGroupSignEventRecvLoop() {
+	log.Debugf("toGroupSignEventRecvLoop")
+	for {
+		select {
+		case event := <-pm.toGroupSignCh:
+			go pm.toGroupSign(event)
 
-			pm.producer.AddToTBLSSignBufs(newUnit)
-			continue
-		}
-
-		err := peer.SendNewProducedUnit(newUnit)
-		if err != nil {
-			log.Debug(err.Error())
+		// Err() channel will be closed when unsubscribing.
+		case <-pm.toGroupSignSub.Err():
+			return
 		}
 	}
+}
+
+func (pm *ProtocolManager) toGroupSign(event modules.ToGroupSignEvent) {
+	log.Debugf("receive toGroupSign event")
+
+	// 判断是否满足群签名的条件
+	if !pm.dag.IsSynced() {
+		log.Debugf("dag is not synced")
+		return
+	}
+
+	if !pm.producer.LocalHaveActiveMediator() && !pm.producer.LocalHavePrecedingMediator() {
+		log.Debugf("the current node has no mediator")
+		return
+	}
+
+	if !pm.producer.IsEnabledGroupSign() {
+		log.Debugf("the current node is enabled groupSign")
+		return
+	}
+
+	// 获取最高稳定单元的高度
+	gasToken := dagconfig.DagConfig.GetGasToken()
+	iun := pm.dag.GetIrreversibleUnitNum(gasToken)
+
+	// 对稳定单元后一个unit进行群签名
+	newUnit, err := pm.dag.GetUnitByNumber(&modules.ChainIndex{gasToken, iun + 1})
+	if err != nil {
+		log.Debugf(err.Error())
+		return
+	}
+
+	go pm.producer.AddToTBLSSignBufs(newUnit)
 }
 
 // @author Albert·Gou
@@ -163,7 +164,7 @@ func (self *ProtocolManager) vssDealTransmitLoop() {
 	for {
 		select {
 		case event := <-self.vssDealCh:
-			node := self.dag.GetActiveMediatorNode(event.DstIndex)
+			node := self.dag.GetActiveMediatorNode(int(event.DstIndex))
 			self.TransmitVSSDeal(node, &event)
 
 			// Err() channel will be closed when unsubscribing.
@@ -319,19 +320,6 @@ func (pm *ProtocolManager) GetActiveMediatorPeers() map[string]*peer {
 	}
 
 	return list
-}
-
-// SendNewProducedUnit propagates an entire new produced unit to a remote mediator peer.
-// @author Albert·Gou
-func (p *peer) SendNewProducedUnit(newUnit *modules.Unit) error {
-	data, err := json.Marshal(newUnit)
-	if err != nil {
-		log.Debug(err.Error())
-		return err
-	}
-
-	//p.knownBlocks.Add(newUnit.UnitHash)
-	return p2p.Send(p.rw, NewProducedUnitMsg, data)
 }
 
 // @author Albert·Gou

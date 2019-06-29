@@ -35,7 +35,7 @@ func Test_ChainParameters_Rlp(t *testing.T) {
 	cp2 := &ChainParameters{}
 	err = rlp.DecodeBytes(data, cp2)
 	assert.Nil(t, err)
-	assert.Equal(t, cp.TxCoinYearRate, cp2.TxCoinYearRate)
+	// assert.Equal(t, cp.TxCoinYearRate, cp2.TxCoinYearRate)
 	assert.Equal(t, cp.ContractElectionNum, cp2.ContractElectionNum)
 	assert.Equal(t, cp.TempUccMemorySwap, cp2.TempUccMemorySwap)
 }

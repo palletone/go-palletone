@@ -124,6 +124,7 @@ func (pRep *PropRepository) GetNewestUnit(token modules.AssetId) (common.Hash, *
 	hash, index, _, e := pRep.db.GetNewestUnit(token)
 	return hash, index, e
 }
+
 func (pRep *PropRepository) GetNewestUnitTimestamp(token modules.AssetId) (int64, error) {
 	_, _, t, e := pRep.db.GetNewestUnit(token)
 	return t, e

@@ -129,6 +129,7 @@ type contractTx struct {
 	rcvTx    []*modules.Transaction //the local has not received the request contract, the cache has signed the contract
 	tm       time.Time              //create time
 	valid    bool                   //contract request valid identification
+	reqRcvEd bool                   //contract request received
 	adaChan  chan bool              //adapter event chan
 	adaInf   map[uint32]*AdapterInf //adapter event data information
 }
@@ -274,6 +275,8 @@ func (p *Processor) localHaveActiveJury() bool {
 //}
 
 func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf) error {
+	log.Debugf("[%s]runContractReq enter", shortId(reqId.String()))
+	defer log.Debugf("[%s]runContractReq exit", shortId(reqId.String()))
 	p.locker.Lock()
 	ctx := p.mtx[reqId]
 	if ctx == nil {
@@ -312,6 +315,7 @@ func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf)
 			return fmt.Errorf("runContractReq, GenContractSigTransctions error, reqId[%s], err:%s", reqId, err.Error())
 		}
 		ctx.sigTx = sigTx
+		log.Debugf("[%s]runContractReq, gen local signature tx[%s]", shortId(reqId.String()), sigTx.Hash().String())
 		//如果rcvTx存在，则比较执行结果，并将结果附加到sigTx上,并删除rcvTx
 		if len(ctx.rcvTx) > 0 {
 			for _, rtx := range ctx.rcvTx {
@@ -319,12 +323,12 @@ func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf)
 				if err != nil {
 					log.Debugf("[%s]runContractReq, checkAndAddTxSigMsgData error:%s", shortId(reqId.String()), err.Error())
 				} else if ok {
-					log.Debugf("[%s]runContractReq, checkAndAddTxSigMsgData ok", shortId(reqId.String()))
+					log.Debugf("[%s]runContractReq, checkAndAddTxSigMsgData ok, tx[%s]", shortId(reqId.String()), rtx.Hash().String())
 				} else {
 					log.Debugf("[%s]runContractReq, checkAndAddTxSigMsgData fail", shortId(reqId.String()))
 				}
 			}
-			ctx.rcvTx = nil
+			//ctx.rcvTx = nil
 		}
 
 		sigNum := getTxSigNum(ctx.sigTx)
@@ -718,7 +722,21 @@ func (p *Processor) createContractTxReq(contractId, from, to common.Address, dao
 	log.Debugf("[%s]createContractTxReq, contractId[%s], tx[%v]", shortId(tx.RequestHash().String()), contractId.String(), tx)
 	return p.signAndExecute(contractId, from, tx, isLocalInstall)
 }
-
+func (p *Processor) SignAndExecuteAndSendRequest(from common.Address, tx *modules.Transaction) (*modules.Transaction, error) {
+	requestMsg := tx.TxMessages[tx.GetRequestMsgIndex()]
+	if requestMsg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
+		request := requestMsg.Payload.(*modules.ContractInvokeRequestPayload)
+		contractId := common.NewAddress(request.ContractId, common.ContractHash)
+		reqId, tx, err := p.signAndExecute(contractId, from, tx, false)
+		if err != nil {
+			return nil, err
+		}
+		//broadcast
+		go p.ptn.ContractBroadcast(ContractEvent{Ele: p.mtx[reqId].eleInf, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
+		return tx, nil
+	}
+	return nil, errors.New("Not support request")
+}
 func (p *Processor) signAndExecute(contractId common.Address, from common.Address, tx *modules.Transaction, isLocalInstall bool) (common.Hash, *modules.Transaction, error) {
 	tx, err := p.ptn.SignGenericTransaction(from, tx)
 	if err != nil {

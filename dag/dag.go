@@ -20,13 +20,12 @@
 package dag
 
 import (
+	"bytes"
 	"fmt"
 	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"bytes"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
@@ -165,6 +164,7 @@ func (d *Dag) GetUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error)
 	//log.Debug("Dag", "GetUnitByNumber getChainUnit(hash):", hash)
 	return d.unstableUnitRep.GetUnit(hash)
 }
+
 func (d *Dag) GetUnstableUnits() []*modules.Unit {
 	units := d.Memdag.GetChainUnits()
 	result := modules.Units{}
@@ -253,15 +253,13 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 		// all units must be continuous
 		if i > 0 && units[i].UnitHeader.Number.Index == units[i-1].UnitHeader.Number.Index+1 {
 			return count, fmt.Errorf("Insert dag error: child height are not continuous, "+
-				"parent unit number=%d, hash=%s; "+
-				"child unit number=%d, hash=%s",
+				"parent unit number=%d, hash=%s; "+"child unit number=%d, hash=%s",
 				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash,
 				units[i].UnitHeader.Number.Index, units[i].UnitHash)
 		}
 		if i > 0 && u.ContainsParent(units[i-1].UnitHash) == false {
 			return count, fmt.Errorf("Insert dag error: child parents are not continuous, "+
-				"parent unit number=%d, hash=%s; "+
-				"child unit number=%d, hash=%s",
+				"parent unit number=%d, hash=%s; "+"child unit number=%d, hash=%s",
 				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash,
 				units[i].UnitHeader.Number.Index, units[i].UnitHash)
 		}
@@ -276,7 +274,7 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 			log.Errorf("Memdag addUnit[%s] error:%s", u.UnitHash.String(), err.Error())
 			return count, nil
 		}
-		log.Infof("InsertDag[%s] #%d spent time:%s", u.UnitHash.String(), u.NumberU64(), time.Since(t1))
+		log.Debugf("InsertDag[%s] #%d spent time:%s", u.UnitHash.String(), u.NumberU64(), time.Since(t1))
 		count += 1
 	}
 
@@ -578,8 +576,8 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 		Memdag:                 unstableChain,
 		//PartitionMemDag:      partitionMemdag,
 	}
-	unitRep.SubscribeSysContractStateChangeEvent(dag.AfterSysContractStateChangeEvent)
-	stableUnitProduceRep.SubscribeChainMaintenanceEvent(dag.AfterChainMaintenanceEvent)
+	dag.stableUnitRep.SubscribeSysContractStateChangeEvent(dag.AfterSysContractStateChangeEvent)
+	dag.stableUnitProduceRep.SubscribeChainMaintenanceEvent(dag.AfterChainMaintenanceEvent)
 	// 检查NewestUnit是否存在，不存在则从MemDag获取最新的Unit作为NewestUnit
 	hash, chainIndex, _ := dag.stablePropRep.GetNewestUnit(gasToken)
 	if !dag.IsHeaderExist(hash) {
@@ -967,6 +965,7 @@ func (d *Dag) saveHeader(header *modules.Header) error {
 	}
 	return nil
 }
+
 func (d *Dag) getMemDag(asset modules.AssetId) (memunit.IMemDag, error) {
 	var memdag memunit.IMemDag
 	gasToken := dagconfig.DagConfig.GetGasToken()
@@ -981,6 +980,7 @@ func (d *Dag) getMemDag(asset modules.AssetId) (memunit.IMemDag, error) {
 	return memdag, nil
 }
 
+// TODO 待优化, 目前只用来存创世unit
 func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error {
 	// todo 应当根据新的unit判断哪条链作为主链
 	// step1. check exists
@@ -1261,7 +1261,7 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 	// 群签之后， 更新memdag，将该unit和它的父单元们稳定存储。
 	//go d.Memdag.SetStableUnit(unitHash, groupSign[:], txpool)
 	log.Debugf("Try to update unit[%s] group sign", unitHash.String())
-	d.Memdag.SetUnitGroupSign(unitHash, nil, groupSign, txpool)
+	d.Memdag.SetUnitGroupSign(unitHash /*, nil*/, groupSign, txpool)
 
 	//TODO Group pub key????
 	// 将缓存池utxo更新到utxodb中
@@ -1470,20 +1470,28 @@ func (d *Dag) SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMedia
 
 func (d *Dag) Close() {
 	d.unstableUnitProduceRep.Close()
+	d.Memdag.Close()
+
+	for _, pmg := range d.PartitionMemDag {
+		pmg.Close()
+	}
+
 	d.Db.Close()
 	log.Debug("Close all dag database connections")
 }
 
-func (dag *Dag) MediatorVotedResults() map[string]uint64 {
-	return dag.unstableUnitProduceRep.MediatorVotedResults()
+func (dag *Dag) MediatorVotedResults() (map[string]uint64, error) {
+	return dag.unstableStateRep.GetMediatorVotedResults()
 }
 
 func (dag *Dag) StoreDataVersion(dv *modules.DataVersion) error {
 	return dag.stableStateRep.StoreDataVersion(dv)
 }
+
 func (dag *Dag) GetDataVersion() (*modules.DataVersion, error) {
 	return dag.stableStateRep.GetDataVersion()
 }
+
 func (dag *Dag) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error) {
 	return dag.stableUnitRep.QueryProofOfExistenceByReference(ref)
 }

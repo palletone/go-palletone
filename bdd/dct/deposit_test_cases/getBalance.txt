@@ -1,0 +1,9 @@
+*** Settings ***
+Resource          publicParams.txt
+
+*** Keywords ***
+getBalance
+    [Arguments]    ${address}
+    ${two}    Create List    ${address}
+    ${result}    创建公用的POST请求    wallet_getBalance    wallet_getBalance    ${two}
+    [Return]    ${result}

@@ -163,6 +163,12 @@ func queryNonce(prefixSymbol string, issuer string, stub shim.ChaincodeStubInter
 }
 
 func GetCertBytes(certid string, stub shim.ChaincodeStubInterface) (certBytes []byte, err error) {
+	cacert, err := GetRootCACert(stub)
+	if err == nil {
+		if cacert.SerialNumber.String() == certid {
+			return cacert.Raw, nil
+		}
+	}
 	key := dagConstants.CERT_BYTES_SYMBOL + certid
 	data, err := stub.GetState(key)
 	if err != nil { // query none

@@ -5,8 +5,8 @@ Resource          publicParams.txt
 
 *** Keywords ***
 getQuitMediatorApplyList
-    ${one}    Create List    GetQuitMediatorApplyList
+    ${one}    Create List    GetQuitApplyList
     ${two}    Create List    ${one}
-    ${result}    创建公用的POST请求    ${depositContractQuery}    GetQuitMediatorApplyList    ${two}
+    ${result}    创建公用的POST请求    ${depositContractQuery}    GetQuitApplyList    ${two}
     ${addressMap}    To Json    ${result}
     [Return]    ${addressMap}

@@ -26,8 +26,8 @@ import (
 )
 
 type ImmutableChainParameters struct {
-	MinimumMediatorCount uint8    `json:"minMediatorCount"`
-	MinMediatorInterval  uint8    `json:"minMediatorInterval"`
+	MinimumMediatorCount uint8    `json:"min_mediator_count"`
+	MinMediatorInterval  uint8    `json:"min_mediator_interval"`
 	UccPrivileged        bool     `json:"ucc_privileged"`       //  防止容器以root权限运行
 	UccCapDrop           []string `json:"ucc_cap_drop"`         //  确保容器以最小权限运行
 	UccNetworkMode       string   `json:"ucc_network_mode"`     //  容器运行网络模式
@@ -50,72 +50,70 @@ func NewChainParametersBase() ChainParametersBase {
 	return ChainParametersBase{
 		GenerateUnitReward:        DefaultGenerateUnitReward,
 		RewardHeight:              DefaultRewardHeight,
+		PledgeDailyReward:         DefaultPledgeDailyReward,
 		FoundationAddress:         DefaultFoundationAddress,
 		DepositAmountForMediator:  DefaultDepositAmountForMediator,
 		DepositAmountForJury:      DefaultDepositAmountForJury,
 		DepositAmountForDeveloper: DefaultDepositAmountForDeveloper,
-		//UccCpuSetCpus:             DefaultUccCpuSetCpus,
-		ActiveMediatorCount:      DefaultActiveMediatorCount,
-		MaximumMediatorCount:     DefaultMaxMediatorCount,
-		MediatorInterval:         DefaultMediatorInterval,
-		MaintenanceInterval:      DefaultMaintenanceInterval,
-		MaintenanceSkipSlots:     DefaultMaintenanceSkipSlots,
-		MediatorCreateFee:        DefaultMediatorCreateFee,
-		AccountUpdateFee:         DefaultAccountUpdateFee,
-		TransferPtnBaseFee:       DefaultTransferPtnBaseFee,
-		TransferPtnPricePerKByte: DefaultTransferPtnPricePerKByte,
-		//CurrentFees:               newFeeSchedule(),
+		ActiveMediatorCount:       DefaultActiveMediatorCount,
+		MaximumMediatorCount:      DefaultMaxMediatorCount,
+		MediatorInterval:          DefaultMediatorInterval,
+		MaintenanceInterval:       DefaultMaintenanceInterval,
+		MaintenanceSkipSlots:      DefaultMaintenanceSkipSlots,
+		MediatorCreateFee:         DefaultMediatorCreateFee,
+		AccountUpdateFee:          DefaultAccountUpdateFee,
+		TransferPtnBaseFee:        DefaultTransferPtnBaseFee,
+		TransferPtnPricePerKByte:  DefaultTransferPtnPricePerKByte,
+		UnitMaxSize:               DefaultUnitMaxSize,
 	}
 }
 
 type ChainParametersBase struct {
-	GenerateUnitReward uint64 `json:"generateUnitReward"` //每生产一个单元，奖励多少Dao的PTN
-	RewardHeight       uint64 `json:"reward_height"`      //每多少高度进行一次奖励的派发
+	GenerateUnitReward uint64 `json:"generate_unit_reward"` //每生产一个单元，奖励多少Dao的PTN
+	PledgeDailyReward  uint64 `json:"pledge_daily_reward"`  //质押金的日奖励额
+	RewardHeight       uint64 `json:"reward_height"`        //每多少高度进行一次奖励的派发
+	UnitMaxSize        uint64 `json:"unit_max_size"`        //一个单元最大允许多大
+	FoundationAddress  string `json:"foundation_address"`   //基金会地址，该地址具有一些特殊权限，比如发起参数修改的投票，发起罚没保证金等
 
-	FoundationAddress string `json:"foundationAddress"` //基金会地址，该地址具有一些特殊权限，比如发起参数修改的投票，发起罚没保证金等
-
-	DepositAmountForMediator  uint64 `json:"depositAmountForMediator"` //保证金的数量
-	DepositAmountForJury      uint64 `json:"depositAmountForJury"`
-	DepositAmountForDeveloper uint64 `json:"depositAmountForDeveloper"`
+	DepositAmountForMediator  uint64 `json:"deposit_amount_for_mediator"` //保证金的数量
+	DepositAmountForJury      uint64 `json:"deposit_amount_for_jury"`
+	DepositAmountForDeveloper uint64 `json:"deposit_amount_for_developer"`
 
 	//UccCpuSetCpus string `json:"ucc_cpu_set_cpus"` //限制使用某些CPUS  "1,3"  "0-2"
 
 	// 活跃mediator的数量。 number of active mediators
-	ActiveMediatorCount uint8 `json:"activeMediatorCount"`
+	ActiveMediatorCount uint8 `json:"active_mediator_count"`
 
 	// 用户可投票mediator的最大数量。the maximum number of mediator users can vote for
-	MaximumMediatorCount uint8 `json:"maxMediatorCount"`
+	MaximumMediatorCount uint8 `json:"max_mediator_count"`
 
 	// unit生产之间的间隔时间，以秒为单元。 interval in seconds between Units
-	MediatorInterval uint8 `json:"mediatorInterval"`
+	MediatorInterval uint8 `json:"mediator_interval"`
 
 	// 区块链维护事件之间的间隔，以秒为单元。 interval in sections between unit maintenance events
-	MaintenanceInterval uint32 `json:"maintenanceInterval"`
+	MaintenanceInterval uint32 `json:"maintenance_interval"`
 
 	// 在维护时跳过的MediatorInterval数量。 number of MediatorInterval to skip at maintenance time
-	MaintenanceSkipSlots uint8 `json:"maintenanceSkipSlots"`
+	MaintenanceSkipSlots uint8 `json:"maintenance_skip_slots"`
 
 	// 目前的操作交易费，current schedule of fees
-	MediatorCreateFee        uint64 `json:"mediatorCreateFee"`
-	AccountUpdateFee         uint64 `json:"accountUpdateFee"`
-	TransferPtnBaseFee       uint64 `json:"transferPtnBaseFee"`
-	TransferPtnPricePerKByte uint64 `json:"transferPtnPricePerKByte"`
+	MediatorCreateFee        uint64 `json:"mediator_create_fee"`
+	AccountUpdateFee         uint64 `json:"account_update_fee"`
+	TransferPtnBaseFee       uint64 `json:"transfer_ptn_base_fee"`
+	TransferPtnPricePerKByte uint64 `json:"transfer_ptn_price_per_KByte"`
 	//CurrentFees              FeeSchedule `json:"currentFees"`
 }
 
 func NewChainParams() ChainParameters {
 	return ChainParameters{
 		ChainParametersBase: NewChainParametersBase(),
-		DepositRate:         DefaultDepositRate,
-		TxCoinYearRate:      DefaultTxCoinYearRate,
-		DepositPeriod:       DefaultDepositPeriod,
-		DepositExtraReward:  DefaultDepositExtraReward,
-		UccMemory:           DefaultUccMemory,
-		UccMemorySwap:       DefaultUccMemorySwap,
-		UccCpuShares:        DefaultUccCpuShares,
-		UccCpuPeriod:        DefaultCpuPeriod,
-		UccCpuQuota:         DefaultUccCpuQuota,
-
+		// TxCoinYearRate:       DefaultTxCoinYearRate,
+		DepositPeriod:        DefaultDepositPeriod,
+		UccMemory:            DefaultUccMemory,
+		UccMemorySwap:        DefaultUccMemorySwap,
+		UccCpuShares:         DefaultUccCpuShares,
+		UccCpuPeriod:         DefaultCpuPeriod,
+		UccCpuQuota:          DefaultUccCpuQuota,
 		TempUccMemory:        DefaultTempUccMemory,
 		TempUccMemorySwap:    DefaultTempUccMemorySwap,
 		TempUccCpuShares:     DefaultTempUccCpuShares,
@@ -130,10 +128,9 @@ func NewChainParams() ChainParameters {
 type ChainParameters struct {
 	ChainParametersBase
 
-	TxCoinYearRate     float64 `json:"tx_coin_year_rate"` //交易币天的年利率
-	DepositRate        float64 `json:"deposit_rate"`      //保证金的年利率
-	DepositPeriod      int     `json:"deposit_period"`    //保证金周期
-	DepositExtraReward int64   `json:"deposit_extra_reward"`
+	// TxCoinYearRate float64 `json:"tx_coin_year_rate"` //交易币天的年利率
+	DepositRate   float64 `json:"deposit_rate"`   //保证金的年利率
+	DepositPeriod int     `json:"deposit_period"` //保证金周期
 
 	//对启动用户合约容器的相关资源的限制
 	UccMemory     int64 `json:"ucc_memory"`      //物理内存  104857600  100m

@@ -17,6 +17,7 @@
 package modules
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -226,36 +227,6 @@ func ToPayloadMapValueBytes(data interface{}) []byte {
 	return b
 }
 
-// Token exchange message and verify message
-// App: payment
-type PaymentPayload struct {
-	Inputs   []*Input  `json:"inputs"`
-	Outputs  []*Output `json:"outputs"`
-	LockTime uint32    `json:"lock_time"`
-}
-
-func (pay *PaymentPayload) IsCoinbase() bool {
-	if len(pay.Inputs) == 0 {
-		return true
-	}
-	for _, input := range pay.Inputs {
-		if input.PreviousOutPoint == nil {
-			return true
-		}
-	}
-	return false
-}
-
-// NewTxOut returns a new bitcoin transaction output with the provided
-// transaction value and public key script.
-func NewTxOut(value uint64, pkScript []byte, asset *Asset) *Output {
-	return &Output{
-		Value:    value,
-		PkScript: pkScript,
-		Asset:    asset,
-	}
-}
-
 type StateVersion struct {
 	Height  *ChainIndex `json:"height"`
 	TxIndex uint32      `json:"tx_index"`
@@ -301,7 +272,7 @@ func (version *StateVersion) ParseStringKey(key string) bool {
 func (version *StateVersion) Bytes() []byte {
 	b := version.Height.Bytes()
 	txIdx := make([]byte, 4)
-	littleEndian.PutUint32(txIdx, version.TxIndex)
+	binary.LittleEndian.PutUint32(txIdx, version.TxIndex)
 	b = append(b, txIdx...)
 	return b[:]
 }
@@ -309,7 +280,7 @@ func (version *StateVersion) SetBytes(b []byte) {
 	cidx := &ChainIndex{}
 	cidx.SetBytes(b[:24])
 	version.Height = cidx
-	version.TxIndex = littleEndian.Uint32(b[24:])
+	version.TxIndex = binary.LittleEndian.Uint32(b[24:])
 }
 
 func (version *StateVersion) Equal(in *StateVersion) bool {
@@ -323,49 +294,12 @@ func (version *StateVersion) Equal(in *StateVersion) bool {
 	}
 	return bytes.Equal(rlpA, rlpB)
 
-	//if in == nil {
-	//	return false
-	//}
-	//if version.Height != nil {
-	//	if in.Height == nil {
-	//		return false
-	//	}
-	//	if !version.Height.Equal(in.Height) {
-	//		return false
-	//	}
-	//} else if in.Height != nil {
-	//	return false
-	//}
-	//
-	//if version.TxIndex != in.TxIndex {
-	//	return false
-	//}
-	//return true
 }
 
 const (
 	FIELD_SPLIT_STR     = "^*^"
 	FIELD_GENESIS_ASSET = "GenesisAsset"
 )
-
-//type DelContractState struct {
-//	IsDelete bool
-//}
-//
-//func (delState DelContractState) Bytes() []byte {
-//	data, err := rlp.EncodeToBytes(delState)
-//	if err != nil {
-//		return nil
-//	}
-//	return data
-//}
-//
-//func (delState DelContractState) SetBytes(b []byte) error {
-//	if err := rlp.DecodeBytes(b, &delState); err != nil {
-//		return err
-//	}
-//	return nil
-//}
 
 type ContractError struct {
 	Code    uint32 `json:"error_code"`    // error code
@@ -393,7 +327,7 @@ type InvokeInfo struct {
 	InvokeFees    *AmountAsset    `json:"invoke_fees"`    //请求交易�?
 }
 
-//请求的数�?
+//请求的数量
 type InvokeTokens struct {
 	Amount  uint64 `json:"amount"`  //数量
 	Asset   *Asset `json:"asset"`   //资产
@@ -538,14 +472,6 @@ type FileInfo struct {
 	ExtraData   string      `json:"extra_data"`
 }
 
-func NewPaymentPayload(inputs []*Input, outputs []*Output) *PaymentPayload {
-	return &PaymentPayload{
-		Inputs:   inputs,
-		Outputs:  outputs,
-		LockTime: defaultTxInOutAlloc,
-	}
-}
-
 func NewContractTplPayload(templateId []byte, memory uint16, bytecode []byte, err ContractError) *ContractTplPayload {
 	return &ContractTplPayload{
 		TemplateId: templateId,
@@ -649,15 +575,6 @@ func (a *ContractTplPayload) Equal(b *ContractTplPayload) bool {
 	}
 	return bytes.Equal(rlpA, rlpB)
 
-	//if b == nil {
-	//	return false
-	//}
-	//if bytes.Equal(a.TemplateId, b.TemplateId) &&
-	//	a.Memory == b.Memory &&
-	//	bytes.Equal(a.ByteCode, b.ByteCode) {
-	//	return true
-	//}
-	//return false
 }
 
 func (a *ContractDeployPayload) Equal(b *ContractDeployPayload) bool {
@@ -671,45 +588,6 @@ func (a *ContractDeployPayload) Equal(b *ContractDeployPayload) bool {
 	}
 	return bytes.Equal(rlpA, rlpB)
 
-	//if b == nil {
-	//	return false
-	//}
-	//if !bytes.Equal(a.TemplateId, b.TemplateId) || !bytes.Equal(a.ContractId, b.ContractId) || !strings.EqualFold(a.Name, b.Name) {
-	//	return false
-	//}
-	//if len(a.Args) == len(b.Args) {
-	//	for i := 0; i < len(a.Args); i++ {
-	//		if !bytes.Equal(a.Args[i], b.Args[i]) {
-	//			return false
-	//		}
-	//	}
-	//} else {
-	//	return false
-	//}
-	//if len(a.EleList) == len(b.EleList) {
-	//	for i := 0; i < len(a.EleList); i++ {
-	//		if !a.EleList[i].Equal(&b.EleList[i]) {
-	//			return false
-	//		}
-	//	}
-	//} else {
-	//	return false
-	//}
-	//if len(a.ReadSet) == len(b.ReadSet) {
-	//	for i := 0; i < len(a.ReadSet); i++ {
-	//		a.ReadSet[i].Equal(&b.ReadSet[i])
-	//	}
-	//} else {
-	//	return false
-	//}
-	//if len(a.WriteSet) == len(b.WriteSet) {
-	//	for i := 0; i < len(a.WriteSet); i++ {
-	//		a.WriteSet[i].Equal(&b.WriteSet[i])
-	//	}
-	//} else {
-	//	return false
-	//}
-	//return true
 }
 
 func (a *ContractInvokePayload) Equal(b *ContractInvokePayload) bool {
@@ -722,42 +600,6 @@ func (a *ContractInvokePayload) Equal(b *ContractInvokePayload) bool {
 		return false
 	}
 	return bytes.Equal(rlpA, rlpB)
-
-	//if b == nil {
-	//	return false
-	//}
-	//if !bytes.Equal(a.ContractId, b.ContractId) || !bytes.Equal(a.Payload, b.Payload) {
-	//	//		log.Debug("ContractInvokePayload Equal", "a.Payload", string(a.Payload), "b.Payload", string(b.Payload))
-	//	return false
-	//}
-	//if len(a.Args) == len(b.Args) {
-	//	for i := 0; i < len(a.Args); i++ {
-	//		if !bytes.Equal(a.Args[i], b.Args[i]) {
-	//			return false
-	//		}
-	//	}
-	//} else {
-	//	return false
-	//}
-	//if len(a.ReadSet) == len(b.ReadSet) {
-	//	for i := 0; i < len(a.ReadSet); i++ {
-	//		if !a.ReadSet[i].Equal(&b.ReadSet[i]) {
-	//			return false
-	//		}
-	//	}
-	//} else {
-	//	return false
-	//}
-	//if len(a.WriteSet) == len(b.WriteSet) {
-	//	for i := 0; i < len(a.WriteSet); i++ {
-	//		if !a.WriteSet[i].Equal(&b.WriteSet[i]) {
-	//			return false
-	//		}
-	//	}
-	//} else {
-	//	return false
-	//}
-	//return true
 }
 
 func (a *ContractStopPayload) Equal(b *ContractStopPayload) bool {
@@ -771,27 +613,6 @@ func (a *ContractStopPayload) Equal(b *ContractStopPayload) bool {
 	}
 	return bytes.Equal(rlpA, rlpB)
 
-	//if b == nil {
-	//	return false
-	//}
-	//if !bytes.Equal(a.ContractId, b.ContractId) {
-	//	return false
-	//}
-	//if len(a.ReadSet) == len(b.ReadSet) {
-	//	for i := 0; i < len(a.ReadSet); i++ {
-	//		a.ReadSet[i].Equal(&b.ReadSet[i])
-	//	}
-	//} else {
-	//	return false
-	//}
-	//if len(a.WriteSet) == len(b.WriteSet) {
-	//	for i := 0; i < len(a.WriteSet); i++ {
-	//		a.WriteSet[i].Equal(&b.WriteSet[i])
-	//	}
-	//} else {
-	//	return false
-	//}
-	//return true
 }
 
 func (a *ContractInstallRequestPayload) Equal(b *ContractInstallRequestPayload) bool {
@@ -805,13 +626,6 @@ func (a *ContractInstallRequestPayload) Equal(b *ContractInstallRequestPayload) 
 	}
 	return bytes.Equal(rlpA, rlpB)
 
-	//if b == nil {
-	//	return false
-	//}
-	//if !strings.EqualFold(a.TplName, b.TplName) || !strings.EqualFold(a.Path, b.Path) || !strings.EqualFold(a.Version, b.Version) {
-	//	return false
-	//}
-	//return true
 }
 
 func (a *ContractDeployRequestPayload) Equal(b *ContractDeployRequestPayload) bool {
@@ -825,22 +639,6 @@ func (a *ContractDeployRequestPayload) Equal(b *ContractDeployRequestPayload) bo
 	}
 	return bytes.Equal(rlpA, rlpB)
 
-	//if b == nil {
-	//	return false
-	//}
-	//if !bytes.Equal(a.TplId, b.TplId) || a.Timeout != b.Timeout {
-	//	return false
-	//}
-	//if len(a.Args) == len(b.Args) {
-	//	for i := 0; i < len(a.Args); i++ {
-	//		if !bytes.Equal(a.Args[i], b.Args[i]) {
-	//			return false
-	//		}
-	//	}
-	//} else {
-	//	return false
-	//}
-	//return true
 }
 
 func (a *ContractInvokeRequestPayload) Equal(b *ContractInvokeRequestPayload) bool {
@@ -854,22 +652,6 @@ func (a *ContractInvokeRequestPayload) Equal(b *ContractInvokeRequestPayload) bo
 	}
 	return bytes.Equal(rlpA, rlpB)
 
-	//if b == nil {
-	//	return false
-	//}
-	//if !bytes.Equal(a.ContractId, b.ContractId) || a.Timeout != b.Timeout {
-	//	return false
-	//}
-	//if len(a.Args) == len(b.Args) {
-	//	for i := 0; i < len(a.Args); i++ {
-	//		if !bytes.Equal(a.Args[i], b.Args[i]) {
-	//			return false
-	//		}
-	//	}
-	//} else {
-	//	return false
-	//}
-	//return true
 }
 
 func (a *ContractStopRequestPayload) Equal(b *ContractStopRequestPayload) bool {
@@ -883,13 +665,6 @@ func (a *ContractStopRequestPayload) Equal(b *ContractStopRequestPayload) bool {
 	}
 	return bytes.Equal(rlpA, rlpB)
 
-	//if b == nil {
-	//	return false
-	//}
-	//if !bytes.Equal(a.ContractId, b.ContractId) || !strings.EqualFold(a.Txid, b.Txid) || a.DeleteImage != b.DeleteImage {
-	//	return false
-	//}
-	//return true
 }
 
 type SysTokenIDInfo struct {

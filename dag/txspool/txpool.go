@@ -29,9 +29,9 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/parameter"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
@@ -744,6 +744,10 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction, n
 // the sender as a local one in the mean time, ensuring it goes around the local
 // pricing constraints.
 func (pool *TxPool) AddLocal(tx *modules.Transaction) error {
+	if tx.IsNewContractInvokeRequest() { //Request不能进入交易池
+		log.Infof("Tx[%s] is a request, do not allow add to txpool", tx.Hash().String())
+		return nil
+	}
 	pool_tx := TxtoTxpoolTx(tx)
 	return pool.addLocal(pool_tx)
 }
@@ -755,6 +759,10 @@ func (pool *TxPool) addLocal(tx *modules.TxPoolTransaction) error {
 // sender is not among the locally tracked ones, full pricing constraints will
 // apply.
 func (pool *TxPool) AddRemote(tx *modules.Transaction) error {
+	if tx.IsNewContractInvokeRequest() { //Request不能进入交易池
+		log.Infof("Tx[%s] is a request, do not allow add to txpool", tx.Hash().String())
+		return nil
+	}
 	if tx.TxMessages[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
 		return nil
 	}
@@ -1599,7 +1607,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 	stxs := pool.GetSequenTxs()
 	poolTxs := pool.AllTxpoolTxs()
 	orphanTxs := pool.AllOrphanTxs()
-	unit_size := common.StorageSize(dagconfig.DagConfig.UnitTxSize)
+	unit_size := common.StorageSize(parameter.CurrentSysParameters.UnitMaxSize)
 	for _, tx := range stxs {
 		list = append(list, tx)
 		total += tx.Tx.Size()

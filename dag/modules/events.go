@@ -39,5 +39,9 @@ type SysContractStateChangeEvent struct {
 	ContractId []byte
 	WriteSet   []ContractWriteSet
 }
+
 type ChainMaintenanceEvent struct {
+}
+
+type ToGroupSignEvent struct {
 }

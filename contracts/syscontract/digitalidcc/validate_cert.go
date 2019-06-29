@@ -122,7 +122,7 @@ func validateIssuer(issuer string, cert *x509.Certificate, stub shim.ChaincodeSt
 			return err
 		}
 		if revocationTime.IsZero() || revocationTime.Before(time.Now()) {
-			return fmt.Errorf("Has no validate intermidate certificate")
+			return fmt.Errorf("Has no validate intermidate certificate. Time is %s", revocationTime.String())
 		}
 	}
 	return nil

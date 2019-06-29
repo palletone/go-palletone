@@ -27,6 +27,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/palletone/go-palletone/dag/errors"
+	"github.com/shopspring/decimal"
 )
 
 //var CoreAsset = NewPTNAsset()
@@ -174,4 +175,12 @@ func (asset *Asset) UnmarshalJSON(data []byte) error {
 	}
 	asset.SetString(str)
 	return nil
+}
+func (asset *Asset) DisplayAmount(amount uint64) decimal.Decimal {
+	dec := asset.GetDecimal()
+	d, _ := decimal.NewFromString(fmt.Sprintf("%d", amount))
+	for i := 0; i < int(dec); i++ {
+		d = d.Div(decimal.New(10, 0))
+	}
+	return d
 }

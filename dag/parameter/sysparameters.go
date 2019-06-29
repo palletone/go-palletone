@@ -21,17 +21,19 @@
 package parameter
 
 type SysParameters struct {
-	TxCoinDayInterest       float64 //一个币天产生多少利息
-	DepositContractInterest float64 //保证金合约一天产生多少利息
-	GenerateUnitReward      uint64  //每产生一个Unit奖励多少Dao的Token
-	RewardHeight            uint64
-	ContractFeeJuryPercent  float64 //合约执行的手续费中，有多少比例是分给Mediator
+	// TxCoinDayInterest      float64 //一个币天产生多少利息
+	DepositDailyReward     uint64 //保证金合约一天产生多少Dao的Token
+	GenerateUnitReward     uint64 //每产生一个Unit奖励多少Dao的Token
+	RewardHeight           uint64
+	UnitMaxSize            uint64
+	ContractFeeJuryPercent float64 //合约执行的手续费中，有多少比例是分给Mediator
 }
 
 var CurrentSysParameters = &SysParameters{
-	TxCoinDayInterest:       0.01 / 365,
-	DepositContractInterest: 0.02 / 365,
-	GenerateUnitReward:      100000000,
-	RewardHeight:            50,
-	ContractFeeJuryPercent:  0.6,
+	// TxCoinDayInterest:      0,
+	DepositDailyReward:     3751400000000, //按总2000W增发计算，质押增发1369.28W/Year,每天37514PTN
+	GenerateUnitReward:     100000000,     //1年增发 630.72W
+	RewardHeight:           50,
+	ContractFeeJuryPercent: 0.6,
+	UnitMaxSize:            5 * 1024 * 1024, //5M
 }

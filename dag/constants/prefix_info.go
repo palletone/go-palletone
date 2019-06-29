@@ -47,7 +47,9 @@ var (
 	REQID_TXID_PREFIX         = []byte("rq")
 	MEDIATOR_INFO_PREFIX      = []byte("mi")
 	DEPOSIT_BALANCE_PREFIX    = []byte("db")
-	DEPOSIT_NORMAL_PREFIX     = []byte("dn")
+	//DEPOSIT_MEDIATOR_VOTE_PREFIX = []byte("dn")
+	PLEDGE_DEPOSIT_PREFIX  = []byte("pd")
+	PLEDGE_WITHDRAW_PREFIX = []byte("pw")
 
 	GLOBAL_PROPERTY_HISTORY_PREFIX = []byte("gh")
 
@@ -68,7 +70,7 @@ var (
 
 	//filehash
 	IDX_MAIN_DATA_TXID  = []byte("md") //Old value: mda
-	IDX_REF_DATA_PREFIX  = []byte("re")
+	IDX_REF_DATA_PREFIX = []byte("re")
 	RewardAddressPrefix = "Addr:"
 )
 
