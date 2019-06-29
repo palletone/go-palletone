@@ -123,6 +123,7 @@ const (
 	DefaultMaintenanceSkipSlots = 0       //3 // number of slots to skip for maintenance interval
 
 	DefaultMediatorCreateFee        = 5000
+	DefaultContractInvokeFee        = 100000000
 	DefaultAccountUpdateFee         = 20
 	DefaultTransferPtnBaseFee       = 20
 	DefaultTransferPtnPricePerKByte = 20
