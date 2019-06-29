@@ -141,9 +141,9 @@ The basic configuration commands in CentOS are as follows:
 			#spawn "gptn's dir" account new
 			spawn /opt/gopath/src/github.com/palletone/go-palletone/build/bin/gptn account new
 			expect "Passphrase:"
-			send "1\r"
+			send "1\n"
 			expect "Repeat passphrase:"
-			send "1\r"
+			send "1\n"
 			interact
 		#
 		##Modify the gptn executable location in getInit.sh in the scripts directory to the absolute path below mediator0
@@ -152,7 +152,7 @@ The basic configuration commands in CentOS are as follows:
 			#输入gptn在Mediator0的绝对路径
 			spawn /opt/gopath/src/github.com/palletone/go-palletone/examples/e2e_cli/channel-artifacts/mediator0/gptn init
 			expect "Passphrase:"
-			send "1\r"
+			send "1\n"
 			interact
 		#
 #### 		(1.4.3) Generating configuration path information for N nodes

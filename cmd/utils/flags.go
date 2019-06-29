@@ -751,7 +751,7 @@ func MakePasswordList(ctx *cli.Context) []string {
 	lines := strings.Split(string(text), "\n")
 	// Sanitise DOS line endings.
 	for i := range lines {
-		lines[i] = strings.TrimRight(lines[i], "\r")
+		lines[i] = strings.TrimRight(lines[i], "\n")
 	}
 	return lines
 }
