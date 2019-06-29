@@ -55,9 +55,9 @@ newSyncMode="SyncMode=\"light\""
 sed -i '/^SyncMode/c'$newSyncMode'' node_test7/ptn-config.toml
 
 sleep 1
-sed -i 's/"mediatorInterval": 5,/"mediatorInterval": 2,/g' node1/ptn-genesis.json
+sed -i 's/"mediatorInterval": 3,/"mediatorInterval": 2,/g' node1/ptn-genesis.json
+sed -i 's/"mediator_interval": 3,/"mediator_interval": 2,/g' node1/ptn-genesis.json
 ./start.sh
-
 sleep 1
 numcommand=`ps -ef|grep gptn |wc -l`
 num=`echo $numcommand | sed -n '$p'| awk '{print $NF}'`
