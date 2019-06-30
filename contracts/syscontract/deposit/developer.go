@@ -37,7 +37,6 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 		//log.Error("strconv.ParseUint err:", "error", err)
 		return shim.Error(err.Error())
 	}
-	depositAmountsForDev := cp.DepositAmountForDeveloper
 	//  交付地址
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
@@ -59,8 +58,8 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 	if balance == nil {
 		balance = &DepositBalance{}
 		//  可以加入列表
-		if invokeTokens.Amount != depositAmountsForDev {
-			return shim.Error("Not enough")
+		if invokeTokens.Amount != cp.DepositAmountForDeveloper {
+			return shim.Error("Too many or too little.")
 		}
 		//  加入候选列表
 		err = addCandaditeList(stub, invokeAddr, modules.DeveloperList)
@@ -86,7 +85,7 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 func devApplyQuit(stub shim.ChaincodeStubInterface, args []string) peer.Response {
 	log.Info("devApplyQuit")
 	//  处理逻辑
-	err := applyQuitList(Developer, stub, args)
+	err := applyQuitList(Developer, stub)
 	if err != nil {
 		log.Error("devApplyQuit err: ", "error", err)
 		return shim.Error(err.Error())

@@ -345,7 +345,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					return nil, errors.New(fmt.Sprintf("[%s]runContractCmd APP_CONTRACT_INVOKE txid(%s) rans err:%s", shortId(reqId.String()), req.txid, err))
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.Args, 0 /*result.ExecutionTime*/ , result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
+				payload := modules.NewContractInvokePayload(result.ContractId, result.Args, 0 /*result.ExecutionTime*/, result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
 				}
@@ -593,33 +593,33 @@ func printTxInfo(tx *modules.Transaction) {
 		return
 	}
 
-	log.Info("=========tx info============hash:", tx.Hash().String())
+	log.Debug("=========tx info============hash:", tx.Hash().String())
 	for i := 0; i < len(tx.TxMessages); i++ {
-		log.Info("---------")
+		log.Debug("---------")
 		app := tx.TxMessages[i].App
 		pay := tx.TxMessages[i].Payload
-		log.Info("", "app:", app)
+		log.Debug("", "app:", app)
 		if app == modules.APP_PAYMENT {
 			p := pay.(*modules.PaymentPayload)
-			fmt.Println(p.LockTime)
+			log.Debugf("%d", p.LockTime)
 		} else if app == modules.APP_CONTRACT_INVOKE_REQUEST {
 			p := pay.(*modules.ContractInvokeRequestPayload)
-			fmt.Println(p.ContractId)
+			log.Debugf("%x", p.ContractId)
 		} else if app == modules.APP_CONTRACT_INVOKE {
 			p := pay.(*modules.ContractInvokePayload)
-			fmt.Println(p.Args)
+			log.Debugf("%x", p.Args)
 			for idx, v := range p.WriteSet {
-				fmt.Printf("WriteSet:idx[%d], k[%v]-v[%v]\n", idx, v.Key, v.Value)
+				log.Debugf("WriteSet:idx[%d], k[%v]-v[%v]\n", idx, v.Key, v.Value)
 			}
 			for idx, v := range p.ReadSet {
-				fmt.Printf("ReadSet:idx[%d], k[%v]-v[%v]\n", idx, v.Key, v.ContractId)
+				log.Debugf("ReadSet:idx[%d], k[%v]-v[%v]\n", idx, v.Key, v.ContractId)
 			}
 		} else if app == modules.APP_SIGNATURE {
 			p := pay.(*modules.SignaturePayload)
-			fmt.Printf("Signatures:[%v]", p.Signatures)
+			log.Debugf("Signatures:[%v]", p.Signatures)
 		} else if app == modules.APP_DATA {
 			p := pay.(*modules.DataPayload)
-			fmt.Printf("Text:[%v]", p.MainData)
+			log.Debugf("Text:[%v]", p.MainData)
 		}
 	}
 }
@@ -719,7 +719,7 @@ func shortId(id string) string {
 //	return resultInt
 //}
 
-func getValidAddress(addrs []common.Address) ([]common.Address) {
+func getValidAddress(addrs []common.Address) []common.Address {
 	result := make([]common.Address, 0)
 	for _, a := range addrs {
 		find := false

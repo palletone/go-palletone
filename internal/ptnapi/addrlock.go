@@ -19,11 +19,13 @@ package ptnapi
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/ptnjson"
 	"math"
 	"sync"
+
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/ptnjson"
 )
 
 type AddrLocker struct {
@@ -65,7 +67,7 @@ func internalRPCError(errStr, context string) *ptnjson.RPCError {
 	if context != "" {
 		logStr = context + ": " + errStr
 	}
-	fmt.Println(logStr)
+	log.Warn(logStr)
 	//rpcsLog.Error(logStr)
 	return ptnjson.NewRPCError(ptnjson.ErrRPCInternal.Code, errStr)
 }

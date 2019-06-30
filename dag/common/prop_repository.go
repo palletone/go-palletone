@@ -236,8 +236,16 @@ func (pRep *PropRepository) GetSlotTime(gp *modules.GlobalProperty, dgp *modules
 获取在给定时间或之前出现的最近一个slot。 Get the last slot which occurs AT or BEFORE the given time.
 */
 func (pRep *PropRepository) GetSlotAtTime(when time.Time) uint32 {
-	gp, _ := pRep.RetrieveGlobalProp()
+	gp, err := pRep.RetrieveGlobalProp()
+	if err != nil {
+		log.Debugf("Retrieve Global Prop error: %v", err.Error())
+		return 0
+	}
 	dgp, _ := pRep.RetrieveDynGlobalProp()
+	if err != nil {
+		log.Debugf("Retrieve Dyn Global Prop error: %v", err.Error())
+		return 0
+	}
 
 	/**
 	返回值是所有满足 GetSlotTime（N）<= when 中最大的N

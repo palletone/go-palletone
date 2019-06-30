@@ -38,7 +38,6 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 		//log.Error("strconv.ParseUint err:", "error", err)
 		return shim.Error(err.Error())
 	}
-	depositAmountsForJury := cp.DepositAmountForJury
 	//  交付地址
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
@@ -60,8 +59,8 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 	if balance == nil {
 		balance = &DepositBalance{}
 		//  可以加入列表
-		if invokeTokens.Amount != depositAmountsForJury {
-			return shim.Error("Not enough")
+		if invokeTokens.Amount != cp.DepositAmountForJury {
+			return shim.Error("Too many or too little.")
 		}
 		//  加入候选列表
 		err = addCandaditeList(stub, invokeAddr, modules.JuryList)
@@ -84,7 +83,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 }
 
 func juryApplyQuit(stub shim.ChaincodeStubInterface, args []string) peer.Response {
-	err := applyQuitList(Jury, stub, args)
+	err := applyQuitList(Jury, stub)
 	if err != nil {
 		log.Error("applyQuitList err: ", "error", err)
 		return shim.Error(err.Error())

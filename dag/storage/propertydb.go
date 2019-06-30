@@ -91,7 +91,7 @@ func (propdb *PropertyDb) StoreDynGlobalProp(dgp *modules.DynamicGlobalProperty)
 	log.Debugf("DB[%s] Save dynamic global property to db.", reflect.TypeOf(propdb.db).String())
 	err := StoreToRlpBytes(propdb.db, constants.DYNAMIC_GLOBALPROPERTY_KEY, dgp)
 	if err != nil {
-		log.Errorf("Store dynamic global properties error: %v", err.Error())
+		log.Debugf("Store dynamic global properties error: %v", err.Error())
 	}
 
 	return err
@@ -101,7 +101,7 @@ func (propdb *PropertyDb) StoreGlobalProp(gp *modules.GlobalProperty) error {
 	log.Debugf("DB[%s] Save global property to db.", reflect.TypeOf(propdb.db).String())
 	err := StoreToRlpBytes(propdb.db, constants.GLOBALPROPERTY_KEY, gp)
 	if err != nil {
-		log.Errorf("Store global properties error: %v", err.Error())
+		log.Debugf("Store global properties error: %v", err.Error())
 	}
 
 	return err
@@ -111,7 +111,7 @@ func (propdb *PropertyDb) RetrieveGlobalProp() (*modules.GlobalProperty, error) 
 	gp := &modules.GlobalProperty{}
 	err := RetrieveFromRlpBytes(propdb.db, constants.GLOBALPROPERTY_KEY, gp)
 	if err != nil {
-		log.Errorf("Retrieve global properties error: %v", err.Error())
+		log.Debugf("Retrieve global properties error: %v", err.Error())
 	}
 
 	return gp, err
@@ -122,7 +122,7 @@ func (propdb *PropertyDb) RetrieveDynGlobalProp() (*modules.DynamicGlobalPropert
 
 	err := RetrieveFromRlpBytes(propdb.db, constants.DYNAMIC_GLOBALPROPERTY_KEY, dgp)
 	if err != nil {
-		log.Errorf("Retrieve dynamic global properties error: %v", err.Error())
+		log.Debugf("Retrieve dynamic global properties error: %v", err.Error())
 	}
 
 	return dgp, err
@@ -132,7 +132,7 @@ func (propdb *PropertyDb) RetrieveMediatorSchl() (*modules.MediatorSchedule, err
 	ms := new(modules.MediatorSchedule)
 	err := RetrieveFromRlpBytes(propdb.db, constants.MEDIATOR_SCHEDULE_KEY, ms)
 	if err != nil {
-		log.Errorf("Retrieve mediator schedule error: %v", err.Error())
+		log.Debugf("Retrieve mediator schedule error: %v", err.Error())
 	}
 
 	return ms, err
@@ -149,7 +149,7 @@ func (propdb *PropertyDb) StoreGlobalPropHistory(gp *modules.GlobalPropertyHisto
 	key := makeGlobalPropHistoryKey(gp)
 	err := StoreToRlpBytes(propdb.db, key, gp)
 	if err != nil {
-		log.Errorf("Store global properties history error: %v", err.Error())
+		log.Debugf("Store global properties history error: %v", err.Error())
 	}
 
 	return err
@@ -199,7 +199,7 @@ func (db *PropertyDb) GetChaincodes(contractId common.Address) (*list.CCInfo, er
 	cc := &list.CCInfo{}
 	err := RetrieveFromRlpBytes(db.db, contractId.Bytes(), cc)
 	if err != nil {
-		log.Infof("Cannot retrieve chaincodes by contractid %s", contractId.String())
+		log.Debugf("Cannot retrieve chaincodes by contractid %s", contractId.String())
 		return nil, err
 	}
 	return cc, nil
