@@ -26,8 +26,8 @@ import (
 )
 
 const (
-	DefaultContractSigNum   = 2 //todo
-	DefaultElectionNum      = 2
+	DefaultElectionNum      = 4 //todo
+	DefaultContractSigNum   = 3 //todo
 	DefaultPassword         = "password"
 	ContractElectionTimeOut = 5 * time.Second //second
 	MaxLengthTplName        = 64              //合约模板名字长度
