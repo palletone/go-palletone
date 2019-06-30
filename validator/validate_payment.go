@@ -40,7 +40,7 @@ import (
 //3. Unlock correct
 func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx int,
 	payment *modules.PaymentPayload, usedUtxo map[string]bool) ValidationCode {
-	txId:=tx.Hash()
+	txId := tx.Hash()
 	//if payment.LockTime > 0 {
 	//	// TODO check locktime
 	//}
@@ -49,9 +49,9 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 	totalInput := uint64(0)
 	isInputnil := false
 	if len(payment.Inputs) == 0 {
-		if payment.Outputs[0].Asset.AssetId.Equal(gasToken) {
-			return TxValidationCode_INVALID_PAYMMENT_INPUT
-		}
+		// if payment.Outputs[0].Asset.AssetId.Equal(gasToken) {
+		// 	return TxValidationCode_INVALID_PAYMMENT_INPUT
+		// }
 		isInputnil = true
 	} else {
 		invokeReqMsgIdx := tx.GetContractInvokeReqMsgIdx()
@@ -71,8 +71,8 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 				log.Error("payment input is null.", "payment.input", payment.Inputs)
 				return TxValidationCode_INVALID_PAYMMENT_INPUT
 			}
-			if in.PreviousOutPoint.TxHash.IsZero(){
-				in.PreviousOutPoint.TxHash=txId
+			if in.PreviousOutPoint.TxHash.IsZero() {
+				in.PreviousOutPoint.TxHash = txId
 			}
 			usedUtxoKey := in.PreviousOutPoint.String()
 			if _, exist := usedUtxo[usedUtxoKey]; exist {

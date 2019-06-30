@@ -15,6 +15,9 @@
 package deposit
 
 import (
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/contracts/syscontract"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"strconv"
 
 	"encoding/json"
@@ -53,9 +56,24 @@ func handlePledgeReward(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 	if len(args) != 0 {
 		return shim.Error("need 0 args")
 	}
-	err := handleRewardAllocation(stub)
+	cp, err := stub.GetSystemConfig()
 	if err != nil {
 		return shim.Error(err.Error())
+	}
+	depositDailyReward := cp.PledgeDailyReward
+
+	err = handleRewardAllocation(stub, depositDailyReward)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	if depositDailyReward > 0 {
+		//增发到合约
+		log.Debugf("Create coinbase %d to pledge contract", depositDailyReward)
+		err = stub.SupplyToken(dagconfig.DagConfig.GetGasToken().Bytes(),
+			[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, depositDailyReward, syscontract.DepositContractAddress.String())
+		if err != nil {
+			return shim.Error(err.Error())
+		}
 	}
 	return shim.Success(nil)
 
