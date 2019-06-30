@@ -118,14 +118,15 @@ const (
 	PalletOne1Percent              = PalletOne100Percent / 100
 	PalletOneIrreversibleThreshold = 70 * PalletOne1Percent
 
-	DefaultMediatorInterval     = 3       // 5  /* seconds */
-	DefaultMaintenanceInterval  = 60 * 10 //60 * 60 * 24 // seconds, aka: 1 day
-	DefaultMaintenanceSkipSlots = 1       //3 // number of slots to skip for maintenance interval
+	DefaultMediatorInterval     = 3       /* seconds */
+	DefaultMaintenanceInterval  = 60 * 10 // seconds, aka: 1 day
+	DefaultMaintenanceSkipSlots = 1       // number of slots to skip for maintenance interval
 
 	DefaultMediatorCreateFee        = 5000
 	DefaultContractInvokeFee        = 100000000
 	DefaultAccountUpdateFee         = 20
 	DefaultTransferPtnBaseFee       = 20
 	DefaultTransferPtnPricePerKByte = 20
-	DefaultUnitMaxSize              = 5 * 1024 * 1024 //5M
+
+	DefaultUnitMaxSize = 5 * 1024 * 1024 //5M
 )

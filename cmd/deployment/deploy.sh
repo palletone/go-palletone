@@ -75,16 +75,9 @@ function replacejson()
 
     add=`cat $1 | jq ".initialParameters.active_mediator_count = $length"`
 
-: << !
-    add=`cat $1 | 
-      jq "to_entries | 
-      map(if .key == \"initialActiveMediators\" 
-          then . + {\"value\":$length} 
-          else . 
-          end
-         ) | 
-      from_entries"`
-!
+    add=`echo $add | jq ".immutableChainParameters.min_mediator_count = $length"`
+
+    add=`echo $add | jq ".initialParameters.maintenance_skip_slots = 0"`
 
     rm $1
     echo $add >> temp.json
