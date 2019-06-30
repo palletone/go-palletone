@@ -533,22 +533,18 @@ func (dag *UnitProduceRepository) updateActiveMediators() bool {
 	// 保证活跃mediator的总数必须大于MinimumMediatorCount
 	minMediatorCount := gp.ImmutableParameters.MinimumMediatorCount
 	countInSystem := dag.getDesiredActiveMediatorCount()
-	if countInSystem < int(minMediatorCount) {
-		log.Debugf("new Desired ActiveMediatorCount(%v) less than minMediatorCount(%v)",
-			countInSystem, minMediatorCount)
-	}
 	mediatorCount := maxFn((countInSystem-1)/2*2+1, int(minMediatorCount))
 
 	mediatorLen := dag.mediatorVoteTally.Len()
 	if mediatorLen < mediatorCount {
-		log.Debugf("the desired mediator count is %v, the actual mediator count is %v,"+
-			" the minimum mediator count is %v", countInSystem, mediatorLen, minMediatorCount)
 		// 保证活跃mediator的总数为奇数
 		mediatorCount = (mediatorLen-1)/2*2 + 1
 	}
-	log.Debugf("In this round, The active mediator's count is %v", mediatorCount)
+	log.Debugf("the desired mediator count is %v, the actual mediator count is %v,"+
+		" the minimum mediator count is %v", countInSystem, mediatorLen, minMediatorCount)
 
 	// 2. 根据每个mediator的得票数，排序出前n个 active mediator
+	log.Debugf("In this round, The active mediator's count is %v", mediatorCount)
 	sort.PartialSort(dag.mediatorVoteTally, mediatorCount)
 
 	// 3. 更新每个mediator的得票数
