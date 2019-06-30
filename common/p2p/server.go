@@ -147,9 +147,9 @@ type Config struct {
 
 var DefaultConfig = Config{
 	ListenAddr:     ":30303",
-	MaxPeers:       25,
+	MaxPeers:       50,
 	NAT:            nat.Any(),
-	CorsListenAddr: ":50505",
+	CorsListenAddr: "",
 }
 
 func GetCorsConfig(config Config) Config {
