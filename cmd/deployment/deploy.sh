@@ -52,6 +52,7 @@ function ExecInit()
 
 function replacejson()
 {
+: << !
     length=`cat $1 |jq '.initialMediatorCandidates| length'`
     minMediatorCount="min_mediator_count"
     line=`awk "/$minMediatorCount/{print NR}" $1`
@@ -70,6 +71,7 @@ function replacejson()
     `echo $replace >>t.json`
     jq -r . t.json >> $1
     rm t.json
+!
 
     add=`cat $1 | jq ".initialParameters.active_mediator_count = $length"`
 

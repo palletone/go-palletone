@@ -60,7 +60,7 @@ const (
 
 	DefaultMaxMediatorCount    = 1
 	DefaultActiveMediatorCount = 5 //21
-	DefaultMinMediatorCount    = 5 //21
+	DefaultMinMediatorCount    = 1 //21
 	DefaultMinMediatorInterval = 1
 
 	DefaultContractSignatureNum = 3
@@ -120,7 +120,7 @@ const (
 
 	DefaultMediatorInterval     = 3       // 5  /* seconds */
 	DefaultMaintenanceInterval  = 60 * 10 //60 * 60 * 24 // seconds, aka: 1 day
-	DefaultMaintenanceSkipSlots = 0       //3 // number of slots to skip for maintenance interval
+	DefaultMaintenanceSkipSlots = 1       //3 // number of slots to skip for maintenance interval
 
 	DefaultMediatorCreateFee        = 5000
 	DefaultContractInvokeFee        = 100000000

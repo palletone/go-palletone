@@ -157,7 +157,7 @@ func createGenesisJson(ctx *cli.Context) error {
 
 	initMediatorCount := len(mcs)
 	genesisState.InitialParameters.ActiveMediatorCount = uint8(initMediatorCount)
-	genesisState.ImmutableParameters.MinimumMediatorCount = uint8(initMediatorCount)
+	//genesisState.ImmutableParameters.MinimumMediatorCount = uint8(initMediatorCount)
 
 	//配置测试的基金会地址及密码
 	//account, _, err = createExampleAccount(ctx)
