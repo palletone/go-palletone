@@ -23,6 +23,8 @@ package ptnjson
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 	"time"
 
 	"encoding/hex"
@@ -271,6 +273,13 @@ func convertDeploy2Json(deploy *modules.ContractDeployPayload) *DeployJson {
 	djson.ErrorMessage = deploy.ErrMsg.Message
 	return djson
 }
+
+type CoinbaseWriteSet struct {
+	IsDelete bool   `json:"is_delete"`
+	Key      string `json:"key"`
+	Value    string `json:"value"`
+}
+
 func convertInvoke2Json(invoke *modules.ContractInvokePayload) *InvokeJson {
 	injson := new(InvokeJson)
 	injson.ContractId = contractId2AddrString(invoke.ContractId)
@@ -278,10 +287,30 @@ func convertInvoke2Json(invoke *modules.ContractInvokePayload) *InvokeJson {
 	for _, arg := range invoke.Args {
 		injson.Args = append(injson.Args, string(arg))
 	}
+
 	rset, _ := json.Marshal(invoke.ReadSet)
 	injson.ReadSet = string(rset)
-	wset, _ := json.Marshal(invoke.WriteSet)
-	injson.WriteSet = string(wset)
+	//Speical for coinbase
+	if injson.ContractId == syscontract.CoinbaseContractAddress.String() {
+		wsjs := []CoinbaseWriteSet{}
+		for _, w := range invoke.WriteSet {
+			wsj := CoinbaseWriteSet{IsDelete: w.IsDelete, Key: w.Key}
+			aa := []modules.AmountAsset{}
+			rlp.DecodeBytes(w.Value, &aa)
+			value := ""
+			for _, a := range aa {
+				value += a.String() + ";"
+			}
+			wsj.Value = value
+			wsjs = append(wsjs, wsj)
+		}
+		wset, _ := json.Marshal(wsjs)
+		injson.WriteSet = string(wset)
+
+	} else {
+		wset, _ := json.Marshal(invoke.WriteSet)
+		injson.WriteSet = string(wset)
+	}
 	injson.Payload = string(invoke.Payload)
 	injson.ErrorCode = invoke.ErrMsg.Code
 	injson.ErrorMessage = invoke.ErrMsg.Message
