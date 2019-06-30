@@ -31,8 +31,10 @@ Request send transaction
     log    ${resp.content}
     Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
     Should Contain    ${resp.content}['id']    1    msg="id:failed"
+    ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
+    ${jsonRes}    To Json    ${jsonRes}
     #Should Match Regexp    ${resp.content}['result']    ${sendResult}    msg="result:does't match expression"
-    [Return]    ${resp}
+    [Return]    ${jsonRes}
 
 Request transfer token
     [Arguments]    ${preTokenId}
