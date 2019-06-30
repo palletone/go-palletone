@@ -314,7 +314,7 @@ func matchProtocols(protocols []Protocol, caps []Cap, rw MsgReadWriter) map[stri
 	sort.Sort(capsByNameAndVersion(caps))
 	offset := baseProtocolLength
 	result := make(map[string]*protoRW)
-	log.Debug("P2P matchProtocols", "len(protocols)", len(protocols), "len(caps)", len(caps))
+	//log.Debug("P2P matchProtocols", "len(protocols)", len(protocols), "len(caps)", len(caps))
 
 outer:
 	for _, cap := range caps {

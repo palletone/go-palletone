@@ -476,7 +476,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 func (pm *ProtocolManager) LocalHandle(p *peer) error {
 	// Ignore maxPeers if this is a trusted peer
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
-		log.Info("ProtocolManager", "handler DiscTooManyPeers:", p2p.DiscTooManyPeers)
+		log.Info("ProtocolManager", "handler DiscTooManyPeers:", p2p.DiscTooManyPeers, "pm.peers.Len()", pm.peers.Len(), "peers", pm.peers.GetPeers())
 		return p2p.DiscTooManyPeers
 	}
 	log.Debug("PalletOne peer connected", "name", p.id)
@@ -520,7 +520,7 @@ func (pm *ProtocolManager) LocalHandle(p *peer) error {
 	// main loop. handle incoming messages.
 	for {
 		if err := pm.handleMsg(p); err != nil {
-			log.Debug("PalletOne message handling failed", "err", err)
+			log.Debug("PalletOne message handling failed", "err", err, "p.id", p.id)
 			return err
 		}
 	}
