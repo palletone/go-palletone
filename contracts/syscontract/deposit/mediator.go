@@ -142,12 +142,11 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	depositAmountsForMediator := cp.DepositAmountForMediator
 	//
 	if md.Balance == 0 {
-		if invokeTokens.Amount != depositAmountsForMediator {
-			log.Error("Payment amount is not enough.")
-			return shim.Error("Payment amount is not enough.")
+		if invokeTokens.Amount != cp.DepositAmountForMediator {
+			log.Error("Too many or too little.")
+			return shim.Error("Too many or too little.")
 		}
 		//  加入候选列表
 		err = addCandaditeList(stub, invokeAddr, modules.MediatorList)
@@ -164,7 +163,6 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		//  处理数据
 		md.EnterTime = getTiem(stub)
 		md.Balance = invokeTokens.Amount
-		md.LastModifyTime = getTiem(stub)
 		//  保存账户信息
 		err = SaveMediatorDeposit(stub, invokeAddr.String(), md)
 		if err != nil {
@@ -179,7 +177,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 
 //  申请退出 参数：暂时 节点地址
 func mediatorApplyQuit(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	err := applyQuitList(Mediator, stub, args)
+	err := applyQuitList(Mediator, stub)
 	if err != nil {
 		log.Error("mediatorApplyQuitMediator err: ", "error", err)
 		return shim.Error(err.Error())
@@ -252,7 +250,6 @@ func handleMediator(stub shim.ChaincodeStubInterface, quitAddr common.Address) e
 	md.Status = Quited
 	md.Balance = 0
 	md.EnterTime = ""
-	md.LastModifyTime = ""
 	//  保存
 	err = SaveMediatorDeposit(stub, quitAddr.Str(), md)
 	if err != nil {

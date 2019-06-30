@@ -113,12 +113,15 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Error(err.Error())
 		}
 		if list == nil {
-			return shim.Success([]byte("{}"))
+			return shim.Success([]byte("false"))
+		}
+		if len(args) != 1 {
+			return shim.Error("arg need one")
 		}
 		if list[args[0]] {
-			return shim.Success([]byte("in the list"))
+			return shim.Success([]byte("true"))
 		}
-		return shim.Error("not in the list")
+		return shim.Success([]byte("false"))
 		//  获取已同意的mediator列表
 	case GetAgreeForBecomeMediatorList:
 		log.Info("Enter DepositChaincode Contract " + GetAgreeForBecomeMediatorList + " Invoke")
@@ -138,12 +141,15 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Error(err.Error())
 		}
 		if list == nil {
-			return shim.Success([]byte("{}"))
+			return shim.Success([]byte("false"))
+		}
+		if len(args) != 1 {
+			return shim.Error("arg need one")
 		}
 		if list[args[0]] {
-			return shim.Success([]byte("in the list"))
+			return shim.Success([]byte("true"))
 		}
-		return shim.Error("not in the list")
+		return shim.Success([]byte("false"))
 		//获取申请退出列表
 	case GetQuitApplyList:
 		log.Info("Enter DepositChaincode Contract " + GetQuitApplyList + " Invoke")
@@ -158,17 +164,20 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		//  查看是否在退出列表中
 	case IsInQuitList:
 		log.Info("Enter DepositChaincode Contract " + IsInQuitList + " Invoke")
-		list, err := getList(stub, ListForQuit)
+		list, err := GetListForQuit(stub)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
 		if list == nil {
-			return shim.Success([]byte("not in the node quit list"))
+			return shim.Success([]byte("false"))
+		}
+		if len(args) != 1 {
+			return shim.Error("arg need one")
 		}
 		if _, ok := list[args[0]]; ok {
-			return shim.Success([]byte("in the node quit list"))
+			return shim.Success([]byte("true"))
 		}
-		return shim.Success([]byte("not in the node quit list"))
+		return shim.Success([]byte("false"))
 		//  获取没收保证金申请列表
 	case GetListForForfeitureApplication:
 		log.Info("Enter DepositChaincode Contract " + GetListForForfeitureApplication + " Invoke")
@@ -188,12 +197,16 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Error(err.Error())
 		}
 		if list == nil {
-			return shim.Success([]byte("{}"))
+			return shim.Success([]byte("false"))
+		}
+		if len(args) != 1 {
+			return shim.Error("arg need one")
 		}
 		if _, ok := list[args[0]]; ok {
-			return shim.Success([]byte("in the list"))
+			return shim.Success([]byte("true"))
 		}
-		return shim.Error("not in the list")
+		return shim.Success([]byte("false"))
+
 		//  获取Mediator候选列表
 	case GetListForMediatorCandidate:
 		log.Info("Enter DepositChaincode Contract " + GetListForMediatorCandidate + " Invoke")
@@ -208,17 +221,20 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		//  查看节点是否在候选列表中
 	case IsInMediatorCandidateList:
 		log.Info("Enter DepositChaincode Contract " + IsInMediatorCandidateList + " Invoke")
-		mediatorRegisterInfo, err := getList(stub, modules.MediatorList)
+		list, err := getList(stub, modules.MediatorList)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-		if mediatorRegisterInfo == nil {
-			return shim.Success([]byte("super node candidate list is empty"))
+		if list == nil {
+			return shim.Success([]byte("false"))
 		}
-		if _, ok := mediatorRegisterInfo[args[0]]; ok {
-			return shim.Success([]byte("joined the super node candidate list"))
+		if len(args) != 1 {
+			return shim.Error("arg need one")
 		}
-		return shim.Success([]byte("not in the supernode candidate list"))
+		if list[args[0]] {
+			return shim.Success([]byte("true"))
+		}
+		return shim.Success([]byte("false"))
 		//  获取Jury候选列表
 	case GetListForJuryCandidate:
 		log.Info("Enter DepositChaincode Contract " + GetListForJuryCandidate + " Invoke")
@@ -233,20 +249,23 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		//  查看jury是否在候选列表中
 	case IsInJuryCandidateList:
 		log.Info("Enter DepositChaincode Contract " + IsInJuryCandidateList + " Invoke")
-		jByte, err := getList(stub, modules.JuryList)
+		list, err := getList(stub, modules.JuryList)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-		if jByte == nil {
-			return shim.Success([]byte("jury node candidate list is empty"))
+		if list == nil {
+			return shim.Success([]byte("false"))
 		}
-		if _, ok := jByte[args[0]]; ok {
-			return shim.Success([]byte("joined the jury node candidate list"))
+		if len(args) != 1 {
+			return shim.Error("arg need one")
 		}
-		return shim.Success([]byte("not in the jury candidate list"))
+		if list[args[0]] {
+			return shim.Success([]byte("true"))
+		}
+		return shim.Success([]byte("false"))
 		//  获取Contract Developer候选列表
-	case GetListForDeveloperCandidate:
-		log.Info("Enter DepositChaincode Contract " + GetListForDeveloperCandidate + " Invoke")
+	case GetListForDeveloper:
+		log.Info("Enter DepositChaincode Contract " + GetListForDeveloper + " Invoke")
 		list, err := stub.GetState(modules.DeveloperList)
 		if err != nil {
 			return shim.Error(err.Error())
@@ -256,19 +275,22 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		return shim.Success(list)
 		//  查看developer是否在候选列表中
-	case IsInDeveloperCandidateList:
-		log.Info("Enter DepositChaincode Contract " + IsInDeveloperCandidateList + " Invoke")
-		dByte, err := getList(stub, modules.DeveloperList)
+	case IsInDeveloperList:
+		log.Info("Enter DepositChaincode Contract " + IsInDeveloperList + " Invoke")
+		list, err := getList(stub, modules.DeveloperList)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-		if dByte == nil {
-			return shim.Success([]byte("jury node candidate list is empty"))
+		if list == nil {
+			return shim.Success([]byte("false"))
 		}
-		if _, ok := dByte[args[0]]; ok {
-			return shim.Success([]byte("joined the jury node candidate list"))
+		if len(args) != 1 {
+			return shim.Error("arg need one")
 		}
-		return shim.Success([]byte("not in the jury candidate list"))
+		if list[args[0]] {
+			return shim.Success([]byte("true"))
+		}
+		return shim.Success([]byte("false"))
 		//  获取jury/dev节点的账户
 	case GetDeposit:
 		log.Info("Enter DepositChaincode Contract " + GetDeposit + " Invoke")
@@ -398,17 +420,9 @@ func (d DepositChaincode) normalNodePledgeVote(stub shim.ChaincodeStubInterface,
 	return processPledgeDeposit(stub, args)
 }
 
-//func (d DepositChaincode) normalNodeChangeVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-//	return normalNodeChangeVote(stub, args)
-//}
-
 func (d DepositChaincode) normalNodeExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return processPledgeWithdraw(stub, args)
 }
-
-//func (d DepositChaincode) handleExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-//	return handleExtractVote(stub, args)
-//}
 
 func (d DepositChaincode) handleEachDayAward(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return handlePledgeReward(stub, args)

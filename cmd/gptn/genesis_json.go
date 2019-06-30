@@ -149,11 +149,11 @@ func createGenesisJson(ctx *cli.Context) error {
 
 	genesisState := createExampleGenesis()
 	genesisState.TokenHolder = account
-	genesisState.InitialParameters.FoundationAddress = genesisState.TokenHolder
-	genesisState.InitialMediatorCandidates = initialMediatorCandidates(mcs, nodeStr)
+	genesisState.InitialParameters.FoundationAddress = account
+	genesisState.DigitalIdentityConfig.RootCAHolder = account
 
-	// set root ca holder
-	genesisState.DigitalIdentityConfig.RootCAHolder = genesisState.TokenHolder
+	genesisState.InitialMediatorCandidates = initialMediatorCandidates(mcs, nodeStr)
+	genesisState.InitialParameters.MaintenanceSkipSlots = 0
 
 	initMediatorCount := len(mcs)
 	genesisState.InitialParameters.ActiveMediatorCount = uint8(initMediatorCount)

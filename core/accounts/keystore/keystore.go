@@ -28,6 +28,7 @@ import (
 	"math/big"
 	"os"
 	"path/filepath"
+        "encoding/hex"
 	"reflect"
 	"runtime"
 	"sync"
@@ -493,6 +494,22 @@ func (ks *KeyStore) Import(keyJSON []byte, passphrase, newPassphrase string) (ac
 	return ks.importKey(key, newPassphrase)
 }
 
+// Import stores the given encrypted JSON key into the key directory.
+func (ks *KeyStore) ImportFromHex(hexhash string, newPassphrase string) (accounts.Account, error) {
+	b, err := hex.DecodeString(hexhash)
+	if err != nil {
+		return accounts.Account{}, errors.New("invalid hex string")
+	}
+	priv ,err :=crypto.ToECDSA(b)
+	key := newKeyFromECDSA(priv)
+	if key != nil && key.PrivateKey != nil {
+		defer ZeroKey(key.PrivateKey)
+	}
+	if err != nil {
+		return accounts.Account{}, err
+	}
+	return ks.importKey(key, newPassphrase)
+}
 // ImportECDSA stores the given key into the key directory, encrypting it with the passphrase.
 func (ks *KeyStore) ImportECDSA(priv *ecdsa.PrivateKey, passphrase string) (accounts.Account, error) {
 	key := newKeyFromECDSA(priv)

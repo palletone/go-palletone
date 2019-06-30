@@ -61,33 +61,6 @@ func handlePledgeReward(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 
 }
 
-//  普通节点修改质押mediator
-//func normalNodeChangeVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-//
-//	//  获取请求地址
-//	inAddr, err := stub.GetInvokeAddress()
-//	if err != nil {
-//		return shim.Error(err.Error())
-//	}
-//	////  获取是否存在
-//	//nor, err := getNor(stub, inAddr.String())
-//	//if err != nil {
-//	//	return shim.Error(err.Error())
-//	//}
-//	//if nor == nil {
-//	//	return shim.Error("node was nil")
-//	//}
-//
-//	//mediatorAddr := args[0]
-//	//nor.MediatorAddr = mediatorAddr
-//	//  保存
-//	err = saveMediatorVote(stub, inAddr.String(), args)
-//	if err != nil {
-//		return shim.Error(err.Error())
-//	}
-//	return shim.Success(nil)
-//}
-
 //  普通节点申请提取PTN
 func processPledgeWithdraw(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	if len(args) != 1 {

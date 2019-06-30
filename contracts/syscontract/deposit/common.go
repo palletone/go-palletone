@@ -74,7 +74,7 @@ func isContainDepositContractAddr(stub shim.ChaincodeStubInterface) (invokeToken
 }
 
 //  处理部分保证金逻辑
-func applyQuitList(role string, stub shim.ChaincodeStubInterface, args []string) error {
+func applyQuitList(role string, stub shim.ChaincodeStubInterface) error {
 	//  获取请求调用地址
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
@@ -90,9 +90,8 @@ func applyQuitList(role string, stub shim.ChaincodeStubInterface, args []string)
 		listForQuit = make(map[string]*QuitNode)
 	}
 	quitNode := &QuitNode{
-		Address: invokeAddr.String(),
-		Role:    role,
-		Time:    getTiem(stub),
+		Role: role,
+		Time: getTiem(stub),
 	}
 
 	//  保存退还列表
@@ -320,312 +319,6 @@ func isFoundationInvoke(stub shim.ChaincodeStubInterface) bool {
 	return true
 }
 
-//  获取普通节点
-//func getAccountMediatorVote(stub shim.ChaincodeStubInterface, invokeA string) ([]string, error) {
-//	b, err := stub.GetState(string(constants.DEPOSIT_MEDIATOR_VOTE_PREFIX) + invokeA)
-//	if err != nil {
-//		return nil, err
-//	}
-//	if b == nil {
-//		return nil, nil
-//	}
-//	mediators := []string{}
-//	err = json.Unmarshal(b, &mediators)
-//	if err != nil {
-//		return nil, err
-//	}
-//	return mediators, nil
-//}
-
-//  保存普通节点
-//func saveMediatorVote(stub shim.ChaincodeStubInterface, invokeA string, mediators []string) error {
-//	config, _ := stub.GetSystemConfig()
-//	maxVote := config.MaximumMediatorCount
-//	if len(mediators) > int(maxVote) {
-//		return errors.New(fmt.Sprintf("Too many mediators, must less or equal than %d", maxVote))
-//	}
-//	b, err := json.Marshal(mediators)
-//	if err != nil {
-//		return err
-//	}
-//	err = stub.PutState(string(constants.DEPOSIT_MEDIATOR_VOTE_PREFIX)+invokeA, b)
-//	if err != nil {
-//		return err
-//	}
-//	return nil
-//}
-
-//  获取普通节点提取PTN
-//func getExtPtn(stub shim.ChaincodeStubInterface) (map[string]*extractPtn, error) {
-//	b, err := stub.GetState(ExtractPtnList)
-//	if err != nil {
-//		return nil, err
-//	}
-//	if b == nil {
-//		return nil, nil
-//	}
-//	extP := make(map[string]*extractPtn)
-//	err = json.Unmarshal(b, &extP)
-//	if err != nil {
-//		return nil, err
-//	}
-//	return extP, nil
-//}
-
-//  保存普通节点提取PTN
-//func saveExtPtn(stub shim.ChaincodeStubInterface, extPtnL map[string]*extractPtn) error {
-//	b, err := json.Marshal(extPtnL)
-//	if err != nil {
-//		return err
-//	}
-//	err = stub.PutState(ExtractPtnList, b)
-//	if err != nil {
-//		return err
-//	}
-//	return nil
-//}
-
-//  获取当前PTN总量
-//func getVotes(stub shim.ChaincodeStubInterface) (int64, error) {
-//	b, err := stub.GetState(AllPledgeVotes)
-//	if err != nil {
-//		return 0, err
-//	}
-//	if b == nil {
-//		return 0, nil
-//	}
-//	votes, err := strconv.ParseInt(string(b), 10, 64)
-//	if err != nil {
-//		return 0, err
-//	}
-//	return votes, nil
-//}
-
-//  保存PTN总量
-//func saveVotes(stub shim.ChaincodeStubInterface, votes int64) error {
-//	cur, err := getVotes(stub)
-//	if err != nil {
-//		return err
-//	}
-//	cur += votes
-//	str := strconv.FormatInt(cur, 10)
-//	err = stub.PutState(AllPledgeVotes, []byte(str))
-//	if err != nil {
-//		return err
-//	}
-//	return nil
-//}
-
-//  每天计算各节点收益
-//func handleEachDayAward1(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-//	if len(args) != 0 {
-//		return shim.Error("need 0 args")
-//	}
-//	//  判断是否是基金会
-//	if !isFoundationInvoke(stub) {
-//		return shim.Error("please use foundation address")
-//	}
-//	//  判断当天是否处理过
-//	if isHandled(stub) {
-//		return shim.Error("had handled")
-//	}
-//	//  通过前缀获取所有mediator
-//	mediators, err := stub.GetStateByPrefix(string(constants.MEDIATOR_INFO_PREFIX) + string(constants.DEPOSIT_BALANCE_PREFIX))
-//	if err != nil {
-//		return shim.Error(err.Error())
-//	}
-//	//  通过前缀获取所有jury/dev
-//	juryAndDevs, err := stub.GetStateByPrefix(string(constants.DEPOSIT_BALANCE_PREFIX))
-//	if err != nil {
-//		return shim.Error(err.Error())
-//	}
-//	//  通过前缀获取所有普通节点
-//	normalNodes, err := stub.GetStateByPrefix(string(constants.DEPOSIT_MEDIATOR_VOTE_PREFIX))
-//	if err != nil {
-//		return shim.Error(err.Error())
-//	}
-//	//  获取集合全部
-//	allM, err := getLastPledgeList(stub)
-//	if err != nil {
-//		return shim.Error(err.Error())
-//	}
-//	//  第一次,收集当前的质押情况
-//	if a == nil {
-//		a = &PledgeList{}
-//		a.Amount = pledgeVotes
-//		//  计算mediators
-//		for _, me := range mediators {
-//			m := Members{}
-//			m.Key = mediatorDepositKey(me.Key)
-//			m.Value = me.Value
-//			m.Role = Mediator
-//			a.Members = append(a.Members, &m)
-//		}
-//		//  计算jury/dev
-//		for _, jd := range juryAndDevs {
-//			m := Members{}
-//			m.Key = string(constants.DEPOSIT_BALANCE_PREFIX) + jd.Key
-//			m.Value = jd.Value
-//			m.Role = JuryAndDev
-//			a.Members = append(a.Members, &m)
-//		}
-//		//  计算normalNode
-//		for _, nor := range normalNodes {
-//			m := Members{}
-//			m.Key = string(constants.DEPOSIT_MEDIATOR_VOTE_PREFIX) + nor.Key
-//			m.Value = nor.Value
-//			m.Role = NormalNode
-//			a.Members = append(a.Members, &m)
-//		}
-//		err = saveMember(stub, a)
-//		if err != nil {
-//			return shim.Error(err.Error())
-//		}
-//		return shim.Success(nil)
-//	} else {
-//		//  获取每天总奖励
-//		cp, err := stub.GetSystemConfig()
-//		if err != nil {
-//			return shim.Error(err.Error())
-//		}
-//		depositExtraReward := cp.DepositExtraReward
-//		rate := float64(depositExtraReward) / float64(a.Amount)
-//		//  计算集合利息
-//		for i, m := range a.Members {
-//			fmt.Println(i)
-//			switch m.Role {
-//			case Mediator:
-//				mediatorDeposit := MediatorDeposit{}
-//				_ = json.Unmarshal(m.Value, &mediators)
-//				dayAward := rate * float64(mediatorDeposit.DepositBalance.Balance)
-//				mediatorDeposit.DepositBalance.Balance += uint64(dayAward)
-//				//  获取该节点
-//				//  添加利息
-//				//  放到集合统一更新
-//			case JuryAndDev:
-//			case NormalNode:
-//
-//			}
-//		}
-//		//  先计算前一天的收益，再累加当前的质押情况
-//
-//	}
-//
-//	//  计算mediators
-//	for _, m := range mediators {
-//		mediatorDeposit := MediatorDeposit{}
-//		_ = json.Unmarshal(m.Value, &mediators)
-//		dayAward := rate * float64(mediatorDeposit.DepositBalance.Balance)
-//		mediatorDeposit.DepositBalance.Balance += uint64(dayAward)
-//		_ = SaveMediatorDeposit(stub, m.Key, &mediatorDeposit)
-//	}
-//	//  计算jury/dev
-//	for _, jd := range juryAndDevs {
-//		depositBalance := DepositBalance{}
-//		_ = json.Unmarshal(jd.Value, &depositBalance)
-//		dayAward := rate * float64(depositBalance.Balance)
-//		depositBalance.Balance += uint64(dayAward)
-//		_ = SaveNodeBalance(stub, jd.Key, &depositBalance)
-//	}
-//	//  计算normalNode
-//	for _, nor := range normalNodes {
-//		norNodBal := NorNodBal{}
-//		_ = json.Unmarshal(nor.Value, &norNodBal)
-//		dayAward := rate * float64(norNodBal.AmountAsset.Amount)
-//		norNodBal.AmountAsset.Amount += uint64(dayAward)
-//		_ = saveNor(stub, nor.Key, &norNodBal)
-//	}
-//	nDay := time.Now().UTC().Day()
-//	err = stub.PutState(HandleEachDay, []byte(strconv.Itoa(nDay)))
-//	if err != nil {
-//		return shim.Error(err.Error())
-//	}
-//	return shim.Success(nil)
-//}
-
-//func getAllMember1(stub shim.ChaincodeStubInterface) (map[string][]*Member, error) {
-//	b, err := stub.GetState(MemberList)
-//	if err != nil {
-//		return nil, err
-//	}
-//	if b == nil {
-//		return nil, nil
-//	}
-//	allM := make(map[string][]*Member)
-//	err = json.Unmarshal(b, allM)
-//	if err != nil {
-//		return nil, err
-//	}
-//	return allM, nil
-//}
-
-//func saveLastPledgeList(stub shim.ChaincodeStubInterface, allM map[string][]*Members) error {
-//	b, err := json.Marshal(allM)
-//	if err != nil {
-//		return err
-//	}
-//	err = stub.PutState(MemberList, b)
-//	if err != nil {
-//		return err
-//	}
-//	return nil
-//}
-
-func getNormalNodeFromAllMember(stub shim.ChaincodeStubInterface) ([]*NorNodBal, error) {
-	//mapAll, err := getLastPledgeList(stub)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//if normalNodes, ok := mapAll[NormalNode]; ok {
-	//	var norl []*NorNodBal
-	//	for i, nor := range normalNodes {
-	//		fmt.Println("===normalNode===>   ", i)
-	//		norNodBal := NorNodBal{}
-	//		_ = json.Unmarshal(nor.Value, &norNodBal)
-	//		norl = append(norl, &norNodBal)
-	//	}
-	//	return norl, nil
-	//}
-	return nil, nil
-}
-
-func getJuryAndDevFromAllMember(stub shim.ChaincodeStubInterface) ([]*DepositBalance, error) {
-	//mapAll, err := getLastPledgeList(stub)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//if juryAndDevs, ok := mapAll[JuryAndDev]; ok {
-	//	var jdl []*DepositBalance
-	//	for i, jd := range juryAndDevs {
-	//		fmt.Println("===jury and dev===>   ", i)
-	//		depositBalance := DepositBalance{}
-	//		_ = json.Unmarshal(jd.Value, &depositBalance)
-	//		jdl = append(jdl, &depositBalance)
-	//	}
-	//	return jdl, nil
-	//}
-	return nil, nil
-
-}
-
-func getMediatorsFromeAllMember(stub shim.ChaincodeStubInterface) ([]*MediatorDeposit, error) {
-	//mapAll, err := getLastPledgeList(stub)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//if mediators, ok := mapAll[deposit.Mediator]; ok {
-	//	var ml []*MediatorDeposit
-	//	for i, m := range mediators {
-	//		fmt.Println("===mediator===>   ", i)
-	//		mediatorDeposit := MediatorDeposit{}
-	//		_ = json.Unmarshal(m.Value, &mediatorDeposit)
-	//		ml = append(ml, &mediatorDeposit)
-	//	}
-	//	return ml, nil
-	//}
-	return nil, nil
-}
-
 func getTiem(stub shim.ChaincodeStubInterface) string {
 	t, _ := stub.GetTxTimestamp(10)
 	ti := time.Unix(t.Seconds, 0)
@@ -645,8 +338,8 @@ func getToday(stub shim.ChaincodeStubInterface) string {
 func applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	log.Info("applyForForfeitureDeposit")
 	if len(args) != 3 {
-		log.Error("args need four parameters")
-		return shim.Error("args need four parameters")
+		log.Error("args need three parameters")
+		return shim.Error("args need three parameters")
 	}
 	//  需要判断是否基金会发起的
 	//if !isFoundationInvoke(stub) {
@@ -688,7 +381,6 @@ func applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, args []string) 
 	//  存储信息
 	forfeiture := &Forfeiture{}
 	forfeiture.ApplyAddress = invokeAddr.String()
-	forfeiture.ForfeitureAddress = forfeitureAddr
 	forfeiture.ForfeitureRole = role
 	forfeiture.Extra = extra
 	forfeiture.ApplyTime = getTiem(stub)

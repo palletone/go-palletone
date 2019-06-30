@@ -194,26 +194,30 @@ func (rep *UnitRepository) GetHeaderByNumber(index *modules.ChainIndex) (*module
 	}
 	return rep.dagdb.GetHeaderByHash(hash)
 }
+
 func (rep *UnitRepository) IsHeaderExist(uHash common.Hash) (bool, error) {
 	return rep.dagdb.IsHeaderExist(uHash)
 }
+
 func (rep *UnitRepository) IsTransactionExist(txHash common.Hash) (bool, error) {
 	return rep.dagdb.IsTransactionExist(txHash)
 }
+
 func (rep *UnitRepository) GetUnit(hash common.Hash) (*modules.Unit, error) {
 	rep.lock.RLock()
 	defer rep.lock.RUnlock()
 	return rep.getUnit(hash)
 }
+
 func (rep *UnitRepository) getUnit(hash common.Hash) (*modules.Unit, error) {
 	uHeader, err := rep.dagdb.GetHeaderByHash(hash)
 	if err != nil {
-		log.Error("getChainUnit when GetHeaderByHash failed ", "error", err, "hash", hash.String())
+		log.Debug("getChainUnit when GetHeaderByHash failed ", "error", err, "hash", hash.String())
 		return nil, err
 	}
 	txs, err := rep.dagdb.GetUnitTransactions(hash)
 	if err != nil {
-		log.Error("getChainUnit when GetUnitTransactions failed ", "error", err, "hash", hash.String())
+		log.Debug("getChainUnit when GetUnitTransactions failed ", "error", err, "hash", hash.String())
 		return nil, err
 	}
 	// generate unit

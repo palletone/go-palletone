@@ -53,7 +53,13 @@ func (d *Dag) GetActiveMediatorNodes() map[string]*discover.Node {
 
 	meds := d.GetActiveMediators()
 	for _, add := range meds {
-		med := d.GetActiveMediator(add)
+		// todo albert  待检查
+		//med := d.GetActiveMediator(add)
+		med := d.GetMediator(add)
+		if med == nil {
+			continue
+		}
+
 		node := med.Node
 		nodes[node.ID.TerminalString()] = node
 	}
@@ -116,6 +122,7 @@ func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
 func (d *Dag) GetMediator(add common.Address) *core.Mediator {
 	med, err := d.unstableStateRep.RetrieveMediator(add)
 	if err != nil {
+		log.Debugf("Retrieve Mediator error: %v", err.Error())
 		return nil
 	}
 

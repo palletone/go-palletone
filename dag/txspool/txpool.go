@@ -575,13 +575,12 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 		log.Trace("Discarding already known transaction", "hash", hash)
 		return false, fmt.Errorf("known transaction: %#x", hash)
 	}
-	//if has, _ := pool.unit.IsTransactionExist(hash); has {
-	//	return false, fmt.Errorf("the transactionx: %s has been packaged.", hash.String())
-	//}
 	if pool.isOrphanInPool(hash) {
 		return false, fmt.Errorf("know orphanTx: %#x", hash)
 	}
-
+	if has, _ := pool.unit.IsTransactionExist(hash); has {
+		return false, fmt.Errorf("the transactionx: %s has been packaged.", hash.String())
+	}
 	// If the transaction fails basic validation, discard it
 	if addition, code, err := pool.validateTx(tx, local); err != nil {
 		if code == validator.TxValidationCode_ORPHAN {
@@ -606,31 +605,6 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	//}
 	// 计算优先级
 	pool.setPriorityLvl(tx)
-
-	//utxoview, err := pool.FetchInputUtxos(tx.Tx)
-	//if err != nil {
-	//	log.Errorf("fetchInputUtxos by txid[%s] failed:%s", tx.Tx.Hash().String(), err)
-	//	return false, err
-	//}
-	//
-	//// Check the transaction if it exists in the main chain and is not already fully spent.
-	//preout := modules.OutPoint{TxHash: hash}
-	//for i, msgcopy := range msgs {
-	//	if msgcopy.App == modules.APP_PAYMENT {
-	//		if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
-	//			for j := range msg.Outputs {
-	//				preout.MessageIndex = uint32(i)
-	//				preout.OutIndex = uint32(j)
-	//				// get utxo entry , if the utxo entry is spent, then return  error.
-	//				utxo := utxoview.LookupUtxo(preout)
-	//				if utxo != nil && !utxo.IsSpent() {
-	//					return false, errors.New("transaction already exists.")
-	//				}
-	//				utxoview.RemoveUtxo(preout)
-	//			}
-	//		}
-	//	}
-	//}
 
 	// If the transaction pool is full, discard underpriced transactions
 	length := pool.AllLength()
@@ -1357,7 +1331,7 @@ func (pool *TxPool) GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error)
 func (pool *TxPool) FetchInputUtxos(tx *modules.Transaction) (*UtxoViewpoint, error) {
 	utxoView, err := pool.GetUtxoView(tx)
 	if err != nil {
-		fmt.Println("getUtxoView is error,", err)
+		log.Errorf("getUtxoView is error:%s", err.Error())
 		return nil, err
 	}
 	// spent input utxo, and add output utxo.
