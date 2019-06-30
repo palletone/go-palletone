@@ -1357,7 +1357,7 @@ func (pool *TxPool) GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error)
 func (pool *TxPool) FetchInputUtxos(tx *modules.Transaction) (*UtxoViewpoint, error) {
 	utxoView, err := pool.GetUtxoView(tx)
 	if err != nil {
-		fmt.Println("getUtxoView is error,", err)
+		log.Errorf("getUtxoView is error:%s", err.Error())
 		return nil, err
 	}
 	// spent input utxo, and add output utxo.
