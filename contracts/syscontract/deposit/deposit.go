@@ -115,6 +115,9 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		if list == nil {
 			return shim.Success([]byte("false"))
 		}
+		if len(args) != 1 {
+			return shim.Error("arg need one")
+		}
 		if list[args[0]] {
 			return shim.Success([]byte("true"))
 		}
@@ -139,6 +142,9 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		if list == nil {
 			return shim.Success([]byte("false"))
+		}
+		if len(args) != 1 {
+			return shim.Error("arg need one")
 		}
 		if list[args[0]] {
 			return shim.Success([]byte("true"))
@@ -165,6 +171,9 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		if list == nil {
 			return shim.Success([]byte("false"))
 		}
+		if len(args) != 1 {
+			return shim.Error("arg need one")
+		}
 		if _, ok := list[args[0]]; ok {
 			return shim.Success([]byte("true"))
 		}
@@ -189,6 +198,9 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		if list == nil {
 			return shim.Success([]byte("false"))
+		}
+		if len(args) != 1 {
+			return shim.Error("arg need one")
 		}
 		if _, ok := list[args[0]]; ok {
 			return shim.Success([]byte("true"))
@@ -216,6 +228,9 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		if list == nil {
 			return shim.Success([]byte("false"))
 		}
+		if len(args) != 1 {
+			return shim.Error("arg need one")
+		}
 		if list[args[0]] {
 			return shim.Success([]byte("true"))
 		}
@@ -241,6 +256,9 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		if list == nil {
 			return shim.Success([]byte("false"))
 		}
+		if len(args) != 1 {
+			return shim.Error("arg need one")
+		}
 		if list[args[0]] {
 			return shim.Success([]byte("true"))
 		}
@@ -265,6 +283,9 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		if list == nil {
 			return shim.Success([]byte("false"))
+		}
+		if len(args) != 1 {
+			return shim.Error("arg need one")
 		}
 		if list[args[0]] {
 			return shim.Success([]byte("true"))
