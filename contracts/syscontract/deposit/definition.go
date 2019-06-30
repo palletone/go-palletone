@@ -35,13 +35,13 @@ const (
 	No = "no"
 
 	//获取候选列表
-	GetListForMediatorCandidate  = "GetListForMediatorCandidate"
-	GetListForJuryCandidate      = "GetListForJuryCandidate"
-	GetListForDeveloperCandidate = "GetListForDeveloperCandidate"
+	GetListForMediatorCandidate = "GetListForMediatorCandidate"
+	GetListForJuryCandidate     = "GetListForJuryCandidate"
+	GetListForDeveloper         = "GetListForDeveloper"
 	//查看是否在候选列表中
-	IsInMediatorCandidateList  = "IsInMediatorCandidateList"
-	IsInJuryCandidateList      = "IsInJuryCandidateList"
-	IsInDeveloperCandidateList = "IsInDeveloperCandidateList"
+	IsInMediatorCandidateList = "IsInMediatorCandidateList"
+	IsInJuryCandidateList     = "IsInJuryCandidateList"
+	IsInDeveloperList         = "IsInDeveloperList"
 	//  是否在相应列表中
 	IsInBecomeList     = "IsInBecomeList"
 	IsInAgressList     = "IsInAgressList"
