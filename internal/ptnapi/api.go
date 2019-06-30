@@ -1793,6 +1793,21 @@ func (api *PrivateDebugAPI) QueryDbByPrefix(keyString string, keyHex string) []*
 	}
 	return result
 }
+
+func (api *PrivateDebugAPI) GetAllTokenBalance() map[string]uint64 {
+	result := make(map[string]uint64)
+	utxos, _ := api.b.GetAllUtxos()
+	for _, utxo := range utxos {
+		amt, ok := result[utxo.Asset]
+		if ok {
+			result[utxo.Asset] = amt + utxo.Amount
+		} else {
+			result[utxo.Asset] = utxo.Amount
+		}
+	}
+	return result
+}
+
 func (api *PrivateDebugAPI) SaveCommon(keyHex string, valueHex string) error {
 	if keyHex == "" || valueHex == "" {
 		return fmt.Errorf("saveCommon does not supported empty strings.")
