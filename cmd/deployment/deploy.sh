@@ -73,6 +73,8 @@ function replacejson()
     rm t.json
 !
 
+    length=`cat $1 |jq '.initialMediatorCandidates| length'`
+
     add=`cat $1 | jq ".initialParameters.active_mediator_count = $length"`
 
     add=`echo $add | jq ".immutableChainParameters.min_mediator_count = $length"`
