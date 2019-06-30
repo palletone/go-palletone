@@ -422,16 +422,27 @@ func (s *PublicContractAPI) DepositContractQuery(ctx context.Context, param []st
 }
 
 func (s *PublicContractAPI) SysConfigContractQuery(ctx context.Context, param []string) (string, error) {
-	log.Debug("---enter SysConfigContractQuery---")
+	log.Debugf("---enter SysConfigContractQuery---")
 	return s.Ccquery(ctx, syscontract.SysConfigContractAddress.String(), param, 0)
 }
 
 func (s *PublicContractAPI) SysConfigContractInvoke(ctx context.Context, from, to, daoAmount, daoFee string,
 	param []string) (string, error) {
-	log.Debug("---enter SysConfigContractInvoke---")
+	log.Debugf("---enter SysConfigContractInvoke---")
+	if len(param) == 0 {
+		err := "args is nil"
+		log.Debugf(err)
+		return "", fmt.Errorf(err)
+	}
 
 	// 检查参数
 	if param[0] == sysconfigcc.UpdateSysParamWithoutVote {
+		if len(param) != 3 {
+			err := "args len not equal 3"
+			log.Debugf(err)
+			return "", fmt.Errorf(err)
+		}
+
 		field, value := param[1], param[2]
 		err := core.CheckSysConfigArgs(field, value)
 		if err != nil {
@@ -439,6 +450,12 @@ func (s *PublicContractAPI) SysConfigContractInvoke(ctx context.Context, from, t
 			return "", err
 		}
 	} else if param[0] == sysconfigcc.CreateVotesTokens {
+		if len(param) != 6 {
+			err := "args len not equal 6"
+			log.Debugf(err)
+			return "", fmt.Errorf(err)
+		}
+
 		var voteTopics []sysconfigcc.SysVoteTopic
 		err := json.Unmarshal([]byte(param[5]), &voteTopics)
 		if err != nil {

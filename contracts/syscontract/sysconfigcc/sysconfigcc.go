@@ -174,7 +174,7 @@ func (s *SysConfigChainCode) getVotesResult(stub shim.ChaincodeStubInterface, ar
 
 func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	//params check
-	if len(args) < 5 {
+	if len(args) != 5 {
 		return nil, fmt.Errorf("need 5 args (Name,VoteType,TotalSupply,VoteEndTime,VoteContentJson)")
 	}
 	//get creator
@@ -433,6 +433,12 @@ func (s *SysConfigChainCode) nodesVote(stub shim.ChaincodeStubInterface, args []
 //}
 
 func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	if len(args) != 2 {
+		err := "args len not equal 2"
+		log.Debugf(err)
+		return nil, fmt.Errorf(err)
+	}
+
 	field, value := args[0], args[1]
 
 	// 检查参数
@@ -449,7 +455,7 @@ func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubIn
 	}
 
 	var modifies map[string]string
-	if resultBytes != nil {
+	if resultBytes != nil && string(resultBytes) != "" {
 		err := json.Unmarshal(resultBytes, &modifies)
 		if err != nil {
 			log.Debugf(err.Error())
