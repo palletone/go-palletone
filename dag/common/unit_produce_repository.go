@@ -350,6 +350,7 @@ func (dag *UnitProduceRepository) RefreshSysParameters() {
 	//generateUnitRewardStr, _, _ := rep.GetConfig("GenerateUnitReward")
 	//generateUnitReward, _ := strconv.ParseUint(string(generateUnitRewardStr), 10, 64)
 	parameter.CurrentSysParameters.GenerateUnitReward = cp.GenerateUnitReward
+	parameter.CurrentSysParameters.RewardHeight = cp.RewardHeight
 	log.Debugf("Load SysParameter GenerateUnitReward value:%d", parameter.CurrentSysParameters.GenerateUnitReward)
 }
 

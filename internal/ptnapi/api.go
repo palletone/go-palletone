@@ -1332,7 +1332,7 @@ func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, f
 		outPoint := modules.NewOutPoint(txHash, 0, uint32(i))
 		pay.AddTxIn(modules.NewTxIn(outPoint, []byte{}))
 		lockScript := tokenengine.GenerateLockScript(toAddr)
-		pay.AddTxOut(modules.NewTxOut(uint64(amount*100000000), lockScript, asset))
+		pay.AddTxOut(modules.NewTxOut(uint64(amount), lockScript, asset))
 		tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay))
 		utxoLookup := map[modules.OutPoint][]byte{}
 		utxoLookup[*outPoint] = utxoScript
