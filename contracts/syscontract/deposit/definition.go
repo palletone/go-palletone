@@ -31,8 +31,8 @@ const (
 	Jury      = "Jury"
 	Mediator  = "Mediator"
 
-	Ok = "ok"
-	No = "no"
+	Ok = "Ok"
+	No = "No"
 
 	//获取候选列表
 	GetListForMediatorCandidate = "GetListForMediatorCandidate"
@@ -75,10 +75,10 @@ const (
 	QueryPledgeList         = "QueryPledgeList"
 
 	//  mediator状态
-	Apply    = "applying"
-	Agree    = "approved"
-	Quitting = "quitting"
-	Quited   = "quited"
+	Apply    = "Applying"
+	Agree    = "Approved"
+	Quitting = "Quitting"
+	Quited   = "Quited"
 
 	//  时间格式
 	//  Layout1 = "2006-01-02 15"
@@ -114,6 +114,7 @@ type PayValue struct {
 type DepositBalance struct {
 	Balance   uint64 `json:"balance"`    //  保证金余额
 	EnterTime string `json:"enter_time"` //  交保证金的时间
+	Role      string `json:"role"`
 }
 
 type MediatorDeposit struct {

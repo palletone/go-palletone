@@ -23,7 +23,7 @@ Business_01
     ${addressMap1}    getBecomeMediatorApplyList
     log    ${addressMap1}
     Dictionary Should Contain Key    ${addressMap1}    ${mediatorAddr_01}    #有该节点
-    ${result}    handleForApplyBecomeMediator    ${foundationAddr}    ${mediatorAddr_01}    ok    #基金会处理列表里的节点（同意）
+    ${result}    handleForApplyBecomeMediator    ${foundationAddr}    ${mediatorAddr_01}    Ok    #基金会处理列表里的节点（同意）
     log    ${result}
     ${addressMap2}    getAgreeForBecomeMediatorList
     log    ${addressMap2}
@@ -46,7 +46,7 @@ Business_01
     ${addressMap4}    getQuitMediatorApplyList
     log    ${addressMap4}
     Dictionary Should Contain Key    ${addressMap4}    ${mediatorAddr_01}    #有该节点
-    ${result}    handleForApplyForQuitMediator    ${foundationAddr}    ${mediatorAddr_01}    ok    HandleForApplyQuitMediator    #基金会处理退出候选列表里的节点（同意）
+    ${result}    handleForApplyForQuitMediator    ${foundationAddr}    ${mediatorAddr_01}    Ok    HandleForApplyQuitMediator    #基金会处理退出候选列表里的节点（同意）
     log    ${result}
     ${result}    getBalance    ${mediatorAddr_01}    #99,999,970‬
     ${resul}    getListForJuryCandidate    #mediator退出候选列表，则移除该jury
@@ -75,7 +75,7 @@ Business_02
     ${addressMap1}    getBecomeMediatorApplyList
     log    ${addressMap1}
     Dictionary Should Contain Key    ${addressMap1}    ${mediatorAddr_02}    #有该节点
-    ${result}    handleForApplyBecomeMediator    ${foundationAddr}    ${mediatorAddr_02}    ok    #基金会处理列表里的节点（同意）
+    ${result}    handleForApplyBecomeMediator    ${foundationAddr}    ${mediatorAddr_02}    Ok    #基金会处理列表里的节点（同意）
     log    ${result}
     ${addressMap2}    getAgreeForBecomeMediatorList
     log    ${addressMap2}
@@ -96,7 +96,7 @@ Business_02
     ${result}    getListForForfeitureApplication
     log    ${result}
     Dictionary Should Contain Key    ${result}    ${mediatorAddr_02}    #有该节点
-    ${result}    handleForForfeitureApplication    ${foundationAddr}    ${mediatorAddr_02}    ok    #基金会处理（同意），这是会移除mediator出候选列表
+    ${result}    handleForForfeitureApplication    ${foundationAddr}    ${mediatorAddr_02}    Ok    #基金会处理（同意），这是会移除mediator出候选列表
     log    ${result}
     ${result}    getMediatorDepositWithAddr    ${mediatorAddr_02}
     log    ${result}    #余额为 0
@@ -129,7 +129,7 @@ Business_03
     ${addressMap4}    getQuitMediatorApplyList    #获取申请mediator列表里的节点（不为空）
     log    ${addressMap4}
     Dictionary Should Contain Key    ${addressMap4}    ${juryAddr_01}
-    ${result}    handleForApplyForQuitMediator    ${foundationAddr}    ${juryAddr_01}    ok    HandleForApplyQuitJury    #基金会处理退出候选列表里的节点（同意）
+    ${result}    handleForApplyForQuitMediator    ${foundationAddr}    ${juryAddr_01}    Ok    HandleForApplyQuitJury    #基金会处理退出候选列表里的节点（同意）
     log    ${result}
     ${resul}    getListForJuryCandidate    #mediator退出候选列表，则移除该jury
     Dictionary Should Not Contain Key    ${resul}    ${juryAddr_01}
@@ -153,7 +153,7 @@ Business_04
     ${result}    getListForForfeitureApplication
     log    ${result}
     Dictionary Should Contain Key    ${result}    ${juryAddr_02}    #没收列表有该地址
-    ${result}    handleForForfeitureApplication    ${foundationAddr}    ${juryAddr_02}    ok    #基金会处理（同意），这是会移除mediator出候选列表
+    ${result}    handleForForfeitureApplication    ${foundationAddr}    ${juryAddr_02}    Ok    #基金会处理（同意），这是会移除mediator出候选列表
     log    ${result}
     ${result}    getCandidateBalanceWithAddr    ${juryAddr_02}
     log    ${result}
@@ -177,7 +177,7 @@ Business_05
     ${addressMap4}    getQuitMediatorApplyList    #获取申请mediator列表里的节点（不为空）
     log    ${addressMap4}
     Dictionary Should Contain Key    ${addressMap4}    ${developerAddr_01}
-    ${result}    handleForApplyForQuitMediator    ${foundationAddr}    ${developerAddr_01}    ok    HandleForApplyQuitDev    #基金会处理退出候选列表里的节点（同意）
+    ${result}    handleForApplyForQuitMediator    ${foundationAddr}    ${developerAddr_01}    Ok    HandleForApplyQuitDev    #基金会处理退出候选列表里的节点（同意）
     log    ${result}
     ${resul}    getListForDeveloperCandidate    #mediator退出候选列表，则移除该jury
     Dictionary Should Not Contain Key    ${resul}    ${developerAddr_01}
@@ -201,7 +201,7 @@ Business_06
     ${result}    getListForForfeitureApplication
     log    ${result}
     Dictionary Should Contain Key    ${result}    ${developerAddr_02}    #没收列表有该地址
-    ${result}    handleForForfeitureApplication    ${foundationAddr}    ${developerAddr_02}    ok    #基金会处理（同意），这是会移除mediator出候选列表
+    ${result}    handleForForfeitureApplication    ${foundationAddr}    ${developerAddr_02}    Ok    #基金会处理（同意），这是会移除mediator出候选列表
     log    ${result}
     ${result}    getCandidateBalanceWithAddr    ${developerAddr_02}
     log    ${result}

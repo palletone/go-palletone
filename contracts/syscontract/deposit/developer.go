@@ -70,6 +70,7 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 		balance.EnterTime = getTiem(stub)
 		//  没有
 		balance.Balance = invokeTokens.Amount
+		balance.Role = Developer
 		err = SaveNodeBalance(stub, invokeAddr.String(), balance)
 		if err != nil {
 			log.Error("save node balance err: ", "error", err)

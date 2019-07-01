@@ -87,8 +87,8 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 			return shim.Error(err.Error())
 		}
 	} else {
-		log.Error("please enter ok")
-		return shim.Error("please enter ok")
+		log.Error("please enter Ok")
+		return shim.Error("please enter Ok")
 	}
 	//  不管同意还是不同意都需要移除申请列表
 	becomeList, err := getList(stub, ListForApplyBecomeMediator)
@@ -273,8 +273,8 @@ func handleForForfeitureApplication(stub shim.ChaincodeStubInterface, args []str
 		//移除申请列表，不做处理
 		log.Info("not agree to for apply forfeiture")
 	} else {
-		log.Error("Please enter ok or no.")
-		return shim.Error("Please enter ok or no.")
+		log.Error("Please enter Ok or No.")
+		return shim.Error("Please enter Ok or No.")
 	}
 	//  不管同意与否都需要从列表中移除
 	delete(listForForfeiture, addr)
