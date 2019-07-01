@@ -48,6 +48,10 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 	var asset *modules.Asset
 	totalInput := uint64(0)
 	isInputnil := false
+	if len(payment.Inputs) > 1000 {
+		//太多的Input会导致签名验证超时
+		return TxValidationCode_INVALID_PAYMMENT_INPUT_COUNT
+	}
 	if len(payment.Inputs) == 0 {
 		// if payment.Outputs[0].Asset.AssetId.Equal(gasToken) {
 		// 	return TxValidationCode_INVALID_PAYMMENT_INPUT
