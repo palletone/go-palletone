@@ -384,9 +384,12 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 		if parentHash == chain.lastMainChainUnit.Hash() {
 			//Add a new unit to main chain
 			// 判断当前高度是不是已经有区块了
+			var need_check bool
 			if _, err := chain.getHeaderByNumber(unit.Number()); err != nil {
+				need_check = true
 				chain.setLastMainchainUnit(unit)
 			} else {
+
 				log.Infof("the chain is forked, save the equal units,fork:[%s]", uHash.String())
 			}
 			chain.chainUnits.Store(uHash, unit)
@@ -396,17 +399,16 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 			}
 			//增加了单元后检查是否满足稳定单元的条件
 			// todo Albert·gou 待重做 优化逻辑
-			if !chain.checkStableCondition(txpool) {
-				//没有产生稳定单元，加入Tempdb
-				chain.saveUnitToDb(chain.tempdbunitRep, chain.tempUnitProduceRep, unit)
-				//这个单元不是稳定单元，需要加入Tempdb
-			} else {
-				// 下一个unit的群签名
-				log.Debugf("sent toGroupSign event")
-				go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
+			if need_check {
+				if chain.checkStableCondition(txpool) {
+					// 下一个unit的群签名
+					log.Debugf("sent toGroupSign event")
+					go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
 
-				log.Debugf("unit[%s] checkStableCondition =true", unit.Hash().String())
+					log.Debugf("unit[%s] checkStableCondition =true", unit.Hash().String())
+				}
 			}
+			chain.saveUnitToDb(chain.tempdbunitRep, chain.tempUnitProduceRep, unit)
 		} else { //Fork unit
 			chain.chainUnits.Store(uHash, unit)
 			if unit.NumberU64() > chain.lastMainChainUnit.NumberU64() { //Need switch main chain
