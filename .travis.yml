@@ -46,13 +46,13 @@ matrix:
         - go test ./...
         # - $GOPATH/bin/goveralls -service=travis-ci
     - os: osx
-     go: 1.12.x
-     env: UT
-     install:
+      go: 1.12.x
+      env: UT
+      install:
         - brew install inetutils
         - brew install expect
         - chmod +x ./bdd/macUpload2Ftp.sh
-     script:
+      script:
         - go build ./cmd/gptn
         - make gptn
         - go test ./...
