@@ -69,6 +69,9 @@ type iDag interface {
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	IsActiveJury(addr common.Address) bool
 	JuryCount() int
+	GetContractDevelopers() ([]common.Address, error)
+	IsContractDeveloper(addr common.Address) bool
+
 	GetActiveJuries() []common.Address
 	IsActiveMediator(addr common.Address) bool
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
@@ -768,11 +771,7 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 		if err = p.runContractReq(reqId, nil); err != nil {
 			return common.Hash{}, nil, err
 		}
-		account := p.getLocalAccount()
-		if account == nil {
-			return common.Hash{}, nil, fmt.Errorf("createContractTxReq no local account, reqId[%s]", shortId(tx.RequestHash().String()))
-		}
-		ctx.rstTx, err = p.GenContractSigTransaction(account.Address, account.Password, ctx.rstTx, p.ptn.GetKeyStore())
+		ctx.rstTx, err = p.GenContractSigTransaction(from, "", ctx.rstTx, p.ptn.GetKeyStore())
 		if err != nil {
 			return common.Hash{}, nil, err
 		}

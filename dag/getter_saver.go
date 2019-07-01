@@ -274,13 +274,23 @@ func (d *Dag) JuryCount() int {
 }
 
 func (d *Dag) GetActiveJuries() []common.Address {
-	return nil
+	return nil //todo
 
 	//return d.unstableStateRep.GetJuryCandidateList()
 }
 
 func (d *Dag) IsActiveJury(addr common.Address) bool {
-	return true //todo for test
+	return true //todo
 
-	//return d.unstableStateRep.IsJury(addr)
+	return d.unstableStateRep.IsJury(addr)
+}
+
+func (d *Dag) GetContractDevelopers() ([]common.Address, error){
+	return d.unstableStateRep.GetContractDeveloperList()
+}
+
+func (d *Dag) IsContractDeveloper(addr common.Address) bool {
+	return true //todo
+
+	return d.unstableStateRep.IsContractDeveloper(addr)
 }

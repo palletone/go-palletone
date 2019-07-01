@@ -31,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/common/log"
 )
 
 //保存了对合约写集、Config、Asset信息
@@ -134,28 +135,38 @@ func (statedb *StateDb) IsInJuryCandidateList(address common.Address) bool {
 	}
 	return false
 }
-func (statedb *StateDb) GetDevCcCandidateList() (map[string]bool, error) {
+func (statedb *StateDb) GetContractDeveloperList() ([]common.Address, error) {
 	depositeContractAddress := syscontract.DepositContractAddress
 	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), modules.DeveloperList)
 	if err != nil {
 		return nil, fmt.Errorf("devCc candidate list is nil.")
 	}
-	//var candidateList []common.Address
-	candidateList := make(map[string]bool)
-	err = json.Unmarshal(val, &candidateList)
+	depList := make(map[string]bool)
+	err = json.Unmarshal(val, &depList)
 	if err != nil {
 		return nil, err
 	}
-	return candidateList, nil
+	res := make([]common.Address, len(depList))
+	for addStr, _ := range depList {
+		add, err := common.StringToAddress(addStr)
+		if err != nil {
+			log.Debugf(err.Error())
+			continue
+		}
+		res = append(res, add)
+	}
+	return res, nil
 }
 
-func (statedb *StateDb) IsInDevCcCandidateList(address common.Address) bool {
-	list, err := statedb.GetDevCcCandidateList()
+func (statedb *StateDb) IsInContractDeveloperList(address common.Address) bool {
+	list, err := statedb.GetContractDeveloperList()
 	if err != nil {
 		return false
 	}
-	if _, ok := list[address.String()]; ok {
-		return true
+	for _, d := range list{
+		if d.Equal(address){
+			return true
+		}
 	}
 	return false
 }
