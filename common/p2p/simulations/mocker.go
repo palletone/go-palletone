@@ -183,7 +183,7 @@ func connectNodesInRing(net *Network, nodeCount int) ([]discover.NodeID, error) 
 	for i, id := range ids {
 		peerID := ids[(i+1)%len(ids)]
 		if err := net.Connect(id, peerID); err != nil {
-			log.Error("Error connecting a node to a peer! %s", err)
+			log.Errorf("Error connecting a node to a peer! %s", err)
 			return nil, err
 		}
 	}
