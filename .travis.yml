@@ -72,7 +72,6 @@ matrix:
         - go build ./cmd/gptn
         - make gptn
         - go test ./...
-        - tar czvf gptn-mac.tar.gz ./gptn
         - ./bdd/macUpload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH}
     # - os: linux
     #   dist: xenial
