@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -65,9 +66,13 @@ func isContainDepositContractAddr(stub shim.ChaincodeStubInterface) (invokeToken
 	if err != nil {
 		return nil, err
 	}
+
 	for _, invokeTo := range invokeTokens {
 		if strings.Compare(invokeTo.Address, syscontract.DepositContractAddress.String()) == 0 {
-			return invokeTo, nil
+			if invokeTo.Asset.Equal(dagconfig.DagConfig.GetGasToken().ToAsset()) {
+				return invokeTo, nil
+			}
+			return nil, fmt.Errorf("%s", "Deposit assets must be PTN")
 		}
 	}
 	return nil, fmt.Errorf("it is not a depositContract invoke transaction")
