@@ -163,6 +163,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		//  处理数据
 		md.EnterTime = getTiem(stub)
 		md.Balance = invokeTokens.Amount
+		md.Role = Mediator
 		//  保存账户信息
 		err = SaveMediatorDeposit(stub, invokeAddr.String(), md)
 		if err != nil {
