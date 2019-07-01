@@ -75,7 +75,7 @@ func pledgeRewardAllocation(pledgeList *modules.PledgeList, rewardAmount uint64)
 }
 
 //质押分红处理
-func handleRewardAllocation(stub shim.ChaincodeStubInterface) error {
+func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward uint64) error {
 	//  判断当天是否处理过
 	today := getToday(stub)
 	lastDate, err := getLastPledgeListDate(stub)
@@ -89,11 +89,7 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface) error {
 	}
 	//计算分红
 	if allM != nil {
-		cp, err := stub.GetSystemConfig()
-		if err != nil {
-			return err
-		}
-		depositDailyReward := cp.PledgeDailyReward
+
 		allM = pledgeRewardAllocation(allM, depositDailyReward)
 	} else {
 		allM = &modules.PledgeList{}

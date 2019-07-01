@@ -44,6 +44,11 @@ web3._extend({
 			params: 1
 		}),
 		new web3._extend.Method({
+			name: 'getAllTokenBalance',
+			call: 'debug_getAllTokenBalance',
+			params: 0
+		}),
+		new web3._extend.Method({
 			name: 'setHead',
 			call: 'debug_setHead',
 			params: 1

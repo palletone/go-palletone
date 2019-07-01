@@ -23,10 +23,10 @@ import (
 	"strings"
 
 	"github.com/btcsuite/btcutil/base58"
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/pairing/bn256"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/p2p/discover"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/pairing/bn256"
 )
 
 var Suite = bn256.NewSuiteG2()
@@ -74,7 +74,7 @@ type MediatorApplyInfo struct {
 
 func NewMediatorApplyInfo() *MediatorApplyInfo {
 	return &MediatorApplyInfo{
-		ApplyInfo: "",
+		ApplyInfo: "某节点; www.abc.com",
 	}
 }
 

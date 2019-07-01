@@ -177,9 +177,14 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, isFullTx bool) ([]
 		return addition, code, nil
 	}
 
-	//log.Debugf("Tx[%s] validate not pass, Validation msg: %v",
-	//	tx.Hash().String(), validationCode_name[int32(code)])
-
+	// if code != TxValidationCode_VALID {
+	// 	log.DebugDynamic(func() string {
+	// 		data, _ := json.Marshal(tx)
+	// 		return "ValidateTx not pass,for debug tx: " + string(data)
+	// 	})
+	// 	//log.Debugf("Tx[%s] validate not pass, Validation msg: %v",
+	// 	//	tx.Hash().String(), validationCode_name[int32(code)])
+	// }
 	return addition, code, NewValidateError(code)
 }
 

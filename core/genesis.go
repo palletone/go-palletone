@@ -152,11 +152,13 @@ func (mib *MediatorInfoBase) Validate() error {
 
 type InitialMediator struct {
 	*MediatorInfoBase
+	*MediatorApplyInfo
 }
 
 func NewInitialMediator() *InitialMediator {
 	return &InitialMediator{
 		MediatorInfoBase: NewMediatorInfoBase(),
+		MediatorApplyInfo: NewMediatorApplyInfo(),
 	}
 }
 
