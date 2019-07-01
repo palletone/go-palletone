@@ -66,6 +66,8 @@ type IStateRepository interface {
 
 	GetJuryCandidateList() (map[string]bool, error)
 	IsJury(address common.Address) bool
+	GetContractDeveloperList() ([]common.Address, error)
+	IsContractDeveloper(address common.Address) bool
 
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
@@ -310,6 +312,14 @@ func (rep *StateRepository) GetJuryCandidateList() (map[string]bool, error) {
 
 func (rep *StateRepository) IsJury(address common.Address) bool {
 	return rep.statedb.IsInJuryCandidateList(address)
+}
+
+func (rep *StateRepository) GetContractDeveloperList() ([]common.Address, error) {
+	return rep.statedb.GetContractDeveloperList()
+}
+
+func (rep *StateRepository) IsContractDeveloper(address common.Address) bool {
+	return rep.statedb.IsInContractDeveloperList(address)
 }
 
 func (rep *StateRepository) GetPartitionChains() ([]*modules.PartitionChain, error) {
