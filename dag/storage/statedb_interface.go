@@ -88,6 +88,9 @@ type IStateDb interface {
 
 	GetJuryCandidateList() (map[string]bool, error)
 	IsInJuryCandidateList(address common.Address) bool
+	GetContractDeveloperList()([]common.Address, error)
+	IsInContractDeveloperList(address common.Address) bool
+
 	GetDataVersion() (*modules.DataVersion, error)
 	SaveDataVersion(dv *modules.DataVersion) error
 

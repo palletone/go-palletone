@@ -37,6 +37,9 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) error {
 		return errors.New("ProcessContractEvent param is nil")
 	}
 	reqId := event.Tx.RequestHash()
+	if !event.Tx.IsContractTx() {
+		return fmt.Errorf("[%s]ProcessContractEvent, is not contract tx", shortId(reqId.String()))
+	}
 	if p.checkTxIsExist(event.Tx) {
 		err := fmt.Sprintf("[%s]ProcessContractEvent, event Tx is exist, txId:%s", shortId(reqId.String()), event.Tx.Hash().String())
 		return errors.New(err)
@@ -47,6 +50,10 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) error {
 	}
 	if !p.checkTxValid(event.Tx) {
 		err := fmt.Sprintf("[%s]ProcessContractEvent, event Tx is invalid, txId:%s", shortId(reqId.String()), event.Tx.Hash().String())
+		return errors.New(err)
+	}
+	if !p.checkTxAddrValid(event.Tx) {
+		err := fmt.Sprintf("[%s]ProcessContractEvent, event Tx addr is invalid, txId:%s", shortId(reqId.String()), event.Tx.Hash().String())
 		return errors.New(err)
 	}
 	if !p.contractEventExecutable(event.CType, event.Tx, event.Ele) {
@@ -152,7 +159,7 @@ func (p *Processor) contractSigEvent(tx *modules.Transaction, ele []modules.Elec
 	p.locker.Lock()
 	defer p.locker.Unlock()
 	reqId := tx.RequestHash()
-	if _, ok := p.mtx[reqId];ok {
+	if _, ok := p.mtx[reqId]; ok {
 		if checkTxReceived(p.mtx[reqId].rcvTx, tx) {
 			return false, nil
 		}

@@ -345,7 +345,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					return nil, errors.New(fmt.Sprintf("[%s]runContractCmd APP_CONTRACT_INVOKE txid(%s) rans err:%s", shortId(reqId.String()), req.txid, err))
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.Args, 0 /*result.ExecutionTime*/, result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
+				payload := modules.NewContractInvokePayload(result.ContractId, result.Args, 0 /*result.ExecutionTime*/ , result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
 				}
@@ -542,8 +542,29 @@ func (p *Processor) checkTxValid(tx *modules.Transaction) bool {
 	if err != nil {
 		log.Debugf("[%s]checkTxValid, Validate fail, txHash[%s], err:%s", shortId(tx.RequestHash().String()), tx.Hash().String(), err.Error())
 	}
-
 	return err == nil
+}
+
+func (p *Processor) checkTxAddrValid(tx *modules.Transaction) bool {
+	reqId := tx.RequestHash()
+	cType, err := getContractTxType(tx)
+	if err != nil {
+		log.Infof("[%s]checkTxAddrValid, getContractTxType fail", shortId(reqId.String()))
+		return false
+	}
+	reqAddr, err := p.dag.GetTxRequesterAddress(tx)
+	if err != nil {
+		log.Infof("[%s]checkTxAddrValid, GetTxRequesterAddress fail", shortId(reqId.String()))
+		return false
+	}
+	switch cType {
+	case modules.APP_CONTRACT_TPL_REQUEST:
+		return p.dag.IsContractDeveloper(reqAddr)
+	case modules.APP_CONTRACT_DEPLOY_REQUEST:
+	case modules.APP_CONTRACT_INVOKE_REQUEST:
+	case modules.APP_CONTRACT_STOP_REQUEST:
+	}
+	return true
 }
 
 func checkTxReceived(all []*modules.Transaction, tx *modules.Transaction) bool {

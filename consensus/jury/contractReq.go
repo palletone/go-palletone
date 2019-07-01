@@ -40,7 +40,10 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 	}
 	if len(tplName) > MaxLengthTplName || len(path) > MaxLengthTplPath || len(version) > MaxLengthTplVersion || len(addrs) > MaxNumberTplEleAddrHash {
 		log.Error("ContractInstallReq", "request param len overflow，len(tplName)", len(tplName), "len(path)", len(path), "len(version)", len(version), "len(addrs)", len(addrs))
-		return common.Hash{}, nil, errors.New("ContractInstallReq request param len overflow")
+		return common.Hash{}, nil, errors.New("ContractInstallReq, request param len overflow")
+	}
+	if !p.dag.IsContractDeveloper(from) {
+		return common.Hash{}, nil, fmt.Errorf("ContractInstallReq, address[%s] is not developer", from.String())
 	}
 	addrHash := make([]common.Hash, 0)
 	//去重

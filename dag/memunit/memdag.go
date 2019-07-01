@@ -70,26 +70,11 @@ func (pmg *MemDag) SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent)
 	return pmg.toGroupSignScope.Track(pmg.toGroupSignFeed.Subscribe(ch))
 }
 
-//
-//type PartitionMemDag struct {
-//	*MemDag
-//	threshold int
-//}
-
 func (pmg *MemDag) SetStableThreshold(count int) {
 	pmg.lock.Lock()
 	defer pmg.lock.Unlock()
 	pmg.threshold = count
 }
-
-//func NewPartitionMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptndb.Database,
-//	stableUnitRep common2.IUnitRepository, propRep common2.IPropRepository,
-//	stableStateRep common2.IStateRepository) *PartitionMemDag {
-//	return &PartitionMemDag{
-//		MemDag:    NewMemDag(token, saveHeaderOnly, db, stableUnitRep, propRep, stableStateRep),
-//		threshold: threshold,
-//	}
-//}
 
 func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptndb.Database,
 	stableUnitRep common2.IUnitRepository, propRep common2.IPropRepository,
@@ -197,13 +182,11 @@ func (chain *MemDag) SetUnitGroupSign(uHash common.Hash /*, groupPubKey []byte*/
 	//header.GroupPubKey = groupPubKey
 	header.GroupSign = groupSign
 	log.Debugf("Try to update unit[%s] header group sign", uHash.String())
-
 	// 下一个unit的群签名
 	if err == nil {
 		log.Debugf("sent toGroupSign event")
 		go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
 	}
-
 	return chain.ldbunitRep.SaveHeader(header)
 }
 
@@ -290,8 +273,6 @@ func (chain *MemDag) checkStableCondition(txpool txspool.ITxPool) bool {
 			chain.setStableUnit(ustbHash, u.NumberU64(), txpool)
 			return true
 		}
-		//log.Debugf("Unstable unit[%s] has confirm address count: %d / %d", ustbHash.TerminalString(), len(hs), needAddrCount)
-
 		ustbHash = u.ParentHash()[0]
 	}
 	return false
@@ -300,21 +281,8 @@ func (chain *MemDag) checkStableCondition(txpool txspool.ITxPool) bool {
 //清空Tempdb，然后基于稳定单元到最新主链单元的路径，构建新的Tempdb
 func (chain *MemDag) rebuildTempdb() {
 	log.Debugf("MemDag[%s] clear tempdb and rebuild data", chain.token.String())
-	// 删除stable unit ,保留从stable unit 到 last unit 之间的数据。
 	chain.tempdb.Clear()
-	//if last_unit != nil {
-	//	to_save_hash := chain.lastMainChainUnit.Hash()
-	//	unstablecount := chain.lastMainChainUnit.NumberU64() - last_unit.NumberU64()
-	//	// 保存last unit 到last main unit 之间的区块。
-	//	for i := 0; i < int(unstablecount); i++ {
-	//		u, has := chain.getChainUnits()[to_save_hash]
-	//		if has {
-	//			to_save_hash = u.ParentHash()[0]
-	//			chain.saveUnitToDb(chain.tempdbunitRep, chain.tempUnitProduceRep, u)
-	//		}
-	//	}
-	//	return
-	//}
+
 	unstableUnits := chain.getMainChainUnits()
 	for _, unit := range unstableUnits {
 		chain.saveUnitToDb(chain.tempdbunitRep, chain.tempUnitProduceRep, unit)
@@ -353,7 +321,6 @@ func (chain *MemDag) saveUnitToDb(unitRep common2.IUnitRepository, produceRep co
 	if chain.saveHeaderOnly {
 		unitRep.SaveNewestHeader(unit.Header())
 	} else {
-		//chain.tempdbunitRep.SaveUnit(unit, false)
 		produceRep.PushUnit(unit)
 	}
 }
@@ -417,9 +384,12 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 		if parentHash == chain.lastMainChainUnit.Hash() {
 			//Add a new unit to main chain
 			// 判断当前高度是不是已经有区块了
+			var need_check bool
 			if _, err := chain.getHeaderByNumber(unit.Number()); err != nil {
+				need_check = true
 				chain.setLastMainchainUnit(unit)
 			} else {
+
 				log.Infof("the chain is forked, save the equal units,fork:[%s]", uHash.String())
 			}
 			chain.chainUnits.Store(uHash, unit)
@@ -429,21 +399,20 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 			}
 			//增加了单元后检查是否满足稳定单元的条件
 			// todo Albert·gou 待重做 优化逻辑
-			if !chain.checkStableCondition(txpool) {
-				//没有产生稳定单元，加入Tempdb
-				chain.saveUnitToDb(chain.tempdbunitRep, chain.tempUnitProduceRep, unit)
-				//这个单元不是稳定单元，需要加入Tempdb
-			} else {
-				// 下一个unit的群签名
-				log.Debugf("sent toGroupSign event")
-				go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
+			if need_check {
+				if chain.checkStableCondition(txpool) {
+					// 下一个unit的群签名
+					log.Debugf("sent toGroupSign event")
+					go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
 
-				log.Debugf("unit[%s] checkStableCondition =true", unit.Hash().String())
+					log.Debugf("unit[%s] checkStableCondition =true", unit.Hash().String())
+				}
 			}
+			chain.saveUnitToDb(chain.tempdbunitRep, chain.tempUnitProduceRep, unit)
 		} else { //Fork unit
 			chain.chainUnits.Store(uHash, unit)
 			if unit.NumberU64() > chain.lastMainChainUnit.NumberU64() { //Need switch main chain
-				//switch main chain, build db
+				// switch main chain, build db
 				// 如果按节点产块的确认数来判断，可能会last_main_unit和new_unit的确认数相等，导致不切换主链。
 				// todo 优化不被攻击
 				chain.switchMainChain(unit, txpool)
@@ -519,18 +488,8 @@ func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPo
 	chain.rebuildTempdb()
 }
 
-//枚举每一个孤儿单元，如果发现有单元的ParentHash是指定Hash，那么这说明这不再是一个孤儿单元，
 //将其从孤儿单元列表中删除，并添加到ChainUnits中。
 func (chain *MemDag) processOrphan(unitHash common.Hash, txpool txspool.ITxPool) {
-	//for hash, unit := range chain.getOrphanUnits() {
-	//	if unit.ParentHash()[0] == unitHash {
-	//		log.Debugf("Orphan unit[%s] can add to chain now.", unit.Hash().String())
-	//		chain.orphanUnitsParants.Delete(unitHash)
-	//		chain.orphanUnits.Delete(hash)
-	//		chain.addUnit(unit, txpool) //这个方法里面又会处理剩下的孤儿单元，从而形成递归
-	//	}
-	//}
-	// 不用每次都循环
 	unit, has := chain.getOrphanUnits()[unitHash]
 	if has {
 		log.Debugf("Orphan unit[%s] can add to chain now.", unit.Hash().String())
