@@ -13,9 +13,9 @@ normalSignTrans
     [Return]    ${hex}
 
 normalSendTrans
-    [Arguments]    ${resp}
-    ${resp}    Request send transaction    ${resp}
-    ${ret}    Should Match Regexp    ${resp.content}['result']    ${sendResult}    msg="result:does't match Result expression"
+    [Arguments]    ${hex}
+    ${resp}    Request send transaction    ${hex}
+    ${ret}    Should Match Regexp    ${resp['result']}    ${sendResult}    msg="result:does't match Result expression"
     [Return]    ${ret}
 
 normalCcinvokePass

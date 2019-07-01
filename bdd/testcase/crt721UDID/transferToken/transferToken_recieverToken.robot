@@ -40,6 +40,7 @@ Request getbalance before transfer token
     ${PTN1}    ${result1}    normalGetBalance    ${geneAdd}
     ${queryResult}    ccqueryById    ${721ContractId}    getTokenInfo    ${preTokenId}
     ${tokenCommonId}    ${countList}    jsonLoads    ${queryResult['result']}    AssetID    TokenIDs
+    log    ${result1['result']}
     ${key}    getTokenIdByNum    ${tokenCommonId}    ${result1['result']}    2
     ${voteToken}    Get From Dictionary    ${result1['result']}    ${key}
     [Return]    ${key}    ${voteToken}
@@ -52,7 +53,7 @@ Request transfer token
 Request getbalance after transfer token
     [Arguments]    ${key}
     sleep    4
-    ${PTN1}    ${result2}    normalGetBalance    ${recieverAdd}
+    ${PTN2}    ${result2}    normalGetBalance    ${recieverAdd}
     ${voteToken2}    Get From Dictionary    ${result2['result']}    ${key}
     [Return]    ${voteToken2}
 
