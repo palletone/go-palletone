@@ -16,9 +16,11 @@ package deposit
 
 import (
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"strconv"
+	"strings"
 
 	"encoding/json"
 	"github.com/palletone/go-palletone/contracts/shim"
@@ -91,9 +93,14 @@ func processPledgeWithdraw(stub shim.ChaincodeStubInterface, args []string) pb.R
 	}
 
 	amount := args[0]
-	ptnAccount, err := strconv.ParseUint(amount, 10, 64)
-	if err != nil {
-		return shim.Error(err.Error())
+	ptnAccount := uint64(0)
+	if strings.ToLower(amount) == "all" {
+		ptnAccount = math.MaxUint64
+	} else {
+		ptnAccount, err = strconv.ParseUint(amount, 10, 64)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
 	}
 	//  保存质押提取
 	err = pledgeWithdrawRep(stub, inAddr, ptnAccount)
