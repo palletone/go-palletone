@@ -275,7 +275,7 @@ destory utxo, delete from UTXO database
 */
 func (repository *UtxoRepository) destoryUtxo(txid common.Hash, txins []*modules.Input) error {
 	for _, txin := range txins {
-		log.Debugf("Try to destroy utxo Outpoint[%s]", txin.PreviousOutPoint.String())
+
 		if txin == nil {
 			continue
 		}

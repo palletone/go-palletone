@@ -16,22 +16,31 @@ Business_01
     [Documentation]    mediator 交付 50 0000 0000 0000 及以上才可以加入候选列表
     ...
     ...    某节点申请加入mediator-》进入申请列表-》基金会同意-》进入同意列表-》节点加入保证金（足够）-》进入候选列表-》节点增加保证金-》节点申请退出部分保证金-》基金会同意-》节点申请退出候选列表-》进入退出列表-》基金会同意。
-    ${result}    getBalance    ${mediatorAddr_01}
-    #    ${result}    #100,000,000
-    ${result}    applyBecomeMediator    ${mediatorAddr_01}    #节点申请加入列表    #10
+    ${amount}    getBalance    ${mediatorAddr_01}
+    log    ${amount}    #499999995
+    ${result}    applyBecomeMediator    ${mediatorAddr_01}    #节点申请加入列表    #1
     log    ${result}
     ${addressMap1}    getBecomeMediatorApplyList
     log    ${addressMap1}
     Dictionary Should Contain Key    ${addressMap1}    ${mediatorAddr_01}    #有该节点
-    ${result}    handleForApplyBecomeMediator    ${foundationAddr}    ${mediatorAddr_01}    Ok    #基金会处理列表里的节点（同意）
+    ${result}    handleForApplyBecomeMediator    ${foundationAddr}    ${mediatorAddr_01}    Ok    #基金会处理列表里的节点（同意）    #1
     log    ${result}
     ${addressMap2}    getAgreeForBecomeMediatorList
     log    ${addressMap2}
     Dictionary Should Contain Key    ${addressMap2}    ${mediatorAddr_01}    #有该节点
-    ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    ${medDepositAmount}    #在同意列表里的节点，可以交付保证金    #500010
+    ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    3000000000    #在同意列表里的节点，可以交付保证金    #这里交的数量不是规定的保证金数量，导致无法加入候选列表，并且相应保证金退还该地址    #1
     log    ${result}
-    ${result}    getBalance    ${mediatorAddr_01}    #94,999,980
-    #    ${result}
+    ${amount}    getBalance    ${mediatorAddr_01}    #499999992
+    log    ${amount}    #499999992
+    Should Be Equal As Numbers    ${amount}    499999992
+    ${addressMap3}    getListForMediatorCandidate
+    log    ${addressMap3}
+    Dictionary Should Not Contain Key    ${addressMap3}    ${mediatorAddr_01}    #无该节点
+    ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    ${medDepositAmount}    #在同意列表里的节点，可以交付保证金    #51
+    log    ${result}
+    ${amount}    getBalance    ${mediatorAddr_01}
+    log    ${amount}    #499999941
+    Should Be Equal As Numbers    ${amount}    499999941
     ${addressMap3}    getListForMediatorCandidate
     log    ${addressMap3}
     Dictionary Should Contain Key    ${addressMap3}    ${mediatorAddr_01}    #有该节点
