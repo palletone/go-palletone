@@ -1596,7 +1596,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 		}
 		tx := pool.priority_sorted.Get()
 		if tx == nil {
-			log.Infof("The task of txspool get priority_pricedtx has been finished,count:%d", len(list))
+			log.Debugf("The task of txspool get priority_pricedtx has been finished,count:%d", len(list))
 			break
 		} else {
 			if !tx.Pending {
@@ -1677,7 +1677,8 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 			go pool.promoteTx(hash, tx, index, uint64(i))
 		}
 	}
-	log.Infof("get sorted and rm Orphan txs spent times: %s , count: %d ,t2: %s , txs_size %s,  total_size %s", time.Since(t0), len(list), time.Since(t2), total.String(), unit_size.String())
+	log.Debugf("get sorted and rm Orphan txs spent times: %s , count: %d ,t2: %s , txs_size %s,  " +
+		"total_size %s", time.Since(t0), len(list), time.Since(t2), total.String(), unit_size.String())
 
 	return list, total
 }
