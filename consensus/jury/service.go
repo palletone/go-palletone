@@ -483,12 +483,12 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 		if ctx.rstTx == nil {
 			continue
 		}
+		ctx.valid = false
 		reqId = ctx.rstTx.RequestHash()
 		if p.checkTxReqIdIsExist(reqId) {
 			log.Debugf("[%s]AddContractLoop ,ReqId is exist, rst reqId[%s]", shortId(reqId.String()), reqId.String())
 			continue
 		}
-		ctx.valid = false
 		log.Debugf("[%s]AddContractLoop, B enter mtx, addr[%s]", shortId(reqId.String()), addr.String())
 
 		tx := ctx.rstTx
