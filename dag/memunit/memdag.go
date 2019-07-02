@@ -349,6 +349,8 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 	if unit == nil {
 		return errors.ErrNullPoint
 	}
+	chain.lock.Lock()
+	defer chain.lock.Unlock()
 	if unit.NumberU64() <= chain.stableUnitHeight {
 		log.Infof("This unit is too old! Ignore it,stable unit height:%d, stable hash:%s", chain.stableUnitHeight, chain.stableUnitHash.String())
 		return nil
@@ -357,9 +359,6 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 	if _, has := chain_units[unit.Hash()]; has { // 不重复添加
 		return nil
 	}
-
-	chain.lock.Lock()
-	defer chain.lock.Unlock()
 	err := chain.addUnit(unit, txpool)
 	log.Debugf("MemDag[%s] AddUnit cost time: %v ,index: %d", chain.token.String(),
 		time.Since(start), unit.NumberU64())
@@ -450,7 +449,7 @@ func (chain *MemDag) getChainAddressCount(lastUnit *modules.Unit) int {
 func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPool) {
 	oldLastMainchainUnit := chain.lastMainChainUnit
 	old_last_unit_hash := oldLastMainchainUnit.Hash()
-	log.Debugf("Switch main chain unit from %s to %s", old_last_unit_hash.String(), newUnit.Hash().String())
+	log.Infof("Switch main chain unit from %s to %s", old_last_unit_hash.String(), newUnit.Hash().String())
 	//reverse txpool tx status
 	chain_units := chain.getChainUnits()
 	main_chain_units := chain.getMainChainUnits()
