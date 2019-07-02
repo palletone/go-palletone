@@ -776,10 +776,7 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 			return common.Hash{}, nil, err
 		}
 		tx = ctx.rstTx
-	} else if p.contractEventExecutable(CONTRACT_EVENT_EXEC, tx, ctx.eleInf) && !tx.IsSystemContract() {
-		go p.runContractReq(reqId, ctx.eleInf)
 	}
-
 	return reqId, tx, nil
 }
 

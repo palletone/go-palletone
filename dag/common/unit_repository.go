@@ -412,7 +412,7 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 
 	defer func() {
 		rep.lock.RUnlock()
-		log.Infof("CreateUnit cost time %s", time.Since(begin))
+		log.Debugf("CreateUnit cost time %s", time.Since(begin))
 	}()
 
 	// step1. get mediator responsible for asset (for now is ptn)
@@ -447,7 +447,7 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 	//	txIds = append(txIds, tx.Tx.Hash())
 	//}
 	// log.Infof("txpool.GetSortedTxs cost time %s, txs[%#x]", time.Since(begin), txIds)
-	log.Infof("txpool.GetSortedTxs cost time %s", time.Since(begin))
+	log.Debugf("txpool.GetSortedTxs cost time %s", time.Since(begin))
 	// step5. compute minner income: transaction fees + interest
 	tt := time.Now()
 	//交易费用(包含利息)
@@ -497,7 +497,7 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 			txs = append(txs, t)
 		}
 	}
-	log.Infof("create coinbase tx cost time %s", time.Since(tt))
+	log.Debugf("create coinbase tx cost time %s", time.Since(tt))
 	/**
 	todo 需要根据交易中涉及到的token类型来确定交易打包到哪个区块
 	todo 如果交易中涉及到其他币种的交易，则需要将交易费的单独打包

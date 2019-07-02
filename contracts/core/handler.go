@@ -480,6 +480,7 @@ func (handler *Handler) createTxContext(ctxt context.Context, chainID string, tx
 	defer handler.Unlock()
 	txCtxID := handler.getTxCtxId(chainID, txid)
 	if handler.txCtxs[txCtxID] != nil {
+		log.Debugf("createTxContext,  already exists, txCtxID[%s] ", txCtxID)
 		return nil, errors.Errorf("txid: %s(%s) exists", txid, chainID)
 	}
 	txctx := &transactionContext{chainID: chainID, signedProp: signedProp,
@@ -488,6 +489,7 @@ func (handler *Handler) createTxContext(ctxt context.Context, chainID string, tx
 		//queryIteratorMap:    make(map[string]commonledger.ResultsIterator),
 		pendingQueryResults: make(map[string]*pendingQueryResult)}
 	handler.txCtxs[txCtxID] = txctx
+	log.Debugf("createTxContext, create txCtxID[%s]", txCtxID)
 	//glh
 	txctx.txsimulator = getTxSimulator(ctxt)
 	//txctx.historyQueryExecutor = getHistoryQueryExecutor(ctxt)
