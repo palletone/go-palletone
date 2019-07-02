@@ -90,6 +90,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	md := NewMediatorDeposit()
 	md.ApplyEnterTime = getTiem(stub)
 	md.Status = Apply
+	md.Role = Mediator
 	err = SaveMediatorDeposit(stub, invokeAddr.Str(), md)
 	if err != nil {
 		log.Error("SaveMedInfo err:", "error", err)
@@ -163,7 +164,6 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		//  处理数据
 		md.EnterTime = getTiem(stub)
 		md.Balance = invokeTokens.Amount
-		md.Role = Mediator
 		//  保存账户信息
 		err = SaveMediatorDeposit(stub, invokeAddr.String(), md)
 		if err != nil {

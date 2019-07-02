@@ -325,10 +325,10 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	//  普通用户质押投票
 	case PledgeDeposit:
 		log.Info("Enter DepositChaincode Contract " + PledgeDeposit + " Invoke")
-		return processPledgeDeposit(stub, args)
+		return d.processPledgeDeposit(stub, args)
 	case PledgeWithdraw: //提币质押申请（如果提币申请金额为MaxUint64表示全部提现）
 		log.Info("Enter DepositChaincode Contract " + PledgeWithdraw + " Invoke")
-		return processPledgeWithdraw(stub, args)
+		return d.processPledgeWithdraw(stub, args)
 
 	case QueryPledgeStatusByAddr: //查询某用户的质押状态
 		log.Info("Enter DepositChaincode Contract " + QueryPledgeStatusByAddr + " Query")
@@ -339,7 +339,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 
 	case HandlePledgeReward: //质押分红处理
 		log.Info("Enter DepositChaincode Contract " + HandlePledgeReward + " Invoke")
-		return handlePledgeReward(stub, args)
+		return d.handlePledgeReward(stub, args)
 	case QueryPledgeList:
 		log.Info("Enter DepositChaincode Contract " + QueryPledgeList + " Query")
 		return queryPledgeList(stub, args)
@@ -415,15 +415,31 @@ func (d DepositChaincode) applyForForfeitureDeposit(stub shim.ChaincodeStubInter
 	return applyForForfeitureDeposit(stub, args)
 }
 
-//
-func (d DepositChaincode) normalNodePledgeVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+//  质押
+
+func (d DepositChaincode) processPledgeDeposit(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return processPledgeDeposit(stub, args)
 }
 
-func (d DepositChaincode) normalNodeExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (d DepositChaincode) processPledgeWithdraw(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return processPledgeWithdraw(stub, args)
 }
 
-func (d DepositChaincode) handleEachDayAward(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (d DepositChaincode) handlePledgeReward(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return handlePledgeReward(stub, args)
+}
+
+//
+func (d DepositChaincode) hanldeNodeRemoveFromAgreeList(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return hanldeNodeRemoveFromAgreeList(stub, args)
+}
+
+//
+func (d DepositChaincode) handleRemoveMediatorNode(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return handleRemoveMediatorNode(stub, args)
+}
+
+//
+func (d DepositChaincode) handleRemoveNormalNode(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return handleRemoveNormalNode(stub, args)
 }
