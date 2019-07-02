@@ -307,7 +307,7 @@ func (chain *MemDag) getMainChainUnits() []*modules.Unit {
 	for i := 0; i < unstableCount; i++ {
 		u, ok := chain_units[ustbHash]
 		if !ok {
-			log.Errorf("chainUnits don't have unit[%s]", ustbHash.String())
+			log.Errorf("chainUnits don't have unit[%s], last_main[%s]", ustbHash.String(), chain.lastMainChainUnit.Hash().String())
 		}
 		unstableUnits[unstableCount-i-1] = u
 		ustbHash = u.ParentHash()[0]
@@ -451,10 +451,10 @@ func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPo
 	oldLastMainchainUnit := chain.lastMainChainUnit
 	old_last_unit_hash := oldLastMainchainUnit.Hash()
 	log.Debugf("Switch main chain unit from %s to %s", old_last_unit_hash.String(), newUnit.Hash().String())
-	chain.setLastMainchainUnit(newUnit)
 	//reverse txpool tx status
 	chain_units := chain.getChainUnits()
 	main_chain_units := chain.getMainChainUnits()
+	main_chain_units = append(main_chain_units, newUnit)
 	for _, m_u := range main_chain_units {
 		hash := m_u.Hash()
 		if _, has := chain_units[hash]; has {
@@ -484,6 +484,8 @@ func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPo
 			}
 		}
 	}
+	//设置最新主链单元
+	chain.setLastMainchainUnit(newUnit)
 	//基于新主链的单元和稳定单元，重新构建Tempdb
 	chain.rebuildTempdb()
 }
@@ -528,12 +530,7 @@ func (chain *MemDag) getChainUnits() map[common.Hash]*modules.Unit {
 	chain.chainUnits.Range(func(k, v interface{}) bool {
 		hash := k.(common.Hash)
 		u := v.(*modules.Unit)
-		u_hash := u.Hash()
-		if hash != u_hash {
-			chain.chainUnits.Delete(hash)
-			chain.chainUnits.Store(u_hash, u)
-		}
-		units[u_hash] = u
+		units[hash] = u
 		return true
 	})
 	return units
