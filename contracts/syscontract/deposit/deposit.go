@@ -428,3 +428,18 @@ func (d DepositChaincode) processPledgeWithdraw(stub shim.ChaincodeStubInterface
 func (d DepositChaincode) handlePledgeReward(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return handlePledgeReward(stub, args)
 }
+
+//
+func (d DepositChaincode) hanldeNodeRemoveFromAgreeList(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return hanldeNodeRemoveFromAgreeList(stub, args)
+}
+
+//
+func (d DepositChaincode) handleRemoveMediatorNode(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return handleRemoveMediatorNode(stub, args)
+}
+
+//
+func (d DepositChaincode) handleRemoveNormalNode(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return handleRemoveNormalNode(stub, args)
+}
