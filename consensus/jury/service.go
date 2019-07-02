@@ -386,9 +386,22 @@ func (p *Processor) GenContractSigTransaction(signer common.Address, password st
 					redeemScript := tokenengine.GenerateRedeemScript(1, [][]byte{pubKey})
 					log.Debugf("[%s]GenContractSigTransaction, RedeemScript:%x", shortId(reqId.String()), redeemScript)
 					for inputIdx, input := range payment.Inputs {
-						utxo, err := p.dag.GetUtxoEntry(input.PreviousOutPoint)
-						if err != nil {
-							return nil, err
+						var utxo *modules.Utxo
+						var err error
+						if input.PreviousOutPoint.TxHash.IsSelfHash() { //引用Tx本身
+							output := tx.TxMessages[input.PreviousOutPoint.MessageIndex].Payload.(*modules.PaymentPayload).Outputs[input.PreviousOutPoint.OutIndex]
+							utxo = &modules.Utxo{
+								Amount:    output.Value,
+								Asset:     output.Asset,
+								PkScript:  output.PkScript,
+								LockTime:  0,
+								Timestamp: 0,
+							}
+						} else {
+							utxo, err = p.dag.GetUtxoEntry(input.PreviousOutPoint)
+							if err != nil {
+								return nil, err
+							}
 						}
 						log.Debugf("[%s]GenContractSigTransaction, Lock script:%x", shortId(reqId.String()), utxo.PkScript)
 						sign, err := tokenengine.MultiSignOnePaymentInput(tx, tokenengine.SigHashAll, msgidx, inputIdx, utxo.PkScript, redeemScript, ks.GetPublicKey, ks.SignHash, nil)

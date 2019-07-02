@@ -713,7 +713,9 @@ type OutPoint struct {
 func (outpoint *OutPoint) String() string {
 	return fmt.Sprintf("Outpoint[TxId:{%#x},MsgIdx:{%d},OutIdx:{%d}]", outpoint.TxHash, outpoint.MessageIndex, outpoint.OutIndex)
 }
-
+func (outpoint *OutPoint) Clone() *OutPoint {
+	return NewOutPoint(outpoint.TxHash, outpoint.MessageIndex, outpoint.OutIndex)
+}
 func NewOutPoint(hash common.Hash, messageindex uint32, outindex uint32) *OutPoint {
 	return &OutPoint{
 		TxHash:       hash,

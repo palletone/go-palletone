@@ -31,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/tokenengine"
 )
 
+//将ContractInvokeResult中合约付款出去的请求转换为UTXO对应的Payment
 func resultToContractPayments(dag iDag, result *modules.ContractInvokeResult) ([]*modules.PaymentPayload, error) {
 	addr := common.NewAddress(result.ContractId, common.ContractHash)
 	payments := []*modules.PaymentPayload{}

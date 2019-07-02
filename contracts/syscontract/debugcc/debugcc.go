@@ -33,7 +33,7 @@ type DebugChainCode struct {
 }
 
 func (d *DebugChainCode) Init(stub shim.ChaincodeStubInterface) pb.Response {
-	fmt.Println("*** DebugChainCode system contract init ***")
+
 	return shim.Success([]byte("ok"))
 }
 
@@ -42,6 +42,8 @@ func (d *DebugChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	switch funcName {
 	case "add":
 		return d.add(stub, args)
+	case "testError":
+		return d.error(stub, args)
 	case "testAddBalance":
 		return d.addBalance(stub, args)
 	case "testGetBalance":
@@ -60,7 +62,10 @@ func (d *DebugChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	return shim.Error("Invoke error")
 }
-
+func (d *DebugChainCode) error(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	stub.PutState("CannotPut", []byte("Your error will ignore this put."))
+	return shim.Error("Test Error")
+}
 func (d *DebugChainCode) add(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	a, _ := strconv.Atoi(args[0])
 	b, _ := strconv.Atoi(args[1])

@@ -40,7 +40,7 @@ import (
 //3. Unlock correct
 func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx int,
 	payment *modules.PaymentPayload, usedUtxo map[string]bool) ValidationCode {
-	txId := tx.Hash()
+	//txId := tx.Hash()
 	//if payment.LockTime > 0 {
 	//	// TODO check locktime
 	//}
@@ -75,9 +75,7 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 				log.Error("payment input is null.", "payment.input", payment.Inputs)
 				return TxValidationCode_INVALID_PAYMMENT_INPUT
 			}
-			if in.PreviousOutPoint.TxHash.IsZero() {
-				in.PreviousOutPoint.TxHash = txId
-			}
+
 			usedUtxoKey := in.PreviousOutPoint.String()
 			if _, exist := usedUtxo[usedUtxoKey]; exist {
 				log.Error("double spend utxo:", usedUtxoKey)
@@ -85,10 +83,24 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 			}
 			usedUtxo[usedUtxoKey] = true
 			// 合约创币后同步到mediator的utxo验证不通过,在创币后需要先将创币的utxo同步到所有mediator节点。
-			utxo, err := validate.utxoquery.GetUtxoEntry(in.PreviousOutPoint)
-			if utxo == nil || err != nil {
-				//找不到对应的UTXO，应该是孤儿交易
-				return TxValidationCode_ORPHAN
+			var utxo *modules.Utxo
+			var err error
+			if in.PreviousOutPoint.TxHash.IsSelfHash() {
+				output := tx.TxMessages[in.PreviousOutPoint.MessageIndex].Payload.(*modules.PaymentPayload).Outputs[in.PreviousOutPoint.OutIndex]
+				utxo = &modules.Utxo{
+					Amount:    output.Value,
+					Asset:     output.Asset,
+					PkScript:  output.PkScript,
+					LockTime:  0,
+					Timestamp: 0,
+				}
+			} else {
+
+				utxo, err = validate.utxoquery.GetUtxoEntry(in.PreviousOutPoint)
+				if utxo == nil || err != nil {
+					//找不到对应的UTXO，应该是孤儿交易
+					return TxValidationCode_ORPHAN
+				}
 			}
 			if utxo.IsSpent() {
 				return TxValidationCode_INVALID_DOUBLE_SPEND

@@ -340,12 +340,17 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					if errMsgEnable {
 						errMsg := createContractErrorPayloadMsg(modules.APP_CONTRACT_INVOKE_REQUEST, req, err.Error())
 						msgs = append(msgs, errMsg)
+						//合约发生错误，检查有没有支付到合约的Token，有则原路返回
+						paybacks := contractPayBack(tx, reqPay.ContractId, dag.GetUtxoEntry)
+						for _, payback := range paybacks {
+							msgs = append(msgs, payback)
+						}
 						return msgs, nil
 					}
 					return nil, errors.New(fmt.Sprintf("[%s]runContractCmd APP_CONTRACT_INVOKE txid(%s) rans err:%s", shortId(reqId.String()), req.txid, err))
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.Args, 0 /*result.ExecutionTime*/ , result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
+				payload := modules.NewContractInvokePayload(result.ContractId, result.Args, 0 /*result.ExecutionTime*/, result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
 				}
@@ -399,6 +404,26 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 	return nil, errors.New(fmt.Sprintf("runContractCmd err, txid=%s", tx.RequestHash().String()))
 }
 
+func contractPayBack(tx *modules.Transaction, addr []byte, queryUtxoFunc modules.QueryUtxoFunc) []*modules.Message {
+	messages := []*modules.Message{}
+	for msgIdx, msg := range tx.TxMessages {
+		if msg.App == modules.APP_PAYMENT {
+			payment := msg.Payload.(*modules.PaymentPayload)
+			for outIdx, out := range payment.Outputs {
+				toAddr, _ := tokenengine.GetAddressFromScript(out.PkScript)
+				if bytes.Equal(toAddr.Bytes(), addr) {
+					input := modules.NewTxIn(modules.NewOutPoint(common.NewSelfHash(), uint32(msgIdx), uint32(outIdx)), nil)
+					inputUtxo, _ := queryUtxoFunc(payment.Inputs[0].PreviousOutPoint)
+					fromAddr, _ := tokenengine.GetAddressFromScript(inputUtxo.PkScript)
+					output := modules.NewTxOut(out.Value, tokenengine.GenerateLockScript(fromAddr), out.Asset)
+					payback := modules.NewPaymentPayload([]*modules.Input{input}, []*modules.Output{output})
+					messages = append(messages, modules.NewMessage(modules.APP_PAYMENT, payback))
+				}
+			}
+		}
+	}
+	return messages
+}
 func handleMsg0(tx *modules.Transaction, dag iDag, reqArgs [][]byte) ([][]byte, error) {
 	var txArgs [][]byte
 	invokeInfo := modules.InvokeInfo{}

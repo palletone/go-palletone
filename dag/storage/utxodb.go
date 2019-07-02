@@ -147,7 +147,7 @@ func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint) error {
 	}
 	key := outpoint.ToKey()
 	utxo.Spend()
-	//log.Debugf("Try to soft delete utxo by key:%s", outpoint.String())
+	log.Debugf("Try to soft delete utxo by key:%s", outpoint.String())
 	err = StoreToRlpBytes(utxodb.db, key, utxo)
 	if err != nil {
 		return err
