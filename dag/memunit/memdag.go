@@ -108,7 +108,7 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 	}
 	log.Debugf("Init MemDag[%s], get last stable unit[%s] to set lastMainChainUnit", token.String(), stablehash.String())
 
-	return &MemDag{
+	memdag := &MemDag{
 		token:              token,
 		threshold:          threshold,
 		ldbunitRep:         stableUnitRep,
@@ -129,8 +129,27 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 		ldbUnitProduceRep:  ldbUnitProduceRep,
 		tempUnitProduceRep: tempUnitProduceRep,
 	}
+	go memdag.loopRebuildTmpDb()
+	return memdag
 }
-
+func (chain *MemDag) loopRebuildTmpDb() {
+	rebuild := time.NewTicker(10 * time.Minute)
+	defer rebuild.Stop()
+	for {
+		select {
+		case <-rebuild.C:
+			if chain.lastMainChainUnit.Hash() == chain.stableUnitHash || len(chain.getChainUnits()) <= 1 {
+				// temp db don't need rebuild.
+				continue
+			}
+			tt := time.Now()
+			chain.lock.Lock()
+			chain.rebuildTempdb()
+			chain.lock.Unlock()
+			log.Debugf("rebuild temp db spent time:%s", time.Since(tt))
+		}
+	}
+}
 func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository, common2.IPropRepository, common2.IUnitProduceRepository) {
 	return chain.tempdbunitRep, chain.tempUtxoRep, chain.tempStateRep, chain.tempPropRep, chain.tempUnitProduceRep
 }
@@ -279,7 +298,7 @@ func (chain *MemDag) checkStableCondition(txpool txspool.ITxPool) bool {
 }
 
 //清空Tempdb，然后基于稳定单元到最新主链单元的路径，构建新的Tempdb
-func (chain *MemDag) RebuildTempdb() {
+func (chain *MemDag) rebuildTempdb() {
 	log.Debugf("MemDag[%s] clear tempdb and rebuild data", chain.token.String())
 	chain.tempdb.Clear()
 
@@ -484,7 +503,7 @@ func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPo
 	//设置最新主链单元
 	chain.setLastMainchainUnit(newUnit)
 	//基于新主链的单元和稳定单元，重新构建Tempdb
-	chain.RebuildTempdb()
+	chain.rebuildTempdb()
 }
 
 //将其从孤儿单元列表中删除，并添加到ChainUnits中。
