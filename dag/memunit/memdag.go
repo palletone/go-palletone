@@ -213,7 +213,7 @@ func (chain *MemDag) setStableUnit(hash common.Hash, height uint64, txpool txspo
 		chain.setNextStableUnit(unit, txpool)
 	}
 	// Rebuild temp db
-	chain.rebuildTempdb()
+	// chain.rebuildTempdb()
 }
 
 //设置当前稳定单元的指定子单元为稳定单元
@@ -279,7 +279,7 @@ func (chain *MemDag) checkStableCondition(txpool txspool.ITxPool) bool {
 }
 
 //清空Tempdb，然后基于稳定单元到最新主链单元的路径，构建新的Tempdb
-func (chain *MemDag) rebuildTempdb() {
+func (chain *MemDag) RebuildTempdb() {
 	log.Debugf("MemDag[%s] clear tempdb and rebuild data", chain.token.String())
 	chain.tempdb.Clear()
 
@@ -388,7 +388,6 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 				need_check = true
 				chain.setLastMainchainUnit(unit)
 			} else {
-
 				log.Infof("the chain is forked, save the equal units,fork:[%s]", uHash.String())
 			}
 			chain.chainUnits.Store(uHash, unit)
@@ -434,7 +433,6 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 
 //计算一个单元到稳定单元之间有多少个确认地址数
 func (chain *MemDag) getChainAddressCount(lastUnit *modules.Unit) int {
-	//token := lastUnit.Number().AssetID
 	addrs := map[common.Address]bool{}
 	unitHash := lastUnit.Hash()
 	units := chain.getChainUnits()
@@ -486,7 +484,7 @@ func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPo
 	//设置最新主链单元
 	chain.setLastMainchainUnit(newUnit)
 	//基于新主链的单元和稳定单元，重新构建Tempdb
-	chain.rebuildTempdb()
+	chain.RebuildTempdb()
 }
 
 //将其从孤儿单元列表中删除，并添加到ChainUnits中。

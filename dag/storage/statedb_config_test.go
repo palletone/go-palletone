@@ -23,10 +23,9 @@ package storage
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/stretchr/testify/assert"
 )
 
 func MockStateMemDb() *StateDb {
@@ -50,7 +49,6 @@ func TestSaveAndGetConfig(t *testing.T) {
 	data, version, err := db.getSysConfigContract("key1")
 	assert.Nil(t, err)
 	t.Log(data)
-	// assert.Nil(t, data)
 	assert.NotNil(t, version)
 
 }

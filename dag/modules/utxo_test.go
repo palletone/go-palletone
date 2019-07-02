@@ -21,8 +21,9 @@
 package modules
 
 import (
-	"github.com/palletone/go-palletone/common"
 	"testing"
+
+	"github.com/palletone/go-palletone/common"
 )
 
 func TestOutPoint_Bytes(t *testing.T) {

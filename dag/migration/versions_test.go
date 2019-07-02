@@ -21,8 +21,9 @@ package migration
 
 import (
 	"fmt"
-	"github.com/palletone/go-palletone/common/hexutil"
 	"testing"
+
+	"github.com/palletone/go-palletone/common/hexutil"
 )
 
 func TestStrToHex(t *testing.T) {

@@ -42,7 +42,6 @@ func TestMemDag_AddUnit(t *testing.T) {
 	//mockCtrl := gomock.NewController(t)
 	//defer mockCtrl.Finish()
 	lastHeader := newTestUnit(common.Hash{}, 0, key1)
-	//txpool := txspool.NewMockITxPool(mockCtrl)
 	db, _ := ptndb.NewMemDatabase()
 	dagDb := storage.NewDagDb(db)
 	utxoDb := storage.NewUtxoDb(db)
@@ -59,16 +58,14 @@ func TestMemDag_AddUnit(t *testing.T) {
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	gasToken := dagconfig.DagConfig.GetGasToken()
 	memdag := NewMemDag(gasToken, 2, false, db, unitRep, propRep, stateRep)
-	//tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
 
 	err := memdag.AddUnit(newTestUnit(common.Hash{}, 0, key2), nil)
 	assert.Nil(t, err)
 }
 func BenchmarkMemDag_AddUnit(b *testing.B) {
-	//mockCtrl := gomock.NewController(b)
+	//mockCtrl := gomock.NewController(t)
 	//defer mockCtrl.Finish()
 	lastHeader := newTestUnit(common.Hash{}, 0, key1)
-	//txpool := txspool.NewMockITxPool(mockCtrl)
 	db, _ := ptndb.NewMemDatabase()
 	dagDb := storage.NewDagDb(db)
 	utxoDb := storage.NewUtxoDb(db)
@@ -77,7 +74,7 @@ func BenchmarkMemDag_AddUnit(b *testing.B) {
 	propDb := storage.NewPropertyDb(db)
 	propDb.SetNewestUnit(lastHeader.UnitHeader)
 	propDb.SetNewestUnit(lastHeader.Header())
-	//utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
+
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	unitRep.SaveUnit(lastHeader, false)
 	propRep := dagcommon.NewPropRepository(propDb)
@@ -85,7 +82,7 @@ func BenchmarkMemDag_AddUnit(b *testing.B) {
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	gasToken := modules.PTNCOIN
 	memdag := NewMemDag(gasToken, 2, false, db, unitRep, propRep, stateRep)
-	//tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
+
 	parentHash := lastHeader.Hash()
 	for i := 0; i < b.N; i++ {
 		unit := newTestUnit(parentHash, uint64(i+1), key1)
@@ -111,7 +108,6 @@ var (
 func newTestHeader(parentHash common.Hash, height uint64, key *ecdsa.PrivateKey) *modules.Header {
 
 	h := new(modules.Header)
-	//h.AssetIDs = append(h.AssetIDs, PTNCOIN)
 	au := modules.Authentifier{}
 
 	h.GroupSign = []byte("group_sign")
@@ -121,8 +117,6 @@ func newTestHeader(parentHash common.Hash, height uint64, key *ecdsa.PrivateKey)
 	h.Number.Index = height
 	h.Extra = make([]byte, 20)
 	h.ParentsHash = []common.Hash{parentHash}
-	//tr := common.Hash{}
-	//tr = tr.SetString("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f")
 	h.TxRoot = common.HexToHash("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f")
 
 	sig, _ := crypto.Sign(h.TxRoot[:], key)
@@ -139,7 +133,6 @@ func TestMemDag_AddOrphanUnit(t *testing.T) {
 	//defer mockCtrl.Finish()
 
 	lastHeader := newTestUnit(common.Hash{}, 0, key1)
-	//txpool := txspool.NewMockITxPool(mockCtrl)
 	var txpool txspool.ITxPool
 	db, _ := ptndb.NewMemDatabase()
 	dagDb := storage.NewDagDb(db)
@@ -178,7 +171,6 @@ func TestMemDag_SwitchMainChain(t *testing.T) {
 	//mockCtrl := gomock.NewController(t)
 	//defer mockCtrl.Finish()
 	u0 := newTestUnit(common.Hash{}, 1, key1)
-	//txpool := txspool.NewMockITxPool(mockCtrl)
 	var txpool txspool.ITxPool
 	db, _ := ptndb.NewMemDatabase()
 	dagDb := storage.NewDagDb(db)

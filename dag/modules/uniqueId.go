@@ -35,7 +35,7 @@ const (
 	UniqueIdType_Sequence   UniqueIdType = 1
 	UniqueIdType_Uuid       UniqueIdType = 2
 	UniqueIdType_UserDefine UniqueIdType = 3
-	UniqueIdType_Ascii UniqueIdType = 4
+	UniqueIdType_Ascii      UniqueIdType = 4
 )
 
 func FormatUUID(buf []byte) string {
@@ -132,11 +132,6 @@ func String2UniqueId(str string, t UniqueIdType) (UniqueId, error) {
 	return uid, errors.New("Unknown UniequeIdType")
 }
 func (it *UniqueId) Bytes() []byte {
-	//idBytes := make([]byte, len(it))
-	//for i := 0; i < len(it); i++ {
-	//	idBytes[i] = it[i]
-	//}
-	//return idBytes
 	return it[:]
 }
 

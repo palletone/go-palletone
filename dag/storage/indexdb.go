@@ -21,12 +21,11 @@
 package storage
 
 import (
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/ethereum/go-ethereum/rlp"
 )
 
 type IndexDb struct {
@@ -38,18 +37,11 @@ func NewIndexDb(db ptndb.Database) *IndexDb {
 }
 
 type IIndexDb interface {
-	//GetPrefix(prefix []byte) map[string][]byte
-	//SaveIndexValue(key []byte, value interface{}) error
-	//GetUtxoByIndex(idx *modules.UtxoIndex) (*modules.Utxo, error)
-	//DeleteUtxoByIndex(idx *modules.UtxoIndex) error
 	SaveAddressTxId(address common.Address, txid common.Hash) error
 	GetAddressTxIds(address common.Address) ([]common.Hash, error)
 
 	SaveTokenTxId(asset *modules.Asset, txid common.Hash) error
 	GetTokenTxIds(asset *modules.Asset) ([]common.Hash, error)
-
-	//GetFromAddressTxIds(addr string) ([]common.Hash, error)
-	//GetTxFromAddresses(tx *modules.Transaction) ([]string, error)
 
 	SaveMainDataTxId(maindata []byte, txid common.Hash) error
 	GetMainDataTxIds(maindata []byte) ([]common.Hash, error)
@@ -57,32 +49,9 @@ type IIndexDb interface {
 	QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error)
 }
 
-// ###################### SAVE IMPL START ######################
-//func (idxdb *IndexDb) SaveIndexValue(key []byte, value interface{}) error {
-//	return StoreToRlpBytes(idxdb.db, key, value)
-//}
-
-// ###################### SAVE IMPL END ######################
-// ###################### GET IMPL START ######################
-//func (idxdb *IndexDb) GetPrefix(prefix []byte) map[string][]byte {
-//	return getprefix(idxdb.db, prefix)
-//}
-
-// ###################### GET IMPL END ######################
-//func (idxdb *IndexDb) GetUtxoByIndex(idx *modules.UtxoIndex) (*modules.Utxo, error) {
-//	key := idx.ToKey()
-//	utxo := new(modules.Utxo)
-//	err := RetrieveFromRlpBytes(idxdb.db, key, utxo)
-//	return utxo, err
-//}
-//func (idxdb *IndexDb) DeleteUtxoByIndex(idx *modules.UtxoIndex) error {
-//	return idxdb.db.Delete(idx.ToKey())
-//}
-
 func (db *IndexDb) SaveAddressTxId(address common.Address, txid common.Hash) error {
 	key := append(constants.ADDR_TXID_PREFIX, address.Bytes()...)
 	key = append(key, txid[:]...)
-	log.Debugf("Index address[%s] and tx[%s]", address.String(), txid.String())
 	return db.db.Put(key, txid[:])
 }
 func (db *IndexDb) GetAddressTxIds(address common.Address) ([]common.Hash, error) {
@@ -99,7 +68,6 @@ func (db *IndexDb) GetAddressTxIds(address common.Address) ([]common.Hash, error
 func (db *IndexDb) SaveTokenTxId(asset *modules.Asset, txid common.Hash) error {
 	key := append(constants.TOKEN_TXID_PREFIX, asset.Bytes()...)
 	key = append(key, txid[:]...)
-	log.Debugf("Index Token[%s] and tx[%s]", asset.String(), txid.String())
 	return db.db.Put(key, txid[:])
 }
 
@@ -114,50 +82,6 @@ func (db *IndexDb) GetTokenTxIds(asset *modules.Asset) ([]common.Hash, error) {
 	}
 	return result, nil
 }
-
-//
-//func (db *IndexDb) GetFromAddressTxIds(addr string) ([]common.Hash, error) {
-//	hashs := make([]common.Hash, 0)
-//	data, err := db.db.Get(append(constants.AddrTx_From_Prefix, []byte(addr)...))
-//	if err != nil {
-//
-//		return nil, err
-//	}
-//	if err := rlp.DecodeBytes(data, &hashs); err != nil {
-//		return hashs, err
-//	}
-//	return hashs, nil
-//}
-//
-//func (db *IndexDb) GetTxFromAddresses(tx *modules.Transaction) ([]string, error) {
-//
-//	froms := make([]string, 0)
-//	if tx == nil {
-//		return froms, errors.New("tx is nil, not exist address.")
-//	}
-//	outpoints, _ := tx.GetAddressInfo()
-//	for _, op := range outpoints {
-//		addr, err := db.getOutpointAddr(op)
-//		if err == nil {
-//			froms = append(froms, addr)
-//		}
-//	}
-//
-//	return froms, nil
-//}
-//func (db *IndexDb) getOutpointAddr(outpoint *modules.OutPoint) (string, error) {
-//	out_key := append(constants.OUTPOINT_ADDR_PREFIX, outpoint.ToKey()...)
-//	data, err := db.db.Get(out_key[:])
-//	if len(data) <= 0 {
-//		return "", errors.New(fmt.Sprintf("address is null. outpoint_key(%s)", outpoint.ToKey()))
-//	}
-//	if err != nil {
-//		return "", err
-//	}
-//	var str string
-//	err0 := rlp.DecodeBytes(data, &str)
-//	return str, err0
-//}
 
 //save filehash key:IDX_MAIN_DATA_TXID   value:Txid
 func (db *IndexDb) SaveMainDataTxId(filehash []byte, txid common.Hash) error {
@@ -179,34 +103,28 @@ func (db *IndexDb) GetMainDataTxIds(filehash []byte) ([]common.Hash, error) {
 	return result, nil
 }
 
-
-func (db *IndexDb) SaveProofOfExistence(poe *modules.ProofOfExistence) error{
-	if len(poe.Reference)==0{
-		log.Infof("tx[%s] Reference data is null, don't need index it.",poe.TxId.String())
+func (db *IndexDb) SaveProofOfExistence(poe *modules.ProofOfExistence) error {
+	if len(poe.Reference) == 0 {
 		return nil
 	}
-	key:=append( constants.IDX_REF_DATA_PREFIX,poe.Reference...)
-	key=append(key,poe.TxId.Bytes()...)
+	key := append(constants.IDX_REF_DATA_PREFIX, poe.Reference...)
+	key = append(key, poe.TxId.Bytes()...)
 
-	return StoreToRlpBytes(db.db,key,poe)
-
+	return StoreToRlpBytes(db.db, key, poe)
 }
 
-
-func (db *IndexDb) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error){
-	prefix:=append( constants.IDX_REF_DATA_PREFIX,ref...)
-	//prefixLen:=len(prefix)
+func (db *IndexDb) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error) {
+	prefix := append(constants.IDX_REF_DATA_PREFIX, ref...)
 	iter := db.db.NewIteratorWithPrefix(prefix)
 	result := []*modules.ProofOfExistence{}
 	for iter.Next() {
-		//key := iter.Key()
 		value := iter.Value()
-		poe:=&modules.ProofOfExistence{}
-		err:=rlp.DecodeBytes(value,poe)
-		if err!=nil{
-			return nil,err
+		poe := &modules.ProofOfExistence{}
+		err := rlp.DecodeBytes(value, poe)
+		if err != nil {
+			return nil, err
 		}
-		result=append(result,poe)
+		result = append(result, poe)
 	}
-	return result,nil
+	return result, nil
 }

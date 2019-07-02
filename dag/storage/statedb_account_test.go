@@ -21,19 +21,17 @@
 package storage
 
 import (
-	"github.com/palletone/go-palletone/dag/modules"
 	"testing"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestStateDb_AccountInfo(t *testing.T) {
 	db, _ := ptndb.NewMemDatabase()
-	//l := log.NewTestLog()
 	statedb := NewStateDb(db)
-	//vote := make(map[common.Address]bool)
 	addr, _ := common.StringToAddress("P173mPBwP1kXmfpg4p7rzZ5XRsGN1G1WQC8")
 	// store
 	key := "Name"
@@ -49,12 +47,10 @@ func TestStateDb_AccountInfo(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, len(allState), 1)
 	assert.Equal(t, allState[key].Value, devin)
-	//assert.Equal(t, info.PtnBalance, info2.PtnBalance)
 }
 
 func TestStateDb_GetAccountBalance(t *testing.T) {
 	db, _ := ptndb.NewMemDatabase()
-	//l := log.NewTestLog()
 	statedb := NewStateDb(db)
 	addr, _ := common.StringToAddress("P173mPBwP1kXmfpg4p7rzZ5XRsGN1G1WQC8")
 	err := statedb.UpdateAccountBalance(addr, 123)

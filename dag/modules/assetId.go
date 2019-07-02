@@ -21,15 +21,14 @@
 package modules
 
 import (
+	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
+	"strings"
 
 	"github.com/martinlindhe/base36"
-
-	"bytes"
-	"encoding/json"
 	"github.com/palletone/go-palletone/common/bitutil"
-	"strings"
 )
 
 var (
@@ -38,7 +37,6 @@ var (
 	BTCCOIN          = AssetId{'b', 't', 'c', 'c', 'o', 'i', 'n'}
 )
 
-// type 	Hash 		[]byte
 const (
 	ID_LENGTH = 16
 )
@@ -98,7 +96,6 @@ func NewAssetId(symbol string, assetType AssetType, decimal byte, requestId []by
 	}
 	assetId := AssetId{}
 	assetSymbol := base36.DecodeToBytes(symbol)
-	//fmt.Printf(base36.EncodeBytes(assetSymbol))
 	copy(assetId[4-len(assetSymbol):4], assetSymbol)
 	firstByte := assetId[0] | (byte(len(assetSymbol) << 5))
 	firstByte = firstByte | byte(assetType)<<2
@@ -141,20 +138,7 @@ func (asset AssetId) Equal(another AssetId) bool {
 	return bytes.Equal(asset.Bytes(), another.Bytes())
 }
 
-//func (it *AssetId) Str() string {
-//	return hex.EncodeToString(it.Bytes())
-//}
-
-//func (it *AssetId) TokenType() string {
-//	return string(it.Bytes()[:])
-//}
-
 func (it AssetId) Bytes() []byte {
-	//idBytes := make([]byte, len(it))
-	//for i := 0; i < len(it); i++ {
-	//	idBytes[i] = it[i]
-	//}
-	//return idBytes
 	return it[:]
 }
 
@@ -175,9 +159,11 @@ func SetIdTypeByHex(id string) (AssetId, error) {
 	copy(id_type[0:], bytes)
 	return id_type, nil
 }
+
 func (assetId AssetId) MarshalJSON() ([]byte, error) {
 	return json.Marshal(assetId.String())
 }
+
 func (assetId *AssetId) UnmarshalJSON(data []byte) error {
 	var str string
 	err := json.Unmarshal(data, &str)

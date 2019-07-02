@@ -27,7 +27,6 @@ import (
 )
 
 type ITxPool interface {
-	// AddRemote(tx *modules.Transaction) error
 	Stop()
 
 	AddLocal(tx *modules.Transaction) error
@@ -49,10 +48,8 @@ type ITxPool interface {
 	ResetPendingTxs(txs []*modules.Transaction) error
 	SendStoredTxs(hashs []common.Hash) error
 	DiscardTxs(hashs []common.Hash) error
-	//DiscardTx(hash common.Hash) error
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
-	// SubscribeTxPreEvent should return an event subscription of
-	// TxPreEvent and send events to the given channel.
+
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
 	GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxPoolTransaction, common.StorageSize)
 	Get(hash common.Hash) (*modules.TxPoolTransaction, common.Hash)
