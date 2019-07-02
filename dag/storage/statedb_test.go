@@ -27,16 +27,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestStateDb_Version(t *testing.T){
-	db,_:=ptndb.NewMemDatabase()
-	//statedb:=NewStateDb(db)
-	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123,AssetID:modules.PTNCOIN}, TxIndex: 1}
-	key:="Name"
-	value:=[]byte("Devin")
-	err:=storeBytesWithVersion(db,[]byte(key),version,value)
-	assert.Nil(t,err)
-	value1,version1,err:= retrieveWithVersion(db,[]byte(key))
-	assert.Nil(t,err)
-	assert.Equal(t,value,value1)
-	assert.Equal(t,version.String(),version1.String())
+func TestStateDb_Version(t *testing.T) {
+	db, _ := ptndb.NewMemDatabase()
+	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123, AssetID: modules.PTNCOIN}, TxIndex: 1}
+	key := "Name"
+	value := []byte("Devin")
+	err := storeBytesWithVersion(db, []byte(key), version, value)
+	assert.Nil(t, err)
+	value1, version1, err := retrieveWithVersion(db, []byte(key))
+	assert.Nil(t, err)
+	assert.Equal(t, value, value1)
+	assert.Equal(t, version.String(), version1.String())
 }

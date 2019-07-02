@@ -21,12 +21,11 @@
 package storage
 
 import (
+	"log"
 	"testing"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
 )
@@ -34,7 +33,6 @@ import (
 func TestGetUtxos(t *testing.T) {
 
 	db, _ := ptndb.NewMemDatabase()
-	//l := log.NewTestLog()
 	utxodb := NewUtxoDb(db)
 	key := new(modules.OutPoint)
 	key.MessageIndex = 1
@@ -53,38 +51,14 @@ func TestGetUtxos(t *testing.T) {
 
 	utxos, err := utxodb.GetAllUtxos()
 	if err != nil {
-		log.Debugf("get all utxo error:%s", err)
+		log.Printf("get all utxo error:%s", err)
 	}
 	for key, u := range utxos {
 
-		log.Debugf("key:%s", key.ToKey())
-		log.Debugf("utxo value:%#v", u)
+		log.Printf("key:%s", key.ToKey())
+		log.Printf("utxo value:%#v", u)
 	}
 	queryUtxo, err := utxodb.GetUtxoEntry(key)
 	assert.Nil(t, err)
 	assert.Equal(t, utxo.Bytes(), queryUtxo.Bytes())
-	//result := utxodb.GetPrefix(constants.UTXO_PREFIX)
-	//for key, b := range result {
-	//	log.Debugf("result::%s", key)
-	//	utxo := new(modules.Utxo)
-	//	err := rlp.DecodeBytes(b, utxo)
-	//	if err != nil {
-	//		log.Errorf("utxo error:%s ", err)
-	//	}
-	//}
-	//
-	//result1 := utxodb.GetPrefix(constants.ADDR_OUTPOINT_PREFIX)
-	//for key, b := range result1 {
-	//	log.Debugf("result:", key)
-	//	out := new(modules.OutPoint)
-	//	rlp.DecodeBytes(b, out)
-	//	log.Debugf("outpoint ", err, out)
-	//	if utxo_byte, err := db.Get(out.ToKey()); err != nil {
-	//		log.Errorf("get utxo from outpoint error:%s", err)
-	//	} else {
-	//		utxo := new(modules.Utxo)
-	//		err := rlp.DecodeBytes(utxo_byte, utxo)
-	//		log.Errorf("get utxo by outpoint :%s,%s", err, utxo)
-	//	}
-	//}
 }

@@ -25,9 +25,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-
-	// "reflect"
-
 	"reflect"
 
 	"github.com/ethereum/go-ethereum/rlp"
@@ -108,7 +105,6 @@ func (statedb *StateDb) SaveContractState(contractId []byte, ws *modules.Contrac
 }
 
 func getContractStateKey(id []byte, field string) []byte {
-	// contractAddress := common.NewAddress(id, common.ContractHash)
 	key := append(constants.CONTRACT_STATE_PREFIX, id...)
 	return append(key, field...)
 }
@@ -154,23 +150,17 @@ To save contract
 
 func (statedb *StateDb) SaveContractStates(id []byte, wset []modules.ContractWriteSet, version *modules.StateVersion) error {
 	batch := statedb.db.NewBatch()
-	//log.DebugDynamic(func() string {
-	//	contractAddress := common.NewAddress(id, common.ContractHash)
-	//	return fmt.Sprintf("save contract(%v) StateVersion: %v", contractAddress.Str(), version.String())
-	//})
 	for _, write := range wset {
 		cid := id
 		if len(write.ContractId) != 0 {
 			cid = write.ContractId
 		}
 		key := getContractStateKey(cid, write.Key)
-		//log.Debugf("Save Contract State key: %x, string key:%s", key, string(key))
 
 		if write.IsDelete {
 			batch.Delete(key)
 			log.Debugf("Delete contract state by key:[%s]", write.Key)
 		} else {
-			//log.Debugf("Save contract state by key:[%s],value:%x;db key %x", write.Key, write.Value, key)
 			if err := storeBytesWithVersion(batch, key, version, write.Value); err != nil {
 				return err
 			}

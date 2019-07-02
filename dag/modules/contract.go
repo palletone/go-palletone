@@ -23,34 +23,13 @@ import (
 )
 
 type Contract struct {
-	//Contract Id 即Address，[20]byte，
 	// 根据用户创建合约实例申请的RequestId截取其后20字节生成
-	ContractId []byte
-	TemplateId []byte
-	Name       string
-	//1Active 0Stopped
+	ContractId   []byte
+	TemplateId   []byte
+	Name         string
 	Status       byte   // 合约状态
-	Creator      []byte //address 20bytes
+	Creator      []byte // address 20bytes
 	CreationTime uint64 // creation  date
-
-	//ConType  string // 合约类型： 系统合约 用户合约
-	//LangCode string // 代码类别
-	//
-	//Sign              []*Authentifier // 单一签名和多方签名
-	//Code              []byte          // 合约代码。
-	//CodeHash          common.Hash
-	//CodeAddress       common.Address
-	//Input             []byte
-	//JuryPubKeys       [][]byte //该合约对于的陪审员公钥列表
-	//NeedApprovalCount uint8    //需要多少个陪审员同意才算共识达成
-	//CallerAddress     common.Address
-	//caller            common.Address
-	//self              common.Address // 合約地址
-	//jumpdests         map[common.Hash][]byte
-	//
-	//value *big.Int
-	//
-	//Args []byte
 }
 
 func NewContract(deploy *ContractDeployPayload, creator common.Address, unitTime uint64) *Contract {
@@ -63,13 +42,3 @@ func NewContract(deploy *ContractDeployPayload, creator common.Address, unitTime
 		CreationTime: unitTime,
 	}
 }
-
-//func (c *Contract) Caller() common.Address { return c.caller }
-//
-//func (c *Contract) Self() common.Address { return c.self }
-//
-//func (c *Contract) Jumpdests() map[common.Hash][]byte { return c.jumpdests }
-//
-//func (c *Contract) Value() *big.Int { return c.value }
-//
-//func (c *Contract) Status() int { return c.status }

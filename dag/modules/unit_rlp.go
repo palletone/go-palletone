@@ -16,24 +16,24 @@
 package modules
 
 import (
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/palletone/go-palletone/common"
 	"io"
 	"time"
+
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common"
 )
 
 type headerTemp struct {
 	ParentsHash []common.Hash `json:"parents_hash"`
-	//AssetIDs     []AssetId    `json:"assets"`
-	Authors     Authentifier `json:"mediator"`    // the unit creation authors
-	GroupSign   []byte       `json:"groupSign"`   // 群签名, 用于加快单元确认速度
-	GroupPubKey []byte       `json:"groupPubKey"` // 群公钥, 用于验证群签名
-	TxRoot      common.Hash  `json:"root"`
-	TxsIllegal  []uint16     `json:"txs_illegal"` //Unit中非法交易索引
-	Number      *ChainIndex  `json:"index"`
-	Extra       []byte       `json:"extra"`
-	Time        uint32       `json:"creation_time"` // unit create time
-	CryptoLib   []byte       `json:"crypto_lib"`    //该区块使用的加解密算法和哈希算法，0位表示非对称加密算法，1位表示Hash算法
+	Authors     Authentifier  `json:"mediator"`    // the unit creation authors
+	GroupSign   []byte        `json:"groupSign"`   // 群签名, 用于加快单元确认速度
+	GroupPubKey []byte        `json:"groupPubKey"` // 群公钥, 用于验证群签名
+	TxRoot      common.Hash   `json:"root"`
+	TxsIllegal  []uint16      `json:"txs_illegal"` //Unit中非法交易索引
+	Number      *ChainIndex   `json:"index"`
+	Extra       []byte        `json:"extra"`
+	Time        uint32        `json:"creation_time"` // unit create time
+	CryptoLib   []byte        `json:"crypto_lib"`    //该区块使用的加解密算法和哈希算法，0位表示非对称加密算法，1位表示Hash算法
 }
 
 func (input *Header) DecodeRLP(s *rlp.Stream) error {

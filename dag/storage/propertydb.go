@@ -47,9 +47,7 @@ type IPropertyDb interface {
 
 	StoreGlobalPropHistory(gp *modules.GlobalPropertyHistory) error
 	RetrieveGlobalPropHistories() ([]*modules.GlobalPropertyHistory, error)
-	//设置稳定单元的Hash
-	// SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error
-	// GetLastStableUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
+
 	SetNewestUnit(header *modules.Header) error
 	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, int64, error)
 
@@ -75,10 +73,6 @@ func NewPropertyDb(db ptndb.Database) *PropertyDb {
 }
 
 func (propdb *PropertyDb) StoreMediatorSchl(ms *modules.MediatorSchedule) error {
-	//log.DebugDynamic(func() string {
-	//	return fmt.Sprintf("DB[%s] Save mediator schedule:%s to db.", reflect.TypeOf(propdb.db).String(), ms.String())
-	//})
-
 	err := StoreToRlpBytes(propdb.db, constants.MEDIATOR_SCHEDULE_KEY, ms)
 	if err != nil {
 		log.Errorf("Store mediator schedule error: %v", err.Error())

@@ -503,7 +503,7 @@ func checkAndAddTxSigMsgData(local *modules.Transaction, recv *modules.Transacti
 	reqId := local.RequestHash()
 
 	if len(local.TxMessages) != len(recv.TxMessages) {
-		return false, fmt.Errorf("[%s]checkAndAddTxSigMsgData tx msg is invalid", shortId(reqId.String()))
+		return false, fmt.Errorf("[%s]checkAndAddTxSigMsgData tx msg is invalid,local msg len[%d],recv msg len[%d]", shortId(reqId.String()), len(local.TxMessages), len(recv.TxMessages))
 	}
 	for i := 0; i < len(local.TxMessages); i++ {
 		if recv.TxMessages[i].App == modules.APP_SIGNATURE {

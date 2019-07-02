@@ -36,22 +36,6 @@ import (
 	"go.dedis.ch/kyber/v3"
 )
 
-// validate unit state
-//const (
-//	UNIT_STATE_VALIDATED                = 0x00
-//	UNIT_STATE_AUTHOR_SIGNATURE_PASSED  = 0x01
-//	UNIT_STATE_EMPTY                    = 0x02
-//	UNIT_STATE_INVALID_AUTHOR_SIGNATURE = 0x03
-//	UNIT_STATE_INVALID_GROUP_SIGNATURE  = 0x04
-//	UNIT_STATE_HAS_INVALID_TRANSACTIONS = 0x05
-//	UNIT_STATE_INVALID_SIZE             = 0x06
-//	UNIT_STATE_INVALID_EXTRA_DATA       = 0x07
-//	UNIT_STATE_INVALID_HEADER           = 0x08
-//	UNIT_STATE_CHECK_HEADER_PASSED      = 0x09
-//	UNIT_STATE_INVALID_HEADER_WITNESS   = 0x10
-//	UNIT_STATE_OTHER_ERROR              = 0xFF
-//)
-
 // unit state
 const (
 	U_STATE_NO_GROUPSIGN = 0x20
@@ -280,12 +264,6 @@ func (unit *Unit) GroupPubKey() (kyber.Point, error) {
 	return pubKey, err
 }
 
-//type OutPoint struct {
-//	TxHash       common.Hash // reference Utxo struct key field
-//	MessageIndex uint32      // message index in transaction
-//	OutIndex     uint32
-//}
-
 func (unit *Unit) IsEmpty() bool {
 	if unit == nil || unit.Hash() == (common.Hash{}) {
 		return true
@@ -303,16 +281,10 @@ func (unit *Unit) String4Log() string {
 //type Transactions []*Transaction
 type TxPoolTxs []*TxPoolTransaction
 
-//type Transaction struct {
-//	TxHash     common.Hash `json:"txhash"`
-//	TxMessages []Message   `json:"messages"`
-//	Locktime   uint32      `json:"lock_time"`
-//}
 //出于DAG和基于Token的分区共识的考虑，设计了该ChainIndex，
 type ChainIndex struct {
 	AssetID AssetId `json:"asset_id"`
-	//IsMain  bool    `json:"is_main"`
-	Index uint64 `json:"index"`
+	Index   uint64  `json:"index"`
 }
 
 func NewChainIndex(assetId AssetId, idx uint64) *ChainIndex {
@@ -346,12 +318,6 @@ func (height *ChainIndex) Equal(in *ChainIndex) bool {
 	}
 	return true
 }
-
-//type Author struct {
-//	Address        common.Address `json:"address"`
-//	Pubkey         []byte/*common.Hash*/ `json:"pubkey"`
-//	TxAuthentifier *Authentifier `json:"authentifiers"`
-//}
 
 type Authentifier struct {
 	PubKey    []byte `json:"pubkey"`

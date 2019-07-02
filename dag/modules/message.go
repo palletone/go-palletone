@@ -17,6 +17,7 @@
 package modules
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
@@ -26,8 +27,6 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-
-	"bytes"
 )
 
 type MessageType byte
@@ -60,8 +59,6 @@ const (
 	JuryList          = "JuryList"
 	DeveloperList     = "DeveloperList"
 	DepositRate       = "DepositRate"
-	//ContractSignatureNum = "ContractSignatureNum"
-	//ContractElectionNum  = "ContractElectionNum"
 )
 
 const (
@@ -95,15 +92,7 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	default:
 		//case APP_PAYMENT, APP_CONTRACT_TPL, APP_DATA:
 		msg.Payload = cpyMsg.Payload
-		//case APP_CONFIG:
-		//	payload, _ := cpyMsg.Payload.(*ConfigPayload)
-		//	newPayload := ConfigPayload{
-		//		ConfigSet: []ContractWriteSet{},
-		//	}
-		//	for _, p := range payload.ConfigSet {
-		//		newPayload.ConfigSet = append(newPayload.ConfigSet, ContractWriteSet{Key: p.Key, Value: p.Value})
-		//	}
-		//	msg.Payload = newPayload
+
 	case APP_CONTRACT_DEPLOY:
 		payload, _ := cpyMsg.Payload.(*ContractDeployPayload)
 		newPayload := ContractDeployPayload{
@@ -111,7 +100,6 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 			ContractId: payload.ContractId,
 			Args:       payload.Args,
 			EleList:    payload.EleList,
-			//ExecutionTime: payload.ExecutionTime,
 		}
 		readSet := []ContractReadSet{}
 		for _, rs := range payload.ReadSet {
@@ -161,8 +149,6 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 }
 
 func (msg *Message) CompareMessages(inMsg *Message) bool {
-	//return true //todo del
-
 	if inMsg == nil || msg.App != inMsg.App {
 		return false
 	}

@@ -172,7 +172,6 @@ func (p *Processor) contractSigEvent(tx *modules.Transaction, ele []modules.Elec
 			adaInf: make(map[uint32]*AdapterInf),
 		}
 		p.mtx[reqId].rcvTx = append(p.mtx[reqId].rcvTx, tx)
-		//go p.runContractReq(reqId, ele) //del
 		return true, nil
 	}
 	ctx := p.mtx[reqId]
