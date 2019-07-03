@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
+	"time"
 )
 
 //验证一个Payment
@@ -131,6 +132,7 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 			utxoScriptMap[in.PreviousOutPoint] = utxo.PkScript
 
 		}
+		t1 := time.Now()
 		err := tokenengine.ScriptValidate1Msg(utxoScriptMap, validate.pickJuryFn, txForSign, msgIdx)
 		if err != nil {
 			txjson, _ := tx.MarshalJSON()
@@ -138,7 +140,7 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 			log.Debugf("Tx for help debug: json: %s ,rlp: %x", string(txjson), rlpdata)
 			return TxValidationCode_INVALID_PAYMMENT_INPUT
 		} else {
-			log.Debugf("Unlock script validated! tx[%s],%d", tx.Hash().String(), msgIdx)
+			log.Debugf("Unlock script validated! tx[%s],%d, spend time:%s", tx.Hash().String(), msgIdx, time.Since(t1))
 		}
 	}
 

@@ -26,6 +26,7 @@ import (
 
 	"encoding/json"
 	"fmt"
+	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -38,12 +39,15 @@ type Validate struct {
 	statequery IStateQuery
 	dagquery   IDagQuery
 	propquery  IPropQuery
+	cache      *ValidatorCache
 }
 
 const MAX_DATA_PAYLOAD_MAIN_DATA_SIZE = 128
 
 func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propquery IPropQuery) *Validate {
-	return &Validate{dagquery: dagdb, utxoquery: utxoRep, statequery: statedb, propquery: propquery}
+	cache := freecache.NewCache(20 * 1024 * 1024)
+	vcache := NewValidatorCache(2000, cache)
+	return &Validate{cache: vcache, dagquery: dagdb, utxoquery: utxoRep, statequery: statedb, propquery: propquery}
 }
 
 type newUtxoQuery struct {
@@ -174,6 +178,7 @@ return all transactions' fee
 func (validate *Validate) ValidateTx(tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, ValidationCode, error) {
 	code, addition := validate.validateTx(tx, isFullTx, time.Now().Unix())
 	if code == TxValidationCode_VALID {
+		validate.cache.Add(tx.Hash())
 		return addition, code, nil
 	}
 

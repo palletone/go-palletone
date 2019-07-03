@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/stretchr/testify/assert"
+	"time"
 )
 
 func getAccount() (*ecdsa.PrivateKey, []byte, common.Address) {
@@ -213,4 +214,48 @@ func TestValidateDoubleSpendOn1Tx(t *testing.T) {
 	_, _, err1 := validate.ValidateTx(tx, true)
 	assert.NotNil(t, err1)
 	t.Log(err1)
+}
+
+//构造一个上千Input的交易，验证时间要多久？
+func TestValidateLargeInputPayment(t *testing.T) {
+	N := 1000
+	tx := &modules.Transaction{}
+	pay := &modules.PaymentPayload{Inputs: []*modules.Input{}, Outputs: []*modules.Output{}}
+	lockScripts := map[modules.OutPoint][]byte{}
+	privKey, _, addr := getAccount()
+	lockScript := tokenengine.GenerateLockScript(addr)
+	for i := 0; i < N; i++ {
+		outpoint := modules.NewOutPoint(hash1, 0, uint32(i))
+		lockScripts[*outpoint] = lockScript
+		in := modules.NewTxIn(outpoint, nil)
+		pay.Inputs = append(pay.Inputs, in)
+	}
+	output := modules.NewTxOut(100, common.Hex2Bytes("0x76a914bd05274d98bb768c0e87a55d9a6024f76beb462a88ac"), modules.NewPTNAsset())
+	pay.AddTxOut(output)
+	tx.TxMessages = []*modules.Message{modules.NewMessage(modules.APP_PAYMENT, pay)}
+	getPubKeyFn := func(common.Address) ([]byte, error) {
+		return crypto.CompressPubkey(&privKey.PublicKey), nil
+	}
+	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
+		s, e := crypto.Sign(hash, privKey)
+		return s, e
+	}
+	var hashtype uint32
+	hashtype = 1
+	_, e := tokenengine.SignTxAllPaymentInput(tx, hashtype, lockScripts, nil, getPubKeyFn, getSignFn)
+	if e != nil {
+		fmt.Println(e.Error())
+	}
+	//data, _ := json.Marshal(tx)
+	//t.Logf("Signed Tx:%s", string(data))
+
+	utxoq := &testutxoQuery{}
+	validate := NewValidate(nil, utxoq, nil, nil)
+	_, _, err := validate.ValidateTx(tx, true)
+
+	t1 := time.Now()
+	//validate := NewValidate(nil, utxoq, nil, nil)
+	_, _, err = validate.ValidateTx(tx, true)
+	t.Logf("Validate send time:%s", time.Since(t1))
+	assert.Nil(t, err)
 }

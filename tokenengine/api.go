@@ -227,6 +227,7 @@ func ScriptValidate1Msg(utxoLockScripts map[*modules.OutPoint][]byte, pickupJury
 			}
 		}
 	}
+	log.Debugf("SignCache count:%d", signCache.Count())
 	for inputIndex, input := range txCopy.TxMessages[msgIdx].Payload.(*modules.PaymentPayload).Inputs {
 		utxoLockScript := utxoLockScripts[input.PreviousOutPoint]
 		vm, err := txscript.NewEngine(utxoLockScript, pickupJuryRedeemScript, txCopy, msgIdx, inputIndex, txscript.StandardVerifyFlags, signCache, acc)
