@@ -46,7 +46,7 @@ const MAX_DATA_PAYLOAD_MAIN_DATA_SIZE = 128
 
 func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propquery IPropQuery) *Validate {
 	cache := freecache.NewCache(20 * 1024 * 1024)
-	vcache := NewValidatorCache(2000, cache)
+	vcache := NewValidatorCache( cache)
 	return &Validate{cache: vcache, dagquery: dagdb, utxoquery: utxoRep, statequery: statedb, propquery: propquery}
 }
 
@@ -176,9 +176,14 @@ return all transactions' fee
 //}
 
 func (validate *Validate) ValidateTx(tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, ValidationCode, error) {
+	txId:=tx.Hash()
+	has,add:= validate.cache.HasTxValidateResult(txId)
+	if has{
+		return add,TxValidationCode_VALID,nil
+	}
 	code, addition := validate.validateTx(tx, isFullTx, time.Now().Unix())
 	if code == TxValidationCode_VALID {
-		validate.cache.Add(tx.Hash())
+		validate.cache.AddTxValidateResult(txId,addition)
 		return addition, code, nil
 	}
 

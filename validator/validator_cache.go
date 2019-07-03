@@ -21,44 +21,66 @@
 package validator
 
 import (
+	"encoding/json"
+
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/palletcache"
-	"sync"
 )
 
 //如果已经验证通过的对象，那么不需要重复做全部验证
 type ValidatorCache struct {
-	sync.RWMutex
-	cache      palletcache.ICache
-	maxEntries uint
+	cache palletcache.ICache
 }
 
 var prefix = []byte("VA")
+var prefixHeader = []byte("VH")
 
-func NewValidatorCache(maxEntries uint, cache palletcache.ICache) *ValidatorCache {
-	return &ValidatorCache{cache: cache, maxEntries: maxEntries}
+func NewValidatorCache(cache palletcache.ICache) *ValidatorCache {
+	return &ValidatorCache{cache: cache}
 }
-func (s *ValidatorCache) Exists(sigHash common.Hash) bool {
-	if s.cache == nil {
-		return false
+func (s *ValidatorCache) AddTxValidateResult(txId common.Hash, validateResult []*modules.Addition) {
+	data, err := json.Marshal(validateResult)
+	if err != nil {
+		log.Errorf("Json marsal struct fail,error:%s", err.Error())
 	}
-	s.RLock()
-	_, err := s.cache.Get(append(prefix, sigHash.Bytes()...))
+	s.cache.Set(append(prefix, txId.Bytes()...), data, 60)
+}
+func (s *ValidatorCache) HasTxValidateResult(txId common.Hash) (bool, []*modules.Addition) {
+	data, err := s.cache.Get(append(prefix, txId.Bytes()...))
+	if err != nil {
+		return false, nil
+	}
+
+	result := []*modules.Addition{}
+	json.Unmarshal(data, &result)
+	log.Debugf("Validate cache has tx hash:%s",txId.String())
+	return true, result
+}
+
+func (s *ValidatorCache) AddUnitValidateResult(unitHash common.Hash) {
+
+	s.cache.Set(append(prefix, unitHash.Bytes()...), []byte{0x1}, 60)
+}
+func (s *ValidatorCache) HasUnitValidateResult(unitHash common.Hash) bool {
+	_, err := s.cache.Get(append(prefix, unitHash.Bytes()...))
 	if err != nil {
 		return false
 	}
-	s.RUnlock()
+	log.Debugf("Validate cache has unit hash:%s",unitHash.String())
 	return true
 }
-func (s *ValidatorCache) Add(sigHash common.Hash) {
-	if s.cache == nil {
-		return
-	}
-	s.Lock()
-	defer s.Unlock()
 
-	if s.maxEntries <= 0 {
-		return
+func (s *ValidatorCache) AddHeaderValidateResult(unitHash common.Hash) {
+
+	s.cache.Set(append(prefixHeader, unitHash.Bytes()...), []byte{0x1}, 60)
+}
+func (s *ValidatorCache) HasHeaderValidateResult(unitHash common.Hash) bool {
+	_, err := s.cache.Get(append(prefixHeader, unitHash.Bytes()...))
+	if err != nil {
+		return false
 	}
-	s.cache.Set(append(prefix, sigHash.Bytes()...), []byte{0x1}, 60)
+	log.Debugf("Validate cache has header hash:%s",unitHash.String())
+	return true
 }
