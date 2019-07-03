@@ -129,16 +129,21 @@ func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint) error {
 	}
 
 	//2. soft delete utxo
-	if utxo.IsSpent() {
-		return errors.New("Try to soft delete a deleted utxo by key:" + outpoint.String())
-	}
+	//if utxo.IsSpent() {
+	//	return errors.New("Try to soft delete a deleted utxo by key:" + outpoint.String())
+	//}
 	key := outpoint.ToKey()
-	utxo.Spend()
-	log.Debugf("Try to soft delete utxo by key:%s", outpoint.String())
-	err = StoreToRlpBytes(utxodb.db, key, utxo)
+	err = utxodb.db.Delete(key)
 	if err != nil {
 		return err
 	}
+	log.Debugf("Try delete utxo by key:%s", outpoint.String())
+	//utxo.Spend()
+	//log.Debugf("Try to soft delete utxo by key:%s", outpoint.String())
+	//err = StoreToRlpBytes(utxodb.db, key, utxo)
+	//if err != nil {
+	//	return err
+	//}
 	//3. Remove index
 	address, _ := tokenengine.GetAddressFromScript(utxo.PkScript[:])
 	utxodb.deleteUtxoOutpoint(address, outpoint)
@@ -176,10 +181,10 @@ func (db *UtxoDb) GetAddrUtxos(addr common.Address, asset *modules.Asset) (map[m
 	}
 	for _, out := range outpoints {
 		if utxo, err := db.GetUtxoEntry(&out); err == nil {
-			if !utxo.IsSpent() {
-				if asset == nil || asset.IsSimilar(utxo.Asset) {
-					allutxos[out] = utxo
-				}
+
+			if asset == nil || asset.IsSimilar(utxo.Asset) {
+				allutxos[out] = utxo
+
 			}
 		}
 	}
@@ -193,10 +198,10 @@ func (db *UtxoDb) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
 	for key, itme := range items {
 		utxo := new(modules.Utxo)
 		if err = rlp.DecodeBytes(itme, utxo); err == nil {
-			if !utxo.IsSpent() {
-				outpoint := modules.KeyToOutpoint([]byte(key))
-				view[*outpoint] = utxo
-			}
+
+			outpoint := modules.KeyToOutpoint([]byte(key))
+			view[*outpoint] = utxo
+
 		}
 	}
 

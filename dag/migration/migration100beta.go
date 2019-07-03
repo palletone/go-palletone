@@ -20,13 +20,12 @@
 package migration
 
 import (
-	"fmt"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/storage"
 )
 
-type Migration100_100 struct {
+type Migration100_101 struct {
 	dagdb   ptndb.Database
 	idxdb   ptndb.Database
 	utxodb  ptndb.Database
@@ -34,21 +33,37 @@ type Migration100_100 struct {
 	propdb  ptndb.Database
 }
 
-func (m *Migration100_100) FromVersion() string {
+func (m *Migration100_101) FromVersion() string {
 	return "1.0.0-beta"
 }
-func (m *Migration100_100) ToVersion() string {
+func (m *Migration100_101) ToVersion() string {
 	return "1.0.1-beta"
 }
-func (m *Migration100_100) ExecuteUpgrade() error {
-	// gp 只做了添加和删除的修改
-	fmt.Printf("exec migration , version: %s", m.FromVersion())
-	newGp := modules.NewGlobalProp()
-	newData, err := rlp.EncodeToBytes(newGp)
+func (m *Migration100_101) ExecuteUpgrade() error {
+	//删除已经花费的UTXO
+	dbop := storage.NewUtxoDb(m.utxodb)
+	utxos, err := dbop.GetAllUtxos()
 	if err != nil {
-		fmt.Println("ExecuteUpgrade error:" + err.Error())
 		return err
 	}
-	m.statedb.Put([]byte("gpGlobalProperty"), newData)
+	for outpoint, utxo := range utxos {
+		if utxo.IsSpent() {
+			err = dbop.DeleteUtxo(&outpoint)
+			if err != nil {
+				log.Errorf("Migrate utxo db,delete spent utxo error:%s", err.Error())
+				return err
+			}
+			//log.Debugf("Deleted spent UTXO by key:%s", outpoint.String())
+		}
+	}
+	//// gp 只做了添加和删除的修改
+	//fmt.Printf("exec migration , version: %s", m.FromVersion())
+	//newGp := modules.NewGlobalProp()
+	//newData, err := rlp.EncodeToBytes(newGp)
+	//if err != nil {
+	//	fmt.Println("ExecuteUpgrade error:" + err.Error())
+	//	return err
+	//}
+	//m.statedb.Put([]byte("gpGlobalProperty"), newData)
 	return nil
 }

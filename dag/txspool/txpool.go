@@ -1558,7 +1558,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 		total += tx.Tx.Size()
 	}
 	for {
-		if time.Since(t0) > time.Millisecond*900 {
+		if time.Since(t0) > time.Millisecond*1000 {
 			log.Infof("get sorted timeout spent times: %s , count: %d ", time.Since(t0), len(list))
 			break
 		}
@@ -1571,6 +1571,9 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 			break
 		} else {
 			if !tx.Pending {
+				if has, _ := pool.unit.IsTransactionExist(tx.Tx.Hash()); has {
+					continue
+				}
 				// add precusorTxs 获取该交易的前驱交易列表
 				p_txs, _ := pool.getPrecusorTxs(tx, poolTxs, orphanTxs)
 				for _, ptx := range p_txs {
@@ -1640,7 +1643,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 			go pool.promoteTx(hash, tx, index, uint64(i))
 		}
 	}
-	log.Debugf("get sorted and rm Orphan txs spent times: %s , count: %d ,t2: %s , txs_size %s,  " +
+	log.Debugf("get sorted and rm Orphan txs spent times: %s , count: %d ,t2: %s , txs_size %s,  "+
 		"total_size %s", time.Since(t0), len(list), time.Since(t2), total.String(), unit_size.String())
 
 	return list, total

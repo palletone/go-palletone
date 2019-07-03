@@ -241,7 +241,7 @@ function MakeTestNet()
     newPassword="Password=\"\""
     sed -i '/^Password/c'$newPassword'' node_test$1/ptn-config.toml
 
-    newCorsListenAddr="CorsListenAddr=\":$[$CorsListenAddr+$1]\""
+    newCorsListenAddr="CorsListenAddr=\"\""
     sed -i '/^CorsListenAddr/c'$newCorsListenAddr'' node_test$1/ptn-config.toml
 
     echo "===========node-test ok============="

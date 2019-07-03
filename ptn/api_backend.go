@@ -46,7 +46,10 @@ import (
 	"github.com/palletone/go-palletone/light/les"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
+	"github.com/palletone/go-palletone/ptnjson/statistics"
+	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/shopspring/decimal"
+	"sort"
 )
 
 // PtnApiBackend implements ethapi.Backend for full nodes
@@ -773,4 +776,79 @@ func (b *PtnApiBackend) GetContractState(contractid []byte, key string) ([]byte,
 
 func (b *PtnApiBackend) GetContractStatesByPrefix(contractid []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
 	return b.ptn.dag.GetContractStatesByPrefix(contractid, prefix)
+}
+func (b *PtnApiBackend) GetAddressBalanceStatistics(token string, topN int) (*statistics.TokenAddressBalanceJson, error) {
+	utxos, err := b.ptn.dag.GetAllUtxos()
+	if err != nil {
+		return nil, err
+	}
+	asset, err := modules.StringToAsset(token)
+	if err != nil {
+		return nil, err
+	}
+	//token过滤
+	pickedUtxos := []*modules.Utxo{}
+	for _, utxo := range utxos {
+		if utxo.Asset.IsSameAssetId(asset) {
+			pickedUtxos = append(pickedUtxos, utxo)
+		}
+	}
+	//统计各地址余额
+	addrBalanceMap := make(map[common.Address]uint64)
+	totalSupply := uint64(0)
+
+	for _, utxo := range pickedUtxos {
+		addr, err := tokenengine.GetAddressFromScript(utxo.PkScript)
+		if err != nil {
+			continue
+		}
+		amount, ok := addrBalanceMap[addr]
+		if ok {
+			addrBalanceMap[addr] = amount + utxo.Amount
+		} else {
+			addrBalanceMap[addr] = utxo.Amount
+		}
+		totalSupply += utxo.Amount
+	}
+
+	//Map转换为[]addressBalance
+	addressBalanceList := addressBalanceList{}
+	for addr, balance := range addrBalanceMap {
+		addressBalanceList = append(addressBalanceList, addressBalance{Address: addr, Balance: balance})
+	}
+	sort.Sort(addressBalanceList)
+	//TopN并转换为Json对象
+	result := &statistics.TokenAddressBalanceJson{}
+	result.Token = asset.String()
+	dec := asset.GetDecimal()
+	result.TotalSupply = ptnjson.FormatAssetAmountByDecimal(totalSupply, dec)
+	result.TotalAddressCount = len(addrBalanceMap)
+	if topN == 0 {
+		topN = len(addressBalanceList)
+	} else if len(addressBalanceList) < topN {
+		topN = len(addressBalanceList)
+	}
+	list := []statistics.AddressBalanceJson{}
+	for i := 0; i < topN; i++ {
+		ab := addressBalanceList[i]
+		list = append(list, statistics.AddressBalanceJson{Address: ab.Address.String(), Balance: ptnjson.FormatAssetAmountByDecimal(ab.Balance, dec)})
+	}
+	result.AddressBalance = list
+	return result, nil
+}
+
+type addressBalance struct {
+	Address common.Address
+	Balance uint64
+}
+type addressBalanceList []addressBalance
+
+func (a addressBalanceList) Len() int { // 重写 Len() 方法
+	return len(a)
+}
+func (a addressBalanceList) Swap(i, j int) { // 重写 Swap() 方法
+	a[i], a[j] = a[j], a[i]
+}
+func (a addressBalanceList) Less(i, j int) bool { // 重写 Less() 方法， 从大到小排序
+	return a[j].Balance < a[i].Balance
 }

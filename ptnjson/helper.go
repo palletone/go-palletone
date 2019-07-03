@@ -35,6 +35,9 @@ func Dao2Ptn(amount uint64) decimal.Decimal {
 }
 func AssetAmt2JsonAmt(asset *modules.Asset, amount uint64) decimal.Decimal {
 	dec := asset.GetDecimal()
+	return FormatAssetAmountByDecimal(amount, dec)
+}
+func FormatAssetAmountByDecimal(amount uint64, dec byte) decimal.Decimal {
 	d, _ := decimal.NewFromString(fmt.Sprintf("%d", amount))
 	for i := 0; i < int(dec); i++ {
 		d = d.Div(decimal.New(10, 0))
