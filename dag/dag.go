@@ -805,6 +805,9 @@ func (d *Dag) GetUtxosOutViewbyUnit(unit *modules.Unit) *txspool.UtxoViewpoint {
 	}
 	return view
 }
+func (d *Dag) IsUtxoSpent(outpoint *modules.OutPoint) (bool, error) {
+	return d.unstableUtxoRep.IsUtxoSpent(outpoint)
+}
 
 // GetAllUtxos is return all utxo.
 func (d *Dag) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {

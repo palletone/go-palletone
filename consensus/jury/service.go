@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"encoding/json"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -71,7 +72,7 @@ type iDag interface {
 	JuryCount() int
 	GetContractDevelopers() ([]common.Address, error)
 	IsContractDeveloper(addr common.Address) bool
-
+	IsUtxoSpent(outpoint *modules.OutPoint) (bool, error)
 	GetActiveJuries() []common.Address
 	IsActiveMediator(addr common.Address) bool
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)

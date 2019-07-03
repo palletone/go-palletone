@@ -48,6 +48,7 @@ type IUtxoDb interface {
 	SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.Utxo) error
 	SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error
 	DeleteUtxo(outpoint *modules.OutPoint) error
+	IsUtxoSpent(outpoint *modules.OutPoint) (bool,error)
 	ClearUtxo() error
 }
 
@@ -123,21 +124,23 @@ func (utxodb *UtxoDb) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) erro
 // Remove the utxo
 func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint) error {
 	//1. get utxo
-	utxo, err := utxodb.GetUtxoEntry(outpoint)
+	//utxo, err := utxodb.GetUtxoEntry(outpoint)
+
+	key := outpoint.ToKey()
+	data,err:= utxodb.db.Get(key)
 	if err != nil {
 		return err
 	}
-
-	//2. soft delete utxo
+	//2. delete utxo, put data into spent table
 	//if utxo.IsSpent() {
 	//	return errors.New("Try to soft delete a deleted utxo by key:" + outpoint.String())
 	//}
-	key := outpoint.ToKey()
 	err = utxodb.db.Delete(key)
 	if err != nil {
 		return err
 	}
-	log.Debugf("Try delete utxo by key:%s", outpoint.String())
+	log.Debugf("Try delete utxo by key:%s, move to spent table", outpoint.String())
+	utxodb.setUtxoSpent(outpoint,data)
 	//utxo.Spend()
 	//log.Debugf("Try to soft delete utxo by key:%s", outpoint.String())
 	//err = StoreToRlpBytes(utxodb.db, key, utxo)
@@ -145,6 +148,8 @@ func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint) error {
 	//	return err
 	//}
 	//3. Remove index
+	utxo := new(modules.Utxo)
+	rlp.DecodeBytes(data,utxo)
 	address, _ := tokenengine.GetAddressFromScript(utxo.PkScript[:])
 	utxodb.deleteUtxoOutpoint(address, outpoint)
 	return nil
@@ -170,6 +175,14 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 		return nil, err
 	}
 	return utxo, nil
+}
+func (utxodb *UtxoDb) setUtxoSpent(outpoint *modules.OutPoint,value []byte) error{
+	key:=append( constants.SPENT_UTXO_PREFIX,outpoint.ToKey()...)
+	return utxodb.db.Put(key,value)
+}
+func (utxodb *UtxoDb)IsUtxoSpent(outpoint *modules.OutPoint) (bool,error){
+	key:=append( constants.SPENT_UTXO_PREFIX,outpoint.ToKey()...)
+	return utxodb.db.Has(key)
 }
 
 //GetAddrUtxos if asset is nil, query all Asset from address

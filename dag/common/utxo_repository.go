@@ -66,7 +66,7 @@ type IUtxoRepository interface {
 	//ReadUtxos(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64)
 	GetUxto(txin modules.Input) *modules.Utxo
 	UpdateUtxo(unitTime int64, txHash common.Hash, payment *modules.PaymentPayload, msgIndex uint32) error
-
+	IsUtxoSpent(outpoint *modules.OutPoint) (bool,error)
 	ComputeTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
 	GetUxtoSetByInputs(txins []modules.Input) (map[modules.OutPoint]*modules.Utxo, uint64)
 	//GetAccountTokens(addr common.Address) (map[string]*modules.AccountToken, error)
@@ -80,6 +80,9 @@ type IUtxoRepository interface {
 
 func (repository *UtxoRepository) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	return repository.utxodb.GetUtxoEntry(outpoint)
+}
+func (repository *UtxoRepository)IsUtxoSpent(outpoint *modules.OutPoint) (bool,error){
+	return repository.utxodb.IsUtxoSpent(outpoint)
 }
 func (repository *UtxoRepository) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
 	return repository.utxodb.GetAllUtxos()
