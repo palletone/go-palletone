@@ -59,24 +59,24 @@ func NewPublicContractAPI(b Backend) *PublicContractAPI {
 
 //contract command
 //install
-func (s *PublicContractAPI) Ccinstall(ctx context.Context, ccname string, ccpath string, ccversion string) (hexutil.Bytes, error) {
+func (s *PublicContractAPI) Ccinstall(ctx context.Context, ccname, ccpath, ccversion, ccdescription, ccabi, cclanguage string) (hexutil.Bytes, error) {
 	log.Info("CcInstall:", "ccname", ccname, "ccpath", ccpath, "ccversion", ccversion)
-	templateId, err := s.b.ContractInstall(ccname, ccpath, ccversion, "Descrition ...", "ABI file content", "go")
+	templateId, err := s.b.ContractInstall(ccname, ccpath, ccversion, ccdescription, ccabi, cclanguage)
 	return hexutil.Bytes(templateId), err
 }
 
-func (s *PublicContractAPI) Ccdeploy(ctx context.Context, templateId string, param []string, timeout uint32) (*ContractDeployRsp, error) {
+func (s *PublicContractAPI) Ccdeploy(ctx context.Context, templateId string, param []string) (*ContractDeployRsp, error) {
 	tempId, _ := hex.DecodeString(templateId)
 	rd, err := crypto.GetRandomBytes(32)
 	txid := util.RlpHash(rd)
 
-	log.Info("Ccdeploy:", "templateId", templateId, "txid", txid.String(), "timeout", timeout)
+	log.Info("Ccdeploy:", "templateId", templateId, "txid", txid.String())
 	args := make([][]byte, len(param))
 	for i, arg := range param {
 		args[i] = []byte(arg)
 		log.Info("Ccdeploy", "param index:", i, "arg", arg)
 	}
-	_, err = s.b.ContractDeploy(tempId, txid.String(), args, time.Duration(timeout)*time.Second)
+	_, err = s.b.ContractDeploy(tempId, txid.String(), args, time.Duration(30)*time.Second)
 	if err != nil {
 		log.Debug("Ccdeploy", "ContractDeploy err", err)
 	}
@@ -89,12 +89,12 @@ func (s *PublicContractAPI) Ccdeploy(ctx context.Context, templateId string, par
 	return rsp, nil
 }
 
-func (s *PublicContractAPI) Ccinvoke(ctx context.Context, contractAddr string, param []string, timeout uint32) (string, error) {
+func (s *PublicContractAPI) Ccinvoke(ctx context.Context, contractAddr string, param []string) (string, error) {
 	contractId, _ := common.StringToAddress(contractAddr)
 	//contractId, _ := hex.DecodeString(contractAddr)
 	rd, err := crypto.GetRandomBytes(32)
 	txid := util.RlpHash(rd)
-	log.Info("Ccinvoke", "contractId", contractId, "txid", txid.String(), "timeout", timeout)
+	log.Info("Ccinvoke", "contractId", contractId, "txid", txid.String())
 
 	args := make([][]byte, len(param))
 	for i, arg := range param {
@@ -104,7 +104,7 @@ func (s *PublicContractAPI) Ccinvoke(ctx context.Context, contractAddr string, p
 	//参数前面加入msg0和msg1,这里为空
 	fullArgs := [][]byte{defaultMsg0, defaultMsg1}
 	fullArgs = append(fullArgs, args...)
-	rsp, err := s.b.ContractInvoke(contractId.Bytes(), txid.String(), fullArgs, time.Duration(timeout)*time.Second)
+	rsp, err := s.b.ContractInvoke(contractId.Bytes(), txid.String(), fullArgs, time.Duration(30)*time.Second)
 	log.Info("Ccinvoke", "rsp", rsp)
 	return string(rsp), err
 }
