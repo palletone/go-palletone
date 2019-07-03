@@ -546,7 +546,8 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 	//只检查invoke类型
 	if txType, err := getContractTxType(tx); err == nil {
 		if txType != modules.APP_CONTRACT_INVOKE_REQUEST {
-			return false
+			//other type is ok
+			return true
 		}
 	}
 	//检查本阶段时候有合约执行权限
@@ -780,14 +781,7 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 		}
 	}
 	if isLocalInstall {
-		if err = p.runContractReq(reqId, nil); err != nil {
-			return common.Hash{}, nil, err
-		}
-		ctx.rstTx, err = p.GenContractSigTransaction(from, "", ctx.rstTx, p.ptn.GetKeyStore())
-		if err != nil {
-			return common.Hash{}, nil, err
-		}
-		tx = ctx.rstTx
+
 	}
 	return reqId, tx, nil
 }
