@@ -29,7 +29,8 @@ type AddressBalanceJson struct {
 	Balance decimal.Decimal `json:"balance"`
 }
 type TokenAddressBalanceJson struct {
-	Token          string               `json:"token"`
-	TotalSupply    decimal.Decimal      `json:"total_supply"`
-	AddressBalance []AddressBalanceJson `json:"address_balance"`
+	Token             string               `json:"token"`
+	TotalSupply       decimal.Decimal      `json:"total_supply"`
+	TotalAddressCount int                  `json:"total_address_count"`
+	AddressBalance    []AddressBalanceJson `json:"address_balance"`
 }

@@ -794,6 +794,7 @@ func (b *PtnApiBackend) GetAddressBalanceStatistics(token string, topN int) (*st
 	//统计各地址余额
 	addrBalanceMap := make(map[common.Address]uint64)
 	totalSupply := uint64(0)
+
 	for _, utxo := range pickedUtxos {
 		addr, err := tokenengine.GetAddressFromScript(utxo.PkScript)
 		if err != nil {
@@ -807,6 +808,7 @@ func (b *PtnApiBackend) GetAddressBalanceStatistics(token string, topN int) (*st
 		}
 		totalSupply += utxo.Amount
 	}
+
 	//Map转换为[]addressBalance
 	addressBalanceList := addressBalanceList{}
 	for addr, balance := range addrBalanceMap {
@@ -818,6 +820,7 @@ func (b *PtnApiBackend) GetAddressBalanceStatistics(token string, topN int) (*st
 	result.Token = asset.String()
 	dec := asset.GetDecimal()
 	result.TotalSupply = ptnjson.FormatAssetAmountByDecimal(totalSupply, dec)
+	result.TotalAddressCount = len(addrBalanceMap)
 	if topN == 0 {
 		topN = len(addressBalanceList)
 	} else if len(addressBalanceList) < topN {
