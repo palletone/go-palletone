@@ -13,7 +13,6 @@ type TxManager interface {
 }
 
 type TxSimulator interface {
-	//GetConfig(name string) ([]byte, error)
 	GetState(contractid []byte, ns string, key string) ([]byte, error)
 	GetStatesByPrefix(contractid []byte, ns string, prefix string) ([]*modules.KeyValue, error)
 	GetTimestamp(ns string, rangeNumber uint32) ([]byte, error)

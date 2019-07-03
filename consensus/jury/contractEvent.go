@@ -37,9 +37,6 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) error {
 		return errors.New("ProcessContractEvent param is nil")
 	}
 	reqId := event.Tx.RequestHash()
-	if !event.Tx.IsContractTx() {
-		return fmt.Errorf("[%s]ProcessContractEvent, is not contract tx", shortId(reqId.String()))
-	}
 	if p.checkTxIsExist(event.Tx) {
 		err := fmt.Sprintf("[%s]ProcessContractEvent, event Tx is exist, txId:%s", shortId(reqId.String()), event.Tx.Hash().String())
 		return errors.New(err)
@@ -175,7 +172,6 @@ func (p *Processor) contractSigEvent(tx *modules.Transaction, ele []modules.Elec
 			adaInf: make(map[uint32]*AdapterInf),
 		}
 		p.mtx[reqId].rcvTx = append(p.mtx[reqId].rcvTx, tx)
-		//go p.runContractReq(reqId, ele) //del
 		return true, nil
 	}
 	ctx := p.mtx[reqId]

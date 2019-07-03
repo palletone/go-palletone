@@ -30,15 +30,12 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-//var CoreAsset = NewPTNAsset()
-
 //Asset to identify token
 //By default, system asset id=0,UniqueId=0
 //默认的PTN资产，则AssetId=0，UniqueId=0
 type Asset struct {
 	AssetId  AssetId  `json:"asset_id"`
 	UniqueId UniqueId `json:"unique_id"` // every token has its unique id
-	//ChainId  uint64   `json:"chain_id"`  // main chain id or sub-chain id,read from toml config NetworkId
 }
 
 type AssetType byte
@@ -50,7 +47,6 @@ const (
 )
 
 func NewPTNAsset() *Asset {
-	//return &Asset{AssetId: PTNCOIN}
 	asset, err := NewAsset("PTN", AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, UniqueIdType_Null, UniqueId{})
 	if err != nil {
 		return nil
@@ -132,11 +128,6 @@ func (asset *Asset) IsEmpty() bool {
 }
 
 func (asset *Asset) Bytes() []byte {
-	//data, err := rlp.EncodeToBytes(asset)
-	//if err != nil {
-	//	return nil
-	//}
-	//return data
 	b := asset.AssetId.Bytes()
 	return append(b, asset.UniqueId.Bytes()...)
 }

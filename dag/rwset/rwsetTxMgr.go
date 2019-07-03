@@ -21,11 +21,11 @@ package rwset
 
 import (
 	"errors"
+	"sync"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag"
-	"sync"
 )
 
 var RwM *RwSetTxMgr
@@ -117,10 +117,7 @@ func (m *RwSetTxMgr) Close() {
 		if ts.CheckDone() != nil {
 			continue
 		}
-		// 等待tx simulator 被执行完成。
-		// ts.Done()
 	}
-	//m.wg.Wait()
 	m.baseTxSim = make(map[string]TxSimulator)
 	m.closed = true
 	return

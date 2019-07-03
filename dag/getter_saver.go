@@ -200,33 +200,6 @@ func (dag *Dag) GetImmutableChainParameters() *core.ImmutableChainParameters {
 	return &dag.GetGlobalProp().ImmutableParameters
 }
 
-//func (d *Dag) GetConfig(name string) ([]byte, error) {
-//	chainParameters := *d.GetChainParameters()
-//	vv := reflect.ValueOf(chainParameters)
-//	//tt := reflect.TypeOf(chainParameters)
-//	//for i := 0; i < tt.NumField(); i++ {
-//	//	if tt.Field(i).Name == name {
-//	//		return []byte(vv.Field(i).String()), nil
-//	//	}
-//	//}
-//
-//	vn := vv.FieldByName(name)
-//	if vn.IsValid() {
-//		return []byte(vn.String()), nil
-//	}
-//
-//	return nil, fmt.Errorf("no such field: %v", name)
-//}
-
-//func (d *Dag) GetConfig(name string) ([]byte, *modules.StateVersion, error) {
-//	return d.unstableStateRep.GetConfig(name)
-//}
-
-//func (d *Dag) GetAllConfig() (map[string]*modules.ContractStateValue, error) {
-//	return d.unstableStateRep.GetAllConfig()
-//
-//}
-
 func (dag *Dag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
 	unit, err := dag.unstableUnitRep.GetUnit(hash)
 
@@ -285,7 +258,7 @@ func (d *Dag) IsActiveJury(addr common.Address) bool {
 	return d.unstableStateRep.IsJury(addr)
 }
 
-func (d *Dag) GetContractDevelopers() ([]common.Address, error){
+func (d *Dag) GetContractDevelopers() ([]common.Address, error) {
 	return d.unstableStateRep.GetContractDeveloperList()
 }
 

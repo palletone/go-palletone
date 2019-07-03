@@ -20,14 +20,13 @@
 package migration
 
 import (
+	"fmt"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
 type Migration100_100 struct {
-	//mdag  dag.IDag
 	dagdb   ptndb.Database
 	idxdb   ptndb.Database
 	utxodb  ptndb.Database
@@ -43,11 +42,11 @@ func (m *Migration100_100) ToVersion() string {
 }
 func (m *Migration100_100) ExecuteUpgrade() error {
 	// gp 只做了添加和删除的修改
-	log.Info("exec migration ", "version", m.FromVersion())
+	fmt.Printf("exec migration , version: %s", m.FromVersion())
 	newGp := modules.NewGlobalProp()
 	newData, err := rlp.EncodeToBytes(newGp)
 	if err != nil {
-		log.Error("ExecuteUpgrade error:" + err.Error())
+		fmt.Println("ExecuteUpgrade error:" + err.Error())
 		return err
 	}
 	m.statedb.Put([]byte("gpGlobalProperty"), newData)

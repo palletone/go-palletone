@@ -108,7 +108,7 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 	}
 	log.Debugf("Init MemDag[%s], get last stable unit[%s] to set lastMainChainUnit", token.String(), stablehash.String())
 
-	return &MemDag{
+	memdag := &MemDag{
 		token:              token,
 		threshold:          threshold,
 		ldbunitRep:         stableUnitRep,
@@ -129,8 +129,27 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 		ldbUnitProduceRep:  ldbUnitProduceRep,
 		tempUnitProduceRep: tempUnitProduceRep,
 	}
+	go memdag.loopRebuildTmpDb()
+	return memdag
 }
-
+func (chain *MemDag) loopRebuildTmpDb() {
+	rebuild := time.NewTicker(10 * time.Minute)
+	defer rebuild.Stop()
+	for {
+		select {
+		case <-rebuild.C:
+			if chain.lastMainChainUnit.Hash() == chain.stableUnitHash || len(chain.getChainUnits()) <= 1 {
+				// temp db don't need rebuild.
+				continue
+			}
+			tt := time.Now()
+			chain.lock.Lock()
+			chain.rebuildTempdb()
+			chain.lock.Unlock()
+			log.Debugf("rebuild temp db spent time:%s", time.Since(tt))
+		}
+	}
+}
 func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository, common2.IPropRepository, common2.IUnitProduceRepository) {
 	return chain.tempdbunitRep, chain.tempUtxoRep, chain.tempStateRep, chain.tempPropRep, chain.tempUnitProduceRep
 }
@@ -213,7 +232,7 @@ func (chain *MemDag) setStableUnit(hash common.Hash, height uint64, txpool txspo
 		chain.setNextStableUnit(unit, txpool)
 	}
 	// Rebuild temp db
-	chain.rebuildTempdb()
+	// chain.rebuildTempdb()
 }
 
 //设置当前稳定单元的指定子单元为稳定单元
@@ -307,7 +326,7 @@ func (chain *MemDag) getMainChainUnits() []*modules.Unit {
 	for i := 0; i < unstableCount; i++ {
 		u, ok := chain_units[ustbHash]
 		if !ok {
-			log.Errorf("chainUnits don't have unit[%s]", ustbHash.String())
+			log.Errorf("chainUnits don't have unit[%s], last_main[%s]", ustbHash.String(), chain.lastMainChainUnit.Hash().String())
 		}
 		unstableUnits[unstableCount-i-1] = u
 		ustbHash = u.ParentHash()[0]
@@ -349,6 +368,8 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 	if unit == nil {
 		return errors.ErrNullPoint
 	}
+	chain.lock.Lock()
+	defer chain.lock.Unlock()
 	if unit.NumberU64() <= chain.stableUnitHeight {
 		log.Infof("This unit is too old! Ignore it,stable unit height:%d, stable hash:%s", chain.stableUnitHeight, chain.stableUnitHash.String())
 		return nil
@@ -357,9 +378,6 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 	if _, has := chain_units[unit.Hash()]; has { // 不重复添加
 		return nil
 	}
-
-	chain.lock.Lock()
-	defer chain.lock.Unlock()
 	err := chain.addUnit(unit, txpool)
 	log.Debugf("MemDag[%s] AddUnit cost time: %v ,index: %d", chain.token.String(),
 		time.Since(start), unit.NumberU64())
@@ -389,7 +407,6 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 				need_check = true
 				chain.setLastMainchainUnit(unit)
 			} else {
-
 				log.Infof("the chain is forked, save the equal units,fork:[%s]", uHash.String())
 			}
 			chain.chainUnits.Store(uHash, unit)
@@ -435,7 +452,6 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 
 //计算一个单元到稳定单元之间有多少个确认地址数
 func (chain *MemDag) getChainAddressCount(lastUnit *modules.Unit) int {
-	//token := lastUnit.Number().AssetID
 	addrs := map[common.Address]bool{}
 	unitHash := lastUnit.Hash()
 	units := chain.getChainUnits()
@@ -450,11 +466,11 @@ func (chain *MemDag) getChainAddressCount(lastUnit *modules.Unit) int {
 func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPool) {
 	oldLastMainchainUnit := chain.lastMainChainUnit
 	old_last_unit_hash := oldLastMainchainUnit.Hash()
-	log.Debugf("Switch main chain unit from %s to %s", old_last_unit_hash.String(), newUnit.Hash().String())
-	chain.setLastMainchainUnit(newUnit)
+	log.Infof("Switch main chain unit from %s to %s", old_last_unit_hash.String(), newUnit.Hash().String())
 	//reverse txpool tx status
 	chain_units := chain.getChainUnits()
 	main_chain_units := chain.getMainChainUnits()
+	main_chain_units = append(main_chain_units, newUnit)
 	for _, m_u := range main_chain_units {
 		hash := m_u.Hash()
 		if _, has := chain_units[hash]; has {
@@ -484,6 +500,8 @@ func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPo
 			}
 		}
 	}
+	//设置最新主链单元
+	chain.setLastMainchainUnit(newUnit)
 	//基于新主链的单元和稳定单元，重新构建Tempdb
 	chain.rebuildTempdb()
 }
@@ -528,12 +546,7 @@ func (chain *MemDag) getChainUnits() map[common.Hash]*modules.Unit {
 	chain.chainUnits.Range(func(k, v interface{}) bool {
 		hash := k.(common.Hash)
 		u := v.(*modules.Unit)
-		u_hash := u.Hash()
-		if hash != u_hash {
-			chain.chainUnits.Delete(hash)
-			chain.chainUnits.Store(u_hash, u)
-		}
-		units[u_hash] = u
+		units[hash] = u
 		return true
 	})
 	return units
