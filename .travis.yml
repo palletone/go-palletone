@@ -206,9 +206,9 @@ matrix:
         - chmod +x ./start.sh
         - cp $BASE_DIR/bdd/UserContract/editConfig.sh ./
         - chmod +x editConfig.sh
-        - ./deploy.sh 5
-        - ./editConfig.sh 5 4
-        - ./start.sh 5
+        - ./deploy.sh 3
+        - ./editConfig.sh 3 2
+        - ./start.sh 3
         - sleep 30
         - cd $BASE_DIR
         - python -m robot.run -d ${BDD_LOG_PATH}/${USER_CONTRACT_DIR} ./bdd/UserContract/Testcases;

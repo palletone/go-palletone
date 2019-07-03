@@ -124,6 +124,6 @@ Query user2 balance
     ${ramount}=    Get From Dictionary    ${balance}    amount
     ${rasset}=    Get From Dictionary    ${balance}    asset
     ${raddr}=    Get From Dictionary    ${balance}    address
-    Should Be Equal    ${ramount}    100
+    Should Be Equal    ${ramount}    ${100}
     Should Be Equal    ${rasset}    PTN
     Should Be Equal    ${raddr}    ${addr}
