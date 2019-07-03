@@ -386,7 +386,7 @@ func (f *Fetcher) loop() {
 					}
 				}
 			}
-			log.Debug("===fetcher <-fetchTimer.C===", "len(request):", len(request))
+
 			// Send out all block header requests
 			for peer, hashes := range request {
 				log.Trace("Fetching scheduled headers", "peer", peer, "list", hashes)

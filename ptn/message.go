@@ -55,10 +55,8 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
 
-	log.Debug("ProtocolManager", "GetBlockHeadersMsg getBlockHeadersData:", query)
-
 	hashMode := query.Origin.Hash != (common.Hash{})
-	log.Debug("ProtocolManager", "GetBlockHeadersMsg hashMode:", hashMode)
+	log.Debug("ProtocolManager", "GetBlockHeadersMsg getBlockHeadersData:", query, "GetBlockHeadersMsg hashMode:", hashMode)
 	// Gather headers until the fetch or network limits is reached
 	var (
 		bytes   common.StorageSize
@@ -108,7 +106,7 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 				next    = current + query.Skip + 1
 				index   = origin.Number
 			)
-			log.Debug("ProtocolManager", "GetBlockHeadersMsg next", next, "current:", current)
+			//log.Debug("ProtocolManager", "GetBlockHeadersMsg next", next, "current:", current)
 			if next <= current {
 				infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
 				log.Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
@@ -137,7 +135,7 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 			if query.Origin.Number.Index >= query.Skip+1 {
 				query.Origin.Number.Index -= query.Skip + 1
 			} else {
-				log.Info("ProtocolManager", "GetBlockHeadersMsg query.Reverse", "unknown is true")
+				log.Debug("ProtocolManager", "GetBlockHeadersMsg query.Reverse", "unknown is true")
 				unknown = true
 			}
 
@@ -174,7 +172,7 @@ func (pm *ProtocolManager) BlockHeadersMsg(msg p2p.Msg, p *peer) error {
 		headers = pm.fetcher.FilterHeaders(p.id, headers, time.Now())
 	}
 	if len(headers) > 0 || !filter {
-		log.Debug("===BlockHeadersMsg ===", "len(headers):", len(headers))
+		//log.Debug("===BlockHeadersMsg ===", "len(headers):", len(headers))
 		err := pm.downloader.DeliverHeaders(p.id, headers)
 		if err != nil {
 			log.Debug("Failed to deliver headers", "err", err.Error())
@@ -256,15 +254,13 @@ func (pm *ProtocolManager) BlockBodiesMsg(msg p2p.Msg, p *peer) error {
 		transactions[i] = txs
 		log.Debug("BlockBodiesMsg", "i", i, "txs size:", len(txs))
 	}
-	log.Debug("===BlockBodiesMsg===", "len(transactions:)", len(transactions))
+	log.Debug("Full ProtocolManager BlockBodiesMsg", "len(transactions:)", len(transactions))
 	// Filter out any explicitly requested bodies, deliver the rest to the downloader
 	filter := len(transactions) > 0
 	if filter {
-		log.Debug("===BlockBodiesMsg->FilterBodies===")
 		transactions = pm.fetcher.FilterBodies(p.id, transactions, time.Now())
 	}
 	if len(transactions) > 0 || !filter {
-		log.Debug("===BlockBodiesMsg->DeliverBodies===")
 		err := pm.downloader.DeliverBodies(p.id, transactions)
 		if err != nil {
 			log.Debug("Failed to deliver bodies", "err", err.Error())
@@ -315,10 +311,10 @@ func (pm *ProtocolManager) NodeDataMsg(msg p2p.Msg, p *peer) error {
 }
 
 func (pm *ProtocolManager) NewBlockHashesMsg(msg p2p.Msg, p *peer) error {
-	log.Debug("===NewBlockHashesMsg===")
+	log.Debug("Enter Full ProtocolManager NewBlockHashesMsg")
+	defer log.Debug("End Full ProtocolManager NewBlockHashesMsg")
 	var announces newBlockHashesData
 	if err := msg.Decode(&announces); err != nil {
-		log.Debug("===NewBlockHashesMsg===", "Decode err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
 	// Mark the hashes as present at the remote node
@@ -332,7 +328,7 @@ func (pm *ProtocolManager) NewBlockHashesMsg(msg p2p.Msg, p *peer) error {
 			unknown = append(unknown, block)
 		}
 	}
-	log.Debug("===NewBlockHashesMsg===", "len(unknown):", len(unknown))
+	log.Debug("Full ProtocolManager NewBlockHashesMsg", "len(unknown):", len(unknown))
 	for _, block := range unknown {
 		pm.fetcher.Notify(p.id, block.Hash, &block.Number, time.Now(), p.RequestOneHeader, p.RequestBodies)
 	}
@@ -366,7 +362,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	}
 	// append by Albert·Gou
 	timestamp := time.Unix(unit.Timestamp(), 0)
-	log.Infof("Received unit(%v) #%v parent(%v) @%v signed by %v", unitHash.TerminalString(),
+	log.Debugf("Received unit(%v) #%v parent(%v) @%v signed by %v", unitHash.TerminalString(),
 		unit.NumberU64(), unit.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
 		unit.Author().Str())
 
@@ -399,7 +395,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 			log.Debugf("[%s]NewBlockMsg, index[%x],txHash[%s]", reqId.String()[0:8], index, tx.Hash().String())
 			index++
 			if !pm.contractProc.CheckContractTxValid(rwset.RwM, tx, true) {
-				log.Debug("[%s]NewBlockMsg, CheckContractTxValid is false.", reqId.String()[0:8])
+				log.Debugf("[%s]NewBlockMsg, CheckContractTxValid is false.", reqId.String()[0:8])
 				continue
 			}
 		}
@@ -547,7 +543,7 @@ func (pm *ProtocolManager) GroupSigMsg(msg p2p.Msg, p *peer) error {
 func (pm *ProtocolManager) ContractMsg(msg p2p.Msg, p *peer) error {
 	var event jury.ContractEvent
 	if err := msg.Decode(&event); err != nil {
-		log.Info("===ContractMsg===", "err:", err)
+		log.Info("ProtocolManager ContractMsg", "err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
 	if pm.IsExistInCache(event.Hash().Bytes()) {
@@ -556,10 +552,10 @@ func (pm *ProtocolManager) ContractMsg(msg p2p.Msg, p *peer) error {
 	}
 
 	reqId := event.Tx.RequestHash()
-	log.Infof("[%s]===ContractMsg===, event type[%v]", reqId.String()[0:8], event.CType)
+	log.Debugf("[%s] ProtocolManager ContractMsg, event type[%v]", reqId.String()[0:8], event.CType)
 	err := pm.contractProc.ProcessContractEvent(&event)
 	if err != nil {
-		log.Debugf("[%s]ContractMsg, error:%s", reqId.String()[0:8], err.Error())
+		log.Debugf("[%s]ProtocolManager ContractMsg, error:%s", reqId.String()[0:8], err.Error())
 	}
 	return nil
 }
@@ -589,20 +585,19 @@ func (pm *ProtocolManager) ElectionMsg(msg p2p.Msg, p *peer) error {
 func (pm *ProtocolManager) AdapterMsg(msg p2p.Msg, p *peer) error {
 	var avs jury.AdapterEventBytes
 	if err := msg.Decode(&avs); err != nil {
-		log.Info("===AdapterMsg===", "err:", err)
+		log.Info("ProtocolManager AdapterMsg", "err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
-	//log.Debug("===============ProtocolManager", "avs:", avs)
 
 	event, err := avs.ToAdapterEvent()
 	if err != nil {
-		log.Debug("AdapterMsg, ToAdapterEvent fail")
+		log.Debug("ProtocolManager AdapterMsg, ToAdapterEvent fail")
 		return nil
 	}
 
 	_, err = pm.contractProc.ProcessAdapterEvent(event)
 	if err != nil {
-		log.Debug("AdapterMsg", "ProcessAdapterEvent error:", err)
+		log.Debug("ProtocolManager AdapterMsg", "ProcessAdapterEvent error:", err)
 	}
 	return nil
 }
@@ -610,7 +605,7 @@ func (pm *ProtocolManager) AdapterMsg(msg p2p.Msg, p *peer) error {
 func (pm *ProtocolManager) GetLeafNodesMsg(msg p2p.Msg, p *peer) error {
 	headers, err := pm.dag.GetAllLeafNodes()
 	if err != nil {
-		log.Info("===GetLeafNodesMsg===", "err:", err)
+		log.Info("Full ProtocolManager GetLeafNodesMsg", "err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
 	return p.SendUnitHeaders(headers)
