@@ -31,13 +31,13 @@ func NewMigrations(db ptndb.Database) map[string]IMigration {
 	// }
 	// /* version: 0615 end*/
 
-	// /* version: 1.0.0-beta */
-	// m_100_beta := NewMigration100_100(db)
-	// migrations[m_100_beta.FromVersion()] = m_100_beta
-	// /* version: 1.0.0-beta end */
-	// /* version: 1.0.0-beta */
-	// m_101_beta := NewNothingMigration("1.0.1-beta", "1.0.2-beta")
-	// migrations[m_101_beta.FromVersion()] = m_101_beta
+	/* version: 1.0.0-beta */
+	m_100_beta := NewMigration100_101(db)
+	migrations[m_100_beta.FromVersion()] = m_100_beta
+	/* version: 1.0.0-beta end */
+	/* version: 1.0.0-beta */
+	//m_101_beta := NewNothingMigration("1.0.1-beta", "1.0.2-beta")
+	//migrations[m_101_beta.FromVersion()] = m_101_beta
 	/* version: 1.0.0-beta end */
 	return migrations
 }
@@ -46,6 +46,6 @@ func NewMigrations(db ptndb.Database) map[string]IMigration {
 // 	return &Migration0615_100{dagdb: db, idxdb: db, utxodb: db, statedb: db, propdb: db}
 // }
 
-// func NewMigration100_100(db ptndb.Database) *Migration100_100 {
-// 	return &Migration100_100{dagdb: db, idxdb: db, utxodb: db, statedb: db, propdb: db}
-// }
+func NewMigration100_101(db ptndb.Database) *Migration100_101 {
+	return &Migration100_101{dagdb: db, idxdb: db, utxodb: db, statedb: db, propdb: db}
+}

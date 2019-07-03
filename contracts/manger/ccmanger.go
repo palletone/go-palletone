@@ -114,7 +114,7 @@ func GetBytesProposal(prop *peer.Proposal) ([]byte, error) {
 	return propBytes, err
 }
 
-func signedEndorserProposa(chainID string, txid string, cs *peer.ChaincodeSpec, creator, signature []byte) (*peer.SignedProposal, *peer.Proposal, error) {
+func SignedEndorserProposa(chainID string, txid string, cs *peer.ChaincodeSpec, creator, signature []byte) (*peer.SignedProposal, *peer.Proposal, error) {
 	prop, _, err := createChaincodeProposal(
 		common.HeaderType_ENDORSER_TRANSACTION,
 		chainID,

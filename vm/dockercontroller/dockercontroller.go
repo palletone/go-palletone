@@ -220,8 +220,8 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 
 	//stop,force remove if necessary
 	log.Debugf("Cleanup container %s", containerID)
-	//停止容器
-	//err = vm.stopInternal(ctxt, client, containerID, 0, false, false)
+	//停止并删除容器
+	err = vm.stopInternal(ctxt, client, containerID, 0, false, false)
 	//if err != nil {
 	//	return err
 	//}

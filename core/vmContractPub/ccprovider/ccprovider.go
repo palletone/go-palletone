@@ -377,7 +377,8 @@ func NewCCContext(contractid []byte, cid, name, version, txid string, syscc bool
 		return nil
 	}
 
-	canName := name + ":" + version
+	//TODO xiaozhi
+	canName := name + ":" + version + ":" + contractcfg.GetConfig().ContractAddress
 
 	cccid := &CCContext{contractid, cid, name, version, txid, syscc, signedProp, prop, canName, nil}
 

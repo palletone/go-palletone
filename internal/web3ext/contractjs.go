@@ -69,20 +69,20 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'ccinstall',
         	call: 'contract_ccinstall',
-        	params: 3, //ccName string, ccPath string, ccVersion string
-			inputFormatter: [null, null, null]
+        	params: 6, //ccName string, ccPath string, ccVersion string
+			inputFormatter: [null, null, null, null, null, null]
 		}),
 		new web3._extend.Method({
 			name: 'ccdeploy',
         	call: 'contract_ccdeploy',
-        	params: 3, //templateId, args []string ---->["init", "a", "1", "b", 10], timeout uint32
-			inputFormatter: [null, null, null]
+        	params: 2, //templateId, args []string ---->["init", "a", "1", "b", 10], timeout uint32
+			inputFormatter: [null, null]
 		}),
 		new web3._extend.Method({
 			name: 'ccinvoke',
         	call: 'contract_ccinvoke',
-        	params: 3, // contractAddr, args[]string------>["fun", "key", "value"], timeout uint32
-			inputFormatter: [null, null, null]
+        	params: 2, // contractAddr, args[]string------>["fun", "key", "value"], timeout uint32
+			inputFormatter: [null, null]
 		}),
 		new web3._extend.Method({
 			name: 'ccquery',
