@@ -20,8 +20,6 @@
 package storage
 
 import (
-	"log"
-
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 )
@@ -35,14 +33,10 @@ func Init(path string, cache int, handles int) (*palletdb.LDBDatabase, error) {
 	}
 
 	Dbconn, err := palletdb.NewLDBDatabase(path, cache, handles)
-	if err != nil {
-		log.Println("new dbconn error:", err)
-	}
 	return Dbconn, err
 }
 func ReNewDbConn(path string) *palletdb.LDBDatabase {
 	if dbconn, err := palletdb.NewLDBDatabase(path, 0, 0); err != nil {
-		log.Println("renew dbconn error:", path, err)
 		return nil
 	} else {
 		return dbconn

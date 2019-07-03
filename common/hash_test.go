@@ -20,15 +20,26 @@
 
 package common
 
-import "testing"
+import (
+	"github.com/stretchr/testify/assert"
+	"testing"
+)
 
 func TestNewHashFromStr(t *testing.T) {
 	str := "e01c4bae7b396bc3c9bcb9275cef479560141c2010b6537abd78795bc935a2dd"
-	hash:= HexToHash(str)
+	hash := HexToHash(str)
 	t.Logf("Hash:%s", hash.String())
 	hash2 := &Hash{}
 	err := hash2.SetHexString(str)
 	t.Log(err)
 	t.Logf("Hash:%s", hash2.String())
 
+}
+func TestHash_IsZero(t *testing.T) {
+	h1 := Hash{}
+	assert.True(t, h1.IsZero())
+}
+func TestHash_IsSelfHash(t *testing.T) {
+	h2 := NewSelfHash()
+	assert.True(t, h2.IsSelfHash())
 }

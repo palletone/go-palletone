@@ -36,7 +36,6 @@ import (
 
 func TestGetContractState(t *testing.T) {
 	db, _ := ptndb.NewMemDatabase()
-	//l := log.NewTestLog()
 	statedb := NewStateDb(db)
 	id := []byte("TestContract")
 	contract := &modules.Contract{ContractId: id, Name: "TestContract1", TemplateId: []byte("Temp")}
@@ -61,22 +60,13 @@ func TestGetContractState(t *testing.T) {
 
 func TestStateDb_GetApprovedMediatorList(t *testing.T) {
 	db, _ := ptndb.NewMemDatabase()
-	//l := log.NewTestLog()
 	statedb := NewStateDb(db)
 	depositeContractAddress := common.HexToAddress("0x00000000000000000000000000000000000000011C")
 	contractId := depositeContractAddress.Bytes()
-	//fmt.Println(contractId)
 	addr1 := "P1G988UGLytFgPwxy1bzY3FkzPT46ThDhTJ"
-	//mediator1 := &core.MediatorApplyInfo{
-	//	Address: addr1,
-	//}
-	//assert.Nil(t, err, "string 2 address fail: ")
+
 	addr2 := "P1FbTqEaSLNfhp1hCwNmRkj5BkMjTNU8jRp"
-	//mediator2 := &core.MediatorApplyInfo{
-	//	Address: addr2,
-	//}
-	//assert.Nil(t, err, "string 2 address fail: ")
-	//mediatorList := []*core.MediatorApplyInfo{mediator1, mediator2}
+
 	list1 := make(map[string]bool)
 	list1[addr1] = true
 	list1[addr2] = true
@@ -87,17 +77,9 @@ func TestStateDb_GetApprovedMediatorList(t *testing.T) {
 
 	err = statedb.SaveContractState(contractId, ws, version)
 	assert.Nil(t, err, "save mediatorlist error: ")
-	//list2, err := statedb.GetApprovedMediatorList()
-	//assert.Nil(t, err, "get mediator candidate list error: ")
-	//assert.True(t, len(list2) == 2, "len is erroe")
-	//for k, b := range list2 {
-	//	fmt.Println(k, b)
-	//}
 }
 
 func TestGetContract(t *testing.T) {
-	//var keys []string
-	//var results []interface{}
 	var contract modules.Contract
 
 	contract.ContractId = []byte("123456")
@@ -112,17 +94,6 @@ func TestGetContract(t *testing.T) {
 	assert.Nil(t, err)
 	t.Logf("%#v", dbContract)
 	assertRlpHashEqual(t, contract, dbContract)
-	//log.Debug("store error: ", StoreToRlpBytes(db, append(CONTRACT_PREFIX, contract.Id[:]...), contract))
-	//keys = append(keys, "Id", "id", "Name", "Code", "code", "codes", "inputs")
-	//results = append(results, common.HexToHash("123456"), nil, "test", []byte(`logger.PrintLn("hello world")`), nil, nil, nil)
-	//log.Debug("test data: ", keys)
-	//
-	//for i, k := range keys {
-	//	data, err := GetContractKeyValue(db, contract.Id, k)
-	//	if !reflect.DeepEqual(data, results[i]) {
-	//		t.Error("test error:", err, "the expect key is:", k, " value is :", results[i], ",but the return value is: ", data)
-	//	}
-	//}
 }
 
 func assertRlpHashEqual(t assert.TestingT, a, b interface{}) {
@@ -140,8 +111,6 @@ func TestStateDb_GetSysParamWithoutVote(t *testing.T) {
 	modifies["key2"] = "val2"
 
 	modifiesByte, _ := json.Marshal(modifies)
-	//[{\"Key\":\"depositAmountForJury\",\"Value\":\"9000000\"}]
-	//err := statedb.SaveContractState(syscontract.SysConfigContractAddress.Bytes21(), modules.DesiredSysParams, modifiesByte, version)
 	err := statedb.SaveSysConfigContract(modules.DesiredSysParamsWithoutVote, modifiesByte, version)
 	if err != nil {
 		t.Error(err.Error())

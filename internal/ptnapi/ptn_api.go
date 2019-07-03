@@ -36,6 +36,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
+	"github.com/palletone/go-palletone/ptnjson/statistics"
 	"github.com/shopspring/decimal"
 )
 
@@ -142,19 +143,12 @@ func (s *PublicBlockChainAPI) GetChainParameters() (*core.ChainParameters, error
 	return s.b.GetChainParameters(), nil
 }
 
-//func (s *PublicBlockChainAPI) WalletTokens(ctx context.Context, address string) (string, error) {
-//	result, err := s.b.WalletTokens(address)
-//	if err != nil {
-//		log.Error("WalletTokens:", "error", err.Error())
-//	}
-//	//fmt.Println("result len=", len(result))
-//	b, err := json.Marshal(result)
-//
-//	if err != nil {
-//		log.Error("WalletTokens 2222:", "error", err.Error())
-//	}
-//	return string(b), nil
-//}
+func (s *PublicBlockChainAPI) AddressBalanceStatistics(ctx context.Context, token string, topN int) (*statistics.TokenAddressBalanceJson, error) {
+	result, err := s.b.GetAddressBalanceStatistics(token, topN)
+
+	return result, err
+}
+
 //
 //func (s *PublicBlockChainAPI) WalletBalance(ctx context.Context, address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error) {
 //	return s.b.WalletBalance(address, assetid, uniqueid, chainid)

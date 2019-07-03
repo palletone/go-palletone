@@ -21,8 +21,9 @@
 package modules
 
 import (
-	"github.com/palletone/go-palletone/common"
 	"time"
+
+	"github.com/palletone/go-palletone/common"
 )
 
 const GlobalPrefix = "Tokens_"

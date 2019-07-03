@@ -57,8 +57,3 @@ type IMemDag interface {
 	SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription
 	Close()
 }
-
-//type IPartitionMemDag interface {
-//	IMemDag
-//	SetStableThreshold(threshold int)
-//}

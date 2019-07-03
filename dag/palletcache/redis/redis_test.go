@@ -26,7 +26,6 @@ import (
 func TestInit(t *testing.T) {
 	log.Println("start test redis.")
 	Init()
-	// log.Println(red.ParseConfig("jay"), red.Init())
 	Store("unit", "unit1", "hello1")
 
 	val, ok := Get("unit", "123")

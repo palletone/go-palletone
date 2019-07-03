@@ -23,19 +23,22 @@ package storage
 
 import (
 	"testing"
-	"github.com/palletone/go-palletone/dag/modules"
+
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
 )
-var tplId1=[]byte("1234567")
-func TestStatedb_SaveAndGetTemplate(t *testing.T){
-	tpl:=&modules.ContractTemplate{TplId:tplId1,TplName:"Test",TplDescription:"Descr",Version:"v1.0",Abi:"abi content",Language:"go"}
-	db,_:=ptndb.NewMemDatabase()
-	statedb:=NewStateDb(db)
-	err:=statedb.SaveContractTpl(tpl)
-	assert.Nil(t,err)
-	dbTemplate,err:= statedb.GetContractTpl(tplId1)
-	assert.Nil(t,err)
-	assert.NotNil(t,dbTemplate)
-	assert.Equal(t,tpl.TplName,dbTemplate.TplName)
+
+var tplId1 = []byte("1234567")
+
+func TestStatedb_SaveAndGetTemplate(t *testing.T) {
+	tpl := &modules.ContractTemplate{TplId: tplId1, TplName: "Test", TplDescription: "Descr", Version: "v1.0", Abi: "abi content", Language: "go"}
+	db, _ := ptndb.NewMemDatabase()
+	statedb := NewStateDb(db)
+	err := statedb.SaveContractTpl(tpl)
+	assert.Nil(t, err)
+	dbTemplate, err := statedb.GetContractTpl(tplId1)
+	assert.Nil(t, err)
+	assert.NotNil(t, dbTemplate)
+	assert.Equal(t, tpl.TplName, dbTemplate.TplName)
 }

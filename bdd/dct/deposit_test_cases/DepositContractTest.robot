@@ -16,22 +16,41 @@ Business_01
     [Documentation]    mediator 交付 50 0000 0000 0000 及以上才可以加入候选列表
     ...
     ...    某节点申请加入mediator-》进入申请列表-》基金会同意-》进入同意列表-》节点加入保证金（足够）-》进入候选列表-》节点增加保证金-》节点申请退出部分保证金-》基金会同意-》节点申请退出候选列表-》进入退出列表-》基金会同意。
-    ${result}    getBalance    ${mediatorAddr_01}
-    #    ${result}    #100,000,000
-    ${result}    applyBecomeMediator    ${mediatorAddr_01}    #节点申请加入列表    #10
+    ${amount}    getBalance    ${mediatorAddr_01}
+    log    ${amount}    #499999995
+    Should Be Equal As Numbers    ${amount}    499999995
+    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM
+    log    ${amount}    #0
+    Should Be Equal As Numbers    ${amount}    0
+    ${result}    applyBecomeMediator    ${mediatorAddr_01}    #节点申请加入列表    #1
     log    ${result}
     ${addressMap1}    getBecomeMediatorApplyList
     log    ${addressMap1}
     Dictionary Should Contain Key    ${addressMap1}    ${mediatorAddr_01}    #有该节点
-    ${result}    handleForApplyBecomeMediator    ${foundationAddr}    ${mediatorAddr_01}    Ok    #基金会处理列表里的节点（同意）
+    ${result}    handleForApplyBecomeMediator    ${foundationAddr}    ${mediatorAddr_01}    Ok    #基金会处理列表里的节点（同意）    #1
     log    ${result}
     ${addressMap2}    getAgreeForBecomeMediatorList
     log    ${addressMap2}
     Dictionary Should Contain Key    ${addressMap2}    ${mediatorAddr_01}    #有该节点
-    ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    ${medDepositAmount}    #在同意列表里的节点，可以交付保证金    #500010
+    ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    3000000000    #在同意列表里的节点，可以交付保证金    #这里交的数量不是规定的保证金数量，导致无法加入候选列表，并且相应保证金退还该地址    #1
     log    ${result}
-    ${result}    getBalance    ${mediatorAddr_01}    #94,999,980
-    #    ${result}
+    ${amount}    getBalance    ${mediatorAddr_01}    #499999992
+    log    ${amount}    #499999992
+    Should Be Equal As Numbers    ${amount}    499999992
+    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM
+    log    ${amount}    #0
+    Should Be Equal As Numbers    ${amount}    0
+    ${addressMap3}    getListForMediatorCandidate
+    log    ${addressMap3}
+    Dictionary Should Not Contain Key    ${addressMap3}    ${mediatorAddr_01}    #无该节点
+    ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    ${medDepositAmount}    #在同意列表里的节点，可以交付保证金    #51
+    log    ${result}
+    ${amount}    getBalance    ${mediatorAddr_01}
+    log    ${amount}    #499999941
+    Should Be Equal As Numbers    ${amount}    499999941
+    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM
+    log    ${amount}    #0
+    Should Be Equal As Numbers    ${amount}    50
     ${addressMap3}    getListForMediatorCandidate
     log    ${addressMap3}
     Dictionary Should Contain Key    ${addressMap3}    ${mediatorAddr_01}    #有该节点
@@ -41,14 +60,20 @@ Business_01
     ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
     log    ${mDeposit}
     Should Not Be Equal    ${mDeposit["balance"]}    ${0}    #有余额
-    ${result}    applyQuitMediator    ${mediatorAddr_01}    MediatorApplyQuit    #该节点申请退出mediator候选列表    #10
+    ${result}    applyQuitMediator    ${mediatorAddr_01}    MediatorApplyQuit    #该节点申请退出mediator候选列表    #1
     log    ${result}
     ${addressMap4}    getQuitMediatorApplyList
     log    ${addressMap4}
     Dictionary Should Contain Key    ${addressMap4}    ${mediatorAddr_01}    #有该节点
     ${result}    handleForApplyForQuitMediator    ${foundationAddr}    ${mediatorAddr_01}    Ok    HandleForApplyQuitMediator    #基金会处理退出候选列表里的节点（同意）
+    ...    #1
     log    ${result}
-    ${result}    getBalance    ${mediatorAddr_01}    #99,999,970‬
+    ${amount}    getBalance    ${mediatorAddr_01}    #99,999,970‬
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    499999989
+    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM
+    log    ${amount}    #0
+    Should Be Equal As Numbers    ${amount}    0
     ${resul}    getListForJuryCandidate    #mediator退出候选列表，则移除该jury
     Dictionary Should Not Contain Key    ${resul}    ${mediatorAddr_01}    #无该节点
     log    ${resul}

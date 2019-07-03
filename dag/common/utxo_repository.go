@@ -275,15 +275,17 @@ destory utxo, delete from UTXO database
 */
 func (repository *UtxoRepository) destoryUtxo(txid common.Hash, txins []*modules.Input) error {
 	for _, txin := range txins {
-		//TODO for download sync
+
 		if txin == nil {
 			continue
 		}
-		outpoint := txin.PreviousOutPoint
-		if outpoint == nil || outpoint.IsEmpty() { //Coinbase
+		if txin.PreviousOutPoint == nil { //Coinbase
 			continue
 		}
-		if outpoint.TxHash.IsZero() { //TxHash为0，表示花费当前Tx产生的UTXO
+		outpoint := txin.PreviousOutPoint.Clone()
+
+		if outpoint.TxHash.IsSelfHash() { //TxHash为0，表示花费当前Tx产生的UTXO
+			log.Debugf("Outpoint is zero:%s,set new txid:%s", outpoint.String(), txid.String())
 			outpoint.TxHash = txid
 		}
 		// get utxo info
