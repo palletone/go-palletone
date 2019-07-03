@@ -331,7 +331,6 @@ func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf)
 					log.Debugf("[%s]runContractReq, checkAndAddTxSigMsgData fail", shortId(reqId.String()))
 				}
 			}
-			//ctx.rcvTx = nil
 		}
 
 		sigNum := getTxSigNum(ctx.sigTx)
