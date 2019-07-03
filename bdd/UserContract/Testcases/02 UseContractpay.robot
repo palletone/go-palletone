@@ -19,10 +19,24 @@ DeployContract
 
 PutStatus
     Given Unlock token holder succeed
-    ${reqId} =    When User put status into contractpay
+    ${reqId} =    When User put status into contractpay    put
     And wait for transaction being packaged
     And Wait for unit abount contract to be confirmed by unit height    ${reqId}
-    Then Get status from contractpay
+    Then Get status from contractpay    get    a    aa
+
+Paystate1
+    Given Unlock token holder succeed
+    ${reqId} =    When User put status into contractpay    paystate1
+    And wait for transaction being packaged
+    And Wait for unit abount contract to be confirmed by unit height    ${reqId}
+    Then Get status from contractpay    get    paystate1    paystate1
+
+Paystate2
+    Given Unlock token holder succeed
+    ${reqId} =    When User put status into contractpay    paystate2
+    And wait for transaction being packaged
+    And Wait for unit abount contract to be confirmed by unit height    ${reqId}
+    Then Get status from contractpay    get    paystate2    paystate2
 
 Payout
     Given Unlock token holder succeed
@@ -32,7 +46,7 @@ Payout
     ${newAddr}    ${reqId}=    And Use contractpay to transfer PTN to user2
     And wait for transaction being packaged
     And Wait for unit abount contract to be confirmed by unit height    ${reqId}
-    Then Query user2 balance
+    Then Query user2 balance    ${newAddr}
 
 *** Keywords ***
 Unlock token holder succeed
@@ -60,7 +74,8 @@ User deploys contract
     [Return]    ${reqId}
 
 User put status into contractpay
-    ${args}=    Create List    put
+    [Arguments]    ${putmethod}
+    ${args}=    Create List    ${putmethod}
     ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
     ...    ${args}
     ${result}=    Get From Dictionary    ${respJson}    result
@@ -70,11 +85,12 @@ User put status into contractpay
     [Return]    ${reqId}
 
 Get status from contractpay
-    ${args}=    Create List    get    a
+    [Arguments]    ${getmethod}    ${name}    ${result}
+    ${args}=    Create List    ${getmethod}    ${name}
     ${respJson}=    queryContract    ${gContractId}    ${args}
     Dictionary Should Contain Key    ${respJson}    result
     ${result}=    Get From Dictionary    ${respJson}    result
-    Should Be Equal    ${result}    aa
+    Should Be Equal    ${result}    ${result}
 
 User transfer PTN to contractpay
     transferPtnTo    ${gContractId}    10000
@@ -89,6 +105,7 @@ Query contract balance
 Use contractpay to transfer PTN to user2
     # create account
     ${newAddr}=    newAccount
+    Log    ${newAddr}
     ${args}=    Create List    payout    ${newAddr}    PTN    100
     ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
     ...    ${args}
@@ -102,3 +119,11 @@ Query user2 balance
     ${respJson}=    queryContract    ${gContractId}    ${args}
     Dictionary Should Contain Key    ${respJson}    result
     ${result}=    Get From Dictionary    ${respJson}    result
+    ${result}=    To Json    ${result}
+    ${balance}=    Get From List    ${result}    0
+    ${ramount}=    Get From Dictionary    ${balance}    amount
+    ${rasset}=    Get From Dictionary    ${balance}    asset
+    ${raddr}=    Get From Dictionary    ${balance}    address
+    Should Be Equal    ${ramount}    100
+    Should Be Equal    ${rasset}    PTN
+    Should Be Equal    ${raddr}    ${addr}
