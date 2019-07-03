@@ -461,15 +461,12 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 				continue
 			}
 		}
-		// @Jay ---> 同步过来的交易 p2p层不需要做交易的验证。
 		p.MarkTransaction(tx.Hash())
 		_, err := pm.txpool.ProcessTransaction(tx, true, true, 0 /*pm.txpool.Tag(peer.ID())*/)
 		if err != nil {
 			log.Infof("the transaction %s not accepteable, err:%s", tx.Hash().String(), err.Error())
-			continue
-			//return errResp(ErrDecode, "transaction %d not accepteable ", i, "err:", err)
 		}
-		pm.txpool.AddRemote(tx)
+		//pm.txpool.AddRemote(tx)
 	}
 
 	return nil
