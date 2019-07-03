@@ -28,6 +28,7 @@ outchain.toml
 .project
 .settings
 *.pyc
+*.pem
 
 # used by the Makefile
 /build/_workspace/
