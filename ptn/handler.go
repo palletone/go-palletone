@@ -479,7 +479,7 @@ func (pm *ProtocolManager) LocalHandle(p *peer) error {
 		log.Info("ProtocolManager", "handler DiscTooManyPeers:", p2p.DiscTooManyPeers, "pm.peers.Len()", pm.peers.Len(), "peers", pm.peers.GetPeers())
 		return p2p.DiscTooManyPeers
 	}
-	log.Debug("PalletOne peer connected", "name", p.id)
+	log.Debug("PalletOne peer connected", "name", p.id, "p Trusted:", p.Peer.Info().Network.Trusted)
 	// @分区后需要用token获取
 	//head := pm.dag.CurrentHeader(pm.mainAssetId)
 	var (

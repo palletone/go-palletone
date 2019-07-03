@@ -14,25 +14,31 @@
 package certficate
 
 import (
-	"github.com/tjfoc/gmsm/sm2"
-	"os"
-	"gopkg.in/errgo.v1"
+	"crypto"
 	"crypto/rand"
-	"math/big"
+	"crypto/sha1"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	"io/ioutil"
+	"github.com/tjfoc/gmsm/sm2"
+	"gopkg.in/errgo.v1"
 	"io"
+	"io/ioutil"
+	"math/big"
+	"os"
 	"path"
-	"crypto/sha1"
-	"crypto"
 )
 
-func GenSMCert(address string) ([]byte, error) {
-	country := []string{"China"}
-	locality := []string{"BeiJing"}
-	organization := []string{"PalletOne"}
+type GmCertInfo struct {
+	Address         string
+	Country         []string
+	Locality        []string
+	Organization    []string
+	EmailAddresses  namesVar
+	IPAddresses     ipsVar
+	subjectAltEmail namesVar
+}
 
+func (c *GmCertInfo) GenSMCert() ([]byte, error) {
 	key, err := sm2.GenerateKey()
 	if err != nil {
 		return nil, err
@@ -43,19 +49,20 @@ func GenSMCert(address string) ([]byte, error) {
 		return nil, err
 	}
 	subj := pkix.Name{
-		Country:      country,
-		Organization: organization,
-		Locality:     locality,
+		Country:      c.Country,
+		Organization: c.Organization,
+		Locality:     c.Locality,
 	}
 
 	template := &sm2.Certificate{
 		Subject:        subj,
 		DNSNames:       DNSNames(),
-		EmailAddresses: EmailAddresses(),
-		IPAddresses:    IPAddresses(),
+		EmailAddresses: c.EmailAddresses,
+		IPAddresses:    c.IPAddresses,
+		IsCA:           false,
 	}
 
-	crt, err := SelfSignCertificate(template, key,address)
+	crt, err := SelfSignCertificate(template, key, c.Address)
 	if err != nil {
 		return nil, err
 	}
@@ -67,9 +74,9 @@ func GenSMCert(address string) ([]byte, error) {
 	return certbyte, nil
 }
 
-func SelfSignCertificate(params *sm2.Certificate, key crypto.Signer,address string) (*sm2.Certificate, error) {
+func SelfSignCertificate(params *sm2.Certificate, key crypto.Signer, address string) (*sm2.Certificate, error) {
 	template := *params
-	if err := generateCertificateValues(&template, key.Public(),address); err != nil {
+	if err := generateCertificateValues(&template, key.Public(), address); err != nil {
 		return nil, errgo.Mask(err)
 	}
 
@@ -85,7 +92,7 @@ func SelfSignCertificate(params *sm2.Certificate, key crypto.Signer,address stri
 	return crt, nil
 }
 
-func generateCertificateValues(template *sm2.Certificate, publicKey interface{},address string) error {
+func generateCertificateValues(template *sm2.Certificate, publicKey interface{}, address string) error {
 	if template.SerialNumber == nil {
 		max := big.NewInt(1)
 		max.Lsh(max, 20*8)
@@ -105,7 +112,6 @@ func generateCertificateValues(template *sm2.Certificate, publicKey interface{},
 	template.Subject.CommonName = address
 	return nil
 }
-
 
 func SaveSM2Key(key *sm2.PrivateKey) error {
 	keyPath := path.Join("./", "/keystore")
@@ -149,7 +155,7 @@ func WriteCertificate(w io.Writer, crt *sm2.Certificate) ([]byte, error) {
 	)
 	err = ioutil.WriteFile(caFile, caPem, 0644)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
-	return caPem,nil
+	return caPem, nil
 }
