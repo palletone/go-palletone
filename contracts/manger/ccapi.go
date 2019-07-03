@@ -26,8 +26,6 @@ import (
 	"strings"
 )
 
-var debugX bool = false
-
 type TempCC struct {
 	templateId  []byte
 	name        string
@@ -168,9 +166,9 @@ func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byt
 	}
 	txHash := common.HexToHash(txId)
 	depId := crypto.RequestIdToContractAddress(txHash) //common.NewAddress(btxId[:20], common.ContractHash)
-	//usrccName := depId.String()
+	usrccName := depId.String()
 	usrcc := &ucc.UserChaincode{
-		Name:       templateCC.Name,
+		Name:       usrccName,
 		Path:       templateCC.Path,
 		Version:    templateCC.Version,
 		Desciption: templateCC.Desciption,
@@ -192,7 +190,7 @@ func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byt
 	}
 	cc := &cclist.CCInfo{
 		Id:       depId.Bytes(),
-		Name:     templateCC.Name,
+		Name:     usrcc.Name,
 		Path:     usrcc.Path,
 		TempleId: templateId,
 		Version:  usrcc.Version,
