@@ -3,9 +3,6 @@ Resource          pubVariables.robot
 Library           Collections
 
 *** Keywords ***
-Unlock token holder succeed
-    unlockAccount    ${tokenHolder}
-
 genInvoketxParams
     [Arguments]    ${caCertHolder}    ${caCertHolder}    ${from}    ${to}    ${certContractAddr}    ${args}
     ...    ${certid}

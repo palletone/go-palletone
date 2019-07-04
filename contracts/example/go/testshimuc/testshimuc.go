@@ -18,10 +18,11 @@
  *
  */
 
-package testshimuc
+package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 )
@@ -37,8 +38,15 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 
 func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	function, args := stub.GetFunctionAndParameters()
-	if function == "testGetArgs" {
+	switch function {
+	case "testGetArgs":
 		return t.test_GetArgs(stub, args)
+	case "testGetStringArgs":
+		return t.test_GetStringArgs(stub, args)
+	case "testGetFunctionAndParameters":
+		return t.test_GetFunctionAndParameters(stub, args)
+	case "testGetArgsSlice":
+		return t.test_GetArgsSlice(stub, args)
 	}
 	return shim.Error("Invalid invoke function name. Expecting \"invoke\"")
 }
@@ -56,4 +64,42 @@ func (t *SimpleChaincode) test_GetArgs(stub shim.ChaincodeStubInterface, args []
 		return shim.Error(err.Error())
 	}
 	return shim.Success(res)
+}
+
+func (t *SimpleChaincode) test_GetStringArgs(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	params := stub.GetStringArgs()
+	res, err := json.Marshal(params)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	return shim.Success(res)
+}
+
+func (t *SimpleChaincode) test_GetFunctionAndParameters(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	funcname, params := stub.GetFunctionAndParameters()
+	data := struct {
+		funcname string
+		params   []string
+	}{funcname: funcname, params: params}
+
+	res, err := json.Marshal(data)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	return shim.Success(res)
+}
+
+func (t *SimpleChaincode) test_GetArgsSlice(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	argsSlice, err := stub.GetArgsSlice()
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	return shim.Success(argsSlice)
+}
+
+func main() {
+	err := shim.Start(new(SimpleChaincode))
+	if err != nil {
+		fmt.Printf("Error starting Simple chaincode: %s", err)
+	}
 }
