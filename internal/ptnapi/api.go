@@ -726,6 +726,14 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, poolTxs
 		for msgindex, msg := range tx.Tx.TxMessages {
 			if msg.App == modules.APP_PAYMENT {
 				pay := msg.Payload.(*modules.PaymentPayload)
+
+				data, _ := json.Marshal(pay)
+				if len(pay.Outputs) == 0 {
+					log.Errorf("Payment output length=0,pay:%s", string(data))
+				}
+				if pay.Outputs[0].Asset == nil {
+					log.Errorf("Payment output asset=nil,pay:%s", string(data))
+				}
 				if pay.Outputs[0].Asset.IsSimilar(tokenAsset) == false {
 					continue
 				}
