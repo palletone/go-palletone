@@ -20,7 +20,6 @@
 package modules
 
 import (
-	"crypto/ecdsa"
 	"fmt"
 	"log"
 	"reflect"
@@ -111,11 +110,13 @@ func TestCopyHeader(t *testing.T) {
 
 // test unit's size of header
 func TestUnitSize(t *testing.T) {
-	key := new(ecdsa.PrivateKey)
-	key, _ = crypto.GenerateKey()
+
+	key, _ := crypto.MyCryptoLib.KeyGen()
+	pubKey,_:=crypto.MyCryptoLib.PrivateKeyToPubKey(key)
 	h := new(Header)
 	au := Authentifier{}
-	address := crypto.PubkeyToAddress(&key.PublicKey)
+
+	address := crypto.PubkeyBytesToAddress(pubKey)
 	log.Println("address:", address)
 
 	h.GroupSign = []byte("group_sign")
@@ -127,9 +128,9 @@ func TestUnitSize(t *testing.T) {
 	h.ParentsHash = append(h.ParentsHash, h.TxRoot)
 
 	h.TxRoot = h.Hash()
-	sig, _ := crypto.Sign(h.TxRoot[:], key)
+	sig, _ := crypto.MyCryptoLib.Sign(key,h.TxRoot[:] )
 	au.Signature = sig
-	au.PubKey = crypto.CompressPubkey(&key.PublicKey)
+	au.PubKey = pubKey
 	h.Authors = au
 
 	log.Println("size: ", unsafe.Sizeof(h))
@@ -175,12 +176,12 @@ func TestHeaderPointer(t *testing.T) {
 }
 
 func TestHeaderRLP(t *testing.T) {
-	key := new(ecdsa.PrivateKey)
-	key, _ = crypto.GenerateKey()
+	key, _ := crypto.MyCryptoLib.KeyGen()
+	pubKey,_:=crypto.MyCryptoLib.PrivateKeyToPubKey(key)
 	h := new(headerTemp)
 	//h.AssetIDs = append(h.AssetIDs, PTNCOIN)
 	au := Authentifier{}
-	address := crypto.PubkeyToAddress(&key.PublicKey)
+	address := crypto.PubkeyBytesToAddress(pubKey)
 	log.Println("address:", address)
 
 	h.GroupSign = []byte("group_sign")
@@ -192,9 +193,9 @@ func TestHeaderRLP(t *testing.T) {
 	h.CryptoLib = []byte{0x1, 0x2}
 	h.ParentsHash = append(h.ParentsHash, h.TxRoot)
 	h.TxRoot = common.HexToHash("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f")
-	sig, _ := crypto.Sign(h.TxRoot[:], key)
+	sig, _ := crypto.MyCryptoLib.Sign(key,h.TxRoot[:])
 	au.Signature = sig
-	au.PubKey = crypto.CompressPubkey(&key.PublicKey)
+	au.PubKey = pubKey
 	h.Authors = au
 	h.Time = 123
 
