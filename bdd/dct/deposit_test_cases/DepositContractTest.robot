@@ -16,10 +16,11 @@ Business_01
     [Documentation]    mediator 交付 50 0000 0000 0000 及以上才可以加入候选列表
     ...
     ...    某节点申请加入mediator-》进入申请列表-》基金会同意-》进入同意列表-》节点加入保证金（足够）-》进入候选列表-》节点增加保证金-》节点申请退出部分保证金-》基金会同意-》节点申请退出候选列表-》进入退出列表-》基金会同意。
-    ${amount}    getBalance    ${mediatorAddr_01}
-    log    ${amount}    #499999995
-    Should Be Equal As Numbers    ${amount}    499999995
-    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM
+    ${amount}    getBalance    ${mediatorAddr_01}    PTN
+    log    ${amount}    #999949995
+    #    Should Be Equal As Numbers
+    Should Be Equal As Numbers    ${amount}    999949995
+    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${amount}    #0
     Should Be Equal As Numbers    ${amount}    0
     ${result}    applyBecomeMediator    ${mediatorAddr_01}    #节点申请加入列表    #1
@@ -34,10 +35,10 @@ Business_01
     Dictionary Should Contain Key    ${addressMap2}    ${mediatorAddr_01}    #有该节点
     ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    3000000000    #在同意列表里的节点，可以交付保证金    #这里交的数量不是规定的保证金数量，导致无法加入候选列表，并且相应保证金退还该地址    #1
     log    ${result}
-    ${amount}    getBalance    ${mediatorAddr_01}    #499999992
-    log    ${amount}    #499999992
-    Should Be Equal As Numbers    ${amount}    499999992
-    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM
+    ${amount}    getBalance    ${mediatorAddr_01}    PTN    #499999992
+    log    ${amount}    #999949992
+    Should Be Equal As Numbers    ${amount}    999949992
+    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${amount}    #0
     Should Be Equal As Numbers    ${amount}    0
     ${addressMap3}    getListForMediatorCandidate
@@ -45,10 +46,10 @@ Business_01
     Dictionary Should Not Contain Key    ${addressMap3}    ${mediatorAddr_01}    #无该节点
     ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    ${medDepositAmount}    #在同意列表里的节点，可以交付保证金    #51
     log    ${result}
-    ${amount}    getBalance    ${mediatorAddr_01}
-    log    ${amount}    #499999941
-    Should Be Equal As Numbers    ${amount}    499999941
-    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM
+    ${amount}    getBalance    ${mediatorAddr_01}    PTN
+    log    ${amount}    #999949941
+    Should Be Equal As Numbers    ${amount}    999949941
+    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${amount}    #0
     Should Be Equal As Numbers    ${amount}    50
     ${addressMap3}    getListForMediatorCandidate
@@ -68,10 +69,10 @@ Business_01
     ${result}    handleForApplyForQuitMediator    ${foundationAddr}    ${mediatorAddr_01}    Ok    HandleForApplyQuitMediator    #基金会处理退出候选列表里的节点（同意）
     ...    #1
     log    ${result}
-    ${amount}    getBalance    ${mediatorAddr_01}    #99,999,970‬
+    ${amount}    getBalance    ${mediatorAddr_01}    PTN    #99,999,970‬
     log    ${amount}
-    Should Be Equal As Numbers    ${amount}    499999989
-    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM
+    Should Be Equal As Numbers    ${amount}    999949989
+    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${amount}    #0
     Should Be Equal As Numbers    ${amount}    0
     ${resul}    getListForJuryCandidate    #mediator退出候选列表，则移除该jury
@@ -234,3 +235,39 @@ Business_06
     ${resul}    getListForDeveloperCandidate
     Dictionary Should Not Contain Key    ${resul}    ${developerAddr_02}    #候选列表无该地址
     log    ${resul}
+
+Business_07
+    [Documentation]    创建新Token，使用新Token交付保证金，由于保证金只支持PTN，所以交保证金失败
+    ...
+    ...    DPT+10E7XBWEBT0K2H2GE0O
+    ...
+    ...    DPT+10102JC6CQU8OK204BXA
+    ${amount}    getBalance    ${foundationAddr}    PTN
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    999950041
+    ${amount}    getBalance    ${mediatorAddr_02}    PTN
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    9948
+    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
+    log    ${amount}    #0
+    Should Be Equal As Numbers    ${amount}    0
+    ${result}    createToken    ${mediatorAddr_02}    #1
+    ${assetId}    ccquery
+    log    ${assetId}
+    ${amount}    getBalance    ${mediatorAddr_02}    ${assetId}
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    1000000000
+    ${result}    invokeToken    ${mediatorAddr_02}    ${assetId}    #在同意列表里的节点，可以交付保证金    #这里交的数量不是规定的保证金数量，导致无法加入候选列表，并且相应保证金退还该地址    #1
+    log    ${result}
+    ${addressMap3}    getListForMediatorCandidate
+    log    ${addressMap3}
+    Dictionary Should Not Contain Key    ${addressMap3}    ${mediatorAddr_02}    #无该节点
+    ${amount}    getBalance    ${mediatorAddr_02}    ${assetId}
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    1000000000
+    ${amount}    getBalance    ${mediatorAddr_02}    PTN
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    9946
+    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
+    log    ${amount}    #0
+    Should Be Equal As Numbers    ${amount}    0

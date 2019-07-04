@@ -109,7 +109,7 @@ func (s *PublicContractAPI) Ccinvoke(ctx context.Context, contractAddr string, p
 	return string(rsp), err
 }
 
-func (s *PublicContractAPI) Ccquery(ctx context.Context, contractAddr string, param []string, timeout uint32) (string, error) {
+func (s *PublicContractAPI) Ccquery(ctx context.Context, contractAddr string, param []string, timeout string) (string, error) {
 	contractId, _ := common.StringToAddress(contractAddr)
 	//contractId, _ := hex.DecodeString(contractAddr)
 	rd, err := crypto.GetRandomBytes(32)
@@ -120,10 +120,12 @@ func (s *PublicContractAPI) Ccquery(ctx context.Context, contractAddr string, pa
 		args[i] = []byte(arg)
 		log.Info("Ccquery", "param index:", i, "arg", arg)
 	}
+	timeout64, _ := strconv.ParseUint(timeout, 10, 64)
+
 	//参数前面加入msg0和msg1,这里为空
 	fullArgs := [][]byte{defaultMsg0, defaultMsg1}
 	fullArgs = append(fullArgs, args...)
-	rsp, err := s.b.ContractQuery(contractId.Bytes(), txid.String(), fullArgs, time.Duration(timeout)*time.Second)
+	rsp, err := s.b.ContractQuery(contractId.Bytes(), txid.String(), fullArgs, time.Duration(timeout64)*time.Second)
 	if err != nil {
 		return "", err
 	}
@@ -418,12 +420,12 @@ func (s *PublicContractAPI) DepositContractInvoke(ctx context.Context, from, to,
 
 func (s *PublicContractAPI) DepositContractQuery(ctx context.Context, param []string) (string, error) {
 	log.Debug("---enter DepositContractQuery---")
-	return s.Ccquery(ctx, syscontract.DepositContractAddress.String(), param, 0)
+	return s.Ccquery(ctx, syscontract.DepositContractAddress.String(), param, "0")
 }
 
 func (s *PublicContractAPI) SysConfigContractQuery(ctx context.Context, param []string) (string, error) {
 	log.Debugf("---enter SysConfigContractQuery---")
-	return s.Ccquery(ctx, syscontract.SysConfigContractAddress.String(), param, 0)
+	return s.Ccquery(ctx, syscontract.SysConfigContractAddress.String(), param, "0")
 }
 
 func (s *PublicContractAPI) SysConfigContractInvoke(ctx context.Context, from, to, daoAmount, daoFee string,
