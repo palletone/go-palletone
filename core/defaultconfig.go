@@ -119,9 +119,9 @@ const (
 	PalletOne1Percent              = PalletOne100Percent / 100
 	PalletOneIrreversibleThreshold = 70 * PalletOne1Percent
 
-	DefaultMediatorInterval     = 2       //Devin: Don't change   /* seconds */
-	DefaultMaintenanceInterval  = 60 * 10 // seconds, aka: 1 day
-	DefaultMaintenanceSkipSlots = 0       //Devin: Don't change    // number of slots to skip for maintenance interval
+	DefaultMediatorInterval     = 2      //Devin: Don't change   /* seconds */
+	DefaultMaintenanceInterval  = 60 * 5 // 60 * 60 * 24 // seconds, aka: 1 day
+	DefaultMaintenanceSkipSlots = 0      //Devin: Don't change // 1 // number of slots to skip for maintenance interval
 
 	DefaultMediatorCreateFee        = 5000
 	DefaultContractInvokeFee        = 100000000
