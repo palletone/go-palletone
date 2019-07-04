@@ -805,6 +805,9 @@ func (d *Dag) GetUtxosOutViewbyUnit(unit *modules.Unit) *txspool.UtxoViewpoint {
 	}
 	return view
 }
+func (d *Dag) IsUtxoSpent(outpoint *modules.OutPoint) (bool, error) {
+	return d.unstableUtxoRep.IsUtxoSpent(outpoint)
+}
 
 // GetAllUtxos is return all utxo.
 func (d *Dag) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
@@ -1123,7 +1126,7 @@ func (bc *Dag) GetMainChain() (*modules.MainChain, error) {
 //}
 
 func (d *Dag) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
-	return d.stableUnitRep.GetTxRequesterAddress(tx)
+	return d.unstableUnitRep.GetTxRequesterAddress(tx)
 }
 func (d *Dag) RefreshAddrTxIndex() error {
 	return d.stableUnitRep.RefreshAddrTxIndex()

@@ -446,7 +446,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 			}
 		}
 	}
-	log.Info("Downloader->syncWithPeer last", "origin:", origin, "pivot:", pivot)
+	log.Debug("Downloader->syncWithPeer last", "origin:", origin, "pivot:", pivot)
 	d.committed = 1
 	if d.mode == FastSync && pivot != 0 {
 		d.committed = 0

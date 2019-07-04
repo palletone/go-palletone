@@ -81,6 +81,7 @@ type IDag interface {
 	GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error)
 
 	GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error)
+	IsUtxoSpent(outpoint *modules.OutPoint) (bool, error)
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
 	SubscribeChainEvent(ch chan<- modules.ChainEvent) event.Subscription
 	PostChainEvents(events []interface{})

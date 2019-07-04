@@ -101,13 +101,18 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 
 				utxo, err = validate.utxoquery.GetUtxoEntry(in.PreviousOutPoint)
 				if utxo == nil || err != nil {
-					//找不到对应的UTXO，应该是孤儿交易
+					//找不到对应的UTXO，去IsSpent再找一下
+					spent, _ := validate.utxoquery.IsUtxoSpent(in.PreviousOutPoint)
+					if spent {
+						return TxValidationCode_INVALID_DOUBLE_SPEND
+					}
+					//IsSpent找不到，说明是孤儿
 					return TxValidationCode_ORPHAN
 				}
 			}
-			if utxo.IsSpent() {
-				return TxValidationCode_INVALID_DOUBLE_SPEND
-			}
+			//if utxo.IsSpent() {
+			//	return TxValidationCode_INVALID_DOUBLE_SPEND
+			//}
 			if asset == nil {
 				asset = utxo.Asset
 			} else {
@@ -196,6 +201,8 @@ func (validate *Validate) pickJuryFn(contractAddr common.Address) ([]byte, error
 
 	return redeemScript, nil
 }
+
+//检查转移的Token是否已经冻结，冻结的Token不能再转移
 func (validate *Validate) checkTokenStatus(asset *modules.Asset) ValidationCode {
 	globalStateContractId := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	result, _, err := validate.statequery.GetContractState(globalStateContractId, modules.GlobalPrefix+asset.AssetId.GetSymbol())

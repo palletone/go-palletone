@@ -476,10 +476,10 @@ func (pm *ProtocolManager) handle(p *peer) error {
 func (pm *ProtocolManager) LocalHandle(p *peer) error {
 	// Ignore maxPeers if this is a trusted peer
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
-		log.Info("ProtocolManager", "handler DiscTooManyPeers:", p2p.DiscTooManyPeers, "pm.peers.Len()", pm.peers.Len(), "peers", pm.peers.GetPeers())
+		log.Debug("ProtocolManager", "handler DiscTooManyPeers:", p2p.DiscTooManyPeers, "pm.peers.Len()", pm.peers.Len(), "peers", pm.peers.GetPeers())
 		return p2p.DiscTooManyPeers
 	}
-	log.Debug("PalletOne peer connected", "name", p.id)
+	log.Debug("PalletOne peer connected", "name", p.id, "p Trusted:", p.Peer.Info().Network.Trusted)
 	// @分区后需要用token获取
 	//head := pm.dag.CurrentHeader(pm.mainAssetId)
 	var (
@@ -633,7 +633,6 @@ func (self *ProtocolManager) txBroadcastLoop() {
 	for {
 		select {
 		case event := <-self.txCh:
-			log.Debug("=====ProtocolManager=====", "txBroadcastLoop event.Tx", event.Tx)
 			self.BroadcastTx(event.Tx.Hash(), event.Tx)
 
 			// Err() channel will be closed when unsubscribing.
@@ -644,7 +643,7 @@ func (self *ProtocolManager) txBroadcastLoop() {
 }
 
 func (pm *ProtocolManager) ContractReqLocalSend(event jury.ContractEvent) {
-	log.Info("ContractReqLocalSend", "event", event.Tx.Hash())
+	log.Debug("ContractReqLocalSend", "event", event.Tx.Hash())
 	pm.contractCh <- event
 }
 
@@ -768,7 +767,7 @@ func (self *ProtocolManager) dockerLoop() {
 			log.Infof("quit from docker loop")
 			return
 		case <-time.After(time.Duration(30) * time.Second):
-			log.Infof("each 30 second to get all containers")
+			log.Debugf("each 30 second to get all containers")
 			manger.GetAllContainers(client)
 		}
 	}

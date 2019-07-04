@@ -86,7 +86,7 @@ type dags interface {
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
 	// getTxfee
 	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
-
+	IsUtxoSpent(outpoint *modules.OutPoint) (bool, error)
 	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
 	GetMinFee() (*modules.AmountAsset, error)
 	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
@@ -247,6 +247,9 @@ func (pool *TxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, err
 		return utxo, nil
 	}
 	return pool.unit.GetUtxoEntry(outpoint)
+}
+func (pool *TxPool) IsUtxoSpent(outpoint *modules.OutPoint) (bool, error) {
+	return pool.unit.IsUtxoSpent(outpoint)
 }
 
 // loop is the transaction pool's main event loop, waiting for and reacting to
@@ -1558,7 +1561,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 		total += tx.Tx.Size()
 	}
 	for {
-		if time.Since(t0) > time.Millisecond*900 {
+		if time.Since(t0) > time.Millisecond*1000 {
 			log.Infof("get sorted timeout spent times: %s , count: %d ", time.Since(t0), len(list))
 			break
 		}
@@ -1571,6 +1574,9 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 			break
 		} else {
 			if !tx.Pending {
+				if has, _ := pool.unit.IsTransactionExist(tx.Tx.Hash()); has {
+					continue
+				}
 				// add precusorTxs 获取该交易的前驱交易列表
 				p_txs, _ := pool.getPrecusorTxs(tx, poolTxs, orphanTxs)
 				for _, ptx := range p_txs {
@@ -1640,7 +1646,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 			go pool.promoteTx(hash, tx, index, uint64(i))
 		}
 	}
-	log.Debugf("get sorted and rm Orphan txs spent times: %s , count: %d ,t2: %s , txs_size %s,  " +
+	log.Debugf("get sorted and rm Orphan txs spent times: %s , count: %d ,t2: %s , txs_size %s,  "+
 		"total_size %s", time.Since(t0), len(list), time.Since(t2), total.String(), unit_size.String())
 
 	return list, total
@@ -1708,7 +1714,7 @@ func (pool *TxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subs
 }
 
 func (pool *TxPool) GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error) {
-	return tx.GetTxFee(pool.GetUtxoEntry, time.Now().Unix())
+	return tx.GetTxFee(pool.GetUtxoEntry)
 }
 
 func (pool *TxPool) limitNumberOrphans() error {

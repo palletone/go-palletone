@@ -65,20 +65,36 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 			Language:       language,
 		},
 	}
-	reqId, tx, err := p.createContractTxReq(common.Address{}, from, to, daoAmount, daoFee, nil, msgReq, true)
+	reqId, _, err = p.createContractTxReq(common.Address{}, from, to, daoAmount, daoFee, nil, msgReq, true)
 	if err != nil {
 		return common.Hash{}, nil, err
 	}
-	tpl, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_TPL)
-	if err != nil || tpl == nil {
-		errMsg := fmt.Sprintf("[%s]getContractTxContractInfo fail, tpl Name[%s]", shortId(reqId.String()), tplName)
-		return common.Hash{}, nil, errors.New(errMsg)
+	isLocal := true //todo
+	if isLocal{
+		if err = p.runContractReq(reqId, nil); err != nil {
+			return common.Hash{}, nil, err
+		}
+
+		ctx := p.mtx[reqId]
+		ctx.rstTx, err = p.GenContractSigTransaction(from, "", ctx.rstTx, p.ptn.GetKeyStore())
+		if err != nil {
+			return common.Hash{}, nil, err
+		}
+		tx := ctx.rstTx
+		tpl, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_TPL)
+		if err != nil || tpl == nil {
+			errMsg := fmt.Sprintf("[%s]getContractTxContractInfo fail, tpl Name[%s]", shortId(reqId.String()), tplName)
+			return common.Hash{}, nil, errors.New(errMsg)
+		}
+		templateId := tpl.(*modules.ContractTplPayload).TemplateId
+		log.Infof("[%s]ContractInstallReq ok, reqId[%s] templateId[%x]", shortId(reqId.String()), reqId.String(), templateId)
+		//broadcast
+		go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_COMMIT, Tx: tx}, false)
+		return reqId, templateId, nil
 	}
-	templateId := tpl.(*modules.ContractTplPayload).TemplateId
-	log.Infof("[%s]ContractInstallReq ok, reqId[%s] templateId[%x]", shortId(reqId.String()), reqId.String(), templateId)
-	//broadcast
-	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_COMMIT, Tx: tx}, false)
-	return reqId, templateId, nil
+	//net mode
+
+	return reqId, nil, nil
 }
 
 func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (common.Hash, common.Address, error) {

@@ -25,6 +25,7 @@ import (
 	cc "github.com/palletone/go-palletone/contracts/manger"
 
 	"github.com/palletone/go-palletone/contracts/core"
+	"github.com/palletone/go-palletone/contracts/test"
 	"github.com/palletone/go-palletone/dag"
 	md "github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
@@ -97,15 +98,20 @@ func (c *Contract) Close() error {
 // Contract installation, packaging the specified contract path file,
 // and forming a contract template unit together with the contract name and version
 // Chain code ID for multiple chains
-func (c *Contract) Install(chainID string, ccName string, ccPath string, ccVersion string, ccDescription, ccAbi, ccLanguage string) (payload *md.ContractTplPayload, err error) {
-	log.Info("Enter Contract Install====", "chainId", chainID, "ccName", ccName, "ccPath", ccPath, "ccVersion", ccVersion)
-	defer log.Info("Exit Contract Install====", "chainId", chainID, "ccName", ccName, "ccPath", ccPath, "ccVersion", ccVersion)
+func (c *Contract) Install(channelId, ccName, ccPath, ccVersion, ccDescription, ccAbi, ccLanguage string) (payload *md.ContractTplPayload, err error) {
+	log.Info("Enter Contract Install====", "chainId", channelId, "ccName", ccName, "ccPath", ccPath, "ccVersion", ccVersion, "ccdescription", ccDescription, "ccabi", ccAbi, "cclanguage", ccLanguage)
+	defer log.Info("Exit Contract Install====", "chainId", channelId, "ccName", ccName, "ccPath", ccPath, "ccVersion", ccVersion, "ccdescription", ccDescription, "ccabi", ccAbi, "cclanguage", ccLanguage)
 	atomic.LoadInt32(&initFlag)
 	if initFlag == 0 {
 		log.Error("Contract module not initialized")
 		return nil, errors.New("Contract not initialized")
 	}
-	return cc.Install(c.dag, chainID, ccName, ccPath, ccVersion, ccDescription, ccAbi, ccLanguage)
+	if contractcfg.DebugTest {
+		log.Info("contract test install")
+		return test.Install(channelId, ccName, ccPath, ccVersion, ccDescription, ccAbi, ccLanguage)
+	}
+	return cc.Install(c.dag, channelId, ccName, ccPath, ccVersion, ccDescription, ccAbi, ccLanguage)
+
 }
 
 // Deploy 将指定的合约模板部署到本地，生成对应Docker镜像及启动带有初始化合约参数的容器，用于合约的执行。
@@ -124,7 +130,12 @@ func (c *Contract) Deploy(rwM rwset.TxManager, chainID string, templateId []byte
 		log.Error("Contract module not initialized")
 		return nil, nil, errors.New("Contract not initialized")
 	}
+	if contractcfg.DebugTest {
+		log.Info("contract test deploy")
+		return test.Deploy(rwM, c.dag, chainID, templateId, txId, args)
+	}
 	return cc.Deploy(rwM, c.dag, chainID, templateId, txId, args, timeout)
+
 }
 
 // Invoke 合约invoke调用，根据指定合约调用参数执行已经部署的合约，函数返回合约调用单元。
@@ -138,6 +149,10 @@ func (c *Contract) Invoke(rwM rwset.TxManager, chainID string, deployId []byte, 
 		log.Error("Contract module not initialized")
 		return nil, errors.New("contract not initialized")
 	}
+	if contractcfg.DebugTest {
+		log.Info("contract test invoke")
+		return test.Invoke(rwM, c.dag, chainID, deployId, txid, args)
+	}
 	return cc.Invoke(rwM, c.dag, chainID, deployId, txid, args, timeout)
 }
 
@@ -150,6 +165,10 @@ func (c *Contract) Stop(rwM rwset.TxManager, chainID string, deployId []byte, tx
 	if initFlag == 0 {
 		log.Error("Contract module not initialized")
 		return nil, errors.New("contract not initialized")
+	}
+	if contractcfg.DebugTest {
+		log.Info("contract test stop")
+		return test.Stop(deployId, chainID, deployId, txid, deleteImage)
 	}
 	return cc.Stop(rwM, c.dag, deployId, chainID, deployId, txid, deleteImage)
 }
