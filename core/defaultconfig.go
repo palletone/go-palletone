@@ -34,14 +34,15 @@ const (
 	DefaultDepositAmountForDeveloper = 1 * 100000000
 	DefaultFoundationAddress         = "P1LA8TkEWxU6FcMzkyeSbf9b9FwZwxrYRuF"
 
-	DefaultUccMemory         = 2147483648 //物理内存  1073741824  1G 2147483648 2G
-	DefaultUccMemorySwap     = 2147483648 //内存交换区，不设置默认为memory的两倍
-	DefaultUccCpuShares      = 1024       //CPU占用率，相对的  CPU 利用率权重，默认为 1024
-	DefaultCpuPeriod         = 50000      // 限制CPU --cpu-period=50000 --cpu-quota=25000
-	DefaultUccCpuQuota       = 25000      //限制CPU 周期设为 50000，将容器在每个周期内的 CPU 配额设置为 25000，表示该容器每 50ms 可以得到 50% 的 CPU 运行时间
-	DefaultUccPrivileged     = false      //防止容器以root权限运行
-	DefaultUccNetworkMode    = "bridge"   //容器运行网络模式
-	defaultUccOOMKillDisable = false      //是否内存使用量超过上限时系统杀死进程
+	DefaultUccMemory     = 2147483648 //物理内存  1073741824  1G 2147483648 2G
+	DefaultUccMemorySwap = 2147483648 //内存交换区，不设置默认为memory的两倍
+	DefaultUccCpuShares  = 1024       //CPU占用率，相对的  CPU 利用率权重，默认为 1024
+	DefaultCpuPeriod     = 50000      // 限制CPU --cpu-period=50000 --cpu-quota=25000
+	DefaultUccCpuQuota   = 25000      //限制CPU 周期设为 50000，将容器在每个周期内的 CPU 配额设置为 25000，表示该容器每 50ms 可以得到 50% 的 CPU 运行时间
+	DefaultUccPrivileged = false      //防止容器以root权限运行
+	//DefaultUccNetworkMode    = "bridge"   //容器运行网络模式
+	DefaultUccNetworkMode    = "host" //TODO xiaozhi 测试容器运行网络模式
+	defaultUccOOMKillDisable = false  //是否内存使用量超过上限时系统杀死进程
 
 	DefaultTempUccMemory     = 2147483648 //物理内存  1073741824  1G 2147483648 2G
 	DefaultTempUccMemorySwap = 2147483648 //内存交换区，不设置默认为memory的两倍 1073741824  1G 2147483648 2G

@@ -533,21 +533,22 @@ func (b *PtnApiBackend) GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson,
 }
 
 func (b *PtnApiBackend) ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi, ccLanguage string) ([]byte, error) {
-	log.Debugf("======>ContractInstall:name[%s]path[%s]version[%s]", ccName, ccPath, ccVersion)
-	payload, err := b.ptn.contract.Install("palletone", ccName, ccPath, ccVersion, ccDescription, ccAbi, ccLanguage)
+	channelId := "palletone"
+	payload, err := b.ptn.contract.Install(channelId, ccName, ccPath, ccVersion, ccDescription, ccAbi, ccLanguage)
 	return payload.TemplateId, err
 }
 
 func (b *PtnApiBackend) ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error) {
 	log.Debugf("======>ContractDeploy:tmId[%s]txid[%s]", hex.EncodeToString(templateId), txid)
-	_, payload, err := b.ptn.contract.Deploy(rwset.RwM, "palletone", templateId, txid, args, timeout)
+	channelId := "palletone"
+	_, payload, err := b.ptn.contract.Deploy(rwset.RwM, channelId, templateId, txid, args, timeout)
 	return payload.ContractId, err
 }
 
 func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) ([]byte, error) {
 	log.Debugf("======>ContractInvoke:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
-
-	unit, err := b.ptn.contract.Invoke(rwset.RwM, "palletone", deployId, txid, args, timeout)
+	channelId := "palletone"
+	unit, err := b.ptn.contract.Invoke(rwset.RwM, channelId, deployId, txid, args, timeout)
 	//todo print rwset
 	if err != nil {
 		return nil, err
@@ -560,7 +561,8 @@ func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, args [][]by
 
 func (b *PtnApiBackend) ContractQuery(contractId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
 	//contractAddr := common.HexToAddress(hex.EncodeToString(contractId))
-	rsp, err := b.ptn.contract.Invoke(rwset.RwM, "palletone", contractId, txid, args, timeout)
+	channelId := "palletone"
+	rsp, err := b.ptn.contract.Invoke(rwset.RwM, channelId, contractId, txid, args, timeout)
 	if err != nil {
 		log.Debugf(" err!=nil =====>ContractQuery:contractId[%s]txid[%s]", hex.EncodeToString(contractId), txid)
 		return nil, err

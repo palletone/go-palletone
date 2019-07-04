@@ -58,6 +58,7 @@ var (
 	// lookup
 	LOOKUP_PREFIX              = []byte("lu")
 	UTXO_PREFIX                = []byte("uo")
+	SPENT_UTXO_PREFIX                = []byte("us")
 	UTXO_INDEX_PREFIX          = []byte("ui")
 	TrieSyncKey                = []byte("TrieSync")
 	LastUnitInfo               = []byte("stbu")

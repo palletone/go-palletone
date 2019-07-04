@@ -122,6 +122,8 @@ func (validate *Validate) validateMediatorSchedule(header *modules.Header) Valid
 	return TxValidationCode_VALID
 }
 func (validate *Validate) ValidateUnitExceptPayment(unit *modules.Unit) error {
+	//  TODO xiaozhi
+	return nil
 	unitHeaderValidateResult := validate.validateHeaderExceptGroupSig(unit.UnitHeader)
 	if unitHeaderValidateResult != TxValidationCode_VALID &&
 		unitHeaderValidateResult != UNIT_STATE_AUTHOR_SIGNATURE_PASSED &&

@@ -86,7 +86,7 @@ type dags interface {
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
 	// getTxfee
 	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
-
+	IsUtxoSpent(outpoint *modules.OutPoint) (bool, error)
 	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
 	GetMinFee() (*modules.AmountAsset, error)
 	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
@@ -247,6 +247,9 @@ func (pool *TxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, err
 		return utxo, nil
 	}
 	return pool.unit.GetUtxoEntry(outpoint)
+}
+func (pool *TxPool) IsUtxoSpent(outpoint *modules.OutPoint) (bool, error) {
+	return pool.unit.IsUtxoSpent(outpoint)
 }
 
 // loop is the transaction pool's main event loop, waiting for and reacting to

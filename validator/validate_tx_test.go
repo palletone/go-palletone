@@ -120,6 +120,9 @@ func (u *testutxoQuery) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo,
 	}
 	return nil, errors.New("Incorrect Hash")
 }
+func (u *testutxoQuery) IsUtxoSpent(outpoint *modules.OutPoint) (bool,error){
+	return false,nil
+}
 func newTestPayment(point *modules.OutPoint, outAmt uint64) *modules.PaymentPayload {
 	pay1s := &modules.PaymentPayload{
 		LockTime: 12345,

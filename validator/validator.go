@@ -26,6 +26,7 @@ import (
 
 	"encoding/json"
 	"fmt"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -51,6 +52,9 @@ type newUtxoQuery struct {
 	unitUtxo     *sync.Map
 }
 
+func (q *newUtxoQuery) IsUtxoSpent(outpoint *modules.OutPoint) (bool, error) {
+	return q.oldUtxoQuery.IsUtxoSpent(outpoint)
+}
 func (q *newUtxoQuery) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	utxo, ok := q.unitUtxo.Load(*outpoint)
 	if ok {

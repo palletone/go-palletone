@@ -17,9 +17,12 @@ import (
 )
 
 type UserChaincode struct {
-	Name           string         //Unique name of the chaincode
-	Path           string         //Path to the chaincode; currently not used
-	Version        string         //chainCode Version
+	Name           string //Unique name of the chaincode
+	Path           string //Path to the chaincode; currently not used
+	Version        string //chainCode Version
+	Desciption     string
+	Abi            string
+	Language       string
 	InitArgs       [][]byte       //InitArgs initialization arguments to startup the chaincode
 	Chaincode      shim.Chaincode // Chaincode is the actual chaincode object
 	InvokableCC2CC bool           //InvokableCC2CC keeps track of whether this chaincode
@@ -130,12 +133,12 @@ func RecoverChainCodeFromDb(spec *pb.ChaincodeSpec, chainID string, templateId [
 		log.Error("getCcDagHand err:", "error", err)
 		return nil, nil, err
 	}
-	tpl,err:= dag.GetContractTpl(templateId)
-	if err!=nil {
+	tpl, err := dag.GetContractTpl(templateId)
+	if err != nil {
 		return nil, nil, errors.New("GetContractTpl contract template err")
 	}
-	chaincodeData,err:=dag.GetContractTplCode(templateId)
-	if err!=nil {
+	chaincodeData, err := dag.GetContractTplCode(templateId)
+	if err != nil {
 		return nil, nil, errors.New("GetContractTpl contract code err")
 	}
 	usrCC := &UserChaincode{
