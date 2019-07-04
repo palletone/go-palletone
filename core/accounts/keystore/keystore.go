@@ -21,7 +21,7 @@
 package keystore
 
 import (
-	"crypto/ecdsa"
+
 	crand "crypto/rand"
 	"encoding/hex"
 	"errors"
@@ -41,6 +41,7 @@ import (
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag/modules"
+	"crypto/ecdsa"
 )
 
 var (
@@ -517,9 +518,9 @@ func (ks *KeyStore) ImportFromHex(hexhash string, newPassphrase string) (account
 }
 
 // ImportECDSA stores the given key into the key directory, encrypting it with the passphrase.
-func (ks *KeyStore) ImportECDSA(priv *ecdsa.PrivateKey, passphrase string) (accounts.Account, error) {
-	data := crypto.FromECDSA(priv)
-	key := newKeyFromECDSA(data)
+func (ks *KeyStore) ImportECDSA(priv []byte, passphrase string) (accounts.Account, error) {
+
+	key := newKeyFromECDSA(priv)
 	if ks.cache.hasAddress(key.Address) {
 		return accounts.Account{}, fmt.Errorf("account already exists")
 	}

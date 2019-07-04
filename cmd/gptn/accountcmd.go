@@ -248,14 +248,12 @@ verify the message signature.
 					utils.PasswordFileFlag,
 					utils.LightKDFFlag,
 				},
-				ArgsUsage: "<keyFile>",
+				ArgsUsage: "key hex data",
 				Description: `
-    gptn account import <keyfile>
+    gptn account import hex
 
-Imports an unencrypted private key from <keyfile> and creates a new account.
+Imports an unencrypted private key from hex and creates a new account.
 Prints the address.
-
-The keyfile is assumed to contain an unencrypted private key in hexadecimal format.
 
 The account is saved in encrypted format, you are prompted for a passphrase.
 
@@ -263,7 +261,7 @@ You must remember this passphrase to unlock your account in the future.
 
 For non-interactive use the passphrase can be specified with the -password flag:
 
-    gptn account import [options] <keyfile>
+    gptn account import [options] <key hex>
 
 Note:
 As you can directly copy your encrypted accounts to another ethereum instance,
@@ -664,11 +662,11 @@ func accountSignTx(ctx *cli.Context) error {
 	return nil
 }
 func accountImport(ctx *cli.Context) error {
-	keyfile := ctx.Args().First()
-	if len(keyfile) == 0 {
-		utils.Fatalf("keyfile must be given as argument")
+	keyHex := ctx.Args().First()
+	if len(keyHex) == 0 {
+		utils.Fatalf("keyHex must be given as argument")
 	}
-	key, err := crypto.LoadECDSA(keyfile)
+	key, err := hexutil.Decode(keyHex)
 	if err != nil {
 		utils.Fatalf("Failed to load the private key: %v", err)
 	}
