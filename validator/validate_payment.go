@@ -71,7 +71,7 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 		}
 
 		statusValid := false
-		utxoScriptMap := make(map[*modules.OutPoint][]byte)
+		utxoScriptMap := make(map[string][]byte)
 		for _, in := range payment.Inputs {
 			// checkout input
 			if in == nil || in.PreviousOutPoint == nil {
@@ -134,15 +134,15 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 			}
 			totalInput += utxo.Amount
 			// check SignatureScript
-			utxoScriptMap[in.PreviousOutPoint] = utxo.PkScript
+			utxoScriptMap[in.PreviousOutPoint.String()] = utxo.PkScript
 
 		}
 		t1 := time.Now()
 		err := tokenengine.ScriptValidate1Msg(utxoScriptMap, validate.pickJuryFn, txForSign, msgIdx)
 		if err != nil {
-			txjson, _ := tx.MarshalJSON()
-			rlpdata, _ := rlp.EncodeToBytes(tx)
-			log.Debugf("Tx for help debug: json: %s ,rlp: %x", string(txjson), rlpdata)
+			// txjson, _ := tx.MarshalJSON()
+			// rlpdata, _ := rlp.EncodeToBytes(tx)
+			// log.Debugf("ScriptValidate1Msg error:%s, Tx msg[%d] for help debug: json: %s ,rlp: %x", err.Error(), msgIdx, string(txjson), rlpdata)
 			return TxValidationCode_INVALID_PAYMMENT_INPUT
 		} else {
 			log.Debugf("Unlock script validated! tx[%s],%d, spend time:%s", tx.Hash().String(), msgIdx, time.Since(t1))

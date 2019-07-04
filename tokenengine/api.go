@@ -26,6 +26,7 @@ import (
 	"sort"
 
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -212,7 +213,7 @@ func ScriptValidate(utxoLockScript []byte, pickupJuryRedeemScript txscript.Picku
 }
 
 //验证一个PaymentMessage的所有Input解锁脚本是否正确
-func ScriptValidate1Msg(utxoLockScripts map[*modules.OutPoint][]byte, pickupJuryRedeemScript txscript.PickupJuryRedeemScript, tx *modules.Transaction, msgIdx int) error {
+func ScriptValidate1Msg(utxoLockScripts map[string][]byte, pickupJuryRedeemScript txscript.PickupJuryRedeemScript, tx *modules.Transaction, msgIdx int) error {
 	acc := &account{}
 	txCopy := tx
 	if tx.IsContractTx() {
@@ -229,7 +230,7 @@ func ScriptValidate1Msg(utxoLockScripts map[*modules.OutPoint][]byte, pickupJury
 	}
 	log.Debugf("SignCache count:%d", signCache.Count())
 	for inputIndex, input := range txCopy.TxMessages[msgIdx].Payload.(*modules.PaymentPayload).Inputs {
-		utxoLockScript := utxoLockScripts[input.PreviousOutPoint]
+		utxoLockScript := utxoLockScripts[input.PreviousOutPoint.String()]
 		vm, err := txscript.NewEngine(utxoLockScript, pickupJuryRedeemScript, txCopy, msgIdx, inputIndex, txscript.StandardVerifyFlags, signCache, acc)
 		if err != nil {
 			log.Warnf("Unlock script validate fail,tx[%s],MsgIdx[%d],In[%d],unlockScript:%x,utxoScript:%x",
@@ -239,6 +240,13 @@ func ScriptValidate1Msg(utxoLockScripts map[*modules.OutPoint][]byte, pickupJury
 		}
 		err = vm.Execute()
 		if err != nil {
+			log.Warnf("Unlock script validate fail,tx[%s],MsgIdx[%d],In[%d],unlockScript:%x,utxoScript:%x",
+				tx.Hash().String(), msgIdx, inputIndex, input.SignatureScript, utxoLockScript)
+
+			log.DebugDynamic(func() string {
+				data, _ := json.Marshal(txCopy)
+				return "Tx json:" + string(data)
+			})
 			return err
 		}
 	}
