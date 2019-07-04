@@ -264,6 +264,10 @@ func (unit *Unit) GroupPubKey() (kyber.Point, error) {
 	return pubKey, err
 }
 
+func (unit *Unit) GetGroupPubKey() []byte {
+	return unit.UnitHeader.GroupPubKey
+}
+
 func (unit *Unit) IsEmpty() bool {
 	if unit == nil || unit.Hash() == (common.Hash{}) {
 		return true
@@ -420,10 +424,14 @@ func (u *Unit) ParentHash() []common.Hash {
 	return u.UnitHeader.ParentsHash
 }
 
-func (u *Unit) SetGroupSign(sign []byte) {
-	if len(sign) > 0 {
-		u.UnitHeader.GroupSign = sign
-	}
+//func (u *Unit) SetGroupSign(sign []byte) {
+//	if len(sign) > 0 {
+//		u.UnitHeader.GroupSign = sign
+//	}
+//}
+
+func (u *Unit) GetGroupSign() []byte {
+	return u.UnitHeader.GroupSign
 }
 
 type ErrUnit float64

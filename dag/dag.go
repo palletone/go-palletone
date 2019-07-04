@@ -985,6 +985,14 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 		log.Debug(err.Error())
 		return err
 	}
+
+	// 判断本节点是否正在同步数据
+	if !d.IsSynced() {
+		err := "this node is syncing"
+		log.Debugf(err)
+		return fmt.Errorf(err)
+	}
+
 	// 验证群签名：
 	err := d.VerifyUnitGroupSign(unitHash, groupSign)
 	if err != nil {

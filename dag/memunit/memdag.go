@@ -27,12 +27,15 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/core"
 	common2 "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
+	"go.dedis.ch/kyber/v3/sign/bls"
 )
 
 type MemDag struct {
@@ -236,7 +239,7 @@ func (chain *MemDag) setStableUnit(hash common.Hash, height uint64, txpool txspo
 	})
 }
 
-//设置当前稳定单元的指定子单元为稳定单元
+//设置当前稳定单元的指定父单元为稳定单元
 func (chain *MemDag) setNextStableUnit(unit *modules.Unit, txpool txspool.ITxPool) {
 	hash := unit.Hash()
 	height := unit.NumberU64()
@@ -262,10 +265,39 @@ func (chain *MemDag) setNextStableUnit(unit *modules.Unit, txpool txspool.ITxPoo
 	chain.removeLowOrphanUnit(unit.NumberU64(), txpool)
 }
 
+func (chain *MemDag) checkUnitIrreversibleWithGroupSign(unit *modules.Unit) bool {
+	if unit.GetGroupPubKey() == nil || unit.GetGroupSign() == nil {
+		return false
+	}
+
+	pubKey, err := unit.GroupPubKey()
+	if err != nil {
+		log.Debug(err.Error())
+		return false
+	}
+
+	err = bls.Verify(core.Suite, pubKey, unit.UnitHash[:], unit.GetGroupSign())
+	if err != nil {
+		log.Debug(err.Error())
+		return false
+	}
+
+	return true
+}
+
 //判断当前主链上的单元是否有满足稳定单元的确认数，如果有，则更新稳定单元，并重建Temp数据库，返回True
 // 如果没有，则不进行任何操作，返回False
-func (chain *MemDag) checkStableCondition(txpool txspool.ITxPool) bool {
-	unit := chain.lastMainChainUnit
+func (chain *MemDag) checkStableCondition(unit *modules.Unit, txpool txspool.ITxPool) bool {
+	//unit := chain.lastMainChainUnit
+
+	// append by albert, 使用群签名判断是否稳定
+	if chain.checkUnitIrreversibleWithGroupSign(unit) {
+		log.Debugf("the unit(%s) have group sign(%s), make it to irreversible.",
+			unit.UnitHash.TerminalString(), hexutil.Encode(unit.GetGroupSign()))
+		chain.setStableUnit(unit.UnitHash, unit.NumberU64(), txpool)
+		return true
+	}
+
 	unstableCount := int(unit.NumberU64() - chain.stableUnitHeight)
 	//每个单元被多少个地址确认过(包括自己)
 	unstableCofirmAddrs := make(map[common.Hash]map[common.Address]bool)
@@ -410,11 +442,11 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 			if len(unit.Txs) > 0 {
 				go txpool.SetPendingTxs(unit.Hash(), height, unit.Txs)
 			}
-			//增加了单元后检查是否满足稳定单元的条件
-			// todo Albert·gou 待重做 优化逻辑
-			start := time.Now()
 
-			if chain.checkStableCondition(txpool) {
+			//增加了单元后检查是否满足稳定单元的条件
+			start := time.Now()
+			// todo Albert·gou 待重做 优化逻辑
+			if chain.checkStableCondition(unit, txpool) {
 				// 下一个unit的群签名
 				log.Debugf("sent toGroupSign event")
 				go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
