@@ -19,13 +19,14 @@ import (
 	"crypto/sha1"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	"github.com/tjfoc/gmsm/sm2"
-	"gopkg.in/errgo.v1"
 	"io"
 	"io/ioutil"
 	"math/big"
 	"os"
 	"path"
+
+	"github.com/palletone/go-palletone/common/crypto/gmsm/sm2"
+	"gopkg.in/errgo.v1"
 )
 
 type GmCertInfo struct {
