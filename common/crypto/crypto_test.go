@@ -28,7 +28,6 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
-	"github.com/stretchr/testify/assert"
 )
 
 var testAddr = "P136gdm7CfJcAeG2RFZNXvwwteg3uGzVqr5"
@@ -93,10 +92,10 @@ func TestSign(t *testing.T) {
 }
 */
 func TestInvalidSign(t *testing.T) {
-	if _, err := Sign(make([]byte, 1), nil); err == nil {
+	if _, err := MyCryptoLib. Sign(make([]byte, 1), nil); err == nil {
 		t.Errorf("expected sign with hash 1 byte to error")
 	}
-	if _, err := Sign(make([]byte, 33), nil); err == nil {
+	if _, err := MyCryptoLib.Sign(make([]byte, 33), nil); err == nil {
 		t.Errorf("expected sign with hash 33 byte to error")
 	}
 }
@@ -215,31 +214,34 @@ func checkAddr(t *testing.T, addr0, addr1 common.Address) {
 // skip but keep it after they are done
 func TestPythonIntegration(t *testing.T) {
 	kh := "289c2857d4598e37fb9647507e47a309d6133539bf21a8b9cb6df88fd5232032"
-	k0, _ := HexToECDSA(kh)
+	k0, _ := hex.DecodeString(kh)
 
 	msg0 := Keccak256([]byte("foo"))
-	sig0, _ := Sign(msg0, k0)
+	sig0, _ := MyCryptoLib.Sign(k0,msg0)
 
 	msg1 := common.FromHex("00000000000000000000000000000000")
-	sig1, _ := Sign(msg0, k0)
+	sig1, _ := MyCryptoLib.Sign(k0,msg0)
 
 	t.Logf("msg: %x, privkey: %s sig: %x\n", msg0, kh, sig0)
 	t.Logf("msg: %x, privkey: %s sig: %x\n", msg1, kh, sig1)
 }
 
 func TestPubkeyToAddress(t *testing.T) {
-	prvKey, _ := GenerateKey()
-	b := FromECDSA(prvKey)
-	t.Logf("Private Key: %s", hex.EncodeToString(b))
-	pubKey := prvKey.PublicKey
+	prvKey, _ := MyCryptoLib.KeyGen()
 
-	pb := FromECDSAPub(&pubKey)
-	t.Logf("Public Key: %s", hex.EncodeToString(pb))
-	address := PubkeyToAddress(&pubKey)
+	t.Logf("Private Key: %s", hex.EncodeToString(prvKey))
+	pubKey,_ := MyCryptoLib.PrivateKeyToPubKey(prvKey)
+
+
+	t.Logf("Public Key: %s", hex.EncodeToString(pubKey))
+	address := PubkeyBytesToAddress(pubKey)
 	addStr := address.Str()
 	t.Logf("Address: %s", addStr)
 }
-
+func PubkeyToAddress(p *ecdsa.PublicKey) common.Address {
+	pubBytes := compressPubkey(p)
+	return PubkeyBytesToAddress(pubBytes)
+}
 func TestImportPrivateKeyAndGenerateAddress(t *testing.T) {
 	prvKeyHex := "0x734e7c08b3651305c45422b9dc1e3fc0d67bc2bf8f3b50bff28a6760fb3e1057"
 	prvKeyB, _ := hexutil.Decode(prvKeyHex)
@@ -278,15 +280,15 @@ func TestScriptToAddress(t *testing.T) {
 //	t.Log(address.Str())
 //}
 
-func TestToWIFAndFromWIF(t *testing.T) {
-	prvKey, _ := GenerateKey()
-	wif := ToWIF(FromECDSA(prvKey))
-	assert.True(t, wif[0] == 'K' || wif[0] == 'L', "Invalid WIF format")
-
-	pk, err := FromWIF(wif)
-	if err != nil {
-		t.Errorf("FromWIF error:%s", err)
-	}
-
-	assert.True(t, bytes.Equal(FromECDSA(pk), FromECDSA(prvKey)), "Export private key not equal import key")
-}
+//func TestToWIFAndFromWIF(t *testing.T) {
+//	prvKey, _ := GenerateKey()
+//	wif := ToWIF(FromECDSA(prvKey))
+//	assert.True(t, wif[0] == 'K' || wif[0] == 'L', "Invalid WIF format")
+//
+//	pk, err := FromWIF(wif)
+//	if err != nil {
+//		t.Errorf("FromWIF error:%s", err)
+//	}
+//
+//	assert.True(t, bytes.Equal(FromECDSA(pk), FromECDSA(prvKey)), "Export private key not equal import key")
+//}

@@ -604,10 +604,10 @@ func (ks *KeyStore) SigData(data interface{}, address common.Address) ([]byte, e
 	return sign, nil
 }
 
-func (ks *KeyStore) SigUnitWithPwd(unit interface{}, privateKey *ecdsa.PrivateKey) ([]byte, error) {
+func (ks *KeyStore) SigUnitWithPwd(unit interface{}, privateKey []byte) ([]byte, error) {
 	hash := util.RlpHash(unit) //crypto.Keccak256Hash(util.RHashBytes(unit))
 	//unit signature
-	sign, err := crypto.Sign(hash.Bytes(), privateKey)
+	sign, err := crypto.MyCryptoLib.Sign(privateKey,hash.Bytes())
 	if err != nil {
 		return nil, err
 	}
@@ -625,7 +625,8 @@ func VerifyUnitWithPK(sign []byte, unit interface{}, publicKey []byte) bool {
 		return false
 	}
 	sig := sign[:len(sign)-1] // remove recovery id
-	return crypto.VerifySignature(publicKey, hash.Bytes(), sig)
+	pass,_:=crypto.MyCryptoLib.Verify(publicKey,sig, hash.Bytes())
+	return pass
 }
 
 //tx:TxMessages   []Message
@@ -647,6 +648,6 @@ func VerifyTXWithPK(sign []byte, tx interface{}, publicKey []byte) bool {
 	return VerifyUnitWithPK(sign, tx, publicKey)
 }
 
-func (ks *KeyStore) SigTXWithPwd(tx interface{}, privateKey *ecdsa.PrivateKey) ([]byte, error) {
+func (ks *KeyStore) SigTXWithPwd(tx interface{}, privateKey []byte) ([]byte, error) {
 	return ks.SigUnitWithPwd(tx, privateKey)
 }

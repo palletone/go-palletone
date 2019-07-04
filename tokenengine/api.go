@@ -288,14 +288,14 @@ type account struct {
 }
 
 func (a *account) Hash(msg []byte) ([]byte, error) {
-	return crypto.Keccak256(msg), nil
+	return crypto.MyCryptoLib.Hash(msg)
 }
 func (a *account) Sign(address common.Address, digest []byte) ([]byte, error) {
 	return a.signFn(address, digest)
 }
 func (a *account) Verify(pubKey, signature, digest []byte) (bool, error) {
 	//log.Debugf("Pubkey:%x,Signature:%x,hash:%x", pubKey, signature, digest)
-	return crypto.VerifySignature(pubKey, digest, signature), nil
+	return crypto.MyCryptoLib.Verify(pubKey, signature,digest )
 }
 func (a *account) GetPubKey(address common.Address) ([]byte, error) {
 	return a.pubKeyFn(address)

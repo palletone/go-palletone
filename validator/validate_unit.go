@@ -59,7 +59,7 @@ func (validate *Validate) validateUnitSignature(h *modules.Header) ValidationCod
 	//  pubKey to pubKey_bytes
 	//pubKey_bytes := crypto.CompressPubkey(pubKey)
 
-	if !crypto.VerifySignature(h.Authors.PubKey, hash.Bytes(), h.Authors.Signature) {
+	if pass,_:=crypto.MyCryptoLib.Verify(h.Authors.PubKey, h.Authors.Signature, hash.Bytes());!pass {
 		log.Debug("Verify unit signature error.")
 		return UNIT_STATE_INVALID_AUTHOR_SIGNATURE
 	}

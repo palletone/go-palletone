@@ -24,13 +24,19 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"golang.org/x/crypto/sha3"
 	"hash"
+	"crypto/ecdsa"
+	"fmt"
+	"github.com/btcsuite/btcd/btcec"
+	"math/big"
+	"github.com/palletone/go-palletone/common/log"
+	"crypto/rand"
 )
 
 type CryptoS256 struct {
 }
 
 func (c *CryptoS256) KeyGen() (privKey []byte, err error) {
-	key, err := GenerateKey()
+	key, err :=  ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 	if err != nil {
 		return nil, err
 	}
@@ -42,10 +48,29 @@ func (c *CryptoS256) PrivateKeyToPubKey(privKey []byte) ([]byte, error) {
 		return nil, err
 	}
 	pubKey := prvKey.PublicKey
-	return CompressPubkey(&pubKey), nil
+	return compressPubkey(&pubKey), nil
+}
+
+// DecompressPubkey parses a public key in the 33-byte compressed format.
+//func decompressPubkey(pubkey []byte) (*ecdsa.PublicKey, error) {
+//	if len(pubkey) != 33 {
+//		return nil, errors.New("invalid compressed public key length")
+//	}
+//	key, err := btcec.ParsePubKey(pubkey, btcec.S256())
+//	if err != nil {
+//		return nil, err
+//	}
+//	return key.ToECDSA(), nil
+//}
+
+// CompressPubkey encodes a public key to the 33-byte compressed format.
+func compressPubkey(pubkey *ecdsa.PublicKey) []byte {
+	return (*btcec.PublicKey)(pubkey).SerializeCompressed()
 }
 func (c *CryptoS256) Hash(msg []byte) (hash []byte, err error) {
-	return Keccak256(msg), nil
+	d := sha3.New256()
+		d.Write(msg)
+	return d.Sum(nil),nil
 }
 func (c *CryptoS256) GetHash() (h hash.Hash, err error) {
 	return sha3.New256(), nil
@@ -55,10 +80,41 @@ func (c *CryptoS256) Sign(privKey, digest []byte) (signature []byte, err error) 
 	if err != nil {
 		return nil, err
 	}
-	return Sign(digest, prvKey)
+	return sign(digest, prvKey)
+}
+func sign(hash []byte, prv *ecdsa.PrivateKey) ([]byte, error) {
+	if len(hash) != 32 {
+		return nil, fmt.Errorf("hash is required to be exactly 32 bytes (%d)", len(hash))
+	}
+	if prv.Curve != btcec.S256() {
+		return nil, fmt.Errorf("private key curve is not secp256k1")
+	}
+	key := (*btcec.PrivateKey)(prv)
+	sign, _ := key.Sign(hash)
+	return sign.Serialize(), nil
 }
 func (c *CryptoS256) Verify(pubKey, signature, digest []byte) (valid bool, err error) {
-	return VerifySignature(pubKey, digest, signature), nil
+	key, err := btcec.ParsePubKey(pubKey, btcec.S256())
+	if err != nil {
+		log.Info("parsePubKey error:" + err.Error())
+		return false,err
+	}
+	var sig *btcec.Signature
+	if len(signature) == 64 { // R||S
+		sig = &btcec.Signature{R: new(big.Int).SetBytes(signature[:32]), S: new(big.Int).SetBytes(signature[32:])}
+	} else {
+		sig, err = btcec.ParseSignature(signature, btcec.S256())
+		if err != nil {
+			log.Info("ParseSignature error:" + err.Error())
+			return false,err
+		}
+	}
+	// Reject malleable signatures. libsecp256k1 does this check but btcec doesn't.
+	if sig.S.Cmp(secp256k1_halfN) > 0 {
+
+		return false,errors.New("sig.S.Cmp > 0")
+	}
+	return sig.Verify(digest, key),nil
 }
 func (c *CryptoS256) Encrypt(key []byte, plaintext []byte) (ciphertext []byte, err error) {
 	return nil, errors.New("Not implement")
