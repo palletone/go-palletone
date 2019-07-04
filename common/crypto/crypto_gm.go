@@ -23,12 +23,12 @@ package crypto
 
 import (
 	"hash"
-	"github.com/tjfoc/gmsm/sm2"
+	"github.com/palletone/go-palletone/common/crypto/gmsm/sm2"
 	"fmt"
 	"github.com/palletone/go-palletone/common/math"
 	"math/big"
 	"errors"
-	"github.com/tjfoc/gmsm/sm3"
+	"github.com/palletone/go-palletone/common/crypto/gmsm/sm3"
 	"encoding/asn1"
 )
 

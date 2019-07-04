@@ -1,3 +1,5 @@
+Devin:因为该包不支持语义化的版本，所以直接代码引入，而不是作为vendor引入
+
 
 GM SM2/3/4 library based on Golang
 
