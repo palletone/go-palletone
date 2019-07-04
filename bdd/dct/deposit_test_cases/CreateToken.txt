@@ -14,7 +14,7 @@ createToken
 
 ccquery
     ${one}    Create List    getTokenInfo    dpt
-    ${two}    Create List    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43    ${one}    20
+    ${two}    Create List    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43    ${one}    ${0}
     ${result}    创建公用的POST请求    contract_ccquery    getTokenInfo    ${two}
     ${addressMap}    To Json    ${result}
     ${assetId}    Get From Dictionary    ${addressMap}    AssetID
