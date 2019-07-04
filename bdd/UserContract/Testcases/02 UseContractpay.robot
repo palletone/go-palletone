@@ -7,7 +7,7 @@ Library           BuiltIn
 *** Test Cases ***
 InstallContractpayTpl
     Given Unlock token holder succeed
-    ${reqId} =    When User installs contract template
+    ${reqId} =    When User installs contract template    github.com/palletone/go-palletone/contracts/example/go/contractpay    example
     And wait for transaction being packaged
     Then Wait for unit abount contract to be confirmed by unit height    ${reqId}
 
@@ -49,30 +49,6 @@ Payout
     Then Query user2 balance    ${newAddr}
 
 *** Keywords ***
-Unlock token holder succeed
-    unlockAccount    ${tokenHolder}
-
-User installs contract template
-    ${respJson}=    installContractTpl    ${tokenHolder}    ${tokenHolder}    100    100    jury06
-    ...    github.com/palletone/go-palletone/contracts/example/go/contractpay    example
-    ${result}=    Get From Dictionary    ${respJson}    result
-    ${reqId}=    Get From Dictionary    ${result}    reqId
-    ${tplId}=    Get From Dictionary    ${result}    tplId
-    Run Keyword If    '${tplId}'=='${EMPTY}'    Fail    "Install Contract Error"
-    Set Global Variable    ${gTplId}    ${tplId}
-    [Return]    ${reqId}
-
-User deploys contract
-    ${args}=    Create List    deploy
-    ${respJson}=    deployContract    ${tokenHolder}    ${tokenHolder}    1000    10    ${gTplId}
-    ...    ${args}
-    ${result}=    Get From Dictionary    ${respJson}    result
-    ${reqId}=    Get From Dictionary    ${result}    reqId
-    ${contractId}=    Get From Dictionary    ${result}    ContractId
-    Run Keyword If    '${contractId}'=='${EMPTY}'    Fail    "Deploy Contract Error"
-    Set Global Variable    ${gContractId}    ${contractId}
-    [Return]    ${reqId}
-
 User put status into contractpay
     [Arguments]    ${putmethod}
     ${args}=    Create List    ${putmethod}

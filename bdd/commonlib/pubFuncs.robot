@@ -3,6 +3,9 @@ Resource          pubVariables.robot
 Library           Collections
 
 *** Keywords ***
+Unlock token holder succeed
+    unlockAccount    ${tokenHolder}
+
 genInvoketxParams
     [Arguments]    ${caCertHolder}    ${caCertHolder}    ${from}    ${to}    ${certContractAddr}    ${args}
     ...    ${certid}
@@ -152,6 +155,30 @@ wait for transaction being packaged
 Unlock token holder succeed
     unlockAccount    ${tokenHolder}
     Log    "unlock ${tokenHolder} succeed"
+
+
+User installs contract template
+    [Arguments]    ${path}  ${name}
+    ${respJson}=    installContractTpl    ${tokenHolder}    ${tokenHolder}    100    100    jury06
+    ...    ${path}    ${name}
+    ${result}=    Get From Dictionary    ${respJson}    result
+    ${reqId}=    Get From Dictionary    ${result}    reqId
+    ${tplId}=    Get From Dictionary    ${result}    tplId
+    Run Keyword If    '${tplId}'=='${EMPTY}'    Fail    "Install Contract Error"
+    Set Global Variable    ${gTplId}    ${tplId}
+    [Return]    ${reqId}
+
+
+User deploys contract
+    ${args}=    Create List    deploy
+    ${respJson}=    deployContract    ${tokenHolder}    ${tokenHolder}    1000    10    ${gTplId}
+    ...    ${args}
+    ${result}=    Get From Dictionary    ${respJson}    result
+    ${reqId}=    Get From Dictionary    ${result}    reqId
+    ${contractId}=    Get From Dictionary    ${result}    ContractId
+    Run Keyword If    '${contractId}'=='${EMPTY}'    Fail    "Deploy Contract Error"
+    Set Global Variable    ${gContractId}    ${contractId}
+    [Return]    ${reqId}
 
 Wait for unit abount contract to be confirmed by unit height
     [Arguments]    ${reqId}
