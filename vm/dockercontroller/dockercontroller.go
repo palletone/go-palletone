@@ -35,7 +35,6 @@ import (
 	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/comm"
-	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	container "github.com/palletone/go-palletone/vm/api"
 	"github.com/palletone/go-palletone/vm/ccintf"
@@ -530,7 +529,7 @@ func (vm *DockerVM) GetContainerId(ccid ccintf.CCID) (string, error) {
 	//} else if ccid.PeerID != "" {
 	//	name = fmt.Sprintf("%s-%s", ccid.PeerID, name)
 	//}
-	name = name + ":" + contractcfg.GetConfig().ContractAddress
+	//name = name + ":" + contractcfg.GetConfig().ContractAddress
 	// replace any invalid characters with "-" (either in network id, peer id, or in the
 	// entire name returned by any format function)
 	name = vmRegExp.ReplaceAllString(name, "-")

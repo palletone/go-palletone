@@ -113,9 +113,9 @@ func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byt
 		templateCC.Path = tmpcc.path
 		templateCC.Version = tmpcc.version
 		templateCC.Language = tmpcc.language
-		templateCC.Desciption = tmpcc.description
+		//templateCC.Desciption = tmpcc.description
 		templateCC.Language = tmpcc.language
-		templateCC.Abi = tmpcc.abi
+		//templateCC.Abi = tmpcc.abi
 	} else {
 		errMsg := fmt.Sprintf("Deploy not find tplId[%x] in list", templateId)
 		log.Error(errMsg)
@@ -130,14 +130,14 @@ func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byt
 	depId := crypto.RequestIdToContractAddress(txHash) //common.NewAddress(btxId[:20], common.ContractHash)
 	//usrccName := depId.String()
 	usrcc := &ucc.UserChaincode{
-		Name:       templateCC.Name,
-		Path:       templateCC.Path,
-		Version:    templateCC.Version,
-		Desciption: templateCC.Desciption,
-		Language:   templateCC.Language,
-		Abi:        templateCC.Abi,
-		InitArgs:   args,
-		Enabled:    true,
+		Name:    templateCC.Name,
+		Path:    templateCC.Path,
+		Version: templateCC.Version,
+		//Desciption: templateCC.Desciption,
+		Language: templateCC.Language,
+		//Abi:        templateCC.Abi,
+		//InitArgs:   args,
+		Enabled: true,
 	}
 	chaincodeID := &pb.ChaincodeID{
 		Name:    usrcc.Name,
@@ -145,21 +145,21 @@ func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byt
 		Version: usrcc.Version,
 	}
 	spec.ChaincodeId = chaincodeID
-	err = ucc.DeployUserCC(chaincodeData, spec, chainID, usrcc, txId, txsim, setTimeOut)
+	err = ucc.DeployUserCC(depId.Bytes(), chaincodeData, spec, chainID, txId, txsim, setTimeOut)
 	if err != nil {
 		log.Error("deployUserCC err:", "error", err)
 		return nil, nil, errors2.WithMessage(err, "Deploy fail")
 	}
 	cc := &list2.CCInfo{
-		Id:          depId.Bytes(),
-		Name:        usrcc.Name,
-		Path:        usrcc.Path,
-		Version:     usrcc.Version,
-		Description: usrcc.Desciption,
-		Abi:         usrcc.Abi,
-		Language:    usrcc.Language,
-		TempleId:    templateId,
-		SysCC:       false,
+		Id:      depId.Bytes(),
+		Name:    usrcc.Name,
+		Path:    usrcc.Path,
+		Version: usrcc.Version,
+		//Description: usrcc.Desciption,
+		//Abi:         usrcc.Abi,
+		Language: usrcc.Language,
+		TempleId: templateId,
+		SysCC:    false,
 	}
 	//  测试
 	err = list2.SetChaincode(chainID, 0, cc)
