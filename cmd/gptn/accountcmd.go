@@ -441,10 +441,10 @@ func accountSignString(ctx *cli.Context) error {
 	ks := stack.GetKeyStore()
 	addr := ctx.Args().First()
 	account, _ := utils.MakeAddress(ks, addr)
-	hash := crypto.Keccak256Hash([]byte(ctx.Args()[1]))
-	fmt.Printf("%s Hash:%s", addr, hash.String())
+	data := []byte(ctx.Args()[1])
+	fmt.Printf("%s Data:%#x", addr, data)
 	pwd := getPassPhrase("Please give a password to unlock your account", false, 0, utils.MakePasswordList(ctx))
-	sign, err := ks.SignHashWithPassphrase(account, pwd, hash.Bytes())
+	sign, err := ks.SignMessageWithPassphrase(account, pwd, data)
 	if err != nil {
 		utils.Fatalf("Sign error:%s", err)
 	}
@@ -464,7 +464,7 @@ func accountDumpKey(ctx *cli.Context) error {
 	wif := crypto.ToWIF(prvKey)
 	fmt.Printf("Your private key hex is : {%x}, WIF is {%s}\n", prvKey, wif)
 	//pK, _ := crypto.ToECDSA(prvKey)
-	pubBytes,_ := crypto.MyCryptoLib.PrivateKeyToPubKey(prvKey)
+	pubBytes, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(prvKey)
 	fmt.Printf("Compressed public key hex is {%x}", pubBytes)
 	return nil
 }

@@ -83,7 +83,7 @@ func (w *keystoreWallet) SelfDerive(base accounts.DerivationPath, chain ethereum
 // the given account. If the wallet does not wrap this particular account, an
 // error is returned to avoid account leakage (even though in theory we may be
 // able to sign via our shared keystore backend).
-func (w *keystoreWallet) SignHash(account accounts.Account, hash []byte) ([]byte, error) {
+func (w *keystoreWallet) SignMessage(account accounts.Account, msg []byte) ([]byte, error) {
 	// Make sure the requested account is contained within
 	if account.Address != w.account.Address {
 		return nil, accounts.ErrUnknownAccount
@@ -92,7 +92,7 @@ func (w *keystoreWallet) SignHash(account accounts.Account, hash []byte) ([]byte
 		return nil, accounts.ErrUnknownAccount
 	}
 	// Account seems valid, request the keystore to sign
-	return w.keystore.SignHash(account.Address, hash)
+	return w.keystore.SignMessage(account.Address, msg)
 }
 
 // SignTx implements accounts.Wallet, attempting to sign the given transaction
@@ -113,7 +113,7 @@ func (w *keystoreWallet) SignTx(account accounts.Account, tx *modules.Transactio
 
 // SignHashWithPassphrase implements accounts.Wallet, attempting to sign the
 // given hash with the given account using passphrase as extra authentication.
-func (w *keystoreWallet) SignHashWithPassphrase(account accounts.Account, passphrase string, hash []byte) ([]byte, error) {
+func (w *keystoreWallet) SignMessageWithPassphrase(account accounts.Account, passphrase string, msg []byte) ([]byte, error) {
 	// Make sure the requested account is contained within
 	if account.Address != w.account.Address {
 		return nil, accounts.ErrUnknownAccount
@@ -122,7 +122,7 @@ func (w *keystoreWallet) SignHashWithPassphrase(account accounts.Account, passph
 		return nil, accounts.ErrUnknownAccount
 	}
 	// Account seems valid, request the keystore to sign
-	return w.keystore.SignHashWithPassphrase(account, passphrase, hash)
+	return w.keystore.SignMessageWithPassphrase(account, passphrase, msg)
 }
 
 // SignTxWithPassphrase implements accounts.Wallet, attempting to sign the given

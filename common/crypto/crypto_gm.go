@@ -90,12 +90,12 @@ func (c *CryptoGm) Hash(msg []byte) (hash []byte, err error) {
 func (c *CryptoGm) GetHash() (h hash.Hash, err error) {
 	return sm3.New(), nil
 }
-func (c *CryptoGm) Sign(privKey, digest []byte) (signature []byte, err error) {
+func (c *CryptoGm) Sign(privKey, message []byte) (signature []byte, err error) {
 	prvKey, err := sm2ToECDSA(privKey)
 	if err != nil {
 		return nil, err
 	}
-	return prvKey.Sign(nil, digest, nil)
+	return prvKey.Sign(nil, message, nil)
 	//r, s, err := sm2.Sign(prvKey, digest)
 	//if err != nil {
 	//	return nil, err
@@ -104,13 +104,13 @@ func (c *CryptoGm) Sign(privKey, digest []byte) (signature []byte, err error) {
 	//return Sign(digest, prvKey)
 }
 
-func (c *CryptoGm) Verify(pubKey, signature, digest []byte) (valid bool, err error) {
+func (c *CryptoGm) Verify(pubKey, signature, message []byte) (valid bool, err error) {
 	//r, s, err := unmarshalSM2Signature(signature)
 	//if err != nil {
 	//	return false, err
 	//}
 	publicKey := sm2.Decompress(pubKey)
-	return publicKey.Verify(digest, signature), nil
+	return publicKey.Verify(message, signature), nil
 	//return sm2.Verify(publicKey, digest, r, s), nil
 	//return VerifySignature(pubKey, digest, signature), nil
 }

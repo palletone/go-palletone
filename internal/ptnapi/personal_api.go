@@ -29,7 +29,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto"
+
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/core/accounts"
@@ -65,17 +65,6 @@ func (s *PrivateAccountAPI) ListAccounts() []string {
 		}
 	}
 	return addresses
-}
-
-// ListAccounts will return a list of addresses for accounts this node manages.
-func (s *PrivateAccountAPI) LlistAccounts() ([]string, error) {
-	addresses := make([]string, 0)
-	for _, wallet := range s.am.Wallets() {
-		for _, account := range wallet.Accounts() {
-			addresses = append(addresses, account.Address.String())
-		}
-	}
-	return addresses, nil
 }
 
 // rawWallet is a JSON representation of an accounts.Wallet interface, with its
@@ -261,10 +250,10 @@ func (s *PrivateAccountAPI) SignTransaction(ctx context.Context, args SendTxArgs
 //   keccak256("\x19Ethereum Signed Message:\n"${message length}${message}).
 //
 // This gives context to the signed message and prevents signing of transactions.
-func signHash(data []byte) []byte {
-	msg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(data), data)
-	return crypto.Keccak256([]byte(msg))
-}
+//func signHash(data []byte) []byte {
+//	msg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(data), data)
+//	return crypto.Keccak256([]byte(msg))
+//}
 
 // Sign calculates an PalletOne ECDSA signature for:
 // keccack256("\x19Ethereum Signed Message:\n" + len(message) + message))
@@ -285,7 +274,7 @@ func (s *PrivateAccountAPI) Sign(ctx context.Context, data hexutil.Bytes, addr s
 		return nil, err
 	}
 	// Assemble sign the data with the wallet
-	signature, err := wallet.SignHashWithPassphrase(account, passwd, data)
+	signature, err := wallet.SignMessageWithPassphrase(account, passwd, data)
 	if err != nil {
 		return nil, err
 	}

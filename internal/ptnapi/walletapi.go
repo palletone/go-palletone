@@ -35,6 +35,7 @@ func (s *PublicWalletAPI) Forking(ctx context.Context, rate uint64) uint64 {
 func (s *PrivateWalletAPI) Forking(ctx context.Context, rate uint64) uint64 {
 	return forking(ctx, s.b)
 }
+
 type PublicWalletAPI struct {
 	b Backend
 }
@@ -87,7 +88,7 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 	if err != nil {
 		return "", fmt.Errorf("Select utxo err")
 	}
-        limitdao,_:=decimal.NewFromString("0.0001")
+	limitdao, _ := decimal.NewFromString("0.0001")
 	if !fee.GreaterThanOrEqual(limitdao) {
 		return "", fmt.Errorf("fee cannot less than 1 PTN ")
 	}
@@ -525,11 +526,11 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 		//privKey, _ := ks.DumpPrivateKey(account, "1")
 		//return crypto.CompressPubkey(&privKey.PublicKey), nil
 	}
-	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
+	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
 		ks := s.b.GetKeyStore()
 		//account, _ := MakeAddress(ks, addr.String())
 		//privKey, _ := ks.DumpPrivateKey(account, "1")
-		return ks.SignHash(addr, hash)
+		return ks.SignMessage(addr, msg)
 		//return crypto.Sign(hash, privKey)
 	}
 	var srawinputs []ptnjson.RawTxInput
@@ -875,11 +876,9 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 		//privKey, _ := ks.DumpPrivateKey(account, "1")
 		//return crypto.CompressPubkey(&privKey.PublicKey), nil
 	}
-	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
+	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
 		ks := s.b.GetKeyStore()
-		//account, _ := MakeAddress(ks, addr.String())
-		//privKey, _ := ks.DumpPrivateKey(account, "1")
-		return ks.SignHash(addr, hash)
+		return ks.SignMessage(addr, msg)
 		//return crypto.Sign(hash, privKey)
 	}
 	var srawinputs []ptnjson.RawTxInput
@@ -1072,9 +1071,9 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 		return ks.GetPublicKey(addr)
 	}
 	//sign tx
-	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
+	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
 		ks := s.b.GetKeyStore()
-		return ks.SignHash(addr, hash)
+		return ks.SignMessage(addr, msg)
 	}
 	utxoLockScripts := make(map[modules.OutPoint][]byte)
 	for _, utxo := range usedUtxo {
@@ -1096,21 +1095,20 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 	return submitTransaction(ctx, s.b, rawTx)
 }
 
-
 func (s *PrivateWalletAPI) CreateProofOfExistenceTx(ctx context.Context, addr string,
-	mainData, extraData,reference string, password string) (common.Hash, error) {
+	mainData, extraData, reference string, password string) (common.Hash, error) {
 	gasToken := dagconfig.DagConfig.GasToken
-	ptn1:=decimal.New(1,0)
-	rawTx, usedUtxo, err := s.buildRawTransferTx(gasToken, addr, addr, decimal.New(0,0), ptn1)
+	ptn1 := decimal.New(1, 0)
+	rawTx, usedUtxo, err := s.buildRawTransferTx(gasToken, addr, addr, decimal.New(0, 0), ptn1)
 	if err != nil {
 		return common.Hash{}, err
 	}
 
-		textPayload := new(modules.DataPayload)
-		textPayload.MainData = []byte(mainData)
-		textPayload.ExtraData = []byte(extraData)
-		textPayload.Reference = []byte(reference)
-		rawTx.TxMessages = append(rawTx.TxMessages, modules.NewMessage(modules.APP_DATA, textPayload))
+	textPayload := new(modules.DataPayload)
+	textPayload.MainData = []byte(mainData)
+	textPayload.ExtraData = []byte(extraData)
+	textPayload.Reference = []byte(reference)
+	rawTx.TxMessages = append(rawTx.TxMessages, modules.NewMessage(modules.APP_DATA, textPayload))
 
 	//lockscript
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
@@ -1119,9 +1117,9 @@ func (s *PrivateWalletAPI) CreateProofOfExistenceTx(ctx context.Context, addr st
 		return ks.GetPublicKey(addr)
 	}
 	//sign tx
-	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
+	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
 		ks := s.b.GetKeyStore()
-		return ks.SignHash(addr, hash)
+		return ks.SignMessage(addr, msg)
 	}
 	utxoLockScripts := make(map[modules.OutPoint][]byte)
 	for _, utxo := range usedUtxo {
@@ -1195,7 +1193,7 @@ func (s *PublicWalletAPI) GetAllTokenInfo(ctx context.Context) (string, error) {
 	GlobalStateContractId := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	result, err := s.b.GetContractStatesByPrefix(GlobalStateContractId, modules.GlobalPrefix)
 	if nil == result || nil != err {
-           return  "There is no PRC20 and PRC721 Token Yet",nil
+		return "There is no PRC20 and PRC721 Token Yet", nil
 	}
 	var all []modules.GlobalTokenInfo
 	for key, val := range result {
@@ -1208,7 +1206,7 @@ func (s *PublicWalletAPI) GetAllTokenInfo(ctx context.Context) (string, error) {
 	}
 	allToken, err := json.Marshal(all)
 	if nil != err {
-		return "There is no PRC20 and PRC721 Token Yet",nil
+		return "There is no PRC20 and PRC721 Token Yet", nil
 	}
 
 	return string(allToken), err

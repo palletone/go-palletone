@@ -334,12 +334,12 @@ type account struct {
 func (a *account) Hash(msg []byte) ([]byte, error) {
 	return crypto.MyCryptoLib.Hash(msg)
 }
-func (a *account) Sign(address common.Address, digest []byte) ([]byte, error) {
-	return a.signFn(address, digest)
+func (a *account) Sign(address common.Address, msg []byte) ([]byte, error) {
+	return a.signFn(address, msg)
 }
-func (a *account) Verify(pubKey, signature, digest []byte) (bool, error) {
+func (a *account) Verify(pubKey, signature, msg []byte) (bool, error) {
 	//log.Debugf("Pubkey:%x,Signature:%x,hash:%x", pubKey, signature, digest)
-	return crypto.MyCryptoLib.Verify(pubKey, signature,digest )
+	return crypto.MyCryptoLib.Verify(pubKey, signature, msg)
 }
 func (a *account) GetPubKey(address common.Address) ([]byte, error) {
 	return a.pubKeyFn(address)
