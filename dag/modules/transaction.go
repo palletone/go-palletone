@@ -360,7 +360,7 @@ type GetAddressFromScriptFunc func(lockScript []byte) (common.Address, error)
 type GetScriptSignersFunc func(tx *Transaction, msgIdx, inputIndex int) ([]common.Address, error)
 
 //计算该交易的手续费，基于UTXO，所以传入查询UTXO的函数指针
-func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc, unitTime int64) (*AmountAsset, error) {
+func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, error) {
 	msg0 := tx.TxMessages[0]
 	if msg0.App != APP_PAYMENT {
 		return nil, errors.New("Tx message 0 must a payment payload")
@@ -450,7 +450,22 @@ func (tx *Transaction) GetNewUtxos() map[OutPoint]*Utxo {
 	}
 	return result
 }
-
+func (tx *Transaction) GetSpendOutpoints() []*OutPoint {
+	result := []*OutPoint{}
+	for _, msg := range tx.TxMessages {
+		if msg.App != APP_PAYMENT {
+			continue
+		}
+		pay := msg.Payload.(*PaymentPayload)
+		inputs := pay.Inputs
+		for _, input := range inputs {
+			if input.PreviousOutPoint != nil {
+				result = append(result, input.PreviousOutPoint)
+			}
+		}
+	}
+	return result
+}
 func (tx *Transaction) GetContractTxSignatureAddress() []common.Address {
 	if !tx.IsContractTx() {
 		return nil
@@ -786,8 +801,8 @@ func (tx *Transaction) GetContractInvokeReqMsgIdx() int {
 	}
 	return -1
 }
-func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, unitTime int64, getSignerFunc GetScriptSignersFunc, mediatorAddr common.Address) ([]*Addition, error) {
-	fee, err := tx.GetTxFee(queryUtxoFunc, unitTime)
+func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFunc GetScriptSignersFunc, mediatorAddr common.Address) ([]*Addition, error) {
+	fee, err := tx.GetTxFee(queryUtxoFunc)
 	result := []*Addition{}
 	if err != nil {
 		return nil, err

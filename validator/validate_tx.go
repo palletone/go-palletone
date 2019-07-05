@@ -46,8 +46,7 @@ Tx的第一条Msg必须是Payment
 To validate one transaction
 如果isFullTx为false，意味着这个Tx还没有被陪审团处理完，所以结果部分的Payment不验证
 */
-func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool,
-	unitTime int64) (ValidationCode, []*modules.Addition) {
+func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (ValidationCode, []*modules.Addition) {
 	if len(tx.TxMessages) == 0 {
 		return TxValidationCode_INVALID_MSG, nil
 	}
@@ -55,7 +54,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool,
 	if tx.TxMessages[0].App != modules.APP_PAYMENT { // 交易费
 		return TxValidationCode_INVALID_MSG, nil
 	}
-	txFeePass, txFee := validate.validateTxFee(tx, unitTime)
+	txFeePass, txFee := validate.validateTxFee(tx)
 	if !txFeePass {
 		return TxValidationCode_INVALID_FEE, nil
 	}
@@ -259,12 +258,12 @@ func (v *Validate) validateVoteMediatorTx(payload interface{}) ValidationCode {
 }
 
 //验证手续费是否合法，并返回手续费的分配情况
-func (validate *Validate) validateTxFee(tx *modules.Transaction, unitTime int64) (bool, []*modules.Addition) {
+func (validate *Validate) validateTxFee(tx *modules.Transaction) (bool, []*modules.Addition) {
 	if validate.utxoquery == nil {
 		log.Warn("Cannot validate tx fee, your validate utxoquery not set")
 		return true, nil
 	}
-	feeAllocate, err := tx.GetTxFeeAllocate(validate.utxoquery.GetUtxoEntry, unitTime, tokenengine.GetScriptSigners, common.Address{})
+	feeAllocate, err := tx.GetTxFeeAllocate(validate.utxoquery.GetUtxoEntry, tokenengine.GetScriptSigners, common.Address{})
 	if err != nil {
 		log.Warn("compute tx fee error: " + err.Error())
 		return false, nil
