@@ -56,6 +56,26 @@ type Header struct {
 	CryptoLib   []byte        `json:"crypto_lib"`    //该区块使用的加解密算法和哈希算法，0位表示非对称加密算法，1位表示Hash算法
 }
 
+func (h *Header) NumberU64() uint64 {
+	return h.Number.Index
+}
+
+func (h *Header) GetGroupPubKeyByte() []byte {
+	return h.GroupPubKey
+}
+
+func (h *Header) GetGroupPubKey() (kyber.Point, error) {
+	pubKeyB := h.GroupPubKey
+	if len(pubKeyB) == 0 {
+		return nil, errors.New("group public key is null")
+	}
+
+	pubKey := core.Suite.Point()
+	err := pubKey.UnmarshalBinary(pubKeyB)
+
+	return pubKey, err
+}
+
 func (cpy *Header) CopyHeader(h *Header) {
 	cpy = h
 	if len(h.ParentsHash) > 0 {
@@ -252,20 +272,12 @@ func (unit *Unit) Author() common.Address {
 	return unit.UnitHeader.Author()
 }
 
-func (unit *Unit) GroupPubKey() (kyber.Point, error) {
-	pubKeyB := unit.UnitHeader.GroupPubKey
-	if len(pubKeyB) == 0 {
-		return nil, errors.New("group public key is null")
-	}
-
-	pubKey := core.Suite.Point()
-	err := pubKey.UnmarshalBinary(pubKeyB)
-
-	return pubKey, err
+func (unit *Unit) GetGroupPubKey() (kyber.Point, error) {
+	return unit.UnitHeader.GetGroupPubKey()
 }
 
-func (unit *Unit) GetGroupPubKey() []byte {
-	return unit.UnitHeader.GroupPubKey
+func (unit *Unit) GetGroupPubKeyByte() []byte {
+	return unit.UnitHeader.GetGroupPubKeyByte()
 }
 
 func (unit *Unit) IsEmpty() bool {
@@ -412,7 +424,7 @@ func (u *Unit) Number() *ChainIndex {
 }
 
 func (u *Unit) NumberU64() uint64 {
-	return u.UnitHeader.Number.Index
+	return u.UnitHeader.NumberU64()
 }
 
 func (u *Unit) Timestamp() int64 {

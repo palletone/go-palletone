@@ -197,6 +197,7 @@ func (chain *MemDag) SetUnitGroupSign(uHash common.Hash /*, groupPubKey []byte*/
 	chain.lock.Lock()
 	defer chain.lock.Unlock()
 	chain.setStableUnit(uHash, unit.NumberU64(), txpool)
+
 	//2. Update unit.groupSign
 	header := unit.Header()
 	//header.GroupPubKey = groupPubKey
@@ -207,6 +208,7 @@ func (chain *MemDag) SetUnitGroupSign(uHash common.Hash /*, groupPubKey []byte*/
 		log.Debugf("sent toGroupSign event")
 		go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
 	}
+
 	return chain.ldbunitRep.SaveHeader(header)
 }
 
@@ -270,11 +272,11 @@ func (chain *MemDag) setNextStableUnit(unit *modules.Unit, txpool txspool.ITxPoo
 }
 
 func (chain *MemDag) checkUnitIrreversibleWithGroupSign(unit *modules.Unit) bool {
-	if unit.GetGroupPubKey() == nil || unit.GetGroupSign() == nil {
+	if unit.GetGroupPubKeyByte() == nil || unit.GetGroupSign() == nil {
 		return false
 	}
 
-	pubKey, err := unit.GroupPubKey()
+	pubKey, err := unit.GetGroupPubKey()
 	if err != nil {
 		log.Debug(err.Error())
 		return false
