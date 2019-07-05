@@ -404,7 +404,7 @@ func (p *Processor) GenContractSigTransaction(signer common.Address, password st
 							}
 						}
 						log.Debugf("[%s]GenContractSigTransaction, Lock script:%x", shortId(reqId.String()), utxo.PkScript)
-						sign, err := tokenengine.MultiSignOnePaymentInput(tx, tokenengine.SigHashAll, msgidx, inputIdx, utxo.PkScript, redeemScript, ks.GetPublicKey, ks.SignHash, nil)
+						sign, err := tokenengine.MultiSignOnePaymentInput(tx, tokenengine.SigHashAll, msgidx, inputIdx, utxo.PkScript, redeemScript, ks.GetPublicKey, ks.SignMessage, nil)
 						if err != nil {
 							log.Errorf("[%s]GenContractSigTransaction, Sign error:%s", shortId(reqId.String()), err)
 						}

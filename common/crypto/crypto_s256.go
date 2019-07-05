@@ -21,22 +21,22 @@
 package crypto
 
 import (
+	"crypto/ecdsa"
+	"crypto/rand"
+	"fmt"
+	"github.com/btcsuite/btcd/btcec"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/errors"
 	"golang.org/x/crypto/sha3"
 	"hash"
-	"crypto/ecdsa"
-	"fmt"
-	"github.com/btcsuite/btcd/btcec"
 	"math/big"
-	"github.com/palletone/go-palletone/common/log"
-	"crypto/rand"
 )
 
 type CryptoS256 struct {
 }
 
 func (c *CryptoS256) KeyGen() (privKey []byte, err error) {
-	key, err :=  ecdsa.GenerateKey(btcec.S256(), rand.Reader)
+	key, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
 	if err != nil {
 		return nil, err
 	}
@@ -69,14 +69,18 @@ func compressPubkey(pubkey *ecdsa.PublicKey) []byte {
 }
 func (c *CryptoS256) Hash(msg []byte) (hash []byte, err error) {
 	d := sha3.New256()
-		d.Write(msg)
-	return d.Sum(nil),nil
+	d.Write(msg)
+	return d.Sum(nil), nil
 }
 func (c *CryptoS256) GetHash() (h hash.Hash, err error) {
 	return sha3.New256(), nil
 }
-func (c *CryptoS256) Sign(privKey, digest []byte) (signature []byte, err error) {
+func (c *CryptoS256) Sign(privKey, message []byte) (signature []byte, err error) {
 	prvKey, err := ToECDSA(privKey)
+	if err != nil {
+		return nil, err
+	}
+	digest, err := c.Hash(message)
 	if err != nil {
 		return nil, err
 	}
@@ -93,11 +97,11 @@ func sign(hash []byte, prv *ecdsa.PrivateKey) ([]byte, error) {
 	sign, _ := key.Sign(hash)
 	return sign.Serialize(), nil
 }
-func (c *CryptoS256) Verify(pubKey, signature, digest []byte) (valid bool, err error) {
+func (c *CryptoS256) Verify(pubKey, signature, message []byte) (valid bool, err error) {
 	key, err := btcec.ParsePubKey(pubKey, btcec.S256())
 	if err != nil {
 		log.Info("parsePubKey error:" + err.Error())
-		return false,err
+		return false, err
 	}
 	var sig *btcec.Signature
 	if len(signature) == 64 { // R||S
@@ -106,15 +110,19 @@ func (c *CryptoS256) Verify(pubKey, signature, digest []byte) (valid bool, err e
 		sig, err = btcec.ParseSignature(signature, btcec.S256())
 		if err != nil {
 			log.Info("ParseSignature error:" + err.Error())
-			return false,err
+			return false, err
 		}
 	}
 	// Reject malleable signatures. libsecp256k1 does this check but btcec doesn't.
 	if sig.S.Cmp(secp256k1_halfN) > 0 {
 
-		return false,errors.New("sig.S.Cmp > 0")
+		return false, errors.New("sig.S.Cmp > 0")
 	}
-	return sig.Verify(digest, key),nil
+	digest, err := c.Hash(message)
+	if err != nil {
+		return false, err
+	}
+	return sig.Verify(digest, key), nil
 }
 func (c *CryptoS256) Encrypt(key []byte, plaintext []byte) (ciphertext []byte, err error) {
 	return nil, errors.New("Not implement")

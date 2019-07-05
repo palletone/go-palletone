@@ -53,11 +53,11 @@ type ICrypto interface {
 	// Note that when a signature of a hash of a larger message is needed,
 	// the caller is responsible for hashing the larger message and passing
 	// the hash (as digest).
-	Sign(privKey, digest []byte) (signature []byte, err error)
+	Sign(privKey, message []byte) (signature []byte, err error)
 
 	// Verify verifies signature against key k and digest
 	// The opts argument should be appropriate for the algorithm used.
-	Verify(pubKey, signature, digest []byte) (valid bool, err error)
+	Verify(pubKey, signature, message []byte) (valid bool, err error)
 
 	// Encrypt encrypts plaintext using key k.
 	// The opts argument should be appropriate for the algorithm used.

@@ -81,8 +81,9 @@ func (q *mockStatedbQuery) GetContractStatesByPrefix(id []byte, prefix string) (
 
 type mockUtxoQuery struct {
 }
-func (q *mockUtxoQuery) IsUtxoSpent(outpoint *modules.OutPoint) (bool,error){
-	return false,nil
+
+func (q *mockUtxoQuery) IsUtxoSpent(outpoint *modules.OutPoint) (bool, error) {
+	return false, nil
 }
 func (q *mockUtxoQuery) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	hash := common.HexToHash("1")
@@ -153,8 +154,8 @@ func newTx1(t *testing.T) *modules.Transaction {
 	getPubKeyFn := func(common.Address) ([]byte, error) {
 		return crypto.CompressPubkey(&privKey.PublicKey), nil
 	}
-	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
-		return crypto.Sign(hash, privKey)
+	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
+		return crypto.MyCryptoLib.Sign(privKeyBytes, msg)
 	}
 	_, err := tokenengine.SignTxAllPaymentInput(tx, 1, lockScripts, nil, getPubKeyFn, getSignFn)
 	if err != nil {
@@ -194,8 +195,8 @@ func newTx2(t *testing.T, outpoint *modules.OutPoint) *modules.Transaction {
 	getPubKeyFn := func(common.Address) ([]byte, error) {
 		return crypto.CompressPubkey(&privKey.PublicKey), nil
 	}
-	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
-		return crypto.Sign(hash, privKey)
+	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
+		return crypto.MyCryptoLib.Sign(privKeyBytes, msg)
 	}
 	_, err := tokenengine.SignTxAllPaymentInput(tx, 1, lockScripts, nil, getPubKeyFn, getSignFn)
 	if err != nil {
@@ -235,7 +236,7 @@ func TestSignAndVerifyATx(t *testing.T) {
 
 	privKeyBytes, _ := hex.DecodeString("2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644")
 
-	pubKeyBytes ,_:= crypto.MyCryptoLib.PrivateKeyToPubKey(privKeyBytes)
+	pubKeyBytes, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(privKeyBytes)
 	pubKeyHash := crypto.Hash160(pubKeyBytes)
 	t.Logf("Public Key:%x", pubKeyBytes)
 	addr := crypto.PubkeyBytesToAddress(pubKeyBytes)

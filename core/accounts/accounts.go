@@ -98,7 +98,7 @@ type Wallet interface {
 	// about which fields or actions are needed. The user may retry by providing
 	// the needed details via SignHashWithPassphrase, or by other means (e.g. unlock
 	// the account in a keystore).
-	SignHash(account Account, hash []byte) ([]byte, error)
+	SignMessage(account Account, msg []byte) ([]byte, error)
 
 	// SignTx requests the wallet to sign the given transaction.
 	//
@@ -118,7 +118,7 @@ type Wallet interface {
 	//
 	// It looks up the account specified either solely via its address contained within,
 	// or optionally with the aid of any location metadata from the embedded URL field.
-	SignHashWithPassphrase(account Account, passphrase string, hash []byte) ([]byte, error)
+	SignMessageWithPassphrase(account Account, passphrase string, msg []byte) ([]byte, error)
 
 	// SignTxWithPassphrase requests the wallet to sign the given transaction, with the
 	// given passphrase as extra authentication information.

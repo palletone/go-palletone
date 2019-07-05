@@ -406,7 +406,7 @@ func (p *PalletOne) SignGenericTransaction(from common.Address, tx *modules.Tran
 	// 3. 使用tokenengine 和 KeyStore 给 tx 签名
 	ks := p.GetKeyStore()
 	_, err := tokenengine.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, inputpoints, nil,
-		ks.GetPublicKey, ks.SignHash)
+		ks.GetPublicKey, ks.SignMessage)
 	if err != nil {
 		return nil, err
 	}
