@@ -42,6 +42,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
+	"strings"
 )
 
 var (
@@ -172,7 +173,7 @@ func (s *PublicContractAPI) Ccinstalltx(ctx context.Context, from, to, daoAmount
 	}
 	log.Debug("-----Ccinstalltx:", "addrHash", addrs, "len", len(addrs))
 
-	reqId, tplId, err := s.b.ContractInstallReqTx(fromAddr, toAddr, amount, fee, tplName, path, version, "Description...", "ABI ...", "go", addrs)
+	reqId, tplId, err := s.b.ContractInstallReqTx(fromAddr, toAddr, amount, fee, tplName, path, version, "Description...", "ABI ...", strings.ToUpper("golang"), addrs)
 	sReqId := hex.EncodeToString(reqId[:])
 	sTplId := hex.EncodeToString(tplId)
 	log.Debug("-----Ccinstalltx:", "reqId", sReqId, "tplId", sTplId)

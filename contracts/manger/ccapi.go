@@ -18,6 +18,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/contracts/ucc"
 
+	"github.com/palletone/go-palletone/contracts/contractcfg"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag"
 	md "github.com/palletone/go-palletone/dag/modules"
@@ -84,7 +85,7 @@ func GetSysCCList() (ccInf []cclist.CCInfo, ccCount int, errs error) {
 		ci.Name = ccinf.Name
 		ci.Path = ccinf.Path
 		//ci.Enable = ccinf.Enabled
-		ci.SysCC = true
+		//ci.SysCC = true
 		scclist = append(scclist, ci)
 	}
 	return scclist, count, err
@@ -96,13 +97,13 @@ func Install(dag dag.IDag, chainID, ccName, ccPath, ccVersion, ccDescription, cc
 	defer log.Info("Install exit", "chainID", chainID, "name", ccName, "path", ccPath, "version", ccVersion, "ccdescription", ccDescription, "ccabi", ccAbi, "cclanguage", ccLanguage)
 	//  用于合约实列
 	usrcc := &ucc.UserChaincode{
-		Name:       ccName,
-		Path:       ccPath,
-		Version:    ccVersion,
-		Desciption: ccDescription,
-		Abi:        ccAbi,
-		Language:   ccLanguage,
-		Enabled:    true,
+		Name:    ccName,
+		Path:    ccPath,
+		Version: ccVersion,
+		//Desciption: ccDescription,
+		//Abi:        ccAbi,
+		Language: ccLanguage,
+		Enabled:  true,
 	}
 	//  产生唯一模板id
 	var buffer bytes.Buffer
@@ -124,7 +125,7 @@ func Install(dag dag.IDag, chainID, ccName, ccPath, ccVersion, ccDescription, cc
 		return nil, errors.New(errMsg)
 	}
 	//将合约代码文件打包成 tar 文件
-	paylod, err := ucc.GetUserCCPayload(chainID, usrcc)
+	paylod, err := ucc.GetUserCCPayload(usrcc)
 	if err != nil {
 		log.Error("getUserCCPayload err:", "error", err)
 		return nil, err
@@ -137,28 +138,16 @@ func Install(dag dag.IDag, chainID, ccName, ccPath, ccVersion, ccDescription, cc
 func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
 	log.Info("Deploy enter", "chainID", chainID, "templateId", templateId, "txId", txId)
 	defer log.Info("Deploy exit", "chainID", chainID, "templateId", templateId, "txId", txId)
-	var mksupt Support = &SupportImpl{}
 	setTimeOut := time.Duration(30) * time.Second
 	if timeout > 0 {
 		setTimeOut = timeout
 	}
-	spec := &pb.ChaincodeSpec{
-		Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]),
-		Input: &pb.ChaincodeInput{
-			Args: args,
-		},
-		ChaincodeId: &pb.ChaincodeID{},
-	}
-	templateCC := &ucc.UserChaincode{}
-	var err error
-	var chaincodeData []byte
-
-	templateCC, chaincodeData, err = ucc.RecoverChainCodeFromDb(spec, chainID, templateId)
+	templateCC, chaincodeData, err := ucc.RecoverChainCodeFromDb(chainID, templateId)
 	if err != nil {
 		log.Error("Deploy", "chainid:", chainID, "templateId:", templateId, "RecoverChainCodeFromDb err", err)
 		return nil, nil, err
 	}
-
+	mksupt := &SupportImpl{}
 	txsim, err := mksupt.GetTxSimulator(rwM, idag, chainID, txId)
 	if err != nil {
 		log.Error("getTxSimulator err:", "error", err)
@@ -168,22 +157,29 @@ func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byt
 	depId := crypto.RequestIdToContractAddress(txHash) //common.NewAddress(btxId[:20], common.ContractHash)
 	usrccName := depId.String()
 	usrcc := &ucc.UserChaincode{
-		Name:       usrccName,
-		Path:       templateCC.Path,
-		Version:    templateCC.Version,
-		Desciption: templateCC.Desciption,
-		Language:   templateCC.Language,
-		Abi:        templateCC.Abi,
-		InitArgs:   args,
-		Enabled:    true,
+		Name:    usrccName,
+		Path:    templateCC.Path,
+		Version: templateCC.Version,
+		//Desciption: templateCC.Desciption,
+		Language: templateCC.Language,
+		//Abi:        templateCC.Abi,
+		//InitArgs:   args,
+		Enabled: true,
 	}
-	chaincodeID := &pb.ChaincodeID{
-		Name:    usrcc.Name,
-		Path:    usrcc.Path,
-		Version: usrcc.Version,
+	//  TODO 可以开启单机多容器,防止容器名冲突
+	usrcc.Version += contractcfg.GetConfig().ContractAddress
+	spec := &pb.ChaincodeSpec{
+		Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value[templateCC.Language]),
+		Input: &pb.ChaincodeInput{
+			Args: args,
+		},
+		ChaincodeId: &pb.ChaincodeID{
+			Name:    usrcc.Name,
+			Path:    usrcc.Path,
+			Version: usrcc.Version,
+		},
 	}
-	spec.ChaincodeId = chaincodeID
-	err = ucc.DeployUserCC(chaincodeData, spec, chainID, usrcc, txId, txsim, setTimeOut)
+	err = ucc.DeployUserCC(depId.Bytes(), chaincodeData, spec, chainID, txId, txsim, setTimeOut)
 	if err != nil {
 		log.Error("deployUserCC err:", "error", err)
 		return nil, nil, errors.WithMessage(err, "Deploy fail")
@@ -194,9 +190,9 @@ func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byt
 		Path:     usrcc.Path,
 		TempleId: templateId,
 		Version:  usrcc.Version,
+		Language: usrcc.Language,
 		SysCC:    false,
 	}
-
 	if depId.IsSystemContractAddress() {
 		err = cclist.SetChaincode(chainID, 0, cc)
 		if err != nil {
@@ -300,23 +296,24 @@ func Stop(rwM rwset.TxManager, idag dag.IDag, contractid []byte, chainID string,
 	if err != nil {
 		return nil, err
 	}
-	stopResult, err := StopByName(contractid, setChainId, txid, cc.Name, cc.Path, cc.Version, deleteImage)
+	stopResult, err := StopByName(contractid, setChainId, txid, cc, deleteImage)
 	if err == nil {
 		cclist.DelChaincode(chainID, cc.Name, cc.Version)
 	}
 	return stopResult, err
 }
 
-func StopByName(contractid []byte, chainID string, txid string, ccName string, ccPath string, ccVersion string, deleteImage bool) (*md.ContractStopPayload, error) {
+func StopByName(contractid []byte, chainID string, txid string, usercc *cclist.CCInfo, deleteImage bool) (*md.ContractStopPayload, error) {
 	usrcc := &ucc.UserChaincode{
-		Name:    ccName,
-		Path:    ccPath,
-		Version: ccVersion,
-		Enabled: true,
+		Name:     usercc.Name,
+		Path:     usercc.Path,
+		Version:  usercc.Version,
+		Enabled:  true,
+		Language: usercc.Language,
 	}
 	err := ucc.StopUserCC(contractid, chainID, usrcc, txid, deleteImage)
 	if err != nil {
-		errMsg := fmt.Sprintf("StopUserCC err[%s]-[%s]-err[%s]", chainID, ccName, err)
+		errMsg := fmt.Sprintf("StopUserCC err[%s]-[%s]-err[%s]", chainID, usrcc.Name, err)
 		return nil, errors.New(errMsg)
 	}
 	stopResult := &md.ContractStopPayload{
@@ -390,11 +387,11 @@ func StartChaincodeContainert(idag dag.IDag, chainID string, deployId []byte, tx
 		return nil, errors.WithMessage(err, "GetTxSimulator error")
 	}
 	usrcc := &ucc.UserChaincode{
-		Name:     cc.Name,
-		Path:     cc.Path,
-		Version:  cc.Version,
-		InitArgs: [][]byte{},
-		Enabled:  true,
+		Name:    cc.Name,
+		Path:    cc.Path,
+		Version: cc.Version,
+		//InitArgs: [][]byte{},
+		Enabled: true,
 	}
 	chaincodeID := &pb.ChaincodeID{
 		Name:    usrcc.Name,
@@ -402,12 +399,12 @@ func StartChaincodeContainert(idag dag.IDag, chainID string, deployId []byte, tx
 		Version: usrcc.Version,
 	}
 	spec.ChaincodeId = chaincodeID
-	_, chaincodeData, err := ucc.RecoverChainCodeFromDb(spec, chainID, cc.TempleId)
+	_, chaincodeData, err := ucc.RecoverChainCodeFromDb(chainID, cc.TempleId)
 	if err != nil {
 		log.Error("Deploy", "chainid:", chainID, "templateId:", cc.TempleId, "RecoverChainCodeFromDb err", err)
 		return nil, err
 	}
-	err = ucc.DeployUserCC(chaincodeData, spec, setChainId, usrcc, txId, nil, setTimeOut)
+	err = ucc.DeployUserCC(address.Bytes(), chaincodeData, spec, setChainId, txId, nil, setTimeOut)
 	if err != nil {
 		log.Error("deployUserCC err:", "error", err)
 		return nil, errors.WithMessage(err, "Deploy fail")

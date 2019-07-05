@@ -30,7 +30,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/contracts/contractcfg"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/pkg/errors"
 	"time"
@@ -378,7 +377,8 @@ func NewCCContext(contractid []byte, cid, name, version, txid string, syscc bool
 	}
 
 	//TODO xiaozhi
-	canName := name + ":" + version + ":" + contractcfg.GetConfig().ContractAddress
+	//canName := name + ":" + version + ":" + contractcfg.GetConfig().ContractAddress
+	canName := name + ":" + version
 
 	cccid := &CCContext{contractid, cid, name, version, txid, syscc, signedProp, prop, canName, nil}
 
@@ -398,7 +398,6 @@ func (cccid *CCContext) GetCanonicalName() string {
 
 func (cccid *CCContext) GetContainerName() string {
 	name := cccid.Name + ":" + cccid.Version
-	name = name + ":" + contractcfg.GetConfig().ContractAddress
 	return strings.Replace(name, ":", "-", -1)
 }
 
