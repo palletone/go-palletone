@@ -31,7 +31,6 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/stretchr/testify/assert"
 
-	"crypto/ecdsa"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -91,21 +90,23 @@ func BenchmarkMemDag_AddUnit(b *testing.B) {
 		parentHash = unit.Hash()
 	}
 }
-func newTestUnit(parentHash common.Hash, height uint64, key *ecdsa.PrivateKey) *modules.Unit {
+func newTestUnit(parentHash common.Hash, height uint64, key []byte) *modules.Unit {
 	h := newTestHeader(parentHash, height, key)
 	return modules.NewUnit(h, []*modules.Transaction{})
 }
 
 var (
-	key1, _ = crypto.GenerateKey()
-	addr1   = crypto.PubkeyToAddress(&key1.PublicKey)
-	key2, _ = crypto.GenerateKey()
-	addr2   = crypto.PubkeyToAddress(&key2.PublicKey)
-	key3, _ = crypto.GenerateKey()
-	key4, _ = crypto.GenerateKey()
+	key1, _ = crypto.MyCryptoLib.KeyGen()
+	pubKey1,_=crypto.MyCryptoLib.PrivateKeyToPubKey(key1)
+	addr1   = crypto.PubkeyBytesToAddress(pubKey1)
+	key2, _ = crypto.MyCryptoLib.KeyGen()
+	pubKey2,_=crypto.MyCryptoLib.PrivateKeyToPubKey(key2)
+	addr2   = crypto.PubkeyBytesToAddress(pubKey2)
+	key3, _ = crypto.MyCryptoLib.KeyGen()
+	key4, _ = crypto.MyCryptoLib.KeyGen()
 )
 
-func newTestHeader(parentHash common.Hash, height uint64, key *ecdsa.PrivateKey) *modules.Header {
+func newTestHeader(parentHash common.Hash, height uint64, key []byte) *modules.Header {
 
 	h := new(modules.Header)
 	au := modules.Authentifier{}
@@ -119,9 +120,9 @@ func newTestHeader(parentHash common.Hash, height uint64, key *ecdsa.PrivateKey)
 	h.ParentsHash = []common.Hash{parentHash}
 	h.TxRoot = common.HexToHash("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f")
 
-	sig, _ := crypto.Sign(h.TxRoot[:], key)
+	sig, _ := crypto.MyCryptoLib.Sign(key,h.TxRoot[:])
 	au.Signature = sig
-	au.PubKey = crypto.CompressPubkey(&key.PublicKey)
+	au.PubKey,_ = crypto.MyCryptoLib.PrivateKeyToPubKey(key)
 	h.Authors = au
 	h.Time = int64(height) * 3
 	return h

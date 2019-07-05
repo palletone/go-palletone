@@ -214,42 +214,48 @@ func (chain *MemDag) setStableUnit(hash common.Hash, height uint64, txpool txspo
 	log.Debugf("Set stable unit to %s,height:%d", hash.String(), height)
 	stable_height := chain.stableUnitHeight
 	stableCount := int(height - stable_height)
-	if stableCount < 0 {
+	if stableCount <= 0 {
 		log.Errorf("Current stable height is %d, impossible set stable height to %d", stable_height, height)
 		return
 	}
 	newStableUnits := make([]*modules.Unit, stableCount)
 	stbHash := hash
+	chain_units := chain.getChainUnits()
 	for i := 0; i < stableCount; i++ {
-		if u, has := chain.getChainUnits()[stbHash]; has {
+		if u, has := chain_units[stbHash]; has {
 			newStableUnits[stableCount-i-1] = u
 			stbHash = u.ParentHash()[0]
 		}
 	}
 	//Save stable unit and it's parent
+	max_height := height
 	for _, unit := range newStableUnits {
+		if unit.NumberU64() > max_height {
+			max_height = unit.NumberU64()
+		}
 		chain.setNextStableUnit(unit, txpool)
 	}
 	log.InfoDynamic(func() string {
-		return fmt.Sprintf("xxx set stable unit cost time: %s ,index: %d, hash: %s",
+		return fmt.Sprintf("set next stable unit cost time: %s ,index: %d, hash: %s",
 			time.Since(tt), height, hash.String())
 	})
+	//remove fork units, and remove lower than stable unit
+	for _, funit := range chain_units {
+		if funit.NumberU64() <= max_height && funit.Hash() != hash {
+			chain.removeUnitAndChildren(funit.Hash(), txpool)
+		}
+	}
+	//remove too low orphan unit
+	go chain.removeLowOrphanUnit(max_height, txpool)
 }
 
 //设置当前稳定单元的指定子单元为稳定单元
 func (chain *MemDag) setNextStableUnit(unit *modules.Unit, txpool txspool.ITxPool) {
 	hash := unit.Hash()
 	height := unit.NumberU64()
-	//remove fork units
-	chain_units := chain.getChainUnits()
-	for _, funit := range chain_units {
-		if funit.NumberU64() <= height && funit.Hash() != hash {
-			chain.removeUnitAndChildren(funit.Hash(), txpool)
-		}
-	}
-	chain.saveUnitToDb(chain.ldbunitRep, chain.ldbUnitProduceRep, unit)
-
-	if !chain.saveHeaderOnly && len(unit.Txs) > 0 {
+	// memdag不依赖apply unit的存储，因此用协程提高setStable的效率
+	go chain.saveUnitToDb(chain.ldbunitRep, chain.ldbUnitProduceRep, unit)
+	if !chain.saveHeaderOnly && len(unit.Txs) > 1 {
 		go txpool.SendStoredTxs(unit.Txs.GetTxIds())
 	}
 	log.Debugf("Remove unit[%s] from chainUnits", hash.String())
@@ -258,8 +264,6 @@ func (chain *MemDag) setNextStableUnit(unit *modules.Unit, txpool txspool.ITxPoo
 	//Set stable unit
 	chain.stableUnitHash = hash
 	chain.stableUnitHeight = height
-	//remove too low orphan unit
-	chain.removeLowOrphanUnit(unit.NumberU64(), txpool)
 }
 
 //判断当前主链上的单元是否有满足稳定单元的确认数，如果有，则更新稳定单元，并重建Temp数据库，返回True

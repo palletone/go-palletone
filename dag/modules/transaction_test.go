@@ -340,11 +340,11 @@ func TestTransaction_GetTxFee(t *testing.T) {
 		t := time.Now().AddDate(0, 0, -1).Unix()
 		return &Utxo{Amount: Ptn2Dao(11), Timestamp: uint64(t), Asset: NewPTNAsset()}, nil
 	}
-	fee, err := tx.GetTxFee(utxoQueryFn, time.Now().Unix())
+	fee, err := tx.GetTxFee(utxoQueryFn)
 	assert.Nil(t, err)
 	assert.True(t, fee.Amount == Ptn2Dao(1))
 	t.Log(fee.String())
-	fee2, err := tx.GetTxFee(utxoQueryFn, 0)
+	fee2, err := tx.GetTxFee(utxoQueryFn)
 	assert.Nil(t, err)
 	t.Log(fee2.String())
 	assert.Equal(t, fee2.Amount, Ptn2Dao(1))

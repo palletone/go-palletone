@@ -21,7 +21,6 @@
 package storage
 
 import (
-	"crypto/ecdsa"
 	"testing"
 
 	"github.com/palletone/go-palletone/common"
@@ -50,11 +49,11 @@ func TestPrintHashList(t *testing.T) {
 }
 
 func TestGetHeader(t *testing.T) {
-	key := new(ecdsa.PrivateKey)
-	key, _ = crypto.GenerateKey()
+	key, _ := crypto.MyCryptoLib.KeyGen()
+	pubKey,_:=crypto.MyCryptoLib.PrivateKeyToPubKey(key)
 	h := new(modules.Header)
 	au := modules.Authentifier{}
-	address := crypto.PubkeyToAddress(&key.PublicKey)
+	address := crypto.PubkeyBytesToAddress(pubKey)
 	t.Log("address:", address)
 
 	h.GroupSign = []byte("group_sign")
@@ -65,9 +64,9 @@ func TestGetHeader(t *testing.T) {
 	h.Extra = make([]byte, 20)
 	h.ParentsHash = append(h.ParentsHash, h.TxRoot)
 	h.TxRoot = common.HexToHash("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f")
-	sig, _ := crypto.Sign(h.TxRoot[:], key)
+	sig, _ := crypto.MyCryptoLib.Sign(key,h.TxRoot[:])
 	au.Signature = sig
-	au.PubKey = crypto.CompressPubkey(&key.PublicKey)
+	au.PubKey = pubKey
 	h.Authors = au
 	h.Time = 123
 

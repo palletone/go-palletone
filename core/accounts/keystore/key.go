@@ -17,7 +17,6 @@
 package keystore
 
 import (
-	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -44,7 +43,7 @@ type Key struct {
 	Address common.Address
 	// we only store privkey as pubkey/address can be derived from it
 	// privkey in this struct is always in plaintext
-	PrivateKey *ecdsa.PrivateKey
+	PrivateKey []byte
 }
 
 type keyStore interface {
@@ -93,7 +92,7 @@ type cipherparamsJSON struct {
 func (k *Key) MarshalJSON() (j []byte, err error) {
 	jStruct := plainKeyJSON{
 		hex.EncodeToString(k.Address[:]),
-		hex.EncodeToString(crypto.FromECDSA(k.PrivateKey)),
+		hex.EncodeToString(k.PrivateKey),
 		k.Id.String(),
 		version,
 	}
@@ -115,7 +114,7 @@ func (k *Key) UnmarshalJSON(j []byte) (err error) {
 	if err != nil {
 		return err
 	}
-	privkey, err := crypto.HexToECDSA(keyJSON.PrivateKey)
+	privkey, err := hex.DecodeString(keyJSON.PrivateKey)
 	if err != nil {
 		return err
 	}
@@ -126,11 +125,12 @@ func (k *Key) UnmarshalJSON(j []byte) (err error) {
 	return nil
 }
 
-func newKeyFromECDSA(privateKeyECDSA *ecdsa.PrivateKey) *Key {
+func newKeyFromECDSA(privateKeyECDSA []byte) *Key {
 	id := uuid.NewRandom()
+	pubKey, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(privateKeyECDSA)
 	key := &Key{
 		Id:         id,
-		Address:    crypto.PubkeyToAddress(&privateKeyECDSA.PublicKey),
+		Address:    crypto.PubkeyBytesToAddress(pubKey),
 		PrivateKey: privateKeyECDSA,
 	}
 	return key
@@ -158,7 +158,7 @@ func newKeyFromECDSA(privateKeyECDSA *ecdsa.PrivateKey) *Key {
 // }
 
 func newKey(rand io.Reader) (*Key, error) {
-	privateKeyECDSA, err := ecdsa.GenerateKey(crypto.S256(), rand)
+	privateKeyECDSA, err := crypto.MyCryptoLib.KeyGen()
 	if err != nil {
 		return nil, err
 	}

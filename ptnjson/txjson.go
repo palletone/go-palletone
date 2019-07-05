@@ -225,7 +225,7 @@ func ConvertTx2FullJson(tx *modules.Transaction, utxoQuery modules.QueryUtxoFunc
 		}
 	}
 	if utxoQuery != nil {
-		fee, err := tx.GetTxFee(utxoQuery, time.Now().Unix())
+		fee, err := tx.GetTxFee(utxoQuery)
 		if err == nil {
 			txjson.Fee = fee.Amount
 		}

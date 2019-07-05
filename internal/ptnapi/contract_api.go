@@ -120,6 +120,7 @@ func (s *PublicContractAPI) Ccquery(ctx context.Context, contractAddr string, pa
 		args[i] = []byte(arg)
 		log.Info("Ccquery", "param index:", i, "arg", arg)
 	}
+
 	//参数前面加入msg0和msg1,这里为空
 	fullArgs := [][]byte{defaultMsg0, defaultMsg1}
 	fullArgs = append(fullArgs, args...)
