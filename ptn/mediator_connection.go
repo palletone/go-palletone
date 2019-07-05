@@ -131,10 +131,15 @@ func (pm *ProtocolManager) checkActiveMediatorConnected() {
 	}
 
 	// 1. 设置Ticker, 每隔一段时间检查一次
-	checkTick := time.NewTicker(50 * time.Millisecond)
+	checkTick := time.NewTicker(200 * time.Millisecond)
+	// 设置检查期限，防止死循环
+	expiration := pm.dag.UnitIrreversibleTime()
+	delayDisc := time.NewTimer(expiration)
 	for {
 		select {
 		case <-pm.quitSync:
+			return
+		case <-delayDisc.C:
 			return
 		case <-checkTick.C:
 			if checkFn() {
