@@ -981,10 +981,23 @@ func (d *Dag) SaveCommon(key, val []byte) error {
 
 func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error {
 	if groupSign == nil {
-		err := fmt.Errorf("group sign is null")
+		err := fmt.Errorf("this unit(%v)'s group sign is null", unitHash.TerminalString())
 		log.Debug(err.Error())
 		return err
 	}
+
+	// 判断本节点是否正在同步数据
+	if !d.IsSynced() {
+		err := "this node is syncing"
+		log.Debugf(err)
+		return fmt.Errorf(err)
+	}
+
+	if d.IsIrreversibleUnit(unitHash) {
+		log.Debugf("this unit(%v) is irreversible", unitHash.TerminalString())
+		return nil
+	}
+
 	// 验证群签名：
 	err := d.VerifyUnitGroupSign(unitHash, groupSign)
 	if err != nil {
@@ -995,7 +1008,7 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 	log.Debugf("Try to update unit[%s] group sign", unitHash.String())
 	d.Memdag.SetUnitGroupSign(unitHash /*, nil*/, groupSign, txpool)
 
-	//TODO Group pub key????
+	//TODO albert 待合并
 	// 状态更新
 	//go d.updateGlobalPropDependGroupSign(unitHash)
 	return nil
