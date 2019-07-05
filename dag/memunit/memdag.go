@@ -36,6 +36,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"go.dedis.ch/kyber/v3/sign/bls"
+	"github.com/palletone/go-palletone/validator"
 )
 
 type MemDag struct {
@@ -59,7 +60,7 @@ type MemDag struct {
 	tempdb            *Tempdb
 	saveHeaderOnly    bool
 	lock              sync.RWMutex
-
+	validator validator.Validator
 	// append by albert·gou 用于通知群签名
 	toGroupSignFeed  event.Feed
 	toGroupSignScope event.SubscriptionScope
@@ -110,7 +111,7 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 		}
 	}
 	log.Debugf("Init MemDag[%s], get last stable unit[%s] to set lastMainChainUnit", token.String(), stablehash.String())
-
+	v:=validator.NewValidate(trep,tutxoRep,tstateRep,tpropRep)
 	memdag := &MemDag{
 		token:              token,
 		threshold:          threshold,
@@ -128,7 +129,7 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 		stableUnitHeight:   stbIndex.Index,
 		lastMainChainUnit:  stableUnit,
 		saveHeaderOnly:     saveHeaderOnly,
-
+		validator:v,
 		ldbUnitProduceRep:  ldbUnitProduceRep,
 		tempUnitProduceRep: tempUnitProduceRep,
 	}
@@ -442,6 +443,12 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 		//add at the end of main chain unit
 		if parentHash == chain.lastMainChainUnit.Hash() {
 			//Add a new unit to main chain
+			//Check unit and it's txs are valid
+			//只有主链上添加单元时才能判断整个Unit的有效性
+			validateCode:= chain.validator.ValidateUnitExceptGroupSig(unit)
+			if validateCode!=validator.TxValidationCode_VALID{
+				return validator.NewValidateError(validateCode)
+			}
 			// 判断当前高度是不是已经有区块了
 			//if _, err := chain.getHeaderByNumber(unit.Number()); err != nil {
 			chain.setLastMainchainUnit(unit)
@@ -507,7 +514,12 @@ func (chain *MemDag) getChainAddressCount(lastUnit *modules.Unit) int {
 	}
 	return len(addrs)
 }
-
+//发现一条更长的确认数更多的链，则放弃原有主链，切换成新主链
+//1.将旧主链上包含的交易在交易池中重置
+//2.将稳定单元刷新到LevelDB，清空TempDB
+//3.从稳定单元开始，循环操作，检查新主链上的Unit是否有效。
+//3.1.有效则做保存Unit到Tempdb，并更新交易池中对应交易的状态
+//3.2.无效则删除该Unit以及其后面的Unit，并重新判断主链
 func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPool) {
 	old_last_unit_hash := chain.lastMainChainUnit.Hash()
 	//reverse txpool tx status
@@ -545,6 +557,7 @@ func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPo
 	}
 	//设置最新主链单元
 	chain.setLastMainchainUnit(newUnit)
+	//TODO 将未写入ldb的稳定单元数据刷新到ldb，然后才能重建tempdb
 	//基于新主链的单元和稳定单元，重新构建Tempdb
 	chain.rebuildTempdb()
 

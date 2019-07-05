@@ -59,17 +59,17 @@ func (s *ValidatorCache) HasTxValidateResult(txId common.Hash) (bool, []*modules
 	return true, result
 }
 
-func (s *ValidatorCache) AddUnitValidateResult(unitHash common.Hash) {
+func (s *ValidatorCache) AddUnitValidateResult(unitHash common.Hash,code ValidationCode) {
 
-	s.cache.Set(append(prefix, unitHash.Bytes()...), []byte{0x1}, 60)
+	s.cache.Set(append(prefix, unitHash.Bytes()...), []byte{byte(code)}, 60)
 }
-func (s *ValidatorCache) HasUnitValidateResult(unitHash common.Hash) bool {
-	_, err := s.cache.Get(append(prefix, unitHash.Bytes()...))
+func (s *ValidatorCache) HasUnitValidateResult(unitHash common.Hash) (bool,ValidationCode) {
+	data, err := s.cache.Get(append(prefix, unitHash.Bytes()...))
 	if err != nil {
-		return false
+		return false,TxValidationCode_NOT_VALIDATED
 	}
 	log.Debugf("Validate cache has unit hash:%s",unitHash.String())
-	return true
+	return true, ValidationCode(data[0])
 }
 
 func (s *ValidatorCache) AddHeaderValidateResult(unitHash common.Hash) {

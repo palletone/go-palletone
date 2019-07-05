@@ -34,10 +34,6 @@ import (
 	"go.dedis.ch/kyber/v3/sign/bls"
 )
 
-func (d *Dag) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
-	return d.validate.ValidateUnitExceptGroupSig(unit)
-}
-
 func (d *Dag) SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription {
 	return d.Memdag.SubscribeToGroupSignEvent(ch)
 }

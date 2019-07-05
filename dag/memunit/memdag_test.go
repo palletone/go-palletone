@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"testing"
+	"github.com/palletone/go-palletone/validator"
 )
 
 func TestMemDag_AddUnit(t *testing.T) {
@@ -149,6 +150,7 @@ func TestMemDag_AddOrphanUnit(t *testing.T) {
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	gasToken := modules.PTNCOIN
 	memdag := NewMemDag(gasToken, 2, false, db, unitRep, propRep, stateRep)
+	memdag.validator=mockValidator()
 	u1 := newTestUnit(lastHeader.Hash(), 1, key2)
 	log.Debugf("Try add unit[%x] to memdag", u1.Hash())
 	err := memdag.AddUnit(u1, txpool)
@@ -187,6 +189,7 @@ func TestMemDag_SwitchMainChain(t *testing.T) {
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	gasToken := modules.PTNCOIN
 	memdag := NewMemDag(gasToken, 2, false, db, unitRep, propRep, stateRep)
+	memdag.validator=mockValidator()
 	u1 := newTestUnit(u0.Hash(), 2, key2)
 	log.Debugf("Try add unit[%x] to memdag", u1.Hash())
 	err := memdag.AddUnit(u1, txpool)
@@ -228,4 +231,30 @@ func mockMediatorInit(statedb storage.IStateDb, propDb storage.IPropertyDb) {
 	ms.CurrentShuffledMediators = append(ms.CurrentShuffledMediators, addr1)
 	ms.CurrentShuffledMediators = append(ms.CurrentShuffledMediators, addr2)
 	propDb.StoreMediatorSchl(ms)
+}
+func mockValidator() validator.Validator{
+	return &mockValidate{}
+}
+type mockValidate struct {
+
+}
+func(v mockValidate)ValidateTx(tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, validator.ValidationCode, error){
+	return nil,validator.TxValidationCode_VALID,nil
+}
+
+func(v mockValidate)ValidateUnitExceptGroupSig(unit *modules.Unit) validator.ValidationCode{
+	return validator.TxValidationCode_VALID
+}
+func(v mockValidate)ValidateUnitExceptPayment(unit *modules.Unit) error{
+	return nil
+}
+//验证一个Header是否合法（Mediator签名有效）
+func(v mockValidate)ValidateHeader(h *modules.Header) error{
+	return nil
+}
+func(v mockValidate)ValidateUnitGroupSign(h *modules.Header) error{
+	return nil
+}
+func(v mockValidate)CheckTxIsExist(tx *modules.Transaction) bool{
+	return false
 }
