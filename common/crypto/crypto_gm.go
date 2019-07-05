@@ -15,27 +15,27 @@
  *
  *  * @author PalletOne core developers <dev@pallet.one>
  *  * @date 2018-2019
- *  
+ *
  *
  */
 
 package crypto
 
 import (
-	"hash"
-	"github.com/palletone/go-palletone/common/crypto/gmsm/sm2"
-	"fmt"
-	"github.com/palletone/go-palletone/common/math"
-	"math/big"
-	"errors"
-	"github.com/palletone/go-palletone/common/crypto/gmsm/sm3"
 	"encoding/asn1"
+	"errors"
+	"fmt"
+	"github.com/palletone/go-palletone/common/crypto/gmsm/sm2"
+	"github.com/palletone/go-palletone/common/crypto/gmsm/sm3"
+	"github.com/palletone/go-palletone/common/math"
+	"hash"
+	"math/big"
 )
 
 type CryptoGm struct {
 }
 
-func (c *CryptoGm) KeyGen() ( []byte,  error) {
+func (c *CryptoGm) KeyGen() ([]byte, error) {
 	privKey, err := sm2.GenerateKey()
 	if err != nil {
 		return nil, fmt.Errorf("Failed generating GMSM2 key  [%s]", err)
@@ -49,8 +49,8 @@ func sm2FromECDSA(priv *sm2.PrivateKey) []byte {
 	}
 	return math.PaddedBigBytes(priv.D, priv.Params().BitSize/8)
 }
-func sm2ToECDSA(d []byte ) (*sm2.PrivateKey, error) {
-	strict:=false
+func sm2ToECDSA(d []byte) (*sm2.PrivateKey, error) {
+	strict := false
 	priv := new(sm2.PrivateKey)
 	priv.PublicKey.Curve = sm2.P256Sm2()
 	if strict && 8*len(d) != priv.Params().BitSize {
@@ -85,7 +85,7 @@ func (c *CryptoGm) PrivateKeyToPubKey(privKey []byte) ([]byte, error) {
 func (c *CryptoGm) Hash(msg []byte) (hash []byte, err error) {
 	d := sm3.New()
 	d.Write(msg)
-	return d.Sum(nil),nil
+	return d.Sum(nil), nil
 }
 func (c *CryptoGm) GetHash() (h hash.Hash, err error) {
 	return sm3.New(), nil
@@ -95,52 +95,23 @@ func (c *CryptoGm) Sign(privKey, digest []byte) (signature []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
-	r,s,err:= sm2.Sign(prvKey,digest)
-	if err!=nil{
-		return nil,err
-	}
-	return MarshalSM2Signature(r,s)
+	return prvKey.Sign(nil, digest, nil)
+	//r, s, err := sm2.Sign(prvKey, digest)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//return marshalSM2Signature(r, s)
 	//return Sign(digest, prvKey)
 }
-type SM2Signature struct {
-	R, S *big.Int
-}
-func MarshalSM2Signature(r, s *big.Int) ([]byte, error) {
-	return asn1.Marshal(SM2Signature{r, s})
-}
 
-func UnmarshalSM2Signature(raw []byte) (*big.Int, *big.Int, error) {
-	// Unmarshal
-	sig := new(SM2Signature)
-	_, err := asn1.Unmarshal(raw, sig)
-	if err != nil {
-		return nil, nil, fmt.Errorf("Failed unmashalling signature [%s]", err)
-	}
-
-	// Validate sig
-	if sig.R == nil {
-		return nil, nil, errors.New("Invalid signature. R must be different from nil.")
-	}
-	if sig.S == nil {
-		return nil, nil, errors.New("Invalid signature. S must be different from nil.")
-	}
-
-	if sig.R.Sign() != 1 {
-		return nil, nil, errors.New("Invalid signature. R must be larger than zero")
-	}
-	if sig.S.Sign() != 1 {
-		return nil, nil, errors.New("Invalid signature. S must be larger than zero")
-	}
-
-	return sig.R, sig.S, nil
-}
 func (c *CryptoGm) Verify(pubKey, signature, digest []byte) (valid bool, err error) {
-	r,s,err:= UnmarshalSM2Signature(signature)
-	if err!=nil{
-		return false,err
-	}
-	publicKey:= sm2.Decompress(pubKey)
-	return sm2.Verify(publicKey,digest,r,s),nil
+	//r, s, err := unmarshalSM2Signature(signature)
+	//if err != nil {
+	//	return false, err
+	//}
+	publicKey := sm2.Decompress(pubKey)
+	return publicKey.Verify(digest, signature), nil
+	//return sm2.Verify(publicKey, digest, r, s), nil
 	//return VerifySignature(pubKey, digest, signature), nil
 }
 func (c *CryptoGm) Encrypt(key []byte, plaintext []byte) (ciphertext []byte, err error) {
@@ -149,4 +120,3 @@ func (c *CryptoGm) Encrypt(key []byte, plaintext []byte) (ciphertext []byte, err
 func (c *CryptoGm) Decrypt(key, ciphertext []byte) (plaintext []byte, err error) {
 	return nil, errors.New("Not implement")
 }
-
