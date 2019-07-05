@@ -22,14 +22,14 @@
 package crypto
 
 import (
-	"encoding/asn1"
 	"errors"
 	"fmt"
+	"hash"
+	"math/big"
+
 	"github.com/palletone/go-palletone/common/crypto/gmsm/sm2"
 	"github.com/palletone/go-palletone/common/crypto/gmsm/sm3"
 	"github.com/palletone/go-palletone/common/math"
-	"hash"
-	"math/big"
 )
 
 type CryptoGm struct {
