@@ -79,7 +79,7 @@ func Test_key(t *testing.T) {
 	}
 
 	pubKey1, _ := prikey.Public().(*sm2.PublicKey)
-	t.Logf("Pubkey:%x,len:%d",pubKey1)
+	t.Logf("Pubkey:%x",pubKey1)
 	ok = pubKey1.Verify(msg, sign) // 公钥验证
 	if ok != true {
 		t.Logf("Verify error\n")
