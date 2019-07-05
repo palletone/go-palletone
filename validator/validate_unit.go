@@ -149,6 +149,10 @@ Validate unit(除群签名以外), 新生产的unit暂时还没有群签名
 */
 //func (validate *Validate) ValidateUnit(unit *modules.Unit, isGenesis bool) byte {
 func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
+	unitHash:=unit.Hash()
+	if validate.cache.HasUnitValidateResult(unitHash){
+		return nil
+	}
 	start := time.Now()
 	defer func() {
 		log.Debugf("ValidateUnitExceptGroupSig unit[%s],cost:%s", unit.Hash().String(), time.Since(start))
@@ -180,6 +184,7 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
 	if unitHeaderValidateResult != TxValidationCode_VALID {
 		return NewValidateError(unitHeaderValidateResult)
 	}
+	validate.cache.AddUnitValidateResult(unitHash)
 	return nil
 }
 
@@ -242,12 +247,19 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 }
 
 func (validate *Validate) ValidateHeader(h *modules.Header) error {
+	hash:=h.Hash()
+	if validate.cache.HasHeaderValidateResult(hash){
+		return nil
+	}
 	unitHeaderValidateResult := validate.validateHeaderExceptGroupSig(h)
 	if unitHeaderValidateResult != TxValidationCode_VALID &&
 		unitHeaderValidateResult != UNIT_STATE_AUTHOR_SIGNATURE_PASSED &&
 		unitHeaderValidateResult != UNIT_STATE_ORPHAN {
 		log.Debug("Validate unit's header failed.", "error code", unitHeaderValidateResult)
 		return NewValidateError(unitHeaderValidateResult)
+	}
+	if unitHeaderValidateResult==TxValidationCode_VALID{
+		validate.cache.AddHeaderValidateResult(hash)
 	}
 	return nil
 }

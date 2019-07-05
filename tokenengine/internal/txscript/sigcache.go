@@ -43,6 +43,9 @@ type SigCache struct {
 func NewSigCache(maxEntries uint) *SigCache {
 	return &SigCache{validSigs: make(map[sigInfo]struct{}), maxEntries: maxEntries}
 }
+func (s *SigCache) Count() int {
+	return len(s.validSigs)
+}
 
 // Exists returns true if an existing entry of 'sig' over 'sigHash' for public
 // key 'pubKey' is found within the SigCache. Otherwise, false is returned.

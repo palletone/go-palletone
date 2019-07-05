@@ -22,11 +22,10 @@ package validator
 
 import (
 	"sync"
-	"time"
 
 	"encoding/json"
 	"fmt"
-
+	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -39,12 +38,15 @@ type Validate struct {
 	statequery IStateQuery
 	dagquery   IDagQuery
 	propquery  IPropQuery
+	cache      *ValidatorCache
 }
 
 const MAX_DATA_PAYLOAD_MAIN_DATA_SIZE = 128
 
 func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propquery IPropQuery) *Validate {
-	return &Validate{dagquery: dagdb, utxoquery: utxoRep, statequery: statedb, propquery: propquery}
+	cache := freecache.NewCache(20 * 1024 * 1024)
+	vcache := NewValidatorCache(cache)
+	return &Validate{cache: vcache, dagquery: dagdb, utxoquery: utxoRep, statequery: statedb, propquery: propquery}
 }
 
 type newUtxoQuery struct {
@@ -76,7 +78,7 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 	newUtxoQuery := &newUtxoQuery{oldUtxoQuery: oldUtxoQuery, unitUtxo: unitUtxo}
 	validate.utxoquery = newUtxoQuery
 	defer validate.setUtxoQuery(oldUtxoQuery)
-
+	spendOutpointMap := make(map[*modules.OutPoint]bool)
 	var coinbase *modules.Transaction
 	for txIndex, tx := range txs {
 		//先检查普通交易并计算手续费，最后检查Coinbase
@@ -90,13 +92,22 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 			//每个单元的第一条交易比较特殊，是Coinbase交易，其包含增发和收集的手续费
 
 		}
-
-		txCode, txFeeAllocate := validate.validateTx(tx, true, unitTime)
+		txFeeAllocate, txCode, _ := validate.ValidateTx(tx, true)
 		if txCode != TxValidationCode_VALID {
 			log.Debug("ValidateTx", "txhash", txHash, "error validate code", txCode)
-
 			return txCode
 		}
+		// 验证双花
+		for _, outpoint := range tx.GetSpendOutpoints() {
+			if _, ok := spendOutpointMap[outpoint]; ok {
+				return TxValidationCode_INVALID_DOUBLE_SPEND
+			}
+			if spent, _ := validate.utxoquery.IsUtxoSpent(outpoint); spent {
+				return TxValidationCode_INVALID_DOUBLE_SPEND
+			}
+			spendOutpointMap[outpoint] = true
+		}
+
 		for _, a := range txFeeAllocate {
 			if a.Addr.IsZero() {
 				a.Addr = unitAuthor
@@ -176,8 +187,14 @@ return all transactions' fee
 //}
 
 func (validate *Validate) ValidateTx(tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, ValidationCode, error) {
-	code, addition := validate.validateTx(tx, isFullTx, time.Now().Unix())
+	txId := tx.Hash()
+	has, add := validate.cache.HasTxValidateResult(txId)
+	if has {
+		return add, TxValidationCode_VALID, nil
+	}
+	code, addition := validate.validateTx(tx, isFullTx)
 	if code == TxValidationCode_VALID {
+		validate.cache.AddTxValidateResult(txId, addition)
 		return addition, code, nil
 	}
 

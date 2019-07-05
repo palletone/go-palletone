@@ -24,13 +24,13 @@ import (
 	"encoding/json"
 	"math"
 
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
+	"time"
 )
 
 //验证一个Payment
@@ -69,7 +69,8 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 		}
 
 		statusValid := false
-		for inputIdx, in := range payment.Inputs {
+		utxoScriptMap := make(map[string][]byte)
+		for _, in := range payment.Inputs {
 			// checkout input
 			if in == nil || in.PreviousOutPoint == nil {
 				log.Error("payment input is null.", "payment.input", payment.Inputs)
@@ -98,13 +99,18 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 
 				utxo, err = validate.utxoquery.GetUtxoEntry(in.PreviousOutPoint)
 				if utxo == nil || err != nil {
-					//找不到对应的UTXO，应该是孤儿交易
+					//找不到对应的UTXO，去IsSpent再找一下
+					spent, _ := validate.utxoquery.IsUtxoSpent(in.PreviousOutPoint)
+					if spent {
+						return TxValidationCode_INVALID_DOUBLE_SPEND
+					}
+					//IsSpent找不到，说明是孤儿
 					return TxValidationCode_ORPHAN
 				}
 			}
-			if utxo.IsSpent() {
-				return TxValidationCode_INVALID_DOUBLE_SPEND
-			}
+			//if utxo.IsSpent() {
+			//	return TxValidationCode_INVALID_DOUBLE_SPEND
+			//}
 			if asset == nil {
 				asset = utxo.Asset
 			} else {
@@ -126,40 +132,21 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 			}
 			totalInput += utxo.Amount
 			// check SignatureScript
+			utxoScriptMap[in.PreviousOutPoint.String()] = utxo.PkScript
 
-			pickJuryFn := func(contractAddr common.Address) ([]byte, error) {
-				log.Debugf("Try to pickup jury for address:%s", contractAddr.String())
-				var redeemScript []byte
-
-				if !contractAddr.IsSystemContractAddress() {
-					jury, err := validate.statequery.GetContractJury(contractAddr.Bytes())
-					if err != nil {
-						log.Errorf("Cannot get contract[%s] jury", contractAddr.String())
-						return nil, errors.New("Cannot get contract jury")
-					}
-					redeemScript, _ = generateJuryRedeemScript(jury)
-					log.DebugDynamic(func() string {
-						redeemStr, _ := tokenengine.DisasmString(redeemScript)
-						return "Generate RedeemScript: " + redeemStr
-					})
-				}
-
-				return redeemScript, nil
-			}
-			err = tokenengine.ScriptValidate(utxo.PkScript, pickJuryFn, txForSign, msgIdx, inputIdx)
-			if err != nil {
-
-				log.Warnf("Unlock script validate fail,tx[%s],MsgIdx[%d],In[%d],unlockScript:%x,utxoScript:%x",
-					tx.Hash().String(), msgIdx, inputIdx, in.SignatureScript, utxo.PkScript)
-				txjson, _ := tx.MarshalJSON()
-				rlpdata, _ := rlp.EncodeToBytes(tx)
-				log.Debugf("Tx for help debug: json: %s ,rlp: %x", string(txjson), rlpdata)
-				return TxValidationCode_INVALID_PAYMMENT_INPUT
-			} else {
-				log.Debugf("Unlock script validated! tx[%s],%d,%d", tx.Hash().String(), msgIdx, inputIdx)
-			}
+		}
+		t1 := time.Now()
+		err := tokenengine.ScriptValidate1Msg(utxoScriptMap, validate.pickJuryFn, txForSign, msgIdx)
+		if err != nil {
+			// txjson, _ := tx.MarshalJSON()
+			// rlpdata, _ := rlp.EncodeToBytes(tx)
+			// log.Debugf("ScriptValidate1Msg error:%s, Tx msg[%d] for help debug: json: %s ,rlp: %x", err.Error(), msgIdx, string(txjson), rlpdata)
+			return TxValidationCode_INVALID_PAYMMENT_INPUT
+		} else {
+			log.Debugf("Unlock script validated! tx[%s],%d, spend time:%s", tx.Hash().String(), msgIdx, time.Since(t1))
 		}
 	}
+
 	//有可能没有Output，全部付手续费去了
 	//if len(payment.Outputs) == 0 {
 	//	log.Error("payment output is null.", "payment.output", payment.Outputs)
@@ -193,7 +180,27 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 	}
 	return TxValidationCode_VALID
 }
+func (validate *Validate) pickJuryFn(contractAddr common.Address) ([]byte, error) {
+	log.Debugf("Try to pickup jury for address:%s", contractAddr.String())
+	var redeemScript []byte
 
+	if !contractAddr.IsSystemContractAddress() {
+		jury, err := validate.statequery.GetContractJury(contractAddr.Bytes())
+		if err != nil {
+			log.Errorf("Cannot get contract[%s] jury", contractAddr.String())
+			return nil, errors.New("Cannot get contract jury")
+		}
+		redeemScript, _ = generateJuryRedeemScript(jury)
+		log.DebugDynamic(func() string {
+			redeemStr, _ := tokenengine.DisasmString(redeemScript)
+			return "Generate RedeemScript: " + redeemStr
+		})
+	}
+
+	return redeemScript, nil
+}
+
+//检查转移的Token是否已经冻结，冻结的Token不能再转移
 func (validate *Validate) checkTokenStatus(asset *modules.Asset) ValidationCode {
 	globalStateContractId := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	result, _, err := validate.statequery.GetContractState(globalStateContractId, modules.GlobalPrefix+asset.AssetId.GetSymbol())

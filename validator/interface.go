@@ -42,6 +42,8 @@ type Validator interface {
 	ValidateHeader(h *modules.Header) error
 	ValidateUnitGroupSign(h *modules.Header) error
 	CheckTxIsExist(tx *modules.Transaction) bool
+	//验证一个交易是否是双花交易
+	//ValidateTxDoubleSpend(tx *modules.Transaction) error
 }
 
 type IUtxoQuery interface {
