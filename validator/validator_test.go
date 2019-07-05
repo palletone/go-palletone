@@ -234,12 +234,11 @@ func TestValidate_ValidateHeader(t *testing.T) {
 func TestSignAndVerifyATx(t *testing.T) {
 
 	privKeyBytes, _ := hex.DecodeString("2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644")
-	privKey, _ := crypto.ToECDSA(privKeyBytes)
-	pubKey := privKey.PublicKey
-	pubKeyBytes := crypto.CompressPubkey(&pubKey)
+
+	pubKeyBytes ,_:= crypto.MyCryptoLib.PrivateKeyToPubKey(privKeyBytes)
 	pubKeyHash := crypto.Hash160(pubKeyBytes)
 	t.Logf("Public Key:%x", pubKeyBytes)
-	addr := crypto.PubkeyToAddress(&privKey.PublicKey)
+	addr := crypto.PubkeyBytesToAddress(pubKeyBytes)
 	t.Logf("Addr:%s", addr.String())
 	lockScript := tokenengine.GenerateP2PKHLockScript(pubKeyHash)
 	t.Logf("UTXO lock script:%x", lockScript)
@@ -274,10 +273,10 @@ func TestSignAndVerifyATx(t *testing.T) {
 	//	addr: privKey,
 	//}
 	getPubKeyFn := func(common.Address) ([]byte, error) {
-		return crypto.CompressPubkey(&privKey.PublicKey), nil
+		return pubKeyBytes, nil
 	}
 	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
-		return crypto.Sign(hash, privKey)
+		return crypto.MyCryptoLib.Sign(privKeyBytes, hash)
 	}
 	var hashtype uint32
 	hashtype = 1

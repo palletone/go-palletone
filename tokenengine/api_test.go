@@ -80,12 +80,12 @@ func TestDecodeScriptBytes(t *testing.T) {
 }
 func TestSignAndVerify2PaymentTx(t *testing.T) {
 	privKeyBytes, _ := hex.DecodeString("2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644")
-	privKey, _ := crypto.ToECDSA(privKeyBytes)
-	pubKey := privKey.PublicKey
-	pubKeyBytes := crypto.CompressPubkey(&pubKey)
+
+	pubKeyBytes ,_:= crypto.MyCryptoLib.PrivateKeyToPubKey(privKeyBytes)
+
 	pubKeyHash := crypto.Hash160(pubKeyBytes)
 	t.Logf("Public Key:%x", pubKeyBytes)
-	addr := crypto.PubkeyToAddress(&privKey.PublicKey)
+	addr := crypto.PubkeyBytesToAddress(pubKeyBytes)
 	t.Logf("Addr:%s", addr.String())
 	lockScript := GenerateP2PKHLockScript(pubKeyHash)
 	t.Logf("UTXO lock script:%x", lockScript)
@@ -130,10 +130,10 @@ func TestSignAndVerify2PaymentTx(t *testing.T) {
 	//	addr: privKey,
 	//}
 	getPubKeyFn := func(common.Address) ([]byte, error) {
-		return crypto.CompressPubkey(&privKey.PublicKey), nil
+		return pubKeyBytes, nil
 	}
 	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
-		s, e := crypto.Sign(hash, privKey)
+		s, e := crypto.MyCryptoLib.Sign(privKeyBytes,hash)
 		return s, e
 	}
 	var hashtype uint32
@@ -161,12 +161,11 @@ func TestSignAndVerify2PaymentTx(t *testing.T) {
 
 func TestHashNone1Payment(t *testing.T) {
 	privKeyBytes, _ := hex.DecodeString("2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644")
-	privKey, _ := crypto.ToECDSA(privKeyBytes)
-	pubKey := privKey.PublicKey
-	pubKeyBytes := crypto.CompressPubkey(&pubKey)
+	pubKeyBytes ,_:= crypto.MyCryptoLib.PrivateKeyToPubKey(privKeyBytes)
+
 	pubKeyHash := crypto.Hash160(pubKeyBytes)
 	t.Logf("Public Key:%x", pubKeyBytes)
-	addr := crypto.PubkeyToAddress(&privKey.PublicKey)
+	addr := crypto.PubkeyBytesToAddress(pubKeyBytes)
 	t.Logf("Addr:%s", addr.String())
 	lockScript := GenerateP2PKHLockScript(pubKeyHash)
 	t.Logf("UTXO lock script:%x", lockScript)
@@ -190,10 +189,10 @@ func TestHashNone1Payment(t *testing.T) {
 	}
 
 	getPubKeyFn := func(common.Address) ([]byte, error) {
-		return crypto.CompressPubkey(&privKey.PublicKey), nil
+		return pubKeyBytes, nil
 	}
 	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
-		s, e := crypto.Sign(hash, privKey)
+		s, e := crypto.MyCryptoLib.Sign(privKeyBytes,hash)
 		return s, e
 	}
 	var hashtype uint32
@@ -635,12 +634,10 @@ func Test22MutiSign(t *testing.T) {
 }
 func TestSampleTx(t *testing.T) {
 	privKeyBytes, _ := hex.DecodeString("2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644")
-	privKey, _ := crypto.ToECDSA(privKeyBytes)
-	pubKey := privKey.PublicKey
-	pubKeyBytes := crypto.CompressPubkey(&pubKey)
+	pubKeyBytes ,_:= crypto.MyCryptoLib.PrivateKeyToPubKey(privKeyBytes)
 	pubKeyHash := crypto.Hash160(pubKeyBytes)
 	t.Logf("Public Key:%x", pubKeyBytes)
-	addr := crypto.PubkeyToAddress(&privKey.PublicKey)
+	addr := crypto.PubkeyBytesToAddress(pubKeyBytes)
 	t.Logf("Addr:%s", addr.String())
 	lockScript := GenerateP2PKHLockScript(pubKeyHash)
 	t.Logf("UTXO lock script:%x", lockScript)
@@ -662,10 +659,10 @@ func TestSampleTx(t *testing.T) {
 		*outPoint: lockScript[:],
 	}
 	getPubKeyFn := func(common.Address) ([]byte, error) {
-		return crypto.CompressPubkey(&privKey.PublicKey), nil
+		return pubKeyBytes, nil
 	}
 	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
-		s, e := crypto.Sign(hash, privKey)
+		s, e := crypto.MyCryptoLib.Sign(privKeyBytes,hash)
 		return s, e
 	}
 	var hashtype uint32
