@@ -203,9 +203,9 @@ func (chain *MemDag) SetUnitGroupSign(uHash common.Hash /*, groupPubKey []byte*/
 	//header.GroupPubKey = groupPubKey
 	header.GroupSign = groupSign
 	log.Debugf("Try to update unit[%s] header group sign", uHash.String())
-	// 下一个unit的群签名
+	// 进行下一个unit的群签名
 	if err == nil {
-		log.Debugf("sent toGroupSign event")
+		log.Debugf("send toGroupSign event")
 		go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
 	}
 
@@ -259,7 +259,8 @@ func (chain *MemDag) setNextStableUnit(unit *modules.Unit, txpool txspool.ITxPoo
 	hash := unit.Hash()
 	height := unit.NumberU64()
 	// memdag不依赖apply unit的存储，因此用协程提高setStable的效率
-	go chain.saveUnitToDb(chain.ldbunitRep, chain.ldbUnitProduceRep, unit)
+	// 虽然与memdag无关，但是下一个unit的 apply 处理依赖上一个unit apply的结果，所以不能用协程并发处理
+	chain.saveUnitToDb(chain.ldbunitRep, chain.ldbUnitProduceRep, unit)
 	if !chain.saveHeaderOnly && len(unit.Txs) > 1 {
 		go txpool.SendStoredTxs(unit.Txs.GetTxIds())
 	}
@@ -408,7 +409,8 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 	chain.lock.Lock()
 	defer chain.lock.Unlock()
 	if unit.NumberU64() <= chain.stableUnitHeight {
-		log.Debugf("This unit is too old! Ignore it,stable unit height:%d, stable hash:%s", chain.stableUnitHeight, chain.stableUnitHash.String())
+		log.Debugf("This unit is too old! Ignore it,stable unit height:%d, stable hash:%s",
+			chain.stableUnitHeight, chain.stableUnitHash.String())
 		return nil
 	}
 	chain_units := chain.getChainUnits()
@@ -422,8 +424,8 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 	})
 
 	if err == nil {
-		// 下一个unit的群签名
-		log.Debugf("sent toGroupSign event")
+		// 进行下一个unit的群签名
+		log.Debugf("send toGroupSign event")
 		go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
 	}
 
@@ -453,8 +455,8 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 			start := time.Now()
 			// todo Albert·gou 待重做 优化逻辑
 			if chain.checkStableCondition(unit, txpool) {
-				// 下一个unit的群签名
-				log.Debugf("sent toGroupSign event")
+				// 进行下一个unit的群签名
+				log.Debugf("send toGroupSign event")
 				go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
 				log.Debugf("unit[%s] checkStableCondition =true", uHash.String())
 			}
