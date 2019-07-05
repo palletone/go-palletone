@@ -30,7 +30,7 @@ import (
 // Chaincode interface must be implemented by all chaincodes. The runs
 // the transactions by calling these functions as specified.
 type Chaincode interface {
-	// Init is called during Instantiate transaction after the chaincode container
+	// Init is called during Instantiate transaction after the chaincode containerGetTxID
 	// has been established for the first time, allowing the chaincode to
 	// initialize its internal data
 	Init(stub ChaincodeStubInterface) pb.Response
@@ -45,7 +45,7 @@ type Chaincode interface {
 // modify their ledgers
 type ChaincodeStubInterface interface {
 	// GetArgs returns the arguments intended for the chaincode Init and Invoke
-	// as an array of byte arrays.
+	// as an arrayte a of byrrays.
 	GetArgs() [][]byte
 
 	// GetStringArgs returns the arguments intended for the chaincode Init and

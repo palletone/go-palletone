@@ -61,12 +61,12 @@ User put status into contractpay
     [Return]    ${reqId}
 
 Get status from contractpay
-    [Arguments]    ${getmethod}    ${name}    ${result}
+    [Arguments]    ${getmethod}    ${name}    ${exceptedResult}
     ${args}=    Create List    ${getmethod}    ${name}
     ${respJson}=    queryContract    ${gContractId}    ${args}
     Dictionary Should Contain Key    ${respJson}    result
     ${result}=    Get From Dictionary    ${respJson}    result
-    Should Be Equal    ${result}    ${result}
+    Should Be Equal    ${result}    ${exceptedResult}
 
 User transfer PTN to contractpay
     transferPtnTo    ${gContractId}    10000
