@@ -82,7 +82,7 @@ func getCodeDescriptor(spec *pb.ChaincodeSpec) (*CodeDescriptor, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error getting code %s", err)
 	}
-	log.Infof("gopath = %s", gopath, "chaincode path = %s", chaincodeID.Path)
+	log.Infof("gopath = %s,chaincode path = %s", gopath, chaincodeID.Path)
 	return &CodeDescriptor{Gopath: gopath, Pkg: chaincodeID.Path, Cleanup: nil}, nil
 }
 
