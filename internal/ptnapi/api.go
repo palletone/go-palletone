@@ -729,7 +729,9 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, poolTxs
 
 				data, _ := json.Marshal(pay)
 				if len(pay.Outputs) == 0 {
-					log.Errorf("Payment output length=0,pay:%s", string(data))
+					//一个交易是可能Output为0的，所有Input都交了手续费
+					log.Debugf("Payment output length=0,pay:%s", string(data))
+					continue
 				}
 				if pay.Outputs[0].Asset == nil {
 					log.Errorf("Payment output asset=nil,pay:%s", string(data))
