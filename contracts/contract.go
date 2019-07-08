@@ -170,7 +170,7 @@ func (c *Contract) Stop(rwM rwset.TxManager, chainID string, deployId []byte, tx
 		log.Info("contract test stop")
 		return test.Stop(deployId, chainID, deployId, txid, deleteImage)
 	}
-	return cc.Stop(rwM, c.dag, deployId, chainID, deployId, txid, deleteImage)
+	return cc.Stop(rwM, c.dag, deployId, chainID, deployId, txid, deleteImage, false)
 }
 
 func (c *Contract) StartChaincodeContainer(chainID string, templateId []byte, txId string) (deployId []byte, e error) {

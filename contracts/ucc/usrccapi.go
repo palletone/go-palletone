@@ -80,7 +80,7 @@ func DeployUserCC(contractId []byte, chaincodeData []byte, spec *pb.ChaincodeSpe
 	return nil
 }
 
-func StopUserCC(contractid []byte, chainID string, usrcc *UserChaincode, txid string, deleteImage bool) error {
+func StopUserCC(contractid []byte, chainID string, usrcc *UserChaincode, txid string, deleteImage bool, dontRmCon bool) error {
 	ccprov := ccprovider.GetChaincodeProvider()
 	chaincodeID := &pb.ChaincodeID{Path: usrcc.Path, Name: usrcc.Name, Version: usrcc.Version}
 	spec := &pb.ChaincodeSpec{
@@ -95,7 +95,7 @@ func StopUserCC(contractid []byte, chainID string, usrcc *UserChaincode, txid st
 		CodePackage:   nil,
 	}
 	cccid := ccprov.GetCCContext(contractid, chainID, usrcc.Name, usrcc.Version, txid, false, nil, nil)
-	if err := ccprov.Stop(context.Background(), cccid, chaincodeDeploymentSpec); err != nil {
+	if err := ccprov.Stop(context.Background(), cccid, chaincodeDeploymentSpec, dontRmCon); err != nil {
 		return err
 	}
 

@@ -496,7 +496,7 @@ type ChaincodeProvider interface {
 	// ExecuteWithErrorFilter executes the chaincode given context and spec and returns payload
 	ExecuteWithErrorFilter(ctxt context.Context, cccid interface{}, spec interface{}, timeout time.Duration) ([]byte, *pb.ChaincodeEvent, error)
 	// Stop stops the chaincode given context and deployment spec
-	Stop(ctxt context.Context, cccid interface{}, spec *pb.ChaincodeDeploymentSpec) error
+	Stop(ctxt context.Context, cccid interface{}, spec *pb.ChaincodeDeploymentSpec, dontRmCon bool) error
 
 	Destory(ctxt context.Context, cccid interface{}, spec *pb.ChaincodeDeploymentSpec) error
 }

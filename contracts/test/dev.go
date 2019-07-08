@@ -256,7 +256,7 @@ func StopByName(contractid []byte, chainID string, txid string, ccName string, c
 		Version: ccVersion,
 		Enabled: true,
 	}
-	err := ucc.StopUserCC(contractid, chainID, usrcc, txid, deleteImage)
+	err := ucc.StopUserCC(contractid, chainID, usrcc, txid, deleteImage, false)
 	if err != nil {
 		errMsg := fmt.Sprintf("StopUserCC err[%s]-[%s]-err[%s]", chainID, ccName, err)
 		return nil, errors.New(errMsg)
