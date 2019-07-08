@@ -588,6 +588,23 @@ func (p *Processor) checkTxAddrValid(tx *modules.Transaction) bool {
 	case modules.APP_CONTRACT_DEPLOY_REQUEST:
 	case modules.APP_CONTRACT_INVOKE_REQUEST:
 	case modules.APP_CONTRACT_STOP_REQUEST:
+		reqId := tx.RequestHash()
+		contractId := tx.ContractIdBytes()
+		contract, err := p.dag.GetContract(contractId)
+		if err != nil {
+			log.Debugf("[%s]checkTxAddrValid, GetContract fail, contractId[%v]", shortId(reqId.String()), contractId)
+			return false
+		}
+		reqAddr, err := p.dag.GetTxRequesterAddress(tx)
+		if err != nil {
+			return false
+		}
+		log.Debug("checkTxAddrValid", "contract", contract)
+
+		if !bytes.Equal(contract.Creator, reqAddr.Bytes()) {
+			log.Debugf("[%s]checkTxAddrValid, addr is not equal, Creator[%v], reqAddr[%v]", shortId(reqId.String()), contract.Creator, reqAddr.Bytes())
+			return false
+		}
 	}
 	return true
 }

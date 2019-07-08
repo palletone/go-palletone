@@ -497,7 +497,7 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 			txs = append(txs, t)
 		}
 	}
-	log.Debugf("create coinbase tx cost time %s", time.Since(tt))
+	log.Debugf("create coinbase tx cost time %s, unit tx num[%d]", time.Since(tt), len(txs))
 	/**
 	todo 需要根据交易中涉及到的token类型来确定交易打包到哪个区块
 	todo 如果交易中涉及到其他币种的交易，则需要将交易费的单独打包
