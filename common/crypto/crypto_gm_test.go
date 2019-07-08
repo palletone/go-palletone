@@ -29,10 +29,6 @@ import (
 
 func TestCryptoGm_Sign(t *testing.T) {
 	crypto:=&CryptoGm{}
-	//h,err:=crypto.Hash([]byte("ABC"))
-	//assert.Nil(t,err)
-	//t.Logf("Hash:%x",h)
-
 	msg := []byte("ABC")
 	privKey,err:= crypto.KeyGen()
 	assert.Nil(t,err)
@@ -87,4 +83,39 @@ func Test_key(t *testing.T) {
 		t.Logf("Verify ok\n")
 	}
 
+}
+
+
+func TestCryptoGm_Addr(t *testing.T)  {
+	crypto:=&CryptoGm{}
+	privKey,err:= crypto.KeyGen()
+	assert.Nil(t,err)
+	t.Logf("PrivateKey:%x",privKey)
+	assert.Nil(t,err)
+
+	pubKey,err:=crypto.PrivateKeyToPubKey(privKey)
+	assert.Nil(t,err)
+	t.Logf("Pubkey:%x",pubKey)
+
+	addr := PubkeyBytesToAddress(pubKey)
+	address := addr.String()
+	t.Logf("Address:%s",address)
+
+
+	crypto1:=&CryptoS256{}
+	privKey1,err:= crypto1.KeyGen()
+	assert.Nil(t,err)
+	t.Logf("PrivateKey:%x",privKey1)
+	assert.Nil(t,err)
+
+	pubKey1,err:=crypto1.PrivateKeyToPubKey(privKey1)
+	assert.Nil(t,err)
+	t.Logf("Pubkey:%x",pubKey1)
+
+	addr1 := PubkeyBytesToAddress(pubKey1)
+	address1 := addr1.String()
+	t.Logf("Address:%s",address1)
+
+	a,_ := addr.Validate()
+	t.Log(a)
 }
