@@ -106,7 +106,8 @@ func (pm *ProtocolManager) connectWitchActiveMediators() {
 	for id, peer := range peers {
 		// 仅当不是本节点，并还未连接时，才进行连接
 		if peer.ID != pm.srvr.Self().ID && pm.peers.Peer(id) == nil {
-			pm.srvr.AddTrustedPeer(peer)
+			pm.srvr.AddTrustedPeer(peer) // 加入Trusted列表
+			pm.srvr.AddPeer(peer)        // 建立连接
 		}
 	}
 }
@@ -134,12 +135,12 @@ func (pm *ProtocolManager) checkActiveMediatorConnected() {
 	checkTick := time.NewTicker(200 * time.Millisecond)
 	// 设置检查期限，防止死循环
 	expiration := pm.dag.UnitIrreversibleTime()
-	delayDisc := time.NewTimer(expiration)
+	killLoop := time.NewTimer(expiration)
 	for {
 		select {
 		case <-pm.quitSync:
 			return
-		case <-delayDisc.C:
+		case <-killLoop.C:
 			return
 		case <-checkTick.C:
 			if checkFn() {
@@ -169,7 +170,7 @@ func (pm *ProtocolManager) delayDiscPrecedingMediator() {
 		}
 	}
 
-	// 3. 设置定时器延迟 断开连接
+	// 3. 设置定时器延迟 将上一届的活跃mediator节点从Trusted列表中移除
 	disconnectFn := func() {
 		for _, peer := range delayDiscNodes {
 			pm.srvr.RemoveTrustedPeer(peer)
