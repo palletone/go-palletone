@@ -183,10 +183,12 @@ func CopyHeader(h *Header) *Header {
 	}
 
 	if len(h.GroupSign) > 0 {
+		cpy.GroupSign = make([]byte, len(h.GroupSign))
 		copy(cpy.GroupSign, h.GroupSign)
 	}
 
 	if len(h.GroupPubKey) > 0 {
+		cpy.GroupPubKey = make([]byte, len(h.GroupPubKey))
 		copy(cpy.GroupPubKey, h.GroupPubKey)
 	}
 
