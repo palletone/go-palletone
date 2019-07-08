@@ -759,7 +759,12 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 	if err != nil {
 		return common.Hash{}, nil, err
 	}
+	p.locker.Lock()
+	defer p.locker.Unlock()
 	reqId := tx.RequestHash()
+	if p.mtx[reqId] != nil {
+		return reqId, nil, fmt.Errorf("contract request transaction[%s] already created!", shortId(reqId.String()))
+	}
 	p.mtx[reqId] = &contractTx{
 		reqTx:  tx.GetRequestTx(),
 		tm:     time.Now(),
@@ -770,9 +775,10 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 	if !tx.IsSystemContract() {
 		//获取合约Id
 		//检查合约Id下是否存在addrHash,并检查数量是否满足要求
-		if contractId == (common.Address{}) { //deploy
-
-		} else { //invoke,stop
+		if contractId == (common.Address{}) {
+			//deploy
+		} else {
+			//invoke,stop
 			elist, err := p.getContractElectionList(contractId)
 			if err != nil {
 				log.Errorf("[%s]signAndExecute, getContractElectionList fail,err:%s", shortId(tx.RequestHash().String()), err.Error())
@@ -780,9 +786,6 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 			}
 			ctx.eleInf = elist
 		}
-	}
-	if isLocalInstall {
-
 	}
 	return reqId, tx, nil
 }

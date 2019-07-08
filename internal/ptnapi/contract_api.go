@@ -324,25 +324,24 @@ func (s *PublicContractAPI) CcinvoketxPass(ctx context.Context, from, to, daoAmo
 	return hex.EncodeToString(reqId[:]), err
 }
 
-func (s *PublicContractAPI) Ccstoptx(ctx context.Context, from, to, daoAmount, daoFee, contractId, deleteImage string) (string, error) {
+func (s *PublicContractAPI) Ccstoptx(ctx context.Context, from, to, daoAmount, daoFee, contractId string) (string, error) {
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
 	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
 	fee, _ := strconv.ParseUint(daoFee, 10, 64)
 	contractAddr, _ := common.StringToAddress(contractId)
 	//TODO delImg 为 true 时，目前是会删除基础镜像的
-	delImg := true
-	if del, _ := strconv.Atoi(deleteImage); del <= 0 {
-		delImg = false
-	}
+	//delImg := true
+	//if del, _ := strconv.Atoi(deleteImage); del <= 0 {
+	//	delImg = false
+	//}
 	log.Debug("-----Ccstoptx:", "fromAddr", fromAddr.String())
 	log.Debug("-----Ccstoptx:", "toAddr", toAddr.String())
 	log.Debug("-----Ccstoptx:", "amount", amount)
 	log.Debug("-----Ccstoptx:", "fee", fee)
 	log.Debug("-----Ccstoptx:", "contractId", contractAddr)
-	log.Debug("-----Ccstoptx:", "delImg", delImg)
 
-	reqId, err := s.b.ContractStopReqTx(fromAddr, toAddr, amount, fee, contractAddr, delImg)
+	reqId, err := s.b.ContractStopReqTx(fromAddr, toAddr, amount, fee, contractAddr, false)
 	log.Debug("-----Ccstoptx:" + hex.EncodeToString(reqId[:]))
 	return hex.EncodeToString(reqId[:]), err
 }

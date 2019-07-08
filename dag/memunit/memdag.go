@@ -35,8 +35,8 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/txspool"
-	"go.dedis.ch/kyber/v3/sign/bls"
 	"github.com/palletone/go-palletone/validator"
+	"go.dedis.ch/kyber/v3/sign/bls"
 )
 
 type MemDag struct {
@@ -60,7 +60,7 @@ type MemDag struct {
 	tempdb            *Tempdb
 	saveHeaderOnly    bool
 	lock              sync.RWMutex
-	validator validator.Validator
+	validator         validator.Validator
 	// append by albert·gou 用于通知群签名
 	toGroupSignFeed  event.Feed
 	toGroupSignScope event.SubscriptionScope
@@ -111,7 +111,7 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 		}
 	}
 	log.Debugf("Init MemDag[%s], get last stable unit[%s] to set lastMainChainUnit", token.String(), stablehash.String())
-	v:=validator.NewValidate(trep,tutxoRep,tstateRep,tpropRep)
+	v := validator.NewValidate(trep, tutxoRep, tstateRep, tpropRep)
 	memdag := &MemDag{
 		token:              token,
 		threshold:          threshold,
@@ -129,7 +129,7 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 		stableUnitHeight:   stbIndex.Index,
 		lastMainChainUnit:  stableUnit,
 		saveHeaderOnly:     saveHeaderOnly,
-		validator:v,
+		validator:          v,
 		ldbUnitProduceRep:  ldbUnitProduceRep,
 		tempUnitProduceRep: tempUnitProduceRep,
 	}
@@ -416,6 +416,7 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 	}
 	chain_units := chain.getChainUnits()
 	if _, has := chain_units[unit.Hash()]; has { // 不重复添加
+		log.Infof("MemDag[%s] received a repeated unit, hash[%s] ", chain.token.String(), unit.Hash().String())
 		return nil
 	}
 	err := chain.addUnit(unit, txpool)
@@ -445,8 +446,8 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 			//Add a new unit to main chain
 			//Check unit and it's txs are valid
 			//只有主链上添加单元时才能判断整个Unit的有效性
-			validateCode:= chain.validator.ValidateUnitExceptGroupSig(unit)
-			if validateCode!=validator.TxValidationCode_VALID{
+			validateCode := chain.validator.ValidateUnitExceptGroupSig(unit)
+			if validateCode != validator.TxValidationCode_VALID {
 				return validator.NewValidateError(validateCode)
 			}
 			// 判断当前高度是不是已经有区块了
@@ -474,7 +475,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 
 			start1 := time.Now()
 			chain.saveUnitToDb(chain.tempdbunitRep, chain.tempUnitProduceRep, unit)
-			log.InfoDynamic(func() string {
+			log.DebugDynamic(func() string {
 				return fmt.Sprintf("save unit cost time: %s ,index: %d, hash: %s",
 					time.Since(start1), height, uHash.String())
 			})
@@ -514,6 +515,7 @@ func (chain *MemDag) getChainAddressCount(lastUnit *modules.Unit) int {
 	}
 	return len(addrs)
 }
+
 //发现一条更长的确认数更多的链，则放弃原有主链，切换成新主链
 //1.将旧主链上包含的交易在交易池中重置
 //2.将稳定单元刷新到LevelDB，清空TempDB

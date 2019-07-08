@@ -62,8 +62,8 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'ccstoptx',
         	call: 'contract_ccstoptx',
-        	params: 6, //from, to, daoAmount, daoFee, contractId, deleteImage
-			inputFormatter: [null, null, null, null, null, null]
+        	params: 5, //from, to, daoAmount, daoFee, contractId
+			inputFormatter: [null, null, null, null, null]
 		}),
 		//cc
 		new web3._extend.Method({

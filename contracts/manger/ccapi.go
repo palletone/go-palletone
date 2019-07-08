@@ -280,7 +280,7 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 	return unit, nil
 }
 
-func Stop(rwM rwset.TxManager, idag dag.IDag, contractid []byte, chainID string, deployId []byte, txid string, deleteImage bool) (*md.ContractStopPayload, error) {
+func Stop(rwM rwset.TxManager, idag dag.IDag, contractid []byte, chainID string, deployId []byte, txid string, deleteImage bool, dontRmCon bool) (*md.ContractStopPayload, error) {
 	log.Info("Stop enter", "contractid", contractid, "chainID", chainID, "deployId", deployId, "txid", txid)
 	defer log.Info("Stop enter", "contractid", contractid, "chainID", chainID, "deployId", deployId, "txid", txid)
 
@@ -296,14 +296,14 @@ func Stop(rwM rwset.TxManager, idag dag.IDag, contractid []byte, chainID string,
 	if err != nil {
 		return nil, err
 	}
-	stopResult, err := StopByName(contractid, setChainId, txid, cc, deleteImage)
+	stopResult, err := StopByName(contractid, setChainId, txid, cc, deleteImage, dontRmCon)
 	if err == nil {
 		cclist.DelChaincode(chainID, cc.Name, cc.Version)
 	}
 	return stopResult, err
 }
 
-func StopByName(contractid []byte, chainID string, txid string, usercc *cclist.CCInfo, deleteImage bool) (*md.ContractStopPayload, error) {
+func StopByName(contractid []byte, chainID string, txid string, usercc *cclist.CCInfo, deleteImage bool, dontRmCon bool) (*md.ContractStopPayload, error) {
 	usrcc := &ucc.UserChaincode{
 		Name:     usercc.Name,
 		Path:     usercc.Path,
@@ -311,7 +311,7 @@ func StopByName(contractid []byte, chainID string, txid string, usercc *cclist.C
 		Enabled:  true,
 		Language: usercc.Language,
 	}
-	err := ucc.StopUserCC(contractid, chainID, usrcc, txid, deleteImage)
+	err := ucc.StopUserCC(contractid, chainID, usrcc, txid, deleteImage, dontRmCon)
 	if err != nil {
 		errMsg := fmt.Sprintf("StopUserCC err[%s]-[%s]-err[%s]", chainID, usrcc.Name, err)
 		return nil, errors.New(errMsg)
@@ -358,7 +358,7 @@ func GetAllContainers(client *docker.Client) {
 }
 
 func StartChaincodeContainert(idag dag.IDag, chainID string, deployId []byte, txId string) ([]byte, error) {
-	_, err := Stop(nil, idag, deployId, chainID, deployId, txId, false)
+	_, err := Stop(nil, idag, deployId, chainID, deployId, txId, false, true)
 	if err != nil {
 		return nil, err
 	}

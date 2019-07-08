@@ -96,9 +96,9 @@ func (c *ccProviderImpl) ExecuteWithErrorFilter(ctxt context.Context, cccid inte
 }
 
 // Stop stops the chaincode given context and spec
-func (c *ccProviderImpl) Stop(ctxt context.Context, cccid interface{}, spec *pb.ChaincodeDeploymentSpec) error {
+func (c *ccProviderImpl) Stop(ctxt context.Context, cccid interface{}, spec *pb.ChaincodeDeploymentSpec, dontRmCon bool) error {
 	if theChaincodeSupport != nil {
-		return theChaincodeSupport.Stop(ctxt, cccid.(*ccProviderContextImpl).ctx, spec)
+		return theChaincodeSupport.Stop(ctxt, cccid.(*ccProviderContextImpl).ctx, spec, dontRmCon)
 	}
 	return errors.New("Stop:ChaincodeSupport not initialized")
 }

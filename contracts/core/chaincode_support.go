@@ -426,7 +426,8 @@ func (chaincodeSupport *ChaincodeSupport) getLaunchConfigs(cccid *ccprovider.CCC
 	switch cLang {
 	case pb.ChaincodeSpec_GOLANG, pb.ChaincodeSpec_CAR:
 		//args = []string{"chaincode", fmt.Sprintf("-peer.address=%s", chaincodeSupport.peerAddress)}
-		args = []string{"/bin/sh", "-c", "cd / && tar -xvf binpackage.tar -C $GOPATH/bin && rm binpackage.tar && rm Dockerfile && cd $GOPATH/bin && ./chaincode"}
+		//args = []string{"/bin/sh", "-c", "cd / && tar -xvf binpackage.tar -C $GOPATH/bin && rm binpackage.tar && rm Dockerfile && cd $GOPATH/bin && ./chaincode"}
+		args = []string{"/bin/sh", "-c", "cd / && tar -xvf binpackage.tar -C $GOPATH/bin && cd $GOPATH/bin && ./chaincode"}
 	case pb.ChaincodeSpec_JAVA:
 		args = []string{"java", "-jar", "chaincode.jar", "--peerAddress", chaincodeSupport.peerAddress}
 	case pb.ChaincodeSpec_NODE:
@@ -593,7 +594,7 @@ func (chaincodeSupport *ChaincodeSupport) launchAndWaitForRegister(ctxt context.
 	}
 	if err != nil {
 		log.Debugf("stopping due to error while launching: %+v", err)
-		errIgnore := chaincodeSupport.Stop(ctxt, cccid, cds)
+		errIgnore := chaincodeSupport.Stop(ctxt, cccid, cds, true)
 		if errIgnore != nil {
 			log.Debugf("stop failed: %+v", errIgnore)
 		}
@@ -605,7 +606,7 @@ func (chaincodeSupport *ChaincodeSupport) launchAndWaitForRegister(ctxt context.
 //---------- End - launchAndWaitForRegister related functionality --------
 
 //Stop stops a chaincode if running
-func (chaincodeSupport *ChaincodeSupport) Stop(context context.Context, cccid *ccprovider.CCContext, cds *pb.ChaincodeDeploymentSpec) error {
+func (chaincodeSupport *ChaincodeSupport) Stop(context context.Context, cccid *ccprovider.CCContext, cds *pb.ChaincodeDeploymentSpec, dontRmCon bool) error {
 	canName := cccid.GetCanonicalName()
 	if canName == "" {
 		return errors.New("chaincode name not set")
@@ -617,7 +618,7 @@ func (chaincodeSupport *ChaincodeSupport) Stop(context context.Context, cccid *c
 	//sir := container.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, Version: cccid.Version}, Timeout: 0}
 	// The line below is left for debugging. It replaces the line above to keep
 	// the chaincode container around to give you a chance to get data
-	sir := controller.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, ChainID: "" /*cccid.ChainID*/, Version: cccid.Version}, Timeout: 0, Dontremove: false}
+	sir := controller.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, ChainID: "" /*cccid.ChainID*/, Version: cccid.Version}, Timeout: 0, Dontremove: dontRmCon}
 	vmtype, _ := chaincodeSupport.getVMType(cds)
 
 	_, err := controller.VMCProcess(context, vmtype, sir)
@@ -803,7 +804,7 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 		if err != nil {
 			err = errors.WithMessage(err, "failed to init chaincode")
 			log.Errorf("%+v", err)
-			errIgnore := chaincodeSupport.Stop(context, cccid, cds)
+			errIgnore := chaincodeSupport.Stop(context, cccid, cds, true)
 			if errIgnore != nil {
 				log.Errorf("stop failed: %+v", errIgnore)
 			}
