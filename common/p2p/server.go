@@ -670,7 +670,7 @@ running:
 		case n := <-srv.addtrusted:
 			// This channel is used by AddTrustedPeer to add an pnode
 			// to the trusted node set.
-			log.Debug("Adding trusted node", "node", n)
+			log.Debug("Adding trusted node", "node", n.ID.TerminalString())
 			trusted[n.ID] = true
 			// Mark any already-connected peer as trusted
 			if p, ok := peers[n.ID]; ok {
@@ -679,7 +679,7 @@ running:
 		case n := <-srv.removetrusted:
 			// This channel is used by RemoveTrustedPeer to remove an pnode
 			// from the trusted node set.
-			log.Debug("Removing trusted node", "node", n)
+			log.Debug("Removing trusted node", "node", n.ID.TerminalString())
 			if _, ok := trusted[n.ID]; ok {
 				delete(trusted, n.ID)
 			}
