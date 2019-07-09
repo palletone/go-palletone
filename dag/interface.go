@@ -88,6 +88,7 @@ type IDag interface {
 
 	GetTrieSyncProgress() (uint64, error)
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
+	GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error)
 
 	GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error)
 	GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
