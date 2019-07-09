@@ -165,7 +165,7 @@ type Backend interface {
 	GetAllContractTpl() ([]*ptnjson.ContractTemplateJson, error)
 	GetAllContracts() ([]*ptnjson.ContractJson, error)
 	GetContractsByTpl(tplId []byte) ([]*ptnjson.ContractJson, error)
-
+	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
 	//get contract key
 	GetContractState(contractid []byte, key string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)

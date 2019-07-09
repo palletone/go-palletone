@@ -568,7 +568,9 @@ func (dag *UnitProduceRepository) updateActiveMediators() bool {
 	}
 	dag.propRep.StoreGlobalProp(gp)
 
-	return isActiveMediatorsChanged(gp)
+	// todo albert 待使用
+	//return isActiveMediatorsChanged(gp)
+	return false
 }
 
 func (d *UnitProduceRepository) getDesiredActiveMediatorCount() int {

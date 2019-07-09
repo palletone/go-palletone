@@ -104,12 +104,12 @@ func (pm *ProtocolManager) connectWitchActiveMediators() {
 
 	// 2. 和其他活跃mediator节点相连
 	peers := pm.dag.GetActiveMediatorNodes()
-	for /*id*/ _, peer := range peers {
-		// 仅当不是本节点，并还未连接时，才进行连接
-		//if peer.ID != pm.srvr.Self().ID && pm.peers.Peer(id) == nil {
-		pm.srvr.AddTrustedPeer(peer) // 加入Trusted列表
-		pm.srvr.AddPeer(peer)        // 建立连接
-		//}
+	for _, peer := range peers {
+		// 仅当不是本节点，才做处理
+		if peer.ID != pm.srvr.Self().ID {
+			pm.srvr.AddTrustedPeer(peer) // 加入Trusted列表
+			pm.srvr.AddPeer(peer)        // 建立连接
+		}
 	}
 }
 
