@@ -366,7 +366,7 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			incomeAddr, _ := common.StringToAddress(addr)
 			aa := []modules.AmountAsset{}
 			rlp.DecodeBytes(v.Value, &aa)
-			if len(aa)>0 {
+			if len(aa) > 0 {
 				rewards[incomeAddr] = aa
 			}
 		}
@@ -385,9 +385,9 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 		if !compareRewardAndOutput(rewards, payment.Outputs) {
 			log.Error("Output not match")
 			log.DebugDynamic(func() string {
-				rjson,_:=json.Marshal(rewards)
-				ojson,_:=json.Marshal(payment)
-				return fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nPayment:%s",string(rjson),string(ojson))
+				rjson, _ := json.Marshal(rewards)
+				ojson, _ := json.Marshal(payment)
+				return fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nPayment:%s", string(rjson), string(ojson))
 			})
 			// panic("Coinbase Output not match")
 			return TxValidationCode_INVALID_COINBASE
@@ -402,9 +402,9 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			if !compareRewardAndStateClear(rewards, clearStateInvoke.WriteSet) {
 				log.Error("Clear statedb not match")
 				log.DebugDynamic(func() string {
-					rjson,_:=json.Marshal(rewards)
-					ojson,_:=json.Marshal(clearStateInvoke)
-					return fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nInvoke result:%s",string(rjson),string(ojson))
+					rjson, _ := json.Marshal(rewards)
+					ojson, _ := json.Marshal(clearStateInvoke)
+					return fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nInvoke result:%s", string(rjson), string(ojson))
 				})
 				return TxValidationCode_INVALID_COINBASE
 			}
@@ -439,6 +439,11 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			return TxValidationCode_VALID
 		} else {
 			log.Error("Coinbase contract write set not correct")
+			log.DebugDynamic(func() string {
+				rjson, _ := json.Marshal(rewards)
+				ojson, _ := json.Marshal(invoke)
+				return fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nInvoke result:%s", string(rjson), string(ojson))
+			})
 			return TxValidationCode_INVALID_COINBASE
 		}
 	}
@@ -492,7 +497,7 @@ func compareRewardAndStateClear(rewards map[common.Address][]modules.AmountAsset
 
 	}
 	//if comparedCount != len(writeset) {
-	if comparedCount != len(rewards) {//所有的Reward的状态数据库被清空
+	if comparedCount != len(rewards) { //所有的Reward的状态数据库被清空
 		return false
 	}
 	return true
