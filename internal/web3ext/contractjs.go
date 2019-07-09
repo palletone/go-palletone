@@ -119,8 +119,26 @@ web3._extend({
         	params: 1, // param[]string
 		}),
 		new web3._extend.Method({
-			name: 'getContractsByTpl',
-        	call: 'contract_getContractsByTpl',
+			name: 'getAllContractsUsedTemplateId',
+        	call: 'contract_getAllContractsUsedTemplateId',
+        	params: 1, //param[]string
+			inputFormatter: [null]
+		}),
+		new web3._extend.Method({
+			name: 'getContractTemplateInfoById',
+        	call: 'contract_getContractTemplateInfoById',
+        	params: 1, //param[]string
+			inputFormatter: [null]
+		}),
+		new web3._extend.Method({
+			name: 'getContractInfoById',
+        	call: 'contract_getContractInfoById',
+        	params: 1, //param[]string
+			inputFormatter: [null]
+		}),
+		new web3._extend.Method({
+			name: 'getContractInfoByAddr',
+        	call: 'contract_getContractInfoByAddr',
         	params: 1, //param[]string
 			inputFormatter: [null]
 		}),
