@@ -514,7 +514,7 @@ func compareRewardAndWriteset(rewards map[common.Address][]modules.AmountAsset, 
 		}
 
 	}
-	if comparedCount != len(writeset) {
+	if comparedCount != len(rewards) { //所有的Reward的状态数据库被清空
 		return false
 	}
 	return true
