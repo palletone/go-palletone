@@ -542,3 +542,7 @@ func (b *LesApiBackend) GetContractStatesByPrefix(id []byte, prefix string) (map
 func (b *LesApiBackend) GetAddressBalanceStatistics(token string, topN int) (*statistics.TokenAddressBalanceJson, error) {
 	return nil, nil
 }
+
+func (b *LesApiBackend) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
+	return nil, nil
+}

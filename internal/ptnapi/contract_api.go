@@ -365,15 +365,27 @@ func (s *PublicContractAPI) unlockKS(addr common.Address, password string, durat
 	return nil
 }
 
+//  TODO
 func (s *PublicContractAPI) ListAllContractTemplates(ctx context.Context) ([]*ptnjson.ContractTemplateJson, error) {
 	return s.b.GetAllContractTpl()
 }
 
+//  TODO
 func (s *PublicContractAPI) ListAllContracts(ctx context.Context) ([]*ptnjson.ContractJson, error) {
 	return s.b.GetAllContracts()
 }
 
-func (s *PublicContractAPI) GetContractsByTpl(ctx context.Context, tplId string) ([]*ptnjson.ContractJson, error) {
+//  通过合约模板id获取模板信息
+func (s *PublicContractAPI) GetContractTemplateInfoById(ctx context.Context, contractTplId string) (*modules.ContractTemplate, error) {
+	templateId, err := hex.DecodeString(contractTplId)
+	if err != nil {
+		return nil, err
+	}
+	return s.b.GetContractTpl(templateId)
+}
+
+//  查看某个模板id对应着多个合约实例的合约信息
+func (s *PublicContractAPI) GetAllContractsUsedTemplateId(ctx context.Context, tplId string) ([]*ptnjson.ContractJson, error) {
 	id, err := hex.DecodeString(tplId)
 	if err != nil {
 		return nil, err
@@ -381,6 +393,24 @@ func (s *PublicContractAPI) GetContractsByTpl(ctx context.Context, tplId string)
 	return s.b.GetContractsByTpl(id)
 }
 
+//  通过合约Id，获取合约的详细信息
+func (s *PublicContractAPI) GetContractInfoById(ctx context.Context, contractId string) (*ptnjson.ContractJson, error) {
+	contract, err := s.b.GetContract(contractId)
+	if err != nil {
+		return nil, err
+	}
+	return ptnjson.ConvertContract2Json(contract), nil
+}
+
+//  通过合约地址，获取合约的详细信息
+func (s *PublicContractAPI) GetContractInfoByAddr(ctx context.Context, contractAddr string) (*ptnjson.ContractJson, error) {
+	addr, _ := common.StringToAddress(contractAddr)
+	contract, err := s.b.GetContract(addr.Hex()[2:])
+	if err != nil {
+		return nil, err
+	}
+	return ptnjson.ConvertContract2Json(contract), nil
+}
 func (s *PublicContractAPI) DepositContractInvoke(ctx context.Context, from, to, daoAmount, daoFee string,
 	param []string) (string, error) {
 	log.Debug("---enter DepositContractInvoke---")
@@ -481,6 +511,7 @@ func (s *PublicContractAPI) SysConfigContractInvoke(ctx context.Context, from, t
 	return rsp.ReqId, err
 }
 
+//  TODO
 func (s *PublicContractAPI) GetContractState(contractid []byte, key string) ([]byte, *modules.StateVersion, error) {
 	return s.b.GetContractState(contractid, key)
 }

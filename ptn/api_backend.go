@@ -770,6 +770,10 @@ func (b *PtnApiBackend) GetContractsByTpl(tplId []byte) ([]*ptnjson.ContractJson
 	return jsons, nil
 }
 
+func (b *PtnApiBackend) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
+	return b.ptn.dag.GetContractTpl(tplId)
+}
+
 func (b *PtnApiBackend) GetContractState(contractid []byte, key string) ([]byte, *modules.StateVersion, error) {
 	return b.ptn.dag.GetContractState(contractid, key)
 }
