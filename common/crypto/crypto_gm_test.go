@@ -101,7 +101,6 @@ func TestCryptoGm_Addr(t *testing.T)  {
 	address := addr.String()
 	t.Logf("Address:%s",address)
 
-
 	crypto1:=&CryptoS256{}
 	privKey1,err:= crypto1.KeyGen()
 	assert.Nil(t,err)
@@ -115,7 +114,6 @@ func TestCryptoGm_Addr(t *testing.T)  {
 	addr1 := PubkeyBytesToAddress(pubKey1)
 	address1 := addr1.String()
 	t.Logf("Address:%s",address1)
-
 	a,_ := addr.Validate()
 	t.Log(a)
 }
