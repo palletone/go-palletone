@@ -72,7 +72,7 @@ type iDag interface {
 	JuryCount() int
 	GetContractDevelopers() ([]common.Address, error)
 	IsContractDeveloper(addr common.Address) bool
-	IsUtxoSpent(outpoint *modules.OutPoint) (bool, error)
+	GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error)
 	GetActiveJuries() []common.Address
 	IsActiveMediator(addr common.Address) bool
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)

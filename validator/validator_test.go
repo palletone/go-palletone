@@ -82,8 +82,8 @@ func (q *mockStatedbQuery) GetContractStatesByPrefix(id []byte, prefix string) (
 type mockUtxoQuery struct {
 }
 
-func (q *mockUtxoQuery) IsUtxoSpent(outpoint *modules.OutPoint) (bool, error) {
-	return false, nil
+func (q *mockUtxoQuery) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error) {
+	return nil, nil
 }
 func (q *mockUtxoQuery) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	hash := common.HexToHash("1")

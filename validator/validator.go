@@ -54,8 +54,8 @@ type newUtxoQuery struct {
 	unitUtxo     *sync.Map
 }
 
-func (q *newUtxoQuery) IsUtxoSpent(outpoint *modules.OutPoint) (bool, error) {
-	return q.oldUtxoQuery.IsUtxoSpent(outpoint)
+func (q *newUtxoQuery) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error) {
+	return q.oldUtxoQuery.GetStxoEntry(outpoint)
 }
 func (q *newUtxoQuery) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	utxo, ok := q.unitUtxo.Load(*outpoint)
@@ -102,7 +102,7 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 			if _, ok := spendOutpointMap[outpoint]; ok {
 				return TxValidationCode_INVALID_DOUBLE_SPEND
 			}
-			if spent, _ := validate.utxoquery.IsUtxoSpent(outpoint); spent {
+			if stxo, _ := validate.utxoquery.GetStxoEntry(outpoint); stxo != nil {
 				return TxValidationCode_INVALID_DOUBLE_SPEND
 			}
 			spendOutpointMap[outpoint] = true
