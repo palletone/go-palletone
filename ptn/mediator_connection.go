@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -88,8 +89,8 @@ func (pm *ProtocolManager) switchMediatorConnect(isChanged bool) {
 	// 2. 和新的活跃mediator节点相连
 	go pm.connectWitchActiveMediators()
 
-	// 3. 检查是否连接完成，并发送事件
-	go pm.checkActiveMediatorConnected()
+	// 3. 检查是否连接和同步，并更新DKG和VSS
+	go pm.checkConnectedAndSynced()
 
 	// 4. 延迟关闭和旧活跃mediator节点的连接
 	go pm.delayDiscPrecedingMediator()
@@ -113,47 +114,57 @@ func (pm *ProtocolManager) connectWitchActiveMediators() {
 	}
 }
 
-func (pm *ProtocolManager) checkActiveMediatorConnected() {
-	log.Debugf("check if it is connected to an active mediator")
+func (pm *ProtocolManager) checkConnectedAndSynced() {
+	log.Debugf("check if it is connected to all active mediator peers")
 	if !pm.producer.LocalHaveActiveMediator() {
 		return
 	}
 
 	// 2. 是否和所有其他活跃mediator节点相连完成
 	checkFn := func() bool {
-		peers := pm.dag.GetActiveMediatorNodes()
-		for id, peer := range peers {
-			// 仅当不是本节点，并还未连接完成时，返回false
-			if peer.ID != pm.srvr.Self().ID && pm.peers.Peer(id) == nil {
+		nodes := pm.dag.GetActiveMediatorNodes()
+		for id, node := range nodes {
+			// 仅当不是本节点，并还未连接完成时，或者未同步，返回false
+			if node.ID == pm.srvr.Self().ID {
+				continue
+			}
+
+			peer := pm.peers.Peer(id)
+			if peer == nil {
+				return false
+			}
+
+			headHash := pm.dag.HeadUnitHash()
+			gasToken := dagconfig.DagConfig.GetGasToken()
+			pHeadHash, _ := peer.Head(gasToken)
+			if common.EmptyHash(pHeadHash) || headHash != pHeadHash {
 				return false
 			}
 		}
 
-		log.Debugf("connected with all active mediator nodes")
+		log.Debugf("connected with all active mediator peers")
 		return true
 	}
 
-	// 3. 调用mediator连接完成都的相关处理
+	// 3. 更新DKG和VSS
 	processFn := func() {
 		go pm.producer.UpdateMediatorsDKG(true)
 	}
 
 	// 1. 设置Ticker, 每隔一段时间检查一次
 	checkTick := time.NewTicker(200 * time.Millisecond)
+	defer checkTick.Stop()
 	// 设置检查期限，防止死循环
 	expiration := pm.dag.UnitIrreversibleTime()
 	killLoop := time.NewTimer(expiration)
 	for {
 		select {
 		case <-pm.quitSync:
-			checkTick.Stop()
 			return
 		case <-killLoop.C:
-			checkTick.Stop()
 			return
 		case <-checkTick.C:
 			if checkFn() {
-				checkTick.Stop()
 				processFn()
 				return
 			}
