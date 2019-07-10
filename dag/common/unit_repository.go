@@ -1342,6 +1342,18 @@ func (rep *UnitRepository) saveContractStop(reqid []byte, msg *modules.Message) 
 		log.Info("save contract stop payload failed,", "error", err)
 		return false
 	}
+	//  合约停止后，修改该合约的状态
+	contract, err := rep.statedb.GetContract(stop.ContractId)
+	if err != nil {
+		log.Info("get contract with id failed,", "error", err)
+		return false
+	}
+	contract.Status = 0
+	err = rep.statedb.SaveContract(contract)
+	if err != nil {
+		log.Info("save contract with id failed,", "error", err)
+		return false
+	}
 	return true
 }
 
@@ -1479,7 +1491,7 @@ func (rep *UnitRepository) createCoinbasePayment(ads []*modules.Addition) (*modu
 		incomeAddr, _ := common.StringToAddress(addr)
 		aa := []modules.AmountAsset{}
 		rlp.DecodeBytes(v.Value, &aa)
-		if len(aa)>0 {
+		if len(aa) > 0 {
 			rewards[incomeAddr] = aa
 		}
 	}
