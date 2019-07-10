@@ -48,7 +48,7 @@ type Validator interface {
 
 type IUtxoQuery interface {
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
-	IsUtxoSpent(outpoint *modules.OutPoint) (bool,error)
+	GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error)
 }
 
 type IStateQuery interface {

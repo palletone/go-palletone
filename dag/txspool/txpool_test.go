@@ -132,8 +132,8 @@ func (ud *UnitDag4Test) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo,
 	}
 	return nil, fmt.Errorf("not found!")
 }
-func (ud *UnitDag4Test) IsUtxoSpent(outpoint *modules.OutPoint) (bool,error){
-	return false,nil
+func (ud *UnitDag4Test) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error) {
+	return nil, nil
 }
 func (ud *UnitDag4Test) GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error) {
 	neededSet := make(map[modules.OutPoint]struct{})
