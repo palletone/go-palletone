@@ -27,10 +27,12 @@ import (
 	"log"
 	"testing"
 
+	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/stretchr/testify/assert"
 	"time"
@@ -44,10 +46,12 @@ func getAccount() (*ecdsa.PrivateKey, []byte, common.Address) {
 	addr := crypto.PubkeyBytesToAddress(pubKey)
 	return privKey, pubKey, addr
 }
-
+func newCache() palletcache.ICache {
+	return freecache.NewCache(100 * 1024)
+}
 func TestValidate_ValidateTx_EmptyTx_NoPayment(t *testing.T) {
 	tx := &modules.Transaction{} //Empty Tx
-	validat := NewValidate(nil, nil, nil, nil)
+	validat := NewValidate(nil, nil, nil, nil, newCache())
 	_, _, err := validat.ValidateTx(tx, true)
 	assert.NotNil(t, err)
 	t.Log(err)
@@ -60,7 +64,7 @@ func TestValidate_ValidateTx_MsgCodeIncorrect(t *testing.T) {
 	tx := &modules.Transaction{}
 	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, &modules.DataPayload{MainData: []byte("m")}))
 
-	validat := NewValidate(nil, nil, nil, nil)
+	validat := NewValidate(nil, nil, nil, nil, newCache())
 	_, _, err := validat.ValidateTx(tx, true)
 	assert.NotNil(t, err)
 	t.Log(err)
@@ -209,7 +213,7 @@ func TestValidateDoubleSpendOn1Tx(t *testing.T) {
 
 	signTx(tx, outPoint)
 	utxoq := &testutxoQuery{}
-	validate := NewValidate(nil, utxoq, nil, nil)
+	validate := NewValidate(nil, utxoq, nil, nil, newCache())
 	_, _, err := validate.ValidateTx(tx, true)
 	assert.Nil(t, err)
 	pay2 := newTestPayment(outPoint, 2)
@@ -254,7 +258,7 @@ func TestValidateLargeInputPayment(t *testing.T) {
 	//t.Logf("Signed Tx:%s", string(data))
 
 	utxoq := &testutxoQuery{}
-	validate := NewValidate(nil, utxoq, nil, nil)
+	validate := NewValidate(nil, utxoq, nil, nil, newCache())
 	_, _, err := validate.ValidateTx(tx, true)
 
 	t1 := time.Now()

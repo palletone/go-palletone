@@ -37,9 +37,10 @@ import (
 func (d *Dag) SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription {
 	return d.Memdag.SubscribeToGroupSignEvent(ch)
 }
-func (d *Dag) ValidateUnitExceptPayment(unit *modules.Unit) error {
-	return d.validate.ValidateUnitExceptPayment(unit)
-}
+
+//func (d *Dag) ValidateUnitExceptPayment(unit *modules.Unit) error {
+//	return d.validate.ValidateUnitExceptPayment(unit)
+//}
 func (d *Dag) IsActiveMediator(add common.Address) bool {
 	return d.GetGlobalProp().IsActiveMediator(add)
 }

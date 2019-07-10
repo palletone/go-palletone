@@ -28,6 +28,8 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
 
+	"encoding/json"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -149,6 +151,11 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 		return common.Hash{}, err
 	}
 	log.Infof("[%s]ContractInvokeReq ok, reqId[%s], contractId[%s]", shortId(reqId.String()), reqId.String(), contractId.String())
+	log.DebugDynamic(func() string {
+		rjson, _ := json.Marshal(tx)
+		rdata, _ := rlp.EncodeToBytes(tx)
+		return fmt.Sprintf("Request data fro debug json:%s,\r\n rlp:%x", string(rjson), rdata)
+	})
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractEvent{Ele: p.mtx[reqId].eleInf, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
 	return reqId, nil
@@ -232,13 +239,3 @@ func (p *Processor) UpdateJuryAccount(addr common.Address, pwd string) bool {
 	return true
 }
 
-func (p *Processor) GetJuryAccount() []common.Address {
-	num := len(p.local)
-	addrs := make([]common.Address, num)
-	i := 0
-	for addr, _ := range p.local {
-		addrs[i] = addr
-		i++
-	}
-	return addrs
-}

@@ -619,7 +619,7 @@ func (b *PtnApiBackend) UpdateJuryAccount(addr common.Address, pwd string) bool 
 }
 
 func (b *PtnApiBackend) GetJuryAccount() []common.Address {
-	return b.ptn.contractPorcessor.GetJuryAccount()
+	return b.ptn.contractPorcessor.GetLocalJuryAddrs()
 }
 func (b *PtnApiBackend) SaveCommon(key, val []byte) error {
 	return b.ptn.dag.SaveCommon(key, val)

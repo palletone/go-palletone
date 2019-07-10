@@ -267,7 +267,7 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 	validatorFn := func(unit *modules.Unit) error {
 		//return dagerrors.ErrFutureBlock
 		hash := unit.Hash()
-		verr := pm.dag.ValidateUnitExceptPayment(unit)
+		verr := validator.ValidateUnitBasic(unit)
 		if verr != nil && !validator.IsOrphanError(verr) {
 			return verr
 		}

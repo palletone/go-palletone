@@ -34,7 +34,9 @@ type ValidatorCache struct {
 	cache palletcache.ICache
 }
 
-var prefix = []byte("VA")
+var expireSeconds = 60
+var prefixTx = []byte("VT")
+var prefixUnit = []byte("VU")
 var prefixHeader = []byte("VH")
 
 func NewValidatorCache(cache palletcache.ICache) *ValidatorCache {
@@ -45,42 +47,42 @@ func (s *ValidatorCache) AddTxValidateResult(txId common.Hash, validateResult []
 	if err != nil {
 		log.Errorf("Json marsal struct fail,error:%s", err.Error())
 	}
-	s.cache.Set(append(prefix, txId.Bytes()...), data, 60)
+	s.cache.Set(append(prefixTx, txId.Bytes()...), data, expireSeconds)
 }
 func (s *ValidatorCache) HasTxValidateResult(txId common.Hash) (bool, []*modules.Addition) {
-	data, err := s.cache.Get(append(prefix, txId.Bytes()...))
+	data, err := s.cache.Get(append(prefixTx, txId.Bytes()...))
 	if err != nil {
 		return false, nil
 	}
 
 	result := []*modules.Addition{}
 	json.Unmarshal(data, &result)
-	log.Debugf("Validate cache has tx hash:%s",txId.String())
+	log.Debugf("Validate cache has tx hash:%s", txId.String())
 	return true, result
 }
 
-func (s *ValidatorCache) AddUnitValidateResult(unitHash common.Hash,code ValidationCode) {
+func (s *ValidatorCache) AddUnitValidateResult(unitHash common.Hash, code ValidationCode) {
 
-	s.cache.Set(append(prefix, unitHash.Bytes()...), []byte{byte(code)}, 60)
+	s.cache.Set(append(prefixUnit, unitHash.Bytes()...), []byte{byte(code)}, expireSeconds)
 }
-func (s *ValidatorCache) HasUnitValidateResult(unitHash common.Hash) (bool,ValidationCode) {
-	data, err := s.cache.Get(append(prefix, unitHash.Bytes()...))
+func (s *ValidatorCache) HasUnitValidateResult(unitHash common.Hash) (bool, ValidationCode) {
+	data, err := s.cache.Get(append(prefixUnit, unitHash.Bytes()...))
 	if err != nil {
-		return false,TxValidationCode_NOT_VALIDATED
+		return false, TxValidationCode_NOT_VALIDATED
 	}
-	log.Debugf("Validate cache has unit hash:%s",unitHash.String())
+	log.Debugf("Validate cache has unit hash:%s", unitHash.String())
 	return true, ValidationCode(data[0])
 }
 
-func (s *ValidatorCache) AddHeaderValidateResult(unitHash common.Hash) {
+func (s *ValidatorCache) AddHeaderValidateResult(unitHash common.Hash, code ValidationCode) {
 
-	s.cache.Set(append(prefixHeader, unitHash.Bytes()...), []byte{0x1}, 60)
+	s.cache.Set(append(prefixHeader, unitHash.Bytes()...), []byte{byte(code)}, expireSeconds)
 }
-func (s *ValidatorCache) HasHeaderValidateResult(unitHash common.Hash) bool {
-	_, err := s.cache.Get(append(prefixHeader, unitHash.Bytes()...))
+func (s *ValidatorCache) HasHeaderValidateResult(unitHash common.Hash) (bool, ValidationCode) {
+	data, err := s.cache.Get(append(prefixHeader, unitHash.Bytes()...))
 	if err != nil {
-		return false
+		return false, TxValidationCode_NOT_VALIDATED
 	}
-	log.Debugf("Validate cache has header hash:%s",unitHash.String())
-	return true
+	log.Debugf("Validate cache has header hash:%s", unitHash.String())
+	return true, ValidationCode(data[0])
 }
