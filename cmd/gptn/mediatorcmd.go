@@ -173,7 +173,7 @@ func listMediators(ctx *cli.Context) error {
 		return err
 	}
 
-	dag, err := dag.NewDag(Dbconn)
+	dag, err := dag.NewDag(Dbconn,false)
 	if err != nil {
 		fmt.Println("leveldb init failed!")
 		return err
