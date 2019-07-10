@@ -63,6 +63,7 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 			TplDescription: description,
 			Abi:            abi,
 			Language:       language,
+			Creator:        from.String(),
 		},
 	}
 	reqId, _, err = p.createContractTxReq(common.Address{}, from, to, daoAmount, daoFee, nil, msgReq, true)
@@ -70,7 +71,7 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 		return common.Hash{}, nil, err
 	}
 	isLocal := true //todo
-	if isLocal{
+	if isLocal {
 		if err = p.runContractReq(reqId, nil); err != nil {
 			return common.Hash{}, nil, err
 		}

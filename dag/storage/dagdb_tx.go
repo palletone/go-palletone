@@ -64,10 +64,15 @@ func (dagdb *DagDb) saveReqIdByTx(tx *modules.Transaction) error {
 }
 func (dagdb *DagDb) GetAllTxs() ([]*modules.Transaction, error) {
 	kvs := getprefix(dagdb.db, constants.TRANSACTION_PREFIX)
-	result := make([]*modules.Transaction, len(kvs))
-	for _, v := range kvs {
+	result := make([]*modules.Transaction, 0, len(kvs))
+	for k, v := range kvs {
 		tx := new(modules.Transaction)
-		rlp.DecodeBytes(v, tx)
+		err := rlp.DecodeBytes(v, tx)
+		if err != nil || tx == nil {
+			log.Errorf("Cannot decode key[%s] rlp tx:%x", k, v)
+			return nil, err
+		}
+
 		result = append(result, tx)
 	}
 	return result, nil

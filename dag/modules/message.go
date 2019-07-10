@@ -336,7 +336,7 @@ type TokenPayOut struct {
 // App: contract_template
 type ContractTplPayload struct {
 	TemplateId []byte        `json:"template_id"`    // contract template id
-	Memory     uint16        `json:"memory"`         // contract template bytecode memory size(Byte), use to compute transaction fee
+	Size       uint16        `json:"size"`           // contract template bytecode memory size(Byte), use to compute transaction fee
 	ByteCode   []byte        `json:"byte_code"`      // contract bytecode
 	ErrMsg     ContractError `json:"contract_error"` // contract error message
 }
@@ -396,6 +396,7 @@ type ContractInstallRequestPayload struct {
 	Abi            string        `json:"abi"`
 	Language       string        `json:"language"`
 	AddrHash       []common.Hash `json:"addr_hash"`
+	Creator        string        `json:"creator"`
 }
 
 type ContractDeployRequestPayload struct {
@@ -461,7 +462,7 @@ type FileInfo struct {
 func NewContractTplPayload(templateId []byte, memory uint16, bytecode []byte, err ContractError) *ContractTplPayload {
 	return &ContractTplPayload{
 		TemplateId: templateId,
-		Memory:     memory,
+		Size:       memory,
 		ByteCode:   bytecode,
 		ErrMsg:     err,
 	}

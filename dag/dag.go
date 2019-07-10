@@ -765,7 +765,11 @@ func (d *Dag) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	defer d.Mutex.RUnlock()
 	return d.unstableUtxoRep.GetUtxoEntry(outpoint)
 }
-
+func (d *Dag) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error) {
+	d.Mutex.RLock()
+	defer d.Mutex.RUnlock()
+	return d.unstableUtxoRep.GetStxoEntry(outpoint)
+}
 func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error) {
 	neededSet := make(map[modules.OutPoint]struct{})
 
