@@ -37,9 +37,9 @@ type Validator interface {
 	//ValidateTransactions(txs modules.Transactions) error
 	//除了群签名外，验证Unit是否是合法Unit,包括其中的所有交易都会逐一验证
 	ValidateUnitExceptGroupSig(unit *modules.Unit) ValidationCode
-	ValidateUnitExceptPayment(unit *modules.Unit) error
+	//ValidateUnitExceptPayment(unit *modules.Unit) error
 	//验证一个Header是否合法（Mediator签名有效）
-	ValidateHeader(h *modules.Header) error
+	ValidateHeader(h *modules.Header) ValidationCode
 	ValidateUnitGroupSign(h *modules.Header) error
 	CheckTxIsExist(tx *modules.Transaction) bool
 	//验证一个交易是否是双花交易
@@ -48,7 +48,7 @@ type Validator interface {
 
 type IUtxoQuery interface {
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
-	IsUtxoSpent(outpoint *modules.OutPoint) (bool,error)
+	GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error)
 }
 
 type IStateQuery interface {

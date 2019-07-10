@@ -21,16 +21,15 @@
 package validator
 
 import (
-	"sync"
-
 	"encoding/json"
 	"fmt"
-	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/dag/parameter"
+	"sync"
 )
 
 type Validate struct {
@@ -43,8 +42,8 @@ type Validate struct {
 
 const MAX_DATA_PAYLOAD_MAIN_DATA_SIZE = 128
 
-func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propquery IPropQuery) *Validate {
-	cache := freecache.NewCache(20 * 1024 * 1024)
+func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propquery IPropQuery, cache palletcache.ICache) *Validate {
+	//cache := freecache.NewCache(20 * 1024 * 1024)
 	vcache := NewValidatorCache(cache)
 	return &Validate{cache: vcache, dagquery: dagdb, utxoquery: utxoRep, statequery: statedb, propquery: propquery}
 }
@@ -54,8 +53,8 @@ type newUtxoQuery struct {
 	unitUtxo     *sync.Map
 }
 
-func (q *newUtxoQuery) IsUtxoSpent(outpoint *modules.OutPoint) (bool, error) {
-	return q.oldUtxoQuery.IsUtxoSpent(outpoint)
+func (q *newUtxoQuery) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error) {
+	return q.oldUtxoQuery.GetStxoEntry(outpoint)
 }
 func (q *newUtxoQuery) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	utxo, ok := q.unitUtxo.Load(*outpoint)
@@ -102,7 +101,7 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 			if _, ok := spendOutpointMap[outpoint]; ok {
 				return TxValidationCode_INVALID_DOUBLE_SPEND
 			}
-			if spent, _ := validate.utxoquery.IsUtxoSpent(outpoint); spent {
+			if stxo, _ := validate.utxoquery.GetStxoEntry(outpoint); stxo != nil {
 				return TxValidationCode_INVALID_DOUBLE_SPEND
 			}
 			spendOutpointMap[outpoint] = true

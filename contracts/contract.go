@@ -47,7 +47,6 @@ type ContractInf interface {
 	Install(chainID string, ccName string, ccPath string, ccVersion string, ccDescription, ccAbi, ccLanguage string) (payload *md.ContractTplPayload, err error)
 	Deploy(rwM rwset.TxManager, chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error)
 	Invoke(rwM rwset.TxManager, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error)
-	StartChaincodeContainer(chainID string, templateId []byte, txId string) (deployId []byte, e error)
 	Stop(rwM rwset.TxManager, chainID string, deployId []byte, txid string, deleteImage bool) (*md.ContractStopPayload, error)
 }
 
@@ -171,15 +170,4 @@ func (c *Contract) Stop(rwM rwset.TxManager, chainID string, deployId []byte, tx
 		return test.Stop(deployId, chainID, deployId, txid, deleteImage)
 	}
 	return cc.Stop(rwM, c.dag, deployId, chainID, deployId, txid, deleteImage, false)
-}
-
-func (c *Contract) StartChaincodeContainer(chainID string, templateId []byte, txId string) (deployId []byte, e error) {
-	log.Info("Enter Contract StartChaincodeContainer====", "chainID", chainID, "templateId", templateId, "txId", txId)
-	defer log.Info("Exit Contract StartChaincodeContainer====", "chainID", chainID, "templateId", templateId, "txId", txId)
-	atomic.LoadInt32(&initFlag)
-	if initFlag == 0 {
-		log.Error("Contract module not initialized")
-		return nil, errors.New("Contract not initialized")
-	}
-	return cc.StartChaincodeContainer(c.dag, chainID, templateId, txId)
 }

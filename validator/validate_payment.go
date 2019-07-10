@@ -40,7 +40,7 @@ import (
 //3. Unlock correct
 func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx int,
 	payment *modules.PaymentPayload, usedUtxo map[string]bool) ValidationCode {
-	//txId := tx.Hash()
+	txId := tx.Hash()
 	//if payment.LockTime > 0 {
 	//	// TODO check locktime
 	//}
@@ -100,8 +100,9 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 				utxo, err = validate.utxoquery.GetUtxoEntry(in.PreviousOutPoint)
 				if utxo == nil || err != nil {
 					//找不到对应的UTXO，去IsSpent再找一下
-					spent, _ := validate.utxoquery.IsUtxoSpent(in.PreviousOutPoint)
-					if spent {
+					stxo, _ := validate.utxoquery.GetStxoEntry(in.PreviousOutPoint)
+					if stxo != nil && stxo.SpentByTxId != txId {
+						log.Errorf("Utxo[%s] spent by tx[%s]", in.PreviousOutPoint.String(), stxo.SpentByTxId.String())
 						return TxValidationCode_INVALID_DOUBLE_SPEND
 					}
 					//IsSpent找不到，说明是孤儿

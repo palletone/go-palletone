@@ -54,9 +54,9 @@ type DepositInterface interface {
 	//  候选列表中，移除某个节点（mediator jury dev）
 	//  hanldeNodeRemoveFromCandidateList(stub shim.ChaincodeStubInterface, args []string) pb.Response
 	//  删除某个mediator节点(info balance)
-	handleRemoveMediatorNode(stub shim.ChaincodeStubInterface, args []string) pb.Response
+	//handleRemoveMediatorNode(stub shim.ChaincodeStubInterface, args []string) pb.Response
 	//  删除某个普通节点
-	handleRemoveNormalNode(stub shim.ChaincodeStubInterface, args []string) pb.Response
+	//handleRemoveNormalNode(stub shim.ChaincodeStubInterface, args []string) pb.Response
 	//  删除某个质押节点
 	//  handleRmovePledgeNode(stub shim.ChaincodeStubInterface, args []string) pb.Response
 

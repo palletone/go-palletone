@@ -49,7 +49,7 @@ func TestValidate_ValidateUnitTxs(t *testing.T) {
 
 	utxoQuery := &mockUtxoQuery{}
 	mockStatedbQuery := &mockStatedbQuery{}
-	validate := NewValidate(nil, utxoQuery, mockStatedbQuery, nil)
+	validate := NewValidate(nil, utxoQuery, mockStatedbQuery, nil, newCache())
 	addr, _ := common.StringToAddress("P1HXNZReTByQHgWQNGMXotMyTkMG9XeEQfX")
 	code := validate.validateTransactions(txs, time.Now().Unix(), addr)
 	assert.Equal(t, code, TxValidationCode_VALID)
@@ -82,8 +82,8 @@ func (q *mockStatedbQuery) GetContractStatesByPrefix(id []byte, prefix string) (
 type mockUtxoQuery struct {
 }
 
-func (q *mockUtxoQuery) IsUtxoSpent(outpoint *modules.OutPoint) (bool, error) {
-	return false, nil
+func (q *mockUtxoQuery) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error) {
+	return nil, nil
 }
 func (q *mockUtxoQuery) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	hash := common.HexToHash("1")
@@ -226,7 +226,7 @@ func TestValidate_ValidateHeader(t *testing.T) {
 	tx := newTx1(t)
 
 	header := newHeader(modules.Transactions{tx})
-	v := NewValidate(nil, nil, nil, nil)
+	v := NewValidate(nil, nil, nil, nil, newCache())
 	vresult := v.validateHeaderExceptGroupSig(header)
 	t.Log(vresult)
 	assert.Equal(t, vresult, TxValidationCode_VALID)

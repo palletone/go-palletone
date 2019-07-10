@@ -326,14 +326,6 @@ func (s *PublicBlockChainAPI) GetPrefix(condition string) string /*map[string][]
 	return *(*string)(unsafe.Pointer(&content))
 }
 
-func (s *PublicBlockChainAPI) CcstartChaincodeContainer(ctx context.Context, deployId string, txid string) (string, error) {
-	depId, _ := hex.DecodeString(deployId)
-	log.Info("CcstartChaincodeContainer:" + deployId + ":" + txid + "_")
-	//TODO deleteImage 为 true 时，目前是会删除基础镜像的
-	deplo1, err := s.b.ContractStartChaincodeContainer(depId, txid)
-	return string(deplo1), err
-}
-
 func (s *PublicBlockChainAPI) DecodeTx(ctx context.Context, hex string) (string, error) {
 	return s.b.DecodeTx(hex)
 }
