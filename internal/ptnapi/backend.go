@@ -135,7 +135,6 @@ type Backend interface {
 	ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 	ContractStop(deployId []byte, txid string, deleteImage bool) error
 
-	ContractStartChaincodeContainer(templateId []byte, txId string) (deployId []byte, e error)
 	DecodeTx(hex string) (string, error)
 	EncodeTx(jsonStr string) (string, error)
 

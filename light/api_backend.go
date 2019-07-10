@@ -455,9 +455,6 @@ func (b *LesApiBackend) SendContractInvokeReqTx(requestTx *modules.Transaction) 
 func (b *LesApiBackend) ContractInvokeReqTokenTx(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, asset string, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
 	return
 }
-func (b *LesApiBackend) ContractStartChaincodeContainer(templateId []byte, txId string) (deployId []byte, e error) {
-	return
-}
 
 func (b *LesApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, deleteImage bool) (reqId common.Hash, err error) {
 	return

@@ -586,10 +586,6 @@ func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage b
 	return err
 }
 
-func (b *PtnApiBackend) ContractStartChaincodeContainer(deployId []byte, txid string) ([]byte, error) {
-	log.Debugf("======>ContractStartChaincodeContainer:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
-	return b.ptn.contract.StartChaincodeContainer("palletone", deployId, txid)
-}
 func (b *PtnApiBackend) SignAndSendRequest(addr common.Address, tx *modules.Transaction) error {
 	_, err := b.ptn.contractPorcessor.SignAndExecuteAndSendRequest(addr, tx)
 	return err

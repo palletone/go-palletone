@@ -297,8 +297,11 @@ func Stop(rwM rwset.TxManager, idag dag.IDag, contractid []byte, chainID string,
 		return nil, err
 	}
 	stopResult, err := StopByName(contractid, setChainId, txid, cc, deleteImage, dontRmCon)
-	if err == nil {
-		cclist.DelChaincode(chainID, cc.Name, cc.Version)
+	if !dontRmCon {
+		err := saveChaincode(idag, address, nil)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return stopResult, err
 }
@@ -364,27 +367,16 @@ func StartChaincodeContainert(idag dag.IDag, chainID string, deployId []byte, tx
 	}
 	log.Info("enter Deploy", "chainID", chainID, "templateId", hex.EncodeToString(deployId), "txId", txId)
 	defer log.Info("exit Deploy", "txId", txId)
-	setChainId := "palletone"
+	//setChainId := "palletone"
 	setTimeOut := time.Duration(50) * time.Second
-	if chainID != "" {
-		setChainId = chainID
-	}
-	spec := &pb.ChaincodeSpec{
-		Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]),
-		Input: &pb.ChaincodeInput{
-			Args: [][]byte{},
-		},
-		ChaincodeId: &pb.ChaincodeID{},
-	}
+	//if chainID != "" {
+	//	setChainId = chainID
+	//}
 	//test
 	address := common.NewAddress(deployId, common.ContractHash)
 	cc, err := getChaincode(idag, address)
 	if err != nil {
 		return nil, err
-	}
-	if err != nil {
-		log.Error("getTxSimulator err:", "error", err)
-		return nil, errors.WithMessage(err, "GetTxSimulator error")
 	}
 	usrcc := &ucc.UserChaincode{
 		Name:    cc.Name,
@@ -393,18 +385,23 @@ func StartChaincodeContainert(idag dag.IDag, chainID string, deployId []byte, tx
 		//InitArgs: [][]byte{},
 		Enabled: true,
 	}
-	chaincodeID := &pb.ChaincodeID{
-		Name:    usrcc.Name,
-		Path:    usrcc.Path,
-		Version: usrcc.Version,
+	spec := &pb.ChaincodeSpec{
+		Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value[cc.Language]),
+		Input: &pb.ChaincodeInput{
+			Args: [][]byte{},
+		},
+		ChaincodeId: &pb.ChaincodeID{
+			Name:    usrcc.Name,
+			Path:    usrcc.Path,
+			Version: usrcc.Version,
+		},
 	}
-	spec.ChaincodeId = chaincodeID
 	_, chaincodeData, err := ucc.RecoverChainCodeFromDb(chainID, cc.TempleId)
 	if err != nil {
 		log.Error("Deploy", "chainid:", chainID, "templateId:", cc.TempleId, "RecoverChainCodeFromDb err", err)
 		return nil, err
 	}
-	err = ucc.DeployUserCC(address.Bytes(), chaincodeData, spec, setChainId, txId, nil, setTimeOut)
+	err = ucc.DeployUserCC(address.Bytes(), chaincodeData, spec, chainID, txId, nil, setTimeOut)
 	if err != nil {
 		log.Error("deployUserCC err:", "error", err)
 		return nil, errors.WithMessage(err, "Deploy fail")
@@ -412,10 +409,10 @@ func StartChaincodeContainert(idag dag.IDag, chainID string, deployId []byte, tx
 	return cc.Id, err
 }
 
-func StartChaincodeContainer(idag dag.IDag, chainID string, deployId []byte, txId string) ([]byte, error) {
-	//GoStart()
-	return nil, nil
-}
+//func StartChaincodeContainer(idag dag.IDag, chainID string, deployId []byte, txId string) ([]byte, error) {
+//	//GoStart()
+//	return nil, nil
+//}
 
 //func DeployByName(rwM rwset.TxManager, idag dag.IDag, chainID string, txid string, ccName string, ccPath string, ccVersion string, args [][]byte, timeout time.Duration) (depllyId []byte, respPayload *md.ContractDeployPayload, e error) {
 //	var mksupt Support = &SupportImpl{}
