@@ -69,7 +69,7 @@ sed -i '/^EnableConsecutiveProduction/c'$newEnableConsecutiveProduction'' ptn-co
 newRequiredParticipation="RequiredParticipation=0"
 sed -i '/^RequiredParticipation/c'$newRequiredParticipation'' ptn-config.toml
 
-newEnableGroupSigning="EnableGroupSigning=false"
+newEnableGroupSigning="EnableGroupSigning=true"
 sed -i '/^EnableGroupSigning/c'$newEnableGroupSigning'' ptn-config.toml
 
 

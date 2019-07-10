@@ -116,6 +116,7 @@ type Backend interface {
 	GetPrefix(prefix string) map[string][]byte //getprefix
 
 	GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error)
+	GetStxoEntry(outpoint *modules.OutPoint) (*ptnjson.StxoJson, error)
 	QueryDbByKey(key []byte) *ptnjson.DbRowJson
 	QueryDbByPrefix(prefix []byte) []*ptnjson.DbRowJson
 	//GetAddrOutput(addr string) ([]modules.Output, error)
@@ -165,7 +166,7 @@ type Backend interface {
 	GetAllContractTpl() ([]*ptnjson.ContractTemplateJson, error)
 	GetAllContracts() ([]*ptnjson.ContractJson, error)
 	GetContractsByTpl(tplId []byte) ([]*ptnjson.ContractJson, error)
-
+	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
 	//get contract key
 	GetContractState(contractid []byte, key string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)

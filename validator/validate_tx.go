@@ -24,6 +24,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+
 	"github.com/ethereum/go-ethereum/rlp"
 
 	"github.com/palletone/go-palletone/common"
@@ -365,7 +366,9 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			incomeAddr, _ := common.StringToAddress(addr)
 			aa := []modules.AmountAsset{}
 			rlp.DecodeBytes(v.Value, &aa)
-			rewards[incomeAddr] = aa
+			if len(aa) > 0 {
+				rewards[incomeAddr] = aa
+			}
 		}
 		//附加最新的奖励
 		for _, ad := range ads {
@@ -381,6 +384,12 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 		payment := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
 		if !compareRewardAndOutput(rewards, payment.Outputs) {
 			log.Error("Output not match")
+			log.DebugDynamic(func() string {
+				rjson, _ := json.Marshal(rewards)
+				ojson, _ := json.Marshal(payment)
+				return fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nPayment:%s", string(rjson), string(ojson))
+			})
+			// panic("Coinbase Output not match")
 			return TxValidationCode_INVALID_COINBASE
 		}
 		//Check statedb should clear
@@ -392,6 +401,11 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			}
 			if !compareRewardAndStateClear(rewards, clearStateInvoke.WriteSet) {
 				log.Error("Clear statedb not match")
+				log.DebugDynamic(func() string {
+					rjson, _ := json.Marshal(rewards)
+					ojson, _ := json.Marshal(clearStateInvoke)
+					return fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nInvoke result:%s", string(rjson), string(ojson))
+				})
 				return TxValidationCode_INVALID_COINBASE
 			}
 		}
@@ -425,6 +439,11 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			return TxValidationCode_VALID
 		} else {
 			log.Error("Coinbase contract write set not correct")
+			log.DebugDynamic(func() string {
+				rjson, _ := json.Marshal(rewards)
+				ojson, _ := json.Marshal(invoke)
+				return fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nInvoke result:%s", string(rjson), string(ojson))
+			})
 			return TxValidationCode_INVALID_COINBASE
 		}
 	}
@@ -434,7 +453,6 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 func compareRewardAndOutput(rewards map[common.Address][]modules.AmountAsset, outputs []*modules.Output) bool {
 	comparedCount := 0
 	for addr, reward := range rewards {
-
 		if rewardExistInOutputs(addr, reward, outputs) {
 			comparedCount++
 		} else {
@@ -478,7 +496,8 @@ func compareRewardAndStateClear(rewards map[common.Address][]modules.AmountAsset
 		}
 
 	}
-	if comparedCount != len(writeset) {
+	//if comparedCount != len(writeset) {
+	if comparedCount != len(rewards) { //所有的Reward的状态数据库被清空
 		return false
 	}
 	return true
@@ -495,7 +514,7 @@ func compareRewardAndWriteset(rewards map[common.Address][]modules.AmountAsset, 
 		}
 
 	}
-	if comparedCount != len(writeset) {
+	if comparedCount != len(rewards) { //所有的Reward的状态数据库被清空
 		return false
 	}
 	return true

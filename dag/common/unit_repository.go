@@ -497,7 +497,7 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 			txs = append(txs, t)
 		}
 	}
-	log.Debugf("create coinbase tx cost time %s", time.Since(tt))
+	log.Debugf("create coinbase tx cost time %s, unit tx num[%d]", time.Since(tt), len(txs))
 	/**
 	todo 需要根据交易中涉及到的token类型来确定交易打包到哪个区块
 	todo 如果交易中涉及到其他币种的交易，则需要将交易费的单独打包
@@ -1479,7 +1479,9 @@ func (rep *UnitRepository) createCoinbasePayment(ads []*modules.Addition) (*modu
 		incomeAddr, _ := common.StringToAddress(addr)
 		aa := []modules.AmountAsset{}
 		rlp.DecodeBytes(v.Value, &aa)
-		rewards[incomeAddr] = aa
+		if len(aa)>0 {
+			rewards[incomeAddr] = aa
+		}
 	}
 	//附加最新的奖励
 	for _, ad := range ads {
@@ -1499,12 +1501,13 @@ func (rep *UnitRepository) createCoinbasePayment(ads []*modules.Addition) (*modu
 	//清空历史奖励的记账值
 	payload := &modules.ContractInvokePayload{}
 	payload.ContractId = contractId
+	empty, _ := rlp.EncodeToBytes([]modules.AmountAsset{})
 	for addr, _ := range rewards {
 		key := constants.RewardAddressPrefix + addr.String()
 		_, version, _ := rep.statedb.GetContractState(contractId, key)
 		rs := modules.ContractReadSet{Key: key, Version: version}
 		payload.ReadSet = append(payload.ReadSet, rs)
-		empty, _ := rlp.EncodeToBytes([]modules.AmountAsset{})
+
 		ws := modules.ContractWriteSet{IsDelete: false, Key: key, Value: empty}
 		payload.WriteSet = append(payload.WriteSet, ws)
 	}

@@ -106,8 +106,11 @@ func (mp *MediatorPlugin) LocalMediatorPubKey(add common.Address) []byte {
 	if err == nil {
 		pubKey, err = dks.Public().MarshalBinary()
 		if err != nil {
+			log.Debugf(err.Error())
 			pubKey = nil
 		}
+	} else {
+		log.Debugf(err.Error())
 	}
 
 	return pubKey

@@ -278,11 +278,16 @@ func CalcSignatureHash(script []byte, hashType SigHashType, tx *modules.Transact
 	}
 	return calcSignatureHash(parsedScript, hashType, tx, msgIdx, idx, crypto), nil
 }
+func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *modules.Transaction, msgIdx, idx int, crypto ICrypto) []byte {
+	data := calcSignatureData(script, hashType, tx, msgIdx, idx, crypto)
+	hash, _ := crypto.Hash(data)
+	return hash
+}
 
 // calcSignatureHash will, given a script and hash type for the current script
 // engine instance, calculate the signature hash to be used for signing and
 // verification.
-func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *modules.Transaction, msgIdx, idx int, crypto ICrypto) []byte {
+func calcSignatureData(script []parsedOpcode, hashType SigHashType, tx *modules.Transaction, msgIdx, idx int, crypto ICrypto) []byte {
 	pay := tx.TxMessages[msgIdx].Payload.(*modules.PaymentPayload)
 	// The SigHashSingle signature type signs only the corresponding input
 	// and output (the output with the same index number as the input).
@@ -394,8 +399,7 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *modules.
 	if err != nil {
 		log.Error("Rlp encode tx error:" + err.Error())
 	}
-	hash, _ := crypto.Hash(data)
-	return hash
+	return data
 }
 
 // asSmallInt returns the passed opcode, which must be true according to

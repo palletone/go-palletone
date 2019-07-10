@@ -729,7 +729,9 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, poolTxs
 
 				data, _ := json.Marshal(pay)
 				if len(pay.Outputs) == 0 {
-					log.Errorf("Payment output length=0,pay:%s", string(data))
+					//一个交易是可能Output为0的，所有Input都交了手续费
+					log.Debugf("Payment output length=0,pay:%s", string(data))
+					continue
 				}
 				if pay.Outputs[0].Asset == nil {
 					log.Errorf("Payment output asset=nil,pay:%s", string(data))
@@ -1298,10 +1300,10 @@ func (s *PublicTransactionPoolAPI) helpSignTx(tx *modules.Transaction, password 
 		ks.Unlock(account, password)
 		return ks.GetPublicKey(addr)
 	}
-	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
+	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
 		ks := s.b.GetKeyStore()
 		account, _ := MakeAddress(ks, addr.String())
-		return ks.SignHashWithPassphrase(account, password, hash)
+		return ks.SignMessageWithPassphrase(account, password, msg)
 	}
 	utxos := s.getTxUtxoLockScript(tx)
 	return tokenengine.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, utxos, nil, getPubKeyFn, getSignFn)
@@ -1347,8 +1349,8 @@ func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, f
 		errs, err := tokenengine.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, utxoLookup, nil, func(addresses common.Address) ([]byte, error) {
 			return pubKey, nil
 		},
-			func(addresses common.Address, hash []byte) ([]byte, error) {
-				return ks.SignHash(addresses, hash)
+			func(addresses common.Address, msg []byte) ([]byte, error) {
+				return ks.SignMessage(addresses, msg)
 			})
 		if len(errs) > 0 || err != nil {
 			return nil, err
@@ -1391,11 +1393,11 @@ func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, param
 		//privKey, _ := ks.DumpPrivateKey(account, "1")
 		//return crypto.CompressPubkey(&privKey.PublicKey), nil
 	}
-	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
+	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
 		ks := s.b.GetKeyStore()
 		//account, _ := MakeAddress(ks, addr.String())
 		//privKey, _ := ks.DumpPrivateKey(account, "1")
-		return ks.SignHash(addr, hash)
+		return ks.SignMessage(addr, msg)
 		//return crypto.Sign(hash, privKey)
 	}
 	var srawinputs []ptnjson.RawTxInput
@@ -1579,7 +1581,7 @@ func (s *PublicTransactionPoolAPI) Sign(addr common.Address, data hexutil.Bytes)
 		return nil, err
 	}
 	// Sign the requested hash with the wallet
-	signature, err := wallet.SignHash(account, signHash(data))
+	signature, err := wallet.SignMessage(account, data)
 	if err == nil {
 		signature[64] += 27 // Transform V from 0/1 to 27/28 according to the yellow paper
 	}

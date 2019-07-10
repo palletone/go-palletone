@@ -35,7 +35,6 @@ import (
 	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/comm"
-	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	container "github.com/palletone/go-palletone/vm/api"
 	"github.com/palletone/go-palletone/vm/ccintf"
@@ -197,25 +196,46 @@ func (vm *DockerVM) Deploy(ctxt context.Context, ccid ccintf.CCID,
 //这里还可以指定对容器日志的输出
 func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 	args []string, env []string, filesToUpload map[string][]byte, builder container.BuildSpecFactory, prelaunchFunc container.PrelaunchFunc) error {
-	//获取本地基础镜像
-	imageID, err := vm.GetImageId(ccid)
-	if err != nil {
-		log.Errorf("get image id error: %s", err)
-		return err
-	}
 	//获取docker客户端
 	client, err := vm.getClientFnc()
 	if err != nil {
 		log.Debugf("start - cannot create client: %s", err.Error())
 		return err
 	}
-
 	containerID, err := vm.GetContainerId(ccid)
 	if err != nil {
 		log.Debugf("get container %s error: %s", containerID, err.Error())
 		return err
 	}
-
+	//如果合约存在，则直接起容器
+	c, err := com.NewDockerClient()
+	if err != nil {
+		log.Error("util.NewDockerClient", "error", err)
+		return err
+	}
+	_, err = c.InspectContainer(containerID)
+	if err == nil {
+		if prelaunchFunc != nil {
+			if err = prelaunchFunc(); err != nil {
+				return err
+			}
+		}
+		// start container with HostConfig was deprecated since v1.10 and removed in v1.2
+		err = client.StartContainer(containerID, nil)
+		if err != nil {
+			log.Errorf("start-could not start container: %s", err)
+			return err
+		}
+		return nil
+	} else {
+		log.Infof("inspect container %s", err.Error())
+	}
+	//获取本地基础镜像
+	imageID, err := vm.GetImageId(ccid)
+	if err != nil {
+		log.Errorf("get image id error: %s", err)
+		return err
+	}
 	attachStdout := viper.GetBool("vm.docker.attachStdout")
 
 	//stop,force remove if necessary
@@ -530,7 +550,7 @@ func (vm *DockerVM) GetContainerId(ccid ccintf.CCID) (string, error) {
 	//} else if ccid.PeerID != "" {
 	//	name = fmt.Sprintf("%s-%s", ccid.PeerID, name)
 	//}
-	name = name + ":" + contractcfg.GetConfig().ContractAddress
+	//name = name + ":" + contractcfg.GetConfig().ContractAddress
 	// replace any invalid characters with "-" (either in network id, peer id, or in the
 	// entire name returned by any format function)
 	name = vmRegExp.ReplaceAllString(name, "-")

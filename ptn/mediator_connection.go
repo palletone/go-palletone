@@ -97,21 +97,28 @@ func (pm *ProtocolManager) switchMediatorConnect(isChanged bool) {
 
 func (pm *ProtocolManager) connectWitchActiveMediators() {
 	// 1. 判断本节点是否是活跃mediator
+	log.Debugf("to connected with all active mediator nodes")
 	if !pm.producer.LocalHaveActiveMediator() {
 		return
 	}
 
 	// 2. 和其他活跃mediator节点相连
 	peers := pm.dag.GetActiveMediatorNodes()
-	for id, peer := range peers {
-		// 仅当不是本节点，并还未连接时，才进行连接
-		if peer.ID != pm.srvr.Self().ID && pm.peers.Peer(id) == nil {
-			pm.srvr.AddTrustedPeer(peer)
+	for _, peer := range peers {
+		// 仅当不是本节点，才做处理
+		if peer.ID != pm.srvr.Self().ID {
+			pm.srvr.AddTrustedPeer(peer) // 加入Trusted列表
+			pm.srvr.AddPeer(peer)        // 建立连接
 		}
 	}
 }
 
 func (pm *ProtocolManager) checkActiveMediatorConnected() {
+	log.Debugf("check if it is connected to an active mediator")
+	if !pm.producer.LocalHaveActiveMediator() {
+		return
+	}
+
 	// 2. 是否和所有其他活跃mediator节点相连完成
 	checkFn := func() bool {
 		peers := pm.dag.GetActiveMediatorNodes()
@@ -122,6 +129,7 @@ func (pm *ProtocolManager) checkActiveMediatorConnected() {
 			}
 		}
 
+		log.Debugf("connected with all active mediator nodes")
 		return true
 	}
 
@@ -131,10 +139,17 @@ func (pm *ProtocolManager) checkActiveMediatorConnected() {
 	}
 
 	// 1. 设置Ticker, 每隔一段时间检查一次
-	checkTick := time.NewTicker(50 * time.Millisecond)
+	checkTick := time.NewTicker(200 * time.Millisecond)
+	// 设置检查期限，防止死循环
+	expiration := pm.dag.UnitIrreversibleTime()
+	killLoop := time.NewTimer(expiration)
 	for {
 		select {
 		case <-pm.quitSync:
+			checkTick.Stop()
+			return
+		case <-killLoop.C:
+			checkTick.Stop()
 			return
 		case <-checkTick.C:
 			if checkFn() {
@@ -152,19 +167,22 @@ func (pm *ProtocolManager) delayDiscPrecedingMediator() {
 		return
 	}
 
+	// 如果当前节点不是活跃mediator，则删除全部之前的mediator节点
+	isActive := pm.producer.LocalHaveActiveMediator()
+
 	// 2. 统计出需要断开连接的mediator节点
 	delayDiscNodes := make(map[string]*discover.Node, 0)
 
 	activePeers := pm.dag.GetActiveMediatorNodes()
 	precedingPeers := pm.dag.GetPrecedingMediatorNodes()
 	for id, peer := range precedingPeers {
-		// 仅当上一届mediator 不是本届活跃mediator，并且已连接时，才断开连接
-		if _, ok := activePeers[id]; !ok && pm.peers.Peer(id) != nil {
+		// 仅当上一届mediator 不是本届活跃mediator，或者本节点不是活跃mediator
+		if _, ok := activePeers[id]; !isActive || !ok /*&& pm.peers.Peer(id) != nil*/ {
 			delayDiscNodes[id] = peer
 		}
 	}
 
-	// 3. 设置定时器延迟 断开连接
+	// 3. 设置定时器延迟 将上一届的活跃mediator节点从Trusted列表中移除
 	disconnectFn := func() {
 		for _, peer := range delayDiscNodes {
 			pm.srvr.RemoveTrustedPeer(peer)
@@ -178,6 +196,7 @@ func (pm *ProtocolManager) delayDiscPrecedingMediator() {
 	case <-pm.quitSync:
 		return
 	case <-delayDisc.C:
+		log.Debugf("disconnect with preceding mediator nodes")
 		disconnectFn()
 	}
 }

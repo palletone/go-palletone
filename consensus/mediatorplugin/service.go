@@ -63,7 +63,7 @@ type iDag interface {
 
 	IsActiveMediator(add common.Address) bool
 	IsSynced() bool
-	ValidateUnitExceptGroupSig(unit *modules.Unit) error
+	// ValidateUnitExceptGroupSig(unit *modules.Unit) error
 	SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error
 
 	GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte,

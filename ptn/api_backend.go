@@ -462,9 +462,14 @@ func (b *PtnApiBackend) GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJ
 	return ujson, nil
 }
 
-//func (b *PtnApiBackend) GetAddrOutput(addr string) ([]modules.Output, error) {
-//	return b.ptn.dag.GetAddrOutput(addr)
-//}
+func (b *PtnApiBackend) GetStxoEntry(outpoint *modules.OutPoint) (*ptnjson.StxoJson, error) {
+	stxo, err := b.ptn.dag.GetStxoEntry(outpoint)
+	if err != nil {
+		return nil, err
+	}
+	j := ptnjson.ConvertStxo2Json(outpoint, stxo)
+	return j, nil
+}
 
 func (b *PtnApiBackend) GetAddrOutpoints(addr string) ([]modules.OutPoint, error) {
 	address, err := common.StringToAddress(addr)
@@ -768,6 +773,10 @@ func (b *PtnApiBackend) GetContractsByTpl(tplId []byte) ([]*ptnjson.ContractJson
 		jsons = append(jsons, ptnjson.ConvertContract2Json(c))
 	}
 	return jsons, nil
+}
+
+func (b *PtnApiBackend) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
+	return b.ptn.dag.GetContractTpl(tplId)
 }
 
 func (b *PtnApiBackend) GetContractState(contractid []byte, key string) ([]byte, *modules.StateVersion, error) {

@@ -43,6 +43,7 @@ const (
 	tfModified
 )
 
+//Unspent Transaction Output
 type Utxo struct {
 	Amount   uint64 `json:"amount"`    // 数量
 	Asset    *Asset `json:"asset"`     // 资产类别
@@ -54,6 +55,30 @@ type Utxo struct {
 	Flags     txoFlags
 }
 
+//Spent Transaction Output
+type Stxo struct {
+	Amount   uint64 `json:"amount"`    // 数量
+	Asset    *Asset `json:"asset"`     // 资产类别
+	PkScript []byte `json:"pk_script"` // 锁定脚本
+	LockTime uint32 `json:"lock_time"`
+	// flags contains additional info about output such as whether it is spent, and whether is has
+	// been modified since is was loaded.
+	Timestamp   uint64      `json:"timestamp"` // unit's Timestamp
+	SpentByTxId common.Hash `json:"spent_by_tx_id"`
+	SpentTime   uint64      `json:"spent_time"`
+}
+
+func NewStxo(utxo *Utxo, spentTxId common.Hash, spentTime uint64) *Stxo {
+	return &Stxo{
+		Amount:      utxo.Amount,
+		Asset:       utxo.Asset,
+		PkScript:    utxo.PkScript,
+		LockTime:    utxo.LockTime,
+		Timestamp:   utxo.Timestamp,
+		SpentByTxId: spentTxId,
+		SpentTime:   spentTime,
+	}
+}
 func NewUtxo(output *Output, lockTime uint32, timestamp int64) *Utxo {
 	return &Utxo{
 		Amount:    output.Value,

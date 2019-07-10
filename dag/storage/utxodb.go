@@ -47,8 +47,9 @@ type IUtxoDb interface {
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
 	SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.Utxo) error
 	SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error
-	DeleteUtxo(outpoint *modules.OutPoint) error
-	IsUtxoSpent(outpoint *modules.OutPoint) (bool,error)
+	DeleteUtxo(outpoint *modules.OutPoint, spentTxId common.Hash, spentTime uint64) error
+	IsUtxoSpent(outpoint *modules.OutPoint) (bool, error)
+	GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error)
 	ClearUtxo() error
 }
 
@@ -122,15 +123,17 @@ func (utxodb *UtxoDb) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) erro
 }
 
 // Remove the utxo
-func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint) error {
+func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint, spentTxId common.Hash, spentTime uint64) error {
 	//1. get utxo
-	//utxo, err := utxodb.GetUtxoEntry(outpoint)
-
-	key := outpoint.ToKey()
-	data,err:= utxodb.db.Get(key)
+	utxo, err := utxodb.GetUtxoEntry(outpoint)
 	if err != nil {
 		return err
 	}
+	key := outpoint.ToKey()
+	//data,err:= utxodb.db.Get(key)
+	//if err != nil {
+	//	return err
+	//}
 	//2. delete utxo, put data into spent table
 	//if utxo.IsSpent() {
 	//	return errors.New("Try to soft delete a deleted utxo by key:" + outpoint.String())
@@ -140,7 +143,7 @@ func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint) error {
 		return err
 	}
 	log.Debugf("Try delete utxo by key:%s, move to spent table", outpoint.String())
-	utxodb.setUtxoSpent(outpoint,data)
+	utxodb.SaveUtxoSpent(outpoint, utxo, spentTxId, spentTime)
 	//utxo.Spend()
 	//log.Debugf("Try to soft delete utxo by key:%s", outpoint.String())
 	//err = StoreToRlpBytes(utxodb.db, key, utxo)
@@ -148,8 +151,8 @@ func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint) error {
 	//	return err
 	//}
 	//3. Remove index
-	utxo := new(modules.Utxo)
-	rlp.DecodeBytes(data,utxo)
+	//utxo := new(modules.Utxo)
+	//rlp.DecodeBytes(data,utxo)
 	address, _ := tokenengine.GetAddressFromScript(utxo.PkScript[:])
 	utxodb.deleteUtxoOutpoint(address, outpoint)
 	return nil
@@ -176,13 +179,27 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 	}
 	return utxo, nil
 }
-func (utxodb *UtxoDb) setUtxoSpent(outpoint *modules.OutPoint,value []byte) error{
-	key:=append( constants.SPENT_UTXO_PREFIX,outpoint.ToKey()...)
-	return utxodb.db.Put(key,value)
+func (utxodb *UtxoDb) SaveUtxoSpent(outpoint *modules.OutPoint, utxo *modules.Utxo, spentTxId common.Hash, spentTime uint64) error {
+	stxo := modules.NewStxo(utxo, spentTxId, spentTime)
+	return utxodb.SaveStxoEntry(outpoint, stxo)
 }
-func (utxodb *UtxoDb)IsUtxoSpent(outpoint *modules.OutPoint) (bool,error){
-	key:=append( constants.SPENT_UTXO_PREFIX,outpoint.ToKey()...)
+func (utxodb *UtxoDb) SaveStxoEntry(outpoint *modules.OutPoint, stxo *modules.Stxo) error {
+	key := append(constants.SPENT_UTXO_PREFIX, outpoint.ToKey()...)
+	//stxo := modules.NewStxo(utxo, spentTxId, spentTime)
+	return StoreToRlpBytes(utxodb.db, key, stxo)
+}
+func (utxodb *UtxoDb) IsUtxoSpent(outpoint *modules.OutPoint) (bool, error) {
+	key := append(constants.SPENT_UTXO_PREFIX, outpoint.ToKey()...)
 	return utxodb.db.Has(key)
+}
+func (utxodb *UtxoDb) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error) {
+	key := append(constants.SPENT_UTXO_PREFIX, outpoint.ToKey()...)
+	stxo := &modules.Stxo{}
+	err := RetrieveFromRlpBytes(utxodb.db, key, stxo)
+	if err != nil {
+		return nil, err
+	}
+	return stxo, nil
 }
 
 //GetAddrUtxos if asset is nil, query all Asset from address

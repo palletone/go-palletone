@@ -30,7 +30,8 @@ type ContractTemplate struct {
 	Abi            string        `json:"abi"`
 	Language       string        `json:"language"`
 	AddrHash       []common.Hash `json:"addr_hash" rlp:"nil"`
-	Memory         uint16        `json:"memory"`
+	Size           uint16        `json:"size"`
+	Creator        string        `json:"creator"`
 }
 
 func NewContractTemplate(req *ContractInstallRequestPayload, tpl *ContractTplPayload) *ContractTemplate {
@@ -43,6 +44,7 @@ func NewContractTemplate(req *ContractInstallRequestPayload, tpl *ContractTplPay
 		Abi:            req.Abi,
 		Language:       req.Language,
 		AddrHash:       req.AddrHash,
-		Memory:         tpl.Memory,
+		Size:           uint16(len(tpl.ByteCode[:])),
+		Creator:        req.Creator,
 	}
 }

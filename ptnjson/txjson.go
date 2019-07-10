@@ -62,7 +62,7 @@ type TplJson struct {
 	//Name         string `json:"name"`
 	//Path         string `json:"path"`
 	//Version      string `json:"version"`
-	Memory       uint16 `json:"memory"`
+	//Memory       uint16 `json:"memory"`
 	Bytecode     []byte `json:"bytecode"`      // contract bytecode
 	BytecodeSize int    `json:"bytecode_size"` // contract bytecode
 	//AddrHash     string `json:"addr_hash"`
@@ -245,7 +245,7 @@ func convertTpl2Json(tpl *modules.ContractTplPayload) *TplJson {
 	tpljson.TemplateId = hex.EncodeToString(tpl.TemplateId)
 	tpljson.Bytecode = tpl.ByteCode[:]
 	tpljson.BytecodeSize = len(tpl.ByteCode[:])
-	tpljson.Memory = tpl.Memory
+	//tpljson.Memory = tpl.Memory
 
 	//ah, _ := json.Marshal(tpl.AddrHash)
 	//tpljson.AddrHash = string(ah)

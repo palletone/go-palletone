@@ -266,7 +266,8 @@ func vendorDependencies(pkg string, files Sources) {
 func (goPlatform *Platform) GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte, error) {
 	log.Info("GetChainCodePayload enter")
 	defer log.Info("GetChainCodePayload exit")
-	codeDescriptor, err := getCodeDescriptor(spec) //获取codeDescriptor，即构造CodeDescriptor，Gopath为go环境gopath路径，Pkg为代码相对路径
+	//获取codeDescriptor，即构造CodeDescriptor，Gopath为go环境gopath路径，Pkg为代码相对路径
+	codeDescriptor, err := getCodeDescriptor(spec)
 	if err != nil {
 		log.Info("getCodeDescriptor err:", "error", err)
 		return nil, err

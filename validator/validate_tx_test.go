@@ -36,8 +36,9 @@ import (
 	"time"
 )
 
+var privKeyBytes, _ = hex.DecodeString("2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644")
+
 func getAccount() (*ecdsa.PrivateKey, []byte, common.Address) {
-	privKeyBytes, _ := hex.DecodeString("2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644")
 	privKey, _ := crypto.ToECDSA(privKeyBytes)
 	pubKey := crypto.CompressPubkey(&privKey.PublicKey)
 	addr := crypto.PubkeyBytesToAddress(pubKey)
@@ -98,8 +99,8 @@ func signTx(tx *modules.Transaction, outPoint *modules.OutPoint) {
 	getPubKeyFn := func(common.Address) ([]byte, error) {
 		return crypto.CompressPubkey(&privKey.PublicKey), nil
 	}
-	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
-		s, e := crypto.Sign(hash, privKey)
+	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
+		s, e := crypto.MyCryptoLib.Sign(privKeyBytes, msg)
 		return s, e
 	}
 	var hashtype uint32
@@ -121,8 +122,8 @@ func (u *testutxoQuery) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo,
 	}
 	return nil, errors.New("Incorrect Hash")
 }
-func (u *testutxoQuery) IsUtxoSpent(outpoint *modules.OutPoint) (bool,error){
-	return false,nil
+func (u *testutxoQuery) IsUtxoSpent(outpoint *modules.OutPoint) (bool, error) {
+	return false, nil
 }
 func newTestPayment(point *modules.OutPoint, outAmt uint64) *modules.PaymentPayload {
 	pay1s := &modules.PaymentPayload{
@@ -239,8 +240,8 @@ func TestValidateLargeInputPayment(t *testing.T) {
 	getPubKeyFn := func(common.Address) ([]byte, error) {
 		return crypto.CompressPubkey(&privKey.PublicKey), nil
 	}
-	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
-		s, e := crypto.Sign(hash, privKey)
+	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
+		s, e := crypto.MyCryptoLib.Sign(privKeyBytes, msg)
 		return s, e
 	}
 	var hashtype uint32

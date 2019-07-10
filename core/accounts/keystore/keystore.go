@@ -21,7 +21,6 @@
 package keystore
 
 import (
-
 	crand "crypto/rand"
 	"encoding/hex"
 	"errors"
@@ -34,14 +33,14 @@ import (
 	"sync"
 	"time"
 
+	"crypto/ecdsa"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag/modules"
-	"crypto/ecdsa"
 )
 
 var (
@@ -258,7 +257,7 @@ func (ks *KeyStore) Delete(a accounts.Account, passphrase string) error {
 
 // SignHash calculates a ECDSA signature for the given hash. The produced
 // signature is in the [R || S ] format .
-func (ks *KeyStore) SignHash(addr common.Address, hash []byte) ([]byte, error) {
+func (ks *KeyStore) SignMessage(addr common.Address, msg []byte) ([]byte, error) {
 	// Look up the key to sign with and abort if it cannot be found
 	ks.mu.RLock()
 	defer ks.mu.RUnlock()
@@ -267,7 +266,7 @@ func (ks *KeyStore) SignHash(addr common.Address, hash []byte) ([]byte, error) {
 	if !found {
 		return nil, ErrLocked
 	}
-	return crypto.MyCryptoLib.Sign(unlockedKey.PrivateKey, hash)
+	return crypto.MyCryptoLib.Sign(unlockedKey.PrivateKey, msg)
 	// Sign the hash using plain ECDSA operations
 	//return crypto.Sign(hash, unlockedKey.PrivateKey)
 }
@@ -296,13 +295,13 @@ func (ks *KeyStore) SignTx(a accounts.Account, tx *modules.Transaction, chainID 
 // SignHashWithPassphrase signs hash if the private key matching the given address
 // can be decrypted with the given passphrase. The produced signature is in the
 // [R || S ] format where V is 0 or 1.
-func (ks *KeyStore) SignHashWithPassphrase(a accounts.Account, passphrase string, hash []byte) (signature []byte, err error) {
+func (ks *KeyStore) SignMessageWithPassphrase(a accounts.Account, passphrase string, msg []byte) (signature []byte, err error) {
 	_, key, err := ks.getDecryptedKey(a, passphrase)
 	if err != nil {
 		return nil, err
 	}
 	defer ZeroKey(key.PrivateKey)
-	return crypto.MyCryptoLib.Sign(key.PrivateKey, hash)
+	return crypto.MyCryptoLib.Sign(key.PrivateKey, msg)
 	//return crypto.Sign(hash, key.PrivateKey)
 }
 func (ks *KeyStore) VerifySignatureWithPassphrase(a accounts.Account, passphrase string, hash []byte, signature []byte) (pass bool, err error) {
@@ -590,24 +589,30 @@ func (ks *KeyStore) SigData(data interface{}, address common.Address) ([]byte, e
 		return nil, err
 	}
 	//defer ZeroKey(privateKey)
-	hash := util.RlpHash(data) //crypto.Keccak256Hash(util.RHashBytes(data))
+	msg, err := rlp.EncodeToBytes(data)
+	//hash := util.RlpHash(data) //crypto.Keccak256Hash(util.RHashBytes(data))
 	if err != nil {
 		return nil, err
 	}
-	sign, err := crypto.MyCryptoLib.Sign(privateKey, hash.Bytes())
+	sign, err := crypto.MyCryptoLib.Sign(privateKey, msg)
 	//sign, err := crypto.Sign(hash.Bytes(), privateKey)
 	if err != nil {
 		return nil, err
 	}
-	log.Debugf("Try to sign data hash:%s,sign result:%x", hash.String(), sign)
+	//log.Debugf("Try to sign data:%x,sign result:%x", msg, sign)
 
 	return sign, nil
 }
 
 func (ks *KeyStore) SigUnitWithPwd(unit interface{}, privateKey []byte) ([]byte, error) {
-	hash := util.RlpHash(unit) //crypto.Keccak256Hash(util.RHashBytes(unit))
+	//hash := util.RlpHash(unit) //crypto.Keccak256Hash(util.RHashBytes(unit))
+	msg, err := rlp.EncodeToBytes(unit)
+	//hash := util.RlpHash(data) //crypto.Keccak256Hash(util.RHashBytes(data))
+	if err != nil {
+		return nil, err
+	}
 	//unit signature
-	sign, err := crypto.MyCryptoLib.Sign(privateKey,hash.Bytes())
+	sign, err := crypto.MyCryptoLib.Sign(privateKey, msg)
 	if err != nil {
 		return nil, err
 	}
@@ -615,17 +620,17 @@ func (ks *KeyStore) SigUnitWithPwd(unit interface{}, privateKey []byte) ([]byte,
 }
 
 func VerifyUnitWithPK(sign []byte, unit interface{}, publicKey []byte) bool {
-	hash := util.RlpHash(unit) //crypto.Keccak256Hash(util.RHashBytes(unit))
-	// s, err := hexutil.Decode(sign)
-	// if err != nil {
-	// 	return false
-	// }
+	msg, err := rlp.EncodeToBytes(unit)
+	//hash := util.RlpHash(data) //crypto.Keccak256Hash(util.RHashBytes(data))
+	if err != nil {
+		return false
+	}
 	if len(sign) <= 0 {
 		log.Error("Unit sigature is none.")
 		return false
 	}
 	sig := sign[:len(sign)-1] // remove recovery id
-	pass,_:=crypto.MyCryptoLib.Verify(publicKey,sig, hash.Bytes())
+	pass, _ := crypto.MyCryptoLib.Verify(publicKey, sig, msg)
 	return pass
 }
 

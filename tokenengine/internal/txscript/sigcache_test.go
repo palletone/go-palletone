@@ -15,7 +15,7 @@ import (
 // genRandomSig returns a random message, public key, and a signature of the
 // message under the public key. This function is used to generate randomized
 // test data.
-func genRandomSig() (*common.Hash, []byte, []byte, error) {
+func genRandomSig() ([]byte, []byte, []byte, error) {
 	privKey, err := btcec.NewPrivateKey(btcec.S256())
 	if err != nil {
 		return nil, nil, nil, err
@@ -31,7 +31,7 @@ func genRandomSig() (*common.Hash, []byte, []byte, error) {
 		return nil, nil, nil, err
 	}
 
-	return &msgHash, sig.Serialize(), privKey.PubKey().SerializeCompressed(), nil
+	return msgHash.Bytes(), sig.Serialize(), privKey.PubKey().SerializeCompressed(), nil
 }
 
 // TestSigCacheAddExists tests the ability to add, and later check the
@@ -46,11 +46,11 @@ func TestSigCacheAddExists(t *testing.T) {
 	}
 
 	// Add the triplet to the signature cache.
-	sigCache.Add(*msg1, sig1, key1)
+	sigCache.Add(msg1, sig1, key1)
 
 	// The previously added triplet should now be found within the sigcache.
 
-	if !sigCache.Exists(*msg1, sig1, key1) {
+	if !sigCache.Exists(msg1, sig1, key1) {
 		t.Errorf("previously added item not found in signature cache")
 	}
 }
@@ -70,9 +70,9 @@ func TestSigCacheAddEvictEntry(t *testing.T) {
 			t.Fatalf("unable to generate random signature test data")
 		}
 
-		sigCache.Add(*msg, sig, key)
+		sigCache.Add(msg, sig, key)
 
-		if !sigCache.Exists(*msg, sig, key) {
+		if !sigCache.Exists(msg, sig, key) {
 			t.Errorf("previously added item not found in signature" +
 				"cache")
 		}
@@ -90,7 +90,7 @@ func TestSigCacheAddEvictEntry(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to generate random signature test data")
 	}
-	sigCache.Add(*msgNew, sigNew, keyNew)
+	sigCache.Add(msgNew, sigNew, keyNew)
 
 	// The sigcache should still have sigCache entries.
 	if uint(len(sigCache.validSigs)) != sigCacheSize {
@@ -100,7 +100,7 @@ func TestSigCacheAddEvictEntry(t *testing.T) {
 
 	// The entry added  above should be found within the sigcache.
 
-	if !sigCache.Exists(*msgNew, sigNew, keyNew) {
+	if !sigCache.Exists(msgNew, sigNew, keyNew) {
 		t.Fatalf("previously added item not found in signature cache")
 	}
 }
@@ -118,11 +118,11 @@ func TestSigCacheAddMaxEntriesZeroOrNegative(t *testing.T) {
 	}
 
 	// Add the triplet to the signature cache.
-	sigCache.Add(*msg1, sig1, key1)
+	sigCache.Add(msg1, sig1, key1)
 
 	// The generated triplet should not be found.
 
-	if sigCache.Exists(*msg1, sig1, key1) {
+	if sigCache.Exists(msg1, sig1, key1) {
 		t.Errorf("previously added signature found in sigcache, but" +
 			"shouldn't have been")
 	}

@@ -404,7 +404,7 @@ func (p *Processor) GenContractSigTransaction(signer common.Address, password st
 							}
 						}
 						log.Debugf("[%s]GenContractSigTransaction, Lock script:%x", shortId(reqId.String()), utxo.PkScript)
-						sign, err := tokenengine.MultiSignOnePaymentInput(tx, tokenengine.SigHashAll, msgidx, inputIdx, utxo.PkScript, redeemScript, ks.GetPublicKey, ks.SignHash, nil)
+						sign, err := tokenengine.MultiSignOnePaymentInput(tx, tokenengine.SigHashAll, msgidx, inputIdx, utxo.PkScript, redeemScript, ks.GetPublicKey, ks.SignMessage, nil)
 						if err != nil {
 							log.Errorf("[%s]GenContractSigTransaction, Sign error:%s", shortId(reqId.String()), err)
 						}
@@ -681,10 +681,6 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 			log.Debugf("[%s]contractEventExecutable, CONTRACT_EVENT_EXEC, Mediator, true", shortId(reqId.String()))
 			return true
 		} else if !isSysContract && isJury {
-			if !p.contractReqAddrCheck(tx, true) {
-				log.Debugf("[%s]contractEventExecutable, CONTRACT_EVENT_EXEC, Jury, stop, false", shortId(reqId.String()))
-				break
-			}
 			if p.isValidateElection(tx, ele, true) {
 				log.Debugf("[%s]contractEventExecutable, CONTRACT_EVENT_EXEC, Jury, true", shortId(reqId.String()))
 				return true
@@ -694,10 +690,6 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 		}
 	case CONTRACT_EVENT_SIG:
 		if !isSysContract && isJury {
-			if !p.contractReqAddrCheck(tx, true) {
-				log.Debugf("[%s]contractEventExecutable, CONTRACT_EVENT_SIG, Jury, stop, false", shortId(reqId.String()))
-				break
-			}
 			if p.isValidateElection(tx, ele, false) {
 				log.Debugf("[%s]contractEventExecutable, CONTRACT_EVENT_SIG, Jury, true", shortId(reqId.String()))
 				return true
@@ -759,7 +751,12 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 	if err != nil {
 		return common.Hash{}, nil, err
 	}
+	p.locker.Lock()
+	defer p.locker.Unlock()
 	reqId := tx.RequestHash()
+	if p.mtx[reqId] != nil {
+		return reqId, nil, fmt.Errorf("contract request transaction[%s] already created!", shortId(reqId.String()))
+	}
 	p.mtx[reqId] = &contractTx{
 		reqTx:  tx.GetRequestTx(),
 		tm:     time.Now(),
@@ -770,9 +767,10 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 	if !tx.IsSystemContract() {
 		//获取合约Id
 		//检查合约Id下是否存在addrHash,并检查数量是否满足要求
-		if contractId == (common.Address{}) { //deploy
-
-		} else { //invoke,stop
+		if contractId == (common.Address{}) {
+			//deploy
+		} else {
+			//invoke,stop
 			elist, err := p.getContractElectionList(contractId)
 			if err != nil {
 				log.Errorf("[%s]signAndExecute, getContractElectionList fail,err:%s", shortId(tx.RequestHash().String()), err.Error())
@@ -780,9 +778,6 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 			}
 			ctx.eleInf = elist
 		}
-	}
-	if isLocalInstall {
-
 	}
 	return reqId, tx, nil
 }
@@ -947,31 +942,4 @@ func (p *Processor) genContractElectionList(tx *modules.Transaction, contractId 
 		}
 	}
 	return nil, nil
-}
-
-func (p *Processor) contractReqAddrCheck(tx *modules.Transaction, check bool) bool { //contract stop only
-	if check {
-		//只检查合约交易Stop请求地址与合同部署创建者地址是否相同
-		if contractType, err := getContractTxType(tx); err == nil {
-			if contractType != modules.APP_CONTRACT_STOP_REQUEST {
-				return true
-			}
-		}
-		reqId := tx.RequestHash()
-		contractId := tx.ContractIdBytes()
-		contract, err := p.dag.GetContract(contractId)
-		if err != nil {
-			log.Debugf("[%s]contractReqAddrCheck, GetContract fail, contractId[%v]", shortId(reqId.String()), contractId)
-			return false
-		}
-		reqAddr, err := p.dag.GetTxRequesterAddress(tx)
-		if err != nil {
-			return false
-		}
-		if !bytes.Equal(contract.Creator, reqAddr.Bytes()) {
-			log.Debugf("[%s]contractReqAddrCheck, addr is not equal, Creator[%v], reqAddr[%v]", shortId(reqId.String()), contract.Creator, reqAddr.Bytes())
-			return false
-		}
-	}
-	return true
 }

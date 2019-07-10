@@ -63,7 +63,8 @@ type ContractTemplateJson struct {
 	Abi            string   `json:"abi"`
 	Language       string   `json:"language"`
 	AddrHash       []string `json:"addr_hash" rlp:"nil"`
-	Memory         uint16   `json:"memory"`
+	Size           uint16   `json:"size"`
+	Creator        string   `json:"creator"`
 }
 
 func ConvertContractTemplate2Json(tpl *modules.ContractTemplate) *ContractTemplateJson {
@@ -76,8 +77,9 @@ func ConvertContractTemplate2Json(tpl *modules.ContractTemplate) *ContractTempla
 		Version:        tpl.Version,
 		Abi:            tpl.Abi,
 		Language:       tpl.Language,
-		Memory:         tpl.Memory,
+		Size:           tpl.Size,
 		AddrHash:       []string{},
+		Creator:        tpl.Creator,
 	}
 	for _, addH := range tpl.AddrHash {
 		json.AddrHash = append(json.AddrHash, addH.String())

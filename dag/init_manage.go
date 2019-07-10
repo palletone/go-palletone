@@ -34,10 +34,6 @@ import (
 	"go.dedis.ch/kyber/v3/sign/bls"
 )
 
-func (d *Dag) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
-	return d.validate.ValidateUnitExceptGroupSig(unit)
-}
-
 func (d *Dag) SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription {
 	return d.Memdag.SubscribeToGroupSignEvent(ch)
 }
@@ -164,13 +160,19 @@ func (d *Dag) UnitIrreversibleTime() time.Duration {
 }
 
 func (d *Dag) IsIrreversibleUnit(hash common.Hash) bool {
-	unit, err := d.stableUnitRep.GetUnit(hash)
-	if err != nil {
-		log.Debugf("stableUnitRep GetUnit error:%s", err.Error())
-		return false
+	// 查询memdag是否存在
+	_, err := d.unstableUnitRep.GetHeaderByHash(hash)
+	if err == nil {
+		return false // 存在于memdag，不稳定
 	}
 
-	if unit.NumberU64() > d.GetIrreversibleUnitNum(unit.GetAssetId()) {
+	header, err := d.stableUnitRep.GetHeaderByHash(hash)
+	if err != nil {
+		log.Debugf("stableUnitRep GetHeaderByHash error:%s", err.Error())
+		return false // 不存在该unit
+	}
+
+	if header.NumberU64() > d.GetIrreversibleUnitNum(header.GetAssetId()) {
 		return false
 	}
 
@@ -188,13 +190,13 @@ func (d *Dag) GetIrreversibleUnitNum(id modules.AssetId) uint64 {
 }
 
 func (d *Dag) VerifyUnitGroupSign(unitHash common.Hash, groupSign []byte) error {
-	unit, err := d.GetUnitByHash(unitHash)
+	header, err := d.GetHeaderByHash(unitHash)
 	if err != nil {
 		log.Debug(err.Error())
 		return err
 	}
 
-	pubKey, err := unit.GroupPubKey()
+	pubKey, err := header.GetGroupPubKey()
 	if err != nil {
 		log.Debug(err.Error())
 		return err

@@ -102,17 +102,17 @@ func TestCopyHeader(t *testing.T) {
 	}
 
 	newH := CopyHeader(&h)
-	newH.GroupSign = make([]byte, 0)
-	newH.GroupPubKey = make([]byte, 0)
+	//newH.GroupSign = make([]byte, 0)
+	//newH.GroupPubKey = make([]byte, 0)
 	hh := Header{}
-	log.Printf("newh=%v \n oldH=%v \n hh=%v", *newH, h, hh)
+	log.Printf("\n newh=%v \n oldH=%v \n hh=%v", *newH, h, hh)
 }
 
 // test unit's size of header
 func TestUnitSize(t *testing.T) {
 
 	key, _ := crypto.MyCryptoLib.KeyGen()
-	pubKey,_:=crypto.MyCryptoLib.PrivateKeyToPubKey(key)
+	pubKey, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(key)
 	h := new(Header)
 	au := Authentifier{}
 
@@ -128,7 +128,7 @@ func TestUnitSize(t *testing.T) {
 	h.ParentsHash = append(h.ParentsHash, h.TxRoot)
 
 	h.TxRoot = h.Hash()
-	sig, _ := crypto.MyCryptoLib.Sign(key,h.TxRoot[:] )
+	sig, _ := crypto.MyCryptoLib.Sign(key, h.TxRoot[:])
 	au.Signature = sig
 	au.PubKey = pubKey
 	h.Authors = au
@@ -177,7 +177,7 @@ func TestHeaderPointer(t *testing.T) {
 
 func TestHeaderRLP(t *testing.T) {
 	key, _ := crypto.MyCryptoLib.KeyGen()
-	pubKey,_:=crypto.MyCryptoLib.PrivateKeyToPubKey(key)
+	pubKey, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(key)
 	h := new(headerTemp)
 	//h.AssetIDs = append(h.AssetIDs, PTNCOIN)
 	au := Authentifier{}
@@ -193,7 +193,7 @@ func TestHeaderRLP(t *testing.T) {
 	h.CryptoLib = []byte{0x1, 0x2}
 	h.ParentsHash = append(h.ParentsHash, h.TxRoot)
 	h.TxRoot = common.HexToHash("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f")
-	sig, _ := crypto.MyCryptoLib.Sign(key,h.TxRoot[:])
+	sig, _ := crypto.MyCryptoLib.Sign(key, h.TxRoot[:])
 	au.Signature = sig
 	au.PubKey = pubKey
 	h.Authors = au

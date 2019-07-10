@@ -100,7 +100,7 @@ var DefaultConfig = Config{
 	EnableStaleProduction:       false,
 	EnableConsecutiveProduction: false,
 	RequiredParticipation:       DefaultRequiredParticipation,
-	EnableGroupSigning:          true,
+	EnableGroupSigning:          false,
 	Mediators: []*MediatorConf{
 		DefaultMediatorConf(),
 	},

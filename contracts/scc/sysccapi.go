@@ -160,7 +160,7 @@ func deploySysCC(chainID string, syscc *SystemChaincode) error {
 }
 
 // DeDeploySysCC stops the system chaincode and deregisters it from inproccontroller
-func DeDeploySysCC(chainID string, syscc *SystemChaincode) error {
+func DeDeploySysCC(chainID string, syscc *SystemChaincode, dontRmCon bool) error {
 	chaincodeID := &pb.ChaincodeID{Path: syscc.Path, Name: syscc.Name}
 	spec := &pb.ChaincodeSpec{Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]), ChaincodeId: chaincodeID, Input: &pb.ChaincodeInput{Args: syscc.InitArgs}}
 	ctx := context.Background()
@@ -174,7 +174,7 @@ func DeDeploySysCC(chainID string, syscc *SystemChaincode) error {
 	ccprov := ccprovider.GetChaincodeProvider()
 	version := util.GetSysCCVersion()
 	cccid := ccprov.GetCCContext(syscc.Id, chainID, syscc.Name, version, "123", true, nil, nil)
-	err = ccprov.Stop(ctx, cccid, chaincodeDeploymentSpec)
+	err = ccprov.Stop(ctx, cccid, chaincodeDeploymentSpec, dontRmCon)
 	if err == nil {
 		cclist.DelChaincode(chainID, syscc.Name, version)
 	}

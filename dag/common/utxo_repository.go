@@ -59,6 +59,7 @@ func NewUtxoRepository4Db(db ptndb.Database) *UtxoRepository {
 
 type IUtxoRepository interface {
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
+	GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error)
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error)
 	GetAddrUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
@@ -79,6 +80,9 @@ type IUtxoRepository interface {
 
 func (repository *UtxoRepository) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	return repository.utxodb.GetUtxoEntry(outpoint)
+}
+func (repository *UtxoRepository) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error) {
+	return repository.utxodb.GetStxoEntry(outpoint)
 }
 func (repository *UtxoRepository) IsUtxoSpent(outpoint *modules.OutPoint) (bool, error) {
 	return repository.utxodb.IsUtxoSpent(outpoint)
@@ -219,7 +223,7 @@ To create utxo according to outpus in transaction, and destory utxo according to
 */
 func (repository *UtxoRepository) UpdateUtxo(unitTime int64, txHash common.Hash, payment *modules.PaymentPayload, msgIndex uint32) error {
 	// update utxo
-	err := repository.destoryUtxo(txHash, payment.Inputs)
+	err := repository.destoryUtxo(txHash, uint64(unitTime), payment.Inputs)
 	if err != nil {
 		return err
 	}
@@ -275,7 +279,7 @@ func (repository *UtxoRepository) writeUtxo(unitTime int64, txHash common.Hash, 
 销毁utxo
 destory utxo, delete from UTXO database
 */
-func (repository *UtxoRepository) destoryUtxo(txid common.Hash, txins []*modules.Input) error {
+func (repository *UtxoRepository) destoryUtxo(txid common.Hash, unitTime uint64, txins []*modules.Input) error {
 	for _, txin := range txins {
 
 		if txin == nil {
@@ -298,7 +302,7 @@ func (repository *UtxoRepository) destoryUtxo(txid common.Hash, txins []*modules
 		}
 
 		// delete utxo
-		if err := repository.utxodb.DeleteUtxo(outpoint); err != nil {
+		if err := repository.utxodb.DeleteUtxo(outpoint, txid, unitTime); err != nil {
 			log.Error("Update uxto... ", "error", err.Error())
 			return err
 		}

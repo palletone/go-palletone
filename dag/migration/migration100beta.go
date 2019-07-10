@@ -20,6 +20,7 @@
 package migration
 
 import (
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -48,12 +49,34 @@ func (m *Migration100_101) ExecuteUpgrade() error {
 	}
 	for outpoint, utxo := range utxos {
 		if utxo.IsSpent() {
-			err = dbop.DeleteUtxo(&outpoint)
+			err = dbop.DeleteUtxo(&outpoint, common.Hash{}, 0)
 			if err != nil {
 				log.Errorf("Migrate utxo db,delete spent utxo error:%s", err.Error())
 				return err
 			}
 			//log.Debugf("Deleted spent UTXO by key:%s", outpoint.String())
+		}
+	}
+	dagdb := storage.NewDagDb(m.dagdb)
+	txs, err := dagdb.GetAllTxs()
+	if err != nil {
+		log.Error(err.Error())
+	}
+	log.Debugf("Tx count:%d", len(txs))
+	for i, tx := range txs {
+		if tx == nil {
+			log.Errorf("tx[%d] is nil", i)
+		}
+		spents := tx.GetSpendOutpoints()
+		for _, spent := range spents {
+			stxo, err := dbop.GetStxoEntry(spent)
+			if err == nil && stxo != nil {
+				stxo.SpentByTxId = tx.Hash()
+				lookup, _ := dagdb.GetTxLookupEntry(tx.Hash())
+				stxo.SpentTime = lookup.Timestamp
+				log.Debugf("Update stxo spentTxId:%s,spentTime:%d", stxo.SpentByTxId.String(), stxo.SpentTime)
+				dbop.SaveStxoEntry(spent, stxo)
+			}
 		}
 	}
 	//// gp 只做了添加和删除的修改

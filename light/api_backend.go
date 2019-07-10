@@ -355,6 +355,9 @@ func (b *LesApiBackend) GetPrefix(prefix string) map[string][]byte {
 func (b *LesApiBackend) GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error) {
 	return nil, nil
 }
+func (b *LesApiBackend) GetStxoEntry(outpoint *modules.OutPoint) (*ptnjson.StxoJson, error) {
+	return nil, nil
+}
 func (b *LesApiBackend) QueryDbByKey(key []byte) *ptnjson.DbRowJson {
 	return nil
 }
@@ -540,5 +543,9 @@ func (b *LesApiBackend) GetContractStatesByPrefix(id []byte, prefix string) (map
 	return nil, nil
 }
 func (b *LesApiBackend) GetAddressBalanceStatistics(token string, topN int) (*statistics.TokenAddressBalanceJson, error) {
+	return nil, nil
+}
+
+func (b *LesApiBackend) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
 	return nil, nil
 }

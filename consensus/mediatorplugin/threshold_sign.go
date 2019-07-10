@@ -196,7 +196,7 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 			finished = true
 
 			if dkgr.Certified() {
-				log.Debugf("the mediator(%v)'s DKG verification passed!", localMed.Str())
+				log.Debugf("the mediator(%v)'s DKG verification passed", localMed.Str())
 
 				certified = true
 			}
@@ -364,9 +364,10 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 	// 2. 判断群签名的相关条件
 	{
 		// 1.如果单元没有群公钥， 则跳过群签名
-		_, err := newUnit.GroupPubKey()
-		if err != nil {
-			log.Debugf(err.Error())
+		pkb := newUnit.GetGroupPubKeyByte()
+		if pkb == nil || len(pkb) == 0 {
+			err := fmt.Errorf("this unit(%v)'s group public key is null", unitHash.TerminalString())
+			log.Debug(err.Error())
 			return
 		}
 
