@@ -1215,3 +1215,9 @@ func (s *PublicWalletAPI) GetAllTokenInfo(ctx context.Context) (string, error) {
 func (s *PublicWalletAPI) GetProofOfExistencesByRef(ctx context.Context, reference string) ([]*ptnjson.ProofOfExistenceJson, error) {
 	return s.b.QueryProofOfExistenceByReference(reference)
 }
+
+//好像某个UTXO是被那个交易花费的
+func (s *PublicWalletAPI) GetStxo(ctx context.Context, txid string, msgIdx int, outIdx int) (*ptnjson.StxoJson, error) {
+	outpoint := modules.NewOutPoint(common.HexToHash(txid), uint32(msgIdx), uint32(outIdx))
+	return s.b.GetStxoEntry(outpoint)
+}

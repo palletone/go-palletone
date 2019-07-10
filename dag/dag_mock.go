@@ -691,6 +691,21 @@ func (mr *MockIDagMockRecorder) GetUtxoEntry(outpoint interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUtxoEntry", reflect.TypeOf((*MockIDag)(nil).GetUtxoEntry), outpoint)
 }
 
+// GetStxoEntry mocks base method
+func (m *MockIDag) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetStxoEntry", outpoint)
+	ret0, _ := ret[0].(*modules.Stxo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetStxoEntry indicates an expected call of GetStxoEntry
+func (mr *MockIDagMockRecorder) GetStxoEntry(outpoint interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStxoEntry", reflect.TypeOf((*MockIDag)(nil).GetStxoEntry), outpoint)
+}
+
 // GetAddrOutpoints mocks base method
 func (m *MockIDag) GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error) {
 	m.ctrl.T.Helper()
@@ -1303,20 +1318,6 @@ func (m *MockIDag) GetIrreversibleUnitNum(id modules.AssetId) uint64 {
 func (mr *MockIDagMockRecorder) GetIrreversibleUnitNum(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIrreversibleUnitNum", reflect.TypeOf((*MockIDag)(nil).GetIrreversibleUnitNum), id)
-}
-
-// ValidateUnitExceptGroupSig mocks base method
-func (m *MockIDag) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ValidateUnitExceptGroupSig", unit)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ValidateUnitExceptGroupSig indicates an expected call of ValidateUnitExceptGroupSig
-func (mr *MockIDagMockRecorder) ValidateUnitExceptGroupSig(unit interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateUnitExceptGroupSig", reflect.TypeOf((*MockIDag)(nil).ValidateUnitExceptGroupSig), unit)
 }
 
 // ValidateUnitExceptPayment mocks base method

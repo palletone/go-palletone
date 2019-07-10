@@ -355,6 +355,9 @@ func (b *LesApiBackend) GetPrefix(prefix string) map[string][]byte {
 func (b *LesApiBackend) GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error) {
 	return nil, nil
 }
+func (b *LesApiBackend) GetStxoEntry(outpoint *modules.OutPoint) (*ptnjson.StxoJson, error) {
+	return nil, nil
+}
 func (b *LesApiBackend) QueryDbByKey(key []byte) *ptnjson.DbRowJson {
 	return nil
 }
