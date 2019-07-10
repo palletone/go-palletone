@@ -249,8 +249,8 @@ func(v mockValidate)ValidateUnitExceptPayment(unit *modules.Unit) error{
 	return nil
 }
 //验证一个Header是否合法（Mediator签名有效）
-func(v mockValidate)ValidateHeader(h *modules.Header) error{
-	return nil
+func(v mockValidate)ValidateHeader(h *modules.Header) validator.ValidationCode{
+	return validator.TxValidationCode_VALID
 }
 func(v mockValidate)ValidateUnitGroupSign(h *modules.Header) error{
 	return nil

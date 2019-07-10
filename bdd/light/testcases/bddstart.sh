@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ./preset.sh
-sleep 25
+sleep 30
 
 listcommand=`./gptn --exec 'personal.listAccounts'  attach node1/palletone/gptn.ipc`
 list=`echo ${listcommand//^M/}`
