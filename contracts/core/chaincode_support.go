@@ -894,6 +894,7 @@ func (chaincodeSupport *ChaincodeSupport) Execute(ctxt context.Context, cccid *c
 			Follow:      true,
 			Stdout:      true,
 			Stderr:      true,
+			Tail:        "30",
 		}
 		err = client.Logs(logsO)
 		if err != nil {
@@ -905,7 +906,6 @@ func (chaincodeSupport *ChaincodeSupport) Execute(ctxt context.Context, cccid *c
 			line, _ := buf.ReadString('\n')
 			line = strings.TrimSpace(line)
 			if strings.Contains(line, "panic: runtime error") || strings.Contains(line, "fatal error: runtime") {
-
 				err = errors.New(line)
 			} else {
 				//log.Info("===================2=================timeout expired while executing transaction")
