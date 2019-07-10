@@ -9,13 +9,13 @@ InstallTestshimucTpl
     Given Unlock token holder succeed
     ${reqId} =    When User installs contract template    github.com/palletone/go-palletone/contracts/example/go/testshimuc    testshimuc
     And wait for transaction being packaged
-    Then Wait for unit abount contract to be confirmed by unit height    ${reqId}
+    Then Wait for unit about contract to be confirmed by unit height    ${reqId}
 
 DeployTestshimuc
     Given Unlock token holder succeed
     ${reqId} =    When User deploys contract
     And wait for transaction being packaged
-    Then Wait for unit abount contract to be confirmed by unit height    ${reqId}
+    Then Wait for unit about contract to be confirmed by unit height    ${reqId}
 
 *** Keywords ***
 Getxxxx
@@ -23,7 +23,7 @@ Getxxxx
     Given Unlock token holder succeed
     ${reqId} =    When User put status into testshimuc      ${method}    ${key}    ${value}
     And wait for transaction being packaged
-    And Wait for unit abount contract to be confirmed by unit height    ${reqId}
+    And Wait for unit about contract to be confirmed by unit height    ${reqId}
     Get status from testshimuc    ${method}    ${key}    ${value}
 
 Generate arguments for test

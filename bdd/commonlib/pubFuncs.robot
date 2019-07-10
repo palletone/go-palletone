@@ -177,7 +177,7 @@ User deploys contract
     Set Global Variable    ${gContractId}    ${contractId}
     [Return]    ${reqId}
 
-Wait for unit abount contract to be confirmed by unit height
+Wait for unit about contract to be confirmed by unit height
     [Arguments]    ${reqId}
     # query the height of unit including tpl install tx
     ${params}=    Create List    ${reqId}
