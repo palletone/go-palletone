@@ -128,7 +128,7 @@ func (p *Processor) AdapterFunRequest(reqId common.Hash, contractId common.Addre
 	}
 	log.Infof("AdapterFunRequest reqid: %x, consultContent: %s", reqId, string(consultContent))
 	//
-	account := p.getLocalAccount()
+	account := p.getLocalJuryAccount()
 	if account == nil {
 		return nil, errors.New("AdapterFunRequest no local account")
 	}

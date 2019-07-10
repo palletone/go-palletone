@@ -391,7 +391,7 @@ func (d *Dag) InsertHeaderDag(headers []*modules.Header) (int, error) {
 //Ethereum ethash engine.go
 func (d *Dag) VerifyHeader(header *modules.Header) error {
 	// step1. check unit signature, should be compare to mediator list
-	unitState := d.validate.ValidateHeader(header)
+	unitState := validator.NewValidateError( d.validate.ValidateHeader(header))
 	if unitState != nil {
 		log.Errorf("Validate unit header error, errno=%s", unitState.Error())
 		return unitState
@@ -531,7 +531,7 @@ func (d *Dag) initDataForMainChainHeader(mainChain *modules.MainChain) {
 		d.stableUnitRep.SaveNewestHeader(pHeader)
 	}
 }
-func NewDag(db ptndb.Database) (*Dag, error) {
+func NewDag(db ptndb.Database,light bool) (*Dag, error) {
 	mutex := new(sync.RWMutex)
 
 	dagDb := storage.NewDagDb(db)
@@ -549,7 +549,7 @@ func NewDag(db ptndb.Database) (*Dag, error) {
 	//hash, idx, _ := stablePropRep.GetLastStableUnit(modules.PTNCOIN)
 	gasToken := dagconfig.DagConfig.GetGasToken()
 	threshold, _ := propRep.GetChainThreshold()
-	unstableChain := memunit.NewMemDag(gasToken, threshold, false, db, unitRep, propRep, stateRep)
+	unstableChain := memunit.NewMemDag(gasToken, threshold, light/*false*/, db, unitRep, propRep, stateRep)
 	tunitRep, tutxoRep, tstateRep, tpropRep, tUnitProduceRep := unstableChain.GetUnstableRepositories()
 	validate := validator.NewValidate(tunitRep, tutxoRep, tstateRep, tpropRep)
 	//partitionMemdag := make(map[modules.AssetId]memunit.IMemDag)
@@ -616,7 +616,7 @@ func checkDbMigration(db ptndb.Database, stateDb storage.IStateDb) error {
 	log.Debugf("the program version is:%s", now_version)
 	next_version := old_vertion.Version
 	if next_version != now_version {
-		log.Infof("start migration,upgrade gtpn vertion[%s] to [%s]", next_version, now_version)
+		log.Infof("Start migration,upgrade gtpn vertion[%s] to [%s]", next_version, now_version)
 		// migrations
 		mig_versions := migration.NewMigrations(db)
 		for {
@@ -639,7 +639,7 @@ func checkDbMigration(db ptndb.Database, stateDb storage.IStateDb) error {
 				break
 			}
 		}
-		log.Infof("exec migration spent time:%s", time.Since(t))
+		log.Infof("Complete migration, spent time:%s", time.Since(t))
 		return nil
 	}
 	return nil

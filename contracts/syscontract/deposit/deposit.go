@@ -72,6 +72,10 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	case HandleForApplyBecomeMediator:
 		log.Info("Enter DepositChaincode Contract " + HandleForApplyBecomeMediator + " Invoke")
 		return d.handleForApplyBecomeMediator(stub, args)
+	//  基金会移除某个节点
+	case HanldeNodeRemoveFromAgreeList:
+		log.Info("Enter DepositChaincode Contract " + HanldeNodeRemoveFromAgreeList + " Invoke")
+		return d.hanldeNodeRemoveFromAgreeList(stub, args)
 		//  基金会对退出申请Mediator进行处理
 	case HandleForApplyQuitMediator:
 		log.Info("Enter DepositChaincode Contract " + HandleForApplyQuitMediator + " Invoke")

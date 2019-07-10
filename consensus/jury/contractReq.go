@@ -232,13 +232,3 @@ func (p *Processor) UpdateJuryAccount(addr common.Address, pwd string) bool {
 	return true
 }
 
-func (p *Processor) GetJuryAccount() []common.Address {
-	num := len(p.local)
-	addrs := make([]common.Address, num)
-	i := 0
-	for addr, _ := range p.local {
-		addrs[i] = addr
-		i++
-	}
-	return addrs
-}

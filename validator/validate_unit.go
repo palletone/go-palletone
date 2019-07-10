@@ -244,20 +244,20 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 	return TxValidationCode_VALID
 }
 
-func (validate *Validate) ValidateHeader(h *modules.Header) error {
+func (validate *Validate) ValidateHeader(h *modules.Header) ValidationCode {
 	hash:=h.Hash()
 	if validate.cache.HasHeaderValidateResult(hash){
-		return nil
+		return TxValidationCode_VALID
 	}
 	unitHeaderValidateResult := validate.validateHeaderExceptGroupSig(h)
 	if unitHeaderValidateResult != TxValidationCode_VALID &&
 		unitHeaderValidateResult != UNIT_STATE_AUTHOR_SIGNATURE_PASSED &&
 		unitHeaderValidateResult != UNIT_STATE_ORPHAN {
 		log.Debug("Validate unit's header failed.", "error code", unitHeaderValidateResult)
-		return NewValidateError(unitHeaderValidateResult)
+		return unitHeaderValidateResult
 	}
 	if unitHeaderValidateResult==TxValidationCode_VALID{
 		validate.cache.AddHeaderValidateResult(hash)
 	}
-	return nil
+	return TxValidationCode_VALID
 }

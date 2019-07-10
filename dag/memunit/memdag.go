@@ -469,7 +469,12 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 			//Add a new unit to main chain
 			//Check unit and it's txs are valid
 			//只有主链上添加单元时才能判断整个Unit的有效性
-			validateCode := chain.validator.ValidateUnitExceptGroupSig(unit)
+			validateCode := validator.TxValidationCode_VALID
+			if chain.saveHeaderOnly{
+				validateCode=chain.validator.ValidateHeader(unit.UnitHeader)
+			}else {
+				validateCode=chain.validator.ValidateUnitExceptGroupSig(unit)
+			}
 			if validateCode != validator.TxValidationCode_VALID {
 				return validator.NewValidateError(validateCode)
 			}
