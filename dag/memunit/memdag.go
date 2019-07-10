@@ -394,8 +394,6 @@ func (chain *MemDag) getForkUnits(unit *modules.Unit) []*modules.Unit {
 		hash = u.ParentHash()[0]
 	}
 	return unstableUnits
-
-	return nil
 }
 
 //判断当前设置是保存Header还是Unit，将对应的对象保存到Tempdb数据库
@@ -620,7 +618,6 @@ func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPo
 	chain.setLastMainchainUnit(newUnit)
 	//基于新主链的单元和稳定单元，重新构建Tempdb
 	chain.rebuildTempdb()
-
 }
 
 //将其从孤儿单元列表中删除，并添加到ChainUnits中。
