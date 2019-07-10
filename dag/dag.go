@@ -44,7 +44,6 @@ import (
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
-	"github.com/palletone/go-palletone/validator"
 )
 
 type Dag struct {
@@ -64,8 +63,8 @@ type Dag struct {
 	stablePropRep  dagcommon.IPropRepository
 
 	stableUnitProduceRep dagcommon.IUnitProduceRepository
-	validate             validator.Validator
-	ChainHeadFeed        *event.Feed
+	//validate             validator.Validator
+	ChainHeadFeed *event.Feed
 
 	Mutex           sync.RWMutex
 	Memdag          memunit.IMemDag                     // memory unit
@@ -389,22 +388,22 @@ func (d *Dag) InsertHeaderDag(headers []*modules.Header) (int, error) {
 
 //VerifyHeader checks whether a header conforms to the consensus rules of the stock
 //Ethereum ethash engine.go
-func (d *Dag) VerifyHeader(header *modules.Header) error {
-	// step1. check unit signature, should be compare to mediator list
-	unitState := validator.NewValidateError( d.validate.ValidateHeader(header))
-	if unitState != nil {
-		log.Errorf("Validate unit header error, errno=%s", unitState.Error())
-		return unitState
-	}
-
-	// step2. check extra data
-	// Ensure that the header's extra-data section is of a reasonable size
-	if uint64(len(header.Extra)) > uint64(32) {
-		return fmt.Errorf("extra-data too long: %d > %d", len(header.Extra), configure.MaximumExtraDataSize)
-	}
-
-	return nil
-}
+//func (d *Dag) VerifyHeader(header *modules.Header) error {
+//	// step1. check unit signature, should be compare to mediator list
+//	unitState := validator.NewValidateError(d.validate.ValidateHeader(header))
+//	if unitState != nil {
+//		log.Errorf("Validate unit header error, errno=%s", unitState.Error())
+//		return unitState
+//	}
+//
+//	// step2. check extra data
+//	// Ensure that the header's extra-data section is of a reasonable size
+//	if uint64(len(header.Extra)) > uint64(32) {
+//		return fmt.Errorf("extra-data too long: %d > %d", len(header.Extra), configure.MaximumExtraDataSize)
+//	}
+//
+//	return nil
+//}
 
 /**
 获取account address下面的token信息
@@ -531,7 +530,7 @@ func (d *Dag) initDataForMainChainHeader(mainChain *modules.MainChain) {
 		d.stableUnitRep.SaveNewestHeader(pHeader)
 	}
 }
-func NewDag(db ptndb.Database,light bool) (*Dag, error) {
+func NewDag(db ptndb.Database, light bool) (*Dag, error) {
 	mutex := new(sync.RWMutex)
 
 	dagDb := storage.NewDagDb(db)
@@ -549,9 +548,9 @@ func NewDag(db ptndb.Database,light bool) (*Dag, error) {
 	//hash, idx, _ := stablePropRep.GetLastStableUnit(modules.PTNCOIN)
 	gasToken := dagconfig.DagConfig.GetGasToken()
 	threshold, _ := propRep.GetChainThreshold()
-	unstableChain := memunit.NewMemDag(gasToken, threshold, light/*false*/, db, unitRep, propRep, stateRep)
+	unstableChain := memunit.NewMemDag(gasToken, threshold, light /*false*/, db, unitRep, propRep, stateRep)
 	tunitRep, tutxoRep, tstateRep, tpropRep, tUnitProduceRep := unstableChain.GetUnstableRepositories()
-	validate := validator.NewValidate(tunitRep, tutxoRep, tstateRep, tpropRep)
+	//validate := validator.NewValidate(tunitRep, tutxoRep, tstateRep, tpropRep)
 	//partitionMemdag := make(map[modules.AssetId]memunit.IMemDag)
 	//for _, ptoken := range dagconfig.DagConfig.GeSyncPartitionTokens() {
 	//	partitionMemdag[ptoken] = memunit.NewMemDag(ptoken, true, db, unitRep, propRep, stateRep)
@@ -570,10 +569,10 @@ func NewDag(db ptndb.Database,light bool) (*Dag, error) {
 		stableUtxoRep:          utxoRep,
 		stableStateRep:         stateRep,
 		stableUnitProduceRep:   stableUnitProduceRep,
-		validate:               validate,
-		ChainHeadFeed:          new(event.Feed),
-		Mutex:                  *mutex,
-		Memdag:                 unstableChain,
+		//validate:               validate,
+		ChainHeadFeed: new(event.Feed),
+		Mutex:         *mutex,
+		Memdag:        unstableChain,
 		//PartitionMemDag:      partitionMemdag,
 	}
 	dag.stableUnitRep.SubscribeSysContractStateChangeEvent(dag.AfterSysContractStateChangeEvent)
@@ -669,7 +668,7 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
-	validate := validator.NewValidate(dagDb, utxoRep, stateDb, nil)
+	//validate := validator.NewValidate(dagDb, utxoRep, stateDb, nil)
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
 
@@ -683,9 +682,9 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 		stablePropRep:        propRep,
 		stableStateRep:       stateRep,
 		stableUnitProduceRep: statleUnitProduceRep,
-		validate:             validate,
-		ChainHeadFeed:        new(event.Feed),
-		Mutex:                *mutex,
+		//validate:             validate,
+		ChainHeadFeed: new(event.Feed),
+		Mutex:         *mutex,
 		//Memdag:        memunit.NewMemDag(dagDb, stateDb, unstableUnitRep),
 		//utxos_cache: make(map[common.Hash]map[modules.OutPoint]*modules.Utxo),
 	}
@@ -708,19 +707,19 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 	statleUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
 
 	threshold, _ := propRep.GetChainThreshold()
-	validate := validator.NewValidate(dagDb, utxoRep, stateDb, propRep)
+	//validate := validator.NewValidate(dagDb, utxoRep, stateDb, propRep)
 	unstableChain := memunit.NewMemDag(modules.PTNCOIN, threshold, false, db, unitRep, propRep, stateRep)
 	tunitRep, tutxoRep, tstateRep, tpropRep, tUnitProduceRep := unstableChain.GetUnstableRepositories()
 
 	dag := &Dag{
 		//Cache:            freecache.NewCache(200 * 1024 * 1024),
-		Db:                     db,
-		stableUnitRep:          unitRep,
-		stableUtxoRep:          utxoRep,
-		stableStateRep:         stateRep,
-		stablePropRep:          propRep,
-		stableUnitProduceRep:   statleUnitProduceRep,
-		validate:               validate,
+		Db:                   db,
+		stableUnitRep:        unitRep,
+		stableUtxoRep:        utxoRep,
+		stableStateRep:       stateRep,
+		stablePropRep:        propRep,
+		stableUnitProduceRep: statleUnitProduceRep,
+		//validate:               validate,
 		ChainHeadFeed:          new(event.Feed),
 		Mutex:                  *mutex,
 		Memdag:                 unstableChain,
