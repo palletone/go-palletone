@@ -27,6 +27,7 @@ import (
 
 	"encoding/json"
 
+	"github.com/coocood/freecache"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -200,8 +201,8 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 	if contractEleNum < 1 {
 		contractEleNum = core.DefaultContractElectionNum
 	}
-
-	validator := validator.NewValidate(dag, dag, dag, nil)
+	cache := freecache.NewCache(20 * 1024 * 1024)
+	validator := validator.NewValidate(dag, dag, dag, nil, cache)
 	p := &Processor{
 		name:           "contractProcessor",
 		ptn:            ptn,
