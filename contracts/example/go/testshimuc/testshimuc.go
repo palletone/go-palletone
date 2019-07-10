@@ -24,9 +24,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
+	"strconv"
+	"strings"
 )
 
 // SimpleChaincode example simple Chaincode implementation
@@ -34,7 +37,9 @@ type SimpleChaincode struct {
 }
 
 func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
-	stub.PutState("paystate0", []byte("paystate0"))
+	if err := stub.PutState("paystate0", []byte("paystate0")); err != nil {
+		return shim.Error(err.Error())
+	}
 	return shim.Success(nil)
 }
 
@@ -301,6 +306,235 @@ func (t *SimpleChaincode) test_DelGlobalState(stub shim.ChaincodeStubInterface, 
 	}
 	if err := stub.DelGlobalState(args[0]); err != nil {
 		return shim.Error(err.Error())
+	}
+	return shim.Success(nil)
+}
+
+func (t *SimpleChaincode) test_GetTxTimestamp(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	ts, err := stub.GetTxTimestamp(10)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	return shim.Success([]byte(ts.String()))
+}
+
+func (t *SimpleChaincode) test_GetSystemConfig(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	cp, err := stub.GetSystemConfig()
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	res, err := json.Marshal(cp)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	return shim.Success(res)
+}
+
+func (t *SimpleChaincode) test_GetTokenBalance(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	if len(args) < 1 {
+		return shim.Error(fmt.Sprintf("input:<address><token name (option) >"))
+	}
+
+	asset := &modules.Asset{}
+	if len(args) == 2 {
+		if err := asset.SetString(args[1]); err != nil {
+			return shim.Error(err.Error())
+		}
+	} else {
+		asset = nil
+	}
+	tokens, err := stub.GetTokenBalance(args[0], asset)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	res, err := json.Marshal(tokens)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	return shim.Success(res)
+}
+
+func (t *SimpleChaincode) test_PayOutToken(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	if len(args) < 3 {
+		return shim.Error(fmt.Sprintf("input:<address><token name><amount>"))
+	}
+
+	amountAsset := &modules.AmountAsset{}
+	if len(args) == 2 {
+		asset := &modules.Asset{}
+		if err := asset.SetString(args[1]); err != nil {
+			return shim.Error(err.Error())
+		}
+		amountAsset.Asset = asset
+		amount, err := strconv.Atoi(args[1])
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		amountAsset.Amount = uint64(amount)
+	}
+	if err := stub.PayOutToken(args[0], amountAsset, 0); err != nil {
+		return shim.Error(err.Error())
+	}
+	return shim.Success(nil)
+}
+
+func (t *SimpleChaincode) test_SetEvent(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	message := "Event send data is here!"
+	err := stub.SetEvent("evtsender", []byte(message))
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	return shim.Success(nil)
+}
+
+func (t *SimpleChaincode) test_DefineToken(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	// stub.DefineToken(byte(dm.AssetType_FungibleToken), createJson, createAddr.String())
+	if len(args) != 5 {
+		return shim.Error("input: <token name> <token symbol> <token dedimals> <token total>")
+	}
+
+	addr, err := stub.GetInvokeAddress()
+	if err != nil {
+		shim.Error(err.Error())
+	}
+	symbol := strings.ToUpper(args[1])
+	decimal, err := strconv.Atoi(args[2])
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	total, err := strconv.Atoi(args[3])
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	fungible := modules.FungibleToken{
+		Name:          args[0],
+		Symbol:        symbol,
+		Decimals:      byte(decimal),
+		TotalSupply:   uint64(total),
+		SupplyAddress: addr.String(),
+	}
+	createJson, err := json.Marshal(fungible)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to generate token Json\"}"
+		return shim.Error(jsonResp)
+	}
+
+	if err := stub.DefineToken(byte(modules.AssetType_FungibleToken), createJson, addr.String()); err != nil {
+		return shim.Error(err.Error())
+	}
+	return shim.Success(nil)
+}
+
+func (t *SimpleChaincode) test_SupplyToken(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	if len(args) < 2 {
+		return shim.Error("need 2 args (Symbol,SupplyAmout)")
+	}
+
+	//symbol
+	symbol := strings.ToUpper(args[0])
+	//check name is exist or not
+	gTkInfo := modules.GlobalTokenInfo{}
+	tkInfoBytes, err := stub.GetGlobalState(modules.GlobalPrefix + symbol)
+	if len(tkInfoBytes) == 0 {
+		return shim.Error(err.Error())
+	}
+	if err := json.Unmarshal(tkInfoBytes, &gTkInfo); err != nil {
+		return shim.Error(err.Error())
+	}
+
+	//check status
+	if gTkInfo.Status != 0 {
+		jsonResp := "{\"Error\":\"Status is frozen\"}"
+		return shim.Error(jsonResp)
+	}
+
+	//supply amount
+	supplyAmount, err := strconv.ParseUint(args[1], 10, 64)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to convert supply amount\"}"
+		return shim.Error(jsonResp)
+	}
+	if supplyAmount == 0 {
+		jsonResp := "{\"Error\":\"Can't be zero\"}"
+		return shim.Error(jsonResp)
+	}
+	if math.MaxInt64-gTkInfo.TotalSupply < supplyAmount {
+		jsonResp := "{\"Error\":\"Too big, overflow\"}"
+		return shim.Error(jsonResp)
+	}
+
+	//get invoke address
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
+	}
+	//check supply address
+	if invokeAddr.String() != gTkInfo.SupplyAddr {
+		jsonResp := "{\"Error\":\"Not the supply address\"}"
+		return shim.Error(jsonResp)
+	}
+
+	//call SupplyToken
+	assetID := gTkInfo.AssetID
+	err = stub.SupplyToken(assetID.Bytes(),
+		[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, supplyAmount, gTkInfo.SupplyAddr)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to call stub.SupplyToken\"}"
+		return shim.Error(jsonResp)
+	}
+
+	//add supply
+	gTkInfo.TotalSupply += supplyAmount
+
+	info := struct {
+		Symbol      string
+		CreateAddr  string
+		TotalSupply uint64
+		Decimals    uint64
+		SupplyAddr  string
+		AssetID     modules.AssetId
+	}{gTkInfo.Symbol, gTkInfo.CreateAddr, gTkInfo.TotalSupply, uint64(assetID.GetDecimal()), gTkInfo.SupplyAddr, assetID}
+	val, err := json.Marshal(&info)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	err = stub.PutState("symbol_"+info.Symbol, val)
+
+	gti := modules.GlobalTokenInfo{Symbol: info.Symbol, TokenType: 1, Status: 0, CreateAddr: info.CreateAddr,
+		TotalSupply: info.TotalSupply, SupplyAddr: info.SupplyAddr, AssetID: info.AssetID}
+	val, err = json.Marshal(gti)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	err = stub.PutGlobalState(modules.GlobalPrefix+gTkInfo.Symbol, val)
+
+	return shim.Success([]byte(""))
+}
+
+func (t *SimpleChaincode) test_GetRequesterCert(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	if len(args) < 1 {
+		return shim.Error("input:<certificate raw bytes>")
+	}
+	certBytes, err := stub.GetRequesterCert()
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	if string(certBytes) != args[0] {
+		return shim.Error("Certificate bytes through GetRequesterCert was unexpected")
+	}
+	return shim.Success(nil)
+}
+
+func (t *SimpleChaincode) test_IsRequesterCertValid(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	v, err := stub.IsRequesterCertValid()
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	if v != true {
+		return shim.Error("Certificate used is invalid.")
 	}
 	return shim.Success(nil)
 }
