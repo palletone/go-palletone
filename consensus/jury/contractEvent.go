@@ -98,7 +98,7 @@ func (p *Processor) contractEleEvent(tx *modules.Transaction) error {
 	elesLen := len(eles)
 	if elesLen > 0 {
 		if elesLen >= p.electionNum {
-			mtx.eleInf = eles[0:p.electionNum]
+			mtx.eleInf = eles[0:p.electionNum] //todo 随机选择
 			log.Debugf("[%s]contractEleEvent election Num ok", shortId(reqId.String()))
 		} else {
 			mtx.eleInf = eles[:]

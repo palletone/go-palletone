@@ -87,9 +87,8 @@ func (e *elector) checkElected(data []byte) (proof []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
-	vrfValue := proof
-	if len(vrfValue) > 0 {
-		if alg.Selected(e.num, e.weight, uint64(e.total), vrfValue) > 0 {
+	if len(proof) > 0 {
+		if alg.Selected(e.num, e.weight, uint64(e.total), proof) > 0 {
 			return proof, nil
 		}
 	}
@@ -144,7 +143,7 @@ func (p *Processor) selectElectionInf(local []modules.ElectionInf, recv []module
 	return eles
 }
 
-func (p *Processor) electionEventIsProcess(event *ElectionEvent, addr *common.Address) (common.Hash, bool) {
+func (p *Processor) electionEventIsProcess(event *ElectionEvent) (common.Hash, bool) {
 	if event == nil {
 		return common.Hash{}, false
 	}
@@ -524,19 +523,19 @@ func (p *Processor) ProcessElectionEvent(event *ElectionEvent) (result *Election
 		account.Password = a.Password
 		break //first one
 	}
-	reqId, isP := p.electionEventIsProcess(event, &account.Address)
+	reqId, isP := p.electionEventIsProcess(event)
 	if !isP {
 		log.Infof("[%s]ProcessElectionEvent, electionEventIsProcess is false, addr[%s], event type[%v]", shortId(reqId.String()), account.Address.String(), event.EType)
 		return nil, nil
 	}
-	ele := &elector{
+	elr := &elector{
 		num:      uint(p.electionNum),
 		total:    uint64(p.dag.JuryCount()), // 100 todo dynamic acquisition
 		addr:     account.Address,
 		password: account.Password,
 		ks:       p.ptn.GetKeyStore(),
 	}
-	ele.weight = electionWeightValue(ele.total)
+	elr.weight = electionWeightValue(elr.total)
 
 	//log.Infof("[%s]ProcessElectionEvent--, event type[%v] ", shortId(reqId.String()), event.EType) //del
 	recved, invalid, err := p.electionEventBroadcast(event)
@@ -550,9 +549,9 @@ func (p *Processor) ProcessElectionEvent(event *ElectionEvent) (result *Election
 	//go p.ptn.ElectionBroadcast(*event, false)
 
 	if event.EType == ELECTION_EVENT_VRF_REQUEST {
-		err = p.processElectionRequestEvent(ele, event.Event.(*ElectionRequestEvent))
+		err = p.processElectionRequestEvent(elr, event.Event.(*ElectionRequestEvent))
 	} else if event.EType == ELECTION_EVENT_VRF_RESULT {
-		err = p.processElectionResultEvent(ele, event.Event.(*ElectionResultEvent))
+		err = p.processElectionResultEvent(elr, event.Event.(*ElectionResultEvent))
 	} else if event.EType == ELECTION_EVENT_SIG_REQUEST {
 		err = p.processElectionSigRequestEvent(event.Event.(*ElectionSigRequestEvent))
 	} else if event.EType == ELECTION_EVENT_SIG_RESULT {
