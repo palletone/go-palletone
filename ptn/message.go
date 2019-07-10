@@ -358,8 +358,11 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	unitHash := unit.Hash()
 	if pm.IsExistInCache(unitHash.Bytes()) {
 		//log.Debugf("Received unit(%v) again, ignore it", unitHash.TerminalString())
+		p.MarkUnit(unitHash)
+		p.SetHead(unitHash, unit.Number())
 		return nil
 	}
+
 	// append by Albert·Gou
 	timestamp := time.Unix(unit.Timestamp(), 0)
 	log.Debugf("Received unit(%v) #%v parent(%v) @%v signed by %v", unitHash.TerminalString(),
@@ -411,15 +414,17 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	p.MarkUnit(unit.UnitHash)
 	pm.fetcher.Enqueue(p.id, unit)
 
-	requestNumber := unit.UnitHeader.Number
+	requestNumber := unit.Number()
 	hash, number := p.Head(unit.Number().AssetID)
 	if common.EmptyHash(hash) || (!common.EmptyHash(hash) && requestNumber.Index > number.Index) {
 		log.Debug("ProtocolManager", "NewBlockMsg SetHead request.Index:", requestNumber.Index, "local peer index:", number.Index)
 		p.SetHead(unit.Hash(), requestNumber)
 
-		currentUnitIndex := pm.dag.GetCurrentUnit(unit.Number().AssetID).UnitHeader.Number.Index
+		//currentUnitIndex := pm.dag.GetCurrentUnit(unit.Number().AssetID).UnitHeader.Number.Index
+		currentUnitIndex := pm.dag.HeadUnitNum()
 		if requestNumber.Index > currentUnitIndex+1 {
-			log.Debug("ProtocolManager", "NewBlockMsg synchronise request.Index:", requestNumber.Index, "current unit index+1:", currentUnitIndex+1)
+			log.Debug("ProtocolManager", "NewBlockMsg synchronise request.Index:", requestNumber.Index,
+				"current unit index+1:", currentUnitIndex+1)
 			go func() {
 				pm.synchronise(p, unit.Number().AssetID, nil)
 			}()
