@@ -666,11 +666,9 @@ func (chain *MemDag) getChainUnits() map[common.Hash]*modules.Unit {
 	return units
 }
 func (chain *MemDag) getChainUnit(hash common.Hash) (*modules.Unit, error) {
-	units := chain.getChainUnits()
-	if units != nil {
-		if unit, ok := units[hash]; ok {
-			return unit, nil
-		}
+	inter, ok := chain.chainUnits.Load(hash)
+	if ok {
+		return inter.(*modules.Unit), nil
 	}
 	return nil, errors.ErrNotFound
 }
