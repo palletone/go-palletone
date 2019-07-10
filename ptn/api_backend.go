@@ -36,6 +36,7 @@ import (
 
 	"bytes"
 	"fmt"
+	"github.com/palletone/go-palletone/consensus/jury"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -585,10 +586,6 @@ func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage b
 	return err
 }
 
-func (b *PtnApiBackend) ContractStartChaincodeContainer(deployId []byte, txid string) ([]byte, error) {
-	log.Debugf("======>ContractStartChaincodeContainer:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
-	return b.ptn.contract.StartChaincodeContainer("palletone", deployId, txid)
-}
 func (b *PtnApiBackend) SignAndSendRequest(addr common.Address, tx *modules.Transaction) error {
 	_, err := b.ptn.contractPorcessor.SignAndExecuteAndSendRequest(addr, tx)
 	return err
@@ -603,6 +600,10 @@ func (b *PtnApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, 
 }
 func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
 	return b.ptn.contractPorcessor.ContractInvokeReq(from, to, daoAmount, daoFee, certID, contractAddress, args, timeout)
+}
+func (b *PtnApiBackend) SendContractInvokeReqTx(requestTx *modules.Transaction) (reqId common.Hash, err error) {
+	go b.ptn.ContractBroadcast(jury.ContractEvent{Ele: nil, CType: jury.CONTRACT_EVENT_EXEC, Tx: requestTx}, false)
+	return requestTx.RequestHash(), nil
 }
 func (b *PtnApiBackend) ContractInvokeReqTokenTx(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
 	return b.ptn.contractPorcessor.ContractInvokeReqToken(from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, contractAddress, args, timeout)

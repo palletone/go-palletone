@@ -63,8 +63,11 @@ function replacejson()
     add=`echo $add | jq ".initialParameters.mediator_interval = 3"`
 
     tempstamp=`cat $1 | jq '.initialTimestamp'`
+    tempstamp=$[$tempstamp/3]
+    tempstamp=`echo $tempstamp | cut -f1 -d"."`
+    tempstamp=$[$tempstamp*3]
 
-    add=`echo $add | jq ".initialTimestamp = 3 * $tempstamp / 3"`
+    add=`echo $add | jq ".initialTimestamp = $tempstamp"`
 
     rm $1
     echo $add >> temp.json
