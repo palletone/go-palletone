@@ -121,6 +121,7 @@ func (pm *ProtocolManager) checkConnectedAndSynced() {
 	}
 
 	// 2. 是否和所有其他活跃mediator节点相连完成
+	headNum := pm.dag.HeadUnitNum()
 	checkFn := func() bool {
 		nodes := pm.dag.GetActiveMediatorNodes()
 		for id, node := range nodes {
@@ -134,10 +135,9 @@ func (pm *ProtocolManager) checkConnectedAndSynced() {
 				return false
 			}
 
-			headHash := pm.dag.HeadUnitHash()
 			gasToken := dagconfig.DagConfig.GetGasToken()
-			pHeadHash, _ := peer.Head(gasToken)
-			if common.EmptyHash(pHeadHash) || headHash != pHeadHash {
+			_, pHeadNum := peer.Head(gasToken)
+			if pHeadNum == nil || pHeadNum.Index < headNum {
 				return false
 			}
 		}
