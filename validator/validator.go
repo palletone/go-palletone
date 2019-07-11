@@ -21,16 +21,15 @@
 package validator
 
 import (
-	"sync"
-
 	"encoding/json"
 	"fmt"
-	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/dag/parameter"
+	"sync"
 )
 
 type Validate struct {
@@ -43,8 +42,8 @@ type Validate struct {
 
 const MAX_DATA_PAYLOAD_MAIN_DATA_SIZE = 128
 
-func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propquery IPropQuery) *Validate {
-	cache := freecache.NewCache(20 * 1024 * 1024)
+func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propquery IPropQuery, cache palletcache.ICache) *Validate {
+	//cache := freecache.NewCache(20 * 1024 * 1024)
 	vcache := NewValidatorCache(cache)
 	return &Validate{cache: vcache, dagquery: dagdb, utxoquery: utxoRep, statequery: statedb, propquery: propquery}
 }

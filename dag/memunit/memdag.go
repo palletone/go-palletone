@@ -25,6 +25,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/hexutil"
@@ -34,6 +35,7 @@ import (
 	common2 "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/validator"
 	"go.dedis.ch/kyber/v3/sign/bls"
@@ -61,6 +63,7 @@ type MemDag struct {
 	saveHeaderOnly    bool
 	lock              sync.RWMutex
 	validator         validator.Validator
+	cache             palletcache.ICache
 	// append by albert·gou 用于通知群签名
 	toGroupSignFeed  event.Feed
 	toGroupSignScope event.SubscriptionScope
@@ -84,6 +87,7 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 	stableUnitRep common2.IUnitRepository, propRep common2.IPropRepository,
 	stableStateRep common2.IStateRepository) *MemDag {
 	tempdb, _ := NewTempdb(db)
+	cache := freecache.NewCache(20 * 1024 * 1024)
 	trep := common2.NewUnitRepository4Db(tempdb)
 	tutxoRep := common2.NewUtxoRepository4Db(tempdb)
 	tstateRep := common2.NewStateRepository4Db(tempdb)
@@ -111,7 +115,7 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 		}
 	}
 	log.Debugf("Init MemDag[%s], get last stable unit[%s] to set lastMainChainUnit", token.String(), stablehash.String())
-	v := validator.NewValidate(trep, tutxoRep, tstateRep, tpropRep)
+	v := validator.NewValidate(trep, tutxoRep, tstateRep, tpropRep, cache)
 	memdag := &MemDag{
 		token:              token,
 		threshold:          threshold,
@@ -130,6 +134,7 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 		lastMainChainUnit:  stableUnit,
 		saveHeaderOnly:     saveHeaderOnly,
 		validator:          v,
+		cache:              cache,
 		ldbUnitProduceRep:  ldbUnitProduceRep,
 		tempUnitProduceRep: tempUnitProduceRep,
 	}
@@ -470,10 +475,10 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) error {
 			//Check unit and it's txs are valid
 			//只有主链上添加单元时才能判断整个Unit的有效性
 			validateCode := validator.TxValidationCode_VALID
-			if chain.saveHeaderOnly{
-				validateCode=chain.validator.ValidateHeader(unit.UnitHeader)
-			}else {
-				validateCode=chain.validator.ValidateUnitExceptGroupSig(unit)
+			if chain.saveHeaderOnly {
+				validateCode = chain.validator.ValidateHeader(unit.UnitHeader)
+			} else {
+				validateCode = chain.validator.ValidateUnitExceptGroupSig(unit)
 			}
 			if validateCode != validator.TxValidationCode_VALID {
 				return validator.NewValidateError(validateCode)

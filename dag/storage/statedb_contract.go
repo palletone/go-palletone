@@ -40,10 +40,10 @@ func (statedb *StateDb) SaveContract(contract *modules.Contract) error {
 	//保存一个新合约的状态信息
 	//如果数据库中已经存在同样的合约ID，则报错
 	key := append(constants.CONTRACT_PREFIX, contract.ContractId...)
-	count := getCountByPrefix(statedb.db, key)
-	if count > 0 {
-		return errors.New("Contract[" + common.Bytes2Hex(contract.ContractId) + "]'s state existed!")
-	}
+	//count := getCountByPrefix(statedb.db, key)
+	//if count > 0 {
+	//	return errors.New("Contract[" + common.Bytes2Hex(contract.ContractId) + "]'s state existed!")
+	//}
 	log.Debugf("Save contract[%x]", contract.ContractId)
 	err := StoreToRlpBytes(statedb.db, key, contract)
 	if err != nil {

@@ -27,6 +27,7 @@ import (
 
 	"encoding/json"
 
+	"github.com/coocood/freecache"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -200,8 +201,8 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 	if contractEleNum < 1 {
 		contractEleNum = core.DefaultContractElectionNum
 	}
-
-	validator := validator.NewValidate(dag, dag, dag, nil)
+	cache := freecache.NewCache(20 * 1024 * 1024)
+	validator := validator.NewValidate(dag, dag, dag, nil, cache)
 	p := &Processor{
 		name:           "contractProcessor",
 		ptn:            ptn,
@@ -253,8 +254,42 @@ func (p *Processor) localHaveActiveJury() bool {
 			return true
 		}
 	}
-
 	return false
+}
+
+func (p *Processor) GetLocalJuryAddrs() []common.Address {
+	num := len(p.local)
+	if num <= 0 {
+		return nil
+	}
+	addrs := make([]common.Address, num)
+	for addr, _ := range p.local {
+		addrs = append(addrs, addr)
+	}
+	return addrs
+}
+
+func (p *Processor) getLocalAllJuryAccount() []*JuryAccount {
+	num := len(p.local)
+	if num <= 0 {
+		return nil
+	}
+	accounts := make([]*JuryAccount, num)
+	for _, a := range p.local {
+		accounts = append(accounts, a)
+	}
+	return accounts
+}
+
+func (p *Processor) getLocalJuryAccount() *JuryAccount {
+	num := len(p.local)
+	if num <= 0 {
+		return nil
+	}
+	for _, a := range p.local { //first one
+		return a
+	}
+	return nil
 }
 
 //func (p *Processor) getLocalNodesInfo() ([]*nodeInfo, error) {
@@ -308,7 +343,7 @@ func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf)
 	if tx.IsSystemContract() {
 		ctx.rstTx = tx
 	} else {
-		account := p.getLocalAccount()
+		account := p.getLocalJuryAccount()
 		if account == nil {
 			log.Errorf("[%s]runContractReq, not find local account", shortId(reqId.String()))
 			return fmt.Errorf("runContractReq no local account, reqId[%s]", reqId.String())
@@ -807,15 +842,6 @@ func (p *Processor) ContractTxDeleteLoop() {
 		}
 		p.locker.Unlock()
 	}
-}
-
-func (p *Processor) getLocalAccount() *JuryAccount {
-	//todo 这里默认取其中一个，实际配置只有一个
-	var account *JuryAccount
-	for _, account = range p.local {
-		break
-	}
-	return account
 }
 
 func (p *Processor) getContractElectionList(contractId common.Address) ([]modules.ElectionInf, error) {
