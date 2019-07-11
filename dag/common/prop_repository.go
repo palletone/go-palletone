@@ -20,9 +20,9 @@
 package common
 
 import (
+	"encoding/binary"
 	"time"
 
-	"encoding/binary"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
@@ -36,6 +36,7 @@ import (
 type PropRepository struct {
 	db storage.IPropertyDb
 }
+
 type IPropRepository interface {
 	StoreGlobalProp(gp *modules.GlobalProperty) error
 	RetrieveGlobalProp() (*modules.GlobalProperty, error)

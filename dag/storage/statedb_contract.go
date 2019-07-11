@@ -196,7 +196,7 @@ func (statedb *StateDb) GetContractStatesById(id []byte) (map[string]*modules.Co
 		realKey := dbkey[len(key):]
 		if realKey != "" {
 			result[realKey] = &modules.ContractStateValue{Value: state, Version: version}
-			log.Info("the contract's state get info.", "key", realKey)
+			log.Debug("the contract's state get info.", "key", realKey)
 		}
 	}
 	return result, err
