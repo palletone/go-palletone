@@ -55,7 +55,7 @@ matrix:
         - ./start.sh 3
         - sleep 30
         - cd $BASE_DIR
-        - python -m robot.run -d ${BDD_LOG_PATH}/${USER_CONTRACT_DIR} ./bdd/UserContract/Testcases;
+        #- python -m robot.run -d ${BDD_LOG_PATH}/${USER_CONTRACT_DIR} ./bdd/UserContract/Testcases;
         - docker ps -a
       after_script:
         - killall gptn
@@ -65,7 +65,7 @@ matrix:
         - docker rmi -f $(docker images -q)
         - cd ${BASE_DIR}
         - zip ./bdd/logs/uc2-3_logs.zip ./cmd/deployment/node1/log ./cmd/deployment/node1/nohup.out ./cmd/deployment/node2/log ./cmd/deployment/node2/nohup.out ./cmd/deployment/node3/log ./cmd/deployment/node3/nohup.out
-        - zip ./bdd/logs/uc2-3_reports.zip ${BDD_LOG_PATH}/${USER_CONTRACT_DIR}/*
+        #- zip ./bdd/logs/uc2-3_reports.zip ${BDD_LOG_PATH}/${USER_CONTRACT_DIR}/*
         - ls ./bdd/logs
         - |
           if [ $IS_UPLOAD == 'true' ]; then
