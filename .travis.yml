@@ -270,11 +270,12 @@ matrix:
         - docker rm $(docker ps -a -q)
         - docker rmi -f $(docker images -q)
         - cd ${BASE_DIR}
+        - ls ./cmd/deployment/
         - zip -j ./bdd/logs/contractpay_3-3logs.zip ./cmd/deployment/*
+        - ls ${BDD_LOG_PATH}/${USER_CONTRACT_DIR}
         - zip -j ./bdd/logs/contractpay_3-3reports.zip ${BDD_LOG_PATH}/${USER_CONTRACT_DIR}/*
         - |
           if [ $IS_UPLOAD == 'true' ]; then
-            # uplaod all log
             ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
       install:
         - sudo -H pip install --upgrade pip
@@ -287,7 +288,7 @@ matrix:
         - sudo -H apt-get install lftp
         - chmod +x bdd/upload2Ftp.sh
     - os: linux
-      #env: contractpay_bdd_2-3
+      env: contractpay_bdd_2-3
       dist: xenial
       go: 1.12.5
       services: docker
