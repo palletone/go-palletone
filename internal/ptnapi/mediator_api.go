@@ -231,6 +231,11 @@ func (a *PrivateMediatorAPI) Apply(args MediatorCreateArgs) (*TxExecuteResult, e
 		return nil, err
 	}
 
+	// 判断本节点是否同步完成，数据是否最新
+	if !a.Dag().IsSynced() {
+		return nil, fmt.Errorf("this node is not synced, and can't apply mediator now")
+	}
+
 	addr := args.FeePayer()
 	// 判断是否已经是mediator
 	if a.Dag().IsMediator(addr) {
@@ -276,6 +281,11 @@ func (a *PrivateMediatorAPI) PayDeposit(from string, amount decimal.Decimal) (*T
 		return nil, fmt.Errorf("the amount of the deposit must be greater than 0")
 	}
 
+	// 判断本节点是否同步完成，数据是否最新
+	if !a.Dag().IsSynced() {
+		return nil, fmt.Errorf("this node is not synced, and can't pay deposit now")
+	}
+
 	// 调用系统合约
 	cArgs := [][]byte{[]byte(modules.MediatorPayDeposit)}
 	//fee := a.Dag().CurrentFeeSchedule().TransferFee.BaseFee
@@ -303,6 +313,11 @@ func (a *PrivateMediatorAPI) WithdrawDeposit(medAddStr string, amount decimal.De
 	medAdd, err := common.StringToAddress(medAddStr)
 	if err != nil {
 		return nil, fmt.Errorf("invalid account address: %v", medAddStr)
+	}
+
+	// 判断本节点是否同步完成，数据是否最新
+	if !a.Dag().IsSynced() {
+		return nil, fmt.Errorf("this node is not synced, and can't withdraw deposit now")
 	}
 
 	// 判断是否是mediator
@@ -345,6 +360,11 @@ func (a *PrivateMediatorAPI) Quit(medAddStr string) (*TxExecuteResult, error) {
 		return nil, fmt.Errorf("invalid account address: %v", medAddStr)
 	}
 
+	// 判断本节点是否同步完成，数据是否最新
+	if !a.Dag().IsSynced() {
+		return nil, fmt.Errorf("this node is not synced, and can't quit now")
+	}
+
 	// 判断是否是mediator
 	if !a.Dag().IsMediator(medAdd) {
 		return nil, fmt.Errorf("account %v is not a mediator", medAddStr)
@@ -380,7 +400,7 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxEx
 
 	// 判断本节点是否同步完成，数据是否最新
 	if !a.Dag().IsSynced() {
-		return nil, fmt.Errorf("the data of this node is not synced, and can't vote now")
+		return nil, fmt.Errorf("this node is not synced, and can't vote now")
 	}
 
 	maxMediatorCount := int(a.Dag().GetChainParameters().MaximumMediatorCount)
