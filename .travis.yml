@@ -16,7 +16,6 @@ env:
     - DEPOSIT_DIR=deposit
     - GAS_TOKEN_DIR=gasToken
     - MEDIATOR_VOTE_DIR=meidatorvote
-    - USER_CONTRACT_DIR=usercontract
     - LOG_NAME=log.html
     - REPORT_NAME=report.html
     ##########  control testcase  ##############
@@ -244,6 +243,8 @@ matrix:
         - chmod +x bdd/upload2Ftp.sh
     - os: linux
       env: usercontract_bdd_3-3
+        global:
+          - USER_CONTRACT_DIR=usercontract3-3
       dist: xenial
       go: 1.12.5
       services: docker
@@ -274,6 +275,7 @@ matrix:
         - zip -l -o  ./bdd/logs/uc3-3_logs.zip ./cmd/deployment/node1/log ./cmd/deployment/node1/nohup.out ./cmd/deployment/node2/log ./cmd/deployment/node2/nohup.out ./cmd/deployment/node3/log ./cmd/deployment/node3/nohup.out
         - zip -j -l -o  ./bdd/logs/uc3-3_reports.zip ${BDD_LOG_PATH}/${USER_CONTRACT_DIR}/*
         - ls ./bdd/logs
+        - ls ${BDD_LOG_PATH}/${USER_CONTRACT_DIR}
         - |
           if [ $IS_UPLOAD == 'true' ]; then
             ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
@@ -290,6 +292,8 @@ matrix:
         - chmod +x bdd/upload2Ftp.sh
     - os: linux
       env: usercontract_bdd_2-3
+        global:
+          - USER_CONTRACT_DIR=usercontract2-3
       dist: xenial
       go: 1.12.5
       services: docker
@@ -308,7 +312,7 @@ matrix:
         - ./start.sh 3
         - sleep 30
         - cd $BASE_DIR
-        - python -m robot.run -d ${BDD_LOG_PATH}}/${USER_CONTRACT_DIR ./bdd/UserContract/Testcases;
+        - python -m robot.run -d ${BDD_LOG_PATH}}/${USER_CONTRACT_DIR} ./bdd/UserContract/Testcases;
         - docker ps -a
       after_script:
         - killall gptn
