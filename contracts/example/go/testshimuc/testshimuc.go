@@ -539,6 +539,37 @@ func (t *SimpleChaincode) test_IsRequesterCertValid(stub shim.ChaincodeStubInter
 	return shim.Success(nil)
 }
 
+type JuryMsgAddr struct {
+	Address string
+	Answer  []byte
+}
+
+func (t *SimpleChaincode) test_SendRecvJury(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	_, err := stub.SendJury(1, []byte("hello"), []byte("result"))
+	if err != nil {
+		return shim.Error(fmt.Sprintf("sendresult err: %s", err.Error()))
+	}
+	result, err := stub.RecvJury(1, []byte("hello"), 2)
+	if err != nil {
+		err = stub.PutState("result", []byte(err.Error()))
+		if err != nil {
+			return shim.Error("PutState: " + string(result))
+		}
+		return shim.Error("RecvJury failed")
+	} else {
+		var juryMsg []JuryMsgAddr
+		err := json.Unmarshal(result, &juryMsg)
+		if err != nil {
+			return shim.Error("Unmarshal result failed: " + string(result))
+		}
+		err = stub.PutState("result", result)
+		if err != nil {
+			return shim.Error("PutState: " + string(result))
+		}
+		return shim.Success([]byte("")) //test
+	}
+}
+
 func main() {
 	err := shim.Start(new(SimpleChaincode))
 	if err != nil {
