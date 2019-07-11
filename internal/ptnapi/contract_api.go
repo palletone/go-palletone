@@ -406,21 +406,23 @@ func (s *PublicContractAPI) GetAllContractsUsedTemplateId(ctx context.Context, t
 
 //  通过合约Id，获取合约的详细信息
 func (s *PublicContractAPI) GetContractInfoById(ctx context.Context, contractId string) (*ptnjson.ContractJson, error) {
-	contract, err := s.b.GetContract(contractId)
+	id,_:=hex.DecodeString(contractId)
+	addr:= common.NewAddress(id,common.ContractHash)
+	contract, err := s.b.GetContract(addr)
 	if err != nil {
 		return nil, err
 	}
-	return ptnjson.ConvertContract2Json(contract), nil
+	return contract, nil
 }
 
 //  通过合约地址，获取合约的详细信息
 func (s *PublicContractAPI) GetContractInfoByAddr(ctx context.Context, contractAddr string) (*ptnjson.ContractJson, error) {
 	addr, _ := common.StringToAddress(contractAddr)
-	contract, err := s.b.GetContract(addr.Hex()[2:])
+	contract, err := s.b.GetContract(addr)
 	if err != nil {
 		return nil, err
 	}
-	return ptnjson.ConvertContract2Json(contract), nil
+	return contract, nil
 }
 func (s *PublicContractAPI) DepositContractInvoke(ctx context.Context, from, to, daoAmount, daoFee string,
 	param []string) (string, error) {

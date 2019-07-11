@@ -91,7 +91,7 @@ type Backend interface {
 	GetCommonByPrefix(prefix []byte) map[string][]byte
 	SaveCommon(key, val []byte) error
 	// Get Contract Api
-	GetContract(hex_id string) (*modules.Contract, error)
+	GetContract(contractAddr common.Address) (*ptnjson.ContractJson, error)
 
 	//get level db
 	GetUnitByHash(hash common.Hash) *modules.Unit
