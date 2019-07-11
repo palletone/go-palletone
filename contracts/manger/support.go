@@ -61,12 +61,15 @@ func (s *SupportImpl) IsSysCC(name string) bool {
 
 //Execute - execute proposal, return original response of chaincode
 func (s *SupportImpl) Execute(contractid []byte, ctxt context.Context, cid, name, version, txid string, syscc bool, signedProp *pb.SignedProposal, prop *pb.Proposal, spec interface{}, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error) {
+	log.Debugf("execute enter")
 	cccid := ccprovider.NewCCContext(contractid, cid, name, version, txid, syscc, signedProp, prop)
 
 	switch spec.(type) {
 	case *pb.ChaincodeDeploymentSpec:
+		log.Debugf("deploy")
 		return chaincode.Execute(ctxt, cccid, spec, timeout)
 	case *pb.ChaincodeInvocationSpec:
+		log.Debugf("invoke")
 		cis := spec.(*pb.ChaincodeInvocationSpec)
 
 		//log.Infof("cis:%v", cis)
