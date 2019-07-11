@@ -243,8 +243,6 @@ matrix:
         - chmod +x bdd/upload2Ftp.sh
     - os: linux
       env: usercontract_bdd_3-3
-        global:
-          - USER_CONTRACT_DIR=usercontract3-3
       dist: xenial
       go: 1.12.5
       services: docker
@@ -292,8 +290,6 @@ matrix:
         - chmod +x bdd/upload2Ftp.sh
     - os: linux
       env: usercontract_bdd_2-3
-        global:
-          - USER_CONTRACT_DIR=usercontract2-3
       dist: xenial
       go: 1.12.5
       services: docker
