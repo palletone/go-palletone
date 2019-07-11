@@ -355,16 +355,9 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	unitHash := unit.Hash()
-	if pm.IsExistInCache(unitHash.Bytes()) {
-		//log.Debugf("Received unit(%v) again, ignore it", unitHash.TerminalString())
-		p.MarkUnit(unitHash)
-		p.SetHead(unitHash, unit.Number())
-		return nil
-	}
-
 	// append by Albert·Gou
 	timestamp := time.Unix(unit.Timestamp(), 0)
+	unitHash := unit.Hash()
 	log.Debugf("Received unit(%v) #%v parent(%v) @%v signed by %v", unitHash.TerminalString(),
 		unit.NumberU64(), unit.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
 		unit.Author().Str())
@@ -375,6 +368,13 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 			unit.NumberU64(), timestamp.Format("2006-01-02 15:04:05"), unit.Author().Str())
 		log.Debugf(errStr)
 		return fmt.Errorf(errStr)
+	}
+
+	if pm.IsExistInCache(unitHash.Bytes()) {
+		//log.Debugf("Received unit(%v) again, ignore it", unitHash.TerminalString())
+		p.MarkUnit(unitHash)
+		p.SetHead(unitHash, unit.Number())
+		return nil
 	}
 
 	log.DebugDynamic(func() string {
