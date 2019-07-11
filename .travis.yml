@@ -16,6 +16,7 @@ env:
     - DEPOSIT_DIR=deposit
     - GAS_TOKEN_DIR=gasToken
     - MEDIATOR_VOTE_DIR=meidatorvote
+    - USER_CONTRACT_DIR=usercontract
     - LOG_NAME=log.html
     - REPORT_NAME=report.html
     ##########  control testcase  ##############
@@ -270,8 +271,8 @@ matrix:
         - docker rm $(docker ps -a -q)
         - docker rmi -f $(docker images -q)
         - cd ${BASE_DIR}
-        - zip ./bdd/logs/uc33_logs.zip ./cmd/deployment/node1/log ./cmd/deployment/node1/nohup.out ./cmd/deployment/node2/log ./cmd/deployment/node2/nohup.out ./cmd/deployment/node3/log ./cmd/deployment/node3/nohup.out
-        - zip ./bdd/logs/uc23_reports.zip ${BDD_LOG_PATH}/${USER_CONTRACT_DIR}/*
+        - zip ./bdd/logs/uc3-3_logs.zip ./cmd/deployment/node1/log ./cmd/deployment/node1/nohup.out ./cmd/deployment/node2/log ./cmd/deployment/node2/nohup.out ./cmd/deployment/node3/log ./cmd/deployment/node3/nohup.out
+        - zip ./bdd/logs/uc3-3_reports.zip ${BDD_LOG_PATH}/${USER_CONTRACT_DIR}/*
         - ls ./bdd/logs
         - |
           if [ $IS_UPLOAD == 'true' ]; then
@@ -307,7 +308,7 @@ matrix:
         - ./start.sh 3
         - sleep 30
         - cd $BASE_DIR
-        - python -m robot.run -d ${BDD_LOG_PATH}/${USER_CONTRACT_DIR} ./bdd/UserContract/Testcases;
+        - python -m robot.run -d ${BDD_LOG_PATH}}/${USER_CONTRACT_DIR ./bdd/UserContract/Testcases;
         - docker ps -a
       after_script:
         - killall gptn

@@ -54,6 +54,24 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return t.test_GetFunctionAndParameters(stub, args)
 	case "testGetArgsSlice":
 		return t.test_GetArgsSlice(stub, args)
+	case "testPutState":
+		return t.test_PutState(stub, args)
+	case "testGetState":
+		return t.test_GetState(stub, args)
+	case "testPutGlobalState":
+		return t.test_PutGlobalState(stub, args)
+	case "testGetGlobalState":
+		return t.test_GetGlobalState(stub, args)
+	case "testDelState":
+		return t.test_DelState(stub, args)
+	case "testDelGlobalState":
+		return t.test_DelGlobalState(stub, args)
+	case "testGetStateByPrefix":
+		return t.test_GetStateByPrefix(stub, args)
+	case "testGetContractAllState":
+		return t.test_GetContractAllState(stub, args)
+	case "testGetContractState":
+		return t.test_GetContractState(stub, args)
 	}
 	return shim.Error("Invalid invoke function name. Expecting \"invoke\"")
 }
