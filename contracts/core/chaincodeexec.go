@@ -108,6 +108,7 @@ func GetChaincodeDefinition(ctxt context.Context, txid string, signedProp *pb.Si
 
 // ExecuteChaincode executes a given chaincode given chaincode name and arguments
 func ExecuteChaincode(ctxt context.Context, cccid *ccprovider.CCContext, args [][]byte, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error) {
+	log.Debugf("execute chain code")
 	var spec *pb.ChaincodeInvocationSpec
 	var err error
 	var res *pb.Response
@@ -117,7 +118,7 @@ func ExecuteChaincode(ctxt context.Context, cccid *ccprovider.CCContext, args []
 	res, ccevent, err = Execute(ctxt, cccid, spec, timeout)
 	if err != nil {
 		err = errors.WithMessage(err, "error executing chaincode")
-		log.Errorf("%+v", err)
+		log.Errorf("execute %+v", err)
 		return nil, nil, err
 	}
 

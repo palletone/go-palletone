@@ -302,11 +302,11 @@ func (chaincodeSupport *ChaincodeSupport) registerHandler(chaincodehandler *Hand
 func (chaincodeSupport *ChaincodeSupport) deregisterHandler(chaincodehandler *Handler) error {
 
 	// clean up queryIteratorMap
-	for _, txcontext := range chaincodehandler.txCtxs {
-		for _, v := range txcontext.queryIteratorMap {
-			v.Close()
-		}
-	}
+	//for _, txcontext := range chaincodehandler.txCtxs {
+	//	for _, v := range txcontext.queryIteratorMap {
+	//		v.Close()
+	//	}
+	//}
 
 	key := chaincodehandler.ChaincodeID.Name
 	log.Debugf("Deregister handler: %s", key)
@@ -681,6 +681,7 @@ func (chaincodeSupport *ChaincodeSupport) Destory(context context.Context, cccid
 
 // Launch will launch the chaincode if not running (if running return nil) and will wait for handler of the chaincode to get into FSM ready state.
 func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid *ccprovider.CCContext, spec interface{}) (*pb.ChaincodeID, *pb.ChaincodeInput, error) {
+	log.Debugf("launch enter")
 	//build the chaincode
 	var cID *pb.ChaincodeID
 	var cMsg *pb.ChaincodeInput
@@ -847,6 +848,7 @@ func createCCMessage(contractid []byte, typ pb.ChaincodeMessage_Type, cid string
 
 // Execute executes a transaction and waits for it to complete until a timeout value.
 func (chaincodeSupport *ChaincodeSupport) Execute(ctxt context.Context, cccid *ccprovider.CCContext, msg *pb.ChaincodeMessage, timeout time.Duration) (*pb.ChaincodeMessage, error) {
+	log.Debugf("chain code support execute")
 	log.Debugf("Entry, chainId[%s], txid[%s]", msg.ChannelId, msg.Txid)
 	defer log.Debugf("Exit")
 	//glh

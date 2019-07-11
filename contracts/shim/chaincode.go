@@ -324,6 +324,7 @@ func chatWithPeer(chaincodename string, stream PeerChaincodeStream, cc Chaincode
 			case nsInfo = <-handler.nextState:
 				in = nsInfo.msg
 				if in == nil {
+					log.Debugf("nil msg")
 					panic("nil msg")
 				}
 				log.Debugf("[%s]Move state message %s", shorttxid(in.Txid), in.Type.String())

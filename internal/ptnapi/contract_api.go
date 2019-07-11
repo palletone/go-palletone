@@ -40,6 +40,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/syscontract/sysconfigcc"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"strings"
@@ -142,7 +143,7 @@ func (s *PublicContractAPI) Ccstop(ctx context.Context, contractAddr string) err
 }
 
 //contract tx
-func (s *PublicContractAPI) Ccinstalltx(ctx context.Context, from, to, daoAmount, daoFee, tplName, path, version string, addr []string) (*ContractInstallRsp, error) {
+func (s *PublicContractAPI) Ccinstalltx(ctx context.Context, from, to, daoAmount, daoFee, tplName, path, version, ccdescription, ccabi, cclanguage string, addr []string) (*ContractInstallRsp, error) {
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
 	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
@@ -157,7 +158,17 @@ func (s *PublicContractAPI) Ccinstalltx(ctx context.Context, from, to, daoAmount
 	log.Debug("-----Ccinstalltx:", "tplName", tplName)
 	log.Debug("-----Ccinstalltx:", "path", path)
 	log.Debug("-----Ccinstalltx:", "version", version)
+	log.Debug("-----Ccinstalltx:", "description", ccdescription)
+	log.Debug("-----Ccinstalltx:", "abi", ccabi)
+	log.Debug("-----Ccinstalltx:", "language", cclanguage)
 
+	if strings.ToLower(cclanguage) == "go" {
+		cclanguage = "golang"
+	}
+	language := strings.ToUpper(cclanguage)
+	if _, ok := peer.ChaincodeSpec_Type_value[language]; !ok {
+		return nil, errors.New(cclanguage + " language is not supported")
+	}
 	/*
 		"P1QFTh1Xq2JpfTbu9bfaMfWh2sR1nHrMV8z", "P1NHVBFRkooh8HD9SvtvU3bpbeVmuGKPPuF",
 		"P1PpgjUC7Nkxgi5KdKCGx2tMu6F5wfPGrVX", "P1MBXJypFCsQpafDGi9ivEooR8QiYmxq4qw"
@@ -173,7 +184,7 @@ func (s *PublicContractAPI) Ccinstalltx(ctx context.Context, from, to, daoAmount
 	}
 	log.Debug("-----Ccinstalltx:", "addrHash", addrs, "len", len(addrs))
 
-	reqId, tplId, err := s.b.ContractInstallReqTx(fromAddr, toAddr, amount, fee, tplName, path, version, "Description...", "ABI ...", strings.ToUpper("golang"), addrs)
+	reqId, tplId, err := s.b.ContractInstallReqTx(fromAddr, toAddr, amount, fee, tplName, path, version, ccdescription, ccabi, language, addrs)
 	sReqId := hex.EncodeToString(reqId[:])
 	sTplId := hex.EncodeToString(tplId)
 	log.Debug("-----Ccinstalltx:", "reqId", sReqId, "tplId", sTplId)

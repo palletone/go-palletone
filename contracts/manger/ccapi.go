@@ -228,6 +228,7 @@ func saveChaincode(dag dag.IDag, contractId common.Address, chaincode *cclist.CC
 // ccName can be contract Id
 //func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
 func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
+	log.Debugf("Invoke enter")
 	log.Info("Invoke enter", "chainID", chainID, "deployId", deployId, "txid", txid, "timeout", timeout)
 	defer log.Info("Invoke exit", "chainID", chainID, "deployId", deployId, "txid", txid, "timeout", timeout)
 
@@ -244,16 +245,17 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 		}
 	} else {
 		cc, err = getChaincode(idag, address)
+		log.Debugf("get chain code")
 		if err != nil {
 			return nil, err
 		}
 	}
 	startTm := time.Now()
 	es := NewEndorserServer(mksupt)
-
+	log.Debugf("new endorser server")
 	spec := &pb.ChaincodeSpec{
 		ChaincodeId: &pb.ChaincodeID{Name: cc.Name},
-		Type:        pb.ChaincodeSpec_GOLANG,
+		Type:        pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value[cc.Language]),
 		Input:       &pb.ChaincodeInput{Args: args},
 	}
 	cid := &pb.ChaincodeID{
@@ -262,11 +264,13 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 		Version: cc.Version,
 	}
 	sprop, prop, err := SignedEndorserProposa(chainID, txid, spec, creator, []byte("msg1"))
+	log.Debugf("signed endorser proposal")
 	if err != nil {
 		log.Errorf("signedEndorserProposa error[%v]", err)
 		return nil, err
 	}
 	rsp, unit, err := es.ProcessProposal(rwM, idag, deployId, context.Background(), sprop, prop, chainID, cid, timeout)
+	log.Debugf("process proposal")
 	if err != nil {
 		log.Infof("ProcessProposal error[%v]", err)
 		return nil, err
