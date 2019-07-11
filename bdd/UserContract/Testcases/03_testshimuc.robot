@@ -45,6 +45,13 @@ DelState
     And User query state    testGetStateByPrefix    state    ${null}    dic
     And User query state    testGetContractAllState    ${null}    ${null}    dic
 
+HandleToken
+    Given Unlock token holder succeed
+    ${reqId}=    When User define token
+    ${reqId}=    And User supply token
+    ${reqId}=    And User pay out token
+    Then User query balance
+
 *** Keywords ***
 User put state
     [Arguments]    ${method}    ${key}    ${value}
