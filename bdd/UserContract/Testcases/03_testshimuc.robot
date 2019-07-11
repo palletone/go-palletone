@@ -23,10 +23,13 @@ AddState
     And Wait for transaction being packaged    ${reqId}
     ${reqId}=    And User put state    testPutGlobalState    state2    state2
     And Wait for transaction being packaged    ${reqId}
-    Then User query state    testGetState    state1    state1
-    And User query state    testGetGlobalState    state2    state2
-    And User query state    testGetContractState    state1    state1
-    And User query state    testGetContractState    state2    state2
+    Then User query state    testGetState    state1    state1    str
+    And User query state    testGetGlobalState    state2    state2    str
+    And User query state    testGetContractState    state1    state1    str
+    And User query state    testGetContractState    state2    state2    str
+    ${allState}=    And Create Dictionary    state1    state1    state2    state2
+    And User query state    testGetStateByPrefix    state    ${allState}    dic
+    And User query state    testGetContractAllState    ${null}    ${allState}    dic
 
 DelState
     Given Unlock token holder succeed
@@ -38,7 +41,9 @@ DelState
     And User query state    testGetGlobalState    state2    ${null}
     And User query state    testGetContractState    state1    ${null}
     And User query state    testGetContractState    state2    ${null}
-    ${allState}    Create Dictionary    state1    state1    state2    state2
+    ${allState}=    And Create Dictionary    state1    state1    state2    state2
+    And User query state    testGetStateByPrefix    state    ${null}    dic
+    And User query state    testGetContractAllState    ${null}    ${null}    dic
 
 *** Keywords ***
 User put state
@@ -64,17 +69,10 @@ User delete state
     [Return]    ${reqId}
 
 User query state
-    [Arguments]    ${getmethod}    ${name}    ${exceptedResult}
+    [Arguments]    ${getmethod}    ${name}    ${exceptedResult}    ${resType}
     ${args}=    Create List    ${getmethod}    ${name}
     ${respJson}=    queryContract    ${gContractId}    ${args}
     Dictionary Should Contain Key    ${respJson}    result
     ${result}=    Get From Dictionary    ${respJson}    result
-    Should Be Equal    ${result}    ${exceptedResult}
-
-User query state by prefix
-    [Arguments]    ${getmethod}    ${prefix}    ${exceptedResult}
-    ${args}=    Create List    ${getmethod}    ${name}
-    ${respJson}=    queryContract    ${gContractId}    ${args}
-    Dictionary Should Contain Key    ${respJson}    result
-    ${result}=    Get From Dictionary    ${respJson}    result
-    Should Be Equal    ${result}    ${exceptedResult}
+    Run Keyword If    '${resType}'=='str'    Should Be Equal    ${result}    ${exceptedResult}
+    ...    ELSE    Dictionaries Should Be Equal    ${result}    ${exceptedResult}
