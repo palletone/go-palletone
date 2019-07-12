@@ -236,12 +236,12 @@ func (d *Dag) GetMediatorInfo(address common.Address) *modules.MediatorInfo {
 	return mi
 }
 
-func (d *Dag) JuryCount() int {
+func (d *Dag) JuryCount() uint {
 	return 20 //todo test
 
 	juryList, err := d.unstableStateRep.GetJuryCandidateList()
 	if err != nil {
-		return len(juryList)
+		return uint(len(juryList))
 	}
 	return 0
 }

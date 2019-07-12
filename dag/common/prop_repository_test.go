@@ -69,6 +69,7 @@ func BenchmarkPropRepository_RetrieveDynGlobalProp(b *testing.B) {
 		rep.RetrieveDynGlobalProp()
 	}
 }
+
 func TestShuffle(t *testing.T) {
 	addr1 := common.NewAddress(crypto.Hash160([]byte("1")), common.PublicKeyHash)
 	addr2 := common.NewAddress(crypto.Hash160([]byte("2")), common.PublicKeyHash)
@@ -78,7 +79,7 @@ func TestShuffle(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		addrs := []common.Address{addr1, addr2, addr3, addr4, addr5}
-		Shuffle(addrs, uint64(i))
+		shuffleMediators(addrs, uint64(i))
 		addrJs, _ := json.Marshal(addrs)
 		t.Logf("i:%d,addr:%s", i, addrJs)
 	}

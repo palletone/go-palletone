@@ -133,6 +133,17 @@ func (s *PublicBlockChainAPI) GetTokenTxHistory(ctx context.Context, assetStr st
 	return result, err
 }
 
+func (s *PublicBlockChainAPI) GetAssetExistence(ctx context.Context, assetStr string) ([]*ptnjson.ProofOfExistenceJson, error) {
+	asset := &modules.Asset{}
+	err := asset.SetString(assetStr)
+	if err != nil {
+		return nil, errors.New("Invalid asset string")
+	}
+	result, err := s.b.GetAssetExistence(asset)
+
+	return result, err
+}
+
 func (s *PublicBlockChainAPI) ListSysConfig() ([]*ptnjson.ConfigJson, error) {
 	cp := s.b.GetChainParameters()
 

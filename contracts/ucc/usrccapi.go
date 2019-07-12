@@ -53,10 +53,11 @@ func mockerDeployUserCC() error {
 }
 
 func DeployUserCC(contractId []byte, chaincodeData []byte, spec *pb.ChaincodeSpec, chainID string, txid string, txsim rwset.TxSimulator, timeout time.Duration) error {
+	//return mockerDeployUserCC()
+
 	cdDeploymentSpec := &pb.ChaincodeDeploymentSpec{}
 	var err error
 	if cfg.DebugTest {
-		//return mockerDeployUserCC()
 		cdDeploymentSpec, err = getDeploymentSpec(nil, spec)
 		if err != nil {
 			return err
