@@ -87,7 +87,7 @@ var (
 		utils.MaxPeersFlag,
 		utils.MaxPendingPeersFlag,
 		utils.EtherbaseFlag,
-		utils.GasPriceFlag,
+		utils.CryptoLibFlag,
 		utils.MinerThreadsFlag,
 		utils.MiningEnabledFlag,
 		//utils.TargetGasLimitFlag,

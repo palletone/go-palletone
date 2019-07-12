@@ -17,7 +17,6 @@
 package ptn
 
 import (
-	"math/big"
 	"os"
 	"os/user"
 
@@ -26,8 +25,6 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common/hexutil"
-	"github.com/palletone/go-palletone/configure"
-
 	//"github.com/palletone/go-palletone/consensus/consensusconfig"
 	"github.com/palletone/go-palletone/consensus/jury"
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
@@ -48,7 +45,7 @@ var DefaultConfig = Config{
 	DatabaseCache: 768,
 	TrieCache:     256,
 	TrieTimeout:   5 * time.Minute,
-	GasPrice:      big.NewInt(0.01 * configure.PalletOne),
+	CryptoLib:      []byte{0,0},
 
 	TxPool:         txspool.DefaultTxPoolConfig,
 	Dag:            dagconfig.DagConfig,
@@ -103,7 +100,7 @@ type Config struct {
 	//Etherbase    common.Address `toml:",omitempty"`
 	MinerThreads int    `toml:",omitempty"`
 	ExtraData    []byte `toml:",omitempty"`
-	GasPrice     *big.Int
+	CryptoLib     []byte
 
 	// Transaction pool options
 	TxPool txspool.TxPoolConfig `toml:"-"`

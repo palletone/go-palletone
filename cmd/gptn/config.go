@@ -45,6 +45,8 @@ import (
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 	"gopkg.in/urfave/cli.v1"
+	"bytes"
+	"github.com/palletone/go-palletone/common/crypto"
 )
 
 const defaultConfigPath = "./ptn-config.toml"
@@ -256,7 +258,10 @@ func makeConfigNode(ctx *cli.Context, isInConsole bool) (*node.Node, FullConfig)
 	adaptorPtnConfig(&cfg)
 
 	utils.SetPtnConfig(ctx, stack, &cfg.Ptn)
-
+	if bytes.Equal( cfg.Ptn.CryptoLib,[]byte{1,1}){
+		fmt.Println("Use GM crypto lib")
+		crypto.MyCryptoLib=&crypto.CryptoGm{}
+	}
 	if ctx.GlobalIsSet(utils.EthStatsURLFlag.Name) {
 		cfg.Ptnstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
 	}

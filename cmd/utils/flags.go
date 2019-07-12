@@ -21,7 +21,7 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"io/ioutil"
-	"math/big"
+
 	"os"
 	"path/filepath"
 	"runtime"
@@ -54,6 +54,7 @@ import (
 	"github.com/palletone/go-palletone/statistics/metrics"
 	"github.com/palletone/go-palletone/statistics/ptnstats"
 	"gopkg.in/urfave/cli.v1"
+	"encoding/hex"
 )
 
 var (
@@ -295,10 +296,10 @@ var (
 		Usage: "Public address for block mining rewards (default = first account created)",
 		Value: "0",
 	}
-	GasPriceFlag = BigFlag{
-		Name:  "gasprice",
-		Usage: "Minimal gas price to accept for mining a transactions",
-		Value: ptn.DefaultConfig.GasPrice,
+	CryptoLibFlag = cli.StringFlag{
+		Name:  "cryptolib",
+		Usage: "set crypto lib,1st byte sign algorithm: 0,ECDSA-S256;1,GM-SM2 2ed byte hash algorithm: 0,SHA3;1,GM-SM3",
+		Value: hex.EncodeToString( ptn.DefaultConfig.CryptoLib),
 	}
 	ExtraDataFlag = cli.StringFlag{
 		Name:  "extradata",
@@ -1125,8 +1126,9 @@ func SetPtnConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
 	if ctx.GlobalIsSet(ExtraDataFlag.Name) {
 		cfg.ExtraData = []byte(ctx.GlobalString(ExtraDataFlag.Name))
 	}
-	if ctx.GlobalIsSet(GasPriceFlag.Name) {
-		cfg.GasPrice = GlobalBig(ctx, GasPriceFlag.Name)
+	if ctx.GlobalIsSet(CryptoLibFlag.Name) {
+		t:= ctx.GlobalString(CryptoLibFlag.Name)
+		cfg.CryptoLib,_ =hex.DecodeString(t)
 	}
 	if ctx.GlobalIsSet(VMEnableDebugFlag.Name) {
 		// TODO(fjl): force-enable this in --dev mode
@@ -1159,9 +1161,9 @@ func SetPtnConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
 		}
 		log.Info("Using developer account", "address", developer.Address)
 
-		if !ctx.GlobalIsSet(GasPriceFlag.Name) {
-			cfg.GasPrice = big.NewInt(1)
-		}
+		//if !ctx.GlobalIsSet(GasPriceFlag.Name) {
+		//	cfg.GasPrice = big.NewInt(1)
+		//}
 	}
 	// TODO(fjl): move trie cache generations into config
 	if gen := ctx.GlobalInt(TrieCacheGenFlag.Name); gen > 0 {
