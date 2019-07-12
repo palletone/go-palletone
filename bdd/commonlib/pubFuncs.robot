@@ -88,7 +88,7 @@ installContractTpl
     [Arguments]    ${from}    ${to}    ${ptnAmount}    ${ptnFee}    ${tplName}    ${tplPath}
     ...    ${tplVersion}
     ${params}=    Create List    ${from}    ${to}    ${ptnAmount}    ${ptnFee}    ${tplName}
-    ...    ${tplPath}    ${tplVersion}    ""    ""    go    ${null}
+    ...    ${tplPath}    ${tplVersion}    ${null}    ${null}    go    ${null}
     ${respJson}=    sendRpcPost    ${host}    ${installMethod}    ${params}    InstallContractTpl
     Dictionary Should Contain Key    ${respJson}    result
     ${result}=    Get From Dictionary    ${respJson}    result
