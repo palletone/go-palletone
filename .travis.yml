@@ -56,7 +56,7 @@ matrix:
         - sleep 30
         - cd $BASE_DIR
         - mkdir -p ${BDD_LOG_PATH}
-        #- python -m robot.run -d ${BDD_LOG_PATH}}/${USER_CONTRACT_DIR} ./bdd/UserContract/Testcases;
+        - python -m robot.run -d ${BDD_LOG_PATH}}/${USER_CONTRACT_DIR} ./bdd/UserContract/Testcases;
         - docker ps -a
       after_script:
         - killall gptn
@@ -65,12 +65,12 @@ matrix:
         - docker rm $(docker ps -a -q)
         - docker rmi -f $(docker images -q)
         - cd ${BASE_DIR}
-        - ls ./bdd/logs
+        - ls -l ./bdd/logs
         - zip -l -o  ./bdd/logs/uc2-3_logs.zip ./cmd/deployment/node1/log ./cmd/deployment/node1/nohup.out ./cmd/deployment/node2/log ./cmd/deployment/node2/nohup.out ./cmd/deployment/node3/log ./cmd/deployment/node3/nohup.out
         - ls ${BDD_LOG_PATH}/${USER_CONTRACT_DIR}/
         #- zip -r -l -o  ./bdd/logs/uc2-3_reports.zip ${BDD_LOG_PATH}/${USER_CONTRACT_DIR}/*
-        - ls ./bdd/logs
-        - ls ${BDD_LOG_PATH}/${USER_CONTRACT_DIR}/
+        - ls -l ./bdd/logs
+        - ls -l ${BDD_LOG_PATH}/${USER_CONTRACT_DIR}/
         - |
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
