@@ -63,33 +63,38 @@ type JuryMsgAddr struct {
 
 //contract
 type ContractEvent struct {
-	CType ContractEventType
-	Ele   []modules.ElectionInf
-	Tx    *modules.Transaction
+	CType     ContractEventType
+	JuryCount uint64
+	Ele       []modules.ElectionInf
+	Tx        *modules.Transaction
 }
 
-func (ce *ContractEvent) Hash() common.Hash{
+func (ce *ContractEvent) Hash() common.Hash {
 	return util.RlpHash(ce)
 }
 
 //Election
 type ElectionRequestEvent struct {
-	ReqId common.Hash
+	ReqId     common.Hash
+	JuryCount uint64
 	//Data  []byte //election data, input as vrf. use reqId
 }
 type ElectionResultEvent struct {
-	ReqId common.Hash
-	Ele   modules.ElectionInf
+	ReqId     common.Hash
+	JuryCount uint64
+	Ele       modules.ElectionInf
 }
 
 //sig
 type ElectionSigRequestEvent struct {
-	ReqId common.Hash
-	Ele   []modules.ElectionInf
+	ReqId     common.Hash
+	JuryCount uint64
+	Ele       []modules.ElectionInf
 }
 type ElectionSigResultEvent struct {
-	ReqId common.Hash
-	Sig   modules.SignatureSet
+	ReqId     common.Hash
+	JuryCount uint64
+	Sig       modules.SignatureSet
 }
 
 type ElectionEvent struct {
@@ -101,7 +106,7 @@ type ElectionEventBytes struct {
 	Event []byte            `json:"event"`
 }
 
-func (es *ElectionEventBytes) Hash() common.Hash{
+func (es *ElectionEventBytes) Hash() common.Hash {
 	return util.RlpHash(es)
 }
 
@@ -123,14 +128,14 @@ func (es *ElectionEventBytes) ToElectionEvent() (*ElectionEvent, error) {
 			return nil, err
 		}
 		event.Event = &evt
-	} else if es.EType == ELECTION_EVENT_SIG_REQUEST{
+	} else if es.EType == ELECTION_EVENT_SIG_REQUEST {
 		var evt ElectionSigRequestEvent
 		err = json.Unmarshal(es.Event, &evt)
 		if err != nil {
 			return nil, err
 		}
 		event.Event = &evt
-	}else if es.EType == ELECTION_EVENT_SIG_RESULT{
+	} else if es.EType == ELECTION_EVENT_SIG_RESULT {
 		var evt ElectionSigResultEvent
 		err = json.Unmarshal(es.Event, &evt)
 		if err != nil {
