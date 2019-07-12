@@ -49,28 +49,4 @@ func TestIndexDb_QueryProofOfExistenceByReference(t *testing.T) {
 	}
 }
 
-func TestIndexDb_GetAssetReference(t *testing.T) {
-	uid := modules.UniqueId{0x28, 0x5a, 0x59, 0x29}
-	PTNCOIN := modules.AssetId{0x40, 0x00, 0x82, 0xBB, 0x08, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00}
-    t.Log(uid)
-	t.Log(PTNCOIN)
-	asset := &modules.Asset{}
-	asset.AssetId = PTNCOIN
-	asset.UniqueId = uid
-	t.Log(asset)
-	ref := []byte("APP1-News-123")
-	poe1 := &modules.ProofOfExistence{MainData: []byte("News Hash1"), ExtraData: []byte("News metadata json1"), Reference: ref, TxId: common.BytesToHash([]byte("txid")), UnitHash: common.Hash{}, Timestamp: 123}
-	poe2 := &modules.ProofOfExistence{MainData: []byte("News Hash1"), ExtraData: []byte("News op1"), Reference: ref, TxId: common.BytesToHash([]byte("txid1")), UnitHash: common.Hash{}, Timestamp: 333}
-	poe3 := &modules.ProofOfExistence{MainData: []byte("News Hash1"), ExtraData: []byte("News op2"), Reference: ref, TxId: common.BytesToHash([]byte("txid2")), UnitHash: common.Hash{}, Timestamp: 222}
-	db, _ := ptndb.NewMemDatabase()
-	idxdb := NewIndexDb(db)
-	err := idxdb.SaveTokenExistence(asset, poe1)
-	assert.Nil(t, err)
-	err = idxdb.SaveTokenExistence(asset, poe2)
-	err = idxdb.SaveTokenExistence(asset, poe3)
-	result, err := idxdb.GetTokenExistence(asset)
-	assert.Nil(t, err)
-	for _, poe := range result {
-		t.Logf("%s", poe.Reference)
-	}
-}
+

@@ -1728,7 +1728,19 @@ func (rep *UnitRepository) RefreshAddrTxIndex() error {
 }
 
 func (rep *UnitRepository) GetAssetReference(asset *modules.Asset) ([]*modules.ProofOfExistence, error) {
-	return rep.idxdb.GetTokenExistence(asset)
+
+	txInfor, err := rep.GetAssetTxHistory(asset)
+	if err != nil {
+		return nil, err
+	}
+	for _, tx := range txInfor {
+		for _, msg := range tx.TxMessages {
+			pay := msg.Payload.(*modules.DataPayload)
+			ref := pay.Reference
+			return rep.idxdb.QueryProofOfExistenceByReference(ref)
+		}
+	}
+	return nil,nil
 }
 
 func (rep *UnitRepository) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error) {
