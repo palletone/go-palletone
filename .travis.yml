@@ -53,8 +53,9 @@ matrix:
         - ./deploy.sh 3
         - ./editConfig.sh 3 2
         - ./start.sh 3
-#        - sleep 30
+        - sleep 30
         - cd $BASE_DIR
+        - mkdir -p ${BDD_LOG_PATH}
         #- python -m robot.run -d ${BDD_LOG_PATH}}/${USER_CONTRACT_DIR} ./bdd/UserContract/Testcases;
         - docker ps -a
       after_script:
@@ -67,7 +68,7 @@ matrix:
         - ls ./bdd/logs
         - zip -l -o  ./bdd/logs/uc2-3_logs.zip ./cmd/deployment/node1/log ./cmd/deployment/node1/nohup.out ./cmd/deployment/node2/log ./cmd/deployment/node2/nohup.out ./cmd/deployment/node3/log ./cmd/deployment/node3/nohup.out
         - ls ${BDD_LOG_PATH}/${USER_CONTRACT_DIR}/
-        - zip -r -l -o  ./bdd/logs/uc2-3_reports.zip ${BDD_LOG_PATH}/${USER_CONTRACT_DIR}/*
+        #- zip -r -l -o  ./bdd/logs/uc2-3_reports.zip ${BDD_LOG_PATH}/${USER_CONTRACT_DIR}/*
         - ls ./bdd/logs
         - ls ${BDD_LOG_PATH}/${USER_CONTRACT_DIR}/
         - |
