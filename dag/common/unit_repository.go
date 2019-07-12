@@ -99,6 +99,7 @@ type IUnitRepository interface {
 	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
 	//根据现有Tx数据，重新构建地址和Tx的关系索引
 	RefreshAddrTxIndex() error
+	GetAssetReference(asset *modules.Asset) ([]*modules.ProofOfExistence, error)
 	QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error)
 	SubscribeSysContractStateChangeEvent(ob AfterSysContractStateChangeEventFunc)
 	SaveCommon(key, val []byte) error
@@ -1028,7 +1029,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 				return fmt.Errorf("save contract of signature failed.")
 			}
 		case modules.APP_DATA:
-			if ok := rep.saveDataPayload(requester, unitHash, unitTime, txHash, msg.Payload.(*modules.DataPayload)); ok != true {
+			if ok := rep.saveDataPayload(requester, unitHash, unitTime, txHash, msg.Payload.(*modules.DataPayload), msg.Payload.(*modules.PaymentPayload)); ok != true {
 				return fmt.Errorf("save data payload faild.")
 			}
 		default:
@@ -1058,8 +1059,8 @@ func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Trans
 	for _, addr := range fromAddrs {
 		rep.idxdb.SaveAddressTxId(addr, txHash)
 	}
+	}
 
-}
 func getPayToAddresses(tx *modules.Transaction) []common.Address {
 	resultMap := map[common.Address]int{}
 	for _, msg := range tx.TxMessages {
@@ -1169,7 +1170,7 @@ func (rep *UnitRepository) savePaymentPayload(unitTime int64, txHash common.Hash
 save DataPayload data
 */
 
-func (rep *UnitRepository) saveDataPayload(requester common.Address, unitHash common.Hash, timestamp int64, txHash common.Hash, dataPayload *modules.DataPayload) bool {
+func (rep *UnitRepository) saveDataPayload(requester common.Address, unitHash common.Hash, timestamp int64, txHash common.Hash, dataPayload *modules.DataPayload, msg *modules.PaymentPayload) bool {
 
 	if dagconfig.DagConfig.TextFileHashIndex {
 
@@ -1193,6 +1194,16 @@ func (rep *UnitRepository) saveDataPayload(requester common.Address, unitHash co
 				log.Error("error SaveProofOfExistence", "err", err)
 				return false
 			}
+			for _, output := range msg.Outputs {
+				asset := output.Asset
+				if asset.AssetId.GetAssetType() == modules.AssetType_NonFungibleToken {
+					if err = rep.idxdb.SaveTokenExistence(asset, poe); err != nil {
+						log.Errorf("Save token and ProofOfExistence index data error:%s", err.Error())
+					}
+				}
+
+			}
+			//err = rep.idxdb.SaveTokenExistence()
 		}
 		return true
 	}
@@ -1649,18 +1660,7 @@ func (rep *UnitRepository) GetFileInfoByHash(hashs []common.Hash) ([]*modules.Fi
 	var mds []*modules.FileInfo
 	for _, hash := range hashs {
 		var md modules.FileInfo
-		//txlookup, err := rep.dagdb.GetTxLookupEntry(hash)
-		//if err != nil {
-		//	return nil, err
-		//}
-		//
-		//header, err := rep.dagdb.GetHeaderByHash(unithash)
-		//if err != nil {
-		//	return nil, err
-		//}
-		//for _, v := range header.ParentsHash {
-		//	md.ParentsHash = v
-		//}
+
 		tx, err := rep.GetTransaction(hash)
 		if err != nil {
 			return nil, err
@@ -1726,6 +1726,11 @@ func (rep *UnitRepository) RefreshAddrTxIndex() error {
 	}
 	return nil
 }
+
+func (rep *UnitRepository) GetAssetReference(asset *modules.Asset) ([]*modules.ProofOfExistence, error) {
+	return rep.idxdb.GetTokenExistence(asset)
+}
+
 func (rep *UnitRepository) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error) {
 	return rep.idxdb.QueryProofOfExistenceByReference(ref)
 }

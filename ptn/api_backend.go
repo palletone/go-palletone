@@ -316,6 +316,19 @@ func (b *PtnApiBackend) GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxHi
 	return txjs, nil
 }
 
+func (b *PtnApiBackend) GetAssetExistence(asset *modules.Asset) ([]*ptnjson.ProofOfExistenceJson, error) {
+	poes, err := b.ptn.dag.GetAssetReference(asset)
+	if err != nil {
+		return nil, err
+	}
+	result := []*ptnjson.ProofOfExistenceJson{}
+	for _, poe := range poes {
+		j := ptnjson.ConvertProofOfExistence2Json(poe)
+		result = append(result, j)
+	}
+	return result, nil
+}
+
 // Get state
 //func (b *PtnApiBackend) GetHeadHeaderHash() (common.Hash, error) {
 //	return b.ptn.dag.GetHeadHeaderHash()

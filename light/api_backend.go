@@ -416,6 +416,9 @@ func (b *LesApiBackend) GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson,
 func (b *LesApiBackend) GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxHistoryJson, error) {
 	return nil, nil
 }
+func (b *LesApiBackend) GetAssetExistence(asset *modules.Asset) ([]*ptnjson.ProofOfExistenceJson, error)  {
+	return nil, nil
+}
 
 //contract control
 func (b *LesApiBackend) ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi, ccLanguage string) (TemplateId []byte, err error) {

@@ -1216,6 +1216,15 @@ func (s *PublicWalletAPI) GetProofOfExistencesByRef(ctx context.Context, referen
 	return s.b.QueryProofOfExistenceByReference(reference)
 }
 
+func (s *PublicWalletAPI) GetProofOfExistencesByAsset(ctx context.Context, ass string) ([]*ptnjson.ProofOfExistenceJson, error) {
+	asset := &modules.Asset{}
+	err := asset.SetString(ass)
+	if err != nil {
+		return nil, errors.New("Invalid asset string")
+	}
+	return s.b.GetAssetExistence(asset)
+}
+
 //好像某个UTXO是被那个交易花费的
 func (s *PublicWalletAPI) GetStxo(ctx context.Context, txid string, msgIdx int, outIdx int) (*ptnjson.StxoJson, error) {
 	outpoint := modules.NewOutPoint(common.HexToHash(txid), uint32(msgIdx), uint32(outIdx))
