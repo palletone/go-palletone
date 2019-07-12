@@ -43,7 +43,7 @@ matrix:
       script:
         - ip addr
         - make gptn
-        #- make golang-baseimage-dev
+        - make golang-baseimage-dev
         - docker images
         - cd ./cmd/deployment
         - chmod +x ./deploy.sh
@@ -56,7 +56,7 @@ matrix:
         - sleep 30
         - cd $BASE_DIR
         - mkdir -p ${BDD_LOG_PATH}
-        #- python -m robot.run -d ${BDD_LOG_PATH}}/${USER_CONTRACT_DIR} ./bdd/UserContract/Testcases;
+        - python -m robot.run -d ${BDD_LOG_PATH}}/${USER_CONTRACT_DIR} ./bdd/UserContract/Testcases;
         - docker ps -a
       after_script:
         - killall gptn
@@ -66,15 +66,8 @@ matrix:
         - docker rmi -f $(docker images -q)
         - cd ${BASE_DIR}
         - zip -r -l -o  ./bdd/logs/uc2-3_logs.zip ./cmd/deployment/node1/log ./cmd/deployment/node1/nohup.out ./cmd/deployment/node2/log ./cmd/deployment/node2/nohup.out ./cmd/deployment/node3/log ./cmd/deployment/node3/nohup.out
-        - unzip -t ./bdd/logs/uc2-3_logs.zip
-        - ls -l ./bdd/logs/uc2-3_logs.zip
-        - unzip -t -l ./bdd/logs/uc2-3_logs.zip -d ./bdd/logs/
-        #- zip -r -l -o  ./bdd/logs/uc2-3_reports.zip ${BDD_LOG_PATH}/${USER_CONTRACT_DIR}/*
-        #- unzip -t ./bdd/logs/uc2-3_reports.zip
-        #- ls -l ./bdd/logs/uc2-3_reports.zip
-        #- unzip -t -l ./bdd/logs/uc2-3_reports.zip -d ./bdd/logs/
+        - zip -r -l -o  ./bdd/logs/uc2-3_reports.zip ${BDD_LOG_PATH}/${USER_CONTRACT_DIR}/*
         - ls -l ./bdd/logs
-        - ls -l ${BDD_LOG_PATH}/${USER_CONTRACT_DIR}/
         - |
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
