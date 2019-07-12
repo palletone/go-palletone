@@ -1029,7 +1029,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 				return fmt.Errorf("save contract of signature failed.")
 			}
 		case modules.APP_DATA:
-			if ok := rep.saveDataPayload(requester, unitHash, unitTime, txHash, msg.Payload.(*modules.DataPayload), msg.Payload.(*modules.PaymentPayload)); ok != true {
+			if ok := rep.saveDataPayload(requester, unitHash, unitTime, txHash, msg.Payload.(*modules.DataPayload)); ok != true {
 				return fmt.Errorf("save data payload faild.")
 			}
 		default:
@@ -1170,7 +1170,7 @@ func (rep *UnitRepository) savePaymentPayload(unitTime int64, txHash common.Hash
 save DataPayload data
 */
 
-func (rep *UnitRepository) saveDataPayload(requester common.Address, unitHash common.Hash, timestamp int64, txHash common.Hash, dataPayload *modules.DataPayload, msg *modules.PaymentPayload) bool {
+func (rep *UnitRepository) saveDataPayload(requester common.Address, unitHash common.Hash, timestamp int64, txHash common.Hash, dataPayload *modules.DataPayload) bool {
 
 	if dagconfig.DagConfig.TextFileHashIndex {
 
@@ -1194,15 +1194,15 @@ func (rep *UnitRepository) saveDataPayload(requester common.Address, unitHash co
 				log.Error("error SaveProofOfExistence", "err", err)
 				return false
 			}
-			for _, output := range msg.Outputs {
-				asset := output.Asset
-				if asset.AssetId.GetAssetType() == modules.AssetType_NonFungibleToken {
-					if err = rep.idxdb.SaveTokenExistence(asset, poe); err != nil {
-						log.Errorf("Save token and ProofOfExistence index data error:%s", err.Error())
-					}
-				}
-
-			}
+			//for _, output := range msg.Outputs {
+			//	asset := output.Asset
+			//	if asset.AssetId.GetAssetType() == modules.AssetType_NonFungibleToken {
+			//		if err = rep.idxdb.SaveTokenExistence(asset, poe); err != nil {
+			//			log.Errorf("Save token and ProofOfExistence index data error:%s", err.Error())
+			//		}
+			//	}
+			//
+			//}
 			//err = rep.idxdb.SaveTokenExistence()
 		}
 		return true
