@@ -88,7 +88,7 @@ installContractTpl
     [Arguments]    ${from}    ${to}    ${ptnAmount}    ${ptnFee}    ${tplName}    ${tplPath}
     ...    ${tplVersion}
     ${params}=    Create List    ${from}    ${to}    ${ptnAmount}    ${ptnFee}    ${tplName}
-    ...    ${tplPath}    ${tplVersion}    ${null}
+    ...    ${tplPath}    ${tplVersion}    ""    ""    go    ${null}
     ${respJson}=    sendRpcPost    ${host}    ${installMethod}    ${params}    InstallContractTpl
     Dictionary Should Contain Key    ${respJson}    result
     ${result}=    Get From Dictionary    ${respJson}    result
@@ -153,9 +153,8 @@ Unlock token holder succeed
     unlockAccount    ${tokenHolder}
     Log    "unlock ${tokenHolder} succeed"
 
-
 User installs contract template
-    [Arguments]    ${path}  ${name}
+    [Arguments]    ${path}    ${name}
     ${respJson}=    installContractTpl    ${tokenHolder}    ${tokenHolder}    100    100    jury06
     ...    ${path}    ${name}
     ${result}=    Get From Dictionary    ${respJson}    result
@@ -164,7 +163,6 @@ User installs contract template
     Run Keyword If    '${tplId}'=='${EMPTY}'    Fail    "Install Contract Error"
     Set Global Variable    ${gTplId}    ${tplId}
     [Return]    ${reqId}
-
 
 User deploys contract
     ${args}=    Create List    deploy
