@@ -82,6 +82,7 @@ func NewEndorserServer(s Support) pb.EndorserServer {
 
 //call specified chaincode (system or user)
 func (e *Endorser) callChaincode(contractid []byte, ctxt context.Context, chainID string, version string, txid string, signedProp *pb.SignedProposal, prop *pb.Proposal, cis *pb.ChaincodeInvocationSpec, chaincodeName string, txsim rwset.TxSimulator, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error) {
+	log.Debugf("call chain code enter")
 	log.Debugf("[%s][%s] Entry chaincode: %s version: %s", chainID, shorttxid(txid), chaincodeName, version)
 	defer log.Debugf("[%s][%s] Exit", chainID, shorttxid(txid))
 	var err error
@@ -94,6 +95,7 @@ func (e *Endorser) callChaincode(contractid []byte, ctxt context.Context, chainI
 
 	scc := e.s.IsSysCC(chaincodeName)
 	res, ccevent, err = e.s.Execute(contractid, ctxt, chainID, chaincodeName, version, txid, scc, signedProp, prop, cis, timeout)
+	log.Debugf("execute")
 	if err != nil {
 		return res, nil, err
 	}
@@ -139,6 +141,7 @@ func (e *Endorser) simulateProposal(contractid []byte, ctx context.Context, chai
 	var res *pb.Response
 	var ccevent *pb.ChaincodeEvent
 	res, ccevent, err = e.callChaincode(contractid, ctx, chainID, cid.Version, txid, signedProp, prop, cis, cid.Name, txsim, tmout)
+	log.Debugf("call chain code")
 	if err != nil {
 		log.Errorf("[%s][%s] failed to invoke chaincode %s, error: %+v", chainID, shorttxid(txid), cid, err)
 		return res, nil, nil, err
@@ -203,6 +206,7 @@ func (e *Endorser) validateProcess(signedProp *pb.SignedProposal) (*validateResu
 // ProcessProposal process the Proposal
 //func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedProposal) (*pb.ProposalResponse, error) {
 func (e *Endorser) ProcessProposal(rwM rwset.TxManager, idag dag.IDag, deployId []byte, ctx context.Context, signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, cid *pb.ChaincodeID, tmout time.Duration) (*pb.ProposalResponse, *modules.ContractInvokeResult, error) {
+	log.Debugf("process proposal enter")
 	var txsim rwset.TxSimulator
 
 	//addr := util.ExtractRemoteAddress(ctx)
@@ -211,6 +215,7 @@ func (e *Endorser) ProcessProposal(rwM rwset.TxManager, idag dag.IDag, deployId 
 
 	//0 -- check and validate
 	result, err := e.validateProcess(signedProp)
+	log.Debugf("validate process")
 	if err != nil {
 		log.Debugf("validate signedProp err:%s", err)
 		return nil, nil, err
@@ -228,6 +233,7 @@ func (e *Endorser) ProcessProposal(rwM rwset.TxManager, idag dag.IDag, deployId 
 
 	//1 -- simulate
 	res, _, _, err := e.simulateProposal(deployId, ctx, chainID, txid, signedProp, prop, cid, txsim, tmout)
+	log.Debugf("simulate proposal")
 	if err != nil {
 		return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, nil, err
 	}

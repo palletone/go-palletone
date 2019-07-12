@@ -459,7 +459,7 @@ func testConcurrentAnnouncements(t *testing.T, protocol int) {
 
 // Tests that announcements retrieved in a random order are cached and eventually
 // imported when all the gaps are filled in.
-func TestRandomArrivalImport1(t *testing.T) { testRandomArrivalImport(t, 1) }
+//func TestRandomArrivalImport1(t *testing.T) { testRandomArrivalImport(t, 1) }
 func testRandomArrivalImport(t *testing.T, protocol int) {
 	// Create a chain of blocks to import, and choose one to delay
 	targetunits := maxQueueDist
@@ -496,7 +496,7 @@ func testRandomArrivalImport(t *testing.T, protocol int) {
 
 // Tests that direct block enqueues (due to block propagation vs. hash announce)
 // are correctly schedule, filling and import queue gaps.
-func TestQueueGapFill1(t *testing.T) { testQueueGapFill(t, 1) }
+//func TestQueueGapFill1(t *testing.T) { testQueueGapFill(t, 1) }
 func testQueueGapFill(t *testing.T, protocol int) {
 	// Create a chain of blocks to import, and choose one to not announce at all
 	targetunits := maxQueueDist

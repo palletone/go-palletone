@@ -42,6 +42,8 @@ type IIndexDb interface {
 
 	SaveTokenTxId(asset *modules.Asset, txid common.Hash) error
 	GetTokenTxIds(asset *modules.Asset) ([]common.Hash, error)
+	SaveTokenExistence(asset *modules.Asset, poe *modules.ProofOfExistence) error
+	GetTokenExistence(asset *modules.Asset) ([]*modules.ProofOfExistence, error)
 
 	SaveMainDataTxId(maindata []byte, txid common.Hash) error
 	GetMainDataTxIds(maindata []byte) ([]common.Hash, error)
@@ -79,6 +81,28 @@ func (db *IndexDb) GetTokenTxIds(asset *modules.Asset) ([]common.Hash, error) {
 		hash := common.Hash{}
 		hash.SetBytes(v)
 		result = append(result, hash)
+	}
+	return result, nil
+}
+
+func (db *IndexDb) SaveTokenExistence(asset *modules.Asset, poe *modules.ProofOfExistence) error {
+	key := append(constants.TOKEN_EX_PREFIX, asset.Bytes()...)
+	key = append(key,  poe.Reference...)
+	return StoreToRlpBytes(db.db, key, poe)
+}
+
+func (db *IndexDb) GetTokenExistence(asset *modules.Asset) ([]*modules.ProofOfExistence, error) {
+	prefix := append(constants.TOKEN_EX_PREFIX, asset.Bytes()...)
+	iter := db.db.NewIteratorWithPrefix(prefix)
+	result := []*modules.ProofOfExistence{}
+	for iter.Next() {
+		value := iter.Value()
+		poe := &modules.ProofOfExistence{}
+		err := rlp.DecodeBytes(value, poe)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, poe)
 	}
 	return result, nil
 }

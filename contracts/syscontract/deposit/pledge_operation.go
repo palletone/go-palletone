@@ -25,6 +25,8 @@ import (
 	"encoding/json"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/shopspring/decimal"
 )
 
 //  质押PTN
@@ -117,9 +119,32 @@ func queryPledgeStatusByAddr(stub shim.ChaincodeStubInterface, args []string) pb
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	data, _ := json.Marshal(status)
+	pjson := convertPledgeStatus2Json(status)
+	data, _ := json.Marshal(pjson)
 	return shim.Success(data)
 }
+
+type pledgeStatusJson struct {
+	NewDepositAmount    decimal.Decimal
+	PledgeAmount        decimal.Decimal
+	WithdrawApplyAmount string
+	OtherAmount         decimal.Decimal
+}
+
+func convertPledgeStatus2Json(p *modules.PledgeStatus) *pledgeStatusJson {
+	data := &pledgeStatusJson{}
+	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
+	data.NewDepositAmount = gasToken.DisplayAmount(p.NewDepositAmount)
+	data.PledgeAmount = gasToken.DisplayAmount(p.PledgeAmount)
+	data.OtherAmount = gasToken.DisplayAmount(p.OtherAmount)
+	if p.WithdrawApplyAmount == math.MaxUint64 {
+		data.WithdrawApplyAmount = "all"
+	} else {
+		data.WithdrawApplyAmount = gasToken.DisplayAmount(p.WithdrawApplyAmount).String()
+	}
+	return data
+}
+
 func queryAllPledgeHistory(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 
 	history, err := getAllPledgeRewardHistory(stub)

@@ -91,7 +91,7 @@ type Backend interface {
 	GetCommonByPrefix(prefix []byte) map[string][]byte
 	SaveCommon(key, val []byte) error
 	// Get Contract Api
-	GetContract(hex_id string) (*modules.Contract, error)
+	GetContract(contractAddr common.Address) (*ptnjson.ContractJson, error)
 
 	//get level db
 	GetUnitByHash(hash common.Hash) *modules.Unit
@@ -129,6 +129,7 @@ type Backend interface {
 	GetAddressBalanceStatistics(token string, topN int) (*statistics.TokenAddressBalanceJson, error)
 	GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson, error)
 	GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxHistoryJson, error)
+	GetAssetExistence(asset *modules.Asset) ([]*ptnjson.ProofOfExistenceJson, error)
 	//contract control
 	ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi, ccLanguage string) (TemplateId []byte, err error)
 	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)

@@ -26,7 +26,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -121,6 +120,8 @@ func (pm *ProtocolManager) checkConnectedAndSynced() {
 	}
 
 	// 2. 是否和所有其他活跃mediator节点相连完成
+	//headNum := pm.dag.HeadUnitNum()
+	//gasToken := dagconfig.DagConfig.GetGasToken()
 	checkFn := func() bool {
 		nodes := pm.dag.GetActiveMediatorNodes()
 		for id, node := range nodes {
@@ -134,15 +135,15 @@ func (pm *ProtocolManager) checkConnectedAndSynced() {
 				return false
 			}
 
-			headHash := pm.dag.HeadUnitHash()
-			gasToken := dagconfig.DagConfig.GetGasToken()
-			pHeadHash, _ := peer.Head(gasToken)
-			if common.EmptyHash(pHeadHash) || headHash != pHeadHash {
-				return false
-			}
+			// todo Albert 待使用
+			//_, pHeadNum := peer.Head(gasToken)
+			//if pHeadNum == nil || pHeadNum.Index < headNum {
+			//	return false
+			//}
 		}
 
 		log.Debugf("connected with all active mediator peers")
+		//log.Debugf("connected with all active mediator peers, all all peers synced")
 		return true
 	}
 
