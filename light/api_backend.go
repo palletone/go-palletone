@@ -285,7 +285,7 @@ func (b *LesApiBackend) GetCommonByPrefix(prefix []byte) map[string][]byte {
 }
 
 // Get Contract Api
-func (b *LesApiBackend) GetContract(hex_id string) (*modules.Contract, error) {
+func (b *LesApiBackend) GetContract(contractAddr common.Address) (*ptnjson.ContractJson, error){
 	return nil, nil
 }
 
