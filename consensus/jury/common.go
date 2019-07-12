@@ -295,6 +295,11 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					args:       reqPay.Args,
 					timeout:    time.Duration(reqPay.Timeout) * time.Second,
 				}
+				fullArgs, err := handleMsg0(tx, dag, req.args)
+				if err != nil {
+					return nil, err
+				}
+				req.args = fullArgs
 				deployResult, err := ContractProcess(rwM, contract, req)
 				if err != nil {
 					log.Error("runContractCmd ContractProcess ", "error", err.Error())

@@ -594,7 +594,7 @@ func (chaincodeSupport *ChaincodeSupport) launchAndWaitForRegister(ctxt context.
 	}
 	if err != nil {
 		log.Debugf("stopping due to error while launching: %+v", err)
-		errIgnore := chaincodeSupport.Stop(ctxt, cccid, cds, true)
+		errIgnore := chaincodeSupport.Stop(ctxt, cccid, cds, false)
 		if errIgnore != nil {
 			log.Debugf("stop failed: %+v", errIgnore)
 		}
@@ -805,7 +805,7 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 		if err != nil {
 			err = errors.WithMessage(err, "failed to init chaincode")
 			log.Errorf("%+v", err)
-			errIgnore := chaincodeSupport.Stop(context, cccid, cds, true)
+			errIgnore := chaincodeSupport.Stop(context, cccid, cds, false)
 			if errIgnore != nil {
 				log.Errorf("stop failed: %+v", errIgnore)
 			}

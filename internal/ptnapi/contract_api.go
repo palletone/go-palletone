@@ -214,7 +214,7 @@ func (s *PublicContractAPI) Ccdeploytx(ctx context.Context, from, to, daoAmount,
 		args[i] = []byte(arg)
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
-	fullArgs := [][]byte{defaultMsg0, defaultMsg1}
+	fullArgs := [][]byte{defaultMsg0}
 	fullArgs = append(fullArgs, args...)
 	reqId, _, err := s.b.ContractDeployReqTx(fromAddr, toAddr, amount, fee, templateId, fullArgs, 0)
 	contractAddr := crypto.RequestIdToContractAddress(reqId)
