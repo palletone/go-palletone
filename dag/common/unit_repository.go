@@ -53,7 +53,7 @@ type IUnitRepository interface {
 	GetGenesisUnit() (*modules.Unit, error)
 	//GenesisHeight() modules.ChainIndex
 	SaveUnit(unit *modules.Unit, isGenesis bool) error
-	CreateUnit(mAddr common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error)
+	CreateUnit(mAddr common.Address, txpool txspool.ITxPool, propdb IPropRepository, t time.Time) (*modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
 	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
@@ -406,7 +406,7 @@ create common unit
 @param mAddr is minner addr
 return: correct if error is nil, and otherwise is incorrect
 */
-func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error) {
+func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPool, propdb IPropRepository, t time.Time) (*modules.Unit, error) {
 	rep.lock.RLock()
 	begin := time.Now()
 
@@ -422,7 +422,8 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 	// get current world_state index.
 	index := uint64(1)
 	//isMain := true
-	phash, chainIndex, _, err := rep.propdb.GetNewestUnit(assetId)
+	phash, chainIndex, err := propdb.GetNewestUnit(assetId)
+	// phash, chainIndex, _, err := rep.propdb.GetNewestUnit(assetId)
 	if err != nil {
 		chainIndex = &modules.ChainIndex{AssetID: assetId, Index: index + 1}
 		log.Error("GetCurrentChainIndex is failed.", "error", err)
@@ -437,7 +438,7 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 	}
 	header.ParentsHash = append(header.ParentsHash, phash)
 	h_hash := header.HashWithOutTxRoot()
-	log.Debugf("Start txpool.GetSortedTxs..., parent hash:%s", phash.String())
+	log.Infof("Start txpool.GetSortedTxs..., parent hash:%s", phash.String())
 
 	// step4. get transactions from txspool
 	poolTxs, _ := txpool.GetSortedTxs(h_hash, chainIndex.Index)

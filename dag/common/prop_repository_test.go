@@ -78,7 +78,7 @@ func TestShuffle(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		addrs := []common.Address{addr1, addr2, addr3, addr4, addr5}
-		Shuffle(addrs, uint64(i))
+		//Shuffle(addrs, uint64(i))
 		addrJs, _ := json.Marshal(addrs)
 		t.Logf("i:%d,addr:%s", i, addrJs)
 	}

@@ -139,11 +139,15 @@ func (d *Dag) GetMediator(add common.Address) *core.Mediator {
 //}
 
 func (dag *Dag) GetSlotAtTime(when time.Time) uint32 {
-	return dag.unstablePropRep.GetSlotAtTime(when)
+	_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
+	return rep.GetSlotAtTime(when)
+	//return dag.unstablePropRep.GetSlotAtTime(when)
 }
 
 func (dag *Dag) GetNewestUnitTimestamp(token modules.AssetId) (int64, error) {
-	return dag.unstablePropRep.GetNewestUnitTimestamp(token)
+	_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
+	return rep.GetNewestUnitTimestamp(token)
+	//return dag.unstablePropRep.GetNewestUnitTimestamp(token)
 }
 
 func (dag *Dag) GetSlotTime(slotNum uint32) time.Time {
@@ -156,13 +160,17 @@ func (dag *Dag) GetScheduledMediator(slotNum uint32) common.Address {
 
 func (dag *Dag) HeadUnitTime() int64 {
 	gasToken := dagconfig.DagConfig.GetGasToken()
-	t, _ := dag.unstablePropRep.GetNewestUnitTimestamp(gasToken)
+	//t, _ := dag.unstablePropRep.GetNewestUnitTimestamp(gasToken)
+	_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
+	t, _ := rep.GetNewestUnitTimestamp(gasToken)
 	return t
 }
 
 func (dag *Dag) HeadUnitNum() uint64 {
 	gasToken := dagconfig.DagConfig.GetGasToken()
-	_, idx, _ := dag.unstablePropRep.GetNewestUnit(gasToken)
+	//_, idx, _ := dag.unstablePropRep.GetNewestUnit(gasToken)
+	_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
+	_, idx, _ := rep.GetNewestUnit(gasToken)
 	return idx.Index
 }
 
@@ -172,7 +180,9 @@ func (dag *Dag) LastMaintenanceTime() int64 {
 
 func (dag *Dag) HeadUnitHash() common.Hash {
 	gasToken := dagconfig.DagConfig.GetGasToken()
-	hash, _, _ := dag.unstablePropRep.GetNewestUnit(gasToken)
+	_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
+	hash, _, _ := rep.GetNewestUnit(gasToken)
+	//hash, _, _ := dag.unstablePropRep.GetNewestUnit(gasToken)
 	return hash
 }
 
