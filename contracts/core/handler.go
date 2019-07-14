@@ -557,6 +557,7 @@ func (handler *Handler) processStream() error {
 			log.Debugf("[%s]Received message %s from shim", shorttxid(in.Txid), in.Type.String())
 			if in.Type.String() == pb.ChaincodeMessage_ERROR.String() {
 				log.Errorf("Got error: %s", string(in.Payload))
+
 			}
 
 			// we can spin off another Recv again

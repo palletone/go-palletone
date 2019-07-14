@@ -1651,3 +1651,18 @@ func (mr *MockIDagMockRecorder) QueryProofOfExistenceByReference(ref interface{}
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryProofOfExistenceByReference", reflect.TypeOf((*MockIDag)(nil).QueryProofOfExistenceByReference), ref)
 }
+
+// GetAssetReference mocks base method
+func (m *MockIDag) GetAssetReference(asset *modules.Asset) ([]*modules.ProofOfExistence, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAssetReference", asset)
+	ret0, _ := ret[0].([]*modules.ProofOfExistence)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAssetReference indicates an expected call of GetAssetReference
+func (mr *MockIDagMockRecorder) GetAssetReference(asset interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssetReference", reflect.TypeOf((*MockIDag)(nil).GetAssetReference), asset)
+}

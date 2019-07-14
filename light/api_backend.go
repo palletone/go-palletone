@@ -285,7 +285,7 @@ func (b *LesApiBackend) GetCommonByPrefix(prefix []byte) map[string][]byte {
 }
 
 // Get Contract Api
-func (b *LesApiBackend) GetContract(hex_id string) (*modules.Contract, error) {
+func (b *LesApiBackend) GetContract(contractAddr common.Address) (*ptnjson.ContractJson, error){
 	return nil, nil
 }
 
@@ -414,6 +414,9 @@ func (b *LesApiBackend) GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson,
 	return nil, nil
 }
 func (b *LesApiBackend) GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxHistoryJson, error) {
+	return nil, nil
+}
+func (b *LesApiBackend) GetAssetExistence(asset *modules.Asset) ([]*ptnjson.ProofOfExistenceJson, error)  {
 	return nil, nil
 }
 

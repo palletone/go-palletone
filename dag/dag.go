@@ -1220,3 +1220,7 @@ func (dag *Dag) GetDataVersion() (*modules.DataVersion, error) {
 func (dag *Dag) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error) {
 	return dag.stableUnitRep.QueryProofOfExistenceByReference(ref)
 }
+
+func (dag *Dag) GetAssetReference(asset *modules.Asset) ([]*modules.ProofOfExistence, error) {
+	return dag.stableUnitRep.GetAssetReference(asset)
+}

@@ -63,6 +63,7 @@ var (
 		ArgsUsage: "<genesisJsonPath> <openStdout>",
 		Flags: []cli.Flag{
 			GenesisJsonPathFlag,
+			utils.CryptoLibFlag,
 		},
 		Category: "BLOCKCHAIN COMMANDS",
 		Description: `

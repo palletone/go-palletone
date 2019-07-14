@@ -246,8 +246,18 @@ func (b *PtnApiBackend) ServiceFilter(ctx context.Context, session *bloombits.Ma
 //}
 
 // GetContract
-func (b *PtnApiBackend) GetContract(id string) (*modules.Contract, error) {
-	return b.ptn.dag.GetContract(common.Hex2Bytes(id))
+func (b *PtnApiBackend) GetContract(addr common.Address) (*ptnjson.ContractJson, error) {
+	contract,err:= b.ptn.dag.GetContract(addr.Bytes())
+	if err!=nil{
+		return nil,err
+	}
+	cjson:= ptnjson.ConvertContract2Json(contract)
+	tpl,err:= b.ptn.dag.GetContractTpl(contract.TemplateId)
+	if err!=nil{
+		return cjson,nil
+	}
+	cjson.Template= ptnjson.ConvertContractTemplate2Json(tpl)
+	return cjson,nil
 }
 func (b *PtnApiBackend) QueryDbByKey(key []byte) *ptnjson.DbRowJson {
 	val, err := b.ptn.dag.QueryDbByKey(key)
@@ -304,6 +314,19 @@ func (b *PtnApiBackend) GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxHi
 		txjs = append(txjs, txj)
 	}
 	return txjs, nil
+}
+
+func (b *PtnApiBackend) GetAssetExistence(asset *modules.Asset) ([]*ptnjson.ProofOfExistenceJson, error) {
+	poes, err := b.ptn.dag.GetAssetReference(asset)
+	if err != nil {
+		return nil, err
+	}
+	result := []*ptnjson.ProofOfExistenceJson{}
+	for _, poe := range poes {
+		j := ptnjson.ConvertProofOfExistence2Json(poe)
+		result = append(result, j)
+	}
+	return result, nil
 }
 
 // Get state

@@ -214,7 +214,9 @@ func (s *PublicContractAPI) Ccdeploytx(ctx context.Context, from, to, daoAmount,
 		args[i] = []byte(arg)
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
-	reqId, _, err := s.b.ContractDeployReqTx(fromAddr, toAddr, amount, fee, templateId, args, 0)
+	fullArgs := [][]byte{defaultMsg0}
+	fullArgs = append(fullArgs, args...)
+	reqId, _, err := s.b.ContractDeployReqTx(fromAddr, toAddr, amount, fee, templateId, fullArgs, 0)
 	contractAddr := crypto.RequestIdToContractAddress(reqId)
 	sReqId := hex.EncodeToString(reqId[:])
 	log.Debug("-----Ccdeploytx:", "reqId", sReqId, "depId", contractAddr.String())
@@ -406,21 +408,23 @@ func (s *PublicContractAPI) GetAllContractsUsedTemplateId(ctx context.Context, t
 
 //  通过合约Id，获取合约的详细信息
 func (s *PublicContractAPI) GetContractInfoById(ctx context.Context, contractId string) (*ptnjson.ContractJson, error) {
-	contract, err := s.b.GetContract(contractId)
+	id, _ := hex.DecodeString(contractId)
+	addr := common.NewAddress(id, common.ContractHash)
+	contract, err := s.b.GetContract(addr)
 	if err != nil {
 		return nil, err
 	}
-	return ptnjson.ConvertContract2Json(contract), nil
+	return contract, nil
 }
 
 //  通过合约地址，获取合约的详细信息
 func (s *PublicContractAPI) GetContractInfoByAddr(ctx context.Context, contractAddr string) (*ptnjson.ContractJson, error) {
 	addr, _ := common.StringToAddress(contractAddr)
-	contract, err := s.b.GetContract(addr.Hex()[2:])
+	contract, err := s.b.GetContract(addr)
 	if err != nil {
 		return nil, err
 	}
-	return ptnjson.ConvertContract2Json(contract), nil
+	return contract, nil
 }
 func (s *PublicContractAPI) DepositContractInvoke(ctx context.Context, from, to, daoAmount, daoFee string,
 	param []string) (string, error) {

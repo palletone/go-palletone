@@ -118,7 +118,7 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward
 	for _, withdraw := range withdrawList {
 		withdrawAmt, _ := allM.Reduce(withdraw.Address, withdraw.Amount)
 		if withdrawAmt > 0 {
-			err := stub.PayOutToken(withdraw.Address, modules.NewAmountAsset(withdraw.Amount, gasToken), 0)
+			err := stub.PayOutToken(withdraw.Address, modules.NewAmountAsset(withdrawAmt, gasToken), 0)
 			if err != nil {
 				return err
 			}
