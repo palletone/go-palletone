@@ -657,19 +657,17 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 	log.Debug("Importing propagated block insert DAG", "peer", peer, "number", block.Number().Index, "hash", hash)
 	go func() {
 		defer func() { f.done <- hash }()
-
-		// If the parent's unknown, abort insertion
-		//parent := f.isHeaderExist(block.ParentHash())
-		parentsHash := block.ParentHash()
-		for _, parentHash := range parentsHash {
-			//fmt.Println("parentHash=>", parentHash)
-			log.Debug("Importing propagated block insert DAG Enter isHeaderExist")
-			if !f.isHeaderExist(parentHash) {
-				log.Warn("Unknown parent of propagated block", "peer", peer, "number", block.Number().Index, "hash", hash, "parent", parentHash)
-				return
-			}
-			log.Debug("Importing propagated block insert DAG End isHeaderExist")
-		}
+		// 如果本节点与主网断连后重连进p2p网络，那么接下来收到的单元很有可能是相对本节点的孤儿单元，则本节点会永远分叉回不去。
+		//parentsHash := block.ParentHash()
+		//for _, parentHash := range parentsHash {
+		//	//fmt.Println("parentHash=>", parentHash)
+		//	log.Debug("Importing propagated block insert DAG Enter isHeaderExist")
+		//	if !f.isHeaderExist(parentHash) {
+		//		log.Warn("Unknown parent of propagated block", "peer", peer, "number", block.Number().Index, "hash", hash, "parent", parentHash)
+		//		return
+		//	}
+		//	log.Debug("Importing propagated block insert DAG End isHeaderExist")
+		//}
 
 		// Quickly validate the header and propagate the block if it passes
 		switch err := f.verifyUnit(block); err {

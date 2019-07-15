@@ -53,7 +53,7 @@ type IUnitRepository interface {
 	GetGenesisUnit() (*modules.Unit, error)
 	//GenesisHeight() modules.ChainIndex
 	SaveUnit(unit *modules.Unit, isGenesis bool) error
-	CreateUnit(mAddr common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error)
+	CreateUnit(mAddr common.Address, txpool txspool.ITxPool, propdb IPropRepository, t time.Time) (*modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
 	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
@@ -407,7 +407,7 @@ create common unit
 @param mAddr is minner addr
 return: correct if error is nil, and otherwise is incorrect
 */
-func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error) {
+func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPool, propdb IPropRepository, t time.Time) (*modules.Unit, error) {
 	rep.lock.RLock()
 	begin := time.Now()
 
@@ -423,7 +423,8 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 	// get current world_state index.
 	index := uint64(1)
 	//isMain := true
-	phash, chainIndex, _, err := rep.propdb.GetNewestUnit(assetId)
+	phash, chainIndex, err := propdb.GetNewestUnit(assetId)
+	// phash, chainIndex, _, err := rep.propdb.GetNewestUnit(assetId)
 	if err != nil {
 		chainIndex = &modules.ChainIndex{AssetID: assetId, Index: index + 1}
 		log.Error("GetCurrentChainIndex is failed.", "error", err)
@@ -438,7 +439,7 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 	}
 	header.ParentsHash = append(header.ParentsHash, phash)
 	h_hash := header.HashWithOutTxRoot()
-	log.Debugf("Start txpool.GetSortedTxs..., parent hash:%s", phash.String())
+	log.Infof("Start txpool.GetSortedTxs..., parent hash:%s", phash.String())
 
 	// step4. get transactions from txspool
 	poolTxs, _ := txpool.GetSortedTxs(h_hash, chainIndex.Index)
@@ -1029,7 +1030,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 				return fmt.Errorf("save contract of signature failed.")
 			}
 		case modules.APP_DATA:
-			if ok := rep.saveDataPayload(requester, unitHash, unitTime, txHash, msg.Payload.(*modules.DataPayload), msg.Payload.(*modules.PaymentPayload)); ok != true {
+			if ok := rep.saveDataPayload(requester, unitHash, unitTime, txHash, msg.Payload.(*modules.DataPayload)); ok != true {
 				return fmt.Errorf("save data payload faild.")
 			}
 		default:
@@ -1170,7 +1171,7 @@ func (rep *UnitRepository) savePaymentPayload(unitTime int64, txHash common.Hash
 save DataPayload data
 */
 
-func (rep *UnitRepository) saveDataPayload(requester common.Address, unitHash common.Hash, timestamp int64, txHash common.Hash, dataPayload *modules.DataPayload, msg *modules.PaymentPayload) bool {
+func (rep *UnitRepository) saveDataPayload(requester common.Address, unitHash common.Hash, timestamp int64, txHash common.Hash, dataPayload *modules.DataPayload) bool {
 
 	if dagconfig.DagConfig.TextFileHashIndex {
 
@@ -1194,15 +1195,15 @@ func (rep *UnitRepository) saveDataPayload(requester common.Address, unitHash co
 				log.Error("error SaveProofOfExistence", "err", err)
 				return false
 			}
-			for _, output := range msg.Outputs {
-				asset := output.Asset
-				if asset.AssetId.GetAssetType() == modules.AssetType_NonFungibleToken {
-					if err = rep.idxdb.SaveTokenExistence(asset, poe); err != nil {
-						log.Errorf("Save token and ProofOfExistence index data error:%s", err.Error())
-					}
-				}
-
-			}
+			//for _, output := range msg.Outputs {
+			//	asset := output.Asset
+			//	if asset.AssetId.GetAssetType() == modules.AssetType_NonFungibleToken {
+			//		if err = rep.idxdb.SaveTokenExistence(asset, poe); err != nil {
+			//			log.Errorf("Save token and ProofOfExistence index data error:%s", err.Error())
+			//		}
+			//	}
+			//
+			//}
 			//err = rep.idxdb.SaveTokenExistence()
 		}
 		return true
@@ -1728,7 +1729,19 @@ func (rep *UnitRepository) RefreshAddrTxIndex() error {
 }
 
 func (rep *UnitRepository) GetAssetReference(asset *modules.Asset) ([]*modules.ProofOfExistence, error) {
-	return rep.idxdb.GetTokenExistence(asset)
+
+	txInfor, err := rep.GetAssetTxHistory(asset)
+	if err != nil {
+		return nil, err
+	}
+	for _, tx := range txInfor {
+		for _, msg := range tx.TxMessages {
+			pay := msg.Payload.(*modules.DataPayload)
+			ref := pay.Reference
+			return rep.idxdb.QueryProofOfExistenceByReference(ref)
+		}
+	}
+	return nil,nil
 }
 
 func (rep *UnitRepository) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error) {
