@@ -1653,7 +1653,7 @@ func (mr *MockIDagMockRecorder) QueryProofOfExistenceByReference(ref interface{}
 }
 
 // GetAssetReference mocks base method
-func (m *MockIDag) GetAssetReference(asset *modules.Asset) ([]*modules.ProofOfExistence, error) {
+func (m *MockIDag) GetAssetReference(asset []byte) ([]*modules.ProofOfExistence, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAssetReference", asset)
 	ret0, _ := ret[0].([]*modules.ProofOfExistence)

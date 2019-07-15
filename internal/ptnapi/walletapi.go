@@ -1216,12 +1216,7 @@ func (s *PublicWalletAPI) GetProofOfExistencesByRef(ctx context.Context, referen
 	return s.b.QueryProofOfExistenceByReference(reference)
 }
 
-func (s *PublicWalletAPI) GetProofOfExistencesByAsset(ctx context.Context, ass string) ([]*ptnjson.ProofOfExistenceJson, error) {
-	asset := &modules.Asset{}
-	err := asset.SetString(ass)
-	if err != nil {
-		return nil, errors.New("Invalid asset string")
-	}
+func (s *PublicWalletAPI) GetProofOfExistencesByAsset(ctx context.Context, asset string) ([]*ptnjson.ProofOfExistenceJson, error) {
 	return s.b.GetAssetExistence(asset)
 }
 
