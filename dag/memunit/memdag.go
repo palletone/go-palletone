@@ -47,20 +47,15 @@ type MemDag struct {
 	stableUnitHeight   uint64
 	lastMainChainUnit  *modules.Unit
 	threshold          int
-	height_hashs       map[uint64][]common.Hash
+	height_hashs       sync.Map
 	orphanUnits        sync.Map
 	orphanUnitsParants sync.Map
 	chainUnits         sync.Map
-	//tempdbunitRep      map[common.Hash]common2.IUnitRepository
-	//tempUtxoRep        map[common.Hash]common2.IUtxoRepository
-	//tempStateRep       map[common.Hash]common2.IStateRepository
-	//tempPropRep        map[common.Hash]common2.IPropRepository
-	//tempUnitProduceRep map[common.Hash]common2.IUnitProduceRepository
+	tempdb             sync.Map
 
 	ldbunitRep        common2.IUnitRepository
 	ldbPropRep        common2.IPropRepository
 	ldbUnitProduceRep common2.IUnitProduceRepository
-	tempdb            map[common.Hash]*ChainTempDb
 	saveHeaderOnly    bool
 	lock              sync.RWMutex
 	cache             palletcache.ICache
@@ -109,16 +104,12 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 		}
 	}
 	memdag := &MemDag{
-		token:      token,
-		threshold:  threshold,
-		ldbunitRep: stableUnitRep,
-		ldbPropRep: propRep,
-		//tempdbunitRep:      make(map[common.Hash]common2.IUnitRepository),
-		//tempUtxoRep:        make(map[common.Hash]common2.IUtxoRepository),
-		//tempStateRep:       make(map[common.Hash]common2.IStateRepository),
-		//tempPropRep:        make(map[common.Hash]common2.IPropRepository),
-		tempdb:             make(map[common.Hash]*ChainTempDb),
-		height_hashs:       make(map[uint64][]common.Hash),
+		token:              token,
+		threshold:          threshold,
+		ldbunitRep:         stableUnitRep,
+		ldbPropRep:         propRep,
+		tempdb:             sync.Map{},
+		height_hashs:       sync.Map{},
 		orphanUnits:        sync.Map{},
 		orphanUnitsParants: sync.Map{},
 		chainUnits:         sync.Map{},
@@ -132,7 +123,7 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 	}
 	temp, _ := NewChainTempDb(db, cache)
 	temp.Unit = stableUnit
-	memdag.tempdb[stablehash] = temp
+	memdag.tempdb.Store(stablehash, temp)
 	memdag.chainUnits.Store(stablehash, temp)
 
 	go memdag.loopRebuildTmpDb()
@@ -161,13 +152,15 @@ func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2
 }
 
 func (chain *MemDag) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
-	if temp, has := chain.tempdb[chain.lastMainChainUnit.Hash()]; has {
+	if inter, has := chain.tempdb.Load(chain.lastMainChainUnit.Hash()); has {
+		temp := inter.(*ChainTempDb)
 		return temp.UnitRep.GetHeaderByHash(hash)
 	}
 	return nil, errors.New("not found")
 }
 func (chain *MemDag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error) {
-	if temp, has := chain.tempdb[chain.lastMainChainUnit.Hash()]; has {
+	if inter, has := chain.tempdb.Load(chain.lastMainChainUnit.Hash()); has {
+		temp := inter.(*ChainTempDb)
 		return temp.UnitRep.GetHeaderByNumber(number)
 	}
 	return nil, errors.New("not found")
@@ -341,22 +334,27 @@ func (chain *MemDag) checkStableCondition(unit *modules.Unit, txpool txspool.ITx
 
 //清空主链的Tempdb，然后基于稳定单元到最新主链单元的路径，构建新的Tempdb
 func (chain *MemDag) rebuildTempdb() {
-	for h, temp := range chain.tempdb {
-		var keep bool
-		temp.Tempdb.Clear()
-		if unit_temp, err := chain.getChainUnit(h); err == nil {
-			if unit_temp.Unit.NumberU64() > chain.stableUnitHeight {
-				keep = true
-				forks := chain.getForkUnits(unit_temp.Unit)
-				for _, u := range forks {
-					temp.AddUnit(u, chain.saveHeaderOnly)
+	to_del := make([]common.Hash, 0)
+	chain.tempdb.Range(func(k, v interface{}) bool {
+		hash := k.(common.Hash)
+		if unit_temp, err := chain.getChainUnit(hash); err == nil {
+			if num := unit_temp.Unit.NumberU64(); num < chain.stableUnitHeight {
+				to_del = append(to_del, hash)
+			} else if num == chain.stableUnitHeight {
+				if unit_temp.Unit.Hash() != chain.stableUnitHash {
+					to_del = append(to_del, hash)
 				}
-				chain.tempdb[h] = temp
 			}
 		}
-		if !keep {
-			delete(chain.tempdb, h)
+		return true
+	})
+	for _, h := range to_del {
+		inter, ok := chain.tempdb.Load(h)
+		if ok {
+			temp := inter.(*ChainTempDb)
+			temp.Tempdb.Clear()
 		}
+		chain.tempdb.Delete(h)
 	}
 }
 
@@ -448,7 +446,7 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 	}
 	chain_units := chain.getChainUnits()
 	if _, has := chain_units[unit.Hash()]; has { // 不重复添加
-		log.Infof("MemDag[%s] received a repeated unit, hash[%s] ", chain.token.String(), unit.Hash().String())
+		log.Debugf("MemDag[%s] received a repeated unit, hash[%s] ", chain.token.String(), unit.Hash().String())
 		return nil, nil, nil, nil, nil, nil
 	}
 	a, b, c, d, e, err := chain.addUnit(unit, txpool)
@@ -479,9 +477,12 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 		if parentHash == chain.lastMainChainUnit.Hash() {
 			//Add a new unit to main chain
 			//Check unit and it's txs are valid
-			tempdb, has := chain.tempdb[parentHash]
+			tempdb := new(ChainTempDb)
+			inter_temp, has := chain.tempdb.Load(parentHash)
 			if !has {
 				tempdb, _ = NewChainTempDb(parent_temp.Tempdb, freecache.NewCache(1000*1024))
+			} else {
+				tempdb = inter_temp.(*ChainTempDb)
 			}
 			validateCode := validator.TxValidationCode_VALID
 			if chain.saveHeaderOnly {
@@ -491,14 +492,14 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 			}
 			if validateCode != validator.TxValidationCode_VALID {
 				vali_err := validator.NewValidateError(validateCode)
-				log.Infof("validate main chain unit error, %s, unit hash:%s", vali_err.Error(), uHash.String())
+				log.Debugf("validate main chain unit error, %s, unit hash:%s", vali_err.Error(), uHash.String())
 				return nil, nil, nil, nil, nil, vali_err
 			}
 			tempdb, _ = tempdb.AddUnit(unit, chain.saveHeaderOnly)
-			chain.tempdb[uHash] = tempdb
+			chain.tempdb.Store(uHash, tempdb)
 			chain.chainUnits.Store(uHash, tempdb)
 			if has {
-				delete(chain.tempdb, parentHash)
+				chain.tempdb.Delete(parentHash)
 				chain.setLastMainchainUnit(unit)
 
 				start := time.Now()
@@ -521,13 +522,16 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 		} else { //Fork unit
 			start1 := time.Now()
 			validateCode := validator.TxValidationCode_VALID
-			main_temp, has := chain.tempdb[parentHash]
+			main_temp := new(ChainTempDb)
+			inter_main, has := chain.tempdb.Load(parentHash)
 			if !has { // 分叉
 				main_temp, _ = NewChainTempDb(chain.db, freecache.NewCache(1000*1024))
 				forks := chain.getForkUnits(unit)
 				for i := 0; i < len(forks)-1; i++ {
 					main_temp, _ = main_temp.AddUnit(forks[i], chain.saveHeaderOnly)
 				}
+			} else {
+				main_temp = inter_main.(*ChainTempDb)
 			}
 			if chain.saveHeaderOnly {
 				validateCode = main_temp.Validator.ValidateHeader(unit.UnitHeader)
@@ -536,12 +540,12 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 			}
 			if validateCode != validator.TxValidationCode_VALID {
 				vali_err := validator.NewValidateError(validateCode)
-				log.Infof("validate fork unit error, %s, unit hash:%s", vali_err.Error(), uHash.String())
+				log.Debugf("validate fork unit error, %s, unit hash:%s", vali_err.Error(), uHash.String())
 				return nil, nil, nil, nil, nil, vali_err
 			}
 			temp, _ := main_temp.AddUnit(unit, chain.saveHeaderOnly)
-			delete(chain.tempdb, parentHash) // 删除parent的tempdb
-			chain.tempdb[uHash] = temp
+			chain.tempdb.Delete(parentHash) // 删除parent的tempdb
+			chain.tempdb.Store(uHash, temp)
 			chain.chainUnits.Store(uHash, temp)
 
 			log.InfoDynamic(func() string {
@@ -571,61 +575,72 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 		}
 	} else {
 		//add unit to orphan
-		log.Infof("This unit[%s] is an orphan unit", uHash.String())
+		log.Debugf("This unit[%s] is an orphan unit", uHash.String())
 		chain.orphanUnits.Store(uHash, unit)
 		chain.orphanUnitsParants.Store(unit.ParentHash()[0], uHash)
 	}
 	chain.addUnitHeight(unit)
-	tmp := chain.tempdb[chain.lastMainChainUnit.Hash()]
+	inter_tmp, _ := chain.tempdb.Load(chain.lastMainChainUnit.Hash())
+	tmp := inter_tmp.(*ChainTempDb)
 	return tmp.UnitRep, tmp.UtxoRep, tmp.StateRep, tmp.PropRep, tmp.UnitProduceRep, nil
 }
-func (chain *MemDag) getCofirmAddrs(hash common.Hash, height uint64) int {
-	log.Infof("get confirm address index:%d,stable_height:%d,hash: %s", height, chain.stableUnitHeight, hash.String())
-	num := 0
-	count := int(height - chain.stableUnitHeight)
-	unstableCofirmAddrs := make(map[common.Hash]map[common.Address]bool)
-	childrenCofirmAddrs := make(map[common.Address]bool)
-	chain_units := chain.getChainUnits()
-	for i := 0; i < count; i++ {
-		u := chain_units[hash]
-		hs := unstableCofirmAddrs[hash]
-		if hs == nil {
-			hs = make(map[common.Address]bool)
-			unstableCofirmAddrs[hash] = hs
-		}
-		hs[u.Author()] = true
-		for addr := range childrenCofirmAddrs {
-			hs[addr] = true
-		}
-		childrenCofirmAddrs[u.Author()] = true
 
-		hash = u.ParentHash()[0]
-		num = len(hs)
-	}
-	return num
-}
+//func (chain *MemDag) getCofirmAddrs(hash common.Hash, height uint64) int {
+//	num := 0
+//	count := int(height - chain.stableUnitHeight)
+//	unstableCofirmAddrs := make(map[common.Hash]map[common.Address]bool)
+//	childrenCofirmAddrs := make(map[common.Address]bool)
+//	chain_units := chain.getChainUnits()
+//	for i := 0; i < count; i++ {
+//		u := chain_units[hash]
+//		hs := unstableCofirmAddrs[hash]
+//		if hs == nil {
+//			hs = make(map[common.Address]bool)
+//			unstableCofirmAddrs[hash] = hs
+//		}
+//		hs[u.Author()] = true
+//		for addr := range childrenCofirmAddrs {
+//			hs[addr] = true
+//		}
+//		childrenCofirmAddrs[u.Author()] = true
+//
+//		hash = u.ParentHash()[0]
+//		num = len(hs)
+//	}
+//	return num
+//}
 
 // 缓存该高度的所有单元hash
 func (chain *MemDag) addUnitHeight(unit *modules.Unit) {
 	height := unit.NumberU64()
 	hs := make([]common.Hash, 0)
-	all, has := chain.height_hashs[height]
+	inter, has := chain.height_hashs.Load(height)
 	if has {
+		all := inter.([]common.Hash)
 		hs = append(hs, all...)
 	}
 	hs = append(hs, unit.Hash())
-	chain.height_hashs[height] = hs
+	chain.height_hashs.Store(height, hs)
 }
 
 // 单元稳定后，清空该高度的所有缓存
 func (chain *MemDag) delHeightUnitsAndTemp(height uint64) {
-	for hei, all := range chain.height_hashs {
-		if hei <= height {
-			for _, hash := range all {
-				delete(chain.tempdb, hash)
-			}
-			delete(chain.height_hashs, height)
+	to_del_h := make([]uint64, 0)
+	to_del_hash := make([]common.Hash, 0)
+	chain.height_hashs.Range(func(k, v interface{}) bool {
+		h := k.(uint64)
+		if h <= height {
+			to_del_h = append(to_del_h, h)
+			hashs := v.([]common.Hash)
+			to_del_hash = append(to_del_hash, hashs...)
 		}
+		return true
+	})
+	for _, h := range to_del_h {
+		chain.height_hashs.Delete(h)
+	}
+	for _, hash := range to_del_hash {
+		chain.tempdb.Delete(hash)
 	}
 }
 
