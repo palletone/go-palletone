@@ -316,8 +316,8 @@ func (b *PtnApiBackend) GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxHi
 	return txjs, nil
 }
 
-func (b *PtnApiBackend) GetAssetExistence(asset *modules.Asset) ([]*ptnjson.ProofOfExistenceJson, error) {
-	poes, err := b.ptn.dag.GetAssetReference(asset)
+func (b *PtnApiBackend) GetAssetExistence(asset string) ([]*ptnjson.ProofOfExistenceJson, error) {
+	poes, err := b.ptn.dag.GetAssetReference([]byte(asset))
 	if err != nil {
 		return nil, err
 	}
