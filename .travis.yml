@@ -56,7 +56,8 @@ matrix:
         - ./start.sh 3
         - sleep 30
         - cd $BASE_DIR
-        - mkdir -p ${BDD_LOG_PATH}
+        - mkdir -p ${BDD_LOG_PATH}}/${USER_CONTRACT_DIR}
+        - ls ${BDD_LOG_PATH}
         - python -m robot.run -d ${BDD_LOG_PATH}}/${USER_CONTRACT_DIR} ./bdd/UserContract/Testcases;
         - docker ps -a
       after_script:
