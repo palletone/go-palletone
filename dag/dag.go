@@ -1221,6 +1221,6 @@ func (dag *Dag) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOf
 	return dag.stableUnitRep.QueryProofOfExistenceByReference(ref)
 }
 
-func (dag *Dag) GetAssetReference(asset *modules.Asset) ([]*modules.ProofOfExistence, error) {
+func (dag *Dag) GetAssetReference(asset []byte) ([]*modules.ProofOfExistence, error) {
 	return dag.stableUnitRep.GetAssetReference(asset)
 }
