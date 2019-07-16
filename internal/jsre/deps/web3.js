@@ -5792,11 +5792,6 @@ var methods = function () {
 		inputFormatter: [null, formatters.inputAddressFormatter, null]
     });
 
-    var ecRecover = new Method({
-    name: 'ecRecover',
-		call: 'personal_ecRecover',
-		params: 2
-    });
 
     var unlockAccount = new Method({
         name: 'unlockAccount',
@@ -5822,7 +5817,6 @@ var methods = function () {
         newAccount,
         importRawKey,
         unlockAccount,
-        ecRecover,
         sign,
         sendTransaction,
         lockAccount
