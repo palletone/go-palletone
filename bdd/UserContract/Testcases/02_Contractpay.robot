@@ -22,21 +22,21 @@ PutStatus
     ${reqId} =    When User put status into contractpay    put
     And Wait for transaction being packaged
     And Wait for unit about contract to be confirmed by unit height    ${reqId}
-    Then Get status from contractpay    get    a    aa
+    #Then Get status from contractpay    get    a    aa
 
 Paystate1
     Given Unlock token holder succeed
     ${reqId} =    When User put status into contractpay    paystate1
     And Wait for transaction being packaged
     And Wait for unit about contract to be confirmed by unit height    ${reqId}
-    Then Get status from contractpay    get    paystate1    paystate1
+    #Then Get status from contractpay    get    paystate1    paystate1
 
 Paystate2
     Given Unlock token holder succeed
     ${reqId} =    When User put status into contractpay    paystate2
     And Wait for transaction being packaged
     And Wait for unit about contract to be confirmed by unit height    ${reqId}
-    Then Get status from contractpay    get    paystate2    paystate2
+    #Then Get status from contractpay    get    paystate2    paystate2
 
 Payout
     Given Unlock token holder succeed

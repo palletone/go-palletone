@@ -20,9 +20,11 @@ DeployTestshimuc
 AddState
     Given Unlock token holder succeed
     ${reqId}=    When User put state    testPutState    state1    state1
-    And Wait for transaction being packaged    ${reqId}
+    And Wait for transaction being packaged
+    And Wait for unit about contract to be confirmed by unit height    ${reqId}
     ${reqId}=    And User put state    testPutGlobalState    state2    state2
-    And Wait for transaction being packaged    ${reqId}
+    And Wait for transaction being packaged
+    And Wait for unit about contract to be confirmed by unit height    ${reqId}
     Then User query state    testGetState    state1    state1    str
     And User query state    testGetGlobalState    state2    state2    str
     And User query state    testGetContractState    state1    state1    str

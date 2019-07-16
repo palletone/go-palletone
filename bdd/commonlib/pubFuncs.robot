@@ -188,6 +188,15 @@ Wait for unit about contract to be confirmed by unit height
     \    Exit For Loop If    '${status}' == 'PASS'
     \    Run Keyword If    ${waitTimes}-${t}==1    Fail    "It takes too long for jury to signature"
     \    Sleep    5s
+    # ------- query error code ------- #
+    ${errCode}=    Evaluate    re.findall('\"error_code\":(\\d*)', '${result}')    re
+    ${errMsg}=    Evaluate    re.findall('\"error_message\":\"([^"]*)\"', '${result}')    re
+    ${len}=    Get Length    ${errCode}
+    ${errCode}=    Run Keyword If    ${len}>=1    Get From List    ${errCode}    0
+    ${len}=    Get Length    ${errMsg}
+    ${errMsg}=    Run Keyword If    ${len}>=1    Get From List    ${errMsg}    0
+    Run Keyword If    ${errCode}!=0    Fail    ${errMsg}
+    # ------- end of query error code ------- #
     ${result}=    To Json    ${result}
     ${info}=    Get From Dictionary    ${result}    info
     ${unitHeight}=    Get From Dictionary    ${info}    unit_height
