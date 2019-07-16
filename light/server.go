@@ -42,6 +42,13 @@ import (
 	"time"
 )
 
+const (
+	CodeErr        = "error"
+	CodeOK         = "ok"
+	CodeTimeout    = "timeout"
+	CodeEmptyPeers = "empty peers"
+)
+
 type LesServer struct {
 	config          *ptn.Config
 	protocolManager *ProtocolManager
@@ -423,13 +430,13 @@ func (pm *ProtocolManager) ReqProofByTxHash(strhash string) string {
 
 	result := vreq.Wait()
 	if result == 0 {
-		return "OK"
+		return CodeOK
 	} else if result == 1 {
-		return "error"
+		return CodeErr
 	} else if result == 2 {
-		return "timeout"
+		return CodeTimeout
 	}
-	return "errors"
+	return CodeErr
 }
 
 func (pm *ProtocolManager) ReqProofByRlptx(rlptx [][]byte) string {
@@ -445,13 +452,13 @@ func (pm *ProtocolManager) ReqProofByRlptx(rlptx [][]byte) string {
 		return err.Error()
 	}
 	if result == 0 {
-		return "OK"
+		return CodeOK
 	} else if result == 1 {
-		return "error"
+		return CodeErr
 	} else if result == 2 {
-		return "timeout"
+		return CodeTimeout
 	}
-	return "errors"
+	return CodeErr
 }
 
 func (pm *ProtocolManager) SyncUTXOByAddr(addr string) string {
@@ -471,17 +478,20 @@ func (pm *ProtocolManager) SyncUTXOByAddr(addr string) string {
 	//random select peer to download GetAddrUtxos(addr)
 	rand.Seed(time.Now().UnixNano())
 	peers := pm.peers.AllPeers(pm.assetId)
+	if len(peers) <= 0 {
+		return CodeEmptyPeers
+	}
 	x := rand.Intn(len(peers))
 	p := peers[x]
 	p.RequestUTXOs(0, 0, req.addr)
 
 	result := req.Wait()
 	if result == 0 {
-		return "OK"
+		return CodeOK
 	} else if result == 1 {
-		return "error"
+		return CodeErr
 	} else if result == 2 {
-		return "timeout"
+		return CodeTimeout
 	}
-	return "errors"
+	return CodeErr
 }

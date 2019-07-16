@@ -99,7 +99,7 @@ type IUnitRepository interface {
 	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
 	//根据现有Tx数据，重新构建地址和Tx的关系索引
 	RefreshAddrTxIndex() error
-	GetAssetReference(asset *modules.Asset) ([]*modules.ProofOfExistence, error)
+	GetAssetReference(asset []byte) ([]*modules.ProofOfExistence, error)
 	QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error)
 	SubscribeSysContractStateChangeEvent(ob AfterSysContractStateChangeEventFunc)
 	SaveCommon(key, val []byte) error
@@ -1728,20 +1728,8 @@ func (rep *UnitRepository) RefreshAddrTxIndex() error {
 	return nil
 }
 
-func (rep *UnitRepository) GetAssetReference(asset *modules.Asset) ([]*modules.ProofOfExistence, error) {
-
-	txInfor, err := rep.GetAssetTxHistory(asset)
-	if err != nil {
-		return nil, err
-	}
-	for _, tx := range txInfor {
-		for _, msg := range tx.TxMessages {
-			pay := msg.Payload.(*modules.DataPayload)
-			ref := pay.Reference
-			return rep.idxdb.QueryProofOfExistenceByReference(ref)
-		}
-	}
-	return nil,nil
+func (rep *UnitRepository) GetAssetReference(asset []byte) ([]*modules.ProofOfExistence, error) {
+	return rep.idxdb.QueryProofOfExistenceByReference(asset)
 }
 
 func (rep *UnitRepository) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error) {
