@@ -588,7 +588,7 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 	}
 	//检查本阶段时候有合约执行权限
 	if !p.contractEventExecutable(CONTRACT_EVENT_EXEC, tx, nil, 0) {
-		log.Errorf("[%s]CheckContractTxValid, nodeContractExecutable false", shortId(reqId.String()))
+		log.Debugf("[%s]CheckContractTxValid, nodeContractExecutable false", shortId(reqId.String()))
 		return false
 	}
 	msgs, err := runContractCmd(rwM, p.dag, p.contract, tx, nil, p.errMsgEnable) // long time ...

@@ -245,6 +245,11 @@ func GetAPIs(apiBackend Backend) []rpc.API {
 			Service:   NewPublicContractAPI(apiBackend),
 			Public:    true,
 		}, {
+			Namespace: "contract",
+			Version:   "1.0",
+			Service:   NewPrivateContractAPI(apiBackend),
+			Public:    false,
+		}, {
 			Namespace: "mediator",
 			Version:   "1.0",
 			Service:   NewPrivateMediatorAPI(apiBackend),

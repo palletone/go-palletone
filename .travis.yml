@@ -16,6 +16,7 @@ env:
     - DEPOSIT_DIR=deposit
     - GAS_TOKEN_DIR=gasToken
     - MEDIATOR_VOTE_DIR=meidatorvote
+    - APPLICATION_DIR=application
     - LOG_NAME=log.html
     - REPORT_NAME=report.html
 ##########  control testcase  ##############
@@ -30,6 +31,7 @@ env:
     - IS_RUN_VOTE=true
     - IS_RUN_GASTOKEN=true
     - IS_RUN_MEDIATOR_VOTE=true
+    - IS_RUN_APPLICATION=true
     - GO111MODULE=on
     - IS_UPLOAD=true
 #    - 'SFTP_KEY=[base64-encoded-rsa-key]'
@@ -241,13 +243,50 @@ matrix:
         - sudo -H apt-get install expect
         - sudo -H apt-get install lftp
         - chmod +x bdd/upload2Ftp.sh
+    - os: linux
+      dist: xenial
+      go: 1.12.5
+      env: application_bdd
+      script:
+        - go build ./cmd/gptn
+        - mkdir bdd/application/node
+        - cp gptn bdd/application/node
+        - if [ $IS_RUN_APPLICATION == 'true' ]; then
+          cd ./bdd/application;
+          chmod +x ./init.sh;
+          ./init.sh;
+          sleep 15;
+          python -m robot.run -d ${BDD_LOG_PATH}/${APPLICATION_DIR} .;
+          fi
+      after_script:
+        - killall gptn
+        - sleep 2
+        - cd ${BASE_DIR}
+        - zip -j ./bdd/logs/application_log.zip ./bdd/application/node/log/*
+        - |
+          if [ $IS_UPLOAD == 'true' ]; then
+            # uplaod all log
+            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
+            echo "The path of all bdd log in vsftpd is 'ftp://47.74.209.46"
+          fi
+      install:
+        - sudo -H pip install --upgrade pip
+        - sudo -H pip install robotframework==2.8.5
+        - sudo -H pip install requests
+        - sudo -H pip install robotframework-requests
+        - sudo -H pip install demjson
+        - sudo -H pip install pexpect
+        - sudo -H apt-get install expect
+        - sudo -H apt-get install lftp
+        - chmod +x bdd/upload2Ftp.sh
 before_install:
     - go get -u github.com/palletone/adaptor
     - go get -u github.com/palletone/btc-adaptor
     - go get -u github.com/palletone/eth-adaptor
     - source ./build/goget_by_version.sh
     #- source ./gomockgen.sh
-    
+
+
 addons:
   apt:
     update: true
