@@ -86,7 +86,7 @@ type MediatorPlugin struct {
 	ptn  PalletOne     // Full PalletOne service to retrieve other function
 	quit chan struct{} // Channel used for graceful exit
 	dag  iDag
-	srvr *p2p.Server
+	//srvr *p2p.Server
 
 	// 标记是否主程序启动时，就开启unit生产功能
 	producingEnabled bool
@@ -119,6 +119,7 @@ type MediatorPlugin struct {
 	precedingDKGs map[common.Address]*dkg.DistKeyGenerator
 
 	// dkg 完成 vss 协议相关
+	dealBuf map[common.Address]chan *dkg.Deal
 	// todo 待加锁，防止写冲突
 	respBuf map[common.Address]map[common.Address]chan *dkg.Response
 
@@ -165,6 +166,69 @@ func (mp *MediatorPlugin) APIs() []rpc.API {
 	}
 }
 
+func (mp *MediatorPlugin) newActiveMediatorsDKG() {
+	dag := mp.dag
+	// 重复判断
+	//if !mp.productionEnabled && !dag.IsSynced() {
+	//	log.Debugf("we're not synced")
+	//	return
+	//}
+
+	lams := mp.GetLocalActiveMediators()
+	initPubs := dag.GetActiveMediatorInitPubs()
+	curThreshold := dag.ChainThreshold()
+	lamc := len(lams)
+
+	mp.activeDKGs = make(map[common.Address]*dkg.DistKeyGenerator, lamc)
+	//mp.dealBuf = make(map[common.Address]chan *dkg.Deal, lamc)
+	//mp.respBuf = make(map[common.Address]map[common.Address]chan *dkg.Response, lamc)
+
+	for _, localMed := range lams {
+		initSec := mp.mediators[localMed].InitPrivKey
+
+		//dkgr, err := dkg.NewDistKeyGeneratorWithoutSecret(mp.suite, initSec, initPubs, curThreshold)
+		dkgr, err := dkg.NewDistKeyGenerator(mp.suite, initSec, initPubs, curThreshold)
+		if err != nil {
+			log.Debugf(err.Error())
+			continue
+		}
+
+		mp.activeDKGs[localMed] = dkgr
+		//mp.initVSSBuf(localMed)
+	}
+}
+
+// todo Albert 待删除
+func (mp *MediatorPlugin) initVSSBuf(localMed common.Address) {
+	aSize := mp.dag.ActiveMediatorsCount()
+	mp.dealBuf[localMed] = make(chan *dkg.Deal, aSize)
+	mp.respBuf[localMed] = make(map[common.Address]chan *dkg.Response, aSize)
+
+	for i := 0; i < aSize; i++ {
+		vrfrMed := mp.dag.GetActiveMediatorAddr(i)
+		mp.respBuf[localMed][vrfrMed] = make(chan *dkg.Response, aSize-1)
+	}
+}
+
+func (mp *MediatorPlugin) Start(server *p2p.Server) error {
+	log.Debugf("mediator plugin startup begin")
+	//mp.srvr = server
+
+	// 开启循环生产计划
+	if mp.producingEnabled {
+		go mp.ScheduleProductionLoop()
+	}
+
+	// 开始完成 vss 协议
+	// todo albert 待优化
+	//if mp.groupSigningEnabled {
+	//	go mp.startVSSProtocol()
+	//}
+
+	log.Debugf("mediator plugin startup end")
+	return nil
+}
+
 func (mp *MediatorPlugin) ScheduleProductionLoop() {
 	// 1. 判断是否满足生产unit的条件，主要判断本节点是否控制至少一个mediator账户
 	if len(mp.mediators) == 0 {
@@ -181,80 +245,6 @@ func (mp *MediatorPlugin) ScheduleProductionLoop() {
 
 		// 调度生产unit
 		go mp.scheduleProductionLoop()
-	}
-}
-
-func (mp *MediatorPlugin) newActiveMediatorsDKG() {
-	dag := mp.dag
-	if !mp.productionEnabled && !dag.IsSynced() {
-		log.Debugf("we're not synced")
-		return
-	}
-
-	lams := mp.GetLocalActiveMediators()
-	initPubs := dag.GetActiveMediatorInitPubs()
-	curThreshold := dag.ChainThreshold()
-	lamc := len(lams)
-
-	mp.activeDKGs = make(map[common.Address]*dkg.DistKeyGenerator, lamc)
-	mp.respBuf = make(map[common.Address]map[common.Address]chan *dkg.Response, lamc)
-
-	for _, localMed := range lams {
-		initSec := mp.mediators[localMed].InitPrivKey
-
-		//dkgr, err := dkg.NewDistKeyGeneratorWithoutSecret(mp.suite, initSec, initPubs, curThreshold)
-		dkgr, err := dkg.NewDistKeyGenerator(mp.suite, initSec, initPubs, curThreshold)
-		if err != nil {
-			log.Debugf(err.Error())
-			continue
-		}
-
-		mp.activeDKGs[localMed] = dkgr
-		mp.initRespBuf(localMed)
-	}
-}
-
-func (mp *MediatorPlugin) initRespBuf(localMed common.Address) {
-	aSize := mp.dag.ActiveMediatorsCount()
-	mp.respBuf[localMed] = make(map[common.Address]chan *dkg.Response, aSize)
-
-	for i := 0; i < aSize; i++ {
-		vrfrMed := mp.dag.GetActiveMediatorAddr(i)
-		mp.respBuf[localMed][vrfrMed] = make(chan *dkg.Response, aSize-1)
-	}
-}
-
-func (mp *MediatorPlugin) Start(server *p2p.Server) error {
-	log.Debugf("mediator plugin startup begin")
-	mp.srvr = server
-
-	// 1. 解锁本地控制的mediator账户
-	mp.unlockLocalMediators()
-
-	// 2. 开启循环生产计划
-	if mp.producingEnabled {
-		go mp.ScheduleProductionLoop()
-	}
-
-	// 3. 开始完成 vss 协议
-	// todo albert 待优化
-	//if mp.groupSigningEnabled {
-	//	go mp.startVSSProtocol()
-	//}
-
-	log.Debugf("mediator plugin startup end")
-	return nil
-}
-
-func (mp *MediatorPlugin) unlockLocalMediators() {
-	ks := mp.ptn.GetKeyStore()
-
-	for add, medAcc := range mp.mediators {
-		err := ks.Unlock(accounts.Account{Address: add}, medAcc.Password)
-		if err != nil {
-			log.Debugf("fail to unlock the mediator(%v), error: %v", add.Str(), err.Error())
-			delete(mp.mediators, add)
-		}
 	}
 }
 
@@ -318,7 +308,7 @@ func RegisterMediatorPluginService(stack *node.Node, cfg *Config) {
 	}
 }
 
-func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, error) {
+func NewMediatorPlugin(ctx *node.ServiceContext, cfg *Config, ptn PalletOne, dag iDag) (*MediatorPlugin, error) {
 	log.Debugf("mediator plugin initialize begin")
 
 	if ptn == nil || dag == nil || cfg == nil {
@@ -326,22 +316,6 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 		log.Errorf(err)
 		panic(err)
 	}
-
-	mss := cfg.Mediators
-	msm := make(map[common.Address]*MediatorAccount, len(mss))
-
-	for _, medConf := range mss {
-		medAcc := medConf.configToAccount()
-		if medAcc == nil {
-			continue
-		}
-
-		addr := medAcc.Address
-		log.Debugf("this node control mediator account address: %v", addr.Str())
-
-		msm[addr] = medAcc
-	}
-	log.Debugf("This node controls %v mediators.", len(msm))
 
 	mp := MediatorPlugin{
 		ptn:  ptn,
@@ -356,27 +330,56 @@ func NewMediatorPlugin(ptn PalletOne, dag iDag, cfg *Config) (*MediatorPlugin, e
 		requiredParticipation:     cfg.RequiredParticipation * core.PalletOne1Percent,
 		groupSigningEnabled:       cfg.EnableGroupSigning,
 
-		mediators: msm,
-
 		suite:         core.Suite,
 		activeDKGs:    make(map[common.Address]*dkg.DistKeyGenerator),
 		precedingDKGs: make(map[common.Address]*dkg.DistKeyGenerator),
 	}
 
+	mp.initLocalConfigMediator(cfg.Mediators, ctx.AccountManager)
+
 	if mp.groupSigningEnabled {
-		mp.newActiveMediatorsDKG()
-		mp.initTBLSBuf()
+		//mp.newActiveMediatorsDKG()
+		mp.initGroupSignBuf()
 	}
 
 	log.Debugf("mediator plugin initialize end")
 	return &mp, nil
 }
 
-// initTBLSBuf, 初始化与TBLS签名相关的buf
-func (mp *MediatorPlugin) initTBLSBuf() {
-	lmc := len(mp.mediators)
+func (mp *MediatorPlugin) initLocalConfigMediator(mcs []*MediatorConf, am *accounts.Manager) {
+	mas := make(map[common.Address]*MediatorAccount, len(mcs))
+	ks := am.Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 
-	mp.toTBLSSignBuf = make(map[common.Address]*sync.Map, lmc)
-	mp.toTBLSRecoverBuf = make(map[common.Address]map[common.Hash]*sigShareSet, lmc)
+	for _, medConf := range mcs {
+		medAcc := medConf.configToAccount()
+		if medAcc == nil {
+			continue
+		}
+
+		addr := medAcc.Address
+		// 解锁本地配置的mediator账户
+		err := ks.Unlock(accounts.Account{Address: addr}, medAcc.Password)
+		if err != nil {
+			log.Debugf("fail to unlock the mediator(%v), error: %v", medConf.Address, err.Error())
+			continue
+		}
+
+		log.Debugf("this node control mediator account address: %v", medConf.Address)
+		mas[addr] = medAcc
+	}
+
+	log.Debugf("This node controls %v mediators.", len(mas))
+	mp.mediators = mas
+}
+
+// initTBLSBuf, 初始化与TBLS签名相关的buf
+func (mp *MediatorPlugin) initGroupSignBuf() {
+	lamc := len(mp.mediators)
+
+	mp.dealBuf = make(map[common.Address]chan *dkg.Deal, lamc)
+	mp.respBuf = make(map[common.Address]map[common.Address]chan *dkg.Response, lamc)
+
+	mp.toTBLSSignBuf = make(map[common.Address]*sync.Map, lamc)
+	mp.toTBLSRecoverBuf = make(map[common.Address]map[common.Hash]*sigShareSet, lamc)
 	mp.recoverBufLock = new(sync.RWMutex)
 }
