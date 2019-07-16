@@ -39,10 +39,10 @@ type producer interface {
 	AddToTBLSSignBufs(newUnit *modules.Unit)
 
 	SubscribeSigShareEvent(ch chan<- mp.SigShareEvent) event.Subscription
-	AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare []byte) error
+	AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare []byte)
 
 	SubscribeVSSDealEvent(ch chan<- mp.VSSDealEvent) event.Subscription
-	ProcessVSSDeal(deal *mp.VSSDealEvent) error
+	AddToDealBuf(deal *mp.VSSDealEvent)
 
 	SubscribeVSSResponseEvent(ch chan<- mp.VSSResponseEvent) event.Subscription
 	AddToResponseBuf(resp *mp.VSSResponseEvent)
@@ -73,7 +73,7 @@ func (pm *ProtocolManager) activeMediatorsUpdatedEventRecvLoop() {
 func (pm *ProtocolManager) switchMediatorConnect(isChanged bool) {
 	log.Debugf("switchMediatorConnect")
 
-	// 1. 若干数据还没同步完成，则忽略本次切换，继续同步
+	// 若干数据还没同步完成，则忽略本次切换，继续同步
 	if !pm.dag.IsSynced() {
 		log.Debugf("this node is not synced")
 		return
@@ -85,13 +85,13 @@ func (pm *ProtocolManager) switchMediatorConnect(isChanged bool) {
 	//	return
 	//}
 
-	// 2. 和新的活跃mediator节点相连
+	// 和新的活跃mediator节点相连
 	go pm.connectWitchActiveMediators()
 
-	// 3. 检查是否连接和同步，并更新DKG和VSS
+	// 检查是否连接和同步，并更新DKG和VSS
 	go pm.checkConnectedAndSynced()
 
-	// 4. 延迟关闭和旧活跃mediator节点的连接
+	// 延迟关闭和旧活跃mediator节点的连接
 	go pm.delayDiscPrecedingMediator()
 }
 

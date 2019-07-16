@@ -500,12 +500,21 @@ func (pm *ProtocolManager) VSSDealMsg(msg p2p.Msg, p *peer) error {
 		//return fmt.Errorf(errStr)
 		return nil
 	}
-	pm.producer.ProcessVSSDeal(&deal)
+
+	// 判断是否同步, 如果没同步完成，接收到的vss deal是超前的
+	if !pm.dag.IsSynced() {
+		errStr := "we are not synced"
+		log.Debugf(errStr)
+		//return fmt.Errorf(errStr)
+		return nil
+	}
+
+	pm.producer.AddToDealBuf(&deal)
 
 	// comment by Albert·Gou
 	////TODO vssmark
 	//if !pm.peers.PeersWithoutVss(vssmsg.NodeId) {
-	//	pm.producer.ProcessVSSDeal(vssmsg.Deal)
+	//	pm.producer.AddToDealBuf(vssmsg.Deal)
 	//	pm.peers.MarkVss(vssmsg.NodeId)
 	//	pm.BroadcastVss(vssmsg.NodeId, vssmsg.Deal)
 	//}
