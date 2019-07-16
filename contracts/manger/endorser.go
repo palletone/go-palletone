@@ -258,27 +258,11 @@ func (e *Endorser) ProcessProposal(rwM rwset.TxManager, idag dag.IDag, deployId 
 	cis, err := putils.GetChaincodeInvocationSpec(prop)
 	if err != nil {
 	}
-
 	unit, err := RwTxResult2DagInvokeUnit(txsim, txid, cis.ChaincodeSpec.ChaincodeId.Name, deployId, cis.ChaincodeSpec.Input.Args, tmout)
 	if err != nil {
 		log.Errorf("chainID[%s] converRwTxResult2DagUnit failed", chainID)
 		return nil, nil, errors.New("Conver RwSet to dag unit fail")
 	}
-	//for i := 0; i < len(unit.WriteSet); i++ {
-	//	fmt.Printf("==unit=> %v\n", unit.WriteSet[i].IsDelete)
-	//	fmt.Printf("==unit=> %s\n", unit.WriteSet[i].Key)
-	//	fmt.Printf("==unit=> %s\n", unit.WriteSet[i].Value)
-	//	fmt.Println()
-	//	fmt.Println()
-	//}
-	//fmt.Println("===")
-	//if len(unit.TokenPayOut) > 0 {
-	//	fmt.Printf("==unit=> %#v\n", unit.TokenPayOut[0])
-	//	fmt.Printf("==unit=> %s\n", unit.TokenPayOut[0].Asset.String())
-	//	fmt.Printf("==unit=> %d\n", unit.TokenPayOut[0].Amount)
-	//	fmt.Printf("==unit=> %s\n", unit.TokenPayOut[0].PayTo.String())
-	//}
-	// todo
 
 	pResp.Response.Payload = res.Payload
 	unit.Payload = res.Payload
