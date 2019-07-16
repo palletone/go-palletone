@@ -316,6 +316,19 @@ func (b *PtnApiBackend) GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxHi
 	return txjs, nil
 }
 
+func (b *PtnApiBackend) GetAssetExistence(asset string) ([]*ptnjson.ProofOfExistenceJson, error) {
+	poes, err := b.ptn.dag.GetAssetReference([]byte(asset))
+	if err != nil {
+		return nil, err
+	}
+	result := []*ptnjson.ProofOfExistenceJson{}
+	for _, poe := range poes {
+		j := ptnjson.ConvertProofOfExistence2Json(poe)
+		result = append(result, j)
+	}
+	return result, nil
+}
+
 // Get state
 //func (b *PtnApiBackend) GetHeadHeaderHash() (common.Hash, error) {
 //	return b.ptn.dag.GetHeadHeaderHash()
@@ -579,6 +592,7 @@ func (b *PtnApiBackend) ContractQuery(contractId []byte, txid string, args [][]b
 	//contractAddr := common.HexToAddress(hex.EncodeToString(contractId))
 	channelId := "palletone"
 	rsp, err := b.ptn.contract.Invoke(rwset.RwM, channelId, contractId, txid, args, timeout)
+	rwset.RwM.Close()
 	if err != nil {
 		log.Debugf(" err!=nil =====>ContractQuery:contractId[%s]txid[%s]", hex.EncodeToString(contractId), txid)
 		return nil, err

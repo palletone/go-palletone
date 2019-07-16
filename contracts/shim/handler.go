@@ -218,8 +218,21 @@ func (handler *Handler) handleInit(msg *pb.ChaincodeMessage) {
 		if nextStateMsg = errFunc(err, nil, stub.chaincodeEvent, "[%s]Init get error response. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR.String()); nextStateMsg != nil {
 			return
 		}
-
-		res := handler.cc.Init(stub)
+		for i, a := range stub.args {
+			fmt.Println(i, a)
+		}
+		res := pb.Response{}
+		if len(input.Args) != 0 {
+			log.Infof("user contract deploy")
+			res = handler.cc.Init(stub)
+		} else {
+			log.Infof("user contract restart")
+			res = pb.Response{
+				Status:  OK,
+				Message: "Restart container",
+				Payload: nil,
+			}
+		}
 		log.Debugf("[%s]Init get response status: %d, payload len: %d", shorttxid(msg.Txid), res.Status, len(res.Payload))
 
 		if res.Status >= ERROR {

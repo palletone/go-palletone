@@ -59,6 +59,12 @@ func NewPublicContractAPI(b Backend) *PublicContractAPI {
 	return &PublicContractAPI{b}
 }
 
+type PrivateContractAPI struct {
+       b Backend
+}
+func NewPrivateContractAPI(b Backend) *PrivateContractAPI {
+       return &PrivateContractAPI{b}
+}
 //contract command
 //install
 func (s *PublicContractAPI) Ccinstall(ctx context.Context, ccname, ccpath, ccversion, ccdescription, ccabi, cclanguage string) (hexutil.Bytes, error) {
@@ -214,7 +220,7 @@ func (s *PublicContractAPI) Ccdeploytx(ctx context.Context, from, to, daoAmount,
 		args[i] = []byte(arg)
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
-	fullArgs := [][]byte{defaultMsg0, defaultMsg1}
+	fullArgs := [][]byte{defaultMsg0}
 	fullArgs = append(fullArgs, args...)
 	reqId, _, err := s.b.ContractDeployReqTx(fromAddr, toAddr, amount, fee, templateId, fullArgs, 0)
 	contractAddr := crypto.RequestIdToContractAddress(reqId)
@@ -298,7 +304,7 @@ func (s *PublicContractAPI) CcinvokeToken(ctx context.Context, from, to, toToken
 	return rsp1, err
 }
 
-func (s *PublicContractAPI) CcinvoketxPass(ctx context.Context, from, to, daoAmount, daoFee, deployId string, param []string, password string, duration *uint64, certID string) (string, error) {
+func (s *PrivateContractAPI) CcinvoketxPass(ctx context.Context, from, to, daoAmount, daoFee, deployId string, param []string, password string, duration *uint64, certID string) (string, error) {
 	contractAddr, _ := common.StringToAddress(deployId)
 
 	fromAddr, _ := common.StringToAddress(from)
@@ -359,7 +365,7 @@ func (s *PublicContractAPI) Ccstoptx(ctx context.Context, from, to, daoAmount, d
 	return hex.EncodeToString(reqId[:]), err
 }
 
-func (s *PublicContractAPI) unlockKS(addr common.Address, password string, duration *uint64) error {
+func (s *PrivateContractAPI) unlockKS(addr common.Address, password string, duration *uint64) error {
 	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
 	var d time.Duration
 	if duration == nil {

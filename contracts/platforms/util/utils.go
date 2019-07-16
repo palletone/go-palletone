@@ -259,10 +259,9 @@ func DockerBuild(opts DockerBuildOptions) error {
 		for {
 			select {
 			case <-time.After(contractcfg.GetConfig().ContractDeploytimeout):
-				log.Infof("======go build error")
 				err := client.RemoveContainer(docker.RemoveContainerOptions{ID: id, Force: true})
 				if err != nil {
-					log.Infof("======go build error,%s", err.Error())
+					log.Infof("remove container error: %s", err.Error())
 				}
 				return
 			}

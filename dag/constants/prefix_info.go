@@ -55,6 +55,7 @@ var (
 	ACCOUNT_INFO_PREFIX        = []byte("ai")
 	ACCOUNT_PTN_BALANCE_PREFIX = []byte("ab")
 	TOKEN_TXID_PREFIX          = []byte("tt") //IndexDB中存储一个Token关联的TxId
+	TOKEN_EX_PREFIX          = []byte("te") //IndexDB中存储一个Token关联的ProofOfExistence
 	// lookup
 	LOOKUP_PREFIX              = []byte("lu")
 	UTXO_PREFIX                = []byte("uo")

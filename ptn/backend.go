@@ -358,7 +358,7 @@ func (s *PalletOne) Stop() error {
 	// append by Albert·Gou
 	s.mediatorPlugin.Stop()
 
-	s.dag.Close()
+
 	if s.lesServer != nil {
 		s.lesServer.Stop()
 	}
@@ -366,7 +366,7 @@ func (s *PalletOne) Stop() error {
 	if s.corsServer != nil {
 		s.corsServer.Stop()
 	}
-
+	s.dag.Close()
 	return nil
 }
 
