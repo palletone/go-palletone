@@ -18,12 +18,12 @@ import (
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/contracts/ucc"
 
+	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag"
 	md "github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
-	"math/rand"
 	"strings"
 )
 
@@ -349,9 +349,10 @@ func GetAllContainers(client *docker.Client) {
 					log.Infof("common.StringToAddress err: %s", err.Error())
 					return
 				}
-				txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
+				rd, err := crypto.GetRandomBytes(32)
+				txid := util.RlpHash(rd)
 				log.Infof("==============需要重启====容器名称为-->%s,---->%s", name, hex.EncodeToString(contractAddr.Bytes21()))
-				_, err = StartChaincodeContainert(dag, "palletone", contractAddr.Bytes21(), txid)
+				_, err = StartChaincodeContainert(dag, "palletone", contractAddr.Bytes21(), txid.String())
 				if err != nil {
 					log.Infof("startChaincodeContainert err: %s", err.Error())
 					return
