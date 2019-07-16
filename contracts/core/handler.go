@@ -121,7 +121,11 @@ func HandleChaincodeStream(chaincodeSupport *ChaincodeSupport, ctxt context.Cont
 	deadline, ok := ctxt.Deadline()
 	log.Debugf("Current context deadline = %s, ok = %v", deadline, ok)
 	handler := newChaincodeSupportHandler(chaincodeSupport, stream, jury)
-	return handler.processStream()
+	err := handler.processStream()
+	if err != nil {
+		log.Debugf("handler process stream err: %s", err.Error())
+	}
+	return err
 }
 
 // Filter the Errors to allow NoTransitionError and CanceledError to not propagate for cases where embedded Err == nil
@@ -536,6 +540,7 @@ func (handler *Handler) processStream() error {
 		select {
 		case sendErr := <-errc:
 			if sendErr != nil {
+				log.Debugf("%+v", sendErr)
 				return sendErr
 			}
 			//send was successful, just continue
@@ -551,6 +556,7 @@ func (handler *Handler) processStream() error {
 				log.Debugf("Error handling chaincode support stream: %+v", err)
 				return err
 			} else if in == nil {
+				log.Debugf("in == nil")
 				//err = errors.New("received nil message, ending chaincode support stream")
 				//log.Debugf("%+v", err)
 				return nil
@@ -601,6 +607,7 @@ func (handler *Handler) processStream() error {
 			log.Debugf("[%s]sending state message %s", shorttxid(in.Txid), in.Type.String())
 			//ready messages are sent sync
 			if nsInfo.sendSync {
+				log.Debugf("send sync %v", nsInfo.sendSync)
 				if in.Type.String() != pb.ChaincodeMessage_READY.String() {
 					panic(fmt.Sprintf("[%s]Sync send can only be for READY state %s\n", shorttxid(in.Txid), in.Type.String()))
 				}
@@ -608,6 +615,7 @@ func (handler *Handler) processStream() error {
 					return errors.WithMessage(err, fmt.Sprintf("[%s]error sending ready  message, ending stream:", shorttxid(in.Txid)))
 				}
 			} else {
+				log.Debugf("send async")
 				//if error bail in select
 				handler.serialSendAsync(in, errc)
 			}

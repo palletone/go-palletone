@@ -32,19 +32,17 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"bytes"
-	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/accesscontrol"
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/platforms"
 	"github.com/palletone/go-palletone/contracts/shim"
+	"github.com/palletone/go-palletone/contracts/utils"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/vm/api"
 	"github.com/palletone/go-palletone/vm/ccintf"
-	"github.com/palletone/go-palletone/vm/common"
 	"github.com/palletone/go-palletone/vm/controller"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
@@ -877,43 +875,22 @@ func (chaincodeSupport *ChaincodeSupport) Execute(ctxt context.Context, cccid *c
 	var ccresp *pb.ChaincodeMessage
 	select {
 	case ccresp = <-notfy:
+		log.Infof("notfy = %v", ccresp)
 		//response is sent to user or calling chaincode. ChaincodeMessage_ERROR
 		//are typically treated as error
 		//log.Errorf("{{{{{ time out [%d]", setTimeout)
 	case <-time.After(setTimeout):
+		log.Debugf("time out when execute,time = %v", setTimeout)
 		//err = errors.New("timeout expired while executing transaction")
 		//log.Info("====================================timeout expired while executing transaction")
-		var client *docker.Client
-		client, err = util.NewDockerClient()
-		if err != nil {
-			log.Error("util.NewDockerClient", "error", err)
-			err = errors.New("timeout expired while executing transaction")
-		}
-		var buf bytes.Buffer
-		logsO := docker.LogsOptions{
-			Container:   cccid.GetContainerName(),
-			ErrorStream: &buf,
-			Follow:      true,
-			Stdout:      true,
-			Stderr:      true,
-			Tail:        "30",
-		}
-		err = client.Logs(logsO)
-		if err != nil {
-			//log.Info("===================4=================timeout expired while executing transaction")
-			log.Error("client.Logs", "error", err)
-			err = errors.New("timeout expired while executing transaction")
+		containerErrStr := utils.GetLogFromContainer(cccid.GetContainerName())
+		if containerErrStr != "" {
+			log.Error("error from container %s", containerErrStr)
+			err = errors.New(containerErrStr)
 		} else {
-			//log.Info("==============1======================timeout expired while executing transaction")
-			line, _ := buf.ReadString('\n')
-			line = strings.TrimSpace(line)
-			if strings.Contains(line, "panic: runtime error") || strings.Contains(line, "fatal error: runtime") {
-				err = errors.New(line)
-			} else {
-				//log.Info("===================2=================timeout expired while executing transaction")
-				log.Errorf("<<<txid[%s] time out [%d]", cccid.TxID, setTimeout)
-				err = errors.New("timeout expired while executing transaction")
-			}
+			//log.Info("===================2=================timeout expired while executing transaction")
+			log.Errorf("<<<txid[%s] time out [%d]", cccid.TxID, setTimeout)
+			err = errors.New("timeout expired while executing transaction")
 		}
 	}
 	//our responsibility to delete transaction context if sendExecuteMessage succeeded

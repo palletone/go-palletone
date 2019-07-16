@@ -46,7 +46,7 @@ var DefaultConfig = Config{
 	PartitionForkUnitHeight:      0,
 	AddrTxsIndex:                 false,
 	Token721TxIndex:              true,
-	TextFileHashIndex:            false,
+	TextFileHashIndex:            true,
 	GasToken:                     DefaultToken,
 }
 
