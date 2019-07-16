@@ -35,11 +35,11 @@ import (
 )
 
 func (mp *MediatorPlugin) startVSSProtocol() {
-	dag := mp.dag
-	if !mp.productionEnabled && !dag.IsSynced() {
-		log.Debugf("we're not synced")
-		return
-	}
+	//dag := mp.dag
+	//if !mp.productionEnabled && !dag.IsSynced() {
+	//	log.Debugf("we're not synced")
+	//	return
+	//}
 
 	log.Debugf("Start completing the VSS protocol.")
 	go mp.BroadcastVSSDeals()

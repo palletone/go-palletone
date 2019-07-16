@@ -68,10 +68,10 @@ func (pm *ProtocolManager) toGroupSign(event modules.ToGroupSignEvent) {
 		return
 	}
 
-	if !pm.producer.IsEnabledGroupSign() {
-		log.Debugf("the current node is enabled groupSign")
-		return
-	}
+	//if !pm.producer.IsEnabledGroupSign() {
+	//	log.Debugf("the current node is enabled groupSign")
+	//	return
+	//}
 
 	// 获取最高稳定单元的高度
 	gasToken := dagconfig.DagConfig.GetGasToken()
@@ -250,7 +250,7 @@ func (pm *ProtocolManager) BroadcastVssResp(resp *mp.VSSResponseEvent) {
 	peers := pm.GetActiveMediatorPeers()
 	//peers := pm.GetTransitionPeers()
 	for _, peer := range peers {
-		if peer == nil {
+		if peer == nil { // 此时为本节点
 			//size, reader, err := rlp.EncodeToReader(resp)
 			//if err != nil {
 			//	log.Debug(err.Error())

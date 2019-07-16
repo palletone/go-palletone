@@ -36,9 +36,9 @@ func (mp *MediatorPlugin) LocalMediators() []common.Address {
 	return addrs
 }
 
-func (mp *MediatorPlugin) IsEnabledGroupSign() bool {
-	return mp.groupSigningEnabled
-}
+//func (mp *MediatorPlugin) IsEnabledGroupSign() bool {
+//	return mp.groupSigningEnabled
+//}
 
 func (mp *MediatorPlugin) GetLocalActiveMediators() []common.Address {
 	lams := make([]common.Address, 0)
