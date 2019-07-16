@@ -41,8 +41,11 @@ func (mp *MediatorPlugin) startVSSProtocol() {
 	//	return
 	//}
 
+	// todo albert 换届后第一个生产槽的前一个生产间隔开始vss协议
+
 	log.Debugf("Start completing the VSS protocol.")
 	go mp.BroadcastVSSDeals()
+	// todo albert 处理可能收到的deal
 }
 
 func (mp *MediatorPlugin) BroadcastVSSDeals() {
@@ -58,7 +61,7 @@ func (mp *MediatorPlugin) BroadcastVSSDeals() {
 
 		for index, deal := range deals {
 			event := VSSDealEvent{
-				DstIndex: uint(index),
+				DstIndex: uint32(index),
 				Deal:     deal,
 			}
 
@@ -76,9 +79,11 @@ func (mp *MediatorPlugin) AddToDealBuf(dealEvent *VSSDealEvent) {
 		return
 	}
 
+	// todo albert 添加的缓存中
 	//dag := mp.dag
 	//localMed := dag.GetActiveMediatorAddr(int(dealEvent.DstIndex))
 
+	// todo albert 处理收到的deal
 }
 
 func (mp *MediatorPlugin) ProcessVSSDeal(dealEvent *VSSDealEvent) error {
@@ -99,7 +104,7 @@ func (mp *MediatorPlugin) ProcessVSSDeal(dealEvent *VSSDealEvent) error {
 
 	resp, err := dkgr.ProcessDeal(deal)
 	if err != nil {
-		log.Debugf(err.Error())
+		log.Debugf("dkg: cannot process own deal: " + err.Error())
 		return err
 	}
 
@@ -164,7 +169,7 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 		return
 	}
 
-	aSize := mp.dag.ActiveMediatorsCount()
+	respAmount := mp.dag.ActiveMediatorsCount() - 1
 	respCount := 0
 	// localMed 对 vrfrMed 的 response 在 ProcessDeal 生成 response 时 自动处理了
 	if vrfrMed != localMed {
@@ -189,7 +194,7 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 	isFinishedAndCertified := func() (finished, certified bool) {
 		respCount++
 
-		if respCount == aSize-1 {
+		if respCount == respAmount-1 {
 			finished = true
 
 			if dkgr.Certified() {
@@ -215,6 +220,7 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 		select {
 		case <-mp.quit:
 			return
+			// todo Albert 超过期限后也要删除
 		case resp := <-respCh:
 			processResp(resp)
 			finished, certified := isFinishedAndCertified()

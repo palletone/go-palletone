@@ -35,7 +35,7 @@ type SigShareEvent struct {
 }
 
 type VSSDealEvent struct {
-	DstIndex uint
+	DstIndex uint32
 	Deal     *dkg.Deal
 }
 

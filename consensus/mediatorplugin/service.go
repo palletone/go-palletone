@@ -201,7 +201,7 @@ func (mp *MediatorPlugin) newActiveMediatorsDKG() {
 // todo Albert 待删除
 func (mp *MediatorPlugin) initVSSBuf(localMed common.Address) {
 	aSize := mp.dag.ActiveMediatorsCount()
-	mp.dealBuf[localMed] = make(chan *dkg.Deal, aSize)
+	mp.dealBuf[localMed] = make(chan *dkg.Deal, aSize-1)
 	mp.respBuf[localMed] = make(map[common.Address]chan *dkg.Response, aSize)
 
 	for i := 0; i < aSize; i++ {
