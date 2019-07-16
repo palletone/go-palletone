@@ -36,7 +36,7 @@ sleep 5
 #ptn.syncUTXOByAddr("P19wzjSAfVKRY84pPQMsqJSxeVK7oTYEiXt") in light node5
 syncutxocommand=`./gptn --exec "ptn.syncUTXOByAddr($account5)"  attach node_test5/palletone/gptn5.ipc`
 syncutxoinfo=`echo $syncutxocommand`
-value="\"OK\""
+value="\"ok\""
 echo $syncutxoinfo
 if [ $syncutxoinfo = $value ];then
     echo "============syncUTXOByAddr account5 ok============"
