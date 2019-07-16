@@ -592,6 +592,7 @@ func (b *PtnApiBackend) ContractQuery(contractId []byte, txid string, args [][]b
 	//contractAddr := common.HexToAddress(hex.EncodeToString(contractId))
 	channelId := "palletone"
 	rsp, err := b.ptn.contract.Invoke(rwset.RwM, channelId, contractId, txid, args, timeout)
+	rwset.RwM.Close()
 	if err != nil {
 		log.Debugf(" err!=nil =====>ContractQuery:contractId[%s]txid[%s]", hex.EncodeToString(contractId), txid)
 		return nil, err
