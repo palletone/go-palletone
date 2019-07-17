@@ -2531,19 +2531,19 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
             this._requestManager = new RequestManager(provider);
             //this.currentProvider = provider;
             this.ptn = new Ptn(this);
-            this.db = new DB(this);
-            this.shh = new Shh(this);
+            //this.db = new DB(this);
+            //this.shh = new Shh(this);
             this.net = new Net(this);
             this.personal = new Personal(this);
-            this.bzz = new Swarm(this);
-            this.settings = new Settings();
+            //this.bzz = new Swarm(this);
+            //this.settings = new Settings();
             this.version = {
                 api: version.version
             };
-            this.providers = {
+            //this.providers = {
                 //HttpProvider: HttpProvider,
                 //IpcProvider: IpcProvider
-            };
+            //};
             this._extend = extend(this);
             this._extend({
                 properties: properties()
