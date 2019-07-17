@@ -10,10 +10,11 @@ ${juryHosts}      Create List
 ${gastokenHost}    http://localhost:8545
 ${nodenum}        3
 # methods
-${invokeMethod}    contract_ccinvoketx
-${queryMethod}    contract_ccquery
-${installMethod}    contract_ccinstalltx
-${deployMethod}    contract_ccdeploytx
+${ccinvokeMethod}    contract_ccinvoketx
+${ccqueryMethod}    contract_ccquery
+${ccinstallMethod}    contract_ccinstalltx
+${ccdeployMethod}    contract_ccdeploytx
+${ccstopMethod}    contract_ccstoptx
 ${transferPTNMethod}    wallet_transferPtn
 ${transferTokenMethod}    wallet_transferToken
 ${getBalanceMethod}    wallet_getBalance
@@ -22,7 +23,7 @@ ${personalListAccountsMethod}    personal_listAccounts
 # address
 ${prc720ContractAddr}    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43
 # comman param
-${tokenHolder}    ${null}
+${tokenHolder}    P128sz4bD9akVYtvnx3er3hWdUAz8nALox9
 ${Alice}          ${null}
 ${Bob}            ${null}
 ${Carol}          ${null}

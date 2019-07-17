@@ -3,6 +3,7 @@ Resource          ../../commonlib/pubVariables.robot
 Resource          ../../commonlib/pubFuncs.robot
 Resource          ../../commonlib/setups.robot
 Library           BuiltIn
+Library           Collections
 
 *** Test Cases ***
 InstallContractpayTpl
@@ -48,9 +49,11 @@ Payout
     And Wait for unit about contract to be confirmed by unit height    ${reqId}
     Then Query user2 balance    ${newAddr}
 
-Stop
+Stop contractpay contract
     Given Unlock token holder succeed
-    When User transfer PTN to contractpay
+    ${reqId}=   Then stopContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
+    And Wait for transaction being packaged
+    And Wait for unit about contract to be confirmed by unit height    ${reqId}
 
 *** Keywords ***
 User put status into contractpay

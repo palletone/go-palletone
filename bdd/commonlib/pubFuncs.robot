@@ -65,7 +65,7 @@ issueToken
     ...    ${addr}
     ${params}=    genInvoketxParams    ${addr}    ${addr}    100    1    ${prc720ContractAddr}
     ...    ${args}    ${null}
-    ${respJson}=    sendRpcPost    ${host}    ${invokeMethod}    ${params}    issueToken
+    ${respJson}=    sendRpcPost    ${host}    ${ccinvokeMethod}    ${params}    issueToken
     Dictionary Should Contain Key    ${respJson}    result
     [Return]    ${respJson}
 
@@ -74,7 +74,7 @@ supplyToken
     ${args}=    Create List    supplyToken    ${tokenID}    ${amount}    ${addr}
     ${params}=    genInvoketxParams    ${addr}    ${addr}    100    1    ${prc720ContractAddr}
     ...    ${args}    ${null}
-    ${respJson}=    sendRpcPost    ${host}    ${invokeMethod}    ${params}    supplyToken
+    ${respJson}=    sendRpcPost    ${host}    ${ccinvokeMethod}    ${params}    supplyToken
     Dictionary Should Contain Key    ${respJson}    result
     [Return]    ${respJson}
 
@@ -89,7 +89,7 @@ installContractTpl
     ...    ${tplVersion}
     ${params}=    Create List    ${from}    ${to}    ${ptnAmount}    ${ptnFee}    ${tplName}
     ...    ${tplPath}    ${tplVersion}    ${null}    ${null}    go    ${null}
-    ${respJson}=    sendRpcPost    ${host}    ${installMethod}    ${params}    InstallContractTpl
+    ${respJson}=    sendRpcPost    ${host}    ${ccinstallMethod}    ${params}    InstallContractTpl
     Dictionary Should Contain Key    ${respJson}    result
     ${result}=    Get From Dictionary    ${respJson}    result
     Dictionary Should Contain Key    ${result}    reqId
@@ -99,8 +99,8 @@ installContractTpl
 deployContract
     [Arguments]    ${from}    ${to}    ${ptnAmount}    ${ptnFee}    ${tplId}    ${args}
     ${params}=    Create List    ${from}    ${to}    ${ptnAmount}    ${ptnFee}    ${tplId}
-    ...    ${args}
-    ${respJson}=    sendRpcPost    ${host}    ${deployMethod}    ${params}    DeployContract
+    ...    ${args}    ${null}
+    ${respJson}=    sendRpcPost    ${host}    ${ccdeployMethod}    ${params}    DeployContract
     Dictionary Should Contain Key    ${respJson}    result
     ${result}=    Get From Dictionary    ${respJson}    result
     Dictionary Should Contain Key    ${result}    ContractId
@@ -111,19 +111,27 @@ invokeContract
     [Arguments]    ${from}    ${to}    ${ptnAmount}    ${ptnFee}    ${contractId}    ${args}
     ${params}=    Create List    ${from}    ${to}    ${ptnAmount}    ${ptnFee}    ${contractId}
     ...    ${args}    ${null}    0
-    ${respJson}=    sendRpcPost    ${host}    ${invokeMethod}    ${params}    InvokeContract
+    ${respJson}=    sendRpcPost    ${host}    ${ccinvokeMethod}    ${params}    InvokeContract
     Dictionary Should Contain Key    ${respJson}    result
     ${result}=    Get From Dictionary    ${respJson}    result
     Dictionary Should Contain Key    ${result}    ContractId
     Dictionary Should Contain Key    ${result}    reqId
     [Return]    ${respJson}
 
+stopContract
+    [Arguments]    ${from}    ${to}    ${ptnAmount}    ${ptnFee}    ${contractId}
+    ${params}=    Create List    ${from}    ${to}    ${ptnAmount}    ${ptnFee}    ${contractId}
+    ${respJson}=    sendRpcPost    ${host}    ${ccstopMethod}    ${params}    InvokeContract
+    Dictionary Should Contain Key    ${respJson}    result
+    ${result}=    Get From Dictionary    ${respJson}    result
+    [Return]    ${result}
+
 queryContract
     [Arguments]    ${contractId}    ${args}
     ${params}=    Create List    ${contractId}    ${args}    ${0}
     Should Not Be Empty    ${juryHosts}
     ${juryHost}=    Get From List    ${juryHosts}    0
-    ${respJson}=    sendRpcPost    ${juryHost}    ${queryMethod}    ${params}    QueryContract
+    ${respJson}=    sendRpcPost    ${juryHost}    ${ccqueryMethod}    ${params}    QueryContract
     [Return]    ${respJson}
 
 getCurrentUnitHeight
