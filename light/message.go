@@ -51,6 +51,7 @@ func (pm *ProtocolManager) AnnounceMsg(msg p2p.Msg, p *peer) error {
 
 	if pm.IsExistInCache(req.Header.Hash().Bytes()) {
 		//log.Debugf("Received unit(%v) again, ignore it", unitHash.TerminalString())
+		p.SetHead(&req)
 		return nil
 	}
 

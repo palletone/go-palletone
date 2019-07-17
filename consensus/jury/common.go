@@ -295,6 +295,11 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					args:       reqPay.Args,
 					timeout:    time.Duration(reqPay.Timeout) * time.Second,
 				}
+				fullArgs, err := handleMsg0(tx, dag, req.args)
+				if err != nil {
+					return nil, err
+				}
+				req.args = fullArgs
 				deployResult, err := ContractProcess(rwM, contract, req)
 				if err != nil {
 					log.Error("runContractCmd ContractProcess ", "error", err.Error())
@@ -350,7 +355,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					return nil, errors.New(fmt.Sprintf("[%s]runContractCmd APP_CONTRACT_INVOKE txid(%s) rans err:%s", shortId(reqId.String()), req.txid, err))
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.Args, 0 /*result.ExecutionTime*/, result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
+				payload := modules.NewContractInvokePayload(result.ContractId, result.Args, 0 /*result.ExecutionTime*/ , result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
 				}
@@ -793,4 +798,16 @@ func getValidAddress(addrs []common.Address) []common.Address {
 		}
 	}
 	return result
+}
+
+func checkJuryCountValid(numIn, numLocal uint64) bool {
+	if numLocal <= 0 {
+		log.Error("checkJuryCountValid, numLocal is 0")
+		return false
+	}
+	if int(math.Abs(float64(numIn-numLocal))*100/float64(numLocal)) <= 10 {
+		return true
+	}
+	log.Error("checkJuryCountValid", "numIn", numIn, "numLocal", numLocal)
+	return false
 }

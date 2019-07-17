@@ -53,10 +53,11 @@ func mockerDeployUserCC() error {
 }
 
 func DeployUserCC(contractId []byte, chaincodeData []byte, spec *pb.ChaincodeSpec, chainID string, txid string, txsim rwset.TxSimulator, timeout time.Duration) error {
+	//return mockerDeployUserCC()
+
 	cdDeploymentSpec := &pb.ChaincodeDeploymentSpec{}
 	var err error
 	if cfg.DebugTest {
-		//return mockerDeployUserCC()
 		cdDeploymentSpec, err = getDeploymentSpec(nil, spec)
 		if err != nil {
 			return err
@@ -74,6 +75,7 @@ func DeployUserCC(contractId []byte, chaincodeData []byte, spec *pb.ChaincodeSpe
 	_, _, err = ccprov.ExecuteWithErrorFilter(ctxt, cccid, cdDeploymentSpec, timeout)
 	if err != nil {
 		log.Errorf("ExecuteWithErrorFilter with usercc.Name[%s] chainId[%s] err !!", cdDeploymentSpec.ChaincodeSpec.ChaincodeId.Name, chainID)
+		ccprov.Stop(ctxt, cccid, cdDeploymentSpec, false)
 		return err
 	}
 	log.Debugf("user chaincode chainID[%s]-name[%s]-path[%s]-version[%s] deployed", chainID, cdDeploymentSpec.ChaincodeSpec.ChaincodeId.Name, cdDeploymentSpec.ChaincodeSpec.ChaincodeId.Path, cdDeploymentSpec.ChaincodeSpec.ChaincodeId.Version)

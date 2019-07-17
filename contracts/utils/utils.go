@@ -1,13 +1,16 @@
-package manger
+package utils
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/vm/common"
+	"io"
 	"strings"
+	"time"
 )
 
 type UccInterface interface {
@@ -110,4 +113,48 @@ func getResourceUses(cc *list.CCInfo) (*docker.Stats, error) {
 		}
 	}
 	return nil, fmt.Errorf("get container stats error")
+}
+
+//  通过容器名称获取容器里面的错误信息，返回最后一条
+func GetLogFromContainer(name string) string {
+	var client *docker.Client
+	client, err := util.NewDockerClient()
+	if err != nil {
+		log.Info("util.NewDockerClient", "error", err)
+		return ""
+	}
+	var buf bytes.Buffer
+	logsO := docker.LogsOptions{
+		Container:         name,
+		ErrorStream:       &buf,
+		Follow:            true,
+		Stderr:            true,
+		InactivityTimeout: time.Duration(5 * time.Second),
+	}
+	log.Debugf("start docker logs")
+	err = client.Logs(logsO)
+	log.Debugf("end docker logs")
+	if err != nil {
+		log.Infof("get log from container %s error: %s", name, err.Error())
+		return ""
+	}
+	errArray := make([]string, 0)
+	for {
+		line, err := buf.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return ""
+		}
+		line = strings.TrimSpace(line)
+		if strings.Contains(line, "panic: runtime error") || strings.Contains(line, "fatal error: runtime") {
+			log.Infof("container %s error %s", name, line)
+			errArray = append(errArray, line)
+		}
+	}
+	if len(errArray) != 0 {
+		return errArray[len(errArray)-1]
+	}
+	return ""
 }

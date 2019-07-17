@@ -91,7 +91,7 @@ type Backend interface {
 	GetCommonByPrefix(prefix []byte) map[string][]byte
 	SaveCommon(key, val []byte) error
 	// Get Contract Api
-	GetContract(hex_id string) (*modules.Contract, error)
+	GetContract(contractAddr common.Address) (*ptnjson.ContractJson, error)
 
 	//get level db
 	GetUnitByHash(hash common.Hash) *modules.Unit
@@ -129,6 +129,7 @@ type Backend interface {
 	GetAddressBalanceStatistics(token string, topN int) (*statistics.TokenAddressBalanceJson, error)
 	GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson, error)
 	GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxHistoryJson, error)
+	GetAssetExistence(asset string) ([]*ptnjson.ProofOfExistenceJson, error)
 	//contract control
 	ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi, ccLanguage string) (TemplateId []byte, err error)
 	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)
@@ -139,7 +140,7 @@ type Backend interface {
 	EncodeTx(jsonStr string) (string, error)
 
 	ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, description, abi, language string, addrs []common.Address) (reqId common.Hash, tplId []byte, err error)
-	ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (reqId common.Hash, contractAddr common.Address, err error)
+	ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, extData []byte,timeout time.Duration) (reqId common.Hash, contractAddr common.Address, err error)
 	ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error)
 	SendContractInvokeReqTx(requestTx *modules.Transaction) (reqId common.Hash, err error)
 	ContractInvokeReqTokenTx(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, asset string, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error)
@@ -243,6 +244,11 @@ func GetAPIs(apiBackend Backend) []rpc.API {
 			Version:   "1.0",
 			Service:   NewPublicContractAPI(apiBackend),
 			Public:    true,
+		}, {
+			Namespace: "contract",
+			Version:   "1.0",
+			Service:   NewPrivateContractAPI(apiBackend),
+			Public:    false,
 		}, {
 			Namespace: "mediator",
 			Version:   "1.0",
