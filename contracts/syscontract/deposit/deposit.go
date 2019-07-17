@@ -46,8 +46,8 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		log.Info("Enter DepositChaincode Contract " + modules.MediatorPayDeposit + " Invoke")
 		return d.mediatorPayToDepositContract(stub, args)
 		//  申请退出Mediator
-	case modules.MediatorApplyQuitList:
-		log.Info("Enter DepositChaincode Contract " + modules.MediatorApplyQuitList + " Invoke")
+	case modules.MediatorApplyQuit:
+		log.Info("Enter DepositChaincode Contract " + modules.MediatorApplyQuit + " Invoke")
 		return d.mediatorApplyQuitMediator(stub, args)
 	//
 	//  jury 交付保证金
@@ -138,8 +138,8 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		return shim.Success(list)
 		//  查看是否在agree列表中
-	case IsInAgressList:
-		log.Info("Enter DepositChaincode Contract " + IsInAgressList + " Invoke")
+	case modules.IsApproved:
+		log.Info("Enter DepositChaincode Contract " + modules.IsApproved + " Invoke")
 		list, err := getList(stub, ListForAgreeBecomeMediator)
 		if err != nil {
 			return shim.Error(err.Error())
