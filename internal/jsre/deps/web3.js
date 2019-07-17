@@ -5772,64 +5772,11 @@ function Personal(web3) {
 }
 
 var methods = function () {
-    var newAccount = new Method({
-        name: 'newAccount',
-        call: 'personal_newAccount',
-        params: 1,
-        inputFormatter: [null]
-    });
-
-    var importRawKey = new Method({
-        name: 'importRawKey',
-		call: 'personal_importRawKey',
-		params: 2
-    });
-
-    var sign = new Method({
-        name: 'sign',
-		call: 'personal_sign',
-		params: 3,
-		inputFormatter: [null, formatters.inputAddressFormatter, null]
-    });
-
-
-    var unlockAccount = new Method({
-        name: 'unlockAccount',
-        call: 'personal_unlockAccount',
-        params: 3,
-        inputFormatter: [null, null, null]
-    });
-
-    var sendTransaction = new Method({
-        name: 'sendTransaction',
-        call: 'personal_sendTransaction',
-        params: 2,
-        inputFormatter: [formatters.inputTransactionFormatter, null]
-    });
-
-    var lockAccount = new Method({
-        name: 'lockAccount',
-        call: 'personal_lockAccount',
-        params: 1
-    });
-
-    return [
-        newAccount,
-        importRawKey,
-        unlockAccount,
-        sign,
-        sendTransaction,
-        lockAccount
-    ];
+    return [];
 };
 
 var properties = function () {
-    return [
-       // new Property({
-       //     name: 'listAccounts',
-       //     getter: 'personal_listAccounts'
-       // })
-    ];
+    return [];
 };
 
 

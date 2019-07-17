@@ -60,6 +60,31 @@ web3._extend({
 			call: 'personal_transferPtn',
 			params: 5,
 		}),
+		new web3._extend.Method({
+			name: 'newAccount',
+			call: 'personal_newAccount',
+			params: 1,
+			inputFormatter: [null]
+		}),
+	   	new web3._extend.Method({
+			name: 'unlockAccount',
+			call: 'personal_unlockAccount',
+			params: 3,
+			inputFormatter: [null, null, null]
+		}),
+	
+		//new web3._extend.Method({
+		//	name: 'sendTransaction',
+		//	call: 'personal_sendTransaction',
+		//	params: 2,
+		//	inputFormatter: [formatters.inputTransactionFormatter, null]
+		//}),
+	
+		new web3._extend.Method({
+			name: 'lockAccount',
+			call: 'personal_lockAccount',
+			params: 1
+		})
 	],
 	properties: [
 		new web3._extend.Property({
