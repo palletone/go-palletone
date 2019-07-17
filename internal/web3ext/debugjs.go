@@ -20,6 +20,7 @@
 
 package web3ext
 
+/*
 func init() {
 	Modules["debug"] = Debug_JS
 }
@@ -32,7 +33,7 @@ web3._extend({
 			name: 'ccinvoke',
 			call: 'debug_ccinvoke',
 			params: 4
-		}),	
+		}),
 	new web3._extend.Method({
 			name: 'printBlock',
 			call: 'debug_printBlock',
@@ -262,3 +263,4 @@ web3._extend({
 	properties: []
 });
 `
+*/
