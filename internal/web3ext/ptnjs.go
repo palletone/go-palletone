@@ -95,36 +95,36 @@ web3._extend({
 		//}),
 		
 
-		new web3._extend.Method({
-			name: 'cmdCreateTransaction',
-			call: 'ptn_cmdCreateTransaction',
-			params: 4,
-			inputFormatter: [null,null,null, null]
-		}),
-		new web3._extend.Method({
-			name: 'createRawTransaction',
-			call: 'ptn_createRawTransaction',
-			params: 1,
-			inputFormatter: [null]
-		}),
-		new web3._extend.Method({
-			name: 'signRawTransaction',
-			call: 'ptn_signRawTransaction',
-			params: 3,
-			inputFormatter: [null,null, null]
-		}),
-		new web3._extend.Method({
-			name: 'sendRawTransaction',
-			call: 'ptn_sendRawTransaction',
-			params: 1,
-			inputFormatter: [null]
-		}),
-                new web3._extend.Method({
-			name: 'sendJsonTransaction',
-			call: 'ptn_sendJsonTransaction',
-			params: 1,
-			inputFormatter: [null]
-		}),
+		//new web3._extend.Method({
+		//	name: 'cmdCreateTransaction',
+		//	call: 'ptn_cmdCreateTransaction',
+		//	params: 4,
+		//	inputFormatter: [null,null,null, null]
+		//}),
+		//new web3._extend.Method({
+		//	name: 'createRawTransaction',
+		//	call: 'ptn_createRawTransaction',
+		//	params: 1,
+		//	inputFormatter: [null]
+		//}),
+		//new web3._extend.Method({
+		//	name: 'signRawTransaction',
+		//	call: 'ptn_signRawTransaction',
+		//	params: 3,
+		//	inputFormatter: [null,null, null]
+		//}),
+		//new web3._extend.Method({
+		//	name: 'sendRawTransaction',
+		//	call: 'ptn_sendRawTransaction',
+		//	params: 1,
+		//	inputFormatter: [null]
+		//}),
+         //       new web3._extend.Method({
+		//	name: 'sendJsonTransaction',
+		//	call: 'ptn_sendJsonTransaction',
+		//	params: 1,
+		//	inputFormatter: [null]
+		//}),
 		//new web3._extend.Method({
 		//	name: 'getBalance',
 		//	call: 'ptn_getBalance',

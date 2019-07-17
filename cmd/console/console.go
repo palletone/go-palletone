@@ -203,7 +203,7 @@ func (c *Console) init(preload []string) error {
 			if _, err = c.jsre.Run(`jptn.signRawTransaction = ptn.signRawTransaction;`); err != nil {
 				return fmt.Errorf("ptn.signRawTransaction: %v", err)
 			}
-			obj.Set("signRawTransaction", bridge.SignRawTransaction)
+			//obj.Set("signRawTransaction", bridge.SignRawTransaction)
 			//if _, err = c.jsre.Run(`jptn.getPtnTestCoin = wallet.getPtnTestCoin;`); err != nil {
 			//	return fmt.Errorf("ptn.getPtnTestCoin: %v", err)
 			//}
