@@ -35,6 +35,7 @@ import (
 
 //Execute - execute proposal, return original response of chaincode
 func Execute(ctxt context.Context, cccid *ccprovider.CCContext, spec interface{}, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error) {
+	log.Debugf("execute enter")
 	var err error
 	var cds *pb.ChaincodeDeploymentSpec
 	var ci *pb.ChaincodeInvocationSpec
@@ -63,6 +64,7 @@ func Execute(ctxt context.Context, cccid *ccprovider.CCContext, spec interface{}
 	}
 
 	resp, err := theChaincodeSupport.Execute(ctxt, cccid, ccMsg, timeout) //theChaincodeSupport.executetimeout
+	log.Debugf("resp")
 	if err != nil {
 		// Rollback transaction
 		return nil, nil, errors.WithMessage(err, "failed to execute transaction")

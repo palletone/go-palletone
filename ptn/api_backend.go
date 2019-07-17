@@ -246,8 +246,18 @@ func (b *PtnApiBackend) ServiceFilter(ctx context.Context, session *bloombits.Ma
 //}
 
 // GetContract
-func (b *PtnApiBackend) GetContract(id string) (*modules.Contract, error) {
-	return b.ptn.dag.GetContract(common.Hex2Bytes(id))
+func (b *PtnApiBackend) GetContract(addr common.Address) (*ptnjson.ContractJson, error) {
+	contract, err := b.ptn.dag.GetContract(addr.Bytes())
+	if err != nil {
+		return nil, err
+	}
+	cjson := ptnjson.ConvertContract2Json(contract)
+	tpl, err := b.ptn.dag.GetContractTpl(contract.TemplateId)
+	if err != nil {
+		return cjson, nil
+	}
+	cjson.Template = ptnjson.ConvertContractTemplate2Json(tpl)
+	return cjson, nil
 }
 func (b *PtnApiBackend) QueryDbByKey(key []byte) *ptnjson.DbRowJson {
 	val, err := b.ptn.dag.QueryDbByKey(key)
@@ -304,6 +314,19 @@ func (b *PtnApiBackend) GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxHi
 		txjs = append(txjs, txj)
 	}
 	return txjs, nil
+}
+
+func (b *PtnApiBackend) GetAssetExistence(asset string) ([]*ptnjson.ProofOfExistenceJson, error) {
+	poes, err := b.ptn.dag.GetAssetReference([]byte(asset))
+	if err != nil {
+		return nil, err
+	}
+	result := []*ptnjson.ProofOfExistenceJson{}
+	for _, poe := range poes {
+		j := ptnjson.ConvertProofOfExistence2Json(poe)
+		result = append(result, j)
+	}
+	return result, nil
 }
 
 // Get state
@@ -555,33 +578,26 @@ func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, args [][]by
 	log.Debugf("======>ContractInvoke:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
 	channelId := "palletone"
 	unit, err := b.ptn.contract.Invoke(rwset.RwM, channelId, deployId, txid, args, timeout)
-	//todo print rwset
 	if err != nil {
 		return nil, err
 	}
 	return unit.Payload, err
-	// todo tmp
-	//b.ptn.contractPorcessor.ContractTxReqBroadcast(deployId, txid, args, timeout)
-	//return nil, nil
 }
 
 func (b *PtnApiBackend) ContractQuery(contractId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
-	//contractAddr := common.HexToAddress(hex.EncodeToString(contractId))
 	channelId := "palletone"
 	rsp, err := b.ptn.contract.Invoke(rwset.RwM, channelId, contractId, txid, args, timeout)
+	rwset.RwM.Close()
 	if err != nil {
 		log.Debugf(" err!=nil =====>ContractQuery:contractId[%s]txid[%s]", hex.EncodeToString(contractId), txid)
 		return nil, err
 	}
 	log.Debugf("=====>ContractQuery:contractId[%s]txid[%s]", hex.EncodeToString(contractId), txid)
-	//fmt.Printf("contract query rsp = %#v\n", string(rsp.Payload))
 	return rsp.Payload, nil
 }
 
 func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage bool) error {
 	log.Debugf("======>ContractStop:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
-
-	//err := cc.Stop("palletone", deployId, txid, deleteImage)
 	_, err := b.ptn.contract.Stop(rwset.RwM, "palletone", deployId, txid, deleteImage)
 	return err
 }
@@ -595,8 +611,8 @@ func (b *PtnApiBackend) SignAndSendRequest(addr common.Address, tx *modules.Tran
 func (b *PtnApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, description, abi, language string, addrs []common.Address) (reqId common.Hash, tplId []byte, err error) {
 	return b.ptn.contractPorcessor.ContractInstallReq(from, to, daoAmount, daoFee, tplName, path, version, description, abi, language, true, addrs)
 }
-func (b *PtnApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (common.Hash, common.Address, error) {
-	return b.ptn.contractPorcessor.ContractDeployReq(from, to, daoAmount, daoFee, templateId, args, timeout)
+func (b *PtnApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, extData []byte, timeout time.Duration) (common.Hash, common.Address, error) {
+	return b.ptn.contractPorcessor.ContractDeployReq(from, to, daoAmount, daoFee, templateId, args, extData, timeout)
 }
 func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
 	return b.ptn.contractPorcessor.ContractInvokeReq(from, to, daoAmount, daoFee, certID, contractAddress, args, timeout)

@@ -25,12 +25,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/dag/parameter"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
@@ -179,6 +181,7 @@ type TxPool struct {
 	wg             sync.WaitGroup // for shutdown sync
 	quit           chan struct{}  // used for exit
 	nextExpireScan time.Time
+	cache          palletcache.ICache
 }
 
 type sTxDesc struct {
@@ -219,10 +222,11 @@ func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.
 		nextExpireScan: time.Now().Add(config.OrphanTTL),
 		orphans:        sync.Map{},
 		outputs:        sync.Map{},
+		cache:          freecache.NewCache(20 * 1024 * 1024),
 	}
 	pool.mu = new(sync.RWMutex)
 	pool.priority_sorted = newTxPrioritiedList(&pool.all)
-	pool.txValidator = validator.NewValidate(unit, pool, unit, unit)
+	pool.txValidator = validator.NewValidate(unit, pool, unit, unit, pool.cache)
 	// If local transactions and journaling is enabled, load from disk
 	if !config.NoLocals && config.Journal != "" {
 		log.Info("Journal path:" + config.Journal)

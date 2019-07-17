@@ -123,20 +123,6 @@ func (mr *MockIDagMockRecorder) CurrentUnit(token interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentUnit", reflect.TypeOf((*MockIDag)(nil).CurrentUnit), token)
 }
 
-// VerifyHeader mocks base method
-func (m *MockIDag) VerifyHeader(header *modules.Header) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "VerifyHeader", header)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// VerifyHeader indicates an expected call of VerifyHeader
-func (mr *MockIDagMockRecorder) VerifyHeader(header interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyHeader", reflect.TypeOf((*MockIDag)(nil).VerifyHeader), header)
-}
-
 // GetCurrentUnit mocks base method
 func (m *MockIDag) GetCurrentUnit(assetId modules.AssetId) *modules.Unit {
 	m.ctrl.T.Helper()
@@ -1320,20 +1306,6 @@ func (mr *MockIDagMockRecorder) GetIrreversibleUnitNum(id interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIrreversibleUnitNum", reflect.TypeOf((*MockIDag)(nil).GetIrreversibleUnitNum), id)
 }
 
-// ValidateUnitExceptPayment mocks base method
-func (m *MockIDag) ValidateUnitExceptPayment(unit *modules.Unit) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ValidateUnitExceptPayment", unit)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ValidateUnitExceptPayment indicates an expected call of ValidateUnitExceptPayment
-func (mr *MockIDagMockRecorder) ValidateUnitExceptPayment(unit interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateUnitExceptPayment", reflect.TypeOf((*MockIDag)(nil).ValidateUnitExceptPayment), unit)
-}
-
 // SaveChaincode mocks base method
 func (m *MockIDag) SaveChaincode(contractId common.Address, cc *list.CCInfo) error {
 	m.ctrl.T.Helper()
@@ -1678,4 +1650,19 @@ func (m *MockIDag) QueryProofOfExistenceByReference(ref []byte) ([]*modules.Proo
 func (mr *MockIDagMockRecorder) QueryProofOfExistenceByReference(ref interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryProofOfExistenceByReference", reflect.TypeOf((*MockIDag)(nil).QueryProofOfExistenceByReference), ref)
+}
+
+// GetAssetReference mocks base method
+func (m *MockIDag) GetAssetReference(asset []byte) ([]*modules.ProofOfExistence, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAssetReference", asset)
+	ret0, _ := ret[0].([]*modules.ProofOfExistence)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAssetReference indicates an expected call of GetAssetReference
+func (mr *MockIDagMockRecorder) GetAssetReference(asset interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssetReference", reflect.TypeOf((*MockIDag)(nil).GetAssetReference), asset)
 }

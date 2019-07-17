@@ -42,7 +42,7 @@ type IDag interface {
 
 	IsEmpty() bool
 	CurrentUnit(token modules.AssetId) *modules.Unit
-	VerifyHeader(header *modules.Header) error
+	//VerifyHeader(header *modules.Header) error
 	GetCurrentUnit(assetId modules.AssetId) *modules.Unit
 	GetMainCurrentUnit() *modules.Unit
 	GetCurrentMemUnit(assetId modules.AssetId, index uint64) *modules.Unit
@@ -148,7 +148,7 @@ type IDag interface {
 	HeadUnitNum() uint64
 	HeadUnitHash() common.Hash
 	GetIrreversibleUnitNum(id modules.AssetId) uint64
-	ValidateUnitExceptPayment(unit *modules.Unit) error
+	//ValidateUnitExceptPayment(unit *modules.Unit) error
 
 	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
 	GetChaincodes(contractId common.Address) (*list.CCInfo, error)
@@ -181,4 +181,5 @@ type IDag interface {
 	GetDataVersion() (*modules.DataVersion, error)
 	StoreDataVersion(dv *modules.DataVersion) error
 	QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error)
+	GetAssetReference(asset []byte) ([]*modules.ProofOfExistence, error)
 }

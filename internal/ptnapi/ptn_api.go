@@ -133,9 +133,9 @@ func (s *PublicBlockChainAPI) GetTokenTxHistory(ctx context.Context, assetStr st
 }
 
 func (s *PublicBlockChainAPI) GetAssetExistence(ctx context.Context, asset string) ([]*ptnjson.ProofOfExistenceJson, error) {
-	//result, err := s.b.GetAssetExistence(asset)
-	//return result, err
-	return nil, nil
+	result, err := s.b.GetAssetExistence(asset)
+	return result, err
+
 }
 
 func (s *PublicBlockChainAPI) ListSysConfig() ([]*ptnjson.ConfigJson, error) {

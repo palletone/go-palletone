@@ -20,6 +20,7 @@
 package common
 
 import (
+	"encoding/binary"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -35,6 +36,7 @@ import (
 type PropRepository struct {
 	db storage.IPropertyDb
 }
+
 type IPropRepository interface {
 	StoreGlobalProp(gp *modules.GlobalProperty) error
 	RetrieveGlobalProp() (*modules.GlobalProperty, error)
@@ -134,15 +136,15 @@ func (pRep *PropRepository) GetNewestUnitTimestamp(token modules.AssetId) (int64
 func (pRep *PropRepository) UpdateMediatorSchedule(ms *modules.MediatorSchedule, gp *modules.GlobalProperty,
 	dgp *modules.DynamicGlobalProperty) bool {
 	token := dagconfig.DagConfig.GetGasToken()
-	_, idx, timestamp, err := pRep.db.GetNewestUnit(token)
+	hash, idx, _, err := pRep.db.GetNewestUnit(token)
 	if err != nil {
-		log.Debug("GetNewestUnit error:" + err.Error())
+		log.Debugf("GetNewestUnit error:" + err.Error())
 		return false
 	}
 
 	aSize := uint64(len(gp.ActiveMediators))
 	if aSize == 0 {
-		log.Debug("The current number of active mediators is 0!")
+		log.Debugf("the current number of active mediators is 0")
 		return false
 	}
 
@@ -161,11 +163,12 @@ func (pRep *PropRepository) UpdateMediatorSchedule(ms *modules.MediatorSchedule,
 	}
 
 	// 4. 打乱证人的调度顺序
-	Shuffle(ms.CurrentShuffledMediators, uint64(timestamp))
+	shuffleMediators(ms.CurrentShuffledMediators, binary.BigEndian.Uint64(hash[8:]))
 	return true
 }
-func Shuffle(mediators []common.Address, timestamp uint64) {
-	nowHi := uint64(timestamp << 32)
+
+func shuffleMediators(mediators []common.Address, seed uint64) {
+	nowHi := uint64(seed << 32)
 	aSize := len(mediators)
 	for i := 0; i < aSize; i++ {
 		// 高性能随机生成器(High performance random generator)

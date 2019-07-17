@@ -18,12 +18,12 @@ import (
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/contracts/ucc"
 
+	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag"
 	md "github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
-	"math/rand"
 	"strings"
 )
 
@@ -228,6 +228,7 @@ func saveChaincode(dag dag.IDag, contractId common.Address, chaincode *cclist.CC
 // ccName can be contract Id
 //func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
 func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
+	log.Debugf("Invoke enter")
 	log.Info("Invoke enter", "chainID", chainID, "deployId", deployId, "txid", txid, "timeout", timeout)
 	defer log.Info("Invoke exit", "chainID", chainID, "deployId", deployId, "txid", txid, "timeout", timeout)
 
@@ -244,16 +245,17 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 		}
 	} else {
 		cc, err = getChaincode(idag, address)
+		log.Debugf("get chain code")
 		if err != nil {
 			return nil, err
 		}
 	}
 	startTm := time.Now()
 	es := NewEndorserServer(mksupt)
-
+	log.Debugf("new endorser server")
 	spec := &pb.ChaincodeSpec{
 		ChaincodeId: &pb.ChaincodeID{Name: cc.Name},
-		Type:        pb.ChaincodeSpec_GOLANG,
+		Type:        pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value[cc.Language]),
 		Input:       &pb.ChaincodeInput{Args: args},
 	}
 	cid := &pb.ChaincodeID{
@@ -262,11 +264,13 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 		Version: cc.Version,
 	}
 	sprop, prop, err := SignedEndorserProposa(chainID, txid, spec, creator, []byte("msg1"))
+	log.Debugf("signed endorser proposal")
 	if err != nil {
 		log.Errorf("signedEndorserProposa error[%v]", err)
 		return nil, err
 	}
 	rsp, unit, err := es.ProcessProposal(rwM, idag, deployId, context.Background(), sprop, prop, chainID, cid, timeout)
+	log.Debugf("process proposal")
 	if err != nil {
 		log.Infof("ProcessProposal error[%v]", err)
 		return nil, err
@@ -345,11 +349,12 @@ func GetAllContainers(client *docker.Client) {
 					log.Infof("common.StringToAddress err: %s", err.Error())
 					return
 				}
-				txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
+				rd, err := crypto.GetRandomBytes(32)
+				txid := util.RlpHash(rd)
 				log.Infof("==============需要重启====容器名称为-->%s,---->%s", name, hex.EncodeToString(contractAddr.Bytes21()))
-				_, err = StartChaincodeContainert(dag, "palletone", contractAddr.Bytes21(), txid)
+				_, err = RestartContainer(dag, "palletone", contractAddr.Bytes21(), txid.String())
 				if err != nil {
-					log.Infof("startChaincodeContainert err: %s", err.Error())
+					log.Infof("RestartContainer err: %s", err.Error())
 					return
 				}
 			}
@@ -360,7 +365,7 @@ func GetAllContainers(client *docker.Client) {
 	}
 }
 
-func StartChaincodeContainert(idag dag.IDag, chainID string, deployId []byte, txId string) ([]byte, error) {
+func RestartContainer(idag dag.IDag, chainID string, deployId []byte, txId string) ([]byte, error) {
 	_, err := Stop(nil, idag, deployId, chainID, deployId, txId, false, true)
 	if err != nil {
 		return nil, err

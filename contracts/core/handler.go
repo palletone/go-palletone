@@ -37,7 +37,7 @@ import (
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/outchain"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
-	commonledger "github.com/palletone/go-palletone/core/vmContractPub/ledger"
+	//commonledger "github.com/palletone/go-palletone/core/vmContractPub/ledger"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/core/vmContractPub/sysccprovider"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
@@ -65,16 +65,16 @@ type transactionContext struct {
 	responseNotifier chan *pb.ChaincodeMessage
 
 	// tracks open iterators used for range queries
-	queryIteratorMap    map[string]commonledger.ResultsIterator
-	pendingQueryResults map[string]*pendingQueryResult
+	//queryIteratorMap    map[string]commonledger.ResultsIterator
+	//pendingQueryResults map[string]*pendingQueryResult
 
 	txsimulator rwset.TxSimulator
 }
 
-type pendingQueryResult struct {
-	batch []*pb.QueryResultBytes
-	count int
-}
+//type pendingQueryResult struct {
+//	batch []*pb.QueryResultBytes
+//	count int
+//}
 
 type nextStateInfo struct {
 	msg      *pb.ChaincodeMessage
@@ -121,7 +121,11 @@ func HandleChaincodeStream(chaincodeSupport *ChaincodeSupport, ctxt context.Cont
 	deadline, ok := ctxt.Deadline()
 	log.Debugf("Current context deadline = %s, ok = %v", deadline, ok)
 	handler := newChaincodeSupportHandler(chaincodeSupport, stream, jury)
-	return handler.processStream()
+	err := handler.processStream()
+	if err != nil {
+		log.Debugf("handler process stream err: %s", err.Error())
+	}
+	return err
 }
 
 // Filter the Errors to allow NoTransitionError and CanceledError to not propagate for cases where embedded Err == nil
@@ -263,23 +267,23 @@ func newChaincodeSupportHandler(chaincodeSupport *ChaincodeSupport, peerChatStre
 	return v
 }
 
-func (p *pendingQueryResult) cut() []*pb.QueryResultBytes {
-	batch := p.batch
-	p.batch = nil
-	p.count = 0
-	return batch
-}
-
-func (p *pendingQueryResult) add(queryResult commonledger.QueryResult) error {
-	queryResultBytes, err := proto.Marshal(queryResult.(proto.Message))
-	if err != nil {
-		log.Errorf("Failed to get encode query result as bytes")
-		return err
-	}
-	p.batch = append(p.batch, &pb.QueryResultBytes{ResultBytes: queryResultBytes})
-	p.count = len(p.batch)
-	return nil
-}
+//func (p *pendingQueryResult) cut() []*pb.QueryResultBytes {
+//	batch := p.batch
+//	p.batch = nil
+//	p.count = 0
+//	return batch
+//}
+//
+//func (p *pendingQueryResult) add(queryResult commonledger.QueryResult) error {
+//	queryResultBytes, err := proto.Marshal(queryResult.(proto.Message))
+//	if err != nil {
+//		log.Errorf("Failed to get encode query result as bytes")
+//		return err
+//	}
+//	p.batch = append(p.batch, &pb.QueryResultBytes{ResultBytes: queryResultBytes})
+//	p.count = len(p.batch)
+//	return nil
+//}
 
 func (handler *Handler) enterGetSystemConfig(e *fsm.Event) {
 	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
@@ -320,38 +324,6 @@ func (handler *Handler) enterGetSystemConfig(e *fsm.Event) {
 			return
 		}
 		chaincodeID := handler.getCCRootName()
-
-		//TODO 通过 keyForSystemConfig 获取相应的系统的配置
-		//var payloadBytes []byte
-		//var err error
-		//systemConfig := &core.SystemConfig{
-		//	FoundationAddress:         "P1N4hGvGhjzfxmXGGKSFRL2vWZnSCXYojZU",
-		//	DepositAmountForMediator:  2000,
-		//	DepositAmountForJury:      1000,
-		//	DepositAmountForDeveloper: 800,
-		//	DepositRate:               0.02,
-		//	DepositPeriod:             0,
-		//}
-		//res, err := txContext.txsimulator.GetState(msg.ContractId, chaincodeID, keyForSystemConfig.Key)
-		//payloadBytes, err := txContext.txsimulator.GetConfig(keyForSystemConfig.Key)
-
-		//fmt.Println("keyForSystemConfig.Key = ", keyForSystemConfig.Key)
-		//if strings.Compare("DepositAmountForJury", keyForSystemConfig.Key) == 0 {
-		//	depositAmount := strconv.FormatUint(systemConfig.DepositAmountForJury, 10)
-		//
-		//	payloadBytes = []byte(depositAmount)
-		//} else if strings.Compare("FoundationAddress", keyForSystemConfig.Key) == 0 {
-		//	payloadBytes = []byte(systemConfig.FoundationAddress)
-		//} else if strings.Compare("DepositAmountForMediator", keyForSystemConfig.Key) == 0 {
-		//	depositAmount := strconv.FormatUint(systemConfig.DepositAmountForMediator, 10)
-		//	payloadBytes = []byte(depositAmount)
-		//} else if strings.Compare("DepositAmountForDeveloper", keyForSystemConfig.Key) == 0 {
-		//	depositAmount := strconv.FormatUint(systemConfig.DepositAmountForDeveloper, 10)
-		//	payloadBytes = []byte(depositAmount)
-		//} else if strings.Compare("DepositPeriod", keyForSystemConfig.Key) == 0 {
-		//	payloadBytes = []byte(strconv.Itoa(systemConfig.DepositPeriod))
-		//}
-		//chaincodeID := handler.getCCRootName()
 		log.Debugf("[%s] getting state for chaincode %s, channel %s", shorttxid(msg.Txid), chaincodeID, msg.ChannelId)
 
 		payloadBytes, err := txContext.txsimulator.GetChainParameters()
@@ -484,10 +456,10 @@ func (handler *Handler) createTxContext(ctxt context.Context, chainID string, tx
 		return nil, errors.Errorf("txid: %s(%s) exists", txid, chainID)
 	}
 	txctx := &transactionContext{chainID: chainID, signedProp: signedProp,
-		proposal: prop, responseNotifier: make(chan *pb.ChaincodeMessage, 1),
-		//glh
-		//queryIteratorMap:    make(map[string]commonledger.ResultsIterator),
-		pendingQueryResults: make(map[string]*pendingQueryResult)}
+		proposal: prop, responseNotifier: make(chan *pb.ChaincodeMessage, 1)}
+	//glh
+	//queryIteratorMap:    make(map[string]commonledger.ResultsIterator),
+	//pendingQueryResults: make(map[string]*pendingQueryResult)}
 	handler.txCtxs[txCtxID] = txctx
 	log.Debugf("createTxContext, create txCtxID[%s]", txCtxID)
 	//glh
@@ -568,6 +540,7 @@ func (handler *Handler) processStream() error {
 		select {
 		case sendErr := <-errc:
 			if sendErr != nil {
+				log.Debugf("%+v", sendErr)
 				return sendErr
 			}
 			//send was successful, just continue
@@ -583,6 +556,7 @@ func (handler *Handler) processStream() error {
 				log.Debugf("Error handling chaincode support stream: %+v", err)
 				return err
 			} else if in == nil {
+				log.Debugf("in == nil")
 				//err = errors.New("received nil message, ending chaincode support stream")
 				//log.Debugf("%+v", err)
 				return nil
@@ -590,6 +564,7 @@ func (handler *Handler) processStream() error {
 			log.Debugf("[%s]Received message %s from shim", shorttxid(in.Txid), in.Type.String())
 			if in.Type.String() == pb.ChaincodeMessage_ERROR.String() {
 				log.Errorf("Got error: %s", string(in.Payload))
+
 			}
 
 			// we can spin off another Recv again
@@ -632,6 +607,7 @@ func (handler *Handler) processStream() error {
 			log.Debugf("[%s]sending state message %s", shorttxid(in.Txid), in.Type.String())
 			//ready messages are sent sync
 			if nsInfo.sendSync {
+				log.Debugf("send sync %v", nsInfo.sendSync)
 				if in.Type.String() != pb.ChaincodeMessage_READY.String() {
 					panic(fmt.Sprintf("[%s]Sync send can only be for READY state %s\n", shorttxid(in.Txid), in.Type.String()))
 				}
@@ -639,6 +615,7 @@ func (handler *Handler) processStream() error {
 					return errors.WithMessage(err, fmt.Sprintf("[%s]error sending ready  message, ending stream:", shorttxid(in.Txid)))
 				}
 			} else {
+				log.Debugf("send async")
 				//if error bail in select
 				handler.serialSendAsync(in, errc)
 			}
@@ -746,9 +723,9 @@ func (handler *Handler) notify(msg *pb.ChaincodeMessage) {
 		tctx.responseNotifier <- msg
 
 		// clean up queryIteratorMap
-		for _, v := range tctx.queryIteratorMap {
-			v.Close()
-		}
+		//for _, v := range tctx.queryIteratorMap {
+		//	v.Close()
+		//}
 	}
 }
 
@@ -2213,7 +2190,6 @@ func (handler *Handler) sendExecuteMessage(ctxt context.Context, chainID string,
 
 	log.Debugf("[%s]sendExecuteMsg trigger event %s", shorttxid(msg.Txid), msg.Type)
 	handler.triggerNextState(msg, true)
-
 	return txctx.responseNotifier, nil
 }
 
