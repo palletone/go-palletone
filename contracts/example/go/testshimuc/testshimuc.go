@@ -23,6 +23,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/contracts/shim"
@@ -285,13 +286,17 @@ func (t *SimpleChaincode) test_GetStateByPrefix(stub shim.ChaincodeStubInterface
 	if len(args) < 1 {
 		return shim.Error("args:<state key prefix>")
 	}
-	val, err := stub.GetStateByPrefix(args[0])
+	KVs, err := stub.GetStateByPrefix(args[0])
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 	res := map[string]string{}
-	for _, kv := range val {
-		res[kv.Key] = string(kv.Value)
+	for _, kv := range KVs {
+		v := []byte{}
+		if err := rlp.DecodeBytes(kv.Value, &v); err != nil {
+			return shim.Error(err.Error())
+		}
+		res[kv.Key] = string(v)
 	}
 	data, err := json.Marshal(res)
 	if err != nil {
