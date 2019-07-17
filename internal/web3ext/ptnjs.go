@@ -34,11 +34,11 @@ web3._extend({
 		//	params: 2,
 		//	inputFormatter: [web3._extend.formatters.inputAddressFormatter, null]
 		//}),
-		new web3._extend.Method({
-			name: 'addressBalanceStatistics',
-			call: 'ptn_addressBalanceStatistics',
-			params: 2
-		}),
+		//new web3._extend.Method({
+		//	name: 'addressBalanceStatistics',
+		//	call: 'ptn_addressBalanceStatistics',
+		//	params: 2
+		//}),
 		new web3._extend.Method({
 			name: 'encodeTx',
 			call: 'ptn_encodeTx',
@@ -182,18 +182,18 @@ web3._extend({
 	],
 
 	properties: [
-		new web3._extend.Property({
-			name: 'pendingTransactions',
-			getter: 'ptn_pendingTransactions',
-			outputFormatter: function(txs) {
-				var formatted = [];
-				for (var i = 0; i < txs.length; i++) {
-					formatted.push(web3._extend.formatters.outputTransactionFormatter(txs[i]));
-					formatted[i].blockHash = null;
-				}
-				return formatted;
-			}
-		}),
+		//new web3._extend.Property({
+		//	name: 'pendingTransactions',
+		//	getter: 'ptn_pendingTransactions',
+		//	outputFormatter: function(txs) {
+		//		var formatted = [];
+		//		for (var i = 0; i < txs.length; i++) {
+		//			formatted.push(web3._extend.formatters.outputTransactionFormatter(txs[i]));
+		//			formatted[i].blockHash = null;
+		//		}
+		//		return formatted;
+		//	}
+		//}),
 		new web3._extend.Property({
 			name: 'getChainParameters',
 			getter: 'ptn_getChainParameters'

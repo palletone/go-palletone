@@ -91,6 +91,10 @@ web3._extend({
 			name: 'listWallets',
 			getter: 'personal_listWallets'
 		}),
+		new web3._extend.Property({
+			name: 'listAccounts',
+			getter: 'personal_listAccounts'
+		}),
 	]
 })
 `
