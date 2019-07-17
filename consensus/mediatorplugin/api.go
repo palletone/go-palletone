@@ -124,9 +124,10 @@ func NewPublicMediatorAPI(mp *MediatorPlugin) *PublicMediatorAPI {
 	return &PublicMediatorAPI{mp}
 }
 
+// 初始群签名公私钥
 type InitDKSResult struct {
-	PrivateKey string
-	PublicKey  string
+	PrivateKey string `json:"private_key"` // 初始群签名私钥
+	PublicKey  string `json:"public_key"`  // 初始群签名公钥
 }
 
 func (a *PublicMediatorAPI) DumpInitDKS() (res InitDKSResult) {
