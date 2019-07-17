@@ -185,15 +185,13 @@ func (c *Console) init(preload []string) error {
 			if _, err = c.jsre.Run(`jptn.transferPtn = personal.transferPtn;`); err != nil {
 				return fmt.Errorf("personal.transferPtn: %v", err)
 			}
-			if _, err = c.jsre.Run(`jptn.llistAccounts = personal.llistAccounts;`); err != nil {
-				return fmt.Errorf("personal.llistAccounts: %v", err)
-			}
+
 			obj.Set("openWallet", bridge.OpenWallet)
 			obj.Set("unlockAccount", bridge.UnlockAccount)
 			obj.Set("newAccount", bridge.NewAccount)
 			obj.Set("sign", bridge.Sign)
 			obj.Set("transferPtn", bridge.TransferPtn)
-			obj.Set("llistAccounts", bridge.LlistAccounts)
+
 		}
 		ptn, errr := c.jsre.Get("ptn")
 		if errr != nil {
@@ -203,7 +201,7 @@ func (c *Console) init(preload []string) error {
 			if _, err = c.jsre.Run(`jptn.signRawTransaction = ptn.signRawTransaction;`); err != nil {
 				return fmt.Errorf("ptn.signRawTransaction: %v", err)
 			}
-			obj.Set("signRawTransaction", bridge.SignRawTransaction)
+			//obj.Set("signRawTransaction", bridge.SignRawTransaction)
 			//if _, err = c.jsre.Run(`jptn.getPtnTestCoin = wallet.getPtnTestCoin;`); err != nil {
 			//	return fmt.Errorf("ptn.getPtnTestCoin: %v", err)
 			//}

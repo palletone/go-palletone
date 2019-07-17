@@ -140,7 +140,7 @@ type Backend interface {
 	EncodeTx(jsonStr string) (string, error)
 
 	ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, description, abi, language string, addrs []common.Address) (reqId common.Hash, tplId []byte, err error)
-	ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, extData []byte,timeout time.Duration) (reqId common.Hash, contractAddr common.Address, err error)
+	ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, extData []byte, timeout time.Duration) (reqId common.Hash, contractAddr common.Address, err error)
 	ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error)
 	SendContractInvokeReqTx(requestTx *modules.Transaction) (reqId common.Hash, err error)
 	ContractInvokeReqTokenTx(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, asset string, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error)
@@ -226,9 +226,14 @@ func GetAPIs(apiBackend Backend) []rpc.API {
 			Public:    false,
 		}, {
 			Namespace: "dag",
-			Version:   "2.0",
+			Version:   "1.0",
 			Service:   NewPublicDagAPI(apiBackend),
 			Public:    true,
+		}, {
+			Namespace: "dag",
+			Version:   "1.0",
+			Service:   NewPrivateDagAPI(apiBackend),
+			Public:    false,
 		}, {
 			Namespace: "wallet",
 			Version:   "1.0",

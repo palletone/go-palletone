@@ -2566,36 +2566,35 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
             this.settings = new Settings();
         };
 
-        Web3.prototype.BigNumber = BigNumber;
-        Web3.prototype.toHex = utils.toHex;
-        Web3.prototype.toAscii = utils.toAscii;
-        Web3.prototype.toUtf8 = utils.toUtf8;
-        Web3.prototype.fromAscii = utils.fromAscii;
-        Web3.prototype.fromUtf8 = utils.fromUtf8;
-        Web3.prototype.toDecimal = utils.toDecimal;
-        Web3.prototype.fromDecimal = utils.fromDecimal;
-        Web3.prototype.toBigNumber = utils.toBigNumber;
-        Web3.prototype.toWei = utils.toWei;
-        Web3.prototype.fromWei = utils.fromWei;
-        Web3.prototype.isAddress = utils.isAddress;
-        Web3.prototype.isChecksumAddress = utils.isChecksumAddress;
-        Web3.prototype.toChecksumAddress = utils.toChecksumAddress;
-        Web3.prototype.isIBAN = utils.isIBAN;
-        Web3.prototype.padLeft = utils.padLeft;
-        Web3.prototype.padRight = utils.padRight;
+        // Web3.prototype.BigNumber = BigNumber;
+        // Web3.prototype.toHex = utils.toHex;
+        // Web3.prototype.toAscii = utils.toAscii;
+        // Web3.prototype.toUtf8 = utils.toUtf8;
+        // Web3.prototype.fromAscii = utils.fromAscii;
+        // Web3.prototype.fromUtf8 = utils.fromUtf8;
+        // Web3.prototype.toDecimal = utils.toDecimal;
+        // Web3.prototype.fromDecimal = utils.fromDecimal;
+        // Web3.prototype.toBigNumber = utils.toBigNumber;
+        // Web3.prototype.toWei = utils.toWei;
+        // Web3.prototype.fromWei = utils.fromWei;
+        // Web3.prototype.isAddress = utils.isAddress;
+        // Web3.prototype.isChecksumAddress = utils.isChecksumAddress;
+        // Web3.prototype.toChecksumAddress = utils.toChecksumAddress;
+        // Web3.prototype.isIBAN = utils.isIBAN;
+        // Web3.prototype.padLeft = utils.padLeft;
+        // Web3.prototype.padRight = utils.padRight;
 
-
-        Web3.prototype.sha3 = function(string, options) {
-            return '0x' + sha3(string, options);
-        };
+        // Web3.prototype.sha3 = function(string, options) {
+        //     return '0x' + sha3(string, options);
+        // };
 
         /**
          * Transforms direct icap to address
          */
-        Web3.prototype.fromICAP = function (icap) {
-            var iban = new Iban(icap);
-            return iban.address();
-        };
+        // Web3.prototype.fromICAP = function (icap) {
+        //     var iban = new Iban(icap);
+        //     return iban.address();
+        // };
 
         var properties = function () {
             return [
@@ -2609,7 +2608,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                     inputFormatter: utils.toDecimal
                 }),
                 new Property({
-                    name: 'version.ethereum',
+                    name: 'version.palletone',
                     getter: 'ptn_protocolVersion',
                     inputFormatter: utils.toDecimal
                 }),
@@ -2621,13 +2620,13 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
             ];
         };
 
-        Web3.prototype.isConnected = function(){
-            return (this.currentProvider && this.currentProvider.isConnected());
-        };
-
-        Web3.prototype.createBatch = function () {
-            return new Batch(this);
-        };
+        // Web3.prototype.isConnected = function(){
+        //     return (this.currentProvider && this.currentProvider.isConnected());
+        // };
+        //
+        // Web3.prototype.createBatch = function () {
+        //     return new Batch(this);
+        // };
 
         module.exports = Web3;
 
@@ -5138,32 +5137,9 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         };
 
         var methods = function () {
-            var putString = new Method({
-                name: 'putString',
-                call: 'db_putString',
-                params: 3
-            });
-
-            var getString = new Method({
-                name: 'getString',
-                call: 'db_getString',
-                params: 2
-            });
-
-            var putHex = new Method({
-                name: 'putHex',
-                call: 'db_putHex',
-                params: 3
-            });
-
-            var getHex = new Method({
-                name: 'getHex',
-                call: 'db_getHex',
-                params: 2
-            });
 
             return [
-                putString, getString, putHex, getHex
+
             ];
         };
 
@@ -5248,403 +5224,14 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
             //this.sendIBANTransaction = transfer.bind(null, this);
         }
 
-        // Object.defineProperty(Ptn.prototype, 'defaultBlock', {
-        //     get: function () {
-        //         return c.defaultBlock;
-        //     },
-        //     set: function (val) {
-        //         c.defaultBlock = val;
-        //         return val;
-        //     }
-        // });
-
-        // Object.defineProperty(Ptn.prototype, 'defaultAccount', {
-        //     get: function () {
-        //         return c.defaultAccount;
-        //     },
-        //     set: function (val) {
-        //         c.defaultAccount = val;
-        //         return val;
-        //     }
-        // });
-
         var methods = function () {
-
-            var forking = new Method({
-                name: 'forking',
-                call: 'ptn_forking',
-                params: 1,
-                inputFormatter: [null],
-                outputFormatter: formatters.outputBigNumberFormatter
-            });
-
-            var getUnitByHash = new Method({
-                name: 'getUnitByHash',
-                call: 'ptn_getUnitByHash',
-                params: 1,
-                inputFormatter: [null],
-                outputFormatter: formatters.outputBlockFormatter
-            });
-
-            var getUnitByNumber = new Method({
-                name: 'getUnitByNumber',
-                call: 'ptn_getUnitByNumber',
-                params: 1,
-                inputFormatter: [null],
-                outputFormatter: formatters.outputBlockFormatter
-            });
-
-            var getPrefix = new Method({
-                name: 'getPrefix',
-                call: 'ptn_getPrefix',
-                params: 1,
-                inputFormatter: [null],
-                outputFormatter: formatters.outputBlockFormatter
-            });
-
-            /*var getBalance = new Method({
-        name: 'getBalance',
-        call: 'ptn_getBalance',
-        params: 1,
-        inputFormatter: [null]
-    });
-
-    var getStorageAt = new Method({
-        name: 'getStorageAt',
-        call: 'ptn_getStorageAt',
-        params: 3,
-        inputFormatter: [null, utils.toHex, formatters.inputDefaultBlockNumberFormatter]
-    });
-
-    var getCode = new Method({
-        name: 'getCode',
-        call: 'ptn_getCode',
-        params: 2,
-        inputFormatter: [formatters.inputAddressFormatter, formatters.inputDefaultBlockNumberFormatter]
-    });
-
-    var getBlock = new Method({
-        name: 'getBlock',
-        call: blockCall,
-        params: 2,
-        inputFormatter: [formatters.inputBlockNumberFormatter, function (val) { return !!val; }],
-        outputFormatter: formatters.outputBlockFormatter
-    });
-
-    var getUncle = new Method({
-        name: 'getUncle',
-        call: uncleCall,
-        params: 2,
-        inputFormatter: [formatters.inputBlockNumberFormatter, utils.toHex],
-        outputFormatter: formatters.outputBlockFormatter,
-
-    });
-
-    var getCompilers = new Method({
-        name: 'getCompilers',
-        call: 'ptn_getCompilers',
-        params: 0
-    });*/
-
-            /*var getBlockTransactionCount = new Method({
-        name: 'getBlockTransactionCount',
-        call: getBlockTransactionCountCall,
-        params: 1,
-        inputFormatter: [formatters.inputBlockNumberFormatter],
-        outputFormatter: utils.toDecimal
-    });
-
-    var getBlockUncleCount = new Method({
-        name: 'getBlockUncleCount',
-        call: uncleCountCall,
-        params: 1,
-        inputFormatter: [formatters.inputBlockNumberFormatter],
-        outputFormatter: utils.toDecimal
-    });
-
-    var getTransaction = new Method({
-        name: 'getTransaction',
-        call: 'ptn_getTransactionByHash',
-        params: 1,
-        outputFormatter: formatters.outputTransactionFormatter
-    });
-
-    var getTransactionFromBlock = new Method({
-        name: 'getTransactionFromBlock',
-        call: transactionFromBlockCall,
-        params: 2,
-        inputFormatter: [formatters.inputBlockNumberFormatter, utils.toHex],
-        outputFormatter: formatters.outputTransactionFormatter
-    });
-
-    var getTransactionReceipt = new Method({
-        name: 'getTransactionReceipt',
-        call: 'ptn_getTransactionReceipt',
-        params: 1,
-        outputFormatter: formatters.outputTransactionReceiptFormatter
-    });
-
-    var getTransactionCount = new Method({
-        name: 'getTransactionCount',
-        call: 'ptn_getTransactionCount',
-        params: 2,
-        inputFormatter: [null, formatters.inputDefaultBlockNumberFormatter],
-        outputFormatter: utils.toDecimal
-    });*/
-            /*var walletCreateTransaction = new Method({
-        name: 'walletCreateTransaction',
-        call: 'wallet_createRawTransaction',
-        params: 4,
-        inputFormatter: [null,null,null,null]
-    });
-    var cmdCreateTransaction = new Method({
-        name: 'cmdCreateTransaction',
-        call: 'ptn_cmdCreateTransaction',
-        params: 4,
-        inputFormatter: [null,null,null,null]
-    });
-
-    var createRawTransaction = new Method({
-        name: 'createRawTransaction',
-        call: 'ptn_createRawTransaction',
-        params: 1,
-        inputFormatter: [null]
-    });*/
-
-            /* var signRawTransaction = new Method({
-        name: 'signRawTransaction',
-        call: 'ptn_signRawTransaction',
-        params: 3,
-        inputFormatter: [null,null,null]
-    });
-
-    var sendRawTransaction = new Method({
-        name: 'sendRawTransaction',
-        call: 'ptn_sendRawTransaction',
-        params: 1,
-        inputFormatter: [null]
-    });
-    var walletSendTransaction = new Method({
-        name: 'walletSendRawTransaction',
-        call: 'wallet_sendRawTransaction',
-        params: 1,
-        inputFormatter: [null]
-    });
-
-    var sendTransaction = new Method({
-        name: 'sendTransaction',
-        call: 'ptn_sendTransaction',
-        params: 1,
-        inputFormatter: [formatters.inputTransactionFormatter]
-    });
-
-    var signTransaction = new Method({
-        name: 'signTransaction',
-        call: 'ptn_signTransaction',
-        params: 1,
-        inputFormatter: [formatters.inputTransactionFormatter]
-    });
-
-    var sign = new Method({
-        name: 'sign',
-        call: 'ptn_sign',
-        params: 2,
-        inputFormatter: [formatters.inputAddressFormatter, null]
-    });
-
-    var call = new Method({
-        name: 'call',
-        call: 'ptn_call',
-        params: 2,
-        inputFormatter: [formatters.inputCallFormatter, formatters.inputDefaultBlockNumberFormatter]
-    });*/
-
-            /*var estimateGas = new Method({
-        name: 'estimateGas',
-        call: 'ptn_estimateGas',
-        params: 1,
-        inputFormatter: [formatters.inputCallFormatter],
-        outputFormatter: utils.toDecimal
-    });
-
-    var compileSolidity = new Method({
-        name: 'compile.solidity',
-        call: 'ptn_compileSolidity',
-        params: 1
-    });
-
-    var compileLLL = new Method({
-        name: 'compile.lll',
-        call: 'ptn_compileLLL',
-        params: 1
-    });*/
-
-            /*var compileSerpent = new Method({
-        name: 'compile.serpent',
-        call: 'ptn_compileSerpent',
-        params: 1
-    });
-
-    var submitWork = new Method({
-        name: 'submitWork',
-        call: 'ptn_submitWork',
-        params: 3
-    });
-
-    var getWork = new Method({
-        name: 'getWork',
-        call: 'ptn_getWork',
-        params: 0
-    });*/
-            /* var getTransactionsByTxid = new Method({
-        name: 'getTransactionsByTxid',
-        call: 'ptn_getTransactionsByTxid',
-        params: 1,
-        // inputFormatter: [null]
-    });
-    var walletTokens = new Method({
-        name: 'walletTokens',
-        call: 'ptn_walletTokens',
-        params: 1,
-        // inputFormatter: [null]
-    });
-
-    var walletBalance = new Method({
-        name: 'walletBalance',
-        call: 'ptn_walletBalance',
-        params: 4,
-        // inputFormatter: [null]
-    });
-
-    var getContract = new Method({
-        name: 'getContract',
-        call: 'ptn_getContract',
-        params: 1,
-        // inputFormatter: [null]
-    });*/
-            /*var getHeader = new Method({
-        name: 'getHeader',
-        call: 'ptn_getHeader',
-        params: 2,
-        // inputFormatter: [null]
-    });
-    var getUnit = new Method({
-        name: 'getUnit',
-        call: 'ptn_getUnit',
-        params: 1,
-        // inputFormatter: [null]
-    });
-    var getUnitNumber = new Method({
-        name: 'getUnitNumber',
-        call: 'ptn_getUnitNumber',
-        params: 1,
-        // inputFormatter: [null]
-    });
-    var getTrieSyncProgress = new Method({
-        name: 'getTrieSyncProgress',
-        call: 'ptn_getTrieSyncProgress',
-        params: 0,
-        // inputFormatter: [null]
-    });
-
-    var getUnitTxsInfo = new Method({
-        name: 'getUnitTxsInfo',
-        call: 'dag_getUnitTxsInfo',
-        params: 1,
-        // inputFormatter: [null]
-    });
-    var getUnitTxsHashHex = new Method({
-        name: 'getUnitTxsHashHex',
-        call: 'dag_getUnitTxsHashHex',
-        params: 1,
-        // inputFormatter: [null]
-    }); */
             return [
-                forking,
-                //getUnitByHash,
-                //getUnitByNumber,
-                //getPrefix,
-                //getBalance,
-                //getStorageAt,
-                //getCode,
-                // getBlock,
-                //getUncle,
-                // getCompilers,
-                //getBlockTransactionCount,
-                //getBlockUncleCount,
-                //getTransaction,
-                //getTransactionFromBlock,
-                //getTransactionReceipt,
-                //getTransactionCount,
-                //call,
-                //estimateGas,
-                //walletCreateTransaction,
-                //walletSendTransaction,
-                //cmdCreateTransaction,
-                //createRawTransaction,
-                //signRawTransaction,
-                //sendRawTransaction,
-                //signTransaction,
-                //sendTransaction,
-                //sign,
-                //compileSolidity,
-                //compileLLL,
-                //compileSerpent,
-                //submitWork,
-                //getWork,
-                //walletTokens,
-                //walletBalance,
-                //getContract,
-                //getHeader,
-                //getUnit,
-                //getUnitNumber,
-                //getTrieSyncProgress,
-                //getTransactionsByTxid,
-                // createPayment,
-                //getUnitTxsInfo,
-                //getUnitTxsHashHex,
             ];
         };
 
 
         var properties = function () {
             return [
-                /*new Property({
-            name: 'coinbase',
-            getter: 'ptn_coinbase'
-        }),
-        new Property({
-            name: 'mining',
-            getter: 'ptn_mining'
-        }),
-        new Property({
-            name: 'hashrate',
-            getter: 'ptn_hashrate',
-            outputFormatter: utils.toDecimal
-        }),
-        new Property({
-            name: 'syncing',
-            getter: 'ptn_syncing',
-            outputFormatter: formatters.outputSyncingFormatter
-        }),
-        new Property({
-            name: 'gasPrice',
-            getter: 'ptn_gasPrice',
-            outputFormatter: formatters.outputBigNumberFormatter
-        }),*/
-                new Property({
-                    name: 'accounts',
-                    getter: 'ptn_accounts'
-                }),
-                /*new Property({
-            name: 'blockNumber',
-            getter: 'ptn_blockNumber',
-            outputFormatter: utils.toDecimal
-        }),
-        new Property({
-            name: 'protocolVersion',
-            getter: 'ptn_protocolVersion'
-        })*/
             ];
         };
 
@@ -5828,100 +5415,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         var methods = function () {
 
             return [
-                new Method({
-                    name: 'version',
-                    call: 'shh_version',
-                    params: 0
-                }),
-                new Method({
-                    name: 'info',
-                    call: 'shh_info',
-                    params: 0
-                }),
-                new Method({
-                    name: 'setMaxMessageSize',
-                    call: 'shh_setMaxMessageSize',
-                    params: 1
-                }),
-                new Method({
-                    name: 'setMinPoW',
-                    call: 'shh_setMinPoW',
-                    params: 1
-                }),
-                new Method({
-                    name: 'markTrustedPeer',
-                    call: 'shh_markTrustedPeer',
-                    params: 1
-                }),
-                new Method({
-                    name: 'newKeyPair',
-                    call: 'shh_newKeyPair',
-                    params: 0
-                }),
-                new Method({
-                    name: 'addPrivateKey',
-                    call: 'shh_addPrivateKey',
-                    params: 1
-                }),
-                new Method({
-                    name: 'deleteKeyPair',
-                    call: 'shh_deleteKeyPair',
-                    params: 1
-                }),
-                new Method({
-                    name: 'hasKeyPair',
-                    call: 'shh_hasKeyPair',
-                    params: 1
-                }),
-                new Method({
-                    name: 'getPublicKey',
-                    call: 'shh_getPublicKey',
-                    params: 1
-                }),
-                new Method({
-                    name: 'getPrivateKey',
-                    call: 'shh_getPrivateKey',
-                    params: 1
-                }),
-                new Method({
-                    name: 'newSymKey',
-                    call: 'shh_newSymKey',
-                    params: 0
-                }),
-                new Method({
-                    name: 'addSymKey',
-                    call: 'shh_addSymKey',
-                    params: 1
-                }),
-                new Method({
-                    name: 'generateSymKeyFromPassword',
-                    call: 'shh_generateSymKeyFromPassword',
-                    params: 1
-                }),
-                new Method({
-                    name: 'hasSymKey',
-                    call: 'shh_hasSymKey',
-                    params: 1
-                }),
-                new Method({
-                    name: 'getSymKey',
-                    call: 'shh_getSymKey',
-                    params: 1
-                }),
-                new Method({
-                    name: 'deleteSymKey',
-                    call: 'shh_deleteSymKey',
-                    params: 1
-                }),
 
-                // subscribe and unsubscribe missing
-
-                new Method({
-                    name: 'post',
-                    call: 'shh_post',
-                    params: 1,
-                    inputFormatter: [null]
-                })
             ];
         };
 
@@ -5975,100 +5469,12 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         }
 
         var methods = function () {
-            var blockNetworkRead = new Method({
-                name: 'blockNetworkRead',
-                call: 'bzz_blockNetworkRead',
-                params: 1,
-                inputFormatter: [null]
-            });
-
-            var syncEnabled = new Method({
-                name: 'syncEnabled',
-                call: 'bzz_syncEnabled',
-                params: 1,
-                inputFormatter: [null]
-            });
-
-            var swapEnabled = new Method({
-                name: 'swapEnabled',
-                call: 'bzz_swapEnabled',
-                params: 1,
-                inputFormatter: [null]
-            });
-
-            var download = new Method({
-                name: 'download',
-                call: 'bzz_download',
-                params: 2,
-                inputFormatter: [null, null]
-            });
-
-            var upload = new Method({
-                name: 'upload',
-                call: 'bzz_upload',
-                params: 2,
-                inputFormatter: [null, null]
-            });
-
-            var retrieve = new Method({
-                name: 'retrieve',
-                call: 'bzz_retrieve',
-                params: 1,
-                inputFormatter: [null]
-            });
-
-            var store = new Method({
-                name: 'store',
-                call: 'bzz_store',
-                params: 2,
-                inputFormatter: [null, null]
-            });
-
-            var get = new Method({
-                name: 'get',
-                call: 'bzz_get',
-                params: 1,
-                inputFormatter: [null]
-            });
-
-            var put = new Method({
-                name: 'put',
-                call: 'bzz_put',
-                params: 2,
-                inputFormatter: [null, null]
-            });
-
-            var modify = new Method({
-                name: 'modify',
-                call: 'bzz_modify',
-                params: 4,
-                inputFormatter: [null, null, null, null]
-            });
-
             return [
-                blockNetworkRead,
-                syncEnabled,
-                swapEnabled,
-                download,
-                upload,
-                retrieve,
-                store,
-                get,
-                put,
-                modify
             ];
         };
 
         var properties = function () {
             return [
-                new Property({
-                    name: 'hive',
-                    getter: 'bzz_hive'
-                }),
-                new Property({
-                    name: 'info',
-                    getter: 'bzz_info'
-                })
             ];
         };
 
@@ -6102,52 +5508,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 
 /// @returns an array of objects describing web3.ptn.filter api methods
         var ptn = function () {
-            var newFilterCall = function (args) {
-                var type = args[0];
-
-                switch(type) {
-                    case 'latest':
-                        args.shift();
-                        this.params = 0;
-                        return 'ptn_newBlockFilter';
-                    case 'pending':
-                        args.shift();
-                        this.params = 0;
-                        return 'ptn_newPendingTransactionFilter';
-                    default:
-                        return 'ptn_newFilter';
-                }
-            };
-
-            var newFilter = new Method({
-                name: 'newFilter',
-                call: newFilterCall,
-                params: 1
-            });
-
-            var uninstallFilter = new Method({
-                name: 'uninstallFilter',
-                call: 'ptn_uninstallFilter',
-                params: 1
-            });
-
-            var getLogs = new Method({
-                name: 'getLogs',
-                call: 'ptn_getFilterLogs',
-                params: 1
-            });
-
-            var poll = new Method({
-                name: 'poll',
-                call: 'ptn_getFilterChanges',
-                params: 1
-            });
-
             return [
-                newFilter,
-                uninstallFilter,
-                getLogs,
-                poll
             ];
         };
 
@@ -6155,26 +5516,6 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         var shh = function () {
 
             return [
-                new Method({
-                    name: 'newFilter',
-                    call: 'shh_newMessageFilter',
-                    params: 1
-                }),
-                new Method({
-                    name: 'uninstallFilter',
-                    call: 'shh_deleteMessageFilter',
-                    params: 1
-                }),
-                new Method({
-                    name: 'getLogs',
-                    call: 'shh_getFilterMessages',
-                    params: 1
-                }),
-                new Method({
-                    name: 'poll',
-                    call: 'shh_getFilterMessages',
-                    params: 1
-                })
             ];
         };
 
