@@ -48,17 +48,17 @@ web3._extend({
 			call: 'admin_removeTrustedPeer',
 			params: 1
 		}),
-		new web3._extend.Method({
-			name: 'exportChain',
-			call: 'admin_exportChain',
-			params: 1,
-			inputFormatter: [null]
-		}),
-		new web3._extend.Method({
-			name: 'sleepBlocks',
-			call: 'admin_sleepBlocks',
-			params: 2
-		}),
+		//new web3._extend.Method({
+		//	name: 'exportChain',
+		//	call: 'admin_exportChain',
+		//	params: 1,
+		//	inputFormatter: [null]
+		//}),
+		//new web3._extend.Method({
+		//	name: 'sleepBlocks',
+		//	call: 'admin_sleepBlocks',
+		//	params: 2
+		//}),
 		new web3._extend.Method({
 			name: 'startRPC',
 			call: 'admin_startRPC',
