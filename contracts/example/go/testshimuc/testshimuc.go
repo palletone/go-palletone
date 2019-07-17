@@ -293,12 +293,8 @@ func (t *SimpleChaincode) test_GetStateByPrefix(stub shim.ChaincodeStubInterface
 	}
 	res := map[string]string{}
 	for _, kv := range KVs {
-		v := []byte{}
-		if err := rlp.DecodeBytes(kv.Value, &v); err != nil {
-			return shim.Error(err.Error())
-		}
-		log.Debug("key:%s, value:%s", kv.Key, v)
-		res[kv.Key] = string(v)
+		log.Debug("key:%s, value:%s", kv.Key, string(kv.Value))
+		res[kv.Key] = string(kv.Value)
 	}
 	data, err := json.Marshal(res)
 	if err != nil {
