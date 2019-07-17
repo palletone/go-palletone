@@ -402,6 +402,7 @@ type ContractInstallRequestPayload struct {
 type ContractDeployRequestPayload struct {
 	TplId   []byte   `json:"tpl_name"`
 	Args    [][]byte `json:"args"`
+	ExtData []byte   `json:"extend_data"`
 	Timeout uint32   `json:"timeout"`
 }
 
