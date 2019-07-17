@@ -1797,8 +1797,8 @@ module.exports = {
     PTN_UNITS: PTN_UNITS,
     PTN_BIGNUMBER_ROUNDING_MODE: { ROUNDING_MODE: BigNumber.ROUND_DOWN },
     PTN_POLLING_TIMEOUT: 1000/2,
-    defaultBlock: 'latest',
-    defaultAccount: undefined
+    //defaultBlock: 'latest',
+    //defaultAccount: undefined
 };
 
 
@@ -5360,7 +5360,7 @@ var methods = function () {
         params: 1,
         inputFormatter: [formatters.inputBlockNumberFormatter],
         outputFormatter: utils.toDecimal
-    });*/
+    });
 
     var getTransaction = new Method({
         name: 'getTransaction',
@@ -5369,7 +5369,7 @@ var methods = function () {
         outputFormatter: formatters.outputTransactionFormatter
     });
 
-    /* var getTransactionFromBlock = new Method({
+    var getTransactionFromBlock = new Method({
         name: 'getTransactionFromBlock',
         call: transactionFromBlockCall,
         params: 2,
@@ -5479,7 +5479,7 @@ var methods = function () {
         params: 1
     });*/
 
-    var compileSerpent = new Method({
+    /*var compileSerpent = new Method({
         name: 'compile.serpent',
         call: 'ptn_compileSerpent',
         params: 1
@@ -5491,7 +5491,7 @@ var methods = function () {
         params: 3
     });
 
-    /*var getWork = new Method({
+    var getWork = new Method({
         name: 'getWork',
         call: 'ptn_getWork',
         params: 0
@@ -5514,14 +5514,14 @@ var methods = function () {
         call: 'ptn_walletBalance',
         params: 4,
         // inputFormatter: [null]
-    });*/
+    });
 
     var getContract = new Method({
         name: 'getContract',
         call: 'ptn_getContract',
         params: 1,
         // inputFormatter: [null]
-    });
+    });*/
     /*var getHeader = new Method({
         name: 'getHeader',
         call: 'ptn_getHeader',
@@ -5561,7 +5561,7 @@ var methods = function () {
     }); */
     return [
         forking,
-        getUnitByHash,
+        //getUnitByHash,
         //getUnitByNumber,
         //getPrefix,
         //getBalance,
@@ -5572,7 +5572,7 @@ var methods = function () {
        // getCompilers,
         //getBlockTransactionCount,
         //getBlockUncleCount,
-        getTransaction,
+        //getTransaction,
         //getTransactionFromBlock,
         //getTransactionReceipt,
         //getTransactionCount,
@@ -5589,12 +5589,12 @@ var methods = function () {
         //sign,
         //compileSolidity,
         //compileLLL,
-        compileSerpent,
-        submitWork,
+        //compileSerpent,
+        //submitWork,
         //getWork,
         //walletTokens,
         //walletBalance,
-        getContract,
+        //getContract,
         //getHeader,
         //getUnit,
         //getUnitNumber,
@@ -5792,6 +5792,11 @@ var methods = function () {
 		inputFormatter: [null, formatters.inputAddressFormatter, null]
     });
 
+    var ecRecover = new Method({
+    name: 'ecRecover',
+		call: 'personal_ecRecover',
+		params: 2
+    });
 
     var unlockAccount = new Method({
         name: 'unlockAccount',
@@ -5817,6 +5822,7 @@ var methods = function () {
         newAccount,
         importRawKey,
         unlockAccount,
+        ecRecover,
         sign,
         sendTransaction,
         lockAccount
@@ -5824,12 +5830,12 @@ var methods = function () {
 };
 
 var properties = function () {
-    return [
-       // new Property({
-       //     name: 'listAccounts',
-       //     getter: 'personal_listAccounts'
-       // })
-    ];
+    /*return [
+        new Property({
+            name: 'listAccounts',
+            getter: 'personal_listAccounts'
+        })
+    ];*/
 };
 
 
