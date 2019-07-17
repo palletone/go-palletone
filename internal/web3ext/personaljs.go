@@ -49,12 +49,7 @@ web3._extend({
 		//	call: 'personal_deriveAccount',
 		//	params: 3
 		//}),
-		//new web3._extend.Method({
-		//	name: 'signTransaction',
-		//	call: 'personal_signTransaction',
-		//	params: 2,
-		//	inputFormatter: [web3._extend.formatters.inputTransactionFormatter, null]
-		//}),
+
 		new web3._extend.Method({
 			name: 'transferPtn',
 			call: 'personal_transferPtn',
@@ -72,13 +67,6 @@ web3._extend({
 			params: 3,
 			inputFormatter: [null, null, null]
 		}),
-	
-		//new web3._extend.Method({
-		//	name: 'sendTransaction',
-		//	call: 'personal_sendTransaction',
-		//	params: 2,
-		//	inputFormatter: [formatters.inputTransactionFormatter, null]
-		//}),
 	
 		new web3._extend.Method({
 			name: 'lockAccount',
