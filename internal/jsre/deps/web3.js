@@ -1797,8 +1797,8 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
             PTN_UNITS: PTN_UNITS,
             PTN_BIGNUMBER_ROUNDING_MODE: { ROUNDING_MODE: BigNumber.ROUND_DOWN },
             PTN_POLLING_TIMEOUT: 1000/2,
-            defaultBlock: 'latest',
-            defaultAccount: undefined
+            //defaultBlock: 'latest',
+            //defaultAccount: undefined
         };
 
 
@@ -5360,16 +5360,16 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         params: 1,
         inputFormatter: [formatters.inputBlockNumberFormatter],
         outputFormatter: utils.toDecimal
-    });*/
+    });
 
-            var getTransaction = new Method({
-                name: 'getTransaction',
-                call: 'ptn_getTransactionByHash',
-                params: 1,
-                outputFormatter: formatters.outputTransactionFormatter
-            });
+    var getTransaction = new Method({
+        name: 'getTransaction',
+        call: 'ptn_getTransactionByHash',
+        params: 1,
+        outputFormatter: formatters.outputTransactionFormatter
+    });
 
-            /* var getTransactionFromBlock = new Method({
+    var getTransactionFromBlock = new Method({
         name: 'getTransactionFromBlock',
         call: transactionFromBlockCall,
         params: 2,
@@ -5479,19 +5479,19 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         params: 1
     });*/
 
-            var compileSerpent = new Method({
-                name: 'compile.serpent',
-                call: 'ptn_compileSerpent',
-                params: 1
-            });
+            /*var compileSerpent = new Method({
+        name: 'compile.serpent',
+        call: 'ptn_compileSerpent',
+        params: 1
+    });
 
-            var submitWork = new Method({
-                name: 'submitWork',
-                call: 'ptn_submitWork',
-                params: 3
-            });
+    var submitWork = new Method({
+        name: 'submitWork',
+        call: 'ptn_submitWork',
+        params: 3
+    });
 
-            /*var getWork = new Method({
+    var getWork = new Method({
         name: 'getWork',
         call: 'ptn_getWork',
         params: 0
@@ -5514,14 +5514,14 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         call: 'ptn_walletBalance',
         params: 4,
         // inputFormatter: [null]
-    });*/
+    });
 
-            var getContract = new Method({
-                name: 'getContract',
-                call: 'ptn_getContract',
-                params: 1,
-                // inputFormatter: [null]
-            });
+    var getContract = new Method({
+        name: 'getContract',
+        call: 'ptn_getContract',
+        params: 1,
+        // inputFormatter: [null]
+    });*/
             /*var getHeader = new Method({
         name: 'getHeader',
         call: 'ptn_getHeader',
@@ -5561,7 +5561,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     }); */
             return [
                 forking,
-                getUnitByHash,
+                //getUnitByHash,
                 //getUnitByNumber,
                 //getPrefix,
                 //getBalance,
@@ -5572,7 +5572,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                 // getCompilers,
                 //getBlockTransactionCount,
                 //getBlockUncleCount,
-                getTransaction,
+                //getTransaction,
                 //getTransactionFromBlock,
                 //getTransactionReceipt,
                 //getTransactionCount,
@@ -5589,12 +5589,12 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                 //sign,
                 //compileSolidity,
                 //compileLLL,
-                compileSerpent,
-                submitWork,
+                //compileSerpent,
+                //submitWork,
                 //getWork,
                 //walletTokens,
                 //walletBalance,
-                getContract,
+                //getContract,
                 //getHeader,
                 //getUnit,
                 //getUnitNumber,
@@ -5772,64 +5772,11 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         }
 
         var methods = function () {
-            var newAccount = new Method({
-                name: 'newAccount',
-                call: 'personal_newAccount',
-                params: 1,
-                inputFormatter: [null]
-            });
-
-            var importRawKey = new Method({
-                name: 'importRawKey',
-                call: 'personal_importRawKey',
-                params: 2
-            });
-
-            var sign = new Method({
-                name: 'sign',
-                call: 'personal_sign',
-                params: 3,
-                inputFormatter: [null, formatters.inputAddressFormatter, null]
-            });
-
-
-            var unlockAccount = new Method({
-                name: 'unlockAccount',
-                call: 'personal_unlockAccount',
-                params: 3,
-                inputFormatter: [null, null, null]
-            });
-
-            var sendTransaction = new Method({
-                name: 'sendTransaction',
-                call: 'personal_sendTransaction',
-                params: 2,
-                inputFormatter: [formatters.inputTransactionFormatter, null]
-            });
-
-            var lockAccount = new Method({
-                name: 'lockAccount',
-                call: 'personal_lockAccount',
-                params: 1
-            });
-
-            return [
-                newAccount,
-                importRawKey,
-                unlockAccount,
-                sign,
-                sendTransaction,
-                lockAccount
-            ];
+            return [];
         };
 
         var properties = function () {
-            return [
-                // new Property({
-                //     name: 'listAccounts',
-                //     getter: 'personal_listAccounts'
-                // })
-            ];
+            return [];
         };
 
 
