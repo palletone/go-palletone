@@ -2529,7 +2529,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 
         function Web3 (provider) {
             this._requestManager = new RequestManager(provider);
-            this.currentProvider = provider;
+            //this.currentProvider = provider;
             this.ptn = new Ptn(this);
             this.db = new DB(this);
             this.shh = new Shh(this);
@@ -2541,8 +2541,8 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                 api: version.version
             };
             this.providers = {
-                HttpProvider: HttpProvider,
-                IpcProvider: IpcProvider
+                //HttpProvider: HttpProvider,
+                //IpcProvider: IpcProvider
             };
             this._extend = extend(this);
             this._extend({
@@ -2556,15 +2556,15 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
             IpcProvider: IpcProvider
         };
 
-        Web3.prototype.setProvider = function (provider) {
-            this._requestManager.setProvider(provider);
-            this.currentProvider = provider;
-        };
-
-        Web3.prototype.reset = function (keepIsSyncing) {
-            this._requestManager.reset(keepIsSyncing);
-            this.settings = new Settings();
-        };
+        // Web3.prototype.setProvider = function (provider) {
+        //     this._requestManager.setProvider(provider);
+        //     this.currentProvider = provider;
+        // };
+        //
+        // Web3.prototype.reset = function (keepIsSyncing) {
+        //     this._requestManager.reset(keepIsSyncing);
+        //     this.settings = new Settings();
+        // };
 
         // Web3.prototype.BigNumber = BigNumber;
         // Web3.prototype.toHex = utils.toHex;
@@ -2598,25 +2598,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 
         var properties = function () {
             return [
-                new Property({
-                    name: 'version.node',
-                    getter: 'web3_clientVersion'
-                }),
-                new Property({
-                    name: 'version.network',
-                    getter: 'net_version',
-                    inputFormatter: utils.toDecimal
-                }),
-                new Property({
-                    name: 'version.palletone',
-                    getter: 'ptn_protocolVersion',
-                    inputFormatter: utils.toDecimal
-                }),
-                new Property({
-                    name: 'version.whisper',
-                    getter: 'shh_version',
-                    inputFormatter: utils.toDecimal
-                })
+
             ];
         };
 
@@ -5408,9 +5390,9 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
             });
         };
 
-        Shh.prototype.newMessageFilter = function (options, callback, filterCreationErrorCallback) {
-            return new Filter(options, 'shh', this._requestManager, watches.shh(), null, callback, filterCreationErrorCallback);
-        };
+        // Shh.prototype.newMessageFilter = function (options, callback, filterCreationErrorCallback) {
+        //     return new Filter(options, 'shh', this._requestManager, watches.shh(), null, callback, filterCreationErrorCallback);
+        // };
 
         var methods = function () {
 
