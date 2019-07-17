@@ -20,3 +20,11 @@ test1
     ${len}=    Get Length    ${errMsg}
     ${errMsg}=    Run Keyword If    ${len}>=1    Get From List    ${errMsg}    0
     Run Keyword If    ${errCode}!=0    Fail    ${errMsg}
+
+test2
+    ${contractId}    Set Variable    333
+    ${getmethod}    Set Variable    1111
+    ${name}    Set Variable    222
+    ${args}=    Run Keyword If    ${contractId}==${null}    Create List    ${getmethod}    ${name}
+    ...    ELSE    Create List    ${contractId}    ${getmethod}    ${name}
+    Log    ${args}

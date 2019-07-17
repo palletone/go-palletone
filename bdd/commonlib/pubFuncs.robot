@@ -175,6 +175,17 @@ User deploys contract
     Set Global Variable    ${gContractId}    ${contractId}
     [Return]    ${reqId}
 
+User stops contract
+    ${args}=    Create List    stop
+    ${respJson}=    deployContract    ${tokenHolder}    ${tokenHolder}    1000    10    ${gTplId}
+    ...    ${args}
+    ${result}=    Get From Dictionary    ${respJson}    result
+    ${reqId}=    Get From Dictionary    ${result}    reqId
+    ${contractId}=    Get From Dictionary    ${result}    ContractId
+    Run Keyword If    '${contractId}'=='${EMPTY}'    Fail    "Deploy Contract Error"
+    Set Global Variable    ${gContractId}    ${contractId}
+    [Return]    ${reqId}
+
 Wait for unit about contract to be confirmed by unit height
     [Arguments]    ${reqId}
     # query the height of unit including tpl install tx
@@ -195,7 +206,7 @@ Wait for unit about contract to be confirmed by unit height
     ${errCode}=    Run Keyword If    ${len}>=1    Get From List    ${errCode}    0
     ${len}=    Get Length    ${errMsg}
     ${errMsg}=    Run Keyword If    ${len}>=1    Get From List    ${errMsg}    0
-    Run Keyword If    ${errCode}!=0    Fail    ${errMsg}
+    #Run Keyword If    ${errCode}!=0    Fail    ${errMsg}
     # ------- end of query error code ------- #
     ${result}=    To Json    ${result}
     ${info}=    Get From Dictionary    ${result}    info
@@ -207,3 +218,4 @@ Wait for unit about contract to be confirmed by unit height
     \    Run Keyword If    ${height}-${unitHeight}>3    Exit For Loop
     \    Run Keyword If    ${waitTimes}-${t}==1    Fail    "It takes too slow to confirm unit"
     \    Sleep    3s
+    [Return]    ${errCode}    ${errMsg}

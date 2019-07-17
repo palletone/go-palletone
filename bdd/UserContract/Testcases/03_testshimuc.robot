@@ -22,13 +22,19 @@ AddState
     ${reqId}=    When User put state    testPutState    state1    state1
     And Wait for transaction being packaged
     And Wait for unit about contract to be confirmed by unit height    ${reqId}
-    ${reqId}=    And User put state    testPutGlobalState    state2    state2
+    ${reqId}=    When User put state    testPutState    state2    state2
     And Wait for transaction being packaged
     And Wait for unit about contract to be confirmed by unit height    ${reqId}
+    # ======= put global state should be error ========
+    ${reqId}=    And User put state    testPutGlobalState    gState1    gState1
+    And Wait for transaction being packaged
+    ${errCode}    ${errMsg}=    And Wait for unit about contract to be confirmed by unit height    ${reqId}
+    Should Be Equal    ${errMsg}    Chaincode Error:Only system contract can call this function.
+    # ======= query contract state
     Then User query state    testGetState    state1    state1    str
-    And User query state    testGetGlobalState    state2    state2    str
-    And User query state    testGetContractState    state1    state1    str
     And User query state    testGetContractState    state2    state2    str
+    And User query state    testGetGlobalState    gState1    ${null}    str
+    And User query state    testGetContractState    gState1    ${null}    str
     ${allState}=    And Create Dictionary    state1    state1    state2    state2
     And User query state    testGetStateByPrefix    state    ${allState}    dic
     And User query state    testGetContractAllState    ${null}    ${allState}    dic
@@ -41,8 +47,8 @@ DelState
     And Wait for transaction being packaged    ${reqId}
     Then User query state    testGetState    state1    ${null}
     And User query state    testGetGlobalState    state2    ${null}
-    And User query state    testGetContractState    state1    ${null}
-    And User query state    testGetContractState    state2    ${null}
+    And User query state    testGetContractState    state1    ${null}    ${gContractId}
+    And User query state    testGetContractState    state2    ${null}    ${gContractId}
     ${allState}=    And Create Dictionary    state1    state1    state2    state2
     And User query state    testGetStateByPrefix    state    ${null}    dic
     And User query state    testGetContractAllState    ${null}    ${null}    dic
@@ -78,8 +84,9 @@ User delete state
     [Return]    ${reqId}
 
 User query state
-    [Arguments]    ${getmethod}    ${name}    ${exceptedResult}    ${resType}
-    ${args}=    Create List    ${getmethod}    ${name}
+    [Arguments]    ${getmethod}    ${name}    ${exceptedResult}    ${resType}    ${contractId}
+    ${args}=    Run Keyword If    ${contractId}==${null}    Create List    ${getmethod}    ${name}
+    ...    ELSE    Create List    ${contractId}    ${getmethod}    ${name}
     ${respJson}=    queryContract    ${gContractId}    ${args}
     Dictionary Should Contain Key    ${respJson}    result
     ${result}=    Get From Dictionary    ${respJson}    result

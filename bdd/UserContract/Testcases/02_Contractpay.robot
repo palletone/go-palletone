@@ -48,6 +48,10 @@ Payout
     And Wait for unit about contract to be confirmed by unit height    ${reqId}
     Then Query user2 balance    ${newAddr}
 
+Stop
+    Given Unlock token holder succeed
+    When User transfer PTN to contractpay
+
 *** Keywords ***
 User put status into contractpay
     [Arguments]    ${putmethod}
