@@ -25,12 +25,12 @@ AddState
     ${reqId}=    When User put state    testPutState    state2    state2
     And Wait for transaction being packaged
     And Wait for unit about contract to be confirmed by unit height    ${reqId}
-    # ======= put global state should be error ========
+    # -------- put global state should be error ----------
     ${reqId}=    And User put state    testPutGlobalState    gState1    gState1
     And Wait for transaction being packaged
     ${errCode}    ${errMsg}=    And Wait for unit about contract to be confirmed by unit height    ${reqId}
     Should Be Equal    ${errMsg}    Chaincode Error:Only system contract can call this function.
-    # ======= query contract state
+    # -------- query contract state --------------
     Then User query state    testGetState    state1    state1    str
     And User query state    testGetContractState    state2    state2    str
     And User query state    testGetGlobalState    gState1    ${null}    str
