@@ -197,7 +197,7 @@ func (s *PrivateAccountAPI) LockAccount(addrStr string) bool {
 // The key used to calculate the signature is decrypted with the given password.
 //
 // https://github.com/palletone/go-palletone/wiki/Management-APIs#personal_sign
-func (s *PrivateAccountAPI) Sign(ctx context.Context, data hexutil.Bytes, addr string, passwd string) (hexutil.Bytes, error) {
+/*func (s *PrivateAccountAPI) Sign(ctx context.Context, data hexutil.Bytes, addr string, passwd string) (hexutil.Bytes, error) {
 	// Look up the wallet containing the requested signer
 	address, _ := common.StringToAddress(addr)
 	account := accounts.Account{Address: address}
@@ -213,7 +213,7 @@ func (s *PrivateAccountAPI) Sign(ctx context.Context, data hexutil.Bytes, addr s
 	}
 	signature[64] += 27 // Transform V from 0/1 to 27/28 according to the yellow paper
 	return signature, nil
-}
+}*/
 
 /*
 // EcRecover returns the address for the account that was used to create the signature.
