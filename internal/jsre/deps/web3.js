@@ -5248,25 +5248,25 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
             //this.sendIBANTransaction = transfer.bind(null, this);
         }
 
-        Object.defineProperty(Ptn.prototype, 'defaultBlock', {
-            get: function () {
-                return c.defaultBlock;
-            },
-            set: function (val) {
-                c.defaultBlock = val;
-                return val;
-            }
-        });
+        // Object.defineProperty(Ptn.prototype, 'defaultBlock', {
+        //     get: function () {
+        //         return c.defaultBlock;
+        //     },
+        //     set: function (val) {
+        //         c.defaultBlock = val;
+        //         return val;
+        //     }
+        // });
 
-        Object.defineProperty(Ptn.prototype, 'defaultAccount', {
-            get: function () {
-                return c.defaultAccount;
-            },
-            set: function (val) {
-                c.defaultAccount = val;
-                return val;
-            }
-        });
+        // Object.defineProperty(Ptn.prototype, 'defaultAccount', {
+        //     get: function () {
+        //         return c.defaultAccount;
+        //     },
+        //     set: function (val) {
+        //         c.defaultAccount = val;
+        //         return val;
+        //     }
+        // });
 
         var methods = function () {
 
@@ -5648,10 +5648,10 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
             ];
         };
 
-        Ptn.prototype.contract = function (abi) {
-            var factory = new Contract(this, abi);
-            return factory;
-        };
+        // Ptn.prototype.contract = function (abi) {
+        //     var factory = new Contract(this, abi);
+        //     return factory;
+        // };
 
         Ptn.prototype.filter = function (options, callback, filterCreationErrorCallback) {
             return new Filter(options, 'ptn', this._requestManager, watches.ptn(), formatters.outputLogFormatter, callback, filterCreationErrorCallback);
@@ -6642,8 +6642,8 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 
 
         var Settings = function () {
-            this.defaultBlock = 'latest';
-            this.defaultAccount = undefined;
+            //this.defaultBlock = 'latest';
+            //this.defaultAccount = undefined;
         };
 
         module.exports = Settings;
