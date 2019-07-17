@@ -247,17 +247,17 @@ func (b *PtnApiBackend) ServiceFilter(ctx context.Context, session *bloombits.Ma
 
 // GetContract
 func (b *PtnApiBackend) GetContract(addr common.Address) (*ptnjson.ContractJson, error) {
-	contract,err:= b.ptn.dag.GetContract(addr.Bytes())
-	if err!=nil{
-		return nil,err
+	contract, err := b.ptn.dag.GetContract(addr.Bytes())
+	if err != nil {
+		return nil, err
 	}
-	cjson:= ptnjson.ConvertContract2Json(contract)
-	tpl,err:= b.ptn.dag.GetContractTpl(contract.TemplateId)
-	if err!=nil{
-		return cjson,nil
+	cjson := ptnjson.ConvertContract2Json(contract)
+	tpl, err := b.ptn.dag.GetContractTpl(contract.TemplateId)
+	if err != nil {
+		return cjson, nil
 	}
-	cjson.Template= ptnjson.ConvertContractTemplate2Json(tpl)
-	return cjson,nil
+	cjson.Template = ptnjson.ConvertContractTemplate2Json(tpl)
+	return cjson, nil
 }
 func (b *PtnApiBackend) QueryDbByKey(key []byte) *ptnjson.DbRowJson {
 	val, err := b.ptn.dag.QueryDbByKey(key)

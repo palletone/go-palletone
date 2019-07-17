@@ -70,11 +70,6 @@ web3._extend({
         	inputFormatter: [null]
 		}),
 		new web3._extend.Method({
-			name: 'getTransaction',
-        	call: 'dag_getTransactionByHash',
-        	params: 1
-		}),
-		new web3._extend.Method({
 		    name: 'getTxHashByReqId',
 		    call: 'dag_getTxHashByReqId',
 			params: 1,
@@ -148,26 +143,7 @@ web3._extend({
             call: 'dag_getAllUtxos',
             params: 0,
             // inputFormatter: [null]
-        }),        
-        new web3._extend.Method({
-            name: 'getTokenInfo',
-            call: 'dag_getTokenInfo',
-            params: 1,
-            // inputFormatter: [null]
         }),
-        new web3._extend.Method({
-            name: 'getAllTokenInfo',
-            call: 'dag_getAllTokenInfo',
-            params: 0,
-            // inputFormatter: [null]
-        }),
-        new web3._extend.Method({
-            name: 'saveTokenInfo',
-            call: 'dag_saveTokenInfo',
-            params: 3,
-            //inputFormatter: [null]
-        }),
-       
         new web3._extend.Method({
             name: 'getHeadHeaderHash',
             call: 'dag_getHeadHeaderHash',
