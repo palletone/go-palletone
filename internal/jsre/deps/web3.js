@@ -5824,12 +5824,12 @@ var methods = function () {
 };
 
 var properties = function () {
-    /*return [
-        new Property({
-            name: 'listAccounts',
-            getter: 'personal_listAccounts'
-        })
-    ];*/
+    return [
+       // new Property({
+       //     name: 'listAccounts',
+       //     getter: 'personal_listAccounts'
+       // })
+    ];
 };
 
 
