@@ -469,16 +469,6 @@ func (b *bridge) TransferPtn(call otto.FunctionCall) (response otto.Value) {
 	return val
 }
 
-func (b *bridge) LlistAccounts(call otto.FunctionCall) (response otto.Value) {
-	// Send the request to the backend and return
-	val, err := call.Otto.Call("jptn.llistAccounts", nil)
-	if err != nil {
-		throwJSException(err.Error())
-	}
-
-	return val
-}
-
 // Sign is a wrapper around the personal.sign RPC method that uses a non-echoing password
 // prompt to acquire the passphrase and executes the original RPC method (saved in
 // jptn.sign) with it to actually execute the RPC call.
