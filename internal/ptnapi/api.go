@@ -138,6 +138,7 @@ func (s *PublicTxPoolAPI) Queue() map[common.Hash]*modules.Transaction {
 	return result
 }
 
+// 未确认的交易列表
 func (s *PublicTxPoolAPI) Pending() ([]*ptnjson.TxPoolPendingJson, error) {
 	queue, err := s.b.Queued()
 	pending := make([]*ptnjson.TxPoolPendingJson, 0)
@@ -148,42 +149,6 @@ func (s *PublicTxPoolAPI) Pending() ([]*ptnjson.TxPoolPendingJson, error) {
 	return pending, err
 }
 
-/*
-// Inspect retrieves the content of the transaction pool and flattens it into an
-// easily inspectable list.
-func (s *PublicTxPoolAPI) Inspect() map[string]map[string]map[string]string {
-	content := map[string]map[string]map[string]string{
-		"pending": make(map[string]map[string]string),
-		"queued":  make(map[string]map[string]string),
-	}
-	pending, queue := s.b.TxPoolContent()
-
-	// Define a formatter to flatten a transaction into a string
-	var format = func(tx *modules.Transaction) string {
-		if to := tx.To(); to != nil {
-			return fmt.Sprintf("%s: %v wei + %v gas × %v wei", tx.To().Hex(), tx.Value(), tx.Gas(), tx.GasPrice())
-		}
-		return fmt.Sprintf("contract creation: %v wei + %v gas × %v wei", tx.Value(), tx.Gas(), tx.GasPrice())
-	}
-	// Flatten the pending transactions
-	for account, txs := range pending {
-		dump := make(map[string]string)
-		for _, tx := range txs {
-			dump[fmt.Sprintf("%d", tx.Nonce())] = format(tx)
-		}
-		content["pending"][account.Hex()] = dump
-	}
-	// Flatten the queued transactions
-	for account, txs := range queue {
-		dump := make(map[string]string)
-		for _, tx := range txs {
-			dump[fmt.Sprintf("%d", tx.Nonce())] = format(tx)
-		}
-		content["queued"][account.Hex()] = dump
-	}
-	return content
-}
-*/
 // PublicAccountAPI provides an API to access accounts managed by this node.
 // It offers only methods that can retrieve accounts.
 type PublicAccountAPI struct {
