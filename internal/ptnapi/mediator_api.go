@@ -183,12 +183,12 @@ func NewPrivateMediatorAPI(b Backend) *PrivateMediatorAPI {
 
 // 交易执行结果
 type TxExecuteResult struct {
-	TxContent string      `json:"txContent"`
-	TxHash    common.Hash `json:"txHash"`
-	TxSize    string      `json:"txSize"`
-	TxFee     string      `json:"txFee"`
-	Tip       string      `json:"tip"`
-	Warning   string      `json:"warning"`
+	TxContent string      `json:"txContent"` // 交易内容
+	TxHash    common.Hash `json:"txHash"`    // 交易hash
+	TxSize    string      `json:"txSize"`    // 交易大小
+	TxFee     string      `json:"txFee"`     // 交易费用
+	Tip       string      `json:"tip"`       // 提示
+	Warning   string      `json:"warning"`   // 警告
 }
 
 // 创建 mediator 所需的参数, 至少包含普通账户地址
