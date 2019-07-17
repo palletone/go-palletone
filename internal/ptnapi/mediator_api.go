@@ -23,7 +23,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
-	"strconv"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -298,46 +297,6 @@ func (a *PrivateMediatorAPI) PayDeposit(from string, amount decimal.Decimal) (*T
 	return res, nil
 }
 
-func (a *PrivateMediatorAPI) WithdrawDeposit(medAddStr string, amount decimal.Decimal) (*TxExecuteResult, error) {
-	// 参数检查
-	medAdd, err := common.StringToAddress(medAddStr)
-	if err != nil {
-		return nil, fmt.Errorf("invalid account address: %v", medAddStr)
-	}
-
-	// 判断是否是mediator
-	if !a.Dag().IsMediator(medAdd) {
-		return nil, fmt.Errorf("account %v is not a mediator", medAddStr)
-	}
-
-	if !amount.IsPositive() {
-		return nil, fmt.Errorf("the amount of the deposit must be greater than 0")
-	}
-
-	// 调用系统合约
-	amountStr := strconv.FormatUint(ptnjson.Ptn2Dao(amount), 10)
-	cArgs := [][]byte{[]byte(modules.MediatorWithdrawDeposit), []byte(amountStr)}
-
-	//fee := a.Dag().CurrentFeeSchedule().TransferFee.BaseFee
-	fee := a.Dag().GetChainParameters().TransferPtnBaseFee
-	reqId, err := a.ContractInvokeReqTx(medAdd, medAdd, 0, fee,
-		nil, syscontract.DepositContractAddress, cArgs, 0)
-	if err != nil {
-		return nil, err
-	}
-
-	// 返回执行结果
-	res := &TxExecuteResult{}
-	res.TxContent = fmt.Sprintf("Mediator(%v) apply to withdraw %vPTN to DepositContract(%v)",
-		medAddStr, amount, syscontract.DepositContractAddress.Str())
-	res.TxFee = fmt.Sprintf("%vdao", fee)
-	res.Warning = DefaultResult
-	res.Tip = "Your ReqId is: " + hex.EncodeToString(reqId[:]) +
-		" , You can get the transaction hash with dag.getTxByReqId()"
-
-	return res, nil
-}
-
 func (a *PrivateMediatorAPI) Quit(medAddStr string) (*TxExecuteResult, error) {
 	// 参数检查
 	medAdd, err := common.StringToAddress(medAddStr)
@@ -351,7 +310,7 @@ func (a *PrivateMediatorAPI) Quit(medAddStr string) (*TxExecuteResult, error) {
 	}
 
 	// 调用系统合约
-	cArgs := [][]byte{[]byte(modules.MediatorApplyQuitList)}
+	cArgs := [][]byte{[]byte(modules.MediatorApplyQuit)}
 	//fee := a.Dag().CurrentFeeSchedule().TransferFee.BaseFee
 	fee := a.Dag().GetChainParameters().TransferPtnBaseFee
 	reqId, err := a.ContractInvokeReqTx(medAdd, medAdd, 0, fee,
