@@ -124,18 +124,17 @@ type InstallRequestJson struct {
 }
 
 type DeployRequestJson struct {
-	Number int    `json:"row_number"`
-	TplId  string `json:"tpl_id"`
-	//TxId    string        `json:"tx_id"`
+	Number  int           `json:"row_number"`
+	TplId   string        `json:"tpl_id"`
 	Args    []string      `json:"arg_set"`
 	Timeout time.Duration `json:"timeout"`
+	ExtData string        `json:"extend_data"`
 }
 
 type StopRequestJson struct {
-	Number     int    `json:"row_number"`
-	ContractId string `json:"contract_id"`
-	//Txid        string `json:"tx_id"`
-	DeleteImage bool `json:"delete_image"`
+	Number      int    `json:"row_number"`
+	ContractId  string `json:"contract_id"`
+	DeleteImage bool   `json:"delete_image"`
 }
 type DataJson struct {
 	Number    int    `json:"row_number"`
@@ -373,6 +372,7 @@ func convertDeployRequest2Json(req *modules.ContractDeployRequestPayload) *Deplo
 		reqJson.Args = append(reqJson.Args, string(arg))
 	}
 	reqJson.Timeout = time.Duration(req.Timeout) * time.Second
+	reqJson.ExtData = hex.EncodeToString(req.ExtData)
 	return reqJson
 }
 

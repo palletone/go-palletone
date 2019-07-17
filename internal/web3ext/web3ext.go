@@ -21,11 +21,11 @@
 package web3ext
 
 var Modules = map[string]string{
-	"chequebook": Chequebook_JS,
-	"clique":     Clique_JS,
-	"net":        Net_JS,
-	"rpc":        RPC_JS,
-	"txpool":     TxPool_JS,
+	//"chequebook": Chequebook_JS,
+	//"clique":     Clique_JS,
+	//"net":        Net_JS,
+	//"rpc":        RPC_JS,
+	"txpool": TxPool_JS,
 }
 
 const Chequebook_JS = `
