@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/fsouza/go-dockerclient"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/list"
@@ -117,7 +118,6 @@ func getResourceUses(cc *list.CCInfo) (*docker.Stats, error) {
 
 //  通过容器名称获取容器里面的错误信息，返回最后一条
 func GetLogFromContainer(name string) string {
-	var client *docker.Client
 	client, err := util.NewDockerClient()
 	if err != nil {
 		log.Info("util.NewDockerClient", "error", err)
@@ -129,7 +129,7 @@ func GetLogFromContainer(name string) string {
 		ErrorStream:       &buf,
 		Follow:            true,
 		Stderr:            true,
-		InactivityTimeout: time.Duration(5 * time.Second),
+		InactivityTimeout: time.Duration(3 * time.Second),
 	}
 	log.Debugf("start docker logs")
 	err = client.Logs(logsO)
@@ -157,4 +157,28 @@ func GetLogFromContainer(name string) string {
 		return errArray[len(errArray)-1]
 	}
 	return ""
+}
+
+func GetAllExitedContainer(client *docker.Client) ([]common.Address, error) {
+	cons, err := client.ListContainers(docker.ListContainersOptions{All: true})
+	if err != nil {
+		log.Infof("client.ListContainers err: %s\n", err.Error())
+		return nil, err
+	}
+	addr := make([]common.Address, 0)
+	if len(cons) > 0 {
+		for _, v := range cons {
+			if strings.Contains(v.Names[0][1:3], "PC") && strings.Contains(v.Status, "Exited") {
+				name := v.Names[0][1:36]
+				contractAddr, err := common.StringToAddress(name)
+				if err != nil {
+					log.Infof("common.StringToAddress err: %s", err.Error())
+					continue
+				}
+				addr = append(addr, contractAddr)
+			}
+		}
+		return addr, nil
+	}
+	return nil, fmt.Errorf("without any container")
 }

@@ -20,11 +20,11 @@ import (
 
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
+	"github.com/palletone/go-palletone/contracts/utils"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag"
 	md "github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
-	"strings"
 )
 
 type TempCC struct {
@@ -330,39 +330,29 @@ func StopByName(contractid []byte, chainID string, txid string, usercc *cclist.C
 }
 
 func GetAllContainers(client *docker.Client) {
-	cons, err := client.ListContainers(docker.ListContainersOptions{All: true})
+	addrs, err := utils.GetAllExitedContainer(client)
 	if err != nil {
 		log.Infof("client.ListContainers err: %s\n", err.Error())
 		return
 	}
-	if len(cons) > 0 {
-		for _, v := range cons {
-			if strings.Contains(v.Names[0][1:3], "PC") && strings.Contains(v.Status, "Exited") {
-				dag, err := db.GetCcDagHand()
-				if err != nil {
-					log.Infof("db.GetCcDagHand err: %s", err.Error())
-					return
-				}
-				name := v.Names[0][1:36]
-				contractAddr, err := common.StringToAddress(name)
-				if err != nil {
-					log.Infof("common.StringToAddress err: %s", err.Error())
-					return
-				}
-				rd, err := crypto.GetRandomBytes(32)
-				txid := util.RlpHash(rd)
-				log.Infof("==============需要重启====容器名称为-->%s,---->%s", name, hex.EncodeToString(contractAddr.Bytes21()))
-				_, err = RestartContainer(dag, "palletone", contractAddr.Bytes21(), txid.String())
-				if err != nil {
-					log.Infof("RestartContainer err: %s", err.Error())
-					return
-				}
+	if len(addrs) > 0 {
+		for _, v := range addrs {
+			dag, err := db.GetCcDagHand()
+			if err != nil {
+				log.Infof("db.GetCcDagHand err: %s", err.Error())
+				return
+			}
+			rd, err := crypto.GetRandomBytes(32)
+			txid := util.RlpHash(rd)
+			log.Infof("==============需要重启====容器地址为--->%s", hex.EncodeToString(v.Bytes21()))
+			_, err = RestartContainer(dag, "palletone", v.Bytes21(), txid.String())
+			if err != nil {
+				log.Infof("RestartContainer err: %s", err.Error())
+				return
 			}
 		}
-	} else {
-		log.Infof("no containers")
-		return
 	}
+	return
 }
 
 func RestartContainer(idag dag.IDag, chainID string, deployId []byte, txId string) ([]byte, error) {
