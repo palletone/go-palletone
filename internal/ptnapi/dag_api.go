@@ -46,6 +46,14 @@ func NewPublicDagAPI(b Backend) *PublicDagAPI {
 	return &PublicDagAPI{b}
 }
 
+//所有可能大数据量的查询只能在本地查询
+type PrivateDagAPI struct {
+	b Backend
+}
+
+func NewPrivateDagAPI(b Backend) *PrivateDagAPI {
+	return &PrivateDagAPI{b}
+}
 func (s *PublicDagAPI) GetHexCommon(ctx context.Context, key string) (string, error) {
 	key_bytes, err0 := hexutil.Decode(key)
 	if err0 != nil {
@@ -65,7 +73,7 @@ func (s *PublicDagAPI) GetCommon(ctx context.Context, key string) ([]byte, error
 	return s.b.GetCommon([]byte(key))
 }
 
-func (s *PublicDagAPI) GetCommonByPrefix(ctx context.Context, prefix string) (string, error) {
+func (s *PrivateDagAPI) GetCommonByPrefix(ctx context.Context, prefix string) (string, error) {
 	result := s.b.GetCommonByPrefix([]byte(prefix))
 	if result == nil || len(result) == 0 {
 		return "all_items:null", nil
@@ -359,23 +367,6 @@ func (s *PublicDagAPI) GetAddrUtxos(ctx context.Context, addr string) (string, e
 	return string(result_json), nil
 }
 
-func (s *PublicDagAPI) GetAllUtxos(ctx context.Context) (string, error) {
-	items, err := s.b.GetAllUtxos()
-	if err != nil {
-		log.Error("Get all utxo failed.", "error", err, "result", items)
-		return "", err
-	}
-
-	info := NewPublicReturnInfo("all_utxos", items)
-
-	result_json, err := json.Marshal(info)
-	if err != nil {
-		log.Error("Get all utxo ,json marshal failed.", "error", err)
-	}
-
-	return string(result_json), nil
-}
-
 func (s *PublicDagAPI) GetTransactionsByTxid(ctx context.Context, txid string) (*ptnjson.GetTxIdResult, error) {
 	tx, err := s.b.GetTxByTxid_back(txid)
 	if err != nil {
@@ -471,4 +462,21 @@ func (s *PublicDagAPI) StableUnitNum() uint64 {
 	}
 
 	return uint64(0)
+}
+
+func (s *PrivateDagAPI) GetAllUtxos(ctx context.Context) (string, error) {
+	items, err := s.b.GetAllUtxos()
+	if err != nil {
+		log.Error("Get all utxo failed.", "error", err, "result", items)
+		return "", err
+	}
+
+	info := NewPublicReturnInfo("all_utxos", items)
+
+	result_json, err := json.Marshal(info)
+	if err != nil {
+		log.Error("Get all utxo ,json marshal failed.", "error", err)
+	}
+
+	return string(result_json), nil
 }
