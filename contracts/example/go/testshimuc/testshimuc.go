@@ -289,7 +289,11 @@ func (t *SimpleChaincode) test_GetStateByPrefix(stub shim.ChaincodeStubInterface
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	data, err := json.Marshal(val)
+	res := map[string]string{}
+	for _, kv := range val {
+		res[kv.Key] = string(kv.Value)
+	}
+	data, err := json.Marshal(res)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
