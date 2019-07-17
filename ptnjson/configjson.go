@@ -27,10 +27,10 @@ import (
 	"strconv"
 )
 
+// 配置参数的键值对，区块链浏览器专用
 type ConfigJson struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
-	//ValueHex string `json:"value_hex"`
+	Key   string `json:"key"`   // 配置参数的key
+	Value string `json:"value"` // 配置参数的value
 }
 
 func ConvertAllSysConfigToJson(configs *core.ChainParameters) []*ConfigJson {
