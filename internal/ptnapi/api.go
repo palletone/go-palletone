@@ -1419,31 +1419,6 @@ func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encod
 	return submitTransaction(ctx, s.b, tx)
 }
 
-// SendJsonTransaction will add the signed transaction jsonto the transaction pool.
-// The sender is responsible for signing the transaction and using the correct nonce.
-func (s *PublicTransactionPoolAPI) SendJsonTransaction(ctx context.Context, jsonStr string) (common.Hash, error) {
-	//transaction inputs
-	txjson := &ptnjson.TxJson{}
-	json.Unmarshal([]byte(jsonStr), txjson)
-	tx := ptnjson.ConvertJson2Tx(txjson)
-
-	if 0 == len(tx.TxMessages) {
-		return common.Hash{}, errors.New("Invalid Tx, message length is 0")
-	}
-	var outAmount uint64
-	for _, msg := range tx.TxMessages {
-		payload, ok := msg.Payload.(*modules.PaymentPayload)
-		if ok == false {
-			continue
-		}
-
-		for _, txout := range payload.Outputs {
-			outAmount += txout.Value
-		}
-	}
-	return submitTransaction(ctx, s.b, tx)
-}
-
 // Sign calculates an ECDSA signature for:
 // keccack256("\x19Ethereum Signed Message:\n" + len(message) + message).
 //
