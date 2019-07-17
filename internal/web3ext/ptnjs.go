@@ -81,18 +81,18 @@ web3._extend({
 		//	inputFormatter: [web3._extend.formatters.inputBlockNumberFormatter, web3._extend.utils.toHex]
 		//}),
 		
-		new web3._extend.Method({
-			name: 'setJuryAccount',
-        	call: 'ptn_setJuryAccount',
-        	params: 2, //address, password string
-			inputFormatter: [null, null]
-		}),
-		new web3._extend.Method({
-			name: 'getJuryAccount',
-        	call: 'ptn_getJuryAccount',
-        	params: 0, //
-			inputFormatter: []
-		}),
+		//new web3._extend.Method({
+		//	name: 'setJuryAccount',
+        	//call: 'ptn_setJuryAccount',
+        	//params: 2, //address, password string
+		//	inputFormatter: [null, null]
+		//}),
+		//new web3._extend.Method({
+		//	name: 'getJuryAccount',
+        	//call: 'ptn_getJuryAccount',
+        	//params: 0, //
+		//	inputFormatter: []
+		//}),
 		
 
 		new web3._extend.Method({
@@ -125,29 +125,29 @@ web3._extend({
 			params: 1,
 			inputFormatter: [null]
 		}),
-        new web3._extend.Method({
-			name: 'getBalance',
-			call: 'ptn_getBalance',
-			params: 1,
-			inputFormatter: [null]
-		}),
+		//new web3._extend.Method({
+		//	name: 'getBalance',
+		//	call: 'ptn_getBalance',
+		//	params: 1,
+		//	inputFormatter: [null]
+		//}),
   		new web3._extend.Method({
 			name: 'getTokenTxHistory',
 			call: 'ptn_getTokenTxHistory',
 			params: 1,
 			inputFormatter: [null]
 		}),
-        new web3._extend.Method({
-			name: 'getTransactionsByTxid',
-            call: 'ptn_getTransactionsByTxid',
-			params: 1,
-			inputFormatter: [null]
-		}),
-        new web3._extend.Method({
-			name: 'election',
-			call: 'ptn_election',
-			params: 1,			
-		}),
+		//new web3._extend.Method({
+		//	name: 'getTransactionsByTxid',
+         //   call: 'ptn_getTransactionsByTxid',
+		//	params: 1,
+		//	inputFormatter: [null]
+		//}),
+		//new web3._extend.Method({
+		//	name: 'election',
+		//	call: 'ptn_election',
+		//	params: 1,			
+		//}),
 		new web3._extend.Method({
 			name: 'getProofTxInfoByHash',
 			call: 'ptn_getProofTxInfoByHash',
@@ -168,12 +168,12 @@ web3._extend({
 			call: 'ptn_syncUTXOByAddr',
 			params: 1
 		}),
-		new web3._extend.Method({
-			name: 'ccstartChaincodeContainer',
-			call: 'ptn_ccstartChaincodeContainer',
-			params: 2,
-			inputFormatter: [null,null]
-		}),
+		//new web3._extend.Method({
+		//	name: 'ccstartChaincodeContainer',
+		//	call: 'ptn_ccstartChaincodeContainer',
+		//	params: 2,
+		//	inputFormatter: [null,null]
+		//}),
 		new web3._extend.Method({
 			name: 'listSysConfig',
 			call: 'ptn_listSysConfig'
