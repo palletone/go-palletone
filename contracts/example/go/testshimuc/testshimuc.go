@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
@@ -296,6 +297,7 @@ func (t *SimpleChaincode) test_GetStateByPrefix(stub shim.ChaincodeStubInterface
 		if err := rlp.DecodeBytes(kv.Value, &v); err != nil {
 			return shim.Error(err.Error())
 		}
+		log.Debug("key:%s, value:%s", kv.Key, v)
 		res[kv.Key] = string(v)
 	}
 	data, err := json.Marshal(res)
