@@ -24,7 +24,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
@@ -292,7 +291,7 @@ func (t *SimpleChaincode) test_GetStateByPrefix(stub shim.ChaincodeStubInterface
 	}
 	res := map[string]string{}
 	for _, kv := range KVs {
-		log.Debug("key:%s, value:%s", kv.Key, string(kv.Value))
+		//log.Debug("key:%s, value:%s", kv.Key, string(kv.Value))
 		res[kv.Key] = string(kv.Value)
 	}
 	data, err := json.Marshal(res)
@@ -303,11 +302,15 @@ func (t *SimpleChaincode) test_GetStateByPrefix(stub shim.ChaincodeStubInterface
 }
 
 func (t *SimpleChaincode) test_GetContractAllState(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	val, err := stub.GetContractAllState()
+	result, err := stub.GetContractAllState()
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	data, err := json.Marshal(val)
+	KVs := map[string]string{}
+	for key, val := range result {
+		KVs[key] = string(val.Value)
+	}
+	data, err := json.Marshal(KVs)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
