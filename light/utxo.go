@@ -89,8 +89,7 @@ func (u *utxosRespData) decode(arrs [][][]byte) error {
 	for _, arr := range arrs[1:] {
 		var outpoint modules.OutPoint
 		var utxo *modules.Utxo
-		//log.Debug("Light PalletOne","utxosRespData decode outpoint",string(arr[0]))
-		//log.Debug("Light PalletOne","utxosRespData decode utxo",string(arr[1]))
+
 		if err := json.Unmarshal(arr[0], &outpoint); err != nil {
 			return err
 		}

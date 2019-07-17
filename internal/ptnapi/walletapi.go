@@ -1060,8 +1060,8 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 	}
 	if Extra != "" {
 		textPayload := new(modules.DataPayload)
-		textPayload.MainData = []byte(asset)
-		textPayload.ExtraData = []byte(Extra)
+		textPayload.Reference = []byte(asset)
+		textPayload.MainData = []byte(Extra)
 		rawTx.TxMessages = append(rawTx.TxMessages, modules.NewMessage(modules.APP_DATA, textPayload))
 	}
 	//lockscript
@@ -1214,6 +1214,10 @@ func (s *PublicWalletAPI) GetAllTokenInfo(ctx context.Context) (string, error) {
 
 func (s *PublicWalletAPI) GetProofOfExistencesByRef(ctx context.Context, reference string) ([]*ptnjson.ProofOfExistenceJson, error) {
 	return s.b.QueryProofOfExistenceByReference(reference)
+}
+
+func (s *PublicWalletAPI) GetProofOfExistencesByAsset(ctx context.Context, asset string) ([]*ptnjson.ProofOfExistenceJson, error) {
+	return s.b.GetAssetExistence(asset)
 }
 
 //好像某个UTXO是被那个交易花费的

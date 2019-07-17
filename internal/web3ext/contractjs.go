@@ -32,14 +32,14 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'ccinstalltx',
         	call: 'contract_ccinstalltx',
-        	params: 8, //from, to , daoAmount, daoFee , tplName, path, version
-			inputFormatter: [null, null, null,null, null, null, null, null]
+        	params: 11, //from, to , daoAmount, daoFee , tplName, path, version，description，abi，language
+			inputFormatter: [null, null, null,null, null, null, null, null, null, null, null]
 		}),
 		new web3._extend.Method({
 			name: 'ccdeploytx',
         	call: 'contract_ccdeploytx',
-        	params: 6, //from, to , daoAmount, daoFee , templateId , args  
-			inputFormatter: [null, null, null,null, null, null]
+        	params: 7, //from, to , daoAmount, daoFee , templateId , args , extData
+			inputFormatter: [null, null, null,null, null, null, null]
 		}),
 		new web3._extend.Method({
 			name: 'ccinvoketx',

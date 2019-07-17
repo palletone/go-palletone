@@ -53,7 +53,7 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) error {
 		err := fmt.Sprintf("[%s]ProcessContractEvent, event Tx addr is invalid, txId:%s", shortId(reqId.String()), event.Tx.Hash().String())
 		return errors.New(err)
 	}
-	if !p.contractEventExecutable(event.CType, event.Tx, event.Ele) {
+	if !p.contractEventExecutable(event.CType, event.Tx, event.Ele, event.JuryCount) {
 		log.Debugf("[%s]ProcessContractEvent, contractEventExecutable is false", shortId(reqId.String()))
 		return nil
 	}
@@ -113,7 +113,8 @@ func (p *Processor) contractEleEvent(tx *modules.Transaction) error {
 	}
 	if elesLen < p.electionNum {
 		reqEvent := &ElectionRequestEvent{
-			ReqId: reqId,
+			ReqId:     reqId,
+			JuryCount: uint64(p.dag.JuryCount()),
 		}
 		go p.ptn.ElectionBroadcast(ElectionEvent{EType: ELECTION_EVENT_VRF_REQUEST, Event: reqEvent}, true)
 	}

@@ -267,7 +267,7 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 	validatorFn := func(unit *modules.Unit) error {
 		//return dagerrors.ErrFutureBlock
 		hash := unit.Hash()
-		verr := pm.dag.ValidateUnitExceptPayment(unit)
+		verr := validator.ValidateUnitBasic(unit)
 		if verr != nil && !validator.IsOrphanError(verr) {
 			return verr
 		}
@@ -582,7 +582,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// Transactions arrived, make sure we have a valid and fresh chain to handle them
 		return pm.TxMsg(msg, p)
 
-	// append by Albert·Gou
+		// append by Albert·Gou
 	case msg.Code == SigShareMsg:
 		return pm.SigShareMsg(msg, p)
 
@@ -651,13 +651,13 @@ func (pm *ProtocolManager) ContractReqLocalSend(event jury.ContractEvent) {
 // will only announce it's availability (depending what's requested).
 func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
 	hash := unit.Hash()
-
-	for _, parentHash := range unit.ParentHash() {
-		if parent, err := pm.dag.GetUnitByHash(parentHash); err != nil || parent == nil {
-			log.Error("Propagating dangling block", "index", unit.Number().Index, "hash", hash, "parent_hash", parentHash.String())
-			return
-		}
-	}
+	// 孤儿单元是需要同步的
+	//for _, parentHash := range unit.ParentHash() {
+	//	if parent, err := pm.dag.GetUnitByHash(parentHash); err != nil || parent == nil {
+	//		log.Error("Propagating dangling block", "index", unit.Number().Index, "hash", hash, "parent_hash", parentHash.String())
+	//		return
+	//	}
+	//}
 
 	data, err := json.Marshal(unit)
 	if err != nil {

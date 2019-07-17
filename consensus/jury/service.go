@@ -26,7 +26,8 @@ import (
 	"time"
 
 	"encoding/json"
-
+	"go.dedis.ch/kyber/v3"
+	"github.com/coocood/freecache"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -45,7 +46,6 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
-	"go.dedis.ch/kyber/v3"
 )
 
 type PalletOne interface {
@@ -69,7 +69,7 @@ type iDag interface {
 	GetActiveMediators() []common.Address
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	IsActiveJury(addr common.Address) bool
-	JuryCount() int
+	JuryCount() uint
 	GetContractDevelopers() ([]common.Address, error)
 	IsContractDeveloper(addr common.Address) bool
 	GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error)
@@ -111,8 +111,9 @@ type nodeInfo struct {
 }
 
 type electionVrf struct {
-	brded bool //broadcasted
-	nType byte //ele type  ?   node type, 1:election sig requester. 0:receiver,not process election sig result event
+	brded   bool //broadcasted
+	nType   byte //ele type  ?   node type, 1:election sig requester. 0:receiver,not process election sig result event
+	juryCnt uint64
 
 	rcvEle []modules.ElectionInf //receive
 	sigs   []modules.SignatureSet
@@ -200,8 +201,8 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 	if contractEleNum < 1 {
 		contractEleNum = core.DefaultContractElectionNum
 	}
-
-	validator := validator.NewValidate(dag, dag, dag, nil)
+	cache := freecache.NewCache(20 * 1024 * 1024)
+	validator := validator.NewValidate(dag, dag, dag, nil, cache)
 	p := &Processor{
 		name:           "contractProcessor",
 		ptn:            ptn,
@@ -514,7 +515,7 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 		if !ctx.reqTx.IsSystemContract() {
 			defer rwM.CloseTxSimulator(setChainId, reqId.String())
 		}
-		if ctx.reqTx.IsSystemContract() && p.contractEventExecutable(CONTRACT_EVENT_EXEC, ctx.reqTx, nil) {
+		if ctx.reqTx.IsSystemContract() && p.contractEventExecutable(CONTRACT_EVENT_EXEC, ctx.reqTx, nil,0) {
 			if cType, err := getContractTxType(ctx.reqTx); err == nil && cType != modules.APP_CONTRACT_TPL_REQUEST {
 				ctx.valid = false
 				log.Debugf("[%s]AddContractLoop, A enter mtx, addr[%s]", shortId(reqId.String()), addr.String())
@@ -531,14 +532,14 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 			continue
 		}
 		ctx.valid = false
-		reqId = ctx.rstTx.RequestHash()
+
+		tx := ctx.rstTx
+		reqId = tx.RequestHash()
 		if p.checkTxReqIdIsExist(reqId) {
 			log.Debugf("[%s]AddContractLoop ,ReqId is exist, rst reqId[%s]", shortId(reqId.String()), reqId.String())
 			continue
 		}
 		log.Debugf("[%s]AddContractLoop, B enter mtx, addr[%s]", shortId(reqId.String()), addr.String())
-
-		tx := ctx.rstTx
 		if tx.IsSystemContract() {
 			sigTx, err := p.GenContractSigTransaction(addr, "", ctx.rstTx, ks)
 			if err != nil {
@@ -586,8 +587,8 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 		}
 	}
 	//检查本阶段时候有合约执行权限
-	if !p.contractEventExecutable(CONTRACT_EVENT_EXEC, tx, nil) {
-		log.Errorf("[%s]CheckContractTxValid, nodeContractExecutable false", shortId(reqId.String()))
+	if !p.contractEventExecutable(CONTRACT_EVENT_EXEC, tx, nil, 0) {
+		log.Debugf("[%s]CheckContractTxValid, nodeContractExecutable false", shortId(reqId.String()))
 		return false
 	}
 	msgs, err := runContractCmd(rwM, p.dag, p.contract, tx, nil, p.errMsgEnable) // long time ...
@@ -616,7 +617,7 @@ func (p *Processor) isInLocalAddr(addrHash []common.Hash) bool {
 	return false
 }
 
-func (p *Processor) isValidateElection(tx *modules.Transaction, ele []modules.ElectionInf, checkExit bool) bool {
+func (p *Processor) isValidateElection(tx *modules.Transaction, ele []modules.ElectionInf, juryCnt uint64, checkExit bool) bool {
 	reqId := tx.RequestHash()
 	if len(ele) < p.electionNum {
 		log.Infof("[%s]isValidateElection, ElectionInf number not enough ,len(ele)[%d], set electionNum[%d]", shortId(reqId.String()), len(ele), p.electionNum)
@@ -631,7 +632,7 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele []modules.El
 	isExit := false
 	etor := &elector{
 		num:   uint(p.electionNum),
-		total: uint64(p.dag.JuryCount()), //todo from dag
+		total: juryCnt,
 	}
 	etor.weight = electionWeightValue(etor.total)
 	for i, e := range ele {
@@ -651,19 +652,12 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele []modules.El
 		if e.Etype == 1 {
 			jjhAd := p.dag.GetChainParameters().FoundationAddress
 			if jjhAd == reqAddr.Str() {
-				//jjhAd, err := p.dag.GetConfig(modules.FoundationAddress)
-				//if err == nil && string(jjhAd) == reqAddr.Str() {
-				//if err == nil && bytes.Equal(reqAddr[:], jjhAd) {
 				log.Debugf("[%s]isValidateElection, e.Etype == 1, ok, contractId[%s]", shortId(reqId.String()), string(contractId))
 				continue
 			} else {
 				log.Debugf("[%s]isValidateElection, e.Etype == 1, but not jjh request addr, contractId[%s]",
 					shortId(reqId.String()), string(contractId))
-				//log.Debugf("[%s]isValidateElection, reqAddr[%s], jjh[%s]", shortId(reqId.String()), string(reqAddr[:]), string(jjhAd))
-				//log.Debugf("[%s]isValidateElection, reqAddr[%s], jjh[%s]", shortId(reqId.String()), reqAddr.Str(), string(jjhAd))
 				log.Debugf("[%s]isValidateElection, reqAddr[%s], jjh[%s]", shortId(reqId.String()), reqAddr.Str(), jjhAd)
-
-				//continue //todo test
 				return false
 			}
 		}
@@ -679,6 +673,11 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele []modules.El
 			return false
 		}
 		//验证proof是否通过
+		localJuryNum := uint64(p.dag.JuryCount())
+		if !checkJuryCountValid(juryCnt, uint64(localJuryNum)) {
+			log.Errorf("[%s]isValidateElection, index[%d],checkJuryCountValid fail, tx jury num[%d]--dag[%d]", shortId(reqId.String()), i, juryCnt, localJuryNum)
+			return false
+		}
 		isVerify, err := etor.verifyVrf(e.Proof, conversionElectionSeedData(contractId), e.PublicKey)
 		if err != nil || !isVerify {
 			log.Infof("[%s]isValidateElection, index[%d],verifyVrf fail, contractId[%s]", shortId(reqId.String()), i, string(contractId))
@@ -694,7 +693,7 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele []modules.El
 	return true
 }
 
-func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules.Transaction, ele []modules.ElectionInf) bool {
+func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules.Transaction, ele []modules.ElectionInf, juryCnt uint64) bool {
 	if tx == nil {
 		log.Errorf("tx is nil")
 		return false
@@ -715,7 +714,7 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 			log.Debugf("[%s]contractEventExecutable, CONTRACT_EVENT_EXEC, Mediator, true", shortId(reqId.String()))
 			return true
 		} else if !isSysContract && isJury {
-			if p.isValidateElection(tx, ele, true) {
+			if p.isValidateElection(tx, ele, juryCnt, true) {
 				log.Debugf("[%s]contractEventExecutable, CONTRACT_EVENT_EXEC, Jury, true", shortId(reqId.String()))
 				return true
 			} else {
@@ -724,7 +723,7 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 		}
 	case CONTRACT_EVENT_SIG:
 		if !isSysContract && isJury {
-			if p.isValidateElection(tx, ele, false) {
+			if p.isValidateElection(tx, ele, juryCnt, false) {
 				log.Debugf("[%s]contractEventExecutable, CONTRACT_EVENT_SIG, Jury, true", shortId(reqId.String()))
 				return true
 			} else {
@@ -736,7 +735,7 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 			if isSysContract {
 				log.Debugf("[%s]contractEventExecutable, CONTRACT_EVENT_COMMIT, Mediator, sysContract, true", shortId(reqId.String()))
 				return true
-			} else if !isSysContract && p.isValidateElection(tx, ele, false) {
+			} else if !isSysContract && p.isValidateElection(tx, ele, juryCnt, false) {
 				log.Debugf("[%s]contractEventExecutable, CONTRACT_EVENT_COMMIT, Mediator, userContract, true", shortId(reqId.String()))
 				return true
 			} else {

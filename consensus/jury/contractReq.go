@@ -28,6 +28,8 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
 
+	"encoding/json"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -98,13 +100,13 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 	return reqId, nil, nil
 }
 
-func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (common.Hash, common.Address, error) {
+func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, extData []byte, timeout time.Duration) (common.Hash, common.Address, error) {
 	if from == (common.Address{}) || to == (common.Address{}) || templateId == nil {
 		log.Error("ContractDeployReq", "param is error")
 		return common.Hash{}, common.Address{}, errors.New("ContractDeployReq request param is error")
 	}
-	if len(templateId) > MaxLengthTplId || len(args) > MaxNumberArgs {
-		log.Error("ContractDeployReq", "len(templateId)", len(templateId), "len(args)", len(args))
+	if len(templateId) > MaxLengthTplId || len(args) > MaxNumberArgs || len(extData) > MaxLengthExtData {
+		log.Error("ContractDeployReq", "len(templateId)", len(templateId), "len(args)", len(args), "len(extData)", len(extData))
 		return common.Hash{}, common.Address{}, errors.New("ContractDeployReq request param len overflow")
 	}
 	msgReq := &modules.Message{
@@ -112,6 +114,7 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 		Payload: &modules.ContractDeployRequestPayload{
 			TplId:   templateId,
 			Args:    args,
+			ExtData: extData,
 			Timeout: uint32(timeout),
 		},
 	}
@@ -149,6 +152,11 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 		return common.Hash{}, err
 	}
 	log.Infof("[%s]ContractInvokeReq ok, reqId[%s], contractId[%s]", shortId(reqId.String()), reqId.String(), contractId.String())
+	log.DebugDynamic(func() string {
+		rjson, _ := json.Marshal(tx)
+		rdata, _ := rlp.EncodeToBytes(tx)
+		return fmt.Sprintf("Request data fro debug json:%s,\r\n rlp:%x", string(rjson), rdata)
+	})
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractEvent{Ele: p.mtx[reqId].eleInf, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
 	return reqId, nil
@@ -231,4 +239,3 @@ func (p *Processor) UpdateJuryAccount(addr common.Address, pwd string) bool {
 
 	return true
 }
-
