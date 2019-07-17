@@ -352,9 +352,9 @@ func GetAllContainers(client *docker.Client) {
 				rd, err := crypto.GetRandomBytes(32)
 				txid := util.RlpHash(rd)
 				log.Infof("==============需要重启====容器名称为-->%s,---->%s", name, hex.EncodeToString(contractAddr.Bytes21()))
-				_, err = StartChaincodeContainert(dag, "palletone", contractAddr.Bytes21(), txid.String())
+				_, err = RestartContainer(dag, "palletone", contractAddr.Bytes21(), txid.String())
 				if err != nil {
-					log.Infof("startChaincodeContainert err: %s", err.Error())
+					log.Infof("RestartContainer err: %s", err.Error())
 					return
 				}
 			}
@@ -365,7 +365,7 @@ func GetAllContainers(client *docker.Client) {
 	}
 }
 
-func StartChaincodeContainert(idag dag.IDag, chainID string, deployId []byte, txId string) ([]byte, error) {
+func RestartContainer(idag dag.IDag, chainID string, deployId []byte, txId string) ([]byte, error) {
 	_, err := Stop(nil, idag, deployId, chainID, deployId, txId, false, true)
 	if err != nil {
 		return nil, err
