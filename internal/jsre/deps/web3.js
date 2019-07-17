@@ -2566,36 +2566,35 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
             this.settings = new Settings();
         };
 
-        Web3.prototype.BigNumber = BigNumber;
-        Web3.prototype.toHex = utils.toHex;
-        Web3.prototype.toAscii = utils.toAscii;
-        Web3.prototype.toUtf8 = utils.toUtf8;
-        Web3.prototype.fromAscii = utils.fromAscii;
-        Web3.prototype.fromUtf8 = utils.fromUtf8;
-        Web3.prototype.toDecimal = utils.toDecimal;
-        Web3.prototype.fromDecimal = utils.fromDecimal;
-        Web3.prototype.toBigNumber = utils.toBigNumber;
-        Web3.prototype.toWei = utils.toWei;
-        Web3.prototype.fromWei = utils.fromWei;
-        Web3.prototype.isAddress = utils.isAddress;
-        Web3.prototype.isChecksumAddress = utils.isChecksumAddress;
-        Web3.prototype.toChecksumAddress = utils.toChecksumAddress;
-        Web3.prototype.isIBAN = utils.isIBAN;
-        Web3.prototype.padLeft = utils.padLeft;
-        Web3.prototype.padRight = utils.padRight;
+        // Web3.prototype.BigNumber = BigNumber;
+        // Web3.prototype.toHex = utils.toHex;
+        // Web3.prototype.toAscii = utils.toAscii;
+        // Web3.prototype.toUtf8 = utils.toUtf8;
+        // Web3.prototype.fromAscii = utils.fromAscii;
+        // Web3.prototype.fromUtf8 = utils.fromUtf8;
+        // Web3.prototype.toDecimal = utils.toDecimal;
+        // Web3.prototype.fromDecimal = utils.fromDecimal;
+        // Web3.prototype.toBigNumber = utils.toBigNumber;
+        // Web3.prototype.toWei = utils.toWei;
+        // Web3.prototype.fromWei = utils.fromWei;
+        // Web3.prototype.isAddress = utils.isAddress;
+        // Web3.prototype.isChecksumAddress = utils.isChecksumAddress;
+        // Web3.prototype.toChecksumAddress = utils.toChecksumAddress;
+        // Web3.prototype.isIBAN = utils.isIBAN;
+        // Web3.prototype.padLeft = utils.padLeft;
+        // Web3.prototype.padRight = utils.padRight;
 
-
-        Web3.prototype.sha3 = function(string, options) {
-            return '0x' + sha3(string, options);
-        };
+        // Web3.prototype.sha3 = function(string, options) {
+        //     return '0x' + sha3(string, options);
+        // };
 
         /**
          * Transforms direct icap to address
          */
-        Web3.prototype.fromICAP = function (icap) {
-            var iban = new Iban(icap);
-            return iban.address();
-        };
+        // Web3.prototype.fromICAP = function (icap) {
+        //     var iban = new Iban(icap);
+        //     return iban.address();
+        // };
 
         var properties = function () {
             return [
@@ -2609,7 +2608,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                     inputFormatter: utils.toDecimal
                 }),
                 new Property({
-                    name: 'version.ethereum',
+                    name: 'version.palletone',
                     getter: 'ptn_protocolVersion',
                     inputFormatter: utils.toDecimal
                 }),
@@ -2621,13 +2620,13 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
             ];
         };
 
-        Web3.prototype.isConnected = function(){
-            return (this.currentProvider && this.currentProvider.isConnected());
-        };
-
-        Web3.prototype.createBatch = function () {
-            return new Batch(this);
-        };
+        // Web3.prototype.isConnected = function(){
+        //     return (this.currentProvider && this.currentProvider.isConnected());
+        // };
+        //
+        // Web3.prototype.createBatch = function () {
+        //     return new Batch(this);
+        // };
 
         module.exports = Web3;
 
