@@ -270,6 +270,8 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 		return nil, err
 	}
 	rsp, unit, err := es.ProcessProposal(rwM, idag, deployId, context.Background(), sprop, prop, chainID, cid, timeout)
+	//  TODO 执行完invoke，获取容器资源使用情况
+	//utils.GetResourcesWhenInvokeContainer(cc)
 	log.Debugf("process proposal")
 	if err != nil {
 		log.Infof("ProcessProposal error[%v]", err)

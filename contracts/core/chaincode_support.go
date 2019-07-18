@@ -585,6 +585,8 @@ func (chaincodeSupport *ChaincodeSupport) launchAndWaitForRegister(ctxt context.
 		// When the launch completed, errors from the launch if any will be handled below.
 		// Just test for invalid nil error notification (we expect only errors to be notified)
 		if err == nil {
+			// TODO
+			return errors.New("nil error notified. the launch contract is to notify errors only")
 			panic("nil error notified. the launch contract is to notify errors only")
 		}
 	case <-time.After(chaincodeSupport.ccStartupTimeout):
@@ -690,6 +692,8 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 	log.Infof("chainId=%s, name=%s, version=%s, syscc=%v", cccid.ChainID, cccid.Name, cccid.Version, cccid.Syscc)
 	if cds, _ = spec.(*pb.ChaincodeDeploymentSpec); cds == nil {
 		if ci, _ = spec.(*pb.ChaincodeInvocationSpec); ci == nil {
+			//  TODO
+			return cID, cMsg, errors.New("Launch should be called with deployment or invocation spec")
 			panic("Launch should be called with deployment or invocation spec")
 		}
 	}
@@ -895,6 +899,8 @@ func (chaincodeSupport *ChaincodeSupport) Execute(ctxt context.Context, cccid *c
 			log.Errorf("<<<txid[%s] time out [%d]", cccid.TxID, setTimeout)
 			err = errors.New("timeout expired while executing transaction")
 		}
+		//  调用合约超时，停止该容器
+		utils.StopContainerWhenInvokeTimeOut(cccid.GetContainerName())
 	}
 	//our responsibility to delete transaction context if sendExecuteMessage succeeded
 	chrte.handler.deleteTxContext(msg.ChannelId, msg.Txid)

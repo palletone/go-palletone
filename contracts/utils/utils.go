@@ -24,36 +24,89 @@ type UccInterface interface {
 //
 //}
 
-func getRT(cc *list.CCInfo) {
-	//r := &Resource{}
-	cupusage, _ := GetCPUUsageTotalUsage(cc)
-	log.Infof("================================================%d\n\n", cupusage)
-	limit, _ := GetMemoryStatsLimit(cc)
-	log.Infof("================================================%d\n\n", limit)
-	usage, _ := GetMemoryStatsUsage(cc)
-	log.Infof("================================================%d\n\n", usage)
+func GetResourcesWhenInvokeContainer(cc *list.CCInfo) {
+	log.Debugf("enter GetResourcesWhenInvokeContainer")
+	defer log.Debugf("exit GetResourcesWhenInvokeContainer")
+	if !cc.SysCC {
+		name := cc.Name + ":" + cc.Version
+		name = strings.Replace(name, ":", "-", -1)
+		stats, err := GetAllResourceUsageByContainerName(name)
+		if err != nil {
+			return
+		}
+		cupusage, _ := GetCPUUsageTotalUsage(stats)
+		log.Infof("================================================%d\n\n", cupusage)
+		limit, _ := GetMemoryStatsLimit(stats)
+		log.Infof("================================================%d\n\n", limit)
+		usage, _ := GetMemoryStatsUsage(stats)
+		log.Infof("================================================%d\n\n", usage)
+	}
+	return
 }
 
-func GetCPUUsageTotalUsage(cc *list.CCInfo) (uint64, error) {
-	stats, err := getResourceUses(cc)
-	if err != nil {
-		return uint64(0), nil
-	}
+func GetCPUUsageTotalUsage(stats *docker.Stats) (uint64, error) {
 	return stats.CPUStats.CPUUsage.TotalUsage, nil
 }
-func GetMemoryStatsLimit(cc *list.CCInfo) (uint64, error) {
-	stats, err := getResourceUses(cc)
-	if err != nil {
-		return uint64(0), nil
-	}
+func GetMemoryStatsLimit(stats *docker.Stats) (uint64, error) {
 	return stats.MemoryStats.Limit, nil
 }
-func GetMemoryStatsUsage(cc *list.CCInfo) (uint64, error) {
-	stats, err := getResourceUses(cc)
-	if err != nil {
-		return uint64(0), nil
-	}
+func GetMemoryStatsUsage(stats *docker.Stats) (uint64, error) {
 	return stats.MemoryStats.Usage, nil
+}
+
+func GetAllResourceUsageByContainerName(name string) (*docker.Stats, error) {
+	client, err := util.NewDockerClient()
+	if err != nil {
+		log.Infof("util.NewDockerClient err: %s\n", err.Error())
+		return nil, err
+	}
+	//  通过容器名称获取容器id
+	con, err := client.InspectContainer(name)
+	if err != nil {
+		log.Infof("client.InspectContainer err: %s\n", err.Error())
+		return nil, err
+	}
+	errC := make(chan error, 1)
+	statsC := make(chan *docker.Stats)
+	done := make(chan bool)
+	defer close(done)
+	go func() {
+		errC <- client.Stats(docker.StatsOptions{ID: con.ID, Stats: statsC, Stream: false, Done: done, InactivityTimeout: time.Duration(3 * time.Second)})
+		close(errC)
+	}()
+	var resultStats []*docker.Stats
+	for {
+		stats, ok := <-statsC
+		if !ok {
+			break
+		}
+		resultStats = append(resultStats, stats)
+	}
+	err = <-errC
+	if err != nil {
+		return nil, err
+	}
+	if len(resultStats) == 0 {
+		return nil, fmt.Errorf("get container stats error")
+	} else {
+		stats := resultStats[0]
+		log.Infof("----------------------------------------%v\n\n", stats.Read)
+		log.Infof("------stats.CPUStats-----------%v\n", stats.CPUStats)
+		log.Infof("--------stats.PreCPUStats---------%v\n", stats.PreCPUStats)
+		log.Infof("-------------------stats.CPUStats.CPUUsage.PercpuUsage---------------------%v\n\n", stats.CPUStats.CPUUsage.PercpuUsage)
+		log.Infof("-------------------stats.CPUStats.CPUUsage.TotalUsage---------------------%v\n\n", stats.CPUStats.CPUUsage.TotalUsage)
+		log.Infof("-----------------%v\n", stats.MemoryStats)
+		log.Infof("----------------------stats.MemoryStats.Stats.Swap------------------%v\n\n", stats.MemoryStats.Stats.Swap)
+		log.Infof("----------------------stats.MemoryStats.Limit------------------%v\n\n", stats.MemoryStats.Limit)
+		log.Infof("----------------------stats.MemoryStats.MaxUsage------------------%v\n\n", stats.MemoryStats.MaxUsage)
+		log.Infof("----------------------stats.MemoryStats.Usage------------------%v\n\n", stats.MemoryStats.Usage)
+		log.Infof("---------stats.StorageStats---------%v\n", stats.StorageStats)
+		log.Infof("--------stats.BlkioStats----------%v\n", stats.BlkioStats)
+		log.Infof("--------stats.PidsStats----------%v\n", stats.PidsStats)
+		log.Infof("--------stats.NumProcs----------%v\n", stats.NumProcs)
+		return stats, nil
+	}
+	return nil, fmt.Errorf("get container stats error")
 }
 
 func getResourceUses(cc *list.CCInfo) (*docker.Stats, error) {
@@ -159,6 +212,7 @@ func GetLogFromContainer(name string) string {
 	return ""
 }
 
+//  获取用户合约异常退出的监听函数
 func GetAllExitedContainer(client *docker.Client) ([]common.Address, error) {
 	cons, err := client.ListContainers(docker.ListContainersOptions{All: true})
 	if err != nil {
@@ -181,4 +235,34 @@ func GetAllExitedContainer(client *docker.Client) ([]common.Address, error) {
 		return addr, nil
 	}
 	return nil, fmt.Errorf("without any container")
+}
+
+//  当调用合约时，发生超时，即停止掉容器
+func StopContainerWhenInvokeTimeOut(name string) {
+	log.Debugf("enter StopContainerWhenInvokeTimeOut name = %s", name)
+	defer log.Debugf("exit StopContainerWhenInvokeTimeOut name = %s", name)
+	client, err := util.NewDockerClient()
+	if err != nil {
+		log.Info("util.NewDockerClient", "error", err)
+		return
+	}
+	err = client.StopContainer(name, 0)
+	if err != nil {
+		log.Infof("stop container error: %s", err.Error())
+		return
+	}
+}
+
+//  编译超时，移除容器
+func RemoveContainerWhenGoBuildTimeOut(client *docker.Client, id string) {
+	for {
+		select {
+		case <-time.After(contractcfg.GetConfig().ContractDeploytimeout):
+			err := client.RemoveContainer(docker.RemoveContainerOptions{ID: id, Force: true})
+			if err != nil {
+				log.Infof("remove container error: %s", err.Error())
+			}
+			return
+		}
+	}
 }
