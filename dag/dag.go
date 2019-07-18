@@ -92,13 +92,19 @@ func (d *Dag) IsEmpty() bool {
 	return !it.Next()
 }
 
+// 返回稳定单元
 func (d *Dag) CurrentUnit(token modules.AssetId) *modules.Unit {
 	memdag, err := d.getMemDag(token)
 	if err != nil {
 		log.Errorf("Get CurrentUnit by token[%s] error:%s", token.String(), err.Error())
 		return nil
 	}
-	return memdag.GetLastMainChainUnit()
+	stable_hash, _ := memdag.GetLastStableUnitInfo()
+	unit, err := d.GetUnitByHash(stable_hash)
+	if err != nil {
+		return nil
+	}
+	return unit
 }
 
 func (d *Dag) GetMainCurrentUnit() *modules.Unit {
@@ -119,7 +125,12 @@ func (d *Dag) GetCurrentUnit(assetId modules.AssetId) *modules.Unit {
 }
 
 func (d *Dag) GetCurrentMemUnit(assetId modules.AssetId, index uint64) *modules.Unit {
-	curUnit := d.Memdag.GetLastMainChainUnit()
+	memdag, err := d.getMemDag(assetId)
+	if err != nil {
+		log.Errorf("Get CurrentUnit by token[%s] error:%s", assetId.String(), err.Error())
+		return nil
+	}
+	curUnit := memdag.GetLastMainChainUnit()
 
 	return curUnit
 }
@@ -994,7 +1005,7 @@ func (d *Dag) GetContractTplCode(tplId []byte) ([]byte, error) {
 }
 
 func (d *Dag) GetCurrentUnitIndex(token modules.AssetId) (*modules.ChainIndex, error) {
-	currentUnit := d.CurrentUnit(token)
+	currentUnit := d.GetCurrentUnit(token)
 	//	return d.GetUnitNumber(currentUnitHash)
 	return currentUnit.Number(), nil
 }

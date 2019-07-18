@@ -199,9 +199,12 @@ func (s *PublicDagAPI) GetUnitsByIndex(ctx context.Context, start, end decimal.D
 func (s *PublicDagAPI) GetFastUnitIndex(ctx context.Context, assetid string) string {
 	log.Info("PublicDagAPI", "GetUnitByNumber condition:", assetid)
 	if assetid == "" {
-		assetid = "ptn"
+		assetid = "PTN"
 	}
-	token, _, _ := modules.String2AssetId(assetid)
+	token, _, err := modules.String2AssetId(assetid)
+	if err != nil {
+		return "unknow assetid:" + assetid + ". " + err.Error()
+	}
 	stableUnit := s.b.Dag().CurrentUnit(token)
 	ustabeUnit := s.b.Dag().GetCurrentMemUnit(token, 0)
 	result := new(ptnjson.FastUnitJson)
