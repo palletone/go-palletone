@@ -128,19 +128,28 @@ func (e *elector) verifyVrf(proof, data []byte, pubKey []byte) (bool, error) {
 	return false, nil
 }
 
-func (p *Processor) selectElectionInf(local []modules.ElectionInf, recv []modules.ElectionInf, num int) []modules.ElectionInf {
+func (p *Processor) selectElectionInf(local []modules.ElectionInf, recv []modules.ElectionInf, num int) ([]modules.ElectionInf, bool) {
 	if len(local)+len(recv) < num {
-		return nil
+		return nil, false
 	}
 	eles := make([]modules.ElectionInf, 0)
-	if len(local) >= num {
+	if len(local) >= num {  //use local
 		eles = local[:num]
 	} else {
 		less := num - len(local)
 		eles = append(eles, local...)
-		eles = append(eles, recv[:less]...)
+		for i := 0; i < less; i++ {
+			for _, l := range local {
+				if !bytes.Equal(l.AddrHash[:], recv[i].AddrHash[:]) {
+					eles = append(eles, recv[i])
+				}
+			}
+		}
+		if len(eles) < num{
+			return nil, false
+		}
 	}
-	return eles
+	return eles, true
 }
 
 func (p *Processor) electionEventIsProcess(event *ElectionEvent) (common.Hash, bool) {
@@ -522,7 +531,6 @@ func (p *Processor) processElectionSigResultEvent(evt *ElectionSigResultEvent) e
 			Tx:    p.mtx[reqId].reqTx,
 		}
 		log.Infof("[%s]processElectionSigResultEvent, CONTRACT_EVENT_EXEC", shortId(reqId.String()))
-		//log.Info("processElectionSigResultEvent======================================================ok")
 		log.Info("processElectionSigResultEvent, CONTRACT_EVENT_EXEC", "reqId", shortId(reqId.String()), "event", event)
 		go p.ptn.ContractBroadcast(event, true)
 		return nil
@@ -542,7 +550,10 @@ func (p *Processor) BroadcastElectionSigRequestEvent() {
 			continue
 		}
 		if (len(mtx.eleInf) + len(ele.rcvEle)) >= p.electionNum {
-			se := p.selectElectionInf(mtx.eleInf, ele.rcvEle, p.electionNum)
+			se, valid := p.selectElectionInf(mtx.eleInf, ele.rcvEle, p.electionNum)
+			if !valid {
+				continue
+			}
 			mtx.eleInf = se
 			event := &ElectionSigRequestEvent{
 				ReqId:     reqId,
