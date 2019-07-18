@@ -798,8 +798,8 @@ func signTokenTx(tx *modules.Transaction, cmdInputs []ptnjson.RawTxInput, flags 
 
 	return nil
 }
-
-func (s *PublicTransactionPoolAPI) unlockKS(addr common.Address, password string, duration *uint64) error {
+/*
+func (s *PrivateTransactionPoolAPI) unlockKS(addr common.Address, password string, duration *uint64) error {
 	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
 	var d time.Duration
 	if duration == nil {
@@ -816,7 +816,7 @@ func (s *PublicTransactionPoolAPI) unlockKS(addr common.Address, password string
 		return err
 	}
 	return nil
-}
+}*/
 
 //func (s *PublicTransactionPoolAPI) TransferToken(ctx context.Context, asset string, from string, to string,
 //	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint64) (common.Hash, error) {
