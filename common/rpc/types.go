@@ -60,6 +60,7 @@ type serverRequest struct {
 	args          []reflect.Value
 	isUnsubscribe bool
 	err           Error
+	method        string
 }
 
 type serviceRegistry map[string]*service // collection of services
