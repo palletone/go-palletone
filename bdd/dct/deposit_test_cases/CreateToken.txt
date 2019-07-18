@@ -4,7 +4,7 @@ Resource          publicParams.txt
 *** Keywords ***
 createToken
     [Arguments]    ${address}
-    ${one}    Create List    createToken    depositTest    dpt    1    10000000000
+    ${one}    Create List    createToken    depositTest    dpt    1    1000
     ...    ${address}
     ${two}    Create List    ${address}    ${address}    ${amount}    ${fee}    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43
     ...    ${one}    \    20
@@ -25,7 +25,7 @@ invokeToken
     [Arguments]    ${address}    ${assetId}
     ${one}    Create List    MediatorPayToDepositContract
     ${two}    Create List    ${address}    ${address}    ${depositContractAddress}    ${amount}    ${fee}
-    ...    ${assetId}    500000000    ${depositContractAddress}    ${one}
+    ...    ${assetId}    50    ${depositContractAddress}    ${one}
     ${result}    创建公用的POST请求    contract_ccinvokeToken    getTokenInfo    ${two}
     log    ${result}
     #    To Json    ${result}
