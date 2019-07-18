@@ -26,6 +26,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 const MetadataApi = "rpc"
@@ -305,6 +306,12 @@ func (s *Server) handle(ctx context.Context, codec ServerCodec, req *serverReque
 		return codec.CreateErrorResponse(&req.id, rpcErr), nil
 	}
 
+	defer func(start time.Time, method string) {
+		if method != "" {
+			log.Debug("RPC Server Call Method", "name", method, "elapsed", time.Since(start))
+		}
+	}(time.Now(), req.method)
+
 	arguments := []reflect.Value{req.callb.rcvr}
 	if req.callb.hasCtx {
 		arguments = append(arguments, reflect.ValueOf(ctx))
@@ -437,6 +444,7 @@ func (s *Server) readRequest(codec ServerCodec) ([]*serverRequest, bool, Error) 
 			if r.params != nil && len(callb.argTypes) > 0 {
 				if args, err := codec.ParseRequestArguments(callb.argTypes, r.params); err == nil {
 					requests[i].args = args
+					requests[i].method = r.method
 				} else {
 					requests[i].err = &invalidParamsError{err.Error()}
 				}
