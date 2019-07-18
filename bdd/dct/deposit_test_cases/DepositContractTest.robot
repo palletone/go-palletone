@@ -33,7 +33,7 @@ Business_01
     ${addressMap2}    getAgreeForBecomeMediatorList
     log    ${addressMap2}
     Dictionary Should Contain Key    ${addressMap2}    ${mediatorAddr_01}    #有该节点
-    ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    3000000000    #在同意列表里的节点，可以交付保证金    #这里交的数量不是规定的保证金数量，导致无法加入候选列表，并且相应保证金退还该地址    #1
+    ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    30    #在同意列表里的节点，可以交付保证金    #这里交的数量不是规定的保证金数量，导致无法加入候选列表，并且相应保证金退还该地址    #1
     log    ${result}
     ${amount}    getBalance    ${mediatorAddr_01}    PTN    #499999992
     log    ${amount}    #999949992
@@ -142,7 +142,7 @@ Business_02
 
 Business_03
     [Documentation]    jury 交付 1000000 0000 0000 及以上才可以加入候选列表
-    ${resul}    juryPayToDepositContract    ${juryAddr_01}    1000000000
+    ${resul}    juryPayToDepositContract    ${juryAddr_01}    10
     log    ${resul}
     ${result}    getCandidateBalanceWithAddr    ${juryAddr_01}    #获取该地址保证金账户详情
     log    ${result}    #余额为100000000000000
@@ -166,7 +166,7 @@ Business_03
 
 Business_04
     [Documentation]    没收jury节点
-    ${resul}    juryPayToDepositContract    ${juryAddr_02}    1000000000
+    ${resul}    juryPayToDepositContract    ${juryAddr_02}    10
     log    ${resul}
     ${result}    getCandidateBalanceWithAddr    ${juryAddr_02}    #获取该地址保证金账户详情
     log    ${result}
@@ -190,7 +190,7 @@ Business_04
 
 Business_05
     [Documentation]    dev 交付 10000 0000 0000 及以上才可以加入候选列表
-    ${resul}    developerPayToDepositContract    ${developerAddr_01}    100000000
+    ${resul}    developerPayToDepositContract    ${developerAddr_01}    1
     log    ${resul}
     ${result}    getCandidateBalanceWithAddr    ${developerAddr_01}    #获取该地址保证金账户详情
     log    ${result}
@@ -214,7 +214,7 @@ Business_05
 
 Business_06
     [Documentation]    没收dev节点
-    ${resul}    developerPayToDepositContract    ${developerAddr_02}    100000000
+    ${resul}    developerPayToDepositContract    ${developerAddr_02}    1
     log    ${resul}
     ${result}    getCandidateBalanceWithAddr    ${developerAddr_02}    #获取该地址保证金账户详情
     log    ${result}
@@ -256,7 +256,7 @@ Business_07
     log    ${assetId}
     ${amount}    getBalance    ${mediatorAddr_02}    ${assetId}
     log    ${amount}
-    Should Be Equal As Numbers    ${amount}    1000000000
+    Should Be Equal As Numbers    ${amount}    100
     ${result}    invokeToken    ${mediatorAddr_02}    ${assetId}    #在同意列表里的节点，可以交付保证金    #这里交的数量不是规定的保证金数量，导致无法加入候选列表，并且相应保证金退还该地址    #1
     log    ${result}
     ${addressMap3}    getListForMediatorCandidate
@@ -264,7 +264,7 @@ Business_07
     Dictionary Should Not Contain Key    ${addressMap3}    ${mediatorAddr_02}    #无该节点
     ${amount}    getBalance    ${mediatorAddr_02}    ${assetId}
     log    ${amount}
-    Should Be Equal As Numbers    ${amount}    1000000000
+    Should Be Equal As Numbers    ${amount}    100
     ${amount}    getBalance    ${mediatorAddr_02}    PTN
     log    ${amount}
     Should Be Equal As Numbers    ${amount}    9946
