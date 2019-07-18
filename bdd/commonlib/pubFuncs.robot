@@ -195,7 +195,8 @@ User stops contract
     [Return]    ${reqId}
 
 Wait for unit about contract to be confirmed by unit height
-    [Arguments]    ${reqId}
+    [Arguments]    ${reqId}    ${checkCode}
+    Wait for transaction being packaged
     # query the height of unit including tpl install tx
     ${params}=    Create List    ${reqId}
     # jury signature needs time to set agree
@@ -214,7 +215,7 @@ Wait for unit about contract to be confirmed by unit height
     ${errCode}=    Run Keyword If    ${len}>=1    Get From List    ${errCode}    0
     ${len}=    Get Length    ${errMsg}
     ${errMsg}=    Run Keyword If    ${len}>=1    Get From List    ${errMsg}    0
-    #Run Keyword If    ${errCode}!=0    Fail    ${errMsg}
+    Run Keyword If    ${checkCode}==${true}    Check response code    ${errCode}    ${errMsg}
     # ------- end of query error code ------- #
     ${result}=    To Json    ${result}
     ${info}=    Get From Dictionary    ${result}    info
@@ -227,3 +228,7 @@ Wait for unit about contract to be confirmed by unit height
     \    Run Keyword If    ${waitTimes}-${t}==1    Fail    "It takes too slow to confirm unit"
     \    Sleep    3s
     [Return]    ${errCode}    ${errMsg}
+
+Check response code
+    [Arguments]    ${resCode}    ${resMsg}
+    Run Keyword If    ${resCode}!=0    Fail    ${resMsg}

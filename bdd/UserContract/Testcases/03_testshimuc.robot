@@ -9,27 +9,22 @@ Library           Collections
 InstallTestshimucTpl
     Given Unlock token holder succeed
     ${reqId} =    When User installs contract template    github.com/palletone/go-palletone/contracts/example/go/testshimuc    testshimuc
-    And Wait for transaction being packaged
-    Then Wait for unit about contract to be confirmed by unit height    ${reqId}
+    Then Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
 DeployTestshimuc
     Given Unlock token holder succeed
     ${reqId} =    When User deploys contract
-    And Wait for transaction being packaged
-    Then Wait for unit about contract to be confirmed by unit height    ${reqId}
+    Then Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
 AddState
     Given Unlock token holder succeed
     ${reqId}=    When User put state    testPutState    state1    state1
-    And Wait for transaction being packaged
-    And Wait for unit about contract to be confirmed by unit height    ${reqId}
+    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
     ${reqId}=    When User put state    testPutState    state2    state2
-    And Wait for transaction being packaged
-    And Wait for unit about contract to be confirmed by unit height    ${reqId}
+    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
     # -------- put global state should be error ----------
     ${reqId}=    And User put state    testPutGlobalState    gState1    gState1
-    And Wait for transaction being packaged
-    ${errCode}    ${errMsg}=    And Wait for unit about contract to be confirmed by unit height    ${reqId}
+    ${errCode}    ${errMsg}=    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${false}
     Should Be Equal    ${errMsg}    Chaincode Error:Only system contract can call this function.
     # -------- query contract state --------------
     Then User query state    testGetState    state1    state1    str    ${null}
@@ -47,11 +42,9 @@ AddState
 DelState
     Given Unlock token holder succeed
     ${reqId}=    When User delete state    testDelState    state1
-    And Wait for transaction being packaged
-    And Wait for unit about contract to be confirmed by unit height    ${reqId}
+    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
     ${reqId}=    And User delete state    testDelState    state2
-    And Wait for transaction being packaged
-    And Wait for unit about contract to be confirmed by unit height    ${reqId}
+    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
     Then User query state    testGetState    state1    ${EMPTY}    str    ${null}
     And User query state    testGetGlobalState    state2    ${EMPTY}    str    ${null}
     And User query state    testGetContractState    state1    ${EMPTY}    str    ${gContractId}
@@ -62,18 +55,90 @@ DelState
 
 HandleToken
     Given Unlock token holder succeed
-    ${reqId}=    When User define token
-    ${reqId}=    And User supply token
-    ${reqId}=    And User pay out token
-    Then User query balance
+    ${reqId}=    When User define token    my token    YY    1    100000
+    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
+    And Query balance by contract    ${tokenHolder}    ${assetId}    10000
+    ${reqId}=    And User supply token    YY    100000
+    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
+    And Query balance by contract    ${tokenHolder}    YY    20000
+    ${newAddr}=    Then newAccount
+    ${reqId}=    And User pay out token    ${newAddr}    YY    4500
+    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
+    And Query balance by contract    ${tokenHolder}    YY    19550
+    And Query balance by contract    ${newAddr}    YY    450
+
+Get Invoke Info
+    Given Unlock token holder succeed
+    ${args}=    And Create List    arg1    arg2
+    ${reqId}=    When User get invoke info    ${args}
+    ${resCode}    ${resMsg}=    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
+    Then Check all invoke info    ${resMsg}    ${args}
 
 Stop testshimuc contract
     Given Unlock token holder succeed
     ${reqId}=    Then stopContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
-    And Wait for transaction being packaged
-    And Wait for unit about contract to be confirmed by unit height    ${reqId}
+    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
 *** Keywords ***
+User get invoke info
+    [Arguments]    ${args}
+    ${args}=    Create List    testGetInvokeInfo    ${args}
+    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
+    ...    ${args}
+    ${result}=    Get From Dictionary    ${respJson}    result
+    ${reqId}=    Get From Dictionary    ${result}    reqId
+    ${contractId}=    Get From Dictionary    ${result}    ContractId
+    Should Be Equal    ${gContractId}    ${contractId}
+    [Return]    ${reqId}
+
+Check all invoke info
+    [Arguments]    ${resMsg}    ${args}
+    # GetStringArgs
+    ${resMsg}=    To Json    ${resMsg}
+    Dictionary Should Contain    ${resMsg}    GetArgs
+    ${GetArgs} =    Get From Dictioanry     ${resMsg}    GetArgs
+    Dictionary Should Contain    ${resMsg}    GetStringArgs
+    ${GetStringArgs} =    Get From Dictioanry     ${resMsg}    GetStringArgs
+    Dictionary Should Contain    ${resMsg}    GetFunctionAndParameters
+    ${GetFunctionAndParameters} =    Get From Dictioanry     ${resMsg}    GetFunctionAndParameters
+    Dictionary Should Contain    ${resMsg}    GetArgsSlice
+    ${GetArgsSlice} =    Get From Dictioanry     ${resMsg}    GetArgsSlice
+    Dictionary Should Contain    ${resMsg}    GetTxID
+    ${GetTxID} =    Get From Dictioanry     ${resMsg}    GetTxID
+    Dictionary Should Contain    ${resMsg}    GetChannelID
+    ${GetChannelID} =    Get From Dictioanry     ${resMsg}    GetChannelID
+    Dictionary Should Contain    ${resMsg}    GetTxTimestamp
+    ${GetTxTimestamp} =    Get From Dictioanry     ${resMsg}    GetTxTimestamp
+    Dictionary Should Contain    ${resMsg}    GetInvokeAddress
+    ${GetInvokeAddress} =    Get From Dictioanry     ${resMsg}    GetInvokeAddress
+    Dictionary Should Contain    ${resMsg}    GetInvokeTokens
+    ${GetInvokeTokens} =    Get From Dictioanry     ${resMsg}    GetInvokeTokens
+    Dictionary Should Contain    ${resMsg}    GetInvokeFees
+    ${GetInvokeFees} =    Get From Dictioanry     ${resMsg}    GetInvokeFees
+    Dictionary Should Contain    ${resMsg}    GetContractID
+    ${GetContractID} =    Get From Dictioanry     ${resMsg}    GetContractID
+    Dictionary Should Contain    ${resMsg}    GetInvokeParameters
+    ${GetInvokeParameters} =    Get From Dictioanry     ${resMsg}    GetInvokeParameters
+
+User define token
+    [Arguments]    ${name}    ${symbole}    ${decimal}    ${amount}
+    ${args}=    Create List    testDefineToken    ${name}    ${symbole}    ${decimal}    ${amount}
+    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
+    ...    ${args}
+    ${result}=    Get From Dictionary    ${respJson}    result
+    ${reqId}=    Get From Dictionary    ${result}    reqId
+    ${contractId}=    Get From Dictionary    ${result}    ContractId
+    Should Be Equal    ${gContractId}    ${contractId}
+    [Return]    ${reqId}
+
+Query balance by contract
+    [Arguments]    ${addr}    ${symbole}    ${exceptedAmount}
+    ${args}=    Create List    testGetTokenBalance    ${addr}    ${symbole}
+    ${respJson}=    queryContract    ${gContractId}    ${args}
+    Dictionary Should Contain Key    ${respJson}    result
+    ${result}=    Get From Dictionary    ${respJson}    result
+    [Return]    ${reqId}
+
 User put state
     [Arguments]    ${method}    ${key}    ${value}
     ${args}=    Create List    ${method}    ${key}    ${value}

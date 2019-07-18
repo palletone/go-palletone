@@ -9,34 +9,29 @@ Library           Collections
 InstallContractpayTpl
     Given Unlock token holder succeed
     ${reqId} =    When User installs contract template    github.com/palletone/go-palletone/contracts/example/go/contractpay    example
-    And Wait for transaction being packaged
-    Then Wait for unit about contract to be confirmed by unit height    ${reqId}
+    Then Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
 DeployContract
     Given Unlock token holder succeed
     ${reqId} =    When User deploys contract
-    And Wait for transaction being packaged
-    Then Wait for unit about contract to be confirmed by unit height    ${reqId}
+    Then Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
 PutStatus
     Given Unlock token holder succeed
     ${reqId} =    When User put status into contractpay    put
-    And Wait for transaction being packaged
-    And Wait for unit about contract to be confirmed by unit height    ${reqId}
+    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
     #Then Get status from contractpay    get    a    aa
 
 Paystate1
     Given Unlock token holder succeed
     ${reqId} =    When User put status into contractpay    paystate1
-    And Wait for transaction being packaged
-    And Wait for unit about contract to be confirmed by unit height    ${reqId}
+    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
     #Then Get status from contractpay    get    paystate1    paystate1
 
 Paystate2
     Given Unlock token holder succeed
     ${reqId} =    When User put status into contractpay    paystate2
-    And Wait for transaction being packaged
-    And Wait for unit about contract to be confirmed by unit height    ${reqId}
+    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
     #Then Get status from contractpay    get    paystate2    paystate2
 
 Payout
@@ -45,15 +40,13 @@ Payout
     And Wait for transaction being packaged
     And Query contract balance
     ${newAddr}    ${reqId}=    And Use contractpay to transfer PTN to user2
-    And Wait for transaction being packaged
-    And Wait for unit about contract to be confirmed by unit height    ${reqId}
+    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
     Then Query user2 balance    ${newAddr}
 
 Stop contractpay contract
     Given Unlock token holder succeed
     ${reqId}=   Then stopContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
-    And Wait for transaction being packaged
-    And Wait for unit about contract to be confirmed by unit height    ${reqId}
+    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
 *** Keywords ***
 User put status into contractpay
