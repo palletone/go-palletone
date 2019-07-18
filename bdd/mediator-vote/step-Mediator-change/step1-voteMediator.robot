@@ -30,15 +30,15 @@ user unlock its account succeed
 pledge users ptn
     Log    " pledge users ptn succeed"
     ${args}=    Create List    ${pledgeMethod}
-    ${params}=    Create List    ${userAccount}    ${contractAddr}    10000    1    ${contractAddr}
+    ${params}=    Create List    ${userAccount}    ${contractAddr}    1000    1    ${contractAddr}
     ...    ${args}    ${strnull}    ${strnull}
-    ${params2}=    Create List    ${userAccount2}    ${contractAddr}    20000    1    ${contractAddr}
+    ${params2}=    Create List    ${userAccount2}    ${contractAddr}    2000    1    ${contractAddr}
     ...    ${args}    ${strnull}    ${strnull}
-    ${params3}=    Create List    ${userAccount3}    ${contractAddr}    30000    1    ${contractAddr}
+    ${params3}=    Create List    ${userAccount3}    ${contractAddr}    3000    1    ${contractAddr}
     ...    ${args}    ${strnull}    ${strnull}
-    ${params4}=    Create List    ${userAccount4}    ${contractAddr}    40000    1    ${contractAddr}
+    ${params4}=    Create List    ${userAccount4}    ${contractAddr}    4000    1    ${contractAddr}
     ...    ${args}    ${strnull}    ${strnull}
-    ${params5}=    Create List    ${userAccount5}    ${contractAddr}    50000    1    ${contractAddr}
+    ${params5}=    Create List    ${userAccount5}    ${contractAddr}    5000    1    ${contractAddr}
     ...    ${args}    ${strnull}    ${strnull}
     ${resp}=    sendRpcPost    ${pledgeDeposit}    ${params}    pledge users ptn
     ${resp}=    sendRpcPost    ${pledgeDeposit}    ${params2}    pledge users ptn

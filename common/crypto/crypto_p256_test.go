@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestCryptoP256_Sign(t *testing.T) {
+func TestCryptoP256_Key(t *testing.T) {
 	crypto:=&CryptoP256{}
 	msg := []byte("ABC")
 
@@ -27,8 +27,5 @@ func TestCryptoP256_Sign(t *testing.T) {
 	addr1 := PubkeyBytesToAddress(pubKey)
 	address1 := addr1.String()
 	t.Logf("Address:%s",address1)
-
-
-
-}
+	}
 
