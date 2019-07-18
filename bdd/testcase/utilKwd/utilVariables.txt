@@ -17,8 +17,8 @@ ${id}    ${1}
 
 # methods
 ${newAccount}     personal_newAccount
-${crtTransMethod}         ptn_cmdCreateTransaction
-${signMethod}     ptn_signRawTransaction
+${crtTransMethod}         wallet_CreateRawTransaction
+${signMethod}     wallet_signRawTransaction
 ${crtTokenMethod}    createToken
 ${frozenTokenMethod}    frozenToken
 ${supplyTokenMethod}    supplyToken
