@@ -43,7 +43,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/tokenengine"
-	"github.com/shopspring/decimal"
+	//"github.com/shopspring/decimal"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
 )
@@ -137,6 +137,7 @@ func (s *PublicTxPoolAPI) Queue() map[common.Hash]*modules.Transaction {
 	return result
 }
 
+// 未确认的交易列表
 func (s *PublicTxPoolAPI) Pending() ([]*ptnjson.TxPoolPendingJson, error) {
 	queue, err := s.b.Queued()
 	pending := make([]*ptnjson.TxPoolPendingJson, 0)
@@ -147,42 +148,6 @@ func (s *PublicTxPoolAPI) Pending() ([]*ptnjson.TxPoolPendingJson, error) {
 	return pending, err
 }
 
-/*
-// Inspect retrieves the content of the transaction pool and flattens it into an
-// easily inspectable list.
-func (s *PublicTxPoolAPI) Inspect() map[string]map[string]map[string]string {
-	content := map[string]map[string]map[string]string{
-		"pending": make(map[string]map[string]string),
-		"queued":  make(map[string]map[string]string),
-	}
-	pending, queue := s.b.TxPoolContent()
-
-	// Define a formatter to flatten a transaction into a string
-	var format = func(tx *modules.Transaction) string {
-		if to := tx.To(); to != nil {
-			return fmt.Sprintf("%s: %v wei + %v gas × %v wei", tx.To().Hex(), tx.Value(), tx.Gas(), tx.GasPrice())
-		}
-		return fmt.Sprintf("contract creation: %v wei + %v gas × %v wei", tx.Value(), tx.Gas(), tx.GasPrice())
-	}
-	// Flatten the pending transactions
-	for account, txs := range pending {
-		dump := make(map[string]string)
-		for _, tx := range txs {
-			dump[fmt.Sprintf("%d", tx.Nonce())] = format(tx)
-		}
-		content["pending"][account.Hex()] = dump
-	}
-	// Flatten the queued transactions
-	for account, txs := range queue {
-		dump := make(map[string]string)
-		for _, tx := range txs {
-			dump[fmt.Sprintf("%d", tx.Nonce())] = format(tx)
-		}
-		content["queued"][account.Hex()] = dump
-	}
-	return content
-}
-*/
 // PublicAccountAPI provides an API to access accounts managed by this node.
 // It offers only methods that can retrieve accounts.
 type PublicAccountAPI struct {
@@ -694,7 +659,7 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, poolTxs
 	//}
 	return allUtxo, nil
 }
-func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, from string, to string, amount, fee decimal.Decimal) (string, error) {
+/*func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, from string, to string, amount, fee decimal.Decimal) (string, error) {
 
 	//realNet := &chaincfg.MainNetParams
 	var LockTime int64
@@ -767,7 +732,7 @@ func (s *PublicTransactionPoolAPI) CmdCreateTransaction(ctx context.Context, fro
 	result, _ := CreateRawTransaction(arg)
 	// fmt.Println(result)
 	return result, nil
-}
+}*/
 func convertUtxoMap2Utxos(maps map[modules.OutPoint]*modules.Utxo) (core.Utxos, *modules.Asset) {
 	utxos := core.Utxos{}
 	asset := &modules.Asset{}
@@ -833,8 +798,8 @@ func signTokenTx(tx *modules.Transaction, cmdInputs []ptnjson.RawTxInput, flags 
 
 	return nil
 }
-
-func (s *PublicTransactionPoolAPI) unlockKS(addr common.Address, password string, duration *uint64) error {
+/*
+func (s *PrivateTransactionPoolAPI) unlockKS(addr common.Address, password string, duration *uint64) error {
 	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
 	var d time.Duration
 	if duration == nil {
@@ -851,7 +816,7 @@ func (s *PublicTransactionPoolAPI) unlockKS(addr common.Address, password string
 		return err
 	}
 	return nil
-}
+}*/
 
 //func (s *PublicTransactionPoolAPI) TransferToken(ctx context.Context, asset string, from string, to string,
 //	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint64) (common.Hash, error) {
