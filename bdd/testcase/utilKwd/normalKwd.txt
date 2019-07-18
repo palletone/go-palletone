@@ -64,7 +64,7 @@ Request getOneTokenInfo
 Request getBalance
     [Arguments]    ${address}    ${host}
     ${address}    Create List    ${address}
-    ${resp}    setPostRequest    ${host}    ptn_getBalance    ${address}
+    ${resp}    setPostRequest    ${host}    wallet_getBalance    ${address}
     #${type}    Evaluate    type(${resp.content})
     log    ${resp.content}
     ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
