@@ -27,6 +27,7 @@ import (
 	"time"
 	"unsafe"
 
+	"fmt"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
@@ -62,10 +63,16 @@ func (s *PublicDagAPI) GetHexCommon(ctx context.Context, key string) (string, er
 }
 func (s *PublicDagAPI) GetCommon(ctx context.Context, key string) ([]byte, error) {
 	// key to bytes
+	if key == "" {
+		return nil, fmt.Errorf("参数为空")
+	}
 	return s.b.GetCommon([]byte(key))
 }
 
 func (s *PublicDagAPI) GetCommonByPrefix(ctx context.Context, prefix string) (string, error) {
+	if prefix == "" {
+		return "", fmt.Errorf("参数为空")
+	}
 	result := s.b.GetCommonByPrefix([]byte(prefix))
 	if result == nil || len(result) == 0 {
 		return "all_items:null", nil
@@ -191,7 +198,13 @@ func (s *PublicDagAPI) GetUnitsByIndex(ctx context.Context, start, end decimal.D
 
 func (s *PublicDagAPI) GetFastUnitIndex(ctx context.Context, assetid string) string {
 	log.Info("PublicDagAPI", "GetUnitByNumber condition:", assetid)
-	token, _, _ := modules.String2AssetId(assetid)
+	if assetid == "" {
+		assetid = "PTN"
+	}
+	token, _, err := modules.String2AssetId(assetid)
+	if err != nil {
+		return "unknow assetid:" + assetid + ". " + err.Error()
+	}
 	stableUnit := s.b.Dag().CurrentUnit(token)
 	ustabeUnit := s.b.Dag().GetCurrentMemUnit(token, 0)
 	result := new(ptnjson.FastUnitJson)

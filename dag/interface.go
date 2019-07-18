@@ -42,7 +42,6 @@ type IDag interface {
 
 	IsEmpty() bool
 	CurrentUnit(token modules.AssetId) *modules.Unit
-	//VerifyHeader(header *modules.Header) error
 	GetCurrentUnit(assetId modules.AssetId) *modules.Unit
 	GetMainCurrentUnit() *modules.Unit
 	GetCurrentMemUnit(assetId modules.AssetId, index uint64) *modules.Unit

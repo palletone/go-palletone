@@ -30,15 +30,14 @@ import (
 type ContractJson struct {
 	//Contract Id 即Address，[20]byte，
 	// 根据用户创建合约实例申请的RequestId截取其后20字节生成
-	ContractId      string `json:"contract_id"` //Hex
-	ContractAddress string `json:"contract_address"`
-	TemplateId      string `json:"tpl_id"`
-	Name            string `json:"contract_name"`
-	//1Active 0Stopped
-	Status       byte      `json:"status"` // 合约状态
-	Creator      string    `json:"creator"`
-	CreationTime time.Time `json:"creation_time"` // creation  date
-	Template *ContractTemplateJson `json:"template"`
+	ContractId      string                `json:"contract_id"` //Hex
+	ContractAddress string                `json:"contract_address"`
+	TemplateId      string                `json:"tpl_id"`
+	Name            string                `json:"contract_name"`
+	Status          byte                  `json:"status"` // 合约状态
+	Creator         string                `json:"creator"`
+	CreationTime    time.Time             `json:"creation_time"` // creation  date
+	Template        *ContractTemplateJson `json:"template"`
 }
 
 func ConvertContract2Json(contract *modules.Contract) *ContractJson {
