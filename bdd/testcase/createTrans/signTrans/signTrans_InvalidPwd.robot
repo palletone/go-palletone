@@ -10,7 +10,7 @@ Resource          ../../utilKwd/normalKwd.txt
 
 *** Variables ***
 ${host}           http://localhost:8545/
-${method}         ptn_signRawTransaction
+${method}         wallet_signRawTransaction
 ${geneAdd}        P1CwGYGSjWSaJrysHAjAWtDyFSsbcYwoULv
 ${recieverAdd}    P11LKXXsDuKUdo3cJEy7uMnqnvw4kwHPs8
 ${result_code}    \f[a-z0-9]*
