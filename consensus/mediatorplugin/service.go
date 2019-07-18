@@ -166,6 +166,29 @@ func (mp *MediatorPlugin) APIs() []rpc.API {
 	}
 }
 
+func (mp *MediatorPlugin) UpdateMediatorsDKG(isRenew bool) {
+	log.Debugf("UpdateMediatorsDKG when after performChainMaintenance")
+
+	if !mp.groupSigningEnabled {
+		return
+	}
+
+	// 1. 保存旧的 dkg ， 用于之前的unit群签名确认
+	mp.precedingDKGs = mp.activeDKGs
+
+	// 判断是否重新 初始化DKG 和 VSS 协议
+	// todo albert 待优化
+	//if !isRenew {
+	//	return
+	//}
+
+	// 2. 初始化当前节点控制的活跃mediator对应的DKG.
+	mp.newActiveMediatorsDKG()
+
+	// 3. 开始完成 vss 协议
+	go mp.startVSSProtocol()
+}
+
 func (mp *MediatorPlugin) newActiveMediatorsDKG() {
 	dag := mp.dag
 
@@ -175,13 +198,10 @@ func (mp *MediatorPlugin) newActiveMediatorsDKG() {
 
 	lamc := len(lams)
 	mp.activeDKGs = make(map[common.Address]*dkg.DistKeyGenerator, lamc)
-	//mp.dealBuf = make(map[common.Address]chan *dkg.Deal, lamc)
-	//mp.respBuf = make(map[common.Address]map[common.Address]chan *dkg.Response, lamc)
 
 	for _, localMed := range lams {
 		initSec := mp.mediators[localMed].InitPrivKey
 
-		//dkgr, err := dkg.NewDistKeyGeneratorWithoutSecret(mp.suite, initSec, initPubs, curThreshold)
 		dkgr, err := dkg.NewDistKeyGenerator(mp.suite, initSec, initPubs, curThreshold)
 		if err != nil {
 			log.Debugf(err.Error())
@@ -189,7 +209,6 @@ func (mp *MediatorPlugin) newActiveMediatorsDKG() {
 		}
 
 		mp.activeDKGs[localMed] = dkgr
-		//mp.initVSSBuf(localMed)
 	}
 }
 
@@ -241,29 +260,6 @@ func (mp *MediatorPlugin) launchProduction() {
 		// 调度生产unit
 		go mp.scheduleProductionLoop()
 	}
-}
-
-func (mp *MediatorPlugin) UpdateMediatorsDKG(isRenew bool) {
-	log.Debugf("UpdateMediatorsDKG when after performChainMaintenance")
-
-	if !mp.groupSigningEnabled {
-		return
-	}
-
-	// 1. 保存旧的 dkg ， 用于之前的unit群签名确认
-	mp.precedingDKGs = mp.activeDKGs
-
-	// 判断是否重新 初始化DKG 和 VSS 协议
-	// todo albert 待优化
-	//if !isRenew {
-	//	return
-	//}
-
-	// 2. 初始化当前节点控制的活跃mediator对应的DKG.
-	mp.newActiveMediatorsDKG()
-
-	// 3. 开始完成 vss 协议
-	go mp.startVSSProtocol()
 }
 
 func (mp *MediatorPlugin) Stop() error {

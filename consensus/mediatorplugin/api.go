@@ -98,13 +98,14 @@ func (mp *MediatorPlugin) LocalHavePrecedingMediator() bool {
 }
 
 func (mp *MediatorPlugin) getLocalActiveDKG(add common.Address) (*dkg.DistKeyGenerator, error) {
-	if !mp.IsLocalActiveMediator(add) {
-		return nil, fmt.Errorf("the mediator(%v) is not local active mediator", add.String())
-	}
+	// 重复判断，不需要
+	//if !mp.IsLocalActiveMediator(add) {
+	//	return nil, fmt.Errorf("the mediator(%v) is not local active mediator", add.String())
+	//}
 
 	dkg, ok := mp.activeDKGs[add]
 	if !ok || dkg == nil {
-		return nil, fmt.Errorf("the mediator(%v)'s dkg is not existed", add.String())
+		return nil, fmt.Errorf("the mediator(%v)'s dkg is not existed, or it is not active", add.String())
 	}
 
 	return dkg, nil
