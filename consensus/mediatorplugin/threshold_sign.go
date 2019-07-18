@@ -35,6 +35,7 @@ import (
 )
 
 func (mp *MediatorPlugin) startVSSProtocol() {
+	// 重复判断，不需要
 	//dag := mp.dag
 	//if !mp.productionEnabled && !dag.IsSynced() {
 	//	log.Debugf("we're not synced")
@@ -44,8 +45,9 @@ func (mp *MediatorPlugin) startVSSProtocol() {
 	// todo albert 换届后第一个生产槽的前一个生产间隔开始vss协议
 
 	log.Debugf("Start completing the VSS protocol.")
+	// 将deal广播给其他节点
 	go mp.BroadcastVSSDeals()
-	// todo albert 处理可能收到的deal
+	// todo albert 处理从其他节点收到的deal
 }
 
 func (mp *MediatorPlugin) BroadcastVSSDeals() {
@@ -82,8 +84,6 @@ func (mp *MediatorPlugin) AddToDealBuf(dealEvent *VSSDealEvent) {
 	// todo albert 添加的缓存中
 	//dag := mp.dag
 	//localMed := dag.GetActiveMediatorAddr(int(dealEvent.DstIndex))
-
-	// todo albert 处理收到的deal
 }
 
 func (mp *MediatorPlugin) ProcessVSSDeal(dealEvent *VSSDealEvent) error {
