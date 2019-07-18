@@ -46,14 +46,8 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	function, args := stub.GetFunctionAndParameters()
 	switch function {
-	case "testGetArgs":
-		return t.test_GetArgs(stub, args)
-	case "testGetStringArgs":
-		return t.test_GetStringArgs(stub, args)
-	case "testGetFunctionAndParameters":
-		return t.test_GetFunctionAndParameters(stub, args)
-	case "testGetArgsSlice":
-		return t.test_GetArgsSlice(stub, args)
+	case "testGetInvokeInfo":
+		return t.test_GetInvokeInfo(stub, args)
 	case "testPutState":
 		return t.test_PutState(stub, args)
 	case "testGetState":
@@ -72,35 +66,130 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return t.test_GetContractAllState(stub, args)
 	case "testGetContractState":
 		return t.test_GetContractState(stub, args)
+	case "testDefineToken":
+		return t.test_DefineToken(stub, args)
+	case "testSupplyToken":
+		return t.test_SupplyToken(stub, args)
+	case "testPayOutToken":
+		return t.test_PayOutToken(stub, args)
+	case "testGetTokenBalance":
+		return t.test_GetTokenBalance(stub, args)
 	}
 	return shim.Error("Invalid invoke function name. Expecting \"invoke\"")
 }
 
-func (t *SimpleChaincode) test_GetArgs(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *SimpleChaincode) test_GetInvokeInfo(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	// GetArgs return args in ChaincodeStub
 	// invokeInfo, funcName, function params
+	resMap := map[string]interface{}{}
+	// getArgs，调用参数列表，byte类型
 	newArgs := stub.GetArgs()
 	params := make([]string, len(newArgs))
 	for _, a := range newArgs {
 		params = append(params, string(a))
 	}
-	res, err := json.Marshal(params)
+	resMap["GetArgs"] = params
+	// GetStringArgs，调用参数类别，string类型
+	strArgs := stub.GetStringArgs()
+	strParams := make([]string, len(strArgs))
+	for _, s := range strArgs {
+		strParams = append(strParams, s)
+	}
+	resMap["GetStringArgs"] = strParams
+	/// GetFunctionAndParameters，调用参数类别，string类型
+	fn, fpArgs := stub.GetFunctionAndParameters()
+	fpRes := map[string]interface{}{}
+	fpParams := make([]string, len(strArgs))
+	fpRes["functionName"] = fn
+	for _, s := range fpArgs {
+		fpParams = append(fpParams, s)
+	}
+	fpRes["parameters"] = fpParams
+	resMap["GetFunctionAndParameters"] = fpRes
+	// GetArgsSlice，调用参数列表，byte类型
+	sliceArgs, err := stub.GetArgsSlice()
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	if err := stub.PutState("GetArgs", res); err != nil {
+	sliceParams := make([]string, len(newArgs))
+	for _, a := range sliceArgs {
+		sliceParams = append(sliceParams, string(a))
+	}
+	resMap["GetArgsSlice"] = sliceParams
+	// GetTxID
+	txid := stub.GetTxID()
+	resMap["GetTxID"] = txid
+	// GetChannelID
+	chid := stub.GetChannelID()
+	resMap["GetChannelID"] = chid
+	// GetTxTimestamp
+	tt, err := stub.GetTxTimestamp(10)
+	if err != nil {
 		return shim.Error(err.Error())
 	}
-	return shim.Success(res)
-}
+	resMap["GetTxTimestamp"] = tt.String()
+	// GetInvokeAddress
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	resMap["GetInvokeAddress"] = invokeAddr.String()
+	// GetInvokeTokens
+	invokeTokens, err := stub.GetInvokeTokens()
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	sinvoketokens := make([]map[string]interface{}, len(invokeTokens))
+	for _, tokenInfo := range invokeTokens {
+		oneToken := map[string]interface{}{}
+		oneToken["assetId"] = tokenInfo.Asset.AssetId.String()
+		oneToken["uniqueId"] = tokenInfo.Asset.UniqueId.String()
+		oneToken["amount"] = tokenInfo.Amount
+		oneToken["address"] = tokenInfo.Address
+		sinvoketokens = append(sinvoketokens, oneToken)
+	}
+	resMap["GetInvokeTokens"] = sinvoketokens
+	// GetInvokeFees
+	invokeFees, err := stub.GetInvokeFees()
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	oneFee := map[string]interface{}{}
+	oneFee["assetId"] = invokeFees.Asset.AssetId.String()
+	oneFee["uniqueId"] = invokeFees.Asset.UniqueId.String()
+	oneFee["amount"] = invokeFees.Amount
+	resMap["GetInvokeFees"] = oneFee
+	// GetInvokeParameters
+	invokeAddr, invokeTokens, invokeFees, funcName, params, err := stub.GetInvokeParameters()
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	GIP := map[string]interface{}{}
+	GIP["invokeAddress"] = invokeAddr.String()
+	GIP["funcName"] = funcName
+	gipt := make([]map[string]interface{}, len(invokeTokens))
+	for _, tokenInfo := range invokeTokens {
+		oneToken := map[string]interface{}{}
+		oneToken["assetId"] = tokenInfo.Asset.AssetId.String()
+		oneToken["uniqueId"] = tokenInfo.Asset.UniqueId.String()
+		oneToken["amount"] = tokenInfo.Amount
+		oneToken["address"] = tokenInfo.Address
+		gipt = append(gipt, oneToken)
+	}
+	GIP["invokeTokens"] = gipt
+	gipf := map[string]interface{}{}
+	gipf["assetId"] = invokeFees.Asset.AssetId.String()
+	gipf["uniqueId"] = invokeFees.Asset.UniqueId.String()
+	gipf["amount"] = invokeFees.Amount
+	GIP["invokeFees"] = gipf
+	GIP["invokeParams"] = params
+	resMap["GetInvokeParameters"] = GIP
+	// GetContractID
+	_, scontractid := stub.GetContractID()
+	resMap["GetContractID"] = string(scontractid)
 
-func (t *SimpleChaincode) test_GetStringArgs(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	params := stub.GetStringArgs()
-	res, err := json.Marshal(params)
+	res, err := json.Marshal(resMap)
 	if err != nil {
-		return shim.Error(err.Error())
-	}
-	if err := stub.PutState("GetStringArgs", res); err != nil {
 		return shim.Error(err.Error())
 	}
 	return shim.Success(res)
@@ -121,17 +210,6 @@ func (t *SimpleChaincode) test_GetFunctionAndParameters(stub shim.ChaincodeStubI
 		return shim.Error(err.Error())
 	}
 	return shim.Success(res)
-}
-
-func (t *SimpleChaincode) test_GetArgsSlice(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	argsSlice, err := stub.GetArgsSlice()
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	if err := stub.PutState("GetArgsSlice", argsSlice); err != nil {
-		return shim.Error(err.Error())
-	}
-	return shim.Success(argsSlice)
 }
 
 func (t *SimpleChaincode) test_GetInvokeParameters(stub shim.ChaincodeStubInterface, args []string) pb.Response {
@@ -157,66 +235,6 @@ func (t *SimpleChaincode) test_GetInvokeParameters(stub shim.ChaincodeStubInterf
 		return shim.Error(err.Error())
 	}
 	return shim.Success(nil)
-}
-
-func (t *SimpleChaincode) test_GetInvokeAddress(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	// GetArgs return args in ChaincodeStub
-	// invokeInfo, funcName, function params
-	invokeAddr, err := stub.GetInvokeAddress()
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	// put stats into it
-	if err := stub.PutState("GetInvokeAddress", []byte(invokeAddr.String())); err != nil {
-		return shim.Error(err.Error())
-	}
-	return shim.Success(nil)
-}
-
-func (t *SimpleChaincode) test_GetInvokeFees(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	// GetArgs return args in ChaincodeStub
-	// invokeInfo, funcName, function params
-	invokeFees, err := stub.GetInvokeFees()
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	res, err := json.Marshal(invokeFees)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	// put stats into it
-	if err := stub.PutState("GetInvokeFees", res); err != nil {
-		return shim.Error(err.Error())
-	}
-	return shim.Success(nil)
-}
-
-func (t *SimpleChaincode) test_GetInvokeTokens(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	// GetArgs return args in ChaincodeStub
-	// invokeInfo, funcName, function params
-	invokeTokens, err := stub.GetInvokeTokens()
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	res, err := json.Marshal(invokeTokens)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	// put stats into it
-	if err := stub.PutState("GetInvokeTokens", res); err != nil {
-		return shim.Error(err.Error())
-	}
-	return shim.Success(nil)
-}
-
-func (t *SimpleChaincode) test_GetTxID(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	txid := stub.GetTxID()
-	return shim.Success([]byte(txid))
-}
-
-func (t *SimpleChaincode) test_GetChannelID(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	chid := stub.GetChannelID()
-	return shim.Success([]byte(chid))
 }
 
 func (t *SimpleChaincode) test_GetContractID(stub shim.ChaincodeStubInterface, args []string) pb.Response {
@@ -337,14 +355,6 @@ func (t *SimpleChaincode) test_DelGlobalState(stub shim.ChaincodeStubInterface, 
 	return shim.Success(nil)
 }
 
-func (t *SimpleChaincode) test_GetTxTimestamp(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	ts, err := stub.GetTxTimestamp(10)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	return shim.Success([]byte(ts.String()))
-}
-
 func (t *SimpleChaincode) test_GetSystemConfig(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	cp, err := stub.GetSystemConfig()
 	if err != nil {
@@ -360,11 +370,12 @@ func (t *SimpleChaincode) test_GetSystemConfig(stub shim.ChaincodeStubInterface,
 
 func (t *SimpleChaincode) test_GetTokenBalance(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	if len(args) < 1 {
-		return shim.Error(fmt.Sprintf("input:<address><token name (option) >"))
+		return shim.Error(fmt.Sprintf("input:<address><token symbol (option) >"))
 	}
 
 	asset := &modules.Asset{}
 	if len(args) == 2 {
+		// 根据symbol查询asset
 		if err := asset.SetString(args[1]); err != nil {
 			return shim.Error(err.Error())
 		}
