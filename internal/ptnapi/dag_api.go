@@ -23,11 +23,10 @@ package ptnapi
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"time"
 	"unsafe"
-
-	"fmt"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -78,7 +77,7 @@ func (s *PublicDagAPI) GetCommon(ctx context.Context, key string) ([]byte, error
 	return s.b.GetCommon([]byte(key))
 }
 
-func (s *PublicDagAPI) GetCommonByPrefix(ctx context.Context, prefix string) (string, error) {
+func (s *PrivateDagAPI) GetCommonByPrefix(ctx context.Context, prefix string) (string, error) {
 	if prefix == "" {
 		return "", fmt.Errorf("参数为空")
 	}

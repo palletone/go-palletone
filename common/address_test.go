@@ -27,7 +27,7 @@ import (
 )
 
 func TestAddressValidate(t *testing.T) {
-	p2pkh := "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
+	p2pkh := "P1C6rpwKHrCxUiJyi7X5E4yP5o6aq3tTBSs"
 	addr, err := StringToAddress(p2pkh)
 
 	if err != nil {
@@ -35,6 +35,7 @@ func TestAddressValidate(t *testing.T) {
 	}
 	t.Log(addr)
 }
+
 func TestAddressNotValidate(t *testing.T) {
 	p2pkh := "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gj"
 	addr, err := StringToAddress(p2pkh)
@@ -132,6 +133,7 @@ func TestAddresses_MarshalJson(t *testing.T) {
 	addrListStr, _ := json.Marshal(addrList)
 	t.Log(string(addrListStr))
 }
+
 func TestAddressIsMapKey(t *testing.T) {
 	addr1, _ := StringToAddress("P124gB1bXHDTXmox58g4hd4u13HV3e5vKie")
 	addr2, _ := StringToAddress("P1LWaK3KBCuPVsXUPHXkMZr2Cm5tZquRDK8")

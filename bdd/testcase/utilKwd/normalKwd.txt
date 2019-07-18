@@ -2,7 +2,7 @@
 Request create transaction
     [Arguments]    ${senderAddr}    ${recieverAddr}    ${senderPTN}    ${Poundage}
     ${transList}    Create List    ${senderAddr}    ${recieverAddr}    ${senderPTN}    ${Poundage}
-    ${resp}    setPostRequest    ${host}    ptn_cmdCreateTransaction    ${transList}
+    ${resp}    setPostRequest    ${host}    wallet_CreateRawTransaction    ${transList}
     ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
     ${jsonRes}    To Json    ${jsonRes}
     Should Contain    ${jsonRes['jsonrpc']}    2.0    msg="jsonrpc:failed"
@@ -13,7 +13,7 @@ Request create transaction
 Request sign transaction
     [Arguments]    ${crtRet}    ${signType}    ${pwd}
     ${transList}    Create List    ${crtRet}    ${signType}    ${pwd}
-    ${resp}    setPostRequest    ${host}    ptn_signRawTransaction    ${transList}
+    ${resp}    setPostRequest    ${host}    wallet_signRawTransaction    ${transList}
     #${type}    Evaluate    type(${resp.content})
     #${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
     #${jsonRes}    To Json    ${jsonRes}
@@ -27,7 +27,7 @@ Request sign transaction
 Request send transaction
     [Arguments]    ${ret}
     ${sendList}    Create List    ${ret}
-    ${resp}    setPostRequest    ${host}    ptn_sendRawTransaction    ${sendList}
+    ${resp}    setPostRequest    ${host}    wallet_sendRawTransaction    ${sendList}
     log    ${resp.content}
     Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
     Should Contain    ${resp.content}['id']    1    msg="id:failed"
@@ -64,7 +64,7 @@ Request getOneTokenInfo
 Request getBalance
     [Arguments]    ${address}    ${host}
     ${address}    Create List    ${address}
-    ${resp}    setPostRequest    ${host}    ptn_getBalance    ${address}
+    ${resp}    setPostRequest    ${host}    wallet_getBalance    ${address}
     #${type}    Evaluate    type(${resp.content})
     log    ${resp.content}
     ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson

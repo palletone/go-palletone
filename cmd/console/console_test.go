@@ -39,7 +39,7 @@ import (
 )
 
 const (
-	testInstance = "console-tester"
+	testInstance = "console-tester JavaScript console"
 	testAddress  = "0x8605cdbbdb6d264aa742e77020dcbc58fcdce182"
 )
 

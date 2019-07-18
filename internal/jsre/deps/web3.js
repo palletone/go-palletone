@@ -2598,7 +2598,20 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 
         var properties = function () {
             return [
-
+                new Property({
+                    name: 'version.node',
+                    getter: 'web3_clientVersion'
+                }),
+                new Property({
+                    name: 'version.network',
+                    getter: 'net_version',
+                    inputFormatter: utils.toDecimal
+                }),
+                new Property({
+                    name: 'version.palletone',
+                    getter: 'ptn_protocolVersion',
+                    inputFormatter: utils.toDecimal
+                }),
             ];
         };
 
