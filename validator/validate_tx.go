@@ -74,10 +74,6 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 			return TxValidationCode_NOT_COMPARE_SIZE, txFee
 		}
 
-		// validate transaction signature
-		if validateTxSignature(tx) == false {
-			return TxValidationCode_BAD_CREATOR_SIGNATURE, txFee
-		}
 		// validate every type payload
 		switch msg.App {
 		case modules.APP_PAYMENT:

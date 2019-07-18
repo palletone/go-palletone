@@ -49,22 +49,39 @@ web3._extend({
 		//	call: 'personal_deriveAccount',
 		//	params: 3
 		//}),
-		//new web3._extend.Method({
-		//	name: 'signTransaction',
-		//	call: 'personal_signTransaction',
-		//	params: 2,
-		//	inputFormatter: [web3._extend.formatters.inputTransactionFormatter, null]
-		//}),
+
 		new web3._extend.Method({
 			name: 'transferPtn',
 			call: 'personal_transferPtn',
 			params: 5,
 		}),
+		new web3._extend.Method({
+			name: 'newAccount',
+			call: 'personal_newAccount',
+			params: 1,
+			inputFormatter: [null]
+		}),
+	   	new web3._extend.Method({
+			name: 'unlockAccount',
+			call: 'personal_unlockAccount',
+			params: 3,
+			inputFormatter: [null, null, null]
+		}),
+	
+		new web3._extend.Method({
+			name: 'lockAccount',
+			call: 'personal_lockAccount',
+			params: 1
+		})
 	],
 	properties: [
 		new web3._extend.Property({
 			name: 'listWallets',
 			getter: 'personal_listWallets'
+		}),
+		new web3._extend.Property({
+			name: 'listAccounts',
+			getter: 'personal_listAccounts'
 		}),
 	]
 })

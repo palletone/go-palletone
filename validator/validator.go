@@ -214,31 +214,6 @@ func (validate *Validate) ValidateUnitGroupSign(h *modules.Header) error {
 	return nil
 }
 
-/**
-验证交易签名
-To validate transaction signature
-*/
-func validateTxSignature(tx *modules.Transaction) bool {
-	// recover signature
-	//cpySig := make([]byte, 65)
-	//copy(cpySig[32-len(sig.R):32], sig.R)
-	//copy(cpySig[64-len(sig.S):64], sig.S)
-	//copy(cpySig[64:], sig.V)
-	//// recover pubkey
-	//hash := crypto.Keccak256Hash(util.RHashBytes(txHash))
-	//pubKey, err := modules.RSVtoPublicKey(hash[:], sig.R[:], sig.S[:], sig.V[:])
-	//if err != nil {
-	//	log.Error("Validate transaction signature", "error", err.Error())
-	//	return false
-	//}
-	////  pubKey to pubKey_bytes
-	//pubKey_bytes := crypto.FromECDSAPub(pubKey)
-	//if keystore.VerifyUnitWithPK(cpySig, txHash, pubKey_bytes) == true {
-	//	return true
-	//}
-	return true
-}
-
 //验证一个DataPayment
 func (validate *Validate) validateDataPayload(payload *modules.DataPayload) ValidationCode {
 	//验证 maindata是否存在
