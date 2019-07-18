@@ -609,6 +609,8 @@ func (handler *Handler) processStream() error {
 			if nsInfo.sendSync {
 				log.Debugf("send sync %v", nsInfo.sendSync)
 				if in.Type.String() != pb.ChaincodeMessage_READY.String() {
+					//  TODO
+					return errors.Errorf("[%s]Sync send can only be for READY state %s\n", shorttxid(in.Txid), in.Type.String())
 					panic(fmt.Sprintf("[%s]Sync send can only be for READY state %s\n", shorttxid(in.Txid), in.Type.String()))
 				}
 				if err = handler.serialSend(in); err != nil {

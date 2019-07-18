@@ -123,6 +123,7 @@ func TestCompressPubkey(t *testing.T) {
 func TestPubkeyRandom(t *testing.T) {
 	cryptoS256:=&CryptoS256{}
 	cryptoGM := &CryptoGm{}
+	cryptoP256 := &CryptoP256{}
 	const runs = 200
 	for i := 0; i < runs; i++ {
 		key, err := cryptoS256.KeyGen()
@@ -147,6 +148,18 @@ func TestPubkeyRandom(t *testing.T) {
 		}
 		t.Logf("GMPubKey:%x", pubkey)
 	}
+
+	for i := 0; i < runs; i++ {
+		key, err := cryptoP256.KeyGen()
+		if err != nil {
+			t.Fatalf("iteration %d: %v", i, err)
+		}
+		pubkey, err := cryptoP256.PrivateKeyToPubKey(key)
+		if err != nil {
+			t.Fatalf("iteration %d: %v", i, err)
+		}
+		t.Logf("P256PubKey:%x", pubkey)
+	}
 }
 
 /*
@@ -160,9 +173,9 @@ func BenchmarkEcrecoverSignature(b *testing.B) {
 */
 func BenchmarkVerifySignature(b *testing.B) {
 	cryptoS256:=&CryptoS256{}
-	sig := testsig[:len(testsig)-1] // remove recovery id
+	sigs256 := testsig[:len(testsig)-1] // remove recovery id
 	for i := 0; i < b.N; i++ {
-		if pass, _ := cryptoS256.Verify(testpubkey, sig, testmsg); !pass {
+		if pass, _ := cryptoS256.Verify(testpubkey, sigs256, testmsg); !pass {
 			b.Fatal("verify error")
 		}
 	}
@@ -192,11 +205,7 @@ func TestSignVerify(t *testing.T) {
 	pubKey, _ := cryptoS256.PrivateKeyToPubKey(prvKey)
 	pass, err := cryptoS256.Verify(pubKey, signature, hash)
 	assert.Nil(t, err)
-	if pass {
-		t.Log("Pass")
-	} else {
-		t.Error("No Pass")
-	}
+	assert.True(t,pass)
 
 	//GM SignVerify
 	cryptoGM := &CryptoGm{}
@@ -208,6 +217,18 @@ func TestSignVerify(t *testing.T) {
 	t.Logf("Signature:%s,len:%d",hexutil.Encode(sign),len(sign))
 	pubKey,err=cryptoGM.PrivateKeyToPubKey(prvKey)
 	pass,err= cryptoGM.Verify(pubKey,sign,text)
+	assert.Nil(t,err)
+	assert.True(t,pass)
+
+	cryptoP256 := &CryptoP256{}
+	p256privateKey := "11441a3394cea675295e322a4f1d82944ab6701dae2e1ce2834c072030d7dc95"
+	prvKey, _ = hex.DecodeString(p256privateKey)
+	sign,err= cryptoP256.Sign(prvKey,text)
+	assert.Nil(t,err)
+	t.Logf("Signature:%s,len:%d",hexutil.Encode(sign),len(sign))
+
+	pubKey,err=cryptoP256.PrivateKeyToPubKey(prvKey)
+	pass,err= cryptoP256.Verify(pubKey,text,sign)
 	assert.Nil(t,err)
 	assert.True(t,pass)
 }
