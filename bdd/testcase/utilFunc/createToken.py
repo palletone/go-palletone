@@ -24,7 +24,7 @@ class createToken(object):
     def getBalance(self,address,domain=host):
         data = {
             "jsonrpc": "2.0",
-            "method": "ptn_getBalance",
+            "method": "wallet_getBalance",
             "params": [address],
             "id": 1
         }
