@@ -70,13 +70,13 @@ func NewPrivateContractAPI(b Backend) *PrivateContractAPI {
 
 //contract command
 //install
-func (s *PublicContractAPI) Ccinstall(ctx context.Context, ccname, ccpath, ccversion, ccdescription, ccabi, cclanguage string) (hexutil.Bytes, error) {
+func (s *PrivateContractAPI) Ccinstall(ctx context.Context, ccname, ccpath, ccversion, ccdescription, ccabi, cclanguage string) (hexutil.Bytes, error) {
 	log.Info("CcInstall:", "ccname", ccname, "ccpath", ccpath, "ccversion", ccversion)
 	templateId, err := s.b.ContractInstall(ccname, ccpath, ccversion, ccdescription, ccabi, cclanguage)
 	return hexutil.Bytes(templateId), err
 }
 
-func (s *PublicContractAPI) Ccdeploy(ctx context.Context, templateId string, param []string) (*ContractDeployRsp, error) {
+func (s *PrivateContractAPI) Ccdeploy(ctx context.Context, templateId string, param []string) (*ContractDeployRsp, error) {
 	tempId, _ := hex.DecodeString(templateId)
 	rd, err := crypto.GetRandomBytes(32)
 	txid := util.RlpHash(rd)
@@ -100,7 +100,7 @@ func (s *PublicContractAPI) Ccdeploy(ctx context.Context, templateId string, par
 	return rsp, nil
 }
 
-func (s *PublicContractAPI) Ccinvoke(ctx context.Context, contractAddr string, param []string) (string, error) {
+func (s *PrivateContractAPI) Ccinvoke(ctx context.Context, contractAddr string, param []string) (string, error) {
 	contractId, _ := common.StringToAddress(contractAddr)
 	//contractId, _ := hex.DecodeString(contractAddr)
 	rd, err := crypto.GetRandomBytes(32)
@@ -142,7 +142,7 @@ func (s *PublicContractAPI) Ccquery(ctx context.Context, contractAddr string, pa
 	return string(rsp), nil
 }
 
-func (s *PublicContractAPI) Ccstop(ctx context.Context, contractAddr string) error {
+func (s *PrivateContractAPI) Ccstop(ctx context.Context, contractAddr string) error {
 	contractId, _ := common.StringToAddress(contractAddr)
 	//contractId, _ := hex.DecodeString(contractAddr)
 	txid := "123"
@@ -152,7 +152,7 @@ func (s *PublicContractAPI) Ccstop(ctx context.Context, contractAddr string) err
 }
 
 //contract tx
-func (s *PublicContractAPI) Ccinstalltx(ctx context.Context, from, to string, amount, fee decimal.Decimal, tplName, path, version, ccdescription, ccabi, cclanguage string, addr []string) (*ContractInstallRsp, error) {
+func (s *PrivateContractAPI) Ccinstalltx(ctx context.Context, from, to string, amount, fee decimal.Decimal, tplName, path, version, ccdescription, ccabi, cclanguage string, addr []string) (*ContractInstallRsp, error) {
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
 	daoAmount := ptnjson.Ptn2Dao(amount)
@@ -190,7 +190,7 @@ func (s *PublicContractAPI) Ccinstalltx(ctx context.Context, from, to string, am
 
 	return rsp, err
 }
-func (s *PublicContractAPI) Ccdeploytx(ctx context.Context, from, to string, amount, fee decimal.Decimal, tplId string, param []string, extData string) (*ContractDeployRsp, error) {
+func (s *PrivateContractAPI) Ccdeploytx(ctx context.Context, from, to string, amount, fee decimal.Decimal, tplId string, param []string, extData string) (*ContractDeployRsp, error) {
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
 	daoAmount := ptnjson.Ptn2Dao(amount)
@@ -221,7 +221,7 @@ func (s *PublicContractAPI) Ccdeploytx(ctx context.Context, from, to string, amo
 	return rsp, err
 }
 
-func (s *PublicContractAPI) Ccinvoketx(ctx context.Context, from, to string, amount, fee decimal.Decimal, deployId string, param []string, certID string, timeout string) (*ContractDeployRsp, error) {
+func (s *PrivateContractAPI) Ccinvoketx(ctx context.Context, from, to string, amount, fee decimal.Decimal, deployId string, param []string, certID string, timeout string) (*ContractDeployRsp, error) {
 	contractAddr, _ := common.StringToAddress(deployId)
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
@@ -257,7 +257,7 @@ func (s *PublicContractAPI) Ccinvoketx(ctx context.Context, from, to string, amo
 	return rsp1, err
 }
 
-func (s *PublicContractAPI) CcinvokeToken(ctx context.Context, from, to, toToken string, amount, fee decimal.Decimal, assetToken, amountToken, deployId string, param []string) (*ContractDeployRsp, error) {
+func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, toToken string, amount, fee decimal.Decimal, assetToken, amountToken, deployId string, param []string) (*ContractDeployRsp, error) {
 	contractAddr, _ := common.StringToAddress(deployId)
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
@@ -324,7 +324,7 @@ func (s *PrivateContractAPI) CcinvoketxPass(ctx context.Context, from, to string
 	return hex.EncodeToString(reqId[:]), err
 }
 
-func (s *PublicContractAPI) Ccstoptx(ctx context.Context, from, to string, amount, fee decimal.Decimal, contractId string) (string, error) {
+func (s *PrivateContractAPI) Ccstoptx(ctx context.Context, from, to string, amount, fee decimal.Decimal, contractId string) (string, error) {
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
 	daoAmount := ptnjson.Ptn2Dao(amount)
@@ -408,7 +408,7 @@ func (s *PublicContractAPI) GetContractInfoByAddr(ctx context.Context, contractA
 	}
 	return contract, nil
 }
-func (s *PublicContractAPI) DepositContractInvoke(ctx context.Context, from, to string, amount, fee decimal.Decimal,
+func (s *PrivateContractAPI) DepositContractInvoke(ctx context.Context, from, to string, amount, fee decimal.Decimal,
 	param []string) (string, error) {
 	log.Debug("---enter DepositContractInvoke---")
 	// append by albert·gou
@@ -454,7 +454,7 @@ func (s *PublicContractAPI) SysConfigContractQuery(ctx context.Context, param []
 	return s.Ccquery(ctx, syscontract.SysConfigContractAddress.String(), param, 0)
 }
 
-func (s *PublicContractAPI) SysConfigContractInvoke(ctx context.Context, from, to string, amount, fee decimal.Decimal,
+func (s *PrivateContractAPI) SysConfigContractInvoke(ctx context.Context, from, to string, amount, fee decimal.Decimal,
 	param []string) (string, error) {
 	log.Debugf("---enter SysConfigContractInvoke---")
 	if len(param) == 0 {
