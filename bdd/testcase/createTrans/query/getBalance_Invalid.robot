@@ -7,7 +7,7 @@ Resource          ../../utilKwd/behaveKwd.txt
 
 *** Variables ***
 ${host}           http://localhost:8545/
-${method}         ptn_getBalance
+${method}         wallet_getBalance
 ${result_code}    \f[a-z0-9]*
 
 *** Test Cases ***

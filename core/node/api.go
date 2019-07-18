@@ -310,7 +310,7 @@ func (api *PublicAdminAPI) CorsPeers(protocol string) ([]*p2p.PeerInfo, error) {
 }
 
 //addCorsPeer
-func (api *PublicAdminAPI) AddCorsPeer(url string) (bool, error) {
+func (api *PrivateAdminAPI) AddCorsPeer(url string) (bool, error) {
 	server := api.node.CorsServer()
 	if server == nil {
 		return false, ErrNodeStopped
