@@ -103,6 +103,13 @@ User query state
     ${respJson}=    queryContract    ${gContractId}    ${args}
     Dictionary Should Contain Key    ${respJson}    result
     ${result}=    Get From Dictionary    ${respJson}    result
-    ${resDict}=    Run Keyword If    '${resType}'=='dict'    To Json    ${result}
-    Run Keyword If    '${resType}'=='str'    Should Be Equal    '${result}'    '${exceptedResult}'
-    ...    ELSE    Dictionaries Should Be Equal    ${resDict}    ${exceptedResult}
+    Run Keyword If    '${resType}'=='dict'    Compare Dict    ${result}    ${exceptedResult}
+    ...    ELSE IF    '${resType}'=='str'    Should Be Equal    '${result}'    '${exceptedResult}'
+    ...    ELSE    Fail    Result type is not supported now.
+
+Compare Dict
+    [Arguments]    ${result}    ${exceptedResult}
+    ${resDict}=    To Json    ${result}
+    ${len}=    Get Length    ${resDict}
+    Run Keyword If    ${len}==0 and ${exceptedResult}==${null}    Pass Execution    Result is the expected one
+    ...    ELSE IF    ${len}==0 and ${exceptedResult}!=${null}    Fail    Result is not the expected one
