@@ -62,8 +62,8 @@ type iDag interface {
 	GetUnitByHash(common.Hash) (*modules.Unit, error)
 
 	IsActiveMediator(add common.Address) bool
-	IsSynced() bool
-	// ValidateUnitExceptGroupSig(unit *modules.Unit) error
+	//IsSynced() bool
+	//ValidateUnitExceptGroupSig(unit *modules.Unit) error
 	SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error
 
 	GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte,
@@ -201,7 +201,7 @@ func (mp *MediatorPlugin) newActiveMediatorsDKG() {
 // todo Albert 待删除
 func (mp *MediatorPlugin) initVSSBuf(localMed common.Address) {
 	aSize := mp.dag.ActiveMediatorsCount()
-	mp.dealBuf[localMed] = make(chan *dkg.Deal, aSize)
+	mp.dealBuf[localMed] = make(chan *dkg.Deal, aSize-1)
 	mp.respBuf[localMed] = make(map[common.Address]chan *dkg.Response, aSize)
 
 	for i := 0; i < aSize; i++ {
@@ -372,7 +372,7 @@ func (mp *MediatorPlugin) initLocalConfigMediator(mcs []*MediatorConf, am *accou
 	mp.mediators = mas
 }
 
-// initTBLSBuf, 初始化与TBLS签名相关的buf
+// initGroupSignBuf, 初始化与群签名相关(vss和tbls)的buf
 func (mp *MediatorPlugin) initGroupSignBuf() {
 	lamc := len(mp.mediators)
 

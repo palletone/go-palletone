@@ -586,11 +586,13 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	case msg.Code == SigShareMsg:
 		return pm.SigShareMsg(msg, p)
 
-		//21*21 resp
+		// 21*21 deal => 21*20 dealMsg
 		// append by Albert·Gou
 	case msg.Code == VSSDealMsg:
 		return pm.VSSDealMsg(msg, p)
 
+		// 21*21 deal => 21*21 resp
+		// 21*21 resp => 21*20*20 respMsg
 		// append by Albert·Gou
 	case msg.Code == VSSResponseMsg:
 		return pm.VSSResponseMsg(msg, p)

@@ -19,9 +19,12 @@
 package mediatorplugin
 
 import (
+	"fmt"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
+	"go.dedis.ch/kyber/v3/share/dkg/pedersen"
 )
 
 func (mp *MediatorPlugin) LocalMediators() []common.Address {
@@ -36,9 +39,9 @@ func (mp *MediatorPlugin) LocalMediators() []common.Address {
 	return addrs
 }
 
-func (mp *MediatorPlugin) IsEnabledGroupSign() bool {
-	return mp.groupSigningEnabled
-}
+//func (mp *MediatorPlugin) IsEnabledGroupSign() bool {
+//	return mp.groupSigningEnabled
+//}
 
 func (mp *MediatorPlugin) GetLocalActiveMediators() []common.Address {
 	lams := make([]common.Address, 0)
@@ -94,6 +97,19 @@ func (mp *MediatorPlugin) LocalHavePrecedingMediator() bool {
 	return false
 }
 
+func (mp *MediatorPlugin) getLocalActiveDKG(add common.Address) (*dkg.DistKeyGenerator, error) {
+	if !mp.IsLocalActiveMediator(add) {
+		return nil, fmt.Errorf("the mediator(%v) is not local active mediator", add.String())
+	}
+
+	dkg, ok := mp.activeDKGs[add]
+	if !ok || dkg == nil {
+		return nil, fmt.Errorf("the mediator(%v)'s dkg is not existed", add.String())
+	}
+
+	return dkg, nil
+}
+
 func (mp *MediatorPlugin) LocalMediatorPubKey(add common.Address) []byte {
 	var pubKey []byte = nil
 	dkgr, err := mp.getLocalActiveDKG(add)
@@ -124,9 +140,10 @@ func NewPublicMediatorAPI(mp *MediatorPlugin) *PublicMediatorAPI {
 	return &PublicMediatorAPI{mp}
 }
 
+// 初始群签名公私钥
 type InitDKSResult struct {
-	PrivateKey string
-	PublicKey  string
+	PrivateKey string `json:"private_key"` // 初始群签名私钥
+	PublicKey  string `json:"public_key"`  // 初始群签名公钥
 }
 
 func (a *PublicMediatorAPI) DumpInitDKS() (res InitDKSResult) {

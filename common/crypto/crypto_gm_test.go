@@ -42,6 +42,10 @@ func TestCryptoGm_Sign(t *testing.T) {
 	pass,err:= crypto.Verify(pubKey,sign,msg)
 	assert.Nil(t,err)
 	assert.True(t,pass)
+	addr := PubkeyBytesToAddress(pubKey)
+	address := addr.String()
+	t.Logf("Address:%s",address)
+
 }
 
 

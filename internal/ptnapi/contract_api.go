@@ -30,6 +30,8 @@ import (
 	"math/big"
 	"strconv"
 	"time"
+	"strings"
+	"github.com/shopspring/decimal"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -43,7 +45,6 @@ import (
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
-	"strings"
 )
 
 var (
@@ -69,13 +70,13 @@ func NewPrivateContractAPI(b Backend) *PrivateContractAPI {
 
 //contract command
 //install
-func (s *PublicContractAPI) Ccinstall(ctx context.Context, ccname, ccpath, ccversion, ccdescription, ccabi, cclanguage string) (hexutil.Bytes, error) {
+func (s *PrivateContractAPI) Ccinstall(ctx context.Context, ccname, ccpath, ccversion, ccdescription, ccabi, cclanguage string) (hexutil.Bytes, error) {
 	log.Info("CcInstall:", "ccname", ccname, "ccpath", ccpath, "ccversion", ccversion)
 	templateId, err := s.b.ContractInstall(ccname, ccpath, ccversion, ccdescription, ccabi, cclanguage)
 	return hexutil.Bytes(templateId), err
 }
 
-func (s *PublicContractAPI) Ccdeploy(ctx context.Context, templateId string, param []string) (*ContractDeployRsp, error) {
+func (s *PrivateContractAPI) Ccdeploy(ctx context.Context, templateId string, param []string) (*ContractDeployRsp, error) {
 	tempId, _ := hex.DecodeString(templateId)
 	rd, err := crypto.GetRandomBytes(32)
 	txid := util.RlpHash(rd)
@@ -99,7 +100,7 @@ func (s *PublicContractAPI) Ccdeploy(ctx context.Context, templateId string, par
 	return rsp, nil
 }
 
-func (s *PublicContractAPI) Ccinvoke(ctx context.Context, contractAddr string, param []string) (string, error) {
+func (s *PrivateContractAPI) Ccinvoke(ctx context.Context, contractAddr string, param []string) (string, error) {
 	contractId, _ := common.StringToAddress(contractAddr)
 	//contractId, _ := hex.DecodeString(contractAddr)
 	rd, err := crypto.GetRandomBytes(32)
@@ -141,7 +142,7 @@ func (s *PublicContractAPI) Ccquery(ctx context.Context, contractAddr string, pa
 	return string(rsp), nil
 }
 
-func (s *PublicContractAPI) Ccstop(ctx context.Context, contractAddr string) error {
+func (s *PrivateContractAPI) Ccstop(ctx context.Context, contractAddr string) error {
 	contractId, _ := common.StringToAddress(contractAddr)
 	//contractId, _ := hex.DecodeString(contractAddr)
 	txid := "123"
@@ -151,15 +152,15 @@ func (s *PublicContractAPI) Ccstop(ctx context.Context, contractAddr string) err
 }
 
 //contract tx
-func (s *PublicContractAPI) Ccinstalltx(ctx context.Context, from, to, daoAmount, daoFee, tplName, path, version, ccdescription, ccabi, cclanguage string, addr []string) (*ContractInstallRsp, error) {
+func (s *PrivateContractAPI) Ccinstalltx(ctx context.Context, from, to string, amount, fee decimal.Decimal, tplName, path, version, ccdescription, ccabi, cclanguage string, addr []string) (*ContractInstallRsp, error) {
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
-	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
-	fee, _ := strconv.ParseUint(daoFee, 10, 64)
+	daoAmount := ptnjson.Ptn2Dao(amount)
+	daoFee := ptnjson.Ptn2Dao(fee)
 
 	log.Info("Ccinstalltx info:")
 	log.Infof("   fromAddr[%s], toAddr[%s]", fromAddr.String(), toAddr.String())
-	log.Infof("   amount[%d], fee[%d]", amount, fee)
+	log.Infof("   daoAmount[%d], daoFee[%d]", daoAmount, daoFee)
 	log.Infof("   tplName[%s], path[%s],version[%s]", tplName, path, version)
 	log.Infof("   description[%s], abi[%s],language[%s]", ccdescription, ccabi, cclanguage)
 	log.Infof("   addrs len[%d]", len(addr))
@@ -177,8 +178,7 @@ func (s *PublicContractAPI) Ccinstalltx(ctx context.Context, from, to, daoAmount
 		addrs = append(addrs, a)
 		log.Infof("    index[%d],addr[%s]", i, s)
 	}
-
-	reqId, tplId, err := s.b.ContractInstallReqTx(fromAddr, toAddr, amount, fee, tplName, path, version, ccdescription, ccabi, language, addrs)
+	reqId, tplId, err := s.b.ContractInstallReqTx(fromAddr, toAddr, daoAmount, daoFee, tplName, path, version, ccdescription, ccabi, language, addrs)
 	sReqId := hex.EncodeToString(reqId[:])
 	sTplId := hex.EncodeToString(tplId)
 	log.Info("Ccinstalltx:", "reqId", sReqId, "tplId", sTplId)
@@ -190,17 +190,17 @@ func (s *PublicContractAPI) Ccinstalltx(ctx context.Context, from, to, daoAmount
 
 	return rsp, err
 }
-func (s *PublicContractAPI) Ccdeploytx(ctx context.Context, from, to, daoAmount, daoFee, tplId string, param []string, extData string) (*ContractDeployRsp, error) {
+func (s *PrivateContractAPI) Ccdeploytx(ctx context.Context, from, to string, amount, fee decimal.Decimal, tplId string, param []string, extData string) (*ContractDeployRsp, error) {
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
-	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
-	fee, _ := strconv.ParseUint(daoFee, 10, 64)
+	daoAmount := ptnjson.Ptn2Dao(amount)
+	daoFee := ptnjson.Ptn2Dao(fee)
 	templateId, _ := hex.DecodeString(tplId)
 	extendData, _ := hex.DecodeString(extData)
 
 	log.Info("Ccdeploytx info:")
 	log.Infof("   fromAddr[%s], toAddr[%s]", fromAddr.String(), toAddr.String())
-	log.Infof("   amount[%d], fee[%d]", amount, fee)
+	log.Infof("   daoAmount[%d], daoFee[%d]", daoAmount, daoFee)
 	log.Infof("   templateId[%s], extData[%s]", tplId, extData)
 
 	args := make([][]byte, len(param))
@@ -210,7 +210,7 @@ func (s *PublicContractAPI) Ccdeploytx(ctx context.Context, from, to, daoAmount,
 	}
 	fullArgs := [][]byte{defaultMsg0}
 	fullArgs = append(fullArgs, args...)
-	reqId, _, err := s.b.ContractDeployReqTx(fromAddr, toAddr, amount, fee, templateId, fullArgs, extendData, 0)
+	reqId, _, err := s.b.ContractDeployReqTx(fromAddr, toAddr, daoAmount, daoFee, templateId, fullArgs, extendData, 0)
 	contractAddr := crypto.RequestIdToContractAddress(reqId)
 	sReqId := hex.EncodeToString(reqId[:])
 	log.Debug("-----Ccdeploytx:", "reqId", sReqId, "depId", contractAddr.String())
@@ -221,18 +221,17 @@ func (s *PublicContractAPI) Ccdeploytx(ctx context.Context, from, to, daoAmount,
 	return rsp, err
 }
 
-func (s *PublicContractAPI) Ccinvoketx(ctx context.Context, from, to, daoAmount, daoFee, deployId string, param []string, certID string, timeout string) (*ContractDeployRsp, error) {
+func (s *PrivateContractAPI) Ccinvoketx(ctx context.Context, from, to string, amount, fee decimal.Decimal, deployId string, param []string, certID string, timeout string) (*ContractDeployRsp, error) {
 	contractAddr, _ := common.StringToAddress(deployId)
-
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
-	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
-	fee, _ := strconv.ParseUint(daoFee, 10, 64)
+	daoAmount := ptnjson.Ptn2Dao(amount)
+	daoFee := ptnjson.Ptn2Dao(fee)
 	timeout64, _ := strconv.ParseUint(timeout, 10, 64)
 
 	log.Info("Ccinvoketx info:")
 	log.Infof("   fromAddr[%s], toAddr[%s]", fromAddr.String(), toAddr.String())
-	log.Infof("   amount[%d], fee[%d]", amount, fee)
+	log.Infof("   daoAmount[%d], daoFee[%d]", daoAmount, daoFee)
 	log.Infof("   contractId[%s], certID[%s], timeout[%s]", contractAddr.String(), certID, timeout)
 
 	intCertID := new(big.Int)
@@ -240,7 +239,6 @@ func (s *PublicContractAPI) Ccinvoketx(ctx context.Context, from, to, daoAmount,
 		if _, ok := intCertID.SetString(certID, 10); !ok {
 			return &ContractDeployRsp{}, fmt.Errorf("certid is invalid")
 		}
-		//log.Debug("Ccinvoketx:", "certificate serial number", certID)
 	}
 
 	log.Infof("   param len[%d]", len(param))
@@ -249,7 +247,7 @@ func (s *PublicContractAPI) Ccinvoketx(ctx context.Context, from, to, daoAmount,
 		args[i] = []byte(arg)
 		log.Infof("      index[%d], value[%s]\n", i, arg)
 	}
-	reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, amount, fee, intCertID, contractAddr, args, uint32(timeout64))
+	reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, daoAmount, daoFee, intCertID, contractAddr, args, uint32(timeout64))
 	//log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(reqId[:]))
 	log.Infof("   reqId[%s]", hex.EncodeToString(reqId[:]))
 	rsp1 := &ContractDeployRsp{
@@ -259,18 +257,18 @@ func (s *PublicContractAPI) Ccinvoketx(ctx context.Context, from, to, daoAmount,
 	return rsp1, err
 }
 
-func (s *PublicContractAPI) CcinvokeToken(ctx context.Context, from, to, toToken, daoAmount, daoFee, assetToken, amountToken, deployId string, param []string) (*ContractDeployRsp, error) {
+func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, toToken string, amount, fee decimal.Decimal, assetToken, amountToken, deployId string, param []string) (*ContractDeployRsp, error) {
 	contractAddr, _ := common.StringToAddress(deployId)
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
 	toAddrToken, _ := common.StringToAddress(toToken)
-	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
-	fee, _ := strconv.ParseUint(daoFee, 10, 64)
+	daoAmount := ptnjson.Ptn2Dao(amount)
+	daoFee := ptnjson.Ptn2Dao(fee)
 	amountOfToken, _ := strconv.ParseUint(amountToken, 10, 64)
 
 	log.Info("CcinvokeToken info:")
 	log.Infof("   fromAddr[%s], toAddr[%s]", fromAddr.String(), toAddr.String())
-	log.Infof("   amount[%d], fee[%d]", amount, fee)
+	log.Infof("   daoAmount[%d], daoFee[%d]", daoAmount, daoFee)
 	log.Infof("   toAddrToken[%s], amountVote[%d]", toAddrToken.String(), amountOfToken)
 	log.Infof("   contractId[%s]", contractAddr.String())
 
@@ -280,7 +278,7 @@ func (s *PublicContractAPI) CcinvokeToken(ctx context.Context, from, to, toToken
 		args[i] = []byte(arg)
 		log.Infof("      index[%d], value[%s]\n", i, arg)
 	}
-	reqId, err := s.b.ContractInvokeReqTokenTx(fromAddr, toAddr, toAddrToken, amount, fee, amountOfToken, assetToken, contractAddr, args, 0)
+	reqId, err := s.b.ContractInvokeReqTokenTx(fromAddr, toAddr, toAddrToken, daoAmount, daoFee, amountOfToken, assetToken, contractAddr, args, 0)
 	log.Infof("   reqId[%s]", hex.EncodeToString(reqId[:]))
 	rsp1 := &ContractDeployRsp{
 		ReqId:      hex.EncodeToString(reqId[:]),
@@ -289,16 +287,16 @@ func (s *PublicContractAPI) CcinvokeToken(ctx context.Context, from, to, toToken
 	return rsp1, err
 }
 
-func (s *PrivateContractAPI) CcinvoketxPass(ctx context.Context, from, to, daoAmount, daoFee, deployId string, param []string, password string, duration *uint64, certID string) (string, error) {
+func (s *PrivateContractAPI) CcinvoketxPass(ctx context.Context, from, to string, amount, fee decimal.Decimal, deployId string, param []string, password string, duration *uint64, certID string) (string, error) {
 	contractAddr, _ := common.StringToAddress(deployId)
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
-	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
-	fee, _ := strconv.ParseUint(daoFee, 10, 64)
+	daoAmount := ptnjson.Ptn2Dao(amount)
+	daoFee := ptnjson.Ptn2Dao(fee)
 
 	log.Info("CcinvoketxPass info:")
 	log.Infof("   fromAddr[%s], toAddr[%s]", fromAddr.String(), toAddr.String())
-	log.Infof("   amount[%d], fee[%d]", amount, fee)
+	log.Infof("   daoAmount[%d], daoFee[%d]", daoAmount, daoFee)
 	log.Infof("   contractId[%s], certID[%s], password[%s]", contractAddr.String(), certID, password)
 
 	intCertID := new(big.Int)
@@ -320,25 +318,25 @@ func (s *PrivateContractAPI) CcinvoketxPass(ctx context.Context, from, to, daoAm
 		return "", err
 	}
 
-	reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, amount, fee, intCertID, contractAddr, args, 0)
+	reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, daoAmount, daoFee, intCertID, contractAddr, args, 0)
 	log.Infof("   reqId[%s]", hex.EncodeToString(reqId[:]))
 
 	return hex.EncodeToString(reqId[:]), err
 }
 
-func (s *PublicContractAPI) Ccstoptx(ctx context.Context, from, to, daoAmount, daoFee, contractId string) (string, error) {
+func (s *PrivateContractAPI) Ccstoptx(ctx context.Context, from, to string, amount, fee decimal.Decimal, contractId string) (string, error) {
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
-	amount, _ := strconv.ParseUint(daoAmount, 10, 64)
-	fee, _ := strconv.ParseUint(daoFee, 10, 64)
+	daoAmount := ptnjson.Ptn2Dao(amount)
+	daoFee := ptnjson.Ptn2Dao(fee)
 	contractAddr, _ := common.StringToAddress(contractId)
 
 	log.Info("Ccstoptx info:")
 	log.Infof("   fromAddr[%s], toAddr[%s]", fromAddr.String(), toAddr.String())
-	log.Infof("   amount[%d], fee[%d]", amount, fee)
+	log.Infof("   daoAmount[%d], daoFee[%d]", daoAmount, daoFee)
 	log.Infof("   contractId[%s]", contractAddr.String())
 
-	reqId, err := s.b.ContractStopReqTx(fromAddr, toAddr, amount, fee, contractAddr, false)
+	reqId, err := s.b.ContractStopReqTx(fromAddr, toAddr, daoAmount, daoFee, contractAddr, false)
 	log.Infof("   reqId[%s]", hex.EncodeToString(reqId[:]))
 	return hex.EncodeToString(reqId[:]), err
 }
@@ -410,7 +408,7 @@ func (s *PublicContractAPI) GetContractInfoByAddr(ctx context.Context, contractA
 	}
 	return contract, nil
 }
-func (s *PublicContractAPI) DepositContractInvoke(ctx context.Context, from, to, daoAmount, daoFee string,
+func (s *PrivateContractAPI) DepositContractInvoke(ctx context.Context, from, to string, amount, fee decimal.Decimal,
 	param []string) (string, error) {
 	log.Debug("---enter DepositContractInvoke---")
 	// append by albert·gou
@@ -440,7 +438,7 @@ func (s *PublicContractAPI) DepositContractInvoke(ctx context.Context, from, to,
 		}
 	}
 
-	rsp, err := s.Ccinvoketx(ctx, from, to, daoAmount, daoFee, syscontract.DepositContractAddress.String(),
+	rsp, err := s.Ccinvoketx(ctx, from, to, amount, fee, syscontract.DepositContractAddress.String(),
 		param, "", "0")
 
 	return rsp.ReqId, err
@@ -456,7 +454,7 @@ func (s *PublicContractAPI) SysConfigContractQuery(ctx context.Context, param []
 	return s.Ccquery(ctx, syscontract.SysConfigContractAddress.String(), param, 0)
 }
 
-func (s *PublicContractAPI) SysConfigContractInvoke(ctx context.Context, from, to, daoAmount, daoFee string,
+func (s *PrivateContractAPI) SysConfigContractInvoke(ctx context.Context, from, to string, amount, fee decimal.Decimal,
 	param []string) (string, error) {
 	log.Debugf("---enter SysConfigContractInvoke---")
 	if len(param) == 0 {
@@ -504,7 +502,7 @@ func (s *PublicContractAPI) SysConfigContractInvoke(ctx context.Context, from, t
 		}
 	}
 
-	rsp, err := s.Ccinvoketx(ctx, from, to, daoAmount, daoFee, syscontract.SysConfigContractAddress.String(),
+	rsp, err := s.Ccinvoketx(ctx, from, to, amount, fee, syscontract.SysConfigContractAddress.String(),
 		param, "", "0")
 
 	return rsp.ReqId, err

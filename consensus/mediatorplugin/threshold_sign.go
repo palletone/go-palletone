@@ -35,27 +35,19 @@ import (
 )
 
 func (mp *MediatorPlugin) startVSSProtocol() {
-	dag := mp.dag
-	if !mp.productionEnabled && !dag.IsSynced() {
-		log.Debugf("we're not synced")
-		return
-	}
+	// 重复判断，不需要
+	//dag := mp.dag
+	//if !mp.productionEnabled && !dag.IsSynced() {
+	//	log.Debugf("we're not synced")
+	//	return
+	//}
+
+	// todo albert 换届后第一个生产槽的前一个生产间隔开始vss协议
 
 	log.Debugf("Start completing the VSS protocol.")
+	// 将deal广播给其他节点
 	go mp.BroadcastVSSDeals()
-}
-
-func (mp *MediatorPlugin) getLocalActiveDKG(add common.Address) (*dkg.DistKeyGenerator, error) {
-	if !mp.IsLocalActiveMediator(add) {
-		return nil, fmt.Errorf("the mediator(%v) is not local active mediator", add.String())
-	}
-
-	dkg, ok := mp.activeDKGs[add]
-	if !ok || dkg == nil {
-		return nil, fmt.Errorf("the mediator(%v)'s dkg is not existed", add.String())
-	}
-
-	return dkg, nil
+	// todo albert 处理从其他节点收到的deal
 }
 
 func (mp *MediatorPlugin) BroadcastVSSDeals() {
@@ -71,7 +63,7 @@ func (mp *MediatorPlugin) BroadcastVSSDeals() {
 
 		for index, deal := range deals {
 			event := VSSDealEvent{
-				DstIndex: uint(index),
+				DstIndex: uint32(index),
 				Deal:     deal,
 			}
 
@@ -82,6 +74,16 @@ func (mp *MediatorPlugin) BroadcastVSSDeals() {
 
 func (mp *MediatorPlugin) SubscribeVSSDealEvent(ch chan<- VSSDealEvent) event.Subscription {
 	return mp.vssDealScope.Track(mp.vssDealFeed.Subscribe(ch))
+}
+
+func (mp *MediatorPlugin) AddToDealBuf(dealEvent *VSSDealEvent) {
+	if !mp.groupSigningEnabled {
+		return
+	}
+
+	// todo albert 添加的缓存中
+	//dag := mp.dag
+	//localMed := dag.GetActiveMediatorAddr(int(dealEvent.DstIndex))
 }
 
 func (mp *MediatorPlugin) ProcessVSSDeal(dealEvent *VSSDealEvent) error {
@@ -102,7 +104,7 @@ func (mp *MediatorPlugin) ProcessVSSDeal(dealEvent *VSSDealEvent) error {
 
 	resp, err := dkgr.ProcessDeal(deal)
 	if err != nil {
-		log.Debugf(err.Error())
+		log.Debugf("dkg: cannot process own deal: " + err.Error())
 		return err
 	}
 
@@ -167,7 +169,7 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 		return
 	}
 
-	aSize := mp.dag.ActiveMediatorsCount()
+	respAmount := mp.dag.ActiveMediatorsCount() - 1
 	respCount := 0
 	// localMed 对 vrfrMed 的 response 在 ProcessDeal 生成 response 时 自动处理了
 	if vrfrMed != localMed {
@@ -192,7 +194,7 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 	isFinishedAndCertified := func() (finished, certified bool) {
 		respCount++
 
-		if respCount == aSize-1 {
+		if respCount == respAmount-1 {
 			finished = true
 
 			if dkgr.Certified() {
@@ -218,6 +220,7 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 		select {
 		case <-mp.quit:
 			return
+			// todo Albert 超过期限后也要删除
 		case resp := <-respCh:
 			processResp(resp)
 			finished, certified := isFinishedAndCertified()
@@ -408,9 +411,9 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 }
 
 // 收集签名分片
-func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare []byte) error {
+func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare []byte) {
 	if !mp.groupSigningEnabled {
-		return nil
+		return
 	}
 
 	log.Debugf("received the sign shares of the unit(%v)", newUnitHash.TerminalString())
@@ -420,7 +423,7 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 	if newUnit == nil || err != nil {
 		err = fmt.Errorf("fail to get unit by hash in dag: %v", newUnitHash.TerminalString())
 		log.Debugf(err.Error())
-		return err
+		return
 	}
 
 	localMed := newUnit.Author()
@@ -431,7 +434,7 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 	if !ok {
 		err = fmt.Errorf("the mediator(%v)'s toTBLSRecoverBuf has not initialized yet", localMed.Str())
 		log.Debugf(err.Error())
-		return err
+		return
 	}
 
 	// 当buf不存在时，说明已经recover出群签名, 或者已经过了unit确认时间，忽略该签名分片
@@ -440,14 +443,14 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 		err = fmt.Errorf("the unit(%v) has already recovered the group signature",
 			newUnitHash.TerminalString())
 		log.Debugf(err.Error())
-		return err
+		return
 	}
 
 	sigShareSet.append(sigShare)
 
 	// recover群签名
 	go mp.recoverUnitTBLS(localMed, newUnitHash)
-	return nil
+	return
 }
 
 func (mp *MediatorPlugin) SubscribeGroupSigEvent(ch chan<- GroupSigEvent) event.Subscription {
