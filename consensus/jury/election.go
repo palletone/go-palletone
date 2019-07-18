@@ -522,7 +522,7 @@ func (p *Processor) processElectionSigResultEvent(evt *ElectionSigResultEvent) e
 			Tx:    p.mtx[reqId].reqTx,
 		}
 		log.Infof("[%s]processElectionSigResultEvent, CONTRACT_EVENT_EXEC", shortId(reqId.String()))
-		log.Info("processElectionSigResultEvent======================================================ok")
+		//log.Info("processElectionSigResultEvent======================================================ok")
 		log.Info("processElectionSigResultEvent, CONTRACT_EVENT_EXEC", "reqId", shortId(reqId.String()), "event", event)
 		go p.ptn.ContractBroadcast(event, true)
 		return nil

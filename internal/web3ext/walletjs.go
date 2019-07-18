@@ -62,6 +62,11 @@ const Wallet_JS = `
 			params: 1
 		}),
 		
+               new web3._extend.Method({
+			name: 'sendRlpTransaction',
+			call: 'wallet_sendRlpTransaction',
+			params: 1
+		}),
 		new web3._extend.Method({
 			name: 'getPtnTestCoin',
 			call: 'wallet_getPtnTestCoin',

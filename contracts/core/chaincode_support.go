@@ -711,6 +711,7 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 	var err error
 	//if its in the map, there must be a connected stream...nothing to do
 	if chrte, ok = chaincodeSupport.chaincodeHasBeenLaunched(canName); ok {
+		log.Debugf("chaincode has been launched")
 		if !chrte.handler.registered {
 			chaincodeSupport.runningChaincodes.Unlock()
 			err = errors.Errorf("premature execution - chaincode (%s) launched and waiting for registration", canName)
@@ -726,6 +727,7 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 		}
 		log.Debugf("Container not in READY state(%s)...send init/ready", chrte.handler.FSM.Current())
 	} else {
+		log.Debugf("chaincode is not up,but launch started")
 		//chaincode is not up... but is the launch process underway? this is
 		//strictly not necessary as the actual launch process will catch this
 		//(in launchAndWaitForRegister), just a bit of optimization for thundering
@@ -737,33 +739,33 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 		}
 	}
 	chaincodeSupport.runningChaincodes.Unlock()
-	//if cds == nil {
-	//	//return cID, cMsg, errors.Errorf("contract not running:%s", canName)
-	//	if cccid.Syscc {
-	//		return cID, cMsg, errors.Errorf("a syscc should be running (it cannot be launched) %s", canName)
-	//	}
-	//
-	//	if chaincodeSupport.userRunsCC {
-	//		log.Error("You are attempting to perform an action other than Deploy on Chaincode that is not ready and you are in developer mode. Did you forget to Deploy your chaincode?")
-	//	}
-	//
-	//	var depPayload []byte
-	//	//hopefully we are restarting from existing image and the deployed transaction exists
-	//	//(this will also validate the ID from the LSCC if we're not using the config-tree approach)
-	//	depPayload, err = GetCDS(cccid.ContractId, context, cccid.TxID, cccid.SignedProposal, cccid.Proposal, cccid.ChainID, cID.Name)
-	//	if err != nil {
-	//		return cID, cMsg, errors.WithMessage(err, fmt.Sprintf("could not get ChaincodeDeploymentSpec for %s", canName))
-	//	}
-	//	if depPayload == nil {
-	//		return cID, cMsg, errors.WithMessage(err, fmt.Sprintf("nil ChaincodeDeploymentSpec for %s", canName))
-	//	}
-	//
-	//	cds = &pb.ChaincodeDeploymentSpec{}
-	//	err = proto.Unmarshal(depPayload, cds)
-	//	if err != nil {
-	//		return cID, cMsg, errors.Wrap(err, fmt.Sprintf("failed to unmarshal deployment transactions for %s", canName))
-	//	}
-	//}
+	if cds == nil {
+		return cID, cMsg, errors.Errorf("contract not running:%s", canName)
+		//if cccid.Syscc {
+		//	return cID, cMsg, errors.Errorf("a syscc should be running (it cannot be launched) %s", canName)
+		//}
+		//
+		//if chaincodeSupport.userRunsCC {
+		//	log.Error("You are attempting to perform an action other than Deploy on Chaincode that is not ready and you are in developer mode. Did you forget to Deploy your chaincode?")
+		//}
+		//
+		//var depPayload []byte
+		////hopefully we are restarting from existing image and the deployed transaction exists
+		////(this will also validate the ID from the LSCC if we're not using the config-tree approach)
+		//depPayload, err = GetCDS(cccid.ContractId, context, cccid.TxID, cccid.SignedProposal, cccid.Proposal, cccid.ChainID, cID.Name)
+		//if err != nil {
+		//	return cID, cMsg, errors.WithMessage(err, fmt.Sprintf("could not get ChaincodeDeploymentSpec for %s", canName))
+		//}
+		//if depPayload == nil {
+		//	return cID, cMsg, errors.WithMessage(err, fmt.Sprintf("nil ChaincodeDeploymentSpec for %s", canName))
+		//}
+		//
+		//cds = &pb.ChaincodeDeploymentSpec{}
+		//err = proto.Unmarshal(depPayload, cds)
+		//if err != nil {
+		//	return cID, cMsg, errors.Wrap(err, fmt.Sprintf("failed to unmarshal deployment transactions for %s", canName))
+		//}
+	}
 
 	//from here on : if we launch the container and get an error, we need to stop the container
 	//launch container if it is a System container or not in dev mode
@@ -883,6 +885,7 @@ func (chaincodeSupport *ChaincodeSupport) Execute(ctxt context.Context, cccid *c
 		log.Debugf("time out when execute,time = %v", setTimeout)
 		//err = errors.New("timeout expired while executing transaction")
 		//log.Info("====================================timeout expired while executing transaction")
+		//  试图从容器获取错误信息
 		containerErrStr := utils.GetLogFromContainer(cccid.GetContainerName())
 		if containerErrStr != "" {
 			log.Error("error from container %s", containerErrStr)
