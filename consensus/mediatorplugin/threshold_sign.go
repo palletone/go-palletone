@@ -35,22 +35,66 @@ import (
 )
 
 func (mp *MediatorPlugin) startVSSProtocol() {
-	// 重复判断，不需要
-	//dag := mp.dag
-	//if !mp.productionEnabled && !dag.IsSynced() {
-	//	log.Debugf("we're not synced")
-	//	return
-	//}
+	log.Debugf("Start completing the VSS protocol.")
+
+	// todo albert 处理从其他节点收到的deal
+
+	// todo albert 处理所有的response
 
 	// todo albert 换届后第一个生产槽的前一个生产间隔开始vss协议
 
-	log.Debugf("Start completing the VSS protocol.")
 	// 将deal广播给其他节点
-	go mp.BroadcastVSSDeals()
-	// todo albert 处理从其他节点收到的deal
+	go mp.broadcastVSSDeals()
+
+	// 开启计时器，删除vss相关缓存
 }
 
-func (mp *MediatorPlugin) BroadcastVSSDeals() {
+func (mp *MediatorPlugin) processVSSDeals() {
+
+}
+
+func (mp *MediatorPlugin) processDealLoop(dealEvent *VSSDealEvent) {
+	dag := mp.dag
+	localMed := dag.GetActiveMediatorAddr(int(dealEvent.DstIndex))
+
+	dkgr, err := mp.getLocalActiveDKG(localMed)
+	if err != nil {
+		log.Debugf(err.Error())
+		return
+	}
+
+	deal := dealEvent.Deal
+
+	resp, err := dkgr.ProcessDeal(deal)
+	if err != nil {
+		log.Debugf("dkg: cannot process own deal: " + err.Error())
+		return
+	}
+
+	vrfrMed := dag.GetActiveMediatorAddr(int(deal.Index))
+	log.Debugf("the mediator(%v) received the vss deal from the mediator(%v)",
+		localMed.Str(), vrfrMed.Str())
+
+	// todo albert 待重构
+	go mp.processResponseLoop(localMed, vrfrMed)
+
+	if resp.Response.Status != vss.StatusApproval {
+		err = fmt.Errorf("DKG: own deal gave a complaint: %v", localMed.String())
+		log.Debugf(err.Error())
+		return
+	}
+
+	respEvent := VSSResponseEvent{
+		Resp: resp,
+	}
+	go mp.vssResponseFeed.Send(respEvent)
+	log.Debugf("the mediator(%v) broadcast the vss response to the mediator(%v)",
+		localMed.Str(), vrfrMed.Str())
+
+	return
+}
+
+func (mp *MediatorPlugin) broadcastVSSDeals() {
 	for localMed, dkg := range mp.activeDKGs {
 		deals, err := dkg.Deals()
 		if err != nil {
@@ -58,6 +102,7 @@ func (mp *MediatorPlugin) BroadcastVSSDeals() {
 			continue
 		}
 
+		// todo albert 待重构
 		go mp.processResponseLoop(localMed, localMed)
 		log.Debugf("the mediator(%v) broadcast vss deals", localMed.Str())
 
@@ -81,52 +126,15 @@ func (mp *MediatorPlugin) AddToDealBuf(dealEvent *VSSDealEvent) {
 		return
 	}
 
-	// todo albert 添加的缓存中
-	//dag := mp.dag
-	//localMed := dag.GetActiveMediatorAddr(int(dealEvent.DstIndex))
-}
-
-func (mp *MediatorPlugin) ProcessVSSDeal(dealEvent *VSSDealEvent) error {
-	if !mp.groupSigningEnabled {
-		return nil
-	}
-
 	dag := mp.dag
 	localMed := dag.GetActiveMediatorAddr(int(dealEvent.DstIndex))
 
-	dkgr, err := mp.getLocalActiveDKG(localMed)
-	if err != nil {
-		log.Debugf(err.Error())
-		return err
+	if _, ok := mp.dealBuf[localMed]; !ok {
+		aSize := dag.ActiveMediatorsCount()
+		mp.dealBuf[localMed] = make(chan *dkg.Deal, aSize-1)
 	}
 
-	deal := dealEvent.Deal
-
-	resp, err := dkgr.ProcessDeal(deal)
-	if err != nil {
-		log.Debugf("dkg: cannot process own deal: " + err.Error())
-		return err
-	}
-
-	vrfrMed := dag.GetActiveMediatorAddr(int(deal.Index))
-	log.Debugf("the mediator(%v) received the vss deal from the mediator(%v)",
-		localMed.Str(), vrfrMed.Str())
-	go mp.processResponseLoop(localMed, vrfrMed)
-
-	if resp.Response.Status != vss.StatusApproval {
-		err = fmt.Errorf("DKG: own deal gave a complaint: %v", localMed.String())
-		log.Debugf(err.Error())
-		return err
-	}
-
-	respEvent := VSSResponseEvent{
-		Resp: resp,
-	}
-	go mp.vssResponseFeed.Send(respEvent)
-	log.Debugf("the mediator(%v) broadcast the vss response to the mediator(%v)",
-		localMed.Str(), vrfrMed.Str())
-
-	return nil
+	mp.dealBuf[localMed] <- dealEvent.Deal
 }
 
 func (mp *MediatorPlugin) AddToResponseBuf(respEvent *VSSResponseEvent) {
@@ -231,7 +239,7 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 					go mp.signUnitsTBLS(localMed)
 					go mp.recoverUnitsTBLS(localMed)
 
-					delete(mp.respBuf, localMed)
+					//delete(mp.respBuf, localMed)
 				}
 
 				return
@@ -366,7 +374,7 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 
 	// 2. 判断群签名的相关条件
 	{
-		// 1.如果单元没有群公钥， 则跳过群签名
+		// 如果单元没有群公钥， 则跳过群签名
 		pkb := newUnit.GetGroupPubKeyByte()
 		if pkb == nil || len(pkb) == 0 {
 			err := fmt.Errorf("this unit(%v)'s group public key is null", unitHash.TerminalString())
@@ -374,14 +382,7 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 			return
 		}
 
-		// 2. 验证本 unit
-		// 已经被验证了，不需要再验证了
-		//if dag.ValidateUnitExceptGroupSig(newUnit) != nil {
-		//	log.Debugf("the unit validate except group sig fail: %v", newUnit.UnitHash.TerminalString())
-		//	return
-		//}
-
-		// 3. 判断父 unit 是否不可逆
+		// 判断父 unit 是否不可逆
 		parentHash := newUnit.ParentHash()[0]
 		if !dag.IsIrreversibleUnit(parentHash) {
 			log.Debugf("the unit's(%v) parent unit(%v) is not irreversible",

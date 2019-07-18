@@ -168,17 +168,12 @@ func (mp *MediatorPlugin) APIs() []rpc.API {
 
 func (mp *MediatorPlugin) newActiveMediatorsDKG() {
 	dag := mp.dag
-	// 重复判断
-	//if !mp.productionEnabled && !dag.IsSynced() {
-	//	log.Debugf("we're not synced")
-	//	return
-	//}
 
 	lams := mp.GetLocalActiveMediators()
 	initPubs := dag.GetActiveMediatorInitPubs()
 	curThreshold := dag.ChainThreshold()
-	lamc := len(lams)
 
+	lamc := len(lams)
 	mp.activeDKGs = make(map[common.Address]*dkg.DistKeyGenerator, lamc)
 	//mp.dealBuf = make(map[common.Address]chan *dkg.Deal, lamc)
 	//mp.respBuf = make(map[common.Address]map[common.Address]chan *dkg.Response, lamc)
@@ -216,7 +211,7 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 
 	// 开启循环生产计划
 	if mp.producingEnabled {
-		go mp.ScheduleProductionLoop()
+		go mp.launchProduction()
 	}
 
 	// 开始完成 vss 协议
@@ -229,7 +224,7 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	return nil
 }
 
-func (mp *MediatorPlugin) ScheduleProductionLoop() {
+func (mp *MediatorPlugin) launchProduction() {
 	// 1. 判断是否满足生产unit的条件，主要判断本节点是否控制至少一个mediator账户
 	if len(mp.mediators) == 0 {
 		log.Debugf("No mediators configured! Please add mediator and private keys to configuration.")
@@ -282,7 +277,7 @@ func (mp *MediatorPlugin) Stop() error {
 
 	mp.wg.Wait()
 
-	log.Debugf("mediator plugin stopped")
+	log.Infof("mediator plugin stopped")
 	return nil
 }
 

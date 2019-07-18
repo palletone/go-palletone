@@ -166,7 +166,7 @@ func NewPrivateMediatorAPI(mp *MediatorPlugin) *PrivateMediatorAPI {
 func (a *PrivateMediatorAPI) StartProduce() bool {
 	if !a.producingEnabled {
 		a.producingEnabled = true
-		go a.ScheduleProductionLoop()
+		go a.launchProduction()
 
 		return true
 	}
