@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/core/certficate"
 
 	"time"
 
@@ -1154,8 +1156,8 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 	}
 	if Extra != "" {
 		textPayload := new(modules.DataPayload)
-		textPayload.Reference = []byte(asset)
-		textPayload.MainData = []byte(Extra)
+		textPayload.Reference = []byte(Extra)
+		//textPayload.MainData = []byte(asset)
 		rawTx.TxMessages = append(rawTx.TxMessages, modules.NewMessage(modules.APP_DATA, textPayload))
 	}
 	//lockscript
@@ -1312,6 +1314,33 @@ func (s *PublicWalletAPI) GetProofOfExistencesByRef(ctx context.Context, referen
 
 func (s *PublicWalletAPI) GetProofOfExistencesByAsset(ctx context.Context, asset string) ([]*ptnjson.ProofOfExistenceJson, error) {
 	return s.b.GetAssetExistence(asset)
+}
+
+//affiliation  gptn.mediator1
+func (s *PublicWalletAPI) GenCert(addrStr, name, data, roleType, affiliation string) (bool, error) {
+	ks := s.b.GetKeyStore()
+	addr, _ := common.StringToAddress(addrStr)
+	pubKey, err := ks.GetPublicKey(addr)
+	if err != nil {
+		return false, err
+	}
+
+	pub := crypto.P256ToECDSAPub(pubKey)
+	ca := certficate.CertINfo{}
+	cf := certficate.CAConfig{}
+	ca.Address = addrStr
+	ca.Name = name
+	ca.Data = data
+	ca.Type = roleType
+	ca.Affiliation = affiliation
+	ca.Key = pub
+	_, err = certficate.GenCert(ca, cf)
+	if err != nil {
+		return false, err
+	}
+
+	//s.b.ContractInvoke()
+	return true, nil
 }
 
 //好像某个UTXO是被那个交易花费的

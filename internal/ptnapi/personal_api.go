@@ -265,3 +265,5 @@ func (s *PrivateAccountAPI) TransferPtn(from, to string, amount decimal.Decimal,
 
 	return s.b.TransferPtn(from, to, amount, text)
 }
+
+
