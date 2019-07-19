@@ -138,16 +138,7 @@ func (p *Processor) selectElectionInf(local []modules.ElectionInf, recv []module
 	} else {
 		less := num - len(local)
 		eles = append(eles, local...)
-		for i := 0; i < less; i++ {
-			for _, l := range local {
-				if !bytes.Equal(l.AddrHash[:], recv[i].AddrHash[:]) {
-					eles = append(eles, recv[i])
-				}
-			}
-		}
-		if len(eles) < num{
-			return nil, false
-		}
+		eles = append(eles, recv[:less]...)
 	}
 	return eles, true
 }
