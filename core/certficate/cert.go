@@ -14,11 +14,11 @@
 package certficate
 
 import (
-	"github.com/palletone/digital-identity/client"
+	"bytes"
 	"crypto/x509"
 	"encoding/pem"
+	"github.com/palletone/digital-identity/client"
 	"net/http"
-	"bytes"
 
 	"encoding/json"
 	"github.com/palletone/go-palletone/contracts/syscontract"
@@ -60,6 +60,8 @@ type CertINfo struct {
 	Type string `json:"type"`
 	// Affiliation associates identity with particular organisation.  (gptn.mediator1...)
 	Affiliation string `json:"affiliation"`
+
+	Key interface{} `json:"key"`
 }
 
 type CAGetCertChain struct {
@@ -98,32 +100,32 @@ func CertChain2Result(cc client.CAGetCertResponse) CAGetCertChain {
 	return CAGetCertChain{
 		RootCertificates:         cc.RootCertificates,
 		IntermediateCertificates: cc.IntermediateCertificates,
-		CAName:                   cc.CAName,
-		Version:                  cc.Version,
+		CAName:  cc.CAName,
+		Version: cc.Version,
 	}
 }
 
-func GenCert(certinfo CertINfo, cfg CAConfig) error {
+func GenCert(certinfo CertINfo, cfg CAConfig) ([]byte, error) {
 	cainfo := CertInfo2Cainfo(certinfo)
 	//发送请求到CA server 注册用户 生成证书
 	certpem, err := cainfo.Enrolluser()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	immediateca := cfg.ImmediateCa
-	address := cainfo.EnrolmentId
-	url := cfg.CaUrl
+	//immediateca := cfg.ImmediateCa
+	//address := cainfo.EnrolmentId
+	//url := cfg.CaUrl
 
 	//将证书byte 用户地址 通过rpc调用进行存储
-	if certpem != nil {
+	//if certpem != nil {
+	//
+	//	err = CertRpcReq(address, immediateca, certpem,url)
+	//	if err != nil {
+	//		return err
+	//	}
+	//}
 
-		err = CertRpcReq(address, immediateca, certpem,url)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return certpem, nil
 }
 
 func RevokeCert(address string, reason string, cfg CAConfig) error {
@@ -136,7 +138,7 @@ func RevokeCert(address string, reason string, cfg CAConfig) error {
 	immediateca := cfg.ImmediateCa
 	//吊销证书后将crl byte 通过rpc发送请求 添加到合约中
 	if crlPem != nil {
-		err = CrlRpcReq(immediateca, crlPem,url)
+		err = CrlRpcReq(immediateca, crlPem, url)
 		if err != nil {
 			return err
 		}
@@ -182,7 +184,7 @@ func GetCaCertificateChain(caname string) (*CAGetCertChain, error) {
 func GetHolderCertIDs(address string, cfg CAConfig) (string, error) {
 	method := "getHolderCertIDs"
 	url := cfg.CaUrl
-	body, err :=QueryRpcReq(method,address,url)
+	body, err := QueryRpcReq(method, address, url)
 	if err != nil {
 		return "", err
 	}
@@ -200,7 +202,7 @@ func GetHolderCertIDs(address string, cfg CAConfig) (string, error) {
 func GetIssuerCertsInfo(address string, cfg CAConfig) (string, error) {
 	method := "getIssuerCertsInfo"
 	url := cfg.CaUrl
-	body, err :=QueryRpcReq(method,address,url)
+	body, err := QueryRpcReq(method, address, url)
 	if err != nil {
 		return "", err
 	}
@@ -218,7 +220,7 @@ func GetIssuerCertsInfo(address string, cfg CAConfig) (string, error) {
 func GetCertBytes(certid string, cfg CAConfig) (string, error) {
 	method := "getCertBytes"
 	url := cfg.CaUrl
-	body, err :=QueryRpcReq(method,certid,url)
+	body, err := QueryRpcReq(method, certid, url)
 	if err != nil {
 		return "", err
 	}
@@ -236,7 +238,7 @@ func GetCertBytes(certid string, cfg CAConfig) (string, error) {
 func GetCertHolder(certid string, cfg CAConfig) (string, error) {
 	method := "getCertHolder"
 	url := cfg.CaUrl
-	body, err :=QueryRpcReq(method,certid,url)
+	body, err := QueryRpcReq(method, certid, url)
 	if err != nil {
 		return "", err
 	}
@@ -254,7 +256,7 @@ func GetCertHolder(certid string, cfg CAConfig) (string, error) {
 func GetRootCAHoler(cfg CAConfig) (string, error) {
 	method := "getRootCAHoler"
 	url := cfg.CaUrl
-	body, err :=QueryRpcReq2(method,url)
+	body, err := QueryRpcReq2(method, url)
 	if err != nil {
 		return "", err
 	}
@@ -268,7 +270,7 @@ func GetRootCAHoler(cfg CAConfig) (string, error) {
 	return result.Result, nil
 }
 
-func RpcReq(params CertRpc,url string) ([]byte, error) {
+func RpcReq(params CertRpc, url string) ([]byte, error) {
 	reqJson, err := json.Marshal(params)
 	if err != nil {
 		return nil, err
@@ -293,7 +295,7 @@ func RpcReq(params CertRpc,url string) ([]byte, error) {
 	return body, nil
 }
 
-func CertRpcReq(address string, immediateca string, certbyte []byte,url string) error {
+func CertRpcReq(address string, immediateca string, certbyte []byte, url string) error {
 	params := CertRpc{}
 	params.Jsonrpc = jsonrpc
 	params.Methond = invokemethod
@@ -307,14 +309,14 @@ func CertRpcReq(address string, immediateca string, certbyte []byte,url string) 
 
 	params.Params = append(params.Params, method2)
 
-	_, err := RpcReq(params,url)
+	_, err := RpcReq(params, url)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func CrlRpcReq(immediateca string, crlbyte []byte,url string) error {
+func CrlRpcReq(immediateca string, crlbyte []byte, url string) error {
 	params := CertRpc{}
 	params.Jsonrpc = jsonrpc
 	params.Methond = invokemethod
@@ -328,7 +330,7 @@ func CrlRpcReq(immediateca string, crlbyte []byte,url string) error {
 
 	params.Params = append(params.Params, method2)
 
-	_, err := RpcReq(params,url)
+	_, err := RpcReq(params, url)
 	if err != nil {
 		return err
 	}
@@ -336,7 +338,7 @@ func CrlRpcReq(immediateca string, crlbyte []byte,url string) error {
 }
 
 //GetIssuerCertsInfo rpc req
-func QueryRpcReq(data string,method string,url string) ([]byte, error) {
+func QueryRpcReq(data string, method string, url string) ([]byte, error) {
 	params := CertRpc{}
 	params.Jsonrpc = jsonrpc
 	params.Methond = querymethod
@@ -348,14 +350,14 @@ func QueryRpcReq(data string,method string,url string) ([]byte, error) {
 
 	params.Params = append(params.Params, method2)
 
-	body, err := RpcReq(params,url)
+	body, err := RpcReq(params, url)
 	if err != nil {
 		return nil, err
 	}
 	return body, nil
 }
 
-func QueryRpcReq2(method string,url string) ([]byte, error) {
+func QueryRpcReq2(method string, url string) ([]byte, error) {
 	params := CertRpc{}
 	params.Jsonrpc = jsonrpc
 	params.Methond = querymethod
@@ -367,7 +369,7 @@ func QueryRpcReq2(method string,url string) ([]byte, error) {
 
 	params.Params = append(params.Params, method2)
 
-	body, err := RpcReq(params,url)
+	body, err := RpcReq(params, url)
 	if err != nil {
 		return nil, err
 	}
