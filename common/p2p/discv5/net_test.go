@@ -16,6 +16,7 @@
 
 package discv5
 
+/*
 import (
 	"fmt"
 	"net"
@@ -372,3 +373,4 @@ func (n *preminedTestnet) mine(target NodeID) {
 func injectResponse(net *Network, from *Node, ev nodeEvent, packet interface{}) {
 	go net.reqReadPacket(ingressPacket{remoteID: from.ID, remoteAddr: from.addr(), ev: ev, data: packet})
 }
+*/

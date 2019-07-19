@@ -16,6 +16,7 @@
 
 package discv5
 
+/*
 import (
 	"encoding/hex"
 	"errors"
@@ -448,3 +449,4 @@ func (c *dgramPipe) waitPacketOut() []byte {
 	c.queue = c.queue[:len(c.queue)-1]
 	return p
 }
+*/
