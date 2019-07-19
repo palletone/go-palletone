@@ -16,7 +16,7 @@ Feature: Vote Contract- Create token
     ${PTN1}    ${key}    ${coinToken1}    And Request getbalance before create token
     ${ret}    When Create token of vote contract
     ${GAIN}    And Calculate gain of recieverAdd
-    ${PTN2}    ${tokenGAIN}    And Request getbalance after create token    ${key}    ${GAIN}
+    ${PTN2}    ${tokenGAIN}    And Request getbalance after create token    ${key}    ${GAIN}    ${coinToken1}
     Then Assert gain of reciever    ${PTN1}    ${PTN2}    ${tokenGAIN}    ${GAIN}
 
 *** Keywords ***
@@ -48,12 +48,12 @@ Calculate gain of recieverAdd
     [Return]    ${GAIN}
 
 Request getbalance after create token
-    [Arguments]    ${key}    ${GAIN}
+    [Arguments]    ${key}    ${GAIN}    ${coinToken1}
     sleep    4
     ${result2}    getBalance    ${geneAdd}    ${mutiHost1}
     ${coinToken2}    Get From Dictionary    ${result2}    ${key}
     ${PTN2}    Get From Dictionary    ${result2}    PTN
-    ${tokenGAIN}    Evaluate    float(${coinToken2})-float(${coinToken1})
+    ${tokenGAIN}    Evaluate    ${coinToken2}-${coinToken1}
     [Return]    ${PTN2}    ${tokenGAIN}
 
 Assert gain of reciever

@@ -240,8 +240,10 @@ class createToken(object):
                     [reqId],
                 "id":1
             }
+        print reqId
         data = json.dumps(data)
         response = requests.post(url=self.domain, data=data, headers=self.headers)
+        print response.content
         result1 = json.loads(response.content)
         return result1
 

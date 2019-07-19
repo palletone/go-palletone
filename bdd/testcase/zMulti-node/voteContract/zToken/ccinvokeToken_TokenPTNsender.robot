@@ -37,7 +37,6 @@ Ccinvoke token of vote contract
     ${ccList}    Create List    ${geneAdd}    ${recieverAdd}    ${destructionAdd}    ${PTNAmount}    ${PTNPoundage}
     ...    ${voteToken}    ${gain}    ${voteContractId}    ${supportList}
     ${resp}    setPostRequest    ${host}    ${invokeTokenMethod}    ${ccList}
-    log    ${resp.content}
     sleep    4
 
 Calculate gain of recieverAdd
