@@ -232,3 +232,15 @@ Wait for unit about contract to be confirmed by unit height
 Check response code
     [Arguments]    ${resCode}    ${resMsg}
     Run Keyword If    ${resCode}!=0    Fail    ${resMsg}
+
+Get invoke payload info
+    [Arguments]    ${reqId}
+    ${params}=    Create List    ${reqId}
+    ${respJson}=    sendRpcPost    ${host}    dag_getTxByReqId    ${params}    QueryContractReqStats
+    ${result}=    Get From Dictionary    ${respJson}    result
+    ${result}=    To Json    ${result}
+    ${info}=    Get From Dictionary    ${result}    info
+    ${invokeInfo}=    Get From Dictionary    ${info}    contract_invoke
+    ${payload}=    Get From Dictionary    ${invokeInfo}    payload
+    ${payload}=    To Json    ${payload}
+    [Return]    ${payload}

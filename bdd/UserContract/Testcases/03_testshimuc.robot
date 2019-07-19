@@ -71,8 +71,9 @@ Get Invoke Info
     Given Unlock token holder succeed
     ${args}=    And Create List    arg1    arg2
     ${reqId}=    When User get invoke info    ${args}
-    ${resCode}    ${resMsg}=    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
-    Then Check all invoke info    ${resMsg}    ${args}
+    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
+    ${payload}=    Get invoke payload info    ${reqId}
+    Then Check all invoke info    ${payload}    ${args}    testGetInvokeInfo
 
 Stop testshimuc contract
     Given Unlock token holder succeed
@@ -93,33 +94,71 @@ User get invoke info
     [Return]    ${reqId}
 
 Check all invoke info
-    [Arguments]    ${resMsg}    ${args}
-    # GetStringArgs
-    ${resMsg}=    To Json    ${resMsg}
-    Dictionary Should Contain    ${resMsg}    GetArgs
-    ${GetArgs} =    Get From Dictioanry    ${resMsg}    GetArgs
-    Dictionary Should Contain    ${resMsg}    GetStringArgs
-    ${GetStringArgs} =    Get From Dictioanry    ${resMsg}    GetStringArgs
-    Dictionary Should Contain    ${resMsg}    GetFunctionAndParameters
-    ${GetFunctionAndParameters} =    Get From Dictioanry    ${resMsg}    GetFunctionAndParameters
-    Dictionary Should Contain    ${resMsg}    GetArgsSlice
-    ${GetArgsSlice} =    Get From Dictioanry    ${resMsg}    GetArgsSlice
-    Dictionary Should Contain    ${resMsg}    GetTxID
-    ${GetTxID} =    Get From Dictioanry    ${resMsg}    GetTxID
-    Dictionary Should Contain    ${resMsg}    GetChannelID
-    ${GetChannelID} =    Get From Dictioanry    ${resMsg}    GetChannelID
-    Dictionary Should Contain    ${resMsg}    GetTxTimestamp
-    ${GetTxTimestamp} =    Get From Dictioanry    ${resMsg}    GetTxTimestamp
-    Dictionary Should Contain    ${resMsg}    GetInvokeAddress
-    ${GetInvokeAddress} =    Get From Dictioanry    ${resMsg}    GetInvokeAddress
-    Dictionary Should Contain    ${resMsg}    GetInvokeTokens
-    ${GetInvokeTokens} =    Get From Dictioanry    ${resMsg}    GetInvokeTokens
-    Dictionary Should Contain    ${resMsg}    GetInvokeFees
-    ${GetInvokeFees} =    Get From Dictioanry    ${resMsg}    GetInvokeFees
-    Dictionary Should Contain    ${resMsg}    GetContractID
-    ${GetContractID} =    Get From Dictioanry    ${resMsg}    GetContractID
-    Dictionary Should Contain    ${resMsg}    GetInvokeParameters
-    ${GetInvokeParameters} =    Get From Dictioanry    ${resMsg}    GetInvokeParameters
+    [Arguments]    ${payload}    ${args}    ${exceptedFuncName}    ${reqId}
+    # => GetArgs
+    Dictionary Should Contain Key    ${payload}    GetArgs
+    ${GetArgs} =    Get From Dictioanry    ${payload}    GetArgs
+    List Should Contain Sub List    ${GetArgs}    ${args}
+    # => GetStringArgs
+    Dictionary Should Contain Key    ${payload}    GetStringArgs
+    ${GetStringArgs} =    Get From Dictioanry    ${payload}    GetStringArgs
+    List Should Contain Sub List    ${GetStringArgs}    ${args}
+    # => GetFunctionAndParameters
+    Dictionary Should Contain Key    ${payload}    GetFunctionAndParameters
+    ${GetFunctionAndParameters} =    Get From Dictioanry    ${payload}    GetFunctionAndParameters
+    ${funcName}=    Get From Dictionary    ${GetFunctionAndParameters}    functionName
+    ${parameters}=    Get From Dictioanry    ${GetFunctionAndParameters}    parameters
+    Shoulb Be Equal    ${exceptedFuncName}    ${funcName}
+    List Should Contain Sub List    ${parameters}    ${args}
+    # => GetArgsSlice
+    Dictionary Should Contain Key    ${payload}    GetArgsSlice
+    ${GetArgsSlice} =    Get From Dictioanry    ${payload}    GetArgsSlice
+    ${str}=    Evaluate    "".join(${GetArgsSlice})
+    ${comp}=    Create List    ${exceptedFuncName}
+    ${comp}=    CrCombine Lists    ${comp}    ${args}
+    Should Be Equal    ${str}    ${comp}
+    # => GetTxID
+    Dictionary Should Contain Key    ${payload}    GetTxID
+    ${GetTxID}=    Get From Dictioanry    ${payload}    GetTxID
+    ${exceptTxId}=    catenate    SEPARATOR=    0x    ${reqId}
+    Sould Be Equal    ${GetTxID}    ${exceptTxId}
+    # => GetChannelID
+    Dictionary Should Contain Key    ${payload}    GetChannelID
+    ${GetChannelID} =    Get From Dictioanry    ${payload}    GetChannelID
+    Should Be Equal    ${GetChannelID}    palletone
+    # => GetTxTimestamp
+    Dictionary Should Contain Key    ${payload}    GetTxTimestamp
+    ${GetTxTimestamp} =    Get From Dictioanry    ${payload}    GetTxTimestamp
+    # => GetInvokeAddress
+    Dictionary Should Contain Key    ${payload}    GetInvokeAddress
+    ${GetInvokeAddress} =    Get From Dictioanry    ${payload}    GetInvokeAddress
+    Should Be Equal    ${GetInvokeAddress}    ${tokenHolder}
+    # => GetInvokeTokens
+    Dictionary Should Contain Key    ${payload}    GetInvokeTokens
+    ${GetInvokeTokens} =    Get From Dictioanry    ${payload}    GetInvokeTokens
+    # => GetInvokeFees
+    Dictionary Should Contain Key    ${payload}    GetInvokeFees
+    ${GetInvokeFees} =    Get From Dictioanry    ${payload}    GetInvokeFees
+    ${amount}=    Get From Dictionary    ${GetInvokeFees}    ${amount}
+    ${symbol}=    Get From Dictionary    ${GetInvokeFees}    ${assetId}
+    Should Be Equal    ${amount}    100000000
+    Should Be Equal    ${symbol}    PTN
+    # => GetContractID
+    Dictionary Should Contain Key    ${payload}    GetContractID
+    ${GetContractID} =    Get From Dictioanry    ${payload}    GetContractID
+    Should Be Eequal    ${GetContractID}    ${gContractId}
+    # => GetInvokeParameters
+    Dictionary Should Contain Key    ${payload}    GetInvokeParameters
+    ${GetInvokeParameters} =    Get From Dictioanry    ${payload}    GetInvokeParameters
+    ${funcName}=    Get From Dictionary    ${GetInvokeParameters}    funcName
+    Shoulb Be Equal    ${exceptedFuncName}    ${funcName}
+    ${invokeAddress}=    Get From Dictionary    ${GetInvokeParameters}    invokeAddress
+    Should Be Equal    ${invokeAddress}    ${tokenHolder}
+    ${invokeFees}=    Get From Dictionary    ${GetInvokeParameters}    invokeFees
+    Dictionaries Should Be Equal    ${GetInvokeFees}    ${invokeFees}
+    ${invokeParams}=    Get From Dictionary    ${GetInvokeParameters}    invokeParams
+    List Should Contain Sub List    ${invokeParams}    ${args}
+    ${invokeTokens}=    Get From Dictionary    ${GetInvokeParameters}    invokeTokens
 
 User define token
     [Arguments]    ${name}    ${symbole}    ${decimal}    ${amount}

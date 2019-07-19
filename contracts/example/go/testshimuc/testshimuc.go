@@ -193,53 +193,6 @@ func (t *SimpleChaincode) test_GetInvokeInfo(stub shim.ChaincodeStubInterface, a
 	return shim.Success(res)
 }
 
-func (t *SimpleChaincode) test_GetFunctionAndParameters(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	funcname, params := stub.GetFunctionAndParameters()
-	data := struct {
-		funcname string
-		params   []string
-	}{funcname: funcname, params: params}
-
-	res, err := json.Marshal(data)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	if err := stub.PutState("GetFunctionAndParameters", res); err != nil {
-		return shim.Error(err.Error())
-	}
-	return shim.Success(res)
-}
-
-func (t *SimpleChaincode) test_GetInvokeParameters(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	// GetArgs return args in ChaincodeStub
-	// invokeInfo, funcName, function params
-	invokeAddr, invokeTokens, invokeFees, funcName, params, err := stub.GetInvokeParameters()
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	data := struct {
-		invokeAddr   string
-		invokeTokens []*modules.InvokeTokens
-		invokeFees   *modules.AmountAsset
-		funcName     string
-		params       []string
-	}{invokeAddr.String(), invokeTokens, invokeFees, funcName, params}
-	res, err := json.Marshal(data)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	// put stats into it
-	if err := stub.PutState("GetInvokeParameters", res); err != nil {
-		return shim.Error(err.Error())
-	}
-	return shim.Success(nil)
-}
-
-func (t *SimpleChaincode) test_GetContractID(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	contractId, _ := stub.GetContractID()
-	return shim.Success(contractId)
-}
-
 func (t *SimpleChaincode) test_PutState(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	if len(args) < 2 {
 		return shim.Error("args:<state key><state value>")
