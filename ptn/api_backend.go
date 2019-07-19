@@ -37,6 +37,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/palletone/go-palletone/consensus/jury"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -252,11 +253,16 @@ func (b *PtnApiBackend) GetContract(addr common.Address) (*ptnjson.ContractJson,
 		return nil, err
 	}
 	cjson := ptnjson.ConvertContract2Json(contract)
-	tpl, err := b.ptn.dag.GetContractTpl(contract.TemplateId)
-	if err != nil {
-		return cjson, nil
+	if addr == syscontract.CreateTokenContractAddress {
+		cjson.Template = ptnjson.GetSysContractTemplate_PRC20()
+	} else {
+
+		tpl, err := b.ptn.dag.GetContractTpl(contract.TemplateId)
+		if err != nil {
+			return cjson, nil
+		}
+		cjson.Template = ptnjson.ConvertContractTemplate2Json(tpl)
 	}
-	cjson.Template = ptnjson.ConvertContractTemplate2Json(tpl)
 	return cjson, nil
 }
 func (b *PtnApiBackend) QueryDbByKey(key []byte) *ptnjson.DbRowJson {
@@ -541,7 +547,6 @@ func (b *PtnApiBackend) GetAllUtxos() ([]*ptnjson.UtxoJson, error) {
 		result = append(result, ujson)
 	}
 	return result, nil
-
 }
 
 func (b *PtnApiBackend) GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson, error) {
@@ -585,9 +590,10 @@ func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, args [][]by
 }
 
 func (b *PtnApiBackend) ContractQuery(contractId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
-	channelId := "palletone"
-	rsp, err := b.ptn.contract.Invoke(rwset.RwM, channelId, contractId, txid, args, timeout)
+	rsp, err := b.ptn.contract.Invoke(rwset.RwM, rwset.ChainId, contractId, txid, args, timeout)
+	rwset.RwM.CloseTxSimulator(rwset.ChainId, txid)
 	rwset.RwM.Close()
+
 	if err != nil {
 		log.Debugf(" err!=nil =====>ContractQuery:contractId[%s]txid[%s]", hex.EncodeToString(contractId), txid)
 		return nil, err

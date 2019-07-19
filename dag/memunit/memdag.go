@@ -747,7 +747,11 @@ func (chain *MemDag) getChainUnit(hash common.Hash) (*ChainTempDb, error) {
 	}
 	return nil, errors.ErrNotFound
 }
-
+func (chain *MemDag) GetLastStableUnitInfo() (common.Hash, uint64) {
+	chain.lock.RLock()
+	defer chain.lock.RUnlock()
+	return chain.stableUnitHash, chain.stableUnitHeight
+}
 func (chain *MemDag) GetLastMainChainUnit() *modules.Unit {
 	chain.lock.RLock()
 	defer chain.lock.RUnlock()

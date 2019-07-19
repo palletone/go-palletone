@@ -5,12 +5,13 @@
 package ptn
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	common "github.com/palletone/go-palletone/common"
 	event "github.com/palletone/go-palletone/common/event"
 	mediatorplugin "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	modules "github.com/palletone/go-palletone/dag/modules"
-	reflect "reflect"
 )
 
 // Mockproducer is a mock of producer interface
@@ -71,10 +72,8 @@ func (mr *MockproducerMockRecorder) SubscribeSigShareEvent(ch interface{}) *gomo
 }
 
 // AddToTBLSRecoverBuf mocks base method
-func (m *Mockproducer) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare []byte) error {
-	ret := m.ctrl.Call(m, "AddToTBLSRecoverBuf", newUnitHash, sigShare)
-	ret0, _ := ret[0].(error)
-	return ret0
+func (m *Mockproducer) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare []byte) {
+	m.ctrl.Call(m, "AddToTBLSRecoverBuf", newUnitHash, sigShare)
 }
 
 // AddToTBLSRecoverBuf indicates an expected call of AddToTBLSRecoverBuf
@@ -94,16 +93,14 @@ func (mr *MockproducerMockRecorder) SubscribeVSSDealEvent(ch interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeVSSDealEvent", reflect.TypeOf((*Mockproducer)(nil).SubscribeVSSDealEvent), ch)
 }
 
-// ProcessVSSDeal mocks base method
-func (m *Mockproducer) ProcessVSSDeal(deal *mediatorplugin.VSSDealEvent) error {
-	ret := m.ctrl.Call(m, "ProcessVSSDeal", deal)
-	ret0, _ := ret[0].(error)
-	return ret0
+// AddToDealBuf mocks base method
+func (m *Mockproducer) AddToDealBuf(deal *mediatorplugin.VSSDealEvent) {
+	m.ctrl.Call(m, "AddToDealBuf", deal)
 }
 
-// ProcessVSSDeal indicates an expected call of ProcessVSSDeal
-func (mr *MockproducerMockRecorder) ProcessVSSDeal(deal interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessVSSDeal", reflect.TypeOf((*Mockproducer)(nil).ProcessVSSDeal), deal)
+// AddToDealBuf indicates an expected call of AddToDealBuf
+func (mr *MockproducerMockRecorder) AddToDealBuf(deal interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddToDealBuf", reflect.TypeOf((*Mockproducer)(nil).AddToDealBuf), deal)
 }
 
 // SubscribeVSSResponseEvent mocks base method
@@ -172,16 +169,4 @@ func (m *Mockproducer) UpdateMediatorsDKG(isRenew bool) {
 // UpdateMediatorsDKG indicates an expected call of UpdateMediatorsDKG
 func (mr *MockproducerMockRecorder) UpdateMediatorsDKG(isRenew interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMediatorsDKG", reflect.TypeOf((*Mockproducer)(nil).UpdateMediatorsDKG), isRenew)
-}
-
-// IsEnabledGroupSign mocks base method
-func (m *Mockproducer) IsEnabledGroupSign() bool {
-	ret := m.ctrl.Call(m, "IsEnabledGroupSign")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsEnabledGroupSign indicates an expected call of IsEnabledGroupSign
-func (mr *MockproducerMockRecorder) IsEnabledGroupSign() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsEnabledGroupSign", reflect.TypeOf((*Mockproducer)(nil).IsEnabledGroupSign))
 }

@@ -6,8 +6,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/core/certficate"
 
 	"time"
+
+	"math/big"
+	"math/rand"
+	"strconv"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -22,10 +29,6 @@ import (
 	"github.com/palletone/go-palletone/ptnjson/walletjson"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/shopspring/decimal"
-	"math/big"
-	"math/rand"
-	"strconv"
-	"strings"
 )
 
 // Start forking command.
@@ -117,7 +120,8 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 	}
 
 	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &LockTime)
-	result, _ := WalletCreateTransaction(arg)
+	result, _ := CreateRawTransaction(arg)
+
 	return result, nil
 }
 func (s *PrivateWalletAPI) buildRawTransferTx(tokenId, from, to string, amount, gasFee decimal.Decimal) (*modules.Transaction, []*modules.UtxoWithOutPoint, error) {
@@ -346,11 +350,7 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 		}
 	}
 
-	bytetxjson, err := json.Marshal(mtx)
-	if err != nil {
-		return "", err
-	}
-	mtxbt, err := rlp.EncodeToBytes(bytetxjson)
+	mtxbt, err := rlp.EncodeToBytes(mtx)
 	if err != nil {
 		return "", err
 	}
@@ -459,24 +459,21 @@ func (s *PrivateWalletAPI) SignRawTransaction(ctx context.Context, params string
 	}
 	return result, err
 }
+
 // walletSendTransaction will add the signed transaction to the transaction pool.
 // The sender is responsible for signing the transaction and using the correct nonce.
-func (s *PublicWalletAPI) SendRawTransaction(ctx context.Context, params string) (common.Hash, error) {
+func (s *PublicWalletAPI) SendRawTransaction(ctx context.Context, signedTxHex string) (common.Hash, error) {
 
-	decoded, err := hex.DecodeString(params)
+	serializedTx, err := hex.DecodeString(signedTxHex)
 	if err != nil {
 		return common.Hash{}, errors.New("Decode Signedtx is invalid")
 	}
-	var btxjson []byte
-	if err := rlp.DecodeBytes(decoded, &btxjson); err != nil {
-		return common.Hash{}, errors.New("RLP Decode To Byte is invalid")
-	}
+
 	tx := &modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
 	}
-	err = json.Unmarshal(btxjson, tx)
-	if err != nil {
-		return common.Hash{}, errors.New("Json Unmarshal To Tx is invalid")
+	if err := rlp.DecodeBytes(serializedTx, tx); err != nil {
+		return common.Hash{}, errors.New("encodedTx decode is invalid")
 	}
 
 	if 0 == len(tx.TxMessages) {
@@ -1159,8 +1156,8 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 	}
 	if Extra != "" {
 		textPayload := new(modules.DataPayload)
-		textPayload.Reference = []byte(asset)
-		textPayload.MainData = []byte(Extra)
+		textPayload.Reference = []byte(Extra)
+		//textPayload.MainData = []byte(asset)
 		rawTx.TxMessages = append(rawTx.TxMessages, modules.NewMessage(modules.APP_DATA, textPayload))
 	}
 	//lockscript
@@ -1317,6 +1314,33 @@ func (s *PublicWalletAPI) GetProofOfExistencesByRef(ctx context.Context, referen
 
 func (s *PublicWalletAPI) GetProofOfExistencesByAsset(ctx context.Context, asset string) ([]*ptnjson.ProofOfExistenceJson, error) {
 	return s.b.GetAssetExistence(asset)
+}
+
+//affiliation  gptn.mediator1
+func (s *PublicWalletAPI) GenCert(addrStr, name, data, roleType, affiliation string) (bool, error) {
+	ks := s.b.GetKeyStore()
+	addr, _ := common.StringToAddress(addrStr)
+	pubKey, err := ks.GetPublicKey(addr)
+	if err != nil {
+		return false, err
+	}
+
+	pub := crypto.P256ToECDSAPub(pubKey)
+	ca := certficate.CertINfo{}
+	cf := certficate.CAConfig{}
+	ca.Address = addrStr
+	ca.Name = name
+	ca.Data = data
+	ca.Type = roleType
+	ca.Affiliation = affiliation
+	ca.Key = pub
+	_, err = certficate.GenCert(ca, cf)
+	if err != nil {
+		return false, err
+	}
+
+	//s.b.ContractInvoke()
+	return true, nil
 }
 
 //好像某个UTXO是被那个交易花费的

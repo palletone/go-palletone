@@ -65,7 +65,7 @@ const Wallet_JS = `
 			name: 'signRawTransaction',
 			call: 'wallet_signRawTransaction',
 			params: 3,
-                        inputFormatter: [null,null, null]
+			inputFormatter: [null,null, null]
 		}),	
                new web3._extend.Method({
 			name: 'sendRlpTransaction',
@@ -139,7 +139,13 @@ const Wallet_JS = `
 			name: 'getStxo',
 			call: 'wallet_getStxo',
 			params: 3
+		}),	
+		new web3._extend.Method({
+			name: 'genCert',
+			call: 'wallet_gencert',
+			params: 3
 		})
+
  	]
  });
  `
