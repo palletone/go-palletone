@@ -143,8 +143,12 @@ const Wallet_JS = `
 			name: 'genCert',
 			call: 'wallet_gencert',
 			params: 3
-		})
-
+		}),
+        new web3._extend.Method({
+            name: 'addBatchTxs',
+            call: 'wallet_addBatchTxs',
+            params: 1,
+        }),
  	]
  });
  `
