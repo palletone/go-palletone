@@ -31,42 +31,53 @@ import (
 func (mp *MediatorPlugin) startVSSProtocol() {
 	log.Debugf("Start completing the VSS protocol.")
 
-	// 处理其他 mediator 的 deals
-	go mp.launchProcessDealLoops()
-
-	// todo albert 处理所有的response
+	// 处理其他 mediator 的 deals, 以及所有 response
+	go mp.launchDealAndRespLoops()
 
 	// todo albert 换届后第一个生产槽的前一个生产间隔开始vss协议
 
 	// 将deal广播给其他节点
 	go mp.broadcastVSSDeals()
 
-	// 开启计时器，删除vss相关缓存
+	// todo albert 开启计时器，删除vss相关缓存, 验证vss是否完成，并开启群签名
 }
 
-func (mp *MediatorPlugin) launchProcessDealLoops() {
+func (mp *MediatorPlugin) launchDealAndRespLoops() {
 	lams := mp.GetLocalActiveMediators()
 
 	for _, localMed := range lams {
 		go mp.processDealLoop(localMed)
+		// todo albert 处理所有的response
 	}
 }
 
 func (mp *MediatorPlugin) processDealLoop(localMed common.Address) {
+	log.Debugf("the local active mediator(%v) run the loop to deal", localMed.Str())
 
+	if _, ok := mp.dealBuf[localMed]; !ok {
+		aSize := mp.dag.ActiveMediatorsCount()
+		mp.dealBuf[localMed] = make(chan *dkg.Deal, aSize-1)
+	}
+
+	dealCh := mp.dealBuf[localMed]
+
+	for {
+		select {
+		case <-mp.quit:
+			return
+			// todo Albert 超过期限后也要删除
+		case deal := <-dealCh:
+			go mp.processVSSDeal(localMed, deal)
+		}
+	}
 }
 
-func (mp *MediatorPlugin) processVSSDeal(dealEvent *VSSDealEvent) {
-	dag := mp.dag
-	localMed := dag.GetActiveMediatorAddr(int(dealEvent.DstIndex))
-
+func (mp *MediatorPlugin) processVSSDeal(localMed common.Address, deal *dkg.Deal) {
 	dkgr, err := mp.getLocalActiveDKG(localMed)
 	if err != nil {
 		log.Debugf(err.Error())
 		return
 	}
-
-	deal := dealEvent.Deal
 
 	resp, err := dkgr.ProcessDeal(deal)
 	if err != nil {
@@ -74,7 +85,7 @@ func (mp *MediatorPlugin) processVSSDeal(dealEvent *VSSDealEvent) {
 		return
 	}
 
-	vrfrMed := dag.GetActiveMediatorAddr(int(deal.Index))
+	vrfrMed := mp.dag.GetActiveMediatorAddr(int(deal.Index))
 	log.Debugf("the mediator(%v) received the vss deal from the mediator(%v)",
 		localMed.Str(), vrfrMed.Str())
 

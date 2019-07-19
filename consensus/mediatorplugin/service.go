@@ -61,6 +61,7 @@ type iDag interface {
 	HeadUnitNum() uint64
 	GetUnitByHash(common.Hash) (*modules.Unit, error)
 
+	GetActiveMediators() []common.Address
 	IsActiveMediator(add common.Address) bool
 	//IsSynced() bool
 	//ValidateUnitExceptGroupSig(unit *modules.Unit) error
@@ -119,9 +120,10 @@ type MediatorPlugin struct {
 	precedingDKGs map[common.Address]*dkg.DistKeyGenerator
 
 	// dkg 完成 vss 协议相关
-	dealBuf map[common.Address]chan *dkg.Deal
-	// todo 待加锁，防止写冲突
-	respBuf map[common.Address]map[common.Address]chan *dkg.Response
+	dealBuf     map[common.Address]chan *dkg.Deal
+	respBuf     map[common.Address]map[common.Address]chan *dkg.Response
+	vssBufLock  *sync.RWMutex
+	clearVSSBuf chan struct{}
 
 	// 广播和处理 vss 协议 deal
 	vssDealFeed  event.Feed
@@ -173,7 +175,7 @@ func (mp *MediatorPlugin) UpdateMediatorsDKG(isRenew bool) {
 		return
 	}
 
-	// 1. 保存旧的 dkg ， 用于之前的unit群签名确认
+	// 保存旧的 dkg ， 用于之前的unit群签名确认
 	mp.precedingDKGs = mp.activeDKGs
 
 	// 判断是否重新 初始化DKG 和 VSS 协议
@@ -182,14 +184,14 @@ func (mp *MediatorPlugin) UpdateMediatorsDKG(isRenew bool) {
 	//	return
 	//}
 
-	// 2. 初始化当前节点控制的活跃mediator对应的DKG.
-	mp.newActiveMediatorsDKG()
+	// 初始化当前节点控制的活跃mediator对应的DKG, 以及初始化完成vss相关的buf
+	mp.newDKGAndInitVSSBuf()
 
-	// 3. 开始完成 vss 协议
+	// 开始完成 vss 协议
 	go mp.startVSSProtocol()
 }
 
-func (mp *MediatorPlugin) newActiveMediatorsDKG() {
+func (mp *MediatorPlugin) newDKGAndInitVSSBuf() {
 	dag := mp.dag
 
 	lams := mp.GetLocalActiveMediators()
@@ -198,6 +200,9 @@ func (mp *MediatorPlugin) newActiveMediatorsDKG() {
 
 	lamc := len(lams)
 	mp.activeDKGs = make(map[common.Address]*dkg.DistKeyGenerator, lamc)
+
+	ams := dag.GetActiveMediators()
+	aSize := len(ams)
 
 	for _, localMed := range lams {
 		initSec := mp.mediators[localMed].InitPrivKey
@@ -209,18 +214,15 @@ func (mp *MediatorPlugin) newActiveMediatorsDKG() {
 		}
 
 		mp.activeDKGs[localMed] = dkgr
-	}
-}
+		mp.vssBufLock.RLock()
 
-// todo Albert 待删除
-func (mp *MediatorPlugin) initVSSBuf(localMed common.Address) {
-	aSize := mp.dag.ActiveMediatorsCount()
-	mp.dealBuf[localMed] = make(chan *dkg.Deal, aSize-1)
-	mp.respBuf[localMed] = make(map[common.Address]chan *dkg.Response, aSize)
+		mp.dealBuf[localMed] = make(chan *dkg.Deal, aSize-1)
+		mp.respBuf[localMed] = make(map[common.Address]chan *dkg.Response, aSize)
+		for _, vrfrMed := range ams {
+			mp.respBuf[localMed][vrfrMed] = make(chan *dkg.Response, aSize-1)
+		}
 
-	for i := 0; i < aSize; i++ {
-		vrfrMed := mp.dag.GetActiveMediatorAddr(i)
-		mp.respBuf[localMed][vrfrMed] = make(chan *dkg.Response, aSize-1)
+		mp.vssBufLock.RUnlock()
 	}
 }
 
@@ -329,7 +331,6 @@ func NewMediatorPlugin(ctx *node.ServiceContext, cfg *Config, ptn PalletOne, dag
 	mp.initLocalConfigMediator(cfg.Mediators, ctx.AccountManager)
 
 	if mp.groupSigningEnabled {
-		//mp.newActiveMediatorsDKG()
 		mp.initGroupSignBuf()
 	}
 
@@ -369,6 +370,8 @@ func (mp *MediatorPlugin) initGroupSignBuf() {
 
 	mp.dealBuf = make(map[common.Address]chan *dkg.Deal, lamc)
 	mp.respBuf = make(map[common.Address]map[common.Address]chan *dkg.Response, lamc)
+	mp.clearVSSBuf = make(chan struct{})
+	mp.vssBufLock = new(sync.RWMutex)
 
 	mp.toTBLSSignBuf = make(map[common.Address]*sync.Map, lamc)
 	mp.toTBLSRecoverBuf = make(map[common.Address]map[common.Hash]*sigShareSet, lamc)

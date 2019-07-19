@@ -43,6 +43,7 @@ func NewGlobalPropBase() GlobalPropBase {
 type GlobalProperty struct {
 	GlobalPropBase
 
+	// todo albert 待重构为数组，提高效率
 	ActiveJuries       map[common.Address]bool // 当前活跃Jury集合
 	ActiveMediators    map[common.Address]bool // 当前活跃 mediator 集合；每个维护间隔更新一次
 	PrecedingMediators map[common.Address]bool // 上一届 mediator
