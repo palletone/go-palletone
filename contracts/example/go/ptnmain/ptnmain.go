@@ -136,7 +136,7 @@ func getMapAddr(stub shim.ChaincodeStubInterface) (string, error) {
 
 func _payoutPTN(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//params check
-	if len(args) < 2 {
+	if len(args) < 1 {
 		return shim.Error("need 1  args (transferTxID)")
 	}
 
