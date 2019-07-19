@@ -133,19 +133,26 @@ func (p *Processor) selectElectionInf(local []modules.ElectionInf, recv []module
 		return nil, false
 	}
 	eles := make([]modules.ElectionInf, 0)
-	if len(local) >= num {  //use local
+	if len(local) >= num { //use local
 		eles = local[:num]
 	} else {
 		less := num - len(local)
 		eles = append(eles, local...)
 		for i := 0; i < less; i++ {
+			ok := true
 			for _, l := range local {
-				if !bytes.Equal(l.AddrHash[:], recv[i].AddrHash[:]) {
-					eles = append(eles, recv[i])
+				if bytes.Equal(l.AddrHash[:], recv[i].AddrHash[:]) {
+					ok = false
+					break
 				}
 			}
+			if ok {
+				log.Debug("selectElectionInf", "i", i, "add ele", recv[i].AddrHash.String())
+				eles = append(eles, recv[i])
+			}
 		}
-		if len(eles) < num{
+		if len(eles) < num {
+			log.Debug("selectElectionInf", "len(eles):", len(eles), "< num:", num)
 			return nil, false
 		}
 	}
