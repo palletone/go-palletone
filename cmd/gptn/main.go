@@ -181,7 +181,7 @@ func init() {
 		nodeInfoCommand,          // 获取本节点信息
 		timestampCommand,         // 获取指定时间的时间戳
 		mediatorCommand,          // mediator 管理
-		certCommand,              //证书管理
+		//certCommand,              //证书管理
 
 	}
 	sort.Sort(cli.CommandsByName(app.Commands))
