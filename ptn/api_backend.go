@@ -37,6 +37,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/palletone/go-palletone/consensus/jury"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -252,11 +253,16 @@ func (b *PtnApiBackend) GetContract(addr common.Address) (*ptnjson.ContractJson,
 		return nil, err
 	}
 	cjson := ptnjson.ConvertContract2Json(contract)
-	tpl, err := b.ptn.dag.GetContractTpl(contract.TemplateId)
-	if err != nil {
-		return cjson, nil
+	if addr == syscontract.CreateTokenContractAddress {
+		cjson.Template = ptnjson.GetSysContractTemplate_PRC20()
+	} else {
+
+		tpl, err := b.ptn.dag.GetContractTpl(contract.TemplateId)
+		if err != nil {
+			return cjson, nil
+		}
+		cjson.Template = ptnjson.ConvertContractTemplate2Json(tpl)
 	}
-	cjson.Template = ptnjson.ConvertContractTemplate2Json(tpl)
 	return cjson, nil
 }
 func (b *PtnApiBackend) QueryDbByKey(key []byte) *ptnjson.DbRowJson {
