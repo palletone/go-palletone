@@ -167,7 +167,7 @@ func (pm *ProtocolManager) transmitVSSDeal(deal *mp.VSSDealEvent) {
 	node := pm.dag.GetActiveMediatorNode(int(deal.DstIndex))
 	peer, self := pm.GetPeer(node)
 	if self {
-		pm.producer.AddToDealBuf(deal)
+		go pm.producer.AddToDealBuf(deal)
 		return
 	}
 

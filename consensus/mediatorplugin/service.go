@@ -61,6 +61,7 @@ type iDag interface {
 	HeadUnitNum() uint64
 	GetUnitByHash(common.Hash) (*modules.Unit, error)
 
+	GetGlobalProp() *modules.GlobalProperty
 	GetActiveMediators() []common.Address
 	IsActiveMediator(add common.Address) bool
 	//IsSynced() bool
@@ -120,10 +121,10 @@ type MediatorPlugin struct {
 	precedingDKGs map[common.Address]*dkg.DistKeyGenerator
 
 	// dkg 完成 vss 协议相关
-	dealBuf     map[common.Address]chan *dkg.Deal
-	respBuf     map[common.Address]map[common.Address]chan *dkg.Response
-	vssBufLock  *sync.RWMutex
-	clearVSSBuf chan struct{}
+	dealBuf    map[common.Address]chan *dkg.Deal
+	respBuf    map[common.Address]map[common.Address]chan *dkg.Response
+	vssBufLock *sync.RWMutex
+	stopVSS    chan struct{}
 
 	// 广播和处理 vss 协议 deal
 	vssDealFeed  event.Feed
@@ -165,64 +166,6 @@ func (mp *MediatorPlugin) APIs() []rpc.API {
 			Service:   NewPrivateMediatorAPI(mp),
 			Public:    false,
 		},
-	}
-}
-
-func (mp *MediatorPlugin) UpdateMediatorsDKG(isRenew bool) {
-	log.Debugf("UpdateMediatorsDKG when after performChainMaintenance")
-
-	if !mp.groupSigningEnabled {
-		return
-	}
-
-	// 保存旧的 dkg ， 用于之前的unit群签名确认
-	mp.precedingDKGs = mp.activeDKGs
-
-	// 判断是否重新 初始化DKG 和 VSS 协议
-	// todo albert 待优化
-	//if !isRenew {
-	//	return
-	//}
-
-	// 初始化当前节点控制的活跃mediator对应的DKG, 以及初始化完成vss相关的buf
-	mp.newDKGAndInitVSSBuf()
-
-	// 开始完成 vss 协议
-	go mp.startVSSProtocol()
-}
-
-func (mp *MediatorPlugin) newDKGAndInitVSSBuf() {
-	dag := mp.dag
-
-	lams := mp.GetLocalActiveMediators()
-	initPubs := dag.GetActiveMediatorInitPubs()
-	curThreshold := dag.ChainThreshold()
-
-	lamc := len(lams)
-	mp.activeDKGs = make(map[common.Address]*dkg.DistKeyGenerator, lamc)
-
-	ams := dag.GetActiveMediators()
-	aSize := len(ams)
-
-	for _, localMed := range lams {
-		initSec := mp.mediators[localMed].InitPrivKey
-
-		dkgr, err := dkg.NewDistKeyGenerator(mp.suite, initSec, initPubs, curThreshold)
-		if err != nil {
-			log.Debugf(err.Error())
-			continue
-		}
-
-		mp.activeDKGs[localMed] = dkgr
-		mp.vssBufLock.RLock()
-
-		mp.dealBuf[localMed] = make(chan *dkg.Deal, aSize-1)
-		mp.respBuf[localMed] = make(map[common.Address]chan *dkg.Response, aSize)
-		for _, vrfrMed := range ams {
-			mp.respBuf[localMed][vrfrMed] = make(chan *dkg.Response, aSize-1)
-		}
-
-		mp.vssBufLock.RUnlock()
 	}
 }
 
@@ -370,10 +313,33 @@ func (mp *MediatorPlugin) initGroupSignBuf() {
 
 	mp.dealBuf = make(map[common.Address]chan *dkg.Deal, lamc)
 	mp.respBuf = make(map[common.Address]map[common.Address]chan *dkg.Response, lamc)
-	mp.clearVSSBuf = make(chan struct{})
+	mp.stopVSS = make(chan struct{})
 	mp.vssBufLock = new(sync.RWMutex)
 
 	mp.toTBLSSignBuf = make(map[common.Address]*sync.Map, lamc)
 	mp.toTBLSRecoverBuf = make(map[common.Address]map[common.Hash]*sigShareSet, lamc)
 	mp.recoverBufLock = new(sync.RWMutex)
+}
+
+func (mp *MediatorPlugin) UpdateMediatorsDKG(isRenew bool) {
+	log.Debugf("UpdateMediatorsDKG when after performChainMaintenance")
+
+	if !mp.groupSigningEnabled {
+		return
+	}
+
+	// 保存旧的 dkg ， 用于之前的unit群签名确认
+	mp.precedingDKGs = mp.activeDKGs
+
+	// 判断是否重新 初始化DKG 和 VSS 协议
+	// todo albert 待优化
+	//if !isRenew {
+	//	return
+	//}
+
+	// 初始化当前节点控制的活跃mediator对应的DKG, 以及初始化完成vss相关的buf
+	mp.newDKGAndInitVSSBuf()
+
+	// 开始完成 vss 协议
+	go mp.startVSSProtocol()
 }
