@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"math/big"
+	"strings"
 )
 
 type PTNMain struct {
@@ -77,8 +78,8 @@ func _setOwner(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error("need 1 args (PTNAddr)")
 	}
 	_, err := getOwner(stub)
-	if err != nil {
-		return shim.Error(err.Error())
+	if err == nil {
+		return shim.Error("Owner has been set")
 	}
 	err = stub.PutState(symbolsOwner, []byte(args[0]))
 	if err != nil {
@@ -155,7 +156,7 @@ func _payoutPTN(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(err.Error())
 	}
 	//check contract address, must be ptn erc20 contract address
-	if txResult.ContractAddr != PTN_ERC20Addr {
+	if strings.ToLower(txResult.ContractAddr) != PTN_ERC20Addr {
 		return shim.Error("The tx is't PTN contract")
 	}
 	//checke receiver, must be ptnmap contract address
