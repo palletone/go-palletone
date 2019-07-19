@@ -26,11 +26,9 @@ CcinvokePass normal
     Set Suite Variable    ${geneAdd}    ${geneAdd}
     ${ccList}    Create List    ${crtTokenMethod}    ${note}    ${preTokenId}    ${SeqenceToken}    ${721TokenAmount}
     ...    ${721MetaBefore}    ${geneAdd}
-    ${resp}    Request CcinvokePass    ${commonResultCode}    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
+    ${resp}    normalCcinvokePass    ${commonResultCode}    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
     ...    ${721ContractId}    ${ccList}
-    ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
-    ${jsonRes}    To Json    ${jsonRes}
-    [Return]    ${jsonRes['result']}
+    [Return]    ${resp}
 
 Request getbalance before create token
     #${PTN1}    ${result1}    normalGetBalance    ${geneAdd}
@@ -42,11 +40,9 @@ Request getbalance before create token
 
 Spply token of 721 contract
     ${ccList}    Create List    ${supplyTokenMethod}    ${preTokenId}    ${721TokenAmount}    ${721MetaAfter}
-    ${resp}    Request CcinvokePass    ${commonResultCode}    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
+    ${resp}    normalCcinvokePass    ${commonResultCode}    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
     ...    ${721ContractId}    ${ccList}
-    ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
-    ${jsonRes}    To Json    ${jsonRes}
-    [Return]    ${jsonRes['result']}
+    [Return]    ${resp}
 
 Calculate gain
     ${PTNGAIN}    Evaluate    ${PTNAmount}+${PTNPoundage}

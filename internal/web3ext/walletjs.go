@@ -56,20 +56,24 @@ const Wallet_JS = `
 			call: 'wallet_createRawTransaction',
 			params: 4
 		}),
-	        new web3._extend.Method({
-			name: 'sendRawTransaction',
-			call: 'wallet_sendRawTransaction',
-			params: 1
+        new web3._extend.Method({
+		    name: 'sendRawTransaction',
+		    call: 'wallet_sendRawTransaction',
+		    params: 1
 		}),
-	        new web3._extend.Method({
-			name: 'signRawTransaction',
-			call: 'wallet_signRawTransaction',
-			params: 3,
-			inputFormatter: [null,null, null]
+        new web3._extend.Method({
+		    name: 'signRawTransaction',
+		    call: 'wallet_signRawTransaction',
+		    params: 3
 		}),	
-               new web3._extend.Method({
-			name: 'sendRlpTransaction',
-			call: 'wallet_sendRlpTransaction',
+        new web3._extend.Method({
+		    name: 'sendRlpTransaction',
+		    call: 'wallet_sendRlpTransaction',
+		    params: 1
+		}),
+		new web3._extend.Method({
+			name: 'sendJsonTransaction',
+			call: 'wallet_sendJsonTransaction',
 			params: 1
 		}),
 		new web3._extend.Method({
@@ -77,7 +81,6 @@ const Wallet_JS = `
 			call: 'wallet_getPtnTestCoin',
 			params: 5
 		}),
-		
 		new web3._extend.Method({
 			name: 'transferToken',
 			call: 'wallet_transferToken',

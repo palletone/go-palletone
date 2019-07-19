@@ -528,6 +528,44 @@ func (s *PublicWalletAPI) SendRlpTransaction(ctx context.Context, encodedTx stri
 	return submitTransaction(ctx, s.b, tx)
 }
 
+func (s *PublicWalletAPI) SendJsonTransaction(ctx context.Context, params string) (common.Hash, error) {
+
+	decoded, err := hex.DecodeString(params)
+	if err != nil {
+		return common.Hash{}, errors.New("Decode Signedtx is invalid")
+	}
+	var btxjson []byte
+	if err := rlp.DecodeBytes(decoded, &btxjson); err != nil {
+		return common.Hash{}, errors.New("RLP Decode To Byte is invalid")
+	}
+	tx := &modules.Transaction{
+		TxMessages: make([]*modules.Message, 0),
+	}
+	err = json.Unmarshal(btxjson, tx)
+	if err != nil {
+		return common.Hash{}, errors.New("Json Unmarshal To Tx is invalid")
+	}
+
+	if 0 == len(tx.TxMessages) {
+		return common.Hash{}, errors.New("Invalid Tx, message length is 0")
+	}
+	var outAmount uint64
+	var outpoint_txhash common.Hash
+	for _, msg := range tx.TxMessages {
+		payload, ok := msg.Payload.(*modules.PaymentPayload)
+		if ok == false {
+			continue
+		}
+
+		for _, txout := range payload.Outputs {
+			outAmount += txout.Value
+		}
+		log.Info("payment info", "info", payload)
+		outpoint_txhash = payload.Inputs[0].PreviousOutPoint.TxHash
+	}
+	log.Infof("Tx outpoint tx hash:%s", outpoint_txhash.String())
+	return submitTransaction(ctx, s.b, tx)
+}
 func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params string, password string) (common.Hash, error) {
 
 	var proofTransactionGenParams ptnjson.ProofTransactionGenParams
@@ -1157,7 +1195,7 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 	if Extra != "" {
 		textPayload := new(modules.DataPayload)
 		textPayload.Reference = []byte(Extra)
-		//textPayload.MainData = []byte(asset)
+		textPayload.MainData = []byte(asset) //MainData不能为空
 		rawTx.TxMessages = append(rawTx.TxMessages, modules.NewMessage(modules.APP_DATA, textPayload))
 	}
 	//lockscript
