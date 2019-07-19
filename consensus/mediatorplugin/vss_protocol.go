@@ -98,7 +98,26 @@ func (mp *MediatorPlugin) completeVSSProtocol() {
 	mp.vssBufLock.RUnlock()
 
 	// 验证vss是否完成，并开启群签名
+	go mp.launchGroupSignLoops()
+}
 
+func (mp *MediatorPlugin) launchGroupSignLoops() {
+	lams := mp.GetLocalActiveMediators()
+
+	for _, localMed := range lams {
+		dkgr, err := mp.getLocalActiveDKG(localMed)
+		if err != nil {
+			log.Debugf(err.Error())
+			continue
+		}
+
+		if dkgr.Certified() {
+			log.Debugf("the mediator(%v)'s DKG verification passed", localMed.Str())
+
+			go mp.signUnitsTBLS(localMed)
+			go mp.recoverUnitsTBLS(localMed)
+		}
+	}
 }
 
 func (mp *MediatorPlugin) launchDealAndRespLoops() {
@@ -145,15 +164,15 @@ func (mp *MediatorPlugin) processVSSDeal(localMed common.Address, deal *dkg.Deal
 		return
 	}
 
+	vrfrMed := mp.dag.GetActiveMediatorAddr(int(deal.Index))
+	log.Debugf("the mediator(%v) received the vss deal from the mediator(%v)",
+		localMed.Str(), vrfrMed.Str())
+
 	resp, err := dkgr.ProcessDeal(deal)
 	if err != nil {
 		log.Debugf("dkg: cannot process own deal: " + err.Error())
 		return
 	}
-
-	vrfrMed := mp.dag.GetActiveMediatorAddr(int(deal.Index))
-	log.Debugf("the mediator(%v) received the vss deal from the mediator(%v)",
-		localMed.Str(), vrfrMed.Str())
 
 	if resp.Response.Status != vss.StatusApproval {
 		err = fmt.Errorf("DKG: own deal gave a complaint: %v", localMed.String())
@@ -167,8 +186,6 @@ func (mp *MediatorPlugin) processVSSDeal(localMed common.Address, deal *dkg.Deal
 	go mp.vssResponseFeed.Send(respEvent)
 	log.Debugf("the mediator(%v) broadcast the vss response to the mediator(%v)",
 		localMed.Str(), vrfrMed.Str())
-
-	return
 }
 
 func (mp *MediatorPlugin) broadcastVSSDeals() {
@@ -209,14 +226,18 @@ func (mp *MediatorPlugin) AddToDealBuf(dealEvent *VSSDealEvent) {
 		localMed.Str(), vrfrMed.Str())
 
 	mp.vssBufLock.RLock()
-	defer mp.vssBufLock.RUnlock()
 	dealCh, ok := mp.dealBuf[localMed]
-
 	if !ok {
 		log.Debugf("the mediator(%v)'s dealBuf is not initialized", localMed.Str())
 		return
+	} else {
+		dealCh <- deal
 	}
-	dealCh <- deal
+	mp.vssBufLock.RUnlock()
+}
+
+func (mp *MediatorPlugin) SubscribeVSSResponseEvent(ch chan<- VSSResponseEvent) event.Subscription {
+	return mp.vssResponseScope.Track(mp.vssResponseFeed.Subscribe(ch))
 }
 
 func (mp *MediatorPlugin) AddToResponseBuf(respEvent *VSSResponseEvent) {
@@ -229,7 +250,7 @@ func (mp *MediatorPlugin) AddToResponseBuf(respEvent *VSSResponseEvent) {
 	for _, localMed := range lams {
 		dag := mp.dag
 
-		//ignore the message from myself
+		// ignore the message from myself
 		srcIndex := resp.Response.Index
 		srcMed := dag.GetActiveMediatorAddr(int(srcIndex))
 		if srcMed == localMed {
@@ -240,71 +261,31 @@ func (mp *MediatorPlugin) AddToResponseBuf(respEvent *VSSResponseEvent) {
 		log.Debugf("the mediator(%v) received the vss response from the mediator(%v) to the mediator(%v)",
 			localMed.Str(), srcMed.Str(), vrfrMed.Str())
 
-		if _, ok := mp.respBuf[localMed][vrfrMed]; !ok {
+		mp.vssBufLock.RLock()
+		respCh, ok := mp.respBuf[localMed][vrfrMed]
+		if !ok {
 			log.Debugf("the mediator(%v)'s respBuf corresponding the mediator(%v) is not initialized",
 				localMed.Str(), vrfrMed.Str())
+		} else {
+			respCh <- resp
 		}
-		mp.respBuf[localMed][vrfrMed] <- resp
+		mp.vssBufLock.RUnlock()
 	}
-}
-
-func (mp *MediatorPlugin) SubscribeVSSResponseEvent(ch chan<- VSSResponseEvent) event.Subscription {
-	return mp.vssResponseScope.Track(mp.vssResponseFeed.Subscribe(ch))
 }
 
 func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) {
-	dkgr, err := mp.getLocalActiveDKG(localMed)
-	if err != nil {
-		log.Debugf(err.Error())
-		return
-	}
-
-	respAmount := mp.dag.ActiveMediatorsCount() - 1
-	respCount := 0
-	// localMed 对 vrfrMed 的 response 在 ProcessDeal 生成 response 时 自动处理了
-	if vrfrMed != localMed {
-		respCount++
-	}
-
-	processResp := func(resp *dkg.Response) bool {
-		jstf, err := dkgr.ProcessResponse(resp)
-		if err != nil {
-			log.Debugf(err.Error())
-			return false
-		}
-
-		if jstf != nil {
-			log.Debugf("DKG: wrong Process Response: %v", localMed.String())
-			return false
-		}
-
-		return true
-	}
-
-	isFinishedAndCertified := func() (finished, certified bool) {
-		respCount++
-
-		if respCount == respAmount-1 {
-			finished = true
-
-			if dkgr.Certified() {
-				log.Debugf("the mediator(%v)'s DKG verification passed", localMed.Str())
-
-				certified = true
-			}
-		}
-
-		return
-	}
-
-	if _, ok := mp.respBuf[localMed][vrfrMed]; !ok {
-		log.Debugf("the mediator(%v)'s respBuf corresponding the mediator(%v) is not initialized",
-			localMed.Str(), vrfrMed.Str())
-	}
-
 	log.Debugf("the mediator(%v) run the loop to process response regarding the mediator(%v)",
 		localMed.Str(), vrfrMed.Str())
-	respCh := mp.respBuf[localMed][vrfrMed]
+
+	mp.vssBufLock.Lock()
+	respCh, ok := mp.respBuf[localMed][vrfrMed]
+	mp.vssBufLock.Unlock()
+
+	if !ok {
+		log.Debugf("the mediator(%v)'s respBuf corresponding the mediator(%v) is not initialized",
+			localMed.Str(), vrfrMed.Str())
+		return
+	}
 
 	for {
 		select {
@@ -313,20 +294,26 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 		case <-mp.stopVSS:
 			return
 		case resp := <-respCh:
-			processResp(resp)
-			finished, certified := isFinishedAndCertified()
-			if finished {
-				delete(mp.respBuf[localMed], vrfrMed)
-
-				if certified {
-					go mp.signUnitsTBLS(localMed)
-					go mp.recoverUnitsTBLS(localMed)
-
-					//delete(mp.respBuf, localMed)
-				}
-
-				return
-			}
+			go mp.processVSSResp(localMed, resp)
 		}
+	}
+}
+
+func (mp *MediatorPlugin) processVSSResp(localMed common.Address, resp *dkg.Response) {
+	dkgr, err := mp.getLocalActiveDKG(localMed)
+	if err != nil {
+		log.Debugf(err.Error())
+		return
+	}
+
+	jstf, err := dkgr.ProcessResponse(resp)
+	if err != nil {
+		log.Debugf(err.Error())
+		return
+	}
+
+	if jstf != nil {
+		log.Debugf("DKG: wrong Process Response: %v", localMed.String())
+		return
 	}
 }

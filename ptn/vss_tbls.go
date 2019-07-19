@@ -177,7 +177,7 @@ func (pm *ProtocolManager) transmitVSSDeal(deal *mp.VSSDealEvent) {
 
 	err := peer.SendVSSDeal(deal)
 	if err != nil {
-		log.Debug(err.Error())
+		log.Debugf(err.Error())
 	}
 }
 
@@ -198,7 +198,6 @@ func (self *ProtocolManager) vssResponseBroadcastLoop() {
 // @author Albert·Gou
 func (pm *ProtocolManager) broadcastVssResp(resp *mp.VSSResponseEvent) {
 	peers := pm.GetActiveMediatorPeers()
-	//peers := pm.GetTransitionPeers()
 	for _, peer := range peers {
 		if peer == nil { // 此时为本节点
 			go pm.producer.AddToResponseBuf(resp)
@@ -207,7 +206,7 @@ func (pm *ProtocolManager) broadcastVssResp(resp *mp.VSSResponseEvent) {
 
 		err := peer.SendVSSResponse(resp)
 		if err != nil {
-			log.Info(err.Error())
+			log.Debugf(err.Error())
 		}
 	}
 }

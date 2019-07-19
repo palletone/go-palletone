@@ -191,7 +191,7 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 func (mp *MediatorPlugin) launchProduction() {
 	// 1. 判断是否满足生产unit的条件，主要判断本节点是否控制至少一个mediator账户
 	if len(mp.mediators) == 0 {
-		log.Debugf("No mediators configured! Please add mediator and private keys to configuration.")
+		log.Debugf("No mediators configured! Please add mediator(s) to config file, and reboot process")
 	} else {
 		// 2. 开启循环生产计划
 		log.Infof("Launching unit production for %v mediators.", len(mp.mediators))
@@ -245,7 +245,7 @@ func RegisterMediatorPluginService(stack *node.Node, cfg *Config) {
 }
 
 func NewMediatorPlugin(ctx *node.ServiceContext, cfg *Config, ptn PalletOne, dag iDag) (*MediatorPlugin, error) {
-	log.Debugf("mediator plugin initialize begin")
+	log.Infof("mediator plugin initialize begin")
 
 	if ptn == nil || dag == nil || cfg == nil {
 		err := "pointer parameters of NewMediatorPlugin are nil!"
@@ -295,15 +295,15 @@ func (mp *MediatorPlugin) initLocalConfigMediator(mcs []*MediatorConf, am *accou
 		// 解锁本地配置的mediator账户
 		err := ks.Unlock(accounts.Account{Address: addr}, medAcc.Password)
 		if err != nil {
-			log.Debugf("fail to unlock the mediator(%v), error: %v", medConf.Address, err.Error())
+			log.Infof("fail to unlock the mediator(%v), error: %v", medConf.Address, err.Error())
 			continue
 		}
 
-		log.Debugf("this node control mediator account address: %v", medConf.Address)
+		log.Infof("this node control mediator account address: %v", medConf.Address)
 		mas[addr] = medAcc
 	}
 
-	log.Debugf("This node controls %v mediators.", len(mas))
+	log.Infof("This node controls %v mediators.", len(mas))
 	mp.mediators = mas
 }
 
