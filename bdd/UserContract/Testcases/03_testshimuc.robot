@@ -82,9 +82,10 @@ Stop testshimuc contract
 *** Keywords ***
 User get invoke info
     [Arguments]    ${args}
-    ${args}=    Create List    testGetInvokeInfo    ${args}
+    ${newArgs}=    Create List    testGetInvokeInfo
+    ${newArgs}=    Combine Lists    ${newArgs}    ${args}
     ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
-    ...    ${args}
+    ...    ${newArgs}
     ${result}=    Get From Dictionary    ${respJson}    result
     ${reqId}=    Get From Dictionary    ${result}    reqId
     ${contractId}=    Get From Dictionary    ${result}    ContractId
@@ -96,29 +97,29 @@ Check all invoke info
     # GetStringArgs
     ${resMsg}=    To Json    ${resMsg}
     Dictionary Should Contain    ${resMsg}    GetArgs
-    ${GetArgs} =    Get From Dictioanry     ${resMsg}    GetArgs
+    ${GetArgs} =    Get From Dictioanry    ${resMsg}    GetArgs
     Dictionary Should Contain    ${resMsg}    GetStringArgs
-    ${GetStringArgs} =    Get From Dictioanry     ${resMsg}    GetStringArgs
+    ${GetStringArgs} =    Get From Dictioanry    ${resMsg}    GetStringArgs
     Dictionary Should Contain    ${resMsg}    GetFunctionAndParameters
-    ${GetFunctionAndParameters} =    Get From Dictioanry     ${resMsg}    GetFunctionAndParameters
+    ${GetFunctionAndParameters} =    Get From Dictioanry    ${resMsg}    GetFunctionAndParameters
     Dictionary Should Contain    ${resMsg}    GetArgsSlice
-    ${GetArgsSlice} =    Get From Dictioanry     ${resMsg}    GetArgsSlice
+    ${GetArgsSlice} =    Get From Dictioanry    ${resMsg}    GetArgsSlice
     Dictionary Should Contain    ${resMsg}    GetTxID
-    ${GetTxID} =    Get From Dictioanry     ${resMsg}    GetTxID
+    ${GetTxID} =    Get From Dictioanry    ${resMsg}    GetTxID
     Dictionary Should Contain    ${resMsg}    GetChannelID
-    ${GetChannelID} =    Get From Dictioanry     ${resMsg}    GetChannelID
+    ${GetChannelID} =    Get From Dictioanry    ${resMsg}    GetChannelID
     Dictionary Should Contain    ${resMsg}    GetTxTimestamp
-    ${GetTxTimestamp} =    Get From Dictioanry     ${resMsg}    GetTxTimestamp
+    ${GetTxTimestamp} =    Get From Dictioanry    ${resMsg}    GetTxTimestamp
     Dictionary Should Contain    ${resMsg}    GetInvokeAddress
-    ${GetInvokeAddress} =    Get From Dictioanry     ${resMsg}    GetInvokeAddress
+    ${GetInvokeAddress} =    Get From Dictioanry    ${resMsg}    GetInvokeAddress
     Dictionary Should Contain    ${resMsg}    GetInvokeTokens
-    ${GetInvokeTokens} =    Get From Dictioanry     ${resMsg}    GetInvokeTokens
+    ${GetInvokeTokens} =    Get From Dictioanry    ${resMsg}    GetInvokeTokens
     Dictionary Should Contain    ${resMsg}    GetInvokeFees
-    ${GetInvokeFees} =    Get From Dictioanry     ${resMsg}    GetInvokeFees
+    ${GetInvokeFees} =    Get From Dictioanry    ${resMsg}    GetInvokeFees
     Dictionary Should Contain    ${resMsg}    GetContractID
-    ${GetContractID} =    Get From Dictioanry     ${resMsg}    GetContractID
+    ${GetContractID} =    Get From Dictioanry    ${resMsg}    GetContractID
     Dictionary Should Contain    ${resMsg}    GetInvokeParameters
-    ${GetInvokeParameters} =    Get From Dictioanry     ${resMsg}    GetInvokeParameters
+    ${GetInvokeParameters} =    Get From Dictioanry    ${resMsg}    GetInvokeParameters
 
 User define token
     [Arguments]    ${name}    ${symbole}    ${decimal}    ${amount}

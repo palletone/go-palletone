@@ -79,8 +79,6 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 }
 
 func (t *SimpleChaincode) test_GetInvokeInfo(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	// GetArgs return args in ChaincodeStub
-	// invokeInfo, funcName, function params
 	resMap := map[string]interface{}{}
 	// getArgs，调用参数列表，byte类型
 	newArgs := stub.GetArgs()
@@ -186,7 +184,7 @@ func (t *SimpleChaincode) test_GetInvokeInfo(stub shim.ChaincodeStubInterface, a
 	resMap["GetInvokeParameters"] = GIP
 	// GetContractID
 	_, scontractid := stub.GetContractID()
-	resMap["GetContractID"] = string(scontractid)
+	resMap["1234567GetContractID"] = string(scontractid)
 
 	res, err := json.Marshal(resMap)
 	if err != nil {
