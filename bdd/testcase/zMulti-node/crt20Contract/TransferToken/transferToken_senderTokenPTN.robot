@@ -22,7 +22,7 @@ transferToken_senderTokenPTN
     ...    ${geneAdd}
     ${ret}    normalCcinvokePass    ${commonResultCode}    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
     ...    ${20ContractId}    ${ccList}
-    sleep    5
+    sleep    4
     ${result1}    getBalance    ${GeneAdd}    ${mutiHost1}
     sleep    5
     ${key}    getTokenId    ${preTokenId}    ${result1}

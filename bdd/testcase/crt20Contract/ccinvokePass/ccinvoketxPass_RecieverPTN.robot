@@ -8,7 +8,7 @@ Resource          ../../utilKwd/utilDefined.txt
 Resource          ../../utilKwd/behaveKwd.txt
 
 *** Variables ***
-${preTokenId}     QA051
+${preTokenId}     QA151
 #${gain}          2000
 
 *** Test Cases ***
@@ -46,3 +46,11 @@ Request getbalance after create token
 Assert gain
     [Arguments]    ${PTN2}    ${PTNGAIN}
     Should Be Equal As Numbers    ${PTN2}    ${PTNGAIN}
+
+Request send transaction
+    [Arguments]    ${ret}
+    ${sendList}    Create List    ${ret}
+    ${resp}    setPostRequest    ${host}    wallet_sendRawTransaction    ${sendList}
+    ${jsonRes}    resultToJson    ${resp}
+    #Should Match Regexp    ${resp.content}['result']    ${sendResult}    msg="result:does't match expression"
+    [Return]    ${jsonRes}

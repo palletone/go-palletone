@@ -6,7 +6,7 @@ set timeout 30
 ./preset.sh
 #spawn ./start.sh
 #expect "Please input the numbers of nodes you want:"
-#send "3\n"
+#send "3\r"
 #interact
 #expect eof
 #EOF

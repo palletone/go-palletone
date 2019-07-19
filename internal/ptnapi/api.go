@@ -606,7 +606,7 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, poolTxs
 	inputsOutpoint := []modules.OutPoint{}
 	allUtxo := make(map[modules.OutPoint]*modules.Utxo)
 	for k, v := range dbUtxo {
-		if v.Asset.IsSimilar(tokenAsset) {
+		if v.Asset.Equal(tokenAsset) {
 			allUtxo[k] = v
 		}
 	}
@@ -625,10 +625,11 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, poolTxs
 				if pay.Outputs[0].Asset == nil {
 					log.Errorf("Payment output asset=nil,pay:%s", string(data))
 				}
-				if pay.Outputs[0].Asset.IsSimilar(tokenAsset) == false {
-					continue
-				}
+
 				for outIndex, output := range pay.Outputs {
+					if !output.Asset.Equal(tokenAsset) {
+						continue
+					}
 					op := modules.OutPoint{}
 					op.TxHash = tx.Tx.Hash()
 					op.MessageIndex = uint32(msgindex)
