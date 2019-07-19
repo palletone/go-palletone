@@ -184,7 +184,7 @@ func (t *SimpleChaincode) test_GetInvokeInfo(stub shim.ChaincodeStubInterface, a
 	resMap["GetInvokeParameters"] = GIP
 	// GetContractID
 	_, scontractid := stub.GetContractID()
-	resMap["1234567GetContractID"] = string(scontractid)
+	resMap["GetContractID"] = string(scontractid)
 
 	res, err := json.Marshal(resMap)
 	if err != nil {
