@@ -360,7 +360,7 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxEx
 	maxMediatorCount := int(a.Dag().GetChainParameters().MaximumMediatorCount)
 	mediatorCount := len(mediatorStrs)
 	if mediatorCount > maxMediatorCount {
-		return nil, fmt.Errorf("the number(%v) of mediators voting exceeded the maximum limit: %v",
+		return nil, fmt.Errorf("the total number(%v) of mediators voted exceeds the maximum limit: %v",
 			mediatorCount, maxMediatorCount)
 	}
 
