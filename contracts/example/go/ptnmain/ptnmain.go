@@ -26,8 +26,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/palletone/eth-adaptor"
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
