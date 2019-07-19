@@ -229,14 +229,6 @@ func (d *Dag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, er
 	return uHeader, nil
 }
 
-//func (d *Dag) GetPrefix(prefix string) map[string][]byte {
-//	return d.unstableUnitRep.GetPrefix(*(*[]byte)(unsafe.Pointer(&prefix)))
-//}
-
-//func (d *Dag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription {
-//	return d.ChainHeadFeed.Subscribe(ch)
-//}
-
 // FastSyncCommitHead sets the current head block to the one defined by the hash
 // irrelevant what the chain contents were prior.
 func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
@@ -339,10 +331,14 @@ func (d *Dag) IsHeaderExist(hash common.Hash) bool {
 }
 
 func (d *Dag) CurrentHeader(token modules.AssetId) *modules.Header {
-	unit := d.CurrentUnit(token)
-	if unit != nil {
-		return unit.Header()
+	memdag, err := d.getMemDag(token)
+	if err != nil {
+		log.Errorf("Get CurrentUnit by token[%s] error:%s", token.String(), err.Error())
+		return nil
 	}
+	// 从memdag 获取最新的header
+	unit := memdag.GetLastMainChainUnit()
+	return unit.Header()
 	return nil
 }
 

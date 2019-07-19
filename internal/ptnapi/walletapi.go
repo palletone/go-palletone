@@ -9,6 +9,11 @@ import (
 
 	"time"
 
+	"math/big"
+	"math/rand"
+	"strconv"
+	"strings"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
@@ -22,10 +27,6 @@ import (
 	"github.com/palletone/go-palletone/ptnjson/walletjson"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/shopspring/decimal"
-	"math/big"
-	"math/rand"
-	"strconv"
-	"strings"
 )
 
 // Start forking command.
@@ -117,7 +118,8 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 	}
 
 	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &LockTime)
-	result, _ := WalletCreateTransaction(arg)
+	result, _ := CreateRawTransaction(arg)
+
 	return result, nil
 }
 func (s *PrivateWalletAPI) buildRawTransferTx(tokenId, from, to string, amount, gasFee decimal.Decimal) (*modules.Transaction, []*modules.UtxoWithOutPoint, error) {
@@ -346,11 +348,7 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 		}
 	}
 
-	bytetxjson, err := json.Marshal(mtx)
-	if err != nil {
-		return "", err
-	}
-	mtxbt, err := rlp.EncodeToBytes(bytetxjson)
+	mtxbt, err := rlp.EncodeToBytes(mtx)
 	if err != nil {
 		return "", err
 	}
@@ -459,24 +457,21 @@ func (s *PrivateWalletAPI) SignRawTransaction(ctx context.Context, params string
 	}
 	return result, err
 }
+
 // walletSendTransaction will add the signed transaction to the transaction pool.
 // The sender is responsible for signing the transaction and using the correct nonce.
-func (s *PublicWalletAPI) SendRawTransaction(ctx context.Context, params string) (common.Hash, error) {
+func (s *PublicWalletAPI) SendRawTransaction(ctx context.Context, signedTxHex string) (common.Hash, error) {
 
-	decoded, err := hex.DecodeString(params)
+	serializedTx, err := hex.DecodeString(signedTxHex)
 	if err != nil {
 		return common.Hash{}, errors.New("Decode Signedtx is invalid")
 	}
-	var btxjson []byte
-	if err := rlp.DecodeBytes(decoded, &btxjson); err != nil {
-		return common.Hash{}, errors.New("RLP Decode To Byte is invalid")
-	}
+
 	tx := &modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
 	}
-	err = json.Unmarshal(btxjson, tx)
-	if err != nil {
-		return common.Hash{}, errors.New("Json Unmarshal To Tx is invalid")
+	if err := rlp.DecodeBytes(serializedTx, tx); err != nil {
+		return common.Hash{}, errors.New("encodedTx decode is invalid")
 	}
 
 	if 0 == len(tx.TxMessages) {
