@@ -22,15 +22,16 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"strconv"
+	"strings"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"math/big"
-	"strings"
 )
 
 type PTNMain struct {
@@ -164,7 +165,7 @@ func _payoutPTN(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	if txResult.To != mapAddr {
+	if strings.ToLower(txResult.To) != mapAddr {
 		return shim.Error("Not send token to the Map contract")
 	}
 	//check token amount
@@ -305,7 +306,8 @@ func getPTNHex(mapAddr, sender string, stub shim.ChaincodeStubInterface) (string
 	queryContract.ContractAddr = mapAddr
 	queryContract.ContractABI = PTNMapABI
 	queryContract.Method = "getptnhex"
-	queryContract.ParamsArray = append(queryContract.ParamsArray, sender)
+	senderAddr := common.HexToAddress("0x588eb98f8814aedb056d549c0bafd5ef4963069c")
+	queryContract.ParamsArray = append(queryContract.ParamsArray, senderAddr)
 	reqBytes, err := json.Marshal(queryContract)
 	if err != nil {
 		return "", err
