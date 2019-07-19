@@ -70,10 +70,11 @@ HandleToken
 Get Invoke Info
     Given Unlock token holder succeed
     ${args}=    And Create List    arg1    arg2
-    ${reqId}=    When User get invoke info    ${args}
+    ${newAddr}=    newAccount
+    ${reqId}=    When User get invoke info    ${args}    ${newAddr}
     And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
     ${payload}=    Get invoke payload info    ${reqId}
-    Then Check all invoke info    ${payload}    ${args}    testGetInvokeInfo
+    Then Check all invoke info    ${payload}    ${args}    testGetInvokeInfo    ${reqId}    ${newAddr}
 
 Stop testshimuc contract
     Given Unlock token holder succeed
@@ -82,10 +83,10 @@ Stop testshimuc contract
 
 *** Keywords ***
 User get invoke info
-    [Arguments]    ${args}
+    [Arguments]    ${args}    ${newAddr}
     ${newArgs}=    Create List    testGetInvokeInfo
     ${newArgs}=    Combine Lists    ${newArgs}    ${args}
-    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
+    ${respJson}=    invokeContract    ${tokenHolder}    ${newAddr}    100    1    ${gContractId}
     ...    ${newArgs}
     ${result}=    Get From Dictionary    ${respJson}    result
     ${reqId}=    Get From Dictionary    ${result}    reqId
@@ -94,64 +95,65 @@ User get invoke info
     [Return]    ${reqId}
 
 Check all invoke info
-    [Arguments]    ${payload}    ${args}    ${exceptedFuncName}    ${reqId}
+    [Arguments]    ${payload}    ${args}    ${exceptedFuncName}    ${reqId}    ${newAddr}
     # => GetArgs
     Dictionary Should Contain Key    ${payload}    GetArgs
-    ${GetArgs} =    Get From Dictioanry    ${payload}    GetArgs
+    ${GetArgs} =    Get From Dictionary    ${payload}    GetArgs
     List Should Contain Sub List    ${GetArgs}    ${args}
     # => GetStringArgs
     Dictionary Should Contain Key    ${payload}    GetStringArgs
-    ${GetStringArgs} =    Get From Dictioanry    ${payload}    GetStringArgs
+    ${GetStringArgs} =    Get From Dictionary    ${payload}    GetStringArgs
     List Should Contain Sub List    ${GetStringArgs}    ${args}
     # => GetFunctionAndParameters
     Dictionary Should Contain Key    ${payload}    GetFunctionAndParameters
-    ${GetFunctionAndParameters} =    Get From Dictioanry    ${payload}    GetFunctionAndParameters
+    ${GetFunctionAndParameters} =    Get From Dictionary    ${payload}    GetFunctionAndParameters
     ${funcName}=    Get From Dictionary    ${GetFunctionAndParameters}    functionName
-    ${parameters}=    Get From Dictioanry    ${GetFunctionAndParameters}    parameters
-    Shoulb Be Equal    ${exceptedFuncName}    ${funcName}
+    ${parameters}=    Get From Dictionary    ${GetFunctionAndParameters}    parameters
+    Should Be Equal    ${exceptedFuncName}    ${funcName}
     List Should Contain Sub List    ${parameters}    ${args}
     # => GetArgsSlice
     Dictionary Should Contain Key    ${payload}    GetArgsSlice
-    ${GetArgsSlice} =    Get From Dictioanry    ${payload}    GetArgsSlice
+    ${GetArgsSlice} =    Get From Dictionary    ${payload}    GetArgsSlice
     ${str}=    Evaluate    "".join(${GetArgsSlice})
     ${comp}=    Create List    ${exceptedFuncName}
-    ${comp}=    CrCombine Lists    ${comp}    ${args}
-    Should Be Equal    ${str}    ${comp}
+    ${comp}=    Combine Lists    ${comp}    ${args}
+    ${compStr}=    Evaluate    "".join(${comp})
+    Should Be Equal    ${str}    ${compStr}
     # => GetTxID
     Dictionary Should Contain Key    ${payload}    GetTxID
-    ${GetTxID}=    Get From Dictioanry    ${payload}    GetTxID
+    ${GetTxID}=    Get From Dictionary    ${payload}    GetTxID
     ${exceptTxId}=    catenate    SEPARATOR=    0x    ${reqId}
-    Sould Be Equal    ${GetTxID}    ${exceptTxId}
+    Should Be Equal    ${GetTxID}    ${exceptTxId}
     # => GetChannelID
     Dictionary Should Contain Key    ${payload}    GetChannelID
-    ${GetChannelID} =    Get From Dictioanry    ${payload}    GetChannelID
+    ${GetChannelID} =    Get From Dictionary    ${payload}    GetChannelID
     Should Be Equal    ${GetChannelID}    palletone
     # => GetTxTimestamp
     Dictionary Should Contain Key    ${payload}    GetTxTimestamp
-    ${GetTxTimestamp} =    Get From Dictioanry    ${payload}    GetTxTimestamp
+    ${GetTxTimestamp} =    Get From Dictionary    ${payload}    GetTxTimestamp
     # => GetInvokeAddress
     Dictionary Should Contain Key    ${payload}    GetInvokeAddress
-    ${GetInvokeAddress} =    Get From Dictioanry    ${payload}    GetInvokeAddress
+    ${GetInvokeAddress} =    Get From Dictionary    ${payload}    GetInvokeAddress
     Should Be Equal    ${GetInvokeAddress}    ${tokenHolder}
     # => GetInvokeTokens
     Dictionary Should Contain Key    ${payload}    GetInvokeTokens
-    ${GetInvokeTokens} =    Get From Dictioanry    ${payload}    GetInvokeTokens
+    ${GetInvokeTokens} =    Get From Dictionary    ${payload}    GetInvokeTokens
     # => GetInvokeFees
     Dictionary Should Contain Key    ${payload}    GetInvokeFees
-    ${GetInvokeFees} =    Get From Dictioanry    ${payload}    GetInvokeFees
-    ${amount}=    Get From Dictionary    ${GetInvokeFees}    ${amount}
-    ${symbol}=    Get From Dictionary    ${GetInvokeFees}    ${assetId}
-    Should Be Equal    ${amount}    100000000
+    ${GetInvokeFees} =    Get From Dictionary    ${payload}    GetInvokeFees
+    ${amount}=    Get From Dictionary    ${GetInvokeFees}    amount
+    ${symbol}=    Get From Dictionary    ${GetInvokeFees}    assetId
+    Should Be Equal    ${amount}    ${100000000}
     Should Be Equal    ${symbol}    PTN
     # => GetContractID
     Dictionary Should Contain Key    ${payload}    GetContractID
-    ${GetContractID} =    Get From Dictioanry    ${payload}    GetContractID
-    Should Be Eequal    ${GetContractID}    ${gContractId}
+    ${GetContractID} =    Get From Dictionary    ${payload}    GetContractID
+    Should Be Equal    ${GetContractID}    ${gContractId}
     # => GetInvokeParameters
     Dictionary Should Contain Key    ${payload}    GetInvokeParameters
-    ${GetInvokeParameters} =    Get From Dictioanry    ${payload}    GetInvokeParameters
+    ${GetInvokeParameters} =    Get From Dictionary    ${payload}    GetInvokeParameters
     ${funcName}=    Get From Dictionary    ${GetInvokeParameters}    funcName
-    Shoulb Be Equal    ${exceptedFuncName}    ${funcName}
+    Should Be Equal    ${exceptedFuncName}    ${funcName}
     ${invokeAddress}=    Get From Dictionary    ${GetInvokeParameters}    invokeAddress
     Should Be Equal    ${invokeAddress}    ${tokenHolder}
     ${invokeFees}=    Get From Dictionary    ${GetInvokeParameters}    invokeFees
