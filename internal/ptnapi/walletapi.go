@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/core/certficate"
 
 	"time"
@@ -1317,30 +1316,49 @@ func (s *PublicWalletAPI) GetProofOfExistencesByAsset(ctx context.Context, asset
 }
 
 //affiliation  gptn.mediator1
-func (s *PublicWalletAPI) GenCert(addrStr, name, data, roleType, affiliation string) (bool, error) {
+func (s *PublicWalletAPI) GenCert(addrStr, passwd, name, data, roleType, affiliation string) (*ContractDeployRsp, error) {
+
 	ks := s.b.GetKeyStore()
-	addr, _ := common.StringToAddress(addrStr)
-	pubKey, err := ks.GetPublicKey(addr)
+	account, err := MakeAddress(ks, addrStr)
 	if err != nil {
-		return false, err
+		return nil, err
+	}
+	//导出私钥 用于证书的生成
+	privKey, _ := ks.DumpPrivateKey(account, passwd)
+	if err != nil {
+		return nil, err
 	}
 
-	pub := crypto.P256ToECDSAPub(pubKey)
 	ca := certficate.CertINfo{}
-	cf := certficate.CAConfig{}
 	ca.Address = addrStr
 	ca.Name = name
 	ca.Data = data
 	ca.Type = roleType
 	ca.Affiliation = affiliation
-	ca.Key = pub
-	_, err = certficate.GenCert(ca, cf)
+	ca.Key = privKey
+	certBytes, err := certficate.GenCert(ca)
+	log.Infof("GenCert Success! CertBytes[%s]", certBytes)
 	if err != nil {
-		return false, err
+		return nil, err
+	}
+	//调用系统合约 将证书byte存入到数字身份系统合约中
+
+	args := make([][]byte, 3)
+	args[0] = []byte("addMemberCert")
+	args[1] = []byte(addrStr)
+	args[2] = certBytes
+
+	contractAddr := "PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk"
+	addr, _ := common.StringToAddress(addrStr)
+	cAddr, _ := common.StringToAddress(contractAddr)
+	reqId, err := s.b.ContractInvokeReqTx(addr, addr, 100000, 100000, nil, cAddr, args, 0)
+	log.Infof("GenCert reqId[%s]", hex.EncodeToString(reqId[:]))
+	rsp1 := &ContractDeployRsp{
+		ReqId:      hex.EncodeToString(reqId[:]),
+		ContractId: contractAddr,
 	}
 
-	//s.b.ContractInvoke()
-	return true, nil
+	return rsp1, nil
 }
 
 //好像某个UTXO是被那个交易花费的
