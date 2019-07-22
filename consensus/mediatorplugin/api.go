@@ -19,12 +19,9 @@
 package mediatorplugin
 
 import (
-	"fmt"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
-	"go.dedis.ch/kyber/v3/share/dkg/pedersen"
 )
 
 func (mp *MediatorPlugin) LocalMediators() []common.Address {
@@ -93,20 +90,11 @@ func (mp *MediatorPlugin) LocalHavePrecedingMediator() bool {
 	return false
 }
 
-func (mp *MediatorPlugin) getLocalActiveDKG(add common.Address) (*dkg.DistKeyGenerator, error) {
-	dkg, ok := mp.activeDKGs[add]
-	if !ok || dkg == nil {
-		return nil, fmt.Errorf("the mediator(%v)'s dkg is not existed, or it is not active", add.String())
-	}
-
-	return dkg, nil
-}
-
-func (mp *MediatorPlugin) LocalMediatorPubKey(add common.Address) []byte {
+func (mp *MediatorPlugin) localMediatorPubKey(add common.Address) []byte {
 	var pubKey []byte = nil
-	dkgr, err := mp.getLocalActiveDKG(add)
-	if err != nil {
-		log.Debugf(err.Error())
+	dkgr, ok := mp.activeDKGs[add]
+	if !ok || dkgr == nil {
+		log.Debugf("the mediator(%v)'s dkg is not existed, or it is not active", add.String())
 		return pubKey
 	}
 

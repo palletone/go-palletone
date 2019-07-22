@@ -119,6 +119,7 @@ type MediatorPlugin struct {
 	suite         *bn256.Suite
 	activeDKGs    map[common.Address]*dkg.DistKeyGenerator
 	precedingDKGs map[common.Address]*dkg.DistKeyGenerator
+	dkgLock       *sync.RWMutex
 
 	// dkg 完成 vss 协议相关
 	dealBuf    map[common.Address]chan *dkg.Deal
@@ -269,6 +270,7 @@ func NewMediatorPlugin(ctx *node.ServiceContext, cfg *Config, ptn PalletOne, dag
 		suite:         core.Suite,
 		activeDKGs:    make(map[common.Address]*dkg.DistKeyGenerator),
 		precedingDKGs: make(map[common.Address]*dkg.DistKeyGenerator),
+		dkgLock:       new(sync.RWMutex),
 	}
 
 	mp.initLocalConfigMediator(cfg.Mediators, ctx.AccountManager)
