@@ -116,6 +116,9 @@ func (b *LesApiBackend) GetChainParameters() *core.ChainParameters {
 func (b *LesApiBackend) SendTx(ctx context.Context, signedTx *modules.Transaction) error {
 	return b.ptn.txPool.AddLocal(signedTx)
 }
+func (b *LesApiBackend) SendTxs(ctx context.Context, signedTxs []*modules.Transaction) []error {
+	return b.ptn.txPool.AddLocals(signedTxs)
+}
 
 func (b *LesApiBackend) RemoveTx(txHash common.Hash) {
 	//b.ptn.txPool.RemoveTx(txHash)

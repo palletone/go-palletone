@@ -114,30 +114,28 @@ func (c *CryptoP256) Sign(privKey, message []byte) (signature []byte, err error)
 	if err != nil {
 		return nil, err
 	}
-	r, s, err :=ecdsa.Sign(rand.Reader,prvKey,digest)
+	r, s, err := ecdsa.Sign(rand.Reader, prvKey, digest)
 	return asn1.Marshal(ECDSASignature{r, s})
 }
 
-func (c *CryptoP256) Verify(pubKey,  message []byte,signature []byte) (valid bool, err error) {
+func (c *CryptoP256) Verify(pubKey, signature []byte, message []byte) (valid bool, err error) {
 	pub := P256ToECDSAPub(pubKey)
 	var s ECDSASignature
-	_,err = asn1.Unmarshal(signature, &s)
+	_, err = asn1.Unmarshal(signature, &s)
 	if err != nil {
-		return false,err
+		return false, err
 	}
 	digest, err := c.Hash(message)
 	if err != nil {
 		return false, err
 	}
-	result := ecdsa.Verify(pub, digest, s.R,s.S )
-	return result,nil
+	result := ecdsa.Verify(pub, digest, s.R, s.S)
+	return result, nil
 }
 
-
-
-func (c *CryptoP256) EncryptP256(key []byte, plaintext []byte) (ciphertext []byte, err error) {
+func (c *CryptoP256) Encrypt(key []byte, plaintext []byte) (ciphertext []byte, err error) {
 	return nil, errors.New("Not implement")
 }
-func (c *CryptoP256) DecryptP256(key, ciphertext []byte) (plaintext []byte, err error) {
+func (c *CryptoP256) Decrypt(key, ciphertext []byte) (plaintext []byte, err error) {
 	return nil, errors.New("Not implement")
 }
