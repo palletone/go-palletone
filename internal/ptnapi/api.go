@@ -498,6 +498,13 @@ func submitTransaction(ctx context.Context, b Backend, tx *modules.Transaction) 
 	}
 	return tx.Hash(), nil
 }
+func submitTxs(ctx context.Context, b Backend, txs []*modules.Transaction) []error {
+	errs := b.SendTxs(ctx, txs)
+	if errs != nil {
+		return errs
+	}
+	return nil
+}
 
 const (
 	MaxTxInSequenceNum uint32 = 0xffffffff

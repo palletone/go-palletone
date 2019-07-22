@@ -92,6 +92,7 @@ func CertInfo2Cainfo(certinfo CertINfo) client.CaGenInfo {
 		ECert:       certinfo.ECert,
 		Type:        certinfo.Type,
 		Affiliation: certinfo.Affiliation,
+		//Key:         certinfo.Key,
 	}
 
 }
@@ -100,12 +101,12 @@ func CertChain2Result(cc client.CAGetCertResponse) CAGetCertChain {
 	return CAGetCertChain{
 		RootCertificates:         cc.RootCertificates,
 		IntermediateCertificates: cc.IntermediateCertificates,
-		CAName:  cc.CAName,
-		Version: cc.Version,
+		CAName:                   cc.CAName,
+		Version:                  cc.Version,
 	}
 }
 
-func GenCert(certinfo CertINfo, cfg CAConfig) ([]byte, error) {
+func GenCert(certinfo CertINfo) ([]byte, error) {
 	cainfo := CertInfo2Cainfo(certinfo)
 	//发送请求到CA server 注册用户 生成证书
 	certpem, err := cainfo.Enrolluser()

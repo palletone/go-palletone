@@ -18,6 +18,7 @@
  *
  */
 package certficate
+
 //
 //type TestCertRpc struct {
 //	Jsonrpc string `json:"jsonrpc"`
@@ -28,6 +29,7 @@ package certficate
 //
 //
 //func TestGenCert(t *testing.T) {
+//    addr := "P1PosMZZjMaB1VTR6jayWHUtEkhS87A7N3u"
 //
 //	certinfo := NewCertInfo("P15dtShJp7FpdgxCqT6RwZGKdfSSdkRk7GQ", "lkk", "HiPalletone", "user", "gptn.mediator1", true)
 //	cainfo := CertInfo2Cainfo(*certinfo)
