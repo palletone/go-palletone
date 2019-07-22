@@ -140,8 +140,10 @@ type (
 var (
 	versionPrefix     = []byte("temporary discovery v5")
 	versionPrefixSize = len(versionPrefix)
-	sigSize           = 520 / 8
-	headSize          = versionPrefixSize + sigSize // space of packet frame data
+	//sigSize           = 520 / 8
+	//headSize          = versionPrefixSize + sigSize // space of packet frame data
+	IdSize   = 512 / 8
+	headSize = versionPrefixSize + IdSize // space of packet frame data
 )
 
 // Neighbors replies are sent across multiple packets to
@@ -353,13 +355,17 @@ func encodePacket(priv *ecdsa.PrivateKey, ptype byte, req interface{}) (p, hash 
 		return nil, nil, err
 	}
 	packet := b.Bytes()
-	sig, err := crypto.Sign(crypto.Keccak256(packet[headSize:]), priv)
-	if err != nil {
-		log.Error(fmt.Sprint("could not sign packet:", err))
-		return nil, nil, err
-	}
+	//sig, err := crypto.Sign(crypto.Keccak256(packet[headSize:]), priv)
+	//if err != nil {
+	//	log.Error(fmt.Sprint("could not sign packet:", err))
+	//	return nil, nil, err
+	//}
+	nodeID := PubkeyID(&priv.PublicKey)
+	//copy(packet[macSize:], nodeID.Bytes())
+
 	copy(packet, versionPrefix)
-	copy(packet[versionPrefixSize:], sig)
+	//copy(packet[versionPrefixSize:], sig)
+	copy(packet[versionPrefixSize:], nodeID.Bytes())
 	hash = crypto.Keccak256(packet[versionPrefixSize:])
 	return packet, hash, nil
 }
@@ -404,15 +410,16 @@ func decodePacket(buffer []byte, pkt *ingressPacket) error {
 	}
 	buf := make([]byte, len(buffer))
 	copy(buf, buffer)
-	prefix /*sig*/, _, sigdata := buf[:versionPrefixSize], buf[versionPrefixSize:headSize], buf[headSize:]
+	prefix, id, sigdata := buf[:versionPrefixSize], buf[versionPrefixSize:headSize], buf[headSize:]
 	if !bytes.Equal(prefix, versionPrefix) {
 		return errBadPrefix
 	}
 	//fromID, err := recoverNodeID(crypto.Keccak256(buf[headSize:]), sig)
-	//if err != nil {
-	//	return err
-	//}
-	var fromID NodeID
+	fromID, err := BytesID(id)
+	if err != nil {
+		return err
+	}
+
 	pkt.rawData = buf
 	pkt.hash = crypto.Keccak256(buf[versionPrefixSize:])
 	pkt.remoteID = fromID

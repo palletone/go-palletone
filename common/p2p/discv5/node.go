@@ -263,6 +263,11 @@ const nodeIDBits = 512
 // The node identifier is a marshaled elliptic curve public key.
 type NodeID [nodeIDBits / 8]byte
 
+// Bytes returns a byte slice representation of the NodeID
+func (n NodeID) Bytes() []byte {
+	return n[:]
+}
+
 // NodeID prints as a long hexadecimal number.
 func (n NodeID) String() string {
 	return fmt.Sprintf("%x", n[:])
@@ -332,6 +337,16 @@ func (id NodeID) mustPubkey() ecdsa.PublicKey {
 		panic(err)
 	}
 	return *pk
+}
+
+// BytesID converts a byte slice to a NodeID
+func BytesID(b []byte) (NodeID, error) {
+	var id NodeID
+	if len(b) != len(id) {
+		return id, fmt.Errorf("wrong length, want %d bytes", len(id))
+	}
+	copy(id[:], b)
+	return id, nil
 }
 
 // recoverNodeID computes the public key used to sign the
