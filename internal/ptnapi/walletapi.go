@@ -1423,7 +1423,7 @@ func readTxs(path string) ([]string, error) {
 	txs := make([]string, 0)
 	f, err := os.Open(path)
 	if err != nil {
-		log.Infof("open file failed, err:", err.Error())
+		log.Infof("open file failed, err: %s", err.Error())
 		return nil, err
 	}
 	defer f.Close()
