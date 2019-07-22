@@ -125,10 +125,13 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 	}
 
 	dag := mp.dag
+	mp.dkgLock.Lock()
+	defer mp.dkgLock.Unlock()
 	var (
 		dkgr    *dkg.DistKeyGenerator
 		newUnit *modules.Unit
 	)
+
 	// 1. 获取群签名所需数据
 	{
 		value, ok := medUnitsBuf.Load(unitHash)
@@ -270,10 +273,13 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	}
 
 	// 2. 获取阈值、mediator数量、DKG
+	mp.dkgLock.Lock()
+	defer mp.dkgLock.Unlock()
 	var (
 		mSize, threshold int
 		dkgr             *dkg.DistKeyGenerator
 	)
+
 	{
 		dag := mp.dag
 		unit, err := dag.GetUnitByHash(unitHash)

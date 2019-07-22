@@ -30,16 +30,18 @@ import (
 )
 
 func (mp *MediatorPlugin) newDKGAndInitVSSBuf() {
-	dag := mp.dag
+	mp.dkgLock.RLock()
+	defer mp.dkgLock.RUnlock()
+	mp.vssBufLock.RLock()
+	defer mp.vssBufLock.RUnlock()
 
+	dag := mp.dag
 	lams := mp.GetLocalActiveMediators()
 	initPubs := dag.GetActiveMediatorInitPubs()
 	curThreshold := dag.ChainThreshold()
 
 	lamc := len(lams)
-	mp.dkgLock.RLock()
 	mp.activeDKGs = make(map[common.Address]*dkg.DistKeyGenerator, lamc)
-	mp.dkgLock.RUnlock()
 
 	ams := dag.GetActiveMediators()
 	aSize := len(ams)
@@ -51,17 +53,13 @@ func (mp *MediatorPlugin) newDKGAndInitVSSBuf() {
 			log.Debugf(err.Error())
 			continue
 		}
-		mp.dkgLock.RLock()
 		mp.activeDKGs[localMed] = dkgr
-		mp.dkgLock.RUnlock()
 
-		mp.vssBufLock.RLock()
 		mp.dealBuf[localMed] = make(chan *dkg.Deal, aSize-1)
 		mp.respBuf[localMed] = make(map[common.Address]chan *dkg.Response, aSize)
 		for _, vrfrMed := range ams {
 			mp.respBuf[localMed][vrfrMed] = make(chan *dkg.Response, aSize-1)
 		}
-		mp.vssBufLock.RUnlock()
 	}
 }
 
@@ -107,6 +105,8 @@ func (mp *MediatorPlugin) completeVSSProtocol() {
 
 func (mp *MediatorPlugin) launchGroupSignLoops() {
 	lams := mp.GetLocalActiveMediators()
+	mp.dkgLock.RLock()
+	defer mp.dkgLock.RUnlock()
 
 	for _, localMed := range lams {
 		dkgr, ok := mp.activeDKGs[localMed]
@@ -162,6 +162,9 @@ func (mp *MediatorPlugin) processDealLoop(localMed common.Address) {
 }
 
 func (mp *MediatorPlugin) processVSSDeal(localMed common.Address, deal *dkg.Deal) {
+	mp.dkgLock.RLock()
+	defer mp.dkgLock.RUnlock()
+
 	dkgr, ok := mp.activeDKGs[localMed]
 	if !ok || dkgr == nil {
 		log.Debugf("the mediator(%v)'s dkg is not existed, or it is not active", localMed.String())
@@ -193,6 +196,9 @@ func (mp *MediatorPlugin) processVSSDeal(localMed common.Address, deal *dkg.Deal
 }
 
 func (mp *MediatorPlugin) broadcastVSSDeals() {
+	mp.dkgLock.RLock()
+	defer mp.dkgLock.RUnlock()
+
 	// 将deal广播给其他节点
 	for localMed, dkg := range mp.activeDKGs {
 		deals, err := dkg.Deals()
@@ -303,6 +309,9 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 }
 
 func (mp *MediatorPlugin) processVSSResp(localMed common.Address, resp *dkg.Response) {
+	mp.dkgLock.RLock()
+	defer mp.dkgLock.RUnlock()
+
 	dkgr, ok := mp.activeDKGs[localMed]
 	if !ok || dkgr == nil {
 		log.Debugf("the mediator(%v)'s dkg is not existed, or it is not active", localMed.String())
