@@ -341,5 +341,5 @@ func (mp *MediatorPlugin) UpdateMediatorsDKG(isRenew bool) {
 	mp.newDKGAndInitVSSBuf()
 
 	// 开始完成 vss 协议
-	go mp.startVSSProtocol()
+	mp.startVSSProtocol()
 }

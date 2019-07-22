@@ -65,7 +65,7 @@ func (mp *MediatorPlugin) startVSSProtocol() {
 	log.Debugf("start completing the VSS protocol")
 
 	// 处理其他 mediator 的 deals, 以及所有 response
-	go mp.launchDealAndRespLoops()
+	mp.launchDealAndRespLoops()
 
 	interval := mp.dag.GetGlobalProp().ChainParameters.MediatorInterval / 2
 
@@ -74,7 +74,7 @@ func (mp *MediatorPlugin) startVSSProtocol() {
 	case <-mp.quit:
 		return
 	case <-time.After(time.Second * time.Duration(interval)):
-		go mp.broadcastVSSDeals()
+		mp.broadcastVSSDeals()
 	}
 
 	// 隔2个生产间隔，再处理vss协议后续工作
@@ -82,7 +82,7 @@ func (mp *MediatorPlugin) startVSSProtocol() {
 	case <-mp.quit:
 		return
 	case <-time.After(time.Second * time.Duration(interval)):
-		go mp.completeVSSProtocol()
+		mp.completeVSSProtocol()
 	}
 }
 
@@ -98,7 +98,7 @@ func (mp *MediatorPlugin) completeVSSProtocol() {
 	mp.vssBufLock.RUnlock()
 
 	// 验证vss是否完成，并开启群签名
-	go mp.launchGroupSignLoops()
+	mp.launchGroupSignLoops()
 }
 
 func (mp *MediatorPlugin) launchGroupSignLoops() {
@@ -152,7 +152,7 @@ func (mp *MediatorPlugin) processDealLoop(localMed common.Address) {
 		case <-mp.stopVSS:
 			return
 		case deal := <-dealCh:
-			go mp.processVSSDeal(localMed, deal)
+			mp.processVSSDeal(localMed, deal)
 		}
 	}
 }
@@ -183,7 +183,7 @@ func (mp *MediatorPlugin) processVSSDeal(localMed common.Address, deal *dkg.Deal
 	respEvent := VSSResponseEvent{
 		Resp: resp,
 	}
-	go mp.vssResponseFeed.Send(respEvent)
+	mp.vssResponseFeed.Send(respEvent)
 	log.Debugf("the mediator(%v) broadcast the vss response to the mediator(%v)",
 		localMed.Str(), vrfrMed.Str())
 }
@@ -203,7 +203,7 @@ func (mp *MediatorPlugin) broadcastVSSDeals() {
 				DstIndex: uint32(index),
 				Deal:     deal,
 			}
-			go mp.vssDealFeed.Send(event)
+			mp.vssDealFeed.Send(event)
 		}
 	}
 }
@@ -229,7 +229,6 @@ func (mp *MediatorPlugin) AddToDealBuf(dealEvent *VSSDealEvent) {
 	dealCh, ok := mp.dealBuf[localMed]
 	if !ok {
 		log.Debugf("the mediator(%v)'s dealBuf is not initialized", localMed.Str())
-		return
 	} else {
 		dealCh <- deal
 	}
@@ -294,7 +293,7 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 		case <-mp.stopVSS:
 			return
 		case resp := <-respCh:
-			go mp.processVSSResp(localMed, resp)
+			mp.processVSSResp(localMed, resp)
 		}
 	}
 }
