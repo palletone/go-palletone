@@ -311,6 +311,9 @@ func (chain *MemDag) checkStableCondition(unit *modules.Unit, txpool txspool.ITx
 	// todo Albert·gou 待重做 优化逻辑
 	for i := 0; i < unstableCount; i++ {
 		u := units[ustbHash]
+		if u == nil {
+			continue
+		}
 		hs := unstableCofirmAddrs[ustbHash]
 		if hs == nil {
 			hs = make(map[common.Address]bool)
@@ -477,6 +480,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 		if parentHash == chain.lastMainChainUnit.Hash() {
 			//Add a new unit to main chain
 			//Check unit and it's txs are valid
+			tt := time.Now()
 			tempdb := new(ChainTempDb)
 			inter_temp, has := chain.tempdb.Load(parentHash)
 			if !has {
@@ -495,7 +499,8 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 				log.Debugf("validate main chain unit error, %s, unit hash:%s", vali_err.Error(), uHash.String())
 				return nil, nil, nil, nil, nil, vali_err
 			}
-			tempdb, _ = tempdb.AddUnit(unit, chain.saveHeaderOnly)
+			//	tempdb, _ = tempdb.AddUnit(unit, chain.saveHeaderOnly)
+			go tempdb.AddUnit(unit, chain.saveHeaderOnly)
 			chain.tempdb.Store(uHash, tempdb)
 			chain.chainUnits.Store(uHash, tempdb)
 			if has {
@@ -514,6 +519,10 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 					})
 				}
 			}
+			log.InfoDynamic(func() string {
+				return fmt.Sprintf("save mainchain unit cost time: %s ,index: %d, hash: %s",
+					time.Since(tt), height, uHash.String())
+			})
 			//update txpool's tx status to pending
 			if len(unit.Txs) > 0 {
 				go txpool.SetPendingTxs(unit.Hash(), height, unit.Txs)
