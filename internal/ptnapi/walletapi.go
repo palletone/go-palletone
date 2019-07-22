@@ -6,8 +6,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/core/certficate"
 
 	"time"
+
+	"math/big"
+	"math/rand"
+	"strconv"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -22,10 +29,6 @@ import (
 	"github.com/palletone/go-palletone/ptnjson/walletjson"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/shopspring/decimal"
-	"math/big"
-	"math/rand"
-	"strconv"
-	"strings"
 )
 
 // Start forking command.
@@ -117,7 +120,8 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 	}
 
 	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &LockTime)
-	result, _ := WalletCreateTransaction(arg)
+	result, _ := CreateRawTransaction(arg)
+
 	return result, nil
 }
 func (s *PrivateWalletAPI) buildRawTransferTx(tokenId, from, to string, amount, gasFee decimal.Decimal) (*modules.Transaction, []*modules.UtxoWithOutPoint, error) {
@@ -346,11 +350,7 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 		}
 	}
 
-	bytetxjson, err := json.Marshal(mtx)
-	if err != nil {
-		return "", err
-	}
-	mtxbt, err := rlp.EncodeToBytes(bytetxjson)
+	mtxbt, err := rlp.EncodeToBytes(mtx)
 	if err != nil {
 		return "", err
 	}
@@ -359,25 +359,121 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 	return mtxHex, nil
 	//return string(bytetxjson), nil
 }
+func (s *PrivateWalletAPI) SignRawTransaction(ctx context.Context, params string, hashtype string, password string, duration *uint64) (ptnjson.SignRawTransactionResult, error) {
 
-// walletSendTransaction will add the signed transaction to the transaction pool.
-// The sender is responsible for signing the transaction and using the correct nonce.
-func (s *PublicWalletAPI) SendRawTransaction(ctx context.Context, params string) (common.Hash, error) {
-
-	decoded, err := hex.DecodeString(params)
+	//transaction inputs
+	if params == "" {
+		return ptnjson.SignRawTransactionResult{}, errors.New("Params is empty")
+	}
+	upper_type := strings.ToUpper(hashtype)
+	if upper_type != "ALL" && upper_type != "NONE" && upper_type != "SINGLE" {
+		return ptnjson.SignRawTransactionResult{}, errors.New("Hashtype is error,error type:" + hashtype)
+	}
+	serializedTx, err := decodeHexStr(params)
 	if err != nil {
-		return common.Hash{}, errors.New("Decode Signedtx is invalid")
+		return ptnjson.SignRawTransactionResult{}, errors.New("Params is invalid")
 	}
-	var btxjson []byte
-	if err := rlp.DecodeBytes(decoded, &btxjson); err != nil {
-		return common.Hash{}, errors.New("RLP Decode To Byte is invalid")
-	}
+
 	tx := &modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
 	}
-	err = json.Unmarshal(btxjson, tx)
+	if err := rlp.DecodeBytes(serializedTx, &tx); err != nil {
+		return ptnjson.SignRawTransactionResult{}, errors.New("Params decode is invalid")
+	}
+
+	getPubKeyFn := func(addr common.Address) ([]byte, error) {
+		//TODO use keystore
+		ks := s.b.GetKeyStore()
+
+		return ks.GetPublicKey(addr)
+		//privKey, _ := ks.DumpPrivateKey(account, "1")
+		//return crypto.CompressPubkey(&privKey.PublicKey), nil
+	}
+	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
+		ks := s.b.GetKeyStore()
+		//account, _ := MakeAddress(ks, addr.String())
+		//privKey, _ := ks.DumpPrivateKey(account, "1")
+		return ks.SignMessage(addr, msg)
+		//return crypto.Sign(hash, privKey)
+	}
+	var srawinputs []ptnjson.RawTxInput
+
+	var addr common.Address
+	var keys []string
+	for _, msg := range tx.TxMessages {
+		payload, ok := msg.Payload.(*modules.PaymentPayload)
+		if ok == false {
+			continue
+		}
+		for _, txin := range payload.Inputs {
+			inpoint := modules.OutPoint{
+				TxHash:       txin.PreviousOutPoint.TxHash,
+				OutIndex:     txin.PreviousOutPoint.OutIndex,
+				MessageIndex: txin.PreviousOutPoint.MessageIndex,
+			}
+			uvu, eerr := s.b.GetUtxoEntry(&inpoint)
+			if eerr != nil {
+				log.Error(eerr.Error())
+				return ptnjson.SignRawTransactionResult{}, err
+			}
+			TxHash := trimx(uvu.TxHash)
+			PkScriptHex := trimx(uvu.PkScriptHex)
+			input := ptnjson.RawTxInput{TxHash, uvu.OutIndex, uvu.MessageIndex, PkScriptHex, ""}
+			srawinputs = append(srawinputs, input)
+			addr, err = tokenengine.GetAddressFromScript(hexutil.MustDecode(uvu.PkScriptHex))
+			if err != nil {
+				log.Error(err.Error())
+				return ptnjson.SignRawTransactionResult{}, errors.New("get addr FromScript is err")
+			}
+		}
+		/*for _, txout := range payload.Outputs {
+			err = tokenengine.ScriptValidate(txout.PkScript, tx, 0, 0)
+			if err != nil {
+			}
+		}*/
+	}
+	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
+	var d time.Duration
+	if duration == nil {
+		d = 300 * time.Second
+	} else if *duration > max {
+		return ptnjson.SignRawTransactionResult{}, errors.New("unlock duration too large")
+	} else {
+		d = time.Duration(*duration) * time.Second
+	}
+	ks := s.b.GetKeyStore()
+	err = ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
 	if err != nil {
-		return common.Hash{}, errors.New("Json Unmarshal To Tx is invalid")
+		newErr := errors.New("get addr by outpoint get err:" + err.Error())
+		log.Error(newErr.Error())
+		return ptnjson.SignRawTransactionResult{}, newErr
+	}
+
+	newsign := ptnjson.NewSignRawTransactionCmd(params, &srawinputs, &keys, ptnjson.String(hashtype))
+	result, err := SignRawTransaction(newsign, getPubKeyFn, getSignFn, addr)
+	if !result.Complete {
+		log.Error("Not complete!!!")
+		for _, e := range result.Errors {
+			log.Error("SignError:" + e.Error)
+		}
+	}
+	return result, err
+}
+
+// walletSendTransaction will add the signed transaction to the transaction pool.
+// The sender is responsible for signing the transaction and using the correct nonce.
+func (s *PublicWalletAPI) SendRawTransaction(ctx context.Context, signedTxHex string) (common.Hash, error) {
+
+	serializedTx, err := hex.DecodeString(signedTxHex)
+	if err != nil {
+		return common.Hash{}, errors.New("Decode Signedtx is invalid")
+	}
+
+	tx := &modules.Transaction{
+		TxMessages: make([]*modules.Message, 0),
+	}
+	if err := rlp.DecodeBytes(serializedTx, tx); err != nil {
+		return common.Hash{}, errors.New("encodedTx decode is invalid")
 	}
 
 	if 0 == len(tx.TxMessages) {
@@ -432,6 +528,44 @@ func (s *PublicWalletAPI) SendRlpTransaction(ctx context.Context, encodedTx stri
 	return submitTransaction(ctx, s.b, tx)
 }
 
+func (s *PublicWalletAPI) SendJsonTransaction(ctx context.Context, params string) (common.Hash, error) {
+
+	decoded, err := hex.DecodeString(params)
+	if err != nil {
+		return common.Hash{}, errors.New("Decode Signedtx is invalid")
+	}
+	var btxjson []byte
+	if err := rlp.DecodeBytes(decoded, &btxjson); err != nil {
+		return common.Hash{}, errors.New("RLP Decode To Byte is invalid")
+	}
+	tx := &modules.Transaction{
+		TxMessages: make([]*modules.Message, 0),
+	}
+	err = json.Unmarshal(btxjson, tx)
+	if err != nil {
+		return common.Hash{}, errors.New("Json Unmarshal To Tx is invalid")
+	}
+
+	if 0 == len(tx.TxMessages) {
+		return common.Hash{}, errors.New("Invalid Tx, message length is 0")
+	}
+	var outAmount uint64
+	var outpoint_txhash common.Hash
+	for _, msg := range tx.TxMessages {
+		payload, ok := msg.Payload.(*modules.PaymentPayload)
+		if ok == false {
+			continue
+		}
+
+		for _, txout := range payload.Outputs {
+			outAmount += txout.Value
+		}
+		log.Info("payment info", "info", payload)
+		outpoint_txhash = payload.Inputs[0].PreviousOutPoint.TxHash
+	}
+	log.Infof("Tx outpoint tx hash:%s", outpoint_txhash.String())
+	return submitTransaction(ctx, s.b, tx)
+}
 func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params string, password string) (common.Hash, error) {
 
 	var proofTransactionGenParams ptnjson.ProofTransactionGenParams
@@ -1060,8 +1194,8 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 	}
 	if Extra != "" {
 		textPayload := new(modules.DataPayload)
-		textPayload.Reference = []byte(asset)
-		textPayload.MainData = []byte(Extra)
+		textPayload.Reference = []byte(Extra)
+		textPayload.MainData = []byte(asset) //MainData不能为空
 		rawTx.TxMessages = append(rawTx.TxMessages, modules.NewMessage(modules.APP_DATA, textPayload))
 	}
 	//lockscript
@@ -1218,6 +1352,33 @@ func (s *PublicWalletAPI) GetProofOfExistencesByRef(ctx context.Context, referen
 
 func (s *PublicWalletAPI) GetProofOfExistencesByAsset(ctx context.Context, asset string) ([]*ptnjson.ProofOfExistenceJson, error) {
 	return s.b.GetAssetExistence(asset)
+}
+
+//affiliation  gptn.mediator1
+func (s *PublicWalletAPI) GenCert(addrStr, name, data, roleType, affiliation string) (bool, error) {
+	ks := s.b.GetKeyStore()
+	addr, _ := common.StringToAddress(addrStr)
+	pubKey, err := ks.GetPublicKey(addr)
+	if err != nil {
+		return false, err
+	}
+
+	pub := crypto.P256ToECDSAPub(pubKey)
+	ca := certficate.CertINfo{}
+	cf := certficate.CAConfig{}
+	ca.Address = addrStr
+	ca.Name = name
+	ca.Data = data
+	ca.Type = roleType
+	ca.Affiliation = affiliation
+	ca.Key = pub
+	_, err = certficate.GenCert(ca, cf)
+	if err != nil {
+		return false, err
+	}
+
+	//s.b.ContractInvoke()
+	return true, nil
 }
 
 //好像某个UTXO是被那个交易花费的

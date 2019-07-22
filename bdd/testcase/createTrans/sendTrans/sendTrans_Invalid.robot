@@ -9,7 +9,7 @@ Resource          ../../utilKwd/behaveKwd.txt
 
 *** Variables ***
 ${host}           http://localhost:8545/
-${method}         ptn_sendRawTransaction
+${method}         wallet_sendRawTransaction
 
 *** Test Cases ***
 sendTransInvalid1

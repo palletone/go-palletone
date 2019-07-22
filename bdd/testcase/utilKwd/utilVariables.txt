@@ -2,6 +2,7 @@
 Library           RequestsLibrary
 Library           Collections
 Library           /usr/lib/python2.7/decimal.py
+#Library           D:/Python2.7/Lib/decimal.py
 
 *** Variables ***
 #settings
@@ -17,8 +18,8 @@ ${id}    ${1}
 
 # methods
 ${newAccount}     personal_newAccount
-${crtTransMethod}         ptn_cmdCreateTransaction
-${signMethod}     ptn_signRawTransaction
+${crtTransMethod}         wallet_CreateRawTransaction
+${signMethod}     wallet_signRawTransaction
 ${crtTokenMethod}    createToken
 ${frozenTokenMethod}    frozenToken
 ${supplyTokenMethod}    supplyToken

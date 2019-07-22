@@ -10,7 +10,7 @@ Resource          ../../utilKwd/normalKwd.txt
 
 *** Variables ***
 ${host}           http://localhost:8545/
-${method}         ptn_cmdCreateTransaction
+${method}         wallet_CreateRawTransaction
 ${error_code}     -32602
 ${error_message}    missing value for required argument 3
 ${error_message2}    too many arguments, want at most 4

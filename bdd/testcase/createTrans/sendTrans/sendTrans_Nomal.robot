@@ -12,10 +12,12 @@ Resource          ../../utilKwd/normalKwd.txt
 Scenario: createTrans - Send Transaction
     [Documentation]    Verify PTN after sending
     [Tags]    normal
+    sleep    4
     ${PTN1}    Given Request getbalance before create transaction
     ${ret1}    And normalCrtTrans    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
     ${ret2}    And normalSignTrans    ${ret1}    ${signType}    ${pwd}
     ${ret3}    And normalSendTrans    ${ret2}
+    sleep    4
     Then Request getbalance after create transaction    ${PTN1}
 
 *** Keywords ***

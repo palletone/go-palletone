@@ -16,7 +16,7 @@ Scenario: 20Contract- Supply token
     ${PTN1}    ${key}    ${coinToken1}    And Request getbalance before create token
     ${ret}    When Create token of vote contract    ${geneAdd}
     ${GAIN}    And Calculate gain of recieverAdd
-    ${PTN2}    ${tokenGAIN}    And Request getbalance after create token    ${geneAdd}    ${key}    ${GAIN}
+    ${PTN2}    ${tokenGAIN}    And Request getbalance after create token    ${geneAdd}    ${key}    ${coinToken1}
     Then Assert gain of reciever    ${PTN1}    ${PTN2}    ${tokenGAIN}    ${GAIN}
 
 *** Keywords ***
@@ -50,12 +50,12 @@ Calculate gain of recieverAdd
     [Return]    ${GAIN}
 
 Request getbalance after create token
-    [Arguments]    ${geneAdd}    ${key}    ${GAIN}
+    [Arguments]    ${geneAdd}    ${key}    ${coinToken1}
     sleep    4
     ${result2}    getBalance    ${geneAdd}
     ${coinToken2}    Get From Dictionary    ${result2}    ${key}
     ${PTN2}    Get From Dictionary    ${result2}    PTN
-    ${tokenGAIN}    Evaluate    float(${coinToken2})-float(${coinToken1})
+    ${tokenGAIN}    Evaluate    ${coinToken2}-${coinToken1}
     [Return]    ${PTN2}    ${tokenGAIN}
 
 Assert gain of reciever

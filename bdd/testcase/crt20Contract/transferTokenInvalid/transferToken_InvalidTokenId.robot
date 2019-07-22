@@ -11,7 +11,7 @@ Resource          ../../utilKwd/normalKwd.txt
 
 *** Variables ***
 ${host}           http://localhost:8545/
-${method}         ptn_transferToken
+${method}         wallet_transferToken
 
 *** Test Cases ***
 Scenario: InvalidTokenId
