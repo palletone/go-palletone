@@ -380,7 +380,7 @@ func (t *SimpleChaincode) test_SetEvent(stub shim.ChaincodeStubInterface, args [
 
 func (t *SimpleChaincode) test_DefineToken(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	// stub.DefineToken(byte(dm.AssetType_FungibleToken), createJson, createAddr.String())
-	if len(args) != 5 {
+	if len(args) != 4 {
 		return shim.Error("input: <token name> <token symbol> <token dedimals> <token total>")
 	}
 
