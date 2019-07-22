@@ -158,12 +158,17 @@ func _payoutPTN(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(err.Error())
 	}
 
+	//check tx status
+	if txResult.Status != "1" {
+		log.Debugf("The tx is failed")
+		return shim.Error("The tx is failed")
+	}
 	//check contract address, must be ptn erc20 contract address
 	if strings.ToLower(txResult.ContractAddr) != PTN_ERC20Addr {
 		log.Debugf("The tx is't PTN contract")
 		return shim.Error("The tx is't PTN contract")
 	}
-	//checke receiver, must be ptnmap contract address
+	//check receiver, must be ptnmap contract address
 	mapAddr, err := getMapAddr(stub)
 	if err != nil {
 		log.Debugf("getMapAddr failed: %s", err.Error())
