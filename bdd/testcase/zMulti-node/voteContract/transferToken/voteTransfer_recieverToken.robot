@@ -28,7 +28,6 @@ Request getbalance before create token
     [Arguments]    ${geneAdd}
     ${PTN1}    ${result1}    normalGetBalance    ${geneAdd}    ${mutiHost1}
     ${key}    getTokenId    ${voteId}    ${result1['result']}
-    sleep    4
     ${PTN2}    ${result2}    normalGetBalance    ${recieverAdd}    ${mutiHost1}
     #${dicRes}    Evaluate    demjson.encode(${result2})    demjson
     #log    type(${dicRes})
