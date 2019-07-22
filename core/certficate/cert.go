@@ -92,7 +92,7 @@ func CertInfo2Cainfo(certinfo CertINfo) client.CaGenInfo {
 		ECert:       certinfo.ECert,
 		Type:        certinfo.Type,
 		Affiliation: certinfo.Affiliation,
-		Key:         certinfo.Key,
+		//Key:         certinfo.Key,
 	}
 
 }
@@ -101,8 +101,8 @@ func CertChain2Result(cc client.CAGetCertResponse) CAGetCertChain {
 	return CAGetCertChain{
 		RootCertificates:         cc.RootCertificates,
 		IntermediateCertificates: cc.IntermediateCertificates,
-		CAName:  cc.CAName,
-		Version: cc.Version,
+		CAName:                   cc.CAName,
+		Version:                  cc.Version,
 	}
 }
 
