@@ -116,7 +116,7 @@ func getDockerHostConfig() *docker.HostConfig {
 		NetworkMode:    icp.UccNetworkMode,
 		Memory:         cp.UccMemory,
 		MemorySwap:     cp.UccMemorySwap,
-		OOMKillDisable: icp.UccOOMKillDisable,
+		OOMKillDisable: &icp.UccOOMKillDisable,
 		CPUShares:      cp.UccCpuShares,
 		CPUQuota:       cp.UccCpuQuota,
 		CPUPeriod:      cp.UccCpuPeriod,
