@@ -634,7 +634,7 @@ loop:
 			}
 			net.refreshResp <- refreshDone
 		case <-refreshDone:
-			log.Trace("<-net.refreshDone", "table size", net.tab.count)
+			//log.Trace("<-net.refreshDone", "table size", net.tab.count)
 			if net.tab.count != 0 {
 				refreshDone = nil
 				list := searchReqWhenRefreshDone
@@ -682,7 +682,7 @@ func (net *Network) refresh(done chan<- struct{}) {
 		seeds = net.nursery
 	}
 	if len(seeds) == 0 {
-		log.Trace("no seed nodes found")
+		//log.Trace("no seed nodes found")
 		close(done)
 		return
 	}
