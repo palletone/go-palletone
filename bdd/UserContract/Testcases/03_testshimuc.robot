@@ -55,17 +55,25 @@ DelState
 
 HandleToken
     Given Unlock token holder succeed
+    # -> define token
     ${reqId}=    When User define token    my token    YY    1    100000
-    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
-    And Query balance by contract    ${tokenHolder}    ${assetId}    10000
+    ${errCode}    ${errMsg}=    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${false}
+    Should Be Equal    ${errMsg}    Chaincode Error:Only system contract can call this function.
+    # -> supply token
     ${reqId}=    And User supply token    YY    100000
-    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
-    And Query balance by contract    ${tokenHolder}    YY    20000
+    ${errCode}    ${errMsg}=    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${false}
+    Should Be Equal    ${errMsg}    error executing chaincode: failed to execute transaction: timeout expired while executing transaction
+    # -> payout token
     ${newAddr}=    Then newAccount
-    ${reqId}=    And User pay out token    ${newAddr}    YY    4500
-    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
-    And Query balance by contract    ${tokenHolder}    YY    19550
-    And Query balance by contract    ${newAddr}    YY    450
+    ${reqId}=    And User pay out token    ${newAddr}    PTN    4500
+    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${false}
+    # -> query balance
+    Then Query balance by contract    ${tokenHolder}    YY    ${0}
+    ${exceptedAmount}=    And getBalance    ${tokenHolder}    PTN
+    ${exceptedAmount}=    Evaluate    ${exceptedAmount}*${100000000}
+    And Query balance by contract    ${tokenHolder}    PTN    ${exceptedAmount}
+    ${exceptedAmount}=    Evaluate    ${4500}*${100000000}
+    And Query balance by contract    ${newAddr}    PTN    ${exceptedAmount}
 
 Get Invoke Info
     Given Unlock token holder succeed
@@ -163,8 +171,30 @@ Check all invoke info
     ${invokeTokens}=    Get From Dictionary    ${GetInvokeParameters}    invokeTokens
 
 User define token
-    [Arguments]    ${name}    ${symbole}    ${decimal}    ${amount}
-    ${args}=    Create List    testDefineToken    ${name}    ${symbole}    ${decimal}    ${amount}
+    [Arguments]    ${name}    ${symbol}    ${decimal}    ${amount}
+    ${args}=    Create List    testDefineToken    ${name}    ${symbol}    ${decimal}    ${amount}
+    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
+    ...    ${args}
+    ${result}=    Get From Dictionary    ${respJson}    result
+    ${reqId}=    Get From Dictionary    ${result}    reqId
+    ${contractId}=    Get From Dictionary    ${result}    ContractId
+    Should Be Equal    ${gContractId}    ${contractId}
+    [Return]    ${reqId}
+
+User supply token
+    [Arguments]    ${symbol}    ${amount}
+    ${args}=    Create List    testSupplyToken    ${symbol}    ${amount}
+    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
+    ...    ${args}
+    ${result}=    Get From Dictionary    ${respJson}    result
+    ${reqId}=    Get From Dictionary    ${result}    reqId
+    ${contractId}=    Get From Dictionary    ${result}    ContractId
+    Should Be Equal    ${gContractId}    ${contractId}
+    [Return]    ${reqId}
+
+User pay out token
+    [Arguments]    ${to}    ${symbol}    ${amount}
+    ${args}=    Create List    testPayOutToken    ${to}    ${symbol}    ${amount}
     ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
     ...    ${args}
     ${result}=    Get From Dictionary    ${respJson}    result
@@ -174,12 +204,16 @@ User define token
     [Return]    ${reqId}
 
 Query balance by contract
-    [Arguments]    ${addr}    ${symbole}    ${exceptedAmount}
-    ${args}=    Create List    testGetTokenBalance    ${addr}    ${symbole}
+    [Arguments]    ${addr}    ${symbol}    ${exceptedAmount}
+    ${args}=    Create List    testGetTokenBalance    ${addr}    ${symbol}
     ${respJson}=    queryContract    ${gContractId}    ${args}
     Dictionary Should Contain Key    ${respJson}    result
     ${result}=    Get From Dictionary    ${respJson}    result
-    [Return]    ${reqId}
+    ${result}=    To Json    ${result}
+    ${len}=    Get Length    ${result}
+    ${amount}=    Run Keyword If    ${len}==${0}    Set Variable    ${0}
+    ...    ELSE    Evaluate    ${result}[${0}]["amount"]
+    Should Be Equal    ${amount}    ${exceptedAmount}
 
 User put state
     [Arguments]    ${method}    ${key}    ${value}

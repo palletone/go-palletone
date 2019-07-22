@@ -32,13 +32,13 @@ transferTokenTo
     Dictionary Should Contain Key    ${respJson}    result
 
 getBalance
-    [Arguments]    ${addr}
+    [Arguments]    ${addr}  ${symbol}
     ${params}=    Create List    ${addr}
     ${respJson}=    sendRpcPost    ${host}    ${getBalanceMethod}    ${params}    getBalance
     Dictionary Should Contain Key    ${respJson}    result
-    Dictionary Should Contain Key    ${respJson["result"]}    ${gasToken}
+    Dictionary Should Contain Key    ${respJson["result"]}    ${symbol}
     ${result}=    Get From Dictionary    ${respJson}    result
-    ${amount}=    Get From Dictionary    ${result}    ${gasToken}
+    ${amount}=    Get From Dictionary    ${result}    ${symbol}
     [Return]    ${amount}
 
 getAllBalance
@@ -225,7 +225,7 @@ Wait for unit about contract to be confirmed by unit height
     : FOR    ${t}    IN RANGE    ${waitTimes}
     \    ${height}=    getCurrentUnitHeight    ${host}    # query current unit height
     \    Run Keyword If    ${height}-${unitHeight}>3    Exit For Loop
-    \    Run Keyword If    ${waitTimes}-${t}==1    Fail    "It takes too slow to confirm unit"
+    \    Run Keyword If    ${waitTimes}-${t}==1    Fail    "It takes too long to confirm unit"
     \    Sleep    3s
     [Return]    ${errCode}    ${errMsg}
 

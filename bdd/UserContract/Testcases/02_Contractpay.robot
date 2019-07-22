@@ -73,8 +73,7 @@ User transfer PTN to contractpay
     Wait for transaction being packaged
 
 Query contract balance
-    Set Global Variable    ${gasToken}    PTN
-    ${amount}=    getBalance    ${gContractId}
+    ${amount}=    getBalance    ${gContractId}  PTN
     Should Be Equal    ${amount}    10000
     Log    ${amount}
 
