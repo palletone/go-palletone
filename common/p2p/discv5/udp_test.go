@@ -16,7 +16,6 @@
 
 package discv5
 
-/*
 import (
 	"encoding/hex"
 	"errors"
@@ -27,9 +26,9 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
-	"github.com/ethereum/go-ethereum/rlp"
 )
 
 func init() {
@@ -449,4 +448,3 @@ func (c *dgramPipe) waitPacketOut() []byte {
 	c.queue = c.queue[:len(c.queue)-1]
 	return p
 }
-*/

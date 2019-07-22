@@ -16,7 +16,6 @@
 
 package discv5
 
-/*
 import (
 	"crypto/ecdsa"
 	"fmt"
@@ -336,4 +335,3 @@ func newkey() *ecdsa.PrivateKey {
 	}
 	return key
 }
-*/
