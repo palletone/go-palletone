@@ -24,7 +24,7 @@ package protos;
 option java_package = "protos.peer";
 
 option go_package = "github.com/palletone/go-palletone/core/vmContractPub/protos/peer";
-import "google/protobuf/timestamp.proto";
+//import "google/protobuf/timestamp.proto";
 
 
 // Confidentiality Levels
@@ -77,6 +77,9 @@ message ChaincodeSpec {
     ChaincodeID chaincode_id = 2;
     ChaincodeInput input = 3;
     int32 timeout = 4;
+    int64 Memory = 5;
+    int64 CpuQuota = 6;
+    int64 CpuShare = 7;
 }
 
 // Specify the deployment of a chaincode.
@@ -90,7 +93,7 @@ message ChaincodeDeploymentSpec {
 
     ChaincodeSpec chaincode_spec = 1;
     // Controls when the chaincode becomes executable.
-    google.protobuf.Timestamp effective_date = 2;
+//    google.protobuf.Timestamp effective_date = 2;
     bytes code_package = 3;
     ExecutionEnvironment exec_env=  4;
 

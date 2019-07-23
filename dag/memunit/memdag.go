@@ -499,8 +499,8 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 				log.Debugf("validate main chain unit error, %s, unit hash:%s", vali_err.Error(), uHash.String())
 				return nil, nil, nil, nil, nil, vali_err
 			}
-			//	tempdb, _ = tempdb.AddUnit(unit, chain.saveHeaderOnly)
-			go tempdb.AddUnit(unit, chain.saveHeaderOnly)
+			tempdb, _ = tempdb.AddUnit(unit, chain.saveHeaderOnly)
+			// go tempdb.AddUnit(unit, chain.saveHeaderOnly)
 			chain.tempdb.Store(uHash, tempdb)
 			chain.chainUnits.Store(uHash, tempdb)
 			if has {
