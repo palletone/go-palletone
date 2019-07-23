@@ -75,6 +75,14 @@ HandleToken
     ${exceptedAmount}=    Evaluate    ${4500}*${100000000}
     And Query balance by contract    ${newAddr}    PTN    ${exceptedAmount}
 
+UseDigitalCertificate
+    Given Unlock token holder succeed
+    # -> use cert
+    ${reqId}=    When User use cert to invoke contract    ${caCertID}
+    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${false}
+    ${payload}=    Then Get invoke payload info    ${reqId}
+    And Should Be Equal    ${payload}    ${caCertBytes}
+
 Get Invoke Info
     Given Unlock token holder succeed
     ${args}=    And Create List    arg1    arg2

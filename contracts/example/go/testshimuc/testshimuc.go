@@ -74,6 +74,8 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return t.test_PayOutToken(stub, args)
 	case "testGetTokenBalance":
 		return t.test_GetTokenBalance(stub, args)
+	case "testUseCert":
+		return t.test_UseCert(stub, args)
 	}
 	return shim.Error("Invalid invoke function name. Expecting \"invoke\"")
 }
@@ -503,21 +505,7 @@ func (t *SimpleChaincode) test_SupplyToken(stub shim.ChaincodeStubInterface, arg
 	return shim.Success([]byte(""))
 }
 
-func (t *SimpleChaincode) test_GetRequesterCert(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	if len(args) < 1 {
-		return shim.Error("input:<certificate raw bytes>")
-	}
-	certBytes, err := stub.GetRequesterCert()
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	if string(certBytes) != args[0] {
-		return shim.Error("Certificate bytes through GetRequesterCert was unexpected")
-	}
-	return shim.Success(nil)
-}
-
-func (t *SimpleChaincode) test_IsRequesterCertValid(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *SimpleChaincode) test_UseCert(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	v, err := stub.IsRequesterCertValid()
 	if err != nil {
 		return shim.Error(err.Error())
@@ -525,7 +513,11 @@ func (t *SimpleChaincode) test_IsRequesterCertValid(stub shim.ChaincodeStubInter
 	if v != true {
 		return shim.Error("Certificate used is invalid.")
 	}
-	return shim.Success(nil)
+	certBytes, err := stub.GetRequesterCert()
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	return shim.Success(certBytes)
 }
 
 type JuryMsgAddr struct {
