@@ -24,6 +24,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"time"
 
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -170,6 +171,7 @@ func TestMemDag_AddOrphanUnit(t *testing.T) {
 	log.Debugf("Try add missed unit[%x] to memdag", u2.Hash())
 	_, _, _, _, _, err = memdag.AddUnit(u2, txpool)
 	assert.Nil(t, err)
+	time.Sleep(1 * time.Second)
 	assert.EqualValues(t, 3, memdag.GetLastMainChainUnit().NumberU64())
 }
 
@@ -211,6 +213,7 @@ func TestMemDag_SwitchMainChain(t *testing.T) {
 
 	_, _, _, _, _, err = memdag.AddUnit(u33, txpool)
 	assert.Nil(t, err)
+	time.Sleep(1 * time.Second)
 	assert.EqualValues(t, 3, memdag.GetLastMainChainUnit().NumberU64())
 }
 
