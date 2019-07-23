@@ -19,7 +19,7 @@ GO ?= latest
 BUILD_DIR = $(shell pwd)/build
 
 gptn:
-	build/env.sh go run build/ci.go install ./cmd/gptn
+	go run build/ci.go install ./cmd/gptn
 	@echo "Done building."
 	@echo "Run \"$(GOBIN)/gptn\" to launch gptn."
 

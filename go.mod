@@ -54,7 +54,7 @@ require (
 	github.com/onsi/gomega v1.5.0 // indirect
 	github.com/palletone/adaptor v0.6.1-0.20190717052756-a631c9dd9d6a
 	github.com/palletone/btc-adaptor v0.6.1-0.20190718062616-d31b41f123f7
-	github.com/palletone/digital-identity v0.0.0-20190528094734-e865dc23008a
+	github.com/palletone/digital-identity v0.6.1-0.20190722095929-e1f02021dead
 	github.com/palletone/eth-adaptor v0.6.1-0.20190718070938-ea95de9928b1
 	github.com/pborman/uuid v1.2.0
 	github.com/peterh/liner v0.0.0-20170902204657-a37ad3984311

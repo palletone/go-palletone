@@ -110,15 +110,15 @@ func NewChainParams() ChainParameters {
 	return ChainParameters{
 		ChainParametersBase: NewChainParametersBase(),
 		// TxCoinYearRate:       DefaultTxCoinYearRate,
-		DepositPeriod:        DefaultDepositPeriod,
-		UccMemory:            DefaultUccMemory,
-		UccMemorySwap:        DefaultUccMemorySwap,
-		UccCpuShares:         DefaultUccCpuShares,
-		UccCpuPeriod:         DefaultCpuPeriod,
-		UccCpuQuota:          DefaultUccCpuQuota,
-		UccDisk:              DefaultUccDisk,
-		TempUccMemory:        DefaultTempUccMemory,
-		TempUccMemorySwap:    DefaultTempUccMemorySwap,
+		DepositPeriod: DefaultDepositPeriod,
+		UccMemory:     DefaultUccMemory,
+		//UccMemorySwap:        DefaultUccMemorySwap,
+		UccCpuShares: DefaultUccCpuShares,
+		//UccCpuPeriod:         DefaultCpuPeriod,
+		UccCpuQuota:   DefaultUccCpuQuota,
+		UccDisk:       DefaultUccDisk,
+		TempUccMemory: DefaultTempUccMemory,
+		//TempUccMemorySwap:    DefaultTempUccMemorySwap,
 		TempUccCpuShares:     DefaultTempUccCpuShares,
 		TempUccCpuQuota:      DefaultTempUccCpuQuota,
 		ContractSignatureNum: DefaultContractSignatureNum,
@@ -136,17 +136,14 @@ type ChainParameters struct {
 	DepositPeriod int     `json:"deposit_period"` //保证金周期
 
 	//对启动用户合约容器的相关资源的限制
-	UccMemory     int64 `json:"ucc_memory"`      //物理内存  104857600  100m
-	UccMemorySwap int64 `json:"ucc_memory_swap"` //内存交换区，不设置默认为memory的两倍
-	UccCpuShares  int64 `json:"ucc_cpu_shares"`  //CPU占用率，相对的  CPU 利用率权重，默认为 1024
-	UccCpuQuota   int64 `json:"ucc_cpu_quota"`   // 限制CPU --cpu-period=50000 --cpu-quota=25000
-	UccCpuPeriod  int64 `json:"ucc_cpu_period"`  //限制CPU 周期设为 50000，将容器在每个周期内的 CPU 配额设置为 25000，表示该容器每 50ms 可以得到 50% 的 CPU 运行时间
-	UccDisk       int64 `json:"ucc_disk"`
+	UccMemory    int64 `json:"ucc_memory"`     //物理内存  104857600  100m
+	UccCpuShares int64 `json:"ucc_cpu_shares"` //CPU占用率，相对的  CPU 利用率权重，默认为 1024
+	UccCpuQuota  int64 `json:"ucc_cpu_quota"`  // 限制CPU --cpu-period=50000 --cpu-quota=25000
+	UccDisk      int64 `json:"ucc_disk"`
 	//对中间容器的相关资源限制
-	TempUccMemory     int64 `json:"temp_ucc_memory"`
-	TempUccMemorySwap int64 `json:"temp_ucc_memory_swap"`
-	TempUccCpuShares  int64 `json:"temp_ucc_cpu_shares"`
-	TempUccCpuQuota   int64 `json:"temp_ucc_cpu_quota"`
+	TempUccMemory    int64 `json:"temp_ucc_memory"`
+	TempUccCpuShares int64 `json:"temp_ucc_cpu_shares"`
+	TempUccCpuQuota  int64 `json:"temp_ucc_cpu_quota"`
 
 	//contract about
 	ContractSignatureNum int `json:"contract_signature_num"`

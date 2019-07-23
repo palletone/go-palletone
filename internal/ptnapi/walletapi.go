@@ -1157,7 +1157,7 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 	if Extra != "" {
 		textPayload := new(modules.DataPayload)
 		textPayload.Reference = []byte(asset)
-		//textPayload.MainData = []byte(asset)
+		textPayload.MainData = []byte(Extra)
 		rawTx.TxMessages = append(rawTx.TxMessages, modules.NewMessage(modules.APP_DATA, textPayload))
 	}
 	//lockscript
@@ -1250,6 +1250,7 @@ func (s *PublicWalletAPI) getFileInfo(filehash string) (string, error) {
 		get.ParentsHash = file.ParentsHash.String()
 		get.FileHash = string(file.MainData)
 		get.ExtraData = string(file.ExtraData)
+		get.Reference = string(file.Reference)
 		timestamp = int64(file.Timestamp)
 		tm := time.Unix(timestamp, 0)
 		get.Timestamp = tm.String()
@@ -1317,7 +1318,7 @@ func (s *PublicWalletAPI) GetProofOfExistencesByAsset(ctx context.Context, asset
 }
 
 //affiliation  gptn.mediator1
-func (s *PublicWalletAPI) GenCert(ctx context.Context,caAddress,userAddress, passwd, name, data, roleType, affiliation string) (*ContractDeployRsp, error) {
+func (s *PublicWalletAPI) GenCert(ctx context.Context, caAddress, userAddress, passwd, name, data, roleType, affiliation string) (*ContractDeployRsp, error) {
 
 	ks := s.b.GetKeyStore()
 	account, err := MakeAddress(ks, userAddress)
@@ -1402,7 +1403,7 @@ func readTxs(path string) ([]string, error) {
 	txs := make([]string, 0)
 	f, err := os.Open(path)
 	if err != nil {
-		log.Infof("open file failed, err:", err.Error())
+		log.Infof("open file failed, err:%s", err.Error())
 		return nil, err
 	}
 	defer f.Close()

@@ -458,6 +458,7 @@ type FileInfo struct {
 	Timestamp   uint64      `json:"timestamp"`
 	MainData    string      `json:"main_data"`
 	ExtraData   string      `json:"extra_data"`
+	Reference   string        `json:"reference"`
 }
 
 func NewContractTplPayload(templateId []byte, memory uint16, bytecode []byte, err ContractError) *ContractTplPayload {
