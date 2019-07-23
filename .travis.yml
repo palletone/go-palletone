@@ -39,10 +39,10 @@ matrix:
   include:
     - os: linux
       dist: xenial
-      go: 1.10.x
+      go: 1.12.x
       env: UT
       script:
-        - go get github.com/mattn/goveralls
+        # - go get github.com/mattn/goveralls
         - go build ./cmd/gptn
         - make gptn
         - go test ./...
@@ -72,7 +72,7 @@ matrix:
     #     - go test ./...
     - os: linux
       dist: xenial
-      go: 1.12.5
+      go: 1.12.X
       env: one_node_bdd
       script:
         - go build ./cmd/gptn
@@ -155,7 +155,7 @@ matrix:
         - chmod +x bdd/upload2Ftp.sh
     - os: linux
       dist: xenial
-      go: 1.12.5
+      go: 1.12.X
       env: multiple_nodes_bdd
       script:
         #- go build ./cmd/gptn
@@ -209,7 +209,7 @@ matrix:
         - chmod +x bdd/upload2Ftp.sh
     - os: linux
       dist: xenial
-      go: 1.12.5
+      go: 1.12.X
       env: mediator_bdd
       script:
         - go build ./cmd/gptn
@@ -245,7 +245,7 @@ matrix:
         - chmod +x bdd/upload2Ftp.sh
     - os: linux
       dist: xenial
-      go: 1.12.5
+      go: 1.12.X
       env: application_bdd
       script:
         - go build ./cmd/gptn
@@ -279,11 +279,11 @@ matrix:
         - sudo -H apt-get install expect
         - sudo -H apt-get install lftp
         - chmod +x bdd/upload2Ftp.sh
-before_install:
-    - go get -u github.com/palletone/adaptor
-    - go get -u github.com/palletone/btc-adaptor
-    - go get -u github.com/palletone/eth-adaptor
-    - source ./build/goget_by_version.sh
+# before_install:
+#     - go get -u github.com/palletone/adaptor
+#     - go get -u github.com/palletone/btc-adaptor
+#     - go get -u github.com/palletone/eth-adaptor
+#     - source ./build/goget_by_version.sh
     #- source ./gomockgen.sh
 
 
