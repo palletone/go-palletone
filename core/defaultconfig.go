@@ -39,6 +39,7 @@ const (
 	DefaultUccCpuShares  = 1024      //CPU占用率，相对的  CPU 利用率权重，默认为 1024
 	DefaultCpuPeriod     = 50000     // 限制CPU --cpu-period=50000 --cpu-quota=25000
 	DefaultUccCpuQuota   = 25000     //限制CPU 周期设为 50000，将容器在每个周期内的 CPU 配额设置为 25000，表示该容器每 50ms 可以得到 50% 的 CPU 运行时间
+	DefaultUccDisk       = 157286400 // 1073741824 = 1G  157286400 = 150m
 	DefaultUccPrivileged = false     //防止容器以root权限运行
 	//DefaultUccNetworkMode    = "bridge"   //容器运行网络模式
 	DefaultUccNetworkMode    = "host" //TODO xiaozhi 测试容器运行网络模式

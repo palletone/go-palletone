@@ -271,7 +271,7 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 	}
 	rsp, unit, err := es.ProcessProposal(rwM, idag, deployId, context.Background(), sprop, prop, chainID, cid, timeout)
 	//  TODO 执行完invoke，获取容器资源使用情况
-	//utils.GetResourcesWhenInvokeContainer(cc)
+	utils.GetResourcesWhenInvokeContainer(cc)
 	log.Debugf("process proposal")
 	if err != nil {
 		log.Infof("ProcessProposal error[%v]", err)
@@ -331,7 +331,10 @@ func StopByName(contractid []byte, chainID string, txid string, usercc *cclist.C
 	return stopResult, nil
 }
 
-func GetAllContainers(client *docker.Client) {
+func GetAllContainers(client *docker.Client, disk int64) {
+	//  监听所有容器的磁盘使用量
+	utils.GetDiskForEachContainer(client, disk)
+	//
 	addrs, err := utils.GetAllExitedContainer(client)
 	if err != nil {
 		log.Infof("client.ListContainers err: %s\n", err.Error())

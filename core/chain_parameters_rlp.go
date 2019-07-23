@@ -38,6 +38,7 @@ type chainParameters struct {
 	UccCpuShares  string
 	UccCpuQuota   string
 	UccCpuPeriod  string
+	UccDisk       string
 
 	TempUccMemory     string
 	TempUccMemorySwap string
@@ -67,6 +68,7 @@ func (cp *ChainParameters) getCPT() *chainParameters {
 		UccCpuShares:  strconv.FormatInt(int64(cp.UccCpuShares), 10),
 		UccCpuQuota:   strconv.FormatInt(int64(cp.UccCpuQuota), 10),
 		UccCpuPeriod:  strconv.FormatInt(int64(cp.UccCpuPeriod), 10),
+		UccDisk:       strconv.FormatInt(int64(cp.UccDisk), 10),
 
 		TempUccMemory:     strconv.FormatInt(int64(cp.TempUccMemory), 10),
 		TempUccMemorySwap: strconv.FormatInt(int64(cp.TempUccMemorySwap), 10),
@@ -128,6 +130,12 @@ func (cpt *chainParameters) getCP(cp *ChainParameters) error {
 		return err
 	}
 	cp.UccCpuPeriod = int64(UccCpuPeriod)
+
+	UccDisk, err := strconv.ParseInt(cpt.UccDisk, 10, 64)
+	if err != nil {
+		return err
+	}
+	cp.UccDisk = int64(UccDisk)
 
 	TempUccMemory, err := strconv.ParseInt(cpt.TempUccMemory, 10, 64)
 	if err != nil {
