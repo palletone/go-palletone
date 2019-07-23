@@ -763,6 +763,7 @@ func (self *ProtocolManager) dockerLoop() {
 	if err != nil {
 		log.Infof("util.NewDockerClient err: %s\n", err.Error())
 	}
+	cp := self.dag.GetChainParameters()
 	for {
 		select {
 		case <-self.dockerQuitSync:
@@ -770,7 +771,7 @@ func (self *ProtocolManager) dockerLoop() {
 			return
 		case <-time.After(time.Duration(30) * time.Second):
 			log.Debugf("each 30 second to get all containers")
-			manger.GetAllContainers(client)
+			manger.GetAllContainers(client, cp.UccDisk)
 		}
 	}
 }

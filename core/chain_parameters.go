@@ -116,6 +116,7 @@ func NewChainParams() ChainParameters {
 		UccCpuShares:         DefaultUccCpuShares,
 		UccCpuPeriod:         DefaultCpuPeriod,
 		UccCpuQuota:          DefaultUccCpuQuota,
+		UccDisk:              DefaultUccDisk,
 		TempUccMemory:        DefaultTempUccMemory,
 		TempUccMemorySwap:    DefaultTempUccMemorySwap,
 		TempUccCpuShares:     DefaultTempUccCpuShares,
@@ -140,7 +141,7 @@ type ChainParameters struct {
 	UccCpuShares  int64 `json:"ucc_cpu_shares"`  //CPU占用率，相对的  CPU 利用率权重，默认为 1024
 	UccCpuQuota   int64 `json:"ucc_cpu_quota"`   // 限制CPU --cpu-period=50000 --cpu-quota=25000
 	UccCpuPeriod  int64 `json:"ucc_cpu_period"`  //限制CPU 周期设为 50000，将容器在每个周期内的 CPU 配额设置为 25000，表示该容器每 50ms 可以得到 50% 的 CPU 运行时间
-
+	UccDisk       int64 `json:"ucc_disk"`
 	//对中间容器的相关资源限制
 	TempUccMemory     int64 `json:"temp_ucc_memory"`
 	TempUccMemorySwap int64 `json:"temp_ucc_memory_swap"`

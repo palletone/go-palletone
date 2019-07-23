@@ -1317,10 +1317,10 @@ func (s *PublicWalletAPI) GetProofOfExistencesByAsset(ctx context.Context, asset
 }
 
 //affiliation  gptn.mediator1
-func (s *PublicWalletAPI) GenCert(addrStr, passwd, name, data, roleType, affiliation string) (*ContractDeployRsp, error) {
+func (s *PublicWalletAPI) GenCert(ctx context.Context,caAddress,userAddress, passwd, name, data, roleType, affiliation string) (*ContractDeployRsp, error) {
 
 	ks := s.b.GetKeyStore()
-	account, err := MakeAddress(ks, addrStr)
+	account, err := MakeAddress(ks, userAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -1329,37 +1329,36 @@ func (s *PublicWalletAPI) GenCert(addrStr, passwd, name, data, roleType, affilia
 	if err != nil {
 		return nil, err
 	}
-
 	ca := certficate.CertINfo{}
-	ca.Address = addrStr
+	ca.Address = userAddress
 	ca.Name = name
 	ca.Data = data
 	ca.Type = roleType
 	ca.Affiliation = affiliation
 	ca.Key = privKey
+	//生成证书 获取证书byte
 	certBytes, err := certficate.GenCert(ca)
 	log.Infof("GenCert Success! CertBytes[%s]", certBytes)
 	if err != nil {
 		return nil, err
 	}
 	//调用系统合约 将证书byte存入到数字身份系统合约中
-
 	args := make([][]byte, 3)
 	args[0] = []byte("addMemberCert")
-	args[1] = []byte(addrStr)
+	args[1] = []byte(userAddress)
 	args[2] = certBytes
 
 	contractAddr := "PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk"
-	addr, _ := common.StringToAddress(addrStr)
+	caAddr, _ := common.StringToAddress(caAddress)
 	cAddr, _ := common.StringToAddress(contractAddr)
-	reqId, err := s.b.ContractInvokeReqTx(addr, addr, 100000, 100000, nil, cAddr, args, 0)
+	reqId, err := s.b.ContractInvokeReqTx(caAddr, caAddr, 10000, 0000, nil, cAddr, args, 0)
 	log.Infof("GenCert reqId[%s]", hex.EncodeToString(reqId[:]))
-	rsp1 := &ContractDeployRsp{
+	rsp := &ContractDeployRsp{
 		ReqId:      hex.EncodeToString(reqId[:]),
 		ContractId: contractAddr,
 	}
 
-	return rsp1, nil
+	return rsp, nil
 }
 
 //好像某个UTXO是被那个交易花费的
