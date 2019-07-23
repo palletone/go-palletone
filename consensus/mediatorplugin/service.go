@@ -295,13 +295,14 @@ func (mp *MediatorPlugin) initLocalConfigMediator(mcs []*MediatorConf, am *accou
 
 		addr := medAcc.Address
 		// 解锁本地配置的mediator账户
+		log.Debugf("try to unlock mediator account: %v", medConf.Address)
 		err := ks.Unlock(accounts.Account{Address: addr}, medAcc.Password)
 		if err != nil {
-			log.Infof("fail to unlock the mediator(%v), error: %v", medConf.Address, err.Error())
+			log.Debugf("fail to unlock the mediator(%v), error: %v", medConf.Address, err.Error())
 			continue
 		}
 
-		log.Infof("this node control mediator account address: %v", medConf.Address)
+		log.Infof("this node control mediator account: %v", medConf.Address)
 		mas[addr] = medAcc
 	}
 

@@ -259,8 +259,8 @@ func (a *PrivateMediatorAPI) Apply(args MediatorCreateArgs) (*TxExecuteResult, e
 
 	// 返回执行结果
 	res := &TxExecuteResult{}
-	res.TxContent = fmt.Sprintf("Apply mediator %v with initPubKey : %v , node: %v , content: %v",
-		args.AddStr, args.InitPubKey, args.Node, args.ApplyInfo)
+	res.TxContent = fmt.Sprintf("Apply mediator %v with initPubKey : %v , node: %v , name: %v , url: %v",
+		args.AddStr, args.InitPubKey, args.Node, args.Name, args.Url)
 	res.TxFee = fmt.Sprintf("%vdao", fee)
 	res.Warning = DefaultResult
 	res.Tip = "Your ReqId is: " + hex.EncodeToString(reqId[:]) +

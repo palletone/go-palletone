@@ -70,12 +70,14 @@ func NewMediator() *Mediator {
 
 // Mediator申请信息
 type MediatorApplyInfo struct {
-	ApplyInfo string `json:"applyInfo"` //  申请信息
+	Name      string `json:"name"`      // 节点名称
+	Url       string `json:"url"`       // 节点网站
 }
 
 func NewMediatorApplyInfo() *MediatorApplyInfo {
 	return &MediatorApplyInfo{
-		ApplyInfo: "某节点; www.abc.com",
+		Name: "某节点",
+		Url: "www.abc.com",
 	}
 }
 
