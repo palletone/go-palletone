@@ -26,6 +26,7 @@ if [ $index -eq 0 ] ; then
 /}`
 
     add=`echo $add | jq ".initialParameters.foundation_address = \"$account\""`
+    add=`echo $add | jq ".digitalIdentityConfig.rootCAHolder = \"$account\""`
 
 fi
 
