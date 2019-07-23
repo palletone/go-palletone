@@ -228,7 +228,7 @@ func TestSignVerify(t *testing.T) {
 	t.Logf("Signature:%s,len:%d",hexutil.Encode(sign),len(sign))
 
 	pubKey,err=cryptoP256.PrivateKeyToPubKey(prvKey)
-	pass,err= cryptoP256.Verify(pubKey,text,sign)
+	pass,err= cryptoP256.Verify(pubKey,sign,text)
 	assert.Nil(t,err)
 	assert.True(t,pass)
 }
