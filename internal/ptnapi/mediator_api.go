@@ -163,9 +163,9 @@ func (a *PublicMediatorAPI) GetInfo(addStr string) (*modules.MediatorInfo, error
 		return nil, err
 	}
 
-	//if !a.Dag().IsMediator(mediator) {
-	//	return nil, fmt.Errorf("%v is not mediator", mediator.Str())
-	//}
+	if !a.Dag().IsMediator(mediator) {
+		return nil, fmt.Errorf("%v is not mediator", mediator.Str())
+	}
 
 	return a.Dag().GetMediatorInfo(mediator), nil
 }
@@ -249,7 +249,6 @@ func (a *PrivateMediatorAPI) Apply(args MediatorCreateArgs) (*TxExecuteResult, e
 	cArgs := [][]byte{[]byte(modules.ApplyMediator), argsB}
 
 	// 调用系统合约
-	//fee := a.Dag().CurrentFeeSchedule().MediatorCreateFee
 	fee := a.Dag().GetChainParameters().MediatorCreateFee
 	reqId, err := a.ContractInvokeReqTx(addr, addr, 0, fee, nil,
 		syscontract.DepositContractAddress, cArgs, 0)
@@ -287,7 +286,6 @@ func (a *PrivateMediatorAPI) PayDeposit(from string, amount decimal.Decimal) (*T
 
 	// 调用系统合约
 	cArgs := [][]byte{[]byte(modules.MediatorPayDeposit)}
-	//fee := a.Dag().CurrentFeeSchedule().TransferFee.BaseFee
 	fee := a.Dag().GetChainParameters().TransferPtnBaseFee
 	reqId, err := a.ContractInvokeReqTx(fromAdd, syscontract.DepositContractAddress, ptnjson.Ptn2Dao(amount),
 		fee, nil, syscontract.DepositContractAddress, cArgs, 0)
@@ -326,7 +324,6 @@ func (a *PrivateMediatorAPI) Quit(medAddStr string) (*TxExecuteResult, error) {
 
 	// 调用系统合约
 	cArgs := [][]byte{[]byte(modules.MediatorApplyQuit)}
-	//fee := a.Dag().CurrentFeeSchedule().TransferFee.BaseFee
 	fee := a.Dag().GetChainParameters().TransferPtnBaseFee
 	reqId, err := a.ContractInvokeReqTx(medAdd, medAdd, 0, fee,
 		nil, syscontract.DepositContractAddress, cArgs, 0)

@@ -631,14 +631,17 @@ func checkDbMigration(db ptndb.Database, stateDb storage.IStateDb) error {
 		old_vertion = &modules.DataVersion{Version: "1.0.0-beta"}
 	}
 	log.Debugf("the database version is:%s", old_vertion.Version)
+
 	// 获取当前gptn版本号
 	now_version := configure.Version
 	log.Debugf("the program version is:%s", now_version)
 	next_version := old_vertion.Version
+
 	if next_version != now_version {
 		log.Infof("Start migration,upgrade gtpn vertion[%s] to [%s]", next_version, now_version)
 		// migrations
 		mig_versions := migration.NewMigrations(db)
+
 		for {
 			if mig, has := mig_versions[next_version]; has {
 				if err := mig.ExecuteUpgrade(); err != nil {
@@ -659,9 +662,11 @@ func checkDbMigration(db ptndb.Database, stateDb storage.IStateDb) error {
 				break
 			}
 		}
+
 		log.Infof("Complete migration, spent time:%s", time.Since(t))
 		return nil
 	}
+
 	return nil
 }
 
