@@ -63,17 +63,14 @@ func (cp *ChainParameters) getCPT() *chainParameters {
 		DepositDailyReward: strconv.FormatInt(int64(cp.PledgeDailyReward), 10),
 		DepositPeriod:      strconv.FormatInt(int64(cp.DepositPeriod), 10),
 
-		UccMemory:     strconv.FormatInt(int64(cp.UccMemory), 10),
-		UccMemorySwap: strconv.FormatInt(int64(cp.UccMemorySwap), 10),
-		UccCpuShares:  strconv.FormatInt(int64(cp.UccCpuShares), 10),
-		UccCpuQuota:   strconv.FormatInt(int64(cp.UccCpuQuota), 10),
-		UccCpuPeriod:  strconv.FormatInt(int64(cp.UccCpuPeriod), 10),
-		UccDisk:       strconv.FormatInt(int64(cp.UccDisk), 10),
+		UccMemory:    strconv.FormatInt(int64(cp.UccMemory), 10),
+		UccCpuShares: strconv.FormatInt(int64(cp.UccCpuShares), 10),
+		UccCpuQuota:  strconv.FormatInt(int64(cp.UccCpuQuota), 10),
+		UccDisk:      strconv.FormatInt(int64(cp.UccDisk), 10),
 
-		TempUccMemory:     strconv.FormatInt(int64(cp.TempUccMemory), 10),
-		TempUccMemorySwap: strconv.FormatInt(int64(cp.TempUccMemorySwap), 10),
-		TempUccCpuShares:  strconv.FormatInt(int64(cp.TempUccCpuShares), 10),
-		TempUccCpuQuota:   strconv.FormatInt(int64(cp.TempUccCpuQuota), 10),
+		TempUccMemory:    strconv.FormatInt(int64(cp.TempUccMemory), 10),
+		TempUccCpuShares: strconv.FormatInt(int64(cp.TempUccCpuShares), 10),
+		TempUccCpuQuota:  strconv.FormatInt(int64(cp.TempUccCpuQuota), 10),
 
 		ContractSignatureNum: strconv.FormatInt(int64(cp.ContractSignatureNum), 10),
 		ContractElectionNum:  strconv.FormatInt(int64(cp.ContractElectionNum), 10),
@@ -107,12 +104,6 @@ func (cpt *chainParameters) getCP(cp *ChainParameters) error {
 	}
 	cp.UccMemory = int64(UccMemory)
 
-	UccMemorySwap, err := strconv.ParseInt(cpt.UccMemorySwap, 10, 64)
-	if err != nil {
-		return err
-	}
-	cp.UccMemorySwap = int64(UccMemorySwap)
-
 	UccCpuShares, err := strconv.ParseInt(cpt.UccCpuShares, 10, 64)
 	if err != nil {
 		return err
@@ -125,12 +116,6 @@ func (cpt *chainParameters) getCP(cp *ChainParameters) error {
 	}
 	cp.UccCpuQuota = int64(UccCpuQuota)
 
-	UccCpuPeriod, err := strconv.ParseInt(cpt.UccCpuPeriod, 10, 64)
-	if err != nil {
-		return err
-	}
-	cp.UccCpuPeriod = int64(UccCpuPeriod)
-
 	UccDisk, err := strconv.ParseInt(cpt.UccDisk, 10, 64)
 	if err != nil {
 		return err
@@ -142,12 +127,6 @@ func (cpt *chainParameters) getCP(cp *ChainParameters) error {
 		return err
 	}
 	cp.TempUccMemory = int64(TempUccMemory)
-
-	TempUccMemorySwap, err := strconv.ParseInt(cpt.TempUccMemorySwap, 10, 64)
-	if err != nil {
-		return err
-	}
-	cp.TempUccMemorySwap = int64(TempUccMemorySwap)
 
 	TempUccCpuShares, err := strconv.ParseInt(cpt.TempUccCpuShares, 10, 64)
 	if err != nil {
