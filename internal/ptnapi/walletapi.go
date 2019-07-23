@@ -1157,7 +1157,7 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 	if Extra != "" {
 		textPayload := new(modules.DataPayload)
 		textPayload.Reference = []byte(asset)
-		//textPayload.MainData = []byte(asset)
+		textPayload.MainData = []byte(Extra)
 		rawTx.TxMessages = append(rawTx.TxMessages, modules.NewMessage(modules.APP_DATA, textPayload))
 	}
 	//lockscript
