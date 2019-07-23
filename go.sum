@@ -56,6 +56,7 @@ github.com/cespare/xxhash v1.1.0/go.mod h1:XrSqR1VqqWfGrhpAt58auRo0WTKS1nRRg3ghf
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/cloudflare/cfssl v0.0.0-20190510060611-9c027c93ba9e h1:ZtyhUG4s94BMUCdgvRZySr/AXYL5CDcjxhIV/83xJog=
 github.com/cloudflare/cfssl v0.0.0-20190510060611-9c027c93ba9e/go.mod h1:yMWuSON2oQp+43nFtAV/uvKQIFpSPerB57DCt9t8sSA=
+github.com/cloudflare/cfssl v0.0.0-20190627231140-2001f384ec4f/go.mod h1:yMWuSON2oQp+43nFtAV/uvKQIFpSPerB57DCt9t8sSA=
 github.com/containerd/continuity v0.0.0-20180612233548-246e49050efd h1:AqPnRJG7BcXlRtISATdp/XsD4cwZK6MdeMxFQ2hGFdw=
 github.com/containerd/continuity v0.0.0-20180612233548-246e49050efd/go.mod h1:GL3xCUCBDV3CZiTSEKksMWbLE66hEyuu9qyDOOqM47Y=
 github.com/containerd/continuity v0.0.0-20181203112020-004b46473808/go.mod h1:GL3xCUCBDV3CZiTSEKksMWbLE66hEyuu9qyDOOqM47Y=
@@ -256,6 +257,9 @@ github.com/palletone/btc-adaptor v0.6.1-0.20190718062616-d31b41f123f7 h1:DAbRc96
 github.com/palletone/btc-adaptor v0.6.1-0.20190718062616-d31b41f123f7/go.mod h1:yiVDYHChPVGmhubz/XLkgWu9qXQya+u4Y/+2e/j0nts=
 github.com/palletone/digital-identity v0.0.0-20190528094734-e865dc23008a h1:kR9IosN38oVoQ/2MOP7qAhHrJGGvP6JnNs3K9HlK+Dk=
 github.com/palletone/digital-identity v0.0.0-20190528094734-e865dc23008a/go.mod h1:vwqWBMZD2KidZGSQEzPvPSHtyYELh+x0mLk0TNlayS4=
+github.com/palletone/digital-identity v0.6.0 h1:3GhOyfTsQG7qZyPacRKcVKEFyGOKPhmCVn/D3d7j8Yg=
+github.com/palletone/digital-identity v0.6.1-0.20190722095929-e1f02021dead h1:+ZBMoFYdG6PKjtP8mvqtxNhkS3164X6Jl8wQ7jLNHWE=
+github.com/palletone/digital-identity v0.6.1-0.20190722095929-e1f02021dead/go.mod h1:nU+KRc545ru0otQl5XbRlV8YiwjS3rHUySM1FMtvq9Y=
 github.com/palletone/eth-adaptor v0.0.0-20190606102906-debacefdb91e h1:UixyiCYdb5S1v9O5qWkhUkzx75ZbiD3feqzdx2A3z7o=
 github.com/palletone/eth-adaptor v0.0.0-20190606102906-debacefdb91e/go.mod h1:1VJ2RI5CRKeui5na1lbqKdjt2DV78J5BtcBv4GhPKP0=
 github.com/palletone/eth-adaptor v0.6.1-0.20190718070938-ea95de9928b1 h1:haxa3RbFB3R2EVRGUXcylcshUfPbdGRlbuFLZAdl41M=
