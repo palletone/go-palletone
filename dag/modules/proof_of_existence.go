@@ -24,11 +24,12 @@ package modules
 import "github.com/palletone/go-palletone/common"
 
 type ProofOfExistence struct {
-	MainData  []byte         `json:"main_data"`
-	ExtraData []byte         `json:"extra_data"`
-	Reference []byte         `json:"reference"`
-	TxId      common.Hash    `json:"tx_id"`
-	UnitHash  common.Hash    `json:"unit_hash"`
-	Timestamp uint64         `json:"timestamp"`
-	Creator   common.Address `json:"creator"`
+	MainData   []byte         `json:"main_data"`
+	ExtraData  []byte         `json:"extra_data"`
+	Reference  []byte         `json:"reference"`
+	UintHeight uint64         `json:"unit_index"`
+	TxId       common.Hash    `json:"tx_id"`
+	UnitHash   common.Hash    `json:"unit_hash"`
+	Timestamp  uint64         `json:"timestamp"`
+	Creator    common.Address `json:"creator"`
 }

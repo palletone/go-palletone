@@ -28,13 +28,14 @@ import (
 )
 
 type ProofOfExistenceJson struct {
-	Creator   string      `json:"creator"`
-	MainData  string      `json:"main_data"`
-	ExtraData string      `json:"extra_data"`
-	Reference string      `json:"reference"`
-	TxId      common.Hash `json:"tx_id"`
-	UnitHash  common.Hash `json:"unit_hash"`
-	Timestamp time.Time   `json:"timestamp"`
+	Creator    string      `json:"creator"`
+	MainData   string      `json:"main_data"`
+	ExtraData  string      `json:"extra_data"`
+	Reference  string      `json:"reference"`
+	UintHeight uint64      `json:"unit_index"`
+	TxId       common.Hash `json:"tx_id"`
+	UnitHash   common.Hash `json:"unit_hash"`
+	Timestamp  time.Time   `json:"timestamp"`
 }
 
 func ConvertProofOfExistence2Json(poe *modules.ProofOfExistence) *ProofOfExistenceJson {
@@ -43,6 +44,7 @@ func ConvertProofOfExistence2Json(poe *modules.ProofOfExistence) *ProofOfExisten
 		MainData:  string(poe.MainData),
 		ExtraData: string(poe.ExtraData),
 		Reference: string(poe.Reference),
+		UintHeight:poe.UintHeight,
 		TxId:      poe.TxId,
 		UnitHash:  poe.UnitHash,
 		Timestamp: time.Unix(int64(poe.Timestamp), 0),
