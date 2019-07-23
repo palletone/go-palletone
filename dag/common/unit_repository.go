@@ -1110,28 +1110,18 @@ func (rep *UnitRepository) getPayFromAddresses(tx *modules.Transaction) []common
 	return keys
 }
 
-func getMaindata(tx *modules.Transaction) string {
-	var maindata string
+func getDataPayload(tx *modules.Transaction) *modules.DataPayload {
+	dp := &modules.DataPayload{}
 	for _, msg := range tx.TxMessages {
 		if msg.App == modules.APP_DATA {
 			pay := msg.Payload.(*modules.DataPayload)
-			maindata = string(pay.MainData)
-
+			dp.MainData = pay.MainData
+			dp.ExtraData = pay.ExtraData
+			dp.Reference = pay.Reference
+			return pay
 		}
 	}
-	return maindata
-}
-
-func getExtradata(tx *modules.Transaction) string {
-	var extradata string
-	for _, msg := range tx.TxMessages {
-		if msg.App == modules.APP_DATA {
-			pay := msg.Payload.(*modules.DataPayload)
-			extradata = string(pay.ExtraData)
-
-		}
-	}
-	return extradata
+	return nil
 }
 
 /**
@@ -1666,8 +1656,10 @@ func (rep *UnitRepository) GetFileInfoByHash(hashs []common.Hash) ([]*modules.Fi
 		if err != nil {
 			return nil, err
 		}
-		md.MainData = getMaindata(tx.Transaction)
-		md.ExtraData = getExtradata(tx.Transaction)
+		dp := getDataPayload(tx.Transaction)
+		md.MainData = string(dp.MainData)
+		md.ExtraData = string(dp.ExtraData)
+		md.Reference = string(dp.Reference)
 		md.UnitHash = tx.UnitHash
 		md.UintHeight = tx.UnitIndex
 		md.Txid = tx.Hash()
