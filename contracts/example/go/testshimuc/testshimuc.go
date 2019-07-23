@@ -76,6 +76,10 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return t.test_GetTokenBalance(stub, args)
 	case "testUseCert":
 		return t.test_UseCert(stub, args)
+	case "testSendRecvJury":
+		return t.test_SendRecvJury(stub, args)
+	case "testSetEvent":
+		return t.test_SetEvent(stub, args)
 	}
 	return shim.Error("Invalid invoke function name. Expecting \"invoke\"")
 }
@@ -551,7 +555,7 @@ func (t *SimpleChaincode) test_SendRecvJury(stub shim.ChaincodeStubInterface, ar
 		if err != nil {
 			return shim.Error("PutState: " + string(result))
 		}
-		return shim.Success([]byte("")) //test
+		return shim.Success(nil) //test
 	}
 }
 
