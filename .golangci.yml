@@ -195,7 +195,7 @@ linters:
   fast: false
 
 
-# issues:
+issues:
 #   # List of regexps of issue texts to exclude, empty list by default.
 #   # But independently from this option we use default exclude patterns,
 #   # it can be disabled by `exclude-use-default: false`. To list all
@@ -204,7 +204,10 @@ linters:
 #     - abcdef
 
 #   # Excluding configuration per-path, per-linter, per-text and per-source
-#   exclude-rules:
+  exclude-rules:
+      - linters:
+        - gosec
+        text: "G[105,202,401,505]"
 #     # Exclude some linters from running on tests files.
 #     - path: _test\.go
 #       linters:
