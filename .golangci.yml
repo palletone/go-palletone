@@ -50,7 +50,7 @@ run:
 # output configuration options
 output:
   # colored-line-number|line-number|json|tab|checkstyle|code-climate, default is "colored-line-number"
-  format: colored-line-number
+  format: json
 
   # print lines of code with issue, default is true
   print-issued-lines: true
@@ -184,13 +184,13 @@ linters:
     - gosec
     # - govet
   enable-all: false
-  disable:
-    # - maligned
-    # - prealloc
+  # disable:
+  #   - maligned
+  #   - prealloc
   disable-all: true
-  presets:
-    - bugs
-    - unused
+  # presets:
+  #   - bugs
+  #   - unused
   fast: false
 
 
