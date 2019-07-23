@@ -126,6 +126,10 @@ func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transactio
 	return b.ptn.txPool.AddLocal(signedTx)
 }
 
+func (b *PtnApiBackend) SendTxs(ctx context.Context, signedTxs []*modules.Transaction) []error {
+	return b.ptn.txPool.AddLocals(signedTxs)
+}
+
 func (b *PtnApiBackend) GetPoolTransactions() (modules.Transactions, error) {
 	pending, err := b.ptn.txPool.Pending()
 	if err != nil {

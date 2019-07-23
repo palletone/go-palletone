@@ -20,7 +20,7 @@ func TestCryptoP256_Key(t *testing.T) {
 	sign,err:= crypto.Sign(privKey,msg)
 	assert.Nil(t,err)
 	t.Logf("Signature:%x,len:%d",sign,len(sign))
-	pass1,err:= crypto.Verify(pubKey,msg,sign)
+	pass1,err:= crypto.Verify(pubKey,sign,msg)
 	assert.Nil(t,err)
 	assert.True(t,pass1)
 
