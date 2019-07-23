@@ -515,7 +515,7 @@ func (pool *TxPool) setPriorityLvl(tx *modules.TxPoolTransaction) {
 	tx.Priority_lvl = tx.GetPriorityLvl()
 }
 
-//
+// 交易池缓存时需要将tx转化为PoolTx
 func TxtoTxpoolTx(tx *modules.Transaction) *modules.TxPoolTransaction {
 	txpool_tx := new(modules.TxPoolTransaction)
 	txpool_tx.Tx = tx
@@ -584,7 +584,9 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 		}
 		tx.TxFee = append(tx.TxFee, addition...)
 	}
-
+	//if tx.TxFee == nil {
+	//	tx.TxFee = make([]*modules.Addition, 0)
+	//}
 	// 同一个utxo可以花费多次， 但最终只能确认一次。
 	//if err := pool.checkPoolDoubleSpend(tx); err != nil {
 	//	return false, err
@@ -611,7 +613,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 		}
 	}
 	// Add the transaction to the pool  and mark the referenced outpoints as spent by the pool.
-	pool.priority_sorted.Put(tx)
+	go pool.priority_sorted.Put(tx)
 	pool.all.Store(hash, tx)
 	pool.addCache(tx)
 	//go pool.journalTx(tx)
@@ -909,17 +911,24 @@ func (pool *TxPool) addTxs(txs []*modules.TxPoolTransaction, local bool) []error
 // whilst assuming the transaction pool lock is already held.
 func (pool *TxPool) addTxsLocked(txs []*modules.TxPoolTransaction, local bool) []error {
 	// Add the batch of transaction, tracking the accepted ones
-	errs := make([]error, len(txs))
+	errs := make([]error, 0)
 	var replace bool
+	var err error
+	tt := time.Now()
 	for i, tx := range txs {
-		if replace, errs[i] = pool.add(tx, local); errs[i] != nil {
+		if replace, err = pool.add(tx, local); err != nil {
+			errs = append(errs, err)
 			break
+		}
+		if (i+1)%1000 == 0 {
+			log.Infof("add txs locked: %d, spent time: %s", (i+1)/1000, time.Since(tt))
 		}
 	}
 
 	if !replace {
 		pool.promoteExecutables()
 	}
+	log.Infof("add txs locked spent all time: %s", time.Since(tt))
 	return errs
 }
 

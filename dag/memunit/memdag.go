@@ -473,7 +473,13 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 	height := unit.NumberU64()
 	if _, ok := chain.getChainUnits()[parentHash]; ok || parentHash == chain.stableUnitHash {
 		//add unit to chain
-		inter, _ := chain.chainUnits.Load(parentHash)
+		inter, ok1 := chain.chainUnits.Load(parentHash)
+		if !ok1 {
+			str := fmt.Sprintf("add unit failed, parent hash[%s] 's temdb not found.", parentHash.String())
+			log.Error(str)
+			chain.chainUnits.Delete(parentHash)
+			return nil, nil, nil, nil, nil, errors.New(str)
+		}
 		parent_temp := inter.(*ChainTempDb)
 		log.Debugf("chain[%p] Add unit[%s] to chainUnits", chain, uHash.String())
 		//add at the end of main chain unit
