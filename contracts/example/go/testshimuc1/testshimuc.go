@@ -358,7 +358,7 @@ func (t *SimpleChaincode) test_PayOutToken(stub shim.ChaincodeStubInterface, arg
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	amount, err := strconv.Atoi(args[1])
+	amount, err := strconv.Atoi(args[2])
 	if err != nil {
 		return shim.Error(err.Error())
 	}
