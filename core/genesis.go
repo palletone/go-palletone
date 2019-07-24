@@ -127,28 +127,28 @@ func NewMediatorInfoBase() *MediatorInfoBase {
 	}
 }
 
-func (mib *MediatorInfoBase) Validate() error {
-	_, err := StrToMedAdd(mib.AddStr)
+func (mib *MediatorInfoBase) Validate() (common.Address, error) {
+	addr, err := StrToMedAdd(mib.AddStr)
 	if err != nil {
-		return err
+		return addr, err
 	}
 
 	_, err = StrToPoint(mib.InitPubKey)
 	if err != nil {
-		return err
+		return addr, err
 	}
 
 	node, err := StrToMedNode(mib.Node)
 	if err != nil {
-		return err
+		return addr, err
 	}
 
 	err = node.ValidateComplete()
 	if err != nil {
-		return err
+		return addr, err
 	}
 
-	return nil
+	return addr, nil
 }
 
 type InitialMediator struct {

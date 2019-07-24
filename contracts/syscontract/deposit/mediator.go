@@ -45,7 +45,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		return shim.Error(errStr)
 	}
 
-	err = mco.Validate()
+	_, err = mco.Validate()
 	if err != nil {
 		errStr := fmt.Sprintf("invalid args: %v", err.Error())
 		log.Errorf(errStr)

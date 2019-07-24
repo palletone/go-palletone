@@ -82,7 +82,7 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 	list := make(map[string]bool, len(genesis.InitialMediatorCandidates))
 	for _, imc := range genesis.InitialMediatorCandidates {
 		// 存储 mediator info
-		err := imc.Validate()
+		addr, err := imc.Validate()
 		if err != nil {
 			log.Debugf(err.Error())
 			panic(err.Error())
@@ -91,7 +91,6 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 		mi := modules.NewMediatorInfo()
 		*mi.MediatorInfoBase = *imc.MediatorInfoBase
 
-		addr, _ := common.StringToAddress(mi.AddStr)
 		err = dag.stableStateRep.StoreMediatorInfo(addr, mi)
 		if err != nil {
 			log.Debugf(err.Error())

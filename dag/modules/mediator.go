@@ -21,7 +21,6 @@
 package modules
 
 import (
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core"
 )
 
@@ -73,10 +72,4 @@ func (mi *MediatorInfo) InfoToMediator() *core.Mediator {
 type MediatorCreateOperation struct {
 	*core.MediatorInfoBase
 	*core.MediatorApplyInfo
-}
-
-func (mco *MediatorCreateOperation) FeePayer() common.Address {
-	addr, _ := common.StringToAddress(mco.AddStr)
-
-	return addr
 }
