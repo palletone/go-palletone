@@ -8,6 +8,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/list"
+	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/vm/common"
 	"io"
 	"strings"
@@ -92,20 +93,6 @@ func GetAllResourceUsageByContainerName(name string) (*docker.Stats, error) {
 		return nil, fmt.Errorf("get container stats error")
 	} else {
 		stats := resultStats[0]
-		//log.Infof("----------------------------------------%v\n\n", stats.Read)
-		//log.Infof("------stats.CPUStats-----------%v\n", stats.CPUStats)
-		//log.Infof("--------stats.PreCPUStats---------%v\n", stats.PreCPUStats)
-		//log.Infof("-------------------stats.CPUStats.CPUUsage.PercpuUsage---------------------%v\n\n", stats.CPUStats.CPUUsage.PercpuUsage)
-		//log.Infof("-------------------stats.CPUStats.CPUUsage.TotalUsage---------------------%v\n\n", stats.CPUStats.CPUUsage.TotalUsage)
-		//log.Infof("-----------------%v\n", stats.MemoryStats)
-		//log.Infof("----------------------stats.MemoryStats.Stats.Swap------------------%v\n\n", stats.MemoryStats.Stats.Swap)
-		//log.Infof("----------------------stats.MemoryStats.Limit------------------%v\n\n", stats.MemoryStats.Limit)
-		//log.Infof("----------------------stats.MemoryStats.MaxUsage------------------%v\n\n", stats.MemoryStats.MaxUsage)
-		//log.Infof("----------------------stats.MemoryStats.Usage------------------%v\n\n", stats.MemoryStats.Usage)
-		//log.Infof("---------stats.StorageStats---------%v\n", stats.StorageStats)
-		//log.Infof("--------stats.BlkioStats----------%v\n", stats.BlkioStats)
-		//log.Infof("--------stats.PidsStats----------%v\n", stats.PidsStats)
-		//log.Infof("--------stats.NumProcs----------%v\n", stats.NumProcs)
 		return stats, nil
 	}
 	return nil, fmt.Errorf("get container stats error")
@@ -172,8 +159,6 @@ func GetDiskForEachContainer(client *docker.Client, disk int64) {
 		return
 	}
 	if diskUsage != nil {
-		//log.Infof("=====================%#v\n", diskUsage)
-		//log.Infof("=====================%#v\n", diskUsage.LayersSize)
 		for _, c := range diskUsage.Containers {
 			if strings.Contains(c.Names[0][1:3], "PC") {
 				log.Infof("=======%#v\n", c)
@@ -232,7 +217,12 @@ func StopContainerWhenInvokeTimeOut(name string) {
 }
 
 //  编译超时，移除容器
-func RemoveContainerWhenGoBuildTimeOut(client *docker.Client, id string) {
+func RemoveContainerWhenGoBuildTimeOut(id string) {
+	client, err := util.NewDockerClient()
+	if err != nil {
+		log.Debugf("util.NewDockerClient")
+		return
+	}
 	select {
 	case <-time.After(contractcfg.GetConfig().ContractDeploytimeout):
 		err := client.RemoveContainer(docker.RemoveContainerOptions{ID: id, Force: true})
@@ -241,4 +231,44 @@ func RemoveContainerWhenGoBuildTimeOut(client *docker.Client, id string) {
 		}
 		return
 	}
+}
+
+//  调用的时候，若调用完发现磁盘使用超过系统上限，则kill掉并移除
+func RemoveConWhenOverDisk(cc *list.CCInfo, dag dag.IDag) (sizeRW int64, disk int64, isOver bool) {
+	log.Debugf("enter KillAndRmWhenOver")
+	defer log.Debugf("exit KillAndRmWhenOver")
+	client, err := util.NewDockerClient()
+	if err != nil {
+		log.Debugf("util.NewDockerClient %s", err.Error())
+		return 0, 0, false
+	}
+	//  获取所有容器
+	allCon, err := client.ListContainers(docker.ListContainersOptions{All: true, Size: true})
+	if err != nil {
+		log.Debugf("client.ListContainers %s", err.Error())
+		return 0, 0, false
+	}
+	if len(allCon) > 0 {
+		//  获取name对应的容器
+		name := cc.Name + ":" + cc.Version
+		name = strings.Replace(name, ":", "-", -1)
+		con, err := client.InspectContainer(name)
+		if err != nil {
+			log.Debugf("client.InspectContainer %s", err.Error())
+			return 0, 0, false
+		}
+		for _, c := range allCon {
+			cp := dag.GetChainParameters()
+			if c.ID == con.ID && c.SizeRw > cp.UccDisk {
+				err := client.RemoveContainer(docker.RemoveContainerOptions{ID: c.ID, Force: true})
+				if err != nil {
+					log.Debugf("client.RemoveContainer %s", err.Error())
+					return 0, 0, false
+				}
+				log.Debugf("remove container %s", c.Names[0][1:36])
+				return c.SizeRw, cp.UccDisk, true
+			}
+		}
+	}
+	return 0, 0, false
 }

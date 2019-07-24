@@ -253,7 +253,7 @@ func DockerBuild(opts DockerBuildOptions) error {
 		return fmt.Errorf("Error executing build: %s \"%s\"", err, stdout.String())
 	}
 	//解决临时容器一直运行的情况
-	go utils.RemoveContainerWhenGoBuildTimeOut(client, container.ID)
+	go utils.RemoveContainerWhenGoBuildTimeOut(container.ID)
 
 	//-----------------------------------------------------------------------------------
 	// Wait for the build to complete and gather the return value
