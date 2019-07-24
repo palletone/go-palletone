@@ -1326,7 +1326,7 @@ func (s *PublicWalletAPI) GenCert(ctx context.Context, caAddress, userAddress, p
 		return nil, err
 	}
 	//导出私钥 用于证书的生成
-	privKey, _ := ks.DumpPrivateKey(account, passwd)
+	privKey, _ := ks.DumpP256PrivateKey(account, passwd)
 	if err != nil {
 		return nil, err
 	}
@@ -1352,7 +1352,10 @@ func (s *PublicWalletAPI) GenCert(ctx context.Context, caAddress, userAddress, p
 	contractAddr := "PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk"
 	caAddr, _ := common.StringToAddress(caAddress)
 	cAddr, _ := common.StringToAddress(contractAddr)
-	reqId, err := s.b.ContractInvokeReqTx(caAddr, caAddr, 10000, 0000, nil, cAddr, args, 0)
+	reqId, err := s.b.ContractInvokeReqTx(caAddr, caAddr, 10000, 10000, nil, cAddr, args, 0)
+	if err != nil {
+		return nil,err
+	}
 	log.Infof("GenCert reqId[%s]", hex.EncodeToString(reqId[:]))
 	rsp := &ContractDeployRsp{
 		ReqId:      hex.EncodeToString(reqId[:]),
