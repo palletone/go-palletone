@@ -92,7 +92,7 @@ func CertInfo2Cainfo(certinfo CertINfo) client.CaGenInfo {
 		ECert:       certinfo.ECert,
 		Type:        certinfo.Type,
 		Affiliation: certinfo.Affiliation,
-		Key:         certinfo.Key,
+		//Key:         certinfo.Key,
 	}
 
 }
