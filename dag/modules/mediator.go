@@ -31,6 +31,7 @@ const (
 	MediatorList       = "MediatorList"
 	GetMediatorDeposit = "GetMediatorDeposit"
 	MediatorApplyQuit  = "MediatorApplyQuit"
+	UpdateMediatorInfo = "UpdateMediatorInfo"
 )
 
 type MediatorInfo struct {
@@ -72,4 +73,11 @@ func (mi *MediatorInfo) InfoToMediator() *core.Mediator {
 type MediatorCreateOperation struct {
 	*core.MediatorInfoBase
 	*core.MediatorApplyInfo
+}
+
+// 更新 mediator 信息所需参数
+type MediatorUpdateArgs struct {
+	AddStr string  `json:"account"` // 账户地址
+	Name   *string `json:"name"`    // 节点名称
+	Url    *string `json:"url"`     // 节点网站
 }

@@ -21,7 +21,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -37,18 +36,22 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	funcName, args := stub.GetFunctionAndParameters()
 	switch funcName {
 	//
-	//  申请成为Mediator
+	// 申请成为Mediator
 	case modules.ApplyMediator:
 		log.Info("Enter DepositChaincode Contract " + modules.ApplyMediator + " Invoke")
 		return d.applyBecomeMediator(stub, args)
-		//  mediator 交付保证金
+	// mediator 交付保证金
 	case modules.MediatorPayDeposit:
 		log.Info("Enter DepositChaincode Contract " + modules.MediatorPayDeposit + " Invoke")
 		return d.mediatorPayToDepositContract(stub, args)
-		//  申请退出Mediator
+	// 申请退出Mediator
 	case modules.MediatorApplyQuit:
 		log.Info("Enter DepositChaincode Contract " + modules.MediatorApplyQuit + " Invoke")
-		return d.mediatorApplyQuitMediator(stub, args)
+		return d.mediatorApplyQuit(stub, args)
+	// 申请退出Mediator
+	case modules.UpdateMediatorInfo:
+		log.Info("Enter DepositChaincode Contract " + modules.UpdateMediatorInfo + " Invoke")
+		return d.UpdateMediatorInfo(stub, args)
 	//
 	//  jury 交付保证金
 	case JuryPayToDepositContract:
@@ -367,8 +370,12 @@ func (d *DepositChaincode) mediatorPayToDepositContract(stub shim.ChaincodeStubI
 	return mediatorPayToDepositContract(stub, args)
 }
 
-func (d *DepositChaincode) mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (d *DepositChaincode) mediatorApplyQuit(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return mediatorApplyQuit(stub, args)
+}
+
+func (d *DepositChaincode) UpdateMediatorInfo(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return updateMediatorInfo(stub, args)
 }
 
 //
