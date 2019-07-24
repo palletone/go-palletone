@@ -56,6 +56,7 @@ github.com/cespare/xxhash v1.1.0/go.mod h1:XrSqR1VqqWfGrhpAt58auRo0WTKS1nRRg3ghf
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/cloudflare/cfssl v0.0.0-20190510060611-9c027c93ba9e h1:ZtyhUG4s94BMUCdgvRZySr/AXYL5CDcjxhIV/83xJog=
 github.com/cloudflare/cfssl v0.0.0-20190510060611-9c027c93ba9e/go.mod h1:yMWuSON2oQp+43nFtAV/uvKQIFpSPerB57DCt9t8sSA=
+github.com/cloudflare/cfssl v0.0.0-20190627231140-2001f384ec4f h1:WjHSb3zr7akq8UlinFY3vwmXvtje6GUMQww0ECAJsqU=
 github.com/cloudflare/cfssl v0.0.0-20190627231140-2001f384ec4f/go.mod h1:yMWuSON2oQp+43nFtAV/uvKQIFpSPerB57DCt9t8sSA=
 github.com/containerd/continuity v0.0.0-20180612233548-246e49050efd h1:AqPnRJG7BcXlRtISATdp/XsD4cwZK6MdeMxFQ2hGFdw=
 github.com/containerd/continuity v0.0.0-20180612233548-246e49050efd/go.mod h1:GL3xCUCBDV3CZiTSEKksMWbLE66hEyuu9qyDOOqM47Y=

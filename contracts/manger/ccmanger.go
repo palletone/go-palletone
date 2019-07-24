@@ -19,12 +19,9 @@
 package manger
 
 import (
-	"crypto/md5"
 	"encoding/hex"
-	"fmt"
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
-	"io"
 	"net"
 	"os"
 	"time"
@@ -205,11 +202,3 @@ func recoverChaincodeFromeDb() error {
 	return nil
 }
 
-func createDeployId(templateName string) string {
-	t := time.Now()
-	h := md5.New()
-	io.WriteString(h, templateName)
-	io.WriteString(h, t.String())
-	id := fmt.Sprintf("%x", h.Sum(nil))
-	return id
-}

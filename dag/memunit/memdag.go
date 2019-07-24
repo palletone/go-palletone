@@ -506,7 +506,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 				return nil, nil, nil, nil, nil, vali_err
 			}
 			tempdb, _ = tempdb.AddUnit(unit, chain.saveHeaderOnly)
-			// tempdb.AddUnit(unit, chain.saveHeaderOnly)
+			// go tempdb.AddUnit(unit, chain.saveHeaderOnly)
 			chain.tempdb.Store(uHash, tempdb)
 			chain.chainUnits.Store(uHash, tempdb)
 			if has {

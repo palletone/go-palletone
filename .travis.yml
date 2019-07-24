@@ -47,14 +47,16 @@ matrix:
         - make gptn
         - go test ./...
         # - $GOPATH/bin/goveralls -service=travis-ci
-    #- os: linux
-    #  dist: xenial
-    #  go: 1.11.x
-    #  env: UT
-    #  script:
-    #     - go build ./cmd/gptn
-    #     - make gptn
-    #     - go test ./...
+    - os: linux
+      dist: xenial
+      go: 1.12.x
+      env: 
+        - lint
+        - GOGC=5      
+      install:
+        - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.17.1
+      script:
+        - golangci-lint run ./...
     #- os: linux
     #  dist: xenial
     #  go: 1.12.x
@@ -72,7 +74,7 @@ matrix:
     #     - go test ./...
     - os: linux
       dist: xenial
-      go: 1.12.X
+      go: 1.12.7
       env: one_node_bdd
       script:
         - go build ./cmd/gptn
@@ -155,7 +157,7 @@ matrix:
         - chmod +x bdd/upload2Ftp.sh
     - os: linux
       dist: xenial
-      go: 1.12.X
+      go: 1.12.7
       env: multiple_nodes_bdd
       script:
         #- go build ./cmd/gptn
@@ -209,7 +211,7 @@ matrix:
         - chmod +x bdd/upload2Ftp.sh
     - os: linux
       dist: xenial
-      go: 1.12.X
+      go: 1.12.7
       env: mediator_bdd
       script:
         - go build ./cmd/gptn
@@ -245,7 +247,7 @@ matrix:
         - chmod +x bdd/upload2Ftp.sh
     - os: linux
       dist: xenial
-      go: 1.12.X
+      go: 1.12.7
       env: application_bdd
       script:
         - go build ./cmd/gptn

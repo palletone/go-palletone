@@ -139,7 +139,6 @@ func _payoutPTN(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	if len(args) < 1 {
 		return shim.Error("need 1  args (transferTxID)")
 	}
-	log.Debugf("1")
 
 	//
 	txID := args[0]
@@ -148,27 +147,33 @@ func _payoutPTN(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	result, _ := stub.GetState(symbolsPayout + txID)
 	if len(result) != 0 {
+		log.Debugf("The tx has been payout")
 		return shim.Error("The tx has been payout")
 	}
-	log.Debugf("2")
 
 	//get sender receiver amount
 	txResult, err := GetErc20Tx(args[0], stub)
 	if err != nil {
+		log.Debugf("GetErc20Tx failed: %s", err.Error())
 		return shim.Error(err.Error())
 	}
-	log.Debugf("3")
 
+	//check tx status
+	if txResult.Status != "1" {
+		log.Debugf("The tx is failed")
+		return shim.Error("The tx is failed")
+	}
 	//check contract address, must be ptn erc20 contract address
 	if strings.ToLower(txResult.ContractAddr) != PTN_ERC20Addr {
+		log.Debugf("The tx is't PTN contract")
 		return shim.Error("The tx is't PTN contract")
 	}
-	//checke receiver, must be ptnmap contract address
+	//check receiver, must be ptnmap contract address
 	mapAddr, err := getMapAddr(stub)
 	if err != nil {
+		log.Debugf("getMapAddr failed: %s", err.Error())
 		return shim.Error(err.Error())
 	}
-	log.Debugf("4")
 
 	if strings.ToLower(txResult.To) != mapAddr {
 		log.Debugf("strings.ToLower(txResult.To): %s, mapAddr: %s ", strings.ToLower(txResult.To), mapAddr)
@@ -180,9 +185,9 @@ func _payoutPTN(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	bigIntAmout = bigIntAmout.Div(bigIntAmout, big.NewInt(1e10)) //Token's decimal is 18, PTN's decimal is 8
 	amt := bigIntAmout.Uint64()
 	if amt == 0 {
+		log.Debugf("Amount is 0")
 		return shim.Error("Amount is 0")
 	}
-	log.Debugf("5")
 
 	//check confirms
 	curHeight, err := getHight(stub)
@@ -191,38 +196,39 @@ func _payoutPTN(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	blockNum, err := strconv.ParseUint(txResult.BlockNumber, 10, 64)
 	if curHeight-blockNum < 1 {
+		log.Debugf("Need more confirms")
 		return shim.Error("Need more confirms")
 	}
-	log.Debugf("6")
 
 	//query ptnmap contract for get ptnAddr
 	ptnAddr, err := getPTNHex(mapAddr, txResult.From, stub)
 	if err != nil {
+		log.Debugf("getPTNHex failed: %s", err.Error())
 		return shim.Error(err.Error())
 	}
-	log.Debugf("7")
 
 	//get addrPTN
 	//ptnAddr := common.HexToAddress(ptnHex).String()
 	//ptnAddr := "P" + base58.CheckEncode(common.FromHex(ptnHex), 0)
 	if ptnAddr == "P14oLvT2" {
+		log.Debugf("Need transfer 1 PTNMap for bind address")
 		return shim.Error("Need transfer 1 PTNMap for bind address")
 	}
 	//save payout history
 	err = stub.PutState(symbolsPayout+txID, []byte(ptnAddr+"-"+bigIntAmout.String()))
 	if err != nil {
+		log.Debugf("write symbolsPayout failed: %s", err.Error())
 		return shim.Error("write symbolsPayout failed: " + err.Error())
 	}
-	log.Debugf("8")
 
 	//payout
 	asset := modules.NewPTNAsset()
 	amtToken := &modules.AmountAsset{Amount: amt, Asset: asset}
 	err = stub.PayOutToken(ptnAddr, amtToken, 0)
 	if err != nil {
+		log.Debugf("PayOutToken failed: %s", err.Error())
 		return shim.Error("PayOutToken failed: " + err.Error())
 	}
-	log.Debugf("9")
 
 	return shim.Success([]byte("Success"))
 }
@@ -345,9 +351,9 @@ func getPTNHex(mapAddr, sender string, stub shim.ChaincodeStubInterface) (string
 		return "", errors.New("QueryContract result empty")
 	}
 	var addrs []string
-	err = json.Unmarshal(result, &addrs)
+	err = json.Unmarshal([]byte(getResult.Result), &addrs)
 	if err != nil || len(addrs) == 0 {
-		return "", errors.New("QueryContract result Unmarshal failed")
+		return "", errors.New("QueryContract getResult.Result Unmarshal failed")
 	}
 
 	return addrs[0], nil

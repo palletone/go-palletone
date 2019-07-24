@@ -17,7 +17,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/math"
@@ -529,44 +528,6 @@ func (s *PublicWalletAPI) SendRlpTransaction(ctx context.Context, encodedTx stri
 	return submitTransaction(ctx, s.b, tx)
 }
 
-func (s *PublicWalletAPI) SendJsonTransaction(ctx context.Context, params string) (common.Hash, error) {
-
-	decoded, err := hex.DecodeString(params)
-	if err != nil {
-		return common.Hash{}, errors.New("Decode Signedtx is invalid")
-	}
-	var btxjson []byte
-	if err := rlp.DecodeBytes(decoded, &btxjson); err != nil {
-		return common.Hash{}, errors.New("RLP Decode To Byte is invalid")
-	}
-	tx := &modules.Transaction{
-		TxMessages: make([]*modules.Message, 0),
-	}
-	err = json.Unmarshal(btxjson, tx)
-	if err != nil {
-		return common.Hash{}, errors.New("Json Unmarshal To Tx is invalid")
-	}
-
-	if 0 == len(tx.TxMessages) {
-		return common.Hash{}, errors.New("Invalid Tx, message length is 0")
-	}
-	var outAmount uint64
-	var outpoint_txhash common.Hash
-	for _, msg := range tx.TxMessages {
-		payload, ok := msg.Payload.(*modules.PaymentPayload)
-		if ok == false {
-			continue
-		}
-
-		for _, txout := range payload.Outputs {
-			outAmount += txout.Value
-		}
-		log.Info("payment info", "info", payload)
-		outpoint_txhash = payload.Inputs[0].PreviousOutPoint.TxHash
-	}
-	log.Infof("Tx outpoint tx hash:%s", outpoint_txhash.String())
-	return submitTransaction(ctx, s.b, tx)
-}
 func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params string, password string) (common.Hash, error) {
 
 	var proofTransactionGenParams ptnjson.ProofTransactionGenParams
@@ -1195,8 +1156,8 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 	}
 	if Extra != "" {
 		textPayload := new(modules.DataPayload)
-		textPayload.Reference = []byte(Extra)
-		textPayload.MainData = []byte(asset) //MainData不能为空
+		textPayload.Reference = []byte(asset)
+		textPayload.MainData = []byte(Extra)
 		rawTx.TxMessages = append(rawTx.TxMessages, modules.NewMessage(modules.APP_DATA, textPayload))
 	}
 	//lockscript
@@ -1289,6 +1250,7 @@ func (s *PublicWalletAPI) getFileInfo(filehash string) (string, error) {
 		get.ParentsHash = file.ParentsHash.String()
 		get.FileHash = string(file.MainData)
 		get.ExtraData = string(file.ExtraData)
+		get.Reference = string(file.Reference)
 		timestamp = int64(file.Timestamp)
 		tm := time.Unix(timestamp, 0)
 		get.Timestamp = tm.String()
@@ -1356,30 +1318,51 @@ func (s *PublicWalletAPI) GetProofOfExistencesByAsset(ctx context.Context, asset
 }
 
 //affiliation  gptn.mediator1
-func (s *PublicWalletAPI) GenCert(addrStr, name, data, roleType, affiliation string) (bool, error) {
-	ks := s.b.GetKeyStore()
-	addr, _ := common.StringToAddress(addrStr)
-	pubKey, err := ks.GetPublicKey(addr)
-	if err != nil {
-		return false, err
-	}
+func (s *PublicWalletAPI) GenCert(ctx context.Context, caAddress, userAddress, passwd, name, data, roleType, affiliation string) (*ContractDeployRsp, error) {
 
-	pub := crypto.P256ToECDSAPub(pubKey)
+	ks := s.b.GetKeyStore()
+	account, err := MakeAddress(ks, userAddress)
+	if err != nil {
+		return nil, err
+	}
+	//导出私钥 用于证书的生成
+	privKey, _ := ks.DumpP256PrivateKey(account, passwd)
+	if err != nil {
+		return nil, err
+	}
 	ca := certficate.CertINfo{}
-	cf := certficate.CAConfig{}
-	ca.Address = addrStr
+	ca.Address = userAddress
 	ca.Name = name
 	ca.Data = data
 	ca.Type = roleType
 	ca.Affiliation = affiliation
-	ca.Key = pub
-	_, err = certficate.GenCert(ca, cf)
+	ca.Key = privKey
+	//生成证书 获取证书byte
+	certBytes, err := certficate.GenCert(ca)
+	log.Infof("GenCert Success! CertBytes[%s]", certBytes)
 	if err != nil {
-		return false, err
+		return nil, err
+	}
+	//调用系统合约 将证书byte存入到数字身份系统合约中
+	args := make([][]byte, 3)
+	args[0] = []byte("addMemberCert")
+	args[1] = []byte(userAddress)
+	args[2] = certBytes
+
+	contractAddr := "PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk"
+	caAddr, _ := common.StringToAddress(caAddress)
+	cAddr, _ := common.StringToAddress(contractAddr)
+	reqId, err := s.b.ContractInvokeReqTx(caAddr, caAddr, 10000, 10000, nil, cAddr, args, 0)
+	if err != nil {
+		return nil,err
+	}
+	log.Infof("GenCert reqId[%s]", hex.EncodeToString(reqId[:]))
+	rsp := &ContractDeployRsp{
+		ReqId:      hex.EncodeToString(reqId[:]),
+		ContractId: contractAddr,
 	}
 
-	//s.b.ContractInvoke()
-	return true, nil
+	return rsp, nil
 }
 
 //好像某个UTXO是被那个交易花费的
@@ -1423,7 +1406,7 @@ func readTxs(path string) ([]string, error) {
 	txs := make([]string, 0)
 	f, err := os.Open(path)
 	if err != nil {
-		log.Infof("open file failed, err: %s", err.Error())
+		log.Infof("open file failed, err:%s", err.Error())
 		return nil, err
 	}
 	defer f.Close()

@@ -487,6 +487,16 @@ func (ks *KeyStore) DumpPrivateKey(a accounts.Account, passphrase string) (priva
 
 }
 
+func (ks *KeyStore) DumpP256PrivateKey(a accounts.Account, passphrase string) (privateKey *ecdsa.PrivateKey, err error) {
+	_, key, err := ks.getDecryptedKey(a, passphrase)
+	if err != nil {
+		return nil, err
+	}
+
+	return crypto.P256ToECDSA(key.PrivateKey)
+
+}
+
 // Import stores the given encrypted JSON key into the key directory.
 func (ks *KeyStore) Import(keyJSON []byte, passphrase, newPassphrase string) (accounts.Account, error) {
 	key, err := DecryptKey(keyJSON, passphrase)

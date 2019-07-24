@@ -145,8 +145,8 @@ const Wallet_JS = `
 		}),	
 		new web3._extend.Method({
 			name: 'genCert',
-			call: 'wallet_gencert',
-			params: 3
+			call: 'wallet_genCert',
+			params: 7
 		}),
         new web3._extend.Method({
             name: 'addBatchTxs',
