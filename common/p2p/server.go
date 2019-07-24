@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/common/mclock"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 
+	"github.com/palletone/go-palletone/common/p2p/discv5"
 	"github.com/palletone/go-palletone/common/p2p/nat"
 	"github.com/palletone/go-palletone/common/p2p/netutil"
 )
@@ -80,6 +81,10 @@ type Config struct {
 	// Disabling is useful for protocol debugging (manual topology).
 	NoDiscovery bool
 
+	// DiscoveryV5 specifies whether the the new topic-discovery based V5 discovery
+	// protocol should be started or not.
+	DiscoveryV5 bool `toml:",omitempty"`
+
 	// Name sets the node name of this server.
 	// Use common.MakeName to create a name that follows existing conventions.
 	Name string `toml:"-"`
@@ -91,7 +96,7 @@ type Config struct {
 	// BootstrapNodesV5 are used to establish connectivity
 	// with the rest of the network using the V5 discovery
 	// protocol.
-	//BootstrapNodesV5 []*discv5.Node `toml:",omitempty"`
+	BootstrapNodesV5 []*discv5.Node `toml:",omitempty"`
 
 	// Static nodes are used as pre-configured connections which are always
 	// maintained and re-connected on disconnects.
@@ -146,6 +151,7 @@ type Config struct {
 }
 
 var DefaultConfig = Config{
+	DiscoveryV5:    true,
 	ListenAddr:     ":30303",
 	MaxPeers:       50,
 	NAT:            nat.Any(),
@@ -179,7 +185,7 @@ type Server struct {
 	listener     net.Listener
 	ourHandshake *protoHandshake
 	lastLookup   time.Time
-	//DiscV5       *discv5.Network
+	DiscV5       *discv5.Network
 
 	// These are for Peers, PeerCount (and nothing else).
 	peerOp     chan peerOpFunc
@@ -473,14 +479,14 @@ func (srv *Server) Start() (err error) {
 	srv.removetrusted = make(chan *discover.Node)
 
 	var (
-		conn *net.UDPConn
-		//sconn     *sharedUDPConn
+		conn      *net.UDPConn
+		sconn     *sharedUDPConn
 		realaddr  *net.UDPAddr
 		unhandled chan discover.ReadPacket
 	)
 
 	// 侦听UDP端口（用于结点发现）
-	if !srv.NoDiscovery /*|| srv.DiscoveryV5*/ {
+	if !srv.NoDiscovery || srv.DiscoveryV5 {
 		addr, err := net.ResolveUDPAddr("udp", srv.ListenAddr)
 		if err != nil {
 			return err
@@ -500,12 +506,12 @@ func (srv *Server) Start() (err error) {
 			}
 		}
 	}
-	/*
-		if !srv.NoDiscovery && srv.DiscoveryV5 {
-			unhandled = make(chan discover.ReadPacket, 100)
-			sconn = &sharedUDPConn{conn, unhandled}
-		}
-	*/
+
+	if !srv.NoDiscovery && srv.DiscoveryV5 {
+		unhandled = make(chan discover.ReadPacket, 100)
+		sconn = &sharedUDPConn{conn, unhandled}
+	}
+
 	// node table
 	// 发起UDP请求获取结点列表（内部会启动goroutine）
 	if !srv.NoDiscovery {
@@ -523,26 +529,26 @@ func (srv *Server) Start() (err error) {
 		}
 		srv.ntab = ntab
 	}
-	/*
-		if srv.DiscoveryV5 {
-			var (
-				ntab *discv5.Network
-				err  error
-			)
-			if sconn != nil {
-				ntab, err = discv5.ListenUDP(srv.PrivateKey, sconn, realaddr, "", srv.NetRestrict) //srv.NodeDatabase)
-			} else {
-				ntab, err = discv5.ListenUDP(srv.PrivateKey, conn, realaddr, "", srv.NetRestrict) //srv.NodeDatabase)
-			}
-			if err != nil {
-				return err
-			}
-			if err := ntab.SetFallbackNodes(srv.BootstrapNodesV5); err != nil {
-				return err
-			}
-			srv.DiscV5 = ntab
+
+	if srv.DiscoveryV5 {
+		var (
+			ntab *discv5.Network
+			err  error
+		)
+		if sconn != nil {
+			ntab, err = discv5.ListenUDP(srv.PrivateKey, sconn, realaddr, "", srv.NetRestrict) //srv.NodeDatabase)
+		} else {
+			ntab, err = discv5.ListenUDP(srv.PrivateKey, conn, realaddr, "", srv.NetRestrict) //srv.NodeDatabase)
 		}
-	*/
+		if err != nil {
+			return err
+		}
+		if err := ntab.SetFallbackNodes(srv.BootstrapNodesV5); err != nil {
+			return err
+		}
+		srv.DiscV5 = ntab
+	}
+
 	dynPeers := srv.maxDialedConns()
 	dialer := newDialState(srv.StaticNodes, srv.BootstrapNodes, srv.ntab, dynPeers, srv.NetRestrict)
 
@@ -760,10 +766,10 @@ running:
 	if srv.ntab != nil {
 		srv.ntab.Close()
 	}
-	/*
-		if srv.DiscV5 != nil {
-			srv.DiscV5.Close()
-		}*/
+
+	if srv.DiscV5 != nil {
+		srv.DiscV5.Close()
+	}
 	// Disconnect all peers.
 	for _, p := range peers {
 		p.Disconnect(DiscQuitting)

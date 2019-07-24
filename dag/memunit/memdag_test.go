@@ -24,6 +24,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"time"
 
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -156,20 +157,21 @@ func TestMemDag_AddOrphanUnit(t *testing.T) {
 	gasToken := modules.PTNCOIN
 	memdag := NewMemDag(gasToken, 2, false, db, unitRep, propRep, stateRep, cache())
 	u1 := newTestUnit(lastHeader.Hash(), 1, key2)
-	log.Debugf("Try add unit[%x] to memdag", u1.Hash())
+	log.Debugf("Try add unit[%x] to memdag, index: %d", u1.Hash(), u1.NumberU64())
 	_, _, _, _, _, err := memdag.AddUnit(u1, txpool)
 	assert.Nil(t, err)
 	assert.EqualValues(t, 1, memdag.GetLastMainChainUnit().NumberU64())
 
 	u2 := newTestUnit(u1.Hash(), 2, key1)
 	u3 := newTestUnit(u2.Hash(), 3, key2)
-	log.Debugf("Try add orphan unit[%x] to memdag", u3.Hash())
+	log.Debugf("Try add orphan unit[%x] to memdag, index: %d", u3.Hash(), u3.NumberU64())
 	_, _, _, _, _, err = memdag.AddUnit(u3, txpool)
 	assert.Nil(t, err)
 	assert.EqualValues(t, 1, memdag.GetLastMainChainUnit().NumberU64())
-	log.Debugf("Try add missed unit[%x] to memdag", u2.Hash())
+	log.Debugf("Try add missed unit[%x] to memdag, index: %d", u2.Hash(), u2.NumberU64())
 	_, _, _, _, _, err = memdag.AddUnit(u2, txpool)
 	assert.Nil(t, err)
+	time.Sleep(1 * time.Second)
 	assert.EqualValues(t, 3, memdag.GetLastMainChainUnit().NumberU64())
 }
 
@@ -211,6 +213,7 @@ func TestMemDag_SwitchMainChain(t *testing.T) {
 
 	_, _, _, _, _, err = memdag.AddUnit(u33, txpool)
 	assert.Nil(t, err)
+	time.Sleep(1 * time.Second)
 	assert.EqualValues(t, 3, memdag.GetLastMainChainUnit().NumberU64())
 }
 

@@ -80,11 +80,11 @@ func TestEcrecover(t *testing.T) {
 
 // This test checks that VerifySignature rejects malleable signatures with s > N/2.
 func TestVerifySignatureMalleable(t *testing.T) {
-	crypto:=&CryptoS256{}
+	crypto := &CryptoS256{}
 	sig := hexutil.MustDecode("0x638a54215d80a6713c8d523a6adc4e6e73652d859103a36b700851cb0e61b66b8ebfc1a610c57d732ec6e0a8f06a9a7a28df5051ece514702ff9cdff0b11f454")
 	key := hexutil.MustDecode("0x03ca634cae0d49acb401d8a4c6b6fe8c55b70d115bf400769cc1400f3258cd3138")
 	msg := hexutil.MustDecode("0xd301ce462d3e639518f482c7f03821fec1e602018630ce621e1e7851c12343a6")
-	if pass, _ :=crypto.Verify(key, sig, msg); pass {
+	if pass, _ := crypto.Verify(key, sig, msg); pass {
 		t.Error("VerifySignature returned true for malleable signature")
 	}
 }
@@ -121,7 +121,7 @@ func TestCompressPubkey(t *testing.T) {
 }
 
 func TestPubkeyRandom(t *testing.T) {
-	cryptoS256:=&CryptoS256{}
+	cryptoS256 := &CryptoS256{}
 	cryptoGM := &CryptoGm{}
 	cryptoP256 := &CryptoP256{}
 	const runs = 200
@@ -135,7 +135,7 @@ func TestPubkeyRandom(t *testing.T) {
 			t.Fatalf("iteration %d: %v", i, err)
 		}
 		t.Logf("S256PubKey:%x", pubkey2)
-		}
+	}
 
 	for i := 0; i < runs; i++ {
 		key, err := cryptoGM.KeyGen()
@@ -172,7 +172,7 @@ func BenchmarkEcrecoverSignature(b *testing.B) {
 }
 */
 func BenchmarkVerifySignature(b *testing.B) {
-	cryptoS256:=&CryptoS256{}
+	cryptoS256 := &CryptoS256{}
 	sigs256 := testsig[:len(testsig)-1] // remove recovery id
 	for i := 0; i < b.N; i++ {
 		if pass, _ := cryptoS256.Verify(testpubkey, sigs256, testmsg); !pass {
@@ -191,7 +191,7 @@ func BenchmarkDecompressPubkey(b *testing.B) {
 
 func TestSignVerify(t *testing.T) {
 	//S256 SignVerify
-	cryptoS256:=&CryptoS256{}
+	cryptoS256 := &CryptoS256{}
 	text := []byte("a")
 	hash := Keccak256(text)
 
@@ -200,35 +200,36 @@ func TestSignVerify(t *testing.T) {
 	prvKey, _ := hex.DecodeString(privateKey)
 	signature, err := cryptoS256.Sign(prvKey, hash)
 	assert.Nil(t, err)
-	t.Logf("Signature:%s,len:%d",hexutil.Encode(signature),len(signature))
+	t.Logf("Signature:%s,len:%d", hexutil.Encode(signature), len(signature))
 
 	pubKey, _ := cryptoS256.PrivateKeyToPubKey(prvKey)
 	pass, err := cryptoS256.Verify(pubKey, signature, hash)
 	assert.Nil(t, err)
-	assert.True(t,pass)
+	assert.True(t, pass)
 
 	//GM SignVerify
 	cryptoGM := &CryptoGm{}
 	gmprivateKey := "dd44e1b291182348c2138b44e311d0ee7719ecd0ea5832088d0dbbb16f5ba33a"
 	prvKey, _ = hex.DecodeString(gmprivateKey)
-	sign,err:= cryptoGM.Sign(prvKey,text)
+	sign, err := cryptoGM.Sign(prvKey, text)
 
-	assert.Nil(t,err)
-	t.Logf("Signature:%s,len:%d",hexutil.Encode(sign),len(sign))
-	pubKey,err=cryptoGM.PrivateKeyToPubKey(prvKey)
-	pass,err= cryptoGM.Verify(pubKey,sign,text)
-	assert.Nil(t,err)
-	assert.True(t,pass)
+	assert.Nil(t, err)
+	t.Logf("Signature:%s,len:%d", hexutil.Encode(sign), len(sign))
+	pubKey, err = cryptoGM.PrivateKeyToPubKey(prvKey)
+	pass, err = cryptoGM.Verify(pubKey, sign, text)
+	assert.Nil(t, err)
+	assert.True(t, pass)
 
 	cryptoP256 := &CryptoP256{}
 	p256privateKey := "11441a3394cea675295e322a4f1d82944ab6701dae2e1ce2834c072030d7dc95"
 	prvKey, _ = hex.DecodeString(p256privateKey)
-	sign,err= cryptoP256.Sign(prvKey,text)
-	assert.Nil(t,err)
-	t.Logf("Signature:%s,len:%d",hexutil.Encode(sign),len(sign))
+	sign, err = cryptoP256.Sign(prvKey, text)
+	assert.Nil(t, err)
+	t.Logf("Signature:%s,len:%d", hexutil.Encode(sign), len(sign))
 
-	pubKey,err=cryptoP256.PrivateKeyToPubKey(prvKey)
-	pass,err= cryptoP256.Verify(pubKey,text,sign)
-	assert.Nil(t,err)
-	assert.True(t,pass)
+	pubKey, err = cryptoP256.PrivateKeyToPubKey(prvKey)
+	assert.Nil(t, err)
+	pass, err = cryptoP256.Verify(pubKey, sign, text)
+	assert.Nil(t, err)
+	assert.True(t, pass)
 }

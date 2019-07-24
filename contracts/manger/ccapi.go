@@ -179,6 +179,11 @@ func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byt
 			Version: usrcc.Version,
 		},
 	}
+	//TODO 这里获取运行用户合约容器的相关资源  CpuQuota  CpuShare  MEMORY
+	cp := idag.GetChainParameters()
+	spec.CpuQuota = cp.UccCpuQuota  //微妙单位（100ms=100000us=上限为1个CPU）
+	spec.CpuShare = cp.UccCpuShares //占用率，默认1024，即可占用一个CPU，相对值
+	spec.Memory = cp.UccMemory      //字节单位 物理内存  1073741824  1G 2147483648 2G 209715200 200m 104857600 100m
 	err = ucc.DeployUserCC(depId.Bytes(), chaincodeData, spec, chainID, txId, txsim, setTimeOut)
 	if err != nil {
 		log.Error("deployUserCC err:", "error", err)
@@ -271,7 +276,7 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 	}
 	rsp, unit, err := es.ProcessProposal(rwM, idag, deployId, context.Background(), sprop, prop, chainID, cid, timeout)
 	//  TODO 执行完invoke，获取容器资源使用情况
-	//utils.GetResourcesWhenInvokeContainer(cc)
+	utils.GetResourcesWhenInvokeContainer(cc)
 	log.Debugf("process proposal")
 	if err != nil {
 		log.Infof("ProcessProposal error[%v]", err)
@@ -331,7 +336,10 @@ func StopByName(contractid []byte, chainID string, txid string, usercc *cclist.C
 	return stopResult, nil
 }
 
-func GetAllContainers(client *docker.Client) {
+func GetAllContainers(client *docker.Client, disk int64) {
+	//  监听所有容器的磁盘使用量
+	utils.GetDiskForEachContainer(client, disk)
+	//
 	addrs, err := utils.GetAllExitedContainer(client)
 	if err != nil {
 		log.Infof("client.ListContainers err: %s\n", err.Error())

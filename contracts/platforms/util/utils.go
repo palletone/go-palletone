@@ -192,10 +192,9 @@ func DockerBuild(opts DockerBuildOptions) error {
 		//MemorySwap: dockercontroller.GetInt64FromDb("TempUccMemorySwap"), //1GB
 		//CPUShares:  dockercontroller.GetInt64FromDb("TempUccCpuShares"),
 		//CPUQuota:   dockercontroller.GetInt64FromDb("TempUccCpuQuota"),
-		Memory:     cp.TempUccMemory,     //1GB
-		MemorySwap: cp.TempUccMemorySwap, //1GB
-		CPUShares:  cp.TempUccCpuShares,
-		CPUQuota:   cp.TempUccCpuQuota,
+		Memory:    cp.TempUccMemory, //1GB
+		CPUShares: cp.TempUccCpuShares,
+		CPUQuota:  cp.TempUccCpuQuota,
 	}
 	log.Infof("client.CreateContainer")
 	container, err := client.CreateContainer(docker.CreateContainerOptions{

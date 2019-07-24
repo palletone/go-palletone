@@ -64,6 +64,7 @@ type Backend interface {
 	GetUnstableUnits() []*ptnjson.UnitSummaryJson
 	// TxPool API
 	SendTx(ctx context.Context, signedTx *modules.Transaction) error
+	SendTxs(ctx context.Context, signedTxs []*modules.Transaction) []error
 	GetPoolTransactions() (modules.Transactions, error)
 	GetPoolTransaction(txHash common.Hash) *modules.Transaction
 	GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, error)

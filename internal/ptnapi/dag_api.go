@@ -26,7 +26,6 @@ import (
 	"fmt"
 	"strconv"
 	"time"
-	"unsafe"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -109,7 +108,7 @@ func (s *PublicDagAPI) GetHeaderByHash(ctx context.Context, condition string) (s
 		log.Info("PublicBlockChainAPI", "GetHeaderByHash Marshal err:", err, "hash", hash.String())
 		return "Marshal err", err
 	}
-	return *(*string)(unsafe.Pointer(&content)), nil
+	return string(content), nil
 }
 func (s *PublicDagAPI) GetHeaderByNumber(ctx context.Context, condition string) (string, error) {
 	number := &modules.ChainIndex{}
@@ -134,7 +133,7 @@ func (s *PublicDagAPI) GetHeaderByNumber(ctx context.Context, condition string) 
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetHeaderByNumber Marshal err:", err, "number", number.String())
 	}
-	return *(*string)(unsafe.Pointer(&content)), nil
+	return string(content), nil
 }
 
 func (s *PublicDagAPI) GetUnitByHash(ctx context.Context, condition string) string {
@@ -155,7 +154,7 @@ func (s *PublicDagAPI) GetUnitByHash(ctx context.Context, condition string) stri
 		log.Info("PublicBlockChainAPI", "GetUnitByHash Marshal err:", err, "unit:", *unit)
 		return "Marshal err"
 	}
-	return *(*string)(unsafe.Pointer(&content))
+	return string(content)
 }
 
 func (s *PublicDagAPI) GetUnitByNumber(ctx context.Context, condition string) string {
@@ -183,7 +182,7 @@ func (s *PublicDagAPI) GetUnitByNumber(ctx context.Context, condition string) st
 		log.Info("PublicBlockChainAPI", "GetUnitByNumber Marshal err:", err, "unit:", *unit)
 		return "Marshal err"
 	}
-	return *(*string)(unsafe.Pointer(&content))
+	return string(content)
 }
 
 // getUnitsByIndex
@@ -201,7 +200,7 @@ func (s *PublicDagAPI) GetUnitsByIndex(ctx context.Context, start, end decimal.D
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetUnitsByIndexs Marshal err:", err)
 	}
-	return *(*string)(unsafe.Pointer(&content))
+	return string(content)
 }
 
 func (s *PublicDagAPI) GetFastUnitIndex(ctx context.Context, assetid string) string {
@@ -229,7 +228,7 @@ func (s *PublicDagAPI) GetFastUnitIndex(ctx context.Context, assetid string) str
 		log.Info("PublicDagAPI", "GetFastUnitIndex Marshal err:", err)
 		return "Marshal err"
 	}
-	return *(*string)(unsafe.Pointer(&content))
+	return string(content)
 }
 func (s *PublicDagAPI) GetUnitSummaryByNumber(ctx context.Context, condition string) string {
 	log.Info("PublicBlockChainAPI", "GetUnitByNumber condition:", condition)
@@ -256,7 +255,7 @@ func (s *PublicDagAPI) GetUnitSummaryByNumber(ctx context.Context, condition str
 		log.Info("PublicBlockChainAPI", "GetUnitByNumber Marshal err:", err, "unit:", *unit)
 		return "Marshal err"
 	}
-	return *(*string)(unsafe.Pointer(&content))
+	return string(content)
 }
 
 func (s *PublicDagAPI) GetUnstableUnits() []*ptnjson.UnitSummaryJson {

@@ -109,17 +109,11 @@ func getDockerHostConfig() *docker.HostConfig {
 	if err != nil {
 		log.Debugf("load GetCcDagHand: %s", err.Error())
 	}
-	cp := dag.GetChainParameters()
 	icp := dag.GetImmutableChainParameters()
 	hostConfig = &docker.HostConfig{
 		CapDrop:        icp.UccCapDrop,
 		NetworkMode:    icp.UccNetworkMode,
-		Memory:         cp.UccMemory,
-		MemorySwap:     cp.UccMemorySwap,
-		OOMKillDisable: icp.UccOOMKillDisable,
-		CPUShares:      cp.UccCpuShares,
-		CPUQuota:       cp.UccCpuQuota,
-		CPUPeriod:      cp.UccCpuPeriod,
+		OOMKillDisable: &icp.UccOOMKillDisable,
 		Privileged:     icp.UccPrivileged,
 	}
 	return hostConfig
@@ -127,9 +121,9 @@ func getDockerHostConfig() *docker.HostConfig {
 
 func (vm *DockerVM) createContainer(ctxt context.Context, client dockerClient,
 	imageID string, containerID string, args []string,
-	env []string, attachStdout bool) error {
+	env []string, attachStdout bool, dockerHostConfig *docker.HostConfig) error {
 	config := docker.Config{Cmd: args, Image: imageID, Env: env, AttachStdout: attachStdout, AttachStderr: attachStdout}
-	copts := docker.CreateContainerOptions{Name: containerID, Config: &config, HostConfig: getDockerHostConfig()}
+	copts := docker.CreateContainerOptions{Name: containerID, Config: &config, HostConfig: dockerHostConfig}
 	log.Debugf("Create container: %s", containerID)
 	_, err := client.CreateContainer(copts)
 	if err != nil {
@@ -245,9 +239,13 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 	//if err != nil {
 	//	return err
 	//}
+	dockerHostConfig := getDockerHostConfig()
+	dockerHostConfig.Memory = ccid.ChaincodeSpec.Memory
+	dockerHostConfig.CPUQuota = ccid.ChaincodeSpec.CpuQuota
+	dockerHostConfig.CPUShares = ccid.ChaincodeSpec.CpuShare
 	//创建容器
 	log.Debugf("Start container %s", containerID)
-	err = vm.createContainer(ctxt, client, imageID, containerID, args, env, attachStdout)
+	err = vm.createContainer(ctxt, client, imageID, containerID, args, env, attachStdout, dockerHostConfig)
 	//var reader io.Reader
 	//var err1 error
 	//var isInit = false
@@ -271,7 +269,7 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 					return fmt.Errorf("Failed to pull %s: %s", imageID, err)
 				}
 			}
-			err = vm.createContainer(ctxt, client, imageID, containerID, args, env, attachStdout)
+			err = vm.createContainer(ctxt, client, imageID, containerID, args, env, attachStdout, dockerHostConfig)
 			if err != nil {
 				return fmt.Errorf("no such base image with image name is %s, should pull this image from docker hub.", imageID)
 			}
