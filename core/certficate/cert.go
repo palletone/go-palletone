@@ -16,13 +16,13 @@ package certficate
 import (
 	"bytes"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
-	"github.com/palletone/digital-identity/client"
+	"io/ioutil"
 	"net/http"
 
-	"encoding/json"
+	"github.com/palletone/digital-identity/client"
 	"github.com/palletone/go-palletone/contracts/syscontract"
-	"io/ioutil"
 )
 
 const (
