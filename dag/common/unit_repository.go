@@ -972,6 +972,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 	reqId := tx.RequestHash().Bytes()
 	unitHash := unit.Hash()
 	unitTime := unit.Timestamp()
+	unitHeight := unit.Header().Index()
 	// traverse messages
 	var installReq *modules.ContractInstallRequestPayload
 	reqIndex := tx.GetRequestMsgIndex()
@@ -1030,7 +1031,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 				return fmt.Errorf("save contract of signature failed.")
 			}
 		case modules.APP_DATA:
-			if ok := rep.saveDataPayload(requester, unitHash, unitTime, txHash, msg.Payload.(*modules.DataPayload)); ok != true {
+			if ok := rep.saveDataPayload(requester, unitHash, unitHeight, unitTime, txHash, msg.Payload.(*modules.DataPayload)); ok != true {
 				return fmt.Errorf("save data payload faild.")
 			}
 		default:
@@ -1060,7 +1061,7 @@ func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Trans
 	for _, addr := range fromAddrs {
 		rep.idxdb.SaveAddressTxId(addr, txHash)
 	}
-	}
+}
 
 func getPayToAddresses(tx *modules.Transaction) []common.Address {
 	resultMap := map[common.Address]int{}
@@ -1110,28 +1111,18 @@ func (rep *UnitRepository) getPayFromAddresses(tx *modules.Transaction) []common
 	return keys
 }
 
-func getMaindata(tx *modules.Transaction) string {
-	var maindata string
+func getDataPayload(tx *modules.Transaction) *modules.DataPayload {
+	dp := &modules.DataPayload{}
 	for _, msg := range tx.TxMessages {
 		if msg.App == modules.APP_DATA {
 			pay := msg.Payload.(*modules.DataPayload)
-			maindata = string(pay.MainData)
-
+			dp.MainData = pay.MainData
+			dp.ExtraData = pay.ExtraData
+			dp.Reference = pay.Reference
+			return pay
 		}
 	}
-	return maindata
-}
-
-func getExtradata(tx *modules.Transaction) string {
-	var extradata string
-	for _, msg := range tx.TxMessages {
-		if msg.App == modules.APP_DATA {
-			pay := msg.Payload.(*modules.DataPayload)
-			extradata = string(pay.ExtraData)
-
-		}
-	}
-	return extradata
+	return nil
 }
 
 /**
@@ -1171,7 +1162,7 @@ func (rep *UnitRepository) savePaymentPayload(unitTime int64, txHash common.Hash
 save DataPayload data
 */
 
-func (rep *UnitRepository) saveDataPayload(requester common.Address, unitHash common.Hash, timestamp int64, txHash common.Hash, dataPayload *modules.DataPayload) bool {
+func (rep *UnitRepository) saveDataPayload(requester common.Address, unitHash common.Hash, unitHeight uint64, timestamp int64, txHash common.Hash, dataPayload *modules.DataPayload) bool {
 
 	if dagconfig.DagConfig.TextFileHashIndex {
 
@@ -1182,13 +1173,14 @@ func (rep *UnitRepository) saveDataPayload(requester common.Address, unitHash co
 		}
 		if len(dataPayload.Reference) > 0 {
 			poe := &modules.ProofOfExistence{
-				MainData:  dataPayload.MainData,
-				ExtraData: dataPayload.ExtraData,
-				Reference: dataPayload.Reference,
-				UnitHash:  unitHash,
-				Creator:   requester,
-				TxId:      txHash,
-				Timestamp: uint64(timestamp),
+				MainData:   dataPayload.MainData,
+				ExtraData:  dataPayload.ExtraData,
+				Reference:  dataPayload.Reference,
+				UnitHash:   unitHash,
+				UintHeight: unitHeight,
+				Creator:    requester,
+				TxId:       txHash,
+				Timestamp:  uint64(timestamp),
 			}
 			err = rep.idxdb.SaveProofOfExistence(poe)
 			if err != nil {
@@ -1666,8 +1658,10 @@ func (rep *UnitRepository) GetFileInfoByHash(hashs []common.Hash) ([]*modules.Fi
 		if err != nil {
 			return nil, err
 		}
-		md.MainData = getMaindata(tx.Transaction)
-		md.ExtraData = getExtradata(tx.Transaction)
+		dp := getDataPayload(tx.Transaction)
+		md.MainData = string(dp.MainData)
+		md.ExtraData = string(dp.ExtraData)
+		md.Reference = string(dp.Reference)
 		md.UnitHash = tx.UnitHash
 		md.UintHeight = tx.UnitIndex
 		md.Txid = tx.Hash()

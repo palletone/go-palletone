@@ -79,7 +79,7 @@ type CCPackage interface {
 func SetChaincodesPath(path string) error {
 	if s, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
-			if err := os.MkdirAll(path, 0755); err != nil {
+			if err := os.MkdirAll(path, 0750); err != nil {
 				log.Errorf("Could not create chaincodes install path: %s", err)
 				return err
 			}

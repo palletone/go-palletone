@@ -526,6 +526,7 @@ func TxtoTxpoolTx(tx *modules.Transaction) *modules.TxPoolTransaction {
 				for _, script := range msg.Inputs {
 					if script.PreviousOutPoint != nil {
 						txpool_tx.From = append(txpool_tx.From, script.PreviousOutPoint)
+						break
 					}
 				}
 			}

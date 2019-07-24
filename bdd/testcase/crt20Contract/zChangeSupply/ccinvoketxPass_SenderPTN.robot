@@ -19,7 +19,7 @@ Scenario: 20Contract - Change Supply Token
     ${PTN1}    ${key}    ${coinToken1}    And Request getbalance before create token
     ${ret}    And Request supply token
     ${tokenAmount}    And Calculate gain of recieverAdd
-    ${PTN2}    ${tokenGAIN}    And Request getbalance after create token    ${geneAdd}    ${key}    ${tokenAmount}
+    ${PTN2}    ${tokenGAIN}    And Request getbalance after create token    ${key}    ${tokenAmount}    ${coinToken1}
     Then Assert gain    ${PTN1}    ${PTN2}    ${tokenGAIN}    ${tokenAmount}
 
 *** Keywords ***
@@ -31,6 +31,7 @@ Send PTN to recieverAdd
     ${ret1}    And normalCrtTrans    ${geneAdd}    ${reciever}    100000    ${PTNPoundage}
     ${ret2}    And normalSignTrans    ${ret1}    ${signType}    ${pwd}
     ${ret3}    And normalSendTrans    ${ret2}
+    sleep    4
 
 Request ccinvokePass and transferToken
     ${ccList}    Create List    ${crtTokenMethod}    ${evidence}    ${preTokenId}    ${tokenDecimal}    ${tokenAmount}
@@ -71,17 +72,17 @@ Request supply token
     [Return]    ${ret}
 
 Calculate gain of recieverAdd
-    ${invokeGain}    Evaluate    int(${PTNAmount})+int(${PTNPoundage})
+    ${invokeGain}    Evaluate    ${PTNAmount}+${PTNPoundage}
     ${tokenAmount}    countRecieverPTN    ${invokeGain}
     [Return]    ${tokenAmount}
 
 Request getbalance after create token
-    [Arguments]    ${geneAdd}    ${key}    ${tokenAmount}
+    [Arguments]    ${key}    ${tokenAmount}    ${coinToken1}
     sleep    4
     ${result2}    getBalance    ${reciever}
     ${coinToken2}    Get From Dictionary    ${result2}    ${key}
     ${PTN2}    Get From Dictionary    ${result2}    PTN
-    ${tokenGAIN}    Evaluate    float(${coinToken2})-float(${coinToken1})
+    ${tokenGAIN}    Evaluate    ${coinToken2}-${coinToken1}
     [Return]    ${PTN2}    ${tokenGAIN}
 
 Assert gain

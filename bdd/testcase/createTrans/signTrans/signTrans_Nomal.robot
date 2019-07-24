@@ -7,8 +7,6 @@ Resource          ../../utilKwd/normalKwd.txt
 Resource          ../../utilKwd/behaveKwd.txt
 
 *** Variables ***
-${result_hex}     \f[a-z0-9]*
-${result_txid}    \0[a-z0-9]{160,170}
 
 *** Test Cases ***
 Scenario: createTrans - Sign Transaction

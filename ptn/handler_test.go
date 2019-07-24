@@ -28,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	//mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
@@ -340,7 +341,8 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 	dag.EXPECT().GetUnitTransactions(gomock.Any()).DoAndReturn(func(hash common.Hash) (modules.Transactions, error) {
 		return mockUnit.Transactions(), nil
 	}).AnyTimes()
-
+	par := core.NewChainParams()
+	dag.EXPECT().GetChainParameters().Return(&par).AnyTimes()
 	dag.EXPECT().SubscribeActiveMediatorsUpdatedEvent(gomock.Any()).Return(&rpc.ClientSubscription{}).AnyTimes()
 	dag.EXPECT().SubscribeToGroupSignEvent(gomock.Any()).Return(&rpc.ClientSubscription{}).AnyTimes()
 	pro.EXPECT().LocalHaveActiveMediator().Return(false).AnyTimes()

@@ -22,15 +22,15 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"strconv"
+	"strings"
 
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"math/big"
-	"strings"
 )
 
 type PTNMain struct {
@@ -147,24 +147,36 @@ func _payoutPTN(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	result, _ := stub.GetState(symbolsPayout + txID)
 	if len(result) != 0 {
+		log.Debugf("The tx has been payout")
 		return shim.Error("The tx has been payout")
 	}
 
 	//get sender receiver amount
 	txResult, err := GetErc20Tx(args[0], stub)
 	if err != nil {
+		log.Debugf("GetErc20Tx failed: %s", err.Error())
 		return shim.Error(err.Error())
+	}
+
+	//check tx status
+	if txResult.Status != "1" {
+		log.Debugf("The tx is failed")
+		return shim.Error("The tx is failed")
 	}
 	//check contract address, must be ptn erc20 contract address
 	if strings.ToLower(txResult.ContractAddr) != PTN_ERC20Addr {
+		log.Debugf("The tx is't PTN contract")
 		return shim.Error("The tx is't PTN contract")
 	}
-	//checke receiver, must be ptnmap contract address
+	//check receiver, must be ptnmap contract address
 	mapAddr, err := getMapAddr(stub)
 	if err != nil {
+		log.Debugf("getMapAddr failed: %s", err.Error())
 		return shim.Error(err.Error())
 	}
-	if txResult.To != mapAddr {
+
+	if strings.ToLower(txResult.To) != mapAddr {
+		log.Debugf("strings.ToLower(txResult.To): %s, mapAddr: %s ", strings.ToLower(txResult.To), mapAddr)
 		return shim.Error("Not send token to the Map contract")
 	}
 	//check token amount
@@ -173,8 +185,10 @@ func _payoutPTN(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	bigIntAmout = bigIntAmout.Div(bigIntAmout, big.NewInt(1e10)) //Token's decimal is 18, PTN's decimal is 8
 	amt := bigIntAmout.Uint64()
 	if amt == 0 {
+		log.Debugf("Amount is 0")
 		return shim.Error("Amount is 0")
 	}
+
 	//check confirms
 	curHeight, err := getHight(stub)
 	if curHeight == 0 || err != nil {
@@ -182,23 +196,28 @@ func _payoutPTN(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	blockNum, err := strconv.ParseUint(txResult.BlockNumber, 10, 64)
 	if curHeight-blockNum < 1 {
+		log.Debugf("Need more confirms")
 		return shim.Error("Need more confirms")
 	}
 
 	//query ptnmap contract for get ptnAddr
 	ptnAddr, err := getPTNHex(mapAddr, txResult.From, stub)
 	if err != nil {
+		log.Debugf("getPTNHex failed: %s", err.Error())
 		return shim.Error(err.Error())
 	}
+
 	//get addrPTN
 	//ptnAddr := common.HexToAddress(ptnHex).String()
 	//ptnAddr := "P" + base58.CheckEncode(common.FromHex(ptnHex), 0)
 	if ptnAddr == "P14oLvT2" {
+		log.Debugf("Need transfer 1 PTNMap for bind address")
 		return shim.Error("Need transfer 1 PTNMap for bind address")
 	}
 	//save payout history
 	err = stub.PutState(symbolsPayout+txID, []byte(ptnAddr+"-"+bigIntAmout.String()))
 	if err != nil {
+		log.Debugf("write symbolsPayout failed: %s", err.Error())
 		return shim.Error("write symbolsPayout failed: " + err.Error())
 	}
 
@@ -207,8 +226,10 @@ func _payoutPTN(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	amtToken := &modules.AmountAsset{Amount: amt, Asset: asset}
 	err = stub.PayOutToken(ptnAddr, amtToken, 0)
 	if err != nil {
+		log.Debugf("PayOutToken failed: %s", err.Error())
 		return shim.Error("PayOutToken failed: " + err.Error())
 	}
+
 	return shim.Success([]byte("Success"))
 }
 
@@ -305,7 +326,12 @@ func getPTNHex(mapAddr, sender string, stub shim.ChaincodeStubInterface) (string
 	queryContract.ContractAddr = mapAddr
 	queryContract.ContractABI = PTNMapABI
 	queryContract.Method = "getptnhex"
-	queryContract.ParamsArray = append(queryContract.ParamsArray, sender)
+	//senderAddr := adaptoreth.HexToAddress(sender)
+	//queryContract.ParamsArray = append(queryContract.ParamsArray, senderAddr)
+	params := []string{"0x588eb98f8814aedb056d549c0bafd5ef4963069c"}
+	reqBytesParams, _ := json.Marshal(params)
+	queryContract.Params = string(reqBytesParams)
+
 	reqBytes, err := json.Marshal(queryContract)
 	if err != nil {
 		return "", err
@@ -325,9 +351,9 @@ func getPTNHex(mapAddr, sender string, stub shim.ChaincodeStubInterface) (string
 		return "", errors.New("QueryContract result empty")
 	}
 	var addrs []string
-	err = json.Unmarshal(result, &addrs)
+	err = json.Unmarshal([]byte(getResult.Result), &addrs)
 	if err != nil || len(addrs) == 0 {
-		return "", errors.New("QueryContract result Unmarshal failed")
+		return "", errors.New("QueryContract getResult.Result Unmarshal failed")
 	}
 
 	return addrs[0], nil
