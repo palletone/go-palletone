@@ -354,20 +354,18 @@ func (t *SimpleChaincode) test_PayOutToken(stub shim.ChaincodeStubInterface, arg
 	if len(args) < 3 {
 		return shim.Error(fmt.Sprintf("input:<address><token name><amount>"))
 	}
-
-	amountAsset := &modules.AmountAsset{}
-	if len(args) == 2 {
-		asset := &modules.Asset{}
-		if err := asset.SetString(args[1]); err != nil {
-			return shim.Error(err.Error())
-		}
-		amountAsset.Asset = asset
-		amount, err := strconv.Atoi(args[1])
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-		amountAsset.Amount = uint64(amount)
+	asset, err := modules.StringToAsset(args[1])
+	if err != nil {
+		return shim.Error(err.Error())
 	}
+	amount, err := strconv.Atoi(args[1])
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	amountAsset := &modules.AmountAsset{}
+	amountAsset.Amount = uint64(amount)
+	amountAsset.Asset = asset
+
 	if err := stub.PayOutToken(args[0], amountAsset, 0); err != nil {
 		return shim.Error(err.Error())
 	}
