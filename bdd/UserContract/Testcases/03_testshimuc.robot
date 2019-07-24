@@ -61,7 +61,7 @@ HandleToken
     ${errCode}    ${errMsg}=    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${false}
     Should Be Equal    ${errMsg}    Chaincode Error:Only system contract can call this function.
     # -> supply token
-    ${reqId}=    And User supply token    YY    100000
+    ${reqId}=    And User supply token    YY    100000    1
     ${errCode}    ${errMsg}=    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${false}
     Should Be Equal    ${errMsg}    Chaincode Error:Only system contract can call this function.
     # -> payout token
@@ -237,8 +237,8 @@ User define token
     [Return]    ${reqId}
 
 User supply token
-    [Arguments]    ${symbol}    ${amount}
-    ${args}=    Create List    testSupplyToken    ${symbol}    ${amount}
+    [Arguments]    ${symbol}    ${amount}    ${decimals}
+    ${args}=    Create List    testSupplyToken    ${symbol}    ${amount}    ${decimals}
     ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
     ...    ${args}
     ${result}=    Get From Dictionary    ${respJson}    result

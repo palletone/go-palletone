@@ -457,29 +457,12 @@ func (t *SimpleChaincode) test_SupplyToken(stub shim.ChaincodeStubInterface, arg
 	assetID, _ := modules.NewAssetId(symbol, modules.AssetType_FungibleToken,
 		byte(decimals), common.Hex2Bytes(txid[2:]), modules.UniqueIdType_Null)
 
-	info := struct {
-		Symbol      string
-		CreateAddr  string
-		TotalSupply uint64
-		Decimals    uint64
-		SupplyAddr  string
-		AssetID     modules.AssetId
-	}{symbol, invokeAddr.String(), supplyAmount, uint64(assetID.GetDecimal()), invokeAddr.String(), assetID}
-	val, err := json.Marshal(&info)
-	if err != nil {
+	if err := stub.SupplyToken(assetID.Bytes(),
+		[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, supplyAmount, invokeAddr.String()); err != nil {
 		return shim.Error(err.Error())
 	}
-	err = stub.PutState("symbol_"+info.Symbol, val)
 
-	gti := modules.GlobalTokenInfo{Symbol: info.Symbol, TokenType: 1, Status: 0, CreateAddr: info.CreateAddr,
-		TotalSupply: info.TotalSupply, SupplyAddr: info.SupplyAddr, AssetID: info.AssetID}
-	val, err = json.Marshal(gti)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	err = stub.PutGlobalState(modules.GlobalPrefix+symbol, val)
-
-	return shim.Success([]byte(""))
+	return shim.Success(nil)
 }
 
 func (t *SimpleChaincode) test_UseCert(stub shim.ChaincodeStubInterface, args []string) pb.Response {
