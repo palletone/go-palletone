@@ -239,3 +239,10 @@ func (p *Processor) UpdateJuryAccount(addr common.Address, pwd string) bool {
 
 	return true
 }
+func (p *Processor) CheckTxValid(tx *modules.Transaction) bool {
+	_, _, err := p.validator.ValidateTx(tx, false)
+	if err != nil {
+		log.Debugf("[%s]checkTxValid, Validate fail, txHash[%s], err:%s", shortId(tx.RequestHash().String()), tx.Hash().String(), err.Error())
+	}
+	return err == nil
+}
