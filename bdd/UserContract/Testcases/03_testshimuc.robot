@@ -9,7 +9,7 @@ Library           String
 *** Test Cases ***
 InstallTestshimucTpl
     Given Unlock token holder succeed
-    ${reqId} =    When User installs contract template    github.com/palletone/go-palletone/contracts/example/go/testshimuc    testshimuc
+    ${reqId} =    When User installs contract template    github.com/palletone/go-palletone/contracts/example/go/testshimuc1    testshimuc
     Then Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
 DeployTestshimuc
@@ -66,15 +66,15 @@ HandleToken
     Should Be Equal    ${errMsg}    Chaincode Error:Only system contract can call this function.
     # -> payout token
     ${newAddr}=    Then newAccount
+    And User transfer PTN to testshimuc
     ${reqId}=    And User pay out token    ${newAddr}    PTN    4500
     And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
     # -> query balance
     Then Query balance by contract    ${tokenHolder}    YY    ${0}
     ${exceptedAmount}=    And getBalance    ${tokenHolder}    PTN
-    ${exceptedAmount}=    Evaluate    ${exceptedAmount}*${100000000}
+    ${exceptedAmount}=    And Evaluate    ${exceptedAmount}*${100000000}
     And Query balance by contract    ${tokenHolder}    PTN    ${exceptedAmount}
-    ${exceptedAmount}=    Evaluate    ${4500}*${100000000}
-    And Query balance by contract    ${newAddr}    PTN    ${exceptedAmount}
+    And Query balance by contract    ${newAddr}    PTN    ${4500}
 
 UseDigitalCertificate
     Given Unlock token holder succeed
@@ -114,6 +114,10 @@ Stop testshimuc contract
     And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
 *** Keywords ***
+User transfer PTN to testshimuc
+    transferPtnTo    ${gContractId}    10000
+    Wait for transaction being packaged
+
 Test set_event by contract
     ${args}=    Create List    testGetInvokeInfo
     ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
