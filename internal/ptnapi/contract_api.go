@@ -428,6 +428,11 @@ func (s *PrivateContractAPI) DepositContractInvoke(ctx context.Context, from, to
 				return "", fmt.Errorf("error(%v), please use mediator.apply()", err.Error())
 			}
 
+			if from != args.AddStr {
+				return "", fmt.Errorf("the calling account(%v) is not appling account(%v), "+
+					"please use mediator.apply()", from, args.AddStr)
+			}
+
 			// 参数序列化
 			argsB, err := json.Marshal(args)
 			if err != nil {

@@ -312,8 +312,38 @@ func (statedb *StateDb) SaveContractInvokeReq(reqid []byte, invoke *modules.Cont
 				*mi.MediatorInfoBase = *mco.MediatorInfoBase
 				*mi.MediatorApplyInfo = *mco.MediatorApplyInfo
 
-				addr, _ := core.StrToMedAdd(mco.AddStr)
-				statedb.StoreMediatorInfo(addr, mi)
+				addr, err := core.StrToMedAdd(mco.AddStr)
+				if err == nil {
+					statedb.StoreMediatorInfo(addr, mi)
+				} else {
+					log.Debugf(err.Error())
+				}
+			} else {
+				log.Debugf(err.Error())
+			}
+		} else if string(invoke.Args[0]) == modules.UpdateMediatorInfo {
+			var mua modules.MediatorUpdateArgs
+			err := json.Unmarshal(invoke.Args[1], &mua)
+			if err == nil {
+				log.Debugf("Save Update Mediator(%v) Invoke Req", mua.AddStr)
+
+				addr, err := core.StrToMedAdd(mua.AddStr)
+				if err == nil {
+					mi, err := statedb.RetrieveMediatorInfo(addr)
+					if err == nil {
+						if mua.Name != nil {
+							mi.Name = *mua.Name
+						}
+						if mua.Url != nil {
+							mi.Url = *mua.Url
+						}
+						statedb.StoreMediatorInfo(addr, mi)
+					} else {
+						log.Debugf(err.Error())
+					}
+				} else {
+					log.Debugf(err.Error())
+				}
 			} else {
 				log.Debugf(err.Error())
 			}

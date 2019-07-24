@@ -48,7 +48,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	case modules.MediatorApplyQuit:
 		log.Info("Enter DepositChaincode Contract " + modules.MediatorApplyQuit + " Invoke")
 		return d.mediatorApplyQuit(stub, args)
-	// 申请退出Mediator
+	// 更新 Mediator 信息
 	case modules.UpdateMediatorInfo:
 		log.Info("Enter DepositChaincode Contract " + modules.UpdateMediatorInfo + " Invoke")
 		return d.UpdateMediatorInfo(stub, args)
