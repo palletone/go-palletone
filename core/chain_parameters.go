@@ -110,15 +110,12 @@ func NewChainParams() ChainParameters {
 	return ChainParameters{
 		ChainParametersBase: NewChainParametersBase(),
 		// TxCoinYearRate:       DefaultTxCoinYearRate,
-		DepositPeriod: DefaultDepositPeriod,
-		UccMemory:     DefaultUccMemory,
-		//UccMemorySwap:        DefaultUccMemorySwap,
-		UccCpuShares: DefaultUccCpuShares,
-		//UccCpuPeriod:         DefaultCpuPeriod,
-		UccCpuQuota:   DefaultUccCpuQuota,
-		UccDisk:       DefaultUccDisk,
-		TempUccMemory: DefaultTempUccMemory,
-		//TempUccMemorySwap:    DefaultTempUccMemorySwap,
+		DepositPeriod:        DefaultDepositPeriod,
+		UccMemory:            DefaultUccMemory,
+		UccCpuShares:         DefaultUccCpuShares,
+		UccCpuQuota:          DefaultUccCpuQuota,
+		UccDisk:              DefaultUccDisk,
+		TempUccMemory:        DefaultTempUccMemory,
 		TempUccCpuShares:     DefaultTempUccCpuShares,
 		TempUccCpuQuota:      DefaultTempUccCpuQuota,
 		ContractSignatureNum: DefaultContractSignatureNum,
@@ -136,9 +133,9 @@ type ChainParameters struct {
 	DepositPeriod int     `json:"deposit_period"` //保证金周期
 
 	//对启动用户合约容器的相关资源的限制
-	UccMemory    int64 `json:"ucc_memory"`     //物理内存  104857600  100m
-	UccCpuShares int64 `json:"ucc_cpu_shares"` //CPU占用率，相对的  CPU 利用率权重，默认为 1024
-	UccCpuQuota  int64 `json:"ucc_cpu_quota"`  // 限制CPU --cpu-period=50000 --cpu-quota=25000
+	UccMemory    int64 `json:"ucc_memory"`
+	UccCpuShares int64 `json:"ucc_cpu_shares"`
+	UccCpuQuota  int64 `json:"ucc_cpu_quota"`
 	UccDisk      int64 `json:"ucc_disk"`
 	//对中间容器的相关资源限制
 	TempUccMemory    int64 `json:"temp_ucc_memory"`
