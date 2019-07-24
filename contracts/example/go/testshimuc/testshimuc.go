@@ -24,7 +24,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -423,28 +422,12 @@ func (t *SimpleChaincode) test_DefineToken(stub shim.ChaincodeStubInterface, arg
 }
 
 func (t *SimpleChaincode) test_SupplyToken(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	if len(args) < 2 {
-		return shim.Error("need 2 args (Symbol,SupplyAmout)")
+	if len(args) < 3 {
+		return shim.Error("need 3 args (Symbol,SupplyAmout,Decimals)")
 	}
 
 	//symbol
 	symbol := strings.ToUpper(args[0])
-	//check name is exist or not
-	gTkInfo := modules.GlobalTokenInfo{}
-	tkInfoBytes, err := stub.GetGlobalState(modules.GlobalPrefix + symbol)
-	if len(tkInfoBytes) == 0 {
-		return shim.Error(err.Error())
-	}
-	if err := json.Unmarshal(tkInfoBytes, &gTkInfo); err != nil {
-		return shim.Error(err.Error())
-	}
-
-	//check status
-	if gTkInfo.Status != 0 {
-		jsonResp := "{\"Error\":\"Status is frozen\"}"
-		return shim.Error(jsonResp)
-	}
-
 	//supply amount
 	supplyAmount, err := strconv.ParseUint(args[1], 10, 64)
 	if err != nil {
@@ -455,8 +438,10 @@ func (t *SimpleChaincode) test_SupplyToken(stub shim.ChaincodeStubInterface, arg
 		jsonResp := "{\"Error\":\"Can't be zero\"}"
 		return shim.Error(jsonResp)
 	}
-	if math.MaxInt64-gTkInfo.TotalSupply < supplyAmount {
-		jsonResp := "{\"Error\":\"Too big, overflow\"}"
+	// supply decimals
+	decimals, err := strconv.ParseUint(args[2], 10, 64)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to convert supply amount\"}"
 		return shim.Error(jsonResp)
 	}
 
@@ -466,23 +451,11 @@ func (t *SimpleChaincode) test_SupplyToken(stub shim.ChaincodeStubInterface, arg
 		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
 		return shim.Error(jsonResp)
 	}
-	//check supply address
-	if invokeAddr.String() != gTkInfo.SupplyAddr {
-		jsonResp := "{\"Error\":\"Not the supply address\"}"
-		return shim.Error(jsonResp)
-	}
 
 	//call SupplyToken
-	assetID := gTkInfo.AssetID
-	err = stub.SupplyToken(assetID.Bytes(),
-		[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, supplyAmount, gTkInfo.SupplyAddr)
-	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to call stub.SupplyToken\"}"
-		return shim.Error(jsonResp)
-	}
-
-	//add supply
-	gTkInfo.TotalSupply += supplyAmount
+	txid := stub.GetTxID()
+	assetID, _ := modules.NewAssetId(symbol, modules.AssetType_FungibleToken,
+		byte(decimals), common.Hex2Bytes(txid[2:]), modules.UniqueIdType_Null)
 
 	info := struct {
 		Symbol      string
@@ -491,7 +464,7 @@ func (t *SimpleChaincode) test_SupplyToken(stub shim.ChaincodeStubInterface, arg
 		Decimals    uint64
 		SupplyAddr  string
 		AssetID     modules.AssetId
-	}{gTkInfo.Symbol, gTkInfo.CreateAddr, gTkInfo.TotalSupply, uint64(assetID.GetDecimal()), gTkInfo.SupplyAddr, assetID}
+	}{symbol, invokeAddr.String(), supplyAmount, uint64(assetID.GetDecimal()), invokeAddr.String(), assetID}
 	val, err := json.Marshal(&info)
 	if err != nil {
 		return shim.Error(err.Error())
@@ -504,7 +477,7 @@ func (t *SimpleChaincode) test_SupplyToken(stub shim.ChaincodeStubInterface, arg
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	err = stub.PutGlobalState(modules.GlobalPrefix+gTkInfo.Symbol, val)
+	err = stub.PutGlobalState(modules.GlobalPrefix+symbol, val)
 
 	return shim.Success([]byte(""))
 }

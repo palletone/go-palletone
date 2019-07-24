@@ -4,6 +4,7 @@ Resource          ../../commonlib/pubFuncs.robot
 Resource          ../../commonlib/setups.robot
 Library           BuiltIn
 Library           Collections
+Library           String
 
 *** Test Cases ***
 InstallTestshimucTpl
@@ -62,11 +63,11 @@ HandleToken
     # -> supply token
     ${reqId}=    And User supply token    YY    100000
     ${errCode}    ${errMsg}=    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${false}
-    Should Be Equal    ${errMsg}    error executing chaincode: failed to execute transaction: timeout expired while executing transaction
+    Should Be Equal    ${errMsg}    Chaincode Error:Only system contract can call this function.
     # -> payout token
     ${newAddr}=    Then newAccount
     ${reqId}=    And User pay out token    ${newAddr}    PTN    4500
-    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${false}
+    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
     # -> query balance
     Then Query balance by contract    ${tokenHolder}    YY    ${0}
     ${exceptedAmount}=    And getBalance    ${tokenHolder}    PTN
@@ -77,11 +78,26 @@ HandleToken
 
 UseDigitalCertificate
     Given Unlock token holder succeed
+    And queryCAHolder
+    And queryCACertID
     # -> use cert
-    ${reqId}=    When User use cert to invoke contract    ${caCertID}
-    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${false}
+    ${reqId}=    Then User use cert to invoke contract
+    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
     ${payload}=    Then Get invoke payload info    ${reqId}
-    And Should Be Equal    ${payload}    ${caCertBytes}
+    ${compareBytes}=    And Replace String    ${caCertBytes}    \n    ${EMPTY}
+    ${compareBytes}=    And Replace String    ${compareBytes}    -----BEGIN CERTIFICATE-----    ${EMPTY}
+    ${compareBytes}=    And Replace String    ${compareBytes}    -----END CERTIFICATE-----    ${EMPTY}
+    And Should Be Equal    ${payload}    ${compareBytes}
+
+TestSendRecvJury
+    Given Unlock token holder succeed
+    ${reqId}=    When Test send and recv jury by contract
+    Then Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
+
+TestSetEvent
+    Given Unlock token holder succeed
+    ${reqId}=    When Test set_event by contract
+    Then Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
 Get Invoke Info
     Given Unlock token holder succeed
@@ -98,6 +114,37 @@ Stop testshimuc contract
     And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
 *** Keywords ***
+Test set_event by contract
+    ${args}=    Create List    testGetInvokeInfo
+    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
+    ...    ${args}
+    ${result}=    Get From Dictionary    ${respJson}    result
+    ${reqId}=    Get From Dictionary    ${result}    reqId
+    ${contractId}=    Get From Dictionary    ${result}    ContractId
+    Should Be Equal    ${gContractId}    ${contractId}
+    [Return]    ${reqId}
+
+Test send and recv jury by contract
+    ${args}=    Create List    testSetEvent
+    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
+    ...    ${args}
+    ${result}=    Get From Dictionary    ${respJson}    result
+    ${reqId}=    Get From Dictionary    ${result}    reqId
+    ${contractId}=    Get From Dictionary    ${result}    ContractId
+    Should Be Equal    ${gContractId}    ${contractId}
+    [Return]    ${reqId}
+
+User use cert to invoke contract
+    ${args}=    Create List    testUseCert
+    ${params}=    genInvoketxParams    ${caCertHolder}    ${caCertHolder}    100    1    ${gContractId}
+    ...    ${args}    ${caCertID}
+    ${respJson}=    sendRpcPost    ${host}    ${ccinvokeMethod}    ${params}    UseCert
+    ${result}=    Get From Dictionary    ${respJson}    result
+    ${reqId}=    Get From Dictionary    ${result}    reqId
+    ${contractId}=    Get From Dictionary    ${result}    ContractId
+    Should Be Equal    ${gContractId}    ${contractId}
+    [Return]    ${reqId}
+
 User get invoke info
     [Arguments]    ${args}    ${newAddr}
     ${newArgs}=    Create List    testGetInvokeInfo
