@@ -276,51 +276,6 @@ func (mr *MockChaincodeStubInterfaceMockRecorder) PutGlobalState(key, value inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutGlobalState", reflect.TypeOf((*MockChaincodeStubInterface)(nil).PutGlobalState), key, value)
 }
 
-// OutChainAddress mocks base method
-func (m *MockChaincodeStubInterface) OutChainAddress(outChainName string, params []byte) ([]byte, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OutChainAddress", outChainName, params)
-	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// OutChainAddress indicates an expected call of OutChainAddress
-func (mr *MockChaincodeStubInterfaceMockRecorder) OutChainAddress(outChainName, params interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OutChainAddress", reflect.TypeOf((*MockChaincodeStubInterface)(nil).OutChainAddress), outChainName, params)
-}
-
-// OutChainTransaction mocks base method
-func (m *MockChaincodeStubInterface) OutChainTransaction(outChainName string, params []byte) ([]byte, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OutChainTransaction", outChainName, params)
-	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// OutChainTransaction indicates an expected call of OutChainTransaction
-func (mr *MockChaincodeStubInterfaceMockRecorder) OutChainTransaction(outChainName, params interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OutChainTransaction", reflect.TypeOf((*MockChaincodeStubInterface)(nil).OutChainTransaction), outChainName, params)
-}
-
-// OutChainQuery mocks base method
-func (m *MockChaincodeStubInterface) OutChainQuery(outChainName string, params []byte) ([]byte, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OutChainQuery", outChainName, params)
-	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// OutChainQuery indicates an expected call of OutChainQuery
-func (mr *MockChaincodeStubInterfaceMockRecorder) OutChainQuery(outChainName, params interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OutChainQuery", reflect.TypeOf((*MockChaincodeStubInterface)(nil).OutChainQuery), outChainName, params)
-}
-
 // OutChainCall mocks base method
 func (m *MockChaincodeStubInterface) OutChainCall(outChainName, method string, params []byte) ([]byte, error) {
 	m.ctrl.T.Helper()

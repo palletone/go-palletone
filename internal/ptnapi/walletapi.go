@@ -1326,7 +1326,7 @@ func (s *PublicWalletAPI) GenCert(ctx context.Context, caAddress, userAddress, p
 		return nil, err
 	}
 	//导出私钥 用于证书的生成
-	privKey, _ := ks.DumpP256PrivateKey(account, passwd)
+	privKey, _ := ks.DumpPrivateKey(account, passwd)
 	if err != nil {
 		return nil, err
 	}

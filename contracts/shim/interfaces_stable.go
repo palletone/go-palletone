@@ -110,10 +110,6 @@ type ChaincodeStubInterface interface {
 	PutState(key string, value []byte) error
 	PutGlobalState(key string, value []byte) error
 
-	OutChainAddress(outChainName string, params []byte) ([]byte, error)
-	OutChainTransaction(outChainName string, params []byte) ([]byte, error)
-	OutChainQuery(outChainName string, params []byte) ([]byte, error)
-
 	OutChainCall(outChainName string, method string, params []byte) ([]byte, error)
 
 	//OutChainUtil(outChainName string, params []byte) ([]byte, error)
