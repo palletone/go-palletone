@@ -1319,6 +1319,20 @@ func (s *PublicWalletAPI) GetProofOfExistencesByAsset(ctx context.Context, asset
 
 //affiliation  gptn.mediator1
 func (s *PublicWalletAPI) GenCert(ctx context.Context, caAddress, userAddress, passwd, name, data, roleType, affiliation string) (*ContractDeployRsp, error) {
+	contractAddr := "PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk"
+	// 参数检查
+	_, err := common.StringToAddress(userAddress)
+	if err != nil {
+		return nil, fmt.Errorf("invalid account address: %v", userAddress)
+	}
+	caAddr, err := common.StringToAddress(caAddress)
+	if err != nil {
+		return nil, fmt.Errorf("invalid account address: %v", userAddress)
+	}
+	cAddr, err := common.StringToAddress(contractAddr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid account address: %v", userAddress)
+	}
 
 	ks := s.b.GetKeyStore()
 	account, err := MakeAddress(ks, userAddress)
@@ -1349,9 +1363,6 @@ func (s *PublicWalletAPI) GenCert(ctx context.Context, caAddress, userAddress, p
 	args[1] = []byte(userAddress)
 	args[2] = certBytes
 
-	contractAddr := "PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk"
-	caAddr, _ := common.StringToAddress(caAddress)
-	cAddr, _ := common.StringToAddress(contractAddr)
 	reqId, err := s.b.ContractInvokeReqTx(caAddr, caAddr, 10000, 10000, nil, cAddr, args, 0)
 	if err != nil {
 		return nil,err
@@ -1362,6 +1373,46 @@ func (s *PublicWalletAPI) GenCert(ctx context.Context, caAddress, userAddress, p
 		ContractId: contractAddr,
 	}
 
+	return rsp, nil
+}
+
+//吊销证书  将crl存入到数字身份系统合约中
+func (s *PublicWalletAPI) RevokeCert(ctx context.Context, caAddress, userAddress string) (*ContractDeployRsp, error) {
+	contractAddr := "PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk"
+	// 参数检查
+	_, err := common.StringToAddress(userAddress)
+	if err != nil {
+		return nil, fmt.Errorf("invalid account address: %v", userAddress)
+	}
+	caAddr, err := common.StringToAddress(caAddress)
+	if err != nil {
+		return nil, fmt.Errorf("invalid account address: %v", userAddress)
+	}
+	cAddr, err := common.StringToAddress(contractAddr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid account address: %v", userAddress)
+	}
+	reason := "PalletOne system administrator revokes certificate!"
+	crlByte,err := certficate.RevokeCert(userAddress,reason)
+	if err != nil {
+		return nil, err
+	}
+	log.Infof("RevokeCert Success!  CrlByte[%s]", crlByte)
+
+	//调用系统合约 将CrlByte存入到数字身份系统合约中
+	args := make([][]byte, 3)
+	args[0] = []byte("addCRL")
+	args[1] = crlByte
+
+	reqId, err := s.b.ContractInvokeReqTx(caAddr, caAddr, 10000, 10000, nil, cAddr, args, 0)
+	if err != nil {
+		return nil,err
+	}
+	log.Infof("RevokeCert reqId[%s]", hex.EncodeToString(reqId[:]))
+	rsp := &ContractDeployRsp{
+		ReqId:      hex.EncodeToString(reqId[:]),
+		ContractId: contractAddr,
+	}
 	return rsp, nil
 }
 

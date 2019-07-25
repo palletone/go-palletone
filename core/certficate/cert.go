@@ -45,17 +45,6 @@ type CAGetCertChain struct {
 	Version                  string
 }
 
-func NewCertInfo(address, name, data, ty, affiliation string, ecert bool) *CertINfo {
-	return &CertINfo{
-		Address:     address,
-		Name:        name,
-		Data:        data,
-		ECert:       ecert,
-		Type:        ty,
-		Affiliation: affiliation,
-	}
-}
-
 func CertInfo2Cainfo(certinfo CertINfo) client.CaGenInfo {
 	return client.CaGenInfo{
 		EnrolmentId: certinfo.Address,
@@ -64,18 +53,9 @@ func CertInfo2Cainfo(certinfo CertINfo) client.CaGenInfo {
 		ECert:       certinfo.ECert,
 		Type:        certinfo.Type,
 		Affiliation: certinfo.Affiliation,
-		//Key:         certinfo.Key,
+		Key:         certinfo.Key,
 	}
 
-}
-
-func CertChain2Result(cc client.CAGetCertResponse) CAGetCertChain {
-	return CAGetCertChain{
-		RootCertificates:         cc.RootCertificates,
-		IntermediateCertificates: cc.IntermediateCertificates,
-		CAName:                   cc.CAName,
-		Version:                  cc.Version,
-	}
 }
 
 func GenCert(certinfo CertINfo) ([]byte, error) {
@@ -85,58 +65,15 @@ func GenCert(certinfo CertINfo) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return certpem, nil
 }
 
-func RevokeCert(address string, reason string, cfg CAConfig) error {
-	//caininfo := client.CaGenInfo{EnrolmentId: address}
-	//url := cfg.CaUrl
-	//crlPem, err := caininfo.Revoke(address, reason)
-	//if err != nil {
-	//	return err
-	//}
-	//immediateca := cfg.ImmediateCa
-	////吊销证书后将crl byte 通过rpc发送请求 添加到合约中
-	//if crlPem != nil {
-	//	err = CrlRpcReq(immediateca, crlPem, url)
-	//	if err != nil {
-	//		return err
-	//	}
-	//}
-	return nil
-}
-
-func GetIndentity(address string, caname string) (*client.CAGetIdentityResponse, error) {
-	cainfo := client.CaGenInfo{}
-	idtRep, err := cainfo.GetIndentity(address, caname)
+func RevokeCert(address string, reason string) ([]byte, error) {
+	caininfo := client.CaGenInfo{EnrolmentId: address}
+	crlPem, err := caininfo.Revoke(address, reason)
 	if err != nil {
 		return nil, err
 	}
-
-	return idtRep, nil
+	return crlPem, nil
 }
 
-func GetIndentities() (*client.CAListAllIdentitesResponse, error) {
-	cainfo := client.CaGenInfo{}
-	idtReps, err := cainfo.GetIndentities()
-	if err != nil {
-		return nil, err
-	}
-
-	return idtReps, nil
-
-}
-
-//获取证书链信息
-func GetCaCertificateChain(caname string) (*CAGetCertChain, error) {
-	cainfo := client.CaGenInfo{}
-	certchain, err := cainfo.GetCaCertificateChain(caname)
-	if err != nil {
-		return nil, err
-	}
-
-	cc := CertChain2Result(*certchain)
-
-	return &cc, nil
-}
