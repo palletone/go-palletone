@@ -119,8 +119,7 @@ func (tx *TxPoolTransaction) Less(otherTx interface{}) bool {
 }
 
 func (tx *TxPoolTransaction) GetPriorityLvl() string {
-	level, _ := strconv.ParseFloat(tx.Priority_lvl, 64)
-	if level > 0 {
+	if tx.Priority_lvl != "" && tx.Priority_lvl > "0" {
 		return tx.Priority_lvl
 	}
 	var priority_lvl float64
@@ -130,7 +129,7 @@ func (tx *TxPoolTransaction) GetPriorityLvl() string {
 		}
 		priority_lvl, _ = strconv.ParseFloat(fmt.Sprintf("%f", float64(txfee.Int64())/tx.Tx.Size().Float64()*(1+float64(time.Now().Second()-tx.CreationDate.Second())/(24*3600))), 64)
 	}
-	tx.Priority_lvl = strconv.FormatFloat(priority_lvl, 'E', -1, 64)
+	tx.Priority_lvl = strconv.FormatFloat(priority_lvl, 'f', -1, 64)
 	return tx.Priority_lvl
 }
 func (tx *TxPoolTransaction) GetPriorityfloat64() float64 {
@@ -148,7 +147,7 @@ func (tx *TxPoolTransaction) GetPriorityfloat64() float64 {
 	return priority_lvl
 }
 func (tx *TxPoolTransaction) SetPriorityLvl(priority float64) {
-	tx.Priority_lvl = strconv.FormatFloat(priority, 'E', -1, 64)
+	tx.Priority_lvl = strconv.FormatFloat(priority, 'f', -1, 64)
 }
 func (tx *TxPoolTransaction) GetTxFee() *big.Int {
 	var fee uint64

@@ -584,13 +584,6 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 		}
 		tx.TxFee = append(tx.TxFee, addition...)
 	}
-	//if tx.TxFee == nil {
-	//	tx.TxFee = make([]*modules.Addition, 0)
-	//}
-	// 同一个utxo可以花费多次， 但最终只能确认一次。
-	//if err := pool.checkPoolDoubleSpend(tx); err != nil {
-	//	return false, err
-	//}
 	// 计算优先级
 	pool.setPriorityLvl(tx)
 
@@ -620,7 +613,6 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 
 	// We've directly injected a replacement transaction, notify subsystems
 	go pool.txFeed.Send(modules.TxPreEvent{tx.Tx})
-
 	return true, nil
 }
 
@@ -922,13 +914,13 @@ func (pool *TxPool) addTxsLocked(txs []*modules.TxPoolTransaction, local bool) [
 		}
 		if (i+1)%1000 == 0 {
 			log.Infof("add txs locked: %d, spent time: %s", (i+1)/1000, time.Since(tt))
+			tt = time.Now()
 		}
 	}
 
 	if !replace {
 		pool.promoteExecutables()
 	}
-	log.Infof("add txs locked spent all time: %s", time.Since(tt))
 	return errs
 }
 
