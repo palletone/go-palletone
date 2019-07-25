@@ -83,7 +83,7 @@ func (e *elector) checkElected(data []byte) (proof []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
-	proof, err = vrfEs.VrfProve(privateKey, data)
+	proof, err = vrfEs.VrfProve(privateKey.(*ecdsa.PrivateKey), data)
 	if err != nil {
 		return nil, err
 	}
