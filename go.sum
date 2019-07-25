@@ -264,6 +264,8 @@ github.com/palletone/digital-identity v0.0.0-20190528094734-e865dc23008a/go.mod 
 github.com/palletone/digital-identity v0.6.0 h1:3GhOyfTsQG7qZyPacRKcVKEFyGOKPhmCVn/D3d7j8Yg=
 github.com/palletone/digital-identity v0.6.1-0.20190722095929-e1f02021dead h1:+ZBMoFYdG6PKjtP8mvqtxNhkS3164X6Jl8wQ7jLNHWE=
 github.com/palletone/digital-identity v0.6.1-0.20190722095929-e1f02021dead/go.mod h1:nU+KRc545ru0otQl5XbRlV8YiwjS3rHUySM1FMtvq9Y=
+github.com/palletone/digital-identity v0.6.1-0.20190724082554-10725881048e h1:C2GCiPLQpy5yxkCWSJXLwZDNzyBFbGLuMx+kbQY6QRI=
+github.com/palletone/digital-identity v0.6.1-0.20190724082554-10725881048e/go.mod h1:nU+KRc545ru0otQl5XbRlV8YiwjS3rHUySM1FMtvq9Y=
 github.com/palletone/eth-adaptor v0.0.0-20190606102906-debacefdb91e h1:UixyiCYdb5S1v9O5qWkhUkzx75ZbiD3feqzdx2A3z7o=
 github.com/palletone/eth-adaptor v0.0.0-20190606102906-debacefdb91e/go.mod h1:1VJ2RI5CRKeui5na1lbqKdjt2DV78J5BtcBv4GhPKP0=
 github.com/palletone/eth-adaptor v0.6.1-0.20190718070938-ea95de9928b1 h1:haxa3RbFB3R2EVRGUXcylcshUfPbdGRlbuFLZAdl41M=
