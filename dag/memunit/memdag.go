@@ -471,26 +471,18 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 	parentHash := unit.ParentHash()[0]
 	uHash := unit.Hash()
 	height := unit.NumberU64()
-	if _, ok := chain.getChainUnits()[parentHash]; ok || parentHash == chain.stableUnitHash {
+	if inter, ok := chain.chainUnits.Load(parentHash); ok || parentHash == chain.stableUnitHash {
 		//add unit to chain
-		inter, ok1 := chain.chainUnits.Load(parentHash)
-		if !ok1 {
-			str := fmt.Sprintf("add unit failed, parent hash[%s] 's temdb not found.", parentHash.String())
-			log.Error(str)
-			chain.chainUnits.Delete(parentHash)
-			return nil, nil, nil, nil, nil, errors.New(str)
-		}
-		parent_temp := inter.(*ChainTempDb)
-		log.Debugf("chain[%p] Add unit[%s] to chainUnits", chain, uHash.String())
+		log.Debugf("chain[%s] Add unit[%s] to chainUnits", chain.token.String(), uHash.String())
 		//add at the end of main chain unit
 		if parentHash == chain.lastMainChainUnit.Hash() {
 			//Add a new unit to main chain
-			//Check unit and it's txs are valid
 			tt := time.Now()
 			tempdb := new(ChainTempDb)
 			inter_temp, has := chain.tempdb.Load(parentHash)
-			if !has {
-				tempdb, _ = NewChainTempDb(parent_temp.Tempdb, freecache.NewCache(1000*1024))
+			if !has { // 分叉链
+				p_temp, _ := inter.(*ChainTempDb)
+				tempdb, _ = NewChainTempDb(p_temp.Tempdb, freecache.NewCache(1000*1024))
 			} else {
 				tempdb = inter_temp.(*ChainTempDb)
 			}
@@ -599,31 +591,6 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 	tmp := inter_tmp.(*ChainTempDb)
 	return tmp.UnitRep, tmp.UtxoRep, tmp.StateRep, tmp.PropRep, tmp.UnitProduceRep, nil
 }
-
-//func (chain *MemDag) getCofirmAddrs(hash common.Hash, height uint64) int {
-//	num := 0
-//	count := int(height - chain.stableUnitHeight)
-//	unstableCofirmAddrs := make(map[common.Hash]map[common.Address]bool)
-//	childrenCofirmAddrs := make(map[common.Address]bool)
-//	chain_units := chain.getChainUnits()
-//	for i := 0; i < count; i++ {
-//		u := chain_units[hash]
-//		hs := unstableCofirmAddrs[hash]
-//		if hs == nil {
-//			hs = make(map[common.Address]bool)
-//			unstableCofirmAddrs[hash] = hs
-//		}
-//		hs[u.Author()] = true
-//		for addr := range childrenCofirmAddrs {
-//			hs[addr] = true
-//		}
-//		childrenCofirmAddrs[u.Author()] = true
-//
-//		hash = u.ParentHash()[0]
-//		num = len(hs)
-//	}
-//	return num
-//}
 
 // 缓存该高度的所有单元hash
 func (chain *MemDag) addUnitHeight(unit *modules.Unit) {
