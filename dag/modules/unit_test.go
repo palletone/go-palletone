@@ -146,6 +146,7 @@ func TestOutPointToKey(t *testing.T) {
 		t.Fatal("test failed.", result.TxHash.String(), result.MessageIndex, result.OutIndex)
 	}
 }
+
 func TestHeaderPointer(t *testing.T) {
 	h := new(Header)
 	//h.AssetIDs = []AssetId{PTNCOIN}
@@ -208,6 +209,7 @@ func TestHeaderRLP(t *testing.T) {
 	t.Log("data", h2)
 	assertEqualRlp(t, h, h2)
 }
+
 func assertEqualRlp(t *testing.T, a, b interface{}) {
 	aa, err := rlp.EncodeToBytes(a)
 	if err != nil {

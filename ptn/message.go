@@ -488,10 +488,6 @@ func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 }
 
 func (pm *ProtocolManager) VSSDealMsg(msg p2p.Msg, p *peer) error {
-	// comment by Albert·Gou
-	//var vssmsg vssMsg
-	//if err := msg.Decode(&vssmsg); err != nil {
-
 	var deal mp.VSSDealEvent
 	if err := msg.Decode(&deal); err != nil {
 		errStr := fmt.Sprintf("VSSDealMsg: %v, err: %v", msg, err)
@@ -509,16 +505,9 @@ func (pm *ProtocolManager) VSSDealMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	pm.producer.AddToDealBuf(&deal)
+	// todo albert 清除在限制时间范围之外的deal消息
 
-	// comment by Albert·Gou
-	////TODO vssmark
-	//if !pm.peers.PeersWithoutVss(vssmsg.NodeId) {
-	//	pm.producer.AddToDealBuf(vssmsg.Deal)
-	//	pm.peers.MarkVss(vssmsg.NodeId)
-	//	pm.BroadcastVss(vssmsg.NodeId, vssmsg.Deal)
-	//}
-
+	go pm.producer.AddToDealBuf(&deal)
 	return nil
 }
 
@@ -531,6 +520,8 @@ func (pm *ProtocolManager) VSSResponseMsg(msg p2p.Msg, p *peer) error {
 		//return fmt.Errorf(errStr)
 		return nil
 	}
+
+	// todo albert 清除在限制时间范围之外的response消息
 
 	go pm.producer.AddToResponseBuf(&resp)
 	return nil

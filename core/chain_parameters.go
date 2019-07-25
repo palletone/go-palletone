@@ -26,12 +26,13 @@ import (
 )
 
 type ImmutableChainParameters struct {
-	MinimumMediatorCount uint8    `json:"min_mediator_count"`
-	MinMediatorInterval  uint8    `json:"min_mediator_interval"`
-	UccPrivileged        bool     `json:"ucc_privileged"`
-	UccCapDrop           []string `json:"ucc_cap_drop"`
-	UccNetworkMode       string   `json:"ucc_network_mode"`
-	UccOOMKillDisable    bool     `json:"ucc_oom_kill_disable"`
+	// todo albert 添加最小维护周期跳过的生产槽数量, 用于完成vss协议
+	MinimumMediatorCount uint8    `json:"min_mediator_count"`    // 最小活跃mediator数量
+	MinMediatorInterval  uint8    `json:"min_mediator_interval"` // 最小的生产槽间隔时间
+	UccPrivileged        bool     `json:"ucc_privileged"`        // 防止容器以root权限运行
+	UccCapDrop           []string `json:"ucc_cap_drop"`          // 确保容器以最小权限运行
+	UccNetworkMode       string   `json:"ucc_network_mode"`      // 容器运行网络模式
+	UccOOMKillDisable    bool     `json:"ucc_oom_kill_disable"`  // 是否内存使用量超过上限时系统杀死进程
 }
 
 func NewImmutChainParams() ImmutableChainParameters {

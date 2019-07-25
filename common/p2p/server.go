@@ -151,7 +151,7 @@ type Config struct {
 }
 
 var DefaultConfig = Config{
-	DiscoveryV5:    true,
+	DiscoveryV5:    false,
 	ListenAddr:     ":30303",
 	MaxPeers:       50,
 	NAT:            nat.Any(),
