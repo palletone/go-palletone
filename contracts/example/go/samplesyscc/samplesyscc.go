@@ -21,7 +21,6 @@
 package samplesyscc
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"strconv"
@@ -34,8 +33,6 @@ var instance SampleSysCC
 
 // SampleSysCC example simple Chaincode implementation
 type SampleSysCC struct {
-	BtcEthMultiAddr map[string]string
-	EthBtcMultiAddr map[string]string
 }
 
 // Init initializes the sample system chaincode by storing the key and value
@@ -49,151 +46,12 @@ func (t *SampleSysCC) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(nil)
 }
 
-type BTCAddress struct {
-	Method     string   `json:"method"`
-	PublicKeys []string `json:"publicKeys"`
-	N          int      `json:"n"`
-	M          int      `json:"m"`
-}
-
-type BTCTransaction struct {
-	Method         string `json:"method"`
-	TransactionHex string `json:"transactionhex"`
-	RedeemHex      string `json:"redeemhex"`
-}
-
-type BTCQuery struct {
-	Method  string `json:"method"`
-	Address string `json:"address"`
-	Minconf int    `json:"minconf"`
-}
-
-type ETHAddress struct {
-	Method    string   `json:"method"`
-	Addresses []string `json:"addresses"`
-	N         int      `json:"n"`
-	M         int      `json:"m"`
-}
-
 // Invoke gets the supplied key and if it exists, updates the key with the newly
 // supplied value.
 func (t *SampleSysCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	f, args := stub.GetFunctionAndParameters()
 
 	switch f {
-
-	case "addrBTC":
-		if len(args) < 3 {
-			return shim.Error("need 3 args (chainName and two publicKeys)")
-		}
-		chain1Name := args[0]
-		chain1PubkeyAlice := args[1]
-		chain1PubkeyBob := args[2]
-
-		createMultiSigParams := BTCAddress{Method: "GetMultiAddr"}
-		createMultiSigParams.M = 2
-		createMultiSigParams.N = 3
-		createMultiSigParams.PublicKeys = append(createMultiSigParams.PublicKeys, chain1PubkeyAlice)
-		createMultiSigParams.PublicKeys = append(createMultiSigParams.PublicKeys, chain1PubkeyBob)
-
-		reqBytes, err := json.Marshal(createMultiSigParams)
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-		fmt.Println("Chaincode params ==== ===== ", reqBytes)
-		result, err := stub.OutChainAddress(chain1Name, reqBytes)
-		if err != nil {
-			fmt.Println("Chaincode result ==== ===== ", err.Error())
-			return shim.Error(string(result))
-		}
-		fmt.Println("Chaincode result ==== ===== ", string(result))
-		return shim.Success(result)
-
-	case "queryBTC":
-		if len(args) < 3 {
-			return shim.Error("need 3 args (chainName, address and minimum confirms)")
-		}
-		chain1 := args[0]
-		addr := args[1]
-		minconfStr := args[2]
-		minconf, err := strconv.Atoi(minconfStr)
-		if err != nil {
-			minconf = 6
-		}
-		if minconf < 3 {
-			minconf = 6
-		}
-
-		btcQuery := BTCQuery{"GetBalance", addr, minconf}
-		reqBytes, err := json.Marshal(btcQuery)
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-		fmt.Println("Chaincode params ==== ===== ", string(reqBytes))
-		result, err := stub.OutChainQuery(chain1, reqBytes)
-		if err != nil {
-			fmt.Println("Chaincode result ==== ===== ", err.Error())
-			return shim.Error(string(result))
-		}
-		fmt.Println("Chaincode result ==== ===== ", string(result))
-		return shim.Success(result)
-
-	case "transactionBTC":
-		if len(args) < 2 {
-			return shim.Error("need 3 args (chainName, transactionhex and redeemhex)")
-		}
-		chain1 := args[0]
-		transactionhex := args[1]
-		redeemhex := ""
-		if len(args) > 2 {
-			redeemhex = args[2]
-		}
-
-		btcTX := BTCTransaction{"SignTransaction", transactionhex, redeemhex}
-		reqBytes, err := json.Marshal(btcTX)
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-		fmt.Println("Chaincode params ==== ===== ", string(reqBytes))
-		result, err := stub.OutChainTransaction(chain1, reqBytes)
-		if err != nil {
-			fmt.Println("Chaincode result ==== ===== ", err.Error())
-			return shim.Error(string(result))
-		}
-		fmt.Println("Chaincode result ==== ===== ", string(result))
-		return shim.Success(result)
-
-	case "addrETH":
-		if len(args) < 3 {
-			return shim.Error("need 3 args (chainName and two addresses)")
-		}
-		chain1Name := args[0]
-		chain1AddrAlice := args[1]
-		chain1AddrBob := args[2]
-
-		createMultiSigParams := ETHAddress{Method: "GetMultiAddr"} // GetJuryAddress
-		createMultiSigParams.N = 3
-		createMultiSigParams.Addresses = append(createMultiSigParams.Addresses, chain1AddrAlice)
-		createMultiSigParams.Addresses = append(createMultiSigParams.Addresses, chain1AddrBob)
-
-		reqBytes, err := json.Marshal(createMultiSigParams)
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-		fmt.Println("Chaincode params ==== ===== ", reqBytes)
-		result, err := stub.OutChainAddress(chain1Name, reqBytes)
-		if err != nil {
-			fmt.Println("Chaincode result ==== ===== ", err.Error())
-			return shim.Error(string(result))
-		}
-		fmt.Println("Chaincode result ==== ===== ", string(result))
-		return shim.Success(result)
-
-	case "transaction":
-		return shim.Success(nil)
-	case "queryETH":
-		return shim.Success(nil)
-
 	case "txAddr":
 		return shim.Success(nil)
 	case "deposit":

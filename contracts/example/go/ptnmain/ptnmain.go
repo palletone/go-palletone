@@ -52,8 +52,6 @@ func (p *PTNMain) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	case "payoutPTN":
 		return _payoutPTN(args, stub)
 
-	case "put":
-		return put(args, stub)
 	case "get":
 		return get(args, stub)
 	default:
@@ -357,25 +355,6 @@ func getPTNHex(mapAddr, sender string, stub shim.ChaincodeStubInterface) (string
 	}
 
 	return addrs[0], nil
-}
-
-func put(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	if len(args) > 0 {
-		err := stub.PutState(args[0], []byte("PutState put"))
-		if err != nil {
-			log.Debugf("PutState put %s err: %s", args[0], err.Error())
-			return shim.Error("PutState put " + args[0] + " failed")
-		}
-		log.Debugf("PutState put " + args[0] + " ok")
-		return shim.Success([]byte("PutState put " + args[0] + " ok"))
-	}
-	err := stub.PutState("result", []byte("PutState put"))
-	if err != nil {
-		log.Debugf("PutState put err: %s", err.Error())
-		return shim.Error("PutState put failed")
-	}
-	log.Debugf("PutState put ok")
-	return shim.Success([]byte("PutState put ok"))
 }
 
 func get(args []string, stub shim.ChaincodeStubInterface) pb.Response {
