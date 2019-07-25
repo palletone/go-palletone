@@ -634,8 +634,8 @@ func verifySigs(juryMsg []JuryMsgAddr, hash string, addrs []string, stub shim.Ch
 		if err != nil {
 			continue
 		}
-		for i := range addrs {
-			if addr == addrs[i] {
+		for j := range addrs {
+			if addr == addrs[j] {
 				sigs = append(sigs, string(juryMsg[i].Answer))
 			}
 		}
