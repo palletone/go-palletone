@@ -320,7 +320,7 @@ func (b *PtnApiBackend) GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxHi
 	}
 	txjs := []*ptnjson.TxHistoryJson{}
 	for _, tx := range txs {
-		txj := ptnjson.ConvertTx2HistoryJson(tx, b.ptn.dag.GetUtxoEntry)
+		txj := ptnjson.ConvertTx2HistoryJson(tx, b.ptn.dag.GetTxOutput)
 		txjs = append(txjs, txj)
 	}
 	return txjs, nil
@@ -564,7 +564,7 @@ func (b *PtnApiBackend) GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson,
 	}
 	txjs := []*ptnjson.TxHistoryJson{}
 	for _, tx := range txs {
-		txj := ptnjson.ConvertTx2HistoryJson(tx, b.ptn.dag.GetUtxoEntry)
+		txj := ptnjson.ConvertTx2HistoryJson(tx, b.ptn.dag.GetTxOutput)
 		txjs = append(txjs, txj)
 	}
 	return txjs, nil
@@ -628,9 +628,9 @@ func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, 
 	return b.ptn.contractPorcessor.ContractInvokeReq(from, to, daoAmount, daoFee, certID, contractAddress, args, timeout)
 }
 func (b *PtnApiBackend) SendContractInvokeReqTx(requestTx *modules.Transaction) (reqId common.Hash, err error) {
-        if !b.ptn.contractPorcessor.CheckTxValid(requestTx) {
+	if !b.ptn.contractPorcessor.CheckTxValid(requestTx) {
 		err := fmt.Sprintf("ProcessContractEvent, event Tx is invalid, txId:%s", requestTx.Hash().String())
-		return common.Hash{},errors.New(err)
+		return common.Hash{}, errors.New(err)
 	}
 	go b.ptn.ContractBroadcast(jury.ContractEvent{Ele: nil, CType: jury.CONTRACT_EVENT_EXEC, Tx: requestTx}, true)
 	return requestTx.RequestHash(), nil
