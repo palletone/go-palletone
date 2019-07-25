@@ -284,7 +284,7 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 	sizeRW, disk, isOver := utils.RemoveConWhenOverDisk(cc, idag)
 	if isOver {
 		log.Debugf("utils.KillAndRmWhenOver name = %s,sizeRW = %d,disk = %d", cc.Name, sizeRW, disk)
-		return nil, fmt.Errorf("utils.KillAndRmWhenOver name = %s,sizeRW = %d,disk = %d", cc.Name, sizeRW, disk)
+		return nil, fmt.Errorf("utils.KillAndRmWhenOver name = %s,sizeRW = %d bytes,disk = %d bytes", cc.Name, sizeRW, disk)
 	}
 	stopTm := time.Now()
 	duration := stopTm.Sub(startTm)
