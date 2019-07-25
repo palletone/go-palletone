@@ -226,7 +226,7 @@ func (v *Validate) validateVoteMediatorTx(payload interface{}) ValidationCode {
 		maxMediatorCount := int(v.propquery.GetChainParameters().MaximumMediatorCount)
 		mediatorCount := len(mediators)
 		if mediatorCount > maxMediatorCount {
-			log.Errorf("the number(%v) of mediators voting exceeded the maximum limit: %v",
+			log.Errorf("the total number(%v) of mediators voted exceeds the maximum limit: %v",
 				mediatorCount, maxMediatorCount)
 			return TxValidationCode_UNSUPPORTED_TX_PAYLOAD
 		}

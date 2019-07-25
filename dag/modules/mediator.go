@@ -21,7 +21,6 @@
 package modules
 
 import (
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core"
 )
 
@@ -32,6 +31,7 @@ const (
 	MediatorList       = "MediatorList"
 	GetMediatorDeposit = "GetMediatorDeposit"
 	MediatorApplyQuit  = "MediatorApplyQuit"
+	UpdateMediatorInfo = "UpdateMediatorInfo"
 )
 
 type MediatorInfo struct {
@@ -75,8 +75,9 @@ type MediatorCreateOperation struct {
 	*core.MediatorApplyInfo
 }
 
-func (mco *MediatorCreateOperation) FeePayer() common.Address {
-	addr, _ := common.StringToAddress(mco.AddStr)
-
-	return addr
+// 更新 mediator 信息所需参数
+type MediatorUpdateArgs struct {
+	AddStr string  `json:"account"` // 账户地址
+	Name   *string `json:"name"`    // 节点名称
+	Url    *string `json:"url"`     // 节点网站
 }

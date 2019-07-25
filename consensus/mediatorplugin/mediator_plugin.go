@@ -234,7 +234,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 
 	var groupPubKey []byte = nil
 	if mp.groupSigningEnabled {
-		groupPubKey = mp.LocalMediatorPubKey(scheduledMediator)
+		groupPubKey = mp.localMediatorPubKey(scheduledMediator)
 		if groupPubKey == nil || len(groupPubKey) == 0 {
 			log.Debugf("the groupPubKey is nil")
 		}

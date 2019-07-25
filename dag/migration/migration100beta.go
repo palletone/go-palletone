@@ -20,9 +20,13 @@
 package migration
 
 import (
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 )
 
@@ -37,10 +41,12 @@ type Migration100_101 struct {
 func (m *Migration100_101) FromVersion() string {
 	return "1.0.0-beta"
 }
+
 func (m *Migration100_101) ToVersion() string {
 	return "1.0.1-beta"
 }
-func (m *Migration100_101) ExecuteUpgrade() error {
+
+func (m *Migration100_101) utxoToStxo() error {
 	//删除已经花费的UTXO
 	dbop := storage.NewUtxoDb(m.utxodb)
 	utxos, err := dbop.GetAllUtxos()
@@ -79,14 +85,58 @@ func (m *Migration100_101) ExecuteUpgrade() error {
 			}
 		}
 	}
-	//// gp 只做了添加和删除的修改
-	//fmt.Printf("exec migration , version: %s", m.FromVersion())
-	//newGp := modules.NewGlobalProp()
-	//newData, err := rlp.EncodeToBytes(newGp)
-	//if err != nil {
-	//	fmt.Println("ExecuteUpgrade error:" + err.Error())
-	//	return err
-	//}
-	//m.statedb.Put([]byte("gpGlobalProperty"), newData)
+
 	return nil
+}
+
+func (m *Migration100_101) ExecuteUpgrade() error {
+	// utxo迁移成Stxo
+	if err := m.utxoToStxo(); err != nil {
+		return err
+	}
+
+	// 转换mediator结构体
+	if err := m.upgradeMediatorInfo(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Migration100_101) upgradeMediatorInfo() error {
+	statedb := storage.NewStateDb(m.statedb)
+	oldMediators := statedb.GetPrefix(constants.MEDIATOR_INFO_PREFIX)
+
+	for key, value := range oldMediators {
+		oldMediator := &oldMediatorInfo{}
+		err := rlp.DecodeBytes(value, oldMediator)
+		if err != nil {
+			log.Debugf(err.Error())
+			return err
+		}
+
+		newMediator := &modules.MediatorInfo{
+			MediatorInfoBase:   oldMediator.MediatorInfoBase,
+			MediatorApplyInfo:  &core.MediatorApplyInfo{Name: oldMediator.ApplyInfo},
+			MediatorInfoExpand: oldMediator.MediatorInfoExpand,
+		}
+
+		err = storage.StoreToRlpBytes(m.statedb, []byte(key), newMediator)
+		if err != nil {
+			log.Debugf(err.Error())
+			return err
+		}
+	}
+
+	return nil
+}
+
+type oldMediatorInfo struct {
+	*core.MediatorInfoBase
+	*oldMediatorApplyInfo
+	*core.MediatorInfoExpand
+}
+
+type oldMediatorApplyInfo struct {
+	ApplyInfo string `json:"applyInfo"` //  申请信息
 }

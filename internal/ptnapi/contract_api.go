@@ -29,9 +29,8 @@ import (
 	"math"
 	"math/big"
 	"strconv"
-	"time"
 	"strings"
-	"github.com/shopspring/decimal"
+	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -45,6 +44,7 @@ import (
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
+	"github.com/shopspring/decimal"
 )
 
 var (
@@ -423,9 +423,14 @@ func (s *PrivateContractAPI) DepositContractInvoke(ctx context.Context, from, to
 			args.setDefaults(from)
 
 			// 参数验证
-			err := args.Validate()
+			_, err := args.Validate()
 			if err != nil {
 				return "", fmt.Errorf("error(%v), please use mediator.apply()", err.Error())
+			}
+
+			if from != args.AddStr {
+				return "", fmt.Errorf("the calling account(%v) is not appling account(%v), "+
+					"please use mediator.apply()", from, args.AddStr)
 			}
 
 			// 参数序列化

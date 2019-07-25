@@ -252,14 +252,9 @@ func RemoveConWhenOverDisk(cc *list.CCInfo, dag dag.IDag) (sizeRW int64, disk in
 		//  获取name对应的容器
 		name := cc.Name + ":" + cc.Version
 		name = strings.Replace(name, ":", "-", -1)
-		con, err := client.InspectContainer(name)
-		if err != nil {
-			log.Debugf("client.InspectContainer %s", err.Error())
-			return 0, 0, false
-		}
+		cp := dag.GetChainParameters()
 		for _, c := range allCon {
-			cp := dag.GetChainParameters()
-			if c.ID == con.ID && c.SizeRw > cp.UccDisk {
+			if c.Names[0][1:] == name && c.SizeRw > cp.UccDisk {
 				err := client.RemoveContainer(docker.RemoveContainerOptions{ID: c.ID, Force: true})
 				if err != nil {
 					log.Debugf("client.RemoveContainer %s", err.Error())
