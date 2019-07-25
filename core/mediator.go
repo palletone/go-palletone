@@ -70,14 +70,20 @@ func NewMediator() *Mediator {
 
 // Mediator申请信息
 type MediatorApplyInfo struct {
-	Name      string `json:"name"`      // 节点名称
-	Url       string `json:"url"`       // 节点网站
+	Logo        string `json:"logo"` // 节点图标url
+	Name        string `json:"name"` // 节点名称
+	Location    string `json:"loc"`  // 节点所在地区
+	Url         string `json:"url"`  // 节点网站
+	Description string `json:"desc"` // 节点信息描述
 }
 
 func NewMediatorApplyInfo() *MediatorApplyInfo {
 	return &MediatorApplyInfo{
-		Name: "某节点",
-		Url: "www.abc.com",
+		Logo:        "sdd.com/lj.ico",
+		Name:        "某节点",
+		Location:    "beijing, china",
+		Url:         "www.abc.com",
+		Description: "...",
 	}
 }
 
