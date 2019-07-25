@@ -77,7 +77,7 @@ class createToken():
             "jsonrpc": "2.0",
             "method": "contract_ccquery",
             "params":
-                [address, [funcName, assetId]],
+                [address, [funcName, assetId],0],
             "id": 1
         }
         data = json.dumps(data)
