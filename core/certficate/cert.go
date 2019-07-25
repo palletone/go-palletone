@@ -68,9 +68,9 @@ func GenCert(certinfo CertINfo) ([]byte, error) {
 	return certpem, nil
 }
 
-func RevokeCert(address string, reason string) ([]byte, error) {
-	caininfo := client.CaGenInfo{EnrolmentId: address}
-	crlPem, err := caininfo.Revoke(address, reason)
+func RevokeCert(certinfo CertINfo, reason string) ([]byte, error) {
+	cainfo := CertInfo2Cainfo(certinfo)
+	crlPem, err := cainfo.Revoke(cainfo.EnrolmentId,reason)
 	if err != nil {
 		return nil, err
 	}

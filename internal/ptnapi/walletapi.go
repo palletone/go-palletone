@@ -1377,7 +1377,7 @@ func (s *PublicWalletAPI) GenCert(ctx context.Context, caAddress, userAddress, p
 }
 
 //吊销证书  将crl存入到数字身份系统合约中
-func (s *PublicWalletAPI) RevokeCert(ctx context.Context, caAddress, userAddress string) (*ContractDeployRsp, error) {
+func (s *PublicWalletAPI) RevokeCert(ctx context.Context, caAddress,passwd ,userAddress  string) (*ContractDeployRsp, error) {
 	contractAddr := "PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk"
 	// 参数检查
 	_, err := common.StringToAddress(userAddress)
@@ -1392,15 +1392,31 @@ func (s *PublicWalletAPI) RevokeCert(ctx context.Context, caAddress, userAddress
 	if err != nil {
 		return nil, fmt.Errorf("invalid account address: %v", userAddress)
 	}
+    //导出ca私钥用于吊销用户证书
+	ks := s.b.GetKeyStore()
+	account, err := MakeAddress(ks, caAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	privKey, _ := ks.DumpPrivateKey(account, passwd)
+	if err != nil {
+		return nil, err
+	}
 	reason := "PalletOne system administrator revokes certificate!"
-	crlByte,err := certficate.RevokeCert(userAddress,reason)
+
+	ca := certficate.CertINfo{}
+	ca.Address = userAddress
+	ca.Key = privKey
+	crlByte,err := certficate.RevokeCert(ca,reason)
 	if err != nil {
 		return nil, err
 	}
 	log.Infof("RevokeCert Success!  CrlByte[%s]", crlByte)
 
+
 	//调用系统合约 将CrlByte存入到数字身份系统合约中
-	args := make([][]byte, 3)
+	args := make([][]byte, 2)
 	args[0] = []byte("addCRL")
 	args[1] = crlByte
 

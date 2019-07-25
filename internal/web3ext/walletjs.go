@@ -151,7 +151,7 @@ const Wallet_JS = `
         new web3._extend.Method({
 			name: 'revokeCert',
 			call: 'wallet_revokeCert',
-			params: 7
+			params: 3
 		}),
         new web3._extend.Method({
             name: 'addBatchTxs',
