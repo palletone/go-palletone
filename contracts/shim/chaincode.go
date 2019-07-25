@@ -448,36 +448,6 @@ func (stub *ChaincodeStub) DelGlobalState(key string) error {
 
 }
 
-// Query documentation can be found in interfaces.go
-func (stub *ChaincodeStub) OutChainAddress(outChainName string, params []byte) ([]byte, error) {
-	if outChainName == "" {
-		return nil, errors.New("outChainName must not be an empty string")
-	}
-	// Access public data by setting the collection to empty string
-	collection := ""
-	return stub.handler.handleOutAddress(collection, outChainName, params, stub.ChannelId, stub.TxID)
-}
-
-// Query documentation can be found in interfaces.go
-func (stub *ChaincodeStub) OutChainTransaction(outChainName string, params []byte) ([]byte, error) {
-	if outChainName == "" {
-		return nil, errors.New("outChainName must not be an empty string")
-	}
-	// Access public data by setting the collection to empty string
-	collection := ""
-	return stub.handler.handleOutTransaction(collection, outChainName, params, stub.ChannelId, stub.TxID)
-}
-
-// Query documentation can be found in interfaces.go
-func (stub *ChaincodeStub) OutChainQuery(outChainName string, params []byte) ([]byte, error) {
-	if outChainName == "" {
-		return nil, errors.New("outChainName must not be an empty string")
-	}
-	// Access public data by setting the collection to empty string
-	collection := ""
-	return stub.handler.handleOutQuery(collection, outChainName, params, stub.ChannelId, stub.TxID)
-}
-
 func (stub *ChaincodeStub) OutChainCall(outChainName string, method string, params []byte) ([]byte, error) {
 	if outChainName == "" {
 		return nil, errors.New("outChainName must not be an empty string")
