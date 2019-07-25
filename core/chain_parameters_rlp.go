@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developer Albert·Gou <dev@pallet.one>
  * @date 2018
@@ -45,8 +46,14 @@ type chainParameters struct {
 	TempUccCpuShares  string
 	TempUccCpuQuota   string
 
-	ContractSignatureNum string
-	ContractElectionNum  string
+	ContractSignatureNum      string
+	ContractElectionNum       string
+	ContractTxTimeoutUnitFee  string
+	ContractTxSizeUnitFee     string
+	ContractTxInstallFeeLevel string
+	ContractTxDeployFeeLevel  string
+	ContractTxInvokeFeeLevel  string
+	ContractTxStopFeeLevel    string
 }
 
 func (cp *ChainParameters) EncodeRLP(w io.Writer) error {
@@ -74,6 +81,13 @@ func (cp *ChainParameters) getCPT() *chainParameters {
 
 		ContractSignatureNum: strconv.FormatInt(int64(cp.ContractSignatureNum), 10),
 		ContractElectionNum:  strconv.FormatInt(int64(cp.ContractElectionNum), 10),
+
+		ContractTxTimeoutUnitFee:  strconv.FormatUint(uint64(cp.ContractTxTimeoutUnitFee), 10),
+		ContractTxSizeUnitFee:     strconv.FormatUint(uint64(cp.ContractTxSizeUnitFee), 10),
+		ContractTxInstallFeeLevel: strconv.FormatFloat(float64(cp.ContractTxInstallFeeLevel), 'f', -1, 64),
+		ContractTxDeployFeeLevel:  strconv.FormatFloat(float64(cp.ContractTxDeployFeeLevel), 'f', -1, 64),
+		ContractTxInvokeFeeLevel:  strconv.FormatFloat(float64(cp.ContractTxInvokeFeeLevel), 'f', -1, 64),
+		ContractTxStopFeeLevel:    strconv.FormatFloat(float64(cp.ContractTxStopFeeLevel), 'f', -1, 64),
 	}
 }
 
@@ -151,6 +165,42 @@ func (cpt *chainParameters) getCP(cp *ChainParameters) error {
 		return err
 	}
 	cp.ContractElectionNum = int(ContractElectionNum)
+
+	ContractTxTimeoutUnitFee, err := strconv.ParseUint(cpt.ContractTxTimeoutUnitFee, 10, 64)
+	if err != nil {
+		return err
+	}
+	cp.ContractTxTimeoutUnitFee = ContractTxTimeoutUnitFee
+
+	ContractTxSizeUnitFee, err := strconv.ParseUint(cpt.ContractTxSizeUnitFee, 10, 64)
+	if err != nil {
+		return err
+	}
+	cp.ContractTxSizeUnitFee = ContractTxSizeUnitFee
+
+	ContractTxInstallFeeLevel, err := strconv.ParseFloat(cpt.ContractTxInstallFeeLevel, 64)
+	if err != nil {
+		return err
+	}
+	cp.ContractTxInstallFeeLevel = ContractTxInstallFeeLevel
+
+	ContractTxDeployFeeLevel, err := strconv.ParseFloat(cpt.ContractTxDeployFeeLevel, 64)
+	if err != nil {
+		return err
+	}
+	cp.ContractTxDeployFeeLevel = ContractTxDeployFeeLevel
+
+	ContractTxInvokeFeeLevel, err := strconv.ParseFloat(cpt.ContractTxInvokeFeeLevel, 64)
+	if err != nil {
+		return err
+	}
+	cp.ContractTxInvokeFeeLevel = ContractTxInvokeFeeLevel
+
+	ContractTxStopFeeLevel, err := strconv.ParseFloat(cpt.ContractTxStopFeeLevel, 64)
+	if err != nil {
+		return err
+	}
+	cp.ContractTxStopFeeLevel = ContractTxStopFeeLevel
 
 	return nil
 }

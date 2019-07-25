@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developer Albert·Gou <dev@pallet.one>
  * @date 2018
@@ -120,6 +121,13 @@ func NewChainParams() ChainParameters {
 		TempUccCpuQuota:      DefaultTempUccCpuQuota,
 		ContractSignatureNum: DefaultContractSignatureNum,
 		ContractElectionNum:  DefaultContractElectionNum,
+
+		ContractTxTimeoutUnitFee:  DefaultContractTxTimeoutUnitFee,
+		ContractTxSizeUnitFee:     DefaultContractTxSizeUnitFee,
+		ContractTxInstallFeeLevel: DefaultContractTxInstallFeeLevel,
+		ContractTxDeployFeeLevel:  DefaultContractTxDeployFeeLevel,
+		ContractTxInvokeFeeLevel:  DefaultContractTxInvokeFeeLevel,
+		ContractTxStopFeeLevel:    DefaultContractTxStopFeeLevel,
 	}
 }
 
@@ -145,6 +153,13 @@ type ChainParameters struct {
 	//contract about
 	ContractSignatureNum int `json:"contract_signature_num"`
 	ContractElectionNum  int `json:"contract_election_num"`
+
+	ContractTxTimeoutUnitFee  uint64  `json:"contract_tx_timeout_unit_fee"`
+	ContractTxSizeUnitFee     uint64  `json:"contract_tx_size_unit_fee"`
+	ContractTxInstallFeeLevel float64 `json:"contract_tx_install_fee_level"`
+	ContractTxDeployFeeLevel  float64 `json:"contract_tx_deploy_fee_level"`
+	ContractTxInvokeFeeLevel  float64 `json:"contract_tx_invoke_fee_level"`
+	ContractTxStopFeeLevel    float64 `json:"contract_tx_stop_fee_level"`
 }
 
 func CheckSysConfigArgs(field, value string) error {
