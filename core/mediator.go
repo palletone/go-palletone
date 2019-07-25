@@ -39,9 +39,9 @@ func GenInitPair() (kyber.Scalar, kyber.Point) {
 
 // mediator 结构体 和具体的账户模型有关
 type Mediator struct {
-	Address    common.Address
-	InitPubKey kyber.Point
-	Node       *discover.Node
+	Address    common.Address `json:"address"`    // mediator账户地址
+	InitPubKey kyber.Point    `json:"initPubKey"` // mediator的群签名初始公钥
+	Node       *discover.Node `json:"pNode"`      // mediator节点信息，包括ip和端口等
 	*MediatorApplyInfo
 	*MediatorInfoExpand
 }

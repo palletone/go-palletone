@@ -331,11 +331,20 @@ func (statedb *StateDb) SaveContractInvokeReq(reqid []byte, invoke *modules.Cont
 				if err == nil {
 					mi, err := statedb.RetrieveMediatorInfo(addr)
 					if err == nil {
+						if mua.Logo != nil {
+							mi.Logo = *mua.Logo
+						}
 						if mua.Name != nil {
 							mi.Name = *mua.Name
 						}
+						if mua.Location != nil {
+							mi.Location = *mua.Location
+						}
 						if mua.Url != nil {
 							mi.Url = *mua.Url
+						}
+						if mua.Description != nil {
+							mi.Description = *mua.Description
 						}
 						statedb.StoreMediatorInfo(addr, mi)
 					} else {

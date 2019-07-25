@@ -77,7 +77,10 @@ type MediatorCreateOperation struct {
 
 // 更新 mediator 信息所需参数
 type MediatorUpdateArgs struct {
-	AddStr string  `json:"account"` // 账户地址
-	Name   *string `json:"name"`    // 节点名称
-	Url    *string `json:"url"`     // 节点网站
+	AddStr      string  `json:"account"` // 账户地址
+	Logo        *string `json:"logo"`    // 节点图标url
+	Name        *string `json:"name"`    // 节点名称
+	Location    *string `json:"loc"`     // 节点所在地区
+	Url         *string `json:"url"`     // 节点网站
+	Description *string `json:"desc"`    // 节点信息描述
 }
