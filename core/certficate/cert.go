@@ -16,13 +16,13 @@ package certficate
 import (
 	"bytes"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
-	"github.com/palletone/digital-identity/client"
+	"io/ioutil"
 	"net/http"
 
-	"encoding/json"
+	"github.com/palletone/digital-identity/client"
 	"github.com/palletone/go-palletone/contracts/syscontract"
-	"io/ioutil"
 )
 
 const (
@@ -113,18 +113,6 @@ func GenCert(certinfo CertINfo) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	//immediateca := cfg.ImmediateCa
-	//address := cainfo.EnrolmentId
-	//url := cfg.CaUrl
-
-	//将证书byte 用户地址 通过rpc调用进行存储
-	//if certpem != nil {
-	//
-	//	err = CertRpcReq(address, immediateca, certpem,url)
-	//	if err != nil {
-	//		return err
-	//	}
-	//}
 
 	return certpem, nil
 }
