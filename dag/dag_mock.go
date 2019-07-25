@@ -692,6 +692,21 @@ func (mr *MockIDagMockRecorder) GetStxoEntry(outpoint interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStxoEntry", reflect.TypeOf((*MockIDag)(nil).GetStxoEntry), outpoint)
 }
 
+// GetTxOutput mocks base method
+func (m *MockIDag) GetTxOutput(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTxOutput", outpoint)
+	ret0, _ := ret[0].(*modules.Utxo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTxOutput indicates an expected call of GetTxOutput
+func (mr *MockIDagMockRecorder) GetTxOutput(outpoint interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxOutput", reflect.TypeOf((*MockIDag)(nil).GetTxOutput), outpoint)
+}
+
 // GetAddrOutpoints mocks base method
 func (m *MockIDag) GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error) {
 	m.ctrl.T.Helper()
