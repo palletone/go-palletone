@@ -193,7 +193,7 @@ User installs contract template
     [Return]    ${reqId}
 
 User deploys contract
-    ${args}=    Create List    deploy
+    ${args}=    Create List    A    1000
     ${respJson}=    deployContract    ${tokenHolder}    ${tokenHolder}    1000    10    ${gTplId}
     ...    ${args}
     ${result}=    Get From Dictionary    ${respJson}    result

@@ -4,7 +4,7 @@ Library           RequestsLibrary
 *** Variables ***
 #${ip}            123.126.106.82
 #${host}          http://${ip}:58645/
-${ip}             127.0.0.1
+${ip}             192.168.152.128
 ${host}           http://${ip}:8645/
 ${juryHosts}      Create List
 ${gastokenHost}    http://localhost:8545
@@ -24,7 +24,7 @@ ${personalListAccountsMethod}    personal_listAccounts
 ${prc720ContractAddr}    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43
 ${certContractAddr}    PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk
 # comman param
-${tokenHolder}    ${null}
+${tokenHolder}    P1NYD2ooTBVPvHnZ2e4aHsMnS7VUXkEDjeg
 ${Alice}          ${null}
 ${Bob}            ${null}
 ${Carol}          ${null}
