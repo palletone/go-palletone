@@ -352,7 +352,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					return genContractErrorMsg(dag, tx, reqPay.ContractId, err, errMsgEnable)
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.Args, 0 /*result.ExecutionTime*/, result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
+				payload := modules.NewContractInvokePayload(result.ContractId, result.Args, 0 /*result.ExecutionTime*/ , result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
 				}
@@ -806,23 +806,28 @@ func checkJuryCountValid(numIn, numLocal uint64) bool {
 //根据交易和费用类型，获取费用基数(dao),其中计算单位
 //timeout:毫秒 ？
 //size:字节
-func getContractFeeLevel(msg modules.MessageType, feeType int) (level float64) {
-	level = 1
-
-	//strconv.ParseFloat(v, 64)
+func getContractFeeLevel(dag iDag, msg modules.MessageType, feeType int) (level float64) {
+	level = 1 //todo
+	cp := dag.GetChainParameters()
+	var opFee float64
+	timeFee := float64(cp.ContractTxTimeoutUnitFee)
+	sizeFee := float64(cp.ContractTxSizeUnitFee)
 	switch msg {
 	case modules.APP_CONTRACT_TPL_REQUEST:
-		if feeType == ContractFeeTypeTimeOut {
-			level = 3
-		} else if feeType == ContractFeeTypeTxSize {
-			level = 3
-		}
+		opFee = cp.ContractTxInstallFeeLevel
 	case modules.APP_CONTRACT_DEPLOY_REQUEST:
+		opFee = cp.ContractTxDeployFeeLevel
 	case modules.APP_CONTRACT_INVOKE_REQUEST:
+		opFee = cp.ContractTxInvokeFeeLevel
 	case modules.APP_CONTRACT_STOP_REQUEST:
+		opFee = cp.ContractTxStopFeeLevel
 	}
-
-	return 1
+	if feeType == ContractFeeTypeTimeOut {
+		level = opFee * timeFee
+	} else if feeType == ContractFeeTypeTxSize {
+		level = opFee * sizeFee
+	}
+	return level
 }
 
 func checkContractTxFeeValid(dag iDag, tx *modules.Transaction) bool {
@@ -836,13 +841,13 @@ func checkContractTxFeeValid(dag iDag, tx *modules.Transaction) bool {
 	}
 	txSize := tx.Size()
 	//txSize := tx.SerializeSize()
-
 	fees, err := dag.GetTxFee(tx)
 	if err != nil {
 		return false
 	}
-	timeoutLevel := getContractFeeLevel(txType, ContractFeeTypeTimeOut)
-	sizeLevel := getContractFeeLevel(txType, ContractFeeTypeTxSize)
+
+	timeoutLevel := getContractFeeLevel(dag, txType, ContractFeeTypeTimeOut)
+	sizeLevel := getContractFeeLevel(dag, txType, ContractFeeTypeTxSize)
 	switch txType {
 	case modules.APP_CONTRACT_TPL_REQUEST:
 	case modules.APP_CONTRACT_DEPLOY_REQUEST:
