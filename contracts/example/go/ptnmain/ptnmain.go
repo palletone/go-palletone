@@ -37,6 +37,26 @@ type PTNMain struct {
 }
 
 func (p *PTNMain) Init(stub shim.ChaincodeStubInterface) pb.Response {
+	args := stub.GetStringArgs()
+	if len(args) < 1 {
+		return shim.Error("need 1 args (MapContractAddr)")
+	}
+
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
+	}
+	err = stub.PutState(symbolsOwner, []byte(invokeAddr.String()))
+	if err != nil {
+		return shim.Error("write symbolsOwner failed: " + err.Error())
+	}
+
+	err = stub.PutState(symbolsContractMap, []byte(args[0]))
+	if err != nil {
+		return shim.Error("write symbolsContractMap failed: " + err.Error())
+	}
+
 	return shim.Success(nil)
 }
 
