@@ -248,20 +248,20 @@ func createContractErrorPayloadMsg(tx *modules.Transaction, errIn error) *module
 	contractReq, _ := getContractTxContractInfo(tx, reqType)
 	switch reqType {
 	case modules.APP_CONTRACT_TPL_REQUEST:
-		//req := contractReq.(ContractInstallReq)
+		//req := contractReq.(*modules.ContractInstallRequestPayload)
 		payload := modules.NewContractTplPayload(nil, 0, nil, contractErr)
 		return modules.NewMessage(modules.APP_CONTRACT_TPL, payload)
 	case modules.APP_CONTRACT_DEPLOY_REQUEST:
-		req := contractReq.(ContractDeployReq)
-		payload := modules.NewContractDeployPayload(req.templateId, nil, "", req.args, nil, nil, nil, contractErr)
+		req := contractReq.(*modules.ContractDeployRequestPayload)
+		payload := modules.NewContractDeployPayload(req.TplId, nil, "", req.Args, nil, nil, nil, contractErr)
 		return modules.NewMessage(modules.APP_CONTRACT_DEPLOY, payload)
 	case modules.APP_CONTRACT_INVOKE_REQUEST:
 		req := contractReq.(*modules.ContractInvokeRequestPayload)
 		payload := modules.NewContractInvokePayload(req.ContractId, req.Args, 0, nil, nil, nil, contractErr)
 		return modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload)
 	case modules.APP_CONTRACT_STOP_REQUEST:
-		req := contractReq.(ContractStopReq)
-		payload := modules.NewContractStopPayload(req.deployId, nil, nil, contractErr)
+		req := contractReq.(*modules.ContractStopRequestPayload)
+		payload := modules.NewContractStopPayload(req.ContractId, nil, nil, contractErr)
 		return modules.NewMessage(modules.APP_CONTRACT_STOP, payload)
 	}
 
