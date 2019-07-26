@@ -27,6 +27,7 @@ type ICrypto interface {
 	// KeyGen generates a key using opts.
 	KeyGen() (privKey []byte, err error)
 	PrivateKeyToPubKey(privKey []byte) (pubKey []byte, err error)
+	PrivateKeyToInstance(privKey []byte) (interface{}, error)
 	// KeyDeriv derives a key from k using opts.
 	// The opts argument should be appropriate for the primitive used.
 	//KeyDeriv(k Key, opts KeyDerivOpts) (dk Key, err error)

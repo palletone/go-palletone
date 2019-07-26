@@ -4,15 +4,9 @@ Resource          publicParams.txt
 *** Variables ***
 
 *** Keywords ***
-申请加入Mediator候选节点所需参数
-    [Arguments]    ${mediatorAddr}
-    ${one}    Create List    ApplyBecomeMediator    {\"applyInfo\":\"key: value\"}
-    ${two}    Create List    ${mediatorAddr}    ${mediatorAddr}    ${amount}    ${fee}    ${one}
-    [Return]    ${two}
-
 applyBecomeMediator
     [Arguments]    ${mediatorAddr}
-    ${one}    Create List    ApplyBecomeMediator    {\"applyInfo\":\"key: value\"}
+    ${one}    Create List    ApplyBecomeMediator    {\"desc\":\"xxx...\"}
     ${two}    Create List    ${mediatorAddr}    ${mediatorAddr}    ${amount}    ${fee}    ${one}
     ${result}    创建公用的POST请求    ${depositContractInvoke}    ApplyBecomeMediator    ${two}
     sleep    6

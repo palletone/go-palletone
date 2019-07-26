@@ -82,6 +82,10 @@ func (c *CryptoGm) PrivateKeyToPubKey(privKey []byte) ([]byte, error) {
 
 	return sm2.Compress(&pubKey), nil
 }
+func (c *CryptoGm)PrivateKeyToInstance(privKey []byte) (interface{}, error){
+	return sm2ToECDSA(privKey)
+}
+
 func (c *CryptoGm) Hash(msg []byte) (hash []byte, err error) {
 	d := sm3.New()
 	d.Write(msg)

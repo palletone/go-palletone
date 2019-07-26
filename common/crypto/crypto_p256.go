@@ -95,7 +95,9 @@ func (c *CryptoP256) PrivateKeyToPubKey(privKey []byte) ([]byte, error) {
 	pubKey := P256FromECDSAPub(&prvKey.PublicKey)
 	return pubKey, nil
 }
-
+func (c *CryptoP256) PrivateKeyToInstance(privKey []byte) (interface{}, error) {
+	return P256ToECDSA(privKey)
+}
 func (c *CryptoP256) Hash(msg []byte) (hash []byte, err error) {
 	d := sha256.New()
 	d.Write(msg)

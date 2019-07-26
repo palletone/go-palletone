@@ -257,8 +257,9 @@ func (a *PrivateMediatorAPI) Apply(args MediatorCreateArgs) (*TxExecuteResult, e
 
 	// 返回执行结果
 	res := &TxExecuteResult{}
-	res.TxContent = fmt.Sprintf("Apply mediator %v with initPubKey : %v , node: %v , name: %v , url: %v",
-		args.AddStr, args.InitPubKey, args.Node, args.Name, args.Url)
+	res.TxContent = fmt.Sprintf("Apply mediator %v with initPubKey: %v, pNode: %v, name: %v, url: %v, "+
+		"logo: %v, location: %v, description: %v",
+		args.AddStr, args.InitPubKey, args.Node, args.Name, args.Url, args.Logo, args.Location, args.Description)
 	res.TxFee = fmt.Sprintf("%vdao", fee)
 	res.Warning = DefaultResult
 	res.Tip = "Your ReqId is: " + hex.EncodeToString(reqId[:]) +
@@ -440,17 +441,30 @@ func (a *PrivateMediatorAPI) Update(args modules.MediatorUpdateArgs) (*TxExecute
 	}
 
 	// 返回执行结果
+	logoStr := ""
+	if args.Logo != nil {
+		logoStr = *args.Logo
+	}
 	nameStr := ""
 	if args.Name != nil {
 		nameStr = *args.Name
+	}
+	locStr := ""
+	if args.Name != nil {
+		locStr = *args.Location
 	}
 	urlStr := ""
 	if args.Url != nil {
 		urlStr = *args.Url
 	}
+	descStr := ""
+	if args.Name != nil {
+		descStr = *args.Description
+	}
 
 	res := &TxExecuteResult{}
-	res.TxContent = fmt.Sprintf("Update mediator %v with name: %v , url: %v", args.AddStr, nameStr, urlStr)
+	res.TxContent = fmt.Sprintf("Update mediator %v with name: %v, url: %v logo: %v, location: %v, "+
+		"description: %v", args.AddStr, nameStr, urlStr, logoStr, locStr, descStr)
 	res.TxFee = fmt.Sprintf("%vdao", fee)
 	res.Warning = DefaultResult
 	res.Tip = "Your ReqId is: " + hex.EncodeToString(reqId[:]) +

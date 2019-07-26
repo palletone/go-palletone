@@ -24,7 +24,7 @@ ${personalListAccountsMethod}    personal_listAccounts
 ${prc720ContractAddr}    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43
 ${certContractAddr}    PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk
 # comman param
-${tokenHolder}    P1NYD2ooTBVPvHnZ2e4aHsMnS7VUXkEDjeg
+${tokenHolder}    ${null}
 ${Alice}          ${null}
 ${Bob}            ${null}
 ${Carol}          ${null}

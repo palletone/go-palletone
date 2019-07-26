@@ -467,24 +467,31 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 	return a, b, c, d, e, err
 }
 
+//添加单元到memdag
+//1.判断该单元的父单元的位置。
+//1.1.如果父单元是lastMainChainUnit,则保存该单元到主链。
+//1.2.如果父单元在主链上，并且父单元不是lastMainChainUnit，此时要重新fork一个侧链，将该单元及所有祖先单元全部保存到该fork链。
+//1.3.如果父单元不在主链上，并且该单元不是孤儿单元，则保存该单元到相应fork链。
+//1.4.如果父单元不在memdag(孤儿单元),则将该单元保存orphan Memdag里。
+//2.保存到主链上的单元，判断主链若有满足稳定条件的单元，则将该单元及祖先单元全部置为稳定单元。
+//3.保存到侧链上的单元，若满足切换主链的条件，则要切换主链（switchMainChain）。
+//4.添加完一个非孤儿单元后，判断是否有孤儿单元是该单元亲子单元，如有则将对应的孤儿单元连到链上。
 func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository, common2.IPropRepository, common2.IUnitProduceRepository, error) {
 	parentHash := unit.ParentHash()[0]
 	uHash := unit.Hash()
 	height := unit.NumberU64()
-	if _, ok := chain.getChainUnits()[parentHash]; ok || parentHash == chain.stableUnitHash {
+	if inter, ok := chain.chainUnits.Load(parentHash); ok || parentHash == chain.stableUnitHash {
 		//add unit to chain
-		inter, _ := chain.chainUnits.Load(parentHash)
-		parent_temp := inter.(*ChainTempDb)
-		log.Debugf("chain[%p] Add unit[%s] to chainUnits", chain, uHash.String())
+		log.Debugf("chain[%s] Add unit[%s] to chainUnits", chain.token.String(), uHash.String())
 		//add at the end of main chain unit
 		if parentHash == chain.lastMainChainUnit.Hash() {
 			//Add a new unit to main chain
-			//Check unit and it's txs are valid
 			tt := time.Now()
 			tempdb := new(ChainTempDb)
 			inter_temp, has := chain.tempdb.Load(parentHash)
-			if !has {
-				tempdb, _ = NewChainTempDb(parent_temp.Tempdb, freecache.NewCache(1000*1024))
+			if !has { // 分叉链
+				p_temp, _ := inter.(*ChainTempDb)
+				tempdb, _ = NewChainTempDb(p_temp.Tempdb, freecache.NewCache(1000*1024))
 			} else {
 				tempdb = inter_temp.(*ChainTempDb)
 			}
@@ -594,31 +601,6 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 	return tmp.UnitRep, tmp.UtxoRep, tmp.StateRep, tmp.PropRep, tmp.UnitProduceRep, nil
 }
 
-//func (chain *MemDag) getCofirmAddrs(hash common.Hash, height uint64) int {
-//	num := 0
-//	count := int(height - chain.stableUnitHeight)
-//	unstableCofirmAddrs := make(map[common.Hash]map[common.Address]bool)
-//	childrenCofirmAddrs := make(map[common.Address]bool)
-//	chain_units := chain.getChainUnits()
-//	for i := 0; i < count; i++ {
-//		u := chain_units[hash]
-//		hs := unstableCofirmAddrs[hash]
-//		if hs == nil {
-//			hs = make(map[common.Address]bool)
-//			unstableCofirmAddrs[hash] = hs
-//		}
-//		hs[u.Author()] = true
-//		for addr := range childrenCofirmAddrs {
-//			hs[addr] = true
-//		}
-//		childrenCofirmAddrs[u.Author()] = true
-//
-//		hash = u.ParentHash()[0]
-//		num = len(hs)
-//	}
-//	return num
-//}
-
 // 缓存该高度的所有单元hash
 func (chain *MemDag) addUnitHeight(unit *modules.Unit) {
 	height := unit.NumberU64()
@@ -667,11 +649,9 @@ func (chain *MemDag) getChainAddressCount(lastUnit *modules.Unit) int {
 }
 
 //发现一条更长的确认数更多的链，则放弃原有主链，切换成新主链
-//1.将旧主链上包含的交易在交易池中重置
-//2.将稳定单元刷新到LevelDB，清空TempDB
-//3.从稳定单元开始，循环操作，检查新主链上的Unit是否有效。
-//3.1.有效则做保存Unit到Tempdb，并更新交易池中对应交易的状态
-//3.2.无效则删除该Unit以及其后面的Unit，并重新判断主链
+//1.将旧主链上包含的交易在交易池中重置(resetPending)。
+//2.更改新主链上的交易状态，(setPending)。
+//3.设置新主链的最新单元（setLastMainCHainUnit）。
 func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPool) {
 	chain_units := chain.getChainUnits()
 	forks_units := chain.getForkUnits(newUnit)

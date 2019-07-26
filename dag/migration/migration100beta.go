@@ -117,7 +117,7 @@ func (m *Migration100_101) upgradeMediatorInfo() error {
 
 		newMediator := &modules.MediatorInfo{
 			MediatorInfoBase:   oldMediator.MediatorInfoBase,
-			MediatorApplyInfo:  &core.MediatorApplyInfo{Name: oldMediator.ApplyInfo},
+			MediatorApplyInfo:  &core.MediatorApplyInfo{Description: oldMediator.ApplyInfo},
 			MediatorInfoExpand: oldMediator.MediatorInfoExpand,
 		}
 

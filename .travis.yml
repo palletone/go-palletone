@@ -16,6 +16,7 @@ env:
     - DEPOSIT_DIR=deposit
     - GAS_TOKEN_DIR=gasToken
     - MEDIATOR_VOTE_DIR=meidatorvote
+    - APPLICATION_DIR=application
     - USER_CONTRACT_DIR=usercontract
     - LOG_NAME=log.html
     - REPORT_NAME=report.html
@@ -31,11 +32,256 @@ env:
     - IS_RUN_VOTE=true
     - IS_RUN_GASTOKEN=true
     - IS_RUN_MEDIATOR_VOTE=true
+    - IS_RUN_APPLICATION=true
     - GO111MODULE=on
     - IS_UPLOAD=true
 #    - 'SFTP_KEY=[base64-encoded-rsa-key]'
 matrix:
   include:
+    - os: linux
+      dist: xenial
+      go: 1.12.x
+      env: UT
+      script:
+        # - go get github.com/mattn/goveralls
+        - go build ./cmd/gptn
+        - make gptn
+        - go test ./...
+        # - $GOPATH/bin/goveralls -service=travis-ci
+    - os: linux
+      dist: xenial
+      go: 1.12.x
+      env:
+        - lint
+        - GOGC=5
+      install:
+        - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.17.1
+      script:
+        - golangci-lint run ./...
+    #- os: linux
+    #  dist: xenial
+    #  go: 1.12.x
+    #  env: UT
+    #  script:
+    #     - go build ./cmd/gptn
+    #     - make gptn
+    #     - go test ./...
+    #- os: osx
+    #  go: 1.12.x
+    #  env: UT
+    #  script:
+    #     - go build ./cmd/gptn
+    #     - make gptn
+    #     - go test ./...
+    - os: linux
+      dist: xenial
+      go: 1.12.7
+      env: one_node_bdd
+      script:
+        - go build ./cmd/gptn
+        - cp gptn bdd/node
+        - mkdir bdd/GasToken/node
+        - cp gptn bdd/GasToken/node
+        - cd bdd/node
+        - chmod +x gptn
+        - python init.py
+        - nohup ./gptn &
+        - sleep 15
+        - netstat -ap | grep gptn
+        - if [ $IS_RUN_DEPOSIT == 'true' ]; then
+          cd ../dct;
+          ./deposit_test.sh 5;
+          fi
+        - if [ $IS_RUN_TESTCONTRACTCASES == 'true' ];then
+          cd ../contract/testcases;
+          chmod +x ./test_start.sh;
+          ./test_start.sh;
+          fi
+        # into bdd path, all testcases is here
+        - cd ${BASE_DIR}/bdd
+        - mkdir -p ${BDD_LOG_PATH}
+        - if [ $IS_RUN_CREATE_TRANS == 'true' ]; then
+          python -m robot.run -d ${BDD_LOG_PATH}/${CREATE_TRANS_DIR} -i normal ./testcase/createTrans;
+          fi
+
+        - if [ $IS_RUN_20CONTRACT == 'true' ]; then
+          python -m robot.run -d ${BDD_LOG_PATH}/${CONTRACT20_DIR} -i normal ./testcase/crt20Contract;
+          fi
+
+        - if [ $IS_RUN_721SEQENCE == 'true' ]; then
+          python -m robot.run -d ${BDD_LOG_PATH}/${SEQENCE721_DIR} -i normal ./testcase/crt721Seqence;
+          fi
+
+        - if [ $IS_RUN_721UDID == 'true' ]; then
+          python -m robot.run -d ${BDD_LOG_PATH}/${UDID721_DIR} -i normal ./testcase/crt721UDID;
+          fi
+
+        - if [ $IS_RUN_VOTE == 'true' ]; then
+          python -m robot.run -d ${BDD_LOG_PATH}/${VOTECONTRACT_DIR} -i normal ./testcase/voteContract;
+          fi
+
+        - if [ $IS_RUN_DIGITAL == 'true' ]; then
+          python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ./DigitalIdentityCert;
+          fi
+
+        - if [ $IS_RUN_GASTOKEN == 'true' ]; then
+          cd ./GasToken;
+          chmod +x ./init_gas_token.sh;
+          ./init_gas_token.sh;
+          sleep 15;
+          python -m robot.run -d ${BDD_LOG_PATH}/${GAS_TOKEN_DIR} ./testcases;
+          fi
+      after_script:
+        - killall gptn
+        - sleep 2
+        - cd ${BASE_DIR}
+        - zip -j ./bdd/logs/oneNode_log.zip ./bdd/node/log/*
+        - zip -j ./bdd/logs/gasToken_log.zip ./bdd/GasToken/node/log/*
+        - |
+          if [ $IS_UPLOAD == 'true' ]; then
+            # uplaod all log
+            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
+            # echo ftp address
+            echo "The path of all bdd log in vsftpd is 'ftp://47.74.209.46"
+            echo "If you want to open it in explorer, you should close VPN first."
+            echo "If you want to open in windows explorer, you should open Internet Explorer and open Settings->Adanced-Enable FTP Folder view"
+          fi
+      install:
+        - sudo -H pip install --upgrade pip
+        - sudo -H pip install robotframework==2.8.5
+        - sudo -H pip install requests
+        - sudo -H pip install robotframework-requests
+        - sudo -H pip install demjson
+        - sudo -H pip install pexpect
+        - sudo -H apt-get install expect
+        - sudo -H apt-get install lftp
+        - chmod +x bdd/upload2Ftp.sh
+    - os: linux
+      dist: xenial
+      go: 1.12.7
+      env: multiple_nodes_bdd
+      script:
+        #- go build ./cmd/gptn
+        - make gptn
+        - cp bdd/light/testcases/!(preset.sh) bdd/node
+        - cp build/bin/gptn bdd/node
+        - cd bdd/node
+        - chmod -R +x *
+        - sudo -H chmod +w /etc/hosts
+        - sudo -H sed -i 's/127.0.0.1 localhost/127.0.0.1/g' /etc/hosts
+        - sudo -H sed -i '$a0.0.0.0 localhost' /etc/hosts
+        - ./launchMultipleNodes.sh
+        - netstat -ap | grep gptn
+        - grep "mediator_interval" node1/ptn-genesis.json
+        - grep "maintenance_skip_slots" node1/ptn-genesis.json
+        - cd ${BASE_DIR}/bdd
+        - mkdir -p ${BDD_LOG_PATH}
+        - if [ $IS_RUN_MULTIPLE == 'true' ]; then
+          python -m robot.run -d ${BDD_LOG_PATH}/${MULTIPLE_DIR} -i normal ./testcase/zMulti-node;
+          fi
+      after_script:
+        - killall gptn
+        - sleep 2
+        - cd ${BASE_DIR}
+        - zip -j ./bdd/logs/zMulti-node.zip ./logs/zMulti-node/*
+        - |
+          if [ $IS_UPLOAD == 'true' ]; then
+            # uplaod all log
+            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
+        - cd ${BASE_DIR}/bdd
+        - source ./targz_node.sh
+        - |
+          if [ $IS_UPLOAD == 'true' ]; then
+            # uplaod all log
+            ./upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
+            # echo ftp address
+            echo "The path of all bdd log in vsftpd is 'ftp://47.74.209.46"
+            echo "If you want to open it in explorer, you should close VPN first."
+            echo "If you want to open in windows explorer, you should open Internet Explorer and open Settings->Adanced-Enable FTP Folder view"
+          fi
+      install:
+        - sudo -H pip install --upgrade pip
+        - sudo -H pip install robotframework==2.8.5
+        - sudo -H pip install requests
+        - sudo -H pip install robotframework-requests
+        - sudo -H pip install demjson
+        - sudo -H pip install pexpect
+        - sudo -H apt-get install jq
+        - sudo -H apt-get install tcl tk expect
+        - sudo -H apt-get install lftp
+        - chmod +x bdd/upload2Ftp.sh
+    - os: linux
+      dist: xenial
+      go: 1.12.7
+      env: mediator_bdd
+      script:
+        - go build ./cmd/gptn
+        - mkdir bdd/mediator-vote/node
+        - cp gptn bdd/mediator-vote/node
+        - if [ $IS_RUN_MEDIATOR_VOTE == 'true' ]; then
+          cd ./bdd/mediator-vote;
+          chmod +x ./init.sh;
+          ./init.sh;
+          sleep 15;
+          python -m robot.run -d ${BDD_LOG_PATH}/${MEDIATOR_VOTE_DIR} .;
+          fi
+      after_script:
+        - killall gptn
+        - sleep 2
+        - cd ${BASE_DIR}
+        - zip -j ./bdd/logs/mediatorVote_log.zip ./bdd/mediator-vote/node/log/*
+        - |
+          if [ $IS_UPLOAD == 'true' ]; then
+            # uplaod all log
+            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
+            echo "The path of all bdd log in vsftpd is 'ftp://47.74.209.46"
+          fi
+      install:
+        - sudo -H pip install --upgrade pip
+        - sudo -H pip install robotframework==2.8.5
+        - sudo -H pip install requests
+        - sudo -H pip install robotframework-requests
+        - sudo -H pip install demjson
+        - sudo -H pip install pexpect
+        - sudo -H apt-get install expect
+        - sudo -H apt-get install lftp
+        - chmod +x bdd/upload2Ftp.sh
+    - os: linux
+      dist: xenial
+      go: 1.12.7
+      env: application_bdd
+      script:
+        - go build ./cmd/gptn
+        - mkdir bdd/application/node
+        - cp gptn bdd/application/node
+        - if [ $IS_RUN_APPLICATION == 'true' ]; then
+          cd ./bdd/application;
+          chmod +x ./init.sh;
+          ./init.sh;
+          sleep 15;
+          python -m robot.run -d ${BDD_LOG_PATH}/${APPLICATION_DIR} .;
+          fi
+      after_script:
+        - killall gptn
+        - sleep 2
+        - cd ${BASE_DIR}
+        - zip -j ./bdd/logs/application_log.zip ./bdd/application/node/log/*
+        - |
+          if [ $IS_UPLOAD == 'true' ]; then
+            # uplaod all log
+            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
+            echo "The path of all bdd log in vsftpd is 'ftp://47.74.209.46"
+          fi
+      install:
+        - sudo -H pip install --upgrade pip
+        - sudo -H pip install robotframework==2.8.5
+        - sudo -H pip install requests
+        - sudo -H pip install robotframework-requests
+        - sudo -H pip install demjson
+        - sudo -H pip install pexpect
+        - sudo -H apt-get install expect
+        - sudo -H apt-get install lftp
+        - chmod +x bdd/upload2Ftp.sh
     - os: linux
       env: usercontract_bdd_3-3
       dist: xenial
@@ -86,12 +332,13 @@ matrix:
         - sudo -H apt-get install lftp
         - chmod +x bdd/upload2Ftp.sh
 
-before_install:
-  - go get -u github.com/palletone/adaptor
-  - go get -u github.com/palletone/btc-adaptor
-  - go get -u github.com/palletone/eth-adaptor
-  - source ./build/goget_by_version.sh
-  #- source ./gomockgen.sh
+    # before_install:
+    #     - go get -u github.com/palletone/adaptor
+    #     - go get -u github.com/palletone/btc-adaptor
+    #     - go get -u github.com/palletone/eth-adaptor
+    #     - source ./build/goget_by_version.sh
+    #- source ./gomockgen.sh
+
 
 addons:
   apt:

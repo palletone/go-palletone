@@ -62,8 +62,16 @@ const (
 	DefaultMinMediatorCount    = 1 //21
 	DefaultMinMediatorInterval = 1
 
+	//contract
 	DefaultContractSignatureNum = 3
 	DefaultContractElectionNum  = 4
+
+	DefaultContractTxTimeoutUnitFee  = 10 //ms
+	DefaultContractTxSizeUnitFee     = 50 //byte
+	DefaultContractTxInstallFeeLevel = 2.3
+	DefaultContractTxDeployFeeLevel  = 1.8
+	DefaultContractTxInvokeFeeLevel  = 1.0
+	DefaultContractTxStopFeeLevel    = 0.5
 
 	DefaultText = "姓名 丨 坐标 丨 简介   \r\n" +
 		"孟岩丨北京丨通证派倡导者、CSDN副总裁、柏链道捷CEO.\r\n" +
