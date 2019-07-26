@@ -61,6 +61,6 @@ sendRpcPost
     ${respJson}    To Json    ${resp.content}
     [Return]    ${respJson}
 
-wait for transaction being packaged
-    Log    wait for transaction being packaged
+Wait for transaction being packaged
+    Log    Wait for transaction being packaged
     Sleep    6

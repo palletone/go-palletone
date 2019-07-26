@@ -1,4 +1,4 @@
-language: go 
+language: go
 sudo: required
 env:
   global:
@@ -17,9 +17,10 @@ env:
     - GAS_TOKEN_DIR=gasToken
     - MEDIATOR_VOTE_DIR=meidatorvote
     - APPLICATION_DIR=application
+    - USER_CONTRACT_DIR=usercontract
     - LOG_NAME=log.html
     - REPORT_NAME=report.html
-##########  control testcase  ##############
+    ##########  control testcase  ##############
     - IS_RUN_DEPOSIT=true
     - IS_RUN_TESTCONTRACTCASES=true
     - IS_RUN_CREATE_TRANS=true
@@ -50,9 +51,9 @@ matrix:
     - os: linux
       dist: xenial
       go: 1.12.x
-      env: 
+      env:
         - lint
-        - GOGC=5      
+        - GOGC=5
       install:
         - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.17.1
       script:
@@ -281,11 +282,61 @@ matrix:
         - sudo -H apt-get install expect
         - sudo -H apt-get install lftp
         - chmod +x bdd/upload2Ftp.sh
-# before_install:
-#     - go get -u github.com/palletone/adaptor
-#     - go get -u github.com/palletone/btc-adaptor
-#     - go get -u github.com/palletone/eth-adaptor
-#     - source ./build/goget_by_version.sh
+    - os: linux
+      env: usercontract_bdd_3-3
+      dist: xenial
+      go: 1.12.5
+      services: docker
+      script:
+        - ip addr
+        - make gptn
+        - make golang-baseimage-dev
+        - docker images
+        - cd ./cmd/deployment
+        - chmod +x ./deploy.sh
+        - chmod +x ./start.sh
+        - cp $BASE_DIR/bdd/UserContract/editConfig.sh ./
+        - chmod +x editConfig.sh
+        - ./deploy.sh 3
+        - ./editConfig.sh 3 3
+        - ./start.sh 3
+        - sleep 30
+        - cd $BASE_DIR
+        - mkdir -p ${BDD_LOG_PATH}/${USER_CONTRACT_DIR}
+        - python -m robot.run -d ${BDD_LOG_PATH}/${USER_CONTRACT_DIR} ./bdd/UserContract/Testcases;
+        - docker ps -a
+      after_script:
+        - killall gptn
+        - sleep 10
+        - docker stop $(docker ps -a -q)
+        - docker rm $(docker ps -a -q)
+        - docker rmi -f $(docker images -q)
+        - cd ${BASE_DIR}
+        - zip -j ./bdd/logs/uc3-3_reports.zip ${BDD_LOG_PATH}/${USER_CONTRACT_DIR}/*
+        - rm -rf ${BDD_LOG_PATH}/${USER_CONTRACT_DIR}
+        - zip -r -l -o  ./bdd/logs/uc3-3_logs.zip ./cmd/deployment/node1/log ./cmd/deployment/node1/nohup.out ./cmd/deployment/node2/log ./cmd/deployment/node2/nohup.out ./cmd/deployment/node3/log ./cmd/deployment/node3/nohup.out
+        - ls -l ./bdd/logs
+        - |
+          if [ $IS_UPLOAD == 'true' ]; then
+            # uplaod all log
+            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
+          fi
+      install:
+        - sudo -H pip install --upgrade pip
+        - sudo -H pip install robotframework==2.8.5
+        - sudo -H pip install requests
+        - sudo -H pip install robotframework-requests
+        - sudo -H pip install demjson
+        - sudo -H pip install pexpect
+        - sudo -H apt-get install expect
+        - sudo -H apt-get install lftp
+        - chmod +x bdd/upload2Ftp.sh
+
+    # before_install:
+    #     - go get -u github.com/palletone/adaptor
+    #     - go get -u github.com/palletone/btc-adaptor
+    #     - go get -u github.com/palletone/eth-adaptor
+    #     - source ./build/goget_by_version.sh
     #- source ./gomockgen.sh
 
 
