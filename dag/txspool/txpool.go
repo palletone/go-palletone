@@ -515,7 +515,7 @@ func (pool *TxPool) setPriorityLvl(tx *modules.TxPoolTransaction) {
 	tx.Priority_lvl = tx.GetPriorityLvl()
 }
 
-//
+// 交易池缓存时需要将tx转化为PoolTx
 func TxtoTxpoolTx(tx *modules.Transaction) *modules.TxPoolTransaction {
 	txpool_tx := new(modules.TxPoolTransaction)
 	txpool_tx.Tx = tx
@@ -558,11 +558,11 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	// Don't accept the transaction if it already in the pool .
 	hash := tx.Tx.Hash()
 	if _, has := pool.all.Load(hash); has {
-		log.Trace("Discarding already known transaction", "hash", hash)
-		return false, fmt.Errorf("known transaction: %#x", hash)
+		log.Trace("Discarding already known transaction", "hash", hash.String())
+		return false, fmt.Errorf("known transaction: %s", hash.String())
 	}
 	if pool.isOrphanInPool(hash) {
-		return false, fmt.Errorf("know orphanTx: %#x", hash)
+		return false, fmt.Errorf("know orphanTx: %s", hash.String())
 	}
 	if has, _ := pool.unit.IsTransactionExist(hash); has {
 		return false, fmt.Errorf("the transactionx: %s has been packaged.", hash.String())
@@ -576,7 +576,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 				return true, nil
 			}
 		}
-		log.Trace("Discarding invalid transaction", "hash", hash, "err", err.Error())
+		log.Trace("Discarding invalid transaction", "hash", hash.String(), "err", err.Error())
 		return false, err
 	} else {
 		if tx.TxFee != nil {
@@ -584,11 +584,6 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 		}
 		tx.TxFee = append(tx.TxFee, addition...)
 	}
-
-	// 同一个utxo可以花费多次， 但最终只能确认一次。
-	//if err := pool.checkPoolDoubleSpend(tx); err != nil {
-	//	return false, err
-	//}
 	// 计算优先级
 	pool.setPriorityLvl(tx)
 
@@ -611,14 +606,13 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 		}
 	}
 	// Add the transaction to the pool  and mark the referenced outpoints as spent by the pool.
-	pool.priority_sorted.Put(tx)
+	go pool.priority_sorted.Put(tx)
 	pool.all.Store(hash, tx)
 	pool.addCache(tx)
 	//go pool.journalTx(tx)
 
 	// We've directly injected a replacement transaction, notify subsystems
 	go pool.txFeed.Send(modules.TxPreEvent{tx.Tx})
-
 	return true, nil
 }
 
@@ -704,10 +698,10 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction, n
 // the sender as a local one in the mean time, ensuring it goes around the local
 // pricing constraints.
 func (pool *TxPool) AddLocal(tx *modules.Transaction) error {
-	if tx.IsNewContractInvokeRequest() { //Request不能进入交易池
-		log.Infof("Tx[%s] is a request, do not allow add to txpool", tx.Hash().String())
-		return nil
-	}
+	//if tx.IsNewContractInvokeRequest() { //Request不能进入交易池
+	//	log.Infof("Tx[%s] is a request, do not allow add to txpool", tx.Hash().String())
+	//	return nil
+	//}
 	pool_tx := TxtoTxpoolTx(tx)
 	return pool.addLocal(pool_tx)
 }
@@ -909,11 +903,18 @@ func (pool *TxPool) addTxs(txs []*modules.TxPoolTransaction, local bool) []error
 // whilst assuming the transaction pool lock is already held.
 func (pool *TxPool) addTxsLocked(txs []*modules.TxPoolTransaction, local bool) []error {
 	// Add the batch of transaction, tracking the accepted ones
-	errs := make([]error, len(txs))
+	errs := make([]error, 0)
 	var replace bool
+	var err error
+	tt := time.Now()
 	for i, tx := range txs {
-		if replace, errs[i] = pool.add(tx, local); errs[i] != nil {
+		if replace, err = pool.add(tx, local); err != nil {
+			errs = append(errs, err)
 			break
+		}
+		if (i+1)%1000 == 0 {
+			log.Infof("add txs locked: %d, spent time: %s", (i+1)/1000, time.Since(tt))
+			tt = time.Now()
 		}
 	}
 
