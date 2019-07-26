@@ -698,10 +698,10 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction, n
 // the sender as a local one in the mean time, ensuring it goes around the local
 // pricing constraints.
 func (pool *TxPool) AddLocal(tx *modules.Transaction) error {
-	//if tx.IsNewContractInvokeRequest() { //Request不能进入交易池
-	//	log.Infof("Tx[%s] is a request, do not allow add to txpool", tx.Hash().String())
-	//	return nil
-	//}
+	if tx.IsNewContractInvokeRequest() { //Request不能进入交易池
+		log.Infof("Tx[%s] is a request, do not allow add to txpool", tx.Hash().String())
+		return nil
+	}
 	pool_tx := TxtoTxpoolTx(tx)
 	return pool.addLocal(pool_tx)
 }
