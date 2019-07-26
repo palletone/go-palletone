@@ -45,11 +45,7 @@ Payout
 
 Stop contractpay contract
     Given Unlock token holder succeed
-<<<<<<< HEAD
-    ${reqId}=    Then stopContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
-=======
     ${reqId}=   Then stopContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
->>>>>>> master
     And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
 *** Keywords ***
@@ -77,11 +73,7 @@ User transfer PTN to contractpay
     Wait for transaction being packaged
 
 Query contract balance
-<<<<<<< HEAD
-    ${amount}=    getBalance    ${gContractId}    PTN
-=======
     ${amount}=    getBalance    ${gContractId}  PTN
->>>>>>> master
     Should Be Equal    ${amount}    10000
     Log    ${amount}
 
