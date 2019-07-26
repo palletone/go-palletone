@@ -18,6 +18,7 @@ if [ $index -eq 0 ] ; then
 /}`
 
     add=`echo $add | jq ".tokenHolder = \"$account\""`
+    add=`echo $add | jq ".digitalIdentityConfig.rootCAHolder = \"$account\""`
 
     createaccount=`./createaccount.sh`
     account=`echo $createaccount | sed -n '$p'| awk '{print $NF}'`

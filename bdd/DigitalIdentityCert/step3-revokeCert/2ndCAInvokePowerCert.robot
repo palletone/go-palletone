@@ -9,7 +9,7 @@ Library           String
 2ndCAInvokePowerCert
     Given ca unlock his account succed
     When ca revoke power certificate succed
-    And wait for transaction being packaged
+    And Wait for transaction being packaged
     And ca can query his issued crl file
     Then power and section certificate revocation time is before now
 

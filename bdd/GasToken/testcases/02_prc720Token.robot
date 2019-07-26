@@ -19,7 +19,7 @@ aliceUsePRC720Token
 Alice issues her personal token named ALICE, amount is 1000, dicimal is 1 succeed
     unlockAccount    ${Alice}
     issueToken    ${Alice}    ${AliceToken}    10000    1    Alice's token
-    wait for transaction being packaged
+    Wait for transaction being packaged
     ${balance}=    getAllBalance    ${Alice}
     ${tokenIDs}=    Get Dictionary Keys    ${balance}
     : FOR    ${id}    IN    @{tokenIDs}
@@ -28,19 +28,19 @@ Alice issues her personal token named ALICE, amount is 1000, dicimal is 1 succee
 
 Alice transfers 500 ALICE to Bob succeed
     transferTokenTo    ${AliceTokenID}    ${Alice}    ${Bob}    500    1
-    wait for transaction being packaged
+    Wait for transaction being packaged
 
 Bob transfers 200 ALICE to Carol succeed
     transferTokenTo    ${AliceTokenID}    ${Bob}    ${Carol}    200    1
-    wait for transaction being packaged
+    Wait for transaction being packaged
 
 Alice increases 1000 ALICE succeed
     supplyToken    ${Alice}    ${AliceToken}    10000
-    wait for transaction being packaged
+    Wait for transaction being packaged
 
 Alice transfers 500 ALICE to Carol succeed
     ${respJson}=    transferTokenTo    ${AliceTokenID}    ${Alice}    ${Carol}    500    1
-    wait for transaction being packaged
+    Wait for transaction being packaged
 
 Alice has 1000 ALICE left
     ${balance}=    getAllBalance    ${Alice}

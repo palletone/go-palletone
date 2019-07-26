@@ -7,9 +7,9 @@ Resource          ../pubFuncs.robot
 caUseCert
     Given ca unlock account succed
     When ca uses debug contract to test getRequesterCert without error
-    And wait for transaction being packaged
+    And Wait for transaction being packaged
     And ca uses debug contract to test checkRequesterCert without error
-    And wait for transaction being packaged
+    And Wait for transaction being packaged
     Then print out: ca has authority to use this cert
 
 *** Keywords ***
