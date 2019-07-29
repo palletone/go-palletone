@@ -25,9 +25,12 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
+// clear all utxo by address
 func (dag *Dag) ClearUtxo(addr common.Address) error {
 	return dag.stableUtxoRep.ClearUtxo()
 }
+
+// save all utxo of a view
 func (dag *Dag) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error {
 	return dag.stableUtxoRep.SaveUtxoView(view)
 }
