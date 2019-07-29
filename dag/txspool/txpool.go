@@ -116,7 +116,7 @@ type TxPoolConfig struct {
 
 	Lifetime   time.Duration // Maximum amount of time non-executable transaction are queued
 	Removetime time.Duration // Maximum amount of time txpool transaction are removed
-	OrphanTTL  time.Duration // Orpthan expriation
+	OrphanTTL  time.Duration // Orpthan expiration
 	// MaxOrphanTxs is the maximum number of orphan transactions
 	// that can be queued.
 	MaxOrphanTxs int

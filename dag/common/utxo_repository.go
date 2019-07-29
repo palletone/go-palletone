@@ -219,11 +219,11 @@ func (repository *UtxoRepository) GetUtxoByOutpoint(outpoint *modules.OutPoint) 
 
 /**
 根据交易信息中的outputs创建UTXO， 根据交易信息中的inputs销毁UTXO
-To create utxo according to outpus in transaction, and destory utxo according to inputs in transaction
+To create utxo according to outpus in transaction, and destroy utxo according to inputs in transaction
 */
 func (repository *UtxoRepository) UpdateUtxo(unitTime int64, txHash common.Hash, payment *modules.PaymentPayload, msgIndex uint32) error {
 	// update utxo
-	err := repository.destoryUtxo(txHash, uint64(unitTime), payment.Inputs)
+	err := repository.destroyUtxo(txHash, uint64(unitTime), payment.Inputs)
 	if err != nil {
 		return err
 	}
@@ -277,9 +277,9 @@ func (repository *UtxoRepository) writeUtxo(unitTime int64, txHash common.Hash, 
 
 /**
 销毁utxo
-destory utxo, delete from UTXO database
+destroy utxo, delete from UTXO database
 */
-func (repository *UtxoRepository) destoryUtxo(txid common.Hash, unitTime uint64, txins []*modules.Input) error {
+func (repository *UtxoRepository) destroyUtxo(txid common.Hash, unitTime uint64, txins []*modules.Input) error {
 	for _, txin := range txins {
 
 		if txin == nil {
@@ -297,7 +297,7 @@ func (repository *UtxoRepository) destoryUtxo(txid common.Hash, unitTime uint64,
 		// get utxo info
 		utxo, err := repository.utxodb.GetUtxoEntry(outpoint)
 		if err != nil {
-			log.Error("Query utxo when destory uxto", "error", err.Error())
+			log.Error("Query utxo when destroy uxto", "error", err.Error())
 			return err
 		}
 
@@ -333,7 +333,7 @@ write asset info to leveldb
 
 /**
 根据assetid从数据库中获取asset的信息
-get asset infomation from leveldb by assetid ( Asset struct type )
+get asset information from leveldb by assetid ( Asset struct type )
 */
 //func (repository *UtxoRepository) GetAssetInfo(assetId *modules.Asset) (*modules.AssetInfo, error) {
 //	return repository.statedb.GetAssetInfo(assetId)
