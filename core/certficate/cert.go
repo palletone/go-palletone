@@ -53,7 +53,7 @@ func CertInfo2Cainfo(certinfo CertINfo) client.CaGenInfo {
 		ECert:       certinfo.ECert,
 		Type:        certinfo.Type,
 		Affiliation: certinfo.Affiliation,
-		Key:         certinfo.Key,
+		//Key:         certinfo.Key,
 	}
 
 }
@@ -70,10 +70,9 @@ func GenCert(certinfo CertINfo) ([]byte, error) {
 
 func RevokeCert(certinfo CertINfo, reason string) ([]byte, error) {
 	cainfo := CertInfo2Cainfo(certinfo)
-	crlPem, err := cainfo.Revoke(cainfo.EnrolmentId,reason)
+	crlPem, err := cainfo.Revoke(cainfo.EnrolmentId, reason)
 	if err != nil {
 		return nil, err
 	}
 	return crlPem, nil
 }
-
