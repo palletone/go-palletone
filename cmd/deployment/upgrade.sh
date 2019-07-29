@@ -4,7 +4,20 @@ FileName="./ptn-config.toml"
 FileNameOld="./ptn-config.toml.old"
 FileNameNew="./ptn-config.toml.new"
 
-function while_read_bottm(){
+
+function addcontent(){
+	file=$1
+	table=$2
+	content=$3
+	echo "====add====="$file $table $content
+	#sed '/"$table"/a\"$content"' $file >> $file
+	num=`grep -n "$table"  $FileName | head -1 | cut -d ":" -f 1`
+	num=$[$num+1]
+	sed -i "${num}i $content" $file
+}
+
+
+function while_read_bottm_new(){
 	line=-1
 	table=""
 	while read content
@@ -28,21 +41,21 @@ function while_read_bottm(){
 
 			#compare to filenameold and add new key
 			flag=`grep -n "$key"  $FileName | head -1 | cut -d ":" -f 1`
+   			echo "line:"$line "table:"$table "content:"$content "包含:" $key "flag:"$flag
 
-			if [[ "$flag" != "" ]]
+			if [[ "$flag" == "" ]]
 			then
 			#add key in filename
-				
+				addcontent $FileName $table $content
 			fi
 
-   			echo "line:"$line "table:"$table "content:"$content "包含:" $key "flag:"$flag
 		else
     			table=$content
 		fi
 	done < $FileNameNew
 }
 cp $FileNameOld $FileName 
-while_read_bottm
+while_read_bottm_new
 
 
 
