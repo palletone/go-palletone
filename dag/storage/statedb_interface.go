@@ -37,6 +37,8 @@ type IStateDb interface {
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 
+	UpdateStateByContractInvoke(invoke *modules.ContractInvokeRequestPayload) error
+
 	SaveContractTpl(tpl *modules.ContractTemplate) error
 	SaveContractTplCode(tplId []byte, byteCode []byte) error
 	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
