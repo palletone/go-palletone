@@ -8,7 +8,7 @@ require (
 	github.com/btcsuite/btcd v0.0.0-20190629003639-c26ffa870fd8
 	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
 	github.com/cespare/cp v1.1.1 // indirect
-	github.com/cloudflare/cfssl v0.0.0-20190716005913-5fc50ce768d7 // indirect
+	github.com/cloudflare/cfssl v0.0.0-20190726000631-633726f6bcb7 // indirect
 	github.com/containerd/continuity v0.0.0-20190426062206-aaeac12a7ffc // indirect
 	github.com/coocood/freecache v0.0.0-20180304015925-036298587d3a
 	github.com/davecgh/go-spew v1.1.1
@@ -50,7 +50,7 @@ require (
 	github.com/onsi/gomega v1.5.0 // indirect
 	github.com/palletone/adaptor v0.6.1-0.20190717052756-a631c9dd9d6a
 	github.com/palletone/btc-adaptor v0.6.1-0.20190718062616-d31b41f123f7
-	github.com/palletone/digital-identity v0.6.1-0.20190724082554-10725881048e
+	github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb
 	github.com/palletone/eth-adaptor v0.6.1-0.20190718070938-ea95de9928b1
 	github.com/pborman/uuid v1.2.0
 	github.com/peterh/liner v0.0.0-20170902204657-a37ad3984311
@@ -75,8 +75,9 @@ require (
 	go.uber.org/zap v0.0.0-20180531205250-88c71ae3d702
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
 	golang.org/x/net v0.0.0-20190724013045-ca1201d0de80
-	golang.org/x/sys v0.0.0-20190712062909-fae7ac547cb7 // indirect
+	golang.org/x/sys v0.0.0-20190726091711-fc99dfbffb4e // indirect
 	golang.org/x/text v0.3.2 // indirect
+	golang.org/x/tools v0.0.0-20190728063539-fc6e2057e7f6 // indirect
 	google.golang.org/appengine v1.4.0 // indirect
 	google.golang.org/genproto v0.0.0-20190716160619-c506a9f90610 // indirect
 	google.golang.org/grpc v1.22.0

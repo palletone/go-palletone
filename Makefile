@@ -32,7 +32,7 @@ all:
 	build/env.sh go run build/ci.go install
 
 golang-baseimage: 
-	docker build -t palletone/goimg vm/baseimages/platforms/golang/
+	cd ./vm/baseimages/platforms/golang && ./goimg_gen.sh
 golang-baseimage-dev:
 	vm/baseimages/dev/tarPro.sh
 	docker build -t palletone/goimg vm/baseimages/dev/

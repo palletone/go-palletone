@@ -11,4 +11,4 @@ RUN wget -o download.log https://studygolang.com/dl/golang/go1.10.linux-amd64.ta
 ENV GOPATH=/gopath  PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/go/bin/:$GOPATH/bin
 
 #INSTALL THE DEPENDENCY OF CHAINCODE RUNNING
-RUN go get -u github.com/palletone/go-palletone
+COPY ./vendor /gopath/src/

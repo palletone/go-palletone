@@ -46,6 +46,8 @@ github.com/cloudflare/cfssl v0.0.0-20190627231140-2001f384ec4f h1:WjHSb3zr7akq8U
 github.com/cloudflare/cfssl v0.0.0-20190627231140-2001f384ec4f/go.mod h1:yMWuSON2oQp+43nFtAV/uvKQIFpSPerB57DCt9t8sSA=
 github.com/cloudflare/cfssl v0.0.0-20190716005913-5fc50ce768d7 h1:OUsO8iauYaRaeqfUpuP4Xrs7ZpxTIqNNC/PEaPA5vs8=
 github.com/cloudflare/cfssl v0.0.0-20190716005913-5fc50ce768d7/go.mod h1:yMWuSON2oQp+43nFtAV/uvKQIFpSPerB57DCt9t8sSA=
+github.com/cloudflare/cfssl v0.0.0-20190726000631-633726f6bcb7 h1:Puu1hUwfps3+1CUzYdAZXijuvLuRMirgiXdf3zsM2Ig=
+github.com/cloudflare/cfssl v0.0.0-20190726000631-633726f6bcb7/go.mod h1:yMWuSON2oQp+43nFtAV/uvKQIFpSPerB57DCt9t8sSA=
 github.com/containerd/continuity v0.0.0-20181203112020-004b46473808/go.mod h1:GL3xCUCBDV3CZiTSEKksMWbLE66hEyuu9qyDOOqM47Y=
 github.com/containerd/continuity v0.0.0-20190426062206-aaeac12a7ffc h1:TP+534wVlf61smEIq1nwLLAjQVEK2EADoW3CX9AuT+8=
 github.com/containerd/continuity v0.0.0-20190426062206-aaeac12a7ffc/go.mod h1:GL3xCUCBDV3CZiTSEKksMWbLE66hEyuu9qyDOOqM47Y=
@@ -214,8 +216,11 @@ github.com/palletone/adaptor v0.6.1-0.20190717052756-a631c9dd9d6a h1:LZcfL+VE4UV
 github.com/palletone/adaptor v0.6.1-0.20190717052756-a631c9dd9d6a/go.mod h1:ekDTVgVdZefQLLzWD+Fu9g8W9A8a6Mkp7kkHRg2M4w4=
 github.com/palletone/btc-adaptor v0.6.1-0.20190718062616-d31b41f123f7 h1:DAbRc960d1au19PBBTV2P5tgyVB3R52f4haoM5IRxCg=
 github.com/palletone/btc-adaptor v0.6.1-0.20190718062616-d31b41f123f7/go.mod h1:yiVDYHChPVGmhubz/XLkgWu9qXQya+u4Y/+2e/j0nts=
+github.com/palletone/digital-identity v0.6.0 h1:3GhOyfTsQG7qZyPacRKcVKEFyGOKPhmCVn/D3d7j8Yg=
 github.com/palletone/digital-identity v0.6.1-0.20190724082554-10725881048e h1:C2GCiPLQpy5yxkCWSJXLwZDNzyBFbGLuMx+kbQY6QRI=
 github.com/palletone/digital-identity v0.6.1-0.20190724082554-10725881048e/go.mod h1:nU+KRc545ru0otQl5XbRlV8YiwjS3rHUySM1FMtvq9Y=
+github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb h1:P4IhYnVAuD+BcmDRKBM3gPha9aybD2UQhLmCSQjoBjM=
+github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb/go.mod h1:nU+KRc545ru0otQl5XbRlV8YiwjS3rHUySM1FMtvq9Y=
 github.com/palletone/eth-adaptor v0.6.1-0.20190718070938-ea95de9928b1 h1:haxa3RbFB3R2EVRGUXcylcshUfPbdGRlbuFLZAdl41M=
 github.com/palletone/eth-adaptor v0.6.1-0.20190718070938-ea95de9928b1/go.mod h1:vDjsIvmkgV2iXuumuO27PYP+kTcrFpGhjl9NNIBVNjE=
 github.com/pborman/uuid v1.2.0 h1:J7Q5mO4ysT1dv8hyrUGHb9+ooztCXu1D8MY8DZYsu3g=
@@ -313,6 +318,7 @@ golang.org/x/net v0.0.0-20190311183353-d8887717615a/go.mod h1:t9HGtf8HONx5eT2rtn
 golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3/go.mod h1:t9HGtf8HONx5eT2rtn7q6eTqICYqUVnKs3thJo3Qplg=
 golang.org/x/net v0.0.0-20190420063019-afa5a82059c6 h1:HdqqaWmYAUI7/dmByKKEw+yxDksGSo+9GjkUc9Zp34E=
 golang.org/x/net v0.0.0-20190420063019-afa5a82059c6/go.mod h1:t9HGtf8HONx5eT2rtn7q6eTqICYqUVnKs3thJo3Qplg=
+golang.org/x/net v0.0.0-20190620200207-3b0461eec859/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
 golang.org/x/net v0.0.0-20190724013045-ca1201d0de80 h1:Ao/3l156eZf2AW5wK8a7/smtodRU+gha3+BeqJ69lRk=
 golang.org/x/net v0.0.0-20190724013045-ca1201d0de80/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
 golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be/go.mod h1:N/0e6XlmueqKjAGxoOufVs8QHGRruUQn6yWY3a++T0U=
@@ -339,6 +345,8 @@ golang.org/x/sys v0.0.0-20190507160741-ecd444e8653b/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20190710143415-6ec70d6a5542/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20190712062909-fae7ac547cb7 h1:LepdCS8Gf/MVejFIt8lsiexZATdoGVyp5bcyS+rYoUI=
 golang.org/x/sys v0.0.0-20190712062909-fae7ac547cb7/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20190726091711-fc99dfbffb4e h1:D5TXcfTk7xF7hvieo4QErS3qqCB4teTffacDWr7CI+0=
+golang.org/x/sys v0.0.0-20190726091711-fc99dfbffb4e/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/text v0.3.0 h1:g61tztE5qeGQ89tm6NTjjM9VPIm088od1l6aSorWRWg=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
 golang.org/x/text v0.3.2 h1:tW2bmiBqwgJj/UpqtC8EpXEZVYOwU0yG4iWbprSVAcs=
@@ -350,6 +358,7 @@ golang.org/x/tools v0.0.0-20190226205152-f727befe758c/go.mod h1:9Yl7xja0Znq3iFh3
 golang.org/x/tools v0.0.0-20190311212946-11955173bddd/go.mod h1:LCzVGOaR6xXOjkQ3onu1FJEFr0SW1gC7cKk1uF8kGRs=
 golang.org/x/tools v0.0.0-20190425150028-36563e24a262/go.mod h1:RgjU9mgBXZiqYHBnxXauZ1Gv1EHHAz9KjViQ78xBX0Q=
 golang.org/x/tools v0.0.0-20190524140312-2c0ae7006135/go.mod h1:RgjU9mgBXZiqYHBnxXauZ1Gv1EHHAz9KjViQ78xBX0Q=
+golang.org/x/tools v0.0.0-20190728063539-fc6e2057e7f6/go.mod h1:jcCCGcm9btYwXyDqrUWc6MKQKKGJCWEQ3AfLSRIbEuI=
 google.golang.org/appengine v1.1.0/go.mod h1:EbEs0AVv82hx2wNQdGPgUI5lhzA/G0D9YwlJXL52JkM=
 google.golang.org/appengine v1.4.0/go.mod h1:xpcJRLb0r/rnEns0DIKYYv+WjYCduHsrkT7/EB5XEv4=
 google.golang.org/genproto v0.0.0-20180817151627-c66870c02cf8 h1:Nw54tB0rB7hY/N0NQvRW8DG4Yk3Q6T9cu9RcFQDu1tc=
