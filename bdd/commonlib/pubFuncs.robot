@@ -161,7 +161,7 @@ getCurrentUnitHeight
     ${respJson}=    sendRpcPost    ${host}    dag_getFastUnitIndex    ${params}    QueryCurrentUnitHeight
     ${result}=    Get From Dictionary    ${respJson}    result
     ${result}=    To Json    ${result}
-    ${stableIndex}=    Get From Dictionary    ${result}    stable_index
+    ${stableIndex}=    Get From Dictionary    ${result}    fast_index
     [Return]    ${stableIndex}
 
 sendRpcPost
