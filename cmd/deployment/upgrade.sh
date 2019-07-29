@@ -4,6 +4,8 @@ FileName="./ptn-config.toml"
 FileNameOld="./ptn-config.toml.old"
 FileNameNew="./ptn-config.toml.new"
 
+jury="[[Jury.Accounts]]"
+mediator="[[MediatorPlugin.Mediators]]"
 
 function addcontent(){
 	file=$1
@@ -16,8 +18,21 @@ function addcontent(){
 	sed -i "${num}i $content" $file
 }
 
+function delcontent(){
+	file=$1
+	table=$2
+	content=$3
+	key=$4
+	#if [[ "$table" != "$jury" ]]
+	if [[ "$table" != "$jury" ]] && [[ "$table" != "$mediator" ]] 
+	then
+		echo "====del====="$file $table $content
+		#sed -i '/"$key"/d' $file
+		sed -i "/$key/d" $file
+	fi
+}
 
-function while_read_bottm_new(){
+function while_read_bottm(){
 	line=-1
 	table=""
 	while read content
@@ -40,26 +55,35 @@ function while_read_bottm_new(){
 			key=`echo $key | sed -e 's/^[ \t]*//g'`
 
 			#compare to filenameold and add new key
-			flag=`grep -n "$key"  $FileName | head -1 | cut -d ":" -f 1`
-   			echo "line:"$line "table:"$table "content:"$content "包含:" $key "flag:"$flag
+			flag=`grep -n "$key"  $2 | head -1 | cut -d ":" -f 1`
+   			#echo "line:"$line "table:"$table "content:"$content "包含:" $key "flag:"$flag
 
 			if [[ "$flag" == "" ]]
 			then
-			#add key in filename
-				addcontent $FileName $table $content
+				#add key in filename
+				if [[ "$4" == "1" ]]
+				then
+					addcontent $3 $table $content
+				fi
+				#del key in filename
+				if [[ "$4" == "2" ]]
+				then
+					delcontent $3 $table $content $key
+				fi
 			fi
 
 		else
     			table=$content
 		fi
-	done < $FileNameNew
+	done < $1
 }
 cp $FileNameOld $FileName 
-while_read_bottm_new
+#$1 compare to $2  add $3
+while_read_bottm $FileNameNew $FileName $FileName 1
 
 
+while_read_bottm $FileNameOld $FileNameNew $FileName 2
 
 
-#https://www.jb51.net/article/156339.htm
 
 
