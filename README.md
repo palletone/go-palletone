@@ -16,8 +16,14 @@ For prerequisites and detailed build instructions please read the
 [Installation Instructions](https://github.com/palletone/go-palletone/wiki/Building-palletone)
 on the wiki.
 
-Building gptn requires both a Go (version 1.10 or later) and a C compiler.
+Building gptn requires both a Go (version 1.12 or later) and a C compiler.
 You can install them using your favourite package manager.
+set GO111MODULE:
+
+```bash
+export GO111MODULE=on
+```
+
 Once the dependencies are installed, run
 
 ```bash
