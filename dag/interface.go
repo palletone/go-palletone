@@ -35,7 +35,6 @@ import (
 type IDag interface {
 	Close()
 
-	//common geter
 	GetCommon(key []byte) ([]byte, error)
 	GetCommonByPrefix(prefix []byte) map[string][]byte
 	SaveCommon(key, val []byte) error
@@ -101,8 +100,6 @@ type IDag interface {
 	GetContractTplCode(tplId []byte) ([]byte, error)
 	GetAllContractTpl() ([]*modules.ContractTemplate, error)
 
-	//WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error)
-	//WalletBalance(address common.Address, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
 	GetContract(id []byte) (*modules.Contract, error)
 	GetAllContracts() ([]*modules.Contract, error)
 	GetContractsByTpl(tplId []byte) ([]*modules.Contract, error)
@@ -148,7 +145,6 @@ type IDag interface {
 	HeadUnitNum() uint64
 	HeadUnitHash() common.Hash
 	GetIrreversibleUnitNum(id modules.AssetId) uint64
-	//ValidateUnitExceptPayment(unit *modules.Unit) error
 
 	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
 	GetChaincodes(contractId common.Address) (*list.CCInfo, error)
