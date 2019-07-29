@@ -538,7 +538,7 @@ func NewDag(db ptndb.Database, light bool) (*Dag, error) {
 	dag.stableUnitProduceRep.SubscribeChainMaintenanceEvent(dag.AfterChainMaintenanceEvent)
 
 	hash, chainIndex, _ := dag.stablePropRep.GetNewestUnit(gasToken)
-	log.Infof("newDag success, current unit[%s], chain index info[%s]", hash.String(), chainIndex.Index)
+	log.Infof("newDag success, current unit[%s], chain index info[%d]", hash.String(), chainIndex.Index)
 	// init partition memdag
 	dag.refreshPartitionMemDag()
 	return dag, nil
