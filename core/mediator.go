@@ -73,7 +73,7 @@ type MediatorApplyInfo struct {
 	Logo        string `json:"logo"` // 节点图标url
 	Name        string `json:"name"` // 节点名称
 	Location    string `json:"loc"`  // 节点所在地区
-	Url         string `json:"url"`  // 节点网站
+	Url         string `json:"url"`  // 节点宣传网站
 	Description string `json:"desc"` // 节点信息描述
 }
 
