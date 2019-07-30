@@ -210,11 +210,24 @@ func createTxs(address string) []*modules.Transaction {
 	lockScript := tokenengine.GenerateLockScript(addr)
 	for j := 0; j < 16; j++ {
 		tx := modules.NewTransaction([]*modules.Message{})
-		tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, modules.NewPaymentPayload([]*modules.Input{modules.NewTxIn(modules.NewOutPoint(common.Hash{}, 0, 0), unlockScript)},
-			[]*modules.Output{modules.NewTxOut(uint64(j+1), lockScript, a)})))
+		output := modules.NewTxOut(uint64(j+10), lockScript, a)
+		tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, modules.NewPaymentPayload([]*modules.Input{modules.NewTxIn(modules.NewOutPoint(common.NewSelfHash(),
+			0, 0), unlockScript)}, []*modules.Output{output})))
 		txs = append(txs, tx)
 	}
 	return txs
+}
+func mockPtnUtxos() map[modules.OutPoint]*modules.Utxo {
+	result := map[modules.OutPoint]*modules.Utxo{}
+	p1 := modules.NewOutPoint(common.NewSelfHash(), 0, 0)
+	asset1 := &modules.Asset{AssetId: modules.PTNCOIN}
+	utxo1 := &modules.Utxo{Asset: asset1, Amount: 100, LockTime: 0}
+	utxo2 := &modules.Utxo{Asset: asset1, Amount: 200, LockTime: 0}
+
+	result[*p1] = utxo1
+	p2 := modules.NewOutPoint(common.NewSelfHash(), 1, 0)
+	result[*p2] = utxo2
+	return result
 }
 
 // Tests that if the transaction count belonging to multiple accounts go above
@@ -232,6 +245,11 @@ func TestTransactionAddingTxs(t *testing.T) {
 	unitchain := &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed), nil}
 	config := testTxPoolConfig
 	config.GlobalSlots = 4096
+
+	utxos := mockPtnUtxos()
+	for outpoint, utxo := range utxos {
+		utxodb.SaveUtxoEntity(&outpoint, utxo)
+	}
 
 	pool := NewTxPool(config, unitchain)
 	defer pool.Stop()
