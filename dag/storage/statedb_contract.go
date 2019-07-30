@@ -345,6 +345,9 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 						if mua.Description != nil {
 							mi.Description = *mua.Description
 						}
+						if mua.Node != nil {
+							mi.Node = *mua.Node
+						}
 						statedb.StoreMediatorInfo(addr, mi)
 					} else {
 						log.Debugf(err.Error())
