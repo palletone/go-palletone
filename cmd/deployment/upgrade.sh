@@ -11,9 +11,17 @@ function addcontent(){
 	file=$1
 	table=$2
 	content=$3
-	echo "====add====="$file $table $content
+			length=${#table}
+			num=$[$length-2]
+			table=${table:1:$num}
+			#echo $table
+			#grep -n '\[Contract\]'  ptn-config.toml.new | head -1 | cut -d ":" -f 1
+			table="\[$table\]"
+	echo "==============================="$2 $table
+			num=`grep -n $table  $FileName | head -1 | cut -d ":" -f 1`
+	echo "====add====="$file $table $content $num
 	#sed '/"$table"/a\"$content"' $file >> $file
-	num=`grep -n "$table"  $FileName | head -1 | cut -d ":" -f 1`
+	#num=`grep -n "$table"  $FileName | head -1 | cut -d ":" -f 1`
 	num=$[$num+1]
 	sed -i "${num}i $content" $file
 }
@@ -38,6 +46,9 @@ function addtable(){
 	table=$2
 	echo "====addtable====="$file $table
 	echo $table>>$file
+	echo -e "\n">> $file
+	echo -e "\n">> $file
+	echo -e "\n">> $file
 
 }
 
@@ -56,7 +67,7 @@ function deltable(){
 
 function while_read_bottm(){
 	line=-1
-	table=""
+	srctable=""
 	while read content
 	do
 		line=$[$line+1]
@@ -85,16 +96,17 @@ function while_read_bottm(){
 				#add key in filename
 				if [[ "$4" == "1" ]]
 				then
-					addcontent $3 $table $content
+					addcontent $3 $srctable $content
 				fi
 				#del key in filename
 				if [[ "$4" == "2" ]]
 				then
-					delcontent $3 $table $content $key
+					delcontent $3 $srctable $content $key
 				fi
 			fi
 
 		else
+			srctable=$content
     			table=$content
 			length=${#table}
 			num=$[$length-2]
