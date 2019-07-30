@@ -104,6 +104,11 @@ const Wallet_JS = `
 			call: 'wallet_createProofOfExistenceTx',
 			params: 5
 		}),
+        new web3._extend.Method({
+			name: 'createTraceability',
+			call: 'wallet_createTraceability',
+			params: 6
+		}),
 		new web3._extend.Method({
 			name: 'getProofOfExistencesByRef',
 			call: 'wallet_getProofOfExistencesByRef',

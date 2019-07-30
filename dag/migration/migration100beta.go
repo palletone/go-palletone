@@ -20,6 +20,8 @@
 package migration
 
 import (
+	"strconv"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -100,6 +102,11 @@ func (m *Migration100_101) ExecuteUpgrade() error {
 		return err
 	}
 
+	//转换GLOBALPROPERTY结构体
+	if err := m.upgradeGP(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -108,7 +115,7 @@ func (m *Migration100_101) upgradeMediatorInfo() error {
 	oldMediators := statedb.GetPrefix(constants.MEDIATOR_INFO_PREFIX)
 
 	for key, value := range oldMediators {
-		oldMediator := &oldMediatorInfo{}
+		oldMediator := &OldMediatorInfo{}
 		err := rlp.DecodeBytes(value, oldMediator)
 		if err != nil {
 			log.Debugf(err.Error())
@@ -131,12 +138,120 @@ func (m *Migration100_101) upgradeMediatorInfo() error {
 	return nil
 }
 
-type oldMediatorInfo struct {
+type OldMediatorInfo struct {
 	*core.MediatorInfoBase
-	*oldMediatorApplyInfo
+	*OldMediatorApplyInfo
 	*core.MediatorInfoExpand
 }
 
-type oldMediatorApplyInfo struct {
+type OldMediatorApplyInfo struct {
 	ApplyInfo string `json:"applyInfo"` //  申请信息
+}
+
+func (m *Migration100_101) upgradeGP() error {
+	oldGp := OldGlobalProperty{}
+	err := storage.RetrieveFromRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, &oldGp)
+	if err != nil {
+		log.Errorf(err.Error())
+		return err
+	}
+	newData := &modules.GlobalPropertys{}
+	newData.ActiveJuries = oldGp.ActiveJuries
+	newData.ActiveMediators = oldGp.ActiveMediators
+	newData.PrecedingMediators = oldGp.PrecedingMediators
+	newData.ImmutableParameters = oldGp.ImmutableParameters
+	newData.ChainParameters.ChainParametersBase = oldGp.ChainParameters.ChainParametersBase
+
+	UccMemory, err := strconv.ParseInt(oldGp.ChainParameters.UccMemory, 10, 64)
+	if err != nil {
+		return err
+	}
+	newData.ChainParameters.UccMemory = int64(UccMemory)
+	UccCpuShares, err := strconv.ParseInt(oldGp.ChainParameters.UccCpuShares, 10, 64)
+	if err != nil {
+		return err
+	}
+	newData.ChainParameters.UccCpuShares = int64(UccCpuShares)
+	UccCpuQuota, err := strconv.ParseInt(oldGp.ChainParameters.UccCpuQuota, 10, 64)
+	if err != nil {
+		return err
+	}
+	newData.ChainParameters.UccCpuQuota = int64(UccCpuQuota)
+	newData.ChainParameters.UccDisk = core.DefaultUccDisk
+
+	TempUccMemory, err := strconv.ParseInt(oldGp.ChainParameters.TempUccMemory, 10, 64)
+	if err != nil {
+		return err
+	}
+	newData.ChainParameters.TempUccMemory = int64(TempUccMemory)
+	TempUccCpuShares, err := strconv.ParseInt(oldGp.ChainParameters.TempUccCpuShares, 10, 64)
+	if err != nil {
+		return err
+	}
+	newData.ChainParameters.TempUccCpuShares = int64(TempUccCpuShares)
+	TempUccCpuQuota, err := strconv.ParseInt(oldGp.ChainParameters.TempUccCpuQuota, 10, 64)
+	if err != nil {
+		return err
+	}
+	newData.ChainParameters.TempUccCpuQuota = int64(TempUccCpuQuota)
+
+	ContractSignatureNum, err := strconv.ParseInt(oldGp.ChainParameters.ContractSignatureNum, 10, 64)
+	if err != nil {
+		return err
+	}
+	newData.ChainParameters.ContractSignatureNum = int(ContractSignatureNum)
+	ContractElectionNum, err := strconv.ParseInt(oldGp.ChainParameters.ContractElectionNum, 10, 64)
+	if err != nil {
+		return err
+	}
+	newData.ChainParameters.ContractElectionNum = int(ContractElectionNum)
+
+	newData.ChainParameters.ContractTxTimeoutUnitFee = core.DefaultContractTxTimeoutUnitFee
+	newData.ChainParameters.ContractTxSizeUnitFee = core.DefaultContractTxSizeUnitFee
+	newData.ChainParameters.ContractTxInstallFeeLevel = core.DefaultContractTxInstallFeeLevel
+	newData.ChainParameters.ContractTxDeployFeeLevel = core.DefaultContractTxDeployFeeLevel
+	newData.ChainParameters.ContractTxInvokeFeeLevel = core.DefaultContractTxInvokeFeeLevel
+	newData.ChainParameters.ContractTxStopFeeLevel = core.DefaultContractTxStopFeeLevel
+
+	err = storage.StoreToRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, newData)
+	if err != nil {
+		log.Errorf(err.Error())
+		return err
+	}
+
+	return nil
+}
+
+type OldGlobalProperty struct {
+	OldGlobalPropBase
+
+	ActiveJuries       []common.Address
+	ActiveMediators    []common.Address
+	PrecedingMediators []common.Address
+}
+
+type OldGlobalPropBase struct {
+	ImmutableParameters core.ImmutableChainParameters // 不可改变的区块链网络参数
+	ChainParameters     OldChainParameters            // 区块链网络参数
+}
+
+type OldChainParameters struct {
+	core.ChainParametersBase
+
+	DepositDailyReward string
+	DepositPeriod      string
+
+	UccMemory     string
+	UccMemorySwap string
+	UccCpuShares  string
+	UccCpuQuota   string
+	UccCpuPeriod  string
+
+	TempUccMemory     string
+	TempUccMemorySwap string
+	TempUccCpuShares  string
+	TempUccCpuQuota   string
+
+	ContractSignatureNum string
+	ContractElectionNum  string
 }
