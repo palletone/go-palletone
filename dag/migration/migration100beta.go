@@ -148,7 +148,11 @@ type oldMediatorApplyInfo struct {
 
 func (m *Migration100_101) upgradeGP() error {
 	oldGp := oldGlobalProperty{}
-	storage.RetrieveFromRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, &oldGp)
+	err := storage.RetrieveFromRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, &oldGp)
+	if err != nil {
+		log.Errorf(err.Error())
+		return err
+	}
 	newData := &modules.GlobalPropertys{}
 	newData.ActiveJuries = oldGp.ActiveJuries
 	newData.ActiveMediators = oldGp.ActiveMediators
@@ -165,8 +169,12 @@ func (m *Migration100_101) upgradeGP() error {
 	newData.ChainParameters.ContractTxInvokeFeeLevel = core.DefaultContractTxInvokeFeeLevel
 	newData.ChainParameters.ContractTxStopFeeLevel = core.DefaultContractTxStopFeeLevel
 
-	storage.StoreToRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, newData)
-
+	err = storage.StoreToRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, newData)
+	if err != nil {
+		log.Errorf(err.Error())
+		return err
+	}
+	log.Debug("upgradeGP ok")
 	return nil
 }
 
