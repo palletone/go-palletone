@@ -694,25 +694,28 @@ func (pm *ProtocolManager) AdapterBroadcast(event jury.AdapterEvent) {
 }
 
 func (pm *ProtocolManager) ContractBroadcast(event jury.ContractEvent, local bool) {
-	//peers := pm.peers.PeersWithoutUnit(event.Tx.TxHash)
+	reqId := event.Tx.RequestHash()
 	peers := pm.peers.GetPeers()
-	log.Debug("ContractBroadcast", "event type", event.CType, "reqId", event.Tx.RequestHash().String(), "peers num", len(peers))
-
+	log.Debugf("[%s]ContractBroadcast, event type[%d], peers num[%d]", reqId.String()[0:8], event.CType, len(peers))
 	for _, peer := range peers {
 		if err := peer.SendContractTransaction(event); err != nil {
-			log.Error("ProtocolManager ContractBroadcast", "SendContractTransaction err:", err.Error())
+			log.Error("ContractBroadcast", "SendContractTransaction err:", err.Error())
 		}
 	}
-
 	if local {
-		go pm.contractProc.ProcessContractEvent(&event)
+		go func() {
+			err := pm.contractProc.ProcessContractEvent(&event)
+			if err != nil {
+				log.Errorf("[%s]ContractBroadcast, error:%s", reqId.String()[0:8], err.Error())
+			}
+		}()
 	}
 }
 
 // NodeInfo represents a short summary of the PalletOne sub-protocol metadata
 // known about the host peer.
 type NodeInfo struct {
-	Network uint64 `json:"network"` // PalletOne network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
+	Network uint64      `json:"network"` // PalletOne network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
 	Index   uint64
 	Genesis common.Hash `json:"genesis"` // SHA3 hash of the host's genesis block
 	Head    common.Hash `json:"head"`    // SHA3 hash of the host's best owned block

@@ -38,20 +38,16 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) error {
 	}
 	reqId := event.Tx.RequestHash()
 	if p.checkTxIsExist(event.Tx) {
-		err := fmt.Sprintf("[%s]ProcessContractEvent, event Tx is exist, txId:%s", shortId(reqId.String()), event.Tx.Hash().String())
-		return errors.New(err)
+		return fmt.Errorf("[%s]ProcessContractEvent, event Tx is exist, txId:%s", shortId(reqId.String()), event.Tx.Hash().String())
 	}
 	if p.checkTxReqIdIsExist(reqId) {
-		err := fmt.Sprintf("[%s]ProcessContractEvent, event Tx reqId is exist, txId:%s", shortId(reqId.String()), event.Tx.Hash().String())
-		return errors.New(err)
+		return fmt.Errorf("[%s]ProcessContractEvent, event Tx reqId is exist, txId:%s", shortId(reqId.String()), event.Tx.Hash().String())
 	}
 	if !p.checkTxValid(event.Tx) {
-		err := fmt.Sprintf("[%s]ProcessContractEvent, event Tx is invalid, txId:%s", shortId(reqId.String()), event.Tx.Hash().String())
-		return errors.New(err)
+		return fmt.Errorf("[%s]ProcessContractEvent, event Tx is invalid, txId:%s", shortId(reqId.String()), event.Tx.Hash().String())
 	}
 	if !p.checkTxAddrValid(event.Tx) {
-		err := fmt.Sprintf("[%s]ProcessContractEvent, event Tx addr is invalid, txId:%s", shortId(reqId.String()), event.Tx.Hash().String())
-		return errors.New(err)
+		return fmt.Errorf("[%s]ProcessContractEvent, event Tx addr is invalid, txId:%s", shortId(reqId.String()), event.Tx.Hash().String())
 	}
 	if !p.contractEventExecutable(event.CType, event.Tx, event.Ele, event.JuryCount) {
 		log.Debugf("[%s]ProcessContractEvent, contractEventExecutable is false", shortId(reqId.String()))
