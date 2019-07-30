@@ -32,6 +32,28 @@ function delcontent(){
 	fi
 }
 
+
+function addtable(){
+	file=$1
+	table=$2
+	echo "====addtable====="$file $table
+	echo $table>>$file
+
+}
+
+function deltable(){
+	file=$1
+	table=$2
+	line=$3
+        if [[ "$table" != "$jury" ]] && [[ "$table" != "$mediator" ]]
+        then
+		echo "====deltable====="$file $table
+                sed -i ${line}d $file
+		#sed -i "/$table/d" $file
+        fi
+
+}
+
 function while_read_bottm(){
 	line=-1
 	table=""
@@ -74,6 +96,28 @@ function while_read_bottm(){
 
 		else
     			table=$content
+			length=${#table}
+			num=$[$length-2]
+			table=${table:1:$num}
+			#echo $table
+			#grep -n '\[Contract\]'  ptn-config.toml.new | head -1 | cut -d ":" -f 1
+			table="\[$table\]"
+			flag=`grep -n $table  $2 | head -1 | cut -d ":" -f 1`
+			echo $table "grep" $2 "flag:"$flag
+			if [[ "$flag" == "" ]]
+			then
+				#add key in filename
+				if [[ "$4" == "1" ]]
+				then
+					addtable $3 $content
+				fi
+				#del key in filename
+				if [[ "$4" == "2" ]]
+				then
+					line=`grep -n $table  $3 | head -1 | cut -d ":" -f 1`
+					deltable $3 $content $line
+				fi
+			fi
 		fi
 	done < $1
 }
