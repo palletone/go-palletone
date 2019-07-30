@@ -113,7 +113,7 @@ func (m *Migration100_101) upgradeMediatorInfo() error {
 	oldMediators := statedb.GetPrefix(constants.MEDIATOR_INFO_PREFIX)
 
 	for key, value := range oldMediators {
-		oldMediator := &oldMediatorInfo{}
+		oldMediator := &OldMediatorInfo{}
 		err := rlp.DecodeBytes(value, oldMediator)
 		if err != nil {
 			log.Debugf(err.Error())
@@ -136,18 +136,18 @@ func (m *Migration100_101) upgradeMediatorInfo() error {
 	return nil
 }
 
-type oldMediatorInfo struct {
+type OldMediatorInfo struct {
 	*core.MediatorInfoBase
-	*oldMediatorApplyInfo
+	*OldMediatorApplyInfo
 	*core.MediatorInfoExpand
 }
 
-type oldMediatorApplyInfo struct {
+type OldMediatorApplyInfo struct {
 	ApplyInfo string `json:"applyInfo"` //  申请信息
 }
 
 func (m *Migration100_101) upgradeGP() error {
-	oldGp := oldGlobalProperty{}
+	oldGp := OldGlobalProperty{}
 	err := storage.RetrieveFromRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, &oldGp)
 	if err != nil {
 		log.Errorf(err.Error())
@@ -174,24 +174,24 @@ func (m *Migration100_101) upgradeGP() error {
 		log.Errorf(err.Error())
 		return err
 	}
-	log.Debug("upgradeGP ok")
+
 	return nil
 }
 
-type oldGlobalProperty struct {
-	oldGlobalPropBase
+type OldGlobalProperty struct {
+	OldGlobalPropBase
 
 	ActiveJuries       []common.Address
 	ActiveMediators    []common.Address
 	PrecedingMediators []common.Address
 }
 
-type oldGlobalPropBase struct {
+type OldGlobalPropBase struct {
 	ImmutableParameters core.ImmutableChainParameters // 不可改变的区块链网络参数
-	ChainParameters     oldChainParameters            // 区块链网络参数
+	ChainParameters     OldChainParameters            // 区块链网络参数
 }
 
-type oldChainParameters struct {
+type OldChainParameters struct {
 	core.ChainParametersBase
 	DepositDailyReward   string
 	DepositPeriod        string
