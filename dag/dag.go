@@ -506,7 +506,11 @@ func NewDag(db ptndb.Database, light bool) (*Dag, error) {
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
 
-	checkDbMigration(db, stateDb)
+	err := checkDbMigration(db, stateDb)
+	if err != nil {
+		return nil, err
+	}
+
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	propRep := dagcommon.NewPropRepository(propDb)

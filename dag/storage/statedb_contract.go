@@ -293,12 +293,9 @@ func (statedb *StateDb) GetContractInvoke(reqId []byte) (*modules.ContractInvoke
 	return invoke, nil
 }
 
-func (statedb *StateDb) SaveContractInvokeReq(reqid []byte, invoke *modules.ContractInvokeRequestPayload) error {
+func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvokeRequestPayload) error {
 	contractAddress := common.NewAddress(invoke.ContractId, common.ContractHash)
-	log.Debugf("save contract invoke req id(%v) contractAddress: %v, timeout: %v",
-		hex.EncodeToString(reqid), contractAddress.Str(), invoke.Timeout)
 
-	// append by Albert·gou
 	if contractAddress == syscontract.DepositContractAddress {
 		log.Debugf("Save Deposit Contract Invoke Req")
 
@@ -358,6 +355,14 @@ func (statedb *StateDb) SaveContractInvokeReq(reqid []byte, invoke *modules.Cont
 			}
 		}
 	}
+
+	return nil
+}
+
+func (statedb *StateDb) SaveContractInvokeReq(reqid []byte, invoke *modules.ContractInvokeRequestPayload) error {
+	contractAddress := common.NewAddress(invoke.ContractId, common.ContractHash)
+	log.Debugf("save contract invoke req id(%v) contractAddress: %v, timeout: %v",
+		hex.EncodeToString(reqid), contractAddress.Str(), invoke.Timeout)
 
 	// key: reqid
 	key := append(constants.CONTRACT_INVOKE_REQ, reqid...)

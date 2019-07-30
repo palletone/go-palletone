@@ -164,9 +164,12 @@ func (tx *TxPoolTransaction) GetTxFee() *big.Int {
 // Hash hashes the RLP encoding of tx.
 // It uniquely identifies the transaction.
 func (tx *Transaction) Hash() common.Hash {
+	oldFlag := tx.Illegal
 	tx.Illegal = false
 
 	v := util.RlpHash(tx)
+	tx.Illegal = oldFlag
+
 	return v
 }
 
