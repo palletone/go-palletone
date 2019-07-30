@@ -75,6 +75,13 @@ type MediatorCreateOperation struct {
 	*core.MediatorApplyInfo
 }
 
+func NewMediatorCreateOperation() *MediatorCreateOperation {
+	return &MediatorCreateOperation{
+		MediatorInfoBase:  core.NewMediatorInfoBase(),
+		MediatorApplyInfo: core.NewMediatorApplyInfo(),
+	}
+}
+
 // 更新 mediator 信息所需参数
 type MediatorUpdateArgs struct {
 	AddStr      string  `json:"account"` // 账户地址

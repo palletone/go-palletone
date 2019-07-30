@@ -151,6 +151,7 @@ func (mib *MediatorInfoBase) Validate() (common.Address, error) {
 	return addr, nil
 }
 
+// genesis 文件定义的mediator结构体
 type InitialMediator struct {
 	*MediatorInfoBase
 	*MediatorApplyInfo
