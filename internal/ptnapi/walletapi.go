@@ -1237,6 +1237,68 @@ func (s *PrivateWalletAPI) CreateProofOfExistenceTx(ctx context.Context, addr st
 	return submitTransaction(ctx, s.b, rawTx)
 }
 
+//创建一笔溯源交易，调用721合约
+func (s *PrivateWalletAPI) CreateTraceability(ctx context.Context, addr, uid, symbol,
+mainData, extraData, reference string) (common.Hash, error) {
+	password := "1"
+	caddr := "PCGTta3M4t3yXu8uRgkKvaWd2d8DRijspoq"
+	contractAddr,_ := common.StringToAddress(caddr)
+	str := "[{\"TokenID\":\""+uid+"\",\"MetaData\":\"\"}]"
+	gasToken := dagconfig.DagConfig.GasToken
+	ptn1 := decimal.New(1, 0)
+	rawTx, usedUtxo, err := s.buildRawTransferTx(gasToken, addr, addr, decimal.New(0, 0), ptn1)
+	if err != nil {
+		return common.Hash{}, err
+	}
+
+	textPayload := new(modules.DataPayload)
+	textPayload.MainData = []byte(mainData)
+	textPayload.ExtraData = []byte(extraData)
+	textPayload.Reference = []byte(reference)
+
+	args := make([][]byte, 4)
+	args[0] = []byte("supplyToken")
+	args[1] = []byte(symbol)
+	args[2] = []byte("1")
+	args[3] = []byte(str)
+	ccinvokePayload := new(modules.ContractInvokeRequestPayload)
+	ccinvokePayload.Args = args
+	ccinvokePayload.ContractId = contractAddr.Bytes()
+	ccinvokePayload.Timeout = 0
+
+	rawTx.TxMessages = append(rawTx.TxMessages, modules.NewMessage(modules.APP_DATA, textPayload))
+	rawTx.TxMessages = append(rawTx.TxMessages, modules.NewMessage(modules.APP_CONTRACT_INVOKE_REQUEST, ccinvokePayload))
+	//lockscript
+	getPubKeyFn := func(addr common.Address) ([]byte, error) {
+		//TODO use keystore
+		ks := s.b.GetKeyStore()
+		return ks.GetPublicKey(addr)
+	}
+	//sign tx
+	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
+		ks := s.b.GetKeyStore()
+		return ks.SignMessage(addr, msg)
+	}
+	utxoLockScripts := make(map[modules.OutPoint][]byte)
+	for _, utxo := range usedUtxo {
+		utxoLockScripts[utxo.OutPoint] = utxo.PkScript
+	}
+	fromAddr, err := common.StringToAddress(addr)
+	err = s.unlockKS(fromAddr, password, nil)
+	if err != nil {
+		return common.Hash{}, err
+	}
+	//3.
+	_, err = tokenengine.SignTxAllPaymentInput(rawTx, 1, utxoLockScripts, nil, getPubKeyFn, getSignFn)
+	if err != nil {
+		return common.Hash{}, err
+	}
+	txJson, _ := json.Marshal(rawTx)
+	log.DebugDynamic(func() string { return "SignedTx:" + string(txJson) })
+	//4.
+	return submitTransaction(ctx, s.b, rawTx)
+}
+
 func (s *PublicWalletAPI) getFileInfo(filehash string) (string, error) {
 	//get fileinfos
 	files, err := s.b.GetFileInfo(filehash)
@@ -1365,7 +1427,7 @@ func (s *PublicWalletAPI) GenCert(ctx context.Context, caAddress, userAddress, p
 
 	reqId, err := s.b.ContractInvokeReqTx(caAddr, caAddr, 10000, 10000, nil, cAddr, args, 0)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	log.Infof("GenCert reqId[%s]", hex.EncodeToString(reqId[:]))
 	rsp := &ContractDeployRsp{
@@ -1377,7 +1439,7 @@ func (s *PublicWalletAPI) GenCert(ctx context.Context, caAddress, userAddress, p
 }
 
 //吊销证书  将crl存入到数字身份系统合约中
-func (s *PublicWalletAPI) RevokeCert(ctx context.Context, caAddress,passwd ,userAddress  string) (*ContractDeployRsp, error) {
+func (s *PublicWalletAPI) RevokeCert(ctx context.Context, caAddress, passwd, userAddress string) (*ContractDeployRsp, error) {
 	contractAddr := "PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk"
 	// 参数检查
 	_, err := common.StringToAddress(userAddress)
@@ -1392,7 +1454,7 @@ func (s *PublicWalletAPI) RevokeCert(ctx context.Context, caAddress,passwd ,user
 	if err != nil {
 		return nil, fmt.Errorf("invalid account address: %v", userAddress)
 	}
-    //导出ca私钥用于吊销用户证书
+	//导出ca私钥用于吊销用户证书
 	ks := s.b.GetKeyStore()
 	account, err := MakeAddress(ks, caAddress)
 	if err != nil {
@@ -1408,12 +1470,11 @@ func (s *PublicWalletAPI) RevokeCert(ctx context.Context, caAddress,passwd ,user
 	ca := certficate.CertINfo{}
 	ca.Address = userAddress
 	ca.Key = privKey
-	crlByte,err := certficate.RevokeCert(ca,reason)
+	crlByte, err := certficate.RevokeCert(ca, reason)
 	if err != nil {
 		return nil, err
 	}
 	log.Infof("RevokeCert Success!  CrlByte[%s]", crlByte)
-
 
 	//调用系统合约 将CrlByte存入到数字身份系统合约中
 	args := make([][]byte, 2)
@@ -1422,7 +1483,7 @@ func (s *PublicWalletAPI) RevokeCert(ctx context.Context, caAddress,passwd ,user
 
 	reqId, err := s.b.ContractInvokeReqTx(caAddr, caAddr, 10000, 10000, nil, cAddr, args, 0)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	log.Infof("RevokeCert reqId[%s]", hex.EncodeToString(reqId[:]))
 	rsp := &ContractDeployRsp{
