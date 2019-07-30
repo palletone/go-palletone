@@ -642,7 +642,7 @@ func checkDbMigration(db ptndb.Database, stateDb storage.IStateDb) error {
 	next_version := old_vertion.Version
 
 	if next_version != now_version {
-		log.Infof("Start migration,upgrade gtpn vertion[%s] to [%s]", next_version, now_version)
+		log.Infof("Start migration,upgrade gtpn vertion[%s] to [%s], it may spend a long time, please wait...", next_version, now_version)
 		// migrations
 		mig_versions := migration.NewMigrations(db)
 

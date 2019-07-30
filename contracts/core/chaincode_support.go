@@ -415,7 +415,7 @@ func (chaincodeSupport *ChaincodeSupport) getLaunchConfigs(cccid *ccprovider.CCC
 		envs = append(envs, "CORE_CHAINCODE_LOGGING_SHIM="+chaincodeSupport.shimLogLevel)
 	}
 	if chaincodeSupport.peerAddress != "" {
-		log.Infof("-------------------------------------------%s\n\n", chaincodeSupport.peerAddress)
+		log.Debugf("-------------------------------------------%s\n\n", chaincodeSupport.peerAddress)
 		envs = append(envs, "CORE_CHAINCODE_PEER_ADDRESS="+chaincodeSupport.peerAddress)
 	}
 	if chaincodeSupport.logFormat != "" {
@@ -700,15 +700,15 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 	if cds != nil {
 		cID = cds.ChaincodeSpec.ChaincodeId
 		cMsg = cds.ChaincodeSpec.Input
-		log.Infof("cds != nil-------这是部署用户合约---------------， cID=%v", cID)
+		log.Debugf("cds != nil-------这是部署用户合约---------------， cID=%v", cID)
 	} else {
 		cID = ci.ChaincodeSpec.ChaincodeId
 		cMsg = ci.ChaincodeSpec.Input
-		log.Infof("cds == nil---------这是调用用户合约-------------, cID=%v", cID)
+		log.Debugf("cds == nil---------这是调用用户合约-------------, cID=%v", cID)
 	}
 
 	canName := cccid.GetCanonicalName()
-	log.Infof("canName= %s", canName)
+	log.Debugf("canName= %s", canName)
 	chaincodeSupport.runningChaincodes.Lock()
 	var chrte *chaincodeRTEnv
 	var ok bool
