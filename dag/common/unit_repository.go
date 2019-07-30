@@ -1231,8 +1231,10 @@ func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, he
 		}
 
 		// append by albert
-		invoke, _ := tx.TxMessages[reqIndex].Payload.(*modules.ContractInvokeRequestPayload)
-		rep.statedb.UpdateStateByContractInvoke(invoke)
+		if reqIndex != -1 { // 排除创世交易中的系统合约交易没有Request的情况
+			invoke, _ := tx.TxMessages[reqIndex].Payload.(*modules.ContractInvokeRequestPayload)
+			rep.statedb.UpdateStateByContractInvoke(invoke)
+		}
 	}
 
 	return true
