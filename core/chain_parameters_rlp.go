@@ -35,14 +35,14 @@ type chainParameters struct {
 	DepositPeriod      string
 
 	UccMemory     string
-	UccMemorySwap string
+	//UccMemorySwap string
 	UccCpuShares  string
 	UccCpuQuota   string
-	UccCpuPeriod  string
+	//UccCpuPeriod  string
 	UccDisk       string
 
 	TempUccMemory     string
-	TempUccMemorySwap string
+	//TempUccMemorySwap string
 	TempUccCpuShares  string
 	TempUccCpuQuota   string
 

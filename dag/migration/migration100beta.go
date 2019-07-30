@@ -100,6 +100,11 @@ func (m *Migration100_101) ExecuteUpgrade() error {
 		return err
 	}
 
+	//转换GLOBALPROPERTY结构体
+	if err := m.upgradeGP(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -139,4 +144,58 @@ type oldMediatorInfo struct {
 
 type oldMediatorApplyInfo struct {
 	ApplyInfo string `json:"applyInfo"` //  申请信息
+}
+
+func (m *Migration100_101) upgradeGP() error {
+	oldGp := oldGlobalProperty{}
+	storage.RetrieveFromRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, &oldGp)
+	newData := &modules.GlobalPropertys{}
+	newData.ActiveJuries = oldGp.ActiveJuries
+	newData.ActiveMediators = oldGp.ActiveMediators
+	newData.PrecedingMediators = oldGp.PrecedingMediators
+	newData.ImmutableParameters = oldGp.ImmutableParameters
+	newData.ChainParameters.ChainParametersBase = oldGp.ChainParameters.ChainParametersBase
+
+	newData.ChainParameters.UccDisk = core.DefaultUccDisk
+
+	newData.ChainParameters.ContractTxTimeoutUnitFee = core.DefaultContractTxTimeoutUnitFee
+	newData.ChainParameters.ContractTxSizeUnitFee = core.DefaultContractTxSizeUnitFee
+	newData.ChainParameters.ContractTxInstallFeeLevel = core.DefaultContractTxInstallFeeLevel
+	newData.ChainParameters.ContractTxDeployFeeLevel = core.DefaultContractTxDeployFeeLevel
+	newData.ChainParameters.ContractTxInvokeFeeLevel = core.DefaultContractTxInvokeFeeLevel
+	newData.ChainParameters.ContractTxStopFeeLevel = core.DefaultContractTxStopFeeLevel
+
+	storage.StoreToRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, newData)
+
+	return nil
+}
+
+type oldGlobalProperty struct {
+	oldGlobalPropBase
+
+	ActiveJuries       []common.Address
+	ActiveMediators    []common.Address
+	PrecedingMediators []common.Address
+}
+
+type oldGlobalPropBase struct {
+	ImmutableParameters core.ImmutableChainParameters // 不可改变的区块链网络参数
+	ChainParameters     oldChainParameters            // 区块链网络参数
+}
+
+type oldChainParameters struct {
+	core.ChainParametersBase
+	DepositDailyReward   string
+	DepositPeriod        string
+	UccMemory            string
+	UccMemorySwap        string
+	UccCpuShares         string
+	UccCpuQuota          string
+	UccCpuPeriod         string
+	TempUccMemory        string
+	TempUccMemorySwap    string
+	TempUccCpuShares     string
+	TempUccCpuQuota      string
+	ContractSignatureNum string
+	ContractElectionNum  string
 }
