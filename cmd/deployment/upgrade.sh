@@ -121,13 +121,33 @@ function while_read_bottm(){
 		fi
 	done < $1
 }
+
+Path="mainnet"
+#Path="testnet"
+
+rm -rf temp
+mkdir temp
+cd temp
+#wget release package
+wget $1
+tar xzvf *.tar.gz
+cd $Path
+dumcpconfig=`./gptn dumpconfig`
+echo $dumpconfig
+cp *.toml ../ptn-config.toml.new
+cd ../
+cp ../ptn-config.toml ptn-config.toml.old
+
 cp $FileNameOld $FileName 
 #$1 compare to $2  add $3
 while_read_bottm $FileNameNew $FileName $FileName 1
 
-
+#$1 compare to $2 del $3
 while_read_bottm $FileNameOld $FileNameNew $FileName 2
 
 
+mv ../ptn-config.toml ../ptn-config.toml.bak
+cp ./ptn-config.toml ../ptn-config.toml
 
-
+mv ../gptn ../gptn.bak
+cp $Path/gptn ../gptn
