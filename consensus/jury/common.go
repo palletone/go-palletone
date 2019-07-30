@@ -562,8 +562,13 @@ func (p *Processor) checkTxValid(tx *modules.Transaction) bool {
 	_, _, err := p.validator.ValidateTx(tx, false)
 	if err != nil {
 		log.Debugf("[%s]checkTxValid, Validate fail, txHash[%s], err:%s", shortId(tx.RequestHash().String()), tx.Hash().String(), err.Error())
+		return false
 	}
-	return err == nil
+	if !checkContractTxFeeValid(p.dag, tx)	{
+		log.Debugf("[%s]checkTxValid, checkContractTxFeeValid fail, txHash[%s], err:%s", shortId(tx.RequestHash().String()), tx.Hash().String(), err.Error())
+		return false
+	}
+	return true
 }
 
 func (p *Processor) checkTxAddrValid(tx *modules.Transaction) bool {
@@ -831,6 +836,8 @@ func getContractFeeLevel(dag iDag, msg modules.MessageType, feeType int) (level 
 }
 
 func checkContractTxFeeValid(dag iDag, tx *modules.Transaction) bool {
+	return true //todo
+
 	if tx == nil {
 		return false
 	}

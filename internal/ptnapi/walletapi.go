@@ -1238,12 +1238,11 @@ func (s *PrivateWalletAPI) CreateProofOfExistenceTx(ctx context.Context, addr st
 }
 
 //创建一笔溯源交易，调用721合约
-func (s *PrivateWalletAPI) CreateTraceability(ctx context.Context, addr, uid, symbol,
-mainData, extraData, reference string) (common.Hash, error) {
+func (s *PrivateWalletAPI) CreateTraceability(ctx context.Context, addr, uid, symbol, mainData, extraData, reference string) (common.Hash, error) {
 	password := "1"
 	caddr := "PCGTta3M4t3yXu8uRgkKvaWd2d8DRijspoq"
-	contractAddr,_ := common.StringToAddress(caddr)
-	str := "[{\"TokenID\":\""+uid+"\",\"MetaData\":\"\"}]"
+	contractAddr, _ := common.StringToAddress(caddr)
+	str := "[{\"TokenID\":\"" + uid + "\",\"MetaData\":\"\"}]"
 	gasToken := dagconfig.DagConfig.GasToken
 	ptn1 := decimal.New(1, 0)
 	rawTx, usedUtxo, err := s.buildRawTransferTx(gasToken, addr, addr, decimal.New(0, 0), ptn1)
@@ -1380,7 +1379,7 @@ func (s *PublicWalletAPI) GetProofOfExistencesByAsset(ctx context.Context, asset
 }
 
 //affiliation  gptn.mediator1
-func (s *PublicWalletAPI) GenCert(ctx context.Context, caAddress, userAddress, passwd, name, data, roleType, affiliation string) (*ContractDeployRsp, error) {
+func (s *PrivateWalletAPI) GenCert(ctx context.Context, caAddress, userAddress, passwd, name, data, roleType, affiliation string) (*ContractDeployRsp, error) {
 	contractAddr := "PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk"
 	// 参数检查
 	_, err := common.StringToAddress(userAddress)
@@ -1401,11 +1400,17 @@ func (s *PublicWalletAPI) GenCert(ctx context.Context, caAddress, userAddress, p
 	if err != nil {
 		return nil, err
 	}
+
 	//导出私钥 用于证书的生成
 	privKey, _ := ks.DumpPrivateKey(account, passwd)
 	if err != nil {
 		return nil, err
 	}
+	err = s.unlockKS(caAddr, "1", nil)
+	if err != nil {
+		return nil, err
+	}
+
 	ca := certficate.CertINfo{}
 	ca.Address = userAddress
 	ca.Name = name
@@ -1439,7 +1444,7 @@ func (s *PublicWalletAPI) GenCert(ctx context.Context, caAddress, userAddress, p
 }
 
 //吊销证书  将crl存入到数字身份系统合约中
-func (s *PublicWalletAPI) RevokeCert(ctx context.Context, caAddress, passwd, userAddress string) (*ContractDeployRsp, error) {
+func (s *PrivateWalletAPI) RevokeCert(ctx context.Context, caAddress, passwd, userAddress string) (*ContractDeployRsp, error) {
 	contractAddr := "PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk"
 	// 参数检查
 	_, err := common.StringToAddress(userAddress)
@@ -1462,6 +1467,10 @@ func (s *PublicWalletAPI) RevokeCert(ctx context.Context, caAddress, passwd, use
 	}
 
 	privKey, _ := ks.DumpPrivateKey(account, passwd)
+	if err != nil {
+		return nil, err
+	}
+	err = s.unlockKS(caAddr, passwd, nil)
 	if err != nil {
 		return nil, err
 	}
