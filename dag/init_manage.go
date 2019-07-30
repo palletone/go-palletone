@@ -86,6 +86,7 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 
 		mi := modules.NewMediatorInfo()
 		*mi.MediatorInfoBase = *imc.MediatorInfoBase
+		*mi.MediatorApplyInfo = *imc.MediatorApplyInfo
 
 		err = dag.stableStateRep.StoreMediatorInfo(addr, mi)
 		if err != nil {

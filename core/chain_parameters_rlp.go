@@ -27,7 +27,8 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
-type chainParameters struct {
+// only for serialization(storage/p2p)
+type ChainParametersTemp struct {
 	ChainParametersBase
 
 	// TxCoinYearRate     string
@@ -63,8 +64,8 @@ func (cp *ChainParameters) EncodeRLP(w io.Writer) error {
 	return rlp.Encode(w, cpt)
 }
 
-func (cp *ChainParameters) getCPT() *chainParameters {
-	return &chainParameters{
+func (cp *ChainParameters) getCPT() *ChainParametersTemp {
+	return &ChainParametersTemp{
 		ChainParametersBase: cp.ChainParametersBase,
 
 		// TxCoinYearRate:     strconv.FormatFloat(float64(cp.TxCoinYearRate), 'f', -1, 64),
@@ -92,7 +93,7 @@ func (cp *ChainParameters) getCPT() *chainParameters {
 	}
 }
 
-func (cpt *chainParameters) getCP(cp *ChainParameters) error {
+func (cpt *ChainParametersTemp) getCP(cp *ChainParameters) error {
 	cp.ChainParametersBase = cpt.ChainParametersBase
 
 	// TxCoinYearRate, err := strconv.ParseFloat(cpt.TxCoinYearRate, 64)
@@ -212,7 +213,7 @@ func (cp *ChainParameters) DecodeRLP(s *rlp.Stream) error {
 		return err
 	}
 
-	cpt := &chainParameters{}
+	cpt := &ChainParametersTemp{}
 	err = rlp.DecodeBytes(raw, cpt)
 	if err != nil {
 		return err

@@ -33,7 +33,7 @@ func (gp *GlobalProperty) DecodeRLP(s *rlp.Stream) error {
 		return err
 	}
 
-	gpt := &GlobalPropertys{}
+	gpt := &GlobalPropertyTemp{}
 	err = rlp.DecodeBytes(raw, gpt)
 	if err != nil {
 		return err
@@ -49,7 +49,7 @@ func (gp *GlobalProperty) EncodeRLP(w io.Writer) error {
 }
 
 // only for serialization(storage/p2p)
-type GlobalPropertys struct {
+type GlobalPropertyTemp struct {
 	GlobalPropBase
 
 	ActiveJuries       []common.Address
@@ -57,7 +57,7 @@ type GlobalPropertys struct {
 	PrecedingMediators []common.Address
 }
 
-func (gp *GlobalProperty) getGPT() *GlobalPropertys {
+func (gp *GlobalProperty) getGPT() *GlobalPropertyTemp {
 	ajs := make([]common.Address, 0)
 	ams := make([]common.Address, 0)
 	pms := make([]common.Address, 0)
@@ -74,7 +74,7 @@ func (gp *GlobalProperty) getGPT() *GlobalPropertys {
 		pms = append(pms, medAdd)
 	}
 
-	gpt := &GlobalPropertys{
+	gpt := &GlobalPropertyTemp{
 		GlobalPropBase:     gp.GlobalPropBase,
 		ActiveJuries:       ajs,
 		ActiveMediators:    ams,
@@ -84,7 +84,7 @@ func (gp *GlobalProperty) getGPT() *GlobalPropertys {
 	return gpt
 }
 
-func (gpt *GlobalPropertys) getGP(gp *GlobalProperty) {
+func (gpt *GlobalPropertyTemp) getGP(gp *GlobalProperty) {
 	ajs := make(map[common.Address]bool)
 	ams := make(map[common.Address]bool)
 	pms := make(map[common.Address]bool)
