@@ -20,6 +20,8 @@
 package migration
 
 import (
+	"strconv"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -160,7 +162,49 @@ func (m *Migration100_101) upgradeGP() error {
 	newData.ImmutableParameters = oldGp.ImmutableParameters
 	newData.ChainParameters.ChainParametersBase = oldGp.ChainParameters.ChainParametersBase
 
+	UccMemory, err := strconv.ParseInt(oldGp.ChainParameters.UccMemory, 10, 64)
+	if err != nil {
+		return err
+	}
+	newData.ChainParameters.UccMemory = int64(UccMemory)
+	UccCpuShares, err := strconv.ParseInt(oldGp.ChainParameters.UccCpuShares, 10, 64)
+	if err != nil {
+		return err
+	}
+	newData.ChainParameters.UccCpuShares = int64(UccCpuShares)
+	UccCpuQuota, err := strconv.ParseInt(oldGp.ChainParameters.UccCpuQuota, 10, 64)
+	if err != nil {
+		return err
+	}
+	newData.ChainParameters.UccCpuQuota = int64(UccCpuQuota)
 	newData.ChainParameters.UccDisk = core.DefaultUccDisk
+
+	TempUccMemory, err := strconv.ParseInt(oldGp.ChainParameters.TempUccMemory, 10, 64)
+	if err != nil {
+		return err
+	}
+	newData.ChainParameters.TempUccMemory = int64(TempUccMemory)
+	TempUccCpuShares, err := strconv.ParseInt(oldGp.ChainParameters.TempUccCpuShares, 10, 64)
+	if err != nil {
+		return err
+	}
+	newData.ChainParameters.TempUccCpuShares = int64(TempUccCpuShares)
+	TempUccCpuQuota, err := strconv.ParseInt(oldGp.ChainParameters.TempUccCpuQuota, 10, 64)
+	if err != nil {
+		return err
+	}
+	newData.ChainParameters.TempUccCpuQuota = int64(TempUccCpuQuota)
+
+	ContractSignatureNum, err := strconv.ParseInt(oldGp.ChainParameters.ContractSignatureNum, 10, 64)
+	if err != nil {
+		return err
+	}
+	newData.ChainParameters.ContractSignatureNum = int(ContractSignatureNum)
+	ContractElectionNum, err := strconv.ParseInt(oldGp.ChainParameters.ContractElectionNum, 10, 64)
+	if err != nil {
+		return err
+	}
+	newData.ChainParameters.ContractElectionNum = int(ContractElectionNum)
 
 	newData.ChainParameters.ContractTxTimeoutUnitFee = core.DefaultContractTxTimeoutUnitFee
 	newData.ChainParameters.ContractTxSizeUnitFee = core.DefaultContractTxSizeUnitFee
@@ -193,17 +237,21 @@ type OldGlobalPropBase struct {
 
 type OldChainParameters struct {
 	core.ChainParametersBase
-	DepositDailyReward   string
-	DepositPeriod        string
-	UccMemory            string
-	UccMemorySwap        string
-	UccCpuShares         string
-	UccCpuQuota          string
-	UccCpuPeriod         string
-	TempUccMemory        string
-	TempUccMemorySwap    string
-	TempUccCpuShares     string
-	TempUccCpuQuota      string
+
+	DepositDailyReward string
+	DepositPeriod      string
+
+	UccMemory     string
+	UccMemorySwap string
+	UccCpuShares  string
+	UccCpuQuota   string
+	UccCpuPeriod  string
+
+	TempUccMemory     string
+	TempUccMemorySwap string
+	TempUccCpuShares  string
+	TempUccCpuQuota   string
+
 	ContractSignatureNum string
 	ContractElectionNum  string
 }
