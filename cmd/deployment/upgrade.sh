@@ -11,17 +11,12 @@ function addcontent(){
 	file=$1
 	table=$2
 	content=$3
-			length=${#table}
-			num=$[$length-2]
-			table=${table:1:$num}
-			#echo $table
-			#grep -n '\[Contract\]'  ptn-config.toml.new | head -1 | cut -d ":" -f 1
-			table="\[$table\]"
-	echo "==============================="$2 $table
-			num=`grep -n $table  $FileName | head -1 | cut -d ":" -f 1`
+	length=${#table}
+	num=$[$length-2]
+	table=${table:1:$num}
+	table="\[$table\]"
+	num=`grep -n $table  $FileName | head -1 | cut -d ":" -f 1`
 	echo "====add====="$file $table $content $num
-	#sed '/"$table"/a\"$content"' $file >> $file
-	#num=`grep -n "$table"  $FileName | head -1 | cut -d ":" -f 1`
 	num=$[$num+1]
 	sed -i "${num}i $content" $file
 }
@@ -31,11 +26,9 @@ function delcontent(){
 	table=$2
 	content=$3
 	key=$4
-	#if [[ "$table" != "$jury" ]]
 	if [[ "$table" != "$jury" ]] && [[ "$table" != "$mediator" ]] 
 	then
 		echo "====del====="$file $table $content
-		#sed -i '/"$key"/d' $file
 		sed -i "/$key/d" $file
 	fi
 }
@@ -60,7 +53,6 @@ function deltable(){
         then
 		echo "====deltable====="$file $table
                 sed -i ${line}d $file
-		#sed -i "/$table/d" $file
         fi
 
 }
@@ -78,8 +70,6 @@ function while_read_bottm(){
 		fi
 		
 		content=`echo $content | sed 's/[[:space:]]//g'`
-		#content=`echo $content | sed -e 's/^[ \t]*//g'`
-		#echo $content
 		result=$(echo $content | grep "=")
 		if [[ "$result" != "" ]]
 		then
@@ -111,11 +101,9 @@ function while_read_bottm(){
 			length=${#table}
 			num=$[$length-2]
 			table=${table:1:$num}
-			#echo $table
-			#grep -n '\[Contract\]'  ptn-config.toml.new | head -1 | cut -d ":" -f 1
 			table="\[$table\]"
 			flag=`grep -n $table  $2 | head -1 | cut -d ":" -f 1`
-			echo $table "grep" $2 "flag:"$flag
+			#echo $table "grep" $2 "flag:"$flag
 			if [[ "$flag" == "" ]]
 			then
 				#add key in filename
