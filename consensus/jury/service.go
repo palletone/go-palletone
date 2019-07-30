@@ -539,9 +539,13 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 			log.Debugf("[%s]AddContractLoop ,ReqId is exist, rst reqId[%s]", shortId(reqId.String()), reqId.String())
 			continue
 		}
+		if p.checkTxIsExist(tx) {
+			log.Debugf("[%s]AddContractLoop ,tx is exist, rst reqId[%s]", shortId(reqId.String()), reqId.String())
+			continue
+		}
 		log.Debugf("[%s]AddContractLoop, B enter mtx, addr[%s]", shortId(reqId.String()), addr.String())
 		if tx.IsSystemContract() {
-			sigTx, err := p.GenContractSigTransaction(addr, "", ctx.rstTx, ks)
+			sigTx, err := p.GenContractSigTransaction(addr, "", tx, ks)
 			if err != nil {
 				log.Error("AddContractLoop GenContractSigTransctions", "error", err.Error())
 				continue
