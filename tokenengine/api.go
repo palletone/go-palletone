@@ -233,15 +233,15 @@ func ScriptValidate1Msg(utxoLockScripts map[string][]byte, pickupJuryRedeemScrip
 		utxoLockScript := utxoLockScripts[input.PreviousOutPoint.String()]
 		vm, err := txscript.NewEngine(utxoLockScript, pickupJuryRedeemScript, txCopy, msgIdx, inputIndex, txscript.StandardVerifyFlags, signCache, acc)
 		if err != nil {
-			log.Warnf("Unlock script validate fail,tx[%s],MsgIdx[%d],In[%d],unlockScript:%x,utxoScript:%x",
-				tx.Hash().String(), msgIdx, inputIndex, input.SignatureScript, utxoLockScript)
+			log.Warnf("Unlock script validate fail,tx[%s],MsgIdx[%d],In[%d],unlockScript:%x,utxoScript:%x,error:%s",
+				tx.Hash().String(), msgIdx, inputIndex, input.SignatureScript, utxoLockScript, err.Error())
 
 			return err
 		}
 		err = vm.Execute()
 		if err != nil {
-			log.Warnf("Unlock script validate fail,tx[%s],MsgIdx[%d],In[%d],unlockScript:%x,utxoScript:%x",
-				tx.Hash().String(), msgIdx, inputIndex, input.SignatureScript, utxoLockScript)
+			log.Warnf("Unlock script validate fail,tx[%s],MsgIdx[%d],In[%d],unlockScript:%x,utxoScript:%x, error:%s",
+				tx.Hash().String(), msgIdx, inputIndex, input.SignatureScript, utxoLockScript, err.Error())
 
 			log.DebugDynamic(func() string {
 				data, _ := json.Marshal(txCopy)
@@ -335,10 +335,12 @@ func (a *account) Hash(msg []byte) ([]byte, error) {
 	return crypto.MyCryptoLib.Hash(msg)
 }
 func (a *account) Sign(address common.Address, msg []byte) ([]byte, error) {
-	return a.signFn(address, msg)
+	signature, err := a.signFn(address, msg)
+	//log.Debugf("Sign Addr:%s,Signature:%x,msg:%x", address.String(), signature, msg)
+	return signature, err
 }
 func (a *account) Verify(pubKey, signature, msg []byte) (bool, error) {
-	//log.Debugf("Pubkey:%x,Signature:%x,hash:%x", pubKey, signature, digest)
+	//log.Debugf("Verify Pubkey:%x,Signature:%x,msg:%x", pubKey, signature, msg)
 	return crypto.MyCryptoLib.Verify(pubKey, signature, msg)
 }
 func (a *account) GetPubKey(address common.Address) ([]byte, error) {
