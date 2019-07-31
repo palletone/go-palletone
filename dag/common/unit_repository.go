@@ -422,7 +422,6 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 	// step2. compute chain height
 	// get current world_state index.
 	index := uint64(1)
-	//isMain := true
 	phash, chainIndex, err := propdb.GetNewestUnit(assetId)
 	// phash, chainIndex, _, err := rep.propdb.GetNewestUnit(assetId)
 	if err != nil {
@@ -444,11 +443,6 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 	// step4. get transactions from txspool
 	poolTxs, _ := txpool.GetSortedTxs(h_hash, chainIndex.Index)
 
-	//txIds := []common.Hash{}
-	//for _, tx := range poolTxs {
-	//	txIds = append(txIds, tx.Tx.Hash())
-	//}
-	// log.Infof("txpool.GetSortedTxs cost time %s, txs[%#x]", time.Since(begin), txIds)
 	log.Debugf("txpool.GetSortedTxs cost time %s", time.Since(begin))
 	// step5. compute minner income: transaction fees + interest
 	tt := time.Now()

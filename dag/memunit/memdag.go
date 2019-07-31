@@ -238,7 +238,7 @@ func (chain *MemDag) setStableUnit(hash common.Hash, height uint64, txpool txspo
 	}
 	// 更新tempdb ，将低于稳定单元的分叉链都删除
 	go chain.delHeightUnitsAndTemp(max_height)
-	log.InfoDynamic(func() string {
+	log.DebugDynamic(func() string {
 		return fmt.Sprintf("set next stable unit cost time: %s ,index: %d, hash: %s",
 			time.Since(tt), height, hash.String())
 	})
@@ -326,7 +326,7 @@ func (chain *MemDag) checkStableCondition(unit *modules.Unit, txpool txspool.ITx
 		childrenCofirmAddrs[u.Author()] = true
 
 		if len(hs) >= chain.threshold {
-			log.Infof("Unit[%s] has enough confirm address count=%d, make it to stable.", ustbHash.String(), len(hs))
+			log.Debugf("Unit[%s] height:%d has enough confirm address count=%d, make it to stable.", ustbHash.String(), unit.NumberU64(), len(hs))
 			chain.setStableUnit(ustbHash, u.NumberU64(), txpool)
 			return true
 		}
@@ -379,6 +379,7 @@ func (chain *MemDag) getMainChainUnits() []*modules.Unit {
 		u, ok := chain_units[ustbHash]
 		if !ok {
 			log.Errorf("chainUnits don't have unit[%s], last_main[%s]", ustbHash.String(), chain.lastMainChainUnit.Hash().String())
+			continue
 		}
 		unstableUnits[unstableCount-i-1] = u
 		ustbHash = u.ParentHash()[0]
@@ -453,7 +454,7 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 		return nil, nil, nil, nil, nil, nil
 	}
 	a, b, c, d, e, err := chain.addUnit(unit, txpool)
-	log.InfoDynamic(func() string {
+	log.DebugDynamic(func() string {
 		return fmt.Sprintf("MemDag[%s] AddUnit cost time: %v ,index: %d, hash: %s", chain.token.String(),
 			time.Since(start), unit.NumberU64(), unit.Hash().String())
 	})
@@ -520,13 +521,13 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 					log.Debugf("send toGroupSign event")
 					go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
 					log.Debugf("unit[%s] checkStableCondition =true", uHash.String())
-					log.InfoDynamic(func() string {
+					log.DebugDynamic(func() string {
 						return fmt.Sprintf("check stable cost time: %s ,index: %d, hash: %s",
 							time.Since(start), height, uHash.String())
 					})
 				}
 			}
-			log.InfoDynamic(func() string {
+			log.DebugDynamic(func() string {
 				return fmt.Sprintf("save mainchain unit cost time: %s ,index: %d, hash: %s",
 					time.Since(tt), height, uHash.String())
 			})
@@ -564,7 +565,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 			chain.tempdb.Store(uHash, temp)
 			chain.chainUnits.Store(uHash, temp)
 
-			log.InfoDynamic(func() string {
+			log.DebugDynamic(func() string {
 				return fmt.Sprintf("save fork unit cost time: %s ,index: %d, hash: %s",
 					time.Since(start1), height, uHash.String())
 			})
@@ -573,7 +574,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 				log.Infof("switch main chain starting, fork index:%d, chain index:%d ,fork hash:%s, main hash:%s", height,
 					chain.lastMainChainUnit.NumberU64(), uHash.String(), chain.lastMainChainUnit.Hash().String())
 				chain.switchMainChain(unit, txpool)
-				log.InfoDynamic(func() string {
+				log.DebugDynamic(func() string {
 					main_chains := chain.getMainChainUnits()
 					hashs := make([]common.Hash, 0)
 					for _, u := range main_chains {

@@ -38,10 +38,17 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		return shim.Error(errStr)
 	}
 
-	var mco modules.MediatorCreateOperation
+	var mco modules.MediatorCreateArgs
 	err := json.Unmarshal([]byte(args[0]), &mco)
 	if err != nil {
 		errStr := fmt.Sprintf("invalid args: %v", err.Error())
+		log.Errorf(errStr)
+		return shim.Error(errStr)
+	}
+
+	// 参数验证
+	if mco.MediatorInfoBase == nil || mco.MediatorApplyInfo == nil {
+		errStr := fmt.Sprintf("invalid args, is null")
 		log.Errorf(errStr)
 		return shim.Error(errStr)
 	}

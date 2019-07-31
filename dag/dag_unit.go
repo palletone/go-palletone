@@ -55,8 +55,6 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	}
 
 	newUnit.UnitHeader.Time = when.Unix()
-	//newUnit.UnitHeader.ParentsHash[0] = dag.HeadUnitHash()
-	//newUnit.UnitHeader.Number.Index = dag.HeadUnitNum() + 1
 	newUnit.UnitHeader.GroupPubKey = groupPubKey
 	newUnit.Hash()
 
