@@ -33,7 +33,7 @@ var CurrentSysParameters = &SysParameters{
 	// TxCoinDayInterest:      0,
 	DepositDailyReward:     3751400000000, //按总2000W增发计算，质押增发1369.28W/Year,每天37514PTN
 	GenerateUnitReward:     100000000,     //1年增发 630.72W
-	RewardHeight:           50,
+	RewardHeight:           200,
 	ContractFeeJuryPercent: 0.6,
 	UnitMaxSize:            5 * 1024 * 1024, //5M
 }
