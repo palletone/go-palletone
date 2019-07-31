@@ -54,7 +54,17 @@ type TokenInfo struct {
 type Symbols struct {
 	TokenInfos map[string]TokenInfo `json:"tokeninfos"`
 }
-
+func paramCheckValid(args []string) (bool, string) {
+	if len(args) > 32 {
+		return false, "args number out of range 32"
+	}
+	for _, arg := range args {
+		if len(arg) > 2048 {
+			return false, "arg length out of range 2048"
+		}
+	}
+	return true, ""
+}
 func (p *PRC721) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(nil)
 }
@@ -62,6 +72,10 @@ func (p *PRC721) Init(stub shim.ChaincodeStubInterface) pb.Response {
 func (p *PRC721) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	f, args := stub.GetFunctionAndParameters()
 
+	valid, errMsg := paramCheckValid(args)
+	if !valid{
+		return shim.Error(errMsg)
+	}
 	switch f {
 	case "createToken":
 		return createToken(args, stub)
