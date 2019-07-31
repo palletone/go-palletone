@@ -4,8 +4,10 @@ FileName="./ptn-config.toml"
 FileNameOld="./ptn-config.toml.old"
 FileNameNew="./ptn-config.toml.new"
 
-jury="[[Jury.Accounts]]"
-mediator="[[MediatorPlugin.Mediators]]"
+#jury="[[Jury.Accounts]]"
+#mediator="[[MediatorPlugin.Mediators]]"
+jury="Jury"
+mediator="Mediator"
 
 function addcontent(){
 	file=$1
@@ -26,7 +28,8 @@ function delcontent(){
 	table=$2
 	content=$3
 	key=$4
-	if [[ "$table" != "$jury" ]] && [[ "$table" != "$mediator" ]] 
+	#if [[ "$table" != "$jury" ]] && [[ "$table" != "$mediator" ]] 
+	if [[ $table != *$jury* ]] && [[ $table != *$mediator* ]]
 	then
 		echo "====del====="$file $table $content
 		sed -i "/$key/d" $file
@@ -37,7 +40,7 @@ function delcontent(){
 function addtable(){
 	file=$1
 	table=$2
-	if [[ "$table" != "$jury" ]] && [[ "$table" != "$mediator" ]]
+	if [[ $table != *$jury* ]] && [[ $table != *$mediator* ]]
 	then
 		echo "====addtable====="$file $table
 		echo $table>>$file
@@ -52,7 +55,7 @@ function deltable(){
 	file=$1
 	table=$2
 	line=$3
-        if [[ "$table" != "$jury" ]] && [[ "$table" != "$mediator" ]]
+        if [[ $table != *$jury* ]] && [[ $table != *$mediator* ]]
         then
 		echo "====deltable====="$file $table
                 sed -i ${line}d $file

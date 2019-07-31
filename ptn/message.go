@@ -358,7 +358,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	// append by Albert·Gou
 	timestamp := time.Unix(unit.Timestamp(), 0)
 	unitHash := unit.Hash()
-	log.Debugf("Received unit(%v) #%v parent(%v) @%v signed by %v", unitHash.TerminalString(),
+	log.Infof("Received unit(%v) #%v parent(%v) @%v signed by %v", unitHash.TerminalString(),
 		unit.NumberU64(), unit.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
 		unit.Author().Str())
 
