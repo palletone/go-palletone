@@ -390,7 +390,7 @@ func (vm *Engine) checkPubKeyEncoding(pubKey []byte) error {
 		return nil
 	}
 
-	if len(pubKey) == 33 && (pubKey[0] == 0x02 || pubKey[0] == 0x03) {
+	if len(pubKey) == 33 { // &&  (pubKey[0] == 0x02 || pubKey[0] == 0x03)
 		// Compressed
 		return nil
 	}
