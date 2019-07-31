@@ -140,7 +140,7 @@ var (
 )
 
 func init() {
-	welcomePalletOne()
+	//welcomePalletOne() //todo
 	// 先调用初始化函数，设置app的各个参数
 	// Initialize the CLI app and start Gptn
 	// gptn处理函数会在 app.HandleAction 里面调用
