@@ -379,6 +379,7 @@ func (chain *MemDag) getMainChainUnits() []*modules.Unit {
 		u, ok := chain_units[ustbHash]
 		if !ok {
 			log.Errorf("chainUnits don't have unit[%s], last_main[%s]", ustbHash.String(), chain.lastMainChainUnit.Hash().String())
+			continue
 		}
 		unstableUnits[unstableCount-i-1] = u
 		ustbHash = u.ParentHash()[0]
