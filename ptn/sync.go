@@ -220,7 +220,7 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId, sync
 	log.Debug("ProtocolManager", "synchronise local unit index:", index, "peer index:", pindex, "header hash:", pHead)
 	// Run the sync cycle, and disable fast sync if we've went past the pivot block
 	if err := pm.downloader.Synchronise(peer.id, pHead, pindex, mode, assetId); err != nil {
-		log.Debug("ptn sync downloader.", "Synchronise err:", err)
+		log.Info("ptn sync downloader.", "Synchronise err:", err)
 		return
 	}
 
@@ -229,6 +229,7 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId, sync
 		atomic.StoreUint32(&pm.fastSync, 0)
 	}
 	atomic.StoreUint32(&pm.acceptTxs, 1) // Mark initial sync done
+	log.Info("ptn sync complete")
 
 	cunit := pm.dag.GetCurrentUnit(assetId)
 	if cunit != nil && cunit.UnitHeader.Number.Index > 0 {
