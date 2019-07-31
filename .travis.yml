@@ -293,9 +293,9 @@ matrix:
         - make golang-baseimage-dev
         - docker images
         - cat /proc/sys/net/ipv4/ip_forward
-        - ./jurySec.sh
+        - sudo ./jurySec.sh
         - cat /proc/sys/net/ipv4/ip_forward
-        - cat /etc/docker/daemon.json
+        - sudo cat /etc/docker/daemon.json
         - cd ./cmd/deployment
         - chmod +x ./deploy.sh
         - chmod +x ./start.sh
