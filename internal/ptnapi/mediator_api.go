@@ -191,7 +191,16 @@ type TxExecuteResult struct {
 }
 
 func (a *PrivateMediatorAPI) Apply(args modules.MediatorCreateArgs) (*TxExecuteResult, error) {
+	// 参数补全
+	if args.MediatorApplyInfo == nil {
+		args.MediatorApplyInfo = core.NewMediatorApplyInfo()
+	}
+
 	// 参数验证
+	if args.MediatorInfoBase == nil {
+		return nil, fmt.Errorf("invalid args, is null")
+	}
+
 	addr, err := args.Validate()
 	if err != nil {
 		return nil, err

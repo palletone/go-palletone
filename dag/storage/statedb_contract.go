@@ -300,16 +300,16 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 		log.Debugf("Save Deposit Contract Invoke Req")
 
 		if string(invoke.Args[0]) == modules.ApplyMediator {
-			mco := modules.NewMediatorCreateArgs()
 			//log.Debugf("ApplyMediator args:%s", string(invoke.Args[1]))
+			mco := modules.NewMediatorCreateArgs()
 
 			err := json.Unmarshal(invoke.Args[1], &mco)
 			if err == nil {
 				log.Debugf("Save Apply Mediator Invoke Req for account: (%v)", mco.AddStr)
 
 				mi := modules.NewMediatorInfo()
-				*mi.MediatorInfoBase = *mco.MediatorInfoBase
-				*mi.MediatorApplyInfo = *mco.MediatorApplyInfo
+				mi.MediatorInfoBase = mco.MediatorInfoBase
+				mi.MediatorApplyInfo = mco.MediatorApplyInfo
 
 				addr, err := core.StrToMedAdd(mco.AddStr)
 				if err == nil {
@@ -321,6 +321,7 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 				log.Warnf("ApplyMediator Args Unmarshal: %v", err.Error())
 			}
 		} else if string(invoke.Args[0]) == modules.UpdateMediatorInfo {
+			//log.Debugf("UpdateMediatorInfo args:%s", string(invoke.Args[1]))
 			var mua modules.MediatorUpdateArgs
 
 			err := json.Unmarshal(invoke.Args[1], &mua)

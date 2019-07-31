@@ -413,7 +413,7 @@ func (s *PrivateContractAPI) DepositContractInvoke(ctx context.Context, from, to
 	log.Debug("---enter DepositContractInvoke---")
 	// append by albert·gou
 	if param[0] == modules.ApplyMediator {
-		var args modules.MediatorCreateArgs
+		args := modules.NewMediatorCreateArgs()
 		err := json.Unmarshal([]byte(param[1]), &args)
 		if err != nil {
 			return "", fmt.Errorf("param error(%v), please use mediator.apply()", err.Error())
