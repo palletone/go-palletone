@@ -300,9 +300,9 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 		log.Debugf("Save Deposit Contract Invoke Req")
 
 		if string(invoke.Args[0]) == modules.ApplyMediator {
-			//log.Debugf(string(invoke.Args[1]))
 			mco := modules.NewMediatorCreateOperation()
 			//log.Infof("ApplyMediator args:%s", string(invoke.Args[1]))
+
 			err := json.Unmarshal(invoke.Args[1], &mco)
 			if err == nil {
 				log.Debugf("Save Apply Mediator Invoke Req for account: (%v)", mco.AddStr)

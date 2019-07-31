@@ -90,5 +90,5 @@ type MediatorUpdateArgs struct {
 	Location    *string `json:"loc"`     // 节点所在地区
 	Url         *string `json:"url"`     // 节点网站
 	Description *string `json:"desc"`    // 节点信息描述
-	Node        *string `json:"pNode"`   // 节点网络信息，包括ip和端口等
+	Node        *string `json:"node"`    // 节点网络信息，包括ip和端口等
 }
