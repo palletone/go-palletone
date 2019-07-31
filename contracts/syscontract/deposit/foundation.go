@@ -458,3 +458,38 @@ func handleRemoveNormalNode(stub shim.ChaincodeStubInterface, args []string) pb.
 	}
 	return shim.Success(nil)
 }
+
+func handleNodeInList(stub shim.ChaincodeStubInterface, args []string, role string) pb.Response {
+	if len(args) > 0 {
+		if !isFoundationInvoke(stub) {
+			log.Debugf("please use foundation address")
+			return shim.Error("please use foundation address")
+		}
+		//
+		list := ""
+		switch role {
+		case Mediator:
+			list = modules.MediatorList
+		case Jury:
+			list = modules.JuryList
+		case Developer:
+			list = modules.DeveloperList
+		}
+		for _, a := range args {
+			// 判断地址是否合法
+			_, err := common.StringToAddress(a)
+			if err != nil {
+				log.Debugf("string to address error: %s", err.Error())
+				return shim.Error(err.Error())
+			}
+			//  从候选列表中移除
+			err = moveCandidate(list, a, stub)
+			if err != nil {
+				log.Debugf("move list error: %s", err.Error())
+				return shim.Error(err.Error())
+			}
+		}
+		return shim.Success(nil)
+	}
+	return shim.Error("invoke err")
+}

@@ -25,7 +25,7 @@ type DepositInterface interface {
 	//  超级节点交付规定保证金
 	mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) pb.Response
 	//  超级节点申请退出候选列表
-	mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) pb.Response
+	mediatorApplyQuit(stub shim.ChaincodeStubInterface, args []string) pb.Response
 
 	//  Jury节点交付规定保证金
 	juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) pb.Response
@@ -48,9 +48,9 @@ type DepositInterface interface {
 
 	//  基金会特权
 	//  处理修改mediator信息
-	//  handleMediatorInfo(stub shim.ChaincodeStubInterface, args []string) pb.Response
+	UpdateMediatorInfo(stub shim.ChaincodeStubInterface, args []string) pb.Response
 	//  同意列表中，移除某个节点
-	hanldeNodeRemoveFromAgreeList(stub shim.ChaincodeStubInterface, args []string) pb.Response
+	handleNodeRemoveFromAgreeList(stub shim.ChaincodeStubInterface, args []string) pb.Response
 	//  候选列表中，移除某个节点（mediator jury dev）
 	//  hanldeNodeRemoveFromCandidateList(stub shim.ChaincodeStubInterface, args []string) pb.Response
 	//  删除某个mediator节点(info balance)
@@ -71,4 +71,9 @@ type DepositInterface interface {
 	processPledgeWithdraw(stub shim.ChaincodeStubInterface, args []string) pb.Response
 	//  质押分红，质押提取处理
 	handlePledgeReward(stub shim.ChaincodeStubInterface, args []string) pb.Response
+
+	//基金会处理候选列表问题
+	handleMediatorInCandidateList(stub shim.ChaincodeStubInterface, args []string) pb.Response
+	handleJuryInCandidateList(stub shim.ChaincodeStubInterface, args []string) pb.Response
+	handleDevInList(stub shim.ChaincodeStubInterface, args []string) pb.Response
 }
