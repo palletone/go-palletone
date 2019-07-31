@@ -74,7 +74,7 @@ type MediatorApplyInfo struct {
 	Name        string `json:"name"`      // 节点名称
 	Location    string `json:"loc"`       // 节点所在地区
 	Url         string `json:"url"`       // 节点宣传网站
-	Description string `json:"applyInfo"` // 节点信息描述
+	Description string `json:"applyInfo"` // 节点详细信息描述
 }
 
 func NewMediatorApplyInfo() *MediatorApplyInfo {
