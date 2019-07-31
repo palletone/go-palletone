@@ -190,40 +190,7 @@ type TxExecuteResult struct {
 	Warning   string      `json:"warning"`   // 警告
 }
 
-// 创建 mediator 所需的参数, 至少包含普通账户地址
-type MediatorCreateArgs struct {
-	*modules.MediatorCreateOperation
-}
-
-// 相关参数检查
-func (args *MediatorCreateArgs) setDefaults(addStr string) {
-	if args.MediatorInfoBase == nil {
-		args.MediatorInfoBase = core.NewMediatorInfoBase()
-	}
-
-	if args.AddStr == "" {
-		args.AddStr = addStr
-	}
-
-	if args.InitPubKey == "" {
-		args.InitPubKey = core.DefaultInitPubKey
-	}
-
-	if args.Node == "" {
-		args.Node = core.DefaultNodeInfo
-	}
-
-	if args.MediatorApplyInfo == nil {
-		args.MediatorApplyInfo = core.NewMediatorApplyInfo()
-	}
-
-	return
-}
-
-func (a *PrivateMediatorAPI) Apply(args MediatorCreateArgs) (*TxExecuteResult, error) {
-	// 参数补全
-	args.setDefaults("")
-
+func (a *PrivateMediatorAPI) Apply(args modules.MediatorCreateArgs) (*TxExecuteResult, error) {
 	// 参数验证
 	addr, err := args.Validate()
 	if err != nil {

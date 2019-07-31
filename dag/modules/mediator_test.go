@@ -9,7 +9,7 @@ import (
 )
 
 func TestMediatorJsonConvert(t *testing.T) {
-	oldMi := NewOldMediatorCreateOp()
+	oldMi := NewOldMediatorCreateArgs()
 	oldMi.AddStr = "P1NzevLMVCFJKWr4KAcHxyyh9xXaVU8yv3N"
 	oldMi.InitPubKey = "34k7awAPrFTS8cvbr498EFcgMRBzhkdk3S8guurUashd6jZL3QwBM2qs16gnXVSc7R4cgXwMyvQTGq7AXGrURVz" +
 		"42qV7MXh6tyFtgkaZuj3zEnzE5D2VZ9EYUNRxbQy88YqTjBjXkaQZNhoCcQtMGARYDFnra9vUtLfz82K3AaPwVGe"
@@ -21,7 +21,7 @@ func TestMediatorJsonConvert(t *testing.T) {
 	t.Logf("%#v", string(jsData))
 	t.Log(err)
 
-	mco := &MediatorCreateOperation{}
+	mco := &MediatorCreateArgs{}
 	err = json.Unmarshal(jsData, mco)
 	t.Logf("%#v, \n MediatorInfoBase:%#v, \n MediatorApplyInfo:%#v", mco,
 		mco.MediatorInfoBase, mco.MediatorApplyInfo)
@@ -29,7 +29,7 @@ func TestMediatorJsonConvert(t *testing.T) {
 }
 
 func TestMediatorRlpConvert(t *testing.T) {
-	oldMi := NewOldMediatorCreateOp()
+	oldMi := NewOldMediatorCreateArgs()
 	oldMi.AddStr = "P1NzevLMVCFJKWr4KAcHxyyh9xXaVU8yv3N"
 	oldMi.InitPubKey = "34k7awAPrFTS8cvbr498EFcgMRBzhkdk3S8guurUashd6jZL3QwBM2qs16gnXVSc7R4cgXwMyvQTGq7AX" +
 		"GrURVz42qV7MXh6tyFtgkaZuj3zEnzE5D2VZ9EYUNRxbQy88YqTjBjXkaQZNhoCcQtMGARYDFnra9vUtLfz82K3AaPwVGe"
@@ -41,20 +41,20 @@ func TestMediatorRlpConvert(t *testing.T) {
 	t.Logf("%#v", string(rlpData))
 	t.Log(err)
 
-	mco := &MediatorCreateOperation{}
+	mco := &MediatorCreateArgs{}
 	err = rlp.DecodeBytes(rlpData, mco)
 	t.Logf("%#v, \n MediatorInfoBase:%#v, \n MediatorApplyInfo:%#v", mco,
 		mco.MediatorInfoBase, mco.MediatorApplyInfo)
 	t.Log(err)
 }
 
-type OldMediatorCreateOperation struct {
+type OldMediatorCreateArgs struct {
 	*core.MediatorInfoBase
 	*OldMediatorApplyInfo
 }
 
-func NewOldMediatorCreateOp() *OldMediatorCreateOperation {
-	return &OldMediatorCreateOperation{
+func NewOldMediatorCreateArgs() *OldMediatorCreateArgs {
+	return &OldMediatorCreateArgs{
 		MediatorInfoBase:     &core.MediatorInfoBase{},
 		OldMediatorApplyInfo: &OldMediatorApplyInfo{},
 	}

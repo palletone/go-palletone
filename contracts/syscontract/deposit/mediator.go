@@ -38,7 +38,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		return shim.Error(errStr)
 	}
 
-	var mco modules.MediatorCreateOperation
+	var mco modules.MediatorCreateArgs
 	err := json.Unmarshal([]byte(args[0]), &mco)
 	if err != nil {
 		errStr := fmt.Sprintf("invalid args: %v", err.Error())

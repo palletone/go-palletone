@@ -70,13 +70,14 @@ func (mi *MediatorInfo) InfoToMediator() *core.Mediator {
 	return md
 }
 
-type MediatorCreateOperation struct {
+// 创建 mediator 所需的参数
+type MediatorCreateArgs struct {
 	*core.MediatorInfoBase
 	*core.MediatorApplyInfo
 }
 
-func NewMediatorCreateOperation() *MediatorCreateOperation {
-	return &MediatorCreateOperation{
+func NewMediatorCreateArgs() *MediatorCreateArgs {
+	return &MediatorCreateArgs{
 		MediatorInfoBase:  core.NewMediatorInfoBase(),
 		MediatorApplyInfo: core.NewMediatorApplyInfo(),
 	}
