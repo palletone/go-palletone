@@ -34,6 +34,7 @@ import (
 
 type TxJson struct {
 	TxHash             string              `json:"tx_hash"`
+	RequestHash        string              `json:"request_hash"`
 	TxSize             float64             `json:"tx_size"`
 	Payment            []*PaymentJson      `json:"payment"`
 	Fee                uint64              `json:"fee"`
@@ -163,6 +164,7 @@ func ConvertTx2FullJson(tx *modules.Transaction, utxoQuery modules.QueryUtxoFunc
 	txjson.Payment = []*PaymentJson{}
 	txjson.Data = []*DataJson{}
 	txjson.TxHash = tx.Hash().String()
+	txjson.RequestHash = tx.RequestHash().String()
 	txjson.TxSize = float64(tx.Size())
 	for i, m := range tx.TxMessages {
 		if m.App == modules.APP_PAYMENT {
