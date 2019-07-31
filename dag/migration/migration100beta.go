@@ -155,7 +155,7 @@ func (m *Migration100_101) upgradeGP() error {
 		log.Errorf(err.Error())
 		return err
 	}
-	newData := &modules.GlobalPropertys{}
+	newData := &modules.GlobalPropertyTemp{}
 	newData.ActiveJuries = oldGp.ActiveJuries
 	newData.ActiveMediators = oldGp.ActiveMediators
 	newData.PrecedingMediators = oldGp.PrecedingMediators

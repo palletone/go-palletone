@@ -767,13 +767,19 @@ func (pool *TxPool) addSequenTx(p_tx *modules.TxPoolTransaction) error {
 	// Don't accept the transaction if it already in the pool .
 	hash := p_tx.Tx.Hash()
 	if has, _ := pool.unit.IsTransactionExist(hash); has {
-		return fmt.Errorf("the transactionx: %s has been packaged.", hash.String())
+		//return fmt.Errorf("the transactionx: %s has been packaged.", hash.String())
+		log.Infof("the transactionx: %s has been packaged.", hash.String())
+		return nil
 	}
 	if _, has := pool.all.Load(hash); has {
-		return fmt.Errorf("known transaction: %#x", hash)
+		//return fmt.Errorf("known transaction: %#x", hash)
+		log.Infof("know sequen transaction: %s", hash.String())
+		return nil
 	}
 	if pool.isOrphanInPool(hash) {
-		return fmt.Errorf("know orphanTx: %#x", hash)
+		//return fmt.Errorf("know orphanTx: %#x", hash)
+		log.Infof("know sequen orphan transaction: %s", hash.String())
+		return nil
 	}
 	// If the transaction fails basic validation, discard it
 	if addition, _, err := pool.validateTx(p_tx, false); err != nil {

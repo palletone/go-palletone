@@ -37,11 +37,14 @@ function delcontent(){
 function addtable(){
 	file=$1
 	table=$2
-	echo "====addtable====="$file $table
-	echo $table>>$file
-	echo -e "\n">> $file
-	echo -e "\n">> $file
-	echo -e "\n">> $file
+	if [[ "$table" != "$jury" ]] && [[ "$table" != "$mediator" ]]
+	then
+		echo "====addtable====="$file $table
+		echo $table>>$file
+		echo -e "\n">> $file
+		echo -e "\n">> $file
+		echo -e "\n">> $file
+	fi
 
 }
 
@@ -134,7 +137,7 @@ tar xzvf *.tar.gz
 cd $Path
 dumcpconfig=`./gptn dumpconfig`
 echo $dumpconfig
-cp *.toml ../ptn-config.toml.new
+cp ptn-config.toml ../ptn-config.toml.new
 cd ../
 cp ../ptn-config.toml ptn-config.toml.old
 
