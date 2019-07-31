@@ -181,7 +181,24 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		}
 		return shim.Success(nil)
 	} else {
-		return shim.Error("You can only deposit once")
+		//  如果账户不是零，考虑到系统参数升级，导致保证金数量问题，所以需要添加追缴逻辑
+		//1判断追缴+账户余额是否为当前系统配置
+		if md.Role != Mediator {
+			return shim.Error("not mediator")
+		}
+		all := invokeTokens.Amount + md.Balance
+		if all != cp.DepositAmountForMediator {
+			log.Error("Too many or too little.")
+			return shim.Error("Too many or too little.")
+		}
+		md.Balance = all
+		//  保存账户信息
+		err = SaveMediatorDeposit(stub, invokeAddr.String(), md)
+		if err != nil {
+			log.Error("save node balance err: ", "error", err)
+			return shim.Error(err.Error())
+		}
+		return shim.Success(nil)
 	}
 }
 
@@ -285,13 +302,14 @@ func handleMediator(stub shim.ChaincodeStubInterface, quitAddr common.Address) e
 		return err
 	}
 	//  退还保证金
-	cp, err := stub.GetSystemConfig()
-	if err != nil {
-		return err
-	}
+	//cp, err := stub.GetSystemConfig()
+	//if err != nil {
+	//	return err
+	//}
+
 	//  调用从合约把token转到请求地址
 	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
-	err = stub.PayOutToken(quitAddr.String(), modules.NewAmountAsset(cp.DepositAmountForMediator, gasToken), 0)
+	err = stub.PayOutToken(quitAddr.String(), modules.NewAmountAsset(md.Balance, gasToken), 0)
 	if err != nil {
 		log.Error("stub.PayOutToken err:", "error", err)
 		return err

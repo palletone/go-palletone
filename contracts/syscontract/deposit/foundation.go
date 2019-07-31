@@ -315,13 +315,13 @@ func handleJuryForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA s
 	}
 
 	//  退还保证金
-	cp, err := stub.GetSystemConfig()
-	if err != nil {
-		return err
-	}
+	//cp, err := stub.GetSystemConfig()
+	//if err != nil {
+	//	return err
+	//}
 	//  调用从合约把token转到请求地址
 	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
-	err = stub.PayOutToken(foundationA, modules.NewAmountAsset(cp.DepositAmountForJury, gasToken), 0)
+	err = stub.PayOutToken(foundationA, modules.NewAmountAsset(node.Balance, gasToken), 0)
 	if err != nil {
 		log.Error("stub.PayOutToken err:", "error", err)
 		return err
@@ -347,13 +347,13 @@ func handleDevForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA st
 		return err
 	}
 	//  退还保证金
-	cp, err := stub.GetSystemConfig()
-	if err != nil {
-		return err
-	}
+	//cp, err := stub.GetSystemConfig()
+	//if err != nil {
+	//	return err
+	//}
 	//  调用从合约把token转到请求地址
 	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
-	err = stub.PayOutToken(foundationA, modules.NewAmountAsset(cp.DepositAmountForDeveloper, gasToken), 0)
+	err = stub.PayOutToken(foundationA, modules.NewAmountAsset(node.Balance, gasToken), 0)
 	if err != nil {
 		log.Error("stub.PayOutToken err:", "error", err)
 		return err
@@ -375,14 +375,14 @@ func handleMediatorForfeitureDeposit(stub shim.ChaincodeStubInterface, foundatio
 	if md == nil {
 		return fmt.Errorf("node is nil")
 	}
-	cp, err := stub.GetSystemConfig()
-	if err != nil {
-		//log.Error("strconv.ParseUint err:", "error", err)
-		return err
-	}
+	//cp, err := stub.GetSystemConfig()
+	//if err != nil {
+	//	//log.Error("strconv.ParseUint err:", "error", err)
+	//	return err
+	//}
 	//  调用从合约把token转到请求地址
 	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
-	err = stub.PayOutToken(foundationA, modules.NewAmountAsset(cp.DepositAmountForMediator, gasToken), 0)
+	err = stub.PayOutToken(foundationA, modules.NewAmountAsset(md.Balance, gasToken), 0)
 	if err != nil {
 		log.Error("stub.PayOutToken err:", "error", err)
 		return err
