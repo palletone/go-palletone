@@ -315,10 +315,10 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 				if err == nil {
 					statedb.StoreMediatorInfo(addr, mi)
 				} else {
-					log.Warn(err.Error())
+					log.Warnf("StrToMedAdd err: %v", err.Error())
 				}
 			} else {
-				log.Warn(err.Error())
+				log.Warnf("ApplyMediator Args Unmarshal: %v", err.Error())
 			}
 		} else if string(invoke.Args[0]) == modules.UpdateMediatorInfo {
 			var mua modules.MediatorUpdateArgs
@@ -351,13 +351,13 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 						}
 						statedb.StoreMediatorInfo(addr, mi)
 					} else {
-						log.Warn(err.Error())
+						log.Warnf("RetrieveMediatorInfo error: %v", err.Error())
 					}
 				} else {
-					log.Warn(err.Error())
+					log.Warnf("StrToMedAdd err: %v", err.Error())
 				}
 			} else {
-				log.Warn(err.Error())
+				log.Warnf("UpdateMediatorInfo Args Unmarshal: %v", err.Error())
 			}
 		}
 	}

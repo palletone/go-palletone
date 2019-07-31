@@ -461,10 +461,14 @@ func (a *PrivateMediatorAPI) Update(args modules.MediatorUpdateArgs) (*TxExecute
 	if args.Name != nil {
 		descStr = *args.Description
 	}
+	NodeStr := ""
+	if args.Node != nil {
+		NodeStr = *args.Node
+	}
 
 	res := &TxExecuteResult{}
 	res.TxContent = fmt.Sprintf("Update mediator %v with name: %v, url: %v logo: %v, location: %v, "+
-		"description: %v", args.AddStr, nameStr, urlStr, logoStr, locStr, descStr)
+		"description: %v, node: %v", args.AddStr, nameStr, urlStr, logoStr, locStr, descStr, NodeStr)
 	res.TxFee = fmt.Sprintf("%vdao", fee)
 	res.Warning = DefaultResult
 	res.Tip = "Your ReqId is: " + hex.EncodeToString(reqId[:]) +
