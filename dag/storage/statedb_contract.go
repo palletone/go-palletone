@@ -302,7 +302,7 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 		if string(invoke.Args[0]) == modules.ApplyMediator {
 			//log.Debugf(string(invoke.Args[1]))
 			mco := modules.NewMediatorCreateOperation()
-
+			//log.Infof("ApplyMediator args:%s", string(invoke.Args[1]))
 			err := json.Unmarshal(invoke.Args[1], &mco)
 			if err == nil {
 				log.Debugf("Save Apply Mediator Invoke Req for account: (%v)", mco.AddStr)
@@ -315,13 +315,14 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 				if err == nil {
 					statedb.StoreMediatorInfo(addr, mi)
 				} else {
-					log.Debugf(err.Error())
+					log.Warn(err.Error())
 				}
 			} else {
-				log.Debugf(err.Error())
+				log.Warn(err.Error())
 			}
 		} else if string(invoke.Args[0]) == modules.UpdateMediatorInfo {
 			var mua modules.MediatorUpdateArgs
+
 			err := json.Unmarshal(invoke.Args[1], &mua)
 			if err == nil {
 				log.Debugf("Save Update Mediator(%v) Invoke Req", mua.AddStr)
@@ -350,13 +351,13 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 						}
 						statedb.StoreMediatorInfo(addr, mi)
 					} else {
-						log.Debugf(err.Error())
+						log.Warn(err.Error())
 					}
 				} else {
-					log.Debugf(err.Error())
+					log.Warn(err.Error())
 				}
 			} else {
-				log.Debugf(err.Error())
+				log.Warn(err.Error())
 			}
 		}
 	}
