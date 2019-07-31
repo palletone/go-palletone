@@ -48,6 +48,13 @@ Invoke
     Given Unlock token holder succeed
     ${reqId} =    GetValueWithInvokeAddress
     And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
+    Given Unlock token holder succeed
+    ${reqId} =    WriteHomePageToContainer
+    sleep    40
+    GetTxByReqId    ${reqId}
+    Given Unlock token holder succeed
+    ${reqId} =    GetValueWithInvokeAddress
+    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
 Stop
     Given Unlock token holder succeed
@@ -111,5 +118,10 @@ ForLoop
     ...    // \ ["ForLoop"]
     ...    // \ result := "error executing chaincode: failed to execute transaction: timeout expired while executing transaction"
     ${args}    Create List    ForLoop
+    ${reqId}    Invoke    ${args}
+    [Return]    ${reqId}
+
+WriteHomePageToContainer
+    ${args}    Create List    WriteHomePageToContainer    https://www.baidu.com
     ${reqId}    Invoke    ${args}
     [Return]    ${reqId}
