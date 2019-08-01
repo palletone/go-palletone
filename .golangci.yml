@@ -181,14 +181,18 @@ linters-settings:
   #       sizeThreshold: 32
 
 linters:
-  enable:
-    - gosec
-    # - govet
-  enable-all: false
-  # disable:
-  #   - maligned
-  #   - prealloc
-  disable-all: true
+  # enable:
+  #   - gosec
+  #   - dupl
+  #   - misspell
+  #   - goimports
+  enable-all: true
+  disable:
+    - errcheck
+    - golint
+    - gocritic
+    - gochecknoglobals
+  disable-all: false
   # presets:
   #   - bugs
   #   - unused
@@ -208,6 +212,9 @@ issues:
       - linters:
         - gosec
         text: "G[105,202,401,505]"
+      - linters:
+        - goimports
+        text: "File is not `goimports`-ed"
 #     # Exclude some linters from running on tests files.
 #     - path: _test\.go
 #       linters:

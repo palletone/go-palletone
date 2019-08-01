@@ -409,7 +409,7 @@ func (a *PrivateMediatorAPI) Update(args modules.MediatorUpdateArgs) (*TxExecute
 	cArgs := [][]byte{[]byte(modules.UpdateMediatorInfo), argsB}
 
 	// 调用系统合约
-	fee := a.Dag().GetChainParameters().MediatorCreateFee
+	fee := a.Dag().GetChainParameters().TransferPtnBaseFee
 	reqId, err := a.ContractInvokeReqTx(addr, addr, 0, fee, nil,
 		syscontract.DepositContractAddress, cArgs, 0)
 	if err != nil {
