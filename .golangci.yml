@@ -191,6 +191,7 @@ linters:
     - errcheck
     - golint
     - gocritic
+    - gochecknoglobals
   disable-all: false
   # presets:
   #   - bugs
