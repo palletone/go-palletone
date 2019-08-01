@@ -28,7 +28,6 @@ import (
 
 type IStateDb interface {
 	GetPrefix(prefix []byte) map[string][]byte
-	//Contract statedb
 	SaveContract(contract *modules.Contract) error
 	GetContract(id []byte) (*modules.Contract, error)
 	GetAllContracts() ([]*modules.Contract, error)
@@ -37,6 +36,8 @@ type IStateDb interface {
 	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
+
+	UpdateStateByContractInvoke(invoke *modules.ContractInvokeRequestPayload) error
 
 	SaveContractTpl(tpl *modules.ContractTemplate) error
 	SaveContractTplCode(tplId []byte, byteCode []byte) error
@@ -73,10 +74,6 @@ type IStateDb interface {
 	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
 	SaveContractJury(contractId []byte, jury []modules.ElectionInf, version *modules.StateVersion) error
 	// world state chainIndex
-	//GetCurrentChainIndex(assetId modules.AssetId) (*modules.ChainIndex, error)
-	//保存当前最新单元的高度，即使是未稳定的单元，也会更新
-	//SaveChainIndex(index *modules.ChainIndex) error
-	//GetCurrentUnit(assetId modules.AssetId) *modules.Unit
 
 	StoreMediator(med *core.Mediator) error
 	StoreMediatorInfo(add common.Address, mi *modules.MediatorInfo) error
@@ -88,14 +85,15 @@ type IStateDb interface {
 
 	GetJuryCandidateList() (map[string]bool, error)
 	IsInJuryCandidateList(address common.Address) bool
+	GetContractDeveloperList() ([]common.Address, error)
+	IsInContractDeveloperList(address common.Address) bool
+
 	GetDataVersion() (*modules.DataVersion, error)
 	SaveDataVersion(dv *modules.DataVersion) error
 
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
 
-	//GetSysConfig(name string) ([]byte, *modules.StateVersion, error)
-	//GetAllSysConfig() (map[string]*modules.ContractStateValue, error)
 	GetSysParamWithoutVote() (map[string]string, error)
 	GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)
 	SaveSysConfigContract(key string, val []byte, ver *modules.StateVersion) error

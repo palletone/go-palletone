@@ -44,8 +44,6 @@ func ptnBalanceKey(address common.Address) []byte {
 
 func (statedb *StateDb) UpdateAccountBalance(address common.Address, addAmount int64) error {
 	balance := statedb.GetAccountBalance(address)
-
-	//log.Debugf("Update Ptn Balance for address:%s, add Amount:%d", address.String(), addAmount)
 	balance = uint64(int64(balance) + addAmount)
 
 	return statedb.db.Put(ptnBalanceKey(address), Uint64ToBytes(balance))
@@ -57,8 +55,6 @@ func (statedb *StateDb) GetAccountBalance(address common.Address) uint64 {
 	data, err := statedb.db.Get(ptnBalanceKey(address))
 	if err == nil {
 		balance = BytesToUint64(data)
-	} else {
-		log.Debugf("Account balance for [%s] don't exist, create it first", address.String())
 	}
 
 	return balance
@@ -77,7 +73,6 @@ func (statedb *StateDb) LookupAccount() map[common.Address]*modules.AccountInfo 
 		add := common.NewAddress(addB, common.PublicKeyHash)
 		acc.VotedMediators = statedb.GetAccountVotedMediators(add)
 
-		log.Debugf("Found account[%v] balance:%v,voted mediators:%v", add.String(), balance, acc.VotedMediators)
 		result[add] = acc
 	}
 
@@ -89,13 +84,11 @@ func (statedb *StateDb) GetAccountVotedMediators(addr common.Address) map[string
 
 	data, err := statedb.GetAccountState(addr, constants.VOTED_MEDIATORS)
 	if err != nil {
-		//log.Debugf(err.Error())
 		return votedMediators
 	}
 
 	err = json.Unmarshal(data.Value, &votedMediators)
 	if err != nil {
-		log.Debugf(err.Error())
 		return votedMediators
 	}
 
@@ -104,10 +97,8 @@ func (statedb *StateDb) GetAccountVotedMediators(addr common.Address) map[string
 
 func (statedb *StateDb) GetAccountState(address common.Address, statekey string) (*modules.ContractStateValue, error) {
 	key := append(accountKey(address), statekey...)
-
 	data, version, err := retrieveWithVersion(statedb.db, key)
 	if err != nil {
-		log.Debugf(err.Error())
 		return nil, err
 	}
 
@@ -126,7 +117,6 @@ func (statedb *StateDb) SaveAccountState(address common.Address, write *modules.
 	}
 
 	if err != nil {
-		log.Debugf(err.Error())
 		return err
 	}
 
@@ -146,7 +136,6 @@ func (statedb *StateDb) GetAllAccountStates(address common.Address) (map[string]
 		realKey := dbkey[len(key):]
 		if realKey != "" {
 			result[realKey] = &modules.ContractStateValue{Value: state, Version: version}
-			log.Debug("the contract's state get info.", "key", realKey)
 		}
 	}
 	return result, err
@@ -159,14 +148,11 @@ func (statedb *StateDb) SaveAccountStates(address common.Address, writeset []mod
 	for _, write := range writeset {
 		key := append(accountKey(address), write.Key...)
 		if write.IsDelete {
-			log.Infof("Account[%s] try to delete account state by key:%s", address.String(), write.Key)
 			err := batch.Delete(key)
 			if err != nil {
 				log.Debugf(err.Error())
 			}
 		} else {
-			log.Debugf("Account[%s] try to set account state key:%s,value:%s", address.String(),
-				write.Key, string(write.Value))
 			err := storeBytesWithVersion(batch, key, version, write.Value)
 			if err != nil {
 				log.Debugf(err.Error())

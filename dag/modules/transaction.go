@@ -102,13 +102,12 @@ type TxPoolTransaction struct {
 	Pending      bool
 	Confirmed    bool
 	IsOrphan     bool
-	Discarded    bool // will remove
-	//TxFee        *AmountAsset `json:"tx_fee"`
-	TxFee      []*Addition `json:"tx_fee"`
-	Index      uint64      `json:"index"` // index 是该Unit位置。
-	Extra      []byte
-	Tag        uint64
-	Expiration time.Time
+	Discarded    bool        // will remove
+	TxFee        []*Addition `json:"tx_fee"`
+	Index        uint64      `json:"index"` // index 是该Unit位置。
+	Extra        []byte
+	Tag          uint64
+	Expiration   time.Time
 	//该Tx依赖于哪些TxId作为先决条件
 	DependOnTxs []common.Hash
 }
@@ -120,20 +119,17 @@ func (tx *TxPoolTransaction) Less(otherTx interface{}) bool {
 }
 
 func (tx *TxPoolTransaction) GetPriorityLvl() string {
-	// priority_lvl=  fee/size*(1+(time.Now-CreationDate)/24)
-	level, _ := strconv.ParseFloat(tx.Priority_lvl, 64)
-	if level > 0 {
+	if tx.Priority_lvl != "" && tx.Priority_lvl > "0" {
 		return tx.Priority_lvl
 	}
 	var priority_lvl float64
 	if txfee := tx.GetTxFee(); txfee.Int64() > 0 {
-		// t0, _ := time.Parse(TimeFormatString, tx.CreationDate)
 		if tx.CreationDate.Unix() <= 0 {
 			tx.CreationDate = time.Now()
 		}
 		priority_lvl, _ = strconv.ParseFloat(fmt.Sprintf("%f", float64(txfee.Int64())/tx.Tx.Size().Float64()*(1+float64(time.Now().Second()-tx.CreationDate.Second())/(24*3600))), 64)
 	}
-	tx.Priority_lvl = strconv.FormatFloat(priority_lvl, 'E', -1, 64)
+	tx.Priority_lvl = strconv.FormatFloat(priority_lvl, 'f', -1, 64)
 	return tx.Priority_lvl
 }
 func (tx *TxPoolTransaction) GetPriorityfloat64() float64 {
@@ -143,7 +139,6 @@ func (tx *TxPoolTransaction) GetPriorityfloat64() float64 {
 	}
 	var priority_lvl float64
 	if txfee := tx.GetTxFee(); txfee.Int64() > 0 {
-		// t0, _ := time.Parse(TimeFormatString, tx.CreationDate)
 		if tx.CreationDate.Unix() <= 0 {
 			tx.CreationDate = time.Now()
 		}
@@ -152,7 +147,7 @@ func (tx *TxPoolTransaction) GetPriorityfloat64() float64 {
 	return priority_lvl
 }
 func (tx *TxPoolTransaction) SetPriorityLvl(priority float64) {
-	tx.Priority_lvl = strconv.FormatFloat(priority, 'E', -1, 64)
+	tx.Priority_lvl = strconv.FormatFloat(priority, 'f', -1, 64)
 }
 func (tx *TxPoolTransaction) GetTxFee() *big.Int {
 	var fee uint64
@@ -162,7 +157,6 @@ func (tx *TxPoolTransaction) GetTxFee() *big.Int {
 		}
 	} else {
 		fee = 20 // 20dao
-		//tx.TxFee = &AmountAsset{Amount: 20, Asset: tx.Tx.Asset()}
 	}
 	return big.NewInt(int64(fee))
 }
@@ -170,18 +164,12 @@ func (tx *TxPoolTransaction) GetTxFee() *big.Int {
 // Hash hashes the RLP encoding of tx.
 // It uniquely identifies the transaction.
 func (tx *Transaction) Hash() common.Hash {
-	//	b, err := json.Marshal(tx)
-	//	if err != nil {
-	//		log.Error("json marshal error", "error", err)
-	//		return common.Hash{}
-	//	}
-	//	v := rlp.RlpHash(b[:])
-	//	return v
-	//}
-	//func (tx *Transaction) Hash_old() common.Hash {
+	oldFlag := tx.Illegal
 	tx.Illegal = false
 
 	v := util.RlpHash(tx)
+	tx.Illegal = oldFlag
+
 	return v
 }
 
@@ -200,8 +188,6 @@ func (tx *Transaction) ContractIdBytes() []byte {
 	for _, msg := range tx.TxMessages {
 		switch msg.App {
 		case APP_CONTRACT_DEPLOY_REQUEST:
-			//tmp := common.BytesToAddress(tx.RequestHash().Bytes())
-			//out := common.NewAddress(tmp.Bytes(), common.ContractHash)
 			addr := crypto.RequestIdToContractAddress(tx.RequestHash())
 			return addr.Bytes()
 		case APP_CONTRACT_INVOKE_REQUEST:
@@ -230,29 +216,6 @@ func (tx *Transaction) CreateDate() string {
 	return n.Format(TimeFormatString)
 }
 
-// address return the tx's original address  of from and to
-//func (tx *Transaction) GetAddressInfo() ([]*OutPoint, [][]byte) {
-//	froms := make([]*OutPoint, 0)
-//	tos := make([][]byte, 0)
-//	if len(tx.Messages()) > 0 {
-//		msg := tx.Messages()[0]
-//		if msg.App == APP_PAYMENT {
-//			payment, ok := msg.Payload.(*PaymentPayload)
-//			if ok {
-//				for _, input := range payment.Inputs {
-//					if input.PreviousOutPoint != nil {
-//						froms = append(froms, input.PreviousOutPoint)
-//					}
-//				}
-//
-//				for _, out := range payment.Outputs {
-//					tos = append(tos, out.PkScript[:])
-//				}
-//			}
-//		}
-//	}
-//	return froms, tos
-//}
 func (tx *Transaction) Asset() *Asset {
 	if tx == nil {
 		return nil
@@ -399,8 +362,7 @@ type GetAddressFromScriptFunc func(lockScript []byte) (common.Address, error)
 type GetScriptSignersFunc func(tx *Transaction, msgIdx, inputIndex int) ([]common.Address, error)
 
 //计算该交易的手续费，基于UTXO，所以传入查询UTXO的函数指针
-func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc, unitTime int64) (*AmountAsset, error) {
-	//	log.Infof("Calculate tx fee,tx[%s]", tx.Hash().String())
+func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, error) {
 	msg0 := tx.TxMessages[0]
 	if msg0.App != APP_PAYMENT {
 		return nil, errors.New("Tx message 0 must a payment payload")
@@ -490,7 +452,22 @@ func (tx *Transaction) GetNewUtxos() map[OutPoint]*Utxo {
 	}
 	return result
 }
-
+func (tx *Transaction) GetSpendOutpoints() []*OutPoint {
+	result := []*OutPoint{}
+	for _, msg := range tx.TxMessages {
+		if msg.App != APP_PAYMENT {
+			continue
+		}
+		pay := msg.Payload.(*PaymentPayload)
+		inputs := pay.Inputs
+		for _, input := range inputs {
+			if input.PreviousOutPoint != nil {
+				result = append(result, input.PreviousOutPoint)
+			}
+		}
+	}
+	return result
+}
 func (tx *Transaction) GetContractTxSignatureAddress() []common.Address {
 	if !tx.IsContractTx() {
 		return nil
@@ -713,7 +690,9 @@ type OutPoint struct {
 func (outpoint *OutPoint) String() string {
 	return fmt.Sprintf("Outpoint[TxId:{%#x},MsgIdx:{%d},OutIdx:{%d}]", outpoint.TxHash, outpoint.MessageIndex, outpoint.OutIndex)
 }
-
+func (outpoint *OutPoint) Clone() *OutPoint {
+	return NewOutPoint(outpoint.TxHash, outpoint.MessageIndex, outpoint.OutIndex)
+}
 func NewOutPoint(hash common.Hash, messageindex uint32, outindex uint32) *OutPoint {
 	return &OutPoint{
 		TxHash:       hash,
@@ -757,10 +736,6 @@ func (t *Input) SerializeSize() int {
 		len(t.SignatureScript)
 }
 
-//func (msg *PaymentPayload) SerializeSize() int {
-//	n := msg.baseSize()
-//	return n
-//}
 func (msg *Transaction) SerializeSize() int {
 	n := msg.baseSize()
 	return n
@@ -828,8 +803,8 @@ func (tx *Transaction) GetContractInvokeReqMsgIdx() int {
 	}
 	return -1
 }
-func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, unitTime int64, getSignerFunc GetScriptSignersFunc, mediatorAddr common.Address) ([]*Addition, error) {
-	fee, err := tx.GetTxFee(queryUtxoFunc, unitTime)
+func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFunc GetScriptSignersFunc, mediatorAddr common.Address) ([]*Addition, error) {
+	fee, err := tx.GetTxFee(queryUtxoFunc)
 	result := []*Addition{}
 	if err != nil {
 		return nil, err
@@ -890,224 +865,11 @@ func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, unitTime in
 	return result, nil
 }
 
-//判断一个交易是否是完整交易，如果是普通转账交易就是完整交易，
-//如果是合约请求交易，那么带了结果Msg的就是完整交易
-//func (tx *Transaction) IsFullTx() bool{
-//	if
-//}
-
-//	// Version 4 bytes + LockTime 4 bytes + Serialized varint size for the
-//	// number of transaction inputs and outputs.
-//	n := 16 + VarIntSerializeSize(uint64(len(msg.TxMessages))) +
-//		VarIntSerializeSize(uint64(len(msg.TxHash)))
-//	for _, mtx := range msg.TxMessages {
-//		payload := mtx.Payload
-//		payment, ok := payload.(PaymentPayload)
-//		if ok == true {
-//			for _, txIn := range payment.Inputs {
-//				n += txIn.SerializeSize()
-//			}
-//			for _, txOut := range payment.Outputs {
-//				n += txOut.SerializeSize()
-//			}
-//		}
-//	}
-//	return n
-//}
-
-// SerializeSizeStripped returns the number of bytes it would take to serialize
-// the transaction, excluding any included witness data.
-//func (msg *PaymentPayload) SerializeSizeStripped() int {
-//	return msg.baseSize()
-//}
-
 // SerializeSizeStripped returns the number of bytes it would take to serialize
 // the transaction, excluding any included witness data.
 func (tx *Transaction) SerializeSizeStripped() int {
 	return tx.baseSize()
 }
-
-// WriteVarBytes serializes a variable length byte array to w as a varInt
-// containing the number of bytes, followed by the bytes themselves.
-//func WriteVarBytes(w io.Writer, pver uint32, bytes []byte) error {
-//	slen := uint64(len(bytes))
-//	err := WriteVarInt(w, pver, slen)
-//	if err != nil {
-//		return err
-//	}
-//	_, err = w.Write(bytes)
-//	return err
-//}
-
-//
-//const binaryFreeListMaxItems = 1024
-//
-//type binaryFreeList chan []byte
-//
-//var binarySerializer binaryFreeList = make(chan []byte, binaryFreeListMaxItems)
-//
-//// WriteVarInt serializes val to w using a variable number of bytes depending
-//// on its value.
-//func WriteVarInt(w io.Writer, pver uint32, val uint64) error {
-//	if val < 0xfd {
-//		return binarySerializer.PutUint8(w, uint8(val))
-//	}
-//	if val <= math.MaxUint16 {
-//		err := binarySerializer.PutUint8(w, 0xfd)
-//		if err != nil {
-//			return err
-//		}
-//		return binarySerializer.PutUint16(w, littleEndian, uint16(val))
-//	}
-//	if val <= math.MaxUint32 {
-//		err := binarySerializer.PutUint8(w, 0xfe)
-//		if err != nil {
-//			return err
-//		}
-//		return binarySerializer.PutUint32(w, littleEndian, uint32(val))
-//	}
-//	err := binarySerializer.PutUint8(w, 0xff)
-//	if err != nil {
-//		return err
-//	}
-//	return binarySerializer.PutUint64(w, littleEndian, val)
-//}
-//
-//// Borrow returns a byte slice from the free list with a length of 8.  A new
-//// buffer is allocated if there are not any available on the free list.
-//func (l binaryFreeList) Borrow() []byte {
-//	var buf []byte
-//	select {
-//	case buf = <-l:
-//	default:
-//		buf = make([]byte, 8)
-//	}
-//	return buf[:8]
-//}
-//
-//// Return puts the provided byte slice back on the free list.  The buffer MUST
-//// have been obtained via the Borrow function and therefore have a cap of 8.
-//func (l binaryFreeList) Return(buf []byte) {
-//	select {
-//	case l <- buf:
-//	default:
-//		// Let it go to the garbage collector.
-//	}
-//}
-//
-//// Uint8 reads a single byte from the provided reader using a buffer from the
-//// free list and returns it as a uint8.
-//func (l binaryFreeList) Uint8(r io.Reader) (uint8, error) {
-//	buf := l.Borrow()[:1]
-//	if _, err := io.ReadFull(r, buf); err != nil {
-//		l.Return(buf)
-//		return 0, err
-//	}
-//	rv := buf[0]
-//	l.Return(buf)
-//	return rv, nil
-//}
-//
-//// Uint16 reads two bytes from the provided reader using a buffer from the
-//// free list, converts it to a number using the provided byte order, and returns
-//// the resulting uint16.
-//func (l binaryFreeList) Uint16(r io.Reader, byteOrder binary.ByteOrder) (uint16, error) {
-//	buf := l.Borrow()[:2]
-//	if _, err := io.ReadFull(r, buf); err != nil {
-//		l.Return(buf)
-//		return 0, err
-//	}
-//	rv := byteOrder.Uint16(buf)
-//	l.Return(buf)
-//	return rv, nil
-//}
-//
-//// Uint32 reads four bytes from the provided reader using a buffer from the
-//// free list, converts it to a number using the provided byte order, and returns
-//// the resulting uint32.
-//func (l binaryFreeList) Uint32(r io.Reader, byteOrder binary.ByteOrder) (uint32, error) {
-//	buf := l.Borrow()[:4]
-//	if _, err := io.ReadFull(r, buf); err != nil {
-//		l.Return(buf)
-//		return 0, err
-//	}
-//	rv := byteOrder.Uint32(buf)
-//	l.Return(buf)
-//	return rv, nil
-//}
-//
-//// Uint64 reads eight bytes from the provided reader using a buffer from the
-//// free list, converts it to a number using the provided byte order, and returns
-//// the resulting uint64.
-//func (l binaryFreeList) Uint64(r io.Reader, byteOrder binary.ByteOrder) (uint64, error) {
-//	buf := l.Borrow()[:8]
-//	if _, err := io.ReadFull(r, buf); err != nil {
-//		l.Return(buf)
-//		return 0, err
-//	}
-//	rv := byteOrder.Uint64(buf)
-//	l.Return(buf)
-//	return rv, nil
-//}
-//
-//// PutUint8 copies the provided uint8 into a buffer from the free list and
-//// writes the resulting byte to the given writer.
-//func (l binaryFreeList) PutUint8(w io.Writer, val uint8) error {
-//	buf := l.Borrow()[:1]
-//	buf[0] = val
-//	_, err := w.Write(buf)
-//	l.Return(buf)
-//	return err
-//}
-//
-//var (
-//	// littleEndian is a convenience variable since binary.LittleEndian is
-//	// quite long.
-//	littleEndian = binary.LittleEndian
-//	// bigEndian is a convenience variable since binary.BigEndian is quite
-//	// long.
-//	bigEndian = binary.BigEndian
-//)
-//
-//// PutUint16 serializes the provided uint16 using the given byte order into a
-//// buffer from the free list and writes the resulting two bytes to the given
-//// writer.
-//func (l binaryFreeList) PutUint16(w io.Writer, byteOrder binary.ByteOrder, val uint16) error {
-//	buf := l.Borrow()[:2]
-//	byteOrder.PutUint16(buf, val)
-//	_, err := w.Write(buf)
-//	l.Return(buf)
-//	return err
-//}
-//
-//// PutUint32 serializes the provided uint32 using the given byte order into a
-//// buffer from the free list and writes the resulting four bytes to the given
-//// writer.
-//func (l binaryFreeList) PutUint32(w io.Writer, byteOrder binary.ByteOrder, val uint32) error {
-//	buf := l.Borrow()[:4]
-//	byteOrder.PutUint32(buf, val)
-//	_, err := w.Write(buf)
-//	l.Return(buf)
-//	return err
-//}
-//
-//// PutUint64 serializes the provided uint64 using the given byte order into a
-//// buffer from the free list and writes the resulting eight bytes to the given
-//// writer.
-//func (l binaryFreeList) PutUint64(w io.Writer, byteOrder binary.ByteOrder, val uint64) error {
-//	buf := l.Borrow()[:8]
-//	byteOrder.PutUint64(buf, val)
-//	_, err := w.Write(buf)
-//	l.Return(buf)
-//	return err
-//}
-//func WriteTxOut(w io.Writer, pver uint32, version int32, to *Output) error {
-//	err := binarySerializer.PutUint64(w, littleEndian, to.Value)
-//	if err != nil {
-//		return err
-//	}
-//	return WriteVarBytes(w, pver, to.PkScript)
-//}
 
 func (a *Addition) IsEqualStyle(b *Addition) (bool, error) {
 	if b == nil {

@@ -28,6 +28,8 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
 
+	"encoding/json"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -40,7 +42,10 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 	}
 	if len(tplName) > MaxLengthTplName || len(path) > MaxLengthTplPath || len(version) > MaxLengthTplVersion || len(addrs) > MaxNumberTplEleAddrHash {
 		log.Error("ContractInstallReq", "request param len overflow，len(tplName)", len(tplName), "len(path)", len(path), "len(version)", len(version), "len(addrs)", len(addrs))
-		return common.Hash{}, nil, errors.New("ContractInstallReq request param len overflow")
+		return common.Hash{}, nil, errors.New("ContractInstallReq, request param len overflow")
+	}
+	if !p.dag.IsContractDeveloper(from) {
+		return common.Hash{}, nil, fmt.Errorf("ContractInstallReq, address[%s] is not developer", from.String())
 	}
 	addrHash := make([]common.Hash, 0)
 	//去重
@@ -60,31 +65,48 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 			TplDescription: description,
 			Abi:            abi,
 			Language:       language,
+			Creator:        from.String(),
 		},
 	}
-	reqId, tx, err := p.createContractTxReq(common.Address{}, from, to, daoAmount, daoFee, nil, msgReq, true)
+	reqId, _, err = p.createContractTxReq(common.Address{}, from, to, daoAmount, daoFee, nil, msgReq, true)
 	if err != nil {
 		return common.Hash{}, nil, err
 	}
-	tpl, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_TPL)
-	if err != nil || tpl == nil {
-		errMsg := fmt.Sprintf("[%s]getContractTxContractInfo fail, tpl Name[%s]", shortId(reqId.String()), tplName)
-		return common.Hash{}, nil, errors.New(errMsg)
+	isLocal := true //todo
+	if isLocal {
+		if err = p.runContractReq(reqId, nil); err != nil {
+			return common.Hash{}, nil, err
+		}
+
+		ctx := p.mtx[reqId]
+		ctx.rstTx, err = p.GenContractSigTransaction(from, "", ctx.rstTx, p.ptn.GetKeyStore())
+		if err != nil {
+			return common.Hash{}, nil, err
+		}
+		tx := ctx.rstTx
+		tpl, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_TPL)
+		if err != nil || tpl == nil {
+			errMsg := fmt.Sprintf("[%s]getContractTxContractInfo fail, tpl Name[%s]", shortId(reqId.String()), tplName)
+			return common.Hash{}, nil, errors.New(errMsg)
+		}
+		templateId := tpl.(*modules.ContractTplPayload).TemplateId
+		log.Infof("[%s]ContractInstallReq ok, reqId[%s] templateId[%x]", shortId(reqId.String()), reqId.String(), templateId)
+		//broadcast
+		go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_COMMIT, Tx: tx}, false)
+		return reqId, templateId, nil
 	}
-	templateId := tpl.(*modules.ContractTplPayload).TemplateId
-	log.Infof("[%s]ContractInstallReq ok, reqId[%s] templateId[%x]", shortId(reqId.String()), reqId.String(), templateId)
-	//broadcast
-	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_COMMIT, Tx: tx}, false)
-	return reqId, templateId, nil
+	//net mode
+
+	return reqId, nil, nil
 }
 
-func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (common.Hash, common.Address, error) {
+func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, extData []byte, timeout time.Duration) (common.Hash, common.Address, error) {
 	if from == (common.Address{}) || to == (common.Address{}) || templateId == nil {
 		log.Error("ContractDeployReq", "param is error")
 		return common.Hash{}, common.Address{}, errors.New("ContractDeployReq request param is error")
 	}
-	if len(templateId) > MaxLengthTplId || len(args) > MaxNumberArgs {
-		log.Error("ContractDeployReq", "len(templateId)", len(templateId), "len(args)", len(args))
+	if len(templateId) > MaxLengthTplId || len(args) > MaxNumberArgs || len(extData) > MaxLengthExtData {
+		log.Error("ContractDeployReq", "len(templateId)", len(templateId), "len(args)", len(args), "len(extData)", len(extData))
 		return common.Hash{}, common.Address{}, errors.New("ContractDeployReq request param len overflow")
 	}
 	msgReq := &modules.Message{
@@ -92,6 +114,7 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 		Payload: &modules.ContractDeployRequestPayload{
 			TplId:   templateId,
 			Args:    args,
+			ExtData: extData,
 			Timeout: uint32(timeout),
 		},
 	}
@@ -129,6 +152,11 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 		return common.Hash{}, err
 	}
 	log.Infof("[%s]ContractInvokeReq ok, reqId[%s], contractId[%s]", shortId(reqId.String()), reqId.String(), contractId.String())
+	log.DebugDynamic(func() string {
+		rjson, _ := json.Marshal(tx)
+		rdata, _ := rlp.EncodeToBytes(tx)
+		return fmt.Sprintf("Request data fro debug json:%s,\r\n rlp:%x", string(rjson), rdata)
+	})
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractEvent{Ele: p.mtx[reqId].eleInf, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
 	return reqId, nil
@@ -211,14 +239,10 @@ func (p *Processor) UpdateJuryAccount(addr common.Address, pwd string) bool {
 
 	return true
 }
-
-func (p *Processor) GetJuryAccount() []common.Address {
-	num := len(p.local)
-	addrs := make([]common.Address, num)
-	i := 0
-	for addr, _ := range p.local {
-		addrs[i] = addr
-		i++
+func (p *Processor) CheckTxValid(tx *modules.Transaction) bool {
+	_, _, err := p.validator.ValidateTx(tx, false)
+	if err != nil {
+		log.Debugf("[%s]checkTxValid, Validate fail, txHash[%s], err:%s", shortId(tx.RequestHash().String()), tx.Hash().String(), err.Error())
 	}
-	return addrs
+	return err == nil
 }

@@ -24,18 +24,17 @@ import (
 	"archive/tar"
 	"bytes"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"time"
-
 	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/comm"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
+	"github.com/palletone/go-palletone/contracts/utils"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	cutil "github.com/palletone/go-palletone/vm/common"
+	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 )
 
 //var log = flogging.MustGetLogger("util")
@@ -193,10 +192,9 @@ func DockerBuild(opts DockerBuildOptions) error {
 		//MemorySwap: dockercontroller.GetInt64FromDb("TempUccMemorySwap"), //1GB
 		//CPUShares:  dockercontroller.GetInt64FromDb("TempUccCpuShares"),
 		//CPUQuota:   dockercontroller.GetInt64FromDb("TempUccCpuQuota"),
-		Memory:     cp.TempUccMemory,     //1GB
-		MemorySwap: cp.TempUccMemorySwap, //1GB
-		CPUShares:  cp.TempUccCpuShares,
-		CPUQuota:   cp.TempUccCpuQuota,
+		Memory:    cp.TempUccMemory, //1GB
+		CPUShares: cp.TempUccCpuShares,
+		CPUQuota:  cp.TempUccCpuQuota,
 	}
 	log.Infof("client.CreateContainer")
 	container, err := client.CreateContainer(docker.CreateContainerOptions{
@@ -255,19 +253,8 @@ func DockerBuild(opts DockerBuildOptions) error {
 		return fmt.Errorf("Error executing build: %s \"%s\"", err, stdout.String())
 	}
 	//解决临时容器一直运行的情况
-	go func(client *docker.Client, id string) {
-		for {
-			select {
-			case <-time.After(contractcfg.GetConfig().ContractDeploytimeout):
-				log.Infof("======go build error")
-				err := client.RemoveContainer(docker.RemoveContainerOptions{ID: id, Force: true})
-				if err != nil {
-					log.Infof("======go build error,%s", err.Error())
-				}
-				return
-			}
-		}
-	}(client, container.ID)
+	go utils.RemoveContainerWhenGoBuildTimeOut(container.ID)
+
 	//-----------------------------------------------------------------------------------
 	// Wait for the build to complete and gather the return value
 	//等待容器返回

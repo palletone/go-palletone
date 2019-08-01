@@ -35,8 +35,4 @@ Assert PTN from another node
     #${foundationAdd2}    getGeneAdd    ${mutiHost1}
     sleep    4
     ${PTN2}    ${reuslt2}    normalGetBalance    ${recieverAdd}    ${mutiHost1}
-    sleep    4
-    #${PTN3}    ${reuslt3}    normalGetBalance    ${reciever}    ${mutiHost2}
-    #sleep    5
     Should Be Equal As Numbers    ${PTNGAIN}    ${PTN2}
-    #Should Be Equal As Numbers    ${PTNGAIN}    ${PTN3}

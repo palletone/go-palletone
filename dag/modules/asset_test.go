@@ -22,9 +22,10 @@ package modules
 
 import (
 	"encoding/json"
+	"testing"
+
 	"github.com/martinlindhe/base36"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestAsset_MaxSymbol(t *testing.T) {
@@ -38,15 +39,7 @@ func TestAsset_String(t *testing.T) {
 	s := base36.DecodeToBytes("DEVIN")
 	t.Logf("Data:%08b", s)
 	t.Logf("Data:%08b", (byte(5)<<5)|s[0])
-	//t.Logf("Data:%08b", base36.DecodeToBytes("00112"))
-	//t.Logf("Data:%08b", base36.DecodeToBytes("ZZZZ"))
-	//t.Logf("Data:%08b", base36.DecodeToBytes("ZZZ"))
-	//t.Logf("Data:%08b", base36.DecodeToBytes("ZZ"))
-	//t.Logf("Data:%08b", base36.DecodeToBytes("Z"))
-	//symbol := base36.DecodeToBytes("Z")
-	//id := AssetId{}
-	//copy(id[4-len(symbol):4], symbol)
-	//t.Logf("Data:%08b", id)
+
 	asset, err := NewAsset("DEVIN", AssetType_FungibleToken, 8, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 11, 12, 13, 14, 15, 16}, UniqueIdType_Null, UniqueId{})
 	assert.Nil(t, err)
 	t.Log(asset.String())

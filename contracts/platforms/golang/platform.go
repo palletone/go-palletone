@@ -266,7 +266,8 @@ func vendorDependencies(pkg string, files Sources) {
 func (goPlatform *Platform) GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte, error) {
 	log.Info("GetChainCodePayload enter")
 	defer log.Info("GetChainCodePayload exit")
-	codeDescriptor, err := getCodeDescriptor(spec) //获取codeDescriptor，即构造CodeDescriptor，Gopath为go环境gopath路径，Pkg为代码相对路径
+	//获取codeDescriptor，即构造CodeDescriptor，Gopath为go环境gopath路径，Pkg为代码相对路径
+	codeDescriptor, err := getCodeDescriptor(spec)
 	if err != nil {
 		log.Info("getCodeDescriptor err:", "error", err)
 		return nil, err
@@ -330,8 +331,8 @@ func (goPlatform *Platform) GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte,
 	}
 	tw.Close()
 	gw.Close()
-	//gopath,_ := getGopath()
-	//ioutil.WriteFile(gopath+"/lala.tar.gz",payload.Bytes(),0644)
+	//gopath, _ := getGopath()
+	//ioutil.WriteFile(gopath+"/lala.tar.gz", payload.Bytes(), 0644)
 	return payload.Bytes(), nil
 }
 
@@ -449,8 +450,8 @@ func (goPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte
 	// Remove any imports that are provided by the ccenv or system
 	// --------------------------------------------------------------------------------------
 	var provided = map[string]bool{ //如下两个包为ccenv已自带，可删除
-	//"github.com/palletone/go-palletone/contracts/shim":                  true,
-	//"github.com/palletone/go-palletone/core/vmContractPub/protos/peer":  true,
+		//"github.com/palletone/go-palletone/contracts/shim":                  true,
+		//"github.com/palletone/go-palletone/core/vmContractPub/protos/peer":  true,
 	}
 
 	// Golang "pseudo-packages" - packages which don't actually exist
@@ -681,7 +682,8 @@ func (goPlatform *Platform) GenerateDockerBuild(cds *pb.ChaincodeDeploymentSpec,
 	binpackage := bytes.NewBuffer(nil)
 
 	err = util.DockerBuild(util.DockerBuildOptions{
-		Cmd: fmt.Sprintf("GOPATH=$GOPATH:/chaincode/input go build -tags \"%s\" %s -o /chaincode/output/chaincode %s", gotags, ldflagsOpt, pkgname),
+		//Cmd: fmt.Sprintf("GOPATH=$GOPATH:/chaincode/input go build -tags \"%s\" %s -o /chaincode/output/chaincode %s", gotags, ldflagsOpt, pkgname),
+		Cmd: fmt.Sprintf("GOPATH=$GOPATH:/chaincode/input go build -ldflags \"-s -w\" -o /chaincode/output/chaincode %s", pkgname),
 		//Cmd:          fmt.Sprintf("GOPATH=/chaincode/input:\"/home/glh/go\" go build -tags \"%s\" %s -o /chaincode/output/chaincode %s", gotags, ldflagsOpt, pkgname),
 		InputStream:  codepackage,
 		OutputStream: binpackage,

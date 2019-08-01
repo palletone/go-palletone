@@ -49,7 +49,11 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) error {
 		err := fmt.Sprintf("[%s]ProcessContractEvent, event Tx is invalid, txId:%s", shortId(reqId.String()), event.Tx.Hash().String())
 		return errors.New(err)
 	}
-	if !p.contractEventExecutable(event.CType, event.Tx, event.Ele) {
+	if !p.checkTxAddrValid(event.Tx) {
+		err := fmt.Sprintf("[%s]ProcessContractEvent, event Tx addr is invalid, txId:%s", shortId(reqId.String()), event.Tx.Hash().String())
+		return errors.New(err)
+	}
+	if !p.contractEventExecutable(event.CType, event.Tx, event.Ele, event.JuryCount) {
 		log.Debugf("[%s]ProcessContractEvent, contractEventExecutable is false", shortId(reqId.String()))
 		return nil
 	}
@@ -94,7 +98,7 @@ func (p *Processor) contractEleEvent(tx *modules.Transaction) error {
 	elesLen := len(eles)
 	if elesLen > 0 {
 		if elesLen >= p.electionNum {
-			mtx.eleInf = eles[0:p.electionNum]
+			mtx.eleInf = eles[0:p.electionNum] //todo 随机选择
 			log.Debugf("[%s]contractEleEvent election Num ok", shortId(reqId.String()))
 		} else {
 			mtx.eleInf = eles[:]
@@ -109,7 +113,8 @@ func (p *Processor) contractEleEvent(tx *modules.Transaction) error {
 	}
 	if elesLen < p.electionNum {
 		reqEvent := &ElectionRequestEvent{
-			ReqId: reqId,
+			ReqId:     reqId,
+			JuryCount: uint64(p.dag.JuryCount()),
 		}
 		go p.ptn.ElectionBroadcast(ElectionEvent{EType: ELECTION_EVENT_VRF_REQUEST, Event: reqEvent}, true)
 	}
@@ -152,7 +157,7 @@ func (p *Processor) contractSigEvent(tx *modules.Transaction, ele []modules.Elec
 	p.locker.Lock()
 	defer p.locker.Unlock()
 	reqId := tx.RequestHash()
-	if _, ok := p.mtx[reqId];ok {
+	if _, ok := p.mtx[reqId]; ok {
 		if checkTxReceived(p.mtx[reqId].rcvTx, tx) {
 			return false, nil
 		}
@@ -168,7 +173,6 @@ func (p *Processor) contractSigEvent(tx *modules.Transaction, ele []modules.Elec
 			adaInf: make(map[uint32]*AdapterInf),
 		}
 		p.mtx[reqId].rcvTx = append(p.mtx[reqId].rcvTx, tx)
-		//go p.runContractReq(reqId, ele) //del
 		return true, nil
 	}
 	ctx := p.mtx[reqId]

@@ -62,7 +62,7 @@ type TplJson struct {
 	//Name         string `json:"name"`
 	//Path         string `json:"path"`
 	//Version      string `json:"version"`
-	Memory       uint16 `json:"memory"`
+	//Memory       uint16 `json:"memory"`
 	Bytecode     []byte `json:"bytecode"`      // contract bytecode
 	BytecodeSize int    `json:"bytecode_size"` // contract bytecode
 	//AddrHash     string `json:"addr_hash"`
@@ -124,18 +124,17 @@ type InstallRequestJson struct {
 }
 
 type DeployRequestJson struct {
-	Number int    `json:"row_number"`
-	TplId  string `json:"tpl_id"`
-	//TxId    string        `json:"tx_id"`
+	Number  int           `json:"row_number"`
+	TplId   string        `json:"tpl_id"`
 	Args    []string      `json:"arg_set"`
 	Timeout time.Duration `json:"timeout"`
+	ExtData string        `json:"extend_data"`
 }
 
 type StopRequestJson struct {
-	Number     int    `json:"row_number"`
-	ContractId string `json:"contract_id"`
-	//Txid        string `json:"tx_id"`
-	DeleteImage bool `json:"delete_image"`
+	Number      int    `json:"row_number"`
+	ContractId  string `json:"contract_id"`
+	DeleteImage bool   `json:"delete_image"`
 }
 type DataJson struct {
 	Number    int    `json:"row_number"`
@@ -225,7 +224,7 @@ func ConvertTx2FullJson(tx *modules.Transaction, utxoQuery modules.QueryUtxoFunc
 		}
 	}
 	if utxoQuery != nil {
-		fee, err := tx.GetTxFee(utxoQuery, time.Now().Unix())
+		fee, err := tx.GetTxFee(utxoQuery)
 		if err == nil {
 			txjson.Fee = fee.Amount
 		}
@@ -245,7 +244,7 @@ func convertTpl2Json(tpl *modules.ContractTplPayload) *TplJson {
 	tpljson.TemplateId = hex.EncodeToString(tpl.TemplateId)
 	tpljson.Bytecode = tpl.ByteCode[:]
 	tpljson.BytecodeSize = len(tpl.ByteCode[:])
-	tpljson.Memory = tpl.Memory
+	//tpljson.Memory = tpl.Memory
 
 	//ah, _ := json.Marshal(tpl.AddrHash)
 	//tpljson.AddrHash = string(ah)
@@ -373,6 +372,7 @@ func convertDeployRequest2Json(req *modules.ContractDeployRequestPayload) *Deplo
 		reqJson.Args = append(reqJson.Args, string(arg))
 	}
 	reqJson.Timeout = time.Duration(req.Timeout) * time.Second
+	reqJson.ExtData = hex.EncodeToString(req.ExtData)
 	return reqJson
 }
 

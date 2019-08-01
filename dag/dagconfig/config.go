@@ -37,35 +37,18 @@ var (
 )
 
 var DefaultConfig = Config{
-	DbPath: "./leveldb",
-	// txpool
-	//UnitTxSize: 1024 * 1000 * 5, //5mb
-
-	// utxo
-	UtxoIndex: true,
-
-	// memory unit, unit number
-	MemoryUnitSize: 1280,
-	// Irreversible Height
+	DbPath:                       "./leveldb",
+	UtxoIndex:                    true,
+	MemoryUnitSize:               1280,
 	IrreversibleHeight:           1, // 单节点memdag正常缓存区块，需要将该值设置为1
 	WhetherValidateUnitSignature: false,
 	GenesisHash:                  "0xeb5f66d0289ea0af68860fd5a4d1a0b38389f598ae01008433a5ca9949fcf55c",
 	PartitionForkUnitHeight:      0,
-	//PtnAssetHex:                  modules.CoreAsset.AssetId.String(),
-	//PtnAssetId:                   modules.NewPTNAsset().AssetId[:],
-	AddrTxsIndex:      false,
-	Token721TxIndex:   true,
-	TextFileHashIndex: false,
-	GasToken:          DefaultToken,
+	AddrTxsIndex:                 false,
+	Token721TxIndex:              true,
+	TextFileHashIndex:            true,
+	GasToken:                     DefaultToken,
 }
-
-//func init() {
-//	if DagConfig.PtnAssetHex != "" {
-//		id, _ := modules.SetIdTypeByHex(DagConfig.PtnAssetHex)
-//		DagConfig.PtnAssetId = id[:]
-//		// modules.PTNCOIN.SetBytes(DagConfig.PtnAssetId)
-//	}
-//}
 
 // global configuration of dag modules
 type Config struct {
@@ -81,9 +64,6 @@ type Config struct {
 	RedisPwd    string
 	RedisPrefix string
 	RedisDb     int
-
-	// txpool
-	//UnitTxSize float64
 
 	// utxo
 	UtxoIndex bool
@@ -157,18 +137,6 @@ func (c *Config) GetGasToken() modules.AssetId {
 	return c.gasToken
 }
 
-//func (c *Config) GetMainToken() modules.AssetId {
-//	if c.mainToken == modules.ZeroIdType16() {
-//		token, _, err := modules.String2AssetId(c.MainToken)
-//		{
-//			if err != nil {
-//				return modules.PTNCOIN
-//			}
-//		}
-//		c.mainToken = token
-//	}
-//	return c.mainToken
-//}
 func (c *Config) GeSyncPartitionTokens() []modules.AssetId {
 	if c.syncPartitionTokens == nil {
 		c.syncPartitionTokens = []modules.AssetId{}

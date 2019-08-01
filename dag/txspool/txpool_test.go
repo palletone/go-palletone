@@ -66,7 +66,6 @@ func NewTxPool4Test() *TxPool {
 func NewUnitDag4Test() *UnitDag4Test {
 	db, _ := palletdb.NewMemDatabase()
 	utxodb := storage.NewUtxoDb(db)
-	//idagdb := storage.NewDagDb(db)
 
 	propdb := storage.NewPropertyDb(db)
 	hash := common.HexToHash("0x0e7e7e3bd7c1e9ce440089712d61de38f925eb039f152ae03c6688ed714af729")
@@ -74,7 +73,6 @@ func NewUnitDag4Test() *UnitDag4Test {
 	h := modules.NewHeader([]common.Hash{hash}, uint64(1), []byte("hello"))
 	h.Number = idx
 	propdb.SetNewestUnit(h)
-	//idagdb.PutHeadUnitHash()
 	mutex := new(sync.RWMutex)
 
 	ud := &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed), make(map[string]map[modules.OutPoint]*modules.Utxo)}
@@ -134,7 +132,9 @@ func (ud *UnitDag4Test) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo,
 	}
 	return nil, fmt.Errorf("not found!")
 }
-
+func (ud *UnitDag4Test) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error) {
+	return nil, nil
+}
 func (ud *UnitDag4Test) GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error) {
 	neededSet := make(map[modules.OutPoint]struct{})
 	preout := modules.OutPoint{TxHash: tx.Hash()}
@@ -241,7 +241,6 @@ func TestTransactionAddingTxs(t *testing.T) {
 	txs := createTxs(address)
 	fmt.Println("range txs start...  , spent time:", time.Since(t0))
 	// Import the batch and verify that limits have been enforced
-	//	pool.AddRemotes(txs)
 	for i, tx := range txs {
 		if txs[i].Size() > 0 {
 			continue
@@ -256,8 +255,6 @@ func TestTransactionAddingTxs(t *testing.T) {
 
 	for i, tx := range txs {
 		p_tx := TxtoTxpoolTx(tx)
-		//p_tx.GetTxFee()
-		//p_tx.TxFee = &modules.AmountAsset{Amount: 20, Asset: tx.Asset()}
 		txpool_txs = append(txpool_txs, p_tx)
 		if i == len(txs)-1 {
 			pool_tx = p_tx

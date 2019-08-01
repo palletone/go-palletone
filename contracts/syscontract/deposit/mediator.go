@@ -22,6 +22,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
+	"github.com/palletone/go-palletone/core"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -37,7 +38,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		return shim.Error(errStr)
 	}
 
-	var mco modules.MediatorCreateOperation
+	var mco modules.MediatorCreateArgs
 	err := json.Unmarshal([]byte(args[0]), &mco)
 	if err != nil {
 		errStr := fmt.Sprintf("invalid args: %v", err.Error())
@@ -45,7 +46,14 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		return shim.Error(errStr)
 	}
 
-	err = mco.Validate()
+	// 参数验证
+	if mco.MediatorInfoBase == nil || mco.MediatorApplyInfo == nil {
+		errStr := fmt.Sprintf("invalid args, is null")
+		log.Errorf(errStr)
+		return shim.Error(errStr)
+	}
+
+	addr, err := mco.Validate()
 	if err != nil {
 		errStr := fmt.Sprintf("invalid args: %v", err.Error())
 		log.Errorf(errStr)
@@ -58,6 +66,13 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		log.Error("Stub.GetInvokeAddress err:", "error", err)
 		return shim.Error(err.Error())
 	}
+
+	if addr != invokeAddr {
+		errStr := fmt.Sprintf("the calling account(%v) is not appling account(%v), "+
+			"please use mediator.apply()", invokeAddr.String(), addr.String())
+		log.Error(errStr)
+	}
+
 	//  判断该地址是否是第一次申请
 	mdeposit, err := GetMediatorDeposit(stub, invokeAddr.String())
 	if err != nil {
@@ -66,6 +81,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	if mdeposit != nil {
 		return shim.Error(invokeAddr.String() + " has applied for become mediator")
 	}
+
 	//  获取申请列表
 	becomeList, err := getList(stub, ListForApplyBecomeMediator)
 	if err != nil {
@@ -90,6 +106,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	md := NewMediatorDeposit()
 	md.ApplyEnterTime = getTiem(stub)
 	md.Status = Apply
+	md.Role = Mediator
 	err = SaveMediatorDeposit(stub, invokeAddr.Str(), md)
 	if err != nil {
 		log.Error("SaveMedInfo err:", "error", err)
@@ -171,7 +188,24 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		}
 		return shim.Success(nil)
 	} else {
-		return shim.Error("You can only deposit once")
+		//  如果账户不是零，考虑到系统参数升级，导致保证金数量问题，所以需要添加追缴逻辑
+		//1判断追缴+账户余额是否为当前系统配置
+		if md.Role != Mediator {
+			return shim.Error("not mediator")
+		}
+		all := invokeTokens.Amount + md.Balance
+		if all != cp.DepositAmountForMediator {
+			log.Error("Too many or too little.")
+			return shim.Error("Too many or too little.")
+		}
+		md.Balance = all
+		//  保存账户信息
+		err = SaveMediatorDeposit(stub, invokeAddr.String(), md)
+		if err != nil {
+			log.Error("save node balance err: ", "error", err)
+			return shim.Error(err.Error())
+		}
+		return shim.Success(nil)
 	}
 }
 
@@ -207,6 +241,70 @@ func mediatorApplyQuit(stub shim.ChaincodeStubInterface, args []string) pb.Respo
 	return shim.Success(nil)
 }
 
+//  申请加入
+func updateMediatorInfo(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	log.Info("Start entering updateMediatorInfo func")
+	//  检查参数
+	if len(args) != 1 {
+		errStr := "Arg need only one parameter."
+		log.Error(errStr)
+		return shim.Error(errStr)
+	}
+
+	var mua modules.MediatorUpdateArgs
+	err := json.Unmarshal([]byte(args[0]), &mua)
+	if err != nil {
+		errStr := fmt.Sprintf("invalid args: %v", err.Error())
+		log.Errorf(errStr)
+		return shim.Error(errStr)
+	}
+
+	addr, err := core.StrToMedAdd(mua.AddStr)
+	if err != nil {
+		errStr := fmt.Sprintf("invalid args: %v", err.Error())
+		log.Errorf(errStr)
+		return shim.Error(errStr)
+	}
+
+	//  获取请求地址
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		log.Error("Stub.GetInvokeAddress err:", "error", err)
+		return shim.Error(err.Error())
+	}
+
+	if addr != invokeAddr {
+		errStr := fmt.Sprintf("the calling account(%v) is not updating account(%v), "+
+			"please use mediator.apply()", invokeAddr.String(), mua.AddStr)
+		log.Error(errStr)
+	}
+
+	// 判断该地址是否是mediator
+	// 这样不能判断genesis文件中那几个mediator
+	//mdeposit, err := GetMediatorDeposit(stub, mua.AddStr)
+	//if err != nil {
+	//	return shim.Error(err.Error())
+	//}
+	//if mdeposit == nil {
+	//	return shim.Error(mua.AddStr + " is not a mediator")
+	//}
+
+	list, err := getList(stub, modules.MediatorList)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	if list == nil {
+		return shim.Success([]byte("false"))
+	}
+
+	if _, ok := list[mua.AddStr]; !ok {
+		return shim.Error(mua.AddStr + " is not a mediator")
+	}
+
+	log.Info("End entering updateMediatorInfo func")
+	return shim.Success([]byte("ok"))
+}
+
 func handleMediator(stub shim.ChaincodeStubInterface, quitAddr common.Address) error {
 	md, err := GetMediatorDeposit(stub, quitAddr.Str())
 	if err != nil {
@@ -224,13 +322,14 @@ func handleMediator(stub shim.ChaincodeStubInterface, quitAddr common.Address) e
 		return err
 	}
 	//  退还保证金
-	cp, err := stub.GetSystemConfig()
-	if err != nil {
-		return err
-	}
+	//cp, err := stub.GetSystemConfig()
+	//if err != nil {
+	//	return err
+	//}
+
 	//  调用从合约把token转到请求地址
 	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
-	err = stub.PayOutToken(quitAddr.String(), modules.NewAmountAsset(cp.DepositAmountForMediator, gasToken), 0)
+	err = stub.PayOutToken(quitAddr.String(), modules.NewAmountAsset(md.Balance, gasToken), 0)
 	if err != nil {
 		log.Error("stub.PayOutToken err:", "error", err)
 		return err

@@ -36,10 +36,6 @@ func (mp *MediatorPlugin) LocalMediators() []common.Address {
 	return addrs
 }
 
-func (mp *MediatorPlugin) IsEnabledGroupSign() bool {
-	return mp.groupSigningEnabled
-}
-
 func (mp *MediatorPlugin) GetLocalActiveMediators() []common.Address {
 	lams := make([]common.Address, 0)
 
@@ -94,11 +90,14 @@ func (mp *MediatorPlugin) LocalHavePrecedingMediator() bool {
 	return false
 }
 
-func (mp *MediatorPlugin) LocalMediatorPubKey(add common.Address) []byte {
+func (mp *MediatorPlugin) localMediatorPubKey(add common.Address) []byte {
 	var pubKey []byte = nil
-	dkgr, err := mp.getLocalActiveDKG(add)
-	if err != nil {
-		log.Debugf(err.Error())
+	mp.dkgLock.Lock()
+	defer mp.dkgLock.Unlock()
+
+	dkgr, ok := mp.activeDKGs[add]
+	if !ok || dkgr == nil {
+		log.Debugf("the mediator(%v)'s dkg is not existed, or it is not active", add.String())
 		return pubKey
 	}
 
@@ -106,8 +105,11 @@ func (mp *MediatorPlugin) LocalMediatorPubKey(add common.Address) []byte {
 	if err == nil {
 		pubKey, err = dks.Public().MarshalBinary()
 		if err != nil {
+			log.Debugf(err.Error())
 			pubKey = nil
 		}
+	} else {
+		log.Debugf(err.Error())
 	}
 
 	return pubKey
@@ -121,9 +123,10 @@ func NewPublicMediatorAPI(mp *MediatorPlugin) *PublicMediatorAPI {
 	return &PublicMediatorAPI{mp}
 }
 
+// 初始群签名公私钥
 type InitDKSResult struct {
-	PrivateKey string
-	PublicKey  string
+	PrivateKey string `json:"private_key"` // 初始群签名私钥
+	PublicKey  string `json:"public_key"`  // 初始群签名公钥
 }
 
 func (a *PublicMediatorAPI) DumpInitDKS() (res InitDKSResult) {
@@ -146,7 +149,7 @@ func NewPrivateMediatorAPI(mp *MediatorPlugin) *PrivateMediatorAPI {
 func (a *PrivateMediatorAPI) StartProduce() bool {
 	if !a.producingEnabled {
 		a.producingEnabled = true
-		go a.ScheduleProductionLoop()
+		go a.launchProduction()
 
 		return true
 	}

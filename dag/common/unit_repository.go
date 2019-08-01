@@ -53,7 +53,7 @@ type IUnitRepository interface {
 	GetGenesisUnit() (*modules.Unit, error)
 	//GenesisHeight() modules.ChainIndex
 	SaveUnit(unit *modules.Unit, isGenesis bool) error
-	CreateUnit(mAddr common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error)
+	CreateUnit(mAddr common.Address, txpool txspool.ITxPool, propdb IPropRepository, t time.Time) (*modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
 	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
@@ -99,6 +99,7 @@ type IUnitRepository interface {
 	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
 	//根据现有Tx数据，重新构建地址和Tx的关系索引
 	RefreshAddrTxIndex() error
+	GetAssetReference(asset []byte) ([]*modules.ProofOfExistence, error)
 	QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error)
 	SubscribeSysContractStateChangeEvent(ob AfterSysContractStateChangeEventFunc)
 	SaveCommon(key, val []byte) error
@@ -406,13 +407,13 @@ create common unit
 @param mAddr is minner addr
 return: correct if error is nil, and otherwise is incorrect
 */
-func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error) {
+func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPool, propdb IPropRepository, t time.Time) (*modules.Unit, error) {
 	rep.lock.RLock()
 	begin := time.Now()
 
 	defer func() {
 		rep.lock.RUnlock()
-		log.Infof("CreateUnit cost time %s", time.Since(begin))
+		log.Debugf("CreateUnit cost time %s", time.Since(begin))
 	}()
 
 	// step1. get mediator responsible for asset (for now is ptn)
@@ -421,8 +422,8 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 	// step2. compute chain height
 	// get current world_state index.
 	index := uint64(1)
-	//isMain := true
-	phash, chainIndex, _, err := rep.propdb.GetNewestUnit(assetId)
+	phash, chainIndex, err := propdb.GetNewestUnit(assetId)
+	// phash, chainIndex, _, err := rep.propdb.GetNewestUnit(assetId)
 	if err != nil {
 		chainIndex = &modules.ChainIndex{AssetID: assetId, Index: index + 1}
 		log.Error("GetCurrentChainIndex is failed.", "error", err)
@@ -437,17 +438,12 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 	}
 	header.ParentsHash = append(header.ParentsHash, phash)
 	h_hash := header.HashWithOutTxRoot()
-	log.Debugf("Start txpool.GetSortedTxs..., parent hash:%s", phash.String())
+	log.Infof("Start txpool.GetSortedTxs..., parent hash:%s", phash.String())
 
 	// step4. get transactions from txspool
 	poolTxs, _ := txpool.GetSortedTxs(h_hash, chainIndex.Index)
 
-	//txIds := []common.Hash{}
-	//for _, tx := range poolTxs {
-	//	txIds = append(txIds, tx.Tx.Hash())
-	//}
-	// log.Infof("txpool.GetSortedTxs cost time %s, txs[%#x]", time.Since(begin), txIds)
-	log.Infof("txpool.GetSortedTxs cost time %s", time.Since(begin))
+	log.Debugf("txpool.GetSortedTxs cost time %s", time.Since(begin))
 	// step5. compute minner income: transaction fees + interest
 	tt := time.Now()
 	//交易费用(包含利息)
@@ -497,7 +493,7 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 			txs = append(txs, t)
 		}
 	}
-	log.Infof("create coinbase tx cost time %s", time.Since(tt))
+	log.Debugf("create coinbase tx cost time %s, unit tx num[%d]", time.Since(tt), len(txs))
 	/**
 	todo 需要根据交易中涉及到的token类型来确定交易打包到哪个区块
 	todo 如果交易中涉及到其他币种的交易，则需要将交易费的单独打包
@@ -626,7 +622,7 @@ func (rep *UnitRepository) ComputeTxFeesAllocate(m common.Address, txs []*module
 		for o, u := range utxos {
 			tempTxs.allUtxo[o] = u
 		}
-		allowcate, err := tx.GetTxFeeAllocate(tempTxs.getUtxoEntryFromTxs, time.Now().Unix(), tokenengine.GetScriptSigners, m)
+		allowcate, err := tx.GetTxFeeAllocate(tempTxs.getUtxoEntryFromTxs, tokenengine.GetScriptSigners, m)
 		if err != nil {
 			return nil, err
 		}
@@ -970,6 +966,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 	reqId := tx.RequestHash().Bytes()
 	unitHash := unit.Hash()
 	unitTime := unit.Timestamp()
+	unitHeight := unit.Header().Index()
 	// traverse messages
 	var installReq *modules.ContractInstallRequestPayload
 	reqIndex := tx.GetRequestMsgIndex()
@@ -994,17 +991,13 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 				return fmt.Errorf("Save contract init payload error.")
 			}
 		case modules.APP_CONTRACT_INVOKE:
-			if ok := rep.saveContractInvokePayload(tx, unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
+			if ok := rep.saveContractInvokePayload(tx, unit.UnitHeader.Number, uint32(txIndex), msg, reqIndex); ok != true {
 				return fmt.Errorf("save contract invode payload error")
 			}
 		case modules.APP_CONTRACT_STOP:
 			if ok := rep.saveContractStop(reqId, msg); !ok {
 				return fmt.Errorf("save contract stop payload failed.")
 			}
-			//case modules.APP_CONFIG:
-			//	if ok := rep.saveConfigPayload(txHash, msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
-			//		return fmt.Errorf("Save contract invode payload error.")
-			//	}
 		case modules.APP_ACCOUNT_UPDATE:
 			if err := rep.updateAccountInfo(msg, requester, unit.UnitHeader.Number, uint32(txIndex)); err != nil {
 				return fmt.Errorf("apply Account Updating Operation error")
@@ -1028,7 +1021,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 				return fmt.Errorf("save contract of signature failed.")
 			}
 		case modules.APP_DATA:
-			if ok := rep.saveDataPayload(requester, unitHash, unitTime, txHash, msg.Payload.(*modules.DataPayload)); ok != true {
+			if ok := rep.saveDataPayload(requester, unitHash, unitHeight, unitTime, txHash, msg.Payload.(*modules.DataPayload)); ok != true {
 				return fmt.Errorf("save data payload faild.")
 			}
 		default:
@@ -1058,8 +1051,8 @@ func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Trans
 	for _, addr := range fromAddrs {
 		rep.idxdb.SaveAddressTxId(addr, txHash)
 	}
-
 }
+
 func getPayToAddresses(tx *modules.Transaction) []common.Address {
 	resultMap := map[common.Address]int{}
 	for _, msg := range tx.TxMessages {
@@ -1108,28 +1101,18 @@ func (rep *UnitRepository) getPayFromAddresses(tx *modules.Transaction) []common
 	return keys
 }
 
-func getMaindata(tx *modules.Transaction) string {
-	var maindata string
+func getDataPayload(tx *modules.Transaction) *modules.DataPayload {
+	dp := &modules.DataPayload{}
 	for _, msg := range tx.TxMessages {
 		if msg.App == modules.APP_DATA {
 			pay := msg.Payload.(*modules.DataPayload)
-			maindata = string(pay.MainData)
-
+			dp.MainData = pay.MainData
+			dp.ExtraData = pay.ExtraData
+			dp.Reference = pay.Reference
+			return pay
 		}
 	}
-	return maindata
-}
-
-func getExtradata(tx *modules.Transaction) string {
-	var extradata string
-	for _, msg := range tx.TxMessages {
-		if msg.App == modules.APP_DATA {
-			pay := msg.Payload.(*modules.DataPayload)
-			extradata = string(pay.ExtraData)
-
-		}
-	}
-	return extradata
+	return nil
 }
 
 /**
@@ -1169,7 +1152,7 @@ func (rep *UnitRepository) savePaymentPayload(unitTime int64, txHash common.Hash
 save DataPayload data
 */
 
-func (rep *UnitRepository) saveDataPayload(requester common.Address, unitHash common.Hash, timestamp int64, txHash common.Hash, dataPayload *modules.DataPayload) bool {
+func (rep *UnitRepository) saveDataPayload(requester common.Address, unitHash common.Hash, unitHeight uint64, timestamp int64, txHash common.Hash, dataPayload *modules.DataPayload) bool {
 
 	if dagconfig.DagConfig.TextFileHashIndex {
 
@@ -1180,19 +1163,30 @@ func (rep *UnitRepository) saveDataPayload(requester common.Address, unitHash co
 		}
 		if len(dataPayload.Reference) > 0 {
 			poe := &modules.ProofOfExistence{
-				MainData:  dataPayload.MainData,
-				ExtraData: dataPayload.ExtraData,
-				Reference: dataPayload.Reference,
-				UnitHash:  unitHash,
-				Creator:   requester,
-				TxId:      txHash,
-				Timestamp: uint64(timestamp),
+				MainData:   dataPayload.MainData,
+				ExtraData:  dataPayload.ExtraData,
+				Reference:  dataPayload.Reference,
+				UnitHash:   unitHash,
+				UintHeight: unitHeight,
+				Creator:    requester,
+				TxId:       txHash,
+				Timestamp:  uint64(timestamp),
 			}
 			err = rep.idxdb.SaveProofOfExistence(poe)
 			if err != nil {
 				log.Error("error SaveProofOfExistence", "err", err)
 				return false
 			}
+			//for _, output := range msg.Outputs {
+			//	asset := output.Asset
+			//	if asset.AssetId.GetAssetType() == modules.AssetType_NonFungibleToken {
+			//		if err = rep.idxdb.SaveTokenExistence(asset, poe); err != nil {
+			//			log.Errorf("Save token and ProofOfExistence index data error:%s", err.Error())
+			//		}
+			//	}
+			//
+			//}
+			//err = rep.idxdb.SaveTokenExistence()
 		}
 		return true
 	}
@@ -1205,7 +1199,7 @@ func (rep *UnitRepository) saveDataPayload(requester common.Address, unitHash co
 To save contract invoke state
 */
 func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, height *modules.ChainIndex,
-	txIndex uint32, msg *modules.Message) bool {
+	txIndex uint32, msg *modules.Message, reqIndex int) bool {
 	var pl interface{}
 	pl = msg.Payload
 	payload, ok := pl.(*modules.ContractInvokePayload)
@@ -1223,12 +1217,20 @@ func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, he
 		log.Errorf("Tx[%s]Write contract state error:%s", tx.Hash().String(), err.Error())
 		return false
 	}
+
 	if common.IsSystemContractAddress(payload.ContractId) && payload.ErrMsg.Code == 0 {
 		eventArg := &modules.SysContractStateChangeEvent{ContractId: payload.ContractId, WriteSet: payload.WriteSet}
 		for _, eventFunc := range rep.observers {
 			eventFunc(eventArg)
 		}
+
+		// append by albert
+		if reqIndex != -1 { // 排除创世交易中的系统合约交易没有Request的情况
+			invoke, _ := tx.TxMessages[reqIndex].Payload.(*modules.ContractInvokeRequestPayload)
+			rep.statedb.UpdateStateByContractInvoke(invoke)
+		}
 	}
+
 	return true
 }
 
@@ -1340,6 +1342,18 @@ func (rep *UnitRepository) saveContractStop(reqid []byte, msg *modules.Message) 
 	err := rep.statedb.SaveContractStop(reqid[:], stop)
 	if err != nil {
 		log.Info("save contract stop payload failed,", "error", err)
+		return false
+	}
+	//  合约停止后，修改该合约的状态
+	contract, err := rep.statedb.GetContract(stop.ContractId)
+	if err != nil {
+		log.Info("get contract with id failed,", "error", err)
+		return false
+	}
+	contract.Status = 0
+	err = rep.statedb.SaveContract(contract)
+	if err != nil {
+		log.Info("save contract with id failed,", "error", err)
 		return false
 	}
 	return true
@@ -1479,7 +1493,9 @@ func (rep *UnitRepository) createCoinbasePayment(ads []*modules.Addition) (*modu
 		incomeAddr, _ := common.StringToAddress(addr)
 		aa := []modules.AmountAsset{}
 		rlp.DecodeBytes(v.Value, &aa)
-		rewards[incomeAddr] = aa
+		if len(aa) > 0 {
+			rewards[incomeAddr] = aa
+		}
 	}
 	//附加最新的奖励
 	for _, ad := range ads {
@@ -1499,12 +1515,13 @@ func (rep *UnitRepository) createCoinbasePayment(ads []*modules.Addition) (*modu
 	//清空历史奖励的记账值
 	payload := &modules.ContractInvokePayload{}
 	payload.ContractId = contractId
+	empty, _ := rlp.EncodeToBytes([]modules.AmountAsset{})
 	for addr, _ := range rewards {
 		key := constants.RewardAddressPrefix + addr.String()
 		_, version, _ := rep.statedb.GetContractState(contractId, key)
 		rs := modules.ContractReadSet{Key: key, Version: version}
 		payload.ReadSet = append(payload.ReadSet, rs)
-		empty, _ := rlp.EncodeToBytes([]modules.AmountAsset{})
+
 		ws := modules.ContractWriteSet{IsDelete: false, Key: key, Value: empty}
 		payload.WriteSet = append(payload.WriteSet, ws)
 	}
@@ -1634,24 +1651,15 @@ func (rep *UnitRepository) GetFileInfoByHash(hashs []common.Hash) ([]*modules.Fi
 	var mds []*modules.FileInfo
 	for _, hash := range hashs {
 		var md modules.FileInfo
-		//txlookup, err := rep.dagdb.GetTxLookupEntry(hash)
-		//if err != nil {
-		//	return nil, err
-		//}
-		//
-		//header, err := rep.dagdb.GetHeaderByHash(unithash)
-		//if err != nil {
-		//	return nil, err
-		//}
-		//for _, v := range header.ParentsHash {
-		//	md.ParentsHash = v
-		//}
+
 		tx, err := rep.GetTransaction(hash)
 		if err != nil {
 			return nil, err
 		}
-		md.MainData = getMaindata(tx.Transaction)
-		md.ExtraData = getExtradata(tx.Transaction)
+		dp := getDataPayload(tx.Transaction)
+		md.MainData = string(dp.MainData)
+		md.ExtraData = string(dp.ExtraData)
+		md.Reference = string(dp.Reference)
 		md.UnitHash = tx.UnitHash
 		md.UintHeight = tx.UnitIndex
 		md.Txid = tx.Hash()
@@ -1711,6 +1719,11 @@ func (rep *UnitRepository) RefreshAddrTxIndex() error {
 	}
 	return nil
 }
+
+func (rep *UnitRepository) GetAssetReference(asset []byte) ([]*modules.ProofOfExistence, error) {
+	return rep.idxdb.QueryProofOfExistenceByReference(asset)
+}
+
 func (rep *UnitRepository) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error) {
 	return rep.idxdb.QueryProofOfExistenceByReference(ref)
 }

@@ -46,18 +46,29 @@ type DepositInterface interface {
 	//  处理dev节点退出
 	handleForApplyQuitDev(stub shim.ChaincodeStubInterface, args []string) pb.Response
 
-	//  处理没收申请
-	handleForForfeitureApplication(stub shim.ChaincodeStubInterface, args []string) pb.Response
+	//  基金会特权
+	//  处理修改mediator信息
+	//  handleMediatorInfo(stub shim.ChaincodeStubInterface, args []string) pb.Response
+	//  同意列表中，移除某个节点
+	hanldeNodeRemoveFromAgreeList(stub shim.ChaincodeStubInterface, args []string) pb.Response
+	//  候选列表中，移除某个节点（mediator jury dev）
+	//  hanldeNodeRemoveFromCandidateList(stub shim.ChaincodeStubInterface, args []string) pb.Response
+	//  删除某个mediator节点(info balance)
+	//handleRemoveMediatorNode(stub shim.ChaincodeStubInterface, args []string) pb.Response
+	//  删除某个普通节点
+	//handleRemoveNormalNode(stub shim.ChaincodeStubInterface, args []string) pb.Response
+	//  删除某个质押节点
+	//  handleRmovePledgeNode(stub shim.ChaincodeStubInterface, args []string) pb.Response
 
 	//  申请没收保证金
 	applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, args []string) pb.Response
+	//  处理没收申请
+	handleForForfeitureApplication(stub shim.ChaincodeStubInterface, args []string) pb.Response
 
-	//  普通节点质押PTN投票某个mediator
-	normalNodePledgeVote(stub shim.ChaincodeStubInterface, args []string) pb.Response
-
+	//  质押PTN
+	processPledgeDeposit(stub shim.ChaincodeStubInterface, args []string) pb.Response
 	//  普通节点提取质押PTN
-	normalNodeExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.Response
-
-	//
-	handleEachDayAward(stub shim.ChaincodeStubInterface, args []string) pb.Response
+	processPledgeWithdraw(stub shim.ChaincodeStubInterface, args []string) pb.Response
+	//  质押分红，质押提取处理
+	handlePledgeReward(stub shim.ChaincodeStubInterface, args []string) pb.Response
 }

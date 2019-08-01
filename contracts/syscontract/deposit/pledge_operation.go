@@ -16,13 +16,17 @@ package deposit
 
 import (
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"strconv"
+	"strings"
 
 	"encoding/json"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/shopspring/decimal"
 )
 
 //  质押PTN
@@ -91,9 +95,14 @@ func processPledgeWithdraw(stub shim.ChaincodeStubInterface, args []string) pb.R
 	}
 
 	amount := args[0]
-	ptnAccount, err := strconv.ParseUint(amount, 10, 64)
-	if err != nil {
-		return shim.Error(err.Error())
+	ptnAccount := uint64(0)
+	if strings.ToLower(amount) == "all" {
+		ptnAccount = math.MaxUint64
+	} else {
+		ptnAccount, err = strconv.ParseUint(amount, 10, 64)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
 	}
 	//  保存质押提取
 	err = pledgeWithdrawRep(stub, inAddr, ptnAccount)
@@ -110,9 +119,32 @@ func queryPledgeStatusByAddr(stub shim.ChaincodeStubInterface, args []string) pb
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	data, _ := json.Marshal(status)
+	pjson := convertPledgeStatus2Json(status)
+	data, _ := json.Marshal(pjson)
 	return shim.Success(data)
 }
+
+type pledgeStatusJson struct {
+	NewDepositAmount    decimal.Decimal
+	PledgeAmount        decimal.Decimal
+	WithdrawApplyAmount string
+	OtherAmount         decimal.Decimal
+}
+
+func convertPledgeStatus2Json(p *modules.PledgeStatus) *pledgeStatusJson {
+	data := &pledgeStatusJson{}
+	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
+	data.NewDepositAmount = gasToken.DisplayAmount(p.NewDepositAmount)
+	data.PledgeAmount = gasToken.DisplayAmount(p.PledgeAmount)
+	data.OtherAmount = gasToken.DisplayAmount(p.OtherAmount)
+	if p.WithdrawApplyAmount == math.MaxUint64 {
+		data.WithdrawApplyAmount = "all"
+	} else {
+		data.WithdrawApplyAmount = gasToken.DisplayAmount(p.WithdrawApplyAmount).String()
+	}
+	return data
+}
+
 func queryAllPledgeHistory(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 
 	history, err := getAllPledgeRewardHistory(stub)

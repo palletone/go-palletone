@@ -156,7 +156,7 @@ func adaptorCall(chainName, methodName string, params []byte) (string, error) {
 		if res[1].IsNil() {
 			return res[0].String(), nil
 		} else {
-			return "", errors.New(res[1].String()) //
+			return "", errors.New(fmt.Sprintf("%s", res[1].Interface()))
 		}
 	} else {
 		return res[0].String(), nil

@@ -23,8 +23,6 @@ import (
 	"fmt"
 	"math/big"
 
-	"log"
-
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone"
 	"github.com/palletone/go-palletone/common"
@@ -414,11 +412,11 @@ func (ec *Client) EstimateGas(ctx context.Context, msg palletone.CallMsg) (uint6
 	return uint64(hex), nil
 }
 
-func (ec *Client) CmdCreateTransaction(ctx context.Context, from string, to string, amount uint64, fee uint64) (string, error) {
+/*func (ec *Client) CmdCreateTransaction(ctx context.Context, from string, to string, amount uint64, fee uint64) (string, error) {
 	var result string
 	err := ec.c.CallContext(ctx, &result, "ptn_cmdCreateTransaction", from, to, amount)
 	return result, err
-}
+}*/
 
 func (ec *Client) GetPtnTestCoin(ctx context.Context, from string, to string, amount string, password string, duration *uint64) (string, error) {
 	var result string
@@ -444,7 +442,7 @@ func (ec *Client) CreateRawTransaction(ctx context.Context, params string) (stri
 }
 func (ec *Client) SignRawTransaction(ctx context.Context, params string, password string, duration *uint64) (*ptnjson.SignRawTransactionResult, error) {
 	var result *ptnjson.SignRawTransactionResult
-	err := ec.c.CallContext(ctx, &result, "ptn_signRawTransaction", params, password, duration)
+	err := ec.c.CallContext(ctx, &result, "wallet_signRawTransaction", params, password, duration)
 	return result, err
 }
 
@@ -484,7 +482,6 @@ func toCallArg(msg palletone.CallMsg) interface{} {
 	return arg
 }
 
-//--------------test begin
 // Forking tool's client for the palletone RPC API
 func (ec *Client) ForkingAt(ctx context.Context, account common.Address, rate uint64) (uint64, error) {
 	var result hexutil.Uint64
@@ -492,58 +489,56 @@ func (ec *Client) ForkingAt(ctx context.Context, account common.Address, rate ui
 	return uint64(result), err
 }
 
-func (ec *Client) GetUnitByHashAt(ctx context.Context, condition string) (string, error) {
-	var result string
-	log.Println("GetUnitByHashAt condition:", condition)
-	err := ec.c.CallContext(ctx, &result, "dag_getUnitByHash", condition)
-	return result, err
-}
+//func (ec *Client) GetUnitByHashAt(ctx context.Context, condition string) (string, error) {
+//	var result string
+//	log.Println("GetUnitByHashAt condition:", condition)
+//	err := ec.c.CallContext(ctx, &result, "dag_getUnitByHash", condition)
+//	return result, err
+//}
+//
+////GetUnitByNumber
+//func (ec *Client) GetUnitByNumberAt(ctx context.Context, condition string) (string, error) {
+//	var result string
+//	log.Println("GetUnitByNumberAt condition:", condition)
+//	err := ec.c.CallContext(ctx, &result, "dag_getUnitByNumber", condition)
+//	return result, err
+//}
+//
+////GetPrefix
+//func (ec *Client) GetPrefix(ctx context.Context, condition string) (string, error) {
+//	var result string
+//	log.Println("GetPrefix condition:", condition)
+//	err := ec.c.CallContext(ctx, &result, "ptn_getPrefix", condition)
+//	return result, err
+//}
 
-//GetUnitByNumber
-func (ec *Client) GetUnitByNumberAt(ctx context.Context, condition string) (string, error) {
-	var result string
-	log.Println("GetUnitByNumberAt condition:", condition)
-	err := ec.c.CallContext(ctx, &result, "dag_getUnitByNumber", condition)
-	return result, err
-}
-
-//GetPrefix
-func (ec *Client) GetPrefix(ctx context.Context, condition string) (string, error) {
-	var result string
-	log.Println("GetPrefix condition:", condition)
-	err := ec.c.CallContext(ctx, &result, "ptn_getPrefix", condition)
-	return result, err
-}
-
-func (ec *Client) CcinstallAt(ctx context.Context, ccname string, ccpath string, ccversion string) (uint64, error) {
-	var result hexutil.Uint64
-	log.Printf("==============================CcInstallAt:" + ccname + ":" + ccpath + ":" + ccversion)
-	err := ec.c.CallContext(ctx, &result, "contract_ccinstall", ccname, ccpath, ccversion)
-	return uint64(result), err
-}
-
-func (ec *Client) CcdeployAt(ctx context.Context, templateId string, txid string) (uint64, error) {
-	var result hexutil.Uint64
-	log.Printf("==============================CcdeployAt:" + templateId + ":" + txid + ":")
-	err := ec.c.CallContext(ctx, &result, "contract_ccdeploy", templateId, txid)
-	return uint64(result), err
-}
-
-func (ec *Client) CcinvokeAt(ctx context.Context, deployId string, txid string) (uint64, error) {
-	var result hexutil.Uint64
-	log.Printf("==============================CcinvokeAt:" + deployId + ":" + txid + ":")
-	err := ec.c.CallContext(ctx, &result, "contract_ccinvoke", deployId, txid)
-	return uint64(result), err
-}
-
-func (ec *Client) CcstopAt(ctx context.Context, deployId string, txid string) (uint64, error) {
-	var result hexutil.Uint64
-	log.Printf("==============================CcstopAt:" + deployId + ":" + txid + ":")
-	err := ec.c.CallContext(ctx, &result, "contract_ccstop", deployId, txid)
-	return uint64(result), err
-}
-
-//--------------test end
+//func (ec *Client) CcinstallAt(ctx context.Context, ccname string, ccpath string, ccversion string) (uint64, error) {
+//	var result hexutil.Uint64
+//	log.Printf("==============================CcInstallAt:" + ccname + ":" + ccpath + ":" + ccversion)
+//	err := ec.c.CallContext(ctx, &result, "contract_ccinstall", ccname, ccpath, ccversion)
+//	return uint64(result), err
+//}
+//
+//func (ec *Client) CcdeployAt(ctx context.Context, templateId string, txid string) (uint64, error) {
+//	var result hexutil.Uint64
+//	log.Printf("==============================CcdeployAt:" + templateId + ":" + txid + ":")
+//	err := ec.c.CallContext(ctx, &result, "contract_ccdeploy", templateId, txid)
+//	return uint64(result), err
+//}
+//
+//func (ec *Client) CcinvokeAt(ctx context.Context, deployId string, txid string) (uint64, error) {
+//	var result hexutil.Uint64
+//	log.Printf("==============================CcinvokeAt:" + deployId + ":" + txid + ":")
+//	err := ec.c.CallContext(ctx, &result, "contract_ccinvoke", deployId, txid)
+//	return uint64(result), err
+//}
+//
+//func (ec *Client) CcstopAt(ctx context.Context, deployId string, txid string) (uint64, error) {
+//	var result hexutil.Uint64
+//	log.Printf("==============================CcstopAt:" + deployId + ":" + txid + ":")
+//	err := ec.c.CallContext(ctx, &result, "contract_ccstop", deployId, txid)
+//	return uint64(result), err
+//}
 
 /**
 rpc wallet 操作接口

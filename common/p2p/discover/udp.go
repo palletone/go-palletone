@@ -581,6 +581,12 @@ func (req *ping) handle(t *udp, from *net.UDPAddr, fromID NodeID, mac []byte) er
 	if expired(req.Expiration) {
 		return errExpired
 	}
+	//Start Add by wangjiyou for discv4 in 2019-7-19
+	if req.Version != Version {
+		log.Debug("Bad discv4 ping", "Version", req.Version)
+		return errUnknownNode
+	}
+	//End Add by wangjiyou for discv4 in 2019-7-19
 	t.send(from, pongPacket, &pong{
 		To:         makeEndpoint(from, req.From.TCP),
 		ReplyTok:   mac,

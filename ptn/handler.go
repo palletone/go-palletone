@@ -267,7 +267,7 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 	validatorFn := func(unit *modules.Unit) error {
 		//return dagerrors.ErrFutureBlock
 		hash := unit.Hash()
-		verr := pm.dag.ValidateUnitExceptPayment(unit)
+		verr := validator.ValidateUnitBasic(unit)
 		if verr != nil && !validator.IsOrphanError(verr) {
 			return verr
 		}
@@ -413,7 +413,7 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 		go pm.ceBroadcastLoop()
 	}
 	if runtime.GOOS == "linux" {
-		//go pm.dockerLoop()
+		go pm.dockerLoop()
 	}
 }
 
@@ -476,10 +476,10 @@ func (pm *ProtocolManager) handle(p *peer) error {
 func (pm *ProtocolManager) LocalHandle(p *peer) error {
 	// Ignore maxPeers if this is a trusted peer
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
-		log.Info("ProtocolManager", "handler DiscTooManyPeers:", p2p.DiscTooManyPeers, "pm.peers.Len()", pm.peers.Len(), "peers", pm.peers.GetPeers())
+		log.Debug("ProtocolManager", "handler DiscTooManyPeers:", p2p.DiscTooManyPeers, "pm.peers.Len()", pm.peers.Len(), "peers", pm.peers.GetPeers())
 		return p2p.DiscTooManyPeers
 	}
-	log.Debug("PalletOne peer connected", "name", p.id)
+	log.Debug("PalletOne peer connected", "name", p.id, "p Trusted:", p.Peer.Info().Network.Trusted)
 	// @分区后需要用token获取
 	//head := pm.dag.CurrentHeader(pm.mainAssetId)
 	var (
@@ -582,15 +582,17 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// Transactions arrived, make sure we have a valid and fresh chain to handle them
 		return pm.TxMsg(msg, p)
 
-	// append by Albert·Gou
+		// append by Albert·Gou
 	case msg.Code == SigShareMsg:
 		return pm.SigShareMsg(msg, p)
 
-		//21*21 resp
+		// 21*21 deal => 21*20 dealMsg
 		// append by Albert·Gou
 	case msg.Code == VSSDealMsg:
 		return pm.VSSDealMsg(msg, p)
 
+		// 21*21 deal => 21*21 resp
+		// 21*21 resp => 21*21*20 respMsg
 		// append by Albert·Gou
 	case msg.Code == VSSResponseMsg:
 		return pm.VSSResponseMsg(msg, p)
@@ -633,7 +635,6 @@ func (self *ProtocolManager) txBroadcastLoop() {
 	for {
 		select {
 		case event := <-self.txCh:
-			log.Debug("=====ProtocolManager=====", "txBroadcastLoop event.Tx", event.Tx)
 			self.BroadcastTx(event.Tx.Hash(), event.Tx)
 
 			// Err() channel will be closed when unsubscribing.
@@ -644,7 +645,7 @@ func (self *ProtocolManager) txBroadcastLoop() {
 }
 
 func (pm *ProtocolManager) ContractReqLocalSend(event jury.ContractEvent) {
-	log.Info("ContractReqLocalSend", "event", event.Tx.Hash())
+	log.Debug("ContractReqLocalSend", "event", event.Tx.Hash())
 	pm.contractCh <- event
 }
 
@@ -652,13 +653,13 @@ func (pm *ProtocolManager) ContractReqLocalSend(event jury.ContractEvent) {
 // will only announce it's availability (depending what's requested).
 func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
 	hash := unit.Hash()
-
-	for _, parentHash := range unit.ParentHash() {
-		if parent, err := pm.dag.GetUnitByHash(parentHash); err != nil || parent == nil {
-			log.Error("Propagating dangling block", "index", unit.Number().Index, "hash", hash, "parent_hash", parentHash.String())
-			return
-		}
-	}
+	// 孤儿单元是需要同步的
+	//for _, parentHash := range unit.ParentHash() {
+	//	if parent, err := pm.dag.GetUnitByHash(parentHash); err != nil || parent == nil {
+	//		log.Error("Propagating dangling block", "index", unit.Number().Index, "hash", hash, "parent_hash", parentHash.String())
+	//		return
+	//	}
+	//}
 
 	data, err := json.Marshal(unit)
 	if err != nil {
@@ -768,7 +769,7 @@ func (self *ProtocolManager) dockerLoop() {
 			log.Infof("quit from docker loop")
 			return
 		case <-time.After(time.Duration(30) * time.Second):
-			log.Infof("each 30 second to get all containers")
+			log.Debugf("each 30 second to get all containers")
 			manger.GetAllContainers(client)
 		}
 	}

@@ -58,7 +58,16 @@ function replacejson()
 
     add=`echo $add | jq ".immutableChainParameters.min_mediator_count = $length"`
 
-    add=`echo $add | jq ".initialParameters.maintenance_skip_slots = 0"`
+    add=`echo $add | jq ".initialParameters.maintenance_skip_slots = 1"`
+
+    add=`echo $add | jq ".initialParameters.mediator_interval = 3"`
+
+    tempstamp=`cat $1 | jq '.initialTimestamp'`
+    tempstamp=$[$tempstamp/3]
+    tempstamp=`echo $tempstamp | cut -f1 -d"."`
+    tempstamp=$[$tempstamp*3]
+
+    add=`echo $add | jq ".initialTimestamp = $tempstamp"`
 
     rm $1
     echo $add >> temp.json

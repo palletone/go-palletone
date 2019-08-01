@@ -28,26 +28,12 @@ import (
 	"github.com/palletone/go-palletone/common/util"
 )
 
-//func BatchStore(batch ptndb.Batch, key []byte, value interface{}) error {
-//	val, err := rlp.EncodeToBytes(value)
-//	if err != nil {
-//		return err
-//	}
-//	err = batch.Put(key, val)
-//	if err != nil {
-//		log.Error("batch put error", "key:", string(key), "err:", err)
-//	}
-//	return err
-//}
-
 func StoreToJsonBytes(db ptndb.Putter, key []byte, value interface{}) error {
 	val, err := json.Marshal(value)
 	if err != nil {
 		log.Debugf("json marshal err: %v", err.Error())
 		return err
 	}
-
-	//log.Debugf("StoreToJsonBytes, key: %v, value: %v", string(key), string(val))
 
 	err = db.Put(key, val)
 	if err != nil {
@@ -68,27 +54,6 @@ func StoreToRlpBytes(db ptndb.Putter, key []byte, value interface{}) error {
 		log.Error("StoreToRlpBytes", "key:", string(key), "err:", err)
 	}
 	return err
-	/*
-		_, err = db.Get(key)
-		if err != nil {
-			if err.Error() == errors.ErrNotFound.Error() {
-				//	if err == errors.New("not found") {
-				if err := db.Put(key, val); err != nil {
-					return err
-				}
-			} else {
-				return err
-			}
-		} else {
-			if err = db.Delete(key); err != nil {
-				return err
-			}
-			if err := db.Put(key, val); err != nil {
-				return err
-			}
-		}
-		return nil
-	*/
 }
 
 func GetBytes(db ptndb.Database, key []byte) ([]byte, error) {

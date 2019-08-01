@@ -42,8 +42,6 @@ type IDag interface {
 
 	IsEmpty() bool
 	CurrentUnit(token modules.AssetId) *modules.Unit
-	//SaveDag(unit *modules.Unit, isGenesis bool) (int, error)
-	VerifyHeader(header *modules.Header) error
 	GetCurrentUnit(assetId modules.AssetId) *modules.Unit
 	GetMainCurrentUnit() *modules.Unit
 	GetCurrentMemUnit(assetId modules.AssetId, index uint64) *modules.Unit
@@ -53,9 +51,7 @@ type IDag interface {
 	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
 	GetUnstableUnits() []*modules.Unit
-	//GetPrefix(prefix string) map[string][]byte
 
-	// CurrentHeader retrieves the head header from the local chain.
 	CurrentHeader(token modules.AssetId) *modules.Header
 	GetUnitTransactions(hash common.Hash) (modules.Transactions, error)
 	GetUnitTxsHash(hash common.Hash) ([]common.Hash, error)
@@ -74,32 +70,26 @@ type IDag interface {
 	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error
 	CreateUnit(mAddr common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error)
 
-	// validate group signature by hash
-	//ValidateUnitGroupSig(hash common.Hash) (bool, error)
-
 	FastSyncCommitHead(common.Hash) error
 	GetGenesisUnit() (*modules.Unit, error)
 
-	//GetConfig(name string) ([]byte, *modules.StateVersion, error)
-	//GetAllConfig() (map[string]*modules.ContractStateValue, error)
 	GetContractState(contractid []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
 	GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error)
-	//GetCanonicalHash(number uint64) (common.Hash, error)
-	//GetHeadHeaderHash() (common.Hash, error)
-	//GetHeadUnitHash() (common.Hash, error)
-	//GetHeadFastUnitHash() (common.Hash, error)
+
 	GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error)
+	IsUtxoSpent(outpoint *modules.OutPoint) (bool, error)
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
 	SubscribeChainEvent(ch chan<- modules.ChainEvent) event.Subscription
 	PostChainEvents(events []interface{})
 
 	GetTrieSyncProgress() (uint64, error)
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
-	//GetUtxoPkScripHexByTxhash(txhash common.Hash, mindex, outindex uint32) (string, error)
-	//GetAddrOutput(addr string) ([]modules.Output, error)
+	GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error)
+	//Include Utxo and Stxo
+	GetTxOutput(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error)
 	GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
@@ -140,17 +130,13 @@ type IDag interface {
 	QueryDbByPrefix(prefix []byte) ([]*modules.DbRow, error)
 
 	// SaveReqIdByTx
-	//GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	GetTxByReqId(reqid common.Hash) (*modules.TransactionWithUnitInfo, error)
-
-	//SaveReqIdByTx(tx *modules.Transaction) error
 
 	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
 
 	GetFileInfo(filehash []byte) ([]*modules.FileInfo, error)
 
-	//Light Palletone Subprotocal
 	GetLightHeaderByHash(headerHash common.Hash) (*modules.Header, error)
 	GetLightChainHeight(assetId modules.AssetId) uint64
 	InsertLightHeader(headers []*modules.Header) (int, error)
@@ -162,21 +148,18 @@ type IDag interface {
 	HeadUnitNum() uint64
 	HeadUnitHash() common.Hash
 	GetIrreversibleUnitNum(id modules.AssetId) uint64
-	ValidateUnitExceptGroupSig(unit *modules.Unit) error
-	ValidateUnitExceptPayment(unit *modules.Unit) error
+	//ValidateUnitExceptPayment(unit *modules.Unit) error
 
 	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
 	GetChaincodes(contractId common.Address) (*list.CCInfo, error)
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
-	//GetCoinYearRate() float64
 
 	RefreshAddrTxIndex() error
 	GetMinFee() (*modules.AmountAsset, error)
 
 	GenVoteMediatorTx(voter common.Address, mediators map[string]bool,
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
-	//CurrentFeeSchedule() core.FeeSchedule
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
 
 	IsMediator(address common.Address) bool
@@ -194,9 +177,9 @@ type IDag interface {
 	GetSlotAtTime(when time.Time) uint32
 	GetChainParameters() *core.ChainParameters
 	GetImmutableChainParameters() *core.ImmutableChainParameters
-	//GetConfig(name string) ([]byte, error)
 
 	GetDataVersion() (*modules.DataVersion, error)
 	StoreDataVersion(dv *modules.DataVersion) error
 	QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error)
+	GetAssetReference(asset []byte) ([]*modules.ProofOfExistence, error)
 }

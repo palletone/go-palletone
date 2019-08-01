@@ -44,7 +44,8 @@ import (
 // }
 
 type IMemDag interface {
-	AddUnit(unit *modules.Unit, txpool txspool.ITxPool) error
+	AddUnit(unit *modules.Unit, txpool txspool.ITxPool) (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository, common2.IPropRepository, common2.IUnitProduceRepository, error)
+	GetLastStableUnitInfo() (common.Hash, uint64)
 	GetLastMainChainUnit() *modules.Unit
 	GetChainUnits() map[common.Hash]*modules.Unit
 	SetStableThreshold(threshold int)
@@ -57,8 +58,3 @@ type IMemDag interface {
 	SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription
 	Close()
 }
-
-//type IPartitionMemDag interface {
-//	IMemDag
-//	SetStableThreshold(threshold int)
-//}

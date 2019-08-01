@@ -17,13 +17,10 @@
 package gen
 
 import (
-	"crypto/ecdsa"
 	"fmt"
 	"time"
 
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
 
@@ -194,13 +191,13 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 	return txs, asset
 }
 
-func sigData(key *ecdsa.PrivateKey, data interface{}) ([]byte, error) {
-	txBytes, _ := rlp.EncodeToBytes(data)
-	hash := crypto.Keccak256(txBytes)
-	sign, err := crypto.Sign(hash, key)
-
-	return sign, err
-}
+//func sigData(key *ecdsa.PrivateKey, data interface{}) ([]byte, error) {
+//	txBytes, _ := rlp.EncodeToBytes(data)
+//	hash := crypto.Keccak256(txBytes)
+//	sign, err := crypto.Sign(hash, key)
+//
+//	return sign, err
+//}
 
 func GenContractTransction(orgTx *modules.Transaction, msgs []*modules.Message) (*modules.Transaction, error) {
 	if orgTx == nil || len(orgTx.TxMessages) < 2 {

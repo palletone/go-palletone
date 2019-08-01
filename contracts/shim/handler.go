@@ -218,8 +218,21 @@ func (handler *Handler) handleInit(msg *pb.ChaincodeMessage) {
 		if nextStateMsg = errFunc(err, nil, stub.chaincodeEvent, "[%s]Init get error response. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR.String()); nextStateMsg != nil {
 			return
 		}
-
-		res := handler.cc.Init(stub)
+		for i, a := range stub.args {
+			fmt.Println(i, a)
+		}
+		res := pb.Response{}
+		if len(input.Args) != 0 {
+			log.Infof("user contract deploy")
+			res = handler.cc.Init(stub)
+		} else {
+			log.Infof("user contract restart")
+			res = pb.Response{
+				Status:  OK,
+				Message: "Restart container",
+				Payload: nil,
+			}
+		}
 		log.Debugf("[%s]Init get response status: %d, payload len: %d", shorttxid(msg.Txid), res.Status, len(res.Payload))
 
 		if res.Status >= ERROR {
@@ -609,96 +622,6 @@ func (handler *Handler) handlePutState(collection string, contractId []byte, key
 
 	// Incorrect chaincode message received
 	return errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s or %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
-}
-
-// handlePutState communicates with the peer to put state information into the ledger.
-func (handler *Handler) handleOutAddress(collection string, outChainName string, params []byte, channelId string, txid string) ([]byte, error) {
-	// Construct payload for PUT_STATE
-	payloadBytes, _ := proto.Marshal(&pb.OutChainAddress{Collection: collection, OutChainName: outChainName, Params: params})
-
-	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_OUTCHAIN_ADDRESS, Payload: payloadBytes, Txid: txid, ChannelId: channelId}
-	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_OUTCHAIN_ADDRESS)
-
-	// Execute the request and get response
-	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
-	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("[%s]error sending OUTCHAIN_ADDRESS", msg.Txid))
-	}
-
-	if responseMsg.Type.String() == pb.ChaincodeMessage_RESPONSE.String() {
-		// Success response
-		log.Debugf("[%s]Received %s. Successfully updated state", shorttxid(responseMsg.Txid), pb.ChaincodeMessage_RESPONSE)
-		return responseMsg.Payload, nil
-	}
-
-	if responseMsg.Type.String() == pb.ChaincodeMessage_ERROR.String() {
-		// Error response
-		log.Errorf("[%s]Received %s. Payload: %s", shorttxid(responseMsg.Txid), pb.ChaincodeMessage_ERROR, responseMsg.Payload)
-		return nil, errors.New(string(responseMsg.Payload[:]))
-	}
-
-	// Incorrect chaincode message received
-	return nil, errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s or %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
-}
-
-// handlePutState communicates with the peer to put state information into the ledger.
-func (handler *Handler) handleOutTransaction(collection string, outChainName string, params []byte, channelId string, txid string) ([]byte, error) {
-	// Construct payload for PUT_STATE
-	payloadBytes, _ := proto.Marshal(&pb.OutChainTransaction{Collection: collection, OutChainName: outChainName, Params: params})
-
-	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_OUTCHAIN_TRANSACTION, Payload: payloadBytes, Txid: txid, ChannelId: channelId}
-	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_OUTCHAIN_TRANSACTION)
-
-	// Execute the request and get response
-	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
-	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("[%s]error sending OUTCHAIN_TRANSACTION", msg.Txid))
-	}
-
-	if responseMsg.Type.String() == pb.ChaincodeMessage_RESPONSE.String() {
-		// Success response
-		log.Debugf("[%s]Received %s. Successfully updated state", shorttxid(responseMsg.Txid), pb.ChaincodeMessage_RESPONSE)
-		return responseMsg.Payload, nil
-	}
-
-	if responseMsg.Type.String() == pb.ChaincodeMessage_ERROR.String() {
-		// Error response
-		log.Errorf("[%s]Received %s. Payload: %s", shorttxid(responseMsg.Txid), pb.ChaincodeMessage_ERROR, responseMsg.Payload)
-		return nil, errors.New(string(responseMsg.Payload[:]))
-	}
-
-	// Incorrect chaincode message received
-	return nil, errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s or %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
-}
-
-// handlePutState communicates with the peer to put state information into the ledger.
-func (handler *Handler) handleOutQuery(collection string, outChainName string, params []byte, channelId string, txid string) ([]byte, error) {
-	// Construct payload for PUT_STATE
-	payloadBytes, _ := proto.Marshal(&pb.OutChainQuery{Collection: collection, OutChainName: outChainName, Params: params})
-
-	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_OUTCHAIN_QUERY, Payload: payloadBytes, Txid: txid, ChannelId: channelId}
-	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_OUTCHAIN_QUERY)
-
-	// Execute the request and get response
-	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
-	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("[%s]error sending OUTCHAIN_QUERY", msg.Txid))
-	}
-
-	if responseMsg.Type.String() == pb.ChaincodeMessage_RESPONSE.String() {
-		// Success response
-		log.Debugf("[%s]Received %s. Successfully updated state", shorttxid(responseMsg.Txid), pb.ChaincodeMessage_RESPONSE)
-		return responseMsg.Payload, nil
-	}
-
-	if responseMsg.Type.String() == pb.ChaincodeMessage_ERROR.String() {
-		// Error response
-		log.Errorf("[%s]Received %s. Payload: %s", shorttxid(responseMsg.Txid), pb.ChaincodeMessage_ERROR, responseMsg.Payload)
-		return nil, errors.New(string(responseMsg.Payload[:]))
-	}
-
-	// Incorrect chaincode message received
-	return nil, errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s or %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
 }
 
 // handleOutCall communicates with the peer to put state information into the ledger.

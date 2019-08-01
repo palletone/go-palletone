@@ -1,7 +1,0 @@
-[btc_config]
-net_id = 1
-host = "localhost:18332"
-rpc_user = "zxl"
-rpc_passwd = "123456"
-cert_path = ""
-wallet_passwd = "1"

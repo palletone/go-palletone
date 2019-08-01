@@ -36,22 +36,6 @@ import (
 	"go.dedis.ch/kyber/v3"
 )
 
-// validate unit state
-//const (
-//	UNIT_STATE_VALIDATED                = 0x00
-//	UNIT_STATE_AUTHOR_SIGNATURE_PASSED  = 0x01
-//	UNIT_STATE_EMPTY                    = 0x02
-//	UNIT_STATE_INVALID_AUTHOR_SIGNATURE = 0x03
-//	UNIT_STATE_INVALID_GROUP_SIGNATURE  = 0x04
-//	UNIT_STATE_HAS_INVALID_TRANSACTIONS = 0x05
-//	UNIT_STATE_INVALID_SIZE             = 0x06
-//	UNIT_STATE_INVALID_EXTRA_DATA       = 0x07
-//	UNIT_STATE_INVALID_HEADER           = 0x08
-//	UNIT_STATE_CHECK_HEADER_PASSED      = 0x09
-//	UNIT_STATE_INVALID_HEADER_WITNESS   = 0x10
-//	UNIT_STATE_OTHER_ERROR              = 0xFF
-//)
-
 // unit state
 const (
 	U_STATE_NO_GROUPSIGN = 0x20
@@ -70,6 +54,26 @@ type Header struct {
 	Extra       []byte        `json:"extra"`
 	Time        int64         `json:"creation_time"` // unit create time
 	CryptoLib   []byte        `json:"crypto_lib"`    //该区块使用的加解密算法和哈希算法，0位表示非对称加密算法，1位表示Hash算法
+}
+
+func (h *Header) NumberU64() uint64 {
+	return h.Number.Index
+}
+
+func (h *Header) GetGroupPubKeyByte() []byte {
+	return h.GroupPubKey
+}
+
+func (h *Header) GetGroupPubKey() (kyber.Point, error) {
+	pubKeyB := h.GroupPubKey
+	if len(pubKeyB) == 0 {
+		return nil, errors.New("group public key is null")
+	}
+
+	pubKey := core.Suite.Point()
+	err := pubKey.UnmarshalBinary(pubKeyB)
+
+	return pubKey, err
 }
 
 func (cpy *Header) CopyHeader(h *Header) {
@@ -179,10 +183,12 @@ func CopyHeader(h *Header) *Header {
 	}
 
 	if len(h.GroupSign) > 0 {
+		cpy.GroupSign = make([]byte, len(h.GroupSign))
 		copy(cpy.GroupSign, h.GroupSign)
 	}
 
 	if len(h.GroupPubKey) > 0 {
+		cpy.GroupPubKey = make([]byte, len(h.GroupPubKey))
 		copy(cpy.GroupPubKey, h.GroupPubKey)
 	}
 
@@ -268,23 +274,13 @@ func (unit *Unit) Author() common.Address {
 	return unit.UnitHeader.Author()
 }
 
-func (unit *Unit) GroupPubKey() (kyber.Point, error) {
-	pubKeyB := unit.UnitHeader.GroupPubKey
-	if len(pubKeyB) == 0 {
-		return nil, errors.New("group public key is null")
-	}
-
-	pubKey := core.Suite.Point()
-	err := pubKey.UnmarshalBinary(pubKeyB)
-
-	return pubKey, err
+func (unit *Unit) GetGroupPubKey() (kyber.Point, error) {
+	return unit.UnitHeader.GetGroupPubKey()
 }
 
-//type OutPoint struct {
-//	TxHash       common.Hash // reference Utxo struct key field
-//	MessageIndex uint32      // message index in transaction
-//	OutIndex     uint32
-//}
+func (unit *Unit) GetGroupPubKeyByte() []byte {
+	return unit.UnitHeader.GetGroupPubKeyByte()
+}
 
 func (unit *Unit) IsEmpty() bool {
 	if unit == nil || unit.Hash() == (common.Hash{}) {
@@ -303,16 +299,10 @@ func (unit *Unit) String4Log() string {
 //type Transactions []*Transaction
 type TxPoolTxs []*TxPoolTransaction
 
-//type Transaction struct {
-//	TxHash     common.Hash `json:"txhash"`
-//	TxMessages []Message   `json:"messages"`
-//	Locktime   uint32      `json:"lock_time"`
-//}
 //出于DAG和基于Token的分区共识的考虑，设计了该ChainIndex，
 type ChainIndex struct {
 	AssetID AssetId `json:"asset_id"`
-	//IsMain  bool    `json:"is_main"`
-	Index uint64 `json:"index"`
+	Index   uint64  `json:"index"`
 }
 
 func NewChainIndex(assetId AssetId, idx uint64) *ChainIndex {
@@ -346,12 +336,6 @@ func (height *ChainIndex) Equal(in *ChainIndex) bool {
 	}
 	return true
 }
-
-//type Author struct {
-//	Address        common.Address `json:"address"`
-//	Pubkey         []byte/*common.Hash*/ `json:"pubkey"`
-//	TxAuthentifier *Authentifier `json:"authentifiers"`
-//}
 
 type Authentifier struct {
 	PubKey    []byte `json:"pubkey"`
@@ -442,7 +426,7 @@ func (u *Unit) Number() *ChainIndex {
 }
 
 func (u *Unit) NumberU64() uint64 {
-	return u.UnitHeader.Number.Index
+	return u.UnitHeader.NumberU64()
 }
 
 func (u *Unit) Timestamp() int64 {
@@ -454,10 +438,14 @@ func (u *Unit) ParentHash() []common.Hash {
 	return u.UnitHeader.ParentsHash
 }
 
-func (u *Unit) SetGroupSign(sign []byte) {
-	if len(sign) > 0 {
-		u.UnitHeader.GroupSign = sign
-	}
+//func (u *Unit) SetGroupSign(sign []byte) {
+//	if len(sign) > 0 {
+//		u.UnitHeader.GroupSign = sign
+//	}
+//}
+
+func (u *Unit) GetGroupSign() []byte {
+	return u.UnitHeader.GroupSign
 }
 
 type ErrUnit float64

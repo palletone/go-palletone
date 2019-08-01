@@ -92,7 +92,7 @@ func New(ctx *node.ServiceContext, config *ptn.Config, protocolname string) (*Li
 	if err != nil {
 		return nil, err
 	}
-	dag, err := dag.NewDag(chainDb)
+	dag, err := dag.NewDag(chainDb,true)
 	if err != nil {
 		log.Error("PalletOne New", "NewDag err:", err)
 		return nil, err

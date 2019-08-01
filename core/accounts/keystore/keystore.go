@@ -21,24 +21,23 @@
 package keystore
 
 import (
-	"crypto/ecdsa"
 	crand "crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/big"
 	"os"
 	"path/filepath"
-        "encoding/hex"
 	"reflect"
 	"runtime"
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -256,8 +255,8 @@ func (ks *KeyStore) Delete(a accounts.Account, passphrase string) error {
 }
 
 // SignHash calculates a ECDSA signature for the given hash. The produced
-// signature is in the [R || S || V] format where V is 0 or 1.
-func (ks *KeyStore) SignHash(addr common.Address, hash []byte) ([]byte, error) {
+// signature is in the [R || S ] format .
+func (ks *KeyStore) SignMessage(addr common.Address, msg []byte) ([]byte, error) {
 	// Look up the key to sign with and abort if it cannot be found
 	ks.mu.RLock()
 	defer ks.mu.RUnlock()
@@ -266,8 +265,9 @@ func (ks *KeyStore) SignHash(addr common.Address, hash []byte) ([]byte, error) {
 	if !found {
 		return nil, ErrLocked
 	}
+	return crypto.MyCryptoLib.Sign(unlockedKey.PrivateKey, msg)
 	// Sign the hash using plain ECDSA operations
-	return crypto.Sign(hash, unlockedKey.PrivateKey)
+	//return crypto.Sign(hash, unlockedKey.PrivateKey)
 }
 
 // SignTx signs the given transaction with the requested account.
@@ -293,14 +293,15 @@ func (ks *KeyStore) SignTx(a accounts.Account, tx *modules.Transaction, chainID 
 
 // SignHashWithPassphrase signs hash if the private key matching the given address
 // can be decrypted with the given passphrase. The produced signature is in the
-// [R || S || V] format where V is 0 or 1.
-func (ks *KeyStore) SignHashWithPassphrase(a accounts.Account, passphrase string, hash []byte) (signature []byte, err error) {
+// [R || S ] format where V is 0 or 1.
+func (ks *KeyStore) SignMessageWithPassphrase(a accounts.Account, passphrase string, msg []byte) (signature []byte, err error) {
 	_, key, err := ks.getDecryptedKey(a, passphrase)
 	if err != nil {
 		return nil, err
 	}
 	defer ZeroKey(key.PrivateKey)
-	return crypto.Sign(hash, key.PrivateKey)
+	return crypto.MyCryptoLib.Sign(key.PrivateKey, msg)
+	//return crypto.Sign(hash, key.PrivateKey)
 }
 func (ks *KeyStore) VerifySignatureWithPassphrase(a accounts.Account, passphrase string, hash []byte, signature []byte) (pass bool, err error) {
 	_, key, err := ks.getDecryptedKey(a, passphrase)
@@ -308,9 +309,11 @@ func (ks *KeyStore) VerifySignatureWithPassphrase(a accounts.Account, passphrase
 		return false, err
 	}
 	defer ZeroKey(key.PrivateKey)
-	pk := key.PrivateKey.PublicKey
-	sig := signature[:len(signature)-1] // remove recovery id
-	return crypto.VerifySignature(crypto.FromECDSAPub(&pk), hash, sig), nil
+
+	pk, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(key.PrivateKey)
+	return crypto.MyCryptoLib.Verify(pk, signature, hash)
+	//sig := signature[:len(signature)-1] // remove recovery id
+	//return crypto.VerifySignature(crypto.FromECDSAPub(&pk), hash, sig), nil
 }
 
 // SignTxWithPassphrase signs the transaction if the private key matching the
@@ -470,15 +473,16 @@ func (ks *KeyStore) DumpKey(a accounts.Account, passphrase string) (privateKey [
 	if err != nil {
 		return nil, err
 	}
-	return crypto.FromECDSA(key.PrivateKey), nil
+	return key.PrivateKey, nil
 
 }
-func (ks *KeyStore) DumpPrivateKey(a accounts.Account, passphrase string) (privateKey *ecdsa.PrivateKey, err error) {
+func (ks *KeyStore) DumpPrivateKey(a accounts.Account, passphrase string) (privateKey interface{}, err error) {
 	_, key, err := ks.getDecryptedKey(a, passphrase)
 	if err != nil {
 		return nil, err
 	}
-	return key.PrivateKey, nil
+
+	return crypto.MyCryptoLib.PrivateKeyToInstance(key.PrivateKey)
 
 }
 
@@ -496,11 +500,11 @@ func (ks *KeyStore) Import(keyJSON []byte, passphrase, newPassphrase string) (ac
 
 // Import stores the given encrypted JSON key into the key directory.
 func (ks *KeyStore) ImportFromHex(hexhash string, newPassphrase string) (accounts.Account, error) {
-	b, err := hex.DecodeString(hexhash)
+	priv, err := hex.DecodeString(hexhash)
 	if err != nil {
 		return accounts.Account{}, errors.New("invalid hex string")
 	}
-	priv ,err :=crypto.ToECDSA(b)
+	//priv, err := crypto.ToECDSA(b)
 	key := newKeyFromECDSA(priv)
 	if key != nil && key.PrivateKey != nil {
 		defer ZeroKey(key.PrivateKey)
@@ -510,8 +514,10 @@ func (ks *KeyStore) ImportFromHex(hexhash string, newPassphrase string) (account
 	}
 	return ks.importKey(key, newPassphrase)
 }
+
 // ImportECDSA stores the given key into the key directory, encrypting it with the passphrase.
-func (ks *KeyStore) ImportECDSA(priv *ecdsa.PrivateKey, passphrase string) (accounts.Account, error) {
+func (ks *KeyStore) ImportECDSA(priv []byte, passphrase string) (accounts.Account, error) {
+
 	key := newKeyFromECDSA(priv)
 	if ks.cache.hasAddress(key.Address) {
 		return accounts.Account{}, fmt.Errorf("account already exists")
@@ -539,14 +545,14 @@ func (ks *KeyStore) Update(a accounts.Account, passphrase, newPassphrase string)
 }
 
 // ZeroKey zeroes a private key in memory.
-func ZeroKey(k *ecdsa.PrivateKey) {
-	b := k.D.Bits()
-	for i := range b {
-		b[i] = 0
+func ZeroKey(k []byte) {
+	//b := k.D.Bits()
+	for idx, _ := range k {
+		k[idx] = 0
 	}
 }
 
-func (ks *KeyStore) getPrivateKey(address common.Address) (*ecdsa.PrivateKey, error) {
+func (ks *KeyStore) getPrivateKey(address common.Address) ([]byte, error) {
 	// Look up the key to sign with and abort if it cannot be found
 	ks.mu.RLock()
 	defer ks.mu.RUnlock()
@@ -565,7 +571,8 @@ func (ks *KeyStore) GetPublicKey(address common.Address) ([]byte, error) {
 	if !found {
 		return nil, ErrLocked
 	}
-	return crypto.CompressPubkey(&unlockedKey.PrivateKey.PublicKey), nil
+	return crypto.MyCryptoLib.PrivateKeyToPubKey(unlockedKey.PrivateKey)
+	//return crypto.CompressPubkey(&unlockedKey.PrivateKey.PublicKey), nil
 }
 
 func (ks *KeyStore) SigUnit(unitHeader *modules.Header, address common.Address) ([]byte, error) {
@@ -581,23 +588,30 @@ func (ks *KeyStore) SigData(data interface{}, address common.Address) ([]byte, e
 		return nil, err
 	}
 	//defer ZeroKey(privateKey)
-	hash := util.RlpHash(data) //crypto.Keccak256Hash(util.RHashBytes(data))
+	msg, err := rlp.EncodeToBytes(data)
+	//hash := util.RlpHash(data) //crypto.Keccak256Hash(util.RHashBytes(data))
 	if err != nil {
 		return nil, err
 	}
-	sign, err := crypto.Sign(hash.Bytes(), privateKey)
+	sign, err := crypto.MyCryptoLib.Sign(privateKey, msg)
+	//sign, err := crypto.Sign(hash.Bytes(), privateKey)
 	if err != nil {
 		return nil, err
 	}
-	log.Debugf("Try to sign data hash:%s,sign result:%x", hash.String(), sign)
+	//log.Debugf("Try to sign data:%x,sign result:%x", msg, sign)
 
 	return sign, nil
 }
 
-func (ks *KeyStore) SigUnitWithPwd(unit interface{}, privateKey *ecdsa.PrivateKey) ([]byte, error) {
-	hash := util.RlpHash(unit) //crypto.Keccak256Hash(util.RHashBytes(unit))
+func (ks *KeyStore) SigUnitWithPwd(unit interface{}, privateKey []byte) ([]byte, error) {
+	//hash := util.RlpHash(unit) //crypto.Keccak256Hash(util.RHashBytes(unit))
+	msg, err := rlp.EncodeToBytes(unit)
+	//hash := util.RlpHash(data) //crypto.Keccak256Hash(util.RHashBytes(data))
+	if err != nil {
+		return nil, err
+	}
 	//unit signature
-	sign, err := crypto.Sign(hash.Bytes(), privateKey)
+	sign, err := crypto.MyCryptoLib.Sign(privateKey, msg)
 	if err != nil {
 		return nil, err
 	}
@@ -605,17 +619,18 @@ func (ks *KeyStore) SigUnitWithPwd(unit interface{}, privateKey *ecdsa.PrivateKe
 }
 
 func VerifyUnitWithPK(sign []byte, unit interface{}, publicKey []byte) bool {
-	hash := util.RlpHash(unit) //crypto.Keccak256Hash(util.RHashBytes(unit))
-	// s, err := hexutil.Decode(sign)
-	// if err != nil {
-	// 	return false
-	// }
+	msg, err := rlp.EncodeToBytes(unit)
+	//hash := util.RlpHash(data) //crypto.Keccak256Hash(util.RHashBytes(data))
+	if err != nil {
+		return false
+	}
 	if len(sign) <= 0 {
 		log.Error("Unit sigature is none.")
 		return false
 	}
 	sig := sign[:len(sign)-1] // remove recovery id
-	return crypto.VerifySignature(publicKey, hash.Bytes(), sig)
+	pass, _ := crypto.MyCryptoLib.Verify(publicKey, sig, msg)
+	return pass
 }
 
 //tx:TxMessages   []Message
@@ -637,6 +652,6 @@ func VerifyTXWithPK(sign []byte, tx interface{}, publicKey []byte) bool {
 	return VerifyUnitWithPK(sign, tx, publicKey)
 }
 
-func (ks *KeyStore) SigTXWithPwd(tx interface{}, privateKey *ecdsa.PrivateKey) ([]byte, error) {
+func (ks *KeyStore) SigTXWithPwd(tx interface{}, privateKey []byte) ([]byte, error) {
 	return ks.SigUnitWithPwd(tx, privateKey)
 }

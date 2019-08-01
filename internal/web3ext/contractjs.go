@@ -32,14 +32,14 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'ccinstalltx',
         	call: 'contract_ccinstalltx',
-        	params: 8, //from, to , daoAmount, daoFee , tplName, path, version
-			inputFormatter: [null, null, null,null, null, null, null, null]
+        	params: 11, //from, to , daoAmount, daoFee , tplName, path, version，description，abi，language
+			inputFormatter: [null, null, null,null, null, null, null, null, null, null, null]
 		}),
 		new web3._extend.Method({
 			name: 'ccdeploytx',
         	call: 'contract_ccdeploytx',
-        	params: 6, //from, to , daoAmount, daoFee , templateId , args  
-			inputFormatter: [null, null, null,null, null, null]
+        	params: 7, //from, to , daoAmount, daoFee , templateId , args , extData
+			inputFormatter: [null, null, null,null, null, null, null]
 		}),
 		new web3._extend.Method({
 			name: 'ccinvoketx',
@@ -62,27 +62,27 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'ccstoptx',
         	call: 'contract_ccstoptx',
-        	params: 6, //from, to, daoAmount, daoFee, contractId, deleteImage
-			inputFormatter: [null, null, null, null, null, null]
+        	params: 5, //from, to, daoAmount, daoFee, contractId
+			inputFormatter: [null, null, null, null, null]
 		}),
 		//cc
 		new web3._extend.Method({
 			name: 'ccinstall',
         	call: 'contract_ccinstall',
-        	params: 3, //ccName string, ccPath string, ccVersion string
-			inputFormatter: [null, null, null]
+        	params: 6, //ccName string, ccPath string, ccVersion string
+			inputFormatter: [null, null, null, null, null, null]
 		}),
 		new web3._extend.Method({
 			name: 'ccdeploy',
         	call: 'contract_ccdeploy',
-        	params: 3, //templateId, args []string ---->["init", "a", "1", "b", 10], timeout uint32
-			inputFormatter: [null, null, null]
+        	params: 2, //templateId, args []string ---->["init", "a", "1", "b", 10], timeout uint32
+			inputFormatter: [null, null]
 		}),
 		new web3._extend.Method({
 			name: 'ccinvoke',
         	call: 'contract_ccinvoke',
-        	params: 3, // contractAddr, args[]string------>["fun", "key", "value"], timeout uint32
-			inputFormatter: [null, null, null]
+        	params: 2, // contractAddr, args[]string------>["fun", "key", "value"], timeout uint32
+			inputFormatter: [null, null]
 		}),
 		new web3._extend.Method({
 			name: 'ccquery',
@@ -119,8 +119,26 @@ web3._extend({
         	params: 1, // param[]string
 		}),
 		new web3._extend.Method({
-			name: 'getContractsByTpl',
-        	call: 'contract_getContractsByTpl',
+			name: 'getAllContractsUsedTemplateId',
+        	call: 'contract_getAllContractsUsedTemplateId',
+        	params: 1, //param[]string
+			inputFormatter: [null]
+		}),
+		new web3._extend.Method({
+			name: 'getContractTemplateInfoById',
+        	call: 'contract_getContractTemplateInfoById',
+        	params: 1, //param[]string
+			inputFormatter: [null]
+		}),
+		new web3._extend.Method({
+			name: 'getContractInfoById',
+        	call: 'contract_getContractInfoById',
+        	params: 1, //param[]string
+			inputFormatter: [null]
+		}),
+		new web3._extend.Method({
+			name: 'getContractInfoByAddr',
+        	call: 'contract_getContractInfoByAddr',
         	params: 1, //param[]string
 			inputFormatter: [null]
 		}),

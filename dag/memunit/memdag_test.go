@@ -24,6 +24,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"time"
 
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -31,18 +32,22 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/stretchr/testify/assert"
 
-	"crypto/ecdsa"
+	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/palletcache"
+	"github.com/palletone/go-palletone/validator"
 	"testing"
 )
 
+func cache() palletcache.ICache {
+	return freecache.NewCache(1000 * 1024)
+}
 func TestMemDag_AddUnit(t *testing.T) {
 	//mockCtrl := gomock.NewController(t)
 	//defer mockCtrl.Finish()
 	lastHeader := newTestUnit(common.Hash{}, 0, key1)
-	//txpool := txspool.NewMockITxPool(mockCtrl)
 	db, _ := ptndb.NewMemDatabase()
 	dagDb := storage.NewDagDb(db)
 	utxoDb := storage.NewUtxoDb(db)
@@ -58,17 +63,15 @@ func TestMemDag_AddUnit(t *testing.T) {
 	propRep.StoreGlobalProp(modules.NewGlobalProp())
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	gasToken := dagconfig.DagConfig.GetGasToken()
-	memdag := NewMemDag(gasToken, 2, false, db, unitRep, propRep, stateRep)
-	//tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
+	memdag := NewMemDag(gasToken, 2, false, db, unitRep, propRep, stateRep, cache())
 
-	err := memdag.AddUnit(newTestUnit(common.Hash{}, 0, key2), nil)
+	_, _, _, _, _, err := memdag.AddUnit(newTestUnit(common.Hash{}, 0, key2), nil)
 	assert.Nil(t, err)
 }
 func BenchmarkMemDag_AddUnit(b *testing.B) {
-	//mockCtrl := gomock.NewController(b)
+	//mockCtrl := gomock.NewController(t)
 	//defer mockCtrl.Finish()
 	lastHeader := newTestUnit(common.Hash{}, 0, key1)
-	//txpool := txspool.NewMockITxPool(mockCtrl)
 	db, _ := ptndb.NewMemDatabase()
 	dagDb := storage.NewDagDb(db)
 	utxoDb := storage.NewUtxoDb(db)
@@ -77,41 +80,42 @@ func BenchmarkMemDag_AddUnit(b *testing.B) {
 	propDb := storage.NewPropertyDb(db)
 	propDb.SetNewestUnit(lastHeader.UnitHeader)
 	propDb.SetNewestUnit(lastHeader.Header())
-	//utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb)
+
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
 	unitRep.SaveUnit(lastHeader, false)
 	propRep := dagcommon.NewPropRepository(propDb)
 	propRep.StoreGlobalProp(modules.NewGlobalProp())
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	gasToken := modules.PTNCOIN
-	memdag := NewMemDag(gasToken, 2, false, db, unitRep, propRep, stateRep)
-	//tunitRep, tutxoRep, tstateRep := unstableChain.GetUnstableRepositories()
+	memdag := NewMemDag(gasToken, 2, false, db, unitRep, propRep, stateRep, cache())
+
 	parentHash := lastHeader.Hash()
 	for i := 0; i < b.N; i++ {
 		unit := newTestUnit(parentHash, uint64(i+1), key1)
-		err := memdag.AddUnit(unit, nil)
+		_, _, _, _, _, err := memdag.AddUnit(unit, nil)
 		assert.Nil(b, err)
 		parentHash = unit.Hash()
 	}
 }
-func newTestUnit(parentHash common.Hash, height uint64, key *ecdsa.PrivateKey) *modules.Unit {
+func newTestUnit(parentHash common.Hash, height uint64, key []byte) *modules.Unit {
 	h := newTestHeader(parentHash, height, key)
 	return modules.NewUnit(h, []*modules.Transaction{})
 }
 
 var (
-	key1, _ = crypto.GenerateKey()
-	addr1   = crypto.PubkeyToAddress(&key1.PublicKey)
-	key2, _ = crypto.GenerateKey()
-	addr2   = crypto.PubkeyToAddress(&key2.PublicKey)
-	key3, _ = crypto.GenerateKey()
-	key4, _ = crypto.GenerateKey()
+	key1, _    = crypto.MyCryptoLib.KeyGen()
+	pubKey1, _ = crypto.MyCryptoLib.PrivateKeyToPubKey(key1)
+	addr1      = crypto.PubkeyBytesToAddress(pubKey1)
+	key2, _    = crypto.MyCryptoLib.KeyGen()
+	pubKey2, _ = crypto.MyCryptoLib.PrivateKeyToPubKey(key2)
+	addr2      = crypto.PubkeyBytesToAddress(pubKey2)
+	key3, _    = crypto.MyCryptoLib.KeyGen()
+	key4, _    = crypto.MyCryptoLib.KeyGen()
 )
 
-func newTestHeader(parentHash common.Hash, height uint64, key *ecdsa.PrivateKey) *modules.Header {
+func newTestHeader(parentHash common.Hash, height uint64, key []byte) *modules.Header {
 
 	h := new(modules.Header)
-	//h.AssetIDs = append(h.AssetIDs, PTNCOIN)
 	au := modules.Authentifier{}
 
 	h.GroupSign = []byte("group_sign")
@@ -121,15 +125,13 @@ func newTestHeader(parentHash common.Hash, height uint64, key *ecdsa.PrivateKey)
 	h.Number.Index = height
 	h.Extra = make([]byte, 20)
 	h.ParentsHash = []common.Hash{parentHash}
-	//tr := common.Hash{}
-	//tr = tr.SetString("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f")
-	h.TxRoot = common.HexToHash("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f")
+	h.TxRoot = common.HexToHash("0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421")
 
-	sig, _ := crypto.Sign(h.TxRoot[:], key)
+	sig, _ := crypto.MyCryptoLib.Sign(key, h.TxRoot[:])
 	au.Signature = sig
-	au.PubKey = crypto.CompressPubkey(&key.PublicKey)
+	au.PubKey, _ = crypto.MyCryptoLib.PrivateKeyToPubKey(key)
 	h.Authors = au
-	h.Time = int64(height) * 3
+	h.Time = int64(1536451200) + 1000
 	return h
 }
 
@@ -139,7 +141,6 @@ func TestMemDag_AddOrphanUnit(t *testing.T) {
 	//defer mockCtrl.Finish()
 
 	lastHeader := newTestUnit(common.Hash{}, 0, key1)
-	//txpool := txspool.NewMockITxPool(mockCtrl)
 	var txpool txspool.ITxPool
 	db, _ := ptndb.NewMemDatabase()
 	dagDb := storage.NewDagDb(db)
@@ -154,22 +155,23 @@ func TestMemDag_AddOrphanUnit(t *testing.T) {
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	gasToken := modules.PTNCOIN
-	memdag := NewMemDag(gasToken, 2, false, db, unitRep, propRep, stateRep)
+	memdag := NewMemDag(gasToken, 2, false, db, unitRep, propRep, stateRep, cache())
 	u1 := newTestUnit(lastHeader.Hash(), 1, key2)
-	log.Debugf("Try add unit[%x] to memdag", u1.Hash())
-	err := memdag.AddUnit(u1, txpool)
+	log.Debugf("Try add unit[%x] to memdag, index: %d", u1.Hash(), u1.NumberU64())
+	_, _, _, _, _, err := memdag.AddUnit(u1, txpool)
 	assert.Nil(t, err)
 	assert.EqualValues(t, 1, memdag.GetLastMainChainUnit().NumberU64())
 
 	u2 := newTestUnit(u1.Hash(), 2, key1)
 	u3 := newTestUnit(u2.Hash(), 3, key2)
-	log.Debugf("Try add orphan unit[%x] to memdag", u3.Hash())
-	err = memdag.AddUnit(u3, txpool)
+	log.Debugf("Try add orphan unit[%x] to memdag, index: %d", u3.Hash(), u3.NumberU64())
+	_, _, _, _, _, err = memdag.AddUnit(u3, txpool)
 	assert.Nil(t, err)
 	assert.EqualValues(t, 1, memdag.GetLastMainChainUnit().NumberU64())
-	log.Debugf("Try add missed unit[%x] to memdag", u2.Hash())
-	err = memdag.AddUnit(u2, txpool)
+	log.Debugf("Try add missed unit[%x] to memdag, index: %d", u2.Hash(), u2.NumberU64())
+	_, _, _, _, _, err = memdag.AddUnit(u2, txpool)
 	assert.Nil(t, err)
+	time.Sleep(1 * time.Second)
 	assert.EqualValues(t, 3, memdag.GetLastMainChainUnit().NumberU64())
 }
 
@@ -178,7 +180,6 @@ func TestMemDag_SwitchMainChain(t *testing.T) {
 	//mockCtrl := gomock.NewController(t)
 	//defer mockCtrl.Finish()
 	u0 := newTestUnit(common.Hash{}, 1, key1)
-	//txpool := txspool.NewMockITxPool(mockCtrl)
 	var txpool txspool.ITxPool
 	db, _ := ptndb.NewMemDatabase()
 	dagDb := storage.NewDagDb(db)
@@ -193,34 +194,38 @@ func TestMemDag_SwitchMainChain(t *testing.T) {
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	gasToken := modules.PTNCOIN
-	memdag := NewMemDag(gasToken, 2, false, db, unitRep, propRep, stateRep)
+	memdag := NewMemDag(gasToken, 2, false, db, unitRep, propRep, stateRep, cache())
+	//memdag.validator = mockValidator()
 	u1 := newTestUnit(u0.Hash(), 2, key2)
 	log.Debugf("Try add unit[%x] to memdag", u1.Hash())
-	err := memdag.AddUnit(u1, txpool)
+	_, _, _, _, _, err := memdag.AddUnit(u1, txpool)
 	assert.Nil(t, err)
 	assert.EqualValues(t, 2, memdag.GetLastMainChainUnit().NumberU64())
 
 	u22 := newTestUnit(u0.Hash(), 2, key1)
 	log.Debugf("Try add side unit[%x] to memdag", u22.Hash())
-	err = memdag.AddUnit(u22, txpool)
+	_, _, _, _, _, err = memdag.AddUnit(u22, txpool)
 	assert.Nil(t, err)
 	assert.EqualValues(t, u1.Hash(), memdag.GetLastMainChainUnit().Hash())
 
 	u33 := newTestUnit(u22.Hash(), 3, key2)
 	log.Debugf("Try add new longest chain unit[%x] to memdag", u33.Hash())
 
-	err = memdag.AddUnit(u33, txpool)
+	_, _, _, _, _, err = memdag.AddUnit(u33, txpool)
 	assert.Nil(t, err)
+	time.Sleep(1 * time.Second)
 	assert.EqualValues(t, 3, memdag.GetLastMainChainUnit().NumberU64())
 }
 
 func mockMediatorInit(statedb storage.IStateDb, propDb storage.IPropertyDb) {
 	point, _ := core.StrToPoint("Dsn4gF2xpsM79R6kBfsR1joZD4BoPfBGREJGStCAz1bFfUnB5QXBGbNfudxyCWz6uWZZ8c43BYWkxiezyF5uifhv1diiykrxzgFhLMSAvppx34RjJwzjmXAXnYMuQX3Jy2P3ygehcKmATAyXQCVoXde6Xo3tkA2Jv8Zb8zDcdGjbFyd")
 	node, _ := core.StrToMedNode("pnode://f056aca66625c286ae444add82f44b9eb74f18a8a96572360cb70df9b6d64d9bd2c58a345e570beb2bcffb037cd0a075f548b73083d31c12f1f4564865372534@127.0.0.1:30303")
-	m1 := &core.Mediator{Address: addr1, InitPubKey: point, Node: node, MediatorApplyInfo: &core.MediatorApplyInfo{}, MediatorInfoExpand: &core.MediatorInfoExpand{}}
+	m1 := &core.Mediator{Address: addr1, InitPubKey: point, Node: node,
+		MediatorApplyInfo: core.NewMediatorApplyInfo(), MediatorInfoExpand: core.NewMediatorInfoExpand()}
 
 	statedb.StoreMediator(m1)
-	m2 := &core.Mediator{Address: addr2, InitPubKey: point, Node: node, MediatorApplyInfo: &core.MediatorApplyInfo{}, MediatorInfoExpand: &core.MediatorInfoExpand{}}
+	m2 := &core.Mediator{Address: addr2, InitPubKey: point, Node: node,
+		MediatorApplyInfo: core.NewMediatorApplyInfo(), MediatorInfoExpand: core.NewMediatorInfoExpand()}
 	statedb.StoreMediator(m2)
 	gp := modules.NewGlobalProp()
 	gp.ActiveMediators = make(map[common.Address]bool)
@@ -235,4 +240,32 @@ func mockMediatorInit(statedb storage.IStateDb, propDb storage.IPropertyDb) {
 	ms.CurrentShuffledMediators = append(ms.CurrentShuffledMediators, addr1)
 	ms.CurrentShuffledMediators = append(ms.CurrentShuffledMediators, addr2)
 	propDb.StoreMediatorSchl(ms)
+}
+func mockValidator() validator.Validator {
+	return &mockValidate{}
+}
+
+type mockValidate struct {
+}
+
+func (v mockValidate) ValidateTx(tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, validator.ValidationCode, error) {
+	return nil, validator.TxValidationCode_VALID, nil
+}
+
+func (v mockValidate) ValidateUnitExceptGroupSig(unit *modules.Unit) validator.ValidationCode {
+	return validator.TxValidationCode_VALID
+}
+func (v mockValidate) ValidateUnitExceptPayment(unit *modules.Unit) error {
+	return nil
+}
+
+//验证一个Header是否合法（Mediator签名有效）
+func (v mockValidate) ValidateHeader(h *modules.Header) validator.ValidationCode {
+	return validator.TxValidationCode_VALID
+}
+func (v mockValidate) ValidateUnitGroupSign(h *modules.Header) error {
+	return nil
+}
+func (v mockValidate) CheckTxIsExist(tx *modules.Transaction) bool {
+	return false
 }

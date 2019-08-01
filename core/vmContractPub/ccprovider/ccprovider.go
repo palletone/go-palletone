@@ -30,7 +30,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/contracts/contractcfg"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/pkg/errors"
 	"time"
@@ -80,7 +79,7 @@ type CCPackage interface {
 func SetChaincodesPath(path string) error {
 	if s, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
-			if err := os.MkdirAll(path, 0755); err != nil {
+			if err := os.MkdirAll(path, 0750); err != nil {
 				log.Errorf("Could not create chaincodes install path: %s", err)
 				return err
 			}
@@ -377,6 +376,8 @@ func NewCCContext(contractid []byte, cid, name, version, txid string, syscc bool
 		return nil
 	}
 
+	//TODO xiaozhi
+	//canName := name + ":" + version + ":" + contractcfg.GetConfig().ContractAddress
 	canName := name + ":" + version
 
 	cccid := &CCContext{contractid, cid, name, version, txid, syscc, signedProp, prop, canName, nil}
@@ -397,7 +398,6 @@ func (cccid *CCContext) GetCanonicalName() string {
 
 func (cccid *CCContext) GetContainerName() string {
 	name := cccid.Name + ":" + cccid.Version
-	name = name + ":" + contractcfg.GetConfig().ContractAddress
 	return strings.Replace(name, ":", "-", -1)
 }
 
@@ -496,7 +496,7 @@ type ChaincodeProvider interface {
 	// ExecuteWithErrorFilter executes the chaincode given context and spec and returns payload
 	ExecuteWithErrorFilter(ctxt context.Context, cccid interface{}, spec interface{}, timeout time.Duration) ([]byte, *pb.ChaincodeEvent, error)
 	// Stop stops the chaincode given context and deployment spec
-	Stop(ctxt context.Context, cccid interface{}, spec *pb.ChaincodeDeploymentSpec) error
+	Stop(ctxt context.Context, cccid interface{}, spec *pb.ChaincodeDeploymentSpec, dontRmCon bool) error
 
 	Destory(ctxt context.Context, cccid interface{}, spec *pb.ChaincodeDeploymentSpec) error
 }

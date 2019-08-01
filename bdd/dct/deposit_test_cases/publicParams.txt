@@ -26,6 +26,7 @@ Resource          mediatorPayToDepositContractParams.txt
 Resource          postRequest.txt
 Resource          handleEachDay.txt
 Resource          getBalance.txt
+Resource          CreateToken.txt
 
 *** Variables ***
 ${depositContractQuery}    contract_depositContractQuery
@@ -33,5 +34,5 @@ ${depositContractInvoke}    contract_depositContractInvoke
 ${Url}            http://127.0.0.1:8545
 ${depositContractAddress}    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM
 ${amount}         0
-${fee}            10
-${medDepositAmount}    5000000000
+${fee}            1
+${medDepositAmount}    50

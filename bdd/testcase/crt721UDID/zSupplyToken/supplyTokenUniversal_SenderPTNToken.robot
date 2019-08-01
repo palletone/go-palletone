@@ -34,9 +34,7 @@ CcinvokePass normal
     ...    ${721MetaBefore}
     ${resp}    Request CcinvokePass    ${commonResultCode}    ${geneAdd}    ${reciever}    ${PTNAmount}    ${PTNPoundage}
     ...    ${721ContractId}    ${ccList}
-    ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
-    ${jsonRes}    To Json    ${jsonRes}
-    [Return]    ${jsonRes['result']}
+    [Return]    ${resp}
 
 Request getbalance before create token
     #${PTN1}    ${result1}    normalGetBalance    ${geneAdd}
@@ -49,9 +47,7 @@ Spply token of 721 contract
     ${ccList}    Create List    ${supplyTokenMethod}    ${preTokenId}    ${721TokenAmount}    ${721MetaAfter}
     ${resp}    Request CcinvokePass    ${commonResultCode}    ${reciever}    ${reciever}    ${PTNAmount}    ${PTNPoundage}
     ...    ${721ContractId}    ${ccList}
-    ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
-    ${jsonRes}    To Json    ${jsonRes}
-    [Return]    ${jsonRes['result']}
+    [Return]    ${resp}
 
 Calculate gain
     [Arguments]    ${PTN1}

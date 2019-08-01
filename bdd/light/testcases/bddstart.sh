@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ./preset.sh
-sleep 25
+sleep 30
 
 listcommand=`./gptn --exec 'personal.listAccounts'  attach node1/palletone/gptn.ipc`
 list=`echo ${listcommand//^M/}`
@@ -36,7 +36,7 @@ sleep 5
 #ptn.syncUTXOByAddr("P19wzjSAfVKRY84pPQMsqJSxeVK7oTYEiXt") in light node5
 syncutxocommand=`./gptn --exec "ptn.syncUTXOByAddr($account5)"  attach node_test5/palletone/gptn5.ipc`
 syncutxoinfo=`echo $syncutxocommand`
-value="\"OK\""
+value="\"ok\""
 echo $syncutxoinfo
 if [ $syncutxoinfo = $value ];then
     echo "============syncUTXOByAddr account5 ok============"
@@ -45,7 +45,7 @@ else
 fi
 
 #ptn.getBalance in light node5
-balancecommand=`./gptn --exec "ptn.getBalance($account5)"  attach node_test5/palletone/gptn5.ipc`
+balancecommand=`./gptn --exec "wallet.getBalance($account5)"  attach node_test5/palletone/gptn5.ipc`
 balanceinfo=`echo $balancecommand`
 temp=`echo ${balanceinfo:7}`
 length=`echo ${#temp}`
@@ -74,7 +74,7 @@ else
 fi
 
 
-balancecommand=`./gptn --exec "ptn.getBalance($account6)"  attach node_test6/palletone/gptn6.ipc`
+balancecommand=`./gptn --exec "wallet.getBalance($account6)"  attach node_test6/palletone/gptn6.ipc`
 balanceinfo=`echo $balancecommand`
 temp=`echo ${balanceinfo:7}`
 length=`echo ${#temp}`
@@ -104,7 +104,7 @@ else
 fi
 
 
-balancecommand=`./gptn --exec "ptn.getBalance($account7)"  attach node_test7/palletone/gptn7.ipc`
+balancecommand=`./gptn --exec "wallet.getBalance($account7)"  attach node_test7/palletone/gptn7.ipc`
 balanceinfo=`echo $balancecommand`
 temp=`echo ${balanceinfo:7}`
 length=`echo ${#temp}`
@@ -118,7 +118,7 @@ fi
 
 
 :<<!
-balancecommand=`./gptn --exec "ptn.getBalance($account5)"  attach node_test4/palletone/gptn4.ipc`
+balancecommand=`./gptn --exec "wallet.getBalance($account5)"  attach node_test4/palletone/gptn4.ipc`
 balanceinfo=`echo $balancecommand`
 temp=`echo ${balanceinfo:7}`
 length=`echo ${#temp}`

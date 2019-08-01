@@ -21,8 +21,8 @@ func RawTxInSignature(tx *modules.Transaction, msgIdx, idx int, subScript []byte
 	if err != nil {
 		return nil, fmt.Errorf("cannot parse output script: %v", err)
 	}
-	hash := calcSignatureHash(parsedScript, hashType, tx, msgIdx, idx, crypto)
-	sign, err := crypto.Sign(addr, hash)
+	data := calcSignatureData(parsedScript, hashType, tx, msgIdx, idx, crypto)
+	sign, err := crypto.Sign(addr, data)
 	return append(sign, byte(hashType)), nil
 	//signature, err := key.Sign(hash)
 	//if err != nil {
@@ -294,7 +294,7 @@ sigLoop:
 		// however, assume no sigs etc are in the script since that
 		// would make the transaction nonstandard and thus not
 		// MultiSigTy, so we just need to hash the full thing.
-		hash := calcSignatureHash(pkPops, hashType, tx, msgIdx, idx, crypto)
+		data := calcSignatureData(pkPops, hashType, tx, msgIdx, idx, crypto)
 
 		for _, addr := range addresses {
 			// All multisig addresses should be pubkey addreses
@@ -307,7 +307,7 @@ sigLoop:
 			// If it matches we put it in the map. We only
 			// can take one signature per public key so if we
 			// already have one, we can throw this away.
-			if pass, _ := crypto.Verify(pubKey, tSig, hash); pass {
+			if pass, _ := crypto.Verify(pubKey, tSig, data); pass {
 				//if pSig.Verify(hash, pubKey) {
 				aStr := addr.Address.String()
 				if _, ok := addrToSig[aStr]; !ok {

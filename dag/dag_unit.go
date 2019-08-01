@@ -37,7 +37,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	ks *keystore.KeyStore, txpool txspool.ITxPool) *modules.Unit {
 	t0 := time.Now()
 	defer func(start time.Time) {
-		log.Infof("GenerateUnit cost time: %v", time.Since(start))
+		log.Debugf("GenerateUnit cost time: %v", time.Since(start))
 	}(t0)
 
 	// 1. 判断是否满足生产的若干条件
@@ -55,8 +55,6 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	}
 
 	newUnit.UnitHeader.Time = when.Unix()
-	newUnit.UnitHeader.ParentsHash[0] = dag.HeadUnitHash()
-	newUnit.UnitHeader.Number.Index = dag.HeadUnitNum() + 1
 	newUnit.UnitHeader.GroupPubKey = groupPubKey
 	newUnit.Hash()
 
@@ -72,7 +70,14 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 		sign_unit.UnitHeader.ParentsHash[0].String(), sign_unit.Txs.Len(), time.Since(t0).String())
 
 	//3.将新单元添加到MemDag中
-	dag.Memdag.AddUnit(sign_unit, txpool)
+	a, b, c, d, e, err := dag.Memdag.AddUnit(sign_unit, txpool)
+	if a != nil && err == nil {
+		dag.unstableUnitRep = a
+		dag.unstableUtxoRep = b
+		dag.unstableStateRep = c
+		dag.unstablePropRep = d
+		dag.unstableUnitProduceRep = e
+	}
 
 	//4.PostChainEvents
 	//TODO add PostChainEvents

@@ -34,11 +34,11 @@ web3._extend({
 		//	params: 2,
 		//	inputFormatter: [web3._extend.formatters.inputAddressFormatter, null]
 		//}),
-		//new web3._extend.Method({
-		//	name: 'batchSign',
-		//	call: 'ptn_batchSign',
-		//	params: 6
-		//}),
+		new web3._extend.Method({
+			name: 'addressBalanceStatistics',
+			call: 'ptn_addressBalanceStatistics',
+			params: 2
+		}),
 		new web3._extend.Method({
 			name: 'encodeTx',
 			call: 'ptn_encodeTx',
@@ -81,73 +81,74 @@ web3._extend({
 		//	inputFormatter: [web3._extend.formatters.inputBlockNumberFormatter, web3._extend.utils.toHex]
 		//}),
 		
-		new web3._extend.Method({
-			name: 'setJuryAccount',
-        	call: 'ptn_setJuryAccount',
-        	params: 2, //address, password string
-			inputFormatter: [null, null]
-		}),
-		new web3._extend.Method({
-			name: 'getJuryAccount',
-        	call: 'ptn_getJuryAccount',
-        	params: 0, //
-			inputFormatter: []
-		}),
+		//new web3._extend.Method({
+		//	name: 'setJuryAccount',
+        	//call: 'ptn_setJuryAccount',
+        	//params: 2, //address, password string
+		//	inputFormatter: [null, null]
+		//}),
+		//new web3._extend.Method({
+		//	name: 'getJuryAccount',
+        	//call: 'ptn_getJuryAccount',
+        	//params: 0, //
+		//	inputFormatter: []
+		//}),
 		
 
-		new web3._extend.Method({
-			name: 'cmdCreateTransaction',
-			call: 'ptn_cmdCreateTransaction',
-			params: 4,
-			inputFormatter: [null,null,null, null]
-		}),
-		new web3._extend.Method({
-			name: 'createRawTransaction',
-			call: 'ptn_createRawTransaction',
-			params: 1,
-			inputFormatter: [null]
-		}),
-		new web3._extend.Method({
-			name: 'signRawTransaction',
-			call: 'ptn_signRawTransaction',
-			params: 3,
-			inputFormatter: [null,null, null]
-		}),
-		new web3._extend.Method({
-			name: 'sendRawTransaction',
-			call: 'ptn_sendRawTransaction',
-			params: 1,
-			inputFormatter: [null]
-		}),
-                new web3._extend.Method({
-			name: 'sendJsonTransaction',
-			call: 'ptn_sendJsonTransaction',
-			params: 1,
-			inputFormatter: [null]
-		}),
-        new web3._extend.Method({
-			name: 'getBalance',
-			call: 'ptn_getBalance',
-			params: 1,
-			inputFormatter: [null]
-		}),
+		//new web3._extend.Method({
+		//	name: 'cmdCreateTransaction',
+		//	call: 'ptn_cmdCreateTransaction',
+		//	params: 4,
+		//	inputFormatter: [null,null,null, null]
+		//}),
+		//new web3._extend.Method({
+		//	name: 'createRawTransaction',
+		//	call: 'ptn_createRawTransaction',
+		//	params: 1,
+		//	inputFormatter: [null]
+		//}),
+		//new web3._extend.Method({
+		//	name: 'signRawTransaction',
+		//	call: 'ptn_signRawTransaction',
+		//	params: 3,
+		//	inputFormatter: [null,null, null]
+		//}),
+		//new web3._extend.Method({
+		//	name: 'sendRawTransaction',
+		//	call: 'ptn_sendRawTransaction',
+		//	params: 1,
+		//	inputFormatter: [null]
+		//}),
+         //       new web3._extend.Method({
+		//	name: 'sendJsonTransaction',
+		//	call: 'ptn_sendJsonTransaction',
+		//	params: 1,
+		//	inputFormatter: [null]
+		//}),
+
+		//new web3._extend.Method({
+		//	name: 'getBalance',
+		//	call: 'ptn_getBalance',
+		//	params: 1,
+		//	inputFormatter: [null]
+		//}),
   		new web3._extend.Method({
 			name: 'getTokenTxHistory',
 			call: 'ptn_getTokenTxHistory',
 			params: 1,
 			inputFormatter: [null]
 		}),
-        new web3._extend.Method({
-			name: 'getTransactionsByTxid',
-            call: 'ptn_getTransactionsByTxid',
-			params: 1,
-			inputFormatter: [null]
-		}),
-        new web3._extend.Method({
-			name: 'election',
-			call: 'ptn_election',
-			params: 1,			
-		}),
+		//new web3._extend.Method({
+		//	name: 'getTransactionsByTxid',
+         //   call: 'ptn_getTransactionsByTxid',
+		//	params: 1,
+		//	inputFormatter: [null]
+		//}),
+		//new web3._extend.Method({
+		//	name: 'election',
+		//	call: 'ptn_election',
+		//	params: 1,			
+		//}),
 		new web3._extend.Method({
 			name: 'getProofTxInfoByHash',
 			call: 'ptn_getProofTxInfoByHash',
@@ -168,12 +169,12 @@ web3._extend({
 			call: 'ptn_syncUTXOByAddr',
 			params: 1
 		}),
-		new web3._extend.Method({
-			name: 'ccstartChaincodeContainer',
-			call: 'ptn_ccstartChaincodeContainer',
-			params: 2,
-			inputFormatter: [null,null]
-		}),
+		//new web3._extend.Method({
+		//	name: 'ccstartChaincodeContainer',
+		//	call: 'ptn_ccstartChaincodeContainer',
+		//	params: 2,
+		//	inputFormatter: [null,null]
+		//}),
 		new web3._extend.Method({
 			name: 'listSysConfig',
 			call: 'ptn_listSysConfig'
@@ -182,18 +183,18 @@ web3._extend({
 	],
 
 	properties: [
-		new web3._extend.Property({
-			name: 'pendingTransactions',
-			getter: 'ptn_pendingTransactions',
-			outputFormatter: function(txs) {
-				var formatted = [];
-				for (var i = 0; i < txs.length; i++) {
-					formatted.push(web3._extend.formatters.outputTransactionFormatter(txs[i]));
-					formatted[i].blockHash = null;
-				}
-				return formatted;
-			}
-		}),
+		//new web3._extend.Property({
+		//	name: 'pendingTransactions',
+		//	getter: 'ptn_pendingTransactions',
+		//	outputFormatter: function(txs) {
+		//		var formatted = [];
+		//		for (var i = 0; i < txs.length; i++) {
+		//			formatted.push(web3._extend.formatters.outputTransactionFormatter(txs[i]));
+		//			formatted[i].blockHash = null;
+		//		}
+		//		return formatted;
+		//	}
+		//}),
 		new web3._extend.Property({
 			name: 'getChainParameters',
 			getter: 'ptn_getChainParameters'

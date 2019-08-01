@@ -12,12 +12,15 @@ import (
 //var log = flogging.MustGetLogger("cclist")
 
 type CCInfo struct {
-	Id      []byte
-	Name    string
-	Path    string
-	Version string
+	Id       []byte
+	Name     string
+	Path     string
+	Version  string
 	TempleId []byte
-	SysCC  bool
+	SysCC    bool
+	//Description string
+	//Abi         string
+	Language string
 	//Enable bool
 }
 
@@ -99,6 +102,13 @@ func GetChaincode(cid string, deployId []byte) (*CCInfo, error) {
 	}
 	errmsg := fmt.Sprintf("not find chainId[%s], deployId[%x] in chains", cid, deployId)
 	return nil, errors.New(errmsg)
+}
+
+func GetAllChaincode(cid string) *chain {
+	if chains.Clist[cid] != nil {
+		return chains.Clist[cid]
+	}
+	return nil
 }
 
 func DelChaincode(cid string, ccName string, version string) error {

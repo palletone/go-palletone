@@ -128,14 +128,14 @@ func (p *Processor) AdapterFunRequest(reqId common.Hash, contractId common.Addre
 	}
 	log.Infof("AdapterFunRequest reqid: %x, consultContent: %s", reqId, string(consultContent))
 	//
-	account := p.getLocalAccount()
+	account := p.getLocalJuryAccount()
 	if account == nil {
 		return nil, errors.New("AdapterFunRequest no local account")
 	}
 
 	//
-	hash := crypto.Keccak256(consultContent, myAnswer)
-	sig, err := p.ptn.GetKeyStore().SignHashWithPassphrase(accounts.Account{Address: account.Address}, account.Password, hash)
+	data := append(consultContent, myAnswer...)
+	sig, err := p.ptn.GetKeyStore().SignMessageWithPassphrase(accounts.Account{Address: account.Address}, account.Password, data)
 	if err != nil {
 		return nil, errors.New("AdapterFunRequest SignHashWithPassphrase failed")
 	}

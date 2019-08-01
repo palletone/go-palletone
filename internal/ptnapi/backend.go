@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
+	"github.com/palletone/go-palletone/ptnjson/statistics"
 	"github.com/shopspring/decimal"
 )
 
@@ -63,6 +64,7 @@ type Backend interface {
 	GetUnstableUnits() []*ptnjson.UnitSummaryJson
 	// TxPool API
 	SendTx(ctx context.Context, signedTx *modules.Transaction) error
+	SendTxs(ctx context.Context, signedTxs []*modules.Transaction) []error
 	GetPoolTransactions() (modules.Transactions, error)
 	GetPoolTransaction(txHash common.Hash) *modules.Transaction
 	GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, error)
@@ -90,7 +92,7 @@ type Backend interface {
 	GetCommonByPrefix(prefix []byte) map[string][]byte
 	SaveCommon(key, val []byte) error
 	// Get Contract Api
-	GetContract(hex_id string) (*modules.Contract, error)
+	GetContract(contractAddr common.Address) (*ptnjson.ContractJson, error)
 
 	//get level db
 	GetUnitByHash(hash common.Hash) *modules.Unit
@@ -115,6 +117,7 @@ type Backend interface {
 	GetPrefix(prefix string) map[string][]byte //getprefix
 
 	GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error)
+	GetStxoEntry(outpoint *modules.OutPoint) (*ptnjson.StxoJson, error)
 	QueryDbByKey(key []byte) *ptnjson.DbRowJson
 	QueryDbByPrefix(prefix []byte) []*ptnjson.DbRowJson
 	//GetAddrOutput(addr string) ([]modules.Output, error)
@@ -124,22 +127,23 @@ type Backend interface {
 	GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error)
 	GetAddrRawUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAllUtxos() ([]*ptnjson.UtxoJson, error)
-
+	GetAddressBalanceStatistics(token string, topN int) (*statistics.TokenAddressBalanceJson, error)
 	GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson, error)
 	GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxHistoryJson, error)
+	GetAssetExistence(asset string) ([]*ptnjson.ProofOfExistenceJson, error)
 	//contract control
 	ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi, ccLanguage string) (TemplateId []byte, err error)
 	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)
 	ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 	ContractStop(deployId []byte, txid string, deleteImage bool) error
 
-	ContractStartChaincodeContainer(templateId []byte, txId string) (deployId []byte, e error)
 	DecodeTx(hex string) (string, error)
 	EncodeTx(jsonStr string) (string, error)
 
 	ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, description, abi, language string, addrs []common.Address) (reqId common.Hash, tplId []byte, err error)
-	ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (reqId common.Hash, contractAddr common.Address, err error)
+	ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, extData []byte, timeout time.Duration) (reqId common.Hash, contractAddr common.Address, err error)
 	ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error)
+	SendContractInvokeReqTx(requestTx *modules.Transaction) (reqId common.Hash, err error)
 	ContractInvokeReqTokenTx(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, asset string, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error)
 	ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, deleteImage bool) (reqId common.Hash, err error)
 	ElectionVrf(id uint32) ([]byte, error)
@@ -164,7 +168,7 @@ type Backend interface {
 	GetAllContractTpl() ([]*ptnjson.ContractTemplateJson, error)
 	GetAllContracts() ([]*ptnjson.ContractJson, error)
 	GetContractsByTpl(tplId []byte) ([]*ptnjson.ContractJson, error)
-
+	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
 	//get contract key
 	GetContractState(contractid []byte, key string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
@@ -223,9 +227,14 @@ func GetAPIs(apiBackend Backend) []rpc.API {
 			Public:    false,
 		}, {
 			Namespace: "dag",
-			Version:   "2.0",
+			Version:   "1.0",
 			Service:   NewPublicDagAPI(apiBackend),
 			Public:    true,
+		}, {
+			Namespace: "dag",
+			Version:   "1.0",
+			Service:   NewPrivateDagAPI(apiBackend),
+			Public:    false,
 		}, {
 			Namespace: "wallet",
 			Version:   "1.0",
@@ -241,6 +250,11 @@ func GetAPIs(apiBackend Backend) []rpc.API {
 			Version:   "1.0",
 			Service:   NewPublicContractAPI(apiBackend),
 			Public:    true,
+		}, {
+			Namespace: "contract",
+			Version:   "1.0",
+			Service:   NewPrivateContractAPI(apiBackend),
+			Public:    false,
 		}, {
 			Namespace: "mediator",
 			Version:   "1.0",

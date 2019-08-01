@@ -17,6 +17,7 @@
 package modules
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
@@ -26,8 +27,6 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-
-	"bytes"
 )
 
 type MessageType byte
@@ -60,8 +59,6 @@ const (
 	JuryList          = "JuryList"
 	DeveloperList     = "DeveloperList"
 	DepositRate       = "DepositRate"
-	//ContractSignatureNum = "ContractSignatureNum"
-	//ContractElectionNum  = "ContractElectionNum"
 )
 
 const (
@@ -95,15 +92,7 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	default:
 		//case APP_PAYMENT, APP_CONTRACT_TPL, APP_DATA:
 		msg.Payload = cpyMsg.Payload
-		//case APP_CONFIG:
-		//	payload, _ := cpyMsg.Payload.(*ConfigPayload)
-		//	newPayload := ConfigPayload{
-		//		ConfigSet: []ContractWriteSet{},
-		//	}
-		//	for _, p := range payload.ConfigSet {
-		//		newPayload.ConfigSet = append(newPayload.ConfigSet, ContractWriteSet{Key: p.Key, Value: p.Value})
-		//	}
-		//	msg.Payload = newPayload
+
 	case APP_CONTRACT_DEPLOY:
 		payload, _ := cpyMsg.Payload.(*ContractDeployPayload)
 		newPayload := ContractDeployPayload{
@@ -111,7 +100,6 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 			ContractId: payload.ContractId,
 			Args:       payload.Args,
 			EleList:    payload.EleList,
-			//ExecutionTime: payload.ExecutionTime,
 		}
 		readSet := []ContractReadSet{}
 		for _, rs := range payload.ReadSet {
@@ -161,8 +149,6 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 }
 
 func (msg *Message) CompareMessages(inMsg *Message) bool {
-	//return true //todo del
-
 	if inMsg == nil || msg.App != inMsg.App {
 		return false
 	}
@@ -350,7 +336,7 @@ type TokenPayOut struct {
 // App: contract_template
 type ContractTplPayload struct {
 	TemplateId []byte        `json:"template_id"`    // contract template id
-	Memory     uint16        `json:"memory"`         // contract template bytecode memory size(Byte), use to compute transaction fee
+	Size       uint16        `json:"size"`           // contract template bytecode memory size(Byte), use to compute transaction fee
 	ByteCode   []byte        `json:"byte_code"`      // contract bytecode
 	ErrMsg     ContractError `json:"contract_error"` // contract error message
 }
@@ -410,11 +396,13 @@ type ContractInstallRequestPayload struct {
 	Abi            string        `json:"abi"`
 	Language       string        `json:"language"`
 	AddrHash       []common.Hash `json:"addr_hash"`
+	Creator        string        `json:"creator"`
 }
 
 type ContractDeployRequestPayload struct {
 	TplId   []byte   `json:"tpl_name"`
 	Args    [][]byte `json:"args"`
+	ExtData []byte   `json:"extend_data"`
 	Timeout uint32   `json:"timeout"`
 }
 
@@ -470,12 +458,13 @@ type FileInfo struct {
 	Timestamp   uint64      `json:"timestamp"`
 	MainData    string      `json:"main_data"`
 	ExtraData   string      `json:"extra_data"`
+	Reference   string        `json:"reference"`
 }
 
 func NewContractTplPayload(templateId []byte, memory uint16, bytecode []byte, err ContractError) *ContractTplPayload {
 	return &ContractTplPayload{
 		TemplateId: templateId,
-		Memory:     memory,
+		Size:       memory,
 		ByteCode:   bytecode,
 		ErrMsg:     err,
 	}

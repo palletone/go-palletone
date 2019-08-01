@@ -124,7 +124,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		log.Error("PalletOne New", "CreateDB err:", err)
 		return nil, err
 	}
-	dag, err := dag.NewDag(db)
+	dag, err := dag.NewDag(db, false)
 	if err != nil {
 		log.Error("PalletOne New", "NewDag err:", err)
 		return nil, err
@@ -152,7 +152,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	//Test for P2P
 	ptn.engine = consensus.New(dag, ptn.txPool)
 
-	ptn.mediatorPlugin, err = mp.NewMediatorPlugin(ptn, dag, &config.MediatorPlugin)
+	ptn.mediatorPlugin, err = mp.NewMediatorPlugin(ctx, &config.MediatorPlugin, ptn, dag)
 	if err != nil {
 		log.Error("Initialize mediator plugin err:", "error", err)
 		return nil, err
@@ -358,7 +358,7 @@ func (s *PalletOne) Stop() error {
 	// append by Albert·Gou
 	s.mediatorPlugin.Stop()
 
-	s.dag.Close()
+
 	if s.lesServer != nil {
 		s.lesServer.Stop()
 	}
@@ -366,7 +366,7 @@ func (s *PalletOne) Stop() error {
 	if s.corsServer != nil {
 		s.corsServer.Stop()
 	}
-
+	s.dag.Close()
 	return nil
 }
 
@@ -406,7 +406,7 @@ func (p *PalletOne) SignGenericTransaction(from common.Address, tx *modules.Tran
 	// 3. 使用tokenengine 和 KeyStore 给 tx 签名
 	ks := p.GetKeyStore()
 	_, err := tokenengine.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, inputpoints, nil,
-		ks.GetPublicKey, ks.SignHash)
+		ks.GetPublicKey, ks.SignMessage)
 	if err != nil {
 		return nil, err
 	}

@@ -24,6 +24,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+
 	"github.com/ethereum/go-ethereum/rlp"
 
 	"github.com/palletone/go-palletone/common"
@@ -46,8 +47,7 @@ Tx的第一条Msg必须是Payment
 To validate one transaction
 如果isFullTx为false，意味着这个Tx还没有被陪审团处理完，所以结果部分的Payment不验证
 */
-func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool,
-	unitTime int64) (ValidationCode, []*modules.Addition) {
+func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (ValidationCode, []*modules.Addition) {
 	if len(tx.TxMessages) == 0 {
 		return TxValidationCode_INVALID_MSG, nil
 	}
@@ -55,7 +55,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool,
 	if tx.TxMessages[0].App != modules.APP_PAYMENT { // 交易费
 		return TxValidationCode_INVALID_MSG, nil
 	}
-	txFeePass, txFee := validate.validateTxFee(tx, unitTime)
+	txFeePass, txFee := validate.validateTxFee(tx)
 	if !txFeePass {
 		return TxValidationCode_INVALID_FEE, nil
 	}
@@ -74,10 +74,6 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool,
 			return TxValidationCode_NOT_COMPARE_SIZE, txFee
 		}
 
-		// validate transaction signature
-		if validateTxSignature(tx) == false {
-			return TxValidationCode_BAD_CREATOR_SIGNATURE, txFee
-		}
 		// validate every type payload
 		switch msg.App {
 		case modules.APP_PAYMENT:
@@ -230,7 +226,7 @@ func (v *Validate) validateVoteMediatorTx(payload interface{}) ValidationCode {
 		maxMediatorCount := int(v.propquery.GetChainParameters().MaximumMediatorCount)
 		mediatorCount := len(mediators)
 		if mediatorCount > maxMediatorCount {
-			log.Errorf("the number(%v) of mediators voting exceeded the maximum limit: %v",
+			log.Errorf("the total number(%v) of mediators voted exceeds the maximum limit: %v",
 				mediatorCount, maxMediatorCount)
 			return TxValidationCode_UNSUPPORTED_TX_PAYLOAD
 		}
@@ -259,12 +255,12 @@ func (v *Validate) validateVoteMediatorTx(payload interface{}) ValidationCode {
 }
 
 //验证手续费是否合法，并返回手续费的分配情况
-func (validate *Validate) validateTxFee(tx *modules.Transaction, unitTime int64) (bool, []*modules.Addition) {
+func (validate *Validate) validateTxFee(tx *modules.Transaction) (bool, []*modules.Addition) {
 	if validate.utxoquery == nil {
 		log.Warn("Cannot validate tx fee, your validate utxoquery not set")
 		return true, nil
 	}
-	feeAllocate, err := tx.GetTxFeeAllocate(validate.utxoquery.GetUtxoEntry, unitTime, tokenengine.GetScriptSigners, common.Address{})
+	feeAllocate, err := tx.GetTxFeeAllocate(validate.utxoquery.GetUtxoEntry, tokenengine.GetScriptSigners, common.Address{})
 	if err != nil {
 		log.Warn("compute tx fee error: " + err.Error())
 		return false, nil
@@ -366,7 +362,9 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			incomeAddr, _ := common.StringToAddress(addr)
 			aa := []modules.AmountAsset{}
 			rlp.DecodeBytes(v.Value, &aa)
-			rewards[incomeAddr] = aa
+			if len(aa) > 0 {
+				rewards[incomeAddr] = aa
+			}
 		}
 		//附加最新的奖励
 		for _, ad := range ads {
@@ -381,18 +379,29 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 		//Check payment output is correct
 		payment := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
 		if !compareRewardAndOutput(rewards, payment.Outputs) {
-			log.Error("Output not match")
+			log.Errorf("Coinbase tx[%s] Output not match", tx.Hash().String())
+			log.DebugDynamic(func() string {
+				rjson, _ := json.Marshal(rewards)
+				ojson, _ := json.Marshal(payment)
+				return fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nPayment:%s", string(rjson), string(ojson))
+			})
+			// panic("Coinbase Output not match")
 			return TxValidationCode_INVALID_COINBASE
 		}
 		//Check statedb should clear
 		if len(addrMap) > 0 {
 			clearStateInvoke := tx.TxMessages[1].Payload.(*modules.ContractInvokePayload)
 			if !bytes.Equal(clearStateInvoke.ContractId, contractId) {
-				log.Error("Coinbase contract id not correct")
+				log.Errorf("Coinbase tx[%s] contract id not correct", tx.Hash().String())
 				return TxValidationCode_INVALID_COINBASE
 			}
 			if !compareRewardAndStateClear(rewards, clearStateInvoke.WriteSet) {
-				log.Error("Clear statedb not match")
+				log.Errorf("Coinbase tx[%s] Clear statedb not match", tx.Hash().String())
+				log.DebugDynamic(func() string {
+					rjson, _ := json.Marshal(rewards)
+					ojson, _ := json.Marshal(clearStateInvoke)
+					return fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nInvoke result:%s", string(rjson), string(ojson))
+				})
 				return TxValidationCode_INVALID_COINBASE
 			}
 		}
@@ -419,13 +428,18 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 		//比对reward和writeset是否一致
 		invoke := tx.TxMessages[0].Payload.(*modules.ContractInvokePayload)
 		if !bytes.Equal(invoke.ContractId, contractId) {
-			log.Error("Coinbase contract id not correct")
+			log.Errorf("Coinbase tx[%s] contract id not correct", tx.Hash().String())
 			return TxValidationCode_INVALID_COINBASE
 		}
 		if compareRewardAndWriteset(rewards, invoke.WriteSet) {
 			return TxValidationCode_VALID
 		} else {
-			log.Error("Coinbase contract write set not correct")
+			log.Errorf("Coinbase tx[%s] contract write set not correct", tx.Hash().String())
+			log.DebugDynamic(func() string {
+				rjson, _ := json.Marshal(rewards)
+				ojson, _ := json.Marshal(invoke)
+				return fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nInvoke result:%s", string(rjson), string(ojson))
+			})
 			return TxValidationCode_INVALID_COINBASE
 		}
 	}
@@ -435,7 +449,6 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 func compareRewardAndOutput(rewards map[common.Address][]modules.AmountAsset, outputs []*modules.Output) bool {
 	comparedCount := 0
 	for addr, reward := range rewards {
-
 		if rewardExistInOutputs(addr, reward, outputs) {
 			comparedCount++
 		} else {
@@ -479,7 +492,8 @@ func compareRewardAndStateClear(rewards map[common.Address][]modules.AmountAsset
 		}
 
 	}
-	if comparedCount != len(writeset) {
+	//if comparedCount != len(writeset) {
+	if comparedCount != len(rewards) { //所有的Reward的状态数据库被清空
 		return false
 	}
 	return true
@@ -496,7 +510,7 @@ func compareRewardAndWriteset(rewards map[common.Address][]modules.AmountAsset, 
 		}
 
 	}
-	if comparedCount != len(writeset) {
+	if comparedCount != len(rewards) { //所有的Reward的状态数据库被清空
 		return false
 	}
 	return true

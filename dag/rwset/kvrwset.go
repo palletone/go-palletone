@@ -24,8 +24,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-//var log = flogging.MustGetLogger("rwset")
-
 type KVRWSet struct {
 	Reads  map[string]*KVRead  `protobuf:"bytes,1,rep,name=reads" json:"reads,omitempty"`
 	Writes map[string]*KVWrite `protobuf:"bytes,3,rep,name=writes" json:"writes,omitempty"`

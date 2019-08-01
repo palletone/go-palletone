@@ -8,14 +8,14 @@ normalCrtTrans
 normalSignTrans
     [Arguments]    ${crtRet}    ${signType}    ${pwd}
     ${resp}    Request sign transaction    ${crtRet}    ${signType}    ${pwd}
-    ${hex}    Should Match Regexp    ${resp.content}['result']['hex']    ${result_hex}    msg="hex:does't match Result expression"
-    ${txid}    Should Match Regexp    ${resp.content}['result']['txid']    ${result_txid}    msg="txid:does't match Result expression"
+    ${hex}    Should Match Regexp    ${resp['hex']}    ${result_hex}    msg="hex:does't match Result expression"
+    ${txid}    Should Match Regexp    ${resp['txid']}    ${result_txid}    msg="txid:does't match Result expression"
     [Return]    ${hex}
 
 normalSendTrans
-    [Arguments]    ${resp}
-    ${resp}    Request send transaction    ${resp}
-    ${ret}    Should Match Regexp    ${resp.content}['result']    ${sendResult}    msg="result:does't match Result expression"
+    [Arguments]    ${hex}
+    ${resp}    Request send transaction    ${hex}
+    ${ret}    Should Match Regexp    ${resp['result']}    ${sendResult}    msg="result:does't match Result expression"
     [Return]    ${ret}
 
 normalCcinvokePass
@@ -23,14 +23,10 @@ normalCcinvokePass
     ...    ${ccList}
     ${resp}    Request CcinvokePass    ${commonResultCode}    ${senderAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
     ...    ${ContractId}    ${ccList}
-    #${type}    Evaluate    type(${resp.content})
-    #log    ${resp.content}
-    #${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
-    #${jsonRes}    To Json    ${jsonRes}
     #Should Contain    ${jsonRes['jsonrpc']}    2.0    msg="jsonrpc:failed"
     #Should Contain    str(${jsonRes['id']})    1    msg="id:failed"
-    ${ret}    Should Match Regexp    ${resp.content}    ${commonResultCode}    msg="result:does't match Result expression"
-    [Return]    ${resp}
+    ${ret}    Should Match Regexp    ${resp['result']}    ${commonResultCode}    msg="result:does't match Result expression"
+    [Return]    ${ret}
 
 normalTransferToken
     [Arguments]    ${result_code}
@@ -51,10 +47,7 @@ normalGetBalance
 normalCcqueryById
     [Arguments]    ${contractId}    ${methodType}    ${preTokenId}
     ${resp}    Request Ccquery    ${contractId}    ${methodType}    ${preTokenId}
-    ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
-    ${jsonRes}    To Json    ${jsonRes}
-    log    ${jsonRes['result']}
-    [Return]    ${jsonRes['result']}
+    [Return]    ${resp['result']}
 
 normalVoteTransfer
     [Arguments]    ${result_code}    ${tokenId}    ${tokenDecimal}    ${tokenAmount}    ${amount}    ${poundage}

@@ -155,7 +155,7 @@ func (pm *ProtocolManager) syncer(syncCh chan bool) {
 
 		case <-forceSync.C:
 			// Force a sync even if not enough peers are present
-			log.Debug("start force Sync")
+			//log.Debug("start force Sync")
 			go pm.syncall(syncCh)
 
 		case <-pm.noMorePeers:
@@ -225,10 +225,11 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId, sync
 	}
 
 	if atomic.LoadUint32(&pm.fastSync) == 1 {
-		log.Debug("Fast sync complete, auto disabling")
+		log.Info("Fast sync complete, auto disabling")
 		atomic.StoreUint32(&pm.fastSync, 0)
 	}
 	atomic.StoreUint32(&pm.acceptTxs, 1) // Mark initial sync done
+	log.Info("ptn sync complete")
 
 	cunit := pm.dag.GetCurrentUnit(assetId)
 	if cunit != nil && cunit.UnitHeader.Number.Index > 0 {

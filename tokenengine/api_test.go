@@ -21,13 +21,11 @@
 package tokenengine
 
 import (
-	"testing"
-
-	//"github.com/palletone/go-palletone/tokenengine/btcd/chaincfg/chainhash"
 	"encoding/hex"
 	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
+	"testing"
 
 	"encoding/json"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -35,7 +33,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine/internal/txscript"
 	"github.com/stretchr/testify/assert"
-	"time"
 )
 
 func TestGetAddressFromScript(t *testing.T) {
@@ -80,12 +77,12 @@ func TestDecodeScriptBytes(t *testing.T) {
 }
 func TestSignAndVerify2PaymentTx(t *testing.T) {
 	privKeyBytes, _ := hex.DecodeString("2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644")
-	privKey, _ := crypto.ToECDSA(privKeyBytes)
-	pubKey := privKey.PublicKey
-	pubKeyBytes := crypto.CompressPubkey(&pubKey)
+
+	pubKeyBytes, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(privKeyBytes)
+
 	pubKeyHash := crypto.Hash160(pubKeyBytes)
 	t.Logf("Public Key:%x", pubKeyBytes)
-	addr := crypto.PubkeyToAddress(&privKey.PublicKey)
+	addr := crypto.PubkeyBytesToAddress(pubKeyBytes)
 	t.Logf("Addr:%s", addr.String())
 	lockScript := GenerateP2PKHLockScript(pubKeyHash)
 	t.Logf("UTXO lock script:%x", lockScript)
@@ -130,10 +127,10 @@ func TestSignAndVerify2PaymentTx(t *testing.T) {
 	//	addr: privKey,
 	//}
 	getPubKeyFn := func(common.Address) ([]byte, error) {
-		return crypto.CompressPubkey(&privKey.PublicKey), nil
+		return pubKeyBytes, nil
 	}
 	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
-		s, e := crypto.Sign(hash, privKey)
+		s, e := crypto.MyCryptoLib.Sign(privKeyBytes, hash)
 		return s, e
 	}
 	var hashtype uint32
@@ -161,12 +158,11 @@ func TestSignAndVerify2PaymentTx(t *testing.T) {
 
 func TestHashNone1Payment(t *testing.T) {
 	privKeyBytes, _ := hex.DecodeString("2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644")
-	privKey, _ := crypto.ToECDSA(privKeyBytes)
-	pubKey := privKey.PublicKey
-	pubKeyBytes := crypto.CompressPubkey(&pubKey)
+	pubKeyBytes, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(privKeyBytes)
+
 	pubKeyHash := crypto.Hash160(pubKeyBytes)
 	t.Logf("Public Key:%x", pubKeyBytes)
-	addr := crypto.PubkeyToAddress(&privKey.PublicKey)
+	addr := crypto.PubkeyBytesToAddress(pubKeyBytes)
 	t.Logf("Addr:%s", addr.String())
 	lockScript := GenerateP2PKHLockScript(pubKeyHash)
 	t.Logf("UTXO lock script:%x", lockScript)
@@ -190,10 +186,10 @@ func TestHashNone1Payment(t *testing.T) {
 	}
 
 	getPubKeyFn := func(common.Address) ([]byte, error) {
-		return crypto.CompressPubkey(&privKey.PublicKey), nil
+		return pubKeyBytes, nil
 	}
 	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
-		s, e := crypto.Sign(hash, privKey)
+		s, e := crypto.MyCryptoLib.Sign(privKeyBytes, hash)
 		return s, e
 	}
 	var hashtype uint32
@@ -222,18 +218,22 @@ func TestHashNone1Payment(t *testing.T) {
 
 var (
 	prvKey1, _  = crypto.FromWIF("KwN8TdhAMeU8b9UrEYTNTVEvDsy9CSyepwRVNEy2Fc9nbGqDZw4J") //"0454b0699a590b6fc8e66e81db1ca36e99d7c767cdfe44a217b6e105c5db97d5" //P1QJNzZhqGoxNL2igkdthNBQLNWdNGTWzQU
+	prvKey1B    = crypto.FromECDSA(prvKey1)
 	pubKey1B, _ = hex.DecodeString("02f9286c44fe7ebff9788425d5025ad764cdf5aec3daef862d143c5f09134d75b0")
 	address1, _ = common.StringToAddress("P1QJNzZhqGoxNL2igkdthNBQLNWdNGTWzQU")
 
 	prvKey2, _  = crypto.FromWIF("Ky7gQF2rxXLjGSymCtCMa67N2YMt98fRgxyy5WfH92FpbWDxWVRM") //"3892859c02b1be2ce494e61c60181051d79ff21dca22fae1dc349887335b6676" //P1N4nEffoUskPrbnoEqBR69JQDX2vv9vYa8\
+	prvKey2B    = crypto.FromECDSA(prvKey2)
 	pubKey2B, _ = hex.DecodeString("02a2ba6f2a6e1467334d032ec54ac862c655d7e8bd6bbbce36c771fcdc0ddfb01f")
 	address2, _ = common.StringToAddress("P1N4nEffoUskPrbnoEqBR69JQDX2vv9vYa8")
 
 	prvKey3, _  = crypto.FromWIF("KzRHTanikQgR5oqUts69JTrCXRuy9Zod5qXdnAbYwvUnuUDJ3Rro") //"5f7754e5407fc2a81f453645cbd92878a6341d30dbfe2e680fc81628d47e8023" //P1MzuBUT7ubGpkAFqUB6chqTSXmBThQv2HT
+	prvKey3B    = crypto.FromECDSA(prvKey3)
 	pubKey3B, _ = hex.DecodeString("020945d0c9ed05cf5ca9fe38dde799d7b73f4a5bfb71fc1a3c1dca79e2d86462a7")
 	address3, _ = common.StringToAddress("P1MzuBUT7ubGpkAFqUB6chqTSXmBThQv2HT")
 
 	prvKey4, _  = crypto.FromWIF("L3nZf9ds5JG5Sq2WMCxP6QSfHK6WuSpnsU8Qk2ygfGD92h553xhx") //"c3ecda5c797ef8d7ded2d332eb1cb83198ef88ede1bf9de7b60910644b45f83f" //P1MzuBUT7ubGpkAFqUB6chqTSXmBThQv2HT
+	prvKey4B    = crypto.FromECDSA(prvKey4)
 	pubKey4B, _ = hex.DecodeString("0342ccc3459303c6a24fd3382249af438763c7fab9ca57e919aec658f7d05eab68")
 	address4, _ = common.StringToAddress("P1Lcf8CTxgUwmFamn2qM7SrAukNyezakAbK")
 )
@@ -289,13 +289,13 @@ func TestMultiSign1Step(t *testing.T) {
 		}
 		return nil, nil
 	}
-	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
+	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
 
 		if addr == address1 {
-			return crypto.Sign(hash, prvKey1)
+			return crypto.MyCryptoLib.Sign(prvKey1B, msg)
 		}
 		if addr == address2 {
-			return crypto.Sign(hash, prvKey2)
+			return crypto.MyCryptoLib.Sign(prvKey2B, msg)
 		}
 		return nil, nil
 	}
@@ -345,13 +345,13 @@ func TestMultiSign2Step(t *testing.T) {
 		}
 		return nil, nil
 	}
-	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
+	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
 
 		if addr == address1 {
-			return crypto.Sign(hash, prvKey1)
+			return crypto.MyCryptoLib.Sign(prvKey1B, msg)
 		}
 		if addr == address2 {
-			return crypto.Sign(hash, prvKey2)
+			return crypto.MyCryptoLib.Sign(prvKey2B, msg)
 		}
 		return nil, nil
 	}
@@ -426,19 +426,19 @@ func TestContractPayout(t *testing.T) {
 		}
 		return nil, nil
 	}
-	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
+	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
 
 		if addr == address1 {
-			return crypto.Sign(hash, prvKey1)
+			return crypto.MyCryptoLib.Sign(prvKey1B, msg)
 		}
 		if addr == address2 {
-			return crypto.Sign(hash, prvKey2)
+			return crypto.MyCryptoLib.Sign(prvKey2B, msg)
 		}
 		if addr == address3 {
-			return crypto.Sign(hash, prvKey3)
+			return crypto.MyCryptoLib.Sign(prvKey3B, msg)
 		}
 		if addr == address4 {
-			return crypto.Sign(hash, prvKey4)
+			return crypto.MyCryptoLib.Sign(prvKey4B, msg)
 		}
 		return nil, nil
 	}
@@ -486,7 +486,6 @@ func TestGenerateRedeemScript(t *testing.T) {
 	fmt.Printf("%x", redeem)
 }
 
-
 func TestUserContractPayout(t *testing.T) {
 	tx := &modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
@@ -524,19 +523,19 @@ func TestUserContractPayout(t *testing.T) {
 		}
 		return nil, nil
 	}
-	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
+	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
 
 		if addr == address1 {
-			return crypto.Sign(hash, prvKey1)
+			return crypto.MyCryptoLib.Sign(prvKey1B, msg)
 		}
 		if addr == address2 {
-			return crypto.Sign(hash, prvKey2)
+			return crypto.MyCryptoLib.Sign(prvKey2B, msg)
 		}
 		if addr == address3 {
-			return crypto.Sign(hash, prvKey3)
+			return crypto.MyCryptoLib.Sign(prvKey3B, msg)
 		}
 		if addr == address4 {
-			return crypto.Sign(hash, prvKey4)
+			return crypto.MyCryptoLib.Sign(prvKey4B, msg)
 		}
 		return nil, nil
 	}
@@ -561,10 +560,10 @@ func TestUserContractPayout(t *testing.T) {
 	err = ScriptValidate(lockScript, mockPickupJuryRedeemScript, tx, 0, 1)
 	assert.Nil(t, err, fmt.Sprintf("validate error:%s", err))
 
-	addrs,err:= GetScriptSigners(tx,0,0)
-	assert.Nil(t,err)
-	for _,addr:=range addrs{
-		t.Logf("Signed address:%s",addr.String())
+	addrs, err := GetScriptSigners(tx, 0, 0)
+	assert.Nil(t, err)
+	for _, addr := range addrs {
+		t.Logf("Signed address:%s", addr.String())
 	}
 }
 func TestMergeContractUnlockScript(t *testing.T) {
@@ -610,13 +609,19 @@ func Test22MutiSign(t *testing.T) {
 		}
 		return nil, nil
 	}
-	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
+	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
 
 		if addr == address1 {
-			return crypto.Sign(hash, prvKey1)
+			return crypto.MyCryptoLib.Sign(prvKey1B, msg)
 		}
 		if addr == address2 {
-			return crypto.Sign(hash, prvKey2)
+			return crypto.MyCryptoLib.Sign(prvKey2B, msg)
+		}
+		if addr == address3 {
+			return crypto.MyCryptoLib.Sign(prvKey3B, msg)
+		}
+		if addr == address4 {
+			return crypto.MyCryptoLib.Sign(prvKey4B, msg)
 		}
 		return nil, nil
 	}
@@ -635,12 +640,10 @@ func Test22MutiSign(t *testing.T) {
 }
 func TestSampleTx(t *testing.T) {
 	privKeyBytes, _ := hex.DecodeString("2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644")
-	privKey, _ := crypto.ToECDSA(privKeyBytes)
-	pubKey := privKey.PublicKey
-	pubKeyBytes := crypto.CompressPubkey(&pubKey)
+	pubKeyBytes, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(privKeyBytes)
 	pubKeyHash := crypto.Hash160(pubKeyBytes)
 	t.Logf("Public Key:%x", pubKeyBytes)
-	addr := crypto.PubkeyToAddress(&privKey.PublicKey)
+	addr := crypto.PubkeyBytesToAddress(pubKeyBytes)
 	t.Logf("Addr:%s", addr.String())
 	lockScript := GenerateP2PKHLockScript(pubKeyHash)
 	t.Logf("UTXO lock script:%x", lockScript)
@@ -662,10 +665,10 @@ func TestSampleTx(t *testing.T) {
 		*outPoint: lockScript[:],
 	}
 	getPubKeyFn := func(common.Address) ([]byte, error) {
-		return crypto.CompressPubkey(&privKey.PublicKey), nil
+		return pubKeyBytes, nil
 	}
 	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
-		s, e := crypto.Sign(hash, privKey)
+		s, e := crypto.MyCryptoLib.Sign(privKeyBytes, hash)
 		return s, e
 	}
 	var hashtype uint32
@@ -735,14 +738,15 @@ func BenchmarkScriptValidate(b *testing.B) {
 		}
 	}
 }
-func Test2WScriptValidate(t *testing.T) {
-	tx, lockScript := generateSignedTx()
-	start := time.Now()
-	for i := 0; i < 20000; i++ {
-		err := ScriptValidate(lockScript, nil, tx, 0, 0)
-		if err != nil {
-			t.Logf("validate error:%s", err)
-		}
-	}
-	t.Logf("Cost time:%v", time.Since(start))
-}
+
+//func Test2WScriptValidate(t *testing.T) {
+//	tx, lockScript := generateSignedTx()
+//	start := time.Now()
+//	for i := 0; i < 20000; i++ {
+//		err := ScriptValidate(lockScript, nil, tx, 0, 0)
+//		if err != nil {
+//			t.Logf("validate error:%s", err)
+//		}
+//	}
+//	t.Logf("Cost time:%v", time.Since(start))
+//}

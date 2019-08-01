@@ -71,6 +71,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 		balance.EnterTime = getTiem(stub)
 		//  没有
 		balance.Balance = invokeTokens.Amount
+		balance.Role = Jury
 		err = SaveNodeBalance(stub, invokeAddr.String(), balance)
 		if err != nil {
 			log.Error("save node balance err: ", "error", err)
@@ -78,7 +79,21 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 		}
 		return shim.Success(nil)
 	} else {
-		return shim.Error("Only once")
+		//  追缴逻辑
+		if balance.Role != Jury {
+			return shim.Error("not jury")
+		}
+		all := balance.Balance + invokeTokens.Amount
+		if all != cp.DepositAmountForJury {
+			return shim.Error("Too many or too little.")
+		}
+		balance.Balance = all
+		err = SaveNodeBalance(stub, invokeAddr.String(), balance)
+		if err != nil {
+			log.Error("save node balance err: ", "error", err)
+			return shim.Error(err.Error())
+		}
+		return shim.Success(nil)
 	}
 }
 
@@ -104,13 +119,18 @@ func handleJury(stub shim.ChaincodeStubInterface, quitAddr common.Address) error
 		return err
 	}
 	//  退还保证金
-	cp, err := stub.GetSystemConfig()
+	//cp, err := stub.GetSystemConfig()
+	//if err != nil {
+	//	return err
+	//}
+	//  获取该节点保证金数量
+	b, err := GetNodeBalance(stub, quitAddr.String())
 	if err != nil {
 		return err
 	}
 	//  调用从合约把token转到请求地址
 	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
-	err = stub.PayOutToken(quitAddr.String(), modules.NewAmountAsset(cp.DepositAmountForJury, gasToken), 0)
+	err = stub.PayOutToken(quitAddr.String(), modules.NewAmountAsset(b.Balance, gasToken), 0)
 	if err != nil {
 		log.Error("stub.PayOutToken err:", "error", err)
 		return err

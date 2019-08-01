@@ -416,7 +416,6 @@ func (q *queue) countProcessableItems() int {
 func (q *queue) ReserveHeaders(p *peerConnection, count int) *fetchRequest {
 	q.lock.Lock()
 	defer q.lock.Unlock()
-	log.Debug("Enter queue ReserveHeaders", "q.headerTaskQueue.Size()", q.headerTaskQueue.Size())
 	// Short circuit if the peer's already downloading something (sanity check to
 	// not corrupt state)
 	if _, ok := q.headerPendPool[p.id]; ok {
@@ -447,7 +446,6 @@ func (q *queue) ReserveHeaders(p *peerConnection, count int) *fetchRequest {
 		From: send,
 		Time: time.Now(),
 	}
-	log.Debug("End queue ReserveHeaders", "len(skip)", len(skip), "send", send, "q.headerTaskQueue.Size()", q.headerTaskQueue.Size())
 	q.headerPendPool[p.id] = request
 	return request
 }
@@ -495,8 +493,7 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 	// Retrieve a batch of tasks, skipping previously failed ones
 	send := make([]*modules.Header, 0, count)
 	skip := make([]*modules.Header, 0)
-	log.Debug("Enter downloader->queue", "reserveHeaders count:", count)
-	defer log.Debug("End downloader->queue")
+
 	var sum int = 0
 	var noopsum int = 0
 	progress := false
@@ -542,7 +539,7 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 			send = append(send, header)
 		}
 	}
-	log.Debug("===queue->reserveHeaders===", "len(skip):", len(skip), "len(send):", len(send), "sum:", sum, "noopsum:", noopsum)
+
 	// Merge all the skipped headers back
 	for _, header := range skip {
 		//taskQueue.Push(header, -float32(header.Number.Uint64()))
@@ -701,7 +698,6 @@ func (q *queue) DeliverHeaders(id string, headers []*modules.Header, headerProcC
 
 	// Ensure headers can be mapped onto the skeleton chain
 	target := q.headerTaskPool[request.From].Hash()
-	//log.Debug("===queueu.DeliverHeaders===", "len(headers):", len(headers), "MaxHeaderFetch:", MaxHeaderFetch)
 	accepted := len(headers) == MaxHeaderFetch
 	if accepted {
 		if headers[0].Number.Index != request.From {
@@ -806,7 +802,6 @@ func (q *queue) deliver(id string, taskPool map[common.Hash]*modules.Header, tas
 	}
 	reqTimer.UpdateSince(request.Time)
 	delete(pendPool, id)
-	//log.Debug("===queue->deliver===", "results:", results, "len(request.Headers):", len(request.Headers))
 	// If no data items were retrieved, mark them as unavailable for the origin peer
 	if results == 0 {
 		for _, header := range request.Headers {
@@ -854,7 +849,7 @@ func (q *queue) deliver(id string, taskPool map[common.Hash]*modules.Header, tas
 			sum++
 		}
 	}
-	log.Debug("===queue->deliver===", "accepted:", accepted, "taskQueue sum:", sum)
+
 	// Wake up WaitResults
 	if accepted > 0 {
 		q.active.Signal()
@@ -862,13 +857,10 @@ func (q *queue) deliver(id string, taskPool map[common.Hash]*modules.Header, tas
 	// If none of the data was good, it's a stale delivery
 	switch {
 	case failure == nil || failure == errInvalidChain:
-		log.Debug("===queue->deliver===case 0")
 		return accepted, failure
 	case useful:
-		log.Debug("===queue->deliver===case 1", "failure:", failure)
 		return accepted, fmt.Errorf("partial failure: %v", failure)
 	default:
-		log.Debug("===queue->deliver===default")
 		return accepted, errStaleDelivery
 	}
 }

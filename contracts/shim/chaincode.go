@@ -324,6 +324,7 @@ func chatWithPeer(chaincodename string, stream PeerChaincodeStream, cc Chaincode
 			case nsInfo = <-handler.nextState:
 				in = nsInfo.msg
 				if in == nil {
+					log.Debugf("nil msg")
 					panic("nil msg")
 				}
 				log.Debugf("[%s]Move state message %s", shorttxid(in.Txid), in.Type.String())
@@ -447,36 +448,6 @@ func (stub *ChaincodeStub) DelGlobalState(key string) error {
 
 }
 
-// Query documentation can be found in interfaces.go
-func (stub *ChaincodeStub) OutChainAddress(outChainName string, params []byte) ([]byte, error) {
-	if outChainName == "" {
-		return nil, errors.New("outChainName must not be an empty string")
-	}
-	// Access public data by setting the collection to empty string
-	collection := ""
-	return stub.handler.handleOutAddress(collection, outChainName, params, stub.ChannelId, stub.TxID)
-}
-
-// Query documentation can be found in interfaces.go
-func (stub *ChaincodeStub) OutChainTransaction(outChainName string, params []byte) ([]byte, error) {
-	if outChainName == "" {
-		return nil, errors.New("outChainName must not be an empty string")
-	}
-	// Access public data by setting the collection to empty string
-	collection := ""
-	return stub.handler.handleOutTransaction(collection, outChainName, params, stub.ChannelId, stub.TxID)
-}
-
-// Query documentation can be found in interfaces.go
-func (stub *ChaincodeStub) OutChainQuery(outChainName string, params []byte) ([]byte, error) {
-	if outChainName == "" {
-		return nil, errors.New("outChainName must not be an empty string")
-	}
-	// Access public data by setting the collection to empty string
-	collection := ""
-	return stub.handler.handleOutQuery(collection, outChainName, params, stub.ChannelId, stub.TxID)
-}
-
 func (stub *ChaincodeStub) OutChainCall(outChainName string, method string, params []byte) ([]byte, error) {
 	if outChainName == "" {
 		return nil, errors.New("outChainName must not be an empty string")
@@ -531,7 +502,9 @@ func (stub *ChaincodeStub) GetFunctionAndParameters() (function string, params [
 //GetInvokeParameters documentation can be found in interfaces.go
 func (stub *ChaincodeStub) GetInvokeParameters() (invokeAddr common.Address, invokeTokens []*modules.InvokeTokens, invokeFees *modules.AmountAsset, funcName string, params []string, err error) {
 	allargs := stub.args
-	//if len(allargs) > 2 {
+	if len(allargs) <= 0 {
+		return
+	}
 	invokeInfo := &modules.InvokeInfo{}
 	err = json.Unmarshal(allargs[0], invokeInfo)
 	if err != nil {
@@ -540,13 +513,21 @@ func (stub *ChaincodeStub) GetInvokeParameters() (invokeAddr common.Address, inv
 	invokeAddr = invokeInfo.InvokeAddress
 	invokeTokens = invokeInfo.InvokeTokens
 	invokeFees = invokeInfo.InvokeFees
+	if len(allargs) < 2 {
+		return
+	}
 	strargs := make([]string, 0, len(allargs)-1)
 	for _, barg := range allargs[1:] {
 		strargs = append(strargs, string(barg))
 	}
-	funcName = strargs[0]
-	params = strargs[1:]
-	//}
+	if len(strargs) < 2 {
+		return
+	}
+	funcName = strargs[1]
+	if len(strargs) < 3 {
+		return
+	}
+	params = strargs[2:]
 	return
 }
 

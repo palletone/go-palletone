@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developer Albert·Gou <dev@pallet.one>
  * @date 2018
@@ -26,12 +27,13 @@ import (
 )
 
 type ImmutableChainParameters struct {
-	MinimumMediatorCount uint8    `json:"min_mediator_count"`
-	MinMediatorInterval  uint8    `json:"min_mediator_interval"`
-	UccPrivileged        bool     `json:"ucc_privileged"`       //  防止容器以root权限运行
-	UccCapDrop           []string `json:"ucc_cap_drop"`         //  确保容器以最小权限运行
-	UccNetworkMode       string   `json:"ucc_network_mode"`     //  容器运行网络模式
-	UccOOMKillDisable    bool     `json:"ucc_oom_kill_disable"` //是否内存使用量超过上限时系统杀死进程
+	// todo albert 添加最小维护周期跳过的生产槽数量, 用于完成vss协议
+	MinimumMediatorCount uint8    `json:"min_mediator_count"`    // 最小活跃mediator数量
+	MinMediatorInterval  uint8    `json:"min_mediator_interval"` // 最小的生产槽间隔时间
+	UccPrivileged        bool     `json:"ucc_privileged"`        // 防止容器以root权限运行
+	UccCapDrop           []string `json:"ucc_cap_drop"`          // 确保容器以最小权限运行
+	UccNetworkMode       string   `json:"ucc_network_mode"`      // 容器运行网络模式
+	UccOOMKillDisable    bool     `json:"ucc_oom_kill_disable"`  // 是否内存使用量超过上限时系统杀死进程
 }
 
 func NewImmutChainParams() ImmutableChainParameters {
@@ -109,18 +111,23 @@ func NewChainParams() ChainParameters {
 	return ChainParameters{
 		ChainParametersBase: NewChainParametersBase(),
 		// TxCoinYearRate:       DefaultTxCoinYearRate,
-		DepositPeriod:        DefaultDepositPeriod,
+		//DepositPeriod:        DefaultDepositPeriod,
 		UccMemory:            DefaultUccMemory,
-		UccMemorySwap:        DefaultUccMemorySwap,
 		UccCpuShares:         DefaultUccCpuShares,
-		UccCpuPeriod:         DefaultCpuPeriod,
 		UccCpuQuota:          DefaultUccCpuQuota,
+		UccDisk:              DefaultUccDisk,
 		TempUccMemory:        DefaultTempUccMemory,
-		TempUccMemorySwap:    DefaultTempUccMemorySwap,
 		TempUccCpuShares:     DefaultTempUccCpuShares,
 		TempUccCpuQuota:      DefaultTempUccCpuQuota,
 		ContractSignatureNum: DefaultContractSignatureNum,
 		ContractElectionNum:  DefaultContractElectionNum,
+
+		ContractTxTimeoutUnitFee:  DefaultContractTxTimeoutUnitFee,
+		ContractTxSizeUnitFee:     DefaultContractTxSizeUnitFee,
+		ContractTxInstallFeeLevel: DefaultContractTxInstallFeeLevel,
+		ContractTxDeployFeeLevel:  DefaultContractTxDeployFeeLevel,
+		ContractTxInvokeFeeLevel:  DefaultContractTxInvokeFeeLevel,
+		ContractTxStopFeeLevel:    DefaultContractTxStopFeeLevel,
 	}
 }
 
@@ -130,25 +137,29 @@ type ChainParameters struct {
 	ChainParametersBase
 
 	// TxCoinYearRate float64 `json:"tx_coin_year_rate"` //交易币天的年利率
-	DepositRate   float64 `json:"deposit_rate"`   //保证金的年利率
-	DepositPeriod int     `json:"deposit_period"` //保证金周期
+	//DepositRate   float64 `json:"deposit_rate"`   //保证金的年利率
+	//DepositPeriod int     `json:"deposit_period"` //保证金周期
 
 	//对启动用户合约容器的相关资源的限制
-	UccMemory     int64 `json:"ucc_memory"`      //物理内存  104857600  100m
-	UccMemorySwap int64 `json:"ucc_memory_swap"` //内存交换区，不设置默认为memory的两倍
-	UccCpuShares  int64 `json:"ucc_cpu_shares"`  //CPU占用率，相对的  CPU 利用率权重，默认为 1024
-	UccCpuQuota   int64 `json:"ucc_cpu_quota"`   // 限制CPU --cpu-period=50000 --cpu-quota=25000
-	UccCpuPeriod  int64 `json:"ucc_cpu_period"`  //限制CPU 周期设为 50000，将容器在每个周期内的 CPU 配额设置为 25000，表示该容器每 50ms 可以得到 50% 的 CPU 运行时间
-
+	UccMemory    int64 `json:"ucc_memory"`
+	UccCpuShares int64 `json:"ucc_cpu_shares"`
+	UccCpuQuota  int64 `json:"ucc_cpu_quota"`
+	UccDisk      int64 `json:"ucc_disk"`
 	//对中间容器的相关资源限制
-	TempUccMemory     int64 `json:"temp_ucc_memory"`
-	TempUccMemorySwap int64 `json:"temp_ucc_memory_swap"`
-	TempUccCpuShares  int64 `json:"temp_ucc_cpu_shares"`
-	TempUccCpuQuota   int64 `json:"temp_ucc_cpu_quota"`
+	TempUccMemory    int64 `json:"temp_ucc_memory"`
+	TempUccCpuShares int64 `json:"temp_ucc_cpu_shares"`
+	TempUccCpuQuota  int64 `json:"temp_ucc_cpu_quota"`
 
 	//contract about
 	ContractSignatureNum int `json:"contract_signature_num"`
 	ContractElectionNum  int `json:"contract_election_num"`
+
+	ContractTxTimeoutUnitFee  uint64  `json:"contract_tx_timeout_unit_fee"`
+	ContractTxSizeUnitFee     uint64  `json:"contract_tx_size_unit_fee"`
+	ContractTxInstallFeeLevel float64 `json:"contract_tx_install_fee_level"`
+	ContractTxDeployFeeLevel  float64 `json:"contract_tx_deploy_fee_level"`
+	ContractTxInvokeFeeLevel  float64 `json:"contract_tx_invoke_fee_level"`
+	ContractTxStopFeeLevel    float64 `json:"contract_tx_stop_fee_level"`
 }
 
 func CheckSysConfigArgs(field, value string) error {

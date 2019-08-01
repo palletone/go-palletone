@@ -31,7 +31,6 @@ import (
 	"github.com/palletone/go-palletone/dag/parameter"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/tokenengine"
-	"time"
 )
 
 type UtxoRepository struct {
@@ -60,13 +59,14 @@ func NewUtxoRepository4Db(db ptndb.Database) *UtxoRepository {
 
 type IUtxoRepository interface {
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
+	GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error)
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error)
 	GetAddrUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	//ReadUtxos(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64)
 	GetUxto(txin modules.Input) *modules.Utxo
 	UpdateUtxo(unitTime int64, txHash common.Hash, payment *modules.PaymentPayload, msgIndex uint32) error
-
+	IsUtxoSpent(outpoint *modules.OutPoint) (bool, error)
 	ComputeTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
 	GetUxtoSetByInputs(txins []modules.Input) (map[modules.OutPoint]*modules.Utxo, uint64)
 	//GetAccountTokens(addr common.Address) (map[string]*modules.AccountToken, error)
@@ -80,6 +80,12 @@ type IUtxoRepository interface {
 
 func (repository *UtxoRepository) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	return repository.utxodb.GetUtxoEntry(outpoint)
+}
+func (repository *UtxoRepository) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error) {
+	return repository.utxodb.GetStxoEntry(outpoint)
+}
+func (repository *UtxoRepository) IsUtxoSpent(outpoint *modules.OutPoint) (bool, error) {
+	return repository.utxodb.IsUtxoSpent(outpoint)
 }
 func (repository *UtxoRepository) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
 	return repository.utxodb.GetAllUtxos()
@@ -217,7 +223,7 @@ To create utxo according to outpus in transaction, and destory utxo according to
 */
 func (repository *UtxoRepository) UpdateUtxo(unitTime int64, txHash common.Hash, payment *modules.PaymentPayload, msgIndex uint32) error {
 	// update utxo
-	err := repository.destoryUtxo(txHash, payment.Inputs)
+	err := repository.destoryUtxo(txHash, uint64(unitTime), payment.Inputs)
 	if err != nil {
 		return err
 	}
@@ -273,17 +279,19 @@ func (repository *UtxoRepository) writeUtxo(unitTime int64, txHash common.Hash, 
 销毁utxo
 destory utxo, delete from UTXO database
 */
-func (repository *UtxoRepository) destoryUtxo(txid common.Hash, txins []*modules.Input) error {
+func (repository *UtxoRepository) destoryUtxo(txid common.Hash, unitTime uint64, txins []*modules.Input) error {
 	for _, txin := range txins {
-		//TODO for download sync
+
 		if txin == nil {
 			continue
 		}
-		outpoint := txin.PreviousOutPoint
-		if outpoint == nil || outpoint.IsEmpty() { //Coinbase
+		if txin.PreviousOutPoint == nil { //Coinbase
 			continue
 		}
-		if outpoint.TxHash.IsZero() { //TxHash为0，表示花费当前Tx产生的UTXO
+		outpoint := txin.PreviousOutPoint.Clone()
+
+		if outpoint.TxHash.IsSelfHash() { //TxHash为0，表示花费当前Tx产生的UTXO
+			log.Debugf("Outpoint is zero:%s,set new txid:%s", outpoint.String(), txid.String())
 			outpoint.TxHash = txid
 		}
 		// get utxo info
@@ -294,7 +302,7 @@ func (repository *UtxoRepository) destoryUtxo(txid common.Hash, txins []*modules
 		}
 
 		// delete utxo
-		if err := repository.utxodb.DeleteUtxo(outpoint); err != nil {
+		if err := repository.utxodb.DeleteUtxo(outpoint, txid, unitTime); err != nil {
 			log.Error("Update uxto... ", "error", err.Error())
 			return err
 		}
@@ -631,7 +639,7 @@ To compute transactions' fees
 
 //计算一笔Tx中包含多少手续费
 func (repository *UtxoRepository) ComputeTxFee(tx *modules.Transaction) (*modules.AmountAsset, error) {
-	return tx.GetTxFee(repository.utxodb.GetUtxoEntry, time.Now().Unix())
+	return tx.GetTxFee(repository.utxodb.GetUtxoEntry)
 }
 
 /**

@@ -8,7 +8,7 @@ Resource          ../setups.robot
 powerIssueSection
     Given power unlock its account succeed
     When power issues intermediate certificate name cert2 to section succeed
-    and wait for transaction being packaged
+    and Wait for transaction being packaged
     Then section can query his certificate in db
 
 *** Keywords ***

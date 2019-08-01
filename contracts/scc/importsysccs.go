@@ -157,7 +157,7 @@ func DeploySysCCs(chainID string) {
 //in the same process
 func DeDeploySysCCs(chainID string) {
 	for _, sysCC := range systemChaincodes {
-		DeDeploySysCC(chainID, sysCC)
+		DeDeploySysCC(chainID, sysCC, true)
 	}
 }
 

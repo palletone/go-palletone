@@ -34,19 +34,18 @@ const (
 	DefaultDepositAmountForDeveloper = 1 * 100000000
 	DefaultFoundationAddress         = "P1LA8TkEWxU6FcMzkyeSbf9b9FwZwxrYRuF"
 
-	DefaultUccMemory         = 2147483648 //物理内存  1073741824  1G 2147483648 2G
-	DefaultUccMemorySwap     = 2147483648 //内存交换区，不设置默认为memory的两倍
-	DefaultUccCpuShares      = 1024       //CPU占用率，相对的  CPU 利用率权重，默认为 1024
-	DefaultCpuPeriod         = 50000      // 限制CPU --cpu-period=50000 --cpu-quota=25000
-	DefaultUccCpuQuota       = 25000      //限制CPU 周期设为 50000，将容器在每个周期内的 CPU 配额设置为 25000，表示该容器每 50ms 可以得到 50% 的 CPU 运行时间
-	DefaultUccPrivileged     = false      //防止容器以root权限运行
-	DefaultUccNetworkMode    = "bridge"   //容器运行网络模式
-	defaultUccOOMKillDisable = false      //是否内存使用量超过上限时系统杀死进程
+	DefaultUccMemory     = 524288000  // 每个容器使用内存最大 = 524288000 = 500 M
+	DefaultUccCpuShares  = 1024       // 每个容器相对占用CPU 1024 = 1 CPU
+	DefaultUccCpuQuota   = 100000     //  每个容器最多使用CPU核数 = 1 CPU
+	DefaultUccDisk       = 1073741824 //  每个容器磁盘使用量最多使用 = 1073741824 = 1G
+	DefaultUccPrivileged = false
+	//DefaultUccNetworkMode    = "bridge" //TODO xiaozhi 生产环境
+	DefaultUccNetworkMode    = "host" //TODO xiaozhi 测试容器运行网络模式
+	defaultUccOOMKillDisable = false
 
-	DefaultTempUccMemory     = 2147483648 //物理内存  1073741824  1G 2147483648 2G
-	DefaultTempUccMemorySwap = 2147483648 //内存交换区，不设置默认为memory的两倍 1073741824  1G 2147483648 2G
-	DefaultTempUccCpuShares  = 1024       //CPU占用率，相对的  CPU 利用率权重，默认为 1024
-	DefaultTempUccCpuQuota   = 200000     //限制CPU 200%上限
+	DefaultTempUccMemory    = 1073741824
+	DefaultTempUccCpuShares = 1024
+	DefaultTempUccCpuQuota  = 200000
 
 	DefaultTokenHolder = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
 
@@ -63,8 +62,16 @@ const (
 	DefaultMinMediatorCount    = 1 //21
 	DefaultMinMediatorInterval = 1
 
+	//contract
 	DefaultContractSignatureNum = 3
 	DefaultContractElectionNum  = 4
+
+	DefaultContractTxTimeoutUnitFee  = 10 //ms
+	DefaultContractTxSizeUnitFee     = 50 //byte
+	DefaultContractTxInstallFeeLevel = 2.3
+	DefaultContractTxDeployFeeLevel  = 1.8
+	DefaultContractTxInvokeFeeLevel  = 1.0
+	DefaultContractTxStopFeeLevel    = 0.5
 
 	DefaultText = "姓名 丨 坐标 丨 简介   \r\n" +
 		"孟岩丨北京丨通证派倡导者、CSDN副总裁、柏链道捷CEO.\r\n" +
@@ -118,9 +125,9 @@ const (
 	PalletOne1Percent              = PalletOne100Percent / 100
 	PalletOneIrreversibleThreshold = 70 * PalletOne1Percent
 
-	DefaultMediatorInterval     = 2       //Devin: Don't change   /* seconds */
-	DefaultMaintenanceInterval  = 60 * 10 // seconds, aka: 1 day
-	DefaultMaintenanceSkipSlots = 0       //Devin: Don't change    // number of slots to skip for maintenance interval
+	DefaultMediatorInterval     = 2      //Devin: Don't change   /* seconds */
+	DefaultMaintenanceInterval  = 60 * 5 // 60 * 60 * 24 // seconds, aka: 1 day
+	DefaultMaintenanceSkipSlots = 0      //Devin: Don't change // 1 // number of slots to skip for maintenance interval
 
 	DefaultMediatorCreateFee        = 5000
 	DefaultContractInvokeFee        = 100000000

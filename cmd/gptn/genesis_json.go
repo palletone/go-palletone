@@ -63,6 +63,7 @@ var (
 		ArgsUsage: "<genesisJsonPath> <openStdout>",
 		Flags: []cli.Flag{
 			GenesisJsonPathFlag,
+			utils.CryptoLibFlag,
 		},
 		Category: "BLOCKCHAIN COMMANDS",
 		Description: `
@@ -152,12 +153,9 @@ func createGenesisJson(ctx *cli.Context) error {
 	genesisState.InitialParameters.FoundationAddress = account
 	genesisState.DigitalIdentityConfig.RootCAHolder = account
 
+	genesisState.InitialParameters.MediatorInterval = 3
+	genesisState.InitialTimestamp = genesisState.InitialTimestamp / 3 * 3
 	genesisState.InitialMediatorCandidates = initialMediatorCandidates(mcs, nodeStr)
-	genesisState.InitialParameters.MaintenanceSkipSlots = 0
-
-	initMediatorCount := len(mcs)
-	genesisState.InitialParameters.ActiveMediatorCount = uint8(initMediatorCount)
-	genesisState.ImmutableParameters.MinimumMediatorCount = uint8(initMediatorCount)
 
 	//配置测试的基金会地址及密码
 	//account, _, err = createExampleAccount(ctx)
@@ -228,9 +226,9 @@ func modifyConfig(ctx *cli.Context, mediators []*mp.MediatorConf) error {
 	// 修改本节点中mediator的一些特殊配置
 	cfg.MediatorPlugin.EnableProducing = true
 	cfg.MediatorPlugin.EnableStaleProduction = true
-	cfg.MediatorPlugin.EnableConsecutiveProduction = false
+	cfg.MediatorPlugin.EnableConsecutiveProduction = true
 	cfg.MediatorPlugin.RequiredParticipation = 0
-	cfg.MediatorPlugin.EnableGroupSigning = false
+	cfg.MediatorPlugin.EnableGroupSigning = true
 	cfg.MediatorPlugin.Mediators = mediators
 
 	// change log

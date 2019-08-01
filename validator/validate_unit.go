@@ -24,7 +24,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
@@ -37,7 +36,7 @@ import (
 验证unit的签名，需要比对见证人列表
 To validate unit's signature, and mediators' signature
 */
-func (validate *Validate) validateUnitSignature(h *modules.Header) ValidationCode {
+func validateUnitSignature(h *modules.Header) ValidationCode {
 	// copy unit's header
 	header := modules.CopyHeader(h)
 	// signature does not contain authors and witness fields
@@ -59,7 +58,7 @@ func (validate *Validate) validateUnitSignature(h *modules.Header) ValidationCod
 	//  pubKey to pubKey_bytes
 	//pubKey_bytes := crypto.CompressPubkey(pubKey)
 
-	if !crypto.VerifySignature(h.Authors.PubKey, hash.Bytes(), h.Authors.Signature) {
+	if pass, _ := crypto.MyCryptoLib.Verify(h.Authors.PubKey, h.Authors.Signature, hash.Bytes()); !pass {
 		log.Debug("Verify unit signature error.")
 		return UNIT_STATE_INVALID_AUTHOR_SIGNATURE
 	}
@@ -121,24 +120,54 @@ func (validate *Validate) validateMediatorSchedule(header *modules.Header) Valid
 
 	return TxValidationCode_VALID
 }
-func (validate *Validate) ValidateUnitExceptPayment(unit *modules.Unit) error {
-	unitHeaderValidateResult := validate.validateHeaderExceptGroupSig(unit.UnitHeader)
-	if unitHeaderValidateResult != TxValidationCode_VALID &&
-		unitHeaderValidateResult != UNIT_STATE_AUTHOR_SIGNATURE_PASSED &&
-		unitHeaderValidateResult != UNIT_STATE_ORPHAN {
-		log.Debug("Validate unit's header failed.", "error code", unitHeaderValidateResult)
-		return NewValidateError(unitHeaderValidateResult)
+
+//不基于数据库，进行Unit最基本的验证
+func ValidateUnitBasic(unit *modules.Unit) error {
+	return NewValidateError(validateUnitBasic(unit))
+}
+
+//不基于数据库，进行Unit最基本的验证
+func validateUnitBasic(unit *modules.Unit) ValidationCode {
+	header := unit.UnitHeader
+	if header == nil {
+		log.Info("header is nil.")
+		return UNIT_STATE_INVALID_HEADER
+	}
+
+	if len(header.ParentsHash) == 0 {
+		log.Info("the header's parentHash is null.")
+		return UNIT_STATE_INVALID_HEADER
+	}
+
+	//  check header's extra data
+	if uint64(len(header.Extra)) > configure.MaximumExtraDataSize {
+		msg := fmt.Sprintf("extra-data too long: %d > %d", len(header.Extra), configure.MaximumExtraDataSize)
+		log.Info(msg)
+		return UNIT_STATE_INVALID_EXTRA_DATA
+	}
+
+	// check creation_time
+	if header.Time <= modules.UNIT_CREATION_DATE_INITIAL_UINT64 {
+		return UNIT_STATE_INVALID_HEADER_TIME
+	}
+
+	// check header's number
+	if header.Number == nil {
+		return UNIT_STATE_INVALID_HEADER_NUMBER
+	}
+	var thisUnitIsNotTransmitted bool
+	if thisUnitIsNotTransmitted {
+		sigState := validateUnitSignature(header)
+		return sigState
 	}
 	//validate tx root
 	root := core.DeriveSha(unit.Txs)
 	if root != unit.UnitHeader.TxRoot {
 		log.Debugf("Validate unit's header failed, root:[%#x],  unit.UnitHeader.TxRoot:[%#x], txs:[%#x]", root, unit.UnitHeader.TxRoot, unit.Txs.GetTxIds())
-		return NewValidateError(UNIT_STATE_INVALID_HEADER_TXROOT)
+		return UNIT_STATE_INVALID_HEADER_TXROOT
 	}
-	if unitHeaderValidateResult != TxValidationCode_VALID {
-		return NewValidateError(unitHeaderValidateResult)
-	}
-	return nil
+
+	return TxValidationCode_VALID
 }
 
 /**
@@ -146,7 +175,11 @@ func (validate *Validate) ValidateUnitExceptPayment(unit *modules.Unit) error {
 Validate unit(除群签名以外), 新生产的unit暂时还没有群签名
 */
 //func (validate *Validate) ValidateUnit(unit *modules.Unit, isGenesis bool) byte {
-func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
+func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) ValidationCode {
+	unitHash := unit.Hash()
+	if has, code := validate.cache.HasUnitValidateResult(unitHash); has {
+		return code
+	}
 	start := time.Now()
 	defer func() {
 		log.Debugf("ValidateUnitExceptGroupSig unit[%s],cost:%s", unit.Hash().String(), time.Since(start))
@@ -158,27 +191,28 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
 		unitHeaderValidateResult != UNIT_STATE_AUTHOR_SIGNATURE_PASSED &&
 		unitHeaderValidateResult != UNIT_STATE_ORPHAN {
 		log.Debug("Validate unit's header failed.", "error code", unitHeaderValidateResult)
-		return NewValidateError(unitHeaderValidateResult)
+		return (unitHeaderValidateResult)
 	}
 
 	//validate tx root
 	root := core.DeriveSha(unit.Txs)
 	if root != unit.UnitHeader.TxRoot {
 		log.Debugf("Validate unit's header failed, root:[%#x],  unit.UnitHeader.TxRoot:[%#x], txs:[%#x]", root, unit.UnitHeader.TxRoot, unit.Txs.GetTxIds())
-		return NewValidateError(UNIT_STATE_INVALID_HEADER_TXROOT)
+		return (UNIT_STATE_INVALID_HEADER_TXROOT)
 	}
 	// step2. check transactions in unit
 	code := validate.validateTransactions(unit.Txs, unit.Timestamp(), unit.Author())
 	if code != TxValidationCode_VALID {
 		msg := fmt.Sprintf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), code)
 		log.Debug(msg)
-		return NewValidateError(code)
+		return (code)
 	}
 	//maybe orphan unit
 	if unitHeaderValidateResult != TxValidationCode_VALID {
-		return NewValidateError(unitHeaderValidateResult)
+		return (unitHeaderValidateResult)
 	}
-	return nil
+	validate.cache.AddUnitValidateResult(unitHash, TxValidationCode_VALID)
+	return TxValidationCode_VALID
 }
 
 func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) ValidationCode {
@@ -199,11 +233,11 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 		return UNIT_STATE_INVALID_EXTRA_DATA
 	}
 
-	// check txroot
-	if header.TxRoot == (common.Hash{}) {
-		log.Info("the header's txroot is null.")
-		return UNIT_STATE_INVALID_HEADER_TXROOT
-	}
+	// Only check txroot when has unit body
+	//if header.TxRoot == (common.Hash{}) {
+	//	log.Info("the header's txroot is null.")
+	//	return UNIT_STATE_INVALID_HEADER_TXROOT
+	//}
 
 	// check creation_time
 	if header.Time <= modules.UNIT_CREATION_DATE_INITIAL_UINT64 {
@@ -216,7 +250,7 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 	}
 	var thisUnitIsNotTransmitted bool
 	if thisUnitIsNotTransmitted {
-		sigState := validate.validateUnitSignature(header)
+		sigState := validateUnitSignature(header)
 		return sigState
 	}
 
@@ -239,13 +273,21 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 	return TxValidationCode_VALID
 }
 
-func (validate *Validate) ValidateHeader(h *modules.Header) error {
+func (validate *Validate) ValidateHeader(h *modules.Header) ValidationCode {
+	hash := h.Hash()
+	has, code := validate.cache.HasHeaderValidateResult(hash)
+	if has {
+		return code
+	}
 	unitHeaderValidateResult := validate.validateHeaderExceptGroupSig(h)
 	if unitHeaderValidateResult != TxValidationCode_VALID &&
 		unitHeaderValidateResult != UNIT_STATE_AUTHOR_SIGNATURE_PASSED &&
 		unitHeaderValidateResult != UNIT_STATE_ORPHAN {
 		log.Debug("Validate unit's header failed.", "error code", unitHeaderValidateResult)
-		return NewValidateError(unitHeaderValidateResult)
+		return unitHeaderValidateResult
 	}
-	return nil
+	if unitHeaderValidateResult == TxValidationCode_VALID {
+		validate.cache.AddHeaderValidateResult(hash, unitHeaderValidateResult)
+	}
+	return TxValidationCode_VALID
 }

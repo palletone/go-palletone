@@ -23,6 +23,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/math"
@@ -37,6 +38,7 @@ var (
 	secp256k1_N, _  = new(big.Int).SetString("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16)
 	secp256k1_halfN = new(big.Int).Div(secp256k1_N, big.NewInt(2))
 )
+var MyCryptoLib ICrypto = &CryptoS256{}
 
 // Keccak256 calculates and returns the Keccak256 hash of the input data.
 func Keccak256(data ...[]byte) []byte {
@@ -114,7 +116,7 @@ func ToECDSAUnsafe(d []byte) *ecdsa.PrivateKey {
 // it can also accept legacy encodings (0 prefixes).
 func toECDSA(d []byte, strict bool) (*ecdsa.PrivateKey, error) {
 	priv := new(ecdsa.PrivateKey)
-	priv.PublicKey.Curve = S256()
+	priv.PublicKey.Curve = btcec.S256()
 	if strict && 8*len(d) != priv.Params().BitSize {
 		return nil, fmt.Errorf("invalid length, need %d bits", priv.Params().BitSize)
 	}
@@ -148,8 +150,8 @@ func ToECDSAPub(pub []byte) *ecdsa.PublicKey {
 	if len(pub) == 0 {
 		return nil
 	}
-	x, y := elliptic.Unmarshal(S256(), pub)
-	return &ecdsa.PublicKey{Curve: S256(), X: x, Y: y}
+	x, y := elliptic.Unmarshal(btcec.S256(), pub)
+	return &ecdsa.PublicKey{Curve: btcec.S256(), X: x, Y: y}
 }
 
 // Deprecated: Please use crypto.CompressPubkey to get []byte pubkey
@@ -157,7 +159,7 @@ func FromECDSAPub(pub *ecdsa.PublicKey) []byte {
 	if pub == nil || pub.X == nil || pub.Y == nil {
 		return nil
 	}
-	return elliptic.Marshal(S256(), pub.X, pub.Y)
+	return elliptic.Marshal(btcec.S256(), pub.X, pub.Y)
 }
 
 // HexToECDSA parses a secp256k1 private key.
@@ -215,10 +217,10 @@ func ValidateSignatureValues(v byte, r, s *big.Int, homestead bool) bool {
 }
 
 //This is only for P2PKH account address.
-func PubkeyToAddress(p *ecdsa.PublicKey) common.Address {
-	pubBytes := CompressPubkey(p)
-	return PubkeyBytesToAddress(pubBytes)
-}
+//func PubkeyToAddress(p *ecdsa.PublicKey) common.Address {
+//	pubBytes := CompressPubkey(p)
+//	return PubkeyBytesToAddress(pubBytes)
+//}
 func PubkeyBytesToAddress(pubKeyCompressBytes []byte) common.Address {
 	pubKeyHash := Hash160(pubKeyCompressBytes)
 	return common.NewAddress(pubKeyHash, common.PublicKeyHash)

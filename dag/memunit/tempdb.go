@@ -47,12 +47,9 @@ func NewTempdb(db ptndb.Database) (*Tempdb, error) {
 func (db *Tempdb) Clear() {
 	db.lock.Lock()
 	defer db.lock.Unlock()
-	for k := range db.kv {
-		delete(db.kv, k)
-	}
-	for k := range db.deleted {
-		delete(db.deleted, k)
-	}
+
+	db.kv = make(map[string][]byte)
+	db.deleted = make(map[string]bool)
 }
 
 type KeyValue struct {
@@ -68,12 +65,14 @@ func (i *TempdbIterator) Next() bool {
 	i.idx++
 	return i.idx < len(i.result)
 }
+
 func (i *TempdbIterator) Key() []byte {
 	if i.idx == -1 {
 		return nil
 	}
 	return i.result[i.idx].Key
 }
+
 func (i *TempdbIterator) Value() []byte {
 	if i.idx == -1 {
 		return nil

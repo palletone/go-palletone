@@ -1,0 +1,33 @@
+*** Settings ***
+Resource          publicParams.txt
+
+*** Keywords ***
+createToken
+    [Arguments]    ${address}
+    ${one}    Create List    createToken    depositTest    dpt    1    1000
+    ...    ${address}
+    ${two}    Create List    ${address}    ${address}    ${amount}    ${fee}    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43
+    ...    ${one}    \    20
+    ${result}    创建公用的POST请求    contract_ccinvoketx    createToken    ${two}
+    sleep    6
+    [Return]    ${result}
+
+ccquery
+    ${one}    Create List    getTokenInfo    dpt
+    ${two}    Create List    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43    ${one}    ${0}
+    ${result}    创建公用的POST请求    contract_ccquery    getTokenInfo    ${two}
+    ${addressMap}    To Json    ${result}
+    ${assetId}    Get From Dictionary    ${addressMap}    AssetID
+    sleep    6
+    [Return]    ${assetId}
+
+invokeToken
+    [Arguments]    ${address}    ${assetId}
+    ${one}    Create List    MediatorPayToDepositContract
+    ${two}    Create List    ${address}    ${address}    ${depositContractAddress}    ${amount}    ${fee}
+    ...    ${assetId}    50    ${depositContractAddress}    ${one}
+    ${result}    创建公用的POST请求    contract_ccinvokeToken    getTokenInfo    ${two}
+    log    ${result}
+    #    To Json    ${result}
+    #    Get From Dictionary    ${addressMap}    AssetID
+    sleep    6

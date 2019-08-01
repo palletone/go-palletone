@@ -248,14 +248,12 @@ verify the message signature.
 					utils.PasswordFileFlag,
 					utils.LightKDFFlag,
 				},
-				ArgsUsage: "<keyFile>",
+				ArgsUsage: "key hex data",
 				Description: `
-    gptn account import <keyfile>
+    gptn account import hex
 
-Imports an unencrypted private key from <keyfile> and creates a new account.
+Imports an unencrypted private key from hex and creates a new account.
 Prints the address.
-
-The keyfile is assumed to contain an unencrypted private key in hexadecimal format.
 
 The account is saved in encrypted format, you are prompted for a passphrase.
 
@@ -263,7 +261,7 @@ You must remember this passphrase to unlock your account in the future.
 
 For non-interactive use the passphrase can be specified with the -password flag:
 
-    gptn account import [options] <keyfile>
+    gptn account import [options] <key hex>
 
 Note:
 As you can directly copy your encrypted accounts to another ethereum instance,
@@ -443,10 +441,10 @@ func accountSignString(ctx *cli.Context) error {
 	ks := stack.GetKeyStore()
 	addr := ctx.Args().First()
 	account, _ := utils.MakeAddress(ks, addr)
-	hash := crypto.Keccak256Hash([]byte(ctx.Args()[1]))
-	fmt.Printf("%s Hash:%s", addr, hash.String())
+	data := []byte(ctx.Args()[1])
+	fmt.Printf("%s Data:%#x", addr, data)
 	pwd := getPassPhrase("Please give a password to unlock your account", false, 0, utils.MakePasswordList(ctx))
-	sign, err := ks.SignHashWithPassphrase(account, pwd, hash.Bytes())
+	sign, err := ks.SignMessageWithPassphrase(account, pwd, data)
 	if err != nil {
 		utils.Fatalf("Sign error:%s", err)
 	}
@@ -465,8 +463,8 @@ func accountDumpKey(ctx *cli.Context) error {
 	prvKey, _ := ks.DumpKey(account, pwd)
 	wif := crypto.ToWIF(prvKey)
 	fmt.Printf("Your private key hex is : {%x}, WIF is {%s}\n", prvKey, wif)
-	pK, _ := crypto.ToECDSA(prvKey)
-	pubBytes := crypto.CompressPubkey(&pK.PublicKey)
+	//pK, _ := crypto.ToECDSA(prvKey)
+	pubBytes, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(prvKey)
 	fmt.Printf("Compressed public key hex is {%x}", pubBytes)
 	return nil
 }
@@ -664,11 +662,11 @@ func accountSignTx(ctx *cli.Context) error {
 	return nil
 }
 func accountImport(ctx *cli.Context) error {
-	keyfile := ctx.Args().First()
-	if len(keyfile) == 0 {
-		utils.Fatalf("keyfile must be given as argument")
+	keyHex := ctx.Args().First()
+	if len(keyHex) == 0 {
+		utils.Fatalf("keyHex must be given as argument")
 	}
-	key, err := crypto.LoadECDSA(keyfile)
+	key, err := hexutil.Decode(keyHex)
 	if err != nil {
 		utils.Fatalf("Failed to load the private key: %v", err)
 	}

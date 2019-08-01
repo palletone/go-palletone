@@ -20,14 +20,13 @@
 package modules
 
 import (
-	"crypto/ecdsa"
+	"fmt"
 	"log"
 	"reflect"
 	"testing"
 	"time"
 	"unsafe"
 
-	"fmt"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -85,12 +84,6 @@ func TestCopyHeader(t *testing.T) {
 	addr := common.Address{}
 	addr.SetString("0000000011111111")
 
-	//auth := Authentifier{
-	//	Address: addr,
-	//	R:       []byte("12345678901234567890"),
-	//	S:       []byte("09876543210987654321"),
-	//	V:       []byte("1"),
-	//}
 	auth := Authentifier{
 		Signature: []byte("1234567890123456789"),
 		PubKey:    []byte("1234567890123456789"),
@@ -101,7 +94,6 @@ func TestCopyHeader(t *testing.T) {
 	assetID.SetBytes([]byte("0000000011111111"))
 	h := Header{
 		ParentsHash: []common.Hash{u1, u2},
-		//AssetIDs:    []AssetId{assetID},
 		Authors:     auth,
 		GroupSign:   w,
 		GroupPubKey: w,
@@ -110,28 +102,22 @@ func TestCopyHeader(t *testing.T) {
 	}
 
 	newH := CopyHeader(&h)
-	//newH.Authors = nil
-	newH.GroupSign = make([]byte, 0)
-	newH.GroupPubKey = make([]byte, 0)
+	//newH.GroupSign = make([]byte, 0)
+	//newH.GroupPubKey = make([]byte, 0)
 	hh := Header{}
-	log.Printf("newh=%v \n oldH=%v \n hh=%v", *newH, h, hh)
+	log.Printf("\n newh=%v \n oldH=%v \n hh=%v", *newH, h, hh)
 }
 
 // test unit's size of header
 func TestUnitSize(t *testing.T) {
-	key := new(ecdsa.PrivateKey)
-	key, _ = crypto.GenerateKey()
-	h := new(Header)
-	//h.AssetIDs = append(h.AssetIDs, PTNCOIN)
-	au := Authentifier{}
-	address := crypto.PubkeyToAddress(&key.PublicKey)
-	log.Println("address:", address)
 
-	//author := &Author{
-	//	Address:        address,
-	//	Pubkey:         []byte("1234567890123456789"),
-	//	TxAuthentifier: *au,
-	//}
+	key, _ := crypto.MyCryptoLib.KeyGen()
+	pubKey, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(key)
+	h := new(Header)
+	au := Authentifier{}
+
+	address := crypto.PubkeyBytesToAddress(pubKey)
+	log.Println("address:", address)
 
 	h.GroupSign = []byte("group_sign")
 	h.GroupPubKey = []byte("group_pubKey")
@@ -142,9 +128,9 @@ func TestUnitSize(t *testing.T) {
 	h.ParentsHash = append(h.ParentsHash, h.TxRoot)
 
 	h.TxRoot = h.Hash()
-	sig, _ := crypto.Sign(h.TxRoot[:], key)
+	sig, _ := crypto.MyCryptoLib.Sign(key, h.TxRoot[:])
 	au.Signature = sig
-	au.PubKey = crypto.CompressPubkey(&key.PublicKey)
+	au.PubKey = pubKey
 	h.Authors = au
 
 	log.Println("size: ", unsafe.Sizeof(h))
@@ -160,6 +146,7 @@ func TestOutPointToKey(t *testing.T) {
 		t.Fatal("test failed.", result.TxHash.String(), result.MessageIndex, result.OutIndex)
 	}
 }
+
 func TestHeaderPointer(t *testing.T) {
 	h := new(Header)
 	//h.AssetIDs = []AssetId{PTNCOIN}
@@ -190,19 +177,13 @@ func TestHeaderPointer(t *testing.T) {
 }
 
 func TestHeaderRLP(t *testing.T) {
-	key := new(ecdsa.PrivateKey)
-	key, _ = crypto.GenerateKey()
+	key, _ := crypto.MyCryptoLib.KeyGen()
+	pubKey, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(key)
 	h := new(headerTemp)
 	//h.AssetIDs = append(h.AssetIDs, PTNCOIN)
 	au := Authentifier{}
-	address := crypto.PubkeyToAddress(&key.PublicKey)
+	address := crypto.PubkeyBytesToAddress(pubKey)
 	log.Println("address:", address)
-
-	//author := &Author{
-	//	Address:        address,
-	//	Pubkey:         []byte("1234567890123456789"),
-	//	TxAuthentifier: *au,
-	//}
 
 	h.GroupSign = []byte("group_sign")
 	h.GroupPubKey = []byte("group_pubKey")
@@ -212,12 +193,10 @@ func TestHeaderRLP(t *testing.T) {
 	h.Extra = make([]byte, 20)
 	h.CryptoLib = []byte{0x1, 0x2}
 	h.ParentsHash = append(h.ParentsHash, h.TxRoot)
-	//tr := common.Hash{}
-	//tr = tr.SetString("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f")
 	h.TxRoot = common.HexToHash("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f")
-	sig, _ := crypto.Sign(h.TxRoot[:], key)
+	sig, _ := crypto.MyCryptoLib.Sign(key, h.TxRoot[:])
 	au.Signature = sig
-	au.PubKey = crypto.CompressPubkey(&key.PublicKey)
+	au.PubKey = pubKey
 	h.Authors = au
 	h.Time = 123
 
@@ -230,6 +209,7 @@ func TestHeaderRLP(t *testing.T) {
 	t.Log("data", h2)
 	assertEqualRlp(t, h, h2)
 }
+
 func assertEqualRlp(t *testing.T, a, b interface{}) {
 	aa, err := rlp.EncodeToBytes(a)
 	if err != nil {

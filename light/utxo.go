@@ -1,3 +1,20 @@
+/*
+   This file is part of go-palletone.
+   go-palletone is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   go-palletone is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+*/
+/*
+ * @author PalletOne core developer Jiyou Wang <dev@pallet.one>
+ * @date 2018
+ */
 package light
 
 import (
@@ -72,8 +89,7 @@ func (u *utxosRespData) decode(arrs [][][]byte) error {
 	for _, arr := range arrs[1:] {
 		var outpoint modules.OutPoint
 		var utxo *modules.Utxo
-		//log.Debug("Light PalletOne","utxosRespData decode outpoint",string(arr[0]))
-		//log.Debug("Light PalletOne","utxosRespData decode utxo",string(arr[1]))
+
 		if err := json.Unmarshal(arr[0], &outpoint); err != nil {
 			return err
 		}

@@ -350,7 +350,10 @@ func (dag *UnitProduceRepository) RefreshSysParameters() {
 	//generateUnitRewardStr, _, _ := rep.GetConfig("GenerateUnitReward")
 	//generateUnitReward, _ := strconv.ParseUint(string(generateUnitRewardStr), 10, 64)
 	parameter.CurrentSysParameters.GenerateUnitReward = cp.GenerateUnitReward
-	log.Debugf("Load SysParameter GenerateUnitReward value:%d", parameter.CurrentSysParameters.GenerateUnitReward)
+	parameter.CurrentSysParameters.RewardHeight = cp.RewardHeight
+	log.Debugf("Load SysParameter GenerateUnitReward value:%d,RewardHeight:%d",
+		parameter.CurrentSysParameters.GenerateUnitReward,
+		parameter.CurrentSysParameters.RewardHeight)
 }
 
 func (dag *UnitProduceRepository) updateChainParameters(nextUnit *modules.Unit) {
@@ -545,8 +548,9 @@ func (dag *UnitProduceRepository) updateActiveMediators() bool {
 
 	// 2. 根据每个mediator的得票数，排序出前n个 active mediator
 	log.Debugf("In this round, The active mediator's count is %v", mediatorCount)
-	sort.PartialSort(dag.mediatorVoteTally, mediatorCount)
-
+	if dag.mediatorVoteTally.Len() > 0 {
+		sort.PartialSort(dag.mediatorVoteTally, mediatorCount)
+	}
 	// 3. 更新每个mediator的得票数
 	for _, voteTally := range dag.mediatorVoteTally {
 		med := dag.GetMediator(voteTally.candidate)
@@ -561,13 +565,17 @@ func (dag *UnitProduceRepository) updateActiveMediators() bool {
 	gp.PrecedingMediators = gp.ActiveMediators
 	gp.ActiveMediators = make(map[common.Address]bool, mediatorCount)
 	gp.ChainParameters.ActiveMediatorCount = uint8(mediatorCount)
-	for index := 0; index < mediatorCount; index++ {
-		voteTally := dag.mediatorVoteTally[index]
-		gp.ActiveMediators[voteTally.candidate] = true
+	if dag.mediatorVoteTally.Len() > 0 {
+		for index := 0; index < mediatorCount; index++ {
+			voteTally := dag.mediatorVoteTally[index]
+			gp.ActiveMediators[voteTally.candidate] = true
+		}
 	}
 	dag.propRep.StoreGlobalProp(gp)
 
-	return isActiveMediatorsChanged(gp)
+	// todo albert 待使用
+	//return isActiveMediatorsChanged(gp)
+	return false
 }
 
 func (d *UnitProduceRepository) getDesiredActiveMediatorCount() int {

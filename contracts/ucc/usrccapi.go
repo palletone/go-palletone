@@ -10,20 +10,22 @@ import (
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/core"
 	"github.com/palletone/go-palletone/contracts/platforms"
-	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/rwset"
 )
 
 type UserChaincode struct {
-	Name           string         //Unique name of the chaincode
-	Path           string         //Path to the chaincode; currently not used
-	Version        string         //chainCode Version
-	InitArgs       [][]byte       //InitArgs initialization arguments to startup the chaincode
-	Chaincode      shim.Chaincode // Chaincode is the actual chaincode object
-	InvokableCC2CC bool           //InvokableCC2CC keeps track of whether this chaincode
-	Enabled        bool           //Enabled a convenient switch to enable/disable chaincode
+	Name    string //Unique name of the chaincode
+	Path    string //Path to the chaincode; currently not used
+	Version string //chainCode Version
+	//Desciption     string
+	//Abi            string
+	Language string
+	//InitArgs       [][]byte       //InitArgs initialization arguments to startup the chaincode
+	//Chaincode      shim.Chaincode // Chaincode is the actual chaincode object
+	//InvokableCC2CC bool           //InvokableCC2CC keeps track of whether this chaincode
+	Enabled bool //Enabled a convenient switch to enable/disable chaincode
 }
 
 func buildUserCC(context context.Context, spec *pb.ChaincodeSpec) (*pb.ChaincodeDeploymentSpec, error) {
@@ -50,14 +52,12 @@ func mockerDeployUserCC() error {
 	return nil
 }
 
-func DeployUserCC(chaincodeData []byte, spec *pb.ChaincodeSpec, chainID string, usrcc *UserChaincode, txid string, txsim rwset.TxSimulator, timeout time.Duration) error {
-	cdDeploymentSpec := &pb.ChaincodeDeploymentSpec{}
-
+func DeployUserCC(contractId []byte, chaincodeData []byte, spec *pb.ChaincodeSpec, chainID string, txid string, txsim rwset.TxSimulator, timeout time.Duration) error {
 	//return mockerDeployUserCC()
 
+	cdDeploymentSpec := &pb.ChaincodeDeploymentSpec{}
 	var err error
 	if cfg.DebugTest {
-		//return mockerDeployUserCC()
 		cdDeploymentSpec, err = getDeploymentSpec(nil, spec)
 		if err != nil {
 			return err
@@ -71,32 +71,33 @@ func DeployUserCC(chaincodeData []byte, spec *pb.ChaincodeSpec, chainID string, 
 	if txsim != nil {
 		ctxt = context.WithValue(ctxt, core.TXSimulatorKey, txsim)
 	}
-	cccid := ccprov.GetCCContext(nil, chainID, cdDeploymentSpec.ChaincodeSpec.ChaincodeId.Name, usrcc.Version, txid, false, nil, nil)
+	cccid := ccprov.GetCCContext(contractId, chainID, cdDeploymentSpec.ChaincodeSpec.ChaincodeId.Name, cdDeploymentSpec.ChaincodeSpec.ChaincodeId.Version, txid, false, nil, nil)
 	_, _, err = ccprov.ExecuteWithErrorFilter(ctxt, cccid, cdDeploymentSpec, timeout)
 	if err != nil {
-		log.Errorf("ExecuteWithErrorFilter with usercc.Name[%s] chainId[%s] err !!", usrcc.Name, chainID)
+		log.Errorf("ExecuteWithErrorFilter with usercc.Name[%s] chainId[%s] err !!", cdDeploymentSpec.ChaincodeSpec.ChaincodeId.Name, chainID)
+		ccprov.Stop(ctxt, cccid, cdDeploymentSpec, false)
 		return err
 	}
-	log.Debugf("user chaincode chainID[%s]-name[%s]-path[%s]-version[%s] deployed", chainID, usrcc.Name, usrcc.Path, usrcc.Version)
+	log.Debugf("user chaincode chainID[%s]-name[%s]-path[%s]-version[%s] deployed", chainID, cdDeploymentSpec.ChaincodeSpec.ChaincodeId.Name, cdDeploymentSpec.ChaincodeSpec.ChaincodeId.Path, cdDeploymentSpec.ChaincodeSpec.ChaincodeId.Version)
 	return nil
 }
 
-func StopUserCC(contractid []byte, chainID string, usrcc *UserChaincode, txid string, deleteImage bool) error {
+func StopUserCC(contractid []byte, chainID string, usrcc *UserChaincode, txid string, deleteImage bool, dontRmCon bool) error {
 	ccprov := ccprovider.GetChaincodeProvider()
 	chaincodeID := &pb.ChaincodeID{Path: usrcc.Path, Name: usrcc.Name, Version: usrcc.Version}
 	spec := &pb.ChaincodeSpec{
-		Type:        pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]),
+		Type:        pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value[usrcc.Language]),
 		ChaincodeId: chaincodeID,
-		Input: &pb.ChaincodeInput{
-			Args: usrcc.InitArgs,
-		},
+		//Input: &pb.ChaincodeInput{
+		//	Args: usrcc.InitArgs,
+		//},
 	}
 	chaincodeDeploymentSpec := &pb.ChaincodeDeploymentSpec{
 		ChaincodeSpec: spec,
 		CodePackage:   nil,
 	}
 	cccid := ccprov.GetCCContext(contractid, chainID, usrcc.Name, usrcc.Version, txid, false, nil, nil)
-	if err := ccprov.Stop(context.Background(), cccid, chaincodeDeploymentSpec); err != nil {
+	if err := ccprov.Stop(context.Background(), cccid, chaincodeDeploymentSpec, dontRmCon); err != nil {
 		return err
 	}
 
@@ -107,9 +108,9 @@ func StopUserCC(contractid []byte, chainID string, usrcc *UserChaincode, txid st
 	}
 }
 
-func GetUserCCPayload(chainID string, usrcc *UserChaincode) (payload []byte, err error) {
+func GetUserCCPayload(usrcc *UserChaincode) (payload []byte, err error) {
 	chaincodeID := &pb.ChaincodeID{Path: usrcc.Path, Name: usrcc.Name, Version: usrcc.Version}
-	spec := &pb.ChaincodeSpec{Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]), ChaincodeId: chaincodeID, Input: &pb.ChaincodeInput{Args: usrcc.InitArgs}}
+	spec := &pb.ChaincodeSpec{Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value[usrcc.Language]), ChaincodeId: chaincodeID}
 	chaincodeData, err := platforms.GetChainCodePayload(spec)
 	if err != nil {
 		log.Error("getChainCodePayload err:", "error", err)
@@ -118,7 +119,7 @@ func GetUserCCPayload(chainID string, usrcc *UserChaincode) (payload []byte, err
 	return chaincodeData, nil
 }
 
-func RecoverChainCodeFromDb(spec *pb.ChaincodeSpec, chainID string, templateId []byte) (*UserChaincode, []byte, error) {
+func RecoverChainCodeFromDb(chainID string, templateId []byte) (*UserChaincode, []byte, error) {
 	//todo, for test
 	if cfg.DebugTest {
 		usrCC1 := &UserChaincode{}
@@ -130,18 +131,19 @@ func RecoverChainCodeFromDb(spec *pb.ChaincodeSpec, chainID string, templateId [
 		log.Error("getCcDagHand err:", "error", err)
 		return nil, nil, err
 	}
-	tpl,err:= dag.GetContractTpl(templateId)
-	if err!=nil {
+	tpl, err := dag.GetContractTpl(templateId)
+	if err != nil {
 		return nil, nil, errors.New("GetContractTpl contract template err")
 	}
-	chaincodeData,err:=dag.GetContractTplCode(templateId)
-	if err!=nil {
+	chaincodeData, err := dag.GetContractTplCode(templateId)
+	if err != nil {
 		return nil, nil, errors.New("GetContractTpl contract code err")
 	}
 	usrCC := &UserChaincode{
-		Name:    tpl.TplName,
-		Version: tpl.Version,
-		Path:    tpl.Path,
+		Name:     tpl.TplName,
+		Version:  tpl.Version,
+		Path:     tpl.Path,
+		Language: tpl.Language,
 	}
 	return usrCC, chaincodeData, nil
 

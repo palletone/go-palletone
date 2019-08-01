@@ -27,6 +27,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/constants"
@@ -71,43 +72,14 @@ func splitValueAndVersion(data []byte) ([]byte, *modules.StateVersion, error) {
 	return objData, version, nil
 }
 
-// ######################### SAVE IMPL START ###########################
-
-//func (statedb *StateDb) SaveAssetInfo(assetInfo *modules.AssetInfo) error {
-//	key := assetInfo.Tokey()
-//	return StoreToRlpBytes(statedb.db, key, assetInfo)
-//}
-
 func (statedb *StateDb) DeleteState(key []byte) error {
 	return statedb.db.Delete(key)
 }
-
-// ######################### SAVE IMPL END ###########################
-
-// ######################### GET IMPL START ###########################
-
-//func (statedb *StateDb) GetAssetInfo(assetId *modules.Asset) (*modules.AssetInfo, error) {
-//	key := append(constants.ASSET_INFO_PREFIX, assetId.AssetId.String()...)
-//	data, err := statedb.db.Get(key)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	var assetInfo modules.AssetInfo
-//	err = rlp.DecodeBytes(data, &assetInfo)
-//
-//	if err != nil {
-//		return nil, err
-//	}
-//	return &assetInfo, nil
-//}
 
 // get prefix: return maps
 func (db *StateDb) GetPrefix(prefix []byte) map[string][]byte {
 	return getprefix(db.db, prefix)
 }
-
-// ######################### GET IMPL END ###########################
 
 func (statedb *StateDb) GetJuryCandidateList() (map[string]bool, error) {
 	depositeContractAddress := syscontract.DepositContractAddress
@@ -115,7 +87,7 @@ func (statedb *StateDb) GetJuryCandidateList() (map[string]bool, error) {
 	if err != nil {
 		return nil, fmt.Errorf("jury candidate list is nil.")
 	}
-	//var candidateList []common.Address
+
 	candidateList := make(map[string]bool)
 	err = json.Unmarshal(val, &candidateList)
 	if err != nil {
@@ -134,28 +106,38 @@ func (statedb *StateDb) IsInJuryCandidateList(address common.Address) bool {
 	}
 	return false
 }
-func (statedb *StateDb) GetDevCcCandidateList() (map[string]bool, error) {
+func (statedb *StateDb) GetContractDeveloperList() ([]common.Address, error) {
 	depositeContractAddress := syscontract.DepositContractAddress
 	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), modules.DeveloperList)
 	if err != nil {
 		return nil, fmt.Errorf("devCc candidate list is nil.")
 	}
-	//var candidateList []common.Address
-	candidateList := make(map[string]bool)
-	err = json.Unmarshal(val, &candidateList)
+	depList := make(map[string]bool)
+	err = json.Unmarshal(val, &depList)
 	if err != nil {
 		return nil, err
 	}
-	return candidateList, nil
+	res := make([]common.Address, len(depList))
+	for addStr, _ := range depList {
+		add, err := common.StringToAddress(addStr)
+		if err != nil {
+			log.Debugf(err.Error())
+			continue
+		}
+		res = append(res, add)
+	}
+	return res, nil
 }
 
-func (statedb *StateDb) IsInDevCcCandidateList(address common.Address) bool {
-	list, err := statedb.GetDevCcCandidateList()
+func (statedb *StateDb) IsInContractDeveloperList(address common.Address) bool {
+	list, err := statedb.GetContractDeveloperList()
 	if err != nil {
 		return false
 	}
-	if _, ok := list[address.String()]; ok {
-		return true
+	for _, d := range list {
+		if d.Equal(address) {
+			return true
+		}
 	}
 	return false
 }

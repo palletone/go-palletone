@@ -1912,7 +1912,7 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 	subScript = removeOpcodeByData(subScript, fullSigBytes)
 
 	// Generate the signature hash based on the signature hash type.
-	hash := calcSignatureHash(subScript, hashType, &vm.tx, vm.msgIdx, vm.txIdx, vm.crypto)
+	data := calcSignatureData(subScript, hashType, &vm.tx, vm.msgIdx, vm.txIdx, vm.crypto)
 
 	//pubKey, err := btcec.ParsePubKey(pkBytes, btcec.S256())
 	//if err != nil {
@@ -1935,18 +1935,18 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 
 	var valid bool
 	if vm.sigCache != nil {
-		var sigHash common.Hash
-		copy(sigHash[:], hash)
+		var sigHash []byte
+		copy(sigHash[:], data)
 
 		valid = vm.sigCache.Exists(sigHash, sigBytes, pkBytes)
 		if !valid {
-			if pass, _ := vm.crypto.Verify(pkBytes, sigBytes, hash); pass {
+			if pass, _ := vm.crypto.Verify(pkBytes, sigBytes, data); pass {
 				vm.sigCache.Add(sigHash, sigBytes, pkBytes)
 				valid = true
 			}
 		}
 	} else {
-		valid, _ = vm.crypto.Verify(pkBytes, sigBytes, hash)
+		valid, _ = vm.crypto.Verify(pkBytes, sigBytes, data)
 	}
 
 	vm.dstack.PushBool(valid)
@@ -2104,22 +2104,22 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		signature := rawSig[:len(rawSig)-1]
 
 		// Generate the signature hash based on the signature hash type.
-		hash := calcSignatureHash(script, hashType, &vm.tx, vm.msgIdx, vm.txIdx, vm.crypto)
+		data := calcSignatureData(script, hashType, &vm.tx, vm.msgIdx, vm.txIdx, vm.crypto)
 
 		var valid bool
 		if vm.sigCache != nil {
-			var sigHash common.Hash
-			copy(sigHash[:], hash)
+			var sigHash []byte
+			copy(sigHash[:], data)
 
 			valid = vm.sigCache.Exists(sigHash, signature, pubKey)
 			if !valid {
-				if pass, _ := vm.crypto.Verify(pubKey, signature, hash); pass {
+				if pass, _ := vm.crypto.Verify(pubKey, signature, data); pass {
 					vm.sigCache.Add(sigHash, signature, pubKey)
 					valid = true
 				}
 			}
 		} else {
-			valid, _ = vm.crypto.Verify(pubKey, signature, hash)
+			valid, _ = vm.crypto.Verify(pubKey, signature, data)
 		}
 
 		if valid {

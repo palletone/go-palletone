@@ -87,8 +87,8 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 			return shim.Error(err.Error())
 		}
 	} else {
-		log.Error("please enter ok")
-		return shim.Error("please enter ok")
+		log.Error("please enter Ok")
+		return shim.Error("please enter Ok")
 	}
 	//  不管同意还是不同意都需要移除申请列表
 	becomeList, err := getList(stub, ListForApplyBecomeMediator)
@@ -273,8 +273,8 @@ func handleForForfeitureApplication(stub shim.ChaincodeStubInterface, args []str
 		//移除申请列表，不做处理
 		log.Info("not agree to for apply forfeiture")
 	} else {
-		log.Error("Please enter ok or no.")
-		return shim.Error("Please enter ok or no.")
+		log.Error("Please enter Ok or No.")
+		return shim.Error("Please enter Ok or No.")
 	}
 	//  不管同意与否都需要从列表中移除
 	delete(listForForfeiture, addr)
@@ -315,13 +315,13 @@ func handleJuryForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA s
 	}
 
 	//  退还保证金
-	cp, err := stub.GetSystemConfig()
-	if err != nil {
-		return err
-	}
+	//cp, err := stub.GetSystemConfig()
+	//if err != nil {
+	//	return err
+	//}
 	//  调用从合约把token转到请求地址
 	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
-	err = stub.PayOutToken(foundationA, modules.NewAmountAsset(cp.DepositAmountForJury, gasToken), 0)
+	err = stub.PayOutToken(foundationA, modules.NewAmountAsset(node.Balance, gasToken), 0)
 	if err != nil {
 		log.Error("stub.PayOutToken err:", "error", err)
 		return err
@@ -347,13 +347,13 @@ func handleDevForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA st
 		return err
 	}
 	//  退还保证金
-	cp, err := stub.GetSystemConfig()
-	if err != nil {
-		return err
-	}
+	//cp, err := stub.GetSystemConfig()
+	//if err != nil {
+	//	return err
+	//}
 	//  调用从合约把token转到请求地址
 	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
-	err = stub.PayOutToken(foundationA, modules.NewAmountAsset(cp.DepositAmountForDeveloper, gasToken), 0)
+	err = stub.PayOutToken(foundationA, modules.NewAmountAsset(node.Balance, gasToken), 0)
 	if err != nil {
 		log.Error("stub.PayOutToken err:", "error", err)
 		return err
@@ -375,14 +375,14 @@ func handleMediatorForfeitureDeposit(stub shim.ChaincodeStubInterface, foundatio
 	if md == nil {
 		return fmt.Errorf("node is nil")
 	}
-	cp, err := stub.GetSystemConfig()
-	if err != nil {
-		//log.Error("strconv.ParseUint err:", "error", err)
-		return err
-	}
+	//cp, err := stub.GetSystemConfig()
+	//if err != nil {
+	//	//log.Error("strconv.ParseUint err:", "error", err)
+	//	return err
+	//}
 	//  调用从合约把token转到请求地址
 	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
-	err = stub.PayOutToken(foundationA, modules.NewAmountAsset(cp.DepositAmountForMediator, gasToken), 0)
+	err = stub.PayOutToken(foundationA, modules.NewAmountAsset(md.Balance, gasToken), 0)
 	if err != nil {
 		log.Error("stub.PayOutToken err:", "error", err)
 		return err
@@ -408,4 +408,53 @@ func handleMediatorForfeitureDeposit(stub shim.ChaincodeStubInterface, foundatio
 		return err
 	}
 	return nil
+}
+
+func hanldeNodeRemoveFromAgreeList(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	address, err := common.StringToAddress(args[0])
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	if !isFoundationInvoke(stub) {
+		return shim.Error("please use foundation address")
+	}
+	agreeList, err := getList(stub, ListForAgreeBecomeMediator)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	delete(agreeList, address.String())
+	err = saveList(stub, ListForAgreeBecomeMediator, agreeList)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	return shim.Success(nil)
+}
+
+func handleRemoveMediatorNode(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	address, err := common.StringToAddress(args[0])
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	if !isFoundationInvoke(stub) {
+		return shim.Error("please use foundation address")
+	}
+	err = DelMediatorDeposit(stub, address.String())
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	return shim.Success(nil)
+}
+func handleRemoveNormalNode(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	address, err := common.StringToAddress(args[0])
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	if !isFoundationInvoke(stub) {
+		return shim.Error("please use foundation address")
+	}
+	err = DelNodeBalance(stub, address.String())
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	return shim.Success(nil)
 }

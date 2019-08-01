@@ -25,6 +25,8 @@ import (
 	"errors"
 	"sort"
 
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -32,7 +34,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine/internal/txscript"
 	"strings"
-	"encoding/hex"
 )
 
 const (
@@ -210,51 +211,94 @@ func ScriptValidate(utxoLockScript []byte, pickupJuryRedeemScript txscript.Picku
 	}
 	return vm.Execute()
 }
+
+//验证一个PaymentMessage的所有Input解锁脚本是否正确
+func ScriptValidate1Msg(utxoLockScripts map[string][]byte, pickupJuryRedeemScript txscript.PickupJuryRedeemScript, tx *modules.Transaction, msgIdx int) error {
+	acc := &account{}
+	txCopy := tx
+	if tx.IsContractTx() {
+		isRequestMsg := false
+		for idx, msg := range tx.TxMessages {
+			if msg.App.IsRequest() {
+				isRequestMsg = true
+			}
+			if idx == msgIdx && !isRequestMsg {
+				txCopy = tx.GetRequestTx()
+				log.Debugf("msgIdx %d, GetRequestTx 2", msgIdx)
+			}
+		}
+	}
+	log.Debugf("SignCache count:%d", signCache.Count())
+	for inputIndex, input := range txCopy.TxMessages[msgIdx].Payload.(*modules.PaymentPayload).Inputs {
+		utxoLockScript := utxoLockScripts[input.PreviousOutPoint.String()]
+		vm, err := txscript.NewEngine(utxoLockScript, pickupJuryRedeemScript, txCopy, msgIdx, inputIndex, txscript.StandardVerifyFlags, signCache, acc)
+		if err != nil {
+			log.Warnf("Unlock script validate fail,tx[%s],MsgIdx[%d],In[%d],unlockScript:%x,utxoScript:%x",
+				tx.Hash().String(), msgIdx, inputIndex, input.SignatureScript, utxoLockScript)
+
+			return err
+		}
+		err = vm.Execute()
+		if err != nil {
+			log.Warnf("Unlock script validate fail,tx[%s],MsgIdx[%d],In[%d],unlockScript:%x,utxoScript:%x",
+				tx.Hash().String(), msgIdx, inputIndex, input.SignatureScript, utxoLockScript)
+
+			log.DebugDynamic(func() string {
+				data, _ := json.Marshal(txCopy)
+				return "Tx json:" + string(data)
+			})
+			return err
+		}
+	}
+	return nil
+}
+
 //对于一个多签或者合约解锁脚本，获得到底哪些用户参与了签名
 func GetScriptSigners(tx *modules.Transaction, msgIdx, inputIndex int) ([]common.Address, error) {
-	signatures:=[][]byte{}
-	pubkeys:=[][]byte{}
+	signatures := [][]byte{}
+	pubkeys := [][]byte{}
 	var redeem []byte
 	var hashType byte
-	script:=tx.TxMessages[msgIdx].Payload.(*modules.PaymentPayload).Inputs[inputIndex].SignatureScript
-	scriptStr,_:= txscript.DisasmString(script)
+	script := tx.TxMessages[msgIdx].Payload.(*modules.PaymentPayload).Inputs[inputIndex].SignatureScript
+	scriptStr, _ := txscript.DisasmString(script)
 	ops := strings.Fields(scriptStr)
-	for i,op:=range ops {
-		if op=="0" {
+	for i, op := range ops {
+		if op == "0" {
 			continue
 		}
-		if i+1==len(ops) { //last one, redeem
-			redeem,_=hex.DecodeString(op)
-			redeemStr,_:= txscript.DisasmString(redeem)
+		if i+1 == len(ops) { //last one, redeem
+			redeem, _ = hex.DecodeString(op)
+			redeemStr, _ := txscript.DisasmString(redeem)
 			log.Debug(redeemStr)
 			rops := strings.Fields(redeemStr)
-			for j,rop:=range rops{
-				if j>0&&j<len(rops)-2{
-					pubkey,_:= hex.DecodeString(rop)
-					pubkeys=append(pubkeys,pubkey)
+			for j, rop := range rops {
+				if j > 0 && j < len(rops)-2 {
+					pubkey, _ := hex.DecodeString(rop)
+					pubkeys = append(pubkeys, pubkey)
 				}
 			}
 
-		}else{//signature
-			s,_:=hex.DecodeString(op)
-			hashType=s[len(s)-1]
-			signatures=append(signatures,s[0:len(s)-1])
+		} else { //signature
+			s, _ := hex.DecodeString(op)
+			hashType = s[len(s)-1]
+			signatures = append(signatures, s[0:len(s)-1])
 		}
 	}
 	acc := &account{}
-	hash,_:= CalcSignatureHash(tx,uint32(hashType),msgIdx,inputIndex,redeem)
+	hash, _ := CalcSignatureHash(tx, uint32(hashType), msgIdx, inputIndex, redeem)
 	//根据签名，找到对应的pubkey
-	result:=[]common.Address{}
-	for _,sign:=range signatures{
-		for _,pubkey:=range pubkeys{
-			if pass,_:=acc.Verify(pubkey,sign,hash);pass{
-				addr:= crypto.PubkeyBytesToAddress(pubkey)
-				result=append(result,addr)
+	result := []common.Address{}
+	for _, sign := range signatures {
+		for _, pubkey := range pubkeys {
+			if pass, _ := acc.Verify(pubkey, sign, hash); pass {
+				addr := crypto.PubkeyBytesToAddress(pubkey)
+				result = append(result, addr)
 			}
 		}
 	}
-	return result,nil
+	return result, nil
 }
+
 //对交易中的Payment类型中的某个Input生成解锁脚本
 //func SignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, utxoLockScript []byte, privKey *ecdsa.PrivateKey, juryVersion int) ([]byte, error) {
 //	lookupKey := func(a common.Address) (*ecdsa.PrivateKey, bool, error) {
@@ -288,14 +332,14 @@ type account struct {
 }
 
 func (a *account) Hash(msg []byte) ([]byte, error) {
-	return crypto.Keccak256(msg), nil
+	return crypto.MyCryptoLib.Hash(msg)
 }
-func (a *account) Sign(address common.Address, digest []byte) ([]byte, error) {
-	return a.signFn(address, digest)
+func (a *account) Sign(address common.Address, msg []byte) ([]byte, error) {
+	return a.signFn(address, msg)
 }
-func (a *account) Verify(pubKey, signature, digest []byte) (bool, error) {
+func (a *account) Verify(pubKey, signature, msg []byte) (bool, error) {
 	//log.Debugf("Pubkey:%x,Signature:%x,hash:%x", pubKey, signature, digest)
-	return crypto.VerifySignature(pubKey, digest, signature), nil
+	return crypto.MyCryptoLib.Verify(pubKey, signature, msg)
 }
 func (a *account) GetPubKey(address common.Address) ([]byte, error) {
 	return a.pubKeyFn(address)

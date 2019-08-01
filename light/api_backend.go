@@ -41,6 +41,7 @@ import (
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
+	"github.com/palletone/go-palletone/ptnjson/statistics"
 	"github.com/shopspring/decimal"
 )
 
@@ -114,6 +115,9 @@ func (b *LesApiBackend) GetChainParameters() *core.ChainParameters {
 
 func (b *LesApiBackend) SendTx(ctx context.Context, signedTx *modules.Transaction) error {
 	return b.ptn.txPool.AddLocal(signedTx)
+}
+func (b *LesApiBackend) SendTxs(ctx context.Context, signedTxs []*modules.Transaction) []error {
+	return b.ptn.txPool.AddLocals(signedTxs)
 }
 
 func (b *LesApiBackend) RemoveTx(txHash common.Hash) {
@@ -284,7 +288,7 @@ func (b *LesApiBackend) GetCommonByPrefix(prefix []byte) map[string][]byte {
 }
 
 // Get Contract Api
-func (b *LesApiBackend) GetContract(hex_id string) (*modules.Contract, error) {
+func (b *LesApiBackend) GetContract(contractAddr common.Address) (*ptnjson.ContractJson, error) {
 	return nil, nil
 }
 
@@ -354,6 +358,9 @@ func (b *LesApiBackend) GetPrefix(prefix string) map[string][]byte {
 func (b *LesApiBackend) GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error) {
 	return nil, nil
 }
+func (b *LesApiBackend) GetStxoEntry(outpoint *modules.OutPoint) (*ptnjson.StxoJson, error) {
+	return nil, nil
+}
 func (b *LesApiBackend) QueryDbByKey(key []byte) *ptnjson.DbRowJson {
 	return nil
 }
@@ -412,6 +419,9 @@ func (b *LesApiBackend) GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson,
 func (b *LesApiBackend) GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxHistoryJson, error) {
 	return nil, nil
 }
+func (b *LesApiBackend) GetAssetExistence(asset string) ([]*ptnjson.ProofOfExistenceJson, error) {
+	return nil, nil
+}
 
 //contract control
 func (b *LesApiBackend) ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi, ccLanguage string) (TemplateId []byte, err error) {
@@ -438,16 +448,17 @@ func (b *LesApiBackend) EncodeTx(jsonStr string) (string, error) {
 func (b *LesApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, description, abi, language string, addrs []common.Address) (reqId common.Hash, tplId []byte, err error) {
 	return
 }
-func (b *LesApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, timeout time.Duration) (reqId common.Hash, depId common.Address, err error) {
+func (b *LesApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, extData []byte, timeout time.Duration) (reqId common.Hash, depId common.Address, err error) {
 	return
 }
 func (b *LesApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
 	return
 }
-func (b *LesApiBackend) ContractInvokeReqTokenTx(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, asset string, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
-	return
+func (b *LesApiBackend) SendContractInvokeReqTx(requestTx *modules.Transaction) (reqId common.Hash, err error) {
+	return b.SendContractInvokeReqTx(requestTx)
 }
-func (b *LesApiBackend) ContractStartChaincodeContainer(templateId []byte, txId string) (deployId []byte, e error) {
+
+func (b *LesApiBackend) ContractInvokeReqTokenTx(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, asset string, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
 	return
 }
 
@@ -536,5 +547,12 @@ func (b *LesApiBackend) GetContractState(contractid []byte, key string) ([]byte,
 	return nil, nil, nil
 }
 func (b *LesApiBackend) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
+	return nil, nil
+}
+func (b *LesApiBackend) GetAddressBalanceStatistics(token string, topN int) (*statistics.TokenAddressBalanceJson, error) {
+	return nil, nil
+}
+
+func (b *LesApiBackend) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
 	return nil, nil
 }

@@ -167,7 +167,7 @@ func connectNodesInRing(net *Network, nodeCount int) ([]discover.NodeID, error) 
 	for i := 0; i < nodeCount; i++ {
 		node, err := net.NewNode()
 		if err != nil {
-			log.Error("Error creating a node! %s", err)
+			log.Error("Error creating a node! %s", err.Error())
 			return nil, err
 		}
 		ids[i] = node.ID()
@@ -175,7 +175,7 @@ func connectNodesInRing(net *Network, nodeCount int) ([]discover.NodeID, error) 
 
 	for _, id := range ids {
 		if err := net.Start(id); err != nil {
-			log.Error("Error starting a node! %s", err)
+			log.Error("Error starting a node! %s", err.Error())
 			return nil, err
 		}
 		log.Debug(fmt.Sprintf("node %v starting up", id))
@@ -183,7 +183,7 @@ func connectNodesInRing(net *Network, nodeCount int) ([]discover.NodeID, error) 
 	for i, id := range ids {
 		peerID := ids[(i+1)%len(ids)]
 		if err := net.Connect(id, peerID); err != nil {
-			log.Error("Error connecting a node to a peer! %s", err)
+			log.Errorf("Error connecting a node to a peer! %s", err.Error())
 			return nil, err
 		}
 	}

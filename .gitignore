@@ -28,6 +28,7 @@ outchain.toml
 .project
 .settings
 *.pyc
+*.pem
 
 # used by the Makefile
 /build/_workspace/
@@ -78,3 +79,4 @@ cmd/gptn/
 gptn/
 dag/transactions.rlp.new
 dag/transactions.rlp
+ofile

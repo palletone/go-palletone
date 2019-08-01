@@ -49,7 +49,7 @@ func TestValidate_ValidateUnitTxs(t *testing.T) {
 
 	utxoQuery := &mockUtxoQuery{}
 	mockStatedbQuery := &mockStatedbQuery{}
-	validate := NewValidate(nil, utxoQuery, mockStatedbQuery, nil)
+	validate := NewValidate(nil, utxoQuery, mockStatedbQuery, nil, newCache())
 	addr, _ := common.StringToAddress("P1HXNZReTByQHgWQNGMXotMyTkMG9XeEQfX")
 	code := validate.validateTransactions(txs, time.Now().Unix(), addr)
 	assert.Equal(t, code, TxValidationCode_VALID)
@@ -82,6 +82,9 @@ func (q *mockStatedbQuery) GetContractStatesByPrefix(id []byte, prefix string) (
 type mockUtxoQuery struct {
 }
 
+func (q *mockUtxoQuery) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error) {
+	return nil, nil
+}
 func (q *mockUtxoQuery) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	hash := common.HexToHash("1")
 	//result := map[*modules.OutPoint]*modules.Utxo{}
@@ -151,8 +154,8 @@ func newTx1(t *testing.T) *modules.Transaction {
 	getPubKeyFn := func(common.Address) ([]byte, error) {
 		return crypto.CompressPubkey(&privKey.PublicKey), nil
 	}
-	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
-		return crypto.Sign(hash, privKey)
+	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
+		return crypto.MyCryptoLib.Sign(privKeyBytes, msg)
 	}
 	_, err := tokenengine.SignTxAllPaymentInput(tx, 1, lockScripts, nil, getPubKeyFn, getSignFn)
 	if err != nil {
@@ -192,8 +195,8 @@ func newTx2(t *testing.T, outpoint *modules.OutPoint) *modules.Transaction {
 	getPubKeyFn := func(common.Address) ([]byte, error) {
 		return crypto.CompressPubkey(&privKey.PublicKey), nil
 	}
-	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
-		return crypto.Sign(hash, privKey)
+	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
+		return crypto.MyCryptoLib.Sign(privKeyBytes, msg)
 	}
 	_, err := tokenengine.SignTxAllPaymentInput(tx, 1, lockScripts, nil, getPubKeyFn, getSignFn)
 	if err != nil {
@@ -223,7 +226,7 @@ func TestValidate_ValidateHeader(t *testing.T) {
 	tx := newTx1(t)
 
 	header := newHeader(modules.Transactions{tx})
-	v := NewValidate(nil, nil, nil, nil)
+	v := NewValidate(nil, nil, nil, nil, newCache())
 	vresult := v.validateHeaderExceptGroupSig(header)
 	t.Log(vresult)
 	assert.Equal(t, vresult, TxValidationCode_VALID)
@@ -232,12 +235,11 @@ func TestValidate_ValidateHeader(t *testing.T) {
 func TestSignAndVerifyATx(t *testing.T) {
 
 	privKeyBytes, _ := hex.DecodeString("2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644")
-	privKey, _ := crypto.ToECDSA(privKeyBytes)
-	pubKey := privKey.PublicKey
-	pubKeyBytes := crypto.CompressPubkey(&pubKey)
+
+	pubKeyBytes, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(privKeyBytes)
 	pubKeyHash := crypto.Hash160(pubKeyBytes)
 	t.Logf("Public Key:%x", pubKeyBytes)
-	addr := crypto.PubkeyToAddress(&privKey.PublicKey)
+	addr := crypto.PubkeyBytesToAddress(pubKeyBytes)
 	t.Logf("Addr:%s", addr.String())
 	lockScript := tokenengine.GenerateP2PKHLockScript(pubKeyHash)
 	t.Logf("UTXO lock script:%x", lockScript)
@@ -272,10 +274,10 @@ func TestSignAndVerifyATx(t *testing.T) {
 	//	addr: privKey,
 	//}
 	getPubKeyFn := func(common.Address) ([]byte, error) {
-		return crypto.CompressPubkey(&privKey.PublicKey), nil
+		return pubKeyBytes, nil
 	}
 	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
-		return crypto.Sign(hash, privKey)
+		return crypto.MyCryptoLib.Sign(privKeyBytes, hash)
 	}
 	var hashtype uint32
 	hashtype = 1
@@ -286,4 +288,9 @@ func TestSignAndVerifyATx(t *testing.T) {
 	unlockScript := tx.TxMessages[0].Payload.(*modules.PaymentPayload).Inputs[0].SignatureScript
 	t.Logf("UnlockScript:%x", unlockScript)
 
+}
+func TestTime(t *testing.T) {
+	ti, _ := time.ParseInLocation("2006-01-02 15:04:05", "2019-08-02 00:00:00", time.Local)
+	t.Log(ti.Format("2006-01-02 15:04:05"))
+	t.Log(ti.Unix())
 }

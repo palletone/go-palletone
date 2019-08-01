@@ -21,7 +21,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -37,18 +36,22 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	funcName, args := stub.GetFunctionAndParameters()
 	switch funcName {
 	//
-	//  申请成为Mediator
+	// 申请成为Mediator
 	case modules.ApplyMediator:
 		log.Info("Enter DepositChaincode Contract " + modules.ApplyMediator + " Invoke")
 		return d.applyBecomeMediator(stub, args)
-		//  mediator 交付保证金
+	// mediator 交付保证金
 	case modules.MediatorPayDeposit:
 		log.Info("Enter DepositChaincode Contract " + modules.MediatorPayDeposit + " Invoke")
 		return d.mediatorPayToDepositContract(stub, args)
-		//  申请退出Mediator
-	case modules.MediatorApplyQuitList:
-		log.Info("Enter DepositChaincode Contract " + modules.MediatorApplyQuitList + " Invoke")
-		return d.mediatorApplyQuitMediator(stub, args)
+	// 申请退出Mediator
+	case modules.MediatorApplyQuit:
+		log.Info("Enter DepositChaincode Contract " + modules.MediatorApplyQuit + " Invoke")
+		return d.mediatorApplyQuit(stub, args)
+	// 更新 Mediator 信息
+	case modules.UpdateMediatorInfo:
+		log.Info("Enter DepositChaincode Contract " + modules.UpdateMediatorInfo + " Invoke")
+		return d.UpdateMediatorInfo(stub, args)
 	//
 	//  jury 交付保证金
 	case JuryPayToDepositContract:
@@ -72,6 +75,10 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	case HandleForApplyBecomeMediator:
 		log.Info("Enter DepositChaincode Contract " + HandleForApplyBecomeMediator + " Invoke")
 		return d.handleForApplyBecomeMediator(stub, args)
+	//  基金会移除某个节点
+	case HanldeNodeRemoveFromAgreeList:
+		log.Info("Enter DepositChaincode Contract " + HanldeNodeRemoveFromAgreeList + " Invoke")
+		return d.hanldeNodeRemoveFromAgreeList(stub, args)
 		//  基金会对退出申请Mediator进行处理
 	case HandleForApplyQuitMediator:
 		log.Info("Enter DepositChaincode Contract " + HandleForApplyQuitMediator + " Invoke")
@@ -134,8 +141,8 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		return shim.Success(list)
 		//  查看是否在agree列表中
-	case IsInAgressList:
-		log.Info("Enter DepositChaincode Contract " + IsInAgressList + " Invoke")
+	case modules.IsApproved:
+		log.Info("Enter DepositChaincode Contract " + modules.IsApproved + " Invoke")
 		list, err := getList(stub, ListForAgreeBecomeMediator)
 		if err != nil {
 			return shim.Error(err.Error())
@@ -325,10 +332,10 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	//  普通用户质押投票
 	case PledgeDeposit:
 		log.Info("Enter DepositChaincode Contract " + PledgeDeposit + " Invoke")
-		return processPledgeDeposit(stub, args)
+		return d.processPledgeDeposit(stub, args)
 	case PledgeWithdraw: //提币质押申请（如果提币申请金额为MaxUint64表示全部提现）
 		log.Info("Enter DepositChaincode Contract " + PledgeWithdraw + " Invoke")
-		return processPledgeWithdraw(stub, args)
+		return d.processPledgeWithdraw(stub, args)
 
 	case QueryPledgeStatusByAddr: //查询某用户的质押状态
 		log.Info("Enter DepositChaincode Contract " + QueryPledgeStatusByAddr + " Query")
@@ -339,7 +346,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 
 	case HandlePledgeReward: //质押分红处理
 		log.Info("Enter DepositChaincode Contract " + HandlePledgeReward + " Invoke")
-		return handlePledgeReward(stub, args)
+		return d.handlePledgeReward(stub, args)
 	case QueryPledgeList:
 		log.Info("Enter DepositChaincode Contract " + QueryPledgeList + " Query")
 		return queryPledgeList(stub, args)
@@ -363,8 +370,12 @@ func (d *DepositChaincode) mediatorPayToDepositContract(stub shim.ChaincodeStubI
 	return mediatorPayToDepositContract(stub, args)
 }
 
-func (d *DepositChaincode) mediatorApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (d *DepositChaincode) mediatorApplyQuit(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return mediatorApplyQuit(stub, args)
+}
+
+func (d *DepositChaincode) UpdateMediatorInfo(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return updateMediatorInfo(stub, args)
 }
 
 //
@@ -415,15 +426,31 @@ func (d DepositChaincode) applyForForfeitureDeposit(stub shim.ChaincodeStubInter
 	return applyForForfeitureDeposit(stub, args)
 }
 
-//
-func (d DepositChaincode) normalNodePledgeVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+//  质押
+
+func (d DepositChaincode) processPledgeDeposit(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return processPledgeDeposit(stub, args)
 }
 
-func (d DepositChaincode) normalNodeExtractVote(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (d DepositChaincode) processPledgeWithdraw(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return processPledgeWithdraw(stub, args)
 }
 
-func (d DepositChaincode) handleEachDayAward(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (d DepositChaincode) handlePledgeReward(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return handlePledgeReward(stub, args)
+}
+
+//
+func (d DepositChaincode) hanldeNodeRemoveFromAgreeList(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return hanldeNodeRemoveFromAgreeList(stub, args)
+}
+
+//
+func (d DepositChaincode) handleRemoveMediatorNode(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return handleRemoveMediatorNode(stub, args)
+}
+
+//
+func (d DepositChaincode) handleRemoveNormalNode(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return handleRemoveNormalNode(stub, args)
 }

@@ -56,18 +56,31 @@ const Wallet_JS = `
 			call: 'wallet_createRawTransaction',
 			params: 4
 		}),
+        new web3._extend.Method({
+		    name: 'sendRawTransaction',
+		    call: 'wallet_sendRawTransaction',
+		    params: 1
+		}),
+        new web3._extend.Method({
+		    name: 'signRawTransaction',
+		    call: 'wallet_signRawTransaction',
+		    params: 3
+		}),	
+        new web3._extend.Method({
+		    name: 'sendRlpTransaction',
+		    call: 'wallet_sendRlpTransaction',
+		    params: 1
+		}),
 		new web3._extend.Method({
-			name: 'sendRawTransaction',
-			call: 'wallet_sendRawTransaction',
+			name: 'sendJsonTransaction',
+			call: 'wallet_sendJsonTransaction',
 			params: 1
 		}),
-		
 		new web3._extend.Method({
 			name: 'getPtnTestCoin',
 			call: 'wallet_getPtnTestCoin',
 			params: 5
 		}),
-		
 		new web3._extend.Method({
 			name: 'transferToken',
 			call: 'wallet_transferToken',
@@ -97,6 +110,11 @@ const Wallet_JS = `
 			params: 1
 		}),
         new web3._extend.Method({
+			name: 'getProofOfExistencesByAsset',
+			call: 'wallet_getProofOfExistencesByAsset',
+			params: 1
+		}),
+        new web3._extend.Method({
 			name: 'getFileInfoByTxid',
 			call: 'wallet_getFileInfoByTxid',
 			params: 1,
@@ -120,6 +138,26 @@ const Wallet_JS = `
 			params: 1,
 			inputFormatter: [null]
 		}),	
+		new web3._extend.Method({
+			name: 'getStxo',
+			call: 'wallet_getStxo',
+			params: 3
+		}),	
+		new web3._extend.Method({
+			name: 'genCert',
+			call: 'wallet_genCert',
+			params: 7
+		}),
+        new web3._extend.Method({
+			name: 'revokeCert',
+			call: 'wallet_revokeCert',
+			params: 3
+		}),
+        new web3._extend.Method({
+            name: 'addBatchTxs',
+            call: 'wallet_addBatchTxs',
+            params: 1,
+        }),
  	]
  });
  `

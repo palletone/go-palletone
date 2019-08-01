@@ -21,20 +21,18 @@
 package ptnapi
 
 import (
-	"context"
 	"errors"
 	"fmt"
-	"math/big"
+
 	"time"
 
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto"
+
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
-	"github.com/palletone/go-palletone/dag/modules"
+
 	"github.com/shopspring/decimal"
 )
 
@@ -65,17 +63,6 @@ func (s *PrivateAccountAPI) ListAccounts() []string {
 		}
 	}
 	return addresses
-}
-
-// ListAccounts will return a list of addresses for accounts this node manages.
-func (s *PrivateAccountAPI) LlistAccounts() ([]string, error) {
-	addresses := make([]string, 0)
-	for _, wallet := range s.am.Wallets() {
-		for _, account := range wallet.Accounts() {
-			addresses = append(addresses, account.Address.String())
-		}
-	}
-	return addresses, nil
 }
 
 // rawWallet is a JSON representation of an accounts.Wallet interface, with its
@@ -156,7 +143,7 @@ func fetchKeystore(am *accounts.Manager) *keystore.KeyStore {
 // ImportRawKey stores the given hex encoded ECDSA key into the key directory,
 // encrypting it with the passphrase.
 func (s *PrivateAccountAPI) ImportRawKey(privkey string, password string) (string, error) {
-	key, err := crypto.HexToECDSA(privkey)
+	key, err := hexutil.Decode(privkey)
 	if err != nil {
 		return "", err
 	}
@@ -188,72 +175,6 @@ func (s *PrivateAccountAPI) LockAccount(addrStr string) bool {
 	return fetchKeystore(s.am).Lock(addr) == nil
 }
 
-// signTransactions sets defaults and signs the given transaction
-// NOTE: the caller needs to ensure that the nonceLock is held, if applicable,
-// and release it after the transaction has been submitted to the tx pool
-func (s *PrivateAccountAPI) signTransaction(ctx context.Context, args SendTxArgs, passwd string) (*modules.Transaction, error) {
-	// Look up the wallet containing the requested signer
-	account := accounts.Account{Address: args.From}
-	wallet, err := s.am.Find(account)
-	if err != nil {
-		return nil, err
-	}
-	// Set some sanity defaults and terminate on failure
-	if err := args.setDefaults(ctx, s.b); err != nil {
-		return nil, err
-	}
-	// Assemble the transaction and sign with the wallet
-	tx := args.toTransaction()
-
-	var chainID *big.Int
-
-	return wallet.SignTxWithPassphrase(account, passwd, tx, chainID)
-}
-
-// SendTransaction will create a transaction from the given arguments and
-// tries to sign it with the key associated with args.To. If the given passwd isn't
-// able to decrypt the key it fails.
-func (s *PrivateAccountAPI) SendTransaction(ctx context.Context, args SendTxArgs, passwd string) (common.Hash, error) {
-	if args.Nonce == nil {
-		// Hold the addresse's mutex around signing to prevent concurrent assignment of
-		// the same nonce to multiple accounts.
-		s.nonceLock.LockAddr(args.From)
-		defer s.nonceLock.UnlockAddr(args.From)
-	}
-	signed, err := s.signTransaction(ctx, args, passwd)
-	if err != nil {
-		return common.Hash{}, err
-	}
-	return submitTransaction(ctx, s.b, signed)
-}
-
-// SignTransaction will create a transaction from the given arguments and
-// tries to sign it with the key associated with args.To. If the given passwd isn't
-// able to decrypt the key it fails. The transaction is returned in RLP-form, not broadcast
-// to other nodes
-func (s *PrivateAccountAPI) SignTransaction(ctx context.Context, args SendTxArgs, passwd string) (*SignTransactionResult, error) {
-	// No need to obtain the noncelock mutex, since we won't be sending this
-	// tx into the transaction pool, but right back to the user
-	if args.Gas == nil {
-		return nil, fmt.Errorf("gas not specified")
-	}
-	if args.GasPrice == nil {
-		return nil, fmt.Errorf("gasPrice not specified")
-	}
-	if args.Nonce == nil {
-		return nil, fmt.Errorf("nonce not specified")
-	}
-	signed, err := s.signTransaction(ctx, args, passwd)
-	if err != nil {
-		return nil, err
-	}
-	data, err := rlp.EncodeToBytes(signed)
-	if err != nil {
-		return nil, err
-	}
-	return &SignTransactionResult{data, signed}, nil
-}
-
 // signHash is a helper function that calculates a hash for the given message that can be
 // safely used to calculate a signature from.
 //
@@ -261,10 +182,10 @@ func (s *PrivateAccountAPI) SignTransaction(ctx context.Context, args SendTxArgs
 //   keccak256("\x19Ethereum Signed Message:\n"${message length}${message}).
 //
 // This gives context to the signed message and prevents signing of transactions.
-func signHash(data []byte) []byte {
-	msg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(data), data)
-	return crypto.Keccak256([]byte(msg))
-}
+//func signHash(data []byte) []byte {
+//	msg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(data), data)
+//	return crypto.Keccak256([]byte(msg))
+//}
 
 // Sign calculates an PalletOne ECDSA signature for:
 // keccack256("\x19Ethereum Signed Message:\n" + len(message) + message))
@@ -275,7 +196,7 @@ func signHash(data []byte) []byte {
 // The key used to calculate the signature is decrypted with the given password.
 //
 // https://github.com/palletone/go-palletone/wiki/Management-APIs#personal_sign
-func (s *PrivateAccountAPI) Sign(ctx context.Context, data hexutil.Bytes, addr string, passwd string) (hexutil.Bytes, error) {
+/*func (s *PrivateAccountAPI) Sign(ctx context.Context, data hexutil.Bytes, addr string, passwd string) (hexutil.Bytes, error) {
 	// Look up the wallet containing the requested signer
 	address, _ := common.StringToAddress(addr)
 	account := accounts.Account{Address: address}
@@ -285,13 +206,13 @@ func (s *PrivateAccountAPI) Sign(ctx context.Context, data hexutil.Bytes, addr s
 		return nil, err
 	}
 	// Assemble sign the data with the wallet
-	signature, err := wallet.SignHashWithPassphrase(account, passwd, data)
+	signature, err := wallet.SignMessageWithPassphrase(account, passwd, data)
 	if err != nil {
 		return nil, err
 	}
 	signature[64] += 27 // Transform V from 0/1 to 27/28 according to the yellow paper
 	return signature, nil
-}
+}*/
 
 /*
 // EcRecover returns the address for the account that was used to create the signature.
@@ -322,11 +243,6 @@ func (s *PrivateAccountAPI) EcRecover(ctx context.Context, data, sig hexutil.Byt
 	return recoveredAddr, nil
 }
 */
-// SignAndSendTransaction was renamed to SendTransaction. This method is deprecated
-// and will be removed in the future. It primary goal is to give clients time to update.
-func (s *PrivateAccountAPI) SignAndSendTransaction(ctx context.Context, args SendTxArgs, passwd string) (common.Hash, error) {
-	return s.SendTransaction(ctx, args, passwd)
-}
 
 // appended by albert·gou
 func (s *PrivateAccountAPI) TransferPtn(from, to string, amount decimal.Decimal, text *string,
@@ -349,3 +265,5 @@ func (s *PrivateAccountAPI) TransferPtn(from, to string, amount decimal.Decimal,
 
 	return s.b.TransferPtn(from, to, amount, text)
 }
+
+

@@ -36,6 +36,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
+	"github.com/palletone/go-palletone/ptnjson/statistics"
 	"github.com/shopspring/decimal"
 )
 
@@ -132,6 +133,12 @@ func (s *PublicBlockChainAPI) GetTokenTxHistory(ctx context.Context, assetStr st
 	return result, err
 }
 
+func (s *PublicBlockChainAPI) GetAssetExistence(ctx context.Context, asset string) ([]*ptnjson.ProofOfExistenceJson, error) {
+	result, err := s.b.GetAssetExistence(asset)
+	return result, err
+
+}
+
 func (s *PublicBlockChainAPI) ListSysConfig() ([]*ptnjson.ConfigJson, error) {
 	cp := s.b.GetChainParameters()
 
@@ -142,19 +149,12 @@ func (s *PublicBlockChainAPI) GetChainParameters() (*core.ChainParameters, error
 	return s.b.GetChainParameters(), nil
 }
 
-//func (s *PublicBlockChainAPI) WalletTokens(ctx context.Context, address string) (string, error) {
-//	result, err := s.b.WalletTokens(address)
-//	if err != nil {
-//		log.Error("WalletTokens:", "error", err.Error())
-//	}
-//	//fmt.Println("result len=", len(result))
-//	b, err := json.Marshal(result)
-//
-//	if err != nil {
-//		log.Error("WalletTokens 2222:", "error", err.Error())
-//	}
-//	return string(b), nil
-//}
+func (s *PublicBlockChainAPI) AddressBalanceStatistics(ctx context.Context, token string, topN int) (*statistics.TokenAddressBalanceJson, error) {
+	result, err := s.b.GetAddressBalanceStatistics(token, topN)
+
+	return result, err
+}
+
 //
 //func (s *PublicBlockChainAPI) WalletBalance(ctx context.Context, address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error) {
 //	return s.b.WalletBalance(address, assetid, uniqueid, chainid)
@@ -330,14 +330,6 @@ func (s *PublicBlockChainAPI) GetPrefix(condition string) string /*map[string][]
 		return "Marshal err"
 	}
 	return *(*string)(unsafe.Pointer(&content))
-}
-
-func (s *PublicBlockChainAPI) CcstartChaincodeContainer(ctx context.Context, deployId string, txid string) (string, error) {
-	depId, _ := hex.DecodeString(deployId)
-	log.Info("CcstartChaincodeContainer:" + deployId + ":" + txid + "_")
-	//TODO deleteImage 为 true 时，目前是会删除基础镜像的
-	deplo1, err := s.b.ContractStartChaincodeContainer(depId, txid)
-	return string(deplo1), err
 }
 
 func (s *PublicBlockChainAPI) DecodeTx(ctx context.Context, hex string) (string, error) {

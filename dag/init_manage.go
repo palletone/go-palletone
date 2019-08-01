@@ -34,16 +34,14 @@ import (
 	"go.dedis.ch/kyber/v3/sign/bls"
 )
 
-func (d *Dag) ValidateUnitExceptGroupSig(unit *modules.Unit) error {
-	return d.validate.ValidateUnitExceptGroupSig(unit)
-}
-
 func (d *Dag) SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription {
 	return d.Memdag.SubscribeToGroupSignEvent(ch)
 }
-func (d *Dag) ValidateUnitExceptPayment(unit *modules.Unit) error {
-	return d.validate.ValidateUnitExceptPayment(unit)
-}
+
+//func (d *Dag) ValidateUnitExceptPayment(unit *modules.Unit) error {
+//	return d.validate.ValidateUnitExceptPayment(unit)
+//}
+
 func (d *Dag) IsActiveMediator(add common.Address) bool {
 	return d.GetGlobalProp().IsActiveMediator(add)
 }
@@ -84,16 +82,16 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 	list := make(map[string]bool, len(genesis.InitialMediatorCandidates))
 	for _, imc := range genesis.InitialMediatorCandidates {
 		// 存储 mediator info
-		err := imc.Validate()
+		addr, err := imc.Validate()
 		if err != nil {
 			log.Debugf(err.Error())
 			panic(err.Error())
 		}
 
 		mi := modules.NewMediatorInfo()
-		*mi.MediatorInfoBase = *imc.MediatorInfoBase
+		mi.MediatorInfoBase = imc.MediatorInfoBase
+		//*mi.MediatorApplyInfo = *imc.MediatorApplyInfo
 
-		addr, _ := common.StringToAddress(mi.AddStr)
 		err = dag.stableStateRep.StoreMediatorInfo(addr, mi)
 		if err != nil {
 			log.Debugf(err.Error())
@@ -137,7 +135,9 @@ func (dag *Dag) IsSynced() bool {
 	//nowFine := time.Now()
 	//now := time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
 	now := time.Now()
-	nextSlotTime := dag.unstablePropRep.GetSlotTime(gp, dgp, 1)
+	// 防止误判，获取之后的第2个生产槽时间
+	//nextSlotTime := dag.unstablePropRep.GetSlotTime(gp, dgp, 1)
+	nextSlotTime := dag.unstablePropRep.GetSlotTime(gp, dgp, 2)
 
 	if nextSlotTime.Before(now) {
 		return false
@@ -162,13 +162,19 @@ func (d *Dag) UnitIrreversibleTime() time.Duration {
 }
 
 func (d *Dag) IsIrreversibleUnit(hash common.Hash) bool {
-	unit, err := d.stableUnitRep.GetUnit(hash)
-	if err != nil {
-		log.Debugf("stableUnitRep GetUnit error:%s", err.Error())
-		return false
+	// 查询memdag是否存在
+	_, err := d.unstableUnitRep.GetHeaderByHash(hash)
+	if err == nil {
+		return false // 存在于memdag，不稳定
 	}
 
-	if unit.NumberU64() > d.GetIrreversibleUnitNum(unit.GetAssetId()) {
+	header, err := d.stableUnitRep.GetHeaderByHash(hash)
+	if err != nil {
+		log.Debugf("stableUnitRep GetHeaderByHash error:%s", err.Error())
+		return false // 不存在该unit
+	}
+
+	if header.NumberU64() > d.GetIrreversibleUnitNum(header.GetAssetId()) {
 		return false
 	}
 
@@ -186,13 +192,13 @@ func (d *Dag) GetIrreversibleUnitNum(id modules.AssetId) uint64 {
 }
 
 func (d *Dag) VerifyUnitGroupSign(unitHash common.Hash, groupSign []byte) error {
-	unit, err := d.GetUnitByHash(unitHash)
+	header, err := d.GetHeaderByHash(unitHash)
 	if err != nil {
 		log.Debug(err.Error())
 		return err
 	}
 
-	pubKey, err := unit.GroupPubKey()
+	pubKey, err := header.GetGroupPubKey()
 	if err != nil {
 		log.Debug(err.Error())
 		return err

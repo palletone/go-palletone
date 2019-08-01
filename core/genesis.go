@@ -112,10 +112,11 @@ func (g *Genesis) GetTokenAmount() uint64 {
 	return uint64(amount)
 }
 
+// mediator基本信息
 type MediatorInfoBase struct {
-	AddStr     string `json:"account"`
-	InitPubKey string `json:"initPubKey"`
-	Node       string `json:"node"`
+	AddStr     string `json:"account"`    // mediator账户地址
+	InitPubKey string `json:"initPubKey"` // mediator的群签名初始公钥
+	Node       string `json:"node"`       // mediator节点网络信息，包括ip和端口等
 }
 
 func NewMediatorInfoBase() *MediatorInfoBase {
@@ -126,37 +127,40 @@ func NewMediatorInfoBase() *MediatorInfoBase {
 	}
 }
 
-func (mib *MediatorInfoBase) Validate() error {
-	_, err := StrToMedAdd(mib.AddStr)
+func (mib *MediatorInfoBase) Validate() (common.Address, error) {
+	addr, err := StrToMedAdd(mib.AddStr)
 	if err != nil {
-		return err
+		return addr, err
 	}
 
 	_, err = StrToPoint(mib.InitPubKey)
 	if err != nil {
-		return err
+		return addr, err
 	}
 
 	node, err := StrToMedNode(mib.Node)
 	if err != nil {
-		return err
+		return addr, err
 	}
 
 	err = node.ValidateComplete()
 	if err != nil {
-		return err
+		return addr, err
 	}
 
-	return nil
+	return addr, nil
 }
 
+// genesis 文件定义的mediator结构体
 type InitialMediator struct {
 	*MediatorInfoBase
+	//*MediatorApplyInfo
 }
 
 func NewInitialMediator() *InitialMediator {
 	return &InitialMediator{
-		MediatorInfoBase: NewMediatorInfoBase(),
+		MediatorInfoBase:  NewMediatorInfoBase(),
+		//MediatorApplyInfo: NewMediatorApplyInfo(),
 	}
 }
 
