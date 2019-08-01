@@ -152,10 +152,12 @@ func (pm *ProtocolManager) checkConnectedAndSynced() {
 
 	// 1. 设置Ticker, 每隔一段时间检查一次
 	checkTick := time.NewTicker(200 * time.Millisecond)
+
 	defer checkTick.Stop()
 	// 设置检查期限，防止死循环
 	expiration := pm.dag.UnitIrreversibleTime()
 	killLoop := time.NewTimer(expiration)
+
 	for {
 		select {
 		case <-pm.quitSync:
