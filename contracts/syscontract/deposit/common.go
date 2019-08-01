@@ -399,17 +399,17 @@ func applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, args []string) 
 }
 
 //是否在候选列表中
-func isInCandidate(stub shim.ChaincodeStubInterface, invokeAddr string, candidate string) bool {
+func isInCandidate(stub shim.ChaincodeStubInterface, invokeAddr string, candidate string) (bool, error) {
 	list, err := getList(stub, candidate)
 	if err != nil {
 		log.Debugf("get list err: %s", err.Error())
-		return false
+		return false, err
 	}
 	if list == nil {
-		return false
+		return false, nil
 	}
 	if !list[invokeAddr] {
-		return false
+		return false, nil
 	}
-	return true
+	return true, nil
 }

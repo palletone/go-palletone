@@ -199,7 +199,12 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 			return shim.Error("Too many or too little.")
 		}
 		//这里需要判断是否以及被基金会提前移除候选列表，即在规定时间内该节点没有追缴保证金
-		if !isInCandidate(stub, invokeAddr.String(), modules.MediatorList) {
+		b, err := isInCandidate(stub, invokeAddr.String(), modules.MediatorList)
+		if err != nil {
+			log.Debugf("isInCandidate error: %s", err.Error())
+			return shim.Error(err.Error())
+		}
+		if !b {
 			err = addCandaditeList(stub, invokeAddr, modules.MediatorList)
 			if err != nil {
 				log.Error("addCandidateListAndPutStateForMediator err: ", "error", err)

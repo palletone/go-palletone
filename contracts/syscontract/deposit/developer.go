@@ -86,7 +86,12 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []stri
 		if all != cp.DepositAmountForDeveloper {
 			return shim.Error("Too many or too little.")
 		}
-		if !isInCandidate(stub, invokeAddr.String(), modules.DeveloperList) {
+		b, err := isInCandidate(stub, invokeAddr.String(), modules.DeveloperList)
+		if err != nil {
+			log.Debugf("isInCandidate error: %s", err.Error())
+			return shim.Error(err.Error())
+		}
+		if !b {
 			//  加入jury候选列表
 			err = addCandaditeList(stub, invokeAddr, modules.DeveloperList)
 			if err != nil {

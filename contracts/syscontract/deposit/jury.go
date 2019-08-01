@@ -88,7 +88,12 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 			return shim.Error("Too many or too little.")
 		}
 		//这里需要判断是否以及被基金会提前移除候选列表，即在规定时间内该节点没有追缴保证金
-		if !isInCandidate(stub, invokeAddr.String(), modules.JuryList) {
+		b, err := isInCandidate(stub, invokeAddr.String(), modules.JuryList)
+		if err != nil {
+			log.Debugf("isInCandidate error: %s", err.Error())
+			return shim.Error(err.Error())
+		}
+		if !b {
 			//  加入jury候选列表
 			err = addCandaditeList(stub, invokeAddr, modules.JuryList)
 			if err != nil {

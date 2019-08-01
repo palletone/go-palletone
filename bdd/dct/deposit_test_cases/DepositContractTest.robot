@@ -61,6 +61,7 @@ Business_01
     ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
     log    ${mDeposit}
     Should Not Be Equal    ${mDeposit["balance"]}    ${0}    #有余额
+    GetAllMediators
     ${result}    applyQuitMediator    ${mediatorAddr_01}    MediatorApplyQuit    #该节点申请退出mediator候选列表    #1
     log    ${result}
     ${addressMap4}    getQuitMediatorApplyList
@@ -150,6 +151,7 @@ Business_03
     ${resul}    getListForJuryCandidate
     Dictionary Should Contain Key    ${resul}    ${juryAddr_01}    #候选列表有该地址
     log    ${resul}
+    GetAllNodes
     ${result}    applyQuitMediator    ${juryAddr_01}    JuryApplyQuit    #该节点申请退出mediator候选列表
     log    ${result}
     ${addressMap4}    getQuitMediatorApplyList    #获取申请mediator列表里的节点（不为空）
@@ -198,6 +200,7 @@ Business_05
     ${resul}    getListForDeveloperCandidate
     Dictionary Should Contain Key    ${resul}    ${developerAddr_01}    #候选列表无该地址
     log    ${resul}
+    GetAllNodes
     ${result}    applyQuitMediator    ${developerAddr_01}    DeveloperApplyQuit    #该节点申请退出mediator候选列表
     log    ${result}
     ${addressMap4}    getQuitMediatorApplyList    #获取申请mediator列表里的节点（不为空）
