@@ -404,6 +404,15 @@ func (s *PublicDagAPI) StableUnitNum() uint64 {
 	return uint64(0)
 }
 
+func (s *PublicDagAPI) IsSynced() bool {
+	dag := s.b.Dag()
+	if dag != nil {
+		return dag.IsSynced()
+	}
+
+	return false
+}
+
 func (s *PrivateDagAPI) GetAllUtxos(ctx context.Context) (string, error) {
 	items, err := s.b.GetAllUtxos()
 	if err != nil {
