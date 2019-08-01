@@ -293,8 +293,10 @@ matrix:
         - make golang-baseimage-dev
         - docker images
         - cat /proc/sys/net/ipv4/ip_forward
+	- echo $DOCKER_CONTENT_TRUST
         - sudo ./jurySec.sh
         - cat /proc/sys/net/ipv4/ip_forward
+	- echo $DOCKER_CONTENT_TRUST
         - sudo cat /etc/docker/daemon.json
         - cd ./cmd/deployment
         - chmod +x ./deploy.sh

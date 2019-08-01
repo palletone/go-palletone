@@ -118,6 +118,7 @@ Business_02
     ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_02}    #获取该地址保证金账户详情
     log    ${mDeposit}
     Should Not Be Equal    ${mDeposit["balance"]}    ${0}    #有余额
+    GetAllMediators
     ${result}    applyForForfeitureDeposit    ${foundationAddr}    ${mediatorAddr_02}    Mediator    nothing to do    #某个地址申请没收该节点保证金（全部）
     log    ${result}
     ${result}    getListForForfeitureApplication
@@ -176,6 +177,7 @@ Business_04
     ${resul}    getListForJuryCandidate
     Dictionary Should Contain Key    ${resul}    ${juryAddr_02}    #候选列表有该地址
     log    ${resul}
+    GetAllNodes
     ${result}    applyForForfeitureDeposit    ${foundationAddr}    ${juryAddr_02}    Jury    nothing to do    #某个地址申请没收该节点保证金（全部）
     log    ${result}
     ${result}    getListForForfeitureApplication
@@ -225,6 +227,7 @@ Business_06
     ${resul}    getListForDeveloperCandidate
     Dictionary Should Contain Key    ${resul}    ${developerAddr_02}    #候选列表无该地址
     log    ${resul}
+    GetAllNodes
     ${result}    applyForForfeitureDeposit    ${foundationAddr}    ${developerAddr_02}    Developer    nothing to do    #某个地址申请没收该节点保证金（全部）
     log    ${result}
     ${result}    getListForForfeitureApplication
