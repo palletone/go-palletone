@@ -289,3 +289,8 @@ func TestSignAndVerifyATx(t *testing.T) {
 	t.Logf("UnlockScript:%x", unlockScript)
 
 }
+func TestTime(t *testing.T) {
+	ti, _ := time.ParseInLocation("2006-01-02 15:04:05", "2019-08-02 00:00:00", time.Local)
+	t.Log(ti.Format("2006-01-02 15:04:05"))
+	t.Log(ti.Unix())
+}

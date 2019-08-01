@@ -136,16 +136,18 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 			return "Fee allocation:" + string(data)
 		})
 		//手续费应该与其他交易付出的手续费相等
-		coinbaseValidateResult := validate.validateCoinbase(coinbase, out)
-		if coinbaseValidateResult == TxValidationCode_VALID {
-			log.Debugf("Validate coinbase[%s] pass", coinbase.Hash().String())
-		} else {
-			log.DebugDynamic(func() string {
-				data, _ := json.Marshal(coinbase)
-				return fmt.Sprintf("Coinbase[%s] invalid, content: %s", coinbase.Hash().String(), string(data))
-			})
+		if unitTime > 1564675200 { //2019.8.2主网升级，有些之前的Coinbase可能验证不过。所以主网升级前的不验证了
+			coinbaseValidateResult := validate.validateCoinbase(coinbase, out)
+			if coinbaseValidateResult == TxValidationCode_VALID {
+				log.Debugf("Validate coinbase[%s] pass", coinbase.Hash().String())
+			} else {
+				log.DebugDynamic(func() string {
+					data, _ := json.Marshal(coinbase)
+					return fmt.Sprintf("Coinbase[%s] invalid, content: %s", coinbase.Hash().String(), string(data))
+				})
+			}
+			return coinbaseValidateResult
 		}
-		return coinbaseValidateResult
 
 	}
 	return TxValidationCode_VALID
