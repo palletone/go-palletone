@@ -294,17 +294,30 @@ func updateMediatorInfo(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 
 	if addr != invokeAddr {
 		errStr := fmt.Sprintf("the calling account(%v) is not updating account(%v), "+
-			"please use mediator.apply()", invokeAddr.String(), addr.String())
+			"please use mediator.apply()", invokeAddr.String(), mua.AddStr)
 		log.Error(errStr)
 	}
 
-	//  判断该地址是否是mediator
-	mdeposit, err := GetMediatorDeposit(stub, invokeAddr.String())
+	// 判断该地址是否是mediator
+	// 这样不能判断genesis文件中那几个mediator
+	//mdeposit, err := GetMediatorDeposit(stub, mua.AddStr)
+	//if err != nil {
+	//	return shim.Error(err.Error())
+	//}
+	//if mdeposit == nil {
+	//	return shim.Error(mua.AddStr + " is not a mediator")
+	//}
+
+	list, err := getList(stub, modules.MediatorList)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	if mdeposit == nil {
-		return shim.Error(invokeAddr.String() + " is not a mediator")
+	if list == nil {
+		return shim.Success([]byte("false"))
+	}
+
+	if _, ok := list[mua.AddStr]; !ok {
+		return shim.Error(mua.AddStr + " is not a mediator")
 	}
 
 	log.Info("End entering updateMediatorInfo func")

@@ -235,6 +235,7 @@ func (d *Dag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, er
 		uHeader, err = d.getHeaderByNumberFromPMemDag(number)
 	}
 	if err != nil {
+		log.Debug("GetHeaderByNumber failed ", "error:", err, "number", number.String())
 		return nil, err
 	}
 	return uHeader, nil
