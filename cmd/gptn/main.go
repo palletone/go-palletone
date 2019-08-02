@@ -259,7 +259,7 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 	unlocks := strings.Split(ctx.GlobalString(utils.UnlockedAccountFlag.Name), ",")
 	for i, account := range unlocks {
 		if trimmed := strings.TrimSpace(account); trimmed != "" {
-			unlockAccount(ctx, ks, trimmed, i, passwords)
+			unlockAccount(ks, trimmed, i, passwords)
 		}
 	}
 

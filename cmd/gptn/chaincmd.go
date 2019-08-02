@@ -121,7 +121,7 @@ func initGenesis(ctx *cli.Context) error {
 	}
 	dag, _ := dag.NewDag4GenesisInit(Dbconn)
 	ks := node.GetKeyStore()
-	account, password := unlockAccount(nil, ks, genesis.TokenHolder, 0, nil)
+	account, password := unlockAccount (ks, genesis.TokenHolder, 0, nil)
 
 	err = ks.Unlock(account, password)
 	if err != nil {
