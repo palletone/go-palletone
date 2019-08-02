@@ -270,7 +270,7 @@ func chatWithPeer(chaincodename string, stream PeerChaincodeStream, cc Chaincode
 	chaincodeID := &pb.ChaincodeID{Name: chaincodename}
 	payload, err := proto.Marshal(chaincodeID)
 	if err != nil {
-		return errors.Wrap(err, "error marshalling chaincodeID during chaincode registration")
+		return errors.Wrap(err, "error marshaling chaincodeID during chaincode registration")
 	}
 	// Register on the stream
 	log.Debugf("Registering.. sending %s", pb.ChaincodeMessage_REGISTER)

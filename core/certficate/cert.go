@@ -30,7 +30,7 @@ type CertINfo struct {
 
 	// Type defines type of this identity (user,client, auditor etc...)
 	Type string `json:"type"`
-	// Affiliation associates identity with particular organisation.  (gptn.mediator1...)
+	// Affiliation associates identity with particular organization.  (gptn.mediator1...)
 	Affiliation string `json:"affiliation"`
 
 	Key interface{} `json:"key"`

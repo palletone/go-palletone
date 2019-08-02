@@ -146,7 +146,7 @@ func (v *nameVar) Set(s string) error {
 			f(&v.name, t[i+1:])
 			continue
 		}
-		return errgo.Newf("unrecognised name component %q", t[:i])
+		return errgo.Newf("unrecognized name component %q", t[:i])
 	}
 	return nil
 }
