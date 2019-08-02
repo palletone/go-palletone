@@ -117,6 +117,9 @@ func (c *CryptoP256) Sign(privKey, message []byte) (signature []byte, err error)
 		return nil, err
 	}
 	r, s, err := ecdsa.Sign(rand.Reader, prvKey, digest)
+	if err != nil {
+		return nil, err
+	}
 	return asn1.Marshal(ECDSASignature{r, s})
 }
 

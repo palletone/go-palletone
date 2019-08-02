@@ -23,15 +23,16 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"math/big"
+	"os"
+
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/math"
 	"golang.org/x/crypto/sha3"
-	"io"
-	"io/ioutil"
-	"math/big"
-	"os"
 )
 
 var (
@@ -240,11 +241,12 @@ func RequestIdToContractAddress(deployRequestId common.Hash) common.Address {
 	scriptHash := Hash160(deployRequestId.Bytes())
 	return common.NewAddress(scriptHash, common.ContractHash)
 }
-func zeroBytes(bytes []byte) {
-	for i := range bytes {
-		bytes[i] = 0
-	}
-}
+
+// func zeroBytes(bytes []byte) {
+// 	for i := range bytes {
+// 		bytes[i] = 0
+// 	}
+// }
 
 // GetRandomBytes returns len random looking bytes
 func GetRandomBytes(len int) ([]byte, error) {
