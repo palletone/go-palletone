@@ -31,8 +31,8 @@ const (
 	Jury      = "Jury"
 	Mediator  = "Mediator"
 
-	Ok = "Ok"
-	No = "No"
+	Ok = "ok"
+	No = "no"
 
 	//获取候选列表
 	GetListForMediatorCandidate = "GetListForMediatorCandidate"

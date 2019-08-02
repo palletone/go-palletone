@@ -22,6 +22,7 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"strings"
 )
 
 //  处理mediator申请退出保证金
@@ -37,7 +38,7 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 		return shim.Error("please use foundation address")
 	}
 	//  判断处理地址是否申请过
-	isOk := args[1]
+	isOk := strings.ToLower(args[1])
 	addr, err := common.StringToAddress(args[0])
 	if err != nil {
 		log.Error("string to address err: ", "error", err)
@@ -87,8 +88,8 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 			return shim.Error(err.Error())
 		}
 	} else {
-		log.Error("please enter Ok")
-		return shim.Error("please enter Ok")
+		log.Error("please enter Ok or No")
+		return shim.Error("please enter Ok or No")
 	}
 	//  不管同意还是不同意都需要移除申请列表
 	becomeList, err := getList(stub, ListForApplyBecomeMediator)
@@ -133,7 +134,8 @@ func handleForApplyQuitNode(stub shim.ChaincodeStubInterface, args []string, rol
 		log.Error("common.StringToAddress err:", "error", err)
 		return shim.Error(err.Error())
 	}
-	if args[1] == Ok {
+	isOk := strings.ToLower(args[1])
+	if isOk == Ok {
 		if role == Developer {
 			err = handleDev(stub, addr)
 		}
@@ -143,7 +145,7 @@ func handleForApplyQuitNode(stub shim.ChaincodeStubInterface, args []string, rol
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-	} else {
+	} else if isOk == No {
 		//  移除退出列表
 		listForQuit, err := GetListForQuit(stub)
 		if err != nil {
@@ -154,6 +156,9 @@ func handleForApplyQuitNode(stub shim.ChaincodeStubInterface, args []string, rol
 		if err != nil {
 			return shim.Error(err.Error())
 		}
+	} else {
+		log.Error("please enter Ok or No")
+		return shim.Error("please enter Ok or No")
 	}
 	return shim.Success(nil)
 }
@@ -176,12 +181,13 @@ func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string)
 		log.Error("common.StringToAddress err:", "error", err)
 		return shim.Error(err.Error())
 	}
-	if args[1] == Ok {
+	isOk := strings.ToLower(args[1])
+	if isOk == Ok {
 		err = handleMediator(stub, addr)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-	} else {
+	} else if isOk == No {
 		//  移除退出列表
 		listForQuit, err := GetListForQuit(stub)
 		if err != nil {
@@ -192,6 +198,9 @@ func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
+	} else {
+		log.Error("please enter Ok or No")
+		return shim.Error("please enter Ok or No")
 	}
 	return shim.Success(nil)
 }
@@ -238,7 +247,7 @@ func handleForForfeitureApplication(stub shim.ChaincodeStubInterface, args []str
 	//获取节点信息
 	forfeitureNode := listForForfeiture[f.String()]
 	//  处理操作ok or no
-	isOk := args[1]
+	isOk := strings.ToLower(args[1])
 	//check 如果为ok，则同意此申请，如果为no，则不同意此申请
 	if isOk == Ok {
 		err = agreeForApplyForfeiture(stub, invokeAddr.String(), f.String(), forfeitureNode.ForfeitureRole)
