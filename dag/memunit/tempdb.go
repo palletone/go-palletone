@@ -250,7 +250,13 @@ func (b *tempBatch) Write() error {
 	defer b.db.lock.Unlock()
 
 	for _, kv := range b.writes {
-		b.db.kv[string(kv.k)] = kv.v
+		// b.db.kv[string(kv.k)] = kv.v
+		if kv.del {
+			b.db.deleted[string(kv.k)] = true
+			delete(b.db.kv, string(kv.k))
+		} else {
+			b.db.kv[string(kv.k)] = kv.v
+		}
 	}
 	return nil
 }
