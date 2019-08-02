@@ -393,7 +393,7 @@ func (a *PrivateMediatorAPI) Update(args modules.MediatorUpdateArgs) (*TxExecute
 
 	// 判断本节点是否同步完成，数据是否最新
 	if !a.Dag().IsSynced() {
-		return nil, fmt.Errorf("this node is not synced, and can't apply mediator now")
+		return nil, fmt.Errorf("this node is not synced, and can't update mediator now")
 	}
 
 	// 判断是否已经是mediator
@@ -426,7 +426,7 @@ func (a *PrivateMediatorAPI) Update(args modules.MediatorUpdateArgs) (*TxExecute
 		nameStr = *args.Name
 	}
 	locStr := ""
-	if args.Name != nil {
+	if args.Location != nil {
 		locStr = *args.Location
 	}
 	urlStr := ""
@@ -434,7 +434,7 @@ func (a *PrivateMediatorAPI) Update(args modules.MediatorUpdateArgs) (*TxExecute
 		urlStr = *args.Url
 	}
 	descStr := ""
-	if args.Name != nil {
+	if args.Description != nil {
 		descStr = *args.Description
 	}
 	NodeStr := ""
