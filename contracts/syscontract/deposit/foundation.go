@@ -108,44 +108,15 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 
 //处理退出 参数：同意或不同意，节点的地址
 func handleForApplyQuitJury(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	log.Info("Start enter handleForApplyQuitMediator func")
-	//参数
-	if len(args) != 2 {
-		log.Error("Arg need two parameter.")
-		return shim.Error("Arg need two parameter.")
-	}
-	//  判断是否基金会发起的
-	if !isFoundationInvoke(stub) {
-		log.Error("please use foundation address")
-		return shim.Error("please use foundation address")
-	}
-	addr, err := common.StringToAddress(args[0])
-	if err != nil {
-		log.Error("common.StringToAddress err:", "error", err)
-		return shim.Error(err.Error())
-	}
-	if args[1] == Ok {
-		err = handleJury(stub, addr)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-	} else {
-		//  移除退出列表
-		listForQuit, err := GetListForQuit(stub)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-		delete(listForQuit, addr.String())
-		err = SaveListForQuit(stub, listForQuit)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-	}
-	return shim.Success(nil)
+	return handleForApplyQuitNode(stub, args, Jury)
 }
 
 //处理退出 参数：同意或不同意，节点的地址
 func handleForApplyQuitDev(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return handleForApplyQuitNode(stub, args, Developer)
+}
+
+func handleForApplyQuitNode(stub shim.ChaincodeStubInterface, args []string, role string) pb.Response {
 	log.Info("Start enter handleForApplyQuitMediator func")
 	//参数
 	if len(args) != 2 {
@@ -163,7 +134,12 @@ func handleForApplyQuitDev(stub shim.ChaincodeStubInterface, args []string) pb.R
 		return shim.Error(err.Error())
 	}
 	if args[1] == Ok {
-		err = handleDev(stub, addr)
+		if role == Developer {
+			err = handleDev(stub, addr)
+		}
+		if role == Jury {
+			err = handleJury(stub, addr)
+		}
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -301,39 +277,14 @@ func agreeForApplyForfeiture(stub shim.ChaincodeStubInterface, foundationA strin
 	}
 }
 func handleJuryForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA string, forfeitureAddr string) error {
-	node, err := GetNodeBalance(stub, forfeitureAddr)
-	if err != nil {
-		return err
-	}
-	if node == nil {
-		return fmt.Errorf("node is nil")
-	}
-	//  移除列表
-	err = moveCandidate(modules.JuryList, forfeitureAddr, stub)
-	if err != nil {
-		return err
-	}
-
-	//  退还保证金
-	//cp, err := stub.GetSystemConfig()
-	//if err != nil {
-	//	return err
-	//}
-	//  调用从合约把token转到请求地址
-	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
-	err = stub.PayOutToken(foundationA, modules.NewAmountAsset(node.Balance, gasToken), 0)
-	if err != nil {
-		log.Error("stub.PayOutToken err:", "error", err)
-		return err
-	}
-	err = DelNodeBalance(stub, forfeitureAddr)
-	if err != nil {
-		return err
-	}
-	return nil
+	return handleNodeForfeitureDeposit(stub, foundationA, forfeitureAddr)
 }
 
 func handleDevForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA string, forfeitureAddr string) error {
+	return handleNodeForfeitureDeposit(stub, foundationA, forfeitureAddr)
+}
+
+func handleNodeForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA string, forfeitureAddr string) error {
 	node, err := GetNodeBalance(stub, forfeitureAddr)
 	if err != nil {
 		return err
@@ -341,8 +292,15 @@ func handleDevForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA st
 	if node == nil {
 		return fmt.Errorf("node is nil")
 	}
+	list := ""
+	if node.Role == Developer {
+		list = modules.DeveloperList
+	}
+	if node.Role == Jury {
+		list = modules.JuryList
+	}
 	//  移除列表
-	err = moveCandidate(modules.DeveloperList, forfeitureAddr, stub)
+	err = moveCandidate(list, forfeitureAddr, stub)
 	if err != nil {
 		return err
 	}

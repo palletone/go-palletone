@@ -413,3 +413,49 @@ func isInCandidate(stub shim.ChaincodeStubInterface, invokeAddr string, candidat
 	}
 	return true, nil
 }
+
+//
+func handleNode(stub shim.ChaincodeStubInterface, quitAddr common.Address, role string) error {
+	//  移除退出列表
+	listForQuit, err := GetListForQuit(stub)
+	if err != nil {
+		return err
+	}
+	delete(listForQuit, quitAddr.String())
+	err = SaveListForQuit(stub, listForQuit)
+	if err != nil {
+		return err
+	}
+	//  获取该节点保证金数量
+	b, err := GetNodeBalance(stub, quitAddr.String())
+	if err != nil {
+		return err
+	}
+	//  调用从合约把token转到请求地址
+	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
+	err = stub.PayOutToken(quitAddr.String(), modules.NewAmountAsset(b.Balance, gasToken), 0)
+	if err != nil {
+		log.Error("stub.PayOutToken err:", "error", err)
+		return err
+	}
+	list := ""
+	if role == Developer {
+		list = modules.DeveloperList
+	}
+	if role == Jury {
+		list = modules.JuryList
+	}
+	//  移除候选列表
+	err = moveCandidate(list, quitAddr.String(), stub)
+	if err != nil {
+		log.Error("moveCandidate err:", "error", err)
+		return err
+	}
+	//  删除节点
+	err = stub.DelState(string(constants.DEPOSIT_BALANCE_PREFIX) + quitAddr.String())
+	if err != nil {
+		log.Error("stub.DelState err:", "error", err)
+		return err
+	}
+	return nil
+}
