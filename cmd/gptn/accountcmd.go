@@ -379,6 +379,7 @@ func createAccount(ctx *cli.Context, password string) (common.Address, error) {
 	// Load config file.
 	if cfg, configDir, err = maybeLoadConfig(ctx); err != nil {
 		utils.Fatalf("%v", err)
+                return common.Address{},err
 	}
 
 	cfg.Node.P2P = cfg.P2P
@@ -388,6 +389,7 @@ func createAccount(ctx *cli.Context, password string) (common.Address, error) {
 	address, err := keystore.StoreKey(keydir, password, scryptN, scryptP)
 	if err != nil {
 		utils.Fatalf("Failed to create account: %v", err)
+                return common.Address{},err
 	}
 
 	return address, nil
