@@ -108,10 +108,10 @@ type SignRawTransactionCmd struct {
 	Flags    *string `jsonrpcdefault:"\"ALL\""`
 }
 
-const (
-	NETID_MAIN = iota
-	NETID_TEST
-)
+//const (
+//	NETID_MAIN = iota
+//	NETID_TEST
+//)
 
 type ptnstatsConfig struct {
 	URL string `toml:",omitempty"`

@@ -38,9 +38,9 @@ import (
 	"github.com/palletone/go-palletone/internal/debug"
 )
 
-const (
-	importBatchSize = 2500
-)
+//const (
+//	importBatchSize = 2500
+//)
 
 // Fatalf formats a message to standard error and exits the program.
 // The message is also printed to standard output if standard error
