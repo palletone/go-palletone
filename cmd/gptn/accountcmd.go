@@ -399,7 +399,10 @@ func newAccount(ctx *cli.Context) (common.Address, error) {
 	password := getPassPhrase("Your new account is locked with a password. Please give a password. "+
 		"Do not forget this password.", true, 0, utils.MakePasswordList(ctx))
 
-	address, _ := createAccount(ctx, password)
+	address, err := createAccount(ctx, password)
+        if err != nil {
+            return common.Address{},err
+        }
 
 	return address, nil
 }
