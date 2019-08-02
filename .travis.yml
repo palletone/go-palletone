@@ -294,7 +294,6 @@ matrix:
         - docker images
         - cat /proc/sys/net/ipv4/ip_forward
         - sudo ./jurySec.sh
-        - cat /proc/sys/net/ipv4/ip_forward
         - sudo cat /etc/docker/daemon.json
         - cd ./cmd/deployment
         - chmod +x ./deploy.sh

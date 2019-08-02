@@ -368,35 +368,53 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	case GetAllMediator:
 		values, err := stub.GetStateByPrefix(string(constants.MEDIATOR_INFO_PREFIX) + string(constants.DEPOSIT_BALANCE_PREFIX))
 		if err != nil {
+			log.Debugf("stub.GetStateByPrefix error: %s", err.Error())
 			return shim.Error(err.Error())
 		}
-		mediators := make(map[string]*MediatorDeposit)
-		m := &MediatorDeposit{}
-		for _, v := range values {
-			json.Unmarshal(v.Value, m)
-			mediators[v.Key] = m
+		if len(values) > 0 {
+			mediators := make(map[string]*MediatorDeposit)
+			for _, v := range values {
+				m := MediatorDeposit{}
+				err := json.Unmarshal(v.Value, &m)
+				if err != nil {
+					log.Debugf("json.Unmarshal error: %s", err.Error())
+					return shim.Error(err.Error())
+				}
+				mediators[v.Key] = &m
+			}
+			bytes, err := json.Marshal(mediators)
+			if err != nil {
+				log.Debugf("json.Marshal error: %s", err.Error())
+				return shim.Error(err.Error())
+			}
+			return shim.Success(bytes)
 		}
-		bytes, err := json.Marshal(mediators)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-		return shim.Success(bytes)
+		return shim.Success([]byte("{}"))
 	case GetAllNode:
 		values, err := stub.GetStateByPrefix(string(constants.DEPOSIT_BALANCE_PREFIX))
 		if err != nil {
+			log.Debugf("stub.GetStateByPrefix error: %s", err.Error())
 			return shim.Error(err.Error())
 		}
-		node := make(map[string]*DepositBalance)
-		n := &DepositBalance{}
-		for _, v := range values {
-			json.Unmarshal(v.Value, n)
-			node[v.Key] = n
+		if len(values) > 0 {
+			node := make(map[string]*DepositBalance)
+			for _, v := range values {
+				n := DepositBalance{}
+				err := json.Unmarshal(v.Value, &n)
+				if err != nil {
+					log.Debugf("json.Unmarshal error: %s", err.Error())
+					return shim.Error(err.Error())
+				}
+				node[v.Key] = &n
+			}
+			bytes, err := json.Marshal(node)
+			if err != nil {
+				log.Debugf("json.Marshal error: %s", err.Error())
+				return shim.Error(err.Error())
+			}
+			return shim.Success(bytes)
 		}
-		bytes, err := json.Marshal(node)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-		return shim.Success(bytes)
+		return shim.Success([]byte("{}"))
 	}
 	return shim.Error("please enter validate function name")
 }
