@@ -106,7 +106,7 @@ func (s *RwSetTxSimulator) GetStatesByPrefix(contractid []byte, ns string, prefi
 	data, err := s.dag.GetContractStatesByPrefix(contractid, prefix)
 
 	if err != nil {
-		log.Debugf("get value from db[%s] failed,prefix:%s", ns, prefix)
+		log.Debugf("get value from db[%s] failed,prefix:%s,error:[%s]", ns, prefix, err.Error())
 		return nil, nil
 		//errstr := fmt.Sprintf("GetContractState [%s]-[%s] failed", ns, key)
 		//		//return nil, errors.New(errstr)
