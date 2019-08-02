@@ -223,7 +223,11 @@ func (b *memBatch) Write() error {
 	defer b.db.lock.Unlock()
 
 	for _, kv := range b.writes {
-		b.db.db[string(kv.k)] = kv.v
+		if kv.del {
+			delete(b.db.db, string(kv.k))
+		} else {
+			b.db.db[string(kv.k)] = kv.v
+		}
 	}
 	return nil
 }

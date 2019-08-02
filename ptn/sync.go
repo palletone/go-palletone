@@ -229,6 +229,7 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId, sync
 		atomic.StoreUint32(&pm.fastSync, 0)
 	}
 	atomic.StoreUint32(&pm.acceptTxs, 1) // Mark initial sync done
+	log.Info("ptn sync complete")
 
 	cunit := pm.dag.GetCurrentUnit(assetId)
 	if cunit != nil && cunit.UnitHeader.Number.Index > 0 {

@@ -93,7 +93,7 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 	}
 	limitdao, _ := decimal.NewFromString("0.0001")
 	if !fee.GreaterThanOrEqual(limitdao) {
-		return "", fmt.Errorf("fee cannot less than 1 PTN ")
+		return "", fmt.Errorf("fee cannot less than 100000 Dao ")
 	}
 	daoAmount := ptnjson.Ptn2Dao(amount.Add(fee))
 	if daoAmount <= 100000000 {

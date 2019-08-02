@@ -70,13 +70,14 @@ func (mi *MediatorInfo) InfoToMediator() *core.Mediator {
 	return md
 }
 
-type MediatorCreateOperation struct {
+// 创建 mediator 所需的参数
+type MediatorCreateArgs struct {
 	*core.MediatorInfoBase
 	*core.MediatorApplyInfo
 }
 
-func NewMediatorCreateOperation() *MediatorCreateOperation {
-	return &MediatorCreateOperation{
+func NewMediatorCreateArgs() *MediatorCreateArgs {
+	return &MediatorCreateArgs{
 		MediatorInfoBase:  core.NewMediatorInfoBase(),
 		MediatorApplyInfo: core.NewMediatorApplyInfo(),
 	}
@@ -84,11 +85,11 @@ func NewMediatorCreateOperation() *MediatorCreateOperation {
 
 // 更新 mediator 信息所需参数
 type MediatorUpdateArgs struct {
-	AddStr      string  `json:"account"` // 账户地址
-	Logo        *string `json:"logo"`    // 节点图标url
-	Name        *string `json:"name"`    // 节点名称
-	Location    *string `json:"loc"`     // 节点所在地区
-	Url         *string `json:"url"`     // 节点网站
-	Description *string `json:"desc"`    // 节点信息描述
-	Node        *string `json:"pNode"`   // 节点网络信息，包括ip和端口等
+	AddStr      string  `json:"account"`   // 更新的mediator地址
+	Logo        *string `json:"logo"`      // 节点图标url
+	Name        *string `json:"name"`      // 节点名称
+	Location    *string `json:"loc"`       // 节点所在地区
+	Url         *string `json:"url"`       // 节点网站
+	Description *string `json:"applyInfo"` // 节点详细信息描述
+	Node        *string `json:"node"`      // 节点网络信息，包括ip和端口等
 }

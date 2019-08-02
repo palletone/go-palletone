@@ -237,6 +237,7 @@ func (statedb *StateDb) GetContractState(id []byte, field string) ([]byte, *modu
 	key := getContractStateKey(id, field)
 	log.Debugf("DB[%s] GetContractState for key:%x. field:%s ", reflect.TypeOf(statedb.db).String(), key, field)
 	data, version, err := retrieveWithVersion(statedb.db, key)
+	log.Debugf("GetContractState Result:%x,version:%s",data,version.String())
 	return data, version, err
 }
 
@@ -300,28 +301,30 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 		log.Debugf("Save Deposit Contract Invoke Req")
 
 		if string(invoke.Args[0]) == modules.ApplyMediator {
-			//log.Debugf(string(invoke.Args[1]))
-			mco := modules.NewMediatorCreateOperation()
+			//log.Debugf("ApplyMediator args:%s", string(invoke.Args[1]))
+			mco := modules.NewMediatorCreateArgs()
 
 			err := json.Unmarshal(invoke.Args[1], &mco)
 			if err == nil {
 				log.Debugf("Save Apply Mediator Invoke Req for account: (%v)", mco.AddStr)
 
 				mi := modules.NewMediatorInfo()
-				*mi.MediatorInfoBase = *mco.MediatorInfoBase
-				*mi.MediatorApplyInfo = *mco.MediatorApplyInfo
+				mi.MediatorInfoBase = mco.MediatorInfoBase
+				mi.MediatorApplyInfo = mco.MediatorApplyInfo
 
 				addr, err := core.StrToMedAdd(mco.AddStr)
 				if err == nil {
 					statedb.StoreMediatorInfo(addr, mi)
 				} else {
-					log.Debugf(err.Error())
+					log.Warnf("StrToMedAdd err: %v", err.Error())
 				}
 			} else {
-				log.Debugf(err.Error())
+				log.Warnf("ApplyMediator Args Unmarshal: %v", err.Error())
 			}
 		} else if string(invoke.Args[0]) == modules.UpdateMediatorInfo {
+			//log.Debugf("UpdateMediatorInfo args:%s", string(invoke.Args[1]))
 			var mua modules.MediatorUpdateArgs
+
 			err := json.Unmarshal(invoke.Args[1], &mua)
 			if err == nil {
 				log.Debugf("Save Update Mediator(%v) Invoke Req", mua.AddStr)
@@ -350,13 +353,13 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 						}
 						statedb.StoreMediatorInfo(addr, mi)
 					} else {
-						log.Debugf(err.Error())
+						log.Warnf("RetrieveMediatorInfo error: %v", err.Error())
 					}
 				} else {
-					log.Debugf(err.Error())
+					log.Warnf("StrToMedAdd err: %v", err.Error())
 				}
 			} else {
-				log.Debugf(err.Error())
+				log.Warnf("UpdateMediatorInfo Args Unmarshal: %v", err.Error())
 			}
 		}
 	}

@@ -235,6 +235,7 @@ func (d *Dag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, er
 		uHeader, err = d.getHeaderByNumberFromPMemDag(number)
 	}
 	if err != nil {
+		log.Debug("GetHeaderByNumber failed ", "error:", err, "number", number.String())
 		return nil, err
 	}
 	return uHeader, nil
@@ -298,6 +299,9 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 			}
 		}
 		log.Debugf("InsertDag[%s] #%d spent time:%s", u.UnitHash.String(), u.NumberU64(), time.Since(t1))
+		if u.NumberU64()%1000 == 0 {
+			log.Infof("Insert unit[%s] #%d to local", u.UnitHash.String(), u.NumberU64())
+		}
 		count += 1
 	}
 

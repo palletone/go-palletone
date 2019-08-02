@@ -66,15 +66,17 @@ func (m *Migration100_101) utxoToStxo() error {
 		}
 	}
 	dagdb := storage.NewDagDb(m.dagdb)
-	txs, err := dagdb.GetAllTxs()
-	if err != nil {
-		log.Error(err.Error())
-	}
-	log.Debugf("Tx count:%d", len(txs))
-	for i, tx := range txs {
-		if tx == nil {
-			log.Errorf("tx[%d] is nil", i)
+	iter := m.dagdb.NewIteratorWithPrefix(constants.TRANSACTION_PREFIX)
+	for iter.Next() {
+		key := iter.Key()
+		value := iter.Value()
+		tx := new(modules.Transaction)
+		err := rlp.DecodeBytes(value, tx)
+		if err != nil || tx == nil {
+			log.Errorf("Cannot decode key[%s] rlp tx:%x", key, value)
+			continue
 		}
+
 		spents := tx.GetSpendOutpoints()
 		for _, spent := range spents {
 			stxo, err := dbop.GetStxoEntry(spent)
@@ -87,6 +89,28 @@ func (m *Migration100_101) utxoToStxo() error {
 			}
 		}
 	}
+
+	// txs, err := dagdb.GetAllTxs()
+	// if err != nil {
+	// 	log.Error(err.Error())
+	// }
+	// log.Debugf("Tx count:%d", len(txs))
+	// for i, tx := range txs {
+	// 	if tx == nil {
+	// 		log.Errorf("tx[%d] is nil", i)
+	// 	}
+	// 	spents := tx.GetSpendOutpoints()
+	// 	for _, spent := range spents {
+	// 		stxo, err := dbop.GetStxoEntry(spent)
+	// 		if err == nil && stxo != nil {
+	// 			stxo.SpentByTxId = tx.Hash()
+	// 			lookup, _ := dagdb.GetTxLookupEntry(tx.Hash())
+	// 			stxo.SpentTime = lookup.Timestamp
+	// 			log.Debugf("Update stxo spentTxId:%s,spentTime:%d", stxo.SpentByTxId.String(), stxo.SpentTime)
+	// 			dbop.SaveStxoEntry(spent, stxo)
+	// 		}
+	// 	}
+	// }
 
 	return nil
 }
@@ -111,12 +135,10 @@ func (m *Migration100_101) ExecuteUpgrade() error {
 }
 
 func (m *Migration100_101) upgradeMediatorInfo() error {
-	statedb := storage.NewStateDb(m.statedb)
-	oldMediators := statedb.GetPrefix(constants.MEDIATOR_INFO_PREFIX)
-
-	for key, value := range oldMediators {
+	oldMediatorsIterator := m.statedb.NewIteratorWithPrefix(constants.MEDIATOR_INFO_PREFIX)
+	for oldMediatorsIterator.Next() {
 		oldMediator := &OldMediatorInfo{}
-		err := rlp.DecodeBytes(value, oldMediator)
+		err := rlp.DecodeBytes(oldMediatorsIterator.Value(), oldMediator)
 		if err != nil {
 			log.Debugf(err.Error())
 			return err
@@ -128,7 +150,7 @@ func (m *Migration100_101) upgradeMediatorInfo() error {
 			MediatorInfoExpand: oldMediator.MediatorInfoExpand,
 		}
 
-		err = storage.StoreToRlpBytes(m.statedb, []byte(key), newMediator)
+		err = storage.StoreToRlpBytes(m.statedb, oldMediatorsIterator.Key(), newMediator)
 		if err != nil {
 			log.Debugf(err.Error())
 			return err

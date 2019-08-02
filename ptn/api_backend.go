@@ -412,7 +412,7 @@ func (b *PtnApiBackend) GetUnitTxsInfo(hash common.Hash) ([]*ptnjson.TxSummaryJs
 	txs_json := make([]*ptnjson.TxSummaryJson, 0)
 
 	for txIdx, tx := range txs {
-		txs_json = append(txs_json, ptnjson.ConvertTx2SummaryJson(tx, hash, header.Number.Index, header.Time, uint64(txIdx), b.ptn.dag.GetUtxoEntry))
+		txs_json = append(txs_json, ptnjson.ConvertTx2SummaryJson(tx, hash, header.Number.Index, header.Time, uint64(txIdx), b.ptn.dag.GetTxOutput))
 	}
 	return txs_json, nil
 }
@@ -434,14 +434,14 @@ func (b *PtnApiBackend) GetTxByHash(hash common.Hash) (*ptnjson.TxWithUnitInfoJs
 	if err != nil {
 		return nil, err
 	}
-	return ptnjson.ConvertTxWithUnitInfo2FullJson(tx, b.ptn.dag.GetUtxoEntry), nil
+	return ptnjson.ConvertTxWithUnitInfo2FullJson(tx, b.ptn.dag.GetTxOutput), nil
 }
 func (b *PtnApiBackend) GetTxByReqId(hash common.Hash) (*ptnjson.TxWithUnitInfoJson, error) {
 	tx, err := b.ptn.dag.GetTxByReqId(hash)
 	if err != nil {
 		return nil, err
 	}
-	return ptnjson.ConvertTxWithUnitInfo2FullJson(tx, b.ptn.dag.GetUtxoEntry), nil
+	return ptnjson.ConvertTxWithUnitInfo2FullJson(tx, b.ptn.dag.GetTxOutput), nil
 }
 func (b *PtnApiBackend) GetTxSearchEntry(hash common.Hash) (*ptnjson.TxSerachEntryJson, error) {
 	entry, err := b.ptn.dag.GetTxSearchEntry(hash)

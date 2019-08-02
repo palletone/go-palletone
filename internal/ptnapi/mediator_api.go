@@ -190,41 +190,17 @@ type TxExecuteResult struct {
 	Warning   string      `json:"warning"`   // 警告
 }
 
-// 创建 mediator 所需的参数, 至少包含普通账户地址
-type MediatorCreateArgs struct {
-	*modules.MediatorCreateOperation
-}
-
-// 相关参数检查
-func (args *MediatorCreateArgs) setDefaults(addStr string) {
-	if args.MediatorInfoBase == nil {
-		args.MediatorInfoBase = core.NewMediatorInfoBase()
-	}
-
-	if args.AddStr == "" {
-		args.AddStr = addStr
-	}
-
-	if args.InitPubKey == "" {
-		args.InitPubKey = core.DefaultInitPubKey
-	}
-
-	if args.Node == "" {
-		args.Node = core.DefaultNodeInfo
-	}
-
+func (a *PrivateMediatorAPI) Apply(args modules.MediatorCreateArgs) (*TxExecuteResult, error) {
+	// 参数补全
 	if args.MediatorApplyInfo == nil {
 		args.MediatorApplyInfo = core.NewMediatorApplyInfo()
 	}
 
-	return
-}
-
-func (a *PrivateMediatorAPI) Apply(args MediatorCreateArgs) (*TxExecuteResult, error) {
-	// 参数补全
-	args.setDefaults("")
-
 	// 参数验证
+	if args.MediatorInfoBase == nil {
+		return nil, fmt.Errorf("invalid args, is null")
+	}
+
 	addr, err := args.Validate()
 	if err != nil {
 		return nil, err
@@ -433,7 +409,7 @@ func (a *PrivateMediatorAPI) Update(args modules.MediatorUpdateArgs) (*TxExecute
 	cArgs := [][]byte{[]byte(modules.UpdateMediatorInfo), argsB}
 
 	// 调用系统合约
-	fee := a.Dag().GetChainParameters().MediatorCreateFee
+	fee := a.Dag().GetChainParameters().TransferPtnBaseFee
 	reqId, err := a.ContractInvokeReqTx(addr, addr, 0, fee, nil,
 		syscontract.DepositContractAddress, cArgs, 0)
 	if err != nil {
@@ -461,10 +437,14 @@ func (a *PrivateMediatorAPI) Update(args modules.MediatorUpdateArgs) (*TxExecute
 	if args.Name != nil {
 		descStr = *args.Description
 	}
+	NodeStr := ""
+	if args.Node != nil {
+		NodeStr = *args.Node
+	}
 
 	res := &TxExecuteResult{}
 	res.TxContent = fmt.Sprintf("Update mediator %v with name: %v, url: %v logo: %v, location: %v, "+
-		"description: %v", args.AddStr, nameStr, urlStr, logoStr, locStr, descStr)
+		"description: %v, node: %v", args.AddStr, nameStr, urlStr, logoStr, locStr, descStr, NodeStr)
 	res.TxFee = fmt.Sprintf("%vdao", fee)
 	res.Warning = DefaultResult
 	res.Tip = "Your ReqId is: " + hex.EncodeToString(reqId[:]) +

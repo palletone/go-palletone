@@ -357,11 +357,6 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 
 	// append by Albert·Gou
 	timestamp := time.Unix(unit.Timestamp(), 0)
-	unitHash := unit.Hash()
-	log.Debugf("Received unit(%v) #%v parent(%v) @%v signed by %v", unitHash.TerminalString(),
-		unit.NumberU64(), unit.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
-		unit.Author().Str())
-
 	latency := time.Now().Sub(timestamp)
 	if latency < -5*time.Second {
 		errStr := fmt.Sprintf("Rejecting unit #%v with timestamp(%v) in the future signed by %v",
@@ -370,12 +365,17 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		return fmt.Errorf(errStr)
 	}
 
+	unitHash := unit.Hash()
 	if pm.IsExistInCache(unitHash.Bytes()) {
 		//log.Debugf("Received unit(%v) again, ignore it", unitHash.TerminalString())
 		p.MarkUnit(unitHash)
 		p.SetHead(unitHash, unit.Number())
 		return nil
 	}
+
+	log.Infof("Received unit(%v) #%v parent(%v) @%v signed by %v", unitHash.TerminalString(),
+		unit.NumberU64(), unit.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
+		unit.Author().Str())
 
 	log.DebugDynamic(func() string {
 		txids := []common.Hash{}

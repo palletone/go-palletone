@@ -6,7 +6,7 @@ Resource          publicParams.txt
 *** Keywords ***
 applyBecomeMediator
     [Arguments]    ${mediatorAddr}
-    ${one}    Create List    ApplyBecomeMediator    {\"desc\":\"xxx...\"}
+    ${one}    Create List    ApplyBecomeMediator    {\"applyInfo\":\"xxx...\",\"account\":\"${mediatorAddr}\",\"initPubKey\":\"2SvBCoCHWA8Zg2Q8v2onmaTeZj6YmWLbp6mzoCZeDwiUcmuqFwd8fZXCfdmEhTodbWaSJ8T7MvjQiZkn4S9VTQnKDrEkETt84Sr58vmjVdhdXNjjzqn8j6oHzvduxGo4UjWB66wd1GFXKoz5XD8hcPDzCyGVqZLjb7wu2pkJxeG1Mt3\",\"node\":\"pnode://4bdc1c533f6e3700a0a6cc346bf2364eace58a10d8a782762c8d2b27cf4d96c25827c82a15684d348e88722b259f31abcccd4d0eaae0f52eeb85e1eb5342b862@127.0.0.1:30303\"}
     ${two}    Create List    ${mediatorAddr}    ${mediatorAddr}    ${amount}    ${fee}    ${one}
     ${result}    创建公用的POST请求    ${depositContractInvoke}    ApplyBecomeMediator    ${two}
     sleep    6

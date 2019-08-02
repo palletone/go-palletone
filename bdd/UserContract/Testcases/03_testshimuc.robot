@@ -76,42 +76,42 @@ HandleToken
     And Query balance by contract    ${tokenHolder}    PTN    ${exceptedAmount}
     And Query balance by contract    ${newAddr}    PTN    ${4500}
 
-UseDigitalCertificate
-    Given Unlock token holder succeed
-    And queryCAHolder
-    And queryCACertID
-    # -> use cert
-    ${reqId}=    Then User use cert to invoke contract
-    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
-    ${payload}=    Then Get invoke payload info    ${reqId}
-    ${compareBytes}=    And Replace String    ${caCertBytes}    \n    ${EMPTY}
-    ${compareBytes}=    And Replace String    ${compareBytes}    -----BEGIN CERTIFICATE-----    ${EMPTY}
-    ${compareBytes}=    And Replace String    ${compareBytes}    -----END CERTIFICATE-----    ${EMPTY}
-    And Should Be Equal    ${payload}    ${compareBytes}
+# UseDigitalCertificate
+#     Given Unlock token holder succeed
+#     And queryCAHolder
+#     And queryCACertID
+#     # -> use cert
+#     ${reqId}=    Then User use cert to invoke contract
+#     And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
+#     ${payload}=    Then Get invoke payload info    ${reqId}
+#     ${compareBytes}=    And Replace String    ${caCertBytes}    \n    ${EMPTY}
+#     ${compareBytes}=    And Replace String    ${compareBytes}    -----BEGIN CERTIFICATE-----    ${EMPTY}
+#     ${compareBytes}=    And Replace String    ${compareBytes}    -----END CERTIFICATE-----    ${EMPTY}
+#     And Should Be Equal    ${payload}    ${compareBytes}
 
-TestSendRecvJury
-    Given Unlock token holder succeed
-    ${reqId}=    When Test send and recv jury by contract
-    Then Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
+# TestSendRecvJury
+#     Given Unlock token holder succeed
+#     ${reqId}=    When Test send and recv jury by contract
+#     Then Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
-TestSetEvent
-    Given Unlock token holder succeed
-    ${reqId}=    When Test set_event by contract
-    Then Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
+# TestSetEvent
+#     Given Unlock token holder succeed
+#     ${reqId}=    When Test set_event by contract
+#     Then Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
-Get Invoke Info
-    Given Unlock token holder succeed
-    ${args}=    And Create List    arg1    arg2
-    ${newAddr}=    newAccount
-    ${reqId}=    When User get invoke info    ${args}    ${newAddr}
-    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
-    ${payload}=    Get invoke payload info    ${reqId}
-    Then Check all invoke info    ${payload}    ${args}    testGetInvokeInfo    ${reqId}    ${newAddr}
+# Get Invoke Info
+#     Given Unlock token holder succeed
+#     ${args}=    And Create List    arg1    arg2
+#     ${newAddr}=    newAccount
+#     ${reqId}=    When User get invoke info    ${args}    ${newAddr}
+#     And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
+#     ${payload}=    Get invoke payload info    ${reqId}
+#     Then Check all invoke info    ${payload}    ${args}    testGetInvokeInfo    ${reqId}    ${newAddr}
 
-Stop testshimuc contract
-    Given Unlock token holder succeed
-    ${reqId}=    Then stopContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
-    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
+# Stop testshimuc contract
+#     Given Unlock token holder succeed
+#     ${reqId}=    Then stopContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
+#     And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
 *** Keywords ***
 User transfer PTN to testshimuc

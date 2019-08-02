@@ -38,10 +38,17 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		return shim.Error(errStr)
 	}
 
-	var mco modules.MediatorCreateOperation
+	var mco modules.MediatorCreateArgs
 	err := json.Unmarshal([]byte(args[0]), &mco)
 	if err != nil {
 		errStr := fmt.Sprintf("invalid args: %v", err.Error())
+		log.Errorf(errStr)
+		return shim.Error(errStr)
+	}
+
+	// 参数验证
+	if mco.MediatorInfoBase == nil || mco.MediatorApplyInfo == nil {
+		errStr := fmt.Sprintf("invalid args, is null")
 		log.Errorf(errStr)
 		return shim.Error(errStr)
 	}
@@ -191,6 +198,25 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 			log.Error("Too many or too little.")
 			return shim.Error("Too many or too little.")
 		}
+		//这里需要判断是否以及被基金会提前移除候选列表，即在规定时间内该节点没有追缴保证金
+		b, err := isInCandidate(stub, invokeAddr.String(), modules.MediatorList)
+		if err != nil {
+			log.Debugf("isInCandidate error: %s", err.Error())
+			return shim.Error(err.Error())
+		}
+		if !b {
+			err = addCandaditeList(stub, invokeAddr, modules.MediatorList)
+			if err != nil {
+				log.Error("addCandidateListAndPutStateForMediator err: ", "error", err)
+				return shim.Error(err.Error())
+			}
+			//  自动加入jury候选列表
+			err = addCandaditeList(stub, invokeAddr, modules.JuryList)
+			if err != nil {
+				log.Error("addCandidateListAndPutStateForMediator err: ", "error", err)
+				return shim.Error(err.Error())
+			}
+		}
 		md.Balance = all
 		//  保存账户信息
 		err = SaveMediatorDeposit(stub, invokeAddr.String(), md)
@@ -268,17 +294,30 @@ func updateMediatorInfo(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 
 	if addr != invokeAddr {
 		errStr := fmt.Sprintf("the calling account(%v) is not updating account(%v), "+
-			"please use mediator.apply()", invokeAddr.String(), addr.String())
+			"please use mediator.apply()", invokeAddr.String(), mua.AddStr)
 		log.Error(errStr)
 	}
 
-	//  判断该地址是否是mediator
-	mdeposit, err := GetMediatorDeposit(stub, invokeAddr.String())
+	// 判断该地址是否是mediator
+	// 这样不能判断genesis文件中那几个mediator
+	//mdeposit, err := GetMediatorDeposit(stub, mua.AddStr)
+	//if err != nil {
+	//	return shim.Error(err.Error())
+	//}
+	//if mdeposit == nil {
+	//	return shim.Error(mua.AddStr + " is not a mediator")
+	//}
+
+	list, err := getList(stub, modules.MediatorList)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	if mdeposit == nil {
-		return shim.Error(invokeAddr.String() + " is not a mediator")
+	if list == nil {
+		return shim.Success([]byte("false"))
+	}
+
+	if _, ok := list[mua.AddStr]; !ok {
+		return shim.Error(mua.AddStr + " is not a mediator")
 	}
 
 	log.Info("End entering updateMediatorInfo func")

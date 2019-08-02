@@ -21,6 +21,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -78,7 +79,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	//  基金会移除某个节点
 	case HanldeNodeRemoveFromAgreeList:
 		log.Info("Enter DepositChaincode Contract " + HanldeNodeRemoveFromAgreeList + " Invoke")
-		return d.hanldeNodeRemoveFromAgreeList(stub, args)
+		return d.handleNodeRemoveFromAgreeList(stub, args)
 		//  基金会对退出申请Mediator进行处理
 	case HandleForApplyQuitMediator:
 		log.Info("Enter DepositChaincode Contract " + HandleForApplyQuitMediator + " Invoke")
@@ -358,6 +359,44 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		//	}
 		//	st := strconv.FormatInt(b, 10)
 		//	return shim.Success([]byte(st))
+	case HandleMediatorInCandidateList:
+		return d.handleMediatorInCandidateList(stub, args)
+	case HandleJuryInCandidateList:
+		return d.handleJuryInCandidateList(stub, args)
+	case HandleDevInList:
+		return d.handleDevInList(stub, args)
+	case GetAllMediator:
+		values, err := stub.GetStateByPrefix(string(constants.MEDIATOR_INFO_PREFIX) + string(constants.DEPOSIT_BALANCE_PREFIX))
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		mediators := make(map[string]*MediatorDeposit)
+		m := &MediatorDeposit{}
+		for _, v := range values {
+			json.Unmarshal(v.Value, m)
+			mediators[v.Key] = m
+		}
+		bytes, err := json.Marshal(mediators)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		return shim.Success(bytes)
+	case GetAllNode:
+		values, err := stub.GetStateByPrefix(string(constants.DEPOSIT_BALANCE_PREFIX))
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		node := make(map[string]*DepositBalance)
+		n := &DepositBalance{}
+		for _, v := range values {
+			json.Unmarshal(v.Value, n)
+			node[v.Key] = n
+		}
+		bytes, err := json.Marshal(node)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		return shim.Success(bytes)
 	}
 	return shim.Error("please enter validate function name")
 }
@@ -420,6 +459,10 @@ func (d *DepositChaincode) handleForForfeitureApplication(stub shim.ChaincodeStu
 	return handleForForfeitureApplication(stub, args)
 }
 
+func (d DepositChaincode) handleNodeRemoveFromAgreeList(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return hanldeNodeRemoveFromAgreeList(stub, args)
+}
+
 //
 
 func (d DepositChaincode) applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, args []string) pb.Response {
@@ -440,17 +483,22 @@ func (d DepositChaincode) handlePledgeReward(stub shim.ChaincodeStubInterface, a
 	return handlePledgeReward(stub, args)
 }
 
-//
-func (d DepositChaincode) hanldeNodeRemoveFromAgreeList(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return hanldeNodeRemoveFromAgreeList(stub, args)
+func (d DepositChaincode) handleMediatorInCandidateList(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return handleNodeInList(stub, args, Mediator)
+}
+func (d DepositChaincode) handleJuryInCandidateList(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return handleNodeInList(stub, args, Jury)
+}
+func (d DepositChaincode) handleDevInList(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return handleNodeInList(stub, args, Developer)
 }
 
 //
-func (d DepositChaincode) handleRemoveMediatorNode(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return handleRemoveMediatorNode(stub, args)
-}
-
+//func (d DepositChaincode) handleRemoveMediatorNode(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+//	return handleRemoveMediatorNode(stub, args)
+//}
 //
-func (d DepositChaincode) handleRemoveNormalNode(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return handleRemoveNormalNode(stub, args)
-}
+////
+//func (d DepositChaincode) handleRemoveNormalNode(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+//	return handleRemoveNormalNode(stub, args)
+//}

@@ -379,7 +379,7 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 		//Check payment output is correct
 		payment := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
 		if !compareRewardAndOutput(rewards, payment.Outputs) {
-			log.Error("Output not match")
+			log.Errorf("Coinbase tx[%s] Output not match", tx.Hash().String())
 			log.DebugDynamic(func() string {
 				rjson, _ := json.Marshal(rewards)
 				ojson, _ := json.Marshal(payment)
@@ -392,11 +392,11 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 		if len(addrMap) > 0 {
 			clearStateInvoke := tx.TxMessages[1].Payload.(*modules.ContractInvokePayload)
 			if !bytes.Equal(clearStateInvoke.ContractId, contractId) {
-				log.Error("Coinbase contract id not correct")
+				log.Errorf("Coinbase tx[%s] contract id not correct", tx.Hash().String())
 				return TxValidationCode_INVALID_COINBASE
 			}
 			if !compareRewardAndStateClear(rewards, clearStateInvoke.WriteSet) {
-				log.Error("Clear statedb not match")
+				log.Errorf("Coinbase tx[%s] Clear statedb not match", tx.Hash().String())
 				log.DebugDynamic(func() string {
 					rjson, _ := json.Marshal(rewards)
 					ojson, _ := json.Marshal(clearStateInvoke)
@@ -428,13 +428,13 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 		//比对reward和writeset是否一致
 		invoke := tx.TxMessages[0].Payload.(*modules.ContractInvokePayload)
 		if !bytes.Equal(invoke.ContractId, contractId) {
-			log.Error("Coinbase contract id not correct")
+			log.Errorf("Coinbase tx[%s] contract id not correct", tx.Hash().String())
 			return TxValidationCode_INVALID_COINBASE
 		}
 		if compareRewardAndWriteset(rewards, invoke.WriteSet) {
 			return TxValidationCode_VALID
 		} else {
-			log.Error("Coinbase contract write set not correct")
+			log.Errorf("Coinbase tx[%s] contract write set not correct", tx.Hash().String())
 			log.DebugDynamic(func() string {
 				rjson, _ := json.Marshal(rewards)
 				ojson, _ := json.Marshal(invoke)

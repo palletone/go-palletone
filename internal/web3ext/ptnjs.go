@@ -34,11 +34,11 @@ web3._extend({
 		//	params: 2,
 		//	inputFormatter: [web3._extend.formatters.inputAddressFormatter, null]
 		//}),
-		//new web3._extend.Method({
-		//	name: 'addressBalanceStatistics',
-		//	call: 'ptn_addressBalanceStatistics',
-		//	params: 2
-		//}),
+		new web3._extend.Method({
+			name: 'addressBalanceStatistics',
+			call: 'ptn_addressBalanceStatistics',
+			params: 2
+		}),
 		new web3._extend.Method({
 			name: 'encodeTx',
 			call: 'ptn_encodeTx',
