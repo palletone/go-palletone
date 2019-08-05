@@ -199,6 +199,10 @@ web3._extend({
 			name: 'getChainParameters',
 			getter: 'ptn_getChainParameters'
 		}),
+		new web3._extend.Property({
+			name: 'syncing',
+			getter: 'ptn_syncing'
+		}),
 	]
 });
 `
