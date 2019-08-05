@@ -89,7 +89,7 @@ func SignTransaction(chaincodeID string, methodName string, params []byte) (stri
 	if err != nil {
 		return "", err
 	}
-	return resultJson, nil
+	return string(resultJson), nil
 }
 func GetJuryETHAddr(chaincodeID string, methodName string, params []byte) (string, error) {
 	addrs, err := ClolletJuryETHAddressesTest(chaincodeID)
@@ -125,7 +125,7 @@ func Keccak256HashPackedSig(chaincodeID string, methodName string, params []byte
 	if err != nil {
 		return "", err
 	}
-	return resultJson, nil
+	return string(resultJson), nil
 }
 
 func adaptorCall(chainName, methodName string, params []byte) (string, error) {
