@@ -287,7 +287,7 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 
 		if a, b, c, dd, e, err := d.Memdag.AddUnit(u, txpool); err != nil {
 			//return count, err
-			log.Errorf("Memdag addUnit[%s] error:%s", u.UnitHash.String(), err.Error())
+			log.Errorf("Memdag addUnit[%s] #%d signed by %v error:%s", u.UnitHash.String(), u.NumberU64(), u.Author().Str(), err.Error())
 			return count, nil
 		} else {
 			if a != nil {
