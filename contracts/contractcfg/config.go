@@ -13,12 +13,12 @@ var DefaultConfig = Config{
 	ContractAddress:        "127.0.0.1:12345",
 	ContractExecutetimeout: time.Duration(20) * time.Second,
 	ContractDeploytimeout:  time.Duration(180) * time.Second,
-	CommonBuilder:          "palletone/goimg",
-	GolangBuilder:          "palletone/goimg",
-	JavaBuilder:            "palletone/javaimg",
-	NodejsBuilder:          "palletone/nodejsimg",
-	VmEndpoint:             "unix:///var/run/docker.sock",
-	SysContract:            map[string]string{"deposit_syscc": "true", "sample_syscc": "true", "createToken_sycc": "true"},
+	//CommonBuilder:          "palletone/goimg",
+	GolangBuilder: "palletone/goimg",
+	JavaBuilder:   "palletone/javaimg",
+	NodejsBuilder: "palletone/nodejsimg",
+	VmEndpoint:    "unix:///var/run/docker.sock",
+	SysContract:   map[string]string{"deposit_syscc": "true", "sample_syscc": "true", "createToken_sycc": "true"},
 }
 
 type Config struct {
@@ -26,12 +26,12 @@ type Config struct {
 	ContractAddress        string        //节点ip地址
 	ContractExecutetimeout time.Duration //合约调用执行时间
 	ContractDeploytimeout  time.Duration //合约部署执行时间
-	CommonBuilder          string        //公共基础经镜像
-	GolangBuilder          string        //Golang基础镜像
-	JavaBuilder            string        //Java基础镜像
-	NodejsBuilder          string        //Nodejs基础镜像
-	VmEndpoint             string        //与docker服务连接协议
-	SysContract            map[string]string
+	//CommonBuilder          string        //公共基础经镜像
+	GolangBuilder string //Golang基础镜像
+	JavaBuilder   string //Java基础镜像
+	NodejsBuilder string //Nodejs基础镜像
+	VmEndpoint    string //与docker服务连接协议
+	SysContract   map[string]string
 	//LogLevel               logging.Level
 	//ContractFileSystemPath string
 	//vm.docker.attachStdout
