@@ -41,7 +41,8 @@ import (
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
 	"sync/atomic"
-	//"github.com/palletone/go-palletone/ptn/lps"
+
+	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/manger"
 	"github.com/palletone/go-palletone/validator"
 	"github.com/palletone/go-palletone/vm/common"
@@ -412,8 +413,13 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 		pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
 		go pm.ceBroadcastLoop()
 	}
+	//  是否为linux系統
 	if runtime.GOOS == "linux" {
-		go pm.dockerLoop()
+		//  是否为jury
+		if contractcfg.GetConfig().IsJury {
+			log.Debugf("starting docker loop")
+			go pm.dockerLoop()
+		}
 	}
 }
 
@@ -715,7 +721,7 @@ func (pm *ProtocolManager) ContractBroadcast(event jury.ContractEvent, local boo
 // NodeInfo represents a short summary of the PalletOne sub-protocol metadata
 // known about the host peer.
 type NodeInfo struct {
-	Network uint64      `json:"network"` // PalletOne network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
+	Network uint64 `json:"network"` // PalletOne network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
 	Index   uint64
 	Genesis common.Hash `json:"genesis"` // SHA3 hash of the host's genesis block
 	Head    common.Hash `json:"head"`    // SHA3 hash of the host's best owned block
@@ -765,6 +771,7 @@ func (self *ProtocolManager) dockerLoop() {
 	client, err := util.NewDockerClient()
 	if err != nil {
 		log.Infof("util.NewDockerClient err: %s\n", err.Error())
+		return
 	}
 	for {
 		select {

@@ -27,6 +27,7 @@ import (
 	"runtime"
 	"strings"
 
+	"encoding/hex"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/fdlimit"
@@ -37,7 +38,6 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/nat"
 	"github.com/palletone/go-palletone/common/p2p/netutil"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
@@ -54,7 +54,6 @@ import (
 	"github.com/palletone/go-palletone/statistics/metrics"
 	"github.com/palletone/go-palletone/statistics/ptnstats"
 	"gopkg.in/urfave/cli.v1"
-	"encoding/hex"
 )
 
 var (
@@ -299,7 +298,7 @@ var (
 	CryptoLibFlag = cli.StringFlag{
 		Name:  "cryptolib",
 		Usage: "set crypto lib,1st byte sign algorithm: 0,ECDSA-S256;1,GM-SM2 2ed byte hash algorithm: 0,SHA3;1,GM-SM3",
-		Value: hex.EncodeToString( ptn.DefaultConfig.CryptoLib),
+		Value: hex.EncodeToString(ptn.DefaultConfig.CryptoLib),
 	}
 	ExtraDataFlag = cli.StringFlag{
 		Name:  "extradata",
@@ -970,13 +969,13 @@ func SetDagConfig(ctx *cli.Context, cfg *dagconfig.Config, dataDir string) {
 	dagconfig.DagConfig = *cfg
 }
 
-func SetContractConfig(ctx *cli.Context, cfg *contractcfg.Config, dataDir string) {
-	// 重新计算为绝对路径
-	if !filepath.IsAbs(cfg.ContractFileSystemPath) {
-		path := filepath.Join(dataDir, cfg.ContractFileSystemPath)
-		cfg.ContractFileSystemPath = common.GetAbsPath(path)
-	}
-}
+//func SetContractConfig(ctx *cli.Context, cfg *contractcfg.Config, dataDir string) {
+//	// 重新计算为绝对路径
+//	if !filepath.IsAbs(cfg.ContractFileSystemPath) {
+//		path := filepath.Join(dataDir, cfg.ContractFileSystemPath)
+//		cfg.ContractFileSystemPath = common.GetAbsPath(path)
+//	}
+//}
 
 func SetLogConfig(ctx *cli.Context, cfg *log.Config, configDir string, isInConsole bool) {
 	// 1. 重新计算log.output的路径
@@ -1127,8 +1126,8 @@ func SetPtnConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
 		cfg.ExtraData = []byte(ctx.GlobalString(ExtraDataFlag.Name))
 	}
 	if ctx.GlobalIsSet(CryptoLibFlag.Name) {
-		t:= ctx.GlobalString(CryptoLibFlag.Name)
-		cfg.CryptoLib,_ =hex.DecodeString(t)
+		t := ctx.GlobalString(CryptoLibFlag.Name)
+		cfg.CryptoLib, _ = hex.DecodeString(t)
 	}
 	if ctx.GlobalIsSet(VMEnableDebugFlag.Name) {
 		// TODO(fjl): force-enable this in --dev mode

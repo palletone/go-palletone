@@ -23,7 +23,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
 	"net"
-	"os"
 	"time"
 
 	"github.com/palletone/go-palletone/common/crypto"
@@ -172,11 +171,11 @@ func peerServerInit(jury core.IAdapterJury) error {
 	return nil
 }
 
-func peerServerDeInit() error {
-	grpcServer.Stop()
-	defer os.RemoveAll(cfg.GetConfig().ContractFileSystemPath)
-	return nil
-}
+//func peerServerDeInit() error {
+//	grpcServer.Stop()
+//	defer os.RemoveAll(cfg.GetConfig().ContractFileSystemPath)
+//	return nil
+//}
 
 func systemContractInit() error {
 	chainID := util.GetTestChainID()
@@ -201,4 +200,3 @@ func recoverChaincodeFromeDb() error {
 
 	return nil
 }
-

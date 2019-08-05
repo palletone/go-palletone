@@ -64,10 +64,10 @@ func InitNoSysCCC(jury core.IAdapterJury) error {
 }
 
 func Deinit() error {
-	if err := peerServerDeInit(); err != nil {
-		log.Errorf("peerServerDeInit error:%s", err)
-		return err
-	}
+	//if err := peerServerDeInit(); err != nil {
+	//	log.Errorf("peerServerDeInit error:%s", err)
+	//	return err
+	//}
 
 	if err := systemContractDeInit(); err != nil {
 		log.Errorf("systemContractDeInit error:%s", err)

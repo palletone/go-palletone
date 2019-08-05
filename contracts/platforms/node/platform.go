@@ -32,6 +32,7 @@ import (
 	"strings"
 
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/platforms/util"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	cutil "github.com/palletone/go-palletone/vm/common"
@@ -188,7 +189,7 @@ func (nodePlatform *Platform) GenerateDockerfile(cds *pb.ChaincodeDeploymentSpec
 
 	var buf []string
 
-	buf = append(buf, "FROM "+cutil.GetDockerfileFromConfig("chaincode.node.runtime"))
+	buf = append(buf, "FROM "+contractcfg.GetConfig().CommonBuilder)
 	buf = append(buf, "ADD binpackage.tar /usr/local/src")
 
 	dockerFileContents := strings.Join(buf, "\n")

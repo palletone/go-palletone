@@ -26,7 +26,6 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/palletone/go-palletone/common/log"
-	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	cclist "github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
@@ -75,7 +74,8 @@ type SystemChaincode struct {
 
 // registerSysCC registers the given system chaincode with the peer
 func registerSysCC(syscc *SystemChaincode) (bool, error) {
-	if !syscc.Enabled || isWhitelisted(syscc) {
+	//if !syscc.Enabled || isWhitelisted(syscc) {
+	if !syscc.Enabled {
 		log.Info(fmt.Sprintf("system chaincode (%s,%s,%t) disabled", syscc.Name, syscc.Path, syscc.Enabled))
 		return false, nil
 	}
@@ -96,7 +96,8 @@ func registerSysCC(syscc *SystemChaincode) (bool, error) {
 
 // deploySysCC deploys the given system chaincode on a chain
 func deploySysCC(chainID string, syscc *SystemChaincode) error {
-	if !syscc.Enabled || isWhitelisted(syscc) {
+	//if !syscc.Enabled || isWhitelisted(syscc) {
+	if !syscc.Enabled {
 		log.Info(fmt.Sprintf("system chaincode (%s,%s) disabled", syscc.Name, syscc.Path))
 		return nil
 	}
@@ -189,13 +190,13 @@ func buildSysCC(context context.Context, spec *pb.ChaincodeSpec) (*pb.ChaincodeD
 	return chaincodeDeploymentSpec, nil
 }
 
-func isWhitelisted(syscc *SystemChaincode) bool {
-	//chaincodes := viper.GetStringMapString("chaincode.system")
-	chaincodes := cfg.GetConfig().SysContract
-	val, ok := chaincodes[syscc.Name]
-	disabled := val == "disable" || val == "false" || val == "no"
-	return ok && disabled
-}
+//func isWhitelisted(syscc *SystemChaincode) bool {
+//	//chaincodes := viper.GetStringMapString("chaincode.system")
+//	chaincodes := cfg.GetConfig().SysContract
+//	val, ok := chaincodes[syscc.Name]
+//	disabled := val == "disable" || val == "false" || val == "no"
+//	return ok && disabled
+//}
 
 //RegisterSysCCs is the hook for system chaincodes where system chaincodes are registered
 //note the chaincode must still be deployed and launched like a user chaincode will be
