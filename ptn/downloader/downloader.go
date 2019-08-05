@@ -44,7 +44,7 @@ var (
 	//MaxReceiptFetch = 256 // Amount of transaction receipts to allow fetching per request
 	MaxStateFetch = 384 // Amount of node state values to allow fetching per request
 
-	MaxForkAncestry  = 3 * configure.EpochDuration // Maximum chain reorganization
+	MaxForkAncestry  = 3 * configure.EpochDuration // Maximum chain reorganisation
 	rttMinEstimate   = 2 * time.Second             // Minimum round-trip time to target for download requests
 	rttMaxEstimate   = 20 * time.Second            // Maximum round-trip time to target for download requests
 	rttMinConfidence = 0.1                         // Worse confidence factor in our estimated RTT value
@@ -92,7 +92,7 @@ var (
 )
 
 type Downloader struct {
-	mode SyncMode       // Synchronization mode defining the strategy used (per sync cycle)
+	mode SyncMode       // Synchronisation mode defining the strategy used (per sync cycle)
 	mux  *event.TypeMux // Event multiplexer to announce sync operation events
 
 	queue *queue   // Scheduler for selecting the hashes to download
@@ -114,7 +114,7 @@ type Downloader struct {
 	dropPeer peerDropFn // Drops a peer for misbehaving
 
 	// Status
-	synchroniseMock func(id string, hash common.Hash) error // Replacement for synchronize during testing
+	synchroniseMock func(id string, hash common.Hash) error // Replacement for synchronise during testing
 	synchronising   int32
 	notified        int32
 	committed       int32
@@ -149,7 +149,7 @@ type Downloader struct {
 	chainInsertHook  func([]*fetchResult)    // Method to call upon inserting a chain of blocks (possibly in multiple invocations)
 }
 
-// LightDag encapsulates functions required to synchronize a light chain.
+// LightDag encapsulates functions required to synchronise a light chain.
 type LightDag interface {
 	HasHeader(common.Hash, uint64) bool
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
@@ -232,31 +232,35 @@ func (d *Downloader) Progress() palletone.SyncProgress {
 	defer d.syncStatsLock.RUnlock()
 
 	current := uint64(0)
-	switch d.mode {
-	case FullSync:
-		//unit := d.dag.CurrentUnit(modules.PTNCOIN)
-		//if unit != nil {
-		//	current = unit.Number().Index
-		//}
-	case FastSync:
-		//unit := d.dag.CurrentUnit(modules.PTNCOIN)
-		//if unit != nil {
-		//	current = unit.Number().Index
-		//}
-	case LightSync:
-		//current = d.lightdag.CurrentHeader().Number.Uint64()
+	if unit := d.dag.GetCurrentUnit(modules.PTNCOIN); unit != nil {
+		current = unit.Number().Index
 	}
+
+	//switch d.mode {
+	//case FullSync:
+	//	//unit := d.dag.CurrentUnit(modules.PTNCOIN)
+	//	//if unit != nil {
+	//	//	current = unit.Number().Index
+	//	//}
+	//case FastSync:
+	//	//unit := d.dag.CurrentUnit(modules.PTNCOIN)
+	//	//if unit != nil {
+	//	//	current = unit.Number().Index
+	//	//}
+	//case LightSync:
+	//	//current = d.lightdag.CurrentHeader().Number.Uint64()
+	//}
 
 	return palletone.SyncProgress{
 		StartingBlock: d.syncStatsChainOrigin,
 		CurrentBlock:  current,
 		HighestBlock:  d.syncStatsChainHeight,
-		PulledStates:  d.syncStatsState.processed,
-		KnownStates:   d.syncStatsState.processed + d.syncStatsState.pending,
+		//PulledStates:  d.syncStatsState.processed,
+		//KnownStates:   d.syncStatsState.processed + d.syncStatsState.pending,
 	}
 }
 
-// Synchronizing returns whether the downloader is currently retrieving blocks.
+// Synchronising returns whether the downloader is currently retrieving blocks.
 func (d *Downloader) Synchronising() bool {
 	return atomic.LoadInt32(&d.synchronising) > 0
 }
@@ -304,7 +308,7 @@ func (d *Downloader) UnregisterPeer(id string) error {
 	return nil
 }
 
-// Synchronize tries to sync up our local block chain with a remote peer, both
+// Synchronise tries to sync up our local block chain with a remote peer, both
 // adding various sanity checks as well as wrapping it with various log entries.
 func (d *Downloader) Synchronise(id string, head common.Hash, index uint64, mode SyncMode, assetId modules.AssetId) error {
 	//return nil
@@ -326,12 +330,12 @@ func (d *Downloader) Synchronise(id string, head common.Hash, index uint64, mode
 		}
 
 	default:
-		log.Warn("Synchronization failed, retrying", "err", err)
+		log.Warn("Synchronisation failed, retrying", "err", err)
 	}
 	return err
 }
 
-// synchronize will select the peer and use it for synchronising. If an empty string is given
+// synchronise will select the peer and use it for synchronising. If an empty string is given
 // it will use the best peer possible and synchronize if its TD is higher than our own. If any of the
 // checks fail an error will be returned. This method is synchronous
 func (d *Downloader) synchronise(id string, hash common.Hash, index uint64, mode SyncMode, assetId modules.AssetId) error {
@@ -416,7 +420,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 		return errTooOld
 	}
 
-	log.Debug("Synchronizing with the network", "peer", p.id, "assetid", assetId, "head", hash, "index", index, "mode", d.mode)
+	log.Debug("Synchronising with the network", "peer", p.id, "assetid", assetId, "head", hash, "index", index, "mode", d.mode)
 	defer func(start time.Time) {
 		log.Debug("Synchronisation terminated", "elapsed", time.Since(start), "peer", p.id)
 	}(time.Now())
@@ -433,6 +437,13 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 		return err
 	}
 	log.Debug("Synchronisation findAncestor", "origin:", origin)
+
+	d.syncStatsLock.Lock()
+	if d.syncStatsChainHeight <= origin || d.syncStatsChainOrigin > origin {
+		d.syncStatsChainOrigin = origin
+	}
+	d.syncStatsChainHeight = latest.Number.Index
+	d.syncStatsLock.Unlock()
 
 	// Ensure our origin point is below any fast sync pivot point
 	pivot := uint64(0)
@@ -506,7 +517,7 @@ func (d *Downloader) spawnSync(fetchers []func() error) error {
 
 // cancel aborts all of the operations and resets the queue. However, cancel does
 // not wait for the running download goroutines to finish. This method should be
-// used when canceling the downloads from inside the downloader.
+// used when cancelling the downloads from inside the downloader.
 func (d *Downloader) cancel() {
 	// Close the current cancel channel
 	d.cancelLock.Lock()
@@ -995,7 +1006,7 @@ func (d *Downloader) fetchBodies(from uint64, assetId modules.AssetId) error {
 // various callbacks to handle the slight differences between processing them.
 //
 // The instrumentation parameters:
-//  - errCancel:   error type to return if the fetch operation is canceled (mostly makes logging nicer)
+//  - errCancel:   error type to return if the fetch operation is cancelled (mostly makes logging nicer)
 //  - deliveryCh:  channel from which to retrieve downloaded data packets (merged from all concurrent peers)
 //  - deliver:     processing callback to deliver data packets into type specific download queues (usually within `queue`)
 //  - wakeCh:      notification channel for waking the fetcher when new tasks are available (or sync completed)
