@@ -56,14 +56,14 @@ func P256ToECDSA(d []byte) (*ecdsa.PrivateKey, error) {
 	}
 	priv.D = new(big.Int).SetBytes(d)
 
-	// The priv.D must < N
-	if priv.D.Cmp(secp256k1_N) >= 0 {
-		return nil, fmt.Errorf("invalid private key, >=N")
-	}
-	// The priv.D must not be zero or negative.
-	if priv.D.Sign() <= 0 {
-		return nil, fmt.Errorf("invalid private key, zero or negative")
-	}
+	// // The priv.D must < N
+	// if priv.D.Cmp(secp256k1_N) >= 0 {
+	// 	return nil, fmt.Errorf("invalid private key, >=N")
+	// }
+	// // The priv.D must not be zero or negative.
+	// if priv.D.Sign() <= 0 {
+	// 	return nil, fmt.Errorf("invalid private key, zero or negative")
+	// }
 
 	priv.PublicKey.X, priv.PublicKey.Y = priv.PublicKey.Curve.ScalarBaseMult(d)
 	if priv.PublicKey.X == nil {
