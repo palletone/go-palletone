@@ -386,7 +386,7 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxEx
 
 func (a *PrivateMediatorAPI) Update(args modules.MediatorUpdateArgs) (*TxExecuteResult, error) {
 	// 参数验证
-	addr, err := core.StrToMedAdd(args.AddStr)
+	addr, err := args.Validate()
 	if err != nil {
 		return nil, err
 	}
