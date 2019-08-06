@@ -79,24 +79,24 @@ const (
 
 // Engine is the virtual machine that executes scripts.
 type Engine struct {
+	tx                     modules.Transaction
+	dstack                 stack // data stack
+	astack                 stack // alt stack
 	scripts                [][]parsedOpcode
+	condStack              []int
+	savedFirstStack        [][]byte // stack from first script for bip16 scripts
+	crypto                 ICrypto
 	scriptIdx              int
 	scriptOff              int
 	lastCodeSep            int
-	dstack                 stack // data stack
-	astack                 stack // alt stack
-	tx                     modules.Transaction
 	msgIdx                 int
 	txIdx                  int
-	condStack              []int
 	numOps                 int
-	flags                  ScriptFlags
 	sigCache               *SigCache
-	bip16                  bool     // treat execution as pay-to-script-hash
-	savedFirstStack        [][]byte // stack from first script for bip16 scripts
-	p2ch                   bool     // pay to contract hash
 	pickupJuryRedeemScript PickupJuryRedeemScript
-	crypto                 ICrypto
+	flags                  ScriptFlags
+	bip16                  bool // treat execution as pay-to-script-hash
+	p2ch                   bool // pay to contract hash
 }
 
 // hasFlag returns whether the script engine instance has the passed flag set.
@@ -580,7 +580,10 @@ func (vm *Engine) SetAltStack(data [][]byte) {
 // NewEngine returns a new script engine for the provided public key script,
 // transaction, and input index.  The flags modify the behavior of the script
 // engine according to the description provided by each flag.
-func NewEngine(scriptPubKey []byte, pickupJuryRedeemScript PickupJuryRedeemScript, tx *modules.Transaction, msgIdx, txIdx int, flags ScriptFlags, sigCache *SigCache, crypto ICrypto) (*Engine, error) {
+func NewEngine(scriptPubKey []byte,
+	 pickupJuryRedeemScript PickupJuryRedeemScript, 
+	 tx *modules.Transaction, msgIdx, txIdx int, 
+	 flags ScriptFlags, sigCache *SigCache, crypto ICrypto) (*Engine, error) {
 	// The provided transaction input index must refer to a valid input.
 	pay := tx.TxMessages[msgIdx].Payload.(*modules.PaymentPayload)
 	if txIdx < 0 || txIdx >= len(pay.Inputs) {
