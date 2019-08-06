@@ -239,7 +239,6 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 
 	// recover群签名
 	go mp.recoverUnitTBLS(localMed, newUnitHash)
-	return
 }
 
 func (mp *MediatorPlugin) SubscribeGroupSigEvent(ch chan<- GroupSigEvent) event.Subscription {

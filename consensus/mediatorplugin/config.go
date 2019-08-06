@@ -66,6 +66,11 @@ var (
 
 // config data for mediator plugin
 type Config struct {
+	Mediators []*MediatorConf // the set of mediator accounts controlled by this node
+
+	// Percent of mediators (0-99) that must be participating in order to produce uints
+	RequiredParticipation uint32
+
 	// 主程序启动时，是否立即开启unit生产
 	EnableProducing bool
 
@@ -76,13 +81,8 @@ type Config struct {
 	// 允许本节点的mediator可以连续生产unit
 	EnableConsecutiveProduction bool
 
-	// Percent of mediators (0-99) that must be participating in order to produce uints
-	RequiredParticipation uint32
-
 	// 标记本节点是否开启群签名的功能
 	EnableGroupSigning bool
-
-	Mediators []*MediatorConf // the set of mediator accounts controlled by this node
 }
 
 func DefaultMediatorConf() *MediatorConf {

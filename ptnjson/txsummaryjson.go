@@ -40,11 +40,13 @@ type TxSummaryJson struct {
 	Timestamp   time.Time    `json:"timestamp"`
 	TxIndex     uint64       `json:"tx_index"`
 }
-type MessageJson struct {
-	messages []string
-}
 
-func ConvertTxWithUnitInfo2SummaryJson(tx *modules.TransactionWithUnitInfo, utxoQuery modules.QueryUtxoFunc) *TxSummaryJson {
+// type MessageJson struct {
+// 	messages []string
+// }
+
+func ConvertTxWithUnitInfo2SummaryJson(tx *modules.TransactionWithUnitInfo,
+	utxoQuery modules.QueryUtxoFunc) *TxSummaryJson {
 
 	pay := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
 	payment := ConvertPayment2JsonIncludeFromAddr(pay, utxoQuery)
@@ -60,7 +62,12 @@ func ConvertTxWithUnitInfo2SummaryJson(tx *modules.TransactionWithUnitInfo, utxo
 		TxMessages:  ConvertMegs2Json(tx.TxMessages),
 	}
 }
-func ConvertTx2SummaryJson(tx *modules.Transaction, unitHash common.Hash, unitHeigth uint64, unitTimestamp int64, txIndex uint64, utxoQuery modules.QueryUtxoFunc) *TxSummaryJson {
+func ConvertTx2SummaryJson(tx *modules.Transaction,
+	unitHash common.Hash,
+	unitHeigth uint64,
+	unitTimestamp int64,
+	txIndex uint64,
+	utxoQuery modules.QueryUtxoFunc) *TxSummaryJson {
 
 	pay := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
 	payment := ConvertPayment2JsonIncludeFromAddr(pay, utxoQuery)
@@ -69,7 +76,7 @@ func ConvertTx2SummaryJson(tx *modules.Transaction, unitHash common.Hash, unitHe
 		RequestHash: tx.RequestHash().String(),
 		UnitHash:    unitHash.String(),
 		UnitHeight:  unitHeigth,
-		Timestamp:   time.Unix(int64(unitTimestamp), 0),
+		Timestamp:   time.Unix(unitTimestamp, 0),
 		TxIndex:     txIndex,
 		TxSize:      float64(tx.Size()),
 		Payment:     payment,
@@ -85,20 +92,20 @@ func ConvertMegs2Json(msgs []*modules.Message) string {
 }
 
 // TODO
-func isCoinBase(tx *modules.Transaction) bool {
-	if len(tx.TxMessages) != 1 {
-		return false
-	}
-	msg, ok := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
-	if !ok {
-		return false
-	}
-	prevOut := msg.Inputs[0].PreviousOutPoint
-	if prevOut.TxHash != (common.Hash{}) {
-		return false
-	}
-	return true
-}
+// func isCoinBase(tx *modules.Transaction) bool {
+// 	if len(tx.TxMessages) != 1 {
+// 		return false
+// 	}
+// 	msg, ok := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+// 	if !ok {
+// 		return false
+// 	}
+// 	prevOut := msg.Inputs[0].PreviousOutPoint
+// 	if prevOut.TxHash != (common.Hash{}) {
+// 		return false
+// 	}
+// 	return true
+// }
 
 type GetTranscationOut struct {
 	Addr  string `json:"address"`

@@ -219,6 +219,8 @@ func (u *Unit) CopyBody(txs Transactions) Transactions {
 					tx.TxMessages[j] = pTx.TxMessages[j]
 				}
 			}
+			tx.CertId = pTx.CertId
+			tx.Illegal = pTx.Illegal
 			u.Txs[i] = &tx
 		}
 	}

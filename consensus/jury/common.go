@@ -66,14 +66,14 @@ func localIsMinSignature(tx *modules.Transaction) bool {
 	}
 	return false
 }
-func generateJuryRedeemScript(jury []modules.ElectionInf) ([]byte, error) {
+func generateJuryRedeemScript(jury []modules.ElectionInf) ([]byte) {
 	count := len(jury)
 	needed := byte(math.Ceil((float64(count)*2 + 1) / 3))
 	pubKeys := [][]byte{}
 	for _, jurior := range jury {
 		pubKeys = append(pubKeys, jurior.PublicKey)
 	}
-	return tokenengine.GenerateRedeemScript(needed, pubKeys), nil
+	return tokenengine.GenerateRedeemScript(needed, pubKeys)
 }
 
 //对于Contract Payout的情况，将SignatureSet转移到Payment的解锁脚本中
@@ -84,10 +84,7 @@ func processContractPayout(tx *modules.Transaction, elf []modules.ElectionInf) {
 	reqId := tx.RequestHash()
 	if has, payout := tx.HasContractPayoutMsg(); has {
 		pubkeys, signs := getSignature(tx)
-		redeem, err := generateJuryRedeemScript(elf)
-		if err != nil {
-			log.Errorf("[%s]processContractPayout, generateJuryRedeemScript error:%s", shortId(reqId.String()), err.Error())
-		}
+		redeem := generateJuryRedeemScript(elf)
 
 		signsOrder := SortSigs(pubkeys, signs, redeem)
 		unlock := tokenengine.MergeContractUnlockScript(signsOrder, redeem)
@@ -186,45 +183,46 @@ func getSignature(tx *modules.Transaction) ([][]byte, [][]byte) {
 	}
 	return nil, nil
 }
-func checkAndAddSigSet(local *modules.Transaction, recv *modules.Transaction) error {
-	if local == nil || recv == nil {
-		return errors.New("checkAndAddSigSet param is nil")
-	}
-	var app modules.MessageType
-	for _, msg := range local.TxMessages {
-		if msg.App >= modules.APP_CONTRACT_TPL && msg.App <= modules.APP_SIGNATURE {
-			app = msg.App
-			break
-		}
-	}
-	if app <= 0 {
-		return errors.New("checkAndAddSigSet not find contract app type")
-	}
-	if msgsCompare(local.TxMessages, recv.TxMessages, app) {
-		getSigPay := func(mesgs []*modules.Message) *modules.SignaturePayload {
-			for _, v := range mesgs {
-				if v.App == modules.APP_SIGNATURE {
-					return v.Payload.(*modules.SignaturePayload)
-				}
-			}
-			return nil
-		}
-		localSigPay := getSigPay(local.TxMessages)
-		recvSigPay := getSigPay(recv.TxMessages)
-		if localSigPay != nil && recvSigPay != nil {
-			localSigPay.Signatures = append(localSigPay.Signatures, recvSigPay.Signatures[0])
-			log.Debug("checkAndAddSigSet", "local transaction", local.RequestHash(), "recv transaction", recv.RequestHash())
-			return nil
-		}
-	}
 
-	return errors.New("checkAndAddSigSet add sig fail")
-}
+//func checkAndAddSigSet(local *modules.Transaction, recv *modules.Transaction) error {
+//	if local == nil || recv == nil {
+//		return errors.New("checkAndAddSigSet param is nil")
+//	}
+//	var app modules.MessageType
+//	for _, msg := range local.TxMessages {
+//		if msg.App >= modules.APP_CONTRACT_TPL && msg.App <= modules.APP_SIGNATURE {
+//			app = msg.App
+//			break
+//		}
+//	}
+//	if app <= 0 {
+//		return errors.New("checkAndAddSigSet not find contract app type")
+//	}
+//	if msgsCompare(local.TxMessages, recv.TxMessages, app) {
+//		getSigPay := func(mesgs []*modules.Message) *modules.SignaturePayload {
+//			for _, v := range mesgs {
+//				if v.App == modules.APP_SIGNATURE {
+//					return v.Payload.(*modules.SignaturePayload)
+//				}
+//			}
+//			return nil
+//		}
+//		localSigPay := getSigPay(local.TxMessages)
+//		recvSigPay := getSigPay(recv.TxMessages)
+//		if localSigPay != nil && recvSigPay != nil {
+//			localSigPay.Signatures = append(localSigPay.Signatures, recvSigPay.Signatures[0])
+//			log.Debug("checkAndAddSigSet", "local transaction", local.RequestHash(), "recv transaction", recv.RequestHash())
+//			return nil
+//		}
+//	}
+//	return errors.New("checkAndAddSigSet add sig fail")
+//}
+
 func genContractErrorMsg(dag iDag, tx *modules.Transaction, addr []byte, errIn error, errMsgEnable bool) ([]*modules.Message, error) {
 	reqType, _ := getContractTxType(tx)
 	errString := fmt.Sprintf("[%s]genContractErrorMsg, reqType:%d,err:%s", shortId(tx.RequestHash().String()), reqType, errIn.Error())
 	log.Error(errString)
-	if errMsgEnable == false {
+	if !errMsgEnable {
 		return nil, errors.New(errString)
 	}
 	msgs := make([]*modules.Message, 0)
@@ -233,9 +231,8 @@ func genContractErrorMsg(dag iDag, tx *modules.Transaction, addr []byte, errIn e
 
 	//合约发生错误，检查有没有支付到合约的Token，有则原路返回
 	paybacks := contractPayBack(tx, addr, dag.GetUtxoEntry)
-	for _, payback := range paybacks {
-		msgs = append(msgs, payback)
-	}
+	msgs = append(msgs, paybacks...)
+
 	return msgs, nil
 }
 
@@ -360,7 +357,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 				if err != nil {
 					return genContractErrorMsg(dag, tx, reqPay.ContractId, err, errMsgEnable)
 				}
-				if toContractPayments != nil && len(toContractPayments) > 0 {
+				if len(toContractPayments) > 0 {
 					for _, contractPayment := range toContractPayments {
 						msgs = append(msgs, modules.NewMessage(modules.APP_PAYMENT, contractPayment))
 					}
@@ -369,7 +366,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 				if err != nil {
 					return genContractErrorMsg(dag, tx, reqPay.ContractId, err, errMsgEnable)
 				}
-				if cs != nil && len(cs) > 0 {
+				if len(cs) > 0 {
 					for _, coinbase := range cs {
 						msgs = append(msgs, modules.NewMessage(modules.APP_PAYMENT, coinbase))
 					}
@@ -648,53 +645,53 @@ func msgsCompare(msgsA []*modules.Message, msgsB []*modules.Message, msgType mod
 	log.Debug("msgsCompare,msg is not equal", "msg1", msg1.Payload, "msg2", msg2.Payload) //todo del
 	return false
 }
-
-func printTxInfo(tx *modules.Transaction) {
-	if tx == nil {
-		return
-	}
-
-	log.Debug("=========tx info============hash:", tx.Hash().String())
-	for i := 0; i < len(tx.TxMessages); i++ {
-		log.Debug("---------")
-		app := tx.TxMessages[i].App
-		pay := tx.TxMessages[i].Payload
-		log.Debug("", "app:", app)
-		if app == modules.APP_PAYMENT {
-			p := pay.(*modules.PaymentPayload)
-			log.Debugf("%d", p.LockTime)
-		} else if app == modules.APP_CONTRACT_INVOKE_REQUEST {
-			p := pay.(*modules.ContractInvokeRequestPayload)
-			log.Debugf("%x", p.ContractId)
-		} else if app == modules.APP_CONTRACT_INVOKE {
-			p := pay.(*modules.ContractInvokePayload)
-			log.Debugf("%x", p.Args)
-			for idx, v := range p.WriteSet {
-				log.Debugf("WriteSet:idx[%d], k[%v]-v[%v]\n", idx, v.Key, v.Value)
-			}
-			for idx, v := range p.ReadSet {
-				log.Debugf("ReadSet:idx[%d], k[%v]-v[%v]\n", idx, v.Key, v.ContractId)
-			}
-		} else if app == modules.APP_SIGNATURE {
-			p := pay.(*modules.SignaturePayload)
-			log.Debugf("Signatures:[%v]", p.Signatures)
-		} else if app == modules.APP_DATA {
-			p := pay.(*modules.DataPayload)
-			log.Debugf("Text:[%v]", p.MainData)
-		}
-	}
-}
-
-func getFileHash(tx *modules.Transaction) []byte {
-	if tx != nil {
-		for _, msg := range tx.TxMessages {
-			if msg.App == modules.APP_DATA {
-				return msg.Payload.(*modules.DataPayload).MainData
-			}
-		}
-	}
-	return nil
-}
+//
+//func printTxInfo(tx *modules.Transaction) {
+//	if tx == nil {
+//		return
+//	}
+//
+//	log.Debug("=========tx info============hash:", tx.Hash().String())
+//	for i := 0; i < len(tx.TxMessages); i++ {
+//		log.Debug("---------")
+//		app := tx.TxMessages[i].App
+//		pay := tx.TxMessages[i].Payload
+//		log.Debug("", "app:", app)
+//		if app == modules.APP_PAYMENT {
+//			p := pay.(*modules.PaymentPayload)
+//			log.Debugf("%d", p.LockTime)
+//		} else if app == modules.APP_CONTRACT_INVOKE_REQUEST {
+//			p := pay.(*modules.ContractInvokeRequestPayload)
+//			log.Debugf("%x", p.ContractId)
+//		} else if app == modules.APP_CONTRACT_INVOKE {
+//			p := pay.(*modules.ContractInvokePayload)
+//			log.Debugf("%x", p.Args)
+//			for idx, v := range p.WriteSet {
+//				log.Debugf("WriteSet:idx[%d], k[%v]-v[%v]\n", idx, v.Key, v.Value)
+//			}
+//			for idx, v := range p.ReadSet {
+//				log.Debugf("ReadSet:idx[%d], k[%v]-v[%v]\n", idx, v.Key, v.ContractId)
+//			}
+//		} else if app == modules.APP_SIGNATURE {
+//			p := pay.(*modules.SignaturePayload)
+//			log.Debugf("Signatures:[%v]", p.Signatures)
+//		} else if app == modules.APP_DATA {
+//			p := pay.(*modules.DataPayload)
+//			log.Debugf("Text:[%v]", p.MainData)
+//		}
+//	}
+//}
+//
+//func getFileHash(tx *modules.Transaction) []byte {
+//	if tx != nil {
+//		for _, msg := range tx.TxMessages {
+//			if msg.App == modules.APP_DATA {
+//				return msg.Payload.(*modules.DataPayload).MainData
+//			}
+//		}
+//	}
+//	return nil
+//}
 
 func getContractTxType(tx *modules.Transaction) (modules.MessageType, error) {
 	if tx == nil {
@@ -849,7 +846,7 @@ func checkContractTxFeeValid(dag iDag, tx *modules.Transaction) bool {
 		return false
 	}
 	txSize := tx.Size()
-	//txSize := tx.SerializeSize()
+	//txSSize := tx.SerializeSize() //del
 	fees, err := dag.GetTxFee(tx)
 	if err != nil {
 		log.Errorf("[%s]checkContractTxFeeValid, GetTxFee fail", shortId(reqId.String()))

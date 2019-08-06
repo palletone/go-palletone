@@ -750,17 +750,17 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 	return false
 }
 
-func (p *Processor) createContractTxReqToken(contractId, from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string, msg *modules.Message, isLocalInstall bool) (common.Hash, *modules.Transaction, error) {
+func (p *Processor) createContractTxReqToken(contractId, from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string, msg *modules.Message) (common.Hash, *modules.Transaction, error) {
 	tx, _, err := p.dag.CreateTokenTransaction(from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, msg, p.ptn.TxPool())
 	if err != nil {
 		return common.Hash{}, nil, err
 	}
 	log.Debugf("[%s]createContractTxReqToken, contractId[%s], tx[%v]", shortId(tx.RequestHash().String()), contractId.String(), tx)
-	return p.signAndExecute(contractId, from, tx, isLocalInstall)
+	return p.signAndExecute(contractId, from, tx)
 }
 
 func (p *Processor) createContractTxReq(contractId, from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
-	msg *modules.Message, isLocalInstall bool) (common.Hash, *modules.Transaction, error) {
+	msg *modules.Message) (common.Hash, *modules.Transaction, error) {
 	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, certID, msg, p.ptn.TxPool())
 	if err != nil {
 		return common.Hash{}, nil, err
@@ -771,14 +771,14 @@ func (p *Processor) createContractTxReq(contractId, from, to common.Address, dao
 		return common.Hash{}, nil, errors.New("checkContractTxFeeValid false")
 	}
 	log.Debugf("[%s]createContractTxReq, contractId[%s], tx[%v]", shortId(reqId.String()), contractId.String(), tx)
-	return p.signAndExecute(contractId, from, tx, isLocalInstall)
+	return p.signAndExecute(contractId, from, tx)
 }
 func (p *Processor) SignAndExecuteAndSendRequest(from common.Address, tx *modules.Transaction) (*modules.Transaction, error) {
 	requestMsg := tx.TxMessages[tx.GetRequestMsgIndex()]
 	if requestMsg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
 		request := requestMsg.Payload.(*modules.ContractInvokeRequestPayload)
 		contractId := common.NewAddress(request.ContractId, common.ContractHash)
-		reqId, tx, err := p.signAndExecute(contractId, from, tx, false)
+		reqId, tx, err := p.signAndExecute(contractId, from, tx)
 		if err != nil {
 			return nil, err
 		}
@@ -788,7 +788,7 @@ func (p *Processor) SignAndExecuteAndSendRequest(from common.Address, tx *module
 	}
 	return nil, errors.New("Not support request")
 }
-func (p *Processor) signAndExecute(contractId common.Address, from common.Address, tx *modules.Transaction, isLocalInstall bool) (common.Hash, *modules.Transaction, error) {
+func (p *Processor) signAndExecute(contractId common.Address, from common.Address, tx *modules.Transaction) (common.Hash, *modules.Transaction, error) {
 	tx, err := p.ptn.SignGenericTransaction(from, tx)
 	if err != nil {
 		return common.Hash{}, nil, err

@@ -329,7 +329,7 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 			if err == nil {
 				log.Debugf("Save Update Mediator(%v) Invoke Req", mua.AddStr)
 
-				addr, err := core.StrToMedAdd(mua.AddStr)
+				addr, err := mua.Validate()
 				if err == nil {
 					mi, err := statedb.RetrieveMediatorInfo(addr)
 					if err == nil {

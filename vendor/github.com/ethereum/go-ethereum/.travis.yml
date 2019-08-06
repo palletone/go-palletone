@@ -5,29 +5,28 @@ matrix:
   include:
     - os: linux
       dist: xenial
-      sudo: required
       go: 1.10.x
       script:
-      - sudo modprobe fuse
-      - sudo chmod 666 /dev/fuse
-      - sudo chown root:$USER /etc/fuse.conf
       - go run build/ci.go install
       - go run build/ci.go test -coverage $TEST_PACKAGES
+
+    - os: linux
+      dist: xenial
+      go: 1.11.x
+      script:
+        - go run build/ci.go install
+        - go run build/ci.go test -coverage $TEST_PACKAGES
 
     # These are the latest Go versions.
     - os: linux
       dist: xenial
-      sudo: required
-      go: 1.11.x
+      go: 1.12.x
       script:
-        - sudo modprobe fuse
-        - sudo chmod 666 /dev/fuse
-        - sudo chown root:$USER /etc/fuse.conf
         - go run build/ci.go install
         - go run build/ci.go test -coverage $TEST_PACKAGES
 
     - os: osx
-      go: 1.11.x
+      go: 1.12.x
       script:
         - echo "Increase the maximum number of open file descriptors on macOS"
         - NOFILE=20480
@@ -44,7 +43,7 @@ matrix:
     # This builder only tests code linters on latest version of Go
     - os: linux
       dist: xenial
-      go: 1.11.x
+      go: 1.12.x
       env:
         - lint
       git:
@@ -56,7 +55,7 @@ matrix:
     - if: type = push
       os: linux
       dist: xenial
-      go: 1.11.x
+      go: 1.12.x
       env:
         - ubuntu-ppa
       git:
@@ -79,7 +78,7 @@ matrix:
       os: linux
       dist: xenial
       sudo: required
-      go: 1.11.x
+      go: 1.12.x
       env:
         - azure-linux
       git:
@@ -114,7 +113,7 @@ matrix:
       dist: xenial
       services:
         - docker
-      go: 1.11.x
+      go: 1.12.x
       env:
         - azure-linux-mips
       git:
@@ -159,25 +158,24 @@ matrix:
       git:
         submodules: false # avoid cloning ethereum/tests
       before_install:
-        - curl https://storage.googleapis.com/golang/go1.11.5.linux-amd64.tar.gz | tar -xz
+        - curl https://dl.google.com/go/go1.12.linux-amd64.tar.gz | tar -xz
         - export PATH=`pwd`/go/bin:$PATH
         - export GOROOT=`pwd`/go
         - export GOPATH=$HOME/go
       script:
         # Build the Android archive and upload it to Maven Central and Azure
-        - curl https://dl.google.com/android/repository/android-ndk-r17b-linux-x86_64.zip -o android-ndk-r17b.zip
-        - unzip -q android-ndk-r17b.zip && rm android-ndk-r17b.zip
-        - mv android-ndk-r17b $HOME
-        - export ANDROID_NDK=$HOME/android-ndk-r17b
+        - curl https://dl.google.com/android/repository/android-ndk-r19b-linux-x86_64.zip -o android-ndk-r19b.zip
+        - unzip -q android-ndk-r19b.zip && rm android-ndk-r19b.zip
+        - mv android-ndk-r19b $ANDROID_HOME/ndk-bundle
 
         - mkdir -p $GOPATH/src/github.com/ethereum
-        - ln -s `pwd` $GOPATH/src/github.com/ethereum
+        - ln -s `pwd` $GOPATH/src/github.com/ethereum/go-ethereum
         - go run build/ci.go aar -signer ANDROID_SIGNING_KEY -deploy https://oss.sonatype.org -upload gethstore/builds
 
     # This builder does the OSX Azure, iOS CocoaPods and iOS Azure uploads
     - if: type = push
       os: osx
-      go: 1.11.x
+      go: 1.12.x
       env:
         - azure-osx
         - azure-ios
@@ -207,7 +205,7 @@ matrix:
     - if: type = cron
       os: linux
       dist: xenial
-      go: 1.11.x
+      go: 1.12.x
       env:
         - azure-purge
       git:
