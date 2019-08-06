@@ -497,6 +497,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 				tempdb = inter_temp.(*ChainTempDb)
 			}
 			validateCode := validator.TxValidationCode_VALID
+			fmt.Println("validate code:", validateCode)
 			if chain.saveHeaderOnly {
 				validateCode = tempdb.Validator.ValidateHeader(unit.UnitHeader)
 			} else {
@@ -539,6 +540,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 		} else { //Fork unit
 			start1 := time.Now()
 			validateCode := validator.TxValidationCode_VALID
+			fmt.Println("fork validate code:", validateCode)
 			main_temp := new(ChainTempDb)
 			inter_main, has := chain.tempdb.Load(parentHash)
 			if !has { // 分叉

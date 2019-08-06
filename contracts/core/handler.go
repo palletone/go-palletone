@@ -2015,11 +2015,11 @@ func (handler *Handler) enterGetCertByID(e *fsm.Event) {
 		payloadBytes, err := txContext.txsimulator.GetState(contractID, chaincodeID, keyForSystemConfig.Key)
 		log.Debugf("[%s] getting cert bytes for chaincode %s, channel %s", shorttxid(msg.Txid), chaincodeID, msg.ChannelId)
 		if err != nil {
-			log.Debugf("[%s]Got deposit configs. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
+			log.Debugf("[%s]Got cert bytes. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
 			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(err.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
 			return
 		}
-		log.Debugf("[%s]Got deposit configs. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)
+		log.Debugf("[%s]Got cert bytes. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)
 		serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: payloadBytes, Txid: msg.Txid, ChannelId: msg.ChannelId}
 	}()
 }

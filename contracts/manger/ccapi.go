@@ -64,10 +64,10 @@ func InitNoSysCCC(jury core.IAdapterJury) error {
 }
 
 func Deinit() error {
-	//if err := peerServerDeInit(); err != nil {
-	//	log.Errorf("peerServerDeInit error:%s", err)
-	//	return err
-	//}
+	if err := peerServerDeInit(); err != nil {
+		log.Errorf("peerServerDeInit error:%s", err)
+		return err
+	}
 
 	if err := systemContractDeInit(); err != nil {
 		log.Errorf("systemContractDeInit error:%s", err)
@@ -199,6 +199,7 @@ func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byt
 		SysCC:    false,
 	}
 	if depId.IsSystemContractAddress() {
+		cc.SysCC = true
 		err = cclist.SetChaincode(chainID, 0, cc)
 		if err != nil {
 			log.Error("Deploy", "SetChaincode fail, chainId", chainID, "name", cc.Name)
@@ -281,10 +282,12 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 		return nil, err
 	}
 	//
-	sizeRW, disk, isOver := utils.RemoveConWhenOverDisk(cc, idag)
-	if isOver {
-		log.Debugf("utils.KillAndRmWhenOver name = %s,sizeRW = %d,disk = %d", cc.Name, sizeRW, disk)
-		return nil, fmt.Errorf("utils.KillAndRmWhenOver name = %s,sizeRW = %d bytes,disk = %d bytes", cc.Name, sizeRW, disk)
+	if !cc.SysCC {
+		sizeRW, disk, isOver := utils.RemoveConWhenOverDisk(cc, idag)
+		if isOver {
+			log.Debugf("utils.KillAndRmWhenOver name = %s,sizeRW = %d,disk = %d", cc.Name, sizeRW, disk)
+			return nil, fmt.Errorf("utils.KillAndRmWhenOver name = %s,sizeRW = %d bytes,disk = %d bytes", cc.Name, sizeRW, disk)
+		}
 	}
 	stopTm := time.Now()
 	duration := stopTm.Sub(startTm)

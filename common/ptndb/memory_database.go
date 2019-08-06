@@ -68,16 +68,18 @@ func (i *MemIterator) Value() []byte {
 
 //implement iterator interface
 func (i *MemIterator) First() bool {
-	if i.idx == -1 {
-		return false
-	}
-	return true
+	return i.idx != -1
+	// if i.idx == -1 {
+	// 	return false
+	// }
+	// return true
 }
 func (i *MemIterator) Last() bool {
-	if i.idx == -1 {
-		return false
-	}
-	return true
+	return i.idx != -1
+	// if i.idx == -1 {
+	// 	return false
+	// }
+	// return true
 }
 func (i *MemIterator) Seek(key []byte) bool {
 	if i.idx == -1 {
@@ -92,17 +94,19 @@ func (i *MemIterator) Seek(key []byte) bool {
 	return false
 }
 func (i *MemIterator) Prev() bool {
-	if i.idx == -1 {
-		return false
-	}
-	return true
+	return i.idx != -1
+	// if i.idx == -1 {
+	// 	return false
+	// }
+	// return true
 
 }
 func (i *MemIterator) Valid() bool {
-	if i.idx == -1 {
-		return false
-	}
-	return true
+	return i.idx != -1
+	// if i.idx == -1 {
+	// 	return false
+	// }
+	// return true
 }
 func (i *MemIterator) Error() error {
 	return nil

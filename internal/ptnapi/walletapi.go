@@ -75,7 +75,7 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 		return "", fmt.Errorf("receiver address is invalid")
 	}
 
-	amounts = append(amounts, ptnjson.AddressAmt{to, amount})
+	amounts = append(amounts, ptnjson.AddressAmt{Address: to, Amount: amount})
 	if len(amounts) == 0 || !amount.IsPositive() {
 		return "", fmt.Errorf("amounts is invalid")
 	}
@@ -116,7 +116,7 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 	}
 
 	if change > 0 {
-		amounts = append(amounts, ptnjson.AddressAmt{from, ptnjson.Dao2Ptn(change)})
+		amounts = append(amounts, ptnjson.AddressAmt{Address: from, Amount: ptnjson.Dao2Ptn(change)})
 	}
 
 	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &LockTime)
@@ -260,11 +260,11 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 	// some validity checks.
 	//先构造PaymentPayload结构，再组装成Transaction结构
 	pload := new(modules.PaymentPayload)
-	var inputjson []walletjson.InputJson
+	//var inputjson []walletjson.InputJson
 	for _, input := range c.Inputs {
 		txHash := common.HexToHash(input.Txid)
 
-		inputjson = append(inputjson, walletjson.InputJson{TxHash: input.Txid, MessageIndex: input.MessageIndex, OutIndex: input.Vout, HashForSign: "", Signature: ""})
+		//inputjson = append(inputjson, walletjson.InputJson{TxHash: input.Txid, MessageIndex: input.MessageIndex, OutIndex: input.Vout, HashForSign: "", Signature: ""})
 		prevOut := modules.NewOutPoint(txHash, input.MessageIndex, input.Vout)
 		txInput := modules.NewTxIn(prevOut, []byte{})
 		pload.AddTxIn(txInput)
@@ -418,7 +418,7 @@ func (s *PrivateWalletAPI) SignRawTransaction(ctx context.Context, params string
 			}
 			TxHash := trimx(uvu.TxHash)
 			PkScriptHex := trimx(uvu.PkScriptHex)
-			input := ptnjson.RawTxInput{TxHash, uvu.OutIndex, uvu.MessageIndex, PkScriptHex, ""}
+			input := ptnjson.RawTxInput{Txid: TxHash, Vout: uvu.OutIndex, MessageIndex: uvu.MessageIndex, ScriptPubKey: PkScriptHex, RedeemScript: ""}
 			srawinputs = append(srawinputs, input)
 			addr, err = tokenengine.GetAddressFromScript(hexutil.MustDecode(uvu.PkScriptHex))
 			if err != nil {
@@ -542,7 +542,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 		if len(outOne.Address) == 0 || outOne.Amount.LessThanOrEqual(decimal.New(0, 0)) {
 			continue
 		}
-		amounts = append(amounts, ptnjson.AddressAmt{outOne.Address, outOne.Amount})
+		amounts = append(amounts, ptnjson.AddressAmt{Address: outOne.Address, Amount: outOne.Amount})
 		amount = amount.Add(outOne.Amount)
 	}
 	if len(amounts) == 0 || !amount.IsPositive() {
@@ -593,7 +593,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	}
 
 	if change > 0 {
-		amounts = append(amounts, ptnjson.AddressAmt{proofTransactionGenParams.From, ptnjson.Dao2Ptn(change)})
+		amounts = append(amounts, ptnjson.AddressAmt{Address: proofTransactionGenParams.From, Amount: ptnjson.Dao2Ptn(change)})
 	}
 
 	if len(inputs) == 0 {
@@ -644,7 +644,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 			TxHash := txin.PreviousOutPoint.TxHash.String()
 			OutIndex := txin.PreviousOutPoint.OutIndex
 			MessageIndex := txin.PreviousOutPoint.MessageIndex
-			input := ptnjson.RawTxInput{TxHash, OutIndex, MessageIndex, PkScriptHex, ""}
+			input := ptnjson.RawTxInput{Txid: TxHash, Vout: OutIndex, MessageIndex: MessageIndex, ScriptPubKey: PkScriptHex, RedeemScript: ""}
 			srawinputs = append(srawinputs, input)
 			addr, err = tokenengine.GetAddressFromScript(hexutil.MustDecode(PkScriptHex))
 			if err != nil {
@@ -910,7 +910,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 	if err != nil {
 		return common.Hash{}, err
 	}
-	amounts = append(amounts, ptnjson.AddressAmt{to, a})
+	amounts = append(amounts, ptnjson.AddressAmt{Address: to, Amount: a})
 
 	utxoJsons, err := s.b.GetAddrUtxos(from)
 	if err != nil {
@@ -945,7 +945,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 	}
 
 	if change > 0 {
-		amounts = append(amounts, ptnjson.AddressAmt{from, ptnjson.Dao2Ptn(change)})
+		amounts = append(amounts, ptnjson.AddressAmt{Address: from, Amount: ptnjson.Dao2Ptn(change)})
 	}
 
 	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &LockTime)
@@ -998,7 +998,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 			}
 			TxHash := trimx(uvu.TxHash)
 			PkScriptHex := trimx(uvu.PkScriptHex)
-			input := ptnjson.RawTxInput{TxHash, uvu.OutIndex, uvu.MessageIndex, PkScriptHex, ""}
+			input := ptnjson.RawTxInput{Txid: TxHash, Vout: uvu.OutIndex, MessageIndex: uvu.MessageIndex, ScriptPubKey: PkScriptHex, RedeemScript: ""}
 			srawinputs = append(srawinputs, input)
 			addr, err = tokenengine.GetAddressFromScript(hexutil.MustDecode(uvu.PkScriptHex))
 			if err != nil {

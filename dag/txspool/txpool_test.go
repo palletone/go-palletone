@@ -243,7 +243,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 	utxodb := storage.NewUtxoDb(db)
 	mutex := new(sync.RWMutex)
 	unitchain := &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed), nil}
-	config := testTxPoolConfig
+	config := DefaultTxPoolConfig
 	config.GlobalSlots = 4096
 
 	utxos := mockPtnUtxos()

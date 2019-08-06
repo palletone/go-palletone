@@ -309,8 +309,8 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 				var (
 					events = make([]interface{}, 0, 2)
 				)
-				events = append(events, modules.ChainHeadEvent{blocks[0]})
-				events = append(events, modules.ChainEvent{blocks[0], blocks[0].UnitHash})
+				events = append(events, modules.ChainHeadEvent{Unit: blocks[0]})
+				events = append(events, modules.ChainEvent{Unit: blocks[0], Hash: blocks[0].UnitHash})
 				pm.dag.PostChainEvents(events)
 			}()
 		}

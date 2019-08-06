@@ -171,11 +171,11 @@ func peerServerInit(jury core.IAdapterJury) error {
 	return nil
 }
 
-//func peerServerDeInit() error {
-//	grpcServer.Stop()
-//	defer os.RemoveAll(cfg.GetConfig().ContractFileSystemPath)
-//	return nil
-//}
+func peerServerDeInit() error {
+	grpcServer.Stop()
+	//defer os.RemoveAll(cfg.GetConfig().ContractFileSystemPath)
+	return nil
+}
 
 func systemContractInit() error {
 	chainID := util.GetTestChainID()

@@ -502,7 +502,6 @@ func (d *Dag) initDataForMainChainHeader(mainChain *modules.MainChain) {
 // newDag, with db , light to build a new dag
 // firstly to check db migration, is updated ptn database.
 func NewDag(db ptndb.Database, light bool) (*Dag, error) {
-	mutex := new(sync.RWMutex)
 
 	dagDb := storage.NewDagDb(db)
 	utxoDb := storage.NewUtxoDb(db)
@@ -539,7 +538,6 @@ func NewDag(db ptndb.Database, light bool) (*Dag, error) {
 		stableStateRep:         stateRep,
 		stableUnitProduceRep:   stableUnitProduceRep,
 		ChainHeadFeed:          new(event.Feed),
-		Mutex:                  *mutex,
 		Memdag:                 unstableChain,
 	}
 	dag.stableUnitRep.SubscribeSysContractStateChangeEvent(dag.AfterSysContractStateChangeEvent)
@@ -620,7 +618,6 @@ func (dag *Dag) AfterChainMaintenanceEvent(arg *modules.ChainMaintenanceEvent) {
 
 // to build a new dag when init genesis
 func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
-	mutex := new(sync.RWMutex)
 
 	dagDb := storage.NewDagDb(db)
 	utxoDb := storage.NewUtxoDb(db)
@@ -643,16 +640,13 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 		stableStateRep:       stateRep,
 		stableUnitProduceRep: statleUnitProduceRep,
 		ChainHeadFeed:        new(event.Feed),
-		Mutex:                *mutex,
+		//Mutex:                *mutex,
 	}
-
 	return dag, nil
 }
 
 // to build a dag for test
 func NewDagForTest(db ptndb.Database) (*Dag, error) {
-	mutex := new(sync.RWMutex)
-
 	dagDb := storage.NewDagDb(db)
 	utxoDb := storage.NewUtxoDb(db)
 	stateDb := storage.NewStateDb(db)
@@ -676,7 +670,6 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 		stablePropRep:          propRep,
 		stableUnitProduceRep:   statleUnitProduceRep,
 		ChainHeadFeed:          new(event.Feed),
-		Mutex:                  *mutex,
 		Memdag:                 unstableChain,
 		unstableUnitRep:        tunitRep,
 		unstableUtxoRep:        tutxoRep,

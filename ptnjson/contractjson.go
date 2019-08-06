@@ -86,6 +86,9 @@ func ConvertContractTemplate2Json(tpl *modules.ContractTemplate) *ContractTempla
 	}
 	return json
 }
+
+const PRC20_ABI = `[{"constant": false,"inputs": [{"name": "Name","type": "string"},{"name": "Name","type": "string"},{"name": "Decimals","type": "string"},{"name": "TotalSupply","type": "string"},{"name": "SupplyAddress","type": "string"}],"name": "createToken","outputs": [{"name": "","type": "string"}],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"name": "Symbol","type": "string"},{"name": "SupplyAmout","type": "string"}],"name": "supplyToken","outputs": [{"name": "","type": "string"}],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"name": "Symbol","type": "string"},{"name": "NewSupplyAddr","type": "string"}],"name": "changeSupplyAddr","outputs": [{"name": "","type": "string"}],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"name": "Symbol","type": "string"}],"name": "frozenToken","outputs": [{"name": "","type": "string"}],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": true,"inputs": [{"name": "Symbol","type": "string"}],"name": "getTokenInfo","outputs": [{"name": "","type": "string"}],"payable": false,"stateMutability": "view","type": "function"},{"constant": true,"inputs": [],"name": "getAllTokenInfo","outputs": [{"name": "","type": "string"}],"payable": false,"stateMutability": "view","type": "function"}]`
+
 func GetSysContractTemplate_PRC20() *ContractTemplateJson {
 	json := &ContractTemplateJson{
 		TplId:          "",
@@ -93,11 +96,11 @@ func GetSysContractTemplate_PRC20() *ContractTemplateJson {
 		TplDescription: "Fungible Token",
 		Path:           "",
 		Version:        "v1.0.0",
-		Abi: `[{"constant": false,"inputs": [{"name": "Name","type": "string"},{"name": "Name","type": "string"},{"name": "Decimals","type": "string"},{"name": "TotalSupply","type": "string"},{"name": "SupplyAddress","type": "string"}],"name": "createToken","outputs": [{"name": "","type": "string"}],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"name": "Symbol","type": "string"},{"name": "SupplyAmout","type": "string"}],"name": "supplyToken","outputs": [{"name": "","type": "string"}],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"name": "Symbol","type": "string"},{"name": "NewSupplyAddr","type": "string"}],"name": "changeSupplyAddr","outputs": [{"name": "","type": "string"}],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": false,"inputs": [{"name": "Symbol","type": "string"}],"name": "frozenToken","outputs": [{"name": "","type": "string"}],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": true,"inputs": [{"name": "Symbol","type": "string"}],"name": "getTokenInfo","outputs": [{"name": "","type": "string"}],"payable": false,"stateMutability": "view","type": "function"},{"constant": true,"inputs": [],"name": "getAllTokenInfo","outputs": [{"name": "","type": "string"}],"payable": false,"stateMutability": "view","type": "function"}]`,
-		Language: "Golang",
-		Size:     0,
-		AddrHash: []string{},
-		Creator:  "",
+		Abi:            PRC20_ABI,
+		Language:       "Golang",
+		Size:           0,
+		AddrHash:       []string{},
+		Creator:        "",
 	}
 	return json
 }

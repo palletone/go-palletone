@@ -164,7 +164,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		return nil, err
 	}
 
-	aJury := &consensus.AdapterJury{ptn.contractPorcessor}
+	aJury := &consensus.AdapterJury{Processor: ptn.contractPorcessor}
 	ptn.contract, err = contracts.Initialize(ptn.dag, aJury, &config.Contract)
 	if err != nil {
 		log.Error("Contract Initialize err:", "error", err)
@@ -357,7 +357,6 @@ func (s *PalletOne) Stop() error {
 
 	// append by Albert·Gou
 	s.mediatorPlugin.Stop()
-
 
 	if s.lesServer != nil {
 		s.lesServer.Stop()

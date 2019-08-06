@@ -36,16 +36,15 @@ var errBadChannel = errors.New("event: Subscribe argument does not have sendable
 //
 // The zero value is ready to use.
 type Feed struct {
-	once      sync.Once        // ensures that init only runs once
+	sendCases caseList // the active set of select cases used by Send
+	inbox     caseList
+	etype     reflect.Type
 	sendLock  chan struct{}    // sendLock has a one-element buffer and is empty when held.It protects sendCases.
 	removeSub chan interface{} // interrupts Send
-	sendCases caseList         // the active set of select cases used by Send
-
+	once      sync.Once        // ensures that init only runs once
 	// The inbox holds newly subscribed channels until they are added to sendCases.
-	mu     sync.Mutex
-	inbox  caseList
-	etype  reflect.Type
-	closed bool
+	mu sync.Mutex
+	// closed bool
 }
 
 // This is the index of the first actual subscription channel in sendCases.
