@@ -44,9 +44,9 @@ matrix:
       env: UT
       script:
         # - go get github.com/mattn/goveralls
-        - go build ./cmd/gptn
+        - go build  -mod=vendor ./cmd/gptn
         - make gptn
-        - go test ./...
+        - go test  -mod=vendor ./...
         # - $GOPATH/bin/goveralls -service=travis-ci
     - os: linux
       dist: xenial
@@ -78,7 +78,7 @@ matrix:
       go: 1.12.7
       env: one_node_bdd
       script:
-        - go build ./cmd/gptn
+        - go build  -mod=vendor ./cmd/gptn
         - cp gptn bdd/node
         - mkdir bdd/GasToken/node
         - cp gptn bdd/GasToken/node
@@ -215,7 +215,7 @@ matrix:
       go: 1.12.7
       env: mediator_bdd
       script:
-        - go build ./cmd/gptn
+        - go build  -mod=vendor ./cmd/gptn
         - mkdir bdd/mediator-vote/node
         - cp gptn bdd/mediator-vote/node
         - if [ $IS_RUN_MEDIATOR_VOTE == 'true' ]; then
@@ -251,7 +251,7 @@ matrix:
       go: 1.12.7
       env: application_bdd
       script:
-        - go build ./cmd/gptn
+        - go build -mod=vendor ./cmd/gptn
         - mkdir bdd/application/node
         - cp gptn bdd/application/node
         - if [ $IS_RUN_APPLICATION == 'true' ]; then
