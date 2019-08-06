@@ -60,7 +60,11 @@ func (it AssetId) String() string {
 	}
 
 	type2 := byte(assetType)<<3 | byte(uidType)
-	return symbol + "+" + base36.EncodeBytes([]byte{decimal}) + base36.EncodeBytes([]byte{type2}) + base36.EncodeBytes(txHash)
+        rst := symbol + "+" + base36.EncodeBytes([]byte{decimal})
+        rst += base36.EncodeBytes([]byte{type2})
+        rst += base36.EncodeBytes(txHash)
+        return rst
+	//return symbol + "+" + base36.EncodeBytes([]byte{decimal}) + base36.EncodeBytes([]byte{type2}) + base36.EncodeBytes(txHash)
 
 }
 
