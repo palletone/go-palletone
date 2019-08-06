@@ -232,6 +232,7 @@ func (h *RwSetTxSimulator) Done() {
 	h.doneInvoked = true
 }
 func (s *RwSetTxSimulator) Close() {
+	//s.dag.Close()
 	item := new(RwSetTxSimulator)
 	s = item
 

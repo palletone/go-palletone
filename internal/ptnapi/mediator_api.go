@@ -233,8 +233,8 @@ func (a *PrivateMediatorAPI) Apply(args modules.MediatorCreateArgs) (*TxExecuteR
 
 	// 返回执行结果
 	res := &TxExecuteResult{}
-	res.TxContent = fmt.Sprintf("Apply mediator %v with initPubKey: %v, pNode: %v, name: %v, url: %v, "+
-		"logo: %v, location: %v, description: %v",
+	res.TxContent = fmt.Sprintf("account(%v) apply mediator with initPubKey: %v, node: %v, name: %v, url: %v, "+
+		"logo: %v, location: %v, applyInfo: %v",
 		args.AddStr, args.InitPubKey, args.Node, args.Name, args.Url, args.Logo, args.Location, args.Description)
 	res.TxFee = fmt.Sprintf("%vdao", fee)
 	res.Warning = DefaultResult
@@ -443,8 +443,8 @@ func (a *PrivateMediatorAPI) Update(args modules.MediatorUpdateArgs) (*TxExecute
 	}
 
 	res := &TxExecuteResult{}
-	res.TxContent = fmt.Sprintf("Update mediator %v with name: %v, url: %v logo: %v, location: %v, "+
-		"description: %v, node: %v", args.AddStr, nameStr, urlStr, logoStr, locStr, descStr, NodeStr)
+	res.TxContent = fmt.Sprintf("mediator(%v) update info with name: %v, url: %v logo: %v, location: %v, "+
+		"applyInfo: %v, node: %v", args.AddStr, nameStr, urlStr, logoStr, locStr, descStr, NodeStr)
 	res.TxFee = fmt.Sprintf("%vdao", fee)
 	res.Warning = DefaultResult
 	res.Tip = "Your ReqId is: " + hex.EncodeToString(reqId[:]) +
