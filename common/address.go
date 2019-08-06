@@ -23,7 +23,7 @@ import (
 	"fmt"
 	// "math/big"
 	// "math/rand"
-	"reflect"
+	//"reflect"
 	// "strings"
 
 	"math/big"
@@ -37,9 +37,9 @@ const (
 	AddressLength = 21 //byte[0:20] is hash160, byte[20] is AddressType
 )
 
-var (
-	addressT = reflect.TypeOf(Address{})
-)
+//var (
+//	addressT = reflect.TypeOf(Address{})
+//)
 
 /////////// Address
 

@@ -128,9 +128,9 @@ deployContract
     [Return]    ${respJson}
 
 invokeContract
-    [Arguments]    ${from}    ${to}    ${ptnAmount}    ${ptnFee}    ${contractId}    ${args}
+    [Arguments]    ${from}    ${to}    ${ptnAmount}    ${ptnFee}    ${contractId}    ${args}    ${certId}=${null}
     ${params}=    Create List    ${from}    ${to}    ${ptnAmount}    ${ptnFee}    ${contractId}
-    ...    ${args}    ${null}    0
+    ...    ${args}    ${certId}    0
     ${respJson}=    sendRpcPost    ${host}    ${ccinvokeMethod}    ${params}    InvokeContract
     Dictionary Should Contain Key    ${respJson}    result
     ${result}=    Get From Dictionary    ${respJson}    result

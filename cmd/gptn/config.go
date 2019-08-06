@@ -44,7 +44,7 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn"
-	"github.com/palletone/go-palletone/ptnjson"
+	//"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 	"gopkg.in/urfave/cli.v1"
 )
@@ -101,12 +101,12 @@ var tomlSettings = toml.Config{
 }
 
 // SignRawTransactionCmd defines the signrawtransaction JSON-RPC command.
-type SignRawTransactionCmd struct {
-	RawTx    string
-	Inputs   *[]ptnjson.RawTxInput
-	PrivKeys *[]string
-	Flags    *string `jsonrpcdefault:"\"ALL\""`
-}
+//type SignRawTransactionCmd struct {
+//	RawTx    string
+//	Inputs   *[]ptnjson.RawTxInput
+//	PrivKeys *[]string
+//	Flags    *string `jsonrpcdefault:"\"ALL\""`
+//}
 
 //const (
 //	NETID_MAIN = iota
@@ -375,12 +375,11 @@ func makeConfigFile(cfg *FullConfig, configPath string) error {
 	}
 
 	configFile, err = os.Create(configPath)
-	defer configFile.Close()
 	if err != nil {
 		utils.Fatalf("%v", err)
 		return err
 	}
-
+        defer configFile.Close()
 	configToml, err := tomlSettings.Marshal(cfg)
 	if err != nil {
 		log.Error(err.Error())

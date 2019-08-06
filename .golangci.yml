@@ -228,6 +228,9 @@ issues:
         - gofmt
         text: "File is not `gofmt`-ed with `-s`"
       - linters:
+        - interfacer
+        text: "can be `fmt.Stringer`"
+      - linters:
         - staticcheck
         text: "this value of `-s` is never used"
 #     # Exclude some linters from running on tests files.

@@ -34,7 +34,7 @@ import (
 	"compress/gzip"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/rlp"
+	//"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/internal/debug"
 )
 
@@ -123,8 +123,8 @@ func ImportChain(fn string) error {
 			return err
 		}
 	}
-	stream := rlp.NewStream(reader, 0)
-	stream = stream
+	//stream := rlp.NewStream(reader, 0)
+	//stream = stream
 	// Run actual the import.
 
 	//blocks := make(types.Blocks, importBatchSize)

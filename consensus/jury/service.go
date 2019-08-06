@@ -26,7 +26,6 @@ import (
 	"time"
 
 	"encoding/json"
-	"go.dedis.ch/kyber/v3"
 	"github.com/coocood/freecache"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -46,6 +45,7 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
+	"go.dedis.ch/kyber/v3"
 )
 
 type PalletOne interface {
