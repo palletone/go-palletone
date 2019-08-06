@@ -40,7 +40,9 @@ func RawTxInSignature(tx *modules.Transaction, msgIdx, idx int, subScript []byte
 // as the idx'th input. privKey is serialized in either a compressed or
 // uncompressed format based on compress. This format must match the same format
 // used to generate the payment address, or the script validation will fail.
-func SignatureScript(tx *modules.Transaction, msgIdx, idx int, subscript []byte, hashType SigHashType, pubKey []byte, crypto ICrypto, addr common.Address) ([]byte, error) {
+func SignatureScript(tx *modules.Transaction, msgIdx, idx int, 
+	subscript []byte, hashType SigHashType, pubKey []byte, 
+	crypto ICrypto, addr common.Address) ([]byte, error) {
 	sig, err := RawTxInSignature(tx, msgIdx, idx, subscript, hashType, crypto, addr)
 	if err != nil {
 		return nil, err
@@ -57,7 +59,9 @@ func SignatureScript(tx *modules.Transaction, msgIdx, idx int, subscript []byte,
 	return NewScriptBuilder().AddData(sig).AddData(pubKey).Script()
 }
 
-func p2pkSignatureScript(tx *modules.Transaction, msgIdx, idx int, subScript []byte, hashType SigHashType, crypto ICrypto, addr common.Address) ([]byte, error) {
+func p2pkSignatureScript(tx *modules.Transaction, msgIdx, idx int, 
+	subScript []byte, hashType SigHashType, 
+	crypto ICrypto, addr common.Address) ([]byte, error) {
 	sig, err := RawTxInSignature(tx, msgIdx, idx, subScript, hashType, crypto, addr)
 	if err != nil {
 		return nil, err
@@ -70,7 +74,8 @@ func p2pkSignatureScript(tx *modules.Transaction, msgIdx, idx int, subScript []b
 // possible. It returns the generated script and a boolean if the script fulfills
 // the contract (i.e. nrequired signatures are provided).  Since it is arguably
 // legal to not be able to sign any of the outputs, no error is returned.
-func signMultiSig(tx *modules.Transaction, msgIdx, idx int, subScript []byte, hashType SigHashType,
+func signMultiSig(tx *modules.Transaction, msgIdx, idx int, 
+	subScript []byte, hashType SigHashType,
 	addresses []AddressOriginalData, nRequired int, crypto ICrypto) ([]byte, bool) {
 	// We start with a single OP_FALSE to work around the (now standard)
 	// but in the reference implementation that causes a spurious pop at

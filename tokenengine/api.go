@@ -45,7 +45,7 @@ const (
 	SigHashAnyOneCanPay uint32 = 0x80
 	// sigHashMask defines the number of bits of the hash type which is used
 	// to identify which outputs are signed.
-	sigHashMask = 0x1f
+	// sigHashMask = 0x1f
 )
 
 type AddressGetSign func(common.Address, []byte) ([]byte, error)
@@ -189,7 +189,10 @@ func GenerateP2CHUnlockScript(signs [][]byte, redeemScript []byte) []byte {
 var signCache = txscript.NewSigCache(20000)
 
 //validate this transaction and input index script can unlock the utxo.
-func ScriptValidate(utxoLockScript []byte, pickupJuryRedeemScript txscript.PickupJuryRedeemScript, tx *modules.Transaction, msgIdx, inputIndex int) error {
+func ScriptValidate(utxoLockScript []byte,
+	pickupJuryRedeemScript txscript.PickupJuryRedeemScript,
+	tx *modules.Transaction,
+	msgIdx, inputIndex int) error {
 	acc := &account{}
 	txCopy := tx
 	if tx.IsContractTx() {
@@ -204,7 +207,8 @@ func ScriptValidate(utxoLockScript []byte, pickupJuryRedeemScript txscript.Picku
 			}
 		}
 	}
-	vm, err := txscript.NewEngine(utxoLockScript, pickupJuryRedeemScript, txCopy, msgIdx, inputIndex, txscript.StandardVerifyFlags, signCache, acc)
+	vm, err := txscript.NewEngine(utxoLockScript, pickupJuryRedeemScript, txCopy, msgIdx, inputIndex,
+		txscript.StandardVerifyFlags, signCache, acc)
 	if err != nil {
 		log.Error("Failed to create script: ", err)
 		return err
@@ -213,7 +217,9 @@ func ScriptValidate(utxoLockScript []byte, pickupJuryRedeemScript txscript.Picku
 }
 
 //验证一个PaymentMessage的所有Input解锁脚本是否正确
-func ScriptValidate1Msg(utxoLockScripts map[string][]byte, pickupJuryRedeemScript txscript.PickupJuryRedeemScript, tx *modules.Transaction, msgIdx int) error {
+func ScriptValidate1Msg(utxoLockScripts map[string][]byte,
+	pickupJuryRedeemScript txscript.PickupJuryRedeemScript,
+	tx *modules.Transaction, msgIdx int) error {
 	acc := &account{}
 	txCopy := tx
 	if tx.IsContractTx() {
@@ -231,7 +237,8 @@ func ScriptValidate1Msg(utxoLockScripts map[string][]byte, pickupJuryRedeemScrip
 	log.Debugf("SignCache count:%d", signCache.Count())
 	for inputIndex, input := range txCopy.TxMessages[msgIdx].Payload.(*modules.PaymentPayload).Inputs {
 		utxoLockScript := utxoLockScripts[input.PreviousOutPoint.String()]
-		vm, err := txscript.NewEngine(utxoLockScript, pickupJuryRedeemScript, txCopy, msgIdx, inputIndex, txscript.StandardVerifyFlags, signCache, acc)
+		vm, err := txscript.NewEngine(utxoLockScript, pickupJuryRedeemScript, txCopy, msgIdx, inputIndex,
+			txscript.StandardVerifyFlags, signCache, acc)
 		if err != nil {
 			log.Warnf("Unlock script validate fail,tx[%s],MsgIdx[%d],In[%d],unlockScript:%x,utxoScript:%x,error:%s",
 				tx.Hash().String(), msgIdx, inputIndex, input.SignatureScript, utxoLockScript, err.Error())
@@ -300,7 +307,8 @@ func GetScriptSigners(tx *modules.Transaction, msgIdx, inputIndex int) ([]common
 }
 
 //对交易中的Payment类型中的某个Input生成解锁脚本
-//func SignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, utxoLockScript []byte, privKey *ecdsa.PrivateKey, juryVersion int) ([]byte, error) {
+//func SignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, 
+//	utxoLockScript []byte, privKey *ecdsa.PrivateKey, juryVersion int) ([]byte, error) {
 //	lookupKey := func(a common.Address) (*ecdsa.PrivateKey, bool, error) {
 //		return privKey, true, nil
 //	}
@@ -311,7 +319,9 @@ func GetScriptSigners(tx *modules.Transaction, msgIdx, inputIndex int) ([]common
 //	}
 //	return sigScript, nil
 //}
-func MultiSignOnePaymentInput(tx *modules.Transaction, hashType uint32, msgIdx, id int, utxoLockScript []byte, redeemScript []byte,
+func MultiSignOnePaymentInput(tx *modules.Transaction,
+	hashType uint32, msgIdx, id int,
+	utxoLockScript []byte, redeemScript []byte,
 	pubKeyFn AddressGetPubKey, hashFn AddressGetSign, previousScript []byte) ([]byte, error) {
 
 	lookupRedeemScript := func(a common.Address) ([]byte, error) {
@@ -358,7 +368,8 @@ func (a *account) GetPubKey(address common.Address) ([]byte, error) {
 //}
 
 //为钱包计算要签名某个Input对应的Hash
-func CalcSignatureHash(tx *modules.Transaction, hashType uint32, msgIdx, inputIdx int, lockOrRedeemScript []byte) ([]byte, error) {
+func CalcSignatureHash(tx *modules.Transaction, hashType uint32,
+	msgIdx, inputIdx int, lockOrRedeemScript []byte) ([]byte, error) {
 	acc := &account{}
 	return txscript.CalcSignatureHash(lockOrRedeemScript, txscript.SigHashType(hashType), tx, msgIdx, inputIdx, acc)
 }
