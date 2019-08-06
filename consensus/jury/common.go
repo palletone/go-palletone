@@ -66,14 +66,14 @@ func localIsMinSignature(tx *modules.Transaction) bool {
 	}
 	return false
 }
-func generateJuryRedeemScript(jury []modules.ElectionInf) ([]byte, error) {
+func generateJuryRedeemScript(jury []modules.ElectionInf) ([]byte) {
 	count := len(jury)
 	needed := byte(math.Ceil((float64(count)*2 + 1) / 3))
 	pubKeys := [][]byte{}
 	for _, jurior := range jury {
 		pubKeys = append(pubKeys, jurior.PublicKey)
 	}
-	return tokenengine.GenerateRedeemScript(needed, pubKeys), nil
+	return tokenengine.GenerateRedeemScript(needed, pubKeys)
 }
 
 //对于Contract Payout的情况，将SignatureSet转移到Payment的解锁脚本中
@@ -84,10 +84,7 @@ func processContractPayout(tx *modules.Transaction, elf []modules.ElectionInf) {
 	reqId := tx.RequestHash()
 	if has, payout := tx.HasContractPayoutMsg(); has {
 		pubkeys, signs := getSignature(tx)
-		redeem, err := generateJuryRedeemScript(elf)
-		if err != nil {
-			log.Errorf("[%s]processContractPayout, generateJuryRedeemScript error:%s", shortId(reqId.String()), err.Error())
-		}
+		redeem := generateJuryRedeemScript(elf)
 
 		signsOrder := SortSigs(pubkeys, signs, redeem)
 		unlock := tokenengine.MergeContractUnlockScript(signsOrder, redeem)
@@ -849,7 +846,7 @@ func checkContractTxFeeValid(dag iDag, tx *modules.Transaction) bool {
 		return false
 	}
 	txSize := tx.Size()
-	//txSize := tx.SerializeSize()
+	//txSSize := tx.SerializeSize() //del
 	fees, err := dag.GetTxFee(tx)
 	if err != nil {
 		log.Errorf("[%s]checkContractTxFeeValid, GetTxFee fail", shortId(reqId.String()))

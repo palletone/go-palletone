@@ -13,7 +13,7 @@ environment:
     MSYSTEM: MINGW64
     PATH: C:\gopath\bin\;C:\msys64\mingw64\bin\;C:\Program Files (x86)\NSIS\;%PATH%
   matrix:
-    - GOVERSION: 1.12.5
+    - GOVERSION: 1.12.7
       GO111MODULE: on
 
 
@@ -27,7 +27,7 @@ install:
 
   
 build_script:
-  - go build .\cmd\gptn\
+  - go build -mod=vendor .\cmd\gptn\
 
 # after_build:
 #   - go run build\ci.go archive -type zip -signer WINDOWS_SIGNING_KEY -upload ""
@@ -35,4 +35,4 @@ build_script:
 
 test_script:
    - set CGO_ENABLED=1
-   - go test ./...
+   - go test -mod=vendor ./...
