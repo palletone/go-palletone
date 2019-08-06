@@ -502,7 +502,6 @@ func (d *Dag) initDataForMainChainHeader(mainChain *modules.MainChain) {
 // newDag, with db , light to build a new dag
 // firstly to check db migration, is updated ptn database.
 func NewDag(db ptndb.Database, light bool) (*Dag, error) {
-	mutex := new(sync.RWMutex)
 
 	dagDb := storage.NewDagDb(db)
 	utxoDb := storage.NewUtxoDb(db)
@@ -539,7 +538,6 @@ func NewDag(db ptndb.Database, light bool) (*Dag, error) {
 		stableStateRep:         stateRep,
 		stableUnitProduceRep:   stableUnitProduceRep,
 		ChainHeadFeed:          new(event.Feed),
-		Mutex:                  *mutex,
 		Memdag:                 unstableChain,
 	}
 	dag.stableUnitRep.SubscribeSysContractStateChangeEvent(dag.AfterSysContractStateChangeEvent)

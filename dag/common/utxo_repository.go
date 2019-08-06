@@ -45,14 +45,10 @@ func NewUtxoRepository(utxodb storage.IUtxoDb, idxdb storage.IIndexDb, statedb s
 	return &UtxoRepository{utxodb: utxodb, idxdb: idxdb, statedb: statedb, propDb: propDb}
 }
 func NewUtxoRepository4Db(db ptndb.Database) *UtxoRepository {
-	//dagdb := storage.NewDagDb(db)
 	utxodb := storage.NewUtxoDb(db)
 	statedb := storage.NewStateDb(db)
 	idxdb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
-	//propdb := storage.NewPropertyDb(db)
-	//utxoRep := NewUtxoRepository(utxodb, idxdb, statedb)
-	//val := NewValidate(dagdb, utxodb, utxoRep, statedb)
 
 	return &UtxoRepository{utxodb: utxodb, idxdb: idxdb, statedb: statedb, propDb: propDb}
 }
@@ -63,7 +59,6 @@ type IUtxoRepository interface {
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error)
 	GetAddrUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
-	//ReadUtxos(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64)
 	GetUxto(txin modules.Input) *modules.Utxo
 	UpdateUtxo(unitTime int64, txHash common.Hash, payment *modules.PaymentPayload, msgIndex uint32) error
 	IsUtxoSpent(outpoint *modules.OutPoint) (bool, error)
@@ -530,8 +525,6 @@ func checkUtxo(addr *common.Address, asset *modules.Asset, utxo *modules.Utxo) b
 	sAddr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
 	// check address
 	if strings.Compare(sAddr.String(), addr.String()) != 0 {
-		//fmt.Printf(">>>>> Address is not compare:scriptPubKey.Address=%s, address=%s\n",
-		//	sAddr, addr.String())
 		return false
 	}
 	return true
