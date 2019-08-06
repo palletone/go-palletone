@@ -26,10 +26,12 @@ import (
 	"reflect"
 	"unicode"
 
+	"bytes"
 	"github.com/naoina/toml"
 	"github.com/palletone/go-palletone/adaptor"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/files"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
@@ -45,8 +47,6 @@ import (
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 	"gopkg.in/urfave/cli.v1"
-	"bytes"
-	"github.com/palletone/go-palletone/common/crypto"
 )
 
 const defaultConfigPath = "./ptn-config.toml"
@@ -108,10 +108,10 @@ type SignRawTransactionCmd struct {
 	Flags    *string `jsonrpcdefault:"\"ALL\""`
 }
 
-const (
-	NETID_MAIN = iota
-	NETID_TEST
-)
+//const (
+//	NETID_MAIN = iota
+//	NETID_TEST
+//)
 
 type ptnstatsConfig struct {
 	URL string `toml:",omitempty"`
@@ -246,7 +246,7 @@ func makeConfigNode(ctx *cli.Context, isInConsole bool) (*node.Node, FullConfig)
 		utils.Fatalf("Failed to create the protocol stack: %v", err)
 	}
 
-	utils.SetContractConfig(ctx, &cfg.Contract, dataDir)
+	//utils.SetContractConfig(ctx, &cfg.Contract, dataDir)
 	utils.SetTxPoolConfig(ctx, &cfg.TxPool)
 	utils.SetDagConfig(ctx, &cfg.Dag, dataDir)
 	mp.SetMediatorConfig(ctx, &cfg.MediatorPlugin)
@@ -258,9 +258,9 @@ func makeConfigNode(ctx *cli.Context, isInConsole bool) (*node.Node, FullConfig)
 	adaptorPtnConfig(&cfg)
 
 	utils.SetPtnConfig(ctx, stack, &cfg.Ptn)
-	if bytes.Equal( cfg.Ptn.CryptoLib,[]byte{1,1}){
+	if bytes.Equal(cfg.Ptn.CryptoLib, []byte{1, 1}) {
 		fmt.Println("Use GM crypto lib")
-		crypto.MyCryptoLib=&crypto.CryptoGm{}
+		crypto.MyCryptoLib = &crypto.CryptoGm{}
 	}
 	if ctx.GlobalIsSet(utils.EthStatsURLFlag.Name) {
 		cfg.Ptnstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)

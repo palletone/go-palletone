@@ -288,7 +288,7 @@ func Encrypt(rand io.Reader, pub *PublicKey, m, s1, s2 []byte) (ct []byte, err e
 	copy(ct, Rb)
 	copy(ct[len(Rb):], em)
 	copy(ct[len(Rb)+len(em):], d)
-	return
+	return ct, err
 }
 
 // Decrypt decrypts an ECIES ciphertext.
@@ -362,5 +362,5 @@ func (prv *PrivateKey) Decrypt(c, s1, s2 []byte) (m []byte, err error) {
 	}
 
 	m, err = symDecrypt(params, Ke, c[mStart:mEnd])
-	return
+	return m, err
 }

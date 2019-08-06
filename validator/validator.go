@@ -220,7 +220,8 @@ func (validate *Validate) ValidateUnitGroupSign(h *modules.Header) error {
 func (validate *Validate) validateDataPayload(payload *modules.DataPayload) ValidationCode {
 	//验证 maindata是否存在
 	//验证 maindata extradata大小 不可过大
-	if len(payload.MainData) >= MAX_DATA_PAYLOAD_MAIN_DATA_SIZE || len(payload.MainData) == 0 {
+	//len(payload.MainData) >= MAX_DATA_PAYLOAD_MAIN_DATA_SIZE
+	if len(payload.MainData) == 0 {
 		return TxValidationCode_INVALID_DATAPAYLOAD
 	}
 	//TODO 验证maindata其它属性

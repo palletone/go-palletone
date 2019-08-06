@@ -155,7 +155,7 @@ func DockerBuild(opts DockerBuildOptions) error {
 	}
 	if opts.Image == "" {
 		//通用的本地编译环境
-		opts.Image = contractcfg.GetConfig().ContractBuilder //cutil.GetDockerfileFromConfig("chaincode.builder")
+		opts.Image = contractcfg.GetConfig().CommonBuilder //cutil.GetDockerfileFromConfig("chaincode.builder")
 		if opts.Image == "" {
 			return fmt.Errorf("No image provided and \"chaincode.builder\" default does not exist")
 		}

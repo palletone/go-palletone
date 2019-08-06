@@ -23,7 +23,6 @@ package core
 import (
 	"fmt"
 	"io"
-	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
@@ -147,10 +146,10 @@ func (chaincodeSupport *ChaincodeSupport) launchStarted(chaincode string) bool {
 // NewChaincodeSupport creates a new ChaincodeSupport instance
 func NewChaincodeSupport(ccEndpoint string, userrunsCC bool, ccstartuptimeout time.Duration, ca accesscontrol.CA, jury IAdapterJury) pb.ChaincodeSupportServer {
 	//path := config.GetPath("peer.fileSystemPath") + string(filepath.Separator) + "chaincodes"
-	path := cfg.GetConfig().ContractFileSystemPath + string(filepath.Separator) + "chaincodes"
-	log.Infof("NewChaincodeSupport chaincodes path: %s, cfgpath[%s]\n", path, cfg.GetConfig().ContractFileSystemPath)
+	//path := cfg.GetConfig().ContractFileSystemPath + string(filepath.Separator) + "chaincodes"
+	//log.Infof("NewChaincodeSupport chaincodes path: %s, cfgpath[%s]\n", path, cfg.GetConfig().ContractFileSystemPath)
 
-	ccprovider.SetChaincodesPath(path)
+	//ccprovider.SetChaincodesPath(path)
 	pnid := viper.GetString("peer.networkId")
 	pid := viper.GetString("peer.id")
 

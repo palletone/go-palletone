@@ -227,7 +227,7 @@ type ScriptInfo struct {
 
 // CalcScriptInfo returns a structure providing data about the provided script
 // pair.  It will error if the pair is in someway invalid such that they can not
-// be analysed, i.e. if they do not parse or the pkScript is not a push-only
+// be analyzed, i.e. if they do not parse or the pkScript is not a push-only
 // script
 func CalcScriptInfo(sigScript, pkScript []byte, bip16 bool) (*ScriptInfo, error) {
 	sigPops, err := parseScript(sigScript)

@@ -38,6 +38,15 @@ sendRpcPost
     ${respJson}    To Json    ${resp.content}
     [Return]    ${respJson}
 
+queryToken
+    ${args}    Create List    getTokenInfo    ${symbol}
+    ${params}    Create List    PCGTta3M4t3yXu8uRgkKvaWd2d8DRijspoq    ${args}    ${0}
+    ${resp}    sendRpcPost    ${contractQuery}    ${params}    queryToken
+    ${respJson}    To Json   ${resp["result"]}
+    ${assetId}    Get From Dictionary    ${respJson}    AssetID
+    sleep    6
+    [Return]    ${assetId}
+
 queryTokenHolder
     ${args}=    Create List
     ${params}=    Create List

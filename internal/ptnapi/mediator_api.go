@@ -233,8 +233,8 @@ func (a *PrivateMediatorAPI) Apply(args modules.MediatorCreateArgs) (*TxExecuteR
 
 	// 返回执行结果
 	res := &TxExecuteResult{}
-	res.TxContent = fmt.Sprintf("Apply mediator %v with initPubKey: %v, pNode: %v, name: %v, url: %v, "+
-		"logo: %v, location: %v, description: %v",
+	res.TxContent = fmt.Sprintf("account(%v) apply mediator with initPubKey: %v, node: %v, name: %v, url: %v, "+
+		"logo: %v, location: %v, applyInfo: %v",
 		args.AddStr, args.InitPubKey, args.Node, args.Name, args.Url, args.Logo, args.Location, args.Description)
 	res.TxFee = fmt.Sprintf("%vdao", fee)
 	res.Warning = DefaultResult
@@ -393,7 +393,7 @@ func (a *PrivateMediatorAPI) Update(args modules.MediatorUpdateArgs) (*TxExecute
 
 	// 判断本节点是否同步完成，数据是否最新
 	if !a.Dag().IsSynced() {
-		return nil, fmt.Errorf("this node is not synced, and can't apply mediator now")
+		return nil, fmt.Errorf("this node is not synced, and can't update mediator now")
 	}
 
 	// 判断是否已经是mediator
@@ -426,7 +426,7 @@ func (a *PrivateMediatorAPI) Update(args modules.MediatorUpdateArgs) (*TxExecute
 		nameStr = *args.Name
 	}
 	locStr := ""
-	if args.Name != nil {
+	if args.Location != nil {
 		locStr = *args.Location
 	}
 	urlStr := ""
@@ -434,7 +434,7 @@ func (a *PrivateMediatorAPI) Update(args modules.MediatorUpdateArgs) (*TxExecute
 		urlStr = *args.Url
 	}
 	descStr := ""
-	if args.Name != nil {
+	if args.Description != nil {
 		descStr = *args.Description
 	}
 	NodeStr := ""
@@ -443,8 +443,8 @@ func (a *PrivateMediatorAPI) Update(args modules.MediatorUpdateArgs) (*TxExecute
 	}
 
 	res := &TxExecuteResult{}
-	res.TxContent = fmt.Sprintf("Update mediator %v with name: %v, url: %v logo: %v, location: %v, "+
-		"description: %v, node: %v", args.AddStr, nameStr, urlStr, logoStr, locStr, descStr, NodeStr)
+	res.TxContent = fmt.Sprintf("mediator(%v) update info with name: %v, url: %v logo: %v, location: %v, "+
+		"applyInfo: %v, node: %v", args.AddStr, nameStr, urlStr, logoStr, locStr, descStr, NodeStr)
 	res.TxFee = fmt.Sprintf("%vdao", fee)
 	res.Warning = DefaultResult
 	res.Tip = "Your ReqId is: " + hex.EncodeToString(reqId[:]) +
