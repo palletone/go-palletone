@@ -140,7 +140,6 @@ var (
 )
 
 func init() {
-	//welcomePalletOne() //todo
 	// 先调用初始化函数，设置app的各个参数
 	// Initialize the CLI app and start Gptn
 	// gptn处理函数会在 app.HandleAction 里面调用
@@ -226,6 +225,7 @@ func main() {
 		2. c.Run(context)
 		3. HandleAction(c.Action, context)
 	*/
+	//welcomePalletOne()
 	if err := app.Run(os.Args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
