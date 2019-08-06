@@ -373,15 +373,12 @@ func calcSignatureData(script []parsedOpcode, hashType SigHashType, tx *modules.
 		//		payCopy.TxIn[i].Sequence = 0
 		//	}
 		//}
-
-	default:
-		// Consensus treats undefined hashtypes like normal SigHashAll
-		// for purposes of hash generation.
-		fallthrough
 	case SigHashOld:
 		fallthrough
 	case SigHashAll:
 		// Nothing special here.
+        default:
+                fallthrough
 	}
 	if hashType&SigHashAnyOneCanPay != 0 {
 		payCopy.Inputs = payCopy.Inputs[idx : idx+1]

@@ -264,7 +264,7 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 	for _, input := range c.Inputs {
 		txHash := common.HexToHash(input.Txid)
 
-		inputjson = append(inputjson, walletjson.InputJson{TxHash: input.Txid, MessageIndex: input.MessageIndex, OutIndex: input.Vout, HashForSign: "", Signature: ""})
+		//inputjson = append(inputjson, walletjson.InputJson{TxHash: input.Txid, MessageIndex: input.MessageIndex, OutIndex: input.Vout, HashForSign: "", Signature: ""})
 		prevOut := modules.NewOutPoint(txHash, input.MessageIndex, input.Vout)
 		txInput := modules.NewTxIn(prevOut, []byte{})
 		pload.AddTxIn(txInput)
