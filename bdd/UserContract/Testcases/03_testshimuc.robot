@@ -108,10 +108,10 @@ HandleToken
 #     ${payload}=    Get invoke payload info    ${reqId}
 #     Then Check all invoke info    ${payload}    ${args}    testGetInvokeInfo    ${reqId}    ${newAddr}
 
-# Stop testshimuc contract
-#     Given Unlock token holder succeed
-#     ${reqId}=    Then stopContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
-#     And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
+ Stop testshimuc contract
+     Given Unlock token holder succeed
+     ${reqId}=    Then stopContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
+     And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
 *** Keywords ***
 User transfer PTN to testshimuc
