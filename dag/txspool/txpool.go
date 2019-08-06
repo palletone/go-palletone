@@ -612,7 +612,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 	//go pool.journalTx(tx)
 
 	// We've directly injected a replacement transaction, notify subsystems
-	go pool.txFeed.Send(modules.TxPreEvent{tx.Tx})
+	go pool.txFeed.Send(modules.TxPreEvent{Tx: tx.Tx})
 	return true, nil
 }
 
@@ -805,7 +805,7 @@ func (pool *TxPool) addSequenTx(p_tx *modules.TxPoolTransaction) error {
 	pool.addCache(p_tx)
 
 	// We've directly injected a replacement transaction, notify subsystems
-	go pool.txFeed.Send(modules.TxPreEvent{p_tx.Tx})
+	go pool.txFeed.Send(modules.TxPreEvent{Tx: p_tx.Tx})
 	return nil
 }
 
@@ -1530,7 +1530,7 @@ func (pool *TxPool) addCache(tx *modules.TxPoolTransaction) {
 				for j, out := range msg.Outputs {
 					preout.MessageIndex = uint32(i)
 					preout.OutIndex = uint32(j)
-					utxo := &modules.Utxo{Amount: out.Value, Asset: &modules.Asset{out.Asset.AssetId, out.Asset.UniqueId},
+					utxo := &modules.Utxo{Amount: out.Value, Asset: &modules.Asset{AssetId: out.Asset.AssetId, UniqueId: out.Asset.UniqueId},
 						PkScript: out.PkScript[:]}
 					pool.outputs.Store(preout, utxo)
 				}
@@ -1811,7 +1811,7 @@ func (pool *TxPool) addOrphan(otx *modules.TxPoolTransaction, tag uint64) {
 				for j, out := range payment.Outputs {
 					preout.MessageIndex = uint32(i)
 					preout.OutIndex = uint32(j)
-					utxo := &modules.Utxo{Amount: out.Value, Asset: &modules.Asset{out.Asset.AssetId, out.Asset.UniqueId},
+					utxo := &modules.Utxo{Amount: out.Value, Asset: &modules.Asset{AssetId: out.Asset.AssetId, UniqueId: out.Asset.UniqueId},
 						PkScript: out.PkScript[:]}
 					pool.outputs.Store(preout, utxo)
 					/*	pool.outputs[preout] = utxo*/
