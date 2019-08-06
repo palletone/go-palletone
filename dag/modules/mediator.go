@@ -21,6 +21,7 @@
 package modules
 
 import (
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core"
 )
 
@@ -34,6 +35,7 @@ const (
 	UpdateMediatorInfo = "UpdateMediatorInfo"
 )
 
+// mediator 信息
 type MediatorInfo struct {
 	*core.MediatorInfoBase
 	*core.MediatorApplyInfo
@@ -92,4 +94,25 @@ type MediatorUpdateArgs struct {
 	Url         *string `json:"url"`       // 节点宣传网站
 	Description *string `json:"applyInfo"` // 节点详细信息描述
 	Node        *string `json:"node"`      // 节点网络信息，包括ip和端口等
+}
+
+func (mua *MediatorUpdateArgs) Validate() (common.Address, error) {
+	addr, err := core.StrToMedAdd(mua.AddStr)
+	if err != nil {
+		return addr, err
+	}
+
+	if mua.Node != nil {
+		node, err := core.StrToMedNode(*mua.Node)
+		if err != nil {
+			return addr, err
+		}
+
+		err = node.ValidateComplete()
+		if err != nil {
+			return addr, err
+		}
+	}
+
+	return addr, nil
 }
