@@ -227,6 +227,9 @@ issues:
       - linters:
         - gofmt
         text: "File is not `gofmt`-ed with `-s`"
+      - linters:
+        - interfacer
+        text: "can be `fmt.Stringer`"
 #     # Exclude some linters from running on tests files.
 #     - path: _test\.go
 #       linters:
