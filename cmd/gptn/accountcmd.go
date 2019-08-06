@@ -539,9 +539,9 @@ type RawTransactionGenParams struct {
 	} `json:"outputs"`
 	Locktime int64 `json:"locktime"`
 }
-type RawTransactionGenResult struct {
-	Rawtx string `json:"rawtx"`
-}
+//type RawTransactionGenResult struct {
+//	Rawtx string `json:"rawtx"`
+//}
 
 type SignTransactionParams struct {
 	RawTx  string `json:"rawtx"`
@@ -649,8 +649,8 @@ func accountSignTx(ctx *cli.Context) error {
 	}
 	//	// All returned errors (not OOM, which panics) encounted during
 	//	// bytes.Buffer writes are unexpected.
-	send_args := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx, &rawinputs, &keys, nil)
-	send_args = send_args
+	//send_args := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx, &rawinputs, &keys, nil)
+	//send_args = send_args
 	//signtxout, err := ptnapi.SignRawTransaction(send_args)
 	//if signtxout == nil {
 	//	utils.Fatalf("Invalid signature")
