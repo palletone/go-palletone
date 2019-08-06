@@ -618,7 +618,6 @@ func (dag *Dag) AfterChainMaintenanceEvent(arg *modules.ChainMaintenanceEvent) {
 
 // to build a new dag when init genesis
 func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
-	mutex := new(sync.RWMutex)
 
 	dagDb := storage.NewDagDb(db)
 	utxoDb := storage.NewUtxoDb(db)
@@ -641,9 +640,8 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 		stableStateRep:       stateRep,
 		stableUnitProduceRep: statleUnitProduceRep,
 		ChainHeadFeed:        new(event.Feed),
-		Mutex:                *mutex,
+		//Mutex:                *mutex,
 	}
-
 	return dag, nil
 }
 

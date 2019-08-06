@@ -402,7 +402,7 @@ func spendBTCFromMultiAddr2(txid string, index string, txAmount string, txid2 st
 	var rawTransactionGenParams adaptor.RawTransactionGenParams
 	rawTransactionGenParams.Inputs = append(rawTransactionGenParams.Inputs, adaptor.Input{Txid: txid, Vout: uint32(vout)})
 	rawTransactionGenParams.Inputs = append(rawTransactionGenParams.Inputs, adaptor.Input{Txid: txid2, Vout: uint32(vout2)})
-	rawTransactionGenParams.Outputs = append(rawTransactionGenParams.Outputs, adaptor.Output{toAddr, amountValue + amountValue2 - feeValue})
+	rawTransactionGenParams.Outputs = append(rawTransactionGenParams.Outputs, adaptor.Output{Address: toAddr, Amount: amountValue + amountValue2 - feeValue})
 	//
 	btcadaptor.Host = gWallet.BtcConfig.Host
 	btcadaptor.RPCUser = gWallet.BtcConfig.RPCUser
@@ -524,7 +524,7 @@ func mergeMultiAddr2(txid string, index string, txAmount string, txid2 string, i
 	var rawTransactionGenParams adaptor.RawTransactionGenParams
 	rawTransactionGenParams.Inputs = append(rawTransactionGenParams.Inputs, adaptor.Input{Txid: txid, Vout: uint32(vout)})
 	rawTransactionGenParams.Inputs = append(rawTransactionGenParams.Inputs, adaptor.Input{Txid: txid2, Vout: uint32(vout2)})
-	rawTransactionGenParams.Outputs = append(rawTransactionGenParams.Outputs, adaptor.Output{toAddr, amountValue + amountValue2 - feeValue})
+	rawTransactionGenParams.Outputs = append(rawTransactionGenParams.Outputs, adaptor.Output{Address: toAddr, Amount: amountValue + amountValue2 - feeValue})
 	//
 	btcadaptor.Host = gWallet.BtcConfig.Host
 	btcadaptor.RPCUser = gWallet.BtcConfig.RPCUser
@@ -578,7 +578,7 @@ func mergeMultiAddr2(txid string, index string, txAmount string, txid2 string, i
 	}
 
 	if mergeTxResult.Complete {
-		sendTxParams := adaptor.SendTransactionHttpParams{mergeTxResult.TransactionHex}
+		sendTxParams := adaptor.SendTransactionHttpParams{TransactionHex: mergeTxResult.TransactionHex}
 		sendResult, err := btcadaptor.SendTransactionHttp(&sendTxParams)
 		if err != nil {
 			return err

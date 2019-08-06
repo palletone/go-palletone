@@ -236,7 +236,7 @@ func genNFData(idType dm.UniqueIdType, totalSupply uint64, start uint64, tokenID
 				jsonResp := "{\"Error\":\"tokenIDMetas format invalid, len must be 16 ascii string\"}"
 				return nil, jsonResp
 			}
-			nFdata := dm.NonFungibleMetaData{[]byte(oneTokenMeta.TokenID)}
+			nFdata := dm.NonFungibleMetaData{UniqueBytes: []byte(oneTokenMeta.TokenID)}
 			nfDatas = append(nfDatas, nFdata)
 		}
 	}
