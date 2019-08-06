@@ -64,8 +64,6 @@ func (it AssetId) String() string {
         rst += base36.EncodeBytes([]byte{type2})
         rst += base36.EncodeBytes(txHash)
         return rst
-	//return symbol + "+" + base36.EncodeBytes([]byte{decimal}) + base36.EncodeBytes([]byte{type2}) + base36.EncodeBytes(txHash)
-
 }
 
 func String2AssetId(str string) (AssetId, UniqueIdType, error) {
