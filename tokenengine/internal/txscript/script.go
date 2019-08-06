@@ -377,12 +377,12 @@ func calcSignatureData(script []parsedOpcode, hashType SigHashType,
 		//		payCopy.TxIn[i].Sequence = 0
 		//	}
 		//}
+        default:
+                fallthrough
 	case SigHashOld:
 		fallthrough
 	case SigHashAll:
 		// Nothing special here.
-        default:
-                fallthrough
 	}
 	if hashType&SigHashAnyOneCanPay != 0 {
 		payCopy.Inputs = payCopy.Inputs[idx : idx+1]

@@ -260,7 +260,7 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 	// some validity checks.
 	//先构造PaymentPayload结构，再组装成Transaction结构
 	pload := new(modules.PaymentPayload)
-	var inputjson []walletjson.InputJson
+	//var inputjson []walletjson.InputJson
 	for _, input := range c.Inputs {
 		txHash := common.HexToHash(input.Txid)
 
