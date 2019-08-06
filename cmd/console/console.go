@@ -197,7 +197,7 @@ func (c *Console) init(preload []string) error {
 		if errr != nil {
 			return errr
 		}
-		if obj := ptn.Object(); obj != nil { // make sure the admin api is enabled over the interface
+		//if obj := ptn.Object(); obj != nil { // make sure the admin api is enabled over the interface
 			//if _, err = c.jsre.Run(`jptn.signRawTransaction = ptn.signRawTransaction;`); err != nil {
 			//	return fmt.Errorf("ptn.signRawTransaction: %v", err)
 			//}
@@ -210,7 +210,7 @@ func (c *Console) init(preload []string) error {
 			// 	return fmt.Errorf("ptn.transferToken: %v", err)
 			// }
 			// obj.Set("transferToken", bridge.TransferToken)
-		}
+		//}
 		wallet, err := c.jsre.Get("wallet")
 		if err != nil {
 			return err
@@ -255,11 +255,11 @@ func (c *Console) init(preload []string) error {
 	if err != nil {
 		return err
 	}
-	if obj := admin.Object(); obj != nil { // make sure the admin api is enabled over the interface
+	//if obj := admin.Object(); obj != nil { // make sure the admin api is enabled over the interface
 		//obj.Set("sleepBlocks", bridge.SleepBlocks)
 		//obj.Set("sleep", bridge.Sleep)
 		//obj.Set("clearHistory", c.clearHistory)
-	}
+	//}
 	//Add by wzhyuan
 	// Preload any JavaScript files before starting the console
 	for _, path := range preload {
@@ -284,7 +284,7 @@ func (c *Console) init(preload []string) error {
 	return nil
 }
 
-func (c *Console) clearHistory() {
+/*func (c *Console) clearHistory() {
 	c.history = nil
 	c.prompter.ClearHistory()
 	if err := os.Remove(c.histPath); err != nil {
@@ -292,7 +292,7 @@ func (c *Console) clearHistory() {
 	} else {
 		fmt.Fprintln(c.printer, "history file deleted")
 	}
-}
+}*/
 
 // consoleOutput is an override for the console.log and console.error methods to
 // stream the output into the configured output stream instead of stdout.
