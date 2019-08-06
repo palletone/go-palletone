@@ -118,6 +118,9 @@ func (p *Processor) contractEleEvent(tx *modules.Transaction) error {
 }
 
 func (p *Processor) contractExecEvent(tx *modules.Transaction, ele []modules.ElectionInf) (broadcast bool, err error) {
+	if tx == nil {
+		return false, errors.New("contractExecEvent, tx is nil")
+	}
 	reqId := tx.RequestHash()
 	p.locker.Lock()
 	if p.mtx[reqId] == nil {
@@ -150,6 +153,9 @@ func (p *Processor) contractExecEvent(tx *modules.Transaction, ele []modules.Ele
 }
 
 func (p *Processor) contractSigEvent(tx *modules.Transaction, ele []modules.ElectionInf) (broadcast bool, err error) {
+	if tx == nil {
+		return false, errors.New("contractSigEvent, tx is nil")
+	}
 	p.locker.Lock()
 	defer p.locker.Unlock()
 	reqId := tx.RequestHash()
@@ -191,6 +197,9 @@ func (p *Processor) contractSigEvent(tx *modules.Transaction, ele []modules.Elec
 }
 
 func (p *Processor) contractCommitEvent(tx *modules.Transaction) (broadcast bool, err error) {
+	if tx == nil {
+		return false, errors.New("contractCommitEvent, tx is nil")
+	}
 	reqId := tx.RequestHash()
 	p.locker.Lock()
 	defer p.locker.Unlock()

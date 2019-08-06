@@ -68,7 +68,7 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 			Creator:        from.String(),
 		},
 	}
-	reqId, _, err = p.createContractTxReq(common.Address{}, from, to, daoAmount, daoFee, nil, msgReq, true)
+	reqId, _, err = p.createContractTxReq(common.Address{}, from, to, daoAmount, daoFee, nil, msgReq)
 	if err != nil {
 		return common.Hash{}, nil, err
 	}
@@ -118,7 +118,7 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 			Timeout: uint32(timeout),
 		},
 	}
-	reqId, tx, err := p.createContractTxReq(common.Address{}, from, to, daoAmount, daoFee, nil, msgReq, false)
+	reqId, tx, err := p.createContractTxReq(common.Address{}, from, to, daoAmount, daoFee, nil, msgReq)
 	if err != nil {
 		return common.Hash{}, common.Address{}, err
 	}
@@ -147,7 +147,7 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 			Timeout:    timeout,
 		},
 	}
-	reqId, tx, err := p.createContractTxReq(contractId, from, to, daoAmount, daoFee, certID, msgReq, false)
+	reqId, tx, err := p.createContractTxReq(contractId, from, to, daoAmount, daoFee, certID, msgReq)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -175,7 +175,7 @@ func (p *Processor) ContractInvokeReqToken(from, to, toToken common.Address, dao
 			Timeout:    timeout,
 		},
 	}
-	reqId, tx, err := p.createContractTxReqToken(contractId, from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, msgReq, false)
+	reqId, tx, err := p.createContractTxReqToken(contractId, from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, msgReq)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -202,7 +202,7 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 			DeleteImage: deleteImage,
 		},
 	}
-	reqId, tx, err := p.createContractTxReq(contractId, from, to, daoAmount, daoFee, nil, msgReq, false)
+	reqId, tx, err := p.createContractTxReq(contractId, from, to, daoAmount, daoFee, nil, msgReq)
 	if err != nil {
 		return common.Hash{}, err
 	}
