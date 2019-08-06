@@ -54,6 +54,7 @@ type TokenInfo struct {
 type Symbols struct {
 	TokenInfos map[string]TokenInfo `json:"tokeninfos"`
 }
+
 func paramCheckValid(args []string) (bool, string) {
 	if len(args) > 32 {
 		return false, "args number out of range 32"
@@ -73,7 +74,7 @@ func (p *PRC721) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	f, args := stub.GetFunctionAndParameters()
 
 	valid, errMsg := paramCheckValid(args)
-	if !valid{
+	if !valid {
 		return shim.Error(errMsg)
 	}
 	switch f {
@@ -206,7 +207,7 @@ func genNFData(idType dm.UniqueIdType, totalSupply uint64, start uint64, tokenID
 	if idType == dm.UniqueIdType_Sequence {
 		for i := uint64(0); i < totalSupply; i++ {
 			seqByte := convertToByte(start + i)
-			nFdata := dm.NonFungibleMetaData{seqByte}
+			nFdata := dm.NonFungibleMetaData{UniqueBytes: seqByte}
 			nfDatas = append(nfDatas, nFdata)
 		}
 	} else if idType == dm.UniqueIdType_Uuid {
@@ -216,7 +217,7 @@ func genNFData(idType dm.UniqueIdType, totalSupply uint64, start uint64, tokenID
 				jsonResp := "{\"Error\":\"generateUUID() failed\"}"
 				return nil, jsonResp
 			}
-			nFdata := dm.NonFungibleMetaData{UUID}
+			nFdata := dm.NonFungibleMetaData{UniqueBytes: UUID}
 			nfDatas = append(nfDatas, nFdata)
 		}
 	} else if idType == dm.UniqueIdType_UserDefine {
@@ -226,7 +227,7 @@ func genNFData(idType dm.UniqueIdType, totalSupply uint64, start uint64, tokenID
 				jsonResp := "{\"Error\":\"tokenIDMetas format invalid, must be 32 len hex string\"}"
 				return nil, jsonResp
 			}
-			nFdata := dm.NonFungibleMetaData{oneTokenIDByte}
+			nFdata := dm.NonFungibleMetaData{UniqueBytes: oneTokenIDByte}
 			nfDatas = append(nfDatas, nFdata)
 		}
 	} else if idType == dm.UniqueIdType_Ascii {
@@ -235,7 +236,7 @@ func genNFData(idType dm.UniqueIdType, totalSupply uint64, start uint64, tokenID
 				jsonResp := "{\"Error\":\"tokenIDMetas format invalid, len must be 16 ascii string\"}"
 				return nil, jsonResp
 			}
-			nFdata := dm.NonFungibleMetaData{[]byte(oneTokenMeta.TokenID)}
+			nFdata := dm.NonFungibleMetaData{UniqueBytes: []byte(oneTokenMeta.TokenID)}
 			nfDatas = append(nfDatas, nFdata)
 		}
 	}

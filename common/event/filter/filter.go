@@ -45,37 +45,37 @@ func New() *Filters {
 	}
 }
 
-func (self *Filters) Start() {
-	go self.loop()
+func (filters *Filters) Start() {
+	go filters.loop()
 }
 
-func (self *Filters) Stop() {
-	close(self.quit)
+func (filters *Filters) Stop() {
+	close(filters.quit)
 }
 
-func (self *Filters) Notify(filter Filter, data interface{}) {
-	self.ch <- FilterEvent{filter, data}
+func (filters *Filters) Notify(filter Filter, data interface{}) {
+	filters.ch <- FilterEvent{filter, data}
 }
 
-func (self *Filters) Install(watcher Filter) int {
-	self.watchers[self.id] = watcher
-	self.id++
+func (filters *Filters) Install(watcher Filter) int {
+	filters.watchers[filters.id] = watcher
+	filters.id++
 
-	return self.id - 1
+	return filters.id - 1
 }
 
-func (self *Filters) Uninstall(id int) {
-	delete(self.watchers, id)
+func (filters *Filters) Uninstall(id int) {
+	delete(filters.watchers, id)
 }
 
-func (self *Filters) loop() {
+func (filters *Filters) loop() {
 out:
 	for {
 		select {
-		case <-self.quit:
+		case <-filters.quit:
 			break out
-		case event := <-self.ch:
-			for _, watcher := range self.watchers {
+		case event := <-filters.ch:
+			for _, watcher := range filters.watchers {
 				if reflect.TypeOf(watcher) == reflect.TypeOf(event.filter) {
 					if watcher.Compare(event.filter) {
 						watcher.Trigger(event.data)
@@ -86,10 +86,10 @@ out:
 	}
 }
 
-func (self *Filters) Match(a, b Filter) bool {
+func (filters *Filters) Match(a, b Filter) bool {
 	return reflect.TypeOf(a) == reflect.TypeOf(b) && a.Compare(b)
 }
 
-func (self *Filters) Get(i int) Filter {
-	return self.watchers[i]
+func (filters *Filters) Get(i int) Filter {
+	return filters.watchers[i]
 }

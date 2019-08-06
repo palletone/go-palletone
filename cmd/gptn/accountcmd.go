@@ -286,7 +286,7 @@ func accountList(ctx *cli.Context) error {
 }
 
 // tries unlocking the specified account a few times.
-func unlockAccount(/*ctx *cli.Context*/ ks *keystore.KeyStore, address string, i int, passwords []string) (accounts.Account, string) {
+func unlockAccount( /*ctx *cli.Context*/ ks *keystore.KeyStore, address string, i int, passwords []string) (accounts.Account, string) {
 	account, err := utils.MakeAddress(ks, address)
 	if err != nil {
 		utils.Fatalf("Could not list accounts: %v", err)
@@ -379,7 +379,7 @@ func createAccount(ctx *cli.Context, password string) (common.Address, error) {
 	// Load config file.
 	if cfg, configDir, err = maybeLoadConfig(ctx); err != nil {
 		utils.Fatalf("%v", err)
-                return common.Address{},err
+		return common.Address{}, err
 	}
 
 	cfg.Node.P2P = cfg.P2P
@@ -389,7 +389,7 @@ func createAccount(ctx *cli.Context, password string) (common.Address, error) {
 	address, err := keystore.StoreKey(keydir, password, scryptN, scryptP)
 	if err != nil {
 		utils.Fatalf("Failed to create account: %v", err)
-                return common.Address{},err
+		return common.Address{}, err
 	}
 
 	return address, nil
@@ -400,9 +400,9 @@ func newAccount(ctx *cli.Context) (common.Address, error) {
 		"Do not forget this password.", true, 0, utils.MakePasswordList(ctx))
 
 	address, err := createAccount(ctx, password)
-        if err != nil {
-            return common.Address{},err
-        }
+	if err != nil {
+		return common.Address{}, err
+	}
 
 	return address, nil
 }
@@ -577,7 +577,7 @@ func accountCreateTx(ctx *cli.Context) error {
 	//transaction inputs
 	var inputs []ptnjson.TransactionInput
 	for _, inputOne := range rawTransactionGenParams.Inputs {
-		input := ptnjson.TransactionInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex}
+		input := ptnjson.TransactionInput{Txid: inputOne.Txid, Vout: inputOne.Vout, MessageIndex: inputOne.MessageIndex}
 		inputs = append(inputs, input)
 	}
 	if len(inputs) == 0 {
@@ -629,7 +629,8 @@ func accountSignTx(ctx *cli.Context) error {
 	//transaction inputs
 	var rawinputs []ptnjson.RawTxInput
 	for _, inputOne := range signTransactionParams.Inputs {
-		input := ptnjson.RawTxInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex, inputOne.ScriptPubKey, inputOne.RedeemScript}
+		input := ptnjson.RawTxInput{Txid: inputOne.Txid, Vout: inputOne.Vout, MessageIndex: inputOne.MessageIndex, ScriptPubKey: inputOne.ScriptPubKey,
+			RedeemScript: inputOne.RedeemScript}
 		rawinputs = append(rawinputs, input)
 	}
 	if len(rawinputs) == 0 {
