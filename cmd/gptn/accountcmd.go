@@ -589,7 +589,7 @@ func accountCreateTx(ctx *cli.Context) error {
 		if len(outOne.Address) == 0 || outOne.Amount.LessThanOrEqual(decimal.New(0, 0)) {
 			continue
 		}
-		amounts = append(amounts, ptnjson.AddressAmt{outOne.Address, outOne.Amount})
+		amounts = append(amounts, ptnjson.AddressAmt{Address: outOne.Address, Amount: outOne.Amount})
 	}
 	if len(amounts) == 0 {
 		return nil

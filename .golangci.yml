@@ -227,6 +227,9 @@ issues:
       - linters:
         - gofmt
         text: "File is not `gofmt`-ed with `-s`"
+      - linters:
+        - staticcheck
+        text: "this value of `-s` is never used"
 #     # Exclude some linters from running on tests files.
 #     - path: _test\.go
 #       linters:
