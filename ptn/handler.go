@@ -41,7 +41,8 @@ import (
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
 	"sync/atomic"
-	//"github.com/palletone/go-palletone/ptn/lps"
+
+	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/manger"
 	"github.com/palletone/go-palletone/validator"
 	"github.com/palletone/go-palletone/vm/common"
@@ -308,8 +309,8 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 				var (
 					events = make([]interface{}, 0, 2)
 				)
-				events = append(events, modules.ChainHeadEvent{blocks[0]})
-				events = append(events, modules.ChainEvent{blocks[0], blocks[0].UnitHash})
+				events = append(events, modules.ChainHeadEvent{Unit: blocks[0]})
+				events = append(events, modules.ChainEvent{Unit: blocks[0], Hash: blocks[0].UnitHash})
 				pm.dag.PostChainEvents(events)
 			}()
 		}
@@ -412,8 +413,13 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 		pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
 		go pm.ceBroadcastLoop()
 	}
+	//  是否为linux系統
 	if runtime.GOOS == "linux" {
-		go pm.dockerLoop()
+		//  是否为jury
+		if contractcfg.GetConfig().IsJury {
+			log.Debugf("starting docker loop")
+			go pm.dockerLoop()
+		}
 	}
 }
 
@@ -592,7 +598,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return pm.VSSDealMsg(msg, p)
 
 		// 21*21 deal => 21*21 resp
-		// 21*21 resp => 21*20*20 respMsg
+		// 21*21 resp => 21*21*20 respMsg
 		// append by Albert·Gou
 	case msg.Code == VSSResponseMsg:
 		return pm.VSSResponseMsg(msg, p)
@@ -694,18 +700,21 @@ func (pm *ProtocolManager) AdapterBroadcast(event jury.AdapterEvent) {
 }
 
 func (pm *ProtocolManager) ContractBroadcast(event jury.ContractEvent, local bool) {
-	//peers := pm.peers.PeersWithoutUnit(event.Tx.TxHash)
+	reqId := event.Tx.RequestHash()
 	peers := pm.peers.GetPeers()
-	log.Debug("ContractBroadcast", "event type", event.CType, "reqId", event.Tx.RequestHash().String(), "peers num", len(peers))
-
+	log.Debugf("[%s]ContractBroadcast, event type[%d], peers num[%d]", reqId.String()[0:8], event.CType, len(peers))
 	for _, peer := range peers {
 		if err := peer.SendContractTransaction(event); err != nil {
-			log.Error("ProtocolManager ContractBroadcast", "SendContractTransaction err:", err.Error())
+			log.Error("ContractBroadcast", "SendContractTransaction err:", err.Error())
 		}
 	}
-
 	if local {
-		go pm.contractProc.ProcessContractEvent(&event)
+		go func() {
+			err := pm.contractProc.ProcessContractEvent(&event)
+			if err != nil {
+				log.Errorf("[%s]ContractBroadcast, error:%s", reqId.String()[0:8], err.Error())
+			}
+		}()
 	}
 }
 
@@ -762,8 +771,8 @@ func (self *ProtocolManager) dockerLoop() {
 	client, err := util.NewDockerClient()
 	if err != nil {
 		log.Infof("util.NewDockerClient err: %s\n", err.Error())
+		return
 	}
-	cp := self.dag.GetChainParameters()
 	for {
 		select {
 		case <-self.dockerQuitSync:
@@ -771,7 +780,7 @@ func (self *ProtocolManager) dockerLoop() {
 			return
 		case <-time.After(time.Duration(30) * time.Second):
 			log.Debugf("each 30 second to get all containers")
-			manger.GetAllContainers(client, cp.UccDisk)
+			manger.GetAllContainers(client)
 		}
 	}
 }

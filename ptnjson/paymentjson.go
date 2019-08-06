@@ -76,7 +76,7 @@ func ConvertPayment2Json(payment *modules.PaymentPayload) *PaymentJson {
 	json.Outputs = []*OutputJson{}
 	if len(payment.Inputs) > 0 {
 		for _, in := range payment.Inputs {
-			// @jay :genesis or coinbase unit occured nil error.
+			// @jay :genesis or coinbase unit occurred nil error.
 			var hstr string
 			var mindex uint32
 			var outindex uint32

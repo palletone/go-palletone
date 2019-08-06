@@ -155,7 +155,7 @@ func DockerBuild(opts DockerBuildOptions) error {
 	}
 	if opts.Image == "" {
 		//通用的本地编译环境
-		opts.Image = contractcfg.GetConfig().ContractBuilder //cutil.GetDockerfileFromConfig("chaincode.builder")
+		opts.Image = contractcfg.GetConfig().CommonBuilder //cutil.GetDockerfileFromConfig("chaincode.builder")
 		if opts.Image == "" {
 			return fmt.Errorf("No image provided and \"chaincode.builder\" default does not exist")
 		}
@@ -253,7 +253,7 @@ func DockerBuild(opts DockerBuildOptions) error {
 		return fmt.Errorf("Error executing build: %s \"%s\"", err, stdout.String())
 	}
 	//解决临时容器一直运行的情况
-	go utils.RemoveContainerWhenGoBuildTimeOut(client, container.ID)
+	go utils.RemoveContainerWhenGoBuildTimeOut(container.ID)
 
 	//-----------------------------------------------------------------------------------
 	// Wait for the build to complete and gather the return value

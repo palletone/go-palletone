@@ -30,48 +30,57 @@ import (
 )
 
 type TxSummaryJson struct {
-	TxHash string `json:"tx_hash"`
-
-	TxSize     float64      `json:"tx_size"`
-	Payment    *PaymentJson `json:"payment"`
-	TxMessages string       `json:"tx_messages"`
-	UnitHash   string       `json:"unit_hash"`
-	UnitHeight uint64       `json:"unit_height"`
-	Timestamp  time.Time    `json:"timestamp"`
-	TxIndex    uint64       `json:"tx_index"`
-}
-type MessageJson struct {
-	messages []string
+	TxHash      string       `json:"tx_hash"`
+	RequestHash string       `json:"request_hash"`
+	TxSize      float64      `json:"tx_size"`
+	Payment     *PaymentJson `json:"payment"`
+	TxMessages  string       `json:"tx_messages"`
+	UnitHash    string       `json:"unit_hash"`
+	UnitHeight  uint64       `json:"unit_height"`
+	Timestamp   time.Time    `json:"timestamp"`
+	TxIndex     uint64       `json:"tx_index"`
 }
 
-func ConvertTxWithUnitInfo2SummaryJson(tx *modules.TransactionWithUnitInfo, utxoQuery modules.QueryUtxoFunc) *TxSummaryJson {
+// type MessageJson struct {
+// 	messages []string
+// }
+
+func ConvertTxWithUnitInfo2SummaryJson(tx *modules.TransactionWithUnitInfo,
+	utxoQuery modules.QueryUtxoFunc) *TxSummaryJson {
 
 	pay := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
 	payment := ConvertPayment2JsonIncludeFromAddr(pay, utxoQuery)
 	return &TxSummaryJson{
-		TxHash:     tx.Hash().String(),
-		UnitHash:   tx.UnitHash.String(),
-		UnitHeight: tx.UnitIndex,
-		Timestamp:  time.Unix(int64(tx.Timestamp), 0),
-		TxIndex:    tx.TxIndex,
-		TxSize:     float64(tx.Size()),
-		Payment:    payment,
-		TxMessages: ConvertMegs2Json(tx.TxMessages),
+		TxHash:      tx.Hash().String(),
+		RequestHash: tx.RequestHash().String(),
+		UnitHash:    tx.UnitHash.String(),
+		UnitHeight:  tx.UnitIndex,
+		Timestamp:   time.Unix(int64(tx.Timestamp), 0),
+		TxIndex:     tx.TxIndex,
+		TxSize:      float64(tx.Size()),
+		Payment:     payment,
+		TxMessages:  ConvertMegs2Json(tx.TxMessages),
 	}
 }
-func ConvertTx2SummaryJson(tx *modules.Transaction, unitHash common.Hash, unitHeigth uint64, unitTimestamp int64, txIndex uint64, utxoQuery modules.QueryUtxoFunc) *TxSummaryJson {
+func ConvertTx2SummaryJson(tx *modules.Transaction,
+	unitHash common.Hash,
+	unitHeigth uint64,
+	unitTimestamp int64,
+	txIndex uint64,
+	utxoQuery modules.QueryUtxoFunc) *TxSummaryJson {
 
 	pay := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
 	payment := ConvertPayment2JsonIncludeFromAddr(pay, utxoQuery)
 	return &TxSummaryJson{
-		TxHash:     tx.Hash().String(),
-		UnitHash:   unitHash.String(),
-		UnitHeight: unitHeigth,
-		Timestamp:  time.Unix(int64(unitTimestamp), 0),
-		TxIndex:    txIndex,
-		TxSize:     float64(tx.Size()),
-		Payment:    payment,
-		TxMessages: ConvertMegs2Json(tx.TxMessages),
+		TxHash:      tx.Hash().String(),
+		RequestHash: tx.RequestHash().String(),
+		UnitHash:    unitHash.String(),
+		UnitHeight:  unitHeigth,
+		Timestamp:   time.Unix(unitTimestamp, 0),
+		TxIndex:     txIndex,
+		TxSize:      float64(tx.Size()),
+		Payment:     payment,
+		TxMessages:  ConvertMegs2Json(tx.TxMessages),
 	}
 }
 func ConvertMegs2Json(msgs []*modules.Message) string {
@@ -83,20 +92,20 @@ func ConvertMegs2Json(msgs []*modules.Message) string {
 }
 
 // TODO
-func isCoinBase(tx *modules.Transaction) bool {
-	if len(tx.TxMessages) != 1 {
-		return false
-	}
-	msg, ok := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
-	if !ok {
-		return false
-	}
-	prevOut := msg.Inputs[0].PreviousOutPoint
-	if prevOut.TxHash != (common.Hash{}) {
-		return false
-	}
-	return true
-}
+// func isCoinBase(tx *modules.Transaction) bool {
+// 	if len(tx.TxMessages) != 1 {
+// 		return false
+// 	}
+// 	msg, ok := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+// 	if !ok {
+// 		return false
+// 	}
+// 	prevOut := msg.Inputs[0].PreviousOutPoint
+// 	if prevOut.TxHash != (common.Hash{}) {
+// 		return false
+// 	}
+// 	return true
+// }
 
 type GetTranscationOut struct {
 	Addr  string `json:"address"`

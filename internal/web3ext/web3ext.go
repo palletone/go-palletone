@@ -21,7 +21,7 @@
 package web3ext
 
 var Modules = map[string]string{
-	//"chequebook": Chequebook_JS,
+	//"checkbook": Chequebook_JS,
 	//"clique":     Clique_JS,
 	//"net":        Net_JS,
 	//"rpc":        RPC_JS,

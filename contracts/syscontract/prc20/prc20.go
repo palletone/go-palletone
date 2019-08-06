@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * Copyright IBM Corp. All Rights Reserved.
  * @author PalletOne core developers <dev@pallet.one>
@@ -45,6 +46,18 @@ type TokenInfo struct {
 	AssetID     dm.AssetId
 }
 
+func paramCheckValid(args []string) (bool, string) {
+	if len(args) > 32 {
+		return false, "args number out of range 32"
+	}
+	for _, arg := range args {
+		if len(arg) > 2048 {
+			return false, "arg length out of range 2048"
+		}
+	}
+	return true, ""
+}
+
 func (p *PRC20) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(nil)
 }
@@ -52,6 +65,10 @@ func (p *PRC20) Init(stub shim.ChaincodeStubInterface) pb.Response {
 func (p *PRC20) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	f, args := stub.GetFunctionAndParameters()
 
+	valid, errMsg := paramCheckValid(args)
+	if !valid{
+		return shim.Error(errMsg)
+	}
 	switch f {
 	case "createToken":
 		return createToken(args, stub)

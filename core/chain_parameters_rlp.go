@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developer Albert·Gou <dev@pallet.one>
  * @date 2018
@@ -26,27 +27,35 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
-type chainParameters struct {
+// only for serialization(storage/p2p)
+type ChainParametersTemp struct {
 	ChainParametersBase
 
 	// TxCoinYearRate     string
-	DepositDailyReward string
-	DepositPeriod      string
+	//DepositDailyReward string
+	//DepositPeriod      string
 
-	UccMemory     string
-	UccMemorySwap string
-	UccCpuShares  string
-	UccCpuQuota   string
-	UccCpuPeriod  string
-	UccDisk       string
+	UccMemory string
+	//UccMemorySwap string
+	UccCpuShares string
+	UccCpuQuota  string
+	//UccCpuPeriod  string
+	UccDisk string
 
-	TempUccMemory     string
-	TempUccMemorySwap string
-	TempUccCpuShares  string
-	TempUccCpuQuota   string
+	TempUccMemory string
+	//TempUccMemorySwap string
+	TempUccCpuShares string
+	TempUccCpuQuota  string
 
 	ContractSignatureNum string
 	ContractElectionNum  string
+
+	ContractTxTimeoutUnitFee  string
+	ContractTxSizeUnitFee     string
+	ContractTxInstallFeeLevel string
+	ContractTxDeployFeeLevel  string
+	ContractTxInvokeFeeLevel  string
+	ContractTxStopFeeLevel    string
 }
 
 func (cp *ChainParameters) EncodeRLP(w io.Writer) error {
@@ -55,13 +64,13 @@ func (cp *ChainParameters) EncodeRLP(w io.Writer) error {
 	return rlp.Encode(w, cpt)
 }
 
-func (cp *ChainParameters) getCPT() *chainParameters {
-	return &chainParameters{
+func (cp *ChainParameters) getCPT() *ChainParametersTemp {
+	return &ChainParametersTemp{
 		ChainParametersBase: cp.ChainParametersBase,
 
 		// TxCoinYearRate:     strconv.FormatFloat(float64(cp.TxCoinYearRate), 'f', -1, 64),
-		DepositDailyReward: strconv.FormatInt(int64(cp.PledgeDailyReward), 10),
-		DepositPeriod:      strconv.FormatInt(int64(cp.DepositPeriod), 10),
+		//DepositDailyReward: strconv.FormatInt(int64(cp.PledgeDailyReward), 10),
+		//DepositPeriod:      strconv.FormatInt(int64(cp.DepositPeriod), 10),
 
 		UccMemory:    strconv.FormatInt(int64(cp.UccMemory), 10),
 		UccCpuShares: strconv.FormatInt(int64(cp.UccCpuShares), 10),
@@ -74,10 +83,17 @@ func (cp *ChainParameters) getCPT() *chainParameters {
 
 		ContractSignatureNum: strconv.FormatInt(int64(cp.ContractSignatureNum), 10),
 		ContractElectionNum:  strconv.FormatInt(int64(cp.ContractElectionNum), 10),
+
+		ContractTxTimeoutUnitFee:  strconv.FormatUint(uint64(cp.ContractTxTimeoutUnitFee), 10),
+		ContractTxSizeUnitFee:     strconv.FormatUint(uint64(cp.ContractTxSizeUnitFee), 10),
+		ContractTxInstallFeeLevel: strconv.FormatFloat(float64(cp.ContractTxInstallFeeLevel), 'f', -1, 64),
+		ContractTxDeployFeeLevel:  strconv.FormatFloat(float64(cp.ContractTxDeployFeeLevel), 'f', -1, 64),
+		ContractTxInvokeFeeLevel:  strconv.FormatFloat(float64(cp.ContractTxInvokeFeeLevel), 'f', -1, 64),
+		ContractTxStopFeeLevel:    strconv.FormatFloat(float64(cp.ContractTxStopFeeLevel), 'f', -1, 64),
 	}
 }
 
-func (cpt *chainParameters) getCP(cp *ChainParameters) error {
+func (cpt *ChainParametersTemp) getCP(cp *ChainParameters) error {
 	cp.ChainParametersBase = cpt.ChainParametersBase
 
 	// TxCoinYearRate, err := strconv.ParseFloat(cpt.TxCoinYearRate, 64)
@@ -86,17 +102,17 @@ func (cpt *chainParameters) getCP(cp *ChainParameters) error {
 	// }
 	// cp.TxCoinYearRate = float64(TxCoinYearRate)
 
-	DepositDailyReward, err := strconv.ParseInt(cpt.DepositDailyReward, 10, 64)
-	if err != nil {
-		return err
-	}
-	cp.PledgeDailyReward = uint64(DepositDailyReward)
+	//DepositDailyReward, err := strconv.ParseInt(cpt.DepositDailyReward, 10, 64)
+	//if err != nil {
+	//	return err
+	//}
+	//cp.PledgeDailyReward = uint64(DepositDailyReward)
 
-	DepositPeriod, err := strconv.ParseInt(cpt.DepositPeriod, 10, 64)
-	if err != nil {
-		return err
-	}
-	cp.DepositPeriod = int(DepositPeriod)
+	//DepositPeriod, err := strconv.ParseInt(cpt.DepositPeriod, 10, 64)
+	//if err != nil {
+	//	return err
+	//}
+	//cp.DepositPeriod = int(DepositPeriod)
 
 	UccMemory, err := strconv.ParseInt(cpt.UccMemory, 10, 64)
 	if err != nil {
@@ -152,6 +168,42 @@ func (cpt *chainParameters) getCP(cp *ChainParameters) error {
 	}
 	cp.ContractElectionNum = int(ContractElectionNum)
 
+	ContractTxTimeoutUnitFee, err := strconv.ParseUint(cpt.ContractTxTimeoutUnitFee, 10, 64)
+	if err != nil {
+		return err
+	}
+	cp.ContractTxTimeoutUnitFee = ContractTxTimeoutUnitFee
+
+	ContractTxSizeUnitFee, err := strconv.ParseUint(cpt.ContractTxSizeUnitFee, 10, 64)
+	if err != nil {
+		return err
+	}
+	cp.ContractTxSizeUnitFee = ContractTxSizeUnitFee
+
+	ContractTxInstallFeeLevel, err := strconv.ParseFloat(cpt.ContractTxInstallFeeLevel, 64)
+	if err != nil {
+		return err
+	}
+	cp.ContractTxInstallFeeLevel = ContractTxInstallFeeLevel
+
+	ContractTxDeployFeeLevel, err := strconv.ParseFloat(cpt.ContractTxDeployFeeLevel, 64)
+	if err != nil {
+		return err
+	}
+	cp.ContractTxDeployFeeLevel = ContractTxDeployFeeLevel
+
+	ContractTxInvokeFeeLevel, err := strconv.ParseFloat(cpt.ContractTxInvokeFeeLevel, 64)
+	if err != nil {
+		return err
+	}
+	cp.ContractTxInvokeFeeLevel = ContractTxInvokeFeeLevel
+
+	ContractTxStopFeeLevel, err := strconv.ParseFloat(cpt.ContractTxStopFeeLevel, 64)
+	if err != nil {
+		return err
+	}
+	cp.ContractTxStopFeeLevel = ContractTxStopFeeLevel
+
 	return nil
 }
 
@@ -161,7 +213,7 @@ func (cp *ChainParameters) DecodeRLP(s *rlp.Stream) error {
 		return err
 	}
 
-	cpt := &chainParameters{}
+	cpt := &ChainParametersTemp{}
 	err = rlp.DecodeBytes(raw, cpt)
 	if err != nil {
 		return err

@@ -39,9 +39,9 @@ func GenInitPair() (kyber.Scalar, kyber.Point) {
 
 // mediator 结构体 和具体的账户模型有关
 type Mediator struct {
-	Address    common.Address
-	InitPubKey kyber.Point
-	Node       *discover.Node
+	Address    common.Address `json:"address"`    // mediator账户地址
+	InitPubKey kyber.Point    `json:"initPubKey"` // mediator的群签名初始公钥
+	Node       *discover.Node `json:"node"`       // mediator节点网络信息，包括ip和端口等
 	*MediatorApplyInfo
 	*MediatorInfoExpand
 }
@@ -70,12 +70,20 @@ func NewMediator() *Mediator {
 
 // Mediator申请信息
 type MediatorApplyInfo struct {
-	ApplyInfo string `json:"applyInfo"` //  申请信息
+	Logo        string `json:"logo"`      // 节点图标url
+	Name        string `json:"name"`      // 节点名称
+	Location    string `json:"loc"`       // 节点所在地区
+	Url         string `json:"url"`       // 节点宣传网站
+	Description string `json:"applyInfo"` // 节点详细信息描述
 }
 
 func NewMediatorApplyInfo() *MediatorApplyInfo {
 	return &MediatorApplyInfo{
-		ApplyInfo: "某节点; www.abc.com",
+		Logo:        "",
+		Name:        "",
+		Location:    "",
+		Url:         "",
+		Description: "",
 	}
 }
 

@@ -422,7 +422,6 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 	// step2. compute chain height
 	// get current world_state index.
 	index := uint64(1)
-	//isMain := true
 	phash, chainIndex, err := propdb.GetNewestUnit(assetId)
 	// phash, chainIndex, _, err := rep.propdb.GetNewestUnit(assetId)
 	if err != nil {
@@ -444,11 +443,6 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 	// step4. get transactions from txspool
 	poolTxs, _ := txpool.GetSortedTxs(h_hash, chainIndex.Index)
 
-	//txIds := []common.Hash{}
-	//for _, tx := range poolTxs {
-	//	txIds = append(txIds, tx.Tx.Hash())
-	//}
-	// log.Infof("txpool.GetSortedTxs cost time %s, txs[%#x]", time.Since(begin), txIds)
 	log.Debugf("txpool.GetSortedTxs cost time %s", time.Since(begin))
 	// step5. compute minner income: transaction fees + interest
 	tt := time.Now()
@@ -997,17 +991,13 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 				return fmt.Errorf("Save contract init payload error.")
 			}
 		case modules.APP_CONTRACT_INVOKE:
-			if ok := rep.saveContractInvokePayload(tx, unit.UnitHeader.Number, uint32(txIndex), msg); ok != true {
+			if ok := rep.saveContractInvokePayload(tx, unit.UnitHeader.Number, uint32(txIndex), msg, reqIndex); ok != true {
 				return fmt.Errorf("save contract invode payload error")
 			}
 		case modules.APP_CONTRACT_STOP:
 			if ok := rep.saveContractStop(reqId, msg); !ok {
 				return fmt.Errorf("save contract stop payload failed.")
 			}
-			//case modules.APP_CONFIG:
-			//	if ok := rep.saveConfigPayload(txHash, msg, unit.UnitHeader.Number, uint32(txIndex)); ok == false {
-			//		return fmt.Errorf("Save contract invode payload error.")
-			//	}
 		case modules.APP_ACCOUNT_UPDATE:
 			if err := rep.updateAccountInfo(msg, requester, unit.UnitHeader.Number, uint32(txIndex)); err != nil {
 				return fmt.Errorf("apply Account Updating Operation error")
@@ -1209,7 +1199,7 @@ func (rep *UnitRepository) saveDataPayload(requester common.Address, unitHash co
 To save contract invoke state
 */
 func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, height *modules.ChainIndex,
-	txIndex uint32, msg *modules.Message) bool {
+	txIndex uint32, msg *modules.Message, reqIndex int) bool {
 	var pl interface{}
 	pl = msg.Payload
 	payload, ok := pl.(*modules.ContractInvokePayload)
@@ -1227,12 +1217,20 @@ func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, he
 		log.Errorf("Tx[%s]Write contract state error:%s", tx.Hash().String(), err.Error())
 		return false
 	}
+
 	if common.IsSystemContractAddress(payload.ContractId) && payload.ErrMsg.Code == 0 {
 		eventArg := &modules.SysContractStateChangeEvent{ContractId: payload.ContractId, WriteSet: payload.WriteSet}
 		for _, eventFunc := range rep.observers {
 			eventFunc(eventArg)
 		}
+
+		// append by albert
+		if reqIndex != -1 { // 排除创世交易中的系统合约交易没有Request的情况
+			invoke, _ := tx.TxMessages[reqIndex].Payload.(*modules.ContractInvokeRequestPayload)
+			rep.statedb.UpdateStateByContractInvoke(invoke)
+		}
 	}
+
 	return true
 }
 

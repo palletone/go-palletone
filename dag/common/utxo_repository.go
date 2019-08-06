@@ -45,14 +45,10 @@ func NewUtxoRepository(utxodb storage.IUtxoDb, idxdb storage.IIndexDb, statedb s
 	return &UtxoRepository{utxodb: utxodb, idxdb: idxdb, statedb: statedb, propDb: propDb}
 }
 func NewUtxoRepository4Db(db ptndb.Database) *UtxoRepository {
-	//dagdb := storage.NewDagDb(db)
 	utxodb := storage.NewUtxoDb(db)
 	statedb := storage.NewStateDb(db)
 	idxdb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
-	//propdb := storage.NewPropertyDb(db)
-	//utxoRep := NewUtxoRepository(utxodb, idxdb, statedb)
-	//val := NewValidate(dagdb, utxodb, utxoRep, statedb)
 
 	return &UtxoRepository{utxodb: utxodb, idxdb: idxdb, statedb: statedb, propDb: propDb}
 }
@@ -63,7 +59,6 @@ type IUtxoRepository interface {
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error)
 	GetAddrUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
-	//ReadUtxos(addr common.Address, asset modules.Asset) (map[modules.OutPoint]*modules.Utxo, uint64)
 	GetUxto(txin modules.Input) *modules.Utxo
 	UpdateUtxo(unitTime int64, txHash common.Hash, payment *modules.PaymentPayload, msgIndex uint32) error
 	IsUtxoSpent(outpoint *modules.OutPoint) (bool, error)
@@ -219,11 +214,11 @@ func (repository *UtxoRepository) GetUtxoByOutpoint(outpoint *modules.OutPoint) 
 
 /**
 根据交易信息中的outputs创建UTXO， 根据交易信息中的inputs销毁UTXO
-To create utxo according to outpus in transaction, and destory utxo according to inputs in transaction
+To create utxo according to outpus in transaction, and destroy utxo according to inputs in transaction
 */
 func (repository *UtxoRepository) UpdateUtxo(unitTime int64, txHash common.Hash, payment *modules.PaymentPayload, msgIndex uint32) error {
 	// update utxo
-	err := repository.destoryUtxo(txHash, uint64(unitTime), payment.Inputs)
+	err := repository.destroyUtxo(txHash, uint64(unitTime), payment.Inputs)
 	if err != nil {
 		return err
 	}
@@ -277,9 +272,9 @@ func (repository *UtxoRepository) writeUtxo(unitTime int64, txHash common.Hash, 
 
 /**
 销毁utxo
-destory utxo, delete from UTXO database
+destroy utxo, delete from UTXO database
 */
-func (repository *UtxoRepository) destoryUtxo(txid common.Hash, unitTime uint64, txins []*modules.Input) error {
+func (repository *UtxoRepository) destroyUtxo(txid common.Hash, unitTime uint64, txins []*modules.Input) error {
 	for _, txin := range txins {
 
 		if txin == nil {
@@ -297,7 +292,7 @@ func (repository *UtxoRepository) destoryUtxo(txid common.Hash, unitTime uint64,
 		// get utxo info
 		utxo, err := repository.utxodb.GetUtxoEntry(outpoint)
 		if err != nil {
-			log.Error("Query utxo when destory uxto", "error", err.Error())
+			log.Error("Query utxo when destroy uxto", "error", err.Error())
 			return err
 		}
 
@@ -333,7 +328,7 @@ write asset info to leveldb
 
 /**
 根据assetid从数据库中获取asset的信息
-get asset infomation from leveldb by assetid ( Asset struct type )
+get asset information from leveldb by assetid ( Asset struct type )
 */
 //func (repository *UtxoRepository) GetAssetInfo(assetId *modules.Asset) (*modules.AssetInfo, error) {
 //	return repository.statedb.GetAssetInfo(assetId)
@@ -530,8 +525,6 @@ func checkUtxo(addr *common.Address, asset *modules.Asset, utxo *modules.Utxo) b
 	sAddr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
 	// check address
 	if strings.Compare(sAddr.String(), addr.String()) != 0 {
-		//fmt.Printf(">>>>> Address is not compare:scriptPubKey.Address=%s, address=%s\n",
-		//	sAddr, addr.String())
 		return false
 	}
 	return true

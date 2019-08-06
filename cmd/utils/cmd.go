@@ -34,13 +34,13 @@ import (
 	"compress/gzip"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/rlp"
+	//"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/internal/debug"
 )
 
-const (
-	importBatchSize = 2500
-)
+//const (
+//	importBatchSize = 2500
+//)
 
 // Fatalf formats a message to standard error and exits the program.
 // The message is also printed to standard output if standard error
@@ -123,8 +123,8 @@ func ImportChain(fn string) error {
 			return err
 		}
 	}
-	stream := rlp.NewStream(reader, 0)
-	stream = stream
+	//stream := rlp.NewStream(reader, 0)
+	//stream = stream
 	// Run actual the import.
 
 	//blocks := make(types.Blocks, importBatchSize)

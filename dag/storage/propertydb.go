@@ -102,7 +102,7 @@ func (propdb *PropertyDb) StoreGlobalProp(gp *modules.GlobalProperty) error {
 }
 
 func (propdb *PropertyDb) RetrieveGlobalProp() (*modules.GlobalProperty, error) {
-	gp := &modules.GlobalProperty{}
+	gp := modules.NewGlobalProp()
 	err := RetrieveFromRlpBytes(propdb.db, constants.GLOBALPROPERTY_KEY, gp)
 	if err != nil {
 		log.Debugf("Retrieve global properties error: %v", err.Error())
@@ -123,7 +123,7 @@ func (propdb *PropertyDb) RetrieveDynGlobalProp() (*modules.DynamicGlobalPropert
 }
 
 func (propdb *PropertyDb) RetrieveMediatorSchl() (*modules.MediatorSchedule, error) {
-	ms := new(modules.MediatorSchedule)
+	ms := modules.NewMediatorSchl()
 	err := RetrieveFromRlpBytes(propdb.db, constants.MEDIATOR_SCHEDULE_KEY, ms)
 	if err != nil {
 		log.Debugf("Retrieve mediator schedule error: %v", err.Error())

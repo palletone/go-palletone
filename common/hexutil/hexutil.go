@@ -117,9 +117,10 @@ func EncodeUint64(i uint64) string {
 	return string(strconv.AppendUint(enc, i, 16))
 }
 
-var bigWordNibbles int
+var bigWordNibbles int = bigWordNibblesInit()
 
-func init() {
+func bigWordNibblesInit() int {
+	var bigWordNibbles int
 	// This is a weird way to compute the number of nibbles required for big.Word.
 	// The usual way would be to use constant arithmetic but go vet can't handle that.
 	b, _ := new(big.Int).SetString("FFFFFFFFFF", 16)
@@ -131,6 +132,7 @@ func init() {
 	default:
 		panic("weird big.Word size")
 	}
+	return bigWordNibbles
 }
 
 // DecodeBig decodes a hex string with 0x prefix as a quantity.

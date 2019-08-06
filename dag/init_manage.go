@@ -38,9 +38,6 @@ func (d *Dag) SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) even
 	return d.Memdag.SubscribeToGroupSignEvent(ch)
 }
 
-//func (d *Dag) ValidateUnitExceptPayment(unit *modules.Unit) error {
-//	return d.validate.ValidateUnitExceptPayment(unit)
-//}
 func (d *Dag) IsActiveMediator(add common.Address) bool {
 	return d.GetGlobalProp().IsActiveMediator(add)
 }
@@ -81,16 +78,16 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 	list := make(map[string]bool, len(genesis.InitialMediatorCandidates))
 	for _, imc := range genesis.InitialMediatorCandidates {
 		// 存储 mediator info
-		err := imc.Validate()
+		addr, err := imc.Validate()
 		if err != nil {
 			log.Debugf(err.Error())
 			panic(err.Error())
 		}
 
 		mi := modules.NewMediatorInfo()
-		*mi.MediatorInfoBase = *imc.MediatorInfoBase
+		mi.MediatorInfoBase = imc.MediatorInfoBase
+		//*mi.MediatorApplyInfo = *imc.MediatorApplyInfo
 
-		addr, _ := common.StringToAddress(mi.AddStr)
 		err = dag.stableStateRep.StoreMediatorInfo(addr, mi)
 		if err != nil {
 			log.Debugf(err.Error())
@@ -204,18 +201,15 @@ func (d *Dag) VerifyUnitGroupSign(unitHash common.Hash, groupSign []byte) error 
 	}
 
 	err = bls.Verify(core.Suite, pubKey, unitHash[:], groupSign)
-	if err == nil {
-		//log.Debug("the group signature: " + hexutil.Encode(groupSign) +
-		//	" of the Unit that hash: " + unitHash.Hex() + " is verified through!")
-	} else {
+	if err != nil {
 		log.Debug("the group signature: " + hexutil.Encode(groupSign) + " of the Unit that hash: " +
 			unitHash.Hex() + " is verified that an error has occurred: " + err.Error())
 		return err
 	}
-
 	return nil
 }
 
+// 判断该mediator是下一个产块mediator
 func (dag *Dag) IsConsecutiveMediator(nextMediator common.Address) bool {
 	dgp := dag.GetDynGlobalProp()
 

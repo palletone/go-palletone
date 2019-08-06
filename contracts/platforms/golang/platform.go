@@ -642,7 +642,7 @@ func (goPlatform *Platform) GenerateDockerfile(cds *pb.ChaincodeDeploymentSpec) 
 	var buf []string
 	//glh
 	//buf = append(buf, "FROM "+"palletimg")
-	buf = append(buf, "FROM "+cfg.GetConfig().ContractBuilder)
+	buf = append(buf, "FROM "+cfg.GetConfig().CommonBuilder)
 	//buf = append(buf, "ADD binpackage.tar /usr/local/bin")
 
 	dockerFileContents := strings.Join(buf, "\n")

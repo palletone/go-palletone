@@ -28,6 +28,8 @@ run:
     - build
     - bdd
     - gmsm*
+    - bitutil
+    
 
   # which files to skip: they will be analyzed, but issues from them
   # won't be reported. Default value is empty list, but there is
@@ -109,7 +111,7 @@ linters-settings:
     suggest-new: true
   dupl:
     # tokens count to trigger issue, 150 by default
-    threshold: 100
+    threshold: 150
   goconst:
     # minimal length of string constant, 3 by default
     min-len: 3
@@ -181,14 +183,19 @@ linters-settings:
   #       sizeThreshold: 32
 
 linters:
-  enable:
-    - gosec
-    # - govet
-  enable-all: false
-  # disable:
-  #   - maligned
-  #   - prealloc
-  disable-all: true
+  # enable:
+  #   - gosec
+  #   - dupl
+  #   - misspell
+  #   - goimports
+  enable-all: true
+  disable:
+    - errcheck
+    - golint
+    - gocritic
+    - gochecknoglobals
+    - gocyclo
+  disable-all: false
   # presets:
   #   - bugs
   #   - unused
@@ -208,6 +215,21 @@ issues:
       - linters:
         - gosec
         text: "G[105,202,401,505]"
+      - linters:
+        - goimports
+        text: "File is not `goimports`-ed"
+      - linters:
+        - stylecheck
+        text: "ST1005:"
+      - linters:
+        - govet
+        text: "shadows declaration"
+      - linters:
+        - gofmt
+        text: "File is not `gofmt`-ed with `-s`"
+      - linters:
+        - interfacer
+        text: "can be `fmt.Stringer`"
 #     # Exclude some linters from running on tests files.
 #     - path: _test\.go
 #       linters:

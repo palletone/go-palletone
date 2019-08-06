@@ -237,6 +237,7 @@ func (statedb *StateDb) GetContractState(id []byte, field string) ([]byte, *modu
 	key := getContractStateKey(id, field)
 	log.Debugf("DB[%s] GetContractState for key:%x. field:%s ", reflect.TypeOf(statedb.db).String(), key, field)
 	data, version, err := retrieveWithVersion(statedb.db, key)
+	log.Debugf("GetContractState Result:%x,version:%s",data,version.String())
 	return data, version, err
 }
 
@@ -293,32 +294,83 @@ func (statedb *StateDb) GetContractInvoke(reqId []byte) (*modules.ContractInvoke
 	return invoke, nil
 }
 
-func (statedb *StateDb) SaveContractInvokeReq(reqid []byte, invoke *modules.ContractInvokeRequestPayload) error {
+func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvokeRequestPayload) error {
 	contractAddress := common.NewAddress(invoke.ContractId, common.ContractHash)
-	log.Debugf("save contract invoke req id(%v) contractAddress: %v, timeout: %v",
-		hex.EncodeToString(reqid), contractAddress.Str(), invoke.Timeout)
 
-	// append by Albert·gou
 	if contractAddress == syscontract.DepositContractAddress {
 		log.Debugf("Save Deposit Contract Invoke Req")
 
 		if string(invoke.Args[0]) == modules.ApplyMediator {
-			var mco modules.MediatorCreateOperation
+			//log.Debugf("ApplyMediator args:%s", string(invoke.Args[1]))
+			mco := modules.NewMediatorCreateArgs()
+
 			err := json.Unmarshal(invoke.Args[1], &mco)
 			if err == nil {
-				log.Debugf("Save Apply Mediator(%v) Invoke Req", mco.AddStr)
+				log.Debugf("Save Apply Mediator Invoke Req for account: (%v)", mco.AddStr)
 
 				mi := modules.NewMediatorInfo()
-				*mi.MediatorInfoBase = *mco.MediatorInfoBase
-				*mi.MediatorApplyInfo = *mco.MediatorApplyInfo
+				mi.MediatorInfoBase = mco.MediatorInfoBase
+				mi.MediatorApplyInfo = mco.MediatorApplyInfo
 
-				addr, _ := core.StrToMedAdd(mco.AddStr)
-				statedb.StoreMediatorInfo(addr, mi)
+				addr, err := core.StrToMedAdd(mco.AddStr)
+				if err == nil {
+					statedb.StoreMediatorInfo(addr, mi)
+				} else {
+					log.Warnf("StrToMedAdd err: %v", err.Error())
+				}
 			} else {
-				log.Debugf(err.Error())
+				log.Warnf("ApplyMediator Args Unmarshal: %v", err.Error())
+			}
+		} else if string(invoke.Args[0]) == modules.UpdateMediatorInfo {
+			//log.Debugf("UpdateMediatorInfo args:%s", string(invoke.Args[1]))
+			var mua modules.MediatorUpdateArgs
+
+			err := json.Unmarshal(invoke.Args[1], &mua)
+			if err == nil {
+				log.Debugf("Save Update Mediator(%v) Invoke Req", mua.AddStr)
+
+				addr, err := core.StrToMedAdd(mua.AddStr)
+				if err == nil {
+					mi, err := statedb.RetrieveMediatorInfo(addr)
+					if err == nil {
+						if mua.Logo != nil {
+							mi.Logo = *mua.Logo
+						}
+						if mua.Name != nil {
+							mi.Name = *mua.Name
+						}
+						if mua.Location != nil {
+							mi.Location = *mua.Location
+						}
+						if mua.Url != nil {
+							mi.Url = *mua.Url
+						}
+						if mua.Description != nil {
+							mi.Description = *mua.Description
+						}
+						if mua.Node != nil {
+							mi.Node = *mua.Node
+						}
+						statedb.StoreMediatorInfo(addr, mi)
+					} else {
+						log.Warnf("RetrieveMediatorInfo error: %v", err.Error())
+					}
+				} else {
+					log.Warnf("StrToMedAdd err: %v", err.Error())
+				}
+			} else {
+				log.Warnf("UpdateMediatorInfo Args Unmarshal: %v", err.Error())
 			}
 		}
 	}
+
+	return nil
+}
+
+func (statedb *StateDb) SaveContractInvokeReq(reqid []byte, invoke *modules.ContractInvokeRequestPayload) error {
+	contractAddress := common.NewAddress(invoke.ContractId, common.ContractHash)
+	log.Debugf("save contract invoke req id(%v) contractAddress: %v, timeout: %v",
+		hex.EncodeToString(reqid), contractAddress.Str(), invoke.Timeout)
 
 	// key: reqid
 	key := append(constants.CONTRACT_INVOKE_REQ, reqid...)

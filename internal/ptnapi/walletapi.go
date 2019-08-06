@@ -75,7 +75,7 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 		return "", fmt.Errorf("receiver address is invalid")
 	}
 
-	amounts = append(amounts, ptnjson.AddressAmt{to, amount})
+	amounts = append(amounts, ptnjson.AddressAmt{Address: to, Amount: amount})
 	if len(amounts) == 0 || !amount.IsPositive() {
 		return "", fmt.Errorf("amounts is invalid")
 	}
@@ -93,7 +93,7 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 	}
 	limitdao, _ := decimal.NewFromString("0.0001")
 	if !fee.GreaterThanOrEqual(limitdao) {
-		return "", fmt.Errorf("fee cannot less than 1 PTN ")
+		return "", fmt.Errorf("fee cannot less than 100000 Dao ")
 	}
 	daoAmount := ptnjson.Ptn2Dao(amount.Add(fee))
 	if daoAmount <= 100000000 {
@@ -116,7 +116,7 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 	}
 
 	if change > 0 {
-		amounts = append(amounts, ptnjson.AddressAmt{from, ptnjson.Dao2Ptn(change)})
+		amounts = append(amounts, ptnjson.AddressAmt{Address: from, Amount: ptnjson.Dao2Ptn(change)})
 	}
 
 	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &LockTime)
@@ -418,7 +418,7 @@ func (s *PrivateWalletAPI) SignRawTransaction(ctx context.Context, params string
 			}
 			TxHash := trimx(uvu.TxHash)
 			PkScriptHex := trimx(uvu.PkScriptHex)
-			input := ptnjson.RawTxInput{TxHash, uvu.OutIndex, uvu.MessageIndex, PkScriptHex, ""}
+			input := ptnjson.RawTxInput{Txid: TxHash, Vout: uvu.OutIndex, MessageIndex: uvu.MessageIndex, ScriptPubKey: PkScriptHex, RedeemScript: ""}
 			srawinputs = append(srawinputs, input)
 			addr, err = tokenengine.GetAddressFromScript(hexutil.MustDecode(uvu.PkScriptHex))
 			if err != nil {
@@ -542,7 +542,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 		if len(outOne.Address) == 0 || outOne.Amount.LessThanOrEqual(decimal.New(0, 0)) {
 			continue
 		}
-		amounts = append(amounts, ptnjson.AddressAmt{outOne.Address, outOne.Amount})
+		amounts = append(amounts, ptnjson.AddressAmt{Address: outOne.Address, Amount: outOne.Amount})
 		amount = amount.Add(outOne.Amount)
 	}
 	if len(amounts) == 0 || !amount.IsPositive() {
@@ -593,7 +593,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	}
 
 	if change > 0 {
-		amounts = append(amounts, ptnjson.AddressAmt{proofTransactionGenParams.From, ptnjson.Dao2Ptn(change)})
+		amounts = append(amounts, ptnjson.AddressAmt{Address: proofTransactionGenParams.From, Amount: ptnjson.Dao2Ptn(change)})
 	}
 
 	if len(inputs) == 0 {
@@ -644,7 +644,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 			TxHash := txin.PreviousOutPoint.TxHash.String()
 			OutIndex := txin.PreviousOutPoint.OutIndex
 			MessageIndex := txin.PreviousOutPoint.MessageIndex
-			input := ptnjson.RawTxInput{TxHash, OutIndex, MessageIndex, PkScriptHex, ""}
+			input := ptnjson.RawTxInput{Txid: TxHash, Vout: OutIndex, MessageIndex: MessageIndex, ScriptPubKey: PkScriptHex, RedeemScript: ""}
 			srawinputs = append(srawinputs, input)
 			addr, err = tokenengine.GetAddressFromScript(hexutil.MustDecode(PkScriptHex))
 			if err != nil {
@@ -910,7 +910,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 	if err != nil {
 		return common.Hash{}, err
 	}
-	amounts = append(amounts, ptnjson.AddressAmt{to, a})
+	amounts = append(amounts, ptnjson.AddressAmt{Address: to, Amount: a})
 
 	utxoJsons, err := s.b.GetAddrUtxos(from)
 	if err != nil {
@@ -945,7 +945,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 	}
 
 	if change > 0 {
-		amounts = append(amounts, ptnjson.AddressAmt{from, ptnjson.Dao2Ptn(change)})
+		amounts = append(amounts, ptnjson.AddressAmt{Address: from, Amount: ptnjson.Dao2Ptn(change)})
 	}
 
 	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &LockTime)
@@ -998,7 +998,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 			}
 			TxHash := trimx(uvu.TxHash)
 			PkScriptHex := trimx(uvu.PkScriptHex)
-			input := ptnjson.RawTxInput{TxHash, uvu.OutIndex, uvu.MessageIndex, PkScriptHex, ""}
+			input := ptnjson.RawTxInput{Txid: TxHash, Vout: uvu.OutIndex, MessageIndex: uvu.MessageIndex, ScriptPubKey: PkScriptHex, RedeemScript: ""}
 			srawinputs = append(srawinputs, input)
 			addr, err = tokenengine.GetAddressFromScript(hexutil.MustDecode(uvu.PkScriptHex))
 			if err != nil {
@@ -1237,6 +1237,67 @@ func (s *PrivateWalletAPI) CreateProofOfExistenceTx(ctx context.Context, addr st
 	return submitTransaction(ctx, s.b, rawTx)
 }
 
+//创建一笔溯源交易，调用721合约
+func (s *PrivateWalletAPI) CreateTraceability(ctx context.Context, addr, uid, symbol, mainData, extraData, reference string) (common.Hash, error) {
+	password := "1"
+	caddr := "PCGTta3M4t3yXu8uRgkKvaWd2d8DRijspoq"
+	contractAddr, _ := common.StringToAddress(caddr)
+	str := "[{\"TokenID\":\"" + uid + "\",\"MetaData\":\"\"}]"
+	gasToken := dagconfig.DagConfig.GasToken
+	ptn1 := decimal.New(1, 0)
+	rawTx, usedUtxo, err := s.buildRawTransferTx(gasToken, addr, addr, decimal.New(0, 0), ptn1)
+	if err != nil {
+		return common.Hash{}, err
+	}
+
+	textPayload := new(modules.DataPayload)
+	textPayload.MainData = []byte(mainData)
+	textPayload.ExtraData = []byte(extraData)
+	textPayload.Reference = []byte(reference)
+
+	args := make([][]byte, 4)
+	args[0] = []byte("supplyToken")
+	args[1] = []byte(symbol)
+	args[2] = []byte("1")
+	args[3] = []byte(str)
+	ccinvokePayload := new(modules.ContractInvokeRequestPayload)
+	ccinvokePayload.Args = args
+	ccinvokePayload.ContractId = contractAddr.Bytes()
+	ccinvokePayload.Timeout = 0
+
+	rawTx.TxMessages = append(rawTx.TxMessages, modules.NewMessage(modules.APP_DATA, textPayload))
+	rawTx.TxMessages = append(rawTx.TxMessages, modules.NewMessage(modules.APP_CONTRACT_INVOKE_REQUEST, ccinvokePayload))
+	//lockscript
+	getPubKeyFn := func(addr common.Address) ([]byte, error) {
+		//TODO use keystore
+		ks := s.b.GetKeyStore()
+		return ks.GetPublicKey(addr)
+	}
+	//sign tx
+	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
+		ks := s.b.GetKeyStore()
+		return ks.SignMessage(addr, msg)
+	}
+	utxoLockScripts := make(map[modules.OutPoint][]byte)
+	for _, utxo := range usedUtxo {
+		utxoLockScripts[utxo.OutPoint] = utxo.PkScript
+	}
+	fromAddr, err := common.StringToAddress(addr)
+	err = s.unlockKS(fromAddr, password, nil)
+	if err != nil {
+		return common.Hash{}, err
+	}
+	//3.
+	_, err = tokenengine.SignTxAllPaymentInput(rawTx, 1, utxoLockScripts, nil, getPubKeyFn, getSignFn)
+	if err != nil {
+		return common.Hash{}, err
+	}
+	txJson, _ := json.Marshal(rawTx)
+	log.DebugDynamic(func() string { return "SignedTx:" + string(txJson) })
+	//4.
+	return submitTransaction(ctx, s.b, rawTx)
+}
+
 func (s *PublicWalletAPI) getFileInfo(filehash string) (string, error) {
 	//get fileinfos
 	files, err := s.b.GetFileInfo(filehash)
@@ -1318,18 +1379,38 @@ func (s *PublicWalletAPI) GetProofOfExistencesByAsset(ctx context.Context, asset
 }
 
 //affiliation  gptn.mediator1
-func (s *PublicWalletAPI) GenCert(ctx context.Context, caAddress, userAddress, passwd, name, data, roleType, affiliation string) (*ContractDeployRsp, error) {
+func (s *PrivateWalletAPI) GenCert(ctx context.Context, caAddress, userAddress, passwd, name, data, roleType, affiliation string) (*ContractDeployRsp, error) {
+	contractAddr := "PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk"
+	// 参数检查
+	_, err := common.StringToAddress(userAddress)
+	if err != nil {
+		return nil, fmt.Errorf("invalid account address: %v", userAddress)
+	}
+	caAddr, err := common.StringToAddress(caAddress)
+	if err != nil {
+		return nil, fmt.Errorf("invalid account address: %v", userAddress)
+	}
+	cAddr, err := common.StringToAddress(contractAddr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid account address: %v", userAddress)
+	}
 
 	ks := s.b.GetKeyStore()
 	account, err := MakeAddress(ks, userAddress)
 	if err != nil {
 		return nil, err
 	}
+
 	//导出私钥 用于证书的生成
 	privKey, _ := ks.DumpPrivateKey(account, passwd)
 	if err != nil {
 		return nil, err
 	}
+	err = s.unlockKS(caAddr, "1", nil)
+	if err != nil {
+		return nil, err
+	}
+
 	ca := certficate.CertINfo{}
 	ca.Address = userAddress
 	ca.Name = name
@@ -1349,16 +1430,75 @@ func (s *PublicWalletAPI) GenCert(ctx context.Context, caAddress, userAddress, p
 	args[1] = []byte(userAddress)
 	args[2] = certBytes
 
-	contractAddr := "PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk"
-	caAddr, _ := common.StringToAddress(caAddress)
-	cAddr, _ := common.StringToAddress(contractAddr)
-	reqId, err := s.b.ContractInvokeReqTx(caAddr, caAddr, 10000, 0000, nil, cAddr, args, 0)
+	reqId, err := s.b.ContractInvokeReqTx(caAddr, caAddr, 10000, 10000, nil, cAddr, args, 0)
+	if err != nil {
+		return nil, err
+	}
 	log.Infof("GenCert reqId[%s]", hex.EncodeToString(reqId[:]))
 	rsp := &ContractDeployRsp{
 		ReqId:      hex.EncodeToString(reqId[:]),
 		ContractId: contractAddr,
 	}
 
+	return rsp, nil
+}
+
+//吊销证书  将crl存入到数字身份系统合约中
+func (s *PrivateWalletAPI) RevokeCert(ctx context.Context, caAddress, passwd, userAddress string) (*ContractDeployRsp, error) {
+	contractAddr := "PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk"
+	// 参数检查
+	_, err := common.StringToAddress(userAddress)
+	if err != nil {
+		return nil, fmt.Errorf("invalid account address: %v", userAddress)
+	}
+	caAddr, err := common.StringToAddress(caAddress)
+	if err != nil {
+		return nil, fmt.Errorf("invalid account address: %v", userAddress)
+	}
+	cAddr, err := common.StringToAddress(contractAddr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid account address: %v", userAddress)
+	}
+	//导出ca私钥用于吊销用户证书
+	ks := s.b.GetKeyStore()
+	account, err := MakeAddress(ks, caAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	privKey, _ := ks.DumpPrivateKey(account, passwd)
+	if err != nil {
+		return nil, err
+	}
+	err = s.unlockKS(caAddr, passwd, nil)
+	if err != nil {
+		return nil, err
+	}
+	reason := "PalletOne system administrator revokes certificate!"
+
+	ca := certficate.CertINfo{}
+	ca.Address = userAddress
+	ca.Key = privKey
+	crlByte, err := certficate.RevokeCert(ca, reason)
+	if err != nil {
+		return nil, err
+	}
+	log.Infof("RevokeCert Success!  CrlByte[%s]", crlByte)
+
+	//调用系统合约 将CrlByte存入到数字身份系统合约中
+	args := make([][]byte, 2)
+	args[0] = []byte("addCRL")
+	args[1] = crlByte
+
+	reqId, err := s.b.ContractInvokeReqTx(caAddr, caAddr, 10000, 10000, nil, cAddr, args, 0)
+	if err != nil {
+		return nil, err
+	}
+	log.Infof("RevokeCert reqId[%s]", hex.EncodeToString(reqId[:]))
+	rsp := &ContractDeployRsp{
+		ReqId:      hex.EncodeToString(reqId[:]),
+		ContractId: contractAddr,
+	}
 	return rsp, nil
 }
 
@@ -1420,8 +1560,8 @@ func readTxs(path string) ([]string, error) {
 		line = strings.Replace(line, "\r\n", "", -1)
 		txs = append(txs, line)
 	}
-	if len(txs) > 10000 {
-		return txs[:10000], err
+	if len(txs) > 2000 {
+		return txs[:2000], err
 	}
 	return txs, err
 }

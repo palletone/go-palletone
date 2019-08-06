@@ -286,7 +286,7 @@ func accountList(ctx *cli.Context) error {
 }
 
 // tries unlocking the specified account a few times.
-func unlockAccount(ctx *cli.Context, ks *keystore.KeyStore, address string, i int, passwords []string) (accounts.Account, string) {
+func unlockAccount( /*ctx *cli.Context*/ ks *keystore.KeyStore, address string, i int, passwords []string) (accounts.Account, string) {
 	account, err := utils.MakeAddress(ks, address)
 	if err != nil {
 		utils.Fatalf("Could not list accounts: %v", err)
@@ -379,6 +379,7 @@ func createAccount(ctx *cli.Context, password string) (common.Address, error) {
 	// Load config file.
 	if cfg, configDir, err = maybeLoadConfig(ctx); err != nil {
 		utils.Fatalf("%v", err)
+		return common.Address{}, err
 	}
 
 	cfg.Node.P2P = cfg.P2P
@@ -388,6 +389,7 @@ func createAccount(ctx *cli.Context, password string) (common.Address, error) {
 	address, err := keystore.StoreKey(keydir, password, scryptN, scryptP)
 	if err != nil {
 		utils.Fatalf("Failed to create account: %v", err)
+		return common.Address{}, err
 	}
 
 	return address, nil
@@ -397,7 +399,10 @@ func newAccount(ctx *cli.Context) (common.Address, error) {
 	password := getPassPhrase("Your new account is locked with a password. Please give a password. "+
 		"Do not forget this password.", true, 0, utils.MakePasswordList(ctx))
 
-	address, _ := createAccount(ctx, password)
+	address, err := createAccount(ctx, password)
+	if err != nil {
+		return common.Address{}, err
+	}
 
 	return address, nil
 }
@@ -424,7 +429,7 @@ func accountUpdate(ctx *cli.Context) error {
 	ks := stack.GetKeyStore()
 
 	for _, addr := range ctx.Args() {
-		account, oldPassword := unlockAccount(ctx, ks, addr, 0, nil)
+		account, oldPassword := unlockAccount(ks, addr, 0, nil)
 		newPassword := getPassPhrase("Please give a new password. Do not forget this password.", true, 0, nil)
 		if err := ks.Update(account, oldPassword, newPassword); err != nil {
 			utils.Fatalf("Could not update the account: %v", err)
@@ -534,9 +539,9 @@ type RawTransactionGenParams struct {
 	} `json:"outputs"`
 	Locktime int64 `json:"locktime"`
 }
-type RawTransactionGenResult struct {
-	Rawtx string `json:"rawtx"`
-}
+//type RawTransactionGenResult struct {
+//	Rawtx string `json:"rawtx"`
+//}
 
 type SignTransactionParams struct {
 	RawTx  string `json:"rawtx"`
@@ -572,7 +577,7 @@ func accountCreateTx(ctx *cli.Context) error {
 	//transaction inputs
 	var inputs []ptnjson.TransactionInput
 	for _, inputOne := range rawTransactionGenParams.Inputs {
-		input := ptnjson.TransactionInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex}
+		input := ptnjson.TransactionInput{Txid: inputOne.Txid, Vout: inputOne.Vout, MessageIndex: inputOne.MessageIndex}
 		inputs = append(inputs, input)
 	}
 	if len(inputs) == 0 {
@@ -624,7 +629,8 @@ func accountSignTx(ctx *cli.Context) error {
 	//transaction inputs
 	var rawinputs []ptnjson.RawTxInput
 	for _, inputOne := range signTransactionParams.Inputs {
-		input := ptnjson.RawTxInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex, inputOne.ScriptPubKey, inputOne.RedeemScript}
+		input := ptnjson.RawTxInput{Txid: inputOne.Txid, Vout: inputOne.Vout, MessageIndex: inputOne.MessageIndex, ScriptPubKey: inputOne.ScriptPubKey,
+			RedeemScript: inputOne.RedeemScript}
 		rawinputs = append(rawinputs, input)
 	}
 	if len(rawinputs) == 0 {
@@ -643,8 +649,8 @@ func accountSignTx(ctx *cli.Context) error {
 	}
 	//	// All returned errors (not OOM, which panics) encounted during
 	//	// bytes.Buffer writes are unexpected.
-	send_args := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx, &rawinputs, &keys, nil)
-	send_args = send_args
+	//send_args := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx, &rawinputs, &keys, nil)
+	//send_args = send_args
 	//signtxout, err := ptnapi.SignRawTransaction(send_args)
 	//if signtxout == nil {
 	//	utils.Fatalf("Invalid signature")

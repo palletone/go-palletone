@@ -199,6 +199,7 @@ func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byt
 		SysCC:    false,
 	}
 	if depId.IsSystemContractAddress() {
+		cc.SysCC = true
 		err = cclist.SetChaincode(chainID, 0, cc)
 		if err != nil {
 			log.Error("Deploy", "SetChaincode fail, chainId", chainID, "name", cc.Name)
@@ -275,12 +276,18 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 		return nil, err
 	}
 	rsp, unit, err := es.ProcessProposal(rwM, idag, deployId, context.Background(), sprop, prop, chainID, cid, timeout)
-	//  TODO 执行完invoke，获取容器资源使用情况
-	utils.GetResourcesWhenInvokeContainer(cc)
 	log.Debugf("process proposal")
 	if err != nil {
 		log.Infof("ProcessProposal error[%v]", err)
 		return nil, err
+	}
+	//
+	if !cc.SysCC {
+		sizeRW, disk, isOver := utils.RemoveConWhenOverDisk(cc, idag)
+		if isOver {
+			log.Debugf("utils.KillAndRmWhenOver name = %s,sizeRW = %d,disk = %d", cc.Name, sizeRW, disk)
+			return nil, fmt.Errorf("utils.KillAndRmWhenOver name = %s,sizeRW = %d bytes,disk = %d bytes", cc.Name, sizeRW, disk)
+		}
 	}
 	stopTm := time.Now()
 	duration := stopTm.Sub(startTm)
@@ -336,9 +343,7 @@ func StopByName(contractid []byte, chainID string, txid string, usercc *cclist.C
 	return stopResult, nil
 }
 
-func GetAllContainers(client *docker.Client, disk int64) {
-	//  监听所有容器的磁盘使用量
-	utils.GetDiskForEachContainer(client, disk)
+func GetAllContainers(client *docker.Client) {
 	//
 	addrs, err := utils.GetAllExitedContainer(client)
 	if err != nil {

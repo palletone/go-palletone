@@ -64,7 +64,7 @@ const Wallet_JS = `
         new web3._extend.Method({
 		    name: 'signRawTransaction',
 		    call: 'wallet_signRawTransaction',
-		    params: 3
+		    params: 4
 		}),	
         new web3._extend.Method({
 		    name: 'sendRlpTransaction',
@@ -103,6 +103,11 @@ const Wallet_JS = `
 			name: 'createProofOfExistenceTx',
 			call: 'wallet_createProofOfExistenceTx',
 			params: 5
+		}),
+        new web3._extend.Method({
+			name: 'createTraceability',
+			call: 'wallet_createTraceability',
+			params: 6
 		}),
 		new web3._extend.Method({
 			name: 'getProofOfExistencesByRef',
@@ -145,8 +150,13 @@ const Wallet_JS = `
 		}),	
 		new web3._extend.Method({
 			name: 'genCert',
-			call: 'wallet_gencert',
+			call: 'wallet_genCert',
 			params: 7
+		}),
+        new web3._extend.Method({
+			name: 'revokeCert',
+			call: 'wallet_revokeCert',
+			params: 3
 		}),
         new web3._extend.Method({
             name: 'addBatchTxs',

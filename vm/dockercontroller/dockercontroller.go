@@ -35,6 +35,7 @@ import (
 	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/comm"
+	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	container "github.com/palletone/go-palletone/vm/api"
 	"github.com/palletone/go-palletone/vm/ccintf"
@@ -560,13 +561,13 @@ func (vm *DockerVM) GetImageId(ccid ccintf.CCID) (string, error) {
 	vmName := ccid.ChaincodeSpec.Type
 	switch vmName {
 	case 1:
-		return "palletone/goimg", nil
+		return contractcfg.GetConfig().GolangBuilder, nil
 	case 2:
-		return "node", nil
+		return contractcfg.GetConfig().NodejsBuilder, nil
 	case 3:
-		return "java", nil
+		return contractcfg.GetConfig().JavaBuilder, nil
 	default:
-		return "palletone", nil
+		return contractcfg.GetConfig().GolangBuilder, nil
 	}
 }
 

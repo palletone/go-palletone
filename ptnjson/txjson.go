@@ -34,6 +34,7 @@ import (
 
 type TxJson struct {
 	TxHash             string              `json:"tx_hash"`
+	RequestHash        string              `json:"request_hash"`
 	TxSize             float64             `json:"tx_size"`
 	Payment            []*PaymentJson      `json:"payment"`
 	Fee                uint64              `json:"fee"`
@@ -109,7 +110,7 @@ type SignatureJson struct {
 type InvokeRequestJson struct {
 	Number       int           `json:"row_number"`
 	ContractAddr string        `json:"contract_addr"`
-	Args         []string      `json"arg_set"`
+	Args         []string      `json:"arg_set"`
 	Timeout      time.Duration `json:"timeout"`
 }
 
@@ -147,7 +148,8 @@ type AccountStateJson struct {
 	WriteSet string `json:"write_set"`
 }
 
-func ConvertTxWithUnitInfo2FullJson(tx *modules.TransactionWithUnitInfo, utxoQuery modules.QueryUtxoFunc) *TxWithUnitInfoJson {
+func ConvertTxWithUnitInfo2FullJson(tx *modules.TransactionWithUnitInfo,
+	utxoQuery modules.QueryUtxoFunc) *TxWithUnitInfoJson {
 	txjson := &TxWithUnitInfoJson{
 		UnitHash:   tx.UnitHash.String(),
 		UnitHeight: tx.UnitIndex,
@@ -158,11 +160,13 @@ func ConvertTxWithUnitInfo2FullJson(tx *modules.TransactionWithUnitInfo, utxoQue
 
 	return txjson
 }
-func ConvertTx2FullJson(tx *modules.Transaction, utxoQuery modules.QueryUtxoFunc) *TxJson {
+func ConvertTx2FullJson(tx *modules.Transaction,
+	utxoQuery modules.QueryUtxoFunc) *TxJson {
 	txjson := &TxJson{}
 	txjson.Payment = []*PaymentJson{}
 	txjson.Data = []*DataJson{}
 	txjson.TxHash = tx.Hash().String()
+	txjson.RequestHash = tx.RequestHash().String()
 	txjson.TxSize = float64(tx.Size())
 	for i, m := range tx.TxMessages {
 		if m.App == modules.APP_PAYMENT {
@@ -178,7 +182,11 @@ func ConvertTx2FullJson(tx *modules.Transaction, utxoQuery modules.QueryUtxoFunc
 			}
 		} else if m.App == modules.APP_DATA {
 			data := m.Payload.(*modules.DataPayload)
-			dataJson := &DataJson{MainData: string(data.MainData), ExtraData: string(data.ExtraData), Reference: string(data.Reference)}
+			dataJson := &DataJson{
+				MainData: string(data.MainData), 
+				ExtraData: string(data.ExtraData), 
+				Reference: string(data.Reference),
+			}
 			dataJson.Number = i
 			txjson.Data = append(txjson.Data, dataJson)
 		} else if m.App == modules.APP_CONTRACT_TPL_REQUEST {

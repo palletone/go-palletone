@@ -19,8 +19,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/palletone/go-palletone/dag/constants"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -79,7 +77,35 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 		}
 		return shim.Success(nil)
 	} else {
-		return shim.Error("Only once")
+		//  追缴逻辑
+		if balance.Role != Jury {
+			return shim.Error("not jury")
+		}
+		all := balance.Balance + invokeTokens.Amount
+		if all != cp.DepositAmountForJury {
+			return shim.Error("Too many or too little.")
+		}
+		//这里需要判断是否以及被基金会提前移除候选列表，即在规定时间内该节点没有追缴保证金
+		b, err := isInCandidate(stub, invokeAddr.String(), modules.JuryList)
+		if err != nil {
+			log.Debugf("isInCandidate error: %s", err.Error())
+			return shim.Error(err.Error())
+		}
+		if !b {
+			//  加入jury候选列表
+			err = addCandaditeList(stub, invokeAddr, modules.JuryList)
+			if err != nil {
+				log.Error("addCandidateListAndPutStateForMediator err: ", "error", err)
+				return shim.Error(err.Error())
+			}
+		}
+		balance.Balance = all
+		err = SaveNodeBalance(stub, invokeAddr.String(), balance)
+		if err != nil {
+			log.Error("save node balance err: ", "error", err)
+			return shim.Error(err.Error())
+		}
+		return shim.Success(nil)
 	}
 }
 
@@ -94,39 +120,5 @@ func juryApplyQuit(stub shim.ChaincodeStubInterface, args []string) peer.Respons
 
 //  处理
 func handleJury(stub shim.ChaincodeStubInterface, quitAddr common.Address) error {
-	//  移除退出列表
-	listForQuit, err := GetListForQuit(stub)
-	if err != nil {
-		return err
-	}
-	delete(listForQuit, quitAddr.String())
-	err = SaveListForQuit(stub, listForQuit)
-	if err != nil {
-		return err
-	}
-	//  退还保证金
-	cp, err := stub.GetSystemConfig()
-	if err != nil {
-		return err
-	}
-	//  调用从合约把token转到请求地址
-	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
-	err = stub.PayOutToken(quitAddr.String(), modules.NewAmountAsset(cp.DepositAmountForJury, gasToken), 0)
-	if err != nil {
-		log.Error("stub.PayOutToken err:", "error", err)
-		return err
-	}
-	//  移除候选列表
-	err = moveCandidate(modules.JuryList, quitAddr.String(), stub)
-	if err != nil {
-		log.Error("moveCandidate err:", "error", err)
-		return err
-	}
-	//  删除节点
-	err = stub.DelState(string(constants.DEPOSIT_BALANCE_PREFIX) + quitAddr.String())
-	if err != nil {
-		log.Error("stub.DelState err:", "error", err)
-		return err
-	}
-	return nil
+	return handleNode(stub, quitAddr, Jury)
 }

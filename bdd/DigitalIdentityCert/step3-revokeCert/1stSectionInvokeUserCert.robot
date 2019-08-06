@@ -9,7 +9,7 @@ Library           String
 1stSectionInvokeUserCert
     Given section unlock his account succed
     When section revoke user certificate succed
-    And wait for transaction being packaged
+    And Wait for transaction being packaged
     And section can query his issued crl file
     Then user certificate revocation time is before now
 

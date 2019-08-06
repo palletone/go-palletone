@@ -55,8 +55,6 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	}
 
 	newUnit.UnitHeader.Time = when.Unix()
-	//newUnit.UnitHeader.ParentsHash[0] = dag.HeadUnitHash()
-	//newUnit.UnitHeader.Number.Index = dag.HeadUnitNum() + 1
 	newUnit.UnitHeader.GroupPubKey = groupPubKey
 	newUnit.Hash()
 
@@ -87,8 +85,8 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 		var (
 			events = make([]interface{}, 0, 2)
 		)
-		events = append(events, modules.ChainHeadEvent{sign_unit})
-		events = append(events, modules.ChainEvent{sign_unit, sign_unit.UnitHash})
+		events = append(events, modules.ChainHeadEvent{Unit: sign_unit})
+		events = append(events, modules.ChainEvent{Unit: sign_unit, Hash: sign_unit.UnitHash})
 		dag.PostChainEvents(events)
 	}()
 

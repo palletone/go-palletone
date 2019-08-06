@@ -26,10 +26,12 @@ import (
 	"reflect"
 	"unicode"
 
+	"bytes"
 	"github.com/naoina/toml"
 	"github.com/palletone/go-palletone/adaptor"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/files"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
@@ -42,11 +44,9 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn"
-	"github.com/palletone/go-palletone/ptnjson"
+	//"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 	"gopkg.in/urfave/cli.v1"
-	"bytes"
-	"github.com/palletone/go-palletone/common/crypto"
 )
 
 const defaultConfigPath = "./ptn-config.toml"
@@ -101,17 +101,17 @@ var tomlSettings = toml.Config{
 }
 
 // SignRawTransactionCmd defines the signrawtransaction JSON-RPC command.
-type SignRawTransactionCmd struct {
-	RawTx    string
-	Inputs   *[]ptnjson.RawTxInput
-	PrivKeys *[]string
-	Flags    *string `jsonrpcdefault:"\"ALL\""`
-}
+//type SignRawTransactionCmd struct {
+//	RawTx    string
+//	Inputs   *[]ptnjson.RawTxInput
+//	PrivKeys *[]string
+//	Flags    *string `jsonrpcdefault:"\"ALL\""`
+//}
 
-const (
-	NETID_MAIN = iota
-	NETID_TEST
-)
+//const (
+//	NETID_MAIN = iota
+//	NETID_TEST
+//)
 
 type ptnstatsConfig struct {
 	URL string `toml:",omitempty"`
@@ -246,7 +246,7 @@ func makeConfigNode(ctx *cli.Context, isInConsole bool) (*node.Node, FullConfig)
 		utils.Fatalf("Failed to create the protocol stack: %v", err)
 	}
 
-	utils.SetContractConfig(ctx, &cfg.Contract, dataDir)
+	//utils.SetContractConfig(ctx, &cfg.Contract, dataDir)
 	utils.SetTxPoolConfig(ctx, &cfg.TxPool)
 	utils.SetDagConfig(ctx, &cfg.Dag, dataDir)
 	mp.SetMediatorConfig(ctx, &cfg.MediatorPlugin)
@@ -258,9 +258,9 @@ func makeConfigNode(ctx *cli.Context, isInConsole bool) (*node.Node, FullConfig)
 	adaptorPtnConfig(&cfg)
 
 	utils.SetPtnConfig(ctx, stack, &cfg.Ptn)
-	if bytes.Equal( cfg.Ptn.CryptoLib,[]byte{1,1}){
+	if bytes.Equal(cfg.Ptn.CryptoLib, []byte{1, 1}) {
 		fmt.Println("Use GM crypto lib")
-		crypto.MyCryptoLib=&crypto.CryptoGm{}
+		crypto.MyCryptoLib = &crypto.CryptoGm{}
 	}
 	if ctx.GlobalIsSet(utils.EthStatsURLFlag.Name) {
 		cfg.Ptnstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
@@ -375,12 +375,11 @@ func makeConfigFile(cfg *FullConfig, configPath string) error {
 	}
 
 	configFile, err = os.Create(configPath)
-	defer configFile.Close()
 	if err != nil {
 		utils.Fatalf("%v", err)
 		return err
 	}
-
+        defer configFile.Close()
 	configToml, err := tomlSettings.Marshal(cfg)
 	if err != nil {
 		log.Error(err.Error())

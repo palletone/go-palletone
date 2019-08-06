@@ -515,7 +515,7 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 		if !ctx.reqTx.IsSystemContract() {
 			defer rwM.CloseTxSimulator(setChainId, reqId.String())
 		}
-		if ctx.reqTx.IsSystemContract() && p.contractEventExecutable(CONTRACT_EVENT_EXEC, ctx.reqTx, nil,0) {
+		if ctx.reqTx.IsSystemContract() && p.contractEventExecutable(CONTRACT_EVENT_EXEC, ctx.reqTx, nil, 0) {
 			if cType, err := getContractTxType(ctx.reqTx); err == nil && cType != modules.APP_CONTRACT_TPL_REQUEST {
 				ctx.valid = false
 				log.Debugf("[%s]AddContractLoop, A enter mtx, addr[%s]", shortId(reqId.String()), addr.String())
@@ -539,9 +539,13 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 			log.Debugf("[%s]AddContractLoop ,ReqId is exist, rst reqId[%s]", shortId(reqId.String()), reqId.String())
 			continue
 		}
+		if p.checkTxIsExist(tx) {
+			log.Debugf("[%s]AddContractLoop ,tx is exist, rst reqId[%s]", shortId(reqId.String()), reqId.String())
+			continue
+		}
 		log.Debugf("[%s]AddContractLoop, B enter mtx, addr[%s]", shortId(reqId.String()), addr.String())
 		if tx.IsSystemContract() {
-			sigTx, err := p.GenContractSigTransaction(addr, "", ctx.rstTx, ks)
+			sigTx, err := p.GenContractSigTransaction(addr, "", tx, ks)
 			if err != nil {
 				log.Error("AddContractLoop GenContractSigTransctions", "error", err.Error())
 				continue
@@ -761,7 +765,12 @@ func (p *Processor) createContractTxReq(contractId, from, to common.Address, dao
 	if err != nil {
 		return common.Hash{}, nil, err
 	}
-	log.Debugf("[%s]createContractTxReq, contractId[%s], tx[%v]", shortId(tx.RequestHash().String()), contractId.String(), tx)
+	reqId := tx.RequestHash()
+	if !checkContractTxFeeValid(p.dag, tx) {
+		log.Errorf("[%s]createContractTxReq, checkContractTxFeeValid fail", shortId(reqId.String()))
+		return common.Hash{}, nil, errors.New("checkContractTxFeeValid false")
+	}
+	log.Debugf("[%s]createContractTxReq, contractId[%s], tx[%v]", shortId(reqId.String()), contractId.String(), tx)
 	return p.signAndExecute(contractId, from, tx, isLocalInstall)
 }
 func (p *Processor) SignAndExecuteAndSendRequest(from common.Address, tx *modules.Transaction) (*modules.Transaction, error) {

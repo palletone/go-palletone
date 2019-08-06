@@ -357,11 +357,6 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 
 	// append by Albert·Gou
 	timestamp := time.Unix(unit.Timestamp(), 0)
-	unitHash := unit.Hash()
-	log.Debugf("Received unit(%v) #%v parent(%v) @%v signed by %v", unitHash.TerminalString(),
-		unit.NumberU64(), unit.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
-		unit.Author().Str())
-
 	latency := time.Now().Sub(timestamp)
 	if latency < -5*time.Second {
 		errStr := fmt.Sprintf("Rejecting unit #%v with timestamp(%v) in the future signed by %v",
@@ -370,12 +365,17 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		return fmt.Errorf(errStr)
 	}
 
+	unitHash := unit.Hash()
 	if pm.IsExistInCache(unitHash.Bytes()) {
 		//log.Debugf("Received unit(%v) again, ignore it", unitHash.TerminalString())
 		p.MarkUnit(unitHash)
 		p.SetHead(unitHash, unit.Number())
 		return nil
 	}
+
+	log.Infof("Received unit(%v) #%v parent(%v) @%v signed by %v", unitHash.TerminalString(),
+		unit.NumberU64(), unit.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
+		unit.Author().Str())
 
 	log.DebugDynamic(func() string {
 		txids := []common.Hash{}
@@ -488,10 +488,6 @@ func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 }
 
 func (pm *ProtocolManager) VSSDealMsg(msg p2p.Msg, p *peer) error {
-	// comment by Albert·Gou
-	//var vssmsg vssMsg
-	//if err := msg.Decode(&vssmsg); err != nil {
-
 	var deal mp.VSSDealEvent
 	if err := msg.Decode(&deal); err != nil {
 		errStr := fmt.Sprintf("VSSDealMsg: %v, err: %v", msg, err)
@@ -509,16 +505,9 @@ func (pm *ProtocolManager) VSSDealMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	pm.producer.AddToDealBuf(&deal)
+	// todo albert 清除在限制时间范围之外的deal消息
 
-	// comment by Albert·Gou
-	////TODO vssmark
-	//if !pm.peers.PeersWithoutVss(vssmsg.NodeId) {
-	//	pm.producer.AddToDealBuf(vssmsg.Deal)
-	//	pm.peers.MarkVss(vssmsg.NodeId)
-	//	pm.BroadcastVss(vssmsg.NodeId, vssmsg.Deal)
-	//}
-
+	go pm.producer.AddToDealBuf(&deal)
 	return nil
 }
 
@@ -531,6 +520,8 @@ func (pm *ProtocolManager) VSSResponseMsg(msg p2p.Msg, p *peer) error {
 		//return fmt.Errorf(errStr)
 		return nil
 	}
+
+	// todo albert 清除在限制时间范围之外的response消息
 
 	go pm.producer.AddToResponseBuf(&resp)
 	return nil

@@ -34,23 +34,18 @@ const (
 	DefaultDepositAmountForDeveloper = 1 * 100000000
 	DefaultFoundationAddress         = "P1LA8TkEWxU6FcMzkyeSbf9b9FwZwxrYRuF"
 
-	DefaultUccMemory    = 104857600 //物理内存  1073741824  1G 2147483648 2G 200m 209715200 100m 104857600
-	DefaultUccCpuAmount = "0.1"
+	DefaultUccMemory      = 524288000  // 每个容器使用内存最大 = 524288000 = 500 M
+	DefaultUccCpuShares   = 1024       // 每个容器相对占用CPU 1024 = 1 CPU
+	DefaultUccCpuQuota    = 100000     //  每个容器最多使用CPU核数 = 1 CPU
+	DefaultUccDisk        = 1073741824 //  每个容器磁盘使用量最多使用 = 1073741824 = 1G
+	DefaultUccPrivileged  = false
+	DefaultUccNetworkMode = "bridge" //TODO xiaozhi 生产环境
+	//DefaultUccNetworkMode    = "host" //TODO xiaozhi 测试容器运行网络模式
+	defaultUccOOMKillDisable = false
 
-	//DefaultUccMemorySwap = 104857600 //内存交换区，不设置默认为memory的两倍
-	DefaultUccCpuShares = 1024 //CPU占用率，相对的  CPU 利用率权重，默认为 1024
-	//DefaultCpuPeriod     = 100000    // 完全公平调度器：默认100ms,限制CPU --cpu-period=100000 --cpu-quota=100000
-	DefaultUccCpuQuota   = 100000    // 即：容器可以最多使用1个CPU
-	DefaultUccDisk       = 157286400 // 1073741824 = 1G  157286400 = 150m
-	DefaultUccPrivileged = false     //防止容器以root权限运行
-	//DefaultUccNetworkMode    = "bridge"   //容器运行网络模式
-	DefaultUccNetworkMode    = "host" //TODO xiaozhi 测试容器运行网络模式
-	defaultUccOOMKillDisable = false  //是否内存使用量超过上限时系统杀死进程
-
-	DefaultTempUccMemory = 1073741824 //物理内存  1073741824  1G 2147483648 2G   4G 4294967296
-	//DefaultTempUccMemorySwap = 1073741824 //内存交换区，不设置默认为memory的两倍 1073741824  1G 2147483648 2G
-	DefaultTempUccCpuShares = 1024   //CPU占用率，相对的  CPU 利用率权重，默认为 1024
-	DefaultTempUccCpuQuota  = 200000 //限制CPU 200%上限，即最多使用2个CPU
+	DefaultTempUccMemory    = 1073741824
+	DefaultTempUccCpuShares = 1024
+	DefaultTempUccCpuQuota  = 200000
 
 	DefaultTokenHolder = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
 
@@ -67,8 +62,16 @@ const (
 	DefaultMinMediatorCount    = 1 //21
 	DefaultMinMediatorInterval = 1
 
+	//contract
 	DefaultContractSignatureNum = 3
 	DefaultContractElectionNum  = 4
+
+	DefaultContractTxTimeoutUnitFee  = 10 //ms
+	DefaultContractTxSizeUnitFee     = 50 //byte
+	DefaultContractTxInstallFeeLevel = 2.3
+	DefaultContractTxDeployFeeLevel  = 1.8
+	DefaultContractTxInvokeFeeLevel  = 1.0
+	DefaultContractTxStopFeeLevel    = 0.5
 
 	DefaultText = "姓名 丨 坐标 丨 简介   \r\n" +
 		"孟岩丨北京丨通证派倡导者、CSDN副总裁、柏链道捷CEO.\r\n" +

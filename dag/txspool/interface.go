@@ -40,8 +40,7 @@ type ITxPool interface {
 	AddRemote(tx *modules.Transaction) error
 	AddRemotes([]*modules.Transaction) []error
 	ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag Tag) ([]*TxDesc, error)
-	// Pending should return pending transactions.
-	// The slice should be modifiable by the caller.
+
 	Pending() (map[common.Hash][]*modules.TxPoolTransaction, error)
 	Queued() ([]*modules.TxPoolTransaction, error)
 	SetPendingTxs(unit_hash common.Hash, num uint64, txs []*modules.Transaction) error

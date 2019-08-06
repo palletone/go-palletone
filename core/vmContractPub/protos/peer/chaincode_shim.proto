@@ -51,9 +51,6 @@ message ChaincodeMessage {
 //        QUERY_STATE_CLOSE = 17;
         KEEPALIVE = 18;
 //        GET_HISTORY_FOR_KEY = 19;
-        OUTCHAIN_ADDRESS = 20;
-        OUTCHAIN_TRANSACTION = 21;
-        OUTCHAIN_QUERY = 22;
         GET_SYSTEM_CONFIG_REQUEST = 23;
         GET_CONTRACT_ALL_STATE = 24;
         GET_TOKEN_BALANCE=25;
@@ -145,24 +142,6 @@ message QueryResponse {
     repeated QueryResultBytes results = 1;
     bool has_more = 2;
     string id = 3;
-}
-
-message OutChainAddress {
-    string OutChainName = 1;
-    bytes params = 2;
-    string collection = 3;
-}
-
-message OutChainTransaction {
-    string OutChainName = 1;
-    bytes params = 2;
-    string collection = 3;
-}
-
-message OutChainQuery {
-    string OutChainName = 1;
-    bytes params = 2;
-    string collection = 3;
 }
 
 message OutChainCall {

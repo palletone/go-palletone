@@ -33,7 +33,6 @@ import (
 	"sync"
 	"time"
 
-	"crypto/ecdsa"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -477,13 +476,13 @@ func (ks *KeyStore) DumpKey(a accounts.Account, passphrase string) (privateKey [
 	return key.PrivateKey, nil
 
 }
-func (ks *KeyStore) DumpPrivateKey(a accounts.Account, passphrase string) (privateKey *ecdsa.PrivateKey, err error) {
+func (ks *KeyStore) DumpPrivateKey(a accounts.Account, passphrase string) (privateKey interface{}, err error) {
 	_, key, err := ks.getDecryptedKey(a, passphrase)
 	if err != nil {
 		return nil, err
 	}
 
-	return crypto.ToECDSA(key.PrivateKey)
+	return crypto.MyCryptoLib.PrivateKeyToInstance(key.PrivateKey)
 
 }
 

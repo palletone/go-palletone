@@ -80,7 +80,16 @@ func SignTransaction(chaincodeID string, methodName string, params []byte) (stri
 
 	var btcAdaptor adaptorbtc.AdaptorBTC
 	btcAdaptor.NetID = cfg.Ada.Btc.NetID
-	return btcAdaptor.SignTransaction(&signTransactionParams)
+	result, err := btcAdaptor.SignTransaction(&signTransactionParams)
+	if err != nil {
+		return "", err
+	}
+
+	resultJson, err := json.Marshal(result)
+	if err != nil {
+		return "", err
+	}
+	return string(resultJson), nil
 }
 func GetJuryETHAddr(chaincodeID string, methodName string, params []byte) (string, error) {
 	addrs, err := ClolletJuryETHAddressesTest(chaincodeID)
@@ -107,7 +116,16 @@ func Keccak256HashPackedSig(chaincodeID string, methodName string, params []byte
 
 	var ethAdaptor adaptoreth.AdaptorETH
 	ethAdaptor.NetID = cfg.Ada.Eth.NetID
-	return ethAdaptor.Keccak256HashPackedSig(&sigParams)
+	result, err := ethAdaptor.Keccak256HashPackedSig(&sigParams)
+	if err != nil {
+		return "", err
+	}
+
+	resultJson, err := json.Marshal(result)
+	if err != nil {
+		return "", err
+	}
+	return string(resultJson), nil
 }
 
 func adaptorCall(chainName, methodName string, params []byte) (string, error) {
@@ -154,7 +172,9 @@ func adaptorCall(chainName, methodName string, params []byte) (string, error) {
 	}
 	if len(res) > 1 {
 		if res[1].IsNil() {
-			return res[0].String(), nil
+			//return res[0].String(), nil
+			result, err := json.Marshal(res[0].Interface())
+			return string(result), err
 		} else {
 			return "", errors.New(fmt.Sprintf("%s", res[1].Interface()))
 		}

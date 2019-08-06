@@ -37,6 +37,26 @@ type PTNMain struct {
 }
 
 func (p *PTNMain) Init(stub shim.ChaincodeStubInterface) pb.Response {
+	args := stub.GetStringArgs()
+	if len(args) < 1 {
+		return shim.Error("need 1 args (MapContractAddr)")
+	}
+
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
+	}
+	err = stub.PutState(symbolsOwner, []byte(invokeAddr.String()))
+	if err != nil {
+		return shim.Error("write symbolsOwner failed: " + err.Error())
+	}
+
+	err = stub.PutState(symbolsContractMap, []byte(args[0]))
+	if err != nil {
+		return shim.Error("write symbolsContractMap failed: " + err.Error())
+	}
+
 	return shim.Success(nil)
 }
 
@@ -52,8 +72,6 @@ func (p *PTNMain) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	case "payoutPTN":
 		return _payoutPTN(args, stub)
 
-	case "put":
-		return put(args, stub)
 	case "get":
 		return get(args, stub)
 	default:
@@ -357,25 +375,6 @@ func getPTNHex(mapAddr, sender string, stub shim.ChaincodeStubInterface) (string
 	}
 
 	return addrs[0], nil
-}
-
-func put(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	if len(args) > 0 {
-		err := stub.PutState(args[0], []byte("PutState put"))
-		if err != nil {
-			log.Debugf("PutState put %s err: %s", args[0], err.Error())
-			return shim.Error("PutState put " + args[0] + " failed")
-		}
-		log.Debugf("PutState put " + args[0] + " ok")
-		return shim.Success([]byte("PutState put " + args[0] + " ok"))
-	}
-	err := stub.PutState("result", []byte("PutState put"))
-	if err != nil {
-		log.Debugf("PutState put err: %s", err.Error())
-		return shim.Error("PutState put failed")
-	}
-	log.Debugf("PutState put ok")
-	return shim.Success([]byte("PutState put ok"))
 }
 
 func get(args []string, stub shim.ChaincodeStubInterface) pb.Response {

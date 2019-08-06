@@ -10,7 +10,7 @@ CAIssueIntermedate
     Given ca certificate exists
     When ca unlock its account succeed
     And ca issues intermediate certificate name cert1 to power succeed
-    And wait for transaction being packaged
+    And Wait for transaction being packaged
     Then power can query his certificate in db
 
 *** Keywords ***

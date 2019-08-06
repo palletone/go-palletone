@@ -23,7 +23,6 @@ package core
 import (
 	"fmt"
 	"io"
-	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
@@ -147,10 +146,10 @@ func (chaincodeSupport *ChaincodeSupport) launchStarted(chaincode string) bool {
 // NewChaincodeSupport creates a new ChaincodeSupport instance
 func NewChaincodeSupport(ccEndpoint string, userrunsCC bool, ccstartuptimeout time.Duration, ca accesscontrol.CA, jury IAdapterJury) pb.ChaincodeSupportServer {
 	//path := config.GetPath("peer.fileSystemPath") + string(filepath.Separator) + "chaincodes"
-	path := cfg.GetConfig().ContractFileSystemPath + string(filepath.Separator) + "chaincodes"
-	log.Infof("NewChaincodeSupport chaincodes path: %s, cfgpath[%s]\n", path, cfg.GetConfig().ContractFileSystemPath)
+	//path := cfg.GetConfig().ContractFileSystemPath + string(filepath.Separator) + "chaincodes"
+	//log.Infof("NewChaincodeSupport chaincodes path: %s, cfgpath[%s]\n", path, cfg.GetConfig().ContractFileSystemPath)
 
-	ccprovider.SetChaincodesPath(path)
+	//ccprovider.SetChaincodesPath(path)
 	pnid := viper.GetString("peer.networkId")
 	pid := viper.GetString("peer.id")
 
@@ -415,7 +414,7 @@ func (chaincodeSupport *ChaincodeSupport) getLaunchConfigs(cccid *ccprovider.CCC
 		envs = append(envs, "CORE_CHAINCODE_LOGGING_SHIM="+chaincodeSupport.shimLogLevel)
 	}
 	if chaincodeSupport.peerAddress != "" {
-		log.Infof("-------------------------------------------%s\n\n", chaincodeSupport.peerAddress)
+		log.Debugf("-------------------------------------------%s\n\n", chaincodeSupport.peerAddress)
 		envs = append(envs, "CORE_CHAINCODE_PEER_ADDRESS="+chaincodeSupport.peerAddress)
 	}
 	if chaincodeSupport.logFormat != "" {
@@ -700,15 +699,15 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 	if cds != nil {
 		cID = cds.ChaincodeSpec.ChaincodeId
 		cMsg = cds.ChaincodeSpec.Input
-		log.Infof("cds != nil-------这是部署用户合约---------------， cID=%v", cID)
+		log.Debugf("cds != nil-------这是部署用户合约---------------， cID=%v", cID)
 	} else {
 		cID = ci.ChaincodeSpec.ChaincodeId
 		cMsg = ci.ChaincodeSpec.Input
-		log.Infof("cds == nil---------这是调用用户合约-------------, cID=%v", cID)
+		log.Debugf("cds == nil---------这是调用用户合约-------------, cID=%v", cID)
 	}
 
 	canName := cccid.GetCanonicalName()
-	log.Infof("canName= %s", canName)
+	log.Debugf("canName= %s", canName)
 	chaincodeSupport.runningChaincodes.Lock()
 	var chrte *chaincodeRTEnv
 	var ok bool

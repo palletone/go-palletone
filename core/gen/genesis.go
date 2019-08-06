@@ -180,7 +180,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 			tx.TxMessages = append(tx.TxMessages, newMsg)
 		}
 	}
-	// step4, generate inital mediator info payload
+	// step4, generate initial mediator info payload
 	//initialMediatorMsgs := dagCommon.GetInitialMediatorMsgs(genesis)
 	//tx.TxMessages = append(tx.TxMessages, initialMediatorMsgs...)
 

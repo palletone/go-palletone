@@ -58,14 +58,14 @@ func sm2ToECDSA(d []byte) (*sm2.PrivateKey, error) {
 	}
 	priv.D = new(big.Int).SetBytes(d)
 
-	// The priv.D must < N
-	if priv.D.Cmp(secp256k1_N) >= 0 {
-		return nil, fmt.Errorf("invalid private key, >=N")
-	}
-	// The priv.D must not be zero or negative.
-	if priv.D.Sign() <= 0 {
-		return nil, fmt.Errorf("invalid private key, zero or negative")
-	}
+	// // The priv.D must < N
+	// if priv.D.Cmp(secp256k1_N) >= 0 {
+	// 	return nil, fmt.Errorf("invalid private key, >=N")
+	// }
+	// // The priv.D must not be zero or negative.
+	// if priv.D.Sign() <= 0 {
+	// 	return nil, fmt.Errorf("invalid private key, zero or negative")
+	// }
 
 	priv.PublicKey.X, priv.PublicKey.Y = priv.PublicKey.Curve.ScalarBaseMult(d)
 	if priv.PublicKey.X == nil {
@@ -82,6 +82,10 @@ func (c *CryptoGm) PrivateKeyToPubKey(privKey []byte) ([]byte, error) {
 
 	return sm2.Compress(&pubKey), nil
 }
+func (c *CryptoGm) PrivateKeyToInstance(privKey []byte) (interface{}, error) {
+	return sm2ToECDSA(privKey)
+}
+
 func (c *CryptoGm) Hash(msg []byte) (hash []byte, err error) {
 	d := sm3.New()
 	d.Write(msg)

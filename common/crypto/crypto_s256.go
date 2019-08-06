@@ -50,7 +50,9 @@ func (c *CryptoS256) PrivateKeyToPubKey(privKey []byte) ([]byte, error) {
 	pubKey := prvKey.PublicKey
 	return compressPubkey(&pubKey), nil
 }
-
+func (c *CryptoS256) PrivateKeyToInstance(privKey []byte) (interface{}, error){
+	return ToECDSA(privKey)
+}
 // DecompressPubkey parses a public key in the 33-byte compressed format.
 //func decompressPubkey(pubkey []byte) (*ecdsa.PublicKey, error) {
 //	if len(pubkey) != 33 {

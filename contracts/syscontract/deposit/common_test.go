@@ -39,3 +39,10 @@ func TestTime(t *testing.T) {
 	fmt.Println(t3)
 	fmt.Println(t1.String())
 }
+
+func TestArray(t *testing.T) {
+	var arr []string
+	for i, v := range arr {
+		fmt.Println(i, v)
+	}
+}

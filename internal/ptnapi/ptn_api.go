@@ -36,6 +36,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
+	"github.com/palletone/go-palletone/ptnjson/statistics"
 	"github.com/shopspring/decimal"
 )
 
@@ -71,16 +72,16 @@ func (s *PublicPalletOneAPI) Syncing() (interface{}, error) {
 	progress := s.b.Downloader().Progress()
 
 	// Return not syncing if the synchronisation already completed
-	//	if progress.CurrentBlock >= progress.HighestBlock {
-	//		return false, nil
-	//	}
+		if progress.CurrentBlock >= progress.HighestBlock {
+			return false, nil
+		}
 	// Otherwise gather the block sync stats
 	return map[string]interface{}{
 		"startingBlock": hexutil.Uint64(progress.StartingBlock),
-		//"currentBlock":  hexutil.Uint64(progress.CurrentBlock),
+		"currentBlock":  hexutil.Uint64(progress.CurrentBlock),
 		"highestBlock": hexutil.Uint64(progress.HighestBlock),
-		"pulledStates": hexutil.Uint64(progress.PulledStates),
-		"knownStates":  hexutil.Uint64(progress.KnownStates),
+		//"pulledStates": hexutil.Uint64(progress.PulledStates),
+		//"knownStates":  hexutil.Uint64(progress.KnownStates),
 	}, nil
 }
 
@@ -148,11 +149,11 @@ func (s *PublicBlockChainAPI) GetChainParameters() (*core.ChainParameters, error
 	return s.b.GetChainParameters(), nil
 }
 
-//func (s *PublicBlockChainAPI) AddressBalanceStatistics(ctx context.Context, token string, topN int) (*statistics.TokenAddressBalanceJson, error) {
-//	result, err := s.b.GetAddressBalanceStatistics(token, topN)
-//
-//	return result, err
-//}
+func (s *PublicBlockChainAPI) AddressBalanceStatistics(ctx context.Context, token string, topN int) (*statistics.TokenAddressBalanceJson, error) {
+	result, err := s.b.GetAddressBalanceStatistics(token, topN)
+
+	return result, err
+}
 
 //
 //func (s *PublicBlockChainAPI) WalletBalance(ctx context.Context, address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error) {

@@ -320,7 +320,7 @@ func (b *PtnApiBackend) GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxHi
 	}
 	txjs := []*ptnjson.TxHistoryJson{}
 	for _, tx := range txs {
-		txj := ptnjson.ConvertTx2HistoryJson(tx, b.ptn.dag.GetUtxoEntry)
+		txj := ptnjson.ConvertTx2HistoryJson(tx, b.ptn.dag.GetTxOutput)
 		txjs = append(txjs, txj)
 	}
 	return txjs, nil
@@ -412,7 +412,7 @@ func (b *PtnApiBackend) GetUnitTxsInfo(hash common.Hash) ([]*ptnjson.TxSummaryJs
 	txs_json := make([]*ptnjson.TxSummaryJson, 0)
 
 	for txIdx, tx := range txs {
-		txs_json = append(txs_json, ptnjson.ConvertTx2SummaryJson(tx, hash, header.Number.Index, header.Time, uint64(txIdx), b.ptn.dag.GetUtxoEntry))
+		txs_json = append(txs_json, ptnjson.ConvertTx2SummaryJson(tx, hash, header.Number.Index, header.Time, uint64(txIdx), b.ptn.dag.GetTxOutput))
 	}
 	return txs_json, nil
 }
@@ -434,14 +434,14 @@ func (b *PtnApiBackend) GetTxByHash(hash common.Hash) (*ptnjson.TxWithUnitInfoJs
 	if err != nil {
 		return nil, err
 	}
-	return ptnjson.ConvertTxWithUnitInfo2FullJson(tx, b.ptn.dag.GetUtxoEntry), nil
+	return ptnjson.ConvertTxWithUnitInfo2FullJson(tx, b.ptn.dag.GetTxOutput), nil
 }
 func (b *PtnApiBackend) GetTxByReqId(hash common.Hash) (*ptnjson.TxWithUnitInfoJson, error) {
 	tx, err := b.ptn.dag.GetTxByReqId(hash)
 	if err != nil {
 		return nil, err
 	}
-	return ptnjson.ConvertTxWithUnitInfo2FullJson(tx, b.ptn.dag.GetUtxoEntry), nil
+	return ptnjson.ConvertTxWithUnitInfo2FullJson(tx, b.ptn.dag.GetTxOutput), nil
 }
 func (b *PtnApiBackend) GetTxSearchEntry(hash common.Hash) (*ptnjson.TxSerachEntryJson, error) {
 	entry, err := b.ptn.dag.GetTxSearchEntry(hash)
@@ -564,7 +564,7 @@ func (b *PtnApiBackend) GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson,
 	}
 	txjs := []*ptnjson.TxHistoryJson{}
 	for _, tx := range txs {
-		txj := ptnjson.ConvertTx2HistoryJson(tx, b.ptn.dag.GetUtxoEntry)
+		txj := ptnjson.ConvertTx2HistoryJson(tx, b.ptn.dag.GetTxOutput)
 		txjs = append(txjs, txj)
 	}
 	return txjs, nil
@@ -628,7 +628,11 @@ func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, 
 	return b.ptn.contractPorcessor.ContractInvokeReq(from, to, daoAmount, daoFee, certID, contractAddress, args, timeout)
 }
 func (b *PtnApiBackend) SendContractInvokeReqTx(requestTx *modules.Transaction) (reqId common.Hash, err error) {
-	go b.ptn.ContractBroadcast(jury.ContractEvent{Ele: nil, CType: jury.CONTRACT_EVENT_EXEC, Tx: requestTx}, false)
+	if !b.ptn.contractPorcessor.CheckTxValid(requestTx) {
+		err := fmt.Sprintf("ProcessContractEvent, event Tx is invalid, txId:%s", requestTx.Hash().String())
+		return common.Hash{}, errors.New(err)
+	}
+	go b.ptn.ContractBroadcast(jury.ContractEvent{Ele: nil, CType: jury.CONTRACT_EVENT_EXEC, Tx: requestTx}, true)
 	return requestTx.RequestHash(), nil
 }
 func (b *PtnApiBackend) ContractInvokeReqTokenTx(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {

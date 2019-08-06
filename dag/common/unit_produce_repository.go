@@ -351,7 +351,9 @@ func (dag *UnitProduceRepository) RefreshSysParameters() {
 	//generateUnitReward, _ := strconv.ParseUint(string(generateUnitRewardStr), 10, 64)
 	parameter.CurrentSysParameters.GenerateUnitReward = cp.GenerateUnitReward
 	parameter.CurrentSysParameters.RewardHeight = cp.RewardHeight
-	log.Debugf("Load SysParameter GenerateUnitReward value:%d", parameter.CurrentSysParameters.GenerateUnitReward)
+	log.Debugf("Load SysParameter GenerateUnitReward value:%d,RewardHeight:%d",
+		parameter.CurrentSysParameters.GenerateUnitReward,
+		parameter.CurrentSysParameters.RewardHeight)
 }
 
 func (dag *UnitProduceRepository) updateChainParameters(nextUnit *modules.Unit) {

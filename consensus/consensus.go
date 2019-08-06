@@ -48,7 +48,7 @@ func (engine *DPOSEngine) SubscribeCeEvent(ch chan<- core.ConsensusEvent) event.
 }
 
 func (engine *DPOSEngine) SendEvents(content []byte) {
-	engine.dposFeed.Send(core.ConsensusEvent{content})
+	engine.dposFeed.Send(core.ConsensusEvent{Ce: content})
 }
 
 func (engine *DPOSEngine) Stop() {

@@ -232,27 +232,31 @@ func (d *Downloader) Progress() palletone.SyncProgress {
 	defer d.syncStatsLock.RUnlock()
 
 	current := uint64(0)
-	switch d.mode {
-	case FullSync:
-		//unit := d.dag.CurrentUnit(modules.PTNCOIN)
-		//if unit != nil {
-		//	current = unit.Number().Index
-		//}
-	case FastSync:
-		//unit := d.dag.CurrentUnit(modules.PTNCOIN)
-		//if unit != nil {
-		//	current = unit.Number().Index
-		//}
-	case LightSync:
-		//current = d.lightdag.CurrentHeader().Number.Uint64()
+	if unit := d.dag.GetCurrentUnit(modules.PTNCOIN); unit != nil {
+		current = unit.Number().Index
 	}
+
+	//switch d.mode {
+	//case FullSync:
+	//	//unit := d.dag.CurrentUnit(modules.PTNCOIN)
+	//	//if unit != nil {
+	//	//	current = unit.Number().Index
+	//	//}
+	//case FastSync:
+	//	//unit := d.dag.CurrentUnit(modules.PTNCOIN)
+	//	//if unit != nil {
+	//	//	current = unit.Number().Index
+	//	//}
+	//case LightSync:
+	//	//current = d.lightdag.CurrentHeader().Number.Uint64()
+	//}
 
 	return palletone.SyncProgress{
 		StartingBlock: d.syncStatsChainOrigin,
 		CurrentBlock:  current,
 		HighestBlock:  d.syncStatsChainHeight,
-		PulledStates:  d.syncStatsState.processed,
-		KnownStates:   d.syncStatsState.processed + d.syncStatsState.pending,
+		//PulledStates:  d.syncStatsState.processed,
+		//KnownStates:   d.syncStatsState.processed + d.syncStatsState.pending,
 	}
 }
 
@@ -433,6 +437,13 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 		return err
 	}
 	log.Debug("Synchronisation findAncestor", "origin:", origin)
+
+	d.syncStatsLock.Lock()
+	if d.syncStatsChainHeight <= origin || d.syncStatsChainOrigin > origin {
+		d.syncStatsChainOrigin = origin
+	}
+	d.syncStatsChainHeight = latest.Number.Index
+	d.syncStatsLock.Unlock()
 
 	// Ensure our origin point is below any fast sync pivot point
 	pivot := uint64(0)

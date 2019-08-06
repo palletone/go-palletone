@@ -31,8 +31,8 @@ const (
 	Jury      = "Jury"
 	Mediator  = "Mediator"
 
-	Ok = "Ok"
-	No = "No"
+	Ok = "ok"
+	No = "no"
 
 	//获取候选列表
 	GetListForMediatorCandidate = "GetListForMediatorCandidate"
@@ -87,6 +87,12 @@ const (
 	//  Layout3 = "2006-01-02 15:04:05"
 	//  目前使用 time.Now().UTC().Format(Layout) 返回字符串
 	Layout2 = "2006-01-02 15:04:05"
+
+	HandleMediatorInCandidateList = "HandleMediatorInCandidateList"
+	HandleJuryInCandidateList     = "HandleJuryInCandidateList"
+	HandleDevInList               = "HandleDevInList"
+	GetAllMediator                = "GetAllMediator"
+	GetAllNode                    = "GetAllNode"
 )
 
 //申请退出

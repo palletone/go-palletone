@@ -32,7 +32,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/netutil"
 )
 
-const Version = 10
+const Version = 4
 
 // Errors
 var (

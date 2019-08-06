@@ -36,9 +36,9 @@ import (
 const (
 	writePauseWarningThrottler = 1 * time.Minute
 
-	writeDelayNThreshold       = 200
-	writeDelayThreshold        = 350 * time.Millisecond
-	writeDelayWarningThrottler = 1 * time.Minute
+	// writeDelayNThreshold       = 200
+	// writeDelayThreshold        = 350 * time.Millisecond
+	// writeDelayWarningThrottler = 1 * time.Minute
 )
 
 var OpenFileLimit = 64
@@ -276,7 +276,8 @@ func (db *LDBDatabase) meter(refresh time.Duration) {
 			duration      time.Duration
 			paused        bool
 		)
-		if n, err := fmt.Sscanf(writedelay, "DelayN:%d Delay:%s Paused:%t", &delayN, &delayDuration, &paused); n != 3 || err != nil {
+		n, err := fmt.Sscanf(writedelay, "DelayN:%d Delay:%s Paused:%t", &delayN, &delayDuration, &paused)
+		if n != 3 || err != nil {
 			log.Error("Write delay statistic not found")
 			merr = err
 			continue
