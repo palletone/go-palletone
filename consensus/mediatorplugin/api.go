@@ -27,7 +27,7 @@ import (
 func (mp *MediatorPlugin) LocalMediators() []common.Address {
 	addrs := make([]common.Address, 0)
 
-	for add, _ := range mp.mediators {
+	for add := range mp.mediators {
 		if mp.dag.IsMediator(add) {
 			addrs = append(addrs, mp.mediators[add].Address)
 		}

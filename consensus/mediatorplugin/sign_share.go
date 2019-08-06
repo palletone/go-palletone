@@ -65,9 +65,7 @@ func (self *sigShareSet) popSigShares() (sigShares [][]byte) {
 	defer self.dataLock.Unlock()
 
 	sigShares = make([][]byte, 0, len(self.sigShares))
-	for _, sigShare := range self.sigShares {
-		sigShares = append(sigShares, sigShare)
-	}
+	sigShares = append(sigShares, self.sigShares...)
 
 	self.sigShares = make([][]byte, 0)
 
