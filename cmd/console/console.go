@@ -193,10 +193,10 @@ func (c *Console) init(preload []string) error {
 			obj.Set("transferPtn", bridge.TransferPtn)
 
 		}
-		ptn, errr := c.jsre.Get("ptn")
-		if errr != nil {
-			return errr
-		}
+		//ptn, errr := c.jsre.Get("ptn")
+		//if errr != nil {
+		//	return errr
+		//}
 		//if obj := ptn.Object(); obj != nil { // make sure the admin api is enabled over the interface
 			//if _, err = c.jsre.Run(`jptn.signRawTransaction = ptn.signRawTransaction;`); err != nil {
 			//	return fmt.Errorf("ptn.signRawTransaction: %v", err)
@@ -251,10 +251,10 @@ func (c *Console) init(preload []string) error {
 		}
 	}
 	// The admin.sleep and admin.sleepBlocks are offered by the console and not by the RPC layer.
-	admin, err := c.jsre.Get("admin")
-	if err != nil {
-		return err
-	}
+	//admin, err := c.jsre.Get("admin")
+	//if err != nil {
+	//	return err
+	//}
 	//if obj := admin.Object(); obj != nil { // make sure the admin api is enabled over the interface
 		//obj.Set("sleepBlocks", bridge.SleepBlocks)
 		//obj.Set("sleep", bridge.Sleep)
