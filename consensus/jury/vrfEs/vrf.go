@@ -10,9 +10,6 @@ import (
 
 func VrfProve(pri *ecdsa.PrivateKey, msg []byte) (proof []byte, err error) {
 	h := crypto.Keccak256Hash(util.RHashBytes(msg))
-	if err != nil {
-		return nil, err
-	}
 	proof, err = Evaluate(pri, h, msg)
 	if err != nil {
 		log.Error("VrfProve Evaluate fail")
