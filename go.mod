@@ -5,18 +5,22 @@ go 1.12
 require (
 	github.com/allegro/bigcache v1.2.1 // indirect
 	github.com/aristanetworks/goarista v0.0.0-20190712234253-ed1100a1c015
+	github.com/armon/consul-api v0.0.0-20180202201655-eb2c6b5be1b6 // indirect
 	github.com/btcsuite/btcd v0.0.0-20190629003639-c26ffa870fd8
 	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
 	github.com/cespare/cp v1.1.1 // indirect
 	github.com/cloudflare/cfssl v0.0.0-20190726000631-633726f6bcb7 // indirect
 	github.com/containerd/continuity v0.0.0-20190426062206-aaeac12a7ffc // indirect
 	github.com/coocood/freecache v0.0.0-20180304015925-036298587d3a
+	github.com/coreos/etcd v3.3.10+incompatible // indirect
+	github.com/coreos/go-etcd v2.0.0+incompatible // indirect
+	github.com/coreos/go-semver v0.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1
 	github.com/deckarep/golang-set v1.7.1
 	github.com/docker/docker v1.4.2-0.20190710153559-aa8249ae1b8b
 	github.com/elastic/gosigar v0.10.2
 	github.com/ethereum/go-ethereum v1.9.0
-	github.com/fatih/color v1.3.0
+	github.com/fatih/color v1.6.0
 	github.com/fjl/memsize v0.0.0-20180418122429-ca190fb6ffbc
 	github.com/fsouza/go-dockerclient v1.4.2
 	github.com/gballet/go-libpcsclite v0.0.0-20190607065134-2772fd86a8ff // indirect
@@ -24,9 +28,11 @@ require (
 	github.com/golang/mock v1.3.1
 	github.com/golang/protobuf v1.3.2
 	github.com/golang/snappy v0.0.1
+	github.com/golangci/golangci-lint v1.17.1 // indirect
 	github.com/gomodule/redigo v0.0.0-20180627144507-2cd21d9966bf
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/hashicorp/golang-lru v0.5.1
+	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/huin/goupnp v0.0.0-20161224104101-679507af18f3
 	github.com/influxdata/influxdb v0.0.0-20180221223340-01288bdb0883
 	github.com/jackpal/go-nat-pmp v0.0.0-20160603034137-1fa385a6f458
@@ -35,13 +41,14 @@ require (
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/looplab/fsm v0.0.0-20180515091235-f980bdb68a89
+	github.com/magiconair/properties v1.8.0 // indirect
 	github.com/martinlindhe/base36 v0.0.0-20180729042928-5cda0030da17
 	github.com/maruel/panicparse v0.0.0-20160720141634-ad661195ed0e // indirect
 	github.com/maruel/ut v1.0.0 // indirect
-	github.com/mattn/go-colorable v0.0.0-20170210172801-5411d3eea597
-	github.com/mattn/go-isatty v0.0.0-20170209175615-281032e84ae0 // indirect
+	github.com/mattn/go-colorable v0.0.9
 	github.com/mattn/go-runewidth v0.0.0-20170201023540-14207d285c6c // indirect
 	github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7 // indirect
+	github.com/mitchellh/mapstructure v1.1.2 // indirect
 	github.com/naoina/go-stringutil v0.1.0 // indirect
 	github.com/naoina/toml v0.0.0-20170410220130-ac014c6b6502
 	github.com/nsf/termbox-go v0.0.0-20170211012700-3540b76b9c77 // indirect
@@ -53,6 +60,7 @@ require (
 	github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb
 	github.com/palletone/eth-adaptor v0.6.1-0.20190718070938-ea95de9928b1
 	github.com/pborman/uuid v1.2.0
+	github.com/pelletier/go-toml v1.2.0 // indirect
 	github.com/peterh/liner v0.0.0-20170902204657-a37ad3984311
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/tsdb v0.8.0
@@ -61,14 +69,20 @@ require (
 	github.com/rs/cors v1.6.0
 	github.com/shopspring/decimal v0.0.0-20180709203117-cd690d0c9e24
 	github.com/sirupsen/logrus v1.4.2 // indirect
-	github.com/spf13/viper v0.0.0-20190408140645-7a605a50e69c
+	github.com/spf13/afero v1.1.2 // indirect
+	github.com/spf13/cast v1.3.0 // indirect
+	github.com/spf13/jwalterweatherman v1.0.0 // indirect
+	github.com/spf13/pflag v1.0.3 // indirect
+	github.com/spf13/viper v1.0.2
 	github.com/status-im/keycard-go v0.0.0-20190424133014-d95853db0f48 // indirect
 	github.com/steakknife/bloomfilter v0.0.0-20180922174646-6819c0d2a570 // indirect
 	github.com/steakknife/hamming v0.0.0-20180906055917-c99c65617cd3 // indirect
 	github.com/stretchr/testify v1.3.0
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/tyler-smith/go-bip39 v1.0.0 // indirect
+	github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8 // indirect
 	github.com/wsddn/go-ecdh v0.0.0-20161211032359-48726bab9208 // indirect
+	github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77 // indirect
 	go.dedis.ch/kyber/v3 v3.0.3
 	go.uber.org/atomic v1.3.2 // indirect
 	go.uber.org/multierr v0.0.0-20180122172545-ddea229ff1df // indirect
