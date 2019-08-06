@@ -234,13 +234,13 @@ func (d *Dag) GetMediatorInfo(address common.Address) *modules.MediatorInfo {
 }
 
 func (d *Dag) JuryCount() uint {
-	return 20 //todo test
-
-	juryList, err := d.unstableStateRep.GetJuryCandidateList()
-	if err != nil {
-		return uint(len(juryList))
-	}
-	return 0
+	return 20
+	//todo test
+	//juryList, err := d.unstableStateRep.GetJuryCandidateList()
+	//if err != nil {
+	//	return uint(len(juryList))
+	//}
+	//return 0
 }
 
 func (d *Dag) GetActiveJuries() []common.Address {

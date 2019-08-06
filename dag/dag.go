@@ -354,7 +354,6 @@ func (d *Dag) CurrentHeader(token modules.AssetId) *modules.Header {
 	// 从memdag 获取最新的header
 	unit := memdag.GetLastMainChainUnit()
 	return unit.Header()
-	return nil
 }
 
 // return unit's body , all transactions of unit by hash

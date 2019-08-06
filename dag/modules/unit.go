@@ -469,7 +469,6 @@ func (e ErrUnit) Error() string {
 	default:
 		return ""
 	}
-	return ""
 }
 
 /************************** Unit Members  *****************************/
