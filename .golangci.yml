@@ -230,9 +230,9 @@ issues:
       - linters:
         - interfacer
         text: "can be `fmt.Stringer`"
-      - linters:
-        - staticcheck
-        text: "this value of `-s` is never used"
+#      - linters:
+#        - staticcheck
+#        text: "this value of `-s` is never used"
 #     # Exclude some linters from running on tests files.
 #     - path: _test\.go
 #       linters:

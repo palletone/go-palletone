@@ -26,7 +26,6 @@ import (
 	"time"
 
 	"encoding/json"
-	"go.dedis.ch/kyber/v3"
 	"github.com/coocood/freecache"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -46,6 +45,7 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
+	"go.dedis.ch/kyber/v3"
 )
 
 type PalletOne interface {
@@ -465,7 +465,7 @@ func (p *Processor) GenContractSigTransaction(signer common.Address, password st
 			PubKey:    pubKey,
 			Signature: sig,
 		}
-		SigPayload, err := getContractTxContractInfo(tx, modules.APP_SIGNATURE)
+		SigPayload, _ := getContractTxContractInfo(tx, modules.APP_SIGNATURE)
 		if SigPayload != nil {
 			SigPayload.(*modules.SignaturePayload).Signatures = append(SigPayload.(*modules.SignaturePayload).Signatures, sigSet)
 		} else {
