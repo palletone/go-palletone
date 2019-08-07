@@ -114,7 +114,7 @@ func getTokenAccount(ctx *cli.Context) (string, error) {
 }
 
 func createExampleMediators(ctx *cli.Context, mcLen int) []*mp.MediatorConf {
-	exampleMediators := make([]*mp.MediatorConf, mcLen, mcLen)
+	exampleMediators := make([]*mp.MediatorConf, mcLen)
 	for i := 0; i < mcLen; i++ {
 		account, password, _ := createExampleAccount(ctx)
 		secStr, pubStr := core.CreateInitDKS()
@@ -180,11 +180,11 @@ func createGenesisJson(ctx *cli.Context) error {
 	}
 
 	genesisFile, err = os.Create(genesisOut)
-	defer genesisFile.Close()
 	if err != nil {
 		utils.Fatalf("%v", err)
 		return err
 	}
+	defer genesisFile.Close()
 
 	_, err = genesisFile.Write(genesisJson)
 	if err != nil {
@@ -385,11 +385,11 @@ func dumpJson(ctx *cli.Context) error {
 	}
 
 	file, err1 := os.Create(filePath)
-	defer file.Close()
 	if err1 != nil {
 		utils.Fatalf("%v", err1)
 		return err1
 	}
+	defer file.Close()
 
 	_, err = file.Write(genesisJson)
 	if err != nil {
