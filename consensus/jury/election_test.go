@@ -91,7 +91,7 @@ import (
 //}
 
 func TestContractProcess(t *testing.T) {
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 10; i++ {
 		reqId := util.RlpHash(util.IntToBytes(rand.Int()))
 		//sel := alg.Selected(40, 4, 100, reqId[:])
 		sel := alg.Selected(4, 10, 100, reqId[:])
@@ -141,7 +141,7 @@ func Test_Election_Optimal(t *testing.T) {
 	def_weight := 1
 	max_weight := 20
 
-	total_list := []uint64{20, 50, 100, 200, 500, 1000} //1000, 1500
+	total_list := []uint64{20, 50, 100} //20, 50, 100, 200, 500, 1000
 
 	for _, total := range total_list {
 		//log.Info("Election", "total", total)
