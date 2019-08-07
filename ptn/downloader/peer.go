@@ -483,18 +483,18 @@ func (ps *peerSet) BodyIdlePeers() ([]*peerConnection, int) {
 
 // ReceiptIdlePeers retrieves a flat list of all the currently receipt-idle peers
 // within the active peer set, ordered by their reputation.
-func (ps *peerSet) ReceiptIdlePeers() ([]*peerConnection, int) {
-	idle := func(p *peerConnection) bool {
-		return atomic.LoadInt32(&p.receiptIdle) == 0
-	}
-	throughput := func(p *peerConnection) float64 {
-		p.lock.RLock()
-		defer p.lock.RUnlock()
-		return p.receiptThroughput
-	}
-	//return ps.idlePeers(63, 64, idle, throughput)
-	return ps.idlePeers(0, 2, idle, throughput)
-}
+//func (ps *peerSet) ReceiptIdlePeers() ([]*peerConnection, int) {
+//	idle := func(p *peerConnection) bool {
+//		return atomic.LoadInt32(&p.receiptIdle) == 0
+//	}
+//	throughput := func(p *peerConnection) float64 {
+//		p.lock.RLock()
+//		defer p.lock.RUnlock()
+//		return p.receiptThroughput
+//	}
+//	//return ps.idlePeers(63, 64, idle, throughput)
+//	return ps.idlePeers(0, 2, idle, throughput)
+//}
 
 // NodeDataIdlePeers retrieves a flat list of all the currently node-data-idle
 // peers within the active peer set, ordered by their reputation.

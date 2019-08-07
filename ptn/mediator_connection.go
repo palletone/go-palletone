@@ -58,8 +58,8 @@ func (pm *ProtocolManager) activeMediatorsUpdatedEventRecvLoop() {
 	log.Debugf("activeMediatorsUpdatedEventRecvLoop")
 	for {
 		select {
-		case /*event :=*/ <-pm.activeMediatorsUpdatedCh:
-			go pm.switchMediatorConnect( /*event.IsChanged*/ )
+		case event := <-pm.activeMediatorsUpdatedCh:
+			go pm.switchMediatorConnect(event.IsChanged)
 
 			// Err() channel will be closed when unsubscribing.
 		case <-pm.activeMediatorsUpdatedSub.Err():
@@ -68,8 +68,8 @@ func (pm *ProtocolManager) activeMediatorsUpdatedEventRecvLoop() {
 	}
 }
 
-func (pm *ProtocolManager) switchMediatorConnect( /*isChanged bool*/ ) {
-	log.Debugf("switchMediatorConnect")
+func (pm *ProtocolManager) switchMediatorConnect(isChanged bool) {
+	log.Debug("switchMediatorConnect", "isChanged", isChanged)
 
 	// 若干数据还没同步完成，则忽略本次切换，继续同步
 	if !pm.dag.IsSynced() {

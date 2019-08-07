@@ -335,9 +335,7 @@ func (pm *ProtocolManager) removePeer(id string) {
 		log.Error("Peer removal failed", "peer", id, "err", err)
 	}
 	// Hard disconnect at the networking layer
-	//if peer != nil {
 	peer.Peer.Disconnect(p2p.DiscUselessPeer)
-	//}
 }
 
 func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan bool) {
@@ -621,8 +619,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 	}
-
-	return nil
 }
 
 // BroadcastTx will propagate a transaction to all peers which are not known to

@@ -698,9 +698,9 @@ func (b *PtnApiBackend) GetFileInfo(filehash string) ([]*modules.FileInfo, error
 //SPV
 //`json:"unit_hash"`
 type proofTxInfo struct {
-	headerhash []byte       `json:"header_hash"`
-	triekey    []byte       `json:"trie_key"`
-	triepath   les.NodeList `json:"trie_path"`
+	Headerhash []byte       `json:"header_hash"`
+	Triekey    []byte       `json:"trie_key"`
+	Triepath   les.NodeList `json:"trie_path"`
 }
 
 func (s *PtnApiBackend) GetProofTxInfoByHash(strtxhash string) ([][]byte, error) {
@@ -723,15 +723,15 @@ func (s *PtnApiBackend) GetProofTxInfoByHash(strtxhash string) ([][]byte, error)
 	}
 
 	info := proofTxInfo{}
-	info.headerhash = unit.UnitHeader.Hash().Bytes()
+	info.Headerhash = unit.UnitHeader.Hash().Bytes()
 	keybuf := new(bytes.Buffer)
 	rlp.Encode(keybuf, uint(index))
-	info.triekey = keybuf.Bytes()
+	info.Triekey = keybuf.Bytes()
 
 	tri, trieRootHash := core.GetTrieInfo(unit.Txs)
 
-	if err := tri.Prove(info.triekey, 0, &info.triepath); err != nil {
-		log.Debug("Light PalletOne", "GetProofTxInfoByHash err", err, "key", info.triekey, "proof", info.triepath)
+	if err := tri.Prove(info.Triekey, 0, &info.Triepath); err != nil {
+		log.Debug("Light PalletOne", "GetProofTxInfoByHash err", err, "key", info.Triekey, "proof", info.Triepath)
 		return [][]byte{[]byte(fmt.Sprintf("Get Trie err %v", err))}, err
 	}
 
@@ -741,10 +741,10 @@ func (s *PtnApiBackend) GetProofTxInfoByHash(strtxhash string) ([][]byte, error)
 	}
 
 	data := [][]byte{}
-	data = append(data, info.headerhash)
-	data = append(data, info.triekey)
+	data = append(data, info.Headerhash)
+	data = append(data, info.Triekey)
 
-	path, err := rlp.EncodeToBytes(info.triepath)
+	path, err := rlp.EncodeToBytes(info.Triepath)
 	if err != nil {
 		return nil, err
 	}
