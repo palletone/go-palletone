@@ -544,7 +544,7 @@ func (ks *KeyStore) Update(a accounts.Account, passphrase, newPassphrase string)
 // ZeroKey zeroes a private key in memory.
 func ZeroKey(k []byte) {
 	//b := k.D.Bits()
-	for idx, _ := range k {
+	for idx := range k {
 		k[idx] = 0
 	}
 }

@@ -38,12 +38,12 @@ type DirectoryString struct {
 	Value string
 }
 
-func (self *DirectoryString) String() string {
-	return self.Value
+func (ds *DirectoryString) String() string {
+	return ds.Value
 }
 
-func (self *DirectoryString) Set(value string) error {
-	self.Value = expandPath(value)
+func (ds *DirectoryString) Set(value string) error {
+	ds.Value = expandPath(value)
 	return nil
 }
 
@@ -55,12 +55,12 @@ type DirectoryFlag struct {
 	Usage string
 }
 
-func (self DirectoryFlag) String() string {
+func (ds DirectoryFlag) String() string {
 	fmtString := "%s %v\t%v"
-	if len(self.Value.Value) > 0 {
+	if len(ds.Value.Value) > 0 {
 		fmtString = "%s \"%v\"\t%v"
 	}
-	return fmt.Sprintf(fmtString, prefixedNames(self.Name), self.Value.Value, self.Usage)
+	return fmt.Sprintf(fmtString, prefixedNames(ds.Name), ds.Value.Value, ds.Usage)
 }
 
 func eachName(longName string, fn func(string)) {
@@ -73,9 +73,9 @@ func eachName(longName string, fn func(string)) {
 
 // called by cli library, grabs variable from environment (if in env)
 // and adds variable to flag set for parsing.
-func (self DirectoryFlag) Apply(set *flag.FlagSet) {
-	eachName(self.Name, func(name string) {
-		set.Var(&self.Value, self.Name, self.Usage)
+func (ds DirectoryFlag) Apply(set *flag.FlagSet) {
+	eachName(ds.Name, func(name string) {
+		set.Var(&ds.Value, ds.Name, ds.Usage)
 	})
 }
 
@@ -207,12 +207,12 @@ func prefixedNames(fullName string) (prefixed string) {
 	return
 }
 
-func (self DirectoryFlag) GetName() string {
-	return self.Name
+func (ds DirectoryFlag) GetName() string {
+	return ds.Name
 }
 
-func (self *DirectoryFlag) Set(value string) {
-	self.Value.Value = value
+func (ds *DirectoryFlag) Set(value string) {
+	ds.Value.Value = value
 }
 
 // Expands a file path
