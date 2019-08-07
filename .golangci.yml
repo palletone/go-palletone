@@ -29,6 +29,8 @@ run:
     - bdd
     - gmsm*
     - bitutil
+    - edwards25519
+    - ec
     
 
   # which files to skip: they will be analyzed, but issues from them

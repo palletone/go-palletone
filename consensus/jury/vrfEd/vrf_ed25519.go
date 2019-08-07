@@ -190,7 +190,7 @@ func OS2ECP(os []byte, sign byte) *edwards25519.ExtendedGroupElement {
 func S2OS(s []byte) []byte {
 	sign := s[31] >> 7     // @@ we should clear the sign bit??
 	os := []byte{sign + 2} // Y = 0x02 if positive or 0x03 if negative
-	os = append([]byte(os), s...)
+	os = append(os, s...)
 	return os
 }
 
