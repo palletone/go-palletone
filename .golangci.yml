@@ -199,6 +199,7 @@ linters:
     - gochecknoglobals
     - gocyclo
     - maligned
+    - gochecknoinits
   disable-all: false
   # presets:
   #   - bugs

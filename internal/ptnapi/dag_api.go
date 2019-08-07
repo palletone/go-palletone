@@ -81,7 +81,7 @@ func (s *PrivateDagAPI) GetCommonByPrefix(ctx context.Context, prefix string) (s
 		return "", fmt.Errorf("参数为空")
 	}
 	result := s.b.GetCommonByPrefix([]byte(prefix))
-	if result == nil || len(result) == 0 {
+	if len(result) == 0 {
 		return "all_items:null", nil
 	}
 

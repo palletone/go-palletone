@@ -89,7 +89,7 @@ func (a *PublicMediatorAPI) ListAll() []string {
 	addStrs := make([]string, 0)
 	mas := a.Dag().GetMediators()
 
-	for address, _ := range mas {
+	for address := range mas {
 		addStrs = append(addStrs, address.Str())
 	}
 
@@ -99,7 +99,7 @@ func (a *PublicMediatorAPI) ListAll() []string {
 func (a *PublicMediatorAPI) ListVoteResults() map[string]uint64 {
 	mediatorVoteCount := make(map[string]uint64)
 
-	for address, _ := range a.Dag().GetMediators() {
+	for address := range a.Dag().GetMediators() {
 		mediatorVoteCount[address.String()] = 0
 	}
 	result, _ := a.Dag().MediatorVotedResults()
@@ -143,7 +143,7 @@ func (a *PublicMediatorAPI) GetVoted(addStr string) ([]string, error) {
 	voted := a.Dag().GetAccountVotedMediators(addr)
 	mediators := make([]string, 0, len(voted))
 
-	for med, _ := range voted {
+	for med := range voted {
 		mediators = append(mediators, med)
 	}
 
