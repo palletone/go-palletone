@@ -227,7 +227,9 @@ func (p *Processor) AdapterFunResult(reqId common.Hash, contractId common.Addres
 		}
 		log.Debug("AdapterFunResult, time out")
 		return nil, errors.New("AdapterFunResult, time out")
+	default:
 	}
+	return nil, nil
 }
 
 func (p *Processor) ProcessAdapterEvent(event *AdapterEvent) (result *AdapterEvent, err error) {

@@ -142,8 +142,10 @@ func convertMapUtxo(utxo map[modules.OutPoint]*modules.Utxo) []*modules.UtxoWith
 	nm := len(utxo)
 	result := make([]*modules.UtxoWithOutPoint, nm)
 	for o, u := range utxo {
-		uo := &modules.UtxoWithOutPoint{}
-		uo.Set(u, &o)
+		uo := &modules.UtxoWithOutPoint{
+			Utxo:     u,
+			OutPoint: o,
+		}
 		result = append(result, uo)
 	}
 	return result
