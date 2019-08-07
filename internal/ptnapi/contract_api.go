@@ -77,8 +77,14 @@ func (s *PrivateContractAPI) Ccinstall(ctx context.Context, ccname, ccpath, ccve
 }
 
 func (s *PrivateContractAPI) Ccdeploy(ctx context.Context, templateId string, param []string) (*ContractDeployRsp, error) {
-	tempId, _ := hex.DecodeString(templateId)
+	tempId, err := hex.DecodeString(templateId)
+	if err != nil {
+		return nil, err
+	}
 	rd, err := crypto.GetRandomBytes(32)
+	if err != nil {
+		return nil, err
+	}
 	txid := util.RlpHash(rd)
 
 	log.Info("Ccdeploy:", "templateId", templateId, "txid", txid.String())
@@ -87,7 +93,10 @@ func (s *PrivateContractAPI) Ccdeploy(ctx context.Context, templateId string, pa
 		args[i] = []byte(arg)
 		log.Info("Ccdeploy", "param index:", i, "arg", arg)
 	}
-	_, err = s.b.ContractDeploy(tempId, txid.String(), args, time.Duration(30)*time.Second)
+	//参数前面加入msg0和msg1,这里为空
+	fullArgs := [][]byte{defaultMsg0, defaultMsg1}
+	fullArgs = append(fullArgs, args...)
+	_, err = s.b.ContractDeploy(tempId, txid.String(), fullArgs, time.Duration(30)*time.Second)
 	if err != nil {
 		log.Debug("Ccdeploy", "ContractDeploy err", err)
 	}

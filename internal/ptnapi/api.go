@@ -570,10 +570,10 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 		pkScript := tokenengine.GenerateLockScript(addr)
 		// Convert the amount to satoshi.
 		dao := ptnjson.Ptn2Dao(ptnAmt)
-		if err != nil {
-			context := "Failed to convert amount"
-			return "", internalRPCError(err.Error(), context)
-		}
+		//if err != nil {
+		//	context := "Failed to convert amount"
+		//	return "", internalRPCError(err.Error(), context)
+		//}
 		assetId := dagconfig.DagConfig.GetGasToken()
 		txOut := modules.NewTxOut(uint64(dao), pkScript, assetId.ToAsset())
 		pload.AddTxOut(txOut)
@@ -1072,9 +1072,9 @@ func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine
 	var PkScript []byte
 	for _, rti := range cmdInputs {
 		inputHash := common.HexToHash(rti.Txid)
-		if err != nil {
-			return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
-		}
+		//if err != nil {
+		//	return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
+		//}
 		script, err := decodeHexStr(trimx(rti.ScriptPubKey))
 		if err != nil {
 			return ptnjson.SignRawTransactionResult{}, err

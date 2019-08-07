@@ -189,6 +189,10 @@ return all transactions' fee
 
 func (validate *Validate) ValidateTx(tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, ValidationCode, error) {
 	txId := tx.Hash()
+	if txId.String()=="0x9c6e60e75aa59d253b156d102d6d314f21e57cdda923593346c98c30a841c64e"{
+		log.Warn("Invalid tx:0x9c6e60e75aa59d253b156d102d6d314f21e57cdda923593346c98c30a841c64e")
+		return nil,TxValidationCode_INVALID_MSG,NewValidateError(TxValidationCode_INVALID_MSG)
+	}
 	has, add := validate.cache.HasTxValidateResult(txId)
 	if has {
 		return add, TxValidationCode_VALID, nil

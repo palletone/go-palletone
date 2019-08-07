@@ -248,16 +248,12 @@ func (rep *StateRepository) GetPledgeListWithNew() (*modules.PledgeList, error) 
 		pledgeList = &modules.PledgeList{}
 	}
 	newDepositList, _ := rep.GetPledgeDepositApplyList()
-	if newDepositList != nil {
-		for _, deposit := range newDepositList {
-			pledgeList.Add(deposit.Address, deposit.Amount)
-		}
+	for _, deposit := range newDepositList {
+		pledgeList.Add(deposit.Address, deposit.Amount)
 	}
 	newWithdrawList, _ := rep.GetPledgeWithdrawApplyList()
-	if newWithdrawList != nil {
-		for _, withdraw := range newWithdrawList {
-			pledgeList.Reduce(withdraw.Address, withdraw.Amount)
-		}
+	for _, withdraw := range newWithdrawList {
+		pledgeList.Reduce(withdraw.Address, withdraw.Amount)
 	}
 
 	return pledgeList, nil
@@ -278,7 +274,7 @@ func (rep *StateRepository) GetMediatorVotedResults() (map[string]uint64, error)
 		// 遍历该账户投票的mediator
 		addr, _ := common.StringToAddress(account.Address)
 		mediators := rep.statedb.GetAccountVotedMediators(addr)
-		for med, _ := range mediators {
+		for med := range mediators {
 			// 累加投票数量
 			mediatorVoteCount[med] += account.Amount
 		}

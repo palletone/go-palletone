@@ -499,7 +499,7 @@ func (dag *UnitProduceRepository) performAccountMaintenance() {
 	mediatorVoteCount, _ := dag.stateRep.GetMediatorVotedResults()
 
 	// 初始化 mediator 的投票数据
-	for mediator, _ := range mediators {
+	for mediator := range mediators {
 
 		voteTally := newVoteTally(mediator)
 		voteTally.votedCount = mediatorVoteCount[mediator.Str()]
@@ -674,7 +674,7 @@ func isActiveMediatorsChanged(gp *modules.GlobalProperty) bool {
 		return true
 	}
 
-	for am, _ := range activeMediators {
+	for am := range activeMediators {
 		if !precedingMediators[am] {
 			return true
 		}

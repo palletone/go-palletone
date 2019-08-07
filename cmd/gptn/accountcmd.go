@@ -384,7 +384,7 @@ func createAccount(ctx *cli.Context, password string) (common.Address, error) {
 
 	cfg.Node.P2P = cfg.P2P
 	utils.SetNodeConfig(ctx, &cfg.Node, configDir)
-	scryptN, scryptP, keydir, err := cfg.Node.AccountConfig()
+	scryptN, scryptP, keydir, _ := cfg.Node.AccountConfig()
 
 	address, err := keystore.StoreKey(keydir, password, scryptN, scryptP)
 	if err != nil {
@@ -539,6 +539,7 @@ type RawTransactionGenParams struct {
 	} `json:"outputs"`
 	Locktime int64 `json:"locktime"`
 }
+
 //type RawTransactionGenResult struct {
 //	Rawtx string `json:"rawtx"`
 //}

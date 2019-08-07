@@ -415,7 +415,7 @@ func ExtractPkScriptAddrs(pkScript []byte) (ScriptClass, []AddressOriginalData, 
 		addr := NewAddressOriginalData(pops[2].data, scriptClass)
 		//addr, err := btcutil.NewAddressPubKeyHash(pops[2].data,
 		//	chainParams)
-		if err == nil {
+		if addr.Address.Str() != "" {
 			addrs = append(addrs, addr)
 		}
 
@@ -427,7 +427,7 @@ func ExtractPkScriptAddrs(pkScript []byte) (ScriptClass, []AddressOriginalData, 
 		requiredSigs = 1
 		addr := NewAddressOriginalData(pops[0].data, scriptClass)
 		//addr, err := btcutil.NewAddressPubKey(pops[0].data, chainParams)
-		if err == nil {
+		if addr.Address.Str() != "" {
 			addrs = append(addrs, addr)
 		}
 

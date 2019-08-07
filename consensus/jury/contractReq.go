@@ -229,7 +229,7 @@ func (p *Processor) UpdateJuryAccount(addr common.Address, pwd string) bool {
 		Address:  addr,
 		Password: pwd,
 	}
-	accMap := make(map[common.Address]*JuryAccount, 0)
+	accMap := make(map[common.Address]*JuryAccount)
 	accMap[addr] = acc
 	p.locker.Lock()
 	defer p.locker.Unlock()

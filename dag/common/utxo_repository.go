@@ -524,10 +524,8 @@ func checkUtxo(addr *common.Address, asset *modules.Asset, utxo *modules.Utxo) b
 	// get addr
 	sAddr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
 	// check address
-	if strings.Compare(sAddr.String(), addr.String()) != 0 {
-		return false
-	}
-	return true
+	return strings.Compare(sAddr.String(), addr.String()) == 0
+
 }
 
 /**

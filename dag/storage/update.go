@@ -31,6 +31,6 @@ func Update(db ptndb.Database, key, value []byte) error {
 }
 
 // delete
-func Delete(db ptndb.Database, key []byte) error {
+func Delete(db ptndb.Deleter, key []byte) error {
 	return db.Delete(key)
 }

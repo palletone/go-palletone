@@ -397,34 +397,34 @@ func hanldeNodeRemoveFromAgreeList(stub shim.ChaincodeStubInterface, args []stri
 	return shim.Success(nil)
 }
 
-func handleRemoveMediatorNode(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	address, err := common.StringToAddress(args[0])
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	if !isFoundationInvoke(stub) {
-		return shim.Error("please use foundation address")
-	}
-	err = DelMediatorDeposit(stub, address.String())
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	return shim.Success(nil)
-}
-func handleRemoveNormalNode(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	address, err := common.StringToAddress(args[0])
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	if !isFoundationInvoke(stub) {
-		return shim.Error("please use foundation address")
-	}
-	err = DelNodeBalance(stub, address.String())
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	return shim.Success(nil)
-}
+//func handleRemoveMediatorNode(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+//	address, err := common.StringToAddress(args[0])
+//	if err != nil {
+//		return shim.Error(err.Error())
+//	}
+//	if !isFoundationInvoke(stub) {
+//		return shim.Error("please use foundation address")
+//	}
+//	err = DelMediatorDeposit(stub, address.String())
+//	if err != nil {
+//		return shim.Error(err.Error())
+//	}
+//	return shim.Success(nil)
+//}
+//func handleRemoveNormalNode(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+//	address, err := common.StringToAddress(args[0])
+//	if err != nil {
+//		return shim.Error(err.Error())
+//	}
+//	if !isFoundationInvoke(stub) {
+//		return shim.Error("please use foundation address")
+//	}
+//	err = DelNodeBalance(stub, address.String())
+//	if err != nil {
+//		return shim.Error(err.Error())
+//	}
+//	return shim.Success(nil)
+//}
 
 func handleNodeInList(stub shim.ChaincodeStubInterface, args []string, role string) pb.Response {
 	if len(args) > 0 {
