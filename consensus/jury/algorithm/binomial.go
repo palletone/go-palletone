@@ -182,15 +182,11 @@ func (b *RegularBinomial) CDF(j int64) *big.Rat {
 	k = begin
 
 	for k <= j {
-		for rat := range resChan{
+		select {
+		case rat := <-resChan:
 			res.Add(res, rat)
 			k++
 		}
-		//select {
-		//case rat := <-resChan:
-		//	res.Add(res, rat)
-		//	k++
-		//}
 	}
 	close(resChan)
 	b.cdfCache.Store(j, res)
