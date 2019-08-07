@@ -282,7 +282,7 @@ func CalcSignatureHash(script []byte, hashType SigHashType,
 }
 func calcSignatureHash(script []parsedOpcode, hashType SigHashType, 
 	tx *modules.Transaction, msgIdx, idx int, crypto ICrypto) []byte {
-	data := calcSignatureData(script, hashType, tx, msgIdx, idx, crypto)
+	data := calcSignatureData(script, hashType, tx, msgIdx, idx)
 	hash, _ := crypto.Hash(data)
 	return hash
 }
@@ -291,7 +291,7 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType,
 // engine instance, calculate the signature hash to be used for signing and
 // verification.
 func calcSignatureData(script []parsedOpcode, hashType SigHashType, 
-	tx *modules.Transaction, msgIdx, idx int, crypto ICrypto) []byte {
+	tx *modules.Transaction, msgIdx, idx int) []byte {
 	pay := tx.TxMessages[msgIdx].Payload.(*modules.PaymentPayload)
 	// The SigHashSingle signature type signs only the corresponding input
 	// and output (the output with the same index number as the input).

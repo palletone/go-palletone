@@ -208,7 +208,7 @@ func ScriptValidate(utxoLockScript []byte,
 		}
 	}
 	vm, err := txscript.NewEngine(utxoLockScript, pickupJuryRedeemScript, txCopy, msgIdx, inputIndex,
-		txscript.StandardVerifyFlags, signCache, acc)
+		txscript.StandardVerifyExcludeSignFlags, signCache, acc)
 	if err != nil {
 		log.Error("Failed to create script: ", err)
 		return err
@@ -238,7 +238,7 @@ func ScriptValidate1Msg(utxoLockScripts map[string][]byte,
 	for inputIndex, input := range txCopy.TxMessages[msgIdx].Payload.(*modules.PaymentPayload).Inputs {
 		utxoLockScript := utxoLockScripts[input.PreviousOutPoint.String()]
 		vm, err := txscript.NewEngine(utxoLockScript, pickupJuryRedeemScript, txCopy, msgIdx, inputIndex,
-			txscript.StandardVerifyFlags, signCache, acc)
+			txscript.StandardVerifyExcludeSignFlags, signCache, acc)
 		if err != nil {
 			log.Warnf("Unlock script validate fail,tx[%s],MsgIdx[%d],In[%d],unlockScript:%x,utxoScript:%x,error:%s",
 				tx.Hash().String(), msgIdx, inputIndex, input.SignatureScript, utxoLockScript, err.Error())

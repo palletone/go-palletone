@@ -90,7 +90,8 @@ func processContractPayout(tx *modules.Transaction, elf []modules.ElectionInf) {
 		unlock := tokenengine.MergeContractUnlockScript(signsOrder, redeem)
 		log.DebugDynamic(func() string {
 			unlockStr, _ := tokenengine.DisasmString(unlock)
-			return fmt.Sprintf("[%s]processContractPayout, Move sign payload to contract payout unlock script:%s", shortId(reqId.String()), unlockStr)
+			return fmt.Sprintf("[%s]processContractPayout, Move sign payload to contract payout unlock script:%s",
+				shortId(reqId.String()), unlockStr)
 		})
 		for _, input := range payout.Inputs {
 			input.SignatureScript = unlock
@@ -218,9 +219,11 @@ func getSignature(tx *modules.Transaction) ([][]byte, [][]byte) {
 //	return errors.New("checkAndAddSigSet add sig fail")
 //}
 
-func genContractErrorMsg(dag iDag, tx *modules.Transaction, addr []byte, errIn error, errMsgEnable bool) ([]*modules.Message, error) {
+func genContractErrorMsg(dag iDag, tx *modules.Transaction, addr []byte,
+	errIn error, errMsgEnable bool) ([]*modules.Message, error) {
 	reqType, _ := getContractTxType(tx)
-	errString := fmt.Sprintf("[%s]genContractErrorMsg, reqType:%d,err:%s", shortId(tx.RequestHash().String()), reqType, errIn.Error())
+	errString := fmt.Sprintf("[%s]genContractErrorMsg, reqType:%d,err:%s",
+		shortId(tx.RequestHash().String()), reqType, errIn.Error())
 	log.Error(errString)
 	if !errMsgEnable {
 		return nil, errors.New(errString)
@@ -266,7 +269,8 @@ func createContractErrorPayloadMsg(tx *modules.Transaction, errIn error) *module
 }
 
 //执行合约命令:install、deploy、invoke、stop，同时只支持一种类型
-func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract, tx *modules.Transaction, elf []modules.ElectionInf, errMsgEnable bool) ([]*modules.Message, error) {
+func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract, tx *modules.Transaction,
+	elf []modules.ElectionInf, errMsgEnable bool) ([]*modules.Message, error) {
 	if tx == nil || len(tx.TxMessages) <= 0 {
 		return nil, errors.New("runContractCmd transaction or msg is nil")
 	}
@@ -302,7 +306,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 				req := ContractDeployReq{
 					chainID:    "palletone",
 					templateId: reqPay.TplId,
-					txid:       tx.RequestHash().String(), //  hex.EncodeToString(common.BytesToAddress(tx.RequestHash().Bytes()).Bytes()),
+					txid:       tx.RequestHash().String(),
 					args:       reqPay.Args,
 					timeout:    time.Duration(reqPay.Timeout) * time.Second,
 				}
@@ -349,7 +353,8 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					return genContractErrorMsg(dag, tx, reqPay.ContractId, err, errMsgEnable)
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.Args, 0 /*result.ExecutionTime*/ , result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
+				payload := modules.NewContractInvokePayload(result.ContractId, result.Args, 0,
+					result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
 				}
@@ -496,13 +501,15 @@ func checkAndAddTxSigMsgData(local *modules.Transaction, recv *modules.Transacti
 	reqId := local.RequestHash()
 
 	if len(local.TxMessages) != len(recv.TxMessages) {
-		return false, fmt.Errorf("[%s]checkAndAddTxSigMsgData tx msg is invalid,local msg len[%d],recv msg len[%d]", shortId(reqId.String()), len(local.TxMessages), len(recv.TxMessages))
+		return false, fmt.Errorf("[%s]checkAndAddTxSigMsgData tx msg is invalid,local msg len[%d],recv msg len[%d]",
+			shortId(reqId.String()), len(local.TxMessages), len(recv.TxMessages))
 	}
 	for i := 0; i < len(local.TxMessages); i++ {
 		if recv.TxMessages[i].App == modules.APP_SIGNATURE {
 			recvSigMsg = recv.TxMessages[i]
 		} else if !local.TxMessages[i].CompareMessages(recv.TxMessages[i]) {
-			log.Info("checkAndAddTxSigMsgData", "reqId", shortId(reqId.String()), "local:", local.TxMessages[i], "recv:", recv.TxMessages[i])
+			log.Info("checkAndAddTxSigMsgData", "reqId", shortId(reqId.String()), "local:", local.TxMessages[i],
+				"recv:", recv.TxMessages[i])
 			return false, fmt.Errorf("[%s]checkAndAddTxSigMsgData tx msg[%d] is not equal", shortId(reqId.String()), i)
 		}
 	}
@@ -514,8 +521,8 @@ func checkAndAddTxSigMsgData(local *modules.Transaction, recv *modules.Transacti
 			sigPayload := msg.Payload.(*modules.SignaturePayload)
 			sigs := sigPayload.Signatures
 			for _, sig := range sigs {
-				if true == bytes.Equal(sig.PubKey, recvSigMsg.Payload.(*modules.SignaturePayload).Signatures[0].PubKey) &&
-					true == bytes.Equal(sig.Signature, recvSigMsg.Payload.(*modules.SignaturePayload).Signatures[0].Signature) {
+				if bytes.Equal(sig.PubKey, recvSigMsg.Payload.(*modules.SignaturePayload).Signatures[0].PubKey) &&
+					bytes.Equal(sig.Signature, recvSigMsg.Payload.(*modules.SignaturePayload).Signatures[0].Signature) {
 					log.Infof("[%s]checkAndAddTxSigMsgData tx  already receive, tx[%s]", shortId(reqId.String()), recv.Hash().String())
 					return false, nil
 				}
@@ -525,7 +532,8 @@ func checkAndAddTxSigMsgData(local *modules.Transaction, recv *modules.Transacti
 				sigPayload.Signatures = append(sigs, recvSigMsg.Payload.(*modules.SignaturePayload).Signatures[0])
 			}
 			local.TxMessages[i].Payload = sigPayload
-			log.Infof("[%s]checkAndAddTxSigMsgData, add sig payload, len(Signatures)=%d, Signatures[%s]", shortId(reqId.String()), len(sigPayload.Signatures), sigPayload.Signatures)
+			log.Infof("[%s]checkAndAddTxSigMsgData, add sig payload, len(Signatures)=%d, Signatures[%s]",
+				shortId(reqId.String()), len(sigPayload.Signatures), sigPayload.Signatures)
 			return true, nil
 		}
 	}
@@ -556,13 +564,17 @@ func (p *Processor) checkTxReqIdIsExist(reqId common.Hash) bool {
 }
 
 func (p *Processor) checkTxValid(tx *modules.Transaction) bool {
+	reqId := tx.RequestHash()
+	txHash := tx.Hash()
 	_, _, err := p.validator.ValidateTx(tx, false)
 	if err != nil {
-		log.Debugf("[%s]checkTxValid, Validate fail, txHash[%s], err:%s", shortId(tx.RequestHash().String()), tx.Hash().String(), err.Error())
+		log.Debugf("[%s]checkTxValid, Validate fail, txHash[%s], err:%s",
+			shortId(reqId.String()), txHash.String(), err.Error())
 		return false
 	}
-	if !checkContractTxFeeValid(p.dag, tx)	{
-		log.Debugf("[%s]checkTxValid, checkContractTxFeeValid fail, txHash[%s], err:%s", shortId(tx.RequestHash().String()), tx.Hash().String(), err.Error())
+	if !checkContractTxFeeValid(p.dag, tx) {
+		log.Debugf("[%s]checkTxValid, checkContractTxFeeValid fail, txHash[%s]",
+			shortId(reqId.String()), txHash.String())
 		return false
 	}
 	return true
@@ -597,7 +609,8 @@ func (p *Processor) checkTxAddrValid(tx *modules.Transaction) bool {
 			return false
 		}
 		if !bytes.Equal(contract.Creator, reqAddr.Bytes()) {
-			log.Debugf("[%s]checkTxAddrValid, addr is not equal, Creator[%v], reqAddr[%v]", shortId(reqId.String()), contract.Creator, reqAddr.Bytes())
+			log.Debugf("[%s]checkTxAddrValid, addr is not equal, Creator[%v], reqAddr[%v]",
+				shortId(reqId.String()), contract.Creator, reqAddr.Bytes())
 			return false
 		}
 	}
@@ -645,6 +658,7 @@ func msgsCompare(msgsA []*modules.Message, msgsB []*modules.Message, msgType mod
 	log.Debug("msgsCompare,msg is not equal", "msg1", msg1.Payload, "msg2", msg2.Payload) //todo del
 	return false
 }
+
 //
 //func printTxInfo(tx *modules.Transaction) {
 //	if tx == nil {
@@ -808,71 +822,72 @@ func checkJuryCountValid(numIn, numLocal uint64) bool {
 //根据交易和费用类型，获取费用基数(dao),其中计算单位
 //timeout:毫秒 ？
 //size:字节
-func getContractFeeLevel(dag iDag, msg modules.MessageType, feeType int) (level float64) {
-	level = 1 //todo
-	cp := dag.GetChainParameters()
-	var opFee float64
-	timeFee := float64(cp.ContractTxTimeoutUnitFee)
-	sizeFee := float64(cp.ContractTxSizeUnitFee)
-	switch msg {
-	case modules.APP_CONTRACT_TPL_REQUEST:
-		opFee = cp.ContractTxInstallFeeLevel
-	case modules.APP_CONTRACT_DEPLOY_REQUEST:
-		opFee = cp.ContractTxDeployFeeLevel
-	case modules.APP_CONTRACT_INVOKE_REQUEST:
-		opFee = cp.ContractTxInvokeFeeLevel
-	case modules.APP_CONTRACT_STOP_REQUEST:
-		opFee = cp.ContractTxStopFeeLevel
-	}
-	if feeType == ContractFeeTypeTimeOut {
-		level = opFee * timeFee
-	} else if feeType == ContractFeeTypeTxSize {
-		level = opFee * sizeFee
-	}
-	return level
-}
+//func getContractFeeLevel(dag iDag, msg modules.MessageType, feeType int) (level float64) {
+//	level = 1 //todo
+//	cp := dag.GetChainParameters()
+//	var opFee float64
+//	timeFee := float64(cp.ContractTxTimeoutUnitFee)
+//	sizeFee := float64(cp.ContractTxSizeUnitFee)
+//	switch msg {
+//	case modules.APP_CONTRACT_TPL_REQUEST:
+//		opFee = cp.ContractTxInstallFeeLevel
+//	case modules.APP_CONTRACT_DEPLOY_REQUEST:
+//		opFee = cp.ContractTxDeployFeeLevel
+//	case modules.APP_CONTRACT_INVOKE_REQUEST:
+//		opFee = cp.ContractTxInvokeFeeLevel
+//	case modules.APP_CONTRACT_STOP_REQUEST:
+//		opFee = cp.ContractTxStopFeeLevel
+//	}
+//	if feeType == ContractFeeTypeTimeOut {
+//		level = opFee * timeFee
+//	} else if feeType == ContractFeeTypeTxSize {
+//		level = opFee * sizeFee
+//	}
+//	return level
+//}
 
 func checkContractTxFeeValid(dag iDag, tx *modules.Transaction) bool {
 	return true //todo
 
-	if tx == nil {
-		return false
-	}
-	reqId := tx.RequestHash()
-	var timeout uint32
-	txType, err := getContractTxType(tx)
-	if err != nil {
-		log.Errorf("[%s]checkContractTxFeeValid, getContractTxType fail", shortId(reqId.String()))
-		return false
-	}
-	txSize := tx.Size()
-	//txSSize := tx.SerializeSize() //del
-	fees, err := dag.GetTxFee(tx)
-	if err != nil {
-		log.Errorf("[%s]checkContractTxFeeValid, GetTxFee fail", shortId(reqId.String()))
-		return false
-	}
-
-	timeoutLevel := getContractFeeLevel(dag, txType, ContractFeeTypeTimeOut)
-	sizeLevel := getContractFeeLevel(dag, txType, ContractFeeTypeTxSize)
-	switch txType {
-	case modules.APP_CONTRACT_TPL_REQUEST:
-	case modules.APP_CONTRACT_DEPLOY_REQUEST: //不处理部署超时
-	case modules.APP_CONTRACT_INVOKE_REQUEST:
-		payload, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_INVOKE_REQUEST)
-		if err != nil {
-			log.Errorf("[%s]checkContractTxFeeValid, getContractTxContractInfo fail", shortId(reqId.String()))
-			return false
-		}
-		timeout = payload.(*modules.ContractInvokeRequestPayload).Timeout
-	case modules.APP_CONTRACT_STOP_REQUEST:
-	}
-	timeFee := timeoutLevel * float64(timeout)
-	sizeFee := sizeLevel * float64(txSize)
-
-	val := math.Max(float64(fees.Amount), timeFee+sizeFee) == float64(fees.Amount)
-	if !val {
-		log.Errorf("[%s]checkContractTxFeeValid invalid, fee amount[%f]-fees[%f]", shortId(reqId.String()), float64(fees.Amount), timeFee+sizeFee)
-	}
-	return val
+	//if tx == nil {
+	//	return false
+	//}
+	//reqId := tx.RequestHash()
+	//var timeout uint32
+	//txType, err := getContractTxType(tx)
+	//if err != nil {
+	//	log.Errorf("[%s]checkContractTxFeeValid, getContractTxType fail", shortId(reqId.String()))
+	//	return false
+	//}
+	//txSize := tx.Size()
+	////txSSize := tx.SerializeSize() //del
+	//fees, err := dag.GetTxFee(tx)
+	//if err != nil {
+	//	log.Errorf("[%s]checkContractTxFeeValid, GetTxFee fail", shortId(reqId.String()))
+	//	return false
+	//}
+	//
+	//timeoutLevel := getContractFeeLevel(dag, txType, ContractFeeTypeTimeOut)
+	//sizeLevel := getContractFeeLevel(dag, txType, ContractFeeTypeTxSize)
+	//switch txType {
+	//case modules.APP_CONTRACT_TPL_REQUEST:
+	//case modules.APP_CONTRACT_DEPLOY_REQUEST: //不处理部署超时
+	//case modules.APP_CONTRACT_INVOKE_REQUEST:
+	//	payload, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_INVOKE_REQUEST)
+	//	if err != nil {
+	//		log.Errorf("[%s]checkContractTxFeeValid, getContractTxContractInfo fail", shortId(reqId.String()))
+	//		return false
+	//	}
+	//	timeout = payload.(*modules.ContractInvokeRequestPayload).Timeout
+	//case modules.APP_CONTRACT_STOP_REQUEST:
+	//}
+	//timeFee := timeoutLevel * float64(timeout)
+	//sizeFee := sizeLevel * float64(txSize)
+	//
+	//val := math.Max(float64(fees.Amount), timeFee+sizeFee) == float64(fees.Amount)
+	//if !val {
+	//	log.Errorf("[%s]checkContractTxFeeValid invalid, fee amount[%f]-fees[%f]",
+	//		shortId(reqId.String()), float64(fees.Amount), timeFee+sizeFee)
+	//}
+	//return val
 }
