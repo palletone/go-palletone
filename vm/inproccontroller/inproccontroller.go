@@ -121,7 +121,7 @@ func (ipc *inprocContainer) launchInProc(ctxt context.Context, id string, args [
 		if env == nil {
 			env = ipc.env
 		}
-		err := _shimStartInProc(env, args, ipc.chaincode, ccRcvPeerSend, peerRcvCCSend)
+		err = _shimStartInProc(env, args, ipc.chaincode, ccRcvPeerSend, peerRcvCCSend)
 		if err != nil {
 			err = fmt.Errorf("chaincode-support ended with err: %s", err)
 			_logErrorf("%s", err)
@@ -134,7 +134,7 @@ func (ipc *inprocContainer) launchInProc(ctxt context.Context, id string, args [
 		defer close(ccsupportchan)
 		inprocStream := newInProcStream(peerRcvCCSend, ccRcvPeerSend)
 		log.Debugf("chaincode-support started for  %s", id)
-		err := ccSupport.HandleChaincodeStream(ctxt, inprocStream)
+		err = ccSupport.HandleChaincodeStream(ctxt, inprocStream)
 		if err != nil {
 			err = fmt.Errorf("chaincode ended with err: %s", err)
 			_logErrorf("%s", err)

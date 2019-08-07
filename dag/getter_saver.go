@@ -212,7 +212,7 @@ func (d *Dag) GetPrecedingMediatorNodes() map[string]*discover.Node {
 	nodes := make(map[string]*discover.Node)
 
 	pmds := d.GetGlobalProp().PrecedingMediators
-	for add, _ := range pmds {
+	for add := range pmds {
 		med := d.GetMediator(add)
 		node := med.Node
 		nodes[node.ID.TerminalString()] = node
@@ -252,7 +252,7 @@ func (d *Dag) GetActiveJuries() []common.Address {
 func (d *Dag) IsActiveJury(addr common.Address) bool {
 	return true //todo
 
-	return d.unstableStateRep.IsJury(addr)
+	//return d.unstableStateRep.IsJury(addr)
 }
 
 func (d *Dag) GetContractDevelopers() ([]common.Address, error) {
@@ -262,5 +262,5 @@ func (d *Dag) GetContractDevelopers() ([]common.Address, error) {
 func (d *Dag) IsContractDeveloper(addr common.Address) bool {
 	return true //todo
 
-	return d.unstableStateRep.IsContractDeveloper(addr)
+	//return d.unstableStateRep.IsContractDeveloper(addr)
 }

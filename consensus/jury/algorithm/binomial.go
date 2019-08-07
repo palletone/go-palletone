@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	bigZero = big.NewInt(0)
+	//bigZero = big.NewInt(0)
 	bigOne  = big.NewInt(1)
 	ratZero = big.NewRat(0, 1)
 	ratOne  = big.NewRat(1, 1)
@@ -136,7 +136,7 @@ func (b *RegularBinomial) Exp(x *big.Int, y float64) *big.Int {
 	if y == 2 {
 		res = new(big.Int).Mul(x, x)
 	} else {
-		ly := math.Floor(math.Sqrt(float64(y)))
+		ly := math.Floor(math.Sqrt(y))
 		ry := math.Floor(y - ly)
 		res = new(big.Int).Mul(b.Exp(x, ly), b.Exp(x, ry))
 	}
@@ -160,7 +160,7 @@ func (b *RegularBinomial) CDF(j int64) *big.Rat {
 	}
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	k := int64(j - 1)
+	k := j - 1
 	var res = new(big.Rat).SetInt64(0)
 	for k >= 0 {
 		if cdf, exist := b.cdfCache.Load(k); exist {
@@ -180,6 +180,7 @@ func (b *RegularBinomial) CDF(j int64) *big.Rat {
 		k++
 	}
 	k = begin
+
 	for k <= j {
 		select {
 		case rat := <-resChan:

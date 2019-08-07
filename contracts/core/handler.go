@@ -232,20 +232,20 @@ func newChaincodeSupportHandler(chaincodeSupport *ChaincodeSupport, peerChatStre
 		},
 		fsm.Callbacks{
 			"before_" + pb.ChaincodeMessage_REGISTER.String():           func(e *fsm.Event) { v.beforeRegisterEvent(e, v.FSM.Current()) },
-			"before_" + pb.ChaincodeMessage_COMPLETED.String():          func(e *fsm.Event) { v.beforeCompletedEvent(e, v.FSM.Current()) },
-			"after_" + pb.ChaincodeMessage_GET_STATE.String():           func(e *fsm.Event) { v.afterGetState(e, v.FSM.Current()) },
-			"after_" + pb.ChaincodeMessage_GET_TIMESTAMP.String():       func(e *fsm.Event) { v.afterGetTimestamp(e, v.FSM.Current()) },
-			"after_" + pb.ChaincodeMessage_GET_STATE_BY_PREFIX.String(): func(e *fsm.Event) { v.afterGetStateByPrefix(e, v.FSM.Current()) },
+			"before_" + pb.ChaincodeMessage_COMPLETED.String():          func(e *fsm.Event) { v.beforeCompletedEvent(e) },
+			"after_" + pb.ChaincodeMessage_GET_STATE.String():           func(e *fsm.Event) { v.afterGetState(e) },
+			"after_" + pb.ChaincodeMessage_GET_TIMESTAMP.String():       func(e *fsm.Event) { v.afterGetTimestamp(e) },
+			"after_" + pb.ChaincodeMessage_GET_STATE_BY_PREFIX.String(): func(e *fsm.Event) { v.afterGetStateByPrefix(e) },
 			//"after_" + pb.ChaincodeMessage_GET_HISTORY_FOR_KEY.String():       func(e *fsm.Event) { v.afterGetHistoryForKey(e, v.FSM.Current()) },
 			//"after_" + pb.ChaincodeMessage_QUERY_STATE_NEXT.String():          func(e *fsm.Event) { v.afterQueryStateNext(e, v.FSM.Current()) },
 			//"after_" + pb.ChaincodeMessage_QUERY_STATE_CLOSE.String():         func(e *fsm.Event) { v.afterQueryStateClose(e, v.FSM.Current()) },
 			"after_" + pb.ChaincodeMessage_PUT_STATE.String():                 func(e *fsm.Event) { v.enterBusyState(e, v.FSM.Current()) },
-			"after_" + pb.ChaincodeMessage_OUTCHAIN_CALL.String():             func(e *fsm.Event) { v.enterOutChainCall(e, v.FSM.Current()) },
-			"after_" + pb.ChaincodeMessage_SEND_JURY.String():                 func(e *fsm.Event) { v.enterSendJury(e, v.FSM.Current()) },
-			"after_" + pb.ChaincodeMessage_RECV_JURY.String():                 func(e *fsm.Event) { v.enterRecvJury(e, v.FSM.Current()) },
+			"after_" + pb.ChaincodeMessage_OUTCHAIN_CALL.String():             func(e *fsm.Event) { v.enterOutChainCall(e) },
+			"after_" + pb.ChaincodeMessage_SEND_JURY.String():                 func(e *fsm.Event) { v.enterSendJury(e) },
+			"after_" + pb.ChaincodeMessage_RECV_JURY.String():                 func(e *fsm.Event) { v.enterRecvJury(e) },
 			"after_" + pb.ChaincodeMessage_DEL_STATE.String():                 func(e *fsm.Event) { v.enterBusyState(e, v.FSM.Current()) },
 			"after_" + pb.ChaincodeMessage_INVOKE_CHAINCODE.String():          func(e *fsm.Event) { v.enterBusyState(e, v.FSM.Current()) },
-			"enter_" + establishedstate:                                       func(e *fsm.Event) { v.enterEstablishedState(e, v.FSM.Current()) },
+			"enter_" + establishedstate:                                       func(e *fsm.Event) { v.enterEstablishedState(e) },
 			"enter_" + readystate:                                             func(e *fsm.Event) { v.enterReadyState(e, v.FSM.Current()) },
 			"enter_" + endstate:                                               func(e *fsm.Event) { v.enterEndState(e, v.FSM.Current()) },
 			"after_" + pb.ChaincodeMessage_GET_SYSTEM_CONFIG_REQUEST.String(): func(e *fsm.Event) { v.enterGetSystemConfig(e) },
@@ -479,11 +479,11 @@ func (handler *Handler) deleteTxContext(chainID, txid string) {
 	}
 }
 
-func (handler *Handler) deregister() error {
+func (handler *Handler) deregister()  {
 	if handler.registered {
 		handler.chaincodeSupport.deregisterHandler(handler)
 	}
-	return nil
+	return
 }
 
 func (handler *Handler) triggerNextState(msg *pb.ChaincodeMessage, send bool) {
@@ -726,7 +726,7 @@ func (handler *Handler) notify(msg *pb.ChaincodeMessage) {
 }
 
 // beforeCompletedEvent is invoked when chaincode has completed execution of init, invoke.
-func (handler *Handler) beforeCompletedEvent(e *fsm.Event, state string) {
+func (handler *Handler) beforeCompletedEvent(e *fsm.Event) {
 	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
 	if !ok {
 		e.Cancel(errors.New("received unexpected message type"))
@@ -736,7 +736,7 @@ func (handler *Handler) beforeCompletedEvent(e *fsm.Event, state string) {
 	log.Debugf("[%s]beforeCompleted - not in ready state will notify when in readystate", shorttxid(msg.Txid))
 	return
 }
-func (handler *Handler) afterGetStateByPrefix(e *fsm.Event, state string) {
+func (handler *Handler) afterGetStateByPrefix(e *fsm.Event) {
 	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
 	if !ok {
 		e.Cancel(errors.New("received unexpected message type"))
@@ -818,7 +818,7 @@ func (handler *Handler) handleGetStateByPrefix(msg *pb.ChaincodeMessage) {
 }
 
 // afterGetState handles a GET_STATE request from the chaincode.
-func (handler *Handler) afterGetState(e *fsm.Event, state string) {
+func (handler *Handler) afterGetState(e *fsm.Event) {
 	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
 	if !ok {
 		e.Cancel(errors.New("received unexpected message type"))
@@ -829,7 +829,7 @@ func (handler *Handler) afterGetState(e *fsm.Event, state string) {
 	// Query ledger for state
 	handler.handleGetState(msg)
 }
-func (handler *Handler) afterGetTimestamp(e *fsm.Event, state string) {
+func (handler *Handler) afterGetTimestamp(e *fsm.Event) {
 	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
 	if !ok {
 		e.Cancel(errors.New("received unexpected message type"))
@@ -1599,7 +1599,7 @@ func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 }
 
 // Handles request to ledger to OutChainCall
-func (handler *Handler) enterOutChainCall(e *fsm.Event, state string) {
+func (handler *Handler) enterOutChainCall(e *fsm.Event) {
 	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
 	if !ok {
 		e.Cancel(errors.New("received unexpected message type"))
@@ -1674,7 +1674,7 @@ func (handler *Handler) enterOutChainCall(e *fsm.Event, state string) {
 	}()
 }
 
-func (handler *Handler) enterSendJury(e *fsm.Event, state string) {
+func (handler *Handler) enterSendJury(e *fsm.Event) {
 	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
 	if !ok {
 		e.Cancel(errors.New("received unexpected message type"))
@@ -1761,7 +1761,7 @@ func (handler *Handler) enterSendJury(e *fsm.Event, state string) {
 	}()
 }
 
-func (handler *Handler) enterRecvJury(e *fsm.Event, state string) {
+func (handler *Handler) enterRecvJury(e *fsm.Event) {
 	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
 	if !ok {
 		e.Cancel(errors.New("received unexpected message type"))
@@ -1848,7 +1848,7 @@ func (handler *Handler) enterRecvJury(e *fsm.Event, state string) {
 	}()
 }
 
-func (handler *Handler) enterEstablishedState(e *fsm.Event, state string) {
+func (handler *Handler) enterEstablishedState(e *fsm.Event) {
 	handler.notifyDuringStartup(true)
 }
 

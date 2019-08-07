@@ -63,7 +63,7 @@ func WriteFolderToTarPackage(tw *tar.Writer, srcPath string, excludeDir string, 
 
 	rootDirLen := len(rootDirectory)
 	walkFn := func(localpath string, info os.FileInfo, err error) error {
-
+		log.Debugf("err %s", err.Error())
 		// If localpath includes .git, ignore
 		if strings.Contains(localpath, ".git") {
 			return nil

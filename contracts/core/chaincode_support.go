@@ -485,7 +485,7 @@ func (ccl *ccLauncherImpl) launch(ctxt context.Context, notfy chan bool) (interf
 	sir := controller.StartImageReq{CCID: ccid, Builder: ccl.builder, Args: args, Env: env, FilesToUpload: filesToUpload, PrelaunchFunc: preLaunchFunc}
 	ipcCtxt := context.WithValue(ctxt, ccintf.GetCCHandlerKey(), ccl.ccSupport)
 
-	vmtype, _ := ccl.ccSupport.getVMType(ccl.cds)
+	vmtype := ccl.ccSupport.getVMType(ccl.cds)
 	resp, err := controller.VMCProcess(ipcCtxt, vmtype, sir)
 
 	return resp, err
@@ -617,8 +617,8 @@ func (chaincodeSupport *ChaincodeSupport) Stop(context context.Context, cccid *c
 	//sir := container.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, Version: cccid.Version}, Timeout: 0}
 	// The line below is left for debugging. It replaces the line above to keep
 	// the chaincode container around to give you a chance to get data
-	sir := controller.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, ChainID: "" /*cccid.ChainID*/, Version: cccid.Version}, Timeout: 0, Dontremove: dontRmCon}
-	vmtype, _ := chaincodeSupport.getVMType(cds)
+	sir := controller.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, ChainID: "" /*cccid.ChainID*/ , Version: cccid.Version}, Timeout: 0, Dontremove: dontRmCon}
+	vmtype := chaincodeSupport.getVMType(cds)
 
 	_, err := controller.VMCProcess(context, vmtype, sir)
 	if err != nil {
@@ -659,7 +659,7 @@ func (chaincodeSupport *ChaincodeSupport) Destory(context context.Context, cccid
 		Force:   true,
 		NoPrune: false,
 	}
-	vmtype, _ := chaincodeSupport.getVMType(cds)
+	vmtype := chaincodeSupport.getVMType(cds)
 
 	_, err := controller.VMCProcess(context, vmtype, sir)
 	if err != nil {
@@ -822,11 +822,11 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, cccid 
 
 //getVMType - just returns a string for now. Another possibility is to use a factory method to
 //return a VM executor
-func (chaincodeSupport *ChaincodeSupport) getVMType(cds *pb.ChaincodeDeploymentSpec) (string, error) {
+func (chaincodeSupport *ChaincodeSupport) getVMType(cds *pb.ChaincodeDeploymentSpec) string {
 	if cds.ExecEnv == pb.ChaincodeDeploymentSpec_SYSTEM {
-		return controller.SYSTEM, nil
+		return controller.SYSTEM
 	}
-	return controller.DOCKER, nil
+	return controller.DOCKER
 }
 
 // HandleChaincodeStream implements ccintf.HandleChaincodeStream for all vms to call with appropriate stream

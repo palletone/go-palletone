@@ -164,7 +164,7 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 	{
 		// 如果单元没有群公钥， 则跳过群签名
 		pkb := newUnit.GetGroupPubKeyByte()
-		if pkb == nil || len(pkb) == 0 {
+		if len(pkb) == 0 {
 			err := fmt.Errorf("this unit(%v)'s group public key is null", unitHash.TerminalString())
 			log.Debug(err.Error())
 			return

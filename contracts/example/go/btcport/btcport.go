@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * Copyright IBM Corp. All Rights Reserved.
  * @author PalletOne core developers <dev@pallet.one>
@@ -48,20 +49,20 @@ func (p *BTCPort) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 	switch f {
 	case "initDepositAddr":
-		return _initDepositAddr(args, stub)
+		return _initDepositAddr(stub)
 	case "setBTCTokenAsset":
 		return _setBTCTokenAsset(args, stub)
 	case "getDepositAddr":
-		return _getDepositAddr(args, stub)
+		return _getDepositAddr(stub)
 	case "_getBTCToken":
 		return _getBTCToken(args, stub)
 	case "withdrawBTC":
 		return _withdrawBTC(args, stub)
 
 	case "put":
-		return put(args, stub)
+		return put(stub)
 	case "get":
-		return get(args, stub)
+		return get(stub)
 	default:
 		jsonResp := "{\"Error\":\"Unknown function " + f + "\"}"
 		return shim.Error(jsonResp)
@@ -112,7 +113,7 @@ func creatMulti(juryMsg []JuryMsgAddr, stub shim.ChaincodeStubInterface) ([]byte
 	}
 	log.Debugf("OutChainCall CreateMultiSigAddress createMultiResult ==== ===== %s", string(createMultiResult))
 
-	return nil, nil
+	return createMultiResult, nil
 }
 
 const symbolsDeposit = "createMultiResult"
@@ -126,7 +127,7 @@ const symbolsUnspend = "unspend_"
 const symbolsSpent = "spent_"
 const sep = "_"
 
-func _initDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+func _initDepositAddr(stub shim.ChaincodeStubInterface) pb.Response {
 	//
 	saveResult, _ := stub.GetState(symbolsDeposit)
 	if len(saveResult) != 0 {
@@ -214,7 +215,7 @@ func getBTCTokenAsset(stub shim.ChaincodeStubInterface) *dm.Asset {
 	return asset
 }
 
-func _getDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+func _getDepositAddr(stub shim.ChaincodeStubInterface) pb.Response {
 	result, _ := stub.GetState(symbolsDepositAddr)
 	if len(result) == 0 {
 		return shim.Error("DepsoitAddr is empty")
@@ -223,7 +224,8 @@ func _getDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respons
 }
 
 //refer to the struct GetTransactionHttpParams in "github.com/palletone/adaptor/AdaptorBTC.go",
-type BTCTransaction_getTxHTTP struct { //GetTransactionHttpParams
+type BTCTransaction_getTxHTTP struct {
+	//GetTransactionHttpParams
 	TxHash string `json:"txhash"`
 }
 
@@ -493,7 +495,8 @@ func getUnspends(btcAmout int64, stub shim.ChaincodeStubInterface) []Unspend {
 }
 
 //refer to the struct RawTransactionGenParams in "github.com/palletone/adaptor/AdaptorBTC.go",
-type BTCTransaction_rawTransactionGen struct { //GetTransactionHttpParams
+type BTCTransaction_rawTransactionGen struct {
+	//GetTransactionHttpParams
 	Inputs   []Input  `json:"inputs"`
 	Outputs  []Output `json:"outputs"`
 	Locktime int64    `json:"locktime"`
@@ -550,7 +553,8 @@ func genRawTx(btcAmout, btcFee int64, btcAddr string, unspends []Unspend, stub s
 }
 
 //refer to the struct SignTransactionParams in "github.com/palletone/adaptor/AdaptorBTC.go",
-type BTCTransaction_signTransaction struct { //SignTransactionParams
+type BTCTransaction_signTransaction struct {
+	//SignTransactionParams
 	TransactionHex   string   `json:"transactionhex"`
 	InputRedeemIndex []int    `json:"inputredeemindex"`
 	RedeemHex        []string `json:"redeemhex"`
@@ -815,7 +819,7 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	return shim.Success([]byte(txHash))
 }
-func put(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+func put(stub shim.ChaincodeStubInterface) pb.Response {
 	err := stub.PutState("result", []byte("put"))
 	if err != nil {
 		log.Debugf("PutState err: %s", err.Error())
@@ -825,7 +829,7 @@ func put(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success([]byte("PutState OK"))
 }
 
-func get(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+func get(stub shim.ChaincodeStubInterface) pb.Response {
 	result, _ := stub.GetState("result")
 	return shim.Success(result)
 }

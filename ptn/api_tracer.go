@@ -29,7 +29,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/rpc"
-	"github.com/palletone/go-palletone/dag/state"
 )
 
 const (
@@ -59,11 +58,11 @@ type txTraceResult struct {
 
 // blockTraceTask represents a single block trace task when an entire chain is
 // being traced.
-type blockTraceTask struct {
-	statedb *state.StateDB   // Intermediate state prepped for tracing
-	rootref common.Hash      // Trie root reference held for this task
-	results []*txTraceResult // Trace results procudes by the task
-}
+//type blockTraceTask struct {
+//	statedb *state.StateDB   // Intermediate state prepped for tracing
+//	rootref common.Hash      // Trie root reference held for this task
+//	results []*txTraceResult // Trace results procudes by the task
+//}
 
 // blockTraceResult represets the results of tracing a single block when an entire
 // chain is being traced.
@@ -75,10 +74,10 @@ type blockTraceResult struct {
 
 // txTraceTask represents a single transaction trace task when an entire block
 // is being traced.
-type txTraceTask struct {
-	statedb *state.StateDB // Intermediate state prepped for tracing
-	index   int            // Transaction offset in the block
-}
+//type txTraceTask struct {
+//	statedb *state.StateDB // Intermediate state prepped for tracing
+//	index   int            // Transaction offset in the block
+//}
 
 // TraceChain returns the structured logs created during the execution of EVM
 // between two blocks (excluding start) and returns them as a JSON object.

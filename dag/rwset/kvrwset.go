@@ -57,7 +57,13 @@ type KVRead struct {
 	ContractId []byte                `protobuf:"bytes,4,opt,name=contract_id,proto3" json:"contract_id,omitempty"`
 }
 
-func (m *KVRead) Reset()                    { m = new(KVRead) }
+func (m *KVRead) Reset() {
+	n := new(KVRead)
+	m.key = n.key
+	m.version = n.version
+	m.value = n.value
+	m.ContractId = n.ContractId
+}
 func (m *KVRead) String() string            { return proto.CompactTextString(m) }
 func (*KVRead) ProtoMessage()               {}
 func (*KVRead) Descriptor() ([]byte, []int) { return nil, nil }
@@ -90,7 +96,13 @@ type KVWrite struct {
 	ContractId []byte `protobuf:"bytes,4,opt,name=contract_id,proto3" json:"contract_id,omitempty"`
 }
 
-func (m *KVWrite) Reset()                    { m = new(KVWrite) }
+func (m *KVWrite) Reset() {
+	n := new(KVWrite)
+	m.key = n.key
+	m.isDelete = n.isDelete
+	m.value = n.value
+	m.ContractId = n.ContractId
+}
 func (m *KVWrite) String() string            { return proto.CompactTextString(m) }
 func (*KVWrite) ProtoMessage()               {}
 func (*KVWrite) Descriptor() ([]byte, []int) { return nil, nil }
