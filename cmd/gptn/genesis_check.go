@@ -64,7 +64,8 @@ func validateGenesis(genesis *core.Genesis) {
 
 	minMediatorCount := genesis.ImmutableParameters.MinimumMediatorCount
 	fcAssert(initialActiveMediator >= minMediatorCount,
-		"initial active mediators must be larger than min mediator count.")
+		"initial active mediators(%v) must be larger than min mediator count(%v).",
+		initialActiveMediator, minMediatorCount)
 
 	fcAssert((minMediatorCount&1) == 1, "min mediator count must be odd.")
 }

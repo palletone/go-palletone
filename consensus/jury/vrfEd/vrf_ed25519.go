@@ -34,7 +34,8 @@ const (
 	limit    = 100
 	N2       = 32 // ceil(log2(q) / 8)
 	N        = N2 / 2
-	qs       = "1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed" // 2^252 + 27742317777372353535851937790883648493
+	// 2^252 + 27742317777372353535851937790883648493
+	qs       = "1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed"
 	cofactor = 8
 	NOSIGN   = 3
 )
@@ -190,7 +191,7 @@ func OS2ECP(os []byte, sign byte) *edwards25519.ExtendedGroupElement {
 func S2OS(s []byte) []byte {
 	sign := s[31] >> 7     // @@ we should clear the sign bit??
 	os := []byte{sign + 2} // Y = 0x02 if positive or 0x03 if negative
-	os = append([]byte(os), s...)
+	os = append(os, s...)
 	return os
 }
 

@@ -282,7 +282,7 @@ func (vm *Engine) Step() (done bool, err error) {
 	vm.scriptOff++
 	if vm.scriptOff >= len(vm.scripts[vm.scriptIdx]) {
 		// Illegal to have an `if' that straddles two scripts.
-		if err == nil && len(vm.condStack) != 0 {
+		if  len(vm.condStack) != 0 {
 			return false, ErrStackMissingEndif
 		}
 

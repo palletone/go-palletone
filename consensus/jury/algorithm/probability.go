@@ -34,9 +34,9 @@ func Selected(expectedNum uint, weight, total uint64, vrf []byte) int {
 
 	hh := util.RlpHash(vrf)
 	h32 := hh[:common.HashLength]
-
 	//Total := 100
-	binomial := NewBinomial(int64(weight), int64(expectedNum), int64(total)) //weight=TokenPerUser; TotalTokenAmount = UserAmount * TokenPerUser
+	//weight=TokenPerUser; TotalTokenAmount = UserAmount * TokenPerUser
+	binomial := NewBinomial(int64(weight), int64(expectedNum), int64(total))
 	//binomial := NewApproxBinomial(int64(expectedNum), weight)
 	//binomial := &distuv.Binomial{
 	//	N: float64(weight),

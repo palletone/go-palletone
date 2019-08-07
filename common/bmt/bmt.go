@@ -80,7 +80,7 @@ type Hasher struct {
 	depth       int         // index of last level
 	result      chan []byte // result channel
 	hash        []byte      // to record the result
-	max         int32       // max segments for SegmentWriter interface
+	//max         int32       // max segments for SegmentWriter interface
 	blockLength []byte      // The block length that needes to be added in Sum
 }
 

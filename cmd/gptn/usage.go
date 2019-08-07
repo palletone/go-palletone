@@ -38,7 +38,8 @@ var AppHelpTemplate = `NAME:
    Copyright 2017-2018 The go-ethereum Authors
 
 USAGE:
-   {{.App.HelpName}} [options]{{if .App.Commands}} command [command options]{{end}} {{if .App.ArgsUsage}}{{.App.ArgsUsage}}{{else}}[arguments...]{{end}}
+   {{.App.HelpName}} [options]{{if .App.Commands}} command [command options]{{end}} 
+   {{if .App.ArgsUsage}}{{.App.ArgsUsage}}{{else}}[arguments...]{{end}}
    {{if .App.Version}}
 VERSION:
    {{.App.Version}}
@@ -317,11 +318,13 @@ func init() {
 			if len(uncategorized) > 0 {
 				// Append all ungategorized options to the misc group
 				miscs := len(AppHelpFlagGroups[len(AppHelpFlagGroups)-1].Flags)
-				AppHelpFlagGroups[len(AppHelpFlagGroups)-1].Flags = append(AppHelpFlagGroups[len(AppHelpFlagGroups)-1].Flags, uncategorized...)
+				AppHelpFlagGroups[len(AppHelpFlagGroups)-1].Flags =
+					append(AppHelpFlagGroups[len(AppHelpFlagGroups)-1].Flags, uncategorized...)
 
 				// Make sure they are removed afterwards
 				defer func() {
-					AppHelpFlagGroups[len(AppHelpFlagGroups)-1].Flags = AppHelpFlagGroups[len(AppHelpFlagGroups)-1].Flags[:miscs]
+					AppHelpFlagGroups[len(AppHelpFlagGroups)-1].Flags =
+						AppHelpFlagGroups[len(AppHelpFlagGroups)-1].Flags[:miscs]
 				}()
 			}
 			// Render out custom usage screen

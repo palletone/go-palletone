@@ -545,7 +545,7 @@ func markTxIllegal(dag storage.IStateDb, tx *modules.Transaction) {
 	var readSet []modules.ContractReadSet
 	var contractId []byte
 
-	valid := true
+
 	for _, msg := range tx.TxMessages {
 		switch msg.App {
 		case modules.APP_CONTRACT_DEPLOY:
@@ -562,7 +562,7 @@ func markTxIllegal(dag storage.IStateDb, tx *modules.Transaction) {
 			contractId = payload.ContractId
 		}
 	}
-	valid = checkReadSetValid(dag, contractId, readSet)
+	valid := checkReadSetValid(dag, contractId, readSet)
 	tx.Illegal = !valid
 
 	return
@@ -579,7 +579,7 @@ func markTxsIllegal(dag storage.IStateDb, txs []*modules.Transaction) error {
 		var readSet []modules.ContractReadSet
 		var contractId []byte
 
-		valid := true
+
 		for _, msg := range tx.TxMessages {
 			switch msg.App {
 			case modules.APP_CONTRACT_DEPLOY:
@@ -596,7 +596,7 @@ func markTxsIllegal(dag storage.IStateDb, txs []*modules.Transaction) error {
 				contractId = payload.ContractId
 			}
 		}
-		valid = checkReadSetValid(dag, contractId, readSet)
+		valid := checkReadSetValid(dag, contractId, readSet)
 		tx.Illegal = !valid
 	}
 	return nil
@@ -1019,7 +1019,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 				return fmt.Errorf("save contract of signature failed.")
 			}
 		case modules.APP_DATA:
-			if ok := rep.saveDataPayload(requester, unitHash, unitHeight, unitTime, txHash, msg.Payload.(*modules.DataPayload)); ok != true {
+			if ok := rep.saveDataPayload(requester, unitHash, unitHeight, unitTime, txHash, msg.Payload.(*modules.DataPayload)); !ok {
 				return fmt.Errorf("save data payload faild.")
 			}
 		default:
@@ -1201,7 +1201,7 @@ func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, he
 	var pl interface{}
 	pl = msg.Payload
 	payload, ok := pl.(*modules.ContractInvokePayload)
-	if ok == false {
+	if !ok {
 		return false
 	}
 

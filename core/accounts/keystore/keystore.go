@@ -509,9 +509,6 @@ func (ks *KeyStore) ImportFromHex(hexhash string, newPassphrase string) (account
 	if key != nil && key.PrivateKey != nil {
 		defer ZeroKey(key.PrivateKey)
 	}
-	if err != nil {
-		return accounts.Account{}, err
-	}
 	return ks.importKey(key, newPassphrase)
 }
 

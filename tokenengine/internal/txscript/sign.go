@@ -21,8 +21,11 @@ func RawTxInSignature(tx *modules.Transaction, msgIdx, idx int, subScript []byte
 	if err != nil {
 		return nil, fmt.Errorf("cannot parse output script: %v", err)
 	}
-	data := calcSignatureData(parsedScript, hashType, tx, msgIdx, idx, crypto)
+	data := calcSignatureData(parsedScript, hashType, tx, msgIdx, idx)
 	sign, err := crypto.Sign(addr, data)
+	if err != nil {
+		return nil, fmt.Errorf("cannot sign tx input: %s", err)
+	}
 	return append(sign, byte(hashType)), nil
 	//signature, err := key.Sign(hash)
 	//if err != nil {
@@ -198,7 +201,7 @@ func mergeScripts(tx *modules.Transaction, msgIdx, idx int,
 		script := sigPops[len(sigPops)-1].data
 
 		// We already know this information somewhere up the stack.
-		class, addresses, nrequired, err :=
+		class, addresses, nrequired, _ :=
 			ExtractPkScriptAddrs(script)
 
 		// regenerate scripts.
@@ -299,7 +302,7 @@ sigLoop:
 		// however, assume no sigs etc are in the script since that
 		// would make the transaction nonstandard and thus not
 		// MultiSigTy, so we just need to hash the full thing.
-		data := calcSignatureData(pkPops, hashType, tx, msgIdx, idx, crypto)
+		data := calcSignatureData(pkPops, hashType, tx, msgIdx, idx)
 
 		for _, addr := range addresses {
 			// All multisig addresses should be pubkey addreses
