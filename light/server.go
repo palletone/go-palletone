@@ -32,7 +32,6 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
-	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/light/flowcontrol"
@@ -253,7 +252,7 @@ func linRegFromBytes(data []byte) *linReg {
 
 type requestCostStats struct {
 	lock  sync.RWMutex
-	db    ptndb.Database
+	//db    ptndb.Database
 	stats map[uint64]*linReg
 }
 

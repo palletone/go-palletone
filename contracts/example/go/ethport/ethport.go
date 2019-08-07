@@ -48,11 +48,11 @@ func (p *ETHPort) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 	switch f {
 	case "initDepositAddr":
-		return _initDepositAddr(args, stub)
+		return _initDepositAddr(stub)
 	case "setETHTokenAsset":
-		return _setETHTokenAsset(args, stub)
+		return _setETHTokenAsset(args,stub)
 	case "getETHToken":
-		return _getETHToken(args, stub)
+		return _getETHToken(stub)
 	case "setETHContract":
 		return _setETHContract(args, stub)
 	case "setOwner":
@@ -116,7 +116,7 @@ func consult(stub shim.ChaincodeStubInterface, content []byte, myAnswer []byte) 
 	return recvResult, nil
 }
 
-func _initDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+func _initDepositAddr(stub shim.ChaincodeStubInterface) pb.Response {
 	//
 	saveResult, _ := stub.GetState(symbolsJuryAddress)
 	if len(saveResult) != 0 {
@@ -371,7 +371,7 @@ func getDepositETHInfo(contractAddr, ptnAddr string, stub shim.ChaincodeStubInte
 
 }
 
-func _getETHToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+func _getETHToken(stub shim.ChaincodeStubInterface) pb.Response {
 	//
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {

@@ -235,7 +235,7 @@ func (di DestroyImageReq) getCCID() ccintf.CCID {
 //   . construct req of the right type (e.g., CreateImageReq)
 //   . call it in a go routine
 //   . process response in the go routing
-//context can be cancelled. VMCProcess will try to cancel calling functions if it can
+//context can be canceled. VMCProcess will try to cancel calling functions if it can
 //For instance docker clients api's such as BuildImage are not cancelable.
 //In all cases VMCProcess will wait for the called go routine to return
 func VMCProcess(ctxt context.Context, vmtype string, req VMCReqIntf) (interface{}, error) {

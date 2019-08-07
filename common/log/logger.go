@@ -28,7 +28,6 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 	"log"
 	"strings"
-	"sync"
 )
 
 const (
@@ -49,11 +48,11 @@ const (
 	LogStderr = "stderr"
 )
 
-var defaultLogModule = []string{RootBuild, RootCmd, RootCommon, RootConfigure, RootCore, RootInternal, RootPtnclient, RootPtnjson, RootStatistics, RootVendor, RootWallet}
+//var defaultLogModule = []string{RootBuild, RootCmd, RootCommon, RootConfigure, RootCore, RootInternal, RootPtnclient, RootPtnjson, RootStatistics, RootVendor, RootWallet}
 
 var LogConfig = DefaultConfig
 var Logger *zap.Logger
-var mux sync.RWMutex
+//var mux sync.RWMutex
 
 // init zap.logger
 func InitLogger() {

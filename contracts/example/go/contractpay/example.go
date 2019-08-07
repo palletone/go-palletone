@@ -54,12 +54,12 @@ func (t *SimpleChaincode) payout(stub shim.ChaincodeStubInterface, args []string
 	return shim.Success(nil)
 }
 
-func (t *SimpleChaincode) paystate1(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *SimpleChaincode) paystate1(stub shim.ChaincodeStubInterface) pb.Response {
 	stub.PutState("paystate1", []byte("paystate1"))
 	return shim.Success(nil)
 }
 
-func (t *SimpleChaincode) paystate2(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *SimpleChaincode) paystate2(stub shim.ChaincodeStubInterface) pb.Response {
 	stub.PutState("paystate2", []byte("paystate2"))
 	return shim.Success(nil)
 }
@@ -104,7 +104,7 @@ func (t *SimpleChaincode) balance(stub shim.ChaincodeStubInterface, args []strin
 	}
 	return shim.Success(data)
 }
-func (t *SimpleChaincode) time(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *SimpleChaincode) time(stub shim.ChaincodeStubInterface) pb.Response {
 	time, err := stub.GetTxTimestamp(10)
 	if err != nil {
 		return shim.Error(err.Error())
@@ -121,25 +121,25 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	if function == "paystate1" {
-		return t.paystate1(stub, args)
+		return t.paystate1(stub)
 	}
 	if function == "paystate2" {
-		return t.paystate2(stub, args)
+		return t.paystate2(stub)
 	}
 	if function == "payoutstate" {
 		return t.payoutstate(stub, args)
 	}
 	if function == "addr" {
-		return t.addr(stub, args)
+		return t.addr(stub)
 	}
 	if function == "balance" {
 		return t.balance(stub, args)
 	}
 	if function == "time" {
-		return t.time(stub, args)
+		return t.time(stub)
 	}
 	if function == "put" {
-		return t.put(stub, args)
+		return t.put(stub)
 	}
 	if function == "get" {
 		return t.get(stub, args)
@@ -147,7 +147,7 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 	return shim.Error("Invalid invoke function name. Expecting \"invoke\"")
 }
-func (t *SimpleChaincode) put(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *SimpleChaincode) put(stub shim.ChaincodeStubInterface) pb.Response {
 
 	stub.PutState("b", []byte("b"))
 	stub.PutState("a", []byte("a"))
@@ -172,7 +172,7 @@ func (t *SimpleChaincode) get(stub shim.ChaincodeStubInterface, args []string) p
 	return shim.Success([]byte(str))
 }
 
-func (t *SimpleChaincode) addr(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *SimpleChaincode) addr(stub shim.ChaincodeStubInterface) pb.Response {
 	contractBuf, contractAddr := stub.GetContractID()
 	result := fmt.Sprintf("%x-%s", contractBuf, contractAddr)
 	log.Debugf(result)

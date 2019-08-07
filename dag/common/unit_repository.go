@@ -545,7 +545,7 @@ func markTxIllegal(dag storage.IStateDb, tx *modules.Transaction) {
 	var readSet []modules.ContractReadSet
 	var contractId []byte
 
-	valid := true
+
 	for _, msg := range tx.TxMessages {
 		switch msg.App {
 		case modules.APP_CONTRACT_DEPLOY:
@@ -562,7 +562,7 @@ func markTxIllegal(dag storage.IStateDb, tx *modules.Transaction) {
 			contractId = payload.ContractId
 		}
 	}
-	valid = checkReadSetValid(dag, contractId, readSet)
+	valid := checkReadSetValid(dag, contractId, readSet)
 	tx.Illegal = !valid
 
 	return
@@ -579,7 +579,7 @@ func markTxsIllegal(dag storage.IStateDb, txs []*modules.Transaction) error {
 		var readSet []modules.ContractReadSet
 		var contractId []byte
 
-		valid := true
+
 		for _, msg := range tx.TxMessages {
 			switch msg.App {
 			case modules.APP_CONTRACT_DEPLOY:
@@ -596,7 +596,7 @@ func markTxsIllegal(dag storage.IStateDb, txs []*modules.Transaction) error {
 				contractId = payload.ContractId
 			}
 		}
-		valid = checkReadSetValid(dag, contractId, readSet)
+		valid := checkReadSetValid(dag, contractId, readSet)
 		tx.Illegal = !valid
 	}
 	return nil

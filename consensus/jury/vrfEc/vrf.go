@@ -101,8 +101,6 @@ func getHash(curve elliptic.Curve) hash.Hash {
 		//}
 	case 384:
 		return crypto.SHA384.New()
-	default:
-		return nil
 	}
 	return nil
 }

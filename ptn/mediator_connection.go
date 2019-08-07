@@ -69,7 +69,7 @@ func (pm *ProtocolManager) activeMediatorsUpdatedEventRecvLoop() {
 }
 
 func (pm *ProtocolManager) switchMediatorConnect(isChanged bool) {
-	log.Debugf("switchMediatorConnect")
+	log.Debug("switchMediatorConnect", "isChanged", isChanged)
 
 	// 若干数据还没同步完成，则忽略本次切换，继续同步
 	if !pm.dag.IsSynced() {
