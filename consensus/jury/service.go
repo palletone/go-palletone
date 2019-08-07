@@ -594,20 +594,6 @@ func (p *Processor) IsSystemContractTx(tx *modules.Transaction) bool {
 	return tx.IsSystemContract()
 }
 
-//func (p *Processor) isInLocalAddr(addrHash []common.Hash) bool {
-//	if len(addrHash) <= 0 {
-//		return true
-//	}
-//	for _, hs := range addrHash {
-//		for addr := range p.local {
-//			if hs == util.RlpHash(addr) {
-//				return true
-//			}
-//		}
-//	}
-//	return false
-//}
-
 func (p *Processor) isValidateElection(tx *modules.Transaction, ele []modules.ElectionInf,
 	juryCnt uint64, checkExit bool) bool {
 	reqId := tx.RequestHash()
@@ -895,12 +881,6 @@ func (p *Processor) getContractAssignElectionList(tx *modules.Transaction) ([]mo
 	}
 
 	return eels, nil
-
-	//if len(eels) >= p.electionNum {
-	//	log.Debugf("[%s]getContractAssignElectionList, all from dag, ele:%v", shortId(reqId.String()), eels)
-	//	return eels, nil
-	//}
-	//return nil, nil
 }
 
 //func (p *Processor) getTemplateAddrHash(tplId []byte) ([]common.Hash, error) {
