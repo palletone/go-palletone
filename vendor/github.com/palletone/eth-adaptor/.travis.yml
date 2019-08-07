@@ -1,0 +1,31 @@
+language: go
+matrix:
+  include:
+    - os: linux
+      dist: xenial
+      go: 1.10.x
+      script:
+        - go get -u github.com/palletone/adaptor
+        - go test ./...
+    - os: linux
+      dist: xenial
+      go: 1.11.x
+      env: GO111MODULE=on
+      script:
+        - go get -u github.com/palletone/adaptor@master
+        - go test ./...  
+    - os: linux
+      dist: xenial
+      go: 1.12.x
+      env: GO111MODULE=on
+      script:
+        - go get -u github.com/palletone/adaptor@master
+        - go test ./...  
+    - os: osx
+      go: 1.12.x
+      env: GO111MODULE=on
+      script:
+        - go get -u github.com/palletone/adaptor@master
+        - go test ./...  
+
+
