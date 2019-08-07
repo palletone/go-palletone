@@ -143,10 +143,10 @@ func createGenesisJson(ctx *cli.Context) error {
 	}
 
 	mcs := createExampleMediators(ctx, core.DefaultActiveMediatorCount)
-	nodeStr, err := getNodeInfo(ctx)
-	if err != nil {
-		return err
-	}
+	nodeStr/*, err*/ := getNodeInfo(ctx)
+	//if err != nil {
+	//	return err
+	//}
 
 	genesisState := createExampleGenesis()
 	genesisState.TokenHolder = account
