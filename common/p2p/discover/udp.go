@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/nat"
@@ -33,6 +34,8 @@ import (
 )
 
 const Version = 4
+
+var Genesis = common.Hash{}
 
 // Errors
 var (

@@ -147,5 +147,5 @@ type NorNodBal struct {
 
 type Member struct {
 	Key   string `json:"key"`
-	Value []byte `json;"value"`
+	Value []byte `json:"value"`
 }

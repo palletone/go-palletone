@@ -57,10 +57,10 @@ func pledgeWithdrawRep(stub shim.ChaincodeStubInterface, addr common.Address, am
 }
 
 //撤销当天的提币请求
-func pledgeWithdrawCancelRep(stub shim.ChaincodeStubInterface, addr common.Address) error {
-	err := delPledgeWithdrawRecord(stub, addr.String())
-	return err
-}
+//func pledgeWithdrawCancelRep(stub shim.ChaincodeStubInterface, addr common.Address) error {
+//	err := delPledgeWithdrawRecord(stub, addr.String())
+//	return err
+//}
 
 //质押分红,按持仓比例分固定金额
 func pledgeRewardAllocation(pledgeList *modules.PledgeList, rewardAmount uint64) *modules.PledgeList {
@@ -79,7 +79,9 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward
 	//  判断当天是否处理过
 	today := getToday(stub)
 	lastDate, err := getLastPledgeListDate(stub)
-
+	if err != nil {
+		return err
+	}
 	if lastDate == today {
 		return fmt.Errorf("%s pledge reward has been allocated before", today)
 	}

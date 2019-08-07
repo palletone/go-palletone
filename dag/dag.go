@@ -273,7 +273,7 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash,
 				units[i].UnitHeader.Number.Index, units[i].UnitHash)
 		}
-		if i > 0 && u.ContainsParent(units[i-1].UnitHash) == false {
+		if i > 0 && !u.ContainsParent(units[i-1].UnitHash) {
 			return count, fmt.Errorf("Insert dag error: child parents are not continuous, "+
 				"parent unit number=%d, hash=%s; "+"child unit number=%d, hash=%s",
 				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash,
@@ -354,7 +354,6 @@ func (d *Dag) CurrentHeader(token modules.AssetId) *modules.Header {
 	// 从memdag 获取最新的header
 	unit := memdag.GetLastMainChainUnit()
 	return unit.Header()
-	return nil
 }
 
 // return unit's body , all transactions of unit by hash

@@ -145,6 +145,10 @@ func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byt
 		Version: usrcc.Version,
 	}
 	spec.ChaincodeId = chaincodeID
+	cp := idag.GetChainParameters()
+	spec.CpuQuota = cp.UccCpuQuota  //微妙单位（100ms=100000us=上限为1个CPU）
+	spec.CpuShare = cp.UccCpuShares //占用率，默认1024，即可占用一个CPU，相对值
+	spec.Memory = cp.UccMemory      //字节单位 物理内存  1073741824  1G 2147483648 2G 209715200 200m 104857600 100m
 	err = ucc.DeployUserCC(depId.Bytes(), chaincodeData, spec, chainID, txId, txsim, setTimeOut)
 	if err != nil {
 		log.Error("deployUserCC err:", "error", err)
