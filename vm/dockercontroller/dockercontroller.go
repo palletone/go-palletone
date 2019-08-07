@@ -25,18 +25,15 @@ import (
 	"bufio"
 	"bytes"
 	"compress/gzip"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/comm"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
-	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	container "github.com/palletone/go-palletone/vm/api"
 	"github.com/palletone/go-palletone/vm/ccintf"
 	com "github.com/palletone/go-palletone/vm/common"
@@ -46,15 +43,15 @@ import (
 
 var (
 	//log = flogging.MustGetLogger("dockercontroller")
-	hostConfig  *docker.HostConfig
-	vmRegExp    = regexp.MustCompile("[^a-zA-Z0-9-_.]")
-	imageRegExp = regexp.MustCompile("^[a-z0-9]+(([._-][a-z0-9]+)+)?$")
+	hostConfig *docker.HostConfig
+	vmRegExp   = regexp.MustCompile("[^a-zA-Z0-9-_.]")
+	//imageRegExp = regexp.MustCompile("^[a-z0-9]+(([._-][a-z0-9]+)+)?$")
 )
 
-func getClientMe() (dockerClient, error) {
-	client, err := docker.NewClient("unix:///var/run/docker.sock")
-	return client, err
-}
+//func getClientMe() (dockerClient, error) {
+//	client, err := docker.NewClient("unix:///var/run/docker.sock")
+//	return client, err
+//}
 
 // getClient returns an instance that implements dockerClient interface
 type getClient func() (dockerClient, error)
@@ -236,7 +233,7 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 	//stop,force remove if necessary
 	log.Debugf("Cleanup container %s", containerID)
 	//停止并删除容器
-	err = vm.stopInternal(ctxt, client, containerID, 0, false, false)
+	vm.stopInternal(ctxt, client, containerID, 0, false, false)
 	//if err != nil {
 	//	return err
 	//}
@@ -261,6 +258,9 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 			//确认镜像是否存在或从远程拉取
 			//-----------------------------------------------------------------------------------
 			client1, err := com.NewDockerClient()
+			if err != nil {
+				return err
+			}
 			_, err = client1.InspectImage(imageID)
 			if err != nil {
 				log.Debugf("Image %s does not exist locally, attempt pull", imageID)
@@ -576,16 +576,16 @@ func (vm *DockerVM) GetImageId(ccid ccintf.CCID) (string, error) {
 // environment (such as a development environment). It computes the hash for the
 // supplied image name and then appends it to the lowercase image name to ensure
 // uniqueness.
-func formatImageName(name string) (string, error) {
-	hash := hex.EncodeToString(util.ComputeSHA256([]byte(name)))
-	name = vmRegExp.ReplaceAllString(name, "-")
-	imageName := strings.ToLower(fmt.Sprintf("%s-%s", name, hash))
-
-	// Check that name complies with Docker's repository naming rules
-	if !imageRegExp.MatchString(imageName) {
-		log.Errorf("Error constructing Docker VM Name. '%s' breaks Docker's repository naming rules", name)
-		return imageName, fmt.Errorf("Error constructing Docker VM Name. '%s' breaks Docker's repository naming rules", imageName)
-	}
-
-	return imageName, nil
-}
+//func formatImageName(name string) (string, error) {
+//	hash := hex.EncodeToString(util.ComputeSHA256([]byte(name)))
+//	name = vmRegExp.ReplaceAllString(name, "-")
+//	imageName := strings.ToLower(fmt.Sprintf("%s-%s", name, hash))
+//
+//	// Check that name complies with Docker's repository naming rules
+//	if !imageRegExp.MatchString(imageName) {
+//		log.Errorf("Error constructing Docker VM Name. '%s' breaks Docker's repository naming rules", name)
+//		return imageName, fmt.Errorf("Error constructing Docker VM Name. '%s' breaks Docker's repository naming rules", imageName)
+//	}
+//
+//	return imageName, nil
+//}
