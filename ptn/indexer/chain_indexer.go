@@ -190,8 +190,8 @@ func (c *ChainIndexer) eventLoop(currentHeader *modules.Header, events chan modu
 	c.newHead(currentHeader.Number.Index, false)
 
 	var (
-		prevHeader = currentHeader
-		prevHash   = currentHeader.Hash()
+		//prevHeader = currentHeader
+		prevHash = currentHeader.Hash()
 	)
 	for {
 		select {
@@ -224,8 +224,9 @@ func (c *ChainIndexer) eventLoop(currentHeader *modules.Header, events chan modu
 				*/
 			}
 			c.newHead(header.Number.Index, false)
-			prevHeader = prevHeader //TODO must be delete
-			prevHeader, prevHash = header, header.Hash()
+			//prevHeader = prevHeader //TODO must be delete
+			//prevHeader, prevHash = header, header.Hash()
+			prevHash = header.Hash()
 		}
 	}
 }
@@ -352,7 +353,7 @@ func (c *ChainIndexer) updateLoop() {
 // held while processing, the continuity can be broken by a long reorg, in which
 // case the function returns with an error.
 func (c *ChainIndexer) processSection(section uint64, lastHead common.Hash) (common.Hash, error) {
-	log.Trace("Processing new chain section", "section", section)
+	log.Trace("Processing new chain section", "section", section, "lastHead", lastHead)
 	return common.Hash{}, errors.New("404 Not Found")
 	// Reset and partial processing
 	/*

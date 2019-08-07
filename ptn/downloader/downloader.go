@@ -470,7 +470,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 
 	fetchers := []func() error{
 		func() error { return d.fetchHeaders(p, origin+1, pivot, assetId) },
-		func() error { return d.fetchBodies(origin+1, assetId) },
+		func() error { return d.fetchBodies(origin + 1) },
 		func() error { return d.processHeaders(origin+1, pivot, index, assetId) },
 	}
 	if d.mode == FastSync {
@@ -965,7 +965,7 @@ func (d *Downloader) fillHeaderSkeleton(from uint64, skeleton []*modules.Header,
 	)
 	err := d.fetchParts(errCancelHeaderFetch, d.headerCh, deliver, d.queue.headerContCh, expire,
 		d.queue.PendingHeaders, d.queue.InFlightHeaders, throttle, reserve,
-		nil, fetch, d.queue.CancelHeaders, capacity, d.peers.HeaderIdlePeers, setIdle, "headers")
+		nil, fetch /*d.queue.CancelHeaders,*/, capacity, d.peers.HeaderIdlePeers, setIdle, "headers")
 
 	log.Debug("Skeleton fill terminated", "err", err)
 
@@ -976,7 +976,7 @@ func (d *Downloader) fillHeaderSkeleton(from uint64, skeleton []*modules.Header,
 // fetchBodies iteratively downloads the scheduled block bodies, taking any
 // available peers, reserving a chunk of blocks for each, waiting for delivery
 // and also periodically checking for timeouts.
-func (d *Downloader) fetchBodies(from uint64, assetId modules.AssetId) error {
+func (d *Downloader) fetchBodies(from uint64) error {
 	log.Debug("Downloading block bodies", "origin", from)
 	var (
 		deliver = func(packet dataPack) (int, error) {
@@ -991,7 +991,7 @@ func (d *Downloader) fetchBodies(from uint64, assetId modules.AssetId) error {
 
 	err := d.fetchParts(errCancelBodyFetch, d.bodyCh, deliver, d.bodyWakeCh, expire,
 		d.queue.PendingBlocks, d.queue.InFlightBlocks, d.queue.ShouldThrottleBlocks, d.queue.ReserveBodies,
-		d.bodyFetchHook, fetch, d.queue.CancelBodies, capacity, d.peers.BodyIdlePeers, setIdle, "bodies")
+		d.bodyFetchHook, fetch /*d.queue.CancelBodies,*/, capacity, d.peers.BodyIdlePeers, setIdle, "bodies")
 
 	log.Debug("Block body download terminated", "err", err)
 	return err
@@ -1024,7 +1024,7 @@ func (d *Downloader) fetchBodies(from uint64, assetId modules.AssetId) error {
 //  - kind:        textual label of the type being downloaded to display in log mesages
 func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliver func(dataPack) (int, error), wakeCh chan bool,
 	expire func() map[string]int, pending func() int, inFlight func() bool, throttle func() bool, reserve func(*peerConnection, int) (*fetchRequest, bool, error),
-	fetchHook func([]*modules.Header), fetch func(*peerConnection, *fetchRequest) error, cancel func(*fetchRequest), capacity func(*peerConnection) int,
+	fetchHook func([]*modules.Header), fetch func(*peerConnection, *fetchRequest) error /*cancel func(*fetchRequest),*/, capacity func(*peerConnection) int,
 	idle func() ([]*peerConnection, int), setIdle func(*peerConnection, int), kind string) error {
 
 	// Create a ticker to detect expired retrieval tasks
@@ -1193,7 +1193,7 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 	// Keep a count of uncertain headers to roll back
 	rollback := []*modules.Header{}
 	defer func() {
-		log.Debug("===processHeaders===", "len(rollback):", len(rollback))
+		log.Debug("===processHeaders===", "len(rollback):", len(rollback), "pivot", pivot)
 		if len(rollback) > 0 {
 			//TODO must recover
 			/*
@@ -1361,7 +1361,6 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 			}
 		}
 	}
-	return nil
 }
 
 // processFullSyncContent takes fetch results from the queue and imports them into the chain.
@@ -1422,7 +1421,7 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 func (d *Downloader) processFastSyncContent(latest *modules.Header, assetId modules.AssetId) error {
 	// Start syncing state of the reported head block. This should get us most of
 	// the state of the pivot block.
-	log.Debug("", "===Enter processFastSyncContent===latest.Number.Index:", latest.Number.Index)
+	log.Debug("", "===Enter processFastSyncContent===latest.Number.Index:", latest.Number.Index, "assetId", assetId)
 	defer log.Debug("End processFastSyncContent")
 	//TODO wangjiyou
 
@@ -1695,8 +1694,6 @@ func (d *Downloader) DeliverAllToken(id string, headers []*modules.Header) error
 		log.Debug("Waiting for head header timed out", "elapsed", ttl, "peer", id)
 		return errTimeout
 	}
-
-	return nil
 }
 
 func (d *Downloader) FetchAllToken(id string) ([]*modules.Header, error) {
