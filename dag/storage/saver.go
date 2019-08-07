@@ -90,7 +90,7 @@ func GetUnitChainVersion(db ptndb.Database) int {
 }
 
 // SaveUnitChainVersion writes vsn as the version number to db.
-func SaveUnitChainVersion(db ptndb.Database, vsn int) error {
+func SaveUnitChainVersion(db ptndb.Putter, vsn int) error {
 	enc, _ := rlp.EncodeToBytes(uint(vsn))
 	return db.Put([]byte("UnitchainVersion"), enc)
 }

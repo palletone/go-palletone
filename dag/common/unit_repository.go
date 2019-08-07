@@ -1019,7 +1019,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 				return fmt.Errorf("save contract of signature failed.")
 			}
 		case modules.APP_DATA:
-			if ok := rep.saveDataPayload(requester, unitHash, unitHeight, unitTime, txHash, msg.Payload.(*modules.DataPayload)); ok != true {
+			if ok := rep.saveDataPayload(requester, unitHash, unitHeight, unitTime, txHash, msg.Payload.(*modules.DataPayload)); !ok {
 				return fmt.Errorf("save data payload faild.")
 			}
 		default:
@@ -1201,7 +1201,7 @@ func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, he
 	var pl interface{}
 	pl = msg.Payload
 	payload, ok := pl.(*modules.ContractInvokePayload)
-	if ok == false {
+	if !ok {
 		return false
 	}
 
