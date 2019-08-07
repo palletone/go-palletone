@@ -40,13 +40,13 @@ func (p *ShimJury) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 	switch f {
 	case "test":
-		return test(args, stub)
+		return test(stub)
 	case "test1":
-		return test1(args, stub)
+		return test1(stub)
 	case "test2":
-		return test2(args, stub)
+		return test2(stub)
 	case "put":
-		return put(args, stub)
+		return put(stub)
 	case "get":
 		return get(args, stub)
 	default:
@@ -60,7 +60,7 @@ type JuryMsgAddr struct {
 	Answer  []byte
 }
 
-func test(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+func test(stub shim.ChaincodeStubInterface) pb.Response {
 	sendresult, err := stub.SendJury(1, []byte("hello"), []byte("result"))
 	if err != nil {
 		log.Debugf("sendresult err: %s", err.Error())
@@ -89,7 +89,7 @@ func test(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	return shim.Success([]byte("RecvJury failed"))
 }
-func test1(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+func test1(stub shim.ChaincodeStubInterface) pb.Response {
 	sendresult, err := stub.SendJury(1, []byte("hello"), []byte("result"))
 	if err != nil {
 		log.Debugf("sendresult err: %s", err.Error())
@@ -99,7 +99,7 @@ func test1(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	log.Debugf("sendresult: %s", common.Bytes2Hex(sendresult))
 	return shim.Success([]byte("RecvJury failed"))
 }
-func test2(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+func test2( stub shim.ChaincodeStubInterface) pb.Response {
 	result, err := stub.RecvJury(1, []byte("hello"), 2)
 	if err != nil {
 		log.Debugf("result err: %s", err.Error())
@@ -120,7 +120,7 @@ func test2(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Success([]byte("RecvJury OK"))
 	}
 }
-func put(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+func put(stub shim.ChaincodeStubInterface) pb.Response {
 	err := stub.PutState("result", []byte("PutState put"))
 	if err != nil {
 		log.Debugf("PutState put err: %s", err.Error())

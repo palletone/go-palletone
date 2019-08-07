@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * Copyright IBM Corp. All Rights Reserved.
  * @author PalletOne core developers <dev@pallet.one>
@@ -49,13 +50,13 @@ func (p *BTCPort) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 	switch f {
 	case "initDepositAddr":
-		return _initDepositAddr(args, stub)
+		return _initDepositAddr(stub)
 	case "setBTCTokenAsset":
 		return _setBTCTokenAsset(args, stub)
 	case "setDepositAddr":
 		return _setDepositAddr(args, stub)
 	case "getBTCToken":
-		return _getBTCToken(args, stub)
+		return _getBTCToken(stub)
 
 	case "withdrawPrepare":
 		return _withdrawPrepare(args, stub)
@@ -137,7 +138,7 @@ const symbolsWithdraw = "withdraw_"
 const consultM = 3
 const consultN = 4
 
-func _initDepositAddr(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+func _initDepositAddr(stub shim.ChaincodeStubInterface) pb.Response {
 	//
 	saveResult, _ := stub.GetState(symbolsJuryPubkeys)
 	if len(saveResult) != 0 {
@@ -334,7 +335,7 @@ func getAddrUTXO(btcAddr string, stub shim.ChaincodeStubInterface) (*GetUTXOHttp
 	return &result, nil
 }
 
-func _getBTCToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+func _getBTCToken(stub shim.ChaincodeStubInterface) pb.Response {
 	//
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
@@ -488,7 +489,8 @@ func getUnspends(btcAmout int64, stub shim.ChaincodeStubInterface) []Unspend {
 }
 
 //refer to the struct RawTransactionGenParams in "github.com/palletone/adaptor/AdaptorBTC.go",
-type BTCTransaction_rawTransactionGen struct { //GetTransactionHttpParams
+type BTCTransaction_rawTransactionGen struct {
+	//GetTransactionHttpParams
 	Inputs   []Input  `json:"inputs"`
 	Outputs  []Output `json:"outputs"`
 	Locktime int64    `json:"locktime"`
@@ -545,7 +547,8 @@ func genRawTx(btcAmout, btcFee int64, btcAddr string, unspends []Unspend, stub s
 }
 
 //refer to the struct SignTransactionParams in "github.com/palletone/adaptor/AdaptorBTC.go",
-type BTCTransaction_signTransaction struct { //SignTransactionParams
+type BTCTransaction_signTransaction struct {
+	//SignTransactionParams
 	TransactionHex   string   `json:"transactionhex"`
 	InputRedeemIndex []int    `json:"inputredeemindex"`
 	RedeemHex        []string `json:"redeemhex"`
