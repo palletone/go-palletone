@@ -123,11 +123,11 @@ func (s *PublicDagAPI) GetHeaderByNumber(ctx context.Context, condition string) 
 	if err != nil {
 		return "", err
 	}
-	headerRlp, _ := rlp.EncodeToBytes(header)
-	headerJson := ptnjson.ConvertUnitHeader2Json(header)
+	headerRlp, err := rlp.EncodeToBytes(header)
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetHeaderByNumber err:", err, "number", number.String())
 	}
+	headerJson := ptnjson.ConvertUnitHeader2Json(header)
 	info := NewPublicReturnInfoWithHex("header", headerJson, headerRlp)
 	content, err := json.Marshal(info)
 	if err != nil {

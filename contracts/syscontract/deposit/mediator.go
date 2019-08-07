@@ -117,7 +117,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 }
 
 //mediator 交付保证金：
-func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface /*, args []string*/) pb.Response {
 	log.Info("starting entering mediatorPayToDepositContract func.")
 	//  判断是否是交付保证金到保证金合约地址
 	invokeTokens, err := isContainDepositContractAddr(stub)
@@ -228,7 +228,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 }
 
 //  申请退出 参数：暂时 节点地址
-func mediatorApplyQuit(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func mediatorApplyQuit(stub shim.ChaincodeStubInterface /*, args []string*/) pb.Response {
 	err := applyQuitList(Mediator, stub)
 	if err != nil {
 		log.Error("mediatorApplyQuitMediator err: ", "error", err)
