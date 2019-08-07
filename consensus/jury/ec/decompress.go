@@ -169,8 +169,8 @@ func curveSqrt(ySquare *big.Int, curve *elliptic.CurveParams) *big.Int {
 	fourQ.Lsh(lucasParamQ, 2)
 	fourQ.Mod(fourQ, curve.P)
 
-	seqU := big.NewInt(0)
-	seqV := big.NewInt(0)
+	//seqU := big.NewInt(0)
+	//seqV := big.NewInt(0)
 
 	for {
 		lucasParamP := big.NewInt(0)
@@ -189,7 +189,7 @@ func curveSqrt(ySquare *big.Int, curve *elliptic.CurveParams) *big.Int {
 			}
 		}
 
-		seqU, seqV = fastLucasSequence(curve.P, lucasParamP, lucasParamQ, k)
+		seqU, seqV := fastLucasSequence(curve.P, lucasParamP, lucasParamQ, k)
 		tmp6 := big.NewInt(0)
 		tmp6.Mul(seqV, seqV)
 		tmp6.Mod(tmp6, curve.P)

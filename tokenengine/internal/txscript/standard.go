@@ -422,7 +422,7 @@ func ExtractPkScriptAddrs(pkScript []byte) (ScriptClass, []AddressOriginalData, 
 		//addr, err := btcutil.NewAddressPubKeyHash(pops[2].data,
 		//	chainParams)
 		// if err == nil {
-			addrs = append(addrs, addr)
+		addrs = append(addrs, addr)
 		// }
 
 	case PubKeyTy:
@@ -434,7 +434,7 @@ func ExtractPkScriptAddrs(pkScript []byte) (ScriptClass, []AddressOriginalData, 
 		addr := NewAddressOriginalData(pops[0].data, scriptClass)
 		//addr, err := btcutil.NewAddressPubKey(pops[0].data, chainParams)
 		// if err == nil {
-			addrs = append(addrs, addr)
+		addrs = append(addrs, addr)
 		// }
 
 	case ScriptHashTy:
@@ -447,14 +447,14 @@ func ExtractPkScriptAddrs(pkScript []byte) (ScriptClass, []AddressOriginalData, 
 		//addr, err := btcutil.NewAddressScriptHashFromHash(pops[1].data,
 		//	chainParams)
 		// if err == nil {
-			addrs = append(addrs, addr)
+		addrs = append(addrs, addr)
 		// }
 	case ContractHashTy:
 		//<contract hash> OP_JURY_REDEEM_EQUAL
 		requiredSigs = 1
 		addr := NewAddressOriginalData(pops[0].data, scriptClass)
 		// if err == nil {
-			addrs = append(addrs, addr)
+		addrs = append(addrs, addr)
 		// }
 	case MultiSigTy:
 		// A multi-signature script is of the form:
