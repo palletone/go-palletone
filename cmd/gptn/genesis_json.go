@@ -114,7 +114,7 @@ func getTokenAccount(ctx *cli.Context) (string, error) {
 }
 
 func createExampleMediators(ctx *cli.Context, mcLen int) []*mp.MediatorConf {
-	exampleMediators := make([]*mp.MediatorConf, mcLen, mcLen)
+	exampleMediators := make([]*mp.MediatorConf, mcLen)
 	for i := 0; i < mcLen; i++ {
 		account, password, _ := createExampleAccount(ctx)
 		secStr, pubStr := core.CreateInitDKS()
@@ -143,7 +143,7 @@ func createGenesisJson(ctx *cli.Context) error {
 	}
 
 	mcs := createExampleMediators(ctx, core.DefaultActiveMediatorCount)
-	nodeStr/*, err*/ := getNodeInfo(ctx)
+	nodeStr /*, err*/ := getNodeInfo(ctx)
 	//if err != nil {
 	//	return err
 	//}
@@ -180,11 +180,11 @@ func createGenesisJson(ctx *cli.Context) error {
 	}
 
 	genesisFile, err = os.Create(genesisOut)
-	defer genesisFile.Close()
 	if err != nil {
 		utils.Fatalf("%v", err)
 		return err
 	}
+	defer genesisFile.Close()
 
 	_, err = genesisFile.Write(genesisJson)
 	if err != nil {
@@ -202,11 +202,16 @@ func createGenesisJson(ctx *cli.Context) error {
 func initSysContracts() []core.SysContract {
 	list := make([]core.SysContract, 0)
 	list = append(list, core.SysContract{Address: syscontract.CreateTokenContractAddress, Name: "PRC20", Active: true})
-	list = append(list, core.SysContract{Address: syscontract.CreateToken721ContractAddress, Name: "PRC721", Active: true})
-	list = append(list, core.SysContract{Address: syscontract.SysConfigContractAddress, Name: "System Config Manager", Active: true})
-	list = append(list, core.SysContract{Address: syscontract.PartitionContractAddress, Name: "Partition Manager", Active: true})
-	list = append(list, core.SysContract{Address: syscontract.DepositContractAddress, Name: "Deposit Manager", Active: true})
-	list = append(list, core.SysContract{Address: syscontract.DigitalIdentityContractAddress, Name: "Digital Identity", Active: true})
+	list = append(list, core.SysContract{Address: syscontract.CreateToken721ContractAddress,
+		Name: "PRC721", Active: true})
+	list = append(list, core.SysContract{Address: syscontract.SysConfigContractAddress,
+		Name: "System Config Manager", Active: true})
+	list = append(list, core.SysContract{Address: syscontract.PartitionContractAddress,
+		Name: "Partition Manager", Active: true})
+	list = append(list, core.SysContract{Address: syscontract.DepositContractAddress,
+		Name: "Deposit Manager", Active: true})
+	list = append(list, core.SysContract{Address: syscontract.DigitalIdentityContractAddress,
+		Name: "Digital Identity", Active: true})
 	list = append(list, core.SysContract{Address: syscontract.VoteTokenContractAddress, Name: "Vote", Active: true})
 	list = append(list, core.SysContract{Address: syscontract.TestContractAddress, Name: "Test", Active: true})
 
@@ -282,6 +287,7 @@ func initialAccount(ctx *cli.Context) (string, error) {
 	address, err := newAccount(ctx)
 	if err != nil {
 		utils.Fatalf("%v", err)
+		return address.Str(), err
 	}
 
 	fmt.Printf("Initial token holder's account address: %s\n", address.String())
@@ -385,11 +391,11 @@ func dumpJson(ctx *cli.Context) error {
 	}
 
 	file, err1 := os.Create(filePath)
-	defer file.Close()
 	if err1 != nil {
 		utils.Fatalf("%v", err1)
 		return err1
 	}
+	defer file.Close()
 
 	_, err = file.Write(genesisJson)
 	if err != nil {

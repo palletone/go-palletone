@@ -286,7 +286,8 @@ func accountList(ctx *cli.Context) error {
 }
 
 // tries unlocking the specified account a few times.
-func unlockAccount( /*ctx *cli.Context*/ ks *keystore.KeyStore, address string, i int, passwords []string) (accounts.Account, string) {
+func unlockAccount( /*ctx *cli.Context*/ ks *keystore.KeyStore, address string, i int,
+	passwords []string) (accounts.Account, string) {
 	account, err := utils.MakeAddress(ks, address)
 	if err != nil {
 		utils.Fatalf("Could not list accounts: %v", err)
@@ -648,24 +649,7 @@ func accountSignTx(ctx *cli.Context) error {
 	if len(keys) == 0 {
 		return nil
 	}
-	//	// All returned errors (not OOM, which panics) encounted during
-	//	// bytes.Buffer writes are unexpected.
-	//send_args := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx, &rawinputs, &keys, nil)
-	//send_args = send_args
-	//signtxout, err := ptnapi.SignRawTransaction(send_args)
-	//if signtxout == nil {
-	//	utils.Fatalf("Invalid signature")
-	//}
-	//signtx := signtxout.(ptnjson.SignRawTransactionResult)
-	//if err != nil {
-	//	utils.Fatalf("signtx error:%s", err)
-	//}
-	//if signtx.Complete == true {
-	//	fmt.Println("Signature success")
-	//	fmt.Println(signtx.Hex)
-	//} else {
-	//	utils.Fatalf("Invalid signature")
-	//}
+
 	return nil
 }
 func accountImport(ctx *cli.Context) error {
