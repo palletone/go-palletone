@@ -5,12 +5,11 @@
 package ptn
 
 import (
-	gomock "github.com/golang/mock/gomock"
-	common "github.com/palletone/go-palletone/common"
-	event "github.com/palletone/go-palletone/common/event"
-	mediatorplugin "github.com/palletone/go-palletone/consensus/mediatorplugin"
-	modules "github.com/palletone/go-palletone/dag/modules"
-	reflect "reflect"
+	"github.com/golang/mock/gomock"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"reflect"
 )
 
 // Mockproducer is a mock of producer interface
@@ -51,15 +50,15 @@ func (mr *MockproducerMockRecorder) SubscribeNewProducedUnitEvent(ch interface{}
 }
 
 // AddToTBLSSignBufs mocks base method
-func (m *Mockproducer) AddToTBLSSignBufs(newUnit *modules.Unit) {
+func (m *Mockproducer) AddToTBLSSignBufs(newHash common.Hash) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddToTBLSSignBufs", newUnit)
+	m.ctrl.Call(m, "AddToTBLSSignBufs", newHash)
 }
 
 // AddToTBLSSignBufs indicates an expected call of AddToTBLSSignBufs
-func (mr *MockproducerMockRecorder) AddToTBLSSignBufs(newUnit interface{}) *gomock.Call {
+func (mr *MockproducerMockRecorder) AddToTBLSSignBufs(newHash interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddToTBLSSignBufs", reflect.TypeOf((*Mockproducer)(nil).AddToTBLSSignBufs), newUnit)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddToTBLSSignBufs", reflect.TypeOf((*Mockproducer)(nil).AddToTBLSSignBufs), newHash)
 }
 
 // SubscribeSigShareEvent mocks base method

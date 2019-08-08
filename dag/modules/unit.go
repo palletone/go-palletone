@@ -60,6 +60,10 @@ func (h *Header) NumberU64() uint64 {
 	return h.Number.Index
 }
 
+func (h *Header) Timestamp() int64 {
+	return h.Time
+}
+
 func (h *Header) GetGroupPubKeyByte() []byte {
 	return h.GroupPubKey
 }
@@ -433,7 +437,7 @@ func (u *Unit) NumberU64() uint64 {
 }
 
 func (u *Unit) Timestamp() int64 {
-	return u.UnitHeader.Time
+	return u.UnitHeader.Timestamp()
 }
 
 // return unit's parents UnitHash
