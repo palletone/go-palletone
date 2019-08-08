@@ -24,7 +24,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math/big"
 	"strings"
 	"time"
 
@@ -36,7 +35,6 @@ import (
 	//"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rpc"
-	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
@@ -50,30 +48,28 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/util"
 )
 
-const (
-	defaultGasPrice = 0.0001 * configure.PalletOne
-)
-
-const (
-	// rpcAuthTimeoutSeconds is the number of seconds a connection to the
-	// RPC server is allowed to stay open without authenticating before it
-	// is closed.
-	rpcAuthTimeoutSeconds = 10
-	// uint256Size is the number of bytes needed to represent an unsigned
-	// 256-bit integer.
-	uint256Size = 32
-	// gbtNonceRange is two 32-bit big-endian hexadecimal integers which
-	// represent the valid ranges of nonces returned by the getblocktemplate
-	// RPC.
-	gbtNonceRange = "00000000ffffffff"
-	// gbtRegenerateSeconds is the number of seconds that must pass before
-	// a new template is generated when the previous block hash has not
-	// changed and there have been changes to the available transactions
-	// in the memory pool.
-	gbtRegenerateSeconds = 60
-	// maxProtocolVersion is the max protocol version the server supports.
-	maxProtocolVersion = 70002
-)
+//const (
+//	defaultGasPrice = 0.0001 * configure.PalletOne
+//
+//	// rpcAuthTimeoutSeconds is the number of seconds a connection to the
+//	// RPC server is allowed to stay open without authenticating before it
+//	// is closed.
+//	rpcAuthTimeoutSeconds = 10
+//	// uint256Size is the number of bytes needed to represent an unsigned
+//	// 256-bit integer.
+//	uint256Size = 32
+//	// gbtNonceRange is two 32-bit big-endian hexadecimal integers which
+//	// represent the valid ranges of nonces returned by the getblocktemplate
+//	// RPC.
+//	gbtNonceRange = "00000000ffffffff"
+//	// gbtRegenerateSeconds is the number of seconds that must pass before
+//	// a new template is generated when the previous block hash has not
+//	// changed and there have been changes to the available transactions
+//	// in the memory pool.
+//	gbtRegenerateSeconds = 60
+//	// maxProtocolVersion is the max protocol version the server supports.
+//	maxProtocolVersion = 70002
+//)
 
 type ContractInstallRsp struct {
 	ReqId string `json:"reqId"`
@@ -462,18 +458,18 @@ func (s *PublicTransactionPoolAPI) GetTransactionReceipt(ctx context.Context, ha
 }
 */
 // sign is a helper function that signs a transaction with the private key of the given address.
-func (s *PublicTransactionPoolAPI) sign(addr common.Address, tx *modules.Transaction) (*modules.Transaction, error) {
-	// Look up the wallet containing the requested signer
-	account := accounts.Account{Address: addr}
-
-	wallet, err := s.b.AccountManager().Find(account)
-	if err != nil {
-		return nil, err
-	}
-	// Request the wallet to sign the transaction
-	var chainID *big.Int
-	return wallet.SignTx(account, tx, chainID)
-}
+//func (s *PublicTransactionPoolAPI) sign(addr common.Address, tx *modules.Transaction) (*modules.Transaction, error) {
+//	// Look up the wallet containing the requested signer
+//	account := accounts.Account{Address: addr}
+//
+//	wallet, err := s.b.AccountManager().Find(account)
+//	if err != nil {
+//		return nil, err
+//	}
+//	// Request the wallet to sign the transaction
+//	var chainID *big.Int
+//	return wallet.SignTx(account, tx, chainID)
+//}
 
 //func forking
 func forking(ctx context.Context, b Backend) uint64 {
@@ -481,10 +477,10 @@ func forking(ctx context.Context, b Backend) uint64 {
 	return 0
 }
 
-func queryDb(ctx context.Context, b Backend, condition string) string {
-	b.SendConsensus(ctx)
-	return ""
-}
+//func queryDb(ctx context.Context, b Backend, condition string) string {
+//	b.SendConsensus(ctx)
+//	return ""
+//}
 
 // submitTransaction is a helper function that submits tx to txPool and logs a message.
 func submitTransaction(ctx context.Context, b Backend, tx *modules.Transaction) (common.Hash, error) {
@@ -1129,10 +1125,10 @@ func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine
 	}
 	for msgidx, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
-		if ok == false {
+		if !ok {
 			continue
 		}
-		for inputindex, _ := range payload.Inputs {
+		for inputindex := range payload.Inputs {
 			err = tokenengine.ScriptValidate(PkScript, nil, tx, msgidx, inputindex)
 			if err != nil {
 				return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
@@ -1159,7 +1155,7 @@ func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine
 			}
 		}
 	}
-	// All returned errors (not OOM, which panics) encounted during
+	// All returned errors (not OOM, which panics) encountered during
 	// bytes.Buffer writes are unexpected.
 	mtxbt, err := rlp.EncodeToBytes(tx)
 	if err != nil {
@@ -1187,12 +1183,13 @@ func MakeAddress(ks *keystore.KeyStore, account string) (accounts.Account, error
 	if err == nil {
 		return accounts.Account{Address: addr}, nil
 	} else {
-		return accounts.Account{}, fmt.Errorf("invalid account address: %s", account)
+		return accounts.Account{}, fmt.Errorf("invalid account address: %v", account)
 	}
 
 }
 
-func (s *PublicTransactionPoolAPI) helpSignTx(tx *modules.Transaction, password string) ([]common.SignatureError, error) {
+func (s *PublicTransactionPoolAPI) helpSignTx(tx *modules.Transaction,
+	password string) ([]common.SignatureError, error) {
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
 		ks := s.b.GetKeyStore()
 		account, _ := MakeAddress(ks, addr.String())

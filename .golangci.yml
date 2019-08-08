@@ -235,6 +235,9 @@ issues:
       - linters:
         - interfacer
         text: "can be `fmt.Stringer`"
+      - linters:
+        - staticcheck
+        text: "SA1019:"
 #      - linters:
 #        - staticcheck
 #        text: "this value of `-s` is never used"

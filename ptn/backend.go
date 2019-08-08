@@ -321,7 +321,8 @@ func (s *PalletOne) Start(srvr *p2p.Server, corss *p2p.Server) error {
 	maxPeers := srvr.MaxPeers
 	if s.config.LightServ > 0 {
 		if s.config.LightPeers >= srvr.MaxPeers {
-			return fmt.Errorf("invalid peer config: light peer count (%d) >= total peer count (%d)", s.config.LightPeers, srvr.MaxPeers)
+			return fmt.Errorf("invalid peer config: light peer count (%d) >= total peer count (%d)",
+				s.config.LightPeers, srvr.MaxPeers)
 		}
 		maxPeers -= s.config.LightPeers
 	}
@@ -425,7 +426,8 @@ func (p *PalletOne) SignAndSendTransaction(addr common.Address, tx *modules.Tran
 }
 
 // @author Albert·Gou
-func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal, text *string) (*ptnapi.TxExecuteResult, error) {
+func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal,
+	text *string) (*ptnapi.TxExecuteResult, error) {
 	// 参数检查
 	if from == to {
 		return nil, fmt.Errorf("please don't transfer ptn to yourself: %v", from)

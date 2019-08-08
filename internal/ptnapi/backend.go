@@ -132,7 +132,8 @@ type Backend interface {
 	GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxHistoryJson, error)
 	GetAssetExistence(asset string) ([]*ptnjson.ProofOfExistenceJson, error)
 	//contract control
-	ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi, ccLanguage string) (TemplateId []byte, err error)
+	ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi,
+		ccLanguage string) (TemplateId []byte, err error)
 	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)
 	ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 	ContractStop(deployId []byte, txid string, deleteImage bool) error
@@ -140,12 +141,17 @@ type Backend interface {
 	DecodeTx(hex string) (string, error)
 	EncodeTx(jsonStr string) (string, error)
 
-	ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, description, abi, language string, addrs []common.Address) (reqId common.Hash, tplId []byte, err error)
-	ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, extData []byte, timeout time.Duration) (reqId common.Hash, contractAddr common.Address, err error)
-	ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error)
+	ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string,
+		description, abi, language string, addrs []common.Address) (reqId common.Hash, tplId []byte, err error)
+	ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte,
+		extData []byte, timeout time.Duration) (reqId common.Hash, contractAddr common.Address, err error)
+	ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
+		contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error)
 	SendContractInvokeReqTx(requestTx *modules.Transaction) (reqId common.Hash, err error)
-	ContractInvokeReqTokenTx(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, asset string, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error)
-	ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, deleteImage bool) (reqId common.Hash, err error)
+	ContractInvokeReqTokenTx(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64,
+		asset string, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error)
+	ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address,
+		deleteImage bool) (reqId common.Hash, err error)
 	ElectionVrf(id uint32) ([]byte, error)
 	UpdateJuryAccount(addr common.Address, pwd string) bool
 	GetJuryAccount() []common.Address
