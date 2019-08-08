@@ -529,6 +529,7 @@ func (b *PtnApiBackend) GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
 	utxos, _ := b.ptn.dag.GetAddrUtxos(address)
 	result := []*ptnjson.UtxoJson{}
 	for o, u := range utxos {
+		o := o
 		ujson := ptnjson.ConvertUtxo2Json(&o, u)
 		result = append(result, ujson)
 	}
@@ -549,6 +550,7 @@ func (b *PtnApiBackend) GetAllUtxos() ([]*ptnjson.UtxoJson, error) {
 	}
 	result := []*ptnjson.UtxoJson{}
 	for o, u := range utxos {
+		o := o
 		ujson := ptnjson.ConvertUtxo2Json(&o, u)
 		result = append(result, ujson)
 	}
