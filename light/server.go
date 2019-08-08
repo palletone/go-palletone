@@ -37,7 +37,6 @@ import (
 	"github.com/palletone/go-palletone/light/flowcontrol"
 	"github.com/palletone/go-palletone/ptn"
 	"math/rand"
-	"sync"
 	"time"
 )
 
@@ -237,113 +236,7 @@ func (l *linReg) toBytes() []byte {
 	return arr[:]
 }
 
-func linRegFromBytes(data []byte) *linReg {
-	if len(data) != 40 {
-		return nil
-	}
-	l := &linReg{}
-	l.sumX = math.Float64frombits(binary.BigEndian.Uint64(data[0:8]))
-	l.sumY = math.Float64frombits(binary.BigEndian.Uint64(data[8:16]))
-	l.sumXX = math.Float64frombits(binary.BigEndian.Uint64(data[16:24]))
-	l.sumXY = math.Float64frombits(binary.BigEndian.Uint64(data[24:32]))
-	l.cnt = binary.BigEndian.Uint64(data[32:40])
-	return l
-}
-
-type requestCostStats struct {
-	lock  sync.RWMutex
-	//db    ptndb.Database
-	stats map[uint64]*linReg
-}
-
-type requestCostStatsRlp []struct {
-	MsgCode uint64
-	Data    []byte
-}
-
 var rcStatsKey = []byte("_requestCostStats")
-
-/*
-func newCostStats(db ptndb.Database) *requestCostStats {
-	stats := make(map[uint64]*linReg)
-	for _, code := range reqList {
-		stats[code] = &linReg{cnt: 100}
-	}
-
-	if db != nil {
-		data, err := db.Get(rcStatsKey)
-		var statsRlp requestCostStatsRlp
-		if err == nil {
-			err = rlp.DecodeBytes(data, &statsRlp)
-		}
-		if err == nil {
-			for _, r := range statsRlp {
-				if stats[r.MsgCode] != nil {
-					if l := linRegFromBytes(r.Data); l != nil {
-						stats[r.MsgCode] = l
-					}
-				}
-			}
-		}
-	}
-
-	return &requestCostStats{
-		db:    db,
-		stats: stats,
-	}
-}
-*/
-/*
-func (s *requestCostStats) store() {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	statsRlp := make(requestCostStatsRlp, len(reqList))
-	for i, code := range reqList {
-		statsRlp[i].MsgCode = code
-		statsRlp[i].Data = s.stats[code].toBytes()
-	}
-
-	if data, err := rlp.EncodeToBytes(statsRlp); err == nil {
-		s.db.Put(rcStatsKey, data)
-	}
-}
-*/
-/*
-func (s *requestCostStats) getCurrentList() RequestCostList {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	list := make(RequestCostList, len(reqList))
-	//fmt.Println("RequestCostList")
-	for idx, code := range reqList {
-		b, m := s.stats[code].calc()
-		//fmt.Println(code, s.stats[code].cnt, b/1000000, m/1000000)
-		if m < 0 {
-			b += m
-			m = 0
-		}
-		if b < 0 {
-			b = 0
-		}
-
-		list[idx].MsgCode = code
-		list[idx].BaseCost = uint64(b * 2)
-		list[idx].ReqCost = uint64(m * 2)
-	}
-	return list
-}
-*/
-func (s *requestCostStats) update(msgCode, reqCnt, cost uint64) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	c, ok := s.stats[msgCode]
-	if !ok || reqCnt == 0 {
-		return
-	}
-	c.add(float64(reqCnt), float64(cost))
-}
 
 func (pm *ProtocolManager) blockLoop() {
 	pm.wg.Add(1)
@@ -439,7 +332,7 @@ func (pm *ProtocolManager) ReqProofByTxHash(strhash string) string {
 }
 
 func (pm *ProtocolManager) ReqProofByRlptx(rlptx [][]byte) string {
-	log.Debug("===========ReqProofByRlptx===========", "", rlptx)
+	log.Debug("ReqProofByRlptx", "", rlptx)
 	resp := proofsRespData{}
 	resp.headerhash.SetBytes(rlptx[0])
 	resp.key = rlptx[1]
