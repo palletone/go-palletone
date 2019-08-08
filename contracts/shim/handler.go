@@ -203,14 +203,14 @@ func (handler *Handler) handleInit(msg *pb.ChaincodeMessage) {
 				}
 				log.Errorf(errFmt, args...)
 				return &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: payload, Txid: msg.Txid,
-				ChaincodeEvent: ce, ChannelId: msg.ChannelId}
+					ChaincodeEvent: ce, ChannelId: msg.ChannelId}
 			}
 			return nil
 		}
 		// Get the function and args from Payload
 		input := &pb.ChaincodeInput{}
 		unmarshalErr := proto.Unmarshal(msg.Payload, input)
-		if nextStateMsg = errFunc(unmarshalErr, nil, nil, "[%s]Incorrect payload format. " +
+		if nextStateMsg = errFunc(unmarshalErr, nil, nil, "[%s]Incorrect payload format. "+
 			"Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR.String()); nextStateMsg != nil {
 			return
 		}
@@ -219,7 +219,7 @@ func (handler *Handler) handleInit(msg *pb.ChaincodeMessage) {
 		// Create the ChaincodeStub which the chaincode can use to callback
 		stub := new(ChaincodeStub)
 		err := stub.init(handler, msg.ContractId, msg.ChannelId, msg.Txid, input, msg.Proposal)
-		if nextStateMsg = errFunc(err, nil, stub.chaincodeEvent, "[%s]Init get error response. " +
+		if nextStateMsg = errFunc(err, nil, stub.chaincodeEvent, "[%s]Init get error response. "+
 			"Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR.String()); nextStateMsg != nil {
 			return
 		}
@@ -243,21 +243,21 @@ func (handler *Handler) handleInit(msg *pb.ChaincodeMessage) {
 
 		if res.Status >= ERROR {
 			err = errors.New(res.Message)
-			if nextStateMsg = errFunc(err, []byte(res.Message), stub.chaincodeEvent, "[%s]Init get error " +
+			if nextStateMsg = errFunc(err, []byte(res.Message), stub.chaincodeEvent, "[%s]Init get error "+
 				"response. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR.String()); nextStateMsg != nil {
 				return
 			}
 		}
 
 		resBytes, err := proto.Marshal(&res)
-		if nextStateMsg = errFunc(err, nil, stub.chaincodeEvent, "[%s]Init marshal response error. " +
+		if nextStateMsg = errFunc(err, nil, stub.chaincodeEvent, "[%s]Init marshal response error. "+
 			"Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR.String()); nextStateMsg != nil {
 			return
 		}
 
 		// Send COMPLETED message to chaincode support and change state
 		nextStateMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_COMPLETED, Payload: resBytes, Txid: msg.Txid,
-		ChaincodeEvent: stub.chaincodeEvent, ChannelId: stub.ChannelId}
+			ChaincodeEvent: stub.chaincodeEvent, ChannelId: stub.ChannelId}
 		log.Debugf("[%s]Init succeeded. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_COMPLETED)
 	}()
 }
@@ -297,7 +297,7 @@ func (handler *Handler) handleTransaction(msg *pb.ChaincodeMessage) {
 				payload := []byte(err.Error())
 				log.Errorf(errStr, args...)
 				return &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: payload, Txid: msg.Txid,
-				ChaincodeEvent: ce, ChannelId: msg.ChannelId}
+					ChaincodeEvent: ce, ChannelId: msg.ChannelId}
 			}
 			return nil
 		}
@@ -331,7 +331,7 @@ func (handler *Handler) handleTransaction(msg *pb.ChaincodeMessage) {
 		// Send COMPLETED message to chaincode support and change state
 		log.Debugf("[%s]Transaction completed. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_COMPLETED)
 		nextStateMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_COMPLETED, Payload: resBytes, Txid: msg.Txid,
-		ChaincodeEvent: stub.chaincodeEvent, ChannelId: stub.ChannelId}
+			ChaincodeEvent: stub.chaincodeEvent, ChannelId: stub.ChannelId}
 	}()
 }
 
@@ -410,7 +410,7 @@ func (handler *Handler) handleGetState(collection string, key string, contractid
 	payloadBytes, _ := proto.Marshal(&pb.GetState{Collection: collection, ContractId: contractid, Key: key})
 
 	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_STATE, Payload: payloadBytes, Txid: txid,
-	ChannelId: channelId, ContractId: contractid}
+		ChannelId: channelId, ContractId: contractid}
 	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_STATE)
 
 	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
@@ -444,7 +444,7 @@ func (handler *Handler) handelGetStateByPrefix(prefix string, contractId []byte,
 	payloadBytes, _ := proto.Marshal(&pb.GetStateByPrefix{ContractId: contractId, Prefix: prefix})
 
 	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_STATE_BY_PREFIX, Payload: payloadBytes, Txid: txid,
-	ChannelId: channelId, ContractId: contractId}
+		ChannelId: channelId, ContractId: contractId}
 	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_STATE_BY_PREFIX)
 
 	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
@@ -478,7 +478,7 @@ func (handler *Handler) handleGetTimestamp(collection string, rangeNumber uint32
 	payloadBytes, _ := proto.Marshal(&pb.GetTimestamp{Collection: collection, RangeNumber: rangeNumber})
 
 	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_TIMESTAMP, Payload: payloadBytes, Txid: txid,
-	ChannelId: channelId, ContractId: contractid}
+		ChannelId: channelId, ContractId: contractid}
 	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_TIMESTAMP)
 
 	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
@@ -512,7 +512,7 @@ func (handler *Handler) handleGetTokenBalance(address string, token *modules.Ass
 	payloadBytes, _ := proto.Marshal(par)
 
 	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_TOKEN_BALANCE, Payload: payloadBytes, Txid: txid,
-	ChannelId: channelId, ContractId: contractid}
+		ChannelId: channelId, ContractId: contractid}
 	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_TOKEN_BALANCE)
 
 	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
@@ -582,7 +582,7 @@ func (handler *Handler) handleDefineToken(tokenType byte, define []byte, creator
 	payloadBytes, _ := proto.Marshal(par)
 
 	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_DEFINE_TOKEN, Payload: payloadBytes, Txid: txid,
-	ChannelId: channelId, ContractId: contractid}
+		ChannelId: channelId, ContractId: contractid}
 	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_DEFINE_TOKEN)
 
 	// Execute the request and get response
@@ -616,7 +616,7 @@ func (handler *Handler) handleSupplyToken(assetId []byte, uniqueId []byte, amt u
 	payloadBytes, _ := proto.Marshal(par)
 
 	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_SUPPLY_TOKEN, Payload: payloadBytes, Txid: txid,
-	ChannelId: channelId, ContractId: contractid}
+		ChannelId: channelId, ContractId: contractid}
 	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_SUPPLY_TOKEN)
 
 	// Execute the request and get response
@@ -651,10 +651,10 @@ func (handler *Handler) handlePutState(collection string, contractId []byte, key
 	channelId string, txid string) error {
 	// Construct payload for PUT_STATE
 	payloadBytes, _ := proto.Marshal(&pb.PutState{Collection: collection, ContractId: contractId, Key: key,
-	Value: value})
+		Value: value})
 
 	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_PUT_STATE, Payload: payloadBytes, Txid: txid,
-	ChannelId: channelId, ContractId: contractId}
+		ChannelId: channelId, ContractId: contractId}
 	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_PUT_STATE)
 
 	// Execute the request and get response
@@ -687,10 +687,10 @@ func (handler *Handler) handleOutCall(collection string, outChainName string, me
 	channelId string, txid string) ([]byte, error) {
 	// Construct payload for ChaincodeMessage_OUTCHAIN_CALL
 	payloadBytes, _ := proto.Marshal(&pb.OutChainCall{Collection: collection, OutChainName: outChainName,
-	Method: method, Params: params})
+		Method: method, Params: params})
 
 	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_OUTCHAIN_CALL, Payload: payloadBytes, Txid: txid,
-	ChannelId: channelId}
+		ChannelId: channelId}
 	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_OUTCHAIN_CALL)
 
 	// Execute the request and get response
@@ -722,10 +722,10 @@ func (handler *Handler) handleSendJury(collection string, msgType uint32, consul
 	channelId string, txid string) ([]byte, error) {
 	// Construct payload for PUT_STATE
 	payloadBytes, _ := proto.Marshal(&pb.SendJury{Collection: collection, MsgType: msgType,
-	ConsultContent: consultContent, MyAnswer: myAnswer})
+		ConsultContent: consultContent, MyAnswer: myAnswer})
 
 	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_SEND_JURY, Payload: payloadBytes, Txid: txid,
-	ChannelId: channelId}
+		ChannelId: channelId}
 	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_SEND_JURY)
 
 	// Execute the request and get response
@@ -758,10 +758,10 @@ func (handler *Handler) handleRecvJury(collection string, msgType uint32, consul
 	channelId string, txid string) ([]byte, error) {
 	// Construct payload for PUT_STATE
 	payloadBytes, _ := proto.Marshal(&pb.RecvJury{Collection: collection, MsgType: msgType,
-	ConsultContent: consultContent, Timeout: timeout})
+		ConsultContent: consultContent, Timeout: timeout})
 
 	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RECV_JURY, Payload: payloadBytes, Txid: txid,
-	ChannelId: channelId}
+		ChannelId: channelId}
 	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RECV_JURY)
 
 	// Execute the request and get response
@@ -797,7 +797,7 @@ func (handler *Handler) handleDelState(collection string, contractId []byte, key
 	payloadBytes, _ := proto.Marshal(&pb.DelState{Collection: collection, ContractId: contractId, Key: key})
 
 	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_DEL_STATE, Payload: payloadBytes, Txid: txid,
-	ChannelId: channelId, ContractId: contractId}
+		ChannelId: channelId, ContractId: contractId}
 	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_DEL_STATE)
 
 	// Execute the request and get response
@@ -863,7 +863,7 @@ func (handler *Handler) handleGetContractAllState(channelId, txid string,
 	contractid []byte) (map[string]*modules.ContractStateValue, error) {
 	//定义一个pb.ChaincodeMessage_GET_ALL_SATE
 	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_CONTRACT_ALL_STATE, Payload: []byte(""),
-	ChannelId: channelId, Txid: txid, ContractId: contractid}
+		ChannelId: channelId, Txid: txid, ContractId: contractid}
 	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_CONTRACT_ALL_STATE)
 	//Execute the request and get response
 	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
@@ -896,7 +896,7 @@ func (handler *Handler) handleInvokeChaincode(chaincodeName string, args [][]byt
 	txid string) pb.Response {
 	//we constructed a valid object. No need to check for error
 	payloadBytes, _ := proto.Marshal(&pb.ChaincodeSpec{ChaincodeId: &pb.ChaincodeID{Name: chaincodeName},
-	Input: &pb.ChaincodeInput{Args: args}})
+		Input: &pb.ChaincodeInput{Args: args}})
 
 	// Create the channel on which to communicate the response from validating peer
 	var respChan chan pb.ChaincodeMessage
@@ -909,7 +909,7 @@ func (handler *Handler) handleInvokeChaincode(chaincodeName string, args [][]byt
 
 	// Send INVOKE_CHAINCODE message to peer chaincode support
 	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_INVOKE_CHAINCODE, Payload: payloadBytes,
-	Txid: txid, ChannelId: channelId}
+		Txid: txid, ChannelId: channelId}
 	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_INVOKE_CHAINCODE)
 
 	var responseMsg pb.ChaincodeMessage
@@ -947,7 +947,7 @@ func (handler *Handler) handleInvokeChaincode(chaincodeName string, args [][]byt
 	}
 
 	// Incorrect chaincode message received
-	return handler.createResponse(ERROR, []byte(fmt.Sprintf("[%s]Incorrect chaincode message %s received." +
+	return handler.createResponse(ERROR, []byte(fmt.Sprintf("[%s]Incorrect chaincode message %s received."+
 		" Expecting %s or %s", shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE,
 		pb.ChaincodeMessage_ERROR)))
 }
@@ -962,10 +962,10 @@ func (handler *Handler) handleMessage(msg *pb.ChaincodeMessage) error {
 	log.Debugf("[%s]Handling ChaincodeMessage of type: %s(state:%s)", shorttxid(msg.Txid), msg.Type,
 		handler.FSM.Current())
 	if handler.FSM.Cannot(msg.Type.String()) {
-		err := errors.Errorf("[%s]chaincode handler FSM cannot handle message (%s) with payload size (%d) " +
+		err := errors.Errorf("[%s]chaincode handler FSM cannot handle message (%s) with payload size (%d) "+
 			"while in state: %s", msg.Txid, msg.Type.String(), len(msg.Payload), handler.FSM.Current())
 		handler.serialSend(&pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(err.Error()),
-		Txid: msg.Txid, ChannelId: msg.ChannelId})
+			Txid: msg.Txid, ChannelId: msg.ChannelId})
 		return err
 	}
 	err := handler.FSM.Event(msg.Type.String(), msg)
@@ -977,7 +977,7 @@ func (handler *Handler) handleGetCertState(key string, channelId string, txid st
 	// Construct payload for PUT_STATE
 	payloadBytes, _ := proto.Marshal(&pb.KeyForSystemConfig{Key: key})
 	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_CERT_STATE, Payload: payloadBytes, ChannelId: channelId,
-	Txid: txid}
+		Txid: txid}
 	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_CERT_STATE)
 	//Execute the request and get response
 	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
@@ -1067,7 +1067,7 @@ func (handler *Handler) handleGetCertChain(rootIssuer string, cert *x509.Certifi
 			break
 		}
 	}
-	return
+	return nil, nil, nil
 }
 
 // 获取证书的吊销时间

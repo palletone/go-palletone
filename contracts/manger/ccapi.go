@@ -27,15 +27,15 @@ import (
 	"github.com/palletone/go-palletone/dag/rwset"
 )
 
-type TempCC struct {
-	templateId  []byte
-	name        string
-	path        string
-	version     string
-	description string
-	abi         string
-	language    string
-}
+//type TempCC struct {
+//	templateId  []byte
+//	name        string
+//	path        string
+//	version     string
+//	description string
+//	abi         string
+//	language    string
+//}
 
 // contract manger module init
 func Init(dag dag.IDag, jury core.IAdapterJury) error {
@@ -112,7 +112,7 @@ func Install(dag dag.IDag, chainID, ccName, ccPath, ccVersion, ccDescription, cc
 	buffer.Write([]byte(ccVersion))
 	tpid := crypto.Keccak256Hash(buffer.Bytes())
 	payloadUnit := &md.ContractTplPayload{
-		TemplateId: []byte(tpid[:]),
+		TemplateId: tpid[:],
 		//Name:       ccName,
 		//Path:       ccPath,
 		//Version:    ccVersion,
@@ -315,6 +315,9 @@ func Stop(rwM rwset.TxManager, idag dag.IDag, contractid []byte, chainID string,
 		return nil, err
 	}
 	stopResult, err := StopByName(contractid, setChainId, txid, cc, deleteImage, dontRmCon)
+	if err != nil {
+		return nil, err
+	}
 	if !dontRmCon {
 		err := saveChaincode(idag, address, nil)
 		if err != nil {
@@ -357,7 +360,7 @@ func GetAllContainers(client *docker.Client) {
 				log.Infof("db.GetCcDagHand err: %s", err.Error())
 				return
 			}
-			rd, err := crypto.GetRandomBytes(32)
+			rd, _ := crypto.GetRandomBytes(32)
 			txid := util.RlpHash(rd)
 			log.Infof("==============需要重启====容器地址为--->%s", hex.EncodeToString(v.Bytes21()))
 			_, err = RestartContainer(dag, "palletone", v.Bytes21(), txid.String())

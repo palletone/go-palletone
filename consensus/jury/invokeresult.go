@@ -137,13 +137,10 @@ func resultToCoinbase(result *modules.ContractInvokeResult) ([]*modules.PaymentP
 }
 
 func convertMapUtxo(utxo map[modules.OutPoint]*modules.Utxo) []*modules.UtxoWithOutPoint {
-	nm := len(utxo)
-	result := make([]*modules.UtxoWithOutPoint, nm)
+	var result []*modules.UtxoWithOutPoint
 	for o, u := range utxo {
-		uo := &modules.UtxoWithOutPoint{
-			Utxo:     u,
-			OutPoint: o,
-		}
+		uo := &modules.UtxoWithOutPoint{}
+		uo.Set(u, &o)
 		result = append(result, uo)
 	}
 	return result

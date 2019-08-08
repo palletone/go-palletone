@@ -40,20 +40,9 @@ import (
 )
 
 const (
-	softResponseLimit = 2 * 1024 * 1024 // Target maximum size of returned blocks, headers or node data.
-	estHeaderRlpSize  = 500             // Approximate size of an RLP encoded block header
-
-	ethVersion = 63 // equivalent eth version for the downloader
-
-	MaxHeaderFetch           = 192 // Amount of block headers to be fetched per retrieval request
-	MaxBodyFetch             = 32  // Amount of block bodies to be fetched per retrieval request
-	MaxReceiptFetch          = 128 // Amount of transaction receipts to allow fetching per request
-	MaxCodeFetch             = 64  // Amount of contract codes to allow fetching per request
-	MaxProofsFetch           = 64  // Amount of merkle proofs to be fetched per retrieval request
-	MaxHelperTrieProofsFetch = 64  // Amount of merkle proofs to be fetched per retrieval request
-	MaxTxSend                = 64  // Amount of transactions to be send per request
-	MaxTxStatus              = 256 // Amount of transactions to queried per request
-
+	softResponseLimit       = 2 * 1024 * 1024 // Target maximum size of returned blocks, headers or node data.
+	estHeaderRlpSize        = 500             // Approximate size of an RLP encoded block header
+	MaxHeaderFetch          = 192             // Amount of block headers to be fetched per retrieval request
 	disableClientRemovePeer = false
 	txChanSize              = 4096
 )
@@ -64,6 +53,13 @@ var errIncompatibleConfig = errors.New("incompatible configuration")
 
 func errResp(code errCode, format string, v ...interface{}) error {
 	return fmt.Errorf("%v - %v", code, fmt.Sprintf(format, v...))
+}
+
+type ProofReq struct {
+	BHash       common.Hash
+	AccKey, Key []byte
+	FromLevel   uint
+	Index       string
 }
 
 type BlockChain interface {
@@ -96,13 +92,13 @@ type ProtocolManager struct {
 	dag     dag.IDag
 	assetId modules.AssetId
 	//chainDb     ethdb.Database
-	odr        *LesOdr
+	//odr        *LesOdr
 	server     *LesServer
 	serverPool *serverPool
 	genesis    *modules.Unit
 	//lesTopic   discv5.Topic
-	reqDist   *requestDistributor
-	retriever *retrieveManager
+	//reqDist *requestDistributor
+	//retriever *retrieveManager
 
 	downloader *downloader.Downloader
 	fetcher    *LightFetcher
@@ -161,9 +157,9 @@ func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasTok
 
 	// Initiate a sub-protocol for every implemented version we can handle
 	manager.SubProtocols = make([]p2p.Protocol, 0, len(ClientProtocolVersions))
-	for _, version := range ClientProtocolVersions {
+	for _, ver := range ClientProtocolVersions {
 		// Compatible, initialize the sub-protocol
-		//version := version // Closure for the run
+		version := ver
 		manager.SubProtocols = append(manager.SubProtocols, p2p.Protocol{
 			Name:    protocolname,
 			Version: version,
@@ -514,8 +510,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		log.Trace("Received unknown message", "code", msg.Code)
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 	}
-
-	return nil
 }
 
 func (pm *ProtocolManager) BroadcastTx(hash common.Hash, tx *modules.Transaction) {

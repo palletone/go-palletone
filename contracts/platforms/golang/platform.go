@@ -88,7 +88,8 @@ func getGopath() (string, error) {
 		return "", err
 	}
 	// Only take the first element of GOPATH
-	splitGoPath := make([]string, 0)
+	//splitGoPath := make([]string, 0)
+	var splitGoPath []string
 	os := runtime.GOOS
 	if os == "windows" {
 		splitGoPath = filepath.SplitList(env["set GOPATH"])
@@ -278,10 +279,16 @@ func (goPlatform *Platform) GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte,
 	chaincodeVendorDir := tld + PthSep + "vendor"
 	cl := len(chaincodeVendorDir)
 	chaincodeVendorDirs, err := getAllDirs(chaincodeVendorDir)
+	if err != nil {
+		return nil, err
+	}
 	//获取项目vendor的所有文件夹
 	ploDir := filepath.Join(codeDescriptor.Gopath, "src", "github.com/palletone/go-palletone/vendor")
 	pl := len(ploDir)
 	pVendorDirs, err := getAllDirs(ploDir)
+	if err != nil {
+		return nil, err
+	}
 	newFiles := []string{}
 	for _, cDir := range chaincodeVendorDirs {
 		pIsHave := false

@@ -19,6 +19,12 @@ package light
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/mclock"
+	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/common/p2p/discover"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"io"
 	"math"
 	"math/rand"
@@ -26,13 +32,6 @@ import (
 	"strconv"
 	"sync"
 	"time"
-
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/mclock"
-	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/palletone/go-palletone/common/ptndb"
 )
 
 const (
@@ -86,9 +85,9 @@ const (
 	initStatsWeight = 1
 )
 
-// serverPool implements a pool for storing and selecting newly discovered and already
-// known light server nodes. It received discovered nodes, stores statistics about
-// known nodes and takes care of always having enough good quality servers connected.
+//serverPool implements a pool for storing and selecting newly discovered and already
+//known light server nodes. It received discovered nodes, stores statistics about
+//known nodes and takes care of always having enough good quality servers connected.
 type serverPool struct {
 	db     ptndb.Database
 	dbKey  []byte

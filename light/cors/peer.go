@@ -52,7 +52,7 @@ type peer struct {
 	version int    // Protocol version negotiated
 	network uint64 // Network ID being on
 
-	announceType, requestAnnounceType uint64
+	//requestAnnounceType uint64
 
 	id string
 
@@ -61,14 +61,14 @@ type peer struct {
 
 	announceChn chan announceData
 
-	hasBlock       func(common.Hash, uint64) bool
-	responseErrors int
+	hasBlock func(common.Hash, uint64) bool
+	//responseErrors int
 
 	//fcClient       *flowcontrol.ClientNode // nil if the peer is server only
 	//fcServer       *flowcontrol.ServerNode // nil if the peer is client only
 	//fcServerParams *flowcontrol.ServerParams
 	//fcCosts        requestCostTable
-	fullnode bool
+	//fullnode bool
 }
 
 func newPeer(version int, network uint64, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
@@ -86,14 +86,15 @@ func newPeer(version int, network uint64, p *p2p.Peer, rw p2p.MsgReadWriter) *pe
 	}
 }
 
-func (p *peer) canQueue() bool {
-	//return p.sendQueue.canQueue()
-	return false
-}
-
-func (p *peer) queueSend(f func()) {
-	//p.sendQueue.queue(f)
-}
+//
+//func (p *peer) canQueue() bool {
+//	//return p.sendQueue.canQueue()
+//	return false
+//}
+//
+//func (p *peer) queueSend(f func()) {
+//	//p.sendQueue.queue(f)
+//}
 
 // Info gathers and returns a collection of metadata known about a peer.
 func (p *peer) Info(asssetId modules.AssetId) *ptn.PeerInfo {
@@ -153,12 +154,16 @@ func (p *peer) SendCurrentHeader(headers []*modules.Header) error {
 }
 
 func (p *peer) RequestHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
-	log.Debug("Fetching batch of headers", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse)
-	return p2p.Send(p.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Hash: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
+	log.Debug("Fetching batch of headers", "count", amount, "fromhash", origin, "skip", skip,
+		"reverse", reverse)
+	return p2p.Send(p.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Hash: origin},
+		Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
 }
 func (p *peer) RequestHeadersByNumber(origin *modules.ChainIndex, amount int, skip int, reverse bool) error {
-	log.Debug("Fetching batch of headers", "count", amount, "index", origin.Index, "skip", skip, "reverse", reverse)
-	return p2p.Send(p.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Number: *origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
+	log.Debug("Fetching batch of headers", "count", amount, "index", origin.Index, "skip", skip,
+		"reverse", reverse)
+	return p2p.Send(p.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Number: *origin},
+		Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
 }
 
 // SendBlockHeaders sends a batch of block headers to the remote peer.
@@ -168,36 +173,28 @@ func (p *peer) SendUnitHeaders(headers []*modules.Header) error {
 
 //interface
 func (p *peer) RequestBodies([]common.Hash) error {
-	log.Debug("=========================================RequestBodies")
 	return nil
 }
 func (p *peer) RequestNodeData([]common.Hash) error {
-	log.Debug("=========================================RequestNodeData")
 	return nil
 }
 
 func (p *peer) RequestNodeDataHead(modules.AssetId) (common.Hash, *modules.ChainIndex) {
-	log.Debug("=========================================RequestNodeDataHead")
 	return common.Hash{}, nil
 }
 func (p *peer) RequestNodeDataRequestHeadersByHash(common.Hash, int, int, bool) error {
-	log.Debug("=========================================RequestNodeDataRequestHeadersByHash")
 	return nil
 }
 func (p *peer) RequestNodeDataRequestHeadersByNumber(*modules.ChainIndex, int, int, bool) error {
-	log.Debug("=========================================RequestNodeDataRequestHeadersByNumber")
 	return nil
 }
 func (p *peer) RequestNodeDataRequestDagHeadersByHash(common.Hash, int, int, bool) error {
-	log.Debug("=========================================RequestNodeDataRequestDagHeadersByHash")
 	return nil
 }
 func (p *peer) RequestNodeDataRequestLeafNodes() error {
-	log.Debug("=========================================RequestNodeDataRequestLeafNodes")
 	return nil
 }
 func (p *peer) RequestLeafNodes() error {
-	log.Debug("=========================================RequestLeafNodes")
 	return nil
 }
 
@@ -270,7 +267,8 @@ func (p *peer) sendReceiveHandshake(sendList keyValueList) (keyValueList, error)
 
 // Handshake executes the les protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
-func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headhash common.Hash, assetId modules.AssetId, pcs []*modules.PartitionChain) error {
+func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headhash common.Hash, assetId modules.AssetId,
+	pcs []*modules.PartitionChain) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
@@ -317,15 +315,15 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headha
 		for _, pc := range pcs {
 			pcHash := pc.GetGenesisHeader().Hash()
 			if rGenesis != pcHash {
-				log.Debugf("ErrGenesisBlockMismatch , %x (!= %x)", rGenesis[:8], pcHash[:8]) //errResp(ErrGenesisBlockMismatch, "%x (!= %x)", rGenesis[:8], pcHash[:8])
+				log.Debugf("ErrGenesisBlockMismatch , %x (!= %x)", rGenesis[:8], pcHash[:8])
 				continue
 			}
 			if rNetwork != pc.NetworkId {
-				log.Debugf("ErrNetworkIdMismatch, %d (!= %d)", rNetwork, pc.NetworkId) //return errResp(ErrNetworkIdMismatch, "%d (!= %d)", rNetwork, pc.NetworkId)
+				log.Debugf("ErrNetworkIdMismatch, %d (!= %d)", rNetwork, pc.NetworkId)
 				continue
 			}
 			if rVersion != pc.Version {
-				log.Debugf("ErrProtocolVersionMismatch %d (!= %d)", rVersion, pc.Version) //return errResp(ErrProtocolVersionMismatch, "%d (!= %d)", rVersion, pc.Version)
+				log.Debugf("ErrProtocolVersionMismatch %d (!= %d)", rVersion, pc.Version)
 				continue
 			}
 
@@ -348,7 +346,8 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headha
 		return errResp(ErrRequestRejected, "Not Registered,p.id:%v", p.id)
 	}
 
-	log.Debug("Cors Handshake", "p.ID()", p.ID(), "genesis", rGenesis, "network", rNetwork, "version", rVersion, "gastoken", rGastoken)
+	log.Debug("Cors Handshake", "p.ID()", p.ID(), "genesis", rGenesis, "network", rNetwork,
+		"version", rVersion, "gastoken", rGastoken)
 	p.headInfo = peerMsg{head: rHash, number: &rNum}
 	return nil
 }

@@ -38,6 +38,7 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/internal/ptnapi"
@@ -108,7 +109,7 @@ func (p *PalletOne) AddCorsServer(cs LesServer) *PalletOne {
 
 // New creates a new PalletOne object (including the
 // initialisation of the common PalletOne object)
-func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
+func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache) (*PalletOne, error) {
 	if !config.SyncMode.IsValid() {
 		return nil, fmt.Errorf("invalid sync mode %d", config.SyncMode)
 	}
@@ -118,7 +119,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		log.Error("PalletOne New", "CreateDB err:", err)
 		return nil, err
 	}
-	dag, err := dag.NewDag(db, false)
+	dag, err := dag.NewDag(db, cache, false)
 	if err != nil {
 		log.Error("PalletOne New", "NewDag err:", err)
 		return nil, err
@@ -141,7 +142,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
-	ptn.txPool = txspool.NewTxPool(config.TxPool, ptn.dag)
+	ptn.txPool = txspool.NewTxPool(config.TxPool, cache, ptn.dag)
 
 	//Test for P2P
 	ptn.engine = consensus.New(dag, ptn.txPool)

@@ -44,6 +44,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/light/cors"
@@ -87,12 +88,12 @@ type LightPalletone struct {
 	txSub event.Subscription
 }
 
-func New(ctx *node.ServiceContext, config *ptn.Config, protocolname string) (*LightPalletone, error) {
+func New(ctx *node.ServiceContext, config *ptn.Config, protocolname string, cache palletcache.ICache) (*LightPalletone, error) {
 	chainDb, err := ptn.CreateDB(ctx, config /*, "lightchaindata"*/)
 	if err != nil {
 		return nil, err
 	}
-	dag, err := dag.NewDag(chainDb,true)
+	dag, err := dag.NewDag(chainDb, cache, true)
 	if err != nil {
 		log.Error("PalletOne New", "NewDag err:", err)
 		return nil, err
@@ -126,7 +127,7 @@ func New(ctx *node.ServiceContext, config *ptn.Config, protocolname string) (*Li
 	//lptn.retriever = newRetrieveManager(peers, leth.reqDist, leth.serverPool)
 	//lptn.odr = NewLesOdr(chainDb, leth.chtIndexer, leth.bloomTrieIndexer, leth.bloomIndexer, leth.retriever)
 
-	lptn.txPool = txspool.NewTxPool(config.TxPool, lptn.dag)
+	lptn.txPool = txspool.NewTxPool(config.TxPool, cache, lptn.dag)
 
 	if lptn.protocolManager, err = NewProtocolManager(true, lptn.peers, config.NetworkId, gasToken, nil,
 		dag, lptn.eventMux, genesis, quitSync, configure.LPSProtocol); err != nil {

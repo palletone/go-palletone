@@ -32,21 +32,20 @@ type TempCC struct {
 
 var listCC list.List
 
-func listAdd(cc *TempCC) error {
+func listAdd(cc *TempCC) {
 	if cc != nil {
 		log.Debug("listAdd", "TempCC", cc)
 		listCC.PushBack(*cc)
 	}
-	return nil
 }
 
-func listDel(templateId []byte) {
-	for e := listCC.Front(); e != nil; e = e.Next() {
-		if bytes.Equal(e.Value.(TempCC).templateId, templateId) {
-			listCC.Remove(e)
-		}
-	}
-}
+//func listDel(templateId []byte) {
+//	for e := listCC.Front(); e != nil; e = e.Next() {
+//		if bytes.Equal(e.Value.(TempCC).templateId, templateId) {
+//			listCC.Remove(e)
+//		}
+//	}
+//}
 
 func listGet(templateId []byte) (*TempCC, error) {
 	for e := listCC.Front(); e != nil; e = e.Next() {
@@ -78,13 +77,13 @@ func Install(chainID, ccName, ccPath, ccVersion, ccDescription, ccAbi, ccLanguag
 	buffer.Write([]byte(ccVersion))
 	tpid := crypto.Keccak256Hash(buffer.Bytes())
 	payloadUnit := &modules.ContractTplPayload{
-		TemplateId: []byte(tpid[:]),
+		TemplateId: tpid[:],
 		//Name:       ccName,
 		//Path:       ccPath,
 		//Version:    ccVersion,
 	}
 	log.Info("enter contract debug test", "templateId", tpid)
-	tcc := &TempCC{templateId: []byte(tpid[:]), name: ccName, path: ccPath, version: ccVersion, description: ccDescription, abi: ccAbi, language: ccLanguage}
+	tcc := &TempCC{templateId: tpid[:], name: ccName, path: ccPath, version: ccVersion, description: ccDescription, abi: ccAbi, language: ccLanguage}
 	//  保存
 	listAdd(tcc)
 	return payloadUnit, nil

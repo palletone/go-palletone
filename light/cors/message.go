@@ -38,7 +38,8 @@ func (pm *ProtocolManager) CorsHeaderMsg(msg p2p.Msg, p *peer) error {
 
 	if pm.fetcher != nil {
 		for _, header := range headers {
-			log.Trace("CorsHeaderMsg message content", "assetid:", header.Number.AssetID, "index:", header.Number.Index)
+			log.Trace("CorsHeaderMsg message content", "assetid:", header.Number.AssetID,
+				"index:", header.Number.Index)
 			pm.fetcher.Enqueue(p, header)
 		}
 	}
@@ -99,7 +100,8 @@ func (pm *ProtocolManager) CurrentHeaderMsg(msg p2p.Msg, p *peer) error {
 		return errResp(ErrDecode, "msg %v: %v", msg, "len is err")
 	}
 	if headers[0].Number.AssetID.String() != pm.assetId.String() {
-		log.Info("CurrentHeaderMsg", "assetid not equal response", headers[0].Number.AssetID.String(), "local", pm.assetId.String())
+		log.Info("CurrentHeaderMsg", "assetid not equal response", headers[0].Number.AssetID.String(),
+			"local", pm.assetId.String())
 		return errBadPeer
 	}
 	pm.headerCh <- &headerPack{p.id, headers}
@@ -146,7 +148,8 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 		unknown bool
 	)
 
-	for !unknown && len(headers) < int(query.Amount) && bytes < softResponseLimit && len(headers) < downloader.MaxHeaderFetch {
+	for !unknown && len(headers) < int(query.Amount) && bytes < softResponseLimit &&
+		len(headers) < downloader.MaxHeaderFetch {
 		// Retrieve the next header satisfying the query
 		var origin *modules.Header
 		if hashMode {
@@ -193,24 +196,29 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 			log.Debug("ProtocolManager", "GetBlockHeadersMsg next", next, "current:", current)
 			if next <= current {
 				infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
-				log.Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
+				log.Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip,
+					"next", next, "attacker", infos)
 				unknown = true
 			} else {
 				index.Index = next
 				log.Debug("ProtocolManager", "GetBlockHeadersMsg index.Index:", index.Index)
 				if header, _ := pm.dag.GetHeaderByNumber(index); header != nil {
 					hashs := pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)
-					log.Debug("ProtocolManager", "GetUnitHashesFromHash len(hashs):", len(hashs), "header.index:", header.Number.Index, "header.hash:", header.Hash().String(), "query.Skip+1", query.Skip+1)
+					log.Debug("ProtocolManager", "GetUnitHashesFromHash len(hashs):", len(hashs),
+						"header.index:", header.Number.Index, "header.hash:", header.Hash().String(), "query.Skip+1",
+						query.Skip+1)
 					if len(hashs) > int(query.Skip) && (hashs[query.Skip] == query.Origin.Hash) {
 						query.Origin.Hash = header.Hash()
 					} else {
-						log.Debug("ProtocolManager", "GetBlockHeadersMsg unknown = true; pm.dag.GetUnitHashesFromHash not equal origin hash.", "")
-						log.Debug("ProtocolManager", "GetBlockHeadersMsg header.Hash()", header.Hash(), "query.Skip+1:", query.Skip+1, "query.Origin.Hash:", query.Origin.Hash)
-						//log.Debug("ProtocolManager", "GetBlockHeadersMsg pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip]:", pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip])
+						log.Debug("ProtocolManager", "GetBlockHeadersMsg unknown = true; "+
+							"pm.dag.GetUnitHashesFromHash not equal origin hash.", "")
+						log.Debug("ProtocolManager", "GetBlockHeadersMsg header.Hash()", header.Hash(),
+							"query.Skip+1:", query.Skip+1, "query.Origin.Hash:", query.Origin.Hash)
 						unknown = true
 					}
 				} else {
-					log.Debug("ProtocolManager", "GetBlockHeadersMsg unknown = true; pm.dag.GetHeaderByNumber not found. Index:", index.Index)
+					log.Debug("ProtocolManager", "GetBlockHeadersMsg unknown = true; pm.dag.GetHeaderByNumber "+
+						"not found. Index:", index.Index)
 					unknown = true
 				}
 			}
@@ -230,14 +238,17 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 			query.Origin.Number.Index += query.Skip + 1
 		}
 	}
-	start := uint64(0)
-	end := uint64(0)
+
 	number := len(headers)
 	if number > 0 {
-		start = uint64(headers[0].Number.Index)
-		end = uint64(headers[number-1].Number.Index)
+		log.Debug("ProtocolManager", "GetBlockHeadersMsg query.Amount", query.Amount, "send number:", number,
+			"start:", headers[0].Number.Index, "end:", headers[number-1].Number.Index,
+			" getBlockHeadersData:", query)
+	} else {
+		log.Debug("ProtocolManager", "GetBlockHeadersMsg query.Amount", query.Amount, "send number:", 0,
+			" getBlockHeadersData:", query)
 	}
-	log.Debug("ProtocolManager", "GetBlockHeadersMsg query.Amount", query.Amount, "send number:", len(headers), "start:", start, "end:", end, " getBlockHeadersData:", query)
+
 	return p.SendUnitHeaders(headers)
 }
 

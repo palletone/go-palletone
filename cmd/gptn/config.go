@@ -45,6 +45,7 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn"
 	//"github.com/palletone/go-palletone/ptnjson"
+	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 	"gopkg.in/urfave/cli.v1"
 )
@@ -266,7 +267,8 @@ func makeConfigNode(ctx *cli.Context, isInConsole bool) (*node.Node, FullConfig)
 		cfg.Ptnstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
 	}
 	utils.SetDashboardConfig(ctx, &cfg.Dashboard)
-
+	//  init node.cache
+	stack.CacheDb = freecache.NewCache(cfg.Dag.DbCache)
 	return stack, cfg
 }
 
@@ -379,7 +381,7 @@ func makeConfigFile(cfg *FullConfig, configPath string) error {
 		utils.Fatalf("%v", err)
 		return err
 	}
-        defer configFile.Close()
+	defer configFile.Close()
 	configToml, err := tomlSettings.Marshal(cfg)
 	if err != nil {
 		log.Error(err.Error())

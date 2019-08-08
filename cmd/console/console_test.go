@@ -176,7 +176,7 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 	}
 
 	db.Close()
-	if err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) { return ptn.New(ctx, ptnConf) }); err != nil {
+	if err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) { return ptn.New(ctx, ptnConf, stack.CacheDb) }); err != nil {
 		t.Fatalf("failed to register PalletOne protocol: %v", err)
 	}
 	// Start the node and assemble the JavaScript console around it

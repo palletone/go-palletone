@@ -25,7 +25,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -209,7 +208,7 @@ type TxDesc struct {
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
 // transactions from the network.
-func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.ChainConfig,
+func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit dags) *TxPool { // chainconfig *params.ChainConfig,
 	// Sanitize the input to ensure no vulnerable gas prices are set
 	config = (&config).sanitize()
 	// Create the transaction pool with its initial settings
@@ -222,7 +221,7 @@ func NewTxPool(config TxPoolConfig, unit dags) *TxPool { // chainconfig *params.
 		nextExpireScan: time.Now().Add(config.OrphanTTL),
 		orphans:        sync.Map{},
 		outputs:        sync.Map{},
-		cache:          freecache.NewCache(20 * 1024 * 1024),
+		cache:          cachedb,
 	}
 	pool.mu = sync.RWMutex{}
 	pool.priority_sorted = newTxPrioritiedList(&pool.all)

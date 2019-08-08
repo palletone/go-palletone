@@ -147,7 +147,7 @@ func (s *SysConfigChainCode) getVotesResult(stub shim.ChaincodeStubInterface, ar
 		isVoteEnd = true
 	}
 	//calculate result
-	supportResults :=make([]*modules.SysSupportResult, 0, len(topicSupports))
+	supportResults := make([]*modules.SysSupportResult, 0, len(topicSupports))
 	for i, oneTopicSupport := range topicSupports {
 		oneResult := &modules.SysSupportResult{}
 		oneResult.TopicIndex = uint64(i) + 1
@@ -470,6 +470,9 @@ func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubIn
 
 	modifies[field] = value
 	modifyByte, err := json.Marshal(modifies)
+	if err != nil {
+		return nil, err
+	}
 	err = stub.PutState(modules.DesiredSysParamsWithoutVote, modifyByte)
 	if err != nil {
 		log.Debugf(err.Error())

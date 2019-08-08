@@ -64,8 +64,8 @@ type Endorser struct {
 
 // validateResult provides the result of endorseProposal verification
 type validateResult struct {
-	prop    *pb.Proposal
-	hdrExt  *pb.ChaincodeHeaderExtension
+	prop *pb.Proposal
+	//hdrExt  *pb.ChaincodeHeaderExtension
 	chainID string
 	txid    string
 	resp    *pb.ProposalResponse
@@ -146,11 +146,11 @@ func (e *Endorser) simulateProposal(contractid []byte, ctx context.Context, chai
 		return res, nil, nil, err
 	}
 
-	if txsim != nil {
-		//if simResult, err = txsim.GetTxSimulationResults(); err != nil {
-		//	return  nil, nil, nil, err
-		//}
-	}
+	//if txsim != nil {
+	//	//if simResult, err = txsim.GetTxSimulationResults(); err != nil {
+	//	//	return  nil, nil, nil, err
+	//	//}
+	//}
 
 	return res, simResBytes, ccevent, nil
 }
@@ -181,10 +181,10 @@ func (e *Endorser) validateProcess(signedProp *pb.SignedProposal) (*validateResu
 
 	//TODO validate the header
 
-	if err != nil {
-		vr.resp = &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}
-		return vr, err
-	}
+	//if err != nil {
+	//	vr.resp = &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}
+	//	return vr, err
+	//}
 
 	chdr, err := putils.UnmarshalChannelHeader(hdr.ChannelHeader)
 	if err != nil {
@@ -252,10 +252,11 @@ func (e *Endorser) ProcessProposal(rwM rwset.TxManager, idag dag.IDag, deployId 
 			Payload: nil, Response: &pb.Response{Status: 500, Message: "simulateProposal response is nil"}}, nil, errors.New("Chaincode Error:simulateProposal response is nil")
 	}
 
-	//2 -- endorse and get a marshalled ProposalResponse message
+	//2 -- endorse and get a marshaled ProposalResponse message
 	pResp := &pb.ProposalResponse{Response: res}
 	cis, err := putils.GetChaincodeInvocationSpec(prop)
 	if err != nil {
+		return nil, nil, err
 	}
 	unit, err := RwTxResult2DagInvokeUnit(txsim, txid, cis.ChaincodeSpec.ChaincodeId.Name, deployId, cis.ChaincodeSpec.Input.Args, tmout)
 	if err != nil {

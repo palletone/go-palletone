@@ -49,7 +49,7 @@ import (
 )
 
 type Dag struct {
-	//Cache       palletcache.ICache
+	Cache       palletcache.ICache
 	Db          ptndb.Database
 	currentUnit atomic.Value
 
@@ -499,7 +499,7 @@ func (d *Dag) initDataForMainChainHeader(mainChain *modules.MainChain) {
 
 // newDag, with db , light to build a new dag
 // firstly to check db migration, is updated ptn database.
-func NewDag(db ptndb.Database, light bool) (*Dag, error) {
+func NewDag(db ptndb.Database, cache palletcache.ICache, light bool) (*Dag, error) {
 
 	dagDb := storage.NewDagDb(db)
 	utxoDb := storage.NewUtxoDb(db)
@@ -519,12 +519,12 @@ func NewDag(db ptndb.Database, light bool) (*Dag, error) {
 	stableUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
 	gasToken := dagconfig.DagConfig.GetGasToken()
 	threshold, _ := propRep.GetChainThreshold()
-	cache := freecache.NewCache(1000 * 1024)
 	unstableChain := memunit.NewMemDag(gasToken, threshold, light /*false*/, db, unitRep, propRep, stateRep, cache)
 	tunitRep, tutxoRep, tstateRep, tpropRep, tUnitProduceRep := unstableChain.GetUnstableRepositories()
 
 	dag := &Dag{
 		Db:                     db,
+		Cache:                  cache,
 		unstableUnitRep:        tunitRep,
 		unstableUtxoRep:        tutxoRep,
 		unstableStateRep:       tstateRep,

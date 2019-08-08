@@ -377,21 +377,22 @@ func (b *LesApiBackend) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Ad
 	return common.Address{}, nil
 }
 func (b *LesApiBackend) GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
-	address, err := common.StringToAddress(addr)
-	if err != nil {
-		return nil, err
-	}
-
-	utxos, err := b.ptn.dag.GetAddrUtxos(address)
-	if err != nil {
-		return nil, err
-	}
-	result := []*ptnjson.UtxoJson{}
-	for o, u := range utxos {
-		ujson := ptnjson.ConvertUtxo2Json(&o, u)
-		result = append(result, ujson)
-	}
-	return result, nil
+	return nil, nil
+	//address, err := common.StringToAddress(addr)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//utxos, err := b.ptn.dag.GetAddrUtxos(address)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//result := []*ptnjson.UtxoJson{}
+	//for o, u := range utxos {
+	//	ujson := ptnjson.ConvertUtxo2Json(&o, u)
+	//	result = append(result, ujson)
+	//}
+	//return result, nil
 }
 func (b *LesApiBackend) GetAddrRawUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error) {
 	address, err := common.StringToAddress(addr)
@@ -401,16 +402,17 @@ func (b *LesApiBackend) GetAddrRawUtxos(addr string) (map[modules.OutPoint]*modu
 	return b.ptn.dag.GetAddrUtxos(address)
 }
 func (b *LesApiBackend) GetAllUtxos() ([]*ptnjson.UtxoJson, error) {
-	utxos, err := b.ptn.dag.GetAllUtxos()
-	if err != nil {
-		return nil, err
-	}
-	result := []*ptnjson.UtxoJson{}
-	for o, u := range utxos {
-		ujson := ptnjson.ConvertUtxo2Json(&o, u)
-		result = append(result, ujson)
-	}
-	return result, nil
+	return nil, nil
+	//utxos, err := b.ptn.dag.GetAllUtxos()
+	//if err != nil {
+	//	return nil, err
+	//}
+	//result := []*ptnjson.UtxoJson{}
+	//for o, u := range utxos {
+	//	ujson := ptnjson.ConvertUtxo2Json(&o, u)
+	//	result = append(result, ujson)
+	//}
+	//return result, nil
 }
 
 func (b *LesApiBackend) GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson, error) {

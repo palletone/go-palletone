@@ -43,10 +43,10 @@ const (
 	ERRUTXOsExist      = 3
 )
 
-type lpsutxo struct {
-	addr  []byte     `json:"addr"`
-	utxos [][][]byte `json:"utxos"`
-}
+//type lpsutxo struct {
+//	addr  []byte     `json:"addr"`
+//	utxos [][][]byte `json:"utxos"`
+//}
 
 type utxosRespData struct {
 	addr  string
@@ -58,8 +58,8 @@ func NewUtxosRespData() *utxosRespData {
 }
 
 func (u *utxosRespData) encode() ([][][]byte, error) {
-	var addrarr [][]byte
-	var arrs [][][]byte
+	addrarr := [][]byte{}
+	arrs := [][][]byte{}
 	addrarr = append(addrarr, []byte(u.addr))
 	arrs = append(arrs, addrarr)
 

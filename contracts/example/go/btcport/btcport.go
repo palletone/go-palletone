@@ -762,7 +762,7 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Success([]byte(jsonResp))
 	}
 	// 产生交易
-	rawTx, err := genRawTx(int64(btcTokenAmount), btcFee, btcAddr, selUnspnds, stub)
+	rawTx, _ := genRawTx(int64(btcTokenAmount), btcFee, btcAddr, selUnspnds, stub)
 
 	//
 	result, _ := stub.GetState(symbolsDepositRedeem)
@@ -776,7 +776,7 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		inputRedeemIndex = append(inputRedeemIndex, 0)
 	}
 	// 签名交易
-	rawTxSign, err := signTx(rawTx, inputRedeemIndex, []string{redeemHex}, stub)
+	rawTxSign, _ := signTx(rawTx, inputRedeemIndex, []string{redeemHex}, stub)
 	//协商交易
 	sendResult, err := stub.SendJury(2, []byte(rawTx), []byte(rawTxSign)) //todo 封装重构
 	if err != nil {
