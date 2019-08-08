@@ -60,25 +60,25 @@ func CopyBytes(b []byte) (copiedBytes []byte) {
 	return
 }
 
-func hasHexPrefix(str string) bool {
-	return len(str) >= 2 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X')
-}
+//func hasHexPrefix(str string) bool {
+//	return len(str) >= 2 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X')
+//}
 
-func isHexCharacter(c byte) bool {
-	return ('0' <= c && c <= '9') || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F')
-}
+//func isHexCharacter(c byte) bool {
+//	return ('0' <= c && c <= '9') || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F')
+//}
 
-func isHex(str string) bool {
-	if len(str)%2 != 0 {
-		return false
-	}
-	for _, c := range []byte(str) {
-		if !isHexCharacter(c) {
-			return false
-		}
-	}
-	return true
-}
+//func isHex(str string) bool {
+//	if len(str)%2 != 0 {
+//		return false
+//	}
+//	for _, c := range []byte(str) {
+//		if !isHexCharacter(c) {
+//			return false
+//		}
+//	}
+//	return true
+//}
 
 func Bytes2Hex(d []byte) string {
 	return hex.EncodeToString(d)
@@ -163,10 +163,10 @@ func BytesEqual(a, b []byte) bool {
 
 //YiRan
 // this function connect multiple []byte to single []byte.
-func KeyConnector(keys ...[]byte) []byte {
-	var res []byte
-	for _, key := range keys {
-		res = append(res, key...)
-	}
-	return res
-}
+//func KeyConnector(keys ...[]byte) []byte {
+//	var res []byte
+//	for _, key := range keys {
+//		res = append(res, key...)
+//	}
+//	return res
+//}
