@@ -180,7 +180,8 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 	}
 	inserter := func(headers []*modules.Header) (int, error) {
 		// If fast sync is running, deny importing weird blocks
-		log.Debug("Cors ProtocolManager InsertLightHeader", "manager.dag.InsertDag index:", headers[0].Number.Index, "hash", headers[0].Hash())
+		log.Debug("Cors ProtocolManager InsertLightHeader", "manager.dag.InsertDag index:",
+			headers[0].Number.Index, "hash", headers[0].Hash())
 		return pm.dag.InsertLightHeader(headers)
 	}
 	return NewLightFetcher(pm.dag.GetHeaderByHash, pm.dag.GetLightChainHeight, headerVerifierFn,
@@ -192,10 +193,10 @@ func (pm *ProtocolManager) BroadcastCorsHeader(p *peer, header *modules.Header) 
 	v, ok := pm.needboradcast[p.id]
 	pm.bdlock.RUnlock()
 	if ok && header.Number.Index >= v {
-		log.Debug("Cors ProtocolManager BroadcastCorsHeader", "assetid:", header.Number.AssetID.String(), "index:", header.Index(), "hash", header.Hash())
+		log.Debug("Cors ProtocolManager BroadcastCorsHeader", "assetid:", header.Number.AssetID.String(),
+			"index:", header.Index(), "hash", header.Hash())
 		pm.server.SendEvents(header)
 	}
-	return
 }
 
 // removePeer initiates disconnection from a peer by removing it from the peer set
@@ -223,13 +224,14 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 			pm.fetcher.Start()
 			defer pm.fetcher.Stop()
 			defer pm.downloader.Terminate()
-			forceSync := time.Tick(forceSyncCycle)
+			forceSync := time.NewTicker(forceSyncCycle)
+			defer forceSync.Stop()
 			for {
 				select {
 				case <-pm.newPeerCh:
 					//go pm.StartCorsSync()
 
-				case <-forceSync:
+				case <-forceSync.C:
 					// Force a sync even if not enough peers are present
 					if pm.maxPeers > 0 {
 						log.Debug("Cors PalletOne ProtocolManager StartCorsSync", "maxpeers", pm.maxPeers)
@@ -412,8 +414,8 @@ type NodeInfo struct {
 }
 
 // NodeInfo retrieves some protocol metadata about the running host node.
-func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
-	header := self.dag.CurrentHeader(self.assetId)
+func (pm *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
+	header := pm.dag.CurrentHeader(pm.assetId)
 
 	var (
 		index = uint64(0)
@@ -427,46 +429,9 @@ func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
 	}
 
 	return &NodeInfo{
-		Network: self.networkId,
+		Network: pm.networkId,
 		Index:   index,
 		Genesis: genesisHash,
 		Head:    hash,
 	}
 }
-
-/*
-type downloaderPeerNotify ProtocolManager
-
-type peerConnection struct {
-	manager *ProtocolManager
-	peer    *peer
-}
-
-func (pc *peerConnection) Head(assetId modules.AssetId) (common.Hash, *modules.ChainIndex) {
-	//return common.Hash{}, nil
-	return pc.peer.HeadAndNumber(assetId)
-}
-
-func (pc *peerConnection) RequestHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
-	log.Debug("peerConnection batch of headers by hash", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse)
-	return nil
-	//return p2p.Send(pc.peer.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Hash: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
-}
-
-func (pc *peerConnection) RequestHeadersByNumber(origin *modules.ChainIndex, amount int, skip int, reverse bool) error {
-	log.Debug("peerConnection batch of headers by number", "count", amount, "from origin", origin, "skip", skip, "reverse", reverse)
-	return nil
-	//return p2p.Send(pc.peer.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Number: *origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
-}
-func (p *peerConnection) RequestDagHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
-	//log.Debug("Fetching batch of headers", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse)
-	return nil
-}
-
-func (p *peerConnection) RequestLeafNodes() error {
-	//GetLeafNodes
-	log.Debug("Fetching leaf nodes")
-	return nil
-	//return p2p.Send(p.rw, GetLeafNodesMsg, "")
-}
-*/
