@@ -135,11 +135,7 @@ func (dag *Dag) IsSynced() bool {
 	//nextSlotTime := dag.unstablePropRep.GetSlotTime(gp, dgp, 1)
 	nextSlotTime := dag.unstablePropRep.GetSlotTime(gp, dgp, 2)
 
-	if nextSlotTime.Before(now) {
-		return false
-	}
-
-	return true
+	return nextSlotTime.Before(now)
 }
 
 // author Albert·Gou

@@ -123,7 +123,8 @@ func (statedb *StateDb) GetContractJury(contractId []byte) ([]modules.ElectionIn
 	}
 	return jury, nil
 }
-func (statedb *StateDb) SaveContractJury(contractId []byte, jury []modules.ElectionInf, version *modules.StateVersion) error {
+func (statedb *StateDb) SaveContractJury(contractId []byte, jury []modules.ElectionInf,
+	version *modules.StateVersion) error {
 	log.Debugf("SaveContractJury contractId %x", contractId)
 	key := append(constants.CONTRACT_JURY_PREFIX, contractId...)
 	juryb, err := rlp.EncodeToBytes(jury)
@@ -148,7 +149,8 @@ To save contract
 //	return nil
 //}
 
-func (statedb *StateDb) SaveContractStates(id []byte, wset []modules.ContractWriteSet, version *modules.StateVersion) error {
+func (statedb *StateDb) SaveContractStates(id []byte, wset []modules.ContractWriteSet,
+	version *modules.StateVersion) error {
 	batch := statedb.db.NewBatch()
 	for _, write := range wset {
 		cid := id
@@ -206,7 +208,8 @@ func (statedb *StateDb) GetContractStatesById(id []byte) (map[string]*modules.Co
 获取合约全部属性 by Prefix
 To get contract or contract template all fields
 */
-func (statedb *StateDb) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
+func (statedb *StateDb) GetContractStatesByPrefix(id []byte,
+	prefix string) (map[string]*modules.ContractStateValue, error) {
 	key := append(constants.CONTRACT_STATE_PREFIX, id...)
 	data := getprefix(statedb.db, append(key, []byte(prefix)...))
 	if data == nil || len(data) == 0 {

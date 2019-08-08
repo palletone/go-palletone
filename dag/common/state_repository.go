@@ -126,7 +126,8 @@ func (rep *StateRepository) GetContractStatesById(id []byte) (map[string]*module
 	return rep.statedb.GetContractStatesById(id)
 }
 
-func (rep *StateRepository) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
+func (rep *StateRepository) GetContractStatesByPrefix(id []byte,
+	prefix string) (map[string]*modules.ContractStateValue, error) {
 	return rep.statedb.GetContractStatesByPrefix(id, prefix)
 }
 
@@ -208,7 +209,8 @@ func (rep *StateRepository) GetPledgeList() (*modules.PledgeList, error) {
 
 //获得新的用户的质押申请列表
 func (rep *StateRepository) GetPledgeDepositApplyList() ([]*modules.AddressAmount, error) {
-	states, err := rep.statedb.GetContractStatesByPrefix(syscontract.DepositContractAddress.Bytes(), string(constants.PLEDGE_DEPOSIT_PREFIX))
+	states, err := rep.statedb.GetContractStatesByPrefix(syscontract.DepositContractAddress.Bytes(),
+		string(constants.PLEDGE_DEPOSIT_PREFIX))
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +226,8 @@ func (rep *StateRepository) GetPledgeDepositApplyList() ([]*modules.AddressAmoun
 	return result, nil
 }
 func (rep *StateRepository) GetPledgeWithdrawApplyList() ([]*modules.AddressAmount, error) {
-	states, err := rep.statedb.GetContractStatesByPrefix(syscontract.DepositContractAddress.Bytes(), string(constants.PLEDGE_WITHDRAW_PREFIX))
+	states, err := rep.statedb.GetContractStatesByPrefix(syscontract.DepositContractAddress.Bytes(),
+		string(constants.PLEDGE_WITHDRAW_PREFIX))
 	if err != nil {
 		return nil, err
 	}
@@ -326,11 +329,13 @@ func (rep *StateRepository) GetMainChain() (*modules.MainChain, error) {
 	return rep.statedb.GetMainChain()
 }
 
-func (rep *StateRepository) GetAllAccountStates(address common.Address) (map[string]*modules.ContractStateValue, error) {
+func (rep *StateRepository) GetAllAccountStates(address common.Address) (map[string]*modules.ContractStateValue,
+	error) {
 	return rep.statedb.GetAllAccountStates(address)
 }
 
-func (rep *StateRepository) GetAccountState(address common.Address, statekey string) (*modules.ContractStateValue, error) {
+func (rep *StateRepository) GetAccountState(address common.Address, statekey string) (*modules.ContractStateValue,
+	error) {
 	return rep.statedb.GetAccountState(address, statekey)
 }
 
