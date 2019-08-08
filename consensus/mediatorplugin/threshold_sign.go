@@ -91,17 +91,16 @@ func (mp *MediatorPlugin) AddToTBLSSignBufs(newHash common.Hash) {
 	for _, localMed := range ms {
 		log.Debugf("the mediator(%v) received a unit(%v) to be group-signed",
 			localMed.Str(), newHash.TerminalString())
-		//go mp.addToTBLSSignBuf(localMed, newHash)
+		go mp.addToTBLSSignBuf(localMed, newHash)
 	}
 }
 
-func (mp *MediatorPlugin) addToTBLSSignBuf(localMed common.Address, newUnit *modules.Unit) {
+func (mp *MediatorPlugin) addToTBLSSignBuf(localMed common.Address, unitHash common.Hash) {
 	if _, ok := mp.toTBLSSignBuf[localMed]; !ok {
 		mp.toTBLSSignBuf[localMed] = new(sync.Map)
 	}
 
-	unitHash := newUnit.UnitHash
-	mp.toTBLSSignBuf[localMed].LoadOrStore(unitHash, newUnit)
+	mp.toTBLSSignBuf[localMed].LoadOrStore(unitHash, true)
 	go mp.signUnitTBLS(localMed, unitHash)
 
 	// 当 unit 过了确认时间后，及时删除待群签名的 unit，防止内存溢出
@@ -136,26 +135,27 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 	defer mp.dkgLock.Unlock()
 	var (
 		dkgr    *dkg.DistKeyGenerator
-		newUnit *modules.Unit
+		newHeader *modules.Header
 	)
 
 	// 1. 获取群签名所需数据
 	{
-		value, ok := medUnitsBuf.Load(unitHash)
+		_, ok := medUnitsBuf.Load(unitHash)
 		if !ok {
 			log.Debugf("the mediator(%v) has no unit(%v) to sign TBLS",
 				localMed.Str(), unitHash.TerminalString())
 			return
 		}
 
-		newUnit, ok = value.(*modules.Unit)
-		if !ok {
-			log.Debugf("value converted to Unit pointer failed")
+		newHeader, err := mp.dag.GetHeaderByHash(unitHash)
+		if newHeader == nil || err != nil {
+			err = fmt.Errorf("fail to get header by hash in dag: %v", unitHash.TerminalString())
+			log.Debugf(err.Error())
 			return
 		}
 
 		// 判断是否是换届前的单元
-		if newUnit.Timestamp() <= dag.LastMaintenanceTime() {
+		if newHeader.Timestamp() <= dag.LastMaintenanceTime() {
 			dkgr, ok = mp.precedingDKGs[localMed]
 		} else {
 			dkgr, ok = mp.activeDKGs[localMed]
@@ -170,7 +170,7 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 	// 2. 判断群签名的相关条件
 	{
 		// 如果单元没有群公钥， 则跳过群签名
-		pkb := newUnit.GetGroupPubKeyByte()
+		pkb := newHeader.GetGroupPubKeyByte()
 		if len(pkb) == 0 {
 			err := fmt.Errorf("this unit(%v)'s group public key is null", unitHash.TerminalString())
 			log.Debug(err.Error())
@@ -178,10 +178,10 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 		}
 
 		// 判断父 unit 是否不可逆
-		parentHash := newUnit.ParentHash()[0]
+		parentHash := newHeader.ParentHash()[0]
 		if !dag.IsIrreversibleUnit(parentHash) {
 			log.Debugf("the unit's(%v) parent unit(%v) is not irreversible",
-				newUnit.UnitHash.TerminalString(), parentHash.TerminalString())
+				unitHash.TerminalString(), parentHash.TerminalString())
 			return
 		}
 	}
@@ -201,9 +201,9 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 
 	// 4. 群签名成功后的处理
 	log.Debugf("the mediator(%v) signed-group the unit(%v)", localMed.Str(),
-		newUnit.UnitHash.TerminalString())
+		unitHash.TerminalString())
 	mp.toTBLSSignBuf[localMed].Delete(unitHash)
-	go mp.sigShareFeed.Send(SigShareEvent{UnitHash: newUnit.Hash(), SigShare: sigShare})
+	go mp.sigShareFeed.Send(SigShareEvent{UnitHash: unitHash, SigShare: sigShare})
 }
 
 // 收集签名分片
