@@ -401,20 +401,6 @@ func (mr *MockIDagMockRecorder) HasUnit(hash interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasUnit", reflect.TypeOf((*MockIDag)(nil).HasUnit), hash)
 }
 
-// UnitIsConfirmedByHash mocks base method
-//func (m *MockIDag) UnitIsConfirmedByHash(hash common.Hash) bool {
-//	m.ctrl.T.Helper()
-//	ret := m.ctrl.Call(m, "UnitIsConfirmedByHash", hash)
-//	ret0, _ := ret[0].(bool)
-//	return ret0
-//}
-
-// UnitIsConfirmedByHash indicates an expected call of UnitIsConfirmedByHash
-//func (mr *MockIDagMockRecorder) UnitIsConfirmedByHash(hash interface{}) *gomock.Call {
-//	mr.mock.ctrl.T.Helper()
-//	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnitIsConfirmedByHash", reflect.TypeOf((*MockIDag)(nil).UnitIsConfirmedByHash), hash)
-//}
-
 // ParentsIsConfirmByHash mocks base method
 func (m *MockIDag) ParentsIsConfirmByHash(hash common.Hash) bool {
 	m.ctrl.T.Helper()
@@ -914,6 +900,21 @@ func (m *MockIDag) GetUnitHashesFromHash(hash common.Hash, max uint64) []common.
 func (mr *MockIDagMockRecorder) GetUnitHashesFromHash(hash, max interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnitHashesFromHash", reflect.TypeOf((*MockIDag)(nil).GetUnitHashesFromHash), hash, max)
+}
+
+// GetUnitHash mocks base method
+func (m *MockIDag) GetUnitHash(number *modules.ChainIndex) (common.Hash, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUnitHash", number)
+	ret0, _ := ret[0].(common.Hash)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUnitHash indicates an expected call of GetUnitHash
+func (mr *MockIDagMockRecorder) GetUnitHash(number interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnitHash", reflect.TypeOf((*MockIDag)(nil).GetUnitHash), number)
 }
 
 // GetActiveMediator mocks base method

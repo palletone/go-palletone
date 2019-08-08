@@ -5,11 +5,11 @@
 package ptn
 
 import (
-	"github.com/golang/mock/gomock"
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
-	"github.com/palletone/go-palletone/consensus/mediatorplugin"
-	"reflect"
+	gomock "github.com/golang/mock/gomock"
+	common "github.com/palletone/go-palletone/common"
+	event "github.com/palletone/go-palletone/common/event"
+	mediatorplugin "github.com/palletone/go-palletone/consensus/mediatorplugin"
+	reflect "reflect"
 )
 
 // Mockproducer is a mock of producer interface
