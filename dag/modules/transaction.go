@@ -72,9 +72,10 @@ func NewContractCreation(msg []*Message) *Transaction {
 
 func newTransaction(msg []*Message) *Transaction {
 	tx := new(Transaction)
-	for _, m := range msg {
-		tx.TxMessages = append(tx.TxMessages, m)
-	}
+	//for _, m := range msg {
+	//	tx.TxMessages = append(tx.TxMessages, m)
+	//}
+	tx.TxMessages = append(tx.TxMessages, msg...)
 	return tx
 }
 
@@ -655,7 +656,7 @@ func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc Get
 		}
 	}
 	result := []common.Address{}
-	for k, _ := range addrMap {
+	for k := range addrMap {
 		result = append(result, k)
 	}
 	return result, nil

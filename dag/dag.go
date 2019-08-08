@@ -74,9 +74,9 @@ type Dag struct {
 	//applyLock sync.Mutex
 
 	//SPV
-	rmLogsFeed    event.Feed
-	chainFeed     event.Feed
-	chainSideFeed event.Feed
+	rmLogsFeed event.Feed
+	chainFeed  event.Feed
+	//chainSideFeed event.Feed
 	chainHeadFeed event.Feed
 	logsFeed      event.Feed
 	scope         event.SubscriptionScope
@@ -151,12 +151,12 @@ func (d *Dag) IsTransactionExist(hash common.Hash) (bool, error) {
 }
 
 // return the unit confirmed is true or false
-func (d *Dag) UnitIsConfirmedByHash(hash common.Hash) bool {
-	if d.HasUnit(hash) {
-		return true
-	}
-	return false
-}
+//func (d *Dag) UnitIsConfirmedByHash(hash common.Hash) bool {
+//	if d.HasUnit(hash) {
+//		return true
+//	}
+//	return false
+//}
 
 // return the unit's parent confirmed is true or false
 func (d *Dag) ParentsIsConfirmByHash(hash common.Hash) bool {
