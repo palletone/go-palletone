@@ -17,14 +17,10 @@
 package ptn
 
 import (
-	"os"
-	"os/user"
-
 	//"path/filepath"
 	//"runtime"
 	"time"
 
-	"github.com/palletone/go-palletone/common/hexutil"
 	//"github.com/palletone/go-palletone/consensus/consensusconfig"
 	"github.com/palletone/go-palletone/consensus/jury"
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
@@ -45,7 +41,7 @@ var DefaultConfig = Config{
 	DatabaseCache: 768,
 	TrieCache:     256,
 	TrieTimeout:   5 * time.Minute,
-	CryptoLib:      []byte{0,0},
+	CryptoLib:     []byte{0, 0},
 
 	TxPool:         txspool.DefaultTxPoolConfig,
 	Dag:            dagconfig.DagConfig,
@@ -55,12 +51,12 @@ var DefaultConfig = Config{
 }
 
 func init() {
-	home := os.Getenv("HOME")
-	if home == "" {
-		if user, err := user.Current(); err == nil {
-			home = user.HomeDir
-		}
-	}
+	//home := os.Getenv("HOME")
+	//if home == "" {
+	//	if user, err := user.Current(); err == nil {
+	//		home = user.HomeDir
+	//	}
+	//}
 	/*would recover
 	if runtime.GOOS == "windows" {
 		DefaultConfig.Ethash.DatasetDir = filepath.Join(home, "AppData", "Ethash")
@@ -100,7 +96,7 @@ type Config struct {
 	//Etherbase    common.Address `toml:",omitempty"`
 	MinerThreads int    `toml:",omitempty"`
 	ExtraData    []byte `toml:",omitempty"`
-	CryptoLib     []byte
+	CryptoLib    []byte
 
 	// Transaction pool options
 	TxPool txspool.TxPoolConfig `toml:"-"`
@@ -127,8 +123,4 @@ type Config struct {
 
 	//must be equal to the node.GasToken
 	//TokenSubProtocol string `toml:"-"`
-}
-
-type configMarshaling struct {
-	ExtraData hexutil.Bytes
 }

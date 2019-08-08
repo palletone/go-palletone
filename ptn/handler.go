@@ -58,10 +58,6 @@ const (
 	txChanSize = 4096
 )
 
-var (
-	daoChallengeTimeout = 15 * time.Second // Time allowance for a node to reply to the DAO handshake challenge
-)
-
 // errIncompatibleConfig is returned if the requested protocols and configs are
 // not compatible (low protocol version restrictions and high requirements).
 var errIncompatibleConfig = errors.New("incompatible configuration")
@@ -624,14 +620,14 @@ func (pm *ProtocolManager) BroadcastTx(hash common.Hash, tx *modules.Transaction
 	log.Trace("Broadcast transaction", "hash", hash, "recipients", len(peers))
 }
 
-func (self *ProtocolManager) txBroadcastLoop() {
+func (pm *ProtocolManager) txBroadcastLoop() {
 	for {
 		select {
-		case event := <-self.txCh:
-			self.BroadcastTx(event.Tx.Hash(), event.Tx)
+		case event := <-pm.txCh:
+			pm.BroadcastTx(event.Tx.Hash(), event.Tx)
 
 			// Err() channel will be closed when unsubscribing.
-		case <-self.txSub.Err():
+		case <-pm.txSub.Err():
 			return
 		}
 	}
@@ -715,8 +711,8 @@ type NodeInfo struct {
 }
 
 // NodeInfo retrieves some protocol metadata about the running host node.
-func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
-	unit := self.dag.GetCurrentUnit(self.mainAssetId)
+func (pm *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
+	unit := pm.dag.GetCurrentUnit(pm.mainAssetId)
 	var (
 		index = uint64(0)
 		hash  = common.Hash{}
@@ -727,7 +723,7 @@ func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
 	}
 
 	return &NodeInfo{
-		Network: self.networkId,
+		Network: pm.networkId,
 		Index:   index,
 		Genesis: genesisHash,
 		Head:    hash,
@@ -741,14 +737,14 @@ func (pm *ProtocolManager) BroadcastCe(ce []byte) {
 		peer.SendConsensus(ce)
 	}
 }
-func (self *ProtocolManager) ceBroadcastLoop() {
+func (pm *ProtocolManager) ceBroadcastLoop() {
 	for {
 		select {
-		case event := <-self.ceCh:
-			self.BroadcastCe(event.Ce)
+		case event := <-pm.ceCh:
+			pm.BroadcastCe(event.Ce)
 
 			// Err() channel will be closed when unsubscribing.
-		case <-self.ceSub.Err():
+		case <-pm.ceSub.Err():
 			return
 		}
 	}

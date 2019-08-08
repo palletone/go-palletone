@@ -163,7 +163,7 @@ func (gp *GlobalProperty) GetActiveMediatorAddr(index int) common.Address {
 // GetActiveMediators, return the list of active mediators, and the order of the list from small to large
 func (gp *GlobalProperty) GetActiveMediators() []common.Address {
 	var mediators common.Addresses
-	mediators = make([]common.Address, 0, gp.ActiveMediatorsCount())
+	//mediators = make([]common.Address, 0, gp.ActiveMediatorsCount())
 
 	for medAdd := range gp.ActiveMediators {
 		mediators = append(mediators, medAdd)

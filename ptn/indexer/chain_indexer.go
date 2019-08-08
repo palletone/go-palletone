@@ -190,8 +190,8 @@ func (c *ChainIndexer) eventLoop(currentHeader *modules.Header, events chan modu
 	c.newHead(currentHeader.Number.Index, false)
 
 	var (
-		//prevHeader = currentHeader
-		prevHash = currentHeader.Hash()
+	//prevHeader = currentHeader
+	//prevHash = currentHeader.Hash()
 	)
 	for {
 		select {
@@ -210,23 +210,23 @@ func (c *ChainIndexer) eventLoop(currentHeader *modules.Header, events chan modu
 			header := ev.Unit.Header()
 			log.Debug("ChainIndexer->eventLoop", "index", header.Number.Index)
 			//TODO must modify some parent hash
-			if header.ParentsHash[0] != prevHash {
-				// Reorg to the common ancestor (might not exist in light sync mode, skip reorg then)
-				// TODO(karalabe, zsfelfoldi): This seems a bit brittle, can we detect this case explicitly?
+			//if header.ParentsHash[0] != prevHash {
+			// Reorg to the common ancestor (might not exist in light sync mode, skip reorg then)
+			// TODO(karalabe, zsfelfoldi): This seems a bit brittle, can we detect this case explicitly?
 
-				// TODO(karalabe): This operation is expensive and might block, causing the event system to
-				// potentially also lock up. We need to do with on a different thread somehow.
-				//TODO must be recover
-				/*
-					if h := FindCommonAncestor(c.chainDb, prevHeader, header); h != nil {
-						c.newHead(h.Number.Uint64(), true)
-					}
-				*/
-			}
+			// TODO(karalabe): This operation is expensive and might block, causing the event system to
+			// potentially also lock up. We need to do with on a different thread somehow.
+			//TODO must be recover
+			/*
+				if h := FindCommonAncestor(c.chainDb, prevHeader, header); h != nil {
+					c.newHead(h.Number.Uint64(), true)
+				}
+			*/
+			//}
 			c.newHead(header.Number.Index, false)
 			//prevHeader = prevHeader //TODO must be delete
 			//prevHeader, prevHash = header, header.Hash()
-			prevHash = header.Hash()
+			//prevHash = header.Hash()
 		}
 	}
 }

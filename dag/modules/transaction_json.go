@@ -258,7 +258,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 
 func (tx *Transaction) UnmarshalJSON(data []byte) error {
 	temp := &txJsonTemp{}
-	err := json.Unmarshal([]byte(data), temp)
+	err := json.Unmarshal(data, temp)
 	if err != nil {
 		return err
 	}

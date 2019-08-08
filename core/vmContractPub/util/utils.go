@@ -43,20 +43,19 @@ var availableIDgenAlgs = map[string]alg{
 	defaultAlg: {GenerateIDfromTxSHAHash},
 }
 
-func computerHash(data []byte) []byte {
-	//var hh hash.Hash
+func computerHash(data []byte) (hsh []byte, err error) {
 	hh := sha256.New()
 	hh.Write(data)
-	return hh.Sum(nil)
+	return hh.Sum(nil), nil
 }
 
 // ComputeSHA256 returns SHA2-256 on data
 func ComputeSHA256(data []byte) (hsh []byte) {
-	//hsh = computerHash(data)
-	//if err != nil {
-	//	panic(fmt.Errorf("Failed computing SHA256 on [% x]", data))
-	//}
-	return computerHash(data)
+	hsh, err := computerHash(data)
+	if err != nil {
+		panic(fmt.Errorf("Failed computing SHA256 on [% x]", data))
+	}
+	return
 }
 
 // ComputeSHA3256 returns SHA3-256 on data
