@@ -459,3 +459,100 @@ func handleNode(stub shim.ChaincodeStubInterface, quitAddr common.Address, role 
 	}
 	return nil
 }
+func nodePayToDepositContract(stub shim.ChaincodeStubInterface, args []string, role string) pb.Response {
+
+	log.Debug("nodePayToDepositContract", args)
+	//  判断是否交付保证金交易
+	invokeTokens, err := isContainDepositContractAddr(stub)
+	if err != nil {
+		log.Error("isContainDepositContractAddr err: ", "error", err)
+		return shim.Error(err.Error())
+	}
+
+	cp, err := stub.GetSystemConfig()
+	if err != nil {
+		//log.Error("strconv.ParseUint err:", "error", err)
+		return shim.Error(err.Error())
+	}
+	//  交付地址
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		log.Error("get invoke address err: ", "error", err)
+		return shim.Error(err.Error())
+	}
+	//  TODO 添加进入质押记录
+	//err = pledgeDepositRep(stub, invokeAddr, invokeTokens.Amount)
+	//if err != nil {
+	//	return shim.Error(err.Error())
+	//}
+	//获取账户
+	balance, err := GetNodeBalance(stub, invokeAddr.String())
+	if err != nil {
+		log.Error("get node balance err: ", "error", err)
+		return shim.Error(err.Error())
+	}
+	depositAmount := uint64(0)
+	list := ""
+	if role == Jury {
+		depositAmount = cp.DepositAmountForJury
+		list = modules.JuryList
+	}
+	if role == Developer {
+		depositAmount = cp.DepositAmountForDeveloper
+		list = modules.DeveloperList
+	}
+	//  第一次想加入
+	if balance == nil {
+		balance = &DepositBalance{}
+		//  可以加入列表
+		if invokeTokens.Amount != depositAmount {
+			return shim.Error("Too many or too little.")
+		}
+		//  加入候选列表
+		err = addCandaditeList(stub, invokeAddr, list)
+		if err != nil {
+			log.Error("addCandaditeList err: ", "error", err)
+			return shim.Error(err.Error())
+		}
+		balance.EnterTime = getTiem(stub)
+		//  没有
+		balance.Balance = invokeTokens.Amount
+		balance.Role = role
+		err = SaveNodeBalance(stub, invokeAddr.String(), balance)
+		if err != nil {
+			log.Error("save node balance err: ", "error", err)
+			return shim.Error(err.Error())
+		}
+		return shim.Success(nil)
+	} else {
+		//  追缴逻辑
+		//if balance.Role != Jury {
+		//	return shim.Error("not jury")
+		//}
+		all := balance.Balance + invokeTokens.Amount
+		if all != depositAmount {
+			return shim.Error("Too many or too little.")
+		}
+		//这里需要判断是否以及被基金会提前移除候选列表，即在规定时间内该节点没有追缴保证金
+		b, err := isInCandidate(stub, invokeAddr.String(), list)
+		if err != nil {
+			log.Debugf("isInCandidate error: %s", err.Error())
+			return shim.Error(err.Error())
+		}
+		if !b {
+			//  加入jury候选列表
+			err = addCandaditeList(stub, invokeAddr, list)
+			if err != nil {
+				log.Error("addCandidateListAndPutStateForMediator err: ", "error", err)
+				return shim.Error(err.Error())
+			}
+		}
+		balance.Balance = all
+		err = SaveNodeBalance(stub, invokeAddr.String(), balance)
+		if err != nil {
+			log.Error("save node balance err: ", "error", err)
+			return shim.Error(err.Error())
+		}
+		return shim.Success(nil)
+	}
+}

@@ -27,15 +27,15 @@ import (
 	"github.com/palletone/go-palletone/dag/rwset"
 )
 
-type TempCC struct {
-	templateId  []byte
-	name        string
-	path        string
-	version     string
-	description string
-	abi         string
-	language    string
-}
+//type TempCC struct {
+//	templateId  []byte
+//	name        string
+//	path        string
+//	version     string
+//	description string
+//	abi         string
+//	language    string
+//}
 
 // contract manger module init
 func Init(dag dag.IDag, jury core.IAdapterJury) error {

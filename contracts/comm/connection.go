@@ -26,7 +26,6 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"sync"
 	"time"
 
@@ -191,14 +190,14 @@ func (cs *CredentialSupport) GetPeerCredentials() credentials.TransportCredentia
 	return creds
 }
 
-func getEnv(key, def string) string {
-	val := os.Getenv(key)
-	if len(val) > 0 {
-		return val
-	} else {
-		return def
-	}
-}
+//func getEnv(key, def string) string {
+//	val := os.Getenv(key)
+//	if len(val) > 0 {
+//		return val
+//	} else {
+//		return def
+//	}
+//}
 
 // NewClientConnectionWithAddress Returns a new grpc.ClientConn to the given address
 func NewClientConnectionWithAddress(peerAddress string, block bool, tslEnabled bool,

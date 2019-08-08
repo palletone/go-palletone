@@ -28,11 +28,11 @@ type UserChaincode struct {
 	Enabled bool //Enabled a convenient switch to enable/disable chaincode
 }
 
-func buildUserCC(context context.Context, spec *pb.ChaincodeSpec) (*pb.ChaincodeDeploymentSpec, error) {
-	var codePackageBytes []byte
-	chaincodeDeploymentSpec := &pb.ChaincodeDeploymentSpec{ExecEnv: pb.ChaincodeDeploymentSpec_DOCKER, ChaincodeSpec: spec, CodePackage: codePackageBytes}
-	return chaincodeDeploymentSpec, nil
-}
+//func buildUserCC(context context.Context, spec *pb.ChaincodeSpec) (*pb.ChaincodeDeploymentSpec, error) {
+//	var codePackageBytes []byte
+//	chaincodeDeploymentSpec := &pb.ChaincodeDeploymentSpec{ExecEnv: pb.ChaincodeDeploymentSpec_DOCKER, ChaincodeSpec: spec, CodePackage: codePackageBytes}
+//	return chaincodeDeploymentSpec, nil
+//}
 
 func getDeploymentSpec(spec *pb.ChaincodeSpec) (*pb.ChaincodeDeploymentSpec, error) {
 	log.Debugf("getting deployment spec for chaincode spec: %v\n", spec)
@@ -44,13 +44,13 @@ func getDeploymentSpec(spec *pb.ChaincodeSpec) (*pb.ChaincodeDeploymentSpec, err
 	return cdDeploymentSpec, nil
 }
 
-func mockerDeployUserCC() error {
-	log.Debug("==================mockerDeployUserCC enter")
-	time.Sleep(time.Duration(1) * time.Second)
-	log.Debug("==================mockerDeployUserCC end")
-
-	return nil
-}
+//func mockerDeployUserCC() error {
+//	log.Debug("==================mockerDeployUserCC enter")
+//	time.Sleep(time.Duration(1) * time.Second)
+//	log.Debug("==================mockerDeployUserCC end")
+//
+//	return nil
+//}
 
 func DeployUserCC(contractId []byte, chaincodeData []byte, spec *pb.ChaincodeSpec, chainID string, txid string, txsim rwset.TxSimulator, timeout time.Duration) error {
 	//return mockerDeployUserCC()

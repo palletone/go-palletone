@@ -26,15 +26,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"math/big"
-	"os"
-	"strconv"
-	"strings"
-	"time"
-	"unicode/utf8"
-
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/palletone/go-palletone/common"
@@ -48,6 +39,13 @@ import (
 	"github.com/spf13/viper"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"io"
+	"io/ioutil"
+	"math/big"
+	"os"
+	"strconv"
+	"strings"
+	"time"
 )
 
 // Logger for the shim package.
@@ -59,12 +57,13 @@ var cert string
 var GlobalStateContractId = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 var ERROR_ONLY_SYS_CONTRACT = errors.New("Only system contract can call this function.")
 
-const (
-	minUnicodeRuneValue   = 0            //U+0000
-	maxUnicodeRuneValue   = utf8.MaxRune //U+10FFFF - maximum (and unallocated) code point
-	compositeKeyNamespace = "\x00"
-	emptyKeySubstitute    = "\x01"
-)
+//const (
+//
+//	minUnicodeRuneValue   = 0            //U+0000
+//	maxUnicodeRuneValue   = utf8.MaxRune //U+10FFFF - maximum (and unallocated) code point
+//	compositeKeyNamespace = "\x00"
+//	emptyKeySubstitute    = "\x01"
+//)
 
 // ChaincodeStub is an object passed to chaincode for shim side handling of
 // APIs.
@@ -76,12 +75,12 @@ type ChaincodeStub struct {
 	args           [][]byte
 	handler        *Handler
 	signedProposal *pb.SignedProposal
-	proposal       *pb.Proposal
+	//proposal       *pb.Proposal
 
 	// Additional fields extracted from the signedProposal
-	creator   []byte
-	transient map[string][]byte
-	binding   []byte
+	//creator   []byte
+	//transient map[string][]byte
+	//binding   []byte
 
 	decorations map[string][]byte
 }

@@ -20,7 +20,6 @@
 package accesscontrol
 
 import (
-	"encoding/base64"
 	"encoding/pem"
 	"sync"
 	"time"
@@ -72,22 +71,22 @@ func (r *certMapper) purge(hash certHash) {
 	delete(r.m, hash)
 }
 
-func certKeyPairFromString(privKey string, pubKey string) (*certKeyPair, error) {
-	priv, err := base64.StdEncoding.DecodeString(privKey)
-	if err != nil {
-		return nil, err
-	}
-	pub, err := base64.StdEncoding.DecodeString(pubKey)
-	if err != nil {
-		return nil, err
-	}
-	return &certKeyPair{
-		CertKeyPair: &CertKeyPair{
-			Key:  priv,
-			Cert: pub,
-		},
-	}, nil
-}
+//func certKeyPairFromString(privKey string, pubKey string) (*certKeyPair, error) {
+//	priv, err := base64.StdEncoding.DecodeString(privKey)
+//	if err != nil {
+//		return nil, err
+//	}
+//	pub, err := base64.StdEncoding.DecodeString(pubKey)
+//	if err != nil {
+//		return nil, err
+//	}
+//	return &certKeyPair{
+//		CertKeyPair: &CertKeyPair{
+//			Key:  priv,
+//			Cert: pub,
+//		},
+//	}, nil
+//}
 
 func (r *certMapper) genCert(name string) (*certKeyPair, error) {
 	keyPair, err := r.keyGen()
