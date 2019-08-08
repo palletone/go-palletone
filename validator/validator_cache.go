@@ -34,7 +34,7 @@ type ValidatorCache struct {
 	cache palletcache.ICache
 }
 
-var expireSeconds = 60
+var expireSeconds = 600
 var prefixTx = []byte("VT")
 var prefixUnit = []byte("VU")
 var prefixHeader = []byte("VH")

@@ -502,6 +502,12 @@ var (
 	//		Usage: "Dag dbname",
 	//		Value: ptn.DefaultConfig.Dag.DbName,
 	//	}
+	DagValue3Flag = cli.IntFlag{
+		Name:  "dag.dbcache",
+		Usage: "Dag dbcache",
+		Value: ptn.DefaultConfig.Dag.DbCache,
+	}
+
 	LogOutputPathFlag = cli.StringFlag{
 		Name:  "log.path",
 		Usage: "Log path",
@@ -960,7 +966,9 @@ func SetDagConfig(ctx *cli.Context, cfg *dagconfig.Config, dataDir string) {
 	//	if ctx.GlobalIsSet(DagValue2Flag.Name) {
 	//		cfg.DbName = ctx.GlobalString(DagValue2Flag.Name)
 	//	}
-
+	if ctx.GlobalIsSet(DagValue3Flag.Name) {
+		cfg.DbCache = ctx.GlobalInt(DagValue3Flag.Name)
+	}
 	// 重新计算为绝对路径
 	if !filepath.IsAbs(cfg.DbPath) {
 		path := filepath.Join(dataDir, cfg.DbPath)
@@ -1184,11 +1192,11 @@ func RegisterPtnService(stack *node.Node, cfg *ptn.Config) {
 	var err error
 	if cfg.SyncMode == downloader.LightSync {
 		err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-			return light.New(ctx, cfg, configure.LPSProtocol)
+			return light.New(ctx, cfg, configure.LPSProtocol, stack.CacheDb)
 		})
 	} else {
 		err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-			fullNode, err := ptn.New(ctx, cfg)
+			fullNode, err := ptn.New(ctx, cfg, stack.CacheDb)
 			if fullNode != nil && cfg.LightServ > 0 {
 				ls, _ := light.NewLesServer(fullNode, cfg, configure.LPSProtocol)
 				fullNode.AddLesServer(ls)
