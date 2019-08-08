@@ -177,7 +177,8 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 	}
 	symbol, _, _, _, _ := gasToken.ParseAssetId()
 	protocolName := symbol
-	//asset, err := modules.NewAsset(strings.ToUpper(gasToken), modules.AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, modules.UniqueIdType_Null, modules.UniqueId{})
+	//asset, err := modules.NewAsset(strings.ToUpper(gasToken), modules.AssetType_FungibleToken,
+	// 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, modules.UniqueIdType_Null, modules.UniqueId{})
 	//if err != nil {
 	//	log.Error("ProtocolManager new asset err", err)
 	//	return nil, err
@@ -259,7 +260,8 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 		if verr != nil && !validator.IsOrphanError(verr) {
 			return verr
 		}
-		log.Debugf("Importing propagated block insert DAG End ValidateUnitExceptGroupSig, unit: %s,validated: %v", hash.String(), verr)
+		log.Debugf("Importing propagated block insert DAG End ValidateUnitExceptGroupSig, unit: %s,validated: %v",
+			hash.String(), verr)
 		return dagerrors.ErrFutureBlock
 	}
 	heighter := func(assetId modules.AssetId) uint64 {
@@ -467,7 +469,8 @@ func (pm *ProtocolManager) handle(p *peer) error {
 func (pm *ProtocolManager) LocalHandle(p *peer) error {
 	// Ignore maxPeers if this is a trusted peer
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
-		log.Debug("ProtocolManager", "handler DiscTooManyPeers:", p2p.DiscTooManyPeers, "pm.peers.Len()", pm.peers.Len(), "peers", pm.peers.GetPeers())
+		log.Debug("ProtocolManager", "handler DiscTooManyPeers:", p2p.DiscTooManyPeers,
+			"pm.peers.Len()", pm.peers.Len(), "peers", pm.peers.GetPeers())
 		return p2p.DiscTooManyPeers
 	}
 	log.Debug("PalletOne peer connected", "name", p.id, "p Trusted:", p.Peer.Info().Network.Trusted)
@@ -645,7 +648,8 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
 	// 孤儿单元是需要同步的
 	//for _, parentHash := range unit.ParentHash() {
 	//	if parent, err := pm.dag.GetUnitByHash(parentHash); err != nil || parent == nil {
-	//		log.Error("Propagating dangling block", "index", unit.Number().Index, "hash", hash, "parent_hash", parentHash.String())
+	//		log.Error("Propagating dangling block", "index", unit.Number().Index, "hash", hash,
+	// "parent_hash", parentHash.String())
 	//		return
 	//	}
 	//}
@@ -661,11 +665,13 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
 	for _, peer := range peers {
 		peer.SendNewRawUnit(unit, data)
 	}
-	log.Trace("BroadcastUnit Propagated block", "index:", unit.Header().Number.Index, "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
+	log.Trace("BroadcastUnit Propagated block", "index:", unit.Header().Number.Index,
+		"hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
 }
 
 func (pm *ProtocolManager) ElectionBroadcast(event jury.ElectionEvent, local bool) {
-	//log.Debug("ElectionBroadcast", "event num", event.Event.(jury.ElectionRequestEvent), "data", event.Event.(jury.ElectionRequestEvent).Data)
+	//log.Debug("ElectionBroadcast", "event num", event.Event.(jury.ElectionRequestEvent),
+	// "data", event.Event.(jury.ElectionRequestEvent).Data)
 	peers := pm.peers.GetPeers()
 	for _, peer := range peers {
 		peer.SendElectionEvent(event)
@@ -750,7 +756,7 @@ func (pm *ProtocolManager) ceBroadcastLoop() {
 	}
 }
 
-func (self *ProtocolManager) dockerLoop() {
+func (pm *ProtocolManager) dockerLoop() {
 	client, err := util.NewDockerClient()
 	if err != nil {
 		log.Infof("util.NewDockerClient err: %s\n", err.Error())
@@ -758,7 +764,7 @@ func (self *ProtocolManager) dockerLoop() {
 	}
 	for {
 		select {
-		case <-self.dockerQuitSync:
+		case <-pm.dockerQuitSync:
 			log.Infof("quit from docker loop")
 			return
 		case <-time.After(time.Duration(30) * time.Second):

@@ -201,14 +201,16 @@ func (pm *ProtocolManager) synchronize(peer *peer, assetId modules.AssetId, sync
 			atomic.StoreUint32(&pm.fastSync, 0)
 		}
 		atomic.StoreUint32(&pm.acceptTxs, 1)
-		log.Debug("Do not need synchronize", "local peer.index:", pindex, "local index:", number.Index, "header hash:", pHead)
+		log.Debug("Do not need synchronize", "local peer.index:", pindex, "local index:", number.Index,
+			"header hash:", pHead)
 		//TODO notice light protocol to sync corsheader
 		if syncCh != nil {
 			syncCh <- true
 		}
 		return
 	}
-	log.Debug("ProtocolManager", "synchronize local unit index:", index, "local peer index:", pindex, "header hash:", pHead)
+	log.Debug("ProtocolManager", "synchronize local unit index:", index, "local peer index:", pindex,
+		"header hash:", pHead)
 	// Otherwise try to sync with the downloader
 	mode := downloader.FullSync
 
@@ -216,7 +218,8 @@ func (pm *ProtocolManager) synchronize(peer *peer, assetId modules.AssetId, sync
 		// Fast sync was explicitly requested, and explicitly granted
 		mode = downloader.FastSync
 	}
-	log.Debug("ProtocolManager", "synchronize local unit index:", index, "peer index:", pindex, "header hash:", pHead)
+	log.Debug("ProtocolManager", "synchronize local unit index:", index, "peer index:", pindex,
+		"header hash:", pHead)
 	// Run the sync cycle, and disable fast sync if we've went past the pivot block
 	if err := pm.downloader.Synchronize(peer.id, pHead, pindex, mode, assetId); err != nil {
 		log.Debug("ptn sync downloader.", "Synchronize err:", err)
