@@ -25,7 +25,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/hexutil"
@@ -492,7 +491,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 			inter_temp, has := chain.tempdb.Load(parentHash)
 			if !has { // 分叉链
 				p_temp, _ := inter.(*ChainTempDb)
-				tempdb, _ = NewChainTempDb(p_temp.Tempdb, freecache.NewCache(1000*1024))
+				tempdb, _ = NewChainTempDb(p_temp.Tempdb, chain.cache)
 			} else {
 				tempdb = inter_temp.(*ChainTempDb)
 			}
@@ -544,7 +543,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 			main_temp := new(ChainTempDb)
 			inter_main, has := chain.tempdb.Load(parentHash)
 			if !has { // 分叉
-				main_temp, _ = NewChainTempDb(chain.db, freecache.NewCache(1000*1024))
+				main_temp, _ = NewChainTempDb(chain.db, chain.cache)
 				forks := chain.getForkUnits(unit)
 				for i := 0; i < len(forks)-1; i++ {
 					main_temp, _ = main_temp.AddUnit(forks[i], chain.saveHeaderOnly)

@@ -28,6 +28,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -60,7 +61,7 @@ type UnitDag4Test struct {
 func NewTxPool4Test() *TxPool {
 	//l := log.NewTestLog()
 	testDag := NewUnitDag4Test()
-	return NewTxPool(testTxPoolConfig, testDag)
+	return NewTxPool(testTxPoolConfig, freecache.NewCache(1*1024*1024), testDag)
 }
 
 func NewUnitDag4Test() *UnitDag4Test {
@@ -251,7 +252,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 		utxodb.SaveUtxoEntity(&outpoint, utxo)
 	}
 
-	pool := NewTxPool(config, unitchain)
+	pool := NewTxPool(config, freecache.NewCache(1*1024*1024), unitchain)
 	defer pool.Stop()
 
 	var pending_cache, queue_cache, all, origin int

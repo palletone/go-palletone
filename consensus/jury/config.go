@@ -73,6 +73,7 @@ var DefaultConfig = Config{
 	ContractSigNum: DefaultContractSigNum,
 	ElectionNum:    DefaultElectionNum,
 	Accounts: []*AccountConf{
+		&AccountConf{},
 	},
 }
 

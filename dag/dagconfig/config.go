@@ -38,6 +38,7 @@ var (
 
 var DefaultConfig = Config{
 	DbPath:                       "./leveldb",
+	DbCache:                      30 * 1024 * 1024, // cache size: 50mb  31,457,280‬
 	UtxoIndex:                    true,
 	MemoryUnitSize:               1280,
 	IrreversibleHeight:           1, // 单节点memdag正常缓存区块，需要将该值设置为1
@@ -53,7 +54,7 @@ var DefaultConfig = Config{
 // global configuration of dag modules
 type Config struct {
 	DbPath    string
-	DbCache   int
+	DbCache   int // cache db size
 	DbHandles int
 
 	// cache
