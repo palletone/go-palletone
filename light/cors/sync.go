@@ -207,7 +207,6 @@ func (pm *ProtocolManager) fetchHeader() (*modules.Header, error) {
 			return nil, errTimeout
 		}
 	}
-	return nil, nil
 }
 
 func (pm *ProtocolManager) PullSync() {
@@ -260,7 +259,6 @@ func (pm *ProtocolManager) pullSync(peer *peer) {
 	}
 
 	if err := pm.downloader.Synchronize(peer.id, hash, index, downloader.LightSync, modules.PTNCOIN); err != nil {
-		log.Debug("ptn sync downloader.", "Synchronise err:", err)
-		return
+		log.Debug("ptn sync downloader.", "Synchronize err:", err)
 	}
 }

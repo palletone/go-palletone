@@ -66,6 +66,13 @@ func errResp(code errCode, format string, v ...interface{}) error {
 	return fmt.Errorf("%v - %v", code, fmt.Sprintf(format, v...))
 }
 
+type ProofReq struct {
+	BHash       common.Hash
+	AccKey, Key []byte
+	FromLevel   uint
+	Index       string
+}
+
 type BlockChain interface {
 	//Config() *params.ChainConfig
 	HasHeader(hash common.Hash, number uint64) bool
@@ -96,13 +103,13 @@ type ProtocolManager struct {
 	dag     dag.IDag
 	assetId modules.AssetId
 	//chainDb     ethdb.Database
-	odr        *LesOdr
+	//odr        *LesOdr
 	server     *LesServer
 	serverPool *serverPool
 	genesis    *modules.Unit
 	//lesTopic   discv5.Topic
-	reqDist   *requestDistributor
-	retriever *retrieveManager
+	reqDist *requestDistributor
+	//retriever *retrieveManager
 
 	downloader *downloader.Downloader
 	fetcher    *LightFetcher

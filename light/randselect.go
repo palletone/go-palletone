@@ -21,9 +21,10 @@ import (
 	"math/rand"
 )
 
-// wrsItem interface should be implemented by any entries that are to be selected from
-// a weightedRandomSelect set. Note that recalculating monotonously decreasing item
-// weights on-demand (without constantly calling update) is allowed
+//
+//// wrsItem interface should be implemented by any entries that are to be selected from
+//// a weightedRandomSelect set. Note that recalculating monotonously decreasing item
+//// weights on-demand (without constantly calling update) is allowed
 type wrsItem interface {
 	Weight() int64
 }

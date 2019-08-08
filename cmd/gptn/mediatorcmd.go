@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developer Albert·Gou <dev@pallet.one>
  * @date 2018
@@ -170,7 +171,7 @@ func listMediators(ctx *cli.Context) error {
 		return err
 	}
 
-	dag, err := dag.NewDag(Dbconn, false)
+	dag, err := dag.NewDag(Dbconn, node.CacheDb, false)
 	if err != nil {
 		fmt.Println("leveldb init failed!")
 		return err
