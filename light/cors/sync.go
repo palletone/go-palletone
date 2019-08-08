@@ -259,7 +259,7 @@ func (pm *ProtocolManager) pullSync(peer *peer) {
 		index = lheader.Number.Index
 	}
 
-	if err := pm.downloader.Synchronise(peer.id, hash, index, downloader.LightSync, modules.PTNCOIN); err != nil {
+	if err := pm.downloader.Synchronize(peer.id, hash, index, downloader.LightSync, modules.PTNCOIN); err != nil {
 		log.Debug("ptn sync downloader.", "Synchronise err:", err)
 		return
 	}

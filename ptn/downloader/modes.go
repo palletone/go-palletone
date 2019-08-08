@@ -18,7 +18,7 @@ package downloader
 
 import "fmt"
 
-// SyncMode represents the synchronisation mode of the downloader.
+// SyncMode represents the synchronization mode of the downloader.
 type SyncMode int
 
 const (
