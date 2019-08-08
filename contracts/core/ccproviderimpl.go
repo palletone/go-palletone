@@ -107,7 +107,7 @@ func (c *ccProviderImpl) Stop(ctxt context.Context, cccid interface{}, spec *pb.
 
 func (c *ccProviderImpl) Destroy(ctxt context.Context, cccid interface{}, spec *pb.ChaincodeDeploymentSpec) error {
 	if theChaincodeSupport != nil {
-		return theChaincodeSupport.Destory(ctxt, cccid.(*ccProviderContextImpl).ctx, spec)
+		return theChaincodeSupport.Destroy(ctxt, cccid.(*ccProviderContextImpl).ctx, spec)
 	}
-	return errors.New("Destory:ChaincodeSupport not initialized")
+	return errors.New("Destroy:ChaincodeSupport not initialized")
 }
