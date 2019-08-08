@@ -357,7 +357,7 @@ func _getBTCToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//
-	btcAmount, btcAddr, err, outputs := getDepositBTCInfo(btcTxHash, stub)
+	btcAmount, btcAddr, outputs, err := getDepositBTCInfo(btcTxHash, stub)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Have get token\"}"
 		return shim.Success([]byte(jsonResp))
