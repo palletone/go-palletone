@@ -63,7 +63,7 @@ func (pm *ProtocolManager) syncTransactions(p *peer) {
 
 // txsyncLoop takes care of the initial transaction sync for each new
 // connection. When a new peer appears, we relay all currently pending
-// transactions. In order to minimise egress bandwidth usage, we send
+// transactions. In order to minimize egress bandwidth usage, we send
 // the transactions in small packs to one peer at a time.
 func (pm *ProtocolManager) txsyncLoop() {
 	var (
@@ -132,7 +132,7 @@ func (pm *ProtocolManager) txsyncLoop() {
 	}
 }
 
-// syncer is responsible for periodically synchronising with the network, both
+// syncer is responsible for periodically synchronizing with the network, both
 // downloading hashes and blocks as well as handling the announcement handler.
 func (pm *ProtocolManager) syncer(syncCh chan bool) {
 	// Start and ensure cleanup of sync mechanisms
@@ -140,7 +140,7 @@ func (pm *ProtocolManager) syncer(syncCh chan bool) {
 	defer pm.fetcher.Stop()
 	defer pm.downloader.Terminate()
 
-	// Wait for different events to fire synchronisation operations
+	// Wait for different events to fire synchronization operations
 	forceSync := time.NewTicker(forceSyncCycle)
 	defer forceSync.Stop()
 
@@ -181,7 +181,7 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId, sync
 	defer log.Debug("End ProtocolManager synchronise", "peer id:", peer.id)
 
 	// Make sure the peer's TD is higher than our own
-	//TODO compare local assetId & chainIndex whith remote peer assetId & chainIndex
+	//TODO compare local assetId & chainIndex with remote peer assetId & chainIndex
 	currentUnit := pm.dag.GetCurrentUnit(assetId)
 	if currentUnit == nil {
 		log.Error("synchronise currentUnit is nil have not genesis")
@@ -220,7 +220,7 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId, sync
 	log.Debug("ProtocolManager", "synchronise local unit index:", index, "peer index:", pindex, "header hash:", pHead)
 	// Run the sync cycle, and disable fast sync if we've went past the pivot block
 	if err := pm.downloader.Synchronize(peer.id, pHead, pindex, mode, assetId); err != nil {
-		log.Debug("ptn sync downloader.", "Synchronise err:", err)
+		log.Debug("ptn sync downloader.", "Synchronize err:", err)
 		return
 	}
 

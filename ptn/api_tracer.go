@@ -19,22 +19,15 @@ package ptn
 import (
 	//"bytes"
 	"context"
-	//"errors"
-	//"fmt"
-	//"io/ioutil"
-	//"runtime"
-	//"sync"
-	"time"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/rpc"
 )
 
 const (
 	// defaultTraceTimeout is the amount of time a single transaction can execute
 	// by default before being forcefully aborted.
-	defaultTraceTimeout = 5 * time.Second
+	//defaultTraceTimeout = 5 * time.Second
 
 	// defaultTraceReexec is the number of blocks the tracer is willing to go back
 	// and reexecute to produce missing historical state necessary to run a specific
@@ -66,11 +59,11 @@ type txTraceResult struct {
 
 // blockTraceResult represets the results of tracing a single block when an entire
 // chain is being traced.
-type blockTraceResult struct {
-	Block  hexutil.Uint64   `json:"block"`  // Block number corresponding to this trace
-	Hash   common.Hash      `json:"hash"`   // Block hash corresponding to this trace
-	Traces []*txTraceResult `json:"traces"` // Trace results produced by the task
-}
+//type blockTraceResult struct {
+//	Block  hexutil.Uint64   `json:"block"`  // Block number corresponding to this trace
+//	Hash   common.Hash      `json:"hash"`   // Block hash corresponding to this trace
+//	Traces []*txTraceResult `json:"traces"` // Trace results produced by the task
+//}
 
 // txTraceTask represents a single transaction trace task when an entire block
 // is being traced.

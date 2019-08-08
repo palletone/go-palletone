@@ -106,8 +106,8 @@ func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 }
 
 // Info gathers and returns a collection of metadata known about a peer.
-func (p *peer) Info(protocal string) *PeerInfo {
-	asset, err := modules.NewAsset(strings.ToUpper(protocal), modules.AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, modules.UniqueIdType_Null, modules.UniqueId{})
+func (p *peer) Info(protocol string) *PeerInfo {
+	asset, err := modules.NewAsset(strings.ToUpper(protocol), modules.AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, modules.UniqueIdType_Null, modules.UniqueId{})
 	if err != nil {
 		log.Error("peer info asset err", err)
 		return &PeerInfo{}
