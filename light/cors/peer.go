@@ -52,7 +52,7 @@ type peer struct {
 	version int    // Protocol version negotiated
 	network uint64 // Network ID being on
 
-	announceType, requestAnnounceType uint64
+	requestAnnounceType uint64
 
 	id string
 
@@ -61,14 +61,14 @@ type peer struct {
 
 	announceChn chan announceData
 
-	hasBlock       func(common.Hash, uint64) bool
-	responseErrors int
+	hasBlock func(common.Hash, uint64) bool
+	//responseErrors int
 
 	//fcClient       *flowcontrol.ClientNode // nil if the peer is server only
 	//fcServer       *flowcontrol.ServerNode // nil if the peer is client only
 	//fcServerParams *flowcontrol.ServerParams
 	//fcCosts        requestCostTable
-	fullnode bool
+	//fullnode bool
 }
 
 func newPeer(version int, network uint64, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {

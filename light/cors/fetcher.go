@@ -28,19 +28,10 @@ import (
 )
 
 const (
-	blockDelayTimeout = time.Second * 10 // timeout for a peer to announce a head that has already been confirmed by others
-	maxNodeCount      = 20               // maximum number of fetcherTreeNode entries remembered for each peer
-	//retryQueue         = time.Millisecond * 100
-	//softRequestTimeout = time.Millisecond * 500
-	//hardRequestTimeout = time.Second * 10
+	maxUncleDist = 14 /*7*/ // Maximum allowed backward distance from the chain head
+	maxQueueDist = 32 // Maximum allowed distance from the chain head to queue
 
-	arriveTimeout = 500 * time.Millisecond // Time allowance before an announced block is explicitly requested
-	gatherSlack   = 100 * time.Millisecond // Interval used to collate almost-expired announces with fetches
-	fetchTimeout  = 5 * time.Second        // Maximum allotted time to return an explicitly requested block
-	maxUncleDist  = 14                     /*7*/ // Maximum allowed backward distance from the chain head
-	maxQueueDist  = 32                     // Maximum allowed distance from the chain head to queue
-	hashLimit     = 256                    // Maximum number of unique blocks a peer may have announced
-	blockLimit    = 65536                  //headersiz:1024 bytes   fetchersize:1024*1024*64bytes    blockLimit:1024*64        //64                     // Maximum number of unique blocks a peer may have delivered
+	blockLimit = 65536 //headersiz:1024 bytes   fetchersize:1024*1024*64bytes    blockLimit:1024*64                   // Maximum number of unique blocks a peer may have delivered
 )
 
 var (
@@ -51,7 +42,7 @@ var (
 type headerRetrievalFn func(common.Hash) (*modules.Header, error)
 
 // headerRequesterFn is a callback type for sending a header retrieval request.
-type headerRequesterFn func(common.Hash) error
+//type headerRequesterFn func(common.Hash) error
 
 // headerVerifierFn is a callback type to verify a block's header for fast propagation.
 type headerVerifierFn func(header *modules.Header) error
@@ -69,11 +60,11 @@ type headerInsertFn func(headers []*modules.Header) (int, error)
 type peerDropFn func(id string)
 
 // headerFilterTask represents a batch of headers needing fetcher filtering.
-type headerFilterTask struct {
-	peer    string            // The source peer of block headers
-	headers []*modules.Header // Collection of headers to filter
-	time    time.Time         // Arrival time of the headers
-}
+//type headerFilterTask struct {
+//	peer    string            // The source peer of block headers
+//	headers []*modules.Header // Collection of headers to filter
+//	time    time.Time         // Arrival time of the headers
+//}
 
 // inject represents a schedules import operation.
 type inject struct {
@@ -89,7 +80,7 @@ type LightFetcher struct {
 	inject chan *inject
 
 	//blockFilter  chan chan []*modules.Unit
-	headerFilter chan chan *headerFilterTask
+	//headerFilter chan chan *headerFilterTask
 
 	done chan common.Hash
 	quit chan struct{}
@@ -118,10 +109,10 @@ func NewLightFetcher(getHeaderByHash headerRetrievalFn, lightChainHeight lightCh
 	broadcastHeader headerBroadcasterFn, insertHeader headerInsertFn, dropPeer peerDropFn) *LightFetcher {
 	return &LightFetcher{
 		//notify:           make(chan *announce),
-		inject:       make(chan *inject),
-		headerFilter: make(chan chan *headerFilterTask),
-		done:         make(chan common.Hash),
-		quit:         make(chan struct{}),
+		inject: make(chan *inject),
+		//headerFilter: make(chan chan *headerFilterTask),
+		done: make(chan common.Hash),
+		quit: make(chan struct{}),
 
 		queue:  prque.New(),
 		queues: make(map[string]int),

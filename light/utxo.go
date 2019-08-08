@@ -43,10 +43,10 @@ const (
 	ERRUTXOsExist      = 3
 )
 
-type lpsutxo struct {
-	addr  []byte     `json:"addr"`
-	utxos [][][]byte `json:"utxos"`
-}
+//type lpsutxo struct {
+//	addr  []byte     `json:"addr"`
+//	utxos [][][]byte `json:"utxos"`
+//}
 
 type utxosRespData struct {
 	addr  string

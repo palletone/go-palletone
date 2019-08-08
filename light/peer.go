@@ -152,7 +152,7 @@ func (p *peer) waitBefore(maxCost uint64) (time.Duration, float64) {
 	return p.fcServer.CanSend(maxCost)
 }
 
-func sendRequest(w p2p.MsgWriter, msgcode, reqID, cost uint64, data interface{}) error {
+func sendRequest(w p2p.MsgWriter, msgcode, reqID uint64, data interface{}) error {
 	type req struct {
 		ReqID uint64
 		Data  interface{}
@@ -219,16 +219,16 @@ func (p *peer) SendProofs(reqID, bv uint64, proof proofsRespData) error {
 // RequestHeadersByHash fetches a batch of blocks' headers corresponding to the
 // specified header query, based on the hash of an origin block.
 func (p *peer) RequestHeadersByHash(reqID, cost uint64, origin common.Hash, amount int, skip int, reverse bool) error {
-	log.Debug("Fetching batch of headers", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse)
-	return sendRequest(p.rw, GetBlockHeadersMsg, reqID, cost, &getBlockHeadersData{Origin: hashOrNumber{Hash: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
+	log.Debug("Fetching batch of headers", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse, "cost", cost)
+	return sendRequest(p.rw, GetBlockHeadersMsg, reqID, &getBlockHeadersData{Origin: hashOrNumber{Hash: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
 }
 
 // RequestHeadersByNumber fetches a batch of blocks' headers corresponding to the
 // specified header query, based on the number of an origin block.
 func (p *peer) RequestHeadersByNumber(reqID, cost uint64, origin modules.ChainIndex, amount int, skip int, reverse bool) error {
-	log.Debug("Fetching batch of headers", "count", amount, "fromnum", origin, "skip", skip, "reverse", reverse)
+	log.Debug("Fetching batch of headers", "count", amount, "fromnum", origin, "skip", skip, "reverse", reverse, "cost", cost)
 	//return nil
-	return sendRequest(p.rw, GetBlockHeadersMsg, reqID, cost, &getBlockHeadersData{Origin: hashOrNumber{Number: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
+	return sendRequest(p.rw, GetBlockHeadersMsg, reqID, &getBlockHeadersData{Origin: hashOrNumber{Number: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
 }
 
 func (p *peer) RequestUTXOs(reqID, cost uint64, addr string) error {

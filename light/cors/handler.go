@@ -38,23 +38,9 @@ import (
 const (
 	softResponseLimit = 2 * 1024 * 1024 // Target maximum size of returned blocks, headers or node data.
 	estHeaderRlpSize  = 500             // Approximate size of an RLP encoded block header
-
-	ethVersion = 63 // equivalent eth version for the downloader
-
-	MaxHeaderFetch           = 192 // Amount of block headers to be fetched per retrieval request
-	MaxBodyFetch             = 32  // Amount of block bodies to be fetched per retrieval request
-	MaxReceiptFetch          = 128 // Amount of transaction receipts to allow fetching per request
-	MaxCodeFetch             = 64  // Amount of contract codes to allow fetching per request
-	MaxProofsFetch           = 64  // Amount of merkle proofs to be fetched per retrieval request
-	MaxHelperTrieProofsFetch = 64  // Amount of merkle proofs to be fetched per retrieval request
-	MaxTxSend                = 64  // Amount of transactions to be send per request
-	MaxTxStatus              = 256 // Amount of transactions to queried per request
-
-	disableClientRemovePeer = false
-	txChanSize              = 4096
-	forceSyncCycle          = 10 * time.Second
-	waitPushSync            = 200 * time.Millisecond
-	fsMinFullBlocks         = 64
+	MaxHeaderFetch    = 192             // Amount of block headers to be fetched per retrieval request
+	forceSyncCycle    = 10 * time.Second
+	waitPushSync      = 200 * time.Millisecond
 )
 
 // errIncompatibleConfig is returned if the requested protocols and configs are
@@ -137,7 +123,8 @@ func NewCorsProtocolManager(lightSync bool, networkId uint64, gasToken modules.A
 	// Initiate a sub-protocol for every implemented version we can handle
 	protocolVersions := ClientProtocolVersions
 	manager.SubProtocols = make([]p2p.Protocol, 0, len(protocolVersions))
-	for _, version := range protocolVersions {
+	for _, ver := range protocolVersions {
+		version := ver
 		manager.SubProtocols = append(manager.SubProtocols, p2p.Protocol{
 			Name:    "cors",
 			Version: version,
@@ -219,9 +206,7 @@ func (pm *ProtocolManager) removePeer(id string) {
 	}
 	pm.downloader.UnregisterPeer(id)
 	pm.peers.Unregister(id)
-	if peer != nil {
-		peer.Peer.Disconnect(p2p.DiscUselessPeer)
-	}
+	peer.Peer.Disconnect(p2p.DiscUselessPeer)
 }
 
 func (pm *ProtocolManager) mainchainpeers() int {
@@ -413,7 +398,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		log.Trace("Received unknown message", "code", msg.Code)
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 	}
-	return nil
+
 }
 
 // NodeInfo represents a short summary of the Palletone sub-protocol metadata
