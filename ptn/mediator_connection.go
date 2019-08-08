@@ -183,7 +183,7 @@ func (pm *ProtocolManager) delayDiscPrecedingMediator() {
 	isActive := pm.producer.LocalHaveActiveMediator()
 
 	// 2. 统计出需要断开连接的mediator节点
-	delayDiscNodes := make(map[string]*discover.Node, 0)
+	delayDiscNodes := make(map[string]*discover.Node)
 
 	activePeers := pm.dag.GetActiveMediatorNodes()
 	precedingPeers := pm.dag.GetPrecedingMediatorNodes()

@@ -22,14 +22,11 @@ import (
 	"gopkg.in/urfave/cli.v1"
 
 	"github.com/palletone/go-palletone/common"
-	"time"
 )
 
 const (
 	DefaultElectionNum      = 2 //todo
 	DefaultContractSigNum   = 2 //todo
-	DefaultPassword         = "password"
-	ContractElectionTimeOut = 5 * time.Second //second
 	MaxLengthTplName        = 64              //合约模板名字长度
 	MaxLengthTplPath        = 512             //合约模板文件路径长度
 	MaxLengthTplVersion     = 12              //合约模板版本号长度
@@ -76,8 +73,6 @@ var DefaultConfig = Config{
 	ContractSigNum: DefaultContractSigNum,
 	ElectionNum:    DefaultElectionNum,
 	Accounts: []*AccountConf{
-		//&AccountConf{core.DefaultJuryAddr, DefaultPassword},
-		&AccountConf{},
 	},
 }
 

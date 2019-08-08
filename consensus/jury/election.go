@@ -288,21 +288,8 @@ func (p *Processor) checkElectionSigRequestEventValid(evt *ElectionSigRequestEve
 		total: evt.JuryCount,
 	}
 	etor.weight = electionWeightValue(etor.total)
-	//jjhAd, _, err := p.dag.GetConfig(modules.FoundationAddress)
 	for i, e := range evt.Ele {
 		if e.Etype == 1 { //todo
-			//if err == nil && bytes.Equal(reqAddr[:], jjhAd) {
-			//	log.Debugf("[%s]checkElectionSigRequestEventValid, e.Etype == 1, ok, contractId[%s]",
-			// shortId(reqId.String()), string(contractId))
-			//	continue
-			//} else {
-			//	log.Debugf("[%s]checkElectionSigRequestEventValid, e.Etype == 1, but not jjh request addr, contractId[%s]",
-			// shortId(reqId.String()), string(contractId))
-			//	log.Debugf("[%s]checkElectionSigRequestEventValid, reqAddr[%s], jjh[%s]",
-			// shortId(reqId.String()), string(reqAddr[:]), string(jjhAd))
-			//
-			//	return false
-			//}
 			continue
 		}
 		//验证proof是否通过

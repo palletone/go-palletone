@@ -366,7 +366,8 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	case HandleDevInList:
 		return d.handleDevInList(stub, args)
 	case GetAllMediator:
-		values, err := stub.GetStateByPrefix(string(constants.MEDIATOR_INFO_PREFIX) + string(constants.DEPOSIT_BALANCE_PREFIX))
+		values, err := stub.GetStateByPrefix(string(constants.MEDIATOR_INFO_PREFIX) +
+			string(constants.DEPOSIT_BALANCE_PREFIX))
 		if err != nil {
 			log.Debugf("stub.GetStateByPrefix error: %s", err.Error())
 			return shim.Error(err.Error())
@@ -424,11 +425,11 @@ func (d *DepositChaincode) applyBecomeMediator(stub shim.ChaincodeStubInterface,
 }
 
 func (d *DepositChaincode) mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return mediatorPayToDepositContract(stub, args)
+	return mediatorPayToDepositContract(stub/*, args*/)
 }
 
 func (d *DepositChaincode) mediatorApplyQuit(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return mediatorApplyQuit(stub, args)
+	return mediatorApplyQuit(stub/*, args*/)
 }
 
 func (d *DepositChaincode) UpdateMediatorInfo(stub shim.ChaincodeStubInterface, args []string) pb.Response {

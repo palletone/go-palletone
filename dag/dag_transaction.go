@@ -248,6 +248,7 @@ func (dag *Dag) getAddrCoreUtxos(addr common.Address,
 	assetId := dagconfig.DagConfig.GetGasToken()
 	coreUtxos := make(map[modules.OutPoint]*modules.Utxo, len(allTxos))
 	for outPoint, utxo := range allTxos {
+		outPoint := outPoint
 		// 剔除非PTN资产
 		if !utxo.Asset.AssetId.Equal(assetId) {
 			continue
@@ -280,6 +281,7 @@ func (dag *Dag) getAddrCoreUtxosToken(addr common.Address, assetToken string,
 	tokenUtxos := make(map[modules.OutPoint]*modules.Utxo, len(allTxos))
 	assetId := dagconfig.DagConfig.GetGasToken()
 	for outPoint, utxo := range allTxos {
+		outPoint := outPoint
 		// 剔除非PTN资产
 		isPTN := true
 		if !utxo.Asset.AssetId.Equal(assetId) {

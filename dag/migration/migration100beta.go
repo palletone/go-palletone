@@ -56,6 +56,7 @@ func (m *Migration100_101) utxoToStxo() error {
 		return err
 	}
 	for outpoint, utxo := range utxos {
+		outpoint := outpoint
 		if utxo.IsSpent() {
 			err = dbop.DeleteUtxo(&outpoint, common.Hash{}, 0)
 			if err != nil {
@@ -188,12 +189,12 @@ func (m *Migration100_101) upgradeGP() error {
 	if err != nil {
 		return err
 	}
-	newData.ChainParameters.UccMemory = int64(UccMemory)
+	newData.ChainParameters.UccMemory = UccMemory
 	UccCpuShares, err := strconv.ParseInt(oldGp.ChainParameters.UccCpuShares, 10, 64)
 	if err != nil {
 		return err
 	}
-	newData.ChainParameters.UccCpuShares = int64(UccCpuShares)
+	newData.ChainParameters.UccCpuShares = UccCpuShares
 	UccCpuQuota, err := strconv.ParseInt(oldGp.ChainParameters.UccCpuQuota, 10, 64)
 	if err != nil {
 		return err
@@ -210,12 +211,12 @@ func (m *Migration100_101) upgradeGP() error {
 	if err != nil {
 		return err
 	}
-	newData.ChainParameters.TempUccCpuShares = int64(TempUccCpuShares)
+	newData.ChainParameters.TempUccCpuShares = TempUccCpuShares
 	TempUccCpuQuota, err := strconv.ParseInt(oldGp.ChainParameters.TempUccCpuQuota, 10, 64)
 	if err != nil {
 		return err
 	}
-	newData.ChainParameters.TempUccCpuQuota = int64(TempUccCpuQuota)
+	newData.ChainParameters.TempUccCpuQuota = TempUccCpuQuota
 
 	ContractSignatureNum, err := strconv.ParseInt(oldGp.ChainParameters.ContractSignatureNum, 10, 64)
 	if err != nil {

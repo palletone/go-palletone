@@ -695,17 +695,6 @@ func msgsCompare(msgsA []*modules.Message, msgsB []*modules.Message, msgType mod
 //		}
 //	}
 //}
-//
-//func getFileHash(tx *modules.Transaction) []byte {
-//	if tx != nil {
-//		for _, msg := range tx.TxMessages {
-//			if msg.App == modules.APP_DATA {
-//				return msg.Payload.(*modules.DataPayload).MainData
-//			}
-//		}
-//	}
-//	return nil
-//}
 
 func getContractTxType(tx *modules.Transaction) (modules.MessageType, error) {
 	if tx == nil {
@@ -776,20 +765,6 @@ func shortId(id string) string {
 	}
 	return id[0:8]
 }
-
-//func getSystemContractConfig(dag iDag, key string) int {
-//	resultStr, err := dag.GetConfig(key)
-//	if err != nil {
-//		log.Debugf("getSystemContractConfig, dag.GetConfig err: %s", err.Error())
-//		return 0
-//	}
-//	resultInt, err := strconv.Atoi(string(resultStr))
-//	if err != nil {
-//		log.Debugf("strconv.ParseInt err: %s", err.Error())
-//		return 0
-//	}
-//	return resultInt
-//}
 
 func getValidAddress(addrs []common.Address) []common.Address {
 	result := make([]common.Address, 0)

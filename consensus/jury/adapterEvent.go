@@ -80,21 +80,6 @@ func (p *Processor) saveSig(msgType uint32, reqEvt *AdapterRequestEvent) (firstS
 	return true
 }
 
-//func (p *Processor) checkJury(reqEvt *AdapterRequestEvent) bool {
-//	juryAll, err := p.getContractElectionList(reqEvt.ContractId)
-//	if err != nil {
-//		log.Debug("checkJury", "ContractId", reqEvt.ContractId, "getContractElectionList err:", err)
-//		return false
-//	}
-//	pubkeyHex := common.Bytes2Hex(reqEvt.Pubkey)
-//	for i := range juryAll {
-//		if common.Bytes2Hex(juryAll[i].PublicKey) == pubkeyHex {
-//			return true
-//		}
-//	}
-//	return false
-//}
-
 func (p *Processor) processAdapterRequestEvent(msgType uint32,
 	reqEvt *AdapterRequestEvent) (result *AdapterEvent, err error) {
 	log.Info("processAdapterRequestEvent")

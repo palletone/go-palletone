@@ -16,11 +16,6 @@
 
 package node
 
-import (
-	"os"
-	"os/user"
-)
-
 const (
 	DefaultHTTPHost = "localhost" // Default host interface for the HTTP RPC server
 	DefaultHTTPPort = 8545        // Default TCP port for the HTTP RPC server
@@ -62,12 +57,12 @@ func DefaultDataDir() string {
 	return "./palletone"
 }
 
-func homeDir() string {
-	if home := os.Getenv("HOME"); home != "" {
-		return home
-	}
-	if usr, err := user.Current(); err == nil {
-		return usr.HomeDir
-	}
-	return ""
-}
+//func homeDir() string {
+//	if home := os.Getenv("HOME"); home != "" {
+//		return home
+//	}
+//	if usr, err := user.Current(); err == nil {
+//		return usr.HomeDir
+//	}
+//	return ""
+//}
