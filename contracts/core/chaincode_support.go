@@ -266,7 +266,7 @@ func (chaincodeSupport *ChaincodeSupport) registerHandler(chaincodehandler *Hand
 	defer chaincodeSupport.runningChaincodes.Unlock()
 
 	chrte2, ok := chaincodeSupport.chaincodeHasBeenLaunched(key)
-	if ok && chrte2.handler.registered == true {
+	if ok && chrte2.handler.registered {
 		log.Debugf("duplicate registered handler(key:%s) return error", key)
 		// Duplicate, return error
 		return newDuplicateChaincodeHandlerError(chaincodehandler)
@@ -277,7 +277,7 @@ func (chaincodeSupport *ChaincodeSupport) registerHandler(chaincodehandler *Hand
 		chaincodehandler.readyNotify = chrte2.handler.readyNotify
 		chrte2.handler = chaincodehandler
 	} else {
-		if chaincodeSupport.userRunsCC == false {
+		if !chaincodeSupport.userRunsCC {
 			//this chaincode was not launched by the peer and is attempting
 			//to register. Don't allow this.
 			return errors.Errorf("peer will not accept external chaincode connection %v (except in dev mode)", chaincodehandler.ChaincodeID)
@@ -617,7 +617,7 @@ func (chaincodeSupport *ChaincodeSupport) Stop(context context.Context, cccid *c
 	//sir := container.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, Version: cccid.Version}, Timeout: 0}
 	// The line below is left for debugging. It replaces the line above to keep
 	// the chaincode container around to give you a chance to get data
-	sir := controller.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, ChainID: "" /*cccid.ChainID*/ , Version: cccid.Version}, Timeout: 0, Dontremove: dontRmCon}
+	sir := controller.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, ChainID: "" /*cccid.ChainID*/, Version: cccid.Version}, Timeout: 0, Dontremove: dontRmCon}
 	vmtype := chaincodeSupport.getVMType(cds)
 
 	_, err := controller.VMCProcess(context, vmtype, sir)
@@ -844,7 +844,6 @@ func (chaincodeSupport *ChaincodeSupport) Register(stream pb.ChaincodeSupport_Re
 func createCCMessage(contractid []byte, typ pb.ChaincodeMessage_Type, cid string, txid string, cMsg *pb.ChaincodeInput) (*pb.ChaincodeMessage, error) {
 	payload, err := proto.Marshal(cMsg)
 	if err != nil {
-		fmt.Printf(err.Error())
 		return nil, err
 	}
 	return &pb.ChaincodeMessage{Type: typ, Payload: payload, Txid: txid, ChannelId: cid, ContractId: contractid}, nil

@@ -146,11 +146,11 @@ func (e *Endorser) simulateProposal(contractid []byte, ctx context.Context, chai
 		return res, nil, nil, err
 	}
 
-	if txsim != nil {
-		//if simResult, err = txsim.GetTxSimulationResults(); err != nil {
-		//	return  nil, nil, nil, err
-		//}
-	}
+	//if txsim != nil {
+	//	//if simResult, err = txsim.GetTxSimulationResults(); err != nil {
+	//	//	return  nil, nil, nil, err
+	//	//}
+	//}
 
 	return res, simResBytes, ccevent, nil
 }
@@ -256,6 +256,7 @@ func (e *Endorser) ProcessProposal(rwM rwset.TxManager, idag dag.IDag, deployId 
 	pResp := &pb.ProposalResponse{Response: res}
 	cis, err := putils.GetChaincodeInvocationSpec(prop)
 	if err != nil {
+		return nil, nil, err
 	}
 	unit, err := RwTxResult2DagInvokeUnit(txsim, txid, cis.ChaincodeSpec.ChaincodeId.Name, deployId, cis.ChaincodeSpec.Input.Args, tmout)
 	if err != nil {

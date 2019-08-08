@@ -58,7 +58,7 @@ func Initialize(idag dag.IDag, jury core.IAdapterJury, cfg *contractcfg.Config) 
 	atomic.LoadInt32(&initFlag)
 	if initFlag > 0 {
 		//todo  tmp delete
-		//return nil, errors.New("contract already init")
+		return nil, errors.New("contract already init")
 	}
 
 	var contractCfg contractcfg.Config

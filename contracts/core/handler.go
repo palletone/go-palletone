@@ -150,10 +150,11 @@ func filterError(errFromFSMEvent error) error {
 }
 
 func isCollectionSet(collection string) bool {
-	if collection == "" {
-		return false
-	}
-	return true
+	//if collection == "" {
+	//	return false
+	//}
+	//return true
+	return collection != ""
 }
 
 func getChaincodeInstance(ccName string) *sysccprovider.ChaincodeInstance {
@@ -483,7 +484,6 @@ func (handler *Handler) deregister() {
 	if handler.registered {
 		handler.chaincodeSupport.deregisterHandler(handler)
 	}
-	return
 }
 
 func (handler *Handler) triggerNextState(msg *pb.ChaincodeMessage, send bool) {
@@ -734,7 +734,6 @@ func (handler *Handler) beforeCompletedEvent(e *fsm.Event) {
 	}
 	// Notify on channel once into READY state
 	log.Debugf("[%s]beforeCompleted - not in ready state will notify when in readystate", shorttxid(msg.Txid))
-	return
 }
 func (handler *Handler) afterGetStateByPrefix(e *fsm.Event) {
 	msg, ok := e.Args[0].(*pb.ChaincodeMessage)
@@ -794,6 +793,10 @@ func (handler *Handler) handleGetStateByPrefix(msg *pb.ChaincodeMessage) {
 			shorttxid(msg.Txid), chaincodeID, getState.Prefix, txContext.chainID)
 
 		rows, err := txContext.txsimulator.GetStatesByPrefix(msg.ContractId, chaincodeID, getState.Prefix)
+		if err != nil {
+			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(err.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
+			return
+		}
 		res, err := json.Marshal(rows)
 		//if txContext.txsimulator != nil {
 		//	res, err = txContext.txsimulator.GetState(msg.ContractId, chaincodeID, getState.Key)
@@ -1727,13 +1730,13 @@ func (handler *Handler) enterSendJury(e *fsm.Event) {
 
 		var res []byte
 		var err error
-		if isCollectionSet(sendJury.Collection) {
-			//glh
-			//res, err = txContext.txsimulator.GetPrivateData(chaincodeID, getState.Collection, outChainAddr.Key)
-		} else {
-			//glh
-			//res, err = txContext.txsimulator.GetState(chaincodeID, getState.Key)
-		}
+		//if isCollectionSet(sendJury.Collection) {
+		//	//glh
+		//	//res, err = txContext.txsimulator.GetPrivateData(chaincodeID, getState.Collection, outChainAddr.Key)
+		//} else {
+		//	//glh
+		//	//res, err = txContext.txsimulator.GetState(chaincodeID, getState.Key)
+		//}
 		//if txContext.txsimulator != nil {
 		//	res, err = txContext.txsimulator.GetState(chaincodeID, getState.OutChainName)
 		//}
@@ -1814,13 +1817,13 @@ func (handler *Handler) enterRecvJury(e *fsm.Event) {
 
 		var res []byte
 		var err error
-		if isCollectionSet(recvJury.Collection) {
-			//glh
-			//res, err = txContext.txsimulator.GetPrivateData(chaincodeID, getState.Collection, outChainAddr.Key)
-		} else {
-			//glh
-			//res, err = txContext.txsimulator.GetState(chaincodeID, getState.Key)
-		}
+		//if isCollectionSet(recvJury.Collection) {
+		//	//glh
+		//	//res, err = txContext.txsimulator.GetPrivateData(chaincodeID, getState.Collection, outChainAddr.Key)
+		//} else {
+		//	//glh
+		//	//res, err = txContext.txsimulator.GetState(chaincodeID, getState.Key)
+		//}
 		//if txContext.txsimulator != nil {
 		//	res, err = txContext.txsimulator.GetState(chaincodeID, getState.OutChainName)
 		//}

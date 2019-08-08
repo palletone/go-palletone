@@ -190,13 +190,3 @@ func systemContractDeInit() error {
 	scc.DeDeploySysCCs(chainID)
 	return nil
 }
-
-func packChaincode(chainID string, ccName string, ccPath string, ccVersion string, args [][]byte) error {
-
-	return nil
-}
-
-func recoverChaincodeFromeDb() error {
-
-	return nil
-}

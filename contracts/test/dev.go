@@ -40,13 +40,13 @@ func listAdd(cc *TempCC) error {
 	return nil
 }
 
-func listDel(templateId []byte) {
-	for e := listCC.Front(); e != nil; e = e.Next() {
-		if bytes.Equal(e.Value.(TempCC).templateId, templateId) {
-			listCC.Remove(e)
-		}
-	}
-}
+//func listDel(templateId []byte) {
+//	for e := listCC.Front(); e != nil; e = e.Next() {
+//		if bytes.Equal(e.Value.(TempCC).templateId, templateId) {
+//			listCC.Remove(e)
+//		}
+//	}
+//}
 
 func listGet(templateId []byte) (*TempCC, error) {
 	for e := listCC.Front(); e != nil; e = e.Next() {

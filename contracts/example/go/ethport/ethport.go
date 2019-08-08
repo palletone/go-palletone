@@ -131,7 +131,7 @@ func _initDepositAddr(stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//
-	recvResult, err := consult(stub, []byte("juryETHAddr"), []byte(result))
+	recvResult, _ := consult(stub, []byte("juryETHAddr"), []byte(result))
 	var juryMsg []JuryMsgAddr
 	err = json.Unmarshal(recvResult, &juryMsg)
 	if err != nil {
@@ -403,7 +403,7 @@ func _getETHToken(stub shim.ChaincodeStubInterface) pb.Response {
 			log.Debugf("PutState sigHash failed err: %s", err.Error())
 			return shim.Error("PutState sigHash failed")
 		}
-		ethAmount += uint64(depositInfo[i].Amount)
+		ethAmount += depositInfo[i].Amount
 	}
 
 	if ethAmount == 0 {
