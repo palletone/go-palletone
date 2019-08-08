@@ -43,7 +43,7 @@ type filter struct {
 	typ      Type
 	deadline *time.Timer // filter is inactiv when deadline triggers
 	hashes   []common.Hash
-	crit     FilterCriteria
+	//crit     FilterCriteria
 	//logs     []*types.Log
 	s *Subscription // associated subscription in event system
 }
@@ -51,9 +51,9 @@ type filter struct {
 // PublicFilterAPI offers support to create and manage filters. This will allow external clients to retrieve various
 // information related to the PalletOne protocol such als blocks, transactions and logs.
 type PublicFilterAPI struct {
-	backend   Backend
-	mux       *event.TypeMux
-	quit      chan struct{}
+	backend Backend
+	mux     *event.TypeMux
+	//quit      chan struct{}
 	chainDb   ptndb.Database
 	events    *EventSystem
 	filtersMu sync.Mutex

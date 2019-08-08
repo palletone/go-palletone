@@ -73,8 +73,8 @@ type peer struct {
 	*p2p.Peer
 	rw p2p.MsgReadWriter
 
-	version  int         // Protocol version negotiated
-	forkDrop *time.Timer // Timed connection dropper if forks aren't validated in time
+	version int // Protocol version negotiated
+	//forkDrop *time.Timer // Timed connection dropper if forks aren't validated in time
 
 	peermsg map[modules.AssetId]peerMsg
 	lock    sync.RWMutex
@@ -566,7 +566,7 @@ func (ps *peerSet) Close() {
 	for _, p := range ps.peers {
 		p.Disconnect(p2p.DiscQuitting)
 	}
-	for id, _ := range ps.peers {
+	for id := range ps.peers {
 		delete(ps.peers, id)
 	}
 	ps.peers = nil

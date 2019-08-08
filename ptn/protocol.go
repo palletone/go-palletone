@@ -189,8 +189,6 @@ type hashOrNumber struct {
 	Number modules.ChainIndex
 }
 
-type leafNodes []*modules.Header
-
 /*
 // EncodeRLP is a specialized encoder for hashOrNumber to encode only one of the
 // two contained union fields.
