@@ -402,18 +402,18 @@ func (mr *MockIDagMockRecorder) HasUnit(hash interface{}) *gomock.Call {
 }
 
 // UnitIsConfirmedByHash mocks base method
-func (m *MockIDag) UnitIsConfirmedByHash(hash common.Hash) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UnitIsConfirmedByHash", hash)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
+//func (m *MockIDag) UnitIsConfirmedByHash(hash common.Hash) bool {
+//	m.ctrl.T.Helper()
+//	ret := m.ctrl.Call(m, "UnitIsConfirmedByHash", hash)
+//	ret0, _ := ret[0].(bool)
+//	return ret0
+//}
 
 // UnitIsConfirmedByHash indicates an expected call of UnitIsConfirmedByHash
-func (mr *MockIDagMockRecorder) UnitIsConfirmedByHash(hash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnitIsConfirmedByHash", reflect.TypeOf((*MockIDag)(nil).UnitIsConfirmedByHash), hash)
-}
+//func (mr *MockIDagMockRecorder) UnitIsConfirmedByHash(hash interface{}) *gomock.Call {
+//	mr.mock.ctrl.T.Helper()
+//	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnitIsConfirmedByHash", reflect.TypeOf((*MockIDag)(nil).UnitIsConfirmedByHash), hash)
+//}
 
 // ParentsIsConfirmByHash mocks base method
 func (m *MockIDag) ParentsIsConfirmByHash(hash common.Hash) bool {

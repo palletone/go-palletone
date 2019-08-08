@@ -246,7 +246,7 @@ type OutputIndex struct {
 	Value int64  `json:"value"` //satoshi
 }
 
-func getDepositBTCInfo(btcTxHash string, stub shim.ChaincodeStubInterface) (uint64, string, error, []OutputIndex) {
+func getDepositBTCInfo(btcTxHash string, stub shim.ChaincodeStubInterface) (uint64, string, []OutputIndex, error) {
 	//
 	getTxHttp := BTCTransaction_getTxHTTP{btcTxHash}
 
@@ -254,27 +254,27 @@ func getDepositBTCInfo(btcTxHash string, stub shim.ChaincodeStubInterface) (uint
 	//
 	reqBytes, err := json.Marshal(getTxHttp)
 	if err != nil {
-		return 0, "", err, outputs
+		return 0, "", outputs, err
 	}
 	getTxHttpResult, err := stub.OutChainCall("btc", "GetTransactionHttp", reqBytes)
 	if err != nil {
-		return 0, "", err, outputs
+		return 0, "", outputs, err
 	}
 
 	//
 	var getTxResult GetTransactionHttpResult
 	err = json.Unmarshal(getTxHttpResult, &getTxResult)
 	if err != nil {
-		return 0, "", err, outputs
+		return 0, "", outputs, err
 	}
 	if getTxResult.Confirms < 6 {
-		return 0, "", errors.New("Confirms is less than 6, please wait"), outputs
+		return 0, "", outputs, errors.New("Confirms is less than 6, please wait")
 	}
 
 	//
 	result, _ := stub.GetState(symbolsDepositAddr)
 	if len(result) == 0 {
-		return 0, "", errors.New("DepsoitAddr is empty"), outputs
+		return 0, "", outputs, errors.New("DepsoitAddr is empty")
 	}
 	depositAddr := string(result)
 
@@ -287,10 +287,10 @@ func getDepositBTCInfo(btcTxHash string, stub shim.ChaincodeStubInterface) (uint
 		}
 	}
 	if depositAmount == 0 {
-		return 0, "", errors.New("Deposit amount is empty"), outputs
+		return 0, "", outputs, errors.New("Deposit amount is empty")
 	}
 
-	return uint64(depositAmount), getTxResult.Inputs[0].Addr, nil, outputs
+	return uint64(depositAmount), getTxResult.Inputs[0].Addr, outputs, nil
 }
 
 //refer to the struct VerifyMessageParams in "github.com/palletone/adaptor/AdaptorBTC.go",

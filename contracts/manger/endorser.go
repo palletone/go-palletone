@@ -20,7 +20,6 @@
 package manger
 
 import (
-	"fmt"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	"time"
@@ -35,14 +34,14 @@ import (
 	"github.com/palletone/go-palletone/dag/rwset"
 )
 
-type chaincodeError struct {
-	status int32
-	msg    string
-}
-
-func (ce chaincodeError) Error() string {
-	return fmt.Sprintf("chaincode error (status: %d, message: %s)", ce.status, ce.msg)
-}
+//type chaincodeError struct {
+//	status int32
+//	msg    string
+//}
+//
+//func (ce chaincodeError) Error() string {
+//	return fmt.Sprintf("chaincode error (status: %d, message: %s)", ce.status, ce.msg)
+//}
 
 //var log = flogging.MustGetLogger("ccmanger")
 

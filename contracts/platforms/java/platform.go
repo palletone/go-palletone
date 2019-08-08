@@ -61,7 +61,7 @@ func getBuildCmd(codePackage []byte) (string, error) {
 			return "", errors.New("Build file not found")
 		}
 
-		if cmd, ok := buildCmds[header.Name]; ok == true {
+		if cmd, ok := buildCmds[header.Name]; ok {
 			return cmd, nil
 		}
 	}

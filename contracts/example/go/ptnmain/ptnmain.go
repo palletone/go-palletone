@@ -212,7 +212,7 @@ func _payoutPTN(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	if curHeight == 0 || err != nil {
 		return shim.Error("getHeight failed")
 	}
-	blockNum, err := strconv.ParseUint(txResult.BlockNumber, 10, 64)
+	blockNum, _ := strconv.ParseUint(txResult.BlockNumber, 10, 64)
 	if curHeight-blockNum < 1 {
 		log.Debugf("Need more confirms")
 		return shim.Error("Need more confirms")

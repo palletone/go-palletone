@@ -810,7 +810,7 @@ func _withdrawPrepare(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 	log.Debugf("tempHashHex:%s", tempHashHex)
 
 	//协商交易
-	recvResult, err := consult(stub, []byte(tempHashHex), []byte("rawTx"))
+	recvResult, _ := consult(stub, []byte(tempHashHex), []byte("rawTx"))
 	var juryMsg []JuryMsgAddr
 	err = json.Unmarshal(recvResult, &juryMsg)
 	if err != nil {
@@ -866,6 +866,9 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	// 检查交易
 	var prepare WithdrawPrepare
 	err := json.Unmarshal(result, &prepare)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
 	if len(prepare.Unspends) == 0 {
 		jsonResp := "check Unspends failed"
 		return shim.Error(jsonResp)
@@ -907,7 +910,7 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	log.Debugf("tempHashHex:%s", tempHashHex)
 
 	//协商交易
-	recvResult, err := consult(stub, []byte(tempHashHex), []byte(rawTxSign))
+	recvResult, _ := consult(stub, []byte(tempHashHex), []byte(rawTxSign))
 	var juryMsg []JuryMsgAddr
 	err = json.Unmarshal(recvResult, &juryMsg)
 	if err != nil {

@@ -95,7 +95,7 @@ type Node struct {
 
 	//log log.ILogger
 	//for genesis 2018-8-14
-	dbpath string
+	//dbpath string
 }
 
 // New creates a new P2P node, ready for protocol registration.
@@ -407,7 +407,8 @@ func (n *Node) startHTTP(endpoint string, apis []rpc.API, modules []string, cors
 		log.Info("HTTP endpoint StartHTTPEndpoint err:", err)
 		return err
 	}
-	log.Info("HTTP endpoint opened", "url", fmt.Sprintf("http://%s", endpoint), "cors", strings.Join(cors, ","), "vhosts", strings.Join(vhosts, ","))
+	log.Info("HTTP endpoint opened", "url", fmt.Sprintf("http://%s", endpoint), "cors",
+		strings.Join(cors, ","), "vhosts", strings.Join(vhosts, ","))
 	// All listeners booted successfully
 	n.httpEndpoint = endpoint
 	n.httpListener = listener
