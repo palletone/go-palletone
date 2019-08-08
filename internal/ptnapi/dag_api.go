@@ -106,7 +106,7 @@ func (s *PublicDagAPI) GetHeaderByHash(ctx context.Context, condition string) (s
 	content, err := json.Marshal(info)
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetHeaderByHash Marshal err:", err, "hash", hash.String())
-		return "Marshal err", err
+		return "info Marshal err", err
 	}
 	return string(content), nil
 }
@@ -152,7 +152,7 @@ func (s *PublicDagAPI) GetUnitByHash(ctx context.Context, condition string) stri
 	content, err := json.Marshal(jsonUnit)
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetUnitByHash Marshal err:", err, "unit:", *unit)
-		return "Marshal err"
+		return "jsonUnit Marshal err"
 	}
 	return string(content)
 }
@@ -180,7 +180,7 @@ func (s *PublicDagAPI) GetUnitByNumber(ctx context.Context, condition string) st
 	content, err := json.Marshal(jsonUnit)
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetUnitByNumber Marshal err:", err, "unit:", *unit)
-		return "Marshal err"
+		return "json UnitMarshal err"
 	}
 	return string(content)
 }
@@ -226,7 +226,7 @@ func (s *PublicDagAPI) GetFastUnitIndex(ctx context.Context, assetid string) str
 	content, err := json.Marshal(result)
 	if err != nil {
 		log.Info("PublicDagAPI", "GetFastUnitIndex Marshal err:", err)
-		return "Marshal err"
+		return "result Marshal err"
 	}
 	return string(content)
 }
@@ -253,7 +253,7 @@ func (s *PublicDagAPI) GetUnitSummaryByNumber(ctx context.Context, condition str
 	content, err := json.Marshal(jsonUnit)
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetUnitByNumber Marshal err:", err, "unit:", *unit)
-		return "Marshal err"
+		return "json Unit Marshal err"
 	}
 	return string(content)
 }

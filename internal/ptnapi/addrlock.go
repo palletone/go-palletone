@@ -18,13 +18,10 @@ package ptnapi
 
 import (
 	"encoding/hex"
-	"fmt"
-	"math"
 	"sync"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 )
 
@@ -57,11 +54,13 @@ func (l *AddrLocker) LockAddr(address common.Address) {
 func (l *AddrLocker) UnlockAddr(address common.Address) {
 	l.lock(address).Unlock()
 }
-func rpcDecodeHexError(gotHex string) *ptnjson.RPCError {
-	return ptnjson.NewRPCError(ptnjson.ErrRPCDecodeHexString,
-		fmt.Sprintf("Argument must be hexadecimal string (not %q)",
-			gotHex))
-}
+
+//func rpcDecodeHexError(gotHex string) *ptnjson.RPCError {
+//	return ptnjson.NewRPCError(ptnjson.ErrRPCDecodeHexString,
+//		fmt.Sprintf("Argument must be hexadecimal string (not %q)",
+//			gotHex))
+//}
+
 func internalRPCError(errStr, context string) *ptnjson.RPCError {
 	logStr := errStr
 	if context != "" {
@@ -145,12 +144,12 @@ type SignTransactionParams struct {
 
 // isNullOutpoint determines whether or not a previous transaction output point
 // is set.
-func isNullOutpoint(outpoint *modules.OutPoint) bool {
-	if outpoint.OutIndex == math.MaxUint32 && outpoint.TxHash == zeroHash {
-		return true
-	}
-	return false
-}
+//func isNullOutpoint(outpoint *modules.OutPoint) bool {
+//	if outpoint.OutIndex == math.MaxUint32 && outpoint.TxHash == zeroHash {
+//		return true
+//	}
+//	return false
+//}
 
 //type SignTransactionResult struct {
 //        TransactionHex string `json:"transactionhex"`
