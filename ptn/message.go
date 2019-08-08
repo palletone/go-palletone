@@ -357,7 +357,8 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 
 	// append by Albert·Gou
 	timestamp := time.Unix(unit.Timestamp(), 0)
-	latency := time.Now().Sub(timestamp)
+	//latency := time.Now().Sub(timestamp)
+	latency := time.Since(timestamp)
 	if latency < -5*time.Second {
 		errStr := fmt.Sprintf("Rejecting unit #%v with timestamp(%v) in the future signed by %v",
 			unit.NumberU64(), timestamp.Format("2006-01-02 15:04:05"), unit.Author().Str())
@@ -426,7 +427,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 			log.Debug("ProtocolManager", "NewBlockMsg synchronize request.Index:", requestNumber.Index,
 				"current unit index+1:", currentUnitIndex+1)
 			go func() {
-				pm.synchronise(p, unit.Number().AssetID, nil)
+				pm.synchronize(p, unit.Number().AssetID, nil)
 			}()
 		}
 	}

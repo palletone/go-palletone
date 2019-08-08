@@ -54,6 +54,8 @@ import (
 	"sort"
 )
 
+const channelId = "palletone"
+
 // PtnApiBackend implements ethapi.Backend for full nodes
 type PtnApiBackend struct {
 	ptn *PalletOne
@@ -571,21 +573,21 @@ func (b *PtnApiBackend) GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson,
 }
 
 func (b *PtnApiBackend) ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi, ccLanguage string) ([]byte, error) {
-	channelId := "palletone"
+	//channelId := "palletone"
 	payload, err := b.ptn.contract.Install(channelId, ccName, ccPath, ccVersion, ccDescription, ccAbi, ccLanguage)
 	return payload.TemplateId, err
 }
 
 func (b *PtnApiBackend) ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error) {
 	log.Debugf("======>ContractDeploy:tmId[%s]txid[%s]", hex.EncodeToString(templateId), txid)
-	channelId := "palletone"
+	//channelId := "palletone"
 	_, payload, err := b.ptn.contract.Deploy(rwset.RwM, channelId, templateId, txid, args, timeout)
 	return payload.ContractId, err
 }
 
 func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) ([]byte, error) {
 	log.Debugf("======>ContractInvoke:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
-	channelId := "palletone"
+	//channelId := "palletone"
 	unit, err := b.ptn.contract.Invoke(rwset.RwM, channelId, deployId, txid, args, timeout)
 	if err != nil {
 		return nil, err

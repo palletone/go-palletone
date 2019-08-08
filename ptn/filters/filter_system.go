@@ -25,7 +25,6 @@ import (
 	"sync"
 	"time"
 
-	ethereum "github.com/palletone/go-palletone"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/rpc"
@@ -56,15 +55,15 @@ const (
 
 const (
 
-	// txChanSize is the size of channel listening to TxPreEvent.
-	// The number is referenced from the size of tx pool.
-	txChanSize = 4096
-	// rmLogsChanSize is the size of channel listening to RemovedLogsEvent.
-	rmLogsChanSize = 10
-	// logsChanSize is the size of channel listening to LogsEvent.
-	logsChanSize = 10
-	// chainEvChanSize is the size of channel listening to ChainEvent.
-	chainEvChanSize = 10
+// txChanSize is the size of channel listening to TxPreEvent.
+// The number is referenced from the size of tx pool.
+//txChanSize = 4096
+// rmLogsChanSize is the size of channel listening to RemovedLogsEvent.
+//rmLogsChanSize = 10
+// logsChanSize is the size of channel listening to LogsEvent.
+//logsChanSize = 10
+// chainEvChanSize is the size of channel listening to ChainEvent.
+//chainEvChanSize = 10
 )
 
 var (
@@ -72,10 +71,10 @@ var (
 )
 
 type subscription struct {
-	id        rpc.ID
-	typ       Type
-	created   time.Time
-	logsCrit  ethereum.FilterQuery
+	id      rpc.ID
+	typ     Type
+	created time.Time
+	//logsCrit  ethereum.FilterQuery
 	hashes    chan common.Hash
 	headers   chan *modules.Header
 	installed chan struct{} // closed when the filter is installed
@@ -88,7 +87,7 @@ type EventSystem struct {
 	mux       *event.TypeMux
 	backend   Backend
 	lightMode bool
-	lastHead  *modules.Header
+	//lastHead  *modules.Header
 	install   chan *subscription // install filter for event notification
 	uninstall chan *subscription // remove filter for event notification
 }
@@ -186,131 +185,4 @@ func (es *EventSystem) SubscribePendingTxEvents(hashes chan common.Hash) *Subscr
 		err:       make(chan error),
 	}
 	return es.subscribe(sub)
-}
-
-type filterIndex map[Type]map[rpc.ID]*subscription
-
-// broadcast event to filters that match criteria.
-func (es *EventSystem) broadcast(filters filterIndex, ev interface{}) {
-	if ev == nil {
-		return
-	}
-
-	switch e := ev.(type) {
-	case modules.TxPreEvent:
-		for _, f := range filters[PendingTransactionsSubscription] {
-			f.hashes <- e.Tx.Hash()
-		}
-
-	}
-}
-
-func (es *EventSystem) lightFilterNewHead(newHeader *modules.Header, callBack func(*modules.Header, bool)) {
-	/*
-		oldh := es.lastHead
-		es.lastHead = newHeader
-		if oldh == nil {
-			return
-		}
-		newh := newHeader
-		// find common ancestor, create list of rolled back and new block hashes
-		var oldHeaders, newHeaders []*modules.Header
-		for oldh.Hash() != newh.Hash() {
-			if oldh.Number.Uint64() >= newh.Number.Uint64() {
-				oldHeaders = append(oldHeaders, oldh)
-				oldh = coredata.GetHeader(es.backend.ChainDb(), oldh.ParentHash, oldh.Number.Uint64()-1)
-			}
-			if oldh.Number.Uint64() < newh.Number.Uint64() {
-				newHeaders = append(newHeaders, newh)
-				newh = coredata.GetHeader(es.backend.ChainDb(), newh.ParentHash, newh.Number.Uint64()-1)
-				if newh == nil {
-					// happens when CHT syncing, nothing to do
-					newh = oldh
-				}
-			}
-		}
-		// roll back old blocks
-		for _, h := range oldHeaders {
-			callBack(h, true)
-		}
-		// check new blocks (array is in reverse order)
-		for i := len(newHeaders) - 1; i >= 0; i-- {
-			callBack(newHeaders[i], false)
-		}
-	*/
-}
-
-// eventLoop (un)installs filters and processes mux events.
-func (es *EventSystem) eventLoop() {
-
-	var (
-		index = make(filterIndex)
-		//sub   = es.mux.Subscribe(coredata.PendingLogsEvent{})
-		// Subscribe TxPreEvent form txpool
-		txCh  = make(chan modules.TxPreEvent, txChanSize)
-		txSub = es.backend.SubscribeTxPreEvent(txCh)
-		// Subscribe RemovedLogsEvent
-		//		rmLogsCh  = make(chan core.RemovedLogsEvent, rmLogsChanSize)
-		//		rmLogsSub = es.backend.SubscribeRemovedLogsEvent(rmLogsCh)
-		//		logsCh  = make(chan []*types.Log, logsChanSize)
-		//		logsSub = es.backend.SubscribeLogsEvent(logsCh)
-		//		// Subscribe ChainEvent
-		//		chainEvCh  = make(chan core.ChainEvent, chainEvChanSize)
-		//		chainEvSub = es.backend.SubscribeChainEvent(chainEvCh)
-	)
-
-	// Unsubscribe all events
-	//defer sub.Unsubscribe()
-	defer txSub.Unsubscribe()
-	//	defer rmLogsSub.Unsubscribe()
-	//	defer logsSub.Unsubscribe()
-	//	defer chainEvSub.Unsubscribe()
-
-	for i := UnknownSubscription; i < LastIndexSubscription; i++ {
-		index[i] = make(map[rpc.ID]*subscription)
-	}
-
-	for {
-		select {
-		// Handle subscribed events
-		case ev := <-txCh:
-			es.broadcast(index, ev)
-			//		case ev := <-rmLogsCh:
-			//			es.broadcast(index, ev)
-			//		case ev := <-logsCh:
-			//			es.broadcast(index, ev)
-			//		case ev := <-chainEvCh:
-			//			es.broadcast(index, ev)
-
-		case f := <-es.install:
-			if f.typ == MinedAndPendingLogsSubscription {
-				// the type are logs and pending logs subscriptions
-				index[LogsSubscription][f.id] = f
-				index[PendingLogsSubscription][f.id] = f
-			} else {
-				index[f.typ][f.id] = f
-			}
-			close(f.installed)
-		case f := <-es.uninstall:
-			if f.typ == MinedAndPendingLogsSubscription {
-				// the type are logs and pending logs subscriptions
-				delete(index[LogsSubscription], f.id)
-				delete(index[PendingLogsSubscription], f.id)
-			} else {
-				delete(index[f.typ], f.id)
-			}
-			close(f.err)
-
-		// System stopped
-		case <-txSub.Err():
-			return
-			//		case <-rmLogsSub.Err():
-			//			return
-			//		case <-logsSub.Err():
-			//			return
-			//		case <-chainEvSub.Err():
-			//			return
-		}
-	}
-
 }
