@@ -174,7 +174,6 @@ func (d *Dag) ParentsIsConfirmByHash(hash common.Hash) bool {
 
 // return the unit by chain index
 func (d *Dag) GetUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error) {
-
 	hash, err := d.unstableUnitRep.GetHashByNumber(number)
 	if err != nil {
 		log.Debug("GetUnitByNumber dagdb.GetHashByNumber err:", "error", err)

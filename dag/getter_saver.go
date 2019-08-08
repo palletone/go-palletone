@@ -264,3 +264,7 @@ func (d *Dag) IsContractDeveloper(addr common.Address) bool {
 
 	//return d.unstableStateRep.IsContractDeveloper(addr)
 }
+
+func (d *Dag) GetUnitHash(number *modules.ChainIndex) (common.Hash, error) {
+	return d.unstableUnitRep.GetHashByNumber(number)
+}
