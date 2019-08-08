@@ -90,7 +90,7 @@ func (dagdb *DagDb) GetCommon(key []byte) ([]byte, error) {
 }
 func (dagdb *DagDb) GetCommonByPrefix(prefix []byte) map[string][]byte {
 	iter := dagdb.db.NewIteratorWithPrefix(prefix)
-	result := make(map[string][]byte, 0)
+	result := make(map[string][]byte)
 	for iter.Next() {
 		key := iter.Key()
 		value := make([]byte, 0)

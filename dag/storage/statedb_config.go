@@ -61,7 +61,7 @@ func (statedb *StateDb) GetSysParamWithoutVote() (map[string]string, error) {
 		return nil, err
 	}
 
-	if val == nil || len(val) == 0 {
+	if len(val) == 0 {
 		return nil, fmt.Errorf("data is nil")
 	}
 
@@ -82,7 +82,7 @@ func (statedb *StateDb) GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)
 		return nil, err
 	}
 
-	if val == nil || len(val) == 0 {
+	if len(val) == 0 {
 		return nil, fmt.Errorf("data is nil")
 	}
 
