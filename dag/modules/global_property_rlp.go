@@ -62,15 +62,15 @@ func (gp *GlobalProperty) getGPT() *GlobalPropertyTemp {
 	ams := make([]common.Address, 0)
 	pms := make([]common.Address, 0)
 
-	for juryAdd, _ := range gp.ActiveJuries {
+	for juryAdd := range gp.ActiveJuries {
 		ajs = append(ajs, juryAdd)
 	}
 
-	for medAdd, _ := range gp.ActiveMediators {
+	for medAdd := range gp.ActiveMediators {
 		ams = append(ams, medAdd)
 	}
 
-	for medAdd, _ := range gp.PrecedingMediators {
+	for medAdd := range gp.PrecedingMediators {
 		pms = append(pms, medAdd)
 	}
 
