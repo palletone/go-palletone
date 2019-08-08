@@ -545,7 +545,6 @@ func markTxIllegal(dag storage.IStateDb, tx *modules.Transaction) {
 	var readSet []modules.ContractReadSet
 	var contractId []byte
 
-
 	for _, msg := range tx.TxMessages {
 		switch msg.App {
 		case modules.APP_CONTRACT_DEPLOY:
@@ -578,7 +577,6 @@ func markTxsIllegal(dag storage.IStateDb, txs []*modules.Transaction) error {
 		}
 		var readSet []modules.ContractReadSet
 		var contractId []byte
-
 
 		for _, msg := range tx.TxMessages {
 			switch msg.App {
@@ -635,10 +633,10 @@ func (rep *UnitRepository) ComputeTxFeesAllocate(m common.Address, txs []*module
 //,Mediator奖励
 func (rep *UnitRepository) ComputeGenerateUnitReward(m common.Address, asset *modules.Asset) *modules.Addition {
 	a := &modules.Addition{
-		Addr: m,
+		Addr:   m,
+		Amount: ComputeGenerateUnitReward(),
+		Asset:  asset,
 	}
-	a.Amount = ComputeGenerateUnitReward()
-	a.Asset = asset
 	return a
 }
 
@@ -1198,8 +1196,7 @@ To save contract invoke state
 */
 func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, height *modules.ChainIndex,
 	txIndex uint32, msg *modules.Message, reqIndex int) bool {
-	var pl interface{}
-	pl = msg.Payload
+	pl := msg.Payload
 	payload, ok := pl.(*modules.ContractInvokePayload)
 	if !ok {
 		return false
@@ -1514,7 +1511,7 @@ func (rep *UnitRepository) createCoinbasePayment(ads []*modules.Addition) (*modu
 	payload := &modules.ContractInvokePayload{}
 	payload.ContractId = contractId
 	empty, _ := rlp.EncodeToBytes([]modules.AmountAsset{})
-	for addr, _ := range rewards {
+	for addr := range rewards {
 		key := constants.RewardAddressPrefix + addr.String()
 		_, version, _ := rep.statedb.GetContractState(contractId, key)
 		rs := modules.ContractReadSet{Key: key, Version: version}

@@ -71,7 +71,7 @@ type Dag struct {
 	Memdag          memunit.IMemDag                     // memory unit
 	PartitionMemDag map[modules.AssetId]memunit.IMemDag //其他分区的MemDag
 
-	applyLock sync.Mutex
+	//applyLock sync.Mutex
 
 	//SPV
 	rmLogsFeed    event.Feed
