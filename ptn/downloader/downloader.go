@@ -114,8 +114,8 @@ type Downloader struct {
 	dropPeer peerDropFn // Drops a peer for misbehaving
 
 	// Status
-	synchroniseMock func(id string, hash common.Hash) error // Replacement for synchronise during testing
-	synchronising   int32
+	synchroniseMock func(id string, hash common.Hash) error // Replacement for synchronize during testing
+	synchronizing   int32
 	notified        int32
 	committed       int32
 
@@ -149,7 +149,7 @@ type Downloader struct {
 	chainInsertHook func([]*fetchResult) // Method to call upon inserting a chain of blocks (possibly in multiple invocations)
 }
 
-// LightDag encapsulates functions required to synchronise a light chain.
+// LightDag encapsulates functions required to synchronize a light chain.
 type LightDag interface {
 	HasHeader(common.Hash, uint64) bool
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
@@ -260,9 +260,9 @@ func (d *Downloader) Progress() palletone.SyncProgress {
 	}
 }
 
-// Synchronising returns whether the downloader is currently retrieving blocks.
-func (d *Downloader) Synchronising() bool {
-	return atomic.LoadInt32(&d.synchronising) > 0
+// Synchronizing returns whether the downloader is currently retrieving blocks.
+func (d *Downloader) Synchronizing() bool {
+	return atomic.LoadInt32(&d.synchronizing) > 0
 }
 
 // RegisterPeer injects a new download peer into the set of block source to be
@@ -308,11 +308,11 @@ func (d *Downloader) UnregisterPeer(id string) error {
 	return nil
 }
 
-// Synchronise tries to sync up our local block chain with a remote peer, both
+// Synchronize tries to sync up our local block chain with a remote peer, both
 // adding various sanity checks as well as wrapping it with various log entries.
-func (d *Downloader) Synchronise(id string, head common.Hash, index uint64, mode SyncMode, assetId modules.AssetId) error {
+func (d *Downloader) Synchronize(id string, head common.Hash, index uint64, mode SyncMode, assetId modules.AssetId) error {
 	//return nil
-	err := d.synchronise(id, head, index, mode, assetId)
+	err := d.synchronize(id, head, index, mode, assetId)
 	switch err {
 	case nil:
 	case errBusy:
@@ -335,23 +335,23 @@ func (d *Downloader) Synchronise(id string, head common.Hash, index uint64, mode
 	return err
 }
 
-// synchronise will select the peer and use it for synchronising. If an empty string is given
+// synchronize will select the peer and use it for synchronizing. If an empty string is given
 // it will use the best peer possible and synchronize if its TD is higher than our own. If any of the
 // checks fail an error will be returned. This method is synchronous
-func (d *Downloader) synchronise(id string, hash common.Hash, index uint64, mode SyncMode, assetId modules.AssetId) error {
-	log.Debug("Enter Downloader synchronise", "assetid", assetId, "peer id:", id)
-	defer log.Debug("End Downloader synchronise", "assetid", assetId, "peer id:", id)
+func (d *Downloader) synchronize(id string, hash common.Hash, index uint64, mode SyncMode, assetId modules.AssetId) error {
+	log.Debug("Enter Downloader synchronize", "assetid", assetId, "peer id:", id)
+	defer log.Debug("End Downloader synchronize", "assetid", assetId, "peer id:", id)
 	// Mock out the synchronization if testing
 	if d.synchroniseMock != nil {
 		return d.synchroniseMock(id, hash)
 	}
-	log.Debug("Downloader->synchronise", "d.synchronising:", d.synchronising)
+	log.Debug("Downloader->synchronize", "d.synchronizing:", d.synchronizing)
 	// Make sure only one goroutine is ever allowed past this point at once
-	if !atomic.CompareAndSwapInt32(&d.synchronising, 0, 1) {
-		log.Debug("Downloader->synchronise is Busy")
+	if !atomic.CompareAndSwapInt32(&d.synchronizing, 0, 1) {
+		log.Debug("Downloader->synchronize is Busy")
 		return errBusy
 	}
-	defer atomic.StoreInt32(&d.synchronising, 0)
+	defer atomic.StoreInt32(&d.synchronizing, 0)
 
 	// Post a user notification of the sync (only once per session)
 	if atomic.CompareAndSwapInt32(&d.notified, 0, 1) {
@@ -420,7 +420,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, index uin
 		return errTooOld
 	}
 
-	log.Debug("Synchronising with the network", "peer", p.id, "assetid", assetId, "head", hash, "index", index, "mode", d.mode)
+	log.Debug("Synchronizing with the network", "peer", p.id, "assetid", assetId, "head", hash, "index", index, "mode", d.mode)
 	defer func(start time.Time) {
 		log.Debug("Synchronization terminated", "elapsed", time.Since(start), "peer", p.id)
 	}(time.Now())

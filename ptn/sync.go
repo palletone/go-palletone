@@ -219,7 +219,7 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId, sync
 	}
 	log.Debug("ProtocolManager", "synchronise local unit index:", index, "peer index:", pindex, "header hash:", pHead)
 	// Run the sync cycle, and disable fast sync if we've went past the pivot block
-	if err := pm.downloader.Synchronise(peer.id, pHead, pindex, mode, assetId); err != nil {
+	if err := pm.downloader.Synchronize(peer.id, pHead, pindex, mode, assetId); err != nil {
 		log.Debug("ptn sync downloader.", "Synchronise err:", err)
 		return
 	}

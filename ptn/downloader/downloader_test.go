@@ -348,7 +348,7 @@ func (dl *downloadTester) sync(id string, td uint64, mode SyncMode) error {
 	dl.lock.RUnlock()
 
 	// Synchronise with the chosen peer and ensure proper cleanup afterwards
-	err := dl.downloader.synchronise(id, hash, td, mode, modules.PTNCOIN)
+	err := dl.downloader.synchronize(id, hash, td, mode, modules.PTNCOIN)
 	select {
 	case <-dl.downloader.cancelCh:
 		// Ok, downloader fully cancelled after sync cycle
@@ -1582,7 +1582,7 @@ func testBlockHeaderAttackerDropping(t *testing.T, protocol int) {
 		// Simulate a synchronisation and check the required result
 		tester.downloader.synchroniseMock = func(string, common.Hash) error { return tt.result }
 
-		tester.downloader.Synchronise(id, tester.genesis.Hash(), uint64(1000), FullSync, modules.PTNCOIN)
+		tester.downloader.Synchronize(id, tester.genesis.Hash(), uint64(1000), FullSync, modules.PTNCOIN)
 		if _, ok := tester.peerHashes[id]; !ok != tt.drop {
 			t.Errorf("test %d: peer drop mismatch for %v: have %v, want %v", i, tt.result, !ok, tt.drop)
 		}
