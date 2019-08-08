@@ -116,7 +116,10 @@ func couchdbIndexFileValidator(fileName string, fileBytes []byte) error {
 // isJSON tests a string to determine if it can be parsed as valid JSON
 func isJSON(s []byte) (bool, map[string]interface{}) {
 	var js map[string]interface{}
-	return json.Unmarshal([]byte(s), &js) == nil, js
+	if err := json.Unmarshal(s, &js); err != nil {
+		return false, nil
+	}
+	return true, js
 }
 
 func validateIndexJSON(indexDefinition map[string]interface{}) error {

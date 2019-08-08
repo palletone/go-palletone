@@ -102,7 +102,7 @@ func StopUserCC(contractid []byte, chainID string, usrcc *UserChaincode, txid st
 	}
 
 	if deleteImage {
-		return ccprov.Destory(context.Background(), cccid, chaincodeDeploymentSpec)
+		return ccprov.Destroy(context.Background(), cccid, chaincodeDeploymentSpec)
 	} else {
 		return nil
 	}

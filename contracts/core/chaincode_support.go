@@ -639,12 +639,13 @@ func (chaincodeSupport *ChaincodeSupport) Stop(context context.Context, cccid *c
 	return err
 }
 
-func (chaincodeSupport *ChaincodeSupport) Destory(context context.Context, cccid *ccprovider.CCContext, cds *pb.ChaincodeDeploymentSpec) error {
+func (chaincodeSupport *ChaincodeSupport) Destroy(context context.Context, cccid *ccprovider.CCContext,
+	cds *pb.ChaincodeDeploymentSpec) error {
 	canName := cccid.GetCanonicalName()
 	if canName == "" {
 		return errors.New("chaincode name not set")
 	} else {
-		log.Debugf("destory : %+v", canName)
+		log.Debugf("destroy : %+v", canName)
 	}
 
 	sir := controller.DestroyImageReq{
@@ -663,7 +664,7 @@ func (chaincodeSupport *ChaincodeSupport) Destory(context context.Context, cccid
 
 	_, err := controller.VMCProcess(context, vmtype, sir)
 	if err != nil {
-		err = errors.WithMessage(err, "error destory container")
+		err = errors.WithMessage(err, "error destroy container")
 	}
 
 	//chaincodeSupport.runningChaincodes.Lock()
