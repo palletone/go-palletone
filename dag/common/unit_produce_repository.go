@@ -133,7 +133,8 @@ func (vts voteTallys) Swap(i, j int) {
 	vts[i], vts[j] = vts[j], vts[i]
 }
 
-func (dag *UnitProduceRepository) SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription {
+func (dag *UnitProduceRepository) SubscribeActiveMediatorsUpdatedEvent(
+	ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription {
 	return dag.activeMediatorsUpdatedScope.Track(dag.activeMediatorsUpdatedFeed.Subscribe(ch))
 }
 
@@ -360,8 +361,6 @@ func (dag *UnitProduceRepository) updateChainParameters(nextUnit *modules.Unit) 
 
 	dag.UpdateSysParams(version)
 	dag.RefreshSysParameters()
-
-	return
 }
 
 // 获取通过投票修改系统参数的结果
@@ -584,7 +583,7 @@ func (d *UnitProduceRepository) getDesiredActiveMediatorCount() int {
 	if err == nil {
 		desiredActiveMediatorStr, ok := desiredSysParams[modules.DesiredActiveMediatorCount]
 		if ok {
-			desiredActiveMediator, err := strconv.ParseUint(string(desiredActiveMediatorStr), 10, 16)
+			desiredActiveMediator, err := strconv.ParseUint(desiredActiveMediatorStr, 10, 16)
 			if err == nil {
 				activeMediator = uint8(desiredActiveMediator)
 			}
@@ -594,7 +593,7 @@ func (d *UnitProduceRepository) getDesiredActiveMediatorCount() int {
 	// 获取通过投票修改的设置
 	infos := d.getSysParamsWithVote()
 	if desiredActiveMediatorStr, ok := infos[modules.DesiredActiveMediatorCount]; ok {
-		desiredActiveMediator, err := strconv.ParseUint(string(desiredActiveMediatorStr), 10, 16)
+		desiredActiveMediator, err := strconv.ParseUint(desiredActiveMediatorStr, 10, 16)
 		if err == nil {
 			activeMediator = uint8(desiredActiveMediator)
 		}
@@ -639,8 +638,6 @@ func (dag *UnitProduceRepository) updateNextMaintenanceTime(nextUnit *modules.Un
 
 	tt := time.Unix(int64(nextMaintenanceTime), 0)
 	log.Debugf("nextMaintenanceTime: %v", tt.Format("2006-01-02 15:04:05"))
-
-	return
 }
 
 func (dag *UnitProduceRepository) updateMaintenanceFlag(newMaintenanceFlag bool) {
@@ -649,8 +646,6 @@ func (dag *UnitProduceRepository) updateMaintenanceFlag(newMaintenanceFlag bool)
 	dgp := dag.GetDynGlobalProp()
 	dgp.MaintenanceFlag = newMaintenanceFlag
 	dag.propRep.StoreDynGlobalProp(dgp)
-
-	return
 }
 
 func (dag *UnitProduceRepository) HeadUnitTime() int64 {

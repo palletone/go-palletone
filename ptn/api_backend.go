@@ -54,6 +54,8 @@ import (
 	"sort"
 )
 
+const channelId = "palletone"
+
 // PtnApiBackend implements ethapi.Backend for full nodes
 type PtnApiBackend struct {
 	ptn *PalletOne
@@ -95,7 +97,8 @@ func (b *PtnApiBackend) HeaderByNumber(ctx context.Context, blockNr rpc.BlockNum
 	return &modules.Header{}, nil
 }
 
-func (b *PtnApiBackend) StateAndHeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*state.StateDB, *modules.Header, error) {
+func (b *PtnApiBackend) StateAndHeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*state.StateDB,
+	*modules.Header, error) {
 	return &state.StateDB{}, &modules.Header{}, nil
 }
 
@@ -188,7 +191,8 @@ func (b *PtnApiBackend) Stats() (int, int, int) {
 	return b.ptn.txPool.Stats()
 }
 
-func (b *PtnApiBackend) TxPoolContent() (map[common.Hash]*modules.TxPoolTransaction, map[common.Hash]*modules.TxPoolTransaction) {
+func (b *PtnApiBackend) TxPoolContent() (map[common.Hash]*modules.TxPoolTransaction,
+	map[common.Hash]*modules.TxPoolTransaction) {
 	return b.ptn.TxPool().Content()
 }
 func (b *PtnApiBackend) Queued() ([]*modules.TxPoolTransaction, error) {
@@ -242,13 +246,6 @@ func (b *PtnApiBackend) ServiceFilter(ctx context.Context, session *bloombits.Ma
 //	return b.ptn.dag.WalletTokens(comAddr)
 //}
 //
-//func (b *PtnApiBackend) WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error) {
-//	comAddr, err := common.StringToAddress(address)
-//	if err != nil {
-//		return 0, err
-//	}
-//	return b.ptn.dag.WalletBalance(comAddr, assetid, uniqueid, chainid)
-//}
 
 // GetContract
 func (b *PtnApiBackend) GetContract(addr common.Address) (*ptnjson.ContractJson, error) {
@@ -392,7 +389,8 @@ func (b *PtnApiBackend) GetUnitsByIndex(start, end decimal.Decimal, asset string
 		number.AssetID = token
 		unit, err := b.ptn.dag.GetUnitByNumber(number)
 		if unit == nil || err != nil {
-			log.Info("PublicBlockChainAPI", "GetUnitByNumber GetUnitByNumber is nil number:", number.String(), "error", err)
+			log.Info("PublicBlockChainAPI", "GetUnitByNumber GetUnitByNumber is nil number:", number.String(),
+				"error", err)
 		}
 		//jsonUnit := ptnjson.ConvertUnit2Json(unit, s.b.Dag().GetUtxoEntry)
 		units = append(units, unit)
@@ -412,7 +410,8 @@ func (b *PtnApiBackend) GetUnitTxsInfo(hash common.Hash) ([]*ptnjson.TxSummaryJs
 	txs_json := make([]*ptnjson.TxSummaryJson, 0)
 
 	for txIdx, tx := range txs {
-		txs_json = append(txs_json, ptnjson.ConvertTx2SummaryJson(tx, hash, header.Number.Index, header.Time, uint64(txIdx), b.ptn.dag.GetTxOutput))
+		txs_json = append(txs_json, ptnjson.ConvertTx2SummaryJson(tx, hash, header.Number.Index, header.Time,
+			uint64(txIdx), b.ptn.dag.GetTxOutput))
 	}
 	return txs_json, nil
 }
@@ -527,6 +526,7 @@ func (b *PtnApiBackend) GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
 	utxos, _ := b.ptn.dag.GetAddrUtxos(address)
 	result := []*ptnjson.UtxoJson{}
 	for o, u := range utxos {
+		o := o
 		ujson := ptnjson.ConvertUtxo2Json(&o, u)
 		result = append(result, ujson)
 	}
@@ -547,6 +547,7 @@ func (b *PtnApiBackend) GetAllUtxos() ([]*ptnjson.UtxoJson, error) {
 	}
 	result := []*ptnjson.UtxoJson{}
 	for o, u := range utxos {
+		o := o
 		ujson := ptnjson.ConvertUtxo2Json(&o, u)
 		result = append(result, ujson)
 	}
@@ -570,22 +571,25 @@ func (b *PtnApiBackend) GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson,
 	return txjs, nil
 }
 
-func (b *PtnApiBackend) ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi, ccLanguage string) ([]byte, error) {
-	channelId := "palletone"
+func (b *PtnApiBackend) ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi,
+	ccLanguage string) ([]byte, error) {
+	//channelId := "palletone"
 	payload, err := b.ptn.contract.Install(channelId, ccName, ccPath, ccVersion, ccDescription, ccAbi, ccLanguage)
 	return payload.TemplateId, err
 }
 
-func (b *PtnApiBackend) ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error) {
+func (b *PtnApiBackend) ContractDeploy(templateId []byte, txid string, args [][]byte,
+	timeout time.Duration) (deployId []byte, err error) {
 	log.Debugf("======>ContractDeploy:tmId[%s]txid[%s]", hex.EncodeToString(templateId), txid)
-	channelId := "palletone"
+	//channelId := "palletone"
 	_, payload, err := b.ptn.contract.Deploy(rwset.RwM, channelId, templateId, txid, args, timeout)
 	return payload.ContractId, err
 }
 
-func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) ([]byte, error) {
+func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, args [][]byte,
+	timeout time.Duration) ([]byte, error) {
 	log.Debugf("======>ContractInvoke:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
-	channelId := "palletone"
+	//channelId := "palletone"
 	unit, err := b.ptn.contract.Invoke(rwset.RwM, channelId, deployId, txid, args, timeout)
 	if err != nil {
 		return nil, err
@@ -593,7 +597,8 @@ func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, args [][]by
 	return unit.Payload, err
 }
 
-func (b *PtnApiBackend) ContractQuery(contractId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
+func (b *PtnApiBackend) ContractQuery(contractId []byte, txid string, args [][]byte,
+	timeout time.Duration) (rspPayload []byte, err error) {
 	rsp, err := b.ptn.contract.Invoke(rwset.RwM, rwset.ChainId, contractId, txid, args, timeout)
 	rwset.RwM.CloseTxSimulator(rwset.ChainId, txid)
 	rwset.RwM.Close()
@@ -618,13 +623,18 @@ func (b *PtnApiBackend) SignAndSendRequest(addr common.Address, tx *modules.Tran
 }
 
 //
-func (b *PtnApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, description, abi, language string, addrs []common.Address) (reqId common.Hash, tplId []byte, err error) {
-	return b.ptn.contractPorcessor.ContractInstallReq(from, to, daoAmount, daoFee, tplName, path, version, description, abi, language, true, addrs)
+func (b *PtnApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName,
+	path, version string, description, abi, language string, addrs []common.Address) (reqId common.Hash,
+	tplId []byte, err error) {
+	return b.ptn.contractPorcessor.ContractInstallReq(from, to, daoAmount, daoFee, tplName, path,
+		version, description, abi, language, true, addrs)
 }
-func (b *PtnApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, extData []byte, timeout time.Duration) (common.Hash, common.Address, error) {
+func (b *PtnApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte,
+	args [][]byte, extData []byte, timeout time.Duration) (common.Hash, common.Address, error) {
 	return b.ptn.contractPorcessor.ContractDeployReq(from, to, daoAmount, daoFee, templateId, args, extData, timeout)
 }
-func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
+func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
+	contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
 	return b.ptn.contractPorcessor.ContractInvokeReq(from, to, daoAmount, daoFee, certID, contractAddress, args, timeout)
 }
 func (b *PtnApiBackend) SendContractInvokeReqTx(requestTx *modules.Transaction) (reqId common.Hash, err error) {
@@ -635,10 +645,14 @@ func (b *PtnApiBackend) SendContractInvokeReqTx(requestTx *modules.Transaction) 
 	go b.ptn.ContractBroadcast(jury.ContractEvent{Ele: nil, CType: jury.CONTRACT_EVENT_EXEC, Tx: requestTx}, true)
 	return requestTx.RequestHash(), nil
 }
-func (b *PtnApiBackend) ContractInvokeReqTokenTx(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
-	return b.ptn.contractPorcessor.ContractInvokeReqToken(from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, contractAddress, args, timeout)
+func (b *PtnApiBackend) ContractInvokeReqTokenTx(from, to, toToken common.Address, daoAmount, daoFee,
+	daoAmountToken uint64, assetToken string, contractAddress common.Address, args [][]byte,
+	timeout uint32) (reqId common.Hash, err error) {
+	return b.ptn.contractPorcessor.ContractInvokeReqToken(from, to, toToken, daoAmount, daoFee, daoAmountToken,
+		assetToken, contractAddress, args, timeout)
 }
-func (b *PtnApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, deleteImage bool) (reqId common.Hash, err error) {
+func (b *PtnApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address,
+	deleteImage bool) (reqId common.Hash, err error) {
 	return b.ptn.contractPorcessor.ContractStopReq(from, to, daoAmount, daoFee, contractId, deleteImage)
 }
 func (b *PtnApiBackend) ElectionVrf(id uint32) ([]byte, error) {
@@ -731,12 +745,14 @@ func (s *PtnApiBackend) GetProofTxInfoByHash(strtxhash string) ([][]byte, error)
 	tri, trieRootHash := core.GetTrieInfo(unit.Txs)
 
 	if err := tri.Prove(info.Triekey, 0, &info.Triepath); err != nil {
-		log.Debug("Light PalletOne", "GetProofTxInfoByHash err", err, "key", info.Triekey, "proof", info.Triepath)
+		log.Debug("Light PalletOne", "GetProofTxInfoByHash err", err, "key", info.Triekey,
+			"proof", info.Triepath)
 		return [][]byte{[]byte(fmt.Sprintf("Get Trie err %v", err))}, err
 	}
 
 	if trieRootHash.String() != unit.UnitHeader.TxRoot.String() {
-		log.Debug("Light PalletOne", "GetProofTxInfoByHash hash is not equal.trieRootHash.String()", trieRootHash.String(), "unit.UnitHeader.TxRoot.String()", unit.UnitHeader.TxRoot.String())
+		log.Debug("Light PalletOne", "GetProofTxInfoByHash hash is not equal.trieRootHash.String()",
+			trieRootHash.String(), "unit.UnitHeader.TxRoot.String()", unit.UnitHeader.TxRoot.String())
 		return [][]byte{[]byte("trie root hash is not equal")}, errors.New("hash not equal")
 	}
 
@@ -814,10 +830,12 @@ func (b *PtnApiBackend) GetContractState(contractid []byte, key string) ([]byte,
 	return b.ptn.dag.GetContractState(contractid, key)
 }
 
-func (b *PtnApiBackend) GetContractStatesByPrefix(contractid []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
+func (b *PtnApiBackend) GetContractStatesByPrefix(contractid []byte,
+	prefix string) (map[string]*modules.ContractStateValue, error) {
 	return b.ptn.dag.GetContractStatesByPrefix(contractid, prefix)
 }
-func (b *PtnApiBackend) GetAddressBalanceStatistics(token string, topN int) (*statistics.TokenAddressBalanceJson, error) {
+func (b *PtnApiBackend) GetAddressBalanceStatistics(token string, topN int) (*statistics.TokenAddressBalanceJson,
+	error) {
 	utxos, err := b.ptn.dag.GetAllUtxos()
 	if err != nil {
 		return nil, err
@@ -871,7 +889,8 @@ func (b *PtnApiBackend) GetAddressBalanceStatistics(token string, topN int) (*st
 	list := []statistics.AddressBalanceJson{}
 	for i := 0; i < topN; i++ {
 		ab := addressBalanceList[i]
-		list = append(list, statistics.AddressBalanceJson{Address: ab.Address.String(), Balance: ptnjson.FormatAssetAmountByDecimal(ab.Balance, dec)})
+		list = append(list, statistics.AddressBalanceJson{Address: ab.Address.String(),
+			Balance: ptnjson.FormatAssetAmountByDecimal(ab.Balance, dec)})
 	}
 	result.AddressBalance = list
 	return result, nil

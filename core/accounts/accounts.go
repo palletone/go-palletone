@@ -125,7 +125,8 @@ type Wallet interface {
 	//
 	// It looks up the account specified either solely via its address contained within,
 	// or optionally with the aid of any location metadata from the embedded URL field.
-	SignTxWithPassphrase(account Account, passphrase string, tx *modules.Transaction, chainID *big.Int) (*modules.Transaction, error)
+	SignTxWithPassphrase(account Account, passphrase string, tx *modules.Transaction,
+		chainID *big.Int) (*modules.Transaction, error)
 }
 
 // Backend is a "wallet provider" that may contain a batch of accounts they can

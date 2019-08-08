@@ -20,7 +20,6 @@
 package manger
 
 import (
-	"fmt"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	"time"
@@ -35,14 +34,14 @@ import (
 	"github.com/palletone/go-palletone/dag/rwset"
 )
 
-type chaincodeError struct {
-	status int32
-	msg    string
-}
-
-func (ce chaincodeError) Error() string {
-	return fmt.Sprintf("chaincode error (status: %d, message: %s)", ce.status, ce.msg)
-}
+//type chaincodeError struct {
+//	status int32
+//	msg    string
+//}
+//
+//func (ce chaincodeError) Error() string {
+//	return fmt.Sprintf("chaincode error (status: %d, message: %s)", ce.status, ce.msg)
+//}
 
 //var log = flogging.MustGetLogger("ccmanger")
 
@@ -147,11 +146,11 @@ func (e *Endorser) simulateProposal(contractid []byte, ctx context.Context, chai
 		return res, nil, nil, err
 	}
 
-	if txsim != nil {
-		//if simResult, err = txsim.GetTxSimulationResults(); err != nil {
-		//	return  nil, nil, nil, err
-		//}
-	}
+	//if txsim != nil {
+	//	//if simResult, err = txsim.GetTxSimulationResults(); err != nil {
+	//	//	return  nil, nil, nil, err
+	//	//}
+	//}
 
 	return res, simResBytes, ccevent, nil
 }
@@ -257,6 +256,7 @@ func (e *Endorser) ProcessProposal(rwM rwset.TxManager, idag dag.IDag, deployId 
 	pResp := &pb.ProposalResponse{Response: res}
 	cis, err := putils.GetChaincodeInvocationSpec(prop)
 	if err != nil {
+		return nil, nil, err
 	}
 	unit, err := RwTxResult2DagInvokeUnit(txsim, txid, cis.ChaincodeSpec.ChaincodeId.Name, deployId, cis.ChaincodeSpec.Input.Args, tmout)
 	if err != nil {

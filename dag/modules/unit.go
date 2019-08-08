@@ -198,9 +198,10 @@ func CopyHeader(h *Header) *Header {
 
 	if len(h.TxsIllegal) > 0 {
 		cpy.TxsIllegal = make([]uint16, 0)
-		for _, txsI := range h.TxsIllegal {
-			cpy.TxsIllegal = append(cpy.TxsIllegal, txsI)
-		}
+		//for _, txsI := range h.TxsIllegal {
+		//	cpy.TxsIllegal = append(cpy.TxsIllegal, txsI)
+		//}
+		cpy.TxsIllegal = append(cpy.TxsIllegal, h.TxsIllegal...)
 	}
 
 	return &cpy

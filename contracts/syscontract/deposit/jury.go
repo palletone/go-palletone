@@ -23,7 +23,7 @@ import (
 )
 
 func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) peer.Response {
-	log.Info("juryPayToDepositContract")
+	log.Debug("juryPayToDepositContract", args)
 	//  判断是否交付保证金交易
 	invokeTokens, err := isContainDepositContractAddr(stub)
 	if err != nil {
@@ -110,6 +110,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 }
 
 func juryApplyQuit(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+	log.Debug("juryApplyQuit", args)
 	err := applyQuitList(Jury, stub)
 	if err != nil {
 		log.Error("applyQuitList err: ", "error", err)

@@ -40,13 +40,13 @@ func listAdd(cc *TempCC) error {
 	return nil
 }
 
-func listDel(templateId []byte) {
-	for e := listCC.Front(); e != nil; e = e.Next() {
-		if bytes.Equal(e.Value.(TempCC).templateId, templateId) {
-			listCC.Remove(e)
-		}
-	}
-}
+//func listDel(templateId []byte) {
+//	for e := listCC.Front(); e != nil; e = e.Next() {
+//		if bytes.Equal(e.Value.(TempCC).templateId, templateId) {
+//			listCC.Remove(e)
+//		}
+//	}
+//}
 
 func listGet(templateId []byte) (*TempCC, error) {
 	for e := listCC.Front(); e != nil; e = e.Next() {
@@ -185,8 +185,8 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 
 	var mksupt manger.Support = &manger.SupportImpl{}
 	creator := []byte(chainID)
-	cc := &list2.CCInfo{}
-	var err error
+	//cc := &list2.CCInfo{}
+	//var err error
 	chain := list2.GetAllChaincode(chainID)
 	if chain != nil {
 		for k, v := range chain.CClist {
@@ -194,7 +194,7 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 			log.Infof("\n\nchaincode info =======%v", v)
 		}
 	}
-	cc, err = list2.GetChaincode(chainID, deployId)
+	cc, err := list2.GetChaincode(chainID, deployId)
 	if err != nil {
 		return nil, err
 	}

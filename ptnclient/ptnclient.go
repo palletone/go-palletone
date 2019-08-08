@@ -128,7 +128,8 @@ func (tx *rpcTransaction) UnmarshalJSON(msg []byte) error {
 }
 
 // TransactionByHash returns the transaction with the given hash.
-func (ec *Client) TransactionByHash(ctx context.Context, hash common.Hash) (tx *modules.Transaction, isPending bool, err error) {
+func (ec *Client) TransactionByHash(ctx context.Context, hash common.Hash) (tx *modules.Transaction,
+	isPending bool, err error) {
 	var json *rpcTransaction
 	err = ec.c.CallContext(ctx, &json, "ptn_getTransactionByHash", hash)
 	//	if err != nil {
@@ -139,7 +140,7 @@ func (ec *Client) TransactionByHash(ctx context.Context, hash common.Hash) (tx *
 	//		return nil, false, fmt.Errorf("server returned transaction without signature")
 	//	}
 	//setSenderFromServer(json.tx, json.From, json.BlockHash)
-	return json.tx, json.BlockNumber == nil, nil
+	return json.tx, json.BlockNumber == nil, err
 }
 
 // TransactionSender returns the sender address of the given transaction. The transaction
@@ -178,13 +179,13 @@ func (ec *Client) TransactionCount(ctx context.Context, blockHash common.Hash) (
 func (ec *Client) TransactionInBlock(ctx context.Context, blockHash common.Hash, index uint) (*modules.Transaction, error) {
 	var json *rpcTransaction
 	err := ec.c.CallContext(ctx, &json, "ptn_getTransactionByBlockHashAndIndex", blockHash, hexutil.Uint64(index))
-	if err == nil {
-		//		if json == nil {
-		//			return nil, palletone.NotFound
-		//		} else if _, r, _ := json.tx.RawSignatureValues(); r == nil {
-		//			return nil, fmt.Errorf("server returned transaction without signature")
-		//		}
-	}
+	//if err == nil {
+	//	//		if json == nil {
+	//	//			return nil, palletone.NotFound
+	//	//		} else if _, r, _ := json.tx.RawSignatureValues(); r == nil {
+	//	//			return nil, fmt.Errorf("server returned transaction without signature")
+	//	//		}
+	//}
 	//setSenderFromServer(json.tx, json.From, json.BlockHash)
 	return json.tx, err
 }
@@ -682,7 +683,7 @@ func (ec *Client) GetCommon(ctx context.Context, key string) ([]byte, error) {
 }
 
 func (ec *Client) GetCommonByPrefix(ctx context.Context, prefix string) (map[string][]byte, error) {
-	result := make(map[string][]byte, 0)
+	result := make(map[string][]byte)
 	err := ec.c.CallContext(ctx, &result, "dag_getCommonByPrefix", prefix)
 	return result, err
 }

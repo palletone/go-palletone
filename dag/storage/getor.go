@@ -32,7 +32,7 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/iterator"
 )
 
-const missingNumber = uint64(0xffffffffffffffff)
+//const missingNumber = uint64(0xffffffffffffffff)
 
 // DatabaseReader wraps the Get method of a backing data store.
 type DatabaseReader interface {

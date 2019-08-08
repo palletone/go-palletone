@@ -45,9 +45,9 @@ func init() {
 }
 
 // tracer retrieves a specific JavaScript tracer by name.
-func tracer(name string) (string, bool) {
-	if tracer, ok := all[name]; ok {
-		return tracer, true
-	}
-	return "", false
-}
+//func tracer(name string) (string, bool) {
+//	if tracer, ok := all[name]; ok {
+//		return tracer, true
+//	}
+//	return "", false
+//}

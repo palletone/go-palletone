@@ -147,7 +147,8 @@ type txPool interface {
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	AddRemote(tx *modules.Transaction) error
 	AddRemotes([]*modules.Transaction) []error
-	ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag txspool.Tag) ([]*txspool.TxDesc, error)
+	ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool,
+		tag txspool.Tag) ([]*txspool.TxDesc, error)
 	// Pending should return pending transactions.
 	// The slice should be modifiable by the caller.
 	Pending() (map[common.Hash][]*modules.TxPoolTransaction, error)
@@ -188,8 +189,6 @@ type hashOrNumber struct {
 	Hash   common.Hash // Block hash from which to retrieve headers (excludes Number)
 	Number modules.ChainIndex
 }
-
-type leafNodes []*modules.Header
 
 /*
 // EncodeRLP is a specialized encoder for hashOrNumber to encode only one of the

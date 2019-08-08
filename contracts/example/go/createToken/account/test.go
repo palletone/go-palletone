@@ -41,6 +41,7 @@ func TestAccountModel(t *testing.T) {
 	result, ok := u.Call("Tranfer", addr, []uint64{token}) //strict match
 	if !ok {
 		//check
+		fmt.Println(ok)
 	}
 	fmt.Println(result)
 

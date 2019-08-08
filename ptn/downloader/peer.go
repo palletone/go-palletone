@@ -280,7 +280,8 @@ func (p *peerConnection) HeaderCapacity(targetRTT time.Duration) int {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
-	capacity := int(math.Min(1+math.Max(1, p.headerThroughput*float64(targetRTT)/float64(time.Second)), float64(MaxHeaderFetch)))
+	capacity := int(math.Min(1+math.Max(1, p.headerThroughput*float64(targetRTT)/float64(time.Second)),
+		float64(MaxHeaderFetch)))
 	//log.Debug("downloader->peerConnection->HeaderCapacity", "capacity", capacity)
 	return capacity
 }
@@ -290,7 +291,8 @@ func (p *peerConnection) HeaderCapacity(targetRTT time.Duration) int {
 func (p *peerConnection) BlockCapacity(targetRTT time.Duration) int {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
-	capacity := int(math.Min(1+math.Max(1, p.blockThroughput*float64(targetRTT)/float64(time.Second)), float64(MaxBlockFetch)))
+	capacity := int(math.Min(1+math.Max(1, p.blockThroughput*float64(targetRTT)/float64(time.Second)),
+		float64(MaxBlockFetch)))
 	//log.Debug("downloader->peerConnection->BlockCapacity", "capacity", capacity, "p.blockThroughput:", p.blockThroughput,
 	//	"targetRTT:", targetRTT, "MaxBlockFetch:", MaxBlockFetch)
 	return capacity
@@ -514,7 +516,8 @@ func (ps *peerSet) NodeDataIdlePeers() ([]*peerConnection, int) {
 // idlePeers retrieves a flat list of all currently idle peers satisfying the
 // protocol version constraints, using the provided function to check idleness.
 // The resulting set of peers are sorted by their measure throughput.
-func (ps *peerSet) idlePeers(minProtocol, maxProtocol int, idleCheck func(*peerConnection) bool, throughput func(*peerConnection) float64) ([]*peerConnection, int) {
+func (ps *peerSet) idlePeers(minProtocol, maxProtocol int, idleCheck func(*peerConnection) bool,
+	throughput func(*peerConnection) float64) ([]*peerConnection, int) {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()
 

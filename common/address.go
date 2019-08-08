@@ -44,7 +44,8 @@ const (
 /////////// Address
 
 // Address represents the 35 byte address of an PalletOne account.
-// for personal address, start with P1 (version 0), script address start with P3(version 5), contract address start with Pc(version 28)
+// for personal address, start with P1 (version 0), script address start with P3(version 5),
+// contract address start with Pc(version 28)
 type Addresses []Address
 type Address [AddressLength]byte
 type AddressType byte
@@ -129,7 +130,7 @@ func BytesListToAddressList(b []byte) []Address {
 
 	var stringArray []string
 	json.Unmarshal(b, &stringArray)
-	var Addresses []Address
+	Addresses := make([]Address, 0, len(stringArray))
 
 	for _, str := range stringArray {
 		addr, _ := StringToAddress(str)

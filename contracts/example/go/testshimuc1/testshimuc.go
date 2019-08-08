@@ -95,18 +95,18 @@ func (t *SimpleChaincode) test_GetInvokeInfo(stub shim.ChaincodeStubInterface) p
 	// GetStringArgs，调用参数类别，string类型
 	strArgs := stub.GetStringArgs()
 	strParams := make([]string, len(strArgs))
-	for _, s := range strArgs {
-		strParams = append(strParams, s)
-	}
+	//for _, s := range strArgs {
+	strParams = append(strParams, strArgs...)
+	//}
 	resMap["GetStringArgs"] = strParams
 	/// GetFunctionAndParameters，调用参数类别，string类型
 	fn, fpArgs := stub.GetFunctionAndParameters()
 	fpRes := map[string]interface{}{}
 	fpParams := make([]string, len(strArgs))
 	fpRes["functionName"] = fn
-	for _, s := range fpArgs {
-		fpParams = append(fpParams, s)
-	}
+	//for _, s := range fpArgs {
+	fpParams = append(fpParams, fpArgs...)
+	//}
 	fpRes["parameters"] = fpParams
 	resMap["GetFunctionAndParameters"] = fpRes
 	// GetArgsSlice，调用参数列表，byte类型
@@ -189,7 +189,7 @@ func (t *SimpleChaincode) test_GetInvokeInfo(stub shim.ChaincodeStubInterface) p
 	resMap["GetInvokeParameters"] = GIP
 	// GetContractID
 	_, scontractid := stub.GetContractID()
-	resMap["GetContractID"] = string(scontractid)
+	resMap["GetContractID"] = scontractid
 
 	res, err := json.Marshal(resMap)
 	if err != nil {
@@ -468,7 +468,7 @@ func (t *SimpleChaincode) test_UseCert(stub shim.ChaincodeStubInterface) pb.Resp
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	if v != true {
+	if !v {
 		return shim.Error("Certificate used is invalid.")
 	}
 	certBytes, err := stub.GetRequesterCert()
