@@ -306,10 +306,10 @@ func (q *queue) Schedule(headers []*modules.Header, from uint64) []*modules.Head
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
-	// Insert all the headers prioritised by the contained block number
+	// Insert all the headers prioritized by the contained block number
 	inserts := make([]*modules.Header, 0, len(headers))
 	for _, header := range headers {
-		// Make sure chain order is honoured and preserved throughout
+		// Make sure chain order is honored and preserved throughout
 		hash := header.Hash()
 		//if header.Number == nil || header.Number.Uint64() != from {
 		if header.Number.Index != from {
@@ -501,7 +501,7 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 		header := taskQueue.PopItem().(*modules.Header)
 		hash := header.Hash()
 
-		// If we're the first to request this task, initialise the result container
+		// If we're the first to request this task, initialize the result container
 		//index := int(header.Number.Int64() - int64(q.resultOffset))
 		index := int(header.Number.Index - q.resultOffset)
 		if index >= len(q.resultCache) || index < 0 {
@@ -510,9 +510,9 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 		}
 		if q.resultCache[index] == nil {
 			components := 1
-			if q.mode == FastSync {
-				//components = 2
-			}
+			//if q.mode == FastSync {
+			//components = 2
+			//}
 			q.resultCache[index] = &fetchResult{
 				Pending: components,
 				Hash:    hash,

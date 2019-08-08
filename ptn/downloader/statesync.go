@@ -25,8 +25,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/trie"
-	"github.com/palletone/go-palletone/dag/state"
-	"golang.org/x/crypto/sha3"
 )
 
 // stateReq represents a batch of state fetch requests grouped together into
@@ -56,16 +54,16 @@ type stateSyncStats struct {
 }
 
 // syncState starts downloading state with the given root hash.
-func (d *Downloader) syncState(root common.Hash) *stateSync {
-	s := newStateSync(d, root)
-	select {
-	case d.stateSyncStart <- s:
-	case <-d.quitCh:
-		s.err = errCancelStateFetch
-		close(s.done)
-	}
-	return s
-}
+//func (d *Downloader) syncState(root common.Hash) *stateSync {
+//	s := newStateSync(d, root)
+//	select {
+//	case d.stateSyncStart <- s:
+//	case <-d.quitCh:
+//		s.err = errCancelStateFetch
+//		close(s.done)
+//	}
+//	return s
+//}
 
 // stateFetcher manages the active state sync and accepts requests
 // on its behalf.
@@ -234,17 +232,17 @@ type stateTask struct {
 
 // newStateSync creates a new state trie download scheduler. This method does not
 // yet start the sync. The user needs to call run to initiate.
-func newStateSync(d *Downloader, root common.Hash) *stateSync {
-	return &stateSync{
-		d:       d,
-		sched:   state.NewStateSync(root /*, d.stateDB*/),
-		keccak:  sha3.New256(),
-		tasks:   make(map[common.Hash]*stateTask),
-		deliver: make(chan *stateReq),
-		cancel:  make(chan struct{}),
-		done:    make(chan struct{}),
-	}
-}
+//func newStateSync(d *Downloader, root common.Hash) *stateSync {
+//	return &stateSync{
+//		d:       d,
+//		sched:   state.NewStateSync(root /*, d.stateDB*/),
+//		keccak:  sha3.New256(),
+//		tasks:   make(map[common.Hash]*stateTask),
+//		deliver: make(chan *stateReq),
+//		cancel:  make(chan struct{}),
+//		done:    make(chan struct{}),
+//	}
+//}
 
 // run starts the task assignment and response processing loop, blocking until
 // it finishes, and finally notifying any goroutines waiting for the loop to
@@ -475,7 +473,7 @@ func (s *stateSync) updateStats(written, duplicate, unexpected int, duration tim
 	if written > 0 || duplicate > 0 || unexpected > 0 {
 		log.Info("Imported new state entries", "count", written, "elapsed", common.PrettyDuration(duration), "processed", s.d.syncStatsState.processed, "pending", s.d.syncStatsState.pending, "retry", len(s.tasks), "duplicate", s.d.syncStatsState.duplicate, "unexpected", s.d.syncStatsState.unexpected)
 	}
-	if written > 0 {
-		//core.WriteTrieSyncProgress(s.d.stateDB, s.d.syncStatsState.processed)
-	}
+	//if written > 0 {
+	//core.WriteTrieSyncProgress(s.d.stateDB, s.d.syncStatsState.processed)
+	//}
 }
