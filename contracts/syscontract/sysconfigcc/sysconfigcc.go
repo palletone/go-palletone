@@ -116,6 +116,7 @@ func (s *SysConfigChainCode) Invoke(stub shim.ChaincodeStubInterface) peer.Respo
 }
 
 func (s *SysConfigChainCode) getVotesResult(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	log.Debug("getVotesResult", args)
 	//params check
 	//if len(args) < 1 {
 	//	return nil, fmt.Errorf("need 1 args (AssetID String)")
@@ -146,7 +147,7 @@ func (s *SysConfigChainCode) getVotesResult(stub shim.ChaincodeStubInterface, ar
 		isVoteEnd = true
 	}
 	//calculate result
-	var supportResults []*modules.SysSupportResult
+	supportResults :=make([]*modules.SysSupportResult, 0, len(topicSupports))
 	for i, oneTopicSupport := range topicSupports {
 		oneResult := &modules.SysSupportResult{}
 		oneResult.TopicIndex = uint64(i) + 1
@@ -241,7 +242,7 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 		return nil, fmt.Errorf(jsonResp)
 	}
 	//init support
-	var supports []SysTopicSupports
+	supports := make([]SysTopicSupports, 0, len(voteTopics))
 	for _, oneTopic := range voteTopics {
 		oneSupport := SysTopicSupports{TopicTitle: oneTopic.TopicTitle}
 		for _, oneOption := range oneTopic.SelectOptions {

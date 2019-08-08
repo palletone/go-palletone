@@ -479,7 +479,7 @@ func (handler *Handler) deleteTxContext(chainID, txid string) {
 	}
 }
 
-func (handler *Handler) deregister()  {
+func (handler *Handler) deregister() {
 	if handler.registered {
 		handler.chaincodeSupport.deregisterHandler(handler)
 	}
@@ -935,6 +935,7 @@ func (handler *Handler) handleGetTokenBalance(msg *pb.ChaincodeMessage) {
 			// Send response msg back to chaincode. GetState will not trigger event
 			result := []*modules.InvokeTokens{}
 			for asset, amt := range balance {
+				asset := asset
 				result = append(result, &modules.InvokeTokens{Amount: amt, Asset: &asset, Address: address.String()})
 			}
 			res, _ := rlp.EncodeToBytes(result)
@@ -1577,7 +1578,7 @@ func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 			response, execErr := handler.chaincodeSupport.Execute(ctxt, cccid, ccMsg, timeout)
 			log.Infof("----------------2-------------------------------%s\n\n\n\n\n", response)
 			log.Infof("-----------------2------------------------------%s\n\n\n\n\n", string(response.Payload))
-			//payload is marshalled and send to the calling chaincode's shim which unmarshals and
+			//payload is marshaled and send to the calling chaincode's shim which unmarshals and
 			//sends it to chaincode
 			res = nil
 			if execErr != nil {
@@ -1588,7 +1589,8 @@ func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 		}
 
 		if err != nil {
-			errHandler([]byte(err.Error()), "[%s]Failed to handle %s. Sending %s", shorttxid(msg.Txid), msg.Type.String(), pb.ChaincodeMessage_ERROR)
+			errHandler([]byte(err.Error()), "[%s]Failed to handle %s. Sending %s", shorttxid(msg.Txid),
+				msg.Type.String(), pb.ChaincodeMessage_ERROR)
 			return
 		}
 
