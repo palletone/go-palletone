@@ -1854,6 +1854,7 @@ func (handler *Handler) enterRecvJury(e *fsm.Event) {
 }
 
 func (handler *Handler) enterEstablishedState(e *fsm.Event) {
+	log.Debugf("e %s", e.Dst)
 	handler.notifyDuringStartup(true)
 }
 

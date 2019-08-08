@@ -74,7 +74,7 @@ func GetAllResourceUsageByContainerName(name string) (*docker.Stats, error) {
 	defer close(done)
 	go func() {
 		errC <- client.Stats(docker.StatsOptions{ID: con.ID, Stats: statsC, Stream: false, Done: done,
-			InactivityTimeout: time.Duration(3 * time.Second)})
+			InactivityTimeout: 3 * time.Second})
 		close(errC)
 	}()
 	var resultStats []*docker.Stats
@@ -120,7 +120,7 @@ func GetLogFromContainer(name string) string {
 		ErrorStream:       &buf,
 		Follow:            true,
 		Stderr:            true,
-		InactivityTimeout: time.Duration(3 * time.Second),
+		InactivityTimeout: 3 * time.Second,
 	}
 	log.Debugf("start docker logs")
 	err = client.Logs(logsO)
