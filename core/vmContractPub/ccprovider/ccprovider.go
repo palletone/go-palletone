@@ -482,7 +482,7 @@ func (*ChaincodeData) ProtoMessage() {}
 // should be added below if necessary
 type ChaincodeProvider interface {
 	// GetContext returns a ledger context and a tx simulator; it's the
-	// caller's responsability to release the simulator by calling its
+	// caller's responsibility to release the simulator by calling its
 	// done method once it is no longer useful
 	//glh
 	//GetContext(ledger ledger.PeerLedger, txid string) (context.Context, ledger.TxSimulator, error)
@@ -498,7 +498,7 @@ type ChaincodeProvider interface {
 	// Stop stops the chaincode given context and deployment spec
 	Stop(ctxt context.Context, cccid interface{}, spec *pb.ChaincodeDeploymentSpec, dontRmCon bool) error
 
-	Destory(ctxt context.Context, cccid interface{}, spec *pb.ChaincodeDeploymentSpec) error
+	Destroy(ctxt context.Context, cccid interface{}, spec *pb.ChaincodeDeploymentSpec) error
 }
 
 var ccFactory ChaincodeProviderFactory

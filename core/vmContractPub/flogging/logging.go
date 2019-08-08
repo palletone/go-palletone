@@ -25,20 +25,20 @@ import (
 )
 
 const (
-	pkgLogID      = "flogging"
-	defaultFormat = "%{color}%{time:2006-01-02 15:04:05.000 MST} [%{module}] %{shortfunc} -> %{level:.4s} %{id:03x}%{color:reset} %{message}"
-	defaultLevel  = "DEBUG"
+	//pkgLogID      = "flogging"
+	//defaultFormat = "%{color}%{time:2006-01-02 15:04:05.000 MST} [%{module}] %{shortfunc} -> %{level:.4s} %{id:03x}%{color:reset} %{message}"
+	defaultLevel = "DEBUG"
 )
 
 var (
 	//log        log.ILogger
 	defaultOutput *os.File
 
-	modules          map[string]string // Holds the map of all modules and their respective log level
-	peerStartModules map[string]string
+	modules map[string]string // Holds the map of all modules and their respective log level
+	//peerStartModules map[string]string
 
 	lock sync.RWMutex
-	once sync.Once
+	//once sync.Once
 )
 
 func init() {
