@@ -352,24 +352,24 @@ func ambiguousAddrRecovery(ks *keystore.KeyStore, err *keystore.AmbiguousAddrErr
 		fmt.Println("  ", a.URL)
 	}
 	fmt.Println("Testing your passphrase against all of them...")
-	var match *accounts.Account
+	var match accounts.Account
 	for _, a := range err.Matches {
 		if err := ks.Unlock(a, auth); err == nil {
-			match = &a
+			match = a
 			break
 		}
 	}
-	if match == nil {
+	if match.Address.IsZero() {
 		utils.Fatalf("None of the listed files could be unlocked.")
 	}
 	fmt.Printf("Your passphrase unlocked %s\n", match.URL)
 	fmt.Println("In order to avoid this warning, you need to remove the following duplicate key files:")
 	for _, a := range err.Matches {
-		if a != *match {
+		if a != match {
 			fmt.Println("  ", a.URL)
 		}
 	}
-	return *match
+	return match
 }
 
 // accountCreate creates a new account into the keystore defined by the CLI flags.

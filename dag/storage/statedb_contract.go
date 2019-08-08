@@ -23,7 +23,6 @@ package storage
 import (
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"reflect"
 
@@ -213,10 +212,10 @@ func (statedb *StateDb) GetContractStatesByPrefix(id []byte,
 	key := append(constants.CONTRACT_STATE_PREFIX, id...)
 	data := getprefix(statedb.db, append(key, []byte(prefix)...))
 	if len(data) == 0 {
-		return nil, errors.New(fmt.Sprintf("the contract %x state is null.", id))
+		return nil, fmt.Errorf("the contract %x state is null.", id)
 	}
 	var err error
-	result := make(map[string]*modules.ContractStateValue, 0)
+	result := make(map[string]*modules.ContractStateValue)
 	for dbkey, state_version := range data {
 		state, version, err0 := splitValueAndVersion(state_version)
 		if err0 != nil {
