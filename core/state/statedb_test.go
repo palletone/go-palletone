@@ -129,7 +129,7 @@ func TestCopy(t *testing.T) {
 		obj.AddBalance(big.NewInt(int64(i)))
 		orig.updateStateObject(obj)
 	}
-	orig.Finalise(false)
+	orig.Finalize(false)
 
 	// Copy the state, modify both in-memory
 	copy := orig.Copy()
@@ -147,10 +147,10 @@ func TestCopy(t *testing.T) {
 	// Finalise the changes on both concurrently
 	done := make(chan struct{})
 	go func() {
-		orig.Finalise(true)
+		orig.Finalize(true)
 		close(done)
 	}()
-	copy.Finalise(true)
+	copy.Finalize(true)
 	<-done
 
 	// Verify that the two states have been updated independently

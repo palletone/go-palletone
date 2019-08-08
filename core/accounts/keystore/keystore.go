@@ -271,7 +271,8 @@ func (ks *KeyStore) SignMessage(addr common.Address, msg []byte) ([]byte, error)
 }
 
 // SignTx signs the given transaction with the requested account.
-func (ks *KeyStore) SignTx(a accounts.Account, tx *modules.Transaction, chainID *big.Int) (*modules.Transaction, error) {
+func (ks *KeyStore) SignTx(a accounts.Account, tx *modules.Transaction,
+	chainID *big.Int) (*modules.Transaction, error) {
 	//R, S, V, err := ks.SigTX(tx, a.Address)
 	//if err != nil {
 	//	return nil, err
@@ -294,7 +295,8 @@ func (ks *KeyStore) SignTx(a accounts.Account, tx *modules.Transaction, chainID 
 // SignHashWithPassphrase signs hash if the private key matching the given address
 // can be decrypted with the given passphrase. The produced signature is in the
 // [R || S ] format where V is 0 or 1.
-func (ks *KeyStore) SignMessageWithPassphrase(a accounts.Account, passphrase string, msg []byte) (signature []byte, err error) {
+func (ks *KeyStore) SignMessageWithPassphrase(a accounts.Account, passphrase string,
+	msg []byte) (signature []byte, err error) {
 	_, key, err := ks.getDecryptedKey(a, passphrase)
 	if err != nil {
 		return nil, err
@@ -303,7 +305,8 @@ func (ks *KeyStore) SignMessageWithPassphrase(a accounts.Account, passphrase str
 	return crypto.MyCryptoLib.Sign(key.PrivateKey, msg)
 	//return crypto.Sign(hash, key.PrivateKey)
 }
-func (ks *KeyStore) VerifySignatureWithPassphrase(a accounts.Account, passphrase string, hash []byte, signature []byte) (pass bool, err error) {
+func (ks *KeyStore) VerifySignatureWithPassphrase(a accounts.Account, passphrase string, hash []byte,
+	signature []byte) (pass bool, err error) {
 	_, key, err := ks.getDecryptedKey(a, passphrase)
 	if err != nil {
 		return false, err
@@ -318,7 +321,8 @@ func (ks *KeyStore) VerifySignatureWithPassphrase(a accounts.Account, passphrase
 
 // SignTxWithPassphrase signs the transaction if the private key matching the
 // given address can be decrypted with the given passphrase.
-func (ks *KeyStore) SignTxWithPassphrase(a accounts.Account, passphrase string, tx *modules.Transaction, chainID *big.Int) (*modules.Transaction, error) {
+func (ks *KeyStore) SignTxWithPassphrase(a accounts.Account, passphrase string, tx *modules.Transaction,
+	chainID *big.Int) (*modules.Transaction, error) {
 	_, key, err := ks.getDecryptedKey(a, passphrase)
 	if err != nil {
 		return nil, err
@@ -523,7 +527,8 @@ func (ks *KeyStore) ImportECDSA(priv []byte, passphrase string) (accounts.Accoun
 }
 
 func (ks *KeyStore) importKey(key *Key, passphrase string) (accounts.Account, error) {
-	a := accounts.Account{Address: key.Address, URL: accounts.URL{Scheme: KeyStoreScheme, Path: ks.storage.JoinPath(keyFileName(key.Address))}}
+	a := accounts.Account{Address: key.Address, URL: accounts.URL{Scheme: KeyStoreScheme,
+		Path: ks.storage.JoinPath(keyFileName(key.Address))}}
 	if err := ks.storage.StoreKey(a.URL.Path, key, passphrase); err != nil {
 		return accounts.Account{}, err
 	}

@@ -24,7 +24,6 @@ import (
 	"fmt"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/palletone/go-palletone/core/vmContractPub/metadata"
-	"hash"
 	"io"
 	"math/big"
 	"reflect"
@@ -45,8 +44,7 @@ var availableIDgenAlgs = map[string]alg{
 }
 
 func computerHash(data []byte) (hsh []byte, err error) {
-	var hh hash.Hash
-	hh = sha256.New()
+	hh := sha256.New()
 	hh.Write(data)
 	return hh.Sum(nil), nil
 }
