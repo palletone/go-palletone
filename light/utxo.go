@@ -58,8 +58,8 @@ func NewUtxosRespData() *utxosRespData {
 }
 
 func (u *utxosRespData) encode() ([][][]byte, error) {
-	var addrarr [][]byte
-	var arrs [][][]byte
+	addrarr := [][]byte{}
+	arrs := [][][]byte{}
 	addrarr = append(addrarr, []byte(u.addr))
 	arrs = append(arrs, addrarr)
 
