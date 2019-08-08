@@ -176,7 +176,7 @@ func adaptorCall(chainName, methodName string, params []byte) (string, error) {
 			result, err := json.Marshal(res[0].Interface())
 			return string(result), err
 		} else {
-			return "", errors.New(fmt.Sprintf("%s", res[1].Interface()))
+			return "", fmt.Errorf("%s", res[1].Interface())
 		}
 	} else {
 		return res[0].String(), nil

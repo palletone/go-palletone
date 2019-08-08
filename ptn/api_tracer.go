@@ -74,13 +74,15 @@ type txTraceResult struct {
 
 // TraceChain returns the structured logs created during the execution of EVM
 // between two blocks (excluding start) and returns them as a JSON object.
-func (api *PrivateDebugAPI) TraceChain(ctx context.Context, start, end rpc.BlockNumber, config *TraceConfig) (*rpc.Subscription, error) {
+func (api *PrivateDebugAPI) TraceChain(ctx context.Context, start, end rpc.BlockNumber,
+	config *TraceConfig) (*rpc.Subscription, error) {
 	return &rpc.Subscription{}, nil
 }
 
 // TraceBlockByNumber returns the structured logs created during the execution of
 // EVM and returns them as a JSON object.
-func (api *PrivateDebugAPI) TraceBlockByNumber(ctx context.Context, number rpc.BlockNumber, config *TraceConfig) ([]*txTraceResult, error) {
+func (api *PrivateDebugAPI) TraceBlockByNumber(ctx context.Context, number rpc.BlockNumber,
+	config *TraceConfig) ([]*txTraceResult, error) {
 	/*
 		// Fetch the block that we want to trace
 		var block *types.Block
@@ -104,7 +106,8 @@ func (api *PrivateDebugAPI) TraceBlockByNumber(ctx context.Context, number rpc.B
 
 // TraceBlockByHash returns the structured logs created during the execution of
 // EVM and returns them as a JSON object.
-func (api *PrivateDebugAPI) TraceBlockByHash(ctx context.Context, hash common.Hash, config *TraceConfig) ([]*txTraceResult, error) {
+func (api *PrivateDebugAPI) TraceBlockByHash(ctx context.Context, hash common.Hash,
+	config *TraceConfig) ([]*txTraceResult, error) {
 	/*
 		block := api.ptn.blockchain.GetBlockByHash(hash)
 		if block == nil {
@@ -117,7 +120,8 @@ func (api *PrivateDebugAPI) TraceBlockByHash(ctx context.Context, hash common.Ha
 
 // TraceBlock returns the structured logs created during the execution of EVM
 // and returns them as a JSON object.
-func (api *PrivateDebugAPI) TraceBlock(ctx context.Context, blob []byte, config *TraceConfig) ([]*txTraceResult, error) {
+func (api *PrivateDebugAPI) TraceBlock(ctx context.Context, blob []byte,
+	config *TraceConfig) ([]*txTraceResult, error) {
 	/*
 		block := new(types.Block)
 		if err := rlp.Decode(bytes.NewReader(blob), block); err != nil {
@@ -130,7 +134,8 @@ func (api *PrivateDebugAPI) TraceBlock(ctx context.Context, blob []byte, config 
 
 // TraceBlockFromFile returns the structured logs created during the execution of
 // EVM and returns them as a JSON object.
-func (api *PrivateDebugAPI) TraceBlockFromFile(ctx context.Context, file string, config *TraceConfig) ([]*txTraceResult, error) {
+func (api *PrivateDebugAPI) TraceBlockFromFile(ctx context.Context, file string,
+	config *TraceConfig) ([]*txTraceResult, error) {
 	/*
 		blob, err := ioutil.ReadFile(file)
 		if err != nil {
@@ -143,7 +148,8 @@ func (api *PrivateDebugAPI) TraceBlockFromFile(ctx context.Context, file string,
 
 // TraceTransaction returns the structured logs created during the execution of EVM
 // and returns them as a JSON object.
-func (api *PrivateDebugAPI) TraceTransaction(ctx context.Context, hash common.Hash, config *TraceConfig) (interface{}, error) {
+func (api *PrivateDebugAPI) TraceTransaction(ctx context.Context, hash common.Hash,
+	config *TraceConfig) (interface{}, error) {
 	/*
 		// Retrieve the transaction and assemble its EVM context
 		tx, blockHash, _, index := core.GetTransaction(api.ptn.ChainDb(), hash)
@@ -163,44 +169,3 @@ func (api *PrivateDebugAPI) TraceTransaction(ctx context.Context, hash common.Ha
 	*/
 	return nil, nil
 }
-
-/*
-// computeTxEnv returns the execution environment of a certain transaction.
-func (api *PrivateDebugAPI) computeTxEnv(blockHash common.Hash, txIndex int, reexec uint64) (core.Message, vm.Context, *state.StateDB, error) {
-
-		// Create the parent state database
-		block := api.ptn.blockchain.GetBlockByHash(blockHash)
-		if block == nil {
-			return nil, vm.Context{}, nil, fmt.Errorf("block %x not found", blockHash)
-		}
-		parent := api.ptn.blockchain.GetBlock(block.ParentHash(), block.NumberU64()-1)
-		if parent == nil {
-			return nil, vm.Context{}, nil, fmt.Errorf("parent %x not found", block.ParentHash())
-		}
-		statedb, err := api.computeStateDB(parent, reexec)
-		if err != nil {
-			return nil, vm.Context{}, nil, err
-		}
-		// Recompute transactions up to the target index.
-		signer := types.MakeSigner(api.config, block.Number())
-
-		for idx, tx := range block.Transactions() {
-			// Assemble the transaction call message and return if the requested offset
-			msg, _ := tx.AsMessage(signer)
-			context := core.NewEVMContext(msg, block.Header(), api.ptn.blockchain, nil)
-			if idx == txIndex {
-				return msg, context, statedb, nil
-			}
-			// Not yet the searched for transaction, execute on top of the current state
-			vmenv := vm.NewEVM(context, statedb, api.config, vm.Config{})
-			if _, _, _, err := core.ApplyMessage(vmenv, msg, new(core.GasPool).AddGas(tx.Gas())); err != nil {
-				return nil, vm.Context{}, nil, fmt.Errorf("tx %x failed: %v", tx.Hash(), err)
-			}
-			// Ensure any modifications are committed to the state
-			statedb.Finalise(true)
-		}
-		return nil, vm.Context{}, nil, fmt.Errorf("tx index %d out of range for block %x", txIndex, blockHash)
-
-
-}
-*/

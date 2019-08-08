@@ -22,7 +22,6 @@ package golang
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -56,11 +55,11 @@ func runProgram(env Env, timeout time.Duration, pgm string, args ...string) ([]b
 		if err = cmd.Process.Kill(); err != nil {
 			return nil, fmt.Errorf("<%s, %v>: failed to kill: %s", pgm, args, err)
 		} else {
-			return nil, errors.New(fmt.Sprintf("<%s, %v>: timeout(%d msecs)", pgm, args, timeout/time.Millisecond))
+			return nil, fmt.Errorf("<%s, %v>: timeout(%d msecs)", pgm, args, timeout/time.Millisecond)
 		}
 	case err = <-done:
 		if err != nil {
-			return nil, fmt.Errorf("<%s, %v>: failed with error: \"%s\"\n%s", pgm, args, err, string(stdErr.Bytes()))
+			return nil, fmt.Errorf("<%s, %v>: failed with error: \"%s\"\n%s", pgm, args, err, stdErr.String())
 		}
 
 		return stdOut.Bytes(), nil

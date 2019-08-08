@@ -150,10 +150,10 @@ func makeConfigFile(cfg *Config, configPath string) error {
 	}
 
 	configFile, err = os.Create(configPath)
-	defer configFile.Close()
 	if err != nil {
 		return err
 	}
+	defer configFile.Close()
 
 	configToml, err := tomlSettings.Marshal(cfg)
 	if err != nil {

@@ -54,7 +54,6 @@ func GetResourcesWhenInvokeContainer(cc *list.CCInfo) {
 		usage, _ := GetMemoryStatsUsage(stats)
 		log.Infof("================================================%d\n\n", usage)
 	}
-	return
 }
 
 func GetAllResourceUsageByContainerName(name string) (*docker.Stats, error) {
@@ -75,7 +74,7 @@ func GetAllResourceUsageByContainerName(name string) (*docker.Stats, error) {
 	defer close(done)
 	go func() {
 		errC <- client.Stats(docker.StatsOptions{ID: con.ID, Stats: statsC, Stream: false, Done: done,
-		InactivityTimeout: time.Duration(3 * time.Second)})
+			InactivityTimeout: time.Duration(3 * time.Second)})
 		close(errC)
 	}()
 	var resultStats []*docker.Stats

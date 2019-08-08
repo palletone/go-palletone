@@ -240,13 +240,13 @@ func vendorDependencies(pkg string, files Sources) {
 			excluded := false
 
 			for _, exclusion := range exclusions {
-				if strings.HasPrefix(file.Name, exclusion) == true {
+				if strings.HasPrefix(file.Name, exclusion) {
 					excluded = true
 					break
 				}
 			}
 
-			if excluded == false {
+			if !excluded {
 				origName := file.Name
 				file.Name = strings.Replace(origName, "src", vendorPath, 1)
 				//glh
@@ -397,9 +397,9 @@ func getAllFiles(dirPth string) ([]SourceFile, error) {
 	// 读取子目录下文件
 	for _, table := range dirs {
 		temp, _ := getAllFiles(table)
-		for _, temp1 := range temp {
-			sourcefiles = append(sourcefiles, temp1)
-		}
+		//for _, temp1 := range temp {
+		sourcefiles = append(sourcefiles, temp...)
+		//}
 	}
 	return sourcefiles, nil
 }
@@ -461,13 +461,13 @@ func (goPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte
 
 	imports = filter(imports, func(pkg string) bool {
 		// Drop if provided by CCENV
-		if _, ok := provided[pkg]; ok == true { //从导入包中删除ccenv已自带的包
+		if _, ok := provided[pkg]; ok { //从导入包中删除ccenv已自带的包
 			log.Debugf("Discarding provided package %s", pkg)
 			return false
 		}
 
 		// Drop pseudo-packages
-		if _, ok := pseudo[pkg]; ok == true {
+		if _, ok := pseudo[pkg]; ok {
 			log.Debugf("Discarding pseudo-package %s", pkg)
 			return false
 		}
