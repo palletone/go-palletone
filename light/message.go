@@ -61,16 +61,16 @@ func (pm *ProtocolManager) AnnounceMsg(msg p2p.Msg, p *peer) error {
 		pm.fetcher.Enqueue(p, &req.Header)
 		localheader := pm.dag.CurrentHeader(req.Header.Number.AssetID)
 		if localheader != nil {
-			log.Debug("Light PalletOne Announce message pre synchronise", "localheader index", localheader.Number.Index, "req.Header.Number.Index-1", req.Header.Number.Index-1)
+			log.Debug("Light PalletOne Announce message pre synchronize", "localheader index", localheader.Number.Index, "req.Header.Number.Index-1", req.Header.Number.Index-1)
 		} else {
-			log.Debug("Light PalletOne Announce message pre synchronise", "localheader is ni.req.Header.Number.Index-1", req.Header.Number.Index-1)
+			log.Debug("Light PalletOne Announce message pre synchronize", "localheader is ni.req.Header.Number.Index-1", req.Header.Number.Index-1)
 		}
 
 		if localheader == nil || localheader.Number.Index < req.Header.Number.Index-1 {
 			p.SetHead(&req)
 			go func() {
-				log.Debug("Light PalletOne Announce message Enter synchronise")
-				pm.synchronise(p, req.Header.Number.AssetID)
+				log.Debug("Light PalletOne Announce message Enter synchronize")
+				pm.synchronize(p, req.Header.Number.AssetID)
 			}()
 		}
 	}
@@ -233,7 +233,7 @@ func (pm *ProtocolManager) GetProofsMsg(msg p2p.Msg, p *peer) error {
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
 
-	var datas [][][]byte
+	datas := [][][]byte{}
 	for _, req := range reqs {
 		log.Debug("Light PalletOne ProtocolManager GetProofsMsg", "req", req)
 		//Get txRootHash and indexer in tx array and validation path
