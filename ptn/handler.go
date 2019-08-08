@@ -79,7 +79,7 @@ type ProtocolManager struct {
 	mainAssetId   modules.AssetId
 	receivedCache palletcache.ICache
 	fastSync      uint32 // Flag whether fast sync is enabled (gets disabled if we already have blocks)
-	acceptTxs     uint32 // Flag whether we're considered synchronised (enables transaction processing)
+	acceptTxs     uint32 // Flag whether we're considered synchronized (enables transaction processing)
 
 	lightSync uint32 //Flag whether light sync is enabled
 
@@ -207,7 +207,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 		if mode == downloader.FastSync && version < ptn1 {
 			continue
 		}
-		// Compatible; initialise the sub-protocol
+		// Compatible; initialize the sub-protocol
 		version := version // Closure for the run
 		manager.SubProtocols = append(manager.SubProtocols, p2p.Protocol{
 			Name:    protocolName,
@@ -233,22 +233,13 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 				}
 				return nil
 			},
-			//Corss: func() []string {
-			//	return manager.Corss()
-			//},
-			//CorsPeerInfo: func(protocl string, id discover.NodeID) interface{} {
-			//	if p := manager.lightPeers.Peer(id.TerminalString()); p != nil {
-			//		return p.Info(protocl)
-			//	}
-			//	return nil
-			//},
 		})
 	}
 	if len(manager.SubProtocols) == 0 {
 		return nil, errIncompatibleConfig
 	}
 
-	// Construct the different synchronisation mechanisms
+	// Construct the different synchronization mechanisms
 	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer, nil, dag, txpool)
 	manager.fetcher = manager.newFetcher()
 

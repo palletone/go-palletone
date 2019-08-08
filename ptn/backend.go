@@ -18,12 +18,9 @@
 package ptn
 
 import (
-	"fmt"
-	"sync"
-
 	"encoding/json"
+	"fmt"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
@@ -46,7 +43,6 @@ import (
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/filters"
-	"github.com/palletone/go-palletone/ptn/indexer"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/shopspring/decimal"
@@ -89,10 +85,8 @@ type PalletOne struct {
 
 	contract *contracts.Contract
 
-	lock sync.RWMutex // Protects the variadic fields (e.g. gas price and etherbase)
-
-	bloomRequests chan chan *bloombits.Retrieval // Channel receiving bloom data retrieval requests
-	bloomIndexer  *indexer.ChainIndexer          // Bloom indexer operating during block imports
+	//bloomRequests chan chan *bloombits.Retrieval // Channel receiving bloom data retrieval requests
+	//bloomIndexer  *indexer.ChainIndexer          // Bloom indexer operating during block imports
 
 	// append by Albert·Gou
 	mediatorPlugin    *mp.MediatorPlugin
@@ -142,7 +136,7 @@ func New(ctx *node.ServiceContext, config *Config) (*PalletOne, error) {
 		unitDb:         db,
 		syncCh:         make(chan bool, 1),
 	}
-	log.Info("Initialising PalletOne protocol", "versions", ProtocolVersions, "network", config.NetworkId)
+	log.Info("Initializing PalletOne protocol", "versions", ProtocolVersions, "network", config.NetworkId)
 
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)

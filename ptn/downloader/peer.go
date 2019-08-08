@@ -75,7 +75,7 @@ type peerConnection struct {
 	lock sync.RWMutex
 }
 
-// LightPeer encapsulates the methods required to synchronise with a remote light peer.
+// LightPeer encapsulates the methods required to synchronize with a remote light peer.
 type LightPeer interface {
 	//Head() (common.Hash, *big.Int)
 	Head(modules.AssetId) (common.Hash, *modules.ChainIndex)
@@ -85,7 +85,7 @@ type LightPeer interface {
 	RequestLeafNodes() error
 }
 
-// Peer encapsulates the methods required to synchronise with a remote full peer.
+// Peer encapsulates the methods required to synchronize with a remote full peer.
 type Peer interface {
 	LightPeer
 	RequestBodies([]common.Hash) error

@@ -423,7 +423,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		//currentUnitIndex := pm.dag.GetCurrentUnit(unit.Number().AssetID).UnitHeader.Number.Index
 		currentUnitIndex := pm.dag.HeadUnitNum()
 		if requestNumber.Index > currentUnitIndex+1 {
-			log.Debug("ProtocolManager", "NewBlockMsg synchronise request.Index:", requestNumber.Index,
+			log.Debug("ProtocolManager", "NewBlockMsg synchronize request.Index:", requestNumber.Index,
 				"current unit index+1:", currentUnitIndex+1)
 			go func() {
 				pm.synchronise(p, unit.Number().AssetID, nil)

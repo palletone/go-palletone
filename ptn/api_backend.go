@@ -228,9 +228,9 @@ func (b *PtnApiBackend) BloomStatus() (uint64, uint64) {
 }
 
 func (b *PtnApiBackend) ServiceFilter(ctx context.Context, session *bloombits.MatcherSession) {
-	for i := 0; i < bloomFilterThreads; i++ {
-		go session.Multiplex(bloomRetrievalBatch, bloomRetrievalWait, b.ptn.bloomRequests)
-	}
+	//for i := 0; i < bloomFilterThreads; i++ {
+	//	go session.Multiplex(bloomRetrievalBatch, bloomRetrievalWait, b.ptn.bloomRequests)
+	//}
 }
 
 //func (b *PtnApiBackend) WalletTokens(address string) (map[string]*modules.AccountToken, error) {
