@@ -50,7 +50,7 @@ func (p *ETHPort) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	case "initDepositAddr":
 		return _initDepositAddr(stub)
 	case "setETHTokenAsset":
-		return _setETHTokenAsset(args,stub)
+		return _setETHTokenAsset(args, stub)
 	case "getETHToken":
 		return _getETHToken(stub)
 	case "setETHContract":
@@ -487,7 +487,7 @@ func _withdrawPrepare(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 	log.Debugf("tempHashHex:%s", tempHashHex)
 
 	//协商交易
-	recvResult, err := consult(stub, []byte(tempHashHex), []byte("rawTx"))
+	recvResult, _ := consult(stub, []byte(tempHashHex), []byte("rawTx"))
 	var juryMsg []JuryMsgAddr
 	err = json.Unmarshal(recvResult, &juryMsg)
 	if err != nil {
@@ -697,7 +697,7 @@ func _withdrawETH(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	log.Debugf("tempHashHex:%s", tempHashHex)
 
 	//协商交易
-	recvResult, err := consult(stub, []byte(tempHashHex), []byte(sig))
+	recvResult, _ := consult(stub, []byte(tempHashHex), []byte(sig))
 	var juryMsg []JuryMsgAddr
 	err = json.Unmarshal(recvResult, &juryMsg)
 	if err != nil {
@@ -769,6 +769,9 @@ func _withdrawETH(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	withdraw.EthFee = prepare.EthFee
 	withdraw.Sigs = append(withdraw.Sigs, sigs[0:consultM]...)
 	withdrawBytes, err := json.Marshal(withdraw)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
 	err = stub.PutState(symbolsWithdraw+reqidNew, withdrawBytes)
 	if err != nil {
 		log.Debugf("save withdraw failed: " + err.Error())
@@ -833,7 +836,7 @@ func _withdrawFee(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	log.Debugf("tempHashHex:%s", tempHashHex)
 
 	//协商交易
-	recvResult, err := consult(stub, []byte(tempHashHex), []byte(sig))
+	recvResult, _ := consult(stub, []byte(tempHashHex), []byte(sig))
 	var juryMsg []JuryMsgAddr
 	err = json.Unmarshal(recvResult, &juryMsg)
 	if err != nil {
@@ -905,6 +908,9 @@ func _withdrawFee(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	withdraw.EthFee = 0
 	withdraw.Sigs = append(withdraw.Sigs, sigs[0:consultM]...)
 	withdrawBytes, err := json.Marshal(withdraw)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
 	err = stub.PutState(symbolsWithdraw+reqid, withdrawBytes)
 	if err != nil {
 		log.Debugf("save withdraw failed: " + err.Error())

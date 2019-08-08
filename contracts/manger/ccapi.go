@@ -241,7 +241,7 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 	var mksupt Support = &SupportImpl{}
 	creator := []byte("palletone")
 	address := common.NewAddress(deployId, common.ContractHash)
-	cc := &cclist.CCInfo{}
+	var cc *cclist.CCInfo
 	var err error
 
 	if address.IsSystemContractAddress() {
@@ -367,7 +367,6 @@ func GetAllContainers(client *docker.Client) {
 			}
 		}
 	}
-	return
 }
 
 func RestartContainer(idag dag.IDag, chainID string, deployId []byte, txId string) ([]byte, error) {

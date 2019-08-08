@@ -66,10 +66,10 @@ func loadConfig(file string, w *MyWallet) error {
 
 func saveConfig(file string, w *MyWallet) error {
 	configFile, err := os.Create(file)
-	defer configFile.Close()
 	if err != nil {
 		return err
 	}
+	defer configFile.Close()
 
 	configToml, err := gTomlConfig.Marshal(w)
 	if err != nil {
