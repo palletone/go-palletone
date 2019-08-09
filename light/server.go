@@ -144,7 +144,8 @@ func (s *LesServer) loopCors() {
 			select {
 			case header := <-headCh:
 				peers := s.protocolManager.peers.AllPeers(s.protocolManager.assetId)
-				log.Debug("LesServer loopCors Light recv Cors header", "len(peers)", len(peers), "assetid", header.Number.AssetID, "index", header.Number.Index, "hash", header.Hash())
+				log.Debug("LesServer loopCors Light recv Cors header", "len(peers)", len(peers), "assetid",
+					header.Number.AssetID, "index", header.Number.Index, "hash", header.Hash())
 				if len(peers) > 0 {
 					announce := announceData{Hash: header.Hash(), Number: *header.Number, Header: *header}
 					for _, p := range peers {
@@ -235,8 +236,6 @@ func (l *linReg) toBytes() []byte {
 	binary.BigEndian.PutUint64(arr[32:40], l.cnt)
 	return arr[:]
 }
-
-var rcStatsKey = []byte("_requestCostStats")
 
 func (pm *ProtocolManager) blockLoop() {
 	pm.wg.Add(1)

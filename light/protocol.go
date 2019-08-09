@@ -30,16 +30,12 @@ import (
 // Constants to match up protocol versions and messages
 const (
 	lpv1 = 1
-	lpv2 = 2
 )
 
 // Supported versions of the les protocol (first is primary)
 var (
 	ClientProtocolVersions = []uint{lpv1}
 	ServerProtocolVersions = []uint{lpv1}
-	//ClientProtocolVersions    = []uint{lpv2, lpv1}
-	//ServerProtocolVersions    = []uint{lpv2, lpv1}
-	//AdvertiseProtocolVersions = []uint{lpv2} // clients are searching for the first advertised protocol in the list
 )
 
 // Number of implemented message corresponding to different protocol versions.

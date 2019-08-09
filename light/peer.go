@@ -66,9 +66,9 @@ type peer struct {
 	announceChn chan announceData
 	sendQueue   *execQueue
 
-	poolEntry      *poolEntry
-	hasBlock       func(common.Hash, uint64) bool
-	responseErrors int
+	poolEntry *poolEntry
+	hasBlock  func(common.Hash, uint64) bool
+	//	responseErrors int
 
 	fcClient       *flowcontrol.ClientNode // nil if the peer is server only
 	fcServer       *flowcontrol.ServerNode // nil if the peer is client only
