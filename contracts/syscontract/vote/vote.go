@@ -33,6 +33,8 @@ import (
 )
 
 const symbolsKey = "symbol_"
+const jsonResp1 = "{\"Error\":\"Results format invalid, Error!!!\"}"
+const jsonResp2 = "{\"Error\":\"Token not exist\"}"
 
 type Vote struct {
 }
@@ -289,8 +291,7 @@ func support(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//check name is exist or not
 	tkInfo := getSymbols(stub, assetIDStr)
 	if tkInfo == nil {
-		jsonResp := "{\"Error\":\"Token not exist\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp2)
 	}
 
 	//parse support requests
@@ -304,8 +305,7 @@ func support(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	var topicSupports []TopicSupports
 	err = json.Unmarshal(tkInfo.VoteContent, &topicSupports)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Results format invalid, Error!!!\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp1)
 	}
 
 	if voteNum < uint64(len(supportRequests)) { //vote token more than request
@@ -407,16 +407,14 @@ func getVoteResult(args []string, stub shim.ChaincodeStubInterface) pb.Response 
 	//check name is exist or not
 	tkInfo := getSymbols(stub, assetIDStr)
 	if tkInfo == nil {
-		jsonResp := "{\"Error\":\"Token not exist\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp2)
 	}
 
 	//get token information
 	var topicSupports []TopicSupports
 	err := json.Unmarshal(tkInfo.VoteContent, &topicSupports)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Results format invalid, Error!!!\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp1)
 	}
 
 	//
@@ -483,16 +481,14 @@ func getVoteInfo(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//check name is exist or not
 	tkInfo := getSymbols(stub, assetIDStr)
 	if tkInfo == nil {
-		jsonResp := "{\"Error\":\"Token not exist\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp2)
 	}
 
 	//get token information
 	var topicSupports []TopicSupports
 	err := json.Unmarshal(tkInfo.VoteContent, &topicSupports)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Results format invalid, Error!!!\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp1)
 	}
 
 	//topic info

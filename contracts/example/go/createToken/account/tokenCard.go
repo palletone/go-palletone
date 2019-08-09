@@ -20,11 +20,10 @@
 package account
 
 import (
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/contracts/example/go/createToken"
 )
 
-type pFunc func(address common.Address, params []string) (string, bool)
+//type pFunc func(address common.Address, params []string) (string, bool)
 
 //TokenCard : TokenCard class interface
 type TokenCard interface {

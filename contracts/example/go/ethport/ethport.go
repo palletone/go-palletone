@@ -94,6 +94,8 @@ const symbolsWithdraw = "withdraw_"
 const consultM = 3
 const consultN = 4
 
+const jsonResp1 = "{\"Error\":\"Failed to get contractAddr, need set contractAddr\"}"
+
 // contractABI is same, but contractAddr is not
 const contractABI = "[{\"constant\":true,\"inputs\":[{\"name\":\"reqid\",\"type\":\"string\"}],\"name\":\"getmultisig\",\"outputs\":[{\"name\":\"\",\"type\":\"uint8\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"suicideto\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"ptnaddr\",\"type\":\"string\"}],\"name\":\"deposit\",\"outputs\":[],\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"my_eth_bal\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"addra\",\"type\":\"address\"},{\"name\":\"addrb\",\"type\":\"address\"},{\"name\":\"addrc\",\"type\":\"address\"},{\"name\":\"addrd\",\"type\":\"address\"}],\"name\":\"setaddrs\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"recver\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"},{\"name\":\"reqid\",\"type\":\"string\"},{\"name\":\"sigstr1\",\"type\":\"bytes\"},{\"name\":\"sigstr2\",\"type\":\"bytes\"},{\"name\":\"sigstr3\",\"type\":\"bytes\"}],\"name\":\"withdraw\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"addra\",\"type\":\"address\"},{\"name\":\"addrb\",\"type\":\"address\"},{\"name\":\"addrc\",\"type\":\"address\"},{\"name\":\"addrd\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"fallback\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"token\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"ptnaddr\",\"type\":\"string\"}],\"name\":\"Deposit\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"token\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"recver\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"reqid\",\"type\":\"string\"},{\"indexed\":false,\"name\":\"confirmvalue\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"state\",\"type\":\"string\"}],\"name\":\"Withdraw\",\"type\":\"event\"}]"
 
@@ -381,8 +383,7 @@ func _getETHToken(stub shim.ChaincodeStubInterface) pb.Response {
 
 	contractAddr := getETHContract(stub)
 	if contractAddr == "" {
-		jsonResp := "{\"Error\":\"Failed to get contractAddr, need set contractAddr\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp1)
 	}
 
 	depositInfo, err := getDepositETHInfo(contractAddr, invokeAddr.String(), stub)
@@ -678,7 +679,6 @@ func _withdrawETH(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 
 	contractAddr := getETHContract(stub)
 	if contractAddr == "" {
-		jsonResp := "{\"Error\":\"Failed to get contractAddr, need set contractAddr\"}"
 		return shim.Error(jsonResp)
 	}
 
@@ -817,8 +817,7 @@ func _withdrawFee(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	contractAddr := getETHContract(stub)
 	if contractAddr == "" {
-		jsonResp := "{\"Error\":\"Failed to get contractAddr, need set contractAddr\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp1)
 	}
 
 	//

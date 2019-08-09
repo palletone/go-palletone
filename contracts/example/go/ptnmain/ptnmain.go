@@ -219,7 +219,7 @@ func _payoutPTN(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//query ptnmap contract for get ptnAddr
-	ptnAddr, err := getPTNHex(mapAddr, txResult.From, stub)
+	ptnAddr, err := getPTNHex(mapAddr, stub)
 	if err != nil {
 		log.Debugf("getPTNHex failed: %s", err.Error())
 		return shim.Error(err.Error())
@@ -339,7 +339,7 @@ type QueryContractResult struct {
 	Result string `json:"result"`
 }
 
-func getPTNHex(mapAddr, sender string, stub shim.ChaincodeStubInterface) (string, error) {
+func getPTNHex(mapAddr string, stub shim.ChaincodeStubInterface) (string, error) {
 	var queryContract ETH_QueryContract
 	queryContract.ContractAddr = mapAddr
 	queryContract.ContractABI = PTNMapABI

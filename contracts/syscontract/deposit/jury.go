@@ -21,11 +21,11 @@ import (
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 )
 
-func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) peer.Response {
-	return nodePayToDepositContract(stub, args, Jury)
+func juryPayToDepositContract(stub shim.ChaincodeStubInterface) peer.Response {
+	return nodePayToDepositContract(stub, Jury)
 }
 
-func juryApplyQuit(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+func juryApplyQuit(stub shim.ChaincodeStubInterface) peer.Response {
 	log.Debug("juryApplyQuit")
 	err := applyQuitList(Jury, stub)
 	if err != nil {

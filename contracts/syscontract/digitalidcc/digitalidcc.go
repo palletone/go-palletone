@@ -102,7 +102,7 @@ func (d *DigitalIdentityChainCode) addCert(stub shim.ChaincodeStubInterface, arg
 		return shim.Error(reqStr)
 	}
 	// parse Cert bytes to Certificate struct
-	cert, err := x509.ParseCertificate([]byte(certBytes))
+	cert, err := x509.ParseCertificate(certBytes)
 	if err != nil {
 		reqStr := fmt.Sprintf("DigitalIdentityChainCode parse to certificate error:%s", err.Error())
 		return shim.Error(reqStr)
