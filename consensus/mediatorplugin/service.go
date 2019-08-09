@@ -59,7 +59,8 @@ type iDag interface {
 	ActiveMediatorsCount() int
 	GetActiveMediatorAddr(index int) common.Address
 	HeadUnitNum() uint64
-	GetUnitByHash(common.Hash) (*modules.Unit, error)
+	GetHeaderByHash(common.Hash) (*modules.Header, error)
+	//GetUnitByHash(common.Hash) (*modules.Unit, error)
 
 	GetGlobalProp() *modules.GlobalProperty
 	GetActiveMediators() []common.Address

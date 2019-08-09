@@ -85,11 +85,11 @@ func decodeUrl(spec *pb.ChaincodeSpec) (string, error) {
 func getGopath() (string, error) {
 	env, err := getGoEnv()
 	if err != nil {
+		log.Debugf("get go env error: %s", err.Error())
 		return "", err
 	}
 	// Only take the first element of GOPATH
-	//splitGoPath := make([]string, 0)
-	var splitGoPath []string
+	splitGoPath := make([]string, 0)
 	os := runtime.GOOS
 	if os == "windows" {
 		splitGoPath = filepath.SplitList(env["set GOPATH"])
@@ -100,6 +100,7 @@ func getGopath() (string, error) {
 	if len(splitGoPath) == 0 {
 		return "", fmt.Errorf("invalid GOPATH environment variable value:[%s]", env["GOPATH"])
 	}
+	log.Debugf("go path %s", splitGoPath[0])
 	return splitGoPath[0], nil
 }
 
@@ -280,14 +281,16 @@ func (goPlatform *Platform) GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte,
 	cl := len(chaincodeVendorDir)
 	chaincodeVendorDirs, err := getAllDirs(chaincodeVendorDir)
 	if err != nil {
-		return nil, err
+		log.Debugf("get all dirs err %s", err.Error())
+		//return nil, err
 	}
 	//获取项目vendor的所有文件夹
 	ploDir := filepath.Join(codeDescriptor.Gopath, "src", "github.com/palletone/go-palletone/vendor")
 	pl := len(ploDir)
 	pVendorDirs, err := getAllDirs(ploDir)
 	if err != nil {
-		return nil, err
+		log.Debugf("get all dirs err %s", err.Error())
+		//return nil, err
 	}
 	newFiles := []string{}
 	for _, cDir := range chaincodeVendorDirs {

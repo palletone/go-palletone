@@ -458,11 +458,11 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 			time.Since(start), unit.NumberU64(), unit.Hash().String())
 	})
 
-	if err == nil {
-		// 进行下一个unit的群签名
-		log.Debugf("send toGroupSign event")
-		go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
-	}
+	//if err == nil {
+	//	// 进行下一个unit的群签名
+	//	log.Debugf("send toGroupSign event")
+	//	go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
+	//}
 
 	return a, b, c, d, e, err
 }

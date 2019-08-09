@@ -73,13 +73,13 @@ func (pm *ProtocolManager) toGroupSign(event modules.ToGroupSignEvent) {
 	iun := pm.dag.GetIrreversibleUnitNum(gasToken)
 
 	// 对稳定单元后一个unit进行群签名
-	newUnit, err := pm.dag.GetUnitByNumber(&modules.ChainIndex{AssetID: gasToken, Index: iun + 1})
+	newHash, err := pm.dag.GetUnitHash(&modules.ChainIndex{AssetID: gasToken, Index: iun + 1})
 	if err != nil {
 		log.Debugf(err.Error())
 		return
 	}
 
-	go pm.producer.AddToTBLSSignBufs(newUnit)
+	go pm.producer.AddToTBLSSignBufs(newHash)
 }
 
 // @author Albert·Gou
