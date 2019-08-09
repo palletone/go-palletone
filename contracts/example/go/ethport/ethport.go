@@ -679,7 +679,7 @@ func _withdrawETH(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 
 	contractAddr := getETHContract(stub)
 	if contractAddr == "" {
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp1)
 	}
 
 	// 计算签名
