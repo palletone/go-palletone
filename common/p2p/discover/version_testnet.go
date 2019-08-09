@@ -22,10 +22,8 @@
 
 package discover
 
-import "github.com/palletone/go-palletone/common"
-
 //palletone
 //112 97 108 108 101 110 116 111 110 101
 const Version = 1075
 
-var Genesis = common.Hash{"6365f3bc9c197b8679821b998da5ee8f88b3db67fdb023250db3d1c2ae0ab1c6"}
+var GenesisHash = []byte("6365f3bc9c197b8679821b998da5ee8f88b3db67fdb023250db3d1c2ae0ab1c6")
