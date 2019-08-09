@@ -126,7 +126,7 @@ type ProtocolManager struct {
 	protocolname string
 
 	//cors
-	corss *p2p.Server
+	//corss *p2p.Server
 
 	receivedCache palletcache.ICache
 }

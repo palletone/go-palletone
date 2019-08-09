@@ -19,7 +19,6 @@ package light
 
 import (
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -67,7 +66,7 @@ type LightPalletone struct {
 
 	corsProtocolManager *cors.ProtocolManager
 
-	serverPool *serverPool
+	//serverPool *serverPool
 	// DB interfaces
 	dag dag.IDag
 	// DB interfaces
@@ -82,7 +81,7 @@ type LightPalletone struct {
 	networkId     uint64
 	netRPCService *ptnapi.PublicNetAPI
 
-	wg sync.WaitGroup
+	//	wg sync.WaitGroup
 
 	txCh  chan modules.TxPreEvent
 	txSub event.Subscription

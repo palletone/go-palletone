@@ -50,7 +50,8 @@ func (pm *ProtocolManager) AnnounceMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	log.Debug("Light PalletOne Announce message content", "p.id", p.id, "assetid", req.Header.Number.AssetID, "index", req.Header.Number.Index, "hash", req.Header.Hash())
+	log.Debug("Light PalletOne Announce message content", "p.id", p.id, "assetid", req.Header.Number.AssetID,
+		"index", req.Header.Number.Index, "hash", req.Header.Hash())
 
 	if pm.lightSync || pm.assetId != req.Header.Number.AssetID {
 		pm.fetcher.Enqueue(p, &req.Header)

@@ -66,10 +66,10 @@ const (
 	DefaultContractSignatureNum = 3
 	DefaultContractElectionNum  = 4
 
-	DefaultContractTxTimeoutUnitFee  = 10 //ms
-	DefaultContractTxSizeUnitFee     = 50 //byte
-	DefaultContractTxInstallFeeLevel = 2.3
-	DefaultContractTxDeployFeeLevel  = 1.8
+	DefaultContractTxTimeoutUnitFee  = 10 //s
+	DefaultContractTxSizeUnitFee     = 1 //byte
+	DefaultContractTxInstallFeeLevel = 2.5
+	DefaultContractTxDeployFeeLevel  = 1.5
 	DefaultContractTxInvokeFeeLevel  = 1.0
 	DefaultContractTxStopFeeLevel    = 0.5
 

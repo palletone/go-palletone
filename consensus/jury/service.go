@@ -244,18 +244,6 @@ func (p *Processor) GetLocalJuryAddrs() []common.Address {
 	return addrs
 }
 
-//func (p *Processor) getLocalAllJuryAccount() []*JuryAccount {
-//	num := len(p.local)
-//	if num <= 0 {
-//		return nil
-//	}
-//	accounts := make([]*JuryAccount, num)
-//	for _, a := range p.local {
-//		accounts = append(accounts, a)
-//	}
-//	return accounts
-//}
-
 func (p *Processor) getLocalJuryAccount() *JuryAccount {
 	num := len(p.local)
 	if num <= 0 {
@@ -266,27 +254,6 @@ func (p *Processor) getLocalJuryAccount() *JuryAccount {
 	}
 	return nil
 }
-
-//func (p *Processor) getLocalNodesInfo() ([]*nodeInfo, error) {
-//	if len(p.local) < 1 {
-//		return nil, errors.New("getLocalNodeInfo, no local account")
-//	}
-//	nodes := make([]*nodeInfo, 0)
-//	for addr, _ := range p.local {
-//		nodeType := 0
-//		if p.ptn.IsLocalActiveMediator(addr) {
-//			nodeType = TMediator
-//		} else if p.isLocalActiveJury(addr) {
-//			nodeType = TJury
-//		}
-//		node := &nodeInfo{
-//			addr:  addr,
-//			ntype: nodeType,
-//		}
-//		nodes = append(nodes, node)
-//	}
-//	return nodes, nil
-//}
 
 func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf) error {
 	log.Debugf("[%s]runContractReq enter", shortId(reqId.String()))
@@ -305,14 +272,17 @@ func (p *Processor) runContractReq(reqId common.Hash, elf []modules.ElectionInf)
 		log.Errorf("[%s]runContractReq, runContractCmd reqTx, err：%s", shortId(reqId.String()), err.Error())
 		return err
 	}
+	p.locker.Lock()
+	defer p.locker.Unlock()
+
 	tx, err := gen.GenContractTransction(&reqTx, msgs)
 	if err != nil {
 		log.Error("[%s]runContractReq, GenContractSigTransactions error:%s", shortId(reqId.String()), err.Error())
 		return err
 	}
+	//计算交易费用，将deploy持续时间写入交易中
+	addContractDeployDuringTime(p.dag, tx)
 
-	p.locker.Lock()
-	defer p.locker.Unlock()
 	//如果系统合约，直接添加到缓存池
 	//如果用户合约，需要签名，添加到缓存池并广播
 	if tx.IsSystemContract() {

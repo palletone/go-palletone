@@ -63,7 +63,8 @@ func (w *weightedRandomSelect) setWeight(item wrsItem, weight int64) {
 		if weight != 0 {
 			if w.root.itemCnt == w.root.maxItems {
 				// add a new level
-				newRoot := &wrsNode{sumWeight: w.root.sumWeight, itemCnt: w.root.itemCnt, level: w.root.level + 1, maxItems: w.root.maxItems * wrsBranches}
+				newRoot := &wrsNode{sumWeight: w.root.sumWeight, itemCnt: w.root.itemCnt, level: w.root.level + 1,
+					maxItems: w.root.maxItems * wrsBranches}
 				newRoot.items[0] = w.root
 				newRoot.weights[0] = w.root.sumWeight
 				w.root = newRoot
@@ -107,7 +108,8 @@ type wrsNode struct {
 // insert recursively inserts a new item to the tree and returns the item index
 func (n *wrsNode) insert(item wrsItem, weight int64) int {
 	branch := 0
-	for n.items[branch] != nil && (n.level == 0 || n.items[branch].(*wrsNode).itemCnt == n.items[branch].(*wrsNode).maxItems) {
+	for n.items[branch] != nil && (n.level == 0 ||
+		n.items[branch].(*wrsNode).itemCnt == n.items[branch].(*wrsNode).maxItems) {
 		branch++
 		if branch == wrsBranches {
 			panic(nil)

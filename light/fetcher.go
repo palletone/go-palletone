@@ -19,8 +19,6 @@ package light
 
 import (
 	"errors"
-	"time"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	dagerrors "github.com/palletone/go-palletone/dag/errors"
@@ -57,11 +55,11 @@ type headerInsertFn func(headers []*modules.Header) (int, error)
 type peerDropFn func(id string)
 
 // headerFilterTask represents a batch of headers needing fetcher filtering.
-type headerFilterTask struct {
-	peer    string            // The source peer of block headers
-	headers []*modules.Header // Collection of headers to filter
-	time    time.Time         // Arrival time of the headers
-}
+//type headerFilterTask struct {
+////	peer    string            // The source peer of block headers
+////	headers []*modules.Header // Collection of headers to filter
+////	time    time.Time         // Arrival time of the headers
+//}
 
 // inject represents a schedules import operation.
 type inject struct {
@@ -77,7 +75,7 @@ type LightFetcher struct {
 	inject chan *inject
 
 	//blockFilter  chan chan []*modules.Unit
-	headerFilter chan chan *headerFilterTask
+	//headerFilter chan chan *headerFilterTask
 
 	done chan common.Hash
 	quit chan struct{}
@@ -102,10 +100,10 @@ func NewLightFetcher(getHeaderByHash headerRetrievalFn, lightChainHeight lightCh
 	broadcastHeader headerBroadcasterFn, insertHeader headerInsertFn, dropPeer peerDropFn) *LightFetcher {
 	return &LightFetcher{
 		//notify:           make(chan *announce),
-		inject:       make(chan *inject),
-		headerFilter: make(chan chan *headerFilterTask),
-		done:         make(chan common.Hash),
-		quit:         make(chan struct{}),
+		inject: make(chan *inject),
+		//headerFilter: make(chan chan *headerFilterTask),
+		done: make(chan common.Hash),
+		quit: make(chan struct{}),
 
 		queue:            prque.New(),
 		queues:           make(map[string]int),
