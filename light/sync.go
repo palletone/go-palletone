@@ -40,7 +40,8 @@ func (pm *ProtocolManager) syncer(syncCh chan bool) {
 
 	// Wait for different events to fire synchronization operations
 	if pm.lightSync {
-		forceSync := time.Tick(forceSyncCycle)
+		forceSync := time.NewTicker(forceSyncCycle)
+		defer forceSync.Stop()
 		for {
 			select {
 			case <-pm.newPeerCh:
@@ -50,7 +51,7 @@ func (pm *ProtocolManager) syncer(syncCh chan bool) {
 				}
 				go pm.syncall()
 
-			case <-forceSync:
+			case <-forceSync.C:
 				// Force a sync even if not enough peers are present
 				go pm.syncall()
 

@@ -158,7 +158,7 @@ func (u *UtxosSync) SaveUtxoView(respdata *utxosRespData) error {
 	if !ok {
 		u.lock.RUnlock()
 		log.Debug("Light PalletOne", "SaveUtxoView key is not exist. addr:", respdata.addr)
-		return errors.New(fmt.Sprintf("addr(%v) is not exist", respdata.addr))
+		return fmt.Errorf("addr(%v) is not exist", respdata.addr)
 	}
 	u.lock.RUnlock()
 

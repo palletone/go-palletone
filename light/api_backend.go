@@ -414,8 +414,8 @@ func (b *LesApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, 
 	certID *big.Int, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
 	return
 }
-func (b *LesApiBackend) SendContractInvokeReqTx(requestTx *modules.Transaction) (reqId common.Hash, err error) {
-	return b.SendContractInvokeReqTx(requestTx)
+func (b *LesApiBackend) SendContractInvokeReqTx(requestTx *modules.Transaction) (common.Hash, error) {
+	return common.Hash{}, nil
 }
 
 func (b *LesApiBackend) ContractInvokeReqTokenTx(from, to, toToken common.Address, daoAmount,

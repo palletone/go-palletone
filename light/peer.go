@@ -21,9 +21,6 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
-	"sync"
-	"time"
-
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -31,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/light/flowcontrol"
 	"github.com/palletone/go-palletone/ptn"
+	"sync"
 )
 
 var (
@@ -66,8 +64,8 @@ type peer struct {
 	announceChn chan announceData
 	sendQueue   *execQueue
 
-	poolEntry *poolEntry
-	hasBlock  func(common.Hash, uint64) bool
+	//poolEntry *poolEntry
+	hasBlock func(common.Hash, uint64) bool
 	//	responseErrors int
 
 	fcClient       *flowcontrol.ClientNode // nil if the peer is server only
@@ -93,14 +91,6 @@ func newPeer(version int, network uint64, p *p2p.Peer, rw p2p.MsgReadWriter) *pe
 	}
 }
 
-func (p *peer) canQueue() bool {
-	return p.sendQueue.canQueue()
-}
-
-func (p *peer) queueSend(f func()) {
-	p.sendQueue.queue(f)
-}
-
 // Info gathers and returns a collection of metadata known about a peer.
 func (p *peer) Info(assetId modules.AssetId) *ptn.PeerInfo {
 	hash, number := p.HeadAndNumber(assetId)
@@ -111,8 +101,6 @@ func (p *peer) Info(assetId modules.AssetId) *ptn.PeerInfo {
 	}
 }
 
-//lightpeermsg map[modules.AssetId]*announceData
-//lightlock    sync.RWMutex
 func (p *peer) SetHead(data *announceData) {
 	p.lightlock.Lock()
 	defer p.lightlock.Unlock()
@@ -142,11 +130,6 @@ func (p *peer) HeadAndNumber(assetid modules.AssetId) (hash common.Hash, number 
 		return hash, &v.Number
 	}
 	return hash, nil
-}
-
-// waitBefore implements distPeer interface
-func (p *peer) waitBefore(maxCost uint64) (time.Duration, float64) {
-	return p.fcServer.CanSend(maxCost)
 }
 
 func sendRequest(w p2p.MsgWriter, msgcode, reqID uint64, data interface{}) error {

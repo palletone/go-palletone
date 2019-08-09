@@ -248,15 +248,15 @@ func (p *LightPalletone) GetKeyStore() *keystore.KeyStore {
 	return p.accountManager.Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 }
 
-func (self *LightPalletone) txBroadcastLoop() {
+func (p *LightPalletone) txBroadcastLoop() {
 	for {
 		select {
-		case event := <-self.txCh:
+		case event := <-p.txCh:
 			log.Debug("Light ProtocolManager", "txBroadcastLoop event.Tx", event.Tx)
-			self.protocolManager.BroadcastTx(event.Tx.Hash(), event.Tx)
+			p.protocolManager.BroadcastTx(event.Tx.Hash(), event.Tx)
 
 			// Err() channel will be closed when unsubscribing.
-		case <-self.txSub.Err():
+		case <-p.txSub.Err():
 			return
 		}
 	}

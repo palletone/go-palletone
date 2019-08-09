@@ -22,7 +22,6 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"net"
 	"sync"
 
 	"encoding/json"
@@ -93,9 +92,9 @@ type ProtocolManager struct {
 	assetId modules.AssetId
 	//chainDb     ethdb.Database
 	//odr        *LesOdr
-	server     *LesServer
-	serverPool *serverPool
-	genesis    *modules.Unit
+	server *LesServer
+	//serverPool *serverPool
+	genesis *modules.Unit
 	//lesTopic   discv5.Topic
 	//reqDist *requestDistributor
 	//retriever *retrieveManager
@@ -166,26 +165,26 @@ func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasTok
 			Version: version,
 			Length:  ProtocolLengths[version],
 			Run: func(p *p2p.Peer, rw p2p.MsgReadWriter) error {
-				var entry *poolEntry
+				//var entry *poolEntry
 				peer := manager.newPeer(int(version), networkId, p, rw)
-				if manager.serverPool != nil {
-					addr := p.RemoteAddr().(*net.TCPAddr)
-					entry = manager.serverPool.connect(peer, addr.IP, uint16(addr.Port))
-				}
-				peer.poolEntry = entry
+				//if manager.serverPool != nil {
+				//	addr := p.RemoteAddr().(*net.TCPAddr)
+				//	entry = manager.serverPool.connect(peer, addr.IP, uint16(addr.Port))
+				//}
+				//peer.poolEntry = entry
 				select {
 				case manager.newPeerCh <- peer:
 					manager.wg.Add(1)
 					defer manager.wg.Done()
 					err := manager.handle(peer)
-					if entry != nil {
-						manager.serverPool.disconnect(entry)
-					}
+					//if entry != nil {
+					//	manager.serverPool.disconnect(entry)
+					//}
 					return err
 				case <-manager.quitSync:
-					if entry != nil {
-						manager.serverPool.disconnect(entry)
-					}
+					//if entry != nil {
+					//	manager.serverPool.disconnect(entry)
+					//}
 					return p2p.DiscQuitting
 				}
 			},
@@ -258,7 +257,6 @@ func (pm *ProtocolManager) BroadcastLightHeader(header *modules.Header) {
 		//log.Debug("Light PalletOne ProtocolManager BroadcastLightHeader", "announceType", p.announceType)
 		p.announceChn <- announce
 	}
-	return
 }
 
 // removePeer initiates disconnection from a peer by removing it from the peer set
@@ -375,15 +373,11 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		pm.removePeer(p.id)
 	}()
 	// Register the peer in the downloader. If the downloader considers it banned, we disconnect
-	if pm.lightSync {
-		if pm.fetcher != nil {
-			//pm.fetcher.announce(p, head)
-		}
-
-		if p.poolEntry != nil {
-			pm.serverPool.registered(p.poolEntry)
-		}
-	}
+	//if pm.lightSync {
+	//	if p.poolEntry != nil {
+	//		pm.serverPool.registered(p.poolEntry)
+	//	}
+	//}
 
 	stop := make(chan struct{})
 	defer close(stop)
@@ -513,8 +507,8 @@ type NodeInfo struct {
 }
 
 // NodeInfo retrieves some protocol metadata about the running host node.
-func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
-	header := self.dag.CurrentHeader(self.assetId)
+func (pm *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
+	header := pm.dag.CurrentHeader(pm.assetId)
 
 	var (
 		index = uint64(0)
@@ -528,7 +522,7 @@ func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
 	}
 
 	return &NodeInfo{
-		Network: self.networkId,
+		Network: pm.networkId,
 		Index:   index,
 		Genesis: genesisHash,
 		Head:    hash,
