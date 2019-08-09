@@ -37,6 +37,11 @@ import (
 )
 
 const symbolsKey = "symbol_"
+const jsonResp1 = "{\"Error\":\"Failed to add global state\"}"
+const jsonResp2 = "{\"Error\":\"Failed to set symbols\"}"
+const jsonResp3 = "{\"Error\":\"Token not exist\"}"
+const jsonResp4 = "{\"Error\":\"Asset_TokenID invalid\"}"
+const jsonResp5 = "{\"Error\":\"Failed to get invoke address\"}"
 
 type PRC721 struct {
 }
@@ -91,7 +96,7 @@ func (p *PRC721) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	case "getTokenInfo":
 		return oneToken(args, stub)
 	case "getAllTokenInfo":
-		return allToken(args, stub)
+		return allToken(stub)
 	case "changeSupplyAddr":
 		return changeSupplyAddr(args, stub)
 	default:
@@ -177,7 +182,7 @@ func generateUUID() ([]byte, error) {
 	uuid := make([]byte, 16)
 	_, err := io.ReadFull(rand.Reader, uuid)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 	// variant bits; see section 4.1.1
 	uuid[8] = uuid[8]&^0xc0 | 0x80
@@ -336,8 +341,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//get creator
 	createAddr, err := stub.GetInvokeAddress()
 	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp5)
 	}
 
 	//last put state
@@ -361,8 +365,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		nonFungible.SupplyAddress, assetID}
 	err = setSymbols(stub, &info)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to set symbols\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp2)
 	}
 	//set token define
 	err = stub.DefineToken(byte(dm.AssetType_NonFungibleToken), createJson, createAddr.String())
@@ -373,8 +376,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//add global state
 	err = setGlobal(stub, &info)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to add global state\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp1)
 	}
 	return shim.Success(createJson)
 }
@@ -390,8 +392,8 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//check name is exist or not
 	gTkInfo := getGlobal(stub, symbol)
 	if gTkInfo == nil {
-		jsonResp := "{\"Error\":\"Token not exist\"}"
-		return shim.Error(jsonResp)
+
+		return shim.Error(jsonResp3)
 	}
 
 	//check status
@@ -445,8 +447,7 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//get invoke address
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp5)
 	}
 	//check supply address
 	if invokeAddr.String() != tkInfo.SupplyAddr && tkInfo.SupplyAddr != "" {
@@ -488,8 +489,7 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	err = setSymbols(stub, tkInfo)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to set symbols\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp2)
 	}
 
 	for _, nFdata := range nFdatas {
@@ -502,8 +502,7 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 
 	err = setGlobal(stub, tkInfo)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to add global state\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp1)
 	}
 
 	return shim.Success([]byte(""))
@@ -520,8 +519,7 @@ func changeSupplyAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 	//check name is exist or not
 	gTkInfo := getGlobal(stub, symbol)
 	if gTkInfo == nil {
-		jsonResp := "{\"Error\":\"Token not exist\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp3)
 	}
 
 	//check status
@@ -532,8 +530,7 @@ func changeSupplyAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 
 	tkInfo := getSymbols(stub, symbol)
 	if tkInfo == nil {
-		jsonResp := "{\"Error\":\"Token not exist\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp3)
 	}
 
 	//new supply address
@@ -555,14 +552,12 @@ func changeSupplyAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 	tkInfo.SupplyAddr = newSupplyAddr
 	err = setSymbols(stub, tkInfo)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to set symbols\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp2)
 	}
 
 	err = setGlobal(stub, tkInfo)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to add global state\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp1)
 	}
 
 	return shim.Success([]byte(""))
@@ -589,8 +584,7 @@ func existTokenID(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	asset := &dm.Asset{}
 	err := asset.SetString(assetStr)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Asset_TokenID invalid\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp4)
 	}
 	//
 	valBytes, err := stub.GetState(assetStr)
@@ -612,14 +606,12 @@ func setTokenURI(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	asset := &dm.Asset{}
 	err := asset.SetString(assetStr)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Asset_TokenID invalid\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp4)
 	}
 	//get invoke address
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp5)
 	}
 	tokens, err := stub.GetTokenBalance(invokeAddr.String(), asset)
 	if len(tokens) == 0 {
@@ -653,8 +645,7 @@ func getTokenURI(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	asset := &dm.Asset{}
 	err := asset.SetString(assetStr)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Asset_TokenID invalid\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp4)
 	}
 	//
 	valBytes, _ := stub.GetState(assetStr)
@@ -677,8 +668,7 @@ func oneToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//check name is exist or not
 	tkInfo := getSymbols(stub, symbol)
 	if tkInfo == nil {
-		jsonResp := "{\"Error\":\"Token not exist\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp3)
 	}
 
 	var tkIDs []string
@@ -702,7 +692,7 @@ func oneToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(tkJson)
 }
 
-func allToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+func allToken(stub shim.ChaincodeStubInterface) pb.Response {
 	tkInfos := getSymbolsAll(stub)
 	var tkIDInfos []TokenIDInfo
 	tkIDs := []string{"Only return simple information"}

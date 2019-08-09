@@ -13,7 +13,7 @@ ${developerAddr_02}    ${EMPTY}
 
 *** Test Cases ***
 Business_01
-    [Documentation]    mediator 交付 50 0000 0000 0000 及以上才可以加入候选列表
+    [Documentation]    mediator 交付 50 ptn 才可以加入候选列表
     ...
     ...    某节点申请加入mediator-》进入申请列表-》基金会同意-》进入同意列表-》节点加入保证金（足够）-》进入候选列表-》节点增加保证金-》节点申请退出部分保证金-》基金会同意-》节点申请退出候选列表-》进入退出列表-》基金会同意。
     ${amount}    getBalance    ${mediatorAddr_01}    PTN
@@ -143,7 +143,7 @@ Business_02
     log    ${resul}
 
 Business_03
-    [Documentation]    jury 交付 1000000 0000 0000 及以上才可以加入候选列表
+    [Documentation]    jury 交付 10 ptn 才可以加入候选列表
     ${resul}    juryPayToDepositContract    ${juryAddr_01}    10
     log    ${resul}
     ${result}    getCandidateBalanceWithAddr    ${juryAddr_01}    #获取该地址保证金账户详情
@@ -193,7 +193,7 @@ Business_04
     log    ${resul}
 
 Business_05
-    [Documentation]    dev 交付 10000 0000 0000 及以上才可以加入候选列表
+    [Documentation]    dev 交付 1 ptn 才可以加入合约开发者列表
     ${resul}    developerPayToDepositContract    ${developerAddr_01}    1
     log    ${resul}
     ${result}    getCandidateBalanceWithAddr    ${developerAddr_01}    #获取该地址保证金账户详情

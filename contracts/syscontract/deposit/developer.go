@@ -21,13 +21,13 @@ import (
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 )
 
-func developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) peer.Response {
-	return nodePayToDepositContract(stub, args, Developer)
+func developerPayToDepositContract(stub shim.ChaincodeStubInterface) peer.Response {
+	return nodePayToDepositContract(stub, Developer)
 
 }
 
 //  申请
-func devApplyQuit(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+func devApplyQuit(stub shim.ChaincodeStubInterface) peer.Response {
 	log.Info("devApplyQuit")
 	//  处理逻辑
 	err := applyQuitList(Developer, stub)

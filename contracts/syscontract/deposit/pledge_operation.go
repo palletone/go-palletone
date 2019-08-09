@@ -30,7 +30,7 @@ import (
 )
 
 //  质押PTN
-func processPledgeDeposit(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func processPledgeDeposit(stub shim.ChaincodeStubInterface) pb.Response {
 	//  获取是否是保证金合约
 	invokeTokens, err := isContainDepositContractAddr(stub)
 	if err != nil {
@@ -145,7 +145,7 @@ func convertPledgeStatus2Json(p *modules.PledgeStatus) *pledgeStatusJson {
 	return data
 }
 
-func queryAllPledgeHistory(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func queryAllPledgeHistory(stub shim.ChaincodeStubInterface) pb.Response {
 
 	history, err := getAllPledgeRewardHistory(stub)
 	if err != nil {
@@ -154,7 +154,7 @@ func queryAllPledgeHistory(stub shim.ChaincodeStubInterface, args []string) pb.R
 	data, _ := json.Marshal(history)
 	return shim.Success(data)
 }
-func queryPledgeList(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func queryPledgeList(stub shim.ChaincodeStubInterface) pb.Response {
 	list, err := getLastPledgeList(stub)
 	if err != nil {
 		return shim.Error(err.Error())

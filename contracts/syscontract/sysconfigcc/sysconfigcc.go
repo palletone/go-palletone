@@ -479,7 +479,7 @@ func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubIn
 		return nil, err
 	}
 
-	return []byte(modifyByte), nil
+	return modifyByte, nil
 }
 
 //func (s *SysConfigChainCode) getSysParamValByKey(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {

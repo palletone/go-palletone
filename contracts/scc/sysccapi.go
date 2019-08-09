@@ -128,12 +128,12 @@ func deploySysCC(chainID string, syscc *SystemChaincode) error {
 	spec := &pb.ChaincodeSpec{Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]), ChaincodeId: chaincodeID, Input: &pb.ChaincodeInput{Args: syscc.InitArgs}}
 
 	// First build and get the deployment spec
-	chaincodeDeploymentSpec, err := buildSysCC(ctxt, spec)
+	chaincodeDeploymentSpec := buildSysCC(spec)
 
-	if err != nil {
-		log.Error(fmt.Sprintf("Error deploying chaincode spec: %v\n\n error: %s", spec, err))
-		return err
-	}
+	//if err != nil {
+	//	log.Error(fmt.Sprintf("Error deploying chaincode spec: %v\n\n error: %s", spec, err))
+	//	return err
+	//}
 	log.Infof("buildSysCC chaincodeDeploymentSpec =%v", chaincodeDeploymentSpec)
 	version := util.GetSysCCVersion()
 	cccid := ccprov.GetCCContext(syscc.Id, chainID, chaincodeDeploymentSpec.ChaincodeSpec.ChaincodeId.Name, version, txid, true, nil, nil)
@@ -166,16 +166,16 @@ func DeDeploySysCC(chainID string, syscc *SystemChaincode, dontRmCon bool) error
 	spec := &pb.ChaincodeSpec{Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]), ChaincodeId: chaincodeID, Input: &pb.ChaincodeInput{Args: syscc.InitArgs}}
 	ctx := context.Background()
 	// First build and get the deployment spec
-	chaincodeDeploymentSpec, err := buildSysCC(ctx, spec)
-	if err != nil {
-		log.Error(fmt.Sprintf("Error deploying chaincode spec: %v\n\n error: %s", spec, err))
-		return err
-	}
+	chaincodeDeploymentSpec := buildSysCC(spec)
+	//if err != nil {
+	//	log.Error(fmt.Sprintf("Error deploying chaincode spec: %v\n\n error: %s", spec, err))
+	//	return err
+	//}
 
 	ccprov := ccprovider.GetChaincodeProvider()
 	version := util.GetSysCCVersion()
 	cccid := ccprov.GetCCContext(syscc.Id, chainID, syscc.Name, version, "123", true, nil, nil)
-	err = ccprov.Stop(ctx, cccid, chaincodeDeploymentSpec, dontRmCon)
+	err := ccprov.Stop(ctx, cccid, chaincodeDeploymentSpec, dontRmCon)
 	if err == nil {
 		cclist.DelChaincode(chainID, syscc.Name, version)
 	}
@@ -184,10 +184,10 @@ func DeDeploySysCC(chainID string, syscc *SystemChaincode, dontRmCon bool) error
 }
 
 // buildLocal builds a given chaincode code
-func buildSysCC(context context.Context, spec *pb.ChaincodeSpec) (*pb.ChaincodeDeploymentSpec, error) {
+func buildSysCC(spec *pb.ChaincodeSpec) *pb.ChaincodeDeploymentSpec {
 	var codePackageBytes []byte
 	chaincodeDeploymentSpec := &pb.ChaincodeDeploymentSpec{ExecEnv: pb.ChaincodeDeploymentSpec_SYSTEM, ChaincodeSpec: spec, CodePackage: codePackageBytes}
-	return chaincodeDeploymentSpec, nil
+	return chaincodeDeploymentSpec
 }
 
 //func isWhitelisted(syscc *SystemChaincode) bool {

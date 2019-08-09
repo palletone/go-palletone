@@ -546,6 +546,7 @@ func (handler *Handler) handleGetTokenBalance(address string, token *modules.Ass
 }
 func (handler *Handler) handlePayOutToken(collection string, addr string, invokeTokens *modules.AmountAsset,
 	lockTime uint32, contractid []byte, channelId string, txid string) error {
+	log.Debugf("collection %s", collection)
 	// Construct payload for PAY_OUT_TOKEN
 	//TODO Devin
 	payloadBytes, _ := proto.Marshal(&pb.PayOutToken{Asset: invokeTokens.Asset.Bytes(), Amount: invokeTokens.Amount,
@@ -1067,7 +1068,7 @@ func (handler *Handler) handleGetCertChain(rootIssuer string, cert *x509.Certifi
 			break
 		}
 	}
-	return nil, nil, nil
+	return intermediates, holders, nil
 }
 
 // 获取证书的吊销时间

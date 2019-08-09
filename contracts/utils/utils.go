@@ -223,14 +223,19 @@ func RemoveContainerWhenGoBuildTimeOut(id string) {
 		log.Debugf("util.NewDockerClient")
 		return
 	}
-	select {
-	case <-time.After(contractcfg.GetConfig().ContractDeploytimeout):
-		err := client.RemoveContainer(docker.RemoveContainerOptions{ID: id, Force: true})
-		if err != nil {
-			log.Infof("remove container error: %s", err.Error())
-		}
-		return
+	<-time.After(contractcfg.GetConfig().ContractDeploytimeout)
+	err = client.RemoveContainer(docker.RemoveContainerOptions{ID: id, Force: true})
+	if err != nil {
+		log.Infof("remove container error: %s", err.Error())
 	}
+	//select {
+	//case <-time.After(contractcfg.GetConfig().ContractDeploytimeout):
+	//	err := client.RemoveContainer(docker.RemoveContainerOptions{ID: id, Force: true})
+	//	if err != nil {
+	//		log.Infof("remove container error: %s", err.Error())
+	//	}
+	//	return
+	//}
 }
 
 //  调用的时候，若调用完发现磁盘使用超过系统上限，则kill掉并移除

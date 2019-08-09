@@ -76,7 +76,7 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	case "testUseCert":
 		return t.test_UseCert(stub)
 	case "testSendRecvJury":
-		return t.test_SendRecvJury(stub, args)
+		return t.test_SendRecvJury(stub)
 	case "testSetEvent":
 		return t.test_SetEvent(stub)
 	}
@@ -311,18 +311,18 @@ func (t *SimpleChaincode) test_DelGlobalState(stub shim.ChaincodeStubInterface, 
 	return shim.Success(nil)
 }
 
-func (t *SimpleChaincode) test_GetSystemConfig(stub shim.ChaincodeStubInterface) pb.Response {
-	cp, err := stub.GetSystemConfig()
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-
-	res, err := json.Marshal(cp)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	return shim.Success(res)
-}
+//func (t *SimpleChaincode) test_GetSystemConfig(stub shim.ChaincodeStubInterface) pb.Response {
+//	cp, err := stub.GetSystemConfig()
+//	if err != nil {
+//		return shim.Error(err.Error())
+//	}
+//
+//	res, err := json.Marshal(cp)
+//	if err != nil {
+//		return shim.Error(err.Error())
+//	}
+//	return shim.Success(res)
+//}
 
 func (t *SimpleChaincode) test_GetTokenBalance(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	if len(args) < 1 {
@@ -487,7 +487,7 @@ type JuryMsgAddr struct {
 	Answer  []byte
 }
 
-func (t *SimpleChaincode) test_SendRecvJury(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *SimpleChaincode) test_SendRecvJury(stub shim.ChaincodeStubInterface) pb.Response {
 	_, err := stub.SendJury(1, []byte("hello"), []byte("result"))
 	if err != nil {
 		return shim.Error(fmt.Sprintf("sendresult err: %s", err.Error()))

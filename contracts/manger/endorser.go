@@ -156,12 +156,12 @@ func (e *Endorser) simulateProposal(contractid []byte, ctx context.Context, chai
 }
 
 //endorse the proposal
-func (e *Endorser) endorseProposal(ctx context.Context, chainID string, txid string, signedProp *pb.SignedProposal, proposal *pb.Proposal, response *pb.Response, simRes []byte, event *pb.ChaincodeEvent, visibility []byte, ccid *pb.ChaincodeID, txsim rwset.TxSimulator) (*pb.ProposalResponse, error) {
-	log.Debugf("[%s][%s] Entry chaincode: %s", chainID, shorttxid(txid), ccid)
-	defer log.Debugf("[%s][%s] Exit", chainID, shorttxid(txid))
-
-	return nil, nil
-}
+//func (e *Endorser) endorseProposal(ctx context.Context, chainID string, txid string, signedProp *pb.SignedProposal, proposal *pb.Proposal, response *pb.Response, simRes []byte, event *pb.ChaincodeEvent, visibility []byte, ccid *pb.ChaincodeID, txsim rwset.TxSimulator) (*pb.ProposalResponse, error) {
+//	log.Debugf("[%s][%s] Entry chaincode: %s", chainID, shorttxid(txid), ccid)
+//	defer log.Debugf("[%s][%s] Exit", chainID, shorttxid(txid))
+//
+//	return nil, nil
+//}
 
 //preProcess checks the tx proposal headers, uniqueness and ACL
 func (e *Endorser) validateProcess(signedProp *pb.SignedProposal) (*validateResult, error) {
