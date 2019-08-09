@@ -126,7 +126,7 @@ type ProtocolManager struct {
 	protocolname string
 
 	//cors
-	corss *p2p.Server
+	//corss *p2p.Server
 
 	receivedCache palletcache.ICache
 }
@@ -134,7 +134,8 @@ type ProtocolManager struct {
 // NewProtocolManager returns a new ethereum sub protocol manager. The Palletone sub protocol manages peers capable
 // with the ethereum network.
 func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasToken modules.AssetId, txpool txPool,
-	dag dag.IDag, mux *event.TypeMux, genesis *modules.Unit, quitSync chan struct{}, protocolname string) (*ProtocolManager, error) {
+	dag dag.IDag, mux *event.TypeMux, genesis *modules.Unit, quitSync chan struct{},
+	protocolname string) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		lightSync:     lightSync,
@@ -209,7 +210,8 @@ func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasTok
 	}
 
 	//if manager.lightSync {
-	manager.downloader = downloader.New(downloader.LightSync, manager.eventMux, removePeer, nil, dag, nil)
+	manager.downloader = downloader.New(downloader.LightSync, manager.eventMux, removePeer, nil, dag,
+		nil)
 	manager.peers.notify((*downloaderPeerNotify)(manager))
 	manager.fetcher = manager.newLightFetcher()
 	//}
@@ -221,28 +223,18 @@ func NewProtocolManager(lightSync bool, peers *peerSet, networkId uint64, gasTok
 
 func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 	headerVerifierFn := func(header *modules.Header) error {
-		//hash := header.Hash()
-		//log.Debugf("Importing propagated block insert DAG Enter ValidateUnitExceptGroupSig, unit: %s", hash.String())
-		//defer log.Debugf("Importing propagated block insert DAG End ValidateUnitExceptGroupSig, unit: %s", hash.String())
-		//verr := pm.dag.ValidateUnitExceptGroupSig(unit)
-		//if verr != nil && !validator.IsOrphanError(verr) {
-		//	return dagerrors.ErrFutureBlock
-		//}
 		//TODO must modify
 		return dagerrors.ErrFutureBlock
 	}
 	headerBroadcaster := func(header *modules.Header, propagate bool) {
-		log.Info("Light PalletOne ProtocolManager headerBroadcaster", "assetid", header.Number.AssetID, "index", header.Number.Index, "hash:", header.Hash().String())
+		log.Info("Light PalletOne ProtocolManager headerBroadcaster", "assetid", header.Number.AssetID,
+			"index", header.Number.Index, "hash:", header.Hash().String())
 		pm.BroadcastLightHeader(header)
 	}
 	inserter := func(headers []*modules.Header) (int, error) {
 		// If fast sync is running, deny importing weird blocks
-		//TODO must add lock
-		//if pm.lightSync {
-		//	log.Warn("Discarded lighting sync propagated block", "number", headers[0].Number.Index, "hash", headers[0].Hash())
-		//	return 0, errors.New("fasting sync")
-		//}
-		log.Debug("Light PalletOne ProtocolManager InsertLightHeader", "assetId", headers[0].Number.AssetID, "index:", headers[0].Number.Index, "hash", headers[0].Hash())
+		log.Debug("Light PalletOne ProtocolManager InsertLightHeader", "assetId", headers[0].Number.AssetID,
+			"index:", headers[0].Number.Index, "hash", headers[0].Hash())
 		return pm.dag.InsertLightHeader(headers)
 	}
 	return NewLightFetcher(pm.dag.GetHeaderByHash, pm.dag.GetLightChainHeight, headerVerifierFn,
@@ -253,7 +245,8 @@ func (pm *ProtocolManager) BroadcastLightHeader(header *modules.Header) {
 	//peers := pm.peers.PeersWithoutHeader(header.Number.AssetID, header.Hash())
 	peers := pm.peers.AllPeers(header.Number.AssetID)
 	announce := announceData{Hash: header.Hash(), Number: *header.Number, Header: *header}
-	log.Debug("Light PalletOne ProtocolManager BroadcastLightHeader", "index:", header.Index(), "assetId:", header.Number.AssetID.String(), "len(peers)", len(peers))
+	log.Debug("Light PalletOne ProtocolManager BroadcastLightHeader", "index:", header.Index(),
+		"assetId:", header.Number.AssetID.String(), "len(peers)", len(peers))
 	for _, p := range peers {
 		if p == nil {
 			continue
@@ -264,20 +257,7 @@ func (pm *ProtocolManager) BroadcastLightHeader(header *modules.Header) {
 		}
 		//log.Debug("Light PalletOne ProtocolManager BroadcastLightHeader", "announceType", p.announceType)
 		p.announceChn <- announce
-		//switch p.announceType {
-		//case announceTypeNone:
-		//	select {
-		//	case p.announceChn <- announce:
-		//	default:
-		//		pm.removePeer(p.id)
-		//	}
-		//case announceTypeSimple:
-		//
-		//case announceTypeSigned:
-		//
-		//}
 	}
-	//log.Trace("BroadcastLightHeader Propagated header", "protocalname", pm.SubProtocols[0].Name, "index:", header.Number.Index, "hash", header.Hash(), "recipients", len(peers))
 	return
 }
 
@@ -412,10 +392,12 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		for {
 			select {
 			case announce := <-p.announceChn:
-				log.Debug("Light Palletone ProtocolManager->handle", "assetId", announce.Header.Number.AssetID, "index", announce.Header.Number.Index)
+				log.Debug("Light Palletone ProtocolManager->handle", "assetId", announce.Header.Number.AssetID,
+					"index", announce.Header.Number.Index)
 				data, err := json.Marshal(announce.Header)
 				if err != nil {
-					log.Error("Light Palletone ProtocolManager->handle", "Marshal err", err, "announce", announce)
+					log.Error("Light Palletone ProtocolManager->handle", "Marshal err", err,
+						"announce", announce)
 				} else {
 					p.lightlock.Lock()
 					announce.Hash = announce.Header.Hash()
@@ -425,11 +407,11 @@ func (pm *ProtocolManager) handle(p *peer) error {
 
 					//if announce.Number.AssetID != modules.PTNCOIN {
 					if pm.assetId != announce.Number.AssetID {
-						log.Debug("Light PalletOne ProtocolManager SendRawAnnounce", "assetid", announce.Number.AssetID, "index", announce.Number.Index)
+						log.Debug("Light PalletOne ProtocolManager SendRawAnnounce",
+							"assetid", announce.Number.AssetID, "index", announce.Number.Index)
 						p.SendRawAnnounce(data)
 					} else {
 						if !p.fullnode {
-							//log.Debug("Light PalletOne ProtocolManager", "assetid", announce.Number.AssetID, "SendRawAnnounce", data)
 							p.SendRawAnnounce(data)
 						}
 					}
@@ -448,8 +430,6 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		}
 	}
 }
-
-//var reqList = []uint64{GetBlockHeadersMsg, GetBlockBodiesMsg, GetCodeMsg, GetUTXOsMsg, GetProofsMsg, SendTxMsg, GetHeaderProofsMsg}
 
 // handleMsg is invoked whenever an inbound message is received from a remote
 // peer. The remote connection is torn down upon returning any error.
@@ -574,16 +554,19 @@ func (pc *peerConnection) Head(assetId modules.AssetId) (common.Hash, *modules.C
 }
 
 func (pc *peerConnection) RequestHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
-	log.Debug("peerConnection batch of headers by hash", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse)
-	return p2p.Send(pc.peer.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Hash: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
+	log.Debug("peerConnection batch of headers by hash", "count", amount, "fromhash", origin,
+		"skip", skip, "reverse", reverse)
+	return p2p.Send(pc.peer.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Hash: origin},
+		Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
 }
 
 func (pc *peerConnection) RequestHeadersByNumber(origin *modules.ChainIndex, amount int, skip int, reverse bool) error {
-	log.Debug("peerConnection batch of headers by number", "count", amount, "from origin", origin, "skip", skip, "reverse", reverse)
-	return p2p.Send(pc.peer.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Number: *origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
+	log.Debug("peerConnection batch of headers by number", "count", amount, "from origin", origin,
+		"skip", skip, "reverse", reverse)
+	return p2p.Send(pc.peer.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Number: *origin},
+		Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
 }
 func (p *peerConnection) RequestDagHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
-	//log.Debug("Fetching batch of headers", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse)
 	return nil
 }
 

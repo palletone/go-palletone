@@ -343,13 +343,14 @@ type ContractTplPayload struct {
 
 // App: contract_deploy
 type ContractDeployPayload struct {
-	TemplateId []byte             `json:"template_id"`    // contract template id
-	ContractId []byte             `json:"contract_id"`    // contract id
-	Name       string             `json:"name"`           // the name for contract
-	Args       [][]byte           `json:"args"`           // contract arguments list
-	EleList    []ElectionInf      `json:"election_list"`  // contract jurors list
-	ReadSet    []ContractReadSet  `json:"read_set"`       // the set data of read, and value could be any type
-	WriteSet   []ContractWriteSet `json:"write_set"`      // the set data of write, and value could be any type
+	TemplateId []byte             `json:"template_id"`   // contract template id
+	ContractId []byte             `json:"contract_id"`   // contract id
+	Name       string             `json:"name"`          // the name for contract
+	Args       [][]byte           `json:"args"`          // contract arguments list
+	EleList    []ElectionInf      `json:"election_list"` // contract jurors list
+	ReadSet    []ContractReadSet  `json:"read_set"`      // the set data of read, and value could be any type
+	WriteSet   []ContractWriteSet `json:"write_set"`     // the set data of write, and value could be any type
+	DuringTime uint64             `json:"during_time"`
 	ErrMsg     ContractError      `json:"contract_error"` // contract error message
 }
 
@@ -458,7 +459,7 @@ type FileInfo struct {
 	Timestamp   uint64      `json:"timestamp"`
 	MainData    string      `json:"main_data"`
 	ExtraData   string      `json:"extra_data"`
-	Reference   string        `json:"reference"`
+	Reference   string      `json:"reference"`
 }
 
 func NewContractTplPayload(templateId []byte, memory uint16, bytecode []byte, err ContractError) *ContractTplPayload {

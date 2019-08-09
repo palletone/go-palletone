@@ -1,4 +1,5 @@
-// +build mainnet
+// +build !mainnet
+// +build !testnet
 
 /*
  *
@@ -24,6 +25,6 @@ package discover
 
 //palletone
 //112 97 108 108 101 110 116 111 110 101
-const Version = 1076
+const Version = 1070
 
-var GenesisHash = []byte("fda8aea1b4b2920b1f4038fb10edb8fe510669ec1f574f5a13b20cad0f2294df")
+var GenesisHash = []byte("")

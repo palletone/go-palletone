@@ -136,6 +136,7 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 	var (
 		dkgr    *dkg.DistKeyGenerator
 		newHeader *modules.Header
+		err error
 	)
 
 	// 1. 获取群签名所需数据
@@ -147,7 +148,7 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 			return
 		}
 
-		newHeader, err := mp.dag.GetHeaderByHash(unitHash)
+		newHeader, err = mp.dag.GetHeaderByHash(unitHash)
 		if newHeader == nil || err != nil {
 			err = fmt.Errorf("fail to get header by hash in dag: %v", unitHash.TerminalString())
 			log.Debugf(err.Error())

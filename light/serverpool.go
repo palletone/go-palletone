@@ -114,23 +114,23 @@ type serverPool struct {
 }
 
 // newServerPool creates a new serverPool instance
-func newServerPool(db ptndb.Database, quit chan struct{}, wg *sync.WaitGroup) *serverPool {
-	pool := &serverPool{
-		db:           db,
-		quit:         quit,
-		wg:           wg,
-		entries:      make(map[discover.NodeID]*poolEntry),
-		timeout:      make(chan *poolEntry, 1),
-		adjustStats:  make(chan poolStatAdjust, 100),
-		enableRetry:  make(chan *poolEntry, 1),
-		knownSelect:  newWeightedRandomSelect(),
-		newSelect:    newWeightedRandomSelect(),
-		fastDiscover: true,
-	}
-	pool.knownQueue = newPoolEntryQueue(maxKnownEntries, pool.removeEntry)
-	pool.newQueue = newPoolEntryQueue(maxNewEntries, pool.removeEntry)
-	return pool
-}
+//func newServerPool(db ptndb.Database, quit chan struct{}, wg *sync.WaitGroup) *serverPool {
+//	pool := &serverPool{
+//		db:           db,
+//		quit:         quit,
+//		wg:           wg,
+//		entries:      make(map[discover.NodeID]*poolEntry),
+//		timeout:      make(chan *poolEntry, 1),
+//		adjustStats:  make(chan poolStatAdjust, 100),
+//		enableRetry:  make(chan *poolEntry, 1),
+//		knownSelect:  newWeightedRandomSelect(),
+//		newSelect:    newWeightedRandomSelect(),
+//		fastDiscover: true,
+//	}
+//	pool.knownQueue = newPoolEntryQueue(maxKnownEntries, pool.removeEntry)
+//	pool.newQueue = newPoolEntryQueue(maxNewEntries, pool.removeEntry)
+//	return pool
+//}
 
 func (pool *serverPool) start(server *p2p.Server /*, topic discv5.Topic*/) {
 	pool.server = server
@@ -496,7 +496,8 @@ func (pool *serverPool) dial(entry *poolEntry, knownSelected bool) {
 		pool.newSelected++
 	}
 	addr := entry.addrSelect.choose().(*poolEntryAddress)
-	log.Debug("Dialing new peer", "lesaddr", entry.id.String()+"@"+addr.strKey(), "set", len(entry.addr), "known", knownSelected)
+	log.Debug("Dialing new peer", "lesaddr", entry.id.String()+"@"+addr.strKey(), "set", len(entry.addr),
+		"known", knownSelected)
 	entry.dialed = addr
 	go func() {
 		pool.server.AddPeer(discover.NewNode(entry.id, addr.ip, addr.port, addr.port))
@@ -558,7 +559,8 @@ type poolEntry struct {
 }
 
 func (e *poolEntry) EncodeRLP(w io.Writer) error {
-	return rlp.Encode(w, []interface{}{e.id, e.lastConnected.ip, e.lastConnected.port, e.lastConnected.fails, &e.connectStats, &e.delayStats, &e.responseStats, &e.timeoutStats})
+	return rlp.Encode(w, []interface{}{e.id, e.lastConnected.ip, e.lastConnected.port, e.lastConnected.fails,
+		&e.connectStats, &e.delayStats, &e.responseStats, &e.timeoutStats})
 }
 
 func (e *poolEntry) DecodeRLP(s *rlp.Stream) error {
@@ -612,7 +614,10 @@ func (e *knownEntry) Weight() int64 {
 	if e.state != psNotConnected || !e.known || e.delayedRetry {
 		return 0
 	}
-	return int64(1000000000 * e.connectStats.recentAvg() * math.Exp(-float64(e.lastConnected.fails)*failDropLn-e.responseStats.recentAvg()/float64(responseScoreTC)-e.delayStats.recentAvg()/float64(delayScoreTC)) * math.Pow(1-e.timeoutStats.recentAvg(), timeoutPow))
+	return int64(1000000000 * e.connectStats.recentAvg() *
+		math.Exp(-float64(e.lastConnected.fails)*
+			failDropLn-e.responseStats.recentAvg()/float64(responseScoreTC)-
+			e.delayStats.recentAvg()/float64(delayScoreTC)) * math.Pow(1-e.timeoutStats.recentAvg(), timeoutPow))
 }
 
 // poolEntryAddress is a separate object because currently it is necessary to remember
