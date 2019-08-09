@@ -91,7 +91,7 @@ func (t *SimpleChaincode) invoke(stub shim.ChaincodeStubInterface, args []string
 	var err error
 
 	//glh
-	return shim.Success([]byte("example 2 invoke mock sucess"))
+	return shim.Success([]byte("example 2 invoke mock success"))
 
 	if len(args) != 3 {
 		return shim.Error("Incorrect number of arguments. Expecting 3")
@@ -150,7 +150,7 @@ func (t *SimpleChaincode) delete(stub shim.ChaincodeStubInterface, args []string
 	}
 
 	//glh
-	return shim.Success([]byte("example 2 delete mock sucess"))
+	return shim.Success([]byte("example 2 delete mock success"))
 
 	A := args[0]
 
@@ -169,7 +169,7 @@ func (t *SimpleChaincode) query(stub shim.ChaincodeStubInterface, args []string)
 	var err error
 
 	//glh
-	return shim.Success([]byte("example 2 query mock sucess"))
+	return shim.Success([]byte("example 2 query mock success"))
 
 	if len(args) != 1 {
 		return shim.Error("Incorrect number of arguments. Expecting name of the person to query")

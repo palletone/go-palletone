@@ -71,17 +71,17 @@ type TplJson struct {
 	ErrorMessage string `json:"error_message"`
 }
 type DeployJson struct {
-	Number     int      `json:"row_number"`
-	TemplateId string   `json:"template_id"`
-	ContractId string   `json:"contract_id"`
-	Name       string   `json:"name"`
-	Args       [][]byte `json:"args"` // contract arguments list
-	//Jury         []string `json:"jury"`
-	EleList      string `json:"election_list"`
-	ReadSet      string `json:"read_set"`
-	WriteSet     string `json:"write_set"`
-	ErrorCode    uint32 `json:"error_code"`
-	ErrorMessage string `json:"error_message"`
+	Number       int      `json:"row_number"`
+	TemplateId   string   `json:"template_id"`
+	ContractId   string   `json:"contract_id"`
+	Name         string   `json:"name"`
+	Args         [][]byte `json:"args"` // contract arguments list
+	EleList      string   `json:"election_list"`
+	ReadSet      string   `json:"read_set"`
+	WriteSet     string   `json:"write_set"`
+	DuringTime   uint64   `json:"during_time"`
+	ErrorCode    uint32   `json:"error_code"`
+	ErrorMessage string   `json:"error_message"`
 }
 type InvokeJson struct {
 	Number       int      `json:"row_number"`
@@ -183,8 +183,8 @@ func ConvertTx2FullJson(tx *modules.Transaction,
 		} else if m.App == modules.APP_DATA {
 			data := m.Payload.(*modules.DataPayload)
 			dataJson := &DataJson{
-				MainData: string(data.MainData), 
-				ExtraData: string(data.ExtraData), 
+				MainData:  string(data.MainData),
+				ExtraData: string(data.ExtraData),
 				Reference: string(data.Reference),
 			}
 			dataJson.Number = i
@@ -276,6 +276,7 @@ func convertDeploy2Json(deploy *modules.ContractDeployPayload) *DeployJson {
 	djson.ReadSet = string(rset)
 	wset, _ := json.Marshal(deploy.WriteSet)
 	djson.WriteSet = string(wset)
+	djson.DuringTime = deploy.DuringTime
 	djson.ErrorCode = deploy.ErrMsg.Code
 	djson.ErrorMessage = deploy.ErrMsg.Message
 	return djson

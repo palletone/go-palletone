@@ -135,7 +135,7 @@ func (dag *Dag) IsSynced() bool {
 	//nextSlotTime := dag.unstablePropRep.GetSlotTime(gp, dgp, 1)
 	nextSlotTime := dag.unstablePropRep.GetSlotTime(gp, dgp, 2)
 
-	return nextSlotTime.Before(now)
+	return nextSlotTime.After(now)
 }
 
 // author Albert·Gou
@@ -149,21 +149,20 @@ func (d *Dag) PrecedingThreshold() int {
 
 func (d *Dag) UnitIrreversibleTime() time.Duration {
 	gp := d.GetGlobalProp()
-	it := uint(gp.ChainThreshold()) * uint(gp.ChainParameters.MediatorInterval)
+	cp := gp.ChainParameters
+	it := uint(gp.ChainThreshold() + int(cp.MaintenanceSkipSlots)) * uint(cp.MediatorInterval)
 	return time.Duration(it) * time.Second
 }
 
 func (d *Dag) IsIrreversibleUnit(hash common.Hash) bool {
-	// 查询memdag是否存在
-	_, err := d.unstableUnitRep.GetHeaderByHash(hash)
-	if err == nil {
-		return false // 存在于memdag，不稳定
-	}
-
-	header, err := d.stableUnitRep.GetHeaderByHash(hash)
+	header, err := d.unstableUnitRep.GetHeaderByHash(hash)
 	if err != nil {
-		log.Debugf("stableUnitRep GetHeaderByHash error:%s", err.Error())
-		return false // 不存在该unit
+		//return false // 存在于memdag，不稳定
+		header, err = d.stableUnitRep.GetHeaderByHash(hash)
+		if err != nil {
+			log.Debugf("UnitRep GetHeaderByHash error:%s", err.Error())
+			return false // 不存在该unit
+		}
 	}
 
 	if header.NumberU64() > d.GetIrreversibleUnitNum(header.GetAssetId()) {

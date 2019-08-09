@@ -101,7 +101,7 @@ func creatMulti(juryMsg []JuryMsgAddr, stub shim.ChaincodeStubInterface) ([]byte
 	createMultiSigParams.M = 3
 	createMultiSigParams.N = 4
 	for i := range answers {
-		createMultiSigParams.PublicKeys = append(createMultiSigParams.PublicKeys, string(answers[i]))
+		createMultiSigParams.PublicKeys = append(createMultiSigParams.PublicKeys, answers[i])
 	}
 	creteMultiReqBytes, err := json.Marshal(createMultiSigParams)
 	if err != nil {
@@ -111,7 +111,7 @@ func creatMulti(juryMsg []JuryMsgAddr, stub shim.ChaincodeStubInterface) ([]byte
 	if err != nil {
 		return nil, errors.New("OutChainCall CreateMultiSigAddress failed: " + err.Error())
 	}
-	log.Debugf("OutChainCall CreateMultiSigAddress createMultiResult ==== ===== %s", string(createMultiResult))
+	log.Debugf("OutChainCall CreateMultiSigAddress createMultiResult ==== ===== %s", createMultiResult)
 
 	return createMultiResult, nil
 }
@@ -142,7 +142,7 @@ func _initDepositAddr(stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//
-	sendResult, err := stub.SendJury(1, []byte("getPubkey"), []byte(result)) //todo 封装重构
+	sendResult, err := stub.SendJury(1, []byte("getPubkey"), result) //todo 封装重构
 	if err != nil {
 		log.Debugf("SendJury getPubkey err: %s", err.Error())
 		return shim.Success([]byte("SendJury getPubkey failed"))
@@ -519,7 +519,7 @@ func genRawTx(btcAmout, btcFee int64, btcAddr string, unspends []Unspend, stub s
 	var rawTxGen BTCTransaction_rawTransactionGen
 	totalAmount := int64(0)
 	for i := range unspends {
-		rawTxGen.Inputs = append(rawTxGen.Inputs, Input{Txid: unspends[i].Txid, Vout: uint32(unspends[i].Vout)})
+		rawTxGen.Inputs = append(rawTxGen.Inputs, Input{Txid: unspends[i].Txid, Vout: unspends[i].Vout})
 		totalAmount += unspends[i].Value
 	}
 	rawTxGen.Outputs = append(rawTxGen.Outputs, Output{btcAddr, converAmount(btcAmout - btcFee)})
@@ -630,9 +630,9 @@ func mergeTx(rawTx string, inputRedeemIndex []int, redeemHex []string, juryMsg [
 	}
 	for i := 0; i < num; i++ {
 		mergeTx.MergeTransactionHexs = []string{}
-		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, string(answers[array[i][0]]))
-		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, string(answers[array[i][1]]))
-		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, string(answers[array[i][2]]))
+		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, answers[array[i][0]])
+		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, answers[array[i][1]])
+		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, answers[array[i][2]])
 		//
 		reqBytes, err := json.Marshal(mergeTx)
 		if err != nil {
@@ -701,7 +701,7 @@ func saveUtxos(btcTokenAmount int64, selUnspnds []Unspend, txHash string, stub s
 			return errors.New("DelState txhash unspend failed")
 		}
 		err = stub.PutState(symbolsSpent+selUnspnds[i].Txid+sep+strconv.Itoa(int(selUnspnds[i].Vout)),
-			[]byte(Int64ToBytes(selUnspnds[i].Value)))
+			Int64ToBytes(selUnspnds[i].Value))
 		if err != nil {
 			log.Debugf("PutState txhash spent failed err: %s", err.Error())
 			return errors.New("PutState txhash spent failed")

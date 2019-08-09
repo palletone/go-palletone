@@ -19,7 +19,6 @@
 package manger
 
 import (
-	"encoding/hex"
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
 	"net"
@@ -85,12 +84,12 @@ func createChaincodeProposalWithTxIDNonceAndTransient(txid string, typ common.He
 	return &peer.Proposal{Header: hdrBytes, Payload: ccPropPayloadBytes}, txid, nil
 }
 
-func computeProposalTxID(nonce, creator []byte) (string, error) {
-	opdata := append(nonce, creator...)
-	digest := util.ComputeSHA256(opdata)
-
-	return hex.EncodeToString(digest), nil
-}
+//func computeProposalTxID(nonce, creator []byte) (string, error) {
+//	opdata := append(nonce, creator...)
+//	digest := util.ComputeSHA256(opdata)
+//
+//	return hex.EncodeToString(digest), nil
+//}
 
 func createChaincodeProposalWithTransient(typ common.HeaderType, chainID string, txid string, cis *peer.ChaincodeInvocationSpec, creator []byte, transientMap map[string][]byte) (*peer.Proposal, string, error) {
 	// generate a random nonce

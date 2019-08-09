@@ -89,7 +89,8 @@ func getGopath() (string, error) {
 		return "", err
 	}
 	// Only take the first element of GOPATH
-	splitGoPath := make([]string, 0)
+	//splitGoPath := make([]string, 0)
+	var splitGoPath []string
 	os := runtime.GOOS
 	if os == "windows" {
 		splitGoPath = filepath.SplitList(env["set GOPATH"])

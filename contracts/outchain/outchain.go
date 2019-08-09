@@ -78,7 +78,7 @@ var DefaultConfig = Config{
 }
 
 const (
-	modName    = "OutChain"
+	//modName    = "OutChain"
 	configPath = "./outchain.toml"
 )
 

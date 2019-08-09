@@ -38,7 +38,7 @@ import (
 )
 
 const (
-	ContractFeeTypeTimeOut = 1
+	ContractFeeTypeTimeOut = 1 //deploy during time, other is timeout
 	ContractFeeTypeTxSize  = 2
 )
 
@@ -797,72 +797,118 @@ func checkJuryCountValid(numIn, numLocal uint64) bool {
 //根据交易和费用类型，获取费用基数(dao),其中计算单位
 //timeout:毫秒 ？
 //size:字节
-//func getContractFeeLevel(dag iDag, msg modules.MessageType, feeType int) (level float64) {
-//	level = 1 //todo
-//	cp := dag.GetChainParameters()
-//	var opFee float64
-//	timeFee := float64(cp.ContractTxTimeoutUnitFee)
-//	sizeFee := float64(cp.ContractTxSizeUnitFee)
-//	switch msg {
-//	case modules.APP_CONTRACT_TPL_REQUEST:
-//		opFee = cp.ContractTxInstallFeeLevel
-//	case modules.APP_CONTRACT_DEPLOY_REQUEST:
-//		opFee = cp.ContractTxDeployFeeLevel
-//	case modules.APP_CONTRACT_INVOKE_REQUEST:
-//		opFee = cp.ContractTxInvokeFeeLevel
-//	case modules.APP_CONTRACT_STOP_REQUEST:
-//		opFee = cp.ContractTxStopFeeLevel
-//	}
-//	if feeType == ContractFeeTypeTimeOut {
-//		level = opFee * timeFee
-//	} else if feeType == ContractFeeTypeTxSize {
-//		level = opFee * sizeFee
-//	}
-//	return level
-//}
+func getContractFeeLevel(dag iDag, msg modules.MessageType, feeType int) (level float64) {
+	level = 1 //todo
+	cp := dag.GetChainParameters()
+	var opFee float64
+	timeFee := float64(cp.ContractTxTimeoutUnitFee)
+	sizeFee := float64(cp.ContractTxSizeUnitFee)
+	switch msg {
+	case modules.APP_CONTRACT_TPL_REQUEST:
+		opFee = cp.ContractTxInstallFeeLevel
+	case modules.APP_CONTRACT_DEPLOY_REQUEST:
+		opFee = cp.ContractTxDeployFeeLevel
+	case modules.APP_CONTRACT_INVOKE_REQUEST:
+		opFee = cp.ContractTxInvokeFeeLevel
+	case modules.APP_CONTRACT_STOP_REQUEST:
+		opFee = cp.ContractTxStopFeeLevel
+	}
+	if feeType == ContractFeeTypeTimeOut {
+		level = opFee * timeFee
+	} else if feeType == ContractFeeTypeTxSize {
+		level = opFee * sizeFee
+	}
+	return level
+}
 
 func checkContractTxFeeValid(dag iDag, tx *modules.Transaction) bool {
 	return true //todo
 
-	//if tx == nil {
-	//	return false
-	//}
-	//reqId := tx.RequestHash()
-	//var timeout uint32
-	//txType, err := getContractTxType(tx)
-	//if err != nil {
-	//	log.Errorf("[%s]checkContractTxFeeValid, getContractTxType fail", shortId(reqId.String()))
-	//	return false
-	//}
-	//txSize := tx.Size()
-	////txSSize := tx.SerializeSize() //del
-	//fees, err := dag.GetTxFee(tx)
-	//if err != nil {
-	//	log.Errorf("[%s]checkContractTxFeeValid, GetTxFee fail", shortId(reqId.String()))
-	//	return false
-	//}
-	//
-	//timeoutLevel := getContractFeeLevel(dag, txType, ContractFeeTypeTimeOut)
-	//sizeLevel := getContractFeeLevel(dag, txType, ContractFeeTypeTxSize)
-	//switch txType {
-	//case modules.APP_CONTRACT_TPL_REQUEST:
-	//case modules.APP_CONTRACT_DEPLOY_REQUEST: //不处理部署超时
-	//case modules.APP_CONTRACT_INVOKE_REQUEST:
-	//	payload, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_INVOKE_REQUEST)
-	//	if err != nil {
-	//		log.Errorf("[%s]checkContractTxFeeValid, getContractTxContractInfo fail", shortId(reqId.String()))
-	//		return false
-	//	}
-	//	timeout = payload.(*modules.ContractInvokeRequestPayload).Timeout
-	//case modules.APP_CONTRACT_STOP_REQUEST:
-	//}
-	//timeFee := timeoutLevel * float64(timeout)
-	//sizeFee := sizeLevel * float64(txSize)
-	//
-	//val := math.Max(float64(fees.Amount), timeFee+sizeFee) == float64(fees.Amount)
-	//if !val {
-	//	log.Errorf("[%s]checkContractTxFeeValid invalid, fee amount[%f]-fees[%f]",
-	//		shortId(reqId.String()), float64(fees.Amount), timeFee+sizeFee)
-	//}
-	//return val
+	if tx == nil {
+		return false
+	}
+	reqId := tx.RequestHash()
+	var timeout uint32
+	txType, err := getContractTxType(tx)
+	if err != nil {
+		log.Errorf("[%s]checkContractTxFeeValid, getContractTxType fail", shortId(reqId.String()))
+		return false
+	}
+
+	fees, err := dag.GetTxFee(tx)
+	if err != nil {
+		log.Errorf("[%s]checkContractTxFeeValid, GetTxFee fail", shortId(reqId.String()))
+		return false
+	}
+
+	timeoutLevel := getContractFeeLevel(dag, txType, ContractFeeTypeTimeOut)
+	sizeLevel := getContractFeeLevel(dag, txType, ContractFeeTypeTxSize)
+	switch txType {
+	case modules.APP_CONTRACT_TPL_REQUEST:
+	case modules.APP_CONTRACT_DEPLOY_REQUEST:
+	case modules.APP_CONTRACT_INVOKE_REQUEST:
+		payload, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_INVOKE_REQUEST)
+		if err != nil {
+			log.Errorf("[%s]checkContractTxFeeValid, getContractTxContractInfo fail", shortId(reqId.String()))
+			return false
+		}
+		timeout = payload.(*modules.ContractInvokeRequestPayload).Timeout
+	case modules.APP_CONTRACT_STOP_REQUEST:
+	}
+	txSize := tx.Size()
+	timeFee := timeoutLevel * float64(timeout)
+	sizeFee := sizeLevel * float64(txSize)
+
+	val := math.Max(float64(fees.Amount), timeFee+sizeFee) == float64(fees.Amount)
+	if !val {
+		log.Errorf("[%s]checkContractTxFeeValid invalid, fee amount[%f]-fees[%f]",
+			shortId(reqId.String()), float64(fees.Amount), timeFee+sizeFee)
+	}
+	return val
+}
+
+func calculateContractDeployDuringTime(dag iDag, tx *modules.Transaction) (uint64, error) {
+	if tx == nil {
+		return 0, errors.New("calculateContractDeployDuringTime, param is nil")
+	}
+	txSize := tx.Size()
+	fees, err := dag.GetTxFee(tx)
+	if err != nil {
+		return 0, errors.New("calculateContractDeployDuringTime, GetTxFee fail")
+	}
+	sizeLevel := getContractFeeLevel(dag, modules.APP_CONTRACT_DEPLOY_REQUEST, ContractFeeTypeTxSize)
+	timeLevel := getContractFeeLevel(dag, modules.APP_CONTRACT_DEPLOY_REQUEST, ContractFeeTypeTimeOut)
+
+	sizeFee := sizeLevel * float64(txSize)
+	timeFee := float64(fees.Amount) - sizeFee
+
+	if timeLevel == 0{
+		//default
+		timeLevel = 10
+	}
+	duringTime := timeFee / timeLevel
+	log.Debug("calculateContractDeployDuringTime", "sizeLevel", sizeLevel, "timeLevel", timeLevel, "sizeFee", sizeFee, "timeFee", timeFee, "duringTime", duringTime)
+
+	return uint64(duringTime), nil
+}
+
+func addContractDeployDuringTime(dag iDag, tx *modules.Transaction) error {
+	if tx == nil {
+		return errors.New("calculateContractDeployDuringTime, param is nil")
+	}
+	txType, _ := getContractTxType(tx)
+	if txType != modules.APP_CONTRACT_DEPLOY_REQUEST {
+		return nil
+	}
+	duringTime, err := calculateContractDeployDuringTime(dag, tx)
+	if err != nil {
+		return fmt.Errorf("addContractDeployDuringTime, err:%s", err)
+	}
+	payload, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_DEPLOY)
+	if err != nil {
+		return errors.New("addContractDeployDuringTime, getContractTxContractInfo fail")
+	}
+	payload.(*modules.ContractDeployPayload).DuringTime = duringTime
+
+	return nil
 }
