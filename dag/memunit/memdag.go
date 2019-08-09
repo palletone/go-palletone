@@ -146,7 +146,22 @@ func (chain *MemDag) loopRebuildTmpDb() {
 }
 func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository, common2.IPropRepository, common2.IUnitProduceRepository) {
 	last_main_hash := chain.lastMainChainUnit.Hash()
-	temp_rep, _ := chain.getChainUnit(last_main_hash)
+	temp_rep, err := chain.getChainUnit(last_main_hash)
+	if err != nil { // 重启后memdag的chainUnits还清被清空，需要重新以memdag的db构建unstable repositoreis
+		temp_inter, has := chain.tempdb.Load(last_main_hash)
+		if !has {
+			log.Errorf("the last_unit: %s , is not exist in memdag", last_main_hash.String())
+			tempdb, _ := NewTempdb(chain.db)
+			trep := common2.NewUnitRepository4Db(tempdb)
+			tutxoRep := common2.NewUtxoRepository4Db(tempdb)
+			tstateRep := common2.NewStateRepository4Db(tempdb)
+			tpropRep := common2.NewPropRepository4Db(tempdb)
+			tunitProduceRep := common2.NewUnitProduceRepository(trep, tpropRep, tstateRep)
+			return trep, tutxoRep, tstateRep, tpropRep, tunitProduceRep
+		}
+		tempdb := temp_inter.(*ChainTempDb)
+		return tempdb.UnitRep, tempdb.UtxoRep, tempdb.StateRep, tempdb.PropRep, tempdb.UnitProduceRep
+	}
 	return temp_rep.UnitRep, temp_rep.UtxoRep, temp_rep.StateRep, temp_rep.PropRep, temp_rep.UnitProduceRep
 }
 
@@ -633,7 +648,9 @@ func (chain *MemDag) delHeightUnitsAndTemp(height uint64) {
 		chain.height_hashs.Delete(h)
 	}
 	for _, hash := range to_del_hash {
-		chain.tempdb.Delete(hash)
+		if hash != chain.stableUnitHash {
+			chain.tempdb.Delete(hash)
+		}
 	}
 }
 
