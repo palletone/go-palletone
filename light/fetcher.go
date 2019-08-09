@@ -97,7 +97,8 @@ type LightFetcher struct {
 }
 
 // New creates a block fetcher to retrieve blocks based on hash announcements.
-func NewLightFetcher(getHeaderByHash headerRetrievalFn, lightChainHeight lightChainHeightFn, verifyHeader headerVerifierFn,
+func NewLightFetcher(getHeaderByHash headerRetrievalFn, lightChainHeight lightChainHeightFn,
+	verifyHeader headerVerifierFn,
 	broadcastHeader headerBroadcasterFn, insertHeader headerInsertFn, dropPeer peerDropFn) *LightFetcher {
 	return &LightFetcher{
 		//notify:           make(chan *announce),
@@ -197,14 +198,16 @@ func (f *LightFetcher) insert(p *peer, header *modules.Header) {
 
 		default:
 			// Something went very wrong, drop the peer
-			log.Debug("Propagated block verification failed", "peer", p.id, "number", header.Index(), "hash", hash, "err", err)
+			log.Debug("Propagated block verification failed", "peer", p.id, "number", header.Index(),
+				"hash", hash, "err", err)
 			f.dropPeer(p.id)
 			return
 		}
 
 		// Run the actual import and log any issues
 		if _, err := f.insertHeader([]*modules.Header{header}); err != nil {
-			log.Debug("Propagated block import failed", "peer", p.id, "number", header.Index(), "hash", hash, "err", err)
+			log.Debug("Propagated block import failed", "peer", p.id, "number", header.Index(),
+				"hash", hash, "err", err)
 			return
 		}
 		p.lightlock.Lock()
@@ -225,13 +228,15 @@ func (f *LightFetcher) enqueue(p *peer, header *modules.Header) {
 	// Ensure the peer isn't DOSing us
 	count := f.queues[p.id] + 1
 	if count > blockLimit {
-		log.Debug("Discarded propagated block, exceeded allowance", "peer", p.id, "number", header.Index(), "hash", hash, "limit", blockLimit)
+		log.Debug("Discarded propagated block, exceeded allowance", "peer", p.id, "number", header.Index(),
+			"hash", hash, "limit", blockLimit)
 		return
 	}
 	// Discard any past or too distant blocks
 	heightChain := int64(f.lightChainHeight(header.Number.AssetID))
 	if dist := int64(header.Number.Index) - heightChain; dist < -maxUncleDist || dist > maxQueueDist {
-		log.Debug("Discarded propagated block, too far away", "peer", p.id, "number", header.Index(), "heightChain", heightChain, "distance", dist)
+		log.Debug("Discarded propagated block, too far away", "peer", p.id, "number", header.Index(),
+			"heightChain", heightChain, "distance", dist)
 		return
 	}
 	// Schedule the block for future importing
@@ -243,7 +248,8 @@ func (f *LightFetcher) enqueue(p *peer, header *modules.Header) {
 		f.queues[p.id] = count
 		f.queued[hash] = op
 		f.queue.Push(op, -float32(header.Index()))
-		log.Debug("Queued propagated block", "peer", p.id, "number", header.Index(), "hash", hash, "queued", f.queue.Size())
+		log.Debug("Queued propagated block", "peer", p.id, "number", header.Index(), "hash", hash,
+			"queued", f.queue.Size())
 	}
 }
 
