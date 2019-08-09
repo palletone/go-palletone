@@ -155,6 +155,7 @@ func createGenesisJson(ctx *cli.Context) error {
 
 	genesisState.InitialParameters.MediatorInterval = 3
 	genesisState.InitialTimestamp = genesisState.InitialTimestamp / 3 * 3
+	genesisState.InitialParameters.MaintenanceSkipSlots = 2
 	genesisState.InitialMediatorCandidates = initialMediatorCandidates(mcs, nodeStr)
 
 	//配置测试的基金会地址及密码
