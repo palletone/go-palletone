@@ -881,6 +881,11 @@ func calculateContractDeployDuringTime(dag iDag, tx *modules.Transaction) (uint6
 
 	sizeFee := sizeLevel * float64(txSize)
 	timeFee := float64(fees.Amount) - sizeFee
+
+	if timeLevel == 0{
+		//default
+		timeLevel = 10
+	}
 	duringTime := timeFee / timeLevel
 	log.Debug("calculateContractDeployDuringTime", "sizeLevel", sizeLevel, "timeLevel", timeLevel, "sizeFee", sizeFee, "timeFee", timeFee, "duringTime", duringTime)
 
