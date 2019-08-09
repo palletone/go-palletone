@@ -648,7 +648,9 @@ func (chain *MemDag) delHeightUnitsAndTemp(height uint64) {
 		chain.height_hashs.Delete(h)
 	}
 	for _, hash := range to_del_hash {
-		chain.tempdb.Delete(hash)
+		if hash != chain.stableUnitHash {
+			chain.tempdb.Delete(hash)
+		}
 	}
 }
 
