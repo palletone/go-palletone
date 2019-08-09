@@ -26,7 +26,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 }
 
 func juryApplyQuit(stub shim.ChaincodeStubInterface, args []string) peer.Response {
-	log.Debug("juryApplyQuit", args)
+	log.Debug("juryApplyQuit")
 	err := applyQuitList(Jury, stub)
 	if err != nil {
 		log.Error("applyQuitList err: ", "error", err)

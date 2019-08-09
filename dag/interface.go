@@ -105,6 +105,7 @@ type IDag interface {
 	GetContractsByTpl(tplId []byte) ([]*modules.Contract, error)
 	GetUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error)
 	GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash
+	GetUnitHash(number *modules.ChainIndex) (common.Hash, error)
 
 	//Mediator
 	GetActiveMediator(add common.Address) *core.Mediator

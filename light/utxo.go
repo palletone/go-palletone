@@ -31,22 +31,9 @@ import (
 )
 
 const (
-	utxosArriveTimeout = 500 * time.Millisecond // Time allowance before an announced block is explicitly requested
-	utxosGatherSlack   = 100 * time.Millisecond // Interval used to collate almost-expired announces with fetches
-	utxosReqTimeout    = 5 * time.Second        // Maximum allotted time to return an explicitly requested block
-	utxosMaxQueueDist  = 32                     // Maximum allowed distance from the chain head to queue
-	utxosHashLimit     = 256                    // Maximum number of unique blocks a peer may have announced
-	utxosReqLimit      = 64                     // Maximum number of unique blocks a peer may have delivered
-	OKUTXOsSync        = 0
-	ERRUTXOsOTHERS     = 1
-	ERRUTXOsTIMEOUT    = 2
-	ERRUTXOsExist      = 3
+	OKUTXOsSync   = 0
+	ERRUTXOsExist = 3
 )
-
-//type lpsutxo struct {
-//	addr  []byte     `json:"addr"`
-//	utxos [][][]byte `json:"utxos"`
-//}
 
 type utxosRespData struct {
 	addr  string

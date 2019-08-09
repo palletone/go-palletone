@@ -47,6 +47,7 @@ func getCodeFromFS(path string) (codegopath string, err error) {
 	log.Debugf("getCodeFromFS %s", path)
 	gopath, err := getGopath()
 	if err != nil {
+		log.Debugf("getGopath error %s", err.Error())
 		return "", err
 	}
 	tmppath := filepath.Join(gopath, "src", path)
