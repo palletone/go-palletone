@@ -1558,8 +1558,8 @@ func readTxs(path string) ([]string, error) {
 		line = strings.Replace(line, "\r\n", "", -1)
 		txs = append(txs, line)
 	}
-	if len(txs) > 2000 {
-		return txs[:2000], err
+	if len(txs) > 4000 {
+		return txs[2000:4000], err
 	}
 	return txs, err
 }

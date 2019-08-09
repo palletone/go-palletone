@@ -157,7 +157,7 @@ func (pm *ProtocolManager) synchronize(peer *peer, assetId modules.AssetId) {
 	defer log.Debug("End Light PalletOne ProtocolManager synchronize", "assetid", assetId, "index", number.Index)
 
 	if err := pm.downloader.Synchronize(peer.id, headhash, number.Index, downloader.LightSync, number.AssetID); err != nil {
-		log.Debug("Light PalletOne ProtocolManager synchronize", "Synchronise err:", err)
+		log.Debug("Light PalletOne ProtocolManager synchronize", "Synchronize err:", err)
 		return
 	}
 
