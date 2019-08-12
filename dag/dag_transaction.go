@@ -333,7 +333,8 @@ func (dag *Dag) CreateGenericTransaction(from, to common.Address, daoAmount, dao
 }
 
 // to build a transfer transactions by the token, from to fee
-func (dag *Dag) CreateTokenTransaction(from, to, toToken common.Address, daoAmount, daoFee uint64, daoAmountToken uint64,
+func (dag *Dag) CreateTokenTransaction(from, to, toToken common.Address, daoAmount, daoFee uint64,
+	daoAmountToken uint64,
 	assetToken string, msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
 	// 如果是 text，则增加费用，以防止用户任意增加文本，导致网络负担加重
 	if msg.App == modules.APP_DATA {

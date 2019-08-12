@@ -64,7 +64,8 @@ func (utxodb *UtxoDb) saveUtxoOutpoint(address common.Address, outpoint *modules
 	StoreToRlpBytes(utxodb.db, out_key, address.String())
 	return StoreToRlpBytes(utxodb.db, key, outpoint)
 }
-func (utxodb *UtxoDb) batchSaveUtxoOutpoint(batch ptndb.Batch, address common.Address, outpoint *modules.OutPoint) error {
+func (utxodb *UtxoDb) batchSaveUtxoOutpoint(batch ptndb.Batch, address common.Address,
+	outpoint *modules.OutPoint) error {
 	key := append(constants.ADDR_OUTPOINT_PREFIX, address.Bytes()...)
 	key = append(key, outpoint.Bytes()...)
 	return StoreToRlpBytes(batch, key, outpoint)
@@ -114,7 +115,11 @@ func (utxodb *UtxoDb) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) erro
 			}
 			address, _ := tokenengine.GetAddressFromScript(utxo.PkScript[:])
 			// save utxoindex and  addr and key
-			utxodb.batchSaveUtxoOutpoint(batch, address, &outpoint)
+			item := new(modules.OutPoint)
+			item.TxHash = outpoint.TxHash
+			item.MessageIndex = outpoint.MessageIndex
+			item.OutIndex = outpoint.OutIndex
+			utxodb.batchSaveUtxoOutpoint(batch, address, item)
 
 		}
 	}
@@ -179,7 +184,8 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 	}
 	return utxo, nil
 }
-func (utxodb *UtxoDb) SaveUtxoSpent(outpoint *modules.OutPoint, utxo *modules.Utxo, spentTxId common.Hash, spentTime uint64) error {
+func (utxodb *UtxoDb) SaveUtxoSpent(outpoint *modules.OutPoint, utxo *modules.Utxo,
+	spentTxId common.Hash, spentTime uint64) error {
 	stxo := modules.NewStxo(utxo, spentTxId, spentTime)
 	return utxodb.SaveStxoEntry(outpoint, stxo)
 }
@@ -203,14 +209,19 @@ func (utxodb *UtxoDb) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, e
 }
 
 //GetAddrUtxos if asset is nil, query all Asset from address
-func (db *UtxoDb) GetAddrUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error) {
-	allutxos := make(map[modules.OutPoint]*modules.Utxo, 0)
+func (db *UtxoDb) GetAddrUtxos(addr common.Address, asset *modules.Asset) (
+	map[modules.OutPoint]*modules.Utxo, error) {
+	allutxos := make(map[modules.OutPoint]*modules.Utxo)
 	outpoints, err := db.GetAddrOutpoints(addr)
 	if err != nil {
 		return nil, err
 	}
 	for _, out := range outpoints {
-		if utxo, err := db.GetUtxoEntry(&out); err == nil {
+		item := new(modules.OutPoint)
+		item.TxHash = out.TxHash
+		item.MessageIndex = out.MessageIndex
+		item.OutIndex = out.OutIndex
+		if utxo, err := db.GetUtxoEntry(item); err == nil {
 
 			if asset == nil || asset.IsSimilar(utxo.Asset) {
 				allutxos[out] = utxo
@@ -221,7 +232,7 @@ func (db *UtxoDb) GetAddrUtxos(addr common.Address, asset *modules.Asset) (map[m
 	return allutxos, nil
 }
 func (db *UtxoDb) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
-	view := make(map[modules.OutPoint]*modules.Utxo, 0)
+	view := make(map[modules.OutPoint]*modules.Utxo)
 
 	items := getprefix(db.db, constants.UTXO_PREFIX)
 	var err error

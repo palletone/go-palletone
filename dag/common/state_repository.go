@@ -297,7 +297,8 @@ func (rep *StateRepository) StoreMediatorInfo(add common.Address, mi *modules.Me
 	return rep.statedb.StoreMediatorInfo(add, mi)
 }
 
-func (rep *StateRepository) GetContractDeploy(tempId, contractId []byte, name string) (*modules.ContractDeployPayload, error) {
+func (rep *StateRepository) GetContractDeploy(tempId, contractId []byte, name string) (
+	*modules.ContractDeployPayload, error) {
 	return rep.statedb.GetContractDeploy(tempId[:])
 }
 

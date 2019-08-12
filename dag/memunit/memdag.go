@@ -144,7 +144,8 @@ func (chain *MemDag) loopRebuildTmpDb() {
 		}
 	}
 }
-func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository, common2.IPropRepository, common2.IUnitProduceRepository) {
+func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository,
+	common2.IStateRepository, common2.IPropRepository, common2.IUnitProduceRepository) {
 	last_main_hash := chain.lastMainChainUnit.Hash()
 	temp_rep, err := chain.getChainUnit(last_main_hash)
 	if err != nil { // 重启后memdag的chainUnits还清被清空，需要重新以memdag的db构建unstable repositoreis
@@ -180,15 +181,15 @@ func (chain *MemDag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Hea
 	return nil, errors.New("not found")
 }
 
-func (chain *MemDag) getHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error) {
-	chain_units := chain.getChainUnits()
-	for _, unit := range chain_units {
-		if index := unit.UnitHeader.ChainIndex(); index.Equal(number) {
-			return unit.Header(), nil
-		}
-	}
-	return nil, fmt.Errorf("the header[%s] not exist.", number.String())
-}
+//func (chain *MemDag) getHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error) {
+//	chain_units := chain.getChainUnits()
+//	for _, unit := range chain_units {
+//		if index := unit.UnitHeader.ChainIndex(); index.Equal(number) {
+//			return unit.Header(), nil
+//		}
+//	}
+//	return nil, fmt.Errorf("the header[%s] not exist.", number.String())
+//}
 
 func (chain *MemDag) SetUnitGroupSign(uHash common.Hash /*, groupPubKey []byte*/, groupSign []byte,
 	txpool txspool.ITxPool) error {
@@ -211,12 +212,9 @@ func (chain *MemDag) SetUnitGroupSign(uHash common.Hash /*, groupPubKey []byte*/
 	header := unit.Header()
 	//header.GroupPubKey = groupPubKey
 	header.GroupSign = groupSign
-	log.Debugf("Try to update unit[%s] header group sign", uHash.String())
+	log.Debugf("Try to update unit[%s] header group sign, and send go groupSign event.", uHash.String())
 	// 进行下一个unit的群签名
-	if err == nil {
-		log.Debugf("send toGroupSign event")
-		go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
-	}
+	go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
 
 	return chain.ldbunitRep.SaveHeader(header)
 }
@@ -340,7 +338,8 @@ func (chain *MemDag) checkStableCondition(unit *modules.Unit, txpool txspool.ITx
 		childrenCofirmAddrs[u.Author()] = true
 
 		if len(hs) >= chain.threshold {
-			log.Debugf("Unit[%s] height:%d has enough confirm address count=%d, make it to stable.", ustbHash.String(), unit.NumberU64(), len(hs))
+			log.Debugf("Unit[%s] height:%d has enough confirm address count=%d, make it to stable.",
+				ustbHash.String(), unit.NumberU64(), len(hs))
 			chain.setStableUnit(ustbHash, u.NumberU64(), txpool)
 			return true
 		}
@@ -384,7 +383,7 @@ func (chain *MemDag) getMainChainUnits() []*modules.Unit {
 	chain_units := chain.getChainUnits()
 	log.DebugDynamic(func() string {
 		str := "chainUnits has unit:"
-		for hash, _ := range chain_units {
+		for hash := range chain_units {
 			str += hash.String() + ";"
 		}
 		return str
@@ -392,7 +391,8 @@ func (chain *MemDag) getMainChainUnits() []*modules.Unit {
 	for i := 0; i < unstableCount; i++ {
 		u, ok := chain_units[ustbHash]
 		if !ok {
-			log.Errorf("chainUnits don't have unit[%s], last_main[%s]", ustbHash.String(), chain.lastMainChainUnit.Hash().String())
+			log.Errorf("chainUnits don't have unit[%s], last_main[%s]",
+				ustbHash.String(), chain.lastMainChainUnit.Hash().String())
 			continue
 		}
 		unstableUnits[unstableCount-i-1] = u
@@ -413,7 +413,8 @@ func (chain *MemDag) getForkUnits(unit *modules.Unit) []*modules.Unit {
 	for i := 0; i < fork_len; i++ {
 		u, ok := chain_units[hash]
 		if !ok {
-			log.Errorf("getforks chainUnits don't have unit[%s], last_main[%s]", hash.String(), chain.lastMainChainUnit.Hash().String())
+			log.Errorf("getforks chainUnits don't have unit[%s], last_main[%s]",
+				hash.String(), chain.lastMainChainUnit.Hash().String())
 		}
 		unstableUnits[fork_len-i-1] = u
 		hash = u.ParentHash()[0]
@@ -422,7 +423,8 @@ func (chain *MemDag) getForkUnits(unit *modules.Unit) []*modules.Unit {
 }
 
 //判断当前设置是保存Header还是Unit，将对应的对象保存到Tempdb数据库
-func (chain *MemDag) saveUnitToDb(unitRep common2.IUnitRepository, produceRep common2.IUnitProduceRepository, unit *modules.Unit) {
+func (chain *MemDag) saveUnitToDb(unitRep common2.IUnitRepository, produceRep common2.IUnitProduceRepository,
+	unit *modules.Unit) {
 	log.Debugf("Save unit[%s] to db", unit.Hash().String())
 	if chain.saveHeaderOnly {
 		unitRep.SaveNewestHeader(unit.Header())
@@ -450,7 +452,9 @@ func (chain *MemDag) removeUnitAndChildren(hash common.Hash, txpool txspool.ITxP
 	}
 }
 
-func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository, common2.IPropRepository, common2.IUnitProduceRepository, error) {
+func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) (common2.IUnitRepository,
+	common2.IUtxoRepository, common2.IStateRepository, common2.IPropRepository,
+	common2.IUnitProduceRepository, error) {
 	start := time.Now()
 	if unit == nil {
 		return nil, nil, nil, nil, nil, errors.ErrNullPoint
@@ -491,7 +495,9 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 //2.保存到主链上的单元，判断主链若有满足稳定条件的单元，则将该单元及祖先单元全部置为稳定单元。
 //3.保存到侧链上的单元，若满足切换主链的条件，则要切换主链（switchMainChain）。
 //4.添加完一个非孤儿单元后，判断是否有孤儿单元是该单元亲子单元，如有则将对应的孤儿单元连到链上。
-func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository, common2.IPropRepository, common2.IUnitProduceRepository, error) {
+func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common2.IUnitRepository,
+	common2.IUtxoRepository, common2.IStateRepository, common2.IPropRepository,
+	common2.IUnitProduceRepository, error) {
 	parentHash := unit.ParentHash()[0]
 	uHash := unit.Hash()
 	height := unit.NumberU64()
@@ -519,7 +525,8 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 			}
 			if validateCode != validator.TxValidationCode_VALID {
 				vali_err := validator.NewValidateError(validateCode)
-				log.Debugf("validate main chain unit error, %s, unit hash:%s", vali_err.Error(), uHash.String())
+				log.Debugf("validate main chain unit error, %s, unit hash:%s",
+					vali_err.Error(), uHash.String())
 				return nil, nil, nil, nil, nil, vali_err
 			}
 			tempdb, _ = tempdb.AddUnit(unit, chain.saveHeaderOnly)
@@ -587,8 +594,9 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 			})
 			// 满足切换主链条件， 则切换主链，更新主链单元。
 			if height > chain.lastMainChainUnit.NumberU64() {
-				log.Infof("switch main chain starting, fork index:%d, chain index:%d ,fork hash:%s, main hash:%s", height,
-					chain.lastMainChainUnit.NumberU64(), uHash.String(), chain.lastMainChainUnit.Hash().String())
+				log.Infof("switch main chain starting, fork index:%d, chain index:%d ,"+
+					"fork hash:%s, main hash:%s", height, chain.lastMainChainUnit.NumberU64(),
+					uHash.String(), chain.lastMainChainUnit.Hash().String())
 				chain.switchMainChain(unit, txpool)
 				log.DebugDynamic(func() string {
 					main_chains := chain.getMainChainUnits()
@@ -655,17 +663,17 @@ func (chain *MemDag) delHeightUnitsAndTemp(height uint64) {
 }
 
 //计算一个单元到稳定单元之间有多少个确认地址数
-func (chain *MemDag) getChainAddressCount(lastUnit *modules.Unit) int {
-	addrs := map[common.Address]bool{}
-	unitHash := lastUnit.Hash()
-	units := chain.getChainUnits()
-	for unitHash != chain.stableUnitHash {
-		unit := units[unitHash]
-		addrs[unit.Author()] = true
-		unitHash = unit.ParentHash()[0]
-	}
-	return len(addrs)
-}
+//func (chain *MemDag) getChainAddressCount(lastUnit *modules.Unit) int {
+//	addrs := map[common.Address]bool{}
+//	unitHash := lastUnit.Hash()
+//	units := chain.getChainUnits()
+//	for unitHash != chain.stableUnitHash {
+//		unit := units[unitHash]
+//		addrs[unit.Author()] = true
+//		unitHash = unit.ParentHash()[0]
+//	}
+//	return len(addrs)
+//}
 
 //发现一条更长的确认数更多的链，则放弃原有主链，切换成新主链
 //1.将旧主链上包含的交易在交易池中重置(resetPending)。
@@ -680,9 +688,7 @@ func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPo
 
 	for _, m_u := range forks_units {
 		hash := m_u.Hash()
-		if _, has := chain_units[hash]; has {
-			delete(chain_units, hash)
-		}
+		delete(chain_units, hash)
 	}
 	// 不在主链上的区块，将已打包交易回滚。
 	for _, un_unit := range chain_units {
@@ -730,7 +736,8 @@ func (chain *MemDag) getOrphanUnits() map[common.Hash]*modules.Unit {
 func (chain *MemDag) removeLowOrphanUnit(lessThan uint64, txpool txspool.ITxPool) {
 	for hash, unit := range chain.getOrphanUnits() {
 		if unit.NumberU64() <= lessThan {
-			log.Debugf("Orphan unit[%s] height[%d] is too low, remove it.", unit.Hash().String(), unit.NumberU64())
+			log.Debugf("Orphan unit[%s] height[%d] is too low, remove it.",
+				unit.Hash().String(), unit.NumberU64())
 			if txs := unit.Transactions(); len(txs) > 1 {
 				go txpool.ResetPendingTxs(txs)
 			}

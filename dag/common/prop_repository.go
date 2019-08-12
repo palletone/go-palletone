@@ -170,7 +170,7 @@ func (pRep *PropRepository) UpdateMediatorSchedule(ms *modules.MediatorSchedule,
 }
 
 func shuffleMediators(mediators []common.Address, seed uint64) {
-	nowHi := uint64(seed << 32)
+	nowHi := seed << 32
 	aSize := len(mediators)
 	for i := 0; i < aSize; i++ {
 		// 高性能随机生成器(High performance random generator)

@@ -30,7 +30,9 @@ type KVRWSet struct {
 }
 
 func (m *KVRWSet) Reset() {
-	m = &KVRWSet{Reads: make(map[string]*KVRead), Writes: make(map[string]*KVWrite)}
+	m = new(KVRWSet)
+	m.Writes = make(map[string]*KVWrite)
+	m.Reads = make(map[string]*KVRead)
 }
 func (m *KVRWSet) String() string            { return proto.CompactTextString(m) }
 func (*KVRWSet) ProtoMessage()               {}
@@ -129,8 +131,8 @@ func (m *KVWrite) GetValue() []byte {
 }
 
 type Version struct {
-	chainId uint64 `protobuf:"varint,1,opt,name=block_num,json=blockNum"`
-	txNum   uint64 `protobuf:"varint,2,opt,name=tx_num,json=txNum"`
+	//chainId uint64 `protobuf:"varint,1,opt,name=block_num,json=blockNum"`
+	//txNum   uint64 `protobuf:"varint,2,opt,name=tx_num,json=txNum"`
 }
 
 // NewKVRead helps constructing proto message kvrwset.KVRead
