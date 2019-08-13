@@ -186,7 +186,7 @@ func TestSnapshotRandom(t *testing.T) {
 //
 // A new state is created and all actions are applied to it. Several snapshots are taken
 // in between actions. The test then reverts each snapshot. For each snapshot the actions
-// leading up to it are replayed on a fresh, empty state. The behaviour of all public
+// leading up to it are replayed on a fresh, empty state. The behavior of all public
 // accessor methods on the reverted state must match the return value of the equivalent
 // methods on the replayed state.
 type snapshotTest struct {

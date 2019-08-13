@@ -577,7 +577,7 @@ func accountCreateTx(ctx *cli.Context) error {
 		return nil
 	}
 	//transaction inputs
-	var inputs []ptnjson.TransactionInput
+	inputs := make([]ptnjson.TransactionInput, 0, len(rawTransactionGenParams.Inputs))
 	for _, inputOne := range rawTransactionGenParams.Inputs {
 		input := ptnjson.TransactionInput{Txid: inputOne.Txid, Vout: inputOne.Vout, MessageIndex: inputOne.MessageIndex}
 		inputs = append(inputs, input)
@@ -629,7 +629,7 @@ func accountSignTx(ctx *cli.Context) error {
 		return nil
 	}
 	//transaction inputs
-	var rawinputs []ptnjson.RawTxInput
+	rawinputs:=make( []ptnjson.RawTxInput,0,len(signTransactionParams.Inputs))
 	for _, inputOne := range signTransactionParams.Inputs {
 		input := ptnjson.RawTxInput{Txid: inputOne.Txid, Vout: inputOne.Vout, MessageIndex: inputOne.MessageIndex,
 			ScriptPubKey: inputOne.ScriptPubKey, RedeemScript: inputOne.RedeemScript}
@@ -638,7 +638,7 @@ func accountSignTx(ctx *cli.Context) error {
 	if len(rawinputs) == 0 {
 		return nil
 	}
-	var keys []string
+	keys:=make( []string,0,len(signTransactionParams.PrivKeys))
 	for _, key := range signTransactionParams.PrivKeys {
 		key = strings.TrimSpace(key) //Trim whitespace
 		if len(key) == 0 {

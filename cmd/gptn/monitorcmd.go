@@ -98,7 +98,8 @@ func monitor(ctx *cli.Context) error {
 	}
 	sort.Strings(monitored)
 	if cols := len(monitored) / ctx.Int(monitorCommandRowsFlag.Name); cols > 6 {
-		utils.Fatalf("Requested metrics (%d) spans more that 6 columns:\n - %s", len(monitored), strings.Join(monitored, "\n - "))
+		utils.Fatalf("Requested metrics (%d) spans more that 6 columns:\n - %s",
+			len(monitored), strings.Join(monitored, "\n - "))
 	}
 	// Create and configure the chart UI defaults
 	if err := termui.Init(); err != nil {
@@ -252,7 +253,8 @@ func fetchMetric(metrics map[string]interface{}, metric string) float64 {
 
 // refreshCharts retrieves a next batch of metrics, and inserts all the new
 // values into the active datasets and charts
-func refreshCharts(client *rpc.Client, metrics []string, data [][]float64, units []int, charts []*termui.LineChart, ctx *cli.Context, footer *termui.Par) (realign bool) {
+func refreshCharts(client *rpc.Client, metrics []string, data [][]float64, units []int,
+	charts []*termui.LineChart, ctx *cli.Context, footer *termui.Par) (realign bool) {
 	values, err := retrieveMetrics(client)
 	for i, metric := range metrics {
 		if len(data) < 512 {
@@ -270,10 +272,18 @@ func refreshCharts(client *rpc.Client, metrics []string, data [][]float64, units
 
 // updateChart inserts a dataset into a line chart, scaling appropriately as to
 // not display weird labels, also updating the chart label accordingly.
-func updateChart(metric string, data []float64, base *int, chart *termui.LineChart, err error) (realign bool) {
+func updateChart(metric string, data []float64, base *int,
+	chart *termui.LineChart, err error) (realign bool) {
 	dataUnits := []string{"", "K", "M", "G", "T", "E"}
 	timeUnits := []string{"ns", "µs", "ms", "s", "ks", "ms"}
-	colors := []termui.Attribute{termui.ColorBlue, termui.ColorCyan, termui.ColorGreen, termui.ColorYellow, termui.ColorRed, termui.ColorRed}
+	colors := []termui.Attribute{
+		termui.ColorBlue,
+		termui.ColorCyan,
+		termui.ColorGreen,
+		termui.ColorYellow,
+		termui.ColorRed,
+		termui.ColorRed,
+	}
 
 	// Extract only part of the data that's actually visible
 	if chart.Width*2 < len(data) {
@@ -305,7 +315,9 @@ func updateChart(metric string, data []float64, base *int, chart *termui.LineCha
 	}
 	// Update the chart's label with the scale units
 	units := dataUnits
-	if strings.Contains(metric, "/Percentiles/") || strings.Contains(metric, "/pauses/") || strings.Contains(metric, "/time/") {
+	if strings.Contains(metric, "/Percentiles/") ||
+		strings.Contains(metric, "/pauses/") ||
+		strings.Contains(metric, "/time/") {
 		units = timeUnits
 	}
 	chart.BorderLabel = metric
@@ -316,7 +328,7 @@ func updateChart(metric string, data []float64, base *int, chart *termui.LineCha
 	if err != nil {
 		chart.LineColor = termui.ColorRed | termui.AttrBold
 	}
-	return
+	return realign
 }
 
 // createChart creates an empty line chart with the default configs.

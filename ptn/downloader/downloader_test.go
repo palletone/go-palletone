@@ -1028,7 +1028,7 @@ func testForkedSync(t *testing.T, protocol int, mode SyncMode) {
 	assertOwnForkedChain(t, tester, common+1, []int{common + fork + 1, common + fork + 1})
 }
 
-// Tests that synchronising against a much shorter but much heavyer fork works corrently and is not dropped.
+// Tests that synchronizing against a much shorter but much heavyer fork works corrently and is not dropped.
 //func TestHeavyForkedSync1(t *testing.T) { testHeavyForkedSync(t, 1, FullSync) }
 
 //func TestHeavyForkedSync63Full(t *testing.T) { testHeavyForkedSync(t, 2, FullSync) }
