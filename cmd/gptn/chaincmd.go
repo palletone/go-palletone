@@ -29,8 +29,7 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	// "github.com/palletone/go-palletone/dag/txspool"
-	"github.com/palletone/go-palletone/common/p2p/discover"
+
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -167,7 +166,6 @@ func initGenesis(ctx *cli.Context) error {
 	dv.Version = genesis.Version
 	dag.StoreDataVersion(dv)
 
-	discover.GenesisHash = unit.UnitHash.Bytes()
 	//MUST DO NOT MODIFY THIS LOG. For deploy.sh
 	log.Infof("gptn (version[%s] hash[%s]) init success", dv.Version, unit.UnitHash.Hex())
 	return nil

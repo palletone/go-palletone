@@ -36,6 +36,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/pkg/reexec"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
@@ -451,6 +452,10 @@ type snapshotService struct {
 
 func (s *snapshotService) CorsProtocols() []p2p.Protocol {
 	return nil
+}
+
+func (s *snapshotService) GenesisHash() common.Hash {
+	return common.Hash{}
 }
 
 func (s *snapshotService) APIs() []rpc.API {

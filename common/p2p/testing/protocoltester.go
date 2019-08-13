@@ -33,6 +33,7 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
@@ -137,6 +138,11 @@ func (t *testNode) Protocols() []p2p.Protocol {
 		Run:    t.run,
 	}}
 }
+
+func (s *testNode) GenesisHash() common.Hash {
+	return common.Hash{}
+}
+
 func (t *testNode) CorsProtocols() []p2p.Protocol {
 	return nil
 }

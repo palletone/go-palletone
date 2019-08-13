@@ -30,7 +30,14 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/nat"
 	"github.com/palletone/go-palletone/common/p2p/netutil"
+	"github.com/palletone/go-palletone/configure"
 )
+
+//palletone
+//112 97 108 108 101 110 116 111 110 101
+//const Version = 1075
+
+//var GenesisHash = []byte("6365f3bc9c197b8679821b998da5ee8f88b3db67fdb023250db3d1c2ae0ab1c6")
 
 // Errors
 var (
@@ -273,11 +280,11 @@ func (t *udp) close() {
 // ping sends a ping message to the given node and waits for a reply.
 func (t *udp) ping(toid NodeID, toaddr *net.UDPAddr) error {
 	req := &ping{
-		Version:    Version,
+		Version:    configure.UdpVersion,
 		From:       t.ourEndpoint,
 		To:         makeEndpoint(toaddr, 0), // TODO: maybe use known TCP port from DB
 		Expiration: uint64(time.Now().Add(expiration).Unix()),
-		Genesis:    GenesisHash,
+		Genesis:    configure.GenesisHash,
 	}
 	packet, hash, err := encodePacket(t.priv, pingPacket, req)
 	if err != nil {
@@ -583,9 +590,9 @@ func (req *ping) handle(t *udp, from *net.UDPAddr, fromID NodeID, mac []byte) er
 		return errExpired
 	}
 	//Start Add by wangjiyou for discv4 in 2019-7-19
-	if req.Version != Version || !bytes.Equal(req.Genesis, GenesisHash) {
-		log.Debug("Bad discv4 ping", "Req Version", req.Version, "Version", Version, "Req Genesis", req.Genesis,
-			"Genesis", GenesisHash)
+	if req.Version != configure.UdpVersion || !bytes.Equal(req.Genesis, configure.GenesisHash) {
+		log.Debug("Bad discv4 ping", "Req Version", req.Version, "Version", configure.UdpVersion, "Req Genesis", req.Genesis,
+			"Genesis", configure.GenesisHash)
 		return errUnknownNode
 	}
 	//End Add by wangjiyou for discv4 in 2019-7-19

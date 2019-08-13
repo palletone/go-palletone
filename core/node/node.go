@@ -26,11 +26,13 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/palletcache"
@@ -231,6 +233,11 @@ func (n *Node) Start() error {
 	for _, service := range services {
 		running.Protocols = append(running.Protocols, service.Protocols()...)
 		corss.Protocols = append(corss.Protocols, service.CorsProtocols()...)
+
+		if !common.EmptyHash(service.GenesisHash()) {
+			configure.GenesisHash = service.GenesisHash().Bytes()
+		}
+
 	}
 	log.Debug("Node Start", "len(running.Protocols)", len(running.Protocols), "len(corss.Protocols)", len(corss.Protocols))
 
