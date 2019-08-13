@@ -86,7 +86,7 @@ func StringToAddress(a string) (Address, error) {
 	if a[0] != byte('P') {
 		return Address{}, errors.New("PalletOne address must start with 'P'")
 	}
-	addrb, version, err := base58.CheckDecode(string(a[1:]))
+	addrb, version, err := base58.CheckDecode(a[1:])
 	if err != nil {
 		return Address{}, err
 	}
@@ -172,7 +172,7 @@ func IsHexAddress(s string) bool {
 
 // Get the string representation of the underlying address
 func (a Address) Str() string {
-	return "P" + base58.CheckEncode(a[0:20], byte(a[20]))
+	return "P" + base58.CheckEncode(a[0:20], a[20])
 }
 
 //Return account 20 bytes without address type

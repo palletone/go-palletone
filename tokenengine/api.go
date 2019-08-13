@@ -307,7 +307,7 @@ func GetScriptSigners(tx *modules.Transaction, msgIdx, inputIndex int) ([]common
 }
 
 //对交易中的Payment类型中的某个Input生成解锁脚本
-//func SignOnePaymentInput(tx *modules.Transaction, msgIdx, id int, 
+//func SignOnePaymentInput(tx *modules.Transaction, msgIdx, id int,
 //	utxoLockScript []byte, privKey *ecdsa.PrivateKey, juryVersion int) ([]byte, error) {
 //	lookupKey := func(a common.Address) (*ecdsa.PrivateKey, bool, error) {
 //		return privKey, true, nil
@@ -416,7 +416,7 @@ func SignTxAllPaymentInput(tx *modules.Transaction, hashType uint32, utxoLockScr
 						return signErrors, err
 					}
 					input.SignatureScript = sigScript
-					checkscript = nil
+					// checkscript = nil
 				}
 			}
 		}
