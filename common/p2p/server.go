@@ -147,15 +147,15 @@ type Config struct {
 	EnableMsgEvents bool
 
 	// Genesis hash is set udp discover.
-	GenesisHash string
+	//GenesisHash string
 }
 
 var DefaultConfig = Config{
-	DiscoveryV5:    false,
-	ListenAddr:     ":30303",
-	MaxPeers:       50,
-	NAT:            nat.Any(),
-	GenesisHash:    "",
+	DiscoveryV5: false,
+	ListenAddr:  ":30303",
+	MaxPeers:    50,
+	NAT:         nat.Any(),
+	//GenesisHash:    "",
 	CorsListenAddr: "",
 }
 
