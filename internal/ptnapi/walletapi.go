@@ -774,7 +774,7 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransa
 		txInput := modules.NewTxIn(prevOut, []byte{})
 		pload.AddTxIn(txInput)
 	}
-	var OutputJson []walletjson.OutputJson
+	//var OutputJson []walletjson.OutputJson
 	// Add all transaction outputs to the transaction after performing
 	// some validity checks.
 	// only support mainnet
@@ -820,7 +820,7 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransa
 		assetId := dagconfig.DagConfig.GetGasToken()
 		txOut := modules.NewTxOut(dao, pkScript, assetId.ToAsset())
 		pload.AddTxOut(txOut)
-		OutputJson = append(OutputJson, walletjson.OutputJson{Amount: dao, Asset: assetId.String(), ToAddress: addr.String()})
+		//OutputJson = append(OutputJson, walletjson.OutputJson{Amount: dao, Asset: assetId.String(), ToAddress: addr.String()})
 	}
 	// Set the Locktime, if given.
 	if c.LockTime != nil {
@@ -1087,7 +1087,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 	var outAmount uint64
 	for _, msg := range stx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
-		if ok == false {
+		if !ok {
 			continue
 		}
 
@@ -1268,6 +1268,9 @@ func (s *PrivateWalletAPI) CreateProofOfExistenceTx(ctx context.Context, addr st
 		utxoLockScripts[utxo.OutPoint] = utxo.PkScript
 	}
 	fromAddr, err := common.StringToAddress(addr)
+        if err != nil {
+                return common.Hash{}, err
+        }
 	err = s.unlockKS(fromAddr, password, nil)
 	if err != nil {
 		return common.Hash{}, err
@@ -1355,7 +1358,7 @@ func (s *PublicWalletAPI) getFileInfo(filehash string) (string, error) {
 	for _, file := range files {
 		get := walletjson.GetFileInfos{}
 		get.ParentsHash = file.ParentsHash.String()
-		get.FileHash = string(file.MainData)
+		get.FileHash = file.MainData
 		get.ExtraData = string(file.ExtraData)
 		get.Reference = string(file.Reference)
 		timestamp = int64(file.Timestamp)

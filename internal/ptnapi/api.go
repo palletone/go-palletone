@@ -202,7 +202,7 @@ func newRPCTransaction(tx *modules.Transaction, blockHash common.Hash, unitIndex
 // newRPCPendingTransaction returns a pending transaction that will serialize to the RPC representation
 func newRPCPendingTransaction(tx *modules.TxPoolTransaction) *RPCTransaction {
 	if tx.UnitHash != (common.Hash{}) {
-		return newRPCTransaction(tx.Tx, tx.UnitHash, tx.UnitIndex, uint64(tx.Index))
+		return newRPCTransaction(tx.Tx, tx.UnitHash, tx.UnitIndex, tx.Index)
 	}
 	return newRPCTransaction(tx.Tx, common.Hash{}, ^uint64(0), ^uint64(0))
 }
@@ -577,7 +577,7 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 		//	return "", internalRPCError(err.Error(), context)
 		//}
 		assetId := dagconfig.DagConfig.GetGasToken()
-		txOut := modules.NewTxOut(uint64(dao), pkScript, assetId.ToAsset())
+		txOut := modules.NewTxOut(dao, pkScript, assetId.ToAsset())
 		pload.AddTxOut(txOut)
 	}
 	//	// Set the Locktime, if given.
