@@ -1179,7 +1179,7 @@ func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine
 
 func trimx(para string) string {
 	if strings.HasPrefix(para, "0x") || strings.HasPrefix(para, "0X") {
-		return fmt.Sprintf("%s", para[2:])
+		return para[2:]
 	}
 	return para
 }
@@ -1194,7 +1194,7 @@ func MakeAddress(ks *keystore.KeyStore, account string) (accounts.Account, error
 
 }
 
-func (s *PublicTransactionPoolAPI) helpSignTx(tx *modules.Transaction,
+/*func (s *PublicTransactionPoolAPI) helpSignTx(tx *modules.Transaction,
 	password string) ([]common.SignatureError, error) {
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
 		ks := s.b.GetKeyStore()
@@ -1210,8 +1210,9 @@ func (s *PublicTransactionPoolAPI) helpSignTx(tx *modules.Transaction,
 	utxos := s.getTxUtxoLockScript(tx)
 	return tokenengine.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, utxos, nil, getPubKeyFn, getSignFn)
 
-}
-func (s *PublicTransactionPoolAPI) getTxUtxoLockScript(tx *modules.Transaction) map[modules.OutPoint][]byte {
+}*/
+
+/*func (s *PublicTransactionPoolAPI) getTxUtxoLockScript(tx *modules.Transaction) map[modules.OutPoint][]byte {
 	result := map[modules.OutPoint][]byte{}
 
 	for _, msg := range tx.TxMessages {
@@ -1225,7 +1226,7 @@ func (s *PublicTransactionPoolAPI) getTxUtxoLockScript(tx *modules.Transaction) 
 		}
 	}
 	return result
-}
+}*/
 
 //转为压力测试准备数据用
 func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, fromAddress, toAddress string, amount int, count int, password string) ([]string, error) {
