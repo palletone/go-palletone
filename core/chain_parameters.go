@@ -186,31 +186,8 @@ func CheckSysConfigArgs(field, value string) error {
 	return err
 }
 
-// 操作交易费计划
-//type FeeSchedule struct {
-//	// mediator 创建费用
-//	MediatorCreateFee uint64                `json:"mediatorCreateFee"`
-//	AccountUpdateFee  uint64                `json:"accountUpdateFee"`
-//	TransferFee       TransferFeeParameters `json:"transferPtnFee"`
-//}
-
-//func newFeeSchedule() (f FeeSchedule) {
-//	f.MediatorCreateFee = DefaultMediatorCreateFee
-//	f.AccountUpdateFee = DefaultAccountUpdateFee
-//	f.TransferFee = newTransferFeeParameters()
-//
-//	return
-//}
-
-// 转账交易费
-//type TransferFeeParameters struct {
-//	BaseFee       uint64 `json:"baseFee"`
-//	PricePerKByte uint64 `json:"pricePerKByte"`
-//}
-
-//func newTransferFeeParameters() (tf TransferFeeParameters) {
-//	tf.BaseFee = DefaultTransferPtnBaseFee
-//	tf.PricePerKByte = DefaultTransferPtnPricePerKByte
-//
-//	return
-//}
+func ImmutableChainParameterCheck(icp *ImmutableChainParameters, cp *ChainParameters) {
+	if cp.MediatorInterval < icp.MinMediatorInterval {
+		cp.MediatorInterval = icp.MinMediatorInterval
+	}
+}
