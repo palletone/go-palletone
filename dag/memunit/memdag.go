@@ -511,20 +511,20 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 		if parentHash == chain.lastMainChainUnit.Hash() {
 			//Add a new unit to main chain
 			tt := time.Now()
-			tempdb := new(ChainTempDb)
+			var temp_db *ChainTempDb
 			inter_temp, has := chain.tempdb.Load(parentHash)
 			if !has { // 分叉链
-				p_temp, _ := inter.(*ChainTempDb)
-				tempdb, _ = NewChainTempDb(p_temp.Tempdb, chain.cache)
+				p_temp := inter.(*ChainTempDb)
+				temp_db, _ = NewChainTempDb(p_temp.Tempdb, chain.cache)
 			} else {
-				tempdb = inter_temp.(*ChainTempDb)
+				temp_db = inter_temp.(*ChainTempDb)
 			}
 			validateCode := validator.TxValidationCode_VALID
 			fmt.Println("validate code:", validateCode)
 			if chain.saveHeaderOnly {
-				validateCode = tempdb.Validator.ValidateHeader(unit.UnitHeader)
+				validateCode = temp_db.Validator.ValidateHeader(unit.UnitHeader)
 			} else {
-				validateCode = tempdb.Validator.ValidateUnitExceptGroupSig(unit)
+				validateCode = temp_db.Validator.ValidateUnitExceptGroupSig(unit)
 			}
 			if validateCode != validator.TxValidationCode_VALID {
 				vali_err := validator.NewValidateError(validateCode)
@@ -532,7 +532,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 					vali_err.Error(), uHash.String())
 				return nil, nil, nil, nil, nil, vali_err
 			}
-			tempdb, _ = tempdb.AddUnit(unit, chain.saveHeaderOnly)
+			tempdb, _ := temp_db.AddUnit(unit, chain.saveHeaderOnly)
 			// go tempdb.AddUnit(unit, chain.saveHeaderOnly)
 			chain.tempdb.Store(uHash, tempdb)
 			chain.chainUnits.Store(uHash, tempdb)
@@ -565,7 +565,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 			start1 := time.Now()
 			validateCode := validator.TxValidationCode_VALID
 			fmt.Println("fork validate code:", validateCode)
-			main_temp := new(ChainTempDb)
+			var main_temp *ChainTempDb
 			inter_main, has := chain.tempdb.Load(parentHash)
 			if !has { // 分叉
 				main_temp, _ = NewChainTempDb(chain.db, chain.cache)

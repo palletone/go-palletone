@@ -28,6 +28,7 @@ import (
 
 type ImmutableChainParameters struct {
 	// todo albert 添加最小维护周期跳过的生产槽数量, 用于完成vss协议
+	MinMaintSkipSlots    uint8    `json:"min_maint_skip_slots"`
 	MinimumMediatorCount uint8    `json:"min_mediator_count"`    // 最小活跃mediator数量
 	MinMediatorInterval  uint8    `json:"min_mediator_interval"` // 最小的生产槽间隔时间
 	UccPrivileged        bool     `json:"ucc_privileged"`        // 防止容器以root权限运行
@@ -38,6 +39,7 @@ type ImmutableChainParameters struct {
 
 func NewImmutChainParams() ImmutableChainParameters {
 	return ImmutableChainParameters{
+		MinMaintSkipSlots:    DefaultMinMaintSkipSlots,
 		MinimumMediatorCount: DefaultMinMediatorCount,
 		MinMediatorInterval:  DefaultMinMediatorInterval,
 		UccPrivileged:        DefaultUccPrivileged,
@@ -186,31 +188,12 @@ func CheckSysConfigArgs(field, value string) error {
 	return err
 }
 
-// 操作交易费计划
-//type FeeSchedule struct {
-//	// mediator 创建费用
-//	MediatorCreateFee uint64                `json:"mediatorCreateFee"`
-//	AccountUpdateFee  uint64                `json:"accountUpdateFee"`
-//	TransferFee       TransferFeeParameters `json:"transferPtnFee"`
-//}
+func ImmutableChainParameterCheck(icp *ImmutableChainParameters, cp *ChainParameters) {
+	if cp.MediatorInterval < icp.MinMediatorInterval {
+		cp.MediatorInterval = icp.MinMediatorInterval
+	}
 
-//func newFeeSchedule() (f FeeSchedule) {
-//	f.MediatorCreateFee = DefaultMediatorCreateFee
-//	f.AccountUpdateFee = DefaultAccountUpdateFee
-//	f.TransferFee = newTransferFeeParameters()
-//
-//	return
-//}
-
-// 转账交易费
-//type TransferFeeParameters struct {
-//	BaseFee       uint64 `json:"baseFee"`
-//	PricePerKByte uint64 `json:"pricePerKByte"`
-//}
-
-//func newTransferFeeParameters() (tf TransferFeeParameters) {
-//	tf.BaseFee = DefaultTransferPtnBaseFee
-//	tf.PricePerKByte = DefaultTransferPtnPricePerKByte
-//
-//	return
-//}
+	if cp.MaintenanceSkipSlots < icp.MinMaintSkipSlots {
+		cp.MaintenanceSkipSlots = icp.MinMaintSkipSlots
+	}
+}

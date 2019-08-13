@@ -160,27 +160,19 @@ func (s *RwSetTxSimulator) DeleteState(contractId []byte, ns string, key string)
 }
 
 func (s *RwSetTxSimulator) GetRwData(ns string) ([]*KVRead, []*KVWrite, error) {
-	var rd map[string]*KVRead
-	var wt map[string]*KVWrite
-
+	rd := make(map[string]*KVRead)
+	wt := make(map[string]*KVWrite)
 	log.Info("GetRwData", "ns info", ns)
 
 	if s.rwsetBuilder != nil {
 		if s.rwsetBuilder.pubRwBuilderMap != nil {
 			if s.rwsetBuilder.pubRwBuilderMap[ns] != nil {
-				if s.rwsetBuilder.pubRwBuilderMap[ns].readMap != nil {
-					rd = s.rwsetBuilder.pubRwBuilderMap[ns].readMap
-				}
-				if s.rwsetBuilder.pubRwBuilderMap[ns].writeMap != nil {
-					wt = s.rwsetBuilder.pubRwBuilderMap[ns].writeMap
-				}
 				pubRwBuilderMap, ok := s.rwsetBuilder.pubRwBuilderMap[ns]
 				if ok {
 					rd = pubRwBuilderMap.readMap
 					wt = pubRwBuilderMap.writeMap
 				} else {
-					rd = nil
-					wt = nil
+					return nil, nil, errors.New("rw_data not found.")
 				}
 			}
 		}
@@ -189,24 +181,24 @@ func (s *RwSetTxSimulator) GetRwData(ns string) ([]*KVRead, []*KVWrite, error) {
 	return convertReadMap2Slice(rd), convertWriteMap2Slice(wt), nil
 }
 func convertReadMap2Slice(rd map[string]*KVRead) []*KVRead {
-	keys := []string{}
+	keys := make([]string, 0)
 	for k := range rd {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
-	result := []*KVRead{}
+	result := make([]*KVRead, 0)
 	for _, key := range keys {
 		result = append(result, rd[key])
 	}
 	return result
 }
 func convertWriteMap2Slice(rd map[string]*KVWrite) []*KVWrite {
-	keys := []string{}
+	keys := make([]string, 0)
 	for k := range rd {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
-	result := []*KVWrite{}
+	result := make([]*KVWrite, 0)
 	for _, key := range keys {
 		result = append(result, rd[key])
 	}
