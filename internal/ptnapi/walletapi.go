@@ -366,7 +366,7 @@ func (s *PrivateWalletAPI) SignRawTransaction(ctx context.Context, params string
 		return ptnjson.SignRawTransactionResult{}, errors.New("Params is empty")
 	}
 	upper_type := strings.ToUpper(hashtype)
-	if upper_type != "ALL" && upper_type != "NONE" && upper_type != "SINGLE" {
+	if upper_type != ALL && upper_type != NONE && upper_type != SINGLE {
 		return ptnjson.SignRawTransactionResult{}, errors.New("Hashtype is error,error type:" + hashtype)
 	}
 	serializedTx, err := decodeHexStr(params)
@@ -708,7 +708,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 		return common.Hash{}, errors.New("get addr by outpoint is err")
 	}
 
-	newsign := ptnjson.NewSignRawTransactionCmd(result, &srawinputs, &keys, ptnjson.String("ALL"))
+	newsign := ptnjson.NewSignRawTransactionCmd(result, &srawinputs, &keys, ptnjson.String(ALL))
 	signresult, _ := SignRawTransaction(newsign, getPubKeyFn, getSignFn, addr)
 
 	stx := new(modules.Transaction)
@@ -1060,7 +1060,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 		return common.Hash{}, errors.New("get addr by outpoint is err")
 	}
 
-	newsign := ptnjson.NewSignRawTransactionCmd(result, &srawinputs, &keys, ptnjson.String("ALL"))
+	newsign := ptnjson.NewSignRawTransactionCmd(result, &srawinputs, &keys, ptnjson.String(ALL))
 	signresult, _ := SignRawTransaction(newsign, getPubKeyFn, getSignFn, addr)
 
 	fmt.Println(signresult)

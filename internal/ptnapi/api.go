@@ -48,6 +48,12 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/util"
 )
 
+const (
+	NONE   = "NONE"
+	ALL    = "ALL"
+	SINGLE = "SINGLE"
+)
+
 //const (
 //	defaultGasPrice = 0.0001 * configure.PalletOne
 //
@@ -755,11 +761,11 @@ func signTokenTx(tx *modules.Transaction, cmdInputs []ptnjson.RawTxInput, flags 
 	pubKeyFn tokenengine.AddressGetPubKey, hashFn tokenengine.AddressGetSign) error {
 	var hashType uint32
 	switch flags {
-	case "ALL":
+	case ALL:
 		hashType = tokenengine.SigHashAll
-	case "NONE":
+	case NONE:
 		hashType = tokenengine.SigHashNone
-	case "SINGLE":
+	case SINGLE:
 		hashType = tokenengine.SigHashSingle
 	case "ALL|ANYONECANPAY":
 		hashType = tokenengine.SigHashAll | tokenengine.SigHashAnyOneCanPay
@@ -980,7 +986,7 @@ func (s *PrivateTransactionPoolAPI) unlockKS(addr common.Address, password strin
 //		return common.Hash{}, err
 //	}
 //	//3.
-//	err = signTokenTx(tx, rawInputs, "ALL", getPubKeyFn, getSignFn)
+//	err = signTokenTx(tx, rawInputs, ALL, getPubKeyFn, getSignFn)
 //	if err != nil {
 //		return common.Hash{}, err
 //	}
@@ -1040,11 +1046,11 @@ func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine
 
 	var hashType uint32
 	switch strings.ToUpper(*cmd.Flags) {
-	case "ALL":
+	case ALL:
 		hashType = tokenengine.SigHashAll
-	case "NONE":
+	case NONE:
 		hashType = tokenengine.SigHashNone
-	case "SINGLE":
+	case SINGLE:
 		hashType = tokenengine.SigHashSingle
 	case "ALL|ANYONECANPAY":
 		hashType = tokenengine.SigHashAll | tokenengine.SigHashAnyOneCanPay
@@ -1266,7 +1272,7 @@ func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, f
 		return ptnjson.SignRawTransactionResult{}, errors.New("Params is empty")
 	}
 	upper_type := strings.ToUpper(hashtype)
-	if upper_type != "ALL" && upper_type != "NONE" && upper_type != "SINGLE" {
+	if upper_type != ALL && upper_type != NONE && upper_type != SINGLE {
 		return ptnjson.SignRawTransactionResult{}, errors.New("Hashtype is error,error type:" + hashtype)
 	}
 	serializedTx, err := decodeHexStr(params)
