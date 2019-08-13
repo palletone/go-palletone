@@ -60,10 +60,10 @@ func (it AssetId) String() string {
 	}
 
 	type2 := byte(assetType)<<3 | byte(uidType)
-        rst := symbol + "+" + base36.EncodeBytes([]byte{decimal})
-        rst += base36.EncodeBytes([]byte{type2})
-        rst += base36.EncodeBytes(txHash)
-        return rst
+	rst := symbol + "+" + base36.EncodeBytes([]byte{decimal})
+	rst += base36.EncodeBytes([]byte{type2})
+	rst += base36.EncodeBytes(txHash)
+	return rst
 }
 
 func String2AssetId(str string) (AssetId, UniqueIdType, error) {
@@ -73,7 +73,8 @@ func String2AssetId(str string) (AssetId, UniqueIdType, error) {
 	}
 	strArray := strings.Split(str, "+")
 	if len(strArray) < 2 {
-		asset, err := NewAssetId(strArray[0], AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, UniqueIdType_Null)
+		asset, err := NewAssetId(strArray[0], AssetType_FungibleToken, 8,
+			[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, UniqueIdType_Null)
 		return asset, UniqueIdType_Null, err
 	}
 	symbol := strArray[0]
@@ -86,7 +87,8 @@ func String2AssetId(str string) (AssetId, UniqueIdType, error) {
 	return assetId, uniqueIdType, err
 }
 
-func NewAssetId(symbol string, assetType AssetType, decimal byte, requestId []byte, uniqueIdType UniqueIdType) (AssetId, error) {
+func NewAssetId(symbol string, assetType AssetType, decimal byte, requestId []byte,
+	uniqueIdType UniqueIdType) (AssetId, error) {
 	if len(symbol) > 5 || len(symbol) == 0 {
 		return AssetId{}, errors.New("Symbol must less than 5 characters")
 	}

@@ -183,7 +183,6 @@ key: [BODY_PREFIX][unit hash]
 value: all transactions hash set's rlp encoding bytes
 */
 func (dagdb *DagDb) SaveBody(unitHash common.Hash, txsHash []common.Hash) error {
-	//log.Debugf("DB[%s] Save body of unit[%s], include txs:%#x", reflect.TypeOf(dagdb.db).String(), unitHash.String(), txsHash)
 	key := append(constants.BODY_PREFIX, unitHash.Bytes()...)
 	return StoreToRlpBytes(dagdb.db, key, txsHash)
 }
@@ -254,7 +253,8 @@ func (dagdb *DagDb) GetUnitTransactions(hash common.Hash) (modules.Transactions,
 	txs := modules.Transactions{}
 	txHashList, err := dagdb.GetBody(hash)
 	if err != nil {
-		log.Error(reflect.TypeOf(dagdb.db).String()+": GetUnitTransactions when get body error", "error", err.Error(), "unit_hash", hash.String())
+		log.Error(reflect.TypeOf(dagdb.db).String()+": GetUnitTransactions when get body error",
+			"error", err.Error(), "unit_hash", hash.String())
 		return nil, err
 	}
 	// get transaction by tx'hash.
@@ -270,7 +270,8 @@ func (dagdb *DagDb) GetUnitTransactions(hash common.Hash) (modules.Transactions,
 
 func (dagdb *DagDb) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 	key := append(constants.HEADER_PREFIX, hash.Bytes()...)
-	log.Debugf("DB[%s](%p) Get Header by unit hash:%s,key:%x", reflect.TypeOf(dagdb.db).String(), dagdb, hash.String(), key)
+	log.Debugf("DB[%s](%p) Get Header by unit hash:%s,key:%x",
+		reflect.TypeOf(dagdb.db).String(), dagdb, hash.String(), key)
 	header := new(modules.Header)
 	err := RetrieveFromRlpBytes(dagdb.db, key, header)
 	if err != nil {

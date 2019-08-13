@@ -286,7 +286,8 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 
 		if a, b, c, dd, e, err := d.Memdag.AddUnit(u, txpool); err != nil {
 			//return count, err
-			log.Errorf("Memdag addUnit[%s] #%d signed by %v error:%s", u.UnitHash.String(), u.NumberU64(), u.Author().Str(), err.Error())
+			log.Errorf("Memdag addUnit[%s] #%d signed by %v error:%s",
+				u.UnitHash.String(), u.NumberU64(), u.Author().Str(), err.Error())
 			return count, nil
 		} else {
 			if a != nil {
@@ -427,8 +428,10 @@ func (d *Dag) refreshPartitionMemDag() {
 		if !ok {
 			d.initDataForMainChainHeader(mainChain)
 			log.Debugf("Init main chain mem dag for:%s", mainChain.GasToken.String())
-			pmemdag := memunit.NewMemDag(mainChain.GasToken, threshold, true, db, unitRep, propRep, d.stableStateRep, cache())
-			//pmemdag.SetUnstableRepositories(d.unstableUnitRep, d.unstableUtxoRep, d.unstableStateRep, d.unstablePropRep, d.unstableUnitProduceRep)
+			pmemdag := memunit.NewMemDag(mainChain.GasToken, threshold, true, db, unitRep,
+				propRep, d.stableStateRep, cache())
+			//pmemdag.SetUnstableRepositories(d.unstableUnitRep, d.unstableUtxoRep, d.unstableStateRep,
+			// d.unstablePropRep, d.unstableUnitProduceRep)
 			d.PartitionMemDag[mainChain.GasToken] = pmemdag
 		} else {
 			mainChainMemDag.SetStableThreshold(threshold) //可能更新了该数字
@@ -451,8 +454,10 @@ func (d *Dag) refreshPartitionMemDag() {
 			threshold := int(partition.StableThreshold)
 			d.initDataForPartition(partition)
 			log.Debugf("Init partition mem dag for:%s", ptoken.String())
-			pmemdag := memunit.NewMemDag(ptoken, threshold, true, db, unitRep, propRep, d.stableStateRep, cache())
-			//pmemdag.SetUnstableRepositories(d.unstableUnitRep, d.unstableUtxoRep, d.unstableStateRep, d.unstablePropRep, d.unstableUnitProduceRep)
+			pmemdag := memunit.NewMemDag(ptoken, threshold, true, db, unitRep, propRep,
+				d.stableStateRep, cache())
+			//pmemdag.SetUnstableRepositories(d.unstableUnitRep, d.unstableUtxoRep, d.unstableStateRep,
+			// d.unstablePropRep, d.unstableUnitProduceRep)
 			partitionMemdag[ptoken] = pmemdag
 		}
 
@@ -467,8 +472,10 @@ func (d *Dag) refreshPartitionMemDag() {
 		if !ok {
 			d.initDataForPartition(partition)
 			log.Debugf("Init partition mem dag for:%s", ptoken.String())
-			pmemdag := memunit.NewMemDag(ptoken, threshold, true, db, unitRep, propRep, d.stableStateRep, cache())
-			//pmemdag.SetUnstableRepositories(d.unstableUnitRep, d.unstableUtxoRep, d.unstableStateRep, d.unstablePropRep, d.unstableUnitProduceRep)
+			pmemdag := memunit.NewMemDag(ptoken, threshold, true, db, unitRep, propRep,
+				d.stableStateRep, cache())
+			//pmemdag.SetUnstableRepositories(d.unstableUnitRep, d.unstableUtxoRep, d.unstableStateRep,
+			// d.unstablePropRep, d.unstableUnitProduceRep)
 			d.PartitionMemDag[ptoken] = pmemdag
 		} else {
 			partitonMemDag.SetStableThreshold(threshold) //可能更新了该数字
@@ -482,7 +489,8 @@ func (d *Dag) initDataForPartition(partition *modules.PartitionChain) {
 	pHeader := partition.GetGenesisHeader()
 	exist, _ := d.stableUnitRep.IsHeaderExist(pHeader.Hash())
 	if !exist {
-		log.Debugf("Init partition[%s] genesis header:%s", pHeader.ChainIndex().AssetID.String(), pHeader.Hash().String())
+		log.Debugf("Init partition[%s] genesis header:%s",
+			pHeader.ChainIndex().AssetID.String(), pHeader.Hash().String())
 		d.stableUnitRep.SaveNewestHeader(pHeader)
 	}
 }
@@ -492,7 +500,8 @@ func (d *Dag) initDataForMainChainHeader(mainChain *modules.MainChain) {
 	pHeader := mainChain.GetGenesisHeader()
 	exist, _ := d.stableUnitRep.IsHeaderExist(pHeader.Hash())
 	if !exist {
-		log.Debugf("Init main chain[%s] genesis header:%s", pHeader.ChainIndex().AssetID.String(), pHeader.Hash().String())
+		log.Debugf("Init main chain[%s] genesis header:%s",
+			pHeader.ChainIndex().AssetID.String(), pHeader.Hash().String())
 		d.stableUnitRep.SaveNewestHeader(pHeader)
 	}
 }
@@ -565,7 +574,8 @@ func checkDbMigration(db ptndb.Database, stateDb storage.IStateDb) error {
 	next_version := old_vertion.Version
 
 	if next_version != now_version {
-		log.Infof("Start migration,upgrade gtpn vertion[%s] to [%s], it may spend a long time, please wait...", next_version, now_version)
+		log.Infof("Start migration,upgrade gtpn vertion[%s] to [%s], it may spend a long time, please wait...",
+			next_version, now_version)
 		// migrations
 		mig_versions := migration.NewMigrations(db)
 
@@ -657,7 +667,8 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 	statleUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
 
 	threshold, _ := propRep.GetChainThreshold()
-	unstableChain := memunit.NewMemDag(modules.PTNCOIN, threshold, false, db, unitRep, propRep, stateRep, cache())
+	unstableChain := memunit.NewMemDag(modules.PTNCOIN, threshold, false, db, unitRep,
+		propRep, stateRep, cache())
 	tunitRep, tutxoRep, tstateRep, tpropRep, tUnitProduceRep := unstableChain.GetUnstableRepositories()
 
 	dag := &Dag{
@@ -832,7 +843,8 @@ func (d *Dag) GetAssetTxHistory(asset *modules.Asset) ([]*modules.TransactionWit
 }
 
 // get the token balance by address and asset
-func (d *Dag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error) {
+func (d *Dag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (
+	map[modules.OutPoint]*modules.Utxo, error) {
 	all, err := d.unstableUtxoRep.GetAddrUtxos(addr, asset)
 	return all, err
 }
@@ -1073,7 +1085,8 @@ func (d *Dag) GetLightChainHeight(assetId modules.AssetId) uint64 {
 func (d *Dag) InsertLightHeader(headers []*modules.Header) (int, error) {
 	log.Debug("Dag InsertLightHeader numbers", "", len(headers))
 	for _, header := range headers {
-		log.Debug("Dag InsertLightHeader info", "header index:", header.Index(), "assetid", header.Number.AssetID)
+		log.Debug("Dag InsertLightHeader info", "header index:", header.Index(),
+			"assetid", header.Number.AssetID)
 	}
 	count, err := d.InsertHeaderDag(headers)
 

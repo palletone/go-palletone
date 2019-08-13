@@ -25,12 +25,20 @@ run:
   # from this option's value:
   #   	vendor$, third_party$, testdata$, examples$, Godeps$, builtin$
   skip-dirs:
-    - build
+    - build #from go-ethereum
     - bdd
-    - gmsm*
-    - bitutil
+    - gmsm* #from github.com/tjfoc/gmsm
+    - bitutil  #from go-ethereum
     - edwards25519
     - ec
+    - txscript #from github.com/btcsuite/btcd
+    - statistics #from go-ethereum
+    - p2p  #from go-ethereum
+    - trie #from go-ethereum
+    - bloombits #from go-ethereum
+    - rpc #from go-ethereum
+    - bmt #from go-ethereum
+
     
 
   # which files to skip: they will be analyzed, but issues from them
@@ -50,7 +58,7 @@ run:
   # If invoked with -mod=vendor, the go command assumes that the vendor
   # directory holds the correct copies of dependencies and ignores
   # the dependency descriptions in go.mod.
-  modules-download-mode: vendor
+  # modules-download-mode: vendor
 
 
 # output configuration options

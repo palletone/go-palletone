@@ -63,7 +63,6 @@ func (m *Migration100_101) utxoToStxo() error {
 				log.Errorf("Migrate utxo db,delete spent utxo error:%s", err.Error())
 				return err
 			}
-			//log.Debugf("Deleted spent UTXO by key:%s", outpoint.String())
 		}
 	}
 	dagdb := storage.NewDagDb(m.dagdb)
@@ -73,7 +72,7 @@ func (m *Migration100_101) utxoToStxo() error {
 		value := iter.Value()
 		tx := new(modules.Transaction)
 		err := rlp.DecodeBytes(value, tx)
-		if err != nil || tx == nil {
+		if err != nil {
 			log.Errorf("Cannot decode key[%s] rlp tx:%x", key, value)
 			continue
 		}
@@ -199,14 +198,14 @@ func (m *Migration100_101) upgradeGP() error {
 	if err != nil {
 		return err
 	}
-	newData.ChainParameters.UccCpuQuota = int64(UccCpuQuota)
+	newData.ChainParameters.UccCpuQuota = UccCpuQuota
 	newData.ChainParameters.UccDisk = core.DefaultUccDisk
 
 	TempUccMemory, err := strconv.ParseInt(oldGp.ChainParameters.TempUccMemory, 10, 64)
 	if err != nil {
 		return err
 	}
-	newData.ChainParameters.TempUccMemory = int64(TempUccMemory)
+	newData.ChainParameters.TempUccMemory = TempUccMemory
 	TempUccCpuShares, err := strconv.ParseInt(oldGp.ChainParameters.TempUccCpuShares, 10, 64)
 	if err != nil {
 		return err

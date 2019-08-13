@@ -718,11 +718,38 @@ func TestContractTxsIllegal(t *testing.T) {
 	}
 
 	//mark
-	err = markTxsIllegal(statedb, txs)
-	if err != nil {
-		log.Debug("TestContractTxIllegal", "MarkTxIllegal err", err)
+	markTxsIllegal(statedb, txs)
+}
+func markTxsIllegal(dag storage.IStateDb, txs []*modules.Transaction) {
+	for _, tx := range txs {
+		if !tx.IsContractTx() {
+			continue
+		}
+		if tx.IsSystemContract() {
+			continue
+		}
+		var readSet []modules.ContractReadSet
+		var contractId []byte
+
+		for _, msg := range tx.TxMessages {
+			switch msg.App {
+			case modules.APP_CONTRACT_DEPLOY:
+				payload := msg.Payload.(*modules.ContractDeployPayload)
+				readSet = payload.ReadSet
+				contractId = payload.ContractId
+			case modules.APP_CONTRACT_INVOKE:
+				payload := msg.Payload.(*modules.ContractInvokePayload)
+				readSet = payload.ReadSet
+				contractId = payload.ContractId
+			case modules.APP_CONTRACT_STOP:
+				payload := msg.Payload.(*modules.ContractStopPayload)
+				readSet = payload.ReadSet
+				contractId = payload.ContractId
+			}
+		}
+		valid := checkReadSetValid(dag, contractId, readSet)
+		tx.Illegal = !valid
 	}
-	//log.Debug("TestContractTxIllegal", "txs", txs)
 }
 
 // func TestCoinbase(t *testing.T) {
