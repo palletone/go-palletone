@@ -43,12 +43,12 @@ var DefaultConfig = Config{
 	MemoryUnitSize:               1280,
 	IrreversibleHeight:           1, // 单节点memdag正常缓存区块，需要将该值设置为1
 	WhetherValidateUnitSignature: false,
-	GenesisHash:                  "0xeb5f66d0289ea0af68860fd5a4d1a0b38389f598ae01008433a5ca9949fcf55c",
-	PartitionForkUnitHeight:      0,
-	AddrTxsIndex:                 false,
-	Token721TxIndex:              true,
-	TextFileHashIndex:            true,
-	GasToken:                     DefaultToken,
+	//GenesisHash:                  "0xeb5f66d0289ea0af68860fd5a4d1a0b38389f598ae01008433a5ca9949fcf55c",
+	PartitionForkUnitHeight: 0,
+	AddrTxsIndex:            false,
+	Token721TxIndex:         true,
+	TextFileHashIndex:       true,
+	GasToken:                DefaultToken,
 }
 
 // global configuration of dag modules
@@ -78,7 +78,7 @@ type Config struct {
 	// Validate unit signature, just for debug version
 	WhetherValidateUnitSignature bool
 	// genesis hash‘s hex
-	GenesisHash             string
+	//GenesisHash             string
 	PartitionForkUnitHeight int
 
 	AddrTxsIndex    bool
