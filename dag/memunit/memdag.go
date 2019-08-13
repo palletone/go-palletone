@@ -62,6 +62,7 @@ type MemDag struct {
 	toGroupSignFeed  event.Feed
 	toGroupSignScope event.SubscriptionScope
 	db               ptndb.Database
+	quit             chan struct{} // used for exit
 }
 
 func (pmg *MemDag) Close() {
@@ -141,6 +142,8 @@ func (chain *MemDag) loopRebuildTmpDb() {
 			chain.lock.Lock()
 			chain.rebuildTempdb()
 			chain.lock.Unlock()
+		case <-chain.quit:
+			return
 		}
 	}
 }
