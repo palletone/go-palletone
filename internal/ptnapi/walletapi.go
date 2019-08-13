@@ -310,10 +310,10 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 		ppscript = pkScript
 		// Convert the amount to satoshi.
 		dao := ptnjson.Ptn2Dao(ptnAmt)
-		if err != nil {
-			context := "Failed to convert amount"
-			return "", internalRPCError(err.Error(), context)
-		}
+		//if err != nil {
+		//	context := "Failed to convert amount"
+		//	return "", internalRPCError(err.Error(), context)
+		//}
 		assetId := dagconfig.DagConfig.GetGasToken()
 		txOut := modules.NewTxOut(uint64(dao), pkScript, assetId.ToAsset())
 		pload.AddTxOut(txOut)
@@ -591,11 +591,9 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	if err != nil {
 		return common.Hash{}, err
 	}
-	poolTxs, err := s.b.GetPoolTxsByAddr(proofTransactionGenParams.From)
-	if err == nil {
-		if err != nil {
-			return common.Hash{}, fmt.Errorf("Select utxo err")
-		}
+	poolTxs, _ := s.b.GetPoolTxsByAddr(proofTransactionGenParams.From)
+        if len(poolTxs) == 0 {
+	    return common.Hash{}, fmt.Errorf("Select utxo err")
 	} // end of pooltx is not nil
 	utxos, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, proofTransactionGenParams.From, dagconfig.DagConfig.GasToken)
 
@@ -807,10 +805,10 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransa
 		pkScript := tokenengine.GenerateLockScript(addr)
 		// Convert the amount to satoshi.
 		dao := ptnjson.Ptn2Dao(ptnAmt)
-		if err != nil {
-			context := "Failed to convert amount"
-			return "", internalRPCError(err.Error(), context)
-		}
+		//if err != nil {
+		//	context := "Failed to convert amount"
+		//	return "", internalRPCError(err.Error(), context)
+		//}
 		assetId := dagconfig.DagConfig.GetGasToken()
 		txOut := modules.NewTxOut(uint64(dao), pkScript, assetId.ToAsset())
 		pload.AddTxOut(txOut)
