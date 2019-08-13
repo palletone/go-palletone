@@ -159,7 +159,10 @@ func (s *PrivateWalletAPI) buildRawTransferTx(tokenId, from, to string, amount, 
 	if err != nil {
 		return nil, nil, fmt.Errorf("GetAddrRawUtxos utxo err")
 	}
-	poolTxs, err := s.b.GetPoolTxsByAddr(from)
+	poolTxs, _ := s.b.GetPoolTxsByAddr(from)
+       if len(poolTxs) == 0 {
+               return nil, nil, fmt.Errorf("GetPoolTxsByAddr utxo err")
+        }
 
 	utxosPTN, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, from, ptn)
 	if err != nil {
@@ -405,7 +408,7 @@ func (s *PrivateWalletAPI) SignRawTransaction(ctx context.Context, params string
 	var keys []string
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
-		if ok == false {
+		if !ok {
 			continue
 		}
 		for _, txin := range payload.Inputs {
@@ -525,7 +528,7 @@ func (s *PublicWalletAPI) SendJsonTransaction(ctx context.Context, params string
 	var outpoint_txhash common.Hash
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
-		if ok == false {
+		if !ok {
 			continue
 		}
 
@@ -558,7 +561,7 @@ func (s *PublicWalletAPI) SendRlpTransaction(ctx context.Context, encodedTx stri
 	var outAmount uint64
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
-		if ok == false {
+		if !ok {
 			continue
 		}
 
@@ -939,8 +942,8 @@ func (s *PublicWalletAPI) GetAddrTxHistory(ctx context.Context, addr string) ([]
 //sign rawtranscation
 //create raw transction
 func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to string, amount, password string, duration *uint64) (common.Hash, error) {
-	var LockTime int64
-	LockTime = 0
+	//var LockTime int64
+	LockTime := int64(0)
 
 	amounts := []ptnjson.AddressAmt{}
 	if to == "" {
@@ -1157,7 +1160,7 @@ func RandFromString(value string) (decimal.Decimal, error) {
 
 		rand_number = decimal.NewFromBigInt(rd, int32(exp))
 		result = rand_number.Mod(input_number)
-		if result.IsZero() == false {
+		if !result.IsZero() {
 			break
 		}
 	}
