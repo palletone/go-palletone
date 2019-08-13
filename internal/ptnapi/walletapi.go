@@ -56,8 +56,8 @@ func NewPrivateWalletAPI(b Backend) *PrivateWalletAPI {
 func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string, to string, amount, fee decimal.Decimal) (string, error) {
 
 	//realNet := &chaincfg.MainNetParams
-	var LockTime int64
-	LockTime = 0
+        var LockTime int64 
+	//LockTime = 0
 
 	amounts := []ptnjson.AddressAmt{}
 	if from == "" {
@@ -157,7 +157,7 @@ func (s *PrivateWalletAPI) buildRawTransferTx(tokenId, from, to string, amount, 
 	//构造转移PTN的Message0
 	dbUtxos, err := s.b.GetAddrRawUtxos(from)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("GetAddrRawUtxos utxo err")
 	}
 	poolTxs, err := s.b.GetPoolTxsByAddr(from)
 
@@ -340,10 +340,10 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 	mtxtmp := mtx
 	for msgindex, msg := range mtxtmp.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
-		if ok == false {
+		if !ok {
 			continue
 		}
-		for inputindex, _ := range payload.Inputs {
+		for inputindex := range payload.Inputs {
 			hashforsign, err := tokenengine.CalcSignatureHash(mtxtmp, tokenengine.SigHashAll, msgindex, inputindex, ppscript)
 			if err != nil {
 				return "", err
