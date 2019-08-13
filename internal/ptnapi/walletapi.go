@@ -86,7 +86,10 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 
 	ptn := dagconfig.DagConfig.GasToken
 
-	poolTxs, err := s.b.GetPoolTxsByAddr(from)
+	poolTxs, _ := s.b.GetPoolTxsByAddr(from)
+        if len(poolTxs) == 0 {
+                return "", fmt.Errorf("GetPoolTxsByAddr Err")
+        }
 	allutxos, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, from, ptn)
 	if err != nil {
 		return "", fmt.Errorf("Select utxo err")
@@ -1144,6 +1147,7 @@ func RandFromString(value string) (decimal.Decimal, error) {
 	result := decimal.Decimal{}
 	rand_number := decimal.Decimal{}
 	r := rand.Int()
+        r = r
 	rd := big.NewInt(int64(r))
 	for {
 		r = rand.Int()
@@ -1436,7 +1440,7 @@ func (s *PrivateWalletAPI) GenCert(ctx context.Context, caAddress, userAddress, 
 	}
 
 	//导出私钥 用于证书的生成
-	privKey, _ := ks.DumpPrivateKey(account, passwd)
+	privKey, err := ks.DumpPrivateKey(account, passwd)
 	if err != nil {
 		return nil, err
 	}
@@ -1500,7 +1504,7 @@ func (s *PrivateWalletAPI) RevokeCert(ctx context.Context, caAddress, passwd, us
 		return nil, err
 	}
 
-	privKey, _ := ks.DumpPrivateKey(account, passwd)
+	privKey, err := ks.DumpPrivateKey(account, passwd)
 	if err != nil {
 		return nil, err
 	}
