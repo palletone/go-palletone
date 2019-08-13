@@ -318,7 +318,7 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 		//	return "", internalRPCError(err.Error(), context)
 		//}
 		assetId := dagconfig.DagConfig.GetGasToken()
-		txOut := modules.NewTxOut(uint64(dao), pkScript, assetId.ToAsset())
+		txOut := modules.NewTxOut(dao, pkScript, assetId.ToAsset())
 		pload.AddTxOut(txOut)
 		//OutputJson = append(OutputJson, walletjson.OutputJson{Amount: uint64(dao), Asset: assetId.String(), ToAddress: addr.String()})
 	}
@@ -599,7 +599,9 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	    return common.Hash{}, fmt.Errorf("Select utxo err")
 	} // end of pooltx is not nil
 	utxos, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, proofTransactionGenParams.From, dagconfig.DagConfig.GasToken)
-
+        if err != nil {
+                return common.Hash{}, fmt.Errorf("SelectUtxoFromDagAndPool err")
+        }
 	//dagOutpoint := []modules.OutPoint{}
 	//ptn := dagconfig.DagConfig.GasToken
 	//for _, json := range utxoJsons {
@@ -813,7 +815,7 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransa
 		//	return "", internalRPCError(err.Error(), context)
 		//}
 		assetId := dagconfig.DagConfig.GetGasToken()
-		txOut := modules.NewTxOut(uint64(dao), pkScript, assetId.ToAsset())
+		txOut := modules.NewTxOut(dao, pkScript, assetId.ToAsset())
 		pload.AddTxOut(txOut)
 		OutputJson = append(OutputJson, walletjson.OutputJson{Amount: uint64(dao), Asset: assetId.String(), ToAddress: addr.String()})
 	}
@@ -1147,8 +1149,8 @@ func RandFromString(value string) (decimal.Decimal, error) {
 	result := decimal.Decimal{}
 	rand_number := decimal.Decimal{}
 	r := rand.Int()
-        r = r
-	rd := big.NewInt(int64(r))
+        rr:=int64(r)
+	rd := big.NewInt(rr)
 	for {
 		r = rand.Int()
 		//rd = big.NewInt(int64(r))
