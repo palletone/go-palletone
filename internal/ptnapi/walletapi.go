@@ -188,9 +188,9 @@ func (s *PrivateWalletAPI) buildRawTransferTx(tokenId, from, to string, amount, 
 		return nil, nil, err
 	}
 	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pay2))
-	for _, u := range usedUtxo2 {
-		usedUtxo1 = append(usedUtxo1, u)
-	}
+	//for _, u := range usedUtxo2 {
+        usedUtxo1 = append(usedUtxo1, usedUtxo2...)
+	//}
 	return tx, usedUtxo1, nil
 }
 func createPayment(fromAddr, toAddr common.Address, amountToken uint64, feePTN uint64,
@@ -681,7 +681,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	PkScriptHex := hexutil.Encode(PkScript)
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
-		if ok == false {
+		if !ok {
 			continue
 		}
 		for _, txin := range payload.Inputs {
@@ -734,7 +734,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	var outAmount uint64
 	for _, msg := range stx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
-		if ok == false {
+		if !ok {
 			continue
 		}
 
@@ -820,7 +820,7 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransa
 		assetId := dagconfig.DagConfig.GetGasToken()
 		txOut := modules.NewTxOut(dao, pkScript, assetId.ToAsset())
 		pload.AddTxOut(txOut)
-		OutputJson = append(OutputJson, walletjson.OutputJson{Amount: uint64(dao), Asset: assetId.String(), ToAddress: addr.String()})
+		OutputJson = append(OutputJson, walletjson.OutputJson{Amount: dao, Asset: assetId.String(), ToAddress: addr.String()})
 	}
 	// Set the Locktime, if given.
 	if c.LockTime != nil {
@@ -1026,7 +1026,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 	var keys []string
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
-		if ok == false {
+		if !ok {
 			continue
 		}
 		for _, txin := range payload.Inputs {
@@ -1155,7 +1155,7 @@ func RandFromString(value string) (decimal.Decimal, error) {
         rr:=int64(r)
 	rd := big.NewInt(rr)
 	for {
-		r = rand.Int()
+		//r = rand.Int()
 		//rd = big.NewInt(int64(r))
 
 		rand_number = decimal.NewFromBigInt(rd, int32(exp))
@@ -1219,6 +1219,9 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 		utxoLockScripts[utxo.OutPoint] = utxo.PkScript
 	}
 	fromAddr, err := common.StringToAddress(from)
+        if err != nil {
+                return common.Hash{}, err
+        }
 	err = s.unlockKS(fromAddr, password, duration)
 	if err != nil {
 		return common.Hash{}, err
