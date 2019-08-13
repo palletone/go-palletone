@@ -185,8 +185,8 @@ function ModifyP2PConfig()
         #sed -i '/^BootstrapNodes/c'$arrBootstrapNodes'' node$count/ptn-config.toml
         sed -i '/^StaticNodes/c'$arrBootstrapNodes'' node$count/ptn-config.toml
 
-	newGenesisHash="GenesisHash=\"$2\""
-	sed -i '/^GenesisHash/c'$newGenesisHash'' node$count/ptn-config.toml
+#	newGenesisHash="GenesisHash=\"$2\""
+#	sed -i '/^GenesisHash/c'$newGenesisHash'' node$count/ptn-config.toml
 
         echo "=====addBootstrapNodes $count ok======="
         let ++count;
@@ -247,8 +247,8 @@ function MakeTestNet()
     newCorsListenAddr="CorsListenAddr=\"\""
     sed -i '/^CorsListenAddr/c'$newCorsListenAddr'' node_test$1/ptn-config.toml
 
-    newGenesisHash="GenesisHash=\"$2\""
-    sed -i '/^GenesisHash/c'$newGenesisHash'' node_test$1/ptn-config.toml
+#    newGenesisHash="GenesisHash=\"$2\""
+#    sed -i '/^GenesisHash/c'$newGenesisHash'' node_test$1/ptn-config.toml
     echo "===========node-test ok============="
 }
 
