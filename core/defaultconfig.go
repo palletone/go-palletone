@@ -61,13 +61,14 @@ const (
 	DefaultActiveMediatorCount = 5 //21
 	DefaultMinMediatorCount    = 1 //21
 	DefaultMinMediatorInterval = 1
+	DefaultMinMaintSkipSlots   = 2
 
 	//contract
 	DefaultContractSignatureNum = 3
 	DefaultContractElectionNum  = 4
 
 	DefaultContractTxTimeoutUnitFee  = 10 //s
-	DefaultContractTxSizeUnitFee     = 1 //byte
+	DefaultContractTxSizeUnitFee     = 1  //byte
 	DefaultContractTxInstallFeeLevel = 2.5
 	DefaultContractTxDeployFeeLevel  = 1.5
 	DefaultContractTxInvokeFeeLevel  = 1.0
