@@ -1332,6 +1332,9 @@ func (s *PrivateWalletAPI) CreateTraceability(ctx context.Context, addr, uid, sy
 		utxoLockScripts[utxo.OutPoint] = utxo.PkScript
 	}
 	fromAddr, err := common.StringToAddress(addr)
+        if err != nil {
+                return common.Hash{}, err
+        }
 	err = s.unlockKS(fromAddr, password, nil)
 	if err != nil {
 		return common.Hash{}, err
@@ -1359,8 +1362,8 @@ func (s *PublicWalletAPI) getFileInfo(filehash string) (string, error) {
 		get := walletjson.GetFileInfos{}
 		get.ParentsHash = file.ParentsHash.String()
 		get.FileHash = file.MainData
-		get.ExtraData = string(file.ExtraData)
-		get.Reference = string(file.Reference)
+		get.ExtraData = file.ExtraData
+		get.Reference = file.Reference
 		timestamp = int64(file.Timestamp)
 		tm := time.Unix(timestamp, 0)
 		get.Timestamp = tm.String()
