@@ -131,7 +131,6 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 					}
 					number--
 				} else {
-					//log.Info("========GetBlockHeadersMsg========", "number", number, "err:", err)
 					unknown = true
 					break
 				}
@@ -218,15 +217,6 @@ func (pm *ProtocolManager) BlockHeadersMsg(msg p2p.Msg, p *peer) error {
 	if err != nil {
 		log.Debug(fmt.Sprint(err))
 	}
-	//p.fcServer.GotReply(resp.ReqID, resp.BV)
-	//if pm.fetcher != nil && pm.fetcher.requestedID(resp.ReqID) {
-	//	pm.fetcher.deliverHeaders(p, resp.ReqID, resp.Headers)
-	//} else {
-	//	err := pm.downloader.DeliverHeaders(p.id, resp.Headers)
-	//	if err != nil {
-	//		log.Debug(fmt.Sprint(err))
-	//	}
-	//}
 	return nil
 }
 
