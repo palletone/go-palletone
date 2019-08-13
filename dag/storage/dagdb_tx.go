@@ -68,11 +68,10 @@ func (dagdb *DagDb) GetAllTxs() ([]*modules.Transaction, error) {
 	for k, v := range kvs {
 		tx := new(modules.Transaction)
 		err := rlp.DecodeBytes(v, tx)
-		if err != nil || tx == nil {
+		if err != nil {
 			log.Errorf("Cannot decode key[%s] rlp tx:%x", k, v)
 			return nil, err
 		}
-
 		result = append(result, tx)
 	}
 	return result, nil

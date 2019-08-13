@@ -73,14 +73,18 @@ func (view *UtxoViewpoint) SpentUtxo(db utxoBaseOp, outpoints map[modules.OutPoi
 		return nil
 	}
 	for outpoint := range outpoints {
+		item := new(modules.OutPoint)
+		item.TxHash = outpoint.TxHash
+		item.MessageIndex = outpoint.MessageIndex
+		item.OutIndex = outpoint.OutIndex
 		if utxo, has := view.entries[outpoint]; has {
 			utxo.Spend()
-			db.SaveUtxoEntity(&outpoint, utxo)
+			db.SaveUtxoEntity(item, utxo)
 		} else {
-			utxo, err := db.GetUtxoEntry(&outpoint)
+			utxo, err := db.GetUtxoEntry(item)
 			if err == nil {
 				utxo.Spend()
-				db.SaveUtxoEntity(&outpoint, utxo)
+				db.SaveUtxoEntity(item, utxo)
 			}
 		}
 		delete(view.entries, outpoint)
@@ -154,7 +158,11 @@ func (view *UtxoViewpoint) fetchUtxosMain(db utxoBaseGetOp, outpoints map[module
 		return nil
 	}
 	for outpoint := range outpoints {
-		utxo, err := db.GetUtxoEntry(&outpoint)
+		item := new(modules.OutPoint)
+		item.TxHash = outpoint.TxHash
+		item.MessageIndex = outpoint.MessageIndex
+		item.OutIndex = outpoint.OutIndex
+		utxo, err := db.GetUtxoEntry(item)
 		if err != nil {
 			return err
 		}
@@ -264,14 +272,6 @@ type TxRuleError struct {
 	Description string     // Human readable description of the issue
 }
 
-// txRuleError creates an underlying TxRuleError with the given a set of
-// arguments and returns a RuleError that encapsulates it.
-func txRuleError(c RejectCode, desc string) RuleError {
-	return RuleError{
-		ErrorCode: c, Description: desc,
-	}
-}
-
 type RejectCode uint8
 
 // These constants define the various supported reject codes.
@@ -309,7 +309,7 @@ func CheckTransactionSanity(tx *modules.Transaction) error {
 	// var totalSatoshi uint64
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
-		if ok == false {
+		if !ok {
 			continue
 		}
 

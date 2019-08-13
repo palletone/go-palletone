@@ -103,7 +103,8 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 		}
 		readSet := []ContractReadSet{}
 		for _, rs := range payload.ReadSet {
-			readSet = append(readSet, ContractReadSet{Key: rs.Key, Version: &StateVersion{Height: rs.Version.Height, TxIndex: rs.Version.TxIndex}})
+			readSet = append(readSet, ContractReadSet{Key: rs.Key, Version: &StateVersion{
+				Height: rs.Version.Height, TxIndex: rs.Version.TxIndex}})
 		}
 		writeSet := []ContractWriteSet{}
 		for _, ws := range payload.WriteSet {
@@ -129,7 +130,8 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 		}
 		readSet := []ContractReadSet{}
 		for _, rs := range payload.ReadSet {
-			readSet = append(readSet, ContractReadSet{Key: rs.Key, Version: &StateVersion{Height: rs.Version.Height, TxIndex: rs.Version.TxIndex}})
+			readSet = append(readSet, ContractReadSet{Key: rs.Key, Version: &StateVersion{
+				Height: rs.Version.Height, TxIndex: rs.Version.TxIndex}})
 		}
 		writeSet := []ContractWriteSet{}
 		for _, ws := range payload.WriteSet {
@@ -335,10 +337,14 @@ type TokenPayOut struct {
 // Contract template deploy message
 // App: contract_template
 type ContractTplPayload struct {
-	TemplateId []byte        `json:"template_id"`    // contract template id
-	Size       uint16        `json:"size"`           // contract template bytecode memory size(Byte), use to compute transaction fee
-	ByteCode   []byte        `json:"byte_code"`      // contract bytecode
-	ErrMsg     ContractError `json:"contract_error"` // contract error message
+	// contract template id
+	TemplateId []byte `json:"template_id"`
+	// contract template bytecode memory size(Byte), // use to compute transaction fee
+	Size uint16 `json:"size"`
+	// contract bytecode
+	ByteCode []byte `json:"byte_code"`
+	// contract error message
+	ErrMsg ContractError `json:"contract_error"`
 }
 
 // App: contract_deploy
@@ -497,7 +503,8 @@ func NewContractInvokePayload(contractid []byte, args [][]byte, excutiontime tim
 	}
 }
 
-func NewContractStopPayload(contractid []byte, readset []ContractReadSet, writeset []ContractWriteSet, err ContractError) *ContractStopPayload {
+func NewContractStopPayload(contractid []byte, readset []ContractReadSet, writeset []ContractWriteSet,
+	err ContractError) *ContractStopPayload {
 	return &ContractStopPayload{
 		ContractId: contractid,
 		ReadSet:    readset,

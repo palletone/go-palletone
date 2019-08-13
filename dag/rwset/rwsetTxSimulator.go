@@ -33,12 +33,12 @@ import (
 )
 
 type RwSetTxSimulator struct {
-	chainIndex              *modules.ChainIndex
-	txid                    common.Hash
-	rwsetBuilder            *RWSetBuilder
-	write_cache             map[string][]byte
-	dag                     dag.IDag
-	writePerformed          bool
+	chainIndex   *modules.ChainIndex
+	txid         common.Hash
+	rwsetBuilder *RWSetBuilder
+	write_cache  map[string][]byte
+	dag          dag.IDag
+	//writePerformed          bool   // 没用到，注释掉
 	pvtdataQueriesPerformed bool
 	doneInvoked             bool
 }
@@ -190,7 +190,7 @@ func (s *RwSetTxSimulator) GetRwData(ns string) ([]*KVRead, []*KVWrite, error) {
 }
 func convertReadMap2Slice(rd map[string]*KVRead) []*KVRead {
 	keys := []string{}
-	for k, _ := range rd {
+	for k := range rd {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
@@ -202,7 +202,7 @@ func convertReadMap2Slice(rd map[string]*KVRead) []*KVRead {
 }
 func convertWriteMap2Slice(rd map[string]*KVWrite) []*KVWrite {
 	keys := []string{}
-	for k, _ := range rd {
+	for k := range rd {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
@@ -232,21 +232,12 @@ func (h *RwSetTxSimulator) Done() {
 	h.doneInvoked = true
 }
 func (s *RwSetTxSimulator) Close() {
-	//s.dag.Close()
 	item := new(RwSetTxSimulator)
-	s = item
-
-	return
-}
-
-func decomposeVersionedValue(versionedValue *VersionedValue) ([]byte, *Version) {
-	var value []byte
-	var ver *Version
-	if versionedValue != nil {
-		value = versionedValue.Value
-		ver = versionedValue.Version
-	}
-	return value, ver
+	s.chainIndex = item.chainIndex
+	s.txid = item.txid
+	s.rwsetBuilder = item.rwsetBuilder
+	s.write_cache = item.write_cache
+	s.dag = item.dag
 }
 
 func (h *RwSetTxSimulator) GetTxSimulationResults() ([]byte, error) {
@@ -254,7 +245,8 @@ func (h *RwSetTxSimulator) GetTxSimulationResults() ([]byte, error) {
 	return nil, nil
 }
 
-func (s *RwSetTxSimulator) GetTokenBalance(ns string, addr common.Address, asset *modules.Asset) (map[modules.Asset]uint64, error) {
+func (s *RwSetTxSimulator) GetTokenBalance(ns string, addr common.Address, asset *modules.Asset) (
+	map[modules.Asset]uint64, error) {
 	var utxos map[modules.OutPoint]*modules.Utxo
 	if asset == nil {
 		utxos, _ = s.dag.GetAddrUtxos(addr)
@@ -275,7 +267,8 @@ func convertUtxo2Balance(utxos map[modules.OutPoint]*modules.Utxo) map[modules.A
 	}
 	return result
 }
-func (s *RwSetTxSimulator) PayOutToken(ns string, address string, token *modules.Asset, amount uint64, lockTime uint32) error {
+func (s *RwSetTxSimulator) PayOutToken(ns string, address string, token *modules.Asset, amount uint64,
+	lockTime uint32) error {
 	s.rwsetBuilder.AddTokenPayOut(ns, address, token, amount, lockTime)
 	return nil
 }

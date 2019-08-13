@@ -130,15 +130,20 @@ func tx2JsonTemp(tx *Transaction) (*txJsonTemp, error) {
 	temp := &txJsonTemp{MsgCount: len(tx.TxMessages), CertId: intCertID.String(), Illegal: tx.Illegal}
 	for idx, msg := range tx.TxMessages {
 		if msg.App == APP_PAYMENT {
-			temp.Payment = append(temp.Payment, &idxPaymentPayload{Index: idx, PaymentPayload: msg.Payload.(*PaymentPayload)})
+			temp.Payment = append(temp.Payment, &idxPaymentPayload{
+				Index: idx, PaymentPayload: msg.Payload.(*PaymentPayload)})
 		} else if msg.App == APP_CONTRACT_INVOKE {
-			temp.ContractInvoke = append(temp.ContractInvoke, &idxContractInvokePayload{Index: idx, ContractInvokePayload: msg.Payload.(*ContractInvokePayload)})
+			temp.ContractInvoke = append(temp.ContractInvoke, &idxContractInvokePayload{
+				Index: idx, ContractInvokePayload: msg.Payload.(*ContractInvokePayload)})
 		} else if msg.App == APP_CONTRACT_TPL {
-			temp.ContractTpl = append(temp.ContractTpl, &idxContractTplPayload{Index: idx, ContractTplPayload: msg.Payload.(*ContractTplPayload)})
+			temp.ContractTpl = append(temp.ContractTpl, &idxContractTplPayload{
+				Index: idx, ContractTplPayload: msg.Payload.(*ContractTplPayload)})
 		} else if msg.App == APP_CONTRACT_DEPLOY {
-			temp.ContractDeploy = append(temp.ContractDeploy, &idxContractDeployPayload{Index: idx, ContractDeployPayload: msg.Payload.(*ContractDeployPayload)})
+			temp.ContractDeploy = append(temp.ContractDeploy, &idxContractDeployPayload{
+				Index: idx, ContractDeployPayload: msg.Payload.(*ContractDeployPayload)})
 		} else if msg.App == APP_CONTRACT_STOP {
-			temp.ContractStop = append(temp.ContractStop, &idxContractStopPayload{Index: idx, ContractStopPayload: msg.Payload.(*ContractStopPayload)})
+			temp.ContractStop = append(temp.ContractStop, &idxContractStopPayload{
+				Index: idx, ContractStopPayload: msg.Payload.(*ContractStopPayload)})
 		} else if msg.App == APP_CONTRACT_INVOKE_REQUEST {
 			temp.ContractInvokeRequest = append(temp.ContractInvokeRequest,
 				&idxContractInvokeRequestPayload{
@@ -166,9 +171,9 @@ func tx2JsonTemp(tx *Transaction) (*txJsonTemp, error) {
 		} else if msg.App == APP_DATA {
 			temp.Text = append(temp.Text, &idxTextPayload{Index: idx, DataPayload: msg.Payload.(*DataPayload)})
 		} else if msg.App == APP_SIGNATURE {
-			temp.Signature = append(temp.Signature, &idxSignaturePayload{Index: idx, SignaturePayload: msg.Payload.(*SignaturePayload)})
-			//} else if msg.App == APP_CONFIG {
-			//	temp.Config = append(temp.Config, &idxConfigPayload{Index: idx, ConfigPayload: msg.Payload.(*ConfigPayload)})
+			temp.Signature = append(temp.Signature, &idxSignaturePayload{
+				Index: idx, SignaturePayload: msg.Payload.(*SignaturePayload)})
+
 		} else if msg.App == APP_ACCOUNT_UPDATE {
 			temp.AccountUpdateOperation = append(temp.AccountUpdateOperation,
 				&idxAccountUpdateOperation{Index: idx, AccountStateUpdatePayload: msg.Payload.(*AccountStateUpdatePayload)})

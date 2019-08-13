@@ -102,9 +102,11 @@ func (b *RWSetBuilder) GetTokenSupply(ns string) []*modules.TokenSupply {
 }
 func (b *RWSetBuilder) DefineToken(ns string, tokenType int32, define []byte, createAddr common.Address) {
 	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
-	nsPubRwBuilder.tokenDefine = &modules.TokenDefine{TokenType: int(tokenType), TokenDefineJson: define, Creator: createAddr}
+	nsPubRwBuilder.tokenDefine = &modules.TokenDefine{TokenType: int(tokenType),
+		TokenDefineJson: define, Creator: createAddr}
 }
-func (b *RWSetBuilder) AddSupplyToken(ns string, assetId, uniqueId []byte, amt uint64, createAddr common.Address) error {
+func (b *RWSetBuilder) AddSupplyToken(ns string, assetId, uniqueId []byte, amt uint64,
+	createAddr common.Address) error {
 	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
 	if nsPubRwBuilder.tokenSupply == nil {
 		nsPubRwBuilder.tokenSupply = make([]*modules.TokenSupply, 0)
