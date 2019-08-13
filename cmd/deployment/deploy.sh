@@ -4,7 +4,6 @@ source ./modifyconfig.sh
 
 function ExecInit()
 {
-    
     count=1  
     while [ $count -le $1 ] ;  
     do  
@@ -14,7 +13,6 @@ function ExecInit()
     cd node$count
     cp ../init.sh .
     gptninit=`./init.sh`
-
     initinfo=`echo $gptninit | sed -n '$p'`
     initinfotemp=`echo $initinfo | awk '{print $NF}'`
     initinfotemp=${initinfotemp:0:7}
@@ -26,7 +24,7 @@ function ExecInit()
 
     path=`pwd`
     fullpath=${path}"/palletone/leveldb"
-    echo "leveldb path:"$fullpath
+    #echo "leveldb path:"$fullpath
     if [ ! -d $fullpath ]; then
         echo "====================init err=================="
         return
@@ -34,7 +32,6 @@ function ExecInit()
         rm -rf init.sh log
         cd ../
     else
-    echo $count
         cd node$count
         cp ../node1/palletone/leveldb ./palletone/. -rf
         rm -rf log
@@ -42,10 +39,17 @@ function ExecInit()
     fi
     let ++count;  
     sleep 1;  
-    done 
-    echo "====================init ok====================="
+    done
+
+    length=${#initinfo}
+    num=$[$length-112]
+    str=${initinfo:$num:112}
+    charToSearch="\[";
+    let pos=`echo "$str" | awk -F ''$charToSearch'' '{printf "%d", length($0)-length($NF)}'`
+    genesishash=${str:$pos:66}
+    echo "Init OK GenesisHash="$genesishash
+
     return 0;  
-    
 }
 
 
@@ -126,23 +130,31 @@ LoopDeploy $n;
 json="node1/ptn-genesis.json"
 replacejson $json 
 
-ModifyBootstrapNodes $n
+#ModifyBootstrapNodes $n
 
-ExecInit $n
+#ExecInit $n
+initvalue=$(ExecInit $n)
+echo $initvalue
+charToSearch="GenesisHash=";
+let pos=`echo "$initvalue" | awk -F ''$charToSearch'' '{printf "%d", length($0)-length($NF)}'`
+genesishash=${initvalue:$pos:66}
 
+ModifyP2PConfig $n $genesishash
 
 num=$[$n+1]
-MakeTestNet $num
+MakeTestNet $num $genesishash
 
 num=$[$n+2]
-MakeTestNet $num
+MakeTestNet $num $genesishash
 
 num=$[$n+3]
-MakeTestNet $num
+MakeTestNet $num $genesishash
 
 
 num=$[$n+4]
-MakeTestNet $num
+MakeTestNet $num $genesishash
 
 num=$[$n+5]
-MakeTestNet $num
+MakeTestNet $num $genesishash
+
+

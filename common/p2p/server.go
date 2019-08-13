@@ -146,8 +146,8 @@ type Config struct {
 	// whenever a message is sent to or received from a peer
 	EnableMsgEvents bool
 
-	// Logger is a custom logger to use with the p2p.Server.
-	//Logger log.ILogger `toml:",omitempty"`
+	// Genesis hash is set udp discover.
+	GenesisHash string
 }
 
 var DefaultConfig = Config{
@@ -155,6 +155,7 @@ var DefaultConfig = Config{
 	ListenAddr:     ":30303",
 	MaxPeers:       50,
 	NAT:            nat.Any(),
+	GenesisHash:    "",
 	CorsListenAddr: "",
 }
 
