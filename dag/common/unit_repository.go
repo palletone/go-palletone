@@ -1565,11 +1565,6 @@ To Sign transaction
 //	return &sig, nil
 //}
 
-func IsGenesis(hash common.Hash) bool {
-	genHash := common.HexToHash(dagconfig.DagConfig.GenesisHash)
-	return genHash == hash
-}
-
 // GetAddrTransactions containing from && to address
 func (rep *UnitRepository) GetAddrTransactions(address common.Address) ([]*modules.TransactionWithUnitInfo, error) {
 	rep.lock.RLock()
