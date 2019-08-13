@@ -757,7 +757,7 @@ func convertUtxoMap2Utxos(maps map[modules.OutPoint]*modules.Utxo) (core.Utxos, 
 }
 
 //sign raw tx
-func signTokenTx(tx *modules.Transaction, cmdInputs []ptnjson.RawTxInput, flags string,
+/*func signTokenTx(tx *modules.Transaction, cmdInputs []ptnjson.RawTxInput, flags string,
 	pubKeyFn tokenengine.AddressGetPubKey, hashFn tokenengine.AddressGetSign) error {
 	var hashType uint32
 	switch flags {
@@ -810,7 +810,7 @@ func signTokenTx(tx *modules.Transaction, cmdInputs []ptnjson.RawTxInput, flags 
 	fmt.Println(len(signErrors))
 
 	return nil
-}
+}*/
 
 /*
 func (s *PrivateTransactionPoolAPI) unlockKS(addr common.Address, password string, duration *uint64) error {
