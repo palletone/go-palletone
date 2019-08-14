@@ -21,7 +21,7 @@ import (
 	"sync"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
+	//"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/ptnjson"
 )
 
@@ -61,7 +61,7 @@ func (l *AddrLocker) UnlockAddr(address common.Address) {
 //			gotHex))
 //}
 
-func internalRPCError(errStr, context string) *ptnjson.RPCError {
+/*func internalRPCError(errStr, context string) *ptnjson.RPCError {
 	logStr := errStr
 	if context != "" {
 		logStr = context + ": " + errStr
@@ -69,7 +69,7 @@ func internalRPCError(errStr, context string) *ptnjson.RPCError {
 	log.Warn(logStr)
 	//rpcsLog.Error(logStr)
 	return ptnjson.NewRPCError(ptnjson.ErrRPCInternal.Code, errStr)
-}
+}*/
 func decodeHexStr(hexStr string) ([]byte, error) {
 	if len(hexStr)%2 != 0 {
 		hexStr = "0" + hexStr
@@ -84,21 +84,21 @@ func decodeHexStr(hexStr string) ([]byte, error) {
 	return decoded, nil
 }
 
-type response struct {
-	result []byte
-	err    error
-}
-type FutureGetTxOutResult chan *response
+//type response struct {
+//	result []byte
+	//err    error
+//}
+//type FutureGetTxOutResult chan *response
 type SignatureError struct {
 	InputIndex uint32
 	Error      error
 }
 
-var (
+//var (
 	// zeroHash is the zero value for a chainhash.Hash and is defined as
 	// a package level variable to avoid the need to create a new instance
 	// every time a check is needed.
-	zeroHash common.Hash
+	//zeroHash common.Hash
 
 	// block91842Hash is one of the two nodes which violate the rules
 	// set forth in BIP0030.  It is defined as a package level variable to
@@ -109,7 +109,7 @@ var (
 	// set forth in BIP0030.  It is defined as a package level variable to
 	// avoid the need to create a new instance every time a check is needed.
 	//block91880Hash ,err = common.NewHashFromStr("00000000000743f190a18c5577a3c2d2a1f610ae9601ac046a38084ccb7cd721")
-)
+//)
 
 type (
 	// DeserializationError describes a failed deserializaion due to bad

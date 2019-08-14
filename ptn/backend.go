@@ -300,6 +300,14 @@ func (s *PalletOne) Protocols() []p2p.Protocol {
 	return protocols
 }
 
+func (s *PalletOne) GenesisHash() common.Hash {
+	if unit, err := s.dag.GetGenesisUnit(); err != nil {
+		return common.Hash{}
+	} else {
+		return unit.Hash()
+	}
+}
+
 func (s *PalletOne) CorsProtocols() []p2p.Protocol {
 	if s.corsServer != nil {
 		return s.corsServer.CorsProtocols()

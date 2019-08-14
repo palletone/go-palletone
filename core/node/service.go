@@ -19,6 +19,7 @@ package node
 import (
 	"reflect"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/ptndb"
@@ -116,4 +117,7 @@ type Service interface {
 	// are all terminated.
 	// 停止service所有的goroutines，并阻塞线程直到所有goroutines都终止
 	Stop() error
+
+	//GenesisHash
+	GenesisHash() common.Hash
 }

@@ -112,7 +112,7 @@ func (s *PrivateContractAPI) Ccdeploy(ctx context.Context, templateId string, pa
 func (s *PrivateContractAPI) Ccinvoke(ctx context.Context, contractAddr string, param []string) (string, error) {
 	contractId, _ := common.StringToAddress(contractAddr)
 	//contractId, _ := hex.DecodeString(contractAddr)
-	rd, err := crypto.GetRandomBytes(32)
+	rd, _ := crypto.GetRandomBytes(32)
 	txid := util.RlpHash(rd)
 	log.Info("Ccinvoke", "contractId", contractId, "txid", txid.String())
 
@@ -132,7 +132,7 @@ func (s *PrivateContractAPI) Ccinvoke(ctx context.Context, contractAddr string, 
 func (s *PublicContractAPI) Ccquery(ctx context.Context, contractAddr string, param []string, timeout uint32) (string, error) {
 	contractId, _ := common.StringToAddress(contractAddr)
 	//contractId, _ := hex.DecodeString(contractAddr)
-	rd, err := crypto.GetRandomBytes(32)
+	rd, _ := crypto.GetRandomBytes(32)
 	txid := util.RlpHash(rd)
 	log.Info("Ccquery", "contractId", contractId, "txid", txid.String())
 	args := make([][]byte, len(param))

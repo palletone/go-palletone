@@ -111,7 +111,9 @@ func New(url string, ptnServ *ptn.PalletOne) (*Service, error) {
 // Protocols implements node.Service, returning the P2P network protocols used
 // by the stats service (nil as it doesn't use the devp2p overlay network).
 func (s *Service) Protocols() []p2p.Protocol { return nil }
-
+func (s *Service) GenesisHash() common.Hash {
+	return common.Hash{}
+}
 func (s *Service) CorsProtocols() []p2p.Protocol { return nil }
 
 // APIs implements node.Service, returning the RPC API endpoints provided by the

@@ -50,7 +50,7 @@ the account manager through the service context.
 Sharing Data Directory Among Instances
 
 Multiple node instances can share a single data directory if they have distinct instance
-names (set through the Name config option). Sharing behaviour depends on the type of
+names (set through the Name config option). Sharing behavior depends on the type of
 resource.
 
 devp2p-related resources (node key, static/trusted node lists, known hosts database) are

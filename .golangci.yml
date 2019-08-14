@@ -38,7 +38,7 @@ run:
     - bloombits #from go-ethereum
     - rpc #from go-ethereum
     - bmt #from go-ethereum
-
+    - adaptor #will delete this folder
     
 
   # which files to skip: they will be analyzed, but issues from them
@@ -208,6 +208,7 @@ linters:
     - gocyclo
     - maligned
     - gochecknoinits
+    - lll
   disable-all: false
   # presets:
   #   - bugs
