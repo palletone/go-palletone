@@ -86,6 +86,6 @@ func TestMediatorUpdate(t *testing.T) {
 
 	var args2 MediatorUpdateArgs
 	err = rlp.DecodeBytes(rlpData, &args2)
-	t.Logf("%#v, \n account: %v \n logo: %v \n name: %v", args2, args2.AddStr, *args2.Logo, *args2.Name)
+	t.Logf("%#v, \n account: %v \n logo: %v \n name: %v", args2, args2.AddStr, args2.Logo, *args2.Name)
 	t.Log(err)
 }

@@ -202,7 +202,7 @@ func newRPCTransaction(tx *modules.Transaction, blockHash common.Hash, unitIndex
 // newRPCPendingTransaction returns a pending transaction that will serialize to the RPC representation
 func newRPCPendingTransaction(tx *modules.TxPoolTransaction) *RPCTransaction {
 	if tx.UnitHash != (common.Hash{}) {
-		return newRPCTransaction(tx.Tx, tx.UnitHash, tx.UnitIndex, uint64(tx.Index))
+		return newRPCTransaction(tx.Tx, tx.UnitHash, tx.UnitIndex, tx.Index)
 	}
 	return newRPCTransaction(tx.Tx, common.Hash{}, ^uint64(0), ^uint64(0))
 }
@@ -577,7 +577,7 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 		//	return "", internalRPCError(err.Error(), context)
 		//}
 		assetId := dagconfig.DagConfig.GetGasToken()
-		txOut := modules.NewTxOut(uint64(dao), pkScript, assetId.ToAsset())
+		txOut := modules.NewTxOut(dao, pkScript, assetId.ToAsset())
 		pload.AddTxOut(txOut)
 	}
 	//	// Set the Locktime, if given.
@@ -757,7 +757,7 @@ func convertUtxoMap2Utxos(maps map[modules.OutPoint]*modules.Utxo) (core.Utxos, 
 }
 
 //sign raw tx
-func signTokenTx(tx *modules.Transaction, cmdInputs []ptnjson.RawTxInput, flags string,
+/*func signTokenTx(tx *modules.Transaction, cmdInputs []ptnjson.RawTxInput, flags string,
 	pubKeyFn tokenengine.AddressGetPubKey, hashFn tokenengine.AddressGetSign) error {
 	var hashType uint32
 	switch flags {
@@ -810,7 +810,7 @@ func signTokenTx(tx *modules.Transaction, cmdInputs []ptnjson.RawTxInput, flags 
 	fmt.Println(len(signErrors))
 
 	return nil
-}
+}*/
 
 /*
 func (s *PrivateTransactionPoolAPI) unlockKS(addr common.Address, password string, duration *uint64) error {
@@ -1179,7 +1179,7 @@ func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine
 
 func trimx(para string) string {
 	if strings.HasPrefix(para, "0x") || strings.HasPrefix(para, "0X") {
-		return fmt.Sprintf("%s", para[2:])
+		return para[2:]
 	}
 	return para
 }
@@ -1194,7 +1194,7 @@ func MakeAddress(ks *keystore.KeyStore, account string) (accounts.Account, error
 
 }
 
-func (s *PublicTransactionPoolAPI) helpSignTx(tx *modules.Transaction,
+/*func (s *PublicTransactionPoolAPI) helpSignTx(tx *modules.Transaction,
 	password string) ([]common.SignatureError, error) {
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
 		ks := s.b.GetKeyStore()
@@ -1210,8 +1210,9 @@ func (s *PublicTransactionPoolAPI) helpSignTx(tx *modules.Transaction,
 	utxos := s.getTxUtxoLockScript(tx)
 	return tokenengine.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, utxos, nil, getPubKeyFn, getSignFn)
 
-}
-func (s *PublicTransactionPoolAPI) getTxUtxoLockScript(tx *modules.Transaction) map[modules.OutPoint][]byte {
+}*/
+
+/*func (s *PublicTransactionPoolAPI) getTxUtxoLockScript(tx *modules.Transaction) map[modules.OutPoint][]byte {
 	result := map[modules.OutPoint][]byte{}
 
 	for _, msg := range tx.TxMessages {
@@ -1225,7 +1226,7 @@ func (s *PublicTransactionPoolAPI) getTxUtxoLockScript(tx *modules.Transaction) 
 		}
 	}
 	return result
-}
+}*/
 
 //转为压力测试准备数据用
 func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, fromAddress, toAddress string, amount int, count int, password string) ([]string, error) {

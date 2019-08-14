@@ -27,8 +27,7 @@ import (
 )
 
 type ImmutableChainParameters struct {
-	// todo albert 添加最小维护周期跳过的生产槽数量, 用于完成vss协议
-	MinMaintSkipSlots    uint8    `json:"min_maint_skip_slots"`
+	MinMaintSkipSlots    uint8    `json:"min_maint_skip_slots"`  // 最小区块链维护间隔
 	MinimumMediatorCount uint8    `json:"min_mediator_count"`    // 最小活跃mediator数量
 	MinMediatorInterval  uint8    `json:"min_mediator_interval"` // 最小的生产槽间隔时间
 	UccPrivileged        bool     `json:"ucc_privileged"`        // 防止容器以root权限运行

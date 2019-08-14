@@ -13,7 +13,7 @@
  *    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
  * /
  *
- *  * @author PalletOne core developer <dev@pallet.one>
+ *  * @author PalletOne core developers <dev@pallet.one>
  *  * @date 2018-2019
  *
  */
@@ -32,8 +32,13 @@ func NewMigrations(db ptndb.Database) map[string]IMigration {
 	// /* version: 0615 end*/
 
 	/* version: 1.0.0-beta */
+
 	m_100_beta := NewMigration100_101(db)
 	migrations[m_100_beta.FromVersion()] = m_100_beta
+
+	m_101_beta := NewMigration101_102(db)
+	migrations[m_101_beta.FromVersion()] = m_101_beta
+
 	/* version: 1.0.0-beta end */
 	/* version: 1.0.0-beta */
 	//m_101_beta := NewNothingMigration("1.0.1-beta", "1.0.2-beta")
@@ -48,4 +53,8 @@ func NewMigrations(db ptndb.Database) map[string]IMigration {
 
 func NewMigration100_101(db ptndb.Database) *Migration100_101 {
 	return &Migration100_101{dagdb: db, idxdb: db, utxodb: db, statedb: db, propdb: db}
+}
+
+func NewMigration101_102(db ptndb.Database) *Migration101_102 {
+	return &Migration101_102{dagdb: db, idxdb: db, utxodb: db, statedb: db, propdb: db}
 }

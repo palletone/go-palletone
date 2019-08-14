@@ -25,6 +25,7 @@ if [ $index -eq 0 ] ; then
     account=`echo ${account///}`
 
     add=`echo $add | jq ".initialParameters.foundation_address = \"$account\""`
+    add=`echo $add | jq ".immutableChainParameters.min_maint_skip_slots = 2"`
     add=`echo $add | jq ".initialParameters.maintenance_skip_slots = 2"`
 
 fi
