@@ -34,6 +34,7 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/configure"
 	"io"
 	"sync"
 )
@@ -123,7 +124,7 @@ func TestUDP_packetErrors(t *testing.T) {
 	test := newUDPTest(t)
 	defer test.table.Close()
 
-	test.packetIn(errExpired, pingPacket, &ping{From: testRemote, To: testLocalAnnounced, Version: Version})
+	test.packetIn(errExpired, pingPacket, &ping{From: testRemote, To: testLocalAnnounced, Version: configure.UdpVersion})
 	test.packetIn(errUnsolicitedReply, pongPacket, &pong{ReplyTok: []byte{}, Expiration: futureExp})
 	test.packetIn(errUnknownNode, findnodePacket, &findnode{Expiration: futureExp})
 	test.packetIn(errUnsolicitedReply, neighborsPacket, &neighbors{Expiration: futureExp})
@@ -249,7 +250,7 @@ func TestUDP_findnode(t *testing.T) {
 	test.table.db.updateBondTime(PubkeyID(&test.remotekey.PublicKey), time.Now())
 
 	// check that closest neighbors are returned.
-	test.packetIn(nil, findnodePacket, &findnode{Target: testTarget, Expiration: futureExp})
+	test.packetIn(nil, findnodePacket, &findnode{Target: testTarget, Expiration: futureExp, Version: configure.UdpVersion, Genesis: configure.GenesisHash})
 	expected := test.table.closest(targetHash, bucketSize)
 
 	waitNeighbors := func(want []*Node) {
@@ -327,7 +328,7 @@ func TestUDP_successfulPing(t *testing.T) {
 	defer test.table.Close()
 
 	// The remote side sends a ping packet to initiate the exchange.
-	go test.packetIn(nil, pingPacket, &ping{From: testRemote, To: testLocalAnnounced, Version: Version, Expiration: futureExp})
+	go test.packetIn(nil, pingPacket, &ping{From: testRemote, To: testLocalAnnounced, Version: configure.UdpVersion, Expiration: futureExp})
 
 	// the ping is replied to.
 	test.waitPacketOut(func(p *pong) {

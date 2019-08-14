@@ -673,8 +673,12 @@ func (pm *ProtocolManager) ElectionBroadcast(event jury.ElectionEvent, local boo
 	//log.Debug("ElectionBroadcast", "event num", event.Event.(jury.ElectionRequestEvent),
 	// "data", event.Event.(jury.ElectionRequestEvent).Data)
 	peers := pm.peers.GetPeers()
+
 	for _, peer := range peers {
-		peer.SendElectionEvent(event)
+		err := peer.SendElectionEvent(event)
+		if err != nil {
+			log.Debug("ElectionBroadcast", "err", err)
+		}
 	}
 	if local {
 		go pm.contractProc.ProcessElectionEvent(&event)

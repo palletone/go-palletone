@@ -96,6 +96,8 @@ type (
 
 	// findnode is a query for nodes close to the given target.
 	findnode struct {
+		Version    uint
+		Genesis    []byte
 		Target     NodeID // doesn't need to be an actual public key
 		Expiration uint64
 		// Ignore additional fields (for forward compatibility).
@@ -320,6 +322,8 @@ func (t *udp) findnode(toid NodeID, toaddr *net.UDPAddr, target NodeID) ([]*Node
 		return nreceived >= bucketSize
 	})
 	t.send(toaddr, findnodePacket, &findnode{
+		Version:    configure.UdpVersion,
+		Genesis:    configure.GenesisHash,
 		Target:     target,
 		Expiration: uint64(time.Now().Add(expiration).Unix()),
 	})
@@ -591,8 +595,8 @@ func (req *ping) handle(t *udp, from *net.UDPAddr, fromID NodeID, mac []byte) er
 	}
 	//Start Add by wangjiyou for discv4 in 2019-7-19
 	if req.Version != configure.UdpVersion || !bytes.Equal(req.Genesis, configure.GenesisHash) {
-		log.Debug("Bad discv4 ping", "Req Version", req.Version, "Version", configure.UdpVersion, "Req Genesis", req.Genesis,
-			"Genesis", configure.GenesisHash)
+		log.Debug("Bad discv4 ping", "Req Version", req.Version, "Version", configure.UdpVersion,
+			"Req Genesis", req.Genesis, "Genesis", configure.GenesisHash)
 		return errUnknownNode
 	}
 	//End Add by wangjiyou for discv4 in 2019-7-19
@@ -626,6 +630,15 @@ func (req *findnode) handle(t *udp, from *net.UDPAddr, fromID NodeID, mac []byte
 	if expired(req.Expiration) {
 		return errExpired
 	}
+
+	//Start Add by wangjiyou for discv4 in 2019-8-14
+	if req.Version != configure.UdpVersion || !bytes.Equal(req.Genesis, configure.GenesisHash) {
+		log.Debug("Bad discv4 findnode", "Req Version", req.Version, "Version", configure.UdpVersion,
+			"Req Genesis", req.Genesis, "Genesis", configure.GenesisHash)
+		return errUnknownNode
+	}
+	//End Add by wangjiyou for discv4 in 2019-8-14
+
 	if !t.db.hasBond(fromID) {
 		// No bond exists, we don't process the packet. This prevents
 		// an attack vector where the discovery protocol could be used

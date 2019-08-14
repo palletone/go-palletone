@@ -1236,15 +1236,14 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 		log.Errorf("Save contract[%x] error:%s", payload.ContractId, err.Error())
 		return false
 	}
-	if len(payload.EleList) > 0 {
+	if len(payload.EleNode.EleList) > 0 {
 		//save contract election
-		err = rep.statedb.SaveContractJury(payload.ContractId, payload.EleList, version)
+		err = rep.statedb.SaveContractJury(payload.ContractId, payload.EleNode, version)
 		if err != nil {
 			log.Errorf("Save jury for contract[%x] error:%s", payload.ContractId, err.Error())
 			return false
 		}
 	}
-
 	return true
 }
 

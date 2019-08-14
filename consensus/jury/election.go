@@ -311,14 +311,14 @@ func (p *Processor) checkElectionSigResultEventValid(evt *ElectionSigResultEvent
 	if _, ok := p.mel[reqId]; !ok {
 		return false
 	}
-	if p.mtx[reqId].eleInf == nil {
+	if p.mtx[reqId].eleNode == nil {
 		return false
 	}
-	ele := p.mtx[reqId].eleInf
+	ele := p.mtx[reqId].eleNode
 	reqEvt := &ElectionSigRequestEvent{
 		ReqId:     reqId,
 		JuryCount: evt.JuryCount,
-		Ele:       ele,
+		Ele:       ele.EleList,
 	}
 	hash := util.RlpHash(reqEvt)
 	if !crypto.VerifySignature(evt.Sig.PubKey, hash.Bytes(), evt.Sig.Signature) {
@@ -529,9 +529,9 @@ func (p *Processor) processElectionSigResultEvent(evt *ElectionSigResultEvent) e
 		shortId(reqId.String()), len(mel.sigs), evt.Sig.String(), p.dag.ChainThreshold())
 	if len(mel.sigs) >= p.dag.ChainThreshold() {
 		event := ContractEvent{
-			CType: CONTRACT_EVENT_EXEC,
-			Ele:   p.mtx[reqId].eleInf,
-			Tx:    p.mtx[reqId].reqTx,
+			CType:     CONTRACT_EVENT_EXEC,
+			Ele:       p.mtx[reqId].eleNode,
+			Tx:        p.mtx[reqId].reqTx,
 		}
 		log.Infof("[%s]processElectionSigResultEvent, CONTRACT_EVENT_EXEC", shortId(reqId.String()))
 		log.Info("processElectionSigResultEvent, CONTRACT_EVENT_EXEC", "reqId",
@@ -553,12 +553,20 @@ func (p *Processor) BroadcastElectionSigRequestEvent() {
 		if mtx == nil || mtx.reqTx == nil {
 			continue
 		}
-		if (len(mtx.eleInf) + len(ele.rcvEle)) >= p.electionNum {
-			se, valid := p.selectElectionInf(mtx.eleInf, ele.rcvEle, p.electionNum)
+		var eList []modules.ElectionInf
+		if mtx.eleNode != nil {
+			eList = mtx.eleNode.EleList
+		}else{
+			eList = nil
+			mtx.eleNode = &modules.ElectionNode{JuryCount:ele.juryCnt}
+		}
+
+		if len(eList) + len(ele.rcvEle) >= p.electionNum {
+			se, valid := p.selectElectionInf(eList, ele.rcvEle, p.electionNum)
 			if !valid {
 				continue
 			}
-			mtx.eleInf = se
+			mtx.eleNode.EleList = se
 			event := &ElectionSigRequestEvent{
 				ReqId:     reqId,
 				JuryCount: ele.juryCnt,
@@ -568,7 +576,7 @@ func (p *Processor) BroadcastElectionSigRequestEvent() {
 			ele.nType = 1
 			log.Infof("[%s]BroadcastElectionSigRequestEvent ", shortId(reqId.String()))
 			log.Debug("BroadcastElectionSigRequestEvent", "event", event,
-				"len(mtx.eleInf)", len(mtx.eleInf), "len(ele.rcvEle)", len(ele.rcvEle))
+				"len(mtx.eleNode)", len(mtx.eleNode.EleList), "len(ele.rcvEle)", len(ele.rcvEle))
 			go p.ptn.ElectionBroadcast(ElectionEvent{EType: ELECTION_EVENT_SIG_REQUEST, Event: event}, true)
 		}
 	}

@@ -42,8 +42,8 @@ func runProgram(env Env, timeout time.Duration, pgm string, args ...string) ([]b
 	cmd.Env = flattenEnv(env)
 	cmd.Stdout = &stdOut
 	cmd.Stderr = &stdErr
-	//var err error
-	err := cmd.Start()
+	cmd.Start()
+	var err error
 
 	// Create a go routine that will wait for the command to finish
 	done := make(chan error, 1)
