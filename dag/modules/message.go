@@ -484,16 +484,19 @@ func NewContractTplPayload(templateId []byte, memory uint16, bytecode []byte, er
 
 func NewContractDeployPayload(templateid []byte, contractid []byte, name string, args [][]byte,
 	ele *ElectionNode, readset []ContractReadSet, writeset []ContractWriteSet, err ContractError) *ContractDeployPayload {
-	return &ContractDeployPayload{
+	payload := &ContractDeployPayload{
 		TemplateId: templateid,
 		ContractId: contractid,
 		Name:       name,
 		Args:       args,
-		EleNode:    *ele,
 		ReadSet:    readset,
 		WriteSet:   writeset,
 		ErrMsg:     err,
 	}
+	if ele != nil {
+		payload.EleNode = *ele
+	}
+	return payload
 }
 
 func NewContractInvokePayload(contractid []byte, args [][]byte, excutiontime time.Duration,
