@@ -234,7 +234,8 @@ func (n *Node) Start() error {
 		running.Protocols = append(running.Protocols, service.Protocols()...)
 		corss.Protocols = append(corss.Protocols, service.CorsProtocols()...)
 
-		if !common.EmptyHash(service.GenesisHash()) {
+		if !common.EmptyHash(service.GenesisHash()) && len(configure.GenesisHash) == 0 {
+			log.Debug("Node Start", "service.GenesisHash", service.GenesisHash())
 			configure.GenesisHash = service.GenesisHash().Bytes()
 		}
 
