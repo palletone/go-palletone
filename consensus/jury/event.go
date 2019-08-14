@@ -59,10 +59,9 @@ type JuryMsgAddr struct {
 
 //contract
 type ContractEvent struct {
-	CType     ContractEventType
-	JuryCount uint64
-	Ele       []modules.ElectionInf
-	Tx        *modules.Transaction
+	CType ContractEventType
+	Ele   *modules.ElectionNode `rlp:"nil"`
+	Tx    *modules.Transaction
 }
 
 func (ce *ContractEvent) Hash() common.Hash {
@@ -73,7 +72,6 @@ func (ce *ContractEvent) Hash() common.Hash {
 type ElectionRequestEvent struct {
 	ReqId     common.Hash
 	JuryCount uint64
-	//Data  []byte //election data, input as vrf. use reqId
 }
 type ElectionResultEvent struct {
 	ReqId     common.Hash

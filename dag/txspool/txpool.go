@@ -93,7 +93,7 @@ type dags interface {
 	GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error)
 	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
 	GetMinFee() (*modules.AmountAsset, error)
-	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
+	GetContractJury(contractId []byte) (*modules.ElectionNode, error)
 	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 

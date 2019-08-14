@@ -75,7 +75,7 @@ type IDag interface {
 	GetContractState(contractid []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
-	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
+	GetContractJury(contractId []byte) (*modules.ElectionNode, error)
 	GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error)
 
 	GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error)

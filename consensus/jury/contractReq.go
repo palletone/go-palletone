@@ -166,7 +166,7 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 		return fmt.Sprintf("Request data fro debug json:%s,\r\n rlp:%x", string(rjson), rdata)
 	})
 	//broadcast
-	go p.ptn.ContractBroadcast(ContractEvent{Ele: p.mtx[reqId].eleInf, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
+	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_EXEC, Ele: p.mtx[reqId].eleNode, Tx: tx}, true)
 	return reqId, nil
 }
 
@@ -192,7 +192,7 @@ func (p *Processor) ContractInvokeReqToken(from, to, toToken common.Address, dao
 	log.Infof("[%s]ContractInvokeReqToken ok, reqId[%s] contractId[%s]",
 		shortId(reqId.String()), reqId.String(), contractId.Bytes())
 	//broadcast
-	go p.ptn.ContractBroadcast(ContractEvent{Ele: p.mtx[reqId].eleInf, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
+	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_EXEC, Ele: p.mtx[reqId].eleNode, Tx: tx}, true)
 	return reqId, nil
 }
 
@@ -221,7 +221,7 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 	log.Infof("[%s]ContractStopReq ok, reqId[%s], contractId[%s], txId[%s]",
 		shortId(reqId.String()), reqId.String(), contractId, hex.EncodeToString(randNum))
 	//broadcast
-	go p.ptn.ContractBroadcast(ContractEvent{Ele: p.mtx[reqId].eleInf, CType: CONTRACT_EVENT_EXEC, Tx: tx}, true)
+	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_EXEC, Ele: p.mtx[reqId].eleNode, Tx: tx}, true)
 	return reqId, nil
 }
 

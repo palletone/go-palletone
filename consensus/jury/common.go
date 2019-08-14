@@ -77,14 +77,15 @@ func generateJuryRedeemScript(jury []modules.ElectionInf) ([]byte) {
 }
 
 //对于Contract Payout的情况，将SignatureSet转移到Payment的解锁脚本中
-func processContractPayout(tx *modules.Transaction, elf []modules.ElectionInf) {
-	if tx == nil {
+func processContractPayout(tx *modules.Transaction, ele *modules.ElectionNode) {
+	if tx == nil || ele == nil{
 		log.Error("processContractPayout param is nil")
+		return
 	}
 	reqId := tx.RequestHash()
 	if has, payout := tx.HasContractPayoutMsg(); has {
 		pubkeys, signs := getSignature(tx)
-		redeem := generateJuryRedeemScript(elf)
+		redeem := generateJuryRedeemScript(ele.EleList)
 
 		signsOrder := SortSigs(pubkeys, signs, redeem)
 		unlock := tokenengine.MergeContractUnlockScript(signsOrder, redeem)
@@ -270,7 +271,7 @@ func createContractErrorPayloadMsg(tx *modules.Transaction, errIn error) *module
 
 //执行合约命令:install、deploy、invoke、stop，同时只支持一种类型
 func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract, tx *modules.Transaction,
-	elf []modules.ElectionInf, errMsgEnable bool) ([]*modules.Message, error) {
+	ele *modules.ElectionNode, errMsgEnable bool) ([]*modules.Message, error) {
 	if tx == nil || len(tx.TxMessages) <= 0 {
 		return nil, errors.New("runContractCmd transaction or msg is nil")
 	}
@@ -320,8 +321,8 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					return genContractErrorMsg(dag, tx, nil, err, errMsgEnable)
 				}
 				payload := deployResult.(*modules.ContractDeployPayload)
-				if len(elf) > 0 {
-					payload.EleList = elf
+				if ele != nil{
+					payload.EleNode = *ele
 				}
 				msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_DEPLOY, payload))
 				return msgs, nil

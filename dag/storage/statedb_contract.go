@@ -108,21 +108,21 @@ func getContractStateKey(id []byte, field string) []byte {
 	return append(key, field...)
 }
 
-func (statedb *StateDb) GetContractJury(contractId []byte) ([]modules.ElectionInf, error) {
+func (statedb *StateDb) GetContractJury(contractId []byte) (*modules.ElectionNode, error) {
 	log.Debugf("GetContractJury contractId %x", contractId)
 	key := append(constants.CONTRACT_JURY_PREFIX, contractId...)
 	data, _, err := retrieveWithVersion(statedb.db, key)
 	if err != nil {
 		return nil, err
 	}
-	jury := []modules.ElectionInf{}
+	jury := modules.ElectionNode{}
 	err = rlp.DecodeBytes(data, &jury)
 	if err != nil {
 		return nil, err
 	}
-	return jury, nil
+	return &jury, nil
 }
-func (statedb *StateDb) SaveContractJury(contractId []byte, jury []modules.ElectionInf,
+func (statedb *StateDb) SaveContractJury(contractId []byte, jury modules.ElectionNode,
 	version *modules.StateVersion) error {
 	log.Debugf("SaveContractJury contractId %x", contractId)
 	key := append(constants.CONTRACT_JURY_PREFIX, contractId...)

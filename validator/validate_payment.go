@@ -208,11 +208,14 @@ func (validate *Validate) checkTokenStatus(asset *modules.Asset) ValidationCode 
 	return TxValidationCode_VALID
 }
 
-func generateJuryRedeemScript(jury []modules.ElectionInf) []byte {
-	count := len(jury)
+func generateJuryRedeemScript(jury *modules.ElectionNode) []byte {
+	if jury == nil{
+		return nil
+	}
+	count := len(jury.EleList)
 	needed := byte(math.Ceil((float64(count)*2 + 1) / 3))
 	pubKeys := [][]byte{}
-	for _, jurior := range jury {
+	for _, jurior := range jury.EleList {
 		pubKeys = append(pubKeys, jurior.PublicKey)
 	}
 	return tokenengine.GenerateRedeemScript(needed, pubKeys)
