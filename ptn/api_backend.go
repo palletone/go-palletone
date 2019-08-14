@@ -583,6 +583,9 @@ func (b *PtnApiBackend) ContractDeploy(templateId []byte, txid string, args [][]
 	log.Debugf("======>ContractDeploy:tmId[%s]txid[%s]", hex.EncodeToString(templateId), txid)
 	//channelId := "palletone"
 	_, payload, err := b.ptn.contract.Deploy(rwset.RwM, channelId, templateId, txid, args, timeout)
+	if err != nil {
+		return nil, err
+	}
 	return payload.ContractId, err
 }
 

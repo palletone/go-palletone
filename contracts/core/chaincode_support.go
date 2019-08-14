@@ -348,7 +348,7 @@ func (chaincodeSupport *ChaincodeSupport) sendReady(context context.Context, ccc
 				res := &pb.Response{}
 				_ = proto.Unmarshal(ccMsg.Payload, res)
 				if res.Status != shim.OK {
-					err = errors.Errorf("error initializing container %s: %s", canName, string(res.Message))
+					err = errors.Errorf("error initializing container %s: %s", canName, res.Message)
 				}
 				// TODO
 				// return res so that endorser can anylyze it.
