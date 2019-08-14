@@ -87,9 +87,9 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 	ptn := dagconfig.DagConfig.GasToken
 
 	poolTxs, _ := s.b.GetPoolTxsByAddr(from)
-        if len(poolTxs) == 0 {
-                return "", fmt.Errorf("GetPoolTxsByAddr Err")
-        }
+        //if len(poolTxs) == 0 {
+          //      return "", fmt.Errorf("GetPoolTxsByAddr Err")
+        //}
 	allutxos, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, from, ptn)
 	if err != nil {
 		return "", fmt.Errorf("Select utxo err")
