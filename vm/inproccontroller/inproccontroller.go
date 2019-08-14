@@ -69,7 +69,7 @@ func Register(path string, cc shim.Chaincode) error {
 
 //InprocVM is a vm. It is identified by a executable name
 type InprocVM struct {
-	id string
+	//id string
 }
 
 func (vm *InprocVM) getInstance(ctxt context.Context, ipctemplate *inprocContainer, instName string, args []string, env []string) (*inprocContainer, error) {
