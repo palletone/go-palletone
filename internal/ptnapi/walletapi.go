@@ -160,9 +160,9 @@ func (s *PrivateWalletAPI) buildRawTransferTx(tokenId, from, to string, amount, 
 		return nil, nil, fmt.Errorf("GetAddrRawUtxos utxo err")
 	}
 	poolTxs, _ := s.b.GetPoolTxsByAddr(from)
-       if len(poolTxs) == 0 {
-               return nil, nil, fmt.Errorf("GetPoolTxsByAddr utxo err")
-        }
+       //if len(poolTxs) == 0 {
+        //       return nil, nil, fmt.Errorf("GetPoolTxsByAddr utxo err")
+        //}
 
 	utxosPTN, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, from, ptn)
 	if err != nil {
@@ -598,9 +598,9 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 		return common.Hash{}, err
 	}
 	poolTxs, _ := s.b.GetPoolTxsByAddr(proofTransactionGenParams.From)
-        if len(poolTxs) == 0 {
-	    return common.Hash{}, fmt.Errorf("Select utxo err")
-	} // end of pooltx is not nil
+        //if len(poolTxs) == 0 {
+	    //return common.Hash{}, fmt.Errorf("Select utxo err")
+	//} // end of pooltx is not nil
 	utxos, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, proofTransactionGenParams.From, dagconfig.DagConfig.GasToken)
         if err != nil {
                 return common.Hash{}, fmt.Errorf("SelectUtxoFromDagAndPool err")
