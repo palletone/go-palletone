@@ -71,8 +71,8 @@ type IStateDb interface {
 
 	GetMinFee() (*modules.AmountAsset, error)
 	//获得一个合约的陪审团列表
-	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
-	SaveContractJury(contractId []byte, jury []modules.ElectionInf, version *modules.StateVersion) error
+	GetContractJury(contractId []byte) (*modules.ElectionNode, error)
+	SaveContractJury(contractId []byte, jury modules.ElectionNode, version *modules.StateVersion) error
 	// world state chainIndex
 
 	StoreMediator(med *core.Mediator) error

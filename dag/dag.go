@@ -882,9 +882,8 @@ func (d *Dag) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*m
 }
 
 // return electionInfo by contractId
-func (d *Dag) GetContractJury(contractId []byte) ([]modules.ElectionInf, error) {
+func (d *Dag) GetContractJury(contractId []byte) (*modules.ElectionNode, error) {
 	return d.unstableStateRep.GetContractJury(contractId)
-
 }
 
 // createUnit, create a unit when mediator being produced

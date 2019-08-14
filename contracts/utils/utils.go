@@ -184,7 +184,8 @@ func GetAllExitedContainer(client *docker.Client) ([]common.Address, error) {
 	}
 	addr := make([]common.Address, 0)
 	if len(cons) > 0 {
-		for _, v := range cons {
+		for i, v := range cons {
+			log.Debugf("the %d container ===>%s", i, v.Names)
 			if strings.Contains(v.Names[0][1:3], "PC") && strings.Contains(v.Status, "Exited") {
 				name := v.Names[0][1:36]
 				contractAddr, err := common.StringToAddress(name)

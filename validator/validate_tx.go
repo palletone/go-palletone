@@ -136,7 +136,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 			requestMsgIndex = msgIdx
 			// 参数临界值验证
 			payload, _ := msg.Payload.(*modules.ContractDeployRequestPayload)
-			if len(payload.TplId) == 0 || payload.Timeout < 0 {
+			if len(payload.TplId) == 0 {
 				return TxValidationCode_INVALID_CONTRACT, txFee
 			}
 
@@ -269,6 +269,10 @@ func (validate *Validate) validateTxFee(tx *modules.Transaction) (bool, []*modul
 	minFee := &modules.AmountAsset{Amount: 0, Asset: assetId.ToAsset()}
 	if validate.statequery != nil {
 		minFee, err = validate.statequery.GetMinFee()
+		if err != nil {
+			log.Errorf("GetMinFee throw an error:%s", err.Error())
+			return true, feeAllocate
+		}
 	}
 	if minFee.Amount > 0 { //需要验证最小手续费
 		total := uint64(0)
@@ -358,7 +362,7 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 		}
 		rewards := map[common.Address][]modules.AmountAsset{}
 		for key, v := range addrMap {
-			addr := string(key[len(constants.RewardAddressPrefix):])
+			addr := key[len(constants.RewardAddressPrefix):]
 			incomeAddr, _ := common.StringToAddress(addr)
 			aa := []modules.AmountAsset{}
 			rlp.DecodeBytes(v.Value, &aa)
@@ -417,9 +421,10 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			if err == nil { //之前有奖励
 				rlp.DecodeBytes(data, &income)
 			}
+			v1 := *v
 			log.DebugDynamic(func() string {
 				data, _ := json.Marshal(income)
-				return v.Addr.String() + " Coinbase History reward:" + string(data)
+				return v1.Addr.String() + " Coinbase History reward:" + string(data)
 			})
 			log.Debugf("Add reward %d %s to %s", v.Amount, v.Asset.String(), v.Addr.String())
 			newValue := addIncome(income, v.Amount, v.Asset)
@@ -456,10 +461,11 @@ func compareRewardAndOutput(rewards map[common.Address][]modules.AmountAsset, ou
 		}
 
 	}
-	if comparedCount != len(outputs) {
-		return false
-	}
-	return true
+	return comparedCount == len(outputs)
+	// if comparedCount != len(outputs) {
+	// 	return false
+	// }
+	// return true
 }
 func rewardExistInOutputs(addr common.Address, aa []modules.AmountAsset, outputs []*modules.Output) bool {
 	for _, out := range outputs {
@@ -480,7 +486,7 @@ func rewardExistInOutputs(addr common.Address, aa []modules.AmountAsset, outputs
 func compareRewardAndStateClear(rewards map[common.Address][]modules.AmountAsset, writeset []modules.ContractWriteSet) bool {
 	comparedCount := 0
 	empty, _ := rlp.EncodeToBytes([]modules.AmountAsset{})
-	for addr, _ := range rewards {
+	for addr := range rewards {
 		addrKey := constants.RewardAddressPrefix + addr.String()
 		for _, w := range writeset {
 			// if !w.IsDelete {
@@ -492,11 +498,11 @@ func compareRewardAndStateClear(rewards map[common.Address][]modules.AmountAsset
 		}
 
 	}
-	//if comparedCount != len(writeset) {
-	if comparedCount != len(rewards) { //所有的Reward的状态数据库被清空
-		return false
-	}
-	return true
+	return comparedCount == len(writeset)
+	// if comparedCount != len(rewards) { //所有的Reward的状态数据库被清空
+	// 	return false
+	// }
+	// return true
 }
 func compareRewardAndWriteset(rewards map[common.Address][]modules.AmountAsset, writeset []modules.ContractWriteSet) bool {
 	comparedCount := 0
@@ -510,10 +516,11 @@ func compareRewardAndWriteset(rewards map[common.Address][]modules.AmountAsset, 
 		}
 
 	}
-	if comparedCount != len(rewards) { //所有的Reward的状态数据库被清空
-		return false
-	}
-	return true
+	return comparedCount == len(rewards)
+	// if comparedCount != len(rewards) { //所有的Reward的状态数据库被清空
+	// 	return false
+	// }
+	// return true
 }
 func rewardExist(addr common.Address, aa []modules.AmountAsset, writeset []modules.ContractWriteSet) bool {
 	for _, w := range writeset {
@@ -527,9 +534,11 @@ func rewardExist(addr common.Address, aa []modules.AmountAsset, writeset []modul
 			for _, a := range aa {
 				for _, b := range dbAa {
 					if a.Asset.Equal(b.Asset) && a.Amount != b.Amount {
+						a1 := a
+						b1 := b
 						log.DebugDynamic(func() string {
 							data, _ := json.Marshal(dbAa)
-							return fmt.Sprintf("Coinbase rewardExist false, a[%d] b[%d], db writeset:%s", a.Amount, b.Amount, string(data))
+							return fmt.Sprintf("Coinbase rewardExist false, a[%d] b[%d], db writeset:%s", a1.Amount, b1.Amount, string(data))
 						})
 						return false
 					}

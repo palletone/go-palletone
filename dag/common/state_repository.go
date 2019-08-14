@@ -72,7 +72,7 @@ type IStateRepository interface {
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
 	//获得一个合约的陪审团列表
-	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
+	GetContractJury(contractId []byte) (*modules.ElectionNode, error)
 	GetAllContractTpl() ([]*modules.ContractTemplate, error)
 	GetDataVersion() (*modules.DataVersion, error)
 	StoreDataVersion(dv *modules.DataVersion) error
@@ -297,8 +297,7 @@ func (rep *StateRepository) StoreMediatorInfo(add common.Address, mi *modules.Me
 	return rep.statedb.StoreMediatorInfo(add, mi)
 }
 
-func (rep *StateRepository) GetContractDeploy(tempId, contractId []byte, name string) (
-	*modules.ContractDeployPayload, error) {
+func (rep *StateRepository) GetContractDeploy(tempId, contractId []byte, name string) (*modules.ContractDeployPayload, error) {
 	return rep.statedb.GetContractDeploy(tempId[:])
 }
 
@@ -341,7 +340,7 @@ func (rep *StateRepository) GetAccountState(address common.Address, statekey str
 }
 
 //获得一个合约的陪审团列表
-func (rep *StateRepository) GetContractJury(contractId []byte) ([]modules.ElectionInf, error) {
+func (rep *StateRepository) GetContractJury(contractId []byte) (*modules.ElectionNode, error) {
 	return rep.statedb.GetContractJury(contractId)
 }
 func (rep *StateRepository) GetAllContractTpl() ([]*modules.ContractTemplate, error) {

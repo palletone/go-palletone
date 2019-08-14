@@ -598,14 +598,16 @@ func creatFeeTx(isContractTx bool, pubKey [][]byte, amount uint64, aid modules.A
 
 func TestContractStateVrf(t *testing.T) {
 	contractId := []byte("TestContractVrf")
-	eleW := []modules.ElectionInf{
-		{
-			Proof:     []byte("abc"),
-			PublicKey: []byte("def"),
+	eleW := modules.ElectionNode{
+		JuryCount: 0,
+		EleList: []modules.ElectionInf{
+			{
+				Proof: []byte("abc"), PublicKey: []byte("def"),
+			},
 		},
 	}
 	ver := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123}, TxIndex: 1}
-	log.Debug("TestContractStateVrf", "ElectionInf", eleW)
+	log.Debug("TestContractStateVrf", "ElectionNode", eleW)
 
 	db, _ := ptndb.NewMemDatabase()
 	statedb := storage.NewStateDb(db)
