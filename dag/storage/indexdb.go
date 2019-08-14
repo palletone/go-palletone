@@ -57,7 +57,7 @@ func (db *IndexDb) SaveAddressTxId(address common.Address, txid common.Hash) err
 func (db *IndexDb) GetAddressTxIds(address common.Address) ([]common.Hash, error) {
 	prefix := append(constants.ADDR_TXID_PREFIX, address.Bytes()...)
 	data := getprefix(db.db, prefix)
-	var result []common.Hash
+	result := make([]common.Hash, 0)
 	for _, v := range data {
 		hash := common.Hash{}
 		hash.SetBytes(v)
@@ -74,7 +74,7 @@ func (db *IndexDb) SaveTokenTxId(asset *modules.Asset, txid common.Hash) error {
 func (db *IndexDb) GetTokenTxIds(asset *modules.Asset) ([]common.Hash, error) {
 	prefix := append(constants.TOKEN_TXID_PREFIX, asset.Bytes()...)
 	data := getprefix(db.db, prefix)
-	var result []common.Hash
+	result := make([]common.Hash, 0)
 	for _, v := range data {
 		hash := common.Hash{}
 		hash.SetBytes(v)
@@ -85,16 +85,16 @@ func (db *IndexDb) GetTokenTxIds(asset *modules.Asset) ([]common.Hash, error) {
 
 //save filehash key:IDX_MAIN_DATA_TXID   value:Txid
 func (db *IndexDb) SaveMainDataTxId(filehash []byte, txid common.Hash) error {
-	key := append(constants.IDX_MAIN_DATA_TXID, []byte(filehash)...)
+	key := append(constants.IDX_MAIN_DATA_TXID, filehash...)
 	key = append(key, []byte(txid.String())...)
 
 	return db.db.Put(key, txid[:])
 }
 
 func (db *IndexDb) GetMainDataTxIds(filehash []byte) ([]common.Hash, error) {
-	key := append(constants.IDX_MAIN_DATA_TXID, []byte(filehash)...)
+	key := append(constants.IDX_MAIN_DATA_TXID, filehash...)
 	data := getprefix(db.db, key)
-	var result []common.Hash
+	result := make([]common.Hash, 0)
 	for _, v := range data {
 		hash := common.Hash{}
 		hash.SetBytes(v)

@@ -82,16 +82,10 @@ func (i *TempdbIterator) Value() []byte {
 
 //implement iterator interface
 func (i *TempdbIterator) First() bool {
-	if i.idx == -1 {
-		return false
-	}
-	return true
+	return i.idx != -1
 }
 func (i *TempdbIterator) Last() bool {
-	if i.idx == -1 {
-		return false
-	}
-	return true
+	return i.idx != -1
 }
 func (i *TempdbIterator) Seek(key []byte) bool {
 	if i.idx == -1 {
@@ -106,17 +100,11 @@ func (i *TempdbIterator) Seek(key []byte) bool {
 	return false
 }
 func (i *TempdbIterator) Prev() bool {
-	if i.idx == -1 {
-		return false
-	}
-	return true
+	return i.idx != -1
 
 }
 func (i *TempdbIterator) Valid() bool {
-	if i.idx == -1 {
-		return false
-	}
-	return true
+	return i.idx != -1
 }
 func (i *TempdbIterator) Error() error {
 	return nil
@@ -139,7 +127,7 @@ func (db *Tempdb) NewIteratorWithPrefix(prefix []byte) iterator.Iterator {
 	db.lock.RLock()
 	for key := range db.kv {
 		if strings.HasPrefix(key, string(prefix)) {
-			result[string(key)] = db.kv[key]
+			result[key] = db.kv[key]
 		}
 	}
 	//Delete some keys

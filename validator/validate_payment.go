@@ -180,7 +180,7 @@ func (validate *Validate) pickJuryFn(contractAddr common.Address) ([]byte, error
 			log.Errorf("Cannot get contract[%s] jury", contractAddr.String())
 			return nil, errors.New("Cannot get contract jury")
 		}
-		redeemScript, _ = generateJuryRedeemScript(jury)
+		redeemScript = generateJuryRedeemScript(jury)
 		log.DebugDynamic(func() string {
 			redeemStr, _ := tokenengine.DisasmString(redeemScript)
 			return "Generate RedeemScript: " + redeemStr
@@ -208,12 +208,15 @@ func (validate *Validate) checkTokenStatus(asset *modules.Asset) ValidationCode 
 	return TxValidationCode_VALID
 }
 
-func generateJuryRedeemScript(jury []modules.ElectionInf) ([]byte, error) {
-	count := len(jury)
+func generateJuryRedeemScript(jury *modules.ElectionNode) []byte {
+	if jury == nil{
+		return nil
+	}
+	count := len(jury.EleList)
 	needed := byte(math.Ceil((float64(count)*2 + 1) / 3))
 	pubKeys := [][]byte{}
-	for _, jurior := range jury {
+	for _, jurior := range jury.EleList {
 		pubKeys = append(pubKeys, jurior.PublicKey)
 	}
-	return tokenengine.GenerateRedeemScript(needed, pubKeys), nil
+	return tokenengine.GenerateRedeemScript(needed, pubKeys)
 }

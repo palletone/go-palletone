@@ -184,12 +184,16 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
 		return nil, fmt.Errorf(jsonResp)
 	}
-	//TODO 基金会地址
-	//foundationAddress, _ := stub.GetSystemConfig("FoundationAddress")
-	//if createAddr != foundationAddress {
-	//	jsonResp := "{\"Error\":\"Only foundation can call this function\"}"
-	//	return nil, fmt.Errorf(jsonResp)
-	//}
+
+	cp, err := stub.GetSystemConfig()
+	if err != nil {
+		return nil, fmt.Errorf("fail to get system config err")
+	}
+	if createAddr.Str() != cp.FoundationAddress {
+		jsonResp := "{\"Error\":\"Only foundation can call this function\"}"
+		return nil, fmt.Errorf(jsonResp)
+	}
+
 	//==== convert params to token information
 	var vt modules.VoteToken
 	//name symbol
@@ -447,6 +451,21 @@ func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubIn
 	if err != nil {
 		log.Debugf(err.Error())
 		return nil, err
+	}
+
+	createAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return nil, fmt.Errorf(jsonResp)
+	}
+
+	cp, err := stub.GetSystemConfig()
+	if err != nil {
+		return nil, fmt.Errorf("fail to get system config err")
+	}
+	if createAddr.Str() != cp.FoundationAddress {
+		jsonResp := "{\"Error\":\"Only foundation can call this function\"}"
+		return nil, fmt.Errorf(jsonResp)
 	}
 
 	resultBytes, err := stub.GetState(modules.DesiredSysParamsWithoutVote)

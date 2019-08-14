@@ -29,7 +29,7 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	// "github.com/palletone/go-palletone/dag/txspool"
+
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -121,7 +121,7 @@ func initGenesis(ctx *cli.Context) error {
 	}
 	dag, _ := dag.NewDag4GenesisInit(Dbconn)
 	ks := node.GetKeyStore()
-	account, password := unlockAccount (ks, genesis.TokenHolder, 0, nil)
+	account, password := unlockAccount(ks, genesis.TokenHolder, 0, nil)
 
 	err = ks.Unlock(account, password)
 	if err != nil {
@@ -146,9 +146,6 @@ func initGenesis(ctx *cli.Context) error {
 		return err
 	}
 
-	genesisUnitHash := unit.UnitHash
-	log.Info(fmt.Sprintf("Successfully Get Genesis Unit, it's hash: %v", genesisUnitHash.Hex()))
-
 	// 初始化 stateDB
 	// append by albert·gou
 	err = dag.InitStateDB(genesis, unit)
@@ -168,6 +165,8 @@ func initGenesis(ctx *cli.Context) error {
 	dv.Name = "Gptn"
 	dv.Version = genesis.Version
 	dag.StoreDataVersion(dv)
-	log.Infof("gptn(version[%s]) init success", dv.Version)
+
+	//MUST DO NOT MODIFY THIS LOG. For deploy.sh
+	log.Infof("gptn (version[%s] hash[%s]) init success", dv.Version, unit.UnitHash.Hex())
 	return nil
 }

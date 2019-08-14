@@ -29,7 +29,8 @@ package main
 //		ArgsUsage: "",
 //		Category:  "MEDIATOR COMMANDS",
 //		Description: `
-//    Palletone digital certificate management, providing for users to issue certificates, revoke certificates, query certificates and other operations
+//    Palletone digital certificate management, providing for users to issue certificates, 
+//    revoke certificates, query certificates and other operations
 //`,
 //		Subcommands: []cli.Command{
 //			//注册admin证书
@@ -64,7 +65,8 @@ package main
 //				Description: `
 //gptn cert revoke <address><reason>
 //
-//Palletone sends a request to the fabric ca server to cancel the certificate, and CRL files are generated in the MSP directory.
+//Palletone sends a request to the fabric ca server to cancel the certificate, 
+//and CRL files are generated in the MSP directory.
 //`,
 //			},
 //			{

@@ -76,7 +76,7 @@ type DeployJson struct {
 	ContractId   string   `json:"contract_id"`
 	Name         string   `json:"name"`
 	Args         [][]byte `json:"args"` // contract arguments list
-	EleList      string   `json:"election_list"`
+	EleNode      string   `json:"election_node"`
 	ReadSet      string   `json:"read_set"`
 	WriteSet     string   `json:"write_set"`
 	DuringTime   uint64   `json:"during_time"`
@@ -115,13 +115,14 @@ type InvokeRequestJson struct {
 }
 
 type InstallRequestJson struct {
-	Number         int    `json:"row_number"`
-	TplName        string `json:"tpl_name"`
-	TplDescription string `json:"tpl_description"`
-	Path           string `json:"path"`
-	Version        string `json:"version"`
-	Abi            string `json:"abi"`
-	Language       string `json:"language"`
+	Number         int      `json:"row_number"`
+	TplName        string   `json:"tpl_name"`
+	TplDescription string   `json:"tpl_description"`
+	Path           string   `json:"path"`
+	Version        string   `json:"version"`
+	Abi            string   `json:"abi"`
+	Language       string   `json:"language"`
+	AddrHash       []string `json:"addr_hash"`
 }
 
 type DeployRequestJson struct {
@@ -270,8 +271,8 @@ func convertDeploy2Json(deploy *modules.ContractDeployPayload) *DeployJson {
 	//for _, addr := range deploy.Jury {
 	//	djson.Jury = append(djson.Jury, addr.String())
 	//}
-	ele, _ := json.Marshal(deploy.EleList)
-	djson.EleList = string(ele)
+	ele, _ := json.Marshal(deploy.EleNode)
+	djson.EleNode = string(ele)
 	rset, _ := json.Marshal(deploy.ReadSet)
 	djson.ReadSet = string(rset)
 	wset, _ := json.Marshal(deploy.WriteSet)
@@ -369,6 +370,12 @@ func convertInstallRequest2Json(req *modules.ContractInstallRequestPayload) *Ins
 	reqJson.Abi = req.Abi
 	reqJson.Language = req.Language
 	reqJson.TplDescription = req.TplDescription
+
+	reqJson.AddrHash = []string{}
+	for _, aHash := range req.AddrHash {
+		reqJson.AddrHash = append(reqJson.AddrHash, hex.EncodeToString(aHash[:]))
+	}
+
 	return reqJson
 }
 

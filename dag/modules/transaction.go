@@ -128,7 +128,8 @@ func (tx *TxPoolTransaction) GetPriorityLvl() string {
 		if tx.CreationDate.Unix() <= 0 {
 			tx.CreationDate = time.Now()
 		}
-		priority_lvl, _ = strconv.ParseFloat(fmt.Sprintf("%f", float64(txfee.Int64())/tx.Tx.Size().Float64()*(1+float64(time.Now().Second()-tx.CreationDate.Second())/(24*3600))), 64)
+		priority_lvl, _ = strconv.ParseFloat(fmt.Sprintf("%f", float64(txfee.Int64())/
+			tx.Tx.Size().Float64()*(1+float64(time.Now().Second()-tx.CreationDate.Second())/(24*3600))), 64)
 	}
 	tx.Priority_lvl = strconv.FormatFloat(priority_lvl, 'f', -1, 64)
 	return tx.Priority_lvl
@@ -143,7 +144,8 @@ func (tx *TxPoolTransaction) GetPriorityfloat64() float64 {
 		if tx.CreationDate.Unix() <= 0 {
 			tx.CreationDate = time.Now()
 		}
-		priority_lvl, _ = strconv.ParseFloat(fmt.Sprintf("%f", float64(txfee.Int64())/tx.Tx.Size().Float64()*(1+float64(time.Now().Second()-tx.CreationDate.Second())/(24*3600))), 64)
+		priority_lvl, _ = strconv.ParseFloat(fmt.Sprintf("%f", float64(txfee.Int64())/
+			tx.Tx.Size().Float64()*(1+float64(time.Now().Second()-tx.CreationDate.Second())/(24*3600))), 64)
 	}
 	return priority_lvl
 }
@@ -416,7 +418,8 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 	}
 	if inAmount < outAmount {
 
-		return nil, fmt.Errorf("Compute fees: tx %s txin amount less than txout amount. amount:%d ,outAmount:%d ", tx.Hash().String(), inAmount, outAmount)
+		return nil, fmt.Errorf("Compute fees: tx %s txin amount less than txout amount. amount:%d ,outAmount:%d ",
+			tx.Hash().String(), inAmount, outAmount)
 	}
 	fees := inAmount - outAmount
 
@@ -638,7 +641,8 @@ func (tx *Transaction) InvokeContractId() []byte {
 }
 
 //获取该交易的所有From地址
-func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc GetAddressFromScriptFunc) ([]common.Address, error) {
+func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc GetAddressFromScriptFunc) (
+	[]common.Address, error) {
 	addrMap := map[common.Address]bool{}
 	for _, msg := range tx.TxMessages {
 		if msg.App == APP_PAYMENT {
@@ -663,7 +667,8 @@ func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc Get
 }
 
 //获取该交易的发起人地址
-func (tx *Transaction) GetRequesterAddr(queryUtxoFunc QueryUtxoFunc, getAddrFunc GetAddressFromScriptFunc) (common.Address, error) {
+func (tx *Transaction) GetRequesterAddr(queryUtxoFunc QueryUtxoFunc, getAddrFunc GetAddressFromScriptFunc) (
+	common.Address, error) {
 	msg0 := tx.TxMessages[0]
 	if msg0.App != APP_PAYMENT {
 		return common.Address{}, errors.New("Coinbase or Invalid Tx, first message must be a payment")
@@ -691,7 +696,8 @@ type OutPoint struct {
 }
 
 func (outpoint *OutPoint) String() string {
-	return fmt.Sprintf("Outpoint[TxId:{%#x},MsgIdx:{%d},OutIdx:{%d}]", outpoint.TxHash, outpoint.MessageIndex, outpoint.OutIndex)
+	return fmt.Sprintf("Outpoint[TxId:{%#x},MsgIdx:{%d},OutIdx:{%d}]",
+		outpoint.TxHash, outpoint.MessageIndex, outpoint.OutIndex)
 }
 func (outpoint *OutPoint) Clone() *OutPoint {
 	return NewOutPoint(outpoint.TxHash, outpoint.MessageIndex, outpoint.OutIndex)
@@ -806,7 +812,8 @@ func (tx *Transaction) GetContractInvokeReqMsgIdx() int {
 	}
 	return -1
 }
-func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFunc GetScriptSignersFunc, mediatorAddr common.Address) ([]*Addition, error) {
+func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFunc GetScriptSignersFunc,
+	mediatorAddr common.Address) ([]*Addition, error) {
 	fee, err := tx.GetTxFee(queryUtxoFunc)
 	result := []*Addition{}
 	if err != nil {

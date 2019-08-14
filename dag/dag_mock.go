@@ -534,10 +534,10 @@ func (mr *MockIDagMockRecorder) GetContractStatesByPrefix(id, prefix interface{}
 }
 
 // GetContractJury mocks base method
-func (m *MockIDag) GetContractJury(contractId []byte) ([]modules.ElectionInf, error) {
+func (m *MockIDag) GetContractJury(contractId []byte) (*modules.ElectionNode, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContractJury", contractId)
-	ret0, _ := ret[0].([]modules.ElectionInf)
+	ret0, _ := ret[0].(*modules.ElectionNode)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

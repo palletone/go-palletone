@@ -208,7 +208,9 @@ func (s *LightPalletone) EventMux() *event.TypeMux           { return s.eventMux
 func (s *LightPalletone) Protocols() []p2p.Protocol {
 	return s.protocolManager.SubProtocols
 }
-
+func (s *LightPalletone) GenesisHash() common.Hash {
+	return common.Hash{}
+}
 func (s *LightPalletone) CorsProtocols() []p2p.Protocol {
 	return s.corsProtocolManager.SubProtocols
 }

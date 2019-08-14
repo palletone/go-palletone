@@ -30,7 +30,14 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/nat"
 	"github.com/palletone/go-palletone/common/p2p/netutil"
+	"github.com/palletone/go-palletone/configure"
 )
+
+//palletone
+//112 97 108 108 101 110 116 111 110 101
+//const Version = 1075
+
+//var GenesisHash = []byte("6365f3bc9c197b8679821b998da5ee8f88b3db67fdb023250db3d1c2ae0ab1c6")
 
 // Errors
 var (
@@ -89,6 +96,8 @@ type (
 
 	// findnode is a query for nodes close to the given target.
 	findnode struct {
+		Version    uint
+		Genesis    []byte
 		Target     NodeID // doesn't need to be an actual public key
 		Expiration uint64
 		// Ignore additional fields (for forward compatibility).
@@ -273,11 +282,11 @@ func (t *udp) close() {
 // ping sends a ping message to the given node and waits for a reply.
 func (t *udp) ping(toid NodeID, toaddr *net.UDPAddr) error {
 	req := &ping{
-		Version:    Version,
+		Version:    configure.UdpVersion,
 		From:       t.ourEndpoint,
 		To:         makeEndpoint(toaddr, 0), // TODO: maybe use known TCP port from DB
 		Expiration: uint64(time.Now().Add(expiration).Unix()),
-		Genesis:    GenesisHash,
+		Genesis:    configure.GenesisHash,
 	}
 	packet, hash, err := encodePacket(t.priv, pingPacket, req)
 	if err != nil {
@@ -313,6 +322,8 @@ func (t *udp) findnode(toid NodeID, toaddr *net.UDPAddr, target NodeID) ([]*Node
 		return nreceived >= bucketSize
 	})
 	t.send(toaddr, findnodePacket, &findnode{
+		Version:    configure.UdpVersion,
+		Genesis:    configure.GenesisHash,
 		Target:     target,
 		Expiration: uint64(time.Now().Add(expiration).Unix()),
 	})
@@ -583,9 +594,11 @@ func (req *ping) handle(t *udp, from *net.UDPAddr, fromID NodeID, mac []byte) er
 		return errExpired
 	}
 	//Start Add by wangjiyou for discv4 in 2019-7-19
-	if req.Version != Version || !bytes.Equal(req.Genesis, GenesisHash) {
-		log.Debug("Bad discv4 ping", "Req Version", req.Version, "Version", Version, "Req Genesis", req.Genesis,
-			"Genesis", GenesisHash)
+	log.Debug("Discv4 ping handle", "Req Version", req.Version, "Version", configure.UdpVersion, "Req Genesis", req.Genesis,
+		"Genesis", configure.GenesisHash)
+	if req.Version != configure.UdpVersion || !bytes.Equal(req.Genesis, configure.GenesisHash) {
+		log.Debug("Bad discv4 ping", "Req Version", req.Version, "Version", configure.UdpVersion, "Req Genesis", req.Genesis,
+			"Genesis", configure.GenesisHash)
 		return errUnknownNode
 	}
 	//End Add by wangjiyou for discv4 in 2019-7-19
@@ -619,6 +632,17 @@ func (req *findnode) handle(t *udp, from *net.UDPAddr, fromID NodeID, mac []byte
 	if expired(req.Expiration) {
 		return errExpired
 	}
+
+	//Start Add by wangjiyou for discv4 in 2019-8-14
+	log.Debug("Discv4 findnode handle", "Req Version", req.Version, "Version", configure.UdpVersion, "Req Genesis", req.Genesis,
+		"Genesis", configure.GenesisHash)
+	if req.Version != configure.UdpVersion || !bytes.Equal(req.Genesis, configure.GenesisHash) {
+		log.Debug("Bad discv4 findnode", "Req Version", req.Version, "Version", configure.UdpVersion, "Req Genesis", req.Genesis,
+			"Genesis", configure.GenesisHash)
+		return errUnknownNode
+	}
+	//End Add by wangjiyou for discv4 in 2019-8-14
+
 	if !t.db.hasBond(fromID) {
 		// No bond exists, we don't process the packet. This prevents
 		// an attack vector where the discovery protocol could be used

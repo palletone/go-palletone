@@ -189,7 +189,7 @@ func (ud *UnitDag4Test) GetMinFee() (*modules.AmountAsset, error) {
 	return nil, nil
 }
 
-func (ud *UnitDag4Test) GetContractJury(contractId []byte) ([]modules.ElectionInf, error) {
+func (ud *UnitDag4Test) GetContractJury(contractId []byte) (*modules.ElectionNode, error) {
 	return nil, nil
 }
 func (ud *UnitDag4Test) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {

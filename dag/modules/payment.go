@@ -36,8 +36,9 @@ type Output struct {
 }
 
 type Input struct {
-	SignatureScript  []byte    `json:"signature_script"`
-	Extra            []byte    `json:"extra" rlp:"nil"` // if user creating a new asset, this field should be it's config data. Otherwise it is null.
+	SignatureScript []byte `json:"signature_script"`
+	// if user creating a new asset, this field should be it's config data. Otherwise it is null.
+	Extra            []byte    `json:"extra" rlp:"nil"`
 	PreviousOutPoint *OutPoint `json:"pre_outpoint"`
 }
 

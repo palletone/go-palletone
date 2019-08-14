@@ -262,8 +262,8 @@ func (s *PalletOne) MockContractLocalSend(event jury.ContractEvent) {
 }
 func (s *PalletOne) ContractBroadcast(event jury.ContractEvent, local bool) {
 	log.DebugDynamic(func() string {
-		txJson, _ := json.Marshal(event.Tx)
-		return fmt.Sprintf("contract broadcast tx:%s", string(txJson))
+		evtJson, _ := json.Marshal(event)
+		return fmt.Sprintf("contract broadcast event:%s", string(evtJson))
 	})
 	s.protocolManager.ContractBroadcast(event, local)
 }
@@ -298,6 +298,14 @@ func (s *PalletOne) Protocols() []p2p.Protocol {
 	}
 	protocols := append(s.protocolManager.SubProtocols, s.lesServer.Protocols()...)
 	return protocols
+}
+
+func (s *PalletOne) GenesisHash() common.Hash {
+	if unit, err := s.dag.GetGenesisUnit(); err != nil {
+		return common.Hash{}
+	} else {
+		return unit.Hash()
+	}
 }
 
 func (s *PalletOne) CorsProtocols() []p2p.Protocol {

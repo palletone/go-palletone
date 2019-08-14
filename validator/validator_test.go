@@ -69,7 +69,7 @@ func (q *mockStatedbQuery) GetMediators() map[common.Address]bool {
 func (q *mockStatedbQuery) GetMinFee() (*modules.AmountAsset, error) {
 	return &modules.AmountAsset{Asset: modules.NewPTNAsset(), Amount: uint64(1)}, nil
 }
-func (q *mockStatedbQuery) GetContractJury(contractId []byte) ([]modules.ElectionInf, error) {
+func (q *mockStatedbQuery) GetContractJury(contractId []byte) (*modules.ElectionNode, error) {
 	return nil, nil
 }
 func (q *mockStatedbQuery) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {

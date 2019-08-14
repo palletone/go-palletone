@@ -99,11 +99,12 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 			TemplateId: payload.TemplateId,
 			ContractId: payload.ContractId,
 			Args:       payload.Args,
-			EleList:    payload.EleList,
+			EleNode:    payload.EleNode,
 		}
 		readSet := []ContractReadSet{}
 		for _, rs := range payload.ReadSet {
-			readSet = append(readSet, ContractReadSet{Key: rs.Key, Version: &StateVersion{Height: rs.Version.Height, TxIndex: rs.Version.TxIndex}})
+			readSet = append(readSet, ContractReadSet{Key: rs.Key, Version: &StateVersion{
+				Height: rs.Version.Height, TxIndex: rs.Version.TxIndex}})
 		}
 		writeSet := []ContractWriteSet{}
 		for _, ws := range payload.WriteSet {
@@ -129,7 +130,8 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 		}
 		readSet := []ContractReadSet{}
 		for _, rs := range payload.ReadSet {
-			readSet = append(readSet, ContractReadSet{Key: rs.Key, Version: &StateVersion{Height: rs.Version.Height, TxIndex: rs.Version.TxIndex}})
+			readSet = append(readSet, ContractReadSet{Key: rs.Key, Version: &StateVersion{
+				Height: rs.Version.Height, TxIndex: rs.Version.TxIndex}})
 		}
 		writeSet := []ContractWriteSet{}
 		for _, ws := range payload.WriteSet {
@@ -294,10 +296,15 @@ type ContractError struct {
 
 //node election
 type ElectionInf struct {
-	Etype     byte        `json:"etype"`      //vrf type, if set to 1, it is the assignation node
+	Etype     byte        `json:"election_type"`      //vrf type, if set to 1, it is the assignation node
 	AddrHash  common.Hash `json:"addr_hash"`  //common.Address将地址hash后，返回给请求节点
 	Proof     []byte      `json:"proof"`      //vrf proof
 	PublicKey []byte      `json:"public_key"` //alg.PublicKey, rlp not support
+}
+
+type ElectionNode struct {
+	JuryCount uint64        `json:"jury_count"` //
+	EleList   []ElectionInf `json:"ele_list"`   //
 }
 
 type ContractReadSet struct {
@@ -335,10 +342,14 @@ type TokenPayOut struct {
 // Contract template deploy message
 // App: contract_template
 type ContractTplPayload struct {
-	TemplateId []byte        `json:"template_id"`    // contract template id
-	Size       uint16        `json:"size"`           // contract template bytecode memory size(Byte), use to compute transaction fee
-	ByteCode   []byte        `json:"byte_code"`      // contract bytecode
-	ErrMsg     ContractError `json:"contract_error"` // contract error message
+	// contract template id
+	TemplateId []byte `json:"template_id"`
+	// contract template bytecode memory size(Byte), // use to compute transaction fee
+	Size uint16 `json:"size"`
+	// contract bytecode
+	ByteCode []byte `json:"byte_code"`
+	// contract error message
+	ErrMsg ContractError `json:"contract_error"`
 }
 
 // App: contract_deploy
@@ -347,7 +358,7 @@ type ContractDeployPayload struct {
 	ContractId []byte             `json:"contract_id"`   // contract id
 	Name       string             `json:"name"`          // the name for contract
 	Args       [][]byte           `json:"args"`          // contract arguments list
-	EleList    []ElectionInf      `json:"election_list"` // contract jurors list
+	EleNode    ElectionNode       `json:"election_node"` // contract jurors node info
 	ReadSet    []ContractReadSet  `json:"read_set"`      // the set data of read, and value could be any type
 	WriteSet   []ContractWriteSet `json:"write_set"`     // the set data of write, and value could be any type
 	DuringTime uint64             `json:"during_time"`
@@ -472,13 +483,13 @@ func NewContractTplPayload(templateId []byte, memory uint16, bytecode []byte, er
 }
 
 func NewContractDeployPayload(templateid []byte, contractid []byte, name string, args [][]byte,
-	elf []ElectionInf, readset []ContractReadSet, writeset []ContractWriteSet, err ContractError) *ContractDeployPayload {
+	ele *ElectionNode, readset []ContractReadSet, writeset []ContractWriteSet, err ContractError) *ContractDeployPayload {
 	return &ContractDeployPayload{
 		TemplateId: templateid,
 		ContractId: contractid,
 		Name:       name,
 		Args:       args,
-		EleList:    elf,
+		EleNode:    *ele,
 		ReadSet:    readset,
 		WriteSet:   writeset,
 		ErrMsg:     err,
@@ -497,7 +508,8 @@ func NewContractInvokePayload(contractid []byte, args [][]byte, excutiontime tim
 	}
 }
 
-func NewContractStopPayload(contractid []byte, readset []ContractReadSet, writeset []ContractWriteSet, err ContractError) *ContractStopPayload {
+func NewContractStopPayload(contractid []byte, readset []ContractReadSet, writeset []ContractWriteSet,
+	err ContractError) *ContractStopPayload {
 	return &ContractStopPayload{
 		ContractId: contractid,
 		ReadSet:    readset,
