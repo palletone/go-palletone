@@ -204,7 +204,7 @@ func createPayment(fromAddr, toAddr common.Address, amountToken uint64, feePTN u
 
 	utxosPTNTaken, change, err := core.Select_utxo_Greedy(utxoPTNView, amountToken+feePTN)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Select utxo err")
+		return nil, nil, fmt.Errorf("createPayment Select_utxo_Greedy utxo err")
 	}
 	usedUtxo := []*modules.UtxoWithOutPoint{}
 	//ptn payment
@@ -623,7 +623,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	utxoList, _ := convertUtxoMap2Utxos(utxos)
 	taken_utxo, change, err := core.Select_utxo_Greedy(utxoList, daoAmount)
 	if err != nil {
-		return common.Hash{}, fmt.Errorf("Select utxo err")
+		return common.Hash{}, fmt.Errorf("CreateProofTransaction Select_utxo_Greedy utxo err")
 	}
 
 	var inputs []ptnjson.TransactionInput
