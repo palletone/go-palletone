@@ -823,7 +823,7 @@ func getContractFeeLevel(dag iDag, msg modules.MessageType, feeType int) (level 
 }
 
 func checkContractTxFeeValid(dag iDag, tx *modules.Transaction) bool {
-	return true //todo
+	//return true //todo
 
 	if tx == nil {
 		return false

@@ -450,6 +450,9 @@ func (srv *Server) initAlien() (err error) {
 			continue
 		}
 		srv.alienRestrict.Set([]byte(pnode.ID.TerminalString()), []byte(pnode.String()), 0)
+		if ip, err := pnode.IP.MarshalText(); err == nil {
+			srv.alienRestrict.Set(ip, []byte(""), 0)
+		}
 	}
 	return nil
 }
@@ -881,6 +884,18 @@ func (srv *Server) listenLoop() {
 				fd.Close()
 				slots <- struct{}{}
 				continue
+			}
+		}
+
+		if tcp, ok := fd.RemoteAddr().(*net.TCPAddr); ok {
+			if ip, err := tcp.IP.MarshalText(); err == nil && srv.alienRestrict != nil {
+				if _, err = srv.alienRestrict.Get(ip); err != nil {
+				} else {
+					log.Debug("Rejected conn (blacklisted in AlienRestrict)", "addr", fd.RemoteAddr())
+					fd.Close()
+					slots <- struct{}{}
+					continue
+				}
 			}
 		}
 
