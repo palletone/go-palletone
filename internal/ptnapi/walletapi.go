@@ -108,7 +108,7 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 		return "", fmt.Errorf("Select_utxo_Greedy utxo err")
 	}
 
-	var inputs []ptnjson.TransactionInput
+	inputs := []ptnjson.TransactionInput{}
 	var input ptnjson.TransactionInput
 	for _, u := range taken_utxo {
 		utxo := u.(*modules.UtxoWithOutPoint)
@@ -626,7 +626,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 		return common.Hash{}, fmt.Errorf("CreateProofTransaction Select_utxo_Greedy utxo err")
 	}
 
-	var inputs []ptnjson.TransactionInput
+	inputs :=[]ptnjson.TransactionInput{}
 	var input ptnjson.TransactionInput
 	for _, u := range taken_utxo {
 		utxo := u.(*modules.UtxoWithOutPoint)
@@ -968,7 +968,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 		return common.Hash{}, err
 	}
 
-	var inputs []ptnjson.TransactionInput
+        inputs :=[]ptnjson.TransactionInput{}
 	var input ptnjson.TransactionInput
 	for _, u := range taken_utxo {
 		utxo := u.(*ptnjson.UtxoJson)

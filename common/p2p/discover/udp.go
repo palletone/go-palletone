@@ -325,13 +325,16 @@ func (t *udp) findnode(toid NodeID, toaddr *net.UDPAddr, target NodeID) ([]*Node
 				continue
 			}
 			//AlienRestrict.Reject connections that match AlienRestrict.
-			if _, err := t.alienRestrict.Get([]byte(n.ID.TerminalString())); err != nil {
-			} else {
-				log.Debug("Bad discv4 neighbors is alien", "node", n.ID.TerminalString())
-				nodes = nodes[0:0]
-				t.alienRestrict.Set([]byte(n.ID.TerminalString()), []byte(n.String()), 3600)
-				return false
+			if t.alienRestrict != nil {
+				if _, err := t.alienRestrict.Get([]byte(n.ID.TerminalString())); err != nil {
+				} else {
+					log.Debug("Bad discv4 neighbors is alien", "node", n.ID.TerminalString())
+					nodes = nodes[0:0]
+					t.alienRestrict.Set([]byte(n.ID.TerminalString()), []byte(n.String()), 3600)
+					return false
+				}
 			}
+
 			nodes = append(nodes, n)
 		}
 		return nreceived >= bucketSize
@@ -616,10 +619,12 @@ func (req *ping) handle(t *udp, from *net.UDPAddr, fromID NodeID, mac []byte) er
 	}
 	//End Add by wangjiyou for discv4 in 2019-7-19
 	//AlienRestrict.Reject connections that match AlienRestrict.
-	if _, err := t.alienRestrict.Get([]byte(fromID.TerminalString())); err != nil {
-	} else {
-		log.Debug("Bad discv4 ping is alien", "err", err, "fromId", fromID.TerminalString())
-		return errUnknownNode
+	if t.alienRestrict != nil {
+		if _, err := t.alienRestrict.Get([]byte(fromID.TerminalString())); err != nil {
+		} else {
+			log.Debug("Bad discv4 ping is alien", "err", err, "fromId", fromID.TerminalString())
+			return errUnknownNode
+		}
 	}
 
 	t.send(from, pongPacket, &pong{
@@ -661,11 +666,14 @@ func (req *findnode) handle(t *udp, from *net.UDPAddr, fromID NodeID, mac []byte
 	}
 	//End Add by wangjiyou for discv4 in 2019-8-14
 	//AlienRestrict.Reject connections that match AlienRestrict.
-	if _, err := t.alienRestrict.Get([]byte(fromID.TerminalString())); err != nil {
-	} else {
-		log.Debug("Bad discv4 findnode is alien", "fromId", fromID.TerminalString())
-		return errUnknownNode
+	if t.alienRestrict != nil {
+		if _, err := t.alienRestrict.Get([]byte(fromID.TerminalString())); err != nil {
+		} else {
+			log.Debug("Bad discv4 findnode is alien", "fromId", fromID.TerminalString())
+			return errUnknownNode
+		}
 	}
+
 	if !t.db.hasBond(fromID) {
 		// No bond exists, we don't process the packet. This prevents
 		// an attack vector where the discovery protocol could be used
