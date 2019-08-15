@@ -100,9 +100,9 @@ func (d *DebugChainCode) getRequesterCert(stub shim.ChaincodeStubInterface) pb.R
 
 func (d *DebugChainCode) checkRequesterCert(stub shim.ChaincodeStubInterface) pb.Response {
 	isValid, err := stub.IsRequesterCertValid()
-	b := []byte{}
+	//b := []byte{}
 	if isValid {
-		b, _ = json.Marshal(fmt.Sprintf("Requester cert is valid"))
+		b, _ := json.Marshal(fmt.Sprintf("Requester cert is valid"))
 		return shim.Success(b)
 	} else {
 		return shim.Error(fmt.Sprintf("Requester cert is invalid, because %s", err.Error()))
