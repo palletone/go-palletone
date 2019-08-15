@@ -115,7 +115,7 @@ func (g *Genesis) GetTokenAmount() uint64 {
 
 // mediator基本信息
 type MediatorInfoBase struct {
-	AddStr     string `json:"account"`    // mediator账户地址，用于产块签名
+	AddStr     string `json:"account"`    // mediator账户地址，主要用于产块签名
 	RewardAdd  string `json:"rewardAdd"`  // mediator奖励地址，主要用于接收产块奖励
 	InitPubKey string `json:"initPubKey"` // mediator的群签名初始公钥
 	Node       string `json:"node"`       // mediator节点网络信息，包括ip和端口等

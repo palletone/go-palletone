@@ -190,7 +190,7 @@ type TxExecuteResult struct {
 	Warning   string      `json:"warning"`   // 警告
 }
 
-func (a *PrivateMediatorAPI) Apply(args modules.MediatorCreateArgs) (*TxExecuteResult, error) {
+func (a *PrivateMediatorAPI) Apply(applyAddStr string, args modules.MediatorCreateArgs) (*TxExecuteResult, error) {
 	// 参数补全
 	if args.MediatorApplyInfo == nil {
 		args.MediatorApplyInfo = core.NewMediatorApplyInfo()
@@ -206,6 +206,11 @@ func (a *PrivateMediatorAPI) Apply(args modules.MediatorCreateArgs) (*TxExecuteR
 		return nil, err
 	}
 
+	if !(applyAddStr == args.AddStr || args.RewardAdd == applyAddStr) {
+		return nil, fmt.Errorf("the calling account(%v) is not produce account(%v) or " +
+			"reward account(%v), please use mediator.apply()", applyAddStr, args.AddStr, args.RewardAdd)
+	}
+
 	// 判断本节点是否同步完成，数据是否最新
 	if !a.Dag().IsSynced() {
 		return nil, fmt.Errorf("this node is not synced, and can't apply mediator now")
@@ -214,6 +219,11 @@ func (a *PrivateMediatorAPI) Apply(args modules.MediatorCreateArgs) (*TxExecuteR
 	// 判断是否已经是mediator
 	if a.Dag().IsMediator(addr) {
 		return nil, fmt.Errorf("account %v is already a mediator", args.AddStr)
+	}
+
+	applyAdd, err := core.StrToMedAdd(applyAddStr)
+	if err != nil {
+		return nil, err
 	}
 
 	// 参数序列化
@@ -225,7 +235,7 @@ func (a *PrivateMediatorAPI) Apply(args modules.MediatorCreateArgs) (*TxExecuteR
 
 	// 调用系统合约
 	fee := a.Dag().GetChainParameters().MediatorCreateFee
-	reqId, err := a.ContractInvokeReqTx(addr, addr, 0, fee, nil,
+	reqId, err := a.ContractInvokeReqTx(applyAdd, applyAdd, 0, fee, nil,
 		syscontract.DepositContractAddress, cArgs, 0)
 	if err != nil {
 		return nil, err
@@ -233,9 +243,9 @@ func (a *PrivateMediatorAPI) Apply(args modules.MediatorCreateArgs) (*TxExecuteR
 
 	// 返回执行结果
 	res := &TxExecuteResult{}
-	res.TxContent = fmt.Sprintf("account(%v) apply mediator with initPubKey: %v, node: %v, name: %v, url: %v, "+
-		"logo: %v, location: %v, applyInfo: %v",
-		args.AddStr, args.InitPubKey, args.Node, args.Name, args.Url, args.Logo, args.Location, args.Description)
+	res.TxContent = fmt.Sprintf("account(%v) apply mediator with rewardAdd: %v, initPubKey: %v, node: %v, "+
+		"name: %v, url: %v, logo: %v, location: %v, applyInfo: %v", args.AddStr, args.RewardAdd, args.InitPubKey,
+		args.Node, args.Name, args.Url, args.Logo, args.Location, args.Description)
 	res.TxFee = fmt.Sprintf("%vdao", fee)
 	res.Warning = DefaultResult
 	res.Tip = "Your ReqId is: " + hex.EncodeToString(reqId[:]) +
