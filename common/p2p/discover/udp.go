@@ -326,9 +326,10 @@ func (t *udp) findnode(toid NodeID, toaddr *net.UDPAddr, target NodeID) ([]*Node
 			}
 			//AlienRestrict.Reject connections that match AlienRestrict.
 			if _, err := t.alienRestrict.Get([]byte(n.ID.TerminalString())); err != nil {
-				log.Debug("Bad discv4 neighbors is alien", "node", n.ID)
+			} else {
+				log.Debug("Bad discv4 neighbors is alien", "node", n.ID.TerminalString())
 				nodes = nodes[0:0]
-				t.alienRestrict.Set([]byte(n.ID.TerminalString()), []byte(""), 3600)
+				t.alienRestrict.Set([]byte(n.ID.TerminalString()), []byte(n.String()), 3600)
 				return false
 			}
 			nodes = append(nodes, n)
@@ -616,7 +617,8 @@ func (req *ping) handle(t *udp, from *net.UDPAddr, fromID NodeID, mac []byte) er
 	//End Add by wangjiyou for discv4 in 2019-7-19
 	//AlienRestrict.Reject connections that match AlienRestrict.
 	if _, err := t.alienRestrict.Get([]byte(fromID.TerminalString())); err != nil {
-		log.Debug("Bad discv4 ping is alien", "fromId", fromID)
+	} else {
+		log.Debug("Bad discv4 ping is alien", "err", err, "fromId", fromID.TerminalString())
 		return errUnknownNode
 	}
 
@@ -660,7 +662,8 @@ func (req *findnode) handle(t *udp, from *net.UDPAddr, fromID NodeID, mac []byte
 	//End Add by wangjiyou for discv4 in 2019-8-14
 	//AlienRestrict.Reject connections that match AlienRestrict.
 	if _, err := t.alienRestrict.Get([]byte(fromID.TerminalString())); err != nil {
-		log.Debug("Bad discv4 findnode is alien", "fromId", fromID)
+	} else {
+		log.Debug("Bad discv4 findnode is alien", "fromId", fromID.TerminalString())
 		return errUnknownNode
 	}
 	if !t.db.hasBond(fromID) {
@@ -671,7 +674,9 @@ func (req *findnode) handle(t *udp, from *net.UDPAddr, fromID NodeID, mac []byte
 		// port of the target as the source address. The recipient of
 		// the findnode packet would then send a neighbors packet
 		// (which is a much bigger packet than findnode) to the victim.
-		t.alienRestrict.Set([]byte(fromID.TerminalString()), []byte(""), 3600)
+		//TODO add alienRestrict that the node is not matched ???
+		//t.alienRestrict.Set([]byte(fromID.TerminalString()), []byte(""), 3600)
+
 		return errUnknownNode
 	}
 	target := crypto.Keccak256Hash(req.Target[:])
