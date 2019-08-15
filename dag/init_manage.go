@@ -97,24 +97,32 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 		list[mi.AddStr] = true
 	}
 
-	// 存储 initMediatorCandidates
+	// 存储 initMediatorCandidates/JuryCandidates
 	imcB, err := json.Marshal(list)
 	if err != nil {
 		log.Debugf(err.Error())
 		return err
 	}
 
+	version := &modules.StateVersion{
+		Height:  unit.Number(),
+		TxIndex: ^uint32(0),
+	}
 	ws := &modules.ContractWriteSet{
 		IsDelete: false,
 		Key:      modules.MediatorList,
 		Value:    imcB,
 	}
-
-	version := &modules.StateVersion{
-		Height:  unit.Number(),
-		TxIndex: ^uint32(0),
+	//Mediator
+	ws.Key = modules.MediatorList
+	err = dag.stableStateRep.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws, version)
+	if err != nil {
+		log.Debugf(err.Error())
+		return err
 	}
 
+	//Jury
+	ws.Key = modules.JuryList
 	err = dag.stableStateRep.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws, version)
 	if err != nil {
 		log.Debugf(err.Error())
@@ -150,7 +158,7 @@ func (d *Dag) PrecedingThreshold() int {
 func (d *Dag) UnitIrreversibleTime() time.Duration {
 	gp := d.GetGlobalProp()
 	cp := gp.ChainParameters
-	it := uint(gp.ChainThreshold() + int(cp.MaintenanceSkipSlots)) * uint(cp.MediatorInterval)
+	it := uint(gp.ChainThreshold()+int(cp.MaintenanceSkipSlots)) * uint(cp.MediatorInterval)
 	return time.Duration(it) * time.Second
 }
 
