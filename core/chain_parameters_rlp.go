@@ -86,10 +86,10 @@ func (cp *ChainParameters) getCPT() *ChainParametersTemp {
 
 		ContractTxTimeoutUnitFee:  strconv.FormatUint(cp.ContractTxTimeoutUnitFee, 10),
 		ContractTxSizeUnitFee:     strconv.FormatUint(uint64(cp.ContractTxSizeUnitFee), 10),
-		ContractTxInstallFeeLevel: strconv.FormatFloat(float64(cp.ContractTxInstallFeeLevel), 'f', -1, 64),
-		ContractTxDeployFeeLevel:  strconv.FormatFloat(float64(cp.ContractTxDeployFeeLevel), 'f', -1, 64),
-		ContractTxInvokeFeeLevel:  strconv.FormatFloat(float64(cp.ContractTxInvokeFeeLevel), 'f', -1, 64),
-		ContractTxStopFeeLevel:    strconv.FormatFloat(float64(cp.ContractTxStopFeeLevel), 'f', -1, 64),
+		ContractTxInstallFeeLevel: strconv.FormatFloat(cp.ContractTxInstallFeeLevel, 'f', -1, 64),
+		ContractTxDeployFeeLevel:  strconv.FormatFloat(cp.ContractTxDeployFeeLevel, 'f', -1, 64),
+		ContractTxInvokeFeeLevel:  strconv.FormatFloat(cp.ContractTxInvokeFeeLevel, 'f', -1, 64),
+		ContractTxStopFeeLevel:    strconv.FormatFloat(cp.ContractTxStopFeeLevel, 'f', -1, 64),
 	}
 }
 

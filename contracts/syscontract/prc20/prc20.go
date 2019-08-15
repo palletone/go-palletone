@@ -393,7 +393,7 @@ func frozenToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//check address
 	invokeAddrStr := invokeAddr.String()
 	ownerAddr := gTkInfo.SupplyAddr
-	if "" == ownerAddr {
+	if len(ownerAddr)==0 {
 		ownerAddr = gTkInfo.CreateAddr
 	}
 	if invokeAddrStr != ownerAddr {

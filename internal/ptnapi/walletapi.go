@@ -284,14 +284,14 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 	for _, addramt := range c.Amounts {
 		encodedAddr := addramt.Address
 		ptnAmt := addramt.Amount
-		amount := ptnjson.Ptn2Dao(ptnAmt)
+		// amount := ptnjson.Ptn2Dao(ptnAmt)
 		// Ensure amount is in the valid range for monetary amounts.
-		if amount <= 0 /*|| amount > ptnjson.MaxDao*/ {
-			return "", &ptnjson.RPCError{
-				Code:    ptnjson.ErrRPCType,
-				Message: "Invalid amount",
-			}
-		}
+		// if amount <= 0 /*|| amount > ptnjson.MaxDao*/ {
+		// 	return "", &ptnjson.RPCError{
+		// 		Code:    ptnjson.ErrRPCType,
+		// 		Message: "Invalid amount",
+		// 	}
+		// }
 		addr, err := common.StringToAddress(encodedAddr)
 		if err != nil {
 			return "", &ptnjson.RPCError{

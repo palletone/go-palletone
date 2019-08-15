@@ -357,7 +357,7 @@ func (c *Config) parsePersistentNodes(path string) []*discover.Node {
 		return nil
 	}
 	// Interpret the list as a discovery node array
-	var nodes []*discover.Node
+	nodes:=make( []*discover.Node,0,len(nodelist))
 	for _, url := range nodelist {
 		if url == "" {
 			continue

@@ -39,7 +39,7 @@ run:
     - rpc #from go-ethereum
     - bmt #from go-ethereum
     - adaptor #will delete this folder
-    
+    - example
 
   # which files to skip: they will be analyzed, but issues from them
   # won't be reported. Default value is empty list, but there is
