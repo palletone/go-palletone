@@ -153,7 +153,10 @@ func _initDepositAddr(stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//
-	recvResult, err := consult(stub, []byte("getPubkey"), []byte(result))
+	recvResult, err := consult(stub, []byte("getPubkey"), result)
+	if err != nil {
+		return shim.Error("consult getPubkey failed: " + err.Error())
+	}
 	var juryMsg []JuryMsgAddr
 	err = json.Unmarshal(recvResult, &juryMsg)
 	if err != nil {
@@ -165,7 +168,7 @@ func _initDepositAddr(stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//
-	var pubkeys []string
+	pubkeys := make([]string, 0, len(juryMsg))
 	for i := range juryMsg {
 		pubkeys = append(pubkeys, string(juryMsg[i].Answer))
 	}
@@ -373,7 +376,7 @@ func _getBTCToken(stub shim.ChaincodeStubInterface) pb.Response {
 			return shim.Error("PutState txhash failed")
 		}
 		//
-		err = stub.PutState(symbolsUnspend+multiAddr+sep+txIDVout, []byte(Int64ToBytes(int64(getUTXOResult.UTXOs[i].Amount*1e8))))
+		err = stub.PutState(symbolsUnspend+multiAddr+sep+txIDVout, Int64ToBytes(int64(getUTXOResult.UTXOs[i].Amount*1e8)))
 		if err != nil {
 			log.Debugf("PutState txhash unspend failed err: %s", err.Error())
 			return shim.Error("PutState txhash unspend failed")
@@ -449,8 +452,11 @@ func getUnspends(btcAmout int64, stub shim.ChaincodeStubInterface) []Unspend {
 		if unspend.Value == btcAmout {
 			selUnspends = append(selUnspends, unspend)
 			break
+		} else if unspend.Value > btcAmout {
+			bigUnspends = append(bigUnspends, unspend)
+		} else {
+			smlUnspends = append(smlUnspends, unspend)
 		}
-		smlUnspends = append(smlUnspends, unspend)
 	}
 	//
 	if len(selUnspends) != 0 {
@@ -518,7 +524,7 @@ func genRawTx(btcAmout, btcFee int64, btcAddr string, unspends []Unspend, stub s
 	var rawTxGen BTCTransaction_rawTransactionGen
 	totalAmount := int64(0)
 	for i := range unspends {
-		rawTxGen.Inputs = append(rawTxGen.Inputs, Input{Txid: unspends[i].Txid, Vout: uint32(unspends[i].Vout)})
+		rawTxGen.Inputs = append(rawTxGen.Inputs, Input{Txid: unspends[i].Txid, Vout: unspends[i].Vout})
 		totalAmount += unspends[i].Value
 	}
 	rawTxGen.Outputs = append(rawTxGen.Outputs, Output{btcAddr, converAmount(btcAmout - btcFee)})
@@ -610,7 +616,7 @@ func mergeTx(rawTx string, inputRedeemIndex []int, redeemHex []string, juryMsg [
 	mergeTx.RedeemHex = redeemHex
 
 	//
-	var answers []string
+	answers := make([]string, 0, len(juryMsg))
 	for i := range juryMsg {
 		answers = append(answers, string(juryMsg[i].Answer))
 	}
@@ -629,9 +635,9 @@ func mergeTx(rawTx string, inputRedeemIndex []int, redeemHex []string, juryMsg [
 
 	for i := 0; i < num; i++ {
 		mergeTx.MergeTransactionHexs = []string{}
-		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, string(answers[array[i][0]-1]))
-		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, string(answers[array[i][1]-1]))
-		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, string(answers[array[i][2]-1])) //mod
+		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, answers[array[i][0]-1])
+		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, answers[array[i][1]-1])
+		mergeTx.MergeTransactionHexs = append(mergeTx.MergeTransactionHexs, answers[array[i][2]-1]) //mod
 		//
 		reqBytes, err := json.Marshal(mergeTx)
 		if err != nil {
@@ -693,7 +699,7 @@ func saveUtxos(btcTokenAmount int64, selUnspnds []Unspend, txHash string, stub s
 	for i := range selUnspnds {
 		totalAmount += selUnspnds[i].Value
 		err := stub.PutState(symbolsSpent+selUnspnds[i].MultiAddr+sep+selUnspnds[i].Txid+sep+strconv.Itoa(int(selUnspnds[i].Vout)),
-			[]byte(Int64ToBytes(selUnspnds[i].Value)))
+			Int64ToBytes(selUnspnds[i].Value))
 		if err != nil {
 			log.Debugf("PutState txhash spent failed err: %s", err.Error())
 			return errors.New("PutState txhash spent failed")
@@ -701,7 +707,7 @@ func saveUtxos(btcTokenAmount int64, selUnspnds []Unspend, txHash string, stub s
 	}
 
 	if totalAmount > btcTokenAmount {
-		err := stub.PutState(symbolsUnspend+selUnspnds[0].MultiAddr+sep+txHash+sep+strconv.Itoa(1), []byte(Int64ToBytes(totalAmount-btcTokenAmount)))
+		err := stub.PutState(symbolsUnspend+selUnspnds[0].MultiAddr+sep+txHash+sep+strconv.Itoa(1), Int64ToBytes(totalAmount-btcTokenAmount))
 		if err != nil {
 			log.Debugf("PutState txhash unspend failed err: %s", err.Error())
 			return errors.New("PutState txhash unspend failed")
@@ -810,7 +816,10 @@ func _withdrawPrepare(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 	log.Debugf("tempHashHex:%s", tempHashHex)
 
 	//协商交易
-	recvResult, _ := consult(stub, []byte(tempHashHex), []byte("rawTx"))
+	recvResult, err := consult(stub, []byte(tempHashHex), []byte("rawTx"))
+	if err != nil {
+		return shim.Error("consult rawTx failed: " + err.Error())
+	}
 	var juryMsg []JuryMsgAddr
 	err = json.Unmarshal(recvResult, &juryMsg)
 	if err != nil {
@@ -865,10 +874,7 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 
 	// 检查交易
 	var prepare WithdrawPrepare
-	err := json.Unmarshal(result, &prepare)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
+	_ = json.Unmarshal(result, &prepare)
 	if len(prepare.Unspends) == 0 {
 		jsonResp := "check Unspends failed"
 		return shim.Error(jsonResp)
@@ -910,7 +916,10 @@ func _withdrawBTC(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	log.Debugf("tempHashHex:%s", tempHashHex)
 
 	//协商交易
-	recvResult, _ := consult(stub, []byte(tempHashHex), []byte(rawTxSign))
+	recvResult, err := consult(stub, []byte(tempHashHex), []byte(rawTxSign))
+	if err != nil {
+		return shim.Error("consult rawTxSign failed: " + err.Error())
+	}
 	var juryMsg []JuryMsgAddr
 	err = json.Unmarshal(recvResult, &juryMsg)
 	if err != nil {

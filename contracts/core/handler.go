@@ -605,7 +605,7 @@ func (handler *Handler) processStream() error {
 				if in.Type.String() != pb.ChaincodeMessage_READY.String() {
 					//  TODO
 					return errors.Errorf("[%s]Sync send can only be for READY state %s\n", shorttxid(in.Txid), in.Type.String())
-					panic(fmt.Sprintf("[%s]Sync send can only be for READY state %s\n", shorttxid(in.Txid), in.Type.String()))
+					//panic(fmt.Sprintf("[%s]Sync send can only be for READY state %s\n", shorttxid(in.Txid), in.Type.String()))
 				}
 				if err = handler.serialSend(in); err != nil {
 					return errors.WithMessage(err, fmt.Sprintf("[%s]error sending ready  message, ending stream:", shorttxid(in.Txid)))

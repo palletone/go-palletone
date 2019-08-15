@@ -90,7 +90,7 @@ type CreateMultiSigResult struct {
 
 func creatMulti(juryMsg []JuryMsgAddr, stub shim.ChaincodeStubInterface) ([]byte, error) {
 	//
-	var answers []string
+	answers := make([]string, 0, len(juryMsg))
 	for i := range juryMsg {
 		answers = append(answers, string(juryMsg[i].Answer))
 	}
@@ -388,7 +388,7 @@ func _getBTCToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	for i := range outputs {
 		err = stub.PutState(symbolsUnspend+btcTxHash+sep+strconv.Itoa(int(outputs[i].Index)),
-			[]byte(Int64ToBytes(outputs[i].Value)))
+			Int64ToBytes(outputs[i].Value))
 		if err != nil {
 			log.Debugf("PutState txhash unspend failed err: %s", err.Error())
 			return shim.Error("PutState txhash unspend failed")
@@ -455,8 +455,11 @@ func getUnspends(btcAmout int64, stub shim.ChaincodeStubInterface) []Unspend {
 		if unspend.Value == btcAmout {
 			selUnspends = append(selUnspends, unspend)
 			break
+		} else if unspend.Value > btcAmout {
+			bigUnspends = append(bigUnspends, unspend)
+		} else {
+			smlUnspends = append(smlUnspends, unspend)
 		}
-		smlUnspends = append(smlUnspends, unspend)
 	}
 	//
 	if len(selUnspends) != 0 {
@@ -615,7 +618,7 @@ func mergeTx(rawTx string, inputRedeemIndex []int, redeemHex []string, juryMsg [
 	mergeTx.RedeemHex = redeemHex
 
 	//
-	var answers []string
+	answers := make([]string, 0, len(juryMsg))
 	for i := range juryMsg {
 		answers = append(answers, string(juryMsg[i].Answer))
 	}
@@ -709,7 +712,7 @@ func saveUtxos(btcTokenAmount int64, selUnspnds []Unspend, txHash string, stub s
 	}
 
 	if totalAmount > btcTokenAmount {
-		err := stub.PutState(symbolsUnspend+txHash+sep+strconv.Itoa(1), []byte(Int64ToBytes(totalAmount-btcTokenAmount)))
+		err := stub.PutState(symbolsUnspend+txHash+sep+strconv.Itoa(1), Int64ToBytes(totalAmount-btcTokenAmount))
 		if err != nil {
 			log.Debugf("PutState txhash unspend failed err: %s", err.Error())
 			return errors.New("PutState txhash unspend failed")

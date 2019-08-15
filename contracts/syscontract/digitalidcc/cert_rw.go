@@ -206,14 +206,14 @@ func GetCertDBInfo(certid string, stub shim.ChaincodeStubInterface) (certDBInfo 
 	if err := json.Unmarshal(data, certDBInfo); err != nil {
 		return nil, err
 	}
-	if err != nil {
-		return nil, err
-	}
+	//if err != nil {
+	//	return nil, err
+	//}
 	return certDBInfo, nil
 }
 
 func setCRL(issuer string, crl *pkix.CertificateList, certHolderInfo []*dagModules.CertHolderInfo, stub shim.ChaincodeStubInterface) error {
-	var symbol string = ""
+	var symbol string
 	for index, revokeCert := range crl.TBSCertList.RevokedCertificates {
 		t, err := revokeCert.RevocationTime.MarshalBinary()
 		if err != nil {

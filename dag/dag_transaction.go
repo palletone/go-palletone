@@ -79,7 +79,7 @@ func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee
 
 	selUtxos, change, err := core.Select_utxo_Greedy(greedyUtxos, daoTotal)
 	if err != nil {
-		return nil, fmt.Errorf("select utxo err")
+		return nil, fmt.Errorf("createBaseTransaction Select_utxo_Greedy utxo err")
 	}
 
 	// 3. 构建PaymentPayload的Inputs
@@ -187,7 +187,7 @@ func getPayload(from, to common.Address, daoAmount, daoFee uint64,
 	daoTotal := daoAmount + daoFee
 	selUtxos, change, err := core.Select_utxo_Greedy(greedyUtxos, daoTotal)
 	if err != nil {
-		return nil, fmt.Errorf("select utxo err")
+		return nil, fmt.Errorf("getPayload Select_utxo_Greedy utxo err")
 	}
 
 	// 2. 构建PaymentPayload的Inputs

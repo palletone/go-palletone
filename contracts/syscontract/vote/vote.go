@@ -186,7 +186,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(jsonResp)
 	}
 	//init support
-	var supports []TopicSupports
+	supports := make([]TopicSupports, 0, len(voteTopics))
 	for _, oneTopic := range voteTopics {
 		var oneSupport TopicSupports
 		oneSupport.TopicTitle = oneTopic.TopicTitle
@@ -428,7 +428,7 @@ func getVoteResult(args []string, stub shim.ChaincodeStubInterface) pb.Response 
 		isVoteEnd = true
 	}
 	//calculate result
-	var supportResults []SupportResult
+	supportResults := make([]SupportResult, 0, len(topicSupports))
 	for i, oneTopicSupport := range topicSupports {
 		var oneResult SupportResult
 		oneResult.TopicIndex = uint64(i) + 1
@@ -492,7 +492,7 @@ func getVoteInfo(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//topic info
-	var voteTopicIndexs []VoteTopicIndex
+	voteTopicIndexs := make([]VoteTopicIndex, 0, len(topicSupports))
 	for i, oneTopicSupport := range topicSupports {
 		var oneResult VoteTopicIndex
 		oneResult.TopicIndex = uint64(i) + 1

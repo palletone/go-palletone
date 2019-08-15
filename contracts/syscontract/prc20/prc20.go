@@ -145,7 +145,7 @@ func getSymbols(stub shim.ChaincodeStubInterface, symbol string) *TokenInfo {
 
 func getSymbolsAll(stub shim.ChaincodeStubInterface) []TokenInfo {
 	KVs, _ := stub.GetStateByPrefix(symbolsKey)
-	var tkInfos []TokenInfo
+	tkInfos := make([]TokenInfo, 0, len(KVs))
 	for _, oneKV := range KVs {
 		tkInfo := TokenInfo{}
 		err := json.Unmarshal(oneKV.Value, &tkInfo)
@@ -461,7 +461,7 @@ func oneToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 func allToken(stub shim.ChaincodeStubInterface) pb.Response {
 	tkInfos := getSymbolsAll(stub)
 
-	var tkIDs []TokenIDInfo
+	tkIDs := make([]TokenIDInfo, 0, len(tkInfos))
 	for _, tkInfo := range tkInfos {
 		asset := tkInfo.AssetID
 		tkID := TokenIDInfo{tkInfo.Symbol, tkInfo.CreateAddr, tkInfo.TotalSupply,

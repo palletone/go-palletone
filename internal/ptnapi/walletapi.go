@@ -56,7 +56,7 @@ func NewPrivateWalletAPI(b Backend) *PrivateWalletAPI {
 func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string, to string, amount, fee decimal.Decimal) (string, error) {
 
 	//realNet := &chaincfg.MainNetParams
-        var LockTime int64 
+	var LockTime int64
 	//LockTime = 0
 
 	amounts := []ptnjson.AddressAmt{}
@@ -87,12 +87,12 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 	ptn := dagconfig.DagConfig.GasToken
 
 	poolTxs, _ := s.b.GetPoolTxsByAddr(from)
-        //if len(poolTxs) == 0 {
-          //      return "", fmt.Errorf("GetPoolTxsByAddr Err")
-        //}
+	//if len(poolTxs) == 0 {
+	//      return "", fmt.Errorf("GetPoolTxsByAddr Err")
+	//}
 	allutxos, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, from, ptn)
 	if err != nil {
-		return "", fmt.Errorf("Select utxo err")
+		return "", fmt.Errorf("SelectUtxoFromDagAndPool utxo err")
 	}
 	limitdao, _ := decimal.NewFromString("0.0001")
 	if !fee.GreaterThanOrEqual(limitdao) {
@@ -105,7 +105,7 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 	utxos, _ := convertUtxoMap2Utxos(allutxos)
 	taken_utxo, change, err := core.Select_utxo_Greedy(utxos, daoAmount)
 	if err != nil {
-		return "", fmt.Errorf("Select utxo err")
+		return "", fmt.Errorf("Select_utxo_Greedy utxo err")
 	}
 
 	var inputs []ptnjson.TransactionInput
@@ -160,13 +160,13 @@ func (s *PrivateWalletAPI) buildRawTransferTx(tokenId, from, to string, amount, 
 		return nil, nil, fmt.Errorf("GetAddrRawUtxos utxo err")
 	}
 	poolTxs, _ := s.b.GetPoolTxsByAddr(from)
-       //if len(poolTxs) == 0 {
-        //       return nil, nil, fmt.Errorf("GetPoolTxsByAddr utxo err")
-        //}
+	//if len(poolTxs) == 0 {
+	//       return nil, nil, fmt.Errorf("GetPoolTxsByAddr utxo err")
+	//}
 
 	utxosPTN, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, from, ptn)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Select utxo err")
+		return nil, nil, fmt.Errorf("SelectUtxoFromDagAndPool utxo err")
 	}
 	feeAmount := ptnjson.Ptn2Dao(gasFee)
 	pay1, usedUtxo1, err := createPayment(fromAddr, toAddr, ptnAmount, feeAmount, utxosPTN)
@@ -180,7 +180,7 @@ func (s *PrivateWalletAPI) buildRawTransferTx(tokenId, from, to string, amount, 
 	//构造转移Token的Message1
 	utxosToken, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, from, tokenId)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Select utxo err")
+		return nil, nil, fmt.Errorf("SelectUtxoFromDagAndPool token utxo err")
 	}
 	tokenAmount := ptnjson.JsonAmt2AssetAmt(tokenAsset, amount)
 	pay2, usedUtxo2, err := createPayment(fromAddr, toAddr, tokenAmount, 0, utxosToken)
@@ -189,7 +189,7 @@ func (s *PrivateWalletAPI) buildRawTransferTx(tokenId, from, to string, amount, 
 	}
 	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pay2))
 	//for _, u := range usedUtxo2 {
-        usedUtxo1 = append(usedUtxo1, usedUtxo2...)
+	usedUtxo1 = append(usedUtxo1, usedUtxo2...)
 	//}
 	return tx, usedUtxo1, nil
 }
@@ -204,7 +204,7 @@ func createPayment(fromAddr, toAddr common.Address, amountToken uint64, feePTN u
 
 	utxosPTNTaken, change, err := core.Select_utxo_Greedy(utxoPTNView, amountToken+feePTN)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Select utxo err")
+		return nil, nil, fmt.Errorf("createPayment Select_utxo_Greedy utxo err")
 	}
 	usedUtxo := []*modules.UtxoWithOutPoint{}
 	//ptn payment
@@ -598,13 +598,13 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 		return common.Hash{}, err
 	}
 	poolTxs, _ := s.b.GetPoolTxsByAddr(proofTransactionGenParams.From)
-        //if len(poolTxs) == 0 {
-	    //return common.Hash{}, fmt.Errorf("Select utxo err")
+	//if len(poolTxs) == 0 {
+	//return common.Hash{}, fmt.Errorf("Select utxo err")
 	//} // end of pooltx is not nil
 	utxos, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, proofTransactionGenParams.From, dagconfig.DagConfig.GasToken)
-        if err != nil {
-                return common.Hash{}, fmt.Errorf("SelectUtxoFromDagAndPool err")
-        }
+	if err != nil {
+		return common.Hash{}, fmt.Errorf("SelectUtxoFromDagAndPool err")
+	}
 	//dagOutpoint := []modules.OutPoint{}
 	//ptn := dagconfig.DagConfig.GasToken
 	//for _, json := range utxoJsons {
@@ -623,7 +623,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	utxoList, _ := convertUtxoMap2Utxos(utxos)
 	taken_utxo, change, err := core.Select_utxo_Greedy(utxoList, daoAmount)
 	if err != nil {
-		return common.Hash{}, fmt.Errorf("Select utxo err")
+		return common.Hash{}, fmt.Errorf("CreateProofTransaction Select_utxo_Greedy utxo err")
 	}
 
 	var inputs []ptnjson.TransactionInput
@@ -697,16 +697,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 		}
 	}
 	//const max = uint64(time.Duration(math.MaxInt64) / time.Second)
-	var duration *uint64
-	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
-	var d time.Duration
-	if duration == nil {
-		d = 300 * time.Second
-	} else if *duration > max {
-		return common.Hash{}, err
-	} else {
-		d = time.Duration(*duration) * time.Second
-	}
+	d := 300 * time.Second
 
 	ks := s.b.GetKeyStore()
 	err = ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
@@ -1152,7 +1143,7 @@ func RandFromString(value string) (decimal.Decimal, error) {
 	result := decimal.Decimal{}
 	rand_number := decimal.Decimal{}
 	r := rand.Int()
-        rr:=int64(r)
+	rr := int64(r)
 	rd := big.NewInt(rr)
 	for {
 		//r = rand.Int()
@@ -1219,9 +1210,9 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 		utxoLockScripts[utxo.OutPoint] = utxo.PkScript
 	}
 	fromAddr, err := common.StringToAddress(from)
-        if err != nil {
-                return common.Hash{}, err
-        }
+	if err != nil {
+		return common.Hash{}, err
+	}
 	err = s.unlockKS(fromAddr, password, duration)
 	if err != nil {
 		return common.Hash{}, err
@@ -1268,9 +1259,9 @@ func (s *PrivateWalletAPI) CreateProofOfExistenceTx(ctx context.Context, addr st
 		utxoLockScripts[utxo.OutPoint] = utxo.PkScript
 	}
 	fromAddr, err := common.StringToAddress(addr)
-        if err != nil {
-                return common.Hash{}, err
-        }
+	if err != nil {
+		return common.Hash{}, err
+	}
 	err = s.unlockKS(fromAddr, password, nil)
 	if err != nil {
 		return common.Hash{}, err
@@ -1332,9 +1323,9 @@ func (s *PrivateWalletAPI) CreateTraceability(ctx context.Context, addr, uid, sy
 		utxoLockScripts[utxo.OutPoint] = utxo.PkScript
 	}
 	fromAddr, err := common.StringToAddress(addr)
-        if err != nil {
-                return common.Hash{}, err
-        }
+	if err != nil {
+		return common.Hash{}, err
+	}
 	err = s.unlockKS(fromAddr, password, nil)
 	if err != nil {
 		return common.Hash{}, err
@@ -1612,8 +1603,8 @@ func readTxs(path string) ([]string, error) {
 		line = strings.Replace(line, "\r\n", "", -1)
 		txs = append(txs, line)
 	}
-	if len(txs) > 4000 {
-		return txs[2000:4000], err
+	if len(txs) > 5000 {
+		return txs[:5000], err
 	}
 	return txs, err
 }

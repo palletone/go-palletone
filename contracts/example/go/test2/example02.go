@@ -90,6 +90,7 @@ func (t *SimpleChaincode) invoke(stub shim.ChaincodeStubInterface, args []string
 	var X int          // Transaction value
 	var err error
 
+	_ = stub
 	//glh
 	return shim.Success([]byte("example 2 invoke mock success"))
 
@@ -148,7 +149,7 @@ func (t *SimpleChaincode) delete(stub shim.ChaincodeStubInterface, args []string
 	if len(args) != 1 {
 		return shim.Error("Incorrect number of arguments. Expecting 1")
 	}
-
+	_ = stub
 	//glh
 	return shim.Success([]byte("example 2 delete mock success"))
 
@@ -167,7 +168,7 @@ func (t *SimpleChaincode) delete(stub shim.ChaincodeStubInterface, args []string
 func (t *SimpleChaincode) query(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	var A string // Entities
 	var err error
-
+	_ = stub
 	//glh
 	return shim.Success([]byte("example 2 query mock success"))
 
