@@ -53,6 +53,7 @@ func NewMediatorInfo() *MediatorInfo {
 func MediatorToInfo(md *core.Mediator) *MediatorInfo {
 	mi := NewMediatorInfo()
 	mi.AddStr = md.Address.Str()
+	mi.RewardAdd = md.RewardAdd.Str()
 	mi.InitPubKey = core.PointToStr(md.InitPubKey)
 	mi.Node = md.Node.String()
 	*mi.MediatorApplyInfo = *md.MediatorApplyInfo
@@ -64,6 +65,7 @@ func MediatorToInfo(md *core.Mediator) *MediatorInfo {
 func (mi *MediatorInfo) InfoToMediator() *core.Mediator {
 	md := core.NewMediator()
 	md.Address, _ = core.StrToMedAdd(mi.AddStr)
+	md.RewardAdd, _ = core.StrToMedAdd(mi.RewardAdd)
 	md.InitPubKey, _ = core.StrToPoint(mi.InitPubKey)
 	md.Node, _ = core.StrToMedNode(mi.Node)
 	*md.MediatorApplyInfo = *mi.MediatorApplyInfo
