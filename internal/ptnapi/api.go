@@ -91,6 +91,15 @@ type JuryList struct {
 	Addr []string `json:"account"`
 }
 
+type ContractFeeLevelRsp struct {
+	ContractTxTimeoutUnitFee  uint64  `json:"contract_tx_timeout_unit_fee(ptn)"`
+	ContractTxSizeUnitFee     uint64  `json:"contract_tx_size_unit_fee(ptn)"`
+	ContractTxInstallFeeLevel float64 `json:"contract_tx_install_fee_level"`
+	ContractTxDeployFeeLevel  float64 `json:"contract_tx_deploy_fee_level"`
+	ContractTxInvokeFeeLevel  float64 `json:"contract_tx_invoke_fee_level"`
+	ContractTxStopFeeLevel    float64 `json:"contract_tx_stop_fee_level"`
+}
+
 // PublicTxPoolAPI offers and API for the transaction pool. It only operates on data that is non confidential.
 type PublicTxPoolAPI struct {
 	b Backend

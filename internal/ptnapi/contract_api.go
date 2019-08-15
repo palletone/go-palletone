@@ -521,3 +521,16 @@ func (s *PrivateContractAPI) SysConfigContractInvoke(ctx context.Context, from, 
 func (s *PublicContractAPI) GetContractState(contractid []byte, key string) ([]byte, *modules.StateVersion, error) {
 	return s.b.GetContractState(contractid, key)
 }
+
+func (s *PublicContractAPI) GetContractFeeLevel(ctx context.Context) (*ContractFeeLevelRsp, error) {
+	cp := s.b.GetChainParameters()
+	feeLevel := &ContractFeeLevelRsp{
+		ContractTxTimeoutUnitFee:  cp.ContractTxTimeoutUnitFee,
+		ContractTxSizeUnitFee:     cp.ContractTxSizeUnitFee,
+		ContractTxInstallFeeLevel: cp.ContractTxInstallFeeLevel,
+		ContractTxDeployFeeLevel:  cp.ContractTxDeployFeeLevel,
+		ContractTxInvokeFeeLevel:  cp.ContractTxInvokeFeeLevel,
+		ContractTxStopFeeLevel:    cp.ContractTxStopFeeLevel,
+	}
+	return feeLevel, nil
+}

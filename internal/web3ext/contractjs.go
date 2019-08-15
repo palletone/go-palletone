@@ -152,6 +152,10 @@ web3._extend({
 			name: 'listAllContracts',
 			getter: 'contract_listAllContracts'
 		}),
+		new web3._extend.Property({
+			name: 'getContractFeeLevel',
+			getter: 'contract_getContractFeeLevel'
+		}),
 	]
 });
 `
