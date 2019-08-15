@@ -888,7 +888,7 @@ func (srv *Server) listenLoop() {
 		}
 
 		if tcp, ok := fd.RemoteAddr().(*net.TCPAddr); ok {
-			if ip, err := tcp.IP.MarshalText(); err == nil {
+			if ip, err := tcp.IP.MarshalText(); err == nil && srv.alienRestrict != nil {
 				if _, err = srv.alienRestrict.Get(ip); err != nil {
 				} else {
 					log.Debug("Rejected conn (blacklisted in AlienRestrict)", "addr", fd.RemoteAddr())
