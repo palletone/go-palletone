@@ -95,7 +95,7 @@ func GetAllResourceUsageByContainerName(name string) (*docker.Stats, error) {
 		stats := resultStats[0]
 		return stats, nil
 	}
-	return nil, fmt.Errorf("get container stats error")
+	//return nil, fmt.Errorf("get container stats error")
 }
 func GetCPUUsageTotalUsage(stats *docker.Stats) (uint64, error) {
 	return stats.CPUStats.CPUUsage.TotalUsage, nil
