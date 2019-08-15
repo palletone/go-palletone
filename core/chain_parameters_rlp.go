@@ -72,7 +72,7 @@ func (cp *ChainParameters) getCPT() *ChainParametersTemp {
 		//DepositDailyReward: strconv.FormatInt(int64(cp.PledgeDailyReward), 10),
 		//DepositPeriod:      strconv.FormatInt(int64(cp.DepositPeriod), 10),
 
-		UccMemory:    strconv.FormatInt(int64(cp.UccMemory), 10),
+		UccMemory:    strconv.FormatInt(cp.UccMemory, 10),
 		UccCpuShares: strconv.FormatInt(int64(cp.UccCpuShares), 10),
 		UccCpuQuota:  strconv.FormatInt(int64(cp.UccCpuQuota), 10),
 		UccDisk:      strconv.FormatInt(int64(cp.UccDisk), 10),
@@ -130,7 +130,7 @@ func (cpt *ChainParametersTemp) getCP(cp *ChainParameters) error {
 	if err != nil {
 		return err
 	}
-	cp.UccCpuQuota = int64(UccCpuQuota)
+	cp.UccCpuQuota = UccCpuQuota
 
 	UccDisk, err := strconv.ParseInt(cpt.UccDisk, 10, 64)
 	if err != nil {

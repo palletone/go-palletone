@@ -309,18 +309,18 @@ func (ec *Client) SubscribeFilterLogs(ctx context.Context, q palletone.FilterQue
 	return ec.c.EthSubscribe(ctx, ch, "logs", toFilterArg(q))
 }
 */
-func toFilterArg(q palletone.FilterQuery) interface{} {
-	arg := map[string]interface{}{
-		"fromBlock": toBlockNumArg(q.FromBlock),
-		"toBlock":   toBlockNumArg(q.ToBlock),
-		"address":   q.Addresses,
-		"topics":    q.Topics,
-	}
-	if q.FromBlock == nil {
-		arg["fromBlock"] = "0x0"
-	}
-	return arg
-}
+// func toFilterArg(q palletone.FilterQuery) interface{} {
+// 	arg := map[string]interface{}{
+// 		"fromBlock": toBlockNumArg(q.FromBlock),
+// 		"toBlock":   toBlockNumArg(q.ToBlock),
+// 		"address":   q.Addresses,
+// 		"topics":    q.Topics,
+// 	}
+// 	if q.FromBlock == nil {
+// 		arg["fromBlock"] = "0x0"
+// 	}
+// 	return arg
+// }
 
 // Pending State
 
@@ -433,7 +433,7 @@ func (ec *Client) TransferToken(ctx context.Context, asset string, from string, 
 
 func (ec *Client) walletCreateTransaction(ctx context.Context, from string, to string, amount uint64, fee uint64) (string, error) {
 	var result string
-	err := ec.c.CallContext(ctx, &result, "wallet_createRawTransaction", from, to, amount)
+	err := ec.c.CallContext(ctx, &result, "wallet_createRawTransaction", from, to, amount, fee)
 	return result, err
 }
 func (ec *Client) CreateRawTransaction(ctx context.Context, params string) (string, error) {

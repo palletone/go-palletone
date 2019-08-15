@@ -78,7 +78,7 @@ func Select_utxo_Greedy(utxos Utxos, amount uint64) (Utxos, uint64, error) {
 	}
 	if len(lessers) > 0 {
 
-		sort.Sort(Utxos(lessers))
+		sort.Sort(lessers)
 		for _, utxo := range lessers {
 			accum += utxo.GetAmount()
 			logPickedAmt += fmt.Sprintf("%d,", utxo.GetAmount())
