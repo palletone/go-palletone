@@ -171,13 +171,14 @@ type OldMediatorApplyInfo struct {
 }
 
 func (m *Migration100_101) upgradeGP() error {
-	oldGp := OldGlobalProperty{}
+	oldGp := GlobalProperty100{}
 	err := storage.RetrieveFromRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, &oldGp)
 	if err != nil {
 		log.Errorf(err.Error())
 		return err
 	}
-	newData := &modules.GlobalPropertyTemp{}
+
+	newData := &GlobalPropertyTemp101{}
 	newData.ActiveJuries = oldGp.ActiveJuries
 	newData.ActiveMediators = oldGp.ActiveMediators
 	newData.PrecedingMediators = oldGp.PrecedingMediators
@@ -244,20 +245,20 @@ func (m *Migration100_101) upgradeGP() error {
 	return nil
 }
 
-type OldGlobalProperty struct {
-	OldGlobalPropBase
+type GlobalProperty100 struct {
+	GlobalPropBase100
 
 	ActiveJuries       []common.Address
 	ActiveMediators    []common.Address
 	PrecedingMediators []common.Address
 }
 
-type OldGlobalPropBase struct {
-	ImmutableParameters core.ImmutableChainParameters // 不可改变的区块链网络参数
-	ChainParameters     OldChainParameters            // 区块链网络参数
+type GlobalPropBase100 struct {
+	ImmutableParameters ImmutableChainParameters100 // 不可改变的区块链网络参数
+	ChainParameters     ChainParameters100          // 区块链网络参数
 }
 
-type OldChainParameters struct {
+type ChainParameters100 struct {
 	core.ChainParametersBase
 
 	DepositDailyReward string

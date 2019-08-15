@@ -76,27 +76,41 @@ func (m *Migration101_102) upgradeGP() error {
 	newData.ImmutableParameters.UccNetworkMode = oldGp.ImmutableParameters.UccNetworkMode
 	newData.ImmutableParameters.UccOOMKillDisable = oldGp.ImmutableParameters.UccOOMKillDisable
 
+	err = storage.StoreToRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, newData)
+	if err != nil {
+		log.Errorf(err.Error())
+		return err
+	}
+
 	return nil
 }
 
 type OldGlobalProperty101 struct {
-	OldGlobalPropBase101
+	GlobalPropBase101
 
 	ActiveJuries       []common.Address
 	ActiveMediators    []common.Address
 	PrecedingMediators []common.Address
 }
 
-type OldGlobalPropBase101 struct {
-	ImmutableParameters OldImmutableChainParameters101 // 不可改变的区块链网络参数
-	ChainParameters     core.ChainParameters           // 区块链网络参数
+type GlobalPropBase101 struct {
+	ImmutableParameters ImmutableChainParameters100 // 不可改变的区块链网络参数
+	ChainParameters     core.ChainParameters        // 区块链网络参数
 }
 
-type OldImmutableChainParameters101 struct {
+type ImmutableChainParameters100 struct {
 	MinimumMediatorCount uint8    `json:"min_mediator_count"`    // 最小活跃mediator数量
 	MinMediatorInterval  uint8    `json:"min_mediator_interval"` // 最小的生产槽间隔时间
 	UccPrivileged        bool     `json:"ucc_privileged"`        // 防止容器以root权限运行
 	UccCapDrop           []string `json:"ucc_cap_drop"`          // 确保容器以最小权限运行
 	UccNetworkMode       string   `json:"ucc_network_mode"`      // 容器运行网络模式
 	UccOOMKillDisable    bool     `json:"ucc_oom_kill_disable"`  // 是否内存使用量超过上限时系统杀死进程
+}
+
+type GlobalPropertyTemp101 struct {
+	GlobalPropBase101
+
+	ActiveJuries       []common.Address
+	ActiveMediators    []common.Address
+	PrecedingMediators []common.Address
 }
