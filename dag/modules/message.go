@@ -296,10 +296,10 @@ type ContractError struct {
 
 //node election
 type ElectionInf struct {
-	Etype     byte        `json:"election_type"`      //vrf type, if set to 1, it is the assignation node
-	AddrHash  common.Hash `json:"addr_hash"`  //common.Address将地址hash后，返回给请求节点
-	Proof     []byte      `json:"proof"`      //vrf proof
-	PublicKey []byte      `json:"public_key"` //alg.PublicKey, rlp not support
+	EType     byte        `json:"election_type"` //vrf type, if set to 1, it is the assignation node
+	AddrHash  common.Hash `json:"addr_hash"`     //common.Address将地址hash后，返回给请求节点
+	Proof     []byte      `json:"proof"`         //vrf proof
+	PublicKey []byte      `json:"public_key"`    //alg.PublicKey, rlp not support
 }
 
 type ElectionNode struct {
