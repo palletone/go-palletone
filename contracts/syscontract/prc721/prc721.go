@@ -158,7 +158,7 @@ func getSymbols(stub shim.ChaincodeStubInterface, symbol string) *TokenInfo {
 
 func getSymbolsAll(stub shim.ChaincodeStubInterface) []TokenInfo {
 	KVs, _ := stub.GetStateByPrefix(symbolsKey)
-	var tkInfos []TokenInfo
+	tkInfos := make([]TokenInfo, 0, len(KVs))
 	for _, oneKV := range KVs {
 		tkInfo := TokenInfo{}
 		err := json.Unmarshal(oneKV.Value, &tkInfo)
@@ -268,7 +268,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(jsonResp)
 	}
 	//type
-	idType := dm.UniqueIdType_Null
+	var idType dm.UniqueIdType
 	if args[2] == "1" {
 		idType = dm.UniqueIdType_Sequence
 	} else if args[2] == "2" {
@@ -587,7 +587,7 @@ func existTokenID(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(jsonResp4)
 	}
 	//
-	valBytes, err := stub.GetState(assetStr)
+	valBytes, _ := stub.GetState(assetStr)
 	if len(valBytes) == 0 {
 		return shim.Success([]byte("False"))
 	}
@@ -613,7 +613,7 @@ func setTokenURI(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	if err != nil {
 		return shim.Error(jsonResp5)
 	}
-	tokens, err := stub.GetTokenBalance(invokeAddr.String(), asset)
+	tokens, _ := stub.GetTokenBalance(invokeAddr.String(), asset)
 	if len(tokens) == 0 {
 		jsonResp := "{\"Error\":\"Failed to get the balance of invoke address\"}"
 		return shim.Error(jsonResp)
@@ -694,7 +694,7 @@ func oneToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 
 func allToken(stub shim.ChaincodeStubInterface) pb.Response {
 	tkInfos := getSymbolsAll(stub)
-	var tkIDInfos []TokenIDInfo
+	tkIDInfos := make([]TokenIDInfo, 0, len(tkInfos))
 	tkIDs := []string{"Only return simple information"}
 	for _, tkInfo := range tkInfos {
 		tkIDInfo := TokenIDInfo{tkInfo.Symbol, tkInfo.CreateAddr,
