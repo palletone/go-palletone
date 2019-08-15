@@ -57,7 +57,7 @@ func prettyPrint(vm *otto.Otto, value otto.Value, w io.Writer) {
 }
 
 // prettyError writes err to standard output.
-func prettyError(vm *otto.Otto, err error, w io.Writer) {
+func prettyError( err error, w io.Writer) {
 	failure := err.Error()
 	if ottoErr, ok := err.(*otto.Error); ok {
 		failure = ottoErr.String()

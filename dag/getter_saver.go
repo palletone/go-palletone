@@ -235,13 +235,13 @@ func (d *Dag) GetMediatorInfo(address common.Address) *modules.MediatorInfo {
 
 func (d *Dag) JuryCount() uint {
 	//todo test
-	return 20
+	//return 20
 
-	//juryList, err := d.unstableStateRep.GetJuryCandidateList()
-	//if err != nil {
-	//	return 0
-	//}
-	//return uint(len(juryList))
+	juryList, err := d.unstableStateRep.GetJuryCandidateList()
+	if err != nil {
+		return 0
+	}
+	return uint(len(juryList))
 }
 
 func (d *Dag) GetActiveJuries() []common.Address {
@@ -251,9 +251,9 @@ func (d *Dag) GetActiveJuries() []common.Address {
 }
 
 func (d *Dag) IsActiveJury(addr common.Address) bool {
-	return true //todo
+	//return true //todo
 
-	//return d.unstableStateRep.IsJury(addr)
+	return d.unstableStateRep.IsJury(addr)
 }
 
 func (d *Dag) GetContractDevelopers() ([]common.Address, error) {
@@ -261,9 +261,8 @@ func (d *Dag) GetContractDevelopers() ([]common.Address, error) {
 }
 
 func (d *Dag) IsContractDeveloper(addr common.Address) bool {
-	return true //todo
-
-	//return d.unstableStateRep.IsContractDeveloper(addr)
+	//return true //todo
+	return d.unstableStateRep.IsContractDeveloper(addr)
 }
 
 func (d *Dag) GetUnitHash(number *modules.ChainIndex) (common.Hash, error) {

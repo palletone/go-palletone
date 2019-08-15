@@ -180,7 +180,7 @@ func (p *Processor) electionEventIsProcess(event *ElectionEvent) (common.Hash, b
 	case ELECTION_EVENT_VRF_RESULT:
 		evt := event.Event.(*ElectionResultEvent)
 		reqId = evt.ReqId
-		if evt.Ele.Etype != 1 {
+		if evt.Ele.EType != 1 {
 			if !checkJuryCountValid(evt.JuryCount, jCnt) {
 				return reqId, false
 			}
@@ -192,7 +192,7 @@ func (p *Processor) electionEventIsProcess(event *ElectionEvent) (common.Hash, b
 		evt := event.Event.(*ElectionSigRequestEvent)
 		reqId = evt.ReqId
 		for _, e := range evt.Ele {
-			if e.Etype != 1 {
+			if e.EType != 1 {
 				if !checkJuryCountValid(evt.JuryCount, jCnt) {
 					return reqId, false
 				}
@@ -286,7 +286,7 @@ func (p *Processor) checkElectionSigRequestEventValid(evt *ElectionSigRequestEve
 	}
 	etor.weight = electionWeightValue(etor.total)
 	for i, e := range evt.Ele {
-		if e.Etype == 1 { //todo
+		if e.EType == 1 { //todo
 			continue
 		}
 		//验证proof是否通过
@@ -370,7 +370,7 @@ func (p *Processor) processElectionRequestEvent(reqEvt *ElectionRequestEvent) (e
 		rstEvt := &ElectionResultEvent{
 			ReqId:     reqEvt.ReqId,
 			JuryCount: reqEvt.JuryCount,
-			Ele:       modules.ElectionInf{AddrHash: addrHash, Proof: proof, PublicKey: pubKey},
+			Ele:       modules.ElectionInf{EType: 0, AddrHash: addrHash, Proof: proof, PublicKey: pubKey},
 		}
 		log.Debugf("[%s]processElectionRequestEvent, ok", shortId(reqId.String()))
 		go p.ptn.ElectionBroadcast(ElectionEvent{EType: ELECTION_EVENT_VRF_RESULT, Event: rstEvt}, true)

@@ -604,7 +604,7 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele *modules.Ele
 			}
 		}
 		//检查指定节点模式下，是否为jjh请求地址
-		if e.Etype == 1 {
+		if e.EType == 1 {
 			jjhAd := p.dag.GetChainParameters().FoundationAddress
 			if jjhAd == reqAddr.Str() { //true
 				log.Debugf("[%s]isValidateElection, e.EType == 1, ok", shortId(reqId.String()))
@@ -720,8 +720,8 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 	return false
 }
 
-func (p *Processor) createContractTxReqToken(contractId, from, to, toToken common.Address, daoAmount, daoFee,
-daoAmountToken uint64, assetToken string, msg *modules.Message) (common.Hash, *modules.Transaction, error) {
+func (p *Processor) createContractTxReqToken(contractId, from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64,
+	assetToken string, msg *modules.Message) (common.Hash, *modules.Transaction, error) {
 	tx, _, err := p.dag.CreateTokenTransaction(from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken,
 		msg, p.ptn.TxPool())
 	if err != nil {
@@ -862,7 +862,7 @@ func (p *Processor) getContractAssignElectionList(tx *modules.Transaction) ([]mo
 	}
 	//add election node form template install assignation
 	for i := 0; i < num; i++ {
-		e := modules.ElectionInf{Etype: 1, AddrHash: addrHash[i]}
+		e := modules.ElectionInf{EType: 1, AddrHash: addrHash[i]}
 		eels = append(eels, e)
 	}
 

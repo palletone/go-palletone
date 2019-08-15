@@ -29,15 +29,16 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/mclock"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-
 	"github.com/palletone/go-palletone/common/p2p/discv5"
 	"github.com/palletone/go-palletone/common/p2p/nat"
 	"github.com/palletone/go-palletone/common/p2p/netutil"
+	"github.com/palletone/go-palletone/configure"
 )
 
 const (
@@ -145,9 +146,6 @@ type Config struct {
 	// If EnableMsgEvents is set then the server will emit PeerEvents
 	// whenever a message is sent to or received from a peer
 	EnableMsgEvents bool
-
-	// Genesis hash is set udp discover.
-	//GenesisHash string
 }
 
 var DefaultConfig = Config{
@@ -200,11 +198,13 @@ type Server struct {
 	delpeer       chan peerDrop
 	loopWG        sync.WaitGroup // loop, listenLoop
 	peerFeed      event.Feed
-	// log           log.Plogger
 
 	// append by albert·gou, for all active mediator peers connect to each other
 	addtrusted    chan *discover.Node
 	removetrusted chan *discover.Node
+
+	// AlienRestrict black list
+	alienRestrict *freecache.Cache //palletcache.ICache
 }
 
 type peerOpFunc func(map[discover.NodeID]*Peer)
@@ -441,6 +441,19 @@ func (s *sharedUDPConn) Close() error {
 	return nil
 }
 
+func (srv *Server) initAlien() (err error) {
+	srv.alienRestrict = freecache.NewCache(50 * 1024 * 1024)
+	for _, strnode := range configure.AlienRestrict {
+		pnode, err := discover.ParseNode(strnode)
+		if err != nil {
+			log.Error("p2p server initAlien URL invalid", "pnode", strnode, "err", err)
+			continue
+		}
+		srv.alienRestrict.Set([]byte(pnode.ID.TerminalString()), []byte(pnode.String()), 0)
+	}
+	return nil
+}
+
 // Start starts running the server.
 // Servers can not be re-used after stopping.
 func (srv *Server) Start() (err error) {
@@ -450,11 +463,6 @@ func (srv *Server) Start() (err error) {
 		return errors.New("server already running")
 	}
 	srv.running = true
-	// srv.Logger = srv.Config.Logger.
-	// if *srv.Logger == nil {
-	// 	srv.Logger = *log.New()
-	// }
-	//srv.log = *log.New()
 	log.Info("Starting P2P networking")
 
 	// static fields
@@ -479,6 +487,7 @@ func (srv *Server) Start() (err error) {
 	srv.addtrusted = make(chan *discover.Node)
 	srv.removetrusted = make(chan *discover.Node)
 
+	srv.initAlien()
 	var (
 		conn      *net.UDPConn
 		sconn     *sharedUDPConn
@@ -517,12 +526,13 @@ func (srv *Server) Start() (err error) {
 	// 发起UDP请求获取结点列表（内部会启动goroutine）
 	if !srv.NoDiscovery {
 		cfg := discover.Config{
-			PrivateKey:   srv.PrivateKey,
-			AnnounceAddr: realaddr,
-			NodeDBPath:   srv.NodeDatabase,
-			NetRestrict:  srv.NetRestrict,
-			Bootnodes:    srv.BootstrapNodes,
-			Unhandled:    unhandled,
+			PrivateKey:    srv.PrivateKey,
+			AnnounceAddr:  realaddr,
+			NodeDBPath:    srv.NodeDatabase,
+			NetRestrict:   srv.NetRestrict,
+			Bootnodes:     srv.BootstrapNodes,
+			Unhandled:     unhandled,
+			AlienRestrict: srv.alienRestrict,
 		}
 		ntab, err := discover.ListenUDP(conn, cfg)
 		if err != nil {
