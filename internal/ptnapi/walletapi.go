@@ -1609,5 +1609,5 @@ func readTxs(path string) ([]string, error) {
 		return txs[:5000], err
 	}
 
-	return txs, err
+	// return txs, err
 }

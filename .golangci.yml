@@ -246,13 +246,10 @@ issues:
         text: "File is not `gofmt`-ed with `-s`"
       - linters:
         - interfacer
-        text: "can be `fmt.Stringer`"
+        text: "can be `fmt.Stringer`|can be `github.com/golang/protobuf/proto.Message`"
       - linters:
         - staticcheck
         text: "SA1019:"
-      - linters:
-        - interfacer
-        text: "can be `github.com/golang/protobuf/proto.Message`"
 #      - linters:
 #        - staticcheck
 #        text: "this value of `-s` is never used"
