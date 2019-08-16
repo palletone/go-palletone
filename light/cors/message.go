@@ -18,7 +18,6 @@
 package cors
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/palletone/go-palletone/common"
@@ -197,30 +196,17 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 			log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg next", nextIndex, "current:", currentIndex)
 
 			if nextIndex <= currentIndex {
-				infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
-				log.Warn("Cors ProtocolManager GetBlockHeaders skip overflow attack", "current", currentIndex, "skip", query.Skip,
-					"next", nextIndex, "attacker", infos)
 				unknown = true
 			} else {
 				number.Index = nextIndex
-				log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg index.Index:", number.Index)
 				if header, _ := pm.dag.GetHeaderByNumber(number); header != nil {
 					hashs := pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)
-					log.Debug("Cors ProtocolManager", "GetUnitHashesFromHash len(hashs):", len(hashs),
-						"header.index:", header.Number.Index, "header.hash:", header.Hash().String(), "query.Skip+1",
-						query.Skip+1)
 					if len(hashs) > int(query.Skip) && (hashs[query.Skip] == query.Origin.Hash) {
 						query.Origin.Hash = header.Hash()
 					} else {
-						log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg unknown = true; "+
-							"pm.dag.GetUnitHashesFromHash not equal origin hash.", "")
-						log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg header.Hash()", header.Hash(),
-							"query.Skip+1:", query.Skip+1, "query.Origin.Hash:", query.Origin.Hash)
 						unknown = true
 					}
 				} else {
-					log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg unknown = true; pm.dag.GetHeaderByNumber "+
-						"not found. Index:", number.Index)
 					unknown = true
 				}
 			}
