@@ -724,6 +724,9 @@ func (tab *Table) addIP(b *bucket, ip net.IP) bool {
 	if netutil.IsLAN(ip) {
 		return true
 	}
+	if len(ip) == 0 {
+		return true
+	}
 	if !tab.ips.Add(ip) {
 		log.Debug("IP exceeds table limit", "ip", ip)
 		return false
