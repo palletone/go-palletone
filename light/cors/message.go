@@ -189,22 +189,22 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 			// Hash based traversal towards the leaf block
 			log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg ", "Hash based towards the leaf block")
 			var (
-				current = origin.Number.Index
-				next    = current + query.Skip + 1
-				index   = origin.Number
+				currentIndex = origin.Number.Index
+				nextIndex    = currentIndex + query.Skip + 1
+				number       = origin.Number
 			)
 
-			log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg next", next, "current:", current)
+			log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg next", nextIndex, "current:", currentIndex)
 
-			if next <= current {
+			if nextIndex <= currentIndex {
 				infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
-				log.Warn("Cors ProtocolManager GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip,
-					"next", next, "attacker", infos)
+				log.Warn("Cors ProtocolManager GetBlockHeaders skip overflow attack", "current", currentIndex, "skip", query.Skip,
+					"next", nextIndex, "attacker", infos)
 				unknown = true
 			} else {
-				index.Index = next
-				log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg index.Index:", index.Index)
-				if header, _ := pm.dag.GetHeaderByNumber(index); header != nil {
+				number.Index = nextIndex
+				log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg index.Index:", number.Index)
+				if header, _ := pm.dag.GetHeaderByNumber(number); header != nil {
 					hashs := pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)
 					log.Debug("Cors ProtocolManager", "GetUnitHashesFromHash len(hashs):", len(hashs),
 						"header.index:", header.Number.Index, "header.hash:", header.Hash().String(), "query.Skip+1",
@@ -220,7 +220,7 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 					}
 				} else {
 					log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg unknown = true; pm.dag.GetHeaderByNumber "+
-						"not found. Index:", index.Index)
+						"not found. Index:", number.Index)
 					unknown = true
 				}
 			}
