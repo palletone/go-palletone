@@ -1,0 +1,49 @@
+version: '2'
+
+services:
+  mediator1:
+    container_name: mediator1
+    image: palletone/mediator
+    volumes:
+     - ./scripts/node1/ptn-genesis.json:/palletone/mediator/ptn-genesis.json
+     - ./scripts/node1/ptn-config.toml:/palletone/mediator/ptn-config.toml
+     - ./scripts/node1/palletone:/palletone/mediator/palletone
+    restart: always
+    network_mode: "host"
+    command: ./gptn --noProduce --staleProduce
+  mediator2:
+    container_name: mediator2
+    image: palletone/mediator
+    volumes:
+     - ./scripts/node2/ptn-genesis.json:/palletone/mediator/ptn-genesis.json
+     - ./scripts/node2/ptn-config.toml:/palletone/mediator/ptn-config.toml
+     - ./scripts/node2/palletone:/palletone/mediator/palletone
+    restart: always
+    network_mode: "host"
+  mediator3:
+    container_name: mediator3
+    image: palletone/mediator
+    volumes:
+     - ./scripts/node3/ptn-genesis.json:/palletone/mediator/ptn-genesis.json
+     - ./scripts/node3/ptn-config.toml:/palletone/mediator/ptn-config.toml
+     - ./scripts/node3/palletone:/palletone/mediator/palletone
+    restart: always
+    network_mode: "host"
+  mediator4:
+    container_name: mediator4
+    image: palletone/mediator
+    volumes:
+     - ./scripts/node4/ptn-genesis.json:/palletone/mediator/ptn-genesis.json
+     - ./scripts/node4/ptn-config.toml:/palletone/mediator/ptn-config.toml
+     - ./scripts/node4/palletone:/palletone/mediator/palletone
+    restart: always
+    network_mode: "host"
+  mediator5:
+    container_name: mediator5
+    image: palletone/mediator
+    volumes:
+     - ./scripts/node5/ptn-genesis.json:/palletone/mediator/ptn-genesis.json
+     - ./scripts/node5/ptn-config.toml:/palletone/mediator/ptn-config.toml
+     - ./scripts/node5/palletone:/palletone/mediator/palletone
+    restart: always
+    network_mode: "host"
