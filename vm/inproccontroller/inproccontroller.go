@@ -72,11 +72,11 @@ type InprocVM struct {
 	//id string
 }
 
-func (vm *InprocVM) getInstance(ctxt context.Context, ipctemplate *inprocContainer, instName string, args []string, env []string) (*inprocContainer, error) {
+func (vm *InprocVM) getInstance(_ context.Context, ipctemplate *inprocContainer, instName string, args []string, env []string) (*inprocContainer, error) {
 	ipc := instRegistry[instName]
 	if ipc != nil {
 		log.Warnf("chaincode instance exists for %s", instName)
-		return ipc, nil
+		return ipc, fmt.Errorf("chaincode instance exists for %s", instName)
 	}
 	ipc = &inprocContainer{args: args, env: env, chaincode: ipctemplate.chaincode, stopChan: make(chan struct{})}
 	instRegistry[instName] = ipc

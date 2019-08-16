@@ -72,24 +72,24 @@ func (cp *ChainParameters) getCPT() *ChainParametersTemp {
 		//DepositDailyReward: strconv.FormatInt(int64(cp.PledgeDailyReward), 10),
 		//DepositPeriod:      strconv.FormatInt(int64(cp.DepositPeriod), 10),
 
-		UccMemory:    strconv.FormatInt(int64(cp.UccMemory), 10),
-		UccCpuShares: strconv.FormatInt(int64(cp.UccCpuShares), 10),
-		UccCpuQuota:  strconv.FormatInt(int64(cp.UccCpuQuota), 10),
-		UccDisk:      strconv.FormatInt(int64(cp.UccDisk), 10),
+		UccMemory:    strconv.FormatInt(cp.UccMemory, 10),
+		UccCpuShares: strconv.FormatInt(cp.UccCpuShares, 10),
+		UccCpuQuota:  strconv.FormatInt(cp.UccCpuQuota, 10),
+		UccDisk:      strconv.FormatInt(cp.UccDisk, 10),
 
 		TempUccMemory:    strconv.FormatInt(cp.TempUccMemory, 10),
-		TempUccCpuShares: strconv.FormatInt(int64(cp.TempUccCpuShares), 10),
-		TempUccCpuQuota:  strconv.FormatInt(int64(cp.TempUccCpuQuota), 10),
+		TempUccCpuShares: strconv.FormatInt(cp.TempUccCpuShares, 10),
+		TempUccCpuQuota:  strconv.FormatInt(cp.TempUccCpuQuota, 10),
 
 		ContractSignatureNum: strconv.FormatInt(int64(cp.ContractSignatureNum), 10),
 		ContractElectionNum:  strconv.FormatInt(int64(cp.ContractElectionNum), 10),
 
 		ContractTxTimeoutUnitFee:  strconv.FormatUint(cp.ContractTxTimeoutUnitFee, 10),
-		ContractTxSizeUnitFee:     strconv.FormatUint(uint64(cp.ContractTxSizeUnitFee), 10),
-		ContractTxInstallFeeLevel: strconv.FormatFloat(float64(cp.ContractTxInstallFeeLevel), 'f', -1, 64),
-		ContractTxDeployFeeLevel:  strconv.FormatFloat(float64(cp.ContractTxDeployFeeLevel), 'f', -1, 64),
-		ContractTxInvokeFeeLevel:  strconv.FormatFloat(float64(cp.ContractTxInvokeFeeLevel), 'f', -1, 64),
-		ContractTxStopFeeLevel:    strconv.FormatFloat(float64(cp.ContractTxStopFeeLevel), 'f', -1, 64),
+		ContractTxSizeUnitFee:     strconv.FormatUint(cp.ContractTxSizeUnitFee, 10),
+		ContractTxInstallFeeLevel: strconv.FormatFloat(cp.ContractTxInstallFeeLevel, 'f', -1, 64),
+		ContractTxDeployFeeLevel:  strconv.FormatFloat(cp.ContractTxDeployFeeLevel, 'f', -1, 64),
+		ContractTxInvokeFeeLevel:  strconv.FormatFloat(cp.ContractTxInvokeFeeLevel, 'f', -1, 64),
+		ContractTxStopFeeLevel:    strconv.FormatFloat(cp.ContractTxStopFeeLevel, 'f', -1, 64),
 	}
 }
 
@@ -118,43 +118,43 @@ func (cpt *ChainParametersTemp) getCP(cp *ChainParameters) error {
 	if err != nil {
 		return err
 	}
-	cp.UccMemory = int64(UccMemory)
+	cp.UccMemory = UccMemory
 
 	UccCpuShares, err := strconv.ParseInt(cpt.UccCpuShares, 10, 64)
 	if err != nil {
 		return err
 	}
-	cp.UccCpuShares = int64(UccCpuShares)
+	cp.UccCpuShares = UccCpuShares
 
 	UccCpuQuota, err := strconv.ParseInt(cpt.UccCpuQuota, 10, 64)
 	if err != nil {
 		return err
 	}
-	cp.UccCpuQuota = int64(UccCpuQuota)
+	cp.UccCpuQuota = UccCpuQuota
 
 	UccDisk, err := strconv.ParseInt(cpt.UccDisk, 10, 64)
 	if err != nil {
 		return err
 	}
-	cp.UccDisk = int64(UccDisk)
+	cp.UccDisk = UccDisk
 
 	TempUccMemory, err := strconv.ParseInt(cpt.TempUccMemory, 10, 64)
 	if err != nil {
 		return err
 	}
-	cp.TempUccMemory = int64(TempUccMemory)
+	cp.TempUccMemory = TempUccMemory
 
 	TempUccCpuShares, err := strconv.ParseInt(cpt.TempUccCpuShares, 10, 64)
 	if err != nil {
 		return err
 	}
-	cp.TempUccCpuShares = int64(TempUccCpuShares)
+	cp.TempUccCpuShares = TempUccCpuShares
 
 	TempUccCpuQuota, err := strconv.ParseInt(cpt.TempUccCpuQuota, 10, 64)
 	if err != nil {
 		return err
 	}
-	cp.TempUccCpuQuota = int64(TempUccCpuQuota)
+	cp.TempUccCpuQuota = TempUccCpuQuota
 
 	ContractSignatureNum, err := strconv.ParseInt(cpt.ContractSignatureNum, 10, 64)
 	if err != nil {
