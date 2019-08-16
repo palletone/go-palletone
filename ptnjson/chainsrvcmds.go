@@ -60,9 +60,9 @@ const (
 )
 
 const (
-	pubkeyCompressed     byte = 0x2 // y_bit + x coord
-	pubkeyUncompressed   byte = 0x4 // x coord + y coord
-	pubkeyHybrid         byte = 0x6 // y_bit + x coord + y coord
+	// pubkeyCompressed     byte = 0x2 // y_bit + x coord
+	// pubkeyUncompressed   byte = 0x4 // x coord + y coord
+	// pubkeyHybrid         byte = 0x6 // y_bit + x coord + y coord
 	MinCoinbaseScriptLen      = 2
 	MaxCoinbaseScriptLen      = 100
 )
@@ -444,12 +444,12 @@ type Amount int64
 // as an integer, to the Amount integer type by rounding to the nearest integer.
 // This is performed by adding or subtracting 0.5 depending on the sign, and
 // relying on integer truncation to round the value to the nearest Amount.
-func round(f float64) Amount {
-	if f < 0 {
-		return Amount(f - 0.5)
-	}
-	return Amount(f + 0.5)
-}
+// func round(f float64) Amount {
+// 	if f < 0 {
+// 		return Amount(f - 0.5)
+// 	}
+// 	return Amount(f + 0.5)
+// }
 
 //
 //func NewAmount(f decimal.Decimal) (Amount, error) {
