@@ -246,7 +246,7 @@ issues:
         text: "File is not `gofmt`-ed with `-s`"
       - linters:
         - interfacer
-        text: "can be `fmt.Stringer`|can be `github.com/golang/protobuf/proto.Message`"
+        text: "can be `fmt.Stringer`|can be `.*/protobuf/proto.Message`"
       - linters:
         - staticcheck
         text: "SA1019:"
