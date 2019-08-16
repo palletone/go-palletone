@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 type Migration101_102 struct {
@@ -49,6 +50,44 @@ func (m *Migration101_102) ExecuteUpgrade() error {
 	//转换GLOBALPROPERTY结构体
 	if err := m.upgradeGP(); err != nil {
 		return err
+	}
+
+	// 转换mediator结构体
+	if err := m.upgradeMediatorInfo(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Migration101_102) upgradeMediatorInfo() error {
+	oldMediatorsIterator := m.statedb.NewIteratorWithPrefix(constants.MEDIATOR_INFO_PREFIX)
+	for oldMediatorsIterator.Next() {
+		oldMediator := &MediatorInfo101{}
+		err := rlp.DecodeBytes(oldMediatorsIterator.Value(), oldMediator)
+		if err != nil {
+			log.Debugf(err.Error())
+			return err
+		}
+
+		mib := &core.MediatorInfoBase{
+			AddStr: oldMediator.AddStr,
+			RewardAdd: oldMediator.AddStr,
+			InitPubKey: oldMediator.InitPubKey,
+			Node: oldMediator.Node,
+		}
+
+		newMediator := &modules.MediatorInfo{
+			MediatorInfoBase: mib,
+			MediatorApplyInfo:   oldMediator.MediatorApplyInfo,
+			MediatorInfoExpand:  oldMediator.MediatorInfoExpand,
+		}
+
+		err = storage.StoreToRlpBytes(m.statedb, oldMediatorsIterator.Key(), newMediator)
+		if err != nil {
+			log.Debugf(err.Error())
+			return err
+		}
 	}
 
 	return nil
@@ -113,4 +152,16 @@ type GlobalPropertyTemp101 struct {
 	ActiveJuries       []common.Address
 	ActiveMediators    []common.Address
 	PrecedingMediators []common.Address
+}
+
+type MediatorInfoBase101 struct {
+	AddStr     string `json:"account"`    // mediator账户地址
+	InitPubKey string `json:"initPubKey"` // mediator的群签名初始公钥
+	Node       string `json:"node"`       // mediator节点网络信息，包括ip和端口等
+}
+
+type MediatorInfo101 struct {
+	*MediatorInfoBase101
+	*core.MediatorApplyInfo
+	*core.MediatorInfoExpand
 }
