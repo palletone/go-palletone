@@ -178,7 +178,7 @@ func (m *Migration100_101) upgradeGP() error {
 		return err
 	}
 
-	newData := &GlobalPropertyTemp101{}
+	newData := &GlobalProperty101{}
 	newData.ActiveJuries = oldGp.ActiveJuries
 	newData.ActiveMediators = oldGp.ActiveMediators
 	newData.PrecedingMediators = oldGp.PrecedingMediators
@@ -254,7 +254,7 @@ type GlobalProperty100 struct {
 }
 
 type GlobalPropBase100 struct {
-	ImmutableParameters ImmutableChainParameters100 // 不可改变的区块链网络参数
+	ImmutableParameters ImmutableChainParameters101 // 不可改变的区块链网络参数
 	ChainParameters     ChainParameters100          // 区块链网络参数
 }
 
