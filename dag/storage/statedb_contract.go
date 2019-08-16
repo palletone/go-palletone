@@ -352,6 +352,12 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 						if mua.Node != nil {
 							mi.Node = *mua.Node
 						}
+						if mua.RewardAdd != nil {
+							mi.RewardAdd = *mua.RewardAdd
+						}
+						if mua.InitPubKey != nil {
+							mi.InitPubKey = *mua.InitPubKey
+						}
 						statedb.StoreMediatorInfo(addr, mi)
 					} else {
 						log.Warnf("RetrieveMediatorInfo error: %v", err.Error())

@@ -68,8 +68,8 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 
 	applyingAddrStr := applyingAddr.Str()
 	if mco.AddStr != applyingAddrStr || mco.RewardAdd != applyingAddrStr {
-		errStr := fmt.Sprintf("the calling account(%v) is not produce account(%v) or "+
-			"reward account(%v), please use mediator.apply()", applyingAddrStr, mco.AddStr, mco.RewardAdd)
+		errStr := fmt.Sprintf("the calling account(%v) is not produce account(%v) or reward account(%v)",
+			applyingAddrStr, mco.AddStr, mco.RewardAdd)
 		log.Error(errStr)
 		return shim.Error(errStr)
 	}
@@ -293,9 +293,10 @@ func updateMediatorInfo(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 		return shim.Error(err.Error())
 	}
 
+	// todo 待放宽限制为，原奖励地址也可以update信息
 	if addr != invokeAddr {
-		errStr := fmt.Sprintf("the calling account(%v) is not updating account(%v), "+
-			"please use mediator.apply()", invokeAddr.String(), mua.AddStr)
+		errStr := fmt.Sprintf("the calling account(%v) is not not produce account(%v)", invokeAddr.String(),
+			mua.AddStr)
 		log.Error(errStr)
 	}
 
