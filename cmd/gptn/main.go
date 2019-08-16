@@ -225,7 +225,7 @@ func main() {
 		2. c.Run(context)
 		3. HandleAction(c.Action, context)
 	*/
-	welcomePalletOne()
+	//welcomePalletOne()
 	if err := app.Run(os.Args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -236,6 +236,7 @@ func main() {
 // It creates a default node based on the command line arguments and runs it in
 // blocking mode, waiting for it to be shut down.
 func gptn(ctx *cli.Context) error {
+	welcomePalletOne()
 	node := makeFullNode(ctx, false)
 	startNode(ctx, node)
 	node.Wait()
@@ -320,17 +321,17 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 	//}
 }
 
-func welcomePalletOne(){
-///*
-//"*    _____      _ _      _    ____                    *\n"
-//"*   |  __ \    | | |    | |  / __ \                   *\n"
-//"*   | |__) |_ _| | | ___| |_| |  | |_ __   ___        *\n"
-//"*   |  ___/ _` | | |/ _ \ __| |  | | '_ \ / _ \       *\n"
-//"*   | |  | (_| | | |  __/ |_| |__| | | | |  __/       *\n"
-//"*   |_|   \__,_|_|_|\___|\__|\____/|_| |_|\___|       *\n"
-//*/
-//
-//
+func welcomePalletOne() {
+	///*
+	//"*    _____      _ _      _    ____                    *\n"
+	//"*   |  __ \    | | |    | |  / __ \                   *\n"
+	//"*   | |__) |_ _| | | ___| |_| |  | |_ __   ___        *\n"
+	//"*   |  ___/ _` | | |/ _ \ __| |  | | '_ \ / _ \       *\n"
+	//"*   | |  | (_| | | |  __/ |_| |__| | | | |  __/       *\n"
+	//"*   |_|   \__,_|_|_|\___|\__|\____/|_| |_|\___|       *\n"
+	//*/
+	//
+	//
 	fmt.Print("\n" +
 		"    * * * * * Welcome to PalletOne! * * * * *        \n" +
 		"    _____      _ _      _    ____                    \n" +
