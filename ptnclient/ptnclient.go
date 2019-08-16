@@ -431,11 +431,11 @@ func (ec *Client) TransferToken(ctx context.Context, asset string, from string, 
 	return result, err
 }
 
-func (ec *Client) walletCreateTransaction(ctx context.Context, from string, to string, amount uint64, fee uint64) (string, error) {
-	var result string
-	err := ec.c.CallContext(ctx, &result, "wallet_createRawTransaction", from, to, amount, fee)
-	return result, err
-}
+//func (ec *Client) walletCreateTransaction(ctx context.Context, from string, to string, amount uint64, fee uint64) (string, error) {
+//	var result string
+//	err := ec.c.CallContext(ctx, &result, "wallet_createRawTransaction", from, to, amount, fee)
+//	return result, err
+//}
 func (ec *Client) CreateRawTransaction(ctx context.Context, params string) (string, error) {
 	var result string
 	err := ec.c.CallContext(ctx, &result, "ptn_createRawTransaction", params)
