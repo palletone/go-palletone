@@ -14,5 +14,9 @@ done
 
 cd ..
 
+docker pull palletone/mediator:$1
+
+docker tag palletone/mediator:$1 palletone/mediator
+
 docker-compose up -d
 
