@@ -4,9 +4,8 @@
 
 sleep 1
 
-listAccounts=`../node/gptn --exec 'personal.listAccounts' attach ../node/palletone/gptn.ipc`
-
-key=`echo $listAccounts`
+listAccounts=`../node/gptn --exec 'personal.listAccounts' attach ../node/palletone/gptn.ipc | grep '\['` 
+key=`echo $listAccounts `
 echo $key
 
 list=`echo $key | jq ''`;
