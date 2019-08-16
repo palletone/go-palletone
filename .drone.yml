@@ -4,11 +4,6 @@ workspace:
   base: /go
   path: src/github.com/palletone/go-palletone
 steps:
-- name: test
-  image: golang
-  commands:
-  - go test ./...
-  - go build ./cmd/gptn
 - name: lint
   image: golang
   commands:
