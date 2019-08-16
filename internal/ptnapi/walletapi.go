@@ -284,14 +284,14 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 	for _, addramt := range c.Amounts {
 		encodedAddr := addramt.Address
 		ptnAmt := addramt.Amount
-		amount := ptnjson.Ptn2Dao(ptnAmt)
+		// amount := ptnjson.Ptn2Dao(ptnAmt)
 		// Ensure amount is in the valid range for monetary amounts.
-		if amount <= 0 /*|| amount > ptnjson.MaxDao*/ {
-			return "", &ptnjson.RPCError{
-				Code:    ptnjson.ErrRPCType,
-				Message: "Invalid amount",
-			}
-		}
+		// if amount <= 0 /*|| amount > ptnjson.MaxDao*/ {
+		// 	return "", &ptnjson.RPCError{
+		// 		Code:    ptnjson.ErrRPCType,
+		// 		Message: "Invalid amount",
+		// 	}
+		// }
 		addr, err := common.StringToAddress(encodedAddr)
 		if err != nil {
 			return "", &ptnjson.RPCError{
@@ -626,7 +626,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 		return common.Hash{}, fmt.Errorf("CreateProofTransaction Select_utxo_Greedy utxo err")
 	}
 
-	inputs :=[]ptnjson.TransactionInput{}
+	inputs := []ptnjson.TransactionInput{}
 	var input ptnjson.TransactionInput
 	for _, u := range taken_utxo {
 		utxo := u.(*modules.UtxoWithOutPoint)
@@ -968,7 +968,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 		return common.Hash{}, err
 	}
 
-        inputs :=[]ptnjson.TransactionInput{}
+	inputs := []ptnjson.TransactionInput{}
 	var input ptnjson.TransactionInput
 	for _, u := range taken_utxo {
 		utxo := u.(*ptnjson.UtxoJson)
@@ -1575,7 +1575,7 @@ func (s *PublicWalletAPI) AddBatchTxs(ctx context.Context, path string) (int, er
 		}
 		txs = append(txs, tx)
 	}
-	submitTxs(ctx, s.b, txs)
+	go submitTxs(ctx, s.b, txs)
 	log.Infof("add_batch_txs ,send txs spent time: %s", time.Since(ttt))
 	return len(txs), nil
 }
@@ -1603,8 +1603,11 @@ func readTxs(path string) ([]string, error) {
 		line = strings.Replace(line, "\r\n", "", -1)
 		txs = append(txs, line)
 	}
-	if len(txs) > 5000 {
+	if len(txs) <= 5000 {
+		return txs, err
+	} else {
 		return txs[:5000], err
 	}
-	return txs, err
+
+	// return txs, err
 }

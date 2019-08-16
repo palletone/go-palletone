@@ -1,0 +1,28 @@
+version: '2'
+
+services:
+  mediator1:
+    container_name: mediator1
+    image: palletone/mediator1
+    restart: always
+    network_mode: "host"
+  mediator2:
+    container_name: mediator2
+    image: palletone/mediator2
+    restart: always
+    network_mode: "host"
+  mediator3:
+    container_name: mediator3
+    image: palletone/mediator3
+    restart: always
+    network_mode: "host"
+  mediator4:
+    container_name: mediator4
+    image: palletone/mediator4
+    restart: always
+    network_mode: "host"
+  mediator5:
+    container_name: mediator5
+    image: palletone/mediator5
+    restart: always
+    network_mode: "host"

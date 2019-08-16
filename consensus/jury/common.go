@@ -784,7 +784,7 @@ func getValidAddress(addrs []common.Address) []common.Address {
 }
 
 func checkJuryCountValid(numIn, numLocal uint64) bool {
-	if numLocal <= 0 {
+	if numLocal == 0 {
 		log.Error("checkJuryCountValid, numLocal is 0")
 		return false
 	}

@@ -510,7 +510,6 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 		//add at the end of main chain unit
 		if parentHash == chain.lastMainChainUnit.Hash() {
 			//Add a new unit to main chain
-			tt := time.Now()
 			var temp_db *ChainTempDb
 			inter_temp, has := chain.tempdb.Load(parentHash)
 			if !has { // 分叉链
@@ -520,7 +519,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 				temp_db = inter_temp.(*ChainTempDb)
 			}
 			validateCode := validator.TxValidationCode_VALID
-			fmt.Println("validate code:", validateCode)
+			// fmt.Println("validate code:", validateCode)
 			if chain.saveHeaderOnly {
 				validateCode = temp_db.Validator.ValidateHeader(unit.UnitHeader)
 			} else {
@@ -552,10 +551,6 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 					})
 				}
 			}
-			log.DebugDynamic(func() string {
-				return fmt.Sprintf("save mainchain unit cost time: %s ,index: %d, hash: %s",
-					time.Since(tt), height, uHash.String())
-			})
 			//update txpool's tx status to pending
 			if len(unit.Txs) > 0 {
 				go txpool.SetPendingTxs(unit.Hash(), height, unit.Txs)
@@ -564,7 +559,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 		} else { //Fork unit
 			start1 := time.Now()
 			validateCode := validator.TxValidationCode_VALID
-			fmt.Println("fork validate code:", validateCode)
+			// fmt.Println("fork validate code:", validateCode)
 			var main_temp *ChainTempDb
 			inter_main, has := chain.tempdb.Load(parentHash)
 			if !has { // 分叉

@@ -4,19 +4,19 @@
 sleep 40
 
 listcommand=`./gptn --exec 'personal.listAccounts'  attach node1/palletone/gptn.ipc`
-list=`echo ${listcommand//^M/}`
+list=`echo ${listcommand///}`
 moneyaccount=`echo "${list}" | jq -c '.[1]'`
 
 newaccount5command=`./gptn --exec 'personal.newAccount("1")'  attach node_test5/palletone/gptn5.ipc`
-a5=`echo ${newaccount5command//^M/}`
+a5=`echo ${newaccount5command///}`
 account5=`echo $a5`
 
 newaccount6command=`./gptn --exec 'personal.newAccount("1")'  attach node_test6/palletone/gptn6.ipc`
-a6=`echo ${newaccount6command//^M/}`
+a6=`echo ${newaccount6command///}`
 account6=`echo $a6`
 
 newaccount7command=`./gptn --exec 'personal.newAccount("1")'  attach node_test7/palletone/gptn7.ipc`
-a7=`echo ${newaccount7command//^M/}`
+a7=`echo ${newaccount7command///}`
 account7=`echo $a7`
 
 echo $moneyaccount

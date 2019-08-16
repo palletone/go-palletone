@@ -117,7 +117,7 @@ func getDockerHostConfig() *docker.HostConfig {
 	return hostConfig
 }
 
-func (vm *DockerVM) createContainer(ctxt context.Context, client dockerClient,
+func (vm *DockerVM) createContainer(client dockerClient,
 	imageID string, containerID string, args []string,
 	env []string, attachStdout bool, dockerHostConfig *docker.HostConfig) error {
 	config := docker.Config{Cmd: args, Image: imageID, Env: env, AttachStdout: attachStdout, AttachStderr: attachStdout}
@@ -133,6 +133,8 @@ func (vm *DockerVM) createContainer(ctxt context.Context, client dockerClient,
 
 func (vm *DockerVM) deployImage(client dockerClient, ccid ccintf.CCID,
 	args []string, env []string, reader io.Reader) error {
+	log.Debugf("args len %d", len(args))
+	log.Debugf("env len %d", len(env))
 	id, err := vm.GetImageId(ccid)
 	if err != nil {
 		return err
@@ -186,7 +188,7 @@ func (vm *DockerVM) Deploy(ctxt context.Context, ccid ccintf.CCID,
 //Start starts a container using a previously created docker image
 //根据之前指定的镜像文件启动容器，如果镜像文件不存在则新创建，成功后启动容器
 //这里还可以指定对容器日志的输出
-func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
+func (vm *DockerVM) Start(_ context.Context, ccid ccintf.CCID,
 	args []string, env []string, filesToUpload map[string][]byte, builder container.BuildSpecFactory, prelaunchFunc container.PrelaunchFunc) error {
 	//获取docker客户端
 	client, err := vm.getClientFnc()
@@ -233,7 +235,7 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 	//stop,force remove if necessary
 	log.Debugf("Cleanup container %s", containerID)
 	//停止并删除容器
-	vm.stopInternal(ctxt, client, containerID, 0, false, false)
+	vm.stopInternal(client, containerID, 0, false, false)
 	//if err != nil {
 	//	return err
 	//}
@@ -243,7 +245,7 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 	dockerHostConfig.CPUShares = ccid.ChaincodeSpec.CpuShare
 	//创建容器
 	log.Debugf("Start container %s", containerID)
-	err = vm.createContainer(ctxt, client, imageID, containerID, args, env, attachStdout, dockerHostConfig)
+	err = vm.createContainer(client, imageID, containerID, args, env, attachStdout, dockerHostConfig)
 	//var reader io.Reader
 	//var err1 error
 	//var isInit = false
@@ -270,7 +272,7 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 					return fmt.Errorf("Failed to pull %s: %s", imageID, err)
 				}
 			}
-			err = vm.createContainer(ctxt, client, imageID, containerID, args, env, attachStdout, dockerHostConfig)
+			err = vm.createContainer(client, imageID, containerID, args, env, attachStdout, dockerHostConfig)
 			if err != nil {
 				return fmt.Errorf("no such base image with image name is %s, should pull this image from docker hub.", imageID)
 			}
@@ -440,7 +442,7 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 }
 
 //Stop stops a running chaincode
-func (vm *DockerVM) Stop(ctxt context.Context, ccid ccintf.CCID, timeout uint, dontkill bool, dontremove bool) error {
+func (vm *DockerVM) Stop(_ context.Context, ccid ccintf.CCID, timeout uint, dontkill bool, dontremove bool) error {
 	containerId, err := vm.GetContainerId(ccid)
 	if err != nil {
 		log.Errorf("get image id error: %s", err)
@@ -453,12 +455,12 @@ func (vm *DockerVM) Stop(ctxt context.Context, ccid ccintf.CCID, timeout uint, d
 	}
 	//id = strings.Replace(id, ":", "_", -1)
 
-	err = vm.stopInternal(ctxt, client, containerId, timeout, dontkill, dontremove)
+	err = vm.stopInternal(client, containerId, timeout, dontkill, dontremove)
 
 	return err
 }
 
-func (vm *DockerVM) stopInternal(ctxt context.Context, client dockerClient,
+func (vm *DockerVM) stopInternal(client dockerClient,
 	id string, timeout uint, dontkill bool, dontremove bool) error {
 	err := client.StopContainer(id, timeout)
 	if err != nil {

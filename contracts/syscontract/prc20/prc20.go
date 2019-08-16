@@ -157,6 +157,14 @@ func getSymbolsAll(stub shim.ChaincodeStubInterface) []TokenInfo {
 	return tkInfos
 }
 
+func checkAddr(addr string) error {
+	if addr == "" {
+		return nil
+	}
+	_, err := common.StringToAddress(addr)
+	return err
+}
+
 func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//params check
 	if len(args) < 4 {
@@ -197,6 +205,11 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//address of supply
 	if len(args) > 4 {
 		fungible.SupplyAddress = args[4]
+		err := checkAddr(fungible.SupplyAddress)
+		if err != nil {
+			jsonResp := "{\"Error\":\"The SupplyAddress is invalid\"}"
+			return shim.Error(jsonResp)
+		}
 	}
 
 	//check name is only or not
@@ -339,6 +352,11 @@ func changeSupplyAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 
 	//new supply address
 	newSupplyAddr := args[1]
+	err := checkAddr(newSupplyAddr)
+	if err != nil {
+		jsonResp := "{\"Error\":\"The SupplyAddress is invalid\"}"
+		return shim.Error(jsonResp)
+	}
 
 	//get invoke address
 	invokeAddr, err := stub.GetInvokeAddress()
@@ -393,7 +411,7 @@ func frozenToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//check address
 	invokeAddrStr := invokeAddr.String()
 	ownerAddr := gTkInfo.SupplyAddr
-	if "" == ownerAddr {
+	if len(ownerAddr) == 0 {
 		ownerAddr = gTkInfo.CreateAddr
 	}
 	if invokeAddrStr != ownerAddr {

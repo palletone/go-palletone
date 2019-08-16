@@ -248,6 +248,14 @@ func genNFData(idType dm.UniqueIdType, totalSupply uint64, start uint64, tokenID
 	return nfDatas, ""
 }
 
+func checkAddr(addr string) error {
+	if addr == "" {
+		return nil
+	}
+	_, err := common.StringToAddress(addr)
+	return err
+}
+
 func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//params check
 	if len(args) < 5 {
@@ -316,6 +324,11 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//address of supply
 	if len(args) > 5 {
 		nonFungible.SupplyAddress = args[5]
+		err := checkAddr(nonFungible.SupplyAddress)
+		if err != nil {
+			jsonResp := "{\"Error\":\"The SupplyAddress is invalid\"}"
+			return shim.Error(jsonResp)
+		}
 	}
 
 	//check name is only or not
@@ -535,6 +548,11 @@ func changeSupplyAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 
 	//new supply address
 	newSupplyAddr := args[1]
+	err := checkAddr(newSupplyAddr)
+	if err != nil {
+		jsonResp := "{\"Error\":\"The SupplyAddress is invalid\"}"
+		return shim.Error(jsonResp)
+	}
 
 	//get invoke address
 	invokeAddr, err := stub.GetInvokeAddress()
