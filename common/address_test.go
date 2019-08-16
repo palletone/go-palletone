@@ -149,3 +149,7 @@ func TestAddressIsMapKey(t *testing.T) {
 	assert.Nil(t, err)
 	t.Logf("%#v", m2)
 }
+func TestAddressToHex(t *testing.T) {
+	addr1, _ := StringToAddress("P124gB1bXHDTXmox58g4hd4u13HV3e5vKie")
+	t.Logf("%#x", addr1.Bytes())
+}
