@@ -615,6 +615,9 @@ func (req *ping) handle(t *udp, from *net.UDPAddr, fromID NodeID, mac []byte) er
 	if req.Version != configure.UdpVersion || !bytes.Equal(req.Genesis, configure.GenesisHash) {
 		//log.Debug("Bad discv4 ping", "Req Version", req.Version, "Version", configure.UdpVersion,
 		//	"Req Genesis", req.Genesis, "Genesis", configure.GenesisHash)
+		if t.alienRestrict != nil {
+			t.alienRestrict.Set([]byte(fromID.TerminalString()), []byte(fromID.String()), 3600)
+		}
 		return errUnknownNode
 	}
 	//End Add by wangjiyou for discv4 in 2019-7-19
@@ -660,8 +663,11 @@ func (req *findnode) handle(t *udp, from *net.UDPAddr, fromID NodeID, mac []byte
 
 	//Start Add by wangjiyou for discv4 in 2019-8-14
 	if req.Version != configure.UdpVersion || !bytes.Equal(req.Genesis, configure.GenesisHash) {
-		log.Debug("Bad discv4 findnode", "Req Version", req.Version, "Version", configure.UdpVersion,
-			"Req Genesis", req.Genesis, "Genesis", configure.GenesisHash)
+		//log.Debug("Bad discv4 findnode", "Req Version", req.Version, "Version", configure.UdpVersion,
+		//	"Req Genesis", req.Genesis, "Genesis", configure.GenesisHash)
+		if t.alienRestrict != nil {
+			t.alienRestrict.Set([]byte(fromID.TerminalString()), []byte(fromID.String()), 3600)
+		}
 		return errUnknownNode
 	}
 	//End Add by wangjiyou for discv4 in 2019-8-14
