@@ -1139,7 +1139,7 @@ func (handler *Handler) handlerCheckCertValidation(caller string, certID []byte,
 	key = dagConstants.CERT_SERVER_SYMBOL + caller + dagConstants.CERT_SPLIT_CH + cert.SerialNumber.String()
 	revocation, err := handler.handleGetCertRevocationTime(key, channelId, txid)
 	if err != nil {
-		key = dagConstants.CERT_SERVER_SYMBOL + caller + dagConstants.CERT_SPLIT_CH + cert.SerialNumber.String()
+		key = dagConstants.CERT_MEMBER_SYMBOL + caller + dagConstants.CERT_SPLIT_CH + cert.SerialNumber.String()
 		revocation, err = handler.handleGetCertRevocationTime(key, channelId, txid)
 		if err != nil {
 			return false, fmt.Errorf("certificate is not existing")
