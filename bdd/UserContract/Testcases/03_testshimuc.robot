@@ -141,7 +141,8 @@ Test send and recv jury by contract
 
 User use cert to invoke contract
     ${args}=    Create List    testUseCert
-    ${respJson}=    invokeContract      ${caCertHolder}    ${caCertHolder}    100    100    ${gContractId}     ${args}    ${caCertID}
+    ${respJson}=    invokeContract    ${caCertHolder}    ${caCertHolder}    100    100    ${gContractId}
+    ...    ${args}    ${caCertID}
     ${result}=    Get From Dictionary    ${respJson}    result
     ${reqId}=    Get From Dictionary    ${result}    reqId
     ${contractId}=    Get From Dictionary    ${result}    ContractId
@@ -209,7 +210,7 @@ Check all invoke info
     ${GetInvokeFees} =    Get From Dictionary    ${payload}    GetInvokeFees
     ${amount}=    Get From Dictionary    ${GetInvokeFees}    amount
     ${symbol}=    Get From Dictionary    ${GetInvokeFees}    assetId
-    Should Be Equal    ${amount}    ${100000000}
+    Should Be Equal    ${amount}    ${10000000000}
     Should Be Equal    ${symbol}    PTN
     # => GetContractID
     Dictionary Should Contain Key    ${payload}    GetContractID
