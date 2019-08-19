@@ -190,7 +190,7 @@ type TxExecuteResult struct {
 	Warning   string      `json:"warning"`   // 警告
 }
 
-func (a *PrivateMediatorAPI) Apply(/*applyAddStr string, */args modules.MediatorCreateArgs) (*TxExecuteResult, error) {
+func (a *PrivateMediatorAPI) Apply( /*applyAdd string,*/ args modules.MediatorCreateArgs) (*TxExecuteResult, error) {
 	// 参数补全
 	if args.MediatorApplyInfo == nil {
 		args.MediatorApplyInfo = core.NewMediatorApplyInfo()
@@ -396,7 +396,7 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxEx
 	return res, nil
 }
 
-func (a *PrivateMediatorAPI) Update(updateAddStr string, args modules.MediatorUpdateArgs) (*TxExecuteResult, error) {
+func (a *PrivateMediatorAPI) Update( /*updateAdd string,*/ args modules.MediatorUpdateArgs) (*TxExecuteResult, error) {
 	// 参数验证
 	addr, err := args.Validate()
 	if err != nil {
@@ -408,21 +408,22 @@ func (a *PrivateMediatorAPI) Update(updateAddStr string, args modules.MediatorUp
 		return nil, fmt.Errorf("this node is not synced, and can't update mediator now")
 	}
 
-	mi := a.Dag().GetMediatorInfo(addr)
+	//mi := a.Dag().GetMediatorInfo(addr)
 	// 判断是否已经是mediator
-	if mi == nil {
+	//if mi == nil {
+	if !a.Dag().IsMediator(addr) {
 		return nil, fmt.Errorf("account %v is not a mediator", args.AddStr)
 	}
 
-	if !(updateAddStr == args.AddStr || updateAddStr == mi.RewardAdd) {
-		return nil, fmt.Errorf("the calling account(%v) is not produce account(%v) or reward account(%v)",
-			updateAddStr, args.AddStr, mi.RewardAdd)
-	}
-
-	updateAdd, err := core.StrToMedAdd(updateAddStr)
-	if err != nil {
-		return nil, err
-	}
+	//if !(updateAddStr == args.AddStr || updateAddStr == mi.RewardAdd) {
+	//	return nil, fmt.Errorf("the calling account(%v) is not produce account(%v) or reward account(%v)",
+	//		updateAddStr, args.AddStr, mi.RewardAdd)
+	//}
+	//
+	//updateAdd, err := core.StrToMedAdd(updateAddStr)
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	// 参数序列化
 	argsB, err := json.Marshal(args)
@@ -433,8 +434,10 @@ func (a *PrivateMediatorAPI) Update(updateAddStr string, args modules.MediatorUp
 
 	// 调用系统合约
 	fee := a.Dag().GetChainParameters().TransferPtnBaseFee
-	reqId, err := a.ContractInvokeReqTx(updateAdd, updateAdd, 0, fee, nil,
+	reqId, err := a.ContractInvokeReqTx(addr, addr, 0, fee, nil,
 		syscontract.DepositContractAddress, cArgs, 0)
+	//reqId, err := a.ContractInvokeReqTx(updateAdd, updateAdd, 0, fee, nil,
+	//	syscontract.DepositContractAddress, cArgs, 0)
 	if err != nil {
 		return nil, err
 	}

@@ -293,7 +293,6 @@ func updateMediatorInfo(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 		return shim.Error(err.Error())
 	}
 
-	// todo 待放宽限制为，原奖励地址也可以update信息
 	if addr != invokeAddr {
 		errStr := fmt.Sprintf("the calling account(%v) is not not produce account(%v)", invokeAddr.String(),
 			mua.AddStr)
