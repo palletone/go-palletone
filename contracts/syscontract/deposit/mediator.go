@@ -52,7 +52,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		return shim.Error(errStr)
 	}
 
-	addr, err := mco.Validate()
+	_, err = mco.Validate()
 	if err != nil {
 		errStr := fmt.Sprintf("invalid args: %v", err.Error())
 		log.Errorf(errStr)
@@ -60,25 +60,27 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	}
 
 	//  获取请求地址
-	invokeAddr, err := stub.GetInvokeAddress()
+	applyingAddr, err := stub.GetInvokeAddress()
 	if err != nil {
 		log.Error("Stub.GetInvokeAddress err:", "error", err)
 		return shim.Error(err.Error())
 	}
 
-	if addr != invokeAddr {
-		errStr := fmt.Sprintf("the calling account(%v) is not appling account(%v), "+
-			"please use mediator.apply()", invokeAddr.String(), addr.String())
+	applyingAddrStr := applyingAddr.Str()
+	if mco.AddStr != applyingAddrStr /*|| mco.RewardAdd != applyingAddrStr*/ {
+		errStr := fmt.Sprintf("the calling account(%v) is not applying account(%v)",
+			applyingAddrStr, mco.AddStr)
 		log.Error(errStr)
+		return shim.Error(errStr)
 	}
 
 	//  判断该地址是否是第一次申请
-	mdeposit, err := GetMediatorDeposit(stub, invokeAddr.String())
+	mdeposit, err := GetMediatorDeposit(stub, mco.AddStr)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 	if mdeposit != nil {
-		return shim.Error(invokeAddr.String() + " has applied for become mediator")
+		return shim.Error(mco.AddStr + " has applied for become mediator")
 	}
 
 	//  获取申请列表
@@ -93,7 +95,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		becomeList = make(map[string]bool)
 	}
 
-	becomeList[invokeAddr.String()] = true
+	becomeList[mco.AddStr] = true
 	//  保存列表
 	err = saveList(stub, ListForApplyBecomeMediator, becomeList)
 	if err != nil {
@@ -106,7 +108,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	md.ApplyEnterTime = getTiem(stub)
 	md.Status = Apply
 	md.Role = Mediator
-	err = SaveMediatorDeposit(stub, invokeAddr.Str(), md)
+	err = SaveMediatorDeposit(stub, mco.AddStr, md)
 	if err != nil {
 		log.Error("SaveMedInfo err:", "error", err)
 		return shim.Error(err.Error())
@@ -292,8 +294,8 @@ func updateMediatorInfo(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 	}
 
 	if addr != invokeAddr {
-		errStr := fmt.Sprintf("the calling account(%v) is not updating account(%v), "+
-			"please use mediator.apply()", invokeAddr.String(), mua.AddStr)
+		errStr := fmt.Sprintf("the calling account(%v) is not not produce account(%v)", invokeAddr.String(),
+			mua.AddStr)
 		log.Error(errStr)
 	}
 

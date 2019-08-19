@@ -416,6 +416,7 @@ func (s *PublicContractAPI) GetContractInfoByAddr(ctx context.Context, contractA
 	}
 	return contract, nil
 }
+
 func (s *PrivateContractAPI) DepositContractInvoke(ctx context.Context, from, to string, amount, fee decimal.Decimal,
 	param []string) (string, error) {
 	log.Debug("---enter DepositContractInvoke---")
@@ -432,8 +433,14 @@ func (s *PrivateContractAPI) DepositContractInvoke(ctx context.Context, from, to
 				return "", fmt.Errorf("error(%v), please use mediator.apply()", err.Error())
 			}
 
-			if from != args.AddStr {
-				return "", fmt.Errorf("the calling account(%v) is not appling account(%v), "+
+			if args.MediatorInfoBase == nil || args.MediatorApplyInfo == nil {
+				return "", fmt.Errorf("invalid args, is null")
+			}
+
+			if from != args.AddStr /*|| from != args.RewardAdd*/ {
+				//return "", fmt.Errorf("the calling account(%v) is not produce account(%v) or "+
+				//	"reward account(%v), please use mediator.apply()", from, args.AddStr, args.RewardAdd)
+				return "", fmt.Errorf("the calling account(%v) is not applying account(%v), "+
 					"please use mediator.apply()", from, args.AddStr)
 			}
 

@@ -58,13 +58,13 @@ Invoke
 
 Stop
     Given Unlock token holder succeed
-    ${reqId}=    Then stopContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
+    ${reqId}=    Then stopContract    ${tokenHolder}    ${tokenHolder}    100    100    ${gContractId}
     And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
 *** Keywords ***
 Invoke
     [Arguments]    @{args}
-    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
+    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    100    ${gContractId}
     ...    @{args}
     ${result}=    Get From Dictionary    ${respJson}    result
     ${reqId}=    Get From Dictionary    ${result}    reqId
