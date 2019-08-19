@@ -1496,11 +1496,11 @@ func (s *PrivateWalletAPI) RevokeCert(ctx context.Context, caAddress, passwd, us
 	}
 	caAddr, err := common.StringToAddress(caAddress)
 	if err != nil {
-		return nil, fmt.Errorf("invalid account address: %v", userAddress)
+		return nil, fmt.Errorf("invalid account address: %v", caAddress)
 	}
 	cAddr, err := common.StringToAddress(contractAddr)
 	if err != nil {
-		return nil, fmt.Errorf("invalid account address: %v", userAddress)
+		return nil, fmt.Errorf("invalid account address: %v", contractAddr)
 	}
 	//导出ca私钥用于吊销用户证书
 	ks := s.b.GetKeyStore()
