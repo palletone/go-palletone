@@ -198,8 +198,8 @@ function ModifyP2PConfig()
 
 function MakeTestNet()
 {
-    mkdir -p node_test$1/palletone/gptn
-    cd node_test$1
+    mkdir -p node$1/palletone/gptn
+    cd node$1
     cp ../gptn .
     cp ../node1/palletone/leveldb palletone/. -rf
     dumcpconfig=`./gptn dumpuserconfig`
@@ -229,26 +229,26 @@ function MakeTestNet()
     cd ../
     #addBootstrapNodes $1 0
     newarrBootstrapNodes=`echo "$(addBootstrapNodes $1 $count)"`
-    #sed -i '/^BootstrapNodes/c'$newarrBootstrapNodes'' node_test$1/ptn-config.toml
-    sed -i '/^StaticNodes/c'$newarrBootstrapNodes'' node_test$1/ptn-config.toml
+    #sed -i '/^BootstrapNodes/c'$newarrBootstrapNodes'' node$1/ptn-config.toml
+    sed -i '/^StaticNodes/c'$newarrBootstrapNodes'' node$1/ptn-config.toml
 
     newInitPrivKey="InitPrivKey=\"\""
-    sed -i '/^InitPrivKey/c'$newInitPrivKey'' node_test$1/ptn-config.toml
+    sed -i '/^InitPrivKey/c'$newInitPrivKey'' node$1/ptn-config.toml
 
     newInitPubKey="InitPubKey=\"\""
-    sed -i '/^InitPubKey/c'$newInitPubKey'' node_test$1/ptn-config.toml
+    sed -i '/^InitPubKey/c'$newInitPubKey'' node$1/ptn-config.toml
 
     newAddress="Address=\"\""
-    sed -i '/^Address/c'$newAddress'' node_test$1/ptn-config.toml
+    sed -i '/^Address/c'$newAddress'' node$1/ptn-config.toml
 
     newPassword="Password=\"\""
-    sed -i '/^Password/c'$newPassword'' node_test$1/ptn-config.toml
+    sed -i '/^Password/c'$newPassword'' node$1/ptn-config.toml
 
     newCorsListenAddr="CorsListenAddr=\"\""
-    sed -i '/^CorsListenAddr/c'$newCorsListenAddr'' node_test$1/ptn-config.toml
+    sed -i '/^CorsListenAddr/c'$newCorsListenAddr'' node$1/ptn-config.toml
 
 #    newGenesisHash="GenesisHash=\"$2\""
-#    sed -i '/^GenesisHash/c'$newGenesisHash'' node_test$1/ptn-config.toml
+#    sed -i '/^GenesisHash/c'$newGenesisHash'' node$1/ptn-config.toml
     echo "===========node-test ok============="
 }
 
