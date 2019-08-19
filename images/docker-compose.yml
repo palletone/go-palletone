@@ -47,3 +47,12 @@ services:
      - ./scripts/node5/palletone:/palletone/mediator/palletone
     restart: always
     network_mode: "host"
+  node:
+    container_name: node
+    image: palletone/mediator
+    volumes:
+      - ./scripts/node6/ptn-genesis.json:/palletone/mediator/ptn-genesis.json
+      - ./scripts/node6/ptn-config.toml:/palletone/mediator/ptn-config.toml
+      - ./scripts/node6/palletone:/palletone/mediator/palletone
+    restart: always
+    network_mode: "host"
