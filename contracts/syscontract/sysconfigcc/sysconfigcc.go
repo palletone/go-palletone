@@ -185,11 +185,11 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 		return nil, fmt.Errorf(jsonResp)
 	}
 
-	cp, err := stub.GetSystemConfig()
+	gp, err := stub.GetSystemConfig()
 	if err != nil {
 		return nil, fmt.Errorf("fail to get system config err")
 	}
-	if createAddr.Str() != cp.FoundationAddress {
+	if createAddr.Str() != gp.ChainParameters.FoundationAddress {
 		jsonResp := "{\"Error\":\"Only foundation can call this function\"}"
 		return nil, fmt.Errorf(jsonResp)
 	}
@@ -459,11 +459,11 @@ func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubIn
 		return nil, fmt.Errorf(jsonResp)
 	}
 
-	cp, err := stub.GetSystemConfig()
+	gp, err := stub.GetSystemConfig()
 	if err != nil {
 		return nil, fmt.Errorf("fail to get system config err")
 	}
-	if createAddr.Str() != cp.FoundationAddress {
+	if createAddr.Str() != gp.ChainParameters.FoundationAddress {
 		jsonResp := "{\"Error\":\"Only foundation can call this function\"}"
 		return nil, fmt.Errorf(jsonResp)
 	}

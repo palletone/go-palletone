@@ -415,12 +415,12 @@ func frozenToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		ownerAddr = gTkInfo.CreateAddr
 	}
 	if invokeAddrStr != ownerAddr {
-		cp, err := stub.GetSystemConfig()
+		gp, err := stub.GetSystemConfig()
 		if err != nil {
 			jsonResp := "{\"Error\":\"GetSystemConfig() failed\"}"
 			return shim.Error(jsonResp)
 		}
-		if invokeAddrStr != cp.FoundationAddress {
+		if invokeAddrStr != gp.ChainParameters.FoundationAddress {
 			jsonResp := "{\"Error\":\"Only the FoundationAddress or Owner can frozen token\"}"
 			return shim.Error(jsonResp)
 		}

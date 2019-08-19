@@ -156,7 +156,8 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface /*, args []st
 	if md.Status != Agree {
 		return shim.Error(invokeAddr.String() + "does not in the agree list")
 	}
-	cp, err := stub.GetSystemConfig()
+	gp, err := stub.GetSystemConfig()
+	cp := gp.ChainParameters
 	if err != nil {
 		return shim.Error(err.Error())
 	}
