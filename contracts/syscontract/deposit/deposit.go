@@ -52,7 +52,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	// 更新 Mediator 信息
 	case modules.UpdateMediatorInfo:
 		log.Info("Enter DepositChaincode Contract " + modules.UpdateMediatorInfo + " Invoke")
-		return d.UpdateMediatorInfo(stub, args)
+		return d.updateMediatorInfo(stub, args)
 	//
 	//  jury 交付保证金
 	case JuryPayToDepositContract:
@@ -432,7 +432,7 @@ func (d *DepositChaincode) mediatorApplyQuit(stub shim.ChaincodeStubInterface) p
 	return mediatorApplyQuit(stub)
 }
 
-func (d *DepositChaincode) UpdateMediatorInfo(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (d *DepositChaincode) updateMediatorInfo(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return updateMediatorInfo(stub, args)
 }
 

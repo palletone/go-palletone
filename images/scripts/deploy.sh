@@ -145,4 +145,3 @@ ModifyP2PConfig $n $genesishash
 
 num=$[$n+1]
 MakeTestNet $num $genesishash
-

@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 type Migration101_102 struct {
@@ -51,11 +52,49 @@ func (m *Migration101_102) ExecuteUpgrade() error {
 		return err
 	}
 
+	// 转换mediator结构体
+	if err := m.upgradeMediatorInfo(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Migration101_102) upgradeMediatorInfo() error {
+	oldMediatorsIterator := m.statedb.NewIteratorWithPrefix(constants.MEDIATOR_INFO_PREFIX)
+	for oldMediatorsIterator.Next() {
+		oldMediator := &MediatorInfo101{}
+		err := rlp.DecodeBytes(oldMediatorsIterator.Value(), oldMediator)
+		if err != nil {
+			log.Debugf(err.Error())
+			return err
+		}
+
+		mib := &core.MediatorInfoBase{
+			AddStr: oldMediator.AddStr,
+			RewardAdd: oldMediator.AddStr,
+			InitPubKey: oldMediator.InitPubKey,
+			Node: oldMediator.Node,
+		}
+
+		newMediator := &modules.MediatorInfo{
+			MediatorInfoBase: mib,
+			MediatorApplyInfo:   oldMediator.MediatorApplyInfo,
+			MediatorInfoExpand:  oldMediator.MediatorInfoExpand,
+		}
+
+		err = storage.StoreToRlpBytes(m.statedb, oldMediatorsIterator.Key(), newMediator)
+		if err != nil {
+			log.Debugf(err.Error())
+			return err
+		}
+	}
+
 	return nil
 }
 
 func (m *Migration101_102) upgradeGP() error {
-	oldGp := OldGlobalProperty101{}
+	oldGp := GlobalProperty101{}
 	err := storage.RetrieveFromRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, &oldGp)
 	if err != nil {
 		log.Errorf(err.Error())
@@ -85,7 +124,7 @@ func (m *Migration101_102) upgradeGP() error {
 	return nil
 }
 
-type OldGlobalProperty101 struct {
+type GlobalProperty101 struct {
 	GlobalPropBase101
 
 	ActiveJuries       []common.Address
@@ -94,11 +133,11 @@ type OldGlobalProperty101 struct {
 }
 
 type GlobalPropBase101 struct {
-	ImmutableParameters ImmutableChainParameters100 // 不可改变的区块链网络参数
+	ImmutableParameters ImmutableChainParameters101 // 不可改变的区块链网络参数
 	ChainParameters     core.ChainParameters        // 区块链网络参数
 }
 
-type ImmutableChainParameters100 struct {
+type ImmutableChainParameters101 struct {
 	MinimumMediatorCount uint8    `json:"min_mediator_count"`    // 最小活跃mediator数量
 	MinMediatorInterval  uint8    `json:"min_mediator_interval"` // 最小的生产槽间隔时间
 	UccPrivileged        bool     `json:"ucc_privileged"`        // 防止容器以root权限运行
@@ -107,10 +146,14 @@ type ImmutableChainParameters100 struct {
 	UccOOMKillDisable    bool     `json:"ucc_oom_kill_disable"`  // 是否内存使用量超过上限时系统杀死进程
 }
 
-type GlobalPropertyTemp101 struct {
-	GlobalPropBase101
+type MediatorInfoBase101 struct {
+	AddStr     string `json:"account"`    // mediator账户地址
+	InitPubKey string `json:"initPubKey"` // mediator的群签名初始公钥
+	Node       string `json:"node"`       // mediator节点网络信息，包括ip和端口等
+}
 
-	ActiveJuries       []common.Address
-	ActiveMediators    []common.Address
-	PrecedingMediators []common.Address
+type MediatorInfo101 struct {
+	*MediatorInfoBase101
+	*core.MediatorApplyInfo
+	*core.MediatorInfoExpand
 }
