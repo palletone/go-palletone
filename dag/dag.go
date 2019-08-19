@@ -888,8 +888,13 @@ func (d *Dag) GetContractJury(contractId []byte) (*modules.ElectionNode, error) 
 
 // createUnit, create a unit when mediator being produced
 func (d *Dag) CreateUnit(mAddr common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error) {
-	_, _, _, rep, _ := d.Memdag.GetUnstableRepositories()
-	return d.unstableUnitRep.CreateUnit(mAddr, txpool, rep, t)
+	_, _, state, rep, _ := d.Memdag.GetUnstableRepositories()
+	med, err := state.RetrieveMediator(mAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool, rep, t)
 }
 
 // save header

@@ -2,8 +2,8 @@ FROM ubuntu:18.04
 
 MAINTAINER palletone "contract@pallet.one"
 
-COPY /node2 /palletone/node2
+COPY /node1/gptn /palletone/mediator/
 
-WORKDIR /palletone/node2
+WORKDIR /palletone/mediator
 
 CMD ["./gptn"]

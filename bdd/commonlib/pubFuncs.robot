@@ -1,6 +1,9 @@
 *** Settings ***
 Resource          pubVariables.robot
 Library           Collections
+Library           RequestsLibrary
+Library           String
+Library           BuiltIn
 
 *** Keywords ***
 queryCAHolder
@@ -128,7 +131,8 @@ deployContract
     [Return]    ${respJson}
 
 invokeContract
-    [Arguments]    ${from}    ${to}    ${ptnAmount}    ${ptnFee}    ${contractId}    ${args}    ${certId}=${null}
+    [Arguments]    ${from}    ${to}    ${ptnAmount}    ${ptnFee}    ${contractId}    ${args}
+    ...    ${certId}=${null}
     ${params}=    Create List    ${from}    ${to}    ${ptnAmount}    ${ptnFee}    ${contractId}
     ...    ${args}    ${certId}    0
     ${respJson}=    sendRpcPost    ${host}    ${ccinvokeMethod}    ${params}    InvokeContract
@@ -194,7 +198,7 @@ User installs contract template
 
 User deploys contract
     ${args}=    Create List    A    1000
-    ${respJson}=    deployContract    ${tokenHolder}    ${tokenHolder}    1000    10    ${gTplId}
+    ${respJson}=    deployContract    ${tokenHolder}    ${tokenHolder}    1000    100    ${gTplId}
     ...    ${args}
     ${result}=    Get From Dictionary    ${respJson}    result
     ${reqId}=    Get From Dictionary    ${result}    reqId
@@ -205,7 +209,7 @@ User deploys contract
 
 User stops contract
     ${args}=    Create List    stop
-    ${respJson}=    deployContract    ${tokenHolder}    ${tokenHolder}    1000    10    ${gTplId}
+    ${respJson}=    deployContract    ${tokenHolder}    ${tokenHolder}    1000    100    ${gTplId}
     ...    ${args}
     ${result}=    Get From Dictionary    ${respJson}    result
     ${reqId}=    Get From Dictionary    ${result}    reqId
@@ -229,12 +233,7 @@ Wait for unit about contract to be confirmed by unit height
     \    Run Keyword If    ${waitTimes}-${t}==1    Fail    "It takes too long for jury to signature"
     \    Sleep    5s
     # ------- query error code ------- #
-    ${errCode}=    Evaluate    re.findall('\"error_code\":(\\d*)', '${result}')    re
-    ${errMsg}=    Evaluate    re.findall('\"error_message\":\"([^"]*)\"', '${result}')    re
-    ${len}=    Get Length    ${errCode}
-    ${errCode}=    Run Keyword If    ${len}>=1    Get From List    ${errCode}    0
-    ${len}=    Get Length    ${errMsg}
-    ${errMsg}=    Run Keyword If    ${len}>=1    Get From List    ${errMsg}    0
+    ${errCode}    ${errMsg}=    Query Error Msg From Response    ${result}
     Run Keyword If    ${checkCode}==${true}    Check response code    ${errCode}    ${errMsg}
     # ------- end of query error code ------- #
     ${result}=    To Json    ${result}
@@ -264,3 +263,41 @@ Get invoke payload info
     ${payload}=    Get From Dictionary    ${invokeInfo}    payload
     ${payload}=    To Json    ${payload}
     [Return]    ${payload}
+
+Query Error Msg From Response
+    [Arguments]    ${resStr}
+    ${res}=    To Json    ${resStr}
+    ${info}=    Get From Dictionary    ${res}    info
+    # template
+    ${tpl}=    Evaluate    ${info}.get("contract_tpl", {})
+    ${type}=    Evaluate    type(${tpl}).__name__
+    ${tplLen}=    Run Keyword If    '${type}'=='NoneType'    Set Variable    ${0}
+    ...    ELSE    Get Length    ${tpl}
+    # deploy
+    ${deploy}=    Get From Dictionary    ${info}    contract_deploy
+    ${type}=    Evaluate    type(${deploy}).__name__
+    ${deployLen}=    Run Keyword If    '${type}'=='NoneType'    Set Variable    ${0}
+    ...    ELSE    Get Length    ${deploy}
+    # invoke
+    ${invoke}=    Get From Dictionary    ${info}    contract_invoke
+    ${type}=    Evaluate    type(${invoke}).__name__
+    ${invokeLen}=    Run Keyword If    '${type}'=='NoneType'    Set Variable    ${0}
+    ...    ELSE    Get Length    ${invoke}
+    # stop
+    ${stop}=    Get From Dictionary    ${info}    contract_stop
+    ${type}=    Evaluate    type(${stop}).__name__
+    ${stopLen}=    Run Keyword If    '${type}'=='NoneType'    Set Variable    ${0}
+    ...    ELSE    Get Length    ${stop}
+    # query error code
+    ${errCode}    ${errMsg}=    Run Keyword If    ${tplLen}>0    queryErr    ${tpl}
+    ...    ELSE IF    ${deployLen}>0    queryErr    ${deploy}
+    ...    ELSE IF    ${invokeLen}>0    queryErr    ${invoke}
+    ...    ELSE IF    ${stopLen}>0    queryErr    ${stop}
+    ...    ELSE    Set Variable    ${-1}    Get no error info from response
+    [Return]    ${errCode}    ${errMsg}
+
+queryErr
+    [Arguments]    ${res}
+    ${errCode}=    Get From Dictionary    ${res}    error_code
+    ${errMsg}=    Get From Dictionary    ${res}    error_message
+    [Return]    ${errCode}    ${errMsg}

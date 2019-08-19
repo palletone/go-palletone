@@ -142,3 +142,7 @@ let pos=`echo "$initvalue" | awk -F ''$charToSearch'' '{printf "%d", length($0)-
 genesishash=${initvalue:$pos:66}
 
 ModifyP2PConfig $n $genesishash
+
+num=$[$n+1]
+MakeTestNet $num $genesishash
+

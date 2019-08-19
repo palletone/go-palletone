@@ -28,10 +28,13 @@ child.expect(pexpect.EOF)
 EOFLog = child.before
 print EOFLog
 
-#process.call("sed -i 's/\"mediator_interval\": 3,/\"mediator_interval\": 2,/g' ptn-genesis.json",shell=True)
-#process.call("sed -i 's/\"maintenance_skip_slots\": 1,/\"maintenance_skip_slots\": 0,/g' ptn-genesis.json",shell=True)
-#process.call("grep 'mediator_interval' ptn-genesis.json",shell=True)
-#process.call("grep 'maintenance_skip_slots' ptn-genesis.json",shell=True)
+
+subprocess.call("sed -i 's/\"mediator_interval\": 3,/\"mediator_interval\": 2,/g' ptn-genesis.json",shell=True)
+subprocess.call("sed -i 's/\"maintenance_skip_slots\": 2,/\"maintenance_skip_slots\": 0,/g' ptn-genesis.json",shell=True)
+subprocess.call("sed -i 's/\"min_maint_skip_slots\": 2,/\"min_maint_skip_slots\": 0,/g' ptn-genesis.json",shell=True)
+subprocess.call("grep 'mediator_interval' ptn-genesis.json",shell=True)
+subprocess.call("grep 'maintenance_skip_slots' ptn-genesis.json",shell=True)
+subprocess.call("grep 'min_maint_skip_slots' ptn-genesis.json",shell=True)
 
 '''
 child = pexpect.spawn(command="./gptn --exec 'personal.listAccounts' attach palletone/gptn.ipc")

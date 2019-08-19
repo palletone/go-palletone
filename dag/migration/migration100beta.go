@@ -137,17 +137,17 @@ func (m *Migration100_101) ExecuteUpgrade() error {
 func (m *Migration100_101) upgradeMediatorInfo() error {
 	oldMediatorsIterator := m.statedb.NewIteratorWithPrefix(constants.MEDIATOR_INFO_PREFIX)
 	for oldMediatorsIterator.Next() {
-		oldMediator := &OldMediatorInfo{}
+		oldMediator := &MediatorInfo100{}
 		err := rlp.DecodeBytes(oldMediatorsIterator.Value(), oldMediator)
 		if err != nil {
 			log.Debugf(err.Error())
 			return err
 		}
 
-		newMediator := &modules.MediatorInfo{
-			MediatorInfoBase:   oldMediator.MediatorInfoBase,
-			MediatorApplyInfo:  &core.MediatorApplyInfo{Description: oldMediator.ApplyInfo},
-			MediatorInfoExpand: oldMediator.MediatorInfoExpand,
+		newMediator := &MediatorInfo101{
+			MediatorInfoBase101: oldMediator.MediatorInfoBase101,
+			MediatorApplyInfo:   &core.MediatorApplyInfo{Description: oldMediator.ApplyInfo},
+			MediatorInfoExpand:  oldMediator.MediatorInfoExpand,
 		}
 
 		err = storage.StoreToRlpBytes(m.statedb, oldMediatorsIterator.Key(), newMediator)
@@ -160,13 +160,13 @@ func (m *Migration100_101) upgradeMediatorInfo() error {
 	return nil
 }
 
-type OldMediatorInfo struct {
-	*core.MediatorInfoBase
-	*OldMediatorApplyInfo
+type MediatorInfo100 struct {
+	*MediatorInfoBase101
+	*MediatorApplyInfo100
 	*core.MediatorInfoExpand
 }
 
-type OldMediatorApplyInfo struct {
+type MediatorApplyInfo100 struct {
 	ApplyInfo string `json:"applyInfo"` //  申请信息
 }
 
@@ -178,7 +178,7 @@ func (m *Migration100_101) upgradeGP() error {
 		return err
 	}
 
-	newData := &GlobalPropertyTemp101{}
+	newData := &GlobalProperty101{}
 	newData.ActiveJuries = oldGp.ActiveJuries
 	newData.ActiveMediators = oldGp.ActiveMediators
 	newData.PrecedingMediators = oldGp.PrecedingMediators
@@ -254,7 +254,7 @@ type GlobalProperty100 struct {
 }
 
 type GlobalPropBase100 struct {
-	ImmutableParameters ImmutableChainParameters100 // 不可改变的区块链网络参数
+	ImmutableParameters ImmutableChainParameters101 // 不可改变的区块链网络参数
 	ChainParameters     ChainParameters100          // 区块链网络参数
 }
 
