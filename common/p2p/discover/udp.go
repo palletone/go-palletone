@@ -330,7 +330,7 @@ func (t *udp) findnode(toid NodeID, toaddr *net.UDPAddr, target NodeID) ([]*Node
 				} else {
 					log.Debug("Bad discv4 neighbors is alien", "node", n.ID.TerminalString())
 					nodes = nodes[0:0]
-					t.alienRestrict.Set([]byte(n.ID.TerminalString()), []byte(n.String()), 3600)
+					//t.alienRestrict.Set([]byte(n.ID.TerminalString()), []byte(n.String()), 3600)
 					return false
 				}
 			}
@@ -615,9 +615,9 @@ func (req *ping) handle(t *udp, from *net.UDPAddr, fromID NodeID, mac []byte) er
 	if req.Version != configure.UdpVersion || !bytes.Equal(req.Genesis, configure.GenesisHash) {
 		//log.Debug("Bad discv4 ping", "Req Version", req.Version, "Version", configure.UdpVersion,
 		//	"Req Genesis", req.Genesis, "Genesis", configure.GenesisHash)
-		if t.alienRestrict != nil {
-			t.alienRestrict.Set([]byte(fromID.TerminalString()), []byte(fromID.String()), 3600)
-		}
+		//if t.alienRestrict != nil {
+		//	t.alienRestrict.Set([]byte(fromID.TerminalString()), []byte(fromID.String()), 3600)
+		//}
 		return errUnknownNode
 	}
 	//End Add by wangjiyou for discv4 in 2019-7-19
@@ -665,9 +665,9 @@ func (req *findnode) handle(t *udp, from *net.UDPAddr, fromID NodeID, mac []byte
 	if req.Version != configure.UdpVersion || !bytes.Equal(req.Genesis, configure.GenesisHash) {
 		//log.Debug("Bad discv4 findnode", "Req Version", req.Version, "Version", configure.UdpVersion,
 		//	"Req Genesis", req.Genesis, "Genesis", configure.GenesisHash)
-		if t.alienRestrict != nil {
-			t.alienRestrict.Set([]byte(fromID.TerminalString()), []byte(fromID.String()), 3600)
-		}
+		//if t.alienRestrict != nil {
+		//	t.alienRestrict.Set([]byte(fromID.TerminalString()), []byte(fromID.String()), 3600)
+		//}
 		return errUnknownNode
 	}
 	//End Add by wangjiyou for discv4 in 2019-8-14
@@ -688,9 +688,6 @@ func (req *findnode) handle(t *udp, from *net.UDPAddr, fromID NodeID, mac []byte
 		// port of the target as the source address. The recipient of
 		// the findnode packet would then send a neighbors packet
 		// (which is a much bigger packet than findnode) to the victim.
-		//TODO add alienRestrict that the node is not matched ???
-		//t.alienRestrict.Set([]byte(fromID.TerminalString()), []byte(""), 3600)
-
 		return errUnknownNode
 	}
 	target := crypto.Keccak256Hash(req.Target[:])
