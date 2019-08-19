@@ -44,7 +44,7 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'apply',
 			call: 'mediator_apply',
-			params: 2,
+			params: 1,
 		}),
 		new web3._extend.Method({
 			name: 'isApproved',

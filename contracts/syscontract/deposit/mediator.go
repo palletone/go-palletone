@@ -67,9 +67,9 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	}
 
 	applyingAddrStr := applyingAddr.Str()
-	if mco.AddStr != applyingAddrStr || mco.RewardAdd != applyingAddrStr {
-		errStr := fmt.Sprintf("the calling account(%v) is not produce account(%v) or reward account(%v)",
-			applyingAddrStr, mco.AddStr, mco.RewardAdd)
+	if mco.AddStr != applyingAddrStr /*|| mco.RewardAdd != applyingAddrStr*/ {
+		errStr := fmt.Sprintf("the calling account(%v) is not applying account(%v)",
+			applyingAddrStr, mco.AddStr)
 		log.Error(errStr)
 		return shim.Error(errStr)
 	}

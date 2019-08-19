@@ -190,7 +190,7 @@ type TxExecuteResult struct {
 	Warning   string      `json:"warning"`   // 警告
 }
 
-func (a *PrivateMediatorAPI) Apply(applyAddStr string, args modules.MediatorCreateArgs) (*TxExecuteResult, error) {
+func (a *PrivateMediatorAPI) Apply(/*applyAddStr string, */args modules.MediatorCreateArgs) (*TxExecuteResult, error) {
 	// 参数补全
 	if args.MediatorApplyInfo == nil {
 		args.MediatorApplyInfo = core.NewMediatorApplyInfo()
@@ -206,10 +206,10 @@ func (a *PrivateMediatorAPI) Apply(applyAddStr string, args modules.MediatorCrea
 		return nil, err
 	}
 
-	if !(applyAddStr == args.AddStr || applyAddStr == args.RewardAdd) {
-		return nil, fmt.Errorf("the calling account(%v) is not produce account(%v) or reward account(%v)",
-			applyAddStr, args.AddStr, args.RewardAdd)
-	}
+	//if !(applyAddStr == args.AddStr || applyAddStr == args.RewardAdd) {
+	//	return nil, fmt.Errorf("the calling account(%v) is not produce account(%v) or reward account(%v)",
+	//		applyAddStr, args.AddStr, args.RewardAdd)
+	//}
 
 	// 判断本节点是否同步完成，数据是否最新
 	if !a.Dag().IsSynced() {
@@ -221,10 +221,10 @@ func (a *PrivateMediatorAPI) Apply(applyAddStr string, args modules.MediatorCrea
 		return nil, fmt.Errorf("account %v is already a mediator", args.AddStr)
 	}
 
-	applyAdd, err := core.StrToMedAdd(applyAddStr)
-	if err != nil {
-		return nil, err
-	}
+	//applyAdd, err := core.StrToMedAdd(applyAddStr)
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	// 参数序列化
 	argsB, err := json.Marshal(args)
@@ -235,7 +235,9 @@ func (a *PrivateMediatorAPI) Apply(applyAddStr string, args modules.MediatorCrea
 
 	// 调用系统合约
 	fee := a.Dag().GetChainParameters().MediatorCreateFee
-	reqId, err := a.ContractInvokeReqTx(applyAdd, applyAdd, 0, fee, nil,
+	//reqId, err := a.ContractInvokeReqTx(applyAdd, applyAdd, 0, fee, nil,
+	//	syscontract.DepositContractAddress, cArgs, 0)
+	reqId, err := a.ContractInvokeReqTx(addr, addr, 0, fee, nil,
 		syscontract.DepositContractAddress, cArgs, 0)
 	if err != nil {
 		return nil, err
