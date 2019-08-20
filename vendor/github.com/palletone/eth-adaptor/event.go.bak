@@ -1,4 +1,4 @@
-package adaptoreth
+package ethadaptor
 
 import (
 	"context"
@@ -124,11 +124,11 @@ func (it *PalletOneDepositIterator) Close() error {
 	return nil
 }
 
-func GetEventByAddress(getEventByAddressParams *adaptor.GetEventByAddressParams, rpcParams *RPCParams, netID int) (string, error) {
+func GetEventByAddress(getEventByAddressParams *adaptor.GetEventByAddressParams, rpcParams *RPCParams, netID int) (*adaptor.GetEventByAddressResult, error) {
 	//get rpc client
 	client, err := GetClient(rpcParams)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	//
@@ -140,13 +140,13 @@ func GetEventByAddress(getEventByAddressParams *adaptor.GetEventByAddressParams,
 	if getEventByAddressParams.StartHeight == "" {
 		header, err := client.HeaderByNumber(context.Background(), nil)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		StartHeight = header.Number.Uint64() - 172800 // 30 days
 	} else {
 		StartHeight, err = strconv.ParseUint(getEventByAddressParams.StartHeight, 10, 64)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 	}
 	var EndHeight *uint64
@@ -155,7 +155,7 @@ func GetEventByAddress(getEventByAddressParams *adaptor.GetEventByAddressParams,
 	} else {
 		parseHeight, err := strconv.ParseUint(getEventByAddressParams.EndHeight, 10, 64)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		EndHeight = new(uint64)
 		*EndHeight = parseHeight
@@ -176,11 +176,5 @@ func GetEventByAddress(getEventByAddressParams *adaptor.GetEventByAddressParams,
 		}
 	}
 
-	//
-	jsonResult, err := json.Marshal(result)
-	if err != nil {
-		return "", err
-	}
-
-	return string(jsonResult), nil
+	return &result, nil
 }
