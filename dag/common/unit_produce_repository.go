@@ -169,7 +169,7 @@ func (rep *UnitProduceRepository) PushUnit(newUnit *modules.Unit) error {
 // ApplyUnit, 运用下一个 unit 更新整个区块链状态
 func (rep *UnitProduceRepository) ApplyUnit(nextUnit *modules.Unit) error {
 	defer func(start time.Time) {
-		log.Debugf("ApplyUnit cost time: %v", time.Since(start))
+		log.Debugf("ApplyUnit[%s] cost time: %v", nextUnit.UnitHash.String(), time.Since(start))
 	}(time.Now())
 
 	// 计算当前 unit 到上一个 unit 之间的缺失数量，并更新每个mediator的unit的缺失数量
