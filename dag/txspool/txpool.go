@@ -657,6 +657,8 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction, n
 				this.Pending = true
 				this.Discarded = true
 				pool.all.Store(tx_hash, this)
+				// delete utxo
+				pool.deletePoolUtxos(tx.Tx)
 				return
 			}
 		} else {
@@ -671,6 +673,8 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction, n
 	tx.UnitHash = hash
 	tx.UnitIndex = number
 	tx.Index = index
+	// delete utxo
+	pool.deletePoolUtxos(tx.Tx)
 	pool.all.Store(tx_hash, tx)
 }
 
@@ -1878,4 +1882,17 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 
 func (pool *TxPool) deleteOrphanTxOutputs(outpoint modules.OutPoint) {
 	pool.outputs.Delete(outpoint)
+}
+
+func (pool *TxPool) deletePoolUtxos(tx *modules.Transaction) {
+	for _, msg := range tx.Messages() {
+		if msg.App == modules.APP_PAYMENT {
+			payment, ok := msg.Payload.(*modules.PaymentPayload)
+			if ok {
+				for _, in := range payment.Inputs {
+					pool.deleteOrphanTxOutputs(*in.PreviousOutPoint)
+				}
+			}
+		}
+	}
 }
