@@ -476,8 +476,8 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 	}
 	a, b, c, d, e, err := chain.addUnit(unit, txpool)
 	log.DebugDynamic(func() string {
-		return fmt.Sprintf("MemDag[%s] AddUnit cost time: %v ,index: %d, hash: %s", chain.token.String(),
-			time.Since(start), unit.NumberU64(), unit.Hash().String())
+		return fmt.Sprintf("MemDag[%s]: index: %d, hash: %s,AddUnit cost time: %v ,", chain.token.String(),
+			unit.NumberU64(), unit.Hash().String(), time.Since(start))
 	})
 
 	if err == nil {

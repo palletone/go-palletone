@@ -20,6 +20,9 @@
 package migration
 
 import (
+	"strconv"
+
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
@@ -27,10 +30,9 @@ import (
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
-	"github.com/ethereum/go-ethereum/rlp"
 )
 
-type Migration101_102 struct {
+type Migration100_101 struct {
 	dagdb   ptndb.Database
 	idxdb   ptndb.Database
 	utxodb  ptndb.Database
@@ -38,17 +40,84 @@ type Migration101_102 struct {
 	propdb  ptndb.Database
 }
 
-func (m *Migration101_102) FromVersion() string {
+func (m *Migration100_101) FromVersion() string {
+	return "1.0.0-beta"
+}
+
+func (m *Migration100_101) ToVersion() string {
 	return "1.0.1-beta"
 }
 
-func (m *Migration101_102) ToVersion() string {
-	return "1.0.2-beta"
+func (m *Migration100_101) utxoToStxo() error {
+	//删除已经花费的UTXO
+	dbop := storage.NewUtxoDb(m.utxodb)
+	utxos, err := dbop.GetAllUtxos()
+	if err != nil {
+		return err
+	}
+	for outpoint, utxo := range utxos {
+		outpoint := outpoint
+		if utxo.IsSpent() {
+			err = dbop.DeleteUtxo(&outpoint, common.Hash{}, 0)
+			if err != nil {
+				log.Errorf("Migrate utxo db,delete spent utxo error:%s", err.Error())
+				return err
+			}
+		}
+	}
+	dagdb := storage.NewDagDb(m.dagdb)
+	iter := m.dagdb.NewIteratorWithPrefix(constants.TRANSACTION_PREFIX)
+	for iter.Next() {
+		key := iter.Key()
+		value := iter.Value()
+		tx := new(modules.Transaction)
+		err := rlp.DecodeBytes(value, tx)
+		if err != nil {
+			log.Errorf("Cannot decode key[%s] rlp tx:%x", key, value)
+			continue
+		}
+
+		spents := tx.GetSpendOutpoints()
+		for _, spent := range spents {
+			stxo, err := dbop.GetStxoEntry(spent)
+			if err == nil && stxo != nil {
+				stxo.SpentByTxId = tx.Hash()
+				lookup, _ := dagdb.GetTxLookupEntry(tx.Hash())
+				stxo.SpentTime = lookup.Timestamp
+				log.Debugf("Update stxo spentTxId:%s,spentTime:%d", stxo.SpentByTxId.String(), stxo.SpentTime)
+				dbop.SaveStxoEntry(spent, stxo)
+			}
+		}
+	}
+
+	// txs, err := dagdb.GetAllTxs()
+	// if err != nil {
+	// 	log.Error(err.Error())
+	// }
+	// log.Debugf("Tx count:%d", len(txs))
+	// for i, tx := range txs {
+	// 	if tx == nil {
+	// 		log.Errorf("tx[%d] is nil", i)
+	// 	}
+	// 	spents := tx.GetSpendOutpoints()
+	// 	for _, spent := range spents {
+	// 		stxo, err := dbop.GetStxoEntry(spent)
+	// 		if err == nil && stxo != nil {
+	// 			stxo.SpentByTxId = tx.Hash()
+	// 			lookup, _ := dagdb.GetTxLookupEntry(tx.Hash())
+	// 			stxo.SpentTime = lookup.Timestamp
+	// 			log.Debugf("Update stxo spentTxId:%s,spentTime:%d", stxo.SpentByTxId.String(), stxo.SpentTime)
+	// 			dbop.SaveStxoEntry(spent, stxo)
+	// 		}
+	// 	}
+	// }
+
+	return nil
 }
 
-func (m *Migration101_102) ExecuteUpgrade() error {
-	//转换GLOBALPROPERTY结构体
-	if err := m.upgradeGP(); err != nil {
+func (m *Migration100_101) ExecuteUpgrade() error {
+	// utxo迁移成Stxo
+	if err := m.utxoToStxo(); err != nil {
 		return err
 	}
 
@@ -57,29 +126,27 @@ func (m *Migration101_102) ExecuteUpgrade() error {
 		return err
 	}
 
+	//转换GLOBALPROPERTY结构体
+	if err := m.upgradeGP(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (m *Migration101_102) upgradeMediatorInfo() error {
+func (m *Migration100_101) upgradeMediatorInfo() error {
 	oldMediatorsIterator := m.statedb.NewIteratorWithPrefix(constants.MEDIATOR_INFO_PREFIX)
 	for oldMediatorsIterator.Next() {
-		oldMediator := &MediatorInfo101{}
+		oldMediator := &MediatorInfo100{}
 		err := rlp.DecodeBytes(oldMediatorsIterator.Value(), oldMediator)
 		if err != nil {
 			log.Debugf(err.Error())
 			return err
 		}
 
-		mib := &core.MediatorInfoBase{
-			AddStr: oldMediator.AddStr,
-			RewardAdd: oldMediator.AddStr,
-			InitPubKey: oldMediator.InitPubKey,
-			Node: oldMediator.Node,
-		}
-
-		newMediator := &modules.MediatorInfo{
-			MediatorInfoBase: mib,
-			MediatorApplyInfo:   oldMediator.MediatorApplyInfo,
+		newMediator := &MediatorInfo101{
+			MediatorInfoBase101: oldMediator.MediatorInfoBase101,
+			MediatorApplyInfo:   &core.MediatorApplyInfo{Description: oldMediator.ApplyInfo},
 			MediatorInfoExpand:  oldMediator.MediatorInfoExpand,
 		}
 
@@ -93,27 +160,81 @@ func (m *Migration101_102) upgradeMediatorInfo() error {
 	return nil
 }
 
-func (m *Migration101_102) upgradeGP() error {
-	oldGp := GlobalProperty101{}
+type MediatorInfo100 struct {
+	*MediatorInfoBase101
+	*MediatorApplyInfo100
+	*core.MediatorInfoExpand
+}
+
+type MediatorApplyInfo100 struct {
+	ApplyInfo string `json:"applyInfo"` //  申请信息
+}
+
+func (m *Migration100_101) upgradeGP() error {
+	oldGp := GlobalProperty100{}
 	err := storage.RetrieveFromRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, &oldGp)
 	if err != nil {
 		log.Errorf(err.Error())
 		return err
 	}
 
-	newData := &modules.GlobalPropertyTemp{}
+	newData := &GlobalProperty101{}
 	newData.ActiveJuries = oldGp.ActiveJuries
 	newData.ActiveMediators = oldGp.ActiveMediators
 	newData.PrecedingMediators = oldGp.PrecedingMediators
-	newData.ChainParameters = oldGp.ChainParameters
+	newData.ImmutableParameters = oldGp.ImmutableParameters
+	newData.ChainParameters.ChainParametersBase = oldGp.ChainParameters.ChainParametersBase
 
-	newData.ImmutableParameters.MinMaintSkipSlots = 2
-	newData.ImmutableParameters.MinimumMediatorCount = oldGp.ImmutableParameters.MinimumMediatorCount
-	newData.ImmutableParameters.MinMediatorInterval = oldGp.ImmutableParameters.MinMediatorInterval
-	newData.ImmutableParameters.UccPrivileged = oldGp.ImmutableParameters.UccPrivileged
-	newData.ImmutableParameters.UccCapDrop = oldGp.ImmutableParameters.UccCapDrop
-	newData.ImmutableParameters.UccNetworkMode = oldGp.ImmutableParameters.UccNetworkMode
-	newData.ImmutableParameters.UccOOMKillDisable = oldGp.ImmutableParameters.UccOOMKillDisable
+	UccMemory, err := strconv.ParseInt(oldGp.ChainParameters.UccMemory, 10, 64)
+	if err != nil {
+		return err
+	}
+	newData.ChainParameters.UccMemory = UccMemory
+	UccCpuShares, err := strconv.ParseInt(oldGp.ChainParameters.UccCpuShares, 10, 64)
+	if err != nil {
+		return err
+	}
+	newData.ChainParameters.UccCpuShares = UccCpuShares
+	UccCpuQuota, err := strconv.ParseInt(oldGp.ChainParameters.UccCpuQuota, 10, 64)
+	if err != nil {
+		return err
+	}
+	newData.ChainParameters.UccCpuQuota = UccCpuQuota
+	newData.ChainParameters.UccDisk = core.DefaultUccDisk
+
+	TempUccMemory, err := strconv.ParseInt(oldGp.ChainParameters.TempUccMemory, 10, 64)
+	if err != nil {
+		return err
+	}
+	newData.ChainParameters.TempUccMemory = TempUccMemory
+	TempUccCpuShares, err := strconv.ParseInt(oldGp.ChainParameters.TempUccCpuShares, 10, 64)
+	if err != nil {
+		return err
+	}
+	newData.ChainParameters.TempUccCpuShares = TempUccCpuShares
+	TempUccCpuQuota, err := strconv.ParseInt(oldGp.ChainParameters.TempUccCpuQuota, 10, 64)
+	if err != nil {
+		return err
+	}
+	newData.ChainParameters.TempUccCpuQuota = TempUccCpuQuota
+
+	ContractSignatureNum, err := strconv.ParseInt(oldGp.ChainParameters.ContractSignatureNum, 10, 64)
+	if err != nil {
+		return err
+	}
+	newData.ChainParameters.ContractSignatureNum = int(ContractSignatureNum)
+	ContractElectionNum, err := strconv.ParseInt(oldGp.ChainParameters.ContractElectionNum, 10, 64)
+	if err != nil {
+		return err
+	}
+	newData.ChainParameters.ContractElectionNum = int(ContractElectionNum)
+
+	newData.ChainParameters.ContractTxTimeoutUnitFee = core.DefaultContractTxTimeoutUnitFee
+	newData.ChainParameters.ContractTxSizeUnitFee = core.DefaultContractTxSizeUnitFee
+	newData.ChainParameters.ContractTxInstallFeeLevel = core.DefaultContractTxInstallFeeLevel
+	newData.ChainParameters.ContractTxDeployFeeLevel = core.DefaultContractTxDeployFeeLevel
+	newData.ChainParameters.ContractTxInvokeFeeLevel = core.DefaultContractTxInvokeFeeLevel
+	newData.ChainParameters.ContractTxStopFeeLevel = core.DefaultContractTxStopFeeLevel
 
 	err = storage.StoreToRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, newData)
 	if err != nil {
@@ -124,36 +245,36 @@ func (m *Migration101_102) upgradeGP() error {
 	return nil
 }
 
-type GlobalProperty101 struct {
-	GlobalPropBase101
+type GlobalProperty100 struct {
+	GlobalPropBase100
 
 	ActiveJuries       []common.Address
 	ActiveMediators    []common.Address
 	PrecedingMediators []common.Address
 }
 
-type GlobalPropBase101 struct {
+type GlobalPropBase100 struct {
 	ImmutableParameters ImmutableChainParameters101 // 不可改变的区块链网络参数
-	ChainParameters     core.ChainParameters        // 区块链网络参数
+	ChainParameters     ChainParameters100          // 区块链网络参数
 }
 
-type ImmutableChainParameters101 struct {
-	MinimumMediatorCount uint8    `json:"min_mediator_count"`    // 最小活跃mediator数量
-	MinMediatorInterval  uint8    `json:"min_mediator_interval"` // 最小的生产槽间隔时间
-	UccPrivileged        bool     `json:"ucc_privileged"`        // 防止容器以root权限运行
-	UccCapDrop           []string `json:"ucc_cap_drop"`          // 确保容器以最小权限运行
-	UccNetworkMode       string   `json:"ucc_network_mode"`      // 容器运行网络模式
-	UccOOMKillDisable    bool     `json:"ucc_oom_kill_disable"`  // 是否内存使用量超过上限时系统杀死进程
-}
+type ChainParameters100 struct {
+	core.ChainParametersBase
 
-type MediatorInfoBase101 struct {
-	AddStr     string `json:"account"`    // mediator账户地址
-	InitPubKey string `json:"initPubKey"` // mediator的群签名初始公钥
-	Node       string `json:"node"`       // mediator节点网络信息，包括ip和端口等
-}
+	DepositDailyReward string
+	DepositPeriod      string
 
-type MediatorInfo101 struct {
-	*MediatorInfoBase101
-	*core.MediatorApplyInfo
-	*core.MediatorInfoExpand
+	UccMemory     string
+	UccMemorySwap string
+	UccCpuShares  string
+	UccCpuQuota   string
+	UccCpuPeriod  string
+
+	TempUccMemory     string
+	TempUccMemorySwap string
+	TempUccCpuShares  string
+	TempUccCpuQuota   string
+
+	ContractSignatureNum string
+	ContractElectionNum  string
 }
