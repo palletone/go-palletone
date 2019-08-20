@@ -466,7 +466,6 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		}
 		txHash := tx.Hash()
 		if pm.IsExistInCache(txHash.Bytes()) {
-			//log.Debugf("Received tx(%s) again, ignore it", txHash.String())
 			return nil
 		}
 		if tx.IsContractTx() {
@@ -479,7 +478,6 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		if err != nil {
 			log.Infof("the transaction %s not accepteable, err:%s", tx.Hash().String(), err.Error())
 		}
-		//pm.txpool.AddRemote(tx)
 	}
 
 	return nil
