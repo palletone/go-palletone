@@ -38,13 +38,15 @@ import (
 func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string,
 	description, abi, language string, local bool, addrs []common.Address) (reqId common.Hash, TplId []byte, err error) {
 	if from == (common.Address{}) || to == (common.Address{}) || tplName == "" || path == "" || version == "" {
-		log.Error("ContractInstallReq", "param is error")
+		log.Error("ContractInstallReq, param is error")
 		return common.Hash{}, nil, errors.New("ContractInstallReq request param is error")
 	}
 	if len(tplName) > MaxLengthTplName || len(path) > MaxLengthTplPath || len(version) > MaxLengthTplVersion ||
+		len(description) > MaxLengthDescription || len(abi) > MaxLengthAbi || len(language) > MaxLengthLanguage ||
 		len(addrs) > MaxNumberTplEleAddrHash {
 		log.Error("ContractInstallReq", "request param len overflow，len(tplName)",
-			len(tplName), "len(path)", len(path), "len(version)", len(version), "len(addrs)", len(addrs))
+			len(tplName), "len(path)", len(path), "len(version)", len(version), "len(description)", len(description),
+			"len(abi)", len(abi), "len(language)", len(language), "len(addrs)", len(addrs))
 		return common.Hash{}, nil, errors.New("ContractInstallReq, request param len overflow")
 	}
 	if !p.dag.IsContractDeveloper(from) {
@@ -57,7 +59,6 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 		addrHash = append(addrHash, util.RlpHash(addr))
 	}
 	log.Debug("ContractInstallReq", "enter, tplName ", tplName, "path", path, "version", version, "addrHash", addrHash)
-
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_TPL_REQUEST,
 		Payload: &modules.ContractInstallRequestPayload{
@@ -106,13 +107,19 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee uint64, templateId []byte,
 	args [][]byte, extData []byte, timeout time.Duration) (common.Hash, common.Address, error) {
 	if from == (common.Address{}) || to == (common.Address{}) || templateId == nil {
-		log.Error("ContractDeployReq", "param is error")
+		log.Error("ContractDeployReq, param is error")
 		return common.Hash{}, common.Address{}, errors.New("ContractDeployReq request param is error")
 	}
 	if len(templateId) > MaxLengthTplId || len(args) > MaxNumberArgs || len(extData) > MaxLengthExtData {
-		log.Error("ContractDeployReq", "len(templateId)",
+		log.Error("ContractDeployReq", "request param len overflow, len(templateId)",
 			len(templateId), "len(args)", len(args), "len(extData)", len(extData))
 		return common.Hash{}, common.Address{}, errors.New("ContractDeployReq request param len overflow")
+	}
+	for _, arg := range args {
+		if len(arg) > MaxLengthArgs {
+			log.Error("ContractDeployReq", "request param len overflow,len(arg)", len(arg))
+			return common.Hash{}, common.Address{}, errors.New("ContractDeployReq request param len overflow")
+		}
 	}
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_DEPLOY_REQUEST,
@@ -139,12 +146,18 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
 	contractId common.Address, args [][]byte, timeout uint32) (common.Hash, error) {
 	if from == (common.Address{}) || to == (common.Address{}) || contractId == (common.Address{}) || args == nil {
-		log.Error("ContractInvokeReq", "info", "param is error")
+		log.Error("ContractInvokeReq, param is error")
 		return common.Hash{}, errors.New("ContractInvokeReq request param is error")
 	}
 	if len(args) > MaxNumberArgs {
 		log.Error("ContractInvokeReq", "len(args)", len(args))
 		return common.Hash{}, errors.New("ContractInvokeReq request param len overflow")
+	}
+	for _, arg := range args {
+		if len(arg) > MaxLengthArgs {
+			log.Error("ContractInvokeReq", "request param len overflow,len(arg)", len(arg))
+			return common.Hash{}, errors.New("ContractInvokeReq request param args len overflow")
+		}
 	}
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_INVOKE_REQUEST,
@@ -173,8 +186,18 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 func (p *Processor) ContractInvokeReqToken(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64,
 	assetToken string, contractId common.Address, args [][]byte, timeout uint32) (common.Hash, error) {
 	if from == (common.Address{}) || to == (common.Address{}) || contractId == (common.Address{}) || args == nil {
-		log.Error("ContractInvokeReqToken", "param is error")
+		log.Error("ContractInvokeReqToken, param is error")
 		return common.Hash{}, errors.New("ContractInvokeReqToken request param is error")
+	}
+	if len(args) > MaxNumberArgs {
+		log.Error("ContractInvokeReqToken", "len(args)", len(args))
+		return common.Hash{}, errors.New("ContractInvokeReqToken request param len overflow")
+	}
+	for _, arg := range args {
+		if len(arg) > MaxLengthArgs {
+			log.Error("ContractInvokeReqToken", "request param len overflow,len(arg)", len(arg))
+			return common.Hash{}, errors.New("ContractInvokeReqToken request param args len overflow")
+		}
 	}
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_INVOKE_REQUEST,
@@ -199,7 +222,7 @@ func (p *Processor) ContractInvokeReqToken(from, to, toToken common.Address, dao
 func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee uint64,
 	contractId common.Address, deleteImage bool) (common.Hash, error) {
 	if from == (common.Address{}) || to == (common.Address{}) || contractId == (common.Address{}) {
-		log.Error("ContractStopReq", "param is error")
+		log.Error("ContractStopReq, param is error")
 		return common.Hash{}, errors.New("ContractStopReq request param is error")
 	}
 	randNum, err := crypto.GetRandomNonce()
