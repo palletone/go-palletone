@@ -25,15 +25,19 @@ import (
 )
 
 const (
-	DefaultElectionNum      = 2 //todo
-	DefaultContractSigNum   = 2 //todo
-	MaxLengthTplName        = 64              //合约模板名字长度
-	MaxLengthTplPath        = 512             //合约模板文件路径长度
-	MaxLengthTplVersion     = 12              //合约模板版本号长度
-	MaxNumberTplEleAddrHash = 5               //合约模板指定节点地址hash数量
-	MaxLengthTplId          = 128             //合约模板Id长度
-	MaxNumberArgs           = 32              //合约请求参数数量
-	MaxLengthExtData        = 16              //合约请求扩展数据长度
+	DefaultElectionNum      = 2          //todo
+	DefaultContractSigNum   = 2          //todo
+	MaxLengthTplName        = 64         //合约模板名字长度
+	MaxLengthTplPath        = 512        //合约模板文件路径长度
+	MaxLengthTplVersion     = 12         //合约模板版本号长度
+	MaxNumberTplEleAddrHash = 5          //合约模板指定节点地址hash数量
+	MaxLengthTplId          = 128        //合约模板Id长度
+	MaxNumberArgs           = 32         //合约请求参数数量
+	MaxLengthArgs           = 1024       //合约请求输入参数长度
+	MaxLengthExtData        = 16         //合约请求扩展数据长度
+	MaxLengthAbi            = 1024 * 500 //合约Abi数据长度
+	MaxLengthLanguage       = 32         //合约模板语言类型长度
+	MaxLengthDescription    = 1024       //合约描述数据长度
 )
 
 var (
@@ -52,9 +56,9 @@ type JuryAccount struct {
 	Password string
 }
 type Config struct {
-	ContractSigNum int            //user contract jury sig number
-	ElectionNum    int            //vrf election jury number
-	Accounts       []*AccountConf // the set of the mediator info
+	//ContractSigNum int   //user contract jury sig number  //todo  no used
+	//ElectionNum    int   //vrf election jury number       //todo  no used
+	Accounts []*AccountConf // the set of the mediator info
 }
 
 func (aConf *AccountConf) configToAccount() *JuryAccount {
@@ -70,8 +74,6 @@ func (aConf *AccountConf) configToAccount() *JuryAccount {
 }
 
 var DefaultConfig = Config{
-	ContractSigNum: DefaultContractSigNum,
-	ElectionNum:    DefaultElectionNum,
 	Accounts: []*AccountConf{
 		&AccountConf{},
 	},
