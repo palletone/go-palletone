@@ -9,7 +9,7 @@ import (
 )
 
 func TestMediatorJsonConvert(t *testing.T) {
-	oldMi := NewOldMediatorCreateArgs()
+	oldMi := NewMediatorCreateArgs100()
 	oldMi.AddStr = "P1NzevLMVCFJKWr4KAcHxyyh9xXaVU8yv3N"
 	oldMi.InitPubKey = "34k7awAPrFTS8cvbr498EFcgMRBzhkdk3S8guurUashd6jZL3QwBM2qs16gnXVSc7R4cgXwMyvQTGq7AXGrURVz" +
 		"42qV7MXh6tyFtgkaZuj3zEnzE5D2VZ9EYUNRxbQy88YqTjBjXkaQZNhoCcQtMGARYDFnra9vUtLfz82K3AaPwVGe"
@@ -29,7 +29,7 @@ func TestMediatorJsonConvert(t *testing.T) {
 }
 
 func TestMediatorRlpConvert(t *testing.T) {
-	oldMi := NewOldMediatorCreateArgs()
+	oldMi := NewMediatorCreateArgs100()
 	oldMi.AddStr = "P1NzevLMVCFJKWr4KAcHxyyh9xXaVU8yv3N"
 	oldMi.InitPubKey = "34k7awAPrFTS8cvbr498EFcgMRBzhkdk3S8guurUashd6jZL3QwBM2qs16gnXVSc7R4cgXwMyvQTGq7AX" +
 		"GrURVz42qV7MXh6tyFtgkaZuj3zEnzE5D2VZ9EYUNRxbQy88YqTjBjXkaQZNhoCcQtMGARYDFnra9vUtLfz82K3AaPwVGe"
@@ -48,19 +48,19 @@ func TestMediatorRlpConvert(t *testing.T) {
 	t.Log(err)
 }
 
-type OldMediatorCreateArgs struct {
+type MediatorCreateArgs100 struct {
 	*core.MediatorInfoBase
-	*OldMediatorApplyInfo
+	*MediatorApplyInfo100
 }
 
-func NewOldMediatorCreateArgs() *OldMediatorCreateArgs {
-	return &OldMediatorCreateArgs{
+func NewMediatorCreateArgs100() *MediatorCreateArgs100 {
+	return &MediatorCreateArgs100{
 		MediatorInfoBase:     &core.MediatorInfoBase{},
-		OldMediatorApplyInfo: &OldMediatorApplyInfo{},
+		MediatorApplyInfo100: &MediatorApplyInfo100{},
 	}
 }
 
-type OldMediatorApplyInfo struct {
+type MediatorApplyInfo100 struct {
 	ApplyInfo string `json:"applyInfo"` // 节点信息描述
 }
 

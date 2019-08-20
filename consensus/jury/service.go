@@ -188,8 +188,8 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 		mtx:            make(map[common.Hash]*contractTx),
 		mel:            make(map[common.Hash]*electionVrf),
 		lockVrf:        make(map[common.Address][]modules.ElectionInf),
-		electionNum:    cfg.ElectionNum,    //todo contractSigNum
-		contractSigNum: cfg.ContractSigNum, //todo contractEleNum
+		electionNum:    contractSigNum, //todo contractSigNum ,cfg.ContractSigNum
+		contractSigNum: contractEleNum, //todo contractEleNum ,cfg.ElectionNum
 		validator:      validator,
 		errMsgEnable:   true,
 	}
@@ -512,7 +512,7 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 			log.Errorf("[%s]AddContractLoop, error:%s", shortId(reqId.String()), err.Error())
 			continue
 		}
-		log.Debugf("[%s]AddContractLoop, OK, index[%d], Tx hash[%s]", shortId(reqId.String()), index, tx.Hash().String())
+		log.Debugf("[%s]AddContractLoop, OK, index[%d], Tx hash[%s], txSize[%f]", shortId(reqId.String()), index, tx.Hash().String(), tx.Size().Float64())
 		index++
 	}
 	return nil
