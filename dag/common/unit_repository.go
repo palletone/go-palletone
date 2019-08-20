@@ -456,11 +456,16 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 	}
 	ads, err := rep.ComputeTxFeesAllocate(mAddr, txs2)
 	if err != nil {
-		txs2Ids:=""
-		for _,tx:=range txs2{
-			txs2Ids+=tx.Hash().String()+","
+		txs2Ids := ""
+		for _, tx := range txs2 {
+			txs2Ids += tx.Hash().String() + ","
 		}
-		log.Error("CreateUnit", "ComputeTxFees is failed, error", err.Error(),"txs in this unit",txs2Ids)
+
+		pooltxStatusStr := ""
+		for txid, pooltx := range txpool.AllTxpoolTxs() {
+			pooltxStatusStr += txid.String() + ":UnitHash[" + pooltx.UnitHash.String() + "];"
+		}
+		log.Error("CreateUnit", "ComputeTxFees is failed, error", err.Error(), "txs in this unit", txs2Ids, "pool all tx:", pooltxStatusStr)
 		return nil, err
 	}
 
