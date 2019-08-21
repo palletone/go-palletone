@@ -137,6 +137,7 @@ matrix:
         - cd ${BASE_DIR}
         - zip -j ./bdd/logs/oneNode_log.zip ./bdd/node/log/*
         - zip -j ./bdd/logs/gasToken_log.zip ./bdd/GasToken/node/log/*
+        - ./targz_node.sh oneNode
         - |
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
@@ -155,7 +156,7 @@ matrix:
         - sudo -H pip install pexpect
         - sudo -H apt-get install expect
         - sudo -H apt-get install lftp
-        - chmod +x bdd/upload2Ftp.sh
+        - chmod +x bdd/upload2Ftp.sh bdd/targz_node.sh
     - os: linux
       dist: xenial
       go: 1.12.7
@@ -189,7 +190,7 @@ matrix:
             # uplaod all log
             ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH} ${TRAVIS_BUILD_NUMBER};
         - cd ${BASE_DIR}/bdd
-        - source ./targz_node.sh
+        - ./targz_node.sh multiNode
         - |
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
@@ -209,7 +210,7 @@ matrix:
         - sudo -H apt-get install jq
         - sudo -H apt-get install tcl tk expect
         - sudo -H apt-get install lftp
-        - chmod +x bdd/upload2Ftp.sh
+        - chmod +x bdd/upload2Ftp.sh bdd/targz_node.sh
     - os: linux
       dist: xenial
       go: 1.12.7
@@ -245,7 +246,7 @@ matrix:
         - sudo -H pip install pexpect
         - sudo -H apt-get install expect
         - sudo -H apt-get install lftp
-        - chmod +x bdd/upload2Ftp.sh
+        - chmod +x bdd/upload2Ftp.sh bdd/targz_node.sh
     - os: linux
       dist: xenial
       go: 1.12.7
@@ -281,7 +282,7 @@ matrix:
         - sudo -H pip install pexpect
         - sudo -H apt-get install expect
         - sudo -H apt-get install lftp
-        - chmod +x bdd/upload2Ftp.sh
+        - chmod +x bdd/upload2Ftp.sh bdd/targz_node.sh
     - os: linux
       env: usercontract_bdd_3-3
       dist: xenial
@@ -333,7 +334,7 @@ matrix:
         - sudo -H pip install pexpect
         - sudo -H apt-get install expect
         - sudo -H apt-get install lftp
-        - chmod +x bdd/upload2Ftp.sh
+        - chmod +x bdd/upload2Ftp.sh bdd/targz_node.sh
 
     # before_install:
     #     - go get -u github.com/palletone/adaptor
