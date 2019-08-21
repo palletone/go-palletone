@@ -467,6 +467,7 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 	if unit.NumberU64() <= chain.stableUnitHeight {
 		log.Debugf("This unit is too old! Ignore it,stable unit height:%d, stable hash:%s",
 			chain.stableUnitHeight, chain.stableUnitHash.String())
+		go txpool.ResetPendingTxs(unit.Transactions())
 		return nil, nil, nil, nil, nil, nil
 	}
 	chain_units := chain.getChainUnits()
@@ -528,6 +529,8 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 				vali_err := validator.NewValidateError(validateCode)
 				log.Debugf("validate main chain unit error, %s, unit hash:%s",
 					vali_err.Error(), uHash.String())
+				// reset unit's txs
+				go txpool.ResetPendingTxs(unit.Transactions())
 				return nil, nil, nil, nil, nil, vali_err
 			}
 			tempdb, _ := temp_db.AddUnit(unit, chain.saveHeaderOnly)
@@ -577,6 +580,8 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 			if validateCode != validator.TxValidationCode_VALID {
 				vali_err := validator.NewValidateError(validateCode)
 				log.Debugf("validate fork unit error, %s, unit hash:%s", vali_err.Error(), uHash.String())
+				// reset unit's txs
+				go txpool.ResetPendingTxs(unit.Transactions())
 				return nil, nil, nil, nil, nil, vali_err
 			}
 			temp, _ := main_temp.AddUnit(unit, chain.saveHeaderOnly)
