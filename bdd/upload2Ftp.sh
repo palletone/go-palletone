@@ -6,6 +6,8 @@ set folder [lindex $argv 1]
 set number [lindex $argv 2]
 spawn lftp travis:$ftppwd@47.74.209.46
 expect "lftp"
+send "mkdir ${folder}\n"
+expect "mkdir"
 send "cd ${folder}\n"
 expect "cd"
 send "mkdir ${number}\n"

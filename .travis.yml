@@ -137,11 +137,12 @@ matrix:
         - cd ${BASE_DIR}
         - zip -j ./bdd/logs/oneNode_log.zip ./bdd/node/log/*
         - zip -j ./bdd/logs/gasToken_log.zip ./bdd/GasToken/node/log/*
+        - cd ${BASE_DIR}/bdd
         - ./targz_node.sh oneNode
         - |
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
-            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH} ${TRAVIS_BUILD_NUMBER};
+            ./upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH} ${TRAVIS_BUILD_NUMBER};
             # echo ftp address
             echo "The path of all bdd log in vsftpd is 'ftp://47.74.209.46"
             echo "If you want to open it in explorer, you should close VPN first."
@@ -162,10 +163,10 @@ matrix:
       go: 1.12.7
       env: multiple_nodes_bdd
       script:
-        #- go build -mod=vendor ./cmd/gptn
+        # - go build -mod=vendor ./cmd/gptn
         - make gptn
         #- cp bdd/light/testcases/!(preset.sh) bdd/node
-        - cp build/bin/gptn bdd/node
+        # - cp ./gptn bdd/node
         - cd bdd/node
         - chmod -R +x *
         - sudo -H chmod +w /etc/hosts
@@ -185,10 +186,10 @@ matrix:
         - sleep 2
         - cd ${BASE_DIR}
         - zip -j ./bdd/logs/zMulti-node.zip ./logs/zMulti-node/*
-        - |
-          if [ $IS_UPLOAD == 'true' ]; then
-            # uplaod all log
-            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH} ${TRAVIS_BUILD_NUMBER};
+        # - |
+        #   if [ $IS_UPLOAD == 'true' ]; then
+        #     # uplaod all log
+        #     ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH} ${TRAVIS_BUILD_NUMBER};
         - cd ${BASE_DIR}/bdd
         - ./targz_node.sh multiNode
         - |
@@ -229,12 +230,13 @@ matrix:
       after_script:
         - killall gptn
         - sleep 2
-        - cd ${BASE_DIR}
-        - zip -j ./bdd/logs/mediatorVote_log.zip ./bdd/mediator-vote/node/log/*
+        - cd ${BASE_DIR}/bdd
+        - zip -j ./logs/mediatorVote_log.zip ./mediator-vote/node/log/*
+        - ./targz_node.sh mediatorVote
         - |
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
-            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH} ${TRAVIS_BUILD_NUMBER};
+            ./upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH} ${TRAVIS_BUILD_NUMBER};
             echo "The path of all bdd log in vsftpd is 'ftp://47.74.209.46"
           fi
       install:
@@ -265,12 +267,13 @@ matrix:
       after_script:
         - killall gptn
         - sleep 2
-        - cd ${BASE_DIR}
-        - zip -j ./bdd/logs/application_log.zip ./bdd/application/node/log/*
+        - cd ${BASE_DIR}/bdd
+        - zip -j ./logs/application_log.zip ./application/node/log/*
+        - ./targz_node.sh applicationBdd
         - |
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
-            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH} ${TRAVIS_BUILD_NUMBER};
+            ./upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH} ${TRAVIS_BUILD_NUMBER};
             echo "The path of all bdd log in vsftpd is 'ftp://47.74.209.46"
           fi
       install:
