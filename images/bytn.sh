@@ -13,12 +13,12 @@ do
   sed -i "s/unix:\/\/\/var\/run\/docker.sock/tcp:\/\/0.0.0.0:2375/g" node$count/ptn-config.toml
   let ++count
 done
-
-cd ..
 exit 0
-docker pull palletone/mediator:$1
+cd ..
 
-docker tag palletone/mediator:$1 palletone/mediator
+docker pull palletone/mediator:1.0.1
+
+docker tag palletone/mediator:1.0.1 palletone/mediator
 
 docker-compose up -d
 

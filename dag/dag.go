@@ -113,14 +113,14 @@ func (d *Dag) GetMainCurrentUnit() *modules.Unit {
 // return higher unit in memdag
 func (d *Dag) GetCurrentUnit(assetId modules.AssetId) *modules.Unit {
 	memUnit := d.GetCurrentMemUnit(assetId, 0)
-	curUnit := d.CurrentUnit(assetId)
-
-	if memUnit == nil {
-		return curUnit
-	}
-	if curUnit.NumberU64() >= memUnit.NumberU64() {
-		return curUnit
-	}
+	//curUnit := d.CurrentUnit(assetId)
+	//
+	//if memUnit == nil {
+	//	return curUnit
+	//}
+	//if curUnit.NumberU64() >= memUnit.NumberU64() {
+	//	return curUnit
+	//}
 	return memUnit
 }
 

@@ -1,9 +1,6 @@
-#先下载镜像
-#./bytn.sh tag
-./bytn.sh 1.0.1
-
-#启动容器，5个mediator节点和1个全节点的测试网络
-docker-compose up -d
+#使用脚本生成节点、下载镜像和启动5个超级节点和1个普通全节点的本地私有链
+#./bytn.sh
+./bytn.sh 
 
 #进入容器
 docker exec -it mediator1 /bin/bash
