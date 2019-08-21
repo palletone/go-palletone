@@ -310,12 +310,12 @@ func isFoundationInvoke(stub shim.ChaincodeStubInterface) bool {
 		return false
 	}
 	//  获取
-	cp, err := stub.GetSystemConfig()
+	gp, err := stub.GetSystemConfig()
 	if err != nil {
 		//log.Error("strconv.ParseUint err:", "error", err)
 		return false
 	}
-	foundationAddress := cp.FoundationAddress
+	foundationAddress := gp.ChainParameters.FoundationAddress
 	// 判断当前请求的是否为基金会
 	if invokeAddr.String() != foundationAddress {
 		log.Error("please use foundation address")
@@ -468,11 +468,12 @@ func nodePayToDepositContract(stub shim.ChaincodeStubInterface, role string) pb.
 		return shim.Error(err.Error())
 	}
 
-	cp, err := stub.GetSystemConfig()
+	gp, err := stub.GetSystemConfig()
 	if err != nil {
 		//log.Error("strconv.ParseUint err:", "error", err)
 		return shim.Error(err.Error())
 	}
+	cp := gp.ChainParameters
 	//  交付地址
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {

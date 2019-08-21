@@ -75,11 +75,11 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	}
 
 	//  判断该地址是否是第一次申请
-	mdeposit, err := GetMediatorDeposit(stub, mco.AddStr)
+	mDeposit, err := GetMediatorDeposit(stub, mco.AddStr)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	if mdeposit != nil {
+	if mDeposit != nil {
 		return shim.Error(mco.AddStr + " has applied for become mediator")
 	}
 
@@ -156,7 +156,8 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface /*, args []st
 	if md.Status != Agree {
 		return shim.Error(invokeAddr.String() + "does not in the agree list")
 	}
-	cp, err := stub.GetSystemConfig()
+	gp, err := stub.GetSystemConfig()
+	cp := gp.ChainParameters
 	if err != nil {
 		return shim.Error(err.Error())
 	}

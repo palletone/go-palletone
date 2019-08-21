@@ -32,5 +32,6 @@ type TxSimulator interface {
 	Done()
 	String() string
 
-	GetChainParameters() ([]byte, error)
+	//GetChainParameters() ([]byte, error)
+	GetGlobalProp() ([]byte, error)
 }

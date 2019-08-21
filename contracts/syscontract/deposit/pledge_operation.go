@@ -60,11 +60,11 @@ func handlePledgeReward(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 	if len(args) != 0 {
 		return shim.Error("need 0 args")
 	}
-	cp, err := stub.GetSystemConfig()
+	gp, err := stub.GetSystemConfig()
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	depositDailyReward := cp.PledgeDailyReward
+	depositDailyReward := gp.ChainParameters.PledgeDailyReward
 
 	err = handleRewardAllocation(stub, depositDailyReward)
 	if err != nil {
