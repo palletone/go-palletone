@@ -23,6 +23,7 @@ import (
 	"context"
 
 	"errors"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"time"
@@ -96,16 +97,17 @@ func (c *ccProviderImpl) ExecuteWithErrorFilter(ctxt context.Context, cccid inte
 }
 
 // Stop stops the chaincode given context and spec
-func (c *ccProviderImpl) Stop(ctxt context.Context, cccid interface{}, spec *pb.ChaincodeDeploymentSpec) error {
+func (c *ccProviderImpl) Stop(ctxt context.Context, cccid interface{}, spec *pb.ChaincodeDeploymentSpec, dontRmCon bool) error {
 	if theChaincodeSupport != nil {
-		return theChaincodeSupport.Stop(ctxt, cccid.(*ccProviderContextImpl).ctx, spec)
+		log.Debugf("theChainode support is not nil.")
+		return theChaincodeSupport.Stop(ctxt, cccid.(*ccProviderContextImpl).ctx, spec, dontRmCon)
 	}
 	return errors.New("Stop:ChaincodeSupport not initialized")
 }
 
-func (c *ccProviderImpl) Destory(ctxt context.Context, cccid interface{}, spec *pb.ChaincodeDeploymentSpec) error {
+func (c *ccProviderImpl) Destroy(ctxt context.Context, cccid interface{}, spec *pb.ChaincodeDeploymentSpec) error {
 	if theChaincodeSupport != nil {
-		return theChaincodeSupport.Destory(ctxt, cccid.(*ccProviderContextImpl).ctx, spec)
+		return theChaincodeSupport.Destroy(ctxt, cccid.(*ccProviderContextImpl).ctx, spec)
 	}
-	return errors.New("Destory:ChaincodeSupport not initialized")
+	return errors.New("Destroy:ChaincodeSupport not initialized")
 }

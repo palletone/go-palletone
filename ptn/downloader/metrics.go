@@ -33,10 +33,10 @@ var (
 	bodyDropMeter    = metrics.NewRegisteredMeter("ptn/downloader/bodies/drop", nil)
 	bodyTimeoutMeter = metrics.NewRegisteredMeter("ptn/downloader/bodies/timeout", nil)
 
-	receiptInMeter      = metrics.NewRegisteredMeter("ptn/downloader/receipts/in", nil)
-	receiptReqTimer     = metrics.NewRegisteredTimer("ptn/downloader/receipts/req", nil)
-	receiptDropMeter    = metrics.NewRegisteredMeter("ptn/downloader/receipts/drop", nil)
-	receiptTimeoutMeter = metrics.NewRegisteredMeter("ptn/downloader/receipts/timeout", nil)
+	//receiptInMeter      = metrics.NewRegisteredMeter("ptn/downloader/receipts/in", nil)
+	//receiptReqTimer     = metrics.NewRegisteredTimer("ptn/downloader/receipts/req", nil)
+	//receiptDropMeter    = metrics.NewRegisteredMeter("ptn/downloader/receipts/drop", nil)
+	//receiptTimeoutMeter = metrics.NewRegisteredMeter("ptn/downloader/receipts/timeout", nil)
 
 	stateInMeter   = metrics.NewRegisteredMeter("ptn/downloader/states/in", nil)
 	stateDropMeter = metrics.NewRegisteredMeter("ptn/downloader/states/drop", nil)

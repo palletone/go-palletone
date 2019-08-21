@@ -20,7 +20,6 @@
 package manger
 
 import (
-	"fmt"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	"time"
@@ -35,14 +34,14 @@ import (
 	"github.com/palletone/go-palletone/dag/rwset"
 )
 
-type chaincodeError struct {
-	status int32
-	msg    string
-}
-
-func (ce chaincodeError) Error() string {
-	return fmt.Sprintf("chaincode error (status: %d, message: %s)", ce.status, ce.msg)
-}
+//type chaincodeError struct {
+//	status int32
+//	msg    string
+//}
+//
+//func (ce chaincodeError) Error() string {
+//	return fmt.Sprintf("chaincode error (status: %d, message: %s)", ce.status, ce.msg)
+//}
 
 //var log = flogging.MustGetLogger("ccmanger")
 
@@ -65,8 +64,8 @@ type Endorser struct {
 
 // validateResult provides the result of endorseProposal verification
 type validateResult struct {
-	prop    *pb.Proposal
-	hdrExt  *pb.ChaincodeHeaderExtension
+	prop *pb.Proposal
+	//hdrExt  *pb.ChaincodeHeaderExtension
 	chainID string
 	txid    string
 	resp    *pb.ProposalResponse
@@ -82,6 +81,7 @@ func NewEndorserServer(s Support) pb.EndorserServer {
 
 //call specified chaincode (system or user)
 func (e *Endorser) callChaincode(contractid []byte, ctxt context.Context, chainID string, version string, txid string, signedProp *pb.SignedProposal, prop *pb.Proposal, cis *pb.ChaincodeInvocationSpec, chaincodeName string, txsim rwset.TxSimulator, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error) {
+	log.Debugf("call chain code enter")
 	log.Debugf("[%s][%s] Entry chaincode: %s version: %s", chainID, shorttxid(txid), chaincodeName, version)
 	defer log.Debugf("[%s][%s] Exit", chainID, shorttxid(txid))
 	var err error
@@ -94,6 +94,7 @@ func (e *Endorser) callChaincode(contractid []byte, ctxt context.Context, chainI
 
 	scc := e.s.IsSysCC(chaincodeName)
 	res, ccevent, err = e.s.Execute(contractid, ctxt, chainID, chaincodeName, version, txid, scc, signedProp, prop, cis, timeout)
+	log.Debugf("execute")
 	if err != nil {
 		return res, nil, err
 	}
@@ -139,27 +140,28 @@ func (e *Endorser) simulateProposal(contractid []byte, ctx context.Context, chai
 	var res *pb.Response
 	var ccevent *pb.ChaincodeEvent
 	res, ccevent, err = e.callChaincode(contractid, ctx, chainID, cid.Version, txid, signedProp, prop, cis, cid.Name, txsim, tmout)
+	log.Debugf("call chain code")
 	if err != nil {
 		log.Errorf("[%s][%s] failed to invoke chaincode %s, error: %+v", chainID, shorttxid(txid), cid, err)
 		return res, nil, nil, err
 	}
 
-	if txsim != nil {
-		//if simResult, err = txsim.GetTxSimulationResults(); err != nil {
-		//	return  nil, nil, nil, err
-		//}
-	}
+	//if txsim != nil {
+	//	//if simResult, err = txsim.GetTxSimulationResults(); err != nil {
+	//	//	return  nil, nil, nil, err
+	//	//}
+	//}
 
 	return res, simResBytes, ccevent, nil
 }
 
 //endorse the proposal
-func (e *Endorser) endorseProposal(ctx context.Context, chainID string, txid string, signedProp *pb.SignedProposal, proposal *pb.Proposal, response *pb.Response, simRes []byte, event *pb.ChaincodeEvent, visibility []byte, ccid *pb.ChaincodeID, txsim rwset.TxSimulator) (*pb.ProposalResponse, error) {
-	log.Debugf("[%s][%s] Entry chaincode: %s", chainID, shorttxid(txid), ccid)
-	defer log.Debugf("[%s][%s] Exit", chainID, shorttxid(txid))
-
-	return nil, nil
-}
+//func (e *Endorser) endorseProposal(ctx context.Context, chainID string, txid string, signedProp *pb.SignedProposal, proposal *pb.Proposal, response *pb.Response, simRes []byte, event *pb.ChaincodeEvent, visibility []byte, ccid *pb.ChaincodeID, txsim rwset.TxSimulator) (*pb.ProposalResponse, error) {
+//	log.Debugf("[%s][%s] Entry chaincode: %s", chainID, shorttxid(txid), ccid)
+//	defer log.Debugf("[%s][%s] Exit", chainID, shorttxid(txid))
+//
+//	return nil, nil
+//}
 
 //preProcess checks the tx proposal headers, uniqueness and ACL
 func (e *Endorser) validateProcess(signedProp *pb.SignedProposal) (*validateResult, error) {
@@ -179,10 +181,10 @@ func (e *Endorser) validateProcess(signedProp *pb.SignedProposal) (*validateResu
 
 	//TODO validate the header
 
-	if err != nil {
-		vr.resp = &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}
-		return vr, err
-	}
+	//if err != nil {
+	//	vr.resp = &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}
+	//	return vr, err
+	//}
 
 	chdr, err := putils.UnmarshalChannelHeader(hdr.ChannelHeader)
 	if err != nil {
@@ -203,6 +205,7 @@ func (e *Endorser) validateProcess(signedProp *pb.SignedProposal) (*validateResu
 // ProcessProposal process the Proposal
 //func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedProposal) (*pb.ProposalResponse, error) {
 func (e *Endorser) ProcessProposal(rwM rwset.TxManager, idag dag.IDag, deployId []byte, ctx context.Context, signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, cid *pb.ChaincodeID, tmout time.Duration) (*pb.ProposalResponse, *modules.ContractInvokeResult, error) {
+	log.Debugf("process proposal enter")
 	var txsim rwset.TxSimulator
 
 	//addr := util.ExtractRemoteAddress(ctx)
@@ -211,6 +214,7 @@ func (e *Endorser) ProcessProposal(rwM rwset.TxManager, idag dag.IDag, deployId 
 
 	//0 -- check and validate
 	result, err := e.validateProcess(signedProp)
+	log.Debugf("validate process")
 	if err != nil {
 		log.Debugf("validate signedProp err:%s", err)
 		return nil, nil, err
@@ -228,6 +232,7 @@ func (e *Endorser) ProcessProposal(rwM rwset.TxManager, idag dag.IDag, deployId 
 
 	//1 -- simulate
 	res, _, _, err := e.simulateProposal(deployId, ctx, chainID, txid, signedProp, prop, cid, txsim, tmout)
+	log.Debugf("simulate proposal")
 	if err != nil {
 		return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, nil, err
 	}
@@ -247,32 +252,17 @@ func (e *Endorser) ProcessProposal(rwM rwset.TxManager, idag dag.IDag, deployId 
 			Payload: nil, Response: &pb.Response{Status: 500, Message: "simulateProposal response is nil"}}, nil, errors.New("Chaincode Error:simulateProposal response is nil")
 	}
 
-	//2 -- endorse and get a marshalled ProposalResponse message
+	//2 -- endorse and get a marshaled ProposalResponse message
 	pResp := &pb.ProposalResponse{Response: res}
 	cis, err := putils.GetChaincodeInvocationSpec(prop)
 	if err != nil {
+		return nil, nil, err
 	}
-
 	unit, err := RwTxResult2DagInvokeUnit(txsim, txid, cis.ChaincodeSpec.ChaincodeId.Name, deployId, cis.ChaincodeSpec.Input.Args, tmout)
 	if err != nil {
 		log.Errorf("chainID[%s] converRwTxResult2DagUnit failed", chainID)
 		return nil, nil, errors.New("Conver RwSet to dag unit fail")
 	}
-	//for i := 0; i < len(unit.WriteSet); i++ {
-	//	fmt.Printf("==unit=> %v\n", unit.WriteSet[i].IsDelete)
-	//	fmt.Printf("==unit=> %s\n", unit.WriteSet[i].Key)
-	//	fmt.Printf("==unit=> %s\n", unit.WriteSet[i].Value)
-	//	fmt.Println()
-	//	fmt.Println()
-	//}
-	//fmt.Println("===")
-	//if len(unit.TokenPayOut) > 0 {
-	//	fmt.Printf("==unit=> %#v\n", unit.TokenPayOut[0])
-	//	fmt.Printf("==unit=> %s\n", unit.TokenPayOut[0].Asset.String())
-	//	fmt.Printf("==unit=> %d\n", unit.TokenPayOut[0].Amount)
-	//	fmt.Printf("==unit=> %s\n", unit.TokenPayOut[0].PayTo.String())
-	//}
-	// todo
 
 	pResp.Response.Payload = res.Payload
 	unit.Payload = res.Payload

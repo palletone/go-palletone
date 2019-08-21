@@ -21,7 +21,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/hexutil"
+	//"github.com/palletone/go-palletone/common/hexutil"
 )
 
 //go:generate gencodec -type Log -field-override logMarshaling -out gen_log_json.go
@@ -50,17 +50,17 @@ type Log struct {
 	// index of the log in the receipt
 	Index uint `json:"logIndex" gencodec:"required"`
 
-	// The Removed field is true if this log was reverted due to a chain reorganisation.
+	// The Removed field is true if this log was reverted due to a chain reorganization.
 	// You must pay attention to this field if you receive logs through a filter query.
 	Removed bool `json:"removed"`
 }
 
-type logMarshaling struct {
-	Data        hexutil.Bytes
-	BlockNumber hexutil.Uint64
-	TxIndex     hexutil.Uint
-	Index       hexutil.Uint
-}
+// type logMarshaling struct {
+// 	Data        hexutil.Bytes
+// 	BlockNumber hexutil.Uint64
+// 	TxIndex     hexutil.Uint
+// 	Index       hexutil.Uint
+// }
 
 type rlpLog struct {
 	Address common.Address

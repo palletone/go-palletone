@@ -100,13 +100,13 @@ func printCmdOut(w io.Writer, prefix, path string, args ...string) {
 }
 
 const header = `
-#### Expected behaviour
+#### Expected behavior
 
 
-#### Actual behaviour
+#### Actual behavior
 
 
-#### Steps to reproduce the behaviour
+#### Steps to reproduce the behavior
 
 
 #### Backtrace

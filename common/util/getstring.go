@@ -88,13 +88,13 @@ func extractComp(value interface{}, arrResult []string) []string {
 			}
 		} else if strings.Contains(strings.ToLower(reftyp.String()), "map") {
 			val_byte, _ := json.Marshal(value)
-			var val map[string]interface{}
-			val = make(map[string]interface{})
+			// var val map[string]interface{}
+			val := make(map[string]interface{})
 			if err := json.Unmarshal(val_byte, &val); err != nil {
 				log.Println("unmarshal err:", err, string(val_byte))
 			}
 
-			for k, _ := range val {
+			for k := range val {
 				keys = append(keys, k)
 			}
 			sort.Strings(keys)

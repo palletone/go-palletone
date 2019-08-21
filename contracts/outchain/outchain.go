@@ -78,7 +78,7 @@ var DefaultConfig = Config{
 }
 
 const (
-	modName    = "OutChain"
+	//modName    = "OutChain"
 	configPath = "./outchain.toml"
 )
 
@@ -150,10 +150,10 @@ func makeConfigFile(cfg *Config, configPath string) error {
 	}
 
 	configFile, err = os.Create(configPath)
-	defer configFile.Close()
 	if err != nil {
 		return err
 	}
+	defer configFile.Close()
 
 	configToml, err := tomlSettings.Marshal(cfg)
 	if err != nil {
@@ -207,7 +207,6 @@ func GetJuryBTCPrikeyTest(chaincode string) (string, error) {
 		saveConfigTest()
 		return prikey, nil
 	}
-	return "", errors.New("No private key of this chaicode")
 }
 
 func getJuryBTCPubkeyTest(chaincode string) (string, error) {
@@ -231,7 +230,6 @@ func getJuryBTCPubkeyTest(chaincode string) (string, error) {
 		saveConfigTest()
 		return pubkey, nil
 	}
-	return "", errors.New("No private key of this chaicode")
 }
 
 func ClolletJuryBTCPubkeysTest(chaincode string) ([]string, error) {
@@ -262,7 +260,6 @@ func GetJuryETHPrikeyTest(chaincode string) (string, error) {
 		saveConfigTest()
 		return prikey, nil
 	}
-	return "", errors.New("No private key of this chaicode")
 }
 
 func getJuryETHAddressTest(chaincode string) (string, error) {
@@ -284,7 +281,6 @@ func getJuryETHAddressTest(chaincode string) (string, error) {
 		saveConfigTest()
 		return addr, nil
 	}
-	return "", errors.New("No private key of this chaicode")
 }
 
 func ClolletJuryETHAddressesTest(chaincode string) ([]string, error) {
@@ -311,7 +307,6 @@ func GetChainCodeValue(chaincode string, key string) ([]byte, error) {
 	} else {
 		return []byte(""), err
 	}
-	return []byte(""), errors.New("No private key of this chaicode")
 }
 
 func PutChainCodeValue(chaincode string, key string, value []byte) error {

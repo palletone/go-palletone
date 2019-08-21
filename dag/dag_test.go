@@ -71,37 +71,6 @@ func createUnit() (*modules.Unit, error) {
 	return unit, err
 }
 
-//func TestDagRefreshUtxos(t *testing.T) {
-//	//db := storage.ReNewDbConn("/Users/jay/code/gocode/src/github.com/palletone/go-palletone/bin/work/palletone/gptn/leveldb/")
-//	db, _ := ptndb.NewMemDatabase()
-//	test_dag, _ := NewDag4GenesisInit(db)
-//
-//	txpool := txspool.NewTxPool(txspool.DefaultTxPoolConfig, test_dag)
-//	// txpool := txspool.NewTxPool4Test()
-//	dag_test, err := NewDagForTest(db, txpool)
-//	if err != nil {
-//		t.Fatal("New dag for test is faild,error: ", err)
-//	}
-//	unit, err := createUnit()
-//	if err != nil {
-//		log.Info("create test unit is failed.", "error", err)
-//		return
-//	}
-//	dag_test.SaveUnit(unit, txpool, true)
-//	// 添加delhash
-//
-//	// unit := dag_test.GetCurrentUnit(modules.PTNCOIN)
-//	data := make(map[modules.OutPoint]*modules.Utxo)
-//	dag_test.utxos_cache[unit.Hash()] = data
-//	log.Debug("this unit hash info", "hash", unit.Hash().String())
-//	dag_test.Memdag.PushDelHashs([]common.Hash{unit.Hash()})
-//	log.Info("start refresh cache utxos.", "cache_len", len(dag_test.utxos_cache))
-//
-//	dag_test.RefreshCacheUtxos()
-//
-//	log.Info("stop refresh cache utxos.", "cache_len", len(dag_test.utxos_cache))
-//
-//}
 func TestTxCountAndUnitSize(t *testing.T) {
 	sign, _ := hex.DecodeString("2c731f854ef544796b2e86c61b1a9881a0148da0c1001f0da5bd2074d2b8360367e2e0a57de91a5cfe92b79721692741f47588036cf0101f34dab1bfda0eb030")
 	pubKey, _ := hex.DecodeString("0386df0aef707cc5bc8d115c2576f844d2734b05040ef2541e691763f802092c09")
@@ -165,7 +134,6 @@ func setupDag() (*Dag, error) {
 		log.Error("New dag error", "error", err.Error())
 		return nil, err
 	}
-
 	//txpool := txspool.NewTxPool(txspool.DefaultTxPoolConfig, test_dag)
 	if err := initDag.SaveUnit(unit, nil, true); err != nil {
 		log.Error("Save unit error", "error", err.Error())

@@ -32,7 +32,7 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/iterator"
 )
 
-const missingNumber = uint64(0xffffffffffffffff)
+//const missingNumber = uint64(0xffffffffffffffff)
 
 // DatabaseReader wraps the Get method of a backing data store.
 type DatabaseReader interface {
@@ -94,14 +94,14 @@ func getprefix(db DatabaseReader, prefix []byte) map[string][]byte {
 }
 
 // get row count by prefix
-func getCountByPrefix(db DatabaseReader, prefix []byte) int {
-	iter := db.NewIteratorWithPrefix(prefix)
-	count := 0
-	for iter.Next() {
-		count++
-	}
-	return count
-}
+//func getCountByPrefix(db DatabaseReader, prefix []byte) int {
+//	iter := db.NewIteratorWithPrefix(prefix)
+//	count := 0
+//	for iter.Next() {
+//		count++
+//	}
+//	return count
+//}
 func GetContractRlp(db DatabaseReader, id common.Hash) (rlp.RawValue, error) {
 	if common.EmptyHash(id) {
 		return nil, errors.New("the filed not defined")

@@ -19,12 +19,14 @@ package crypto
 import (
 	"bytes"
 	"crypto/ecdsa"
-	"reflect"
 	"testing"
 
+	"encoding/hex"
+	"github.com/btcsuite/btcd/btcec"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/math"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -45,43 +47,44 @@ func TestEcrecover(t *testing.T) {
 	}
 }
 */
-func TestVerifySignature(t *testing.T) {
-	sig := testsig[:len(testsig)-1] // remove recovery id
-	if !VerifySignature(testpubkey, testmsg, sig) {
-		t.Errorf("can't verify signature with uncompressed key")
-	}
-	if !VerifySignature(testpubkeyc, testmsg, sig) {
-		t.Errorf("can't verify signature with compressed key")
-	}
+// func TestVerifySignature(t *testing.T) {
+// 	sig := testsig[:len(testsig)-1] // remove recovery id
+// 	if pass,_:=MyCryptoLib.Verify(testpubkey, sig,testmsg);!pass {
+// 		t.Errorf("can't verify signature with uncompressed key")
+// 	}
+// 	if pass,_:=MyCryptoLib.Verify(testpubkeyc, sig,testmsg);!pass {
+// 		t.Errorf("can't verify signature with compressed key")
+// 	}
 
-	if VerifySignature(nil, testmsg, sig) {
-		t.Errorf("signature valid with no key")
-	}
-	if VerifySignature(testpubkey, nil, sig) {
-		t.Errorf("signature valid with no message")
-	}
-	if VerifySignature(testpubkey, testmsg, nil) {
-		t.Errorf("nil signature valid")
-	}
-	if VerifySignature(testpubkey, testmsg, append(common.CopyBytes(sig), 1, 2, 3)) {
-		t.Errorf("signature valid with extra bytes at the end")
-	}
-	if VerifySignature(testpubkey, testmsg, sig[:len(sig)-2]) {
-		t.Errorf("signature valid even though it's incomplete")
-	}
-	wrongkey := common.CopyBytes(testpubkey)
-	wrongkey[10]++
-	if VerifySignature(wrongkey, testmsg, sig) {
-		t.Errorf("signature valid with with wrong public key")
-	}
-}
+// 	if pass,_:=MyCryptoLib.Verify(nil, sig,testmsg);pass {
+// 		t.Errorf("signature valid with no key")
+// 	}
+// 	if pass,_:=MyCryptoLib.Verify(testpubkey, sig, nil);pass {
+// 		t.Errorf("signature valid with no message")
+// 	}
+// 	if pass,_:=MyCryptoLib.Verify(testpubkey, nil,testmsg);pass {
+// 		t.Errorf("nil signature valid")
+// 	}
+// 	if pass,_:=MyCryptoLib.Verify(testpubkey, append(common.CopyBytes(sig), 1, 2, 3), testmsg);pass {
+// 		t.Errorf("signature valid with extra bytes at the end")
+// 	}
+// 	if pass,_:=MyCryptoLib.Verify(testpubkey, sig,testmsg[:len(testmsg)-2]);pass {
+// 		t.Errorf("signature valid even though it's incomplete")
+// 	}
+// 	wrongkey := common.CopyBytes(testpubkey)
+// 	wrongkey[10]++
+// 	if pass,_:=MyCryptoLib.Verify(wrongkey, sig,testmsg);pass {
+// 		t.Errorf("signature valid with with wrong public key")
+// 	}
+// }
 
 // This test checks that VerifySignature rejects malleable signatures with s > N/2.
 func TestVerifySignatureMalleable(t *testing.T) {
+	crypto := &CryptoS256{}
 	sig := hexutil.MustDecode("0x638a54215d80a6713c8d523a6adc4e6e73652d859103a36b700851cb0e61b66b8ebfc1a610c57d732ec6e0a8f06a9a7a28df5051ece514702ff9cdff0b11f454")
 	key := hexutil.MustDecode("0x03ca634cae0d49acb401d8a4c6b6fe8c55b70d115bf400769cc1400f3258cd3138")
 	msg := hexutil.MustDecode("0xd301ce462d3e639518f482c7f03821fec1e602018630ce621e1e7851c12343a6")
-	if VerifySignature(key, msg, sig) {
+	if pass, _ := crypto.Verify(key, sig, msg); pass {
 		t.Error("VerifySignature returned true for malleable signature")
 	}
 }
@@ -107,31 +110,55 @@ func TestDecompressPubkey(t *testing.T) {
 
 func TestCompressPubkey(t *testing.T) {
 	key := &ecdsa.PublicKey{
-		Curve: S256(),
+		Curve: btcec.S256(),
 		X:     math.MustParseBig256("0xe32df42865e97135acfb65f3bae71bdc86f4d49150ad6a440b6f15878109880a"),
 		Y:     math.MustParseBig256("0x0a2b2667f7e725ceea70c673093bf67663e0312623c8e091b13cf2c0f11ef652"),
 	}
-	compressed := CompressPubkey(key)
+	compressed := compressPubkey(key)
 	if !bytes.Equal(compressed, testpubkeyc) {
 		t.Errorf("wrong public key result: got %x, want %x", compressed, testpubkeyc)
 	}
 }
 
 func TestPubkeyRandom(t *testing.T) {
+	cryptoS256 := &CryptoS256{}
+	cryptoGM := &CryptoGm{}
+	cryptoP256 := &CryptoP256{}
 	const runs = 200
+	for i := 0; i < runs; i++ {
+		key, err := cryptoS256.KeyGen()
+		if err != nil {
+			t.Fatalf("iteration %d: %v", i, err)
+		}
+		pubkey2, err := cryptoS256.PrivateKeyToPubKey(key)
+		if err != nil {
+			t.Fatalf("iteration %d: %v", i, err)
+		}
+		t.Logf("S256PubKey:%x", pubkey2)
+	}
 
 	for i := 0; i < runs; i++ {
-		key, err := GenerateKey()
+		key, err := cryptoGM.KeyGen()
 		if err != nil {
 			t.Fatalf("iteration %d: %v", i, err)
 		}
-		pubkey2, err := DecompressPubkey(CompressPubkey(&key.PublicKey))
+		pubkey, err := cryptoGM.PrivateKeyToPubKey(key)
 		if err != nil {
 			t.Fatalf("iteration %d: %v", i, err)
 		}
-		if !reflect.DeepEqual(key.PublicKey, *pubkey2) {
-			t.Fatalf("iteration %d: keys not equal", i)
+		t.Logf("GMPubKey:%x", pubkey)
+	}
+
+	for i := 0; i < runs; i++ {
+		key, err := cryptoP256.KeyGen()
+		if err != nil {
+			t.Fatalf("iteration %d: %v", i, err)
 		}
+		pubkey, err := cryptoP256.PrivateKeyToPubKey(key)
+		if err != nil {
+			t.Fatalf("iteration %d: %v", i, err)
+		}
+		t.Logf("P256PubKey:%x", pubkey)
 	}
 }
 
@@ -145,9 +172,10 @@ func BenchmarkEcrecoverSignature(b *testing.B) {
 }
 */
 func BenchmarkVerifySignature(b *testing.B) {
-	sig := testsig[:len(testsig)-1] // remove recovery id
+	cryptoS256 := &CryptoS256{}
+	sigs256 := testsig[:len(testsig)-1] // remove recovery id
 	for i := 0; i < b.N; i++ {
-		if !VerifySignature(testpubkey, testmsg, sig) {
+		if pass, _ := cryptoS256.Verify(testpubkey, sigs256, testmsg); !pass {
 			b.Fatal("verify error")
 		}
 	}
@@ -162,23 +190,46 @@ func BenchmarkDecompressPubkey(b *testing.B) {
 }
 
 func TestSignVerify(t *testing.T) {
-	//sign := "0xda850b649658b2863559c338fdd99858acc20884f1b1f097d09735346b059b111e6c0f46661d45987e60a81fc4329b357c609dde1f5da187cdbeb5a57cc61f8d01"
-	text := "a"
-	hash := Keccak256([]byte(text))
+	//S256 SignVerify
+	cryptoS256 := &CryptoS256{}
+	text := []byte("a")
+	hash := Keccak256(text)
 
 	privateKey := "f4b430cd1007bf3309a00fdda81c58131a1e0a41f6a72eab3291e561342ae1b3"
-	// privateKeyBytes := hexutil.MustDecode(privateKey)
-	prvKey, _ := HexToECDSA(privateKey)
 
-	//signB, _ := hexutil.Decode(sign)
-	signature, _ := Sign(hash, prvKey)
-	t.Log("Signature is: " + hexutil.Encode(signature))
-	t.Logf("Sign len:%d", len(signature))
-	pubKey := FromECDSAPub(&prvKey.PublicKey)
-	pass := VerifySignature(pubKey, hash, signature)
-	if pass {
-		t.Log("Pass")
-	} else {
-		t.Error("No Pass")
-	}
+	prvKey, _ := hex.DecodeString(privateKey)
+	signature, err := cryptoS256.Sign(prvKey, hash)
+	assert.Nil(t, err)
+	t.Logf("Signature:%s,len:%d", hexutil.Encode(signature), len(signature))
+
+	pubKey, _ := cryptoS256.PrivateKeyToPubKey(prvKey)
+	pass, err := cryptoS256.Verify(pubKey, signature, hash)
+	assert.Nil(t, err)
+	assert.True(t, pass)
+
+	//GM SignVerify
+	cryptoGM := &CryptoGm{}
+	gmprivateKey := "dd44e1b291182348c2138b44e311d0ee7719ecd0ea5832088d0dbbb16f5ba33a"
+	prvKey, _ = hex.DecodeString(gmprivateKey)
+	sign, err := cryptoGM.Sign(prvKey, text)
+
+	assert.Nil(t, err)
+	t.Logf("Signature:%s,len:%d", hexutil.Encode(sign), len(sign))
+	pubKey, err = cryptoGM.PrivateKeyToPubKey(prvKey)
+	pass, err = cryptoGM.Verify(pubKey, sign, text)
+	assert.Nil(t, err)
+	assert.True(t, pass)
+
+	cryptoP256 := &CryptoP256{}
+	p256privateKey := "11441a3394cea675295e322a4f1d82944ab6701dae2e1ce2834c072030d7dc95"
+	prvKey, _ = hex.DecodeString(p256privateKey)
+	sign, err = cryptoP256.Sign(prvKey, text)
+	assert.Nil(t, err)
+	t.Logf("Signature:%s,len:%d", hexutil.Encode(sign), len(sign))
+
+	pubKey, err = cryptoP256.PrivateKeyToPubKey(prvKey)
+	assert.Nil(t, err)
+	pass, err = cryptoP256.Verify(pubKey, sign, text)
+	assert.Nil(t, err)
+	assert.True(t, pass)
 }

@@ -17,6 +17,7 @@
 package modules
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
@@ -26,8 +27,6 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-
-	"bytes"
 )
 
 type MessageType byte
@@ -60,8 +59,6 @@ const (
 	JuryList          = "JuryList"
 	DeveloperList     = "DeveloperList"
 	DepositRate       = "DepositRate"
-	//ContractSignatureNum = "ContractSignatureNum"
-	//ContractElectionNum  = "ContractElectionNum"
 )
 
 const (
@@ -95,27 +92,19 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	default:
 		//case APP_PAYMENT, APP_CONTRACT_TPL, APP_DATA:
 		msg.Payload = cpyMsg.Payload
-		//case APP_CONFIG:
-		//	payload, _ := cpyMsg.Payload.(*ConfigPayload)
-		//	newPayload := ConfigPayload{
-		//		ConfigSet: []ContractWriteSet{},
-		//	}
-		//	for _, p := range payload.ConfigSet {
-		//		newPayload.ConfigSet = append(newPayload.ConfigSet, ContractWriteSet{Key: p.Key, Value: p.Value})
-		//	}
-		//	msg.Payload = newPayload
+
 	case APP_CONTRACT_DEPLOY:
 		payload, _ := cpyMsg.Payload.(*ContractDeployPayload)
 		newPayload := ContractDeployPayload{
 			TemplateId: payload.TemplateId,
 			ContractId: payload.ContractId,
 			Args:       payload.Args,
-			EleList:    payload.EleList,
-			//ExecutionTime: payload.ExecutionTime,
+			EleNode:    payload.EleNode,
 		}
 		readSet := []ContractReadSet{}
 		for _, rs := range payload.ReadSet {
-			readSet = append(readSet, ContractReadSet{Key: rs.Key, Version: &StateVersion{Height: rs.Version.Height, TxIndex: rs.Version.TxIndex}})
+			readSet = append(readSet, ContractReadSet{Key: rs.Key, Version: &StateVersion{
+				Height: rs.Version.Height, TxIndex: rs.Version.TxIndex}})
 		}
 		writeSet := []ContractWriteSet{}
 		for _, ws := range payload.WriteSet {
@@ -141,7 +130,8 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 		}
 		readSet := []ContractReadSet{}
 		for _, rs := range payload.ReadSet {
-			readSet = append(readSet, ContractReadSet{Key: rs.Key, Version: &StateVersion{Height: rs.Version.Height, TxIndex: rs.Version.TxIndex}})
+			readSet = append(readSet, ContractReadSet{Key: rs.Key, Version: &StateVersion{
+				Height: rs.Version.Height, TxIndex: rs.Version.TxIndex}})
 		}
 		writeSet := []ContractWriteSet{}
 		for _, ws := range payload.WriteSet {
@@ -161,8 +151,6 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 }
 
 func (msg *Message) CompareMessages(inMsg *Message) bool {
-	//return true //todo del
-
 	if inMsg == nil || msg.App != inMsg.App {
 		return false
 	}
@@ -308,10 +296,15 @@ type ContractError struct {
 
 //node election
 type ElectionInf struct {
-	Etype     byte        `json:"etype"`      //vrf type, if set to 1, it is the assignation node
-	AddrHash  common.Hash `json:"addr_hash"`  //common.Address将地址hash后，返回给请求节点
-	Proof     []byte      `json:"proof"`      //vrf proof
-	PublicKey []byte      `json:"public_key"` //alg.PublicKey, rlp not support
+	EType     byte        `json:"election_type"` //vrf type, if set to 1, it is the assignation node
+	AddrHash  common.Hash `json:"addr_hash"`     //common.Address将地址hash后，返回给请求节点
+	Proof     []byte      `json:"proof"`         //vrf proof
+	PublicKey []byte      `json:"public_key"`    //alg.PublicKey, rlp not support
+}
+
+type ElectionNode struct {
+	JuryCount uint64        `json:"jury_count"` //
+	EleList   []ElectionInf `json:"ele_list"`   //
 }
 
 type ContractReadSet struct {
@@ -349,21 +342,26 @@ type TokenPayOut struct {
 // Contract template deploy message
 // App: contract_template
 type ContractTplPayload struct {
-	TemplateId []byte        `json:"template_id"`    // contract template id
-	Memory     uint16        `json:"memory"`         // contract template bytecode memory size(Byte), use to compute transaction fee
-	ByteCode   []byte        `json:"byte_code"`      // contract bytecode
-	ErrMsg     ContractError `json:"contract_error"` // contract error message
+	// contract template id
+	TemplateId []byte `json:"template_id"`
+	// contract template bytecode memory size(Byte), // use to compute transaction fee
+	Size uint16 `json:"size"`
+	// contract bytecode
+	ByteCode []byte `json:"byte_code"`
+	// contract error message
+	ErrMsg ContractError `json:"contract_error"`
 }
 
 // App: contract_deploy
 type ContractDeployPayload struct {
-	TemplateId []byte             `json:"template_id"`    // contract template id
-	ContractId []byte             `json:"contract_id"`    // contract id
-	Name       string             `json:"name"`           // the name for contract
-	Args       [][]byte           `json:"args"`           // contract arguments list
-	EleList    []ElectionInf      `json:"election_list"`  // contract jurors list
-	ReadSet    []ContractReadSet  `json:"read_set"`       // the set data of read, and value could be any type
-	WriteSet   []ContractWriteSet `json:"write_set"`      // the set data of write, and value could be any type
+	TemplateId []byte             `json:"template_id"`   // contract template id
+	ContractId []byte             `json:"contract_id"`   // contract id
+	Name       string             `json:"name"`          // the name for contract
+	Args       [][]byte           `json:"args"`          // contract arguments list
+	EleNode    ElectionNode       `json:"election_node"` // contract jurors node info
+	ReadSet    []ContractReadSet  `json:"read_set"`      // the set data of read, and value could be any type
+	WriteSet   []ContractWriteSet `json:"write_set"`     // the set data of write, and value could be any type
+	DuringTime uint64             `json:"during_time"`
 	ErrMsg     ContractError      `json:"contract_error"` // contract error message
 }
 
@@ -410,11 +408,13 @@ type ContractInstallRequestPayload struct {
 	Abi            string        `json:"abi"`
 	Language       string        `json:"language"`
 	AddrHash       []common.Hash `json:"addr_hash"`
+	Creator        string        `json:"creator"`
 }
 
 type ContractDeployRequestPayload struct {
 	TplId   []byte   `json:"tpl_name"`
 	Args    [][]byte `json:"args"`
+	ExtData []byte   `json:"extend_data"`
 	Timeout uint32   `json:"timeout"`
 }
 
@@ -470,29 +470,33 @@ type FileInfo struct {
 	Timestamp   uint64      `json:"timestamp"`
 	MainData    string      `json:"main_data"`
 	ExtraData   string      `json:"extra_data"`
+	Reference   string      `json:"reference"`
 }
 
 func NewContractTplPayload(templateId []byte, memory uint16, bytecode []byte, err ContractError) *ContractTplPayload {
 	return &ContractTplPayload{
 		TemplateId: templateId,
-		Memory:     memory,
+		Size:       memory,
 		ByteCode:   bytecode,
 		ErrMsg:     err,
 	}
 }
 
 func NewContractDeployPayload(templateid []byte, contractid []byte, name string, args [][]byte,
-	elf []ElectionInf, readset []ContractReadSet, writeset []ContractWriteSet, err ContractError) *ContractDeployPayload {
-	return &ContractDeployPayload{
+	ele *ElectionNode, readset []ContractReadSet, writeset []ContractWriteSet, err ContractError) *ContractDeployPayload {
+	payload := &ContractDeployPayload{
 		TemplateId: templateid,
 		ContractId: contractid,
 		Name:       name,
 		Args:       args,
-		EleList:    elf,
 		ReadSet:    readset,
 		WriteSet:   writeset,
 		ErrMsg:     err,
 	}
+	if ele != nil {
+		payload.EleNode = *ele
+	}
+	return payload
 }
 
 func NewContractInvokePayload(contractid []byte, args [][]byte, excutiontime time.Duration,
@@ -507,7 +511,8 @@ func NewContractInvokePayload(contractid []byte, args [][]byte, excutiontime tim
 	}
 }
 
-func NewContractStopPayload(contractid []byte, readset []ContractReadSet, writeset []ContractWriteSet, err ContractError) *ContractStopPayload {
+func NewContractStopPayload(contractid []byte, readset []ContractReadSet, writeset []ContractWriteSet,
+	err ContractError) *ContractStopPayload {
 	return &ContractStopPayload{
 		ContractId: contractid,
 		ReadSet:    readset,

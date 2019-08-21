@@ -25,10 +25,12 @@ import (
 	"encoding/json"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/shopspring/decimal"
 )
 
 //  质押PTN
-func processPledgeDeposit(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func processPledgeDeposit(stub shim.ChaincodeStubInterface) pb.Response {
 	//  获取是否是保证金合约
 	invokeTokens, err := isContainDepositContractAddr(stub)
 	if err != nil {
@@ -117,10 +119,33 @@ func queryPledgeStatusByAddr(stub shim.ChaincodeStubInterface, args []string) pb
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	data, _ := json.Marshal(status)
+	pjson := convertPledgeStatus2Json(status)
+	data, _ := json.Marshal(pjson)
 	return shim.Success(data)
 }
-func queryAllPledgeHistory(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+
+type pledgeStatusJson struct {
+	NewDepositAmount    decimal.Decimal
+	PledgeAmount        decimal.Decimal
+	WithdrawApplyAmount string
+	OtherAmount         decimal.Decimal
+}
+
+func convertPledgeStatus2Json(p *modules.PledgeStatus) *pledgeStatusJson {
+	data := &pledgeStatusJson{}
+	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
+	data.NewDepositAmount = gasToken.DisplayAmount(p.NewDepositAmount)
+	data.PledgeAmount = gasToken.DisplayAmount(p.PledgeAmount)
+	data.OtherAmount = gasToken.DisplayAmount(p.OtherAmount)
+	if p.WithdrawApplyAmount == math.MaxUint64 {
+		data.WithdrawApplyAmount = "all"
+	} else {
+		data.WithdrawApplyAmount = gasToken.DisplayAmount(p.WithdrawApplyAmount).String()
+	}
+	return data
+}
+
+func queryAllPledgeHistory(stub shim.ChaincodeStubInterface) pb.Response {
 
 	history, err := getAllPledgeRewardHistory(stub)
 	if err != nil {
@@ -129,7 +154,7 @@ func queryAllPledgeHistory(stub shim.ChaincodeStubInterface, args []string) pb.R
 	data, _ := json.Marshal(history)
 	return shim.Success(data)
 }
-func queryPledgeList(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func queryPledgeList(stub shim.ChaincodeStubInterface) pb.Response {
 	list, err := getLastPledgeList(stub)
 	if err != nil {
 		return shim.Error(err.Error())

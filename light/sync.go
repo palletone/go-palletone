@@ -28,13 +28,9 @@ import (
 const (
 	forceSyncCycle      = 10 * time.Second // Time interval to force syncs, even if few peers are available
 	minDesiredPeerCount = 5                // Amount of peers desired to start syncing
-
-	// This is the target size for the packs of transactions sent by txsyncLoop.
-	// A pack can get larger than this if a single transactions exceeds this size.
-	txsyncPackSize = 100 * 1024
 )
 
-// syncer is responsible for periodically synchronising with the network, both
+// syncer is responsible for periodically synchronizing with the network, both
 // downloading hashes and blocks as well as handling the announcement handler.
 func (pm *ProtocolManager) syncer(syncCh chan bool) {
 	// Start and ensure cleanup of sync mechanisms
@@ -42,9 +38,10 @@ func (pm *ProtocolManager) syncer(syncCh chan bool) {
 	defer pm.fetcher.Stop()
 	defer pm.downloader.Terminate()
 
-	// Wait for different events to fire synchronisation operations
+	// Wait for different events to fire synchronization operations
 	if pm.lightSync {
-		forceSync := time.Tick(forceSyncCycle)
+		forceSync := time.NewTicker(forceSyncCycle)
+		defer forceSync.Stop()
 		for {
 			select {
 			case <-pm.newPeerCh:
@@ -54,7 +51,7 @@ func (pm *ProtocolManager) syncer(syncCh chan bool) {
 				}
 				go pm.syncall()
 
-			case <-forceSync:
+			case <-forceSync.C:
 				// Force a sync even if not enough peers are present
 				go pm.syncall()
 
@@ -81,7 +78,7 @@ func (pm *ProtocolManager) syncall() {
 	log.Debug("Enter Light PalletOne syncall")
 	defer log.Debug("End Light PalletOne syncall")
 	if atomic.LoadUint32(&pm.fastSync) == 0 {
-		log.Debug("Light PalletOne syncall synchronising")
+		log.Debug("Light PalletOne syncall synchronizing")
 		return
 	}
 
@@ -96,20 +93,21 @@ func (pm *ProtocolManager) syncall() {
 	}
 	//log.Debug("Light PalletOne syncall FetchAllToken", "len(headers)", len(headers), "headers", headers)
 	for _, header := range headers {
-		log.Debug("Light PalletOne syncall synchronise", "asset", header.Number.AssetID, "index", header.Number.Index)
-		pm.synchronise(p, header.Number.AssetID)
+		log.Debug("Light PalletOne syncall synchronize", "asset", header.Number.AssetID,
+			"index", header.Number.Index)
+		pm.synchronize(p, header.Number.AssetID)
 	}
 }
 
-// synchronise tries to sync up our local block chain with a remote peer.
-func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId) {
+// synchronize tries to sync up our local block chain with a remote peer.
+func (pm *ProtocolManager) synchronize(peer *peer, assetId modules.AssetId) {
 	// Short circuit if no peers are available
 	if peer == nil {
 		return
 	}
 
 	if !pm.lightSync && pm.assetId == assetId {
-		log.Debug("Light PalletOne synchronise pm.assetId == assetId")
+		log.Debug("Light PalletOne synchronize pm.assetId == assetId")
 		return
 	}
 
@@ -137,31 +135,34 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId) {
 
 	headhash, number := peer.HeadAndNumber(assetId)
 	if common.EmptyHash(headhash) || number == nil {
-		log.Debug("Light PalletOne synchronise is nil", "assetId", assetId)
+		log.Debug("Light PalletOne synchronize is nil", "assetId", assetId)
 		return
 	}
 
 	lheader := pm.dag.CurrentHeader(assetId)
 	if lheader != nil && lheader.Number.Index >= number.Index {
-		log.Debug("Light PalletOne synchronise is not need sync", "local index", lheader.Number.Index, "peer index", number.Index)
+		log.Debug("Light PalletOne synchronize is not need sync", "local index",
+			lheader.Number.Index, "peer index", number.Index)
 		return
 	}
 	if lheader == nil {
-		log.Debug("Light PalletOne synchronise local header is nil", "assetid", assetId)
+		log.Debug("Light PalletOne synchronize local header is nil", "assetid", assetId)
 	}
 
 	if atomic.LoadUint32(&pm.fastSync) == 0 {
-		log.Debug("Light PalletOne synchronising")
+		log.Debug("Light PalletOne synchronizing")
 		return
 	}
 	atomic.StoreUint32(&pm.fastSync, 0)
 	defer atomic.StoreUint32(&pm.fastSync, 1)
 
-	log.Debug("Enter Light PalletOne ProtocolManager synchronise", "assetid", assetId, "index", number.Index)
-	defer log.Debug("End Light PalletOne ProtocolManager synchronise", "assetid", assetId, "index", number.Index)
+	log.Debug("Enter Light PalletOne ProtocolManager synchronize", "assetid", assetId, "index", number.Index)
+	defer log.Debug("End Light PalletOne ProtocolManager synchronize", "assetid", assetId,
+		"index", number.Index)
 
-	if err := pm.downloader.Synchronise(peer.id, headhash, number.Index, downloader.LightSync, number.AssetID); err != nil {
-		log.Debug("Light PalletOne ProtocolManager synchronise", "Synchronise err:", err)
+	if err := pm.downloader.Synchronize(peer.id, headhash, number.Index,
+		downloader.LightSync, number.AssetID); err != nil {
+		log.Debug("Light PalletOne ProtocolManager synchronize", "Synchronize err:", err)
 		return
 	}
 

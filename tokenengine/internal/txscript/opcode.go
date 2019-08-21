@@ -1897,9 +1897,9 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 	if err := vm.checkHashTypeEncoding(hashType); err != nil {
 		return err
 	}
-	//if err := vm.checkSignatureEncoding(sigBytes); err != nil {
-	//	return err
-	//}
+	if err := vm.checkSignatureEncoding(sigBytes); err != nil {
+		return err
+	}
 	if err := vm.checkPubKeyEncoding(pkBytes); err != nil {
 		return err
 	}
@@ -1912,7 +1912,7 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 	subScript = removeOpcodeByData(subScript, fullSigBytes)
 
 	// Generate the signature hash based on the signature hash type.
-	hash := calcSignatureHash(subScript, hashType, &vm.tx, vm.msgIdx, vm.txIdx, vm.crypto)
+	data := calcSignatureData(subScript, hashType, &vm.tx, vm.msgIdx, vm.txIdx)
 
 	//pubKey, err := btcec.ParsePubKey(pkBytes, btcec.S256())
 	//if err != nil {
@@ -1935,18 +1935,18 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 
 	var valid bool
 	if vm.sigCache != nil {
-		var sigHash common.Hash
-		copy(sigHash[:], hash)
+		var sigHash []byte
+		copy(sigHash[:], data)
 
 		valid = vm.sigCache.Exists(sigHash, sigBytes, pkBytes)
 		if !valid {
-			if pass, _ := vm.crypto.Verify(pkBytes, sigBytes, hash); pass {
+			if pass, _ := vm.crypto.Verify(pkBytes, sigBytes, data); pass {
 				vm.sigCache.Add(sigHash, sigBytes, pkBytes)
 				valid = true
 			}
 		}
 	} else {
-		valid, _ = vm.crypto.Verify(pkBytes, sigBytes, hash)
+		valid, _ = vm.crypto.Verify(pkBytes, sigBytes, data)
 	}
 
 	vm.dstack.PushBool(valid)
@@ -2104,22 +2104,22 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		signature := rawSig[:len(rawSig)-1]
 
 		// Generate the signature hash based on the signature hash type.
-		hash := calcSignatureHash(script, hashType, &vm.tx, vm.msgIdx, vm.txIdx, vm.crypto)
+		data := calcSignatureData(script, hashType, &vm.tx, vm.msgIdx, vm.txIdx)
 
 		var valid bool
 		if vm.sigCache != nil {
-			var sigHash common.Hash
-			copy(sigHash[:], hash)
+			var sigHash []byte
+			copy(sigHash[:], data)
 
 			valid = vm.sigCache.Exists(sigHash, signature, pubKey)
 			if !valid {
-				if pass, _ := vm.crypto.Verify(pubKey, signature, hash); pass {
+				if pass, _ := vm.crypto.Verify(pubKey, signature, data); pass {
 					vm.sigCache.Add(sigHash, signature, pubKey)
 					valid = true
 				}
 			}
 		} else {
-			valid, _ = vm.crypto.Verify(pubKey, signature, hash)
+			valid, _ = vm.crypto.Verify(pubKey, signature, data)
 		}
 
 		if valid {
@@ -2149,9 +2149,10 @@ func opcodeCheckMultiSigVerify(op *parsedOpcode, vm *Engine) error {
 
 // OpcodeByName is a map that can be used to lookup an opcode by its
 // human-readable name (OP_CHECKMULTISIG, OP_CHECKSIG, etc).
-var OpcodeByName = make(map[string]byte)
+var OpcodeByName =initOpcodeByName()
 
-func init() {
+func initOpcodeByName() map[string]byte{
+	var OpcodeByName = make(map[string]byte)
 	// Initialize the opcode name to value map using the contents of the
 	// opcode array.  Also add entries for "OP_FALSE", "OP_TRUE", and
 	// "OP_NOP2" since they are aliases for "OP_0", "OP_1",
@@ -2162,6 +2163,7 @@ func init() {
 	OpcodeByName["OP_FALSE"] = OP_FALSE
 	OpcodeByName["OP_TRUE"] = OP_TRUE
 	OpcodeByName["OP_NOP2"] = OP_CHECKLOCKTIMEVERIFY
+	return OpcodeByName
 }
 
 func opcodeCheckJuryRedeemEqual(op *parsedOpcode, vm *Engine) error {

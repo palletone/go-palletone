@@ -22,6 +22,7 @@ package node
 import (
 	"reflect"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rpc"
 )
@@ -34,7 +35,9 @@ func (s *NoopService) CorsProtocols() []p2p.Protocol        { return nil }
 func (s *NoopService) APIs() []rpc.API                      { return nil }
 func (s *NoopService) Start(*p2p.Server, *p2p.Server) error { return nil }
 func (s *NoopService) Stop() error                          { return nil }
-
+func (s *NoopService) GenesisHash() common.Hash {
+	return common.Hash{}
+}
 func NewNoopService(*ServiceContext) (Service, error) { return new(NoopService), nil }
 
 // Set of services all wrapping the base NoopService resulting in the same method
@@ -67,6 +70,11 @@ func (s *InstrumentedService) Protocols() []p2p.Protocol {
 		s.protocolsHook()
 	}
 	return s.protocols
+}
+
+//GenesisHash() common.Hash
+func (s *InstrumentedService) GenesisHash() common.Hash {
+	return common.Hash{}
 }
 
 func (s *InstrumentedService) CorsProtocols() []p2p.Protocol {

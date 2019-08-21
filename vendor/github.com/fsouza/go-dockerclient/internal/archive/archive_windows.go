@@ -24,10 +24,10 @@ func CanonicalTarNameForPath(p string) (string, error) {
 	// in file names, it is mostly safe to replace however we must
 	// check just in case
 	if strings.Contains(p, "/") {
+		//lint:ignore ST1005 Windows should be capitalized :)
 		return "", fmt.Errorf("Windows path contains forward slash: %s", p)
 	}
 	return strings.Replace(p, string(os.PathSeparator), "/", -1), nil
-
 }
 
 // fixVolumePathPrefix does platform specific processing to ensure that if
@@ -47,15 +47,15 @@ func getInodeFromStat(stat interface{}) (inode uint64, err error) {
 	return
 }
 
-func getFileUIDGID(stat interface{}) (idtools.IDPair, error) {
+func getFileIdentity(stat interface{}) (idtools.Identity, error) {
 	// no notion of file ownership mapping yet on Windows
-	return idtools.IDPair{0, 0}, nil
+	return idtools.Identity{}, nil
 }
 
 // chmodTarEntry is used to adjust the file permissions used in tar header based
 // on the platform the archival is done.
 func chmodTarEntry(perm os.FileMode) os.FileMode {
-	//perm &= 0755 // this 0-ed out tar flags (like link, regular file, directory marker etc.)
+	// perm &= 0755 // this 0-ed out tar flags (like link, regular file, directory marker etc.)
 	permPart := perm & os.ModePerm
 	noPermPart := perm &^ os.ModePerm
 	// Add the x bit: make everything +x from windows

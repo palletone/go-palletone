@@ -39,17 +39,19 @@ func GenInitPair() (kyber.Scalar, kyber.Point) {
 
 // mediator 结构体 和具体的账户模型有关
 type Mediator struct {
-	Address    common.Address
-	InitPubKey kyber.Point
-	Node       *discover.Node
+	Address    common.Address `json:"address"`    // mediator账户地址，主要用于产块签名
+	RewardAdd  common.Address `json:"rewardAdd"`  // mediator奖励地址，主要用于接收产块奖励
+	InitPubKey kyber.Point    `json:"initPubKey"` // mediator的群签名初始公钥
+	Node       *discover.Node `json:"node"`       // mediator节点网络信息，包括ip和端口等
 	*MediatorApplyInfo
 	*MediatorInfoExpand
 }
 
+// mediator扩展信息
 type MediatorInfoExpand struct {
-	TotalMissed          uint64 `json:"totalMissed"`
-	LastConfirmedUnitNum uint32 `json:"lastConfirmedUnitNum"`
-	TotalVotes           uint64 `json:"totalVotes"`
+	TotalMissed          uint64 `json:"totalMissed"`          // 当前mediator未能按照调度生产区块的总个数
+	LastConfirmedUnitNum uint32 `json:"lastConfirmedUnitNum"` // 当前mediator最新生产的区块编号
+	TotalVotes           uint64 `json:"totalVotes"`           // 当前mediator的总共得票数量
 }
 
 func NewMediatorInfoExpand() *MediatorInfoExpand {
@@ -62,19 +64,39 @@ func NewMediatorInfoExpand() *MediatorInfoExpand {
 
 func NewMediator() *Mediator {
 	return &Mediator{
+		Address:            common.Address{},
+		RewardAdd:          common.Address{},
+		InitPubKey:         nil,
+		Node:               nil,
 		MediatorApplyInfo:  NewMediatorApplyInfo(),
 		MediatorInfoExpand: NewMediatorInfoExpand(),
 	}
 }
 
-//申请成为Mediator
+func (med *Mediator) GetRewardAdd() common.Address {
+	if med.RewardAdd != (common.Address{}) {
+		return med.RewardAdd
+	}
+
+	return med.Address
+}
+
+// Mediator申请信息
 type MediatorApplyInfo struct {
-	ApplyInfo string `json:"applyInfo"` //  申请信息
+	Logo        string `json:"logo"`      // 节点图标url
+	Name        string `json:"name"`      // 节点名称
+	Location    string `json:"loc"`       // 节点所在地区
+	Url         string `json:"url"`       // 节点宣传网站
+	Description string `json:"applyInfo"` // 节点详细信息描述
 }
 
 func NewMediatorApplyInfo() *MediatorApplyInfo {
 	return &MediatorApplyInfo{
-		ApplyInfo: "某节点; www.abc.com",
+		Logo:        "",
+		Name:        "",
+		Location:    "",
+		Url:         "",
+		Description: "",
 	}
 }
 

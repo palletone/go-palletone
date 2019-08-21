@@ -1,7 +1,23 @@
+/*
+   This file is part of go-palletone.
+   go-palletone is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   go-palletone is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+*/
+/*
+ * @author PalletOne core developer Jiyou Wang <dev@pallet.one>
+ * @date 2018
+ */
 package cors
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/palletone/go-palletone/common"
@@ -21,7 +37,8 @@ func (pm *ProtocolManager) CorsHeaderMsg(msg p2p.Msg, p *peer) error {
 
 	if pm.fetcher != nil {
 		for _, header := range headers {
-			log.Trace("CorsHeaderMsg message content", "assetid:", header.Number.AssetID, "index:", header.Number.Index)
+			log.Trace("CorsHeaderMsg message content", "assetid:", header.Number.AssetID,
+				"index:", header.Number.Index)
 			pm.fetcher.Enqueue(p, header)
 		}
 	}
@@ -82,7 +99,8 @@ func (pm *ProtocolManager) CurrentHeaderMsg(msg p2p.Msg, p *peer) error {
 		return errResp(ErrDecode, "msg %v: %v", msg, "len is err")
 	}
 	if headers[0].Number.AssetID.String() != pm.assetId.String() {
-		log.Info("CurrentHeaderMsg", "assetid not equal response", headers[0].Number.AssetID.String(), "local", pm.assetId.String())
+		log.Info("CurrentHeaderMsg", "assetid not equal response", headers[0].Number.AssetID.String(),
+			"local", pm.assetId.String())
 		return errBadPeer
 	}
 	pm.headerCh <- &headerPack{p.id, headers}
@@ -118,10 +136,10 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
 
-	log.Debug("ProtocolManager", "GetBlockHeadersMsg getBlockHeadersData:", query)
+	log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg getBlockHeadersData:", query)
 
 	hashMode := query.Origin.Hash != (common.Hash{})
-	log.Debug("ProtocolManager", "GetBlockHeadersMsg hashMode:", hashMode)
+	log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg hashMode:", hashMode)
 	// Gather headers until the fetch or network limits is reached
 	var (
 		bytes   common.StorageSize
@@ -129,20 +147,21 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 		unknown bool
 	)
 
-	for !unknown && len(headers) < int(query.Amount) && bytes < softResponseLimit && len(headers) < downloader.MaxHeaderFetch {
+	for !unknown && len(headers) < int(query.Amount) && bytes < softResponseLimit &&
+		len(headers) < downloader.MaxHeaderFetch {
 		// Retrieve the next header satisfying the query
 		var origin *modules.Header
 		if hashMode {
 			origin, _ = pm.dag.GetHeaderByHash(query.Origin.Hash)
 		} else {
-			log.Debug("ProtocolManager", "GetBlockHeadersMsg query.Origin.Number:", query.Origin.Number.Index)
+			log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg query.Origin.Number:", query.Origin.Number.Index)
 			origin, _ = pm.dag.GetHeaderByNumber(&query.Origin.Number)
 		}
 
 		if origin == nil {
 			break
 		}
-		log.Debug("ProtocolManager", "GetBlockHeadersMsg origin index:", origin.Number.Index)
+		log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg origin index:", origin.Number.Index)
 
 		number := origin.Number.Index
 		headers = append(headers, origin)
@@ -152,7 +171,7 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 		switch {
 		case hashMode && query.Reverse:
 			// Hash based traversal towards the genesis block
-			log.Debug("ProtocolManager", "GetBlockHeadersMsg ", "Hash based towards the genesis block")
+			log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg ", "Hash based towards the genesis block")
 			for i := 0; i < int(query.Skip)+1; i++ {
 				if header, err := pm.dag.GetHeaderByHash(query.Origin.Hash); err == nil && header != nil {
 					if number != 0 {
@@ -167,60 +186,57 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 			}
 		case hashMode && !query.Reverse:
 			// Hash based traversal towards the leaf block
-			log.Debug("ProtocolManager", "GetBlockHeadersMsg ", "Hash based towards the leaf block")
+			log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg ", "Hash based towards the leaf block")
 			var (
-				current = origin.Number.Index
-				next    = current + query.Skip + 1
-				index   = origin.Number
+				currentIndex = origin.Number.Index
+				nextIndex    = currentIndex + query.Skip + 1
+				number       = origin.Number
 			)
-			log.Debug("ProtocolManager", "GetBlockHeadersMsg next", next, "current:", current)
-			if next <= current {
-				infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
-				log.Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
+
+			log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg next", nextIndex, "current:", currentIndex)
+
+			if nextIndex <= currentIndex {
 				unknown = true
 			} else {
-				index.Index = next
-				log.Debug("ProtocolManager", "GetBlockHeadersMsg index.Index:", index.Index)
-				if header, _ := pm.dag.GetHeaderByNumber(index); header != nil {
+				number.Index = nextIndex
+				if header, _ := pm.dag.GetHeaderByNumber(number); header != nil {
 					hashs := pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)
-					log.Debug("ProtocolManager", "GetUnitHashesFromHash len(hashs):", len(hashs), "header.index:", header.Number.Index, "header.hash:", header.Hash().String(), "query.Skip+1", query.Skip+1)
 					if len(hashs) > int(query.Skip) && (hashs[query.Skip] == query.Origin.Hash) {
 						query.Origin.Hash = header.Hash()
 					} else {
-						log.Debug("ProtocolManager", "GetBlockHeadersMsg unknown = true; pm.dag.GetUnitHashesFromHash not equal origin hash.", "")
-						log.Debug("ProtocolManager", "GetBlockHeadersMsg header.Hash()", header.Hash(), "query.Skip+1:", query.Skip+1, "query.Origin.Hash:", query.Origin.Hash)
-						//log.Debug("ProtocolManager", "GetBlockHeadersMsg pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip]:", pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)[query.Skip])
 						unknown = true
 					}
 				} else {
-					log.Debug("ProtocolManager", "GetBlockHeadersMsg unknown = true; pm.dag.GetHeaderByNumber not found. Index:", index.Index)
 					unknown = true
 				}
 			}
 		case query.Reverse:
 			// Number based traversal towards the genesis block
-			log.Debug("ProtocolManager", "GetBlockHeadersMsg ", "Number based towards the genesis block")
+			log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg ", "Number based towards the genesis block")
 			if query.Origin.Number.Index >= query.Skip+1 {
 				query.Origin.Number.Index -= query.Skip + 1
 			} else {
-				log.Info("ProtocolManager", "GetBlockHeadersMsg query.Reverse", "unknown is true")
+				log.Info("Cors ProtocolManager", "GetBlockHeadersMsg query.Reverse", "unknown is true")
 				unknown = true
 			}
 
 		case !query.Reverse:
 			// Number based traversal towards the leaf block
-			log.Debug("ProtocolManager", "GetBlockHeadersMsg ", "Number based towards the leaf block")
+			log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg ", "Number based towards the leaf block")
 			query.Origin.Number.Index += query.Skip + 1
 		}
 	}
-	start := uint64(0)
-	end := uint64(0)
+
 	number := len(headers)
 	if number > 0 {
-		start = uint64(headers[0].Number.Index)
-		end = uint64(headers[number-1].Number.Index)
+		log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg query.Amount", query.Amount, "send number:", number,
+			"start:", headers[0].Number.Index, "end:", headers[number-1].Number.Index,
+			" getBlockHeadersData:", query)
+	} else {
+		log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg query.Amount", query.Amount, "send number:", 0,
+			" getBlockHeadersData:", query)
 	}
-	log.Debug("ProtocolManager", "GetBlockHeadersMsg query.Amount", query.Amount, "send number:", len(headers), "start:", start, "end:", end, " getBlockHeadersData:", query)
+
 	return p.SendUnitHeaders(headers)
 }
 

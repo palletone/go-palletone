@@ -36,7 +36,7 @@ class createToken():
     def getBalance(self, address):
         data = {
             "jsonrpc": "2.0",
-            "method": "ptn_getBalance",
+            "method": "wallet_getBalance",
             "params": [address],
             "id": 1
         }
@@ -77,7 +77,7 @@ class createToken():
             "jsonrpc": "2.0",
             "method": "contract_ccquery",
             "params":
-                [address, [funcName, assetId]],
+                [address, [funcName, assetId],0],
             "id": 1
         }
         data = json.dumps(data)
@@ -95,7 +95,7 @@ class createToken():
         tokenid = self.getTokenId(self.nickname)
         data = {
             "jsonrpc": "2.0",
-            "method": "ptn_transferToken",
+            "method": "wallet_transferToken",
             "params": [
                 tokenid, senderAddr, recieverAddr, senderAmount, poundage, "1"
             ],
@@ -115,7 +115,7 @@ class createToken():
     def getTxHashByReqId(self, applyResult):
         data = {
             "jsonrpc": "2.0",
-            "method": "ptn_getTxHashByReqId",
+            "method": "dag_getTxHashByReqId",
             "params":
                 [
                     applyResult

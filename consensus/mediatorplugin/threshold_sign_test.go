@@ -22,15 +22,16 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/palletone/go-palletone/common/hexutil"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing/bn256"
 	"go.dedis.ch/kyber/v3/share"
-	dkg "go.dedis.ch/kyber/v3/share/dkg/pedersen"
-	vss "go.dedis.ch/kyber/v3/share/vss/pedersen"
+	"go.dedis.ch/kyber/v3/share/dkg/pedersen"
+	"go.dedis.ch/kyber/v3/share/vss/pedersen"
 	"go.dedis.ch/kyber/v3/sign/bls"
 	"go.dedis.ch/kyber/v3/sign/tbls"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -82,6 +83,7 @@ func fullExchange(t *testing.T) {
 	resps := make([]*dkg.Response, 0, nbParticipants*nbParticipants)
 	for _, dkg := range dkgs {
 		deals, err := dkg.Deals()
+		//fmt.Printf("the number of deals is: %v\n", len(deals))
 		require.Nil(t, err)
 		for i, d := range deals {
 			resp, err := dkgs[i].ProcessDeal(d)
@@ -132,7 +134,7 @@ func TestTBLS(t *testing.T) {
 	sig, err := tbls.Recover(suite, pubPoly, msg, sigShares, ntThreshold, nbParticipants)
 	require.Nil(t, err)
 
-	fmt.Printf("threshold sign: %v", sig)
+	fmt.Printf("threshold sign: %v", hexutil.Encode(sig))
 
 	err = bls.Verify(suite, pubPoly.Commit(), msg, sig)
 	require.Nil(t, err)

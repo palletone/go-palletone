@@ -42,6 +42,9 @@ const (
 	datadirTrustedNodes    = "trusted-nodes.json" // Path within the datadir to the trusted node list
 	datadirNodeDatabase    = "nodes"              // Path within the datadir to store the node infos
 )
+const (
+	GPTN = "gptn"
+)
 
 // Config represents a small collection of configuration values to fine tune the
 // P2P network layer of a protocol stack. These values can be further extended by
@@ -225,7 +228,7 @@ func DefaultWSEndpoint() string {
 func (c *Config) NodeName() string {
 	name := c.name()
 	// Backwards compatibility: previous versions used title-cased "Geth", keep that.
-	if name == "gptn" || name == "gptn-testnet" {
+	if name == GPTN || name == "gptn-testnet" {
 		name = "Gptn"
 	}
 	if c.UserIdent != "" {
@@ -269,9 +272,9 @@ func (c *Config) resolvePath(path string) string {
 	}
 	// Backwards-compatibility: ensure that data directory files created
 	// by gptn 1.4 are used if they exist.
-	if c.name() == "gptn" && isOldGptnResource[path] {
+	if c.name() == GPTN && isOldGptnResource[path] {
 		oldpath := ""
-		if c.Name == "gptn" {
+		if c.Name == GPTN {
 			oldpath = filepath.Join(c.DataDir, path)
 		}
 		if oldpath != "" && common.IsExisted(oldpath) {
@@ -354,7 +357,7 @@ func (c *Config) parsePersistentNodes(path string) []*discover.Node {
 		return nil
 	}
 	// Interpret the list as a discovery node array
-	var nodes []*discover.Node
+	nodes:=make( []*discover.Node,0,len(nodelist))
 	for _, url := range nodelist {
 		if url == "" {
 			continue

@@ -17,13 +17,10 @@
 package gen
 
 import (
-	"crypto/ecdsa"
 	"fmt"
 	"time"
 
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
 
@@ -183,7 +180,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 			tx.TxMessages = append(tx.TxMessages, newMsg)
 		}
 	}
-	// step4, generate inital mediator info payload
+	// step4, generate initial mediator info payload
 	//initialMediatorMsgs := dagCommon.GetInitialMediatorMsgs(genesis)
 	//tx.TxMessages = append(tx.TxMessages, initialMediatorMsgs...)
 
@@ -194,13 +191,13 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 	return txs, asset
 }
 
-func sigData(key *ecdsa.PrivateKey, data interface{}) ([]byte, error) {
-	txBytes, _ := rlp.EncodeToBytes(data)
-	hash := crypto.Keccak256(txBytes)
-	sign, err := crypto.Sign(hash, key)
-
-	return sign, err
-}
+//func sigData(key *ecdsa.PrivateKey, data interface{}) ([]byte, error) {
+//	txBytes, _ := rlp.EncodeToBytes(data)
+//	hash := crypto.Keccak256(txBytes)
+//	sign, err := crypto.Sign(hash, key)
+//
+//	return sign, err
+//}
 
 func GenContractTransction(orgTx *modules.Transaction, msgs []*modules.Message) (*modules.Transaction, error) {
 	if orgTx == nil || len(orgTx.TxMessages) < 2 {
@@ -213,7 +210,8 @@ func GenContractTransction(orgTx *modules.Transaction, msgs []*modules.Message) 
 	for i := 0; i < len(msgs); i++ {
 		tx.AddMessage(msgs[i])
 	}
-
+	tx.CertId = orgTx.CertId
+	tx.Illegal = orgTx.Illegal
 	return tx, nil
 }
 
@@ -333,6 +331,7 @@ func InitialMediatorCandidates(len int, address string) []*core.InitialMediator 
 	for i := 0; i < len; i++ {
 		im := core.NewInitialMediator()
 		im.AddStr = address
+		im.RewardAdd = address
 		im.InitPubKey = core.DefaultInitPubKey
 		im.Node = deFaultNode
 		initialMediator[i] = im

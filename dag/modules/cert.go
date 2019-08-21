@@ -25,7 +25,6 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 )
 
 type CertRawInfo struct {
@@ -66,14 +65,14 @@ func (certHolderInfo *CertHolderInfo) SetBytes(data []byte) error {
 	return nil
 }
 
-func loadCert(path string) ([]byte, error) {
-	//加载PEM格式证书到字节数组
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	return LoadCertBytes(data)
-}
+//func loadCert(path string) ([]byte, error) {
+//	//加载PEM格式证书到字节数组
+//	data, err := ioutil.ReadFile(path)
+//	if err != nil {
+//		return nil, err
+//	}
+//	return LoadCertBytes(data)
+//}
 
 func LoadCertBytes(original []byte) ([]byte, error) {
 	certDERBlock, _ := pem.Decode(original)

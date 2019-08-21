@@ -18,6 +18,7 @@ package discover
 
 import (
 	"bytes"
+	"github.com/palletone/go-palletone/configure"
 	"io/ioutil"
 	"net"
 	"os"
@@ -79,7 +80,7 @@ var nodeDBInt64Tests = []struct {
 }
 
 func TestNodeDBInt64(t *testing.T) {
-	db, _ := newNodeDB("", Version, NodeID{})
+	db, _ := newNodeDB("", configure.UdpVersion, NodeID{})
 	defer db.close()
 
 	tests := nodeDBInt64Tests
@@ -111,7 +112,7 @@ func TestNodeDBFetchStore(t *testing.T) {
 	inst := time.Now()
 	num := 314
 
-	db, _ := newNodeDB("", Version, NodeID{})
+	db, _ := newNodeDB("", configure.UdpVersion, NodeID{})
 	defer db.close()
 
 	// Check fetch/store operations on a node ping object
@@ -216,7 +217,7 @@ var nodeDBSeedQueryNodes = []struct {
 }
 
 func TestNodeDBSeedQuery(t *testing.T) {
-	db, _ := newNodeDB("", Version, nodeDBSeedQueryNodes[1].node.ID)
+	db, _ := newNodeDB("", configure.UdpVersion, nodeDBSeedQueryNodes[1].node.ID)
 	defer db.close()
 
 	// Insert a batch of nodes for querying
@@ -267,7 +268,7 @@ func TestNodeDBPersistency(t *testing.T) {
 	)
 
 	// Create a persistent database and store some values
-	db, err := newNodeDB(filepath.Join(root, "database"), Version, NodeID{})
+	db, err := newNodeDB(filepath.Join(root, "database"), configure.UdpVersion, NodeID{})
 	if err != nil {
 		t.Fatalf("failed to create persistent database: %v", err)
 	}
@@ -277,7 +278,7 @@ func TestNodeDBPersistency(t *testing.T) {
 	db.close()
 
 	// Reopen the database and check the value
-	db, err = newNodeDB(filepath.Join(root, "database"), Version, NodeID{})
+	db, err = newNodeDB(filepath.Join(root, "database"), configure.UdpVersion, NodeID{})
 	if err != nil {
 		t.Fatalf("failed to open persistent database: %v", err)
 	}
@@ -287,7 +288,7 @@ func TestNodeDBPersistency(t *testing.T) {
 	db.close()
 
 	// Change the database version and check flush
-	db, err = newNodeDB(filepath.Join(root, "database"), Version+1, NodeID{})
+	db, err = newNodeDB(filepath.Join(root, "database"), configure.UdpVersion+1, NodeID{})
 	if err != nil {
 		t.Fatalf("failed to open persistent database: %v", err)
 	}
@@ -324,7 +325,7 @@ var nodeDBExpirationNodes = []struct {
 }
 
 func TestNodeDBExpiration(t *testing.T) {
-	db, _ := newNodeDB("", Version, NodeID{})
+	db, _ := newNodeDB("", configure.UdpVersion, NodeID{})
 	defer db.close()
 
 	// Add all the test nodes and set their last pong time
@@ -357,7 +358,7 @@ func TestNodeDBSelfExpiration(t *testing.T) {
 			break
 		}
 	}
-	db, _ := newNodeDB("", Version, self)
+	db, _ := newNodeDB("", configure.UdpVersion, self)
 	defer db.close()
 
 	// Add all the test nodes and set their last pong time

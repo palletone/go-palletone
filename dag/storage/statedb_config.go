@@ -34,7 +34,6 @@ import (
 
 //var CONF_PREFIX = append(constants.CONTRACT_STATE_PREFIX, scc.SysConfigContractAddress.Bytes()...)
 func (statedb *StateDb) SaveSysConfigContract(key string, val []byte, ver *modules.StateVersion) error {
-	//SaveContractState(id []byte, name string, value interface{}, version *modules.StateVersion)
 	id := syscontract.SysConfigContractAddress.Bytes()
 	write := modules.NewWriteSet(key, val)
 	err := statedb.SaveContractState(id, write, ver)
@@ -55,11 +54,6 @@ func (statedb *StateDb) getSysConfigContract(name string) ([]byte, *modules.Stat
 	return statedb.GetContractState(id, name)
 }
 
-//func (statedb *StateDb) GetAllSysConfig() (map[string]*modules.ContractStateValue, error) {
-//	id := syscontract.SysConfigContractAddress.Bytes()
-//	return statedb.GetContractStatesById(id)
-//}
-
 func (statedb *StateDb) GetSysParamWithoutVote() (map[string]string, error) {
 	val, _, err := statedb.getSysConfigContract(modules.DesiredSysParamsWithoutVote)
 	if err != nil {
@@ -67,7 +61,7 @@ func (statedb *StateDb) GetSysParamWithoutVote() (map[string]string, error) {
 		return nil, err
 	}
 
-	if val == nil || len(val) == 0 {
+	if len(val) == 0 {
 		return nil, fmt.Errorf("data is nil")
 	}
 
@@ -88,7 +82,7 @@ func (statedb *StateDb) GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)
 		return nil, err
 	}
 
-	if val == nil || len(val) == 0 {
+	if len(val) == 0 {
 		return nil, fmt.Errorf("data is nil")
 	}
 

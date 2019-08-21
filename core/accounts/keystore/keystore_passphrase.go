@@ -41,7 +41,6 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/crypto/randentropy"
 	// "github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/math"
 	"github.com/pborman/uuid"
 	"golang.org/x/crypto/pbkdf2"
 	"golang.org/x/crypto/scrypt"
@@ -127,7 +126,9 @@ func EncryptKey(key *Key, auth string, scryptN, scryptP int) ([]byte, error) {
 		return nil, err
 	}
 	encryptKey := derivedKey[:16]
-	keyBytes := math.PaddedBigBytes(key.PrivateKey.D, 32)
+	keyBytes := key.PrivateKey
+	//keyBytes := math.PaddedBigBytes(key.PrivateKey.D, 32)
+	//return math.PaddedBigBytes(priv.D, priv.Params().BitSize/8)
 
 	iv := randentropy.GetEntropyCSPRNG(aes.BlockSize) // 16
 	cipherText, err := aesCTRXOR(encryptKey, keyBytes, iv)
@@ -193,12 +194,12 @@ func DecryptKey(keyjson []byte, auth string) (*Key, error) {
 	if err != nil {
 		return nil, err
 	}
-	key := crypto.ToECDSAUnsafe(keyBytes)
-
+	//key := crypto.ToECDSAUnsafe(keyBytes)
+	pubKey, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(keyBytes)
 	return &Key{
 		Id:         uuid.UUID(keyId),
-		Address:    crypto.PubkeyToAddress(&key.PublicKey),
-		PrivateKey: key,
+		Address:    crypto.PubkeyBytesToAddress(pubKey),
+		PrivateKey: keyBytes,
 	}, nil
 }
 

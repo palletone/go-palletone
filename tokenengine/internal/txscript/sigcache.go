@@ -7,14 +7,13 @@ package txscript
 import (
 	"bytes"
 	"crypto/rand"
-	"github.com/palletone/go-palletone/common"
 	"sync"
 )
 
 // sigInfo represents an entry in the SigCache. Entries in the sigcache are a
 // 3-tuple: (sigHash, sig, pubKey).
 type sigInfo struct {
-	sigHash common.Hash
+	sigHash string
 	sig     string
 	pubKey  string
 }
@@ -43,14 +42,17 @@ type SigCache struct {
 func NewSigCache(maxEntries uint) *SigCache {
 	return &SigCache{validSigs: make(map[sigInfo]struct{}), maxEntries: maxEntries}
 }
+func (s *SigCache) Count() int {
+	return len(s.validSigs)
+}
 
 // Exists returns true if an existing entry of 'sig' over 'sigHash' for public
 // key 'pubKey' is found within the SigCache. Otherwise, false is returned.
 //
 // NOTE: This function is safe for concurrent access. Readers won't be blocked
 // unless there exists a writer, adding an entry to the SigCache.
-func (s *SigCache) Exists(sigHash common.Hash, sig, pubKey []byte) bool {
-	info := sigInfo{sigHash, string(sig), string(pubKey)}
+func (s *SigCache) Exists(sigHash, sig, pubKey []byte) bool {
+	info := sigInfo{string(sigHash), string(sig), string(pubKey)}
 
 	s.RLock()
 	_, ok := s.validSigs[info]
@@ -65,7 +67,7 @@ func (s *SigCache) Exists(sigHash common.Hash, sig, pubKey []byte) bool {
 //
 // NOTE: This function is safe for concurrent access. Writers will block
 // simultaneous readers until function execution has concluded.
-func (s *SigCache) Add(sigHash common.Hash, sig, pubKey []byte) {
+func (s *SigCache) Add(sigHash, sig, pubKey []byte) {
 	s.Lock()
 	defer s.Unlock()
 
@@ -96,7 +98,7 @@ func (s *SigCache) Add(sigHash common.Hash, sig, pubKey []byte) {
 			if len(foundEntry.sig) == 0 {
 				foundEntry = sigEntry
 			}
-			if bytes.Compare(sigEntry.sigHash.Bytes(), randHashBytes) > 0 {
+			if bytes.Compare([]byte(sigEntry.sigHash), randHashBytes) > 0 {
 				foundEntry = sigEntry
 				break
 			}
@@ -104,6 +106,6 @@ func (s *SigCache) Add(sigHash common.Hash, sig, pubKey []byte) {
 		delete(s.validSigs, foundEntry)
 	}
 
-	info := sigInfo{sigHash, string(sig), string(pubKey)}
+	info := sigInfo{string(sigHash), string(sig), string(pubKey)}
 	s.validSigs[info] = struct{}{}
 }

@@ -90,8 +90,9 @@ func (t *SimpleChaincode) invoke(stub shim.ChaincodeStubInterface, args []string
 	var X int          // Transaction value
 	var err error
 
+	_ = stub
 	//glh
-	return shim.Success([]byte("example 2 invoke mock sucess"))
+	return shim.Success([]byte("example 2 invoke mock success"))
 
 	if len(args) != 3 {
 		return shim.Error("Incorrect number of arguments. Expecting 3")
@@ -148,9 +149,9 @@ func (t *SimpleChaincode) delete(stub shim.ChaincodeStubInterface, args []string
 	if len(args) != 1 {
 		return shim.Error("Incorrect number of arguments. Expecting 1")
 	}
-
+	_ = stub
 	//glh
-	return shim.Success([]byte("example 2 delete mock sucess"))
+	return shim.Success([]byte("example 2 delete mock success"))
 
 	A := args[0]
 
@@ -167,9 +168,9 @@ func (t *SimpleChaincode) delete(stub shim.ChaincodeStubInterface, args []string
 func (t *SimpleChaincode) query(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	var A string // Entities
 	var err error
-
+	_ = stub
 	//glh
-	return shim.Success([]byte("example 2 query mock sucess"))
+	return shim.Success([]byte("example 2 query mock success"))
 
 	if len(args) != 1 {
 		return shim.Error("Incorrect number of arguments. Expecting name of the person to query")
@@ -195,8 +196,8 @@ func (t *SimpleChaincode) query(stub shim.ChaincodeStubInterface, args []string)
 }
 
 func main() {
-	//err := shim.Start(new(SimpleChaincode))
-	//if err != nil {
-	//	fmt.Printf("Error starting Simple chaincode: %s", err)
-	//}
+	err := shim.Start(new(SimpleChaincode))
+	if err != nil {
+		fmt.Printf("Error starting Simple chaincode: %s", err)
+	}
 }

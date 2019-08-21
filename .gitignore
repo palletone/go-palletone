@@ -28,6 +28,7 @@ outchain.toml
 .project
 .settings
 *.pyc
+*.pem
 
 # used by the Makefile
 /build/_workspace/
@@ -65,7 +66,6 @@ cmd/console/leveldb/
 dag/common/unit.go.orig
 cmd/test/
 cmd/console/**/leveldb/
-palletone/
 
 dag/common/utxo.go.orig
 
@@ -78,3 +78,4 @@ cmd/gptn/
 gptn/
 dag/transactions.rlp.new
 dag/transactions.rlp
+ofile

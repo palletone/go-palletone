@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -24,11 +25,11 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 )
 
-//TODO
-
-type server struct {
-	plugins map[string]Plugin
-}
+////TODO
+//
+//type server struct {
+//	plugins map[string]Plugin
+//}
 
 type Plugin interface {
 	ParseConfig(prefix string) error
@@ -123,10 +124,7 @@ func Exists(key, itemKey string) bool {
 	c := redisPool.Get()
 	defer c.Close()
 	count, _ := redis.Int(c.Do("HEXISTS", key, itemKey))
-	if count == 0 {
-		return false
-	}
-	return true
+	return count != 0
 }
 
 func Get(userKey, itemKey string) (interface{}, bool) {

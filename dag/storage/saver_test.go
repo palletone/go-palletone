@@ -20,9 +20,7 @@
 package storage
 
 import (
-	"fmt"
 	"log"
-
 	"testing"
 
 	"github.com/ethereum/go-ethereum/rlp"
@@ -32,7 +30,7 @@ import (
 func TestDBBatch(t *testing.T) {
 	Dbconn, _ := ptndb.NewMemDatabase()
 	if Dbconn == nil {
-		fmt.Println("Connect mem  db error.")
+		log.Println("Connect mem  db error.")
 		return
 	}
 	table := ptndb.NewTable(Dbconn, "hehe")
@@ -59,78 +57,29 @@ func TestSaveUtxos(t *testing.T) {
 	// 0. initiate db
 	Dbconn, err := ptndb.NewMemDatabase()
 	if Dbconn == nil {
-		fmt.Println("Connect mem db error.")
+		log.Println("Connect mem db error.")
 		return
 	}
-	//l := plog.NewTestLog()
 	utxodb := NewUtxoDb(Dbconn)
 
 	//1. construct object
 	myplane := NewAirPlane()
-	fmt.Println("myplane is :", myplane)
+	log.Println("myplane is :", myplane)
 	myplane2 := NewAirPlane()
-	fmt.Println("myplane2 is :", myplane2)
+	log.Println("myplane2 is :", myplane2)
 	cap := make([]airPlane, 0)
 	cap = append(cap, *myplane, *myplane2)
-	fmt.Println(" cap :", cap)
+	log.Println(" cap :", cap)
 	//2. store object
 	StoreToRlpBytes(utxodb.db, []byte("testkey"), &cap)
 	//3. load object
 	something, err := utxodb.db.Get([]byte("testkey"))
 
-	fmt.Println("db get err:", err)
-	fmt.Println("byte data:", something)
+	log.Println("db get err:", err)
+	log.Println("byte data:", something)
 	p := new([]airPlane)
 	err2 := rlp.DecodeBytes(something, p)
-	fmt.Println("decoded error:", err2)
-	fmt.Printf("decoded data:%v\n", p)
+	log.Println("decoded error:", err2)
+	log.Printf("decoded data:%v\n", p)
 
 }
-
-//func TestAddToken(t *testing.T) {
-//	// dbconn := ReNewDbConn("/Users/jay/code/gocode/src/github.com/palletone/go-palletone/bin/work/gptn/leveldb/")
-//	// if dbconn == nil {
-//	// 	fmt.Println("Connect to db error.")
-//	// 	return
-//	// }
-//	dbconn, _ := ptndb.NewMemDatabase()
-//
-//	token := new(modules.TokenInfo)
-//	token.TokenHex = modules.PTNCOIN.String()
-//	token.Token = modules.PTNCOIN
-//	token.Name = "ptn"
-//	token.Creator = "jay"
-//	token.CreationDate = time.Now().Format(modules.TimeFormatString)
-//	infos := new(tokenInfo)
-//	infos.Items = make(map[string]*modules.TokenInfo)
-//	infos.Items[string(constants.TOKENTYPE)+token.TokenHex] = token
-//	// bytes, err := rlp.EncodeToBytes(infos)
-//	// if err != nil {
-//	// 	t.Errorf("error: %v", err)
-//	// 	return
-//	// }
-//	bytes, _ := json.Marshal(infos)
-//	if err := dbconn.Put(constants.TOKENINFOS, bytes); err != nil {
-//		t.Error("failed")
-//		return
-//	}
-//
-//	if bytes, err := dbconn.Get(constants.TOKENINFOS); err != nil {
-//		t.Error("get token infos error:", err)
-//		return
-//	} else {
-//		log.Println("json  bytes:", bytes)
-//		token_info := new(tokenInfo)
-//		token_info.Items = make(map[string]*modules.TokenInfo)
-//		// if err := rlp.DecodeBytes(bytes, &token_info); err != nil {
-//		// 	t.Error("decode error:", err)
-//		// 	return
-//		// }
-//		err := json.Unmarshal(bytes, &token_info)
-//		log.Println("token_info: ", err, token_info)
-//	}
-//}
-//
-//type tokenInfo struct {
-//	Items map[string]*modules.TokenInfo //  token_info’json string
-//}

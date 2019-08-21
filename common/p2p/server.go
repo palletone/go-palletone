@@ -29,14 +29,16 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/mclock"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-
+	"github.com/palletone/go-palletone/common/p2p/discv5"
 	"github.com/palletone/go-palletone/common/p2p/nat"
 	"github.com/palletone/go-palletone/common/p2p/netutil"
+	"github.com/palletone/go-palletone/configure"
 )
 
 const (
@@ -80,6 +82,10 @@ type Config struct {
 	// Disabling is useful for protocol debugging (manual topology).
 	NoDiscovery bool
 
+	// DiscoveryV5 specifies whether the the new topic-discovery based V5 discovery
+	// protocol should be started or not.
+	DiscoveryV5 bool `toml:",omitempty"`
+
 	// Name sets the node name of this server.
 	// Use common.MakeName to create a name that follows existing conventions.
 	Name string `toml:"-"`
@@ -91,7 +97,7 @@ type Config struct {
 	// BootstrapNodesV5 are used to establish connectivity
 	// with the rest of the network using the V5 discovery
 	// protocol.
-	//BootstrapNodesV5 []*discv5.Node `toml:",omitempty"`
+	BootstrapNodesV5 []*discv5.Node `toml:",omitempty"`
 
 	// Static nodes are used as pre-configured connections which are always
 	// maintained and re-connected on disconnects.
@@ -140,15 +146,14 @@ type Config struct {
 	// If EnableMsgEvents is set then the server will emit PeerEvents
 	// whenever a message is sent to or received from a peer
 	EnableMsgEvents bool
-
-	// Logger is a custom logger to use with the p2p.Server.
-	//Logger log.ILogger `toml:",omitempty"`
 }
 
 var DefaultConfig = Config{
-	ListenAddr:     ":30303",
-	MaxPeers:       50,
-	NAT:            nat.Any(),
+	DiscoveryV5: false,
+	ListenAddr:  ":30303",
+	MaxPeers:    50,
+	NAT:         nat.Any(),
+	//GenesisHash:    "",
 	CorsListenAddr: "",
 }
 
@@ -179,7 +184,7 @@ type Server struct {
 	listener     net.Listener
 	ourHandshake *protoHandshake
 	lastLookup   time.Time
-	//DiscV5       *discv5.Network
+	DiscV5       *discv5.Network
 
 	// These are for Peers, PeerCount (and nothing else).
 	peerOp     chan peerOpFunc
@@ -193,11 +198,13 @@ type Server struct {
 	delpeer       chan peerDrop
 	loopWG        sync.WaitGroup // loop, listenLoop
 	peerFeed      event.Feed
-	// log           log.Plogger
 
 	// append by albert·gou, for all active mediator peers connect to each other
 	addtrusted    chan *discover.Node
 	removetrusted chan *discover.Node
+
+	// AlienRestrict black list
+	alienRestrict *freecache.Cache //palletcache.ICache
 }
 
 type peerOpFunc func(map[discover.NodeID]*Peer)
@@ -434,6 +441,22 @@ func (s *sharedUDPConn) Close() error {
 	return nil
 }
 
+func (srv *Server) initAlien() (err error) {
+	srv.alienRestrict = freecache.NewCache(50 * 1024 * 1024)
+	for _, strnode := range configure.AlienRestrict {
+		pnode, err := discover.ParseNode(strnode)
+		if err != nil {
+			log.Error("p2p server initAlien URL invalid", "pnode", strnode, "err", err)
+			continue
+		}
+		srv.alienRestrict.Set([]byte(pnode.ID.TerminalString()), []byte(pnode.String()), 0)
+		if ip, err := pnode.IP.MarshalText(); err == nil {
+			srv.alienRestrict.Set(ip, []byte(""), 0)
+		}
+	}
+	return nil
+}
+
 // Start starts running the server.
 // Servers can not be re-used after stopping.
 func (srv *Server) Start() (err error) {
@@ -443,11 +466,6 @@ func (srv *Server) Start() (err error) {
 		return errors.New("server already running")
 	}
 	srv.running = true
-	// srv.Logger = srv.Config.Logger.
-	// if *srv.Logger == nil {
-	// 	srv.Logger = *log.New()
-	// }
-	//srv.log = *log.New()
 	log.Info("Starting P2P networking")
 
 	// static fields
@@ -472,15 +490,16 @@ func (srv *Server) Start() (err error) {
 	srv.addtrusted = make(chan *discover.Node)
 	srv.removetrusted = make(chan *discover.Node)
 
+	srv.initAlien()
 	var (
-		conn *net.UDPConn
-		//sconn     *sharedUDPConn
+		conn      *net.UDPConn
+		sconn     *sharedUDPConn
 		realaddr  *net.UDPAddr
 		unhandled chan discover.ReadPacket
 	)
 
 	// 侦听UDP端口（用于结点发现）
-	if !srv.NoDiscovery /*|| srv.DiscoveryV5*/ {
+	if !srv.NoDiscovery || srv.DiscoveryV5 {
 		addr, err := net.ResolveUDPAddr("udp", srv.ListenAddr)
 		if err != nil {
 			return err
@@ -500,22 +519,23 @@ func (srv *Server) Start() (err error) {
 			}
 		}
 	}
-	/*
-		if !srv.NoDiscovery && srv.DiscoveryV5 {
-			unhandled = make(chan discover.ReadPacket, 100)
-			sconn = &sharedUDPConn{conn, unhandled}
-		}
-	*/
+
+	if !srv.NoDiscovery && srv.DiscoveryV5 {
+		unhandled = make(chan discover.ReadPacket, 100)
+		sconn = &sharedUDPConn{conn, unhandled}
+	}
+
 	// node table
 	// 发起UDP请求获取结点列表（内部会启动goroutine）
 	if !srv.NoDiscovery {
 		cfg := discover.Config{
-			PrivateKey:   srv.PrivateKey,
-			AnnounceAddr: realaddr,
-			NodeDBPath:   srv.NodeDatabase,
-			NetRestrict:  srv.NetRestrict,
-			Bootnodes:    srv.BootstrapNodes,
-			Unhandled:    unhandled,
+			PrivateKey:    srv.PrivateKey,
+			AnnounceAddr:  realaddr,
+			NodeDBPath:    srv.NodeDatabase,
+			NetRestrict:   srv.NetRestrict,
+			Bootnodes:     srv.BootstrapNodes,
+			Unhandled:     unhandled,
+			AlienRestrict: srv.alienRestrict,
 		}
 		ntab, err := discover.ListenUDP(conn, cfg)
 		if err != nil {
@@ -523,26 +543,26 @@ func (srv *Server) Start() (err error) {
 		}
 		srv.ntab = ntab
 	}
-	/*
-		if srv.DiscoveryV5 {
-			var (
-				ntab *discv5.Network
-				err  error
-			)
-			if sconn != nil {
-				ntab, err = discv5.ListenUDP(srv.PrivateKey, sconn, realaddr, "", srv.NetRestrict) //srv.NodeDatabase)
-			} else {
-				ntab, err = discv5.ListenUDP(srv.PrivateKey, conn, realaddr, "", srv.NetRestrict) //srv.NodeDatabase)
-			}
-			if err != nil {
-				return err
-			}
-			if err := ntab.SetFallbackNodes(srv.BootstrapNodesV5); err != nil {
-				return err
-			}
-			srv.DiscV5 = ntab
+
+	if srv.DiscoveryV5 {
+		var (
+			ntab *discv5.Network
+			err  error
+		)
+		if sconn != nil {
+			ntab, err = discv5.ListenUDP(srv.PrivateKey, sconn, realaddr, "", srv.NetRestrict) //srv.NodeDatabase)
+		} else {
+			ntab, err = discv5.ListenUDP(srv.PrivateKey, conn, realaddr, "", srv.NetRestrict) //srv.NodeDatabase)
 		}
-	*/
+		if err != nil {
+			return err
+		}
+		if err := ntab.SetFallbackNodes(srv.BootstrapNodesV5); err != nil {
+			return err
+		}
+		srv.DiscV5 = ntab
+	}
+
 	dynPeers := srv.maxDialedConns()
 	dialer := newDialState(srv.StaticNodes, srv.BootstrapNodes, srv.ntab, dynPeers, srv.NetRestrict)
 
@@ -656,13 +676,13 @@ running:
 			// This channel is used by AddPeer to add to the
 			// ephemeral static peer list. Add it to the dialer,
 			// it will keep the node connected.
-			log.Debug("Adding static node", "node", n)
+			log.Debug("Adding static node", "node", n.ID.TerminalString())
 			dialstate.addStatic(n)
 		case n := <-srv.removestatic:
 			// This channel is used by RemovePeer to send a
 			// disconnect request to a peer and begin the
 			// stop keeping the node connected
-			log.Info("Removing static node", "node", n)
+			log.Debug("Removing static node", "node", n.ID.TerminalString())
 			dialstate.removeStatic(n)
 			if p, ok := peers[n.ID]; ok {
 				p.Disconnect(DiscRequested)
@@ -670,7 +690,7 @@ running:
 		case n := <-srv.addtrusted:
 			// This channel is used by AddTrustedPeer to add an pnode
 			// to the trusted node set.
-			log.Debug("Adding trusted node", "node", n)
+			log.Debug("Adding trusted node", "node", n.ID.TerminalString())
 			trusted[n.ID] = true
 			// Mark any already-connected peer as trusted
 			if p, ok := peers[n.ID]; ok {
@@ -679,7 +699,7 @@ running:
 		case n := <-srv.removetrusted:
 			// This channel is used by RemoveTrustedPeer to remove an pnode
 			// from the trusted node set.
-			log.Debug("Removing trusted node", "node", n)
+			log.Debug("Removing trusted node", "node", n.ID.TerminalString())
 			if _, ok := trusted[n.ID]; ok {
 				delete(trusted, n.ID)
 			}
@@ -733,7 +753,7 @@ running:
 					inboundCount++
 				}
 			} else {
-				log.Info("P2P Server run", "p2p addpeer protoHandshakeChecks err:", err.Error())
+				log.Debug("P2P Server run", "p2p addpeer protoHandshakeChecks err:", err.Error())
 			}
 			// The dialer logic relies on the assumption that
 			// dial tasks complete after the peer has been added or
@@ -746,7 +766,7 @@ running:
 		case pd := <-srv.delpeer:
 			// A peer disconnected.
 			d := common.PrettyDuration(mclock.Now() - pd.created)
-			log.Info("Removing p2p peer", "duration", d, "peers", len(peers)-1, "req", pd.requested, "err", pd.err)
+			log.Debug("Removing p2p peer", "duration", d, "peers", len(peers)-1, "req", pd.requested, "err", pd.err)
 			delete(peers, pd.ID())
 			if pd.Inbound() {
 				inboundCount--
@@ -760,10 +780,10 @@ running:
 	if srv.ntab != nil {
 		srv.ntab.Close()
 	}
-	/*
-		if srv.DiscV5 != nil {
-			srv.DiscV5.Close()
-		}*/
+
+	if srv.DiscV5 != nil {
+		srv.DiscV5.Close()
+	}
 	// Disconnect all peers.
 	for _, p := range peers {
 		p.Disconnect(DiscQuitting)
@@ -864,6 +884,18 @@ func (srv *Server) listenLoop() {
 				fd.Close()
 				slots <- struct{}{}
 				continue
+			}
+		}
+
+		if tcp, ok := fd.RemoteAddr().(*net.TCPAddr); ok {
+			if ip, err := tcp.IP.MarshalText(); err == nil && srv.alienRestrict != nil {
+				if _, err = srv.alienRestrict.Get(ip); err != nil {
+				} else {
+					log.Debug("Rejected conn (blacklisted in AlienRestrict)", "addr", fd.RemoteAddr())
+					fd.Close()
+					slots <- struct{}{}
+					continue
+				}
 			}
 		}
 

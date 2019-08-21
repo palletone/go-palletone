@@ -17,7 +17,6 @@
 package keystore
 
 import (
-	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -44,7 +43,7 @@ type Key struct {
 	Address common.Address
 	// we only store privkey as pubkey/address can be derived from it
 	// privkey in this struct is always in plaintext
-	PrivateKey *ecdsa.PrivateKey
+	PrivateKey []byte
 }
 
 type keyStore interface {
@@ -93,7 +92,7 @@ type cipherparamsJSON struct {
 func (k *Key) MarshalJSON() (j []byte, err error) {
 	jStruct := plainKeyJSON{
 		hex.EncodeToString(k.Address[:]),
-		hex.EncodeToString(crypto.FromECDSA(k.PrivateKey)),
+		hex.EncodeToString(k.PrivateKey),
 		k.Id.String(),
 		version,
 	}
@@ -115,7 +114,7 @@ func (k *Key) UnmarshalJSON(j []byte) (err error) {
 	if err != nil {
 		return err
 	}
-	privkey, err := crypto.HexToECDSA(keyJSON.PrivateKey)
+	privkey, err := hex.DecodeString(keyJSON.PrivateKey)
 	if err != nil {
 		return err
 	}
@@ -126,11 +125,12 @@ func (k *Key) UnmarshalJSON(j []byte) (err error) {
 	return nil
 }
 
-func newKeyFromECDSA(privateKeyECDSA *ecdsa.PrivateKey) *Key {
+func newKeyFromECDSA(privateKeyECDSA []byte) *Key {
 	id := uuid.NewRandom()
+	pubKey, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(privateKeyECDSA)
 	key := &Key{
 		Id:         id,
-		Address:    crypto.PubkeyToAddress(&privateKeyECDSA.PublicKey),
+		Address:    crypto.PubkeyBytesToAddress(pubKey),
 		PrivateKey: privateKeyECDSA,
 	}
 	return key
@@ -158,7 +158,7 @@ func newKeyFromECDSA(privateKeyECDSA *ecdsa.PrivateKey) *Key {
 // }
 
 func newKey(rand io.Reader) (*Key, error) {
-	privateKeyECDSA, err := ecdsa.GenerateKey(crypto.S256(), rand)
+	privateKeyECDSA, err := crypto.MyCryptoLib.KeyGen()
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +170,8 @@ func storeNewKey(ks keyStore, rand io.Reader, auth string) (*Key, accounts.Accou
 	if err != nil {
 		return nil, accounts.Account{}, err
 	}
-	a := accounts.Account{Address: key.Address, URL: accounts.URL{Scheme: KeyStoreScheme, Path: ks.JoinPath(keyFileName(key.Address))}}
+	a := accounts.Account{Address: key.Address, URL: accounts.URL{Scheme: KeyStoreScheme,
+		Path: ks.JoinPath(keyFileName(key.Address))}}
 	if err := ks.StoreKey(a.URL.Path, key, auth); err != nil {
 		ZeroKey(key.PrivateKey)
 		return nil, a, err
@@ -215,5 +216,6 @@ func toISO8601(t time.Time) string {
 	} else {
 		tz = fmt.Sprintf("%03d00", offset/3600)
 	}
-	return fmt.Sprintf("%04d-%02d-%02dT%02d-%02d-%02d.%09d%s", t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), tz)
+	return fmt.Sprintf("%04d-%02d-%02dT%02d-%02d-%02d.%09d%s", t.Year(), t.Month(), t.Day(), t.Hour(),
+		t.Minute(), t.Second(), t.Nanosecond(), tz)
 }

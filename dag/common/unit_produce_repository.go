@@ -133,7 +133,8 @@ func (vts voteTallys) Swap(i, j int) {
 	vts[i], vts[j] = vts[j], vts[i]
 }
 
-func (dag *UnitProduceRepository) SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription {
+func (dag *UnitProduceRepository) SubscribeActiveMediatorsUpdatedEvent(
+	ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription {
 	return dag.activeMediatorsUpdatedScope.Track(dag.activeMediatorsUpdatedFeed.Subscribe(ch))
 }
 
@@ -150,10 +151,8 @@ func (d *UnitProduceRepository) Close() {
  * @return true if we switched forks as a result of this push.
  */
 func (rep *UnitProduceRepository) PushUnit(newUnit *modules.Unit) error {
-	var err error
-
 	//更新数据库
-	err = rep.unitRep.SaveUnit(newUnit, false)
+	err := rep.unitRep.SaveUnit(newUnit, false)
 	if err != nil {
 		return err
 	}
@@ -170,7 +169,7 @@ func (rep *UnitProduceRepository) PushUnit(newUnit *modules.Unit) error {
 // ApplyUnit, 运用下一个 unit 更新整个区块链状态
 func (rep *UnitProduceRepository) ApplyUnit(nextUnit *modules.Unit) error {
 	defer func(start time.Time) {
-		log.Debugf("ApplyUnit cost time: %v", time.Since(start))
+		log.Debugf("ApplyUnit[%s] cost time: %v", nextUnit.UnitHash.String(), time.Since(start))
 	}(time.Now())
 
 	// 计算当前 unit 到上一个 unit 之间的缺失数量，并更新每个mediator的unit的缺失数量
@@ -245,8 +244,6 @@ func (rep *UnitProduceRepository) updateDynGlobalProp(unit *modules.Unit, missed
 	dgp.CurrentASlot += missedUnits + 1
 
 	rep.propRep.StoreDynGlobalProp(dgp)
-
-	return
 }
 
 func (rep *UnitProduceRepository) updateMediatorSchedule() {
@@ -261,8 +258,6 @@ func (rep *UnitProduceRepository) updateMediatorSchedule() {
 		dgp.IsShuffledSchedule = true
 		rep.propRep.StoreDynGlobalProp(dgp)
 	}
-
-	return
 }
 
 func (rep *UnitProduceRepository) updateSigningMediator(newUnit *modules.Unit) {
@@ -351,7 +346,9 @@ func (dag *UnitProduceRepository) RefreshSysParameters() {
 	//generateUnitReward, _ := strconv.ParseUint(string(generateUnitRewardStr), 10, 64)
 	parameter.CurrentSysParameters.GenerateUnitReward = cp.GenerateUnitReward
 	parameter.CurrentSysParameters.RewardHeight = cp.RewardHeight
-	log.Debugf("Load SysParameter GenerateUnitReward value:%d", parameter.CurrentSysParameters.GenerateUnitReward)
+	log.Debugf("Load SysParameter GenerateUnitReward value:%d,RewardHeight:%d",
+		parameter.CurrentSysParameters.GenerateUnitReward,
+		parameter.CurrentSysParameters.RewardHeight)
 }
 
 func (dag *UnitProduceRepository) updateChainParameters(nextUnit *modules.Unit) {
@@ -364,8 +361,6 @@ func (dag *UnitProduceRepository) updateChainParameters(nextUnit *modules.Unit) 
 
 	dag.UpdateSysParams(version)
 	dag.RefreshSysParameters()
-
-	return
 }
 
 // 获取通过投票修改系统参数的结果
@@ -411,9 +406,10 @@ func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion)
 
 		//将基金会当前单独修改的重置为nil
 		err = dag.stateRep.SaveSysConfigContract(modules.DesiredSysParamsWithoutVote, nil, version)
-		//if err != nil {
-		//	return err
-		//}
+		if err != nil {
+			log.Errorf(err.Error())
+			//return err
+		}
 	}
 
 	//基金会发起投票的
@@ -438,6 +434,7 @@ func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion)
 		}
 	}
 
+	core.ImmutableChainParameterCheck(&gp.ImmutableParameters, &gp.ChainParameters)
 	err = dag.propRep.StoreGlobalProp(gp)
 	if err != nil {
 		return err
@@ -497,7 +494,7 @@ func (dag *UnitProduceRepository) performAccountMaintenance() {
 	mediatorVoteCount, _ := dag.stateRep.GetMediatorVotedResults()
 
 	// 初始化 mediator 的投票数据
-	for mediator, _ := range mediators {
+	for mediator := range mediators {
 
 		voteTally := newVoteTally(mediator)
 		voteTally.votedCount = mediatorVoteCount[mediator.Str()]
@@ -546,8 +543,9 @@ func (dag *UnitProduceRepository) updateActiveMediators() bool {
 
 	// 2. 根据每个mediator的得票数，排序出前n个 active mediator
 	log.Debugf("In this round, The active mediator's count is %v", mediatorCount)
-	sort.PartialSort(dag.mediatorVoteTally, mediatorCount)
-
+	if dag.mediatorVoteTally.Len() > 0 {
+		sort.PartialSort(dag.mediatorVoteTally, mediatorCount)
+	}
 	// 3. 更新每个mediator的得票数
 	for _, voteTally := range dag.mediatorVoteTally {
 		med := dag.GetMediator(voteTally.candidate)
@@ -562,13 +560,17 @@ func (dag *UnitProduceRepository) updateActiveMediators() bool {
 	gp.PrecedingMediators = gp.ActiveMediators
 	gp.ActiveMediators = make(map[common.Address]bool, mediatorCount)
 	gp.ChainParameters.ActiveMediatorCount = uint8(mediatorCount)
-	for index := 0; index < mediatorCount; index++ {
-		voteTally := dag.mediatorVoteTally[index]
-		gp.ActiveMediators[voteTally.candidate] = true
+	if dag.mediatorVoteTally.Len() > 0 {
+		for index := 0; index < mediatorCount; index++ {
+			voteTally := dag.mediatorVoteTally[index]
+			gp.ActiveMediators[voteTally.candidate] = true
+		}
 	}
 	dag.propRep.StoreGlobalProp(gp)
 
-	return isActiveMediatorsChanged(gp)
+	// todo albert 待使用
+	//return isActiveMediatorsChanged(gp)
+	return false
 }
 
 func (d *UnitProduceRepository) getDesiredActiveMediatorCount() int {
@@ -582,7 +584,7 @@ func (d *UnitProduceRepository) getDesiredActiveMediatorCount() int {
 	if err == nil {
 		desiredActiveMediatorStr, ok := desiredSysParams[modules.DesiredActiveMediatorCount]
 		if ok {
-			desiredActiveMediator, err := strconv.ParseUint(string(desiredActiveMediatorStr), 10, 16)
+			desiredActiveMediator, err := strconv.ParseUint(desiredActiveMediatorStr, 10, 16)
 			if err == nil {
 				activeMediator = uint8(desiredActiveMediator)
 			}
@@ -592,7 +594,7 @@ func (d *UnitProduceRepository) getDesiredActiveMediatorCount() int {
 	// 获取通过投票修改的设置
 	infos := d.getSysParamsWithVote()
 	if desiredActiveMediatorStr, ok := infos[modules.DesiredActiveMediatorCount]; ok {
-		desiredActiveMediator, err := strconv.ParseUint(string(desiredActiveMediatorStr), 10, 16)
+		desiredActiveMediator, err := strconv.ParseUint(desiredActiveMediatorStr, 10, 16)
 		if err == nil {
 			activeMediator = uint8(desiredActiveMediator)
 		}
@@ -637,8 +639,6 @@ func (dag *UnitProduceRepository) updateNextMaintenanceTime(nextUnit *modules.Un
 
 	tt := time.Unix(int64(nextMaintenanceTime), 0)
 	log.Debugf("nextMaintenanceTime: %v", tt.Format("2006-01-02 15:04:05"))
-
-	return
 }
 
 func (dag *UnitProduceRepository) updateMaintenanceFlag(newMaintenanceFlag bool) {
@@ -647,8 +647,6 @@ func (dag *UnitProduceRepository) updateMaintenanceFlag(newMaintenanceFlag bool)
 	dgp := dag.GetDynGlobalProp()
 	dgp.MaintenanceFlag = newMaintenanceFlag
 	dag.propRep.StoreDynGlobalProp(dgp)
-
-	return
 }
 
 func (dag *UnitProduceRepository) HeadUnitTime() int64 {
@@ -658,20 +656,20 @@ func (dag *UnitProduceRepository) HeadUnitTime() int64 {
 }
 
 // 判断新一届mediator和上一届mediator是否有变化
-func isActiveMediatorsChanged(gp *modules.GlobalProperty) bool {
-	precedingMediators := gp.PrecedingMediators
-	activeMediators := gp.ActiveMediators
-
-	// 首先考虑活跃mediator个数是否改变
-	if len(precedingMediators) != len(activeMediators) {
-		return true
-	}
-
-	for am, _ := range activeMediators {
-		if !precedingMediators[am] {
-			return true
-		}
-	}
-
-	return false
-}
+//func isActiveMediatorsChanged(gp *modules.GlobalProperty) bool {
+//	precedingMediators := gp.PrecedingMediators
+//	activeMediators := gp.ActiveMediators
+//
+//	// 首先考虑活跃mediator个数是否改变
+//	if len(precedingMediators) != len(activeMediators) {
+//		return true
+//	}
+//
+//	for am := range activeMediators {
+//		if !precedingMediators[am] {
+//			return true
+//		}
+//	}
+//
+//	return false
+//}

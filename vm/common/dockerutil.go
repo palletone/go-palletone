@@ -74,10 +74,10 @@ func ParseDockerfileTemplate(template string) string {
 	return r.Replace(template)
 }
 
-func GetDockerfileFromConfig(path string) string {
-	if path == "chaincode.builder" {
-		ParseDockerfileTemplate(cfg.GetConfig().ContractBuilder)
-	}
-
-	return ParseDockerfileTemplate(viper.GetString(path))
-}
+//func GetDockerfileFromConfig(path string) string {
+//	if path == "chaincode.builder" {
+//		ParseDockerfileTemplate(cfg.GetConfig().ContractBuilder)
+//	}
+//
+//	return ParseDockerfileTemplate(viper.GetString(path))
+//}

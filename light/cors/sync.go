@@ -1,18 +1,20 @@
-// Copyright 2015 The go-ethereum Authors
-// This file is part of the go-ethereum library.
-//
-// The go-ethereum library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// The go-ethereum library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
+/*
+   This file is part of go-palletone.
+   go-palletone is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   go-palletone is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+*/
+/*
+ * @author PalletOne core developer Jiyou Wang <dev@pallet.one>
+ * @date 2018
+ */
 
 package cors
 
@@ -113,9 +115,10 @@ func (pm *ProtocolManager) pushSync() (uint64, []*modules.Header) {
 		index = pheader.Number.Index - maxQueueDist
 	}
 
-	log.Debug("Cors ProtocolManager", "pheader.index", pheader.Number.Index, "push index", index, "pushSync fetchHeader header", pheader)
+	log.Debug("Cors ProtocolManager", "pheader.index", pheader.Number.Index,
+		"push index", index, "pushSync fetchHeader header", pheader)
 
-	number := &modules.ChainIndex{pm.assetId, index}
+	number := &modules.ChainIndex{AssetID: pm.assetId, Index: index}
 	for {
 		bytes = 0
 		headers = []*modules.Header{}
@@ -144,7 +147,7 @@ func (pm *ProtocolManager) pushSync() (uint64, []*modules.Header) {
 		log.Info("Cors ProtocolManager", "pushSync SendHeaders len(headers)", len(headers), "index", index)
 		if len(headers) == 0 {
 			header := modules.Header{}
-			number := modules.ChainIndex{pm.assetId, 0}
+			number := modules.ChainIndex{AssetID: pm.assetId, Index: 0}
 			header.Number = &number
 			headers = append(headers, &header)
 		}
@@ -205,7 +208,6 @@ func (pm *ProtocolManager) fetchHeader() (*modules.Header, error) {
 			return nil, errTimeout
 		}
 	}
-	return nil, nil
 }
 
 func (pm *ProtocolManager) PullSync() {
@@ -246,19 +248,13 @@ func (pm *ProtocolManager) pullSync(peer *peer) {
 	var hash common.Hash
 	var index uint64
 	lheader := pm.dag.CurrentHeader(modules.PTNCOIN)
-	//hash, number := peer.HeadAndNumber(modules.PTNCOIN)
-	//if lheader.Number.Index >= number.Index {
-	//	log.Debug("Cors PalletOne ProtocolManager pullSync is not need sync", "local index", lheader.Number.Index, "peer index", number.Index)
-	//	return
-	//}
 
 	if lheader != nil {
 		hash = lheader.Hash()
 		index = lheader.Number.Index
 	}
 
-	if err := pm.downloader.Synchronise(peer.id, hash, index, downloader.LightSync, modules.PTNCOIN); err != nil {
-		log.Debug("ptn sync downloader.", "Synchronise err:", err)
-		return
+	if err := pm.downloader.Synchronize(peer.id, hash, index, downloader.LightSync, modules.PTNCOIN); err != nil {
+		log.Debug("ptn sync downloader.", "Synchronize err:", err)
 	}
 }

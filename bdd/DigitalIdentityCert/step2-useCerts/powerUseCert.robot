@@ -7,9 +7,9 @@ Resource          ../pubFuncs.robot
 powerUseCert
     Given power unlock account succed
     When power uses debug contract to test getRequesterCert without error
-    And wait for transaction being packaged
+    And Wait for transaction being packaged
     And power uses debug contract to test checkRequesterCert without error
-    And wait for transaction being packaged
+    And Wait for transaction being packaged
     Then print out: power has authority to use this cert
 
 *** Keywords ***

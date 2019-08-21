@@ -32,6 +32,12 @@ const (
 		ScriptVerifyCleanStack |
 		ScriptVerifyCheckLockTimeVerify |
 		ScriptVerifyLowS
+	StandardVerifyExcludeSignFlags = ScriptBip16 |
+		ScriptVerifyMinimalData |
+		ScriptStrictMultiSig |
+		ScriptDiscourageUpgradableNops |
+		ScriptVerifyCleanStack |
+		ScriptVerifyCheckLockTimeVerify
 )
 
 // ScriptClass is an enumeration for the list of standard types of script.
@@ -227,7 +233,7 @@ type ScriptInfo struct {
 
 // CalcScriptInfo returns a structure providing data about the provided script
 // pair.  It will error if the pair is in someway invalid such that they can not
-// be analysed, i.e. if they do not parse or the pkScript is not a push-only
+// be analyzed, i.e. if they do not parse or the pkScript is not a push-only
 // script
 func CalcScriptInfo(sigScript, pkScript []byte, bip16 bool) (*ScriptInfo, error) {
 	sigPops, err := parseScript(sigScript)
@@ -321,10 +327,10 @@ func payToScriptHashScript(scriptHash []byte) ([]byte, error) {
 
 // payToPubkeyScript creates a new script to pay a transaction output to a
 // public key. It is expected that the input is a valid pubkey.
-func payToPubKeyScript(serializedPubKey []byte) ([]byte, error) {
-	return NewScriptBuilder().AddData(serializedPubKey).
-		AddOp(OP_CHECKSIG).Script()
-}
+// func payToPubKeyScript(serializedPubKey []byte) ([]byte, error) {
+// 	return NewScriptBuilder().AddData(serializedPubKey).
+// 		AddOp(OP_CHECKSIG).Script()
+// }
 func payToContractHash(serializedPubKey []byte) ([]byte, error) {
 	return NewScriptBuilder().AddData(serializedPubKey).
 		AddOp(OP_JURY_REDEEM_EQUAL).Script()
@@ -415,9 +421,9 @@ func ExtractPkScriptAddrs(pkScript []byte) (ScriptClass, []AddressOriginalData, 
 		addr := NewAddressOriginalData(pops[2].data, scriptClass)
 		//addr, err := btcutil.NewAddressPubKeyHash(pops[2].data,
 		//	chainParams)
-		if err == nil {
-			addrs = append(addrs, addr)
-		}
+		// if err == nil {
+		addrs = append(addrs, addr)
+		// }
 
 	case PubKeyTy:
 		// A pay-to-pubkey script is of the form:
@@ -427,9 +433,9 @@ func ExtractPkScriptAddrs(pkScript []byte) (ScriptClass, []AddressOriginalData, 
 		requiredSigs = 1
 		addr := NewAddressOriginalData(pops[0].data, scriptClass)
 		//addr, err := btcutil.NewAddressPubKey(pops[0].data, chainParams)
-		if err == nil {
-			addrs = append(addrs, addr)
-		}
+		// if err == nil {
+		addrs = append(addrs, addr)
+		// }
 
 	case ScriptHashTy:
 		// A pay-to-script-hash script is of the form:
@@ -440,16 +446,16 @@ func ExtractPkScriptAddrs(pkScript []byte) (ScriptClass, []AddressOriginalData, 
 		addr := NewAddressOriginalData(pops[1].data, scriptClass)
 		//addr, err := btcutil.NewAddressScriptHashFromHash(pops[1].data,
 		//	chainParams)
-		if err == nil {
-			addrs = append(addrs, addr)
-		}
+		// if err == nil {
+		addrs = append(addrs, addr)
+		// }
 	case ContractHashTy:
 		//<contract hash> OP_JURY_REDEEM_EQUAL
 		requiredSigs = 1
 		addr := NewAddressOriginalData(pops[0].data, scriptClass)
-		if err == nil {
-			addrs = append(addrs, addr)
-		}
+		// if err == nil {
+		addrs = append(addrs, addr)
+		// }
 	case MultiSigTy:
 		// A multi-signature script is of the form:
 		//  <numsigs> <pubkey> <pubkey> <pubkey>... <numpubkeys> OP_CHECKMULTISIG

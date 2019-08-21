@@ -24,7 +24,6 @@ import (
 	"errors"
 	"log"
 
-	// "github.com/palletone/go-palletone/common/hexutil"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/ptndb"
 )
@@ -66,7 +65,6 @@ func AddKeysWithTag(db ptndb.Database, key, tag string) error {
 	if len(keys) <= 0 {
 		return errors.New("null keys.")
 	}
-	log.Println("keys:=", keys)
 	for _, v := range keys {
 		if v == key {
 			return errors.New("key is already exist.")
@@ -77,8 +75,8 @@ func AddKeysWithTag(db ptndb.Database, key, tag string) error {
 	if err := db.Put([]byte(tag), ConvertBytes(keys)); err != nil {
 		return err
 	}
-	return nil
 
+	return nil
 }
 
 //  get  unit chain version
@@ -92,7 +90,7 @@ func GetUnitChainVersion(db ptndb.Database) int {
 }
 
 // SaveUnitChainVersion writes vsn as the version number to db.
-func SaveUnitChainVersion(db ptndb.Database, vsn int) error {
+func SaveUnitChainVersion(db ptndb.Putter, vsn int) error {
 	enc, _ := rlp.EncodeToBytes(uint(vsn))
 	return db.Put([]byte("UnitchainVersion"), enc)
 }

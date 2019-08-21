@@ -1,3 +1,20 @@
+/*
+   This file is part of go-palletone.
+   go-palletone is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   go-palletone is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+*/
+/*
+ * @author PalletOne core developer Jiyou Wang <dev@pallet.one>
+ * @date 2018
+ */
 package cors
 
 import (
@@ -14,11 +31,11 @@ import (
 )
 
 var (
-	rttMinEstimate   = 2 * time.Second  // Minimum round-trip time to target for download requests
-	rttMaxEstimate   = 20 * time.Second // Maximum round-trip time to target for download requests
-	rttMinConfidence = 0.1              // Worse confidence factor in our estimated RTT value
-	ttlScaling       = 3                // Constant scaling factor for RTT -> TTL conversion
-	ttlLimit         = time.Minute      // Maximum TTL allowance to prevent reaching crazy timeouts
+	//rttMinEstimate   = 2 * time.Second  // Minimum round-trip time to target for download requests
+	rttMaxEstimate = 20 * time.Second // Maximum round-trip time to target for download requests
+	//rttMinConfidence = 0.1              // Worse confidence factor in our estimated RTT value
+	//ttlScaling       = 3                // Constant scaling factor for RTT -> TTL conversion
+	//ttlLimit         = time.Minute      // Maximum TTL allowance to prevent reaching crazy timeouts
 )
 
 type CorsServer struct {

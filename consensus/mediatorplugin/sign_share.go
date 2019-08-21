@@ -38,38 +38,36 @@ func newSigShareSet(cap int) *sigShareSet {
 	}
 }
 
-func (self *sigShareSet) len() int {
-	self.dataLock.Lock()
-	defer self.dataLock.Unlock()
+func (s *sigShareSet) len() int {
+	s.dataLock.Lock()
+	defer s.dataLock.Unlock()
 
-	return len(self.sigShares)
+	return len(s.sigShares)
 }
 
-func (self *sigShareSet) lock() {
-	self.opLock.Lock()
+func (s *sigShareSet) lock() {
+	s.opLock.Lock()
 }
 
-func (self *sigShareSet) unlock() {
-	self.opLock.Unlock()
+func (s *sigShareSet) unlock() {
+	s.opLock.Unlock()
 }
 
-func (self *sigShareSet) append(sigShare []byte) {
-	self.dataLock.Lock()
-	defer self.dataLock.Unlock()
+func (s *sigShareSet) append(sigShare []byte) {
+	s.dataLock.Lock()
+	defer s.dataLock.Unlock()
 
-	self.sigShares = append(self.sigShares, sigShare)
+	s.sigShares = append(s.sigShares, sigShare)
 }
 
-func (self *sigShareSet) popSigShares() (sigShares [][]byte) {
-	self.dataLock.Lock()
-	defer self.dataLock.Unlock()
+func (s *sigShareSet) popSigShares() (sigShares [][]byte) {
+	s.dataLock.Lock()
+	defer s.dataLock.Unlock()
 
-	sigShares = make([][]byte, 0, len(self.sigShares))
-	for _, sigShare := range self.sigShares {
-		sigShares = append(sigShares, sigShare)
-	}
+	sigShares = make([][]byte, 0, len(s.sigShares))
+	sigShares = append(sigShares, s.sigShares...)
 
-	self.sigShares = make([][]byte, 0)
+	s.sigShares = make([][]byte, 0)
 
 	return
 }

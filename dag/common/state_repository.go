@@ -72,7 +72,7 @@ type IStateRepository interface {
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
 	//获得一个合约的陪审团列表
-	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
+	GetContractJury(contractId []byte) (*modules.ElectionNode, error)
 	GetAllContractTpl() ([]*modules.ContractTemplate, error)
 	GetDataVersion() (*modules.DataVersion, error)
 	StoreDataVersion(dv *modules.DataVersion) error
@@ -126,7 +126,8 @@ func (rep *StateRepository) GetContractStatesById(id []byte) (map[string]*module
 	return rep.statedb.GetContractStatesById(id)
 }
 
-func (rep *StateRepository) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
+func (rep *StateRepository) GetContractStatesByPrefix(id []byte,
+	prefix string) (map[string]*modules.ContractStateValue, error) {
 	return rep.statedb.GetContractStatesByPrefix(id, prefix)
 }
 
@@ -208,7 +209,8 @@ func (rep *StateRepository) GetPledgeList() (*modules.PledgeList, error) {
 
 //获得新的用户的质押申请列表
 func (rep *StateRepository) GetPledgeDepositApplyList() ([]*modules.AddressAmount, error) {
-	states, err := rep.statedb.GetContractStatesByPrefix(syscontract.DepositContractAddress.Bytes(), string(constants.PLEDGE_DEPOSIT_PREFIX))
+	states, err := rep.statedb.GetContractStatesByPrefix(syscontract.DepositContractAddress.Bytes(),
+		string(constants.PLEDGE_DEPOSIT_PREFIX))
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +226,8 @@ func (rep *StateRepository) GetPledgeDepositApplyList() ([]*modules.AddressAmoun
 	return result, nil
 }
 func (rep *StateRepository) GetPledgeWithdrawApplyList() ([]*modules.AddressAmount, error) {
-	states, err := rep.statedb.GetContractStatesByPrefix(syscontract.DepositContractAddress.Bytes(), string(constants.PLEDGE_WITHDRAW_PREFIX))
+	states, err := rep.statedb.GetContractStatesByPrefix(syscontract.DepositContractAddress.Bytes(),
+		string(constants.PLEDGE_WITHDRAW_PREFIX))
 	if err != nil {
 		return nil, err
 	}
@@ -248,16 +251,12 @@ func (rep *StateRepository) GetPledgeListWithNew() (*modules.PledgeList, error) 
 		pledgeList = &modules.PledgeList{}
 	}
 	newDepositList, _ := rep.GetPledgeDepositApplyList()
-	if newDepositList != nil {
-		for _, deposit := range newDepositList {
-			pledgeList.Add(deposit.Address, deposit.Amount)
-		}
+	for _, deposit := range newDepositList {
+		pledgeList.Add(deposit.Address, deposit.Amount)
 	}
 	newWithdrawList, _ := rep.GetPledgeWithdrawApplyList()
-	if newWithdrawList != nil {
-		for _, withdraw := range newWithdrawList {
-			pledgeList.Reduce(withdraw.Address, withdraw.Amount)
-		}
+	for _, withdraw := range newWithdrawList {
+		pledgeList.Reduce(withdraw.Address, withdraw.Amount)
 	}
 
 	return pledgeList, nil
@@ -278,7 +277,7 @@ func (rep *StateRepository) GetMediatorVotedResults() (map[string]uint64, error)
 		// 遍历该账户投票的mediator
 		addr, _ := common.StringToAddress(account.Address)
 		mediators := rep.statedb.GetAccountVotedMediators(addr)
-		for med, _ := range mediators {
+		for med := range mediators {
 			// 累加投票数量
 			mediatorVoteCount[med] += account.Amount
 		}
@@ -330,16 +329,18 @@ func (rep *StateRepository) GetMainChain() (*modules.MainChain, error) {
 	return rep.statedb.GetMainChain()
 }
 
-func (rep *StateRepository) GetAllAccountStates(address common.Address) (map[string]*modules.ContractStateValue, error) {
+func (rep *StateRepository) GetAllAccountStates(address common.Address) (map[string]*modules.ContractStateValue,
+	error) {
 	return rep.statedb.GetAllAccountStates(address)
 }
 
-func (rep *StateRepository) GetAccountState(address common.Address, statekey string) (*modules.ContractStateValue, error) {
+func (rep *StateRepository) GetAccountState(address common.Address, statekey string) (*modules.ContractStateValue,
+	error) {
 	return rep.statedb.GetAccountState(address, statekey)
 }
 
 //获得一个合约的陪审团列表
-func (rep *StateRepository) GetContractJury(contractId []byte) ([]modules.ElectionInf, error) {
+func (rep *StateRepository) GetContractJury(contractId []byte) (*modules.ElectionNode, error) {
 	return rep.statedb.GetContractJury(contractId)
 }
 func (rep *StateRepository) GetAllContractTpl() ([]*modules.ContractTemplate, error) {

@@ -14,11 +14,11 @@
 package certficate
 
 type CAConfig struct {
-	ImmediateCa string
-	CaUrl       string
+	//ImmediateCa string
+	//CaUrl       string
 }
 
 var DefaultCAConfig = CAConfig{
-	"P135UmGibaAahtiBet3hvZm8pDsu5V1yRhK",
-	"http://localhost:8545",
+	//"P135UmGibaAahtiBet3hvZm8pDsu5V1yRhK",
+	//"http://localhost:8545",
 }

@@ -29,7 +29,7 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 )
 
-var instance SampleSysCC2
+//var instance SampleSysCC2
 
 // SampleSysCC example simple Chaincode implementation
 type SampleSysCC2 struct {

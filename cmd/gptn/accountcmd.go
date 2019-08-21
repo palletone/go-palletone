@@ -248,14 +248,12 @@ verify the message signature.
 					utils.PasswordFileFlag,
 					utils.LightKDFFlag,
 				},
-				ArgsUsage: "<keyFile>",
+				ArgsUsage: "key hex data",
 				Description: `
-    gptn account import <keyfile>
+    gptn account import hex
 
-Imports an unencrypted private key from <keyfile> and creates a new account.
+Imports an unencrypted private key from hex and creates a new account.
 Prints the address.
-
-The keyfile is assumed to contain an unencrypted private key in hexadecimal format.
 
 The account is saved in encrypted format, you are prompted for a passphrase.
 
@@ -263,7 +261,7 @@ You must remember this passphrase to unlock your account in the future.
 
 For non-interactive use the passphrase can be specified with the -password flag:
 
-    gptn account import [options] <keyfile>
+    gptn account import [options] <key hex>
 
 Note:
 As you can directly copy your encrypted accounts to another ethereum instance,
@@ -288,7 +286,8 @@ func accountList(ctx *cli.Context) error {
 }
 
 // tries unlocking the specified account a few times.
-func unlockAccount(ctx *cli.Context, ks *keystore.KeyStore, address string, i int, passwords []string) (accounts.Account, string) {
+func unlockAccount( /*ctx *cli.Context*/ ks *keystore.KeyStore, address string, i int,
+	passwords []string) (accounts.Account, string) {
 	account, err := utils.MakeAddress(ks, address)
 	if err != nil {
 		utils.Fatalf("Could not list accounts: %v", err)
@@ -353,24 +352,24 @@ func ambiguousAddrRecovery(ks *keystore.KeyStore, err *keystore.AmbiguousAddrErr
 		fmt.Println("  ", a.URL)
 	}
 	fmt.Println("Testing your passphrase against all of them...")
-	var match *accounts.Account
+	var match accounts.Account
 	for _, a := range err.Matches {
 		if err := ks.Unlock(a, auth); err == nil {
-			match = &a
+			match = a
 			break
 		}
 	}
-	if match == nil {
+	if match.Address.IsZero() {
 		utils.Fatalf("None of the listed files could be unlocked.")
 	}
 	fmt.Printf("Your passphrase unlocked %s\n", match.URL)
 	fmt.Println("In order to avoid this warning, you need to remove the following duplicate key files:")
 	for _, a := range err.Matches {
-		if a != *match {
+		if a != match {
 			fmt.Println("  ", a.URL)
 		}
 	}
-	return *match
+	return match
 }
 
 // accountCreate creates a new account into the keystore defined by the CLI flags.
@@ -381,15 +380,17 @@ func createAccount(ctx *cli.Context, password string) (common.Address, error) {
 	// Load config file.
 	if cfg, configDir, err = maybeLoadConfig(ctx); err != nil {
 		utils.Fatalf("%v", err)
+		return common.Address{}, err
 	}
 
 	cfg.Node.P2P = cfg.P2P
 	utils.SetNodeConfig(ctx, &cfg.Node, configDir)
-	scryptN, scryptP, keydir, err := cfg.Node.AccountConfig()
+	scryptN, scryptP, keydir, _ := cfg.Node.AccountConfig()
 
 	address, err := keystore.StoreKey(keydir, password, scryptN, scryptP)
 	if err != nil {
 		utils.Fatalf("Failed to create account: %v", err)
+		return common.Address{}, err
 	}
 
 	return address, nil
@@ -399,7 +400,10 @@ func newAccount(ctx *cli.Context) (common.Address, error) {
 	password := getPassPhrase("Your new account is locked with a password. Please give a password. "+
 		"Do not forget this password.", true, 0, utils.MakePasswordList(ctx))
 
-	address, _ := createAccount(ctx, password)
+	address, err := createAccount(ctx, password)
+	if err != nil {
+		return common.Address{}, err
+	}
 
 	return address, nil
 }
@@ -426,7 +430,7 @@ func accountUpdate(ctx *cli.Context) error {
 	ks := stack.GetKeyStore()
 
 	for _, addr := range ctx.Args() {
-		account, oldPassword := unlockAccount(ctx, ks, addr, 0, nil)
+		account, oldPassword := unlockAccount(ks, addr, 0, nil)
 		newPassword := getPassPhrase("Please give a new password. Do not forget this password.", true, 0, nil)
 		if err := ks.Update(account, oldPassword, newPassword); err != nil {
 			utils.Fatalf("Could not update the account: %v", err)
@@ -443,10 +447,10 @@ func accountSignString(ctx *cli.Context) error {
 	ks := stack.GetKeyStore()
 	addr := ctx.Args().First()
 	account, _ := utils.MakeAddress(ks, addr)
-	hash := crypto.Keccak256Hash([]byte(ctx.Args()[1]))
-	fmt.Printf("%s Hash:%s", addr, hash.String())
+	data := []byte(ctx.Args()[1])
+	fmt.Printf("%s Data:%#x", addr, data)
 	pwd := getPassPhrase("Please give a password to unlock your account", false, 0, utils.MakePasswordList(ctx))
-	sign, err := ks.SignHashWithPassphrase(account, pwd, hash.Bytes())
+	sign, err := ks.SignMessageWithPassphrase(account, pwd, data)
 	if err != nil {
 		utils.Fatalf("Sign error:%s", err)
 	}
@@ -465,8 +469,8 @@ func accountDumpKey(ctx *cli.Context) error {
 	prvKey, _ := ks.DumpKey(account, pwd)
 	wif := crypto.ToWIF(prvKey)
 	fmt.Printf("Your private key hex is : {%x}, WIF is {%s}\n", prvKey, wif)
-	pK, _ := crypto.ToECDSA(prvKey)
-	pubBytes := crypto.CompressPubkey(&pK.PublicKey)
+	//pK, _ := crypto.ToECDSA(prvKey)
+	pubBytes, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(prvKey)
 	fmt.Printf("Compressed public key hex is {%x}", pubBytes)
 	return nil
 }
@@ -536,9 +540,10 @@ type RawTransactionGenParams struct {
 	} `json:"outputs"`
 	Locktime int64 `json:"locktime"`
 }
-type RawTransactionGenResult struct {
-	Rawtx string `json:"rawtx"`
-}
+
+//type RawTransactionGenResult struct {
+//	Rawtx string `json:"rawtx"`
+//}
 
 type SignTransactionParams struct {
 	RawTx  string `json:"rawtx"`
@@ -572,9 +577,9 @@ func accountCreateTx(ctx *cli.Context) error {
 		return nil
 	}
 	//transaction inputs
-	var inputs []ptnjson.TransactionInput
+	inputs := make([]ptnjson.TransactionInput, 0, len(rawTransactionGenParams.Inputs))
 	for _, inputOne := range rawTransactionGenParams.Inputs {
-		input := ptnjson.TransactionInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex}
+		input := ptnjson.TransactionInput{Txid: inputOne.Txid, Vout: inputOne.Vout, MessageIndex: inputOne.MessageIndex}
 		inputs = append(inputs, input)
 	}
 	if len(inputs) == 0 {
@@ -586,7 +591,7 @@ func accountCreateTx(ctx *cli.Context) error {
 		if len(outOne.Address) == 0 || outOne.Amount.LessThanOrEqual(decimal.New(0, 0)) {
 			continue
 		}
-		amounts = append(amounts, ptnjson.AddressAmt{outOne.Address, outOne.Amount})
+		amounts = append(amounts, ptnjson.AddressAmt{Address: outOne.Address, Amount: outOne.Amount})
 	}
 	if len(amounts) == 0 {
 		return nil
@@ -624,15 +629,16 @@ func accountSignTx(ctx *cli.Context) error {
 		return nil
 	}
 	//transaction inputs
-	var rawinputs []ptnjson.RawTxInput
+	rawinputs:=make( []ptnjson.RawTxInput,0,len(signTransactionParams.Inputs))
 	for _, inputOne := range signTransactionParams.Inputs {
-		input := ptnjson.RawTxInput{inputOne.Txid, inputOne.Vout, inputOne.MessageIndex, inputOne.ScriptPubKey, inputOne.RedeemScript}
+		input := ptnjson.RawTxInput{Txid: inputOne.Txid, Vout: inputOne.Vout, MessageIndex: inputOne.MessageIndex,
+			ScriptPubKey: inputOne.ScriptPubKey, RedeemScript: inputOne.RedeemScript}
 		rawinputs = append(rawinputs, input)
 	}
 	if len(rawinputs) == 0 {
 		return nil
 	}
-	var keys []string
+	keys:=make( []string,0,len(signTransactionParams.PrivKeys))
 	for _, key := range signTransactionParams.PrivKeys {
 		key = strings.TrimSpace(key) //Trim whitespace
 		if len(key) == 0 {
@@ -643,37 +649,21 @@ func accountSignTx(ctx *cli.Context) error {
 	if len(keys) == 0 {
 		return nil
 	}
-	//	// All returned errors (not OOM, which panics) encounted during
-	//	// bytes.Buffer writes are unexpected.
-	send_args := ptnjson.NewSignRawTransactionCmd(signTransactionParams.RawTx, &rawinputs, &keys, nil)
-	send_args = send_args
-	//signtxout, err := ptnapi.SignRawTransaction(send_args)
-	//if signtxout == nil {
-	//	utils.Fatalf("Invalid signature")
-	//}
-	//signtx := signtxout.(ptnjson.SignRawTransactionResult)
-	//if err != nil {
-	//	utils.Fatalf("signtx error:%s", err)
-	//}
-	//if signtx.Complete == true {
-	//	fmt.Println("Signature success")
-	//	fmt.Println(signtx.Hex)
-	//} else {
-	//	utils.Fatalf("Invalid signature")
-	//}
+
 	return nil
 }
 func accountImport(ctx *cli.Context) error {
-	keyfile := ctx.Args().First()
-	if len(keyfile) == 0 {
-		utils.Fatalf("keyfile must be given as argument")
+	keyHex := ctx.Args().First()
+	if len(keyHex) == 0 {
+		utils.Fatalf("keyHex must be given as argument")
 	}
-	key, err := crypto.LoadECDSA(keyfile)
+	key, err := hexutil.Decode(keyHex)
 	if err != nil {
 		utils.Fatalf("Failed to load the private key: %v", err)
 	}
 	stack, _ := makeConfigNode(ctx, false)
-	passphrase := getPassPhrase("Your new account is locked with a password. Please give a password. Do not forget this password.", true, 0, utils.MakePasswordList(ctx))
+	passphrase := getPassPhrase("Your new account is locked with a password. "+
+		"Please give a password. Do not forget this password.", true, 0, utils.MakePasswordList(ctx))
 
 	ks := stack.GetKeyStore()
 	acct, err := ks.ImportECDSA(key, passphrase)

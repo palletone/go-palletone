@@ -30,7 +30,7 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-//var CoreAsset = NewPTNAsset()
+const PTN string = "PTN"
 
 //Asset to identify token
 //By default, system asset id=0,UniqueId=0
@@ -38,7 +38,6 @@ import (
 type Asset struct {
 	AssetId  AssetId  `json:"asset_id"`
 	UniqueId UniqueId `json:"unique_id"` // every token has its unique id
-	//ChainId  uint64   `json:"chain_id"`  // main chain id or sub-chain id,read from toml config NetworkId
 }
 
 type AssetType byte
@@ -50,14 +49,15 @@ const (
 )
 
 func NewPTNAsset() *Asset {
-	//return &Asset{AssetId: PTNCOIN}
-	asset, err := NewAsset("PTN", AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, UniqueIdType_Null, UniqueId{})
+	asset, err := NewAsset(PTN, AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		UniqueIdType_Null, UniqueId{})
 	if err != nil {
 		return nil
 	}
 	return asset
 }
-func NewAsset(symbol string, assetType AssetType, decimal byte, requestId []byte, uidType UniqueIdType, uniqueId UniqueId) (*Asset, error) {
+func NewAsset(symbol string, assetType AssetType, decimal byte, requestId []byte,
+	uidType UniqueIdType, uniqueId UniqueId) (*Asset, error) {
 	asset := &Asset{}
 	assetId, err := NewAssetId(symbol, assetType, decimal, requestId, uidType)
 	if err != nil {
@@ -69,16 +69,17 @@ func NewAsset(symbol string, assetType AssetType, decimal byte, requestId []byte
 }
 
 func NewPTNIdType() AssetId {
-	ptn, _ := NewAssetId("PTN", AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, UniqueIdType_Null)
+	ptn, _ := NewAssetId(PTN, AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		UniqueIdType_Null)
 	return ptn
 }
 func (asset *Asset) GetDecimal() byte {
-	_, _, decimal, _, _ := asset.AssetId.ParseAssetId()
-	return decimal
+	_, _, decim_code, _, _ := asset.AssetId.ParseAssetId()
+	return decim_code
 }
 func (asset *Asset) String() string {
 	if asset.AssetId == PTNCOIN {
-		return "PTN"
+		return PTN
 	}
 	_, t, _, _, uidType := asset.AssetId.ParseAssetId()
 	assetIdStr := asset.AssetId.String()
@@ -94,7 +95,7 @@ func StringToAsset(str string) (*Asset, error) {
 	return asset, err
 }
 func (asset *Asset) SetString(str string) error {
-	if str == "PTN" {
+	if str == PTN {
 		asset.AssetId = PTNCOIN
 		return nil
 	}
@@ -132,11 +133,6 @@ func (asset *Asset) IsEmpty() bool {
 }
 
 func (asset *Asset) Bytes() []byte {
-	//data, err := rlp.EncodeToBytes(asset)
-	//if err != nil {
-	//	return nil
-	//}
-	//return data
 	b := asset.AssetId.Bytes()
 	return append(b, asset.UniqueId.Bytes()...)
 }

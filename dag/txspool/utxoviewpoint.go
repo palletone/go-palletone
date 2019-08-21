@@ -73,14 +73,18 @@ func (view *UtxoViewpoint) SpentUtxo(db utxoBaseOp, outpoints map[modules.OutPoi
 		return nil
 	}
 	for outpoint := range outpoints {
+		item := new(modules.OutPoint)
+		item.TxHash = outpoint.TxHash
+		item.MessageIndex = outpoint.MessageIndex
+		item.OutIndex = outpoint.OutIndex
 		if utxo, has := view.entries[outpoint]; has {
 			utxo.Spend()
-			db.SaveUtxoEntity(&outpoint, utxo)
+			db.SaveUtxoEntity(item, utxo)
 		} else {
-			utxo, err := db.GetUtxoEntry(&outpoint)
+			utxo, err := db.GetUtxoEntry(item)
 			if err == nil {
 				utxo.Spend()
-				db.SaveUtxoEntity(&outpoint, utxo)
+				db.SaveUtxoEntity(item, utxo)
 			}
 		}
 		delete(view.entries, outpoint)
@@ -142,37 +146,23 @@ func (view *UtxoViewpoint) FetchUnitUtxos(db utxoBaseGetOp, unit *modules.Unit) 
 	return view.fetchUtxosMain(db, neededSet)
 }
 
-// fetch OutUtxos ,return  utxos  all outpoint.
-// func (view *UtxoViewpoint) FetchOutputUtxos(db storage.IUtxoDb, unit *modules.Unit) (map[modules.OutPoint]struct{}, error) {
-// 	transactions := unit.Transactions()
-// 	needSet := make(map[modules.OutPoint]struct{})
-// 	for i, tx := range transactions {
-// 		// TODO
-// 		//
-
-// 	}
-// 	return needSet, nil
-// }
 func (view *UtxoViewpoint) FetchUtxos(db utxoBaseGetOp, outpoints map[modules.OutPoint]struct{}) error {
 	if len(outpoints) == 0 {
 		return nil
 	}
-	//neededSet := make(map[modules.OutPoint]struct{})
-	//for outpoint := range outpoints {
-	//	if _, ok := view.entries[outpoint]; ok {
-	//		continue
-	//	}
-	//	neededSet[outpoint] = struct{}{}
-	//}
-	return view.fetchUtxosMain(db, outpoints)
 
+	return view.fetchUtxosMain(db, outpoints)
 }
 func (view *UtxoViewpoint) fetchUtxosMain(db utxoBaseGetOp, outpoints map[modules.OutPoint]struct{}) error {
 	if len(outpoints) == 0 {
 		return nil
 	}
 	for outpoint := range outpoints {
-		utxo, err := db.GetUtxoEntry(&outpoint)
+		item := new(modules.OutPoint)
+		item.TxHash = outpoint.TxHash
+		item.MessageIndex = outpoint.MessageIndex
+		item.OutIndex = outpoint.OutIndex
+		utxo, err := db.GetUtxoEntry(item)
 		if err != nil {
 			return err
 		}
@@ -195,8 +185,6 @@ func (view *UtxoViewpoint) addTxOut(outpoint modules.OutPoint, txOut *modules.Tx
 	utxo.PkScript = txOut.PkScript
 	utxo.Asset = txOut.Asset
 
-	// isCoinbase ?
-	// flags --->  标记utxo状态
 	if isCoinbase {
 		utxo.SetCoinBase() // utxo.Flags = modules.tfCoinBase
 	}
@@ -284,14 +272,6 @@ type TxRuleError struct {
 	Description string     // Human readable description of the issue
 }
 
-// txRuleError creates an underlying TxRuleError with the given a set of
-// arguments and returns a RuleError that encapsulates it.
-func txRuleError(c RejectCode, desc string) RuleError {
-	return RuleError{
-		ErrorCode: c, Description: desc,
-	}
-}
-
 type RejectCode uint8
 
 // These constants define the various supported reject codes.
@@ -329,7 +309,7 @@ func CheckTransactionSanity(tx *modules.Transaction) error {
 	// var totalSatoshi uint64
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
-		if ok == false {
+		if !ok {
 			continue
 		}
 

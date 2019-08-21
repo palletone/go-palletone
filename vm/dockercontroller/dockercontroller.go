@@ -25,18 +25,15 @@ import (
 	"bufio"
 	"bytes"
 	"compress/gzip"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/comm"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
-	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	container "github.com/palletone/go-palletone/vm/api"
 	"github.com/palletone/go-palletone/vm/ccintf"
 	com "github.com/palletone/go-palletone/vm/common"
@@ -46,22 +43,22 @@ import (
 
 var (
 	//log = flogging.MustGetLogger("dockercontroller")
-	hostConfig  *docker.HostConfig
-	vmRegExp    = regexp.MustCompile("[^a-zA-Z0-9-_.]")
-	imageRegExp = regexp.MustCompile("^[a-z0-9]+(([._-][a-z0-9]+)+)?$")
+	hostConfig *docker.HostConfig
+	vmRegExp   = regexp.MustCompile("[^a-zA-Z0-9-_.]")
+	//imageRegExp = regexp.MustCompile("^[a-z0-9]+(([._-][a-z0-9]+)+)?$")
 )
 
-func getClientMe() (dockerClient, error) {
-	client, err := docker.NewClient("unix:///var/run/docker.sock")
-	return client, err
-}
+//func getClientMe() (dockerClient, error) {
+//	client, err := docker.NewClient("unix:///var/run/docker.sock")
+//	return client, err
+//}
 
 // getClient returns an instance that implements dockerClient interface
 type getClient func() (dockerClient, error)
 
 //DockerVM is a vm. It is identified by an image id
 type DockerVM struct {
-	id           string
+	//id           string
 	getClientFnc getClient
 }
 
@@ -110,27 +107,21 @@ func getDockerHostConfig() *docker.HostConfig {
 	if err != nil {
 		log.Debugf("load GetCcDagHand: %s", err.Error())
 	}
-	cp := dag.GetChainParameters()
 	icp := dag.GetImmutableChainParameters()
 	hostConfig = &docker.HostConfig{
 		CapDrop:        icp.UccCapDrop,
 		NetworkMode:    icp.UccNetworkMode,
-		Memory:         cp.UccMemory,
-		MemorySwap:     cp.UccMemorySwap,
-		OOMKillDisable: icp.UccOOMKillDisable,
-		CPUShares:      cp.UccCpuShares,
-		CPUQuota:       cp.UccCpuQuota,
-		CPUPeriod:      cp.UccCpuPeriod,
+		OOMKillDisable: &icp.UccOOMKillDisable,
 		Privileged:     icp.UccPrivileged,
 	}
 	return hostConfig
 }
 
-func (vm *DockerVM) createContainer(ctxt context.Context, client dockerClient,
+func (vm *DockerVM) createContainer(client dockerClient,
 	imageID string, containerID string, args []string,
-	env []string, attachStdout bool) error {
+	env []string, attachStdout bool, dockerHostConfig *docker.HostConfig) error {
 	config := docker.Config{Cmd: args, Image: imageID, Env: env, AttachStdout: attachStdout, AttachStderr: attachStdout}
-	copts := docker.CreateContainerOptions{Name: containerID, Config: &config, HostConfig: getDockerHostConfig()}
+	copts := docker.CreateContainerOptions{Name: containerID, Config: &config, HostConfig: dockerHostConfig}
 	log.Debugf("Create container: %s", containerID)
 	_, err := client.CreateContainer(copts)
 	if err != nil {
@@ -142,6 +133,8 @@ func (vm *DockerVM) createContainer(ctxt context.Context, client dockerClient,
 
 func (vm *DockerVM) deployImage(client dockerClient, ccid ccintf.CCID,
 	args []string, env []string, reader io.Reader) error {
+	log.Debugf("args len %d", len(args))
+	log.Debugf("env len %d", len(env))
 	id, err := vm.GetImageId(ccid)
 	if err != nil {
 		return err
@@ -195,39 +188,64 @@ func (vm *DockerVM) Deploy(ctxt context.Context, ccid ccintf.CCID,
 //Start starts a container using a previously created docker image
 //根据之前指定的镜像文件启动容器，如果镜像文件不存在则新创建，成功后启动容器
 //这里还可以指定对容器日志的输出
-func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
+func (vm *DockerVM) Start(_ context.Context, ccid ccintf.CCID,
 	args []string, env []string, filesToUpload map[string][]byte, builder container.BuildSpecFactory, prelaunchFunc container.PrelaunchFunc) error {
-	//获取本地基础镜像
-	imageID, err := vm.GetImageId(ccid)
-	if err != nil {
-		log.Errorf("get image id error: %s", err)
-		return err
-	}
 	//获取docker客户端
 	client, err := vm.getClientFnc()
 	if err != nil {
 		log.Debugf("start - cannot create client: %s", err.Error())
 		return err
 	}
-
 	containerID, err := vm.GetContainerId(ccid)
 	if err != nil {
 		log.Debugf("get container %s error: %s", containerID, err.Error())
 		return err
 	}
-
+	//如果合约存在，则直接起容器
+	c, err := com.NewDockerClient()
+	if err != nil {
+		log.Error("util.NewDockerClient", "error", err)
+		return err
+	}
+	_, err = c.InspectContainer(containerID)
+	if err == nil {
+		if prelaunchFunc != nil {
+			if err = prelaunchFunc(); err != nil {
+				return err
+			}
+		}
+		// start container with HostConfig was deprecated since v1.10 and removed in v1.2
+		err = client.StartContainer(containerID, nil)
+		if err != nil {
+			log.Errorf("start-could not start container: %s", err)
+			return err
+		}
+		return nil
+	} else {
+		log.Infof("inspect container %s", err.Error())
+	}
+	//获取本地基础镜像
+	imageID, err := vm.GetImageId(ccid)
+	if err != nil {
+		log.Errorf("get image id error: %s", err)
+		return err
+	}
 	attachStdout := viper.GetBool("vm.docker.attachStdout")
 
 	//stop,force remove if necessary
 	log.Debugf("Cleanup container %s", containerID)
-	//停止容器
-	//err = vm.stopInternal(ctxt, client, containerID, 0, false, false)
+	//停止并删除容器
+	vm.stopInternal(client, containerID, 0, false, false)
 	//if err != nil {
 	//	return err
 	//}
+	dockerHostConfig := getDockerHostConfig()
+	dockerHostConfig.Memory = ccid.ChaincodeSpec.Memory
+	dockerHostConfig.CPUQuota = ccid.ChaincodeSpec.CpuQuota
+	dockerHostConfig.CPUShares = ccid.ChaincodeSpec.CpuShare
 	//创建容器
 	log.Debugf("Start container %s", containerID)
-	err = vm.createContainer(ctxt, client, imageID, containerID, args, env, attachStdout)
+	err = vm.createContainer(client, imageID, containerID, args, env, attachStdout, dockerHostConfig)
 	//var reader io.Reader
 	//var err1 error
 	//var isInit = false
@@ -242,6 +260,9 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 			//确认镜像是否存在或从远程拉取
 			//-----------------------------------------------------------------------------------
 			client1, err := com.NewDockerClient()
+			if err != nil {
+				return err
+			}
 			_, err = client1.InspectImage(imageID)
 			if err != nil {
 				log.Debugf("Image %s does not exist locally, attempt pull", imageID)
@@ -251,7 +272,7 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 					return fmt.Errorf("Failed to pull %s: %s", imageID, err)
 				}
 			}
-			err = vm.createContainer(ctxt, client, imageID, containerID, args, env, attachStdout)
+			err = vm.createContainer(client, imageID, containerID, args, env, attachStdout, dockerHostConfig)
 			if err != nil {
 				return fmt.Errorf("no such base image with image name is %s, should pull this image from docker hub.", imageID)
 			}
@@ -421,7 +442,7 @@ func (vm *DockerVM) Start(ctxt context.Context, ccid ccintf.CCID,
 }
 
 //Stop stops a running chaincode
-func (vm *DockerVM) Stop(ctxt context.Context, ccid ccintf.CCID, timeout uint, dontkill bool, dontremove bool) error {
+func (vm *DockerVM) Stop(_ context.Context, ccid ccintf.CCID, timeout uint, dontkill bool, dontremove bool) error {
 	containerId, err := vm.GetContainerId(ccid)
 	if err != nil {
 		log.Errorf("get image id error: %s", err)
@@ -434,12 +455,12 @@ func (vm *DockerVM) Stop(ctxt context.Context, ccid ccintf.CCID, timeout uint, d
 	}
 	//id = strings.Replace(id, ":", "_", -1)
 
-	err = vm.stopInternal(ctxt, client, containerId, timeout, dontkill, dontremove)
+	err = vm.stopInternal(client, containerId, timeout, dontkill, dontremove)
 
 	return err
 }
 
-func (vm *DockerVM) stopInternal(ctxt context.Context, client dockerClient,
+func (vm *DockerVM) stopInternal(client dockerClient,
 	id string, timeout uint, dontkill bool, dontremove bool) error {
 	err := client.StopContainer(id, timeout)
 	if err != nil {
@@ -530,7 +551,7 @@ func (vm *DockerVM) GetContainerId(ccid ccintf.CCID) (string, error) {
 	//} else if ccid.PeerID != "" {
 	//	name = fmt.Sprintf("%s-%s", ccid.PeerID, name)
 	//}
-	name = name + ":" + contractcfg.GetConfig().ContractAddress
+	//name = name + ":" + contractcfg.GetConfig().ContractAddress
 	// replace any invalid characters with "-" (either in network id, peer id, or in the
 	// entire name returned by any format function)
 	name = vmRegExp.ReplaceAllString(name, "-")
@@ -542,13 +563,13 @@ func (vm *DockerVM) GetImageId(ccid ccintf.CCID) (string, error) {
 	vmName := ccid.ChaincodeSpec.Type
 	switch vmName {
 	case 1:
-		return "palletone/goimg", nil
+		return contractcfg.GetConfig().GolangBuilder, nil
 	case 2:
-		return "node", nil
+		return contractcfg.GetConfig().NodejsBuilder, nil
 	case 3:
-		return "java", nil
+		return contractcfg.GetConfig().JavaBuilder, nil
 	default:
-		return "palletone", nil
+		return contractcfg.GetConfig().GolangBuilder, nil
 	}
 }
 
@@ -557,16 +578,16 @@ func (vm *DockerVM) GetImageId(ccid ccintf.CCID) (string, error) {
 // environment (such as a development environment). It computes the hash for the
 // supplied image name and then appends it to the lowercase image name to ensure
 // uniqueness.
-func formatImageName(name string) (string, error) {
-	hash := hex.EncodeToString(util.ComputeSHA256([]byte(name)))
-	name = vmRegExp.ReplaceAllString(name, "-")
-	imageName := strings.ToLower(fmt.Sprintf("%s-%s", name, hash))
-
-	// Check that name complies with Docker's repository naming rules
-	if !imageRegExp.MatchString(imageName) {
-		log.Errorf("Error constructing Docker VM Name. '%s' breaks Docker's repository naming rules", name)
-		return imageName, fmt.Errorf("Error constructing Docker VM Name. '%s' breaks Docker's repository naming rules", imageName)
-	}
-
-	return imageName, nil
-}
+//func formatImageName(name string) (string, error) {
+//	hash := hex.EncodeToString(util.ComputeSHA256([]byte(name)))
+//	name = vmRegExp.ReplaceAllString(name, "-")
+//	imageName := strings.ToLower(fmt.Sprintf("%s-%s", name, hash))
+//
+//	// Check that name complies with Docker's repository naming rules
+//	if !imageRegExp.MatchString(imageName) {
+//		log.Errorf("Error constructing Docker VM Name. '%s' breaks Docker's repository naming rules", name)
+//		return imageName, fmt.Errorf("Error constructing Docker VM Name. '%s' breaks Docker's repository naming rules", imageName)
+//	}
+//
+//	return imageName, nil
+//}

@@ -1,0 +1,11 @@
+kind: pipeline
+name: default
+workspace:
+  base: /go
+  path: src/github.com/palletone/go-palletone
+steps:
+- name: lint
+  image: golang
+  commands:
+  - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.17.1
+  - golangci-lint run ./...

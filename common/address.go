@@ -23,7 +23,7 @@ import (
 	"fmt"
 	// "math/big"
 	// "math/rand"
-	"reflect"
+	//"reflect"
 	// "strings"
 
 	"math/big"
@@ -37,14 +37,15 @@ const (
 	AddressLength = 21 //byte[0:20] is hash160, byte[20] is AddressType
 )
 
-var (
-	addressT = reflect.TypeOf(Address{})
-)
+//var (
+//	addressT = reflect.TypeOf(Address{})
+//)
 
 /////////// Address
 
 // Address represents the 35 byte address of an PalletOne account.
-// for personal address, start with P1 (version 0), script address start with P3(version 5), contract address start with Pc(version 28)
+// for personal address, start with P1 (version 0), script address start with P3(version 5),
+// contract address start with Pc(version 28)
 type Addresses []Address
 type Address [AddressLength]byte
 type AddressType byte
@@ -85,7 +86,7 @@ func StringToAddress(a string) (Address, error) {
 	if a[0] != byte('P') {
 		return Address{}, errors.New("PalletOne address must start with 'P'")
 	}
-	addrb, version, err := base58.CheckDecode(string(a[1:]))
+	addrb, version, err := base58.CheckDecode(a[1:])
 	if err != nil {
 		return Address{}, err
 	}
@@ -129,7 +130,7 @@ func BytesListToAddressList(b []byte) []Address {
 
 	var stringArray []string
 	json.Unmarshal(b, &stringArray)
-	var Addresses []Address
+	Addresses := make([]Address, 0, len(stringArray))
 
 	for _, str := range stringArray {
 		addr, _ := StringToAddress(str)
@@ -171,7 +172,7 @@ func IsHexAddress(s string) bool {
 
 // Get the string representation of the underlying address
 func (a Address) Str() string {
-	return "P" + base58.CheckEncode(a[0:20], byte(a[20]))
+	return "P" + base58.CheckEncode(a[0:20], a[20])
 }
 
 //Return account 20 bytes without address type

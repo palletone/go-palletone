@@ -31,8 +31,8 @@ const (
 	Jury      = "Jury"
 	Mediator  = "Mediator"
 
-	Ok = "Ok"
-	No = "No"
+	Ok = "ok"
+	No = "no"
 
 	//获取候选列表
 	GetListForMediatorCandidate = "GetListForMediatorCandidate"
@@ -43,8 +43,8 @@ const (
 	IsInJuryCandidateList     = "IsInJuryCandidateList"
 	IsInDeveloperList         = "IsInDeveloperList"
 	//  是否在相应列表中
-	IsInBecomeList     = "IsInBecomeList"
-	IsInAgressList     = "IsInAgressList"
+	IsInBecomeList = "IsInBecomeList"
+	//IsInAgressList     = "IsInAgressList"
 	IsInQuitList       = "IsInQuitList"
 	IsInForfeitureList = "IsInForfeitureList"
 	//获取列表
@@ -62,6 +62,7 @@ const (
 	HandleForApplyBecomeMediator   = "HandleForApplyBecomeMediator"
 	HandleForApplyQuitJury         = "HandleForApplyQuitJury"
 	HandleForApplyQuitDev          = "HandleForApplyQuitDev"
+	HanldeNodeRemoveFromAgreeList  = "HanldeNodeRemoveFromAgreeList"
 
 	GetDeposit = "GetNodeBalance"
 
@@ -86,6 +87,12 @@ const (
 	//  Layout3 = "2006-01-02 15:04:05"
 	//  目前使用 time.Now().UTC().Format(Layout) 返回字符串
 	Layout2 = "2006-01-02 15:04:05"
+
+	HandleMediatorInCandidateList = "HandleMediatorInCandidateList"
+	HandleJuryInCandidateList     = "HandleJuryInCandidateList"
+	HandleDevInList               = "HandleDevInList"
+	GetAllMediator                = "GetAllMediator"
+	GetAllNode                    = "GetAllNode"
 )
 
 //申请退出
@@ -111,17 +118,19 @@ type PayValue struct {
 	//PayExtra  string        `json:"pay_extra"`  //额外内容
 }
 
+// 保证金信息
 type DepositBalance struct {
-	Balance   uint64 `json:"balance"`    //  保证金余额
-	EnterTime string `json:"enter_time"` //  交保证金的时间
-	Role      string `json:"role"`
+	Balance   uint64 `json:"balance"`    // 保证金余额
+	EnterTime string `json:"enter_time"` // 交保证金的时间
+	Role      string `json:"role"`       // 角色，包括mediator、jury和developer
 }
 
+// mediator保证金信息
 type MediatorDeposit struct {
-	ApplyEnterTime string `json:"apply_enter_time"` //  申请加入时间
-	ApplyQuitTime  string `json:"apply_quit_time"`  //  申请退出时间
-	Status         string `json:"status"`           //  申请状态  申请、同意、退出
-	AgreeTime      string `json:"agree_time"`       //  基金会同意申请时间'
+	ApplyEnterTime string `json:"apply_enter_time"` // 申请加入时间
+	ApplyQuitTime  string `json:"apply_quit_time"`  // 申请退出时间
+	Status         string `json:"status"`           // 申请状态  申请、同意、退出
+	AgreeTime      string `json:"agree_time"`       // 基金会同意申请时间'
 	DepositBalance
 }
 
@@ -138,5 +147,5 @@ type NorNodBal struct {
 
 type Member struct {
 	Key   string `json:"key"`
-	Value []byte `json;"value"`
+	Value []byte `json:"value"`
 }

@@ -58,10 +58,6 @@ func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee
 	}
 
 	daoTotal := daoAmount + daoFee
-	// dbBalance := dag.GetPtnBalance(from)
-	// if daoTotal > dbBalance {
-	// 	return nil, fmt.Errorf("the ptn balance of the account is %v not enough %v", dbBalance, daoTotal)
-	// }
 
 	// 1. 获取转出账户所有的PTN utxo
 	//allUtxos, err := dag.GetAddrUtxos(from)
@@ -83,7 +79,7 @@ func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee
 
 	selUtxos, change, err := core.Select_utxo_Greedy(greedyUtxos, daoTotal)
 	if err != nil {
-		return nil, fmt.Errorf("select utxo err")
+		return nil, fmt.Errorf("createBaseTransaction Select_utxo_Greedy utxo err")
 	}
 
 	// 3. 构建PaymentPayload的Inputs
@@ -149,7 +145,6 @@ func (dag *Dag) createTokenTransaction(from, to, toToken common.Address, daoAmou
 	}
 
 	// 1. 获取转出账户所有的PTN utxo
-	//allUtxos, err := dag.GetAddrUtxos(from)
 	coreUtxos, tokenUtxos, err := dag.getAddrCoreUtxosToken(from, assetToken, txPool)
 	if err != nil {
 		return nil, err
@@ -192,7 +187,7 @@ func getPayload(from, to common.Address, daoAmount, daoFee uint64,
 	daoTotal := daoAmount + daoFee
 	selUtxos, change, err := core.Select_utxo_Greedy(greedyUtxos, daoTotal)
 	if err != nil {
-		return nil, fmt.Errorf("select utxo err")
+		return nil, fmt.Errorf("getPayload Select_utxo_Greedy utxo err")
 	}
 
 	// 2. 构建PaymentPayload的Inputs
@@ -251,8 +246,9 @@ func (dag *Dag) getAddrCoreUtxos(addr common.Address,
 		return nil, err
 	}
 	assetId := dagconfig.DagConfig.GetGasToken()
-	coreUtxos := make(map[modules.OutPoint]*modules.Utxo, len(allTxos))
+	coreUtxos := make(map[modules.OutPoint]*modules.Utxo)
 	for outPoint, utxo := range allTxos {
+		outPoint := outPoint
 		// 剔除非PTN资产
 		if !utxo.Asset.AssetId.Equal(assetId) {
 			continue
@@ -285,6 +281,7 @@ func (dag *Dag) getAddrCoreUtxosToken(addr common.Address, assetToken string,
 	tokenUtxos := make(map[modules.OutPoint]*modules.Utxo, len(allTxos))
 	assetId := dagconfig.DagConfig.GetGasToken()
 	for outPoint, utxo := range allTxos {
+		outPoint := outPoint
 		// 剔除非PTN资产
 		isPTN := true
 		if !utxo.Asset.AssetId.Equal(assetId) {
@@ -316,7 +313,6 @@ func (dag *Dag) getAddrCoreUtxosToken(addr common.Address, assetToken string,
 func (dag *Dag) calculateDataFee(data interface{}) uint64 {
 	size := float64(modules.CalcDateSize(data))
 	pricePerKByte := dag.GetChainParameters().TransferPtnPricePerKByte
-	//pricePerKByte := dag.CurrentFeeSchedule().TransferFee.PricePerKByte
 
 	return uint64(size * float64(pricePerKByte) / 1024)
 }
@@ -336,7 +332,9 @@ func (dag *Dag) CreateGenericTransaction(from, to common.Address, daoAmount, dao
 	return tx, daoFee, nil
 }
 
-func (dag *Dag) CreateTokenTransaction(from, to, toToken common.Address, daoAmount, daoFee uint64, daoAmountToken uint64,
+// to build a transfer transactions by the token, from to fee
+func (dag *Dag) CreateTokenTransaction(from, to, toToken common.Address, daoAmount, daoFee uint64,
+	daoAmountToken uint64,
 	assetToken string, msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
 	// 如果是 text，则增加费用，以防止用户任意增加文本，导致网络负担加重
 	if msg.App == modules.APP_DATA {
@@ -351,6 +349,7 @@ func (dag *Dag) CreateTokenTransaction(from, to, toToken common.Address, daoAmou
 	return tx, daoFee, nil
 }
 
+// to build a vote mediator transaction
 func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators map[string]bool,
 	txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
 	// 1. 组装 message
@@ -385,9 +384,9 @@ func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators map[string]boo
 	return tx, fee, nil
 }
 
+// 构建一个转ptn的转账交易
 func (dag *Dag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string,
 	txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
-	//fee := dag.CurrentFeeSchedule().TransferFee.BaseFee
 	fee := dag.GetChainParameters().TransferPtnBaseFee
 	var tx *modules.Transaction
 	var err error

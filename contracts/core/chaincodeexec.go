@@ -34,13 +34,9 @@ import (
 )
 
 //create a chaincode invocation spec
-func createCIS(ccname string, args [][]byte) (*pb.ChaincodeInvocationSpec, error) {
-	var err error
+func createCIS(ccname string, args [][]byte) (*pb.ChaincodeInvocationSpec) {
 	spec := &pb.ChaincodeInvocationSpec{ChaincodeSpec: &pb.ChaincodeSpec{Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]), ChaincodeId: &pb.ChaincodeID{Name: ccname}, Input: &pb.ChaincodeInput{Args: args}}}
-	if nil != err {
-		return nil, err
-	}
-	return spec, nil
+	return spec
 }
 
 // GetCDS retrieves a chaincode deployment spec for the required chaincode
@@ -108,16 +104,17 @@ func GetChaincodeDefinition(ctxt context.Context, txid string, signedProp *pb.Si
 
 // ExecuteChaincode executes a given chaincode given chaincode name and arguments
 func ExecuteChaincode(ctxt context.Context, cccid *ccprovider.CCContext, args [][]byte, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error) {
+	log.Debugf("execute chain code")
 	var spec *pb.ChaincodeInvocationSpec
 	var err error
 	var res *pb.Response
 	var ccevent *pb.ChaincodeEvent
 
-	spec, err = createCIS(cccid.Name, args)
+	spec= createCIS(cccid.Name, args)
 	res, ccevent, err = Execute(ctxt, cccid, spec, timeout)
 	if err != nil {
 		err = errors.WithMessage(err, "error executing chaincode")
-		log.Errorf("%+v", err)
+		log.Errorf("execute %+v", err)
 		return nil, nil, err
 	}
 

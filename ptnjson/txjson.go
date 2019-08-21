@@ -34,6 +34,7 @@ import (
 
 type TxJson struct {
 	TxHash             string              `json:"tx_hash"`
+	RequestHash        string              `json:"request_hash"`
 	TxSize             float64             `json:"tx_size"`
 	Payment            []*PaymentJson      `json:"payment"`
 	Fee                uint64              `json:"fee"`
@@ -62,7 +63,7 @@ type TplJson struct {
 	//Name         string `json:"name"`
 	//Path         string `json:"path"`
 	//Version      string `json:"version"`
-	Memory       uint16 `json:"memory"`
+	//Memory       uint16 `json:"memory"`
 	Bytecode     []byte `json:"bytecode"`      // contract bytecode
 	BytecodeSize int    `json:"bytecode_size"` // contract bytecode
 	//AddrHash     string `json:"addr_hash"`
@@ -70,17 +71,17 @@ type TplJson struct {
 	ErrorMessage string `json:"error_message"`
 }
 type DeployJson struct {
-	Number     int      `json:"row_number"`
-	TemplateId string   `json:"template_id"`
-	ContractId string   `json:"contract_id"`
-	Name       string   `json:"name"`
-	Args       [][]byte `json:"args"` // contract arguments list
-	//Jury         []string `json:"jury"`
-	EleList      string `json:"election_list"`
-	ReadSet      string `json:"read_set"`
-	WriteSet     string `json:"write_set"`
-	ErrorCode    uint32 `json:"error_code"`
-	ErrorMessage string `json:"error_message"`
+	Number       int      `json:"row_number"`
+	TemplateId   string   `json:"template_id"`
+	ContractId   string   `json:"contract_id"`
+	Name         string   `json:"name"`
+	Args         [][]byte `json:"args"` // contract arguments list
+	EleNode      string   `json:"election_node"`
+	ReadSet      string   `json:"read_set"`
+	WriteSet     string   `json:"write_set"`
+	DuringTime   uint64   `json:"during_time"`
+	ErrorCode    uint32   `json:"error_code"`
+	ErrorMessage string   `json:"error_message"`
 }
 type InvokeJson struct {
 	Number       int      `json:"row_number"`
@@ -109,33 +110,33 @@ type SignatureJson struct {
 type InvokeRequestJson struct {
 	Number       int           `json:"row_number"`
 	ContractAddr string        `json:"contract_addr"`
-	Args         []string      `json"arg_set"`
+	Args         []string      `json:"arg_set"`
 	Timeout      time.Duration `json:"timeout"`
 }
 
 type InstallRequestJson struct {
-	Number         int    `json:"row_number"`
-	TplName        string `json:"tpl_name"`
-	TplDescription string `json:"tpl_description"`
-	Path           string `json:"path"`
-	Version        string `json:"version"`
-	Abi            string `json:"abi"`
-	Language       string `json:"language"`
+	Number         int      `json:"row_number"`
+	TplName        string   `json:"tpl_name"`
+	TplDescription string   `json:"tpl_description"`
+	Path           string   `json:"path"`
+	Version        string   `json:"version"`
+	Abi            string   `json:"abi"`
+	Language       string   `json:"language"`
+	AddrHash       []string `json:"addr_hash"`
 }
 
 type DeployRequestJson struct {
-	Number int    `json:"row_number"`
-	TplId  string `json:"tpl_id"`
-	//TxId    string        `json:"tx_id"`
+	Number  int           `json:"row_number"`
+	TplId   string        `json:"tpl_id"`
 	Args    []string      `json:"arg_set"`
 	Timeout time.Duration `json:"timeout"`
+	ExtData string        `json:"extend_data"`
 }
 
 type StopRequestJson struct {
-	Number     int    `json:"row_number"`
-	ContractId string `json:"contract_id"`
-	//Txid        string `json:"tx_id"`
-	DeleteImage bool `json:"delete_image"`
+	Number      int    `json:"row_number"`
+	ContractId  string `json:"contract_id"`
+	DeleteImage bool   `json:"delete_image"`
 }
 type DataJson struct {
 	Number    int    `json:"row_number"`
@@ -148,7 +149,8 @@ type AccountStateJson struct {
 	WriteSet string `json:"write_set"`
 }
 
-func ConvertTxWithUnitInfo2FullJson(tx *modules.TransactionWithUnitInfo, utxoQuery modules.QueryUtxoFunc) *TxWithUnitInfoJson {
+func ConvertTxWithUnitInfo2FullJson(tx *modules.TransactionWithUnitInfo,
+	utxoQuery modules.QueryUtxoFunc) *TxWithUnitInfoJson {
 	txjson := &TxWithUnitInfoJson{
 		UnitHash:   tx.UnitHash.String(),
 		UnitHeight: tx.UnitIndex,
@@ -159,11 +161,13 @@ func ConvertTxWithUnitInfo2FullJson(tx *modules.TransactionWithUnitInfo, utxoQue
 
 	return txjson
 }
-func ConvertTx2FullJson(tx *modules.Transaction, utxoQuery modules.QueryUtxoFunc) *TxJson {
+func ConvertTx2FullJson(tx *modules.Transaction,
+	utxoQuery modules.QueryUtxoFunc) *TxJson {
 	txjson := &TxJson{}
 	txjson.Payment = []*PaymentJson{}
 	txjson.Data = []*DataJson{}
 	txjson.TxHash = tx.Hash().String()
+	txjson.RequestHash = tx.RequestHash().String()
 	txjson.TxSize = float64(tx.Size())
 	for i, m := range tx.TxMessages {
 		if m.App == modules.APP_PAYMENT {
@@ -179,7 +183,11 @@ func ConvertTx2FullJson(tx *modules.Transaction, utxoQuery modules.QueryUtxoFunc
 			}
 		} else if m.App == modules.APP_DATA {
 			data := m.Payload.(*modules.DataPayload)
-			dataJson := &DataJson{MainData: string(data.MainData), ExtraData: string(data.ExtraData), Reference: string(data.Reference)}
+			dataJson := &DataJson{
+				MainData:  string(data.MainData),
+				ExtraData: string(data.ExtraData),
+				Reference: string(data.Reference),
+			}
 			dataJson.Number = i
 			txjson.Data = append(txjson.Data, dataJson)
 		} else if m.App == modules.APP_CONTRACT_TPL_REQUEST {
@@ -225,7 +233,7 @@ func ConvertTx2FullJson(tx *modules.Transaction, utxoQuery modules.QueryUtxoFunc
 		}
 	}
 	if utxoQuery != nil {
-		fee, err := tx.GetTxFee(utxoQuery, time.Now().Unix())
+		fee, err := tx.GetTxFee(utxoQuery)
 		if err == nil {
 			txjson.Fee = fee.Amount
 		}
@@ -245,7 +253,7 @@ func convertTpl2Json(tpl *modules.ContractTplPayload) *TplJson {
 	tpljson.TemplateId = hex.EncodeToString(tpl.TemplateId)
 	tpljson.Bytecode = tpl.ByteCode[:]
 	tpljson.BytecodeSize = len(tpl.ByteCode[:])
-	tpljson.Memory = tpl.Memory
+	//tpljson.Memory = tpl.Memory
 
 	//ah, _ := json.Marshal(tpl.AddrHash)
 	//tpljson.AddrHash = string(ah)
@@ -263,12 +271,13 @@ func convertDeploy2Json(deploy *modules.ContractDeployPayload) *DeployJson {
 	//for _, addr := range deploy.Jury {
 	//	djson.Jury = append(djson.Jury, addr.String())
 	//}
-	ele, _ := json.Marshal(deploy.EleList)
-	djson.EleList = string(ele)
+	ele, _ := json.Marshal(deploy.EleNode)
+	djson.EleNode = string(ele)
 	rset, _ := json.Marshal(deploy.ReadSet)
 	djson.ReadSet = string(rset)
 	wset, _ := json.Marshal(deploy.WriteSet)
 	djson.WriteSet = string(wset)
+	djson.DuringTime = deploy.DuringTime
 	djson.ErrorCode = deploy.ErrMsg.Code
 	djson.ErrorMessage = deploy.ErrMsg.Message
 	return djson
@@ -361,6 +370,12 @@ func convertInstallRequest2Json(req *modules.ContractInstallRequestPayload) *Ins
 	reqJson.Abi = req.Abi
 	reqJson.Language = req.Language
 	reqJson.TplDescription = req.TplDescription
+
+	reqJson.AddrHash = []string{}
+	for _, aHash := range req.AddrHash {
+		reqJson.AddrHash = append(reqJson.AddrHash, hex.EncodeToString(aHash[:]))
+	}
+
 	return reqJson
 }
 
@@ -373,6 +388,7 @@ func convertDeployRequest2Json(req *modules.ContractDeployRequestPayload) *Deplo
 		reqJson.Args = append(reqJson.Args, string(arg))
 	}
 	reqJson.Timeout = time.Duration(req.Timeout) * time.Second
+	reqJson.ExtData = hex.EncodeToString(req.ExtData)
 	return reqJson
 }
 

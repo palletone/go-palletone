@@ -19,14 +19,9 @@
 package manger
 
 import (
-	"crypto/md5"
-	"encoding/hex"
-	"fmt"
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
-	"io"
 	"net"
-	"os"
 	"time"
 
 	"github.com/palletone/go-palletone/common/crypto"
@@ -89,12 +84,12 @@ func createChaincodeProposalWithTxIDNonceAndTransient(txid string, typ common.He
 	return &peer.Proposal{Header: hdrBytes, Payload: ccPropPayloadBytes}, txid, nil
 }
 
-func computeProposalTxID(nonce, creator []byte) (string, error) {
-	opdata := append(nonce, creator...)
-	digest := util.ComputeSHA256(opdata)
-
-	return hex.EncodeToString(digest), nil
-}
+//func computeProposalTxID(nonce, creator []byte) (string, error) {
+//	opdata := append(nonce, creator...)
+//	digest := util.ComputeSHA256(opdata)
+//
+//	return hex.EncodeToString(digest), nil
+//}
 
 func createChaincodeProposalWithTransient(typ common.HeaderType, chainID string, txid string, cis *peer.ChaincodeInvocationSpec, creator []byte, transientMap map[string][]byte) (*peer.Proposal, string, error) {
 	// generate a random nonce
@@ -114,7 +109,7 @@ func GetBytesProposal(prop *peer.Proposal) ([]byte, error) {
 	return propBytes, err
 }
 
-func signedEndorserProposa(chainID string, txid string, cs *peer.ChaincodeSpec, creator, signature []byte) (*peer.SignedProposal, *peer.Proposal, error) {
+func SignedEndorserProposa(chainID string, txid string, cs *peer.ChaincodeSpec, creator, signature []byte) (*peer.SignedProposal, *peer.Proposal, error) {
 	prop, _, err := createChaincodeProposal(
 		common.HeaderType_ENDORSER_TRANSACTION,
 		chainID,
@@ -177,7 +172,7 @@ func peerServerInit(jury core.IAdapterJury) error {
 
 func peerServerDeInit() error {
 	grpcServer.Stop()
-	defer os.RemoveAll(cfg.GetConfig().ContractFileSystemPath)
+	//defer os.RemoveAll(cfg.GetConfig().ContractFileSystemPath)
 	return nil
 }
 
@@ -193,23 +188,4 @@ func systemContractDeInit() error {
 	chainID := util.GetTestChainID()
 	scc.DeDeploySysCCs(chainID)
 	return nil
-}
-
-func packChaincode(chainID string, ccName string, ccPath string, ccVersion string, args [][]byte) error {
-
-	return nil
-}
-
-func recoverChaincodeFromeDb() error {
-
-	return nil
-}
-
-func createDeployId(templateName string) string {
-	t := time.Now()
-	h := md5.New()
-	io.WriteString(h, templateName)
-	io.WriteString(h, t.String())
-	id := fmt.Sprintf("%x", h.Sum(nil))
-	return id
 }

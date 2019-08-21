@@ -23,7 +23,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
-	"strconv"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -90,7 +89,7 @@ func (a *PublicMediatorAPI) ListAll() []string {
 	addStrs := make([]string, 0)
 	mas := a.Dag().GetMediators()
 
-	for address, _ := range mas {
+	for address := range mas {
 		addStrs = append(addStrs, address.Str())
 	}
 
@@ -100,7 +99,7 @@ func (a *PublicMediatorAPI) ListAll() []string {
 func (a *PublicMediatorAPI) ListVoteResults() map[string]uint64 {
 	mediatorVoteCount := make(map[string]uint64)
 
-	for address, _ := range a.Dag().GetMediators() {
+	for address := range a.Dag().GetMediators() {
 		mediatorVoteCount[address.String()] = 0
 	}
 	result, _ := a.Dag().MediatorVotedResults()
@@ -144,7 +143,7 @@ func (a *PublicMediatorAPI) GetVoted(addStr string) ([]string, error) {
 	voted := a.Dag().GetAccountVotedMediators(addr)
 	mediators := make([]string, 0, len(voted))
 
-	for med, _ := range voted {
+	for med := range voted {
 		mediators = append(mediators, med)
 	}
 
@@ -164,9 +163,9 @@ func (a *PublicMediatorAPI) GetInfo(addStr string) (*modules.MediatorInfo, error
 		return nil, err
 	}
 
-	//if !a.Dag().IsMediator(mediator) {
-	//	return nil, fmt.Errorf("%v is not mediator", mediator.Str())
-	//}
+	if !a.Dag().IsMediator(mediator) {
+		return nil, fmt.Errorf("%v is not mediator", mediator.Str())
+	}
 
 	return a.Dag().GetMediatorInfo(mediator), nil
 }
@@ -183,59 +182,49 @@ func NewPrivateMediatorAPI(b Backend) *PrivateMediatorAPI {
 
 // 交易执行结果
 type TxExecuteResult struct {
-	TxContent string      `json:"txContent"`
-	TxHash    common.Hash `json:"txHash"`
-	TxSize    string      `json:"txSize"`
-	TxFee     string      `json:"txFee"`
-	Tip       string      `json:"tip"`
-	Warning   string      `json:"warning"`
+	TxContent string      `json:"txContent"` // 交易内容
+	TxHash    common.Hash `json:"txHash"`    // 交易hash
+	TxSize    string      `json:"txSize"`    // 交易大小
+	TxFee     string      `json:"txFee"`     // 交易费用
+	Tip       string      `json:"tip"`       // 提示
+	Warning   string      `json:"warning"`   // 警告
 }
 
-// 创建 mediator 所需的参数, 至少包含普通账户地址
-type MediatorCreateArgs struct {
-	*modules.MediatorCreateOperation
-}
-
-// 相关参数检查
-func (args *MediatorCreateArgs) setDefaults(addStr string) {
-	if args.MediatorInfoBase == nil {
-		args.MediatorInfoBase = core.NewMediatorInfoBase()
-	}
-
-	if args.AddStr == "" {
-		args.AddStr = addStr
-	}
-
-	if args.InitPubKey == "" {
-		args.InitPubKey = core.DefaultInitPubKey
-	}
-
-	if args.Node == "" {
-		args.Node = core.DefaultNodeInfo
-	}
-
+func (a *PrivateMediatorAPI) Apply( /*applyAdd string,*/ args modules.MediatorCreateArgs) (*TxExecuteResult, error) {
+	// 参数补全
 	if args.MediatorApplyInfo == nil {
 		args.MediatorApplyInfo = core.NewMediatorApplyInfo()
 	}
 
-	return
-}
-
-func (a *PrivateMediatorAPI) Apply(args MediatorCreateArgs) (*TxExecuteResult, error) {
-	// 参数补全
-	args.setDefaults("")
-
 	// 参数验证
-	err := args.Validate()
+	if args.MediatorInfoBase == nil {
+		return nil, fmt.Errorf("invalid args, is null")
+	}
+
+	addr, err := args.Validate()
 	if err != nil {
 		return nil, err
 	}
 
-	addr := args.FeePayer()
+	//if !(applyAddStr == args.AddStr || applyAddStr == args.RewardAdd) {
+	//	return nil, fmt.Errorf("the calling account(%v) is not produce account(%v) or reward account(%v)",
+	//		applyAddStr, args.AddStr, args.RewardAdd)
+	//}
+
+	// 判断本节点是否同步完成，数据是否最新
+	if !a.Dag().IsSynced() {
+		return nil, fmt.Errorf("this node is not synced, and can't apply mediator now")
+	}
+
 	// 判断是否已经是mediator
 	if a.Dag().IsMediator(addr) {
 		return nil, fmt.Errorf("account %v is already a mediator", args.AddStr)
 	}
+
+	//applyAdd, err := core.StrToMedAdd(applyAddStr)
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	// 参数序列化
 	argsB, err := json.Marshal(args)
@@ -245,8 +234,9 @@ func (a *PrivateMediatorAPI) Apply(args MediatorCreateArgs) (*TxExecuteResult, e
 	cArgs := [][]byte{[]byte(modules.ApplyMediator), argsB}
 
 	// 调用系统合约
-	//fee := a.Dag().CurrentFeeSchedule().MediatorCreateFee
 	fee := a.Dag().GetChainParameters().MediatorCreateFee
+	//reqId, err := a.ContractInvokeReqTx(applyAdd, applyAdd, 0, fee, nil,
+	//	syscontract.DepositContractAddress, cArgs, 0)
 	reqId, err := a.ContractInvokeReqTx(addr, addr, 0, fee, nil,
 		syscontract.DepositContractAddress, cArgs, 0)
 	if err != nil {
@@ -255,8 +245,9 @@ func (a *PrivateMediatorAPI) Apply(args MediatorCreateArgs) (*TxExecuteResult, e
 
 	// 返回执行结果
 	res := &TxExecuteResult{}
-	res.TxContent = fmt.Sprintf("Apply mediator %v with initPubKey : %v , node: %v , content: %v",
-		args.AddStr, args.InitPubKey, args.Node, args.ApplyInfo)
+	res.TxContent = fmt.Sprintf("account(%v) apply mediator with rewardAdd: %v, initPubKey: %v, node: %v, "+
+		"name: %v, url: %v, logo: %v, location: %v, applyInfo: %v", args.AddStr, args.RewardAdd, args.InitPubKey,
+		args.Node, args.Name, args.Url, args.Logo, args.Location, args.Description)
 	res.TxFee = fmt.Sprintf("%vdao", fee)
 	res.Warning = DefaultResult
 	res.Tip = "Your ReqId is: " + hex.EncodeToString(reqId[:]) +
@@ -276,9 +267,18 @@ func (a *PrivateMediatorAPI) PayDeposit(from string, amount decimal.Decimal) (*T
 		return nil, fmt.Errorf("the amount of the deposit must be greater than 0")
 	}
 
+	// 判断本节点是否同步完成，数据是否最新
+	if !a.Dag().IsSynced() {
+		return nil, fmt.Errorf("this node is not synced, and can't pay deposit now")
+	}
+
+	// 判断是否已经是mediator
+	if a.Dag().IsMediator(fromAdd) {
+		return nil, fmt.Errorf("account %v is already a mediator", from)
+	}
+
 	// 调用系统合约
 	cArgs := [][]byte{[]byte(modules.MediatorPayDeposit)}
-	//fee := a.Dag().CurrentFeeSchedule().TransferFee.BaseFee
 	fee := a.Dag().GetChainParameters().TransferPtnBaseFee
 	reqId, err := a.ContractInvokeReqTx(fromAdd, syscontract.DepositContractAddress, ptnjson.Ptn2Dao(amount),
 		fee, nil, syscontract.DepositContractAddress, cArgs, 0)
@@ -298,46 +298,6 @@ func (a *PrivateMediatorAPI) PayDeposit(from string, amount decimal.Decimal) (*T
 	return res, nil
 }
 
-func (a *PrivateMediatorAPI) WithdrawDeposit(medAddStr string, amount decimal.Decimal) (*TxExecuteResult, error) {
-	// 参数检查
-	medAdd, err := common.StringToAddress(medAddStr)
-	if err != nil {
-		return nil, fmt.Errorf("invalid account address: %v", medAddStr)
-	}
-
-	// 判断是否是mediator
-	if !a.Dag().IsMediator(medAdd) {
-		return nil, fmt.Errorf("account %v is not a mediator", medAddStr)
-	}
-
-	if !amount.IsPositive() {
-		return nil, fmt.Errorf("the amount of the deposit must be greater than 0")
-	}
-
-	// 调用系统合约
-	amountStr := strconv.FormatUint(ptnjson.Ptn2Dao(amount), 10)
-	cArgs := [][]byte{[]byte(modules.MediatorWithdrawDeposit), []byte(amountStr)}
-
-	//fee := a.Dag().CurrentFeeSchedule().TransferFee.BaseFee
-	fee := a.Dag().GetChainParameters().TransferPtnBaseFee
-	reqId, err := a.ContractInvokeReqTx(medAdd, medAdd, 0, fee,
-		nil, syscontract.DepositContractAddress, cArgs, 0)
-	if err != nil {
-		return nil, err
-	}
-
-	// 返回执行结果
-	res := &TxExecuteResult{}
-	res.TxContent = fmt.Sprintf("Mediator(%v) apply to withdraw %vPTN to DepositContract(%v)",
-		medAddStr, amount, syscontract.DepositContractAddress.Str())
-	res.TxFee = fmt.Sprintf("%vdao", fee)
-	res.Warning = DefaultResult
-	res.Tip = "Your ReqId is: " + hex.EncodeToString(reqId[:]) +
-		" , You can get the transaction hash with dag.getTxByReqId()"
-
-	return res, nil
-}
-
 func (a *PrivateMediatorAPI) Quit(medAddStr string) (*TxExecuteResult, error) {
 	// 参数检查
 	medAdd, err := common.StringToAddress(medAddStr)
@@ -345,14 +305,18 @@ func (a *PrivateMediatorAPI) Quit(medAddStr string) (*TxExecuteResult, error) {
 		return nil, fmt.Errorf("invalid account address: %v", medAddStr)
 	}
 
+	// 判断本节点是否同步完成，数据是否最新
+	if !a.Dag().IsSynced() {
+		return nil, fmt.Errorf("this node is not synced, and can't quit now")
+	}
+
 	// 判断是否是mediator
 	if !a.Dag().IsMediator(medAdd) {
 		return nil, fmt.Errorf("account %v is not a mediator", medAddStr)
 	}
 
 	// 调用系统合约
-	cArgs := [][]byte{[]byte(modules.MediatorApplyQuitList)}
-	//fee := a.Dag().CurrentFeeSchedule().TransferFee.BaseFee
+	cArgs := [][]byte{[]byte(modules.MediatorApplyQuit)}
 	fee := a.Dag().GetChainParameters().TransferPtnBaseFee
 	reqId, err := a.ContractInvokeReqTx(medAdd, medAdd, 0, fee,
 		nil, syscontract.DepositContractAddress, cArgs, 0)
@@ -380,13 +344,13 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxEx
 
 	// 判断本节点是否同步完成，数据是否最新
 	if !a.Dag().IsSynced() {
-		return nil, fmt.Errorf("the data of this node is not synced, and can't vote now")
+		return nil, fmt.Errorf("this node is not synced, and can't vote now")
 	}
 
 	maxMediatorCount := int(a.Dag().GetChainParameters().MaximumMediatorCount)
 	mediatorCount := len(mediatorStrs)
 	if mediatorCount > maxMediatorCount {
-		return nil, fmt.Errorf("the number(%v) of mediators voting exceeded the maximum limit: %v",
+		return nil, fmt.Errorf("the total number(%v) of mediators voted exceeds the maximum limit: %v",
 			mediatorCount, maxMediatorCount)
 	}
 
@@ -428,6 +392,98 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxEx
 	res.TxSize = tx.Size().TerminalString()
 	res.TxFee = fmt.Sprintf("%vdao", fee)
 	res.Warning = DefaultResult
+
+	return res, nil
+}
+
+func (a *PrivateMediatorAPI) Update( /*updateAdd string,*/ args modules.MediatorUpdateArgs) (*TxExecuteResult, error) {
+	// 参数验证
+	addr, err := args.Validate()
+	if err != nil {
+		return nil, err
+	}
+
+	// 判断本节点是否同步完成，数据是否最新
+	if !a.Dag().IsSynced() {
+		return nil, fmt.Errorf("this node is not synced, and can't update mediator now")
+	}
+
+	//mi := a.Dag().GetMediatorInfo(addr)
+	// 判断是否已经是mediator
+	//if mi == nil {
+	if !a.Dag().IsMediator(addr) {
+		return nil, fmt.Errorf("account %v is not a mediator", args.AddStr)
+	}
+
+	//if !(updateAddStr == args.AddStr || updateAddStr == mi.RewardAdd) {
+	//	return nil, fmt.Errorf("the calling account(%v) is not produce account(%v) or reward account(%v)",
+	//		updateAddStr, args.AddStr, mi.RewardAdd)
+	//}
+	//
+	//updateAdd, err := core.StrToMedAdd(updateAddStr)
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	// 参数序列化
+	argsB, err := json.Marshal(args)
+	if err != nil {
+		return nil, err
+	}
+	cArgs := [][]byte{[]byte(modules.UpdateMediatorInfo), argsB}
+
+	// 调用系统合约
+	fee := a.Dag().GetChainParameters().TransferPtnBaseFee
+	reqId, err := a.ContractInvokeReqTx(addr, addr, 0, fee, nil,
+		syscontract.DepositContractAddress, cArgs, 0)
+	//reqId, err := a.ContractInvokeReqTx(updateAdd, updateAdd, 0, fee, nil,
+	//	syscontract.DepositContractAddress, cArgs, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	// 返回执行结果
+	logoStr := ""
+	if args.Logo != nil {
+		logoStr = *args.Logo
+	}
+	nameStr := ""
+	if args.Name != nil {
+		nameStr = *args.Name
+	}
+	locStr := ""
+	if args.Location != nil {
+		locStr = *args.Location
+	}
+	urlStr := ""
+	if args.Url != nil {
+		urlStr = *args.Url
+	}
+	descStr := ""
+	if args.Description != nil {
+		descStr = *args.Description
+	}
+	nodeStr := ""
+	if args.Node != nil {
+		nodeStr = *args.Node
+	}
+	initPubKeyStr := ""
+	if args.InitPubKey != nil {
+		initPubKeyStr = *args.InitPubKey
+	}
+	rewardAddStr := ""
+	if args.RewardAdd != nil {
+		rewardAddStr = *args.RewardAdd
+	}
+
+	res := &TxExecuteResult{}
+	res.TxContent = fmt.Sprintf("mediator(%v) update info with name: %v, url: %v logo: %v, location: %v, "+
+		"applyInfo: %v, node: %v, initPubKey: %v, rewardAdd: %v", args.AddStr, nameStr, urlStr, logoStr, locStr,
+		descStr, nodeStr, initPubKeyStr, rewardAddStr)
+	res.TxFee = fmt.Sprintf("%vdao", fee)
+	res.Warning = DefaultResult
+	res.Tip = "Your ReqId is: " + hex.EncodeToString(reqId[:]) +
+		" , You can get the transaction hash with dag.getTxByReqId()"
 
 	return res, nil
 }

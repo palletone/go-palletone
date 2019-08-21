@@ -26,15 +26,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"math/big"
-	"os"
-	"strconv"
-	"strings"
-	"time"
-	"unicode/utf8"
-
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/palletone/go-palletone/common"
@@ -48,6 +39,13 @@ import (
 	"github.com/spf13/viper"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"io"
+	"io/ioutil"
+	"math/big"
+	"os"
+	"strconv"
+	"strings"
+	"time"
 )
 
 // Logger for the shim package.
@@ -59,12 +57,13 @@ var cert string
 var GlobalStateContractId = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 var ERROR_ONLY_SYS_CONTRACT = errors.New("Only system contract can call this function.")
 
-const (
-	minUnicodeRuneValue   = 0            //U+0000
-	maxUnicodeRuneValue   = utf8.MaxRune //U+10FFFF - maximum (and unallocated) code point
-	compositeKeyNamespace = "\x00"
-	emptyKeySubstitute    = "\x01"
-)
+//const (
+//
+//	minUnicodeRuneValue   = 0            //U+0000
+//	maxUnicodeRuneValue   = utf8.MaxRune //U+10FFFF - maximum (and unallocated) code point
+//	compositeKeyNamespace = "\x00"
+//	emptyKeySubstitute    = "\x01"
+//)
 
 // ChaincodeStub is an object passed to chaincode for shim side handling of
 // APIs.
@@ -76,12 +75,12 @@ type ChaincodeStub struct {
 	args           [][]byte
 	handler        *Handler
 	signedProposal *pb.SignedProposal
-	proposal       *pb.Proposal
+	//proposal       *pb.Proposal
 
 	// Additional fields extracted from the signedProposal
-	creator   []byte
-	transient map[string][]byte
-	binding   []byte
+	//creator   []byte
+	//transient map[string][]byte
+	//binding   []byte
 
 	decorations map[string][]byte
 }
@@ -132,7 +131,8 @@ func userChaincodeStreamGetter(name string) (PeerChaincodeStream, error) {
 	// Establish stream with validating peer
 	stream, err := chaincodeSupportClient.Register(context.Background())
 	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("error chatting with leader at address=%s", getPeerAddress()))
+		return nil, errors.WithMessage(err, fmt.Sprintf("error chatting with leader at address=%s",
+			getPeerAddress()))
 	}
 	return stream, nil
 }
@@ -190,7 +190,8 @@ func Start(cc Chaincode) error {
 //		if err == nil {
 //			flogging.InitFromSpec(chaincodeLogLevelString)
 //		} else {
-//			log.Warningf("Error: '%s' for chaincode log level: %s; defaulting to %s", err, chaincodeLogLevelString, flogging.DefaultLevel())
+//			log.Warningf("Error: '%s' for chaincode log level: %s; defaulting to %s", err, chaincodeLogLevelString,
+// flogging.DefaultLevel())
 //			flogging.InitFromSpec(flogging.DefaultLevel())
 //		}
 //	}
@@ -215,7 +216,8 @@ func Start(cc Chaincode) error {
 
 // StartInProc is an entry point for system chaincodes bootstrap. It is not an
 // API for chaincodes.
-func StartInProc(env []string, args []string, cc Chaincode, recv <-chan *pb.ChaincodeMessage, send chan<- *pb.ChaincodeMessage) error {
+func StartInProc(env []string, args []string, cc Chaincode, recv <-chan *pb.ChaincodeMessage,
+	send chan<- *pb.ChaincodeMessage) error {
 	log.Debugf("in proc %v", args)
 	var chaincodename string
 	for _, v := range env {
@@ -270,11 +272,12 @@ func chatWithPeer(chaincodename string, stream PeerChaincodeStream, cc Chaincode
 	chaincodeID := &pb.ChaincodeID{Name: chaincodename}
 	payload, err := proto.Marshal(chaincodeID)
 	if err != nil {
-		return errors.Wrap(err, "error marshalling chaincodeID during chaincode registration")
+		return errors.Wrap(err, "error marshaling chaincodeID during chaincode registration")
 	}
 	// Register on the stream
 	log.Debugf("Registering.. sending %s", pb.ChaincodeMessage_REGISTER)
-	if err = handler.serialSend(&pb.ChaincodeMessage{Type: pb.ChaincodeMessage_REGISTER, Payload: payload}); err != nil {
+	err = handler.serialSend(&pb.ChaincodeMessage{Type: pb.ChaincodeMessage_REGISTER, Payload: payload})
+	if err != nil {
 		return errors.WithMessage(err, "error sending chaincode REGISTER")
 	}
 	waitc := make(chan struct{})
@@ -304,7 +307,7 @@ func chatWithPeer(chaincodename string, stream PeerChaincodeStream, cc Chaincode
 					continue
 				}
 				//no, bail
-				err = errors.Wrap(sendErr, fmt.Sprintf("error sending %s", in.Type.String()))
+				err = errors.Wrap(sendErr, fmt.Sprintf("error sending type nil"))
 				return
 			case in = <-msgAvail:
 				if err == io.EOF {
@@ -324,6 +327,7 @@ func chatWithPeer(chaincodename string, stream PeerChaincodeStream, cc Chaincode
 			case nsInfo = <-handler.nextState:
 				in = nsInfo.msg
 				if in == nil {
+					log.Debugf("nil msg")
 					panic("nil msg")
 				}
 				log.Debugf("[%s]Move state message %s", shorttxid(in.Txid), in.Type.String())
@@ -351,7 +355,8 @@ func chatWithPeer(chaincodename string, stream PeerChaincodeStream, cc Chaincode
 
 // -- init stub ---
 // ChaincodeInvocation functionality
-func (stub *ChaincodeStub) init(handler *Handler, contractid []byte, channelId string, txid string, input *pb.ChaincodeInput, signedProposal *pb.SignedProposal) error {
+func (stub *ChaincodeStub) init(handler *Handler, contractid []byte, channelId string, txid string,
+	input *pb.ChaincodeInput, signedProposal *pb.SignedProposal) error {
 	stub.TxID = txid
 	stub.ChannelId = channelId
 	stub.args = input.Args
@@ -447,36 +452,6 @@ func (stub *ChaincodeStub) DelGlobalState(key string) error {
 
 }
 
-// Query documentation can be found in interfaces.go
-func (stub *ChaincodeStub) OutChainAddress(outChainName string, params []byte) ([]byte, error) {
-	if outChainName == "" {
-		return nil, errors.New("outChainName must not be an empty string")
-	}
-	// Access public data by setting the collection to empty string
-	collection := ""
-	return stub.handler.handleOutAddress(collection, outChainName, params, stub.ChannelId, stub.TxID)
-}
-
-// Query documentation can be found in interfaces.go
-func (stub *ChaincodeStub) OutChainTransaction(outChainName string, params []byte) ([]byte, error) {
-	if outChainName == "" {
-		return nil, errors.New("outChainName must not be an empty string")
-	}
-	// Access public data by setting the collection to empty string
-	collection := ""
-	return stub.handler.handleOutTransaction(collection, outChainName, params, stub.ChannelId, stub.TxID)
-}
-
-// Query documentation can be found in interfaces.go
-func (stub *ChaincodeStub) OutChainQuery(outChainName string, params []byte) ([]byte, error) {
-	if outChainName == "" {
-		return nil, errors.New("outChainName must not be an empty string")
-	}
-	// Access public data by setting the collection to empty string
-	collection := ""
-	return stub.handler.handleOutQuery(collection, outChainName, params, stub.ChannelId, stub.TxID)
-}
-
 func (stub *ChaincodeStub) OutChainCall(outChainName string, method string, params []byte) ([]byte, error) {
 	if outChainName == "" {
 		return nil, errors.New("outChainName must not be an empty string")
@@ -529,9 +504,12 @@ func (stub *ChaincodeStub) GetFunctionAndParameters() (function string, params [
 }
 
 //GetInvokeParameters documentation can be found in interfaces.go
-func (stub *ChaincodeStub) GetInvokeParameters() (invokeAddr common.Address, invokeTokens []*modules.InvokeTokens, invokeFees *modules.AmountAsset, funcName string, params []string, err error) {
+func (stub *ChaincodeStub) GetInvokeParameters() (invokeAddr common.Address, invokeTokens []*modules.InvokeTokens,
+	invokeFees *modules.AmountAsset, funcName string, params []string, err error) {
 	allargs := stub.args
-	//if len(allargs) > 2 {
+	if len(allargs) <= 0 {
+		return
+	}
 	invokeInfo := &modules.InvokeInfo{}
 	err = json.Unmarshal(allargs[0], invokeInfo)
 	if err != nil {
@@ -540,13 +518,21 @@ func (stub *ChaincodeStub) GetInvokeParameters() (invokeAddr common.Address, inv
 	invokeAddr = invokeInfo.InvokeAddress
 	invokeTokens = invokeInfo.InvokeTokens
 	invokeFees = invokeInfo.InvokeFees
+	if len(allargs) < 2 {
+		return
+	}
 	strargs := make([]string, 0, len(allargs)-1)
 	for _, barg := range allargs[1:] {
 		strargs = append(strargs, string(barg))
 	}
-	funcName = strargs[0]
-	params = strargs[1:]
-	//}
+	if len(strargs) < 2 {
+		return
+	}
+	funcName = strargs[1]
+	if len(strargs) < 3 {
+		return
+	}
+	params = strargs[2:]
 	return
 }
 
@@ -575,7 +561,8 @@ func (stub *ChaincodeStub) GetTxTimestamp(rangeNumber uint32) (*timestamp.Timest
 
 		return chdr.GetTimestamp(), nil
 	*/
-	headerTime, err := stub.handler.handleGetTimestamp("", rangeNumber, stub.ContractId, stub.ChannelId, stub.TxID)
+	headerTime, err := stub.handler.handleGetTimestamp("", rangeNumber, stub.ContractId, stub.ChannelId,
+		stub.TxID)
 	if err != nil {
 		return nil, errors.New("handleGetState failed")
 	}
@@ -644,7 +631,8 @@ func (stub *ChaincodeStub) SupplyToken(assetId []byte, uniqueId []byte, amt uint
 //将合约上锁定的某种Token支付出去
 func (stub *ChaincodeStub) PayOutToken(addr string, invokeTokens *modules.AmountAsset, lockTime uint32) error {
 	//TODO Devin return stub.handler.handlePayOutToken(  stub.ContractId, stub.ChannelId, stub.TxID)
-	return stub.handler.handlePayOutToken("", addr, invokeTokens, lockTime, stub.ContractId, stub.ChannelId, stub.TxID)
+	return stub.handler.handlePayOutToken("", addr, invokeTokens, lockTime, stub.ContractId, stub.ChannelId,
+		stub.TxID)
 }
 
 // 根据证书ID获得证书字节数据，不包含BEGIN和EN两行字符
@@ -870,7 +858,8 @@ func (c *ChaincodeLogger) Criticalf(format string, args ...interface{}) {
 // if err != nil {
 //    return nil, err
 // }
-// return &StateQueryIterator{CommonIterator: &CommonIterator{stub.handler, stub.ChannelId, stub.TxID, response, 0}}, nil
+// return &StateQueryIterator{CommonIterator: &CommonIterator{stub.handler, stub.ChannelId, stub.TxID, response, 0}},
+// nil
 //}
 
 // CommonIterator documentation can be found in interfaces.go
@@ -904,7 +893,8 @@ func (c *ChaincodeLogger) Criticalf(format string, args ...interface{}) {
 // if err != nil {
 //    return nil, err
 // }
-// return &StateQueryIterator{CommonIterator: &CommonIterator{stub.handler, stub.ChannelId, stub.TxID, response, 0}}, nil
+// return &StateQueryIterator{CommonIterator: &CommonIterator{stub.handler, stub.ChannelId, stub.TxID, response, 0}},
+// nil
 //}
 
 // GetStateByRange documentation can be found in interfaces.go
@@ -961,7 +951,8 @@ func (c *ChaincodeLogger) Criticalf(format string, args ...interface{}) {
 // }
 // for index, runeValue := range str {
 //    if runeValue == minUnicodeRuneValue || runeValue == maxUnicodeRuneValue {
-//       return errors.Errorf(`input contain unicode %#U starting at position [%d]. %#U and %#U are not allowed in the input attribute of a composite key`,
+//       return errors.Errorf(`input contain unicode %#U starting at position [%d]. %#U and %#U are not allowed
+// in the input attribute of a composite key`,
 //          runeValue, index, minUnicodeRuneValue, maxUnicodeRuneValue)
 //    }
 // }
@@ -987,7 +978,8 @@ func (c *ChaincodeLogger) Criticalf(format string, args ...interface{}) {
 //matches the given partial composite key. This function should be used only for
 //a partial composite key. For a full composite key, an iter with empty response
 //would be returned.
-//func (stub *ChaincodeStub) GetStateByPartialCompositeKey(objectType string, attributes []string) (StateQueryIteratorInterface, error) {
+//func (stub *ChaincodeStub) GetStateByPartialCompositeKey(objectType string,
+// attributes []string) (StateQueryIteratorInterface, error) {
 // collection := ""
 // if partialCompositeKey, err := stub.CreateCompositeKey(objectType, attributes); err == nil {
 //    return stub.handleGetStateByRange(collection, partialCompositeKey, partialCompositeKey+string(maxUnicodeRuneValue))

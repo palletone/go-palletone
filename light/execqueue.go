@@ -65,24 +65,24 @@ func (q *execQueue) isClosed() bool {
 }
 
 // canQueue returns true if more function calls can be added to the execution queue.
-func (q *execQueue) canQueue() bool {
-	q.mu.Lock()
-	ok := !q.isClosed() && len(q.funcs) < cap(q.funcs)
-	q.mu.Unlock()
-	return ok
-}
-
-// queue adds a function call to the execution queue. Returns true if successful.
-func (q *execQueue) queue(f func()) bool {
-	q.mu.Lock()
-	ok := !q.isClosed() && len(q.funcs) < cap(q.funcs)
-	if ok {
-		q.funcs = append(q.funcs, f)
-		q.cond.Signal()
-	}
-	q.mu.Unlock()
-	return ok
-}
+//func (q *execQueue) canQueue() bool {
+//	q.mu.Lock()
+//	ok := !q.isClosed() && len(q.funcs) < cap(q.funcs)
+//	q.mu.Unlock()
+//	return ok
+//}
+//
+//// queue adds a function call to the execution queue. Returns true if successful.
+//func (q *execQueue) queue(f func()) bool {
+//	q.mu.Lock()
+//	ok := !q.isClosed() && len(q.funcs) < cap(q.funcs)
+//	if ok {
+//		q.funcs = append(q.funcs, f)
+//		q.cond.Signal()
+//	}
+//	q.mu.Unlock()
+//	return ok
+//}
 
 // quit stops the exec queue.
 // quit waits for the current execution to finish before returning.

@@ -23,28 +23,30 @@ package storage
 
 import (
 	"testing"
-	"github.com/palletone/go-palletone/dag/modules"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestIndexDb_QueryProofOfExistenceByReference(t *testing.T) {
-	ref:=[]byte("APP1-News-123")
-	poe1:=&modules.ProofOfExistence{MainData:[]byte("News Hash1"),ExtraData:[]byte("News metadata json1"),Reference:ref,TxId:common.BytesToHash([]byte("txid")),UnitHash:common.Hash{},Timestamp:123}
-	poe2:=&modules.ProofOfExistence{MainData:[]byte("News Hash1"),ExtraData:[]byte("News op1"),Reference:ref,TxId:common.BytesToHash([]byte("txid1")),UnitHash:common.Hash{},Timestamp:333}
-	poe3:=&modules.ProofOfExistence{MainData:[]byte("News Hash1"),ExtraData:[]byte("News op2"),Reference:ref,TxId:common.BytesToHash([]byte("txid2")),UnitHash:common.Hash{},Timestamp:222}
-	db,_:=ptndb.NewMemDatabase()
-	idxdb:=NewIndexDb(db)
-	err:=idxdb.SaveProofOfExistence(poe1)
-	assert.Nil(t,err)
+	ref := []byte("APP1-News-123")
+	poe1 := &modules.ProofOfExistence{MainData: []byte("News Hash1"), ExtraData: []byte("News metadata json1"), Reference: ref, TxId: common.BytesToHash([]byte("txid")), UnitHash: common.Hash{}, Timestamp: 123}
+	poe2 := &modules.ProofOfExistence{MainData: []byte("News Hash1"), ExtraData: []byte("News op1"), Reference: ref, TxId: common.BytesToHash([]byte("txid1")), UnitHash: common.Hash{}, Timestamp: 333}
+	poe3 := &modules.ProofOfExistence{MainData: []byte("News Hash1"), ExtraData: []byte("News op2"), Reference: ref, TxId: common.BytesToHash([]byte("txid2")), UnitHash: common.Hash{}, Timestamp: 222}
+	db, _ := ptndb.NewMemDatabase()
+	idxdb := NewIndexDb(db)
+	err := idxdb.SaveProofOfExistence(poe1)
+	assert.Nil(t, err)
 	idxdb.SaveProofOfExistence(poe2)
 	idxdb.SaveProofOfExistence(poe3)
-	result,err:= idxdb.QueryProofOfExistenceByReference(ref)
-	assert.Nil(t,err)
-	assert.Equal(t,3,len(result))
-	for _,poe:=range result{
+	result, err := idxdb.QueryProofOfExistenceByReference(ref)
+	assert.Nil(t, err)
+	assert.Equal(t, 3, len(result))
+	for _, poe := range result {
 		t.Logf("%v", poe)
 	}
 }
+
+

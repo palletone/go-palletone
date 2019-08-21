@@ -18,12 +18,24 @@ print child.after
 child.expect(pexpect.EOF)
 sleep(2)
 
+subprocess.call("sed -i 's/\"mediator_interval\": 3,/\"mediator_interval\": 2,/g' ptn-genesis.json",shell=True)
+subprocess.call("sed -i 's/\"maintenance_skip_slots\": 2,/\"maintenance_skip_slots\": 0,/g' ptn-genesis.json",shell=True)
+subprocess.call("sed -i 's/\"min_maint_skip_slots\": 2,/\"min_maint_skip_slots\": 0,/g' ptn-genesis.json",shell=True)
+subprocess.call("sed -i 's/\"initialTimestamp\": [0-9]*,/\"initialTimestamp\": 1566269000,/g' ptn-genesis.json",shell=True)
+subprocess.call("grep 'mediator_interval' ptn-genesis.json",shell=True)
+subprocess.call("grep 'maintenance_skip_slots' ptn-genesis.json",shell=True)
+subprocess.call("grep 'min_maint_skip_slots' ptn-genesis.json",shell=True)
+subprocess.call("grep 'initialTimestamp' ptn-genesis.json",shell=True)
+
+sleep(2)
 child = pexpect.spawn('./gptn',['init'])
 child.expect("Passphrase:")
 child.sendline("1")
 child.expect(pexpect.EOF)
 EOFLog = child.before
 print EOFLog
+
+
 
 '''
 child = pexpect.spawn(command="./gptn --exec 'personal.listAccounts' attach palletone/gptn.ipc")

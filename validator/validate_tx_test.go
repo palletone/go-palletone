@@ -27,25 +27,31 @@ import (
 	"log"
 	"testing"
 
+	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/stretchr/testify/assert"
+	"time"
 )
 
+var privKeyBytes, _ = hex.DecodeString("2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644")
+
 func getAccount() (*ecdsa.PrivateKey, []byte, common.Address) {
-	privKeyBytes, _ := hex.DecodeString("2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644")
 	privKey, _ := crypto.ToECDSA(privKeyBytes)
 	pubKey := crypto.CompressPubkey(&privKey.PublicKey)
 	addr := crypto.PubkeyBytesToAddress(pubKey)
 	return privKey, pubKey, addr
 }
-
+func newCache() palletcache.ICache {
+	return freecache.NewCache(100 * 1024)
+}
 func TestValidate_ValidateTx_EmptyTx_NoPayment(t *testing.T) {
 	tx := &modules.Transaction{} //Empty Tx
-	validat := NewValidate(nil, nil, nil, nil)
+	validat := NewValidate(nil, nil, nil, nil, newCache())
 	_, _, err := validat.ValidateTx(tx, true)
 	assert.NotNil(t, err)
 	t.Log(err)
@@ -58,7 +64,7 @@ func TestValidate_ValidateTx_MsgCodeIncorrect(t *testing.T) {
 	tx := &modules.Transaction{}
 	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, &modules.DataPayload{MainData: []byte("m")}))
 
-	validat := NewValidate(nil, nil, nil, nil)
+	validat := NewValidate(nil, nil, nil, nil, newCache())
 	_, _, err := validat.ValidateTx(tx, true)
 	assert.NotNil(t, err)
 	t.Log(err)
@@ -97,8 +103,8 @@ func signTx(tx *modules.Transaction, outPoint *modules.OutPoint) {
 	getPubKeyFn := func(common.Address) ([]byte, error) {
 		return crypto.CompressPubkey(&privKey.PublicKey), nil
 	}
-	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
-		s, e := crypto.Sign(hash, privKey)
+	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
+		s, e := crypto.MyCryptoLib.Sign(privKeyBytes, msg)
 		return s, e
 	}
 	var hashtype uint32
@@ -119,6 +125,9 @@ func (u *testutxoQuery) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo,
 		return &modules.Utxo{Asset: modules.NewPTNAsset(), Amount: 1000, PkScript: lockScript}, nil
 	}
 	return nil, errors.New("Incorrect Hash")
+}
+func (u *testutxoQuery) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error) {
+	return nil, nil
 }
 func newTestPayment(point *modules.OutPoint, outAmt uint64) *modules.PaymentPayload {
 	pay1s := &modules.PaymentPayload{
@@ -204,7 +213,7 @@ func TestValidateDoubleSpendOn1Tx(t *testing.T) {
 
 	signTx(tx, outPoint)
 	utxoq := &testutxoQuery{}
-	validate := NewValidate(nil, utxoq, nil, nil)
+	validate := NewValidate(nil, utxoq, nil, nil, newCache())
 	_, _, err := validate.ValidateTx(tx, true)
 	assert.Nil(t, err)
 	pay2 := newTestPayment(outPoint, 2)
@@ -213,4 +222,48 @@ func TestValidateDoubleSpendOn1Tx(t *testing.T) {
 	_, _, err1 := validate.ValidateTx(tx, true)
 	assert.NotNil(t, err1)
 	t.Log(err1)
+}
+
+//构造一个上千Input的交易，验证时间要多久？
+func TestValidateLargeInputPayment(t *testing.T) {
+	N := 1000
+	tx := &modules.Transaction{}
+	pay := &modules.PaymentPayload{Inputs: []*modules.Input{}, Outputs: []*modules.Output{}}
+	lockScripts := map[modules.OutPoint][]byte{}
+	privKey, _, addr := getAccount()
+	lockScript := tokenengine.GenerateLockScript(addr)
+	for i := 0; i < N; i++ {
+		outpoint := modules.NewOutPoint(hash1, 0, uint32(i))
+		lockScripts[*outpoint] = lockScript
+		in := modules.NewTxIn(outpoint, nil)
+		pay.Inputs = append(pay.Inputs, in)
+	}
+	output := modules.NewTxOut(100, common.Hex2Bytes("0x76a914bd05274d98bb768c0e87a55d9a6024f76beb462a88ac"), modules.NewPTNAsset())
+	pay.AddTxOut(output)
+	tx.TxMessages = []*modules.Message{modules.NewMessage(modules.APP_PAYMENT, pay)}
+	getPubKeyFn := func(common.Address) ([]byte, error) {
+		return crypto.CompressPubkey(&privKey.PublicKey), nil
+	}
+	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
+		s, e := crypto.MyCryptoLib.Sign(privKeyBytes, msg)
+		return s, e
+	}
+	var hashtype uint32
+	hashtype = 1
+	_, e := tokenengine.SignTxAllPaymentInput(tx, hashtype, lockScripts, nil, getPubKeyFn, getSignFn)
+	if e != nil {
+		fmt.Println(e.Error())
+	}
+	//data, _ := json.Marshal(tx)
+	//t.Logf("Signed Tx:%s", string(data))
+
+	utxoq := &testutxoQuery{}
+	validate := NewValidate(nil, utxoq, nil, nil, newCache())
+	_, _, err := validate.ValidateTx(tx, true)
+
+	t1 := time.Now()
+	//validate := NewValidate(nil, utxoq, nil, nil)
+	_, _, err = validate.ValidateTx(tx, true)
+	t.Logf("Validate send time:%s", time.Since(t1))
+	assert.Nil(t, err)
 }

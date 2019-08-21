@@ -17,14 +17,13 @@
 package crypto
 
 import (
-	"crypto/ecdsa"
 	"crypto/elliptic"
-	"errors"
-	"fmt"
-
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/palletone/go-palletone/common/log"
 	"math/big"
+	"crypto/ecdsa"
+	"fmt"
+	"github.com/palletone/go-palletone/common/log"
+	"errors"
 )
 
 /*
@@ -64,15 +63,6 @@ func Sign(hash []byte, prv *ecdsa.PrivateKey) ([]byte, error) {
 	if prv.Curve != btcec.S256() {
 		return nil, fmt.Errorf("private key curve is not secp256k1")
 	}
-	//sig, err := btcec.SignCompact(btcec.S256(), (*btcec.PrivateKey)(prv), hash, false)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//// Convert to PalletOne signature format with 'recovery id' v at the end.
-	//v := sig[0] - 27
-	//copy(sig, sig[1:])
-	//sig[64] = v
-	//return sig[:64], nil
 	key := (*btcec.PrivateKey)(prv)
 	sign, _ := key.Sign(hash)
 	return sign.Serialize(), nil
@@ -97,14 +87,14 @@ func VerifySignature(pubkey, hash, signature []byte) bool {
 			return false
 		}
 	}
-	
+
 	// Reject malleable signatures. libsecp256k1 does this check but btcec doesn't.
 	if sig.S.Cmp(secp256k1_halfN) > 0 {
 		fmt.Println("sig.S.Cmp > 0")
 		return false
 	}
 	return sig.Verify(hash, key)
-	
+
 	//return sig.Verify(hash, key)
 }
 
@@ -124,7 +114,6 @@ func DecompressPubkey(pubkey []byte) (*ecdsa.PublicKey, error) {
 func CompressPubkey(pubkey *ecdsa.PublicKey) []byte {
 	return (*btcec.PublicKey)(pubkey).SerializeCompressed()
 }
-
 // S256 returns an instance of the secp256k1 curve.
 func S256() elliptic.Curve {
 	return btcec.S256()

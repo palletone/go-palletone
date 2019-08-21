@@ -43,6 +43,7 @@ func NewGlobalPropBase() GlobalPropBase {
 type GlobalProperty struct {
 	GlobalPropBase
 
+	// todo albert 待重构为数组，提高效率
 	ActiveJuries       map[common.Address]bool // 当前活跃Jury集合
 	ActiveMediators    map[common.Address]bool // 当前活跃 mediator 集合；每个维护间隔更新一次
 	PrecedingMediators map[common.Address]bool // 上一届 mediator
@@ -51,9 +52,9 @@ type GlobalProperty struct {
 func NewGlobalProp() *GlobalProperty {
 	return &GlobalProperty{
 		GlobalPropBase:     NewGlobalPropBase(),
-		ActiveJuries:       make(map[common.Address]bool, 0),
-		ActiveMediators:    make(map[common.Address]bool, 0),
-		PrecedingMediators: make(map[common.Address]bool, 0),
+		ActiveJuries:       make(map[common.Address]bool),
+		ActiveMediators:    make(map[common.Address]bool),
+		PrecedingMediators: make(map[common.Address]bool),
 	}
 }
 
@@ -76,10 +77,6 @@ type GlobalPropertyHistory struct {
 
 // 动态全局属性的结构体定义
 type DynamicGlobalProperty struct {
-	//HeadUnitNum  uint64      // 最新单元的编号(数量)
-	//HeadUnitHash common.Hash // 最新单元的 hash
-	//HeadUnitTime int64       // 最新单元的时间
-
 	// 防止同一个mediator连续生产单元导致分叉
 	LastMediator       common.Address // 最新单元的生产 mediator
 	IsShuffledSchedule bool           // 标记 mediator 的调度顺序是否刚被打乱
@@ -95,10 +92,6 @@ type DynamicGlobalProperty struct {
 	// 最低位表示最近一个slot， 初始值全为1。
 	RecentSlotsFilled uint64
 
-	//LastIrreversibleUnitNum uint64
-	//NewestUnit     map[AssetId]*UnitProperty
-	//LastStableUnit map[AssetId]*UnitProperty
-
 	// If MaintenanceFlag is true, then the head unit is a maintenance unit.
 	// This means GetTimeSlot(1) - HeadBlockTime() will have a gap due to maintenance duration.
 	//
@@ -113,9 +106,6 @@ type UnitProperty struct {
 
 func NewDynGlobalProp() *DynamicGlobalProperty {
 	return &DynamicGlobalProperty{
-		//HeadUnitNum:             0,
-		//HeadUnitHash:            common.Hash{},
-
 		LastMediator:       common.Address{},
 		IsShuffledSchedule: false,
 
@@ -125,20 +115,9 @@ func NewDynGlobalProp() *DynamicGlobalProperty {
 
 		RecentSlotsFilled: ^uint64(0),
 
-		//LastIrreversibleUnitNum: 0,
-		//NewestUnit:     map[AssetId]*UnitProperty{},
-		//LastStableUnit: map[AssetId]*UnitProperty{},
-
 		MaintenanceFlag: false,
 	}
 }
-
-//func (gdp *DynamicGlobalProperty) SetNewestUnit(header *Header) {
-//	gdp.NewestUnit[header.Number.AssetID] = &UnitProperty{header.Hash(), header.Number, header.Time}
-//}
-//func (gdp *DynamicGlobalProperty) SetLastStableUnit(header *Header) {
-//	gdp.LastStableUnit[header.Number.AssetID] = &UnitProperty{header.Hash(), header.Number, header.Time}
-//}
 
 func (gp *GlobalProperty) ActiveMediatorsCount() int {
 	return len(gp.ActiveMediators)
@@ -184,9 +163,9 @@ func (gp *GlobalProperty) GetActiveMediatorAddr(index int) common.Address {
 // GetActiveMediators, return the list of active mediators, and the order of the list from small to large
 func (gp *GlobalProperty) GetActiveMediators() []common.Address {
 	var mediators common.Addresses
-	mediators = make([]common.Address, 0, gp.ActiveMediatorsCount())
+	//mediators = make([]common.Address, 0, gp.ActiveMediatorsCount())
 
-	for medAdd, _ := range gp.ActiveMediators {
+	for medAdd := range gp.ActiveMediators {
 		mediators = append(mediators, medAdd)
 	}
 
@@ -221,12 +200,7 @@ func InitGlobalProp(genesis *core.Genesis) *GlobalProperty {
 
 func InitDynGlobalProp(genesis *Unit) *DynamicGlobalProperty {
 	log.Debug("initialize dynamic global property...")
-
-	// Create dynamic global properties
 	dgp := NewDynGlobalProp()
-	//dgp.HeadUnitTime = genesis.InitialTimestamp
-	//dgp.HeadUnitHash = genesisUnitHash
-	//dgp.SetNewestUnit(genesis.Header())
-	//dgp.SetLastStableUnit(genesis.Header())
+
 	return dgp
 }

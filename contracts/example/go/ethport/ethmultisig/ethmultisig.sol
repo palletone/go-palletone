@@ -72,7 +72,6 @@ contract ethmultisig {
   }
 
   function setaddrs(address addra, address addrb, address addrc) public isAdmin {//debug
-    admin = msg.sender;//debug
     addrA = addra;
     addrB = addrb;
     addrC = addrc;
@@ -196,7 +195,7 @@ contract ethmultisig {
       selfdestruct(addr);
   }
 
-  function() public {
+  function() payable {
     revert();
   }
 }

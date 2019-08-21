@@ -27,7 +27,6 @@ import (
 )
 
 type ITxPool interface {
-	// AddRemote(tx *modules.Transaction) error
 	Stop()
 
 	AddLocal(tx *modules.Transaction) error
@@ -41,18 +40,15 @@ type ITxPool interface {
 	AddRemote(tx *modules.Transaction) error
 	AddRemotes([]*modules.Transaction) []error
 	ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag Tag) ([]*TxDesc, error)
-	// Pending should return pending transactions.
-	// The slice should be modifiable by the caller.
+
 	Pending() (map[common.Hash][]*modules.TxPoolTransaction, error)
 	Queued() ([]*modules.TxPoolTransaction, error)
 	SetPendingTxs(unit_hash common.Hash, num uint64, txs []*modules.Transaction) error
 	ResetPendingTxs(txs []*modules.Transaction) error
 	SendStoredTxs(hashs []common.Hash) error
 	DiscardTxs(hashs []common.Hash) error
-	//DiscardTx(hash common.Hash) error
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
-	// SubscribeTxPreEvent should return an event subscription of
-	// TxPreEvent and send events to the given channel.
+
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
 	GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxPoolTransaction, common.StorageSize)
 	Get(hash common.Hash) (*modules.TxPoolTransaction, common.Hash)

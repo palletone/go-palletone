@@ -69,14 +69,14 @@ func Register(path string, cc shim.Chaincode) error {
 
 //InprocVM is a vm. It is identified by a executable name
 type InprocVM struct {
-	id string
+	//id string
 }
 
-func (vm *InprocVM) getInstance(ctxt context.Context, ipctemplate *inprocContainer, instName string, args []string, env []string) (*inprocContainer, error) {
+func (vm *InprocVM) getInstance(_ context.Context, ipctemplate *inprocContainer, instName string, args []string, env []string) (*inprocContainer, error) {
 	ipc := instRegistry[instName]
 	if ipc != nil {
 		log.Warnf("chaincode instance exists for %s", instName)
-		return ipc, nil
+		return ipc, fmt.Errorf("chaincode instance exists for %s", instName)
 	}
 	ipc = &inprocContainer{args: args, env: env, chaincode: ipctemplate.chaincode, stopChan: make(chan struct{})}
 	instRegistry[instName] = ipc
@@ -121,7 +121,7 @@ func (ipc *inprocContainer) launchInProc(ctxt context.Context, id string, args [
 		if env == nil {
 			env = ipc.env
 		}
-		err := _shimStartInProc(env, args, ipc.chaincode, ccRcvPeerSend, peerRcvCCSend)
+		err = _shimStartInProc(env, args, ipc.chaincode, ccRcvPeerSend, peerRcvCCSend)
 		if err != nil {
 			err = fmt.Errorf("chaincode-support ended with err: %s", err)
 			_logErrorf("%s", err)
@@ -134,7 +134,7 @@ func (ipc *inprocContainer) launchInProc(ctxt context.Context, id string, args [
 		defer close(ccsupportchan)
 		inprocStream := newInProcStream(peerRcvCCSend, ccRcvPeerSend)
 		log.Debugf("chaincode-support started for  %s", id)
-		err := ccSupport.HandleChaincodeStream(ctxt, inprocStream)
+		err = ccSupport.HandleChaincodeStream(ctxt, inprocStream)
 		if err != nil {
 			err = fmt.Errorf("chaincode ended with err: %s", err)
 			_logErrorf("%s", err)

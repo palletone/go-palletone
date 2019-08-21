@@ -36,6 +36,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
+	"github.com/palletone/go-palletone/ptnjson/statistics"
 	"github.com/shopspring/decimal"
 )
 
@@ -62,7 +63,7 @@ func (s *PublicPalletOneAPI) ProtocolVersion() hexutil.Uint {
 
 // Syncing returns false in case the node is currently not syncing with the network. It can be up to date or has not
 // yet received the latest block headers from its pears. In case it is synchronizing:
-// - startingBlock: block number this node started to synchronise from
+// - startingBlock: block number this node started to synchronize from
 // - currentBlock:  block number this node is currently importing
 // - highestBlock:  block number of the highest block header this node has received from peers
 // - pulledStates:  number of state entries processed until now
@@ -70,17 +71,17 @@ func (s *PublicPalletOneAPI) ProtocolVersion() hexutil.Uint {
 func (s *PublicPalletOneAPI) Syncing() (interface{}, error) {
 	progress := s.b.Downloader().Progress()
 
-	// Return not syncing if the synchronisation already completed
-	//	if progress.CurrentBlock >= progress.HighestBlock {
-	//		return false, nil
-	//	}
+	// Return not syncing if the synchronization already completed
+		if progress.CurrentBlock >= progress.HighestBlock {
+			return false, nil
+		}
 	// Otherwise gather the block sync stats
 	return map[string]interface{}{
 		"startingBlock": hexutil.Uint64(progress.StartingBlock),
-		//"currentBlock":  hexutil.Uint64(progress.CurrentBlock),
+		"currentBlock":  hexutil.Uint64(progress.CurrentBlock),
 		"highestBlock": hexutil.Uint64(progress.HighestBlock),
-		"pulledStates": hexutil.Uint64(progress.PulledStates),
-		"knownStates":  hexutil.Uint64(progress.KnownStates),
+		//"pulledStates": hexutil.Uint64(progress.PulledStates),
+		//"knownStates":  hexutil.Uint64(progress.KnownStates),
 	}, nil
 }
 
@@ -97,7 +98,8 @@ func NewPublicBlockChainAPI(b Backend) *PublicBlockChainAPI {
 
 //// BlockNumber returns the block number of the chain head.
 //func (s *PublicBlockChainAPI) BlockNumber() *big.Int {
-//	header, _ := s.b.HeaderByNumber(context.Background(), rpc.LatestBlockNumber) // latest header should always be available
+// // latest header should always be available
+//	header, _ := s.b.HeaderByNumber(context.Background(), rpc.LatestBlockNumber)
 //	return header.Number
 //}
 
@@ -121,7 +123,8 @@ func (s *PublicBlockChainAPI) GetBalance(ctx context.Context, address string) (m
 	return result, nil
 }
 
-func (s *PublicBlockChainAPI) GetTokenTxHistory(ctx context.Context, assetStr string) ([]*ptnjson.TxHistoryJson, error) {
+func (s *PublicBlockChainAPI) GetTokenTxHistory(ctx context.Context,
+	assetStr string) ([]*ptnjson.TxHistoryJson, error) {
 	asset := &modules.Asset{}
 	err := asset.SetString(assetStr)
 	if err != nil {
@@ -130,6 +133,13 @@ func (s *PublicBlockChainAPI) GetTokenTxHistory(ctx context.Context, assetStr st
 	result, err := s.b.GetAssetTxHistory(asset)
 
 	return result, err
+}
+
+func (s *PublicBlockChainAPI) GetAssetExistence(ctx context.Context,
+	asset string) ([]*ptnjson.ProofOfExistenceJson, error) {
+	result, err := s.b.GetAssetExistence(asset)
+	return result, err
+
 }
 
 func (s *PublicBlockChainAPI) ListSysConfig() ([]*ptnjson.ConfigJson, error) {
@@ -142,28 +152,24 @@ func (s *PublicBlockChainAPI) GetChainParameters() (*core.ChainParameters, error
 	return s.b.GetChainParameters(), nil
 }
 
-//func (s *PublicBlockChainAPI) WalletTokens(ctx context.Context, address string) (string, error) {
-//	result, err := s.b.WalletTokens(address)
-//	if err != nil {
-//		log.Error("WalletTokens:", "error", err.Error())
-//	}
-//	//fmt.Println("result len=", len(result))
-//	b, err := json.Marshal(result)
+func (s *PublicBlockChainAPI) AddressBalanceStatistics(ctx context.Context, token string,
+	topN int) (*statistics.TokenAddressBalanceJson, error) {
+	result, err := s.b.GetAddressBalanceStatistics(token, topN)
+
+	return result, err
+}
+
 //
-//	if err != nil {
-//		log.Error("WalletTokens 2222:", "error", err.Error())
-//	}
-//	return string(b), nil
-//}
-//
-//func (s *PublicBlockChainAPI) WalletBalance(ctx context.Context, address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error) {
+//func (s *PublicBlockChainAPI) WalletBalance(ctx context.Context, address string, assetid []byte, uniqueid []byte,
+// chainid uint64) (uint64, error) {
 //	return s.b.WalletBalance(address, assetid, uniqueid, chainid)
 //}
 
 /*
 // GetBlockByNumber returns the requested block. When blockNr is -1 the chain head is returned. When fullTx is true all
 // transactions in the block are returned in full detail, otherwise only the transaction hash is returned.
-func (s *PublicBlockChainAPI) GetBlockByNumber(ctx context.Context, blockNr rpc.BlockNumber, fullTx bool) (map[string]interface{}, error) {
+func (s *PublicBlockChainAPI) GetBlockByNumber(ctx context.Context, blockNr rpc.BlockNumber,
+fullTx bool) (map[string]interface{}, error) {
 	block, err := s.b.BlockByNumber(ctx, blockNr)
 	if block != nil {
 		response, err := s.rpcOutputBlock(block, true, fullTx)
@@ -180,7 +186,8 @@ func (s *PublicBlockChainAPI) GetBlockByNumber(ctx context.Context, blockNr rpc.
 
 // GetBlockByHash returns the requested block. When fullTx is true all transactions in the block are returned in full
 // detail, otherwise only the transaction hash is returned.
-func (s *PublicBlockChainAPI) GetBlockByHash(ctx context.Context, blockHash common.Hash, fullTx bool) (map[string]interface{}, error) {
+func (s *PublicBlockChainAPI) GetBlockByHash(ctx context.Context, blockHash common.Hash,
+fullTx bool) (map[string]interface{}, error) {
 	block, err := s.b.GetBlock(ctx, blockHash)
 	if block != nil {
 		return s.rpcOutputBlock(block, true, fullTx)
@@ -190,7 +197,8 @@ func (s *PublicBlockChainAPI) GetBlockByHash(ctx context.Context, blockHash comm
 
 // GetUncleByBlockNumberAndIndex returns the uncle block for the given block hash and index. When fullTx is true
 // all transactions in the block are returned in full detail, otherwise only the transaction hash is returned.
-func (s *PublicBlockChainAPI) GetUncleByBlockNumberAndIndex(ctx context.Context, blockNr rpc.BlockNumber, index hexutil.Uint) (map[string]interface{}, error) {
+func (s *PublicBlockChainAPI) GetUncleByBlockNumberAndIndex(ctx context.Context, blockNr rpc.BlockNumber,
+index hexutil.Uint) (map[string]interface{}, error) {
 	block, err := s.b.BlockByNumber(ctx, blockNr)
 	if block != nil {
 		uncles := block.Uncles()
@@ -206,7 +214,8 @@ func (s *PublicBlockChainAPI) GetUncleByBlockNumberAndIndex(ctx context.Context,
 
 // GetUncleByBlockHashAndIndex returns the uncle block for the given block hash and index. When fullTx is true
 // all transactions in the block are returned in full detail, otherwise only the transaction hash is returned.
-func (s *PublicBlockChainAPI) GetUncleByBlockHashAndIndex(ctx context.Context, blockHash common.Hash, index hexutil.Uint) (map[string]interface{}, error) {
+func (s *PublicBlockChainAPI) GetUncleByBlockHashAndIndex(ctx context.Context, blockHash common.Hash,
+index hexutil.Uint) (map[string]interface{}, error) {
 	block, err := s.b.GetBlock(ctx, blockHash)
 	if block != nil {
 		uncles := block.Uncles()
@@ -222,7 +231,8 @@ func (s *PublicBlockChainAPI) GetUncleByBlockHashAndIndex(ctx context.Context, b
 */
 
 // GetCode returns the code stored at the given address in the state for the given block number.
-func (s *PublicBlockChainAPI) GetCode(ctx context.Context, address common.Address, blockNr rpc.BlockNumber) (hexutil.Bytes, error) {
+func (s *PublicBlockChainAPI) GetCode(ctx context.Context, address common.Address,
+	blockNr rpc.BlockNumber) (hexutil.Bytes, error) {
 	/*
 		state, _, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
 		if state == nil || err != nil {
@@ -237,7 +247,8 @@ func (s *PublicBlockChainAPI) GetCode(ctx context.Context, address common.Addres
 // GetStorageAt returns the storage from the state at the given address, key and
 // block number. The rpc.LatestBlockNumber and rpc.PendingBlockNumber meta block
 // numbers are also allowed.
-func (s *PublicBlockChainAPI) GetStorageAt(ctx context.Context, address common.Address, key string, blockNr rpc.BlockNumber) (hexutil.Bytes, error) {
+func (s *PublicBlockChainAPI) GetStorageAt(ctx context.Context, address common.Address, key string,
+	blockNr rpc.BlockNumber) (hexutil.Bytes, error) {
 	/*
 		state, _, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
 		if state == nil || err != nil {
@@ -261,7 +272,8 @@ type CallArgs struct {
 
 // Call executes the given transaction on the state for the given block number.
 // It doesn't make and changes in the state/blockchain and is useful to execute and retrieve values.
-func (s *PublicBlockChainAPI) Call(ctx context.Context, args CallArgs, blockNr rpc.BlockNumber) (hexutil.Bytes, error) {
+func (s *PublicBlockChainAPI) Call(ctx context.Context, args CallArgs,
+	blockNr rpc.BlockNumber) (hexutil.Bytes, error) {
 	return hexutil.Bytes{}, nil
 }
 
@@ -322,6 +334,7 @@ func (s *PublicBlockChainAPI) GetPrefix(condition string) string /*map[string][]
 	pre := s.b.GetPrefix(condition)
 	prefix := map[string]string{}
 	for key, value := range pre {
+		value := value
 		prefix[key] = *(*string)(unsafe.Pointer(&value))
 	}
 	content, err := json.Marshal(prefix)
@@ -330,14 +343,6 @@ func (s *PublicBlockChainAPI) GetPrefix(condition string) string /*map[string][]
 		return "Marshal err"
 	}
 	return *(*string)(unsafe.Pointer(&content))
-}
-
-func (s *PublicBlockChainAPI) CcstartChaincodeContainer(ctx context.Context, deployId string, txid string) (string, error) {
-	depId, _ := hex.DecodeString(deployId)
-	log.Info("CcstartChaincodeContainer:" + deployId + ":" + txid + "_")
-	//TODO deleteImage 为 true 时，目前是会删除基础镜像的
-	deplo1, err := s.b.ContractStartChaincodeContainer(depId, txid)
-	return string(deplo1), err
 }
 
 func (s *PublicBlockChainAPI) DecodeTx(ctx context.Context, hex string) (string, error) {

@@ -1,8 +1,23 @@
+/*
+   This file is part of go-palletone.
+   go-palletone is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   go-palletone is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+*/
+/*
+ * @author PalletOne core developer Jiyou Wang <dev@pallet.one>
+ * @date 2018
+ */
 package cors
 
 import (
-	"crypto/ecdsa"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -81,13 +96,13 @@ type hashOrNumber struct {
 }
 
 // sign adds a signature to the block announcement by the given privKey
-func (a *announceData) sign(privKey *ecdsa.PrivateKey) {
-	//rlp, _ := rlp.EncodeToBytes(announceBlock{a.Hash, a.Number.Index /*, a.Td*/})
-	//sig, _ := crypto.Sign(crypto.Keccak256(rlp), privKey)
-	//a.Update = a.Update.add("sign", sig)
-}
-
-// checkSignature verifies if the block announcement has a valid signature by the given pubKey
-func (a *announceData) checkSignature(pubKey *ecdsa.PublicKey) error {
-	return nil
-}
+//func (a *announceData) sign(privKey *ecdsa.PrivateKey) {
+//	//rlp, _ := rlp.EncodeToBytes(announceBlock{a.Hash, a.Number.Index /*, a.Td*/})
+//	//sig, _ := crypto.Sign(crypto.Keccak256(rlp), privKey)
+//	//a.Update = a.Update.add("sign", sig)
+//}
+//
+//// checkSignature verifies if the block announcement has a valid signature by the given pubKey
+//func (a *announceData) checkSignature(pubKey *ecdsa.PublicKey) error {
+//	return nil
+//}

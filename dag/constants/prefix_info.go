@@ -22,7 +22,6 @@ package constants
 // prefix info
 //各个Entity的Prefix应该都是2小写字母，不可重复
 var (
-	//UNIT_PREFIX               = []byte("ut") // unit_prefix + mci + hash
 	HEADER_PREFIX             = []byte("uh") // prefix + hash
 	HEADER_HEIGTH_PREFIX      = []byte("hh") // prefix + height:hash
 	UNIT_HASH_NUMBER_PREFIX   = []byte("hn")
@@ -56,9 +55,11 @@ var (
 	ACCOUNT_INFO_PREFIX        = []byte("ai")
 	ACCOUNT_PTN_BALANCE_PREFIX = []byte("ab")
 	TOKEN_TXID_PREFIX          = []byte("tt") //IndexDB中存储一个Token关联的TxId
+	TOKEN_EX_PREFIX          = []byte("te") //IndexDB中存储一个Token关联的ProofOfExistence
 	// lookup
 	LOOKUP_PREFIX              = []byte("lu")
 	UTXO_PREFIX                = []byte("uo")
+	SPENT_UTXO_PREFIX                = []byte("us")
 	UTXO_INDEX_PREFIX          = []byte("ui")
 	TrieSyncKey                = []byte("TrieSync")
 	LastUnitInfo               = []byte("stbu")
@@ -73,11 +74,6 @@ var (
 	IDX_REF_DATA_PREFIX = []byte("re")
 	RewardAddressPrefix = "Addr:"
 )
-
-// suffix
-//var (
-//	NumberSuffix = []byte("n")
-//)
 
 // symbols
 var (

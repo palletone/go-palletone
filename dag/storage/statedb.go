@@ -27,11 +27,11 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/common/log"
 )
 
 //保存了对合约写集、Config、Asset信息
@@ -72,43 +72,14 @@ func splitValueAndVersion(data []byte) ([]byte, *modules.StateVersion, error) {
 	return objData, version, nil
 }
 
-// ######################### SAVE IMPL START ###########################
-
-//func (statedb *StateDb) SaveAssetInfo(assetInfo *modules.AssetInfo) error {
-//	key := assetInfo.Tokey()
-//	return StoreToRlpBytes(statedb.db, key, assetInfo)
-//}
-
 func (statedb *StateDb) DeleteState(key []byte) error {
 	return statedb.db.Delete(key)
 }
-
-// ######################### SAVE IMPL END ###########################
-
-// ######################### GET IMPL START ###########################
-
-//func (statedb *StateDb) GetAssetInfo(assetId *modules.Asset) (*modules.AssetInfo, error) {
-//	key := append(constants.ASSET_INFO_PREFIX, assetId.AssetId.String()...)
-//	data, err := statedb.db.Get(key)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	var assetInfo modules.AssetInfo
-//	err = rlp.DecodeBytes(data, &assetInfo)
-//
-//	if err != nil {
-//		return nil, err
-//	}
-//	return &assetInfo, nil
-//}
 
 // get prefix: return maps
 func (db *StateDb) GetPrefix(prefix []byte) map[string][]byte {
 	return getprefix(db.db, prefix)
 }
-
-// ######################### GET IMPL END ###########################
 
 func (statedb *StateDb) GetJuryCandidateList() (map[string]bool, error) {
 	depositeContractAddress := syscontract.DepositContractAddress
@@ -116,7 +87,7 @@ func (statedb *StateDb) GetJuryCandidateList() (map[string]bool, error) {
 	if err != nil {
 		return nil, fmt.Errorf("jury candidate list is nil.")
 	}
-	//var candidateList []common.Address
+
 	candidateList := make(map[string]bool)
 	err = json.Unmarshal(val, &candidateList)
 	if err != nil {
@@ -147,7 +118,7 @@ func (statedb *StateDb) GetContractDeveloperList() ([]common.Address, error) {
 		return nil, err
 	}
 	res := make([]common.Address, len(depList))
-	for addStr, _ := range depList {
+	for addStr := range depList {
 		add, err := common.StringToAddress(addStr)
 		if err != nil {
 			log.Debugf(err.Error())
@@ -163,8 +134,8 @@ func (statedb *StateDb) IsInContractDeveloperList(address common.Address) bool {
 	if err != nil {
 		return false
 	}
-	for _, d := range list{
-		if d.Equal(address){
+	for _, d := range list {
+		if d.Equal(address) {
 			return true
 		}
 	}

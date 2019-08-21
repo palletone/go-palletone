@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * Copyright IBM Corp. All Rights Reserved.
  * @author PalletOne core developers <dev@pallet.one>
@@ -32,6 +33,10 @@ import (
 )
 
 const symbolsKey = "symbol_"
+const jsonResp1 = "{\"Error\":\"Failed to get invoke address\"}"
+const jsonResp2 = "{\"Error\":\"Token not exist\"}"
+const jsonResp3 = "{\"Error\":\"Failed to set symbols\"}"
+const jsonResp4 = "{\"Error\":\"Failed to add global state\"}"
 
 type PRC20 struct {
 }
@@ -45,6 +50,18 @@ type TokenInfo struct {
 	AssetID     dm.AssetId
 }
 
+func paramCheckValid(args []string) (bool, string) {
+	if len(args) > 32 {
+		return false, "args number out of range 32"
+	}
+	for _, arg := range args {
+		if len(arg) > 2048 {
+			return false, "arg length out of range 2048"
+		}
+	}
+	return true, ""
+}
+
 func (p *PRC20) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(nil)
 }
@@ -52,6 +69,10 @@ func (p *PRC20) Init(stub shim.ChaincodeStubInterface) pb.Response {
 func (p *PRC20) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	f, args := stub.GetFunctionAndParameters()
 
+	valid, errMsg := paramCheckValid(args)
+	if !valid {
+		return shim.Error(errMsg)
+	}
 	switch f {
 	case "createToken":
 		return createToken(args, stub)
@@ -60,7 +81,7 @@ func (p *PRC20) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	case "getTokenInfo":
 		return oneToken(args, stub)
 	case "getAllTokenInfo":
-		return allToken(args, stub)
+		return allToken(stub)
 	case "changeSupplyAddr":
 		return changeSupplyAddr(args, stub)
 	case "frozenToken":
@@ -124,7 +145,7 @@ func getSymbols(stub shim.ChaincodeStubInterface, symbol string) *TokenInfo {
 
 func getSymbolsAll(stub shim.ChaincodeStubInterface) []TokenInfo {
 	KVs, _ := stub.GetStateByPrefix(symbolsKey)
-	var tkInfos []TokenInfo
+	tkInfos := make([]TokenInfo, 0, len(KVs))
 	for _, oneKV := range KVs {
 		tkInfo := TokenInfo{}
 		err := json.Unmarshal(oneKV.Value, &tkInfo)
@@ -134,6 +155,14 @@ func getSymbolsAll(stub shim.ChaincodeStubInterface) []TokenInfo {
 		tkInfos = append(tkInfos, tkInfo)
 	}
 	return tkInfos
+}
+
+func checkAddr(addr string) error {
+	if addr == "" {
+		return nil
+	}
+	_, err := common.StringToAddress(addr)
+	return err
 }
 
 func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
@@ -176,6 +205,11 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//address of supply
 	if len(args) > 4 {
 		fungible.SupplyAddress = args[4]
+		err := checkAddr(fungible.SupplyAddress)
+		if err != nil {
+			jsonResp := "{\"Error\":\"The SupplyAddress is invalid\"}"
+			return shim.Error(jsonResp)
+		}
 	}
 
 	//check name is only or not
@@ -194,21 +228,19 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//get creator
 	createAddr, err := stub.GetInvokeAddress()
 	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp1)
 	}
 
 	//last put state
 	txid := stub.GetTxID()
 	assetID, _ := dm.NewAssetId(fungible.Symbol, dm.AssetType_FungibleToken,
 		fungible.Decimals, common.Hex2Bytes(txid[2:]), dm.UniqueIdType_Null)
-	info := TokenInfo{fungible.Symbol, createAddr.String(), totalSupply, uint64(decimals),
+	info := TokenInfo{fungible.Symbol, createAddr.String(), totalSupply, decimals,
 		fungible.SupplyAddress, assetID}
 
 	err = setSymbols(stub, &info)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to set symbols\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp3)
 	}
 
 	//set token define
@@ -220,8 +252,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//add global state
 	err = setGlobal(stub, &info)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to add global state\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp4)
 	}
 	return shim.Success(createJson)
 }
@@ -237,8 +268,7 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//check name is exist or not
 	gTkInfo := getGlobal(stub, symbol)
 	if gTkInfo == nil {
-		jsonResp := "{\"Error\":\"Token not exist\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp2)
 	}
 
 	//check status
@@ -265,8 +295,7 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//get invoke address
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp1)
 	}
 	//check supply address
 	if invokeAddr.String() != gTkInfo.SupplyAddr {
@@ -290,14 +319,12 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		gTkInfo.SupplyAddr, assetID}
 	err = setSymbols(stub, &info)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to set symbols\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp3)
 	}
 
 	err = setGlobal(stub, &info)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to add global state\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp4)
 	}
 
 	return shim.Success([]byte(""))
@@ -314,8 +341,7 @@ func changeSupplyAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 	//check name is exist or not
 	gTkInfo := getGlobal(stub, symbol)
 	if gTkInfo == nil {
-		jsonResp := "{\"Error\":\"Token not exist\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp2)
 	}
 
 	//check status
@@ -326,12 +352,16 @@ func changeSupplyAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 
 	//new supply address
 	newSupplyAddr := args[1]
+	err := checkAddr(newSupplyAddr)
+	if err != nil {
+		jsonResp := "{\"Error\":\"The SupplyAddress is invalid\"}"
+		return shim.Error(jsonResp)
+	}
 
 	//get invoke address
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp1)
 	}
 	//check supply address
 	if invokeAddr.String() != gTkInfo.SupplyAddr {
@@ -347,14 +377,12 @@ func changeSupplyAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 
 	err = setSymbols(stub, &info)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to set symbols\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp3)
 	}
 
 	err = setGlobal(stub, &info)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to add global state\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp4)
 	}
 
 	return shim.Success([]byte(""))
@@ -371,8 +399,7 @@ func frozenToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//check name is exist or not
 	gTkInfo := getGlobal(stub, symbol)
 	if gTkInfo == nil {
-		jsonResp := "{\"Error\":\"Token not exist\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp2)
 	}
 
 	//get invoke address
@@ -384,7 +411,7 @@ func frozenToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//check address
 	invokeAddrStr := invokeAddr.String()
 	ownerAddr := gTkInfo.SupplyAddr
-	if "" == ownerAddr {
+	if len(ownerAddr) == 0 {
 		ownerAddr = gTkInfo.CreateAddr
 	}
 	if invokeAddrStr != ownerAddr {
@@ -408,8 +435,7 @@ func frozenToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	err = stub.PutGlobalState(dm.GlobalPrefix+gTkInfo.Symbol, val)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to add global state\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp4)
 	}
 	return shim.Success([]byte(""))
 }
@@ -450,10 +476,10 @@ func oneToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(tkJson)
 }
 
-func allToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+func allToken(stub shim.ChaincodeStubInterface) pb.Response {
 	tkInfos := getSymbolsAll(stub)
 
-	var tkIDs []TokenIDInfo
+	tkIDs := make([]TokenIDInfo, 0, len(tkInfos))
 	for _, tkInfo := range tkInfos {
 		asset := tkInfo.AssetID
 		tkID := TokenIDInfo{tkInfo.Symbol, tkInfo.CreateAddr, tkInfo.TotalSupply,

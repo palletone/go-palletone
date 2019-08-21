@@ -30,18 +30,6 @@ var (
 	Isredispool bool
 )
 
-//func init() {
-//	switch config.DefaultConfig.CacheSource {
-//	case "redis":
-//		th_redis.Init()
-//		Isredispool = true
-//		log.Info("init cache.", "redis", Isredispool)
-//	// case "cache":
-//
-//	default:
-//		cache.Init()
-//	}
-//}
 func Store(tag, key string, value interface{}, expire int) error {
 	if Isredispool {
 		err := th_redis.Store(tag, key, value)

@@ -128,8 +128,8 @@ type (
 	}
 	touchChange struct {
 		account   *common.Address
-		prev      bool
-		prevDirty bool
+		// prev      bool
+		// prevDirty bool
 	}
 )
 

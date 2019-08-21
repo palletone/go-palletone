@@ -47,9 +47,9 @@ func getCodeFromFS(path string) (codegopath string, err error) {
 	log.Debugf("getCodeFromFS %s", path)
 	gopath, err := getGopath()
 	if err != nil {
+		log.Debugf("getGopath error %s", err.Error())
 		return "", err
 	}
-
 	tmppath := filepath.Join(gopath, "src", path)
 	if err := ccutil.IsCodeExist(tmppath); err != nil {
 		return "", fmt.Errorf("code does not exist %s", err)
@@ -83,6 +83,7 @@ func getCodeDescriptor(spec *pb.ChaincodeSpec) (*CodeDescriptor, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error getting code %s", err)
 	}
+	log.Infof("gopath = %s,chaincode path = %s", gopath, chaincodeID.Path)
 	return &CodeDescriptor{Gopath: gopath, Pkg: chaincodeID.Path, Cleanup: nil}, nil
 }
 

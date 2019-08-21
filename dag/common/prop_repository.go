@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developer Albert·Gou <dev@pallet.one>
  * @date 2018
@@ -20,6 +21,7 @@
 package common
 
 import (
+	"encoding/binary"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -35,6 +37,7 @@ import (
 type PropRepository struct {
 	db storage.IPropertyDb
 }
+
 type IPropRepository interface {
 	StoreGlobalProp(gp *modules.GlobalProperty) error
 	RetrieveGlobalProp() (*modules.GlobalProperty, error)
@@ -134,15 +137,15 @@ func (pRep *PropRepository) GetNewestUnitTimestamp(token modules.AssetId) (int64
 func (pRep *PropRepository) UpdateMediatorSchedule(ms *modules.MediatorSchedule, gp *modules.GlobalProperty,
 	dgp *modules.DynamicGlobalProperty) bool {
 	token := dagconfig.DagConfig.GetGasToken()
-	_, idx, timestamp, err := pRep.db.GetNewestUnit(token)
+	hash, idx, _, err := pRep.db.GetNewestUnit(token)
 	if err != nil {
-		log.Debug("GetNewestUnit error:" + err.Error())
+		log.Debugf("GetNewestUnit error:" + err.Error())
 		return false
 	}
 
 	aSize := uint64(len(gp.ActiveMediators))
 	if aSize == 0 {
-		log.Debug("The current number of active mediators is 0!")
+		log.Debugf("the current number of active mediators is 0")
 		return false
 	}
 
@@ -152,20 +155,22 @@ func (pRep *PropRepository) UpdateMediatorSchedule(ms *modules.MediatorSchedule,
 	}
 
 	// 2. 清除CurrentShuffledMediators原来的空间，重新分配空间
-	ms.CurrentShuffledMediators = make([]common.Address, aSize, aSize)
+	ms.CurrentShuffledMediators = make([]common.Address, aSize)
 
 	// 3. 初始化数据
 	meds := gp.GetActiveMediators()
-	for i, add := range meds {
-		ms.CurrentShuffledMediators[i] = add
-	}
+	copy(ms.CurrentShuffledMediators, meds)
+	//for i, add := range meds {
+	//	ms.CurrentShuffledMediators[i] = add
+	//}
 
 	// 4. 打乱证人的调度顺序
-	Shuffle(ms.CurrentShuffledMediators, uint64(timestamp))
+	shuffleMediators(ms.CurrentShuffledMediators, binary.BigEndian.Uint64(hash[8:]))
 	return true
 }
-func Shuffle(mediators []common.Address, timestamp uint64) {
-	nowHi := uint64(timestamp << 32)
+
+func shuffleMediators(mediators []common.Address, seed uint64) {
+	nowHi := seed << 32
 	aSize := len(mediators)
 	for i := 0; i < aSize; i++ {
 		// 高性能随机生成器(High performance random generator)
@@ -241,9 +246,9 @@ func (pRep *PropRepository) GetSlotAtTime(when time.Time) uint32 {
 		log.Debugf("Retrieve Global Prop error: %v", err.Error())
 		return 0
 	}
-	dgp, _ := pRep.RetrieveDynGlobalProp()
-	if err != nil {
-		log.Debugf("Retrieve Dyn Global Prop error: %v", err.Error())
+	dgp, err1 := pRep.RetrieveDynGlobalProp()
+	if err1 != nil {
+		log.Debugf("Retrieve Dyn Global Prop error: %v", err1.Error())
 		return 0
 	}
 

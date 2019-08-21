@@ -21,22 +21,19 @@
 package storage
 
 import (
-	"crypto/ecdsa"
+	"testing"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 var hash = common.HexToHash("0xfa4329fbb03fdd5d538a9a01a9af3b6f13e31d476ef9731adbee8bc4df688144")
 
 func TestGetUnit(t *testing.T) {
-	//log.Println("dbconn is nil , renew db  start ...")
-
 	db, _ := ptndb.NewMemDatabase()
-	//l := log.NewTestLog()
 	dagdb := NewDagDb(db)
 	u, err := dagdb.GetHeaderByHash(common.HexToHash("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"))
 	assert.Nil(t, u, "empty db, must return nil Unit")
@@ -52,19 +49,12 @@ func TestPrintHashList(t *testing.T) {
 }
 
 func TestGetHeader(t *testing.T) {
-	key := new(ecdsa.PrivateKey)
-	key, _ = crypto.GenerateKey()
+	key, _ := crypto.MyCryptoLib.KeyGen()
+	pubKey,_:=crypto.MyCryptoLib.PrivateKeyToPubKey(key)
 	h := new(modules.Header)
-	//h.AssetIDs = append(h.AssetIDs, PTNCOIN)
 	au := modules.Authentifier{}
-	address := crypto.PubkeyToAddress(&key.PublicKey)
+	address := crypto.PubkeyBytesToAddress(pubKey)
 	t.Log("address:", address)
-
-	//author := &Author{
-	//	Address:        address,
-	//	Pubkey:         []byte("1234567890123456789"),
-	//	TxAuthentifier: *au,
-	//}
 
 	h.GroupSign = []byte("group_sign")
 	h.GroupPubKey = []byte("group_pubKey")
@@ -73,12 +63,10 @@ func TestGetHeader(t *testing.T) {
 	h.Number.Index = uint64(333333)
 	h.Extra = make([]byte, 20)
 	h.ParentsHash = append(h.ParentsHash, h.TxRoot)
-	//tr := common.Hash{}
-	//tr = tr.SetString("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f")
 	h.TxRoot = common.HexToHash("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f")
-	sig, _ := crypto.Sign(h.TxRoot[:], key)
+	sig, _ := crypto.MyCryptoLib.Sign(key,h.TxRoot[:])
 	au.Signature = sig
-	au.PubKey = crypto.CompressPubkey(&key.PublicKey)
+	au.PubKey = pubKey
 	h.Authors = au
 	h.Time = 123
 

@@ -21,7 +21,7 @@
 package migration
 
 import (
-	"github.com/palletone/go-palletone/common/log"
+	"fmt"
 	"github.com/palletone/go-palletone/common/ptndb"
 )
 
@@ -34,7 +34,7 @@ func RenameKey(db ptndb.Database, oldKey, newKey []byte) error {
 	if err != nil {
 		return err
 	}
-	log.Debugf("Rename key from %s to %s", string(oldKey), string(newKey))
+	fmt.Printf("Rename key from %s to %s", string(oldKey), string(newKey))
 	return db.Delete(oldKey)
 }
 func RenamePrefix(db ptndb.Database, oldPrefix, newPrefix []byte) error {
@@ -49,6 +49,6 @@ func RenamePrefix(db ptndb.Database, oldPrefix, newPrefix []byte) error {
 		batch.Delete(key)
 		count++
 	}
-	log.Debugf("Rename prefix from %s to %s, count:%d", string(oldPrefix), string(newPrefix), count)
+	fmt.Printf("Rename prefix from %s to %s, count:%d", string(oldPrefix), string(newPrefix), count)
 	return batch.Write()
 }
