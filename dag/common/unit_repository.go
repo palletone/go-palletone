@@ -105,12 +105,10 @@ type IUnitRepository interface {
 	SaveCommon(key, val []byte) error
 }
 type UnitRepository struct {
-	dagdb storage.IDagDb
-	idxdb storage.IIndexDb
-	//uxtodb         storage.IUtxoDb
-	statedb storage.IStateDb
-	propdb  storage.IPropertyDb
-	//validate       validator.Validator
+	dagdb          storage.IDagDb
+	idxdb          storage.IIndexDb
+	statedb        storage.IStateDb
+	propdb         storage.IPropertyDb
 	utxoRepository IUtxoRepository
 	lock           sync.RWMutex
 	observers      []AfterSysContractStateChangeEventFunc
@@ -125,7 +123,6 @@ type AfterSysContractStateChangeEventFunc func(event *modules.SysContractStateCh
 func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb, utxodb storage.IUtxoDb, statedb storage.IStateDb,
 	propdb storage.IPropertyDb) *UnitRepository {
 	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, propdb)
-	//val := validator.NewValidate(dagdb, utxoRep, statedb)
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, statedb: statedb, utxoRepository: utxoRep, propdb: propdb}
 }
 
@@ -136,7 +133,6 @@ func NewUnitRepository4Db(db ptndb.Database) *UnitRepository {
 	idxdb := storage.NewIndexDb(db)
 	propdb := storage.NewPropertyDb(db)
 	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, propdb)
-	//val := validator.NewValidate(dagdb, utxoRep, statedb)
 	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, statedb: statedb, propdb: propdb, utxoRepository: utxoRep}
 }
 
@@ -147,10 +143,6 @@ func (rep *UnitRepository) SubscribeSysContractStateChangeEvent(ob AfterSysContr
 
 	rep.observers = append(rep.observers, ob)
 }
-
-//func (rep *UnitRepository) UnsubscribeSysContractStateChangeEvent(ob AfterSysContractStateChangeEventFunc) {
-//	delete(rep.observers, ob)
-//}
 
 func (rep *UnitRepository) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 	return rep.dagdb.GetHeaderByHash(hash)
