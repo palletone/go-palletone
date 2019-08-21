@@ -77,6 +77,9 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 		dag.unstableStateRep = c
 		dag.unstablePropRep = d
 		dag.unstableUnitProduceRep = e
+	} else if err != nil {
+		log.Info("create unit failed.", "error", err.Error())
+		return nil
 	}
 
 	//4.PostChainEvents

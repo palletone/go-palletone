@@ -555,7 +555,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 			}
 			//update txpool's tx status to pending
 			if len(unit.Txs) > 0 {
-				go txpool.SetPendingTxs(unit.Hash(), height, unit.Txs)
+				go txpool.SetPendingTxs(unit.Hash(), height, unit.Transactions())
 			}
 
 		} else { //Fork unit
@@ -703,7 +703,7 @@ func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPo
 	for _, unit := range forks_units {
 		if len(unit.Txs) > 1 {
 			log.Debugf("Update tx[%#x] status to pending in txpool", unit.Txs.GetTxIds())
-			go txpool.SetPendingTxs(unit.Hash(), unit.NumberU64(), unit.Txs)
+			go txpool.SetPendingTxs(unit.Hash(), unit.NumberU64(), unit.Transactions())
 		}
 	}
 	//设置最新主链单元
