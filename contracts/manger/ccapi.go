@@ -167,6 +167,7 @@ func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byt
 		Enabled: true,
 	}
 	//  TODO 可以开启单机多容器,防止容器名冲突
+	usrcc.Version += ":"
 	usrcc.Version += contractcfg.GetConfig().ContractAddress
 	spec := &pb.ChaincodeSpec{
 		Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value[templateCC.Language]),
