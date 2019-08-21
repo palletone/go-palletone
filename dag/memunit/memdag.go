@@ -467,6 +467,7 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 	if unit.NumberU64() <= chain.stableUnitHeight {
 		log.Debugf("This unit is too old! Ignore it,stable unit height:%d, stable hash:%s",
 			chain.stableUnitHeight, chain.stableUnitHash.String())
+		go txpool.ResetPendingTxs(unit.Transactions())
 		return nil, nil, nil, nil, nil, nil
 	}
 	chain_units := chain.getChainUnits()
