@@ -284,7 +284,7 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 			u.NumberU64(), u.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
 			u.Author().Str())
 
-		if a, b, c, dd, e, err := d.Memdag.AddUnit(u, txpool); err != nil {
+		if a, b, c, dd, e, err := d.Memdag.AddUnit(u, txpool, false); err != nil {
 			//return count, err
 			log.Errorf("Memdag addUnit[%s] #%d signed by %v error:%s",
 				u.UnitHash.String(), u.NumberU64(), u.Author().Str(), err.Error())
@@ -909,7 +909,7 @@ func (d *Dag) saveHeader(header *modules.Header) error {
 		log.Error(err.Error())
 		return err
 	}
-	if a, b, c, dd, e, err := memdag.AddUnit(unit, nil); err != nil {
+	if a, b, c, dd, e, err := memdag.AddUnit(unit, nil, false); err != nil {
 		return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
 	} else {
 		if a != nil {
@@ -952,7 +952,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 		return nil
 	}
 
-	if a, b, c, dd, e, err := d.Memdag.AddUnit(unit, txpool); err != nil {
+	if a, b, c, dd, e, err := d.Memdag.AddUnit(unit, txpool, false); err != nil {
 		return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
 	} else {
 		if a != nil {
