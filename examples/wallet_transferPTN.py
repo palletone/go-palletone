@@ -22,7 +22,7 @@ class transferPtn(unittest.TestCase):
 
     def test_TransferPtn(self):
         print "Current URL:" + self.domain
-        for i in range(10):
+        for i in range(100):
             self.transferPtn(self.copygenesisAddress,self.copygenesisAddress,1,0.0001,"remark","1")
             #sleep(1)
             self.getBalance(self.copygenesisAddress)
