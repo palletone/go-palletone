@@ -875,6 +875,9 @@ func (rep *UnitRepository) GetTxRequesterAddress(tx *modules.Transaction) (commo
 save genesis unit data
 */
 func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
+	defer func(start time.Time) {
+		log.Debugf("saveUnit[%s] cost time: %v", unit.UnitHash.String(), time.Since(start))
+	}(time.Now())
 	rep.lock.Lock()
 	defer rep.lock.Unlock()
 	uHash := unit.Hash()
@@ -885,7 +888,6 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		return modules.ErrUnit(-3)
 	}
 	// step2. traverse transactions and save them
-	// tempTxs := &tempTxs{txs: unit.Txs, rep: rep.utxoRepository}
 
 	txHashSet := []common.Hash{}
 	for txIndex, tx := range unit.Txs {
@@ -893,7 +895,7 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		if err != nil {
 			return err
 		}
-		log.Debugf("save transaction, hash[%s] tx_index[%d]", tx.Hash().String(), txIndex)
+		//log.Debugf("save transaction, hash[%s] tx_index[%d]", tx.Hash().String(), txIndex)
 		txHashSet = append(txHashSet, tx.Hash())
 	}
 	// step3. save unit body, the value only save txs' hash set, and the key is merkle root
@@ -911,11 +913,6 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		if err := rep.propdb.SetNewestUnit(unit.Header()); err != nil {
 			log.Errorf("Save ChainIndex for genesis error:%s", err.Error())
 		}
-		//Save StableUnit
-		// if err := rep.propdb.SetLastStableUnit(uHash, unit.UnitHeader.Number); err != nil {
-		// 	log.Info("Set LastStableUnit:", "error", err.Error())
-		// 	return modules.ErrUnit(-3)
-		// }
 		rep.dagdb.SaveGenesisUnitHash(unit.Hash())
 	}
 	return nil

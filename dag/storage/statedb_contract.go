@@ -30,7 +30,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -314,11 +313,11 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 				mi.MediatorInfoBase = mco.MediatorInfoBase
 				mi.MediatorApplyInfo = mco.MediatorApplyInfo
 
-				addr, err := core.StrToMedAdd(mco.AddStr)
+				addr, err := mco.Validate()
 				if err == nil {
 					statedb.StoreMediatorInfo(addr, mi)
 				} else {
-					log.Warnf("StrToMedAdd err: %v", err.Error())
+					log.Warnf("Validate MediatorCreateArgs err: %v", err.Error())
 				}
 			} else {
 				log.Warnf("ApplyMediator Args Unmarshal: %v", err.Error())
@@ -352,6 +351,12 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 						}
 						if mua.Node != nil {
 							mi.Node = *mua.Node
+						}
+						if mua.RewardAdd != nil {
+							mi.RewardAdd = *mua.RewardAdd
+						}
+						if mua.InitPubKey != nil {
+							mi.InitPubKey = *mua.InitPubKey
 						}
 						statedb.StoreMediatorInfo(addr, mi)
 					} else {

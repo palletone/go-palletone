@@ -45,14 +45,14 @@ Payout
 
 Stop contractpay contract
     Given Unlock token holder succeed
-    ${reqId}=   Then stopContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
+    ${reqId}=   Then stopContract    ${tokenHolder}    ${tokenHolder}    100    100    ${gContractId}
     And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
 *** Keywords ***
 User put status into contractpay
     [Arguments]    ${putmethod}
     ${args}=    Create List    ${putmethod}
-    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
+    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    100    ${gContractId}
     ...    ${args}
     ${result}=    Get From Dictionary    ${respJson}    result
     ${reqId}=    Get From Dictionary    ${result}    reqId
@@ -82,7 +82,7 @@ Use contractpay to transfer PTN to user2
     ${newAddr}=    newAccount
     Log    ${newAddr}
     ${args}=    Create List    payout    ${newAddr}    PTN    100
-    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
+    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    100    ${gContractId}
     ...    ${args}
     ${result}=    Get From Dictionary    ${respJson}    result
     ${reqId}=    Get From Dictionary    ${result}    reqId

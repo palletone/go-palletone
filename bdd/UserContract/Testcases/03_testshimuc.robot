@@ -111,7 +111,7 @@ Get Invoke Info
 
 Stop testshimuc contract
     Given Unlock token holder succeed
-    ${reqId}=    Then stopContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
+    ${reqId}=    Then stopContract    ${tokenHolder}    ${tokenHolder}    100    100    ${gContractId}
     And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
 *** Keywords ***
@@ -121,7 +121,7 @@ User transfer PTN to testshimuc
 
 Test set_event by contract
     ${args}=    Create List    testGetInvokeInfo
-    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
+    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    100    ${gContractId}
     ...    ${args}
     ${result}=    Get From Dictionary    ${respJson}    result
     ${reqId}=    Get From Dictionary    ${result}    reqId
@@ -131,7 +131,7 @@ Test set_event by contract
 
 Test send and recv jury by contract
     ${args}=    Create List    testSetEvent
-    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
+    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    100    ${gContractId}
     ...    ${args}
     ${result}=    Get From Dictionary    ${respJson}    result
     ${reqId}=    Get From Dictionary    ${result}    reqId
@@ -141,7 +141,8 @@ Test send and recv jury by contract
 
 User use cert to invoke contract
     ${args}=    Create List    testUseCert
-    ${respJson}=    invokeContract      ${caCertHolder}    ${caCertHolder}    100    1    ${gContractId}     ${args}    ${caCertID}
+    ${respJson}=    invokeContract    ${caCertHolder}    ${caCertHolder}    100    100    ${gContractId}
+    ...    ${args}    ${caCertID}
     ${result}=    Get From Dictionary    ${respJson}    result
     ${reqId}=    Get From Dictionary    ${result}    reqId
     ${contractId}=    Get From Dictionary    ${result}    ContractId
@@ -152,7 +153,7 @@ User get invoke info
     [Arguments]    ${args}    ${newAddr}
     ${newArgs}=    Create List    testGetInvokeInfo
     ${newArgs}=    Combine Lists    ${newArgs}    ${args}
-    ${respJson}=    invokeContract    ${tokenHolder}    ${newAddr}    100    1    ${gContractId}
+    ${respJson}=    invokeContract    ${tokenHolder}    ${newAddr}    100    100    ${gContractId}
     ...    ${newArgs}
     ${result}=    Get From Dictionary    ${respJson}    result
     ${reqId}=    Get From Dictionary    ${result}    reqId
@@ -209,7 +210,7 @@ Check all invoke info
     ${GetInvokeFees} =    Get From Dictionary    ${payload}    GetInvokeFees
     ${amount}=    Get From Dictionary    ${GetInvokeFees}    amount
     ${symbol}=    Get From Dictionary    ${GetInvokeFees}    assetId
-    Should Be Equal    ${amount}    ${100000000}
+    Should Be Equal    ${amount}    ${10000000000}
     Should Be Equal    ${symbol}    PTN
     # => GetContractID
     Dictionary Should Contain Key    ${payload}    GetContractID
@@ -231,7 +232,7 @@ Check all invoke info
 User define token
     [Arguments]    ${name}    ${symbol}    ${decimal}    ${amount}
     ${args}=    Create List    testDefineToken    ${name}    ${symbol}    ${decimal}    ${amount}
-    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
+    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    100    ${gContractId}
     ...    ${args}
     ${result}=    Get From Dictionary    ${respJson}    result
     ${reqId}=    Get From Dictionary    ${result}    reqId
@@ -242,7 +243,7 @@ User define token
 User supply token
     [Arguments]    ${symbol}    ${amount}    ${decimals}
     ${args}=    Create List    testSupplyToken    ${symbol}    ${amount}    ${decimals}
-    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
+    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    100    ${gContractId}
     ...    ${args}
     ${result}=    Get From Dictionary    ${respJson}    result
     ${reqId}=    Get From Dictionary    ${result}    reqId
@@ -253,7 +254,7 @@ User supply token
 User pay out token
     [Arguments]    ${to}    ${symbol}    ${amount}
     ${args}=    Create List    testPayOutToken    ${to}    ${symbol}    ${amount}
-    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
+    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    100    ${gContractId}
     ...    ${args}
     ${result}=    Get From Dictionary    ${respJson}    result
     ${reqId}=    Get From Dictionary    ${result}    reqId
@@ -276,7 +277,7 @@ Query balance by contract
 User put state
     [Arguments]    ${method}    ${key}    ${value}
     ${args}=    Create List    ${method}    ${key}    ${value}
-    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
+    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    100    ${gContractId}
     ...    ${args}
     ${result}=    Get From Dictionary    ${respJson}    result
     ${reqId}=    Get From Dictionary    ${result}    reqId
@@ -287,7 +288,7 @@ User put state
 User delete state
     [Arguments]    ${method}    ${key}
     ${args}=    Create List    ${method}    ${key}
-    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    1    ${gContractId}
+    ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    100    ${gContractId}
     ...    ${args}
     ${result}=    Get From Dictionary    ${respJson}    result
     ${reqId}=    Get From Dictionary    ${result}    reqId

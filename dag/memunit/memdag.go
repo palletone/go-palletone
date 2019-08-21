@@ -476,8 +476,8 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 	}
 	a, b, c, d, e, err := chain.addUnit(unit, txpool)
 	log.DebugDynamic(func() string {
-		return fmt.Sprintf("MemDag[%s] AddUnit cost time: %v ,index: %d, hash: %s", chain.token.String(),
-			time.Since(start), unit.NumberU64(), unit.Hash().String())
+		return fmt.Sprintf("MemDag[%s]: index: %d, hash: %s,AddUnit cost time: %v ,", chain.token.String(),
+			unit.NumberU64(), unit.Hash().String(), time.Since(start))
 	})
 
 	if err == nil {
@@ -518,8 +518,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 			} else {
 				temp_db = inter_temp.(*ChainTempDb)
 			}
-			validateCode := validator.TxValidationCode_VALID
-			// fmt.Println("validate code:", validateCode)
+			var validateCode validator.ValidationCode
 			if chain.saveHeaderOnly {
 				validateCode = temp_db.Validator.ValidateHeader(unit.UnitHeader)
 			} else {
@@ -558,8 +557,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 
 		} else { //Fork unit
 			start1 := time.Now()
-			validateCode := validator.TxValidationCode_VALID
-			// fmt.Println("fork validate code:", validateCode)
+			var validateCode validator.ValidationCode
 			var main_temp *ChainTempDb
 			inter_main, has := chain.tempdb.Load(parentHash)
 			if !has { // 分叉

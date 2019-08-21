@@ -53,6 +53,7 @@ func NewMediatorInfo() *MediatorInfo {
 func MediatorToInfo(md *core.Mediator) *MediatorInfo {
 	mi := NewMediatorInfo()
 	mi.AddStr = md.Address.Str()
+	mi.RewardAdd = md.RewardAdd.Str()
 	mi.InitPubKey = core.PointToStr(md.InitPubKey)
 	mi.Node = md.Node.String()
 	*mi.MediatorApplyInfo = *md.MediatorApplyInfo
@@ -64,6 +65,7 @@ func MediatorToInfo(md *core.Mediator) *MediatorInfo {
 func (mi *MediatorInfo) InfoToMediator() *core.Mediator {
 	md := core.NewMediator()
 	md.Address, _ = core.StrToMedAdd(mi.AddStr)
+	md.RewardAdd, _ = core.StrToMedAdd(mi.RewardAdd)
 	md.InitPubKey, _ = core.StrToPoint(mi.InitPubKey)
 	md.Node, _ = core.StrToMedNode(mi.Node)
 	*md.MediatorApplyInfo = *mi.MediatorApplyInfo
@@ -87,19 +89,35 @@ func NewMediatorCreateArgs() *MediatorCreateArgs {
 
 // 更新 mediator 信息所需参数
 type MediatorUpdateArgs struct {
-	AddStr      string  `json:"account"`             // 要更新的mediator地址
-	Logo        *string `json:"logo" rlp:"nil"`      // 节点图标url
-	Name        *string `json:"name" rlp:"nil"`      // 节点名称
-	Location    *string `json:"loc" rlp:"nil"`       // 节点所在地区
-	Url         *string `json:"url" rlp:"nil"`       // 节点宣传网站
-	Description *string `json:"applyInfo" rlp:"nil"` // 节点详细信息描述
-	Node        *string `json:"node" rlp:"nil"`      // 节点网络信息，包括ip和端口等
+	AddStr      string  `json:"account"`              // 要更新的mediator地址
+	RewardAdd   *string `json:"rewardAdd" rlp:"nil"`  // mediator奖励地址，主要用于接收产块奖励
+	InitPubKey  *string `json:"initPubKey" rlp:"nil"` // mediator的群签名初始公钥
+	Node        *string `json:"node" rlp:"nil"`       // 节点网络信息，包括ip和端口等
+	Logo        *string `json:"logo" rlp:"nil"`       // 节点图标url
+	Name        *string `json:"name" rlp:"nil"`       // 节点名称
+	Location    *string `json:"loc" rlp:"nil"`        // 节点所在地区
+	Url         *string `json:"url" rlp:"nil"`        // 节点宣传网站
+	Description *string `json:"applyInfo" rlp:"nil"`  // 节点详细信息描述
 }
 
 func (mua *MediatorUpdateArgs) Validate() (common.Address, error) {
 	addr, err := core.StrToMedAdd(mua.AddStr)
 	if err != nil {
 		return addr, err
+	}
+
+	if mua.RewardAdd != nil {
+		_, err := core.StrToMedAdd(*mua.RewardAdd)
+		if err != nil {
+			return addr, err
+		}
+	}
+
+	if mua.InitPubKey != nil {
+		_, err = core.StrToPoint(*mua.InitPubKey)
+		if err != nil {
+			return addr, err
+		}
 	}
 
 	if mua.Node != nil {

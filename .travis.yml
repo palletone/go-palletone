@@ -28,7 +28,7 @@ env:
     - IS_RUN_721SEQENCE=true
     - IS_RUN_721UDID=true
     - IS_RUN_MULTIPLE=true
-    - IS_RUN_DIGITAL=true
+    - IS_RUN_DIGITAL=false
     - IS_RUN_VOTE=true
     - IS_RUN_GASTOKEN=true
     - IS_RUN_MEDIATOR_VOTE=true
