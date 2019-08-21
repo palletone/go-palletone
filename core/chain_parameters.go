@@ -187,12 +187,41 @@ func CheckSysConfigArgs(field, value string) error {
 	return err
 }
 
-func ImmutableChainParameterCheck(icp *ImmutableChainParameters, cp *ChainParameters) {
-	if cp.MediatorInterval < icp.MinMediatorInterval {
-		cp.MediatorInterval = icp.MinMediatorInterval
+type GetMediatorCountFn func() int
+
+func ImmutableChainParameterCheck(field, value string, icp *ImmutableChainParameters, fn GetMediatorCountFn) error {
+	var err error
+
+	switch field {
+	case "MediatorInterval":
+		newMediatorInterval, _ := strconv.ParseUint(value, 10, 64)
+		if newMediatorInterval < uint64(icp.MinMediatorInterval) {
+			err = fmt.Errorf("new mediator interval(%v) cannot less than min interval(%v)",
+				newMediatorInterval, icp.MinMediatorInterval)
+		}
+	case "MaintenanceSkipSlots":
+		newMaintenanceSkipSlots, _ := strconv.ParseUint(value, 10, 64)
+		if newMaintenanceSkipSlots < uint64(icp.MinMaintSkipSlots) {
+			err = fmt.Errorf("new MaintenanceSkipSlots(%v) cannot less than MinMaintSkipSlots(%v)",
+				newMaintenanceSkipSlots, icp.MinMaintSkipSlots)
+		}
+	case "ActiveMediatorCount":
+		newActiveMediatorCount, _ := strconv.ParseUint(value, 10, 16)
+		if (newActiveMediatorCount & 1) == 0 {
+			err = fmt.Errorf("new ActiveMediatorCount(%v) must be odd", newActiveMediatorCount)
+		} else if newActiveMediatorCount < uint64(icp.MinimumMediatorCount) {
+			err = fmt.Errorf("new ActiveMediatorCount(%v) cannot less than MinimumMediatorCount(%v)",
+				newActiveMediatorCount, icp.MinimumMediatorCount)
+		} else {
+			mediatorCount := uint64(fn())
+			if newActiveMediatorCount > mediatorCount {
+				err = fmt.Errorf("new ActiveMediatorCount(%v) cannot more than mediator count(%v)",
+					newActiveMediatorCount, mediatorCount)
+			}
+		}
+	default:
+		err = nil
 	}
 
-	if cp.MaintenanceSkipSlots < icp.MinMaintSkipSlots {
-		cp.MaintenanceSkipSlots = icp.MinMaintSkipSlots
-	}
+	return err
 }

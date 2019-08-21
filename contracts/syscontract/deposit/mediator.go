@@ -75,11 +75,11 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	}
 
 	//  判断该地址是否是第一次申请
-	mdeposit, err := GetMediatorDeposit(stub, mco.AddStr)
+	mDeposit, err := GetMediatorDeposit(stub, mco.AddStr)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	if mdeposit != nil {
+	if mDeposit != nil {
 		return shim.Error(mco.AddStr + " has applied for become mediator")
 	}
 

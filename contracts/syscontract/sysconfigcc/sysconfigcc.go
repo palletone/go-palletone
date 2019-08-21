@@ -257,6 +257,13 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 				return nil, err
 			}
 
+			err = core.ImmutableChainParameterCheck(oneSupport.TopicTitle, oneOption, &gp.ImmutableParameters,
+				func() int { return GetMediatorCount(stub) })
+			if err != nil {
+				log.Debugf(err.Error())
+				return nil, err
+			}
+
 			oneResult := &modules.SysVoteResult{}
 			oneResult.SelectOption = oneOption
 			oneSupport.VoteResults = append(oneSupport.VoteResults, oneResult)
@@ -437,6 +444,24 @@ func (s *SysConfigChainCode) nodesVote(stub shim.ChaincodeStubInterface, args []
 //	return sysVal, nil
 //}
 
+func GetMediatorCount(stub shim.ChaincodeStubInterface) int {
+	byte, err := stub.GetState(modules.MediatorList)
+	if err != nil {
+		return 0
+	}
+	if len(byte) == 0 {
+		return 0
+	}
+
+	list := make(map[string]bool)
+	err = json.Unmarshal(byte, &list)
+	if err != nil {
+		return 0
+	}
+
+	return len(list)
+}
+
 func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	if len(args) != 2 {
 		err := "args len not equal 2"
@@ -453,16 +478,24 @@ func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubIn
 		return nil, err
 	}
 
+	gp, err := stub.GetSystemConfig()
+	if err != nil {
+		return nil, fmt.Errorf("fail to get system config err")
+	}
+
+	err = core.ImmutableChainParameterCheck(field, value, &gp.ImmutableParameters,
+		func() int { return GetMediatorCount(stub) })
+	if err != nil {
+		log.Debugf(err.Error())
+		return nil, err
+	}
+
 	createAddr, err := stub.GetInvokeAddress()
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
 		return nil, fmt.Errorf(jsonResp)
 	}
 
-	gp, err := stub.GetSystemConfig()
-	if err != nil {
-		return nil, fmt.Errorf("fail to get system config err")
-	}
 	if createAddr.Str() != gp.ChainParameters.FoundationAddress {
 		jsonResp := "{\"Error\":\"Only foundation can call this function\"}"
 		return nil, fmt.Errorf(jsonResp)
