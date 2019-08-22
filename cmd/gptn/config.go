@@ -387,6 +387,7 @@ func makeConfigFile(cfg *FullConfig, configPath string) error {
 		log.Error(err.Error())
 		return err
 	}
+	//log.Debugf("%v", string(configToml))
 
 	_, err = configFile.Write(configToml)
 	if err != nil {
