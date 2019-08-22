@@ -37,7 +37,7 @@ import (
 )
 
 const (
-	SigHashOld          uint32 = 0x0
+	//SigHashOld          uint32 = 0x0
 	SigHashAll          uint32 = 0x1
 	SigHashNone         uint32 = 0x2
 	SigHashSingle       uint32 = 0x3
@@ -49,11 +49,10 @@ const (
 )
 
 type TokenEngine struct {
+	signCache *txscript.SigCache
 }
-type AddressGetSign func(common.Address, []byte) ([]byte, error)
-type AddressGetPubKey func(common.Address) ([]byte, error)
 
-var Instance ITokenEngine = &TokenEngine{}
+var Instance ITokenEngine = &TokenEngine{signCache: txscript.NewSigCache(20000)}
 
 //Generate a P2PKH lock script, just only need input 20bytes public key hash.
 //You can use Address.Bytes() to get address hash.
@@ -190,11 +189,9 @@ func GenerateP2PKHUnlockScript(sign []byte, pubKey []byte) []byte {
 //	return unlock
 //}
 
-var signCache = txscript.NewSigCache(20000)
-
 //validate this transaction and input index script can unlock the utxo.
 func (engine *TokenEngine) ScriptValidate(utxoLockScript []byte,
-	pickupJuryRedeemScript txscript.PickupJuryRedeemScript,
+	pickupJuryRedeemScript PickupJuryRedeemScript,
 	tx *modules.Transaction,
 	msgIdx, inputIndex int) error {
 	acc := &account{}
@@ -211,8 +208,10 @@ func (engine *TokenEngine) ScriptValidate(utxoLockScript []byte,
 			}
 		}
 	}
-	vm, err := txscript.NewEngine(utxoLockScript, pickupJuryRedeemScript, txCopy, msgIdx, inputIndex,
-		txscript.StandardVerifyExcludeSignFlags, signCache, acc)
+	vm, err := txscript.NewEngine(utxoLockScript,
+		func(addr common.Address) ([]byte, error) { return pickupJuryRedeemScript(addr) },
+		txCopy, msgIdx, inputIndex,
+		txscript.StandardVerifyExcludeSignFlags, engine.signCache, acc)
 	if err != nil {
 		log.Error("Failed to create script: ", err)
 		return err
@@ -222,7 +221,7 @@ func (engine *TokenEngine) ScriptValidate(utxoLockScript []byte,
 
 //验证一个PaymentMessage的所有Input解锁脚本是否正确
 func (engine *TokenEngine) ScriptValidate1Msg(utxoLockScripts map[string][]byte,
-	pickupJuryRedeemScript txscript.PickupJuryRedeemScript,
+	pickupJuryRedeemScript PickupJuryRedeemScript,
 	tx *modules.Transaction, msgIdx int) error {
 	acc := &account{}
 	txCopy := tx
@@ -238,11 +237,13 @@ func (engine *TokenEngine) ScriptValidate1Msg(utxoLockScripts map[string][]byte,
 			}
 		}
 	}
-	log.Debugf("SignCache count:%d", signCache.Count())
+	log.Debugf("SignCache count:%d", engine.signCache.Count())
 	for inputIndex, input := range txCopy.TxMessages[msgIdx].Payload.(*modules.PaymentPayload).Inputs {
 		utxoLockScript := utxoLockScripts[input.PreviousOutPoint.String()]
-		vm, err := txscript.NewEngine(utxoLockScript, pickupJuryRedeemScript, txCopy, msgIdx, inputIndex,
-			txscript.StandardVerifyExcludeSignFlags, signCache, acc)
+		vm, err := txscript.NewEngine(utxoLockScript,
+			func(addr common.Address) ([]byte, error) { return pickupJuryRedeemScript(addr) },
+			txCopy, msgIdx, inputIndex,
+			txscript.StandardVerifyExcludeSignFlags, engine.signCache, acc)
 		if err != nil {
 			log.Warnf("Unlock script validate fail,tx[%s],MsgIdx[%d],In[%d],unlockScript:%x,utxoScript:%x,error:%s",
 				tx.Hash().String(), msgIdx, inputIndex, input.SignatureScript, utxoLockScript, err.Error())
