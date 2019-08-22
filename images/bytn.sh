@@ -13,6 +13,9 @@ do
   sed -i "s/unix:\/\/\/var\/run\/docker.sock/tcp:\/\/0.0.0.0:2375/g" node$count/ptn-config.toml
   let ++count
 done
+
+docker-compose up -d
+
 exit 0
 cd ..
 

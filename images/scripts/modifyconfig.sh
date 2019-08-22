@@ -137,7 +137,8 @@ done
 echo "account: "$account
 echo "publickey: "$publickey
 echo "nodeinfo: "$nodeinfo
-
+#nodeinfo=`echo ${nodeinfo/127.0.0.1/172.11.0.$[$1+1]}`
+echo "update nodeinfo " $nodeinfo
 ModifyJson  $account $publickey $nodeinfo $1
 }
 
@@ -192,7 +193,7 @@ function ModifyP2PConfig()
         let ++count;
         sleep 1;
     done
-    find . -name "*.toml" | xargs sed -i -e "s%\[\:\:\]%127.0.0.1%g"
+#    find . -name "*.toml" | xargs sed -i -e "s%\[\:\:\]%127.0.0.1%g"
     return 0;
 }
 
