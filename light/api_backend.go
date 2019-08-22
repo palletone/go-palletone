@@ -231,10 +231,10 @@ func (b *LesApiBackend) SaveCommon(key, val []byte) error {
 
 // dag's get common
 func (b *LesApiBackend) GetCommon(key []byte) ([]byte, error) {
-	return nil, nil
+	return b.ptn.dag.GetCommon(key)
 }
 func (b *LesApiBackend) GetCommonByPrefix(prefix []byte) map[string][]byte {
-	return nil
+	return b.ptn.dag.GetCommonByPrefix(prefix)
 }
 
 // Get Contract Api
@@ -279,12 +279,6 @@ func (b *LesApiBackend) GetTxByReqId(hash common.Hash) (*ptnjson.TxWithUnitInfoJ
 	return nil, nil
 }
 
-// get state
-//GetHeadUnitHash() (common.Hash, error)
-//GetHeadHeaderHash() (common.Hash, error)
-//GetHeadFastUnitHash() (common.Hash, error)
-//GetCanonicalHash(number uint64) (common.Hash, error)
-
 // get transaction interface
 func (b *LesApiBackend) GetUnitTxsInfo(hash common.Hash) ([]*ptnjson.TxSummaryJson, error) {
 	return nil, nil
@@ -327,22 +321,20 @@ func (b *LesApiBackend) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Ad
 	return common.Address{}, nil
 }
 func (b *LesApiBackend) GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
-	return nil, nil
-	//address, err := common.StringToAddress(addr)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//utxos, err := b.ptn.dag.GetAddrUtxos(address)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//result := []*ptnjson.UtxoJson{}
-	//for o, u := range utxos {
-	//	ujson := ptnjson.ConvertUtxo2Json(&o, u)
-	//	result = append(result, ujson)
-	//}
-	//return result, nil
+	address, err := common.StringToAddress(addr)
+	if err != nil {
+		return nil, err
+	}
+
+	utxos, _ := b.ptn.dag.GetAddrUtxos(address)
+	result := make([]*ptnjson.UtxoJson, 0)
+	for o, u := range utxos {
+		o := o
+		ujson := ptnjson.ConvertUtxo2Json(&o, u)
+		result = append(result, ujson)
+	}
+	return result, nil
+
 }
 func (b *LesApiBackend) GetAddrRawUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error) {
 	address, err := common.StringToAddress(addr)
