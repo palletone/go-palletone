@@ -53,7 +53,7 @@ type TokenEngine struct {
 type AddressGetSign func(common.Address, []byte) ([]byte, error)
 type AddressGetPubKey func(common.Address) ([]byte, error)
 
-var Instance = &TokenEngine{}
+var Instance ITokenEngine = &TokenEngine{}
 
 //Generate a P2PKH lock script, just only need input 20bytes public key hash.
 //You can use Address.Bytes() to get address hash.
