@@ -33,10 +33,11 @@ import (
 
 type UtxoDb struct {
 	db ptndb.Database
+	tokenEngine tokenengine.ITokenEngine
 }
 
-func NewUtxoDb(db ptndb.Database) *UtxoDb {
-	return &UtxoDb{db: db}
+func NewUtxoDb(db ptndb.Database,tokenEngine tokenengine.ITokenEngine) *UtxoDb {
+	return &UtxoDb{db: db,tokenEngine:tokenEngine}
 }
 
 type IUtxoDb interface {
@@ -90,7 +91,7 @@ func (db *UtxoDb) GetAddrOutpoints(address common.Address) ([]modules.OutPoint, 
 // ###################### UTXO Entity ######################
 func (utxodb *UtxoDb) SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.Utxo) error {
 	key := outpoint.ToKey()
-	address, _ := tokenengine.GetAddressFromScript(utxo.PkScript[:])
+	address, _ := utxodb.tokenEngine.GetAddressFromScript(utxo.PkScript[:])
 	err := StoreToRlpBytes(utxodb.db, key, utxo)
 	if err != nil {
 		return err
@@ -116,7 +117,7 @@ func (utxodb *UtxoDb) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) erro
 			} else {
 				log.Debugf("store utxo to db success, key:[%s]", outpoint.String())
 			}
-			address, _ := tokenengine.GetAddressFromScript(utxo.PkScript[:])
+			address, _ := utxodb.tokenEngine.GetAddressFromScript(utxo.PkScript[:])
 			// save utxoindex and  addr and key
 			item := new(modules.OutPoint)
 			item.TxHash = outpoint.TxHash
@@ -149,7 +150,7 @@ func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint, spentTxId common.Ha
 	log.Debugf("Try delete utxo by key:%s, move to spent table", outpoint.String())
 	utxodb.SaveUtxoSpent(outpoint, utxo, spentTxId, spentTime)
 
-	address, _ := tokenengine.GetAddressFromScript(utxo.PkScript[:])
+	address, _ := utxodb.tokenEngine.GetAddressFromScript(utxo.PkScript[:])
 	utxodb.deleteUtxoOutpoint(address, outpoint)
 	return nil
 }

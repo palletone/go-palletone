@@ -184,6 +184,7 @@ type TxPool struct {
 	quit           chan struct{}  // used for exit
 	nextExpireScan time.Time
 	cache          palletcache.ICache
+	tokenEngine tokenengine.ITokenEngine
 }
 
 type sTxDesc struct {
@@ -971,14 +972,14 @@ func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction,
 				if msg.App == modules.APP_PAYMENT {
 					payment, ok := msg.Payload.(*modules.PaymentPayload)
 					if ok {
-						if addrs, err := tx.Tx.GetFromAddrs(pool.GetUtxoEntry, tokenengine.GetAddressFromScript); err == nil {
+						if addrs, err := tx.Tx.GetFromAddrs(pool.GetUtxoEntry, pool.tokenEngine.GetAddressFromScript); err == nil {
 							for _, addr := range addrs {
 								addr1 := addr.String()
 								txs[addr1] = append(txs[addr1], tx)
 							}
 						}
 						for _, out := range payment.Outputs {
-							address, err1 := tokenengine.GetAddressFromScript(out.PkScript[:])
+							address, err1 := pool.tokenEngine.GetAddressFromScript(out.PkScript[:])
 							if err1 == nil {
 								txs[address.String()] = append(txs[address.String()], tx)
 							} else {
@@ -1006,7 +1007,7 @@ func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction,
 						}
 					}
 					for _, out := range payment.Outputs {
-						address, err1 := tokenengine.GetAddressFromScript(out.PkScript[:])
+						address, err1 := pool.tokenEngine.GetAddressFromScript(out.PkScript[:])
 						if err1 == nil {
 							txs[address.String()] = append(txs[address.String()], tx)
 						} else {

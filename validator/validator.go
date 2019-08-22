@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/dag/parameter"
+	"github.com/palletone/go-palletone/tokenengine"
 	"sync"
 )
 
@@ -37,6 +38,7 @@ type Validate struct {
 	statequery IStateQuery
 	dagquery   IDagQuery
 	propquery  IPropQuery
+	tokenEngine tokenengine.ITokenEngine
 	cache      *ValidatorCache
 }
 
@@ -45,7 +47,14 @@ const MAX_DATA_PAYLOAD_MAIN_DATA_SIZE = 128
 func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propquery IPropQuery, cache palletcache.ICache) *Validate {
 	//cache := freecache.NewCache(20 * 1024 * 1024)
 	vcache := NewValidatorCache(cache)
-	return &Validate{cache: vcache, dagquery: dagdb, utxoquery: utxoRep, statequery: statedb, propquery: propquery}
+	return &Validate{
+		cache: vcache,
+		dagquery: dagdb,
+		utxoquery: utxoRep,
+		statequery: statedb,
+		propquery: propquery,
+		tokenEngine:tokenengine.Instalnce,
+	}
 }
 
 type newUtxoQuery struct {

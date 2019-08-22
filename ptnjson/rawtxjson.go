@@ -166,7 +166,7 @@ func ConvertRawTxJson2Paymsg(rawTxJson RawTransactionGenParams) (*modules.Paymen
 		if err != nil {
 			return nil, errors.New("Invalid address:" + out.Address)
 		}
-		lockScript := tokenengine.GenerateLockScript(addr)
+		lockScript := tokenengine.Instalnce.GenerateLockScript(addr)
 		txout := modules.NewTxOut(Ptn2Dao(out.Amount), lockScript, nil)
 		pay.AddTxOut(txout)
 	}

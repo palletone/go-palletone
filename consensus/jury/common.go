@@ -73,7 +73,7 @@ func generateJuryRedeemScript(jury []modules.ElectionInf) ([]byte) {
 	for _, jurior := range jury {
 		pubKeys = append(pubKeys, jurior.PublicKey)
 	}
-	return tokenengine.GenerateRedeemScript(needed, pubKeys)
+	return tokenengine.Instalnce.GenerateRedeemScript(needed, pubKeys)
 }
 
 //对于Contract Payout的情况，将SignatureSet转移到Payment的解锁脚本中
@@ -88,9 +88,9 @@ func processContractPayout(tx *modules.Transaction, ele *modules.ElectionNode) {
 		redeem := generateJuryRedeemScript(ele.EleList)
 
 		signsOrder := SortSigs(pubkeys, signs, redeem)
-		unlock := tokenengine.MergeContractUnlockScript(signsOrder, redeem)
+		unlock := tokenengine.Instalnce.MergeContractUnlockScript(signsOrder, redeem)
 		log.DebugDynamic(func() string {
-			unlockStr, _ := tokenengine.DisasmString(unlock)
+			unlockStr, _ := tokenengine.Instalnce.DisasmString(unlock)
 			return fmt.Sprintf("[%s]processContractPayout, Move sign payload to contract payout unlock script:%s",
 				shortId(reqId.String()), unlockStr)
 		})
@@ -130,7 +130,7 @@ func DeleOneMax(signs [][]byte) [][]byte {
 
 func SortSigs(pubkeys [][]byte, signs [][]byte, redeem []byte) [][]byte {
 	//get all pubkey of redeem
-	redeemStr, _ := tokenengine.DisasmString(redeem)
+	redeemStr, _ := tokenengine.Instalnce.DisasmString(redeem)
 	pubkeyStrs := strings.Split(redeemStr, " ")
 	if len(pubkeyStrs) < 3 {
 		log.Debugf("invalid redeemStr %s", redeemStr)
@@ -409,12 +409,12 @@ func contractPayBack(tx *modules.Transaction, addr []byte, queryUtxoFunc modules
 		if msg.App == modules.APP_PAYMENT {
 			payment := msg.Payload.(*modules.PaymentPayload)
 			for outIdx, out := range payment.Outputs {
-				toAddr, _ := tokenengine.GetAddressFromScript(out.PkScript)
+				toAddr, _ := tokenengine.Instalnce.GetAddressFromScript(out.PkScript)
 				if addr != nil && bytes.Equal(toAddr.Bytes(), addr) {
 					input := modules.NewTxIn(modules.NewOutPoint(common.NewSelfHash(), uint32(msgIdx), uint32(outIdx)), nil)
 					inputUtxo, _ := queryUtxoFunc(payment.Inputs[0].PreviousOutPoint)
-					fromAddr, _ := tokenengine.GetAddressFromScript(inputUtxo.PkScript)
-					output := modules.NewTxOut(out.Value, tokenengine.GenerateLockScript(fromAddr), out.Asset)
+					fromAddr, _ := tokenengine.Instalnce.GetAddressFromScript(inputUtxo.PkScript)
+					output := modules.NewTxOut(out.Value, tokenengine.Instalnce.GenerateLockScript(fromAddr), out.Asset)
 					payback := modules.NewPaymentPayload([]*modules.Input{input}, []*modules.Output{output})
 					messages = append(messages, modules.NewMessage(modules.APP_PAYMENT, payback))
 				}
@@ -440,7 +440,7 @@ func handleMsg0(tx *modules.Transaction, dag iDag, reqArgs [][]byte) ([][]byte, 
 				continue
 			}
 			for _, output := range msg.Outputs {
-				addr, err := tokenengine.GetAddressFromScript(output.PkScript)
+				addr, err := tokenengine.Instalnce.GetAddressFromScript(output.PkScript)
 				if err != nil {
 					return nil, err
 				}

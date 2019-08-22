@@ -66,7 +66,7 @@ func NewTxPool4Test() *TxPool {
 
 func NewUnitDag4Test() *UnitDag4Test {
 	db, _ := palletdb.NewMemDatabase()
-	utxodb := storage.NewUtxoDb(db)
+	utxodb := storage.NewUtxoDb(db,tokenengine.Instalnce)
 
 	propdb := storage.NewPropertyDb(db)
 	hash := common.HexToHash("0x0e7e7e3bd7c1e9ce440089712d61de38f925eb039f152ae03c6688ed714af729")
@@ -208,7 +208,7 @@ func createTxs(address string) []*modules.Transaction {
 	unlockScript := tokenengine.GenerateP2PKHUnlockScript(sign, pubKey)
 	a := modules.NewPTNAsset()
 	addr, _ := common.StringToAddress(address)
-	lockScript := tokenengine.GenerateLockScript(addr)
+	lockScript := tokenengine.Instalnce.GenerateLockScript(addr)
 	for j := 0; j < 16; j++ {
 		tx := modules.NewTransaction([]*modules.Message{})
 		output := modules.NewTxOut(uint64(j+10), lockScript, a)
@@ -241,7 +241,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 
 	// Create the pool to test the limit enforcement with
 	db, _ := palletdb.NewMemDatabase()
-	utxodb := storage.NewUtxoDb(db)
+	utxodb := storage.NewUtxoDb(db,tokenengine.Instalnce)
 	mutex := new(sync.RWMutex)
 	unitchain := &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed), nil}
 	config := DefaultTxPoolConfig

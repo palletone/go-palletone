@@ -110,6 +110,7 @@ type UnitRepository struct {
 	statedb        storage.IStateDb
 	propdb         storage.IPropertyDb
 	utxoRepository IUtxoRepository
+	tokenEngine tokenengine.ITokenEngine
 	lock           sync.RWMutex
 	observers      []AfterSysContractStateChangeEventFunc
 }
@@ -120,20 +121,36 @@ type UnitRepository struct {
 //}
 type AfterSysContractStateChangeEventFunc func(event *modules.SysContractStateChangeEvent)
 
-func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb, utxodb storage.IUtxoDb, statedb storage.IStateDb,
-	propdb storage.IPropertyDb) *UnitRepository {
-	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, propdb)
-	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, statedb: statedb, utxoRepository: utxoRep, propdb: propdb}
+func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb,
+	utxodb storage.IUtxoDb, statedb storage.IStateDb,
+	propdb storage.IPropertyDb,
+	engine tokenengine.ITokenEngine) *UnitRepository {
+	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, propdb,engine)
+	return &UnitRepository{
+		dagdb: dagdb,
+		idxdb: idxdb,
+		statedb: statedb,
+		utxoRepository: utxoRep,
+		propdb: propdb,
+		tokenEngine:engine,
+	}
 }
 
-func NewUnitRepository4Db(db ptndb.Database) *UnitRepository {
+func NewUnitRepository4Db(db ptndb.Database,tokenEngine tokenengine.ITokenEngine) *UnitRepository {
 	dagdb := storage.NewDagDb(db)
-	utxodb := storage.NewUtxoDb(db)
+	utxodb := storage.NewUtxoDb(db,tokenEngine)
 	statedb := storage.NewStateDb(db)
 	idxdb := storage.NewIndexDb(db)
 	propdb := storage.NewPropertyDb(db)
-	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, propdb)
-	return &UnitRepository{dagdb: dagdb, idxdb: idxdb, statedb: statedb, propdb: propdb, utxoRepository: utxoRep}
+	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, propdb,tokenEngine)
+	return &UnitRepository{
+		dagdb: dagdb,
+		idxdb: idxdb,
+		statedb: statedb,
+		propdb: propdb,
+		utxoRepository: utxoRep,
+		tokenEngine:tokenEngine,
+	}
 }
 
 func (rep *UnitRepository) SubscribeSysContractStateChangeEvent(ob AfterSysContractStateChangeEventFunc) {
@@ -593,7 +610,7 @@ func (rep *UnitRepository) ComputeTxFeesAllocate(m common.Address, txs []*module
 		for o, u := range utxos {
 			tempTxs.allUtxo[o] = u
 		}
-		allowcate, err := tx.GetTxFeeAllocate(tempTxs.getUtxoEntryFromTxs, tokenengine.GetScriptSigners, m)
+		allowcate, err := tx.GetTxFeeAllocate(tempTxs.getUtxoEntryFromTxs, rep.tokenEngine.GetScriptSigners, m)
 		if err != nil {
 			return nil, err
 		}
@@ -812,7 +829,7 @@ func (rep *UnitRepository) GetTxRequesterAddress(tx *modules.Transaction) (commo
 	if err != nil {
 		return common.Address{}, err
 	}
-	return tokenengine.GetAddressFromScript(utxo.PkScript)
+	return rep.tokenEngine.GetAddressFromScript(utxo.PkScript)
 
 }
 
@@ -956,7 +973,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Transaction) {
 
 	//Index TxId for to address
-	addresses := getPayToAddresses(tx)
+	addresses := rep.getPayToAddresses(tx)
 	for _, addr := range addresses {
 		rep.idxdb.SaveAddressTxId(addr, txHash)
 	}
@@ -967,13 +984,13 @@ func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Trans
 	}
 }
 
-func getPayToAddresses(tx *modules.Transaction) []common.Address {
+func (rep *UnitRepository)getPayToAddresses(tx *modules.Transaction) []common.Address {
 	resultMap := map[common.Address]int{}
 	for _, msg := range tx.TxMessages {
 		if msg.App == modules.APP_PAYMENT {
 			pay := msg.Payload.(*modules.PaymentPayload)
 			for _, out := range pay.Outputs {
-				addr, _ := tokenengine.GetAddressFromScript(out.PkScript)
+				addr, _ := rep.tokenEngine.GetAddressFromScript(out.PkScript)
 				if _, ok := resultMap[addr]; !ok {
 					resultMap[addr] = 1
 				}
@@ -999,7 +1016,7 @@ func (rep *UnitRepository) getPayFromAddresses(tx *modules.Transaction) []common
 						log.Errorf("Get utxo by [%s] throw an error:%s", input.PreviousOutPoint.String(), err.Error())
 						return []common.Address{}
 					}
-					addr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
+					addr, _ := rep.tokenEngine.GetAddressFromScript(utxo.PkScript)
 					if _, ok := resultMap[addr]; !ok {
 						resultMap[addr] = 1
 					}
@@ -1426,7 +1443,7 @@ func (rep *UnitRepository) createCoinbasePayment(ads []*modules.Addition) (*modu
 		totalIncome += ad.Amount
 	}
 	//所有奖励转换成PaymentPayload
-	msg := createCoinbasePaymentMsg(rewards)
+	msg := rep.createCoinbasePaymentMsg(rewards)
 	coinbase := new(modules.Transaction)
 	coinbase.TxMessages = append(coinbase.TxMessages, msg)
 	//清空历史奖励的记账值
@@ -1449,10 +1466,10 @@ func (rep *UnitRepository) createCoinbasePayment(ads []*modules.Addition) (*modu
 	coinbase.TxMessages = append(coinbase.TxMessages, msg1)
 	return coinbase, totalIncome, nil
 }
-func createCoinbasePaymentMsg(rewards map[common.Address][]modules.AmountAsset) *modules.Message {
+func (rep *UnitRepository)createCoinbasePaymentMsg(rewards map[common.Address][]modules.AmountAsset) *modules.Message {
 	coinbasePayment := &modules.PaymentPayload{}
 	for addr, v := range rewards {
-		script := tokenengine.GenerateLockScript(addr)
+		script := rep.tokenEngine.GenerateLockScript(addr)
 		for _, reward := range v {
 			additionalOutput := modules.Output{
 				Value:    reward.Amount,
@@ -1596,7 +1613,7 @@ func (rep *UnitRepository) GetTxFromAddress(tx *modules.Transaction) ([]common.A
 					if err != nil {
 						return nil, errors.New("Get utxo by " + input.PreviousOutPoint.String() + " error:" + err.Error())
 					}
-					addr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
+					addr, _ := rep.tokenEngine.GetAddressFromScript(utxo.PkScript)
 					result = append(result, addr)
 				}
 			}

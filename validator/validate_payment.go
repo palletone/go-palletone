@@ -29,7 +29,6 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/tokenengine"
 	"time"
 )
 
@@ -134,7 +133,7 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 
 		}
 		t1 := time.Now()
-		err := tokenengine.ScriptValidate1Msg(utxoScriptMap, validate.pickJuryFn, txForSign, msgIdx)
+		err := validate.tokenEngine.ScriptValidate1Msg(utxoScriptMap, validate.pickJuryFn, txForSign, msgIdx)
 		if err != nil {
 			return TxValidationCode_INVALID_PAYMMENT_INPUT
 		} else {
@@ -182,9 +181,9 @@ func (validate *Validate) pickJuryFn(contractAddr common.Address) ([]byte, error
 			log.Errorf("Cannot get contract[%s] jury", contractAddr.String())
 			return nil, errors.New("Cannot get contract jury")
 		}
-		redeemScript = generateJuryRedeemScript(jury)
+		redeemScript = validate.generateJuryRedeemScript(jury)
 		log.DebugDynamic(func() string {
-			redeemStr, _ := tokenengine.DisasmString(redeemScript)
+			redeemStr, _ := validate.tokenEngine.DisasmString(redeemScript)
 			return "Generate RedeemScript: " + redeemStr
 		})
 	}
@@ -210,7 +209,7 @@ func (validate *Validate) checkTokenStatus(asset *modules.Asset) ValidationCode 
 	return TxValidationCode_VALID
 }
 
-func generateJuryRedeemScript(jury *modules.ElectionNode) []byte {
+func (validate *Validate) generateJuryRedeemScript(jury *modules.ElectionNode) []byte {
 	if jury == nil{
 		return nil
 	}
@@ -220,5 +219,5 @@ func generateJuryRedeemScript(jury *modules.ElectionNode) []byte {
 	for _, jurior := range jury.EleList {
 		pubKeys = append(pubKeys, jurior.PublicKey)
 	}
-	return tokenengine.GenerateRedeemScript(needed, pubKeys)
+	return validate.tokenEngine.GenerateRedeemScript(needed, pubKeys)
 }
