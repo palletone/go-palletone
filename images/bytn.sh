@@ -14,8 +14,6 @@ do
   let ++count
 done
 
-docker-compose up -d
-
 exit 0
 cd ..
 

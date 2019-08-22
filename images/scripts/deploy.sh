@@ -134,6 +134,14 @@ replacejson $json
 
 #ModifyBootstrapNodes $n
 
+echo  "=========="
+#sed -i "s/mediator1:/127.0.0.1:/g" node1/ptn-genesis.json
+#sed -i "s/mediator2:/127.0.0.1:/g" node1/ptn-genesis.json
+#sed -i "s/mediator3:/127.0.0.1:/g" node1/ptn-genesis.json
+#sed -i "s/mediator4:/127.0.0.1:/g" node1/ptn-genesis.json
+#sed -i "s/mediator5:/127.0.0.1:/g" node1/ptn-genesis.json
+echo "-----------"
+
 #ExecInit $n
 initvalue=$(ExecInit $n)
 echo $initvalue

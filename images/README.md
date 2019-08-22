@@ -1,6 +1,8 @@
 #使用脚本生成节点、下载镜像和启动5个超级节点和1个普通全节点的本地私有链
-#./bytn.sh
-./bytn.sh 
+./bytn-bridge.sh 
+
+#使用docker-compose 启动容器
+docker-compose -f docker-compose-bridge.yml up -d
 
 #进入容器
 docker exec -it mediator1 /bin/bash
