@@ -122,8 +122,11 @@ func (utxodb *UtxoDb) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) erro
 			item.TxHash = outpoint.TxHash
 			item.MessageIndex = outpoint.MessageIndex
 			item.OutIndex = outpoint.OutIndex
-			utxodb.batchSaveUtxoOutpoint(batch, address, item)
-
+			if err := utxodb.batchSaveUtxoOutpoint(batch, address, item); err != nil {
+				log.Errorf("batch_save_utxo failed,addr[%s] , error:[%s]", address.String(), err)
+			} else {
+				log.Debugf("batch_save_utxo success,addr[%s]", address.String())
+			}
 		}
 	}
 
