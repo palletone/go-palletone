@@ -13,6 +13,8 @@ cd -
 #构建镜像
 docker build -t palletone/mediator:$1 .
 
+docker tag palletone/mediator:$1 palletone/mediator
+
 rm -rf node1
 
 rm ../gptn

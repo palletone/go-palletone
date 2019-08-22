@@ -286,7 +286,8 @@ func (handler *Handler) enterGetSystemConfig(e *fsm.Event) {
 		e.Cancel(errors.New("received unexpected message type"))
 		return
 	}
-	log.Debugf("[%s]Received %s, invoking get state from ledger", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_SYSTEM_CONFIG_REQUEST)
+	log.Debugf("[%s]Received %s, invoking get state from ledger", shorttxid(msg.Txid),
+		pb.ChaincodeMessage_GET_SYSTEM_CONFIG_REQUEST)
 	// The defer followed by triggering a go routine dance is needed to ensure that the previous state transition
 	// is completed before the next one is triggered. The previous state transition is deemed complete only when
 	// the afterGetState function is exited. Interesting bug fix!!
@@ -308,27 +309,32 @@ func (handler *Handler) enterGetSystemConfig(e *fsm.Event) {
 		}
 		defer func() {
 			handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
-			log.Debugf("[%s]handleenterGetDepositConfig serial send %s",
+			log.Debugf("[%s]handleEnterGetDepositConfig serial send %s",
 				shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
 			handler.serialSendAsync(serialSendMsg, nil)
 		}()
 		keyForSystemConfig := &pb.KeyForSystemConfig{}
 		unmarshalErr := proto.Unmarshal(msg.Payload, keyForSystemConfig)
 		if unmarshalErr != nil {
-			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(unmarshalErr.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
+			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(unmarshalErr.Error()),
+				Txid: msg.Txid, ChannelId: msg.ChannelId}
 			return
 		}
 		chaincodeID := handler.getCCRootName()
-		log.Debugf("[%s] getting state for chaincode %s, channel %s", shorttxid(msg.Txid), chaincodeID, msg.ChannelId)
+		log.Debugf("[%s] getting state for chaincode %s, channel %s", shorttxid(msg.Txid), chaincodeID,
+			msg.ChannelId)
 
-		payloadBytes, err := txContext.txsimulator.GetChainParameters()
+		//payloadBytes, err := txContext.txsimulator.GetChainParameters()
+		payloadBytes, err := txContext.txsimulator.GetGlobalProp()
 		if err != nil {
 			log.Debugf("[%s]Got deposit configs. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
-			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(err.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
+			serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_ERROR, Payload: []byte(err.Error()),
+				Txid: msg.Txid, ChannelId: msg.ChannelId}
 			return
 		}
 		log.Debugf("[%s]Got deposit configs. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_RESPONSE)
-		serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: payloadBytes, Txid: msg.Txid, ChannelId: msg.ChannelId}
+		serialSendMsg = &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: payloadBytes, Txid: msg.Txid,
+			ChannelId: msg.ChannelId}
 	}()
 }
 
@@ -338,7 +344,8 @@ func (handler *Handler) enterGetContractAllState(e *fsm.Event) {
 		e.Cancel(errors.New("received unexpected message type"))
 		return
 	}
-	log.Debugf("[%s]Received %s, invoking GetContractAllState from ledger", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_CONTRACT_ALL_STATE)
+	log.Debugf("[%s]Received %s, invoking GetContractAllState from ledger", shorttxid(msg.Txid),
+		pb.ChaincodeMessage_GET_CONTRACT_ALL_STATE)
 	// The defer followed by triggering a go routine dance is needed to ensure that the previous state transition
 	// is completed before the next one is triggered. The previous state transition is deemed complete only when
 	// the afterGetState function is exited. Interesting bug fix!!
@@ -353,7 +360,8 @@ func (handler *Handler) enterGetContractAllState(e *fsm.Event) {
 		var serialSendMsg *pb.ChaincodeMessage
 		var txContext *transactionContext
 		txContext, serialSendMsg = handler.isValidTxSim(msg.ChannelId, msg.Txid,
-			"[%s]No ledger context for GetContractAllState. Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_ERROR)
+			"[%s]No ledger context for GetContractAllState. Sending %s", shorttxid(msg.Txid),
+			pb.ChaincodeMessage_ERROR)
 		defer func() {
 			handler.deleteTXIDEntry(msg.ChannelId, msg.Txid)
 			log.Debugf("[%s]enterGetContractAllState serial send %s",
@@ -364,7 +372,8 @@ func (handler *Handler) enterGetContractAllState(e *fsm.Event) {
 			return
 		}
 		chaincodeID := handler.getCCRootName()
-		log.Debugf("[%s] getting contract all states for chaincode %s, channel %s", shorttxid(msg.Txid), chaincodeID, txContext.chainID)
+		log.Debugf("[%s] getting contract all states for chaincode %s, channel %s", shorttxid(msg.Txid),
+			chaincodeID, txContext.chainID)
 		//返回 map[modules.StateVersion][]byte
 		//contractAllStates := make(map[modules.StateVersion][]byte, 0)
 		contractAllStates, err := txContext.txsimulator.GetContractStatesById(msg.ContractId)

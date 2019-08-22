@@ -70,13 +70,16 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 		sign_unit.UnitHeader.ParentsHash[0].String(), sign_unit.Txs.Len(), time.Since(t0).String())
 
 	//3.将新单元添加到MemDag中
-	a, b, c, d, e, err := dag.Memdag.AddUnit(sign_unit, txpool)
+	a, b, c, d, e, err := dag.Memdag.AddUnit(sign_unit, txpool, true)
 	if a != nil && err == nil {
 		dag.unstableUnitRep = a
 		dag.unstableUtxoRep = b
 		dag.unstableStateRep = c
 		dag.unstablePropRep = d
 		dag.unstableUnitProduceRep = e
+	} else if err != nil {
+		log.Info("create unit failed.", "error", err.Error())
+		return nil
 	}
 
 	//4.PostChainEvents

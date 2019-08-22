@@ -163,7 +163,7 @@ matrix:
       script:
         #- go build -mod=vendor ./cmd/gptn
         - make gptn
-        - cp bdd/light/testcases/!(preset.sh) bdd/node
+        #- cp bdd/light/testcases/!(preset.sh) bdd/node
         - cp build/bin/gptn bdd/node
         - cd bdd/node
         - chmod -R +x *

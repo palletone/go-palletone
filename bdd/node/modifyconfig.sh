@@ -69,7 +69,7 @@ sed -i '/^EnableConsecutiveProduction/c'$newEnableConsecutiveProduction'' ptn-co
 newRequiredParticipation="RequiredParticipation=0"
 sed -i '/^RequiredParticipation/c'$newRequiredParticipation'' ptn-config.toml
 
-newEnableGroupSigning="EnableGroupSigning=true"
+newEnableGroupSigning="EnableGroupSigning=false"
 sed -i '/^EnableGroupSigning/c'$newEnableGroupSigning'' ptn-config.toml
 
 
@@ -137,8 +137,7 @@ done
 echo "account: "$account
 echo "publickey: "$publickey
 echo "nodeinfo: "$nodeinfo
-#nodeinfo=`echo ${nodeinfo/127.0.0.1/172.11.0.$[$1+1]}`
-echo "update nodeinfo " $nodeinfo
+
 ModifyJson  $account $publickey $nodeinfo $1
 }
 
@@ -177,7 +176,7 @@ function addBootstrapNodes()
 
 
 
-function ModifyP2PConfig()
+function ModifyBootstrapNodes()
 {
     count=1;
     while [ $count -le $1 ] ;
@@ -185,22 +184,19 @@ function ModifyP2PConfig()
         arrBootstrapNodes=`echo "$(addBootstrapNodes $1 $count)"`
         #sed -i '/^BootstrapNodes/c'$arrBootstrapNodes'' node$count/ptn-config.toml
         sed -i '/^StaticNodes/c'$arrBootstrapNodes'' node$count/ptn-config.toml
-
-#	newGenesisHash="GenesisHash=\"$2\""
-#	sed -i '/^GenesisHash/c'$newGenesisHash'' node$count/ptn-config.toml
-
         echo "=====addBootstrapNodes $count ok======="
+
         let ++count;
         sleep 1;
     done
-#    find . -name "*.toml" | xargs sed -i -e "s%\[\:\:\]%127.0.0.1%g"
+    find . -name "*.toml" | xargs sed -i -e "s%\[\:\:\]%127.0.0.1%g"
     return 0;
 }
 
 function MakeTestNet()
 {
-    mkdir -p node$1/palletone/gptn
-    cd node$1
+    mkdir -p node_test$1/palletone/gptn
+    cd node_test$1
     cp ../gptn .
     cp ../node1/palletone/leveldb palletone/. -rf
     dumcpconfig=`./gptn dumpuserconfig`
@@ -230,26 +226,24 @@ function MakeTestNet()
     cd ../
     #addBootstrapNodes $1 0
     newarrBootstrapNodes=`echo "$(addBootstrapNodes $1 $count)"`
-    #sed -i '/^BootstrapNodes/c'$newarrBootstrapNodes'' node$1/ptn-config.toml
-    sed -i '/^StaticNodes/c'$newarrBootstrapNodes'' node$1/ptn-config.toml
+    #sed -i '/^BootstrapNodes/c'$newarrBootstrapNodes'' node_test$1/ptn-config.toml
+    sed -i '/^StaticNodes/c'$newarrBootstrapNodes'' node_test$1/ptn-config.toml
 
     newInitPrivKey="InitPrivKey=\"\""
-    sed -i '/^InitPrivKey/c'$newInitPrivKey'' node$1/ptn-config.toml
+    sed -i '/^InitPrivKey/c'$newInitPrivKey'' node_test$1/ptn-config.toml
 
     newInitPubKey="InitPubKey=\"\""
-    sed -i '/^InitPubKey/c'$newInitPubKey'' node$1/ptn-config.toml
+    sed -i '/^InitPubKey/c'$newInitPubKey'' node_test$1/ptn-config.toml
 
     newAddress="Address=\"\""
-    sed -i '/^Address/c'$newAddress'' node$1/ptn-config.toml
+    sed -i '/^Address/c'$newAddress'' node_test$1/ptn-config.toml
 
     newPassword="Password=\"\""
-    sed -i '/^Password/c'$newPassword'' node$1/ptn-config.toml
+    sed -i '/^Password/c'$newPassword'' node_test$1/ptn-config.toml
 
     newCorsListenAddr="CorsListenAddr=\"\""
-    sed -i '/^CorsListenAddr/c'$newCorsListenAddr'' node$1/ptn-config.toml
+    sed -i '/^CorsListenAddr/c'$newCorsListenAddr'' node_test$1/ptn-config.toml
 
-#    newGenesisHash="GenesisHash=\"$2\""
-#    sed -i '/^GenesisHash/c'$newGenesisHash'' node$1/ptn-config.toml
     echo "===========node-test ok============="
 }
 

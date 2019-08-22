@@ -455,7 +455,7 @@ func (chain *MemDag) removeUnitAndChildren(hash common.Hash, txpool txspool.ITxP
 	}
 }
 
-func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) (common2.IUnitRepository,
+func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenerate bool) (common2.IUnitRepository,
 	common2.IUtxoRepository, common2.IStateRepository, common2.IPropRepository,
 	common2.IUnitProduceRepository, error) {
 	start := time.Now()
@@ -467,6 +467,7 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 	if unit.NumberU64() <= chain.stableUnitHeight {
 		log.Debugf("This unit is too old! Ignore it,stable unit height:%d, stable hash:%s",
 			chain.stableUnitHeight, chain.stableUnitHash.String())
+		go txpool.ResetPendingTxs(unit.Transactions())
 		return nil, nil, nil, nil, nil, nil
 	}
 	chain_units := chain.getChainUnits()
@@ -474,7 +475,7 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 		log.Debugf("MemDag[%s] received a repeated unit, hash[%s] ", chain.token.String(), unit.Hash().String())
 		return nil, nil, nil, nil, nil, nil
 	}
-	a, b, c, d, e, err := chain.addUnit(unit, txpool)
+	a, b, c, d, e, err := chain.addUnit(unit, txpool, isGenerate)
 	log.DebugDynamic(func() string {
 		return fmt.Sprintf("MemDag[%s]: index: %d, hash: %s,AddUnit cost time: %v ,", chain.token.String(),
 			unit.NumberU64(), unit.Hash().String(), time.Since(start))
@@ -498,7 +499,7 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 //2.保存到主链上的单元，判断主链若有满足稳定条件的单元，则将该单元及祖先单元全部置为稳定单元。
 //3.保存到侧链上的单元，若满足切换主链的条件，则要切换主链（switchMainChain）。
 //4.添加完一个非孤儿单元后，判断是否有孤儿单元是该单元亲子单元，如有则将对应的孤儿单元连到链上。
-func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common2.IUnitRepository,
+func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenerate bool) (common2.IUnitRepository,
 	common2.IUtxoRepository, common2.IStateRepository, common2.IPropRepository,
 	common2.IUnitProduceRepository, error) {
 	parentHash := unit.ParentHash()[0]
@@ -518,17 +519,21 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 			} else {
 				temp_db = inter_temp.(*ChainTempDb)
 			}
-			var validateCode validator.ValidationCode
-			if chain.saveHeaderOnly {
-				validateCode = temp_db.Validator.ValidateHeader(unit.UnitHeader)
-			} else {
-				validateCode = temp_db.Validator.ValidateUnitExceptGroupSig(unit)
-			}
-			if validateCode != validator.TxValidationCode_VALID {
-				vali_err := validator.NewValidateError(validateCode)
-				log.Debugf("validate main chain unit error, %s, unit hash:%s",
-					vali_err.Error(), uHash.String())
-				return nil, nil, nil, nil, nil, vali_err
+			if !isGenerate {
+				var validateCode validator.ValidationCode
+				if chain.saveHeaderOnly {
+					validateCode = temp_db.Validator.ValidateHeader(unit.UnitHeader)
+				} else {
+					validateCode = temp_db.Validator.ValidateUnitExceptGroupSig(unit)
+				}
+				if validateCode != validator.TxValidationCode_VALID {
+					vali_err := validator.NewValidateError(validateCode)
+					log.Debugf("validate main chain unit error, %s, unit hash:%s",
+						vali_err.Error(), uHash.String())
+					// reset unit's txs
+					go txpool.ResetPendingTxs(unit.Transactions())
+					return nil, nil, nil, nil, nil, vali_err
+				}
 			}
 			tempdb, _ := temp_db.AddUnit(unit, chain.saveHeaderOnly)
 			// go tempdb.AddUnit(unit, chain.saveHeaderOnly)
@@ -552,12 +557,11 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 			}
 			//update txpool's tx status to pending
 			if len(unit.Txs) > 0 {
-				go txpool.SetPendingTxs(unit.Hash(), height, unit.Txs)
+				go txpool.SetPendingTxs(unit.Hash(), height, unit.Transactions())
 			}
 
 		} else { //Fork unit
 			start1 := time.Now()
-			var validateCode validator.ValidationCode
 			var main_temp *ChainTempDb
 			inter_main, has := chain.tempdb.Load(parentHash)
 			if !has { // 分叉
@@ -569,15 +573,20 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 			} else {
 				main_temp = inter_main.(*ChainTempDb)
 			}
-			if chain.saveHeaderOnly {
-				validateCode = main_temp.Validator.ValidateHeader(unit.UnitHeader)
-			} else {
-				validateCode = main_temp.Validator.ValidateUnitExceptGroupSig(unit)
-			}
-			if validateCode != validator.TxValidationCode_VALID {
-				vali_err := validator.NewValidateError(validateCode)
-				log.Debugf("validate fork unit error, %s, unit hash:%s", vali_err.Error(), uHash.String())
-				return nil, nil, nil, nil, nil, vali_err
+			if !isGenerate {
+				var validateCode validator.ValidationCode
+				if chain.saveHeaderOnly {
+					validateCode = main_temp.Validator.ValidateHeader(unit.UnitHeader)
+				} else {
+					validateCode = main_temp.Validator.ValidateUnitExceptGroupSig(unit)
+				}
+				if validateCode != validator.TxValidationCode_VALID {
+					vali_err := validator.NewValidateError(validateCode)
+					log.Debugf("validate fork unit error, %s, unit hash:%s", vali_err.Error(), uHash.String())
+					// reset unit's txs
+					go txpool.ResetPendingTxs(unit.Transactions())
+					return nil, nil, nil, nil, nil, vali_err
+				}
 			}
 			temp, _ := main_temp.AddUnit(unit, chain.saveHeaderOnly)
 			chain.tempdb.Delete(parentHash) // 删除parent的tempdb
@@ -608,7 +617,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool) (common
 		if inter, has := chain.orphanUnitsParants.Load(uHash); has {
 			chain.orphanUnitsParants.Delete(uHash)
 			next_hash := inter.(common.Hash)
-			chain.processOrphan(next_hash, txpool)
+			chain.processOrphan(next_hash, txpool, isGenerate)
 		}
 	} else {
 		//add unit to orphan
@@ -698,7 +707,7 @@ func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPo
 	for _, unit := range forks_units {
 		if len(unit.Txs) > 1 {
 			log.Debugf("Update tx[%#x] status to pending in txpool", unit.Txs.GetTxIds())
-			go txpool.SetPendingTxs(unit.Hash(), unit.NumberU64(), unit.Txs)
+			go txpool.SetPendingTxs(unit.Hash(), unit.NumberU64(), unit.Transactions())
 		}
 	}
 	//设置最新主链单元
@@ -706,12 +715,12 @@ func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPo
 }
 
 //将其从孤儿单元列表中删除，并添加到ChainUnits中。
-func (chain *MemDag) processOrphan(unitHash common.Hash, txpool txspool.ITxPool) {
+func (chain *MemDag) processOrphan(unitHash common.Hash, txpool txspool.ITxPool, isProduce bool) {
 	unit, has := chain.getOrphanUnits()[unitHash]
 	if has {
 		log.Debugf("Orphan unit[%s] can add to chain now.", unit.Hash().String())
 		chain.orphanUnits.Delete(unitHash)
-		chain.addUnit(unit, txpool)
+		chain.addUnit(unit, txpool, isProduce)
 	}
 }
 func (chain *MemDag) getOrphanUnits() map[common.Hash]*modules.Unit {

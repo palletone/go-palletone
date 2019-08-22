@@ -40,6 +40,7 @@ const (
 	DefaultUccDisk        = 1073741824 //  每个容器磁盘使用量最多使用 = 1073741824 = 1G
 	DefaultUccPrivileged  = false
 	DefaultUccNetworkMode = "bridge" //TODO xiaozhi 生产环境
+	//DefaultUccNetworkMode = "images_gptn-net" //TODO xiaozhi 生产环境
 	//DefaultUccNetworkMode    = "host" //TODO xiaozhi 测试容器运行网络模式
 	defaultUccOOMKillDisable = false
 
@@ -65,7 +66,7 @@ const (
 
 	//contract
 	DefaultContractSignatureNum = 3
-	DefaultContractElectionNum  = 4
+	DefaultContractElectionNum  = 3
 
 	DefaultContractTxTimeoutUnitFee  = 10 //s
 	DefaultContractTxSizeUnitFee     = 1  //byte

@@ -31,7 +31,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/comm"
-	"github.com/palletone/go-palletone/core"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	dagConstants "github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -584,7 +583,7 @@ func (stub *ChaincodeStub) SetEvent(name string, payload []byte) error {
 
 //---------- Deposit API ----------
 //func (stub *ChaincodeStub) GetSystemConfig(key string) (string, error) {
-func (stub *ChaincodeStub) GetSystemConfig() (*core.ChainParameters, error) {
+func (stub *ChaincodeStub) GetSystemConfig() (*modules.GlobalProperty, error) {
 	return stub.handler.handleGetSystemConfig(stub.ChannelId, stub.TxID)
 }
 func (stub *ChaincodeStub) GetInvokeAddress() (common.Address, error) {

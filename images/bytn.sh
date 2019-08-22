@@ -14,11 +14,14 @@ do
   let ++count
 done
 
-cd ..
-exit 0
-docker pull palletone/mediator:$1
+docker-compose up -d
 
-docker tag palletone/mediator:$1 palletone/mediator
+exit 0
+cd ..
+
+docker pull palletone/mediator:1.0.1
+
+docker tag palletone/mediator:1.0.1 palletone/mediator
 
 docker-compose up -d
 

@@ -31,7 +31,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/looplab/fsm"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/core"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	dagConstants "github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -825,7 +824,7 @@ func (handler *Handler) handleDelState(collection string, contractId []byte, key
 		shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
 }
 
-func (handler *Handler) handleGetSystemConfig(channelId, txid string) (*core.ChainParameters, error) {
+func (handler *Handler) handleGetSystemConfig(channelId, txid string) (*modules.GlobalProperty, error) {
 	//func (handler *Handler) handleGetSystemConfig(key, channelId, txid string) (string, error) {
 	// Construct payload for PUT_STATE
 	//payloadBytes, _ := proto.Marshal(&pb.KeyForSystemConfig{Key: key})
@@ -846,13 +845,13 @@ func (handler *Handler) handleGetSystemConfig(channelId, txid string) (*core.Cha
 		log.Debugf("[%s]Received %s. Successfully get deposit config", shorttxid(responseMsg.Txid),
 			pb.ChaincodeMessage_RESPONSE)
 
-		cp := &core.ChainParameters{}
-		err = rlp.DecodeBytes(responseMsg.Payload, cp)
+		gp := &modules.GlobalProperty{}
+		err = rlp.DecodeBytes(responseMsg.Payload, gp)
 		if err != nil {
 			log.Error("DecodeBytes ChainParameters err:", "error", err)
 			return nil, err
 		}
-		return cp, nil
+		return gp, nil
 	}
 
 	// Incorrect chaincode message received

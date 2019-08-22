@@ -493,6 +493,14 @@ func (s *PrivateContractAPI) SysConfigContractInvoke(ctx context.Context, from, 
 			log.Debugf(err.Error())
 			return "", err
 		}
+
+		dag := s.b.Dag()
+		err = core.ImmutableChainParameterCheck(field, value, &dag.GetGlobalProp().ImmutableParameters,
+			dag.GetMediatorCount)
+		if err != nil {
+			log.Debugf(err.Error())
+			return "", err
+		}
 	} else if param[0] == sysconfigcc.CreateVotesTokens {
 		if len(param) != 6 {
 			err := "args len not equal 6"
@@ -514,6 +522,14 @@ func (s *PrivateContractAPI) SysConfigContractInvoke(ctx context.Context, from, 
 					log.Debugf(err.Error())
 					return "", err
 				}
+
+				dag := s.b.Dag()
+				err = core.ImmutableChainParameterCheck(oneTopic.TopicTitle, oneOption,
+					&dag.GetGlobalProp().ImmutableParameters, dag.GetMediatorCount)
+				if err != nil {
+					log.Debugf(err.Error())
+					return "", err
+				}
 			}
 		}
 	}
@@ -530,7 +546,7 @@ func (s *PublicContractAPI) GetContractState(contractid []byte, key string) ([]b
 }
 
 func (s *PublicContractAPI) GetContractFeeLevel(ctx context.Context) (*ContractFeeLevelRsp, error) {
-	cp := s.b.GetChainParameters()
+	cp := s.b.Dag().GetChainParameters()
 	feeLevel := &ContractFeeLevelRsp{
 		ContractTxTimeoutUnitFee:  cp.ContractTxTimeoutUnitFee,
 		ContractTxSizeUnitFee:     cp.ContractTxSizeUnitFee,
