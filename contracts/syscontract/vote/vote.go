@@ -196,6 +196,10 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 			oneSupport.VoteResults = append(oneSupport.VoteResults, oneResult)
 		}
 		//oneResult.SelectOptionsNum = uint64(len(oneRequest.SelectOptions))
+		if oneTopic.SelectMax > uint64(len(oneTopic.SelectOptions)) {
+			jsonResp := "{\"Error\":\"VoteContent 's SelectMax invalid\"}"
+			return shim.Error(jsonResp)
+		}
 		oneSupport.SelectMax = oneTopic.SelectMax
 		supports = append(supports, oneSupport)
 	}

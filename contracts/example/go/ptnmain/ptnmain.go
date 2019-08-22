@@ -341,7 +341,7 @@ func _payoutPTNByETHAddr(args []string, stub shim.ChaincodeStubInterface) pb.Res
 	return shim.Success([]byte("Success"))
 }
 
-//refer to the struct GetErc20TxByHashParams in "github.com/palletone/adaptor/ICryptoCurrency.go",
+//refer to the struct GetTransferTxInput in "github.com/palletone/adaptor/ICryptoCurrency.go",
 type GetTransferTxInput struct {
 	TxID  []byte `json:"tx_id"`
 	Extra []byte `json:"extra"`
@@ -393,6 +393,8 @@ func GetErc20Tx(txID []byte, stub shim.ChaincodeStubInterface) (*GetTransferTxOu
 	if err != nil {
 		return nil, errors.New("GetTransferTx error")
 	}
+	log.Debugf("result : %s", string(result))
+
 	//
 	var output GetTransferTxOutput
 	err = json.Unmarshal(result, &output)
@@ -440,7 +442,7 @@ func GetAddrHistory(ethAddrFrom, mapAddrTo string, stub shim.ChaincodeStubInterf
 	return &output, nil
 }
 
-//refer to the struct GetBestHeaderParams in "github.com/palletone/adaptor/IUtility.go",
+//refer to the struct GetBlockInfoInput in "github.com/palletone/adaptor/IUtility.go",
 type GetBlockInfoInput struct {
 	Latest  bool   `json:"latest"`   //true表示查询最新区块
 	Height  uint64 `json:"height"`   //根据高度查询区块
@@ -490,7 +492,7 @@ func getHight(stub shim.ChaincodeStubInterface) (uint, error) {
 	return output.Block.BlockHeight, nil
 }
 
-//refer to the struct QueryContractParams in "github.com/palletone/adaptor/IUtility.go",
+//refer to the struct GetPalletOneMappingAddressInput in "github.com/palletone/adaptor/IUtility.go",
 type GetPalletOneMappingAddressInput struct {
 	PalletOneAddress  string `json:"palletone_address"`
 	ChainAddress      string `json:"chain_address"`
