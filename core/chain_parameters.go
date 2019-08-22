@@ -208,11 +208,14 @@ func ImmutableChainParameterCheck(field, value string, icp *ImmutableChainParame
 	case "ActiveMediatorCount":
 		newActiveMediatorCount, _ := strconv.ParseUint(value, 10, 16)
 		if (newActiveMediatorCount & 1) == 0 {
+			// 保证活跃mediator数量为奇数
 			err = fmt.Errorf("new ActiveMediatorCount(%v) must be odd", newActiveMediatorCount)
 		} else if newActiveMediatorCount < uint64(icp.MinimumMediatorCount) {
+			// 保证活跃mediator数量不小于MinimumMediatorCount
 			err = fmt.Errorf("new ActiveMediatorCount(%v) cannot less than MinimumMediatorCount(%v)",
 				newActiveMediatorCount, icp.MinimumMediatorCount)
 		} else {
+			// 保证活跃mediator数量不大于mediator总数
 			mediatorCount := uint64(fn())
 			if newActiveMediatorCount > mediatorCount {
 				err = fmt.Errorf("new ActiveMediatorCount(%v) cannot more than mediator count(%v)",
