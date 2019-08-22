@@ -149,8 +149,14 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 	if len(payment.Outputs) > 0 {
 		asset0 := payment.Outputs[0].Asset
 		for _, out := range payment.Outputs {
-			if !asset0.IsSameAssetId(out.Asset) {
-				return TxValidationCode_INVALID_ASSET
+			if isInputnil { //Input为空，可能是721的创币，所以只检查AssetId相同，不检查UniqueId
+				if !asset0.IsSameAssetId(out.Asset) {
+					return TxValidationCode_INVALID_ASSET
+				}
+			} else { //Input不为空，则Input和Output必须是同样的Asset
+				if !asset.IsSimilar(out.Asset) { //Input Output asset mustbe same
+					return TxValidationCode_INVALID_ASSET
+				}
 			}
 			totalOutput += out.Value
 			if totalOutput < out.Value || out.Value == 0 { //big number overflow
@@ -159,10 +165,6 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 		}
 
 		if !isInputnil {
-			//Input Output asset mustbe same
-			if !asset.IsSameAssetId(asset0) {
-				return TxValidationCode_INVALID_ASSET
-			}
 			if msgIdx != 0 && totalOutput > totalInput { //相当于进行了增发
 				return TxValidationCode_INVALID_AMOUNT
 			}
