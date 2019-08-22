@@ -34,7 +34,7 @@ import (
 func TestGetUtxos(t *testing.T) {
 
 	db, _ := ptndb.NewMemDatabase()
-	utxodb := NewUtxoDb(db,tokenengine.Instalnce)
+	utxodb := NewUtxoDb(db, tokenengine.Instance)
 	key := new(modules.OutPoint)
 	key.MessageIndex = 1
 	key.OutIndex = 0

@@ -509,7 +509,7 @@ func (d *Dag) initDataForMainChainHeader(mainChain *modules.MainChain) {
 // newDag, with db , light to build a new dag
 // firstly to check db migration, is updated ptn database.
 func NewDag(db ptndb.Database, cache palletcache.ICache, light bool) (*Dag, error) {
-	tokenEngine := tokenengine.Instalnce //TODO Devin tokenENgine from parmeter
+	tokenEngine := tokenengine.Instance //TODO Devin tokenENgine from parmeter
 	dagDb := storage.NewDagDb(db)
 	utxoDb := storage.NewUtxoDb(db, tokenEngine)
 	stateDb := storage.NewStateDb(db)
@@ -628,7 +628,7 @@ func (dag *Dag) AfterChainMaintenanceEvent(arg *modules.ChainMaintenanceEvent) {
 
 // to build a new dag when init genesis
 func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
-	tokenEngine := tokenengine.Instalnce
+	tokenEngine := tokenengine.Instance
 	dagDb := storage.NewDagDb(db)
 	utxoDb := storage.NewUtxoDb(db, tokenEngine)
 	stateDb := storage.NewStateDb(db)
@@ -658,7 +658,7 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 
 // to build a dag for test
 func NewDagForTest(db ptndb.Database) (*Dag, error) {
-	tokenEngine := tokenengine.Instalnce
+	tokenEngine := tokenengine.Instance
 	dagDb := storage.NewDagDb(db)
 	utxoDb := storage.NewUtxoDb(db, tokenEngine)
 	stateDb := storage.NewStateDb(db)

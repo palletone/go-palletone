@@ -37,7 +37,7 @@ func Test_UnitProduceRepository_UpdateSysParams(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	upRep := NewUnitProduceRepository4Db(db,tokenengine.Instalnce)
+	upRep := NewUnitProduceRepository4Db(db, tokenengine.Instance)
 
 	// 初始化若干个链参数
 	gp := modules.NewGlobalProp()

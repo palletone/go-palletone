@@ -121,7 +121,7 @@ func TestGenesisGet(t *testing.T) {
 		return
 	}
 	//l := log.NewTestLog()
-	unitrep := common.NewUnitRepository4Db(dbconn,tokenengine.Instalnce)
+	unitrep := common.NewUnitRepository4Db(dbconn, tokenengine.Instance)
 	if unitrep == nil {
 		t.Error("new unit rep error.")
 	}

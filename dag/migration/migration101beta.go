@@ -51,7 +51,7 @@ func (m *Migration100_101) ToVersion() string {
 
 func (m *Migration100_101) utxoToStxo() error {
 	//删除已经花费的UTXO
-	dbop := storage.NewUtxoDb(m.utxodb,tokenengine.Instalnce)
+	dbop := storage.NewUtxoDb(m.utxodb, tokenengine.Instance)
 	utxos, err := dbop.GetAllUtxos()
 	if err != nil {
 		return err

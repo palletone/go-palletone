@@ -43,7 +43,7 @@ import (
 func mockUnitRepository() *UnitRepository {
 	db, _ := ptndb.NewMemDatabase()
 	//l := plog.NewTestLog()
-	return NewUnitRepository4Db(db,tokenengine.Instalnce)
+	return NewUnitRepository4Db(db, tokenengine.Instance)
 }
 
 //func mockUnitRepositoryLeveldb(path string) *UnitRepository {

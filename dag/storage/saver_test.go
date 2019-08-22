@@ -61,7 +61,7 @@ func TestSaveUtxos(t *testing.T) {
 		log.Println("Connect mem db error.")
 		return
 	}
-	utxodb := NewUtxoDb(Dbconn,tokenengine.Instalnce)
+	utxodb := NewUtxoDb(Dbconn, tokenengine.Instance)
 
 	//1. construct object
 	myplane := NewAirPlane()
