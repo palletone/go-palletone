@@ -391,7 +391,7 @@ func GetUnitWithSig(unit *modules.Unit, ks *keystore.KeyStore, signer common.Add
 	// signature unit: only sign header data(without witness and authors fields)
 	sign, err1 := ks.SigUnit(unit.UnitHeader, signer)
 	if err1 != nil {
-		msg := fmt.Sprintf("Failed to write genesis block:%v", err1.Error())
+		msg := fmt.Sprintf("Failed to Sig Unit:%v", err1.Error())
 		log.Error(msg)
 		return unit, err1
 	}
