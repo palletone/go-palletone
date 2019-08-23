@@ -23,14 +23,15 @@ gptn:
 	@echo "Done building."
 	@echo "Run \"$(GOBIN)/gptn\" to launch gptn."
 
-swarm:
-	build/env.sh go run build/ci.go install ./cmd/swarm
+mainnet:
+	go build -mod=vendor -tags "mainnet" ./cmd/gptn
 	@echo "Done building."
-	@echo "Run \"$(GOBIN)/swarm\" to launch swarm."
+	@echo "Run \"./gptn\" to launch mainnet node."
 
 all:
 	build/env.sh go run -mod=vendor build/ci.go install
 
+	
 golang-baseimage: 
 	docker pull palletone/goimg
 golang-baseimage-dev:
