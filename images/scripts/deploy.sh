@@ -133,6 +133,25 @@ json="node1/ptn-genesis.json"
 replacejson $json 
 
 #ModifyBootstrapNodes $n
+ModifyP2PConfig $n $genesishash
+
+#todo cp node1/ptn-config.toml  node1/ptn-config.toml.bak
+cp node1/ptn-config.toml node1/ptn-config.toml.bak
+
+#todo node1/ptn-config.toml mediator->127.0.0.1
+count=2
+while [ $count -le $1 ] 
+do
+  sed -i "s/mediator$count:/127.0.0.1:/g" node1/ptn-config.toml
+  let ++count
+done
+
+count=1
+while [ $count -le $1 ]
+do
+  sed -i "s/mediator$count:/127.0.0.1:/g" node1/ptn-genesis.json
+  let ++count
+done
 
 #ExecInit $n
 initvalue=$(ExecInit $n)
@@ -141,9 +160,12 @@ charToSearch="GenesisHash=";
 let pos=`echo "$initvalue" | awk -F ''$charToSearch'' '{printf "%d", length($0)-length($NF)}'`
 genesishash=${initvalue:$pos:66}
 
-ModifyP2PConfig $n $genesishash
+#todo cp node1/ptn-config.toml.bak node1/ptn-config.toml
+mv node1/ptn-config.toml.bak node1/ptn-config.toml
 
 num=$[$n+1]
 MakeTestNet $num $genesishash
-num=$[$n+2]
-MakeTestNet $num $genesishash
+
+node1staticnodes=`cat node1/ptn-config.toml | grep StaticNodes`
+sed -i '/^StaticNodes/c'$node1staticnodes'' node6/ptn-config.toml
+
