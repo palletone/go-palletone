@@ -337,6 +337,8 @@ github.com/palletone/adaptor v0.6.1-0.20190717052756-a631c9dd9d6a h1:LZcfL+VE4UV
 github.com/palletone/adaptor v0.6.1-0.20190717052756-a631c9dd9d6a/go.mod h1:ekDTVgVdZefQLLzWD+Fu9g8W9A8a6Mkp7kkHRg2M4w4=
 github.com/palletone/adaptor v0.6.1-0.20190819065448-7b9df99d0a84 h1:g3NprnFNqsBPFb+/MwyndG9CN6OLZ2v94TLv/Dd8Rz0=
 github.com/palletone/adaptor v0.6.1-0.20190819065448-7b9df99d0a84/go.mod h1:k6ZNhpJIeCj4ycLncQy6ww9MdyWva3f7xPgSwaTdyoU=
+github.com/palletone/adaptor v0.6.1-0.20190823035901-8c3583e529c8 h1:x6uDJ2cQglu51ENYtmw0gEl/eyJKIViEzoMJIli3BSw=
+github.com/palletone/adaptor v0.6.1-0.20190823035901-8c3583e529c8/go.mod h1:k6ZNhpJIeCj4ycLncQy6ww9MdyWva3f7xPgSwaTdyoU=
 github.com/palletone/btc-adaptor v0.6.1-0.20190718062616-d31b41f123f7 h1:DAbRc960d1au19PBBTV2P5tgyVB3R52f4haoM5IRxCg=
 github.com/palletone/btc-adaptor v0.6.1-0.20190718062616-d31b41f123f7/go.mod h1:yiVDYHChPVGmhubz/XLkgWu9qXQya+u4Y/+2e/j0nts=
 github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb h1:P4IhYnVAuD+BcmDRKBM3gPha9aybD2UQhLmCSQjoBjM=
@@ -345,6 +347,8 @@ github.com/palletone/eth-adaptor v0.6.1-0.20190718070938-ea95de9928b1 h1:haxa3Rb
 github.com/palletone/eth-adaptor v0.6.1-0.20190718070938-ea95de9928b1/go.mod h1:vDjsIvmkgV2iXuumuO27PYP+kTcrFpGhjl9NNIBVNjE=
 github.com/palletone/eth-adaptor v0.6.1-0.20190819084856-e9e76b0c48cf h1:HTEtHBDzk0/60O0qx+p8Kjsew69FGXqFrxDo37RjR+s=
 github.com/palletone/eth-adaptor v0.6.1-0.20190819084856-e9e76b0c48cf/go.mod h1:WmTXYzBJvsD7CZkRw6JoWzK/i3cBgwc7OeYV4s4qCG0=
+github.com/palletone/eth-adaptor v0.6.1-0.20190823074113-276856016668 h1:mrmRSuhnI3YKUdxqv3k4CRco9EOdbAd5DpNzbtS4qpQ=
+github.com/palletone/eth-adaptor v0.6.1-0.20190823074113-276856016668/go.mod h1:YS5iDM1lWr+lLJuuGVhlkCM+u1bNWSa5G6pt811Gr8k=
 github.com/pborman/uuid v1.2.0 h1:J7Q5mO4ysT1dv8hyrUGHb9+ooztCXu1D8MY8DZYsu3g=
 github.com/pborman/uuid v1.2.0/go.mod h1:X/NO0urCmaxf9VXbdlT7C2Yzkj2IKimNn4k+gtPdI/k=
 github.com/pelletier/go-toml v1.1.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=

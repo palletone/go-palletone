@@ -50,10 +50,10 @@ require (
 	github.com/nsf/termbox-go v0.0.0-20170211012700-3540b76b9c77 // indirect
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/onsi/gomega v1.5.0 // indirect
-	github.com/palletone/adaptor v0.6.1-0.20190819065448-7b9df99d0a84
+	github.com/palletone/adaptor v0.6.1-0.20190823035901-8c3583e529c8
 	github.com/palletone/btc-adaptor v0.6.1-0.20190718062616-d31b41f123f7
 	github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb
-	github.com/palletone/eth-adaptor v0.6.1-0.20190819084856-e9e76b0c48cf
+	github.com/palletone/eth-adaptor v0.6.1-0.20190823074113-276856016668
 	github.com/pborman/uuid v1.2.0
 	github.com/pelletier/go-toml v1.2.0 // indirect
 	github.com/peterh/liner v0.0.0-20170902204657-a37ad3984311
