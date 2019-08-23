@@ -10,12 +10,7 @@ services:
      - ./scripts/node1/palletone:/palletone/mediator/palletone
     restart: always
     command: ./gptn --noProduce --staleProduce
-    network_mode: "bridge"
-    dns:
-      - mediator2
-      - mediator3
-      - mediator4
-      - mediator5
+    network_mode: "gptn-net"
   mediator2:
     container_name: mediator2
     image: palletone/mediator
@@ -24,12 +19,7 @@ services:
      - ./scripts/node2/ptn-config.toml:/palletone/mediator/ptn-config.toml
      - ./scripts/node2/palletone:/palletone/mediator/palletone
     restart: always
-    network_mode: "bridge"
-    dns:
-      - mediator1
-      - mediator3
-      - mediator4
-      - mediator5
+    network_mode: "gptn-net"
   mediator3:
     container_name: mediator3
     image: palletone/mediator
@@ -38,12 +28,7 @@ services:
      - ./scripts/node3/ptn-config.toml:/palletone/mediator/ptn-config.toml
      - ./scripts/node3/palletone:/palletone/mediator/palletone
     restart: always
-    network_mode: "bridge"
-    dns:
-      - mediator2
-      - mediator1
-      - mediator4
-      - mediator5
+    network_mode: "gptn-net"
   mediator4:
     container_name: mediator4
     image: palletone/mediator
@@ -52,12 +37,7 @@ services:
      - ./scripts/node4/ptn-config.toml:/palletone/mediator/ptn-config.toml
      - ./scripts/node4/palletone:/palletone/mediator/palletone
     restart: always
-    network_mode: "bridge"
-    dns:
-      - mediator2
-      - mediator3
-      - mediator1
-      - mediator5
+    network_mode: "gptn-net"
   mediator5:
     container_name: mediator5
     image: palletone/mediator
@@ -66,12 +46,7 @@ services:
      - ./scripts/node5/ptn-config.toml:/palletone/mediator/ptn-config.toml
      - ./scripts/node5/palletone:/palletone/mediator/palletone
     restart: always
-    network_mode: "bridge"
-    dns:
-      - mediator2
-      - mediator3
-      - mediator4
-      - mediator1
+    network_mode: "gptn-net"
   node:
     container_name: node
     image: palletone/mediator
@@ -80,10 +55,4 @@ services:
       - ./scripts/node6/ptn-config.toml:/palletone/mediator/ptn-config.toml
       - ./scripts/node6/palletone:/palletone/mediator/palletone
     restart: always
-    network_mode: "bridge"
-    dns:
-      - mediator1
-      - mediator2
-      - mediator3
-      - mediator4
-      - mediator5
+    network_mode: "gptn-net"
