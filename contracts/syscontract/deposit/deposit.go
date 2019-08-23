@@ -351,6 +351,9 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	case QueryPledgeList:
 		log.Info("Enter DepositChaincode Contract " + QueryPledgeList + " Query")
 		return queryPledgeList(stub)
+	case QueryPledgeListByDate:
+		log.Info("Enter DepositChaincode Contract " + QueryPledgeListByDate + " Query")
+		return queryPledgeListByDate(stub, args)
 		//TODO Devin一个用户，怎么查看自己的流水账？
 		//case AllPledgeVotes:
 		//	b, err := getVotes(stub)

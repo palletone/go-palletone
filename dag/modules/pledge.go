@@ -36,9 +36,14 @@ type PledgeStatus struct{
 type PledgeList struct {
 	TotalAmount uint64           `json:"total_amount"`
 	Date        string           `json:"date"` //质押列表所在的日期yyyyMMdd
-	Members     []*AddressAmount `json:"members"`
+	Members     []*AddressRewardAmount `json:"members"`
 }
-
+//账户质押情况
+type AddressRewardAmount struct {
+	Address string `json:"address"`
+	Amount  uint64 `json:"amount"`
+	Reward uint64 `json:"reward"`
+}
 //账户质押情况
 type AddressAmount struct {
 	Address string `json:"address"`
@@ -48,15 +53,19 @@ type AddressAmount struct {
 func NewAddressAmount(addr string, amt uint64) *AddressAmount {
 	return &AddressAmount{Address: addr, Amount: amt}
 }
-func (pl *PledgeList) Add(addr string, amount uint64) {
+func (pl *PledgeList) Add(addr string, amount,reward uint64) {
 	pl.TotalAmount += amount
 	for _, p := range pl.Members {
 		if p.Address == addr {
 			p.Amount += amount
+			p.Reward+=reward
 			return
 		}
 	}
-	pl.Members = append(pl.Members, &AddressAmount{Address: addr, Amount: amount})
+	pl.Members = append(pl.Members, &AddressRewardAmount{
+		Address: addr,
+		Amount: amount,
+		Reward:reward})
 }
 func (pl *PledgeList) GetAmount(addr string) uint64{
 	for _,row:=range pl.Members{
