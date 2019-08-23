@@ -240,9 +240,9 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 		}
 	}
 
-	newUnit := dag.GenerateUnit(scheduledTime, scheduledMediator, groupPubKey, ks, mp.ptn.TxPool())
-	if newUnit == nil || newUnit.IsEmpty() {
-		detail["Msg"] = "The newly produced unit is empty!"
+	newUnit, err := dag.GenerateUnit(scheduledTime, scheduledMediator, groupPubKey, ks, mp.ptn.TxPool())
+	if err != nil {
+		detail["Msg"] = fmt.Sprintf("GenerateUnit err: %v", err.Error())
 		return ExceptionProducing, detail
 	}
 

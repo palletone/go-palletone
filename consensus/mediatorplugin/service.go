@@ -69,8 +69,8 @@ type iDag interface {
 	//ValidateUnitExceptGroupSig(unit *modules.Unit) error
 	SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error
 
-	GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte,
-		ks *keystore.KeyStore, txspool txspool.ITxPool) *modules.Unit
+	GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte, ks *keystore.KeyStore,
+		txpool txspool.ITxPool) (*modules.Unit, error)
 
 	IsPrecedingMediator(add common.Address) bool
 	IsIrreversibleUnit(hash common.Hash) bool
