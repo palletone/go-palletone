@@ -365,8 +365,10 @@ type ContractDeployRequestPayload struct {
 }
 
 type ContractDeployPayload struct {
+	TemplateId []byte             `json:"template_id"`   // delete--
 	ContractId []byte             `json:"contract_id"`   // contract id
 	Name       string             `json:"name"`          // the name for contract
+	Args       [][]byte           `json:"args"`          // delete--
 	EleNode    ElectionNode       `json:"election_node"` // contract jurors node info
 	ReadSet    []ContractReadSet  `json:"read_set"`      // the set data of read, and value could be any type
 	WriteSet   []ContractWriteSet `json:"write_set"`     // the set data of write, and value could be any type
@@ -385,6 +387,7 @@ type ContractInvokeRequestPayload struct {
 //如果是用户想修改自己的State信息，那么ContractId可以为空或�?0字节
 type ContractInvokePayload struct {
 	ContractId []byte             `json:"contract_id"`    // contract id
+	Args       [][]byte           `json:"args"`           // delete--
 	ReadSet    []ContractReadSet  `json:"read_set"`       // the set data of read, and value could be any type
 	WriteSet   []ContractWriteSet `json:"write_set"`      // the set data of write, and value could be any type
 	Payload    []byte             `json:"payload"`        // the contract execution result
