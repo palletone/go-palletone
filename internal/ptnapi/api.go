@@ -578,7 +578,7 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 			}
 		}
 		// Create a new script which pays to the provided address.
-		pkScript := tokenengine.GenerateLockScript(addr)
+		pkScript := tokenengine.Instance.GenerateLockScript(addr)
 		// Convert the amount to satoshi.
 		dao := ptnjson.Ptn2Dao(ptnAmt)
 		//if err != nil {
@@ -652,7 +652,7 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, poolTxs
 					op.TxHash = tx.Tx.Hash()
 					op.MessageIndex = uint32(msgindex)
 					op.OutIndex = uint32(outIndex)
-					addr, err = tokenengine.GetAddressFromScript(output.PkScript)
+					addr, err = tokenengine.Instance.GetAddressFromScript(output.PkScript)
 					if err != nil {
 						return nil, err
 					}
@@ -1134,7 +1134,7 @@ func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine
 	//}
 
 	var signErrs []common.SignatureError
-	signErrs, err = tokenengine.SignTxAllPaymentInput(tx, hashType, inputpoints, redeem, pubKeyFn, hashFn)
+	signErrs, err = tokenengine.Instance.SignTxAllPaymentInput(tx, hashType, inputpoints, redeem, pubKeyFn, hashFn)
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
 	}
@@ -1144,7 +1144,7 @@ func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine
 			continue
 		}
 		for inputindex := range payload.Inputs {
-			err = tokenengine.ScriptValidate(PkScript, nil, tx, msgidx, inputindex)
+			err = tokenengine.Instance.ScriptValidate(PkScript, nil, tx, msgidx, inputindex)
 			if err != nil {
 				return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
 			}
@@ -1157,7 +1157,7 @@ func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine
 			case tokenengine.SigHashSingle:
 				// Resize output array to up to and including requested index.
 				payload.Outputs = payload.Outputs[:1+1]
-				pk_addr, err := tokenengine.GetAddressFromScript(payload.Outputs[k].PkScript)
+				pk_addr, err := tokenengine.Instance.GetAddressFromScript(payload.Outputs[k].PkScript)
 				if err != nil {
 					return ptnjson.SignRawTransactionResult{}, errors.New("Get addr FromScript is err when signtx")
 				}
@@ -1242,7 +1242,7 @@ func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, f
 	txHash := common.HexToHash(txid)
 	toAddr, _ := common.StringToAddress(toAddress)
 	fromAddr, _ := common.StringToAddress(fromAddress)
-	utxoScript := tokenengine.GenerateLockScript(fromAddr)
+	utxoScript := tokenengine.Instance.GenerateLockScript(fromAddr)
 	ks := s.b.GetKeyStore()
 	ks.Unlock(accounts.Account{Address: fromAddr}, password)
 	pubKey, _ := ks.GetPublicKey(fromAddr)
@@ -1253,12 +1253,12 @@ func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, f
 		pay := &modules.PaymentPayload{}
 		outPoint := modules.NewOutPoint(txHash, 0, uint32(i))
 		pay.AddTxIn(modules.NewTxIn(outPoint, []byte{}))
-		lockScript := tokenengine.GenerateLockScript(toAddr)
+		lockScript := tokenengine.Instance.GenerateLockScript(toAddr)
 		pay.AddTxOut(modules.NewTxOut(uint64(amount), lockScript, asset))
 		tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay))
 		utxoLookup := map[modules.OutPoint][]byte{}
 		utxoLookup[*outPoint] = utxoScript
-		errs, err := tokenengine.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, utxoLookup, nil, func(addresses common.Address) ([]byte, error) {
+		errs, err := tokenengine.Instance.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, utxoLookup, nil, func(addresses common.Address) ([]byte, error) {
 			return pubKey, nil
 		},
 			func(addresses common.Address, msg []byte) ([]byte, error) {

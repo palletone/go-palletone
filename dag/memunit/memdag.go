@@ -22,6 +22,7 @@ package memunit
 
 import (
 	"fmt"
+	"github.com/palletone/go-palletone/tokenengine"
 	"sync"
 	"time"
 
@@ -62,6 +63,7 @@ type MemDag struct {
 	toGroupSignFeed  event.Feed
 	toGroupSignScope event.SubscriptionScope
 	db               ptndb.Database
+	tokenEngine tokenengine.ITokenEngine
 	quit             chan struct{} // used for exit
 }
 
@@ -81,7 +83,8 @@ func (pmg *MemDag) SetStableThreshold(count int) {
 
 func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptndb.Database,
 	stableUnitRep common2.IUnitRepository, propRep common2.IPropRepository,
-	stableStateRep common2.IStateRepository, cache palletcache.ICache) *MemDag {
+	stableStateRep common2.IStateRepository, cache palletcache.ICache,
+	tokenEngine tokenengine.ITokenEngine) *MemDag {
 	ldbUnitProduceRep := common2.NewUnitProduceRepository(stableUnitRep, propRep, stableStateRep)
 	stablehash, stbIndex, err := propRep.GetNewestUnit(token)
 	if err != nil {
@@ -120,8 +123,9 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 		cache:              cache,
 		ldbUnitProduceRep:  ldbUnitProduceRep,
 		db:                 db,
+		tokenEngine:tokenEngine,
 	}
-	temp, _ := NewChainTempDb(db, cache)
+	temp, _ := NewChainTempDb(db, cache,tokenEngine)
 	temp.Unit = stableUnit
 	memdag.tempdb.Store(stablehash, temp)
 	memdag.chainUnits.Store(stablehash, temp)
@@ -156,8 +160,8 @@ func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2
 		if !has {
 			log.Errorf("the last_unit: %s , is not exist in memdag", last_main_hash.String())
 			tempdb, _ := NewTempdb(chain.db)
-			trep := common2.NewUnitRepository4Db(tempdb)
-			tutxoRep := common2.NewUtxoRepository4Db(tempdb)
+			trep := common2.NewUnitRepository4Db(tempdb,chain.tokenEngine)
+			tutxoRep := common2.NewUtxoRepository4Db(tempdb,chain.tokenEngine)
 			tstateRep := common2.NewStateRepository4Db(tempdb)
 			tpropRep := common2.NewPropRepository4Db(tempdb)
 			tunitProduceRep := common2.NewUnitProduceRepository(trep, tpropRep, tstateRep)
@@ -515,7 +519,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 			inter_temp, has := chain.tempdb.Load(parentHash)
 			if !has { // 分叉链
 				p_temp := inter.(*ChainTempDb)
-				temp_db, _ = NewChainTempDb(p_temp.Tempdb, chain.cache)
+				temp_db, _ = NewChainTempDb(p_temp.Tempdb, chain.cache,chain.tokenEngine)
 			} else {
 				temp_db = inter_temp.(*ChainTempDb)
 			}
@@ -565,7 +569,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 			var main_temp *ChainTempDb
 			inter_main, has := chain.tempdb.Load(parentHash)
 			if !has { // 分叉
-				main_temp, _ = NewChainTempDb(chain.db, chain.cache)
+				main_temp, _ = NewChainTempDb(chain.db, chain.cache,chain.tokenEngine)
 				forks := chain.getForkUnits(unit)
 				for i := 0; i < len(forks)-1; i++ {
 					main_temp, _ = main_temp.AddUnit(forks[i], chain.saveHeaderOnly)
