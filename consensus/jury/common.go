@@ -254,11 +254,11 @@ func createContractErrorPayloadMsg(tx *modules.Transaction, errIn error) *module
 		return modules.NewMessage(modules.APP_CONTRACT_TPL, payload)
 	case modules.APP_CONTRACT_DEPLOY_REQUEST:
 		req := contractReq.(*modules.ContractDeployRequestPayload)
-		payload := modules.NewContractDeployPayload(req.TplId, nil, "", req.Args, nil, nil, nil, contractErr)
+		payload := modules.NewContractDeployPayload(req.TemplateId, nil, "", req.Args, nil, nil, nil, contractErr)
 		return modules.NewMessage(modules.APP_CONTRACT_DEPLOY, payload)
 	case modules.APP_CONTRACT_INVOKE_REQUEST:
 		req := contractReq.(*modules.ContractInvokeRequestPayload)
-		payload := modules.NewContractInvokePayload(req.ContractId, req.Args, 0, nil, nil, nil, contractErr)
+		payload := modules.NewContractInvokePayload(req.ContractId, nil, nil, nil, contractErr)
 		return modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload)
 	case modules.APP_CONTRACT_STOP_REQUEST:
 		req := contractReq.(*modules.ContractStopRequestPayload)
@@ -306,7 +306,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 				reqPay := msg.Payload.(*modules.ContractDeployRequestPayload)
 				req := ContractDeployReq{
 					chainID:    "palletone",
-					templateId: reqPay.TplId,
+					templateId: reqPay.TemplateId,
 					txid:       tx.RequestHash().String(),
 					args:       reqPay.Args,
 					timeout:    time.Duration(reqPay.Timeout) * time.Second,
@@ -354,8 +354,8 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					return genContractErrorMsg(dag, tx, reqPay.ContractId, err, errMsgEnable)
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.Args, 0,
-					result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
+				payload := modules.NewContractInvokePayload(result.ContractId, result.ReadSet, result.WriteSet,
+					result.Payload, modules.ContractError{})
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
 				}
