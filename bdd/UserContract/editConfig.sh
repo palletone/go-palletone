@@ -1,6 +1,6 @@
 #!/bin/bash
 
-local_host=`/sbin/ifconfig -a|grep inet|grep -v 127.0.0.1|grep -v inet6|grep -v 172.17.0.1|awk '{print $2}'|tr -d "addr:"`
+local_host=`/sbin/ifconfig -a|grep inet|grep -v 127.0.0.1|grep -v inet6|grep -v 172|awk '{print $2}'|tr -d "addr:"`
 
 echo $local_host
 
