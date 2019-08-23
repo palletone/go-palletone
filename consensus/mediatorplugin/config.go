@@ -181,8 +181,17 @@ func (medConf *MediatorConf) configToAccount() *MediatorAccount {
 	}
 
 	// 2. 解析 mediator 的 DKS 初始公私钥
-	sec, _ := core.StrToScalar(medConf.InitPrivKey)
-	pub, _ := core.StrToPoint(medConf.InitPubKey)
+	sec, err := core.StrToScalar(medConf.InitPrivKey)
+	if err != nil {
+		log.Debugf(err.Error())
+		return nil
+	}
+
+	pub, err := core.StrToPoint(medConf.InitPubKey)
+	if err != nil {
+		log.Debugf(err.Error())
+		return nil
+	}
 
 	medAcc := &MediatorAccount{
 		addr,

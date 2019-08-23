@@ -147,7 +147,7 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache) (*P
 	//Test for P2P
 	ptn.engine = consensus.New(dag, ptn.txPool)
 
-	ptn.mediatorPlugin, err = mp.NewMediatorPlugin(ctx, &config.MediatorPlugin, ptn, dag)
+	ptn.mediatorPlugin, err = mp.NewMediatorPlugin( /*ctx, */ &config.MediatorPlugin, ptn, dag)
 	if err != nil {
 		log.Error("Initialize mediator plugin err:", "error", err)
 		return nil, err
