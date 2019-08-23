@@ -25,6 +25,7 @@ import (
 	comm2 "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/palletcache"
+	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/validator"
 )
 
@@ -39,10 +40,11 @@ type ChainTempDb struct {
 	Unit           *modules.Unit
 }
 
-func NewChainTempDb(db ptndb.Database, cache palletcache.ICache) (*ChainTempDb, error) {
+func NewChainTempDb(db ptndb.Database,
+	cache palletcache.ICache,tokenEngine tokenengine.ITokenEngine) (*ChainTempDb, error) {
 	tempdb, _ := NewTempdb(db)
-	trep := comm2.NewUnitRepository4Db(tempdb)
-	tutxoRep := comm2.NewUtxoRepository4Db(tempdb)
+	trep := comm2.NewUnitRepository4Db(tempdb,tokenEngine)
+	tutxoRep := comm2.NewUtxoRepository4Db(tempdb,tokenEngine)
 	tstateRep := comm2.NewStateRepository4Db(tempdb)
 	tpropRep := comm2.NewPropRepository4Db(tempdb)
 	tunitProduceRep := comm2.NewUnitProduceRepository(trep, tpropRep, tstateRep)

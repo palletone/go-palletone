@@ -20,6 +20,7 @@
 package storage
 
 import (
+	"github.com/palletone/go-palletone/tokenengine"
 	"log"
 	"testing"
 
@@ -60,7 +61,7 @@ func TestSaveUtxos(t *testing.T) {
 		log.Println("Connect mem db error.")
 		return
 	}
-	utxodb := NewUtxoDb(Dbconn)
+	utxodb := NewUtxoDb(Dbconn, tokenengine.Instance)
 
 	//1. construct object
 	myplane := NewAirPlane()

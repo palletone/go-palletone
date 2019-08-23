@@ -21,6 +21,7 @@
 package common
 
 import (
+	"github.com/palletone/go-palletone/tokenengine"
 	"reflect"
 	"testing"
 	"time"
@@ -42,7 +43,7 @@ import (
 func mockUnitRepository() *UnitRepository {
 	db, _ := ptndb.NewMemDatabase()
 	//l := plog.NewTestLog()
-	return NewUnitRepository4Db(db)
+	return NewUnitRepository4Db(db, tokenengine.Instance)
 }
 
 //func mockUnitRepositoryLeveldb(path string) *UnitRepository {

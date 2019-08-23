@@ -470,7 +470,7 @@ func CreateCoinbase() (*modules.Transaction, error) {
 	//}
 	asset := modules.NewPTNAsset()
 	// setp1. create P2PKH script
-	script := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
+	script := tokenengine.Instance.GenerateP2PKHLockScript(addr.Bytes())
 	// step. compute total income
 	totalIncome := int64(100000000) + int64(100000000)
 	// step2. create payload

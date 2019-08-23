@@ -29,15 +29,17 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/dag/parameter"
+	"github.com/palletone/go-palletone/tokenengine"
 	"sync"
 )
 
 type Validate struct {
-	utxoquery  IUtxoQuery
-	statequery IStateQuery
-	dagquery   IDagQuery
-	propquery  IPropQuery
-	cache      *ValidatorCache
+	utxoquery   IUtxoQuery
+	statequery  IStateQuery
+	dagquery    IDagQuery
+	propquery   IPropQuery
+	tokenEngine tokenengine.ITokenEngine
+	cache       *ValidatorCache
 }
 
 const MAX_DATA_PAYLOAD_MAIN_DATA_SIZE = 128
@@ -45,7 +47,14 @@ const MAX_DATA_PAYLOAD_MAIN_DATA_SIZE = 128
 func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propquery IPropQuery, cache palletcache.ICache) *Validate {
 	//cache := freecache.NewCache(20 * 1024 * 1024)
 	vcache := NewValidatorCache(cache)
-	return &Validate{cache: vcache, dagquery: dagdb, utxoquery: utxoRep, statequery: statedb, propquery: propquery}
+	return &Validate{
+		cache:       vcache,
+		dagquery:    dagdb,
+		utxoquery:   utxoRep,
+		statequery:  statedb,
+		propquery:   propquery,
+		tokenEngine: tokenengine.Instance,
+	}
 }
 
 type newUtxoQuery struct {
@@ -189,9 +198,9 @@ return all transactions' fee
 
 func (validate *Validate) ValidateTx(tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, ValidationCode, error) {
 	txId := tx.Hash()
-	if txId.String()=="0x9c6e60e75aa59d253b156d102d6d314f21e57cdda923593346c98c30a841c64e"{
+	if txId.String() == "0x9c6e60e75aa59d253b156d102d6d314f21e57cdda923593346c98c30a841c64e" {
 		log.Warn("Invalid tx:0x9c6e60e75aa59d253b156d102d6d314f21e57cdda923593346c98c30a841c64e")
-		return nil,TxValidationCode_INVALID_MSG,NewValidateError(TxValidationCode_INVALID_MSG)
+		return nil, TxValidationCode_INVALID_MSG, NewValidateError(TxValidationCode_INVALID_MSG)
 	}
 	has, add := validate.cache.HasTxValidateResult(txId)
 	if has {

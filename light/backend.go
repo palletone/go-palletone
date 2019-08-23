@@ -24,11 +24,11 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/core/accounts"
-	//"github.com/ethereum/go-ethereum/consensus"
-	//"github.com/palletone/go-palletone/core"
-	//"github.com/ethereum/go-ethereum/core/bloombits"
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/ptn/downloader"
+	//"github.com/ethereum/go-ethereum/consensus"
+	//"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/tokenengine"
 	//	"github.com/palletone/go-palletone/ptn/filters"
 	//"github.com/ethereum/go-ethereum/eth/gasprice"
 	//"github.com/ethereum/go-ethereum/light"
@@ -127,7 +127,7 @@ func New(ctx *node.ServiceContext, config *ptn.Config, protocolname string, cach
 	//lptn.retriever = newRetrieveManager(peers, leth.reqDist, leth.serverPool)
 	//lptn.odr = NewLesOdr(chainDb, leth.chtIndexer, leth.bloomTrieIndexer, leth.bloomIndexer, leth.retriever)
 
-	lptn.txPool = txspool.NewTxPool(config.TxPool, cache, lptn.dag)
+	lptn.txPool = txspool.NewTxPool(config.TxPool, cache, lptn.dag, tokenengine.Instance)
 
 	if lptn.protocolManager, err = NewProtocolManager(true, lptn.peers, config.NetworkId, gasToken, nil,
 		dag, lptn.eventMux, genesis, quitSync, configure.LPSProtocol); err != nil {
