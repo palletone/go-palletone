@@ -248,10 +248,6 @@ func TestContractInvokeResultPayload_Rlp(t *testing.T) {
 }
 
 func newTestContractInvokeResult() *ContractInvokePayload {
-	a := []byte("AAAA")
-	b := []byte("BBBBBBBBBBB")
-	args := [][]byte{a, b, nil}
-
 	version := &StateVersion{&ChainIndex{PTNCOIN, 100}, 2}
 	read1 := ContractReadSet{"A", version, []byte("This is value")}
 	readset := []ContractReadSet{read1}
