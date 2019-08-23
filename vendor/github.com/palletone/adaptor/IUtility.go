@@ -48,6 +48,7 @@ type IUtility interface {
 	GetBlockInfo(input *GetBlockInfoInput) (*GetBlockInfoOutput, error)
 }
 type NewPrivateKeyInput struct {
+	Extra []byte `json:"extra"`
 }
 type NewPrivateKeyOutput struct {
 	PrivateKey []byte `json:"private_key"`

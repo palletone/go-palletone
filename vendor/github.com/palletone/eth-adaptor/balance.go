@@ -35,7 +35,7 @@ func GetClient(rpcParams *RPCParams) (*ethclient.Client, error) {
 	return client, nil
 }
 
-func GetBalanceETH(input *adaptor.GetBalanceInput, rpcParams *RPCParams, netID int) (*adaptor.GetBalanceOutput, error) {
+func GetBalanceETH(input *adaptor.GetBalanceInput, rpcParams *RPCParams) (*adaptor.GetBalanceOutput, error) {
 	//get rpc client
 	client, err := GetClient(rpcParams)
 	if err != nil {
@@ -53,7 +53,7 @@ func GetBalanceETH(input *adaptor.GetBalanceInput, rpcParams *RPCParams, netID i
 
 	//convert balance
 	var result adaptor.GetBalanceOutput
-	result.Balance.Amount = *balance
+	result.Balance.Amount = balance
 	result.Balance.Asset = input.Asset
 	return &result, nil
 }

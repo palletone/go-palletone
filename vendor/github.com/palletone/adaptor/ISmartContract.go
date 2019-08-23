@@ -38,8 +38,8 @@ type ISmartContract interface {
 	//调用合约的查询方法
 	QueryContract(input *QueryContractInput) (*QueryContractOutput, error)
 	//销毁合约
-	// CreateContractDestoryTx(input *CreateContractDestoryTx) (tx []byte, err error)
-	// GetContractDestoryTxByTxId(txid []byte) (*ContractDestoryTx, error)
+	// CreateContractDestroyTx(input *CreateContractDestroyTx) (tx []byte, err error)
+	// GetContractDestroyTxByTxId(txId []byte) (*ContractDestroyTx, error)
 }
 type CreateContractInstallTxInput struct {
 	Address  string       `json:"address"`
@@ -48,8 +48,8 @@ type CreateContractInstallTxInput struct {
 	Extra    []byte       `json:"extra"`
 }
 type CreateContractInstallTxOutput struct {
-	RawTranaction []byte `json:"raw_transaction"`
-	Extra         []byte `json:"extra"`
+	RawTransaction []byte `json:"raw_transaction"`
+	Extra          []byte `json:"extra"`
 }
 type CreateContractInitialTxInput struct {
 	Address  string       `json:"address"`
@@ -59,8 +59,8 @@ type CreateContractInitialTxInput struct {
 	Extra    []byte       `json:"extra"`
 }
 type CreateContractInitialTxOutput struct {
-	RawTranaction []byte `json:"raw_transaction"`
-	Extra         []byte `json:"extra"`
+	RawTransaction []byte `json:"raw_transaction"`
+	Extra          []byte `json:"extra"`
 }
 type CreateContractInvokeTxInput struct {
 	Address         string       `json:"address"`
@@ -71,8 +71,8 @@ type CreateContractInvokeTxInput struct {
 	Extra           []byte       `json:"extra"`
 }
 type CreateContractInvokeTxOutput struct {
-	RawTranaction []byte `json:"raw_transaction"`
-	Extra         []byte `json:"extra"`
+	RawTransaction []byte `json:"raw_transaction"`
+	Extra          []byte `json:"extra"`
 }
 type QueryContractInput struct {
 	Address         string       `json:"address"`

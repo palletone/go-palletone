@@ -37,10 +37,10 @@ const (
 	AddressLength = 20
 )
 
-var (
-	hashT    = reflect.TypeOf(Hash{})
-	addressT = reflect.TypeOf(Address{})
-)
+//var (
+//	hashT    = reflect.TypeOf(Hash{})
+//	addressT = reflect.TypeOf(Address{})
+//)
 
 // Hash represents the 32 byte Keccak256 hash of arbitrary data.
 type Hash [HashLength]byte
@@ -338,7 +338,7 @@ type MixedcaseAddress struct {
 // NewMixedcaseAddressFromString is mainly meant for unit-testing
 func NewMixedcaseAddressFromString(hexaddr string) (*MixedcaseAddress, error) {
 	if !IsHexAddress(hexaddr) {
-		return nil, fmt.Errorf("Invalid address")
+		return nil, fmt.Errorf("invalid address")
 	}
 	a := FromHex(hexaddr)
 	return &MixedcaseAddress{addr: BytesToAddress(a), original: hexaddr}, nil

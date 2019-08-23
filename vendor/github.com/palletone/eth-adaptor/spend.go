@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"io"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -28,11 +29,9 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 
 	"github.com/palletone/adaptor"
-
-	"github.com/palletone/eth-adaptor/ethclient"
 )
 
-func writeBytes(buf *bytes.Buffer, appendBytes []byte) {
+func writeBytes(buf io.Writer, appendBytes []byte) {
 	lenBytes := len(appendBytes)
 	if lenBytes == 32 {
 		buf.Write(appendBytes)
@@ -135,7 +134,7 @@ func CalcTxHash(input *adaptor.CalcTxHashInput) (*adaptor.CalcTxHashOutput, erro
 	return &result, nil
 }
 
-func SendTransaction(input *adaptor.SendTransactionInput, rpcParams *RPCParams, netID int) (
+func SendTransaction(input *adaptor.SendTransactionInput, rpcParams *RPCParams) (
 	*adaptor.SendTransactionOutput, error) {
 	//get rpc client
 	client, err := GetClient(rpcParams)
@@ -164,7 +163,7 @@ func SendTransaction(input *adaptor.SendTransactionInput, rpcParams *RPCParams, 
 
 }
 
-func CreateETHTx(input *adaptor.CreateTransferTokenTxInput, rpcParams *RPCParams, netID int) (
+func CreateETHTx(input *adaptor.CreateTransferTokenTxInput, rpcParams *RPCParams) (
 	*adaptor.CreateTransferTokenTxOutput, error) {
 	if input.Amount == nil {
 		return nil, errors.New("input's Amount is nil")
@@ -188,9 +187,9 @@ func CreateETHTx(input *adaptor.CreateTransferTokenTxInput, rpcParams *RPCParams
 	toAddress := common.HexToAddress(input.ToAddress)
 
 	tx := types.NewTransaction(nonce, toAddress,
-		&input.Amount.Amount, //in wei
+		input.Amount.Amount, //in wei
 		gasLimit,
-		&input.Fee.Amount, //in wei
+		input.Fee.Amount, //in wei
 		nil)
 
 	rlpTXBytes, err := rlp.EncodeToBytes(tx)
@@ -205,33 +204,33 @@ func CreateETHTx(input *adaptor.CreateTransferTokenTxInput, rpcParams *RPCParams
 	return &result, nil
 }
 
-func CreateContractMsg(input *adaptor.CreateTransferTokenTxInput, client *ethclient.Client,
-	fromAddress common.Address) (*adaptor.CreateTransferTokenTxOutput, error) {
-	gasLimit := uint64(21000) //in units
-	toAddress := common.HexToAddress(input.ToAddress)
-
-	var extra []byte
-	extra = append(extra, fromAddress.Bytes()...)
-	//extra = append(extra, input.Extra...)
-
-	tx := types.NewTransaction(0, toAddress,
-		&input.Amount.Amount, //in wei
-		gasLimit,
-		&input.Fee.Amount, //in wei
-		extra)
-
-	rlpTXBytes, err := rlp.EncodeToBytes(tx)
-	if err != nil {
-		return nil, err
-	}
-	//fmt.Printf("unsigned tx: %x\n", rlpTXBytes)
-	//save result
-	var result adaptor.CreateTransferTokenTxOutput
-	result.Transaction = append(result.Transaction, 'm')
-	result.Transaction = append(result.Transaction, rlpTXBytes...)
-
-	return &result, nil
-}
+//func CreateContractMsg(input *adaptor.CreateTransferTokenTxInput, client *ethclient.Client,
+//	fromAddress common.Address) (*adaptor.CreateTransferTokenTxOutput, error) {
+//	gasLimit := uint64(21000) //in units
+//	toAddress := common.HexToAddress(input.ToAddress)
+//
+//	var extra []byte
+//	extra = append(extra, fromAddress.Bytes()...)
+//	//extra = append(extra, input.Extra...)
+//
+//	tx := types.NewTransaction(0, toAddress,
+//		&input.Amount.Amount, //in wei
+//		gasLimit,
+//		&input.Fee.Amount, //in wei
+//		extra)
+//
+//	rlpTXBytes, err := rlp.EncodeToBytes(tx)
+//	if err != nil {
+//		return nil, err
+//	}
+//	//fmt.Printf("unsigned tx: %x\n", rlpTXBytes)
+//	//save result
+//	var result adaptor.CreateTransferTokenTxOutput
+//	result.Transaction = append(result.Transaction, 'm')
+//	result.Transaction = append(result.Transaction, rlpTXBytes...)
+//
+//	return &result, nil
+//}
 
 func CreateTx(input *adaptor.CreateTransferTokenTxInput) (*adaptor.CreateTransferTokenTxOutput, error) {
 	if input.Amount == nil {

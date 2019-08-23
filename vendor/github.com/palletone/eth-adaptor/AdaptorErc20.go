@@ -20,9 +20,10 @@ package ethadaptor
 import (
 	"errors"
 	"fmt"
+	"math/big"
 	"strconv"
 
-	base58 "github.com/btcsuite/btcutil/base58"
+	"github.com/btcsuite/btcutil/base58"
 
 	"github.com/palletone/adaptor"
 )
@@ -159,20 +160,21 @@ func GetMappAddr(addr *adaptor.GetPalletOneMappingAddressInput,
 	}
 
 	var result adaptor.GetPalletOneMappingAddressOutput
-	result.PalletOneAddress = resultStr[1 : len(resultStr)-1]
+	result.PalletOneAddress = resultStr[2 : len(resultStr)-2]
 
 	return &result, nil
 }
 func (aerc20 *AdaptorErc20) GetPalletOneMappingAddress(addr *adaptor.GetPalletOneMappingAddressInput) (
 	*adaptor.GetPalletOneMappingAddressOutput, error) {
 	if len(addr.MappingDataSource) == 0 {
-		return nil, errors.New("You must define mapping contract address in MappingDataSource")
+		return nil, errors.New("you must define mapping contract address in MappingDataSource")
 	}
 	return GetMappAddr(addr, &aerc20.RPCParams, addr.MappingDataSource)
 }
 
 //对一条交易进行签名，并返回签名结果
-func (aerc20 *AdaptorErc20) SignTransaction(input *adaptor.SignTransactionInput) (*adaptor.SignTransactionOutput, error) {
+func (aerc20 *AdaptorErc20) SignTransaction(input *adaptor.SignTransactionInput) (
+	*adaptor.SignTransactionOutput, error) {
 	if 'm' == input.Transaction[0] {
 		inputNew := &adaptor.SignMessageInput{}
 		inputNew.PrivateKey = input.PrivateKey
@@ -192,7 +194,8 @@ func (aerc20 *AdaptorErc20) SignMessage(input *adaptor.SignMessageInput) (*adapt
 }
 
 //对签名进行验证
-func (aerc20 *AdaptorErc20) VerifySignature(input *adaptor.VerifySignatureInput) (*adaptor.VerifySignatureOutput, error) {
+func (aerc20 *AdaptorErc20) VerifySignature(input *adaptor.VerifySignatureInput) (
+	*adaptor.VerifySignatureOutput, error) {
 	return VerifySignature(input)
 }
 
@@ -208,12 +211,14 @@ func (aerc20 *AdaptorErc20) CalcTxHash(input *adaptor.CalcTxHashInput) (*adaptor
 }
 
 //将签名后的交易广播到网络中,如果发送交易需要手续费，指定最多支付的手续费
-func (aerc20 *AdaptorErc20) SendTransaction(input *adaptor.SendTransactionInput) (*adaptor.SendTransactionOutput, error) {
-	return SendTransaction(input, &aerc20.RPCParams, aerc20.NetID)
+func (aerc20 *AdaptorErc20) SendTransaction(input *adaptor.SendTransactionInput) (
+	*adaptor.SendTransactionOutput, error) {
+	return SendTransaction(input, &aerc20.RPCParams)
 }
 
 //根据交易ID获得交易的基本信息
-func (aerc20 *AdaptorErc20) GetTxBasicInfo(input *adaptor.GetTxBasicInfoInput) (*adaptor.GetTxBasicInfoOutput, error) {
+func (aerc20 *AdaptorErc20) GetTxBasicInfo(input *adaptor.GetTxBasicInfoInput) (
+	*adaptor.GetTxBasicInfoOutput, error) {
 	return GetTxBasicInfo(input, &aerc20.RPCParams, aerc20.NetID)
 }
 
@@ -234,14 +239,16 @@ func (aerc20 *AdaptorErc20) GetBalance(input *adaptor.GetBalanceInput) (*adaptor
 		return nil, err
 	}
 	balanceStr := string(resultQuery.QueryResult)
-	var result adaptor.GetBalanceOutput
-	result.Balance.Amount.SetString(balanceStr[1:len(balanceStr)-1], 10)
-
-	return &result, nil
+	balanceAmt := new(big.Int)
+	balanceAmt.SetString(balanceStr[1:len(balanceStr)-1], 10)
+	var result = &adaptor.GetBalanceOutput{}
+	result.Balance = adaptor.AmountAsset{Amount: balanceAmt, Asset: input.Asset}
+	return result, nil
 }
 
 //获取某资产的小数点位数
-func (aerc20 *AdaptorErc20) GetAssetDecimal(asset *adaptor.GetAssetDecimalInput) (*adaptor.GetAssetDecimalOutput, error) {
+func (aerc20 *AdaptorErc20) GetAssetDecimal(asset *adaptor.GetAssetDecimalInput) (
+	*adaptor.GetAssetDecimalOutput, error) {
 	const ERC20ABI = "[{\"constant\":true,\"inputs\":[],\"name\":\"decimals\",\"outputs\":[{\"name\":\"\",\"type\":\"uint8\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"}]"
 
 	var input adaptor.QueryContractInput
@@ -283,10 +290,10 @@ func (aerc20 *AdaptorErc20) GetTransferTx(input *adaptor.GetTransferTxInput) (*a
 func (aerc20 *AdaptorErc20) CreateMultiSigAddress(input *adaptor.CreateMultiSigAddressInput) (
 	*adaptor.CreateMultiSigAddressOutput, error) {
 	//return &adaptor.CreateMultiSigAddressOutput{Address: aerc20.lockContractAddress}, nil
-	return nil, errors.New("Please deploy multi-sign contract yourself.")
+	return nil, errors.New("please deploy multi-sign contract yourself")
 }
 
 //获取最新区块头
 func (aerc20 *AdaptorErc20) GetBlockInfo(input *adaptor.GetBlockInfoInput) (*adaptor.GetBlockInfoOutput, error) {
-	return GetBlockInfo(input, &aerc20.RPCParams, aerc20.NetID)
+	return GetBlockInfo(input, &aerc20.RPCParams)
 }

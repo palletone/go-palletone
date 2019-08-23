@@ -21,6 +21,7 @@
 package adaptor
 
 import (
+	"encoding/hex"
 	"encoding/json"
 )
 
@@ -54,7 +55,7 @@ func setSimpleTransferTokenTxFromJson(tx *SimpleTransferTokenTx, tx4json simpleT
 	tx.ToAddress = tx4json.ToAddress
 	tx.Amount = tx4json.Amount
 	tx.Fee = tx4json.Fee
-	tx.AttachData = []byte(tx4json.AttachData)
+	tx.AttachData, _ = hex.DecodeString(tx4json.AttachData)
 }
 func convertSimpleTransferTokenTx2Json(tx SimpleTransferTokenTx) simpleTransferTokenTx4Json {
 	tx4Json := simpleTransferTokenTx4Json{}
@@ -62,7 +63,7 @@ func convertSimpleTransferTokenTx2Json(tx SimpleTransferTokenTx) simpleTransferT
 	tx4Json.ToAddress = tx.ToAddress
 	tx4Json.Amount = tx.Amount
 	tx4Json.Fee = tx.Fee
-	tx4Json.AttachData = string(tx.AttachData)
+	tx4Json.AttachData = hex.EncodeToString(tx.AttachData)
 	tx4Json.txBasicInfo4Json = convertTxBasicInfo2Json(tx.TxBasicInfo)
 	return tx4Json
 }

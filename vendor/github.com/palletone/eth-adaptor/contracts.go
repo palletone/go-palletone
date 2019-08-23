@@ -78,16 +78,16 @@ func convertContractParams(paramsNew *[]interface{}, parsed *abi.ABI, method str
 				}
 				paramBytes := common.Hex2Bytes(str)
 				inputSize := parsed.Methods[method].Inputs[i].Type.Size
-				if len(paramBytes) == inputSize {
-					switch inputSize {
-					case 32:
-						//byte32 := new([32]byte)
-						var byte32 [32]byte
-						for i := 0; i < len(paramBytes); i++ {
-							byte32[i] = paramBytes[i]
-						}
-						*paramsNew = append(*paramsNew, byte32)
+				if len(paramBytes) == inputSize && inputSize == 32 {
+					//switch inputSize {
+					//case 32:
+					//byte32 := new([32]byte)
+					var byte32 [32]byte
+					for j := 0; j < len(paramBytes); j++ {
+						byte32[j] = paramBytes[j]
 					}
+					*paramsNew = append(*paramsNew, byte32)
+					//}
 				}
 			case abi.BytesTy:
 				fallthrough
@@ -105,77 +105,77 @@ func convertContractParams(paramsNew *[]interface{}, parsed *abi.ABI, method str
 	}
 }
 
-func prepareResults(outs *[]interface{}, parsed *abi.ABI, method string) {
-	for i, output := range parsed.Methods[method].Outputs {
-		switch output.Type.T {
-		case abi.IntTy:
-			fallthrough
-		case abi.UintTy:
-			paramInt := new(*big.Int)
-			*outs = append(*outs, paramInt)
-
-		case abi.BoolTy:
-			paramBool := new(bool)
-			*outs = append(*outs, paramBool)
-
-		case abi.StringTy:
-			paramStr := new(string)
-			*outs = append(*outs, paramStr)
-
-		case abi.SliceTy: //#zxl#
-		case abi.ArrayTy: //#zxl#
-		case abi.AddressTy:
-			paramAddress := new(common.Address)
-			*outs = append(*outs, paramAddress)
-
-		case abi.FixedBytesTy: //#zxl
-			fallthrough
-		case abi.BytesTy:
-			inputSize := parsed.Methods[method].Inputs[i].Type.Size
-			switch inputSize {
-			case 0:
-				paramBytes := new([]uint8)
-				*outs = append(*outs, paramBytes)
-			case 32:
-				paramBytes32 := new([32]byte)
-				*outs = append(*outs, paramBytes32)
-			}
-		case abi.HashTy:
-			paramAddress := new(common.Hash)
-			*outs = append(*outs, paramAddress)
-
-		case abi.FixedPointTy: //#zxl#
-		case abi.FunctionTy: //#zxl#
-		}
-	}
-}
-
-func parseResults(outs *[]interface{}) []interface{} {
-	results := []interface{}{}
-	for _, out := range *outs {
-		switch out.(type) {
-		case **big.Int:
-			bigIntResult := **(out.(**big.Int))
-			results = append(results, bigIntResult.String())
-		case *bool:
-			boolResult := *(out.(*bool))
-			results = append(results, strconv.FormatBool(boolResult))
-		case *string:
-			strResult := *(out.(*string))
-			results = append(results, strResult)
-		case *common.Address:
-			addrResult := *(out.(*common.Address))
-			results = append(results, addrResult.String())
-		case *[]uint8:
-			bytesResult := *out.(*[]byte)
-			results = append(results, common.Bytes2Hex(bytesResult))
-		case *[32]uint8:
-			bytesResult := *out.(*[32]byte)
-			results = append(results, common.Bytes2Hex(bytesResult[:]))
-		}
-	}
-	return results
-}
+//func prepareResults(outs *[]interface{}, parsed *abi.ABI, method string) {
+//	for i, output := range parsed.Methods[method].Outputs {
+//		switch output.Type.T {
+//		case abi.IntTy:
+//			fallthrough
+//		case abi.UintTy:
+//			paramInt := new(*big.Int)
+//			*outs = append(*outs, paramInt)
+//
+//		case abi.BoolTy:
+//			paramBool := new(bool)
+//			*outs = append(*outs, paramBool)
+//
+//		case abi.StringTy:
+//			paramStr := new(string)
+//			*outs = append(*outs, paramStr)
+//
+//		case abi.SliceTy: //#zxl#
+//		case abi.ArrayTy: //#zxl#
+//		case abi.AddressTy:
+//			paramAddress := new(common.Address)
+//			*outs = append(*outs, paramAddress)
+//
+//		case abi.FixedBytesTy: //#zxl
+//			fallthrough
+//		case abi.BytesTy:
+//			inputSize := parsed.Methods[method].Inputs[i].Type.Size
+//			switch inputSize {
+//			case 0:
+//				paramBytes := new([]uint8)
+//				*outs = append(*outs, paramBytes)
+//			case 32:
+//				paramBytes32 := new([32]byte)
+//				*outs = append(*outs, paramBytes32)
+//			}
+//		case abi.HashTy:
+//			paramAddress := new(common.Hash)
+//			*outs = append(*outs, paramAddress)
+//
+//		case abi.FixedPointTy: //#zxl#
+//		case abi.FunctionTy: //#zxl#
+//		}
+//	}
+//}
+//
+//func parseResults(outs *[]interface{}) []interface{} {
+//	results := []interface{}{}
+//	for _, out := range *outs {
+//		switch out.(type) {
+//		case **big.Int:
+//			bigIntResult := **(out.(**big.Int))
+//			results = append(results, bigIntResult.String())
+//		case *bool:
+//			boolResult := *(out.(*bool))
+//			results = append(results, strconv.FormatBool(boolResult))
+//		case *string:
+//			strResult := *(out.(*string))
+//			results = append(results, strResult)
+//		case *common.Address:
+//			addrResult := *(out.(*common.Address))
+//			results = append(results, addrResult.String())
+//		case *[]uint8:
+//			bytesResult := *out.(*[]byte)
+//			results = append(results, common.Bytes2Hex(bytesResult))
+//		case *[32]uint8:
+//			bytesResult := *out.(*[32]byte)
+//			results = append(results, common.Bytes2Hex(bytesResult[:]))
+//		}
+//	}
+//	return results
+//}
 
 func CreateContractInitialTx(input *adaptor.CreateContractInitialTxInput, rpcParams *RPCParams, netID int) (
 	*adaptor.CreateContractInitialTxOutput, error) {
@@ -195,7 +195,7 @@ func CreateContractInitialTx(input *adaptor.CreateContractInitialTxInput, rpcPar
 	//value.SetString(input.Value, 10)
 	gasLimitU64 := uint64(2100000)
 	gasLimit := big.NewInt(2100000)
-	gasPrice := input.Fee.Amount.Div(&input.Fee.Amount, gasLimit)
+	gasPrice := input.Fee.Amount.Div(input.Fee.Amount, gasLimit)
 
 	//
 	deployerAddr := common.HexToAddress(input.Address)
@@ -226,7 +226,7 @@ func CreateContractInitialTx(input *adaptor.CreateContractInitialTxInput, rpcPar
 
 	//save result
 	var result adaptor.CreateContractInitialTxOutput
-	result.RawTranaction = rlpTXBytes
+	result.RawTransaction = rlpTXBytes
 	//result.ContractAddr = address.String()
 
 	return &result, nil
@@ -264,7 +264,7 @@ func CreateContractInvokeTx(input *adaptor.CreateContractInvokeTxInput, rpcParam
 	value := new(big.Int)
 	gasLimitU64 := uint64(2100000)
 	gasLimit := big.NewInt(2100000)
-	gasPrice := input.Fee.Amount.Div(&input.Fee.Amount, gasLimit)
+	gasPrice := input.Fee.Amount.Div(input.Fee.Amount, gasLimit)
 
 	//
 	var tx *types.Transaction
@@ -292,7 +292,7 @@ func CreateContractInvokeTx(input *adaptor.CreateContractInvokeTxInput, rpcParam
 
 	//save result
 	var result adaptor.CreateContractInvokeTxOutput
-	result.RawTranaction = rlpTXBytes
+	result.RawTransaction = rlpTXBytes
 
 	return &result, nil
 }
@@ -352,6 +352,57 @@ func QueryContract(input *adaptor.QueryContractInput, rpcParams *RPCParams) (*ad
 	return &result, nil
 }
 
+func QueryContractCall(input *adaptor.QueryContractInput, rpcParams *RPCParams) (*adaptor.QueryContractOutput, error) {
+	//get rpc client
+	client, err := GetClient(rpcParams)
+	if err != nil {
+		return nil, err
+	}
+
+	//
+	parsed, err := abi.JSON(strings.NewReader(string(input.Extra)))
+	if err != nil {
+		return nil, err
+	}
+
+	//
+	if len(input.ContractAddress) == 0 {
+		return nil, fmt.Errorf("ContractAddress is empty")
+	}
+	var contractAddr common.Address
+	if "0x" == input.ContractAddress[0:2] || "0X" == input.ContractAddress[0:2] {
+		contractAddr = common.HexToAddress(input.ContractAddress[2:])
+	} else {
+		contractAddr = common.HexToAddress(input.ContractAddress)
+	}
+	contract := bind.NewBoundContract(contractAddr, parsed, client, client, client)
+
+	//
+	var (
+		ret0 = new(string)
+	)
+	if len(input.Args) != 0 {
+		//
+		var paramsNew []interface{}
+		convertContractParams(&paramsNew, &parsed, input.Function, input.Args)
+
+		//
+		err = contract.Call(&bind.CallOpts{Pending: false}, ret0, input.Function, paramsNew...)
+	} else {
+		//
+		err = contract.Call(&bind.CallOpts{Pending: false}, ret0, input.Function)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	//save result
+	var result adaptor.QueryContractOutput
+	result.QueryResult = []byte(*ret0)
+
+	return &result, nil
+}
+
 func UnpackInput() (string, error) {
 	const PANZABI = `[
 	{
@@ -387,7 +438,7 @@ func UnpackInput() (string, error) {
 	method, exist := parsed.Methods[methodName]
 	if !exist {
 		fmt.Println("Not exist method")
-		return "", fmt.Errorf("Not exist method")
+		return "", fmt.Errorf("not exist method")
 	}
 	inputData := "000000000000000000000000c5b8f9336bf26f0f931c97d17e9376c4933ab6c8" +
 		"00000000000000000000000000000000000000000000001b1ae4d6e2ef500000"

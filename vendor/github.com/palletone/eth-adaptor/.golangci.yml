@@ -182,9 +182,11 @@ linters-settings:
 
 linters:
   enable-all: true
-  # disable:
-  #   - maligned
-  #   - prealloc
+  disable:
+    - golint
+    - errcheck
+    - lll
+    - gocyclo
   disable-all: false
   # presets:
   #   - bugs
@@ -203,8 +205,11 @@ issues:
 #   # Excluding configuration per-path, per-linter, per-text and per-source
   exclude-rules:
       - linters:
+        - gocritic
+        text: "ifElseChain"
+      - linters:
         - gosec
-        text: "G[105,202,401,505]"
+        text: "G107"
 #     # Exclude some linters from running on tests files.
 #     - path: _test\.go
 #       linters:

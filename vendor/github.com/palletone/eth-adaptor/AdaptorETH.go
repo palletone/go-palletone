@@ -68,7 +68,8 @@ func (aeth *AdaptorETH) NewPrivateKey(input *adaptor.NewPrivateKeyInput) (*adapt
 }
 
 //根据私钥创建公钥
-func (aeth *AdaptorETH) GetPublicKey(input *adaptor.GetPublicKeyInput) (*adaptor.GetPublicKeyOutput, error) {
+func (aeth *AdaptorETH) GetPublicKey(input *adaptor.GetPublicKeyInput) (
+	*adaptor.GetPublicKeyOutput, error) {
 	pubkey, err := GetPublicKey(input.PrivateKey)
 	if err != nil {
 		return nil, err
@@ -78,7 +79,8 @@ func (aeth *AdaptorETH) GetPublicKey(input *adaptor.GetPublicKeyInput) (*adaptor
 }
 
 //根据Key创建地址
-func (aeth *AdaptorETH) GetAddress(key *adaptor.GetAddressInput) (*adaptor.GetAddressOutput, error) {
+func (aeth *AdaptorETH) GetAddress(key *adaptor.GetAddressInput) (
+	*adaptor.GetAddressOutput, error) {
 	addr, err := PubKeyToAddress(key.Key)
 	if err != nil {
 		return nil, err
@@ -89,23 +91,26 @@ func (aeth *AdaptorETH) GetAddress(key *adaptor.GetAddressInput) (*adaptor.GetAd
 func (aeth *AdaptorETH) GetPalletOneMappingAddress(addr *adaptor.GetPalletOneMappingAddressInput) (
 	*adaptor.GetPalletOneMappingAddressOutput, error) {
 	if len(addr.MappingDataSource) == 0 {
-		return nil, errors.New("You must define mapping contract address in MappingDataSource")
+		return nil, errors.New("you must define mapping contract address in MappingDataSource")
 	}
 	return GetMappAddr(addr, &aeth.RPCParams, addr.MappingDataSource)
 }
 
 //对一条消息进行签名
-func (aeth *AdaptorETH) SignMessage(input *adaptor.SignMessageInput) (*adaptor.SignMessageOutput, error) {
+func (aeth *AdaptorETH) SignMessage(input *adaptor.SignMessageInput) (
+	*adaptor.SignMessageOutput, error) {
 	return SignMessage(input)
 }
 
 //对签名进行验证
-func (aeth *AdaptorETH) VerifySignature(input *adaptor.VerifySignatureInput) (*adaptor.VerifySignatureOutput, error) {
+func (aeth *AdaptorETH) VerifySignature(input *adaptor.VerifySignatureInput) (
+	*adaptor.VerifySignatureOutput, error) {
 	return VerifySignature(input)
 }
 
 //对一条交易进行签名，并返回签名结果 //call SignMessage
-func (aeth *AdaptorETH) SignTransaction(input *adaptor.SignTransactionInput) (*adaptor.SignTransactionOutput, error) {
+func (aeth *AdaptorETH) SignTransaction(input *adaptor.SignTransactionInput) (
+	*adaptor.SignTransactionOutput, error) {
 	if 'm' == input.Transaction[0] && 's' == input.Transaction[1] && 'g' == input.Transaction[2] {
 		inputNew := &adaptor.SignMessageInput{}
 		inputNew.PrivateKey = input.PrivateKey
@@ -120,7 +125,8 @@ func (aeth *AdaptorETH) SignTransaction(input *adaptor.SignTransactionInput) (*a
 }
 
 //将未签名的原始交易与签名进行绑定，返回一个签名后的交易 //产生 contractTx input data
-func (aeth *AdaptorETH) BindTxAndSignature(input *adaptor.BindTxAndSignatureInput) (*adaptor.BindTxAndSignatureOutput,
+func (aeth *AdaptorETH) BindTxAndSignature(input *adaptor.BindTxAndSignatureInput) (
+	*adaptor.BindTxAndSignatureOutput,
 	error) {
 	return BindTxAndSignature(input) //first append methodID, then msg[33:], then pack signatures
 }
@@ -132,7 +138,7 @@ func (aeth *AdaptorETH) CalcTxHash(input *adaptor.CalcTxHashInput) (*adaptor.Cal
 
 //将签名后的交易广播到网络中,如果发送交易需要手续费，指定最多支付的手续费
 func (aeth *AdaptorETH) SendTransaction(input *adaptor.SendTransactionInput) (*adaptor.SendTransactionOutput, error) {
-	return SendTransaction(input, &aeth.RPCParams, aeth.NetID)
+	return SendTransaction(input, &aeth.RPCParams)
 }
 
 //根据交易ID获得交易的基本信息
@@ -148,11 +154,12 @@ func (aeth *AdaptorETH) GetBlockInfo(input *adaptor.GetBlockInfoInput) (*adaptor
 /*ICryptoCurrency*/
 //获取某地址下持有某资产的数量,返回数量为该资产的最小单位
 func (aeth *AdaptorETH) GetBalance(input *adaptor.GetBalanceInput) (*adaptor.GetBalanceOutput, error) {
-	return GetBalanceETH(input, &aeth.RPCParams, aeth.NetID)
+	return GetBalanceETH(input, &aeth.RPCParams)
 }
 
 //获取某资产的小数点位数
-func (aeth *AdaptorETH) GetAssetDecimal(asset *adaptor.GetAssetDecimalInput) (*adaptor.GetAssetDecimalOutput, error) {
+func (aeth *AdaptorETH) GetAssetDecimal(asset *adaptor.GetAssetDecimalInput) (
+	*adaptor.GetAssetDecimalOutput, error) {
 	result := adaptor.GetAssetDecimalOutput{Decimal: 18}
 	return &result, nil
 }
@@ -164,7 +171,8 @@ func (aeth *AdaptorETH) CreateTransferTokenTx(input *adaptor.CreateTransferToken
 }
 
 //获取某个地址对某种Token的交易历史,支持分页和升序降序排列
-func (aeth *AdaptorETH) GetAddrTxHistory(input *adaptor.GetAddrTxHistoryInput) (*adaptor.GetAddrTxHistoryOutput, error) {
+func (aeth *AdaptorETH) GetAddrTxHistory(input *adaptor.GetAddrTxHistoryInput) (
+	*adaptor.GetAddrTxHistoryOutput, error) {
 	return GetAddrTxHistoryHTTP(aeth.TxQueryUrl, input) // use web api
 }
 
@@ -176,7 +184,7 @@ func (aeth *AdaptorETH) GetTransferTx(input *adaptor.GetTransferTxInput) (*adapt
 //创建一个多签地址，该地址必须要满足signCount个签名才能解锁 //eth没有多签，not implement
 func (aeth *AdaptorETH) CreateMultiSigAddress(input *adaptor.CreateMultiSigAddressInput) (
 	*adaptor.CreateMultiSigAddressOutput, error) {
-	return nil, errors.New("Please deploy multi-sign contract yourself.")
+	return nil, errors.New("please deploy multi-sign contract yourself")
 }
 
 /*ISmartContract*/
@@ -217,6 +225,7 @@ func (aeth *AdaptorETH) GetContractInvokeTx(input *adaptor.GetContractInvokeTxIn
 }
 
 //调用合约的查询方法 //rc20合约查询交易的生成
-func (aeth *AdaptorETH) QueryContract(input *adaptor.QueryContractInput) (*adaptor.QueryContractOutput, error) {
+func (aeth *AdaptorETH) QueryContract(input *adaptor.QueryContractInput) (
+	*adaptor.QueryContractOutput, error) {
 	return QueryContract(input, &aeth.RPCParams)
 }

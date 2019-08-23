@@ -1,5 +1,4 @@
 module github.com/palletone/eth-adaptor
-module github.com/palletone/adaptor
 
 go 1.12
 
@@ -21,6 +20,7 @@ require (
 	github.com/karalabe/usb v0.0.0-20190703133951-9be757f914c0 // indirect
 	github.com/mattn/go-runewidth v0.0.4 // indirect
 	github.com/olekukonko/tablewriter v0.0.1 // indirect
+	github.com/palletone/adaptor v0.6.1-0.20190823165629-94ce197415e9
 	github.com/pborman/uuid v1.2.0 // indirect
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/prometheus/tsdb v0.10.0 // indirect
