@@ -250,7 +250,7 @@ func (rep *StateRepository) GetPledgeListWithNew() (*modules.PledgeList, error) 
 	newDepositList, _ := rep.GetPledgeDepositApplyList()
 	if newDepositList != nil {
 		for _, deposit := range newDepositList {
-			pledgeList.Add(deposit.Address, deposit.Amount)
+			pledgeList.Add(deposit.Address, deposit.Amount,0)
 		}
 	}
 	newWithdrawList, _ := rep.GetPledgeWithdrawApplyList()
