@@ -58,40 +58,32 @@ type TxWithUnitInfoJson struct {
 	TxIndex    uint64    `json:"tx_index"`
 }
 type TplJson struct {
-	Number     int    `json:"row_number"`
-	TemplateId string `json:"template_id"`
-	//Name         string `json:"name"`
-	//Path         string `json:"path"`
-	//Version      string `json:"version"`
-	//Memory       uint16 `json:"memory"`
+	Number       int    `json:"row_number"`
+	TemplateId   string `json:"template_id"`
 	Bytecode     []byte `json:"bytecode"`      // contract bytecode
 	BytecodeSize int    `json:"bytecode_size"` // contract bytecode
-	//AddrHash     string `json:"addr_hash"`
 	ErrorCode    uint32 `json:"error_code"`
 	ErrorMessage string `json:"error_message"`
 }
 type DeployJson struct {
-	Number       int      `json:"row_number"`
-	TemplateId   string   `json:"template_id"`
-	ContractId   string   `json:"contract_id"`
-	Name         string   `json:"name"`
-	Args         [][]byte `json:"args"` // contract arguments list
-	EleNode      string   `json:"election_node"`
-	ReadSet      string   `json:"read_set"`
-	WriteSet     string   `json:"write_set"`
-	DuringTime   uint64   `json:"during_time"`
-	ErrorCode    uint32   `json:"error_code"`
-	ErrorMessage string   `json:"error_message"`
+	Number       int    `json:"row_number"`
+	ContractId   string `json:"contract_id"`
+	Name         string `json:"name"`
+	EleNode      string `json:"election_node"`
+	ReadSet      string `json:"read_set"`
+	WriteSet     string `json:"write_set"`
+	DuringTime   uint64 `json:"during_time"`
+	ErrorCode    uint32 `json:"error_code"`
+	ErrorMessage string `json:"error_message"`
 }
 type InvokeJson struct {
-	Number       int      `json:"row_number"`
-	ContractId   string   `json:"contract_id"` // contract id
-	Args         []string `json:"args"`        // contract arguments list
-	ReadSet      string   `json:"read_set"`    // the set data of read, and value could be any type
-	WriteSet     string   `json:"write_set"`   // the set data of write, and value could be any type
-	Payload      string   `json:"payload"`     // the contract execution result
-	ErrorCode    uint32   `json:"error_code"`
-	ErrorMessage string   `json:"error_message"`
+	Number       int    `json:"row_number"`
+	ContractId   string `json:"contract_id"` // contract id
+	ReadSet      string `json:"read_set"`    // the set data of read, and value could be any type
+	WriteSet     string `json:"write_set"`   // the set data of write, and value could be any type
+	Payload      string `json:"payload"`     // the contract execution result
+	ErrorCode    uint32 `json:"error_code"`
+	ErrorMessage string `json:"error_message"`
 }
 type StopJson struct {
 	Number     int    `json:"row_number"`
@@ -253,10 +245,6 @@ func convertTpl2Json(tpl *modules.ContractTplPayload) *TplJson {
 	tpljson.TemplateId = hex.EncodeToString(tpl.TemplateId)
 	tpljson.Bytecode = tpl.ByteCode[:]
 	tpljson.BytecodeSize = len(tpl.ByteCode[:])
-	//tpljson.Memory = tpl.Memory
-
-	//ah, _ := json.Marshal(tpl.AddrHash)
-	//tpljson.AddrHash = string(ah)
 	tpljson.ErrorCode = tpl.ErrMsg.Code
 	tpljson.ErrorMessage = tpl.ErrMsg.Message
 	return tpljson
@@ -264,13 +252,7 @@ func convertTpl2Json(tpl *modules.ContractTplPayload) *TplJson {
 func convertDeploy2Json(deploy *modules.ContractDeployPayload) *DeployJson {
 	djson := new(DeployJson)
 	djson.Name = deploy.Name
-
-	djson.TemplateId = hex.EncodeToString(deploy.TemplateId)
 	djson.ContractId = hex.EncodeToString(deploy.ContractId)
-	djson.Args = deploy.Args
-	//for _, addr := range deploy.Jury {
-	//	djson.Jury = append(djson.Jury, addr.String())
-	//}
 	ele, _ := json.Marshal(deploy.EleNode)
 	djson.EleNode = string(ele)
 	rset, _ := json.Marshal(deploy.ReadSet)
@@ -292,11 +274,6 @@ type CoinbaseWriteSet struct {
 func convertInvoke2Json(invoke *modules.ContractInvokePayload) *InvokeJson {
 	injson := new(InvokeJson)
 	injson.ContractId = contractId2AddrString(invoke.ContractId)
-	injson.Args = []string{}
-	for _, arg := range invoke.Args {
-		injson.Args = append(injson.Args, string(arg))
-	}
-
 	rset, _ := json.Marshal(invoke.ReadSet)
 	injson.ReadSet = string(rset)
 	//Speical for coinbase
@@ -382,7 +359,7 @@ func convertInstallRequest2Json(req *modules.ContractInstallRequestPayload) *Ins
 func convertDeployRequest2Json(req *modules.ContractDeployRequestPayload) *DeployRequestJson {
 	reqJson := &DeployRequestJson{}
 
-	reqJson.TplId = hex.EncodeToString(req.TplId)
+	reqJson.TplId = hex.EncodeToString(req.TemplateId)
 	reqJson.Args = []string{}
 	for _, arg := range req.Args {
 		reqJson.Args = append(reqJson.Args, string(arg))

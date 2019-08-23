@@ -260,7 +260,6 @@ func newTestContractInvokeResult() *ContractInvokePayload {
 
 	pay := &ContractInvokePayload{
 		ContractId: []byte("ContractId"),
-		Args:       args,
 		ReadSet:    readset,
 		WriteSet:   wset,
 	}

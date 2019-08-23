@@ -896,6 +896,8 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 	unitHash := unit.Hash()
 	unitTime := unit.Timestamp()
 	unitHeight := unit.Header().Index()
+
+	templateId := make([]byte, 0)
 	// traverse messages
 	var installReq *modules.ContractInstallRequestPayload
 	reqIndex := tx.GetRequestMsgIndex()
@@ -917,7 +919,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			}
 		case modules.APP_CONTRACT_DEPLOY:
 			deploy := msg.Payload.(*modules.ContractDeployPayload)
-			if ok := rep.saveContractInitPayload(unit.UnitHeader.Number, uint32(txIndex), deploy, requester, unitTime); !ok {
+			if ok := rep.saveContractInitPayload(unit.UnitHeader.Number, uint32(txIndex), templateId, deploy, requester, unitTime); !ok {
 				return fmt.Errorf("Save contract init payload error.")
 			}
 		case modules.APP_CONTRACT_INVOKE:
@@ -938,6 +940,8 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			if ok := rep.saveContractDeployReq(reqId, msg); !ok {
 				return fmt.Errorf("save contract of deploy request failed.")
 			}
+			deployReq := msg.Payload.(*modules.ContractDeployRequestPayload)
+			templateId = deployReq.TemplateId
 		case modules.APP_CONTRACT_STOP_REQUEST:
 			if ok := rep.saveContractStopReq(reqId, msg); !ok {
 				return fmt.Errorf("save contract of stop request failed.")
@@ -1170,7 +1174,7 @@ func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, he
 保存合约初始化状态
 To save contract init state
 */
-func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, txIndex uint32,
+func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, txIndex uint32, templateId []byte,
 	payload *modules.ContractDeployPayload, requester common.Address, unitTime int64) bool {
 	//编译源码时，发生错误信息，但是此时因为还没有构建chaincode容器，所以导致contractId为空
 	if payload.ContractId == nil {
@@ -1189,8 +1193,7 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 			return false
 		}
 	}
-
-	contract := modules.NewContract(payload, requester, uint64(unitTime))
+	contract := modules.NewContract(templateId, payload, requester, uint64(unitTime))
 	err := rep.statedb.SaveContract(contract)
 	if err != nil {
 		log.Errorf("Save contract[%x] error:%s", payload.ContractId, err.Error())

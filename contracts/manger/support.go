@@ -154,10 +154,8 @@ func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, nm string
 	}
 	log.Info("RwTxResult2DagDeployUnit", "nm=", nm, "rd=", rd, "wt=", wt)
 	deploy := &md.ContractDeployPayload{
-		TemplateId: templateId,
 		ContractId: contractId,
 		Name:       nm,
-		Args:       args,
 		ReadSet:    make([]md.ContractReadSet, 0),
 		WriteSet:   make([]md.ContractWriteSet, 0),
 	}

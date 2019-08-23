@@ -845,7 +845,7 @@ func (p *Processor) getContractAssignElectionList(tx *modules.Transaction) ([]mo
 
 	num := 0
 	eels := make([]modules.ElectionInf, 0)
-	tplId := payload.(*modules.ContractDeployRequestPayload).TplId
+	tplId := payload.(*modules.ContractDeployRequestPayload).TemplateId
 	//find the address of the contract template binding in the dag
 	//addrHash, err := p.getTemplateAddrHash(tplId)
 	tpl, err := p.dag.GetContractTpl(tplId)

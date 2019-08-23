@@ -135,11 +135,11 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 			requestMsgIndex = msgIdx
 			// 参数临界值验证
 			payload, _ := msg.Payload.(*modules.ContractDeployRequestPayload)
-			if len(payload.TplId) == 0 {
+			if len(payload.TemplateId) == 0 {
 				return TxValidationCode_INVALID_CONTRACT, txFee
 			}
 
-			validateCode := validate.validateContractdeploy(payload.TplId)
+			validateCode := validate.validateContractdeploy(payload.TemplateId)
 			if validateCode != TxValidationCode_VALID {
 				return validateCode, txFee
 			}

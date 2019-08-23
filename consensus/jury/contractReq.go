@@ -124,7 +124,7 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_DEPLOY_REQUEST,
 		Payload: &modules.ContractDeployRequestPayload{
-			TplId:   templateId,
+			TemplateId:   templateId,
 			Args:    args,
 			ExtData: extData,
 			Timeout: uint32(timeout),
