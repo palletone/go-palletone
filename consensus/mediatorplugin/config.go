@@ -20,6 +20,7 @@ package mediatorplugin
 
 import (
 	"encoding/json"
+	"os"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -67,10 +68,9 @@ var (
 	}
 	MediatorsFlag = cli.StringSliceFlag{
 		Name: "mediators",
-		Usage: "the set of mediator accounts controlled by this node. for example:\n" +
+		Usage: "the mediator account controlled by this node, may specify multiple times. for example:\n" +
 			"{\\\"Address\\\":\\\"P1xx\\\",\\\"Password\\\":\\\"xxx\\\",\\\"InitPrivKey\\\":\\\"xxx\\\"," +
-			"\\\"InitPubKey\\\":\\\"xxx\\\"},{\\\"Address\\\":\\\"P1xx\\\",\\\"Password\\\":\\\"xxx\\\"," +
-			"\\\"InitPrivKey\\\":\\\"xxx\\\",\\\"InitPubKey\\\":\\\"xxx\\\"}",
+			"\\\"InitPubKey\\\":\\\"xxx\\\"}",
 	}
 )
 
@@ -154,14 +154,13 @@ func SetMediatorConfig(ctx *cli.Context, cfg *Config) {
 
 			err := json.Unmarshal([]byte(mj), mc)
 			if err != nil {
-				//log.Debugf("%v", err)
-				continue
+				log.Errorf("%v", err)
+				os.Exit(1)
 			}
 
 			//log.Debugf("%v", mc)
 			cfg.Mediators = append(cfg.Mediators, mc)
 		}
-		//os.Exit(1)
 	}
 }
 
