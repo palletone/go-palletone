@@ -1,5 +1,5 @@
 #使用脚本生成节点、下载镜像和启动5个超级节点和1个普通全节点的本地私有链
-./bytn.sh 
+./bytn.sh 1.0.1
 
 #需要手动修改各个节点的ptn-config.toml配置文件，将 VmEndpoint 的值修改为 tcp://宿主机ip:2375，这个值是docker server监听tcp端口
 如： VmEndpoint = "tcp://192.168.152.128:2375"
