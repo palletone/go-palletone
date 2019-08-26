@@ -190,7 +190,7 @@ func _payoutPTNByTxID(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 		return shim.Error("The tx is failed")
 	}
 	//check contract address, must be ptn erc20 contract address
-	if strings.ToLower(txResult.Tx.ToAddress) != PTN_ERC20Addr {
+	if strings.ToLower(txResult.Tx.TargetAddress) != PTN_ERC20Addr {
 		log.Debugf("The tx is't PTN contract")
 		return shim.Error("The tx is't PTN contract")
 	}
@@ -245,7 +245,8 @@ func _payoutPTNByTxID(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 	}
 
 	//payout
-	asset := modules.NewPTNAsset()
+	//asset := modules.NewPTNAsset()
+	asset, _ := modules.StringToAsset("PTN")
 	amtToken := &modules.AmountAsset{Amount: amt, Asset: asset}
 	err = stub.PayOutToken(ptnAddr, amtToken, 0)
 	if err != nil {
@@ -431,7 +432,7 @@ func GetAddrHistory(ethAddrFrom, mapAddrTo string, stub shim.ChaincodeStubInterf
 	//
 	result, err := stub.OutChainCall("erc20", "GetAddrTxHistory", inputBytes)
 	if err != nil {
-		return nil, errors.New("GetTransferTx error")
+		return nil, errors.New("GetAddrHistory error")
 	}
 	//
 	var output GetAddrTxHistoryOutput

@@ -35,8 +35,9 @@ type BTC struct {
 	WalletPasswd string
 }
 type ETH struct {
-	NetID  int
-	Rawurl string
+	NetID      int
+	Rawurl     string
+	TxQueryUrl string
 }
 
 type KeyInfo struct { //information of private key
@@ -60,8 +61,9 @@ var DefaultConfig = Config{
 			WalletPasswd: "1",
 		},
 		Eth: ETH{
-			NetID:  1,
-			Rawurl: "https://ropsten.infura.io/",
+			NetID:      1,
+			Rawurl:     "https://ropsten.infura.io/",
+			TxQueryUrl: "https://api-ropsten.etherscan.io/api",
 		},
 		ChainKeyKV: map[string]KeyInfo{
 			"btc": KeyInfo{

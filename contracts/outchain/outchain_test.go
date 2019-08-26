@@ -38,7 +38,6 @@ func TestUnmarshal(t *testing.T) {
 }
 
 func TestGetTransferTx(t *testing.T) {
-
 	txID, _ := hex.DecodeString("86c4920a8698a5aadaf9f5eedd45efdedbb924cb59dab4a46231a2d8286039c6")
 	input := adaptor.GetTransferTxInput{TxID: txID}
 	inputBytes, err := json.Marshal(input)
@@ -63,5 +62,72 @@ func TestGetTransferTx(t *testing.T) {
 		fmt.Println("err: ", err)
 	} else {
 		fmt.Println("OK")
+	}
+}
+
+func TestGetPalletOneMappingAddress(t *testing.T) {
+	input := adaptor.GetPalletOneMappingAddressInput{ChainAddress: "0x588eb98f8814aedb056d549c0bafd5ef4963069c", MappingDataSource: "0xa840d94b1ef4c326c370e84d108d539d31d52e84"}
+	inputBytes, err := json.Marshal(input)
+	if err != nil {
+		fmt.Println("err: ", err)
+	} else {
+		fmt.Println(string(inputBytes))
+	}
+
+	outChainCall := &pb.OutChainCall{OutChainName: "erc20", Method: "GetPalletOneMappingAddress", Params: inputBytes}
+	result, err := ProcessOutChainCall("sample_syscc", outChainCall)
+	if err != nil {
+		fmt.Println("err: ", err)
+	} else {
+		fmt.Println(result)
+		var output adaptor.GetPalletOneMappingAddressOutput
+		err = json.Unmarshal([]byte(result), &output)
+		if err != nil {
+			fmt.Println("err: ", err)
+			return
+		}
+		if output.PalletOneAddress == "" {
+			fmt.Println("PalletOneAddress empty")
+			return
+		}
+
+		fmt.Println(output.PalletOneAddress)
+	}
+}
+
+func TestGetBlockInfo(t *testing.T) {
+	//
+	input := adaptor.GetBlockInfoInput{Latest: true} //get best hight
+	//
+	inputBytes, err := json.Marshal(input)
+	if err != nil {
+		return
+	}
+
+	outChainCall := &pb.OutChainCall{OutChainName: "erc20", Method: "GetBlockInfo", Params: inputBytes}
+	result, err := ProcessOutChainCall("sample_syscc", outChainCall)
+	if err != nil {
+		fmt.Println("err: ", err)
+	} else {
+		fmt.Println(result)
+	}
+}
+
+func TestGetAddrTxHistory(t *testing.T) {
+	//
+	input := adaptor.GetAddrTxHistoryInput{FromAddress: "0x588eb98f8814aedb056d549c0bafd5ef4963069c",
+		ToAddress: "0xa840d94b1ef4c326c370e84d108d539d31d52e84", Asset: "0xa54880da9a63cdd2ddacf25af68daf31a1bcc0c9",
+		AddressLogicAndOr: true} //
+	inputBytes, err := json.Marshal(input)
+	if err != nil {
+		return
+	}
+
+	outChainCall := &pb.OutChainCall{OutChainName: "erc20", Method: "GetAddrTxHistory", Params: inputBytes}
+	result, err := ProcessOutChainCall("sample_syscc", outChainCall)
+	if err != nil {
+		fmt.Println("err: ", err)
+	} else {
+		fmt.Println(result)
 	}
 }

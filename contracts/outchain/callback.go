@@ -41,12 +41,14 @@ func GetETHAdaptor() adaptor.ICryptoCurrency {
 	var ethAdaptor ethadaptor.AdaptorETH
 	ethAdaptor.NetID = cfg.Ada.Eth.NetID
 	ethAdaptor.Rawurl = cfg.Ada.Eth.Rawurl
+	ethAdaptor.TxQueryUrl = cfg.Ada.Eth.TxQueryUrl
 	return &ethAdaptor
 }
 func GetERC20Adaptor() adaptor.ICryptoCurrency {
 	var ethAdaptor ethadaptor.AdaptorErc20
 	ethAdaptor.NetID = cfg.Ada.Eth.NetID
 	ethAdaptor.Rawurl = cfg.Ada.Eth.Rawurl
+	ethAdaptor.TxQueryUrl = cfg.Ada.Eth.TxQueryUrl
 	return &ethAdaptor
 }
 
