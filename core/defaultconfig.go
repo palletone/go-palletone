@@ -66,7 +66,7 @@ const (
 
 	//contract
 	DefaultContractSignatureNum = 3
-	DefaultContractElectionNum  = 3
+	DefaultContractElectionNum  = 4
 
 	DefaultContractTxTimeoutUnitFee  = 10 //s
 	DefaultContractTxSizeUnitFee     = 1  //byte
