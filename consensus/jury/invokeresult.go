@@ -56,11 +56,11 @@ func resultToContractPayments(dag iDag, result *modules.ContractInvokeResult) ([
 				in := modules.NewTxIn(&sutxo.OutPoint, nil)
 				payment.AddTxIn(in)
 			}
-			out := modules.NewTxOut(payout.Amount, tokenengine.GenerateLockScript(payout.PayTo), payout.Asset)
+			out := modules.NewTxOut(payout.Amount, tokenengine.Instance.GenerateLockScript(payout.PayTo), payout.Asset)
 			payment.AddTxOut(out)
 			//Change
 			if change > 0 {
-				out2 := modules.NewTxOut(change, tokenengine.GenerateLockScript(addr), payout.Asset)
+				out2 := modules.NewTxOut(change, tokenengine.Instance.GenerateLockScript(addr), payout.Asset)
 				payment.AddTxOut(out2)
 			}
 			payments = append(payments, payment)
@@ -83,7 +83,7 @@ func resultToCoinbase(result *modules.ContractInvokeResult) ([]*modules.PaymentP
 			newAsset := &modules.Asset{}
 			newAsset.AssetId, _ = modules.NewAssetId(token.Symbol, modules.AssetType_FungibleToken,
 				token.Decimals, result.RequestId.Bytes(), modules.UniqueIdType_Null)
-			out := modules.NewTxOut(token.TotalSupply, tokenengine.GenerateLockScript(result.TokenDefine.Creator), newAsset)
+			out := modules.NewTxOut(token.TotalSupply, tokenengine.Instance.GenerateLockScript(result.TokenDefine.Creator), newAsset)
 			coinbase.AddTxOut(out)
 		} else if result.TokenDefine.TokenType == 1 { //ERC721
 			token := modules.NonFungibleToken{}
@@ -101,7 +101,7 @@ func resultToCoinbase(result *modules.ContractInvokeResult) ([]*modules.PaymentP
 				newAsset.AssetId, _ = modules.NewAssetId(token.Symbol, modules.AssetType_NonFungibleToken,
 					0, result.RequestId.Bytes(), modules.UniqueIdType(token.Type))
 				newAsset.UniqueId.SetBytes(token.NonFungibleData[i].UniqueBytes)
-				out := modules.NewTxOut(1, tokenengine.GenerateLockScript(result.TokenDefine.Creator), newAsset)
+				out := modules.NewTxOut(1, tokenengine.Instance.GenerateLockScript(result.TokenDefine.Creator), newAsset)
 				coinbase.AddTxOut(out)
 			}
 		} else if result.TokenDefine.TokenType == 2 { //VoteToken
@@ -114,7 +114,7 @@ func resultToCoinbase(result *modules.ContractInvokeResult) ([]*modules.PaymentP
 			newAsset := &modules.Asset{}
 			newAsset.AssetId, _ = modules.NewAssetId(token.Symbol, modules.AssetType_VoteToken,
 				0, result.RequestId.Bytes(), modules.UniqueIdType_Null)
-			out := modules.NewTxOut(token.TotalSupply, tokenengine.GenerateLockScript(result.TokenDefine.Creator), newAsset)
+			out := modules.NewTxOut(token.TotalSupply, tokenengine.Instance.GenerateLockScript(result.TokenDefine.Creator), newAsset)
 			coinbase.AddTxOut(out)
 		}
 		//TODO Devin ERC721
@@ -126,7 +126,7 @@ func resultToCoinbase(result *modules.ContractInvokeResult) ([]*modules.PaymentP
 			assetId := &modules.Asset{}
 			assetId.AssetId.SetBytes(tokenSupply.AssetId)
 			assetId.UniqueId.SetBytes(tokenSupply.UniqueId)
-			out := modules.NewTxOut(tokenSupply.Amount, tokenengine.GenerateLockScript(tokenSupply.Creator), assetId)
+			out := modules.NewTxOut(tokenSupply.Amount, tokenengine.Instance.GenerateLockScript(tokenSupply.Creator), assetId)
 			//
 			coinbase.AddTxOut(out)
 		}

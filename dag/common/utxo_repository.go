@@ -37,19 +37,33 @@ type UtxoRepository struct {
 	idxdb   storage.IIndexDb
 	statedb storage.IStateDb
 	propDb  storage.IPropertyDb
+	tokenEngine tokenengine.ITokenEngine
 }
 
-func NewUtxoRepository(utxodb storage.IUtxoDb, idxdb storage.IIndexDb, statedb storage.IStateDb,
-	propDb storage.IPropertyDb) *UtxoRepository {
-	return &UtxoRepository{utxodb: utxodb, idxdb: idxdb, statedb: statedb, propDb: propDb}
+func NewUtxoRepository(utxodb storage.IUtxoDb, idxdb storage.IIndexDb,
+	statedb storage.IStateDb,propDb storage.IPropertyDb,
+	tokenEngine tokenengine.ITokenEngine) *UtxoRepository {
+	return &UtxoRepository{
+		utxodb: utxodb,
+		idxdb: idxdb,
+		statedb: statedb,
+		propDb: propDb,
+		tokenEngine:tokenEngine,
+	}
 }
-func NewUtxoRepository4Db(db ptndb.Database) *UtxoRepository {
-	utxodb := storage.NewUtxoDb(db)
+func NewUtxoRepository4Db(db ptndb.Database,tokenEngine tokenengine.ITokenEngine) *UtxoRepository {
+	utxodb := storage.NewUtxoDb(db,tokenEngine)
 	statedb := storage.NewStateDb(db)
 	idxdb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
 
-	return &UtxoRepository{utxodb: utxodb, idxdb: idxdb, statedb: statedb, propDb: propDb}
+	return &UtxoRepository{
+		utxodb: utxodb,
+		idxdb: idxdb,
+		statedb: statedb,
+		propDb: propDb,
+		tokenEngine:tokenEngine,
+	}
 }
 
 type IUtxoRepository interface {
@@ -265,7 +279,7 @@ func (repository *UtxoRepository) writeUtxo(unitTime int64, txHash common.Hash,
 			continue
 		}
 
-		sAddr, _ := tokenengine.GetAddressFromScript(txout.PkScript)
+		sAddr, _ := repository.tokenEngine.GetAddressFromScript(txout.PkScript)
 		//update address account info
 		gasToken := dagconfig.DagConfig.GetGasToken()
 		if txout.Asset.AssetId == gasToken {
@@ -307,7 +321,7 @@ func (repository *UtxoRepository) destroyUtxo(txid common.Hash, unitTime uint64,
 			return err
 		}
 		// delete index data
-		sAddr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
+		sAddr, _ := repository.tokenEngine.GetAddressFromScript(utxo.PkScript)
 		if utxo.Asset.AssetId == dagconfig.DagConfig.GetGasToken() { // modules.PTNCOIN
 			err := repository.statedb.UpdateAccountBalance(sAddr, -int64(utxo.Amount))
 			if err != nil {

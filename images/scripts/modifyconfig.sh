@@ -137,7 +137,7 @@ done
 echo "account: "$account
 echo "publickey: "$publickey
 echo "nodeinfo: "$nodeinfo
-#nodeinfo=`echo ${nodeinfo/127.0.0.1/172.11.0.$[$1+1]}`
+nodeinfo=`echo ${nodeinfo/127.0.0.1/mediator$1}`
 echo "update nodeinfo " $nodeinfo
 ModifyJson  $account $publickey $nodeinfo $1
 }

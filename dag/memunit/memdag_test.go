@@ -24,6 +24,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/tokenengine"
 	"time"
 
 	dagcommon "github.com/palletone/go-palletone/dag/common"
@@ -49,19 +50,20 @@ func TestMemDag_AddUnit(t *testing.T) {
 	lastHeader := newTestUnit(common.Hash{}, 0, key1)
 	db, _ := ptndb.NewMemDatabase()
 	dagDb := storage.NewDagDb(db)
-	utxoDb := storage.NewUtxoDb(db)
+	utxoDb := storage.NewUtxoDb(db, tokenengine.Instance)
 	stateDb := storage.NewStateDb(db)
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
 	propDb.SetNewestUnit(lastHeader.UnitHeader)
 
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenengine.Instance)
 	unitRep.SaveUnit(lastHeader, false)
 	propRep := dagcommon.NewPropRepository(propDb)
 	propRep.StoreGlobalProp(modules.NewGlobalProp())
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	gasToken := dagconfig.DagConfig.GetGasToken()
-	memdag := NewMemDag(gasToken, 2, false, db, unitRep, propRep, stateRep, cache())
+	memdag := NewMemDag(gasToken, 2, false,
+		db, unitRep, propRep, stateRep, cache(), tokenengine.Instance)
 	parent := common.HexToHash("0x2c30cd5b06c4c6d184aae3e1ed76492f16a0fa335673dba99c8efa813c1a1e30")
 	_, _, _, _, _, err := memdag.AddUnit(newTestUnit(parent, 1, key2), nil, true)
 	assert.Nil(t, err)
@@ -72,20 +74,21 @@ func BenchmarkMemDag_AddUnit(b *testing.B) {
 	lastHeader := newTestUnit(common.Hash{}, 0, key1)
 	db, _ := ptndb.NewMemDatabase()
 	dagDb := storage.NewDagDb(db)
-	utxoDb := storage.NewUtxoDb(db)
+	utxoDb := storage.NewUtxoDb(db, tokenengine.Instance)
 	stateDb := storage.NewStateDb(db)
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
 	propDb.SetNewestUnit(lastHeader.UnitHeader)
 	propDb.SetNewestUnit(lastHeader.Header())
 
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenengine.Instance)
 	unitRep.SaveUnit(lastHeader, false)
 	propRep := dagcommon.NewPropRepository(propDb)
 	propRep.StoreGlobalProp(modules.NewGlobalProp())
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	gasToken := modules.PTNCOIN
-	memdag := NewMemDag(gasToken, 2, false, db, unitRep, propRep, stateRep, cache())
+	memdag := NewMemDag(gasToken, 2, false,
+		db, unitRep, propRep, stateRep, cache(), tokenengine.Instance)
 
 	parentHash := lastHeader.Hash()
 	for i := 0; i < b.N; i++ {
@@ -154,18 +157,19 @@ func TestMemDag_AddOrphanUnit(t *testing.T) {
 	txpool.EXPECT().ResetPendingTxs(gomock.Any()).Return(nil).AnyTimes()
 	db, _ := ptndb.NewMemDatabase()
 	dagDb := storage.NewDagDb(db)
-	utxoDb := storage.NewUtxoDb(db)
+	utxoDb := storage.NewUtxoDb(db, tokenengine.Instance)
 	stateDb := storage.NewStateDb(db)
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
 	propDb.SetNewestUnit(lastHeader.Header())
 	mockMediatorInit(stateDb, propDb)
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenengine.Instance)
 	unitRep.SaveUnit(lastHeader, false)
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	gasToken := modules.PTNCOIN
-	memdag := NewMemDag(gasToken, 2, false, db, unitRep, propRep, stateRep, cache())
+	memdag := NewMemDag(gasToken, 2, false,
+		db, unitRep, propRep, stateRep, cache(), tokenengine.Instance)
 	u1 := newTestUnit(lastHeader.Hash(), 1, key2)
 	log.Debugf("Try add unit[%x] to memdag, index: %d", u1.Hash(), u1.NumberU64())
 
@@ -198,18 +202,19 @@ func TestMemDag_SwitchMainChain(t *testing.T) {
 
 	db, _ := ptndb.NewMemDatabase()
 	dagDb := storage.NewDagDb(db)
-	utxoDb := storage.NewUtxoDb(db)
+	utxoDb := storage.NewUtxoDb(db, tokenengine.Instance)
 	stateDb := storage.NewStateDb(db)
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
 	propDb.SetNewestUnit(u0.UnitHeader)
 	mockMediatorInit(stateDb, propDb)
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenengine.Instance)
 	unitRep.SaveUnit(u0, false)
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	gasToken := modules.PTNCOIN
-	memdag := NewMemDag(gasToken, 2, false, db, unitRep, propRep, stateRep, cache())
+	memdag := NewMemDag(gasToken, 2,
+		false, db, unitRep, propRep, stateRep, cache(), tokenengine.Instance)
 
 	u1 := newTestUnit(u0.Hash(), 2, key2)
 	log.Debugf("Try add unit[%x] to memdag", u1.Hash())

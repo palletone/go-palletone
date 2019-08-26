@@ -363,7 +363,7 @@ func (p *Processor) GenContractSigTransaction(signer common.Address, password st
 					//Contract Payout, need sign
 					needSignMsg = false
 					pubKey, _ := ks.GetPublicKey(signer)
-					redeemScript := tokenengine.GenerateRedeemScript(1, [][]byte{pubKey})
+					redeemScript := tokenengine.Instance.GenerateRedeemScript(1, [][]byte{pubKey})
 					log.Debugf("[%s]GenContractSigTransaction, RedeemScript:%x", shortId(reqId.String()), redeemScript)
 					for inputIdx, input := range payment.Inputs {
 						var utxo *modules.Utxo
@@ -385,7 +385,7 @@ func (p *Processor) GenContractSigTransaction(signer common.Address, password st
 							}
 						}
 						log.Debugf("[%s]GenContractSigTransaction, Lock script:%x", shortId(reqId.String()), utxo.PkScript)
-						sign, err := tokenengine.MultiSignOnePaymentInput(tx, tokenengine.SigHashAll, msgidx, inputIdx,
+						sign, err := tokenengine.Instance.MultiSignOnePaymentInput(tx, tokenengine.SigHashAll, msgidx, inputIdx,
 							utxo.PkScript, redeemScript, ks.GetPublicKey, ks.SignMessage, nil)
 						if err != nil {
 							log.Errorf("[%s]GenContractSigTransaction, Sign error:%s", shortId(reqId.String()), err)
@@ -845,7 +845,7 @@ func (p *Processor) getContractAssignElectionList(tx *modules.Transaction) ([]mo
 
 	num := 0
 	eels := make([]modules.ElectionInf, 0)
-	tplId := payload.(*modules.ContractDeployRequestPayload).TplId
+	tplId := payload.(*modules.ContractDeployRequestPayload).TemplateId
 	//find the address of the contract template binding in the dag
 	//addrHash, err := p.getTemplateAddrHash(tplId)
 	tpl, err := p.dag.GetContractTpl(tplId)

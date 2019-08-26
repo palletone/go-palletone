@@ -23,6 +23,7 @@ if [ -e "$jsonFile" ]; then
     sed -i "s/\"initial_active_mediators\": \"5\"/\"initial_active_mediators\": \"3\"/g" $jsonFile
     sed -i "s/\"min_mediator_count\": \"5\"/\"min_mediator_count\": \"3\"/g" $jsonFile
     sed -i "s/\"maintenance_interval\": \"600\"/\"maintenance_interval\": \"150\"/g" $jsonFile
+    sed -i "s/\"maintenance_skip_slots\": \"2\"/\"maintenance_skip_slots\": \"0\"/g" $jsonFile
 else
     #file not found, new file
     echo "no $jsonFile"

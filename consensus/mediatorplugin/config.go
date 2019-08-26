@@ -19,6 +19,9 @@
 package mediatorplugin
 
 import (
+	"encoding/json"
+	"os"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
@@ -39,6 +42,7 @@ var (
 		ConsecutiveProductionFlag,
 		RequiredParticipationFlag,
 		NoGroupSignFlag,
+		MediatorsFlag,
 	}
 
 	NoProduceUnitFlag = cli.BoolFlag{
@@ -56,17 +60,24 @@ var (
 	RequiredParticipationFlag = cli.UintFlag{
 		Name:  "requiredParticipation",
 		Usage: "Percent of mediators (0-99) that must be participating in order to produce units.",
-		Value: DefaultRequiredParticipation,
+		//Value: DefaultRequiredParticipation,
 	}
 	NoGroupSignFlag = cli.BoolFlag{
 		Name:  "noGroupSign",
 		Usage: "Disable group-signing in this node.",
 	}
+	MediatorsFlag = cli.StringSliceFlag{
+		Name: "mediators",
+		Usage: "the mediator account controlled by this node, may specify multiple times. for example:\n" +
+			"{\\\"Address\\\":\\\"P1xx\\\",\\\"Password\\\":\\\"xxx\\\",\\\"InitPrivKey\\\":\\\"xxx\\\"," +
+			"\\\"InitPubKey\\\":\\\"xxx\\\"}",
+	}
 )
 
 // config data for mediator plugin
 type Config struct {
-	Mediators []*MediatorConf // the set of mediator accounts controlled by this node
+	// the set of mediator accounts controlled by this node
+	Mediators []*MediatorConf
 
 	// Percent of mediators (0-99) that must be participating in order to produce uints
 	RequiredParticipation uint32
@@ -116,25 +127,48 @@ func SetMediatorConfig(ctx *cli.Context, cfg *Config) {
 	if ctx.GlobalIsSet(NoProduceUnitFlag.Name) {
 		cfg.EnableProducing = false
 	}
+
 	if ctx.GlobalIsSet(StaleProductionFlag.Name) {
 		cfg.EnableStaleProduction = true
 	}
+
 	if ctx.GlobalIsSet(ConsecutiveProductionFlag.Name) {
 		cfg.EnableConsecutiveProduction = true
 	}
+
 	if ctx.GlobalIsSet(RequiredParticipationFlag.Name) {
 		cfg.RequiredParticipation = uint32(ctx.GlobalUint(RequiredParticipationFlag.Name))
 	}
+
 	if ctx.GlobalIsSet(NoGroupSignFlag.Name) {
 		cfg.EnableGroupSigning = false
+	}
+
+	if ctx.GlobalIsSet(MediatorsFlag.Name) {
+		mjs := ctx.GlobalStringSlice(MediatorsFlag.Name)
+		//log.Debugf("%v", mjs)
+
+		for _, mj := range mjs {
+			//log.Debugf("%v", mj)
+			mc := new(MediatorConf)
+
+			err := json.Unmarshal([]byte(mj), mc)
+			if err != nil {
+				log.Errorf("%v", err)
+				os.Exit(1)
+			}
+
+			//log.Debugf("%v", mc)
+			cfg.Mediators = append(cfg.Mediators, mc)
+		}
 	}
 }
 
 type MediatorConf struct {
-	Address,
-	Password,
-	InitPrivKey,
-	InitPubKey string
+	Address     string //`json:"account" toml:"account"`
+	Password    string //`json:"password" toml:"password"`
+	InitPrivKey string //`json:"initPrivKey" toml:"initPrivKey"`
+	InitPubKey  string //`json:"initPubKey" toml:"initPubKey"`
 }
 
 func (medConf *MediatorConf) configToAccount() *MediatorAccount {
@@ -146,8 +180,17 @@ func (medConf *MediatorConf) configToAccount() *MediatorAccount {
 	}
 
 	// 2. 解析 mediator 的 DKS 初始公私钥
-	sec, _ := core.StrToScalar(medConf.InitPrivKey)
-	pub, _ := core.StrToPoint(medConf.InitPubKey)
+	sec, err := core.StrToScalar(medConf.InitPrivKey)
+	if err != nil {
+		log.Debugf(err.Error())
+		return nil
+	}
+
+	pub, err := core.StrToPoint(medConf.InitPubKey)
+	if err != nil {
+		log.Debugf(err.Error())
+		return nil
+	}
 
 	medAcc := &MediatorAccount{
 		addr,

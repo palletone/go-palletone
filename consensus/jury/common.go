@@ -66,19 +66,19 @@ func localIsMinSignature(tx *modules.Transaction) bool {
 	}
 	return false
 }
-func generateJuryRedeemScript(jury []modules.ElectionInf) ([]byte) {
+func generateJuryRedeemScript(jury []modules.ElectionInf) []byte {
 	count := len(jury)
 	needed := byte(math.Ceil((float64(count)*2 + 1) / 3))
 	pubKeys := [][]byte{}
 	for _, jurior := range jury {
 		pubKeys = append(pubKeys, jurior.PublicKey)
 	}
-	return tokenengine.GenerateRedeemScript(needed, pubKeys)
+	return tokenengine.Instance.GenerateRedeemScript(needed, pubKeys)
 }
 
 //对于Contract Payout的情况，将SignatureSet转移到Payment的解锁脚本中
 func processContractPayout(tx *modules.Transaction, ele *modules.ElectionNode) {
-	if tx == nil || ele == nil{
+	if tx == nil || ele == nil {
 		log.Error("processContractPayout param is nil")
 		return
 	}
@@ -88,9 +88,9 @@ func processContractPayout(tx *modules.Transaction, ele *modules.ElectionNode) {
 		redeem := generateJuryRedeemScript(ele.EleList)
 
 		signsOrder := SortSigs(pubkeys, signs, redeem)
-		unlock := tokenengine.MergeContractUnlockScript(signsOrder, redeem)
+		unlock := tokenengine.Instance.MergeContractUnlockScript(signsOrder, redeem)
 		log.DebugDynamic(func() string {
-			unlockStr, _ := tokenengine.DisasmString(unlock)
+			unlockStr, _ := tokenengine.Instance.DisasmString(unlock)
 			return fmt.Sprintf("[%s]processContractPayout, Move sign payload to contract payout unlock script:%s",
 				shortId(reqId.String()), unlockStr)
 		})
@@ -130,7 +130,7 @@ func DeleOneMax(signs [][]byte) [][]byte {
 
 func SortSigs(pubkeys [][]byte, signs [][]byte, redeem []byte) [][]byte {
 	//get all pubkey of redeem
-	redeemStr, _ := tokenengine.DisasmString(redeem)
+	redeemStr, _ := tokenengine.Instance.DisasmString(redeem)
 	pubkeyStrs := strings.Split(redeemStr, " ")
 	if len(pubkeyStrs) < 3 {
 		log.Debugf("invalid redeemStr %s", redeemStr)
@@ -254,11 +254,11 @@ func createContractErrorPayloadMsg(tx *modules.Transaction, errIn error) *module
 		return modules.NewMessage(modules.APP_CONTRACT_TPL, payload)
 	case modules.APP_CONTRACT_DEPLOY_REQUEST:
 		req := contractReq.(*modules.ContractDeployRequestPayload)
-		payload := modules.NewContractDeployPayload(req.TplId, nil, "", req.Args, nil, nil, nil, contractErr)
+		payload := modules.NewContractDeployPayload(req.TemplateId, nil, "", req.Args, nil, nil, nil, contractErr)
 		return modules.NewMessage(modules.APP_CONTRACT_DEPLOY, payload)
 	case modules.APP_CONTRACT_INVOKE_REQUEST:
 		req := contractReq.(*modules.ContractInvokeRequestPayload)
-		payload := modules.NewContractInvokePayload(req.ContractId, req.Args, 0, nil, nil, nil, contractErr)
+		payload := modules.NewContractInvokePayload(req.ContractId, nil, nil, nil, contractErr)
 		return modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload)
 	case modules.APP_CONTRACT_STOP_REQUEST:
 		req := contractReq.(*modules.ContractStopRequestPayload)
@@ -306,7 +306,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 				reqPay := msg.Payload.(*modules.ContractDeployRequestPayload)
 				req := ContractDeployReq{
 					chainID:    "palletone",
-					templateId: reqPay.TplId,
+					templateId: reqPay.TemplateId,
 					txid:       tx.RequestHash().String(),
 					args:       reqPay.Args,
 					timeout:    time.Duration(reqPay.Timeout) * time.Second,
@@ -321,7 +321,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					return genContractErrorMsg(dag, tx, nil, err, errMsgEnable)
 				}
 				payload := deployResult.(*modules.ContractDeployPayload)
-				if ele != nil{
+				if ele != nil {
 					payload.EleNode = *ele
 				}
 				msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_DEPLOY, payload))
@@ -354,8 +354,8 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					return genContractErrorMsg(dag, tx, reqPay.ContractId, err, errMsgEnable)
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
-				payload := modules.NewContractInvokePayload(result.ContractId, result.Args, 0,
-					result.ReadSet, result.WriteSet, result.Payload, modules.ContractError{})
+				payload := modules.NewContractInvokePayload(result.ContractId, result.ReadSet, result.WriteSet,
+					result.Payload, modules.ContractError{})
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
 				}
@@ -409,12 +409,12 @@ func contractPayBack(tx *modules.Transaction, addr []byte, queryUtxoFunc modules
 		if msg.App == modules.APP_PAYMENT {
 			payment := msg.Payload.(*modules.PaymentPayload)
 			for outIdx, out := range payment.Outputs {
-				toAddr, _ := tokenengine.GetAddressFromScript(out.PkScript)
+				toAddr, _ := tokenengine.Instance.GetAddressFromScript(out.PkScript)
 				if addr != nil && bytes.Equal(toAddr.Bytes(), addr) {
 					input := modules.NewTxIn(modules.NewOutPoint(common.NewSelfHash(), uint32(msgIdx), uint32(outIdx)), nil)
 					inputUtxo, _ := queryUtxoFunc(payment.Inputs[0].PreviousOutPoint)
-					fromAddr, _ := tokenengine.GetAddressFromScript(inputUtxo.PkScript)
-					output := modules.NewTxOut(out.Value, tokenengine.GenerateLockScript(fromAddr), out.Asset)
+					fromAddr, _ := tokenengine.Instance.GetAddressFromScript(inputUtxo.PkScript)
+					output := modules.NewTxOut(out.Value, tokenengine.Instance.GenerateLockScript(fromAddr), out.Asset)
 					payback := modules.NewPaymentPayload([]*modules.Input{input}, []*modules.Output{output})
 					messages = append(messages, modules.NewMessage(modules.APP_PAYMENT, payback))
 				}
@@ -440,7 +440,7 @@ func handleMsg0(tx *modules.Transaction, dag iDag, reqArgs [][]byte) ([][]byte, 
 				continue
 			}
 			for _, output := range msg.Outputs {
-				addr, err := tokenengine.GetAddressFromScript(output.PkScript)
+				addr, err := tokenengine.Instance.GetAddressFromScript(output.PkScript)
 				if err != nil {
 					return nil, err
 				}
@@ -883,7 +883,7 @@ func calculateContractDeployDuringTime(dag iDag, tx *modules.Transaction) (uint6
 	sizeFee := sizeLevel * float64(txSize)
 	timeFee := float64(fees.Amount) - sizeFee
 
-	if timeLevel == 0{
+	if timeLevel == 0 {
 		//default
 		timeLevel = 10
 	}

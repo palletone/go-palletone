@@ -292,6 +292,9 @@ matrix:
         - make gptn
         - make golang-baseimage-dev
         - docker images
+        - docker network ls
+        - docker network create gptn-net
+        - docker network ls
         - cat /proc/sys/net/ipv4/ip_forward
         - sudo ./jurySec.sh
         - sudo cat /etc/docker/daemon.json
@@ -302,6 +305,7 @@ matrix:
         - chmod +x editConfig.sh
         - ./deploy.sh 3
         - ./editConfig.sh 3 3
+
         - ./start.sh 3
         - sleep 30
         - cd $BASE_DIR

@@ -21,6 +21,7 @@
 package common
 
 import (
+	"github.com/palletone/go-palletone/tokenengine"
 	"reflect"
 	"testing"
 	"time"
@@ -42,7 +43,7 @@ import (
 func mockUnitRepository() *UnitRepository {
 	db, _ := ptndb.NewMemDatabase()
 	//l := plog.NewTestLog()
-	return NewUnitRepository4Db(db)
+	return NewUnitRepository4Db(db, tokenengine.Instance)
 }
 
 //func mockUnitRepositoryLeveldb(path string) *UnitRepository {
@@ -141,7 +142,6 @@ func TestSaveUnit(t *testing.T) {
 
 	invokePayload := &modules.ContractInvokePayload{
 		ContractId: []byte("contract0000"),
-		Args:       [][]byte{[]byte("initial")},
 		ReadSet:    readSet,
 		WriteSet: []modules.ContractWriteSet{
 			{
@@ -434,10 +434,9 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 	addr.SetString("P12EA8oRMJbAtKHbaXGy8MGgzM8AMPYxkN1")
 	//et := time.Duration(12)
 	deployPayload := modules.ContractDeployPayload{
-		TemplateId: []byte("contract_template0000"),
+		//TemplateId: []byte("contract_template0000"),
 		ContractId: []byte("contract0000"),
 		Name:       "testdeploy",
-		Args:       [][]byte{[]byte{1, 2, 3}, []byte{4, 5, 6}},
 		//ExecutionTime: et,
 		//Jury:     []common.Address{addr},
 		ReadSet:  readSet,
@@ -686,10 +685,9 @@ func TestContractTxsIllegal(t *testing.T) {
 	addr := common.Address{}
 	addr.SetString("PC2EA8oRMJbAtKHbaXGy8MGgzM8AMPYxkN1")
 	deployPayload := &modules.ContractDeployPayload{
-		TemplateId: []byte("contract_template0000"),
+		//TemplateId: []byte("contract_template0000"),
 		ContractId: []byte("contract0000"),
 		Name:       "testDeploy",
-		Args:       [][]byte{[]byte{1, 2, 3}, []byte{4, 5, 6}},
 		ReadSet:    readSet,
 		WriteSet:   writeSet,
 	}

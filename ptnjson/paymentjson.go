@@ -31,7 +31,7 @@ type PaymentJson struct {
 	Inputs   []*InputJson  `json:"inputs"`
 	Outputs  []*OutputJson `json:"outputs"`
 	LockTime uint32        `json:"locktime"`
-	Number int  `json:"number"`
+	Number   int           `json:"number"`
 }
 type InputJson struct {
 	TxHash       string `json:"txid"`          // reference Utxo struct key field
@@ -62,7 +62,7 @@ func ConvertPayment2JsonIncludeFromAddr(payment *modules.PaymentPayload, utxoQue
 			if err != nil {
 				log.Warnf("Query utxo error:%s", err.Error())
 			} else {
-				addr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
+				addr, _ := tokenengine.Instance.GetAddressFromScript(utxo.PkScript)
 				input.FromAddress = addr.String()
 			}
 		}
@@ -87,7 +87,7 @@ func ConvertPayment2Json(payment *modules.PaymentPayload) *PaymentJson {
 			}
 			unlock := ""
 			if in.SignatureScript != nil {
-				unlock, _ = tokenengine.DisasmString(in.SignatureScript)
+				unlock, _ = tokenengine.Instance.DisasmString(in.SignatureScript)
 			}
 			input := &InputJson{TxHash: hstr, MessageIndex: mindex, OutIndex: outindex, UnlockScript: unlock}
 			json.Inputs = append(json.Inputs, input)
@@ -96,8 +96,8 @@ func ConvertPayment2Json(payment *modules.PaymentPayload) *PaymentJson {
 	}
 
 	for _, out := range payment.Outputs {
-		addr, _ := tokenengine.GetAddressFromScript(out.PkScript)
-		lock, _ := tokenengine.DisasmString(out.PkScript)
+		addr, _ := tokenengine.Instance.GetAddressFromScript(out.PkScript)
+		lock, _ := tokenengine.Instance.DisasmString(out.PkScript)
 		output := &OutputJson{Amount: out.Value, Asset: out.Asset.String(), ToAddress: addr.String(), LockScript: lock}
 		json.Outputs = append(json.Outputs, output)
 	}
@@ -114,7 +114,7 @@ func ConvertJson2Payment(json *PaymentJson) *modules.PaymentPayload {
 	}
 	for _, out := range json.Outputs {
 		addr, _ := common.StringToAddress(out.ToAddress)
-		lockScript := tokenengine.GenerateLockScript(addr)
+		lockScript := tokenengine.Instance.GenerateLockScript(addr)
 		asset := modules.Asset{}
 		asset.SetString(out.Asset)
 		output := modules.NewTxOut(out.Amount, lockScript, &asset)

@@ -21,6 +21,7 @@
 package dag
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -33,8 +34,8 @@ import (
 
 // GenerateUnit, generate unit
 // @author Albert·Gou
-func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte,
-	ks *keystore.KeyStore, txpool txspool.ITxPool) *modules.Unit {
+func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte, ks *keystore.KeyStore,
+	txpool txspool.ITxPool) (*modules.Unit, error) {
 	t0 := time.Now()
 	defer func(start time.Time) {
 		log.Debugf("GenerateUnit cost time: %v", time.Since(start))
@@ -45,23 +46,27 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	// 2. 生产unit，添加交易集、时间戳、签名
 	newUnit, err := dag.CreateUnit(producer, txpool, when)
 	if err != nil {
-		log.Debug("GenerateUnit", "error", err.Error())
-		return nil
+		errStr := fmt.Sprintf("GenerateUnit error: %v", err.Error())
+		log.Debug(errStr)
+		return nil, fmt.Errorf(errStr)
 	}
 	// added by yangyu, 2018.8.9
 	if newUnit == nil || newUnit.IsEmpty() {
-		log.Info("No unit need to be packaged for now.", "unit", newUnit)
-		return nil
+		errStr := fmt.Sprintf("No unit need to be packaged for now.")
+		log.Debug(errStr)
+		//log.Info("No unit need to be packaged for now.", "unit", newUnit)
+		return nil, fmt.Errorf(errStr)
 	}
 
 	newUnit.UnitHeader.Time = when.Unix()
 	newUnit.UnitHeader.GroupPubKey = groupPubKey
 	newUnit.Hash()
 
-	sign_unit, err1 := dagcommon.GetUnitWithSig(newUnit, ks, producer)
-	if err1 != nil {
-		log.Debugf("GetUnitWithSig error: %v", err)
-		return nil
+	sign_unit, err := dagcommon.GetUnitWithSig(newUnit, ks, producer)
+	if err != nil {
+		errStr := fmt.Sprintf("GetUnitWithSig error: %v", err.Error())
+		log.Debug(errStr)
+		return nil, fmt.Errorf(errStr)
 	}
 
 	sign_unit.UnitSize = sign_unit.Size()
@@ -78,8 +83,9 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 		dag.unstablePropRep = d
 		dag.unstableUnitProduceRep = e
 	} else if err != nil {
-		log.Info("create unit failed.", "error", err.Error())
-		return nil
+		errStr := fmt.Sprintf("AddUnit error: %v", err.Error())
+		log.Debug(errStr)
+		return nil, fmt.Errorf(errStr)
 	}
 	sign_unit.ReceivedAt = time.Now()
 	//4.PostChainEvents
@@ -93,5 +99,5 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 		dag.PostChainEvents(events)
 	}()
 
-	return sign_unit
+	return sign_unit, nil
 }
