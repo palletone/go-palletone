@@ -197,6 +197,7 @@ func (mp *MediatorPlugin) unlockLocalMediators() {
 	ks := mp.ptn.GetKeyStore()
 
 	for add, medAcc := range mp.mediators {
+		log.Debugf("try to unlock mediator account: %v", add.Str())
 		err := ks.Unlock(accounts.Account{Address: add}, medAcc.Password)
 		if err != nil {
 			log.Debugf("fail to unlock the mediator(%v), error: %v", add.Str(), err.Error())

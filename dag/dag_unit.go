@@ -87,7 +87,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 		log.Debug(errStr)
 		return nil, fmt.Errorf(errStr)
 	}
-
+	sign_unit.ReceivedAt = time.Now()
 	//4.PostChainEvents
 	//TODO add PostChainEvents
 	go func() {
