@@ -106,12 +106,16 @@ func (h *Header) ChainIndex() *ChainIndex {
 }
 
 func (h *Header) Hash() common.Hash {
-	emptyHeader := CopyHeader(h)
 	// 计算header’hash时 剔除群签
-	//emptyHeader.Authors = Authentifier{} Hash必须包含Mediator签名
-	emptyHeader.GroupSign = nil
-	emptyHeader.GroupPubKey = nil
-	return util.RlpHash(emptyHeader)
+	groupSign := h.GroupSign
+	groupPubKey := h.GroupPubKey
+	h.GroupSign = make([]byte, 0)
+	h.GroupPubKey = make([]byte, 0)
+	hash := util.RlpHash(h)
+	h.GroupSign = append(h.GroupSign, groupSign...)
+	h.GroupPubKey = append(h.GroupPubKey, groupPubKey...)
+
+	return hash
 }
 func (h *Header) HashWithoutAuthor() common.Hash {
 	emptyHeader := CopyHeader(h)
