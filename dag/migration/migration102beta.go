@@ -53,9 +53,9 @@ func (m *Migration101_102) ExecuteUpgrade() error {
 	}
 
 	// 转换mediator结构体
-	if err := m.upgradeMediatorInfo(); err != nil {
-		return err
-	}
+	//if err := m.upgradeMediatorInfo(); err != nil {
+	//	return err
+	//}
 
 	return nil
 }
