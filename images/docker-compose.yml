@@ -3,56 +3,44 @@ version: '2'
 services:
   mediator1:
     container_name: mediator1
-    image: palletone/mediator
+    image: palletone/gptnnode
     volumes:
-     - ./scripts/node1/ptn-genesis.json:/palletone/mediator/ptn-genesis.json
-     - ./scripts/node1/ptn-config.toml:/palletone/mediator/ptn-config.toml
-     - ./scripts/node1/palletone:/palletone/mediator/palletone
+     - ./scripts/node1:/palletone/mainnet
     restart: always
-    command: ./gptn --noProduce --staleProduce
+    command: [--noProduce,--staleProduce]
     network_mode: "gptn-net"
   mediator2:
     container_name: mediator2
-    image: palletone/mediator
+    image: palletone/gptnnode
     volumes:
-     - ./scripts/node2/ptn-genesis.json:/palletone/mediator/ptn-genesis.json
-     - ./scripts/node2/ptn-config.toml:/palletone/mediator/ptn-config.toml
-     - ./scripts/node2/palletone:/palletone/mediator/palletone
+     - ./scripts/node2:/palletone/mainnet
     restart: always
     network_mode: "gptn-net"
   mediator3:
     container_name: mediator3
-    image: palletone/mediator
+    image: palletone/gptnnode
     volumes:
-     - ./scripts/node3/ptn-genesis.json:/palletone/mediator/ptn-genesis.json
-     - ./scripts/node3/ptn-config.toml:/palletone/mediator/ptn-config.toml
-     - ./scripts/node3/palletone:/palletone/mediator/palletone
+     - ./scripts/node3:/palletone/mainnet
     restart: always
     network_mode: "gptn-net"
   mediator4:
     container_name: mediator4
-    image: palletone/mediator
+    image: palletone/gptnnode
     volumes:
-     - ./scripts/node4/ptn-genesis.json:/palletone/mediator/ptn-genesis.json
-     - ./scripts/node4/ptn-config.toml:/palletone/mediator/ptn-config.toml
-     - ./scripts/node4/palletone:/palletone/mediator/palletone
+     - ./scripts/node4:/palletone/mainnet
     restart: always
     network_mode: "gptn-net"
   mediator5:
     container_name: mediator5
-    image: palletone/mediator
+    image: palletone/gptnnode
     volumes:
-     - ./scripts/node5/ptn-genesis.json:/palletone/mediator/ptn-genesis.json
-     - ./scripts/node5/ptn-config.toml:/palletone/mediator/ptn-config.toml
-     - ./scripts/node5/palletone:/palletone/mediator/palletone
+     - ./scripts/node5:/palletone/mainnet
     restart: always
     network_mode: "gptn-net"
   node:
     container_name: node
-    image: palletone/mediator
+    image: palletone/gptnnode
     volumes:
-      - ./scripts/node6/ptn-genesis.json:/palletone/mediator/ptn-genesis.json
-      - ./scripts/node6/ptn-config.toml:/palletone/mediator/ptn-config.toml
-      - ./scripts/node6/palletone:/palletone/mediator/palletone
+      - ./scripts/node6:/palletone/mainnet
     restart: always
     network_mode: "gptn-net"
