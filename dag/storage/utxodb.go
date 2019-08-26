@@ -113,8 +113,6 @@ func (utxodb *UtxoDb) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) erro
 			if err != nil {
 				log.Errorf("store utxo to db failed, key:[%s]", outpoint.String())
 				return err
-			} else {
-				log.Debugf("store utxo to db success, key:[%s]", outpoint.String())
 			}
 			address, _ := tokenengine.GetAddressFromScript(utxo.PkScript[:])
 			// save utxoindex and  addr and key
@@ -124,8 +122,6 @@ func (utxodb *UtxoDb) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) erro
 			item.OutIndex = outpoint.OutIndex
 			if err := utxodb.batchSaveUtxoOutpoint(batch, address, item); err != nil {
 				log.Errorf("batch_save_utxo failed,addr[%s] , error:[%s]", address.String(), err)
-			} else {
-				log.Debugf("batch_save_utxo success,addr[%s]", address.String())
 			}
 		}
 	}
@@ -146,7 +142,7 @@ func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint, spentTxId common.Ha
 	if err != nil {
 		return err
 	}
-	log.Debugf("Try delete utxo by key:%s, move to spent table", outpoint.String())
+	//log.Debugf("Try delete utxo by key:%s, move to spent table", outpoint.String())
 	utxodb.SaveUtxoSpent(outpoint, utxo, spentTxId, spentTime)
 
 	address, _ := tokenengine.GetAddressFromScript(utxo.PkScript[:])

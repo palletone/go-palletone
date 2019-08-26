@@ -1546,7 +1546,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 		total += tx.Tx.Size()
 	}
 	for {
-		if time.Since(t0) > time.Millisecond*1000 {
+		if time.Since(t0) > time.Millisecond*800 {
 			log.Infof("get sorted timeout spent times: %s , count: %d ", time.Since(t0), len(list))
 			break
 		}
