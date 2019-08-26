@@ -839,9 +839,9 @@ save genesis unit data
 */
 func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 	tt := time.Now()
-	log.Debugf("saveUnit lock unitRepository.")
+	log.Debugf("saveUnit[%s] lock unitRepository.", unit.UnitHash.String())
 	rep.lock.Lock()
-	defer log.Debugf("saveUnit[%s] and unlock unitRepository cost time: %v", unit.UnitHash.String(), time.Since(tt))
+	defer log.Debugf("saveUnit[%s] and unlock unitRepository cost time: %s", unit.UnitHash.String(), time.Since(tt))
 	defer rep.lock.Unlock()
 	uHash := unit.Hash()
 	// step1. save unit header

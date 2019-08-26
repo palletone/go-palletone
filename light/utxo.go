@@ -176,8 +176,6 @@ func (u *UtxosSync) SaveUtxoView(respdata *utxosRespData) error {
 	if err := u.dag.SaveUtxoView(respdata.utxos); err != nil {
 		log.Debug("Light PalletOne", "SaveUtxoView failed,error:", err, "addr:", respdata.addr)
 		return err
-	} else {
-		log.Debug("Light PalletOne,SaveUtxoView success", "addr:", respdata.addr)
 	}
 	req.step <- OKUTXOsSync
 	return nil
