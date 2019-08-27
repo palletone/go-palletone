@@ -1,0 +1,46 @@
+version: '2'
+
+services:
+  mediator1:
+    container_name: mediator1
+    image: palletone/gptnnode
+    volumes:
+     - ./scripts/node1:/palletone/mainnet
+    restart: always
+    command: [--noProduce,--staleProduce]
+    network_mode: "gptn-net"
+  mediator2:
+    container_name: mediator2
+    image: palletone/gptnnode
+    volumes:
+     - ./scripts/node2:/palletone/mainnet
+    restart: always
+    network_mode: "gptn-net"
+  mediator3:
+    container_name: mediator3
+    image: palletone/gptnnode
+    volumes:
+     - ./scripts/node3:/palletone/mainnet
+    restart: always
+    network_mode: "gptn-net"
+  mediator4:
+    container_name: mediator4
+    image: palletone/gptnnode
+    volumes:
+     - ./scripts/node4:/palletone/mainnet
+    restart: always
+    network_mode: "gptn-net"
+  mediator5:
+    container_name: mediator5
+    image: palletone/gptnnode
+    volumes:
+     - ./scripts/node5:/palletone/mainnet
+    restart: always
+    network_mode: "gptn-net"
+  node:
+    container_name: node
+    image: palletone/gptnnode
+    volumes:
+      - ./scripts/node6:/palletone/mainnet
+    restart: always
+    network_mode: "gptn-net"

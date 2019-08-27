@@ -21,7 +21,6 @@ package modules
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
 	"math"
@@ -251,16 +250,6 @@ func (s Transactions) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 func (s Transactions) GetRlp(i int) []byte {
 	enc, _ := rlp.EncodeToBytes(s[i])
 	return enc
-}
-func (s Transactions) Hash() common.Hash {
-	b, err := json.Marshal(s)
-	if err != nil {
-		log.Error("json marshal error", "error", err)
-		return common.Hash{}
-	}
-
-	v := util.RlpHash(b[:])
-	return v
 }
 
 // TxDifference returns a new set t which is the difference between a to b.

@@ -68,6 +68,10 @@ function replacejson()
 
     add=`echo $add | jq ".initialParameters.mediator_interval = 3"`
 
+    if [ -n "$2" ]; then
+        add=`echo $add | jq ".initialParameters.contract_election_num = 3"`
+    fi
+
     tempstamp=`cat $1 | jq '.initialTimestamp'`
     tempstamp=$[$tempstamp/3]
     tempstamp=`echo $tempstamp | cut -f1 -d"."`
@@ -127,10 +131,15 @@ else
     read -p "Please input the numbers of nodes you want: " n;
 fi
 
+eleNum=
+if [ -n "$2" ]; then
+    eleNum=$2
+fi
+
 LoopDeploy $n;
 
 json="node1/ptn-genesis.json"
-replacejson $json 
+replacejson $json $eleNum
 
 #ModifyBootstrapNodes $n
 

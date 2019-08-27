@@ -69,8 +69,8 @@ type iDag interface {
 	//ValidateUnitExceptGroupSig(unit *modules.Unit) error
 	SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error
 
-	GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte,
-		ks *keystore.KeyStore, txspool txspool.ITxPool) *modules.Unit
+	GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte, ks *keystore.KeyStore,
+		txpool txspool.ITxPool) (*modules.Unit, error)
 
 	IsPrecedingMediator(add common.Address) bool
 	IsIrreversibleUnit(hash common.Hash) bool
@@ -175,6 +175,9 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 	log.Debugf("mediator plugin startup begin")
 	//mp.srvr = server
 
+	// 解锁本地控制的mediator账户
+	mp.unlockLocalMediators()
+
 	// 开启循环生产计划
 	if mp.producingEnabled {
 		go mp.launchProduction()
@@ -188,6 +191,19 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 
 	log.Debugf("mediator plugin startup end")
 	return nil
+}
+
+func (mp *MediatorPlugin) unlockLocalMediators() {
+	ks := mp.ptn.GetKeyStore()
+
+	for add, medAcc := range mp.mediators {
+		log.Debugf("try to unlock mediator account: %v", add.Str())
+		err := ks.Unlock(accounts.Account{Address: add}, medAcc.Password)
+		if err != nil {
+			log.Debugf("fail to unlock the mediator(%v), error: %v", add.Str(), err.Error())
+			//delete(mp.mediators, add)
+		}
+	}
 }
 
 func (mp *MediatorPlugin) launchProduction() {
@@ -246,11 +262,11 @@ func RegisterMediatorPluginService(stack *node.Node, cfg *Config) {
 	}
 }
 
-func NewMediatorPlugin(ctx *node.ServiceContext, cfg *Config, ptn PalletOne, dag iDag) (*MediatorPlugin, error) {
+func NewMediatorPlugin(/*ctx *node.ServiceContext, */cfg *Config, ptn PalletOne, dag iDag) (*MediatorPlugin, error) {
 	log.Infof("mediator plugin initialize begin")
 
 	if ptn == nil || dag == nil || cfg == nil {
-		err := "pointer parameters of NewMediatorPlugin are nil!"
+		err := "pointer parameters of NewMediatorPlugin are nil"
 		log.Errorf(err)
 		panic(err)
 	}
@@ -274,7 +290,7 @@ func NewMediatorPlugin(ctx *node.ServiceContext, cfg *Config, ptn PalletOne, dag
 		dkgLock:       new(sync.RWMutex),
 	}
 
-	mp.initLocalConfigMediator(cfg.Mediators, ctx.AccountManager)
+	mp.initLocalConfigMediator(cfg.Mediators/*, ctx.AccountManager*/)
 
 	if mp.groupSigningEnabled {
 		mp.initGroupSignBuf()
@@ -284,9 +300,9 @@ func NewMediatorPlugin(ctx *node.ServiceContext, cfg *Config, ptn PalletOne, dag
 	return &mp, nil
 }
 
-func (mp *MediatorPlugin) initLocalConfigMediator(mcs []*MediatorConf, am *accounts.Manager) {
+func (mp *MediatorPlugin) initLocalConfigMediator(mcs []*MediatorConf/*, am *accounts.Manager*/) {
 	mas := make(map[common.Address]*MediatorAccount, len(mcs))
-	ks := am.Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
+	//ks := am.Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 
 	for _, medConf := range mcs {
 		medAcc := medConf.configToAccount()
@@ -296,12 +312,12 @@ func (mp *MediatorPlugin) initLocalConfigMediator(mcs []*MediatorConf, am *accou
 
 		addr := medAcc.Address
 		// 解锁本地配置的mediator账户
-		log.Debugf("try to unlock mediator account: %v", medConf.Address)
-		err := ks.Unlock(accounts.Account{Address: addr}, medAcc.Password)
-		if err != nil {
-			log.Debugf("fail to unlock the mediator(%v), error: %v", medConf.Address, err.Error())
-			continue
-		}
+		//log.Debugf("try to unlock mediator account: %v", medConf.Address)
+		//err := ks.Unlock(accounts.Account{Address: addr}, medAcc.Password)
+		//if err != nil {
+		//	log.Debugf("fail to unlock the mediator(%v), error: %v", medConf.Address, err.Error())
+		//	continue
+		//}
 
 		log.Infof("this node control mediator account: %v", medConf.Address)
 		mas[addr] = medAcc

@@ -74,7 +74,7 @@ func GetAllResourceUsageByContainerName(name string) (*docker.Stats, error) {
 	defer close(done)
 	go func() {
 		errC <- client.Stats(docker.StatsOptions{ID: con.ID, Stats: statsC, Stream: false, Done: done,
-			InactivityTimeout: 3 * time.Second})
+			InactivityTimeout: 3 * time.Second, Timeout: 3 * time.Second})
 		close(errC)
 	}()
 	var resultStats []*docker.Stats
@@ -210,7 +210,7 @@ func StopContainerWhenInvokeTimeOut(name string) {
 		log.Info("util.NewDockerClient", "error", err)
 		return
 	}
-	err = client.StopContainer(name, 0)
+	err = client.StopContainer(name, 3)
 	if err != nil {
 		log.Infof("stop container error: %s", err.Error())
 		return

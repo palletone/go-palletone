@@ -143,13 +143,13 @@ func (s *PublicBlockChainAPI) GetAssetExistence(ctx context.Context,
 }
 
 func (s *PublicBlockChainAPI) ListSysConfig() ([]*ptnjson.ConfigJson, error) {
-	cp := s.b.GetChainParameters()
+	cp := s.b.Dag().GetChainParameters()
 
 	return ptnjson.ConvertAllSysConfigToJson(cp), nil
 }
 
 func (s *PublicBlockChainAPI) GetChainParameters() (*core.ChainParameters, error) {
-	return s.b.GetChainParameters(), nil
+	return s.b.Dag().GetChainParameters(), nil
 }
 
 func (s *PublicBlockChainAPI) AddressBalanceStatistics(ctx context.Context, token string,

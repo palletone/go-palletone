@@ -31,13 +31,13 @@ type Contract struct {
 	Status       byte   // 合约状态
 	Creator      []byte // address 20bytes
 	CreationTime uint64 // creation  date
-	DuringTime   uint64 //合约部署持续时间，单位秒
+	//DuringTime   uint64 //合约部署持续时间，单位秒
 }
 
-func NewContract(deploy *ContractDeployPayload, creator common.Address, unitTime uint64) *Contract {
+func NewContract(templateId []byte, deploy *ContractDeployPayload, creator common.Address, unitTime uint64) *Contract {
 	return &Contract{
 		ContractId:   deploy.ContractId,
-		TemplateId:   deploy.TemplateId,
+		TemplateId:   templateId,
 		Name:         deploy.Name,
 		Status:       1,
 		Creator:      creator.Bytes(),

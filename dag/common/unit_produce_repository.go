@@ -22,6 +22,7 @@ package common
 
 import (
 	"fmt"
+	"github.com/palletone/go-palletone/tokenengine"
 	"reflect"
 	"strconv"
 	"time"
@@ -73,14 +74,15 @@ func NewUnitProduceRepository(unitRep IUnitRepository, propRep IPropRepository,
 	}
 }
 
-func NewUnitProduceRepository4Db(db ptndb.Database) *UnitProduceRepository {
+func NewUnitProduceRepository4Db(db ptndb.Database,
+	tokenEngine tokenengine.ITokenEngine) *UnitProduceRepository {
 	dagDb := storage.NewDagDb(db)
-	utxoDb := storage.NewUtxoDb(db)
+	utxoDb := storage.NewUtxoDb(db, tokenEngine)
 	stateDb := storage.NewStateDb(db)
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
 
-	unitRep := NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
+	unitRep := NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenEngine)
 	propRep := NewPropRepository(propDb)
 	stateRep := NewStateRepository(stateDb)
 
@@ -169,7 +171,7 @@ func (rep *UnitProduceRepository) PushUnit(newUnit *modules.Unit) error {
 // ApplyUnit, 运用下一个 unit 更新整个区块链状态
 func (rep *UnitProduceRepository) ApplyUnit(nextUnit *modules.Unit) error {
 	defer func(start time.Time) {
-		log.Debugf("ApplyUnit cost time: %v", time.Since(start))
+		log.Debugf("ApplyUnit[%s] cost time: %v", nextUnit.UnitHash.String(), time.Since(start))
 	}(time.Now())
 
 	// 计算当前 unit 到上一个 unit 之间的缺失数量，并更新每个mediator的unit的缺失数量
@@ -393,9 +395,9 @@ func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion)
 	modifies, err := dag.stateRep.GetSysParamWithoutVote()
 	if err == nil {
 		for k, v := range modifies {
-			if k == modules.DesiredActiveMediatorCount {
-				continue // 已更新，不需要处理
-			}
+			//if k == modules.DesiredActiveMediatorCount {
+			//	continue // 已更新，不需要处理
+			//}
 
 			err = updateChainParameter(&gp.ChainParameters, k, v)
 			if err != nil {
@@ -416,9 +418,9 @@ func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion)
 	infos := dag.getSysParamsWithVote()
 	if len(infos) > 0 {
 		for k, v := range infos {
-			if k == modules.DesiredActiveMediatorCount {
-				continue // 已更新，不需要处理
-			}
+			//if k == modules.DesiredActiveMediatorCount {
+			//	continue // 已更新，不需要处理
+			//}
 
 			err = updateChainParameter(&gp.ChainParameters, k, v)
 			if err != nil {
@@ -434,7 +436,8 @@ func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion)
 		}
 	}
 
-	core.ImmutableChainParameterCheck(&gp.ImmutableParameters, &gp.ChainParameters)
+	//core.ImmutableChainParameterCheck(&gp.ImmutableParameters, &gp.ChainParameters)
+
 	err = dag.propRep.StoreGlobalProp(gp)
 	if err != nil {
 		return err
@@ -519,33 +522,34 @@ func (dag *UnitProduceRepository) performAccountMaintenance() {
 
 func (dag *UnitProduceRepository) updateActiveMediators() bool {
 	// 1. 统计出活跃mediator数量n
-	maxFn := func(x, y int) int {
-		if x > y {
-			return x
-		}
-		return y
-	}
+	//maxFn := func(x, y int) int {
+	//	if x > y {
+	//		return x
+	//	}
+	//	return y
+	//}
 
 	gp := dag.GetGlobalProp()
 
 	// 保证活跃mediator的总数必须大于MinimumMediatorCount
 	minMediatorCount := gp.ImmutableParameters.MinimumMediatorCount
-	countInSystem := dag.getDesiredActiveMediatorCount()
-	mediatorCount := maxFn((countInSystem-1)/2*2+1, int(minMediatorCount))
+	mediatorCount := dag.getDesiredActiveMediatorCount()
+	//mediatorCount := maxFn((countInSystem-1)/2*2+1, int(minMediatorCount))
 
 	mediatorLen := dag.mediatorVoteTally.Len()
-	if mediatorLen < mediatorCount {
-		// 保证活跃mediator的总数为奇数
-		mediatorCount = (mediatorLen-1)/2*2 + 1
-	}
+	//if mediatorLen < mediatorCount {
+	//	// 保证活跃mediator的总数为奇数
+	//	mediatorCount = (mediatorLen-1)/2*2 + 1
+	//}
 	log.Debugf("the desired mediator count is %v, the actual mediator count is %v,"+
-		" the minimum mediator count is %v", countInSystem, mediatorLen, minMediatorCount)
+		" the minimum mediator count is %v", mediatorCount, mediatorLen, minMediatorCount)
 
 	// 2. 根据每个mediator的得票数，排序出前n个 active mediator
 	log.Debugf("In this round, The active mediator's count is %v", mediatorCount)
 	if dag.mediatorVoteTally.Len() > 0 {
 		sort.PartialSort(dag.mediatorVoteTally, mediatorCount)
 	}
+
 	// 3. 更新每个mediator的得票数
 	for _, voteTally := range dag.mediatorVoteTally {
 		med := dag.GetMediator(voteTally.candidate)
@@ -559,7 +563,7 @@ func (dag *UnitProduceRepository) updateActiveMediators() bool {
 	// 4. 更新 global property 中的 active mediator 和 Preceding Mediators
 	gp.PrecedingMediators = gp.ActiveMediators
 	gp.ActiveMediators = make(map[common.Address]bool, mediatorCount)
-	gp.ChainParameters.ActiveMediatorCount = uint8(mediatorCount)
+	//gp.ChainParameters.ActiveMediatorCount = uint8(mediatorCount)
 	if dag.mediatorVoteTally.Len() > 0 {
 		for index := 0; index < mediatorCount; index++ {
 			voteTally := dag.mediatorVoteTally[index]
@@ -570,7 +574,7 @@ func (dag *UnitProduceRepository) updateActiveMediators() bool {
 
 	// todo albert 待使用
 	//return isActiveMediatorsChanged(gp)
-	return false
+	return true
 }
 
 func (d *UnitProduceRepository) getDesiredActiveMediatorCount() int {

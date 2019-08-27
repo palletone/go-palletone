@@ -22,6 +22,7 @@ package prc20
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -30,6 +31,8 @@ import (
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	dm "github.com/palletone/go-palletone/dag/modules"
+
+	"github.com/shopspring/decimal"
 )
 
 const symbolsKey = "symbol_"
@@ -165,6 +168,21 @@ func checkAddr(addr string) error {
 	return err
 }
 
+func getSupply(supplyStr string, decimals uint64) (uint64, error) {
+	//totalSupply, err := strconv.ParseUint(args[3], 10, 64)
+	totalSupply, err := decimal.NewFromString(supplyStr)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to convert total supply\"}"
+		return 0, fmt.Errorf(jsonResp)
+	}
+	if !totalSupply.IsPositive() {
+		jsonResp := "{\"Error\":\"Must be positive\"}"
+		return 0, fmt.Errorf(jsonResp)
+	}
+	totalSupply = totalSupply.Mul(decimal.New(1, int32(decimals)))
+	return uint64(totalSupply.IntPart()), nil
+}
+
 func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//params check
 	if len(args) < 4 {
@@ -192,16 +210,12 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	fungible.Decimals = byte(decimals)
 	//total supply
-	totalSupply, err := strconv.ParseUint(args[3], 10, 64)
+	totalSupply, err := getSupply(args[3], decimals)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to convert total supply\"}"
-		return shim.Error(jsonResp)
-	}
-	if totalSupply == 0 {
-		jsonResp := "{\"Error\":\"Can't be zero\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(err.Error())
 	}
 	fungible.TotalSupply = totalSupply
+
 	//address of supply
 	if len(args) > 4 {
 		fungible.SupplyAddress = args[4]
@@ -264,7 +278,18 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//symbol
-	symbol := strings.ToUpper(args[0])
+	symbolAsset := args[0]
+	var symbol string
+	if index := strings.IndexRune(symbolAsset, '+'); index != -1 {
+		asset, err := dm.StringToAsset(symbolAsset)
+		if err != nil {
+			jsonResp := "{\"Error\":\"Asset is \"}"
+			return shim.Error(jsonResp)
+		}
+		symbol = asset.AssetId.GetSymbol()
+	} else {
+		symbol = strings.ToUpper(symbolAsset)
+	}
 	//check name is exist or not
 	gTkInfo := getGlobal(stub, symbol)
 	if gTkInfo == nil {
@@ -278,14 +303,9 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//supply amount
-	supplyAmount, err := strconv.ParseUint(args[1], 10, 64)
+	supplyAmount, err := getSupply(args[1], uint64(gTkInfo.AssetID.GetDecimal()))
 	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to convert supply amount\"}"
-		return shim.Error(jsonResp)
-	}
-	if supplyAmount == 0 {
-		jsonResp := "{\"Error\":\"Can't be zero\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(err.Error())
 	}
 	if math.MaxInt64-gTkInfo.TotalSupply < supplyAmount {
 		jsonResp := "{\"Error\":\"Too big, overflow\"}"
@@ -415,12 +435,12 @@ func frozenToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		ownerAddr = gTkInfo.CreateAddr
 	}
 	if invokeAddrStr != ownerAddr {
-		cp, err := stub.GetSystemConfig()
+		gp, err := stub.GetSystemConfig()
 		if err != nil {
 			jsonResp := "{\"Error\":\"GetSystemConfig() failed\"}"
 			return shim.Error(jsonResp)
 		}
-		if invokeAddrStr != cp.FoundationAddress {
+		if invokeAddrStr != gp.ChainParameters.FoundationAddress {
 			jsonResp := "{\"Error\":\"Only the FoundationAddress or Owner can frozen token\"}"
 			return shim.Error(jsonResp)
 		}

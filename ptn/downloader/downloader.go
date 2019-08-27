@@ -238,27 +238,10 @@ func (d *Downloader) Progress() palletone.SyncProgress {
 		current = unit.Number().Index
 	}
 
-	//switch d.mode {
-	//case FullSync:
-	//	//unit := d.dag.CurrentUnit(modules.PTNCOIN)
-	//	//if unit != nil {
-	//	//	current = unit.Number().Index
-	//	//}
-	//case FastSync:
-	//	//unit := d.dag.CurrentUnit(modules.PTNCOIN)
-	//	//if unit != nil {
-	//	//	current = unit.Number().Index
-	//	//}
-	//case LightSync:
-	//	//current = d.lightdag.CurrentHeader().Number.Uint64()
-	//}
-
 	return palletone.SyncProgress{
 		StartingBlock: d.syncStatsChainOrigin,
 		CurrentBlock:  current,
 		HighestBlock:  d.syncStatsChainHeight,
-		//PulledStates:  d.syncStatsState.processed,
-		//KnownStates:   d.syncStatsState.processed + d.syncStatsState.pending,
 	}
 }
 

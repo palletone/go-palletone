@@ -52,7 +52,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	// 更新 Mediator 信息
 	case modules.UpdateMediatorInfo:
 		log.Info("Enter DepositChaincode Contract " + modules.UpdateMediatorInfo + " Invoke")
-		return d.UpdateMediatorInfo(stub, args)
+		return d.updateMediatorInfo(stub, args)
 	//
 	//  jury 交付保证金
 	case JuryPayToDepositContract:
@@ -351,6 +351,9 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	case QueryPledgeList:
 		log.Info("Enter DepositChaincode Contract " + QueryPledgeList + " Query")
 		return queryPledgeList(stub)
+	case QueryPledgeListByDate:
+		log.Info("Enter DepositChaincode Contract " + QueryPledgeListByDate + " Query")
+		return queryPledgeListByDate(stub, args)
 		//TODO Devin一个用户，怎么查看自己的流水账？
 		//case AllPledgeVotes:
 		//	b, err := getVotes(stub)
@@ -432,7 +435,7 @@ func (d *DepositChaincode) mediatorApplyQuit(stub shim.ChaincodeStubInterface) p
 	return mediatorApplyQuit(stub)
 }
 
-func (d *DepositChaincode) UpdateMediatorInfo(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (d *DepositChaincode) updateMediatorInfo(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return updateMediatorInfo(stub, args)
 }
 

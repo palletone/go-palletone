@@ -77,7 +77,7 @@ func TestTxCountAndUnitSize(t *testing.T) {
 	unlockScript := tokenengine.GenerateP2PKHUnlockScript(sign, pubKey)
 	a := modules.NewPTNAsset()
 	addr, _ := common.StringToAddress("P13pBrshF6JU7QhMmzJjXx3mWHh13YHAUAa")
-	lockScript := tokenengine.GenerateLockScript(addr)
+	lockScript := tokenengine.Instance.GenerateLockScript(addr)
 	for i := 1; i < 100000; i *= 2 {
 		txs := modules.Transactions{}
 		for j := 0; j < i; j++ {

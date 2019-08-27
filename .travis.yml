@@ -140,7 +140,7 @@ matrix:
         - |
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
-            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
+            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH} ${TRAVIS_BUILD_NUMBER};
             # echo ftp address
             echo "The path of all bdd log in vsftpd is 'ftp://47.74.209.46"
             echo "If you want to open it in explorer, you should close VPN first."
@@ -163,7 +163,7 @@ matrix:
       script:
         #- go build -mod=vendor ./cmd/gptn
         - make gptn
-        - cp bdd/light/testcases/!(preset.sh) bdd/node
+        #- cp bdd/light/testcases/!(preset.sh) bdd/node
         - cp build/bin/gptn bdd/node
         - cd bdd/node
         - chmod -R +x *
@@ -187,13 +187,13 @@ matrix:
         - |
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
-            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
+            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH} ${TRAVIS_BUILD_NUMBER};
         - cd ${BASE_DIR}/bdd
         - source ./targz_node.sh
         - |
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
-            ./upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
+            ./upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH} ${TRAVIS_BUILD_NUMBER};
             # echo ftp address
             echo "The path of all bdd log in vsftpd is 'ftp://47.74.209.46"
             echo "If you want to open it in explorer, you should close VPN first."
@@ -233,7 +233,7 @@ matrix:
         - |
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
-            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
+            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH} ${TRAVIS_BUILD_NUMBER};
             echo "The path of all bdd log in vsftpd is 'ftp://47.74.209.46"
           fi
       install:
@@ -269,7 +269,7 @@ matrix:
         - |
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
-            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
+            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH} ${TRAVIS_BUILD_NUMBER};
             echo "The path of all bdd log in vsftpd is 'ftp://47.74.209.46"
           fi
       install:
@@ -300,10 +300,12 @@ matrix:
         - chmod +x ./start.sh
         - cp $BASE_DIR/bdd/UserContract/editConfig.sh ./
         - chmod +x editConfig.sh
-        - ./deploy.sh 3
+        - docker network ls
+        - ./deploy.sh 3 3
         - ./editConfig.sh 3 3
         - ./start.sh 3
         - sleep 30
+        - docker network ls
         - cd $BASE_DIR
         - mkdir -p ${BDD_LOG_PATH}/${USER_CONTRACT_DIR}
         - python -m robot.run -d ${BDD_LOG_PATH}/${USER_CONTRACT_DIR} ./bdd/UserContract/Testcases;
@@ -322,7 +324,7 @@ matrix:
         - |
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
-            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH};
+            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH} ${TRAVIS_BUILD_NUMBER};
           fi
       install:
         - sudo -H pip install --upgrade pip

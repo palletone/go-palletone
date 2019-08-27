@@ -1,6 +1,6 @@
 #!/bin/bash
 
-local_host=`/sbin/ifconfig -a|grep inet|grep -v 127.0.0.1|grep -v inet6|grep -v 172.17.0.1|awk '{print $2}'|tr -d "addr:"`
+local_host=`/sbin/ifconfig -a|grep inet|grep -v 127.0.0.1|grep -v inet6|grep -v 172|awk '{print $2}'|tr -d "addr:"`
 
 echo $local_host
 
@@ -23,7 +23,5 @@ sed -i "s/$originPort/$newPort/g" node$i/ptn-config.toml
 fi
 sed -i "s/HTTPHost = \"localhost\"/HTTPHost = \"0.0.0.0\"/g" node$i/ptn-config.toml
 sed -i "s/ContractAddress\s*=\s*\"127.0.0.1/$newAddr/g" node$i/ptn-config.toml
-sed -i "s/ElectionNum = [0-9]*/ElectionNum = $NUM/g" node$i/ptn-config.toml
-sed -i "s/ContractSigNum\s*=\s*[0-9]*/ContractSigNum = $SIG/g" node$i/ptn-config.toml
 sed -i "s/IsJury = false/IsJury = true/g" node$i/ptn-config.toml
 done

@@ -42,34 +42,35 @@ func regulateGenesisTimestamp(ctx *cli.Context, genesis *core.Genesis) {
 // @author Albert·Gou
 func validateGenesis(genesis *core.Genesis) {
 	initialTime := genesis.InitialTimestamp
-	fcAssert(initialTime != 0, "Must initialize genesis timestamp.")
+	fcAssert(initialTime != 0, "must initialize genesis timestamp.")
 
 	mediatorInterval := int64(genesis.InitialParameters.MediatorInterval)
-	fcAssert(mediatorInterval > 0, "mediator interval must be larger than zero.")
+	fcAssert(mediatorInterval > 0, "initial mediator interval must be larger than zero.")
 
 	fcAssert(initialTime%mediatorInterval == 0,
-		"Genesis timestamp must be divisible by mediator interval.")
+		"genesis timestamp must be divisible by mediator interval.")
 
 	minMediatorInterval := int64(genesis.ImmutableParameters.MinMediatorInterval)
-	fcAssert(mediatorInterval >= minMediatorInterval, "mediator interval cannot less than min interval.")
+	fcAssert(!(mediatorInterval < minMediatorInterval), "initial mediator interval(%v) "+
+		"cannot less than min interval(%v).", mediatorInterval, minMediatorInterval)
 
 	mediatorCandidateCount := uint8(len(genesis.InitialMediatorCandidates))
-	fcAssert(mediatorCandidateCount != 0, "Cannot start a chain with zero mediators.")
+	fcAssert(mediatorCandidateCount != 0, "cannot start a chain with zero mediators.")
 
 	initialActiveMediator := genesis.InitialParameters.ActiveMediatorCount
-	fcAssert(initialActiveMediator <= mediatorCandidateCount,
+	fcAssert(!(initialActiveMediator > mediatorCandidateCount),
 		"initial active mediators cannot larger than the number of candidate mediators.")
 
 	fcAssert((initialActiveMediator&1) == 1, "initial active mediator count must be odd.")
 
 	minMediatorCount := genesis.ImmutableParameters.MinimumMediatorCount
-	fcAssert(initialActiveMediator >= minMediatorCount,
+	fcAssert(!(initialActiveMediator < minMediatorCount),
 		"initial active mediators(%v) cannot less than min mediator count(%v).",
 		initialActiveMediator, minMediatorCount)
 
 	minMaintSkipSlots := genesis.ImmutableParameters.MinMaintSkipSlots
 	maintenanceSkipSlots := genesis.InitialParameters.MaintenanceSkipSlots
-	fcAssert(maintenanceSkipSlots >= minMaintSkipSlots,
+	fcAssert(!(maintenanceSkipSlots < minMaintSkipSlots),
 		"initial maintenanceSkipSlots(%v) cannot less than minMaintSkipSlots(%v).",
 		maintenanceSkipSlots, minMaintSkipSlots)
 

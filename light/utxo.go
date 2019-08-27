@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developer Jiyou Wang <dev@pallet.one>
  * @date 2018
@@ -173,7 +174,7 @@ func (u *UtxosSync) SaveUtxoView(respdata *utxosRespData) error {
 		return err
 	}
 	if err := u.dag.SaveUtxoView(respdata.utxos); err != nil {
-		log.Debug("Light PalletOne", "SaveUtxoView key err", err, "addr:", respdata.addr)
+		log.Debug("Light PalletOne", "SaveUtxoView failed,error:", err, "addr:", respdata.addr)
 		return err
 	}
 	req.step <- OKUTXOsSync

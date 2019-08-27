@@ -224,7 +224,7 @@ Wait for unit about contract to be confirmed by unit height
     # query the height of unit including tpl install tx
     ${params}=    Create List    ${reqId}
     # jury signature needs time to set agree
-    ${waitTimes}=    Set Variable    ${20}
+    ${waitTimes}=    Set Variable    ${60}
     ${unitHeight}=    Set Variable    999999999999999999999999999999999999
     : FOR    ${t}    IN RANGE    ${waitTimes}
     \    ${respJson}=    sendRpcPost    ${host}    dag_getTxByReqId    ${params}    QueryContractReqStats

@@ -49,10 +49,10 @@ import (
 )
 
 type Dag struct {
-	Cache       palletcache.ICache
-	Db          ptndb.Database
-	currentUnit atomic.Value
-
+	Cache                  palletcache.ICache
+	Db                     ptndb.Database
+	currentUnit            atomic.Value
+	tokenEngine            tokenengine.ITokenEngine
 	unstableUnitRep        dagcommon.IUnitRepository
 	unstableUtxoRep        dagcommon.IUtxoRepository
 	unstableStateRep       dagcommon.IStateRepository
@@ -113,14 +113,14 @@ func (d *Dag) GetMainCurrentUnit() *modules.Unit {
 // return higher unit in memdag
 func (d *Dag) GetCurrentUnit(assetId modules.AssetId) *modules.Unit {
 	memUnit := d.GetCurrentMemUnit(assetId, 0)
-	curUnit := d.CurrentUnit(assetId)
-
-	if memUnit == nil {
-		return curUnit
-	}
-	if curUnit.NumberU64() >= memUnit.NumberU64() {
-		return curUnit
-	}
+	//curUnit := d.CurrentUnit(assetId)
+	//
+	//if memUnit == nil {
+	//	return curUnit
+	//}
+	//if curUnit.NumberU64() >= memUnit.NumberU64() {
+	//	return curUnit
+	//}
 	return memUnit
 }
 
@@ -284,7 +284,7 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error
 			u.NumberU64(), u.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
 			u.Author().Str())
 
-		if a, b, c, dd, e, err := d.Memdag.AddUnit(u, txpool); err != nil {
+		if a, b, c, dd, e, err := d.Memdag.AddUnit(u, txpool, false); err != nil {
 			//return count, err
 			log.Errorf("Memdag addUnit[%s] #%d signed by %v error:%s",
 				u.UnitHash.String(), u.NumberU64(), u.Author().Str(), err.Error())
@@ -429,7 +429,7 @@ func (d *Dag) refreshPartitionMemDag() {
 			d.initDataForMainChainHeader(mainChain)
 			log.Debugf("Init main chain mem dag for:%s", mainChain.GasToken.String())
 			pmemdag := memunit.NewMemDag(mainChain.GasToken, threshold, true, db, unitRep,
-				propRep, d.stableStateRep, cache())
+				propRep, d.stableStateRep, cache(), d.tokenEngine)
 			//pmemdag.SetUnstableRepositories(d.unstableUnitRep, d.unstableUtxoRep, d.unstableStateRep,
 			// d.unstablePropRep, d.unstableUnitProduceRep)
 			d.PartitionMemDag[mainChain.GasToken] = pmemdag
@@ -455,7 +455,7 @@ func (d *Dag) refreshPartitionMemDag() {
 			d.initDataForPartition(partition)
 			log.Debugf("Init partition mem dag for:%s", ptoken.String())
 			pmemdag := memunit.NewMemDag(ptoken, threshold, true, db, unitRep, propRep,
-				d.stableStateRep, cache())
+				d.stableStateRep, cache(), d.tokenEngine)
 			//pmemdag.SetUnstableRepositories(d.unstableUnitRep, d.unstableUtxoRep, d.unstableStateRep,
 			// d.unstablePropRep, d.unstableUnitProduceRep)
 			partitionMemdag[ptoken] = pmemdag
@@ -473,7 +473,7 @@ func (d *Dag) refreshPartitionMemDag() {
 			d.initDataForPartition(partition)
 			log.Debugf("Init partition mem dag for:%s", ptoken.String())
 			pmemdag := memunit.NewMemDag(ptoken, threshold, true, db, unitRep, propRep,
-				d.stableStateRep, cache())
+				d.stableStateRep, cache(), d.tokenEngine)
 			//pmemdag.SetUnstableRepositories(d.unstableUnitRep, d.unstableUtxoRep, d.unstableStateRep,
 			// d.unstablePropRep, d.unstableUnitProduceRep)
 			d.PartitionMemDag[ptoken] = pmemdag
@@ -509,9 +509,9 @@ func (d *Dag) initDataForMainChainHeader(mainChain *modules.MainChain) {
 // newDag, with db , light to build a new dag
 // firstly to check db migration, is updated ptn database.
 func NewDag(db ptndb.Database, cache palletcache.ICache, light bool) (*Dag, error) {
-
+	tokenEngine := tokenengine.Instance //TODO Devin tokenENgine from parmeter
 	dagDb := storage.NewDagDb(db)
-	utxoDb := storage.NewUtxoDb(db)
+	utxoDb := storage.NewUtxoDb(db, tokenEngine)
 	stateDb := storage.NewStateDb(db)
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
@@ -521,18 +521,20 @@ func NewDag(db ptndb.Database, cache palletcache.ICache, light bool) (*Dag, erro
 		return nil, err
 	}
 
-	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb)
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
+	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb, tokenEngine)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenEngine)
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
 	stableUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
 	gasToken := dagconfig.DagConfig.GetGasToken()
 	threshold, _ := propRep.GetChainThreshold()
-	unstableChain := memunit.NewMemDag(gasToken, threshold, light /*false*/, db, unitRep, propRep, stateRep, cache)
+	unstableChain := memunit.NewMemDag(gasToken, threshold, light, db,
+		unitRep, propRep, stateRep, cache, tokenEngine)
 	tunitRep, tutxoRep, tstateRep, tpropRep, tUnitProduceRep := unstableChain.GetUnstableRepositories()
 
 	dag := &Dag{
 		Db:                     db,
+		tokenEngine:            tokenEngine,
 		Cache:                  cache,
 		unstableUnitRep:        tunitRep,
 		unstableUtxoRep:        tutxoRep,
@@ -626,15 +628,15 @@ func (dag *Dag) AfterChainMaintenanceEvent(arg *modules.ChainMaintenanceEvent) {
 
 // to build a new dag when init genesis
 func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
-
+	tokenEngine := tokenengine.Instance
 	dagDb := storage.NewDagDb(db)
-	utxoDb := storage.NewUtxoDb(db)
+	utxoDb := storage.NewUtxoDb(db, tokenEngine)
 	stateDb := storage.NewStateDb(db)
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
 
-	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb)
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
+	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb, tokenEngine)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenEngine)
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
 
@@ -642,6 +644,7 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 
 	dag := &Dag{
 		Db:                   db,
+		tokenEngine:          tokenEngine,
 		stableUnitRep:        unitRep,
 		stableUtxoRep:        utxoRep,
 		stablePropRep:        propRep,
@@ -655,24 +658,27 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 
 // to build a dag for test
 func NewDagForTest(db ptndb.Database) (*Dag, error) {
+	tokenEngine := tokenengine.Instance
 	dagDb := storage.NewDagDb(db)
-	utxoDb := storage.NewUtxoDb(db)
+	utxoDb := storage.NewUtxoDb(db, tokenEngine)
 	stateDb := storage.NewStateDb(db)
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
+
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb)
-	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb)
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
+	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb, tokenEngine)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenEngine)
 	statleUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
 
 	threshold, _ := propRep.GetChainThreshold()
 	unstableChain := memunit.NewMemDag(modules.PTNCOIN, threshold, false, db, unitRep,
-		propRep, stateRep, cache())
+		propRep, stateRep, cache(), tokenEngine)
 	tunitRep, tutxoRep, tstateRep, tpropRep, tUnitProduceRep := unstableChain.GetUnstableRepositories()
 
 	dag := &Dag{
 		Db:                     db,
+		tokenEngine:            tokenEngine,
 		stableUnitRep:          unitRep,
 		stableUtxoRep:          utxoRep,
 		stableStateRep:         stateRep,
@@ -824,7 +830,7 @@ func (d *Dag) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, err
 	if err != nil {
 		return common.Address{}, err
 	}
-	return tokenengine.GetAddressFromScript(utxo.PkScript)
+	return d.tokenEngine.GetAddressFromScript(utxo.PkScript)
 }
 
 // return the transaction's fee ,
@@ -888,8 +894,13 @@ func (d *Dag) GetContractJury(contractId []byte) (*modules.ElectionNode, error) 
 
 // createUnit, create a unit when mediator being produced
 func (d *Dag) CreateUnit(mAddr common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error) {
-	_, _, _, rep, _ := d.Memdag.GetUnstableRepositories()
-	return d.unstableUnitRep.CreateUnit(mAddr, txpool, rep, t)
+	_, _, state, rep, _ := d.Memdag.GetUnstableRepositories()
+	med, err := state.RetrieveMediator(mAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool, rep, t)
 }
 
 // save header
@@ -904,7 +915,7 @@ func (d *Dag) saveHeader(header *modules.Header) error {
 		log.Error(err.Error())
 		return err
 	}
-	if a, b, c, dd, e, err := memdag.AddUnit(unit, nil); err != nil {
+	if a, b, c, dd, e, err := memdag.AddUnit(unit, nil, false); err != nil {
 		return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
 	} else {
 		if a != nil {
@@ -947,7 +958,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 		return nil
 	}
 
-	if a, b, c, dd, e, err := d.Memdag.AddUnit(unit, txpool); err != nil {
+	if a, b, c, dd, e, err := d.Memdag.AddUnit(unit, txpool, false); err != nil {
 		return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
 	} else {
 		if a != nil {

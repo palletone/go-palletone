@@ -19,6 +19,7 @@ import (
 	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/dagconfig"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -60,11 +61,11 @@ func handlePledgeReward(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 	if len(args) != 0 {
 		return shim.Error("need 0 args")
 	}
-	cp, err := stub.GetSystemConfig()
+	gp, err := stub.GetSystemConfig()
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	depositDailyReward := cp.PledgeDailyReward
+	depositDailyReward := gp.ChainParameters.PledgeDailyReward
 
 	err = handleRewardAllocation(stub, depositDailyReward)
 	if err != nil {
@@ -156,6 +157,19 @@ func queryAllPledgeHistory(stub shim.ChaincodeStubInterface) pb.Response {
 }
 func queryPledgeList(stub shim.ChaincodeStubInterface) pb.Response {
 	list, err := getLastPledgeList(stub)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	result, _ := json.Marshal(list)
+	return shim.Success(result)
+}
+func queryPledgeListByDate(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	date:=args[0]
+	reg := regexp.MustCompile(`[\d]{8}`)
+	if !reg.Match([]byte(date)){
+		return shim.Error("must use YYYYMMDD format")
+	}
+	list, err := getPledgeListByDate(stub,date)
 	if err != nil {
 		return shim.Error(err.Error())
 	}

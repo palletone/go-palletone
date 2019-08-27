@@ -142,12 +142,12 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache) (*P
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
-	ptn.txPool = txspool.NewTxPool(config.TxPool, cache, ptn.dag)
+	ptn.txPool = txspool.NewTxPool(config.TxPool, cache, ptn.dag, tokenengine.Instance)
 
 	//Test for P2P
 	ptn.engine = consensus.New(dag, ptn.txPool)
 
-	ptn.mediatorPlugin, err = mp.NewMediatorPlugin(ctx, &config.MediatorPlugin, ptn, dag)
+	ptn.mediatorPlugin, err = mp.NewMediatorPlugin( /*ctx, */ &config.MediatorPlugin, ptn, dag)
 	if err != nil {
 		log.Error("Initialize mediator plugin err:", "error", err)
 		return nil, err
@@ -408,7 +408,7 @@ func (p *PalletOne) SignGenericTransaction(from common.Address, tx *modules.Tran
 
 	// 3. 使用tokenengine 和 KeyStore 给 tx 签名
 	ks := p.GetKeyStore()
-	_, err := tokenengine.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, inputpoints, nil,
+	_, err := tokenengine.Instance.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, inputpoints, nil,
 		ks.GetPublicKey, ks.SignMessage)
 	if err != nil {
 		return nil, err

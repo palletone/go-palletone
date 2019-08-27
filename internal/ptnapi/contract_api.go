@@ -416,6 +416,7 @@ func (s *PublicContractAPI) GetContractInfoByAddr(ctx context.Context, contractA
 	}
 	return contract, nil
 }
+
 func (s *PrivateContractAPI) DepositContractInvoke(ctx context.Context, from, to string, amount, fee decimal.Decimal,
 	param []string) (string, error) {
 	log.Debug("---enter DepositContractInvoke---")
@@ -432,8 +433,14 @@ func (s *PrivateContractAPI) DepositContractInvoke(ctx context.Context, from, to
 				return "", fmt.Errorf("error(%v), please use mediator.apply()", err.Error())
 			}
 
-			if from != args.AddStr {
-				return "", fmt.Errorf("the calling account(%v) is not appling account(%v), "+
+			if args.MediatorInfoBase == nil || args.MediatorApplyInfo == nil {
+				return "", fmt.Errorf("invalid args, is null")
+			}
+
+			if from != args.AddStr /*|| from != args.RewardAdd*/ {
+				//return "", fmt.Errorf("the calling account(%v) is not produce account(%v) or "+
+				//	"reward account(%v), please use mediator.apply()", from, args.AddStr, args.RewardAdd)
+				return "", fmt.Errorf("the calling account(%v) is not applying account(%v), "+
 					"please use mediator.apply()", from, args.AddStr)
 			}
 
@@ -486,6 +493,14 @@ func (s *PrivateContractAPI) SysConfigContractInvoke(ctx context.Context, from, 
 			log.Debugf(err.Error())
 			return "", err
 		}
+
+		dag := s.b.Dag()
+		err = core.ImmutableChainParameterCheck(field, value, &dag.GetGlobalProp().ImmutableParameters,
+			dag.GetMediatorCount)
+		if err != nil {
+			log.Debugf(err.Error())
+			return "", err
+		}
 	} else if param[0] == sysconfigcc.CreateVotesTokens {
 		if len(param) != 6 {
 			err := "args len not equal 6"
@@ -507,6 +522,14 @@ func (s *PrivateContractAPI) SysConfigContractInvoke(ctx context.Context, from, 
 					log.Debugf(err.Error())
 					return "", err
 				}
+
+				dag := s.b.Dag()
+				err = core.ImmutableChainParameterCheck(oneTopic.TopicTitle, oneOption,
+					&dag.GetGlobalProp().ImmutableParameters, dag.GetMediatorCount)
+				if err != nil {
+					log.Debugf(err.Error())
+					return "", err
+				}
 			}
 		}
 	}
@@ -523,7 +546,7 @@ func (s *PublicContractAPI) GetContractState(contractid []byte, key string) ([]b
 }
 
 func (s *PublicContractAPI) GetContractFeeLevel(ctx context.Context) (*ContractFeeLevelRsp, error) {
-	cp := s.b.GetChainParameters()
+	cp := s.b.Dag().GetChainParameters()
 	feeLevel := &ContractFeeLevelRsp{
 		ContractTxTimeoutUnitFee:  cp.ContractTxTimeoutUnitFee,
 		ContractTxSizeUnitFee:     cp.ContractTxSizeUnitFee,

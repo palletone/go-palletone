@@ -33,10 +33,11 @@ import (
 
 type UtxoDb struct {
 	db ptndb.Database
+	tokenEngine tokenengine.ITokenEngine
 }
 
-func NewUtxoDb(db ptndb.Database) *UtxoDb {
-	return &UtxoDb{db: db}
+func NewUtxoDb(db ptndb.Database,tokenEngine tokenengine.ITokenEngine) *UtxoDb {
+	return &UtxoDb{db: db,tokenEngine:tokenEngine}
 }
 
 type IUtxoDb interface {
@@ -90,7 +91,7 @@ func (db *UtxoDb) GetAddrOutpoints(address common.Address) ([]modules.OutPoint, 
 // ###################### UTXO Entity ######################
 func (utxodb *UtxoDb) SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.Utxo) error {
 	key := outpoint.ToKey()
-	address, _ := tokenengine.GetAddressFromScript(utxo.PkScript[:])
+	address, _ := utxodb.tokenEngine.GetAddressFromScript(utxo.PkScript[:])
 	err := StoreToRlpBytes(utxodb.db, key, utxo)
 	if err != nil {
 		return err
@@ -105,22 +106,24 @@ func (utxodb *UtxoDb) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) erro
 	log.Debugf("Start batch save utxo, batch count:%d", len(view))
 	for outpoint, utxo := range view {
 		// No need to update the database if the utxo was not modified.
-		if utxo == nil { // || utxo.IsModified()
+		if utxo == nil {
 			continue
 		} else {
 			key := outpoint.ToKey()
 			err := StoreToRlpBytes(batch, key, utxo)
 			if err != nil {
+				log.Errorf("store utxo to db failed, key:[%s]", outpoint.String())
 				return err
 			}
-			address, _ := tokenengine.GetAddressFromScript(utxo.PkScript[:])
+			address, _ := utxodb.tokenEngine.GetAddressFromScript(utxo.PkScript[:])
 			// save utxoindex and  addr and key
 			item := new(modules.OutPoint)
 			item.TxHash = outpoint.TxHash
 			item.MessageIndex = outpoint.MessageIndex
 			item.OutIndex = outpoint.OutIndex
-			utxodb.batchSaveUtxoOutpoint(batch, address, item)
-
+			if err := utxodb.batchSaveUtxoOutpoint(batch, address, item); err != nil {
+				log.Errorf("batch_save_utxo failed,addr[%s] , error:[%s]", address.String(), err)
+			}
 		}
 	}
 
@@ -135,30 +138,15 @@ func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint, spentTxId common.Ha
 		return err
 	}
 	key := outpoint.ToKey()
-	//data,err:= utxodb.db.Get(key)
-	//if err != nil {
-	//	return err
-	//}
-	//2. delete utxo, put data into spent table
-	//if utxo.IsSpent() {
-	//	return errors.New("Try to soft delete a deleted utxo by key:" + outpoint.String())
-	//}
+
 	err = utxodb.db.Delete(key)
 	if err != nil {
 		return err
 	}
-	log.Debugf("Try delete utxo by key:%s, move to spent table", outpoint.String())
+	//log.Debugf("Try delete utxo by key:%s, move to spent table", outpoint.String())
 	utxodb.SaveUtxoSpent(outpoint, utxo, spentTxId, spentTime)
-	//utxo.Spend()
-	//log.Debugf("Try to soft delete utxo by key:%s", outpoint.String())
-	//err = StoreToRlpBytes(utxodb.db, key, utxo)
-	//if err != nil {
-	//	return err
-	//}
-	//3. Remove index
-	//utxo := new(modules.Utxo)
-	//rlp.DecodeBytes(data,utxo)
-	address, _ := tokenengine.GetAddressFromScript(utxo.PkScript[:])
+
+	address, _ := utxodb.tokenEngine.GetAddressFromScript(utxo.PkScript[:])
 	utxodb.deleteUtxoOutpoint(address, outpoint)
 	return nil
 }

@@ -26,7 +26,6 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag"
@@ -185,8 +184,6 @@ type Backend interface {
 	ProofTransactionByRlptx(rlptx [][]byte) (string, error)
 	SyncUTXOByAddr(addr string) string
 	StartCorsSync() (string, error)
-
-	GetChainParameters() *core.ChainParameters
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {

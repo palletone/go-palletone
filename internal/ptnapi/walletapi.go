@@ -219,10 +219,10 @@ func createPayment(fromAddr, toAddr common.Address, amountToken uint64, feePTN u
 	}
 	//ptn outputs
 	if amountToken > 0 {
-		payPTN.AddTxOut(modules.NewTxOut(amountToken, tokenengine.GenerateLockScript(toAddr), asset))
+		payPTN.AddTxOut(modules.NewTxOut(amountToken, tokenengine.Instance.GenerateLockScript(toAddr), asset))
 	}
 	if change > 0 {
-		payPTN.AddTxOut(modules.NewTxOut(change, tokenengine.GenerateLockScript(fromAddr), asset))
+		payPTN.AddTxOut(modules.NewTxOut(change, tokenengine.Instance.GenerateLockScript(fromAddr), asset))
 	}
 	//
 	////Token
@@ -312,7 +312,7 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 			}
 		}
 		// Create a new script which pays to the provided address.
-		pkScript := tokenengine.GenerateLockScript(addr)
+		pkScript := tokenengine.Instance.GenerateLockScript(addr)
 		ppscript = pkScript
 		// Convert the amount to satoshi.
 		dao := ptnjson.Ptn2Dao(ptnAmt)
@@ -347,7 +347,7 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 			continue
 		}
 		for inputindex := range payload.Inputs {
-			hashforsign, err := tokenengine.CalcSignatureHash(mtxtmp, tokenengine.SigHashAll, msgindex, inputindex, ppscript)
+			hashforsign, err := tokenengine.Instance.CalcSignatureHash(mtxtmp, tokenengine.SigHashAll, msgindex, inputindex, ppscript)
 			if err != nil {
 				return "", err
 			}
@@ -426,7 +426,7 @@ func (s *PrivateWalletAPI) SignRawTransaction(ctx context.Context, params string
 			PkScriptHex := trimx(uvu.PkScriptHex)
 			input := ptnjson.RawTxInput{Txid: TxHash, Vout: uvu.OutIndex, MessageIndex: uvu.MessageIndex, ScriptPubKey: PkScriptHex, RedeemScript: ""}
 			srawinputs = append(srawinputs, input)
-			addr, err = tokenengine.GetAddressFromScript(hexutil.MustDecode(uvu.PkScriptHex))
+			addr, err = tokenengine.Instance.GetAddressFromScript(hexutil.MustDecode(uvu.PkScriptHex))
 			if err != nil {
 				log.Error(err.Error())
 				return ptnjson.SignRawTransactionResult{}, errors.New("get addr FromScript is err")
@@ -677,7 +677,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	var addr common.Address
 	var keys []string
 	from, _ := common.StringToAddress(proofTransactionGenParams.From)
-	PkScript := tokenengine.GenerateLockScript(from)
+	PkScript := tokenengine.Instance.GenerateLockScript(from)
 	PkScriptHex := hexutil.Encode(PkScript)
 	for _, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
@@ -690,7 +690,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 			MessageIndex := txin.PreviousOutPoint.MessageIndex
 			input := ptnjson.RawTxInput{Txid: TxHash, Vout: OutIndex, MessageIndex: MessageIndex, ScriptPubKey: PkScriptHex, RedeemScript: ""}
 			srawinputs = append(srawinputs, input)
-			addr, err = tokenengine.GetAddressFromScript(hexutil.MustDecode(PkScriptHex))
+			addr, err = tokenengine.Instance.GetAddressFromScript(hexutil.MustDecode(PkScriptHex))
 			if err != nil {
 				return common.Hash{}, err
 			}
@@ -801,7 +801,7 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransa
 			}
 		}
 		// Create a new script which pays to the provided address.
-		pkScript := tokenengine.GenerateLockScript(addr)
+		pkScript := tokenengine.Instance.GenerateLockScript(addr)
 		// Convert the amount to satoshi.
 		dao := ptnjson.Ptn2Dao(ptnAmt)
 		//if err != nil {
@@ -1034,7 +1034,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 			PkScriptHex := trimx(uvu.PkScriptHex)
 			input := ptnjson.RawTxInput{Txid: TxHash, Vout: uvu.OutIndex, MessageIndex: uvu.MessageIndex, ScriptPubKey: PkScriptHex, RedeemScript: ""}
 			srawinputs = append(srawinputs, input)
-			addr, err = tokenengine.GetAddressFromScript(hexutil.MustDecode(uvu.PkScriptHex))
+			addr, err = tokenengine.Instance.GetAddressFromScript(hexutil.MustDecode(uvu.PkScriptHex))
 			if err != nil {
 				return common.Hash{}, err
 			}
@@ -1218,7 +1218,7 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 		return common.Hash{}, err
 	}
 	//3.
-	_, err = tokenengine.SignTxAllPaymentInput(rawTx, 1, utxoLockScripts, nil, getPubKeyFn, getSignFn)
+	_, err = tokenengine.Instance.SignTxAllPaymentInput(rawTx, 1, utxoLockScripts, nil, getPubKeyFn, getSignFn)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -1267,7 +1267,7 @@ func (s *PrivateWalletAPI) CreateProofOfExistenceTx(ctx context.Context, addr st
 		return common.Hash{}, err
 	}
 	//3.
-	_, err = tokenengine.SignTxAllPaymentInput(rawTx, 1, utxoLockScripts, nil, getPubKeyFn, getSignFn)
+	_, err = tokenengine.Instance.SignTxAllPaymentInput(rawTx, 1, utxoLockScripts, nil, getPubKeyFn, getSignFn)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -1331,7 +1331,7 @@ func (s *PrivateWalletAPI) CreateTraceability(ctx context.Context, addr, uid, sy
 		return common.Hash{}, err
 	}
 	//3.
-	_, err = tokenengine.SignTxAllPaymentInput(rawTx, 1, utxoLockScripts, nil, getPubKeyFn, getSignFn)
+	_, err = tokenengine.Instance.SignTxAllPaymentInput(rawTx, 1, utxoLockScripts, nil, getPubKeyFn, getSignFn)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -1609,5 +1609,4 @@ func readTxs(path string) ([]string, error) {
 		return txs[:5000], err
 	}
 
-	// return txs, err
 }

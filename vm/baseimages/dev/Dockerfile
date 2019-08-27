@@ -12,3 +12,4 @@ ENV GOPATH=/gopath  PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin
 #INSTALL THE DEPENDENCY OF CHAINCODE RUNNING
 #RUN go get -u github.com/palletone/go-palletone
 ADD palletone.tar $GOPATH/src/github.com/palletone/go-palletone/
+ADD adaptor.tar $GOPATH/src/github.com/palletone/adaptor/

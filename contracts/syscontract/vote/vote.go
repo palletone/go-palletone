@@ -312,10 +312,10 @@ func support(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(jsonResp1)
 	}
 
-	if voteNum < uint64(len(supportRequests)) { //vote token more than request
-		jsonResp := "{\"Error\":\"Vote token more than support request\"}"
-		return shim.Error(jsonResp)
-	}
+	//if voteNum < uint64(len(supportRequests)) { //vote token more than request
+	//	jsonResp := "{\"Error\":\"Vote token more than support request\"}"
+	//	return shim.Error(jsonResp)
+	//}
 
 	//check time
 	headerTime, err := stub.GetTxTimestamp(10)
@@ -349,7 +349,7 @@ func support(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 					}
 					selIndexHistory[selectIndex] = 1
 					if selectIndex < lenOfVoteResult { //3.index must be real select options
-						topicSupports[topicIndex].VoteResults[selectIndex].Num += 1
+						topicSupports[topicIndex].VoteResults[selectIndex].Num += voteNum //1
 					}
 				}
 			}

@@ -859,7 +859,7 @@ func (b *PtnApiBackend) GetAddressBalanceStatistics(token string, topN int) (*st
 	totalSupply := uint64(0)
 
 	for _, utxo := range pickedUtxos {
-		addr, err := tokenengine.GetAddressFromScript(utxo.PkScript)
+		addr, err := tokenengine.Instance.GetAddressFromScript(utxo.PkScript)
 		if err != nil {
 			continue
 		}

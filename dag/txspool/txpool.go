@@ -184,6 +184,7 @@ type TxPool struct {
 	quit           chan struct{}  // used for exit
 	nextExpireScan time.Time
 	cache          palletcache.ICache
+	tokenEngine    tokenengine.ITokenEngine
 }
 
 type sTxDesc struct {
@@ -211,7 +212,7 @@ type TxDesc struct {
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
 // transactions from the network.
-func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit dags) *TxPool { // chainconfig *params.ChainConfig,
+func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit dags, tokenEngine tokenengine.ITokenEngine) *TxPool { // chainconfig *params.ChainConfig,
 	// Sanitize the input to ensure no vulnerable gas prices are set
 	config = (&config).sanitize()
 	// Create the transaction pool with its initial settings
@@ -225,6 +226,7 @@ func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit dags) *TxPo
 		orphans:        sync.Map{},
 		outputs:        sync.Map{},
 		cache:          cachedb,
+		tokenEngine:    tokenEngine,
 	}
 	pool.mu = sync.RWMutex{}
 	pool.priority_sorted = newTxPrioritiedList(&pool.all)
@@ -657,6 +659,8 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction, n
 				this.Pending = true
 				this.Discarded = true
 				pool.all.Store(tx_hash, this)
+				// delete utxo
+				pool.deletePoolUtxos(tx.Tx)
 				return
 			}
 		} else {
@@ -671,6 +675,8 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction, n
 	tx.UnitHash = hash
 	tx.UnitIndex = number
 	tx.Index = index
+	// delete utxo
+	pool.deletePoolUtxos(tx.Tx)
 	pool.all.Store(tx_hash, tx)
 }
 
@@ -967,14 +973,14 @@ func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction,
 				if msg.App == modules.APP_PAYMENT {
 					payment, ok := msg.Payload.(*modules.PaymentPayload)
 					if ok {
-						if addrs, err := tx.Tx.GetFromAddrs(pool.GetUtxoEntry, tokenengine.GetAddressFromScript); err == nil {
+						if addrs, err := tx.Tx.GetFromAddrs(pool.GetUtxoEntry, pool.tokenEngine.GetAddressFromScript); err == nil {
 							for _, addr := range addrs {
 								addr1 := addr.String()
 								txs[addr1] = append(txs[addr1], tx)
 							}
 						}
 						for _, out := range payment.Outputs {
-							address, err1 := tokenengine.GetAddressFromScript(out.PkScript[:])
+							address, err1 := pool.tokenEngine.GetAddressFromScript(out.PkScript[:])
 							if err1 == nil {
 								txs[address.String()] = append(txs[address.String()], tx)
 							} else {
@@ -1002,7 +1008,7 @@ func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction,
 						}
 					}
 					for _, out := range payment.Outputs {
-						address, err1 := tokenengine.GetAddressFromScript(out.PkScript[:])
+						address, err1 := pool.tokenEngine.GetAddressFromScript(out.PkScript[:])
 						if err1 == nil {
 							txs[address.String()] = append(txs[address.String()], tx)
 						} else {
@@ -1542,7 +1548,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 		total += tx.Tx.Size()
 	}
 	for {
-		if time.Since(t0) > time.Millisecond*1000 {
+		if time.Since(t0) > time.Millisecond*800 {
 			log.Infof("get sorted timeout spent times: %s , count: %d ", time.Since(t0), len(list))
 			break
 		}
@@ -1878,4 +1884,17 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 
 func (pool *TxPool) deleteOrphanTxOutputs(outpoint modules.OutPoint) {
 	pool.outputs.Delete(outpoint)
+}
+
+func (pool *TxPool) deletePoolUtxos(tx *modules.Transaction) {
+	for _, msg := range tx.Messages() {
+		if msg.App == modules.APP_PAYMENT {
+			payment, ok := msg.Payload.(*modules.PaymentPayload)
+			if ok {
+				for _, in := range payment.Inputs {
+					pool.deleteOrphanTxOutputs(*in.PreviousOutPoint)
+				}
+			}
+		}
+	}
 }

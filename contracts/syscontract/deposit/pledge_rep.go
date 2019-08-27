@@ -64,11 +64,15 @@ func pledgeWithdrawRep(stub shim.ChaincodeStubInterface, addr common.Address, am
 
 //质押分红,按持仓比例分固定金额
 func pledgeRewardAllocation(pledgeList *modules.PledgeList, rewardAmount uint64) *modules.PledgeList {
-	newPledgeList := &modules.PledgeList{TotalAmount: 0, Members: []*modules.AddressAmount{}}
+	newPledgeList := &modules.PledgeList{TotalAmount: 0, Members: []*modules.AddressRewardAmount{}}
 	rewardPerDao := float64(rewardAmount) / float64(pledgeList.TotalAmount)
 	for _, pledge := range pledgeList.Members {
-		newAmount := pledge.Amount + uint64(rewardPerDao*float64(pledge.Amount))
-		newPledgeList.Members = append(newPledgeList.Members, &modules.AddressAmount{Address: pledge.Address, Amount: newAmount})
+		reward:=uint64(rewardPerDao*float64(pledge.Amount))
+		newAmount := pledge.Amount + reward
+		newPledgeList.Members = append(newPledgeList.Members, &modules.AddressRewardAmount{
+			Address: pledge.Address,
+			Reward:reward,
+			Amount: newAmount})
 		newPledgeList.TotalAmount += newAmount
 	}
 	return newPledgeList
@@ -105,7 +109,7 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward
 
 	for _, awardNode := range depositList {
 
-		allM.Add(awardNode.Address, awardNode.Amount)
+		allM.Add(awardNode.Address, awardNode.Amount,0) //新增加的质押当天不会有分红
 		err = delPledgeDepositRecord(stub, awardNode.Address)
 		if err != nil {
 			return err
