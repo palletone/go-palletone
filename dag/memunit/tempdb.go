@@ -161,7 +161,8 @@ func (db *Tempdb) Put(key []byte, value []byte) error {
 	db.lock.Lock()
 	defer db.lock.Unlock()
 	delete(db.deleted, string(key))
-	db.kv[string(key)] = common.CopyBytes(value)
+	//db.kv[string(key)] = common.CopyBytes(value)
+	db.kv[string(key)] = value[:]
 	return nil
 }
 
