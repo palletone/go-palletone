@@ -129,5 +129,15 @@ func TestGetAddrTxHistory(t *testing.T) {
 		fmt.Println("err: ", err)
 	} else {
 		fmt.Println(result)
+		var output adaptor.GetAddrTxHistoryOutput
+		err = json.Unmarshal([]byte(result), &output)
+		if err != nil {
+			fmt.Println("err: ", err)
+			return
+		}
+		for _, txResult := range output.Txs {
+			txIDHex := hex.EncodeToString(txResult.TxID)
+			fmt.Println(txIDHex)
+		}
 	}
 }

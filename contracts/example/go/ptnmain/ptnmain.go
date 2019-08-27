@@ -31,6 +31,8 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+
+	"github.com/palletone/adaptor"
 )
 
 type PTNMain struct {
@@ -206,7 +208,7 @@ func _payoutPTNByTxID(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 		return shim.Error("Not send token to the Map contract")
 	}
 	//check token amount
-	bigIntAmout := txResult.Tx.Amount.Amount.Div(&txResult.Tx.Amount.Amount, big.NewInt(1e10)) //Token's decimal is 18, PTN's decimal is 8
+	bigIntAmout := txResult.Tx.Amount.Amount.Div(txResult.Tx.Amount.Amount, big.NewInt(1e10)) //Token's decimal is 18, PTN's decimal is 8
 	amt := txResult.Tx.Amount.Amount.Uint64()
 	if amt == 0 {
 		log.Debugf("Amount is 0")
@@ -308,12 +310,13 @@ func _payoutPTNByETHAddr(args []string, stub shim.ChaincodeStubInterface) pb.Res
 		//
 		result, _ := stub.GetState(symbolsPayout + txIDHex)
 		if len(result) != 0 {
-			log.Debugf("The tx has been payout")
+			log.Debugf("The tx %s has been payout", txIDHex)
 			continue
 		}
+		log.Debugf("The tx %s need be payout", txIDHex)
 
 		//check token amount
-		bigIntAmout := txResult.Amount.Amount.Div(&txResult.Amount.Amount, big.NewInt(1e10)) //Token's decimal is 18, PTN's decimal is 8
+		bigIntAmout := txResult.Amount.Amount.Div(txResult.Amount.Amount, big.NewInt(1e10)) //Token's decimal is 18, PTN's decimal is 8
 		amt += txResult.Amount.Amount.Uint64()
 
 		//save payout history
@@ -342,49 +345,8 @@ func _payoutPTNByETHAddr(args []string, stub shim.ChaincodeStubInterface) pb.Res
 	return shim.Success([]byte("Success"))
 }
 
-//refer to the struct GetTransferTxInput in "github.com/palletone/adaptor/ICryptoCurrency.go",
-type GetTransferTxInput struct {
-	TxID  []byte `json:"tx_id"`
-	Extra []byte `json:"extra"`
-}
-
-//TxBasicInfo 一个交易的基本信息
-type TxBasicInfo struct {
-	TxID           []byte `json:"tx_id"`           //交易的ID，Hash
-	TxRawData      []byte `json:"tx_raw"`          //交易的二进制数据
-	CreatorAddress string `json:"creator_address"` //交易的发起人
-	TargetAddress  string `json:"target_address"`  //交易的目标地址（被调用的合约、收款人）
-	IsInBlock      bool   `json:"is_in_block"`     //是否已经被打包到区块链中
-	IsSuccess      bool   `json:"is_success"`      //是被标记为成功执行
-	IsStable       bool   `json:"is_stable"`       //是否已经稳定不可逆
-	BlockID        []byte `json:"block_id"`        //交易被打包到了哪个区块ID
-	BlockHeight    uint   `json:"block_height"`    //交易被打包到的区块的高度
-	TxIndex        uint   `json:"tx_index"`        //Tx在区块中的位置
-	Timestamp      uint64 `json:"timestamp"`       //交易被打包的时间戳
-}
-
-//AmountAsset Token的金额和资产标识
-type AmountAsset struct {
-	Amount big.Int `json:"amount"` //金额，最小单位
-	Asset  string  `json:"asset"`  //资产标识
-}
-
-//SimpleTransferTokenTx 一个简单的Token转账交易
-type SimpleTransferTokenTx struct {
-	TxBasicInfo
-	FromAddress string       `json:"from_address"` //转出地址
-	ToAddress   string       `json:"to_address"`   //转入地址
-	Amount      *AmountAsset `json:"amount"`       //转账金额
-	Fee         *AmountAsset `json:"fee"`          //转账交易费
-	AttachData  []byte       `json:"attach_data"`  //附加的数据（备注之类的）
-}
-type GetTransferTxOutput struct {
-	Tx    SimpleTransferTokenTx `json:"transaction"`
-	Extra []byte                `json:"extra"`
-}
-
-func GetErc20Tx(txID []byte, stub shim.ChaincodeStubInterface) (*GetTransferTxOutput, error) {
-	input := GetTransferTxInput{TxID: txID}
+func GetErc20Tx(txID []byte, stub shim.ChaincodeStubInterface) (*adaptor.GetTransferTxOutput, error) {
+	input := adaptor.GetTransferTxInput{TxID: txID}
 	inputBytes, err := json.Marshal(input)
 	if err != nil {
 		return nil, err
@@ -397,7 +359,7 @@ func GetErc20Tx(txID []byte, stub shim.ChaincodeStubInterface) (*GetTransferTxOu
 	log.Debugf("result : %s", string(result))
 
 	//
-	var output GetTransferTxOutput
+	var output adaptor.GetTransferTxOutput
 	err = json.Unmarshal(result, &output)
 	if err != nil {
 		return nil, err
@@ -405,25 +367,8 @@ func GetErc20Tx(txID []byte, stub shim.ChaincodeStubInterface) (*GetTransferTxOu
 	return &output, nil
 }
 
-type GetAddrTxHistoryInput struct {
-	FromAddress       string `json:"from_address"`         //转账的付款方地址
-	ToAddress         string `json:"to_address"`           //转账的收款方地址
-	Asset             string `json:"asset"`                //资产标识
-	PageSize          uint32 `json:"page_size"`            //分页大小，0表示不分页
-	PageIndex         uint32 `json:"page_index"`           //分页后的第几页数据
-	AddressLogicAndOr bool   `json:"address_logic_and_or"` //付款地址,收款地址是And=1关系还是Or=0关系
-	Asc               bool   `json:"asc"`                  //按时间顺序从老到新
-	Extra             []byte `json:"extra"`
-}
-
-type GetAddrTxHistoryOutput struct {
-	Txs   []*SimpleTransferTokenTx `json:"transactions"` //返回的交易列表
-	Count uint32                   `json:"count"`        //忽略分页，有多少条记录
-	Extra []byte                   `json:"extra"`
-}
-
-func GetAddrHistory(ethAddrFrom, mapAddrTo string, stub shim.ChaincodeStubInterface) (*GetAddrTxHistoryOutput, error) {
-	input := GetAddrTxHistoryInput{FromAddress: ethAddrFrom, ToAddress: mapAddrTo, Asset: PTN_ERC20Addr,
+func GetAddrHistory(ethAddrFrom, mapAddrTo string, stub shim.ChaincodeStubInterface) (*adaptor.GetAddrTxHistoryOutput, error) {
+	input := adaptor.GetAddrTxHistoryInput{FromAddress: ethAddrFrom, ToAddress: mapAddrTo, Asset: PTN_ERC20Addr,
 		AddressLogicAndOr: true}
 	inputBytes, err := json.Marshal(input)
 	if err != nil {
@@ -434,8 +379,9 @@ func GetAddrHistory(ethAddrFrom, mapAddrTo string, stub shim.ChaincodeStubInterf
 	if err != nil {
 		return nil, errors.New("GetAddrHistory error")
 	}
+	log.Debugf("result : %s", string(result))
 	//
-	var output GetAddrTxHistoryOutput
+	var output adaptor.GetAddrTxHistoryOutput
 	err = json.Unmarshal(result, &output)
 	if err != nil {
 		return nil, err
@@ -443,44 +389,21 @@ func GetAddrHistory(ethAddrFrom, mapAddrTo string, stub shim.ChaincodeStubInterf
 	return &output, nil
 }
 
-//refer to the struct GetBlockInfoInput in "github.com/palletone/adaptor/IUtility.go",
-type GetBlockInfoInput struct {
-	Latest  bool   `json:"latest"`   //true表示查询最新区块
-	Height  uint64 `json:"height"`   //根据高度查询区块
-	BlockID []byte `json:"block_id"` //根据Hash查询区块
-	Extra   []byte `json:"extra"`
-}
-
-type BlockInfo struct {
-	BlockID         []byte `json:"block_id"`         //交易被打包到了哪个区块ID
-	BlockHeight     uint   `json:"block_height"`     //交易被打包到的区块的高度
-	Timestamp       uint64 `json:"timestamp"`        //交易被打包的时间戳
-	ParentBlockID   []byte `json:"parent_block_id"`  //父区块ID
-	HeaderRawData   []byte `json:"header_raw_data"`  //区块头的原始信息
-	TxsRoot         []byte `json:"txs_root"`         //默克尔根
-	ProducerAddress string `json:"producer_address"` //生产者地址
-	IsStable        bool   `json:"is_stable"`        //是否已经稳定不可逆
-}
-type GetBlockInfoOutput struct {
-	Block BlockInfo `json:"block"`
-	Extra []byte    `json:"extra"`
-}
-
 func getHight(stub shim.ChaincodeStubInterface) (uint, error) {
 	//
-	input := GetBlockInfoInput{Latest: true} //get best hight
+	input := adaptor.GetBlockInfoInput{Latest: true} //get best hight
 	//
 	inputBytes, err := json.Marshal(input)
 	if err != nil {
 		return 0, err
 	}
-	//
+	//adaptor.
 	result, err := stub.OutChainCall("erc20", "GetBlockInfo", inputBytes)
 	if err != nil {
 		return 0, err
 	}
 	//
-	var output GetBlockInfoOutput
+	var output adaptor.GetBlockInfoOutput
 	err = json.Unmarshal(result, &output)
 	if err != nil {
 		return 0, err
@@ -493,21 +416,8 @@ func getHight(stub shim.ChaincodeStubInterface) (uint, error) {
 	return output.Block.BlockHeight, nil
 }
 
-//refer to the struct GetPalletOneMappingAddressInput in "github.com/palletone/adaptor/IUtility.go",
-type GetPalletOneMappingAddressInput struct {
-	PalletOneAddress  string `json:"palletone_address"`
-	ChainAddress      string `json:"chain_address"`
-	MappingDataSource string `json:"mapping_data_source"` //映射地址数据查询的地方，以太坊就是一个合约地址
-	Extra             []byte `json:"extra"`
-}
-type GetPalletOneMappingAddressOutput struct {
-	PalletOneAddress string `json:"palletone_address"`
-	ChainAddress     string `json:"chain_address"`
-	Extra            []byte `json:"extra"`
-}
-
 func getPTNMapAddr(mapAddr, fromAddr string, stub shim.ChaincodeStubInterface) (string, error) {
-	var input GetPalletOneMappingAddressInput
+	var input adaptor.GetPalletOneMappingAddressInput
 	input.MappingDataSource = mapAddr
 	input.ChainAddress = fromAddr
 
@@ -521,7 +431,7 @@ func getPTNMapAddr(mapAddr, fromAddr string, stub shim.ChaincodeStubInterface) (
 		return "", errors.New("GetPalletOneMappingAddress failed")
 	}
 	//
-	var output GetPalletOneMappingAddressOutput
+	var output adaptor.GetPalletOneMappingAddressOutput
 	err = json.Unmarshal(result, &output)
 	if err != nil {
 		return "", err
