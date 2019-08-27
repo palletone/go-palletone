@@ -24,5 +24,4 @@ fi
 sed -i "s/HTTPHost = \"localhost\"/HTTPHost = \"0.0.0.0\"/g" node$i/ptn-config.toml
 sed -i "s/ContractAddress\s*=\s*\"127.0.0.1/$newAddr/g" node$i/ptn-config.toml
 sed -i "s/IsJury = false/IsJury = true/g" node$i/ptn-config.toml
-sed -i 's/"contract_election_num": 4,/"contract_election_num": 3,/g' node$i/ptn-genesis.json
 done

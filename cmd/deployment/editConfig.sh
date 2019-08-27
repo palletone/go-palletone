@@ -26,5 +26,4 @@ sed -i "s/ContractAddress\s*=\s*\"127.0.0.1/$newAddr/g" node$i/ptn-config.toml
 sed -i "s/ElectionNum = [0-9]*/ElectionNum = $NUM/g" node$i/ptn-config.toml
 sed -i "s/ContractSigNum\s*=\s*[0-9]*/ContractSigNum = $SIG/g" node$i/ptn-config.toml
 sed -i "s/IsJury = false/IsJury = true/g" node$i/ptn-config.toml
-sed -i "s/contract_election_num\s*=\s*[0-9]*/contract_election_num = $NUM/g" node$i/ptn-genesis.json
 done
