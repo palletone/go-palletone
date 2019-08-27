@@ -37,14 +37,14 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/palletcache"
 
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/fsouza/go-dockerclient"
+	"github.com/palletone/go-palletone/contracts/contractcfg"
+	"github.com/palletone/go-palletone/contracts/manger"
 	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
-
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/palletone/go-palletone/contracts/contractcfg"
-	"github.com/palletone/go-palletone/contracts/manger"
 	"github.com/palletone/go-palletone/validator"
 	"github.com/palletone/go-palletone/vm/common"
 )
@@ -402,10 +402,25 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 	}
 	//  是否为linux系統
 	if runtime.GOOS == "linux" {
+		client, err := util.NewDockerClient()
+		if err != nil {
+			log.Infof("util.NewDockerClient err: %s\n", err.Error())
+			return
+		}
+		//创建gptn-net网络
+		_, err = client.NetworkInfo("gptn-net")
+		if err != nil {
+			log.Debugf("client.NetworkInfo error: %s", err.Error())
+			_, err := client.CreateNetwork(docker.CreateNetworkOptions{Name: "gptn-net", Driver: "bridge"})
+			if err != nil {
+				log.Debugf("client.CreateNetwork error: %s", err.Error())
+				return
+			}
+		}
 		//  是否为jury
 		if contractcfg.GetConfig().IsJury {
 			log.Debugf("starting docker loop")
-			go pm.dockerLoop()
+			go pm.dockerLoop(client)
 		}
 	}
 }
@@ -750,12 +765,7 @@ func (pm *ProtocolManager) ceBroadcastLoop() {
 	}
 }
 
-func (pm *ProtocolManager) dockerLoop() {
-	client, err := util.NewDockerClient()
-	if err != nil {
-		log.Infof("util.NewDockerClient err: %s\n", err.Error())
-		return
-	}
+func (pm *ProtocolManager) dockerLoop(client *docker.Client) {
 	for {
 		select {
 		case <-pm.dockerQuitSync:

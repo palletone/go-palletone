@@ -22,6 +22,7 @@ subprocess.call("sed -i 's/\"mediator_interval\": 3,/\"mediator_interval\": 2,/g
 subprocess.call("sed -i 's/\"maintenance_skip_slots\": 2,/\"maintenance_skip_slots\": 0,/g' ptn-genesis.json",shell=True)
 subprocess.call("sed -i 's/\"min_maint_skip_slots\": 2,/\"min_maint_skip_slots\": 0,/g' ptn-genesis.json",shell=True)
 subprocess.call("sed -i 's/\"initialTimestamp\": [0-9]*,/\"initialTimestamp\": 1566269000,/g' ptn-genesis.json",shell=True)
+subprocess.call("sed -i 's/\"contract_election_num\": 4,/\"contract_election_num\": 3,/g' ptn-genesis.json",shell=True)
 subprocess.call("grep 'mediator_interval' ptn-genesis.json",shell=True)
 subprocess.call("grep 'maintenance_skip_slots' ptn-genesis.json",shell=True)
 subprocess.call("grep 'min_maint_skip_slots' ptn-genesis.json",shell=True)
