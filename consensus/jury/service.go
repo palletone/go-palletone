@@ -95,6 +95,7 @@ type iDag interface {
 	ChainThreshold() int
 	GetChainParameters() *core.ChainParameters
 	GetMediators() map[common.Address]bool
+	GetMediator(add common.Address) *core.Mediator
 }
 
 type electionVrf struct {
