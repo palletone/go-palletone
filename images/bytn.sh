@@ -20,14 +20,8 @@ docker network create gptn-net
 
 cd ..
 
-exit 0
-
 #拉去官方提供的镜像文件
-docker pull palletone/mediator:1.0.1
+docker pull palletone/gptnnode:$1
 
-docker tag palletone/mediator:1.0.1 palletone/mediator
+docker tag palletone/gptnnode:$1 palletone/gptnnode
 
-#需要手动修改各个节点的toml配置文件，将 VmEndpoint 的值修改为 宿主机ip:2375 
-如： VmEndpoint = "192.168.152.128:2375"
-#使用docker-compose up -d 启动节点对应的容器
-docker-compose up -d

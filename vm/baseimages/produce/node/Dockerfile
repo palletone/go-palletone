@@ -5,10 +5,10 @@ FROM ubuntu:18.04
 MAINTAINER palletone "contract@pallet.one"
 
 #将宿主机压缩文件添加到镜像里
-ADD ./tardata/* /palletone/
+ADD tardata/* /palletone/
 
 #设置当前工作目录
 WORKDIR /palletone/mainnet
 
 #容器启动时执行的命令
-CMD ["./gptn","--testnet"]
+ENTRYPOINT ["./gptn"]

@@ -77,12 +77,12 @@ func NewUnitProduceRepository(unitRep IUnitRepository, propRep IPropRepository,
 func NewUnitProduceRepository4Db(db ptndb.Database,
 	tokenEngine tokenengine.ITokenEngine) *UnitProduceRepository {
 	dagDb := storage.NewDagDb(db)
-	utxoDb := storage.NewUtxoDb(db,tokenEngine)
+	utxoDb := storage.NewUtxoDb(db, tokenEngine)
 	stateDb := storage.NewStateDb(db)
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
 
-	unitRep := NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb,tokenEngine)
+	unitRep := NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenEngine)
 	propRep := NewPropRepository(propDb)
 	stateRep := NewStateRepository(stateDb)
 
@@ -437,10 +437,11 @@ func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion)
 	}
 
 	//core.ImmutableChainParameterCheck(&gp.ImmutableParameters, &gp.ChainParameters)
-	//err = dag.propRep.StoreGlobalProp(gp)
-	//if err != nil {
-	//	return err
-	//}
+
+	err = dag.propRep.StoreGlobalProp(gp)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
