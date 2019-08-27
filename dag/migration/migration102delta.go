@@ -54,8 +54,8 @@ func (m *Migration102gamma_102delta) ExecuteUpgrade() error {
 }
 
 func (m *Migration102gamma_102delta) upgradeGP() error {
-	oldGp := modules.GlobalPropertyTemp{}
-	err := storage.RetrieveFromRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, &oldGp)
+	oldGp := &modules.GlobalPropertyTemp{}
+	err := storage.RetrieveFromRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, oldGp)
 	if err != nil {
 		log.Errorf(err.Error())
 		return err

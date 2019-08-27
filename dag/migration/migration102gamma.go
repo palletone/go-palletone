@@ -93,8 +93,8 @@ func (m *Migration102beta_102gamma) upgradeMediatorInfo() error {
 }
 
 //func (m *Migration102beta_102gamma) upgradeGP() error {
-//	oldGp := GlobalProperty101{}
-//	err := storage.RetrieveFromRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, &oldGp)
+//	oldGp := &GlobalProperty101{}
+//	err := storage.RetrieveFromRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, oldGp)
 //	if err != nil {
 //		log.Errorf(err.Error())
 //		return err

@@ -172,8 +172,8 @@ type MediatorApplyInfo100 struct {
 }
 
 func (m *Migration100_101) upgradeGP() error {
-	oldGp := GlobalProperty100{}
-	err := storage.RetrieveFromRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, &oldGp)
+	oldGp := &GlobalProperty100{}
+	err := storage.RetrieveFromRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, oldGp)
 	if err != nil {
 		log.Errorf(err.Error())
 		return err

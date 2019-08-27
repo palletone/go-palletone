@@ -93,8 +93,8 @@ func (m *Migration101_102) ExecuteUpgrade() error {
 //}
 
 func (m *Migration101_102) upgradeGP() error {
-	oldGp := GlobalProperty101{}
-	err := storage.RetrieveFromRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, &oldGp)
+	oldGp := &GlobalProperty101{}
+	err := storage.RetrieveFromRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, oldGp)
 	if err != nil {
 		log.Errorf(err.Error())
 		return err
