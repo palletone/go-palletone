@@ -17,11 +17,11 @@
 package ptn
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/palletone/go-palletone/dag/palletcache"
+	"runtime"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/coocood/freecache"
@@ -35,18 +35,18 @@ import (
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/palletcache"
 
 	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
-	"sync/atomic"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/manger"
 	"github.com/palletone/go-palletone/validator"
 	"github.com/palletone/go-palletone/vm/common"
-	"runtime"
 )
 
 const (
@@ -645,22 +645,12 @@ func (pm *ProtocolManager) ContractReqLocalSend(event jury.ContractEvent) {
 // will only announce it's availability (depending what's requested).
 func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
 	hash := unit.Hash()
-	// 孤儿单元是需要同步的
-	//for _, parentHash := range unit.ParentHash() {
-	//	if parent, err := pm.dag.GetUnitByHash(parentHash); err != nil || parent == nil {
-	//		log.Error("Propagating dangling block", "index", unit.Number().Index, "hash", hash,
-	// "parent_hash", parentHash.String())
-	//		return
-	//	}
-	//}
-
-	data, err := json.Marshal(unit)
+	// If propagation is requested, send to a subset of the peer
+	data, err := rlp.EncodeToBytes(unit)
 	if err != nil {
-		log.Error("ProtocolManager", "BroadcastUnit json marshal err:", err)
-		return
+		log.Errorf("BroadcastUnit rlp encode err:%s", err.Error())
 	}
 
-	// If propagation is requested, send to a subset of the peer
 	peers := pm.peers.PeersWithoutUnit(hash)
 	for _, peer := range peers {
 		peer.SendNewRawUnit(unit, data)
