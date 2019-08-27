@@ -303,9 +303,9 @@ matrix:
         - docker network ls
         - ./deploy.sh 3
         - ./editConfig.sh 3 3
-        - docker network ls
         - ./start.sh 3
         - sleep 30
+        - docker network ls
         - cd $BASE_DIR
         - mkdir -p ${BDD_LOG_PATH}/${USER_CONTRACT_DIR}
         - python -m robot.run -d ${BDD_LOG_PATH}/${USER_CONTRACT_DIR} ./bdd/UserContract/Testcases;
