@@ -2,18 +2,18 @@ package outchain
 
 import (
 	"bufio"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"reflect"
 	"unicode"
 
-	"path/filepath"
-
 	"github.com/naoina/toml"
-	"github.com/palletone/btc-adaptor"
-	"github.com/palletone/eth-adaptor"
 	"github.com/palletone/go-palletone/common/log"
+
+	"github.com/palletone/adaptor"
 )
 
 type Config struct {
@@ -21,9 +21,9 @@ type Config struct {
 }
 
 type Ada struct {
-	Btc      BTC
-	Eth      ETH
-	CCInfoKV map[string]CCInfo
+	Btc        BTC
+	Eth        ETH
+	ChainKeyKV map[string]KeyInfo //chainName --- keyInfo
 }
 
 type BTC struct {
@@ -33,17 +33,18 @@ type BTC struct {
 	RPCPasswd    string
 	CertPath     string
 	WalletPasswd string
-
-	ChaincodeKeys map[string]string
-	AddressKeys   map[string]string
 }
 type ETH struct {
-	NetID  int
-	Rawurl string
-
-	ChaincodeKeys map[string]string
-	AddressKeys   map[string]string
+	NetID      int
+	Rawurl     string
+	TxQueryUrl string
 }
+
+type KeyInfo struct { //information of private key
+	ChaincodeKeys map[string][]byte //chaincode --- privateKey
+	AddressKeys   map[string][]byte //address --- privateKey
+}
+
 type CCInfo struct {
 	CCName      string
 	ChainCodeKV map[string][]byte
@@ -52,26 +53,26 @@ type CCInfo struct {
 var DefaultConfig = Config{
 	Ada{
 		Btc: BTC{
-			NetID:         1,
-			Host:          "localhost:18332",
-			RPCUser:       "test",
-			RPCPasswd:     "123456",
-			CertPath:      "/home/pallet/wallet/btc/btctest/rpc.cert",
-			WalletPasswd:  "1",
-			ChaincodeKeys: map[string]string{},
-			AddressKeys:   map[string]string{},
+			NetID:        1,
+			Host:         "localhost:18332",
+			RPCUser:      "test",
+			RPCPasswd:    "123456",
+			CertPath:     "/home/pallet/wallet/btc/btctest/rpc.cert",
+			WalletPasswd: "1",
 		},
 		Eth: ETH{
-			NetID:         1,
-			Rawurl:        "https://ropsten.infura.io/",
-			ChaincodeKeys: map[string]string{},
-			AddressKeys:   map[string]string{},
+			NetID:      1,
+			Rawurl:     "https://ropsten.infura.io/",
+			TxQueryUrl: "https://api-ropsten.etherscan.io/api",
 		},
-		CCInfoKV: map[string]CCInfo{
-			"test": CCInfo{
-				ChainCodeKV: map[string][]byte{
-					"testk": []byte("testv"),
-				},
+		ChainKeyKV: map[string]KeyInfo{
+			"btc": KeyInfo{
+				ChaincodeKeys: map[string][]byte{},
+				AddressKeys:   map[string][]byte{},
+			},
+			"eth": KeyInfo{
+				ChaincodeKeys: map[string][]byte{},
+				AddressKeys:   map[string][]byte{},
 			},
 		},
 	},
@@ -188,141 +189,82 @@ func saveConfigTest() error {
 	return nil
 }
 
-func GetJuryBTCPrikeyTest(chaincode string) (string, error) {
+func getNewKey(params []byte, iadaptor adaptor.ICryptoCurrency) ([]byte, string, error) {
+	var input adaptor.NewPrivateKeyInput
+	err := json.Unmarshal(params, &input)
+	if err != nil {
+		return []byte{}, "", fmt.Errorf("NewPrivateKeyInput params error : %s", err.Error())
+	}
+	outputKey, err := iadaptor.NewPrivateKey(nil)
+	if err != nil {
+		log.Error("NewPrivateKey() failed !!!!!!")
+		return []byte{}, "", err
+	}
+	outputPub, err := iadaptor.GetPublicKey(&adaptor.GetPublicKeyInput{PrivateKey: outputKey.PrivateKey})
+	if err != nil {
+		log.Error("NewPrivateKey() failed !!!!!!")
+		return []byte{}, "", err
+	}
+	outputAddr, err := iadaptor.GetAddress(&adaptor.GetAddressInput{Key: outputPub.PublicKey})
+	if err != nil {
+		log.Error("GetAddress() failed !!!!!!")
+		return []byte{}, "", err
+	}
+	return outputKey.PrivateKey, outputAddr.Address, nil
+}
+
+func GetJuryKeyInfo(chaincode, chainName string, params []byte, iadaptor adaptor.ICryptoCurrency) ([]byte, error) {
 	err := GetConfigTest()
 	if err != nil {
 		log.Error("loadconfig() failed !!!!!!")
-		return "", err
+		return []byte{}, err
 	}
-	var btcAdaptor adaptorbtc.AdaptorBTC
-	btcAdaptor.NetID = cfg.Ada.Btc.NetID
-	if _, ok := cfg.Ada.Btc.ChaincodeKeys[chaincode]; ok {
-		return cfg.Ada.Btc.ChaincodeKeys[chaincode], nil
-	} else {
-		prikey := btcAdaptor.NewPrivateKey()
-		addr := btcAdaptor.GetAddress(prikey)
-		cfg.Ada.Btc.ChaincodeKeys[chaincode] = prikey
-		cfg.Ada.Btc.AddressKeys[addr] = prikey
-		// todo save config
-		saveConfigTest()
-		return prikey, nil
-	}
-}
 
-func getJuryBTCPubkeyTest(chaincode string) (string, error) {
-	err := GetConfigTest()
-	if err != nil {
-		log.Error("loadconfig() failed !!!!!!")
-		return "", err
-	}
-	var btcAdaptor adaptorbtc.AdaptorBTC
-	btcAdaptor.NetID = cfg.Ada.Btc.NetID
-	if _, ok := cfg.Ada.Btc.ChaincodeKeys[chaincode]; ok {
-		pubkey := btcAdaptor.GetPublicKey(cfg.Ada.Btc.ChaincodeKeys[chaincode])
-		return pubkey, nil
-	} else {
-		prikey := btcAdaptor.NewPrivateKey()
-		pubkey := btcAdaptor.GetPublicKey(prikey)
-		addr := btcAdaptor.GetAddress(prikey)
-		cfg.Ada.Btc.ChaincodeKeys[chaincode] = prikey
-		cfg.Ada.Btc.AddressKeys[addr] = prikey
-		// todo save config
-		saveConfigTest()
-		return pubkey, nil
-	}
-}
-
-func ClolletJuryBTCPubkeysTest(chaincode string) ([]string, error) {
-	var pubkeys []string
-	pubkey, err := getJuryBTCPubkeyTest(chaincode)
-	if err == nil {
-		pubkeys = append(pubkeys, pubkey)
-	}
-	return pubkeys, nil
-}
-
-func GetJuryETHPrikeyTest(chaincode string) (string, error) {
-	err := GetConfigTest()
-	if err != nil {
-		log.Error("loadconfig() failed !!!!!!")
-		return "", err
-	}
-	var ethAdaptor adaptoreth.AdaptorETH
-	ethAdaptor.NetID = cfg.Ada.Eth.NetID
-	if _, ok := cfg.Ada.Eth.ChaincodeKeys[chaincode]; ok {
-		return cfg.Ada.Eth.ChaincodeKeys[chaincode], nil
-	} else {
-		prikey := ethAdaptor.NewPrivateKey()
-		addr := ethAdaptor.GetAddress(prikey)
-		cfg.Ada.Eth.ChaincodeKeys[chaincode] = prikey
-		cfg.Ada.Eth.AddressKeys[addr] = prikey
-		// todo save config
-		saveConfigTest()
-		return prikey, nil
-	}
-}
-
-func getJuryETHAddressTest(chaincode string) (string, error) {
-	err := GetConfigTest()
-	if err != nil {
-		log.Error("loadconfig() failed !!!!!!")
-		return "", err
-	}
-	var ethAdaptor adaptoreth.AdaptorETH
-	if _, ok := cfg.Ada.Eth.ChaincodeKeys[chaincode]; ok {
-		addr := ethAdaptor.GetAddress(cfg.Ada.Eth.ChaincodeKeys[chaincode])
-		return addr, nil
-	} else {
-		prikey := ethAdaptor.NewPrivateKey()
-		addr := ethAdaptor.GetAddress(prikey)
-		cfg.Ada.Eth.ChaincodeKeys[chaincode] = prikey
-		cfg.Ada.Eth.AddressKeys[addr] = prikey
-		// todo save config
-		saveConfigTest()
-		return addr, nil
-	}
-}
-
-func ClolletJuryETHAddressesTest(chaincode string) ([]string, error) {
-	var addresses []string
-	address, err := getJuryETHAddressTest(chaincode)
-	if err == nil {
-		addresses = append(addresses, address)
-	}
-	return addresses, nil
-}
-
-func GetChainCodeValue(chaincode string, key string) ([]byte, error) {
-	err := GetConfigTest()
-	if err != nil {
-		log.Error("loadconfig() failed !!!!!!")
-		return []byte(""), err
-	}
-	if _, ok := cfg.Ada.CCInfoKV[chaincode]; ok {
-		if _, ok := cfg.Ada.CCInfoKV[chaincode].ChainCodeKV[key]; ok {
-			return cfg.Ada.CCInfoKV[chaincode].ChainCodeKV[key], nil
-		} else {
-			return []byte(""), err
+	if _, ok := cfg.Ada.ChainKeyKV[chainName]; !ok {
+		cfg.Ada.ChainKeyKV[chainName] = KeyInfo{
+			ChaincodeKeys: map[string][]byte{},
+			AddressKeys:   map[string][]byte{},
 		}
+	}
+	if _, exist := cfg.Ada.ChainKeyKV[chainName].ChaincodeKeys[chaincode]; exist {
+		return cfg.Ada.ChainKeyKV[chainName].ChaincodeKeys[chaincode], nil
 	} else {
-		return []byte(""), err
+		priKey, addr, err := getNewKey(params, iadaptor)
+		if err != nil {
+			log.Errorf("getNewKey() failed  %s !!!!!!", err.Error())
+			return []byte{}, err
+		}
+		cfg.Ada.ChainKeyKV[chainName].ChaincodeKeys[chaincode] = priKey
+		cfg.Ada.ChainKeyKV[chainName].AddressKeys[addr] = priKey
+
+		saveConfigTest() // todo save config
+
+		return priKey, nil
 	}
 }
 
-func PutChainCodeValue(chaincode string, key string, value []byte) error {
+func GetJuryAddress(chaincode, chainName string, params []byte, iadaptor adaptor.ICryptoCurrency) (string, error) {
 	err := GetConfigTest()
 	if err != nil {
 		log.Error("loadconfig() failed !!!!!!")
-		return err
+		return "", err
 	}
-	if _, ok := cfg.Ada.CCInfoKV[chaincode]; ok {
-		cfg.Ada.CCInfoKV[chaincode].ChainCodeKV[key] = value
-	} else {
-		cfg.Ada.CCInfoKV[chaincode] = CCInfo{CCName: chaincode,
-			ChainCodeKV: map[string][]byte{key: value}}
-	}
-	// todo save config
-	saveConfigTest()
 
-	return nil
+	if _, ok := cfg.Ada.ChainKeyKV[chainName]; ok {
+		for addr := range cfg.Ada.ChainKeyKV[chainName].AddressKeys {
+			return addr, nil
+		}
+		return "", err
+	} else {
+		priKey, addr, err := getNewKey(params, iadaptor)
+		if err != nil {
+			log.Error("getNewKey() failed !!!!!!")
+			return "", err
+		}
+		cfg.Ada.ChainKeyKV[chainName].ChaincodeKeys[chaincode] = priKey
+		cfg.Ada.ChainKeyKV[chainName].AddressKeys[addr] = priKey
+		// todo save config
+		saveConfigTest()
+		return addr, nil
+	}
 }

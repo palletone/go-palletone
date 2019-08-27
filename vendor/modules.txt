@@ -11,7 +11,7 @@ github.com/allegro/bigcache
 github.com/allegro/bigcache/queue
 # github.com/aristanetworks/goarista v0.0.0-20190712234253-ed1100a1c015
 github.com/aristanetworks/goarista/monotime
-# github.com/btcsuite/btcd v0.0.0-20190629003639-c26ffa870fd8
+# github.com/btcsuite/btcd v0.0.0-20190807005414-4063feeff79a
 github.com/btcsuite/btcd/btcec
 github.com/btcsuite/btcd/btcjson
 github.com/btcsuite/btcd/chaincfg
@@ -73,21 +73,21 @@ github.com/docker/docker/api/types/versions
 github.com/docker/go-connections/nat
 # github.com/docker/go-units v0.4.0
 github.com/docker/go-units
-# github.com/elastic/gosigar v0.10.2
+# github.com/elastic/gosigar v0.10.4
 github.com/elastic/gosigar
 github.com/elastic/gosigar/sys/windows
 # github.com/ethereum/go-ethereum v1.9.0
 github.com/ethereum/go-ethereum/rlp
-github.com/ethereum/go-ethereum
 github.com/ethereum/go-ethereum/accounts/abi
 github.com/ethereum/go-ethereum/common
-github.com/ethereum/go-ethereum/common/hexutil
 github.com/ethereum/go-ethereum/core/types
 github.com/ethereum/go-ethereum/crypto
 github.com/ethereum/go-ethereum/params
 github.com/ethereum/go-ethereum/common/math
+github.com/ethereum/go-ethereum/common/hexutil
 github.com/ethereum/go-ethereum/trie
 github.com/ethereum/go-ethereum/crypto/secp256k1
+github.com/ethereum/go-ethereum
 github.com/ethereum/go-ethereum/accounts/keystore
 github.com/ethereum/go-ethereum/event
 github.com/ethereum/go-ethereum/log
@@ -98,7 +98,7 @@ github.com/ethereum/go-ethereum/metrics
 github.com/ethereum/go-ethereum/accounts
 github.com/ethereum/go-ethereum/common/mclock
 github.com/ethereum/go-ethereum/p2p/netutil
-# github.com/fatih/color v1.3.0
+# github.com/fatih/color v1.6.0
 github.com/fatih/color
 # github.com/fjl/memsize v0.0.0-20180418122429-ca190fb6ffbc
 github.com/fjl/memsize/memsizeui
@@ -137,7 +137,7 @@ github.com/google/certificate-transparency-go/asn1
 github.com/google/certificate-transparency-go/x509/pkix
 # github.com/google/uuid v1.1.1
 github.com/google/uuid
-# github.com/hashicorp/golang-lru v0.5.1
+# github.com/hashicorp/golang-lru v0.5.3
 github.com/hashicorp/golang-lru
 github.com/hashicorp/golang-lru/simplelru
 # github.com/hashicorp/hcl v1.0.0
@@ -151,7 +151,7 @@ github.com/hashicorp/hcl/hcl/scanner
 github.com/hashicorp/hcl/hcl/strconv
 github.com/hashicorp/hcl/json/scanner
 github.com/hashicorp/hcl/json/token
-# github.com/huin/goupnp v0.0.0-20161224104101-679507af18f3
+# github.com/huin/goupnp v1.0.0
 github.com/huin/goupnp
 github.com/huin/goupnp/dcps/internetgateway1
 github.com/huin/goupnp/dcps/internetgateway2
@@ -165,9 +165,9 @@ github.com/ijc/Gotty
 github.com/influxdata/influxdb/client
 github.com/influxdata/influxdb/models
 github.com/influxdata/influxdb/pkg/escape
-# github.com/jackpal/go-nat-pmp v0.0.0-20160603034137-1fa385a6f458
+# github.com/jackpal/go-nat-pmp v1.0.1
 github.com/jackpal/go-nat-pmp
-# github.com/julienschmidt/httprouter v0.0.0-20170430222011-975b5c4c7c21
+# github.com/julienschmidt/httprouter v1.2.0
 github.com/julienschmidt/httprouter
 # github.com/konsorten/go-windows-terminal-sequences v1.0.2
 github.com/konsorten/go-windows-terminal-sequences
@@ -183,11 +183,11 @@ github.com/magiconair/properties
 github.com/martinlindhe/base36
 # github.com/maruel/panicparse v0.0.0-20160720141634-ad661195ed0e
 github.com/maruel/panicparse/stack
-# github.com/mattn/go-colorable v0.0.0-20170210172801-5411d3eea597
+# github.com/mattn/go-colorable v0.0.9
 github.com/mattn/go-colorable
-# github.com/mattn/go-isatty v0.0.0-20170209175615-281032e84ae0
+# github.com/mattn/go-isatty v0.0.3
 github.com/mattn/go-isatty
-# github.com/mattn/go-runewidth v0.0.0-20170201023540-14207d285c6c
+# github.com/mattn/go-runewidth v0.0.4
 github.com/mattn/go-runewidth
 # github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7
 github.com/mitchellh/go-wordwrap
@@ -207,7 +207,7 @@ github.com/opencontainers/image-spec/specs-go/v1
 github.com/opencontainers/image-spec/specs-go
 # github.com/opencontainers/runc v0.1.1
 github.com/opencontainers/runc/libcontainer/user
-# github.com/palletone/adaptor v0.6.1-0.20190717052756-a631c9dd9d6a
+# github.com/palletone/adaptor v0.6.1-0.20190823165629-94ce197415e9
 github.com/palletone/adaptor
 # github.com/palletone/btc-adaptor v0.6.1-0.20190718062616-d31b41f123f7
 github.com/palletone/btc-adaptor
@@ -215,7 +215,7 @@ github.com/palletone/btc-adaptor/txscript
 # github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb
 github.com/palletone/digital-identity/client
 github.com/palletone/digital-identity/config
-# github.com/palletone/eth-adaptor v0.6.1-0.20190718070938-ea95de9928b1
+# github.com/palletone/eth-adaptor v0.6.1-0.20190823172410-3ebb6f741360
 github.com/palletone/eth-adaptor
 github.com/palletone/eth-adaptor/bind
 github.com/palletone/eth-adaptor/ethclient
@@ -229,7 +229,7 @@ github.com/peterh/liner
 github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
-# github.com/prometheus/tsdb v0.8.0
+# github.com/prometheus/tsdb v0.10.0
 github.com/prometheus/tsdb/fileutil
 # github.com/rjeczalik/notify v0.9.2
 github.com/rjeczalik/notify
@@ -241,7 +241,7 @@ github.com/robertkrimen/otto/file
 github.com/robertkrimen/otto/parser
 github.com/robertkrimen/otto/registry
 github.com/robertkrimen/otto/token
-# github.com/rs/cors v1.6.0
+# github.com/rs/cors v1.7.0
 github.com/rs/cors
 # github.com/shopspring/decimal v0.0.0-20180709203117-cd690d0c9e24
 github.com/shopspring/decimal
@@ -256,7 +256,7 @@ github.com/spf13/cast
 github.com/spf13/jwalterweatherman
 # github.com/spf13/pflag v1.0.3
 github.com/spf13/pflag
-# github.com/spf13/viper v0.0.0-20190408140645-7a605a50e69c
+# github.com/spf13/viper v1.0.2
 github.com/spf13/viper
 # github.com/steakknife/bloomfilter v0.0.0-20180922174646-6819c0d2a570
 github.com/steakknife/bloomfilter

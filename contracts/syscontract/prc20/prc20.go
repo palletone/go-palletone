@@ -302,12 +302,17 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(jsonResp)
 	}
 
+	tkInfo := getSymbols(stub, symbol)
+	if tkInfo == nil {
+		return shim.Error(jsonResp2)
+	}
+
 	//supply amount
-	supplyAmount, err := getSupply(args[1], uint64(gTkInfo.AssetID.GetDecimal()))
+	supplyAmount, err := getSupply(args[1], uint64(tkInfo.AssetID.GetDecimal()))
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	if math.MaxInt64-gTkInfo.TotalSupply < supplyAmount {
+	if math.MaxInt64-tkInfo.TotalSupply < supplyAmount {
 		jsonResp := "{\"Error\":\"Too big, overflow\"}"
 		return shim.Error(jsonResp)
 	}
@@ -318,31 +323,29 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(jsonResp1)
 	}
 	//check supply address
-	if invokeAddr.String() != gTkInfo.SupplyAddr {
+	if invokeAddr.String() != tkInfo.SupplyAddr {
 		jsonResp := "{\"Error\":\"Not the supply address\"}"
 		return shim.Error(jsonResp)
 	}
 
 	//call SupplyToken
-	assetID := gTkInfo.AssetID
+	assetID := tkInfo.AssetID
 	err = stub.SupplyToken(assetID.Bytes(),
-		[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, supplyAmount, gTkInfo.SupplyAddr)
+		[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, supplyAmount, tkInfo.SupplyAddr)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to call stub.SupplyToken\"}"
 		return shim.Error(jsonResp)
 	}
 
 	//add supply
-	gTkInfo.TotalSupply += supplyAmount
+	tkInfo.TotalSupply += supplyAmount
 
-	info := TokenInfo{gTkInfo.Symbol, gTkInfo.CreateAddr, gTkInfo.TotalSupply, uint64(assetID.GetDecimal()),
-		gTkInfo.SupplyAddr, assetID}
-	err = setSymbols(stub, &info)
+	err = setSymbols(stub, tkInfo)
 	if err != nil {
 		return shim.Error(jsonResp3)
 	}
 
-	err = setGlobal(stub, &info)
+	err = setGlobal(stub, tkInfo)
 	if err != nil {
 		return shim.Error(jsonResp4)
 	}
@@ -370,6 +373,11 @@ func changeSupplyAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 		return shim.Error(jsonResp)
 	}
 
+	tkInfo := getSymbols(stub, symbol)
+	if tkInfo == nil {
+		return shim.Error(jsonResp2)
+	}
+
 	//new supply address
 	newSupplyAddr := args[1]
 	err := checkAddr(newSupplyAddr)
@@ -384,23 +392,20 @@ func changeSupplyAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 		return shim.Error(jsonResp1)
 	}
 	//check supply address
-	if invokeAddr.String() != gTkInfo.SupplyAddr {
+	if invokeAddr.String() != tkInfo.SupplyAddr {
 		jsonResp := "{\"Error\":\"Not the supply address\"}"
 		return shim.Error(jsonResp)
 	}
 
 	//set supply address
-	gTkInfo.SupplyAddr = newSupplyAddr
+	tkInfo.SupplyAddr = newSupplyAddr
 
-	info := TokenInfo{gTkInfo.Symbol, gTkInfo.CreateAddr, gTkInfo.TotalSupply, uint64(gTkInfo.AssetID.GetDecimal()),
-		gTkInfo.SupplyAddr, gTkInfo.AssetID}
-
-	err = setSymbols(stub, &info)
+	err = setSymbols(stub, tkInfo)
 	if err != nil {
 		return shim.Error(jsonResp3)
 	}
 
-	err = setGlobal(stub, &info)
+	err = setGlobal(stub, tkInfo)
 	if err != nil {
 		return shim.Error(jsonResp4)
 	}
@@ -480,8 +485,7 @@ func oneToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//check name is exist or not
 	tkInfo := getSymbols(stub, symbol)
 	if tkInfo == nil {
-		jsonResp := "{\"Error\":\"Token not exist\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp2)
 	}
 
 	//token

@@ -15,44 +15,60 @@
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
  */
-package adaptoreth
+package ethadaptor
 
 import (
-	"encoding/hex"
-
+	base58 "github.com/btcsuite/btcutil/base58"
 	"github.com/ethereum/go-ethereum/crypto"
-	//"github.com/palletone/adaptor"
+
+	"github.com/palletone/adaptor"
 )
 
-func NewPrivateKey(netID int) (prikeyHex string) {
+func NewPrivateKey(netID int) ([]byte, error) {
 	privateKeyECDSA, err := crypto.GenerateKey()
 	if err != nil {
-		return err.Error()
+		return nil, err
 	}
-	priHex := hex.EncodeToString(crypto.FromECDSA(privateKeyECDSA))
-	//	fmt.Println(priHex)
 
-	return priHex
+	return crypto.FromECDSA(privateKeyECDSA), nil
 }
 
-func GetPublicKey(priKeyHex string, netID int) (pubKey string) {
-	privateKeyECDSA, err := crypto.HexToECDSA(priKeyHex)
+func GetPublicKey(priKey []byte) ([]byte, error) {
+	privateKeyECDSA, err := crypto.ToECDSA(priKey)
 	if err != nil {
-		return err.Error()
+		return nil, err
 	}
-	pubHex := hex.EncodeToString(crypto.CompressPubkey(&privateKeyECDSA.PublicKey))
-	//	fmt.Println(pubHex)
 
-	return pubHex
+	return crypto.CompressPubkey(&privateKeyECDSA.PublicKey), nil
 }
 
-func GetAddress(priKeyHex string, netID int) (address string) {
-	privateKeyECDSA, err := crypto.HexToECDSA(priKeyHex)
+func GetAddress(priKey []byte, netID int) (string, error) {
+	privateKeyECDSA, err := crypto.ToECDSA(priKey)
 	if err != nil {
-		return err.Error()
+		return "", err
 	}
 	addr := crypto.PubkeyToAddress(privateKeyECDSA.PublicKey)
 	//	fmt.Println(addr.String())
 
-	return addr.String()
+	return addr.String(), nil
+}
+func PubKeyToAddress(pubKey []byte) (string, error) {
+	pk, err := crypto.DecompressPubkey(pubKey)
+	if err != nil {
+		return "", err
+	}
+	addr := crypto.PubkeyToAddress(*pk)
+	return addr.String(), nil
+}
+func GetPalletOneMappingAddress(addr *adaptor.GetPalletOneMappingAddressInput) (
+	*adaptor.GetPalletOneMappingAddressOutput, error) {
+	var addrBytes []byte
+	if "0x" == addr.ChainAddress[:2] || "0X" == addr.ChainAddress[:2] {
+		addrBytes = Hex2Bytes(addr.ChainAddress[2:])
+	} else {
+		addrBytes = Hex2Bytes(addr.ChainAddress)
+	}
+	var result adaptor.GetPalletOneMappingAddressOutput
+	result.PalletOneAddress = "P" + base58.CheckEncode(addrBytes, 0)
+	return &result, nil
 }
