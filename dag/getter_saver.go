@@ -53,8 +53,6 @@ func (d *Dag) GetActiveMediatorNodes() map[string]*discover.Node {
 
 	meds := d.GetActiveMediators()
 	for _, add := range meds {
-		// todo albert  待检查
-		//med := d.GetActiveMediator(add)
 		med := d.GetMediator(add)
 		if med == nil {
 			continue

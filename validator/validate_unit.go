@@ -201,8 +201,16 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) Validat
 		log.Debugf("Validate unit's header failed, root:[%#x],  unit.UnitHeader.TxRoot:[%#x], txs:[%#x]", root, unit.UnitHeader.TxRoot, unit.Txs.GetTxIds())
 		return (UNIT_STATE_INVALID_HEADER_TXROOT)
 	}
+
 	// step2. check transactions in unit
-	code := validate.validateTransactions(unit.Txs, unit.Timestamp(), unit.Author())
+	medAdd := unit.Author()
+	med := validate.statequery.GetMediator(medAdd)
+	if med == nil {
+		log.Debugf("validate.statequery.RetrieveMediator %v err", medAdd.Str())
+		return UNIT_STATE_INVALID_AUTHOR_SIGNATURE
+	}
+
+	code := validate.validateTransactions(unit.Txs, unit.Timestamp(), med.GetRewardAdd())
 	if code != TxValidationCode_VALID {
 		msg := fmt.Sprintf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), code)
 		log.Debug(msg)
