@@ -131,11 +131,11 @@ const (
 	DefaultMaintenanceInterval  = 60 * 5 // 60 * 60 * 24 // seconds, aka: 1 day
 	DefaultMaintenanceSkipSlots = 0      //Devin: Don't change // 1 // number of slots to skip for maintenance interval
 
-	DefaultMediatorCreateFee        = 5000
+	DefaultMediatorCreateFee        = 50000
+	DefaultAccountUpdateFee         = 5000
+	DefaultTransferPtnBaseFee       = 5000
+	DefaultTransferPtnPricePerKByte = 30000
 	DefaultContractInvokeFee        = 100000000
-	DefaultAccountUpdateFee         = 20
-	DefaultTransferPtnBaseFee       = 20
-	DefaultTransferPtnPricePerKByte = 20
 
 	DefaultUnitMaxSize = 5 * 1024 * 1024 //5M
 )
