@@ -38,10 +38,10 @@ To validate unit's signature, and mediators' signature
 */
 func validateUnitSignature(h *modules.Header) ValidationCode {
 	// copy unit's header
-	header := modules.CopyHeader(h)
+	//header := modules.CopyHeader(h)
 	// signature does not contain authors and witness fields
 	//emptySigUnit.UnitHeader.Authors = nil
-	header.GroupSign = make([]byte, 0)
+	//header.GroupSign = make([]byte, 0)
 	// recover signature
 	//if h.Authors == nil {
 	if h.Authors.Empty() {
@@ -49,7 +49,7 @@ func validateUnitSignature(h *modules.Header) ValidationCode {
 		return UNIT_STATE_INVALID_AUTHOR_SIGNATURE
 	}
 
-	hash := header.HashWithoutAuthor()
+	hash := h.HashWithoutAuthor()
 	//pubKey, err := modules.RSVtoPublicKey(hash[:], h.Authors.R[:], h.Authors.S[:], h.Authors.V[:])
 	//if err != nil {
 	//	log.Debug("Verify unit signature when recover pubkey", "error", err.Error())

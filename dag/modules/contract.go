@@ -31,7 +31,7 @@ type Contract struct {
 	Status       byte   // 合约状态
 	Creator      []byte // address 20bytes
 	CreationTime uint64 // creation  date
-	DuringTime   uint64 //合约部署持续时间，单位秒
+	//DuringTime   uint64 //合约部署持续时间，单位秒
 }
 
 func NewContract(templateId []byte, deploy *ContractDeployPayload, creator common.Address, unitTime uint64) *Contract {

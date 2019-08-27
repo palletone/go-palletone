@@ -225,7 +225,7 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 			continue
 		}
 
-		data, err := json.Marshal(txs)
+		data, err := rlp.EncodeToBytes(txs)
 		if err != nil {
 			log.Debug("Get body Marshal encode", "error", err.Error(), "unit hash", hash.String())
 			//return errResp(ErrDecode, "msg %v: %v", msg, err)
@@ -256,8 +256,8 @@ func (pm *ProtocolManager) BlockBodiesMsg(msg p2p.Msg, p *peer) error {
 			continue
 		}
 		var txs modules.Transactions
-		if err := json.Unmarshal(body, &txs); err != nil {
-			log.Debug("have body Unmarshal encode", "error", err.Error(), "body", string(body))
+		if err := rlp.DecodeBytes(body, &txs); err != nil {
+			log.Debug("have body rlp decode", "error", err.Error(), "body", string(body))
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
 
@@ -355,8 +355,8 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	}
 
 	unit := &modules.Unit{}
-	if err := json.Unmarshal(data, &unit); err != nil {
-		log.Info("ProtocolManager", "NewBlockMsg json ummarshal err:", err, "data", string(data))
+	if err := rlp.DecodeBytes(data, &unit); err != nil {
+		log.Info("ProtocolManager", "NewBlockMsg rlp decode err:", err, "data", string(data))
 		return err
 	}
 
