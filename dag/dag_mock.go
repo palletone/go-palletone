@@ -1369,6 +1369,18 @@ func (mr *MockIDagMockRecorder) IsActiveMediator(add interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsActiveMediator", reflect.TypeOf((*MockIDag)(nil).IsActiveMediator), add)
 }
 
+// GetMediator mocks base method
+func (m *MockIDag) GetMediator(add common.Address) *core.Mediator {
+	ret := m.ctrl.Call(m, "GetMediator", add)
+	ret0, _ := ret[0].(*core.Mediator)
+	return ret0
+}
+
+// GetMediator indicates an expected call of GetMediator
+func (mr *MockIDagMockRecorder) GetMediator(add interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMediator", reflect.TypeOf((*MockIDag)(nil).GetMediator), add)
+}
+
 // GetNewestUnitTimestamp mocks base method
 func (m *MockIDag) GetNewestUnitTimestamp(token modules.AssetId) (int64, error) {
 	ret := m.ctrl.Call(m, "GetNewestUnitTimestamp", token)
