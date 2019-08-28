@@ -501,7 +501,7 @@ func (pm *ProtocolManager) LocalHandle(p *peer) error {
 		hash = head.Hash()
 		stable = pm.dag.GetStableChainIndex(pm.mainAssetId)
 	}
-	// todo get stable index
+
 	log.Debug("ProtocolManager LocalHandle pre Handshake", "index", number.Index, "stable", stable)
 	// Execute the PalletOne handshake
 	if err := p.Handshake(pm.networkId, number, pm.genesis.Hash(), hash, stable); err != nil {

@@ -152,11 +152,20 @@ func (p *peer) SetHead(hash common.Hash, number, index *modules.ChainIndex) {
 	defer p.lock.Unlock()
 
 	msg, ok := p.peermsg[number.AssetID]
+	tempstableIndex := &modules.ChainIndex{}
+	if ok && index == nil {
+		tempstableIndex = msg.stableNumber
+	}
 
 	if (ok && number.Index > msg.number.Index) || !ok {
 		copy(msg.head[:], hash[:])
 		msg.number = number
-		msg.stableNumber = index
+		if index != nil {
+			msg.stableNumber = index
+		} else {
+			msg.stableNumber = tempstableIndex
+		}
+
 	}
 	p.peermsg[number.AssetID] = msg
 }
