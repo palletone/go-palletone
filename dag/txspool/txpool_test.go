@@ -99,6 +99,10 @@ func (q *UnitDag4Test) GetSlotAtTime(when time.Time) uint32 {
 	return 0
 }
 
+func (q *UnitDag4Test) GetMediator(add common.Address) *core.Mediator {
+	return nil
+}
+
 func (q *UnitDag4Test) GetScheduledMediator(slotNum uint32) common.Address {
 	return common.Address{}
 }

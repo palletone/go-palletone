@@ -52,6 +52,8 @@ type IStateRepository interface {
 	LookupAccount() map[common.Address]*modules.AccountInfo
 	GetAccountVotedMediators(addr common.Address) map[string]bool
 	GetPledgeList() (*modules.PledgeList, error)
+
+	GetMediator(add common.Address) *core.Mediator
 	GetMediatorVotedResults() (map[string]uint64, error)
 	RetrieveMediator(address common.Address) (*core.Mediator, error)
 	StoreMediator(med *core.Mediator) error
@@ -162,6 +164,16 @@ func (rep *StateRepository) GetContractTplCode(tplId []byte) ([]byte, error) {
 
 func (rep *StateRepository) RetrieveMediator(address common.Address) (*core.Mediator, error) {
 	return rep.statedb.RetrieveMediator(address)
+}
+
+func (rep *StateRepository) GetMediator(add common.Address) *core.Mediator {
+	med, err := rep.statedb.RetrieveMediator(add)
+	if err != nil {
+		log.Debugf("Retrieve Mediator error: %v", err.Error())
+		return nil
+	}
+
+	return med
 }
 
 func (rep *StateRepository) StoreMediator(med *core.Mediator) error {

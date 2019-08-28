@@ -102,6 +102,7 @@ type dags interface {
 	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
 	GetScheduledMediator(slotNum uint32) common.Address
 	GetSlotAtTime(when time.Time) uint32
+	GetMediator(add common.Address) *core.Mediator
 }
 
 // TxPoolConfig are the configuration parameters of the transaction pool.
