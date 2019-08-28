@@ -12,6 +12,7 @@
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
 package certficate
+
 import (
 	"crypto/x509/pkix"
 	"flag"
@@ -146,13 +147,13 @@ func (v *nameVar) Set(s string) error {
 			f(&v.name, t[i+1:])
 			continue
 		}
-		return errgo.Newf("unrecognised name component %q", t[:i])
+		return errgo.Newf("unrecognized name component %q", t[:i])
 	}
 	return nil
 }
 
 func (v nameVar) String() string {
-	var parts []string
+	parts := make([]string, 0, 9)
 	for _, c := range v.name.Country {
 		parts = append(parts, fmt.Sprintf("C=%s", c))
 	}
@@ -182,4 +183,3 @@ func (v nameVar) String() string {
 	}
 	return strings.Join(parts, ", ")
 }
-

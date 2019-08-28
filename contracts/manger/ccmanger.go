@@ -19,11 +19,9 @@
 package manger
 
 import (
-	"encoding/hex"
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
 	"net"
-	"os"
 	"time"
 
 	"github.com/palletone/go-palletone/common/crypto"
@@ -86,12 +84,12 @@ func createChaincodeProposalWithTxIDNonceAndTransient(txid string, typ common.He
 	return &peer.Proposal{Header: hdrBytes, Payload: ccPropPayloadBytes}, txid, nil
 }
 
-func computeProposalTxID(nonce, creator []byte) (string, error) {
-	opdata := append(nonce, creator...)
-	digest := util.ComputeSHA256(opdata)
-
-	return hex.EncodeToString(digest), nil
-}
+//func computeProposalTxID(nonce, creator []byte) (string, error) {
+//	opdata := append(nonce, creator...)
+//	digest := util.ComputeSHA256(opdata)
+//
+//	return hex.EncodeToString(digest), nil
+//}
 
 func createChaincodeProposalWithTransient(typ common.HeaderType, chainID string, txid string, cis *peer.ChaincodeInvocationSpec, creator []byte, transientMap map[string][]byte) (*peer.Proposal, string, error) {
 	// generate a random nonce
@@ -174,7 +172,7 @@ func peerServerInit(jury core.IAdapterJury) error {
 
 func peerServerDeInit() error {
 	grpcServer.Stop()
-	defer os.RemoveAll(cfg.GetConfig().ContractFileSystemPath)
+	//defer os.RemoveAll(cfg.GetConfig().ContractFileSystemPath)
 	return nil
 }
 
@@ -191,14 +189,3 @@ func systemContractDeInit() error {
 	scc.DeDeploySysCCs(chainID)
 	return nil
 }
-
-func packChaincode(chainID string, ccName string, ccPath string, ccVersion string, args [][]byte) error {
-
-	return nil
-}
-
-func recoverChaincodeFromeDb() error {
-
-	return nil
-}
-

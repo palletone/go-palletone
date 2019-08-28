@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker build -t palletone/baseimg .
+docker build --no-cache -t palletone/baseimg .

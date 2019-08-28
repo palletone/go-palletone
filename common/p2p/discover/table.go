@@ -37,6 +37,7 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/netutil"
+	"github.com/palletone/go-palletone/configure"
 )
 
 const (
@@ -114,7 +115,7 @@ type bucket struct {
 
 func newTable(t transport, ourID NodeID, ourAddr *net.UDPAddr, nodeDBPath string, bootnodes []*Node) (*Table, error) {
 	// If no node database was given, use an in-memory one
-	db, err := newNodeDB(nodeDBPath, Version, ourID)
+	db, err := newNodeDB(nodeDBPath, configure.UdpVersion, ourID)
 	if err != nil {
 		return nil, err
 	}
@@ -721,6 +722,9 @@ func (tab *Table) delete(node *Node) {
 
 func (tab *Table) addIP(b *bucket, ip net.IP) bool {
 	if netutil.IsLAN(ip) {
+		return true
+	}
+	if len(ip) == 0 {
 		return true
 	}
 	if !tab.ips.Add(ip) {

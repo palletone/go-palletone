@@ -46,7 +46,8 @@ import (
 //	UccMemorySwap string `json:"ucc_memory_swap"`  //内存交换区，不设置默认为memory的两倍
 //	UccCpuShares  string `json:"ucc_cpu_shares"`   //CPU占用率，相对的  CPU 利用率权重，默认为 1024
 //	UccCpuQuota   string `json:"ucc_cpu_quota"`    // 限制CPU --cpu-period=50000 --cpu-quota=25000
-//	UccCpuPeriod  string `json:"ucc_cpu_period"`   //限制CPU 周期设为 50000，将容器在每个周期内的 CPU 配额设置为 25000，表示该容器每 50ms 可以得到 50% 的 CPU 运行时间
+//	UccCpuPeriod  string `json:"ucc_cpu_period"`   //限制CPU 周期设为 50000，将容器在每个周期内的 CPU
+// 配额设置为 25000，表示该容器每 50ms 可以得到 50% 的 CPU 运行时间
 //	UccCpuSetCpus string `json:"ucc_cpu_set_cpus"` //限制使用某些CPUS  "1,3"  "0-2"
 //
 //	//对中间容器的相关资源限制
@@ -114,7 +115,8 @@ func (g *Genesis) GetTokenAmount() uint64 {
 
 // mediator基本信息
 type MediatorInfoBase struct {
-	AddStr     string `json:"account"`    // mediator账户地址
+	AddStr     string `json:"account"`    // mediator账户地址，主要用于产块签名
+	RewardAdd  string `json:"rewardAdd"`  // mediator奖励地址，主要用于接收产块奖励
 	InitPubKey string `json:"initPubKey"` // mediator的群签名初始公钥
 	Node       string `json:"node"`       // mediator节点网络信息，包括ip和端口等
 }
@@ -122,6 +124,7 @@ type MediatorInfoBase struct {
 func NewMediatorInfoBase() *MediatorInfoBase {
 	return &MediatorInfoBase{
 		AddStr:     "",
+		RewardAdd:  "",
 		InitPubKey: "",
 		Node:       "",
 	}
@@ -131,6 +134,13 @@ func (mib *MediatorInfoBase) Validate() (common.Address, error) {
 	addr, err := StrToMedAdd(mib.AddStr)
 	if err != nil {
 		return addr, err
+	}
+
+	if mib.RewardAdd != "" {
+		_, err := StrToMedAdd(mib.RewardAdd)
+		if err != nil {
+			return addr, err
+		}
 	}
 
 	_, err = StrToPoint(mib.InitPubKey)
@@ -159,7 +169,7 @@ type InitialMediator struct {
 
 func NewInitialMediator() *InitialMediator {
 	return &InitialMediator{
-		MediatorInfoBase:  NewMediatorInfoBase(),
+		MediatorInfoBase: NewMediatorInfoBase(),
 		//MediatorApplyInfo: NewMediatorApplyInfo(),
 	}
 }

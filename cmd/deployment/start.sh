@@ -18,6 +18,7 @@ function LoopStart()
     while [ $count -le $1 ] ;  
     do  
     StartGPTN $count 
+    sleep 3
     let ++count;  
     done  
     return 0;  

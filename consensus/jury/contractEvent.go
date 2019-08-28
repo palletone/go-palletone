@@ -38,22 +38,22 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) error {
 	}
 	reqId := event.Tx.RequestHash()
 	if p.checkTxIsExist(event.Tx) {
-		err := fmt.Sprintf("[%s]ProcessContractEvent, event Tx is exist, txId:%s", shortId(reqId.String()), event.Tx.Hash().String())
-		return errors.New(err)
+		return fmt.Errorf("[%s]ProcessContractEvent, event Tx is exist, txId:%s",
+			shortId(reqId.String()), event.Tx.Hash().String())
 	}
 	if p.checkTxReqIdIsExist(reqId) {
-		err := fmt.Sprintf("[%s]ProcessContractEvent, event Tx reqId is exist, txId:%s", shortId(reqId.String()), event.Tx.Hash().String())
-		return errors.New(err)
+		return fmt.Errorf("[%s]ProcessContractEvent, event Tx reqId is exist, txId:%s",
+			shortId(reqId.String()), event.Tx.Hash().String())
 	}
 	if !p.checkTxValid(event.Tx) {
-		err := fmt.Sprintf("[%s]ProcessContractEvent, event Tx is invalid, txId:%s", shortId(reqId.String()), event.Tx.Hash().String())
-		return errors.New(err)
+		return fmt.Errorf("[%s]ProcessContractEvent, event Tx is invalid, txId:%s",
+			shortId(reqId.String()), event.Tx.Hash().String())
 	}
 	if !p.checkTxAddrValid(event.Tx) {
-		err := fmt.Sprintf("[%s]ProcessContractEvent, event Tx addr is invalid, txId:%s", shortId(reqId.String()), event.Tx.Hash().String())
-		return errors.New(err)
+		return fmt.Errorf("[%s]ProcessContractEvent, event Tx addr is invalid, txId:%s",
+			shortId(reqId.String()), event.Tx.Hash().String())
 	}
-	if !p.contractEventExecutable(event.CType, event.Tx, event.Ele, event.JuryCount) {
+	if !p.contractEventExecutable(event.CType, event.Tx, event.Ele) {
 		log.Debugf("[%s]ProcessContractEvent, contractEventExecutable is false", shortId(reqId.String()))
 		return nil
 	}
@@ -81,6 +81,7 @@ func (p *Processor) contractEleEvent(tx *modules.Transaction) error {
 	defer p.locker.Unlock()
 
 	reqId := tx.RequestHash()
+	juryCount := uint64(p.dag.JuryCount())
 	if _, ok := p.mtx[reqId]; !ok {
 		p.mtx[reqId] = &contractTx{
 			reqTx:  tx.GetRequestTx(),
@@ -91,18 +92,22 @@ func (p *Processor) contractEleEvent(tx *modules.Transaction) error {
 		}
 	}
 	mtx := p.mtx[reqId]
-	eles, err := p.getContractAssignElectionList(tx)
+	eels, err := p.getContractAssignElectionList(tx)
 	if err != nil {
 		return err
 	}
-	elesLen := len(eles)
-	if elesLen > 0 {
-		if elesLen >= p.electionNum {
-			mtx.eleInf = eles[0:p.electionNum] //todo 随机选择
-			log.Debugf("[%s]contractEleEvent election Num ok", shortId(reqId.String()))
-		} else {
-			mtx.eleInf = eles[:]
+	eelsLen := len(eels)
+	if eelsLen > 0 {
+		eleNode := &modules.ElectionNode{
+			EleList:make([]modules.ElectionInf, 0),
 		}
+		if eelsLen >= p.electionNum {
+			eelsLen = p.electionNum
+			log.Debugf("[%s]contractEleEvent election Num ok", shortId(reqId.String()))
+		}
+		eleNode.EleList = eels[:eelsLen]
+		eleNode.JuryCount = juryCount
+		mtx.eleNode = eleNode
 	}
 	if _, ok := p.mel[reqId]; !ok {
 		p.mel[reqId] = &electionVrf{
@@ -111,17 +116,20 @@ func (p *Processor) contractEleEvent(tx *modules.Transaction) error {
 			tm:     time.Now(),
 		}
 	}
-	if elesLen < p.electionNum {
+	if eelsLen < p.electionNum {
 		reqEvent := &ElectionRequestEvent{
 			ReqId:     reqId,
-			JuryCount: uint64(p.dag.JuryCount()),
+			JuryCount: juryCount,
 		}
-		go p.ptn.ElectionBroadcast(ElectionEvent{EType: ELECTION_EVENT_VRF_REQUEST, Event: reqEvent}, true)
+		go p.ptn.ElectionBroadcast(ElectionEvent{EType: ELECTION_EVENT_VRF_REQUEST, Event: reqEvent}, true) //todo true
 	}
 	return nil
 }
 
-func (p *Processor) contractExecEvent(tx *modules.Transaction, ele []modules.ElectionInf) (broadcast bool, err error) {
+func (p *Processor) contractExecEvent(tx *modules.Transaction, ele *modules.ElectionNode) (broadcast bool, err error) {
+	if tx == nil {
+		return false, errors.New("contractExecEvent, tx is nil")
+	}
 	reqId := tx.RequestHash()
 	p.locker.Lock()
 	if p.mtx[reqId] == nil {
@@ -138,7 +146,7 @@ func (p *Processor) contractExecEvent(tx *modules.Transaction, ele []modules.Ele
 		}
 	}
 	p.mtx[reqId].reqTx = tx.GetRequestTx()
-	p.mtx[reqId].eleInf = ele
+	p.mtx[reqId].eleNode = ele
 	p.mtx[reqId].reqRcvEd = true
 	//关闭mel
 	if e, ok := p.mel[reqId]; ok {
@@ -153,7 +161,10 @@ func (p *Processor) contractExecEvent(tx *modules.Transaction, ele []modules.Ele
 	return true, nil
 }
 
-func (p *Processor) contractSigEvent(tx *modules.Transaction, ele []modules.ElectionInf) (broadcast bool, err error) {
+func (p *Processor) contractSigEvent(tx *modules.Transaction, ele *modules.ElectionNode) (broadcast bool, err error) {
+	if tx == nil {
+		return false, errors.New("contractSigEvent, tx is nil")
+	}
 	p.locker.Lock()
 	defer p.locker.Unlock()
 	reqId := tx.RequestHash()
@@ -166,11 +177,11 @@ func (p *Processor) contractSigEvent(tx *modules.Transaction, ele []modules.Elec
 	if _, ok := p.mtx[reqId]; !ok {
 		log.Debugf("[%s]contractSigEvent, local not find reqId,create it", shortId(reqId.String()))
 		p.mtx[reqId] = &contractTx{
-			reqTx:  tx.GetRequestTx(),
-			eleInf: ele,
-			tm:     time.Now(),
-			valid:  true,
-			adaInf: make(map[uint32]*AdapterInf),
+			reqTx:   tx.GetRequestTx(),
+			eleNode: ele,
+			tm:      time.Now(),
+			valid:   true,
+			adaInf:  make(map[uint32]*AdapterInf),
 		}
 		p.mtx[reqId].rcvTx = append(p.mtx[reqId].rcvTx, tx)
 		return true, nil
@@ -185,7 +196,7 @@ func (p *Processor) contractSigEvent(tx *modules.Transaction, ele []modules.Elec
 				//签名数量足够，而且当前节点是签名最新的节点，那么合并签名并广播完整交易
 				log.Infof("[%s]runContractReq, localIsMinSignature Ok!", shortId(reqId.String()))
 				processContractPayout(ctx.sigTx, ele)
-				go p.ptn.ContractBroadcast(ContractEvent{Ele: ele, CType: CONTRACT_EVENT_COMMIT, Tx: ctx.sigTx}, true)
+				go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_COMMIT, Ele: ele, Tx: ctx.sigTx}, true)
 			}
 		}
 	} else if err != nil {
@@ -195,6 +206,9 @@ func (p *Processor) contractSigEvent(tx *modules.Transaction, ele []modules.Elec
 }
 
 func (p *Processor) contractCommitEvent(tx *modules.Transaction) (broadcast bool, err error) {
+	if tx == nil {
+		return false, errors.New("contractCommitEvent, tx is nil")
+	}
 	reqId := tx.RequestHash()
 	p.locker.Lock()
 	defer p.locker.Unlock()

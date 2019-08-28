@@ -19,6 +19,7 @@ import (
 	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/dagconfig"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -30,7 +31,7 @@ import (
 )
 
 //  质押PTN
-func processPledgeDeposit(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func processPledgeDeposit(stub shim.ChaincodeStubInterface) pb.Response {
 	//  获取是否是保证金合约
 	invokeTokens, err := isContainDepositContractAddr(stub)
 	if err != nil {
@@ -60,11 +61,11 @@ func handlePledgeReward(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 	if len(args) != 0 {
 		return shim.Error("need 0 args")
 	}
-	cp, err := stub.GetSystemConfig()
+	gp, err := stub.GetSystemConfig()
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	depositDailyReward := cp.PledgeDailyReward
+	depositDailyReward := gp.ChainParameters.PledgeDailyReward
 
 	err = handleRewardAllocation(stub, depositDailyReward)
 	if err != nil {
@@ -145,7 +146,7 @@ func convertPledgeStatus2Json(p *modules.PledgeStatus) *pledgeStatusJson {
 	return data
 }
 
-func queryAllPledgeHistory(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func queryAllPledgeHistory(stub shim.ChaincodeStubInterface) pb.Response {
 
 	history, err := getAllPledgeRewardHistory(stub)
 	if err != nil {
@@ -154,8 +155,21 @@ func queryAllPledgeHistory(stub shim.ChaincodeStubInterface, args []string) pb.R
 	data, _ := json.Marshal(history)
 	return shim.Success(data)
 }
-func queryPledgeList(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func queryPledgeList(stub shim.ChaincodeStubInterface) pb.Response {
 	list, err := getLastPledgeList(stub)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	result, _ := json.Marshal(list)
+	return shim.Success(result)
+}
+func queryPledgeListByDate(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	date:=args[0]
+	reg := regexp.MustCompile(`[\d]{8}`)
+	if !reg.Match([]byte(date)){
+		return shim.Error("must use YYYYMMDD format")
+	}
+	list, err := getPledgeListByDate(stub,date)
 	if err != nil {
 		return shim.Error(err.Error())
 	}

@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -30,12 +31,13 @@ type Contract struct {
 	Status       byte   // 合约状态
 	Creator      []byte // address 20bytes
 	CreationTime uint64 // creation  date
+	//DuringTime   uint64 //合约部署持续时间，单位秒
 }
 
-func NewContract(deploy *ContractDeployPayload, creator common.Address, unitTime uint64) *Contract {
+func NewContract(templateId []byte, deploy *ContractDeployPayload, creator common.Address, unitTime uint64) *Contract {
 	return &Contract{
 		ContractId:   deploy.ContractId,
-		TemplateId:   deploy.TemplateId,
+		TemplateId:   templateId,
 		Name:         deploy.Name,
 		Status:       1,
 		Creator:      creator.Bytes(),

@@ -52,9 +52,9 @@ type GlobalProperty struct {
 func NewGlobalProp() *GlobalProperty {
 	return &GlobalProperty{
 		GlobalPropBase:     NewGlobalPropBase(),
-		ActiveJuries:       make(map[common.Address]bool, 0),
-		ActiveMediators:    make(map[common.Address]bool, 0),
-		PrecedingMediators: make(map[common.Address]bool, 0),
+		ActiveJuries:       make(map[common.Address]bool),
+		ActiveMediators:    make(map[common.Address]bool),
+		PrecedingMediators: make(map[common.Address]bool),
 	}
 }
 
@@ -163,9 +163,9 @@ func (gp *GlobalProperty) GetActiveMediatorAddr(index int) common.Address {
 // GetActiveMediators, return the list of active mediators, and the order of the list from small to large
 func (gp *GlobalProperty) GetActiveMediators() []common.Address {
 	var mediators common.Addresses
-	mediators = make([]common.Address, 0, gp.ActiveMediatorsCount())
+	//mediators = make([]common.Address, 0, gp.ActiveMediatorsCount())
 
-	for medAdd, _ := range gp.ActiveMediators {
+	for medAdd := range gp.ActiveMediators {
 		mediators = append(mediators, medAdd)
 	}
 

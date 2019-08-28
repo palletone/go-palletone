@@ -311,7 +311,7 @@ func (re *JSRE) Evaluate(code string, w io.Writer) error {
 	re.Do(func(vm *otto.Otto) {
 		val, err := vm.Run(code)
 		if err != nil {
-			prettyError(vm, err, w)
+			prettyError( err, w)
 		} else {
 			prettyPrint(vm, val, w)
 		}

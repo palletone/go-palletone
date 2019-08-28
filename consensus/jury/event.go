@@ -31,19 +31,15 @@ type AdapterEventType uint32
 
 const (
 	CONTRACT_EVENT_EXEC   ContractEventType = 1 //合约执行，系统合约由Mediator完成，用户合约由Jury完成
-	CONTRACT_EVENT_SIG                      = 2 //多Jury执行合约并签名转发确认，由Jury接收并处理
-	CONTRACT_EVENT_COMMIT                   = 4 //提交给Mediator进行验证确认并写到交易池
-	CONTRACT_EVENT_ELE                      = 8 //节点选举
+	CONTRACT_EVENT_SIG    ContractEventType = 2 //多Jury执行合约并签名转发确认，由Jury接收并处理
+	CONTRACT_EVENT_COMMIT ContractEventType = 4 //提交给Mediator进行验证确认并写到交易池
+	CONTRACT_EVENT_ELE    ContractEventType = 8 //节点选举
 )
 const (
 	ELECTION_EVENT_VRF_REQUEST ElectionEventType = 1
-	ELECTION_EVENT_VRF_RESULT                    = 2
-	ELECTION_EVENT_SIG_REQUEST                   = 3
-	ELECTION_EVENT_SIG_RESULT                    = 4
-)
-const (
-	ADAPTER_EVENT_REQUEST AdapterEventType = 1
-	ADAPTER_EVENT_RESULT                   = 2
+	ELECTION_EVENT_VRF_RESULT  ElectionEventType = 2
+	ELECTION_EVENT_SIG_REQUEST ElectionEventType = 3
+	ELECTION_EVENT_SIG_RESULT  ElectionEventType = 4
 )
 
 type AdapterInf struct {
@@ -63,10 +59,9 @@ type JuryMsgAddr struct {
 
 //contract
 type ContractEvent struct {
-	CType     ContractEventType
-	JuryCount uint64
-	Ele       []modules.ElectionInf
-	Tx        *modules.Transaction
+	CType ContractEventType
+	Ele   *modules.ElectionNode `rlp:"nil"`
+	Tx    *modules.Transaction
 }
 
 func (ce *ContractEvent) Hash() common.Hash {
@@ -77,7 +72,6 @@ func (ce *ContractEvent) Hash() common.Hash {
 type ElectionRequestEvent struct {
 	ReqId     common.Hash
 	JuryCount uint64
-	//Data  []byte //election data, input as vrf. use reqId
 }
 type ElectionResultEvent struct {
 	ReqId     common.Hash

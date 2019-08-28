@@ -1,0 +1,180 @@
+package ethadaptor
+
+import (
+	"context"
+	"encoding/json"
+	"strconv"
+	"strings"
+
+	ethereum "github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	//"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/palletone/eth-adaptor/bind"
+
+	"github.com/palletone/adaptor"
+)
+
+// PalletOneFilterer is an auto generated log filtering Go binding around an Ethereum contract events.
+type PalletOneFilterer struct {
+	contract *bind.BoundContract // Generic contract wrapper for the low level calls
+}
+
+// NewPalletOneFilterer creates a new log filterer instance of PalletOne, bound to a specific deployed contract.
+func NewPalletOneFilterer(contractABI string, address common.Address, filterer bind.ContractFilterer) (*PalletOneFilterer, error) {
+	parsed, err := abi.JSON(strings.NewReader(contractABI))
+	if err != nil {
+		return nil, err
+	}
+	contract := bind.NewBoundContract(address, parsed, nil, nil, filterer)
+	return &PalletOneFilterer{contract: contract}, nil
+}
+
+// FilterEventByName is a free log retrieval operation binding the contract event.
+//
+// Solidity: e Deposit(token address, user address, amount uint256, redeem bytes)
+func (_PalletOne *PalletOneFilterer) FilterEventByName(opts *bind.FilterOpts, event string) (*PalletOneDepositIterator, error) {
+	logs, sub, err := _PalletOne.contract.FilterLogs(opts, event)
+	if err != nil {
+		return nil, err
+	}
+	return &PalletOneDepositIterator{contract: _PalletOne.contract, event: event, logs: logs, sub: sub}, nil
+}
+
+// PalletOneDepositIterator is returned from FilterEventByName and is used to iterate over the raw logs and unpacked data for Deposit events raised by the PalletOne contract.
+type PalletOneDepositIterator struct {
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+	values   string              //json values
+	txhash   string              //json txhash
+	blocknum uint64              //json blocknum
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *PalletOneDepositIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			values, err := it.contract.UnpackLogZXL(it.event, log)
+			if err != nil {
+				it.fail = err
+				return false
+			}
+			jsonValues, err := json.Marshal(values)
+			if err != nil {
+				it.fail = err
+				return false
+			}
+			it.values = string(jsonValues)
+			it.txhash = log.TxHash.String()
+			it.blocknum = log.BlockNumber
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		values, err := it.contract.UnpackLogZXL(it.event, log)
+		if err != nil {
+			it.fail = err
+			return false
+		}
+		jsonValues, err := json.Marshal(values)
+		if err != nil {
+			it.fail = err
+			return false
+		}
+		it.values = string(jsonValues)
+		it.txhash = log.TxHash.String()
+		it.blocknum = log.BlockNumber
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *PalletOneDepositIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *PalletOneDepositIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+func GetEventByAddress(getEventByAddressParams *adaptor.GetEventByAddressParams, rpcParams *RPCParams, netID int) (*adaptor.GetEventByAddressResult, error) {
+	//get rpc client
+	client, err := GetClient(rpcParams)
+	if err != nil {
+		return nil, err
+	}
+
+	//
+	contractAddr := common.HexToAddress(getEventByAddressParams.ContractAddr)
+	filter, err := NewPalletOneFilterer(getEventByAddressParams.ContractABI, contractAddr, client)
+
+	//
+	var StartHeight uint64
+	if getEventByAddressParams.StartHeight == "" {
+		header, err := client.HeaderByNumber(context.Background(), nil)
+		if err != nil {
+			return nil, err
+		}
+		StartHeight = header.Number.Uint64() - 172800 // 30 days
+	} else {
+		StartHeight, err = strconv.ParseUint(getEventByAddressParams.StartHeight, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+	}
+	var EndHeight *uint64
+	if getEventByAddressParams.EndHeight == "" {
+		EndHeight = nil
+	} else {
+		parseHeight, err := strconv.ParseUint(getEventByAddressParams.EndHeight, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		EndHeight = new(uint64)
+		*EndHeight = parseHeight
+	}
+
+	//
+	filterIter, err := filter.FilterEventByName(&bind.FilterOpts{StartHeight, EndHeight, nil},
+		getEventByAddressParams.EventName)
+
+	//
+	var result adaptor.GetEventByAddressResult
+	//getEventByAddressParams.ConcernAddr = strings.ToLower(getEventByAddressParams.ConcernAddr)//eth address need lower
+	for filterIter.Next() {
+		if strings.Contains(filterIter.values, getEventByAddressParams.ConcernAddr) {
+			result.Events = append(result.Events, filterIter.values)
+			result.Txhashs = append(result.Txhashs, filterIter.txhash)
+			result.Blocknums = append(result.Blocknums, filterIter.blocknum)
+		}
+	}
+
+	return &result, nil
+}

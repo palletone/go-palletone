@@ -43,10 +43,10 @@ func ConvertTxPoolTx2PendingJson(tx *modules.TxPoolTransaction) *TxPoolPendingJs
 	if tx.Tx == nil {
 		return nil
 	}
-	pay := new(modules.PaymentPayload)
+	// pay := new(modules.PaymentPayload)
 	var amount uint64
 	if len(tx.Tx.Messages()) > 0 {
-		pay = tx.Tx.Messages()[0].Payload.(*modules.PaymentPayload)
+		pay := tx.Tx.Messages()[0].Payload.(*modules.PaymentPayload)
 
 		for _, out := range pay.Outputs {
 			amount += out.Value
@@ -57,7 +57,13 @@ func ConvertTxPoolTx2PendingJson(tx *modules.TxPoolTransaction) *TxPoolPendingJs
 	if tx.TxFee != nil {
 		asset_str = tx.TxFee[0].Asset.String()
 	}
-	return &TxPoolPendingJson{TxHash: tx.Tx.Hash().String(), CreationDate: tx.CreationDate, Fee: txfee, Asset: asset_str, Amount: amount}
+	return &TxPoolPendingJson{
+		TxHash:       tx.Tx.Hash().String(),
+		CreationDate: tx.CreationDate,
+		Fee:          txfee,
+		Asset:        asset_str,
+		Amount:       amount,
+	}
 }
 
 func ConvertTxPoolTx2Json(tx *modules.TxPoolTransaction, hash common.Hash) *TxPoolTxJson {

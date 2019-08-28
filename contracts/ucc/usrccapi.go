@@ -28,13 +28,13 @@ type UserChaincode struct {
 	Enabled bool //Enabled a convenient switch to enable/disable chaincode
 }
 
-func buildUserCC(context context.Context, spec *pb.ChaincodeSpec) (*pb.ChaincodeDeploymentSpec, error) {
-	var codePackageBytes []byte
-	chaincodeDeploymentSpec := &pb.ChaincodeDeploymentSpec{ExecEnv: pb.ChaincodeDeploymentSpec_DOCKER, ChaincodeSpec: spec, CodePackage: codePackageBytes}
-	return chaincodeDeploymentSpec, nil
-}
+//func buildUserCC(context context.Context, spec *pb.ChaincodeSpec) (*pb.ChaincodeDeploymentSpec, error) {
+//	var codePackageBytes []byte
+//	chaincodeDeploymentSpec := &pb.ChaincodeDeploymentSpec{ExecEnv: pb.ChaincodeDeploymentSpec_DOCKER, ChaincodeSpec: spec, CodePackage: codePackageBytes}
+//	return chaincodeDeploymentSpec, nil
+//}
 
-func getDeploymentSpec(_ context.Context, spec *pb.ChaincodeSpec) (*pb.ChaincodeDeploymentSpec, error) {
+func getDeploymentSpec(spec *pb.ChaincodeSpec) (*pb.ChaincodeDeploymentSpec, error) {
 	log.Debugf("getting deployment spec for chaincode spec: %v\n", spec)
 	codePackageBytes, err := platforms.GetDeploymentPayload(spec)
 	if err != nil {
@@ -44,13 +44,13 @@ func getDeploymentSpec(_ context.Context, spec *pb.ChaincodeSpec) (*pb.Chaincode
 	return cdDeploymentSpec, nil
 }
 
-func mockerDeployUserCC() error {
-	log.Debug("==================mockerDeployUserCC enter")
-	time.Sleep(time.Duration(1) * time.Second)
-	log.Debug("==================mockerDeployUserCC end")
-
-	return nil
-}
+//func mockerDeployUserCC() error {
+//	log.Debug("==================mockerDeployUserCC enter")
+//	time.Sleep(time.Duration(1) * time.Second)
+//	log.Debug("==================mockerDeployUserCC end")
+//
+//	return nil
+//}
 
 func DeployUserCC(contractId []byte, chaincodeData []byte, spec *pb.ChaincodeSpec, chainID string, txid string, txsim rwset.TxSimulator, timeout time.Duration) error {
 	//return mockerDeployUserCC()
@@ -58,7 +58,7 @@ func DeployUserCC(contractId []byte, chaincodeData []byte, spec *pb.ChaincodeSpe
 	cdDeploymentSpec := &pb.ChaincodeDeploymentSpec{}
 	var err error
 	if cfg.DebugTest {
-		cdDeploymentSpec, err = getDeploymentSpec(nil, spec)
+		cdDeploymentSpec, err = getDeploymentSpec(spec)
 		if err != nil {
 			return err
 		}
@@ -102,7 +102,7 @@ func StopUserCC(contractid []byte, chainID string, usrcc *UserChaincode, txid st
 	}
 
 	if deleteImage {
-		return ccprov.Destory(context.Background(), cccid, chaincodeDeploymentSpec)
+		return ccprov.Destroy(context.Background(), cccid, chaincodeDeploymentSpec)
 	} else {
 		return nil
 	}

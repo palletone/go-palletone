@@ -77,7 +77,7 @@ func collectChaincodeFiles(spec *pb.ChaincodeSpec, tw *tar.Writer) (string, erro
 	} else {
 		inputbytes, err2 := proto.Marshal(spec.Input)
 		if err2 != nil {
-			return "", fmt.Errorf("Error marshalling constructor: %s", err)
+			return "", fmt.Errorf("error marshaling constructor: %s", err)
 		}
 		hash = util.GenerateHashFromSignature(codepath, inputbytes)
 	}

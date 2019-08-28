@@ -18,8 +18,6 @@
 package cors
 
 import (
-	"crypto/ecdsa"
-
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -98,13 +96,13 @@ type hashOrNumber struct {
 }
 
 // sign adds a signature to the block announcement by the given privKey
-func (a *announceData) sign(privKey *ecdsa.PrivateKey) {
-	//rlp, _ := rlp.EncodeToBytes(announceBlock{a.Hash, a.Number.Index /*, a.Td*/})
-	//sig, _ := crypto.Sign(crypto.Keccak256(rlp), privKey)
-	//a.Update = a.Update.add("sign", sig)
-}
-
-// checkSignature verifies if the block announcement has a valid signature by the given pubKey
-func (a *announceData) checkSignature(pubKey *ecdsa.PublicKey) error {
-	return nil
-}
+//func (a *announceData) sign(privKey *ecdsa.PrivateKey) {
+//	//rlp, _ := rlp.EncodeToBytes(announceBlock{a.Hash, a.Number.Index /*, a.Td*/})
+//	//sig, _ := crypto.Sign(crypto.Keccak256(rlp), privKey)
+//	//a.Update = a.Update.add("sign", sig)
+//}
+//
+//// checkSignature verifies if the block announcement has a valid signature by the given pubKey
+//func (a *announceData) checkSignature(pubKey *ecdsa.PublicKey) error {
+//	return nil
+//}

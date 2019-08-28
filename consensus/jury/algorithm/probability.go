@@ -20,8 +20,6 @@ package algorithm
 
 import (
 	"math/big"
-	"sync"
-	"context"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/util"
 )
@@ -36,9 +34,9 @@ func Selected(expectedNum uint, weight, total uint64, vrf []byte) int {
 
 	hh := util.RlpHash(vrf)
 	h32 := hh[:common.HashLength]
-
 	//Total := 100
-	binomial := NewBinomial(int64(weight), int64(expectedNum), int64(total)) //weight=TokenPerUser; TotalTokenAmount = UserAmount * TokenPerUser
+	//weight=TokenPerUser; TotalTokenAmount = UserAmount * TokenPerUser
+	binomial := NewBinomial(int64(weight), int64(expectedNum), int64(total))
 	//binomial := NewApproxBinomial(int64(expectedNum), weight)
 	//binomial := &distuv.Binomial{
 	//	N: float64(weight),
@@ -73,58 +71,58 @@ func Selected(expectedNum uint, weight, total uint64, vrf []byte) int {
 	return j
 }
 
-func parallelTrevels(core int, N uint64, hash *big.Rat, binomial Binomial) int {
-	var wg sync.WaitGroup
-	groups := N / uint64(core)
-	background, cancel := context.WithCancel(context.Background())
-	resChan := make(chan int)
-	notFound := make(chan struct{})
-	for i := 0; i < core; i++ {
-		go func(ctx context.Context, begin uint64) {
-			wg.Add(1)
-			defer wg.Done()
-			var (
-				end          uint64
-				upper, lower *big.Rat
-			)
-			if begin == uint64(core-2) {
-				end = N + 1
-			} else {
-				end = groups * (begin + 1)
-			}
-			for j := groups * begin; j < end; j++ {
-				select {
-				case <-ctx.Done():
-					return
-				default:
-				}
-				if upper != nil {
-					lower = upper
-				} else {
-					lower = binomial.CDF(int64(j))
-				}
-				upper = binomial.CDF(int64(j + 1))
-				//log.Infof("hash %v, lower %v , upper %v", hash.Sign(), lower.Sign(), upper.Sign())
-				if hash.Cmp(lower) >= 0 && hash.Cmp(upper) < 0 {
-					resChan <- int(j)
-					return
-				}
-				j++
-			}
-			return
-		}(background, uint64(i))
-	}
-
-	go func() {
-		wg.Wait()
-		close(notFound)
-	}()
-
-	select {
-	case j := <-resChan:
-		cancel()
-		return j
-	case <-notFound:
-		return 0
-	}
-}
+//func parallelTrevels(core int, N uint64, hash *big.Rat, binomial Binomial) int {
+//	var wg sync.WaitGroup
+//	groups := N / uint64(core)
+//	background, cancel := context.WithCancel(context.Background())
+//	resChan := make(chan int)
+//	notFound := make(chan struct{})
+//	for i := 0; i < core; i++ {
+//		go func(ctx context.Context, begin uint64) {
+//			wg.Add(1)
+//			defer wg.Done()
+//			var (
+//				end          uint64
+//				upper, lower *big.Rat
+//			)
+//			if begin == uint64(core-2) {
+//				end = N + 1
+//			} else {
+//				end = groups * (begin + 1)
+//			}
+//			for j := groups * begin; j < end; j++ {
+//				select {
+//				case <-ctx.Done():
+//					return
+//				default:
+//				}
+//				if upper != nil {
+//					lower = upper
+//				} else {
+//					lower = binomial.CDF(int64(j))
+//				}
+//				upper = binomial.CDF(int64(j + 1))
+//				//log.Infof("hash %v, lower %v , upper %v", hash.Sign(), lower.Sign(), upper.Sign())
+//				if hash.Cmp(lower) >= 0 && hash.Cmp(upper) < 0 {
+//					resChan <- int(j)
+//					return
+//				}
+//				j++
+//			}
+//			return
+//		}(background, uint64(i))
+//	}
+//
+//	go func() {
+//		wg.Wait()
+//		close(notFound)
+//	}()
+//
+//	select {
+//	case j := <-resChan:
+//		cancel()
+//		return j
+//	case <-notFound:
+//		return 0
+//	}
+//}

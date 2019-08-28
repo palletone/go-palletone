@@ -55,10 +55,11 @@ type IStateQuery interface {
 	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
 	//获得系统配置的最低手续费要求
 	GetMinFee() (*modules.AmountAsset, error)
-	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
+	GetContractJury(contractId []byte) (*modules.ElectionNode, error)
 	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 	GetMediators() map[common.Address]bool
+	GetMediator(add common.Address) *core.Mediator
 }
 
 type IDagQuery interface {

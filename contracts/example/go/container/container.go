@@ -40,7 +40,7 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) peer.Response {
 	fmt.Println("Init=========================================================")
 	log.Debugf("Init")
 	args := stub.GetStringArgs()
-	_, err := strconv.Atoi(string(args[1]))
+	_, err := strconv.Atoi(args[1])
 	if err != nil {
 		return shim.Success([]byte(err.Error()))
 	}
@@ -183,7 +183,7 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) peer.Response
 	default:
 		return shim.Error("Please enter valid function name.")
 	}
-	return shim.Success([]byte("Please enter valid function name."))
+	//return shim.Success([]byte("Please enter valid function name."))
 }
 
 func main() {

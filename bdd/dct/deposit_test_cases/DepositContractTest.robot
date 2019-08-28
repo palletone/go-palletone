@@ -13,7 +13,7 @@ ${developerAddr_02}    ${EMPTY}
 
 *** Test Cases ***
 Business_01
-    [Documentation]    mediator 交付 50 0000 0000 0000 及以上才可以加入候选列表
+    [Documentation]    mediator 交付 50 ptn 才可以加入候选列表
     ...
     ...    某节点申请加入mediator-》进入申请列表-》基金会同意-》进入同意列表-》节点加入保证金（足够）-》进入候选列表-》节点增加保证金-》节点申请退出部分保证金-》基金会同意-》节点申请退出候选列表-》进入退出列表-》基金会同意。
     ${amount}    getBalance    ${mediatorAddr_01}    PTN
@@ -61,6 +61,7 @@ Business_01
     ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
     log    ${mDeposit}
     Should Not Be Equal    ${mDeposit["balance"]}    ${0}    #有余额
+    GetAllMediators
     ${result}    applyQuitMediator    ${mediatorAddr_01}    MediatorApplyQuit    #该节点申请退出mediator候选列表    #1
     log    ${result}
     ${addressMap4}    getQuitMediatorApplyList
@@ -117,6 +118,7 @@ Business_02
     ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_02}    #获取该地址保证金账户详情
     log    ${mDeposit}
     Should Not Be Equal    ${mDeposit["balance"]}    ${0}    #有余额
+    GetAllMediators
     ${result}    applyForForfeitureDeposit    ${foundationAddr}    ${mediatorAddr_02}    Mediator    nothing to do    #某个地址申请没收该节点保证金（全部）
     log    ${result}
     ${result}    getListForForfeitureApplication
@@ -141,7 +143,7 @@ Business_02
     log    ${resul}
 
 Business_03
-    [Documentation]    jury 交付 1000000 0000 0000 及以上才可以加入候选列表
+    [Documentation]    jury 交付 10 ptn 才可以加入候选列表
     ${resul}    juryPayToDepositContract    ${juryAddr_01}    10
     log    ${resul}
     ${result}    getCandidateBalanceWithAddr    ${juryAddr_01}    #获取该地址保证金账户详情
@@ -150,6 +152,7 @@ Business_03
     ${resul}    getListForJuryCandidate
     Dictionary Should Contain Key    ${resul}    ${juryAddr_01}    #候选列表有该地址
     log    ${resul}
+    GetAllNodes
     ${result}    applyQuitMediator    ${juryAddr_01}    JuryApplyQuit    #该节点申请退出mediator候选列表
     log    ${result}
     ${addressMap4}    getQuitMediatorApplyList    #获取申请mediator列表里的节点（不为空）
@@ -174,6 +177,7 @@ Business_04
     ${resul}    getListForJuryCandidate
     Dictionary Should Contain Key    ${resul}    ${juryAddr_02}    #候选列表有该地址
     log    ${resul}
+    GetAllNodes
     ${result}    applyForForfeitureDeposit    ${foundationAddr}    ${juryAddr_02}    Jury    nothing to do    #某个地址申请没收该节点保证金（全部）
     log    ${result}
     ${result}    getListForForfeitureApplication
@@ -189,7 +193,7 @@ Business_04
     log    ${resul}
 
 Business_05
-    [Documentation]    dev 交付 10000 0000 0000 及以上才可以加入候选列表
+    [Documentation]    dev 交付 1 ptn 才可以加入合约开发者列表
     ${resul}    developerPayToDepositContract    ${developerAddr_01}    1
     log    ${resul}
     ${result}    getCandidateBalanceWithAddr    ${developerAddr_01}    #获取该地址保证金账户详情
@@ -198,6 +202,7 @@ Business_05
     ${resul}    getListForDeveloperCandidate
     Dictionary Should Contain Key    ${resul}    ${developerAddr_01}    #候选列表无该地址
     log    ${resul}
+    GetAllNodes
     ${result}    applyQuitMediator    ${developerAddr_01}    DeveloperApplyQuit    #该节点申请退出mediator候选列表
     log    ${result}
     ${addressMap4}    getQuitMediatorApplyList    #获取申请mediator列表里的节点（不为空）
@@ -222,6 +227,7 @@ Business_06
     ${resul}    getListForDeveloperCandidate
     Dictionary Should Contain Key    ${resul}    ${developerAddr_02}    #候选列表无该地址
     log    ${resul}
+    GetAllNodes
     ${result}    applyForForfeitureDeposit    ${foundationAddr}    ${developerAddr_02}    Developer    nothing to do    #某个地址申请没收该节点保证金（全部）
     log    ${result}
     ${result}    getListForForfeitureApplication
@@ -256,7 +262,7 @@ Business_07
     log    ${assetId}
     ${amount}    getBalance    ${mediatorAddr_02}    ${assetId}
     log    ${amount}
-    Should Be Equal As Numbers    ${amount}    100
+    Should Be Equal As Numbers    ${amount}    1000
     ${result}    invokeToken    ${mediatorAddr_02}    ${assetId}    #在同意列表里的节点，可以交付保证金    #这里交的数量不是规定的保证金数量，导致无法加入候选列表，并且相应保证金退还该地址    #1
     log    ${result}
     ${addressMap3}    getListForMediatorCandidate
@@ -264,7 +270,7 @@ Business_07
     Dictionary Should Not Contain Key    ${addressMap3}    ${mediatorAddr_02}    #无该节点
     ${amount}    getBalance    ${mediatorAddr_02}    ${assetId}
     log    ${amount}
-    Should Be Equal As Numbers    ${amount}    100
+    Should Be Equal As Numbers    ${amount}    1000
     ${amount}    getBalance    ${mediatorAddr_02}    PTN
     log    ${amount}
     Should Be Equal As Numbers    ${amount}    9946

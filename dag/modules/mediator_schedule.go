@@ -44,11 +44,8 @@ func InitMediatorSchl(gp *GlobalProperty, dgp *DynamicGlobalProperty) *MediatorS
 	}
 
 	// Create witness scheduler
-	ms.CurrentShuffledMediators = make([]common.Address, aSize, aSize)
-	meds := gp.GetActiveMediators()
-	for i, add := range meds {
-		ms.CurrentShuffledMediators[i] = add
-	}
+	ms.CurrentShuffledMediators = make([]common.Address, aSize)
+	copy(ms.CurrentShuffledMediators, gp.GetActiveMediators())
 
 	return ms
 }

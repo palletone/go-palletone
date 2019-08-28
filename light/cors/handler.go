@@ -38,23 +38,9 @@ import (
 const (
 	softResponseLimit = 2 * 1024 * 1024 // Target maximum size of returned blocks, headers or node data.
 	estHeaderRlpSize  = 500             // Approximate size of an RLP encoded block header
-
-	ethVersion = 63 // equivalent eth version for the downloader
-
-	MaxHeaderFetch           = 192 // Amount of block headers to be fetched per retrieval request
-	MaxBodyFetch             = 32  // Amount of block bodies to be fetched per retrieval request
-	MaxReceiptFetch          = 128 // Amount of transaction receipts to allow fetching per request
-	MaxCodeFetch             = 64  // Amount of contract codes to allow fetching per request
-	MaxProofsFetch           = 64  // Amount of merkle proofs to be fetched per retrieval request
-	MaxHelperTrieProofsFetch = 64  // Amount of merkle proofs to be fetched per retrieval request
-	MaxTxSend                = 64  // Amount of transactions to be send per request
-	MaxTxStatus              = 256 // Amount of transactions to queried per request
-
-	disableClientRemovePeer = false
-	txChanSize              = 4096
-	forceSyncCycle          = 10 * time.Second
-	waitPushSync            = 200 * time.Millisecond
-	fsMinFullBlocks         = 64
+	MaxHeaderFetch    = 192             // Amount of block headers to be fetched per retrieval request
+	forceSyncCycle    = 10 * time.Second
+	waitPushSync      = 200 * time.Millisecond
 )
 
 // errIncompatibleConfig is returned if the requested protocols and configs are
@@ -137,7 +123,8 @@ func NewCorsProtocolManager(lightSync bool, networkId uint64, gasToken modules.A
 	// Initiate a sub-protocol for every implemented version we can handle
 	protocolVersions := ClientProtocolVersions
 	manager.SubProtocols = make([]p2p.Protocol, 0, len(protocolVersions))
-	for _, version := range protocolVersions {
+	for _, ver := range protocolVersions {
+		version := ver
 		manager.SubProtocols = append(manager.SubProtocols, p2p.Protocol{
 			Name:    "cors",
 			Version: version,
@@ -193,7 +180,8 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 	}
 	inserter := func(headers []*modules.Header) (int, error) {
 		// If fast sync is running, deny importing weird blocks
-		log.Debug("Cors ProtocolManager InsertLightHeader", "manager.dag.InsertDag index:", headers[0].Number.Index, "hash", headers[0].Hash())
+		log.Debug("Cors ProtocolManager InsertLightHeader", "manager.dag.InsertDag index:",
+			headers[0].Number.Index, "hash", headers[0].Hash())
 		return pm.dag.InsertLightHeader(headers)
 	}
 	return NewLightFetcher(pm.dag.GetHeaderByHash, pm.dag.GetLightChainHeight, headerVerifierFn,
@@ -205,10 +193,10 @@ func (pm *ProtocolManager) BroadcastCorsHeader(p *peer, header *modules.Header) 
 	v, ok := pm.needboradcast[p.id]
 	pm.bdlock.RUnlock()
 	if ok && header.Number.Index >= v {
-		log.Debug("Cors ProtocolManager BroadcastCorsHeader", "assetid:", header.Number.AssetID.String(), "index:", header.Index(), "hash", header.Hash())
+		log.Debug("Cors ProtocolManager BroadcastCorsHeader", "assetid:", header.Number.AssetID.String(),
+			"index:", header.Index(), "hash", header.Hash())
 		pm.server.SendEvents(header)
 	}
-	return
 }
 
 // removePeer initiates disconnection from a peer by removing it from the peer set
@@ -219,9 +207,7 @@ func (pm *ProtocolManager) removePeer(id string) {
 	}
 	pm.downloader.UnregisterPeer(id)
 	pm.peers.Unregister(id)
-	if peer != nil {
-		peer.Peer.Disconnect(p2p.DiscUselessPeer)
-	}
+	peer.Peer.Disconnect(p2p.DiscUselessPeer)
 }
 
 func (pm *ProtocolManager) mainchainpeers() int {
@@ -238,13 +224,14 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 			pm.fetcher.Start()
 			defer pm.fetcher.Stop()
 			defer pm.downloader.Terminate()
-			forceSync := time.Tick(forceSyncCycle)
+			forceSync := time.NewTicker(forceSyncCycle)
+			defer forceSync.Stop()
 			for {
 				select {
 				case <-pm.newPeerCh:
 					//go pm.StartCorsSync()
 
-				case <-forceSync:
+				case <-forceSync.C:
 					// Force a sync even if not enough peers are present
 					if pm.maxPeers > 0 {
 						log.Debug("Cors PalletOne ProtocolManager StartCorsSync", "maxpeers", pm.maxPeers)
@@ -413,7 +400,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		log.Trace("Received unknown message", "code", msg.Code)
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 	}
-	return nil
+
 }
 
 // NodeInfo represents a short summary of the Palletone sub-protocol metadata
@@ -427,8 +414,8 @@ type NodeInfo struct {
 }
 
 // NodeInfo retrieves some protocol metadata about the running host node.
-func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
-	header := self.dag.CurrentHeader(self.assetId)
+func (pm *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
+	header := pm.dag.CurrentHeader(pm.assetId)
 
 	var (
 		index = uint64(0)
@@ -442,46 +429,9 @@ func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
 	}
 
 	return &NodeInfo{
-		Network: self.networkId,
+		Network: pm.networkId,
 		Index:   index,
 		Genesis: genesisHash,
 		Head:    hash,
 	}
 }
-
-/*
-type downloaderPeerNotify ProtocolManager
-
-type peerConnection struct {
-	manager *ProtocolManager
-	peer    *peer
-}
-
-func (pc *peerConnection) Head(assetId modules.AssetId) (common.Hash, *modules.ChainIndex) {
-	//return common.Hash{}, nil
-	return pc.peer.HeadAndNumber(assetId)
-}
-
-func (pc *peerConnection) RequestHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
-	log.Debug("peerConnection batch of headers by hash", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse)
-	return nil
-	//return p2p.Send(pc.peer.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Hash: origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
-}
-
-func (pc *peerConnection) RequestHeadersByNumber(origin *modules.ChainIndex, amount int, skip int, reverse bool) error {
-	log.Debug("peerConnection batch of headers by number", "count", amount, "from origin", origin, "skip", skip, "reverse", reverse)
-	return nil
-	//return p2p.Send(pc.peer.rw, GetBlockHeadersMsg, &getBlockHeadersData{Origin: hashOrNumber{Number: *origin}, Amount: uint64(amount), Skip: uint64(skip), Reverse: reverse})
-}
-func (p *peerConnection) RequestDagHeadersByHash(origin common.Hash, amount int, skip int, reverse bool) error {
-	//log.Debug("Fetching batch of headers", "count", amount, "fromhash", origin, "skip", skip, "reverse", reverse)
-	return nil
-}
-
-func (p *peerConnection) RequestLeafNodes() error {
-	//GetLeafNodes
-	log.Debug("Fetching leaf nodes")
-	return nil
-	//return p2p.Send(p.rw, GetLeafNodesMsg, "")
-}
-*/

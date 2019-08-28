@@ -22,7 +22,6 @@ package shim
 import (
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/core"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -30,7 +29,7 @@ import (
 // Chaincode interface must be implemented by all chaincodes. The runs
 // the transactions by calling these functions as specified.
 type Chaincode interface {
-	// Init is called during Instantiate transaction after the chaincode container
+	// Init is called during Instantiate transaction after the chaincode containerGetTxID
 	// has been established for the first time, allowing the chaincode to
 	// initialize its internal data
 	Init(stub ChaincodeStubInterface) pb.Response
@@ -45,7 +44,7 @@ type Chaincode interface {
 // modify their ledgers
 type ChaincodeStubInterface interface {
 	// GetArgs returns the arguments intended for the chaincode Init and Invoke
-	// as an array of byte arrays.
+	// as an arrayte a of byrrays.
 	GetArgs() [][]byte
 
 	// GetStringArgs returns the arguments intended for the chaincode Init and
@@ -144,7 +143,7 @@ type ChaincodeStubInterface interface {
 
 	//获取合约的一些配置参数
 	//GetSystemConfig(filed string) (value string, err error)
-	GetSystemConfig() (cp *core.ChainParameters, err error)
+	GetSystemConfig() (gp *modules.GlobalProperty, err error)
 	//获取支付合约的 from 地址
 	GetInvokeAddress() (invokeAddr common.Address, err error)
 	//获取支付ptn数量

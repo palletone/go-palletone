@@ -28,7 +28,7 @@ import (
 )
 
 // NotFound is returned by API methods if the requested item does not exist.
-var NotFound = errors.New("not found")
+var ErrNotFound = errors.New("not found")
 
 // TODO: move subscription to package event
 
@@ -68,7 +68,7 @@ type ChainReader interface {
 //
 // Avoid relying on this interface if possible. Contract logs (through the LogFilterer
 // interface) are more reliable and usually safer in the presence of chain
-// reorganisations.
+// reorganizations.
 //
 // The returned error is NotFound if the requested item does not exist.
 type TransactionReader interface {
@@ -93,7 +93,7 @@ type ChainStateReader interface {
 	NonceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (uint64, error)
 }
 
-// SyncProgress gives progress indications when the node is synchronising with
+// SyncProgress gives progress indications when the node is synchronizing with
 // the palletone network.
 type SyncProgress struct {
 	StartingBlock uint64 // Block number where sync began
@@ -152,7 +152,7 @@ type FilterQuery struct {
 // event subscription.
 //
 // Logs received through a streaming query subscription may have Removed set to true,
-// indicating that the log was reverted due to a chain reorganisation.
+// indicating that the log was reverted due to a chain reorganization.
 type LogFilterer interface {
 	FilterLogs(ctx context.Context, q FilterQuery) ([]types.Log, error)
 	SubscribeFilterLogs(ctx context.Context, q FilterQuery, ch chan<- types.Log) (Subscription, error)

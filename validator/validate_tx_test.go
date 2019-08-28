@@ -95,7 +95,7 @@ var hash1 = common.HexToHash("0x76a914bd05274d98bb768c0e87a55d9a6024f76beb462a88
 
 func signTx(tx *modules.Transaction, outPoint *modules.OutPoint) {
 	privKey, _, addr := getAccount()
-	lockScript := tokenengine.GenerateLockScript(addr)
+	lockScript := tokenengine.Instance.GenerateLockScript(addr)
 	lockScripts := map[modules.OutPoint][]byte{
 		*outPoint: lockScript[:],
 	}
@@ -109,7 +109,7 @@ func signTx(tx *modules.Transaction, outPoint *modules.OutPoint) {
 	}
 	var hashtype uint32
 	hashtype = 1
-	_, e := tokenengine.SignTxAllPaymentInput(tx, hashtype, lockScripts, nil, getPubKeyFn, getSignFn)
+	_, e := tokenengine.Instance.SignTxAllPaymentInput(tx, hashtype, lockScripts, nil, getPubKeyFn, getSignFn)
 	if e != nil {
 		fmt.Println(e.Error())
 	}
@@ -120,7 +120,7 @@ type testutxoQuery struct {
 
 func (u *testutxoQuery) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	_, _, addr := getAccount()
-	lockScript := tokenengine.GenerateLockScript(addr)
+	lockScript := tokenengine.Instance.GenerateLockScript(addr)
 	if outpoint.TxHash == hash1 {
 		return &modules.Utxo{Asset: modules.NewPTNAsset(), Amount: 1000, PkScript: lockScript}, nil
 	}
@@ -231,7 +231,7 @@ func TestValidateLargeInputPayment(t *testing.T) {
 	pay := &modules.PaymentPayload{Inputs: []*modules.Input{}, Outputs: []*modules.Output{}}
 	lockScripts := map[modules.OutPoint][]byte{}
 	privKey, _, addr := getAccount()
-	lockScript := tokenengine.GenerateLockScript(addr)
+	lockScript := tokenengine.Instance.GenerateLockScript(addr)
 	for i := 0; i < N; i++ {
 		outpoint := modules.NewOutPoint(hash1, 0, uint32(i))
 		lockScripts[*outpoint] = lockScript
@@ -250,7 +250,7 @@ func TestValidateLargeInputPayment(t *testing.T) {
 	}
 	var hashtype uint32
 	hashtype = 1
-	_, e := tokenengine.SignTxAllPaymentInput(tx, hashtype, lockScripts, nil, getPubKeyFn, getSignFn)
+	_, e := tokenengine.Instance.SignTxAllPaymentInput(tx, hashtype, lockScripts, nil, getPubKeyFn, getSignFn)
 	if e != nil {
 		fmt.Println(e.Error())
 	}

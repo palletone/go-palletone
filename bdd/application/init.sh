@@ -20,7 +20,7 @@ tomlFile="ptn-config.toml"
 if [ -e "$tomlFile" ]; then
     #file already exist, modify
     sed -i "s/HTTPPort = 8545/HTTPPort = 8600/g" $tomlFile
-
+    sed -i "s/AddrTxsIndex = false/AddrTxsIndex = true/g" $tomlFile
 else
     #file not found, new file
     echo "no $tomlFile"

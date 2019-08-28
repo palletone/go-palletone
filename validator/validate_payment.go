@@ -29,7 +29,6 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/tokenengine"
 	"time"
 )
 
@@ -109,9 +108,6 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 					return TxValidationCode_ORPHAN
 				}
 			}
-			//if utxo.IsSpent() {
-			//	return TxValidationCode_INVALID_DOUBLE_SPEND
-			//}
 			if asset == nil {
 				asset = utxo.Asset
 			} else {
@@ -137,22 +133,14 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 
 		}
 		t1 := time.Now()
-		err := tokenengine.ScriptValidate1Msg(utxoScriptMap, validate.pickJuryFn, txForSign, msgIdx)
+		err := validate.tokenEngine.ScriptValidate1Msg(utxoScriptMap, validate.pickJuryFn, txForSign, msgIdx)
 		if err != nil {
-			// txjson, _ := tx.MarshalJSON()
-			// rlpdata, _ := rlp.EncodeToBytes(tx)
-			// log.Debugf("ScriptValidate1Msg error:%s, Tx msg[%d] for help debug: json: %s ,rlp: %x", err.Error(), msgIdx, string(txjson), rlpdata)
 			return TxValidationCode_INVALID_PAYMMENT_INPUT
 		} else {
 			log.Debugf("Unlock script validated! tx[%s],%d, spend time:%s", tx.Hash().String(), msgIdx, time.Since(t1))
 		}
 	}
 
-	//有可能没有Output，全部付手续费去了
-	//if len(payment.Outputs) == 0 {
-	//	log.Error("payment output is null.", "payment.output", payment.Outputs)
-	//	return TxValidationCode_INVALID_PAYMMENT_OUTPUT
-	//}
 	totalOutput := uint64(0)
 	//Check payment
 	//rule:
@@ -160,8 +148,14 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 	if len(payment.Outputs) > 0 {
 		asset0 := payment.Outputs[0].Asset
 		for _, out := range payment.Outputs {
-			if !asset0.IsSameAssetId(out.Asset) {
-				return TxValidationCode_INVALID_ASSET
+			if isInputnil { //Input为空，可能是721的创币，所以只检查AssetId相同，不检查UniqueId
+				if !asset0.IsSameAssetId(out.Asset) {
+					return TxValidationCode_INVALID_ASSET
+				}
+			} else { //Input不为空，则Input和Output必须是同样的Asset
+				if !asset.IsSimilar(out.Asset) { //Input Output asset mustbe same
+					return TxValidationCode_INVALID_ASSET
+				}
 			}
 			totalOutput += out.Value
 			if totalOutput < out.Value || out.Value == 0 { //big number overflow
@@ -170,10 +164,6 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 		}
 
 		if !isInputnil {
-			//Input Output asset mustbe same
-			if !asset.IsSameAssetId(asset0) {
-				return TxValidationCode_INVALID_ASSET
-			}
 			if msgIdx != 0 && totalOutput > totalInput { //相当于进行了增发
 				return TxValidationCode_INVALID_AMOUNT
 			}
@@ -191,9 +181,9 @@ func (validate *Validate) pickJuryFn(contractAddr common.Address) ([]byte, error
 			log.Errorf("Cannot get contract[%s] jury", contractAddr.String())
 			return nil, errors.New("Cannot get contract jury")
 		}
-		redeemScript, _ = generateJuryRedeemScript(jury)
+		redeemScript = validate.generateJuryRedeemScript(jury)
 		log.DebugDynamic(func() string {
-			redeemStr, _ := tokenengine.DisasmString(redeemScript)
+			redeemStr, _ := validate.tokenEngine.DisasmString(redeemScript)
 			return "Generate RedeemScript: " + redeemStr
 		})
 	}
@@ -219,12 +209,15 @@ func (validate *Validate) checkTokenStatus(asset *modules.Asset) ValidationCode 
 	return TxValidationCode_VALID
 }
 
-func generateJuryRedeemScript(jury []modules.ElectionInf) ([]byte, error) {
-	count := len(jury)
+func (validate *Validate) generateJuryRedeemScript(jury *modules.ElectionNode) []byte {
+	if jury == nil{
+		return nil
+	}
+	count := len(jury.EleList)
 	needed := byte(math.Ceil((float64(count)*2 + 1) / 3))
 	pubKeys := [][]byte{}
-	for _, jurior := range jury {
+	for _, jurior := range jury.EleList {
 		pubKeys = append(pubKeys, jurior.PublicKey)
 	}
-	return tokenengine.GenerateRedeemScript(needed, pubKeys), nil
+	return validate.tokenEngine.GenerateRedeemScript(needed, pubKeys)
 }

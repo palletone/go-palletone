@@ -78,11 +78,11 @@ func (ec *Client) Close() {
 //	return ec.getBlock(ctx, "ptn_getBlockByNumber", toBlockNumArg(number), true)
 //}
 
-type rpcBlock struct {
-	Hash         common.Hash      `json:"hash"`
-	Transactions []rpcTransaction `json:"transactions"`
-	UncleHashes  []common.Hash    `json:"uncles"`
-}
+// type rpcBlock struct {
+// 	Hash         common.Hash      `json:"hash"`
+// 	Transactions []rpcTransaction `json:"transactions"`
+// 	UncleHashes  []common.Hash    `json:"uncles"`
+// }
 
 //func (ec *Client) getBlock(ctx context.Context, method string, args ...interface{}) (*types.Block, error) {
 //	return &types.Block{}, nil
@@ -93,7 +93,7 @@ func (ec *Client) HeaderByHash(ctx context.Context, hash common.Hash) (*modules.
 	var head *modules.Header
 	err := ec.c.CallContext(ctx, &head, "ptn_getBlockByHash", hash, false)
 	if err == nil && head == nil {
-		err = palletone.NotFound
+		err = palletone.ErrNotFound
 	}
 	return head, err
 }
@@ -104,7 +104,7 @@ func (ec *Client) HeaderByNumber(ctx context.Context, number *big.Int) (*modules
 	var head *modules.Header
 	err := ec.c.CallContext(ctx, &head, "ptn_getBlockByNumber", toBlockNumArg(number), false)
 	if err == nil && head == nil {
-		err = palletone.NotFound
+		err = palletone.ErrNotFound
 	}
 	return head, err
 }
@@ -128,18 +128,19 @@ func (tx *rpcTransaction) UnmarshalJSON(msg []byte) error {
 }
 
 // TransactionByHash returns the transaction with the given hash.
-func (ec *Client) TransactionByHash(ctx context.Context, hash common.Hash) (tx *modules.Transaction, isPending bool, err error) {
+func (ec *Client) TransactionByHash(ctx context.Context, hash common.Hash) (tx *modules.Transaction,
+	isPending bool, err error) {
 	var json *rpcTransaction
 	err = ec.c.CallContext(ctx, &json, "ptn_getTransactionByHash", hash)
 	//	if err != nil {
 	//		return nil, false, err
 	//	} else if json == nil {
-	//		return nil, false, palletone.NotFound
+	//		return nil, false, palletone.ErrNotFound
 	//	} else if _, r, _ := json.tx.RawSignatureValues(); r == nil {
 	//		return nil, false, fmt.Errorf("server returned transaction without signature")
 	//	}
 	//setSenderFromServer(json.tx, json.From, json.BlockHash)
-	return json.tx, json.BlockNumber == nil, nil
+	return json.tx, json.BlockNumber == nil, err
 }
 
 // TransactionSender returns the sender address of the given transaction. The transaction
@@ -178,13 +179,13 @@ func (ec *Client) TransactionCount(ctx context.Context, blockHash common.Hash) (
 func (ec *Client) TransactionInBlock(ctx context.Context, blockHash common.Hash, index uint) (*modules.Transaction, error) {
 	var json *rpcTransaction
 	err := ec.c.CallContext(ctx, &json, "ptn_getTransactionByBlockHashAndIndex", blockHash, hexutil.Uint64(index))
-	if err == nil {
-		//		if json == nil {
-		//			return nil, palletone.NotFound
-		//		} else if _, r, _ := json.tx.RawSignatureValues(); r == nil {
-		//			return nil, fmt.Errorf("server returned transaction without signature")
-		//		}
-	}
+	//if err == nil {
+	//	//		if json == nil {
+	//	//			return nil, palletone.ErrNotFound
+	//	//		} else if _, r, _ := json.tx.RawSignatureValues(); r == nil {
+	//	//			return nil, fmt.Errorf("server returned transaction without signature")
+	//	//		}
+	//}
 	//setSenderFromServer(json.tx, json.From, json.BlockHash)
 	return json.tx, err
 }
@@ -196,7 +197,7 @@ func (ec *Client) TransactionInBlock(ctx context.Context, blockHash common.Hash,
 //	err := ec.c.CallContext(ctx, &r, "ptn_getTransactionReceipt", txHash)
 //	if err == nil {
 //		if r == nil {
-//			return nil, palletone.NotFound
+//			return nil, palletone.ErrNotFound
 //		}
 //	}
 //	return r, err
@@ -308,18 +309,18 @@ func (ec *Client) SubscribeFilterLogs(ctx context.Context, q palletone.FilterQue
 	return ec.c.EthSubscribe(ctx, ch, "logs", toFilterArg(q))
 }
 */
-func toFilterArg(q palletone.FilterQuery) interface{} {
-	arg := map[string]interface{}{
-		"fromBlock": toBlockNumArg(q.FromBlock),
-		"toBlock":   toBlockNumArg(q.ToBlock),
-		"address":   q.Addresses,
-		"topics":    q.Topics,
-	}
-	if q.FromBlock == nil {
-		arg["fromBlock"] = "0x0"
-	}
-	return arg
-}
+// func toFilterArg(q palletone.FilterQuery) interface{} {
+// 	arg := map[string]interface{}{
+// 		"fromBlock": toBlockNumArg(q.FromBlock),
+// 		"toBlock":   toBlockNumArg(q.ToBlock),
+// 		"address":   q.Addresses,
+// 		"topics":    q.Topics,
+// 	}
+// 	if q.FromBlock == nil {
+// 		arg["fromBlock"] = "0x0"
+// 	}
+// 	return arg
+// }
 
 // Pending State
 
@@ -430,11 +431,11 @@ func (ec *Client) TransferToken(ctx context.Context, asset string, from string, 
 	return result, err
 }
 
-func (ec *Client) walletCreateTransaction(ctx context.Context, from string, to string, amount uint64, fee uint64) (string, error) {
-	var result string
-	err := ec.c.CallContext(ctx, &result, "wallet_createRawTransaction", from, to, amount)
-	return result, err
-}
+//func (ec *Client) walletCreateTransaction(ctx context.Context, from string, to string, amount uint64, fee uint64) (string, error) {
+//	var result string
+//	err := ec.c.CallContext(ctx, &result, "wallet_createRawTransaction", from, to, amount, fee)
+//	return result, err
+//}
 func (ec *Client) CreateRawTransaction(ctx context.Context, params string) (string, error) {
 	var result string
 	err := ec.c.CallContext(ctx, &result, "ptn_createRawTransaction", params)
@@ -682,7 +683,7 @@ func (ec *Client) GetCommon(ctx context.Context, key string) ([]byte, error) {
 }
 
 func (ec *Client) GetCommonByPrefix(ctx context.Context, prefix string) (map[string][]byte, error) {
-	result := make(map[string][]byte, 0)
+	result := make(map[string][]byte)
 	err := ec.c.CallContext(ctx, &result, "dag_getCommonByPrefix", prefix)
 	return result, err
 }

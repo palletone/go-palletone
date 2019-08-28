@@ -60,9 +60,9 @@ const (
 )
 
 const (
-	pubkeyCompressed     byte = 0x2 // y_bit + x coord
-	pubkeyUncompressed   byte = 0x4 // x coord + y coord
-	pubkeyHybrid         byte = 0x6 // y_bit + x coord + y coord
+	// pubkeyCompressed     byte = 0x2 // y_bit + x coord
+	// pubkeyUncompressed   byte = 0x4 // x coord + y coord
+	// pubkeyHybrid         byte = 0x6 // y_bit + x coord + y coord
 	MinCoinbaseScriptLen      = 2
 	MaxCoinbaseScriptLen      = 100
 )
@@ -352,10 +352,10 @@ type SignRawTransactionResult struct {
 
 type SignRawTransactionError struct {
 	TxID      string `json:"txid"`
-	Vout      uint32 `json:"vout"`
 	ScriptSig string `json:"scriptSig"`
-	Sequence  uint32 `json:"sequence"`
 	Error     string `json:"error"`
+	Vout      uint32 `json:"vout"`
+	Sequence  uint32 `json:"sequence"`
 }
 
 // RPCErrorCode represents an error code to be used as a part of an RPCError
@@ -444,12 +444,12 @@ type Amount int64
 // as an integer, to the Amount integer type by rounding to the nearest integer.
 // This is performed by adding or subtracting 0.5 depending on the sign, and
 // relying on integer truncation to round the value to the nearest Amount.
-func round(f float64) Amount {
-	if f < 0 {
-		return Amount(f - 0.5)
-	}
-	return Amount(f + 0.5)
-}
+// func round(f float64) Amount {
+// 	if f < 0 {
+// 		return Amount(f - 0.5)
+// 	}
+// 	return Amount(f + 0.5)
+// }
 
 //
 //func NewAmount(f decimal.Decimal) (Amount, error) {
@@ -487,7 +487,7 @@ func NewAddressScriptHash(serializedScript []byte, netScriptHashAddrID byte) (*A
 // newAddressScriptHashFromHash is the internal API to create a script hash
 // address with a known leading identifier byte for a network, rather than
 // looking it up through its parameters.  This is useful when creating a new
-// address structure from a string encoding where the identifer byte is already
+// address structure from a string encoding where the identifier byte is already
 // known.
 func newAddressScriptHashFromHash(scriptHash []byte, netID byte) (*AddressScriptHash, error) {
 	// Check for a valid script hash length.
@@ -544,7 +544,7 @@ var (
 
 	// ErrUnknownAddressType describes an error where an address can not
 	// decoded as a specific address type due to the string encoding
-	// begining with an identifier byte unknown to any standard or
+	// beginning with an identifier byte unknown to any standard or
 	// registered (via chaincfg.Register) network.
 	ErrUnknownAddressType = errors.New("unknown address type")
 

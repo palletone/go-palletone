@@ -33,6 +33,8 @@ import (
 )
 
 const symbolsKey = "symbol_"
+const jsonResp1 = "{\"Error\":\"Results format invalid, Error!!!\"}"
+const jsonResp2 = "{\"Error\":\"Token not exist\"}"
 
 type Vote struct {
 }
@@ -144,6 +146,10 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//==== convert params to token information
 	var vt dm.VoteToken
 	//name symbol
+	if len(args[0]) > 1024 {
+		jsonResp := "{\"Error\":\"Name length should not be greater than 1024\"}"
+		return shim.Error(jsonResp)
+	}
 	vt.Name = args[0]
 	vt.Symbol = "VOTE"
 
@@ -184,7 +190,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(jsonResp)
 	}
 	//init support
-	var supports []TopicSupports
+	supports := make([]TopicSupports, 0, len(voteTopics))
 	for _, oneTopic := range voteTopics {
 		var oneSupport TopicSupports
 		oneSupport.TopicTitle = oneTopic.TopicTitle
@@ -194,6 +200,10 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 			oneSupport.VoteResults = append(oneSupport.VoteResults, oneResult)
 		}
 		//oneResult.SelectOptionsNum = uint64(len(oneRequest.SelectOptions))
+		if oneTopic.SelectMax > uint64(len(oneTopic.SelectOptions)) {
+			jsonResp := "{\"Error\":\"VoteContent 's SelectMax invalid\"}"
+			return shim.Error(jsonResp)
+		}
 		oneSupport.SelectMax = oneTopic.SelectMax
 		supports = append(supports, oneSupport)
 	}
@@ -289,8 +299,7 @@ func support(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//check name is exist or not
 	tkInfo := getSymbols(stub, assetIDStr)
 	if tkInfo == nil {
-		jsonResp := "{\"Error\":\"Token not exist\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp2)
 	}
 
 	//parse support requests
@@ -304,14 +313,13 @@ func support(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	var topicSupports []TopicSupports
 	err = json.Unmarshal(tkInfo.VoteContent, &topicSupports)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Results format invalid, Error!!!\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp1)
 	}
 
-	if voteNum < uint64(len(supportRequests)) { //vote token more than request
-		jsonResp := "{\"Error\":\"Vote token more than support request\"}"
-		return shim.Error(jsonResp)
-	}
+	//if voteNum < uint64(len(supportRequests)) { //vote token more than request
+	//	jsonResp := "{\"Error\":\"Vote token more than support request\"}"
+	//	return shim.Error(jsonResp)
+	//}
 
 	//check time
 	headerTime, err := stub.GetTxTimestamp(10)
@@ -345,7 +353,7 @@ func support(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 					}
 					selIndexHistory[selectIndex] = 1
 					if selectIndex < lenOfVoteResult { //3.index must be real select options
-						topicSupports[topicIndex].VoteResults[selectIndex].Num += 1
+						topicSupports[topicIndex].VoteResults[selectIndex].Num += voteNum //1
 					}
 				}
 			}
@@ -407,16 +415,14 @@ func getVoteResult(args []string, stub shim.ChaincodeStubInterface) pb.Response 
 	//check name is exist or not
 	tkInfo := getSymbols(stub, assetIDStr)
 	if tkInfo == nil {
-		jsonResp := "{\"Error\":\"Token not exist\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp2)
 	}
 
 	//get token information
 	var topicSupports []TopicSupports
 	err := json.Unmarshal(tkInfo.VoteContent, &topicSupports)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Results format invalid, Error!!!\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp1)
 	}
 
 	//
@@ -430,7 +436,7 @@ func getVoteResult(args []string, stub shim.ChaincodeStubInterface) pb.Response 
 		isVoteEnd = true
 	}
 	//calculate result
-	var supportResults []SupportResult
+	supportResults := make([]SupportResult, 0, len(topicSupports))
 	for i, oneTopicSupport := range topicSupports {
 		var oneResult SupportResult
 		oneResult.TopicIndex = uint64(i) + 1
@@ -483,20 +489,18 @@ func getVoteInfo(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//check name is exist or not
 	tkInfo := getSymbols(stub, assetIDStr)
 	if tkInfo == nil {
-		jsonResp := "{\"Error\":\"Token not exist\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp2)
 	}
 
 	//get token information
 	var topicSupports []TopicSupports
 	err := json.Unmarshal(tkInfo.VoteContent, &topicSupports)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Results format invalid, Error!!!\"}"
-		return shim.Error(jsonResp)
+		return shim.Error(jsonResp1)
 	}
 
 	//topic info
-	var voteTopicIndexs []VoteTopicIndex
+	voteTopicIndexs := make([]VoteTopicIndex, 0, len(topicSupports))
 	for i, oneTopicSupport := range topicSupports {
 		var oneResult VoteTopicIndex
 		oneResult.TopicIndex = uint64(i) + 1

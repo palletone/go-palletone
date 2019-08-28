@@ -70,18 +70,18 @@ type BaseHasher func() hash.Hash
 // Reset gives back the Tree to the pool and guaranteed to leave
 // the tree and itself in a state reusable for hashing a new chunk
 type Hasher struct {
-	pool        *TreePool   // BMT resource pool
-	bmt         *Tree       // prebuilt BMT resource for flowcontrol and proofs
-	blocksize   int         // segment size (size of hash) also for hash.Hash
-	count       int         // segment count
-	size        int         // for hash.Hash same as hashsize
-	cur         int         // cursor position for rightmost currently open chunk
-	segment     []byte      // the rightmost open segment (not complete)
-	depth       int         // index of last level
-	result      chan []byte // result channel
-	hash        []byte      // to record the result
-	max         int32       // max segments for SegmentWriter interface
-	blockLength []byte      // The block length that needes to be added in Sum
+	pool      *TreePool   // BMT resource pool
+	bmt       *Tree       // prebuilt BMT resource for flowcontrol and proofs
+	blocksize int         // segment size (size of hash) also for hash.Hash
+	count     int         // segment count
+	size      int         // for hash.Hash same as hashsize
+	cur       int         // cursor position for rightmost currently open chunk
+	segment   []byte      // the rightmost open segment (not complete)
+	depth     int         // index of last level
+	result    chan []byte // result channel
+	hash      []byte      // to record the result
+	//max         int32       // max segments for SegmentWriter interface
+	blockLength []byte // The block length that needes to be added in Sum
 }
 
 // New creates a reusable Hasher
@@ -150,29 +150,29 @@ func NewTreePool(hasher BaseHasher, segmentCount, capacity int) *TreePool {
 }
 
 // Drain drains the pool until it has no more than n resources
-func (self *TreePool) Drain(n int) {
-	self.lock.Lock()
-	defer self.lock.Unlock()
-	for len(self.c) > n {
-		<-self.c
-		self.count--
+func (tp *TreePool) Drain(n int) {
+	tp.lock.Lock()
+	defer tp.lock.Unlock()
+	for len(tp.c) > n {
+		<-tp.c
+		tp.count--
 	}
 }
 
 // Reserve is blocking until it returns an available Tree
 // it reuses free Trees or creates a new one if size is not reached
-func (self *TreePool) Reserve() *Tree {
-	self.lock.Lock()
-	defer self.lock.Unlock()
+func (tp *TreePool) Reserve() *Tree {
+	tp.lock.Lock()
+	defer tp.lock.Unlock()
 	var t *Tree
-	if self.count == self.Capacity {
-		return <-self.c
+	if tp.count == tp.Capacity {
+		return <-tp.c
 	}
 	select {
-	case t = <-self.c:
+	case t = <-tp.c:
 	default:
-		t = NewTree(self.hasher, self.SegmentSize, self.SegmentCount)
-		self.count++
+		t = NewTree(tp.hasher, tp.SegmentSize, tp.SegmentCount)
+		tp.count++
 	}
 	return t
 }
@@ -180,8 +180,8 @@ func (self *TreePool) Reserve() *Tree {
 // Release gives back a Tree to the pool.
 // This Tree is guaranteed to be in reusable state
 // does not need locking
-func (self *TreePool) Release(t *Tree) {
-	self.c <- t // can never fail but...
+func (tp *TreePool) Release(t *Tree) {
+	tp.c <- t // can never fail but...
 }
 
 // Tree is a reusable control structure representing a BMT
@@ -193,17 +193,18 @@ type Tree struct {
 }
 
 // Draw draws the BMT (badly)
-func (self *Tree) Draw(hash []byte, d int) string {
-	var left, right []string
+func (t *Tree) Draw(hash []byte, d int) string {
+	left := make([]string, 0, len(t.leaves))
+	right := make([]string, 0, len(t.leaves))
 	var anc []*Node
-	for i, n := range self.leaves {
+	for i, n := range t.leaves {
 		left = append(left, fmt.Sprintf("%v", hashstr(n.left)))
 		if i%2 == 0 {
 			anc = append(anc, n.parent)
 		}
 		right = append(right, fmt.Sprintf("%v", hashstr(n.right)))
 	}
-	anc = self.leaves
+	anc = t.leaves
 	var hashes [][]string
 	for l := 0; len(anc) > 0; l++ {
 		var nodes []*Node
@@ -394,7 +395,7 @@ func (self *Hasher) ReadFrom(r io.Reader) (m int64, err error) {
 		if err != nil {
 			break
 		}
-		n, err = self.Write(buf[:n])
+		_, err = self.Write(buf[:n])
 		if err != nil {
 			break
 		}

@@ -21,6 +21,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -43,33 +44,33 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	// mediator 交付保证金
 	case modules.MediatorPayDeposit:
 		log.Info("Enter DepositChaincode Contract " + modules.MediatorPayDeposit + " Invoke")
-		return d.mediatorPayToDepositContract(stub, args)
+		return d.mediatorPayToDepositContract(stub)
 	// 申请退出Mediator
 	case modules.MediatorApplyQuit:
 		log.Info("Enter DepositChaincode Contract " + modules.MediatorApplyQuit + " Invoke")
-		return d.mediatorApplyQuit(stub, args)
+		return d.mediatorApplyQuit(stub)
 	// 更新 Mediator 信息
 	case modules.UpdateMediatorInfo:
 		log.Info("Enter DepositChaincode Contract " + modules.UpdateMediatorInfo + " Invoke")
-		return d.UpdateMediatorInfo(stub, args)
+		return d.updateMediatorInfo(stub, args)
 	//
 	//  jury 交付保证金
 	case JuryPayToDepositContract:
 		log.Info("Enter DepositChaincode Contract " + JuryPayToDepositContract + " Invoke")
-		return d.juryPayToDepositContract(stub, args)
+		return d.juryPayToDepositContract(stub)
 		//  jury 申请退出
 	case JuryApplyQuit:
 		log.Info("Enter DepositChaincode Contract " + JuryApplyQuit + " Invoke")
-		return d.juryApplyQuit(stub, args)
+		return d.juryApplyQuit(stub)
 	//
 	//  developer 交付保证金
 	case DeveloperPayToDepositContract:
 		log.Info("Enter DepositChaincode Contract " + DeveloperPayToDepositContract + " Invoke")
-		return d.developerPayToDepositContract(stub, args)
+		return d.developerPayToDepositContract(stub)
 		//  developer 申请退出
 	case DeveloperApplyQuit:
 		log.Info("Enter DepositChaincode Contract " + DeveloperApplyQuit + " Invoke")
-		return d.devApplyQuit(stub, args)
+		return d.devApplyQuit(stub)
 	//
 	//  基金会对加入申请Mediator进行处理
 	case HandleForApplyBecomeMediator:
@@ -78,7 +79,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	//  基金会移除某个节点
 	case HanldeNodeRemoveFromAgreeList:
 		log.Info("Enter DepositChaincode Contract " + HanldeNodeRemoveFromAgreeList + " Invoke")
-		return d.hanldeNodeRemoveFromAgreeList(stub, args)
+		return d.handleNodeRemoveFromAgreeList(stub, args)
 		//  基金会对退出申请Mediator进行处理
 	case HandleForApplyQuitMediator:
 		log.Info("Enter DepositChaincode Contract " + HandleForApplyQuitMediator + " Invoke")
@@ -332,7 +333,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	//  普通用户质押投票
 	case PledgeDeposit:
 		log.Info("Enter DepositChaincode Contract " + PledgeDeposit + " Invoke")
-		return d.processPledgeDeposit(stub, args)
+		return d.processPledgeDeposit(stub)
 	case PledgeWithdraw: //提币质押申请（如果提币申请金额为MaxUint64表示全部提现）
 		log.Info("Enter DepositChaincode Contract " + PledgeWithdraw + " Invoke")
 		return d.processPledgeWithdraw(stub, args)
@@ -342,14 +343,17 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		return queryPledgeStatusByAddr(stub, args)
 	case QueryAllPledgeHistory: //查询质押分红历史
 		log.Info("Enter DepositChaincode Contract " + QueryAllPledgeHistory + " Query")
-		return queryAllPledgeHistory(stub, args)
+		return queryAllPledgeHistory(stub)
 
 	case HandlePledgeReward: //质押分红处理
 		log.Info("Enter DepositChaincode Contract " + HandlePledgeReward + " Invoke")
 		return d.handlePledgeReward(stub, args)
 	case QueryPledgeList:
 		log.Info("Enter DepositChaincode Contract " + QueryPledgeList + " Query")
-		return queryPledgeList(stub, args)
+		return queryPledgeList(stub)
+	case QueryPledgeListByDate:
+		log.Info("Enter DepositChaincode Contract " + QueryPledgeListByDate + " Query")
+		return queryPledgeListByDate(stub, args)
 		//TODO Devin一个用户，怎么查看自己的流水账？
 		//case AllPledgeVotes:
 		//	b, err := getVotes(stub)
@@ -358,6 +362,63 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		//	}
 		//	st := strconv.FormatInt(b, 10)
 		//	return shim.Success([]byte(st))
+	case HandleMediatorInCandidateList:
+		return d.handleMediatorInCandidateList(stub, args)
+	case HandleJuryInCandidateList:
+		return d.handleJuryInCandidateList(stub, args)
+	case HandleDevInList:
+		return d.handleDevInList(stub, args)
+	case GetAllMediator:
+		values, err := stub.GetStateByPrefix(string(constants.MEDIATOR_INFO_PREFIX) +
+			string(constants.DEPOSIT_BALANCE_PREFIX))
+		if err != nil {
+			log.Debugf("stub.GetStateByPrefix error: %s", err.Error())
+			return shim.Error(err.Error())
+		}
+		if len(values) > 0 {
+			mediators := make(map[string]*MediatorDeposit)
+			for _, v := range values {
+				m := MediatorDeposit{}
+				err := json.Unmarshal(v.Value, &m)
+				if err != nil {
+					log.Debugf("json.Unmarshal error: %s", err.Error())
+					return shim.Error(err.Error())
+				}
+				mediators[v.Key] = &m
+			}
+			bytes, err := json.Marshal(mediators)
+			if err != nil {
+				log.Debugf("json.Marshal error: %s", err.Error())
+				return shim.Error(err.Error())
+			}
+			return shim.Success(bytes)
+		}
+		return shim.Success([]byte("{}"))
+	case GetAllNode:
+		values, err := stub.GetStateByPrefix(string(constants.DEPOSIT_BALANCE_PREFIX))
+		if err != nil {
+			log.Debugf("stub.GetStateByPrefix error: %s", err.Error())
+			return shim.Error(err.Error())
+		}
+		if len(values) > 0 {
+			node := make(map[string]*DepositBalance)
+			for _, v := range values {
+				n := DepositBalance{}
+				err := json.Unmarshal(v.Value, &n)
+				if err != nil {
+					log.Debugf("json.Unmarshal error: %s", err.Error())
+					return shim.Error(err.Error())
+				}
+				node[v.Key] = &n
+			}
+			bytes, err := json.Marshal(node)
+			if err != nil {
+				log.Debugf("json.Marshal error: %s", err.Error())
+				return shim.Error(err.Error())
+			}
+			return shim.Success(bytes)
+		}
+		return shim.Success([]byte("{}"))
 	}
 	return shim.Error("please enter validate function name")
 }
@@ -366,34 +427,34 @@ func (d *DepositChaincode) applyBecomeMediator(stub shim.ChaincodeStubInterface,
 	return applyBecomeMediator(stub, args)
 }
 
-func (d *DepositChaincode) mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return mediatorPayToDepositContract(stub, args)
+func (d *DepositChaincode) mediatorPayToDepositContract(stub shim.ChaincodeStubInterface) pb.Response {
+	return mediatorPayToDepositContract(stub /*, args*/)
 }
 
-func (d *DepositChaincode) mediatorApplyQuit(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return mediatorApplyQuit(stub, args)
+func (d *DepositChaincode) mediatorApplyQuit(stub shim.ChaincodeStubInterface) pb.Response {
+	return mediatorApplyQuit(stub)
 }
 
-func (d *DepositChaincode) UpdateMediatorInfo(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (d *DepositChaincode) updateMediatorInfo(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return updateMediatorInfo(stub, args)
 }
 
 //
 
-func (d *DepositChaincode) juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return juryPayToDepositContract(stub, args)
+func (d *DepositChaincode) juryPayToDepositContract(stub shim.ChaincodeStubInterface) pb.Response {
+	return juryPayToDepositContract(stub)
 }
-func (d *DepositChaincode) juryApplyQuit(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return juryApplyQuit(stub, args)
+func (d *DepositChaincode) juryApplyQuit(stub shim.ChaincodeStubInterface) pb.Response {
+	return juryApplyQuit(stub)
 }
 
 //
 
-func (d *DepositChaincode) developerPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return developerPayToDepositContract(stub, args)
+func (d *DepositChaincode) developerPayToDepositContract(stub shim.ChaincodeStubInterface) pb.Response {
+	return developerPayToDepositContract(stub)
 }
-func (d *DepositChaincode) devApplyQuit(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return devApplyQuit(stub, args)
+func (d *DepositChaincode) devApplyQuit(stub shim.ChaincodeStubInterface) pb.Response {
+	return devApplyQuit(stub)
 }
 
 //
@@ -420,6 +481,10 @@ func (d *DepositChaincode) handleForForfeitureApplication(stub shim.ChaincodeStu
 	return handleForForfeitureApplication(stub, args)
 }
 
+func (d DepositChaincode) handleNodeRemoveFromAgreeList(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return hanldeNodeRemoveFromAgreeList(stub, args)
+}
+
 //
 
 func (d DepositChaincode) applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, args []string) pb.Response {
@@ -428,8 +493,8 @@ func (d DepositChaincode) applyForForfeitureDeposit(stub shim.ChaincodeStubInter
 
 //  质押
 
-func (d DepositChaincode) processPledgeDeposit(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return processPledgeDeposit(stub, args)
+func (d DepositChaincode) processPledgeDeposit(stub shim.ChaincodeStubInterface) pb.Response {
+	return processPledgeDeposit(stub)
 }
 
 func (d DepositChaincode) processPledgeWithdraw(stub shim.ChaincodeStubInterface, args []string) pb.Response {
@@ -440,17 +505,22 @@ func (d DepositChaincode) handlePledgeReward(stub shim.ChaincodeStubInterface, a
 	return handlePledgeReward(stub, args)
 }
 
-//
-func (d DepositChaincode) hanldeNodeRemoveFromAgreeList(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return hanldeNodeRemoveFromAgreeList(stub, args)
+func (d DepositChaincode) handleMediatorInCandidateList(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return handleNodeInList(stub, args, Mediator)
+}
+func (d DepositChaincode) handleJuryInCandidateList(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return handleNodeInList(stub, args, Jury)
+}
+func (d DepositChaincode) handleDevInList(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return handleNodeInList(stub, args, Developer)
 }
 
 //
-func (d DepositChaincode) handleRemoveMediatorNode(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return handleRemoveMediatorNode(stub, args)
-}
-
+//func (d DepositChaincode) handleRemoveMediatorNode(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+//	return handleRemoveMediatorNode(stub, args)
+//}
 //
-func (d DepositChaincode) handleRemoveNormalNode(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return handleRemoveNormalNode(stub, args)
-}
+////
+//func (d DepositChaincode) handleRemoveNormalNode(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+//	return handleRemoveNormalNode(stub, args)
+//}

@@ -69,13 +69,20 @@ func (mp *MediatorPlugin) recoverUnitsTBLS(localMed common.Address) {
 	}
 }
 
-func (mp *MediatorPlugin) AddToTBLSSignBufs(newUnit *modules.Unit) {
+func (mp *MediatorPlugin) AddToTBLSSignBufs(newHash common.Hash) {
 	if !mp.groupSigningEnabled {
 		return
 	}
 
+	newHeader, err := mp.dag.GetHeaderByHash(newHash)
+	if newHeader == nil || err != nil {
+		err = fmt.Errorf("fail to get header by hash in dag: %v", newHash.TerminalString())
+		log.Debugf(err.Error())
+		return
+	}
+
 	var ms []common.Address
-	if newUnit.Timestamp() <= mp.dag.LastMaintenanceTime() {
+	if newHeader.Timestamp() <= mp.dag.LastMaintenanceTime() {
 		ms = mp.GetLocalPrecedingMediators()
 	} else {
 		ms = mp.GetLocalActiveMediators()
@@ -83,18 +90,17 @@ func (mp *MediatorPlugin) AddToTBLSSignBufs(newUnit *modules.Unit) {
 
 	for _, localMed := range ms {
 		log.Debugf("the mediator(%v) received a unit(%v) to be group-signed",
-			localMed.Str(), newUnit.UnitHash.TerminalString())
-		go mp.addToTBLSSignBuf(localMed, newUnit)
+			localMed.Str(), newHash.TerminalString())
+		go mp.addToTBLSSignBuf(localMed, newHash)
 	}
 }
 
-func (mp *MediatorPlugin) addToTBLSSignBuf(localMed common.Address, newUnit *modules.Unit) {
+func (mp *MediatorPlugin) addToTBLSSignBuf(localMed common.Address, unitHash common.Hash) {
 	if _, ok := mp.toTBLSSignBuf[localMed]; !ok {
 		mp.toTBLSSignBuf[localMed] = new(sync.Map)
 	}
 
-	unitHash := newUnit.UnitHash
-	mp.toTBLSSignBuf[localMed].LoadOrStore(unitHash, newUnit)
+	mp.toTBLSSignBuf[localMed].LoadOrStore(unitHash, true)
 	go mp.signUnitTBLS(localMed, unitHash)
 
 	// 当 unit 过了确认时间后，及时删除待群签名的 unit，防止内存溢出
@@ -129,26 +135,28 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 	defer mp.dkgLock.Unlock()
 	var (
 		dkgr    *dkg.DistKeyGenerator
-		newUnit *modules.Unit
+		newHeader *modules.Header
+		err error
 	)
 
 	// 1. 获取群签名所需数据
 	{
-		value, ok := medUnitsBuf.Load(unitHash)
+		_, ok := medUnitsBuf.Load(unitHash)
 		if !ok {
 			log.Debugf("the mediator(%v) has no unit(%v) to sign TBLS",
 				localMed.Str(), unitHash.TerminalString())
 			return
 		}
 
-		newUnit, ok = value.(*modules.Unit)
-		if !ok {
-			log.Debugf("value converted to Unit pointer failed")
+		newHeader, err = mp.dag.GetHeaderByHash(unitHash)
+		if newHeader == nil || err != nil {
+			err = fmt.Errorf("fail to get header by hash in dag: %v", unitHash.TerminalString())
+			log.Debugf(err.Error())
 			return
 		}
 
 		// 判断是否是换届前的单元
-		if newUnit.Timestamp() <= dag.LastMaintenanceTime() {
+		if newHeader.Timestamp() <= dag.LastMaintenanceTime() {
 			dkgr, ok = mp.precedingDKGs[localMed]
 		} else {
 			dkgr, ok = mp.activeDKGs[localMed]
@@ -163,18 +171,18 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 	// 2. 判断群签名的相关条件
 	{
 		// 如果单元没有群公钥， 则跳过群签名
-		pkb := newUnit.GetGroupPubKeyByte()
-		if pkb == nil || len(pkb) == 0 {
+		pkb := newHeader.GetGroupPubKeyByte()
+		if len(pkb) == 0 {
 			err := fmt.Errorf("this unit(%v)'s group public key is null", unitHash.TerminalString())
 			log.Debug(err.Error())
 			return
 		}
 
 		// 判断父 unit 是否不可逆
-		parentHash := newUnit.ParentHash()[0]
+		parentHash := newHeader.ParentHash()[0]
 		if !dag.IsIrreversibleUnit(parentHash) {
 			log.Debugf("the unit's(%v) parent unit(%v) is not irreversible",
-				newUnit.UnitHash.TerminalString(), parentHash.TerminalString())
+				unitHash.TerminalString(), parentHash.TerminalString())
 			return
 		}
 	}
@@ -194,9 +202,9 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 
 	// 4. 群签名成功后的处理
 	log.Debugf("the mediator(%v) signed-group the unit(%v)", localMed.Str(),
-		newUnit.UnitHash.TerminalString())
+		unitHash.TerminalString())
 	mp.toTBLSSignBuf[localMed].Delete(unitHash)
-	go mp.sigShareFeed.Send(SigShareEvent{UnitHash: newUnit.Hash(), SigShare: sigShare})
+	go mp.sigShareFeed.Send(SigShareEvent{UnitHash: unitHash, SigShare: sigShare})
 }
 
 // 收集签名分片
@@ -208,7 +216,7 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 	log.Debugf("received the sign shares of the unit(%v)", newUnitHash.TerminalString())
 
 	dag := mp.dag
-	newUnit, err := dag.GetUnitByHash(newUnitHash)
+	newUnit, err := dag.GetHeaderByHash(newUnitHash)
 	if newUnit == nil || err != nil {
 		err = fmt.Errorf("fail to get unit by hash in dag: %v", newUnitHash.TerminalString())
 		log.Debugf(err.Error())
@@ -239,7 +247,6 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 
 	// recover群签名
 	go mp.recoverUnitTBLS(localMed, newUnitHash)
-	return
 }
 
 func (mp *MediatorPlugin) SubscribeGroupSigEvent(ch chan<- GroupSigEvent) event.Subscription {
@@ -282,7 +289,7 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 
 	{
 		dag := mp.dag
-		unit, err := dag.GetUnitByHash(unitHash)
+		unit, err := dag.GetHeaderByHash(unitHash)
 		if unit == nil || err != nil {
 			err = fmt.Errorf("fail to get unit by hash in dag: %v", unitHash.TerminalString())
 			log.Debugf(err.Error())

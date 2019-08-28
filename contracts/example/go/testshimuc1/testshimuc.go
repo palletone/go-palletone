@@ -46,7 +46,7 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	function, args := stub.GetFunctionAndParameters()
 	switch function {
 	case "testGetInvokeInfo":
-		return t.test_GetInvokeInfo(stub, args)
+		return t.test_GetInvokeInfo(stub)
 	case "testPutState":
 		return t.test_PutState(stub, args)
 	case "testGetState":
@@ -62,7 +62,7 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	case "testGetStateByPrefix":
 		return t.test_GetStateByPrefix(stub, args)
 	case "testGetContractAllState":
-		return t.test_GetContractAllState(stub, args)
+		return t.test_GetContractAllState(stub)
 	case "testGetContractState":
 		return t.test_GetContractState(stub, args)
 	case "testDefineToken":
@@ -74,16 +74,16 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	case "testGetTokenBalance":
 		return t.test_GetTokenBalance(stub, args)
 	case "testUseCert":
-		return t.test_UseCert(stub, args)
+		return t.test_UseCert(stub)
 	case "testSendRecvJury":
-		return t.test_SendRecvJury(stub, args)
+		return t.test_SendRecvJury(stub)
 	case "testSetEvent":
-		return t.test_SetEvent(stub, args)
+		return t.test_SetEvent(stub)
 	}
 	return shim.Error("Invalid invoke function name. Expecting \"invoke\"")
 }
 
-func (t *SimpleChaincode) test_GetInvokeInfo(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *SimpleChaincode) test_GetInvokeInfo(stub shim.ChaincodeStubInterface) pb.Response {
 	resMap := map[string]interface{}{}
 	// getArgs，调用参数列表，byte类型
 	newArgs := stub.GetArgs()
@@ -95,18 +95,18 @@ func (t *SimpleChaincode) test_GetInvokeInfo(stub shim.ChaincodeStubInterface, a
 	// GetStringArgs，调用参数类别，string类型
 	strArgs := stub.GetStringArgs()
 	strParams := make([]string, len(strArgs))
-	for _, s := range strArgs {
-		strParams = append(strParams, s)
-	}
+	//for _, s := range strArgs {
+	strParams = append(strParams, strArgs...)
+	//}
 	resMap["GetStringArgs"] = strParams
 	/// GetFunctionAndParameters，调用参数类别，string类型
 	fn, fpArgs := stub.GetFunctionAndParameters()
 	fpRes := map[string]interface{}{}
 	fpParams := make([]string, len(strArgs))
 	fpRes["functionName"] = fn
-	for _, s := range fpArgs {
-		fpParams = append(fpParams, s)
-	}
+	//for _, s := range fpArgs {
+	fpParams = append(fpParams, fpArgs...)
+	//}
 	fpRes["parameters"] = fpParams
 	resMap["GetFunctionAndParameters"] = fpRes
 	// GetArgsSlice，调用参数列表，byte类型
@@ -189,7 +189,7 @@ func (t *SimpleChaincode) test_GetInvokeInfo(stub shim.ChaincodeStubInterface, a
 	resMap["GetInvokeParameters"] = GIP
 	// GetContractID
 	_, scontractid := stub.GetContractID()
-	resMap["GetContractID"] = string(scontractid)
+	resMap["GetContractID"] = scontractid
 
 	res, err := json.Marshal(resMap)
 	if err != nil {
@@ -275,7 +275,7 @@ func (t *SimpleChaincode) test_GetStateByPrefix(stub shim.ChaincodeStubInterface
 	return shim.Success(data)
 }
 
-func (t *SimpleChaincode) test_GetContractAllState(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *SimpleChaincode) test_GetContractAllState(stub shim.ChaincodeStubInterface) pb.Response {
 	result, err := stub.GetContractAllState()
 	if err != nil {
 		return shim.Error(err.Error())
@@ -311,18 +311,18 @@ func (t *SimpleChaincode) test_DelGlobalState(stub shim.ChaincodeStubInterface, 
 	return shim.Success(nil)
 }
 
-func (t *SimpleChaincode) test_GetSystemConfig(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	cp, err := stub.GetSystemConfig()
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-
-	res, err := json.Marshal(cp)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	return shim.Success(res)
-}
+//func (t *SimpleChaincode) test_GetSystemConfig(stub shim.ChaincodeStubInterface) pb.Response {
+//	cp, err := stub.GetSystemConfig()
+//	if err != nil {
+//		return shim.Error(err.Error())
+//	}
+//
+//	res, err := json.Marshal(cp)
+//	if err != nil {
+//		return shim.Error(err.Error())
+//	}
+//	return shim.Success(res)
+//}
 
 func (t *SimpleChaincode) test_GetTokenBalance(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	if len(args) < 1 {
@@ -372,7 +372,7 @@ func (t *SimpleChaincode) test_PayOutToken(stub shim.ChaincodeStubInterface, arg
 	return shim.Success(nil)
 }
 
-func (t *SimpleChaincode) test_SetEvent(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *SimpleChaincode) test_SetEvent(stub shim.ChaincodeStubInterface) pb.Response {
 	message := "Event send data is here!"
 	err := stub.SetEvent("evtsender", []byte(message))
 	if err != nil {
@@ -463,12 +463,12 @@ func (t *SimpleChaincode) test_SupplyToken(stub shim.ChaincodeStubInterface, arg
 	return shim.Success(nil)
 }
 
-func (t *SimpleChaincode) test_UseCert(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *SimpleChaincode) test_UseCert(stub shim.ChaincodeStubInterface) pb.Response {
 	v, err := stub.IsRequesterCertValid()
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	if v != true {
+	if !v {
 		return shim.Error("Certificate used is invalid.")
 	}
 	certBytes, err := stub.GetRequesterCert()
@@ -487,7 +487,7 @@ type JuryMsgAddr struct {
 	Answer  []byte
 }
 
-func (t *SimpleChaincode) test_SendRecvJury(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *SimpleChaincode) test_SendRecvJury(stub shim.ChaincodeStubInterface) pb.Response {
 	_, err := stub.SendJury(1, []byte("hello"), []byte("result"))
 	if err != nil {
 		return shim.Error(fmt.Sprintf("sendresult err: %s", err.Error()))

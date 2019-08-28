@@ -25,8 +25,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/trie"
-	"github.com/palletone/go-palletone/dag/state"
-	"golang.org/x/crypto/sha3"
 )
 
 // stateReq represents a batch of state fetch requests grouped together into
@@ -56,16 +54,16 @@ type stateSyncStats struct {
 }
 
 // syncState starts downloading state with the given root hash.
-func (d *Downloader) syncState(root common.Hash) *stateSync {
-	s := newStateSync(d, root)
-	select {
-	case d.stateSyncStart <- s:
-	case <-d.quitCh:
-		s.err = errCancelStateFetch
-		close(s.done)
-	}
-	return s
-}
+//func (d *Downloader) syncState(root common.Hash) *stateSync {
+//	s := newStateSync(d, root)
+//	select {
+//	case d.stateSyncStart <- s:
+//	case <-d.quitCh:
+//		s.err = errCancelStateFetch
+//		close(s.done)
+//	}
+//	return s
+//}
 
 // stateFetcher manages the active state sync and accepts requests
 // on its behalf.
@@ -84,7 +82,7 @@ func (d *Downloader) stateFetcher() {
 	}
 }
 
-// runStateSync runs a state synchronisation until it completes or another root
+// runStateSync runs a state synchronization until it completes or another root
 // hash is requested to be switched over to.
 func (d *Downloader) runStateSync(s *stateSync) *stateSync {
 	var (
@@ -234,17 +232,17 @@ type stateTask struct {
 
 // newStateSync creates a new state trie download scheduler. This method does not
 // yet start the sync. The user needs to call run to initiate.
-func newStateSync(d *Downloader, root common.Hash) *stateSync {
-	return &stateSync{
-		d:       d,
-		sched:   state.NewStateSync(root /*, d.stateDB*/),
-		keccak:  sha3.New256(),
-		tasks:   make(map[common.Hash]*stateTask),
-		deliver: make(chan *stateReq),
-		cancel:  make(chan struct{}),
-		done:    make(chan struct{}),
-	}
-}
+//func newStateSync(d *Downloader, root common.Hash) *stateSync {
+//	return &stateSync{
+//		d:       d,
+//		sched:   state.NewStateSync(root /*, d.stateDB*/),
+//		keccak:  sha3.New256(),
+//		tasks:   make(map[common.Hash]*stateTask),
+//		deliver: make(chan *stateReq),
+//		cancel:  make(chan struct{}),
+//		done:    make(chan struct{}),
+//	}
+//}
 
 // run starts the task assignment and response processing loop, blocking until
 // it finishes, and finally notifying any goroutines waiting for the loop to
@@ -303,7 +301,8 @@ func (s *stateSync) loop() (err error) {
 
 		case req := <-s.deliver:
 			// Response, disconnect or timeout triggered, drop the peer if stalling
-			log.Trace("Received node data response", "peer", req.peer.id, "count", len(req.response), "dropped", req.dropped, "timeout", !req.dropped && req.timedOut())
+			log.Trace("Received node data response", "peer", req.peer.id, "count", len(req.response),
+				"dropped", req.dropped, "timeout", !req.dropped && req.timedOut())
 			if len(req.items) <= 2 && !req.dropped && req.timedOut() {
 				// 2 items are the minimum requested, if even that times out, we've no use of
 				// this peer at the moment.
@@ -441,7 +440,8 @@ func (s *stateSync) process(req *stateReq) error {
 		// If we've requested the node too many times already, it may be a malicious
 		// sync where nobody has the right data. Abort.
 		if len(task.attempts) >= npeers {
-			return fmt.Errorf("state node %s failed with all peers (%d tries, %d peers)", hash.TerminalString(), len(task.attempts), npeers)
+			return fmt.Errorf("state node %s failed with all peers (%d tries, %d peers)", hash.TerminalString(),
+				len(task.attempts), npeers)
 		}
 		// Missing item, place into the retry queue.
 		s.tasks[hash] = task
@@ -473,9 +473,11 @@ func (s *stateSync) updateStats(written, duplicate, unexpected int, duration tim
 	s.d.syncStatsState.unexpected += uint64(unexpected)
 
 	if written > 0 || duplicate > 0 || unexpected > 0 {
-		log.Info("Imported new state entries", "count", written, "elapsed", common.PrettyDuration(duration), "processed", s.d.syncStatsState.processed, "pending", s.d.syncStatsState.pending, "retry", len(s.tasks), "duplicate", s.d.syncStatsState.duplicate, "unexpected", s.d.syncStatsState.unexpected)
+		log.Info("Imported new state entries", "count", written, "elapsed", common.PrettyDuration(duration),
+			"processed", s.d.syncStatsState.processed, "pending", s.d.syncStatsState.pending, "retry", len(s.tasks),
+			"duplicate", s.d.syncStatsState.duplicate, "unexpected", s.d.syncStatsState.unexpected)
 	}
-	if written > 0 {
-		//core.WriteTrieSyncProgress(s.d.stateDB, s.d.syncStatsState.processed)
-	}
+	//if written > 0 {
+	//core.WriteTrieSyncProgress(s.d.stateDB, s.d.syncStatsState.processed)
+	//}
 }

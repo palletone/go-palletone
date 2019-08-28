@@ -129,7 +129,7 @@ func TestCopy(t *testing.T) {
 		obj.AddBalance(big.NewInt(int64(i)))
 		orig.updateStateObject(obj)
 	}
-	orig.Finalise(false)
+	orig.Finalize(false)
 
 	// Copy the state, modify both in-memory
 	copy := orig.Copy()
@@ -147,10 +147,10 @@ func TestCopy(t *testing.T) {
 	// Finalise the changes on both concurrently
 	done := make(chan struct{})
 	go func() {
-		orig.Finalise(true)
+		orig.Finalize(true)
 		close(done)
 	}()
-	copy.Finalise(true)
+	copy.Finalize(true)
 	<-done
 
 	// Verify that the two states have been updated independently
@@ -186,7 +186,7 @@ func TestSnapshotRandom(t *testing.T) {
 //
 // A new state is created and all actions are applied to it. Several snapshots are taken
 // in between actions. The test then reverts each snapshot. For each snapshot the actions
-// leading up to it are replayed on a fresh, empty state. The behaviour of all public
+// leading up to it are replayed on a fresh, empty state. The behavior of all public
 // accessor methods on the reverted state must match the return value of the equivalent
 // methods on the replayed state.
 type snapshotTest struct {

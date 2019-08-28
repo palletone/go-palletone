@@ -24,33 +24,8 @@ import (
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/core/types"
-	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/indexer"
-)
-
-const (
-	// bloomServiceThreads is the number of goroutines used globally by an Ethereum
-	// instance to service bloombits lookups for all running filters.
-	bloomServiceThreads = 16
-
-	// bloomFilterThreads is the number of goroutines used locally per filter to
-	// multiplex requests onto the global servicing goroutines.
-	bloomFilterThreads = 3
-
-	// bloomRetrievalBatch is the maximum number of bloom bit retrievals to service
-	// in a single batch.
-	bloomRetrievalBatch = 16
-
-	// bloomRetrievalWait is the maximum time to wait for enough bloom bit requests
-	// to accumulate request an entire batch (avoiding hysteresis).
-	bloomRetrievalWait = time.Duration(0)
-)
-const (
-	// BloomBitsBlocks is the number of blocks a single bloom bit section vector
-	// contains.
-	BloomBitsBlocks uint64 = 4096
 )
 
 var (
@@ -60,38 +35,37 @@ var (
 
 // startBloomHandlers starts a batch of goroutines to accept bloom bit database
 // retrievals from possibly a range of filters and serving the data to satisfy.
-func (eth *PalletOne) startBloomHandlers() {
-	for i := 0; i < bloomServiceThreads; i++ {
-		go func() {
-			for {
-				select {
-				case <-eth.shutdownChan:
-					return
-
-				case request := <-eth.bloomRequests:
-					task := <-request
-					task.Bitsets = make([][]byte, len(task.Sections))
-					for i, section := range task.Sections {
-						i = i
-						section = section
-						task.Error = errors.New("404 Not Found")
-						//head := core.GetCanonicalHash(eth.chainDb, (section+1)*BloomBitsBlocks-1)
-						//if compVector, err := core.GetBloomBits(eth.chainDb, task.Bit, section, head); err == nil {
-						//	if blob, err := bitutil.DecompressBytes(compVector, int(BloomBitsBlocks)/8); err == nil {
-						//		task.Bitsets[i] = blob
-						//	} else {
-						//		task.Error = err
-						//	}
-						//} else {
-						//	task.Error = err
-						//}
-					}
-					request <- task
-				}
-			}
-		}()
-	}
-}
+//func (eth *PalletOne) startBloomHandlers() {
+//for i := 0; i < bloomServiceThreads; i++ {
+//	go func() {
+//		for {
+//			select {
+//			case <-eth.shutdownChan:
+//				return
+//
+//			case request := <-eth.bloomRequests:
+//				task := <-request
+//				task.Bitsets = make([][]byte, len(task.Sections))
+//				//for i,section:= range task.Sections {
+//				//section = section
+//				//task.Error = errors.New("404 Not Found")
+//				//head := core.GetCanonicalHash(eth.chainDb, (section+1)*BloomBitsBlocks-1)
+//				//if compVector, err := core.GetBloomBits(eth.chainDb, task.Bit, section, head); err == nil {
+//				//	if blob, err := bitutil.DecompressBytes(compVector, int(BloomBitsBlocks)/8); err == nil {
+//				//		task.Bitsets[i] = blob
+//				//	} else {
+//				//		task.Error = err
+//				//	}
+//				//} else {
+//				//	task.Error = err
+//				//}
+//				//}
+//				request <- task
+//			}
+//		}
+//	}()
+//}
+//}
 
 const (
 	// bloomConfirms is the number of confirmation blocks before a bloom section is
@@ -147,16 +121,17 @@ func (b *BloomIndexer) Process(header *modules.Header) {
 // Commit implements core.ChainIndexerBackend, finalizing the bloom section and
 // writing it out into the database.
 func (b *BloomIndexer) Commit() error {
-	batch := b.db.NewBatch()
-
-	for i := 0; i < types.BloomBitLength; i++ {
-		bits, err := b.gen.Bitset(uint(i))
-		if err != nil {
-			return err
-		}
-		bits = bits
-		//TODO must be recover
-		//core.WriteBloomBits(batch, uint(i), b.section, b.head, bitutil.CompressBytes(bits))
-	}
-	return batch.Write()
+	return nil
+	//	batch := b.db.NewBatch()
+	//
+	//	for i := 0; i < types.BloomBitLength; i++ {
+	//		bits, err := b.gen.Bitset(uint(i))
+	//		if err != nil {
+	//			return err
+	//		}
+	//		bits = bits
+	//		//TODO must be recover
+	//		//core.WriteBloomBits(batch, uint(i), b.section, b.head, bitutil.CompressBytes(bits))
+	//	}
+	//	return batch.Write()
 }

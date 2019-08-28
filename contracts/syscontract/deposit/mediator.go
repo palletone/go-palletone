@@ -22,7 +22,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
-	"github.com/palletone/go-palletone/core"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -53,7 +52,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		return shim.Error(errStr)
 	}
 
-	addr, err := mco.Validate()
+	_, err = mco.Validate()
 	if err != nil {
 		errStr := fmt.Sprintf("invalid args: %v", err.Error())
 		log.Errorf(errStr)
@@ -61,25 +60,27 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	}
 
 	//  获取请求地址
-	invokeAddr, err := stub.GetInvokeAddress()
+	applyingAddr, err := stub.GetInvokeAddress()
 	if err != nil {
 		log.Error("Stub.GetInvokeAddress err:", "error", err)
 		return shim.Error(err.Error())
 	}
 
-	if addr != invokeAddr {
-		errStr := fmt.Sprintf("the calling account(%v) is not appling account(%v), "+
-			"please use mediator.apply()", invokeAddr.String(), addr.String())
+	applyingAddrStr := applyingAddr.Str()
+	if mco.AddStr != applyingAddrStr /*|| mco.RewardAdd != applyingAddrStr*/ {
+		errStr := fmt.Sprintf("the calling account(%v) is not applying account(%v)",
+			applyingAddrStr, mco.AddStr)
 		log.Error(errStr)
+		return shim.Error(errStr)
 	}
 
 	//  判断该地址是否是第一次申请
-	mdeposit, err := GetMediatorDeposit(stub, invokeAddr.String())
+	mDeposit, err := GetMediatorDeposit(stub, mco.AddStr)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	if mdeposit != nil {
-		return shim.Error(invokeAddr.String() + " has applied for become mediator")
+	if mDeposit != nil {
+		return shim.Error(mco.AddStr + " has applied for become mediator")
 	}
 
 	//  获取申请列表
@@ -94,7 +95,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 		becomeList = make(map[string]bool)
 	}
 
-	becomeList[invokeAddr.String()] = true
+	becomeList[mco.AddStr] = true
 	//  保存列表
 	err = saveList(stub, ListForApplyBecomeMediator, becomeList)
 	if err != nil {
@@ -107,7 +108,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	md.ApplyEnterTime = getTiem(stub)
 	md.Status = Apply
 	md.Role = Mediator
-	err = SaveMediatorDeposit(stub, invokeAddr.Str(), md)
+	err = SaveMediatorDeposit(stub, mco.AddStr, md)
 	if err != nil {
 		log.Error("SaveMedInfo err:", "error", err)
 		return shim.Error(err.Error())
@@ -118,7 +119,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 }
 
 //mediator 交付保证金：
-func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface /*, args []string*/) pb.Response {
 	log.Info("starting entering mediatorPayToDepositContract func.")
 	//  判断是否是交付保证金到保证金合约地址
 	invokeTokens, err := isContainDepositContractAddr(stub)
@@ -155,15 +156,17 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 	if md.Status != Agree {
 		return shim.Error(invokeAddr.String() + "does not in the agree list")
 	}
-	cp, err := stub.GetSystemConfig()
+	gp, err := stub.GetSystemConfig()
+	cp := gp.ChainParameters
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 	//
 	if md.Balance == 0 {
 		if invokeTokens.Amount != cp.DepositAmountForMediator {
-			log.Error("Too many or too little.")
-			return shim.Error("Too many or too little.")
+			str := fmt.Errorf("Mediator needs to pay only %d  deposit.", cp.DepositAmountForMediator)
+			log.Error(str.Error())
+			return shim.Error(str.Error())
 		}
 		//  加入候选列表
 		err = addCandaditeList(stub, invokeAddr, modules.MediatorList)
@@ -195,8 +198,28 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 		}
 		all := invokeTokens.Amount + md.Balance
 		if all != cp.DepositAmountForMediator {
-			log.Error("Too many or too little.")
-			return shim.Error("Too many or too little.")
+			str := fmt.Errorf("Mediator needs to pay only %d  deposit.", cp.DepositAmountForMediator-md.Balance)
+			log.Error(str.Error())
+			return shim.Error(str.Error())
+		}
+		//这里需要判断是否以及被基金会提前移除候选列表，即在规定时间内该节点没有追缴保证金
+		b, err := isInCandidate(stub, invokeAddr.String(), modules.MediatorList)
+		if err != nil {
+			log.Debugf("isInCandidate error: %s", err.Error())
+			return shim.Error(err.Error())
+		}
+		if !b {
+			err = addCandaditeList(stub, invokeAddr, modules.MediatorList)
+			if err != nil {
+				log.Error("addCandidateListAndPutStateForMediator err: ", "error", err)
+				return shim.Error(err.Error())
+			}
+			//  自动加入jury候选列表
+			err = addCandaditeList(stub, invokeAddr, modules.JuryList)
+			if err != nil {
+				log.Error("addCandidateListAndPutStateForMediator err: ", "error", err)
+				return shim.Error(err.Error())
+			}
 		}
 		md.Balance = all
 		//  保存账户信息
@@ -210,7 +233,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface, args []strin
 }
 
 //  申请退出 参数：暂时 节点地址
-func mediatorApplyQuit(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func mediatorApplyQuit(stub shim.ChaincodeStubInterface /*, args []string*/) pb.Response {
 	err := applyQuitList(Mediator, stub)
 	if err != nil {
 		log.Error("mediatorApplyQuitMediator err: ", "error", err)
@@ -259,7 +282,7 @@ func updateMediatorInfo(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 		return shim.Error(errStr)
 	}
 
-	addr, err := core.StrToMedAdd(mua.AddStr)
+	addr, err := mua.Validate()
 	if err != nil {
 		errStr := fmt.Sprintf("invalid args: %v", err.Error())
 		log.Errorf(errStr)
@@ -274,8 +297,8 @@ func updateMediatorInfo(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 	}
 
 	if addr != invokeAddr {
-		errStr := fmt.Sprintf("the calling account(%v) is not updating account(%v), "+
-			"please use mediator.apply()", invokeAddr.String(), mua.AddStr)
+		errStr := fmt.Sprintf("the calling account(%v) is not not produce account(%v)", invokeAddr.String(),
+			mua.AddStr)
 		log.Error(errStr)
 	}
 

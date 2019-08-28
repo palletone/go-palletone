@@ -33,12 +33,12 @@ import (
 )
 
 type RwSetTxSimulator struct {
-	chainIndex              *modules.ChainIndex
-	txid                    common.Hash
-	rwsetBuilder            *RWSetBuilder
-	write_cache             map[string][]byte
-	dag                     dag.IDag
-	writePerformed          bool
+	chainIndex   *modules.ChainIndex
+	txid         common.Hash
+	rwsetBuilder *RWSetBuilder
+	write_cache  map[string][]byte
+	dag          dag.IDag
+	//writePerformed          bool   // 没用到，注释掉
 	pvtdataQueriesPerformed bool
 	doneInvoked             bool
 }
@@ -58,10 +58,21 @@ func NewBasedTxSimulator(idag dag.IDag, hash common.Hash) *RwSetTxSimulator {
 		write_cache: make(map[string][]byte), dag: idag}
 }
 
-func (s *RwSetTxSimulator) GetChainParameters() ([]byte, error) {
-	cp := s.dag.GetChainParameters()
+//func (s *RwSetTxSimulator) GetChainParameters() ([]byte, error) {
+//	cp := s.dag.GetChainParameters()
+//
+//	data, err := rlp.EncodeToBytes(cp)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	return data, nil
+//}
 
-	data, err := rlp.EncodeToBytes(cp)
+func (s *RwSetTxSimulator) GetGlobalProp() ([]byte, error) {
+	gp := s.dag.GetGlobalProp()
+
+	data, err := rlp.EncodeToBytes(gp)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +117,7 @@ func (s *RwSetTxSimulator) GetStatesByPrefix(contractid []byte, ns string, prefi
 	data, err := s.dag.GetContractStatesByPrefix(contractid, prefix)
 
 	if err != nil {
-		log.Debugf("get value from db[%s] failed,prefix:%s", ns, prefix)
+		log.Debugf("get value from db[%s] failed,prefix:%s,error:[%s]", ns, prefix, err.Error())
 		return nil, nil
 		//errstr := fmt.Sprintf("GetContractState [%s]-[%s] failed", ns, key)
 		//		//return nil, errors.New(errstr)
@@ -160,27 +171,19 @@ func (s *RwSetTxSimulator) DeleteState(contractId []byte, ns string, key string)
 }
 
 func (s *RwSetTxSimulator) GetRwData(ns string) ([]*KVRead, []*KVWrite, error) {
-	var rd map[string]*KVRead
-	var wt map[string]*KVWrite
-
+	rd := make(map[string]*KVRead)
+	wt := make(map[string]*KVWrite)
 	log.Info("GetRwData", "ns info", ns)
 
 	if s.rwsetBuilder != nil {
 		if s.rwsetBuilder.pubRwBuilderMap != nil {
 			if s.rwsetBuilder.pubRwBuilderMap[ns] != nil {
-				if s.rwsetBuilder.pubRwBuilderMap[ns].readMap != nil {
-					rd = s.rwsetBuilder.pubRwBuilderMap[ns].readMap
-				}
-				if s.rwsetBuilder.pubRwBuilderMap[ns].writeMap != nil {
-					wt = s.rwsetBuilder.pubRwBuilderMap[ns].writeMap
-				}
 				pubRwBuilderMap, ok := s.rwsetBuilder.pubRwBuilderMap[ns]
 				if ok {
 					rd = pubRwBuilderMap.readMap
 					wt = pubRwBuilderMap.writeMap
 				} else {
-					rd = nil
-					wt = nil
+					return nil, nil, errors.New("rw_data not found.")
 				}
 			}
 		}
@@ -189,24 +192,24 @@ func (s *RwSetTxSimulator) GetRwData(ns string) ([]*KVRead, []*KVWrite, error) {
 	return convertReadMap2Slice(rd), convertWriteMap2Slice(wt), nil
 }
 func convertReadMap2Slice(rd map[string]*KVRead) []*KVRead {
-	keys := []string{}
-	for k, _ := range rd {
+	keys := make([]string, 0)
+	for k := range rd {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
-	result := []*KVRead{}
+	result := make([]*KVRead, 0)
 	for _, key := range keys {
 		result = append(result, rd[key])
 	}
 	return result
 }
 func convertWriteMap2Slice(rd map[string]*KVWrite) []*KVWrite {
-	keys := []string{}
-	for k, _ := range rd {
+	keys := make([]string, 0)
+	for k := range rd {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
-	result := []*KVWrite{}
+	result := make([]*KVWrite, 0)
 	for _, key := range keys {
 		result = append(result, rd[key])
 	}
@@ -233,19 +236,11 @@ func (h *RwSetTxSimulator) Done() {
 }
 func (s *RwSetTxSimulator) Close() {
 	item := new(RwSetTxSimulator)
-	s = item
-
-	return
-}
-
-func decomposeVersionedValue(versionedValue *VersionedValue) ([]byte, *Version) {
-	var value []byte
-	var ver *Version
-	if versionedValue != nil {
-		value = versionedValue.Value
-		ver = versionedValue.Version
-	}
-	return value, ver
+	s.chainIndex = item.chainIndex
+	s.txid = item.txid
+	s.rwsetBuilder = item.rwsetBuilder
+	s.write_cache = item.write_cache
+	s.dag = item.dag
 }
 
 func (h *RwSetTxSimulator) GetTxSimulationResults() ([]byte, error) {
@@ -253,7 +248,8 @@ func (h *RwSetTxSimulator) GetTxSimulationResults() ([]byte, error) {
 	return nil, nil
 }
 
-func (s *RwSetTxSimulator) GetTokenBalance(ns string, addr common.Address, asset *modules.Asset) (map[modules.Asset]uint64, error) {
+func (s *RwSetTxSimulator) GetTokenBalance(ns string, addr common.Address, asset *modules.Asset) (
+	map[modules.Asset]uint64, error) {
 	var utxos map[modules.OutPoint]*modules.Utxo
 	if asset == nil {
 		utxos, _ = s.dag.GetAddrUtxos(addr)
@@ -274,7 +270,8 @@ func convertUtxo2Balance(utxos map[modules.OutPoint]*modules.Utxo) map[modules.A
 	}
 	return result
 }
-func (s *RwSetTxSimulator) PayOutToken(ns string, address string, token *modules.Asset, amount uint64, lockTime uint32) error {
+func (s *RwSetTxSimulator) PayOutToken(ns string, address string, token *modules.Asset, amount uint64,
+	lockTime uint32) error {
 	s.rwsetBuilder.AddTokenPayOut(ns, address, token, amount, lockTime)
 	return nil
 }

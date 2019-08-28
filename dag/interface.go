@@ -35,7 +35,6 @@ import (
 type IDag interface {
 	Close()
 
-	//common geter
 	GetCommon(key []byte) ([]byte, error)
 	GetCommonByPrefix(prefix []byte) map[string][]byte
 	SaveCommon(key, val []byte) error
@@ -64,7 +63,7 @@ type IDag interface {
 	// InsertHeaderDag inserts a batch of headers into the local chain.
 	InsertHeaderDag([]*modules.Header) (int, error)
 	HasUnit(hash common.Hash) bool
-	UnitIsConfirmedByHash(hash common.Hash) bool
+	//UnitIsConfirmedByHash(hash common.Hash) bool
 	ParentsIsConfirmByHash(hash common.Hash) bool
 	IsHeaderExist(hash common.Hash) bool
 	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error
@@ -76,7 +75,7 @@ type IDag interface {
 	GetContractState(contractid []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
-	GetContractJury(contractId []byte) ([]modules.ElectionInf, error)
+	GetContractJury(contractId []byte) (*modules.ElectionNode, error)
 	GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error)
 
 	GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error)
@@ -101,13 +100,12 @@ type IDag interface {
 	GetContractTplCode(tplId []byte) ([]byte, error)
 	GetAllContractTpl() ([]*modules.ContractTemplate, error)
 
-	//WalletTokens(addr common.Address) (map[string]*modules.AccountToken, error)
-	//WalletBalance(address common.Address, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
 	GetContract(id []byte) (*modules.Contract, error)
 	GetAllContracts() ([]*modules.Contract, error)
 	GetContractsByTpl(tplId []byte) ([]*modules.Contract, error)
 	GetUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error)
 	GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash
+	GetUnitHash(number *modules.ChainIndex) (common.Hash, error)
 
 	//Mediator
 	GetActiveMediator(add common.Address) *core.Mediator
@@ -148,7 +146,6 @@ type IDag interface {
 	HeadUnitNum() uint64
 	HeadUnitHash() common.Hash
 	GetIrreversibleUnitNum(id modules.AssetId) uint64
-	//ValidateUnitExceptPayment(unit *modules.Unit) error
 
 	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
 	GetChaincodes(contractId common.Address) (*list.CCInfo, error)
@@ -161,6 +158,8 @@ type IDag interface {
 	GenVoteMediatorTx(voter common.Address, mediators map[string]bool,
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
+	GetGlobalProp() *modules.GlobalProperty
+	GetMediatorCount() int
 
 	IsMediator(address common.Address) bool
 	GetMediators() map[common.Address]bool
@@ -171,6 +170,7 @@ type IDag interface {
 	MediatorVotedResults() (map[string]uint64, error)
 	LookupMediatorInfo() []*modules.MediatorInfo
 	IsActiveMediator(add common.Address) bool
+	GetMediator(add common.Address) *core.Mediator
 
 	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
 	GetScheduledMediator(slotNum uint32) common.Address

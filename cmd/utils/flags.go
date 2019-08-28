@@ -27,6 +27,7 @@ import (
 	"runtime"
 	"strings"
 
+	"encoding/hex"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/fdlimit"
@@ -37,7 +38,6 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/nat"
 	"github.com/palletone/go-palletone/common/p2p/netutil"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
@@ -54,13 +54,11 @@ import (
 	"github.com/palletone/go-palletone/statistics/metrics"
 	"github.com/palletone/go-palletone/statistics/ptnstats"
 	"gopkg.in/urfave/cli.v1"
-	"encoding/hex"
 )
 
 var (
-	CommandHelpTemplate = `{{.cmd.Name}}{{if .cmd.Subcommands}} command{{end}}{{if .cmd.Flags}} [command options]{{end}} [arguments...]
-{{if .cmd.Description}}{{.cmd.Description}}
-{{end}}{{if .cmd.Subcommands}}
+	CommandHelpTemplate = `{{.cmd.Name}}{{if .cmd.Subcommands}} command{{end}}{{if .cmd.Flags}} 
+[command options]{{end}} [arguments...] {{if .cmd.Description}}{{.cmd.Description}} {{end}}{{if .cmd.Subcommands}}
 SUBCOMMANDS:
 	{{range .cmd.Subcommands}}{{.Name}}{{with .ShortName}}, {{.}}{{end}}{{ "\t" }}{{.Usage}}
 	{{end}}{{end}}{{if .categorizedFlags}}
@@ -71,7 +69,8 @@ SUBCOMMANDS:
 )
 
 func init() {
-	cli.AppHelpTemplate = `{{.Name}} {{if .Flags}}[global options] {{end}}command{{if .Flags}} [command options]{{end}} [arguments...]
+	cli.AppHelpTemplate = `{{.Name}} {{if .Flags}}[global options] {{end}}command{{if .Flags}} 
+	[command options]{{end}} [arguments...]
 
 VERSION:
    {{.Version}}
@@ -299,7 +298,7 @@ var (
 	CryptoLibFlag = cli.StringFlag{
 		Name:  "cryptolib",
 		Usage: "set crypto lib,1st byte sign algorithm: 0,ECDSA-S256;1,GM-SM2 2ed byte hash algorithm: 0,SHA3;1,GM-SM3",
-		Value: hex.EncodeToString( ptn.DefaultConfig.CryptoLib),
+		Value: hex.EncodeToString(ptn.DefaultConfig.CryptoLib),
 	}
 	ExtraDataFlag = cli.StringFlag{
 		Name:  "extradata",
@@ -359,8 +358,9 @@ var (
 		Value: "",
 	}
 	RPCVirtualHostsFlag = cli.StringFlag{
-		Name:  "rpcvhosts",
-		Usage: "Comma separated list of virtual hostnames from which to accept requests (server enforced). Accepts '*' wildcard.",
+		Name: "rpcvhosts",
+		Usage: "Comma separated list of virtual hostnames from which to accept requests (server enforced). " +
+			"Accepts '*' wildcard.",
 		Value: strings.Join(node.DefaultConfig.HTTPVirtualHosts, ","),
 	}
 	RPCApiFlag = cli.StringFlag{
@@ -502,6 +502,12 @@ var (
 	//		Usage: "Dag dbname",
 	//		Value: ptn.DefaultConfig.Dag.DbName,
 	//	}
+	DagValue3Flag = cli.IntFlag{
+		Name:  "dag.dbcache",
+		Usage: "Dag dbcache",
+		Value: ptn.DefaultConfig.Dag.DbCache,
+	}
+
 	LogOutputPathFlag = cli.StringFlag{
 		Name:  "log.path",
 		Usage: "Log path",
@@ -576,11 +582,11 @@ func setNodeKey(ctx *cli.Context, cfg *p2p.Config) {
 }
 
 // setNodeUserIdent creates the user identifier from CLI flags.
-func setNodeUserIdent(ctx *cli.Context, cfg *node.Config) {
+/*func setNodeUserIdent(ctx *cli.Context, cfg *node.Config) {
 	if identity := ctx.GlobalString(IdentityFlag.Name); len(identity) > 0 {
 		cfg.UserIdent = identity
 	}
-}
+}*/
 
 // setBootstrapNodes creates a list of bootstrap nodes from the command line
 // flags, reverting to pre-configured ones if none have been specified.
@@ -631,17 +637,17 @@ func setNAT(ctx *cli.Context, cfg *p2p.Config) {
 
 // splitAndTrim splits input separated by a comma
 // and trims excessive white space from the substrings.
-func splitAndTrim(input string) []string {
+/*func splitAndTrim(input string) []string {
 	result := strings.Split(input, ",")
 	for i, r := range result {
 		result[i] = strings.TrimSpace(r)
 	}
 	return result
-}
+}*/
 
 // setHTTP creates the HTTP RPC listener interface string from the set
 // command line flags, returning empty if the HTTP endpoint is disabled.
-func setHTTP(ctx *cli.Context, cfg *node.Config) {
+/*func setHTTP(ctx *cli.Context, cfg *node.Config) {
 	if ctx.GlobalBool(RPCEnabledFlag.Name) && cfg.HTTPHost == "" {
 		cfg.HTTPHost = "127.0.0.1"
 		if ctx.GlobalIsSet(RPCListenAddrFlag.Name) {
@@ -661,11 +667,11 @@ func setHTTP(ctx *cli.Context, cfg *node.Config) {
 	if ctx.GlobalIsSet(RPCVirtualHostsFlag.Name) {
 		cfg.HTTPVirtualHosts = splitAndTrim(ctx.GlobalString(RPCVirtualHostsFlag.Name))
 	}
-}
+}*/
 
 // setWS creates the WebSocket RPC listener interface string from the set
 // command line flags, returning empty if the HTTP endpoint is disabled.
-func setWS(ctx *cli.Context, cfg *node.Config) {
+/*func setWS(ctx *cli.Context, cfg *node.Config) {
 	if ctx.GlobalBool(WSEnabledFlag.Name) && cfg.WSHost == "" {
 		cfg.WSHost = "127.0.0.1"
 		if ctx.GlobalIsSet(WSListenAddrFlag.Name) {
@@ -682,11 +688,11 @@ func setWS(ctx *cli.Context, cfg *node.Config) {
 	if ctx.GlobalIsSet(WSApiFlag.Name) {
 		cfg.WSModules = splitAndTrim(ctx.GlobalString(WSApiFlag.Name))
 	}
-}
+}*/
 
 // setIPC creates an IPC path configuration from the set command line flags,
 // returning an empty string if IPC was explicitly disabled, or the set path.
-func setIPC(ctx *cli.Context, cfg *node.Config) {
+/*func setIPC(ctx *cli.Context, cfg *node.Config) {
 	checkExclusive(ctx, IPCDisabledFlag, IPCPathFlag)
 	switch {
 	case ctx.GlobalBool(IPCDisabledFlag.Name):
@@ -694,7 +700,7 @@ func setIPC(ctx *cli.Context, cfg *node.Config) {
 	case ctx.GlobalIsSet(IPCPathFlag.Name):
 		cfg.IPCPath = ctx.GlobalString(IPCPathFlag.Name)
 	}
-}
+}*/
 
 // makeDatabaseHandles raises out the number of allowed file handles per process
 // for Geth and returns half of the allowance to assign to the database.
@@ -750,7 +756,7 @@ func MakePasswordList(ctx *cli.Context) []string {
 		Fatalf("Failed to read password file: %v", err)
 	}
 	lines := strings.Split(string(text), "\n")
-	// Sanitise DOS line endings.
+	// Sanitize DOS line endings.
 	for i := range lines {
 		lines[i] = strings.TrimRight(lines[i], "\n")
 	}
@@ -816,7 +822,7 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 
 // SetNodeConfig applies node-related command line flags to the config.
 // 检查命令行中有没有 node 相关的配置，如果有的话覆盖掉cfg中的配置。
-func SetNodeConfig(ctx *cli.Context, cfg *node.Config, configDir string) (dataDir string) {
+func SetNodeConfig(ctx *cli.Context, cfg *node.Config, configDir string) string {
 	// setIPC(ctx, cfg)
 	// setHTTP(ctx, cfg)
 	// setWS(ctx, cfg)
@@ -836,7 +842,7 @@ func SetNodeConfig(ctx *cli.Context, cfg *node.Config, configDir string) (dataDi
 		path := filepath.Join(configDir, cfg.DataDir)
 		cfg.DataDir = common.GetAbsPath(path)
 	}
-	dataDir = cfg.DataDir
+	dataDir := cfg.DataDir
 
 	if ctx.GlobalIsSet(KeyStoreDirFlag.Name) {
 		cfg.KeyStoreDir = ctx.GlobalString(KeyStoreDirFlag.Name)
@@ -859,7 +865,7 @@ func SetNodeConfig(ctx *cli.Context, cfg *node.Config, configDir string) (dataDi
 	// 	cfg.NoUSB = ctx.GlobalBool(NoUSBFlag.Name)
 	// }
 
-	return
+	return dataDir
 }
 
 /*
@@ -960,7 +966,9 @@ func SetDagConfig(ctx *cli.Context, cfg *dagconfig.Config, dataDir string) {
 	//	if ctx.GlobalIsSet(DagValue2Flag.Name) {
 	//		cfg.DbName = ctx.GlobalString(DagValue2Flag.Name)
 	//	}
-
+	if ctx.GlobalIsSet(DagValue3Flag.Name) {
+		cfg.DbCache = ctx.GlobalInt(DagValue3Flag.Name)
+	}
 	// 重新计算为绝对路径
 	if !filepath.IsAbs(cfg.DbPath) {
 		path := filepath.Join(dataDir, cfg.DbPath)
@@ -970,13 +978,13 @@ func SetDagConfig(ctx *cli.Context, cfg *dagconfig.Config, dataDir string) {
 	dagconfig.DagConfig = *cfg
 }
 
-func SetContractConfig(ctx *cli.Context, cfg *contractcfg.Config, dataDir string) {
-	// 重新计算为绝对路径
-	if !filepath.IsAbs(cfg.ContractFileSystemPath) {
-		path := filepath.Join(dataDir, cfg.ContractFileSystemPath)
-		cfg.ContractFileSystemPath = common.GetAbsPath(path)
-	}
-}
+//func SetContractConfig(ctx *cli.Context, cfg *contractcfg.Config, dataDir string) {
+//	// 重新计算为绝对路径
+//	if !filepath.IsAbs(cfg.ContractFileSystemPath) {
+//		path := filepath.Join(dataDir, cfg.ContractFileSystemPath)
+//		cfg.ContractFileSystemPath = common.GetAbsPath(path)
+//	}
+//}
 
 func SetLogConfig(ctx *cli.Context, cfg *log.Config, configDir string, isInConsole bool) {
 	// 1. 重新计算log.output的路径
@@ -1127,8 +1135,8 @@ func SetPtnConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
 		cfg.ExtraData = []byte(ctx.GlobalString(ExtraDataFlag.Name))
 	}
 	if ctx.GlobalIsSet(CryptoLibFlag.Name) {
-		t:= ctx.GlobalString(CryptoLibFlag.Name)
-		cfg.CryptoLib,_ =hex.DecodeString(t)
+		t := ctx.GlobalString(CryptoLibFlag.Name)
+		cfg.CryptoLib, _ = hex.DecodeString(t)
 	}
 	if ctx.GlobalIsSet(VMEnableDebugFlag.Name) {
 		// TODO(fjl): force-enable this in --dev mode
@@ -1184,11 +1192,11 @@ func RegisterPtnService(stack *node.Node, cfg *ptn.Config) {
 	var err error
 	if cfg.SyncMode == downloader.LightSync {
 		err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-			return light.New(ctx, cfg, configure.LPSProtocol)
+			return light.New(ctx, cfg, configure.LPSProtocol, stack.CacheDb)
 		})
 	} else {
 		err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-			fullNode, err := ptn.New(ctx, cfg)
+			fullNode, err := ptn.New(ctx, cfg, stack.CacheDb)
 			if fullNode != nil && cfg.LightServ > 0 {
 				ls, _ := light.NewLesServer(fullNode, cfg, configure.LPSProtocol)
 				fullNode.AddLesServer(ls)

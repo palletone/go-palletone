@@ -87,7 +87,7 @@ func (statedb *StateDb) GetMediators() map[common.Address]bool {
 	}
 
 	res := make(map[common.Address]bool, len(list))
-	for addStr, _ := range list {
+	for addStr := range list {
 		add, err := common.StringToAddress(addStr)
 		if err != nil {
 			log.Debugf(err.Error())
@@ -107,7 +107,7 @@ func (statedb *StateDb) LookupMediatorInfo() []*modules.MediatorInfo {
 	}
 
 	result := make([]*modules.MediatorInfo, 0, len(list))
-	for addStr, _ := range list {
+	for addStr := range list {
 		add, err := common.StringToAddress(addStr)
 		if err != nil {
 			log.Debugf(err.Error())

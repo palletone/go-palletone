@@ -27,6 +27,8 @@ Resource          postRequest.txt
 Resource          handleEachDay.txt
 Resource          getBalance.txt
 Resource          CreateToken.txt
+Resource          GetAllMediators.txt
+Resource          GetAllNodes.txt
 
 *** Variables ***
 ${depositContractQuery}    contract_depositContractQuery

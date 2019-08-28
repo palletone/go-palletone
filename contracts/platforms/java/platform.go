@@ -28,6 +28,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/palletone/go-palletone/contracts/contractcfg"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	cutil "github.com/palletone/go-palletone/vm/common"
 )
@@ -60,7 +61,7 @@ func getBuildCmd(codePackage []byte) (string, error) {
 			return "", errors.New("Build file not found")
 		}
 
-		if cmd, ok := buildCmds[header.Name]; ok == true {
+		if cmd, ok := buildCmds[header.Name]; ok {
 			return cmd, nil
 		}
 	}
@@ -138,7 +139,7 @@ func (javaPlatform *Platform) GenerateDockerfile(cds *pb.ChaincodeDeploymentSpec
 		return "", err
 	}
 
-	buf = append(buf, cutil.GetDockerfileFromConfig("chaincode.java.Dockerfile"))
+	buf = append(buf, contractcfg.GetConfig().CommonBuilder)
 	buf = append(buf, "ADD codepackage.tgz /root/chaincode")
 	buf = append(buf, "RUN  cd /root/chaincode/src && "+buildCmd)
 	buf = append(buf, "RUN  cp /root/chaincode/src/build/chaincode.jar /root")

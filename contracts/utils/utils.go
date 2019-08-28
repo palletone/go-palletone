@@ -54,7 +54,6 @@ func GetResourcesWhenInvokeContainer(cc *list.CCInfo) {
 		usage, _ := GetMemoryStatsUsage(stats)
 		log.Infof("================================================%d\n\n", usage)
 	}
-	return
 }
 
 func GetAllResourceUsageByContainerName(name string) (*docker.Stats, error) {
@@ -74,7 +73,8 @@ func GetAllResourceUsageByContainerName(name string) (*docker.Stats, error) {
 	done := make(chan bool)
 	defer close(done)
 	go func() {
-		errC <- client.Stats(docker.StatsOptions{ID: con.ID, Stats: statsC, Stream: false, Done: done, InactivityTimeout: time.Duration(3 * time.Second)})
+		errC <- client.Stats(docker.StatsOptions{ID: con.ID, Stats: statsC, Stream: false, Done: done,
+			InactivityTimeout: 3 * time.Second, Timeout: 3 * time.Second})
 		close(errC)
 	}()
 	var resultStats []*docker.Stats
@@ -95,7 +95,7 @@ func GetAllResourceUsageByContainerName(name string) (*docker.Stats, error) {
 		stats := resultStats[0]
 		return stats, nil
 	}
-	return nil, fmt.Errorf("get container stats error")
+	//return nil, fmt.Errorf("get container stats error")
 }
 func GetCPUUsageTotalUsage(stats *docker.Stats) (uint64, error) {
 	return stats.CPUStats.CPUUsage.TotalUsage, nil
@@ -120,7 +120,7 @@ func GetLogFromContainer(name string) string {
 		ErrorStream:       &buf,
 		Follow:            true,
 		Stderr:            true,
-		InactivityTimeout: time.Duration(3 * time.Second),
+		InactivityTimeout: 3 * time.Second,
 	}
 	log.Debugf("start docker logs")
 	err = client.Logs(logsO)
@@ -184,7 +184,8 @@ func GetAllExitedContainer(client *docker.Client) ([]common.Address, error) {
 	}
 	addr := make([]common.Address, 0)
 	if len(cons) > 0 {
-		for _, v := range cons {
+		for i, v := range cons {
+			log.Debugf("the %d container ===>%s", i, v.Names)
 			if strings.Contains(v.Names[0][1:3], "PC") && strings.Contains(v.Status, "Exited") {
 				name := v.Names[0][1:36]
 				contractAddr, err := common.StringToAddress(name)
@@ -209,7 +210,7 @@ func StopContainerWhenInvokeTimeOut(name string) {
 		log.Info("util.NewDockerClient", "error", err)
 		return
 	}
-	err = client.StopContainer(name, 0)
+	err = client.StopContainer(name, 3)
 	if err != nil {
 		log.Infof("stop container error: %s", err.Error())
 		return
@@ -223,14 +224,19 @@ func RemoveContainerWhenGoBuildTimeOut(id string) {
 		log.Debugf("util.NewDockerClient")
 		return
 	}
-	select {
-	case <-time.After(contractcfg.GetConfig().ContractDeploytimeout):
-		err := client.RemoveContainer(docker.RemoveContainerOptions{ID: id, Force: true})
-		if err != nil {
-			log.Infof("remove container error: %s", err.Error())
-		}
-		return
+	<-time.After(contractcfg.GetConfig().ContractDeploytimeout)
+	err = client.RemoveContainer(docker.RemoveContainerOptions{ID: id, Force: true})
+	if err != nil {
+		log.Infof("remove container error: %s", err.Error())
 	}
+	//select {
+	//case <-time.After(contractcfg.GetConfig().ContractDeploytimeout):
+	//	err := client.RemoveContainer(docker.RemoveContainerOptions{ID: id, Force: true})
+	//	if err != nil {
+	//		log.Infof("remove container error: %s", err.Error())
+	//	}
+	//	return
+	//}
 }
 
 //  调用的时候，若调用完发现磁盘使用超过系统上限，则kill掉并移除

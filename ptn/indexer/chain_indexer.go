@@ -99,7 +99,8 @@ type ChainIndexer struct {
 // NewChainIndexer creates a new chain indexer to do background processing on
 // chain segments of a given size after certain number of confirmations passed.
 // The throttling parameter might be used to prevent database thrashing.
-func NewChainIndexer(chainDb, indexDb ptndb.Database, backend ChainIndexerBackend, section, confirm uint64, throttling time.Duration, kind string) *ChainIndexer {
+func NewChainIndexer(chainDb, indexDb ptndb.Database, backend ChainIndexerBackend, section,
+	confirm uint64, throttling time.Duration, kind string) *ChainIndexer {
 	c := &ChainIndexer{
 		chainDb:     chainDb,
 		indexDb:     indexDb,
@@ -180,7 +181,8 @@ func (c *ChainIndexer) Close() error {
 // eventLoop is a secondary - optional - event loop of the indexer which is only
 // started for the outermost indexer to push chain head events into a processing
 // queue.
-func (c *ChainIndexer) eventLoop(currentHeader *modules.Header, events chan modules.ChainEvent, sub event.Subscription) {
+func (c *ChainIndexer) eventLoop(currentHeader *modules.Header, events chan modules.ChainEvent,
+	sub event.Subscription) {
 	// Mark the chain indexer as active, requiring an additional teardown
 	atomic.StoreUint32(&c.active, 1)
 
@@ -190,8 +192,8 @@ func (c *ChainIndexer) eventLoop(currentHeader *modules.Header, events chan modu
 	c.newHead(currentHeader.Number.Index, false)
 
 	var (
-		prevHeader = currentHeader
-		prevHash   = currentHeader.Hash()
+	//prevHeader = currentHeader
+	//prevHash = currentHeader.Hash()
 	)
 	for {
 		select {
@@ -210,22 +212,23 @@ func (c *ChainIndexer) eventLoop(currentHeader *modules.Header, events chan modu
 			header := ev.Unit.Header()
 			log.Debug("ChainIndexer->eventLoop", "index", header.Number.Index)
 			//TODO must modify some parent hash
-			if header.ParentsHash[0] != prevHash {
-				// Reorg to the common ancestor (might not exist in light sync mode, skip reorg then)
-				// TODO(karalabe, zsfelfoldi): This seems a bit brittle, can we detect this case explicitly?
+			//if header.ParentsHash[0] != prevHash {
+			// Reorg to the common ancestor (might not exist in light sync mode, skip reorg then)
+			// TODO(karalabe, zsfelfoldi): This seems a bit brittle, can we detect this case explicitly?
 
-				// TODO(karalabe): This operation is expensive and might block, causing the event system to
-				// potentially also lock up. We need to do with on a different thread somehow.
-				//TODO must be recover
-				/*
-					if h := FindCommonAncestor(c.chainDb, prevHeader, header); h != nil {
-						c.newHead(h.Number.Uint64(), true)
-					}
-				*/
-			}
+			// TODO(karalabe): This operation is expensive and might block, causing the event system to
+			// potentially also lock up. We need to do with on a different thread somehow.
+			//TODO must be recover
+			/*
+				if h := FindCommonAncestor(c.chainDb, prevHeader, header); h != nil {
+					c.newHead(h.Number.Uint64(), true)
+				}
+			*/
+			//}
 			c.newHead(header.Number.Index, false)
-			prevHeader = prevHeader //TODO must be delete
-			prevHeader, prevHash = header, header.Hash()
+			//prevHeader = prevHeader //TODO must be delete
+			//prevHeader, prevHash = header, header.Hash()
+			//prevHash = header.Hash()
 		}
 	}
 }
@@ -352,7 +355,7 @@ func (c *ChainIndexer) updateLoop() {
 // held while processing, the continuity can be broken by a long reorg, in which
 // case the function returns with an error.
 func (c *ChainIndexer) processSection(section uint64, lastHead common.Hash) (common.Hash, error) {
-	log.Trace("Processing new chain section", "section", section)
+	log.Trace("Processing new chain section", "section", section, "lastHead", lastHead)
 	return common.Hash{}, errors.New("404 Not Found")
 	// Reset and partial processing
 	/*

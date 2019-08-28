@@ -136,7 +136,9 @@ func getLastPledgeList(stub shim.ChaincodeStubInterface) (*modules.PledgeList, e
 	if err != nil {
 		return nil, err
 	}
-
+	return getPledgeListByDate(stub,date)
+}
+func getPledgeListByDate(stub shim.ChaincodeStubInterface,date string) (*modules.PledgeList, error) {
 	b, err := stub.GetState(constants.PledgeList + date)
 	if err != nil {
 		return nil, err
@@ -151,7 +153,6 @@ func getLastPledgeList(stub shim.ChaincodeStubInterface) (*modules.PledgeList, e
 	}
 	return allM, nil
 }
-
 //查询历史上的所有质押列表记录
 func getAllPledgeRewardHistory(stub shim.ChaincodeStubInterface) ([]*modules.PledgeList, error) {
 	b, err := stub.GetStateByPrefix(constants.PledgeList)

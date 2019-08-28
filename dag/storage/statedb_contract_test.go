@@ -32,6 +32,8 @@ import (
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
+	"os"
 )
 
 func TestGetContractState(t *testing.T) {
@@ -152,4 +154,48 @@ func TestStateDb_GetSysParamsWithVotes(t *testing.T) {
 	t.Logf("---%#v\n", sysTokenIDInfo)
 	t.Logf("---%#v\n", sysTokenIDInfo.SupportResults[0])
 	t.Logf("---%#v\n", sysTokenIDInfo.SupportResults[0].VoteResults[0])
+}
+func TestStateDb_DeleteContractState(t *testing.T) {
+	// db, remove := newTestLDB()
+	// defer remove()
+	db, _ := ptndb.NewMemDatabase()
+	statedb := NewStateDb(db)
+	depositeContractAddress := common.HexToAddress("0x00000000000000000000000000000000000000011C")
+	contractId := depositeContractAddress.Bytes()
+	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123}, TxIndex: 1}
+	ws1 := modules.NewWriteSet("AA", []byte("100"))
+	ws2 := modules.NewWriteSet("AB", []byte("1000"))
+	ws := []modules.ContractWriteSet{}
+	ws = append(ws, *ws1)
+	ws = append(ws, *ws2)
+	err := statedb.SaveContractStates(contractId, ws, version)
+	assert.Nil(t, err)
+	result, err := statedb.GetContractStatesByPrefix(contractId, "A")
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(result))
+	// key := getContractStateKey(contractId, "AA")
+	// statedb.DeleteState(key)
+	ws3 := modules.ContractWriteSet{true, "AA", nil, nil}
+	ws = []modules.ContractWriteSet{}
+	ws = append(ws, ws3)
+	err = statedb.SaveContractStates(contractId, ws, version)
+	assert.Nil(t, err)
+	result, err = statedb.GetContractStatesByPrefix(contractId, "A")
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(result))
+}
+func newTestLDB() (*ptndb.LDBDatabase, func()) {
+	dirname, err := ioutil.TempDir(os.TempDir(), "ptndb_test_")
+	if err != nil {
+		panic("failed to create test file: " + err.Error())
+	}
+	db, err := ptndb.NewLDBDatabase(dirname, 0, 0)
+	if err != nil {
+		panic("failed to create test database: " + err.Error())
+	}
+
+	return db, func() {
+		db.Close()
+		os.RemoveAll(dirname)
+	}
 }

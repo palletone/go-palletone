@@ -168,13 +168,14 @@ func (am *Manager) Subscribe(sink chan<- WalletEvent) event.Subscription {
 	return am.feed.Subscribe(sink)
 }
 
-// merge is a sorted analogue of append for wallets, where the ordering of the
+// merge is a sorted analog of append for wallets, where the ordering of the
 // origin list is preserved by inserting new wallets at the correct position.
 //
 // The original slice is assumed to be already sorted by URL.
 func merge(slice []Wallet, wallets ...Wallet) []Wallet {
 	for _, wallet := range wallets {
-		n := sort.Search(len(slice), func(i int) bool { return slice[i].URL().Cmp(wallet.URL()) >= 0 })
+		w := wallet
+		n := sort.Search(len(slice), func(i int) bool { return slice[i].URL().Cmp(w.URL()) >= 0 })
 		if n == len(slice) {
 			slice = append(slice, wallet)
 			continue
@@ -188,7 +189,8 @@ func merge(slice []Wallet, wallets ...Wallet) []Wallet {
 // cache and removes the ones specified.
 func drop(slice []Wallet, wallets ...Wallet) []Wallet {
 	for _, wallet := range wallets {
-		n := sort.Search(len(slice), func(i int) bool { return slice[i].URL().Cmp(wallet.URL()) >= 0 })
+		w:=wallet
+		n := sort.Search(len(slice), func(i int) bool { return slice[i].URL().Cmp(w.URL()) >= 0 })
 		if n == len(slice) {
 			// Wallet not found, may happen during startup
 			continue

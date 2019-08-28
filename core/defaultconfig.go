@@ -39,8 +39,9 @@ const (
 	DefaultUccCpuQuota   = 100000     //  每个容器最多使用CPU核数 = 1 CPU
 	DefaultUccDisk       = 1073741824 //  每个容器磁盘使用量最多使用 = 1073741824 = 1G
 	DefaultUccPrivileged = false
-	//DefaultUccNetworkMode    = "bridge" //TODO xiaozhi 生产环境
-	DefaultUccNetworkMode    = "host" //TODO xiaozhi 测试容器运行网络模式
+	//DefaultUccNetworkMode = "bridge" //TODO xiaozhi 生产环境
+	DefaultUccNetworkMode = "gptn-net" //TODO xiaozhi 生产环境
+	//DefaultUccNetworkMode    = "host" //TODO xiaozhi 测试容器运行网络模式
 	defaultUccOOMKillDisable = false
 
 	DefaultTempUccMemory    = 1073741824
@@ -61,15 +62,16 @@ const (
 	DefaultActiveMediatorCount = 5 //21
 	DefaultMinMediatorCount    = 1 //21
 	DefaultMinMediatorInterval = 1
+	DefaultMinMaintSkipSlots   = 0
 
 	//contract
 	DefaultContractSignatureNum = 3
 	DefaultContractElectionNum  = 4
 
-	DefaultContractTxTimeoutUnitFee  = 10 //ms
-	DefaultContractTxSizeUnitFee     = 50 //byte
-	DefaultContractTxInstallFeeLevel = 2.3
-	DefaultContractTxDeployFeeLevel  = 1.8
+	DefaultContractTxTimeoutUnitFee  = 10 //s
+	DefaultContractTxSizeUnitFee     = 1  //byte
+	DefaultContractTxInstallFeeLevel = 2.5
+	DefaultContractTxDeployFeeLevel  = 1.5
 	DefaultContractTxInvokeFeeLevel  = 1.0
 	DefaultContractTxStopFeeLevel    = 0.5
 
@@ -129,11 +131,11 @@ const (
 	DefaultMaintenanceInterval  = 60 * 5 // 60 * 60 * 24 // seconds, aka: 1 day
 	DefaultMaintenanceSkipSlots = 0      //Devin: Don't change // 1 // number of slots to skip for maintenance interval
 
-	DefaultMediatorCreateFee        = 5000
+	DefaultMediatorCreateFee        = 50000
+	DefaultAccountUpdateFee         = 5000
+	DefaultTransferPtnBaseFee       = 5000
+	DefaultTransferPtnPricePerKByte = 30000
 	DefaultContractInvokeFee        = 100000000
-	DefaultAccountUpdateFee         = 20
-	DefaultTransferPtnBaseFee       = 20
-	DefaultTransferPtnPricePerKByte = 20
 
 	DefaultUnitMaxSize = 5 * 1024 * 1024 //5M
 )

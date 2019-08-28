@@ -25,7 +25,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
 )
 
@@ -44,26 +43,26 @@ type txsync struct {
 }
 
 // syncTransactions starts sending all currently pending transactions to the given peer.
-func (pm *ProtocolManager) syncTransactions(p *peer) {
-	var txs modules.Transactions
-	pending, _ := pm.txpool.Pending()
-	for _, this := range pending {
-		for _, batch := range this {
-			txs = append(txs, txspool.PooltxToTx(batch))
-		}
-	}
-	if len(txs) == 0 {
-		return
-	}
-	select {
-	case pm.txsyncCh <- &txsync{p, txs}:
-	case <-pm.quitSync:
-	}
-}
+//func (pm *ProtocolManager) syncTransactions(p *peer) {
+//	var txs modules.Transactions
+//	pending, _ := pm.txpool.Pending()
+//	for _, this := range pending {
+//		for _, batch := range this {
+//			txs = append(txs, txspool.PooltxToTx(batch))
+//		}
+//	}
+//	if len(txs) == 0 {
+//		return
+//	}
+//	select {
+//	case pm.txsyncCh <- &txsync{p, txs}:
+//	case <-pm.quitSync:
+//	}
+//}
 
 // txsyncLoop takes care of the initial transaction sync for each new
 // connection. When a new peer appears, we relay all currently pending
-// transactions. In order to minimise egress bandwidth usage, we send
+// transactions. In order to minimize egress bandwidth usage, we send
 // the transactions in small packs to one peer at a time.
 func (pm *ProtocolManager) txsyncLoop() {
 	var (
@@ -132,7 +131,7 @@ func (pm *ProtocolManager) txsyncLoop() {
 	}
 }
 
-// syncer is responsible for periodically synchronising with the network, both
+// syncer is responsible for periodically synchronizing with the network, both
 // downloading hashes and blocks as well as handling the announcement handler.
 func (pm *ProtocolManager) syncer(syncCh chan bool) {
 	// Start and ensure cleanup of sync mechanisms
@@ -140,7 +139,7 @@ func (pm *ProtocolManager) syncer(syncCh chan bool) {
 	defer pm.fetcher.Stop()
 	defer pm.downloader.Terminate()
 
-	// Wait for different events to fire synchronisation operations
+	// Wait for different events to fire synchronization operations
 	forceSync := time.NewTicker(forceSyncCycle)
 	defer forceSync.Stop()
 
@@ -167,24 +166,24 @@ func (pm *ProtocolManager) syncer(syncCh chan bool) {
 func (pm *ProtocolManager) syncall(syncCh chan bool) {
 	log.Debug("ProtocolManager syncall", "assetId", pm.mainAssetId)
 	peer := pm.peers.BestPeer(pm.mainAssetId)
-	pm.synchronise(peer, pm.mainAssetId, syncCh)
+	pm.synchronize(peer, pm.mainAssetId, syncCh)
 }
 
-// synchronise tries to sync up our local block chain with a remote peer.
-func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId, syncCh chan bool) {
+// synchronize tries to sync up our local block chain with a remote peer.
+func (pm *ProtocolManager) synchronize(peer *peer, assetId modules.AssetId, syncCh chan bool) {
 	// Short circuit if no peers are available
 	if peer == nil {
-		log.Debug("ProtocolManager synchronise peer is nil")
+		log.Debug("ProtocolManager synchronize peer is nil")
 		return
 	}
-	log.Debug("Enter ProtocolManager synchronise", "peer id:", peer.id)
-	defer log.Debug("End ProtocolManager synchronise", "peer id:", peer.id)
+	log.Debug("Enter ProtocolManager synchronize", "peer id:", peer.id)
+	defer log.Debug("End ProtocolManager synchronize", "peer id:", peer.id)
 
 	// Make sure the peer's TD is higher than our own
-	//TODO compare local assetId & chainIndex whith remote peer assetId & chainIndex
+	//TODO compare local assetId & chainIndex with remote peer assetId & chainIndex
 	currentUnit := pm.dag.GetCurrentUnit(assetId)
 	if currentUnit == nil {
-		log.Error("synchronise currentUnit is nil have not genesis")
+		log.Error("synchronize currentUnit is nil have not genesis")
 		return
 	}
 	index := currentUnit.Number().Index
@@ -202,14 +201,16 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId, sync
 			atomic.StoreUint32(&pm.fastSync, 0)
 		}
 		atomic.StoreUint32(&pm.acceptTxs, 1)
-		log.Debug("Do not need synchronise", "local peer.index:", pindex, "local index:", number.Index, "header hash:", pHead)
+		log.Debug("Do not need synchronize", "local peer.index:", pindex, "local index:", number.Index,
+			"header hash:", pHead)
 		//TODO notice light protocol to sync corsheader
 		if syncCh != nil {
 			syncCh <- true
 		}
 		return
 	}
-	log.Debug("ProtocolManager", "synchronise local unit index:", index, "local peer index:", pindex, "header hash:", pHead)
+	log.Debug("ProtocolManager", "synchronize local unit index:", index, "local peer index:", pindex,
+		"header hash:", pHead)
 	// Otherwise try to sync with the downloader
 	mode := downloader.FullSync
 
@@ -217,10 +218,11 @@ func (pm *ProtocolManager) synchronise(peer *peer, assetId modules.AssetId, sync
 		// Fast sync was explicitly requested, and explicitly granted
 		mode = downloader.FastSync
 	}
-	log.Debug("ProtocolManager", "synchronise local unit index:", index, "peer index:", pindex, "header hash:", pHead)
+	log.Debug("ProtocolManager", "synchronize local unit index:", index, "peer index:", pindex,
+		"header hash:", pHead)
 	// Run the sync cycle, and disable fast sync if we've went past the pivot block
-	if err := pm.downloader.Synchronise(peer.id, pHead, pindex, mode, assetId); err != nil {
-		log.Debug("ptn sync downloader.", "Synchronise err:", err)
+	if err := pm.downloader.Synchronize(peer.id, pHead, pindex, mode, assetId); err != nil {
+		log.Debug("ptn sync downloader.", "Synchronize err:", err)
 		return
 	}
 

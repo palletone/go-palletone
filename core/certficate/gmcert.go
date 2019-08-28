@@ -36,7 +36,7 @@ type GmCertInfo struct {
 	Organization    []string
 	EmailAddresses  namesVar
 	IPAddresses     ipsVar
-	subjectAltEmail namesVar
+	// subjectAltEmail namesVar
 }
 
 func (c *GmCertInfo) GenSMCert() ([]byte, error) {

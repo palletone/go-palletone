@@ -138,12 +138,12 @@ func buildPartitionChain(args []string) (*dm.PartitionChain, error) {
 func hasPermission(stub shim.ChaincodeStubInterface) bool {
 	requester, _, _, _, _, _ := stub.GetInvokeParameters()
 	//foundationAddress, _ := stub.GetSystemConfig(dm.FoundationAddress)
-	cp, err := stub.GetSystemConfig()
+	gp, err := stub.GetSystemConfig()
 	if err != nil {
 		//log.Error("strconv.ParseUint err:", "error", err)
 		return false
 	}
-	foundationAddress := cp.FoundationAddress
+	foundationAddress := gp.ChainParameters.FoundationAddress
 	return foundationAddress == requester.String()
 }
 func registerPartition(args []string, stub shim.ChaincodeStubInterface) pb.Response {

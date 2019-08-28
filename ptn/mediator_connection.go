@@ -26,7 +26,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
-	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // @author Albert·Gou
@@ -36,7 +35,7 @@ type producer interface {
 	SubscribeNewProducedUnitEvent(ch chan<- mp.NewProducedUnitEvent) event.Subscription
 
 	// AddToTBLSSignBufs is to TBLS sign the unit
-	AddToTBLSSignBufs(newUnit *modules.Unit)
+	AddToTBLSSignBufs(newHash common.Hash)
 
 	SubscribeSigShareEvent(ch chan<- mp.SigShareEvent) event.Subscription
 	AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare []byte)
@@ -69,7 +68,7 @@ func (pm *ProtocolManager) activeMediatorsUpdatedEventRecvLoop() {
 }
 
 func (pm *ProtocolManager) switchMediatorConnect(isChanged bool) {
-	log.Debugf("switchMediatorConnect")
+	log.Debug("switchMediatorConnect", "isChanged", isChanged)
 
 	// 若干数据还没同步完成，则忽略本次切换，继续同步
 	if !pm.dag.IsSynced() {
@@ -183,7 +182,7 @@ func (pm *ProtocolManager) delayDiscPrecedingMediator() {
 	isActive := pm.producer.LocalHaveActiveMediator()
 
 	// 2. 统计出需要断开连接的mediator节点
-	delayDiscNodes := make(map[string]*discover.Node, 0)
+	delayDiscNodes := make(map[string]*discover.Node)
 
 	activePeers := pm.dag.GetActiveMediatorNodes()
 	precedingPeers := pm.dag.GetPrecedingMediatorNodes()

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
-// Package fetcher contains the block announcement based synchronisation.
+// Package fetcher contains the block announcement based synchronization.
 package fetcher
 
 import (
@@ -147,7 +147,8 @@ type Fetcher struct {
 }
 
 // New creates a block fetcher to retrieve blocks based on hash announcements.
-func New(getBlock headerExistFn, verifyUnit unitVerifierFn, broadcastBlock blockBroadcasterFn, chainHeight chainHeightFn, insertChain chainInsertFn, dropPeer peerDropFn) *Fetcher {
+func New(getBlock headerExistFn, verifyUnit unitVerifierFn, broadcastBlock blockBroadcasterFn,
+	chainHeight chainHeightFn, insertChain chainInsertFn, dropPeer peerDropFn) *Fetcher {
 	return &Fetcher{
 		notify:         make(chan *announce),
 		inject:         make(chan *inject),
@@ -251,7 +252,8 @@ func (f *Fetcher) FilterHeaders(peer string, headers []*modules.Header, time tim
 
 // FilterBodies extracts all the block bodies that were explicitly requested by
 // the fetcher, returning those that should be handled differently.
-func (f *Fetcher) FilterBodies(peer string, transactions [][]*modules.Transaction, time time.Time) [][]*modules.Transaction {
+func (f *Fetcher) FilterBodies(peer string, transactions [][]*modules.Transaction,
+	time time.Time) [][]*modules.Transaction {
 	log.Trace("Filtering bodies", "peer", peer, "txs", len(transactions))
 
 	// Send the filter channel to the fetcher
@@ -335,8 +337,10 @@ func (f *Fetcher) loop() {
 			}
 			// If we have a valid block number, check that it's potentially useful
 			if notification.number.Index > 0 {
-				if dist := int64(notification.number.Index) - int64(f.chainHeight(notification.number.AssetID)); dist < -maxUncleDist || dist > maxQueueDist {
-					log.Debug("Peer discarded announcement", "peer", notification.origin, "number", notification.number, "hash", notification.hash, "distance", dist)
+				if dist := int64(notification.number.Index) -
+					int64(f.chainHeight(notification.number.AssetID)); dist < -maxUncleDist || dist > maxQueueDist {
+					log.Debug("Peer discarded announcement", "peer", notification.origin, "number",
+						notification.number, "hash", notification.hash, "distance", dist)
 					propAnnounceDropMeter.Mark(1)
 					break
 				}
@@ -453,12 +457,14 @@ func (f *Fetcher) loop() {
 			for _, header := range task.headers {
 				hash := header.Hash()
 
-				// Filter fetcher-requested headers from other synchronisation algorithms
-				if announce := f.fetching[hash]; announce != nil && announce.origin == task.peer && f.fetched[hash] == nil && f.completing[hash] == nil && f.queued[hash] == nil {
+				// Filter fetcher-requested headers from other synchronization algorithms
+				if announce := f.fetching[hash]; announce != nil && announce.origin == task.peer && f.fetched[hash] == nil &&
+					f.completing[hash] == nil && f.queued[hash] == nil {
 					// If the delivered header does not match the promised number, drop the announcer
 					if header.Number.Index != announce.number.Index &&
 						header.Number.AssetID == announce.number.AssetID {
-						log.Trace("Invalid block number fetched", "peer", announce.origin, "hash", header.Hash(), "announced", announce.number, "provided", header.Number)
+						log.Trace("Invalid block number fetched", "peer", announce.origin, "hash",
+							header.Hash(), "announced", announce.number, "provided", header.Number)
 						f.dropPeer(announce.origin)
 						f.forgetHash(hash)
 						continue
@@ -472,7 +478,8 @@ func (f *Fetcher) loop() {
 						// If the block is empty (header only), short circuit into the final import queue
 						//TODO modify
 						if header.TxRoot == core.DeriveSha(modules.Transactions{}) {
-							log.Trace("Block empty, skipping body retrieval", "peer", announce.origin, "number", header.Number, "hash", header.Hash())
+							log.Trace("Block empty, skipping body retrieval", "peer", announce.origin,
+								"number", header.Number, "hash", header.Hash())
 
 							block := modules.NewUnitWithHeader(header)
 							block.ReceivedAt = task.time
@@ -484,7 +491,8 @@ func (f *Fetcher) loop() {
 						// Otherwise add to the list of blocks needing completion
 						incomplete = append(incomplete, announce)
 					} else {
-						log.Trace("Block already imported, discarding header", "peer", announce.origin, "number", header.Number, "hash", header.Hash())
+						log.Trace("Block already imported, discarding header", "peer", announce.origin,
+							"number", header.Number, "hash", header.Hash())
 						f.forgetHash(hash)
 					}
 				} else {
@@ -618,7 +626,8 @@ func (f *Fetcher) enqueue(peer string, block *modules.Unit) {
 	// Ensure the peer isn't DOSing us
 	count := f.queues[peer] + 1
 	if count > blockLimit {
-		log.Debug("Discarded propagated block, exceeded allowance", "peer", peer, "number", block.Number(), "hash", hash, "limit", blockLimit)
+		log.Debug("Discarded propagated block, exceeded allowance", "peer", peer, "number", block.Number(),
+			"hash", hash, "limit", blockLimit)
 		propBroadcastDOSMeter.Mark(1)
 		f.forgetHash(hash)
 		return
@@ -626,7 +635,8 @@ func (f *Fetcher) enqueue(peer string, block *modules.Unit) {
 	// Discard any past or too distant blocks
 	heightChain := int64(f.chainHeight(block.Number().AssetID))
 	if dist := int64(block.Number().Index) - heightChain; dist < -maxUncleDist || dist > maxQueueDist {
-		log.Debug("Discarded propagated block, too far away", "peer", peer, "number", block.Number().Index, "heightChain", heightChain, "distance", dist)
+		log.Debug("Discarded propagated block, too far away", "peer", peer, "number", block.Number().Index,
+			"heightChain", heightChain, "distance", dist)
 		propBroadcastDropMeter.Mark(1)
 		f.forgetHash(hash)
 		return
@@ -643,7 +653,8 @@ func (f *Fetcher) enqueue(peer string, block *modules.Unit) {
 		if f.queueChangeHook != nil {
 			f.queueChangeHook(op.unit.Hash(), true)
 		}
-		log.Debug("Queued propagated block", "peer", peer, "number", block.Number().Index, "hash", hash, "queued", f.queue.Size())
+		log.Debug("Queued propagated block", "peer", peer, "number", block.Number().Index, "hash", hash,
+			"queued", f.queue.Size())
 	}
 }
 
@@ -663,7 +674,8 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 		//	//fmt.Println("parentHash=>", parentHash)
 		//	log.Debug("Importing propagated block insert DAG Enter isHeaderExist")
 		//	if !f.isHeaderExist(parentHash) {
-		//		log.Warn("Unknown parent of propagated block", "peer", peer, "number", block.Number().Index, "hash", hash, "parent", parentHash)
+		//		log.Warn("Unknown parent of propagated block", "peer", peer, "number", block.Number().Index,
+		// "hash", hash, "parent", parentHash)
 		//		return
 		//	}
 		//	log.Debug("Importing propagated block insert DAG End isHeaderExist")
@@ -681,7 +693,8 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 			// Weird future block, don't fail, but neither propagate
 		default:
 			// Something went very wrong, drop the peer
-			log.Warn("Propagated block verification failed", "peer", peer, "number", block.Number(), "hash", hash, "err", err)
+			log.Warn("Propagated block verification failed", "peer", peer, "number", block.Number(),
+				"hash", hash, "err", err)
 			if err.Error() != "DOUBLE_SPEND" && err.Error() != "INVALID_HEADER_TIME" {
 				f.dropPeer(peer)
 			} else {
@@ -691,7 +704,8 @@ func (f *Fetcher) insert(peer string, block *modules.Unit) {
 		}
 		// Run the actual import and log any issues
 		if _, err := f.insertChain(modules.Units{block}); err != nil {
-			log.Debug("Propagated block import failed", "peer", peer, "number", block.Number(), "hash", hash, "err", err)
+			log.Debug("Propagated block import failed", "peer", peer, "number", block.Number(),
+				"hash", hash, "err", err)
 			return
 		}
 		// If import succeeded, broadcast the block

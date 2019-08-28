@@ -120,7 +120,6 @@ func (m *RwSetTxMgr) Close() {
 	}
 	m.baseTxSim = make(map[string]TxSimulator)
 	m.closed = true
-	return
 }
 
 func Init() {

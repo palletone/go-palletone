@@ -65,11 +65,15 @@ func (q *mockStatedbQuery) GetMediators() map[common.Address]bool {
 	return nil
 }
 
+func (q *mockStatedbQuery) GetMediator(add common.Address) *core.Mediator {
+	return nil
+}
+
 //获得系统配置的最低手续费要求
 func (q *mockStatedbQuery) GetMinFee() (*modules.AmountAsset, error) {
 	return &modules.AmountAsset{Asset: modules.NewPTNAsset(), Amount: uint64(1)}, nil
 }
-func (q *mockStatedbQuery) GetContractJury(contractId []byte) ([]modules.ElectionInf, error) {
+func (q *mockStatedbQuery) GetContractJury(contractId []byte) (*modules.ElectionNode, error) {
 	return nil, nil
 }
 func (q *mockStatedbQuery) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {
@@ -85,11 +89,12 @@ type mockUtxoQuery struct {
 func (q *mockUtxoQuery) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error) {
 	return nil, nil
 }
+
 func (q *mockUtxoQuery) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	hash := common.HexToHash("1")
 	//result := map[*modules.OutPoint]*modules.Utxo{}
 	addr, _ := common.StringToAddress("P1HXNZReTByQHgWQNGMXotMyTkMG9XeEQfX")
-	lockScript := tokenengine.GenerateLockScript(addr)
+	lockScript := tokenengine.Instance.GenerateLockScript(addr)
 	utxo := &modules.Utxo{Amount: 100, LockTime: 0, Asset: modules.NewPTNAsset(), PkScript: lockScript}
 	if outpoint.TxHash == hash {
 		return utxo, nil
@@ -104,7 +109,7 @@ func (q *mockUtxoQuery) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo,
 func newCoinbaseTx() *modules.Transaction {
 	pay1s := &modules.PaymentPayload{}
 	addr, _ := common.StringToAddress("P1HXNZReTByQHgWQNGMXotMyTkMG9XeEQfX")
-	lockScript := tokenengine.GenerateLockScript(addr)
+	lockScript := tokenengine.Instance.GenerateLockScript(addr)
 	output := modules.NewTxOut(3, lockScript, modules.NewPTNAsset())
 	pay1s.AddTxOut(output)
 	input := modules.Input{}
@@ -126,7 +131,7 @@ func newCoinbaseTx() *modules.Transaction {
 func newTx1(t *testing.T) *modules.Transaction {
 	pay1s := &modules.PaymentPayload{}
 	addr, _ := common.StringToAddress("P1HXNZReTByQHgWQNGMXotMyTkMG9XeEQfX")
-	lockScript := tokenengine.GenerateLockScript(addr)
+	lockScript := tokenengine.Instance.GenerateLockScript(addr)
 	output := modules.NewTxOut(99, lockScript, modules.NewPTNAsset())
 	pay1s.AddTxOut(output)
 	hash := common.HexToHash("1")
@@ -157,7 +162,7 @@ func newTx1(t *testing.T) *modules.Transaction {
 	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
 		return crypto.MyCryptoLib.Sign(privKeyBytes, msg)
 	}
-	_, err := tokenengine.SignTxAllPaymentInput(tx, 1, lockScripts, nil, getPubKeyFn, getSignFn)
+	_, err := tokenengine.Instance.SignTxAllPaymentInput(tx, 1, lockScripts, nil, getPubKeyFn, getSignFn)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
@@ -186,7 +191,7 @@ func newTx2(t *testing.T, outpoint *modules.OutPoint) *modules.Transaction {
 	)
 	//Sign
 	addr, _ := common.StringToAddress("P1HXNZReTByQHgWQNGMXotMyTkMG9XeEQfX")
-	lockScript := tokenengine.GenerateLockScript(addr)
+	lockScript := tokenengine.Instance.GenerateLockScript(addr)
 	lockScripts := map[modules.OutPoint][]byte{
 		*input.PreviousOutPoint: lockScript,
 	}
@@ -198,7 +203,7 @@ func newTx2(t *testing.T, outpoint *modules.OutPoint) *modules.Transaction {
 	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
 		return crypto.MyCryptoLib.Sign(privKeyBytes, msg)
 	}
-	_, err := tokenengine.SignTxAllPaymentInput(tx, 1, lockScripts, nil, getPubKeyFn, getSignFn)
+	_, err := tokenengine.Instance.SignTxAllPaymentInput(tx, 1, lockScripts, nil, getPubKeyFn, getSignFn)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
@@ -241,7 +246,7 @@ func TestSignAndVerifyATx(t *testing.T) {
 	t.Logf("Public Key:%x", pubKeyBytes)
 	addr := crypto.PubkeyBytesToAddress(pubKeyBytes)
 	t.Logf("Addr:%s", addr.String())
-	lockScript := tokenengine.GenerateP2PKHLockScript(pubKeyHash)
+	lockScript := tokenengine.Instance.GenerateP2PKHLockScript(pubKeyHash)
 	t.Logf("UTXO lock script:%x", lockScript)
 
 	tx := &modules.Transaction{
@@ -268,7 +273,7 @@ func TestSignAndVerifyATx(t *testing.T) {
 
 	lockScripts := map[modules.OutPoint][]byte{
 		*outPoint:  lockScript[:],
-		*outPoint2: tokenengine.GenerateP2PKHLockScript(pubKeyHash),
+		*outPoint2: tokenengine.Instance.GenerateP2PKHLockScript(pubKeyHash),
 	}
 	//privKeys := map[common.Address]*ecdsa.PrivateKey{
 	//	addr: privKey,
@@ -281,7 +286,7 @@ func TestSignAndVerifyATx(t *testing.T) {
 	}
 	var hashtype uint32
 	hashtype = 1
-	_, err := tokenengine.SignTxAllPaymentInput(tx, hashtype, lockScripts, nil, getPubKeyFn, getSignFn)
+	_, err := tokenengine.Instance.SignTxAllPaymentInput(tx, hashtype, lockScripts, nil, getPubKeyFn, getSignFn)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}

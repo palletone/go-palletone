@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developer Albert·Gou <dev@pallet.one>
  * @date 2018
@@ -117,7 +118,7 @@ func createInitDKS(ctx *cli.Context) error {
 }
 
 // author Albert·Gou
-func getNodeInfo(ctx *cli.Context) (string, error) {
+func getNodeInfo(ctx *cli.Context) string {
 	_, cfg := makeConfigNode(ctx, false)
 	privateKey := cfg.Node.NodeKey()
 	listenAddr := cfg.P2P.ListenAddr
@@ -128,15 +129,12 @@ func getNodeInfo(ctx *cli.Context) (string, error) {
 	nodeID := discover.PubkeyID(&privateKey.PublicKey)
 	nodeInfo := "pnode://" + nodeID.String() + "@" + listenAddr
 
-	return nodeInfo, nil
+	return nodeInfo
 }
 
 // author Albert·Gou
 func showNodeInfo(ctx *cli.Context) error {
-	nodeStr, err := getNodeInfo(ctx)
-	if err != nil {
-		return err
-	}
+	nodeStr := getNodeInfo(ctx)
 
 	fmt.Println(nodeStr)
 
@@ -173,7 +171,7 @@ func listMediators(ctx *cli.Context) error {
 		return err
 	}
 
-	dag, err := dag.NewDag(Dbconn,false)
+	dag, err := dag.NewDag(Dbconn, node.CacheDb, false)
 	if err != nil {
 		fmt.Println("leveldb init failed!")
 		return err
@@ -183,7 +181,7 @@ func listMediators(ctx *cli.Context) error {
 	fmt.Println("\nList all existing mediator addresses:")
 	fmt.Println("[")
 
-	for address, _ := range mas {
+	for address := range mas {
 		fmt.Printf("\t%s,\n", address.Str())
 	}
 

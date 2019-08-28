@@ -28,7 +28,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/dagconfig"
+	// "github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -38,10 +38,10 @@ To validate unit's signature, and mediators' signature
 */
 func validateUnitSignature(h *modules.Header) ValidationCode {
 	// copy unit's header
-	header := modules.CopyHeader(h)
+	//header := modules.CopyHeader(h)
 	// signature does not contain authors and witness fields
 	//emptySigUnit.UnitHeader.Authors = nil
-	header.GroupSign = make([]byte, 0)
+	//header.GroupSign = make([]byte, 0)
 	// recover signature
 	//if h.Authors == nil {
 	if h.Authors.Empty() {
@@ -49,7 +49,7 @@ func validateUnitSignature(h *modules.Header) ValidationCode {
 		return UNIT_STATE_INVALID_AUTHOR_SIGNATURE
 	}
 
-	hash := header.HashWithoutAuthor()
+	hash := h.HashWithoutAuthor()
 	//pubKey, err := modules.RSVtoPublicKey(hash[:], h.Authors.R[:], h.Authors.S[:], h.Authors.V[:])
 	//if err != nil {
 	//	log.Debug("Verify unit signature when recover pubkey", "error", err.Error())
@@ -90,36 +90,37 @@ func validateUnitSignature(h *modules.Header) ValidationCode {
 	//return modules.UNIT_STATE_VALIDATED
 	return TxValidationCode_VALID
 }
-func (validate *Validate) validateMediatorSchedule(header *modules.Header) ValidationCode {
-	if validate.propquery == nil {
-		log.Warn("Validator don't have propquery, cannot validate mediator schedule")
-		return TxValidationCode_VALID
-	}
 
-	gasToken := dagconfig.DagConfig.GetGasToken()
-	ts, _ := validate.propquery.GetNewestUnitTimestamp(gasToken)
-	if ts >= header.Time {
-		errStr := "invalidated unit's timestamp"
-		log.Warnf("%s,db newest unit timestamp=%d,current unit[%s] timestamp=%d", errStr, ts,
-			header.Hash().String(), header.Time)
-		return UNIT_STATE_INVALID_HEADER_TIME
-	}
+// func (validate *Validate) validateMediatorSchedule(header *modules.Header) ValidationCode {
+// 	if validate.propquery == nil {
+// 		log.Warn("Validator don't have propquery, cannot validate mediator schedule")
+// 		return TxValidationCode_VALID
+// 	}
 
-	slotNum := validate.propquery.GetSlotAtTime(time.Unix(header.Time, 0))
-	if slotNum <= 0 {
-		log.Info("invalidated unit's slot")
-		return UNIT_STATE_INVALID_MEDIATOR_SCHEDULE
-	}
+// 	gasToken := dagconfig.DagConfig.GetGasToken()
+// 	ts, _ := validate.propquery.GetNewestUnitTimestamp(gasToken)
+// 	if ts >= header.Time {
+// 		errStr := "invalidated unit's timestamp"
+// 		log.Warnf("%s,db newest unit timestamp=%d,current unit[%s] timestamp=%d", errStr, ts,
+// 			header.Hash().String(), header.Time)
+// 		return UNIT_STATE_INVALID_HEADER_TIME
+// 	}
 
-	scheduledMediator := validate.propquery.GetScheduledMediator(slotNum)
-	if !scheduledMediator.Equal(header.Author()) {
-		errStr := fmt.Sprintf("mediator(%v) produced unit at wrong time", header.Author().Str())
-		log.Warn(errStr)
-		return UNIT_STATE_INVALID_MEDIATOR_SCHEDULE
-	}
+// 	slotNum := validate.propquery.GetSlotAtTime(time.Unix(header.Time, 0))
+// 	if slotNum <= 0 {
+// 		log.Info("invalidated unit's slot")
+// 		return UNIT_STATE_INVALID_MEDIATOR_SCHEDULE
+// 	}
 
-	return TxValidationCode_VALID
-}
+// 	scheduledMediator := validate.propquery.GetScheduledMediator(slotNum)
+// 	if !scheduledMediator.Equal(header.Author()) {
+// 		errStr := fmt.Sprintf("mediator(%v) produced unit at wrong time", header.Author().Str())
+// 		log.Warn(errStr)
+// 		return UNIT_STATE_INVALID_MEDIATOR_SCHEDULE
+// 	}
+
+// 	return TxValidationCode_VALID
+// }
 
 //不基于数据库，进行Unit最基本的验证
 func ValidateUnitBasic(unit *modules.Unit) error {
@@ -200,8 +201,16 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) Validat
 		log.Debugf("Validate unit's header failed, root:[%#x],  unit.UnitHeader.TxRoot:[%#x], txs:[%#x]", root, unit.UnitHeader.TxRoot, unit.Txs.GetTxIds())
 		return (UNIT_STATE_INVALID_HEADER_TXROOT)
 	}
+
 	// step2. check transactions in unit
-	code := validate.validateTransactions(unit.Txs, unit.Timestamp(), unit.Author())
+	medAdd := unit.Author()
+	med := validate.statequery.GetMediator(medAdd)
+	if med == nil {
+		log.Debugf("validate.statequery.RetrieveMediator %v err", medAdd.Str())
+		return UNIT_STATE_INVALID_AUTHOR_SIGNATURE
+	}
+
+	code := validate.validateTransactions(unit.Txs, unit.Timestamp(), med.GetRewardAdd())
 	if code != TxValidationCode_VALID {
 		msg := fmt.Sprintf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), code)
 		log.Debug(msg)

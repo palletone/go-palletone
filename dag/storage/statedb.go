@@ -118,7 +118,7 @@ func (statedb *StateDb) GetContractDeveloperList() ([]common.Address, error) {
 		return nil, err
 	}
 	res := make([]common.Address, len(depList))
-	for addStr, _ := range depList {
+	for addStr := range depList {
 		add, err := common.StringToAddress(addStr)
 		if err != nil {
 			log.Debugf(err.Error())

@@ -24,7 +24,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math/big"
 	"strings"
 	"time"
 
@@ -36,7 +35,6 @@ import (
 	//"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rpc"
-	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
@@ -51,29 +49,33 @@ import (
 )
 
 const (
-	defaultGasPrice = 0.0001 * configure.PalletOne
+	NONE   = "NONE"
+	ALL    = "ALL"
+	SINGLE = "SINGLE"
 )
 
-const (
-	// rpcAuthTimeoutSeconds is the number of seconds a connection to the
-	// RPC server is allowed to stay open without authenticating before it
-	// is closed.
-	rpcAuthTimeoutSeconds = 10
-	// uint256Size is the number of bytes needed to represent an unsigned
-	// 256-bit integer.
-	uint256Size = 32
-	// gbtNonceRange is two 32-bit big-endian hexadecimal integers which
-	// represent the valid ranges of nonces returned by the getblocktemplate
-	// RPC.
-	gbtNonceRange = "00000000ffffffff"
-	// gbtRegenerateSeconds is the number of seconds that must pass before
-	// a new template is generated when the previous block hash has not
-	// changed and there have been changes to the available transactions
-	// in the memory pool.
-	gbtRegenerateSeconds = 60
-	// maxProtocolVersion is the max protocol version the server supports.
-	maxProtocolVersion = 70002
-)
+//const (
+//	defaultGasPrice = 0.0001 * configure.PalletOne
+//
+//	// rpcAuthTimeoutSeconds is the number of seconds a connection to the
+//	// RPC server is allowed to stay open without authenticating before it
+//	// is closed.
+//	rpcAuthTimeoutSeconds = 10
+//	// uint256Size is the number of bytes needed to represent an unsigned
+//	// 256-bit integer.
+//	uint256Size = 32
+//	// gbtNonceRange is two 32-bit big-endian hexadecimal integers which
+//	// represent the valid ranges of nonces returned by the getblocktemplate
+//	// RPC.
+//	gbtNonceRange = "00000000ffffffff"
+//	// gbtRegenerateSeconds is the number of seconds that must pass before
+//	// a new template is generated when the previous block hash has not
+//	// changed and there have been changes to the available transactions
+//	// in the memory pool.
+//	gbtRegenerateSeconds = 60
+//	// maxProtocolVersion is the max protocol version the server supports.
+//	maxProtocolVersion = 70002
+//)
 
 type ContractInstallRsp struct {
 	ReqId string `json:"reqId"`
@@ -87,6 +89,15 @@ type ContractDeployRsp struct {
 
 type JuryList struct {
 	Addr []string `json:"account"`
+}
+
+type ContractFeeLevelRsp struct {
+	ContractTxTimeoutUnitFee  uint64  `json:"contract_tx_timeout_unit_fee(ptn)"`
+	ContractTxSizeUnitFee     uint64  `json:"contract_tx_size_unit_fee(ptn)"`
+	ContractTxInstallFeeLevel float64 `json:"contract_tx_install_fee_level"`
+	ContractTxDeployFeeLevel  float64 `json:"contract_tx_deploy_fee_level"`
+	ContractTxInvokeFeeLevel  float64 `json:"contract_tx_invoke_fee_level"`
+	ContractTxStopFeeLevel    float64 `json:"contract_tx_stop_fee_level"`
 }
 
 // PublicTxPoolAPI offers and API for the transaction pool. It only operates on data that is non confidential.
@@ -200,7 +211,7 @@ func newRPCTransaction(tx *modules.Transaction, blockHash common.Hash, unitIndex
 // newRPCPendingTransaction returns a pending transaction that will serialize to the RPC representation
 func newRPCPendingTransaction(tx *modules.TxPoolTransaction) *RPCTransaction {
 	if tx.UnitHash != (common.Hash{}) {
-		return newRPCTransaction(tx.Tx, tx.UnitHash, tx.UnitIndex, uint64(tx.Index))
+		return newRPCTransaction(tx.Tx, tx.UnitHash, tx.UnitIndex, tx.Index)
 	}
 	return newRPCTransaction(tx.Tx, common.Hash{}, ^uint64(0), ^uint64(0))
 }
@@ -462,18 +473,18 @@ func (s *PublicTransactionPoolAPI) GetTransactionReceipt(ctx context.Context, ha
 }
 */
 // sign is a helper function that signs a transaction with the private key of the given address.
-func (s *PublicTransactionPoolAPI) sign(addr common.Address, tx *modules.Transaction) (*modules.Transaction, error) {
-	// Look up the wallet containing the requested signer
-	account := accounts.Account{Address: addr}
-
-	wallet, err := s.b.AccountManager().Find(account)
-	if err != nil {
-		return nil, err
-	}
-	// Request the wallet to sign the transaction
-	var chainID *big.Int
-	return wallet.SignTx(account, tx, chainID)
-}
+//func (s *PublicTransactionPoolAPI) sign(addr common.Address, tx *modules.Transaction) (*modules.Transaction, error) {
+//	// Look up the wallet containing the requested signer
+//	account := accounts.Account{Address: addr}
+//
+//	wallet, err := s.b.AccountManager().Find(account)
+//	if err != nil {
+//		return nil, err
+//	}
+//	// Request the wallet to sign the transaction
+//	var chainID *big.Int
+//	return wallet.SignTx(account, tx, chainID)
+//}
 
 //func forking
 func forking(ctx context.Context, b Backend) uint64 {
@@ -481,10 +492,10 @@ func forking(ctx context.Context, b Backend) uint64 {
 	return 0
 }
 
-func queryDb(ctx context.Context, b Backend, condition string) string {
-	b.SendConsensus(ctx)
-	return ""
-}
+//func queryDb(ctx context.Context, b Backend, condition string) string {
+//	b.SendConsensus(ctx)
+//	return ""
+//}
 
 // submitTransaction is a helper function that submits tx to txPool and logs a message.
 func submitTransaction(ctx context.Context, b Backend, tx *modules.Transaction) (common.Hash, error) {
@@ -539,14 +550,14 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 	for _, addramt := range c.Amounts {
 		encodedAddr := addramt.Address
 		ptnAmt := addramt.Amount
-		amount := ptnjson.Ptn2Dao(ptnAmt)
+		// amount := ptnjson.Ptn2Dao(ptnAmt)
 		//		// Ensure amount is in the valid range for monetary amounts.
-		if amount <= 0 /*|| amount > ptnjson.MaxDao*/ {
-			return "", &ptnjson.RPCError{
-				Code:    ptnjson.ErrRPCType,
-				Message: "Invalid amount",
-			}
-		}
+		// if amount <= 0 /*|| amount > ptnjson.MaxDao*/ {
+		// 	return "", &ptnjson.RPCError{
+		// 		Code:    ptnjson.ErrRPCType,
+		// 		Message: "Invalid amount",
+		// 	}
+		// }
 		addr, err := common.StringToAddress(encodedAddr)
 		if err != nil {
 			return "", &ptnjson.RPCError{
@@ -567,15 +578,15 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 			}
 		}
 		// Create a new script which pays to the provided address.
-		pkScript := tokenengine.GenerateLockScript(addr)
+		pkScript := tokenengine.Instance.GenerateLockScript(addr)
 		// Convert the amount to satoshi.
 		dao := ptnjson.Ptn2Dao(ptnAmt)
-		if err != nil {
-			context := "Failed to convert amount"
-			return "", internalRPCError(err.Error(), context)
-		}
+		//if err != nil {
+		//	context := "Failed to convert amount"
+		//	return "", internalRPCError(err.Error(), context)
+		//}
 		assetId := dagconfig.DagConfig.GetGasToken()
-		txOut := modules.NewTxOut(uint64(dao), pkScript, assetId.ToAsset())
+		txOut := modules.NewTxOut(dao, pkScript, assetId.ToAsset())
 		pload.AddTxOut(txOut)
 	}
 	//	// Set the Locktime, if given.
@@ -641,7 +652,7 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, poolTxs
 					op.TxHash = tx.Tx.Hash()
 					op.MessageIndex = uint32(msgindex)
 					op.OutIndex = uint32(outIndex)
-					addr, err = tokenengine.GetAddressFromScript(output.PkScript)
+					addr, err = tokenengine.Instance.GetAddressFromScript(output.PkScript)
 					if err != nil {
 						return nil, err
 					}
@@ -755,15 +766,15 @@ func convertUtxoMap2Utxos(maps map[modules.OutPoint]*modules.Utxo) (core.Utxos, 
 }
 
 //sign raw tx
-func signTokenTx(tx *modules.Transaction, cmdInputs []ptnjson.RawTxInput, flags string,
+/*func signTokenTx(tx *modules.Transaction, cmdInputs []ptnjson.RawTxInput, flags string,
 	pubKeyFn tokenengine.AddressGetPubKey, hashFn tokenengine.AddressGetSign) error {
 	var hashType uint32
 	switch flags {
-	case "ALL":
+	case ALL:
 		hashType = tokenengine.SigHashAll
-	case "NONE":
+	case NONE:
 		hashType = tokenengine.SigHashNone
-	case "SINGLE":
+	case SINGLE:
 		hashType = tokenengine.SigHashSingle
 	case "ALL|ANYONECANPAY":
 		hashType = tokenengine.SigHashAll | tokenengine.SigHashAnyOneCanPay
@@ -808,7 +819,7 @@ func signTokenTx(tx *modules.Transaction, cmdInputs []ptnjson.RawTxInput, flags 
 	fmt.Println(len(signErrors))
 
 	return nil
-}
+}*/
 
 /*
 func (s *PrivateTransactionPoolAPI) unlockKS(addr common.Address, password string, duration *uint64) error {
@@ -984,7 +995,7 @@ func (s *PrivateTransactionPoolAPI) unlockKS(addr common.Address, password strin
 //		return common.Hash{}, err
 //	}
 //	//3.
-//	err = signTokenTx(tx, rawInputs, "ALL", getPubKeyFn, getSignFn)
+//	err = signTokenTx(tx, rawInputs, ALL, getPubKeyFn, getSignFn)
 //	if err != nil {
 //		return common.Hash{}, err
 //	}
@@ -1044,11 +1055,11 @@ func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine
 
 	var hashType uint32
 	switch strings.ToUpper(*cmd.Flags) {
-	case "ALL":
+	case ALL:
 		hashType = tokenengine.SigHashAll
-	case "NONE":
+	case NONE:
 		hashType = tokenengine.SigHashNone
-	case "SINGLE":
+	case SINGLE:
 		hashType = tokenengine.SigHashSingle
 	case "ALL|ANYONECANPAY":
 		hashType = tokenengine.SigHashAll | tokenengine.SigHashAnyOneCanPay
@@ -1072,9 +1083,9 @@ func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine
 	var PkScript []byte
 	for _, rti := range cmdInputs {
 		inputHash := common.HexToHash(rti.Txid)
-		if err != nil {
-			return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
-		}
+		//if err != nil {
+		//	return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
+		//}
 		script, err := decodeHexStr(trimx(rti.ScriptPubKey))
 		if err != nil {
 			return ptnjson.SignRawTransactionResult{}, err
@@ -1123,17 +1134,17 @@ func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine
 	//}
 
 	var signErrs []common.SignatureError
-	signErrs, err = tokenengine.SignTxAllPaymentInput(tx, hashType, inputpoints, redeem, pubKeyFn, hashFn)
+	signErrs, err = tokenengine.Instance.SignTxAllPaymentInput(tx, hashType, inputpoints, redeem, pubKeyFn, hashFn)
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
 	}
 	for msgidx, msg := range tx.TxMessages {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
-		if ok == false {
+		if !ok {
 			continue
 		}
-		for inputindex, _ := range payload.Inputs {
-			err = tokenengine.ScriptValidate(PkScript, nil, tx, msgidx, inputindex)
+		for inputindex := range payload.Inputs {
+			err = tokenengine.Instance.ScriptValidate(PkScript, nil, tx, msgidx, inputindex)
 			if err != nil {
 				return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
 			}
@@ -1146,7 +1157,7 @@ func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine
 			case tokenengine.SigHashSingle:
 				// Resize output array to up to and including requested index.
 				payload.Outputs = payload.Outputs[:1+1]
-				pk_addr, err := tokenengine.GetAddressFromScript(payload.Outputs[k].PkScript)
+				pk_addr, err := tokenengine.Instance.GetAddressFromScript(payload.Outputs[k].PkScript)
 				if err != nil {
 					return ptnjson.SignRawTransactionResult{}, errors.New("Get addr FromScript is err when signtx")
 				}
@@ -1159,7 +1170,7 @@ func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine
 			}
 		}
 	}
-	// All returned errors (not OOM, which panics) encounted during
+	// All returned errors (not OOM, which panics) encountered during
 	// bytes.Buffer writes are unexpected.
 	mtxbt, err := rlp.EncodeToBytes(tx)
 	if err != nil {
@@ -1177,7 +1188,7 @@ func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine
 
 func trimx(para string) string {
 	if strings.HasPrefix(para, "0x") || strings.HasPrefix(para, "0X") {
-		return fmt.Sprintf("%s", para[2:])
+		return para[2:]
 	}
 	return para
 }
@@ -1187,12 +1198,13 @@ func MakeAddress(ks *keystore.KeyStore, account string) (accounts.Account, error
 	if err == nil {
 		return accounts.Account{Address: addr}, nil
 	} else {
-		return accounts.Account{}, fmt.Errorf("invalid account address: %s", account)
+		return accounts.Account{}, fmt.Errorf("invalid account address: %v", account)
 	}
 
 }
 
-func (s *PublicTransactionPoolAPI) helpSignTx(tx *modules.Transaction, password string) ([]common.SignatureError, error) {
+/*func (s *PublicTransactionPoolAPI) helpSignTx(tx *modules.Transaction,
+	password string) ([]common.SignatureError, error) {
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
 		ks := s.b.GetKeyStore()
 		account, _ := MakeAddress(ks, addr.String())
@@ -1207,8 +1219,9 @@ func (s *PublicTransactionPoolAPI) helpSignTx(tx *modules.Transaction, password 
 	utxos := s.getTxUtxoLockScript(tx)
 	return tokenengine.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, utxos, nil, getPubKeyFn, getSignFn)
 
-}
-func (s *PublicTransactionPoolAPI) getTxUtxoLockScript(tx *modules.Transaction) map[modules.OutPoint][]byte {
+}*/
+
+/*func (s *PublicTransactionPoolAPI) getTxUtxoLockScript(tx *modules.Transaction) map[modules.OutPoint][]byte {
 	result := map[modules.OutPoint][]byte{}
 
 	for _, msg := range tx.TxMessages {
@@ -1222,14 +1235,14 @@ func (s *PublicTransactionPoolAPI) getTxUtxoLockScript(tx *modules.Transaction) 
 		}
 	}
 	return result
-}
+}*/
 
 //转为压力测试准备数据用
 func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, fromAddress, toAddress string, amount int, count int, password string) ([]string, error) {
 	txHash := common.HexToHash(txid)
 	toAddr, _ := common.StringToAddress(toAddress)
 	fromAddr, _ := common.StringToAddress(fromAddress)
-	utxoScript := tokenengine.GenerateLockScript(fromAddr)
+	utxoScript := tokenengine.Instance.GenerateLockScript(fromAddr)
 	ks := s.b.GetKeyStore()
 	ks.Unlock(accounts.Account{Address: fromAddr}, password)
 	pubKey, _ := ks.GetPublicKey(fromAddr)
@@ -1240,12 +1253,12 @@ func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, f
 		pay := &modules.PaymentPayload{}
 		outPoint := modules.NewOutPoint(txHash, 0, uint32(i))
 		pay.AddTxIn(modules.NewTxIn(outPoint, []byte{}))
-		lockScript := tokenengine.GenerateLockScript(toAddr)
+		lockScript := tokenengine.Instance.GenerateLockScript(toAddr)
 		pay.AddTxOut(modules.NewTxOut(uint64(amount), lockScript, asset))
 		tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay))
 		utxoLookup := map[modules.OutPoint][]byte{}
 		utxoLookup[*outPoint] = utxoScript
-		errs, err := tokenengine.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, utxoLookup, nil, func(addresses common.Address) ([]byte, error) {
+		errs, err := tokenengine.Instance.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, utxoLookup, nil, func(addresses common.Address) ([]byte, error) {
 			return pubKey, nil
 		},
 			func(addresses common.Address, msg []byte) ([]byte, error) {
@@ -1269,7 +1282,7 @@ func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, f
 		return ptnjson.SignRawTransactionResult{}, errors.New("Params is empty")
 	}
 	upper_type := strings.ToUpper(hashtype)
-	if upper_type != "ALL" && upper_type != "NONE" && upper_type != "SINGLE" {
+	if upper_type != ALL && upper_type != NONE && upper_type != SINGLE {
 		return ptnjson.SignRawTransactionResult{}, errors.New("Hashtype is error,error type:" + hashtype)
 	}
 	serializedTx, err := decodeHexStr(params)

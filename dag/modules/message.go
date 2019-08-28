@@ -96,14 +96,13 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 	case APP_CONTRACT_DEPLOY:
 		payload, _ := cpyMsg.Payload.(*ContractDeployPayload)
 		newPayload := ContractDeployPayload{
-			TemplateId: payload.TemplateId,
 			ContractId: payload.ContractId,
-			Args:       payload.Args,
-			EleList:    payload.EleList,
+			EleNode:    payload.EleNode,
 		}
 		readSet := []ContractReadSet{}
 		for _, rs := range payload.ReadSet {
-			readSet = append(readSet, ContractReadSet{Key: rs.Key, Version: &StateVersion{Height: rs.Version.Height, TxIndex: rs.Version.TxIndex}})
+			readSet = append(readSet, ContractReadSet{Key: rs.Key, Version: &StateVersion{
+				Height: rs.Version.Height, TxIndex: rs.Version.TxIndex}})
 		}
 		writeSet := []ContractWriteSet{}
 		for _, ws := range payload.WriteSet {
@@ -124,12 +123,11 @@ func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
 		payload, _ := cpyMsg.Payload.(*ContractInvokePayload)
 		newPayload := ContractInvokePayload{
 			ContractId: payload.ContractId,
-			Args:       payload.Args,
-			//ExecutionTime: payload.ExecutionTime,
 		}
 		readSet := []ContractReadSet{}
 		for _, rs := range payload.ReadSet {
-			readSet = append(readSet, ContractReadSet{Key: rs.Key, Version: &StateVersion{Height: rs.Version.Height, TxIndex: rs.Version.TxIndex}})
+			readSet = append(readSet, ContractReadSet{Key: rs.Key, Version: &StateVersion{
+				Height: rs.Version.Height, TxIndex: rs.Version.TxIndex}})
 		}
 		writeSet := []ContractWriteSet{}
 		for _, ws := range payload.WriteSet {
@@ -294,10 +292,15 @@ type ContractError struct {
 
 //node election
 type ElectionInf struct {
-	Etype     byte        `json:"etype"`      //vrf type, if set to 1, it is the assignation node
-	AddrHash  common.Hash `json:"addr_hash"`  //common.Address将地址hash后，返回给请求节点
-	Proof     []byte      `json:"proof"`      //vrf proof
-	PublicKey []byte      `json:"public_key"` //alg.PublicKey, rlp not support
+	EType     byte        `json:"election_type"` //vrf type, if set to 1, it is the assignation node
+	AddrHash  common.Hash `json:"addr_hash"`     //common.Address将地址hash后，返回给请求节点
+	Proof     []byte      `json:"proof"`         //vrf proof
+	PublicKey []byte      `json:"public_key"`    //alg.PublicKey, rlp not support
+}
+
+type ElectionNode struct {
+	JuryCount uint64        `json:"jury_count"` //
+	EleList   []ElectionInf `json:"ele_list"`   //
 }
 
 type ContractReadSet struct {
@@ -332,40 +335,72 @@ type TokenPayOut struct {
 	LockTime uint32
 }
 
+//用户钱包发起的合约调用申请
+type ContractInstallRequestPayload struct {
+	TplName        string        `json:"tpl_name"`
+	TplDescription string        `json:"tpl_description"`
+	Path           string        `json:"install_path"`
+	Version        string        `json:"tpl_version"`
+	Abi            string        `json:"abi"`
+	Language       string        `json:"language"`
+	AddrHash       []common.Hash `json:"addr_hash"`
+	Creator        string        `json:"creator"`
+}
+
 // Contract template deploy message
 // App: contract_template
 type ContractTplPayload struct {
 	TemplateId []byte        `json:"template_id"`    // contract template id
-	Size       uint16        `json:"size"`           // contract template bytecode memory size(Byte), use to compute transaction fee
+	Size       uint16        `json:"size"`           // contract template bytecode size(Byte), use to compute transaction fee
 	ByteCode   []byte        `json:"byte_code"`      // contract bytecode
 	ErrMsg     ContractError `json:"contract_error"` // contract error message
 }
 
 // App: contract_deploy
+type ContractDeployRequestPayload struct {
+	TemplateId []byte   `json:"template_id"`
+	Args       [][]byte `json:"args"`
+	ExtData    []byte   `json:"extend_data"`
+	Timeout    uint32   `json:"timeout"`
+}
+
 type ContractDeployPayload struct {
-	TemplateId []byte             `json:"template_id"`    // contract template id
-	ContractId []byte             `json:"contract_id"`    // contract id
-	Name       string             `json:"name"`           // the name for contract
-	Args       [][]byte           `json:"args"`           // contract arguments list
-	EleList    []ElectionInf      `json:"election_list"`  // contract jurors list
-	ReadSet    []ContractReadSet  `json:"read_set"`       // the set data of read, and value could be any type
-	WriteSet   []ContractWriteSet `json:"write_set"`      // the set data of write, and value could be any type
+	TemplateId []byte             `json:"template_id"`   // delete--
+	ContractId []byte             `json:"contract_id"`   // contract id
+	Name       string             `json:"name"`          // the name for contract
+	Args       [][]byte           `json:"args"`          // delete--
+	EleNode    ElectionNode       `json:"election_node"` // contract jurors node info
+	ReadSet    []ContractReadSet  `json:"read_set"`      // the set data of read, and value could be any type
+	WriteSet   []ContractWriteSet `json:"write_set"`     // the set data of write, and value could be any type
+	DuringTime uint64             `json:"during_time"`
 	ErrMsg     ContractError      `json:"contract_error"` // contract error message
 }
 
 // Contract invoke message
 // App: contract_invoke
+type ContractInvokeRequestPayload struct {
+	ContractId []byte   `json:"contract_id"` // contract id
+	Args       [][]byte `json:"args"`        // contract arguments list
+	Timeout    uint32   `json:"timeout"`
+}
+
 //如果是用户想修改自己的State信息，那么ContractId可以为空或�?0字节
 type ContractInvokePayload struct {
 	ContractId []byte             `json:"contract_id"`    // contract id
-	Args       [][]byte           `json:"args"`           // contract arguments list
+	Args       [][]byte           `json:"args"`           // delete--
 	ReadSet    []ContractReadSet  `json:"read_set"`       // the set data of read, and value could be any type
 	WriteSet   []ContractWriteSet `json:"write_set"`      // the set data of write, and value could be any type
 	Payload    []byte             `json:"payload"`        // the contract execution result
 	ErrMsg     ContractError      `json:"contract_error"` // contract error message
 }
 
-// App: contract_deploy
+// App: contract_stop
+type ContractStopRequestPayload struct {
+	ContractId  []byte `json:"contract_id"`
+	Txid        string `json:"transaction_id"`
+	DeleteImage bool   `json:"delete_image"`
+}
+
 type ContractStopPayload struct {
 	ContractId []byte             `json:"contract_id"`    // contract id
 	ReadSet    []ContractReadSet  `json:"read_set"`       // the set data of read, and value could be any type
@@ -385,37 +420,6 @@ type ContractInvokeResult struct {
 	TokenSupply []*TokenSupply     `json:"token_supply"`   //增发Token请求产生的结果
 	TokenDefine *TokenDefine       `json:"token_define"`   //定义新Token
 	ErrMsg      ContractError      `json:"contract_error"` // contract error message
-}
-
-//用户钱包发起的合约调用申请
-type ContractInstallRequestPayload struct {
-	TplName        string        `json:"tpl_name"`
-	TplDescription string        `json:"tpl_description"`
-	Path           string        `json:"install_path"`
-	Version        string        `json:"tpl_version"`
-	Abi            string        `json:"abi"`
-	Language       string        `json:"language"`
-	AddrHash       []common.Hash `json:"addr_hash"`
-	Creator        string        `json:"creator"`
-}
-
-type ContractDeployRequestPayload struct {
-	TplId   []byte   `json:"tpl_name"`
-	Args    [][]byte `json:"args"`
-	ExtData []byte   `json:"extend_data"`
-	Timeout uint32   `json:"timeout"`
-}
-
-type ContractInvokeRequestPayload struct {
-	ContractId []byte   `json:"contract_id"` // contract id
-	Args       [][]byte `json:"args"`        // contract arguments list
-	Timeout    uint32   `json:"timeout"`
-}
-
-type ContractStopRequestPayload struct {
-	ContractId  []byte `json:"contract_id"`
-	Txid        string `json:"transaction_id"`
-	DeleteImage bool   `json:"delete_image"`
 }
 
 type SignaturePayload struct {
@@ -458,7 +462,7 @@ type FileInfo struct {
 	Timestamp   uint64      `json:"timestamp"`
 	MainData    string      `json:"main_data"`
 	ExtraData   string      `json:"extra_data"`
-	Reference   string        `json:"reference"`
+	Reference   string      `json:"reference"`
 }
 
 func NewContractTplPayload(templateId []byte, memory uint16, bytecode []byte, err ContractError) *ContractTplPayload {
@@ -471,24 +475,24 @@ func NewContractTplPayload(templateId []byte, memory uint16, bytecode []byte, er
 }
 
 func NewContractDeployPayload(templateid []byte, contractid []byte, name string, args [][]byte,
-	elf []ElectionInf, readset []ContractReadSet, writeset []ContractWriteSet, err ContractError) *ContractDeployPayload {
-	return &ContractDeployPayload{
-		TemplateId: templateid,
+	ele *ElectionNode, readset []ContractReadSet, writeset []ContractWriteSet, err ContractError) *ContractDeployPayload {
+	payload := &ContractDeployPayload{
 		ContractId: contractid,
 		Name:       name,
-		Args:       args,
-		EleList:    elf,
 		ReadSet:    readset,
 		WriteSet:   writeset,
 		ErrMsg:     err,
 	}
+	if ele != nil {
+		payload.EleNode = *ele
+	}
+	return payload
 }
 
-func NewContractInvokePayload(contractid []byte, args [][]byte, excutiontime time.Duration,
-	readset []ContractReadSet, writeset []ContractWriteSet, payload []byte, err ContractError) *ContractInvokePayload {
+func NewContractInvokePayload(contractid []byte, readset []ContractReadSet, writeset []ContractWriteSet,
+	payload []byte, err ContractError) *ContractInvokePayload {
 	return &ContractInvokePayload{
 		ContractId: contractid,
-		Args:       args,
 		ReadSet:    readset,
 		WriteSet:   writeset,
 		Payload:    payload,
@@ -496,7 +500,8 @@ func NewContractInvokePayload(contractid []byte, args [][]byte, excutiontime tim
 	}
 }
 
-func NewContractStopPayload(contractid []byte, readset []ContractReadSet, writeset []ContractWriteSet, err ContractError) *ContractStopPayload {
+func NewContractStopPayload(contractid []byte, readset []ContractReadSet, writeset []ContractWriteSet,
+	err ContractError) *ContractStopPayload {
 	return &ContractStopPayload{
 		ContractId: contractid,
 		ReadSet:    readset,

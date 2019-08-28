@@ -27,7 +27,7 @@ import (
 )
 
 type ImmutableChainParameters struct {
-	// todo albert 添加最小维护周期跳过的生产槽数量, 用于完成vss协议
+	MinMaintSkipSlots    uint8    `json:"min_maint_skip_slots"`  // 最小区块链维护间隔
 	MinimumMediatorCount uint8    `json:"min_mediator_count"`    // 最小活跃mediator数量
 	MinMediatorInterval  uint8    `json:"min_mediator_interval"` // 最小的生产槽间隔时间
 	UccPrivileged        bool     `json:"ucc_privileged"`        // 防止容器以root权限运行
@@ -38,6 +38,7 @@ type ImmutableChainParameters struct {
 
 func NewImmutChainParams() ImmutableChainParameters {
 	return ImmutableChainParameters{
+		MinMaintSkipSlots:    DefaultMinMaintSkipSlots,
 		MinimumMediatorCount: DefaultMinMediatorCount,
 		MinMediatorInterval:  DefaultMinMediatorInterval,
 		UccPrivileged:        DefaultUccPrivileged,
@@ -186,31 +187,44 @@ func CheckSysConfigArgs(field, value string) error {
 	return err
 }
 
-// 操作交易费计划
-//type FeeSchedule struct {
-//	// mediator 创建费用
-//	MediatorCreateFee uint64                `json:"mediatorCreateFee"`
-//	AccountUpdateFee  uint64                `json:"accountUpdateFee"`
-//	TransferFee       TransferFeeParameters `json:"transferPtnFee"`
-//}
+type GetMediatorCountFn func() int
 
-//func newFeeSchedule() (f FeeSchedule) {
-//	f.MediatorCreateFee = DefaultMediatorCreateFee
-//	f.AccountUpdateFee = DefaultAccountUpdateFee
-//	f.TransferFee = newTransferFeeParameters()
-//
-//	return
-//}
+func ImmutableChainParameterCheck(field, value string, icp *ImmutableChainParameters, fn GetMediatorCountFn) error {
+	var err error
 
-// 转账交易费
-//type TransferFeeParameters struct {
-//	BaseFee       uint64 `json:"baseFee"`
-//	PricePerKByte uint64 `json:"pricePerKByte"`
-//}
+	switch field {
+	case "MediatorInterval":
+		newMediatorInterval, _ := strconv.ParseUint(value, 10, 64)
+		if newMediatorInterval < uint64(icp.MinMediatorInterval) {
+			err = fmt.Errorf("new mediator interval(%v) cannot less than min interval(%v)",
+				newMediatorInterval, icp.MinMediatorInterval)
+		}
+	case "MaintenanceSkipSlots":
+		newMaintenanceSkipSlots, _ := strconv.ParseUint(value, 10, 64)
+		if newMaintenanceSkipSlots < uint64(icp.MinMaintSkipSlots) {
+			err = fmt.Errorf("new MaintenanceSkipSlots(%v) cannot less than MinMaintSkipSlots(%v)",
+				newMaintenanceSkipSlots, icp.MinMaintSkipSlots)
+		}
+	case "ActiveMediatorCount":
+		newActiveMediatorCount, _ := strconv.ParseUint(value, 10, 16)
+		if (newActiveMediatorCount & 1) == 0 {
+			// 保证活跃mediator数量为奇数
+			err = fmt.Errorf("new ActiveMediatorCount(%v) must be odd", newActiveMediatorCount)
+		} else if newActiveMediatorCount < uint64(icp.MinimumMediatorCount) {
+			// 保证活跃mediator数量不小于MinimumMediatorCount
+			err = fmt.Errorf("new ActiveMediatorCount(%v) cannot less than MinimumMediatorCount(%v)",
+				newActiveMediatorCount, icp.MinimumMediatorCount)
+		} else {
+			// 保证活跃mediator数量不大于mediator总数
+			mediatorCount := uint64(fn())
+			if newActiveMediatorCount > mediatorCount {
+				err = fmt.Errorf("new ActiveMediatorCount(%v) cannot more than mediator count(%v)",
+					newActiveMediatorCount, mediatorCount)
+			}
+		}
+	default:
+		err = nil
+	}
 
-//func newTransferFeeParameters() (tf TransferFeeParameters) {
-//	tf.BaseFee = DefaultTransferPtnBaseFee
-//	tf.PricePerKByte = DefaultTransferPtnPricePerKByte
-//
-//	return
-//}
+	return err
+}

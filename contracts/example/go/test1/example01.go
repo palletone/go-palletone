@@ -24,12 +24,12 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 )
 
+var A, B string
+var Aval, Bval int
+
 // SimpleChaincode example simple Chaincode implementation
 type SimpleChaincode struct {
 }
-
-var A, B string
-var Aval, Bval, X int
 
 // Init callback representing the invocation of a chaincode
 // This chaincode will manage two accounts A and B and will transfer X units from A to B upon invoke
@@ -101,8 +101,8 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 }
 
 func main() {
-	//err := shim.Start(new(SimpleChaincode))
-	//if err != nil {
-	//	fmt.Printf("Error starting Simple chaincode: %s", err)
-	//}
+	err := shim.Start(new(SimpleChaincode))
+	if err != nil {
+		fmt.Printf("Error starting Simple chaincode: %s", err)
+	}
 }

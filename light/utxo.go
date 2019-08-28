@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developer Jiyou Wang <dev@pallet.one>
  * @date 2018
@@ -31,22 +32,9 @@ import (
 )
 
 const (
-	utxosArriveTimeout = 500 * time.Millisecond // Time allowance before an announced block is explicitly requested
-	utxosGatherSlack   = 100 * time.Millisecond // Interval used to collate almost-expired announces with fetches
-	utxosReqTimeout    = 5 * time.Second        // Maximum allotted time to return an explicitly requested block
-	utxosMaxQueueDist  = 32                     // Maximum allowed distance from the chain head to queue
-	utxosHashLimit     = 256                    // Maximum number of unique blocks a peer may have announced
-	utxosReqLimit      = 64                     // Maximum number of unique blocks a peer may have delivered
-	OKUTXOsSync        = 0
-	ERRUTXOsOTHERS     = 1
-	ERRUTXOsTIMEOUT    = 2
-	ERRUTXOsExist      = 3
+	OKUTXOsSync   = 0
+	ERRUTXOsExist = 3
 )
-
-type lpsutxo struct {
-	addr  []byte     `json:"addr"`
-	utxos [][][]byte `json:"utxos"`
-}
 
 type utxosRespData struct {
 	addr  string
@@ -58,8 +46,8 @@ func NewUtxosRespData() *utxosRespData {
 }
 
 func (u *utxosRespData) encode() ([][][]byte, error) {
-	var addrarr [][]byte
-	var arrs [][][]byte
+	addrarr := [][]byte{}
+	arrs := [][][]byte{}
 	addrarr = append(addrarr, []byte(u.addr))
 	arrs = append(arrs, addrarr)
 
@@ -171,7 +159,7 @@ func (u *UtxosSync) SaveUtxoView(respdata *utxosRespData) error {
 	if !ok {
 		u.lock.RUnlock()
 		log.Debug("Light PalletOne", "SaveUtxoView key is not exist. addr:", respdata.addr)
-		return errors.New(fmt.Sprintf("addr(%v) is not exist", respdata.addr))
+		return fmt.Errorf("addr(%v) is not exist", respdata.addr)
 	}
 	u.lock.RUnlock()
 
@@ -186,7 +174,7 @@ func (u *UtxosSync) SaveUtxoView(respdata *utxosRespData) error {
 		return err
 	}
 	if err := u.dag.SaveUtxoView(respdata.utxos); err != nil {
-		log.Debug("Light PalletOne", "SaveUtxoView key err", err, "addr:", respdata.addr)
+		log.Debug("Light PalletOne", "SaveUtxoView failed,error:", err, "addr:", respdata.addr)
 		return err
 	}
 	req.step <- OKUTXOsSync

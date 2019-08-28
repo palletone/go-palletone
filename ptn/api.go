@@ -72,7 +72,7 @@ func NewPublicDebugAPI(ptn *PalletOne) *PublicDebugAPI {
 // the private debugging endpoint.
 type PrivateDebugAPI struct {
 	//config *configure.ChainConfig
-	ptn *PalletOne
+	//ptn *PalletOne
 }
 
 // NewPrivateDebugAPI creates a new API definition for the full node-related

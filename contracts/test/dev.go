@@ -32,21 +32,20 @@ type TempCC struct {
 
 var listCC list.List
 
-func listAdd(cc *TempCC) error {
+func listAdd(cc *TempCC) {
 	if cc != nil {
 		log.Debug("listAdd", "TempCC", cc)
 		listCC.PushBack(*cc)
 	}
-	return nil
 }
 
-func listDel(templateId []byte) {
-	for e := listCC.Front(); e != nil; e = e.Next() {
-		if bytes.Equal(e.Value.(TempCC).templateId, templateId) {
-			listCC.Remove(e)
-		}
-	}
-}
+//func listDel(templateId []byte) {
+//	for e := listCC.Front(); e != nil; e = e.Next() {
+//		if bytes.Equal(e.Value.(TempCC).templateId, templateId) {
+//			listCC.Remove(e)
+//		}
+//	}
+//}
 
 func listGet(templateId []byte) (*TempCC, error) {
 	for e := listCC.Front(); e != nil; e = e.Next() {
@@ -78,13 +77,13 @@ func Install(chainID, ccName, ccPath, ccVersion, ccDescription, ccAbi, ccLanguag
 	buffer.Write([]byte(ccVersion))
 	tpid := crypto.Keccak256Hash(buffer.Bytes())
 	payloadUnit := &modules.ContractTplPayload{
-		TemplateId: []byte(tpid[:]),
+		TemplateId: tpid[:],
 		//Name:       ccName,
 		//Path:       ccPath,
 		//Version:    ccVersion,
 	}
 	log.Info("enter contract debug test", "templateId", tpid)
-	tcc := &TempCC{templateId: []byte(tpid[:]), name: ccName, path: ccPath, version: ccVersion, description: ccDescription, abi: ccAbi, language: ccLanguage}
+	tcc := &TempCC{templateId: tpid[:], name: ccName, path: ccPath, version: ccVersion, description: ccDescription, abi: ccAbi, language: ccLanguage}
 	//  保存
 	listAdd(tcc)
 	return payloadUnit, nil
@@ -145,6 +144,10 @@ func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byt
 		Version: usrcc.Version,
 	}
 	spec.ChaincodeId = chaincodeID
+	cp := idag.GetChainParameters()
+	spec.CpuQuota = cp.UccCpuQuota  //微妙单位（100ms=100000us=上限为1个CPU）
+	spec.CpuShare = cp.UccCpuShares //占用率，默认1024，即可占用一个CPU，相对值
+	spec.Memory = cp.UccMemory      //字节单位 物理内存  1073741824  1G 2147483648 2G 209715200 200m 104857600 100m
 	err = ucc.DeployUserCC(depId.Bytes(), chaincodeData, spec, chainID, txId, txsim, setTimeOut)
 	if err != nil {
 		log.Error("deployUserCC err:", "error", err)
@@ -181,8 +184,8 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 
 	var mksupt manger.Support = &manger.SupportImpl{}
 	creator := []byte(chainID)
-	cc := &list2.CCInfo{}
-	var err error
+	//cc := &list2.CCInfo{}
+	//var err error
 	chain := list2.GetAllChaincode(chainID)
 	if chain != nil {
 		for k, v := range chain.CClist {
@@ -190,7 +193,7 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 			log.Infof("\n\nchaincode info =======%v", v)
 		}
 	}
-	cc, err = list2.GetChaincode(chainID, deployId)
+	cc, err := list2.GetChaincode(chainID, deployId)
 	if err != nil {
 		return nil, err
 	}

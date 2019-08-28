@@ -33,7 +33,6 @@ import (
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/tokenengine"
 )
 
 /**
@@ -136,11 +135,11 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 			requestMsgIndex = msgIdx
 			// 参数临界值验证
 			payload, _ := msg.Payload.(*modules.ContractDeployRequestPayload)
-			if len(payload.TplId) == 0 || payload.Timeout < 0 {
+			if len(payload.TemplateId) == 0 {
 				return TxValidationCode_INVALID_CONTRACT, txFee
 			}
 
-			validateCode := validate.validateContractdeploy(payload.TplId)
+			validateCode := validate.validateContractdeploy(payload.TemplateId)
 			if validateCode != TxValidationCode_VALID {
 				return validateCode, txFee
 			}
@@ -260,7 +259,8 @@ func (validate *Validate) validateTxFee(tx *modules.Transaction) (bool, []*modul
 		log.Warn("Cannot validate tx fee, your validate utxoquery not set")
 		return true, nil
 	}
-	feeAllocate, err := tx.GetTxFeeAllocate(validate.utxoquery.GetUtxoEntry, tokenengine.GetScriptSigners, common.Address{})
+	feeAllocate, err := tx.GetTxFeeAllocate(validate.utxoquery.GetUtxoEntry,
+		validate.tokenEngine.GetScriptSigners, common.Address{})
 	if err != nil {
 		log.Warn("compute tx fee error: " + err.Error())
 		return false, nil
@@ -269,6 +269,10 @@ func (validate *Validate) validateTxFee(tx *modules.Transaction) (bool, []*modul
 	minFee := &modules.AmountAsset{Amount: 0, Asset: assetId.ToAsset()}
 	if validate.statequery != nil {
 		minFee, err = validate.statequery.GetMinFee()
+		if err != nil {
+			log.Errorf("GetMinFee throw an error:%s", err.Error())
+			return true, feeAllocate
+		}
 	}
 	if minFee.Amount > 0 { //需要验证最小手续费
 		total := uint64(0)
@@ -358,7 +362,7 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 		}
 		rewards := map[common.Address][]modules.AmountAsset{}
 		for key, v := range addrMap {
-			addr := string(key[len(constants.RewardAddressPrefix):])
+			addr := key[len(constants.RewardAddressPrefix):]
 			incomeAddr, _ := common.StringToAddress(addr)
 			aa := []modules.AmountAsset{}
 			rlp.DecodeBytes(v.Value, &aa)
@@ -373,12 +377,12 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			if !ok {
 				reward = []modules.AmountAsset{}
 			}
-			reward = addIncome(reward, ad.Amount, ad.Asset)
+			reward = validate. addIncome(reward, ad.Amount, ad.Asset)
 			rewards[ad.Addr] = reward
 		}
 		//Check payment output is correct
 		payment := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
-		if !compareRewardAndOutput(rewards, payment.Outputs) {
+		if !validate. compareRewardAndOutput(rewards, payment.Outputs) {
 			log.Errorf("Coinbase tx[%s] Output not match", tx.Hash().String())
 			log.DebugDynamic(func() string {
 				rjson, _ := json.Marshal(rewards)
@@ -395,7 +399,7 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 				log.Errorf("Coinbase tx[%s] contract id not correct", tx.Hash().String())
 				return TxValidationCode_INVALID_COINBASE
 			}
-			if !compareRewardAndStateClear(rewards, clearStateInvoke.WriteSet) {
+			if !validate. compareRewardAndStateClear(rewards, clearStateInvoke.WriteSet) {
 				log.Errorf("Coinbase tx[%s] Clear statedb not match", tx.Hash().String())
 				log.DebugDynamic(func() string {
 					rjson, _ := json.Marshal(rewards)
@@ -417,12 +421,13 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			if err == nil { //之前有奖励
 				rlp.DecodeBytes(data, &income)
 			}
+			v1 := *v
 			log.DebugDynamic(func() string {
 				data, _ := json.Marshal(income)
-				return v.Addr.String() + " Coinbase History reward:" + string(data)
+				return v1.Addr.String() + " Coinbase History reward:" + string(data)
 			})
 			log.Debugf("Add reward %d %s to %s", v.Amount, v.Asset.String(), v.Addr.String())
-			newValue := addIncome(income, v.Amount, v.Asset)
+			newValue :=validate. addIncome(income, v.Amount, v.Asset)
 			rewards[v.Addr] = newValue
 		}
 		//比对reward和writeset是否一致
@@ -431,7 +436,7 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			log.Errorf("Coinbase tx[%s] contract id not correct", tx.Hash().String())
 			return TxValidationCode_INVALID_COINBASE
 		}
-		if compareRewardAndWriteset(rewards, invoke.WriteSet) {
+		if validate. compareRewardAndWriteset(rewards, invoke.WriteSet) {
 			return TxValidationCode_VALID
 		} else {
 			log.Errorf("Coinbase tx[%s] contract write set not correct", tx.Hash().String())
@@ -446,24 +451,25 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 	return TxValidationCode_VALID
 }
 
-func compareRewardAndOutput(rewards map[common.Address][]modules.AmountAsset, outputs []*modules.Output) bool {
+func (validate *Validate) compareRewardAndOutput(rewards map[common.Address][]modules.AmountAsset, outputs []*modules.Output) bool {
 	comparedCount := 0
 	for addr, reward := range rewards {
-		if rewardExistInOutputs(addr, reward, outputs) {
+		if validate.rewardExistInOutputs(addr, reward, outputs) {
 			comparedCount++
 		} else {
 			return false
 		}
 
 	}
-	if comparedCount != len(outputs) {
-		return false
-	}
-	return true
+	return comparedCount == len(outputs)
+	// if comparedCount != len(outputs) {
+	// 	return false
+	// }
+	// return true
 }
-func rewardExistInOutputs(addr common.Address, aa []modules.AmountAsset, outputs []*modules.Output) bool {
+func (validate *Validate) rewardExistInOutputs(addr common.Address, aa []modules.AmountAsset, outputs []*modules.Output) bool {
 	for _, out := range outputs {
-		outAddr, _ := tokenengine.GetAddressFromScript(out.PkScript)
+		outAddr, _ := validate.tokenEngine.GetAddressFromScript(out.PkScript)
 		if outAddr.Equal(addr) {
 
 			for _, a := range aa {
@@ -477,10 +483,10 @@ func rewardExistInOutputs(addr common.Address, aa []modules.AmountAsset, outputs
 	}
 	return true
 }
-func compareRewardAndStateClear(rewards map[common.Address][]modules.AmountAsset, writeset []modules.ContractWriteSet) bool {
+func (validate *Validate) compareRewardAndStateClear(rewards map[common.Address][]modules.AmountAsset, writeset []modules.ContractWriteSet) bool {
 	comparedCount := 0
 	empty, _ := rlp.EncodeToBytes([]modules.AmountAsset{})
-	for addr, _ := range rewards {
+	for addr := range rewards {
 		addrKey := constants.RewardAddressPrefix + addr.String()
 		for _, w := range writeset {
 			// if !w.IsDelete {
@@ -492,17 +498,17 @@ func compareRewardAndStateClear(rewards map[common.Address][]modules.AmountAsset
 		}
 
 	}
-	//if comparedCount != len(writeset) {
-	if comparedCount != len(rewards) { //所有的Reward的状态数据库被清空
-		return false
-	}
-	return true
+	return comparedCount == len(writeset)
+	// if comparedCount != len(rewards) { //所有的Reward的状态数据库被清空
+	// 	return false
+	// }
+	// return true
 }
-func compareRewardAndWriteset(rewards map[common.Address][]modules.AmountAsset, writeset []modules.ContractWriteSet) bool {
+func (validate *Validate) compareRewardAndWriteset(rewards map[common.Address][]modules.AmountAsset, writeset []modules.ContractWriteSet) bool {
 	comparedCount := 0
 	for addr, reward := range rewards {
 
-		if rewardExist(addr, reward, writeset) {
+		if validate.rewardExist(addr, reward, writeset) {
 			comparedCount++
 		} else {
 
@@ -510,12 +516,13 @@ func compareRewardAndWriteset(rewards map[common.Address][]modules.AmountAsset, 
 		}
 
 	}
-	if comparedCount != len(rewards) { //所有的Reward的状态数据库被清空
-		return false
-	}
-	return true
+	return comparedCount == len(rewards)
+	// if comparedCount != len(rewards) { //所有的Reward的状态数据库被清空
+	// 	return false
+	// }
+	// return true
 }
-func rewardExist(addr common.Address, aa []modules.AmountAsset, writeset []modules.ContractWriteSet) bool {
+func (validate *Validate) rewardExist(addr common.Address, aa []modules.AmountAsset, writeset []modules.ContractWriteSet) bool {
 	for _, w := range writeset {
 		if w.Key == constants.RewardAddressPrefix+addr.String() {
 			dbAa := []modules.AmountAsset{}
@@ -527,9 +534,11 @@ func rewardExist(addr common.Address, aa []modules.AmountAsset, writeset []modul
 			for _, a := range aa {
 				for _, b := range dbAa {
 					if a.Asset.Equal(b.Asset) && a.Amount != b.Amount {
+						a1 := a
+						b1 := b
 						log.DebugDynamic(func() string {
 							data, _ := json.Marshal(dbAa)
-							return fmt.Sprintf("Coinbase rewardExist false, a[%d] b[%d], db writeset:%s", a.Amount, b.Amount, string(data))
+							return fmt.Sprintf("Coinbase rewardExist false, a[%d] b[%d], db writeset:%s", a1.Amount, b1.Amount, string(data))
 						})
 						return false
 					}
@@ -540,7 +549,7 @@ func rewardExist(addr common.Address, aa []modules.AmountAsset, writeset []modul
 	return true
 }
 
-func addIncome(income []modules.AmountAsset, newAmount uint64, asset *modules.Asset) []modules.AmountAsset {
+func (validate *Validate) addIncome(income []modules.AmountAsset, newAmount uint64, asset *modules.Asset) []modules.AmountAsset {
 	newValue := []modules.AmountAsset{}
 	hasOldValue := false
 	for _, aa := range income {

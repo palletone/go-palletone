@@ -21,8 +21,11 @@ func RawTxInSignature(tx *modules.Transaction, msgIdx, idx int, subScript []byte
 	if err != nil {
 		return nil, fmt.Errorf("cannot parse output script: %v", err)
 	}
-	data := calcSignatureData(parsedScript, hashType, tx, msgIdx, idx, crypto)
+	data := calcSignatureData(parsedScript, hashType, tx, msgIdx, idx)
 	sign, err := crypto.Sign(addr, data)
+	if err != nil {
+		return nil, fmt.Errorf("cannot sign tx input: %s", err)
+	}
 	return append(sign, byte(hashType)), nil
 	//signature, err := key.Sign(hash)
 	//if err != nil {
@@ -40,7 +43,9 @@ func RawTxInSignature(tx *modules.Transaction, msgIdx, idx int, subScript []byte
 // as the idx'th input. privKey is serialized in either a compressed or
 // uncompressed format based on compress. This format must match the same format
 // used to generate the payment address, or the script validation will fail.
-func SignatureScript(tx *modules.Transaction, msgIdx, idx int, subscript []byte, hashType SigHashType, pubKey []byte, crypto ICrypto, addr common.Address) ([]byte, error) {
+func SignatureScript(tx *modules.Transaction, msgIdx, idx int, 
+	subscript []byte, hashType SigHashType, pubKey []byte, 
+	crypto ICrypto, addr common.Address) ([]byte, error) {
 	sig, err := RawTxInSignature(tx, msgIdx, idx, subscript, hashType, crypto, addr)
 	if err != nil {
 		return nil, err
@@ -57,7 +62,9 @@ func SignatureScript(tx *modules.Transaction, msgIdx, idx int, subscript []byte,
 	return NewScriptBuilder().AddData(sig).AddData(pubKey).Script()
 }
 
-func p2pkSignatureScript(tx *modules.Transaction, msgIdx, idx int, subScript []byte, hashType SigHashType, crypto ICrypto, addr common.Address) ([]byte, error) {
+func p2pkSignatureScript(tx *modules.Transaction, msgIdx, idx int, 
+	subScript []byte, hashType SigHashType, 
+	crypto ICrypto, addr common.Address) ([]byte, error) {
 	sig, err := RawTxInSignature(tx, msgIdx, idx, subScript, hashType, crypto, addr)
 	if err != nil {
 		return nil, err
@@ -67,10 +74,11 @@ func p2pkSignatureScript(tx *modules.Transaction, msgIdx, idx int, subScript []b
 }
 
 // signMultiSig signs as many of the outputs in the provided multisig script as
-// possible. It returns the generated script and a boolean if the script fulfils
+// possible. It returns the generated script and a boolean if the script fulfills
 // the contract (i.e. nrequired signatures are provided).  Since it is arguably
 // legal to not be able to sign any of the outputs, no error is returned.
-func signMultiSig(tx *modules.Transaction, msgIdx, idx int, subScript []byte, hashType SigHashType,
+func signMultiSig(tx *modules.Transaction, msgIdx, idx int, 
+	subScript []byte, hashType SigHashType,
 	addresses []AddressOriginalData, nRequired int, crypto ICrypto) ([]byte, bool) {
 	// We start with a single OP_FALSE to work around the (now standard)
 	// but in the reference implementation that causes a spurious pop at
@@ -166,7 +174,7 @@ func sign(tx *modules.Transaction, msgIdx, idx int,
 // and nrequired are the result of extracting the addresses from pkscript.
 // The return value is the best effort merging of the two scripts. Calling this
 // function with addresses, class and nrequired that do not match pkScript is
-// an error and results in undefined behaviour.
+// an error and results in undefined behavior.
 func mergeScripts(tx *modules.Transaction, msgIdx, idx int,
 	pkScript []byte, class ScriptClass, addresses []AddressOriginalData,
 	nRequired int, sigScript, prevScript []byte, crypto ICrypto) []byte {
@@ -193,7 +201,7 @@ func mergeScripts(tx *modules.Transaction, msgIdx, idx int,
 		script := sigPops[len(sigPops)-1].data
 
 		// We already know this information somewhere up the stack.
-		class, addresses, nrequired, err :=
+		class, addresses, nrequired, _ :=
 			ExtractPkScriptAddrs(script)
 
 		// regenerate scripts.
@@ -214,12 +222,12 @@ func mergeScripts(tx *modules.Transaction, msgIdx, idx int,
 		return mergeMultiSig(tx, msgIdx, idx, addresses, nRequired, pkScript,
 			sigScript, prevScript, crypto)
 
-	// It doesn't actualy make sense to merge anything other than multiig
+	// It doesn't actually make sense to merge anything other than multiig
 	// and scripthash (because it could contain multisig). Everything else
 	// has either zero signature, can't be spent, or has a single signature
 	// which is either present or not. The other two cases are handled
 	// above. In the conflict case here we just assume the longest is
-	// correct (this matches behaviour of the reference implementation).
+	// correct (this matches behavior of the reference implementation).
 	default:
 		if len(sigScript) > len(prevScript) {
 			return sigScript
@@ -233,7 +241,7 @@ func mergeScripts(tx *modules.Transaction, msgIdx, idx int,
 // and nRequired should be the results from extracting the addresses from
 // pkScript. Since this function is internal only we assume that the arguments
 // have come from other functions internally and thus are all consistent with
-// each other, behaviour is undefined if this contract is broken.
+// each other, behavior is undefined if this contract is broken.
 func mergeMultiSig(tx *modules.Transaction, msgIdx, idx int, addresses []AddressOriginalData,
 	nRequired int, pkScript, sigScript, prevScript []byte, crypto ICrypto) []byte {
 
@@ -276,7 +284,7 @@ sigLoop:
 	for _, sig := range possibleSigs {
 
 		// can't have a valid signature that doesn't at least have a
-		// hashtype, in practise it is even longer than this. but
+		// hashtype, in practice it is even longer than this. but
 		// that'll be checked next.
 		if len(sig) < 1 {
 			continue
@@ -294,7 +302,7 @@ sigLoop:
 		// however, assume no sigs etc are in the script since that
 		// would make the transaction nonstandard and thus not
 		// MultiSigTy, so we just need to hash the full thing.
-		data := calcSignatureData(pkPops, hashType, tx, msgIdx, idx, crypto)
+		data := calcSignatureData(pkPops, hashType, tx, msgIdx, idx)
 
 		for _, addr := range addresses {
 			// All multisig addresses should be pubkey addreses

@@ -132,7 +132,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 	//}
 	// generate p2pkh bytes
 	addr, _ := common.StringToAddress(holder.String())
-	pkscript := tokenengine.GenerateP2PKHLockScript(addr.Bytes())
+	pkscript := tokenengine.Instance.GenerateP2PKHLockScript(addr.Bytes())
 	asset, _ := modules.StringToAsset(genesis.GasToken)
 	txout := &modules.Output{
 		Value: genesis.GetTokenAmount(),
@@ -180,7 +180,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 			tx.TxMessages = append(tx.TxMessages, newMsg)
 		}
 	}
-	// step4, generate inital mediator info payload
+	// step4, generate initial mediator info payload
 	//initialMediatorMsgs := dagCommon.GetInitialMediatorMsgs(genesis)
 	//tx.TxMessages = append(tx.TxMessages, initialMediatorMsgs...)
 
@@ -210,7 +210,8 @@ func GenContractTransction(orgTx *modules.Transaction, msgs []*modules.Message) 
 	for i := 0; i < len(msgs); i++ {
 		tx.AddMessage(msgs[i])
 	}
-
+	tx.CertId = orgTx.CertId
+	tx.Illegal = orgTx.Illegal
 	return tx, nil
 }
 
@@ -330,6 +331,7 @@ func InitialMediatorCandidates(len int, address string) []*core.InitialMediator 
 	for i := 0; i < len; i++ {
 		im := core.NewInitialMediator()
 		im.AddStr = address
+		im.RewardAdd = address
 		im.InitPubKey = core.DefaultInitPubKey
 		im.Node = deFaultNode
 		initialMediator[i] = im

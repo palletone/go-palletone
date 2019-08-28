@@ -30,17 +30,14 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 
 	"github.com/palletone/go-palletone/core/node"
-	//"github.com/palletone/go-palletone/dag/modules"
-	"compress/gzip"
-	"strings"
 
-	"github.com/ethereum/go-ethereum/rlp"
+	//"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/internal/debug"
 )
 
-const (
-	importBatchSize = 2500
-)
+//const (
+//	importBatchSize = 2500
+//)
 
 // Fatalf formats a message to standard error and exits the program.
 // The message is also printed to standard output if standard error
@@ -85,89 +82,90 @@ func StartNode(stack *node.Node) {
 	}()
 }
 
-func ImportChain(fn string) error {
-	// Watch for Ctrl-C while the import is running.
-	// If a signal is received, the import will stop at the next batch.
-	interrupt := make(chan os.Signal, 1)
-	stop := make(chan struct{})
-	signal.Notify(interrupt, syscall.SIGINT, syscall.SIGTERM)
-	defer signal.Stop(interrupt)
-	defer close(interrupt)
-	go func() {
-		if _, ok := <-interrupt; ok {
-			log.Info("Interrupted during import, stopping at next batch")
-		}
-		close(stop)
-	}()
-	checkInterrupt := func() bool {
-		select {
-		case <-stop:
-			return true
-		default:
-			return false
-		}
-	}
-
-	log.Info("Importing blockchain", "file", fn)
-
-	// Open the file handle and potentially unwrap the gzip stream
-	fh, err := os.Open(fn)
-	if err != nil {
-		return err
-	}
-	defer fh.Close()
-
-	var reader io.Reader = fh
-	if strings.HasSuffix(fn, ".gz") {
-		if reader, err = gzip.NewReader(reader); err != nil {
-			return err
-		}
-	}
-	stream := rlp.NewStream(reader, 0)
-	stream = stream
-	// Run actual the import.
-
-	//blocks := make(types.Blocks, importBatchSize)
-	//n := 0
-	for batch := 0; ; batch++ {
-		// Load a batch of RLP blocks.
-		if checkInterrupt() {
-			return fmt.Errorf("interrupted")
-		}
-		//		i := 0
-		//		for ; i < importBatchSize; i++ {
-		//			var b types.Block
-		//			if err := stream.Decode(&b); err == io.EOF {
-		//				break
-		//			} else if err != nil {
-		//				return fmt.Errorf("at block %d: %v", n, err)
-		//			}
-		//			// don't import first block
-		//			if b.NumberU64() == 0 {
-		//				i--
-		//				continue
-		//			}
-		//			blocks[i] = &b
-		//			n++
-		//		}
-		//		if i == 0 {
-		//			break
-		//		}
-		//		// Import the batch.
-		//		if checkInterrupt() {
-		//			return fmt.Errorf("interrupted")
-		//		}
-		//		missing := missingBlocks(chain, blocks[:i])
-		//		if len(missing) == 0 {
-		//			log.Info("Skipping batch as all blocks present", "batch", batch, "first", blocks[0].Hash(), "last", blocks[i-1].Hash())
-		//			continue
-		//		}
-		//		if _, err := chain.InsertChain(missing); err != nil {
-		//			return fmt.Errorf("invalid block %d: %v", n, err)
-		//		}
-	}
-	return nil
-}
+//func ImportChain(fn string) error {
+//	// Watch for Ctrl-C while the import is running.
+//	// If a signal is received, the import will stop at the next batch.
+//	interrupt := make(chan os.Signal, 1)
+//	stop := make(chan struct{})
+//	signal.Notify(interrupt, syscall.SIGINT, syscall.SIGTERM)
+//	defer signal.Stop(interrupt)
+//	defer close(interrupt)
+//	go func() {
+//		if _, ok := <-interrupt; ok {
+//			log.Info("Interrupted during import, stopping at next batch")
+//		}
+//		close(stop)
+//	}()
+//	checkInterrupt := func() bool {
+//		select {
+//		case <-stop:
+//			return true
+//		default:
+//			return false
+//		}
+//	}
+//
+//	log.Info("Importing blockchain", "file", fn)
+//
+//	// Open the file handle and potentially unwrap the gzip stream
+//	fh, err := os.Open(fn)
+//	if err != nil {
+//		return err
+//	}
+//	defer fh.Close()
+//
+//	var reader io.Reader = fh
+//	if strings.HasSuffix(fn, ".gz") {
+//		if reader, err = gzip.NewReader(reader); err != nil {
+//			return err
+//		}
+//	}
+//	//stream := rlp.NewStream(reader, 0)
+//	//stream = stream
+//	// Run actual the import.
+//
+//	//blocks := make(types.Blocks, importBatchSize)
+//	//n := 0
+//	//for batch := 0; ; batch++ {
+//		// Load a batch of RLP blocks.
+//		if checkInterrupt() {
+//			return fmt.Errorf("interrupted")
+//		}
+//		//		i := 0
+//		//		for ; i < importBatchSize; i++ {
+//		//			var b types.Block
+//		//			if err := stream.Decode(&b); err == io.EOF {
+//		//				break
+//		//			} else if err != nil {
+//		//				return fmt.Errorf("at block %d: %v", n, err)
+//		//			}
+//		//			// don't import first block
+//		//			if b.NumberU64() == 0 {
+//		//				i--
+//		//				continue
+//		//			}
+//		//			blocks[i] = &b
+//		//			n++
+//		//		}
+//		//		if i == 0 {
+//		//			break
+//		//		}
+//		//		// Import the batch.
+//		//		if checkInterrupt() {
+//		//			return fmt.Errorf("interrupted")
+//		//		}
+//		//		missing := missingBlocks(chain, blocks[:i])
+//		//		if len(missing) == 0 {
+//		//			log.Info("Skipping batch as all blocks present", "batch", batch, "first", blocks[0].Hash(),
+//      //             "last", blocks[i-1].Hash())
+//		//			continue
+//		//		}
+//		//		if _, err := chain.InsertChain(missing); err != nil {
+//		//			return fmt.Errorf("invalid block %d: %v", n, err)
+//		//		}
+//	//}
+//	return nil
+//}
 
 /*
 // ExportChain exports a blockchain into the specified file, truncating any data

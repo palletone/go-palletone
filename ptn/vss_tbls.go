@@ -27,14 +27,14 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-func (self *ProtocolManager) newProducedUnitBroadcastLoop() {
+func (pm *ProtocolManager) newProducedUnitBroadcastLoop() {
 	for {
 		select {
-		case event := <-self.newProducedUnitCh:
-			self.BroadcastUnit(event.Unit, true)
+		case event := <-pm.newProducedUnitCh:
+			pm.BroadcastUnit(event.Unit, true)
 			//self.BroadcastCorsHeader(event.Unit.Header(), self.SubProtocols[0].Name)
 
-		case <-self.newProducedUnitSub.Err():
+		case <-pm.newProducedUnitSub.Err():
 			return
 		}
 	}
@@ -73,29 +73,29 @@ func (pm *ProtocolManager) toGroupSign(event modules.ToGroupSignEvent) {
 	iun := pm.dag.GetIrreversibleUnitNum(gasToken)
 
 	// 对稳定单元后一个unit进行群签名
-	newUnit, err := pm.dag.GetUnitByNumber(&modules.ChainIndex{gasToken, iun + 1})
+	newHash, err := pm.dag.GetUnitHash(&modules.ChainIndex{AssetID: gasToken, Index: iun + 1})
 	if err != nil {
 		log.Debugf(err.Error())
 		return
 	}
 
-	go pm.producer.AddToTBLSSignBufs(newUnit)
+	go pm.producer.AddToTBLSSignBufs(newHash)
 }
 
 // @author Albert·Gou
-func (self *ProtocolManager) sigShareTransmitLoop() {
+func (pm *ProtocolManager) sigShareTransmitLoop() {
 	for {
 		select {
-		case event := <-self.sigShareCh:
-			unit, err := self.dag.GetUnitByHash(event.UnitHash)
+		case event := <-pm.sigShareCh:
+			unit, err := pm.dag.GetUnitByHash(event.UnitHash)
 			if unit != nil && err == nil {
 				med := unit.Author()
-				node := self.dag.GetActiveMediator(med).Node
-				self.transmitSigShare(node, &event)
+				node := pm.dag.GetActiveMediator(med).Node
+				pm.transmitSigShare(node, &event)
 			}
 
 			// Err() channel will be closed when unsubscribing.
-		case <-self.sigShareSub.Err():
+		case <-pm.sigShareSub.Err():
 			return
 		}
 	}
@@ -120,14 +120,14 @@ func (pm *ProtocolManager) transmitSigShare(node *discover.Node, sigShare *mp.Si
 }
 
 // @author Albert·Gou
-func (self *ProtocolManager) groupSigBroadcastLoop() {
+func (pm *ProtocolManager) groupSigBroadcastLoop() {
 	for {
 		select {
-		case event := <-self.groupSigCh:
-			self.BroadcastGroupSig(&event)
+		case event := <-pm.groupSigCh:
+			pm.BroadcastGroupSig(&event)
 
 		// Err() channel will be closed when unsubscribing.
-		case <-self.groupSigSub.Err():
+		case <-pm.groupSigSub.Err():
 			return
 		}
 	}
@@ -143,14 +143,14 @@ func (pm *ProtocolManager) BroadcastGroupSig(groupSig *mp.GroupSigEvent) {
 }
 
 // @author Albert·Gou
-func (self *ProtocolManager) vssDealTransmitLoop() {
+func (pm *ProtocolManager) vssDealTransmitLoop() {
 	for {
 		select {
-		case event := <-self.vssDealCh:
-			self.transmitVSSDeal(&event)
+		case event := <-pm.vssDealCh:
+			pm.transmitVSSDeal(&event)
 
 			// Err() channel will be closed when unsubscribing.
-		case <-self.vssDealSub.Err():
+		case <-pm.vssDealSub.Err():
 			return
 		}
 	}
@@ -182,14 +182,14 @@ func (pm *ProtocolManager) transmitVSSDeal(deal *mp.VSSDealEvent) {
 }
 
 // @author Albert·Gou
-func (self *ProtocolManager) vssResponseBroadcastLoop() {
+func (pm *ProtocolManager) vssResponseBroadcastLoop() {
 	for {
 		select {
-		case event := <-self.vssResponseCh:
-			self.broadcastVssResp(&event)
+		case event := <-pm.vssResponseCh:
+			pm.broadcastVssResp(&event)
 
 			// Err() channel will be closed when unsubscribing.
-		case <-self.vssResponseSub.Err():
+		case <-pm.vssResponseSub.Err():
 			return
 		}
 	}

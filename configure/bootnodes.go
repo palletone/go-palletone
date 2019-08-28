@@ -21,6 +21,10 @@
  */
 package configure
 
+const UdpVersion = 1070
+
+var GenesisHash = []byte("")
+
 // MainnetBootnodes are the pnode URLs of the P2P bootstrap nodes running on
 // the main PalletOne network.
 var MainnetBootnodes = []string{

@@ -24,8 +24,6 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"os"
 	"strings"
 
 	"github.com/palletone/go-palletone/common/log"
@@ -35,7 +33,6 @@ import (
 	"github.com/palletone/go-palletone/core/vmContractPub/metadata"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	cutil "github.com/palletone/go-palletone/vm/common"
-	"github.com/spf13/viper"
 )
 
 // Interface for validating the specification and and writing the package for
@@ -56,9 +53,9 @@ type Platform interface {
 var _Find = Find
 
 //var _GetPath = config.GetPath
-var _VGetBool = viper.GetBool
-var _OSStat = os.Stat
-var _IOUtilReadFile = ioutil.ReadFile
+//var _VGetBool = viper.GetBool
+//var _OSStat = os.Stat
+//var _IOUtilReadFile = ioutil.ReadFile
 var _CUtilWriteBytesToPackage = cutil.WriteBytesToPackage
 var _generateDockerfile = generateDockerfile
 var _generateDockerBuild = generateDockerBuild

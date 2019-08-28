@@ -31,11 +31,11 @@ import (
 )
 
 var (
-	rttMinEstimate   = 2 * time.Second  // Minimum round-trip time to target for download requests
-	rttMaxEstimate   = 20 * time.Second // Maximum round-trip time to target for download requests
-	rttMinConfidence = 0.1              // Worse confidence factor in our estimated RTT value
-	ttlScaling       = 3                // Constant scaling factor for RTT -> TTL conversion
-	ttlLimit         = time.Minute      // Maximum TTL allowance to prevent reaching crazy timeouts
+	//rttMinEstimate   = 2 * time.Second  // Minimum round-trip time to target for download requests
+	rttMaxEstimate = 20 * time.Second // Maximum round-trip time to target for download requests
+	//rttMinConfidence = 0.1              // Worse confidence factor in our estimated RTT value
+	//ttlScaling       = 3                // Constant scaling factor for RTT -> TTL conversion
+	//ttlLimit         = time.Minute      // Maximum TTL allowance to prevent reaching crazy timeouts
 )
 
 type CorsServer struct {

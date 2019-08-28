@@ -271,15 +271,18 @@ func removeOpcodeByData(pkscript []parsedOpcode, data []byte) []parsedOpcode {
 	return retScript
 
 }
-func CalcSignatureHash(script []byte, hashType SigHashType, tx *modules.Transaction /**wire.MsgTx*/, msgIdx, idx int, crypto ICrypto) ([]byte, error) {
+func CalcSignatureHash(script []byte, hashType SigHashType, 
+	tx *modules.Transaction, msgIdx, idx int, 
+	crypto ICrypto) ([]byte, error) {
 	parsedScript, err := parseScript(script)
 	if err != nil {
 		return nil, fmt.Errorf("cannot parse output script: %v", err)
 	}
 	return calcSignatureHash(parsedScript, hashType, tx, msgIdx, idx, crypto), nil
 }
-func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *modules.Transaction, msgIdx, idx int, crypto ICrypto) []byte {
-	data := calcSignatureData(script, hashType, tx, msgIdx, idx, crypto)
+func calcSignatureHash(script []parsedOpcode, hashType SigHashType, 
+	tx *modules.Transaction, msgIdx, idx int, crypto ICrypto) []byte {
+	data := calcSignatureData(script, hashType, tx, msgIdx, idx)
 	hash, _ := crypto.Hash(data)
 	return hash
 }
@@ -287,7 +290,8 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *modules.
 // calcSignatureHash will, given a script and hash type for the current script
 // engine instance, calculate the signature hash to be used for signing and
 // verification.
-func calcSignatureData(script []parsedOpcode, hashType SigHashType, tx *modules.Transaction, msgIdx, idx int, crypto ICrypto) []byte {
+func calcSignatureData(script []parsedOpcode, hashType SigHashType, 
+	tx *modules.Transaction, msgIdx, idx int) []byte {
 	pay := tx.TxMessages[msgIdx].Payload.(*modules.PaymentPayload)
 	// The SigHashSingle signature type signs only the corresponding input
 	// and output (the output with the same index number as the input).
@@ -373,11 +377,8 @@ func calcSignatureData(script []parsedOpcode, hashType SigHashType, tx *modules.
 		//		payCopy.TxIn[i].Sequence = 0
 		//	}
 		//}
-
-	default:
-		// Consensus treats undefined hashtypes like normal SigHashAll
-		// for purposes of hash generation.
-		fallthrough
+        default:
+                fallthrough
 	case SigHashOld:
 		fallthrough
 	case SigHashAll:
@@ -428,7 +429,7 @@ func getSigOpCount(pops []parsedOpcode, precise bool) int {
 			fallthrough
 		case OP_CHECKMULTISIGVERIFY:
 			// If we are being precise then look for familiar
-			// patterns for multisig, for now all we recognise is
+			// patterns for multisig, for now all we recognize is
 			// OP_1 - OP_16 to signify the number of pubkeys.
 			// Otherwise, we use the max of 20.
 			if precise && i > 0 &&

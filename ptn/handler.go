@@ -17,11 +17,11 @@
 package ptn
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/palletone/go-palletone/dag/palletcache"
+	"runtime"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/coocood/freecache"
@@ -35,17 +35,18 @@ import (
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/palletcache"
 
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/fsouza/go-dockerclient"
+	"github.com/palletone/go-palletone/contracts/contractcfg"
+	"github.com/palletone/go-palletone/contracts/manger"
 	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
-	"sync/atomic"
-	//"github.com/palletone/go-palletone/ptn/lps"
-	"github.com/palletone/go-palletone/contracts/manger"
 	"github.com/palletone/go-palletone/validator"
 	"github.com/palletone/go-palletone/vm/common"
-	"runtime"
 )
 
 const (
@@ -55,10 +56,6 @@ const (
 	// txChanSize is the size of channel listening to TxPreEvent.
 	// The number is referenced from the size of tx pool.
 	txChanSize = 4096
-)
-
-var (
-	daoChallengeTimeout = 15 * time.Second // Time allowance for a node to reply to the DAO handshake challenge
 )
 
 // errIncompatibleConfig is returned if the requested protocols and configs are
@@ -78,7 +75,7 @@ type ProtocolManager struct {
 	mainAssetId   modules.AssetId
 	receivedCache palletcache.ICache
 	fastSync      uint32 // Flag whether fast sync is enabled (gets disabled if we already have blocks)
-	acceptTxs     uint32 // Flag whether we're considered synchronised (enables transaction processing)
+	acceptTxs     uint32 // Flag whether we're considered synchronized (enables transaction processing)
 
 	lightSync uint32 //Flag whether light sync is enabled
 
@@ -180,7 +177,8 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 	}
 	symbol, _, _, _, _ := gasToken.ParseAssetId()
 	protocolName := symbol
-	//asset, err := modules.NewAsset(strings.ToUpper(gasToken), modules.AssetType_FungibleToken, 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, modules.UniqueIdType_Null, modules.UniqueId{})
+	//asset, err := modules.NewAsset(strings.ToUpper(gasToken), modules.AssetType_FungibleToken,
+	// 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, modules.UniqueIdType_Null, modules.UniqueId{})
 	//if err != nil {
 	//	log.Error("ProtocolManager new asset err", err)
 	//	return nil, err
@@ -206,7 +204,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 		if mode == downloader.FastSync && version < ptn1 {
 			continue
 		}
-		// Compatible; initialise the sub-protocol
+		// Compatible; initialize the sub-protocol
 		version := version // Closure for the run
 		manager.SubProtocols = append(manager.SubProtocols, p2p.Protocol{
 			Name:    protocolName,
@@ -232,22 +230,13 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 				}
 				return nil
 			},
-			//Corss: func() []string {
-			//	return manager.Corss()
-			//},
-			//CorsPeerInfo: func(protocl string, id discover.NodeID) interface{} {
-			//	if p := manager.lightPeers.Peer(id.TerminalString()); p != nil {
-			//		return p.Info(protocl)
-			//	}
-			//	return nil
-			//},
 		})
 	}
 	if len(manager.SubProtocols) == 0 {
 		return nil, errIncompatibleConfig
 	}
 
-	// Construct the different synchronisation mechanisms
+	// Construct the different synchronization mechanisms
 	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer, nil, dag, txpool)
 	manager.fetcher = manager.newFetcher()
 
@@ -271,7 +260,8 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 		if verr != nil && !validator.IsOrphanError(verr) {
 			return verr
 		}
-		log.Debugf("Importing propagated block insert DAG End ValidateUnitExceptGroupSig, unit: %s,validated: %v", hash.String(), verr)
+		log.Debugf("Importing propagated block insert DAG End ValidateUnitExceptGroupSig, unit: %s,validated: %v",
+			hash.String(), verr)
 		return dagerrors.ErrFutureBlock
 	}
 	heighter := func(assetId modules.AssetId) uint64 {
@@ -308,8 +298,8 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 				var (
 					events = make([]interface{}, 0, 2)
 				)
-				events = append(events, modules.ChainHeadEvent{blocks[0]})
-				events = append(events, modules.ChainEvent{blocks[0], blocks[0].UnitHash})
+				events = append(events, modules.ChainHeadEvent{Unit: blocks[0]})
+				events = append(events, modules.ChainEvent{Unit: blocks[0], Hash: blocks[0].UnitHash})
 				pm.dag.PostChainEvents(events)
 			}()
 		}
@@ -334,9 +324,7 @@ func (pm *ProtocolManager) removePeer(id string) {
 		log.Error("Peer removal failed", "peer", id, "err", err)
 	}
 	// Hard disconnect at the networking layer
-	if peer != nil {
-		peer.Peer.Disconnect(p2p.DiscUselessPeer)
-	}
+	peer.Peer.Disconnect(p2p.DiscUselessPeer)
 }
 
 func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan bool) {
@@ -412,8 +400,28 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 		pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
 		go pm.ceBroadcastLoop()
 	}
+	//  是否为linux系統
 	if runtime.GOOS == "linux" {
-		go pm.dockerLoop()
+		client, err := util.NewDockerClient()
+		if err != nil {
+			log.Infof("util.NewDockerClient err: %s\n", err.Error())
+			return
+		}
+		//创建gptn-net网络
+		_, err = client.NetworkInfo(core.DefaultUccNetworkMode)
+		if err != nil {
+			log.Debugf("client.NetworkInfo error: %s", err.Error())
+			_, err := client.CreateNetwork(docker.CreateNetworkOptions{Name: core.DefaultUccNetworkMode, Driver: "bridge"})
+			if err != nil {
+				log.Debugf("client.CreateNetwork error: %s", err.Error())
+				return
+			}
+		}
+		//  是否为jury
+		if contractcfg.GetConfig().IsJury {
+			log.Debugf("starting docker loop")
+			go pm.dockerLoop(client)
+		}
 	}
 }
 
@@ -476,7 +484,8 @@ func (pm *ProtocolManager) handle(p *peer) error {
 func (pm *ProtocolManager) LocalHandle(p *peer) error {
 	// Ignore maxPeers if this is a trusted peer
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
-		log.Debug("ProtocolManager", "handler DiscTooManyPeers:", p2p.DiscTooManyPeers, "pm.peers.Len()", pm.peers.Len(), "peers", pm.peers.GetPeers())
+		log.Debug("ProtocolManager", "handler DiscTooManyPeers:", p2p.DiscTooManyPeers,
+			"pm.peers.Len()", pm.peers.Len(), "peers", pm.peers.GetPeers())
 		return p2p.DiscTooManyPeers
 	}
 	log.Debug("PalletOne peer connected", "name", p.id, "p Trusted:", p.Peer.Info().Network.Trusted)
@@ -615,8 +624,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 	}
-
-	return nil
 }
 
 // BroadcastTx will propagate a transaction to all peers which are not known to
@@ -631,14 +638,14 @@ func (pm *ProtocolManager) BroadcastTx(hash common.Hash, tx *modules.Transaction
 	log.Trace("Broadcast transaction", "hash", hash, "recipients", len(peers))
 }
 
-func (self *ProtocolManager) txBroadcastLoop() {
+func (pm *ProtocolManager) txBroadcastLoop() {
 	for {
 		select {
-		case event := <-self.txCh:
-			self.BroadcastTx(event.Tx.Hash(), event.Tx)
+		case event := <-pm.txCh:
+			pm.BroadcastTx(event.Tx.Hash(), event.Tx)
 
 			// Err() channel will be closed when unsubscribing.
-		case <-self.txSub.Err():
+		case <-pm.txSub.Err():
 			return
 		}
 	}
@@ -653,33 +660,30 @@ func (pm *ProtocolManager) ContractReqLocalSend(event jury.ContractEvent) {
 // will only announce it's availability (depending what's requested).
 func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
 	hash := unit.Hash()
-	// 孤儿单元是需要同步的
-	//for _, parentHash := range unit.ParentHash() {
-	//	if parent, err := pm.dag.GetUnitByHash(parentHash); err != nil || parent == nil {
-	//		log.Error("Propagating dangling block", "index", unit.Number().Index, "hash", hash, "parent_hash", parentHash.String())
-	//		return
-	//	}
-	//}
-
-	data, err := json.Marshal(unit)
+	// If propagation is requested, send to a subset of the peer
+	data, err := rlp.EncodeToBytes(unit)
 	if err != nil {
-		log.Error("ProtocolManager", "BroadcastUnit json marshal err:", err)
-		return
+		log.Errorf("BroadcastUnit rlp encode err:%s", err.Error())
 	}
 
-	// If propagation is requested, send to a subset of the peer
 	peers := pm.peers.PeersWithoutUnit(hash)
 	for _, peer := range peers {
 		peer.SendNewRawUnit(unit, data)
 	}
-	log.Trace("BroadcastUnit Propagated block", "index:", unit.Header().Number.Index, "hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
+	log.Trace("BroadcastUnit Propagated block", "index:", unit.Header().Number.Index,
+		"hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
 }
 
 func (pm *ProtocolManager) ElectionBroadcast(event jury.ElectionEvent, local bool) {
-	//log.Debug("ElectionBroadcast", "event num", event.Event.(jury.ElectionRequestEvent), "data", event.Event.(jury.ElectionRequestEvent).Data)
+	//log.Debug("ElectionBroadcast", "event num", event.Event.(jury.ElectionRequestEvent),
+	// "data", event.Event.(jury.ElectionRequestEvent).Data)
 	peers := pm.peers.GetPeers()
+
 	for _, peer := range peers {
-		peer.SendElectionEvent(event)
+		err := peer.SendElectionEvent(event)
+		if err != nil {
+			log.Debug("ElectionBroadcast", "err", err)
+		}
 	}
 	if local {
 		go pm.contractProc.ProcessElectionEvent(&event)
@@ -694,18 +698,21 @@ func (pm *ProtocolManager) AdapterBroadcast(event jury.AdapterEvent) {
 }
 
 func (pm *ProtocolManager) ContractBroadcast(event jury.ContractEvent, local bool) {
-	//peers := pm.peers.PeersWithoutUnit(event.Tx.TxHash)
+	reqId := event.Tx.RequestHash()
 	peers := pm.peers.GetPeers()
-	log.Debug("ContractBroadcast", "event type", event.CType, "reqId", event.Tx.RequestHash().String(), "peers num", len(peers))
-
+	log.Debugf("[%s]ContractBroadcast, event type[%d], peers num[%d]", reqId.String()[0:8], event.CType, len(peers))
 	for _, peer := range peers {
 		if err := peer.SendContractTransaction(event); err != nil {
-			log.Error("ProtocolManager ContractBroadcast", "SendContractTransaction err:", err.Error())
+			log.Error("ContractBroadcast", "SendContractTransaction err:", err.Error())
 		}
 	}
-
 	if local {
-		go pm.contractProc.ProcessContractEvent(&event)
+		go func() {
+			err := pm.contractProc.ProcessContractEvent(&event)
+			if err != nil {
+				log.Errorf("[%s]ContractBroadcast, error:%s", reqId.String()[0:8], err.Error())
+			}
+		}()
 	}
 }
 
@@ -719,8 +726,8 @@ type NodeInfo struct {
 }
 
 // NodeInfo retrieves some protocol metadata about the running host node.
-func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
-	unit := self.dag.GetCurrentUnit(self.mainAssetId)
+func (pm *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
+	unit := pm.dag.GetCurrentUnit(pm.mainAssetId)
 	var (
 		index = uint64(0)
 		hash  = common.Hash{}
@@ -731,7 +738,7 @@ func (self *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
 	}
 
 	return &NodeInfo{
-		Network: self.networkId,
+		Network: pm.networkId,
 		Index:   index,
 		Genesis: genesisHash,
 		Head:    hash,
@@ -745,27 +752,23 @@ func (pm *ProtocolManager) BroadcastCe(ce []byte) {
 		peer.SendConsensus(ce)
 	}
 }
-func (self *ProtocolManager) ceBroadcastLoop() {
+func (pm *ProtocolManager) ceBroadcastLoop() {
 	for {
 		select {
-		case event := <-self.ceCh:
-			self.BroadcastCe(event.Ce)
+		case event := <-pm.ceCh:
+			pm.BroadcastCe(event.Ce)
 
 			// Err() channel will be closed when unsubscribing.
-		case <-self.ceSub.Err():
+		case <-pm.ceSub.Err():
 			return
 		}
 	}
 }
 
-func (self *ProtocolManager) dockerLoop() {
-	client, err := util.NewDockerClient()
-	if err != nil {
-		log.Infof("util.NewDockerClient err: %s\n", err.Error())
-	}
+func (pm *ProtocolManager) dockerLoop(client *docker.Client) {
 	for {
 		select {
-		case <-self.dockerQuitSync:
+		case <-pm.dockerQuitSync:
 			log.Infof("quit from docker loop")
 			return
 		case <-time.After(time.Duration(30) * time.Second):

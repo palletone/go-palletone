@@ -127,7 +127,7 @@ func (statedb *StateDb) GetAllAccountStates(address common.Address) (map[string]
 	key := accountKey(address)
 	data := getprefix(statedb.db, key)
 	var err error
-	result := make(map[string]*modules.ContractStateValue, 0)
+	result := make(map[string]*modules.ContractStateValue)
 	for dbkey, state_version := range data {
 		state, version, err0 := splitValueAndVersion(state_version)
 		if err0 != nil {

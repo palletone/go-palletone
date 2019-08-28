@@ -66,7 +66,7 @@ type StxoJson struct {
 }
 
 func ConvertStxo2Json(outPoint *modules.OutPoint, stxo *modules.Stxo) *StxoJson {
-	scriptStr, _ := tokenengine.DisasmString(stxo.PkScript)
+	scriptStr, _ := tokenengine.Instance.DisasmString(stxo.PkScript)
 	json := &StxoJson{
 		TxHash:         outPoint.TxHash.String(),
 		MessageIndex:   outPoint.MessageIndex,

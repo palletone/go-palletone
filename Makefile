@@ -19,20 +19,21 @@ GO ?= latest
 BUILD_DIR = $(shell pwd)/build
 
 gptn:
-	go run build/ci.go install ./cmd/gptn
+	go run -mod=vendor build/ci.go install ./cmd/gptn
 	@echo "Done building."
 	@echo "Run \"$(GOBIN)/gptn\" to launch gptn."
 
-swarm:
-	build/env.sh go run build/ci.go install ./cmd/swarm
+mainnet:
+	go build -mod=vendor -tags "mainnet" ./cmd/gptn
 	@echo "Done building."
-	@echo "Run \"$(GOBIN)/swarm\" to launch swarm."
+	@echo "Run \"./gptn\" to launch mainnet node."
 
 all:
-	build/env.sh go run build/ci.go install
+	build/env.sh go run -mod=vendor build/ci.go install
 
+	
 golang-baseimage: 
-	docker build -t palletone/goimg vm/baseimages/platforms/golang/
+	docker pull palletone/goimg
 golang-baseimage-dev:
 	vm/baseimages/dev/tarPro.sh
 	docker build -t palletone/goimg vm/baseimages/dev/
@@ -61,10 +62,10 @@ ios:
 	@echo "Import \"$(GOBIN)/Geth.framework\" to use the library."
 
 test: all
-	build/env.sh go run build/ci.go test
+	build/env.sh go run -mod=vendor build/ci.go test
 
 lint: ## Run linters.
-	build/env.sh go run build/ci.go lint
+	build/env.sh go run -mod=vendor build/ci.go lint
 
 clean:
 	rm -fr build/_workspace $(GOBIN)/*

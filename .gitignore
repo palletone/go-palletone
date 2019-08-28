@@ -66,7 +66,6 @@ cmd/console/leveldb/
 dag/common/unit.go.orig
 cmd/test/
 cmd/console/**/leveldb/
-palletone/
 
 dag/common/utxo.go.orig
 

@@ -348,7 +348,7 @@ func (dl *downloadTester) sync(id string, td uint64, mode SyncMode) error {
 	dl.lock.RUnlock()
 
 	// Synchronise with the chosen peer and ensure proper cleanup afterwards
-	err := dl.downloader.synchronise(id, hash, td, mode, modules.PTNCOIN)
+	err := dl.downloader.synchronize(id, hash, td, mode, modules.PTNCOIN)
 	select {
 	case <-dl.downloader.cancelCh:
 		// Ok, downloader fully cancelled after sync cycle
@@ -1028,7 +1028,7 @@ func testForkedSync(t *testing.T, protocol int, mode SyncMode) {
 	assertOwnForkedChain(t, tester, common+1, []int{common + fork + 1, common + fork + 1})
 }
 
-// Tests that synchronising against a much shorter but much heavyer fork works corrently and is not dropped.
+// Tests that synchronizing against a much shorter but much heavyer fork works corrently and is not dropped.
 //func TestHeavyForkedSync1(t *testing.T) { testHeavyForkedSync(t, 1, FullSync) }
 
 //func TestHeavyForkedSync63Full(t *testing.T) { testHeavyForkedSync(t, 2, FullSync) }
@@ -1306,13 +1306,13 @@ func testEmptyShortCircuit(t *testing.T, protocol int, mode SyncMode) {
 	tester.newPeer("peer", protocol, hashes, headers, blocks)
 
 	// Instrument the downloader to signal body requests
-	bodiesHave, receiptsHave := int32(0), int32(0)
+	bodiesHave := int32(0)
 	tester.downloader.bodyFetchHook = func(headers []*modules.Header) {
 		atomic.AddInt32(&bodiesHave, int32(len(headers)))
 	}
-	tester.downloader.receiptFetchHook = func(headers []*modules.Header) {
-		atomic.AddInt32(&receiptsHave, int32(len(headers)))
-	}
+	//tester.downloader.receiptFetchHook = func(headers []*modules.Header) {
+	//	atomic.AddInt32(&receiptsHave, int32(len(headers)))
+	//}
 	// Synchronise with the peer and make sure all blocks were retrieved
 	if err := tester.sync("peer", 0, mode); err != nil {
 		t.Fatalf("failed to synchronise blocks: %v", err)
@@ -1545,24 +1545,24 @@ func testBlockHeaderAttackerDropping(t *testing.T, protocol int) {
 		result error
 		drop   bool
 	}{
-		{nil, false},                        // Sync succeeded, all is well
-		{errBusy, false},                    // Sync is already in progress, no problem
-		{errUnknownPeer, false},             // Peer is unknown, was already dropped, don't double drop
-		{errBadPeer, true},                  // Peer was deemed bad for some reason, drop it
-		{errStallingPeer, true},             // Peer was detected to be stalling, drop it
-		{errNoPeers, false},                 // No peers to download from, soft race, no issue
-		{errTimeout, true},                  // No hashes received in due time, drop the peer
-		{errEmptyHeaderSet, true},           // No headers were returned as a response, drop as it's a dead end
-		{errPeersUnavailable, true},         // Nobody had the advertised blocks, drop the advertiser
-		{errInvalidAncestor, true},          // Agreed upon ancestor is not acceptable, drop the chain rewriter
-		{errInvalidChain, true},             // Hash chain was detected as invalid, definitely drop
-		{errInvalidBlock, false},            // A bad peer was detected, but not the sync origin
-		{errInvalidBody, false},             // A bad peer was detected, but not the sync origin
-		{errInvalidReceipt, false},          // A bad peer was detected, but not the sync origin
-		{errCancelBlockFetch, false},        // Synchronisation was canceled, origin may be innocent, don't drop
-		{errCancelHeaderFetch, false},       // Synchronisation was canceled, origin may be innocent, don't drop
-		{errCancelBodyFetch, false},         // Synchronisation was canceled, origin may be innocent, don't drop
-		{errCancelReceiptFetch, false},      // Synchronisation was canceled, origin may be innocent, don't drop
+		{nil, false},                // Sync succeeded, all is well
+		{errBusy, false},            // Sync is already in progress, no problem
+		{errUnknownPeer, false},     // Peer is unknown, was already dropped, don't double drop
+		{errBadPeer, true},          // Peer was deemed bad for some reason, drop it
+		{errStallingPeer, true},     // Peer was detected to be stalling, drop it
+		{errNoPeers, false},         // No peers to download from, soft race, no issue
+		{errTimeout, true},          // No hashes received in due time, drop the peer
+		{errEmptyHeaderSet, true},   // No headers were returned as a response, drop as it's a dead end
+		{errPeersUnavailable, true}, // Nobody had the advertised blocks, drop the advertiser
+		{errInvalidAncestor, true},  // Agreed upon ancestor is not acceptable, drop the chain rewriter
+		{errInvalidChain, true},     // Hash chain was detected as invalid, definitely drop
+		//{errInvalidBlock, false},            // A bad peer was detected, but not the sync origin
+		//{errInvalidBody, false},             // A bad peer was detected, but not the sync origin
+		//{errInvalidReceipt, false},          // A bad peer was detected, but not the sync origin
+		{errCancelBlockFetch, false},  // Synchronisation was canceled, origin may be innocent, don't drop
+		{errCancelHeaderFetch, false}, // Synchronisation was canceled, origin may be innocent, don't drop
+		{errCancelBodyFetch, false},   // Synchronisation was canceled, origin may be innocent, don't drop
+		//{errCancelReceiptFetch, false},      // Synchronisation was canceled, origin may be innocent, don't drop
 		{errCancelHeaderProcessing, false},  // Synchronisation was canceled, origin may be innocent, don't drop
 		{errCancelContentProcessing, false}, // Synchronisation was canceled, origin may be innocent, don't drop
 	}
@@ -1582,7 +1582,7 @@ func testBlockHeaderAttackerDropping(t *testing.T, protocol int) {
 		// Simulate a synchronisation and check the required result
 		tester.downloader.synchroniseMock = func(string, common.Hash) error { return tt.result }
 
-		tester.downloader.Synchronise(id, tester.genesis.Hash(), uint64(1000), FullSync, modules.PTNCOIN)
+		tester.downloader.Synchronize(id, tester.genesis.Hash(), uint64(1000), FullSync, modules.PTNCOIN)
 		if _, ok := tester.peerHashes[id]; !ok != tt.drop {
 			t.Errorf("test %d: peer drop mismatch for %v: have %v, want %v", i, tt.result, !ok, tt.drop)
 		}

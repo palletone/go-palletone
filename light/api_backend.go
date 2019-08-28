@@ -83,7 +83,8 @@ func (b *LesApiBackend) BlockByNumber(ctx context.Context, blockNr rpc.BlockNumb
 	//return b.GetBlock(ctx, header.Hash())
 }
 
-func (b *LesApiBackend) StateAndHeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*state.StateDB, *modules.Header, error) {
+func (b *LesApiBackend) StateAndHeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*state.StateDB,
+	*modules.Header, error) {
 	return nil, nil, nil
 }
 
@@ -106,12 +107,6 @@ func (b *LesApiBackend) GetTd(blockHash common.Hash) *big.Int {
 func (b *LesApiBackend) GetChainParameters() *core.ChainParameters {
 	return nil
 }
-
-//func (b *LesApiBackend) GetEVM(ctx context.Context, msg core.Message, state *state.StateDB, header *types.Header, vmCfg vm.Config) (*vm.EVM, func() error, error) {
-//	state.SetBalance(msg.From(), math.MaxBig256)
-//	context := core.NewEVMContext(msg, header, b.eth.blockchain, nil)
-//	return vm.NewEVM(context, state, b.eth.chainConfig, vmCfg), state.Error, nil
-//}
 
 func (b *LesApiBackend) SendTx(ctx context.Context, signedTx *modules.Transaction) error {
 	return b.ptn.txPool.AddLocal(signedTx)
@@ -144,7 +139,8 @@ func (b *LesApiBackend) Stats() (pending int, queued int, reserve int) {
 	return 0, 0, 0
 }
 
-func (b *LesApiBackend) TxPoolContent() (map[common.Hash]*modules.TxPoolTransaction, map[common.Hash]*modules.TxPoolTransaction) {
+func (b *LesApiBackend) TxPoolContent() (map[common.Hash]*modules.TxPoolTransaction,
+	map[common.Hash]*modules.TxPoolTransaction) {
 	return nil, nil
 	//return b.ptn.txPool.Content()
 }
@@ -201,40 +197,6 @@ func (b *LesApiBackend) AccountManager() *accounts.Manager {
 	return b.ptn.accountManager
 }
 
-//func (b *LesApiBackend) BloomStatus() (uint64, uint64) {
-//	if b.eth.bloomIndexer == nil {
-//		return 0, 0
-//	}
-//	sections, _, _ := b.eth.bloomIndexer.Sections()
-//	return light.BloomTrieFrequency, sections
-//}
-
-//func (b *LesApiBackend) ServiceFilter(ctx context.Context, session *bloombits.MatcherSession) {
-//	for i := 0; i < bloomFilterThreads; i++ {
-//		go session.Multiplex(bloomRetrievalBatch, bloomRetrievalWait, b.eth.bloomRequests)
-//	}
-//}
-// General PalletOne API
-
-//func (b *LesApiBackend)ProtocolVersion() int{
-//
-//}
-//SuggestPrice(ctx context.Context) (*big.Int, error)
-//ChainDb() ptndb.Database
-//EventMux() *event.TypeMux
-//AccountManager() *accounts.Manager
-
-// BlockChain API
-//SetHead(number uint64)
-//HeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*modules.Header, error)
-//BlockByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*types.Block, error)
-//StateAndHeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*state.StateDB, *modules.Header, error)
-//GetBlock(ctx context.Context, blockHash common.Hash) (*types.Block, error)
-//GetReceipts(ctx context.Context, blockHash common.Hash) (types.Receipts, error)
-//GetTd(blockHash common.Hash) *big.Int
-//SubscribeChainEvent(ch chan<- coredata.ChainEvent) event.Subscription
-//SubscribeChainHeadEvent(ch chan<- coredata.ChainHeadEvent) event.Subscription
-//SubscribeChainSideEvent(ch chan<- coredata.ChainSideEvent) event.Subscription
 func (b *LesApiBackend) GetUnstableUnits() []*ptnjson.UnitSummaryJson {
 	units := b.ptn.dag.GetUnstableUnits()
 	result := make([]*ptnjson.UnitSummaryJson, len(units))
@@ -258,22 +220,10 @@ func (b *LesApiBackend) GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransact
 	return nil, nil
 }
 
-//GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error)
-//Stats() (int, int, int)
-//TxPoolContent() (map[common.Hash]*modules.Transaction, map[common.Hash]*modules.Transaction)
-//SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
-
-//ChainConfig() *configure.ChainConfig
-//CurrentBlock() *types.Block
-
 //test
 func (b *LesApiBackend) SendConsensus(ctx context.Context) error {
 	return nil
 }
-
-// wallet api
-//WalletTokens(address string) (map[string]*modules.AccountToken, error)
-//WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
 
 func (b *LesApiBackend) SaveCommon(key, val []byte) error {
 	return nil
@@ -281,10 +231,10 @@ func (b *LesApiBackend) SaveCommon(key, val []byte) error {
 
 // dag's get common
 func (b *LesApiBackend) GetCommon(key []byte) ([]byte, error) {
-	return nil, nil
+	return b.ptn.dag.GetCommon(key)
 }
 func (b *LesApiBackend) GetCommonByPrefix(prefix []byte) map[string][]byte {
-	return nil
+	return b.ptn.dag.GetCommonByPrefix(prefix)
 }
 
 // Get Contract Api
@@ -328,12 +278,6 @@ func (b *LesApiBackend) GetHeaderByNumber(number *modules.ChainIndex) (*modules.
 func (b *LesApiBackend) GetTxByReqId(hash common.Hash) (*ptnjson.TxWithUnitInfoJson, error) {
 	return nil, nil
 }
-
-// get state
-//GetHeadUnitHash() (common.Hash, error)
-//GetHeadHeaderHash() (common.Hash, error)
-//GetHeadFastUnitHash() (common.Hash, error)
-//GetCanonicalHash(number uint64) (common.Hash, error)
 
 // get transaction interface
 func (b *LesApiBackend) GetUnitTxsInfo(hash common.Hash) ([]*ptnjson.TxSummaryJson, error) {
@@ -382,16 +326,15 @@ func (b *LesApiBackend) GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
 		return nil, err
 	}
 
-	utxos, err := b.ptn.dag.GetAddrUtxos(address)
-	if err != nil {
-		return nil, err
-	}
-	result := []*ptnjson.UtxoJson{}
+	utxos, _ := b.ptn.dag.GetAddrUtxos(address)
+	result := make([]*ptnjson.UtxoJson, 0)
 	for o, u := range utxos {
+		o := o
 		ujson := ptnjson.ConvertUtxo2Json(&o, u)
 		result = append(result, ujson)
 	}
 	return result, nil
+
 }
 func (b *LesApiBackend) GetAddrRawUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error) {
 	address, err := common.StringToAddress(addr)
@@ -401,16 +344,17 @@ func (b *LesApiBackend) GetAddrRawUtxos(addr string) (map[modules.OutPoint]*modu
 	return b.ptn.dag.GetAddrUtxos(address)
 }
 func (b *LesApiBackend) GetAllUtxos() ([]*ptnjson.UtxoJson, error) {
-	utxos, err := b.ptn.dag.GetAllUtxos()
-	if err != nil {
-		return nil, err
-	}
-	result := []*ptnjson.UtxoJson{}
-	for o, u := range utxos {
-		ujson := ptnjson.ConvertUtxo2Json(&o, u)
-		result = append(result, ujson)
-	}
-	return result, nil
+	return nil, nil
+	//utxos, err := b.ptn.dag.GetAllUtxos()
+	//if err != nil {
+	//	return nil, err
+	//}
+	//result := []*ptnjson.UtxoJson{}
+	//for o, u := range utxos {
+	//	ujson := ptnjson.ConvertUtxo2Json(&o, u)
+	//	result = append(result, ujson)
+	//}
+	//return result, nil
 }
 
 func (b *LesApiBackend) GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson, error) {
@@ -424,15 +368,18 @@ func (b *LesApiBackend) GetAssetExistence(asset string) ([]*ptnjson.ProofOfExist
 }
 
 //contract control
-func (b *LesApiBackend) ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi, ccLanguage string) (TemplateId []byte, err error) {
+func (b *LesApiBackend) ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi,
+	ccLanguage string) (TemplateId []byte, err error) {
 	return nil, nil
 }
-func (b *LesApiBackend) ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error) {
+func (b *LesApiBackend) ContractDeploy(templateId []byte, txid string, args [][]byte,
+	timeout time.Duration) (deployId []byte, err error) {
 	return nil, nil
 }
 
 //ContractInvoke(txBytes []byte) (rspPayload []byte, err error)
-func (b *LesApiBackend) ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
+func (b *LesApiBackend) ContractInvoke(deployId []byte, txid string, args [][]byte,
+	timeout time.Duration) (rspPayload []byte, err error) {
 	return nil, nil
 }
 func (b *LesApiBackend) ContractStop(deployId []byte, txid string, deleteImage bool) error {
@@ -445,24 +392,32 @@ func (b *LesApiBackend) EncodeTx(jsonStr string) (string, error) {
 	return "", nil
 }
 
-func (b *LesApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string, description, abi, language string, addrs []common.Address) (reqId common.Hash, tplId []byte, err error) {
+func (b *LesApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64,
+	tplName, path, version string, description, abi, language string, addrs []common.Address) (reqId common.Hash,
+	tplId []byte, err error) {
 	return
 }
-func (b *LesApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte, extData []byte, timeout time.Duration) (reqId common.Hash, depId common.Address, err error) {
+func (b *LesApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64,
+	templateId []byte, args [][]byte, extData []byte, timeout time.Duration) (reqId common.Hash,
+	depId common.Address, err error) {
 	return
 }
-func (b *LesApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
+func (b *LesApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64,
+	certID *big.Int, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
 	return
 }
-func (b *LesApiBackend) SendContractInvokeReqTx(requestTx *modules.Transaction) (reqId common.Hash, err error) {
-	return b.SendContractInvokeReqTx(requestTx)
+func (b *LesApiBackend) SendContractInvokeReqTx(requestTx *modules.Transaction) (common.Hash, error) {
+	return common.Hash{}, nil
 }
 
-func (b *LesApiBackend) ContractInvokeReqTokenTx(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, asset string, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
+func (b *LesApiBackend) ContractInvokeReqTokenTx(from, to, toToken common.Address, daoAmount,
+	daoFee, daoAmountToken uint64, asset string, contractAddress common.Address, args [][]byte,
+	timeout uint32) (reqId common.Hash, err error) {
 	return
 }
 
-func (b *LesApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address, deleteImage bool) (reqId common.Hash, err error) {
+func (b *LesApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64,
+	contractId common.Address, deleteImage bool) (reqId common.Hash, err error) {
 	return
 }
 func (b *LesApiBackend) ElectionVrf(id uint32) ([]byte, error) {
@@ -475,7 +430,8 @@ func (b *LesApiBackend) GetJuryAccount() []common.Address {
 	return nil
 }
 
-func (b *LesApiBackend) ContractQuery(contractId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
+func (b *LesApiBackend) ContractQuery(contractId []byte, txid string, args [][]byte,
+	timeout time.Duration) (rspPayload []byte, err error) {
 	return nil, nil
 }
 
@@ -546,10 +502,12 @@ func (b *LesApiBackend) GetContractsByTpl(tplId []byte) ([]*ptnjson.ContractJson
 func (b *LesApiBackend) GetContractState(contractid []byte, key string) ([]byte, *modules.StateVersion, error) {
 	return nil, nil, nil
 }
-func (b *LesApiBackend) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
+func (b *LesApiBackend) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue,
+	error) {
 	return nil, nil
 }
-func (b *LesApiBackend) GetAddressBalanceStatistics(token string, topN int) (*statistics.TokenAddressBalanceJson, error) {
+func (b *LesApiBackend) GetAddressBalanceStatistics(token string, topN int) (*statistics.TokenAddressBalanceJson,
+	error) {
 	return nil, nil
 }
 

@@ -77,8 +77,14 @@ func (s *PrivateContractAPI) Ccinstall(ctx context.Context, ccname, ccpath, ccve
 }
 
 func (s *PrivateContractAPI) Ccdeploy(ctx context.Context, templateId string, param []string) (*ContractDeployRsp, error) {
-	tempId, _ := hex.DecodeString(templateId)
+	tempId, err := hex.DecodeString(templateId)
+	if err != nil {
+		return nil, err
+	}
 	rd, err := crypto.GetRandomBytes(32)
+	if err != nil {
+		return nil, err
+	}
 	txid := util.RlpHash(rd)
 
 	log.Info("Ccdeploy:", "templateId", templateId, "txid", txid.String())
@@ -87,7 +93,10 @@ func (s *PrivateContractAPI) Ccdeploy(ctx context.Context, templateId string, pa
 		args[i] = []byte(arg)
 		log.Info("Ccdeploy", "param index:", i, "arg", arg)
 	}
-	_, err = s.b.ContractDeploy(tempId, txid.String(), args, time.Duration(30)*time.Second)
+	//参数前面加入msg0和msg1,这里为空
+	fullArgs := [][]byte{defaultMsg0, defaultMsg1}
+	fullArgs = append(fullArgs, args...)
+	_, err = s.b.ContractDeploy(tempId, txid.String(), fullArgs, time.Duration(30)*time.Second)
 	if err != nil {
 		log.Debug("Ccdeploy", "ContractDeploy err", err)
 	}
@@ -103,7 +112,7 @@ func (s *PrivateContractAPI) Ccdeploy(ctx context.Context, templateId string, pa
 func (s *PrivateContractAPI) Ccinvoke(ctx context.Context, contractAddr string, param []string) (string, error) {
 	contractId, _ := common.StringToAddress(contractAddr)
 	//contractId, _ := hex.DecodeString(contractAddr)
-	rd, err := crypto.GetRandomBytes(32)
+	rd, _ := crypto.GetRandomBytes(32)
 	txid := util.RlpHash(rd)
 	log.Info("Ccinvoke", "contractId", contractId, "txid", txid.String())
 
@@ -123,7 +132,7 @@ func (s *PrivateContractAPI) Ccinvoke(ctx context.Context, contractAddr string, 
 func (s *PublicContractAPI) Ccquery(ctx context.Context, contractAddr string, param []string, timeout uint32) (string, error) {
 	contractId, _ := common.StringToAddress(contractAddr)
 	//contractId, _ := hex.DecodeString(contractAddr)
-	rd, err := crypto.GetRandomBytes(32)
+	rd, _ := crypto.GetRandomBytes(32)
 	txid := util.RlpHash(rd)
 	log.Info("Ccquery", "contractId", contractId, "txid", txid.String())
 	args := make([][]byte, len(param))
@@ -354,8 +363,7 @@ func (s *PrivateContractAPI) unlockKS(addr common.Address, password string, dura
 	ks := s.b.GetKeyStore()
 	err := ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
 	if err != nil {
-		errors.New("get addr by outpoint is err")
-		return err
+		return fmt.Errorf("get addr by outpoint is err: %v", err.Error())
 	}
 	return nil
 }
@@ -408,6 +416,7 @@ func (s *PublicContractAPI) GetContractInfoByAddr(ctx context.Context, contractA
 	}
 	return contract, nil
 }
+
 func (s *PrivateContractAPI) DepositContractInvoke(ctx context.Context, from, to string, amount, fee decimal.Decimal,
 	param []string) (string, error) {
 	log.Debug("---enter DepositContractInvoke---")
@@ -424,8 +433,14 @@ func (s *PrivateContractAPI) DepositContractInvoke(ctx context.Context, from, to
 				return "", fmt.Errorf("error(%v), please use mediator.apply()", err.Error())
 			}
 
-			if from != args.AddStr {
-				return "", fmt.Errorf("the calling account(%v) is not appling account(%v), "+
+			if args.MediatorInfoBase == nil || args.MediatorApplyInfo == nil {
+				return "", fmt.Errorf("invalid args, is null")
+			}
+
+			if from != args.AddStr /*|| from != args.RewardAdd*/ {
+				//return "", fmt.Errorf("the calling account(%v) is not produce account(%v) or "+
+				//	"reward account(%v), please use mediator.apply()", from, args.AddStr, args.RewardAdd)
+				return "", fmt.Errorf("the calling account(%v) is not applying account(%v), "+
 					"please use mediator.apply()", from, args.AddStr)
 			}
 
@@ -478,6 +493,14 @@ func (s *PrivateContractAPI) SysConfigContractInvoke(ctx context.Context, from, 
 			log.Debugf(err.Error())
 			return "", err
 		}
+
+		dag := s.b.Dag()
+		err = core.ImmutableChainParameterCheck(field, value, &dag.GetGlobalProp().ImmutableParameters,
+			dag.GetMediatorCount)
+		if err != nil {
+			log.Debugf(err.Error())
+			return "", err
+		}
 	} else if param[0] == sysconfigcc.CreateVotesTokens {
 		if len(param) != 6 {
 			err := "args len not equal 6"
@@ -499,6 +522,14 @@ func (s *PrivateContractAPI) SysConfigContractInvoke(ctx context.Context, from, 
 					log.Debugf(err.Error())
 					return "", err
 				}
+
+				dag := s.b.Dag()
+				err = core.ImmutableChainParameterCheck(oneTopic.TopicTitle, oneOption,
+					&dag.GetGlobalProp().ImmutableParameters, dag.GetMediatorCount)
+				if err != nil {
+					log.Debugf(err.Error())
+					return "", err
+				}
 			}
 		}
 	}
@@ -512,4 +543,17 @@ func (s *PrivateContractAPI) SysConfigContractInvoke(ctx context.Context, from, 
 //  TODO
 func (s *PublicContractAPI) GetContractState(contractid []byte, key string) ([]byte, *modules.StateVersion, error) {
 	return s.b.GetContractState(contractid, key)
+}
+
+func (s *PublicContractAPI) GetContractFeeLevel(ctx context.Context) (*ContractFeeLevelRsp, error) {
+	cp := s.b.Dag().GetChainParameters()
+	feeLevel := &ContractFeeLevelRsp{
+		ContractTxTimeoutUnitFee:  cp.ContractTxTimeoutUnitFee,
+		ContractTxSizeUnitFee:     cp.ContractTxSizeUnitFee,
+		ContractTxInstallFeeLevel: cp.ContractTxInstallFeeLevel,
+		ContractTxDeployFeeLevel:  cp.ContractTxDeployFeeLevel,
+		ContractTxInvokeFeeLevel:  cp.ContractTxInvokeFeeLevel,
+		ContractTxStopFeeLevel:    cp.ContractTxStopFeeLevel,
+	}
+	return feeLevel, nil
 }

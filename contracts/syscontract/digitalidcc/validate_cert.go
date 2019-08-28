@@ -105,7 +105,7 @@ func validateIssuer(issuer string, cert *x509.Certificate, stub shim.ChaincodeSt
 	}
 	if issuer == string(rootCAHolder) {
 		if cert.Issuer.String() != rootCert.Subject.String() {
-			return fmt.Errorf("cert issuer is invalid")
+			return fmt.Errorf("cert issuer is invalid, excepted %s but %s", rootCert.Subject.String(), cert.Issuer.String())
 		}
 	} else {
 		// query certid

@@ -80,22 +80,8 @@ func (p *Processor) saveSig(msgType uint32, reqEvt *AdapterRequestEvent) (firstS
 	return true
 }
 
-func (p *Processor) checkJury(reqEvt *AdapterRequestEvent) bool {
-	juryAll, err := p.getContractElectionList(reqEvt.ContractId)
-	if err != nil {
-		log.Debug("checkJury", "ContractId", reqEvt.ContractId, "getContractElectionList err:", err)
-		return false
-	}
-	pubkeyHex := common.Bytes2Hex(reqEvt.Pubkey)
-	for i := range juryAll {
-		if common.Bytes2Hex(juryAll[i].PublicKey) == pubkeyHex {
-			return true
-		}
-	}
-	return false
-}
-
-func (p *Processor) processAdapterRequestEvent(msgType uint32, reqEvt *AdapterRequestEvent) (result *AdapterEvent, err error) {
+func (p *Processor) processAdapterRequestEvent(msgType uint32,
+	reqEvt *AdapterRequestEvent) (result *AdapterEvent, err error) {
 	log.Info("processAdapterRequestEvent")
 
 	//if not this contract's jury, just return
@@ -122,7 +108,8 @@ func (p *Processor) processAdapterRequestEvent(msgType uint32, reqEvt *AdapterRe
 	return nil, nil
 }
 
-func (p *Processor) AdapterFunRequest(reqId common.Hash, contractId common.Address, msgType uint32, consultContent []byte, myAnswer []byte) ([]byte, error) {
+func (p *Processor) AdapterFunRequest(reqId common.Hash, contractId common.Address, msgType uint32,
+	consultContent []byte, myAnswer []byte) ([]byte, error) {
 	if reqId == (common.Hash{}) {
 		return nil, errors.New("AdapterFunRequest param is nil")
 	}
@@ -135,7 +122,8 @@ func (p *Processor) AdapterFunRequest(reqId common.Hash, contractId common.Addre
 
 	//
 	data := append(consultContent, myAnswer...)
-	sig, err := p.ptn.GetKeyStore().SignMessageWithPassphrase(accounts.Account{Address: account.Address}, account.Password, data)
+	sig, err := p.ptn.GetKeyStore().SignMessageWithPassphrase(accounts.Account{Address: account.Address},
+	account.Password, data)
 	if err != nil {
 		return nil, errors.New("AdapterFunRequest SignHashWithPassphrase failed")
 	}
@@ -199,7 +187,8 @@ func (p *Processor) getRusult(reqId common.Hash, msgType uint32, consultContent 
 
 	return nil, errors.New("Not enough")
 }
-func (p *Processor) AdapterFunResult(reqId common.Hash, contractId common.Address, msgType uint32, consultContent []byte, timeOut time.Duration) ([]byte, error) {
+func (p *Processor) AdapterFunResult(reqId common.Hash, contractId common.Address, msgType uint32,
+	consultContent []byte, timeOut time.Duration) ([]byte, error) {
 	if reqId == (common.Hash{}) {
 		return nil, errors.New("AdapterFunRequest param is nil")
 	}
@@ -223,7 +212,9 @@ func (p *Processor) AdapterFunResult(reqId common.Hash, contractId common.Addres
 		}
 		log.Debug("AdapterFunResult, time out")
 		return nil, errors.New("AdapterFunResult, time out")
+	default:
 	}
+	return nil, nil
 }
 
 func (p *Processor) ProcessAdapterEvent(event *AdapterEvent) (result *AdapterEvent, err error) {

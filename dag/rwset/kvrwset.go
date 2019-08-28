@@ -30,7 +30,9 @@ type KVRWSet struct {
 }
 
 func (m *KVRWSet) Reset() {
-	m = &KVRWSet{Reads: make(map[string]*KVRead), Writes: make(map[string]*KVWrite)}
+	m = new(KVRWSet)
+	m.Writes = make(map[string]*KVWrite)
+	m.Reads = make(map[string]*KVRead)
 }
 func (m *KVRWSet) String() string            { return proto.CompactTextString(m) }
 func (*KVRWSet) ProtoMessage()               {}
@@ -51,13 +53,19 @@ func (m *KVRWSet) GetWrites() map[string]*KVWrite {
 }
 
 type KVRead struct {
-	key        string                `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
-	version    *modules.StateVersion `protobuf:"bytes,2,opt,name=version" json:"version,omitempty"`
-	value      []byte                `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
+	key        string                `protobuf:"bytes,1,opt,name=key"`
+	version    *modules.StateVersion `protobuf:"bytes,2,opt,name=version"`
+	value      []byte                `protobuf:"bytes,3,opt,name=value,proto3"`
 	ContractId []byte                `protobuf:"bytes,4,opt,name=contract_id,proto3" json:"contract_id,omitempty"`
 }
 
-func (m *KVRead) Reset()                    { m = new(KVRead) }
+func (m *KVRead) Reset() {
+	n := new(KVRead)
+	m.key = n.key
+	m.version = n.version
+	m.value = n.value
+	m.ContractId = n.ContractId
+}
 func (m *KVRead) String() string            { return proto.CompactTextString(m) }
 func (*KVRead) ProtoMessage()               {}
 func (*KVRead) Descriptor() ([]byte, []int) { return nil, nil }
@@ -84,13 +92,19 @@ func (m *KVRead) GetValue() []byte {
 
 // KVWrite captures a write (update/delete) operation performed during transaction simulation
 type KVWrite struct {
-	key        string `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
-	isDelete   bool   `protobuf:"varint,2,opt,name=is_delete,json=isDelete" json:"is_delete,omitempty"`
-	value      []byte `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
+	key        string `protobuf:"bytes,1,opt,name=key"`
+	isDelete   bool   `protobuf:"varint,2,opt,name=is_delete,json=isDelete"`
+	value      []byte `protobuf:"bytes,3,opt,name=value,proto3"`
 	ContractId []byte `protobuf:"bytes,4,opt,name=contract_id,proto3" json:"contract_id,omitempty"`
 }
 
-func (m *KVWrite) Reset()                    { m = new(KVWrite) }
+func (m *KVWrite) Reset() {
+	n := new(KVWrite)
+	m.key = n.key
+	m.isDelete = n.isDelete
+	m.value = n.value
+	m.ContractId = n.ContractId
+}
 func (m *KVWrite) String() string            { return proto.CompactTextString(m) }
 func (*KVWrite) ProtoMessage()               {}
 func (*KVWrite) Descriptor() ([]byte, []int) { return nil, nil }
@@ -117,8 +131,8 @@ func (m *KVWrite) GetValue() []byte {
 }
 
 type Version struct {
-	chainId uint64 `protobuf:"varint,1,opt,name=block_num,json=blockNum" json:"block_num,omitempty"`
-	txNum   uint64 `protobuf:"varint,2,opt,name=tx_num,json=txNum" json:"tx_num,omitempty"`
+	//chainId uint64 `protobuf:"varint,1,opt,name=block_num,json=blockNum"`
+	//txNum   uint64 `protobuf:"varint,2,opt,name=tx_num,json=txNum"`
 }
 
 // NewKVRead helps constructing proto message kvrwset.KVRead

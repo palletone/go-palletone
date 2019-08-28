@@ -41,9 +41,9 @@ func (d *DebugChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	funcName, args := stub.GetFunctionAndParameters()
 	switch funcName {
 	case "add":
-		return d.add(stub, args)
+		return d.add(args)
 	case "testError":
-		return d.error(stub, args)
+		return d.error(stub)
 	case "testAddBalance":
 		return d.addBalance(stub, args)
 	case "testGetBalance":
@@ -51,22 +51,22 @@ func (d *DebugChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	case "getbalance":
 		return d.getbalance(stub, args)
 	case "getRequesterCert":
-		return d.getRequesterCert(stub, args)
+		return d.getRequesterCert(stub)
 	case "checkRequesterCert":
-		return d.checkRequesterCert(stub, args)
+		return d.checkRequesterCert(stub)
 	case "ForfeitureDeposit":
 	case "getRootCABytes":
-		return d.getRootCABytes(stub, args)
+		return d.getRootCABytes(stub)
 	default:
 		return shim.Error("Invoke error")
 	}
 	return shim.Error("Invoke error")
 }
-func (d *DebugChainCode) error(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (d *DebugChainCode) error(stub shim.ChaincodeStubInterface) pb.Response {
 	stub.PutState("CannotPut", []byte("Your error will ignore this put."))
 	return shim.Error("Test Error")
 }
-func (d *DebugChainCode) add(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (d *DebugChainCode) add(args []string) pb.Response {
 	a, _ := strconv.Atoi(args[0])
 	b, _ := strconv.Atoi(args[1])
 	rspStr := fmt.Sprintf("Value:%d", a+b)
@@ -86,7 +86,7 @@ func (d *DebugChainCode) getbalance(stub shim.ChaincodeStubInterface, args []str
 	return shim.Success(b)
 }
 
-func (d *DebugChainCode) getRequesterCert(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (d *DebugChainCode) getRequesterCert(stub shim.ChaincodeStubInterface) pb.Response {
 	certBytes, err := stub.GetRequesterCert()
 	if err != nil {
 		return shim.Error(err.Error())
@@ -98,18 +98,18 @@ func (d *DebugChainCode) getRequesterCert(stub shim.ChaincodeStubInterface, args
 	return shim.Success(b)
 }
 
-func (d *DebugChainCode) checkRequesterCert(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (d *DebugChainCode) checkRequesterCert(stub shim.ChaincodeStubInterface) pb.Response {
 	isValid, err := stub.IsRequesterCertValid()
-	b := []byte{}
+	//b := []byte{}
 	if isValid {
-		b, _ = json.Marshal(fmt.Sprintf("Requester cert is valid"))
+		b, _ := json.Marshal(fmt.Sprintf("Requester cert is valid"))
 		return shim.Success(b)
 	} else {
 		return shim.Error(fmt.Sprintf("Requester cert is invalid, because %s", err.Error()))
 	}
 }
 
-func (d *DebugChainCode) getRootCABytes(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (d *DebugChainCode) getRootCABytes(stub shim.ChaincodeStubInterface) pb.Response {
 	val, err := stub.GetState("RootCABytes")
 	if err != nil {
 		return shim.Error(err.Error())

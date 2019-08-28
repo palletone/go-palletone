@@ -27,15 +27,15 @@ import (
 	"github.com/palletone/go-palletone/dag/rwset"
 )
 
-type TempCC struct {
-	templateId  []byte
-	name        string
-	path        string
-	version     string
-	description string
-	abi         string
-	language    string
-}
+//type TempCC struct {
+//	templateId  []byte
+//	name        string
+//	path        string
+//	version     string
+//	description string
+//	abi         string
+//	language    string
+//}
 
 // contract manger module init
 func Init(dag dag.IDag, jury core.IAdapterJury) error {
@@ -112,7 +112,7 @@ func Install(dag dag.IDag, chainID, ccName, ccPath, ccVersion, ccDescription, cc
 	buffer.Write([]byte(ccVersion))
 	tpid := crypto.Keccak256Hash(buffer.Bytes())
 	payloadUnit := &md.ContractTplPayload{
-		TemplateId: []byte(tpid[:]),
+		TemplateId: tpid[:],
 		//Name:       ccName,
 		//Path:       ccPath,
 		//Version:    ccVersion,
@@ -167,6 +167,7 @@ func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byt
 		Enabled: true,
 	}
 	//  TODO 可以开启单机多容器,防止容器名冲突
+	usrcc.Version += ":"
 	usrcc.Version += contractcfg.GetConfig().ContractAddress
 	spec := &pb.ChaincodeSpec{
 		Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value[templateCC.Language]),
@@ -199,6 +200,7 @@ func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byt
 		SysCC:    false,
 	}
 	if depId.IsSystemContractAddress() {
+		cc.SysCC = true
 		err = cclist.SetChaincode(chainID, 0, cc)
 		if err != nil {
 			log.Error("Deploy", "SetChaincode fail, chainId", chainID, "name", cc.Name)
@@ -240,7 +242,7 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 	var mksupt Support = &SupportImpl{}
 	creator := []byte("palletone")
 	address := common.NewAddress(deployId, common.ContractHash)
-	cc := &cclist.CCInfo{}
+	var cc *cclist.CCInfo
 	var err error
 
 	if address.IsSystemContractAddress() {
@@ -281,10 +283,12 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 		return nil, err
 	}
 	//
-	sizeRW, disk, isOver := utils.RemoveConWhenOverDisk(cc, idag)
-	if isOver {
-		log.Debugf("utils.KillAndRmWhenOver name = %s,sizeRW = %d,disk = %d", cc.Name, sizeRW, disk)
-		return nil, fmt.Errorf("utils.KillAndRmWhenOver name = %s,sizeRW = %d bytes,disk = %d bytes", cc.Name, sizeRW, disk)
+	if !cc.SysCC {
+		sizeRW, disk, isOver := utils.RemoveConWhenOverDisk(cc, idag)
+		if isOver {
+			log.Debugf("utils.KillAndRmWhenOver name = %s,sizeRW = %d,disk = %d", cc.Name, sizeRW, disk)
+			return nil, fmt.Errorf("utils.KillAndRmWhenOver name = %s,sizeRW = %d bytes,disk = %d bytes", cc.Name, sizeRW, disk)
+		}
 	}
 	stopTm := time.Now()
 	duration := stopTm.Sub(startTm)
@@ -312,6 +316,9 @@ func Stop(rwM rwset.TxManager, idag dag.IDag, contractid []byte, chainID string,
 		return nil, err
 	}
 	stopResult, err := StopByName(contractid, setChainId, txid, cc, deleteImage, dontRmCon)
+	if err != nil {
+		return nil, err
+	}
 	if !dontRmCon {
 		err := saveChaincode(idag, address, nil)
 		if err != nil {
@@ -354,7 +361,7 @@ func GetAllContainers(client *docker.Client) {
 				log.Infof("db.GetCcDagHand err: %s", err.Error())
 				return
 			}
-			rd, err := crypto.GetRandomBytes(32)
+			rd, _ := crypto.GetRandomBytes(32)
 			txid := util.RlpHash(rd)
 			log.Infof("==============需要重启====容器地址为--->%s", hex.EncodeToString(v.Bytes21()))
 			_, err = RestartContainer(dag, "palletone", v.Bytes21(), txid.String())
@@ -364,7 +371,6 @@ func GetAllContainers(client *docker.Client) {
 			}
 		}
 	}
-	return
 }
 
 func RestartContainer(idag dag.IDag, chainID string, deployId []byte, txId string) ([]byte, error) {

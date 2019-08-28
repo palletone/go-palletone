@@ -16,7 +16,7 @@ import (
 type ScriptFlags uint32
 
 const (
-	// ScriptBip16 defines whether the bip16 threshhold has passed and thus
+	// ScriptBip16 defines whether the bip16 threshold has passed and thus
 	// pay-to-script hash transactions will be fully validated.
 	ScriptBip16 ScriptFlags = 1 << iota
 
@@ -79,24 +79,24 @@ const (
 
 // Engine is the virtual machine that executes scripts.
 type Engine struct {
+	tx                     modules.Transaction
+	dstack                 stack // data stack
+	astack                 stack // alt stack
 	scripts                [][]parsedOpcode
+	condStack              []int
+	savedFirstStack        [][]byte // stack from first script for bip16 scripts
+	crypto                 ICrypto
 	scriptIdx              int
 	scriptOff              int
 	lastCodeSep            int
-	dstack                 stack // data stack
-	astack                 stack // alt stack
-	tx                     modules.Transaction
 	msgIdx                 int
 	txIdx                  int
-	condStack              []int
 	numOps                 int
-	flags                  ScriptFlags
 	sigCache               *SigCache
-	bip16                  bool     // treat execution as pay-to-script-hash
-	savedFirstStack        [][]byte // stack from first script for bip16 scripts
-	p2ch                   bool     // pay to contract hash
 	pickupJuryRedeemScript PickupJuryRedeemScript
-	crypto                 ICrypto
+	flags                  ScriptFlags
+	bip16                  bool // treat execution as pay-to-script-hash
+	p2ch                   bool // pay to contract hash
 }
 
 // hasFlag returns whether the script engine instance has the passed flag set.
@@ -282,7 +282,7 @@ func (vm *Engine) Step() (done bool, err error) {
 	vm.scriptOff++
 	if vm.scriptOff >= len(vm.scripts[vm.scriptIdx]) {
 		// Illegal to have an `if' that straddles two scripts.
-		if err == nil && len(vm.condStack) != 0 {
+		if  len(vm.condStack) != 0 {
 			return false, ErrStackMissingEndif
 		}
 
@@ -390,7 +390,7 @@ func (vm *Engine) checkPubKeyEncoding(pubKey []byte) error {
 		return nil
 	}
 
-	if len(pubKey) == 33 && (pubKey[0] == 0x02 || pubKey[0] == 0x03) {
+	if len(pubKey) == 33 { // &&  (pubKey[0] == 0x02 || pubKey[0] == 0x03)
 		// Compressed
 		return nil
 	}
@@ -580,7 +580,10 @@ func (vm *Engine) SetAltStack(data [][]byte) {
 // NewEngine returns a new script engine for the provided public key script,
 // transaction, and input index.  The flags modify the behavior of the script
 // engine according to the description provided by each flag.
-func NewEngine(scriptPubKey []byte, pickupJuryRedeemScript PickupJuryRedeemScript, tx *modules.Transaction, msgIdx, txIdx int, flags ScriptFlags, sigCache *SigCache, crypto ICrypto) (*Engine, error) {
+func NewEngine(scriptPubKey []byte,
+	 pickupJuryRedeemScript PickupJuryRedeemScript, 
+	 tx *modules.Transaction, msgIdx, txIdx int, 
+	 flags ScriptFlags, sigCache *SigCache, crypto ICrypto) (*Engine, error) {
 	// The provided transaction input index must refer to a valid input.
 	pay := tx.TxMessages[msgIdx].Payload.(*modules.PaymentPayload)
 	if txIdx < 0 || txIdx >= len(pay.Inputs) {

@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developer Albert·Gou <dev@pallet.one>
  * @date 2018
@@ -154,13 +155,14 @@ func (pRep *PropRepository) UpdateMediatorSchedule(ms *modules.MediatorSchedule,
 	}
 
 	// 2. 清除CurrentShuffledMediators原来的空间，重新分配空间
-	ms.CurrentShuffledMediators = make([]common.Address, aSize, aSize)
+	ms.CurrentShuffledMediators = make([]common.Address, aSize)
 
 	// 3. 初始化数据
 	meds := gp.GetActiveMediators()
-	for i, add := range meds {
-		ms.CurrentShuffledMediators[i] = add
-	}
+	copy(ms.CurrentShuffledMediators, meds)
+	//for i, add := range meds {
+	//	ms.CurrentShuffledMediators[i] = add
+	//}
 
 	// 4. 打乱证人的调度顺序
 	shuffleMediators(ms.CurrentShuffledMediators, binary.BigEndian.Uint64(hash[8:]))
@@ -168,7 +170,7 @@ func (pRep *PropRepository) UpdateMediatorSchedule(ms *modules.MediatorSchedule,
 }
 
 func shuffleMediators(mediators []common.Address, seed uint64) {
-	nowHi := uint64(seed << 32)
+	nowHi := seed << 32
 	aSize := len(mediators)
 	for i := 0; i < aSize; i++ {
 		// 高性能随机生成器(High performance random generator)
@@ -244,9 +246,9 @@ func (pRep *PropRepository) GetSlotAtTime(when time.Time) uint32 {
 		log.Debugf("Retrieve Global Prop error: %v", err.Error())
 		return 0
 	}
-	dgp, _ := pRep.RetrieveDynGlobalProp()
-	if err != nil {
-		log.Debugf("Retrieve Dyn Global Prop error: %v", err.Error())
+	dgp, err1 := pRep.RetrieveDynGlobalProp()
+	if err1 != nil {
+		log.Debugf("Retrieve Dyn Global Prop error: %v", err1.Error())
 		return 0
 	}
 
