@@ -499,7 +499,7 @@ func (pm *ProtocolManager) LocalHandle(p *peer) error {
 	if head := pm.dag.CurrentHeader(pm.mainAssetId); head != nil {
 		number = head.Number
 		hash = head.Hash()
-		//stable =pm.dag.GetStableChainIndex(assetId )
+		stable = pm.dag.GetStableChainIndex(pm.mainAssetId)
 	}
 	// todo get stable index
 	log.Debug("ProtocolManager LocalHandle pre Handshake", "index", number.Index, "stable", stable)
