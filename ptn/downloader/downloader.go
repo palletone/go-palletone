@@ -148,6 +148,9 @@ type Downloader struct {
 	//receiptFetchHook func([]*modules.Header) // Method to call upon starting a receipt fetch
 	// Method to call upon inserting a chain of blocks (possibly in multiple invocations)
 	chainInsertHook func([]*fetchResult)
+
+	fastStableIndex uint64
+	stableLock      sync.RWMutex
 }
 
 // LightDag encapsulates functions required to synchronize a light chain.
@@ -219,6 +222,19 @@ func New(mode SyncMode, mux *event.TypeMux, dropPeer peerDropFn, lightdag LightD
 	go dl.qosTuner()
 	go dl.stateFetcher()
 	return dl
+}
+
+//fastSyncIndex uint64
+func (d *Downloader) GetFastStableIndex() uint64 {
+	d.stableLock.RLock()
+	defer d.stableLock.RUnlock()
+	return d.fastStableIndex
+}
+
+func (d *Downloader) SetFastStableIndex(index uint64) {
+	d.stableLock.Lock()
+	defer d.stableLock.Unlock()
+	d.fastStableIndex = index
 }
 
 // Progress retrieves the synchronization boundaries, specifically the origin
