@@ -63,8 +63,9 @@ type PeerInfo struct {
 }
 
 type peerMsg struct {
-	head   common.Hash
-	number *modules.ChainIndex
+	head         common.Hash
+	number       *modules.ChainIndex
+	stableNumber *modules.ChainIndex
 }
 
 type peer struct {
@@ -146,7 +147,7 @@ func (p *peer) Head(assetID modules.AssetId) (hash common.Hash, number *modules.
 
 // SetHead updates the head hash and total difficulty of the peer.
 //only retain the max index header
-func (p *peer) SetHead(hash common.Hash, number *modules.ChainIndex) {
+func (p *peer) SetHead(hash common.Hash, number, index *modules.ChainIndex) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
@@ -155,6 +156,9 @@ func (p *peer) SetHead(hash common.Hash, number *modules.ChainIndex) {
 	if (ok && number.Index > msg.number.Index) || !ok {
 		copy(msg.head[:], hash[:])
 		msg.number = number
+		if index != nil {
+			msg.stableNumber = index
+		}
 	}
 	p.peermsg[number.AssetID] = msg
 }
@@ -362,6 +366,7 @@ func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis comm
 	var status statusData // safe to read after two values have been received from errc
 
 	go func() {
+		// todo
 		errc <- p2p.Send(p.rw, StatusMsg, &statusData{
 			ProtocolVersion: uint32(p.version),
 			NetworkId:       network,
@@ -386,7 +391,7 @@ func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis comm
 		}
 	}
 	log.Debug("peer Handshake", "p.id", p.id, "index", index.Index)
-	p.SetHead(status.CurrentHeader, status.Index)
+	p.SetHead(status.CurrentHeader, status.Index, status.StableIndex)
 	return nil
 }
 

@@ -71,7 +71,7 @@ const (
 type errCode int
 
 const (
-	ErrMsgTooLarge = iota
+	ErrMsgTooLarge             = iota
 	ErrDecode
 	ErrInvalidMsgCode
 	ErrProtocolVersionMismatch
@@ -170,6 +170,7 @@ type statusData struct {
 	Index           *modules.ChainIndex
 	GenesisUnit     common.Hash
 	CurrentHeader   common.Hash
+	StableIndex     *modules.ChainIndex
 	//Mediator        bool
 }
 

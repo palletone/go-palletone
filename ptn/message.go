@@ -380,7 +380,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	if pm.IsExistInCache(unitHash.Bytes()) {
 		//log.Debugf("Received unit(%v) again, ignore it", unitHash.TerminalString())
 		p.MarkUnit(unitHash)
-		p.SetHead(unitHash, unit.Number())
+		p.SetHead(unitHash, unit.Number(), nil)
 		return nil
 	}
 

@@ -499,6 +499,7 @@ func (pm *ProtocolManager) LocalHandle(p *peer) error {
 		number = head.Number
 		hash = head.Hash()
 	}
+	// todo get stable index
 	log.Debug("ProtocolManager LocalHandle pre Handshake", "index", number.Index)
 	// Execute the PalletOne handshake
 	if err := p.Handshake(pm.networkId, number, pm.genesis.Hash(), hash); err != nil {
@@ -719,7 +720,7 @@ func (pm *ProtocolManager) ContractBroadcast(event jury.ContractEvent, local boo
 // NodeInfo represents a short summary of the PalletOne sub-protocol metadata
 // known about the host peer.
 type NodeInfo struct {
-	Network uint64 `json:"network"` // PalletOne network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
+	Network uint64      `json:"network"` // PalletOne network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
 	Index   uint64
 	Genesis common.Hash `json:"genesis"` // SHA3 hash of the host's genesis block
 	Head    common.Hash `json:"head"`    // SHA3 hash of the host's best owned block
