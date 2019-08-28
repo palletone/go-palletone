@@ -43,11 +43,11 @@ Request getbalance after create token
     ${PTN2}    ${result2}    normalGetBalance    ${geneAdd}    ${mutiHost1}
     : FOR    ${key}    IN    ${result2.keys}
     \    log    ${key}
-    ${count}    evaluate    int(pow(10,-${tokenDecimal})*${tokenAmount})
+    #${count}    evaluate    int(pow(10,-${tokenDecimal})*${tokenAmount})
     #log    ${result2['result']}
     ${item}    getTokenId    ${preTokenId}    ${result2['result']}
     ${key}    Get From Dictionary    ${result2['result']}    ${item}
-    [Return]    ${count}    ${key}
+    [Return]    ${tokenAmount}    ${key}
 
 Assert gain
     [Arguments]    ${count}    ${key}

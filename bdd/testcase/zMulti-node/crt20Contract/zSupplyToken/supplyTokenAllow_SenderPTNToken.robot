@@ -59,6 +59,6 @@ Request getbalance after create token
 Assert gain of reciever
     [Arguments]    ${PTN1}    ${PTN2}    ${tokenGAIN}    ${GAIN}
     ${PTNGAIN}    Evaluate    decimal.Decimal('${PTN1}')-decimal.Decimal('${GAIN}')    decimal
-    ${supplyTokenAmount}    Evaluate    ${supplyTokenAmount}*(10**-${tokenDecimal})
+    #${supplyTokenAmount}    Evaluate    ${supplyTokenAmount}*(10**-${tokenDecimal})
     Should Be Equal As Numbers    ${PTN2}    ${PTNGAIN}
     Should Be Equal As Numbers    ${supplyTokenAmount}    ${tokenGAIN}

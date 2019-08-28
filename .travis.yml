@@ -75,7 +75,7 @@ matrix:
     #     - go test ./...
     - os: linux
       dist: xenial
-      go: 1.12.7
+      go: 1.12.9
       env: one_node_bdd
       script:
         - go build -mod=vendor ./cmd/gptn
@@ -158,7 +158,7 @@ matrix:
         - chmod +x bdd/upload2Ftp.sh
     - os: linux
       dist: xenial
-      go: 1.12.7
+      go: 1.12.9
       env: multiple_nodes_bdd
       script:
         #- go build -mod=vendor ./cmd/gptn
@@ -212,7 +212,7 @@ matrix:
         - chmod +x bdd/upload2Ftp.sh
     - os: linux
       dist: xenial
-      go: 1.12.7
+      go: 1.12.9
       env: mediator_bdd
       script:
         - go build -mod=vendor ./cmd/gptn
@@ -248,7 +248,7 @@ matrix:
         - chmod +x bdd/upload2Ftp.sh
     - os: linux
       dist: xenial
-      go: 1.12.7
+      go: 1.12.9
       env: application_bdd
       script:
         - go build -mod=vendor ./cmd/gptn
@@ -285,7 +285,7 @@ matrix:
     - os: linux
       env: usercontract_bdd_3-3
       dist: xenial
-      go: 1.12.5
+      go: 1.12.9
       services: docker
       script:
         - ip addr

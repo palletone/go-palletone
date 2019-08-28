@@ -5,3 +5,4 @@
 docker build -t palletone/goimg:dev .
 
 rm palletone.tar
+rm adaptor.tar
