@@ -21,6 +21,9 @@ jsonFile="ptn-genesis.json"
 if [ -e "$jsonFile" ]; then
     #file already exist, modify
     sed -i "s/\"gasToken\": \"PTN\"/\"gasToken\": \"$gasToken\"/g" $jsonFile
+    sed -i 's/"mediator_interval": 3,/"mediator_interval": 2,/g' $jsonFile
+    sed -i 's/"initialTimestamp": [0-9]*,/"initialTimestamp": 1566269000,/g' $jsonFile
+    sed -i 's/"maintenance_skip_slots": 1,/"maintenance_skip_slots": 0,/g' $jsonFile
 else
     #file not found, new file
     echo "no $jsonFile"

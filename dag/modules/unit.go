@@ -81,13 +81,11 @@ func (h *Header) GetGroupPubKey() (kyber.Point, error) {
 }
 
 func (cpy *Header) CopyHeader(h *Header) {
-	cpy = h
-	if len(h.ParentsHash) > 0 {
-		cpy.ParentsHash = make([]common.Hash, len(h.ParentsHash))
-		for i := 0; i < len(h.ParentsHash); i++ {
-			cpy.ParentsHash[i] = h.ParentsHash[i]
-		}
-	}
+	index := new(ChainIndex)
+   index.Index = h.Number.Index
+   index.AssetID = h.Number.AssetID
+   *cpy = *h
+   cpy.Number = index
 }
 
 func NewHeader(parents []common.Hash, used uint64, extra []byte) *Header {
