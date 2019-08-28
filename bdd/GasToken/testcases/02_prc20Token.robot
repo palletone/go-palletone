@@ -6,7 +6,7 @@ Library           BuiltIn
 
 *** Test Cases ***
 aliceUsePRC20Token
-    Given Alice issues her personal token named ALICE, amount is 1000, dicimal is 1 succeed
+    Given Alice issues her personal token named ALICE, amount is 1000, decimal is 1 succeed
     When Alice transfers 500 ALICE to Bob succeed
     And Bob transfers 200 ALICE to Carol succeed
     And Alice increases 1000 ALICE succeed
