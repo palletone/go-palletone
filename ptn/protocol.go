@@ -71,7 +71,7 @@ const (
 type errCode int
 
 const (
-	ErrMsgTooLarge             = iota
+	ErrMsgTooLarge = iota
 	ErrDecode
 	ErrInvalidMsgCode
 	ErrProtocolVersionMismatch
@@ -171,7 +171,6 @@ type statusData struct {
 	GenesisUnit     common.Hash
 	CurrentHeader   common.Hash
 	StableIndex     *modules.ChainIndex
-	//Mediator        bool
 }
 
 // newBlockHashesData is the network packet for the block announcements.

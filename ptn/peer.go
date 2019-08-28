@@ -156,9 +156,7 @@ func (p *peer) SetHead(hash common.Hash, number, index *modules.ChainIndex) {
 	if (ok && number.Index > msg.number.Index) || !ok {
 		copy(msg.head[:], hash[:])
 		msg.number = number
-		if index != nil {
-			msg.stableNumber = index
-		}
+		msg.stableNumber = index
 	}
 	p.peermsg[number.AssetID] = msg
 }
@@ -359,20 +357,20 @@ func (p *peer) RequestReceipts(hashes []common.Hash) error {
 
 // Handshake executes the ptn protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
-func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis common.Hash,
-/*mediator bool,*/ headHash common.Hash) error {
+func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis common.Hash, headHash common.Hash,
+	stable *modules.ChainIndex) error {
 	// Send out own handshake in a new thread
 	errc := make(chan error, 2)
 	var status statusData // safe to read after two values have been received from errc
 
 	go func() {
-		// todo
 		errc <- p2p.Send(p.rw, StatusMsg, &statusData{
 			ProtocolVersion: uint32(p.version),
 			NetworkId:       network,
 			Index:           index,
 			GenesisUnit:     genesis,
 			CurrentHeader:   headHash,
+			StableIndex:     stable,
 		})
 	}()
 	go func() {
@@ -390,7 +388,7 @@ func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis comm
 			return p2p.DiscReadTimeout
 		}
 	}
-	log.Debug("peer Handshake", "p.id", p.id, "index", index.Index)
+	log.Debug("peer Handshake", "p.id", p.id, "index", status.Index, "stable", status.StableIndex)
 	p.SetHead(status.CurrentHeader, status.Index, status.StableIndex)
 	return nil
 }
