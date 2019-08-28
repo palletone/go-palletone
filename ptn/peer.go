@@ -130,6 +130,17 @@ func (p *peer) Info(protocol string) *PeerInfo {
 	}
 }
 
+func (p *peer) StableIndex(assetID modules.AssetId) (stableIndex *modules.ChainIndex) {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+
+	msg, ok := p.peermsg[assetID]
+	if ok {
+		stableIndex = msg.stableNumber
+	}
+	return stableIndex
+}
+
 // Head retrieves a copy of the current head hash and total difficulty of the
 // peer.
 //only retain the max index header.will in other mediator,not in ptn mediator.
@@ -571,6 +582,19 @@ func (ps *peerSet) BestPeer(assetId modules.AssetId) *peer {
 		}
 	}
 	return bestPeer
+}
+
+func (ps *peerSet) StableIndex(assetId modules.AssetId) uint64 {
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
+
+	var index uint64
+	for _, p := range ps.peers {
+		if stable := p.StableIndex(assetId); stable != nil {
+			index += stable.Index
+		}
+	}
+	return index
 }
 
 // Close disconnects all peers.
