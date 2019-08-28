@@ -40,6 +40,7 @@ type IDag interface {
 	SaveCommon(key, val []byte) error
 
 	IsEmpty() bool
+	GetStableChainIndex(token modules.AssetId) *modules.ChainIndex
 	CurrentUnit(token modules.AssetId) *modules.Unit
 	GetCurrentUnit(assetId modules.AssetId) *modules.Unit
 	GetMainCurrentUnit() *modules.Unit
