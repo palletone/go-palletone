@@ -65,6 +65,10 @@ func (q *mockStatedbQuery) GetMediators() map[common.Address]bool {
 	return nil
 }
 
+func (q *mockStatedbQuery) GetMediator(add common.Address) *core.Mediator {
+	return nil
+}
+
 //获得系统配置的最低手续费要求
 func (q *mockStatedbQuery) GetMinFee() (*modules.AmountAsset, error) {
 	return &modules.AmountAsset{Asset: modules.NewPTNAsset(), Amount: uint64(1)}, nil
@@ -85,6 +89,7 @@ type mockUtxoQuery struct {
 func (q *mockUtxoQuery) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error) {
 	return nil, nil
 }
+
 func (q *mockUtxoQuery) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	hash := common.HexToHash("1")
 	//result := map[*modules.OutPoint]*modules.Utxo{}
