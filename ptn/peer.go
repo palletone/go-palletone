@@ -591,7 +591,11 @@ func (ps *peerSet) StableIndex(assetId modules.AssetId) uint64 {
 	var index uint64
 	for _, p := range ps.peers {
 		if stable := p.StableIndex(assetId); stable != nil {
-			index += stable.Index
+			if index == 0 {
+				index = stable.Index
+			} else if stable.Index >= 1 && index > stable.Index {
+				index = stable.Index
+			}
 		}
 	}
 	return index

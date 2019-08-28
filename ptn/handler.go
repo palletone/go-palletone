@@ -292,7 +292,7 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 			pm.txpool.SetPendingTxs(hash, u.NumberU64(), u.Transactions())
 		}
 
-		account, err := pm.dag.InsertDag(blocks, pm.txpool)
+		account, err := pm.dag.InsertDag(blocks, pm.txpool, false)
 		if err == nil {
 			go func() {
 				var (

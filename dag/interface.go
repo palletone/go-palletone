@@ -45,7 +45,7 @@ type IDag interface {
 	GetCurrentUnit(assetId modules.AssetId) *modules.Unit
 	GetMainCurrentUnit() *modules.Unit
 	GetCurrentMemUnit(assetId modules.AssetId, index uint64) *modules.Unit
-	InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error)
+	InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable bool) (int, error)
 	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
 	HasHeader(common.Hash, uint64) bool
 	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)

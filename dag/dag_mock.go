@@ -160,16 +160,16 @@ func (mr *MockIDagMockRecorder) GetCurrentMemUnit(assetId, index interface{}) *g
 }
 
 // InsertDag mocks base method
-func (m *MockIDag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error) {
-	ret := m.ctrl.Call(m, "InsertDag", units, txpool)
+func (m *MockIDag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable bool) (int, error) {
+	ret := m.ctrl.Call(m, "InsertDag", units, txpool, is_stable)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // InsertDag indicates an expected call of InsertDag
-func (mr *MockIDagMockRecorder) InsertDag(units, txpool interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertDag", reflect.TypeOf((*MockIDag)(nil).InsertDag), units, txpool)
+func (mr *MockIDagMockRecorder) InsertDag(units, txpool, is_stable interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertDag", reflect.TypeOf((*MockIDag)(nil).InsertDag), units, txpool, is_stable)
 }
 
 // GetUnitByHash mocks base method
