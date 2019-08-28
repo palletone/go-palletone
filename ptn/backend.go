@@ -43,7 +43,6 @@ import (
 	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
-	"github.com/palletone/go-palletone/ptn/filters"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/shopspring/decimal"
@@ -225,12 +224,12 @@ func (s *PalletOne) APIs() []rpc.API {
 			Service:   downloader.NewPublicDownloaderAPI(s.protocolManager.downloader, s.eventMux),
 			Public:    true,
 		},
-		{
+		/*{
 			Namespace: "ptn",
 			Version:   "1.0",
 			Service:   filters.NewPublicFilterAPI(s.ApiBackend, false),
 			Public:    true,
-		}, {
+		}, */{
 			Namespace: "admin",
 			Version:   "1.0",
 			//Service:   NewPrivateAdminAPI(s),
