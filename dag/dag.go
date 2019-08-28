@@ -104,6 +104,15 @@ func (d *Dag) CurrentUnit(token modules.AssetId) *modules.Unit {
 	}
 	return unit
 }
+func (d *Dag) GetStableChainIndex(token modules.AssetId) *modules.ChainIndex {
+	memdag, err := d.getMemDag(token)
+	if err != nil {
+		log.Errorf("Get CurrentUnit by token[%s] error:%s", token.String(), err.Error())
+		return nil
+	}
+	_, height := memdag.GetLastStableUnitInfo()
+	return &modules.ChainIndex{AssetID: token, Index: height}
+}
 
 // return last main chain unit in memdag
 func (d *Dag) GetMainCurrentUnit() *modules.Unit {
