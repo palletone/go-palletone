@@ -408,10 +408,10 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 			return
 		}
 		//创建gptn-net网络
-		_, err = client.NetworkInfo("gptn-net")
+		_, err = client.NetworkInfo(core.DefaultUccNetworkMode)
 		if err != nil {
 			log.Debugf("client.NetworkInfo error: %s", err.Error())
-			_, err := client.CreateNetwork(docker.CreateNetworkOptions{Name: "gptn-net", Driver: "bridge"})
+			_, err := client.CreateNetwork(docker.CreateNetworkOptions{Name: core.DefaultUccNetworkMode, Driver: "bridge"})
 			if err != nil {
 				log.Debugf("client.CreateNetwork error: %s", err.Error())
 				return
