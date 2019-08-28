@@ -262,7 +262,7 @@ Business_07
     log    ${assetId}
     ${amount}    getBalance    ${mediatorAddr_02}    ${assetId}
     log    ${amount}
-    Should Be Equal As Numbers    ${amount}    100
+    Should Be Equal As Numbers    ${amount}    1000
     ${result}    invokeToken    ${mediatorAddr_02}    ${assetId}    #在同意列表里的节点，可以交付保证金    #这里交的数量不是规定的保证金数量，导致无法加入候选列表，并且相应保证金退还该地址    #1
     log    ${result}
     ${addressMap3}    getListForMediatorCandidate
@@ -270,7 +270,7 @@ Business_07
     Dictionary Should Not Contain Key    ${addressMap3}    ${mediatorAddr_02}    #无该节点
     ${amount}    getBalance    ${mediatorAddr_02}    ${assetId}
     log    ${amount}
-    Should Be Equal As Numbers    ${amount}    100
+    Should Be Equal As Numbers    ${amount}    1000
     ${amount}    getBalance    ${mediatorAddr_02}    PTN
     log    ${amount}
     Should Be Equal As Numbers    ${amount}    9946
