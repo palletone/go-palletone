@@ -93,6 +93,11 @@ func validateUnitSignature(h *modules.Header) ValidationCode {
 
 //验证Author必须是一个活跃的Mediator，防止其他节点冒充产块
 func (validate *Validate)validateUnitAuthor(h *modules.Header) ValidationCode{
+	if validate.statequery==nil{
+		log.Warnf("Don't set validate.statequery, cannot validate unit author is a mediator.")
+		return TxValidationCode_VALID
+	}
+
 	mediators:=validate.statequery.GetMediators()
 	authorAddr:= h.Authors.Address()
 	if has,_:= mediators[authorAddr];!has{
