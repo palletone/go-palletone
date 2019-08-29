@@ -52,6 +52,14 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 	if !p.dag.IsContractDeveloper(from) {
 		return common.Hash{}, nil, fmt.Errorf("ContractInstallReq, address[%s] is not developer", from.String())
 	}
+	if len(addrs) > 0 {
+		jjhAd := p.dag.GetChainParameters().FoundationAddress
+		if jjhAd != from.Str() {
+			log.Debugf("ContractInstallReq, requestAddr[%s] not foundationAddress", from.String())
+			return common.Hash{}, nil, fmt.Errorf("ContractInstallReq,"+
+				" request address[%s] is not foundationAddress(when specifying the contract install address)", from.String())
+		}
+	}
 	addrHash := make([]common.Hash, 0)
 	//去重
 	resultAddress := getValidAddress(addrs)
@@ -124,10 +132,10 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_DEPLOY_REQUEST,
 		Payload: &modules.ContractDeployRequestPayload{
-			TemplateId:   templateId,
-			Args:    args,
-			ExtData: extData,
-			Timeout: uint32(timeout),
+			TemplateId: templateId,
+			Args:       args,
+			ExtData:    extData,
+			Timeout:    uint32(timeout),
 		},
 	}
 	reqId, tx, err := p.createContractTxReq(common.Address{}, from, to, daoAmount, daoFee, nil, msgReq)

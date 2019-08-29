@@ -192,6 +192,10 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//==== convert params to token information
 	var fungible dm.FungibleToken
 	//name symbol
+	if len(args[0]) > 1024 {
+		jsonResp := "{\"Error\":\"Name length should not be greater than 1024\"}"
+		return shim.Error(jsonResp)
+	}
 	fungible.Name = args[0]
 	fungible.Symbol = strings.ToUpper(args[1])
 	if fungible.Symbol == "PTN" {

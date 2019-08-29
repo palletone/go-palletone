@@ -146,6 +146,10 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//==== convert params to token information
 	var vt dm.VoteToken
 	//name symbol
+	if len(args[0]) > 1024 {
+		jsonResp := "{\"Error\":\"Name length should not be greater than 1024\"}"
+		return shim.Error(jsonResp)
+	}
 	vt.Name = args[0]
 	vt.Symbol = "VOTE"
 

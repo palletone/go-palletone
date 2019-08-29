@@ -165,7 +165,7 @@ func _payoutPTNByTxID(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 
 	//
 	txIDHex := args[0]
-	if "0x" == txIDHex[0:2] && "0X" == txIDHex[0:2] {
+	if "0x" == txIDHex[0:2] || "0X" == txIDHex[0:2] {
 		txIDHex = txIDHex[2:]
 	}
 	result, _ := stub.GetState(symbolsPayout + txIDHex)
