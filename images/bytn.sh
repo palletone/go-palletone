@@ -15,12 +15,9 @@ do
   let ++count
 done
 
-#如果本地没有gptn-net这个网络，则创建
-docker network create gptn-net
-
 cd ..
 
-#拉去官方提供的镜像文件
+#拉取官方提供的镜像文件
 docker pull palletone/gptnnode:$1
 
 docker tag palletone/gptnnode:$1 palletone/gptnnode
