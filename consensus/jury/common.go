@@ -862,8 +862,8 @@ func checkContractTxFeeValid(dag iDag, tx *modules.Transaction) bool {
 
 	val := math.Max(float64(fees.Amount), timeFee+sizeFee) == float64(fees.Amount)
 	if !val {
-		log.Errorf("[%s]checkContractTxFeeValid invalid, fee amount[%f]-fees[%f]",
-			shortId(reqId.String()), float64(fees.Amount), timeFee+sizeFee)
+		log.Errorf("[%s]checkContractTxFeeValid invalid, fee amount[%f]-fees[%f], txSize[%f]-timeout[d]s",
+			shortId(reqId.String()), float64(fees.Amount), timeFee+sizeFee, txSize.Float64(), timeout)
 	}
 	return val
 }
