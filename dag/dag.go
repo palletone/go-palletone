@@ -104,6 +104,15 @@ func (d *Dag) CurrentUnit(token modules.AssetId) *modules.Unit {
 	}
 	return unit
 }
+func (d *Dag) GetStableChainIndex(token modules.AssetId) *modules.ChainIndex {
+	memdag, err := d.getMemDag(token)
+	if err != nil {
+		log.Errorf("Get CurrentUnit by token[%s] error:%s", token.String(), err.Error())
+		return nil
+	}
+	_, height := memdag.GetLastStableUnitInfo()
+	return &modules.ChainIndex{AssetID: token, Index: height}
+}
 
 // return last main chain unit in memdag
 func (d *Dag) GetMainCurrentUnit() *modules.Unit {
@@ -261,41 +270,44 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 // wrong.
 // After insertion is done, all accumulated events will be fired.
 // reference : Eth InsertChain
-func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error) {
+func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable bool) (int, error) {
 	count := int(0)
 
 	for i, u := range units {
 		// all units must be continuous
-		if i > 0 && units[i].UnitHeader.Number.Index == units[i-1].UnitHeader.Number.Index+1 {
+		if i > 0 && units[i].UnitHeader.Number.Index != units[i-1].UnitHeader.Number.Index+1 {
 			return count, fmt.Errorf("Insert dag error: child height are not continuous, "+
 				"parent unit number=%d, hash=%s; "+"child unit number=%d, hash=%s",
-				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash,
-				units[i].UnitHeader.Number.Index, units[i].UnitHash)
+				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash.String(),
+				units[i].UnitHeader.Number.Index, units[i].UnitHash.String())
 		}
 		if i > 0 && !u.ContainsParent(units[i-1].UnitHash) {
 			return count, fmt.Errorf("Insert dag error: child parents are not continuous, "+
 				"parent unit number=%d, hash=%s; "+"child unit number=%d, hash=%s",
-				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash,
-				units[i].UnitHeader.Number.Index, units[i].UnitHash)
+				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash.String(),
+				units[i].UnitHeader.Number.Index, units[i].UnitHash.String())
 		}
 		t1 := time.Now()
 		timestamp := time.Unix(u.Timestamp(), 0)
 		log.Debugf("Start InsertDag unit(%v) #%v parent(%v) @%v signed by %v", u.UnitHash.TerminalString(),
 			u.NumberU64(), u.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
 			u.Author().Str())
-
-		if a, b, c, dd, e, err := d.Memdag.AddUnit(u, txpool, false); err != nil {
-			//return count, err
-			log.Errorf("Memdag addUnit[%s] #%d signed by %v error:%s",
-				u.UnitHash.String(), u.NumberU64(), u.Author().Str(), err.Error())
-			return count, nil
+		if is_stable {
+			d.Memdag.AddStableUnit(u)
 		} else {
-			if a != nil {
-				d.unstableUnitRep = a
-				d.unstableUtxoRep = b
-				d.unstableStateRep = c
-				d.unstablePropRep = dd
-				d.unstableUnitProduceRep = e
+			if a, b, c, dd, e, err := d.Memdag.AddUnit(u, txpool, false); err != nil {
+				//return count, err
+				log.Errorf("Memdag addUnit[%s] #%d signed by %v error:%s",
+					u.UnitHash.String(), u.NumberU64(), u.Author().Str(), err.Error())
+				return count, nil
+			} else {
+				if a != nil {
+					d.unstableUnitRep = a
+					d.unstableUtxoRep = b
+					d.unstableStateRep = c
+					d.unstablePropRep = dd
+					d.unstableUnitProduceRep = e
+				}
 			}
 		}
 		log.Debugf("InsertDag[%s] #%d spent time:%s", u.UnitHash.String(), u.NumberU64(), time.Since(t1))

@@ -5,16 +5,16 @@
 package dag
 
 import (
-	gomock "github.com/golang/mock/gomock"
-	common "github.com/palletone/go-palletone/common"
-	event "github.com/palletone/go-palletone/common/event"
-	discover "github.com/palletone/go-palletone/common/p2p/discover"
-	list "github.com/palletone/go-palletone/contracts/list"
-	core "github.com/palletone/go-palletone/core"
-	modules "github.com/palletone/go-palletone/dag/modules"
-	txspool "github.com/palletone/go-palletone/dag/txspool"
-	reflect "reflect"
-	time "time"
+	"github.com/golang/mock/gomock"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/p2p/discover"
+	"github.com/palletone/go-palletone/contracts/list"
+	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/txspool"
+	"reflect"
+	"time"
 )
 
 // MockIDag is a mock of IDag interface
@@ -111,6 +111,18 @@ func (mr *MockIDagMockRecorder) CurrentUnit(token interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentUnit", reflect.TypeOf((*MockIDag)(nil).CurrentUnit), token)
 }
 
+// GetStableChainIndex mocks base method
+func (m *MockIDag) GetStableChainIndex(token modules.AssetId) *modules.ChainIndex {
+	ret := m.ctrl.Call(m, "GetStableChainIndex", token)
+	ret0, _ := ret[0].(*modules.ChainIndex)
+	return ret0
+}
+
+// GetStableChainIndex indicates an expected call of GetStableChainIndex
+func (mr *MockIDagMockRecorder) GetStableChainIndex(token interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStableChainIndex", reflect.TypeOf((*MockIDag)(nil).GetStableChainIndex), token)
+}
+
 // GetCurrentUnit mocks base method
 func (m *MockIDag) GetCurrentUnit(assetId modules.AssetId) *modules.Unit {
 	ret := m.ctrl.Call(m, "GetCurrentUnit", assetId)
@@ -148,16 +160,16 @@ func (mr *MockIDagMockRecorder) GetCurrentMemUnit(assetId, index interface{}) *g
 }
 
 // InsertDag mocks base method
-func (m *MockIDag) InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error) {
-	ret := m.ctrl.Call(m, "InsertDag", units, txpool)
+func (m *MockIDag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable bool) (int, error) {
+	ret := m.ctrl.Call(m, "InsertDag", units, txpool, is_stable)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // InsertDag indicates an expected call of InsertDag
-func (mr *MockIDagMockRecorder) InsertDag(units, txpool interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertDag", reflect.TypeOf((*MockIDag)(nil).InsertDag), units, txpool)
+func (mr *MockIDagMockRecorder) InsertDag(units, txpool, is_stable interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertDag", reflect.TypeOf((*MockIDag)(nil).InsertDag), units, txpool, is_stable)
 }
 
 // GetUnitByHash mocks base method

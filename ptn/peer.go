@@ -63,8 +63,9 @@ type PeerInfo struct {
 }
 
 type peerMsg struct {
-	head   common.Hash
-	number *modules.ChainIndex
+	head         common.Hash
+	number       *modules.ChainIndex
+	stableNumber *modules.ChainIndex
 }
 
 type peer struct {
@@ -129,6 +130,17 @@ func (p *peer) Info(protocol string) *PeerInfo {
 	}
 }
 
+func (p *peer) StableIndex(assetID modules.AssetId) (stableIndex *modules.ChainIndex) {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+
+	msg, ok := p.peermsg[assetID]
+	if ok {
+		stableIndex = msg.stableNumber
+	}
+	return stableIndex
+}
+
 // Head retrieves a copy of the current head hash and total difficulty of the
 // peer.
 //only retain the max index header.will in other mediator,not in ptn mediator.
@@ -146,15 +158,25 @@ func (p *peer) Head(assetID modules.AssetId) (hash common.Hash, number *modules.
 
 // SetHead updates the head hash and total difficulty of the peer.
 //only retain the max index header
-func (p *peer) SetHead(hash common.Hash, number *modules.ChainIndex) {
+func (p *peer) SetHead(hash common.Hash, number, index *modules.ChainIndex) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
 	msg, ok := p.peermsg[number.AssetID]
+	tempstableIndex := &modules.ChainIndex{}
+	if ok && index == nil {
+		tempstableIndex = msg.stableNumber
+	}
 
 	if (ok && number.Index > msg.number.Index) || !ok {
 		copy(msg.head[:], hash[:])
 		msg.number = number
+		if index != nil {
+			msg.stableNumber = index
+		} else {
+			msg.stableNumber = tempstableIndex
+		}
+
 	}
 	p.peermsg[number.AssetID] = msg
 }
@@ -355,8 +377,8 @@ func (p *peer) RequestReceipts(hashes []common.Hash) error {
 
 // Handshake executes the ptn protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
-func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis common.Hash,
-/*mediator bool,*/ headHash common.Hash) error {
+func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis common.Hash, headHash common.Hash,
+	stable *modules.ChainIndex) error {
 	// Send out own handshake in a new thread
 	errc := make(chan error, 2)
 	var status statusData // safe to read after two values have been received from errc
@@ -368,6 +390,7 @@ func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis comm
 			Index:           index,
 			GenesisUnit:     genesis,
 			CurrentHeader:   headHash,
+			StableIndex:     stable,
 		})
 	}()
 	go func() {
@@ -385,8 +408,8 @@ func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis comm
 			return p2p.DiscReadTimeout
 		}
 	}
-	log.Debug("peer Handshake", "p.id", p.id, "index", index.Index)
-	p.SetHead(status.CurrentHeader, status.Index)
+	log.Debug("peer Handshake", "p.id", p.id, "index", status.Index, "stable", status.StableIndex)
+	p.SetHead(status.CurrentHeader, status.Index, status.StableIndex)
 	return nil
 }
 
@@ -559,6 +582,23 @@ func (ps *peerSet) BestPeer(assetId modules.AssetId) *peer {
 		}
 	}
 	return bestPeer
+}
+
+func (ps *peerSet) StableIndex(assetId modules.AssetId) uint64 {
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
+
+	var index uint64
+	for _, p := range ps.peers {
+		if stable := p.StableIndex(assetId); stable != nil {
+			if index == 0 {
+				index = stable.Index
+			} else if stable.Index >= 1 && index > stable.Index {
+				index = stable.Index
+			}
+		}
+	}
+	return index
 }
 
 // Close disconnects all peers.

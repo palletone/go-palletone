@@ -380,7 +380,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	if pm.IsExistInCache(unitHash.Bytes()) {
 		//log.Debugf("Received unit(%v) again, ignore it", unitHash.TerminalString())
 		p.MarkUnit(unitHash)
-		p.SetHead(unitHash, unit.Number())
+		p.SetHead(unitHash, unit.Number(), nil)
 		return nil
 	}
 
@@ -430,7 +430,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	if common.EmptyHash(hash) || (!common.EmptyHash(hash) && requestNumber.Index > number.Index) {
 		log.Debug("ProtocolManager", "NewBlockMsg SetHead request.Index:", requestNumber.Index,
 			"local peer index:", number.Index)
-		p.SetHead(unit.Hash(), requestNumber)
+		p.SetHead(unit.Hash(), requestNumber, nil)
 
 		//currentUnitIndex := pm.dag.GetCurrentUnit(unit.Number().AssetID).UnitHeader.Number.Index
 		currentUnitIndex := pm.dag.HeadUnitNum()

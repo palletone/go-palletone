@@ -458,6 +458,16 @@ func (chain *MemDag) removeUnitAndChildren(hash common.Hash, txpool txspool.ITxP
 		}
 	}
 }
+func (chain *MemDag) AddStableUnit(unit *modules.Unit) {
+	chain.lock.Lock()
+	defer chain.lock.Unlock()
+	hash := unit.Hash()
+	log.Debugf("add stable unit to dag, hash[%s], index:%d", hash.String(), unit.NumberU64())
+	chain.saveUnitToDb(chain.ldbunitRep, chain.ldbUnitProduceRep, unit)
+	//Set stable unit
+	chain.stableUnitHash = hash
+	chain.stableUnitHeight = unit.NumberU64()
+}
 
 func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenerate bool) (common2.IUnitRepository,
 	common2.IUtxoRepository, common2.IStateRepository, common2.IPropRepository,

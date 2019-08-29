@@ -44,6 +44,7 @@ import (
 // }
 
 type IMemDag interface {
+	AddStableUnit(unit *modules.Unit)
 	AddUnit(unit *modules.Unit, txpool txspool.ITxPool, isProd bool) (common2.IUnitRepository, common2.IUtxoRepository,
 		common2.IStateRepository, common2.IPropRepository, common2.IUnitProduceRepository, error)
 	GetLastStableUnitInfo() (common.Hash, uint64)

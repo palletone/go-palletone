@@ -292,7 +292,7 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 			pm.txpool.SetPendingTxs(hash, u.NumberU64(), u.Transactions())
 		}
 
-		account, err := pm.dag.InsertDag(blocks, pm.txpool)
+		account, err := pm.dag.InsertDag(blocks, pm.txpool, false)
 		if err == nil {
 			go func() {
 				var (
@@ -494,14 +494,17 @@ func (pm *ProtocolManager) LocalHandle(p *peer) error {
 	var (
 		number = &modules.ChainIndex{}
 		hash   = common.Hash{}
+		stable = &modules.ChainIndex{}
 	)
 	if head := pm.dag.CurrentHeader(pm.mainAssetId); head != nil {
 		number = head.Number
 		hash = head.Hash()
+		stable = pm.dag.GetStableChainIndex(pm.mainAssetId)
 	}
-	log.Debug("ProtocolManager LocalHandle pre Handshake", "index", number.Index)
+
+	log.Debug("ProtocolManager LocalHandle pre Handshake", "index", number.Index, "stable", stable)
 	// Execute the PalletOne handshake
-	if err := p.Handshake(pm.networkId, number, pm.genesis.Hash(), hash); err != nil {
+	if err := p.Handshake(pm.networkId, number, pm.genesis.Hash(), hash, stable); err != nil {
 		log.Debug("PalletOne handshake failed", "err", err)
 		return err
 	}
