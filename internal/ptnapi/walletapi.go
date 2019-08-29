@@ -1610,3 +1610,101 @@ func readTxs(path string) ([]string, error) {
 	}
 
 }
+
+//将UTXO碎片聚集成整的UTXO
+func (s *PrivateWalletAPI) AggregateUtxo(ctx context.Context, address string, fee decimal.Decimal, password string) ([]common.Hash, error) {
+	ptn := dagconfig.DagConfig.GasToken
+	addr, err := common.StringToAddress(address)
+	if err != nil {
+		return nil, err
+	}
+	err = s.unlockKS(addr, password, nil)
+	if err != nil {
+		return nil, err
+	}
+	utxos, err := s.b.GetAddrRawUtxos(address)
+	if err != nil {
+		return nil, err
+	}
+	var batchInputLen = 1000 //以1000个Input为一个Tx，构造转账交易给自己
+	var payment *modules.PaymentPayload = nil
+	var inputCount = 0
+	var inputAmtSum = uint64(0)
+	var asset *modules.Asset = nil
+	result := []common.Hash{}
+	for outpoint, utxo := range utxos {
+		if utxo.Asset.String() != ptn { //按Asset对UTXO进行过滤
+			continue
+		}
+		asset = utxo.Asset
+		if payment == nil { //一个新的Tx
+			payment = &modules.PaymentPayload{}
+		}
+		//附加一个Input
+		out := outpoint
+		payment.AddTxIn(modules.NewTxIn(&out, nil))
+		inputAmtSum += utxo.Amount
+		inputCount++
+		if inputCount%batchInputLen == 0 { //满足构造Tx的数量了
+			feeAmount := ptnjson.JsonAmt2AssetAmt(asset, fee)
+			if inputAmtSum <= feeAmount {
+				return result, nil
+			}
+			tx, err := s.generateTx(payment, addr, inputAmtSum, feeAmount, asset)
+			if err != nil {
+				return nil, err
+			}
+			err = s.b.SendTx(ctx, tx)
+			inputAmtSum = 0
+			payment = nil
+			if err != nil {
+				return nil, err
+			}
+			result = append(result, tx.Hash())
+		}
+	}
+	if inputAmtSum != 0 {
+		feeAmount := ptnjson.JsonAmt2AssetAmt(asset, fee)
+		if inputAmtSum <= feeAmount {
+			return result, nil
+		}
+		tx, err := s.generateTx(payment, addr, inputAmtSum, feeAmount, asset)
+		if err != nil {
+			return nil, err
+		}
+		err = s.b.SendTx(ctx, tx)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, tx.Hash())
+	}
+	return result, nil
+}
+func (s *PrivateWalletAPI) generateTx(payment *modules.PaymentPayload, address common.Address,
+	inputAmtSum, fee uint64, asset *modules.Asset) (*modules.Transaction, error) {
+	out := modules.NewTxOut(inputAmtSum-fee, tokenengine.Instance.GenerateLockScript(address), asset)
+	payment.AddTxOut(out)
+	tx := &modules.Transaction{}
+	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, payment))
+	//Sign
+	utxoLockScripts := make(map[modules.OutPoint][]byte)
+	lockScript := tokenengine.Instance.GenerateLockScript(address)
+	for _, input := range payment.Inputs {
+		utxoLockScripts[*input.PreviousOutPoint] = lockScript
+	}
+	getPubKeyFn := func(addr common.Address) ([]byte, error) {
+		//TODO use keystore
+		ks := s.b.GetKeyStore()
+		return ks.GetPublicKey(addr)
+	}
+	//sign tx
+	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
+		ks := s.b.GetKeyStore()
+		return ks.SignMessage(addr, msg)
+	}
+	signErrs, err := tokenengine.Instance.SignTxAllPaymentInput(tx, 1, utxoLockScripts, nil, getPubKeyFn, getSignFn)
+	if err != nil {
+		log.Errorf("%v", signErrs)
+	}
+	return tx, nil
+}
