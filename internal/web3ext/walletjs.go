@@ -163,6 +163,11 @@ const Wallet_JS = `
             call: 'wallet_addBatchTxs',
             params: 1,
         }),
+		new web3._extend.Method({
+            name: 'aggregateUtxo',
+            call: 'wallet_aggregateUtxo',
+            params: 3,
+        }),
  	]
  });
  `
