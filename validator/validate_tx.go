@@ -400,12 +400,11 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 				return TxValidationCode_INVALID_COINBASE
 			}
 			if !validate. compareRewardAndStateClear(rewards, clearStateInvoke.WriteSet) {
-				log.Errorf("Coinbase tx[%s] Clear statedb not match", tx.Hash().String())
-				log.DebugDynamic(func() string {
-					rjson, _ := json.Marshal(rewards)
-					ojson, _ := json.Marshal(clearStateInvoke)
-					return fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nInvoke result:%s", string(rjson), string(ojson))
-				})
+				rjson, _ := json.Marshal(rewards)
+				ojson, _ := json.Marshal(clearStateInvoke)
+				data:= fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nInvoke result:%s", string(rjson), string(ojson))
+				log.Errorf("Coinbase tx[%s] Clear statedb not match, detail data:%s",
+					tx.Hash().String(),data)
 				return TxValidationCode_INVALID_COINBASE
 			}
 		}
@@ -498,11 +497,12 @@ func (validate *Validate) compareRewardAndStateClear(rewards map[common.Address]
 		}
 
 	}
-	return comparedCount == len(writeset)
-	// if comparedCount != len(rewards) { //所有的Reward的状态数据库被清空
-	// 	return false
-	// }
-	// return true
+	//return comparedCount == len(writeset)
+	if comparedCount != len(rewards) { //所有的Reward的状态数据库被清空
+		log.Warnf("write set comparedCount:%d clean count:%d",comparedCount,len(rewards))
+		return false
+	}
+	return true
 }
 func (validate *Validate) compareRewardAndWriteset(rewards map[common.Address][]modules.AmountAsset, writeset []modules.ContractWriteSet) bool {
 	comparedCount := 0
