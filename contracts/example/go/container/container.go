@@ -21,7 +21,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/adaptor"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"io/ioutil"
@@ -33,12 +33,13 @@ import (
 type SimpleChaincode struct {
 }
 
+var is adaptor.ISmartContract
+
 // 测试客户端参数，以及msg0的参数
 // 获取客户端两个参数，第一个作为key,第二个作为value
 // 获取部署请求地址，作为key，value为客户端第二个参数
 func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) peer.Response {
 	fmt.Println("Init=========================================================")
-	log.Debugf("Init")
 	args := stub.GetStringArgs()
 	_, err := strconv.Atoi(args[1])
 	if err != nil {
@@ -48,6 +49,7 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) peer.Response {
 	if err != nil {
 		return shim.Error(err.Error())
 	}
+
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
 		return shim.Error(err.Error())
@@ -67,7 +69,6 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) peer.Response
 	//  ["GetValueWithKey","A"]
 	case "GetValueWithKey":
 		fmt.Println("GetValueWithKey")
-		log.Debugf("GetValueWithKey")
 		byte, err := stub.GetState(args[0])
 		if err != nil {
 			return shim.Error(err.Error())
