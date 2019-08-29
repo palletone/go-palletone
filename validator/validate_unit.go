@@ -91,6 +91,21 @@ func validateUnitSignature(h *modules.Header) ValidationCode {
 	return TxValidationCode_VALID
 }
 
+//验证Author必须是一个活跃的Mediator，防止其他节点冒充产块
+func (validate *Validate)validateUnitAuthor(h *modules.Header) ValidationCode{
+	mediators:=validate.statequery.GetMediators()
+	authorAddr:= h.Authors.Address()
+	if has,_:= mediators[authorAddr];!has{
+		mediatorAddrs:=""
+		for m,_:=range mediators{
+			mediatorAddrs+=m.String()+","
+		}
+		log.Warnf("Active mediator list is:%s, current unit[%s %d] author is %s",
+			mediatorAddrs,h.Hash(),h.NumberU64(),authorAddr.String())
+		return UNIT_STATE_INVALID_AUTHOR
+	}
+	return TxValidationCode_VALID
+}
 // func (validate *Validate) validateMediatorSchedule(header *modules.Header) ValidationCode {
 // 	if validate.propquery == nil {
 // 		log.Warn("Validator don't have propquery, cannot validate mediator schedule")
@@ -262,7 +277,11 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 		sigState := validateUnitSignature(header)
 		return sigState
 	}
-
+	//Check author
+	validateAuthorCode:=validate.validateUnitAuthor(header)
+	if validateAuthorCode!=TxValidationCode_VALID{
+		return validateAuthorCode
+	}
 	//Is orphan?
 	parent := header.ParentsHash[0]
 	if validate.dagquery != nil {
