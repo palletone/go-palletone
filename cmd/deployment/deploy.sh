@@ -168,4 +168,4 @@ MakeTestNet $num $genesishash
 num=$[$n+5]
 MakeTestNet $num $genesishash
 
-
+rm -f node*/gptn
