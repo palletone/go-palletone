@@ -87,7 +87,9 @@ func getPledgeDepositRecord(stub shim.ChaincodeStubInterface, addr string) (*mod
 		log.Error("getPledgeDepositRecord by %s return error:%s",addr,err.Error())
 		return nil,err
 	}
-	log.Debugf("getPledgeDepositRecord by %s,result:%d",addr,addrAmt.Amount)
+	if addrAmt!=nil {
+		log.Debugf("getPledgeDepositRecord by %s,result:%d", addr, addrAmt.Amount)
+	}
 	return addrAmt,err
 }
 func getAllPledgeDepositRecords(stub shim.ChaincodeStubInterface) ([]*modules.AddressAmount, error) {
@@ -106,7 +108,9 @@ func getPledgeWithdrawRecord(stub shim.ChaincodeStubInterface, addr string) (*mo
 		log.Error("getPledgeWithdrawRecord by %s return error:%s",addr,err.Error())
 		return nil,err
 	}
-	log.Debugf("getPledgeWithdrawRecord by %s,result:%d",addr,addrAmt.Amount)
+	if addrAmt!=nil {
+		log.Debugf("getPledgeWithdrawRecord by %s,result:%d", addr, addrAmt.Amount)
+	}
 	return addrAmt,err
 }
 func getAllPledgeWithdrawRecords(stub shim.ChaincodeStubInterface) ([]*modules.AddressAmount, error) {
