@@ -438,12 +438,12 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 		if validate. compareRewardAndWriteset(rewards, invoke.WriteSet) {
 			return TxValidationCode_VALID
 		} else {
-			log.Errorf("Coinbase tx[%s] contract write set not correct", tx.Hash().String())
-			log.DebugDynamic(func() string {
-				rjson, _ := json.Marshal(rewards)
-				ojson, _ := json.Marshal(invoke)
-				return fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nInvoke result:%s", string(rjson), string(ojson))
-			})
+			rjson, _ := json.Marshal(rewards)
+			ojson, _ := json.Marshal(invoke)
+			debugData:= fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nInvoke result:%s", string(rjson), string(ojson))
+
+			log.Errorf("Coinbase tx[%s] contract write set not correct, %s",
+				tx.Hash().String(),debugData)
 			return TxValidationCode_INVALID_COINBASE
 		}
 	}

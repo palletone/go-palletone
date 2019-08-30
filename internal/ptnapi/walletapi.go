@@ -1612,16 +1612,18 @@ func readTxs(path string) ([]string, error) {
 }
 
 //将UTXO碎片聚集成整的UTXO
-func (s *PrivateWalletAPI) AggregateUtxo(ctx context.Context, address string, fee decimal.Decimal, password string) ([]common.Hash, error) {
+func (s *PrivateWalletAPI) AggregateUtxo(ctx context.Context,
+	address string, fee decimal.Decimal) ([]common.Hash, error) {
 	ptn := dagconfig.DagConfig.GasToken
 	addr, err := common.StringToAddress(address)
 	if err != nil {
 		return nil, err
 	}
-	err = s.unlockKS(addr, password, nil)
-	if err != nil {
-		return nil, err
-	}
+
+	//err = s.unlockKS(addr, password, nil)
+	//if err != nil {
+	//	return nil, err
+	//}
 	utxos, err := s.b.GetAddrRawUtxos(address)
 	if err != nil {
 		return nil, err
