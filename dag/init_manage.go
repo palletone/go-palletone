@@ -113,6 +113,9 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 		Key:      modules.MediatorList,
 		Value:    imcB,
 	}
+
+	// todo 将保证金设为0
+
 	//Mediator
 	ws.Key = modules.MediatorList
 	err = dag.stableStateRep.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws, version)

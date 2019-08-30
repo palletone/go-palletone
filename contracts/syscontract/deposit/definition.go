@@ -74,7 +74,8 @@ const (
 	HandlePledgeReward      = "HandlePledgeReward"
 	AllPledgeVotes          = "allPledgeVotes"
 	QueryPledgeList         = "QueryPledgeList"
-	QueryPledgeListByDate="QueryPledgeListByDate"
+	QueryPledgeListByDate   = "QueryPledgeListByDate"
+
 	//  mediator状态
 	Apply    = "Applying"
 	Agree    = "Approved"
