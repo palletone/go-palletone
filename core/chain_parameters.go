@@ -117,6 +117,7 @@ func NewChainParams() ChainParameters {
 		UccCpuShares:         DefaultUccCpuShares,
 		UccCpuQuota:          DefaultUccCpuQuota,
 		UccDisk:              DefaultUccDisk,
+		UccDuringTime:        defaultContainerDuringTime,
 		TempUccMemory:        DefaultTempUccMemory,
 		TempUccCpuShares:     DefaultTempUccCpuShares,
 		TempUccCpuQuota:      DefaultTempUccCpuQuota,
@@ -142,10 +143,11 @@ type ChainParameters struct {
 	//DepositPeriod int     `json:"deposit_period"` //保证金周期
 
 	//对启动用户合约容器的相关资源的限制
-	UccMemory    int64 `json:"ucc_memory"`
-	UccCpuShares int64 `json:"ucc_cpu_shares"`
-	UccCpuQuota  int64 `json:"ucc_cpu_quota"`
-	UccDisk      int64 `json:"ucc_disk"`
+	UccMemory     int64 `json:"ucc_memory"`
+	UccCpuShares  int64 `json:"ucc_cpu_shares"`
+	UccCpuQuota   int64 `json:"ucc_cpu_quota"`
+	UccDisk       int64 `json:"ucc_disk"`
+	UccDuringTime int64 `json:"ucc_during_time"`
 	//对中间容器的相关资源限制
 	TempUccMemory    int64 `json:"temp_ucc_memory"`
 	TempUccCpuShares int64 `json:"temp_ucc_cpu_shares"`

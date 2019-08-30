@@ -8,7 +8,6 @@ import (
 	"golang.org/x/net/context"
 	"time"
 
-	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
@@ -18,6 +17,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/contracts/ucc"
 
+	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/utils"
@@ -347,9 +347,15 @@ func StopByName(contractid []byte, chainID string, txid string, usercc *cclist.C
 	return stopResult, nil
 }
 
-func GetAllContainers(client *docker.Client) {
-	//
-	addrs, err := utils.GetAllExitedContainer(client)
+func RestartContainers(client *docker.Client) {
+	//  获取所有容器
+	cons, err := utils.GetAllContainers(client)
+	if err != nil {
+		log.Errorf("utils.GetAllContainers error %s", err.Error())
+		return
+	}
+	//  获取所有退出容器
+	addrs, err := utils.GetAllExitedContainer(cons)
 	if err != nil {
 		log.Infof("client.ListContainers err: %s\n", err.Error())
 		return
@@ -368,6 +374,29 @@ func GetAllContainers(client *docker.Client) {
 			if err != nil {
 				log.Infof("RestartContainer err: %s", err.Error())
 				return
+			}
+		}
+	}
+}
+
+//删除所有过期容器
+func RemoveExpiredConatiners(client *docker.Client) {
+	con, err := utils.GetAllContainers(client)
+	if err != nil {
+		log.Errorf("utils.GetAllContainers error: %s", err.Error())
+		return
+	}
+	dag, err := db.GetCcDagHand()
+	if err != nil {
+		log.Infof("db.GetCcDagHand err: %s", err.Error())
+		return
+	}
+	conIdSlice := utils.RetrieveExpiredContainers(dag, con, true)
+	if len(conIdSlice) > 0 {
+		for _, id := range conIdSlice {
+			err := client.RemoveContainer(docker.RemoveContainerOptions{ID: id, Force: true})
+			if err != nil {
+				log.Errorf("client.RemoveContainer id=%s error=%s", id, err.Error())
 			}
 		}
 	}
