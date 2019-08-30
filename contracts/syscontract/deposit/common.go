@@ -459,6 +459,7 @@ func handleNode(stub shim.ChaincodeStubInterface, quitAddr common.Address, role 
 	}
 	return nil
 }
+
 func nodePayToDepositContract(stub shim.ChaincodeStubInterface, role string) pb.Response {
 	log.Debug("enter nodePayToDepositContract")
 	//  判断是否交付保证金交易
