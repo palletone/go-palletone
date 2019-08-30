@@ -273,9 +273,10 @@ func (a *PrivateMediatorAPI) PayDeposit(from string, amount decimal.Decimal) (*T
 	}
 
 	// 判断是否已经是mediator
-	if a.Dag().IsMediator(fromAdd) {
-		return nil, fmt.Errorf("account %v is already a mediator", from)
-	}
+	// TODO 不满足追缴逻辑
+	//if a.Dag().IsMediator(fromAdd) {
+	//	return nil, fmt.Errorf("account %v is already a mediator", from)
+	//}
 
 	// 调用系统合约
 	cArgs := [][]byte{[]byte(modules.MediatorPayDeposit)}
