@@ -334,8 +334,9 @@ func newTestPeer(name string, version int, pm *ProtocolManager, shake bool, dag 
 			//	0,
 			//}
 			//genesis = pm.dag.GetUnitByNumber(number)
-			head  = pm.dag.CurrentHeader(modules.PTNCOIN)
-			index = head.Number
+			head   = pm.dag.CurrentHeader(modules.PTNCOIN)
+			index  = head.Number
+			stable = pm.dag.GetStableChainIndex(modules.PTNCOIN)
 		)
 		fmt.Println("==========================================index:", index.Index)
 		//fmt.Println("	if shake {===》》》",td)
@@ -344,19 +345,20 @@ func newTestPeer(name string, version int, pm *ProtocolManager, shake bool, dag 
 		//if err != nil {
 		//	fmt.Println("GetGenesisUnit===error:=", err)
 		//}
-		tp.handshake(nil, index, head.Hash(), pm.genesis.Hash())
+		tp.handshake(nil, index, stable, head.Hash(), pm.genesis.Hash())
 	}
 	return tp, errc
 }
 
 // handshake simulates a trivial handshake that expects the same state from the
 // remote side as we are simulating locally.
-func (p *testPeer) handshake(t *testing.T, index *modules.ChainIndex, head common.Hash, genesis common.Hash) {
+func (p *testPeer) handshake(t *testing.T, index, stalbe *modules.ChainIndex, head common.Hash, genesis common.Hash) {
 	msg := &statusData{
 		ProtocolVersion: uint32(p.version),
 		NetworkId:       DefaultConfig.NetworkId,
 		Index:           index,
 		GenesisUnit:     genesis,
+		StableIndex:     stalbe,
 		//Mediator:        false,
 	}
 	if err := p2p.ExpectMsg(p.app, StatusMsg, msg); err != nil {
