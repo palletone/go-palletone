@@ -57,7 +57,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	//  jury 交付保证金
 	case JuryPayToDepositContract:
 		log.Info("Enter DepositChaincode Contract " + JuryPayToDepositContract + " Invoke")
-		return d.juryPayToDepositContract(stub)
+		return d.juryPayToDepositContract(stub, args)
 		//  jury 申请退出
 	case JuryApplyQuit:
 		log.Info("Enter DepositChaincode Contract " + JuryApplyQuit + " Invoke")
@@ -126,7 +126,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		if len(args) != 1 {
 			return shim.Error("arg need one")
 		}
-		if list[args[0]] {
+		if _, ok := list[args[0]]; ok {
 			return shim.Success([]byte("true"))
 		}
 		return shim.Success([]byte("false"))
@@ -154,7 +154,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		if len(args) != 1 {
 			return shim.Error("arg need one")
 		}
-		if list[args[0]] {
+		if _, ok := list[args[0]]; ok {
 			return shim.Success([]byte("true"))
 		}
 		return shim.Success([]byte("false"))
@@ -239,7 +239,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		if len(args) != 1 {
 			return shim.Error("arg need one")
 		}
-		if list[args[0]] {
+		if _, ok := list[args[0]]; ok {
 			return shim.Success([]byte("true"))
 		}
 		return shim.Success([]byte("false"))
@@ -267,7 +267,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		if len(args) != 1 {
 			return shim.Error("arg need one")
 		}
-		if list[args[0]] {
+		if _, ok := list[args[0]]; ok {
 			return shim.Success([]byte("true"))
 		}
 		return shim.Success([]byte("false"))
@@ -295,7 +295,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		if len(args) != 1 {
 			return shim.Error("arg need one")
 		}
-		if list[args[0]] {
+		if _, ok := list[args[0]]; ok {
 			return shim.Success([]byte("true"))
 		}
 		return shim.Success([]byte("false"))
@@ -441,8 +441,8 @@ func (d *DepositChaincode) updateMediatorInfo(stub shim.ChaincodeStubInterface, 
 
 //
 
-func (d *DepositChaincode) juryPayToDepositContract(stub shim.ChaincodeStubInterface) pb.Response {
-	return juryPayToDepositContract(stub)
+func (d *DepositChaincode) juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return juryPayToDepositContract(stub, args)
 }
 func (d *DepositChaincode) juryApplyQuit(stub shim.ChaincodeStubInterface) pb.Response {
 	return juryApplyQuit(stub)

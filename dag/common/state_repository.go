@@ -66,7 +66,7 @@ type IStateRepository interface {
 	GetMinFee() (*modules.AmountAsset, error)
 	//GetCurrentChainIndex(assetId modules.AssetId) (*modules.ChainIndex, error)
 
-	GetJuryCandidateList() (map[string]bool, error)
+	GetJuryCandidateList() (map[string]string, error)
 	IsJury(address common.Address) bool
 	GetContractDeveloperList() ([]common.Address, error)
 	IsContractDeveloper(address common.Address) bool
@@ -264,7 +264,7 @@ func (rep *StateRepository) GetPledgeListWithNew() (*modules.PledgeList, error) 
 	}
 	newDepositList, _ := rep.GetPledgeDepositApplyList()
 	for _, deposit := range newDepositList {
-		pledgeList.Add(deposit.Address, deposit.Amount,0)
+		pledgeList.Add(deposit.Address, deposit.Amount, 0)
 	}
 	newWithdrawList, _ := rep.GetPledgeWithdrawApplyList()
 	for _, withdraw := range newWithdrawList {
@@ -317,7 +317,7 @@ func (rep *StateRepository) GetMinFee() (*modules.AmountAsset, error) {
 	return rep.statedb.GetMinFee()
 }
 
-func (rep *StateRepository) GetJuryCandidateList() (map[string]bool, error) {
+func (rep *StateRepository) GetJuryCandidateList() (map[string]string, error) {
 	return rep.statedb.GetJuryCandidateList()
 }
 

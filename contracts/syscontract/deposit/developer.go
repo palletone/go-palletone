@@ -22,7 +22,7 @@ import (
 )
 
 func developerPayToDepositContract(stub shim.ChaincodeStubInterface) peer.Response {
-	return nodePayToDepositContract(stub, Developer)
+	return nodePayToDepositContract(stub, Developer, nil)
 
 }
 

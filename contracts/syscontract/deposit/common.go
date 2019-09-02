@@ -31,7 +31,7 @@ import (
 )
 
 //  保存相关列表
-func saveList(stub shim.ChaincodeStubInterface, key string, list map[string]bool) error {
+func saveList(stub shim.ChaincodeStubInterface, key string, list map[string]string) error {
 	listByte, err := json.Marshal(list)
 	if err != nil {
 		return err
@@ -44,7 +44,7 @@ func saveList(stub shim.ChaincodeStubInterface, key string, list map[string]bool
 }
 
 //  获取其他list
-func getList(stub shim.ChaincodeStubInterface, typeList string) (map[string]bool, error) {
+func getList(stub shim.ChaincodeStubInterface, typeList string) (map[string]string, error) {
 	byte, err := stub.GetState(typeList)
 	if err != nil {
 		return nil, err
@@ -52,7 +52,7 @@ func getList(stub shim.ChaincodeStubInterface, typeList string) (map[string]bool
 	if byte == nil {
 		return nil, nil
 	}
-	list := make(map[string]bool)
+	list := make(map[string]string)
 	err = json.Unmarshal(byte, &list)
 	if err != nil {
 		return nil, err
@@ -110,14 +110,14 @@ func applyQuitList(role string, stub shim.ChaincodeStubInterface) error {
 }
 
 //  加入相应候选列表，mediator jury dev
-func addCandaditeList(stub shim.ChaincodeStubInterface, invokeAddr common.Address, candidate string) error {
+func addCandaditeList(stub shim.ChaincodeStubInterface, invokeAddr common.Address, candidate string, pubKey string) error {
 	//  获取列表
 	list, err := getList(stub, candidate)
 	if err != nil {
 		return err
 	}
 	if list == nil {
-		list = make(map[string]bool)
+		list = make(map[string]string)
 	}
 
 	// 重复操作一次又何妨
@@ -125,7 +125,7 @@ func addCandaditeList(stub shim.ChaincodeStubInterface, invokeAddr common.Addres
 	//	return fmt.Errorf("node was in the list")
 	//}
 
-	list[invokeAddr.String()] = true
+	list[invokeAddr.String()] = pubKey
 	listByte, err := json.Marshal(list)
 	if err != nil {
 		return err
@@ -150,7 +150,7 @@ func moveCandidate(candidate string, invokeFromAddr string, stub shim.ChaincodeS
 		log.Error("stub.GetCandidateList err: list is nil")
 		return fmt.Errorf("%s", "list is nil")
 	}
-	if !list[invokeFromAddr] {
+	if _, ok := list[invokeFromAddr]; !ok {
 		return fmt.Errorf("node was not in the list")
 	}
 	delete(list, invokeFromAddr)
@@ -411,7 +411,7 @@ func isInCandidate(stub shim.ChaincodeStubInterface, invokeAddr string, candidat
 	if list == nil {
 		return false, nil
 	}
-	if !list[invokeAddr] {
+	if _, ok := list[invokeAddr]; !ok {
 		return false, nil
 	}
 	return true, nil
@@ -463,7 +463,7 @@ func handleNode(stub shim.ChaincodeStubInterface, quitAddr common.Address, role 
 	return nil
 }
 
-func nodePayToDepositContract(stub shim.ChaincodeStubInterface, role string) pb.Response {
+func nodePayToDepositContract(stub shim.ChaincodeStubInterface, role string, args []string) pb.Response {
 	log.Debug("enter nodePayToDepositContract")
 	//  判断是否交付保证金交易
 	invokeTokens, err := isContainDepositContractAddr(stub)
@@ -497,9 +497,11 @@ func nodePayToDepositContract(stub shim.ChaincodeStubInterface, role string) pb.
 	}
 	depositAmount := uint64(0)
 	list := ""
+	pubkey := ""
 	if role == Jury {
 		depositAmount = cp.DepositAmountForJury
 		list = modules.JuryList
+		pubkey = args[0]
 	}
 	if role == Developer {
 		depositAmount = cp.DepositAmountForDeveloper
@@ -515,7 +517,7 @@ func nodePayToDepositContract(stub shim.ChaincodeStubInterface, role string) pb.
 			return shim.Error(str.Error())
 		}
 		//  加入候选列表
-		err = addCandaditeList(stub, invokeAddr, list)
+		err = addCandaditeList(stub, invokeAddr, list, pubkey)
 		if err != nil {
 			log.Error("addCandaditeList err: ", "error", err)
 			return shim.Error(err.Error())
@@ -524,6 +526,7 @@ func nodePayToDepositContract(stub shim.ChaincodeStubInterface, role string) pb.
 		//  没有
 		balance.Balance = invokeTokens.Amount
 		balance.Role = role
+		balance.PublicKey = pubkey
 		err = SaveNodeBalance(stub, invokeAddr.String(), balance)
 		if err != nil {
 			log.Error("save node balance err: ", "error", err)
@@ -549,7 +552,7 @@ func nodePayToDepositContract(stub shim.ChaincodeStubInterface, role string) pb.
 		}
 		if !b {
 			//  加入jury候选列表
-			err = addCandaditeList(stub, invokeAddr, list)
+			err = addCandaditeList(stub, invokeAddr, list, pubkey)
 			if err != nil {
 				log.Error("addCandidateListAndPutStateForMediator err: ", "error", err)
 				return shim.Error(err.Error())

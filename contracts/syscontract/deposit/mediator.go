@@ -92,10 +92,10 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	//  判断
 	if becomeList == nil {
 		log.Info("Stub.GetBecomeMediatorApplyList: list is nil")
-		becomeList = make(map[string]bool)
+		becomeList = make(map[string]string)
 	}
 
-	becomeList[mco.AddStr] = true
+	becomeList[mco.AddStr] = "true"
 	//  保存列表
 	err = saveList(stub, ListForApplyBecomeMediator, becomeList)
 	if err != nil {
@@ -108,6 +108,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	md.ApplyEnterTime = getTiem(stub)
 	md.Status = Apply
 	md.Role = Mediator
+	md.PublicKey = mco.InitPubKey
 	err = SaveMediatorDeposit(stub, mco.AddStr, md)
 	if err != nil {
 		log.Error("SaveMedInfo err:", "error", err)
@@ -195,13 +196,13 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface /*, args []st
 	}
 
 	//  加入候选列表
-	err = addCandaditeList(stub, invokeAddr, modules.MediatorList)
+	err = addCandaditeList(stub, invokeAddr, modules.MediatorList, "")
 	if err != nil {
 		log.Error("addCandidateListAndPutStateForMediator err: ", "error", err)
 		return shim.Error(err.Error())
 	}
 	//  自动加入jury候选列表
-	err = addCandaditeList(stub, invokeAddr, modules.JuryList)
+	err = addCandaditeList(stub, invokeAddr, modules.JuryList, md.PublicKey)
 	if err != nil {
 		log.Error("addCandidateListAndPutStateForMediator err: ", "error", err)
 		return shim.Error(err.Error())
