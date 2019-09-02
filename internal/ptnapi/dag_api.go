@@ -208,6 +208,9 @@ func (s *PublicDagAPI) GetFastUnitIndex(ctx context.Context, assetid string) str
 	if assetid == "" {
 		assetid = "PTN"
 	}
+	if len(assetid) > 22 {
+		return "error assetid:" + assetid + ",is too long."
+	}
 	token, _, err := modules.String2AssetId(assetid)
 	if err != nil {
 		return "unknow assetid:" + assetid + ". " + err.Error()
