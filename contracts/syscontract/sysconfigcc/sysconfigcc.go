@@ -453,7 +453,7 @@ func GetMediatorCount(stub shim.ChaincodeStubInterface) int {
 		return 0
 	}
 
-	list := make(map[string]bool)
+	list := make(map[string]string)
 	err = json.Unmarshal(byte, &list)
 	if err != nil {
 		return 0

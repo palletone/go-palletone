@@ -112,7 +112,7 @@ func (statedb *StateDb) GetContractDeveloperList() ([]common.Address, error) {
 	if err != nil {
 		return nil, fmt.Errorf("devCc candidate list is nil.")
 	}
-	depList := make(map[string]bool)
+	depList := make(map[string]string)
 	err = json.Unmarshal(val, &depList)
 	if err != nil {
 		return nil, err
