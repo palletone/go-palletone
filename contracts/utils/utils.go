@@ -59,7 +59,7 @@ func GetResourcesWhenInvokeContainer(cc *list.CCInfo) {
 func GetAllResourceUsageByContainerName(name string) (*docker.Stats, error) {
 	client, err := util.NewDockerClient()
 	if err != nil {
-		log.Infof("util.NewDockerClient err: %s\n", err.Error())
+		log.Error("util.NewDockerClient", "error", err)
 		return nil, err
 	}
 	//  通过容器名称获取容器id
@@ -111,7 +111,7 @@ func GetMemoryStatsUsage(stats *docker.Stats) (uint64, error) {
 func GetLogFromContainer(name string) string {
 	client, err := util.NewDockerClient()
 	if err != nil {
-		log.Info("util.NewDockerClient", "error", err)
+		log.Error("util.NewDockerClient", "error", err)
 		return ""
 	}
 	var buf bytes.Buffer
@@ -207,7 +207,7 @@ func StopContainerWhenInvokeTimeOut(name string) {
 	defer log.Debugf("exit StopContainerWhenInvokeTimeOut name = %s", name)
 	client, err := util.NewDockerClient()
 	if err != nil {
-		log.Info("util.NewDockerClient", "error", err)
+		log.Error("util.NewDockerClient", "error", err)
 		return
 	}
 	err = client.StopContainer(name, 3)
@@ -221,7 +221,7 @@ func StopContainerWhenInvokeTimeOut(name string) {
 func RemoveContainerWhenGoBuildTimeOut(id string) {
 	client, err := util.NewDockerClient()
 	if err != nil {
-		log.Debugf("util.NewDockerClient")
+		log.Error("util.NewDockerClient", "error", err)
 		return
 	}
 	<-time.After(contractcfg.GetConfig().ContractDeploytimeout)
@@ -245,7 +245,7 @@ func RemoveConWhenOverDisk(cc *list.CCInfo, dag dag.IDag) (sizeRW int64, disk in
 	defer log.Debugf("exit KillAndRmWhenOver")
 	client, err := util.NewDockerClient()
 	if err != nil {
-		log.Debugf("util.NewDockerClient %s", err.Error())
+		log.Error("util.NewDockerClient", "error", err)
 		return 0, 0, false
 	}
 	//  获取所有容器

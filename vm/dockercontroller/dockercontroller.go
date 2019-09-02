@@ -204,7 +204,7 @@ func (vm *DockerVM) Start(_ context.Context, ccid ccintf.CCID,
 	//如果合约存在，则直接起容器
 	c, err := com.NewDockerClient()
 	if err != nil {
-		log.Error("util.NewDockerClient", "error", err)
+		log.Error("com.NewDockerClient", "error", err)
 		return err
 	}
 	_, err = c.InspectContainer(containerID)
@@ -261,6 +261,7 @@ func (vm *DockerVM) Start(_ context.Context, ccid ccintf.CCID,
 			//-----------------------------------------------------------------------------------
 			client1, err := com.NewDockerClient()
 			if err != nil {
+				log.Error("com.NewDockerClient", "error", err)
 				return err
 			}
 			_, err = client1.InspectImage(imageID)

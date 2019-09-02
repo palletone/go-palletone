@@ -39,7 +39,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/fsouza/go-dockerclient"
-	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/manger"
 	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -404,7 +403,7 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 	if runtime.GOOS == "linux" {
 		client, err := util.NewDockerClient()
 		if err != nil {
-			log.Infof("util.NewDockerClient err: %s\n", err.Error())
+			log.Error("util.NewDockerClient", "error", err)
 			return
 		}
 		//创建gptn-net网络
@@ -418,10 +417,9 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 			}
 		}
 		//  是否为jury
-		if contractcfg.GetConfig().IsJury {
-			log.Debugf("starting docker loop")
-			go pm.dockerLoop(client)
-		}
+		//if contractcfg.GetConfig().IsJury {
+		go pm.dockerLoop(client)
+		//}
 	}
 }
 
@@ -769,6 +767,7 @@ func (pm *ProtocolManager) ceBroadcastLoop() {
 }
 
 func (pm *ProtocolManager) dockerLoop(client *docker.Client) {
+	log.Debugf("starting docker loop")
 	for {
 		select {
 		case <-pm.dockerQuitSync:
