@@ -119,9 +119,12 @@ func addCandaditeList(stub shim.ChaincodeStubInterface, invokeAddr common.Addres
 	if list == nil {
 		list = make(map[string]bool)
 	}
-	if list[invokeAddr.String()] {
-		return fmt.Errorf("node was in the list")
-	}
+
+	// 重复操作一次又何妨
+	//if list[invokeAddr.String()] {
+	//	return fmt.Errorf("node was in the list")
+	//}
+
 	list[invokeAddr.String()] = true
 	listByte, err := json.Marshal(list)
 	if err != nil {
@@ -459,6 +462,7 @@ func handleNode(stub shim.ChaincodeStubInterface, quitAddr common.Address, role 
 	}
 	return nil
 }
+
 func nodePayToDepositContract(stub shim.ChaincodeStubInterface, role string) pb.Response {
 	log.Debug("enter nodePayToDepositContract")
 	//  判断是否交付保证金交易

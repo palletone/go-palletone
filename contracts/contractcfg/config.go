@@ -9,7 +9,7 @@ var DebugTest bool = false
 var DefaultConfig = Config{
 	//LogLevel:               logging.DEBUG,
 	//ContractFileSystemPath: "./chaincodes",
-	IsJury:                 false,
+	//IsJury:                 false,
 	ContractAddress:        "127.0.0.1:12345",
 	ContractExecutetimeout: time.Duration(20) * time.Second,
 	ContractDeploytimeout:  time.Duration(180) * time.Second,
@@ -22,7 +22,7 @@ var DefaultConfig = Config{
 }
 
 type Config struct {
-	IsJury                 bool          //是否是jury节点
+	//IsJury                 bool          //是否是jury节点
 	ContractAddress        string        //节点ip地址
 	ContractExecutetimeout time.Duration //合约调用执行时间
 	ContractDeploytimeout  time.Duration //合约部署执行时间

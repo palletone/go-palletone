@@ -368,12 +368,13 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 	outAmount := uint64(0)
 	var feeAsset *Asset
 	for _, txin := range payload.Inputs {
-		utxo, _ := queryUtxoFunc(txin.PreviousOutPoint)
-		if utxo == nil {
-			return nil, fmt.Errorf("Txin(txhash=%s, msgindex=%v, outindex=%v)'s utxo is empty:",
+		utxo, err := queryUtxoFunc(txin.PreviousOutPoint)
+		if err != nil {
+			return nil, fmt.Errorf("Txin(txhash=%s, msgindex=%v, outindex=%v)'s utxo is empty:%s",
 				txin.PreviousOutPoint.TxHash.String(),
 				txin.PreviousOutPoint.MessageIndex,
-				txin.PreviousOutPoint.OutIndex)
+				txin.PreviousOutPoint.OutIndex,
+				err.Error())
 		}
 		feeAsset = utxo.Asset
 		// check overflow

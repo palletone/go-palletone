@@ -50,15 +50,15 @@ func testStatusMsgErrors(t *testing.T, protocol int) {
 			wantError: errResp(ErrNoStatusMsg, "first msg has code 2 (!= 0)"),
 		},
 		{
-			code: StatusMsg, data: statusData{10, DefaultConfig.NetworkId, index, genesis.Hash(), common.Hash{}},
+			code: StatusMsg, data: statusData{10, DefaultConfig.NetworkId, index, genesis.Hash(), common.Hash{}, nil},
 			wantError: errResp(ErrProtocolVersionMismatch, "10 (!= %d)", protocol),
 		},
 		{
-			code: StatusMsg, data: statusData{uint32(protocol), 999, index, genesis.Hash(), common.Hash{}},
+			code: StatusMsg, data: statusData{uint32(protocol), 999, index, genesis.Hash(), common.Hash{}, nil},
 			wantError: errResp(ErrNetworkIdMismatch, "999 (!= 1)"),
 		},
 		{
-			code: StatusMsg, data: statusData{uint32(protocol), DefaultConfig.NetworkId, index, common.Hash{3}, common.Hash{}},
+			code: StatusMsg, data: statusData{uint32(protocol), DefaultConfig.NetworkId, index, common.Hash{3}, common.Hash{}, nil},
 			wantError: errResp(ErrGenesisBlockMismatch, "0300000000000000 (!= %x)", genesis.Hash().Bytes()[:8]),
 		},
 	}

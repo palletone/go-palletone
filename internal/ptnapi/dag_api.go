@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
+	"strings"
 )
 
 type PublicDagAPI struct {
@@ -208,9 +209,17 @@ func (s *PublicDagAPI) GetFastUnitIndex(ctx context.Context, assetid string) str
 	if assetid == "" {
 		assetid = "PTN"
 	}
+	assetid = strings.ToUpper(assetid)
 	token, _, err := modules.String2AssetId(assetid)
 	if err != nil {
 		return "unknow assetid:" + assetid + ". " + err.Error()
+	}
+	if assetid != "PTN" {
+		GlobalStateContractId := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+		val, _, err := s.b.GetContractState(GlobalStateContractId, modules.GlobalPrefix+strings.ToUpper(token.GetSymbol()))
+		if err != nil || len(val) == 0 {
+			return "unknow assetid: " + assetid + ", " + err.Error()
+		}
 	}
 	stableUnit := s.b.Dag().CurrentUnit(token)
 	ustabeUnit := s.b.Dag().GetCurrentMemUnit(token, 0)

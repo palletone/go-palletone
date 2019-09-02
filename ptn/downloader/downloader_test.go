@@ -482,7 +482,7 @@ func (dl *downloadTester) InsertHeaderDag(headers []*modules.Header, checkFreq i
 }
 
 // InsertChain injects a new batch of blocks into the simulated chain.
-func (dl *downloadTester) InsertDag(blocks modules.Units, txpool txspool.ITxPool) (int, error) {
+func (dl *downloadTester) InsertDag(blocks modules.Units, txpool txspool.ITxPool, b bool) (int, error) {
 	dl.lock.Lock()
 	defer dl.lock.Unlock()
 	//blocks modules.Units
