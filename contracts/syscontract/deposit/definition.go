@@ -124,6 +124,7 @@ type DepositBalance struct {
 	Balance   uint64 `json:"balance"`    // 保证金余额
 	EnterTime string `json:"enter_time"` // 交保证金的时间
 	Role      string `json:"role"`       // 角色，包括mediator、jury和developer
+	PublicKey string `json:"public_key"`
 }
 
 // mediator保证金信息

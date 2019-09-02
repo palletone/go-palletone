@@ -75,7 +75,7 @@ func (dag *Dag) InitPropertyDB(genesis *core.Genesis, unit *modules.Unit) error 
 
 func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 	// Create initial mediators
-	list := make(map[string]bool, len(genesis.InitialMediatorCandidates))
+	list := make(map[string]string, len(genesis.InitialMediatorCandidates))
 	for _, imc := range genesis.InitialMediatorCandidates {
 		// 存储 mediator info
 		addr, err := imc.Validate()
@@ -94,7 +94,7 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 			panic(err.Error())
 		}
 
-		list[mi.AddStr] = true
+		list[mi.AddStr] = mi.InitPubKey
 	}
 
 	// 存储 initMediatorCandidates/JuryCandidates

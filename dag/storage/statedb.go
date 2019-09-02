@@ -81,14 +81,14 @@ func (db *StateDb) GetPrefix(prefix []byte) map[string][]byte {
 	return getprefix(db.db, prefix)
 }
 
-func (statedb *StateDb) GetJuryCandidateList() (map[string]bool, error) {
+func (statedb *StateDb) GetJuryCandidateList() (map[string]string, error) {
 	depositeContractAddress := syscontract.DepositContractAddress
 	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), modules.JuryList)
 	if err != nil {
 		return nil, fmt.Errorf("jury candidate list is nil.")
 	}
 
-	candidateList := make(map[string]bool)
+	candidateList := make(map[string]string)
 	err = json.Unmarshal(val, &candidateList)
 	if err != nil {
 		return nil, err

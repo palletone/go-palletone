@@ -15,14 +15,27 @@
 package deposit
 
 import (
+	"fmt"
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"go.dedis.ch/kyber/v3/pairing/bn256"
 )
 
-func juryPayToDepositContract(stub shim.ChaincodeStubInterface) peer.Response {
-	return nodePayToDepositContract(stub, Jury)
+func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+	if len(args) != 1 {
+		return shim.Error("need 1 parameter")
+	}
+	pubB := base58.Decode(args[0])
+	pub := bn256.NewSuiteG2().Point()
+	err := pub.UnmarshalBinary(pubB)
+	if err != nil {
+		err = fmt.Errorf("invalid init jury public key \"%v\" : %v", args[0], err)
+		return shim.Error(err.Error())
+	}
+	return nodePayToDepositContract(stub, Jury, args)
 }
 
 func juryApplyQuit(stub shim.ChaincodeStubInterface) peer.Response {

@@ -76,8 +76,10 @@ func (statedb *StateDb) IsMediator(address common.Address) bool {
 	if err != nil {
 		return false
 	}
-
-	return list[address.String()]
+	if _, ok := list[address.String()]; ok {
+		return true
+	}
+	return false
 }
 
 func (statedb *StateDb) GetMediators() map[common.Address]bool {
@@ -125,14 +127,14 @@ func (statedb *StateDb) LookupMediatorInfo() []*modules.MediatorInfo {
 	return result
 }
 
-func (statedb *StateDb) getCandidateMediatorList() (map[string]bool, error) {
+func (statedb *StateDb) getCandidateMediatorList() (map[string]string, error) {
 	depositeContractAddress := syscontract.DepositContractAddress
 	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), modules.MediatorList)
 	if err != nil {
 		return nil, fmt.Errorf("mediator candidate list is nil")
 	}
 
-	candidateList := make(map[string]bool)
+	candidateList := make(map[string]string)
 	err = json.Unmarshal(val, &candidateList)
 	if err != nil {
 		return nil, err
