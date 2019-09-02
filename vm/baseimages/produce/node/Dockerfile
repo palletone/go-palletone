@@ -10,5 +10,8 @@ ADD tardata/* /palletone/
 #设置当前工作目录
 WORKDIR /palletone/mainnet
 
+#暴露p2p监听端口，以及HTTP监听端口
+EXPOSE 30303 8545
+
 #容器启动时执行的命令
 ENTRYPOINT ["./gptn"]
