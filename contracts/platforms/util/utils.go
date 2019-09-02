@@ -151,7 +151,8 @@ func DockerBuild(opts DockerBuildOptions) error {
 
 	client, err := cutil.NewDockerClient()
 	if err != nil {
-		return fmt.Errorf("Error creating docker client: %s", err)
+		log.Error("util.NewDockerClient", "error", err)
+		return fmt.Errorf("error creating docker client: %s", err)
 	}
 	if opts.Image == "" {
 		//通用的本地编译环境
