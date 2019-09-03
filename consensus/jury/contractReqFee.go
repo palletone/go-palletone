@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	ContractDefaultSignatureSize = 128.0
-	ContractDefaultElectionSize = 512.0
-	ContractDefaultRWSize = 512.0
+	ContractDefaultSignatureSize = 256.0
+	ContractDefaultElectionSize  = 512.0
+	ContractDefaultRWSize        = 512.0
 )
 
 func (p *Processor) getTxContractFee(tx *modules.Transaction, extDataSize float64, timeout uint32) (fee float64,
@@ -25,14 +25,15 @@ func (p *Processor) getTxContractFee(tx *modules.Transaction, extDataSize float6
 	if tx == nil {
 		return 0, 0, 0, errors.New("getTxContractFee, param is nil")
 	}
+	reqId := tx.RequestHash()
 	txType, err := getContractTxType(tx)
 	if err != nil {
-		log.Errorf("getTxContractFee", "getContractTxType err:", err)
+		log.Errorf("[%s]getTxContractFee,getContractTxType err:%s", shortId(reqId.String()), err.Error())
 		return 0, 0, 0, err
 	}
 	allSize := tx.Size().Float64() + extDataSize
 	timeFee, sizeFee := getContractTxNeedFee(p.dag, txType, float64(timeout), allSize) //todo  timeout
-	log.Debug("getTxContractFee", "all txFee", timeFee+sizeFee, "timeFee", timeFee, "sizeFee", sizeFee)
+	log.Debugf("[%s]getTxContractFee, all txFee[%f],timeFee[%s],sizeFee[%f]", shortId(reqId.String()), timeFee+sizeFee, timeFee, sizeFee)
 	return timeFee + sizeFee, allSize, timeout, nil
 }
 
@@ -58,17 +59,17 @@ func (p *Processor) ContractInstallReqFee(from, to common.Address, daoAmount, da
 	}
 	reqTx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, nil, msgReq, p.ptn.TxPool())
 	if err != nil {
-		log.Errorf("ContractInstallReqFee", "CreateGenericTransaction err:", err)
+		log.Error("ContractInstallReqFee", "CreateGenericTransaction err:", err)
 		return 0, 0, 0, err
 	}
 	msgs, err := runContractCmd(rwset.RwM, p.dag, p.contract, reqTx, nil, p.errMsgEnable)
 	if err != nil {
-		log.Errorf("ContractInstallReqFee", "runContractCmd err:", err)
+		log.Error("ContractInstallReqFee", "runContractCmd err:", err)
 		return 0, 0, 0, err
 	}
 	tx, err := gen.GenContractTransction(reqTx, msgs)
 	if err != nil {
-		log.Errorf("ContractInstallReqFee", "GenContractTransction err:", err)
+		log.Error("ContractInstallReqFee", "GenContractTransaction err:", err)
 		return 0, 0, 0, err
 	}
 	return p.getTxContractFee(tx, ContractDefaultSignatureSize, 0)
@@ -87,7 +88,7 @@ func (p *Processor) ContractDeployReqFee(from, to common.Address, daoAmount, dao
 	}
 	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, nil, msgReq, p.ptn.TxPool())
 	if err != nil {
-		log.Errorf("ContractDeployReqFee", "CreateGenericTransaction err:", err)
+		log.Error("ContractDeployReqFee", "CreateGenericTransaction err:", err)
 		return 0, 0, 0, err
 	}
 	return p.getTxContractFee(tx, ContractDefaultSignatureSize+ContractDefaultElectionSize, 0)
@@ -105,7 +106,7 @@ func (p *Processor) ContractInvokeReqFee(from, to common.Address, daoAmount, dao
 	}
 	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, nil, msgReq, p.ptn.TxPool())
 	if err != nil {
-		log.Errorf("ContractInvokeReqFee", "CreateGenericTransaction err:", err)
+		log.Error("ContractInvokeReqFee", "CreateGenericTransaction err:", err)
 		return 0, 0, 0, err
 	}
 	return p.getTxContractFee(tx, ContractDefaultSignatureSize+ContractDefaultRWSize, timeout)
@@ -115,7 +116,7 @@ func (p *Processor) ContractStopReqFee(from, to common.Address, daoAmount, daoFe
 	contractId common.Address, deleteImage bool) (fee float64, size float64, tm uint32, err error) {
 	randNum, err := crypto.GetRandomNonce()
 	if err != nil {
-		return 0, 0, 0, errors.New("ContractStopReq, GetRandomNonce error")
+		return 0, 0, 0, errors.New("ContractStopReqFee, GetRandomNonce error")
 	}
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_STOP_REQUEST,
@@ -127,7 +128,7 @@ func (p *Processor) ContractStopReqFee(from, to common.Address, daoAmount, daoFe
 	}
 	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, nil, msgReq, p.ptn.TxPool())
 	if err != nil {
-		log.Errorf("ContractInvokeReqFee", "CreateGenericTransaction err:", err)
+		log.Error("ContractStopReqFee", "CreateGenericTransaction err:", err)
 		return 0, 0, 0, err
 	}
 
