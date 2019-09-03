@@ -65,6 +65,32 @@ web3._extend({
         	params: 5, //from, to, daoAmount, daoFee, contractId
 			inputFormatter: [null, null, null, null, null]
 		}),
+		//cc fee
+		new web3._extend.Method({
+			name: 'ccinstalltxfee',
+        	call: 'contract_ccinstalltxfee',
+        	params: 11, //from, to , daoAmount, daoFee , tplName, path, version，description，abi，language
+			inputFormatter: [null, null, null,null, null, null, null, null, null, null, null]
+		}),
+		new web3._extend.Method({
+			name: 'ccdeploytxfee',
+        	call: 'contract_ccdeploytxfee',
+        	params: 7, //from, to , daoAmount, daoFee , templateId , args , extData
+			inputFormatter: [null, null, null,null, null, null, null]
+		}),
+		new web3._extend.Method({
+			name: 'ccinvoketxfee',
+        	call: 'contract_ccinvoketxfee',
+        	params: 8, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"], certid, timeout
+			inputFormatter: [null, null, null,null, null, null, null, null]
+		}),
+		new web3._extend.Method({
+			name: 'ccstoptxfee',
+        	call: 'contract_ccstoptxfee',
+        	params: 5, //from, to, daoAmount, daoFee, contractId
+			inputFormatter: [null, null, null, null, null]
+		}),
+
 		//cc
 		new web3._extend.Method({
 			name: 'ccinstall',

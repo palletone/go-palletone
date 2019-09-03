@@ -132,7 +132,7 @@ type Backend interface {
 	GetAssetExistence(asset string) ([]*ptnjson.ProofOfExistenceJson, error)
 	//contract control
 	ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi,
-		ccLanguage string) (TemplateId []byte, err error)
+	ccLanguage string) (TemplateId []byte, err error)
 	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)
 	ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 	ContractStop(deployId []byte, txid string, deleteImage bool) error
@@ -151,6 +151,20 @@ type Backend interface {
 		asset string, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error)
 	ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address,
 		deleteImage bool) (reqId common.Hash, err error)
+
+	ContractInstallReqTxFee(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string,
+		description, abi, language string, addrs []common.Address) (fee float64, size float64, tm uint32, err error)
+
+	ContractDeployReqTxFee(from, to common.Address, daoAmount, daoFee uint64, templateId []byte,
+		args [][]byte, extData []byte, timeout time.Duration) (fee float64, size float64, tm uint32, err error)
+
+	ContractInvokeReqTxFee(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
+		contractAddress common.Address, args [][]byte, timeout uint32) (fee float64, size float64, tm uint32, err error)
+
+	ContractStopReqTxFee(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address,
+		deleteImage bool) (fee float64, size float64, tm uint32, err error)
+
+
 	ElectionVrf(id uint32) ([]byte, error)
 	UpdateJuryAccount(addr common.Address, pwd string) bool
 	GetJuryAccount() []common.Address

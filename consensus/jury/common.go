@@ -822,31 +822,35 @@ func getContractFeeLevel(dag iDag, msg modules.MessageType, feeType int) (level 
 	return level
 }
 
-func checkContractTxFeeValid(dag iDag, tx *modules.Transaction) bool {
-	//return true //todo
+func getContractTxNeedFee(dag iDag, msgType modules.MessageType, timeout float64, txSize float64) (timeFee float64, sizeFee float64) {
+	timeoutLevel := getContractFeeLevel(dag, msgType, ContractFeeTypeTimeOut)
+	sizeLevel := getContractFeeLevel(dag, msgType, ContractFeeTypeTxSize)
 
+	timeFee = timeoutLevel * float64(timeout)
+	sizeFee = sizeLevel * float64(txSize)
+	return timeFee, sizeFee
+}
+
+func checkContractTxFeeValid(dag iDag, tx *modules.Transaction) bool {
 	if tx == nil {
 		return false
 	}
-	reqId := tx.RequestHash()
 	var timeout uint32
-	txType, err := getContractTxType(tx)
-	if err != nil {
-		log.Errorf("[%s]checkContractTxFeeValid, getContractTxType fail", shortId(reqId.String()))
-		return false
-	}
-
+	reqId := tx.RequestHash()
+	txSize := tx.Size().Float64()
 	fees, err := dag.GetTxFee(tx)
 	if err != nil {
 		log.Errorf("[%s]checkContractTxFeeValid, GetTxFee fail", shortId(reqId.String()))
 		return false
 	}
-
-	timeoutLevel := getContractFeeLevel(dag, txType, ContractFeeTypeTimeOut)
-	sizeLevel := getContractFeeLevel(dag, txType, ContractFeeTypeTxSize)
+	txType, err := getContractTxType(tx)
+	if err != nil {
+		log.Errorf("[%s]checkContractTxFeeValid, getContractTxType fail", shortId(reqId.String()))
+		return false
+	}
 	switch txType {
-	case modules.APP_CONTRACT_TPL_REQUEST:
-	case modules.APP_CONTRACT_DEPLOY_REQUEST:
+	case modules.APP_CONTRACT_TPL_REQUEST: //todo
+	case modules.APP_CONTRACT_DEPLOY_REQUEST: //todo
 	case modules.APP_CONTRACT_INVOKE_REQUEST:
 		payload, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_INVOKE_REQUEST)
 		if err != nil {
@@ -854,16 +858,17 @@ func checkContractTxFeeValid(dag iDag, tx *modules.Transaction) bool {
 			return false
 		}
 		timeout = payload.(*modules.ContractInvokeRequestPayload).Timeout
-	case modules.APP_CONTRACT_STOP_REQUEST:
+	case modules.APP_CONTRACT_STOP_REQUEST: //todo
 	}
-	txSize := tx.Size()
-	timeFee := timeoutLevel * float64(timeout)
-	sizeFee := sizeLevel * float64(txSize)
-
+	timeFee, sizeFee := getContractTxNeedFee(dag, txType, float64(timeout), txSize)
+	if err != nil {
+		log.Errorf("[%s]checkContractTxFeeValid, getContractTxNeedFee fail", shortId(reqId.String()))
+		return false
+	}
 	val := math.Max(float64(fees.Amount), timeFee+sizeFee) == float64(fees.Amount)
 	if !val {
-		log.Errorf("[%s]checkContractTxFeeValid invalid, fee amount[%f]-fees[%f], txSize[%f]-timeout[%d]s",
-			shortId(reqId.String()), float64(fees.Amount), timeFee+sizeFee, txSize.Float64(), timeout)
+		log.Errorf("[%s]checkContractTxFeeValid invalid, fee amount[%f]-fees[%f](%f + %f), txSize[%f], timeout[%d]",
+			shortId(reqId.String()), float64(fees.Amount), timeFee+sizeFee, timeFee, sizeFee, txSize, timeout)
 	}
 	return val
 }

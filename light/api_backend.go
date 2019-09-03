@@ -420,6 +420,25 @@ func (b *LesApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, da
 	contractId common.Address, deleteImage bool) (reqId common.Hash, err error) {
 	return
 }
+
+func (b *LesApiBackend) ContractInstallReqTxFee(from, to common.Address, daoAmount, daoFee uint64, tplName,
+path, version string, description, abi, language string, addrs []common.Address) (fee float64, size float64, tm uint32,
+	err error) {
+	return
+}
+func (b *LesApiBackend) ContractDeployReqTxFee(from, to common.Address, daoAmount, daoFee uint64, templateId []byte,
+	args [][]byte, extData []byte, timeout time.Duration) (fee float64, size float64, tm uint32, err error) {
+	return
+}
+func (b *LesApiBackend) ContractInvokeReqTxFee(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
+	contractAddress common.Address, args [][]byte, timeout uint32) (fee float64, size float64, tm uint32, err error) {
+	return
+}
+func (b *LesApiBackend) ContractStopReqTxFee(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address,
+	deleteImage bool) (fee float64, size float64, tm uint32, err error) {
+	return
+}
+
 func (b *LesApiBackend) ElectionVrf(id uint32) ([]byte, error) {
 	return nil, nil
 }

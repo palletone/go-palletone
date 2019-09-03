@@ -18,10 +18,13 @@ package ptn
 
 import (
 	"context"
+	"time"
+	"bytes"
+	"fmt"
+	"sort"
 	"encoding/hex"
 	"encoding/json"
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -33,9 +36,6 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag"
-
-	"bytes"
-	"fmt"
 	"github.com/palletone/go-palletone/consensus/jury"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
@@ -51,7 +51,6 @@ import (
 	"github.com/palletone/go-palletone/ptnjson/statistics"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/shopspring/decimal"
-	"sort"
 )
 
 const channelId = "palletone"
@@ -572,7 +571,7 @@ func (b *PtnApiBackend) GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson,
 }
 
 func (b *PtnApiBackend) ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi,
-	ccLanguage string) ([]byte, error) {
+ccLanguage string) ([]byte, error) {
 	//channelId := "palletone"
 	payload, err := b.ptn.contract.Install(channelId, ccName, ccPath, ccVersion, ccDescription, ccAbi, ccLanguage)
 	return payload.TemplateId, err
@@ -627,7 +626,7 @@ func (b *PtnApiBackend) SignAndSendRequest(addr common.Address, tx *modules.Tran
 
 //
 func (b *PtnApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName,
-	path, version string, description, abi, language string, addrs []common.Address) (reqId common.Hash,
+path, version string, description, abi, language string, addrs []common.Address) (reqId common.Hash,
 	tplId []byte, err error) {
 	return b.ptn.contractPorcessor.ContractInstallReq(from, to, daoAmount, daoFee, tplName, path,
 		version, description, abi, language, true, addrs)
@@ -649,7 +648,7 @@ func (b *PtnApiBackend) SendContractInvokeReqTx(requestTx *modules.Transaction) 
 	return requestTx.RequestHash(), nil
 }
 func (b *PtnApiBackend) ContractInvokeReqTokenTx(from, to, toToken common.Address, daoAmount, daoFee,
-	daoAmountToken uint64, assetToken string, contractAddress common.Address, args [][]byte,
+daoAmountToken uint64, assetToken string, contractAddress common.Address, args [][]byte,
 	timeout uint32) (reqId common.Hash, err error) {
 	return b.ptn.contractPorcessor.ContractInvokeReqToken(from, to, toToken, daoAmount, daoFee, daoAmountToken,
 		assetToken, contractAddress, args, timeout)
@@ -658,6 +657,26 @@ func (b *PtnApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, da
 	deleteImage bool) (reqId common.Hash, err error) {
 	return b.ptn.contractPorcessor.ContractStopReq(from, to, daoAmount, daoFee, contractId, deleteImage)
 }
+
+func (b *PtnApiBackend) ContractInstallReqTxFee(from, to common.Address, daoAmount, daoFee uint64, tplName,
+path, version string, description, abi, language string, addrs []common.Address) (fee float64, size float64, tm uint32,
+	err error) {
+	return b.ptn.contractPorcessor.ContractInstallReqFee(from, to, daoAmount, daoFee, tplName, path,
+		version, description, abi, language, true, addrs)
+}
+func (b *PtnApiBackend) ContractDeployReqTxFee(from, to common.Address, daoAmount, daoFee uint64, templateId []byte,
+	args [][]byte, extData []byte, timeout time.Duration) (fee float64, size float64, tm uint32, err error) {
+	return b.ptn.contractPorcessor.ContractDeployReqFee(from, to, daoAmount, daoFee, templateId, args, extData, timeout)
+}
+func (b *PtnApiBackend) ContractInvokeReqTxFee(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
+	contractAddress common.Address, args [][]byte, timeout uint32) (fee float64, size float64, tm uint32, err error) {
+	return b.ptn.contractPorcessor.ContractInvokeReqFee(from, to, daoAmount, daoFee, certID, contractAddress, args, timeout)
+}
+func (b *PtnApiBackend) ContractStopReqTxFee(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address,
+	deleteImage bool) (fee float64, size float64, tm uint32, err error) {
+	return b.ptn.contractPorcessor.ContractStopReqFee(from, to, daoAmount, daoFee, contractId, deleteImage)
+}
+
 func (b *PtnApiBackend) ElectionVrf(id uint32) ([]byte, error) {
 	return b.ptn.contractPorcessor.ElectionVrfReq(id)
 }
