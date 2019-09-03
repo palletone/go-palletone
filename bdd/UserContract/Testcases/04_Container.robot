@@ -22,35 +22,35 @@ Invoke
     Given Unlock token holder succeed
     ${reqId} =    OutOfMemory
     #    ${reqId}    ${true}
-    sleep    40
+    sleep    60
     GetTxByReqId    ${reqId}
     Given Unlock token holder succeed
     ${reqId} =    GetValueWithInvokeAddress
     And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
     Given Unlock token holder succeed
     ${reqId} =    DivideByZero
-    sleep    40
+    sleep    60
     GetTxByReqId    ${reqId}
     Given Unlock token holder succeed
     ${reqId} =    GetValueWithInvokeAddress
     And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
     Given Unlock token holder succeed
     ${reqId} =    IndexOutOfRange
-    sleep    40
+    sleep    60
     GetTxByReqId    ${reqId}
     Given Unlock token holder succeed
     ${reqId} =    GetValueWithInvokeAddress
     And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
     Given Unlock token holder succeed
     ${reqId} =    ForLoop
-    sleep    40
+    sleep    60
     GetTxByReqId    ${reqId}
     Given Unlock token holder succeed
     ${reqId} =    GetValueWithInvokeAddress
     And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
     Given Unlock token holder succeed
     ${reqId} =    WriteHomePageToContainer
-    sleep    40
+    sleep    60
     GetTxByReqId    ${reqId}
     Given Unlock token holder succeed
     ${reqId} =    GetValueWithInvokeAddress
