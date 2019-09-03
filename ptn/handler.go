@@ -775,7 +775,10 @@ func (pm *ProtocolManager) dockerLoop(client *docker.Client) {
 			return
 		case <-time.After(time.Duration(30) * time.Second):
 			log.Debugf("each 30 second to get all containers")
-			manger.GetAllContainers(client)
+			//  重启退出容器
+			manger.RestartContainers(client)
+			//  删除过期容器
+			manger.RemoveExpiredConatiners(client)
 		}
 	}
 }

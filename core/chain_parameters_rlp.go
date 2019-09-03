@@ -40,7 +40,8 @@ type ChainParametersTemp struct {
 	UccCpuShares string
 	UccCpuQuota  string
 	//UccCpuPeriod  string
-	UccDisk string
+	UccDisk       string
+	UccDuringTime string
 
 	TempUccMemory string
 	//TempUccMemorySwap string
@@ -72,10 +73,11 @@ func (cp *ChainParameters) getCPT() *ChainParametersTemp {
 		//DepositDailyReward: strconv.FormatInt(int64(cp.PledgeDailyReward), 10),
 		//DepositPeriod:      strconv.FormatInt(int64(cp.DepositPeriod), 10),
 
-		UccMemory:    strconv.FormatInt(cp.UccMemory, 10),
-		UccCpuShares: strconv.FormatInt(cp.UccCpuShares, 10),
-		UccCpuQuota:  strconv.FormatInt(cp.UccCpuQuota, 10),
-		UccDisk:      strconv.FormatInt(cp.UccDisk, 10),
+		UccMemory:     strconv.FormatInt(cp.UccMemory, 10),
+		UccCpuShares:  strconv.FormatInt(cp.UccCpuShares, 10),
+		UccCpuQuota:   strconv.FormatInt(cp.UccCpuQuota, 10),
+		UccDisk:       strconv.FormatInt(cp.UccDisk, 10),
+		UccDuringTime: strconv.FormatInt(cp.UccDuringTime, 10),
 
 		TempUccMemory:    strconv.FormatInt(cp.TempUccMemory, 10),
 		TempUccCpuShares: strconv.FormatInt(cp.TempUccCpuShares, 10),
@@ -137,6 +139,12 @@ func (cpt *ChainParametersTemp) getCP(cp *ChainParameters) error {
 		return err
 	}
 	cp.UccDisk = UccDisk
+
+	UccDuringTime, err := strconv.ParseInt(cpt.UccDuringTime, 10, 64)
+	if err != nil {
+		return err
+	}
+	cp.UccDuringTime = UccDuringTime
 
 	TempUccMemory, err := strconv.ParseInt(cpt.TempUccMemory, 10, 64)
 	if err != nil {
