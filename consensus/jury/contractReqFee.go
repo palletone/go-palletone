@@ -33,7 +33,7 @@ func (p *Processor) getTxContractFee(tx *modules.Transaction, extDataSize float6
 	}
 	allSize := tx.Size().Float64() + extDataSize
 	timeFee, sizeFee := getContractTxNeedFee(p.dag, txType, float64(timeout), allSize) //todo  timeout
-	log.Debugf("[%s]getTxContractFee, all txFee[%f],timeFee[%s],sizeFee[%f]", shortId(reqId.String()), timeFee+sizeFee, timeFee, sizeFee)
+	log.Debugf("[%s]getTxContractFee, all txFee[%f],timeFee[%f],sizeFee[%f]", shortId(reqId.String()), timeFee+sizeFee, timeFee, sizeFee)
 	return timeFee + sizeFee, allSize, timeout, nil
 }
 
