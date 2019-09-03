@@ -14,9 +14,18 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 )
 
+/*
+eg.
+size(byte)
+           req      txPool
+install    1577     1691
+deploy     373      1029
+invoke     229      496
+*/
+
 const (
 	ContractDefaultSignatureSize = 256.0
-	ContractDefaultElectionSize  = 512.0
+	ContractDefaultElectionSize  = 768.0
 	ContractDefaultRWSize        = 512.0
 )
 
