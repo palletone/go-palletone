@@ -185,6 +185,29 @@ func (s *PublicDagAPI) GetUnitByNumber(ctx context.Context, condition string) st
 	}
 	return string(content)
 }
+func (s *PublicDagAPI) GetUnitJsonByIndex(ctx context.Context, asset_id string, index uint64) string {
+	number := &modules.ChainIndex{}
+	number.Index = uint64(index)
+
+	assetId, _, err := modules.String2AssetId(asset_id)
+	if err != nil {
+		return fmt.Sprintf("the [%s] isn't unknow asset_id.", asset_id)
+	}
+	number.AssetID = assetId
+	log.Info("PublicBlockChainAPI info", "GetUnitJsonByIndex:", index, "number:", number.String())
+
+	unit := s.b.GetUnitByNumber(number)
+	if unit == nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByNumber GetUnitByNumber is nil number:", number)
+		return "the unit isn't exist."
+	}
+	content, err := json.Marshal(unit)
+	if err != nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByNumber Marshal err:", err, "unit:", *unit)
+		return "json UnitMarshal err: " + err.Error()
+	}
+	return string(content)
+}
 
 // getUnitsByIndex
 func (s *PublicDagAPI) GetUnitsByIndex(ctx context.Context, start, end decimal.Decimal, asset string) string {

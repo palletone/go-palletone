@@ -80,6 +80,7 @@ type Genesis struct {
 	Version     string `json:"version"`
 	GasToken    string `json:"gasToken"`
 	TokenAmount string `json:"tokenAmount"`
+	SignScript  string `json:"sign_script"`
 	//TokenAmount uint64 `json:"tokenAmount"`
 	//TokenDecimal              uint32                   `json:"tokenDecimal"`
 	//DecimalUnit               string                   `json:"decimal_unit"`
