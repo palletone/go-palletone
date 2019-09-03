@@ -199,18 +199,18 @@ func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byt
 		Language: usrcc.Language,
 		SysCC:    false,
 	}
-	if depId.IsSystemContractAddress() {
-		cc.SysCC = true
-		err = cclist.SetChaincode(chainID, 0, cc)
-		if err != nil {
-			log.Error("Deploy", "SetChaincode fail, chainId", chainID, "name", cc.Name)
-		}
-	} else {
-		err = saveChaincode(idag, depId, cc)
-		if err != nil {
-			log.Error("Deploy saveChaincodeSet", "SetChaincode fail, channel", chainID, "name", cc.Name, "error", err.Error())
-		}
+	//if depId.IsSystemContractAddress() {
+	//	cc.SysCC = true
+	//	err = cclist.SetChaincode(chainID, 0, cc)
+	//	if err != nil {
+	//		log.Error("Deploy", "SetChaincode fail, chainId", chainID, "name", cc.Name)
+	//	}
+	//} else {
+	err = saveChaincode(idag, depId, cc)
+	if err != nil {
+		log.Error("Deploy saveChaincodeSet", "SetChaincode fail, channel", chainID, "name", cc.Name, "error", err.Error())
 	}
+	//}
 	unit, err := RwTxResult2DagDeployUnit(txsim, templateId, cc.Name, cc.Id, args, timeout)
 	if err != nil {
 		log.Errorf("chainID[%s] converRwTxResult2DagUnit failed", chainID)

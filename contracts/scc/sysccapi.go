@@ -146,10 +146,12 @@ func deploySysCC(chainID string, syscc *SystemChaincode) error {
 		log.Info("system chaincode deployed ok!!")
 		log.Infof("contract name[%s],path[%s]", syscc.Name, syscc.Path)
 		cc := &cclist.CCInfo{
-			Id:      syscc.Id,
-			Name:    syscc.Name,
-			Path:    syscc.Path,
-			Version: syscc.Version,
+			Id:       syscc.Id,
+			Name:     syscc.Name,
+			Path:     syscc.Path,
+			Version:  syscc.Version,
+			SysCC:    true,
+			Language: "go",
 		}
 		err = cclist.SetChaincode(chainID, 0, cc)
 		if err != nil {
