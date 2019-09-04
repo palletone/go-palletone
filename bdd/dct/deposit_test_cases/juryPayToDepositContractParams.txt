@@ -6,7 +6,7 @@ Resource          publicParams.txt
 *** Keywords ***
 Jury交付保证金所需参数
     [Arguments]    ${juryAddr}    ${depositAmounts}
-    ${one}    Create List    JuryPayToDepositContract    2SvBCoCHWA8Zg2Q8v2onmaTeZj6YmWLbp6mzoCZeDwiUcmuqFwd8fZXCfdmEhTodbWaSJ8T7MvjQiZkn4S9VTQnKDrEkETt84Sr58vmjVdhdXNjjzqn8j6oHzvduxGo4UjWB66wd1GFXKoz5XD8hcPDzCyGVqZLjb7wu2pkJxeG1Mt3
+    ${one}    Create List    JuryPayToDepositContract    0x03fb01988b65751b86d10fc7bfc34b127febb0602ca64edd42003274640bf5148c
     ${two}    Create List    ${juryAddr}    ${depositContractAddress}    ${depositAmounts}    ${fee}    ${one}
     [Return]    ${two}
 
