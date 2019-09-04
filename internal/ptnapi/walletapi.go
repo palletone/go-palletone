@@ -1705,6 +1705,8 @@ func (s *PrivateWalletAPI) generateTx(payment *modules.PaymentPayload, address c
 	signErrs, err := tokenengine.Instance.SignTxAllPaymentInput(tx, 1, utxoLockScripts, nil, getPubKeyFn, getSignFn)
 	if err != nil {
 		log.Errorf("%v", signErrs)
+		//TODO
+		return nil, err
 	}
 	return tx, nil
 }
