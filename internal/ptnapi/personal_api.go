@@ -266,5 +266,14 @@ func (s *PrivateAccountAPI) TransferPtn(from, to string, amount decimal.Decimal,
 
 	return s.b.TransferPtn(from, to, amount, text)
 }
-
-
+func (s *PrivateAccountAPI) GetPublicKey(address string) (string, error) {
+	addr, err := common.StringToAddress(address)
+	if err != nil {
+		return "", err
+	}
+	byte, err := s.b.GetKeyStore().GetPublicKey(addr)
+	if err != nil {
+		return "", err
+	}
+	return hexutil.Encode(byte), nil
+}
