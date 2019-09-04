@@ -347,7 +347,7 @@ func StopByName(contractid []byte, chainID string, txid string, usercc *cclist.C
 	return stopResult, nil
 }
 
-func RestartContainers(client *docker.Client) {
+func RestartContainers(client *docker.Client, dag dag.IDag) {
 	//  获取所有容器
 	cons, err := utils.GetAllContainers(client)
 	if err != nil {
@@ -362,11 +362,6 @@ func RestartContainers(client *docker.Client) {
 	}
 	if len(addrs) > 0 {
 		for _, v := range addrs {
-			dag, err := db.GetCcDagHand()
-			if err != nil {
-				log.Infof("db.GetCcDagHand err: %s", err.Error())
-				return
-			}
 			rd, _ := crypto.GetRandomBytes(32)
 			txid := util.RlpHash(rd)
 			log.Infof("==============需要重启====容器地址为--->%s", hex.EncodeToString(v.Bytes21()))
@@ -380,18 +375,14 @@ func RestartContainers(client *docker.Client) {
 }
 
 //删除所有过期容器
-func RemoveExpiredConatiners(client *docker.Client) {
+func RemoveExpiredConatiners(client *docker.Client, dag dag.IDag, rmExpConFromSysParam bool) {
 	con, err := utils.GetAllContainers(client)
 	if err != nil {
 		log.Errorf("utils.GetAllContainers error: %s", err.Error())
 		return
 	}
-	dag, err := db.GetCcDagHand()
-	if err != nil {
-		log.Infof("db.GetCcDagHand err: %s", err.Error())
-		return
-	}
-	conIdSlice := utils.RetrieveExpiredContainers(dag, con, true)
+
+	conIdSlice := utils.RetrieveExpiredContainers(dag, con, rmExpConFromSysParam)
 	if len(conIdSlice) > 0 {
 		for _, id := range conIdSlice {
 			err := client.RemoveContainer(docker.RemoveContainerOptions{ID: id, Force: true})

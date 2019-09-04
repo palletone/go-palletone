@@ -37,7 +37,7 @@ type ContractJson struct {
 	Status          byte                  `json:"status"` // 合约状态
 	Creator         string                `json:"creator"`
 	CreationTime    time.Time             `json:"creation_time"` // creation date
-	DuringTime      time.Time             `json:"during_time"`   // deploy during date
+	DuringTime      uint64                `json:"during_time"`   // deploy during date
 	Template        *ContractTemplateJson `json:"template"`
 }
 
@@ -52,7 +52,7 @@ func ConvertContract2Json(contract *modules.Contract) *ContractJson {
 		Status:          contract.Status,
 		Creator:         creatorAddr.String(),
 		CreationTime:    time.Unix(int64(contract.CreationTime), 0),
-		DuringTime:      time.Unix(int64(contract.DuringTime), 0),
+		DuringTime:      contract.DuringTime,
 	}
 }
 

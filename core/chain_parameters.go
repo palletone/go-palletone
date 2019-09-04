@@ -55,6 +55,7 @@ func NewChainParametersBase() ChainParametersBase {
 		RewardHeight:              DefaultRewardHeight,
 		PledgeDailyReward:         DefaultPledgeDailyReward,
 		FoundationAddress:         DefaultFoundationAddress,
+		RmExpConFromSysParam:      defaultRmExpConFromSysParam,
 		DepositAmountForMediator:  DefaultDepositAmountForMediator,
 		DepositAmountForJury:      DefaultDepositAmountForJury,
 		DepositAmountForDeveloper: DefaultDepositAmountForDeveloper,
@@ -82,7 +83,7 @@ type ChainParametersBase struct {
 	DepositAmountForMediator  uint64 `json:"deposit_amount_for_mediator"` //保证金的数量
 	DepositAmountForJury      uint64 `json:"deposit_amount_for_jury"`
 	DepositAmountForDeveloper uint64 `json:"deposit_amount_for_developer"`
-
+	RmExpConFromSysParam      bool   `json:"remove_expired_container_from_system_parameter"`
 	//UccCpuSetCpus string `json:"ucc_cpu_set_cpus"` //限制使用某些CPUS  "1,3"  "0-2"
 
 	// 活跃mediator的数量。 number of active mediators
@@ -113,11 +114,12 @@ func NewChainParams() ChainParameters {
 		ChainParametersBase: NewChainParametersBase(),
 		// TxCoinYearRate:       DefaultTxCoinYearRate,
 		//DepositPeriod:        DefaultDepositPeriod,
-		UccMemory:            DefaultUccMemory,
-		UccCpuShares:         DefaultUccCpuShares,
-		UccCpuQuota:          DefaultUccCpuQuota,
-		UccDisk:              DefaultUccDisk,
-		UccDuringTime:        defaultContainerDuringTime,
+		UccMemory:     DefaultUccMemory,
+		UccCpuShares:  DefaultUccCpuShares,
+		UccCpuQuota:   DefaultUccCpuQuota,
+		UccDisk:       DefaultUccDisk,
+		UccDuringTime: defaultContainerDuringTime,
+
 		TempUccMemory:        DefaultTempUccMemory,
 		TempUccCpuShares:     DefaultTempUccCpuShares,
 		TempUccCpuQuota:      DefaultTempUccCpuQuota,
@@ -148,6 +150,7 @@ type ChainParameters struct {
 	UccCpuQuota   int64 `json:"ucc_cpu_quota"`
 	UccDisk       int64 `json:"ucc_disk"`
 	UccDuringTime int64 `json:"ucc_during_time"`
+
 	//对中间容器的相关资源限制
 	TempUccMemory    int64 `json:"temp_ucc_memory"`
 	TempUccCpuShares int64 `json:"temp_ucc_cpu_shares"`

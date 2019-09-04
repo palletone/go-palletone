@@ -39,6 +39,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/fsouza/go-dockerclient"
+	"github.com/palletone/go-palletone/contracts/comm"
 	"github.com/palletone/go-palletone/contracts/manger"
 	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -768,6 +769,11 @@ func (pm *ProtocolManager) ceBroadcastLoop() {
 
 func (pm *ProtocolManager) dockerLoop(client *docker.Client) {
 	log.Debugf("starting docker loop")
+	dag, err := comm.GetCcDagHand()
+	if err != nil {
+		log.Infof("db.GetCcDagHand err: %s", err.Error())
+		return
+	}
 	for {
 		select {
 		case <-pm.dockerQuitSync:
@@ -776,9 +782,9 @@ func (pm *ProtocolManager) dockerLoop(client *docker.Client) {
 		case <-time.After(time.Duration(30) * time.Second):
 			log.Debugf("each 30 second to get all containers")
 			//  重启退出容器
-			manger.RestartContainers(client)
+			manger.RestartContainers(client, dag)
 			//  删除过期容器
-			manger.RemoveExpiredConatiners(client)
+			manger.RemoveExpiredConatiners(client, dag, dag.GetChainParameters().RmExpConFromSysParam)
 		}
 	}
 }

@@ -186,7 +186,7 @@ func GetAllContainers(client *docker.Client) ([]docker.APIContainers, error) {
 }
 
 //  获取所有过期的容器ID(通过交易上的)
-func RetrieveExpiredContainers(idag dag.IDag, containers []docker.APIContainers, isFromSysConfig bool) []string {
+func RetrieveExpiredContainers(idag dag.IDag, containers []docker.APIContainers, rmExpConFromSysParam bool) []string {
 	log.Debugf("enter RetrieveExpiredContainers func")
 	var conId []string
 	if len(containers) > 0 {
@@ -200,9 +200,11 @@ func RetrieveExpiredContainers(idag dag.IDag, containers []docker.APIContainers,
 				}
 
 				containerDurTime := uint64(0)
-				if isFromSysConfig {
+				if rmExpConFromSysParam {
+					log.Info("rm exp con from sys param............")
 					containerDurTime = uint64(idag.GetChainParameters().UccDuringTime)
 				} else {
+					log.Info("rm exp con from contact info..........")
 					contract, err := idag.GetContract(contractAddr.Bytes())
 					if err != nil {
 						log.Errorf("get contract error: %s", err.Error())
@@ -210,8 +212,6 @@ func RetrieveExpiredContainers(idag dag.IDag, containers []docker.APIContainers,
 					}
 					containerDurTime = contract.DuringTime
 				}
-				//containerCreateTime := c.Created
-				//nowTime := time.Now().Unix()
 				duration := time.Now().Unix() - c.Created
 				if uint64(duration) >= containerDurTime {
 					log.Infof("container name = %s was expired.", c.Names[0])
