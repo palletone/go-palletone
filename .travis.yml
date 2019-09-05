@@ -135,7 +135,7 @@ matrix:
 
         - if [ $IS_RUN_LIGHT == 'true' ]; then
           cd ./light/testcases;
-          chmod 777 bddstart.sh;
+          chmod +x ./bddstart.sh;
           ./bddstart.sh;
           fi
       after_script:

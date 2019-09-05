@@ -111,7 +111,6 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 		md.Status = modules.Apply
 		md.Role = modules.Mediator
 		md.ApplyEnterTime = time.Unix(unit.Timestamp(), 0).Format(modules.Layout2)
-		md.PublicKey = mi.InitPubKey
 
 		byte, err := json.Marshal(md)
 		if err != nil {
