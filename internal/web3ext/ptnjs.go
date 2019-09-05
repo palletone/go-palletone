@@ -49,6 +49,11 @@ web3._extend({
 			call: 'ptn_decodeTx',
 			params: 1
 		}),
+		new web3._extend.Method({
+			name: 'decodeJsonTx',
+			call: 'ptn_decodeJsonTx',
+			params: 1
+		}),
 		//new web3._extend.Method({
 		//	name: 'resend',
 		//	call: 'ptn_resend',

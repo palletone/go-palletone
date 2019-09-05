@@ -40,8 +40,10 @@ value="\"ok\""
 echo $syncutxoinfo
 if [ $syncutxoinfo = $value ];then
     echo "============syncUTXOByAddr account5 ok============"
+    python  -m robot.run -d ./logs --test success ./light.robot
 else
     echo "============syncUTXOByAddr account5 err:"$syncutxoinfo
+    python  -m robot.run -d ./logs --test fail ./light.robot
 fi
 
 #ptn.getBalance in light node5
@@ -53,8 +55,10 @@ num=$[$lenght-2]
 t1=`echo ${temp:0:$num} | sed 's/ //g' | sed 's/"//g'`
 if [ $t1 = 100 ];then
     echo "============getBalance account5 ok============"
+    python  -m robot.run -d ./logs --test success ./light.robot
 else
     echo "============getBalance account5 err:"$t1
+    python  -m robot.run -d ./logs --test fail ./light.robot
 fi
 
 
@@ -69,8 +73,10 @@ syncutxoinfo=`echo $syncutxocommand`
 value="\"OK\""
 if [ $syncutxoinfo = $value ];then
     echo "============syncUTXOByAddr account6 ok============"
+    python  -m robot.run -d ./logs --test success ./light.robot
 else
     echo "============syncUTXOByAddr account6 err:"$syncutxoinfo
+    python  -m robot.run -d ./logs --test fail ./light.robot
 fi
 
 
@@ -82,8 +88,10 @@ num=$[$lenght-2]
 t1=`echo ${temp:0:$num} | sed 's/ //g' | sed 's/"//g'`
 if [ $t1 = 80 ];then
     echo "============getBalance account6 ok============"
+    python  -m robot.run -d ./logs --test success ./light.robot
 else
     echo "============getBalance account6 err:"$t1
+    python  -m robot.run -d ./logs --test fail ./light.robot
 fi
 
 
@@ -99,8 +107,10 @@ syncutxoinfo=`echo $syncutxocommand`
 value="\"OK\""
 if [ $syncutxoinfo = $value ];then
     echo "============syncUTXOByAddr account7 ok============"
+    python  -m robot.run -d ./logs --test success ./light.robot
 else
     echo "============syncUTXOByAddr account7 err:"$syncutxoinfo
+    python  -m robot.run -d ./logs --test fail ./light.robot
 fi
 
 
@@ -112,30 +122,10 @@ num=$[$lenght-2]
 t1=`echo ${temp:0:$num} | sed 's/ //g' | sed 's/"//g'`
 if [ $t1 = 50 ];then
     echo "============getBalance account7 ok============"
+    python  -m robot.run -d ./logs --test success ./light.robot
 else
     echo "============getBalance account7 err:"$t1
+    python  -m robot.run -d ./logs --test fail ./light.robot
 fi
 
 
-:<<!
-balancecommand=`./gptn --exec "wallet.getBalance($account5)"  attach node_test4/palletone/gptn4.ipc`
-balanceinfo=`echo $balancecommand`
-temp=`echo ${balanceinfo:7}`
-length=`echo ${#temp}`
-num=$[$lenght-2]
-t1=`echo ${temp:0:$num}`
-echo "=========consle getBalance==========="
-echo $t1
-#check light account5 balance in full node
-balancecommand=`curl -H "Content-Type:application/json" -X POST -d "{\"jsonrpc\":\"2.0\",\"method\":\"wallet_getBalance\",\"params\":[$account5],\"id\":1}" http://127.0.0.1:8585`
-balanceinfo=`echo $balancecommand`
-balance=`echo $balanceinfo | sed -n '$p'`
-b1=`echo $balance | jq '.result.PTN'`
-b2=`echo $b1`
-num="\"100\""
-if [ "$b2" = "$num" ];then 
-    echo "============transferToken account5 ok num"$b2"============"
-else
-    echo "============transferToken1 account5 num:"$b2"============"
-fi
-!

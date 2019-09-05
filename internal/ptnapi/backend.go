@@ -138,6 +138,7 @@ type Backend interface {
 	ContractStop(deployId []byte, txid string, deleteImage bool) error
 
 	DecodeTx(hex string) (string, error)
+	DecodeJsonTx(hex string) (string, error)
 	EncodeTx(jsonStr string) (string, error)
 
 	ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string,

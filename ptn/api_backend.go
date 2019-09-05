@@ -711,6 +711,28 @@ func (b *PtnApiBackend) DecodeTx(hexStr string) (string, error) {
 	json, err := json.Marshal(txjson)
 	return string(json), err
 }
+
+func (b *PtnApiBackend) DecodeJsonTx(hexStr string) (string, error) {
+	decoded, err := hex.DecodeString(hexStr)
+	if err != nil {
+		return "", errors.New("Decode Signedtx is invalid")
+	}
+	var btxjson []byte
+	if err := rlp.DecodeBytes(decoded, &btxjson); err != nil {
+		return "", errors.New("RLP Decode To Byte is invalid")
+	}
+	tx := &modules.Transaction{
+		TxMessages: make([]*modules.Message, 0),
+	}
+	err = json.Unmarshal(btxjson, tx)
+	if err != nil {
+		return "", errors.New("Json Unmarshal To Tx is invalid")
+	}
+	txjson := ptnjson.ConvertTx2FullJson(tx, b.Dag().GetUtxoEntry)
+	json, err := json.Marshal(txjson)
+	return string(json), err
+}
+
 func (b *PtnApiBackend) EncodeTx(jsonStr string) (string, error) {
 	txjson := &ptnjson.TxJson{}
 	json.Unmarshal([]byte(jsonStr), txjson)
