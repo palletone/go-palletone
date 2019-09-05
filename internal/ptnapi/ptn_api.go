@@ -348,6 +348,9 @@ func (s *PublicBlockChainAPI) GetPrefix(condition string) string /*map[string][]
 func (s *PublicBlockChainAPI) DecodeTx(ctx context.Context, hex string) (string, error) {
 	return s.b.DecodeTx(hex)
 }
+func (s *PublicBlockChainAPI) DecodeJsonTx(ctx context.Context, hex string) (string, error) {
+	return s.b.DecodeJsonTx(hex)
+}
 
 func (s *PublicBlockChainAPI) EncodeTx(ctx context.Context, json string) (string, error) {
 	return s.b.EncodeTx(json)
