@@ -93,8 +93,8 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 			log.Debugf(err.Error())
 			panic(err.Error())
 		}
-
-		list[mi.AddStr] = mi.InitPubKey
+		//  TODO 加入地址公钥信息
+		list[mi.AddStr] = ""
 	}
 
 	// 存储 initMediatorCandidates/JuryCandidates
