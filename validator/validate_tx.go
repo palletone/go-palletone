@@ -83,7 +83,6 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 			//如果是合约执行结果中的Payment，只有是完整交易的情况下才检查解锁脚本
 			if msgIdx > requestMsgIndex && !isFullTx {
 				log.Debugf("Tx reqid[%s] is processing tx, don't need validate result payment", tx.RequestHash().String())
-				return TxValidationCode_NOT_VALIDATED, nil
 			} else {
 				validateCode := validate.validatePaymentPayload(tx, msgIdx, payment, usedUtxo)
 				if validateCode != TxValidationCode_VALID {
