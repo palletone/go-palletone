@@ -388,6 +388,9 @@ func (b *LesApiBackend) ContractStop(deployId []byte, txid string, deleteImage b
 func (b *LesApiBackend) DecodeTx(hex string) (string, error) {
 	return "", nil
 }
+func (b *LesApiBackend) DecodeJsonTx(hex string) (string, error) {
+	return "", nil
+}
 func (b *LesApiBackend) EncodeTx(jsonStr string) (string, error) {
 	return "", nil
 }

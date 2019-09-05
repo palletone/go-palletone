@@ -692,6 +692,11 @@ func (ec *Client) DecodeTx(ctx context.Context, hex string) (string, error) {
 	err := ec.c.CallContext(ctx, &result, "ptn_decodeTx", hex)
 	return result, err
 }
+func (ec *Client) DecodeJsonTx(ctx context.Context, hex string) (string, error) {
+	var result string
+	err := ec.c.CallContext(ctx, &result, "ptn_decodeJsonTx", hex)
+	return result, err
+}
 func (ec *Client) EncodeTx(ctx context.Context, jsonStr string) (string, error) {
 	var result string
 	err := ec.c.CallContext(ctx, &result, "ptn_encodeTx", jsonStr)
