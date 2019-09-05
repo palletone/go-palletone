@@ -21,6 +21,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/modules"
 	"go.dedis.ch/kyber/v3/pairing/bn256"
 )
 
@@ -35,12 +36,12 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 		err = fmt.Errorf("invalid init jury public key \"%v\" : %v", args[0], err)
 		return shim.Error(err.Error())
 	}
-	return nodePayToDepositContract(stub, Jury, args)
+	return nodePayToDepositContract(stub, modules.Jury, args)
 }
 
 func juryApplyQuit(stub shim.ChaincodeStubInterface) peer.Response {
 	log.Debug("juryApplyQuit")
-	err := applyQuitList(Jury, stub)
+	err := applyQuitList(modules.Jury, stub)
 	if err != nil {
 		log.Error("applyQuitList err: ", "error", err)
 		return shim.Error(err.Error())
@@ -50,5 +51,5 @@ func juryApplyQuit(stub shim.ChaincodeStubInterface) peer.Response {
 
 //  处理
 func handleJury(stub shim.ChaincodeStubInterface, quitAddr common.Address) error {
-	return handleNode(stub, quitAddr, Jury)
+	return handleNode(stub, quitAddr, modules.Jury)
 }

@@ -84,7 +84,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	}
 
 	//  获取申请列表
-	becomeList, err := getList(stub, ListForApplyBecomeMediator)
+	becomeList, err := getList(stub, modules.ListForApplyBecomeMediator)
 	if err != nil {
 		log.Error("Stub.GetBecomeMediatorApplyList err:", "error", err)
 		return shim.Error(err.Error())
@@ -97,17 +97,17 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 
 	becomeList[mco.AddStr] = "true"
 	//  保存列表
-	err = saveList(stub, ListForApplyBecomeMediator, becomeList)
+	err = saveList(stub, modules.ListForApplyBecomeMediator, becomeList)
 	if err != nil {
 		log.Error("saveList err:", "error", err)
 		return shim.Error(err.Error())
 	}
 
 	// 保存账户信息
-	md := NewMediatorDeposit()
+	md := modules.NewMediatorDeposit()
 	md.ApplyEnterTime = getTiem(stub)
-	md.Status = Apply
-	md.Role = Mediator
+	md.Status = modules.Apply
+	md.Role = modules.Mediator
 	md.PublicKey = mco.InitPubKey
 	err = SaveMediatorDeposit(stub, mco.AddStr, md)
 	if err != nil {
@@ -166,19 +166,19 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface /*, args []st
 		}
 
 		// genesis中定义的mediator, 对其保证金进行特殊处理
-		md = NewMediatorDeposit()
+		md = modules.NewMediatorDeposit()
 		md.ApplyEnterTime = getTiem(stub)
-		md.Status = Agree
-		md.Role = Mediator
+		md.Status = modules.Agree
+		md.Role = modules.Mediator
 	}
 
 	// 退出mediator列表后，再次缴纳保证
-	if md.Status == Quited {
-		md.Status = Agree
+	if md.Status == modules.Quited {
+		md.Status = modules.Agree
 		md.ApplyQuitTime = ""
 	}
 	//  判断是否已经获得同意状态
-	if md.Status != Agree {
+	if md.Status != modules.Agree {
 		return shim.Error(invokeAddr.String() + "does not in the agree list")
 	}
 
@@ -292,7 +292,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface /*, args []st
 
 //  申请退出 参数：暂时 节点地址
 func mediatorApplyQuit(stub shim.ChaincodeStubInterface /*, args []string*/) pb.Response {
-	err := applyQuitList(Mediator, stub)
+	err := applyQuitList(modules.Mediator, stub)
 	if err != nil {
 		log.Error("mediatorApplyQuitMediator err: ", "error", err)
 		return shim.Error(err.Error())
@@ -311,7 +311,7 @@ func mediatorApplyQuit(stub shim.ChaincodeStubInterface /*, args []string*/) pb.
 		return shim.Error(err.Error())
 	}
 	mediator.ApplyQuitTime = getTiem(stub)
-	mediator.Status = Quitting
+	mediator.Status = modules.Quitting
 	//  保存账户信息
 	err = SaveMediatorDeposit(stub, invokeAddr.Str(), mediator)
 	if err != nil {
@@ -427,7 +427,7 @@ func handleMediator(stub shim.ChaincodeStubInterface, quitAddr common.Address) e
 		return err
 	}
 	//  更新
-	md.Status = Quited
+	md.Status = modules.Quited
 	md.Balance = 0
 	md.EnterTime = ""
 	//  保存
