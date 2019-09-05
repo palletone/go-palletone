@@ -45,7 +45,7 @@ func NewImmutChainParams() ImmutableChainParameters {
 		UccCapDrop: []string{"mknod", "setfcap", "audit_write", "net_bind_service", "net_raw",
 			"kill", "setgid", "setuid", "setpcap", "chown", "fowner", "sys_chroot"},
 		UccNetworkMode:    DefaultUccNetworkMode,
-		UccOOMKillDisable: defaultUccOOMKillDisable,
+		UccOOMKillDisable: DefaultUccOOMKillDisable,
 	}
 }
 
@@ -55,7 +55,7 @@ func NewChainParametersBase() ChainParametersBase {
 		RewardHeight:              DefaultRewardHeight,
 		PledgeDailyReward:         DefaultPledgeDailyReward,
 		FoundationAddress:         DefaultFoundationAddress,
-		RmExpConFromSysParam:      defaultRmExpConFromSysParam,
+		RmExpConFromSysParam:      DefaultRmExpConFromSysParam,
 		DepositAmountForMediator:  DefaultDepositAmountForMediator,
 		DepositAmountForJury:      DefaultDepositAmountForJury,
 		DepositAmountForDeveloper: DefaultDepositAmountForDeveloper,
@@ -118,7 +118,7 @@ func NewChainParams() ChainParameters {
 		UccCpuShares:  DefaultUccCpuShares,
 		UccCpuQuota:   DefaultUccCpuQuota,
 		UccDisk:       DefaultUccDisk,
-		UccDuringTime: defaultContainerDuringTime,
+		UccDuringTime: DefaultContainerDuringTime,
 
 		TempUccMemory:        DefaultTempUccMemory,
 		TempUccCpuShares:     DefaultTempUccCpuShares,

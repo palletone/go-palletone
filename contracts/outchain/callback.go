@@ -115,7 +115,7 @@ func GetJuryAddr(chaincodeID string, chainName string, params []byte) (string, e
 }
 
 func SignMessage(chaincodeID string, chainName string, params []byte) (string, error) {
-	adaptorObj, _ := allChain[chainName] //ProcessOutChainCall has checked
+	adaptorObj := allChain[chainName] //ProcessOutChainCall has checked
 	//
 	priKey, err := GetJuryKeyInfo(chaincodeID, chainName, params, adaptorObj)
 	if err != nil {
