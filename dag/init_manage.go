@@ -29,7 +29,6 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
-	"github.com/palletone/go-palletone/contracts/syscontract/deposit"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -108,10 +107,12 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 		}
 
 		// 将保证金设为0
-		md := deposit.NewMediatorDeposit()
+		md := modules.NewMediatorDeposit()
 		md.ApplyEnterTime = ""
-		md.Status = deposit.Apply
-		md.Role = deposit.Mediator
+		md.Status = modules.Apply
+		md.Role = modules.Mediator
+		md.ApplyEnterTime = time.Unix(unit.Timestamp(), 0).Format(modules.Layout2)
+		md.PublicKey = mi.InitPubKey
 
 		byte, err := json.Marshal(md)
 		if err != nil {

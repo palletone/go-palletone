@@ -224,9 +224,9 @@ func GetListForQuit(stub shim.ChaincodeStubInterface) (map[string]*modules.QuitN
 	return list, nil
 }
 
-func mediatorDepositKey(medAddr string) string {
-	return string(constants.MEDIATOR_INFO_PREFIX) + string(constants.DEPOSIT_BALANCE_PREFIX) + medAddr
-}
+//func mediatorDepositKey(medAddr string) string {
+//	return string(constants.MEDIATOR_INFO_PREFIX) + string(constants.DEPOSIT_BALANCE_PREFIX) + medAddr
+//}
 
 //  获取mediator
 func GetMediatorDeposit(stub shim.ChaincodeStubInterface, medAddr string) (*modules.MediatorDeposit, error) {
@@ -249,7 +249,7 @@ func SaveMediatorDeposit(stub shim.ChaincodeStubInterface, medAddr string, balan
 	if err != nil {
 		return err
 	}
-	err = stub.PutState(mediatorDepositKey(medAddr), byte)
+	err = stub.PutState(storage.MediatorDepositKey(medAddr), byte)
 	if err != nil {
 		return err
 	}
@@ -259,7 +259,7 @@ func SaveMediatorDeposit(stub shim.ChaincodeStubInterface, medAddr string, balan
 
 //  删除mediator
 func DelMediatorDeposit(stub shim.ChaincodeStubInterface, medAddr string) error {
-	err := stub.DelState(mediatorDepositKey(medAddr))
+	err := stub.DelState(storage.MediatorDepositKey(medAddr))
 	if err != nil {
 		return err
 	}

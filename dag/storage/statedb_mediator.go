@@ -126,7 +126,7 @@ func (statedb *StateDb) LookupMediatorInfo() []*modules.MediatorInfo {
 	return result
 }
 
-func (statedb *StateDb) getCandidateMediatorList() (map[string]string, error) {
+func (statedb *StateDb) GetCandidateMediatorList() (map[string]string, error) {
 	depositeContractAddress := syscontract.DepositContractAddress
 	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), modules.MediatorList)
 	if err != nil {
