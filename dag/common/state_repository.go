@@ -274,7 +274,11 @@ func (rep *StateRepository) GetPledgeListWithNew() (*modules.PledgeList, error) 
 	return pledgeList, nil
 }
 func (rep *StateRepository) GetMediatorVotedResults() (map[string]uint64, error) {
-	mediatorVoteCount := make(map[string]uint64)
+	mediators, err := rep.statedb.GetCandidateMediatorList()
+	if err != nil {
+		log.Debug("GetPledgeListWithNew error" + err.Error())
+		return nil, err
+	}
 
 	pledgeList, err := rep.GetPledgeListWithNew()
 	if err != nil {
@@ -285,11 +289,23 @@ func (rep *StateRepository) GetMediatorVotedResults() (map[string]uint64, error)
 		data, _ := json.Marshal(pledgeList)
 		return "GetPledgeListWithNew result:\r\n" + string(data)
 	})
+
+	mediatorVoteCount := make(map[string]uint64)
+	//先将所有mediator的投票数量设为0， 防止某个mediator未被任何账户投票
+	for address := range mediators {
+		mediatorVoteCount[address] = 0
+	}
+
 	for _, account := range pledgeList.Members {
 		// 遍历该账户投票的mediator
 		addr, _ := common.StringToAddress(account.Address)
-		mediators := rep.statedb.GetAccountVotedMediators(addr)
-		for med := range mediators {
+		votedMediators := rep.statedb.GetAccountVotedMediators(addr)
+		for med := range votedMediators {
+			// 判断账户投票的mediator是否仍为候选mediator
+			if _, found := mediatorVoteCount[med]; !found {
+				continue
+			}
+
 			// 累加投票数量
 			mediatorVoteCount[med] += account.Amount
 		}

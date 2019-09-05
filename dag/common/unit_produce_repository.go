@@ -42,7 +42,6 @@ import (
 type IUnitProduceRepository interface {
 	PushUnit(nextUnit *modules.Unit) error
 	ApplyUnit(nextUnit *modules.Unit) error
-	//MediatorVotedResults() map[string]uint64
 	Close()
 	SubscribeChainMaintenanceEvent(ob AfterChainMaintenanceEventFunc)
 	SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription
@@ -504,21 +503,6 @@ func (dag *UnitProduceRepository) performAccountMaintenance() {
 		dag.mediatorVoteTally = append(dag.mediatorVoteTally, voteTally)
 	}
 }
-
-//func (dag *UnitProduceRepository) MediatorVotedResults() map[string]uint64 {
-//	mediatorVoteCount := make(map[string]uint64)
-//
-//	allAccount := dag.stateRep.LookupAccount()
-//	for _, info := range allAccount {
-//		// 遍历该账户投票的mediator
-//		for med, _ := range info.VotedMediators {
-//			// 累加投票数量
-//			mediatorVoteCount[med] += info.Balance
-//		}
-//	}
-//
-//	return mediatorVoteCount
-//}
 
 func (dag *UnitProduceRepository) updateActiveMediators() bool {
 	// 1. 统计出活跃mediator数量n

@@ -18,6 +18,7 @@ package deposit
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -178,8 +179,8 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface /*, args []st
 		md.ApplyQuitTime = ""
 	}
 	//  判断是否已经获得同意状态
-	if md.Status != modules.Agree {
-		return shim.Error(invokeAddr.String() + "does not in the agree list")
+	if strings.ToLower(md.Status) != strings.ToLower(modules.Agree) {
+		return shim.Error(invokeAddr.String() + " does not in the agree list")
 	}
 
 	gp, err := stub.GetSystemConfig()
@@ -209,6 +210,8 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface /*, args []st
 	}
 
 	//  处理数据
+	md.Status = modules.Agree
+	md.Role = modules.Mediator
 	md.EnterTime = getTiem(stub)
 	md.Balance = all
 	//  保存账户信息

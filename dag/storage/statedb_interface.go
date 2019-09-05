@@ -83,6 +83,7 @@ type IStateDb interface {
 	IsMediator(address common.Address) bool
 	RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error)
 
+	GetCandidateMediatorList() (map[string]bool, error)
 	GetJuryCandidateList() (map[string]string, error)
 	IsInJuryCandidateList(address common.Address) bool
 	GetContractDeveloperList() ([]common.Address, error)

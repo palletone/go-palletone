@@ -22,6 +22,7 @@ package deposit
 
 import (
 	"encoding/json"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -81,7 +82,15 @@ func delPledgeDepositRecord(stub shim.ChaincodeStubInterface, addr string) error
 	return stub.DelState(key)
 }
 func getPledgeDepositRecord(stub shim.ChaincodeStubInterface, addr string) (*modules.AddressAmount, error) {
-	return getPledgeRecord(stub, string(constants.PLEDGE_DEPOSIT_PREFIX), addr)
+	addrAmt,err:= getPledgeRecord(stub, string(constants.PLEDGE_DEPOSIT_PREFIX), addr)
+	if err!=nil{
+		log.Error("getPledgeDepositRecord by %s return error:%s",addr,err.Error())
+		return nil,err
+	}
+	if addrAmt!=nil {
+		log.Debugf("getPledgeDepositRecord by %s,result:%d", addr, addrAmt.Amount)
+	}
+	return addrAmt,err
 }
 func getAllPledgeDepositRecords(stub shim.ChaincodeStubInterface) ([]*modules.AddressAmount, error) {
 	return getAllPledgeRecords(stub, string(constants.PLEDGE_DEPOSIT_PREFIX))
@@ -94,7 +103,15 @@ func delPledgeWithdrawRecord(stub shim.ChaincodeStubInterface, addr string) erro
 	return stub.DelState(key)
 }
 func getPledgeWithdrawRecord(stub shim.ChaincodeStubInterface, addr string) (*modules.AddressAmount, error) {
-	return getPledgeRecord(stub, string(constants.PLEDGE_WITHDRAW_PREFIX), addr)
+	addrAmt,err:=  getPledgeRecord(stub, string(constants.PLEDGE_WITHDRAW_PREFIX), addr)
+	if err!=nil{
+		log.Error("getPledgeWithdrawRecord by %s return error:%s",addr,err.Error())
+		return nil,err
+	}
+	if addrAmt!=nil {
+		log.Debugf("getPledgeWithdrawRecord by %s,result:%d", addr, addrAmt.Amount)
+	}
+	return addrAmt,err
 }
 func getAllPledgeWithdrawRecords(stub shim.ChaincodeStubInterface) ([]*modules.AddressAmount, error) {
 	return getAllPledgeRecords(stub, string(constants.PLEDGE_WITHDRAW_PREFIX))
