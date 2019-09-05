@@ -28,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/storage"
 )
 
 //  保存相关列表
@@ -229,7 +230,8 @@ func mediatorDepositKey(medAddr string) string {
 
 //  获取mediator
 func GetMediatorDeposit(stub shim.ChaincodeStubInterface, medAddr string) (*MediatorDeposit, error) {
-	byte, err := stub.GetState(mediatorDepositKey(medAddr))
+	//byte, err := stub.GetState(mediatorDepositKey(medAddr))
+	byte, err := stub.GetState(storage.MediatorDepositKey(medAddr))
 	if err != nil || byte == nil {
 		return nil, err
 	}
