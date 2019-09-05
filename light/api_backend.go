@@ -236,6 +236,9 @@ func (b *LesApiBackend) GetCommon(key []byte) ([]byte, error) {
 func (b *LesApiBackend) GetCommonByPrefix(prefix []byte) map[string][]byte {
 	return b.ptn.dag.GetCommonByPrefix(prefix)
 }
+func (b *LesApiBackend) GetAllData() ([][]byte, [][]byte) {
+	return b.ptn.dag.GetAllData()
+}
 
 // Get Contract Api
 func (b *LesApiBackend) GetContract(contractAddr common.Address) (*ptnjson.ContractJson, error) {

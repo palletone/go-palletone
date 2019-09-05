@@ -96,6 +96,11 @@ web3._extend({
             call: 'dag_getCommonByPrefix',
             params: 1,
         }),
+ 		new web3._extend.Method({
+            name: 'getAllData',
+            call: 'dag_getAllData',
+            params: 0,
+        }),
         new web3._extend.Method({   
             name: 'getTxByHash', 
             call: 'dag_getTxByHash',   

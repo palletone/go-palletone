@@ -200,11 +200,10 @@ func newRPCTransaction(tx *modules.Transaction, blockHash common.Hash, unitIndex
 		Hash: tx.Hash(),
 	}
 	if blockHash != (common.Hash{}) {
-		//result.UnitHash = blockHash
 		result.UnitIndex = unitIndex
 		result.TransactionIndex = hexutil.Uint(index)
 	}
-	result.UnitIndex = unitIndex
+	//result.UnitIndex = unitIndex
 	return result
 }
 

@@ -77,10 +77,11 @@ func DefaultDigitalIdentityConfig() DigitalIdentityConfig {
 }
 
 type Genesis struct {
-	Version     string `json:"version"`
-	GasToken    string `json:"gasToken"`
-	TokenAmount string `json:"tokenAmount"`
-	SignScript  string `json:"sign_script"`
+	Version      string `json:"version"`
+	GasToken     string `json:"gasToken"`
+	TokenAmount  string `json:"tokenAmount"`
+	PublicKey    string `json:"mediator_pubkey"`
+	MediatorSign string `json:"mediator_sign"`
 	//TokenAmount uint64 `json:"tokenAmount"`
 	//TokenDecimal              uint32                   `json:"tokenDecimal"`
 	//DecimalUnit               string                   `json:"decimal_unit"`

@@ -19,7 +19,6 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 
 	"github.com/palletone/go-palletone/cmd/utils"
@@ -142,7 +141,6 @@ func initGenesis(ctx *cli.Context) error {
 	//将Unit存入数据库中
 	err = dag.SaveUnit(unit, nil, true)
 	if err != nil {
-		fmt.Println("Save Genesis unit to db error:", err)
 		return err
 	}
 

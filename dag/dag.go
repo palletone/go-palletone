@@ -564,8 +564,8 @@ func NewDag(db ptndb.Database, cache palletcache.ICache, light bool) (*Dag, erro
 	dag.stableUnitRep.SubscribeSysContractStateChangeEvent(dag.AfterSysContractStateChangeEvent)
 	dag.stableUnitProduceRep.SubscribeChainMaintenanceEvent(dag.AfterChainMaintenanceEvent)
 
-	hash, chainIndex, _ := dag.stablePropRep.GetNewestUnit(gasToken)
-	log.Infof("newDag success, current unit[%s], chain index info[%d]", hash.String(), chainIndex.Index)
+	//hash, chainIndex, _ := dag.stablePropRep.GetNewestUnit(gasToken)
+	log.Infof("newDag success, current unit, chain info[%s]", gasToken.String())
 	// init partition memdag
 	dag.refreshPartitionMemDag()
 	return dag, nil
@@ -967,6 +967,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 	}
 	if isGenesis {
 		d.stableUnitRep.SaveUnit(unit, true)
+		// set memdag state
 		return nil
 	}
 
@@ -1020,6 +1021,9 @@ func (d *Dag) GetCommon(key []byte) ([]byte, error) {
 // return the prefix's all key && value.
 func (d *Dag) GetCommonByPrefix(prefix []byte) map[string][]byte {
 	return d.unstableUnitRep.GetCommonByPrefix(prefix)
+}
+func (d *Dag) GetAllData() ([][]byte, [][]byte) {
+	return d.unstableUnitRep.GetAllData()
 }
 
 // save the key, value

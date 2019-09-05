@@ -89,6 +89,7 @@ type Backend interface {
 	// dag's get common
 	GetCommon(key []byte) ([]byte, error)
 	GetCommonByPrefix(prefix []byte) map[string][]byte
+	GetAllData() ([][]byte, [][]byte)
 	SaveCommon(key, val []byte) error
 	// Get Contract Api
 	GetContract(contractAddr common.Address) (*ptnjson.ContractJson, error)

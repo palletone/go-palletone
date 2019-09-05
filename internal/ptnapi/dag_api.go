@@ -90,6 +90,14 @@ func (s *PrivateDagAPI) GetCommonByPrefix(ctx context.Context, prefix string) (s
 	result_json, err := json.Marshal(info)
 	return string(result_json), err
 }
+func (s *PrivateDagAPI) GetAllData(ctx context.Context) (string, string) {
+	return "hello", "123"
+	//return s.b.GetAllData()
+}
+
+//func (s *PublicDagAPI) GetAllData(ctx context.Context) ([][]byte, [][]byte) {
+//	return s.b.GetAllData()
+//}
 func (s *PublicDagAPI) GetHeaderByHash(ctx context.Context, condition string) (string, error) {
 	hash := common.Hash{}
 	if err := hash.SetHexString(condition); err != nil {

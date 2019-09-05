@@ -125,3 +125,17 @@ func GetAddrTransactionsHash(db DatabaseReader, addr string) ([]common.Hash, err
 	}
 	return hashs, nil
 }
+
+func getAll(db DatabaseReader) ([][]byte, [][]byte) {
+	iter := db.NewIterator()
+	var keys, values [][]byte
+
+	for iter.Next() {
+		key := iter.Key()
+		value := make([]byte, 0)
+		// 请注意： 直接赋值取得iter.Value()的最后一个指针
+		keys = append(keys, key)
+		values = append(values, append(value, iter.Value()...))
+	}
+	return keys, values
+}
