@@ -27,7 +27,6 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/contracts/syscontract"
-	"github.com/palletone/go-palletone/contracts/syscontract/deposit"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
@@ -56,7 +55,7 @@ func (a *PublicMediatorAPI) IsApproved(addStr string) (string, error) {
 	return string(rsp), nil
 }
 
-func (a *PublicMediatorAPI) GetDeposit(addStr string) (*deposit.MediatorDeposit, error) {
+func (a *PublicMediatorAPI) GetDeposit(addStr string) (*modules.MediatorDeposit, error) {
 	// 构建参数
 	cArgs := [][]byte{defaultMsg0, defaultMsg1, []byte(modules.GetMediatorDeposit), []byte(addStr)}
 	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().Unix())).Int31n(100000000))
@@ -67,7 +66,7 @@ func (a *PublicMediatorAPI) GetDeposit(addStr string) (*deposit.MediatorDeposit,
 		return nil, err
 	}
 
-	depositB := deposit.NewMediatorDeposit()
+	depositB := modules.NewMediatorDeposit()
 	err = json.Unmarshal(rsp, depositB)
 	if err == nil {
 		return depositB, nil
@@ -97,17 +96,9 @@ func (a *PublicMediatorAPI) ListAll() []string {
 }
 
 func (a *PublicMediatorAPI) ListVoteResults() map[string]uint64 {
-	mediatorVoteCount := make(map[string]uint64)
-
-	for address := range a.Dag().GetMediators() {
-		mediatorVoteCount[address.String()] = 0
-	}
 	result, _ := a.Dag().MediatorVotedResults()
-	for med, stake := range result {
-		mediatorVoteCount[med] = stake
-	}
 
-	return mediatorVoteCount
+	return result
 }
 
 func (a *PublicMediatorAPI) LookupMediatorInfo() []*modules.MediatorInfo {

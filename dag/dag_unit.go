@@ -21,7 +21,9 @@
 package dag
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/rlp"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -83,8 +85,10 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 		dag.unstablePropRep = d
 		dag.unstableUnitProduceRep = e
 	} else if err != nil {
-		errStr := fmt.Sprintf("AddUnit error: %v", err.Error())
-		log.Debug(errStr)
+		errStr := fmt.Sprintf("Memdag AddUnit[%s] error: %v", sign_unit.Hash().String(), err.Error())
+		udata, _ := json.Marshal(sign_unit)
+		rdata, _ := rlp.EncodeToBytes(sign_unit)
+		log.Errorf("%s, Unit data:%s,Rlp:%x", errStr, string(udata), rdata)
 		return nil, fmt.Errorf(errStr)
 	}
 	sign_unit.ReceivedAt = time.Now()

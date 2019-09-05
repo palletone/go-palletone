@@ -12,11 +12,7 @@
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package deposit
-
-import (
-	"github.com/palletone/go-palletone/dag/modules"
-)
+package modules
 
 const (
 	ListForApplyBecomeMediator = "ListForApplyBecomeMediator"
@@ -114,8 +110,8 @@ type Forfeiture struct {
 
 //交易的内容
 type PayValue struct {
-	PayTokens *modules.AmountAsset `json:"pay_tokens"` //数量和资产
-	PayTime   string               `json:"pay_time"`   //发生时间
+	PayTokens *AmountAsset `json:"pay_tokens"` //数量和资产
+	PayTime   string       `json:"pay_time"`   //发生时间
 	//PayExtra  string        `json:"pay_extra"`  //额外内容
 }
 
@@ -143,8 +139,8 @@ func NewMediatorDeposit() *MediatorDeposit {
 }
 
 type NorNodBal struct {
-	AmountAsset  *modules.AmountAsset `json:"amount_asset"`
-	MediatorAddr string               `json:"mediator_address"`
+	AmountAsset  *AmountAsset `json:"amount_asset"`
+	MediatorAddr string       `json:"mediator_address"`
 }
 
 type Member struct {

@@ -143,6 +143,11 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward
 
 //查询一个账户的质押状态
 func getPledgeStatus(stub shim.ChaincodeStubInterface, addr string) (*modules.PledgeStatus, error) {
+	//Check addr format
+	_,err:= common.StringToAddress(addr)
+	if err!=nil{
+		return nil,err
+	}
 	d, err := getPledgeDepositRecord(stub, addr)
 	if err != nil {
 		return nil, err
