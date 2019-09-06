@@ -85,26 +85,28 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 	stableUnitRep common2.IUnitRepository, propRep common2.IPropRepository,
 	stableStateRep common2.IStateRepository, cache palletcache.ICache,
 	tokenEngine tokenengine.ITokenEngine) *MemDag {
+	var stableUnit *modules.Unit
 	ldbUnitProduceRep := common2.NewUnitProduceRepository(stableUnitRep, propRep, stableStateRep)
 	stablehash, stbIndex, err := propRep.GetNewestUnit(token)
-	if err != nil {
-		log.Errorf("Cannot retrieve last stable unit from db for token:%s, you forget 'gptn init'??", token.String())
-		return nil
-	}
-	var stableUnit *modules.Unit
-	if saveHeaderOnly {
-		header, err := stableUnitRep.GetHeaderByHash(stablehash)
-		if err != nil {
-			log.Errorf("Cannot retrieve last stable unit from db by hash[%s]", stablehash.String())
-			return nil
+	var index uint64
+	if err == nil {
+		index = stbIndex.Index
+		if saveHeaderOnly {
+			header, err := stableUnitRep.GetHeaderByHash(stablehash)
+			if err != nil {
+				log.Errorf("Cannot retrieve last stable unit from db by hash[%s]", stablehash.String())
+				return nil
+			}
+			stableUnit = modules.NewUnit(header, nil)
+		} else {
+			stableUnit, err = stableUnitRep.GetUnit(stablehash)
+			if err != nil {
+				log.Errorf("Cannot retrieve last stable unit from db by hash[%s]", stablehash.String())
+				return nil
+			}
 		}
-		stableUnit = modules.NewUnit(header, nil)
 	} else {
-		stableUnit, err = stableUnitRep.GetUnit(stablehash)
-		if err != nil {
-			log.Errorf("Cannot retrieve last stable unit from db by hash[%s]", stablehash.String())
-			return nil
-		}
+		log.Debugf("last stable unit isn't exist, want to rebuild memdag.")
 	}
 	memdag := &MemDag{
 		token:              token,
@@ -117,7 +119,7 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 		orphanUnitsParants: sync.Map{},
 		chainUnits:         sync.Map{},
 		stableUnitHash:     stablehash,
-		stableUnitHeight:   stbIndex.Index,
+		stableUnitHeight:   index,
 		lastMainChainUnit:  stableUnit,
 		saveHeaderOnly:     saveHeaderOnly,
 		cache:              cache,
@@ -125,11 +127,12 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 		db:                 db,
 		tokenEngine:        tokenEngine,
 	}
-	temp, _ := NewChainTempDb(db, cache, tokenEngine)
-	temp.Unit = stableUnit
-	memdag.tempdb.Store(stablehash, temp)
-	memdag.chainUnits.Store(stablehash, temp)
-
+	if err == nil {
+		temp, _ := NewChainTempDb(db, cache, tokenEngine)
+		temp.Unit = stableUnit
+		memdag.tempdb.Store(stablehash, temp)
+		memdag.chainUnits.Store(stablehash, temp)
+	}
 	go memdag.loopRebuildTmpDb()
 	return memdag
 }
@@ -153,6 +156,16 @@ func (chain *MemDag) loopRebuildTmpDb() {
 }
 func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository,
 	common2.IStateRepository, common2.IPropRepository, common2.IUnitProduceRepository) {
+	if chain.lastMainChainUnit == nil {
+		log.Infof("the last_unit is nil, want rebuild memdag repository by db.")
+		tempdb, _ := NewTempdb(chain.db)
+		trep := common2.NewUnitRepository4Db(tempdb, chain.tokenEngine)
+		tutxoRep := common2.NewUtxoRepository4Db(tempdb, chain.tokenEngine)
+		tstateRep := common2.NewStateRepository4Db(tempdb)
+		tpropRep := common2.NewPropRepository4Db(tempdb)
+		tunitProduceRep := common2.NewUnitProduceRepository(trep, tpropRep, tstateRep)
+		return trep, tutxoRep, tstateRep, tpropRep, tunitProduceRep
+	}
 	last_main_hash := chain.lastMainChainUnit.Hash()
 	temp_rep, err := chain.getChainUnit(last_main_hash)
 	if err != nil { // 重启后memdag的chainUnits还清被清空，需要重新以memdag的db构建unstable repositoreis
@@ -456,6 +469,23 @@ func (chain *MemDag) removeUnitAndChildren(hash common.Hash, txpool txspool.ITxP
 				chain.removeUnitAndChildren(h, txpool)
 			}
 		}
+	}
+}
+func (chain *MemDag) SetStableUnit(unit *modules.Unit, isGenesis bool) {
+	chain.lock.Lock()
+	defer chain.lock.Unlock()
+	hash := unit.Hash()
+	log.Debugf("set stable unit to memdag, hash[%s], index:%d", hash.String(), unit.NumberU64())
+	//Set stable unit
+	chain.stableUnitHash = hash
+	chain.stableUnitHeight = unit.NumberU64()
+	if isGenesis {
+		chain.setLastMainchainUnit(unit)
+		// set tempdb
+		temp_db, _ := NewChainTempDb(chain.db, chain.cache, chain.tokenEngine)
+		chain.tempdb.Store(hash, temp_db)
+		chain.chainUnits.Store(hash, temp_db)
+		chain.addUnitHeight(unit)
 	}
 }
 func (chain *MemDag) AddStableUnit(unit *modules.Unit) {

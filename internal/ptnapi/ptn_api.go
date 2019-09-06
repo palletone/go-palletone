@@ -72,14 +72,14 @@ func (s *PublicPalletOneAPI) Syncing() (interface{}, error) {
 	progress := s.b.Downloader().Progress()
 
 	// Return not syncing if the synchronization already completed
-		if progress.CurrentBlock >= progress.HighestBlock {
-			return false, nil
-		}
+	if progress.CurrentBlock >= progress.HighestBlock {
+		return false, nil
+	}
 	// Otherwise gather the block sync stats
 	return map[string]interface{}{
 		"startingBlock": hexutil.Uint64(progress.StartingBlock),
 		"currentBlock":  hexutil.Uint64(progress.CurrentBlock),
-		"highestBlock": hexutil.Uint64(progress.HighestBlock),
+		"highestBlock":  hexutil.Uint64(progress.HighestBlock),
 		//"pulledStates": hexutil.Uint64(progress.PulledStates),
 		//"knownStates":  hexutil.Uint64(progress.KnownStates),
 	}, nil

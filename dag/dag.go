@@ -365,7 +365,10 @@ func (d *Dag) CurrentHeader(token modules.AssetId) *modules.Header {
 	}
 	// 从memdag 获取最新的header
 	unit := memdag.GetLastMainChainUnit()
-	return unit.Header()
+	if unit != nil {
+		return unit.Header()
+	}
+	return nil
 }
 
 // return unit's body , all transactions of unit by hash
@@ -424,7 +427,7 @@ func (d *Dag) InsertHeaderDag(headers []*modules.Header) (int, error) {
 }
 
 // refresh partition memdag when newdag or system contract state be changed.
-func (d *Dag) refreshPartitionMemDag() {
+func (d *Dag) RefreshPartitionMemDag() {
 	db := d.Db
 	unitRep := d.stableUnitRep
 	propRep := d.stablePropRep
@@ -564,10 +567,10 @@ func NewDag(db ptndb.Database, cache palletcache.ICache, light bool) (*Dag, erro
 	dag.stableUnitRep.SubscribeSysContractStateChangeEvent(dag.AfterSysContractStateChangeEvent)
 	dag.stableUnitProduceRep.SubscribeChainMaintenanceEvent(dag.AfterChainMaintenanceEvent)
 
-	hash, chainIndex, _ := dag.stablePropRep.GetNewestUnit(gasToken)
-	log.Infof("newDag success, current unit[%s], chain index info[%d]", hash.String(), chainIndex.Index)
+	//hash, chainIndex, _ := dag.stablePropRep.GetNewestUnit(gasToken)
+	log.Infof("newDag success, current unit, chain info[%s]", gasToken.String())
 	// init partition memdag
-	dag.refreshPartitionMemDag()
+	dag.RefreshPartitionMemDag()
 	return dag, nil
 }
 
@@ -626,7 +629,7 @@ func (dag *Dag) AfterSysContractStateChangeEvent(arg *modules.SysContractStateCh
 	log.Debug("Process AfterSysContractStateChangeEvent")
 	if bytes.Equal(arg.ContractId, syscontract.PartitionContractAddress.Bytes()) {
 		//分区合约进行了修改，刷新PartitionMemDag
-		dag.refreshPartitionMemDag()
+		dag.RefreshPartitionMemDag()
 	}
 }
 
@@ -967,6 +970,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 	}
 	if isGenesis {
 		d.stableUnitRep.SaveUnit(unit, true)
+		// set memdag state
 		return nil
 	}
 
@@ -1020,6 +1024,9 @@ func (d *Dag) GetCommon(key []byte) ([]byte, error) {
 // return the prefix's all key && value.
 func (d *Dag) GetCommonByPrefix(prefix []byte) map[string][]byte {
 	return d.unstableUnitRep.GetCommonByPrefix(prefix)
+}
+func (d *Dag) GetAllData() ([][]byte, [][]byte) {
+	return d.stableUnitRep.GetAllData()
 }
 
 // save the key, value

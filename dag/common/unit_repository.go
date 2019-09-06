@@ -75,6 +75,7 @@ type IUnitRepository interface {
 	GetTxLookupEntry(hash common.Hash) (*modules.TxLookupEntry, error)
 	GetCommon(key []byte) ([]byte, error)
 	GetCommonByPrefix(prefix []byte) map[string][]byte
+	GetAllData() ([][]byte, [][]byte)
 	//GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	//GetAddrOutput(addr string) ([]modules.Output, error)
@@ -110,7 +111,7 @@ type UnitRepository struct {
 	statedb        storage.IStateDb
 	propdb         storage.IPropertyDb
 	utxoRepository IUtxoRepository
-	tokenEngine tokenengine.ITokenEngine
+	tokenEngine    tokenengine.ITokenEngine
 	lock           sync.RWMutex
 	observers      []AfterSysContractStateChangeEventFunc
 }
@@ -125,31 +126,31 @@ func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb,
 	utxodb storage.IUtxoDb, statedb storage.IStateDb,
 	propdb storage.IPropertyDb,
 	engine tokenengine.ITokenEngine) *UnitRepository {
-	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, propdb,engine)
+	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, propdb, engine)
 	return &UnitRepository{
-		dagdb: dagdb,
-		idxdb: idxdb,
-		statedb: statedb,
+		dagdb:          dagdb,
+		idxdb:          idxdb,
+		statedb:        statedb,
 		utxoRepository: utxoRep,
-		propdb: propdb,
-		tokenEngine:engine,
+		propdb:         propdb,
+		tokenEngine:    engine,
 	}
 }
 
-func NewUnitRepository4Db(db ptndb.Database,tokenEngine tokenengine.ITokenEngine) *UnitRepository {
+func NewUnitRepository4Db(db ptndb.Database, tokenEngine tokenengine.ITokenEngine) *UnitRepository {
 	dagdb := storage.NewDagDb(db)
-	utxodb := storage.NewUtxoDb(db,tokenEngine)
+	utxodb := storage.NewUtxoDb(db, tokenEngine)
 	statedb := storage.NewStateDb(db)
 	idxdb := storage.NewIndexDb(db)
 	propdb := storage.NewPropertyDb(db)
-	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, propdb,tokenEngine)
+	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, propdb, tokenEngine)
 	return &UnitRepository{
-		dagdb: dagdb,
-		idxdb: idxdb,
-		statedb: statedb,
-		propdb: propdb,
+		dagdb:          dagdb,
+		idxdb:          idxdb,
+		statedb:        statedb,
+		propdb:         propdb,
 		utxoRepository: utxoRep,
-		tokenEngine:tokenEngine,
+		tokenEngine:    tokenEngine,
 	}
 }
 
@@ -276,6 +277,9 @@ func (rep *UnitRepository) GetCommon(key []byte) ([]byte, error) { return rep.da
 func (rep *UnitRepository) GetCommonByPrefix(prefix []byte) map[string][]byte {
 	return rep.dagdb.GetCommonByPrefix(prefix)
 }
+func (rep *UnitRepository) GetAllData() ([][]byte, [][]byte) {
+	return rep.dagdb.GetAllData()
+}
 func (rep *UnitRepository) SaveCommon(key, val []byte) error {
 	return rep.dagdb.SaveCommon(key, val)
 }
@@ -356,7 +360,7 @@ generate genesis unit, need genesis unit configure fields and transactions list
 parentUnitHeight=-1,means don't have parent unit
 */
 func NewGenesisUnit(txs modules.Transactions, time int64, asset *modules.Asset, parentUnitHeight int64,
-	parentUnitHash common.Hash) (*modules.Unit, error) {
+	parentUnitHash common.Hash) *modules.Unit {
 	gUnit := &modules.Unit{}
 
 	// genesis unit height
@@ -382,7 +386,7 @@ func NewGenesisUnit(txs modules.Transactions, time int64, asset *modules.Asset, 
 	gUnit.UnitSize = gUnit.Size()
 	// set unit hash
 	gUnit.UnitHash = gUnit.Hash()
-	return gUnit, nil
+	return gUnit
 }
 
 // WithSignature, returns a new unit with the given signature.
@@ -988,7 +992,7 @@ func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Trans
 	}
 }
 
-func (rep *UnitRepository)getPayToAddresses(tx *modules.Transaction) []common.Address {
+func (rep *UnitRepository) getPayToAddresses(tx *modules.Transaction) []common.Address {
 	resultMap := map[common.Address]int{}
 	for _, msg := range tx.TxMessages {
 		if msg.App == modules.APP_PAYMENT {
@@ -1469,7 +1473,7 @@ func (rep *UnitRepository) createCoinbasePayment(ads []*modules.Addition) (*modu
 	coinbase.TxMessages = append(coinbase.TxMessages, msg1)
 	return coinbase, totalIncome, nil
 }
-func (rep *UnitRepository)createCoinbasePaymentMsg(rewards map[common.Address][]modules.AmountAsset) *modules.Message {
+func (rep *UnitRepository) createCoinbasePaymentMsg(rewards map[common.Address][]modules.AmountAsset) *modules.Message {
 	coinbasePayment := &modules.PaymentPayload{}
 	for addr, v := range rewards {
 		script := rep.tokenEngine.GenerateLockScript(addr)

@@ -697,6 +697,9 @@ func (b *PtnApiBackend) GetCommon(key []byte) ([]byte, error) {
 func (b *PtnApiBackend) GetCommonByPrefix(prefix []byte) map[string][]byte {
 	return b.ptn.dag.GetCommonByPrefix(prefix)
 }
+func (b *PtnApiBackend) GetAllData() ([][]byte, [][]byte) {
+	return b.ptn.dag.GetAllData()
+}
 func (b *PtnApiBackend) DecodeTx(hexStr string) (string, error) {
 	tx := &modules.Transaction{}
 	bytes, err := hex.DecodeString(hexStr)

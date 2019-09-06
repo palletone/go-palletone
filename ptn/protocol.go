@@ -172,6 +172,13 @@ type statusData struct {
 	CurrentHeader   common.Hash
 	StableIndex     *modules.ChainIndex
 }
+type old_status_data struct {
+	ProtocolVersion uint32
+	NetworkId       uint64
+	Index           *modules.ChainIndex
+	GenesisUnit     common.Hash
+	CurrentHeader   common.Hash
+}
 
 // newBlockHashesData is the network packet for the block announcements.
 type newBlockHashesData []hashOrNumber

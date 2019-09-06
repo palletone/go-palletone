@@ -239,7 +239,9 @@ func makeConfigNode(ctx *cli.Context, isInConsole bool) (*node.Node, FullConfig)
 	utils.SetLogConfig(ctx, &cfg.Log, configDir, isInConsole)
 	utils.SetP2PConfig(ctx, &cfg.P2P)
 	adaptorNodeConfig(&cfg)
-
+	if ctx.GlobalBool(utils.TestnetFlag.Name) {
+		cfg.Node.IsTestNet = true
+	}
 	dataDir := utils.SetNodeConfig(ctx, &cfg.Node, configDir)
 	//通过Node的配置来创建一个Node, 变量名叫stack，代表协议栈的含义。
 	stack, err := node.New(&cfg.Node)
