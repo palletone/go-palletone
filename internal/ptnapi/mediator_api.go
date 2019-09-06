@@ -97,17 +97,9 @@ func (a *PublicMediatorAPI) ListAll() []string {
 }
 
 func (a *PublicMediatorAPI) ListVoteResults() map[string]uint64 {
-	mediatorVoteCount := make(map[string]uint64)
-
-	for address := range a.Dag().GetMediators() {
-		mediatorVoteCount[address.String()] = 0
-	}
 	result, _ := a.Dag().MediatorVotedResults()
-	for med, stake := range result {
-		mediatorVoteCount[med] = stake
-	}
 
-	return mediatorVoteCount
+	return result
 }
 
 func (a *PublicMediatorAPI) LookupMediatorInfo() []*modules.MediatorInfo {

@@ -193,8 +193,6 @@ func (pm *ProtocolManager) BlockHeadersMsg(msg p2p.Msg, p *peer) error {
 
 func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 	// Decode the retrieval message
-	log.Debug("Enter GetBlockBodiesMsg")
-	defer log.Debug("End GetBlockBodiesMsg")
 	msgStream := rlp.NewStream(msg.Payload, uint64(msg.Size))
 	if _, err := msgStream.List(); err != nil {
 		log.Debug("msgStream.List() err:", err)
@@ -216,7 +214,7 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 			log.Debug("msgStream.Decode", "err", err)
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
-		log.Debug("GetBlockBodiesMsg", "hash", hash)
+		//log.Debug("GetBlockBodiesMsg", "hash", hash)
 		// Retrieve the requested block body, stopping if enough was found
 		txs, err := pm.dag.GetUnitTransactions(hash)
 		if err != nil || len(txs) == 0 {
@@ -231,7 +229,7 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 			//return errResp(ErrDecode, "msg %v: %v", msg, err)
 			continue
 		}
-		log.Debug("Get body Marshal", "data:", string(data))
+		//log.Debug("Get body Marshal", "data:", string(data))
 		bytes += len(data)
 		bodies = append(bodies, data)
 	}

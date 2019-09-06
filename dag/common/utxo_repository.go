@@ -283,7 +283,11 @@ func (repository *UtxoRepository) writeUtxo(unitTime int64, txHash common.Hash,
 		//update address account info
 		gasToken := dagconfig.DagConfig.GetGasToken()
 		if txout.Asset.AssetId == gasToken {
-			repository.statedb.UpdateAccountBalance(sAddr, int64(txout.Value))
+			err := repository.statedb.UpdateAccountBalance(sAddr, int64(txout.Value))
+			if err != nil {
+				log.Error("UpdateAccountBalance", "error", err.Error())
+				errs = append(errs, err)
+			}
 		}
 	}
 	return errs
@@ -311,7 +315,7 @@ func (repository *UtxoRepository) destroyUtxo(txid common.Hash, unitTime uint64,
 		// get utxo info
 		utxo, err := repository.utxodb.GetUtxoEntry(outpoint)
 		if err != nil {
-			log.Error("Query utxo when destroy uxto", "error", err.Error())
+			log.Error("Query utxo when destroy uxto", "error", err.Error(), "outpoint", outpoint.String())
 			return err
 		}
 

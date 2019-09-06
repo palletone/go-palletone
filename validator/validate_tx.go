@@ -377,12 +377,12 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			if !ok {
 				reward = []modules.AmountAsset{}
 			}
-			reward = validate. addIncome(reward, ad.Amount, ad.Asset)
+			reward = validate.addIncome(reward, ad.Amount, ad.Asset)
 			rewards[ad.Addr] = reward
 		}
 		//Check payment output is correct
 		payment := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
-		if !validate. compareRewardAndOutput(rewards, payment.Outputs) {
+		if !validate.compareRewardAndOutput(rewards, payment.Outputs) {
 			log.Errorf("Coinbase tx[%s] Output not match", tx.Hash().String())
 			log.DebugDynamic(func() string {
 				rjson, _ := json.Marshal(rewards)
@@ -399,12 +399,12 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 				log.Errorf("Coinbase tx[%s] contract id not correct", tx.Hash().String())
 				return TxValidationCode_INVALID_COINBASE
 			}
-			if !validate. compareRewardAndStateClear(rewards, clearStateInvoke.WriteSet) {
+			if !validate.compareRewardAndStateClear(rewards, clearStateInvoke.WriteSet) {
 				rjson, _ := json.Marshal(rewards)
 				ojson, _ := json.Marshal(clearStateInvoke)
-				data:= fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nInvoke result:%s", string(rjson), string(ojson))
+				data := fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nInvoke result:%s", string(rjson), string(ojson))
 				log.Errorf("Coinbase tx[%s] Clear statedb not match, detail data:%s",
-					tx.Hash().String(),data)
+					tx.Hash().String(), data)
 				return TxValidationCode_INVALID_COINBASE
 			}
 		}
@@ -426,7 +426,7 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 				return v1.Addr.String() + " Coinbase History reward:" + string(data)
 			})
 			log.Debugf("Add reward %d %s to %s", v.Amount, v.Asset.String(), v.Addr.String())
-			newValue :=validate. addIncome(income, v.Amount, v.Asset)
+			newValue := validate.addIncome(income, v.Amount, v.Asset)
 			rewards[v.Addr] = newValue
 		}
 		//比对reward和writeset是否一致
@@ -435,15 +435,15 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			log.Errorf("Coinbase tx[%s] contract id not correct", tx.Hash().String())
 			return TxValidationCode_INVALID_COINBASE
 		}
-		if validate. compareRewardAndWriteset(rewards, invoke.WriteSet) {
+		if validate.compareRewardAndWriteset(rewards, invoke.WriteSet) {
 			return TxValidationCode_VALID
 		} else {
 			rjson, _ := json.Marshal(rewards)
 			ojson, _ := json.Marshal(invoke)
-			debugData:= fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nInvoke result:%s", string(rjson), string(ojson))
+			debugData := fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nInvoke result:%s", string(rjson), string(ojson))
 
 			log.Errorf("Coinbase tx[%s] contract write set not correct, %s",
-				tx.Hash().String(),debugData)
+				tx.Hash().String(), debugData)
 			return TxValidationCode_INVALID_COINBASE
 		}
 	}
@@ -499,7 +499,7 @@ func (validate *Validate) compareRewardAndStateClear(rewards map[common.Address]
 	}
 	//return comparedCount == len(writeset)
 	if comparedCount != len(rewards) { //所有的Reward的状态数据库被清空
-		log.Warnf("write set comparedCount:%d clean count:%d",comparedCount,len(rewards))
+		log.Warnf("write set comparedCount:%d clean count:%d", comparedCount, len(rewards))
 		return false
 	}
 	return true

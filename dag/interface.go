@@ -21,6 +21,7 @@
 package dag
 
 import (
+	"math/big"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -182,4 +183,15 @@ type IDag interface {
 	StoreDataVersion(dv *modules.DataVersion) error
 	QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error)
 	GetAssetReference(asset []byte) ([]*modules.ProofOfExistence, error)
+
+	IsActiveJury(addr common.Address) bool
+	JuryCount() uint
+	GetContractDevelopers() ([]common.Address, error)
+	IsContractDeveloper(addr common.Address) bool
+	GetActiveJuries() []common.Address
+	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
+		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+	CreateTokenTransaction(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string,
+		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+	ChainThreshold() int
 }
