@@ -134,7 +134,6 @@ matrix:
           fi
 
         - if [ $IS_RUN_LIGHT == 'true' ]; then
-          pwd
           cd ../light/testcases;
           chmod +x ./bddstart.sh;
           ./bddstart.sh;
