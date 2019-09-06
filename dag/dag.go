@@ -365,7 +365,10 @@ func (d *Dag) CurrentHeader(token modules.AssetId) *modules.Header {
 	}
 	// 从memdag 获取最新的header
 	unit := memdag.GetLastMainChainUnit()
-	return unit.Header()
+	if unit != nil {
+		return unit.Header()
+	}
+	return nil
 }
 
 // return unit's body , all transactions of unit by hash
@@ -424,7 +427,7 @@ func (d *Dag) InsertHeaderDag(headers []*modules.Header) (int, error) {
 }
 
 // refresh partition memdag when newdag or system contract state be changed.
-func (d *Dag) refreshPartitionMemDag() {
+func (d *Dag) RefreshPartitionMemDag() {
 	db := d.Db
 	unitRep := d.stableUnitRep
 	propRep := d.stablePropRep
@@ -567,7 +570,7 @@ func NewDag(db ptndb.Database, cache palletcache.ICache, light bool) (*Dag, erro
 	//hash, chainIndex, _ := dag.stablePropRep.GetNewestUnit(gasToken)
 	log.Infof("newDag success, current unit, chain info[%s]", gasToken.String())
 	// init partition memdag
-	dag.refreshPartitionMemDag()
+	dag.RefreshPartitionMemDag()
 	return dag, nil
 }
 
@@ -626,7 +629,7 @@ func (dag *Dag) AfterSysContractStateChangeEvent(arg *modules.SysContractStateCh
 	log.Debug("Process AfterSysContractStateChangeEvent")
 	if bytes.Equal(arg.ContractId, syscontract.PartitionContractAddress.Bytes()) {
 		//分区合约进行了修改，刷新PartitionMemDag
-		dag.refreshPartitionMemDag()
+		dag.RefreshPartitionMemDag()
 	}
 }
 
@@ -1023,7 +1026,7 @@ func (d *Dag) GetCommonByPrefix(prefix []byte) map[string][]byte {
 	return d.unstableUnitRep.GetCommonByPrefix(prefix)
 }
 func (d *Dag) GetAllData() ([][]byte, [][]byte) {
-	return d.unstableUnitRep.GetAllData()
+	return d.stableUnitRep.GetAllData()
 }
 
 // save the key, value
@@ -1255,4 +1258,46 @@ func (d *Dag) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfEx
 // return proof of existence by asset
 func (d *Dag) GetAssetReference(asset []byte) ([]*modules.ProofOfExistence, error) {
 	return d.stableUnitRep.GetAssetReference(asset)
+}
+
+func (d *Dag) RefreshDag(cache palletcache.ICache, light bool) error {
+	tokenEngine := tokenengine.Instance //TODO Devin tokenENgine from parmeter
+	dagDb := storage.NewDagDb(d.Db)
+	utxoDb := storage.NewUtxoDb(d.Db, tokenEngine)
+	stateDb := storage.NewStateDb(d.Db)
+	idxDb := storage.NewIndexDb(d.Db)
+	propDb := storage.NewPropertyDb(d.Db)
+
+	err := checkDbMigration(d.Db, stateDb)
+	if err != nil {
+		return err
+	}
+
+	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb, tokenEngine)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenEngine)
+	propRep := dagcommon.NewPropRepository(propDb)
+	stateRep := dagcommon.NewStateRepository(stateDb)
+	stableUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
+	gasToken := dagconfig.DagConfig.GetGasToken()
+	threshold, _ := propRep.GetChainThreshold()
+	unstableChain := memunit.NewMemDag(gasToken, threshold, light, d.Db,
+		unitRep, propRep, stateRep, cache, tokenEngine)
+	tunitRep, tutxoRep, tstateRep, tpropRep, tUnitProduceRep := unstableChain.GetUnstableRepositories()
+
+	d.tokenEngine = tokenEngine
+	d.Cache = cache
+	d.unstableUnitRep = tunitRep
+	d.unstableUtxoRep = tutxoRep
+	d.unstableStateRep = tstateRep
+	d.unstablePropRep = tpropRep
+	d.unstableUnitProduceRep = tUnitProduceRep
+
+	d.stablePropRep = propRep
+	d.stableUnitRep = unitRep
+	d.stableUtxoRep = utxoRep
+	d.stableStateRep = stateRep
+	d.stableUnitProduceRep = stableUnitProduceRep
+	d.stableUnitRep.SubscribeSysContractStateChangeEvent(d.AfterSysContractStateChangeEvent)
+	d.stableUnitProduceRep.SubscribeChainMaintenanceEvent(d.AfterChainMaintenanceEvent)
+	return nil
 }

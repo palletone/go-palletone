@@ -84,10 +84,9 @@ func getprefix(db DatabaseReader, prefix []byte) map[string][]byte {
 	iter := db.NewIteratorWithPrefix(prefix)
 	result := make(map[string][]byte)
 	for iter.Next() {
-		key := iter.Key()
+		key := make([]byte, 0)
 		value := make([]byte, 0)
-		// 请注意： 直接赋值取得iter.Value()的最后一个指针
-		//result[*(*string)(unsafe.Pointer(&key))] = append(value, iter.Value()...)
+		key = append(key, iter.Key()...)
 		result[string(key)] = append(value, iter.Value()...)
 	}
 	return result
@@ -131,9 +130,9 @@ func getAllData(db DatabaseReader) ([][]byte, [][]byte) {
 	var keys, values [][]byte
 
 	for iter.Next() {
-		key := iter.Key()
+		key := make([]byte, 0)
 		value := make([]byte, 0)
-		// 请注意： 直接赋值取得iter.Value()的最后一个指针
+		key = append(key, iter.Key()...)
 		keys = append(keys, key)
 		values = append(values, append(value, iter.Value()...))
 	}

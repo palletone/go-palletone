@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
@@ -125,20 +126,26 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 	}
 	// 若db为空， 则初始化genesis。
 	if _, err := d.GetGenesisUnit(); err != nil {
-		var keys, values [][]byte
+		keys, values := make([]string, 0), make([]string, 0)
 		if isTestNet {
-			keys = TestNetKeys
-			values = TestNetValues
+			keys = append(keys, TestNetKeys...)
+			values = append(values, TestNetValues...)
 		} else {
-			keys = MainNetKeys
-			values = MainNetValues
+			keys = append(keys, MainNetKeys...)
+			values = append(values, MainNetValues...)
 		}
 		err := initGenesisData(keys, values, d)
 		if err != nil {
 			return nil, err
 		}
-
 		// refresh dag
+		if err := d.RefreshDag(d.Cache, false); err != nil {
+			return nil, err
+		} else {
+			hash, height := d.Memdag.GetLastStableUnitInfo()
+			log.Debugf("refresh dag success,index:%d, genesis: %s", height, hash.String())
+		}
+		d.RefreshPartitionMemDag()
 	}
 	d.RefreshSysParameters()
 
@@ -504,14 +511,16 @@ func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal,
 
 	return res, nil
 }
-func initGenesisData(keys, values [][]byte, d *dag.Dag) error {
+func initGenesisData(keys, values []string, d *dag.Dag) error {
 	k := len(keys)
 	v := len(values)
 	if k != v {
 		fmt.Errorf("The len[%d] of keys doesn't match the len[%d] of values", k, v)
 	}
 	for i := 0; i < k; i++ {
-		if err := d.Db.Put(keys[i], values[i]); err != nil {
+		key := util.Hex2Bytes(keys[i])
+		value := util.Hex2Bytes(values[i])
+		if err := d.Db.Put(key, value); err != nil {
 			return err
 		}
 	}

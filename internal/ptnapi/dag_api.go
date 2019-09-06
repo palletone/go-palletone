@@ -96,7 +96,8 @@ func (s *PublicDagAPI) GetGenesisData(ctx context.Context) (*GenesisData, error)
 	data := new(GenesisData)
 	keys_byte, values_byte := s.b.GetAllData()
 	data.Count = len(keys_byte)
-	log.Debugf("len(keys):%d ,len(values):%d", data.Count, len(values_byte))
+	log.Debugf("count:%d, keys:%v", data.Count, keys_byte)
+	log.Debugf("count:%d, values:%v", len(values_byte), values_byte)
 	if data.Count != len(values_byte) {
 		return nil, fmt.Errorf("the keys count[%d] not match the values[%d].", data.Count, len(values_byte))
 	}
