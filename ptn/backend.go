@@ -119,13 +119,7 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 		log.Error("PalletOne New", "CreateDB err:", err)
 		return nil, err
 	}
-	d, err := dag.NewDag(db, cache, false)
-	if err != nil {
-		log.Error("PalletOne New", "NewDag err:", err)
-		return nil, err
-	}
-	// 若db为空， 则初始化genesis。
-	if _, err := d.GetGenesisUnit(); err != nil {
+	if has, _ := db.Has([]byte("gpGlobalProperty")); !has {
 		keys, values := make([]string, 0), make([]string, 0)
 		if isTestNet {
 			keys = append(keys, TestNetKeys...)
@@ -134,20 +128,20 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 			keys = append(keys, MainNetKeys...)
 			values = append(values, MainNetValues...)
 		}
-		err := initGenesisData(keys, values, d)
+		err := initGenesisData(keys, values, db)
 		if err != nil {
 			return nil, err
 		}
-		// refresh dag
-		d.Db = db
-		if err := d.RefreshDag(d.Cache, false); err != nil {
-			return nil, err
-		} else {
-			hash, height := d.Memdag.GetLastStableUnitInfo()
-			log.Debugf("refresh dag success,index:%d, genesis: %s", height, hash.String())
-		}
-		d.RefreshPartitionMemDag()
 	}
+	d, err := dag.NewDag(db, cache, false)
+	if err != nil {
+		log.Error("PalletOne New", "NewDag err:", err)
+		return nil, err
+	} else {
+		hash, height := d.Memdag.GetLastStableUnitInfo()
+		log.Debugf("init dag success,index:%d, genesis: %s", height, hash.String())
+	}
+
 	d.RefreshSysParameters()
 
 	ptn := &PalletOne{
@@ -512,7 +506,7 @@ func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal,
 
 	return res, nil
 }
-func initGenesisData(keys, values []string, d *dag.Dag) error {
+func initGenesisData(keys, values []string, db ptndb.Database) error {
 	k := len(keys)
 	v := len(values)
 	if k != v {
@@ -521,7 +515,7 @@ func initGenesisData(keys, values []string, d *dag.Dag) error {
 	for i := 0; i < k; i++ {
 		key := util.Hex2Bytes(keys[i])
 		value := util.Hex2Bytes(values[i])
-		if err := d.Db.Put(key, value); err != nil {
+		if err := db.Put(key, value); err != nil {
 			return err
 		}
 	}
