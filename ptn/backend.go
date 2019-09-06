@@ -139,6 +139,7 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 			return nil, err
 		}
 		// refresh dag
+		d.Db = db
 		if err := d.RefreshDag(d.Cache, false); err != nil {
 			return nil, err
 		} else {
