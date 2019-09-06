@@ -128,9 +128,8 @@ function LoopDeploy()
 #src=/src/github.com/palletone/go-palletone/build/bin/gptn
 #fullpath=$path$src
 #cp $fullpath .
-cp ../node/gptn .
 
-#cp ../node/gptn .
+cp ../node/gptn .
 killall gptn
 n=3
 #if [ -n "$1" ]; then
