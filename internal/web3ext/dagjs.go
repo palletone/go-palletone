@@ -185,8 +185,8 @@ web3._extend({
             params: 0,
         }),
         new web3._extend.Method({
-            name: 'getAllData',
-            call: 'dag_getAllData',
+            name: 'getGenesisData',
+            call: 'dag_getGenesisData',
             params: 0,
         }),
 	],
@@ -202,10 +202,6 @@ web3._extend({
 		new web3._extend.Property({
 			name: 'headUnitHash',
 			getter: 'dag_headUnitHash'
-		}),
-		new web3._extend.Property({
-			name: 'allData',
-			getter: 'dag_allData'
 		}),
 	]
 });

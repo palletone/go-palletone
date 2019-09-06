@@ -31,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
@@ -90,15 +91,28 @@ func (s *PrivateDagAPI) GetCommonByPrefix(ctx context.Context, prefix string) (s
 	result_json, err := json.Marshal(info)
 	return string(result_json), err
 }
-func (s *PublicDagAPI) AllData() (string, string) {
-	return "all data", "123"
-	//return s.b.GetAllData()
+
+func (s *PublicDagAPI) GetGenesisData(ctx context.Context) (*GenesisData, error) {
+	data := new(GenesisData)
+	keys_byte, values_byte := s.b.GetAllData()
+	data.Count = len(keys_byte)
+	log.Debugf("len(keys):%d ,len(values):%d", data.Count, len(values_byte))
+	if data.Count != len(values_byte) {
+		return nil, fmt.Errorf("the keys count[%d] not match the values[%d].", data.Count, len(values_byte))
+	}
+	for i := 0; i < data.Count; i++ {
+		data.Keys = append(data.Keys, util.Bytes2Hex(keys_byte[i]))
+		data.Values = append(data.Values, util.Bytes2Hex(values_byte[i]))
+	}
+	return data, nil
 }
 
-func (s *PublicDagAPI) GetAllData(ctx context.Context) ([][]byte, [][]byte) {
-	log.Debugf("get all data interface, [%s]", time.Now().String())
-	return s.b.GetAllData()
+type GenesisData struct {
+	Keys   []string
+	Values []string
+	Count  int
 }
+
 func (s *PublicDagAPI) GetHeaderByHash(ctx context.Context, condition string) (string, error) {
 	hash := common.Hash{}
 	if err := hash.SetHexString(condition); err != nil {
