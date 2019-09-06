@@ -41,10 +41,10 @@ const (
 	DefaultUccPrivileged  = false
 	DefaultUccNetworkMode = "gptn-net" //TODO xiaozhi 生产环境
 	//DefaultUccNetworkMode       = "host" //TODO xiaozhi 测试容器运行网络模式
-	defaultUccOOMKillDisable = false
+	DefaultUccOOMKillDisable = false
 
-	defaultContainerDuringTime  = 604800 //7天 = 604800 秒
-	defaultRmExpConFromSysParam = true   //默认删除过期合约容器以系统参数 7 天为主
+	DefaultContainerDuringTime  = 604800 //7天 = 604800 秒
+	DefaultRmExpConFromSysParam = true   //默认删除过期合约容器以系统参数 7 天为主
 
 	DefaultTempUccMemory    = 1073741824
 	DefaultTempUccCpuShares = 1024

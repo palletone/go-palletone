@@ -108,11 +108,9 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 
 		// 将保证金设为0
 		md := modules.NewMediatorDeposit()
-		md.ApplyEnterTime = ""
 		md.Status = modules.Apply
 		md.Role = modules.Mediator
 		md.ApplyEnterTime = time.Unix(unit.Timestamp(), 0).Format(modules.Layout2)
-		md.PublicKey = mi.InitPubKey
 
 		byte, err := json.Marshal(md)
 		if err != nil {
@@ -126,8 +124,8 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 			log.Debugf(err.Error())
 			return err
 		}
-
-		list[mi.AddStr] = mi.InitPubKey
+		//  TODO 加入地址公钥信息
+		list[mi.AddStr] = ""
 	}
 
 	// 存储 initMediatorCandidates/JuryCandidates

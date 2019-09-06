@@ -16,6 +16,7 @@ package deposit
 
 import (
 	"fmt"
+	"github.com/palletone/go-palletone/common/hexutil"
 	"testing"
 	"time"
 )
@@ -45,4 +46,17 @@ func TestArray(t *testing.T) {
 	for i, v := range arr {
 		fmt.Println(i, v)
 	}
+}
+
+func TestLaa(t *testing.T) {
+	encode := "0x03fb01988b65751b86d10fc7bfc34b127febb0602ca64edd42003274640bf5148c"
+	fmt.Println(len(encode))
+	byte, _ := hexutil.Decode(encode)
+	fmt.Println(len(byte))
+	encode2 := hexutil.Encode(byte)
+	if encode == encode2 {
+		t.Log("success")
+		return
+	}
+	t.Error("faild")
 }
