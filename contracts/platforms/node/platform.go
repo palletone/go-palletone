@@ -189,7 +189,7 @@ func (nodePlatform *Platform) GenerateDockerfile(cds *pb.ChaincodeDeploymentSpec
 
 	var buf []string
 
-	buf = append(buf, "FROM "+contractcfg.GetConfig().CommonBuilder)
+	buf = append(buf, "FROM "+contractcfg.Nodejsimg+":"+contractcfg.GptnVersion)
 	buf = append(buf, "ADD binpackage.tar /usr/local/src")
 
 	dockerFileContents := strings.Join(buf, "\n")

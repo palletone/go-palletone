@@ -564,13 +564,13 @@ func (vm *DockerVM) GetImageId(ccid ccintf.CCID) (string, error) {
 	vmName := ccid.ChaincodeSpec.Type
 	switch vmName {
 	case 1:
-		return contractcfg.GetConfig().GolangBuilder, nil
+		return contractcfg.Goimg + ":" + contractcfg.GptnVersion, nil
 	case 2:
-		return contractcfg.GetConfig().NodejsBuilder, nil
+		return contractcfg.Nodejsimg + ":" + contractcfg.GptnVersion, nil
 	case 3:
-		return contractcfg.GetConfig().JavaBuilder, nil
+		return contractcfg.Javaimg + ":" + contractcfg.GptnVersion, nil
 	default:
-		return contractcfg.GetConfig().GolangBuilder, nil
+		return contractcfg.Goimg + ":" + contractcfg.GptnVersion, nil
 	}
 }
 
