@@ -1612,21 +1612,23 @@ func readTxs(path string) ([]string, error) {
 }
 
 //将UTXO碎片聚集成整的UTXO
-func (s *PrivateWalletAPI) AggregateUtxo(ctx context.Context, address string, fee decimal.Decimal, password string) ([]common.Hash, error) {
+func (s *PrivateWalletAPI) AggregateUtxo(ctx context.Context,
+	address string, fee decimal.Decimal) ([]common.Hash, error) {
 	ptn := dagconfig.DagConfig.GasToken
 	addr, err := common.StringToAddress(address)
 	if err != nil {
 		return nil, err
 	}
-	err = s.unlockKS(addr, password, nil)
-	if err != nil {
-		return nil, err
-	}
+
+	//err = s.unlockKS(addr, password, nil)
+	//if err != nil {
+	//	return nil, err
+	//}
 	utxos, err := s.b.GetAddrRawUtxos(address)
 	if err != nil {
 		return nil, err
 	}
-	var batchInputLen = 1000 //以1000个Input为一个Tx，构造转账交易给自己
+	var batchInputLen = 500 //以1000个Input为一个Tx，构造转账交易给自己
 	var payment *modules.PaymentPayload = nil
 	var inputCount = 0
 	var inputAmtSum = uint64(0)
@@ -1654,6 +1656,7 @@ func (s *PrivateWalletAPI) AggregateUtxo(ctx context.Context, address string, fe
 			if err != nil {
 				return nil, err
 			}
+			log.Infof("Try to send aggregate UTXO tx[%s]",tx.Hash().String())
 			err = s.b.SendTx(ctx, tx)
 			inputAmtSum = 0
 			payment = nil
@@ -1672,6 +1675,7 @@ func (s *PrivateWalletAPI) AggregateUtxo(ctx context.Context, address string, fe
 		if err != nil {
 			return nil, err
 		}
+		log.Infof("Try to send aggregate UTXO tx[%s]",tx.Hash().String())
 		err = s.b.SendTx(ctx, tx)
 		if err != nil {
 			return nil, err
@@ -1705,6 +1709,8 @@ func (s *PrivateWalletAPI) generateTx(payment *modules.PaymentPayload, address c
 	signErrs, err := tokenengine.Instance.SignTxAllPaymentInput(tx, 1, utxoLockScripts, nil, getPubKeyFn, getSignFn)
 	if err != nil {
 		log.Errorf("%v", signErrs)
+		//TODO
+		return nil, err
 	}
 	return tx, nil
 }

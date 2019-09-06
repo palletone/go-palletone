@@ -166,7 +166,7 @@ const Wallet_JS = `
 		new web3._extend.Method({
             name: 'aggregateUtxo',
             call: 'wallet_aggregateUtxo',
-            params: 3,
+            params: 2,
         }),
  	]
  });

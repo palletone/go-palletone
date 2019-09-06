@@ -40,6 +40,7 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/contracts/comm"
+	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/manger"
 	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -402,6 +403,7 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 	}
 	//  是否为linux系統
 	if runtime.GOOS == "linux" {
+		//创建 docker client
 		client, err := util.NewDockerClient()
 		if err != nil {
 			log.Error("util.NewDockerClient", "error", err)
@@ -417,6 +419,18 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 				return
 			}
 		}
+		//拉取gptn发布版本对应的goimg基础镜像，防止卡住
+		go func() {
+			goimg := contractcfg.Goimg + ":" + contractcfg.GptnVersion
+			_, err = client.InspectImage(goimg)
+			if err != nil {
+				log.Debugf("Image %s does not exist locally, attempt pull", goimg)
+				err = client.PullImage(docker.PullImageOptions{Repository: contractcfg.Goimg, Tag: contractcfg.GptnVersion}, docker.AuthConfiguration{})
+				if err != nil {
+					log.Debugf("Failed to pull %s: %s", goimg, err)
+				}
+			}
+		}()
 		//  是否为jury
 		//if contractcfg.GetConfig().IsJury {
 		go pm.dockerLoop(client)

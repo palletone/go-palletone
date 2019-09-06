@@ -31,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/storage"
 	"go.dedis.ch/kyber/v3/sign/bls"
 )
 
@@ -74,14 +75,25 @@ func (dag *Dag) InitPropertyDB(genesis *core.Genesis, unit *modules.Unit) error 
 }
 
 func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
+	version := &modules.StateVersion{
+		Height:  unit.Number(),
+		TxIndex: ^uint32(0),
+	}
+	ws := &modules.ContractWriteSet{
+		IsDelete: false,
+		//Key:      modules.MediatorList,
+		//Value: imcB,
+	}
+
 	// Create initial mediators
 	list := make(map[string]string, len(genesis.InitialMediatorCandidates))
+
 	for _, imc := range genesis.InitialMediatorCandidates {
 		// 存储 mediator info
 		addr, err := imc.Validate()
 		if err != nil {
 			log.Debugf(err.Error())
-			panic(err.Error())
+			return err
 		}
 
 		mi := modules.NewMediatorInfo()
@@ -91,10 +103,29 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 		err = dag.stableStateRep.StoreMediatorInfo(addr, mi)
 		if err != nil {
 			log.Debugf(err.Error())
-			panic(err.Error())
+			return err
 		}
 
-		list[mi.AddStr] = mi.InitPubKey
+		// 将保证金设为0
+		md := modules.NewMediatorDeposit()
+		md.Status = modules.Apply
+		md.Role = modules.Mediator
+		md.ApplyEnterTime = time.Unix(unit.Timestamp(), 0).Format(modules.Layout2)
+
+		byte, err := json.Marshal(md)
+		if err != nil {
+			return err
+		}
+
+		ws.Value = byte
+		ws.Key = storage.MediatorDepositKey(imc.AddStr)
+		err = dag.stableStateRep.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws, version)
+		if err != nil {
+			log.Debugf(err.Error())
+			return err
+		}
+		//  TODO 加入地址公钥信息
+		list[mi.AddStr] = ""
 	}
 
 	// 存储 initMediatorCandidates/JuryCandidates
@@ -103,18 +134,7 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 		log.Debugf(err.Error())
 		return err
 	}
-
-	version := &modules.StateVersion{
-		Height:  unit.Number(),
-		TxIndex: ^uint32(0),
-	}
-	ws := &modules.ContractWriteSet{
-		IsDelete: false,
-		Key:      modules.MediatorList,
-		Value:    imcB,
-	}
-
-	// todo 将保证金设为0
+	ws.Value = imcB
 
 	//Mediator
 	ws.Key = modules.MediatorList

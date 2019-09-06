@@ -139,7 +139,7 @@ func (javaPlatform *Platform) GenerateDockerfile(cds *pb.ChaincodeDeploymentSpec
 		return "", err
 	}
 
-	buf = append(buf, contractcfg.GetConfig().CommonBuilder)
+	buf = append(buf, contractcfg.Javaimg+":"+contractcfg.GptnVersion)
 	buf = append(buf, "ADD codepackage.tgz /root/chaincode")
 	buf = append(buf, "RUN  cd /root/chaincode/src && "+buildCmd)
 	buf = append(buf, "RUN  cp /root/chaincode/src/build/chaincode.jar /root")

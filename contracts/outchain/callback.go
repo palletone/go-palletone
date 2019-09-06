@@ -66,7 +66,7 @@ func ProcessOutChainCall(chaincodeID string, outChainCall *pb.OutChainCall) (str
 	return adaptorCall(chainName, outChainCall.Method, outChainCall.Params)
 }
 func GetJuryPubkey(chaincodeID string, chainName string, params []byte) (string, error) {
-	adaptorObj, _ := allChain[chainName] //ProcessOutChainCall has checked
+	adaptorObj := allChain[chainName] //ProcessOutChainCall has checked
 	priKey, err := GetJuryKeyInfo(chaincodeID, chainName, params, adaptorObj)
 	if err != nil {
 		return "", err
@@ -83,7 +83,7 @@ func GetJuryPubkey(chaincodeID string, chainName string, params []byte) (string,
 }
 
 func SignTransaction(chaincodeID string, chainName string, params []byte) (string, error) {
-	adaptorObj, _ := allChain[chainName] //ProcessOutChainCall has checked
+	adaptorObj := allChain[chainName] //ProcessOutChainCall has checked
 	//
 	priKey, err := GetJuryKeyInfo(chaincodeID, chainName, params, adaptorObj)
 	if err != nil {
@@ -106,7 +106,7 @@ func SignTransaction(chaincodeID string, chainName string, params []byte) (strin
 	return string(resultJson), nil
 }
 func GetJuryAddr(chaincodeID string, chainName string, params []byte) (string, error) {
-	adaptorObj, _ := allChain[chainName] //ProcessOutChainCall has checked
+	adaptorObj := allChain[chainName] //ProcessOutChainCall has checked
 	addr, err := GetJuryAddress(chaincodeID, chainName, params, adaptorObj)
 	if err != nil {
 		return "", err
@@ -115,7 +115,7 @@ func GetJuryAddr(chaincodeID string, chainName string, params []byte) (string, e
 }
 
 func SignMessage(chaincodeID string, chainName string, params []byte) (string, error) {
-	adaptorObj, _ := allChain[chainName] //ProcessOutChainCall has checked
+	adaptorObj := allChain[chainName] //ProcessOutChainCall has checked
 	//
 	priKey, err := GetJuryKeyInfo(chaincodeID, chainName, params, adaptorObj)
 	if err != nil {

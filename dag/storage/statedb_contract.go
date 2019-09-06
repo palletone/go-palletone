@@ -85,6 +85,10 @@ func (statedb *StateDb) GetContractIdsByTpl(tplId []byte) ([][]byte, error) {
 	return result, nil
 }
 
+func MediatorDepositKey(medAddr string) string {
+	return string(constants.MEDIATOR_INFO_PREFIX) + string(constants.DEPOSIT_BALANCE_PREFIX) + medAddr
+}
+
 func (statedb *StateDb) SaveContractState(contractId []byte, ws *modules.ContractWriteSet,
 	version *modules.StateVersion) error {
 	cid := contractId
