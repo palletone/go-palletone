@@ -157,20 +157,20 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface /*, args []st
 
 	// 判断是否是genesis中定义的mediator
 	if md == nil {
-		b, err := isInCandidate(stub, invokeAddr.String(), modules.MediatorList)
-		if err != nil {
-			log.Debugf("isInCandidate error: %s", err.Error())
-			return shim.Error(err.Error())
-		}
-		if !b {
+		//b, err := isInCandidate(stub, invokeAddr.String(), modules.MediatorList)
+		//if err != nil {
+		//	log.Debugf("isInCandidate error: %s", err.Error())
+		//	return shim.Error(err.Error())
+		//}
+		//if !b {
 			return shim.Error(invokeAddr.String() + " does not apply for mediator")
-		}
+		//}
 
 		// genesis中定义的mediator, 对其保证金进行特殊处理
-		md = modules.NewMediatorDeposit()
-		md.ApplyEnterTime = getTiem(stub)
-		md.Status = modules.Agree
-		md.Role = modules.Mediator
+		//md = modules.NewMediatorDeposit()
+		//md.ApplyEnterTime = getTiem(stub)
+		//md.Status = modules.Agree
+		//md.Role = modules.Mediator
 	}
 
 	// 退出mediator列表后，再次缴纳保证
