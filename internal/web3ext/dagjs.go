@@ -96,11 +96,6 @@ web3._extend({
             call: 'dag_getCommonByPrefix',
             params: 1,
         }),
- 		new web3._extend.Method({
-            name: 'getAllData',
-            call: 'dag_getAllData',
-            params: 0,
-        }),
         new web3._extend.Method({   
             name: 'getTxByHash', 
             call: 'dag_getTxByHash',   
@@ -189,6 +184,11 @@ web3._extend({
             call: 'dag_isSynced',
             params: 0,
         }),
+        new web3._extend.Method({
+            name: 'getAllData',
+            call: 'dag_getAllData',
+            params: 0,
+        }),
 	],
 	properties: [
 		new web3._extend.Property({
@@ -202,6 +202,10 @@ web3._extend({
 		new web3._extend.Property({
 			name: 'headUnitHash',
 			getter: 'dag_headUnitHash'
+		}),
+		new web3._extend.Property({
+			name: 'allData',
+			getter: 'dag_allData'
 		}),
 	]
 });

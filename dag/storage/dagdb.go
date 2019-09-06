@@ -103,7 +103,7 @@ func (dagdb *DagDb) GetCommonByPrefix(prefix []byte) map[string][]byte {
 }
 
 func (dagdb *DagDb) GetAllData() ([][]byte, [][]byte) {
-	return getAll(dagdb.db)
+	return getAllData(dagdb.db)
 }
 
 func (dagdb *DagDb) GetGenesisUnitHash() (common.Hash, error) {

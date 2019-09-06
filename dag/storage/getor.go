@@ -126,7 +126,7 @@ func GetAddrTransactionsHash(db DatabaseReader, addr string) ([]common.Hash, err
 	return hashs, nil
 }
 
-func getAll(db DatabaseReader) ([][]byte, [][]byte) {
+func getAllData(db DatabaseReader) ([][]byte, [][]byte) {
 	iter := db.NewIterator()
 	var keys, values [][]byte
 
