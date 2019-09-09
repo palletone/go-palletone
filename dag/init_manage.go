@@ -108,7 +108,7 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 
 		// 将保证金设为0
 		md := modules.NewMediatorDeposit()
-		md.Status = modules.Apply
+		md.Status = modules.Agree
 		md.Role = modules.Mediator
 		md.ApplyEnterTime = time.Unix(unit.Timestamp(), 0).Format(modules.Layout2)
 
@@ -124,6 +124,7 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 			log.Debugf(err.Error())
 			return err
 		}
+
 		//  TODO 加入地址公钥信息
 		list[mi.AddStr] = ""
 	}
