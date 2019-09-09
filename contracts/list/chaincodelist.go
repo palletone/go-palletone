@@ -20,7 +20,8 @@ type CCInfo struct {
 	SysCC    bool
 	//Description string
 	//Abi         string
-	Language string
+	Language  string
+	IsExpired bool
 	//Enable bool
 }
 

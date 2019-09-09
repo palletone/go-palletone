@@ -34,13 +34,13 @@ const (
 	DefaultDepositAmountForDeveloper = 1 * 100000000
 	DefaultFoundationAddress         = "P1LA8TkEWxU6FcMzkyeSbf9b9FwZwxrYRuF"
 
-	DefaultUccMemory      = 524288000  // 每个容器使用内存最大 = 524288000 = 500 M
-	DefaultUccCpuShares   = 1024       // 每个容器相对占用CPU 1024 = 1 CPU
-	DefaultUccCpuQuota    = 100000     //  每个容器最多使用CPU核数 = 1 CPU
-	DefaultUccDisk        = 1073741824 //  每个容器磁盘使用量最多使用 = 1073741824 = 1G
-	DefaultUccPrivileged  = false
-	DefaultUccNetworkMode = "gptn-net" //TODO xiaozhi 生产环境
-	//DefaultUccNetworkMode       = "host" //TODO xiaozhi 测试容器运行网络模式
+	DefaultUccMemory     = 524288000  // 每个容器使用内存最大 = 524288000 = 500 M
+	DefaultUccCpuShares  = 1024       // 每个容器相对占用CPU 1024 = 1 CPU
+	DefaultUccCpuQuota   = 100000     //  每个容器最多使用CPU核数 = 1 CPU
+	DefaultUccDisk       = 1073741824 //  每个容器磁盘使用量最多使用 = 1073741824 = 1G
+	DefaultUccPrivileged = false
+	//DefaultUccNetworkMode = "gptn-net" //TODO xiaozhi 生产环境
+	DefaultUccNetworkMode    = "host" //TODO xiaozhi 测试容器运行网络模式
 	DefaultUccOOMKillDisable = false
 
 	DefaultContainerDuringTime  = 604800 //7天 = 604800 秒
@@ -67,8 +67,8 @@ const (
 	DefaultMinMaintSkipSlots   = 0
 
 	//contract
-	DefaultContractSignatureNum = 3
-	DefaultContractElectionNum  = 4
+	DefaultContractSignatureNum = 2
+	DefaultContractElectionNum  = 2
 
 	DefaultContractTxTimeoutUnitFee  = 10 //s
 	DefaultContractTxSizeUnitFee     = 1  //byte

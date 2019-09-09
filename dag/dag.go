@@ -708,8 +708,12 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 }
 
 // get chain codes by contract id
-func (d *Dag) GetChaincodes(contractId common.Address) (*list.CCInfo, error) {
-	return d.stablePropRep.GetChaincodes(contractId)
+func (d *Dag) GetChaincode(contractId common.Address) (*list.CCInfo, error) {
+	return d.stablePropRep.GetChaincode(contractId)
+}
+
+func (d *Dag) RetrieveChaincodes() ([]*list.CCInfo, error) {
+	return d.stablePropRep.RetrieveChaincodes()
 }
 
 // save chain code by contract id
