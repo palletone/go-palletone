@@ -242,7 +242,7 @@ func (statedb *StateDb) GetContractState(id []byte, field string) ([]byte, *modu
 	key := getContractStateKey(id, field)
 	log.Debugf("DB[%s] GetContractState for key:%x. field:%s ", reflect.TypeOf(statedb.db).String(), key, field)
 	data, version, err := retrieveWithVersion(statedb.db, key)
-	log.Debugf("GetContractState Result:%x,version:%s", data, version.String())
+	//log.Debugf("GetContractState Result:%x,version:%s", data, version.String())
 	return data, version, err
 }
 

@@ -252,7 +252,7 @@ func (s *PublicDagAPI) GetUnitsByIndex(ctx context.Context, start, end decimal.D
 }
 
 func (s *PublicDagAPI) GetFastUnitIndex(ctx context.Context, assetid string) string {
-	log.Info("PublicDagAPI", "GetUnitByNumber condition:", assetid)
+	log.Debug("PublicDagAPI", "GetUnitByNumber condition:", assetid)
 	if assetid == "" {
 		assetid = "PTN"
 	}
