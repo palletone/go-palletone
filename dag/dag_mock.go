@@ -1856,3 +1856,17 @@ func (mr *MockIDagMockRecorder) ChainThreshold() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChainThreshold", reflect.TypeOf((*MockIDag)(nil).ChainThreshold))
 }
+
+// CheckHeaderCorrect mocks base method
+func (m *MockIDag) CheckHeaderCorrect(number int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckHeaderCorrect", number)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CheckHeaderCorrect indicates an expected call of CheckHeaderCorrect
+func (mr *MockIDagMockRecorder) CheckHeaderCorrect(number interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckHeaderCorrect", reflect.TypeOf((*MockIDag)(nil).CheckHeaderCorrect), number)
+}

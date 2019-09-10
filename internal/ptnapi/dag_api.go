@@ -438,3 +438,11 @@ func (s *PrivateDagAPI) GetAllUtxos(ctx context.Context) (string, error) {
 
 	return string(result_json), nil
 }
+func (s *PrivateDagAPI) CheckHeader(ctx context.Context,number int) (bool,error) {
+	dag := s.b.Dag()
+	err:= dag.CheckHeaderCorrect(number)
+	if err!=nil{
+		return false,err
+	}
+	return true,nil
+}
