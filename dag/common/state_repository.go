@@ -285,10 +285,10 @@ func (rep *StateRepository) GetMediatorVotedResults() (map[string]uint64, error)
 		log.Warn("GetPledgeListWithNew error" + err.Error())
 		return nil, err
 	}
-	log.DebugDynamic(func() string {
-		data, _ := json.Marshal(pledgeList)
-		return "GetPledgeListWithNew result:\r\n" + string(data)
-	})
+	//log.DebugDynamic(func() string {
+	//	data, _ := json.Marshal(pledgeList)
+	//	return "GetPledgeListWithNew result:\r\n" + string(data)
+	//})
 
 	mediatorVoteCount := make(map[string]uint64)
 	//先将所有mediator的投票数量设为0， 防止某个mediator未被任何账户投票
