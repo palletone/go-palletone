@@ -45,9 +45,9 @@ func (d *CoinbaseChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.Response
 	case "queryReward":
 		return d.queryGenerateUnitReward(stub, args)
 	default:
-		return shim.Error("Invoke error")
+		return shim.Error("coinbase cc Invoke error" + funcName)
 	}
-	return shim.Error("Invoke error")
+	return shim.Error("coinbase cc Invoke error" + funcName)
 }
 
 //出块奖励记录查询

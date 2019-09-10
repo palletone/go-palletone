@@ -146,7 +146,7 @@ var systemChaincodes = []*SystemChaincode{
 		Id:        syscontract.BlacklistContractAddress.Bytes(),
 		Enabled:   true,
 		Name:      "blacklist_sycc",
-		Path:      "",
+		Path:      "./BlacklistContractAddress",
 		Version:   "ptn001",
 		InitArgs:  [][]byte{},
 		Chaincode: &blacklistcc.BlacklistMgr{},

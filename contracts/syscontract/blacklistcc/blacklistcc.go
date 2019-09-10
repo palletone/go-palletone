@@ -44,44 +44,44 @@ func (p *BlacklistMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	f, args := stub.GetFunctionAndParameters()
 
 	switch f {
-	case "addBlacklist"://增加一个地址到黑名单
-		if len(args)!=2{
+	case "addBlacklist": //增加一个地址到黑名单
+		if len(args) != 2 {
 			return shim.Error("must input 2 args: blackAddress, reason")
 		}
-		addr,err:=common.StringToAddress(args[0])
-		if err!=nil{
-			return shim.Error("Invalid address string"+args[0])
+		addr, err := common.StringToAddress(args[0])
+		if err != nil {
+			return shim.Error("Invalid address string" + args[0])
 		}
-		err=p.AddBlacklist(stub,addr,args[1])
-		if err!=nil{
-			return shim.Error(err.Error())
+		err = p.AddBlacklist(stub, addr, args[1])
+		if err != nil {
+			return shim.Error("AddBlacklist error:" + err.Error())
 		}
 		return shim.Success(nil)
-	case "listBlacklist"://列出黑名单列表
-		result,err:= p.ListBlacklist(stub)
-		if err!=nil{
+	case "listBlacklist": //列出黑名单列表
+		result, err := p.ListBlacklist(stub)
+		if err != nil {
 			return shim.Error(err.Error())
 		}
-		data,_:=json.Marshal(result)
+		data, _ := json.Marshal(result)
 		return shim.Success(data)
-	case "payout"://付出Token
-		if len(args)!=3{
+	case "payout": //付出Token
+		if len(args) != 3 {
 			return shim.Error("must input 3 args: Address,Amount,Asset")
 		}
-		addr,err:=common.StringToAddress(args[0])
-		if err!=nil{
-			return shim.Error("Invalid address string"+args[0])
+		addr, err := common.StringToAddress(args[0])
+		if err != nil {
+			return shim.Error("Invalid address string" + args[0])
 		}
-		amount,err:=decimal.NewFromString(args[1])
-		if err!=nil{
-			return shim.Error("Invalid amount:"+args[1])
+		amount, err := decimal.NewFromString(args[1])
+		if err != nil {
+			return shim.Error("Invalid amount:" + args[1])
 		}
-		asset,err:=modules.StringToAsset(args[2])
-		if err!=nil{
-			return shim.Error("Invalid asset string:"+args[2])
+		asset, err := modules.StringToAsset(args[2])
+		if err != nil {
+			return shim.Error("Invalid asset string:" + args[2])
 		}
-		err=p.Payout(stub,addr,amount,asset)
-		if err!=nil{
+		err = p.Payout(stub, addr, amount, asset)
+		if err != nil {
 			return shim.Error(err.Error())
 		}
 		return shim.Success(nil)
@@ -93,79 +93,87 @@ func (p *BlacklistMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(jsonResp)
 	}
 }
-func (p *BlacklistMgr)AddBlacklist(stub shim.ChaincodeStubInterface,blackAddr common.Address,reason string) error{
-	invokeAddr, err := stub.GetInvokeAddress()
-	if !isFoundationInvoke(stub){
+func (p *BlacklistMgr) AddBlacklist(stub shim.ChaincodeStubInterface, blackAddr common.Address, reason string) error {
+	if !isFoundationInvoke(stub) {
 		return errors.New("only foundation address can call this function")
 	}
-	tokenBalance,err:= stub.GetTokenBalance(blackAddr.String(),nil)
-	if err!=nil{
-		return err
+	tokenBalance, err := stub.GetTokenBalance(blackAddr.String(), nil)
+	if err != nil {
+		return errors.New("GetTokenBalance error:" + err.Error())
 	}
-	balance:=make(map[modules.Asset]uint64)
-	for _,aa:=range tokenBalance{
-		balance[*aa.Asset]=aa.Amount
+	balance := make(map[modules.Asset]uint64)
+	for _, aa := range tokenBalance {
+		balance[*aa.Asset] = aa.Amount
 	}
-	balanceJson,_:= json.Marshal(balance)
-	record:=&BlacklistRecord{
+	balanceJson, _ := json.Marshal(balance)
+	record := &BlacklistRecord{
 		Address:     blackAddr,
 		Reason:      reason,
 		FreezeToken: string(balanceJson),
 	}
-	err= saveRecord(stub,record)
-	if err!=nil{
-		return err
+	err = saveRecord(stub, record)
+	if err != nil {
+		return errors.New("saveRecord error:" + err.Error())
 	}
-	err=updateBlacklistAddressList(stub,blackAddr)
-	if err!=nil{
-		return err
+	err = updateBlacklistAddressList(stub, blackAddr)
+	if err != nil {
+		return errors.New("updateBlacklistAddressList error:" + err.Error())
 	}
 	//发行对应冻结的Token给合约
-	for asset,amount:=range balance{
-		err=stub.SupplyToken(asset.AssetId[:],asset.UniqueId[:],amount,invokeAddr.String())
-		if err!=nil{
+	_, addr := stub.GetContractID()
+	for asset, amount := range balance {
+		err = stub.SupplyToken(asset.AssetId[:], asset.UniqueId[:], amount, addr)
+		if err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (p *BlacklistMgr)ListBlacklist(stub shim.ChaincodeStubInterface) ([]*BlacklistRecord,error) {
+func (p *BlacklistMgr) ListBlacklist(stub shim.ChaincodeStubInterface) ([]*BlacklistRecord, error) {
 	return getAllRecords(stub)
 }
-func (p *BlacklistMgr)Payout(stub shim.ChaincodeStubInterface,addr common.Address,amount decimal.Decimal,asset *modules.Asset) error{
-	uint64Amt:=ptnjson.JsonAmt2AssetAmt(asset,amount)
-	return stub.PayOutToken(addr.String(),&modules.AmountAsset{
+func (p *BlacklistMgr) Payout(stub shim.ChaincodeStubInterface, addr common.Address, amount decimal.Decimal, asset *modules.Asset) error {
+	if !isFoundationInvoke(stub) {
+		return errors.New("only foundation address can call this function")
+	}
+	uint64Amt := ptnjson.JsonAmt2AssetAmt(asset, amount)
+	return stub.PayOutToken(addr.String(), &modules.AmountAsset{
 		Amount: uint64Amt,
 		Asset:  asset,
-	},0)
+	}, 0)
 }
 
-
-type BlacklistRecord struct{
-	Address common.Address
-	Reason string
+type BlacklistRecord struct {
+	Address     common.Address
+	Reason      string
 	FreezeToken string
 }
-const BLACKLIST_RECORD="Blacklist-"
-const BLACKLIST_ADDRESS="BlacklistAddress"
-func saveRecord(stub shim.ChaincodeStubInterface,record *BlacklistRecord) error{
-	data,_:= rlp.EncodeToBytes(record)
-	return stub.PutState(BLACKLIST_RECORD+record.Address.String(),data)
+
+const BLACKLIST_RECORD = "Blacklist-"
+const BLACKLIST_ADDRESS = "BlacklistAddress"
+
+func saveRecord(stub shim.ChaincodeStubInterface, record *BlacklistRecord) error {
+	data, _ := rlp.EncodeToBytes(record)
+	return stub.PutState(BLACKLIST_RECORD+record.Address.String(), data)
 }
-func getAllRecords(stub shim.ChaincodeStubInterface) ([]*BlacklistRecord,error){
-	kvs,err:=stub.GetStateByPrefix(BLACKLIST_RECORD)
-	if err!=nil{
-		return nil,err
+func getAllRecords(stub shim.ChaincodeStubInterface) ([]*BlacklistRecord, error) {
+	kvs, err := stub.GetStateByPrefix(BLACKLIST_RECORD)
+	if err != nil {
+		return nil, err
 	}
-	result:=make([]*BlacklistRecord,0,len(kvs))
-	for _,kv:=range kvs{
-		record:=&BlacklistRecord{}
-		rlp.DecodeBytes(kv.Value,record)
-		result=append(result,record)
+	result := make([]*BlacklistRecord, 0, len(kvs))
+	for _, kv := range kvs {
+		record := &BlacklistRecord{}
+		err = rlp.DecodeBytes(kv.Value, record)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, record)
 	}
-	return result,nil
+	return result, nil
 }
+
 //  判断是否基金会发起的
 func isFoundationInvoke(stub shim.ChaincodeStubInterface) bool {
 	//  判断是否基金会发起的
@@ -188,16 +196,17 @@ func isFoundationInvoke(stub shim.ChaincodeStubInterface) bool {
 	}
 	return true
 }
-func updateBlacklistAddressList(stub shim.ChaincodeStubInterface,address common.Address) error{
-	list:=[]common.Address{}
-	dblist,err:= stub.GetState(BLACKLIST_ADDRESS)
-	if err==nil {
+func updateBlacklistAddressList(stub shim.ChaincodeStubInterface, address common.Address) error {
+	list := []common.Address{}
+	dblist, err := stub.GetState(BLACKLIST_ADDRESS)
+	if err == nil && len(dblist) > 0 {
 		err = rlp.DecodeBytes(dblist, &list)
 		if err != nil {
-			return err
+			log.Errorf("rlp decode data[%x] to  []common.Address error", dblist)
+			return errors.New("rlp decode error:" + err.Error())
 		}
 	}
-	list=append(list,address)
-	data,_:= rlp.EncodeToBytes(list)
-	return stub.PutState(BLACKLIST_ADDRESS,data)
+	list = append(list, address)
+	data, _ := rlp.EncodeToBytes(list)
+	return stub.PutState(BLACKLIST_ADDRESS, data)
 }
