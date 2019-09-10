@@ -28,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
@@ -57,8 +58,15 @@ func (p *BlacklistMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			return shim.Error("AddBlacklist error:" + err.Error())
 		}
 		return shim.Success(nil)
-	case "listBlacklist": //列出黑名单列表
-		result, err := p.ListBlacklist(stub)
+	case "getBlacklistRecords": //列出黑名单列表
+		result, err := p.GetBlacklistRecords(stub)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		data, _ := json.Marshal(result)
+		return shim.Success(data)
+	case "getBlacklistAddress": //列出黑名单列表
+		result, err := p.GetBlacklistAddress(stub)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -130,8 +138,11 @@ func (p *BlacklistMgr) AddBlacklist(stub shim.ChaincodeStubInterface, blackAddr 
 	return nil
 }
 
-func (p *BlacklistMgr) ListBlacklist(stub shim.ChaincodeStubInterface) ([]*BlacklistRecord, error) {
+func (p *BlacklistMgr) GetBlacklistRecords(stub shim.ChaincodeStubInterface) ([]*BlacklistRecord, error) {
 	return getAllRecords(stub)
+}
+func (p *BlacklistMgr) GetBlacklistAddress(stub shim.ChaincodeStubInterface) ([]common.Address, error) {
+	return getBlacklistAddress(stub)
 }
 func (p *BlacklistMgr) Payout(stub shim.ChaincodeStubInterface, addr common.Address, amount decimal.Decimal, asset *modules.Asset) error {
 	if !isFoundationInvoke(stub) {
@@ -151,7 +162,6 @@ type BlacklistRecord struct {
 }
 
 const BLACKLIST_RECORD = "Blacklist-"
-const BLACKLIST_ADDRESS = "BlacklistAddress"
 
 func saveRecord(stub shim.ChaincodeStubInterface, record *BlacklistRecord) error {
 	data, _ := rlp.EncodeToBytes(record)
@@ -197,16 +207,20 @@ func isFoundationInvoke(stub shim.ChaincodeStubInterface) bool {
 	return true
 }
 func updateBlacklistAddressList(stub shim.ChaincodeStubInterface, address common.Address) error {
+	list, _ := getBlacklistAddress(stub)
+	list = append(list, address)
+	data, _ := rlp.EncodeToBytes(list)
+	return stub.PutState(constants.BlacklistAddress, data)
+}
+func getBlacklistAddress(stub shim.ChaincodeStubInterface) ([]common.Address, error) {
 	list := []common.Address{}
-	dblist, err := stub.GetState(BLACKLIST_ADDRESS)
+	dblist, err := stub.GetState(constants.BlacklistAddress)
 	if err == nil && len(dblist) > 0 {
 		err = rlp.DecodeBytes(dblist, &list)
 		if err != nil {
 			log.Errorf("rlp decode data[%x] to  []common.Address error", dblist)
-			return errors.New("rlp decode error:" + err.Error())
+			return nil, errors.New("rlp decode error:" + err.Error())
 		}
 	}
-	list = append(list, address)
-	data, _ := rlp.EncodeToBytes(list)
-	return stub.PutState(BLACKLIST_ADDRESS, data)
+	return list, nil
 }

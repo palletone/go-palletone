@@ -114,7 +114,10 @@ func (statedb *StateDb) GetPartitionChains() ([]*modules.PartitionChain, error) 
 
 	for _, v := range rows {
 		partition := &modules.PartitionChain{}
-		json.Unmarshal(v.Value, &partition)
+		err = json.Unmarshal(v.Value, &partition)
+		if err != nil {
+			return nil, err
+		}
 		result = append(result, partition)
 	}
 	return result, nil
@@ -135,11 +138,16 @@ func (statedb *StateDb) GetMainChain() (*modules.MainChain, error) {
 }
 func (statedb *StateDb) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error) {
 	id := syscontract.BlacklistContractAddress.Bytes()
-	data,v,err:= statedb.GetContractState(id, constants.BlacklistAddress)
-	if err!=nil{//未初始化黑名单
-		return []common.Address{},nil,nil
+	data, v, err := statedb.GetContractState(id, constants.BlacklistAddress)
+	if err != nil { //未初始化黑名单
+		log.Debug("Don't have blacklist:" + err.Error())
+		return []common.Address{}, nil, nil
 	}
-	result:=[]common.Address{}
-	err=rlp.DecodeBytes(data,&result)
-	return result,v,err
+	result := []common.Address{}
+	err = rlp.DecodeBytes(data, &result)
+	log.DebugDynamic(func() string {
+		data, _ := json.Marshal(result)
+		return "query blacklist result is:" + string(data)
+	})
+	return result, v, err
 }
