@@ -1256,3 +1256,27 @@ func (d *Dag) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfEx
 func (d *Dag) GetAssetReference(asset []byte) ([]*modules.ProofOfExistence, error) {
 	return d.stableUnitRep.GetAssetReference(asset)
 }
+func(d *Dag)CheckHeaderCorrect(number int) error {
+	ptn := modules.PTNCOIN
+
+	header,err := d.stableUnitRep.GetHeaderByNumber(modules.NewChainIndex(ptn, uint64(number)))
+	if err!=nil{
+		return fmt.Errorf("Unit heigth:%d not exits",number)
+	}
+	parentHash:=header.ParentsHash[0]
+	for {
+		header,err=d.stableUnitRep.GetHeaderByHash(parentHash)
+		if err!=nil{
+			return fmt.Errorf("Unit :%s not exits",parentHash.String())
+		}
+		if len(header.ParentsHash)>0{
+			parentHash=header.ParentsHash[0]
+		}else{
+			break
+		}
+		if header.NumberU64()%1000==0{
+			log.Infof("Check header correct:%d",header.NumberU64())
+		}
+	}
+	return nil
+}

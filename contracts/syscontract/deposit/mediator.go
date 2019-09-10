@@ -155,8 +155,8 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface /*, args []st
 		return shim.Error(err.Error())
 	}
 
-	// 判断是否是genesis中定义的mediator
 	if md == nil {
+		// 判断是否是genesis中定义的mediator
 		//b, err := isInCandidate(stub, invokeAddr.String(), modules.MediatorList)
 		//if err != nil {
 		//	log.Debugf("isInCandidate error: %s", err.Error())
