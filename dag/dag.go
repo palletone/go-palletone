@@ -873,7 +873,11 @@ func (d *Dag) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.U
 
 	return all, err
 }
+func (d *Dag) GetAddrStableUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error) {
+	all, err := d.stableUtxoRep.GetAddrUtxos(addr, nil)
 
+	return all, err
+}
 // refresh system parameters
 func (d *Dag) RefreshSysParameters() {
 	d.unstableUnitProduceRep.RefreshSysParameters()
