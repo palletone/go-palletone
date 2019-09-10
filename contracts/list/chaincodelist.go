@@ -12,17 +12,14 @@ import (
 //var log = flogging.MustGetLogger("cclist")
 
 type CCInfo struct {
-	Id       []byte
-	Name     string
-	Path     string
-	Version  string
-	TempleId []byte
-	SysCC    bool
-	//Description string
-	//Abi         string
+	Id        []byte
+	Name      string
+	Path      string
+	Version   string
+	TempleId  []byte
+	SysCC     bool
 	Language  string
 	IsExpired bool
-	//Enable bool
 }
 
 type chain struct {

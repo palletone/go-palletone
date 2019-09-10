@@ -449,7 +449,10 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 				//conName := c.Name+c.Version+":"+contractcfg.GetConfig().ContractAddress
 				rd, _ := crypto.GetRandomBytes(32)
 				txid := util2.RlpHash(rd)
-				manger.RestartContainer(dag, "palletone", c.Id, txid.String())
+				//  启动gptn时启动Jury对应的没有过期的用户合约容器
+				if !c.IsExpired {
+					manger.RestartContainer(dag, "palletone", c.Id, txid.String())
+				}
 			}
 		}()
 
