@@ -38,6 +38,7 @@ func (m *MockChaincode) EXPECT() *MockChaincodeMockRecorder {
 
 // Init mocks base method
 func (m *MockChaincode) Init(stub ChaincodeStubInterface) peer.Response {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Init", stub)
 	ret0, _ := ret[0].(peer.Response)
 	return ret0
@@ -45,11 +46,13 @@ func (m *MockChaincode) Init(stub ChaincodeStubInterface) peer.Response {
 
 // Init indicates an expected call of Init
 func (mr *MockChaincodeMockRecorder) Init(stub interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockChaincode)(nil).Init), stub)
 }
 
 // Invoke mocks base method
 func (m *MockChaincode) Invoke(stub ChaincodeStubInterface) peer.Response {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Invoke", stub)
 	ret0, _ := ret[0].(peer.Response)
 	return ret0
@@ -57,6 +60,7 @@ func (m *MockChaincode) Invoke(stub ChaincodeStubInterface) peer.Response {
 
 // Invoke indicates an expected call of Invoke
 func (mr *MockChaincodeMockRecorder) Invoke(stub interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Invoke", reflect.TypeOf((*MockChaincode)(nil).Invoke), stub)
 }
 
@@ -85,6 +89,7 @@ func (m *MockChaincodeStubInterface) EXPECT() *MockChaincodeStubInterfaceMockRec
 
 // GetArgs mocks base method
 func (m *MockChaincodeStubInterface) GetArgs() [][]byte {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetArgs")
 	ret0, _ := ret[0].([][]byte)
 	return ret0
@@ -92,11 +97,13 @@ func (m *MockChaincodeStubInterface) GetArgs() [][]byte {
 
 // GetArgs indicates an expected call of GetArgs
 func (mr *MockChaincodeStubInterfaceMockRecorder) GetArgs() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetArgs", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetArgs))
 }
 
 // GetStringArgs mocks base method
 func (m *MockChaincodeStubInterface) GetStringArgs() []string {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetStringArgs")
 	ret0, _ := ret[0].([]string)
 	return ret0
@@ -104,11 +111,13 @@ func (m *MockChaincodeStubInterface) GetStringArgs() []string {
 
 // GetStringArgs indicates an expected call of GetStringArgs
 func (mr *MockChaincodeStubInterfaceMockRecorder) GetStringArgs() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStringArgs", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetStringArgs))
 }
 
 // GetFunctionAndParameters mocks base method
 func (m *MockChaincodeStubInterface) GetFunctionAndParameters() (string, []string) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFunctionAndParameters")
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].([]string)
@@ -117,11 +126,13 @@ func (m *MockChaincodeStubInterface) GetFunctionAndParameters() (string, []strin
 
 // GetFunctionAndParameters indicates an expected call of GetFunctionAndParameters
 func (mr *MockChaincodeStubInterfaceMockRecorder) GetFunctionAndParameters() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFunctionAndParameters", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetFunctionAndParameters))
 }
 
 // GetArgsSlice mocks base method
 func (m *MockChaincodeStubInterface) GetArgsSlice() ([]byte, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetArgsSlice")
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
@@ -130,11 +141,13 @@ func (m *MockChaincodeStubInterface) GetArgsSlice() ([]byte, error) {
 
 // GetArgsSlice indicates an expected call of GetArgsSlice
 func (mr *MockChaincodeStubInterfaceMockRecorder) GetArgsSlice() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetArgsSlice", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetArgsSlice))
 }
 
 // GetTxID mocks base method
 func (m *MockChaincodeStubInterface) GetTxID() string {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTxID")
 	ret0, _ := ret[0].(string)
 	return ret0
@@ -142,11 +155,13 @@ func (m *MockChaincodeStubInterface) GetTxID() string {
 
 // GetTxID indicates an expected call of GetTxID
 func (mr *MockChaincodeStubInterfaceMockRecorder) GetTxID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxID", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetTxID))
 }
 
 // GetChannelID mocks base method
 func (m *MockChaincodeStubInterface) GetChannelID() string {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetChannelID")
 	ret0, _ := ret[0].(string)
 	return ret0
@@ -154,11 +169,13 @@ func (m *MockChaincodeStubInterface) GetChannelID() string {
 
 // GetChannelID indicates an expected call of GetChannelID
 func (mr *MockChaincodeStubInterfaceMockRecorder) GetChannelID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChannelID", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetChannelID))
 }
 
 // InvokeChaincode mocks base method
 func (m *MockChaincodeStubInterface) InvokeChaincode(chaincodeName string, args [][]byte, channel string) peer.Response {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "InvokeChaincode", chaincodeName, args, channel)
 	ret0, _ := ret[0].(peer.Response)
 	return ret0
@@ -166,11 +183,13 @@ func (m *MockChaincodeStubInterface) InvokeChaincode(chaincodeName string, args 
 
 // InvokeChaincode indicates an expected call of InvokeChaincode
 func (mr *MockChaincodeStubInterfaceMockRecorder) InvokeChaincode(chaincodeName, args, channel interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InvokeChaincode", reflect.TypeOf((*MockChaincodeStubInterface)(nil).InvokeChaincode), chaincodeName, args, channel)
 }
 
 // GetState mocks base method
 func (m *MockChaincodeStubInterface) GetState(key string) ([]byte, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetState", key)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
@@ -179,11 +198,13 @@ func (m *MockChaincodeStubInterface) GetState(key string) ([]byte, error) {
 
 // GetState indicates an expected call of GetState
 func (mr *MockChaincodeStubInterfaceMockRecorder) GetState(key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetState", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetState), key)
 }
 
 // GetGlobalState mocks base method
 func (m *MockChaincodeStubInterface) GetGlobalState(key string) ([]byte, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetGlobalState", key)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
@@ -192,11 +213,13 @@ func (m *MockChaincodeStubInterface) GetGlobalState(key string) ([]byte, error) 
 
 // GetGlobalState indicates an expected call of GetGlobalState
 func (mr *MockChaincodeStubInterfaceMockRecorder) GetGlobalState(key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGlobalState", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetGlobalState), key)
 }
 
 // GetContractState mocks base method
 func (m *MockChaincodeStubInterface) GetContractState(contractAddr common.Address, key string) ([]byte, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContractState", contractAddr, key)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
@@ -205,11 +228,13 @@ func (m *MockChaincodeStubInterface) GetContractState(contractAddr common.Addres
 
 // GetContractState indicates an expected call of GetContractState
 func (mr *MockChaincodeStubInterfaceMockRecorder) GetContractState(contractAddr, key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractState", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetContractState), contractAddr, key)
 }
 
 // GetStateByPrefix mocks base method
 func (m *MockChaincodeStubInterface) GetStateByPrefix(prefix string) ([]*modules.KeyValue, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetStateByPrefix", prefix)
 	ret0, _ := ret[0].([]*modules.KeyValue)
 	ret1, _ := ret[1].(error)
@@ -218,11 +243,13 @@ func (m *MockChaincodeStubInterface) GetStateByPrefix(prefix string) ([]*modules
 
 // GetStateByPrefix indicates an expected call of GetStateByPrefix
 func (mr *MockChaincodeStubInterfaceMockRecorder) GetStateByPrefix(prefix interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStateByPrefix", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetStateByPrefix), prefix)
 }
 
 // PutState mocks base method
 func (m *MockChaincodeStubInterface) PutState(key string, value []byte) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PutState", key, value)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -230,11 +257,13 @@ func (m *MockChaincodeStubInterface) PutState(key string, value []byte) error {
 
 // PutState indicates an expected call of PutState
 func (mr *MockChaincodeStubInterfaceMockRecorder) PutState(key, value interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutState", reflect.TypeOf((*MockChaincodeStubInterface)(nil).PutState), key, value)
 }
 
 // PutGlobalState mocks base method
 func (m *MockChaincodeStubInterface) PutGlobalState(key string, value []byte) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PutGlobalState", key, value)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -242,11 +271,13 @@ func (m *MockChaincodeStubInterface) PutGlobalState(key string, value []byte) er
 
 // PutGlobalState indicates an expected call of PutGlobalState
 func (mr *MockChaincodeStubInterfaceMockRecorder) PutGlobalState(key, value interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutGlobalState", reflect.TypeOf((*MockChaincodeStubInterface)(nil).PutGlobalState), key, value)
 }
 
 // OutChainCall mocks base method
 func (m *MockChaincodeStubInterface) OutChainCall(outChainName, method string, params []byte) ([]byte, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "OutChainCall", outChainName, method, params)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
@@ -255,11 +286,13 @@ func (m *MockChaincodeStubInterface) OutChainCall(outChainName, method string, p
 
 // OutChainCall indicates an expected call of OutChainCall
 func (mr *MockChaincodeStubInterfaceMockRecorder) OutChainCall(outChainName, method, params interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OutChainCall", reflect.TypeOf((*MockChaincodeStubInterface)(nil).OutChainCall), outChainName, method, params)
 }
 
 // SendJury mocks base method
 func (m *MockChaincodeStubInterface) SendJury(msgType uint32, consultContent, myAnswer []byte) ([]byte, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendJury", msgType, consultContent, myAnswer)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
@@ -268,11 +301,13 @@ func (m *MockChaincodeStubInterface) SendJury(msgType uint32, consultContent, my
 
 // SendJury indicates an expected call of SendJury
 func (mr *MockChaincodeStubInterfaceMockRecorder) SendJury(msgType, consultContent, myAnswer interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendJury", reflect.TypeOf((*MockChaincodeStubInterface)(nil).SendJury), msgType, consultContent, myAnswer)
 }
 
 // RecvJury mocks base method
 func (m *MockChaincodeStubInterface) RecvJury(msgType uint32, consultContent []byte, timeout uint32) ([]byte, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RecvJury", msgType, consultContent, timeout)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
@@ -281,11 +316,13 @@ func (m *MockChaincodeStubInterface) RecvJury(msgType uint32, consultContent []b
 
 // RecvJury indicates an expected call of RecvJury
 func (mr *MockChaincodeStubInterfaceMockRecorder) RecvJury(msgType, consultContent, timeout interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecvJury", reflect.TypeOf((*MockChaincodeStubInterface)(nil).RecvJury), msgType, consultContent, timeout)
 }
 
 // DelState mocks base method
 func (m *MockChaincodeStubInterface) DelState(key string) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DelState", key)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -293,11 +330,13 @@ func (m *MockChaincodeStubInterface) DelState(key string) error {
 
 // DelState indicates an expected call of DelState
 func (mr *MockChaincodeStubInterfaceMockRecorder) DelState(key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DelState", reflect.TypeOf((*MockChaincodeStubInterface)(nil).DelState), key)
 }
 
 // DelGlobalState mocks base method
 func (m *MockChaincodeStubInterface) DelGlobalState(key string) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DelGlobalState", key)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -305,11 +344,13 @@ func (m *MockChaincodeStubInterface) DelGlobalState(key string) error {
 
 // DelGlobalState indicates an expected call of DelGlobalState
 func (mr *MockChaincodeStubInterfaceMockRecorder) DelGlobalState(key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DelGlobalState", reflect.TypeOf((*MockChaincodeStubInterface)(nil).DelGlobalState), key)
 }
 
 // GetTxTimestamp mocks base method
 func (m *MockChaincodeStubInterface) GetTxTimestamp(rangeNumber uint32) (*timestamp.Timestamp, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTxTimestamp", rangeNumber)
 	ret0, _ := ret[0].(*timestamp.Timestamp)
 	ret1, _ := ret[1].(error)
@@ -318,11 +359,13 @@ func (m *MockChaincodeStubInterface) GetTxTimestamp(rangeNumber uint32) (*timest
 
 // GetTxTimestamp indicates an expected call of GetTxTimestamp
 func (mr *MockChaincodeStubInterfaceMockRecorder) GetTxTimestamp(rangeNumber interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxTimestamp", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetTxTimestamp), rangeNumber)
 }
 
 // SetEvent mocks base method
 func (m *MockChaincodeStubInterface) SetEvent(name string, payload []byte) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetEvent", name, payload)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -330,11 +373,13 @@ func (m *MockChaincodeStubInterface) SetEvent(name string, payload []byte) error
 
 // SetEvent indicates an expected call of SetEvent
 func (mr *MockChaincodeStubInterfaceMockRecorder) SetEvent(name, payload interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetEvent", reflect.TypeOf((*MockChaincodeStubInterface)(nil).SetEvent), name, payload)
 }
 
 // GetSystemConfig mocks base method
 func (m *MockChaincodeStubInterface) GetSystemConfig() (*modules.GlobalProperty, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSystemConfig")
 	ret0, _ := ret[0].(*modules.GlobalProperty)
 	ret1, _ := ret[1].(error)
@@ -343,11 +388,13 @@ func (m *MockChaincodeStubInterface) GetSystemConfig() (*modules.GlobalProperty,
 
 // GetSystemConfig indicates an expected call of GetSystemConfig
 func (mr *MockChaincodeStubInterfaceMockRecorder) GetSystemConfig() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSystemConfig", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetSystemConfig))
 }
 
 // GetInvokeAddress mocks base method
 func (m *MockChaincodeStubInterface) GetInvokeAddress() (common.Address, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetInvokeAddress")
 	ret0, _ := ret[0].(common.Address)
 	ret1, _ := ret[1].(error)
@@ -356,11 +403,13 @@ func (m *MockChaincodeStubInterface) GetInvokeAddress() (common.Address, error) 
 
 // GetInvokeAddress indicates an expected call of GetInvokeAddress
 func (mr *MockChaincodeStubInterfaceMockRecorder) GetInvokeAddress() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInvokeAddress", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetInvokeAddress))
 }
 
 // GetInvokeTokens mocks base method
 func (m *MockChaincodeStubInterface) GetInvokeTokens() ([]*modules.InvokeTokens, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetInvokeTokens")
 	ret0, _ := ret[0].([]*modules.InvokeTokens)
 	ret1, _ := ret[1].(error)
@@ -369,11 +418,13 @@ func (m *MockChaincodeStubInterface) GetInvokeTokens() ([]*modules.InvokeTokens,
 
 // GetInvokeTokens indicates an expected call of GetInvokeTokens
 func (mr *MockChaincodeStubInterfaceMockRecorder) GetInvokeTokens() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInvokeTokens", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetInvokeTokens))
 }
 
 // GetContractAllState mocks base method
 func (m *MockChaincodeStubInterface) GetContractAllState() (map[string]*modules.ContractStateValue, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContractAllState")
 	ret0, _ := ret[0].(map[string]*modules.ContractStateValue)
 	ret1, _ := ret[1].(error)
@@ -382,11 +433,13 @@ func (m *MockChaincodeStubInterface) GetContractAllState() (map[string]*modules.
 
 // GetContractAllState indicates an expected call of GetContractAllState
 func (mr *MockChaincodeStubInterfaceMockRecorder) GetContractAllState() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractAllState", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetContractAllState))
 }
 
 // GetInvokeFees mocks base method
 func (m *MockChaincodeStubInterface) GetInvokeFees() (*modules.AmountAsset, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetInvokeFees")
 	ret0, _ := ret[0].(*modules.AmountAsset)
 	ret1, _ := ret[1].(error)
@@ -395,11 +448,13 @@ func (m *MockChaincodeStubInterface) GetInvokeFees() (*modules.AmountAsset, erro
 
 // GetInvokeFees indicates an expected call of GetInvokeFees
 func (mr *MockChaincodeStubInterfaceMockRecorder) GetInvokeFees() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInvokeFees", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetInvokeFees))
 }
 
 // GetContractID mocks base method
 func (m *MockChaincodeStubInterface) GetContractID() ([]byte, string) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContractID")
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(string)
@@ -408,11 +463,13 @@ func (m *MockChaincodeStubInterface) GetContractID() ([]byte, string) {
 
 // GetContractID indicates an expected call of GetContractID
 func (mr *MockChaincodeStubInterfaceMockRecorder) GetContractID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractID", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetContractID))
 }
 
 // GetTokenBalance mocks base method
 func (m *MockChaincodeStubInterface) GetTokenBalance(address string, token *modules.Asset) ([]*modules.InvokeTokens, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTokenBalance", address, token)
 	ret0, _ := ret[0].([]*modules.InvokeTokens)
 	ret1, _ := ret[1].(error)
@@ -421,11 +478,13 @@ func (m *MockChaincodeStubInterface) GetTokenBalance(address string, token *modu
 
 // GetTokenBalance indicates an expected call of GetTokenBalance
 func (mr *MockChaincodeStubInterfaceMockRecorder) GetTokenBalance(address, token interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTokenBalance", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetTokenBalance), address, token)
 }
 
 // PayOutToken mocks base method
 func (m *MockChaincodeStubInterface) PayOutToken(addr string, invokeTokens *modules.AmountAsset, lockTime uint32) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PayOutToken", addr, invokeTokens, lockTime)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -433,11 +492,13 @@ func (m *MockChaincodeStubInterface) PayOutToken(addr string, invokeTokens *modu
 
 // PayOutToken indicates an expected call of PayOutToken
 func (mr *MockChaincodeStubInterfaceMockRecorder) PayOutToken(addr, invokeTokens, lockTime interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PayOutToken", reflect.TypeOf((*MockChaincodeStubInterface)(nil).PayOutToken), addr, invokeTokens, lockTime)
 }
 
 // GetInvokeParameters mocks base method
 func (m *MockChaincodeStubInterface) GetInvokeParameters() (common.Address, []*modules.InvokeTokens, *modules.AmountAsset, string, []string, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetInvokeParameters")
 	ret0, _ := ret[0].(common.Address)
 	ret1, _ := ret[1].([]*modules.InvokeTokens)
@@ -450,11 +511,13 @@ func (m *MockChaincodeStubInterface) GetInvokeParameters() (common.Address, []*m
 
 // GetInvokeParameters indicates an expected call of GetInvokeParameters
 func (mr *MockChaincodeStubInterfaceMockRecorder) GetInvokeParameters() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInvokeParameters", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetInvokeParameters))
 }
 
 // DefineToken mocks base method
 func (m *MockChaincodeStubInterface) DefineToken(tokenType byte, define []byte, creator string) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DefineToken", tokenType, define, creator)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -462,11 +525,13 @@ func (m *MockChaincodeStubInterface) DefineToken(tokenType byte, define []byte, 
 
 // DefineToken indicates an expected call of DefineToken
 func (mr *MockChaincodeStubInterfaceMockRecorder) DefineToken(tokenType, define, creator interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DefineToken", reflect.TypeOf((*MockChaincodeStubInterface)(nil).DefineToken), tokenType, define, creator)
 }
 
 // SupplyToken mocks base method
 func (m *MockChaincodeStubInterface) SupplyToken(assetId, uniqueId []byte, amt uint64, creator string) error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SupplyToken", assetId, uniqueId, amt, creator)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -474,11 +539,13 @@ func (m *MockChaincodeStubInterface) SupplyToken(assetId, uniqueId []byte, amt u
 
 // SupplyToken indicates an expected call of SupplyToken
 func (mr *MockChaincodeStubInterfaceMockRecorder) SupplyToken(assetId, uniqueId, amt, creator interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SupplyToken", reflect.TypeOf((*MockChaincodeStubInterface)(nil).SupplyToken), assetId, uniqueId, amt, creator)
 }
 
 // GetRequesterCert mocks base method
 func (m *MockChaincodeStubInterface) GetRequesterCert() ([]byte, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRequesterCert")
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
@@ -487,11 +554,13 @@ func (m *MockChaincodeStubInterface) GetRequesterCert() ([]byte, error) {
 
 // GetRequesterCert indicates an expected call of GetRequesterCert
 func (mr *MockChaincodeStubInterfaceMockRecorder) GetRequesterCert() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRequesterCert", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetRequesterCert))
 }
 
 // IsRequesterCertValid mocks base method
 func (m *MockChaincodeStubInterface) IsRequesterCertValid() (bool, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsRequesterCertValid")
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
@@ -500,5 +569,6 @@ func (m *MockChaincodeStubInterface) IsRequesterCertValid() (bool, error) {
 
 // IsRequesterCertValid indicates an expected call of IsRequesterCertValid
 func (mr *MockChaincodeStubInterfaceMockRecorder) IsRequesterCertValid() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRequesterCertValid", reflect.TypeOf((*MockChaincodeStubInterface)(nil).IsRequesterCertValid))
 }
