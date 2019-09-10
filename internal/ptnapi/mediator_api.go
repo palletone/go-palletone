@@ -55,7 +55,7 @@ func (a *PublicMediatorAPI) IsApproved(addStr string) (string, error) {
 	return string(rsp), nil
 }
 
-func (a *PublicMediatorAPI) GetDeposit(addStr string) (*modules.MediatorDeposit, error) {
+func getDeposit(addStr string, a Backend) (*modules.MediatorDeposit, error) {
 	// 构建参数
 	cArgs := [][]byte{defaultMsg0, defaultMsg1, []byte(modules.GetMediatorDeposit), []byte(addStr)}
 	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().Unix())).Int31n(100000000))
@@ -73,6 +73,10 @@ func (a *PublicMediatorAPI) GetDeposit(addStr string) (*modules.MediatorDeposit,
 	}
 
 	return nil, fmt.Errorf(string(rsp))
+}
+
+func (a *PublicMediatorAPI) GetDeposit(addStr string) (*modules.MediatorDeposit, error) {
+	return getDeposit(addStr, a.Backend)
 }
 
 func (a *PublicMediatorAPI) IsInList(addStr string) (bool, error) {
@@ -263,6 +267,17 @@ func (a *PrivateMediatorAPI) PayDeposit(from string, amount decimal.Decimal) (*T
 		return nil, fmt.Errorf("this node is not synced, and can't pay deposit now")
 	}
 
+	// 判断是否已经申请过，即是否创建保证金对象
+	md, err := getDeposit(from, a.Backend)
+	if err != nil {
+		return nil, fmt.Errorf("account %v does not apply for mediator", from)
+	}
+
+	cp := a.Dag().GetChainParameters()
+	if md.Balance == cp.DepositAmountForMediator {
+		return nil, fmt.Errorf("the deposit of account %v is enough %v", from, cp.DepositAmountForMediator)
+	}
+
 	// 判断是否已经是mediator
 	// TODO 不满足追缴逻辑
 	//if a.Dag().IsMediator(fromAdd) {
@@ -271,9 +286,8 @@ func (a *PrivateMediatorAPI) PayDeposit(from string, amount decimal.Decimal) (*T
 
 	// 调用系统合约
 	cArgs := [][]byte{[]byte(modules.MediatorPayDeposit)}
-	fee := a.Dag().GetChainParameters().TransferPtnBaseFee
 	reqId, err := a.ContractInvokeReqTx(fromAdd, syscontract.DepositContractAddress, ptnjson.Ptn2Dao(amount),
-		fee, nil, syscontract.DepositContractAddress, cArgs, 0)
+		cp.TransferPtnBaseFee, nil, syscontract.DepositContractAddress, cArgs, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -282,7 +296,7 @@ func (a *PrivateMediatorAPI) PayDeposit(from string, amount decimal.Decimal) (*T
 	res := &TxExecuteResult{}
 	res.TxContent = fmt.Sprintf("Account(%v) pay %vPTN to DepositContract(%v)",
 		from, amount, syscontract.DepositContractAddress.Str())
-	res.TxFee = fmt.Sprintf("%vdao", fee)
+	res.TxFee = fmt.Sprintf("%vdao", cp.TransferPtnBaseFee)
 	res.Warning = DefaultResult
 	res.Tip = "Your ReqId is: " + hex.EncodeToString(reqId[:]) +
 		" , You can get the transaction hash with dag.getTxByReqId()"

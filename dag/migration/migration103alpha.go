@@ -39,7 +39,7 @@ type Migration102delta_103alpha struct {
 }
 
 func (m *Migration102delta_103alpha) FromVersion() string {
-	return "1.0.2-delta"
+	return "1.0.2-release"
 }
 
 func (m *Migration102delta_103alpha) ToVersion() string {
