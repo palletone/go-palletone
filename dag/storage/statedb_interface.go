@@ -95,6 +95,8 @@ type IStateDb interface {
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
 
+	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
+
 	GetSysParamWithoutVote() (map[string]string, error)
 	GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)
 	SaveSysConfigContract(key string, val []byte, ver *modules.StateVersion) error

@@ -1240,3 +1240,6 @@ func (d *Dag) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfEx
 func (d *Dag) GetAssetReference(asset []byte) ([]*modules.ProofOfExistence, error) {
 	return d.stableUnitRep.GetAssetReference(asset)
 }
+func (d *Dag) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error){
+	return d.unstableStateRep.GetBlacklistAddress()
+}

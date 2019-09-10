@@ -60,6 +60,8 @@ type IStateQuery interface {
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 	GetMediators() map[common.Address]bool
 	GetMediator(add common.Address) *core.Mediator
+	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
+
 }
 
 type IDagQuery interface {

@@ -25,6 +25,9 @@ package storage
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/constants"
 
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
@@ -129,4 +132,14 @@ func (statedb *StateDb) GetMainChain() (*modules.MainChain, error) {
 		return nil, err
 	}
 	return mainChain, nil
+}
+func (statedb *StateDb) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error) {
+	id := syscontract.BlacklistContractAddress.Bytes()
+	data,v,err:= statedb.GetContractState(id, constants.BlacklistAddress)
+	if err!=nil{//未初始化黑名单
+		return []common.Address{},nil,nil
+	}
+	result:=[]common.Address{}
+	err=rlp.DecodeBytes(data,&result)
+	return result,v,err
 }

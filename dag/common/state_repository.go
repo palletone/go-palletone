@@ -84,6 +84,7 @@ type IStateRepository interface {
 	SaveSysConfigContract(key string, val []byte, ver *modules.StateVersion) error
 	//GetSysConfig(name string) ([]byte, *modules.StateVersion, error)
 	//GetAllConfig() (map[string]*modules.ContractStateValue, error)
+	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
 }
 
 type StateRepository struct {
@@ -123,7 +124,9 @@ func (rep *StateRepository) GetSysParamWithoutVote() (map[string]string, error) 
 func (rep *StateRepository) GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error) {
 	return rep.statedb.GetSysParamsWithVotes()
 }
-
+func (rep *StateRepository)GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error){
+	return rep.statedb.GetBlacklistAddress()
+}
 func (rep *StateRepository) GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error) {
 	return rep.statedb.GetContractStatesById(id)
 }
