@@ -51,7 +51,7 @@ func (p *BlacklistMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		addr, err := common.StringToAddress(args[0])
 		if err != nil {
-			return shim.Error("Invalid address string" + args[0])
+			return shim.Error("Invalid address string:" + args[0])
 		}
 		err = p.AddBlacklist(stub, addr, args[1])
 		if err != nil {
@@ -78,7 +78,7 @@ func (p *BlacklistMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		addr, err := common.StringToAddress(args[0])
 		if err != nil {
-			return shim.Error("Invalid address string" + args[0])
+			return shim.Error("Invalid address string:" + args[0])
 		}
 		amount, err := decimal.NewFromString(args[1])
 		if err != nil {

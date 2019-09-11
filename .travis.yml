@@ -18,6 +18,7 @@ env:
     - MEDIATOR_VOTE_DIR=meidatorvote
     - APPLICATION_DIR=application
     - USER_CONTRACT_DIR=usercontract
+    - BLACKLIST_DIR=blacklist
     - LOG_NAME=log.html
     - REPORT_NAME=report.html
     ##########  control testcase  ##############
@@ -33,6 +34,7 @@ env:
     - IS_RUN_GASTOKEN=true
     - IS_RUN_MEDIATOR_VOTE=true
     - IS_RUN_APPLICATION=true
+    - IS_RUN_BLACKLIST=true
     - GO111MODULE=on
     - IS_UPLOAD=true
 #    - 'SFTP_KEY=[base64-encoded-rsa-key]'
@@ -91,6 +93,10 @@ matrix:
         - if [ $IS_RUN_DEPOSIT == 'true' ]; then
           cd ../dct;
           ./deposit_test.sh 5;
+          fi
+        - if [ $IS_RUN_BLACKLIST == 'true' ]; then
+          cd ../blacklist
+          ./blacklist_test.sh
           fi
         - if [ $IS_RUN_TESTCONTRACTCASES == 'true' ];then
           cd ../contract/testcases;
