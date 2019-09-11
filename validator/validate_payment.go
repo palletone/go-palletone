@@ -228,6 +228,12 @@ func (validate *Validate) checkTokenStatus(asset *modules.Asset) ValidationCode 
 
 //var BlacklistAddress=[]byte("BlacklistAddress")
 func (validate *Validate) getBlacklistAddress() map[common.Address]bool {
+	result := make(map[common.Address]bool)
+	if validate.statequery==nil{
+		log.Warn("don't set statequery, blacklist is empty")
+		return result
+	}
+
 	//data,err:= validate.cache.cache.Get(BlacklistAddress)
 	//if err==nil{
 	// 	addresses,_,_:=	validate.statequery.GetBlacklistAddress()
@@ -237,7 +243,7 @@ func (validate *Validate) getBlacklistAddress() map[common.Address]bool {
 	//addresses:=[]common.Address{}
 	//rlp.DecodeBytes(data,&addresses)
 	addresses, _, _ := validate.statequery.GetBlacklistAddress()
-	result := make(map[common.Address]bool)
+
 	for _, addr := range addresses {
 		result[addr] = true
 	}
