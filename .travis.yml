@@ -182,7 +182,7 @@ matrix:
           fi
 
         - if [ $IS_RUN_LIGHT == 'true' ]; then
-          cd ../light;
+          cd ./light;
           chmod +x ./bddstart.sh;
           ./bddstart.sh;
           fi
