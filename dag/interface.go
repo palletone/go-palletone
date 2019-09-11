@@ -93,6 +93,7 @@ type IDag interface {
 	GetTxOutput(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error)
 	GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
+	GetAddrStableUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
@@ -150,7 +151,8 @@ type IDag interface {
 	GetIrreversibleUnitNum(id modules.AssetId) uint64
 
 	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
-	GetChaincodes(contractId common.Address) (*list.CCInfo, error)
+	GetChaincode(contractId common.Address) (*list.CCInfo, error)
+	RetrieveChaincodes() ([]*list.CCInfo, error)
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
 
@@ -195,4 +197,5 @@ type IDag interface {
 	CreateTokenTransaction(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string,
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	ChainThreshold() int
+	CheckHeaderCorrect(number int) error
 }

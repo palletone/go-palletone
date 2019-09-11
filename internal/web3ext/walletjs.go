@@ -37,6 +37,11 @@ const Wallet_JS = `
 			params: 1
 		}),
 		new web3._extend.Method({
+			name: 'getBalance2',
+			call: 'wallet_getBalance2',
+			params: 1
+		}),
+		new web3._extend.Method({
             name: 'getAddrTxHistory',
             call: 'wallet_getAddrTxHistory',
             params: 1

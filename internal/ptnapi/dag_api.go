@@ -205,7 +205,7 @@ func (s *PublicDagAPI) GetUnitsByIndex(ctx context.Context, start, end decimal.D
 }
 
 func (s *PublicDagAPI) GetFastUnitIndex(ctx context.Context, assetid string) string {
-	log.Info("PublicDagAPI", "GetUnitByNumber condition:", assetid)
+	log.Debug("PublicDagAPI", "GetUnitByNumber condition:", assetid)
 	if assetid == "" {
 		assetid = "PTN"
 	}
@@ -437,4 +437,12 @@ func (s *PrivateDagAPI) GetAllUtxos(ctx context.Context) (string, error) {
 	}
 
 	return string(result_json), nil
+}
+func (s *PrivateDagAPI) CheckHeader(ctx context.Context,number int) (bool,error) {
+	dag := s.b.Dag()
+	err:= dag.CheckHeaderCorrect(number)
+	if err!=nil{
+		return false,err
+	}
+	return true,nil
 }

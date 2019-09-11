@@ -523,14 +523,35 @@ func (b *PtnApiBackend) GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
 	}
 
 	utxos, _ := b.ptn.dag.GetAddrUtxos(address)
+	result := covertUtxos2Json(utxos)
+	return result, nil
+}
+func (b *PtnApiBackend) GetAddrUtxos2(addr string) ([]*ptnjson.UtxoJson,[]*ptnjson.UtxoJson, error) {
+	address, err := common.StringToAddress(addr)
+	if err != nil {
+		return nil, nil,err
+	}
+	stbUtxos, _ := b.ptn.dag.GetAddrStableUtxos(address)
+	allUtxos,_:=b.ptn.dag.GetAddrUtxos(address)
+	unstbUtxos:=make(map[modules.OutPoint]*modules.Utxo)
+	for outpoint,utxo:=range allUtxos{
+		_,ok:= stbUtxos[outpoint]
+		if !ok{
+			unstbUtxos[outpoint]=utxo
+		}
+	}
+	return covertUtxos2Json(stbUtxos),covertUtxos2Json(unstbUtxos), nil
+}
+func covertUtxos2Json(utxos map[modules.OutPoint]*modules.Utxo) []*ptnjson.UtxoJson{
 	result := []*ptnjson.UtxoJson{}
 	for o, u := range utxos {
 		o := o
 		ujson := ptnjson.ConvertUtxo2Json(&o, u)
 		result = append(result, ujson)
 	}
-	return result, nil
+	return result
 }
+
 func (b *PtnApiBackend) GetAddrRawUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error) {
 	address, err := common.StringToAddress(addr)
 	if err != nil {

@@ -708,8 +708,12 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 }
 
 // get chain codes by contract id
-func (d *Dag) GetChaincodes(contractId common.Address) (*list.CCInfo, error) {
-	return d.stablePropRep.GetChaincodes(contractId)
+func (d *Dag) GetChaincode(contractId common.Address) (*list.CCInfo, error) {
+	return d.stablePropRep.GetChaincode(contractId)
+}
+
+func (d *Dag) RetrieveChaincodes() ([]*list.CCInfo, error) {
+	return d.stablePropRep.RetrieveChaincodes()
 }
 
 // save chain code by contract id
@@ -873,7 +877,11 @@ func (d *Dag) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.U
 
 	return all, err
 }
+func (d *Dag) GetAddrStableUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error) {
+	all, err := d.stableUtxoRep.GetAddrUtxos(addr, nil)
 
+	return all, err
+}
 // refresh system parameters
 func (d *Dag) RefreshSysParameters() {
 	d.unstableUnitProduceRep.RefreshSysParameters()
@@ -1251,4 +1259,38 @@ func (d *Dag) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfEx
 // return proof of existence by asset
 func (d *Dag) GetAssetReference(asset []byte) ([]*modules.ProofOfExistence, error) {
 	return d.stableUnitRep.GetAssetReference(asset)
+}
+func (d *Dag) CheckHeaderCorrect(number int) error {
+	ptn := modules.PTNCOIN
+	if number == 0 {
+		newestUnitHash, newestIndex, _ := d.stablePropRep.GetNewestUnit(ptn)
+		log.Infof("Newest unit[%s] height:%d", newestUnitHash.String(), newestIndex.Index)
+		number = int(newestIndex.Index)
+	}
+	header, err := d.stableUnitRep.GetHeaderByNumber(modules.NewChainIndex(ptn, uint64(number)))
+	if err != nil {
+		return fmt.Errorf("Unit height:%d not exits", number)
+	}
+	parentHash := header.ParentsHash[0]
+	parentNumber := header.NumberU64() - 1
+	for {
+		header, err = d.stableUnitRep.GetHeaderByHash(parentHash)
+		if err != nil {
+			return fmt.Errorf("Unit :%s not exits", parentHash.String())
+		}
+		if header.NumberU64() != parentNumber {
+			return fmt.Errorf("Number not correct,%d,%d", header.NumberU64(), parentNumber)
+		}
+		if len(header.ParentsHash) > 0 {
+			parentHash = header.ParentsHash[0]
+			parentNumber = header.NumberU64() - 1
+		} else {
+			log.Infof("Check complete!%d", header.NumberU64())
+			break
+		}
+		if header.NumberU64()%1000 == 0 {
+			log.Infof("Check header correct:%d", header.NumberU64())
+		}
+	}
+	return nil
 }

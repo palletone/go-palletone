@@ -39,9 +39,12 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/fsouza/go-dockerclient"
+	"github.com/palletone/go-palletone/common/crypto"
+	util2 "github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts/comm"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/manger"
+	"github.com/palletone/go-palletone/contracts/utils"
 	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
@@ -430,11 +433,31 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 					log.Debugf("Failed to pull %s: %s", goimg, err)
 				}
 			}
+			//  获取本地列表，迁移服务器的重启容器，容器不存在且不过期
+			dag, err := comm.GetCcDagHand()
+			if err != nil {
+				log.Debugf("get contract dag error %s", err.Error())
+				return
+			}
+			ccs, err := manger.GetChaincodes(dag)
+			if err != nil {
+				log.Debugf("get chaincodes error %s", err.Error())
+				return
+			}
+			//启动退出的容器，包括本地有的和本地没有的
+			for _, c := range ccs {
+				//conName := c.Name+c.Version+":"+contractcfg.GetConfig().ContractAddress
+				rd, _ := crypto.GetRandomBytes(32)
+				txid := util2.RlpHash(rd)
+				//  启动gptn时启动Jury对应的没有过期的用户合约容器
+				if !c.IsExpired {
+					manger.RestartContainer(dag, "palletone", c.Id, txid.String())
+				}
+			}
 		}()
-		//  是否为jury
-		//if contractcfg.GetConfig().IsJury {
+
 		go pm.dockerLoop(client)
-		//}
+
 	}
 }
 
@@ -795,10 +818,16 @@ func (pm *ProtocolManager) dockerLoop(client *docker.Client) {
 			return
 		case <-time.After(time.Duration(30) * time.Second):
 			log.Debugf("each 30 second to get all containers")
-			//  重启退出容器
-			manger.RestartContainers(client, dag)
+			//  程序启动过程中的,获取所有的容器
+			//  获取所有容器
+			cons, err := utils.GetAllContainers(client)
+			if err != nil {
+				log.Errorf("utils.GetAllContainers error %s", err.Error())
+			}
+			//  重启退出且不过期容器
+			manger.RestartContainers(client, dag, cons)
 			//  删除过期容器
-			manger.RemoveExpiredConatiners(client, dag, dag.GetChainParameters().RmExpConFromSysParam)
+			manger.RemoveExpiredConatiners(client, dag, dag.GetChainParameters().RmExpConFromSysParam, cons)
 		}
 	}
 }

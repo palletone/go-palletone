@@ -124,6 +124,7 @@ type Backend interface {
 	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
 	GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error)
+	GetAddrUtxos2(addr string) ([]*ptnjson.UtxoJson,[]*ptnjson.UtxoJson, error)
 	GetAddrRawUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAllUtxos() ([]*ptnjson.UtxoJson, error)
 	GetAddressBalanceStatistics(token string, topN int) (*statistics.TokenAddressBalanceJson, error)
