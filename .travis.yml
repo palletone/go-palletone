@@ -95,8 +95,8 @@ matrix:
           ./deposit_test.sh 5;
           fi
         - if [ $IS_RUN_BLACKLIST == 'true' ]; then
-          cd ../blacklist
-          ./blacklist_test.sh
+          cd ../blacklist;
+          ./blacklist_test.sh;
           fi
         - if [ $IS_RUN_TESTCONTRACTCASES == 'true' ];then
           cd ../contract/testcases;
