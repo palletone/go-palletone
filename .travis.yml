@@ -132,12 +132,6 @@ matrix:
           sleep 15;
           python -m robot.run -d ${BDD_LOG_PATH}/${GAS_TOKEN_DIR} ./testcases;
           fi
-
-        - if [ $IS_RUN_LIGHT == 'true' ]; then
-          cd ../light;
-          chmod +x ./bddstart.sh;
-          ./bddstart.sh;
-          fi
       after_script:
         - killall gptn
         - sleep 2
@@ -185,6 +179,12 @@ matrix:
         - mkdir -p ${BDD_LOG_PATH}
         - if [ $IS_RUN_MULTIPLE == 'true' ]; then
           python -m robot.run -d ${BDD_LOG_PATH}/${MULTIPLE_DIR} -i normal ./testcase/zMulti-node;
+          fi
+
+        - if [ $IS_RUN_LIGHT == 'true' ]; then
+          cd ../light;
+          chmod +x ./bddstart.sh;
+          ./bddstart.sh;
           fi
       after_script:
         - killall gptn
