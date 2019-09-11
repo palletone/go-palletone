@@ -103,6 +103,8 @@ type dags interface {
 	GetScheduledMediator(slotNum uint32) common.Address
 	GetSlotAtTime(when time.Time) uint32
 	GetMediator(add common.Address) *core.Mediator
+	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
+
 }
 
 // TxPoolConfig are the configuration parameters of the transaction pool.

@@ -58,9 +58,9 @@ func (d *DebugChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	case "getRootCABytes":
 		return d.getRootCABytes(stub)
 	default:
-		return shim.Error("Invoke error")
+		return shim.Error("debug cc Invoke error" + funcName)
 	}
-	return shim.Error("Invoke error")
+	return shim.Error("debug cc Invoke error" + funcName)
 }
 func (d *DebugChainCode) error(stub shim.ChaincodeStubInterface) pb.Response {
 	stub.PutState("CannotPut", []byte("Your error will ignore this put."))

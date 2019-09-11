@@ -172,6 +172,10 @@ func (asset *Asset) UnmarshalJSON(data []byte) error {
 	asset.SetString(str)
 	return nil
 }
+func (asset Asset) MarshalText() ([]byte, error) {
+	return []byte(asset.String()), nil
+}
+
 func (asset *Asset) DisplayAmount(amount uint64) decimal.Decimal {
 	dec := asset.GetDecimal()
 	d, _ := decimal.NewFromString(fmt.Sprintf("%d", amount))

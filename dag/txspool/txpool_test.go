@@ -188,6 +188,9 @@ func (ud *UnitDag4Test) GetTransactionOnly(hash common.Hash) (*modules.Transacti
 func (ud *UnitDag4Test) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
 	return nil, nil
 }
+func (ud *UnitDag4Test) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error){
+	return []common.Address{},nil,nil
+}
 
 func (ud *UnitDag4Test) GetMinFee() (*modules.AmountAsset, error) {
 	return nil, nil
