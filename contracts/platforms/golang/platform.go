@@ -28,7 +28,7 @@ import (
 	"fmt"
 
 	"github.com/palletone/go-palletone/common/log"
-	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
+	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/platforms/util"
 	ccmetadata "github.com/palletone/go-palletone/core/vmContractPub/ccprovider/metadata"
 	"github.com/palletone/go-palletone/core/vmContractPub/metadata"
@@ -653,7 +653,8 @@ func (goPlatform *Platform) GenerateDockerfile(cds *pb.ChaincodeDeploymentSpec) 
 	var buf []string
 	//glh
 	//buf = append(buf, "FROM "+"palletimg")
-	buf = append(buf, "FROM "+cfg.GetConfig().CommonBuilder)
+
+	buf = append(buf, "FROM "+contractcfg.Goimg+":"+contractcfg.GptnVersion)
 	//buf = append(buf, "ADD binpackage.tar /usr/local/bin")
 
 	dockerFileContents := strings.Join(buf, "\n")
@@ -691,13 +692,13 @@ func (goPlatform *Platform) GenerateDockerBuild(cds *pb.ChaincodeDeploymentSpec,
 
 	codepackage := bytes.NewReader(cds.CodePackage)
 	binpackage := bytes.NewBuffer(nil)
-
 	err = util.DockerBuild(util.DockerBuildOptions{
 		//Cmd: fmt.Sprintf("GOPATH=$GOPATH:/chaincode/input go build -tags \"%s\" %s -o /chaincode/output/chaincode %s", gotags, ldflagsOpt, pkgname),
 		Cmd: fmt.Sprintf("GOPATH=$GOPATH:/chaincode/input go build -ldflags \"-s -w\" -o /chaincode/output/chaincode %s", pkgname),
 		//Cmd:          fmt.Sprintf("GOPATH=/chaincode/input:\"/home/glh/go\" go build -tags \"%s\" %s -o /chaincode/output/chaincode %s", gotags, ldflagsOpt, pkgname),
 		InputStream:  codepackage,
 		OutputStream: binpackage,
+		Image:        contractcfg.Goimg + ":" + contractcfg.GptnVersion,
 	})
 	if err != nil {
 		log.Debugf("DockerBuild err:%s", err)

@@ -186,9 +186,9 @@ func GetAllContainers(client *docker.Client) ([]docker.APIContainers, error) {
 }
 
 //  获取所有过期的容器ID(通过交易上的)
-func RetrieveExpiredContainers(idag dag.IDag, containers []docker.APIContainers, rmExpConFromSysParam bool) []string {
+func RetrieveExpiredContainers(idag dag.IDag, containers []docker.APIContainers, rmExpConFromSysParam bool) map[string]common.Address {
 	log.Debugf("enter RetrieveExpiredContainers func")
-	var conId []string
+	idStr := make(map[string]common.Address)
 	if len(containers) > 0 {
 		for _, c := range containers {
 			if strings.Contains(c.Names[0][1:3], "PC") && len(c.Names[0]) > 40 {
@@ -198,7 +198,6 @@ func RetrieveExpiredContainers(idag dag.IDag, containers []docker.APIContainers,
 					log.Errorf("string to address error: %s", err.Error())
 					continue
 				}
-
 				containerDurTime := uint64(0)
 				if rmExpConFromSysParam {
 					log.Info("rm exp con from sys param............")
@@ -215,12 +214,12 @@ func RetrieveExpiredContainers(idag dag.IDag, containers []docker.APIContainers,
 				duration := time.Now().Unix() - c.Created
 				if uint64(duration) >= containerDurTime {
 					log.Infof("container name = %s was expired.", c.Names[0])
-					conId = append(conId, c.ID)
+					idStr[c.ID] = contractAddr
 				}
 			}
 		}
 	}
-	return conId
+	return idStr
 }
 
 //  获取用户合约异常退出的监听函数

@@ -151,7 +151,8 @@ type IDag interface {
 	GetIrreversibleUnitNum(id modules.AssetId) uint64
 
 	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
-	GetChaincodes(contractId common.Address) (*list.CCInfo, error)
+	GetChaincode(contractId common.Address) (*list.CCInfo, error)
+	RetrieveChaincodes() ([]*list.CCInfo, error)
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
 

@@ -21,8 +21,10 @@
 package storage
 
 import (
+	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -41,4 +43,24 @@ func TestPropertyDb_StoreMediatorSchl(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(dbms.CurrentShuffledMediators))
 	t.Log(dbms.String())
+}
+
+func TestPropertyDb_RetrieveChaincodes(t *testing.T) {
+	db, _ := ptndb.NewMemDatabase()
+	pdb := NewPropertyDb(db)
+	addr1, _ := common.StringToAddress("P1FeeyyaQzetqLfMb2jk3YrmJujwa3FHwke")
+	addr2, _ := common.StringToAddress("P151GBRxoZoqqcGeFoaf66R1hfs8WKc3Wdo")
+	cc1 := &list.CCInfo{Id: addr1.Bytes(), TempleId: []byte("addr1"), Name: "addr1"}
+	cc2 := &list.CCInfo{Id: addr2.Bytes(), TempleId: []byte("addr2"), Name: "addr2"}
+	pdb.SaveChaincode(addr1, cc1)
+	pdb.SaveChaincode(addr2, cc2)
+	cc11, _ := pdb.GetChaincode(addr1)
+	fmt.Printf("cc1 %#v\n", cc11)
+	cc22, _ := pdb.GetChaincode(addr2)
+	fmt.Printf("cc2 %#v\n", cc22)
+	cc1122, _ := pdb.RetrieveChaincodes()
+	for _, c := range cc1122 {
+		fmt.Printf("========%#v\n", c)
+	}
+	assert.Equal(t, 2, len(cc1122))
 }

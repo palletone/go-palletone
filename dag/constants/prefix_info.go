@@ -55,11 +55,11 @@ var (
 	ACCOUNT_INFO_PREFIX        = []byte("ai")
 	ACCOUNT_PTN_BALANCE_PREFIX = []byte("ab")
 	TOKEN_TXID_PREFIX          = []byte("tt") //IndexDB中存储一个Token关联的TxId
-	TOKEN_EX_PREFIX          = []byte("te") //IndexDB中存储一个Token关联的ProofOfExistence
+	TOKEN_EX_PREFIX            = []byte("te") //IndexDB中存储一个Token关联的ProofOfExistence
 	// lookup
 	LOOKUP_PREFIX              = []byte("lu")
 	UTXO_PREFIX                = []byte("uo")
-	SPENT_UTXO_PREFIX                = []byte("us")
+	SPENT_UTXO_PREFIX          = []byte("us")
 	UTXO_INDEX_PREFIX          = []byte("ui")
 	TrieSyncKey                = []byte("TrieSync")
 	LastUnitInfo               = []byte("stbu")
@@ -70,9 +70,10 @@ var (
 	DATA_VERSION_KEY           = []byte("gptnversion")
 
 	//filehash
-	IDX_MAIN_DATA_TXID  = []byte("md") //Old value: mda
-	IDX_REF_DATA_PREFIX = []byte("re")
-	RewardAddressPrefix = "Addr:"
+	IDX_MAIN_DATA_TXID              = []byte("md") //Old value: mda
+	IDX_REF_DATA_PREFIX             = []byte("re")
+	RewardAddressPrefix             = "Addr:"
+	JURY_PROPERTY_USER_CONTRACT_KEY = []byte("jpuck")
 )
 
 // symbols

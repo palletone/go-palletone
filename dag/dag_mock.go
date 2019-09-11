@@ -1366,19 +1366,34 @@ func (mr *MockIDagMockRecorder) SaveChaincode(contractId, cc interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveChaincode", reflect.TypeOf((*MockIDag)(nil).SaveChaincode), contractId, cc)
 }
 
-// GetChaincodes mocks base method
-func (m *MockIDag) GetChaincodes(contractId common.Address) (*list.CCInfo, error) {
+// GetChaincode mocks base method
+func (m *MockIDag) GetChaincode(contractId common.Address) (*list.CCInfo, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetChaincodes", contractId)
+	ret := m.ctrl.Call(m, "GetChaincode", contractId)
 	ret0, _ := ret[0].(*list.CCInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetChaincodes indicates an expected call of GetChaincodes
-func (mr *MockIDagMockRecorder) GetChaincodes(contractId interface{}) *gomock.Call {
+// GetChaincode indicates an expected call of GetChaincode
+func (mr *MockIDagMockRecorder) GetChaincode(contractId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChaincodes", reflect.TypeOf((*MockIDag)(nil).GetChaincodes), contractId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChaincode", reflect.TypeOf((*MockIDag)(nil).GetChaincode), contractId)
+}
+
+// RetrieveChaincodes mocks base method
+func (m *MockIDag) RetrieveChaincodes() ([]*list.CCInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RetrieveChaincodes")
+	ret0, _ := ret[0].([]*list.CCInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RetrieveChaincodes indicates an expected call of RetrieveChaincodes
+func (mr *MockIDagMockRecorder) RetrieveChaincodes() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RetrieveChaincodes", reflect.TypeOf((*MockIDag)(nil).RetrieveChaincodes))
 }
 
 // GetPartitionChains mocks base method
