@@ -328,11 +328,10 @@ func isFoundationInvoke(stub shim.ChaincodeStubInterface) bool {
 	}
 	return true
 }
-
 func getTiem(stub shim.ChaincodeStubInterface) string {
 	t, _ := stub.GetTxTimestamp(10)
 	ti := time.Unix(t.Seconds, 0)
-	return ti.UTC().Format(Layout2)
+	return ti.UTC().Format(modules.Layout2)
 }
 
 func getToday(stub shim.ChaincodeStubInterface) string {
