@@ -875,7 +875,7 @@ func (b *PtnApiBackend) GetAddressBalanceStatistics(token string, topN int) (*st
 			continue
 		}
 		if _, ok := blacklistAddrMap[addr]; ok {
-			log.Debugf("Address[%s] is in black list don't statistic it")
+			log.Debugf("Address[%s] is in black list don't statistic it", addr)
 			continue
 		}
 		amount, ok := addrBalanceMap[addr]
