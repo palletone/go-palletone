@@ -20,12 +20,10 @@ package vrfEc
 
 import (
 	"errors"
-	"hash"
-	"crypto"
-	"crypto/elliptic"
 	"crypto/ecdsa"
 
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/btcsuite/btcd/btcec"
 )
 
 var (
@@ -33,29 +31,17 @@ var (
 	ErrEvalVRF         = errors.New("failed to evaluate vrf")
 )
 
-func VrfProof2Value(curve *elliptic.CurveParams, proof []byte) []byte {
-	params := curve.Params()
-	//nilIndex := [32]byte{}
-	byteLen := (params.BitSize + 7) >> 3
-
-	if curve == nil || len(proof) != 4*byteLen+1 {
-		return nil
-	}
-	//vrfProof = proof[0 : 2*byteLen]
-	//vrfValue = proof[2*byteLen : 2*byteLen+2*byteLen+1]
-
-	return proof[2*byteLen : 2*byteLen+2*byteLen+1]
+type Ec struct{
 }
-
 //Vrf returns the verifiable random function evaluated m and a NIZK proof
 //func VrfProve(pri *ecdsa.PrivateKey, msg []byte) (vrfValue, vrfProof []byte, err error) {
-func VrfProve(pri *ecdsa.PrivateKey, msg []byte) (proof []byte, err error) {
-	sk := pri
+func (e *Ec) VrfProve(priKey interface{}, msg []byte) (proof ,selData []byte, err error) {
+	sk := priKey.(*ecdsa.PrivateKey)
 	h := getHash(sk.Curve)
 	//byteLen := (sk.Params().BitSize + 7) >> 3
-	_, proof = Evaluate(sk, h, msg)
+	index, proof := Evaluate(sk, h, msg)
 	if proof == nil {
-		return nil, ErrEvalVRF
+		return proof, index[:], ErrEvalVRF
 	}
 
 	//vrfProof = proof[0 : 2*byteLen]
@@ -66,41 +52,25 @@ func VrfProve(pri *ecdsa.PrivateKey, msg []byte) (proof []byte, err error) {
 
 //Verify returns true if vrf and nizk is correct for msg
 //func VrfVerify(pub *ecdsa.PublicKey, msg, vrfValue, vrfProof []byte) (bool, error) {
-func VrfVerify(pub *ecdsa.PublicKey, msg, proof []byte) (bool, error) {
-	pk := pub
+//func VrfVerify(pub *ecdsa.PublicKey, msg, proof []byte) (bool, error) {
+func (e *Ec) VrfVerify(pubKey, msg, proof []byte) (bool, []byte, error) {
+	key, err := btcec.ParsePubKey(pubKey, btcec.S256())
+	if err != nil {
+		log.Errorf("VrfVerify, parsePubKey error:%s", err.Error())
+		return false, nil, err
+	}
+
+	pk := key.ToECDSA()
 	h := getHash(pk.Curve)
 	byteLen := (pk.Params().BitSize + 7) >> 3
 	if len(proof) != byteLen*4+1  {
-		return false, nil
+		return false, nil,nil
 	}
 	//proof := append(vrfProof, vrfValue...)
-	_, err := ProofToHash(pk, h, msg, proof)
+	index, err := ProofToHash(pk, h, msg, proof)
 	if err != nil {
 		log.Debugf("verifying VRF failed: %v", err)
-		return false, nil
+		return false,nil,  nil
 	}
-	return true, nil
-}
-
-func getHash(curve elliptic.Curve) hash.Hash {
-	bitSize := curve.Params().BitSize
-
-	switch bitSize {
-	case 224:
-		return crypto.SHA224.New()
-	case 256:
-		return crypto.SHA256.New()	 //default
-		//if curve.Params().Name == "sm2p256v1" {
-		//	log.Debug("sm2p256v1 not support!!")
-		//	//return sm3.New()
-		//} else if curve.Params().Name == "P-256" {
-		//	//return crypto.SHA256.New()
-		//	return crypto.SHA3_256.New()
-		//} else {
-		//	return nil
-		//}
-	case 384:
-		return crypto.SHA384.New()
-	}
-	return nil
+	return true,index[:], nil
 }

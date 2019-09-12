@@ -31,6 +31,7 @@ import (
 	"math/big"
 
 	"github.com/palletone/go-palletone/consensus/jury/ec"
+	"crypto"
 )
 
 var (
@@ -204,4 +205,41 @@ func ProofToHash(pk *ecdsa.PublicKey, h hash.Hash, m, proof []byte) (index [32]b
 		return nilIndex, ErrInvalidVRF
 	}
 	return sha256.Sum256(vrf), nil
+}
+
+func VrfProof2Value(curve *elliptic.CurveParams, proof []byte) []byte {
+	params := curve.Params()
+	//nilIndex := [32]byte{}
+	byteLen := (params.BitSize + 7) >> 3
+
+	if curve == nil || len(proof) != 4*byteLen+1 {
+		return nil
+	}
+	//vrfProof = proof[0 : 2*byteLen]
+	//vrfValue = proof[2*byteLen : 2*byteLen+2*byteLen+1]
+
+	return proof[2*byteLen : 2*byteLen+2*byteLen+1]
+}
+
+func getHash(curve elliptic.Curve) hash.Hash {
+	bitSize := curve.Params().BitSize
+
+	switch bitSize {
+	case 224:
+		return crypto.SHA224.New()
+	case 256:
+		return crypto.SHA256.New()	 //default
+		//if curve.Params().Name == "sm2p256v1" {
+		//	log.Debug("sm2p256v1 not support!!")
+		//	//return sm3.New()
+		//} else if curve.Params().Name == "P-256" {
+		//	//return crypto.SHA256.New()
+		//	return crypto.SHA3_256.New()
+		//} else {
+		//	return nil
+		//}
+	case 384:
+		return crypto.SHA384.New()
+	}
+	return nil
 }

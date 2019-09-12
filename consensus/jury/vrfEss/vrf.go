@@ -9,8 +9,8 @@ import (
 type Ess struct {
 }
 
-func (e *Ess) VrfProve(pri *ecdsa.PrivateKey, msg []byte) (proof, selData []byte, err error) {
-	proof, err = Evaluate(pri, msg)
+func (e *Ess) VrfProve(priKey interface{}, msg []byte) (proof, selData []byte, err error) {
+	proof, err = Evaluate(priKey.(*ecdsa.PrivateKey), msg)
 	if err != nil {
 		log.Error("VrfProve Evaluate fail")
 	}
