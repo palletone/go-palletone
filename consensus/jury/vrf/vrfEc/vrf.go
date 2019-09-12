@@ -23,7 +23,7 @@ import (
 	"crypto/ecdsa"
 
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/palletone/go-palletone/common/crypto"
 )
 
 var (
@@ -53,13 +53,11 @@ func (e *Ec) VrfProve(priKey interface{}, msg []byte) (proof ,selData []byte, er
 //func VrfVerify(pub *ecdsa.PublicKey, msg, vrfValue, vrfProof []byte) (bool, error) {
 //func VrfVerify(pub *ecdsa.PublicKey, msg, proof []byte) (bool, error) {
 func (e *Ec) VrfVerify(pubKey, msg, proof []byte) (bool, []byte, error) {
-	key, err := btcec.ParsePubKey(pubKey, btcec.S256())
-	if err != nil {
-		log.Errorf("VrfVerify, parsePubKey error:%s", err.Error())
-		return false, nil, err
+	pk:= crypto.P256ToECDSAPub(pubKey)
+	if pk == nil {
+		log.Error("VrfVerify, P256ToECDSAPub fail")
+		return false, nil, errors.New("VrfVerify, P256ToECDSAPub fail")
 	}
-
-	pk := key.ToECDSA()
 	h := getHash(pk.Curve)
 	byteLen := (pk.Params().BitSize + 7) >> 3
 	if len(proof) != byteLen*4+1  {

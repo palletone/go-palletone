@@ -27,6 +27,7 @@ import (
 	"math/big"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/palletone/go-palletone/common/crypto"
 )
 
 var vType = new(Ec)
@@ -100,7 +101,7 @@ func testVrf2(t *testing.T) { //todo  后面再继续修改为s256进行验证�
 	if err != nil {
 		t.Fatalf("compute vrf: %v", err)
 	}
-	pk:= (*btcec.PublicKey)(&key.PublicKey).SerializeCompressed()
+	pk := crypto.P256FromECDSAPub(&key.PublicKey)
 	ret, _, err := vType.VrfVerify(pk, msg, proof)
 	if err != nil {
 		t.Fatalf("verify vrf: %v", err)

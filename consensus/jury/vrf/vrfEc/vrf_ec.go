@@ -29,9 +29,8 @@ import (
 	"errors"
 	"hash"
 	"math/big"
-
-	"github.com/palletone/go-palletone/consensus/jury/vrf/ec"
 	"crypto"
+	"github.com/palletone/go-palletone/consensus/jury/vrf/ec"
 )
 
 var (
