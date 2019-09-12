@@ -46,8 +46,7 @@ func (e *Ec) VrfProve(priKey interface{}, msg []byte) (proof ,selData []byte, er
 
 	//vrfProof = proof[0 : 2*byteLen]
 	//vrfValue = proof[2*byteLen : 2*byteLen+2*byteLen+1]
-	err = nil
-	return
+	return proof, index[:], nil
 }
 
 //Verify returns true if vrf and nizk is correct for msg

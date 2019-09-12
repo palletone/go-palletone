@@ -22,20 +22,19 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"time"
+	"bytes"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
-	alg "github.com/palletone/go-palletone/consensus/jury/algorithm"
-
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"bytes"
 	"github.com/palletone/go-palletone/common/crypto"
+	alg "github.com/palletone/go-palletone/consensus/jury/vrf/algorithm"
 	//es "github.com/palletone/go-palletone/consensus/jury/vrfEs"
-	ess "github.com/palletone/go-palletone/consensus/jury/vrfEss"
+	ess "github.com/palletone/go-palletone/consensus/jury/vrf/vrfEss"
 )
 
 type elector struct {

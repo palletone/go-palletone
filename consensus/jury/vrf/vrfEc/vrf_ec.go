@@ -30,7 +30,7 @@ import (
 	"hash"
 	"math/big"
 
-	"github.com/palletone/go-palletone/consensus/jury/ec"
+	"github.com/palletone/go-palletone/consensus/jury/vrf/ec"
 	"crypto"
 )
 
