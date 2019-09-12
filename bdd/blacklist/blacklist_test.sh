@@ -11,13 +11,12 @@ echo $accountsList
 tH=`echo $accountsList | jq ".[0]"`
 tokenHolder=`echo ${tH//\"/}`
 echo "tokenHolder=" $tokenHolder
-echo "foundation=" $tokenHolder
 
-o=`echo $accountsList | jq ".[6]"`
+o=`echo $accountsList | jq ".[9]"`
 one=`echo ${o//\"/}`
 echo "one=" $one
 
-t=`echo $accountsList | jq ".[7]"`
+t=`echo $accountsList | jq ".[10]"`
 two=`echo ${t//\"/}`
 echo "two=" $two
 

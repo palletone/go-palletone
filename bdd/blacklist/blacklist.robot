@@ -11,22 +11,31 @@ ${two}            ${EMPTY}
 blacklist
     ${f}    getBalance    ${foundation}    PTN
     log    ${f}
-    #    ${f}    999950041
+    Should Be Equal As Numbers    ${f}    999950041
     ${o}    getBalance    ${one}    PTN
     log    ${o}
-    #    ${o}    9946
+    Should Be Equal As Numbers    ${o}    9989
     ${t}    getBalance    ${two}    PTN
     log    ${t}
-    #    ${t}    9998
+    Should Be Equal As Numbers    ${t}    9998
+    ${b}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF    PTN
+    log    ${b}
+    Should Be Equal As Numbers    ${b}    0
     ${res}    addBlacklist    ${one}    lsls
     log    ${res}
     sleep    5
+    ${b}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF    PTN
+    log    ${b}
+    Should Be Equal As Numbers    ${b}    9989
     ${res}    getBlacklistRecords
     log    ${res}
     ${res}    getBlacklistAddress
     log    ${res}
     Dictionary Should Contain Key    ${res}    ${one}
-    ${res}    transferPTN    ${one}    ${two}    9945
+    ${res}    transferPTN    ${one}    ${two}    10
+    log    ${res}
+    Should Be Equal As Strings    ${res}    ADDRESS_IN_BLACKLIST
+    ${res}    transferPTN    ${two}    ${one}    10
     log    ${res}
     Should Be Equal As Strings    ${res}    ADDRESS_IN_BLACKLIST
     ${res}    payout    ${two}    ${o}    PTN
@@ -34,12 +43,16 @@ blacklist
     sleep    5
     ${f}    getBalance    ${foundation}    PTN
     log    ${f}
+    Should Be Equal As Numbers    ${f}    999950039
     ${o}    getBalance    ${one}    PTN
     log    ${o}
-    #    ${o}    9946
+    Should Be Equal As Numbers    ${o}    9989
     ${t}    getBalance    ${two}    PTN
     log    ${t}
-    #    ${t}    ‭19943‬
+    Should Be Equal As Numbers    ${t}    19987
+    ${b}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF    PTN
+    log    ${b}
+    Should Be Equal As Numbers    ${b}    0
 
 *** Keywords ***
 getBalance
@@ -65,7 +78,7 @@ post
 addBlacklist
     [Arguments]    ${address}    ${reason}
     ${one}    Create List    addBlacklist    ${address}    ${reason}
-    ${two}    Create List    ${foundation}    ${foundation}    0    1    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF
+    ${two}    Create List    ${foundation}    ${foundation}    1    1    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF
     ...    ${one}    \    10
     ${res}    post    contract_ccinvoketx    addBlacklist    ${two}
     [Return]    ${res}
@@ -86,7 +99,7 @@ getBlacklistAddress
 payout
     [Arguments]    ${address}    ${amount}    ${assetId}
     ${one}    Create List    payout    ${address}    ${amount}    ${assetId}
-    ${two}    Create List    ${foundation}    ${foundation}    0    1    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF
+    ${two}    Create List    ${foundation}    ${foundation}    1    1    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF
     ...    ${one}    \    10
     ${res}    post    contract_ccinvoketx    payout    ${two}
     [Return]    ${res}
