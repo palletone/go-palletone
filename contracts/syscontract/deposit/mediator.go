@@ -109,7 +109,6 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	md.ApplyEnterTime = getTiem(stub)
 	md.Status = modules.Apply
 	md.Role = modules.Mediator
-	md.PublicKey = mco.InitPubKey
 	err = SaveMediatorDeposit(stub, mco.AddStr, md)
 	if err != nil {
 		log.Error("SaveMedInfo err:", "error", err)
@@ -163,7 +162,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface /*, args []st
 		//	return shim.Error(err.Error())
 		//}
 		//if !b {
-			return shim.Error(invokeAddr.String() + " does not apply for mediator")
+		return shim.Error(invokeAddr.String() + " does not apply for mediator")
 		//}
 
 		// genesis中定义的mediator, 对其保证金进行特殊处理
