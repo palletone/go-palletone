@@ -186,40 +186,6 @@ func getSignature(tx *modules.Transaction) ([][]byte, [][]byte) {
 	return nil, nil
 }
 
-//func checkAndAddSigSet(local *modules.Transaction, recv *modules.Transaction) error {
-//	if local == nil || recv == nil {
-//		return errors.New("checkAndAddSigSet param is nil")
-//	}
-//	var app modules.MessageType
-//	for _, msg := range local.TxMessages {
-//		if msg.App >= modules.APP_CONTRACT_TPL && msg.App <= modules.APP_SIGNATURE {
-//			app = msg.App
-//			break
-//		}
-//	}
-//	if app <= 0 {
-//		return errors.New("checkAndAddSigSet not find contract app type")
-//	}
-//	if msgsCompare(local.TxMessages, recv.TxMessages, app) {
-//		getSigPay := func(mesgs []*modules.Message) *modules.SignaturePayload {
-//			for _, v := range mesgs {
-//				if v.App == modules.APP_SIGNATURE {
-//					return v.Payload.(*modules.SignaturePayload)
-//				}
-//			}
-//			return nil
-//		}
-//		localSigPay := getSigPay(local.TxMessages)
-//		recvSigPay := getSigPay(recv.TxMessages)
-//		if localSigPay != nil && recvSigPay != nil {
-//			localSigPay.Signatures = append(localSigPay.Signatures, recvSigPay.Signatures[0])
-//			log.Debug("checkAndAddSigSet", "local transaction", local.RequestHash(), "recv transaction", recv.RequestHash())
-//			return nil
-//		}
-//	}
-//	return errors.New("checkAndAddSigSet add sig fail")
-//}
-
 func genContractErrorMsg(dag iDag, tx *modules.Transaction, addr []byte,
 	errIn error, errMsgEnable bool) ([]*modules.Message, error) {
 	reqType, _ := getContractTxType(tx)
@@ -796,7 +762,7 @@ func checkJuryCountValid(numIn, numLocal uint64) bool {
 }
 
 //根据交易和费用类型，获取费用基数(dao),其中计算单位
-//timeout:毫秒 ？
+//timeout:秒
 //size:字节
 func getContractFeeLevel(dag iDag, msg modules.MessageType, feeType int) (level float64) {
 	level = 1 //todo

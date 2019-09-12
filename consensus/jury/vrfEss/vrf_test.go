@@ -7,6 +7,8 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 )
 
+var vType =new(Ess)
+
 func TestVrf(t *testing.T) {
 	msg := []byte("test")
 	//c := elliptic.P256() //ok
@@ -18,12 +20,12 @@ func TestVrf(t *testing.T) {
 		return
 	}
 	pubKey := &priKey.PublicKey
-	proof, err := VrfProve(priKey, msg)
+	proof,_, err := vType.VrfProve(priKey, msg)
 	if err != nil {
 		t.Fatalf("compute vrf: %v", err)
 	}
 	pk := crypto.CompressPubkey(pubKey)
-	ret, err := VrfVerify(pk, msg, proof)
+	ret, _,err := vType.VrfVerify(pk, msg, proof)
 	if err != nil {
 		t.Fatalf("verify vrf: %v", err)
 	}

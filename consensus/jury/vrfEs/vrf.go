@@ -1,26 +1,41 @@
-package vrfEs
+package vrf
 
 import (
 	"crypto/ecdsa"
-	"github.com/palletone/go-palletone/common/util"
-	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/dag/errors"
+	"github.com/btcsuite/btcd/btcec"
 )
 
-func VrfProve(pri *ecdsa.PrivateKey, msg []byte) (proof []byte, err error) {
-	h := crypto.Keccak256Hash(util.RHashBytes(msg))
-	proof, err = Evaluate(pri, h, msg)
-	if err != nil {
-		log.Error("VrfProve Evaluate fail")
-	}
-	return
+type Es struct {
 }
 
-func VrfVerify(pk , msg, proof []byte) (bool, error) {
-	if pk == nil || msg == nil || proof == nil{
-		log.Error("VrfVerify param is nil")
-		return false, errors.New("VrfVerify fail, param is nil")
+func (e *Es) VrfProve(priKey interface{}, msg []byte) (proof ,selData []byte, err error) {
+	siger, err := NewVRFSigner(priKey.(*ecdsa.PrivateKey))
+	if err != nil {
+		log.Errorf("VrfProve, NewVRFSigner err:%s", err.Error())
+		return nil, nil,err
 	}
-	return VerifyWithPK(proof, msg, pk), nil
+	idx, proof := siger.Evaluate(msg)
+	log.Debugf("VrfProve, msg[%v], idx[%v], proof[%v]", msg, idx, proof)
+
+	return proof, idx[:],nil
+}
+
+func (e *Es) VrfVerify(pubKey, msg, proof []byte) (bool, []byte, error) {
+	key, err := btcec.ParsePubKey(pubKey, btcec.S256())
+	if err != nil {
+		log.Errorf("VrfVerify, parsePubKey error:%s", err.Error())
+		return false, nil, err
+	}
+	pk, err := NewVRFVerifier(key.ToECDSA())
+	if err != nil {
+		log.Errorf("VrfVerify, NewVRFVerifier error:%s", err.Error())
+		return false, nil, err
+	}
+	idx, err := pk.ProofToHash(msg, proof)
+	if err != nil {
+		log.Errorf("VrfVerify, ProofToHash error:%s", err.Error())
+		return false, nil, err
+	}
+	return true, idx[:], nil
 }
