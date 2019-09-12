@@ -96,6 +96,8 @@ type iDag interface {
 	GetChainParameters() *core.ChainParameters
 	GetMediators() map[common.Address]bool
 	GetMediator(add common.Address) *core.Mediator
+	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
+
 }
 
 type electionVrf struct {

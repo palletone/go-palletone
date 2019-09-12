@@ -68,7 +68,9 @@ func (q *mockStatedbQuery) GetMediators() map[common.Address]bool {
 func (q *mockStatedbQuery) GetMediator(add common.Address) *core.Mediator {
 	return nil
 }
-
+func (q *mockStatedbQuery) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error) {
+	return []common.Address{},nil,nil
+}
 //获得系统配置的最低手续费要求
 func (q *mockStatedbQuery) GetMinFee() (*modules.AmountAsset, error) {
 	return &modules.AmountAsset{Asset: modules.NewPTNAsset(), Amount: uint64(1)}, nil

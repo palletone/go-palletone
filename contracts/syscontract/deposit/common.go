@@ -339,7 +339,7 @@ func getToday(stub shim.ChaincodeStubInterface) string {
 	t, _ := stub.GetTxTimestamp(10)
 
 	ti := time.Unix(t.Seconds, 0)
-	str := ti.Format("20060102")
+	str := ti.UTC().Format("20060102")
 	log.Debugf("getToday GetTxTimestamp 10 result:%d, format string:%s", t.Seconds, str)
 	return str
 }

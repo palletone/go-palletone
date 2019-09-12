@@ -1900,3 +1900,19 @@ func (mr *MockIDagMockRecorder) CheckHeaderCorrect(number interface{}) *gomock.C
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckHeaderCorrect", reflect.TypeOf((*MockIDag)(nil).CheckHeaderCorrect), number)
 }
+
+// GetBlacklistAddress mocks base method
+func (m *MockIDag) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBlacklistAddress")
+	ret0, _ := ret[0].([]common.Address)
+	ret1, _ := ret[1].(*modules.StateVersion)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetBlacklistAddress indicates an expected call of GetBlacklistAddress
+func (mr *MockIDagMockRecorder) GetBlacklistAddress() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlacklistAddress", reflect.TypeOf((*MockIDag)(nil).GetBlacklistAddress))
+}

@@ -70,7 +70,7 @@ func (d *DigitalIdentityChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.R
 	case "getCRL":
 		return d.getIssuerCRL(stub, args)
 	default:
-		return shim.Error("Invoke error")
+		return shim.Error("digital id cc Invoke error" + funcName)
 	}
 }
 
