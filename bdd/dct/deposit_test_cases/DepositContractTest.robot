@@ -19,7 +19,7 @@ Business_01
     ${amount}    getBalance    ${mediatorAddr_01}    PTN
     log    ${amount}    #999949995
     #    Should Be Equal As Numbers
-    Should Be Equal As Numbers    ${amount}    999949995
+    Should Be Equal As Numbers    ${amount}    10000
     ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${amount}    #0
     Should Be Equal As Numbers    ${amount}    0
@@ -36,8 +36,8 @@ Business_01
     ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    30    #在同意列表里的节点，可以交付保证金    #这里交的数量不是规定的保证金数量，导致无法加入候选列表，并且相应保证金退还该地址    #1
     log    ${result}
     ${amount}    getBalance    ${mediatorAddr_01}    PTN    #499999992
-    log    ${amount}    #999949992
-    Should Be Equal As Numbers    ${amount}    999949992
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    9998
     ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${amount}    #0
     Should Be Equal As Numbers    ${amount}    0
@@ -48,7 +48,7 @@ Business_01
     log    ${result}
     ${amount}    getBalance    ${mediatorAddr_01}    PTN
     log    ${amount}    #999949941
-    Should Be Equal As Numbers    ${amount}    999949941
+    Should Be Equal As Numbers    ${amount}    9947
     ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${amount}    #0
     Should Be Equal As Numbers    ${amount}    50
@@ -71,7 +71,7 @@ Business_01
     log    ${result}
     ${amount}    getBalance    ${mediatorAddr_01}    PTN    #99,999,970‬
     log    ${amount}
-    Should Be Equal As Numbers    ${amount}    999949989
+    Should Be Equal As Numbers    ${amount}    9996
     ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${amount}    #0
     Should Be Equal As Numbers    ${amount}    0
@@ -172,8 +172,7 @@ Business_03
     GetAllNodes
 
 Business_04
-    [Documentation]    \
-    ...    没收jury节点
+    [Documentation]    没收jury节点
     ...
     ...    Jury 节点交付固定保证金并进入候选列表-》某节点申请没收该jury节点并进入没收列表-》基金会同意并移除候选列表，退出列表，该节点的PTN转到基金会地址。
     ${resul}    juryPayToDepositContract    ${juryAddr_02}    10
@@ -227,8 +226,7 @@ Business_05
     GetAllNodes
 
 Business_06
-    [Documentation]    \
-    ...    没收dev节点
+    [Documentation]    没收dev节点
     ...
     ...    Developer节点交付固定保证金并进入候选列表-》某节点申请没收该Developer节点并进入没收列表-》基金会同意并移除候选列表，退出列表，该节点的PTN转到基金会地址。
     ${resul}    developerPayToDepositContract    ${developerAddr_02}    1
@@ -262,7 +260,7 @@ Business_07
     ...    DPT+10102JC6CQU8OK204BXA
     ${amount}    getBalance    ${foundationAddr}    PTN
     log    ${amount}
-    Should Be Equal As Numbers    ${amount}    999950041
+    Should Be Equal As Numbers    ${amount}    999940044
     ${amount}    getBalance    ${mediatorAddr_02}    PTN
     log    ${amount}
     Should Be Equal As Numbers    ${amount}    9948
@@ -311,6 +309,20 @@ middle_cases
     GetAllMediators
     ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${amount}
+    ${amount}    getBalance    ${foundationAddr}    PTN
+    log    ${amount}
+    ${amount}    getBalance    ${mediatorAddr_01}    PTN
+    log    ${amount}
+    ${amount}    getBalance    ${mediatorAddr_02}    PTN
+    log    ${amount}
+    ${amount}    getBalance    ${juryAddr_01}    PTN
+    log    ${amount}
+    ${amount}    getBalance    ${juryAddr_02}    PTN
+    log    ${amount}
+    ${amount}    getBalance    ${developerAddr_01}    PTN
+    log    ${amount}
+    ${amount}    getBalance    ${developerAddr_02}    PTN
+    log    ${amount}
 
 Business_08
     [Documentation]    退出候选列表的两个Mediator继续交付保证金
@@ -320,14 +332,14 @@ Business_08
     log    ${mDeposit}
     ${amount}    getBalance    ${mediatorAddr_01}    PTN
     log    ${amount}
-    Should Be Equal As Numbers    ${amount}    999950041
+    Should Be Equal As Numbers    ${amount}    9996
     ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    50
     log    ${result}
     ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}
     log    ${mDeposit}
     ${amount}    getBalance    ${mediatorAddr_01}    PTN
     log    ${amount}
-    Should Be Equal As Numbers    ${amount}    999949990
+    Should Be Equal As Numbers    ${amount}    9945
     ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${amount}
     Should Be Equal As Numbers    ${amount}    50

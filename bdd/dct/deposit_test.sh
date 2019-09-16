@@ -42,7 +42,7 @@ do
 	#echo $list | jq ".[$index]";
 done
 
-mdi_01=`echo ${mediatorAddr_01//\"/}`
+#mdi_01=`echo ${mediatorAddr_01//\"/}`
 
 found=`echo ${mediatorAddr_01//\"/}`
 
@@ -62,6 +62,8 @@ juryA_02=`echo $list | jq ".[9]"`
 jury_02=`echo ${juryA_02//\"/}`
 deveA_02=`echo $list | jq ".[10]"`
 developer_02=`echo ${deveA_02//\"/}`
+m01=`echo $list | jq ".[11]"`
+mdi_01=`echo ${m01//\"/}`
 echo "mdi_01" $mdi_01
 echo "----0000"
 echo "found" $found
