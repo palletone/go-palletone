@@ -11,7 +11,7 @@ ${two}            ${EMPTY}
 blacklist
     ${f}    getBalance    ${foundation}    PTN
     log    ${f}
-    Should Be Equal As Numbers    ${f}    999950041
+    Should Be Equal As Numbers    ${f}    999940044
     ${o}    getBalance    ${one}    PTN
     log    ${o}
     Should Be Equal As Numbers    ${o}    9989
@@ -43,7 +43,7 @@ blacklist
     sleep    5
     ${f}    getBalance    ${foundation}    PTN
     log    ${f}
-    Should Be Equal As Numbers    ${f}    999950039
+    Should Be Equal As Numbers    ${f}    999940042
     ${o}    getBalance    ${one}    PTN
     log    ${o}
     Should Be Equal As Numbers    ${o}    9989

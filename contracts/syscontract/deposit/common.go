@@ -328,7 +328,6 @@ func isFoundationInvoke(stub shim.ChaincodeStubInterface) bool {
 	}
 	return true
 }
-
 func getTiem(stub shim.ChaincodeStubInterface) string {
 	t, _ := stub.GetTxTimestamp(10)
 	ti := time.Unix(t.Seconds, 0)

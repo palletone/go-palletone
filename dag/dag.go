@@ -882,6 +882,7 @@ func (d *Dag) GetAddrStableUtxos(addr common.Address) (map[modules.OutPoint]*mod
 
 	return all, err
 }
+
 // refresh system parameters
 func (d *Dag) RefreshSysParameters() {
 	d.unstableUnitProduceRep.RefreshSysParameters()
@@ -1294,6 +1295,7 @@ func (d *Dag) CheckHeaderCorrect(number int) error {
 	}
 	return nil
 }
-func (d *Dag) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error){
+
+func (d *Dag) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error) {
 	return d.unstableStateRep.GetBlacklistAddress()
 }
