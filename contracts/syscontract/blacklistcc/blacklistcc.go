@@ -65,7 +65,7 @@ func (p *BlacklistMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		data, _ := json.Marshal(result)
 		return shim.Success(data)
-	case "getBlacklistAddress": //列出黑名单列表
+	case "getBlacklistAddress": //列出黑名单地址列表
 		result, err := p.GetBlacklistAddress(stub)
 		if err != nil {
 			return shim.Error(err.Error())
@@ -93,9 +93,23 @@ func (p *BlacklistMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			return shim.Error(err.Error())
 		}
 		return shim.Success(nil)
-	case "queryIsInBlacklist":
-		//TODO
-		return shim.Success(nil)
+	case "queryIsInBlacklist": //判断某地址是否在黑名单中
+		if len(args) != 1 {
+			return shim.Error("must input 1 args: Address")
+		}
+		addr, err := common.StringToAddress(args[0])
+		if err != nil {
+			return shim.Error("Invalid address string:" + args[0])
+		}
+		result, err := p.QueryIsInBlacklist(stub, addr)
+		if err != nil {
+			return shim.Error("QueryIsInBlacklist error:" + err.Error())
+		}
+		if result {
+			return shim.Success([]byte("true"))
+		} else {
+			return shim.Success([]byte("false"))
+		}
 	default:
 		jsonResp := "{\"Error\":\"Unknown function " + f + "\"}"
 		return shim.Error(jsonResp)
@@ -104,6 +118,10 @@ func (p *BlacklistMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 func (p *BlacklistMgr) AddBlacklist(stub shim.ChaincodeStubInterface, blackAddr common.Address, reason string) error {
 	if !isFoundationInvoke(stub) {
 		return errors.New("only foundation address can call this function")
+	}
+	exist, _ := p.QueryIsInBlacklist(stub, blackAddr)
+	if exist { //不可重复添加同一个地址到黑名单
+		return errors.New(blackAddr.String() + " already exist in blacklist")
 	}
 	tokenBalance, err := stub.GetTokenBalance(blackAddr.String(), nil)
 	if err != nil {
@@ -153,6 +171,18 @@ func (p *BlacklistMgr) Payout(stub shim.ChaincodeStubInterface, addr common.Addr
 		Amount: uint64Amt,
 		Asset:  asset,
 	}, 0)
+}
+func (p *BlacklistMgr) QueryIsInBlacklist(stub shim.ChaincodeStubInterface, addr common.Address) (bool, error) {
+	blacklist, err := getBlacklistAddress(stub)
+	if err != nil {
+		return false, err
+	}
+	for _, b := range blacklist {
+		if b.Equal(addr) {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 type BlacklistRecord struct {

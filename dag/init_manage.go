@@ -110,7 +110,7 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 		md := modules.NewMediatorDeposit()
 		md.Status = modules.Agree
 		md.Role = modules.Mediator
-		md.ApplyEnterTime = time.Unix(unit.Timestamp(), 0).Format(modules.Layout2)
+		md.ApplyEnterTime = time.Unix(unit.Timestamp(), 0).UTC().Format(modules.Layout2)
 
 		byte, err := json.Marshal(md)
 		if err != nil {

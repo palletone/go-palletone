@@ -591,11 +591,7 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele *modules.Ele
 	//	return false
 	//}
 	isExit := false
-	etor := &elector{
-		num:   uint(p.electionNum),
-		total: ele.JuryCount,
-	}
-	etor.weight = electionWeightValue(etor.total)
+	elr := newElector(uint(p.electionNum), ele.JuryCount, common.Address{},"", p.ptn.GetKeyStore())
 	for i, e := range ele.EleList {
 		isVerify := false
 		//检查地址hash是否在本地
@@ -618,17 +614,6 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele *modules.Ele
 				return false
 			}
 		}
-		//从数据库中获取
-		//var eleInf *modules.ElectionInf
-		//for _, en := range eleNode.EleList {
-		//	if en.Etype == e.Etype && bytes.Equal(en.AddrHash.Bytes(), e.AddrHash.Bytes()) {
-		//		eleInf = &en
-		//	}
-		//}
-		//if eleInf == nil {
-		//	log.Debugf("[%s]isValidateElection,not find ele node hash[%s]", shortId(reqId.String()), e.AddrHash.String())
-		//	return false
-		//}
 
 		//检查地址与pubKey是否匹配:获取当前pubKey下的Addr，将地址hash后与输入比较
 		addr := crypto.PubkeyBytesToAddress(e.PublicKey)
@@ -641,14 +626,7 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele *modules.Ele
 			log.Errorf("[%s]isValidateElection, not active Jury, addrHash[%v]", shortId(reqId.String()), e.AddrHash)
 			return false
 		}
-		//验证proof是否通过
-		//localJuryNum := uint64(p.dag.JuryCount())
-		//if !checkJuryCountValid(ele.JuryCount, localJuryNum) {
-		//	log.Errorf("[%s]isValidateElection, index[%d],checkJuryCountValid fail, tx jury num[%d]--dag[%d]",
-		//		shortId(reqId.String()), i, ele.JuryCount, localJuryNum)
-		//	return false
-		//}
-		isVerify, err := etor.verifyVrf(e.Proof, conversionElectionSeedData(contractId), e.PublicKey)
+		isVerify, err := elr.verifyVrf(e.Proof, conversionElectionSeedData(contractId), e.PublicKey)
 		if err != nil || !isVerify {
 			log.Infof("[%s]isValidateElection, index[%d],verifyVrf fail, contractId[%s]",
 				shortId(reqId.String()), i, string(contractId))

@@ -22,53 +22,43 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"time"
+	"bytes"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
-	alg "github.com/palletone/go-palletone/consensus/jury/algorithm"
-	"github.com/palletone/go-palletone/consensus/jury/vrfEs"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"bytes"
 	"github.com/palletone/go-palletone/common/crypto"
+	alg "github.com/palletone/go-palletone/consensus/jury/vrf/algorithm"
+	//es "github.com/palletone/go-palletone/consensus/jury/vrfEs"
+	ess "github.com/palletone/go-palletone/consensus/jury/vrf/vrfEss"
 )
 
-//type vrfAccount struct {
-//	pubKey *ecdsa.PublicKey  //vrfEc
-//	priKey *ecdsa.PrivateKey //vrfEc
-//}
-
 type elector struct {
-	num    uint
-	weight uint64
-	total  uint64
-	//vrfAct vrfAccount //vrf ec
-
+	num      uint
+	weight   uint64
+	total    uint64
 	addr     common.Address
 	password string
 	ks       *keystore.KeyStore
 }
+//var vrfType = new(es.Es) //todo
+var vrfType =new(ess.Ess)
 
-//func (e *elector) checkElectedEc(data []byte) (proof []byte, err error) {
-//	if e.num < 0 || e.weight < 1 || data == nil {
-//		errs := fmt.Sprintf("checkElected param error, num[%d], weight[%d]", e.num, e.weight)
-//		return nil, errors.New(errs)
-//	}
-//	proof, err = vrfEc.VrfProve(e.vrfAct.priKey, data)
-//	if err != nil {
-//		return nil, err
-//	}
-//	vrfValue := vrfEc.VrfProof2Value(e.vrfAct.priKey.Params(), proof)
-//	if len(vrfValue) > 0 {
-//		if alg.Selected(e.num, e.weight, uint64(e.total), vrfValue) > 0 {
-//			return proof, nil
-//		}
-//	}
-//	return nil, nil
-//}
+func newElector(num uint, total uint64, addr common.Address, password string, ks *keystore.KeyStore) *elector {
+	e := &elector{
+		num:      num,
+		weight:   electionWeightValue(total),
+		total:    total,
+		addr:     addr,
+		password: password,
+		ks:       ks,
+	}
+	return e
+}
 
 func (e *elector) checkElected(data []byte) (proof []byte, err error) {
 	if e.weight < 1 || data == nil {
@@ -82,12 +72,12 @@ func (e *elector) checkElected(data []byte) (proof []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
-	proof, err = vrfEs.VrfProve(privateKey.(*ecdsa.PrivateKey), data)
+	proof, sel, err := vrfType.VrfProve(privateKey.(*ecdsa.PrivateKey), data)
 	if err != nil {
 		return nil, err
 	}
-	if len(proof) > 0 {
-		if alg.Selected(e.num, e.weight, e.total, proof) > 0 {
+	if len(sel) > 0 {
+		if alg.Selected(e.num, e.weight, e.total, sel) > 0 {
 			return proof, nil
 		}
 	}
@@ -111,13 +101,13 @@ func (e *elector) checkElected(data []byte) (proof []byte, err error) {
 //}
 
 func (e *elector) verifyVrf(proof, data []byte, pubKey []byte) (bool, error) {
-	ok, err := vrfEs.VrfVerify(pubKey, data, proof)
+	ok, pro, err := vrfType.VrfVerify(pubKey, data, proof)
 	if err != nil {
 		log.Error("verifyVrf fail", "ok?", ok)
 		return false, err
 	}
 	if ok {
-		vrfValue := proof
+		vrfValue := pro
 		if len(vrfValue) > 0 {
 			if alg.Selected(e.num, e.weight, e.total, vrfValue) > 0 {
 				return true, nil
@@ -280,11 +270,7 @@ func (p *Processor) checkElectionSigRequestEventValid(evt *ElectionSigRequestEve
 		log.Debugf("[%s]checkElectionSigRequestEventValid, len(%d)", shortId(reqId.String()), len(evt.Ele))
 		return false
 	}
-	etor := &elector{
-		num:   uint(p.electionNum),
-		total: evt.JuryCount,
-	}
-	etor.weight = electionWeightValue(etor.total)
+	etor := newElector(uint(p.electionNum), evt.JuryCount, common.Address{},"", nil)
 	for i, e := range evt.Ele {
 		if e.EType == 1 { //todo
 			continue
@@ -345,14 +331,7 @@ func (p *Processor) processElectionRequestEvent(reqEvt *ElectionRequestEvent) (e
 	if account == nil {
 		return errors.New("processElectionRequestEvent, getLocalJuryAccount fail")
 	}
-	elr := &elector{
-		num:      uint(p.electionNum),
-		total:    reqEvt.JuryCount,
-		addr:     account.Address,
-		password: account.Password,
-		ks:       p.ptn.GetKeyStore(),
-	}
-	elr.weight = electionWeightValue(elr.total)
+	elr := newElector(uint(p.electionNum), reqEvt.JuryCount, account.Address,account.Password, p.ptn.GetKeyStore())
 
 	addrHash := util.RlpHash(account.Address)
 	proof, err := elr.checkElected(getElectionSeedData(reqEvt.ReqId))
@@ -411,13 +390,7 @@ func (p *Processor) processElectionResultEvent(rstEvt *ElectionResultEvent) erro
 		}
 	}
 	//验证vrf
-	elr := &elector{
-		num:   uint(p.electionNum),
-		total: rstEvt.JuryCount,
-		ks:    p.ptn.GetKeyStore(),
-	}
-	elr.weight = electionWeightValue(elr.total)
-
+	elr := newElector(uint(p.electionNum), rstEvt.JuryCount, common.Address{},"", p.ptn.GetKeyStore())
 	ok, err := elr.verifyVrf(rstEvt.Ele.Proof, getElectionSeedData(reqId), rstEvt.Ele.PublicKey) //rstEvt.ReqId[:]
 	if err != nil {
 		log.Errorf("[%s]processElectionResultEvent, verify VRF fail", shortId(reqId.String()))

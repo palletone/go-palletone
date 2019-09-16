@@ -595,6 +595,9 @@ func (b *PtnApiBackend) ContractInstall(ccName string, ccPath string, ccVersion 
 ccLanguage string) ([]byte, error) {
 	//channelId := "palletone"
 	payload, err := b.ptn.contract.Install(channelId, ccName, ccPath, ccVersion, ccDescription, ccAbi, ccLanguage)
+	if err != nil {
+		return nil, err
+	}
 	return payload.TemplateId, err
 }
 
@@ -720,17 +723,17 @@ func (b *PtnApiBackend) GetCommonByPrefix(prefix []byte) map[string][]byte {
 }
 func (b *PtnApiBackend) DecodeTx(hexStr string) (string, error) {
 	tx := &modules.Transaction{}
-	bytes, err := hex.DecodeString(hexStr)
+	data, err := hex.DecodeString(hexStr)
 	if err != nil {
 		return "", err
 	}
-	err = rlp.DecodeBytes(bytes, tx)
+	err = rlp.DecodeBytes(data, tx)
 	if err != nil {
 		return "", err
 	}
 	txjson := ptnjson.ConvertTx2FullJson(tx, b.Dag().GetUtxoEntry)
-	json, err := json.Marshal(txjson)
-	return string(json), err
+	jsondata, err := json.Marshal(txjson)
+	return string(jsondata), err
 }
 
 func (b *PtnApiBackend) DecodeJsonTx(hexStr string) (string, error) {
@@ -756,14 +759,17 @@ func (b *PtnApiBackend) DecodeJsonTx(hexStr string) (string, error) {
 
 func (b *PtnApiBackend) EncodeTx(jsonStr string) (string, error) {
 	txjson := &ptnjson.TxJson{}
-	json.Unmarshal([]byte(jsonStr), txjson)
+	err := json.Unmarshal([]byte(jsonStr), txjson)
+	if err != nil {
+		return "", err
+	}
 	tx := ptnjson.ConvertJson2Tx(txjson)
-	bytes, err := rlp.EncodeToBytes(tx)
+	data, err := rlp.EncodeToBytes(tx)
 
 	if err != nil {
 		return "", err
 	}
-	return hex.EncodeToString(bytes), err
+	return hex.EncodeToString(data), err
 }
 
 func (b *PtnApiBackend) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
@@ -919,10 +925,19 @@ func (b *PtnApiBackend) GetAddressBalanceStatistics(token string, topN int) (*st
 	//统计各地址余额
 	addrBalanceMap := make(map[common.Address]uint64)
 	totalSupply := uint64(0)
-
+	//过滤掉黑名单地址
+	blacklistAddrs, _, _ := b.ptn.dag.GetBlacklistAddress()
+	blacklistAddrMap := make(map[common.Address]bool)
+	for _, addr := range blacklistAddrs {
+		blacklistAddrMap[addr] = true
+	}
 	for _, utxo := range pickedUtxos {
 		addr, err := tokenengine.Instance.GetAddressFromScript(utxo.PkScript)
 		if err != nil {
+			continue
+		}
+		if _, ok := blacklistAddrMap[addr]; ok {
+			log.Debugf("Address[%s] is in black list don't statistic it", addr)
 			continue
 		}
 		amount, ok := addrBalanceMap[addr]

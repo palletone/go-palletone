@@ -1295,6 +1295,7 @@ func (d *Dag) CheckHeaderCorrect(number int) error {
 	}
 	return nil
 }
+
 func (d *Dag) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error) {
 	return d.unstableStateRep.GetBlacklistAddress()
 }

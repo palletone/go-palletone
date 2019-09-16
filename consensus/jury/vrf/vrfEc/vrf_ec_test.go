@@ -26,8 +26,11 @@ import (
 	"crypto/elliptic"
 	"math/big"
 
+	"github.com/btcsuite/btcd/btcec"
+	"github.com/palletone/go-palletone/common/crypto"
 )
 
+var vType = new(Ec)
 //func testVrf(t *testing.T, kt keypair.KeyType, curve byte) {
 func testVrf1(t *testing.T) {
 	//pubs := (*btcec.PublicKey)(pub.(*ecdsa.PublicKey)).SerializeCompressed()
@@ -56,12 +59,12 @@ func testVrf1(t *testing.T) {
 	key.Curve.Params().Name = "P-256"
 
 	msg := []byte("test")
-	proof, err := VrfProve(key, msg)
+	proof, _, err := vType.VrfProve(key, msg)
 	if err != nil {
 		t.Fatalf("compute vrf: %v", err)
 	}
-
-	ret, err := VrfVerify(&key.PublicKey, msg, proof)
+	pk:= (*btcec.PublicKey)(&key.PublicKey).SerializeCompressed()
+	ret, _, err := vType.VrfVerify(pk, msg, proof)
 	if err != nil {
 		t.Fatalf("verify vrf: %v", err)
 	}
@@ -94,12 +97,12 @@ func testVrf2(t *testing.T) { //todo  后面再继续修改为s256进行验证�
 	key.Curve.Params().Name = "P-256" //"sm2p256v1"//"P-256"
 
 	msg := []byte("test")
-	proof, err := VrfProve(key, msg)
+	proof, _, err := vType.VrfProve(key, msg)
 	if err != nil {
 		t.Fatalf("compute vrf: %v", err)
 	}
-
-	ret, err := VrfVerify(&key.PublicKey, msg, proof)
+	pk := crypto.P256FromECDSAPub(&key.PublicKey)
+	ret, _, err := vType.VrfVerify(pk, msg, proof)
 	if err != nil {
 		t.Fatalf("verify vrf: %v", err)
 	}

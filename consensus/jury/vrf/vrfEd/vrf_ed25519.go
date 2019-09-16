@@ -25,7 +25,7 @@ import (
 	"crypto/sha512"
 	"errors"
 	"math/big"
-	"github.com/palletone/go-palletone/consensus/jury/vrfEd/edwards25519"
+	"github.com/palletone/go-palletone/consensus/jury/vrf/vrfEd/edwards25519"
 	"golang.org/x/crypto/ed25519"
 	//ed25519 "go.dedis.ch/kyber/v3/group/edwards25519"
 )
