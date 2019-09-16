@@ -144,8 +144,6 @@ type Processor struct {
 	contractSigNum    int
 	contractExecFeed  event.Feed
 	contractExecScope event.SubscriptionScope
-	//contractSigFeed   event.Feed
-	//contractSigScope  event.SubscriptionScope
 }
 
 func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract, cfg *Config) (*Processor, error) {
@@ -773,10 +771,6 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 					shortId(tx.RequestHash().String()), err.Error())
 				return common.Hash{}, nil, err
 			}
-			//for _, ele := range eleNode.EleList { //将冗余数据置空，减少网络数据。验证时从dag中获取这部分数据
-			//	ele.PublicKey = nil
-			//	ele.Proof = nil
-			//}
 			ctx.eleNode = eleNode
 		}
 	}
@@ -846,90 +840,5 @@ func (p *Processor) getContractAssignElectionList(tx *modules.Transaction) ([]mo
 		e := modules.ElectionInf{EType: 1, AddrHash: addrHash[i]}
 		eels = append(eels, e)
 	}
-
 	return eels, nil
 }
-
-//func (p *Processor) getTemplateAddrHash(tplId []byte) ([]common.Hash, error) {
-//	addrBytes, _, err := p.dag.GetContractState(tplId[:], "TplAddrHash")
-//	if err != nil {
-//		log.Debugf("getTemplateAddrHash, not find contract template addrHash, tplId[%x]", tplId)
-//		return nil, err
-//	}
-//
-//	var addh []common.Hash
-//	err = rlp.DecodeBytes(addrBytes, &addh)
-//	if err != nil {
-//		log.Debug("getTemplateAddrHash", "err", err)
-//		errs := fmt.Sprintf("getTemplateAddrHash, DecodeBytes fail, templateId:%x", tplId)
-//		log.Debug(errs)
-//		return nil, errors.New(errs)
-//	}
-//	log.Debugf("getContractElectionList, templateId[%x], addrHash[%v]", tplId, addh)
-//	return addh, nil
-//	return nil, nil
-//}
-
-//func (p *Processor) genContractElectionList(tx *modules.Transaction,
-// contractId common.Address) ([]modules.ElectionInf, error) {
-//	if tx == nil {
-//		return nil, errors.New("genContractElectionList, param is nil")
-//	}
-//	reqId := tx.RequestHash()
-//	payload, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_DEPLOY_REQUEST)
-//	if err != nil {
-//		return nil, fmt.Errorf("[%s]genContractElectionList, getContractTxContractInfo fail", shortId(reqId.String()))
-//	}
-//	num := 0
-//	eels := make([]modules.ElectionInf, 0)
-//	tplId := payload.(*modules.ContractDeployRequestPayload).TplId
-//
-//	//find the address of the contract template binding in the dag
-//	//addrHash, err := p.getTemplateAddrHash(tplId)
-//	tpl, err := p.dag.GetContractTpl(tplId)
-//	if err != nil {
-//		log.Debugf("[%s]genContractElectionList, GetContractTpl fail,templateId[%x], err:%s",
-//      shortId(reqId.String()), tplId, err.Error())
-//	}
-//	addrHash := tpl.AddrHash
-//	if len(addrHash) >= p.electionNum {
-//		num = p.electionNum
-//	} else {
-//		num = len(addrHash)
-//	}
-//	//add election node form template install assignation
-//	for i := 0; i < num; i++ {
-//		e := modules.ElectionInf{Etype: 1, AddrHash: addrHash[i]}
-//		eels = append(eels, e)
-//	}
-//	if len(eels) >= p.electionNum {
-//		log.Debugf("[%s]genContractElectionList, all from dag, eels:%v", shortId(reqId.String()), eels)
-//		return eels, nil
-//	}
-//	//add election node form vrf request
-//	if ele, ok := p.lockVrf[contractId]; !ok || len(ele) < p.electionNum {
-//		p.lockVrf[contractId] = []modules.ElectionInf{} //清空
-//		//if err := p.ElectionRequest(reqId, ContractElectionTimeOut); err != nil {
-//       todo ,Single-threaded timeout wait mode
-//		//	return nil, err
-//		//}
-//	}
-//	for _, e := range p.lockVrf[contractId] {
-//		isExist := false
-//		for _, a := range eels {
-//			if e.AddrHash == a.AddrHash {
-//				isExist = true
-//				break
-//			}
-//		}
-//		if isExist {
-//			continue
-//		}
-//		eels = append(eels, e)
-//		if len(eels) >= p.electionNum {
-//			log.Debug("[%s]genContractElectionList, ele:%v", shortId(reqId.String()), eels)
-//			return eels, nil
-//		}
-//	}
-//	return nil, nil
-//}
