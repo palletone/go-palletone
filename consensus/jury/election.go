@@ -35,6 +35,7 @@ import (
 	alg "github.com/palletone/go-palletone/consensus/jury/vrf/algorithm"
 	//es "github.com/palletone/go-palletone/consensus/jury/vrfEs"
 	ess "github.com/palletone/go-palletone/consensus/jury/vrf/vrfEss"
+	"github.com/palletone/go-palletone/consensus/jury/vrf"
 )
 
 type elector struct {
@@ -72,7 +73,8 @@ func (e *elector) checkElected(data []byte) (proof []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
-	proof, sel, err := vrfType.VrfProve(privateKey.(*ecdsa.PrivateKey), data)
+
+	proof, sel, err := vrf.VrfProve(privateKey.(*ecdsa.PrivateKey), data)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +103,7 @@ func (e *elector) checkElected(data []byte) (proof []byte, err error) {
 //}
 
 func (e *elector) verifyVrf(proof, data []byte, pubKey []byte) (bool, error) {
-	ok, pro, err := vrfType.VrfVerify(pubKey, data, proof)
+	ok, pro, err := vrf.VrfVerify(pubKey, data, proof)
 	if err != nil {
 		log.Error("verifyVrf fail", "ok?", ok)
 		return false, err
