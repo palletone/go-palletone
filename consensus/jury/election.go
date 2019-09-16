@@ -33,8 +33,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/common/crypto"
 	alg "github.com/palletone/go-palletone/consensus/jury/vrf/algorithm"
-	//es "github.com/palletone/go-palletone/consensus/jury/vrfEs"
-	ess "github.com/palletone/go-palletone/consensus/jury/vrf/vrfEss"
+
 	"github.com/palletone/go-palletone/consensus/jury/vrf"
 )
 
@@ -46,9 +45,6 @@ type elector struct {
 	password string
 	ks       *keystore.KeyStore
 }
-//var vrfType = new(es.Es) //todo
-var vrfType =new(ess.Ess)
-
 func newElector(num uint, total uint64, addr common.Address, password string, ks *keystore.KeyStore) *elector {
 	e := &elector{
 		num:      num,
@@ -85,22 +81,6 @@ func (e *elector) checkElected(data []byte) (proof []byte, err error) {
 	}
 	return nil, nil
 }
-
-//func (e *elector) verifyVrfEc(proof, data []byte) (bool, error) {
-//	ok, err := vrfEc.VrfVerify(e.vrfAct.pubKey, data, proof)
-//	if err != nil {
-//		return false, err
-//	}
-//	if ok {
-//		vrfValue := vrfEc.VrfProof2Value(e.vrfAct.pubKey.Params(), proof)
-//		if len(vrfValue) > 0 {
-//			if alg.Selected(e.num, e.weight, uint64(e.total), vrfValue) > 0 {
-//				return true, nil
-//			}
-//		}
-//	}
-//	return false, nil
-//}
 
 func (e *elector) verifyVrf(proof, data []byte, pubKey []byte) (bool, error) {
 	ok, pro, err := vrf.VrfVerify(pubKey, data, proof)
@@ -439,15 +419,6 @@ func (p *Processor) processElectionSigRequestEvent(evt *ElectionSigRequestEvent)
 		log.Debugf("[%s]processElectionSigRequestEvent, SigData fail", shortId(reqId.String()))
 		return nil
 	}
-
-	////////todo del
-	//hash := util.RlpHash(evt)
-	//if !crypto.VerifySignature(pk, hash.Bytes(), sig) {
-	//	log.Debugf("[%s]processElectionSigRequestEvent, VerifySignature fail", shortId(reqId.String()))
-	//}
-	//log.Debug("processElectionSigRequestEvent", "reqId", shortId(reqId.String()),
-	// "evt", evt, "PubKey", pk, "Signature", sig, "hash", hash)
-	////////
 
 	if e, ok := p.mel[reqId]; ok {
 		e.brded = true //关闭签名广播请求
