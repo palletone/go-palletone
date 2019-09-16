@@ -15,7 +15,7 @@ ${developerAddr_02}    ${EMPTY}
 Business_01
     [Documentation]    mediator 交付 50 ptn 才可以加入候选列表
     ...
-    ...    某节点申请加入mediator-》进入申请列表-》基金会同意-》进入同意列表-》节点加入保证金（足够）-》进入候选列表-》节点增加保证金-》节点申请退出部分保证金-》基金会同意-》节点申请退出候选列表-》进入退出列表-》基金会同意。
+    ...    mediator节点申请并且进入申请列表-》基金会同意并移除申请列表-》进入同意列表-》节点加入保证金（不够足够）无法进入候选列表-》节点交够保证金-》进入候选列表（自动进入Jury候选列表）-》节点申请退出并且进入退出列表-》基金会同意并移除节点候选列表（Jury候选列表）和退出列表。结果：同意列表包含该地址
     ${amount}    getBalance    ${mediatorAddr_01}    PTN
     log    ${amount}    #999949995
     #    Should Be Equal As Numbers
@@ -61,7 +61,6 @@ Business_01
     ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
     log    ${mDeposit}
     Should Not Be Equal    ${mDeposit["balance"]}    ${0}    #有余额
-    GetAllMediators
     ${result}    applyQuitMediator    ${mediatorAddr_01}    MediatorApplyQuit    #该节点申请退出mediator候选列表    #1
     log    ${result}
     ${addressMap4}    getQuitMediatorApplyList
@@ -94,9 +93,12 @@ Business_01
     ${result}    getQuitMediatorApplyList
     log    ${result}
     Dictionary Should Not Contain Key    ${result}    ${mediatorAddr_01}    #无该节点
+    GetAllMediators
 
 Business_02
     [Documentation]    没收mediator节点
+    ...
+    ...    mediator节点申请并且进入申请列表-》基金会同意并移除申请列表-》进入同意列表-》节点交够保证金-》进入候选列表（自动进入Jury候选列表）-》某节点申请没收该mediator节点并进入没收列表-》基金会同意并移除候选列表，该节点的PTN转到基金会地址。结果：同意列表有该mediator节点地址，账户余额为0
     ${result}    applyBecomeMediator    ${mediatorAddr_02}    #节点申请加入列表
     log    ${result}
     ${addressMap1}    getBecomeMediatorApplyList
@@ -118,7 +120,6 @@ Business_02
     ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_02}    #获取该地址保证金账户详情
     log    ${mDeposit}
     Should Not Be Equal    ${mDeposit["balance"]}    ${0}    #有余额
-    GetAllMediators
     ${result}    applyForForfeitureDeposit    ${foundationAddr}    ${mediatorAddr_02}    Mediator    nothing to do    #某个地址申请没收该节点保证金（全部）
     log    ${result}
     ${result}    getListForForfeitureApplication
@@ -141,9 +142,12 @@ Business_02
     ${resul}    getListForJuryCandidate    #mediator退出候选列表，则移除该jury
     Dictionary Should Not Contain Key    ${resul}    ${mediatorAddr_02}    #jury候选列表无该地址
     log    ${resul}
+    GetAllMediators
 
 Business_03
     [Documentation]    jury 交付 10 ptn 才可以加入候选列表
+    ...
+    ...    Jury 节点交付固定保证金并进入候选列表-》申请退出并进入退出列表-》基金会同意并移除候选列表，退出列表。
     ${resul}    juryPayToDepositContract    ${juryAddr_01}    10
     log    ${resul}
     ${result}    getCandidateBalanceWithAddr    ${juryAddr_01}    #获取该地址保证金账户详情
@@ -152,7 +156,6 @@ Business_03
     ${resul}    getListForJuryCandidate
     Dictionary Should Contain Key    ${resul}    ${juryAddr_01}    #候选列表有该地址
     log    ${resul}
-    GetAllNodes
     ${result}    applyQuitMediator    ${juryAddr_01}    JuryApplyQuit    #该节点申请退出mediator候选列表
     log    ${result}
     ${addressMap4}    getQuitMediatorApplyList    #获取申请mediator列表里的节点（不为空）
@@ -166,9 +169,13 @@ Business_03
     ${result}    getQuitMediatorApplyList    #为空
     log    ${result}
     Dictionary Should Not Contain Key    ${result}    ${juryAddr_01}
+    GetAllNodes
 
 Business_04
-    [Documentation]    没收jury节点
+    [Documentation]    \
+    ...    没收jury节点
+    ...
+    ...    Jury 节点交付固定保证金并进入候选列表-》某节点申请没收该jury节点并进入没收列表-》基金会同意并移除候选列表，退出列表，该节点的PTN转到基金会地址。
     ${resul}    juryPayToDepositContract    ${juryAddr_02}    10
     log    ${resul}
     ${result}    getCandidateBalanceWithAddr    ${juryAddr_02}    #获取该地址保证金账户详情
@@ -177,7 +184,6 @@ Business_04
     ${resul}    getListForJuryCandidate
     Dictionary Should Contain Key    ${resul}    ${juryAddr_02}    #候选列表有该地址
     log    ${resul}
-    GetAllNodes
     ${result}    applyForForfeitureDeposit    ${foundationAddr}    ${juryAddr_02}    Jury    nothing to do    #某个地址申请没收该节点保证金（全部）
     log    ${result}
     ${result}    getListForForfeitureApplication
@@ -191,9 +197,12 @@ Business_04
     ${resul}    getListForJuryCandidate
     Dictionary Should Not Contain Key    ${resul}    ${juryAddr_02}    #候选列表无该地址
     log    ${resul}
+    GetAllNodes
 
 Business_05
     [Documentation]    dev 交付 1 ptn 才可以加入合约开发者列表
+    ...
+    ...    Developer 节点交付固定保证金并进入列表-》申请退出并进入退出列表-》基金会同意并移除列表，退出列表。
     ${resul}    developerPayToDepositContract    ${developerAddr_01}    1
     log    ${resul}
     ${result}    getCandidateBalanceWithAddr    ${developerAddr_01}    #获取该地址保证金账户详情
@@ -202,7 +211,6 @@ Business_05
     ${resul}    getListForDeveloperCandidate
     Dictionary Should Contain Key    ${resul}    ${developerAddr_01}    #候选列表无该地址
     log    ${resul}
-    GetAllNodes
     ${result}    applyQuitMediator    ${developerAddr_01}    DeveloperApplyQuit    #该节点申请退出mediator候选列表
     log    ${result}
     ${addressMap4}    getQuitMediatorApplyList    #获取申请mediator列表里的节点（不为空）
@@ -216,9 +224,13 @@ Business_05
     ${result}    getQuitMediatorApplyList    #为空
     log    ${result}
     Dictionary Should Not Contain Key    ${result}    ${developerAddr_01}
+    GetAllNodes
 
 Business_06
-    [Documentation]    没收dev节点
+    [Documentation]    \
+    ...    没收dev节点
+    ...
+    ...    Developer节点交付固定保证金并进入候选列表-》某节点申请没收该Developer节点并进入没收列表-》基金会同意并移除候选列表，退出列表，该节点的PTN转到基金会地址。
     ${resul}    developerPayToDepositContract    ${developerAddr_02}    1
     log    ${resul}
     ${result}    getCandidateBalanceWithAddr    ${developerAddr_02}    #获取该地址保证金账户详情
@@ -227,7 +239,6 @@ Business_06
     ${resul}    getListForDeveloperCandidate
     Dictionary Should Contain Key    ${resul}    ${developerAddr_02}    #候选列表无该地址
     log    ${resul}
-    GetAllNodes
     ${result}    applyForForfeitureDeposit    ${foundationAddr}    ${developerAddr_02}    Developer    nothing to do    #某个地址申请没收该节点保证金（全部）
     log    ${result}
     ${result}    getListForForfeitureApplication
@@ -241,6 +252,7 @@ Business_06
     ${resul}    getListForDeveloperCandidate
     Dictionary Should Not Contain Key    ${resul}    ${developerAddr_02}    #候选列表无该地址
     log    ${resul}
+    GetAllNodes
 
 Business_07
     [Documentation]    创建新Token，使用新Token交付保证金，由于保证金只支持PTN，所以交保证金失败
@@ -277,3 +289,23 @@ Business_07
     ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${amount}    #0
     Should Be Equal As Numbers    ${amount}    0
+
+middle_cases
+    log    Mediator
+    ${addressMap1}    getBecomeMediatorApplyList
+    log    ${addressMap1}
+    ${addressMap2}    getAgreeForBecomeMediatorList
+    log    ${addressMap2}
+    ${addressMap3}    getListForMediatorCandidate
+    log    ${addressMap3}
+    log    Jury
+    ${resul}    getListForJuryCandidate
+    log    ${resul}
+    log    Developer
+    ${resul}    getListForDeveloperCandidate
+    log    ${resul}
+    log    All
+    ${addressMap4}    getQuitMediatorApplyList
+    log    ${addressMap4}
+    GetAllNodes
+    GetAllMediators
