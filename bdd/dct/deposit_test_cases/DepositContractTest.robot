@@ -309,3 +309,52 @@ middle_cases
     log    ${addressMap4}
     GetAllNodes
     GetAllMediators
+    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
+    log    ${amount}
+
+Business_08
+    [Documentation]    退出候选列表的两个Mediator继续交付保证金
+    ...
+    ...    mediator交付保证金再次进入候选列表
+    ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}
+    log    ${mDeposit}
+    ${amount}    getBalance    ${mediatorAddr_01}    PTN
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    999950041
+    ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    50
+    log    ${result}
+    ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}
+    log    ${mDeposit}
+    ${amount}    getBalance    ${mediatorAddr_01}    PTN
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    999949990
+    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    50
+    ${addressMap3}    getListForMediatorCandidate
+    log    ${addressMap3}
+    Dictionary Should Contain Key    ${addressMap3}    ${mediatorAddr_01}
+    ${resul}    getListForJuryCandidate
+    Dictionary Should Contain Key    ${resul}    ${mediatorAddr_01}
+    log    ${resul}
+    ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_02}
+    log    ${mDeposit}
+    ${amount}    getBalance    ${mediatorAddr_02}    PTN
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    9946
+    ${result}    mediatorPayToDepositContract    ${mediatorAddr_02}    50
+    log    ${result}
+    ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_02}
+    log    ${mDeposit}
+    ${amount}    getBalance    ${mediatorAddr_02}    PTN
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    9895
+    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    100
+    ${addressMap3}    getListForMediatorCandidate
+    log    ${addressMap3}
+    Dictionary Should Contain Key    ${addressMap3}    ${mediatorAddr_02}
+    ${resul}    getListForJuryCandidate
+    Dictionary Should Contain Key    ${resul}    ${mediatorAddr_02}
+    log    ${resul}
