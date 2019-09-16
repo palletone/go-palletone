@@ -248,13 +248,12 @@ func (rep *UnitProduceRepository) updateDynGlobalProp(unit *modules.Unit, missed
 }
 
 func (rep *UnitProduceRepository) updateMediatorSchedule() {
-	gp := rep.GetGlobalProp()
+	//gp := rep.GetGlobalProp()
 	dgp := rep.GetDynGlobalProp()
-	ms := rep.GetMediatorSchl()
+	//ms := rep.GetMediatorSchl()
 
-	if rep.propRep.UpdateMediatorSchedule(ms, gp, dgp) {
-		log.Debugf("shuffle the scheduling order of mediators")
-		rep.propRep.StoreMediatorSchl(ms)
+	if rep.propRep.UpdateMediatorSchedule() {
+		log.Debugf("shuffled the scheduling order of mediators")
 
 		dgp.IsShuffledSchedule = true
 		rep.propRep.StoreDynGlobalProp(dgp)

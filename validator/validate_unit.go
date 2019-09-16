@@ -121,7 +121,7 @@ func (validate *Validate) validateMediatorSchedule(header *modules.Header) Valid
 
 	gasToken := dagconfig.DagConfig.GetGasToken()
 	ts, _ := validate.propquery.GetNewestUnitTimestamp(gasToken)
-	if ts >= header.Time {
+	if !(header.Time > ts) {
 		errStr := "invalidated unit's timestamp"
 		log.Warnf("%s,db newest unit timestamp=%d,current unit[%s] timestamp=%d", errStr, ts,
 			header.Hash().String(), header.Time)

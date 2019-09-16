@@ -139,7 +139,7 @@ func (dag *Dag) GetNewestUnitTimestamp(token modules.AssetId) (int64, error) {
 }
 
 func (dag *Dag) GetSlotTime(slotNum uint32) time.Time {
-	return dag.unstablePropRep.GetSlotTime(dag.GetGlobalProp(), dag.GetDynGlobalProp(), slotNum)
+	return dag.unstablePropRep.GetSlotTime(slotNum)
 }
 
 func (dag *Dag) GetScheduledMediator(slotNum uint32) common.Address {
@@ -186,10 +186,6 @@ func (dag *Dag) LookupMediatorInfo() []*modules.MediatorInfo {
 func (dag *Dag) IsMediator(address common.Address) bool {
 	return dag.unstableStateRep.IsMediator(address)
 }
-
-//func (dag *Dag) CurrentFeeSchedule() core.FeeSchedule {
-//	return dag.GetGlobalProp().ChainParameters.CurrentFees
-//}
 
 func (dag *Dag) GetChainParameters() *core.ChainParameters {
 	return dag.unstablePropRep.GetChainParameters()
