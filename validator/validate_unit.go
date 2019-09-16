@@ -28,7 +28,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core"
-	// "github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -92,55 +92,57 @@ func validateUnitSignature(h *modules.Header) ValidationCode {
 }
 
 //验证Author必须是一个活跃的Mediator，防止其他节点冒充产块
-func (validate *Validate)validateUnitAuthor(h *modules.Header) ValidationCode{
-	if validate.statequery==nil{
+func (validate *Validate) validateUnitAuthor(h *modules.Header) ValidationCode {
+	if validate.statequery == nil {
 		log.Warnf("Don't set validate.statequery, cannot validate unit author is a mediator.")
 		return TxValidationCode_VALID
 	}
 
-	mediators:=validate.statequery.GetMediators()
-	authorAddr:= h.Authors.Address()
-	if has,_:= mediators[authorAddr];!has{
-		mediatorAddrs:=""
-		for m,_:=range mediators{
-			mediatorAddrs+=m.String()+","
+	mediators := validate.statequery.GetMediators()
+	authorAddr := h.Authors.Address()
+	if has, _ := mediators[authorAddr]; !has {
+		mediatorAddrs := ""
+		for m, _ := range mediators {
+			mediatorAddrs += m.String() + ","
 		}
 		log.Warnf("Active mediator list is:%s, current unit[%s %d] author is %s",
-			mediatorAddrs,h.Hash(),h.NumberU64(),authorAddr.String())
+			mediatorAddrs, h.Hash(), h.NumberU64(), authorAddr.String())
 		return UNIT_STATE_INVALID_AUTHOR
 	}
 	return TxValidationCode_VALID
 }
-// func (validate *Validate) validateMediatorSchedule(header *modules.Header) ValidationCode {
-// 	if validate.propquery == nil {
-// 		log.Warn("Validator don't have propquery, cannot validate mediator schedule")
-// 		return TxValidationCode_VALID
-// 	}
 
-// 	gasToken := dagconfig.DagConfig.GetGasToken()
-// 	ts, _ := validate.propquery.GetNewestUnitTimestamp(gasToken)
-// 	if ts >= header.Time {
-// 		errStr := "invalidated unit's timestamp"
-// 		log.Warnf("%s,db newest unit timestamp=%d,current unit[%s] timestamp=%d", errStr, ts,
-// 			header.Hash().String(), header.Time)
-// 		return UNIT_STATE_INVALID_HEADER_TIME
-// 	}
+// 验证该单元是否是满足调度顺序的mediator生产的
+func (validate *Validate) validateMediatorSchedule(header *modules.Header) ValidationCode {
+	if validate.propquery == nil {
+		log.Warn("Validator don't have propquery, cannot validate mediator schedule")
+		return TxValidationCode_VALID
+	}
 
-// 	slotNum := validate.propquery.GetSlotAtTime(time.Unix(header.Time, 0))
-// 	if slotNum <= 0 {
-// 		log.Info("invalidated unit's slot")
-// 		return UNIT_STATE_INVALID_MEDIATOR_SCHEDULE
-// 	}
+	gasToken := dagconfig.DagConfig.GetGasToken()
+	ts, _ := validate.propquery.GetNewestUnitTimestamp(gasToken)
+	if ts >= header.Time {
+		errStr := "invalidated unit's timestamp"
+		log.Warnf("%s,db newest unit timestamp=%d,current unit[%s] timestamp=%d", errStr, ts,
+			header.Hash().String(), header.Time)
+		return UNIT_STATE_INVALID_HEADER_TIME
+	}
 
-// 	scheduledMediator := validate.propquery.GetScheduledMediator(slotNum)
-// 	if !scheduledMediator.Equal(header.Author()) {
-// 		errStr := fmt.Sprintf("mediator(%v) produced unit at wrong time", header.Author().Str())
-// 		log.Warn(errStr)
-// 		return UNIT_STATE_INVALID_MEDIATOR_SCHEDULE
-// 	}
+	slotNum := validate.propquery.GetSlotAtTime(time.Unix(header.Time, 0))
+	if slotNum <= 0 {
+		log.Info("invalidated unit's slot")
+		return UNIT_STATE_INVALID_MEDIATOR_SCHEDULE
+	}
 
-// 	return TxValidationCode_VALID
-// }
+	scheduledMediator := validate.propquery.GetScheduledMediator(slotNum)
+	if !scheduledMediator.Equal(header.Author()) {
+		errStr := fmt.Sprintf("mediator(%v) produced unit at wrong time", header.Author().Str())
+		log.Warn(errStr)
+		return UNIT_STATE_INVALID_MEDIATOR_SCHEDULE
+	}
+
+	return TxValidationCode_VALID
+}
 
 //不基于数据库，进行Unit最基本的验证
 func ValidateUnitBasic(unit *modules.Unit) error {
@@ -283,8 +285,8 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 		return sigState
 	}
 	//Check author
-	validateAuthorCode:=validate.validateUnitAuthor(header)
-	if validateAuthorCode!=TxValidationCode_VALID{
+	validateAuthorCode := validate.validateUnitAuthor(header)
+	if validateAuthorCode != TxValidationCode_VALID {
 		return validateAuthorCode
 	}
 	//Is orphan?
@@ -297,11 +299,11 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 		if parentHeader.Number.Index+1 != header.Number.Index {
 			return UNIT_STATE_INVALID_HEADER_NUMBER
 		}
-		//TODO temp remove mediator schedule validate
-		//vcode := validate.validateMediatorSchedule(header)
-		//if vcode != TxValidationCode_VALID {
-		//	return vcode
-		//}
+
+		vcode := validate.validateMediatorSchedule(header)
+		if vcode != TxValidationCode_VALID {
+			return vcode
+		}
 	}
 	return TxValidationCode_VALID
 }
