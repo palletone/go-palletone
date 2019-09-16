@@ -1218,7 +1218,9 @@ func (d *Dag) Close() {
 
 // return a mediator voted results
 func (d *Dag) MediatorVotedResults() (map[string]uint64, error) {
-	return d.unstableStateRep.GetMediatorVotedResults()
+	_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
+	return state.GetMediatorVotedResults()
+	//return d.unstableStateRep.GetMediatorVotedResults()
 }
 
 // store a data version in dag

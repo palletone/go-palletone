@@ -144,7 +144,9 @@ func (dag *Dag) IsSynced() bool {
 	now := time.Now()
 	// 防止误判，获取之后的第2个生产槽时间
 	//nextSlotTime := dag.unstablePropRep.GetSlotTime(gp, dgp, 1)
-	nextSlotTime := dag.unstablePropRep.GetSlotTime(2)
+	//nextSlotTime := dag.unstablePropRep.GetSlotTime(2)
+	_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
+	nextSlotTime := rep.GetSlotTime(2)
 
 	return nextSlotTime.After(now)
 }
