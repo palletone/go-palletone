@@ -546,6 +546,7 @@ func (b *PtnApiBackend) GetAddrUtxos2(addr string) ([]*ptnjson.UtxoJson, error) 
 	//根据稳定UTXO和不稳定UTXO的对比，更新UTXO的FlagStatus
 	result := make(map[modules.OutPoint]*ptnjson.UtxoJson)
 	for outpoint, utxo := range allUtxos {
+		outpoint := outpoint
 		_, ok := stbUtxos[outpoint]
 		ujson := ptnjson.ConvertUtxo2Json(&outpoint, utxo)
 		if !ok { //不稳定的UTXO
@@ -557,6 +558,7 @@ func (b *PtnApiBackend) GetAddrUtxos2(addr string) ([]*ptnjson.UtxoJson, error) 
 	}
 	//在Stable里面有，但是在All里面没有，说明已经被花费
 	for outpoint, utxo := range stbUtxos {
+		outpoint := outpoint
 		_, ok := allUtxos[outpoint]
 		if !ok { //已经被花费的UTXO
 			ujson := ptnjson.ConvertUtxo2Json(&outpoint, utxo)
