@@ -1216,13 +1216,6 @@ func (d *Dag) Close() {
 	log.Debug("Close all dag database connections")
 }
 
-// return a mediator voted results
-func (d *Dag) MediatorVotedResults() (map[string]uint64, error) {
-	_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
-	return state.GetMediatorVotedResults()
-	//return d.unstableStateRep.GetMediatorVotedResults()
-}
-
 // store a data version in dag
 func (d *Dag) StoreDataVersion(dv *modules.DataVersion) error {
 	return d.stableStateRep.StoreDataVersion(dv)

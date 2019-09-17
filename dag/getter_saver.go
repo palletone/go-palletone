@@ -301,3 +301,15 @@ func (d *Dag) IsContractDeveloper(addr common.Address) bool {
 func (d *Dag) GetUnitHash(number *modules.ChainIndex) (common.Hash, error) {
 	return d.unstableUnitRep.GetHashByNumber(number)
 }
+
+// return all mediators voted results
+func (d *Dag) MediatorVotedResults() (map[string]uint64, error) {
+	_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
+	return state.GetMediatorVotedResults()
+	//return d.unstableStateRep.GetMediatorVotedResults()
+}
+
+func (d *Dag) GetVotingForMediator(addStr string) (map[string]uint64, error) {
+	_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
+	return state.GetVotingForMediator(addStr)
+}
