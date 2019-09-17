@@ -50,11 +50,13 @@ type IStateRepository interface {
 	GetAccountState(address common.Address, statekey string) (*modules.ContractStateValue, error)
 	GetAccountBalance(address common.Address) uint64
 	LookupAccount() map[common.Address]*modules.AccountInfo
-	GetAccountVotedMediators(addr common.Address) map[string]bool
+
 	GetPledgeList() (*modules.PledgeList, error)
+	GetMediatorVotedResults() (map[string]uint64, error)
+	GetAccountVotedMediators(addr common.Address) map[string]bool
+	GetVotingForMediator(addStr string) (map[string]uint64, error)
 
 	GetMediator(add common.Address) *core.Mediator
-	GetMediatorVotedResults() (map[string]uint64, error)
 	RetrieveMediator(address common.Address) (*core.Mediator, error)
 	StoreMediator(med *core.Mediator) error
 	GetMediators() map[common.Address]bool
@@ -82,8 +84,6 @@ type IStateRepository interface {
 	GetSysParamWithoutVote() (map[string]string, error)
 	GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)
 	SaveSysConfigContract(key string, val []byte, ver *modules.StateVersion) error
-	//GetSysConfig(name string) ([]byte, *modules.StateVersion, error)
-	//GetAllConfig() (map[string]*modules.ContractStateValue, error)
 	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
 }
 
@@ -109,14 +109,6 @@ func (rep *StateRepository) SaveSysConfigContract(key string, val []byte, ver *m
 	return rep.statedb.SaveSysConfigContract(key, val, ver)
 }
 
-//func (rep *StateRepository) GetSysConfig(name string) ([]byte, *modules.StateVersion, error) {
-//	return rep.statedb.GetSysConfig(name)
-//}
-
-//func (rep *StateRepository) GetAllConfig() (map[string]*modules.ContractStateValue, error) {
-//	return rep.statedb.GetAllSysConfig()
-//}
-
 func (rep *StateRepository) GetSysParamWithoutVote() (map[string]string, error) {
 	return rep.statedb.GetSysParamWithoutVote()
 }
@@ -139,9 +131,11 @@ func (rep *StateRepository) GetContractStatesByPrefix(id []byte,
 func (rep *StateRepository) GetContract(id []byte) (*modules.Contract, error) {
 	return rep.statedb.GetContract(id)
 }
+
 func (rep *StateRepository) GetAllContracts() ([]*modules.Contract, error) {
 	return rep.statedb.GetAllContracts()
 }
+
 func (rep *StateRepository) GetContractsByTpl(tplId []byte) ([]*modules.Contract, error) {
 	cids, err := rep.statedb.GetContractIdsByTpl(tplId)
 	if err != nil {
@@ -161,6 +155,7 @@ func (rep *StateRepository) GetContractsByTpl(tplId []byte) ([]*modules.Contract
 func (rep *StateRepository) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
 	return rep.statedb.GetContractTpl(tplId)
 }
+
 func (rep *StateRepository) GetContractTplCode(tplId []byte) ([]byte, error) {
 	return rep.statedb.GetContractTplCode(tplId)
 }
@@ -203,22 +198,26 @@ func (rep *StateRepository) GetAccountBalance(address common.Address) uint64 {
 func (rep *StateRepository) LookupAccount() map[common.Address]*modules.AccountInfo {
 	return rep.statedb.LookupAccount()
 }
+
 func (rep *StateRepository) GetPledgeList() (*modules.PledgeList, error) {
 	dd, _, err := rep.statedb.GetContractState(syscontract.DepositContractAddress.Bytes(), constants.PledgeListLastDate)
 	if err != nil {
 		return nil, err
 	}
+
 	date := string(dd)
 	key := constants.PledgeList + date
 	data, _, err := rep.statedb.GetContractState(syscontract.DepositContractAddress.Bytes(), key)
 	if err != nil {
 		return nil, err
 	}
+
 	pledgeList := &modules.PledgeList{}
 	err = json.Unmarshal(data, pledgeList)
 	if err != nil {
 		return nil, err
 	}
+
 	return pledgeList, nil
 }
 
@@ -240,6 +239,7 @@ func (rep *StateRepository) GetPledgeDepositApplyList() ([]*modules.AddressAmoun
 	}
 	return result, nil
 }
+
 func (rep *StateRepository) GetPledgeWithdrawApplyList() ([]*modules.AddressAmount, error) {
 	states, err := rep.statedb.GetContractStatesByPrefix(syscontract.DepositContractAddress.Bytes(),
 		string(constants.PLEDGE_WITHDRAW_PREFIX))
@@ -260,26 +260,37 @@ func (rep *StateRepository) GetPledgeWithdrawApplyList() ([]*modules.AddressAmou
 
 //根据用户的新质押和提币申请，以及质押列表计算
 func (rep *StateRepository) GetPledgeListWithNew() (*modules.PledgeList, error) {
-
 	pledgeList, err := rep.GetPledgeList()
-	if err != nil || pledgeList == nil {
-		pledgeList = &modules.PledgeList{}
+	if err != nil {
+		return nil, err
+		//pledgeList = &modules.PledgeList{}
 	}
-	newDepositList, _ := rep.GetPledgeDepositApplyList()
+
+	newDepositList, err := rep.GetPledgeDepositApplyList()
+	if err != nil {
+		return nil, err
+	}
+
 	for _, deposit := range newDepositList {
 		pledgeList.Add(deposit.Address, deposit.Amount, 0)
 	}
-	newWithdrawList, _ := rep.GetPledgeWithdrawApplyList()
-	for _, withdraw := range newWithdrawList {
-		pledgeList.Reduce(withdraw.Address, withdraw.Amount)
-	}
+
+	//newWithdrawList, err := rep.GetPledgeWithdrawApplyList()
+	//if err != nil{
+	//	return nil, err
+	//}
+
+	//for _, withdraw := range newWithdrawList {
+	//	pledgeList.Reduce(withdraw.Address, withdraw.Amount)
+	//}
 
 	return pledgeList, nil
 }
+
 func (rep *StateRepository) GetMediatorVotedResults() (map[string]uint64, error) {
 	mediators, err := rep.statedb.GetCandidateMediatorList()
 	if err != nil {
-		log.Debug("GetPledgeListWithNew error" + err.Error())
+		log.Debug("GetCandidateMediatorList error" + err.Error())
 		return nil, err
 	}
 
@@ -316,6 +327,31 @@ func (rep *StateRepository) GetMediatorVotedResults() (map[string]uint64, error)
 
 	return mediatorVoteCount, nil
 }
+
+func (rep *StateRepository) GetVotingForMediator(addStr string) (map[string]uint64, error) {
+	pledgeList, err := rep.GetPledgeListWithNew()
+	if err != nil {
+		log.Debug("GetPledgeListWithNew error" + err.Error())
+		return nil, err
+	}
+
+	votingMediatorCount := make(map[string]uint64)
+	for _, account := range pledgeList.Members {
+		// 遍历该账户投票的mediator
+		addr, _ := common.StringToAddress(account.Address)
+		votedMediators := rep.statedb.GetAccountVotedMediators(addr)
+		for med := range votedMediators {
+			// 判断该账户是否投票了指定的mediator
+			if addStr == med {
+				votingMediatorCount[account.Address] = account.Amount
+				break
+			}
+		}
+	}
+
+	return votingMediatorCount, nil
+}
+
 func (rep *StateRepository) RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error) {
 	return rep.statedb.RetrieveMediatorInfo(address)
 }

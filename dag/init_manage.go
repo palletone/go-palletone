@@ -66,10 +66,10 @@ func (dag *Dag) InitPropertyDB(genesis *core.Genesis, unit *modules.Unit) error 
 	//  初始化mediator调度器，并存在数据库
 	// @author Albert·Gou
 	ms := modules.InitMediatorSchl(gp, dgp)
-	dag.stablePropRep.UpdateMediatorSchedule(ms, gp, dgp)
 	if err := dag.stablePropRep.StoreMediatorSchl(ms); err != nil {
 		return err
 	}
+	dag.stablePropRep.UpdateMediatorSchedule()
 
 	return nil
 }
@@ -157,15 +157,17 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 }
 
 func (dag *Dag) IsSynced() bool {
-	gp := dag.GetGlobalProp()
-	dgp := dag.GetDynGlobalProp()
+	//gp := dag.GetGlobalProp()
+	//dgp := dag.GetDynGlobalProp()
 
 	//nowFine := time.Now()
 	//now := time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
 	now := time.Now()
 	// 防止误判，获取之后的第2个生产槽时间
 	//nextSlotTime := dag.unstablePropRep.GetSlotTime(gp, dgp, 1)
-	nextSlotTime := dag.unstablePropRep.GetSlotTime(gp, dgp, 2)
+	//nextSlotTime := dag.unstablePropRep.GetSlotTime(2)
+	_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
+	nextSlotTime := rep.GetSlotTime(2)
 
 	return nextSlotTime.After(now)
 }
