@@ -992,7 +992,15 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 	for _, jsonu := range utxoJsons {
 		//utxos = append(utxos, &json)
 		if jsonu.Asset == ptn.String() {
-			utxos = append(utxos, &ptnjson.UtxoJson{TxHash: jsonu.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
+			utxos = append(utxos, &ptnjson.UtxoJson{
+				TxHash: jsonu.TxHash,
+				MessageIndex: jsonu.MessageIndex,
+				OutIndex: jsonu.OutIndex,
+				Amount: jsonu.Amount,
+				Asset: jsonu.Asset,
+				PkScriptHex: jsonu.PkScriptHex,
+				PkScriptString: jsonu.PkScriptString,
+				LockTime: jsonu.LockTime})
 		}
 	}
 	fee, err := decimal.NewFromString("1")
