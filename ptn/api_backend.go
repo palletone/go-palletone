@@ -17,14 +17,14 @@
 package ptn
 
 import (
-	"context"
-	"time"
 	"bytes"
-	"fmt"
-	"sort"
+	"context"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"math/big"
+	"sort"
+	"time"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -33,12 +33,12 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
-	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
-	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/consensus/jury"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
@@ -526,28 +526,51 @@ func (b *PtnApiBackend) GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
 	result := covertUtxos2Json(utxos)
 	return result, nil
 }
-func (b *PtnApiBackend) GetAddrUtxos2(addr string) ([]*ptnjson.UtxoJson,[]*ptnjson.UtxoJson, error) {
-	address, err := common.StringToAddress(addr)
-	if err != nil {
-		return nil, nil,err
-	}
-	stbUtxos, _ := b.ptn.dag.GetAddrStableUtxos(address)
-	allUtxos,_:=b.ptn.dag.GetAddrUtxos(address)
-	unstbUtxos:=make(map[modules.OutPoint]*modules.Utxo)
-	for outpoint,utxo:=range allUtxos{
-		_,ok:= stbUtxos[outpoint]
-		if !ok{
-			unstbUtxos[outpoint]=utxo
-		}
-	}
-	return covertUtxos2Json(stbUtxos),covertUtxos2Json(unstbUtxos), nil
-}
-func covertUtxos2Json(utxos map[modules.OutPoint]*modules.Utxo) []*ptnjson.UtxoJson{
+func covertUtxos2Json(utxos map[modules.OutPoint]*modules.Utxo) []*ptnjson.UtxoJson {
 	result := []*ptnjson.UtxoJson{}
 	for o, u := range utxos {
 		o := o
 		ujson := ptnjson.ConvertUtxo2Json(&o, u)
 		result = append(result, ujson)
+	}
+	return result
+}
+func (b *PtnApiBackend) GetAddrUtxos2(addr string) ([]*ptnjson.UtxoJson, error) {
+	address, err := common.StringToAddress(addr)
+	if err != nil {
+		return nil, err
+	}
+
+	allUtxos, _ := b.ptn.dag.GetAddrUtxos(address)
+	stbUtxos, _ := b.ptn.dag.GetAddrStableUtxos(address)
+	//根据稳定UTXO和不稳定UTXO的对比，更新UTXO的FlagStatus
+	result := make(map[modules.OutPoint]*ptnjson.UtxoJson)
+	for outpoint, utxo := range allUtxos {
+		_, ok := stbUtxos[outpoint]
+		ujson := ptnjson.ConvertUtxo2Json(&outpoint, utxo)
+		if !ok { //不稳定的UTXO
+			ujson.FlagStatus = "Unstable"
+		} else {
+			ujson.FlagStatus = "Normal"
+		}
+		result[outpoint] = ujson
+	}
+	//在Stable里面有，但是在All里面没有，说明已经被花费
+	for outpoint, utxo := range stbUtxos {
+		_, ok := allUtxos[outpoint]
+		if !ok { //已经被花费的UTXO
+			ujson := ptnjson.ConvertUtxo2Json(&outpoint, utxo)
+			ujson.FlagStatus = "Spending"
+			result[outpoint] = ujson
+		}
+	}
+	return covertUtxosJsonMap(result), nil
+}
+func covertUtxosJsonMap(utxos map[modules.OutPoint]*ptnjson.UtxoJson) []*ptnjson.UtxoJson {
+	result := []*ptnjson.UtxoJson{}
+	for _, u := range utxos {
+
+		result = append(result, u)
 	}
 	return result
 }
@@ -592,7 +615,7 @@ func (b *PtnApiBackend) GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson,
 }
 
 func (b *PtnApiBackend) ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi,
-ccLanguage string) ([]byte, error) {
+	ccLanguage string) ([]byte, error) {
 	//channelId := "palletone"
 	payload, err := b.ptn.contract.Install(channelId, ccName, ccPath, ccVersion, ccDescription, ccAbi, ccLanguage)
 	if err != nil {
@@ -650,7 +673,7 @@ func (b *PtnApiBackend) SignAndSendRequest(addr common.Address, tx *modules.Tran
 
 //
 func (b *PtnApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName,
-path, version string, description, abi, language string, addrs []common.Address) (reqId common.Hash,
+	path, version string, description, abi, language string, addrs []common.Address) (reqId common.Hash,
 	tplId []byte, err error) {
 	return b.ptn.contractPorcessor.ContractInstallReq(from, to, daoAmount, daoFee, tplName, path,
 		version, description, abi, language, true, addrs)
@@ -672,7 +695,7 @@ func (b *PtnApiBackend) SendContractInvokeReqTx(requestTx *modules.Transaction) 
 	return requestTx.RequestHash(), nil
 }
 func (b *PtnApiBackend) ContractInvokeReqTokenTx(from, to, toToken common.Address, daoAmount, daoFee,
-daoAmountToken uint64, assetToken string, contractAddress common.Address, args [][]byte,
+	daoAmountToken uint64, assetToken string, contractAddress common.Address, args [][]byte,
 	timeout uint32) (reqId common.Hash, err error) {
 	return b.ptn.contractPorcessor.ContractInvokeReqToken(from, to, toToken, daoAmount, daoFee, daoAmountToken,
 		assetToken, contractAddress, args, timeout)
@@ -683,7 +706,7 @@ func (b *PtnApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, da
 }
 
 func (b *PtnApiBackend) ContractInstallReqTxFee(from, to common.Address, daoAmount, daoFee uint64, tplName,
-path, version string, description, abi, language string, addrs []common.Address) (fee float64, size float64, tm uint32,
+	path, version string, description, abi, language string, addrs []common.Address) (fee float64, size float64, tm uint32,
 	err error) {
 	return b.ptn.contractPorcessor.ContractInstallReqFee(from, to, daoAmount, daoFee, tplName, path,
 		version, description, abi, language, true, addrs)

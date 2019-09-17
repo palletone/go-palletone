@@ -336,10 +336,9 @@ func (b *LesApiBackend) GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
 	return result, nil
 
 }
-func (b *LesApiBackend) GetAddrUtxos2(addr string) ([]*ptnjson.UtxoJson,[]*ptnjson.UtxoJson, error){
-	return nil, nil, nil
+func (b *LesApiBackend) GetAddrUtxos2(addr string) ([]*ptnjson.UtxoJson, error) {
+	return nil, nil
 }
-
 
 func (b *LesApiBackend) GetAddrRawUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error) {
 	address, err := common.StringToAddress(addr)
@@ -430,7 +429,7 @@ func (b *LesApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, da
 }
 
 func (b *LesApiBackend) ContractInstallReqTxFee(from, to common.Address, daoAmount, daoFee uint64, tplName,
-path, version string, description, abi, language string, addrs []common.Address) (fee float64, size float64, tm uint32,
+	path, version string, description, abi, language string, addrs []common.Address) (fee float64, size float64, tm uint32,
 	err error) {
 	return
 }
