@@ -246,7 +246,8 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 	var err error
 
 	if address.IsSystemContractAddress() {
-		cc, err = cclist.GetChaincode(chainID, deployId, "ptn001")
+		cp := idag.GetChainParameters()
+		cc, err = cclist.GetChaincode(chainID, deployId, cp.ContractSystemVersion)
 		if err != nil {
 			return nil, err
 		}
