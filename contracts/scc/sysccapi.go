@@ -124,7 +124,7 @@ func deploySysCC(chainID string, syscc *SystemChaincode) error {
 			defer txsim.Done()
 		}
 	*/
-	chaincodeID := &pb.ChaincodeID{Path: syscc.Path, Name: syscc.Name}
+	chaincodeID := &pb.ChaincodeID{Path: syscc.Path, Name: syscc.Name, Version: syscc.Version}
 	spec := &pb.ChaincodeSpec{Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]), ChaincodeId: chaincodeID, Input: &pb.ChaincodeInput{Args: syscc.InitArgs}}
 
 	// First build and get the deployment spec
@@ -135,8 +135,8 @@ func deploySysCC(chainID string, syscc *SystemChaincode) error {
 	//	return err
 	//}
 	log.Infof("buildSysCC chaincodeDeploymentSpec =%v", chaincodeDeploymentSpec)
-	version := util.GetSysCCVersion()
-	cccid := ccprov.GetCCContext(syscc.Id, chainID, chaincodeDeploymentSpec.ChaincodeSpec.ChaincodeId.Name, version, txid, true, nil, nil)
+	//version := util.GetSysCCVersion()
+	cccid := ccprov.GetCCContext(syscc.Id, chainID, chaincodeDeploymentSpec.ChaincodeSpec.ChaincodeId.Name, chaincodeDeploymentSpec.ChaincodeSpec.ChaincodeId.Version, txid, true, nil, nil)
 
 	_, _, err = ccprov.ExecuteWithErrorFilter(ctxt, cccid, chaincodeDeploymentSpec, 0)
 
@@ -144,7 +144,7 @@ func deploySysCC(chainID string, syscc *SystemChaincode) error {
 		log.Errorf("ExecuteWithErrorFilter with syscc.Name[%s] chainId[%s] err !!", syscc.Name, chainID)
 	} else {
 		log.Info("system chaincode deployed ok!!")
-		log.Infof("contract name[%s],path[%s]", syscc.Name, syscc.Path)
+		log.Infof("contract name[%s],path[%s],version[%s]", syscc.Name, syscc.Path, syscc.Version)
 		cc := &cclist.CCInfo{
 			Id:       syscc.Id,
 			Name:     syscc.Name,
@@ -164,7 +164,7 @@ func deploySysCC(chainID string, syscc *SystemChaincode) error {
 
 // DeDeploySysCC stops the system chaincode and deregisters it from inproccontroller
 func DeDeploySysCC(chainID string, syscc *SystemChaincode, dontRmCon bool) error {
-	chaincodeID := &pb.ChaincodeID{Path: syscc.Path, Name: syscc.Name}
+	chaincodeID := &pb.ChaincodeID{Path: syscc.Path, Name: syscc.Name, Version: syscc.Version}
 	spec := &pb.ChaincodeSpec{Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]), ChaincodeId: chaincodeID, Input: &pb.ChaincodeInput{Args: syscc.InitArgs}}
 	ctx := context.Background()
 	// First build and get the deployment spec
@@ -179,7 +179,7 @@ func DeDeploySysCC(chainID string, syscc *SystemChaincode, dontRmCon bool) error
 	cccid := ccprov.GetCCContext(syscc.Id, chainID, syscc.Name, version, "123", true, nil, nil)
 	err := ccprov.Stop(ctx, cccid, chaincodeDeploymentSpec, dontRmCon)
 	if err == nil {
-		cclist.DelChaincode(chainID, syscc.Name, version)
+		cclist.DelChaincode(chainID, syscc.Name, syscc.Version)
 	}
 
 	return err

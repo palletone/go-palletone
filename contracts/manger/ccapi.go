@@ -246,7 +246,7 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 	var err error
 
 	if address.IsSystemContractAddress() {
-		cc, err = cclist.GetChaincode(chainID, deployId)
+		cc, err = cclist.GetChaincode(chainID, deployId, "ptn001")
 		if err != nil {
 			return nil, err
 		}
@@ -261,12 +261,12 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 	es := NewEndorserServer(mksupt)
 	log.Debugf("new endorser server")
 	spec := &pb.ChaincodeSpec{
-		ChaincodeId: &pb.ChaincodeID{Name: cc.Name},
+		ChaincodeId: &pb.ChaincodeID{Name: cc.Name, Version: cc.Version},
 		Type:        pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value[cc.Language]),
 		Input:       &pb.ChaincodeInput{Args: args},
 	}
 	cid := &pb.ChaincodeID{
-		Path:    cc.Path, //no use
+		Path:    cc.Path,
 		Name:    cc.Name,
 		Version: cc.Version,
 	}

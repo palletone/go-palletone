@@ -15,7 +15,6 @@
 package scc
 
 import (
-	"github.com/palletone/go-palletone/contracts/example/go/samplesyscc"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/contracts/syscontract/blacklistcc"
 	"github.com/palletone/go-palletone/contracts/syscontract/coinbasecc"
@@ -27,6 +26,8 @@ import (
 	"github.com/palletone/go-palletone/contracts/syscontract/prc721"
 	"github.com/palletone/go-palletone/contracts/syscontract/sysconfigcc"
 	"github.com/palletone/go-palletone/contracts/syscontract/vote"
+	"github.com/palletone/go-palletone/contracts/example/go/samplesyscc"
+	"github.com/palletone/go-palletone/contracts/example/go/samplesyscc1"
 )
 
 var systemChaincodes = []*SystemChaincode{
@@ -38,6 +39,15 @@ var systemChaincodes = []*SystemChaincode{
 		Version:   "ptn001",
 		InitArgs:  [][]byte{},
 		Chaincode: &samplesyscc.SampleSysCC{},
+	},
+	{
+		Id:        syscontract.TestRunContractAddress.Bytes(), //PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX
+		Enabled:   true,
+		Name:      "sample_syscc",
+		Path:      "../example/go/samplesyscc1/samplesyscc1",
+		Version:   "ptn002",
+		InitArgs:  [][]byte{},
+		Chaincode: &samplesyscc1.SampleSysCC{},
 	},
 	//
 	//{
