@@ -568,3 +568,14 @@ func nodePayToDepositContract(stub shim.ChaincodeStubInterface, role string, arg
 		return shim.Success(nil)
 	}
 }
+
+func convertDepositBalance2Json(db *modules.DepositBalance) *modules.DepositBalanceJson {
+	dbJson := &modules.DepositBalanceJson{}
+	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
+	dbJson.Balance = gasToken.DisplayAmount(db.Balance)
+	dbJson.EnterTime = db.EnterTime
+	dbJson.Role = db.Role
+	dbJson.PublicKey = db.PublicKey
+
+	return dbJson
+}

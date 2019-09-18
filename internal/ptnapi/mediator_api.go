@@ -28,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
@@ -55,7 +56,7 @@ func (a *PublicMediatorAPI) IsApproved(addStr string) (string, error) {
 	return string(rsp), nil
 }
 
-func getDeposit(addStr string, a Backend) (*modules.MediatorDeposit, error) {
+func getDeposit(addStr string, a Backend) (*modules.MediatorDepositJson, error) {
 	// 构建参数
 	cArgs := [][]byte{defaultMsg0, defaultMsg1, []byte(modules.GetMediatorDeposit), []byte(addStr)}
 	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().Unix())).Int31n(100000000))
@@ -66,7 +67,7 @@ func getDeposit(addStr string, a Backend) (*modules.MediatorDeposit, error) {
 		return nil, err
 	}
 
-	depositB := modules.NewMediatorDeposit()
+	depositB := &modules.MediatorDepositJson{}
 	err = json.Unmarshal(rsp, depositB)
 	if err == nil {
 		return depositB, nil
@@ -75,7 +76,7 @@ func getDeposit(addStr string, a Backend) (*modules.MediatorDeposit, error) {
 	return nil, fmt.Errorf(string(rsp))
 }
 
-func (a *PublicMediatorAPI) GetDeposit(addStr string) (*modules.MediatorDeposit, error) {
+func (a *PublicMediatorAPI) GetDeposit(addStr string) (*modules.MediatorDepositJson, error) {
 	// 参数检查
 	_, err := common.StringToAddress(addStr)
 	if err != nil {
@@ -290,8 +291,12 @@ func (a *PrivateMediatorAPI) PayDeposit(from string, amount decimal.Decimal) (*T
 		return nil, fmt.Errorf("account %v does not apply for mediator", from)
 	}
 
+	// 判断保证金是否已交齐
 	cp := a.Dag().GetChainParameters()
-	if md.Balance == cp.DepositAmountForMediator {
+	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
+	dam := gasToken.DisplayAmount(cp.DepositAmountForMediator)
+	dam.Equal(md.Balance)
+	if dam.Equal(md.Balance) {
 		return nil, fmt.Errorf("the deposit of account %v is enough %v", from, cp.DepositAmountForMediator)
 	}
 

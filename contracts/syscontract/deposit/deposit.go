@@ -309,7 +309,8 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		if balance == nil {
 			return shim.Success([]byte("balance is nil"))
 		}
-		byte, err := json.Marshal(balance)
+		dbJson := convertDepositBalance2Json(balance)
+		byte, err := json.Marshal(dbJson)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -324,7 +325,8 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		if mediator == nil {
 			return shim.Success([]byte("mediator is nil"))
 		}
-		byte, err := json.Marshal(mediator)
+		mdJson := convertMediatorDeposit2Json(mediator)
+		byte, err := json.Marshal(mdJson)
 		if err != nil {
 			return shim.Error(err.Error())
 		}

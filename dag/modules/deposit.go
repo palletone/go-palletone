@@ -14,6 +14,8 @@
 
 package modules
 
+import "github.com/shopspring/decimal"
+
 const (
 	ListForApplyBecomeMediator = "ListForApplyBecomeMediator"
 	ListForAgreeBecomeMediator = "ListForAgreeBecomeMediator"
@@ -123,19 +125,25 @@ type DepositBalance struct {
 	PublicKey string `json:"public_key"`
 }
 
-// mediator保证金信息
-type MediatorDeposit struct {
+// mediator保证金額外信息
+type MediatorDepositExtra struct {
 	ApplyEnterTime string `json:"apply_enter_time"` // 申请加入时间
 	ApplyQuitTime  string `json:"apply_quit_time"`  // 申请退出时间
 	Status         string `json:"status"`           // 申请状态  申请、同意、退出
 	AgreeTime      string `json:"agree_time"`       // 基金会同意申请时间'
+}
+
+// mediator保证金信息
+type MediatorDeposit struct {
+	MediatorDepositExtra
 	DepositBalance
 }
 
 func NewMediatorDeposit() *MediatorDeposit {
-	return &MediatorDeposit{
-		Status: Quited,
-	}
+	md := &MediatorDeposit{}
+	md.Status = Quited
+
+	return md
 }
 
 type NorNodBal struct {
@@ -146,4 +154,16 @@ type NorNodBal struct {
 type Member struct {
 	Key   string `json:"key"`
 	Value []byte `json:"value"`
+}
+
+type DepositBalanceJson struct {
+	Balance   decimal.Decimal `json:"balance"`
+	EnterTime string          `json:"enter_time"`
+	Role      string          `json:"role"`
+	PublicKey string          `json:"public_key"`
+}
+
+type MediatorDepositJson struct {
+	MediatorDepositExtra
+	DepositBalanceJson
 }
