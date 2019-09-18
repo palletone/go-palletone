@@ -29,15 +29,19 @@ import (
 	"strconv"
 	"unsafe"
 
+	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/ptnjson/statistics"
 	"github.com/shopspring/decimal"
+	"math/rand"
+	"time"
 )
 
 // PublicPalletOneAPI provides an API to access PalletOne related information.
@@ -72,14 +76,14 @@ func (s *PublicPalletOneAPI) Syncing() (interface{}, error) {
 	progress := s.b.Downloader().Progress()
 
 	// Return not syncing if the synchronization already completed
-		if progress.CurrentBlock >= progress.HighestBlock {
-			return false, nil
-		}
+	if progress.CurrentBlock >= progress.HighestBlock {
+		return false, nil
+	}
 	// Otherwise gather the block sync stats
 	return map[string]interface{}{
 		"startingBlock": hexutil.Uint64(progress.StartingBlock),
 		"currentBlock":  hexutil.Uint64(progress.CurrentBlock),
-		"highestBlock": hexutil.Uint64(progress.HighestBlock),
+		"highestBlock":  hexutil.Uint64(progress.HighestBlock),
 		//"pulledStates": hexutil.Uint64(progress.PulledStates),
 		//"knownStates":  hexutil.Uint64(progress.KnownStates),
 	}, nil
@@ -150,6 +154,26 @@ func (s *PublicBlockChainAPI) ListSysConfig() ([]*ptnjson.ConfigJson, error) {
 
 func (s *PublicBlockChainAPI) GetChainParameters() (*core.ChainParameters, error) {
 	return s.b.Dag().GetChainParameters(), nil
+}
+
+func (s *PublicBlockChainAPI) GetPledge(addStr string) (*modules.PledgeStatusJson, error) {
+	// 构建参数
+	cArgs := [][]byte{defaultMsg0, defaultMsg1, []byte(modules.QueryPledgeStatusByAddr), []byte(addStr)}
+	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().Unix())).Int31n(100000000))
+
+	// 调用系统合约
+	rsp, err := s.b.ContractQuery(syscontract.DepositContractAddress.Bytes(), txid[:], cArgs, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	pledge := &modules.PledgeStatusJson{}
+	err = json.Unmarshal(rsp, pledge)
+	if err == nil {
+		return pledge, nil
+	}
+
+	return nil, fmt.Errorf(string(rsp))
 }
 
 func (s *PublicBlockChainAPI) AddressBalanceStatistics(ctx context.Context, token string,

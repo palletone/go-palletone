@@ -180,6 +180,11 @@ web3._extend({
 			call: 'ptn_listSysConfig'
 			params: 0,
 		}),
+		new web3._extend.Method({
+			name: 'getPledge',
+			call: 'ptn_getPledge'
+			params: 1,
+		}),
 	],
 
 	properties: [
