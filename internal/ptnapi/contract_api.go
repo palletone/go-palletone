@@ -584,9 +584,7 @@ func (s *PrivateContractAPI) DepositContractInvoke(ctx context.Context, from, to
 				return "", fmt.Errorf("invalid args, is null")
 			}
 
-			if from != args.AddStr /*|| from != args.RewardAdd*/ {
-				//return "", fmt.Errorf("the calling account(%v) is not produce account(%v) or "+
-				//	"reward account(%v), please use mediator.apply()", from, args.AddStr, args.RewardAdd)
+			if from != args.AddStr{
 				return "", fmt.Errorf("the calling account(%v) is not applying account(%v), "+
 					"please use mediator.apply()", from, args.AddStr)
 			}
