@@ -90,6 +90,9 @@ func GenerateABI(chainCode interface{}) (string, error) {
 
 		funcName := iStructType.Method(i).Name
 		//fmt.Println(iStructType.Method(i).Name)
+		if funcName == "Init" || funcName == "Invoke" {
+			continue
+		}
 
 		oneFunc := ABI_Function{Name: funcName, Type: "function",
 			Inputs: make([]ABI_Input, 0), Outputs: make([]ABI_Output, 0)}
