@@ -106,8 +106,9 @@ func (a *PublicMediatorAPI) ListAll() []string {
 	return addStrs
 }
 
-func (a *PublicMediatorAPI) ListVoteResults() (map[string]uint64, error) {
-	return a.Dag().MediatorVotedResults()
+func (a *PublicMediatorAPI) ListVoteResults() map[string]uint64 {
+	res, _ := a.Dag().MediatorVotedResults()
+	return res
 }
 
 func (a *PublicMediatorAPI) ListVotingFor(addStr string) (map[string]uint64, error) {
@@ -120,7 +121,8 @@ func (a *PublicMediatorAPI) ListVotingFor(addStr string) (map[string]uint64, err
 		return nil, fmt.Errorf("%v is not mediator", addStr)
 	}
 
-	return a.Dag().GetVotingForMediator(addStr)
+	res, _ := a.Dag().GetVotingForMediator(addStr)
+	return res, nil
 }
 
 func (a *PublicMediatorAPI) LookupMediatorInfo() []*modules.MediatorInfo {
