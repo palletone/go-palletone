@@ -439,3 +439,13 @@ func handleMediator(stub shim.ChaincodeStubInterface, quitAddr common.Address) e
 	}
 	return nil
 }
+
+func convertMediatorDeposit2Json(md *modules.MediatorDeposit) *modules.MediatorDepositJson {
+	mdJson := &modules.MediatorDepositJson{}
+
+	dbJson := convertDepositBalance2Json(&md.DepositBalance)
+	mdJson.DepositBalanceJson = *dbJson
+	mdJson.MediatorDepositExtra = md.MediatorDepositExtra
+
+	return mdJson
+}
