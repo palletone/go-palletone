@@ -94,7 +94,7 @@ func GenerateABI(chainCode interface{}) (string, error) {
 			continue
 		}
 
-		oneFunc := ABI_Function{Name: funcName, Type: "function",
+		oneFunc := ABI_Function{Name: strings.ToLower(funcName[0:1]) + funcName[1:], Type: "function",
 			Inputs: make([]ABI_Input, 0), Outputs: make([]ABI_Output, 0)}
 
 		if strings.HasPrefix(funcName, "Query") || strings.HasPrefix(funcName, "Find") ||
@@ -166,7 +166,7 @@ func GoRun(chainCodeName, fileContent string, mkdir bool) {
 		path = path + string(os.PathSeparator)
 	}
 	//
-	file, err := os.OpenFile(path+chainCodeName+".abi.go", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+	file, err := os.OpenFile(path+chainCodeName+".abi.go", os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		panic(err)
 	}
