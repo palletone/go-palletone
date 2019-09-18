@@ -76,6 +76,12 @@ func getDeposit(addStr string, a Backend) (*modules.MediatorDeposit, error) {
 }
 
 func (a *PublicMediatorAPI) GetDeposit(addStr string) (*modules.MediatorDeposit, error) {
+	// 参数检查
+	_, err := common.StringToAddress(addStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid account address: %v", addStr)
+	}
+
 	return getDeposit(addStr, a.Backend)
 }
 

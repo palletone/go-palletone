@@ -22,28 +22,32 @@ package modules
 
 import (
 	"errors"
+
 	"github.com/palletone/go-palletone/common/math"
+	"github.com/shopspring/decimal"
 )
 
-type PledgeStatus struct{
-	NewDepositAmount uint64
-	PledgeAmount uint64
+type PledgeStatus struct {
+	NewDepositAmount    uint64
+	PledgeAmount        uint64
 	WithdrawApplyAmount uint64
-	OtherAmount uint64
+	OtherAmount         uint64
 }
 
 //质押列表
 type PledgeList struct {
-	TotalAmount uint64           `json:"total_amount"`
-	Date        string           `json:"date"` //质押列表所在的日期yyyyMMdd
+	TotalAmount uint64                 `json:"total_amount"`
+	Date        string                 `json:"date"` //质押列表所在的日期yyyyMMdd
 	Members     []*AddressRewardAmount `json:"members"`
 }
+
 //账户质押情况
 type AddressRewardAmount struct {
 	Address string `json:"address"`
 	Amount  uint64 `json:"amount"`
-	Reward uint64 `json:"reward"`
+	Reward  uint64 `json:"reward"`
 }
+
 //账户质押情况
 type AddressAmount struct {
 	Address string `json:"address"`
@@ -53,28 +57,29 @@ type AddressAmount struct {
 func NewAddressAmount(addr string, amt uint64) *AddressAmount {
 	return &AddressAmount{Address: addr, Amount: amt}
 }
-func (pl *PledgeList) Add(addr string, amount,reward uint64) {
+func (pl *PledgeList) Add(addr string, amount, reward uint64) {
 	pl.TotalAmount += amount
 	for _, p := range pl.Members {
 		if p.Address == addr {
 			p.Amount += amount
-			p.Reward+=reward
+			p.Reward += reward
 			return
 		}
 	}
 	pl.Members = append(pl.Members, &AddressRewardAmount{
 		Address: addr,
-		Amount: amount,
-		Reward:reward})
+		Amount:  amount,
+		Reward:  reward})
 }
-func (pl *PledgeList) GetAmount(addr string) uint64{
-	for _,row:=range pl.Members{
-		if row.Address==addr{
+func (pl *PledgeList) GetAmount(addr string) uint64 {
+	for _, row := range pl.Members {
+		if row.Address == addr {
 			return row.Amount
 		}
 	}
 	return 0
 }
+
 //从质押列表中提币，Amount =MaxUint64表示全部提取
 func (pl *PledgeList) Reduce(addr string, amount uint64) (uint64, error) {
 	for i, p := range pl.Members {
@@ -95,4 +100,11 @@ func (pl *PledgeList) Reduce(addr string, amount uint64) (uint64, error) {
 		}
 	}
 	return 0, errors.New("Address not found")
+}
+
+type PledgeStatusJson struct {
+	NewDepositAmount    decimal.Decimal `json:"newDepositAmount"`
+	PledgeAmount        decimal.Decimal `json:"pledgeAmount"`
+	WithdrawApplyAmount string          `json:"withdrawApplyAmount"`
+	OtherAmount         decimal.Decimal `json:"otherAmount"`
 }
