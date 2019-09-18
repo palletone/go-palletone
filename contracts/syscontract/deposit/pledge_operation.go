@@ -27,7 +27,6 @@ import (
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/shopspring/decimal"
 )
 
 //  质押PTN
@@ -112,6 +111,7 @@ func processPledgeWithdraw(stub shim.ChaincodeStubInterface, args []string) pb.R
 	}
 	return shim.Success(nil)
 }
+
 func queryPledgeStatusByAddr(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	if len(args) != 1 {
 		return shim.Error("need 1 arg, Address")
@@ -120,30 +120,9 @@ func queryPledgeStatusByAddr(stub shim.ChaincodeStubInterface, args []string) pb
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	pjson := convertPledgeStatus2Json(status)
+	pjson := modules.ConvertPledgeStatus2Json(status)
 	data, _ := json.Marshal(pjson)
 	return shim.Success(data)
-}
-
-type pledgeStatusJson struct {
-	NewDepositAmount    decimal.Decimal
-	PledgeAmount        decimal.Decimal
-	WithdrawApplyAmount string
-	OtherAmount         decimal.Decimal
-}
-
-func convertPledgeStatus2Json(p *modules.PledgeStatus) *pledgeStatusJson {
-	data := &pledgeStatusJson{}
-	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
-	data.NewDepositAmount = gasToken.DisplayAmount(p.NewDepositAmount)
-	data.PledgeAmount = gasToken.DisplayAmount(p.PledgeAmount)
-	data.OtherAmount = gasToken.DisplayAmount(p.OtherAmount)
-	if p.WithdrawApplyAmount == math.MaxUint64 {
-		data.WithdrawApplyAmount = "all"
-	} else {
-		data.WithdrawApplyAmount = gasToken.DisplayAmount(p.WithdrawApplyAmount).String()
-	}
-	return data
 }
 
 func queryAllPledgeHistory(stub shim.ChaincodeStubInterface) pb.Response {
@@ -155,6 +134,7 @@ func queryAllPledgeHistory(stub shim.ChaincodeStubInterface) pb.Response {
 	data, _ := json.Marshal(history)
 	return shim.Success(data)
 }
+
 func queryPledgeList(stub shim.ChaincodeStubInterface) pb.Response {
 	list, err := getLastPledgeList(stub)
 	if err != nil {
@@ -163,13 +143,14 @@ func queryPledgeList(stub shim.ChaincodeStubInterface) pb.Response {
 	result, _ := json.Marshal(list)
 	return shim.Success(result)
 }
+
 func queryPledgeListByDate(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	date:=args[0]
+	date := args[0]
 	reg := regexp.MustCompile(`[\d]{8}`)
-	if !reg.Match([]byte(date)){
+	if !reg.Match([]byte(date)) {
 		return shim.Error("must use YYYYMMDD format")
 	}
-	list, err := getPledgeListByDate(stub,date)
+	list, err := getPledgeListByDate(stub, date)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
