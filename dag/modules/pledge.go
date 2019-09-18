@@ -24,7 +24,6 @@ import (
 	"errors"
 
 	"github.com/palletone/go-palletone/common/math"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/shopspring/decimal"
 )
 
@@ -108,18 +107,4 @@ type PledgeStatusJson struct {
 	PledgeAmount        decimal.Decimal `json:"pledgeAmount"`
 	WithdrawApplyAmount string          `json:"withdrawApplyAmount"`
 	OtherAmount         decimal.Decimal `json:"otherAmount"`
-}
-
-func ConvertPledgeStatus2Json(p *PledgeStatus) *PledgeStatusJson {
-	data := &PledgeStatusJson{}
-	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
-	data.NewDepositAmount = gasToken.DisplayAmount(p.NewDepositAmount)
-	data.PledgeAmount = gasToken.DisplayAmount(p.PledgeAmount)
-	data.OtherAmount = gasToken.DisplayAmount(p.OtherAmount)
-	if p.WithdrawApplyAmount == math.MaxUint64 {
-		data.WithdrawApplyAmount = "all"
-	} else {
-		data.WithdrawApplyAmount = gasToken.DisplayAmount(p.WithdrawApplyAmount).String()
-	}
-	return data
 }

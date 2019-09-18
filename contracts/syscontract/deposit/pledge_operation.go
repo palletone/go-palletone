@@ -120,7 +120,7 @@ func queryPledgeStatusByAddr(stub shim.ChaincodeStubInterface, args []string) pb
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	pjson := modules.ConvertPledgeStatus2Json(status)
+	pjson := convertPledgeStatus2Json(status)
 	data, _ := json.Marshal(pjson)
 	return shim.Success(data)
 }
@@ -156,4 +156,18 @@ func queryPledgeListByDate(stub shim.ChaincodeStubInterface, args []string) pb.R
 	}
 	result, _ := json.Marshal(list)
 	return shim.Success(result)
+}
+
+func convertPledgeStatus2Json(p *modules.PledgeStatus) *modules.PledgeStatusJson {
+	data := &modules.PledgeStatusJson{}
+	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
+	data.NewDepositAmount = gasToken.DisplayAmount(p.NewDepositAmount)
+	data.PledgeAmount = gasToken.DisplayAmount(p.PledgeAmount)
+	data.OtherAmount = gasToken.DisplayAmount(p.OtherAmount)
+	if p.WithdrawApplyAmount == math.MaxUint64 {
+		data.WithdrawApplyAmount = "all"
+	} else {
+		data.WithdrawApplyAmount = gasToken.DisplayAmount(p.WithdrawApplyAmount).String()
+	}
+	return data
 }
