@@ -120,11 +120,12 @@ func NewChainParams() ChainParameters {
 		UccDisk:       DefaultUccDisk,
 		UccDuringTime: DefaultContainerDuringTime,
 
-		TempUccMemory:        DefaultTempUccMemory,
-		TempUccCpuShares:     DefaultTempUccCpuShares,
-		TempUccCpuQuota:      DefaultTempUccCpuQuota,
-		ContractSignatureNum: DefaultContractSignatureNum,
-		ContractElectionNum:  DefaultContractElectionNum,
+		TempUccMemory:         DefaultTempUccMemory,
+		TempUccCpuShares:      DefaultTempUccCpuShares,
+		TempUccCpuQuota:       DefaultTempUccCpuQuota,
+		ContractSystemVersion: DefaultContractSystemVersion,
+		ContractSignatureNum:  DefaultContractSignatureNum,
+		ContractElectionNum:   DefaultContractElectionNum,
 
 		ContractTxTimeoutUnitFee:  DefaultContractTxTimeoutUnitFee,
 		ContractTxSizeUnitFee:     DefaultContractTxSizeUnitFee,
@@ -157,8 +158,9 @@ type ChainParameters struct {
 	TempUccCpuQuota  int64 `json:"temp_ucc_cpu_quota"`
 
 	//contract about
-	ContractSignatureNum int `json:"contract_signature_num"`
-	ContractElectionNum  int `json:"contract_election_num"`
+	ContractSystemVersion string `json:"contract_system_version"`
+	ContractSignatureNum  int    `json:"contract_signature_num"`
+	ContractElectionNum   int    `json:"contract_election_num"`
 
 	ContractTxTimeoutUnitFee  uint64  `json:"contract_tx_timeout_unit_fee"`
 	ContractTxSizeUnitFee     uint64  `json:"contract_tx_size_unit_fee"`

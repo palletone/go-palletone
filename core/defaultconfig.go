@@ -67,6 +67,8 @@ const (
 	DefaultMinMaintSkipSlots   = 0
 
 	//contract
+	DefaultContractSystemVersion = ""
+
 	DefaultContractSignatureNum = 3
 	DefaultContractElectionNum  = 4
 
