@@ -200,24 +200,24 @@ func GoRun(chainCodeName, fileContent string, mkdir bool) {
 	}
 }
 
-const chainCodeCallPrefix = ".Start(new("
-const chainCodeCallEndfix = "))"
-
-func getUserChainCodeName(fileContent string) string {
-	index := strings.Index(fileContent, chainCodeCallPrefix)
-	if index == -1 {
-		return ""
-	}
-	index += len(chainCodeCallPrefix)
-	end := strings.Index(fileContent[index:], chainCodeCallEndfix)
-	if end == -1 {
-		return ""
-	}
-	return fileContent[index : end+index]
-}
+//const chainCodeCallPrefix = ".Start(new("
+//const chainCodeCallEndfix = "))"
+//
+//func getUserChainCodeName(fileContent string) string {
+//	index := strings.Index(fileContent, chainCodeCallPrefix)
+//	if index == -1 {
+//		return ""
+//	}
+//	index += len(chainCodeCallPrefix)
+//	end := strings.Index(fileContent[index:], chainCodeCallEndfix)
+//	if end == -1 {
+//		return ""
+//	}
+//	return fileContent[index : end+index]
+//}
 
 func getChainCodeName(fileContent string) string {
-	reg, err := regexp.Compile("func(.*)+Invoke\\(")
+	reg, err := regexp.Compile(`func(.*)+Invoke\(`)
 	if err != nil {
 		fmt.Println("errrrr")
 		return ""
@@ -300,7 +300,7 @@ func addImport(inputFile, fileStr string) (string, error) {
 		return "", fmt.Errorf("GetImports return empty")
 	}
 
-	imports := strings.Split(strings.Trim(string(importsList), "\n"), "\n")
+	imports := strings.Split(strings.Trim(importsList, "\n"), "\n")
 	checkImports := []string{"encoding/json", "fmt", "reflect", "strings"}
 	existImports := []string{}
 	for i := range imports {
@@ -375,31 +375,6 @@ func ReplaceContent(inputFile string) (string, string, bool, error) {
 		fileStr = fileStr + strings.Replace(appendMain, "SimpleChaincode", chainCodePackage+"."+chainCodeName, 1)
 		return fileStr, chainCodePackage + "." + chainCodeName, true, nil
 	}
-}
-
-func testImportPath() {
-	str := getImportPath()
-	fmt.Println("str len", len(str))
-	fmt.Println(str)
-	return
-}
-func testPackage() {
-	str := getPackage(os.Args[1])
-	fmt.Println("str len", len(str))
-	fmt.Println(str)
-	return
-}
-func testImport() {
-	str := getImports(os.Args[1])
-	fmt.Println("str len", len(str))
-	fmt.Println(str)
-	return
-}
-
-func testChainCode() {
-	content := "}\nfunc (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {"
-	chainCode := getChainCodeName(content)
-	fmt.Println(chainCode)
 }
 
 func main() {
