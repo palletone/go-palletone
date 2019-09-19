@@ -96,8 +96,9 @@ func (a *PublicMediatorAPI) ListAll() []string {
 	return addStrs
 }
 
-func (a *PublicMediatorAPI) ListVoteResults() (map[string]uint64, error) {
-	return a.Dag().MediatorVotedResults()
+func (a *PublicMediatorAPI) ListVoteResults() map[string]uint64 {
+	res, _ := a.Dag().MediatorVotedResults()
+	return res
 }
 
 func (a *PublicMediatorAPI) ListVotingFor(addStr string) (map[string]uint64, error) {
