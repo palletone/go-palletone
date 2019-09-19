@@ -259,24 +259,15 @@ func (rep *StateRepository) GetPledgeWithdrawApplyList() ([]*modules.AddressAmou
 func (rep *StateRepository) GetPledgeListWithNew() (*modules.PledgeList, error) {
 	pledgeList, err := rep.GetPledgeList()
 	if err != nil {
-		return nil, err
-		//pledgeList = &modules.PledgeList{}
+		pledgeList = &modules.PledgeList{}
 	}
 
 	newDepositList, err := rep.GetPledgeDepositApplyList()
-	if err != nil {
-		return nil, err
-	}
-
 	for _, deposit := range newDepositList {
 		pledgeList.Add(deposit.Address, deposit.Amount, 0)
 	}
 
 	//newWithdrawList, err := rep.GetPledgeWithdrawApplyList()
-	//if err != nil{
-	//	return nil, err
-	//}
-
 	//for _, withdraw := range newWithdrawList {
 	//	pledgeList.Reduce(withdraw.Address, withdraw.Amount)
 	//}
