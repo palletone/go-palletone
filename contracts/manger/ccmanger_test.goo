@@ -640,3 +640,15 @@ func init() {
 	}
 }
 
+func TestCV(t *testing.T) {
+	//ts := "PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX:v1,PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM:v2;PCGTta3M4t3yXu8uRgkKvaWd2d8DRS71ZEM:v3;"
+	ts := "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM:v2"
+
+	ad, err := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
+	if err != nil {
+		return
+	}
+	v := getContractSysVersion(ad.Bytes(), ts)
+	log.Debug("TestCV", "version", v)
+}
+

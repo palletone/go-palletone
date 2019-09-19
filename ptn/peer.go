@@ -390,7 +390,7 @@ func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis comm
 			Index:           index,
 			GenesisUnit:     genesis,
 			CurrentHeader:   headHash,
-			StableIndex:     stable,
+			//StableIndex:     stable,
 		})
 	}()
 	go func() {
@@ -408,8 +408,10 @@ func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis comm
 			return p2p.DiscReadTimeout
 		}
 	}
-	log.Debug("peer Handshake", "p.id", p.id, "index", status.Index, "stable", status.StableIndex)
-	p.SetHead(status.CurrentHeader, status.Index, status.StableIndex)
+	//stableIndex :=&modules.ChainIndex{Index:uint64(1085100)}
+	stableIndex :=&modules.ChainIndex{Index:uint64(1)}
+	log.Debug("peer Handshake", "p.id", p.id, "index", status.Index, "stable", stableIndex)//status.StableIndex)
+	p.SetHead(status.CurrentHeader, status.Index, stableIndex)//status.StableIndex)
 	return nil
 }
 

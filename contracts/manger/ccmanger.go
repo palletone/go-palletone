@@ -19,21 +19,23 @@
 package manger
 
 import (
-	"github.com/golang/protobuf/proto"
-	"google.golang.org/grpc"
 	"net"
 	"time"
+	"strings"
+	"google.golang.org/grpc"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/accesscontrol"
-	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/core"
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/common"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
+	cm "github.com/palletone/go-palletone/common"
 )
 
 func marshalOrPanic(pb proto.Message) []byte {
@@ -188,4 +190,21 @@ func systemContractDeInit() error {
 	chainID := util.GetTestChainID()
 	scc.DeDeploySysCCs(chainID)
 	return nil
+}
+
+//in = contractId1:v1;contractId2:v2;contractId3:v3
+func getContractSysVersion(contractId []byte, in string) string { //contractId []byte
+	adr := cm.NewAddress(contractId, cm.ContractHash)
+	cvs := strings.Split(in, ";")
+	log.Debugf("cvs len[%d]:%v, adr:%s", len(cvs), cvs, adr.String())
+	for _, ls := range cvs {
+		cv := strings.Split(ls, ":")
+		if len(cv) > 1 {
+			if adr.String() == cv[0] {
+				log.Debugf("getContractSysVersion ok, version:%s", cv[1])
+				return cv[1]
+			}
+		}
+	}
+	return ""
 }
