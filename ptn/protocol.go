@@ -170,7 +170,7 @@ type statusData struct {
 	Index           *modules.ChainIndex
 	GenesisUnit     common.Hash
 	CurrentHeader   common.Hash
-	StableIndex     *modules.ChainIndex
+	//StableIndex     *modules.ChainIndex
 }
 
 // newBlockHashesData is the network packet for the block announcements.
