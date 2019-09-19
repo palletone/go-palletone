@@ -260,55 +260,49 @@ func (rep *StateRepository) GetPledgeWithdrawApplyList() ([]*modules.AddressAmou
 
 //根据用户的新质押和提币申请，以及质押列表计算
 func (rep *StateRepository) GetPledgeListWithNew() (*modules.PledgeList, error) {
-	pledgeList, err := rep.GetPledgeList()
-	if err != nil {
-		return nil, err
-		//pledgeList = &modules.PledgeList{}
+	result := &modules.PledgeList{}
+
+	pledgeList, _ := rep.GetPledgeList()
+	if pledgeList != nil {
+		result = pledgeList
 	}
 
-	newDepositList, err := rep.GetPledgeDepositApplyList()
-	if err != nil {
-		return nil, err
-	}
-
+	newDepositList, _ := rep.GetPledgeDepositApplyList()
 	for _, deposit := range newDepositList {
-		pledgeList.Add(deposit.Address, deposit.Amount, 0)
+		result.Add(deposit.Address, deposit.Amount, 0)
 	}
 
-	//newWithdrawList, err := rep.GetPledgeWithdrawApplyList()
-	//if err != nil{
-	//	return nil, err
-	//}
-
+	//newWithdrawList, _ := rep.GetPledgeWithdrawApplyList()
 	//for _, withdraw := range newWithdrawList {
-	//	pledgeList.Reduce(withdraw.Address, withdraw.Amount)
+	//	result.Reduce(withdraw.Address, withdraw.Amount)
 	//}
 
-	return pledgeList, nil
+	return result, nil
 }
 
 func (rep *StateRepository) GetMediatorVotedResults() (map[string]uint64, error) {
+	mediatorVoteCount := make(map[string]uint64)
+
 	mediators, err := rep.statedb.GetCandidateMediatorList()
 	if err != nil {
 		log.Debug("GetCandidateMediatorList error" + err.Error())
-		return nil, err
+		return mediatorVoteCount, err
+	}
+
+	//先将所有mediator的投票数量设为0， 防止某个mediator未被任何账户投票
+	for address := range mediators {
+		mediatorVoteCount[address] = 0
 	}
 
 	pledgeList, err := rep.GetPledgeListWithNew()
 	if err != nil {
 		log.Warn("GetPledgeListWithNew error" + err.Error())
-		return nil, err
+		return mediatorVoteCount, err
 	}
 	//log.DebugDynamic(func() string {
 	//	data, _ := json.Marshal(pledgeList)
 	//	return "GetPledgeListWithNew result:\r\n" + string(data)
 	//})
-
-	mediatorVoteCount := make(map[string]uint64)
-	//先将所有mediator的投票数量设为0， 防止某个mediator未被任何账户投票
-	for address := range mediators {
-		mediatorVoteCount[address] = 0
-	}
 
 	for _, account := range pledgeList.Members {
 		// 遍历该账户投票的mediator
@@ -329,13 +323,14 @@ func (rep *StateRepository) GetMediatorVotedResults() (map[string]uint64, error)
 }
 
 func (rep *StateRepository) GetVotingForMediator(addStr string) (map[string]uint64, error) {
+	votingMediatorCount := make(map[string]uint64)
+
 	pledgeList, err := rep.GetPledgeListWithNew()
 	if err != nil {
 		log.Debug("GetPledgeListWithNew error" + err.Error())
-		return nil, err
+		return votingMediatorCount, err
 	}
 
-	votingMediatorCount := make(map[string]uint64)
 	for _, account := range pledgeList.Members {
 		// 遍历该账户投票的mediator
 		addr, _ := common.StringToAddress(account.Address)
