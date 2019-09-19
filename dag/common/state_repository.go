@@ -257,22 +257,24 @@ func (rep *StateRepository) GetPledgeWithdrawApplyList() ([]*modules.AddressAmou
 
 //根据用户的新质押和提币申请，以及质押列表计算
 func (rep *StateRepository) GetPledgeListWithNew() (*modules.PledgeList, error) {
-	pledgeList, err := rep.GetPledgeList()
-	if err != nil {
-		pledgeList = &modules.PledgeList{}
+	result := &modules.PledgeList{}
+
+	pledgeList, _ := rep.GetPledgeList()
+	if pledgeList != nil {
+		result = pledgeList
 	}
 
-	newDepositList, err := rep.GetPledgeDepositApplyList()
+	newDepositList, _ := rep.GetPledgeDepositApplyList()
 	for _, deposit := range newDepositList {
-		pledgeList.Add(deposit.Address, deposit.Amount, 0)
+		result.Add(deposit.Address, deposit.Amount, 0)
 	}
 
-	//newWithdrawList, err := rep.GetPledgeWithdrawApplyList()
+	//newWithdrawList, _ := rep.GetPledgeWithdrawApplyList()
 	//for _, withdraw := range newWithdrawList {
-	//	pledgeList.Reduce(withdraw.Address, withdraw.Amount)
+	//	result.Reduce(withdraw.Address, withdraw.Amount)
 	//}
 
-	return pledgeList, nil
+	return result, nil
 }
 
 func (rep *StateRepository) GetMediatorVotedResults() (map[string]uint64, error) {
