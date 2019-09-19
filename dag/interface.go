@@ -200,4 +200,5 @@ type IDag interface {
 	ChainThreshold() int
 	CheckHeaderCorrect(number int) error
 	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
+	RebuildAddrTxIndex() error
 }
