@@ -70,9 +70,9 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 			return shim.Error(err.Error())
 		}
 		if agreeList == nil {
-			agreeList = make(map[string]string)
+			agreeList = make(map[string]bool)
 		}
-		agreeList[addr.String()] = ""
+		agreeList[addr.String()] = true
 		//  保存同意列表
 		err = saveList(stub, modules.ListForAgreeBecomeMediator, agreeList)
 		if err != nil {

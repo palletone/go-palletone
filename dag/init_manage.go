@@ -86,7 +86,7 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 	}
 
 	// Create initial mediators
-	list := make(map[string]string, len(genesis.InitialMediatorCandidates))
+	list := make(map[string]bool, len(genesis.InitialMediatorCandidates))
 
 	for _, imc := range genesis.InitialMediatorCandidates {
 		// 存储 mediator info
@@ -125,8 +125,7 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 			return err
 		}
 
-		//  TODO 加入地址公钥信息
-		list[mi.AddStr] = ""
+		list[mi.AddStr] = true
 	}
 
 	// 存储 initMediatorCandidates/JuryCandidates

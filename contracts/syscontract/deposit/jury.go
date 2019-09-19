@@ -25,6 +25,7 @@ import (
 )
 
 func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+	//  TODO
 	if len(args) != 1 {
 		return shim.Error("need 1 parameter")
 	}
@@ -36,7 +37,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	return nodePayToDepositContract(stub, modules.Jury, args)
+	return nodePayToDepositContract(stub, modules.Jury)
 }
 
 func juryApplyQuit(stub shim.ChaincodeStubInterface) peer.Response {

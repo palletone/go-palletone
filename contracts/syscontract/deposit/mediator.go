@@ -93,10 +93,10 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	//  判断
 	if becomeList == nil {
 		log.Info("Stub.GetBecomeMediatorApplyList: list is nil")
-		becomeList = make(map[string]string)
+		becomeList = make(map[string]bool)
 	}
 
-	becomeList[mco.AddStr] = ""
+	becomeList[mco.AddStr] = true
 	//  保存列表
 	err = saveList(stub, modules.ListForApplyBecomeMediator, becomeList)
 	if err != nil {

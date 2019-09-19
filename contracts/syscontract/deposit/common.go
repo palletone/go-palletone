@@ -32,7 +32,7 @@ import (
 )
 
 //  保存相关列表
-func saveList(stub shim.ChaincodeStubInterface, key string, list map[string]string) error {
+func saveList(stub shim.ChaincodeStubInterface, key string, list map[string]bool) error {
 	listByte, err := json.Marshal(list)
 	if err != nil {
 		return err
@@ -45,7 +45,7 @@ func saveList(stub shim.ChaincodeStubInterface, key string, list map[string]stri
 }
 
 //  获取其他list
-func getList(stub shim.ChaincodeStubInterface, typeList string) (map[string]string, error) {
+func getList(stub shim.ChaincodeStubInterface, typeList string) (map[string]bool, error) {
 	byte, err := stub.GetState(typeList)
 	if err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func getList(stub shim.ChaincodeStubInterface, typeList string) (map[string]stri
 	if byte == nil {
 		return nil, nil
 	}
-	list := make(map[string]string)
+	list := make(map[string]bool)
 	err = json.Unmarshal(byte, &list)
 	if err != nil {
 		return nil, err
@@ -118,7 +118,7 @@ func addCandaditeList(stub shim.ChaincodeStubInterface, invokeAddr common.Addres
 		return err
 	}
 	if list == nil {
-		list = make(map[string]string)
+		list = make(map[string]bool)
 	}
 
 	// 重复操作一次又何妨
@@ -126,7 +126,7 @@ func addCandaditeList(stub shim.ChaincodeStubInterface, invokeAddr common.Addres
 	//	return fmt.Errorf("node was in the list")
 	//}
 
-	list[invokeAddr.String()] = ""
+	list[invokeAddr.String()] = true
 	listByte, err := json.Marshal(list)
 	if err != nil {
 		return err
@@ -464,7 +464,7 @@ func handleNode(stub shim.ChaincodeStubInterface, quitAddr common.Address, role 
 	return nil
 }
 
-func nodePayToDepositContract(stub shim.ChaincodeStubInterface, role string, args []string) pb.Response {
+func nodePayToDepositContract(stub shim.ChaincodeStubInterface, role string) pb.Response {
 	log.Debug("enter nodePayToDepositContract")
 	//  判断是否交付保证金交易
 	invokeTokens, err := isContainDepositContractAddr(stub)
