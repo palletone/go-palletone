@@ -106,7 +106,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 
 	// 保存账户信息
 	md := modules.NewMediatorDeposit()
-	md.ApplyEnterTime = getTiem(stub)
+	md.ApplyEnterTime = getTime(stub)
 	md.Status = modules.Apply
 	md.Role = modules.Mediator
 	err = SaveMediatorDeposit(stub, mco.AddStr, md)
@@ -196,7 +196,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface /*, args []st
 	//  处理数据
 	md.Status = modules.Agree
 	md.Role = modules.Mediator
-	md.EnterTime = getTiem(stub)
+	md.EnterTime = getTime(stub)
 	md.Balance = all
 	//  保存账户信息
 	err = SaveMediatorDeposit(stub, invokeAddr.String(), md)
@@ -227,7 +227,7 @@ func mediatorApplyQuit(stub shim.ChaincodeStubInterface /*, args []string*/) pb.
 		log.Error("get node balance err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	mediator.ApplyQuitTime = getTiem(stub)
+	mediator.ApplyQuitTime = getTime(stub)
 	mediator.Status = modules.Quitting
 	//  保存账户信息
 	err = SaveMediatorDeposit(stub, invokeAddr.Str(), mediator)

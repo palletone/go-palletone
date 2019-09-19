@@ -315,6 +315,21 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Error(err.Error())
 		}
 		return shim.Success(byte)
+	case modules.GetJuryDeposit:
+		log.Info("Enter DepositChaincode Contract " + modules.GetJuryDeposit + " Invoke")
+		balance, err := GetJuryBalance(stub, args[0])
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		if balance == nil {
+			return shim.Success([]byte("balance is nil"))
+		}
+		dbJson := convertJuryDeposit2Json(balance)
+		byte, err := json.Marshal(dbJson)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		return shim.Success(byte)
 		// 获取mediator Deposit
 	case modules.GetMediatorDeposit:
 		log.Info("Enter DepositChaincode Contract " + modules.GetMediatorDeposit + " Invoke")
@@ -406,6 +421,31 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			node := make(map[string]*modules.DepositBalance)
 			for _, v := range values {
 				n := modules.DepositBalance{}
+				err := json.Unmarshal(v.Value, &n)
+				if err != nil {
+					log.Debugf("json.Unmarshal error: %s", err.Error())
+					return shim.Error(err.Error())
+				}
+				node[v.Key] = &n
+			}
+			bytes, err := json.Marshal(node)
+			if err != nil {
+				log.Debugf("json.Marshal error: %s", err.Error())
+				return shim.Error(err.Error())
+			}
+			return shim.Success(bytes)
+		}
+		return shim.Success([]byte("{}"))
+	case modules.GetAllJury:
+		values, err := stub.GetStateByPrefix(string(constants.DEPOSIT_JURY_BALANCE_PREFIX))
+		if err != nil {
+			log.Debugf("stub.GetStateByPrefix error: %s", err.Error())
+			return shim.Error(err.Error())
+		}
+		if len(values) > 0 {
+			node := make(map[string]*modules.Juror)
+			for _, v := range values {
+				n := modules.Juror{}
 				err := json.Unmarshal(v.Value, &n)
 				if err != nil {
 					log.Debugf("json.Unmarshal error: %s", err.Error())
