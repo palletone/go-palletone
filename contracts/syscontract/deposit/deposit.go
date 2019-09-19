@@ -437,25 +437,22 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		return shim.Success([]byte("{}"))
 	case modules.GetAllJury:
-		values, err := stub.GetStateByPrefix(string(constants.DEPOSIT_JURY_BALANCE_PREFIX))
+		juryvalues, err := stub.GetStateByPrefix(string(constants.DEPOSIT_JURY_BALANCE_PREFIX))
 		if err != nil {
-			log.Debugf("stub.GetStateByPrefix error: %s", err.Error())
 			return shim.Error(err.Error())
 		}
-		if len(values) > 0 {
-			node := make(map[string]*modules.Juror)
-			for _, v := range values {
+		if len(juryvalues) > 0 {
+			jurynode := make(map[string]*modules.Juror)
+			for _, v := range juryvalues {
 				n := modules.Juror{}
 				err := json.Unmarshal(v.Value, &n)
 				if err != nil {
-					log.Debugf("json.Unmarshal error: %s", err.Error())
 					return shim.Error(err.Error())
 				}
-				node[v.Key] = &n
+				jurynode[v.Key] = &n
 			}
-			bytes, err := json.Marshal(node)
+			bytes, err := json.Marshal(jurynode)
 			if err != nil {
-				log.Debugf("json.Marshal error: %s", err.Error())
 				return shim.Error(err.Error())
 			}
 			return shim.Success(bytes)
