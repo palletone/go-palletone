@@ -60,7 +60,7 @@ Business_01
     log    ${resul}
     ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
     log    ${mDeposit}
-    Should Not Be Equal    ${mDeposit["balance"]}    ${0}    #有余额
+    Should Not Be Equal    ${mDeposit["balance"]}    0    #有余额
     ${result}    applyQuitMediator    ${mediatorAddr_01}    MediatorApplyQuit    #该节点申请退出mediator候选列表    #1
     log    ${result}
     ${addressMap4}    getQuitMediatorApplyList
@@ -80,7 +80,7 @@ Business_01
     log    ${resul}
     ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
     log    ${mDeposit}
-    Should Be Equal    ${mDeposit["balance"]}    ${0}    #账户地址存在
+    Should Be Equal    ${mDeposit["balance"]}    0    #账户地址存在
     ${result}    getBecomeMediatorApplyList
     log    ${result}
     Dictionary Should Not Contain Key    ${result}    ${mediatorAddr_01}    #无该节点
@@ -119,7 +119,7 @@ Business_02
     log    ${resul}
     ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_02}    #获取该地址保证金账户详情
     log    ${mDeposit}
-    Should Not Be Equal    ${mDeposit["balance"]}    ${0}    #有余额
+    Should Not Be Equal    ${mDeposit["balance"]}    0    #有余额
     ${result}    applyForForfeitureDeposit    ${foundationAddr}    ${mediatorAddr_02}    Mediator    nothing to do    #某个地址申请没收该节点保证金（全部）
     log    ${result}
     ${result}    getListForForfeitureApplication
@@ -150,7 +150,7 @@ Business_03
     ...    Jury 节点交付固定保证金并进入候选列表-》申请退出并进入退出列表-》基金会同意并移除候选列表，退出列表。
     ${resul}    juryPayToDepositContract    ${juryAddr_01}    10
     log    ${resul}
-    ${result}    getCandidateBalanceWithAddr    ${juryAddr_01}    #获取该地址保证金账户详情
+    ${result}    getJuryBalance    ${juryAddr_01}    #获取该地址保证金账户详情
     log    ${result}    #余额为100000000000000
     Should Not Be Equal    ${result}    balance is nil
     ${resul}    getListForJuryCandidate
@@ -169,7 +169,7 @@ Business_03
     ${result}    getQuitMediatorApplyList    #为空
     log    ${result}
     Dictionary Should Not Contain Key    ${result}    ${juryAddr_01}
-    GetAllNodes
+    GetAllJury
 
 Business_04
     [Documentation]    没收jury节点
@@ -177,7 +177,7 @@ Business_04
     ...    Jury 节点交付固定保证金并进入候选列表-》某节点申请没收该jury节点并进入没收列表-》基金会同意并移除候选列表，退出列表，该节点的PTN转到基金会地址。
     ${resul}    juryPayToDepositContract    ${juryAddr_02}    10
     log    ${resul}
-    ${result}    getCandidateBalanceWithAddr    ${juryAddr_02}    #获取该地址保证金账户详情
+    ${result}    getJuryBalance    ${juryAddr_02}    #获取该地址保证金账户详情
     log    ${result}
     Should Not Be Equal    ${result}    balance is nil
     ${resul}    getListForJuryCandidate
@@ -190,13 +190,13 @@ Business_04
     Dictionary Should Contain Key    ${result}    ${juryAddr_02}    #没收列表有该地址
     ${result}    handleForForfeitureApplication    ${foundationAddr}    ${juryAddr_02}    Ok    #基金会处理（同意），这是会移除mediator出候选列表
     log    ${result}
-    ${result}    getCandidateBalanceWithAddr    ${juryAddr_02}
+    ${result}    getJuryBalance    ${juryAddr_02}
     log    ${result}
     Should Be Equal    ${result}    balance is nil    #不为空
     ${resul}    getListForJuryCandidate
     Dictionary Should Not Contain Key    ${resul}    ${juryAddr_02}    #候选列表无该地址
     log    ${resul}
-    GetAllNodes
+    GetAllJury
 
 Business_05
     [Documentation]    dev 交付 1 ptn 才可以加入合约开发者列表

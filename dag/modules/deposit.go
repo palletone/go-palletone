@@ -62,7 +62,8 @@ const (
 	HandleForApplyQuitDev          = "HandleForApplyQuitDev"
 	HanldeNodeRemoveFromAgreeList  = "HanldeNodeRemoveFromAgreeList"
 
-	GetDeposit = "GetNodeBalance"
+	GetDeposit     = "GetNodeBalance"
+	GetJuryDeposit = "GetJuryDeposit"
 
 	//  质押相关
 	PledgeDeposit           = "PledgeDeposit"
@@ -92,6 +93,7 @@ const (
 	HandleDevInList               = "HandleDevInList"
 	GetAllMediator                = "GetAllMediator"
 	GetAllNode                    = "GetAllNode"
+	GetAllJury                    = "GetAllJury"
 )
 
 //申请退出
@@ -122,7 +124,16 @@ type DepositBalance struct {
 	Balance   uint64 `json:"balance"`    // 保证金余额
 	EnterTime string `json:"enter_time"` // 交保证金的时间
 	Role      string `json:"role"`       // 角色，包括mediator、jury和developer
+}
+
+type Juror struct {
+	DepositBalance
+	JurorDepositExtra
+}
+
+type JurorDepositExtra struct {
 	PublicKey string `json:"public_key"`
+	Address   string `json:"address"`
 }
 
 // mediator保证金額外信息
@@ -160,10 +171,14 @@ type DepositBalanceJson struct {
 	Balance   decimal.Decimal `json:"balance"`
 	EnterTime string          `json:"enter_time"`
 	Role      string          `json:"role"`
-	PublicKey string          `json:"public_key"`
 }
 
 type MediatorDepositJson struct {
 	MediatorDepositExtra
 	DepositBalanceJson
+}
+
+type JuryDepositJson struct {
+	DepositBalanceJson
+	JurorDepositExtra
 }

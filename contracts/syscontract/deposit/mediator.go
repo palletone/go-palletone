@@ -93,10 +93,10 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	//  判断
 	if becomeList == nil {
 		log.Info("Stub.GetBecomeMediatorApplyList: list is nil")
-		becomeList = make(map[string]string)
+		becomeList = make(map[string]bool)
 	}
 
-	becomeList[mco.AddStr] = ""
+	becomeList[mco.AddStr] = true
 	//  保存列表
 	err = saveList(stub, modules.ListForApplyBecomeMediator, becomeList)
 	if err != nil {
@@ -106,7 +106,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 
 	// 保存账户信息
 	md := modules.NewMediatorDeposit()
-	md.ApplyEnterTime = getTiem(stub)
+	md.ApplyEnterTime = getTime(stub)
 	md.Status = modules.Apply
 	md.Role = modules.Mediator
 	err = SaveMediatorDeposit(stub, mco.AddStr, md)
@@ -181,13 +181,13 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface /*, args []st
 	}
 
 	//  加入候选列表
-	err = addCandaditeList(stub, invokeAddr, modules.MediatorList, "")
+	err = addCandaditeList(stub, invokeAddr, modules.MediatorList)
 	if err != nil {
 		log.Error("addCandidateListAndPutStateForMediator err: ", "error", err)
 		return shim.Error(err.Error())
 	}
 	//  自动加入jury候选列表
-	err = addCandaditeList(stub, invokeAddr, modules.JuryList, md.PublicKey)
+	err = addCandaditeList(stub, invokeAddr, modules.JuryList)
 	if err != nil {
 		log.Error("addCandidateListAndPutStateForMediator err: ", "error", err)
 		return shim.Error(err.Error())
@@ -196,7 +196,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface /*, args []st
 	//  处理数据
 	md.Status = modules.Agree
 	md.Role = modules.Mediator
-	md.EnterTime = getTiem(stub)
+	md.EnterTime = getTime(stub)
 	md.Balance = all
 	//  保存账户信息
 	err = SaveMediatorDeposit(stub, invokeAddr.String(), md)
@@ -227,7 +227,7 @@ func mediatorApplyQuit(stub shim.ChaincodeStubInterface /*, args []string*/) pb.
 		log.Error("get node balance err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	mediator.ApplyQuitTime = getTiem(stub)
+	mediator.ApplyQuitTime = getTime(stub)
 	mediator.Status = modules.Quitting
 	//  保存账户信息
 	err = SaveMediatorDeposit(stub, invokeAddr.Str(), mediator)

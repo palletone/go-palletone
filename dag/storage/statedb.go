@@ -81,14 +81,14 @@ func (db *StateDb) GetPrefix(prefix []byte) map[string][]byte {
 	return getprefix(db.db, prefix)
 }
 
-func (statedb *StateDb) GetJuryCandidateList() (map[string]string, error) {
+func (statedb *StateDb) GetJuryCandidateList() (map[string]bool, error) {
 	depositeContractAddress := syscontract.DepositContractAddress
 	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), modules.JuryList)
 	if err != nil {
 		return nil, fmt.Errorf("jury candidate list is nil.")
 	}
 
-	candidateList := make(map[string]string)
+	candidateList := make(map[string]bool)
 	err = json.Unmarshal(val, &candidateList)
 	if err != nil {
 		return nil, err
@@ -112,7 +112,7 @@ func (statedb *StateDb) GetContractDeveloperList() ([]common.Address, error) {
 	if err != nil {
 		return nil, fmt.Errorf("devCc candidate list is nil.")
 	}
-	depList := make(map[string]string)
+	depList := make(map[string]bool)
 	err = json.Unmarshal(val, &depList)
 	if err != nil {
 		return nil, err

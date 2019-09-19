@@ -29,6 +29,8 @@ Resource          getBalance.txt
 Resource          CreateToken.txt
 Resource          GetAllMediators.txt
 Resource          GetAllNodes.txt
+Resource          getJuryBalance.txt
+Resource          getAllJury.txt
 
 *** Variables ***
 ${depositContractQuery}    contract_depositContractQuery
