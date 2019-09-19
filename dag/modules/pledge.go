@@ -57,6 +57,7 @@ type AddressAmount struct {
 func NewAddressAmount(addr string, amt uint64) *AddressAmount {
 	return &AddressAmount{Address: addr, Amount: amt}
 }
+
 func (pl *PledgeList) Add(addr string, amount, reward uint64) {
 	pl.TotalAmount += amount
 	for _, p := range pl.Members {
@@ -71,6 +72,7 @@ func (pl *PledgeList) Add(addr string, amount, reward uint64) {
 		Amount:  amount,
 		Reward:  reward})
 }
+
 func (pl *PledgeList) GetAmount(addr string) uint64 {
 	for _, row := range pl.Members {
 		if row.Address == addr {
