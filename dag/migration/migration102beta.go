@@ -23,9 +23,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 )
 
@@ -100,7 +98,7 @@ func (m *Migration101_102) upgradeGP() error {
 		return err
 	}
 
-	newData := &modules.GlobalPropertyTemp{}
+	newData := &GlobalProperty102delta{}
 	newData.ActiveJuries = oldGp.ActiveJuries
 	newData.ActiveMediators = oldGp.ActiveMediators
 	newData.PrecedingMediators = oldGp.PrecedingMediators
@@ -133,7 +131,7 @@ type GlobalProperty101 struct {
 
 type GlobalPropBase101 struct {
 	ImmutableParameters ImmutableChainParameters101 // 不可改变的区块链网络参数
-	ChainParameters     core.ChainParameters        // 区块链网络参数
+	ChainParameters     ChainParameters102delta     // 区块链网络参数
 }
 
 type ImmutableChainParameters101 struct {

@@ -208,8 +208,8 @@ type GlobalPropBase102delta struct {
 
 type ChainParameters102delta struct {
 	ChainParametersBase102delta
-	UccMemory string
 
+	UccMemory string
 	UccCpuShares string
 	UccCpuQuota  string
 	UccDisk      string
@@ -223,6 +223,7 @@ type ChainParameters102delta struct {
 
 	ContractTxTimeoutUnitFee  string
 	ContractTxSizeUnitFee     string
+
 	ContractTxInstallFeeLevel string
 	ContractTxDeployFeeLevel  string
 	ContractTxInvokeFeeLevel  string

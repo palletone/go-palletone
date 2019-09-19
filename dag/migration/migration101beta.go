@@ -20,9 +20,9 @@
 package migration
 
 import (
-	"github.com/palletone/go-palletone/tokenengine"
 	"strconv"
 
+	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -184,58 +184,83 @@ func (m *Migration100_101) upgradeGP() error {
 	newData.ActiveMediators = oldGp.ActiveMediators
 	newData.PrecedingMediators = oldGp.PrecedingMediators
 	newData.ImmutableParameters = oldGp.ImmutableParameters
-	newData.ChainParameters.ChainParametersBase = oldGp.ChainParameters.ChainParametersBase
+	newData.ChainParameters.ChainParametersBase102delta = oldGp.ChainParameters.ChainParametersBase102delta
 
-	UccMemory, err := strconv.ParseInt(oldGp.ChainParameters.UccMemory, 10, 64)
-	if err != nil {
-		return err
-	}
-	newData.ChainParameters.UccMemory = UccMemory
-	UccCpuShares, err := strconv.ParseInt(oldGp.ChainParameters.UccCpuShares, 10, 64)
-	if err != nil {
-		return err
-	}
-	newData.ChainParameters.UccCpuShares = UccCpuShares
-	UccCpuQuota, err := strconv.ParseInt(oldGp.ChainParameters.UccCpuQuota, 10, 64)
-	if err != nil {
-		return err
-	}
-	newData.ChainParameters.UccCpuQuota = UccCpuQuota
-	newData.ChainParameters.UccDisk = core.DefaultUccDisk
+	//UccMemory, err := strconv.ParseInt(oldGp.ChainParameters.UccMemory, 10, 64)
+	//if err != nil {
+	//	return err
+	//}
+	//newData.ChainParameters.UccMemory = UccMemory
+	//UccCpuShares, err := strconv.ParseInt(oldGp.ChainParameters.UccCpuShares, 10, 64)
+	//if err != nil {
+	//	return err
+	//}
+	//newData.ChainParameters.UccCpuShares = UccCpuShares
+	//UccCpuQuota, err := strconv.ParseInt(oldGp.ChainParameters.UccCpuQuota, 10, 64)
+	//if err != nil {
+	//	return err
+	//}
+	//newData.ChainParameters.UccCpuQuota = UccCpuQuota
+	//newData.ChainParameters.UccDisk = core.DefaultUccDisk
+	//
+	//TempUccMemory, err := strconv.ParseInt(oldGp.ChainParameters.TempUccMemory, 10, 64)
+	//if err != nil {
+	//	return err
+	//}
+	//newData.ChainParameters.TempUccMemory = TempUccMemory
+	//TempUccCpuShares, err := strconv.ParseInt(oldGp.ChainParameters.TempUccCpuShares, 10, 64)
+	//if err != nil {
+	//	return err
+	//}
+	//newData.ChainParameters.TempUccCpuShares = TempUccCpuShares
+	//TempUccCpuQuota, err := strconv.ParseInt(oldGp.ChainParameters.TempUccCpuQuota, 10, 64)
+	//if err != nil {
+	//	return err
+	//}
+	//newData.ChainParameters.TempUccCpuQuota = TempUccCpuQuota
+	//
+	//ContractSignatureNum, err := strconv.ParseInt(oldGp.ChainParameters.ContractSignatureNum, 10, 64)
+	//if err != nil {
+	//	return err
+	//}
+	//newData.ChainParameters.ContractSignatureNum = int(ContractSignatureNum)
+	//ContractElectionNum, err := strconv.ParseInt(oldGp.ChainParameters.ContractElectionNum, 10, 64)
+	//if err != nil {
+	//	return err
+	//}
+	//newData.ChainParameters.ContractElectionNum = int(ContractElectionNum)
+	//
+	//newData.ChainParameters.ContractTxTimeoutUnitFee = core.DefaultContractTxTimeoutUnitFee
+	//newData.ChainParameters.ContractTxSizeUnitFee = core.DefaultContractTxSizeUnitFee
+	//
+	//newData.ChainParameters.ContractTxInstallFeeLevel = core.DefaultContractTxInstallFeeLevel
+	//newData.ChainParameters.ContractTxDeployFeeLevel = core.DefaultContractTxDeployFeeLevel
+	//newData.ChainParameters.ContractTxInvokeFeeLevel = core.DefaultContractTxInvokeFeeLevel
+	//newData.ChainParameters.ContractTxStopFeeLevel = core.DefaultContractTxStopFeeLevel
 
-	TempUccMemory, err := strconv.ParseInt(oldGp.ChainParameters.TempUccMemory, 10, 64)
-	if err != nil {
-		return err
-	}
-	newData.ChainParameters.TempUccMemory = TempUccMemory
-	TempUccCpuShares, err := strconv.ParseInt(oldGp.ChainParameters.TempUccCpuShares, 10, 64)
-	if err != nil {
-		return err
-	}
-	newData.ChainParameters.TempUccCpuShares = TempUccCpuShares
-	TempUccCpuQuota, err := strconv.ParseInt(oldGp.ChainParameters.TempUccCpuQuota, 10, 64)
-	if err != nil {
-		return err
-	}
-	newData.ChainParameters.TempUccCpuQuota = TempUccCpuQuota
+	newData.ChainParameters.UccMemory = oldGp.ChainParameters.UccMemory
+	newData.ChainParameters.UccCpuShares = oldGp.ChainParameters.UccCpuShares
+	newData.ChainParameters.UccCpuQuota = oldGp.ChainParameters.UccCpuQuota
+	newData.ChainParameters.UccDisk = strconv.FormatInt(core.DefaultUccDisk, 10)
 
-	ContractSignatureNum, err := strconv.ParseInt(oldGp.ChainParameters.ContractSignatureNum, 10, 64)
-	if err != nil {
-		return err
-	}
-	newData.ChainParameters.ContractSignatureNum = int(ContractSignatureNum)
-	ContractElectionNum, err := strconv.ParseInt(oldGp.ChainParameters.ContractElectionNum, 10, 64)
-	if err != nil {
-		return err
-	}
-	newData.ChainParameters.ContractElectionNum = int(ContractElectionNum)
+	newData.ChainParameters.TempUccMemory = oldGp.ChainParameters.TempUccMemory
+	newData.ChainParameters.TempUccCpuShares = oldGp.ChainParameters.TempUccCpuShares
+	newData.ChainParameters.TempUccCpuQuota = oldGp.ChainParameters.TempUccCpuQuota
 
-	newData.ChainParameters.ContractTxTimeoutUnitFee = core.DefaultContractTxTimeoutUnitFee
-	newData.ChainParameters.ContractTxSizeUnitFee = core.DefaultContractTxSizeUnitFee
-	newData.ChainParameters.ContractTxInstallFeeLevel = core.DefaultContractTxInstallFeeLevel
-	newData.ChainParameters.ContractTxDeployFeeLevel = core.DefaultContractTxDeployFeeLevel
-	newData.ChainParameters.ContractTxInvokeFeeLevel = core.DefaultContractTxInvokeFeeLevel
-	newData.ChainParameters.ContractTxStopFeeLevel = core.DefaultContractTxStopFeeLevel
+	newData.ChainParameters.ContractSignatureNum = oldGp.ChainParameters.ContractSignatureNum
+	newData.ChainParameters.ContractElectionNum = oldGp.ChainParameters.ContractElectionNum
+
+	newData.ChainParameters.ContractTxTimeoutUnitFee = strconv.FormatInt(core.DefaultContractTxTimeoutUnitFee, 10)
+	newData.ChainParameters.ContractTxSizeUnitFee = strconv.FormatInt(core.DefaultContractTxSizeUnitFee, 10)
+
+	newData.ChainParameters.ContractTxInstallFeeLevel =
+		strconv.FormatFloat(core.DefaultContractTxInstallFeeLevel, 'f', -1, 64)
+	newData.ChainParameters.ContractTxDeployFeeLevel =
+		strconv.FormatFloat(core.DefaultContractTxDeployFeeLevel, 'f', -1, 64)
+	newData.ChainParameters.ContractTxInvokeFeeLevel =
+		strconv.FormatFloat(core.DefaultContractTxInvokeFeeLevel, 'f', -1, 64)
+	newData.ChainParameters.ContractTxStopFeeLevel =
+		strconv.FormatFloat(core.DefaultContractTxStopFeeLevel, 'f', -1, 64)
 
 	err = storage.StoreToRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, newData)
 	if err != nil {
@@ -260,7 +285,7 @@ type GlobalPropBase100 struct {
 }
 
 type ChainParameters100 struct {
-	core.ChainParametersBase
+	ChainParametersBase102delta
 
 	DepositDailyReward string
 	DepositPeriod      string
