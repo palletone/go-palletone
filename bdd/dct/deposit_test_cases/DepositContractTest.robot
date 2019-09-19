@@ -60,7 +60,7 @@ Business_01
     log    ${resul}
     ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
     log    ${mDeposit}
-    Should Not Be Equal    ${mDeposit["balance"]}    ${0}    #有余额
+    Should Not Be Equal    ${mDeposit["balance"]}    0    #有余额
     ${result}    applyQuitMediator    ${mediatorAddr_01}    MediatorApplyQuit    #该节点申请退出mediator候选列表    #1
     log    ${result}
     ${addressMap4}    getQuitMediatorApplyList
@@ -80,7 +80,7 @@ Business_01
     log    ${resul}
     ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}    #获取该地址保证金账户详情
     log    ${mDeposit}
-    Should Be Equal    ${mDeposit["balance"]}    ${0}    #账户地址存在
+    Should Be Equal    ${mDeposit["balance"]}    0    #账户地址存在
     ${result}    getBecomeMediatorApplyList
     log    ${result}
     Dictionary Should Not Contain Key    ${result}    ${mediatorAddr_01}    #无该节点
@@ -119,7 +119,7 @@ Business_02
     log    ${resul}
     ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_02}    #获取该地址保证金账户详情
     log    ${mDeposit}
-    Should Not Be Equal    ${mDeposit["balance"]}    ${0}    #有余额
+    Should Not Be Equal    ${mDeposit["balance"]}    0    #有余额
     ${result}    applyForForfeitureDeposit    ${foundationAddr}    ${mediatorAddr_02}    Mediator    nothing to do    #某个地址申请没收该节点保证金（全部）
     log    ${result}
     ${result}    getListForForfeitureApplication
