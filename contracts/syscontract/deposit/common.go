@@ -111,7 +111,7 @@ func applyQuitList(role string, stub shim.ChaincodeStubInterface) error {
 }
 
 //  加入相应候选列表，mediator jury dev
-func addCandaditeList(stub shim.ChaincodeStubInterface, invokeAddr common.Address, candidate string, pubKey string) error {
+func addCandaditeList(stub shim.ChaincodeStubInterface, invokeAddr common.Address, candidate string) error {
 	//  获取列表
 	list, err := getList(stub, candidate)
 	if err != nil {
@@ -126,7 +126,7 @@ func addCandaditeList(stub shim.ChaincodeStubInterface, invokeAddr common.Addres
 	//	return fmt.Errorf("node was in the list")
 	//}
 
-	list[invokeAddr.String()] = pubKey
+	list[invokeAddr.String()] = ""
 	listByte, err := json.Marshal(list)
 	if err != nil {
 		return err
@@ -498,11 +498,9 @@ func nodePayToDepositContract(stub shim.ChaincodeStubInterface, role string, arg
 	}
 	depositAmount := uint64(0)
 	list := ""
-	pubkey := ""
 	if role == modules.Jury {
 		depositAmount = cp.DepositAmountForJury
 		list = modules.JuryList
-		pubkey = args[0]
 	}
 	if role == modules.Developer {
 		depositAmount = cp.DepositAmountForDeveloper
@@ -518,7 +516,7 @@ func nodePayToDepositContract(stub shim.ChaincodeStubInterface, role string, arg
 			return shim.Error(str.Error())
 		}
 		//  加入候选列表
-		err = addCandaditeList(stub, invokeAddr, list, pubkey)
+		err = addCandaditeList(stub, invokeAddr, list)
 		if err != nil {
 			log.Error("addCandaditeList err: ", "error", err)
 			return shim.Error(err.Error())
@@ -527,7 +525,6 @@ func nodePayToDepositContract(stub shim.ChaincodeStubInterface, role string, arg
 		//  没有
 		balance.Balance = invokeTokens.Amount
 		balance.Role = role
-		balance.PublicKey = pubkey
 		err = SaveNodeBalance(stub, invokeAddr.String(), balance)
 		if err != nil {
 			log.Error("save node balance err: ", "error", err)
@@ -553,7 +550,7 @@ func nodePayToDepositContract(stub shim.ChaincodeStubInterface, role string, arg
 		}
 		if !b {
 			//  加入jury候选列表
-			err = addCandaditeList(stub, invokeAddr, list, pubkey)
+			err = addCandaditeList(stub, invokeAddr, list)
 			if err != nil {
 				log.Error("addCandidateListAndPutStateForMediator err: ", "error", err)
 				return shim.Error(err.Error())
@@ -575,7 +572,6 @@ func convertDepositBalance2Json(db *modules.DepositBalance) *modules.DepositBala
 	dbJson.Balance = gasToken.DisplayAmount(db.Balance)
 	dbJson.EnterTime = db.EnterTime
 	dbJson.Role = db.Role
-	dbJson.PublicKey = db.PublicKey
 
 	return dbJson
 }

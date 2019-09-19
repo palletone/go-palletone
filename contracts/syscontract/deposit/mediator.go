@@ -181,13 +181,13 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface /*, args []st
 	}
 
 	//  加入候选列表
-	err = addCandaditeList(stub, invokeAddr, modules.MediatorList, "")
+	err = addCandaditeList(stub, invokeAddr, modules.MediatorList)
 	if err != nil {
 		log.Error("addCandidateListAndPutStateForMediator err: ", "error", err)
 		return shim.Error(err.Error())
 	}
 	//  自动加入jury候选列表
-	err = addCandaditeList(stub, invokeAddr, modules.JuryList, md.PublicKey)
+	err = addCandaditeList(stub, invokeAddr, modules.JuryList)
 	if err != nil {
 		log.Error("addCandidateListAndPutStateForMediator err: ", "error", err)
 		return shim.Error(err.Error())
