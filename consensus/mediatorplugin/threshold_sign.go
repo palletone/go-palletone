@@ -82,10 +82,11 @@ func (mp *MediatorPlugin) AddToTBLSSignBufs(newHash common.Hash) {
 	}
 
 	var ms []common.Address
-	if newHeader.Timestamp() <= mp.dag.LastMaintenanceTime() {
-		ms = mp.GetLocalPrecedingMediators()
-	} else {
+	// 严格要求换届unit时间是产块间隔的整数倍
+	if newHeader.Timestamp() > mp.dag.LastMaintenanceTime() {
 		ms = mp.GetLocalActiveMediators()
+	} else {
+		ms = mp.GetLocalPrecedingMediators()
 	}
 
 	for _, localMed := range ms {
@@ -134,9 +135,9 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 	mp.dkgLock.Lock()
 	defer mp.dkgLock.Unlock()
 	var (
-		dkgr    *dkg.DistKeyGenerator
+		dkgr      *dkg.DistKeyGenerator
 		newHeader *modules.Header
-		err error
+		err       error
 	)
 
 	// 1. 获取群签名所需数据
@@ -156,10 +157,10 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 		}
 
 		// 判断是否是换届前的单元
-		if newHeader.Timestamp() <= dag.LastMaintenanceTime() {
-			dkgr, ok = mp.precedingDKGs[localMed]
-		} else {
+		if newHeader.Timestamp() > mp.lastMaintenanceTime {
 			dkgr, ok = mp.activeDKGs[localMed]
+		} else {
+			dkgr, ok = mp.precedingDKGs[localMed]
 		}
 
 		if !ok {
@@ -297,14 +298,14 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 		}
 
 		// 判断是否是换届前的单元
-		if unit.Timestamp() <= dag.LastMaintenanceTime() {
-			mSize = dag.PrecedingMediatorsCount()
-			threshold = dag.PrecedingThreshold()
-			dkgr, ok = mp.precedingDKGs[localMed]
-		} else {
+		if unit.Timestamp() > mp.lastMaintenanceTime {
 			mSize = dag.ActiveMediatorsCount()
 			threshold = dag.ChainThreshold()
 			dkgr, ok = mp.activeDKGs[localMed]
+		} else {
+			mSize = dag.PrecedingMediatorsCount()
+			threshold = dag.PrecedingThreshold()
+			dkgr, ok = mp.precedingDKGs[localMed]
 		}
 
 		if !ok {
