@@ -95,6 +95,7 @@ type ChainParametersBase struct {
 	// unit生产之间的间隔时间，以秒为单元。 interval in seconds between Units
 	MediatorInterval uint8 `json:"mediator_interval"`
 
+	// MaintenanceInterval 必须是 MediatorInterval的整数倍
 	// 区块链维护事件之间的间隔，以秒为单元。 interval in sections between unit maintenance events
 	MaintenanceInterval uint32 `json:"maintenance_interval"`
 
@@ -170,7 +171,7 @@ type ChainParameters struct {
 	ContractTxStopFeeLevel    float64 `json:"contract_tx_stop_fee_level"`
 }
 
-func CheckSysConfigArgs(field, value string) error {
+func CheckSysConfigArgType(field, value string) error {
 	var err error
 	vn := reflect.ValueOf(ChainParameters{}).FieldByName(field)
 
@@ -196,7 +197,8 @@ func CheckSysConfigArgs(field, value string) error {
 
 type GetMediatorCountFn func() int
 
-func ImmutableChainParameterCheck(field, value string, icp *ImmutableChainParameters, fn GetMediatorCountFn) error {
+func CheckChainParameterValue(field, value string, icp *ImmutableChainParameters, cp *ChainParameters,
+	fn GetMediatorCountFn) error {
 	var err error
 
 	switch field {
@@ -229,6 +231,19 @@ func ImmutableChainParameterCheck(field, value string, icp *ImmutableChainParame
 					newActiveMediatorCount, mediatorCount)
 			}
 		}
+	case "MaintenanceInterval":
+		newMaintenanceInterval, _ := strconv.ParseUint(value, 10, 64)
+		minMaintenanceInterval := cp.MediatorInterval * cp.MaintenanceSkipSlots
+		if !(newMaintenanceInterval > uint64(minMaintenanceInterval)) {
+			// 保证MaintenanceInterval大于必要的时长
+			err = fmt.Errorf("new MaintenanceInterval(%v) must be larger than %v",
+				newMaintenanceInterval, minMaintenanceInterval)
+		} else if newMaintenanceInterval%uint64(cp.MediatorInterval) != 0 {
+			// 保证MaintenanceInterval能被MediatorInterval整除
+			err = fmt.Errorf("new MaintenanceInterval(%v) must be divisible by mediator interval(%v)",
+				newMaintenanceInterval, cp.MediatorInterval)
+		}
+
 	default:
 		err = nil
 	}

@@ -251,14 +251,14 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 		oneSupport := SysTopicSupports{TopicTitle: oneTopic.TopicTitle}
 		for _, oneOption := range oneTopic.SelectOptions {
 			// 检查参数
-			err := core.CheckSysConfigArgs(oneSupport.TopicTitle, oneOption)
+			err := core.CheckSysConfigArgType(oneSupport.TopicTitle, oneOption)
 			if err != nil {
 				log.Debugf(err.Error())
 				return nil, err
 			}
 
-			err = core.ImmutableChainParameterCheck(oneSupport.TopicTitle, oneOption, &gp.ImmutableParameters,
-				func() int { return GetMediatorCount(stub) })
+			err = core.CheckChainParameterValue(oneSupport.TopicTitle, oneOption, &gp.ImmutableParameters,
+				&gp.ChainParameters, func() int { return GetMediatorCount(stub) })
 			if err != nil {
 				log.Debugf(err.Error())
 				return nil, err
@@ -472,7 +472,7 @@ func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubIn
 	field, value := args[0], args[1]
 
 	// 检查参数
-	err := core.CheckSysConfigArgs(field, value)
+	err := core.CheckSysConfigArgType(field, value)
 	if err != nil {
 		log.Debugf(err.Error())
 		return nil, err
@@ -483,8 +483,8 @@ func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubIn
 		return nil, fmt.Errorf("fail to get system config err")
 	}
 
-	err = core.ImmutableChainParameterCheck(field, value, &gp.ImmutableParameters,
-		func() int { return GetMediatorCount(stub) })
+	err = core.CheckChainParameterValue(field, value, &gp.ImmutableParameters,
+		&gp.ChainParameters, func() int { return GetMediatorCount(stub) })
 	if err != nil {
 		log.Debugf(err.Error())
 		return nil, err
