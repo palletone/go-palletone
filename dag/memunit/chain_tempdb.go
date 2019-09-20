@@ -41,15 +41,17 @@ type ChainTempDb struct {
 }
 
 func NewChainTempDb(db ptndb.Database,
-	cache palletcache.ICache,tokenEngine tokenengine.ITokenEngine) (*ChainTempDb, error) {
+	cache palletcache.ICache, tokenEngine tokenengine.ITokenEngine, saveHeaderOnly bool) (*ChainTempDb, error) {
 	tempdb, _ := NewTempdb(db)
-	trep := comm2.NewUnitRepository4Db(tempdb,tokenEngine)
-	tutxoRep := comm2.NewUtxoRepository4Db(tempdb,tokenEngine)
+	trep := comm2.NewUnitRepository4Db(tempdb, tokenEngine)
+	tutxoRep := comm2.NewUtxoRepository4Db(tempdb, tokenEngine)
 	tstateRep := comm2.NewStateRepository4Db(tempdb)
 	tpropRep := comm2.NewPropRepository4Db(tempdb)
 	tunitProduceRep := comm2.NewUnitProduceRepository(trep, tpropRep, tstateRep)
 	val := validator.NewValidate(trep, tutxoRep, tstateRep, tpropRep, cache)
-
+	if saveHeaderOnly { //轻节点，只有Header数据，无法做高级验证
+		val = validator.NewValidate(trep, nil, nil, nil, cache)
+	}
 	return &ChainTempDb{
 		Tempdb:         tempdb,
 		UnitRep:        trep,
