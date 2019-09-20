@@ -173,6 +173,11 @@ const Wallet_JS = `
             call: 'wallet_aggregateUtxo',
             params: 2,
         }),
+		new web3._extend.Method({
+            name: 'getAddrTokenFlow',
+            call: 'wallet_getAddrTokenFlow',
+            params: 2,
+        }),
  	]
  });
  `

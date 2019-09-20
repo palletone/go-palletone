@@ -360,7 +360,9 @@ func (b *LesApiBackend) GetAllUtxos() ([]*ptnjson.UtxoJson, error) {
 	//}
 	//return result, nil
 }
-
+func (b *LesApiBackend) GetAddrTokenFlow(addr, token string) ([]*ptnjson.TokenFlowJson, error) {
+	return nil, nil
+}
 func (b *LesApiBackend) GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson, error) {
 	return nil, nil
 }

@@ -967,6 +967,12 @@ func (s *PublicWalletAPI) GetAddrTxHistory(ctx context.Context, addr string) ([]
 	return result, err
 }
 
+//获得某地址的通证流水
+func (s *PublicWalletAPI) GetAddrTokenFlow(ctx context.Context, addr string, token string) ([]*ptnjson.TokenFlowJson, error) {
+	result, err := s.b.GetAddrTokenFlow(addr, token)
+	return result, err
+}
+
 //sign rawtranscation
 //create raw transction
 func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to string, amount, password string, duration *uint64) (common.Hash, error) {
@@ -993,14 +999,14 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 		//utxos = append(utxos, &json)
 		if jsonu.Asset == ptn.String() {
 			utxos = append(utxos, &ptnjson.UtxoJson{
-				TxHash: jsonu.TxHash,
-				MessageIndex: jsonu.MessageIndex,
-				OutIndex: jsonu.OutIndex,
-				Amount: jsonu.Amount,
-				Asset: jsonu.Asset,
-				PkScriptHex: jsonu.PkScriptHex,
+				TxHash:         jsonu.TxHash,
+				MessageIndex:   jsonu.MessageIndex,
+				OutIndex:       jsonu.OutIndex,
+				Amount:         jsonu.Amount,
+				Asset:          jsonu.Asset,
+				PkScriptHex:    jsonu.PkScriptHex,
 				PkScriptString: jsonu.PkScriptString,
-				LockTime: jsonu.LockTime})
+				LockTime:       jsonu.LockTime})
 		}
 	}
 	fee, err := decimal.NewFromString("1")
