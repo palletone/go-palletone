@@ -70,6 +70,8 @@ type IStateRepository interface {
 
 	GetJuryCandidateList() (map[string]bool, error)
 	IsJury(address common.Address) bool
+	GetAllJuror() (map[string]*modules.Juror, error)
+	GetJurorByAddr(addr string) (*modules.Juror, error)
 	GetContractDeveloperList() ([]common.Address, error)
 	IsContractDeveloper(address common.Address) bool
 
@@ -369,6 +371,14 @@ func (rep *StateRepository) GetMinFee() (*modules.AmountAsset, error) {
 
 func (rep *StateRepository) GetJuryCandidateList() (map[string]bool, error) {
 	return rep.statedb.GetJuryCandidateList()
+}
+
+func (rep *StateRepository) GetJurorByAddr(addr string) (*modules.Juror, error) {
+	return rep.statedb.GetJurorByAddr(addr)
+}
+
+func (rep *StateRepository) GetAllJuror() (map[string]*modules.Juror, error) {
+	return rep.statedb.GetAllJuror()
 }
 
 func (rep *StateRepository) IsJury(address common.Address) bool {
