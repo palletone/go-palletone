@@ -30,6 +30,8 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/util"
+	"github.com/palletone/go-palletone/contracts/syscontract"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
@@ -198,4 +200,31 @@ func newTestLDB() (*ptndb.LDBDatabase, func()) {
 		db.Close()
 		os.RemoveAll(dirname)
 	}
+}
+
+func TestJurors(t *testing.T) {
+	db, _ := ptndb.NewMemDatabase()
+	statedb := NewStateDb(db)
+	depositeContractAddress := syscontract.DepositContractAddress
+	contractId := depositeContractAddress.Bytes()
+	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123}, TxIndex: 1}
+	j1 := &modules.Juror{}
+	j1.Address = "p1"
+	b1, _ := json.Marshal(j1)
+	j2 := &modules.Juror{}
+	j2.Address = "p2"
+	b2, _ := json.Marshal(j2)
+	ws1 := modules.NewWriteSet(string(constants.DEPOSIT_JURY_BALANCE_PREFIX)+"p1", b1)
+	ws2 := modules.NewWriteSet(string(constants.DEPOSIT_JURY_BALANCE_PREFIX)+"p2", b2)
+	ws := []modules.ContractWriteSet{}
+	ws = append(ws, *ws1)
+	ws = append(ws, *ws2)
+	err := statedb.SaveContractStates(contractId, ws, version)
+	assert.Nil(t, err)
+	juror, err := statedb.GetAllJuror()
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(juror))
+	j, err := statedb.GetJurorByAddr("p1")
+	assert.Nil(t, err)
+	assert.NotNil(t, j)
 }
