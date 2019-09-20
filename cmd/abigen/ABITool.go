@@ -126,6 +126,9 @@ func GenerateABI(chainCode interface{}) (string, error) {
 		cntIgnore = 0
 		for j := 0; j < numOut; j++ {
 			outType := iMethodType.Out(j).String()
+			if outType == "error" {
+				continue
+			}
 			if strings.HasPrefix(outType, "shim") || strings.HasPrefix(outType, "peer") {
 				cntIgnore += 1
 				continue

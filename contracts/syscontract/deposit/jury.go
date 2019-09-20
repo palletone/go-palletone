@@ -148,3 +148,32 @@ func convertJuryDeposit2Json(juror *modules.Juror) *modules.JuryDepositJson {
 
 	return jrJson
 }
+
+func updateJuryInfo(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+	addr, err := stub.GetInvokeAddress()
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	b, err := GetJuryBalance(stub, addr.String())
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	//  TODO
+	if len(args) != 1 {
+		return shim.Error("need 1 parameter")
+	}
+	if len(args[0]) != 68 {
+		return shim.Error("public key is error")
+	}
+	//TODO 验证公钥和地址的关系
+	_, err = hexutil.Decode(args[0])
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	b.PublicKey = args[0]
+	err = SaveJuryBalance(stub, addr.String(), b)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	return shim.Success(nil)
+}

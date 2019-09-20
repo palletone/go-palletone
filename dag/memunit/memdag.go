@@ -125,7 +125,7 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 		db:                 db,
 		tokenEngine:        tokenEngine,
 	}
-	temp, _ := NewChainTempDb(db, cache, tokenEngine)
+	temp, _ := NewChainTempDb(db, cache, tokenEngine, saveHeaderOnly)
 	temp.Unit = stableUnit
 	memdag.tempdb.Store(stablehash, temp)
 	memdag.chainUnits.Store(stablehash, temp)
@@ -529,7 +529,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 			inter_temp, has := chain.tempdb.Load(parentHash)
 			if !has { // 分叉链
 				p_temp := inter.(*ChainTempDb)
-				temp_db, _ = NewChainTempDb(p_temp.Tempdb, chain.cache, chain.tokenEngine)
+				temp_db, _ = NewChainTempDb(p_temp.Tempdb, chain.cache, chain.tokenEngine, chain.saveHeaderOnly)
 			} else {
 				temp_db = inter_temp.(*ChainTempDb)
 			}
@@ -580,7 +580,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 			var main_temp *ChainTempDb
 			inter_main, has := chain.tempdb.Load(parentHash)
 			if !has { // 分叉
-				main_temp, _ = NewChainTempDb(chain.db, chain.cache, chain.tokenEngine)
+				main_temp, _ = NewChainTempDb(chain.db, chain.cache, chain.tokenEngine, chain.saveHeaderOnly)
 				forks := chain.getForkUnits(unit)
 				for i := 0; i < len(forks)-1; i++ {
 					main_temp, _ = main_temp.AddUnit(forks[i], chain.saveHeaderOnly)
