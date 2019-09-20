@@ -597,6 +597,7 @@ func (dag *UnitProduceRepository) updateNextMaintenanceTime(nextUnit *modules.Un
 	maintenanceInterval := int64(gp.ChainParameters.MaintenanceInterval)
 
 	if nextUnit.NumberU64() == 1 {
+		// 对第一个unit之后的特殊换届，进行调整，让其回到普通换届时间来
 		nextMaintenanceTime = uint32((nextUnit.Timestamp()/maintenanceInterval + 1) * maintenanceInterval)
 	} else {
 		// We want to find the smallest k such that nextMaintenanceTime + k * maintenanceInterval > HeadUnitTime()

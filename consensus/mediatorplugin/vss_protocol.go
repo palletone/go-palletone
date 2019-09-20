@@ -66,12 +66,12 @@ func (mp *MediatorPlugin) newDKGAndInitVSSBuf() {
 func (mp *MediatorPlugin) startVSSProtocol() {
 	log.Debugf("start completing the VSS protocol")
 
-	// 处理其他 mediator 的 deals, 以及所有 response
-	mp.launchDealAndRespLoops()
+	// 开启处理其他 mediator 的 deals 的循环，准备完成vss协议
+	mp.launchVSSDealLoops()
 
 	interval := mp.dag.GetGlobalProp().ChainParameters.MediatorInterval / 2
 
-	// 隔一个生产间隔，再开始vss协议
+	// 隔1个生产间隔，等待其他节点接收新unit，并处理好vss协议相关准备工作
 	select {
 	case <-mp.quit:
 		return
@@ -79,7 +79,15 @@ func (mp *MediatorPlugin) startVSSProtocol() {
 		mp.broadcastVSSDeals()
 	}
 
-	// 隔2个生产间隔，再处理vss协议后续工作
+	// 再隔1个生产间隔，处理response
+	select {
+	case <-mp.quit:
+		return
+	case <-time.After(time.Second * time.Duration(interval)):
+		mp.launchVSSRespLoops()
+	}
+
+	// 再隔1个生产间隔，验证vss协议是否完成，并开始群签名
 	select {
 	case <-mp.quit:
 		return
@@ -124,13 +132,24 @@ func (mp *MediatorPlugin) launchGroupSignLoops() {
 	}
 }
 
-func (mp *MediatorPlugin) launchDealAndRespLoops() {
+func (mp *MediatorPlugin) launchVSSDealLoops() {
 	lams := mp.GetLocalActiveMediators()
-	ams := mp.dag.GetActiveMediators()
+	//ams := mp.dag.GetActiveMediators()
 
 	for _, localMed := range lams {
 		go mp.processDealLoop(localMed)
 
+		//for _, vrfrMed := range ams {
+		//	go mp.processResponseLoop(localMed, vrfrMed)
+		//}
+	}
+}
+
+func (mp *MediatorPlugin) launchVSSRespLoops() {
+	lams := mp.GetLocalActiveMediators()
+	ams := mp.dag.GetActiveMediators()
+
+	for _, localMed := range lams {
 		for _, vrfrMed := range ams {
 			go mp.processResponseLoop(localMed, vrfrMed)
 		}
@@ -156,6 +175,7 @@ func (mp *MediatorPlugin) processDealLoop(localMed common.Address) {
 		case <-mp.stopVSS:
 			return
 		case deal := <-dealCh:
+			// 处理deal，并广播response
 			mp.processVSSDeal(localMed, deal)
 		}
 	}

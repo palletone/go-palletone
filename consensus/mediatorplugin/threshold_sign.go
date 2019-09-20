@@ -82,7 +82,7 @@ func (mp *MediatorPlugin) AddToTBLSSignBufs(newHash common.Hash) {
 	}
 
 	var ms []common.Address
-	// 严格要求换届unit时间是产块间隔的整数倍
+	// 严格要求换届unix时间是产块间隔的整数倍
 	if newHeader.Timestamp() > mp.dag.LastMaintenanceTime() {
 		ms = mp.GetLocalActiveMediators()
 	} else {
