@@ -39,7 +39,8 @@ func NewIndexDb(db ptndb.Database) *IndexDb {
 type IIndexDb interface {
 	SaveAddressTxId(address common.Address, txid common.Hash) error
 	GetAddressTxIds(address common.Address) ([]common.Hash, error)
-
+	//清空AddressTxIds
+	TruncateAddressTxIds() error
 	SaveTokenTxId(asset *modules.Asset, txid common.Hash) error
 	GetTokenTxIds(asset *modules.Asset) ([]common.Hash, error)
 
@@ -64,6 +65,18 @@ func (db *IndexDb) GetAddressTxIds(address common.Address) ([]common.Hash, error
 		result = append(result, hash)
 	}
 	return result, nil
+}
+
+func (db *IndexDb) TruncateAddressTxIds() error {
+	iter := db.db.NewIteratorWithPrefix(constants.ADDR_TXID_PREFIX)
+	for iter.Next() {
+		key := iter.Key()
+		err := db.db.Delete(key)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 func (db *IndexDb) SaveTokenTxId(asset *modules.Asset, txid common.Hash) error {
 	key := append(constants.TOKEN_TXID_PREFIX, asset.Bytes()...)

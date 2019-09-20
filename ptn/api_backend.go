@@ -598,7 +598,34 @@ func (b *PtnApiBackend) GetAllUtxos() ([]*ptnjson.UtxoJson, error) {
 	}
 	return result, nil
 }
-
+func (b *PtnApiBackend) GetAddrTokenFlow(addr, token string) ([]*ptnjson.TokenFlowJson, error) {
+	address, err := common.StringToAddress(addr)
+	if err != nil {
+		return nil, err
+	}
+	asset, err := modules.StringToAsset(token)
+	if err != nil {
+		return nil, err
+	}
+	txs, err := b.ptn.dag.GetAddrTransactions(address)
+	if err != nil {
+		return nil, err
+	}
+	//按时间从旧到新排序
+	sort.Slice(txs, func(i, j int) bool {
+		return txs[i].Timestamp < txs[j].Timestamp
+	})
+	txjs := []*ptnjson.TokenFlowJson{}
+	balance := uint64(0)
+	for _, tx := range txs {
+		txj, newbalance := ptnjson.ConvertTx2TokenFlowJson(address, asset, balance, tx, b.ptn.dag.GetTxOutput)
+		for _, t := range txj {
+			txjs = append(txjs, t)
+		}
+		balance = newbalance
+	}
+	return txjs, nil
+}
 func (b *PtnApiBackend) GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson, error) {
 	address, err := common.StringToAddress(addr)
 	if err != nil {

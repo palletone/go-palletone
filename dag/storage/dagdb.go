@@ -72,6 +72,7 @@ type IDagDb interface {
 	// get txhash  and save index
 	//GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
+	ForEachAllTxDo(txAction func(key []byte, transaction *modules.Transaction) error) error
 }
 
 func (dagdb *DagDb) IsHeaderExist(uHash common.Hash) (bool, error) {

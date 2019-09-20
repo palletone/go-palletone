@@ -1297,3 +1297,6 @@ func (d *Dag) CheckHeaderCorrect(number int) error {
 func (d *Dag) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error) {
 	return d.unstableStateRep.GetBlacklistAddress()
 }
+func (d *Dag) RebuildAddrTxIndex() error {
+	return d.stableUnitRep.RebuildAddrTxIndex()
+}
