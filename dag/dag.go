@@ -663,7 +663,10 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 		stableStateRep:       stateRep,
 		stableUnitProduceRep: statleUnitProduceRep,
 		ChainHeadFeed:        new(event.Feed),
-		//Mutex:                *mutex,
+		unstableUnitRep:      unitRep,
+		unstablePropRep:      propRep,
+		unstableStateRep:     stateRep,
+		unstableUtxoRep:      utxoRep,
 	}
 	return dag, nil
 }
