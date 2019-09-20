@@ -435,8 +435,6 @@ func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion)
 		}
 	}
 
-	//core.ImmutableChainParameterCheck(&gp.ImmutableParameters, &gp.ChainParameters)
-
 	err = dag.propRep.StoreGlobalProp(gp)
 	if err != nil {
 		return err
