@@ -619,9 +619,10 @@ func (b *PtnApiBackend) GetAddrTokenFlow(addr, token string) ([]*ptnjson.TokenFl
 	balance := uint64(0)
 	for _, tx := range txs {
 		txj, newbalance := ptnjson.ConvertTx2TokenFlowJson(address, asset, balance, tx, b.ptn.dag.GetTxOutput)
-		for _, t := range txj {
-			txjs = append(txjs, t)
-		}
+		txjs = append(txjs, txj...)
+		//for _, t := range txj {
+		//	txjs = append(txjs, t)
+		//}
 		balance = newbalance
 	}
 	return txjs, nil
