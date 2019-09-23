@@ -97,7 +97,6 @@ type iDag interface {
 	GetMediators() map[common.Address]bool
 	GetMediator(add common.Address) *core.Mediator
 	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
-
 }
 
 type electionVrf struct {
@@ -140,8 +139,6 @@ type Processor struct {
 	locker       *sync.Mutex //locker       *sync.Mutex  RWMutex
 	errMsgEnable bool        //package contract execution error information into the transaction
 
-	electionNum       int
-	contractSigNum    int
 	contractExecFeed  event.Feed
 	contractExecScope event.SubscriptionScope
 }
@@ -161,40 +158,27 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 			}
 		}
 	}
-	cp := dag.GetChainParameters()
-	var contractSigNum int
-	if cp.ContractSignatureNum < 1 {
-		contractSigNum = core.DefaultContractSignatureNum
-	} else {
-		contractSigNum = cp.ContractSignatureNum
-	}
-	var contractEleNum int
-	if cp.ContractElectionNum < 1 {
-		contractEleNum = core.DefaultContractElectionNum
-	} else {
-		contractEleNum = cp.ContractElectionNum
-	}
-	log.Debug("NewContractProcessor", "contractEleNum", contractEleNum, "contractSigNum", contractSigNum)
+	cfgSigNum := getSysCfgContractSignatureNum(dag)
+	cfgEleNum := getSysCfgContractElectionNum(dag)
+	log.Debug("NewContractProcessor", "contractEleNum", cfgEleNum, "contractSigNum", cfgSigNum)
 
 	cache := freecache.NewCache(20 * 1024 * 1024)
 	validator := validator.NewValidate(dag, dag, dag, nil, cache)
 	p := &Processor{
-		name:           "contractProcessor",
-		ptn:            ptn,
-		dag:            dag,
-		contract:       contract,
-		local:          acs,
-		locker:         new(sync.Mutex),
-		quit:           make(chan struct{}),
-		mtx:            make(map[common.Hash]*contractTx),
-		mel:            make(map[common.Hash]*electionVrf),
-		lockVrf:        make(map[common.Address][]modules.ElectionInf),
-		electionNum:    contractEleNum, //todo contractSigNum ,cfg.ContractSigNum
-		contractSigNum: contractSigNum, //todo contractEleNum ,cfg.ElectionNum
-		validator:      validator,
-		errMsgEnable:   true,
+		name:     "contractProcessor",
+		ptn:      ptn,
+		dag:      dag,
+		contract: contract,
+		local:    acs,
+		locker:   new(sync.Mutex),
+		quit:     make(chan struct{}),
+		mtx:      make(map[common.Hash]*contractTx),
+		mel:      make(map[common.Hash]*electionVrf),
+		lockVrf:  make(map[common.Address][]modules.ElectionInf),
+		validator:    validator,
+		errMsgEnable: true,
 	}
-	log.Info("NewContractProcessor ok", "local address:", p.local, "electionNum", p.electionNum)
+	log.Info("NewContractProcessor ok", "local address:", p.local, "electionNum", cfgEleNum)
 
 	return p, nil
 }
@@ -315,8 +299,9 @@ func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode)
 		}
 
 		sigNum := getTxSigNum(ctx.sigTx)
-		log.Debugf("[%s]runContractReq sigNum %d, p.contractSigNum %d", shortId(reqId.String()), sigNum, p.contractSigNum)
-		if sigNum >= p.contractSigNum {
+		cfgSigNum := getSysCfgContractSignatureNum(p.dag)
+		log.Debugf("[%s]runContractReq sigNum %d, p.contractSigNum %d", shortId(reqId.String()), sigNum, cfgSigNum)
+		if sigNum >= cfgSigNum {
 			if localIsMinSignature(ctx.sigTx) {
 				//签名数量足够，而且当前节点是签名最新的节点，那么合并签名并广播完整交易
 				log.Infof("[%s]runContractReq, localIsMinSignature Ok!", shortId(reqId.String()))
@@ -570,9 +555,10 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele *modules.Ele
 		return false
 	}
 	reqId := tx.RequestHash()
-	if len(ele.EleList) < p.electionNum {
+	cfgEleNum := getSysCfgContractElectionNum(p.dag)
+	if len(ele.EleList) < cfgEleNum {
 		log.Infof("[%s]isValidateElection, ElectionInf number not enough ,len(ele)[%d], set electionNum[%d]",
-			shortId(reqId.String()), len(ele.EleList), p.electionNum)
+			shortId(reqId.String()), len(ele.EleList), cfgEleNum)
 		return false
 	}
 	contractId := tx.ContractIdBytes()
@@ -589,7 +575,7 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele *modules.Ele
 	//	return false
 	//}
 	isExit := false
-	elr := newElector(uint(p.electionNum), ele.JuryCount, common.Address{},"", p.ptn.GetKeyStore())
+	elr := newElector(uint(cfgEleNum), ele.JuryCount, common.Address{}, "", p.ptn.GetKeyStore())
 	for i, e := range ele.EleList {
 		isVerify := false
 		//检查地址hash是否在本地
@@ -830,8 +816,9 @@ func (p *Processor) getContractAssignElectionList(tx *modules.Transaction) ([]mo
 		return nil, fmt.Errorf("[%s]getContractAssignElectionList, GetContractTpl fail", shortId(reqId.String()))
 	}
 	addrHash := tpl.AddrHash
-	if len(addrHash) >= p.electionNum {
-		num = p.electionNum
+	cfgEleNum := getSysCfgContractElectionNum(p.dag)
+	if len(addrHash) >= cfgEleNum {
+		num = cfgEleNum
 	} else {
 		num = len(addrHash)
 	}

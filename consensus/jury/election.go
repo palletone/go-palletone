@@ -45,6 +45,7 @@ type elector struct {
 	password string
 	ks       *keystore.KeyStore
 }
+
 func newElector(num uint, total uint64, addr common.Address, password string, ks *keystore.KeyStore) *elector {
 	e := &elector{
 		num:      num,
@@ -248,11 +249,12 @@ func (p *Processor) checkElectionSigRequestEventValid(evt *ElectionSigRequestEve
 		return false
 	}
 	reqId := evt.ReqId
-	if len(evt.Ele) != p.electionNum {
+	cfgEleNum := getSysCfgContractElectionNum(p.dag)
+	if len(evt.Ele) != cfgEleNum {
 		log.Debugf("[%s]checkElectionSigRequestEventValid, len(%d)", shortId(reqId.String()), len(evt.Ele))
 		return false
 	}
-	etor := newElector(uint(p.electionNum), evt.JuryCount, common.Address{},"", nil)
+	etor := newElector(uint(cfgEleNum), evt.JuryCount, common.Address{}, "", nil)
 	for i, e := range evt.Ele {
 		if e.EType == 1 { //todo
 			continue
@@ -313,7 +315,7 @@ func (p *Processor) processElectionRequestEvent(reqEvt *ElectionRequestEvent) (e
 	if account == nil {
 		return errors.New("processElectionRequestEvent, getLocalJuryAccount fail")
 	}
-	elr := newElector(uint(p.electionNum), reqEvt.JuryCount, account.Address,account.Password, p.ptn.GetKeyStore())
+	elr := newElector(uint(getSysCfgContractElectionNum(p.dag)), reqEvt.JuryCount, account.Address, account.Password, p.ptn.GetKeyStore())
 
 	addrHash := util.RlpHash(account.Address)
 	proof, err := elr.checkElected(getElectionSeedData(reqEvt.ReqId))
@@ -349,7 +351,7 @@ func (p *Processor) processElectionResultEvent(rstEvt *ElectionResultEvent) erro
 	}
 	p.locker.Lock()
 	defer p.locker.Unlock()
-
+	cfgEleNum := getSysCfgContractElectionNum(p.dag)
 	reqId := rstEvt.ReqId
 	mel := p.mel[reqId]
 	if mel == nil {
@@ -358,7 +360,7 @@ func (p *Processor) processElectionResultEvent(rstEvt *ElectionResultEvent) erro
 			sigs:   make([]modules.SignatureSet, 0),
 		}
 	}
-	if len(mel.rcvEle) >= p.electionNum*2 {
+	if len(mel.rcvEle) >= cfgEleNum*2 {
 		log.Infof("[%s]processElectionResultEvent, The quantity has reached the requirement", shortId(reqId.String()))
 		return nil
 	}
@@ -372,7 +374,7 @@ func (p *Processor) processElectionResultEvent(rstEvt *ElectionResultEvent) erro
 		}
 	}
 	//验证vrf
-	elr := newElector(uint(p.electionNum), rstEvt.JuryCount, common.Address{},"", p.ptn.GetKeyStore())
+	elr := newElector(uint(cfgEleNum), rstEvt.JuryCount, common.Address{}, "", p.ptn.GetKeyStore())
 	ok, err := elr.verifyVrf(rstEvt.Ele.Proof, getElectionSeedData(reqId), rstEvt.Ele.PublicKey) //rstEvt.ReqId[:]
 	if err != nil {
 		log.Errorf("[%s]processElectionResultEvent, verify VRF fail", shortId(reqId.String()))
@@ -504,8 +506,9 @@ func (p *Processor) BroadcastElectionSigRequestEvent() {
 			mtx.eleNode = &modules.ElectionNode{JuryCount: ele.juryCnt}
 		}
 
-		if len(eList)+len(ele.rcvEle) >= p.electionNum {
-			se, valid := p.selectElectionInf(eList, ele.rcvEle, p.electionNum)
+		cfgEleNum := getSysCfgContractElectionNum(p.dag)
+		if len(eList)+len(ele.rcvEle) >= cfgEleNum {
+			se, valid := p.selectElectionInf(eList, ele.rcvEle, cfgEleNum)
 			if !valid {
 				continue
 			}
