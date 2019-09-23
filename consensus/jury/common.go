@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/core"
 )
 
 const (
@@ -882,6 +883,29 @@ func addContractDeployDuringTime(dag iDag, tx *modules.Transaction) error {
 		return errors.New("addContractDeployDuringTime, getContractTxContractInfo fail")
 	}
 	payload.(*modules.ContractDeployPayload).DuringTime = duringTime
-
 	return nil
+}
+
+func getSysCfgContractSignatureNum(dag iDag) int {
+	var contractSigNum int
+	cp := dag.GetChainParameters()
+
+	if cp.ContractSignatureNum < 1 {
+		contractSigNum = core.DefaultContractSignatureNum
+	} else {
+		contractSigNum = cp.ContractSignatureNum
+	}
+	return contractSigNum
+}
+
+func getSysCfgContractElectionNum(dag iDag) int {
+	var contractEleNum int
+	cp := dag.GetChainParameters()
+
+	if cp.ContractElectionNum < 1 {
+		contractEleNum = core.DefaultContractElectionNum
+	} else {
+		contractEleNum = cp.ContractElectionNum
+	}
+	return contractEleNum
 }

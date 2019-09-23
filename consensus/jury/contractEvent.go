@@ -99,10 +99,11 @@ func (p *Processor) contractEleEvent(tx *modules.Transaction) error {
 	eelsLen := len(eels)
 	if eelsLen > 0 {
 		eleNode := &modules.ElectionNode{
-			EleList:make([]modules.ElectionInf, 0),
+			EleList: make([]modules.ElectionInf, 0),
 		}
-		if eelsLen >= p.electionNum {
-			eelsLen = p.electionNum
+		cfgEleNum := getSysCfgContractElectionNum(p.dag)
+		if eelsLen >= cfgEleNum {
+			eelsLen = cfgEleNum
 			log.Debugf("[%s]contractEleEvent election Num ok", shortId(reqId.String()))
 		}
 		eleNode.EleList = eels[:eelsLen]
@@ -116,7 +117,7 @@ func (p *Processor) contractEleEvent(tx *modules.Transaction) error {
 			tm:     time.Now(),
 		}
 	}
-	if eelsLen < p.electionNum {
+	if eelsLen < getSysCfgContractElectionNum(p.dag) {
 		reqEvent := &ElectionRequestEvent{
 			ReqId:     reqId,
 			JuryCount: juryCount,
@@ -191,7 +192,7 @@ func (p *Processor) contractSigEvent(tx *modules.Transaction, ele *modules.Elect
 
 	//如果是jury，将接收到tx与本地执行后的tx进行对比，相同则添加签名到sigTx，如果满足签名数量且签名值最小则广播tx，否则函数返回
 	if ok, err := checkAndAddTxSigMsgData(ctx.sigTx, tx); err == nil && ok {
-		if getTxSigNum(ctx.sigTx) >= p.contractSigNum {
+		if getTxSigNum(ctx.sigTx) >= getSysCfgContractSignatureNum(p.dag) {
 			if localIsMinSignature(ctx.sigTx) { //todo
 				//签名数量足够，而且当前节点是签名最新的节点，那么合并签名并广播完整交易
 				log.Infof("[%s]runContractReq, localIsMinSignature Ok!", shortId(reqId.String()))
