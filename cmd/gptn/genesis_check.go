@@ -74,6 +74,12 @@ func validateGenesis(genesis *core.Genesis) {
 		"initial maintenanceSkipSlots(%v) cannot less than minMaintSkipSlots(%v).",
 		maintenanceSkipSlots, minMaintSkipSlots)
 
+	maintenanceInterval := int64(genesis.InitialParameters.MaintenanceInterval)
+	fcAssert(maintenanceInterval > 0, "maintenance interval must be larger than zero.")
+
+	fcAssert(maintenanceInterval%mediatorInterval == 0,
+		"maintenance interval must be divisible by mediator interval.")
+
 	fcAssert((minMediatorCount&1) == 1, "min mediator count must be odd.")
 }
 

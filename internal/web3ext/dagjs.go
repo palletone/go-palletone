@@ -183,6 +183,11 @@ web3._extend({
             call: 'dag_checkHeader',
             params: 1,
         }),
+		new web3._extend.Method({
+            name: 'rebuildAddrTxIndex',
+            call: 'dag_rebuildAddrTxIndex',
+            params: 0,
+        }),
 	],
 	properties: [
 		new web3._extend.Property({

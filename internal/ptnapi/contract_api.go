@@ -633,14 +633,15 @@ func (s *PrivateContractAPI) SysConfigContractInvoke(ctx context.Context, from, 
 		}
 
 		field, value := param[1], param[2]
-		err := core.CheckSysConfigArgs(field, value)
+		err := core.CheckSysConfigArgType(field, value)
 		if err != nil {
 			log.Debugf(err.Error())
 			return "", err
 		}
 
 		dag := s.b.Dag()
-		err = core.ImmutableChainParameterCheck(field, value, &dag.GetGlobalProp().ImmutableParameters,
+		gp := s.b.Dag().GetGlobalProp()
+		err = core.CheckChainParameterValue(field, value, &gp.ImmutableParameters, &gp.ChainParameters,
 			dag.GetMediatorCount)
 		if err != nil {
 			log.Debugf(err.Error())
@@ -662,15 +663,16 @@ func (s *PrivateContractAPI) SysConfigContractInvoke(ctx context.Context, from, 
 
 		for _, oneTopic := range voteTopics {
 			for _, oneOption := range oneTopic.SelectOptions {
-				err := core.CheckSysConfigArgs(oneTopic.TopicTitle, oneOption)
+				err := core.CheckSysConfigArgType(oneTopic.TopicTitle, oneOption)
 				if err != nil {
 					log.Debugf(err.Error())
 					return "", err
 				}
 
 				dag := s.b.Dag()
-				err = core.ImmutableChainParameterCheck(oneTopic.TopicTitle, oneOption,
-					&dag.GetGlobalProp().ImmutableParameters, dag.GetMediatorCount)
+				gp := s.b.Dag().GetGlobalProp()
+				err = core.CheckChainParameterValue(oneTopic.TopicTitle, oneOption, 	&gp.ImmutableParameters,
+					&gp.ChainParameters, dag.GetMediatorCount)
 				if err != nil {
 					log.Debugf(err.Error())
 					return "", err

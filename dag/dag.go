@@ -663,7 +663,10 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 		stableStateRep:       stateRep,
 		stableUnitProduceRep: statleUnitProduceRep,
 		ChainHeadFeed:        new(event.Feed),
-		//Mutex:                *mutex,
+		unstableUnitRep:      unitRep,
+		unstablePropRep:      propRep,
+		unstableStateRep:     stateRep,
+		unstableUtxoRep:      utxoRep,
 	}
 	return dag, nil
 }
@@ -1293,4 +1296,7 @@ func (d *Dag) CheckHeaderCorrect(number int) error {
 
 func (d *Dag) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error) {
 	return d.unstableStateRep.GetBlacklistAddress()
+}
+func (d *Dag) RebuildAddrTxIndex() error {
+	return d.stableUnitRep.RebuildAddrTxIndex()
 }

@@ -21,11 +21,13 @@
 package modules
 
 import (
+	"encoding/hex"
 	"github.com/ethereum/go-ethereum/rlp"
-	"io"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
-type ContractDeployPayloadV1 struct {
+type ContractDeployPayload2 struct {
 	TemplateId []byte             `json:"template_id"`    // contract template id
 	ContractId []byte             `json:"contract_id"`    // contract id
 	Name       string             `json:"name"`           // the name for contract
@@ -36,18 +38,10 @@ type ContractDeployPayloadV1 struct {
 	ErrMsg     ContractError      `json:"contract_error"` // contract error message
 }
 
-func (input *ContractDeployPayload) EncodeRLP(w io.Writer) error {
-	if len(input.TemplateId) == 0 { //系统合约
-		temp := &ContractDeployPayloadV1{}
-		temp.TemplateId = input.TemplateId
-		temp.ContractId = input.ContractId
-		temp.Name = input.Name
-		temp.Args = input.Args
-		temp.EleList = input.EleNode.EleList
-		temp.ReadSet = input.ReadSet
-		temp.WriteSet = input.WriteSet
-		temp.ErrMsg = input.ErrMsg
-		return rlp.Encode(w, temp)
-	}
-	return rlp.Encode(w, input)
+func TestRlpDeploy(t *testing.T) {
+	data, _ := hex.DecodeString("f3809400000000000000000000000000000000000000049553797374656d20436f6e666967204d616e61676572c0c0c0c0c28080")
+	deploy := &ContractDeployPayload2{}
+	err := rlp.DecodeBytes(data, deploy)
+	assert.Nil(t, err)
+	t.Logf("%#v", deploy)
 }
