@@ -204,13 +204,18 @@ func (d *Dag) GetUnstableUnits() []*modules.Unit {
 
 // return the header by hash in dag
 func (d *Dag) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
-	uHeader, err := d.unstableUnitRep.GetHeaderByHash(hash)
+	rep, _, _, _, _ := d.Memdag.GetUnstableRepositories()
+	uHeader, err := rep.GetHeaderByHash(hash)
+	//uHeader, err := d.unstableUnitRep.GetHeaderByHash(hash)
+
 	if errors.IsNotFoundError(err) {
 		uHeader, err = d.getHeaderByHashFromPMemDag(hash)
 	}
+
 	if err != nil {
 		return nil, err
 	}
+
 	return uHeader, nil
 }
 

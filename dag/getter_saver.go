@@ -223,7 +223,9 @@ func (dag *Dag) GetImmutableChainParameters() *core.ImmutableChainParameters {
 }
 
 func (dag *Dag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
-	unit, err := dag.unstableUnitRep.GetUnit(hash)
+	rep, _, _, _, _ := dag.Memdag.GetUnstableRepositories()
+	unit, err := rep.GetUnit(hash)
+	//unit, err := dag.unstableUnitRep.GetUnit(hash)
 
 	if err != nil {
 		log.Debug("get unit by hash is failed.", "hash", hash)
@@ -299,7 +301,9 @@ func (d *Dag) IsContractDeveloper(addr common.Address) bool {
 }
 
 func (d *Dag) GetUnitHash(number *modules.ChainIndex) (common.Hash, error) {
-	return d.unstableUnitRep.GetHashByNumber(number)
+	unitRep, _, _, _, _ := d.Memdag.GetUnstableRepositories()
+	return unitRep.GetHashByNumber(number)
+	//return d.unstableUnitRep.GetHashByNumber(number)
 }
 
 // return all mediators voted results

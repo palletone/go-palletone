@@ -87,10 +87,15 @@ func (pm *ProtocolManager) sigShareTransmitLoop() {
 	for {
 		select {
 		case event := <-pm.sigShareCh:
-			unit, err := pm.dag.GetUnitByHash(event.UnitHash)
-			if unit != nil && err == nil {
-				med := unit.Author()
-				node := pm.dag.GetActiveMediator(med).Node
+			//unit, err := pm.dag.GetUnitByHash(event.UnitHash)
+			//if unit != nil && err == nil {
+			//	med := unit.Author()
+			header, err := pm.dag.GetHeaderByHash(event.UnitHash)
+			if err == nil {
+				// 换届后，某些节点已经被替换下去，但仍然需要群签名
+				//node := pm.dag.GetActiveMediator(med).Node
+				med := header.Author()
+				node := pm.dag.GetMediator(med).Node
 				pm.transmitSigShare(node, &event)
 			}
 
