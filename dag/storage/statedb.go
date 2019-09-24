@@ -113,25 +113,21 @@ func (statedb *StateDb) GetAllJuror() (map[string]*modules.Juror, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(juryvalues) > 0 {
-		jurynode := make(map[string]*modules.Juror)
-		for a, v := range juryvalues {
-			n := modules.Juror{}
-			err := json.Unmarshal(v.Value, &n)
-			if err != nil {
-				return nil, err
-			}
-			jurynode[a] = &n
+	jurynode := make(map[string]*modules.Juror)
+	for a, v := range juryvalues {
+		n := modules.Juror{}
+		err := json.Unmarshal(v.Value, &n)
+		if err != nil {
+			return nil, err
 		}
-		return jurynode, nil
+		jurynode[a] = &n
 	}
-	return nil, nil
+	return jurynode, nil
 }
 
 func (statedb *StateDb) GetJurorByAddr(addr string) (*modules.Juror, error) {
 	depositeContractAddress := syscontract.DepositContractAddress
-	key := string(constants.DEPOSIT_JURY_BALANCE_PREFIX) + addr
-	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), key)
+	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), string(constants.DEPOSIT_JURY_BALANCE_PREFIX)+addr)
 	if err != nil {
 		return nil, err
 	}

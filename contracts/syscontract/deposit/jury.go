@@ -34,10 +34,20 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 		return shim.Error("public key is error")
 	}
 	//TODO 验证公钥和地址的关系
-	_, err := hexutil.Decode(args[0])
+	byte, err := hexutil.Decode(args[0])
 	if err != nil {
 		return shim.Error(err.Error())
 	}
+	//  交付地址
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		log.Error("get invoke address err: ", "error", err)
+		return shim.Error(err.Error())
+	}
+	// TODO 放开导致BDD测试过不了
+	//if crypto.PubkeyBytesToAddress(byte).String() != invokeAddr.String() {
+	//	return shim.Error("public key is error")
+	//}
 	//  判断是否交付保证金交易
 	invokeTokens, err := isContainDepositContractAddr(stub)
 	if err != nil {
@@ -50,12 +60,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 		return shim.Error(err.Error())
 	}
 	cp := gp.ChainParameters
-	//  交付地址
-	invokeAddr, err := stub.GetInvokeAddress()
-	if err != nil {
-		log.Error("get invoke address err: ", "error", err)
-		return shim.Error(err.Error())
-	}
+
 	//获取账户
 	balance, err := GetJuryBalance(stub, invokeAddr.String())
 	if err != nil {
@@ -82,7 +87,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 		balance.Balance = invokeTokens.Amount
 		balance.Role = modules.Jury
 		balance.Address = invokeAddr.String()
-		balance.PublicKey = args[0]
+		balance.PublicKey = byte
 		err = SaveJuryBalance(stub, invokeAddr.String(), balance)
 		if err != nil {
 			log.Error("save node balance err: ", "error", err)
@@ -166,11 +171,11 @@ func updateJuryInfo(stub shim.ChaincodeStubInterface, args []string) peer.Respon
 		return shim.Error("public key is error")
 	}
 	//TODO 验证公钥和地址的关系
-	_, err = hexutil.Decode(args[0])
+	byte, err := hexutil.Decode(args[0])
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	b.PublicKey = args[0]
+	b.PublicKey = byte
 	err = SaveJuryBalance(stub, addr.String(), b)
 	if err != nil {
 		return shim.Error(err.Error())
