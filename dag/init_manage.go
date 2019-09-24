@@ -22,6 +22,7 @@ package dag
 
 import (
 	"encoding/json"
+	"github.com/palletone/go-palletone/dag/constants"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -126,6 +127,25 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 		}
 
 		list[mi.AddStr] = true
+
+		//对应的Juror
+		juror := modules.Juror{}
+		juror.Address = mi.AddStr
+		juror.Role = modules.Jury
+		juror.Balance = 0
+
+		jurorByte, err := json.Marshal(juror)
+		if err != nil {
+			log.Errorf(err.Error())
+			return err
+		}
+		ws.Value = jurorByte
+		ws.Key = string(constants.DEPOSIT_JURY_BALANCE_PREFIX) + mi.AddStr
+		err = dag.stableStateRep.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws, version)
+		if err != nil {
+			log.Debugf(err.Error())
+			return err
+		}
 	}
 
 	// 存储 initMediatorCandidates/JuryCandidates

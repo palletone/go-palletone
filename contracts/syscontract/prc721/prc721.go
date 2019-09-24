@@ -58,10 +58,6 @@ type tokenInfo struct {
 	AssetID     dm.AssetId
 }
 
-type symbols struct {
-	TokenInfos map[string]tokenInfo `json:"tokeninfos"`
-}
-
 func paramCheckValid(args []string) (bool, string) {
 	if len(args) > 32 {
 		return false, "args number out of range 32"
