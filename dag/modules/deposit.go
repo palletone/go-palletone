@@ -133,7 +133,7 @@ type Juror struct {
 }
 
 type JurorDepositExtra struct {
-	PublicKey string `json:"public_key"`
+	PublicKey []byte `json:"public_key"`
 	Address   string `json:"address"`
 }
 
