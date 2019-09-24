@@ -300,9 +300,9 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 	return unit, nil
 }
 
-func Stop(rwM rwset.TxManager, idag dag.IDag, contractid []byte, chainID string, deployId []byte, txid string, deleteImage bool, dontRmCon bool) (*md.ContractStopPayload, error) {
-	log.Info("Stop enter", "contractid", contractid, "chainID", chainID, "deployId", deployId, "txid", txid)
-	defer log.Info("Stop enter", "contractid", contractid, "chainID", chainID, "deployId", deployId, "txid", txid)
+func Stop(rwM rwset.TxManager, idag dag.IDag, contractid []byte, chainID string, txid string, deleteImage bool, dontRmCon bool) (*md.ContractStopPayload, error) {
+	log.Info("Stop enter", "contractid", contractid, "chainID", chainID, "deployId", contractid, "txid", txid)
+	defer log.Info("Stop enter", "contractid", contractid, "chainID", chainID, "deployId", contractid, "txid", txid)
 
 	setChainId := "palletone"
 	if chainID != "" {
@@ -311,7 +311,7 @@ func Stop(rwM rwset.TxManager, idag dag.IDag, contractid []byte, chainID string,
 	if txid == "" {
 		return nil, errors.New("input param txid is nil")
 	}
-	address := common.NewAddress(deployId, common.ContractHash)
+	address := common.NewAddress(contractid, common.ContractHash)
 	cc, err := GetChaincode(idag, address)
 	if err != nil {
 		return nil, err
@@ -393,12 +393,12 @@ func RemoveExpiredConatiners(client *docker.Client, dag dag.IDag, rmExpConFromSy
 }
 
 func RestartContainer(idag dag.IDag, chainID string, deployId []byte, txId string) ([]byte, error) {
-	_, err := Stop(nil, idag, deployId, chainID, deployId, txId, false, true)
-	if err != nil {
-		return nil, err
-	}
-	log.Info("enter Deploy", "chainID", chainID, "templateId", hex.EncodeToString(deployId), "txId", txId)
-	defer log.Info("exit Deploy", "txId", txId)
+	//_, err := Stop(nil, idag, deployId, chainID, deployId, txId, false, true)
+	//if err != nil {
+	//	return nil, err
+	//}
+	log.Info("enter RestartContainer Deploy", "chainID", chainID, "templateId", hex.EncodeToString(deployId), "txId", txId)
+	defer log.Info("exit RestartContainer Deploy", "txId", txId)
 	//setChainId := "palletone"
 	setTimeOut := time.Duration(50) * time.Second
 	//if chainID != "" {
@@ -434,13 +434,13 @@ func RestartContainer(idag dag.IDag, chainID string, deployId []byte, txId strin
 	spec.Memory = cp.UccMemory      //字节单位 物理内存  1073741824  1G 2147483648 2G 209715200 200m 104857600 100m
 	_, chaincodeData, err := ucc.RecoverChainCodeFromDb(chainID, cc.TempleId)
 	if err != nil {
-		log.Error("Deploy", "chainid:", chainID, "templateId:", cc.TempleId, "RecoverChainCodeFromDb err", err)
+		log.Error("RestartContainer Deploy", "chainid:", chainID, "templateId:", cc.TempleId, "RecoverChainCodeFromDb err", err)
 		return nil, err
 	}
 	err = ucc.DeployUserCC(address.Bytes(), chaincodeData, spec, chainID, txId, nil, setTimeOut)
 	if err != nil {
 		log.Error("deployUserCC err:", "error", err)
-		return nil, errors.WithMessage(err, "Deploy fail")
+		return nil, errors.WithMessage(err, "RestartContainer Deploy fail")
 	}
 	return cc.Id, err
 }
