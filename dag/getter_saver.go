@@ -33,23 +33,23 @@ import (
 )
 
 func (d *Dag) GetGlobalProp() *modules.GlobalProperty {
-	_, _, _, rep, _ := d.Memdag.GetUnstableRepositories()
-	//gp, _ := d.unstablePropRep.RetrieveGlobalProp()
-	gp, _ := rep.RetrieveGlobalProp()
+	//_, _, _, rep, _ := d.Memdag.GetUnstableRepositories()
+	//gp, _ := rep.RetrieveGlobalProp()
+	gp, _ := d.unstablePropRep.RetrieveGlobalProp()
 	return gp
 }
 
 func (d *Dag) GetDynGlobalProp() *modules.DynamicGlobalProperty {
-	_, _, _, rep, _ := d.Memdag.GetUnstableRepositories()
-	//dgp, _ := d.unstablePropRep.RetrieveDynGlobalProp()
-	dgp, _ := rep.RetrieveDynGlobalProp()
+	//_, _, _, rep, _ := d.Memdag.GetUnstableRepositories()
+	//dgp, _ := rep.RetrieveDynGlobalProp()
+	dgp, _ := d.unstablePropRep.RetrieveDynGlobalProp()
 	return dgp
 }
 
 func (d *Dag) GetMediatorSchl() *modules.MediatorSchedule {
-	_, _, _, rep, _ := d.Memdag.GetUnstableRepositories()
-	//ms, _ := d.unstablePropRep.RetrieveMediatorSchl()
-	ms, _ := rep.RetrieveMediatorSchl()
+	//_, _, _, rep, _ := d.Memdag.GetUnstableRepositories()
+	//ms, _ := rep.RetrieveMediatorSchl()
+	ms, _ := d.unstablePropRep.RetrieveMediatorSchl()
 	return ms
 }
 
@@ -124,10 +124,11 @@ func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
 }
 
 func (d *Dag) GetMediator(add common.Address) *core.Mediator {
-	_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
-	//med, err := d.unstableStateRep.RetrieveMediator(add)
+	//_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
+	//med, err := state.RetrieveMediator(add)
 
-	med, err := state.RetrieveMediator(add)
+	med, err := d.unstableStateRep.RetrieveMediator(add)
+
 	if err != nil {
 		log.Debugf("Retrieve Mediator error: %v", err.Error())
 		return nil
