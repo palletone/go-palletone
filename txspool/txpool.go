@@ -21,6 +21,7 @@ package txspool
 
 import (
 	"fmt"
+	"github.com/palletone/go-palletone/validator"
 	"sort"
 	"sync"
 	"time"
@@ -28,13 +29,12 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/dag/parameter"
 	"github.com/palletone/go-palletone/tokenengine"
-	"github.com/palletone/go-palletone/validator"
+
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
 
@@ -79,33 +79,7 @@ var (
 	ErrOversizedData = errors.New("oversized data")
 )
 
-type dags interface {
-	CurrentUnit(token modules.AssetId) *modules.Unit
-	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
-	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
-	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
-	IsTransactionExist(hash common.Hash) (bool, error)
-	GetHeaderByHash(common.Hash) (*modules.Header, error)
-	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
-	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
-	// getTxfee
-	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
-	GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error)
-	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
-	GetMinFee() (*modules.AmountAsset, error)
-	GetContractJury(contractId []byte) (*modules.ElectionNode, error)
-	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
-	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 
-	GetMediators() map[common.Address]bool
-	GetChainParameters() *core.ChainParameters
-	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
-	GetScheduledMediator(slotNum uint32) common.Address
-	GetSlotAtTime(when time.Time) uint32
-	GetMediator(add common.Address) *core.Mediator
-	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
-
-}
 
 // TxPoolConfig are the configuration parameters of the transaction pool.
 type TxPoolConfig struct {
@@ -172,15 +146,15 @@ type TxPool struct {
 	unit        dags
 	txFeed      event.Feed
 	scope       event.SubscriptionScope
-	txValidator validator.Validator
+	txValidator IValidator
 	journal     *txJournal // Journal of local transaction to back up to disk
 
 	all             sync.Map          // All transactions to allow lookups
 	priority_sorted *txPrioritiedList // All transactions sorted by price and priority
-	outpoints       sync.Map          // utxo标记池  map[modules.OutPoint]*modules.TxPoolTransaction
+	outpoints       sync.Map          // utxo标记池  map[modules.OutPoint]*TxPoolTransaction
 	orphans         sync.Map          // 孤儿交易缓存池
 	outputs         sync.Map          // 缓存 交易的outputs
-	sequenTxs       *modules.SequeueTxPoolTxs
+	sequenTxs       *SequeueTxPoolTxs
 
 	mu             sync.RWMutex
 	wg             sync.WaitGroup // for shutdown sync
@@ -215,7 +189,8 @@ type TxDesc struct {
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
 // transactions from the network.
-func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit dags, tokenEngine tokenengine.ITokenEngine) *TxPool { // chainconfig *params.ChainConfig,
+func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit dags,
+	tokenEngine tokenengine.ITokenEngine,validator IValidator) *TxPool { // chainconfig *params.ChainConfig,
 	// Sanitize the input to ensure no vulnerable gas prices are set
 	config = (&config).sanitize()
 	// Create the transaction pool with its initial settings
@@ -223,7 +198,7 @@ func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit dags, token
 		config:         config,
 		unit:           unit,
 		all:            sync.Map{},
-		sequenTxs:      new(modules.SequeueTxPoolTxs),
+		sequenTxs:      new(SequeueTxPoolTxs),
 		outpoints:      sync.Map{},
 		nextExpireScan: time.Now().Add(config.OrphanTTL),
 		orphans:        sync.Map{},
@@ -233,7 +208,8 @@ func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit dags, token
 	}
 	pool.mu = sync.RWMutex{}
 	pool.priority_sorted = newTxPrioritiedList(&pool.all)
-	pool.txValidator = validator.NewValidate(unit, pool, unit, unit, pool.cache)
+	pool.txValidator = validator
+	//pool.txValidator = validator.NewValidate(unit, pool, unit, unit, pool.cache)
 	// If local transactions and journaling is enabled, load from disk
 	if !config.NoLocals && config.Journal != "" {
 		log.Info("Journal path:" + config.Journal)
@@ -367,9 +343,9 @@ func (pool *TxPool) stats() (int, int, int) {
 
 // Content retrieves the data content of the transaction pool, returning all the
 // pending as well as queued transactions, grouped by account and sorted by nonce.
-func (pool *TxPool) Content() (map[common.Hash]*modules.TxPoolTransaction, map[common.Hash]*modules.TxPoolTransaction) {
-	pending := make(map[common.Hash]*modules.TxPoolTransaction)
-	queue := make(map[common.Hash]*modules.TxPoolTransaction)
+func (pool *TxPool) Content() (map[common.Hash]*TxPoolTransaction, map[common.Hash]*TxPoolTransaction) {
+	pending := make(map[common.Hash]*TxPoolTransaction)
+	queue := make(map[common.Hash]*TxPoolTransaction)
 
 	alltxs := pool.AllTxpoolTxs()
 	orphanTxs := pool.AllOrphanTxs()
@@ -392,11 +368,11 @@ func (pool *TxPool) Content() (map[common.Hash]*modules.TxPoolTransaction, map[c
 // Pending retrieves all currently processable transactions, groupped by origin
 // account and sorted by priority level. The returned transaction set is a copy and can be
 // freely modified by calling code.
-func (pool *TxPool) Pending() (map[common.Hash][]*modules.TxPoolTransaction, error) {
+func (pool *TxPool) Pending() (map[common.Hash][]*TxPoolTransaction, error) {
 	return pool.pending()
 }
-func (pool *TxPool) pending() (map[common.Hash][]*modules.TxPoolTransaction, error) {
-	pending := make(map[common.Hash][]*modules.TxPoolTransaction)
+func (pool *TxPool) pending() (map[common.Hash][]*TxPoolTransaction, error) {
+	pending := make(map[common.Hash][]*TxPoolTransaction)
 	txs := pool.AllTxpoolTxs()
 	for _, tx := range txs {
 		if tx.Pending {
@@ -407,8 +383,8 @@ func (pool *TxPool) pending() (map[common.Hash][]*modules.TxPoolTransaction, err
 }
 
 // Queued txs
-func (pool *TxPool) Queued() ([]*modules.TxPoolTransaction, error) {
-	queue := make([]*modules.TxPoolTransaction, 0)
+func (pool *TxPool) Queued() ([]*TxPoolTransaction, error) {
+	queue := make([]*TxPoolTransaction, 0)
 	txs := pool.AllTxpoolTxs()
 	for _, tx := range txs {
 		if !tx.Pending {
@@ -442,11 +418,11 @@ func (pool *TxPool) AllLength() int {
 	})
 	return count
 }
-func (pool *TxPool) AllTxpoolTxs() map[common.Hash]*modules.TxPoolTransaction {
-	txs := make(map[common.Hash]*modules.TxPoolTransaction)
+func (pool *TxPool) AllTxpoolTxs() map[common.Hash]*TxPoolTransaction {
+	txs := make(map[common.Hash]*TxPoolTransaction)
 	pool.all.Range(func(k, v interface{}) bool {
 		hash := k.(common.Hash)
-		tx := v.(*modules.TxPoolTransaction)
+		tx := v.(*TxPoolTransaction)
 		tx_hash := tx.Tx.Hash()
 		if hash != tx_hash {
 			pool.all.Delete(hash)
@@ -457,10 +433,10 @@ func (pool *TxPool) AllTxpoolTxs() map[common.Hash]*modules.TxPoolTransaction {
 	})
 	return txs
 }
-func (pool *TxPool) AllOrphanTxs() map[common.Hash]*modules.TxPoolTransaction {
-	txs := make(map[common.Hash]*modules.TxPoolTransaction)
+func (pool *TxPool) AllOrphanTxs() map[common.Hash]*TxPoolTransaction {
+	txs := make(map[common.Hash]*TxPoolTransaction)
 	pool.orphans.Range(func(k, v interface{}) bool {
-		tx := v.(*modules.TxPoolTransaction)
+		tx := v.(*TxPoolTransaction)
 		txs[tx.Tx.Hash()] = tx
 		return true
 	})
@@ -483,8 +459,8 @@ func (pool *TxPool) Count() int {
 // local retrieves all currently known local transactions, groupped by origin
 // account and sorted by price. The returned transaction set is a copy and can be
 // freely modified by calling code.
-func (pool *TxPool) local() map[common.Hash]*modules.TxPoolTransaction {
-	txs := make(map[common.Hash]*modules.TxPoolTransaction)
+func (pool *TxPool) local() map[common.Hash]*TxPoolTransaction {
+	txs := make(map[common.Hash]*TxPoolTransaction)
 	pending, _ := pool.pending()
 	for _, list := range pending {
 		for _, tx := range list {
@@ -498,7 +474,7 @@ func (pool *TxPool) local() map[common.Hash]*modules.TxPoolTransaction {
 
 // validateTx checks whether a transaction is valid according to the consensus
 // rules and adheres to some heuristic limits of the local node (price and size).
-func (pool *TxPool) validateTx(tx *modules.TxPoolTransaction, local bool) ([]*modules.Addition,
+func (pool *TxPool) validateTx(tx *TxPoolTransaction, local bool) ([]*modules.Addition,
 	validator.ValidationCode, error) {
 	// 交易池不需要验证交易存不存在。
 
@@ -520,13 +496,13 @@ func (pool *TxPool) isTransactionInPool(hash common.Hash) bool {
 func (pool *TxPool) IsTransactionInPool(hash common.Hash) bool {
 	return pool.isTransactionInPool(hash)
 }
-func (pool *TxPool) setPriorityLvl(tx *modules.TxPoolTransaction) {
+func (pool *TxPool) setPriorityLvl(tx *TxPoolTransaction) {
 	tx.Priority_lvl = tx.GetPriorityLvl()
 }
 
 // 交易池缓存时需要将tx转化为PoolTx
-func TxtoTxpoolTx(tx *modules.Transaction) *modules.TxPoolTransaction {
-	txpool_tx := new(modules.TxPoolTransaction)
+func TxtoTxpoolTx(tx *modules.Transaction) *TxPoolTransaction {
+	txpool_tx := new(TxPoolTransaction)
 	txpool_tx.Tx = tx
 
 	for _, msgcopy := range tx.TxMessages {
@@ -546,9 +522,9 @@ func TxtoTxpoolTx(tx *modules.Transaction) *modules.TxPoolTransaction {
 	return txpool_tx
 }
 
-func PooltxToTx(pooltx *modules.TxPoolTransaction) *modules.Transaction {
-	return pooltx.Tx
-}
+//func PooltxToTx(pooltx *TxPoolTransaction) *modules.Transaction {
+//	return pooltx.Tx
+//}
 
 // add validates a transaction and inserts it into the non-executable queue for
 // later pending promotion and execution. If the transaction is a replacement for
@@ -559,7 +535,7 @@ func PooltxToTx(pooltx *modules.TxPoolTransaction) *modules.Transaction {
 // whitelisted, preventing any associated transaction from being dropped out of
 // the pool due to pricing constraints.
 
-func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error) {
+func (pool *TxPool) add(tx *TxPoolTransaction, local bool) (bool, error) {
 	msgs := tx.Tx.Messages()
 	if msgs[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
 		return true, nil
@@ -627,7 +603,7 @@ func (pool *TxPool) add(tx *modules.TxPoolTransaction, local bool) (bool, error)
 
 // journalTx adds the specified transaction to the local disk journal if it is
 // deemed to have been sent from a local account.
-func (pool *TxPool) journalTx(tx *modules.TxPoolTransaction) {
+func (pool *TxPool) journalTx(tx *TxPoolTransaction) {
 	// Only journal if it's enabled and the transaction is local
 	if len(tx.From) > 0 {
 		if pool.journal == nil {
@@ -645,7 +621,7 @@ func (pool *TxPool) journalTx(tx *modules.TxPoolTransaction) {
 // promoteTx adds a transaction to the pending (processable) list of transactions.
 //
 // Note, this method assumes the pool lock is held!
-func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction, number, index uint64) {
+func (pool *TxPool) promoteTx(hash common.Hash, tx *TxPoolTransaction, number, index uint64) {
 	// Try to insert the transaction into the pending queue
 	tx_hash := tx.Tx.Hash()
 	if tx.TxFee == nil {
@@ -656,7 +632,7 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *modules.TxPoolTransaction, n
 	pool.setPriorityLvl(tx)
 	interTx, has := pool.all.Load(tx_hash)
 	if has {
-		if this, ok := interTx.(*modules.TxPoolTransaction); ok {
+		if this, ok := interTx.(*TxPoolTransaction); ok {
 			if this.Pending || this.Confirmed {
 				// An older transaction was better, discard this
 				this.Pending = true
@@ -694,7 +670,7 @@ func (pool *TxPool) AddLocal(tx *modules.Transaction) error {
 	pool_tx := TxtoTxpoolTx(tx)
 	return pool.addLocal(pool_tx)
 }
-func (pool *TxPool) addLocal(tx *modules.TxPoolTransaction) error {
+func (pool *TxPool) addLocal(tx *TxPoolTransaction) error {
 	return pool.addTx(tx, !pool.config.NoLocals)
 }
 
@@ -717,7 +693,7 @@ func (pool *TxPool) AddRemote(tx *modules.Transaction) error {
 // marking the senders as a local ones in the mean time, ensuring they go around
 // the local pricing constraints.
 func (pool *TxPool) AddLocals(txs []*modules.Transaction) []error {
-	pool_txs := make([]*modules.TxPoolTransaction, 0)
+	pool_txs := make([]*TxPoolTransaction, 0)
 	for _, tx := range txs {
 		pool_txs = append(pool_txs, TxtoTxpoolTx(tx))
 	}
@@ -728,7 +704,7 @@ func (pool *TxPool) AddLocals(txs []*modules.Transaction) []error {
 // If the senders are not among the locally tracked ones, full pricing constraints
 // will apply.
 func (pool *TxPool) AddRemotes(txs []*modules.Transaction) []error {
-	pool_txs := make([]*modules.TxPoolTransaction, 0)
+	pool_txs := make([]*TxPoolTransaction, 0)
 	for _, tx := range txs {
 		pool_txs = append(pool_txs, TxtoTxpoolTx(tx))
 	}
@@ -751,7 +727,7 @@ func (pool *TxPool) AddSequenTxs(txs []*modules.Transaction) error {
 	}
 	return nil
 }
-func (pool *TxPool) addSequenTx(p_tx *modules.TxPoolTransaction) error {
+func (pool *TxPool) addSequenTx(p_tx *TxPoolTransaction) error {
 	// Don't accept the transaction if it already in the pool .
 	hash := p_tx.Tx.Hash()
 	if has, _ := pool.unit.IsTransactionExist(hash); has {
@@ -873,7 +849,7 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction, rateLimit bo
 }
 
 // addTx enqueues a single transaction into the pool if it is valid.
-func (pool *TxPool) addTx(tx *modules.TxPoolTransaction, local bool) error {
+func (pool *TxPool) addTx(tx *TxPoolTransaction, local bool) error {
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
 	// Try to inject the transaction and update any state
@@ -889,7 +865,7 @@ func (pool *TxPool) addTx(tx *modules.TxPoolTransaction, local bool) error {
 }
 
 // addTxs attempts to queue a batch of transactions if they are valid.
-func (pool *TxPool) addTxs(txs []*modules.TxPoolTransaction, local bool) []error {
+func (pool *TxPool) addTxs(txs []*TxPoolTransaction, local bool) []error {
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
 
@@ -898,7 +874,7 @@ func (pool *TxPool) addTxs(txs []*modules.TxPoolTransaction, local bool) []error
 
 // addTxsLocked attempts to queue a batch of transactions if they are valid,
 // whilst assuming the transaction pool lock is already held.
-func (pool *TxPool) addTxsLocked(txs []*modules.TxPoolTransaction, local bool) []error {
+func (pool *TxPool) addTxsLocked(txs []*TxPoolTransaction, local bool) []error {
 	// Add the batch of transaction, tracking the accepted ones
 	errs := make([]error, 0)
 	var replace bool
@@ -960,14 +936,14 @@ func (pool *TxPool) Status(hashes []common.Hash) []TxStatus {
 }
 
 // GetPoolTxsByAddr returns all tx by addr.
-func (pool *TxPool) GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error) {
+func (pool *TxPool) GetPoolTxsByAddr(addr string) ([]*TxPoolTransaction, error) {
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
 	return pool.getPoolTxsByAddr(addr)
 }
 
-func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error) {
-	txs := make(map[string][]*modules.TxPoolTransaction)
+func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*TxPoolTransaction, error) {
+	txs := make(map[string][]*TxPoolTransaction)
 	// 将交易按地址分类
 	poolTxs := pool.AllTxpoolTxs()
 	for _, tx := range poolTxs {
@@ -1022,7 +998,7 @@ func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction,
 			}
 		}
 	}
-	result := make([]*modules.TxPoolTransaction, 0)
+	result := make([]*TxPoolTransaction, 0)
 	if re, has := txs[addr]; has {
 		for i, tx := range re {
 			if i == 0 {
@@ -1047,12 +1023,12 @@ func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction,
 
 // Get returns a transaction if it is contained in the pool
 // and nil otherwise.
-func (pool *TxPool) Get(hash common.Hash) (*modules.TxPoolTransaction, common.Hash) {
+func (pool *TxPool) Get(hash common.Hash) (*TxPoolTransaction, common.Hash) {
 	var u_hash common.Hash
-	tx := new(modules.TxPoolTransaction)
+	tx := new(TxPoolTransaction)
 	interTx, has := pool.all.Load(hash)
 	if has {
-		tx = interTx.(*modules.TxPoolTransaction)
+		tx = interTx.(*TxPoolTransaction)
 		if tx.Tx.Hash() != hash {
 			pool.all.Delete(hash)
 			pool.priority_sorted.Removed()
@@ -1065,7 +1041,7 @@ func (pool *TxPool) Get(hash common.Hash) (*modules.TxPoolTransaction, common.Ha
 		return tx, u_hash
 	} else {
 		if itx, exist := pool.orphans.Load(hash); exist {
-			tx := itx.(*modules.TxPoolTransaction)
+			tx := itx.(*TxPoolTransaction)
 			log.Debug("get tx info by hash in orphan txpool... ", "txhash", tx.Tx.Hash(), "info", tx)
 			return tx, u_hash
 		}
@@ -1107,7 +1083,7 @@ func (pool *TxPool) DeleteTxByHash(hash common.Hash) error {
 	if !has {
 		return errors.New(fmt.Sprintf("the tx(%s) isn't exist in pool.", hash.String()))
 	}
-	tx := inter.(*modules.TxPoolTransaction)
+	tx := inter.(*TxPoolTransaction)
 	pool.all.Delete(hash)
 	pool.orphans.Delete(hash)
 	pool.priority_sorted.Removed()
@@ -1145,7 +1121,7 @@ func (pool *TxPool) removeTx(hash common.Hash) {
 	if !has {
 		return
 	}
-	tx, ok := interTx.(*modules.TxPoolTransaction)
+	tx, ok := interTx.(*TxPoolTransaction)
 	if !ok {
 		return
 	}
@@ -1181,7 +1157,7 @@ func (pool *TxPool) RemoveTxs(hashs []common.Hash) {
 	}
 }
 
-func (pool *TxPool) removeTransaction(tx *modules.TxPoolTransaction, removeRedeemers bool) {
+func (pool *TxPool) removeTransaction(tx *TxPoolTransaction, removeRedeemers bool) {
 	hash := tx.Tx.Hash()
 	if removeRedeemers {
 		// Remove any transactions whitch rely on this one.
@@ -1191,7 +1167,7 @@ func (pool *TxPool) removeTransaction(tx *modules.TxPoolTransaction, removeRedee
 					for j := uint32(0); j < uint32(len(msg.Outputs)); j++ {
 						preout := modules.OutPoint{TxHash: hash, MessageIndex: uint32(i), OutIndex: j}
 						if pooltxRedeemer, exist := pool.outpoints.Load(preout); exist {
-							pool.removeTransaction(pooltxRedeemer.(*modules.TxPoolTransaction), true)
+							pool.removeTransaction(pooltxRedeemer.(*TxPoolTransaction), true)
 						}
 					}
 				}
@@ -1203,7 +1179,7 @@ func (pool *TxPool) removeTransaction(tx *modules.TxPoolTransaction, removeRedee
 	if !has {
 		return
 	}
-	if pooltx, ok := interTx.(*modules.TxPoolTransaction); ok {
+	if pooltx, ok := interTx.(*TxPoolTransaction); ok {
 		// mark the referenced outpoints as unspent by the pool.
 		for _, msgcopy := range pooltx.Tx.TxMessages {
 			if msgcopy.App == modules.APP_PAYMENT {
@@ -1221,7 +1197,7 @@ func (pool *TxPool) removeTransaction(tx *modules.TxPoolTransaction, removeRedee
 }
 func (pool *TxPool) RemoveTransaction(hash common.Hash, removeRedeemers bool) {
 	if interTx, has := pool.all.Load(hash); has {
-		go pool.removeTransaction(interTx.(*modules.TxPoolTransaction), removeRedeemers)
+		go pool.removeTransaction(interTx.(*TxPoolTransaction), removeRedeemers)
 	} else {
 		go pool.removeTx(hash)
 	}
@@ -1238,7 +1214,7 @@ func (pool *TxPool) RemoveDoubleSpends(tx *modules.Transaction) {
 			inputs := msg.Payload.(*modules.PaymentPayload)
 			for _, input := range inputs.Inputs {
 				if tx, ok := pool.outpoints.Load(*input.PreviousOutPoint); ok {
-					ptx := tx.(*modules.TxPoolTransaction)
+					ptx := tx.(*TxPoolTransaction)
 					go pool.removeTransaction(ptx, true)
 				}
 			}
@@ -1246,7 +1222,7 @@ func (pool *TxPool) RemoveDoubleSpends(tx *modules.Transaction) {
 	}
 }
 
-func (pool *TxPool) checkPoolDoubleSpend(tx *modules.TxPoolTransaction) error {
+func (pool *TxPool) checkPoolDoubleSpend(tx *TxPoolTransaction) error {
 	for _, msg := range tx.Tx.TxMessages {
 		if msg.App == modules.APP_PAYMENT {
 			inputs, ok := msg.Payload.(*modules.PaymentPayload)
@@ -1274,7 +1250,7 @@ func (pool *TxPool) OutPointIsSpend(outPoint *modules.OutPoint) (bool, error) {
 	if tx, ok := pool.outpoints.Load(*outPoint); ok {
 		str := fmt.Sprintf("output %v already spent by "+
 			"transaction %x in the txpool",
-			outPoint, tx.(*modules.TxPoolTransaction).Tx.Hash())
+			outPoint, tx.(*TxPoolTransaction).Tx.Hash())
 		return true, errors.New(str)
 	}
 	return false, nil
@@ -1284,7 +1260,7 @@ func (pool *TxPool) OutPointIsSpend(outPoint *modules.OutPoint) (bool, error) {
 func (pool *TxPool) CheckSpend(output modules.OutPoint) *modules.Transaction {
 	tx, has := pool.outpoints.Load(output)
 	if has {
-		return tx.(*modules.TxPoolTransaction).Tx
+		return tx.(*TxPoolTransaction).Tx
 	}
 	return nil
 }
@@ -1329,7 +1305,7 @@ func (pool *TxPool) FetchInputUtxos(tx *modules.Transaction) (*UtxoViewpoint, er
 					}
 					// attempt to populate any missing inputs form the tx pool.
 					if pooltx, exist := pool.all.Load(preout.TxHash); exist {
-						this := pooltx.(*modules.TxPoolTransaction)
+						this := pooltx.(*TxPoolTransaction)
 						utxoView.AddTxOut(this.Tx, uint32(i), preout.OutIndex)
 					}
 				}
@@ -1344,7 +1320,7 @@ func (pool *TxPool) FetchInputUtxos(tx *modules.Transaction) (*UtxoViewpoint, er
 // invalidated transactions (low nonce, low balance) are deleted.
 func (pool *TxPool) promoteExecutables() {
 	// If the pending limit is overflown, start equalizing allowances
-	pendingTxs := make([]*modules.TxPoolTransaction, 0)
+	pendingTxs := make([]*TxPoolTransaction, 0)
 	poolTxs := pool.AllTxpoolTxs()
 	for _, tx := range poolTxs {
 		if !tx.Pending {
@@ -1440,7 +1416,7 @@ func (pool *TxPool) discardTx(hash common.Hash) error {
 		if pool.isOrphanInPool(hash) {
 			interOtx, has := pool.orphans.Load(hash)
 			if has {
-				otx := interOtx.(*modules.TxPoolTransaction)
+				otx := interOtx.(*TxPoolTransaction)
 				otx.Discarded = true
 				pool.orphans.Store(hash, otx)
 			}
@@ -1448,7 +1424,7 @@ func (pool *TxPool) discardTx(hash common.Hash) error {
 		// in all pool
 		interTx, has := pool.all.Load(hash)
 		if has {
-			tx := interTx.(*modules.TxPoolTransaction)
+			tx := interTx.(*TxPoolTransaction)
 			tx.Discarded = true
 			pool.all.Store(hash, tx)
 		}
@@ -1475,7 +1451,7 @@ func (pool *TxPool) setPendingTx(unit_hash common.Hash, tx *modules.Transaction,
 	hash := tx.Hash()
 	// in all pool
 	if interTx, has := pool.all.Load(hash); has {
-		tx := interTx.(*modules.TxPoolTransaction)
+		tx := interTx.(*TxPoolTransaction)
 		tx.Pending = true
 		tx.Confirmed = false
 		tx.Discarded = false
@@ -1490,7 +1466,7 @@ func (pool *TxPool) setPendingTx(unit_hash common.Hash, tx *modules.Transaction,
 	pool.promoteTx(unit_hash, p_tx, number, index)
 	return nil
 }
-func (pool *TxPool) addCache(tx *modules.TxPoolTransaction) {
+func (pool *TxPool) addCache(tx *TxPoolTransaction) {
 	if tx == nil {
 		return
 	}
@@ -1537,10 +1513,10 @@ func (pool *TxPool) resetPendingTx(tx *modules.Transaction) error {
 
 /******  end utxoSet  *****/
 // GetSortedTxs returns 根据优先级返回list
-func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxPoolTransaction, common.StorageSize) {
+func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTransaction, common.StorageSize) {
 	t0 := time.Now()
 	var total common.StorageSize
-	list := make([]*modules.TxPoolTransaction, 0)
+	list := make([]*TxPoolTransaction, 0)
 	// get sequenTxs
 	stxs := pool.GetSequenTxs()
 	poolTxs := pool.AllTxpoolTxs()
@@ -1614,7 +1590,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 	}
 
 	// 	去重
-	m := make(map[common.Hash]*modules.TxPoolTransaction)
+	m := make(map[common.Hash]*TxPoolTransaction)
 	indexL := make(map[int]common.Hash)
 	for i, tx := range list {
 		hash := tx.Tx.Hash()
@@ -1622,7 +1598,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 		indexL[i] = hash
 		m[hash] = tx
 	}
-	list = make([]*modules.TxPoolTransaction, 0)
+	list = make([]*TxPoolTransaction, 0)
 
 	for i := 0; i < len(indexL); i++ {
 		t_hash := indexL[i]
@@ -1641,9 +1617,9 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxP
 
 	return list, total
 }
-func (pool *TxPool) getPrecusorTxs(tx *modules.TxPoolTransaction, poolTxs,
-	orphanTxs map[common.Hash]*modules.TxPoolTransaction) []*modules.TxPoolTransaction {
-	pretxs := make([]*modules.TxPoolTransaction, 0)
+func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
+	orphanTxs map[common.Hash]*TxPoolTransaction) []*TxPoolTransaction {
+	pretxs := make([]*TxPoolTransaction, 0)
 	for _, msg := range tx.Tx.Messages() {
 		if msg.App == modules.APP_PAYMENT {
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
@@ -1679,14 +1655,14 @@ func (pool *TxPool) getPrecusorTxs(tx *modules.TxPoolTransaction, poolTxs,
 	}
 	return pretxs
 }
-func (pool *TxPool) GetSequenTxs() []*modules.TxPoolTransaction {
+func (pool *TxPool) GetSequenTxs() []*TxPoolTransaction {
 	return pool.getSequenTxs()
 }
-func (pool *TxPool) getSequenTxs() []*modules.TxPoolTransaction {
+func (pool *TxPool) getSequenTxs() []*TxPoolTransaction {
 	return pool.sequenTxs.All()
 }
 
-type orList []*modules.TxPoolTransaction
+type orList []*TxPoolTransaction
 
 func (ol orList) Len() int {
 	return len(ol)
@@ -1753,7 +1729,7 @@ func pickNoun(n int, singular, plural string) string {
 	return plural
 }
 
-func (pool *TxPool) addOrphan(otx *modules.TxPoolTransaction, tag uint64) {
+func (pool *TxPool) addOrphan(otx *TxPoolTransaction, tag uint64) {
 	if pool.config.MaxOrphanTxs <= 0 {
 		return
 	}
@@ -1786,7 +1762,7 @@ func (pool *TxPool) addOrphan(otx *modules.TxPoolTransaction, tag uint64) {
 	}
 }
 
-func (pool *TxPool) removeOrphan(tx *modules.TxPoolTransaction, reRedeemers bool) {
+func (pool *TxPool) removeOrphan(tx *TxPoolTransaction, reRedeemers bool) {
 	hash := tx.Tx.Hash()
 	orphanTxs := pool.AllOrphanTxs()
 	otx, has := orphanTxs[hash]
@@ -1828,7 +1804,7 @@ func (pool *TxPool) removeOrphan(tx *modules.TxPoolTransaction, reRedeemers bool
 }
 
 // This function is safe for concurrent access.
-func (pool *TxPool) RemoveOrphan(tx *modules.TxPoolTransaction) {
+func (pool *TxPool) RemoveOrphan(tx *TxPoolTransaction) {
 	pool.mu.Lock()
 	pool.removeOrphan(tx, false)
 	pool.mu.Unlock()

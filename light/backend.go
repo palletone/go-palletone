@@ -19,6 +19,7 @@ package light
 
 import (
 	"fmt"
+	"github.com/palletone/go-palletone/validator"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -126,8 +127,8 @@ func New(ctx *node.ServiceContext, config *ptn.Config, protocolname string, cach
 	//lptn.serverPool = newServerPool(chainDb, quitSync, &leth.wg)
 	//lptn.retriever = newRetrieveManager(peers, leth.reqDist, leth.serverPool)
 	//lptn.odr = NewLesOdr(chainDb, leth.chtIndexer, leth.bloomTrieIndexer, leth.bloomIndexer, leth.retriever)
-
-	lptn.txPool = txspool.NewTxPool(config.TxPool, cache, lptn.dag, tokenengine.Instance)
+	val:=validator.NewValidate(lptn.dag,nil,nil,nil,cache)
+	lptn.txPool = txspool.NewTxPool(config.TxPool, cache, lptn.dag, tokenengine.Instance,val)
 
 	if lptn.protocolManager, err = NewProtocolManager(true, lptn.peers, config.NetworkId, gasToken, nil,
 		dag, lptn.eventMux, genesis, quitSync, configure.LPSProtocol); err != nil {

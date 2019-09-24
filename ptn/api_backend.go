@@ -140,7 +140,7 @@ func (b *PtnApiBackend) GetPoolTransactions() (modules.Transactions, error) {
 	var txs modules.Transactions
 	for _, batch := range pending {
 		for _, tx := range batch {
-			txs = append(txs, txspool.PooltxToTx(tx))
+			txs = append(txs, tx.Tx)
 		}
 	}
 	return txs, nil
@@ -190,11 +190,11 @@ func (b *PtnApiBackend) Stats() (int, int, int) {
 	return b.ptn.txPool.Stats()
 }
 
-func (b *PtnApiBackend) TxPoolContent() (map[common.Hash]*modules.TxPoolTransaction,
-	map[common.Hash]*modules.TxPoolTransaction) {
+func (b *PtnApiBackend) TxPoolContent() (map[common.Hash]*txspool.TxPoolTransaction,
+	map[common.Hash]*txspool.TxPoolTransaction) {
 	return b.ptn.TxPool().Content()
 }
-func (b *PtnApiBackend) Queued() ([]*modules.TxPoolTransaction, error) {
+func (b *PtnApiBackend) Queued() ([]*txspool.TxPoolTransaction, error) {
 	return b.ptn.TxPool().Queued()
 }
 
@@ -452,7 +452,7 @@ func (b *PtnApiBackend) GetTxPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJs
 	return ptnjson.ConvertTxPoolTx2Json(tx, unit_hash), nil
 }
 
-func (b *PtnApiBackend) GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error) {
+func (b *PtnApiBackend) GetPoolTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error) {
 	tx, err := b.ptn.txPool.GetPoolTxsByAddr(addr)
 	return tx, err
 }

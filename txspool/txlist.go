@@ -26,10 +26,9 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/dag/modules"
 )
 
-type priorityHeap []*modules.TxPoolTransaction
+type priorityHeap []*TxPoolTransaction
 
 func (h priorityHeap) Len() int { return len(h) }
 func (h priorityHeap) Less(i, j int) bool {
@@ -42,7 +41,7 @@ func (h priorityHeap) Swap(i, j int) {
 }
 
 func (h *priorityHeap) Push(x interface{}) {
-	item := x.(*modules.TxPoolTransaction)
+	item := x.(*TxPoolTransaction)
 	*h = append(*h, item)
 	sort.Sort(*h)
 }
@@ -86,16 +85,16 @@ func newTxPrioritiedList(all *sync.Map) *txPrioritiedList {
 }
 
 // Put inserts a new transaction into the heap.
-func (l *txPrioritiedList) Put(tx *modules.TxPoolTransaction) {
+func (l *txPrioritiedList) Put(tx *TxPoolTransaction) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.items.Push(tx)
 }
-func (l *txPrioritiedList) Get() *modules.TxPoolTransaction {
+func (l *txPrioritiedList) Get() *TxPoolTransaction {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 	for len(*l.items) > 0 {
-		tx := l.items.Pop().(*modules.TxPoolTransaction)
+		tx := l.items.Pop().(*TxPoolTransaction)
 		if _, ok := (*l.all).Load(tx.Tx.Hash()); !ok {
 			continue
 		}
@@ -106,12 +105,12 @@ func (l *txPrioritiedList) Get() *modules.TxPoolTransaction {
 	}
 	return nil
 }
-func (l *txPrioritiedList) All() map[common.Hash]*modules.TxPoolTransaction {
-	txs := make(map[common.Hash]*modules.TxPoolTransaction)
+func (l *txPrioritiedList) All() map[common.Hash]*TxPoolTransaction {
+	txs := make(map[common.Hash]*TxPoolTransaction)
 	(*l.all).Range(func(k, v interface{}) bool {
 		var hash common.Hash
 		hash.SetBytes((k.(common.Hash)).Bytes())
-		tx := v.(*modules.TxPoolTransaction)
+		tx := v.(*TxPoolTransaction)
 		txs[hash] = tx
 		return true
 	})
@@ -142,13 +141,13 @@ func (l *txPrioritiedList) Removed() {
 	sort.Sort(*l.items)
 }
 
-func (l *txPrioritiedList) Cap(threshold float64) []*modules.TxPoolTransaction {
-	save := make([]*modules.TxPoolTransaction, 0)
-	drop := make([]*modules.TxPoolTransaction, 0)
+func (l *txPrioritiedList) Cap(threshold float64) []*TxPoolTransaction {
+	save := make([]*TxPoolTransaction, 0)
+	drop := make([]*TxPoolTransaction, 0)
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	for len(*l.items) > 0 {
-		tx := l.items.Pop().(*modules.TxPoolTransaction)
+		tx := l.items.Pop().(*TxPoolTransaction)
 		if _, has := (*l.all).Load(tx.Tx.Hash()); !has {
 			l.stales--
 			continue
@@ -168,7 +167,7 @@ func (l *txPrioritiedList) Cap(threshold float64) []*modules.TxPoolTransaction {
 
 // Underpriced checks whether a transaction is cheaper than (or as cheap as) the
 // lowest priced transaction currently being tracked.
-func (l *txPrioritiedList) Underpriced(tx *modules.TxPoolTransaction) bool {
+func (l *txPrioritiedList) Underpriced(tx *TxPoolTransaction) bool {
 	all := l.All()
 	if _, has := all[tx.Tx.Hash()]; has {
 		return false
@@ -177,7 +176,7 @@ func (l *txPrioritiedList) Underpriced(tx *modules.TxPoolTransaction) bool {
 	defer l.mu.RUnlock()
 	// Discard stale price points if found at the heap start
 	for len(*l.items) > 0 {
-		head := []*modules.TxPoolTransaction(*l.items)[0]
+		head := []*TxPoolTransaction(*l.items)[0]
 		if _, ok := (*l.all).Load(head.Tx.Hash()); !ok {
 			l.stales--
 			l.items.Pop()
@@ -190,7 +189,7 @@ func (l *txPrioritiedList) Underpriced(tx *modules.TxPoolTransaction) bool {
 		log.Error("Pricing query for empty pool") // This cannot happen, print to catch programming errors
 		return false
 	}
-	cheapest := []*modules.TxPoolTransaction(*l.items)[0]
+	cheapest := []*TxPoolTransaction(*l.items)[0]
 	cp, _ := strconv.ParseFloat(cheapest.Priority_lvl, 64)
 	tp, _ := strconv.ParseFloat(tx.Priority_lvl, 64)
 	return cp >= tp
@@ -198,14 +197,14 @@ func (l *txPrioritiedList) Underpriced(tx *modules.TxPoolTransaction) bool {
 
 // Discard finds a number of most underpriced transactions, removes them from the
 // priced list and returns them for further removal from the entire pool.
-func (l *txPrioritiedList) Discard(count int) modules.TxPoolTxs {
-	drop := make(modules.TxPoolTxs, 0, count) // Remote underpriced transactions to drop
+func (l *txPrioritiedList) Discard(count int) TxPoolTxs {
+	drop := make(TxPoolTxs, 0, count) // Remote underpriced transactions to drop
 	all := l.All()
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 	for len(*l.items) > 0 && count > 0 {
 		// Discard stale transactions if found during cleanup
-		tx := l.items.Pop().(*modules.TxPoolTransaction)
+		tx := l.items.Pop().(*TxPoolTransaction)
 		if _, ok := all[tx.Tx.Hash()]; !ok {
 			l.stales--
 			continue

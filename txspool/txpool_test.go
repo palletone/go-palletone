@@ -22,6 +22,7 @@ package txspool
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/palletone/go-palletone/validator"
 	"math/rand"
 	"strconv"
 	"sync"
@@ -61,7 +62,11 @@ type UnitDag4Test struct {
 func NewTxPool4Test() *TxPool {
 	//l := log.NewTestLog()
 	testDag := NewUnitDag4Test()
-	return NewTxPool(testTxPoolConfig, freecache.NewCache(1*1024*1024), testDag, tokenengine.Instance)
+	validat:=&validator.ValidatorAllPass{}
+	return NewTxPool(testTxPoolConfig,
+		freecache.NewCache(1*1024*1024),
+		testDag, tokenengine.Instance,
+		validat)
 }
 
 func NewUnitDag4Test() *UnitDag4Test {
@@ -258,8 +263,9 @@ func TestTransactionAddingTxs(t *testing.T) {
 	for outpoint, utxo := range utxos {
 		utxodb.SaveUtxoEntity(&outpoint, utxo)
 	}
-
-	pool := NewTxPool(config, freecache.NewCache(1*1024*1024), unitchain, tokenengine.Instance)
+	validat:=&validator.ValidatorAllPass{}
+	pool := NewTxPool(config, freecache.NewCache(1*1024*1024), unitchain,
+		tokenengine.Instance,validat)
 	defer pool.Stop()
 
 	var pending_cache, queue_cache, all, origin int
@@ -276,8 +282,8 @@ func TestTransactionAddingTxs(t *testing.T) {
 	}
 
 	origin = len(txs)
-	txpool_txs := make([]*modules.TxPoolTransaction, 0)
-	pool_tx := new(modules.TxPoolTransaction)
+	txpool_txs := make([]*TxPoolTransaction, 0)
+	pool_tx := new(TxPoolTransaction)
 
 	for i, tx := range txs {
 		p_tx := TxtoTxpoolTx(tx)
@@ -292,7 +298,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 	pool.AddLocals(txs)
 	pendingTxs, _ := pool.pending()
 	pending := 0
-	p_txs := make([]*modules.TxPoolTransaction, 0)
+	p_txs := make([]*TxPoolTransaction, 0)
 	for _, txs := range pendingTxs {
 		for _, tx := range txs {
 			pending++
@@ -430,22 +436,22 @@ func getProscerTx(this *user, us []*user) []int {
 
 func TestPriorityHeap(t *testing.T) {
 	txs := createTxs("P13pBrshF6JU7QhMmzJjXx3mWHh13YHAUAa")
-	p_txs := make([]*modules.TxPoolTransaction, 0)
+	p_txs := make([]*TxPoolTransaction, 0)
 	list := new(priorityHeap)
 	for _, tx := range txs {
 		priority := rand.Float64()
 		str := strconv.FormatFloat(priority, 'f', -1, 64)
-		ptx := &modules.TxPoolTransaction{Tx: tx, Priority_lvl: str}
+		ptx := &TxPoolTransaction{Tx: tx, Priority_lvl: str}
 		p_txs = append(p_txs, ptx)
 		list.Push(ptx)
 	}
 	count := 0
-	biger := new(modules.TxPoolTransaction)
-	bad := new(modules.TxPoolTransaction)
+	biger := new(TxPoolTransaction)
+	bad := new(TxPoolTransaction)
 	for list.Len() > 0 {
 		inter := list.Pop()
 		if inter != nil {
-			ptx, ok := inter.(*modules.TxPoolTransaction)
+			ptx, ok := inter.(*TxPoolTransaction)
 			if ok {
 				if count == 0 {
 					biger.Priority_lvl = ptx.Priority_lvl

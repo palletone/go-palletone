@@ -68,12 +68,12 @@ type Backend interface {
 	GetPoolTransaction(txHash common.Hash) *modules.Transaction
 	GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, error)
 	GetTxPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJson, error)
-	GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error)
+	GetPoolTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error)
 
 	//GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error)
 	Stats() (int, int, int)
-	TxPoolContent() (map[common.Hash]*modules.TxPoolTransaction, map[common.Hash]*modules.TxPoolTransaction)
-	Queued() ([]*modules.TxPoolTransaction, error)
+	TxPoolContent() (map[common.Hash]*txspool.TxPoolTransaction, map[common.Hash]*txspool.TxPoolTransaction)
+	Queued() ([]*txspool.TxPoolTransaction, error)
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
 
 	//ChainConfig() *configure.ChainConfig
