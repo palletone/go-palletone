@@ -822,12 +822,15 @@ func (rep *UnitRepository) updateAccountInfo(msg *modules.Message, account commo
 func (rep *UnitRepository) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
 	msg0 := tx.TxMessages[0]
 	if msg0.App != modules.APP_PAYMENT {
-		return common.Address{}, errors.New("Invalid Tx, first message must be a payment")
+		errStr := "Invalid Tx, first message must be a payment"
+		log.Debug(errStr)
+		return common.Address{}, errors.New(errStr)
 	}
 	pay := msg0.Payload.(*modules.PaymentPayload)
 
 	utxo, err := rep.utxoRepository.GetUtxoEntry(pay.Inputs[0].PreviousOutPoint)
 	if err != nil {
+		log.Debug(err.Error())
 		return common.Address{}, err
 	}
 	return rep.tokenEngine.GetAddressFromScript(utxo.PkScript)
@@ -851,12 +854,13 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		log.Info("SaveHeader:", "error", err.Error())
 		return modules.ErrUnit(-3)
 	}
-	// step2. traverse transactions and save them
 
+	// step2. traverse transactions and save them
 	txHashSet := []common.Hash{}
 	for txIndex, tx := range unit.Txs {
 		err := rep.saveTx4Unit(unit, txIndex, tx)
 		if err != nil {
+			log.Debugf(err.Error())
 			return err
 		}
 		//log.Debugf("save transaction, hash[%s] tx_index[%d]", tx.Hash().String(), txIndex)
