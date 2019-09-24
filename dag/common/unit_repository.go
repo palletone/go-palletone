@@ -37,8 +37,8 @@ import (
 	"github.com/palletone/go-palletone/dag/storage"
 
 	"github.com/palletone/go-palletone/contracts/syscontract"
-	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/txspool"
 
 	//"github.com/palletone/go-palletone/validator"
 	"encoding/json"

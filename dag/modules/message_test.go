@@ -23,6 +23,7 @@ package modules
 import (
 	"encoding/hex"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -44,4 +45,15 @@ func TestRlpDeploy(t *testing.T) {
 	err := rlp.DecodeBytes(data, deploy)
 	assert.Nil(t, err)
 	t.Logf("%#v", deploy)
+}
+
+func TestRlpContractInvokeRequest(t *testing.T) {
+	addr,_:=common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
+		invoke := &ContractInvokeRequestPayload{ContractId:addr.Bytes(),
+			Args:[][]byte{[]byte("PledgeWithdraw"),[]byte("1000000000000") },
+			Timeout:0,
+		}
+	data,err := rlp.EncodeToBytes(invoke)
+	assert.Nil(t, err)
+	t.Logf("%x", data)
 }

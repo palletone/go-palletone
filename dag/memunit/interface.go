@@ -25,7 +25,7 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	common2 "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/txspool"
 )
 
 // type IMemDag interface {

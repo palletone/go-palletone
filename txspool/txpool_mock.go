@@ -5,11 +5,11 @@
 package txspool
 
 import (
-	gomock "github.com/golang/mock/gomock"
-	common "github.com/palletone/go-palletone/common"
-	event "github.com/palletone/go-palletone/common/event"
-	modules "github.com/palletone/go-palletone/dag/modules"
-	reflect "reflect"
+	"github.com/golang/mock/gomock"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/dag/modules"
+	"reflect"
 )
 
 // MockITxPool is a mock of ITxPool interface
