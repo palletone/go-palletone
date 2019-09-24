@@ -158,7 +158,7 @@ func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2
 	if err != nil { // 重启后memdag的chainUnits还清被清空，需要重新以memdag的db构建unstable repositoreis
 		temp_inter, has := chain.tempdb.Load(last_main_hash)
 		if !has {
-			log.Debugf("the last_unit: %s , is not exist in memdag", last_main_hash.String())
+			log.Warnf("the last_unit: %s , is not exist in memdag", last_main_hash.String())
 			tempdb, _ := NewTempdb(chain.db)
 			trep := common2.NewUnitRepository4Db(tempdb, chain.tokenEngine)
 			tutxoRep := common2.NewUtxoRepository4Db(tempdb, chain.tokenEngine)
@@ -261,6 +261,7 @@ func (chain *MemDag) setStableUnit(hash common.Hash, height uint64, txpool txspo
 		return fmt.Sprintf("set next stable unit cost time: %s ,index: %d, hash: %s",
 			time.Since(tt), height, hash.String())
 	})
+
 	//remove fork units, and remove lower than stable unit
 	for _, funit := range chain_units {
 		if funit.NumberU64() <= max_height && funit.Hash() != hash {
@@ -451,12 +452,10 @@ func (chain *MemDag) removeUnitAndChildren(chain_units map[common.Hash]*modules.
 				go txpool.ResetPendingTxs(txs)
 			}
 			chain.chainUnits.Delete(h)
-			delete(chain_units, h)
+			//delete(chain_units, h)
 			log.Debugf("Remove unit[%s] from chainUnits", hash.String())
-		} else {
-			if unit.ParentHash()[0] == hash {
-				chain.removeUnitAndChildren(chain_units, h, txpool)
-			}
+		} else if unit.ParentHash()[0] == hash {
+			chain.removeUnitAndChildren(chain_units, h, txpool)
 		}
 	}
 }

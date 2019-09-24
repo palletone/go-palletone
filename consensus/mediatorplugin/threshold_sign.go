@@ -76,7 +76,7 @@ func (mp *MediatorPlugin) AddToTBLSSignBufs(newHash common.Hash) {
 
 	header, err := mp.dag.GetHeaderByHash(newHash)
 	if header == nil {
-		err = fmt.Errorf("fail to get header by hash in dag: %v", newHash.TerminalString())
+		err = fmt.Errorf("fail to get header by hash: %v, err: %v", newHash.TerminalString(), err.Error())
 		log.Errorf(err.Error())
 		return
 	}
@@ -151,7 +151,7 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 
 		header, err = dag.GetHeaderByHash(unitHash)
 		if header == nil {
-			err = fmt.Errorf("fail to get header by hash in dag: %v", unitHash.TerminalString())
+			err = fmt.Errorf("fail to get header by hash: %v, err: %v", unitHash.TerminalString(), err.Error())
 			log.Errorf(err.Error())
 			return
 		}
@@ -218,8 +218,8 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 
 	dag := mp.dag
 	header, err := dag.GetHeaderByHash(newUnitHash)
-	if header == nil || err != nil {
-		err = fmt.Errorf("fail to get unit by hash in dag: %v", newUnitHash.TerminalString())
+	if header == nil {
+		err = fmt.Errorf("fail to get unit by hash: %v, err: %v", newUnitHash.TerminalString(), err.Error())
 		log.Errorf(err.Error())
 		return
 	}
@@ -292,7 +292,7 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 		dag := mp.dag
 		header, err := dag.GetHeaderByHash(unitHash)
 		if header == nil {
-			err = fmt.Errorf("fail to get header by hash in dag: %v", unitHash.TerminalString())
+			err = fmt.Errorf("fail to get header by hash: %v, err: %v", unitHash.TerminalString(), err.Error())
 			log.Errorf(err.Error())
 			return
 		}
