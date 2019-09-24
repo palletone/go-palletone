@@ -110,7 +110,7 @@ type UnitRepository struct {
 	statedb        storage.IStateDb
 	propdb         storage.IPropertyDb
 	utxoRepository IUtxoRepository
-	tokenEngine tokenengine.ITokenEngine
+	tokenEngine    tokenengine.ITokenEngine
 	lock           sync.RWMutex
 	observers      []AfterSysContractStateChangeEventFunc
 }
@@ -125,31 +125,31 @@ func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb,
 	utxodb storage.IUtxoDb, statedb storage.IStateDb,
 	propdb storage.IPropertyDb,
 	engine tokenengine.ITokenEngine) *UnitRepository {
-	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, propdb,engine)
+	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, propdb, engine)
 	return &UnitRepository{
-		dagdb: dagdb,
-		idxdb: idxdb,
-		statedb: statedb,
+		dagdb:          dagdb,
+		idxdb:          idxdb,
+		statedb:        statedb,
 		utxoRepository: utxoRep,
-		propdb: propdb,
-		tokenEngine:engine,
+		propdb:         propdb,
+		tokenEngine:    engine,
 	}
 }
 
-func NewUnitRepository4Db(db ptndb.Database,tokenEngine tokenengine.ITokenEngine) *UnitRepository {
+func NewUnitRepository4Db(db ptndb.Database, tokenEngine tokenengine.ITokenEngine) *UnitRepository {
 	dagdb := storage.NewDagDb(db)
-	utxodb := storage.NewUtxoDb(db,tokenEngine)
+	utxodb := storage.NewUtxoDb(db, tokenEngine)
 	statedb := storage.NewStateDb(db)
 	idxdb := storage.NewIndexDb(db)
 	propdb := storage.NewPropertyDb(db)
-	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, propdb,tokenEngine)
+	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, propdb, tokenEngine)
 	return &UnitRepository{
-		dagdb: dagdb,
-		idxdb: idxdb,
-		statedb: statedb,
-		propdb: propdb,
+		dagdb:          dagdb,
+		idxdb:          idxdb,
+		statedb:        statedb,
+		propdb:         propdb,
 		utxoRepository: utxoRep,
-		tokenEngine:tokenEngine,
+		tokenEngine:    tokenEngine,
 	}
 }
 
@@ -821,12 +821,15 @@ func (rep *UnitRepository) updateAccountInfo(msg *modules.Message, account commo
 func (rep *UnitRepository) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
 	msg0 := tx.TxMessages[0]
 	if msg0.App != modules.APP_PAYMENT {
-		return common.Address{}, errors.New("Invalid Tx, first message must be a payment")
+		errStr := "Invalid Tx, first message must be a payment"
+		log.Debug(errStr)
+		return common.Address{}, errors.New(errStr)
 	}
 	pay := msg0.Payload.(*modules.PaymentPayload)
 
 	utxo, err := rep.utxoRepository.GetUtxoEntry(pay.Inputs[0].PreviousOutPoint)
 	if err != nil {
+		log.Debug(err.Error())
 		return common.Address{}, err
 	}
 	return rep.tokenEngine.GetAddressFromScript(utxo.PkScript)
@@ -850,12 +853,13 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		log.Info("SaveHeader:", "error", err.Error())
 		return modules.ErrUnit(-3)
 	}
-	// step2. traverse transactions and save them
 
+	// step2. traverse transactions and save them
 	txHashSet := []common.Hash{}
 	for txIndex, tx := range unit.Txs {
 		err := rep.saveTx4Unit(unit, txIndex, tx)
 		if err != nil {
+			log.Debugf(err.Error())
 			return err
 		}
 		//log.Debugf("save transaction, hash[%s] tx_index[%d]", tx.Hash().String(), txIndex)
@@ -988,7 +992,7 @@ func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Trans
 	}
 }
 
-func (rep *UnitRepository)getPayToAddresses(tx *modules.Transaction) []common.Address {
+func (rep *UnitRepository) getPayToAddresses(tx *modules.Transaction) []common.Address {
 	resultMap := map[common.Address]int{}
 	for _, msg := range tx.TxMessages {
 		if msg.App == modules.APP_PAYMENT {
@@ -1469,7 +1473,7 @@ func (rep *UnitRepository) createCoinbasePayment(ads []*modules.Addition) (*modu
 	coinbase.TxMessages = append(coinbase.TxMessages, msg1)
 	return coinbase, totalIncome, nil
 }
-func (rep *UnitRepository)createCoinbasePaymentMsg(rewards map[common.Address][]modules.AmountAsset) *modules.Message {
+func (rep *UnitRepository) createCoinbasePaymentMsg(rewards map[common.Address][]modules.AmountAsset) *modules.Message {
 	coinbasePayment := &modules.PaymentPayload{}
 	for addr, v := range rewards {
 		script := rep.tokenEngine.GenerateLockScript(addr)

@@ -539,7 +539,12 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 					return nil, nil, nil, nil, nil, vali_err
 				}
 			}
-			tempdb, _ := temp_db.AddUnit(unit, chain.saveHeaderOnly)
+			tempdb, err := temp_db.AddUnit(unit, chain.saveHeaderOnly)
+			if err != nil {
+				log.Error(err.Error())
+				return nil, nil, nil, nil, nil, err
+			}
+
 			// go tempdb.AddUnit(unit, chain.saveHeaderOnly)
 			chain.tempdb.Store(uHash, tempdb)
 			chain.chainUnits.Store(uHash, tempdb)
