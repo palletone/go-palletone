@@ -521,6 +521,7 @@ type tokenIDInfo struct {
 //GetTokenInfo get one token information
 func (p *PRC20) GetTokenInfo(stub shim.ChaincodeStubInterface, symbol string) ([]byte, error) {
 	//check name is exist or not
+	symbol = strings.ToUpper(symbol)
 	tkInfo := getSymbols(stub, symbol)
 	if tkInfo == nil {
 		return []byte{}, fmt.Errorf(jsonResp2)
