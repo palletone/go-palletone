@@ -74,16 +74,16 @@ func (mp *MediatorPlugin) AddToTBLSSignBufs(newHash common.Hash) {
 		return
 	}
 
-	newHeader, err := mp.dag.GetHeaderByHash(newHash)
-	if newHeader == nil || err != nil {
+	header, err := mp.dag.GetHeaderByHash(newHash)
+	if header == nil {
 		err = fmt.Errorf("fail to get header by hash in dag: %v", newHash.TerminalString())
-		log.Debugf(err.Error())
+		log.Errorf(err.Error())
 		return
 	}
 
 	var ms []common.Address
 	// 严格要求换届unix时间是产块间隔的整数倍
-	if newHeader.Timestamp() > mp.dag.LastMaintenanceTime() {
+	if header.Timestamp() > mp.dag.LastMaintenanceTime() {
 		ms = mp.GetLocalActiveMediators()
 	} else {
 		ms = mp.GetLocalPrecedingMediators()
@@ -149,7 +149,7 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 			return
 		}
 
-		header, err = mp.dag.GetHeaderByHash(unitHash)
+		header, err = dag.GetHeaderByHash(unitHash)
 		if header == nil {
 			err = fmt.Errorf("fail to get header by hash in dag: %v", unitHash.TerminalString())
 			log.Errorf(err.Error())
@@ -217,14 +217,14 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 	log.Debugf("received the sign shares of the unit(%v)", newUnitHash.TerminalString())
 
 	dag := mp.dag
-	newUnit, err := dag.GetHeaderByHash(newUnitHash)
-	if newUnit == nil || err != nil {
+	header, err := dag.GetHeaderByHash(newUnitHash)
+	if header == nil || err != nil {
 		err = fmt.Errorf("fail to get unit by hash in dag: %v", newUnitHash.TerminalString())
-		log.Debugf(err.Error())
+		log.Errorf(err.Error())
 		return
 	}
 
-	localMed := newUnit.Author()
+	localMed := header.Author()
 	mp.recoverBufLock.RLock()
 	defer mp.recoverBufLock.RUnlock()
 
@@ -293,7 +293,7 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 		header, err := dag.GetHeaderByHash(unitHash)
 		if header == nil {
 			err = fmt.Errorf("fail to get header by hash in dag: %v", unitHash.TerminalString())
-			log.Debugf(err.Error())
+			log.Errorf(err.Error())
 			return
 		}
 
