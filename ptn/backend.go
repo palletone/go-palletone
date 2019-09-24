@@ -45,7 +45,6 @@ import (
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/txspool"
-	"github.com/palletone/go-palletone/validator"
 	"github.com/shopspring/decimal"
 )
 
@@ -142,8 +141,8 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache) (*P
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
-	val:=validator.NewValidate(ptn.dag,ptn.dag,ptn.dag,ptn.dag,cache)
-	ptn.txPool = txspool.NewTxPool(config.TxPool, cache, ptn.dag, tokenengine.Instance,val)
+	//val:=validator.NewValidate(ptn.dag,ptn.dag,ptn.dag,ptn.dag,cache)
+	ptn.txPool = txspool.NewTxPool(config.TxPool, cache, ptn.dag, tokenengine.Instance)
 
 	//Test for P2P
 	ptn.engine = consensus.New(dag, ptn.txPool)

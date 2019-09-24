@@ -81,65 +81,6 @@ var (
 
 
 
-// TxPoolConfig are the configuration parameters of the transaction pool.
-type TxPoolConfig struct {
-	NoLocals  bool          // Whether local transaction handling should be disabled
-	Journal   string        // Journal of local transactions to survive node restarts
-	Rejournal time.Duration // Time interval to regenerate the local transaction journal
-
-	FeeLimit  uint64 // Minimum tx's fee  to enforce for acceptance into the pool
-	PriceBump uint64 // Minimum price bump percentage to replace an already existing transaction (nonce)
-
-	GlobalSlots uint64 // Maximum number of executable transaction slots for all accounts
-	GlobalQueue uint64 // Maximum number of non-executable transaction slots for all accounts
-
-	Lifetime   time.Duration // Maximum amount of time non-executable transaction are queued
-	Removetime time.Duration // Maximum amount of time txpool transaction are removed
-	OrphanTTL  time.Duration // Orpthan expiration
-	// MaxOrphanTxs is the maximum number of orphan transactions
-	// that can be queued.
-	MaxOrphanTxs int
-
-	// MaxOrphanTxSize is the maximum size allowed for orphan transactions.
-	// This helps prevent memory exhaustion attacks from sending a lot of
-	// of big orphans.
-	MaxOrphanTxSize int
-}
-
-// DefaultTxPoolConfig contains the default configurations for the transaction
-// pool.
-var DefaultTxPoolConfig = TxPoolConfig{
-	NoLocals:  false,
-	Journal:   "transactions.rlp",
-	Rejournal: time.Hour,
-
-	FeeLimit:  1,
-	PriceBump: 10,
-
-	GlobalSlots: 48192,
-	GlobalQueue: 12048,
-
-	Lifetime:        3 * time.Hour,
-	Removetime:      30 * time.Minute,
-	OrphanTTL:       20 * time.Minute,
-	MaxOrphanTxs:    10000,
-	MaxOrphanTxSize: 2000000,
-}
-
-// sanitize checks the provided user configurations and changes anything that's
-// unreasonable or unworkable.
-func (config *TxPoolConfig) sanitize() TxPoolConfig {
-	conf := *config
-	if conf.Rejournal < time.Second {
-		log.Warn("Sanitizing invalid txpool journal time", "provided", conf.Rejournal, "updated", time.Second)
-		conf.Rejournal = time.Second
-	}
-	if conf.PriceBump < 1 {
-		log.Warn("Sanitizing invalid txpool price bump", "provided", conf.PriceBump, "updated", DefaultTxPoolConfig.PriceBump)
-		conf.PriceBump = DefaultTxPoolConfig.PriceBump
-	}
-	return conf
-}
 
 type TxPool struct {
 	config      TxPoolConfig
@@ -190,7 +131,7 @@ type TxDesc struct {
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
 // transactions from the network.
 func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit dags,
-	tokenEngine tokenengine.ITokenEngine,validator IValidator) *TxPool { // chainconfig *params.ChainConfig,
+	tokenEngine tokenengine.ITokenEngine) *TxPool { // chainconfig *params.ChainConfig,
 	// Sanitize the input to ensure no vulnerable gas prices are set
 	config = (&config).sanitize()
 	// Create the transaction pool with its initial settings
@@ -208,8 +149,8 @@ func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit dags,
 	}
 	pool.mu = sync.RWMutex{}
 	pool.priority_sorted = newTxPrioritiedList(&pool.all)
-	pool.txValidator = validator
-	//pool.txValidator = validator.NewValidate(unit, pool, unit, unit, pool.cache)
+	//pool.txValidator = validator
+	pool.txValidator = validator.NewValidate(unit, pool, unit, unit, pool.cache)
 	// If local transactions and journaling is enabled, load from disk
 	if !config.NoLocals && config.Journal != "" {
 		log.Info("Journal path:" + config.Journal)

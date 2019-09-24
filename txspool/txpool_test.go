@@ -22,7 +22,6 @@ package txspool
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/palletone/go-palletone/validator"
 	"math/rand"
 	"strconv"
 	"sync"
@@ -62,11 +61,10 @@ type UnitDag4Test struct {
 func NewTxPool4Test() *TxPool {
 	//l := log.NewTestLog()
 	testDag := NewUnitDag4Test()
-	validat:=&validator.ValidatorAllPass{}
+	//validat:=&validator.ValidatorAllPass{}
 	return NewTxPool(testTxPoolConfig,
 		freecache.NewCache(1*1024*1024),
-		testDag, tokenengine.Instance,
-		validat)
+		testDag, tokenengine.Instance)
 }
 
 func NewUnitDag4Test() *UnitDag4Test {
@@ -263,9 +261,9 @@ func TestTransactionAddingTxs(t *testing.T) {
 	for outpoint, utxo := range utxos {
 		utxodb.SaveUtxoEntity(&outpoint, utxo)
 	}
-	validat:=&validator.ValidatorAllPass{}
+	//validat:=&validator.ValidatorAllPass{}
 	pool := NewTxPool(config, freecache.NewCache(1*1024*1024), unitchain,
-		tokenengine.Instance,validat)
+		tokenengine.Instance)
 	defer pool.Stop()
 
 	var pending_cache, queue_cache, all, origin int
