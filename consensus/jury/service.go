@@ -165,20 +165,20 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 	cache := freecache.NewCache(20 * 1024 * 1024)
 	validator := validator.NewValidate(dag, dag, dag, nil, cache)
 	p := &Processor{
-		name:     "contractProcessor",
-		ptn:      ptn,
-		dag:      dag,
-		contract: contract,
-		local:    acs,
-		locker:   new(sync.Mutex),
-		quit:     make(chan struct{}),
-		mtx:      make(map[common.Hash]*contractTx),
-		mel:      make(map[common.Hash]*electionVrf),
-		lockVrf:  make(map[common.Address][]modules.ElectionInf),
+		name:         "contractProcessor",
+		ptn:          ptn,
+		dag:          dag,
+		contract:     contract,
+		local:        acs,
+		locker:       new(sync.Mutex),
+		quit:         make(chan struct{}),
+		mtx:          make(map[common.Hash]*contractTx),
+		mel:          make(map[common.Hash]*electionVrf),
+		lockVrf:      make(map[common.Address][]modules.ElectionInf),
 		validator:    validator,
 		errMsgEnable: true,
 	}
-	log.Info("NewContractProcessor ok", "local address:", p.local, "electionNum", cfgEleNum)
+	log.Info("NewContractProcessor ok", "local address:", p.local)
 
 	return p, nil
 }
@@ -567,13 +567,6 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele *modules.Ele
 		log.Errorf("[%s]isValidateElection, GetTxRequesterAddress fail, err:%s", shortId(reqId.String()), err)
 		return false
 	}
-	//从dag中根据contractId获取eleNode信息
-	//eleNode, err := p.getContractElectionList(common.NewAddress(contractId, common.ContractHash))
-	//if err != nil {
-	//	log.Errorf("[%s]isValidateElection, getContractElectionList fail, contractId[%s], err:%s",
-	//		shortId(reqId.String()), string(contractId), err)
-	//	return false
-	//}
 	isExit := false
 	elr := newElector(uint(cfgEleNum), ele.JuryCount, common.Address{}, "", p.ptn.GetKeyStore())
 	for i, e := range ele.EleList {
