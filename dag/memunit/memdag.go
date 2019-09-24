@@ -158,7 +158,7 @@ func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2
 	if err != nil { // 重启后memdag的chainUnits还清被清空，需要重新以memdag的db构建unstable repositoreis
 		temp_inter, has := chain.tempdb.Load(last_main_hash)
 		if !has {
-			log.Errorf("the last_unit: %s , is not exist in memdag", last_main_hash.String())
+			log.Debugf("the last_unit: %s , is not exist in memdag", last_main_hash.String())
 			tempdb, _ := NewTempdb(chain.db)
 			trep := common2.NewUnitRepository4Db(tempdb, chain.tokenEngine)
 			tutxoRep := common2.NewUtxoRepository4Db(tempdb, chain.tokenEngine)

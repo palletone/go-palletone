@@ -213,6 +213,10 @@ func (d *Dag) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 	}
 
 	if err != nil {
+		uHeader, err = d.stableUnitRep.GetHeaderByHash(hash)
+	}
+
+	if err != nil {
 		return nil, err
 	}
 

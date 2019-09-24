@@ -56,10 +56,10 @@ func addChainCodeInfo(c *chain, cc *CCInfo) error {
 func SetChaincode(cid string, version int, chaincode *CCInfo) error {
 	chains.mu.Lock()
 	defer chains.mu.Unlock()
-	log.Info("SetChaincode", "chainId", cid, "cVersion", version, "Name", chaincode.Name, "chaincode.version", chaincode.Version, "Id", chaincode.Id)
+	log.Debug("SetChaincode", "chainId", cid, "cVersion", version, "Name", chaincode.Name, "chaincode.version", chaincode.Version, "Id", chaincode.Id)
 	for k, v := range chains.Clist {
 		if k == cid {
-			log.Info("SetChaincode", "chainId already exit, cid:", cid, "version", v)
+			log.Debug("SetChaincode", "chainId already exit, cid:", cid, "version" /*, v*/)
 			return addChainCodeInfo(v, chaincode)
 		}
 	}

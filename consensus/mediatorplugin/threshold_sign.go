@@ -135,9 +135,9 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 	mp.dkgLock.Lock()
 	defer mp.dkgLock.Unlock()
 	var (
-		dkgr      *dkg.DistKeyGenerator
-		newHeader *modules.Header
-		err       error
+		dkgr   *dkg.DistKeyGenerator
+		header *modules.Header
+		err    error
 	)
 
 	// 1. 获取群签名所需数据
@@ -149,15 +149,15 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 			return
 		}
 
-		newHeader, err = mp.dag.GetHeaderByHash(unitHash)
-		if newHeader == nil || err != nil {
+		header, err = mp.dag.GetHeaderByHash(unitHash)
+		if header == nil {
 			err = fmt.Errorf("fail to get header by hash in dag: %v", unitHash.TerminalString())
-			log.Debugf(err.Error())
+			log.Errorf(err.Error())
 			return
 		}
 
 		// 判断是否是换届前的单元
-		if newHeader.Timestamp() > mp.lastMaintenanceTime {
+		if header.Timestamp() > mp.lastMaintenanceTime {
 			dkgr, ok = mp.activeDKGs[localMed]
 		} else {
 			dkgr, ok = mp.precedingDKGs[localMed]
@@ -172,7 +172,7 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 	// 2. 判断群签名的相关条件
 	{
 		// 如果单元没有群公钥， 则跳过群签名
-		pkb := newHeader.GetGroupPubKeyByte()
+		pkb := header.GetGroupPubKeyByte()
 		if len(pkb) == 0 {
 			err := fmt.Errorf("this unit(%v)'s group public key is null", unitHash.TerminalString())
 			log.Debug(err.Error())
@@ -180,7 +180,7 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 		}
 
 		// 判断父 unit 是否不可逆
-		parentHash := newHeader.ParentHash()[0]
+		parentHash := header.ParentHash()[0]
 		if !dag.IsIrreversibleUnit(parentHash) {
 			log.Debugf("the unit's(%v) parent unit(%v) is not irreversible",
 				unitHash.TerminalString(), parentHash.TerminalString())
@@ -290,15 +290,15 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 
 	{
 		dag := mp.dag
-		unit, err := dag.GetHeaderByHash(unitHash)
-		if unit == nil || err != nil {
-			err = fmt.Errorf("fail to get unit by hash in dag: %v", unitHash.TerminalString())
+		header, err := dag.GetHeaderByHash(unitHash)
+		if header == nil {
+			err = fmt.Errorf("fail to get header by hash in dag: %v", unitHash.TerminalString())
 			log.Debugf(err.Error())
 			return
 		}
 
 		// 判断是否是换届前的单元
-		if unit.Timestamp() > mp.lastMaintenanceTime {
+		if header.Timestamp() > mp.lastMaintenanceTime {
 			mSize = dag.ActiveMediatorsCount()
 			threshold = dag.ChainThreshold()
 			dkgr, ok = mp.activeDKGs[localMed]
