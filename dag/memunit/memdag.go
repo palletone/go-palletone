@@ -264,7 +264,8 @@ func (chain *MemDag) setStableUnit(hash common.Hash, height uint64, txpool txspo
 	//remove fork units, and remove lower than stable unit
 	for _, funit := range chain_units {
 		if funit.NumberU64() <= max_height && funit.Hash() != hash {
-			chain.removeUnitAndChildren(funit.Hash(), txpool)
+			chain_units := chain.getChainUnits()
+			chain.removeUnitAndChildren(chain_units, funit.Hash(), txpool)
 		}
 	}
 	//remove too low orphan unit
@@ -441,19 +442,20 @@ func (chain *MemDag) saveUnitToDb(unitRep common2.IUnitRepository, produceRep co
 }
 
 //从ChainUnits集合中删除一个单元以及其所有子孙单元
-func (chain *MemDag) removeUnitAndChildren(hash common.Hash, txpool txspool.ITxPool) {
+func (chain *MemDag) removeUnitAndChildren(chain_units map[common.Hash]*modules.Unit, hash common.Hash, txpool txspool.ITxPool) {
 	log.Debugf("Remove unit[%s] and it's children from chain unit", hash.String())
-	chain_units := chain.getChainUnits()
+
 	for h, unit := range chain_units {
 		if h == hash {
 			if txs := unit.Transactions(); len(txs) > 1 {
 				go txpool.ResetPendingTxs(txs)
 			}
 			chain.chainUnits.Delete(h)
+			delete(chain_units, h)
 			log.Debugf("Remove unit[%s] from chainUnits", hash.String())
 		} else {
 			if unit.ParentHash()[0] == hash {
-				chain.removeUnitAndChildren(h, txpool)
+				chain.removeUnitAndChildren(chain_units, h, txpool)
 			}
 		}
 	}
