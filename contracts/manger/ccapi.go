@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
+	"strings"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -352,7 +353,7 @@ func RestartContainers(client *docker.Client, dag dag.IDag, cons []docker.APICon
 	//  获取所有退出容器
 	addrs, err := utils.GetAllExitedContainer(cons)
 	if err != nil {
-		log.Infof("client.ListContainers err: %s\n", err.Error())
+		log.Infof("client.GetAllExitedContainer err: %s\n", err.Error())
 		return
 	}
 	if len(addrs) > 0 {
@@ -397,6 +398,7 @@ func RestartContainer(idag dag.IDag, chainID string, deployId []byte, txId strin
 	//if err != nil {
 	//	return nil, err
 	//}
+	log.Infof("enter jury node %s", contractcfg.GetConfig().ContractAddress)
 	log.Info("enter RestartContainer Deploy", "chainID", chainID, "templateId", hex.EncodeToString(deployId), "txId", txId)
 	defer log.Info("exit RestartContainer Deploy", "txId", txId)
 	//setChainId := "palletone"
@@ -410,6 +412,13 @@ func RestartContainer(idag dag.IDag, chainID string, deployId []byte, txId strin
 	if err != nil {
 		return nil, err
 	}
+	//  再次判断重启容器是否是特定jury所维护的
+	name := cc.Name + ":" + cc.Version
+	name = strings.ReplaceAll(name, ":", "-")
+	if utils.IsRunning(name) {
+		return nil, fmt.Errorf("%s is running", name)
+	}
+	log.Infof("Restarted the container %s", name)
 	usrcc := &ucc.UserChaincode{
 		Name:    cc.Name,
 		Path:    cc.Path,
