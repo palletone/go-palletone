@@ -129,7 +129,7 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 		list[mi.AddStr] = true
 
 		//对应的Juror
-		juror := modules.Juror{}
+		juror := modules.JurorDeposit{}
 		juror.Address = mi.AddStr
 		juror.Role = modules.Jury
 		juror.Balance = 0

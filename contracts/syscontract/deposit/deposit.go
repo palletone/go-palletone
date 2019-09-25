@@ -448,9 +448,9 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Error(err.Error())
 		}
 		if len(juryvalues) > 0 {
-			jurynode := make(map[string]*modules.Juror)
+			jurynode := make(map[string]*modules.JurorDeposit)
 			for _, v := range juryvalues {
-				n := modules.Juror{}
+				n := modules.JurorDeposit{}
 				err := json.Unmarshal(v.Value, &n)
 				if err != nil {
 					return shim.Error(err.Error())

@@ -70,7 +70,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 	}
 	//  第一次想加入
 	if balance == nil {
-		balance = &modules.Juror{}
+		balance = &modules.JurorDeposit{}
 		//  可以加入列表
 		if invokeTokens.Amount != cp.DepositAmountForJury {
 			str := fmt.Errorf("jury needs to pay only %d  deposit.", cp.DepositAmountForJury)
@@ -145,12 +145,13 @@ func handleJury(stub shim.ChaincodeStubInterface, quitAddr common.Address) error
 	return handleNode(stub, quitAddr, modules.Jury)
 }
 
-func convertJuryDeposit2Json(juror *modules.Juror) *modules.JuryDepositJson {
+func convertJuryDeposit2Json(juror *modules.JurorDeposit) *modules.JuryDepositJson {
 	jrJson := &modules.JuryDepositJson{}
 
 	dbJson := convertDepositBalance2Json(&juror.DepositBalance)
 	jrJson.DepositBalanceJson = *dbJson
 	jrJson.JurorDepositExtra = juror.JurorDepositExtra
+	jrJson.Address = juror.Address
 
 	return jrJson
 }

@@ -127,14 +127,14 @@ type DepositBalance struct {
 	Role      string `json:"role"`       // 角色，包括mediator、jury和developer
 }
 
-type Juror struct {
+type JurorDeposit struct {
 	DepositBalance
 	JurorDepositExtra
+	Address string `json:"address"`
 }
 
 type JurorDepositExtra struct {
 	PublicKey []byte `json:"public_key"`
-	Address   string `json:"address"`
 }
 
 // mediator保证金額外信息
@@ -182,4 +182,5 @@ type MediatorDepositJson struct {
 type JuryDepositJson struct {
 	DepositBalanceJson
 	JurorDepositExtra
+	Address string `json:"address"`
 }

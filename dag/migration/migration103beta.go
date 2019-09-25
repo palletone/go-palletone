@@ -105,7 +105,7 @@ func (m *Migration103alpha_103beta) upgradeDefaultMediatorsWithJurorInfo() error
 		return err
 	}
 	for addr := range list {
-		juror := modules.Juror{}
+		juror := modules.JurorDeposit{}
 		juror.Address = addr
 		juror.Role = modules.Jury
 		juror.Balance = 0

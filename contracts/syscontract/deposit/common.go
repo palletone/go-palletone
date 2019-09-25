@@ -307,7 +307,7 @@ func DelNodeBalance(stub shim.ChaincodeStubInterface, balanceAddr string) error 
 }
 
 //保存jury账户
-func SaveJuryBalance(stub shim.ChaincodeStubInterface, balanceAddr string, balance *modules.Juror) error {
+func SaveJuryBalance(stub shim.ChaincodeStubInterface, balanceAddr string, balance *modules.JurorDeposit) error {
 	balanceByte, err := json.Marshal(balance)
 	if err != nil {
 		return err
@@ -320,7 +320,7 @@ func SaveJuryBalance(stub shim.ChaincodeStubInterface, balanceAddr string, balan
 }
 
 //  获取Jury账户
-func GetJuryBalance(stub shim.ChaincodeStubInterface, addr string) (*modules.Juror, error) {
+func GetJuryBalance(stub shim.ChaincodeStubInterface, addr string) (*modules.JurorDeposit, error) {
 	byte, err := stub.GetState(string(constants.DEPOSIT_JURY_BALANCE_PREFIX) + addr)
 	if err != nil {
 		return nil, err
@@ -328,7 +328,7 @@ func GetJuryBalance(stub shim.ChaincodeStubInterface, addr string) (*modules.Jur
 	if byte == nil {
 		return nil, nil
 	}
-	b := &modules.Juror{}
+	b := &modules.JurorDeposit{}
 	err = json.Unmarshal(byte, b)
 	if err != nil {
 		return nil, err
