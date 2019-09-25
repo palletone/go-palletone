@@ -37,11 +37,11 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
-	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/ptnjson/statistics"
+	"github.com/palletone/go-palletone/txspool"
 	"github.com/shopspring/decimal"
 )
 
@@ -139,12 +139,12 @@ func (b *LesApiBackend) Stats() (pending int, queued int, reserve int) {
 	return 0, 0, 0
 }
 
-func (b *LesApiBackend) TxPoolContent() (map[common.Hash]*modules.TxPoolTransaction,
-	map[common.Hash]*modules.TxPoolTransaction) {
+func (b *LesApiBackend) TxPoolContent() (map[common.Hash]*txspool.TxPoolTransaction,
+	map[common.Hash]*txspool.TxPoolTransaction) {
 	return nil, nil
 	//return b.ptn.txPool.Content()
 }
-func (b *LesApiBackend) Queued() ([]*modules.TxPoolTransaction, error) {
+func (b *LesApiBackend) Queued() ([]*txspool.TxPoolTransaction, error) {
 	return nil, nil
 }
 
@@ -216,7 +216,7 @@ func (b *LesApiBackend) GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, e
 func (b *LesApiBackend) GetTxPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJson, error) {
 	return nil, nil
 }
-func (b *LesApiBackend) GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error) {
+func (b *LesApiBackend) GetPoolTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error) {
 	return nil, nil
 }
 

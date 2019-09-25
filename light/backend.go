@@ -44,9 +44,9 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/palletcache"
-	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/light/cors"
+	"github.com/palletone/go-palletone/txspool"
 )
 
 type LightPalletone struct {
@@ -126,7 +126,7 @@ func New(ctx *node.ServiceContext, config *ptn.Config, protocolname string, cach
 	//lptn.serverPool = newServerPool(chainDb, quitSync, &leth.wg)
 	//lptn.retriever = newRetrieveManager(peers, leth.reqDist, leth.serverPool)
 	//lptn.odr = NewLesOdr(chainDb, leth.chtIndexer, leth.bloomTrieIndexer, leth.bloomIndexer, leth.retriever)
-
+	//val:=validator.NewValidate(lptn.dag,nil,nil,nil,cache)
 	lptn.txPool = txspool.NewTxPool(config.TxPool, cache, lptn.dag, tokenengine.Instance)
 
 	if lptn.protocolManager, err = NewProtocolManager(true, lptn.peers, config.NetworkId, gasToken, nil,

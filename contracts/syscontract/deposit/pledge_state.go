@@ -130,7 +130,6 @@ func getLastPledgeListDate(stub shim.ChaincodeStubInterface) (string, error) {
 }
 func saveLastPledgeListDate(stub shim.ChaincodeStubInterface, date string) error {
 	return stub.PutState(constants.PledgeListLastDate, []byte(date))
-
 }
 
 //保存最新的质押列表
@@ -144,7 +143,6 @@ func saveLastPledgeList(stub shim.ChaincodeStubInterface, allM *modules.PledgeLi
 		return err
 	}
 	return saveLastPledgeListDate(stub, allM.Date)
-
 }
 
 //获得最新的质押列表

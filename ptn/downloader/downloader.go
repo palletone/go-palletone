@@ -31,8 +31,8 @@ import (
 	"github.com/palletone/go-palletone/configure"
 	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/statistics/metrics"
+	"github.com/palletone/go-palletone/txspool"
 )
 
 var (

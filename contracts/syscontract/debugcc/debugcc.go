@@ -33,7 +33,6 @@ type DebugChainCode struct {
 }
 
 func (d *DebugChainCode) Init(stub shim.ChaincodeStubInterface) pb.Response {
-
 	return shim.Success([]byte("ok"))
 }
 

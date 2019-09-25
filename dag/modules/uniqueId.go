@@ -74,9 +74,7 @@ func ParseUUID(uuid string) ([]byte, error) {
 	return ret, nil
 }
 func (it *UniqueId) String() string {
-
 	return hex.EncodeToString(it.Bytes())
-
 }
 func (it *UniqueId) StringFriendly(t UniqueIdType) string {
 	switch t {
@@ -96,7 +94,6 @@ func (it *UniqueId) StringFriendly(t UniqueIdType) string {
 		return string(it.Bytes())
 	}
 	return ""
-
 }
 func String2UniqueId(str string, t UniqueIdType) (UniqueId, error) {
 	uid := UniqueId{}

@@ -43,7 +43,7 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/storage"
-	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
 	"math/big"
 	"time"
@@ -119,7 +119,7 @@ type testTxPool struct {
 	txFeed     event.Feed
 	pool       []*modules.Transaction        // Collection of all transactions
 	added      chan<- []*modules.Transaction // Notification channel for new transactions
-	sequenPool *modules.SequeueTxPoolTxs
+	sequenPool *txspool.SequeueTxPoolTxs
 
 	lock sync.RWMutex // Protects the transaction pool
 }
@@ -198,15 +198,15 @@ func (p *testTxPool) AddSequenTxs(txs []*modules.Transaction) error {
 	return nil
 }
 
-func (p *testTxPool) Content() (map[common.Hash]*modules.TxPoolTransaction, map[common.Hash]*modules.TxPoolTransaction) {
+func (p *testTxPool) Content() (map[common.Hash]*txspool.TxPoolTransaction, map[common.Hash]*txspool.TxPoolTransaction) {
 	return nil, nil
 }
 
-func (p *testTxPool) Get(hash common.Hash) (*modules.TxPoolTransaction, common.Hash) {
+func (p *testTxPool) Get(hash common.Hash) (*txspool.TxPoolTransaction, common.Hash) {
 	return nil, (common.Hash{})
 }
 
-func (p *testTxPool) GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error) {
+func (p *testTxPool) GetPoolTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error) {
 	return nil, nil
 }
 
@@ -216,7 +216,7 @@ func (p *testTxPool) GetNonce(hash common.Hash) uint64 {
 func (p *testTxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	return nil, nil
 }
-func (p *testTxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxPoolTransaction, common.StorageSize) {
+func (p *testTxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*txspool.TxPoolTransaction, common.StorageSize) {
 	return nil, 0
 }
 func (p *testTxPool) SendStoredTxs(hashs []common.Hash) error {
@@ -229,11 +229,11 @@ func (p *testTxPool) Stats() (int, int, int) {
 func (p *testTxPool) Stop() {}
 
 // Pending returns all the transactions known to the pool
-func (p *testTxPool) Pending() (map[common.Hash][]*modules.TxPoolTransaction, error) {
+func (p *testTxPool) Pending() (map[common.Hash][]*txspool.TxPoolTransaction, error) {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
-	batches := make(map[common.Hash][]*modules.TxPoolTransaction)
+	batches := make(map[common.Hash][]*txspool.TxPoolTransaction)
 	//for _, tx := range p.pool {
 	// from, _ := types.Sender(types.HomesteadSigner{}, tx)
 	// batches[from] = append(batches[from], tx)
@@ -243,10 +243,10 @@ func (p *testTxPool) Pending() (map[common.Hash][]*modules.TxPoolTransaction, er
 	//}
 	return batches, nil
 }
-func (p *testTxPool) Queued() ([]*modules.TxPoolTransaction, error) {
+func (p *testTxPool) Queued() ([]*txspool.TxPoolTransaction, error) {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
-	batches := make([]*modules.TxPoolTransaction, 0)
+	batches := make([]*txspool.TxPoolTransaction, 0)
 	return batches, nil
 }
 
@@ -257,7 +257,7 @@ func (p *testTxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Sub
 func (p *testTxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag txspool.Tag) ([]*txspool.TxDesc, error) {
 	return []*txspool.TxDesc{}, nil
 }
-func (p *testTxPool) AllTxpoolTxs() map[common.Hash]*modules.TxPoolTransaction {
+func (p *testTxPool) AllTxpoolTxs() map[common.Hash]*txspool.TxPoolTransaction {
 	return nil
 }
 func (p *testTxPool) GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error) {

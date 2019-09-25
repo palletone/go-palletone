@@ -34,15 +34,15 @@ type ITxPool interface {
 	AddSequenTx(tx *modules.Transaction) error
 	AddSequenTxs(txs []*modules.Transaction) error
 	AllHashs() []*common.Hash
-	AllTxpoolTxs() map[common.Hash]*modules.TxPoolTransaction
+	AllTxpoolTxs() map[common.Hash]*TxPoolTransaction
 
 	// AddRemotes should add the given transactions to the pool.
 	AddRemote(tx *modules.Transaction) error
 	AddRemotes([]*modules.Transaction) []error
 	ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag Tag) ([]*TxDesc, error)
 
-	Pending() (map[common.Hash][]*modules.TxPoolTransaction, error)
-	Queued() ([]*modules.TxPoolTransaction, error)
+	Pending() (map[common.Hash][]*TxPoolTransaction, error)
+	Queued() ([]*TxPoolTransaction, error)
 	SetPendingTxs(unit_hash common.Hash, num uint64, txs []*modules.Transaction) error
 	ResetPendingTxs(txs []*modules.Transaction) error
 	SendStoredTxs(hashs []common.Hash) error
@@ -50,11 +50,11 @@ type ITxPool interface {
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
-	GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxPoolTransaction, common.StorageSize)
-	Get(hash common.Hash) (*modules.TxPoolTransaction, common.Hash)
-	GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error)
+	GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTransaction, common.StorageSize)
+	Get(hash common.Hash) (*TxPoolTransaction, common.Hash)
+	GetPoolTxsByAddr(addr string) ([]*TxPoolTransaction, error)
 	Stats() (int, int, int)
-	Content() (map[common.Hash]*modules.TxPoolTransaction, map[common.Hash]*modules.TxPoolTransaction)
+	Content() (map[common.Hash]*TxPoolTransaction, map[common.Hash]*TxPoolTransaction)
 	GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
 	OutPointIsSpend(outPoint *modules.OutPoint) (bool, error)
 	ValidateOrphanTx(tx *modules.Transaction) (bool, error)

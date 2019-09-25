@@ -37,8 +37,8 @@ import (
 	"github.com/palletone/go-palletone/dag/storage"
 
 	"github.com/palletone/go-palletone/contracts/syscontract"
-	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/txspool"
 
 	//"github.com/palletone/go-palletone/validator"
 	"encoding/json"
@@ -506,7 +506,7 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 	//TODO must recover
 	if len(poolTxs) > 0 {
 		for idx, tx := range poolTxs {
-			t := txspool.PooltxToTx(tx)
+			t := tx.Tx
 			reqId := t.RequestHash()
 
 			//标记交易有效性
@@ -633,7 +633,7 @@ func (rep *UnitRepository) ComputeGenerateUnitReward(m common.Address, asset *mo
 
 //获取保证金利息
 //func (rep *UnitRepository) ComputeAwardsFees(addr *common.Address,
-// poolTxs []*modules.TxPoolTransaction) (*modules.Addition, error) {
+// poolTxs []*txspool.TxPoolTransaction) (*modules.Addition, error) {
 //	if poolTxs == nil {
 //		return nil, errors.New("ComputeAwardsFees param is nil")
 //	}
