@@ -15,40 +15,59 @@
 package deposit
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-
-	"fmt"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
 func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) peer.Response {
-	//  TODO
+	log.Debug("Start entering juryPayToDepositContract func")
 	if len(args) != 1 {
 		return shim.Error("need 1 parameter")
 	}
-	if len(args[0]) != 68 {
-		return shim.Error("public key is error")
-	}
-	//TODO 验证公钥和地址的关系
-	byte, err := hexutil.Decode(args[0])
+
+	var jdej modules.JurorDepositExtraJson
+	err := json.Unmarshal([]byte(args[0]), &jdej)
 	if err != nil {
-		return shim.Error(err.Error())
+		errStr := fmt.Sprintf("invalid args: %v", err.Error())
+		log.Errorf(errStr)
+		return shim.Error(errStr)
 	}
+
+	//if len(args[0]) != 68 {
+	//	return shim.Error("public key is error")
+	//}
+	////TODO 验证公钥和地址的关系
+	//byte, err := hexutil.Decode(args[0])
+	//if err != nil {
+	//	return shim.Error(err.Error())
+	//}
+
 	//  交付地址
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
 		log.Error("get invoke address err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	// TODO 放开导致BDD测试过不了
-	if crypto.PubkeyBytesToAddress(byte).String() != invokeAddr.String() {
-		return shim.Error("public key is error")
+
+	jde, err := jdej.Validate(invokeAddr.String())
+	if err != nil {
+		errStr := fmt.Sprintf("invalid args: %v", err.Error())
+		log.Errorf(errStr)
+		return shim.Error(errStr)
 	}
+
+	//// TODO 放开导致BDD测试过不了
+	//if crypto.PubkeyBytesToAddress(byte).String() != invokeAddr.String() {
+	//	return shim.Error("public key is error")
+	//}
+
 	//  判断是否交付保证金交易
 	invokeTokens, err := isContainDepositContractAddr(stub)
 	if err != nil {
@@ -88,7 +107,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 		balance.Balance = invokeTokens.Amount
 		balance.Role = modules.Jury
 		balance.Address = invokeAddr.String()
-		balance.PublicKey = byte
+		balance.JurorDepositExtra = jde
 		err = SaveJuryBalance(stub, invokeAddr.String(), balance)
 		if err != nil {
 			log.Error("save node balance err: ", "error", err)

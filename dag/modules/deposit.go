@@ -14,7 +14,13 @@
 
 package modules
 
-import "github.com/shopspring/decimal"
+import (
+	"fmt"
+
+	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/hexutil"
+	"github.com/shopspring/decimal"
+)
 
 const (
 	ListForApplyBecomeMediator = "ListForApplyBecomeMediator"
@@ -187,4 +193,20 @@ type JuryDepositJson struct {
 
 type JurorDepositExtraJson struct {
 	PublicKey string `json:"public_key"`
+}
+
+func (json *JurorDepositExtraJson) Validate(addStr string) (jde JurorDepositExtra, errs error) {
+	byte, err := hexutil.Decode(json.PublicKey)
+	if err != nil {
+		errs = err
+		return
+	}
+	jde.PublicKey = byte
+
+	if crypto.PubkeyBytesToAddress(byte).String() != addStr {
+		errs = fmt.Errorf("public key(%v) does not match the address(%v)", json.PublicKey, addStr)
+		return
+	}
+
+	return
 }
