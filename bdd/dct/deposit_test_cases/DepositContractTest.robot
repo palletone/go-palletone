@@ -10,6 +10,8 @@ ${juryAddr_01}    ${EMPTY}
 ${developerAddr_01}    ${EMPTY}
 ${juryAddr_02}    ${EMPTY}
 ${developerAddr_02}    ${EMPTY}
+${juryAddr_01_pubkey}    ${EMPTY}
+${juryAddr_02_pubkey}    ${EMPTY}
 
 *** Test Cases ***
 Business_01
@@ -149,7 +151,7 @@ Business_03
     [Documentation]    jury 交付 10 ptn 才可以加入候选列表
     ...
     ...    Jury 节点交付固定保证金并进入候选列表-》申请退出并进入退出列表-》基金会同意并移除候选列表，退出列表。
-    ${resul}    juryPayToDepositContract    ${juryAddr_01}    10
+    ${resul}    juryPayToDepositContract    ${juryAddr_01}    10    ${juryAddr_01_pubkey}
     log    ${resul}
     ${result}    getJuryBalance    ${juryAddr_01}    #获取该地址保证金账户详情
     log    ${result}    #余额为100000000000000
@@ -177,7 +179,7 @@ Business_04
     [Documentation]    没收jury节点
     ...
     ...    Jury 节点交付固定保证金并进入候选列表-》某节点申请没收该jury节点并进入没收列表-》基金会同意并移除候选列表，退出列表，该节点的PTN转到基金会地址。
-    ${resul}    juryPayToDepositContract    ${juryAddr_02}    10
+    ${resul}    juryPayToDepositContract    ${juryAddr_02}    10    ${juryAddr_02_pubkey}
     log    ${resul}
     ${result}    getJuryBalance    ${juryAddr_02}    #获取该地址保证金账户详情
     log    ${result}
