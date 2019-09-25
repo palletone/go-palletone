@@ -201,4 +201,5 @@ type IDag interface {
 	CheckHeaderCorrect(number int) error
 	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
 	RebuildAddrTxIndex() error
+	GetJurorByAddrHash(hash common.Hash) (*modules.Juror, error)
 }

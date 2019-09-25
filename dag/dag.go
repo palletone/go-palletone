@@ -1309,3 +1309,6 @@ func (d *Dag) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, er
 func (d *Dag) RebuildAddrTxIndex() error {
 	return d.stableUnitRep.RebuildAddrTxIndex()
 }
+func (d *Dag) GetJurorByAddrHash(hash common.Hash) (*modules.Juror, error) {
+	return d.stableStateRep.GetJurorByAddrHash(hash)
+}

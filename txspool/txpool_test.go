@@ -128,6 +128,10 @@ func (ud *UnitDag4Test) GetHeaderByHash(common.Hash) (*modules.Header, error) {
 func (ud *UnitDag4Test) IsTransactionExist(hash common.Hash) (bool, error) {
 	return false, nil
 }
+
+func (ud *UnitDag4Test) GetJurorByAddrHash(addrHash common.Hash) (*modules.Juror, error) {
+	return nil, nil
+}
 func (ud *UnitDag4Test) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	if ud.outpoints == nil {
 		return nil, fmt.Errorf("outpoints is nil ")

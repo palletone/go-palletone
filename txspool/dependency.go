@@ -54,7 +54,7 @@ type dags interface {
 	GetSlotAtTime(when time.Time) uint32
 	GetMediator(add common.Address) *core.Mediator
 	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
-
+	GetJurorByAddrHash(addrHash common.Hash) (*modules.Juror, error)
 }
 type IValidator interface {
 	ValidateTx(tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, validator.ValidationCode, error)

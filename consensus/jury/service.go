@@ -97,6 +97,7 @@ type iDag interface {
 	GetMediators() map[common.Address]bool
 	GetMediator(add common.Address) *core.Mediator
 	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
+	GetJurorByAddrHash(addrHash common.Hash) (*modules.Juror, error)
 }
 
 type electionVrf struct {
@@ -305,7 +306,7 @@ func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode)
 			if localIsMinSignature(ctx.sigTx) {
 				//签名数量足够，而且当前节点是签名最新的节点，那么合并签名并广播完整交易
 				log.Infof("[%s]runContractReq, localIsMinSignature Ok!", shortId(reqId.String()))
-				processContractPayout(ctx.sigTx, ele)
+				p.processContractPayout(ctx.sigTx, ele)
 				go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_COMMIT, Ele: ele, Tx: ctx.sigTx}, true)
 				return nil
 			}
