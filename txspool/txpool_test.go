@@ -22,6 +22,7 @@ package txspool
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/palletone/go-palletone/validator"
 	"math/rand"
 	"strconv"
 	"sync"
@@ -58,14 +59,14 @@ type UnitDag4Test struct {
 }
 
 // NewTxPool4Test return TxPool structure for testing.
-func NewTxPool4Test() *TxPool {
-	//l := log.NewTestLog()
-	testDag := NewUnitDag4Test()
-	//validat:=&validator.ValidatorAllPass{}
-	return NewTxPool(testTxPoolConfig,
-		freecache.NewCache(1*1024*1024),
-		testDag, tokenengine.Instance)
-}
+//func NewTxPool4Test() *TxPool {
+//	//l := log.NewTestLog()
+//	testDag := NewUnitDag4Test()
+//	//validat:=&validator.ValidatorAllPass{}
+//	return NewTxPool(testTxPoolConfig,
+//		freecache.NewCache(1*1024*1024),
+//		testDag, tokenengine.Instance)
+//}
 
 func NewUnitDag4Test() *UnitDag4Test {
 	db, _ := palletdb.NewMemDatabase()
@@ -191,8 +192,8 @@ func (ud *UnitDag4Test) GetTransactionOnly(hash common.Hash) (*modules.Transacti
 func (ud *UnitDag4Test) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
 	return nil, nil
 }
-func (ud *UnitDag4Test) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error){
-	return []common.Address{},nil,nil
+func (ud *UnitDag4Test) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error) {
+	return []common.Address{}, nil, nil
 }
 
 func (ud *UnitDag4Test) GetMinFee() (*modules.AmountAsset, error) {
@@ -262,8 +263,8 @@ func TestTransactionAddingTxs(t *testing.T) {
 		utxodb.SaveUtxoEntity(&outpoint, utxo)
 	}
 	//validat:=&validator.ValidatorAllPass{}
-	pool := NewTxPool(config, freecache.NewCache(1*1024*1024), unitchain,
-		tokenengine.Instance)
+	pool := NewTxPool4DI(config, freecache.NewCache(1*1024*1024), unitchain,
+		tokenengine.Instance, &validator.ValidatorAllPass{})
 	defer pool.Stop()
 
 	var pending_cache, queue_cache, all, origin int
