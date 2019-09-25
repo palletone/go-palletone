@@ -16,6 +16,7 @@ package deposit
 
 import (
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
@@ -45,9 +46,9 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 		return shim.Error(err.Error())
 	}
 	// TODO 放开导致BDD测试过不了
-	//if crypto.PubkeyBytesToAddress(byte).String() != invokeAddr.String() {
-	//	return shim.Error("public key is error")
-	//}
+	if crypto.PubkeyBytesToAddress(byte).String() != invokeAddr.String() {
+		return shim.Error("public key is error")
+	}
 	//  判断是否交付保证金交易
 	invokeTokens, err := isContainDepositContractAddr(stub)
 	if err != nil {
