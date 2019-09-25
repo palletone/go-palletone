@@ -293,14 +293,12 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 		outAmount += txout.Value
 	}
 	if inAmount < outAmount {
-
 		return nil, fmt.Errorf("Compute fees: tx %s txin amount less than txout amount. amount:%d ,outAmount:%d ",
 			tx.Hash().String(), inAmount, outAmount)
 	}
 	fees := inAmount - outAmount
 
 	return &AmountAsset{Amount: fees, Asset: feeAsset}, nil
-
 }
 
 //该Tx如果保存后，会产生的新的Utxo
@@ -371,7 +369,6 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 	request.CertId = tx.CertId
 	for _, msg := range tx.TxMessages {
 		if msg.App.IsRequest() {
-
 			if msg.App == APP_CONTRACT_TPL_REQUEST {
 				payload := new(ContractInstallRequestPayload)
 				obj.DeepCopy(payload, msg.Payload)

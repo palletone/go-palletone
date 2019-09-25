@@ -216,6 +216,8 @@ linters:
     - dogsled
     - funlen
     - stylecheck
+    - whitespace
+    - gosimple
   disable-all: false
   # presets:
   #   - bugs
