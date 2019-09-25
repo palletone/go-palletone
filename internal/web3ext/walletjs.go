@@ -47,6 +47,11 @@ const Wallet_JS = `
             params: 1
         }),
 		new web3._extend.Method({
+            name: 'getContractInvokeHistory',
+            call: 'wallet_getContractInvokeHistory',
+            params: 1
+        }),
+		new web3._extend.Method({
 			name: 'getAddrUtxos',
 			call: 'wallet_getAddrUtxos',
 			params: 1

@@ -966,6 +966,10 @@ func (s *PublicWalletAPI) GetAddrTxHistory(ctx context.Context, addr string) ([]
 
 	return result, err
 }
+func (s *PublicWalletAPI) GetContractInvokeHistory(ctx context.Context, contractAddr string) ([]*ptnjson.ContractInvokeHistoryJson, error) {
+	result, err := s.b.GetContractInvokeHistory(contractAddr)
+	return result, err
+}
 
 //获得某地址的通证流水
 func (s *PublicWalletAPI) GetAddrTokenFlow(ctx context.Context, addr string, token string) ([]*ptnjson.TokenFlowJson, error) {

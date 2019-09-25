@@ -647,7 +647,26 @@ func (b *PtnApiBackend) GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson,
 	}
 	return txjs, nil
 }
-
+func (b *PtnApiBackend) GetContractInvokeHistory(addr string) ([]*ptnjson.ContractInvokeHistoryJson, error) {
+	address, err := common.StringToAddress(addr)
+	if err != nil {
+		return nil, err
+	}
+	txs, err := b.ptn.dag.GetAddrTransactions(address)
+	if err != nil {
+		return nil, err
+	}
+	//按时间从旧到新排序
+	sort.Slice(txs, func(i, j int) bool {
+		return txs[i].Timestamp < txs[j].Timestamp
+	})
+	txjs := []*ptnjson.ContractInvokeHistoryJson{}
+	for _, tx := range txs {
+		txj := ptnjson.ConvertTx2ContractInvokeHistoryJson(tx, b.ptn.dag.GetTxOutput)
+		txjs = append(txjs, txj)
+	}
+	return txjs, nil
+}
 func (b *PtnApiBackend) ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi,
 	ccLanguage string) ([]byte, error) {
 	//channelId := "palletone"

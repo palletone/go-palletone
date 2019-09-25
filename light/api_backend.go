@@ -53,7 +53,9 @@ type LesApiBackend struct {
 func (b *LesApiBackend) SignAndSendRequest(addr common.Address, tx *modules.Transaction) error {
 	return nil
 }
-
+func (b *LesApiBackend) GetContractInvokeHistory(addr string) ([]*ptnjson.ContractInvokeHistoryJson, error) {
+	return nil, nil
+}
 func (b *LesApiBackend) CurrentBlock() *modules.Unit {
 	return &modules.Unit{}
 }

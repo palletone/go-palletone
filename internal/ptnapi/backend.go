@@ -129,6 +129,7 @@ type Backend interface {
 	GetAllUtxos() ([]*ptnjson.UtxoJson, error)
 	GetAddressBalanceStatistics(token string, topN int) (*statistics.TokenAddressBalanceJson, error)
 	GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson, error)
+	GetContractInvokeHistory(addr string) ([]*ptnjson.ContractInvokeHistoryJson, error)
 	GetAddrTokenFlow(addr, token string) ([]*ptnjson.TokenFlowJson, error)
 	GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxHistoryJson, error)
 	GetAssetExistence(asset string) ([]*ptnjson.ProofOfExistenceJson, error)
