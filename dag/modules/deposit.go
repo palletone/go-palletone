@@ -181,6 +181,10 @@ type MediatorDepositJson struct {
 
 type JuryDepositJson struct {
 	DepositBalanceJson
-	JurorDepositExtra
+	JurorDepositExtraJson
 	Address string `json:"address"`
+}
+
+type JurorDepositExtraJson struct {
+	PublicKey string `json:"public_key"`
 }

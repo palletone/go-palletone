@@ -150,10 +150,15 @@ func convertJuryDeposit2Json(juror *modules.JurorDeposit) *modules.JuryDepositJs
 
 	dbJson := convertDepositBalance2Json(&juror.DepositBalance)
 	jrJson.DepositBalanceJson = *dbJson
-	jrJson.JurorDepositExtra = juror.JurorDepositExtra
+	jrJson.JurorDepositExtraJson = convertJuryDepositExtra2Json(&juror.JurorDepositExtra)
 	jrJson.Address = juror.Address
 
 	return jrJson
+}
+
+func convertJuryDepositExtra2Json(extra *modules.JurorDepositExtra) (json modules.JurorDepositExtraJson) {
+	json.PublicKey = hexutil.Encode(extra.PublicKey)
+	return
 }
 
 func updateJuryInfo(stub shim.ChaincodeStubInterface, args []string) peer.Response {
