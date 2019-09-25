@@ -991,6 +991,14 @@ func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Trans
 	for _, addr := range fromAddrs {
 		rep.idxdb.SaveAddressTxId(addr, txHash)
 	}
+	//Index contract address to tx
+	for _,msg:=range tx.TxMessages{
+		if msg.App== modules.APP_CONTRACT_INVOKE_REQUEST{
+			invoke:=msg.Payload.(*modules.ContractInvokeRequestPayload)
+			addr:=common.NewAddress(invoke.ContractId,common.ContractHash)
+			rep.idxdb.SaveAddressTxId(addr, txHash)
+		}
+	}
 }
 
 func (rep *UnitRepository) getPayToAddresses(tx *modules.Transaction) []common.Address {

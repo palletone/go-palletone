@@ -636,6 +636,10 @@ func (b *PtnApiBackend) GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson,
 	if err != nil {
 		return nil, err
 	}
+	//按时间从旧到新排序
+	sort.Slice(txs, func(i, j int) bool {
+		return txs[i].Timestamp < txs[j].Timestamp
+	})
 	txjs := []*ptnjson.TxHistoryJson{}
 	for _, tx := range txs {
 		txj := ptnjson.ConvertTx2HistoryJson(tx, b.ptn.dag.GetTxOutput)
