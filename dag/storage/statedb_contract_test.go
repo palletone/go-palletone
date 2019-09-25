@@ -208,10 +208,10 @@ func TestJurors(t *testing.T) {
 	depositeContractAddress := syscontract.DepositContractAddress
 	contractId := depositeContractAddress.Bytes()
 	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123}, TxIndex: 1}
-	j1 := &modules.Juror{}
+	j1 := &modules.JurorDeposit{}
 	j1.Address = "p1"
 	b1, _ := json.Marshal(j1)
-	j2 := &modules.Juror{}
+	j2 := &modules.JurorDeposit{}
 	j2.Address = "p2"
 	b2, _ := json.Marshal(j2)
 	ws1 := modules.NewWriteSet(string(constants.DEPOSIT_JURY_BALANCE_PREFIX)+"p1", b1)
