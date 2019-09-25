@@ -113,7 +113,7 @@ func (p *Processor) selectElectionInf(local []modules.ElectionInf,
 		eels = append(eels, local...)
 		for i := 0; i < less; i++ {
 			ok := true
-			for _, l := range local {
+			for _, l := range local { //检查是否重复
 				if bytes.Equal(l.AddrHash[:], recv[i].AddrHash[:]) {
 					ok = false
 					break
@@ -129,6 +129,7 @@ func (p *Processor) selectElectionInf(local []modules.ElectionInf,
 			return nil, false
 		}
 	}
+
 	return eels, true
 }
 
@@ -505,10 +506,9 @@ func (p *Processor) BroadcastElectionSigRequestEvent() {
 			eList = nil
 			mtx.eleNode = &modules.ElectionNode{JuryCount: ele.juryCnt}
 		}
-
 		cfgEleNum := getSysCfgContractElectionNum(p.dag)
 		if len(eList)+len(ele.rcvEle) >= cfgEleNum {
-			se, valid := p.selectElectionInf(eList, ele.rcvEle, cfgEleNum)
+			se, valid := p.selectElectionInf(eList, randSelectEle(ele.rcvEle), cfgEleNum) //ele.rcvEle
 			if !valid {
 				continue
 			}

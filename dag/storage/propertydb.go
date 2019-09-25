@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
+	"fmt"
 )
 
 type PropertyDb struct {
@@ -197,7 +198,7 @@ func (db *PropertyDb) GetChaincode(contractId common.Address) (*list.CCInfo, err
 	err := RetrieveFromRlpBytes(db.db, key, cc)
 	if err != nil {
 		log.Debugf("Cannot retrieve chaincodes by contractid %s", contractId.String())
-		return nil, err
+		return nil, fmt.Errorf("GetChaincode fail, err:%s", err.Error())
 	}
 	return cc, nil
 }

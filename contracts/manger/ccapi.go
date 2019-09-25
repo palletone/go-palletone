@@ -254,14 +254,13 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 		}
 	} else {
 		cc, err = GetChaincode(idag, address)
-		log.Debugf("get chain code")
 		if err != nil {
+			log.Debugf("Invoke, get chain code err:%s", err.Error())
 			return nil, err
 		}
 	}
 	startTm := time.Now()
 	es := NewEndorserServer(mksupt)
-	log.Debugf("new endorser server")
 	spec := &pb.ChaincodeSpec{
 		ChaincodeId: &pb.ChaincodeID{Name: cc.Name, Version: cc.Version},
 		Type:        pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value[cc.Language]),
@@ -273,13 +272,11 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 		Version: cc.Version,
 	}
 	sprop, prop, err := SignedEndorserProposa(chainID, txid, spec, creator, []byte("msg1"))
-	log.Debugf("signed endorser proposal")
 	if err != nil {
 		log.Errorf("signedEndorserProposa error[%v]", err)
 		return nil, err
 	}
 	rsp, unit, err := es.ProcessProposal(rwM, idag, deployId, context.Background(), sprop, prop, chainID, cid, timeout)
-	log.Debugf("process proposal")
 	if err != nil {
 		log.Infof("ProcessProposal error[%v]", err)
 		return nil, err

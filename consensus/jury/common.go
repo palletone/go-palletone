@@ -36,6 +36,7 @@ import (
 	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/core"
+	"math/rand"
 )
 
 const (
@@ -903,4 +904,15 @@ func getSysCfgContractElectionNum(dag iDag) int {
 		contractEleNum = cp.ContractElectionNum
 	}
 	return contractEleNum
+}
+
+func randSelectEle(ele []modules.ElectionInf) []modules.ElectionInf {
+	out := make([]modules.ElectionInf, len(ele))
+	out = append(out, ele...)
+
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(out), func(i, j int) {
+		out[i], out[j] = out[j], out[i]
+	})
+	return out
 }
