@@ -452,7 +452,7 @@ func (chain *MemDag) removeUnitAndChildren(chain_units map[common.Hash]*modules.
 				go txpool.ResetPendingTxs(txs)
 			}
 			chain.chainUnits.Delete(h)
-			//delete(chain_units, h)
+			delete(chain_units, h)
 			log.Debugf("Remove unit[%s] from chainUnits", hash.String())
 		} else if unit.ParentHash()[0] == hash {
 			chain.removeUnitAndChildren(chain_units, h, txpool)
