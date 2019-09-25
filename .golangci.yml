@@ -212,6 +212,10 @@ linters:
     - maligned
     - gochecknoinits
     - lll
+    - godox
+    - dogsled
+    - funlen
+    - stylecheck
   disable-all: false
   # presets:
   #   - bugs
@@ -235,9 +239,9 @@ issues:
       - linters:
         - goimports
         text: "File is not `goimports`-ed"
-      - linters:
-        - stylecheck
-        text: "ST1005:"
+      # - linters:
+      #   - stylecheck
+      #   text: "ST1005:"
       - linters:
         - govet
         text: "shadows declaration"

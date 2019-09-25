@@ -163,7 +163,8 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface /*, args []st
 		md.ApplyQuitTime = ""
 	}
 	//  判断是否已经获得同意状态
-	if strings.ToLower(md.Status) != strings.ToLower(modules.Agree) {
+	if !strings.EqualFold(md.Status, modules.Agree){
+	// if strings.ToLower(md.Status) != strings.ToLower(modules.Agree) {
 		return shim.Error(invokeAddr.String() + " does not in the agree list")
 	}
 

@@ -718,7 +718,6 @@ type Tag uint64
 
 func (pool *TxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool,
 	tag Tag) ([]*TxDesc, error) {
-
 	// Potentially accept the transaction to the memory pool.
 	_, err := pool.maybeAcceptTransaction(tx, rateLimit)
 	if err != nil {
@@ -1019,7 +1018,6 @@ func (pool *TxPool) DeleteTx() error {
 }
 
 func (pool *TxPool) DeleteTxByHash(hash common.Hash) error {
-
 	inter, has := pool.all.Load(hash)
 	if !has {
 		return errors.New(fmt.Sprintf("the tx(%s) isn't exist in pool.", hash.String()))

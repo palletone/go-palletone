@@ -107,7 +107,6 @@ func (p *peer) SetHead(data *announceData) {
 	data.Number = *data.Header.Number
 	data.Hash = data.Header.Hash()
 	p.lightpeermsg[data.Number.AssetID] = data
-
 }
 
 // Head retrieves a copy of the current head (most recent) hash of the peer.
@@ -124,7 +123,6 @@ func (p *peer) Head(assetid modules.AssetId) (hash common.Hash) {
 func (p *peer) HeadAndNumber(assetid modules.AssetId) (hash common.Hash, number *modules.ChainIndex) {
 	p.lightlock.RLock()
 	defer p.lightlock.RUnlock()
-
 	if v, ok := p.lightpeermsg[assetid]; ok {
 		copy(hash[:], v.Hash[:])
 		return hash, &v.Number

@@ -30,16 +30,16 @@ const (
 	defaultLevel = "DEBUG"
 )
 
-var (
+// var (
 	//log        log.ILogger
-	defaultOutput *os.File
+	// defaultOutput *os.File
 
-	modules map[string]string // Holds the map of all modules and their respective log level
+	// modules map[string]string // Holds the map of all modules and their respective log level
 	//peerStartModules map[string]string
 
-	lock sync.RWMutex
+	// lock sync.RWMutex
 	//once sync.Once
-)
+// )
 
 func init() {
 	//log = log.New(pkgLogID)
