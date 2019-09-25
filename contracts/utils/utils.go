@@ -315,3 +315,18 @@ func RemoveConWhenOverDisk(cc *list.CCInfo, dag dag.IDag) (sizeRW int64, disk in
 	}
 	return 0, 0, false
 }
+
+//判断容器是否正在运行
+func IsRunning(name string) bool {
+	client, err := util.NewDockerClient()
+	if err != nil {
+		log.Errorf(err.Error())
+		return true
+	}
+	c, err := client.InspectContainer(name)
+	if err != nil {
+		log.Errorf(err.Error())
+		return true
+	}
+	return c.State.Running
+}
