@@ -25,6 +25,7 @@ package deposit
 
 import (
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	//pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	//"github.com/palletone/go-palletone/dag/constants"
@@ -122,7 +123,10 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward
 	}
 	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
 	for _, withdraw := range withdrawList {
-		withdrawAmt, _ := allM.Reduce(withdraw.Address, withdraw.Amount)
+		withdrawAmt, err := allM.Reduce(withdraw.Address, withdraw.Amount)
+		if err != nil {
+			log.Warnf("address[%s] withdraw pledge %d error:", withdraw.Address, withdraw.Amount)
+		}
 		if withdrawAmt > 0 {
 			err := stub.PayOutToken(withdraw.Address, modules.NewAmountAsset(withdrawAmt, gasToken), 0)
 			if err != nil {

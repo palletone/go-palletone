@@ -79,6 +79,7 @@ const (
 	HandlePledgeReward      = "HandlePledgeReward"
 	AllPledgeVotes          = "allPledgeVotes"
 	QueryPledgeList         = "QueryPledgeList"
+	QueryPledgeWithdraw         = "QueryPledgeWithdraw"
 	QueryPledgeListByDate   = "QueryPledgeListByDate"
 
 	//  mediator状态
