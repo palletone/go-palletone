@@ -265,7 +265,7 @@ func (chain *MemDag) setStableUnit(hash common.Hash, height uint64, txpool txspo
 	//remove fork units, and remove lower than stable unit
 	for _, funit := range chain_units {
 		if funit.NumberU64() <= max_height && funit.Hash() != hash {
-			//chain_units := chain.getChainUnits()
+			chain_units := chain.getChainUnits()
 			chain.removeUnitAndChildren(chain_units, funit.Hash(), txpool)
 		}
 	}
