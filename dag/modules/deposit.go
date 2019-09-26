@@ -15,10 +15,10 @@
 package modules
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	"github.com/palletone/go-palletone/common/crypto"
-	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/shopspring/decimal"
 )
 
@@ -79,7 +79,7 @@ const (
 	HandlePledgeReward      = "HandlePledgeReward"
 	AllPledgeVotes          = "allPledgeVotes"
 	QueryPledgeList         = "QueryPledgeList"
-	QueryPledgeWithdraw         = "QueryPledgeWithdraw"
+	QueryPledgeWithdraw     = "QueryPledgeWithdraw"
 	QueryPledgeListByDate   = "QueryPledgeListByDate"
 
 	//  mediator状态
@@ -197,7 +197,7 @@ type JurorDepositExtraJson struct {
 }
 
 func (json *JurorDepositExtraJson) Validate(addStr string) (jde JurorDepositExtra, errs error) {
-	byte, err := hexutil.Decode(json.PublicKey)
+	byte, err := hex.DecodeString(json.PublicKey)
 	if err != nil {
 		errs = err
 		return
