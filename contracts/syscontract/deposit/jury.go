@@ -15,13 +15,14 @@
 package deposit
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -32,7 +33,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 		return shim.Error("need 1 parameter")
 	}
 
-	var jdej modules.JurorDepositExtraJson
+	var jdej core.JurorDepositExtraJson
 	err := json.Unmarshal([]byte(args[0]), &jdej)
 	if err != nil {
 		errStr := fmt.Sprintf("invalid args: %v", err.Error())
@@ -163,36 +164,36 @@ func convertJuryDeposit2Json(juror *modules.JurorDeposit) *modules.JuryDepositJs
 	return jrJson
 }
 
-func convertJuryDepositExtra2Json(extra *modules.JurorDepositExtra) (json modules.JurorDepositExtraJson) {
-	json.PublicKey = hexutil.Encode(extra.PublicKey)
+func convertJuryDepositExtra2Json(extra *core.JurorDepositExtra) (json core.JurorDepositExtraJson) {
+	json.PublicKey = hex.EncodeToString(extra.PublicKey)
 	return
 }
 
-func updateJuryInfo(stub shim.ChaincodeStubInterface, args []string) peer.Response {
-	addr, err := stub.GetInvokeAddress()
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	b, err := GetJuryBalance(stub, addr.String())
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	//  TODO
-	if len(args) != 1 {
-		return shim.Error("need 1 parameter")
-	}
-	if len(args[0]) != 68 {
-		return shim.Error("public key is error")
-	}
-	//TODO 验证公钥和地址的关系
-	byte, err := hexutil.Decode(args[0])
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	b.PublicKey = byte
-	err = SaveJuryBalance(stub, addr.String(), b)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	return shim.Success(nil)
-}
+//func updateJuryInfo(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+//	addr, err := stub.GetInvokeAddress()
+//	if err != nil {
+//		return shim.Error(err.Error())
+//	}
+//	b, err := GetJuryBalance(stub, addr.String())
+//	if err != nil {
+//		return shim.Error(err.Error())
+//	}
+//	//  TODO
+//	if len(args) != 1 {
+//		return shim.Error("need 1 parameter")
+//	}
+//	if len(args[0]) != 68 {
+//		return shim.Error("public key is error")
+//	}
+//	//TODO 验证公钥和地址的关系
+//	byte, err := hexutil.Decode(args[0])
+//	if err != nil {
+//		return shim.Error(err.Error())
+//	}
+//	b.PublicKey = byte
+//	err = SaveJuryBalance(stub, addr.String(), b)
+//	if err != nil {
+//		return shim.Error(err.Error())
+//	}
+//	return shim.Success(nil)
+//}

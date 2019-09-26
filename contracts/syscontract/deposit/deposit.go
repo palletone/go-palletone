@@ -373,8 +373,8 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		return queryPledgeListByDate(stub, args)
 	case modules.QueryPledgeWithdraw:
 		log.Info("Enter DepositChaincode Contract " + modules.QueryPledgeWithdraw + " Query")
-		list,err:= getAllPledgeWithdrawRecords(stub)
-		if err!=nil{
+		list, err := getAllPledgeWithdrawRecords(stub)
+		if err != nil {
 			return shim.Error(err.Error())
 		}
 		result, _ := json.Marshal(list)
@@ -472,9 +472,9 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Success(bytes)
 		}
 		return shim.Success([]byte("{}"))
-	case modules.UpdateJuryInfo:
-		log.Info("Enter DepositChaincode Contract " + modules.UpdateJuryInfo + " Invoke")
-		return d.updateJuryInfo(stub, args)
+		//case modules.UpdateJuryInfo:
+		//	log.Info("Enter DepositChaincode Contract " + modules.UpdateJuryInfo + " Invoke")
+		//	return d.updateJuryInfo(stub, args)
 	}
 	return shim.Error("please enter validate function name")
 }
@@ -596,6 +596,6 @@ func (d DepositChaincode) handleDevInList(stub shim.ChaincodeStubInterface, args
 //}
 
 //  更新陪审员信息
-func (d DepositChaincode) updateJuryInfo(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return updateJuryInfo(stub, args)
-}
+//func (d DepositChaincode) updateJuryInfo(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+//	return updateJuryInfo(stub, args)
+//}

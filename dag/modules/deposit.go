@@ -15,11 +15,8 @@
 package modules
 
 import (
-	"encoding/hex"
-	"fmt"
-
-	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/shopspring/decimal"
+	"github.com/palletone/go-palletone/core"
 )
 
 const (
@@ -101,7 +98,7 @@ const (
 	GetAllMediator                = "GetAllMediator"
 	GetAllNode                    = "GetAllNode"
 	GetAllJury                    = "GetAllJury"
-	UpdateJuryInfo                = "UpdateJuryInfo"
+	//UpdateJuryInfo                = "UpdateJuryInfo"
 )
 
 //申请退出
@@ -134,14 +131,11 @@ type DepositBalance struct {
 	Role      string `json:"role"`       // 角色，包括mediator、jury和developer
 }
 
+// juror保证金信息
 type JurorDeposit struct {
 	DepositBalance
-	JurorDepositExtra
-	Address string `json:"address"`
-}
-
-type JurorDepositExtra struct {
-	PublicKey []byte `json:"public_key"`
+	core.JurorDepositExtra
+	Address string `json:"address"` // juror地址
 }
 
 // mediator保证金額外信息
@@ -186,28 +180,9 @@ type MediatorDepositJson struct {
 	DepositBalanceJson
 }
 
+// juror保证金信息
 type JuryDepositJson struct {
 	DepositBalanceJson
-	JurorDepositExtraJson
+	core.JurorDepositExtraJson
 	Address string `json:"address"`
-}
-
-type JurorDepositExtraJson struct {
-	PublicKey string `json:"public_key"`
-}
-
-func (json *JurorDepositExtraJson) Validate(addStr string) (jde JurorDepositExtra, errs error) {
-	byte, err := hex.DecodeString(json.PublicKey)
-	if err != nil {
-		errs = err
-		return
-	}
-	jde.PublicKey = byte
-
-	if crypto.PubkeyBytesToAddress(byte).String() != addStr {
-		errs = fmt.Errorf("public key(%v) does not match the address(%v)", json.PublicKey, addStr)
-		return
-	}
-
-	return
 }

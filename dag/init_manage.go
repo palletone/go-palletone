@@ -91,7 +91,7 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 
 	for _, imc := range genesis.InitialMediatorCandidates {
 		// 存储 mediator info
-		addr, err := imc.Validate()
+		addr, _, err := imc.Validate()
 		if err != nil {
 			log.Debugf(err.Error())
 			return err
