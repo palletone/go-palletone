@@ -91,7 +91,7 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 
 	for _, imc := range genesis.InitialMediatorCandidates {
 		// 存储 mediator info
-		addr, _, err := imc.Validate()
+		addr, jde, err := imc.Validate()
 		if err != nil {
 			log.Debugf(err.Error())
 			return err
@@ -133,6 +133,7 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 		juror.Address = mi.AddStr
 		juror.Role = modules.Jury
 		juror.Balance = 0
+		juror.JurorDepositExtra = jde
 
 		jurorByte, err := json.Marshal(juror)
 		if err != nil {
