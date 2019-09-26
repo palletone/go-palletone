@@ -75,8 +75,6 @@ sed -i '/^EnableGroupSigning/c'$newEnableGroupSigning'' ptn-config.toml
 
 createaccount=`./createaccount.sh`
 tempinfo=`echo $createaccount | sed -n '$p'| awk '{print $NF}'`
-#accountlength=35
-#accounttemp=${tempinfo:0:$accountlength}
 account=`echo ${tempinfo///}`
 
 
@@ -133,12 +131,16 @@ fi
 done
 
 
+createpk=`./createpk.sh $account`
+tempinfo=`echo $createpk | sed -n '$p'| awk '{print $NF}'`
+pk=`echo ${tempinfo///}`
 
 echo "account: "$account
-echo "publickey: "$publickey
+echo "initpublickey: "$publickey
 echo "nodeinfo: "$nodeinfo
+echo "publickey: "$pk
 
-ModifyJson  $account $publickey $nodeinfo $1
+ModifyJson  $account $publickey $nodeinfo $1 $pk
 }
 
 

@@ -477,6 +477,14 @@ func handleNodeInList(stub shim.ChaincodeStubInterface, args []string, role stri
 				log.Debugf("move list error: %s", err.Error())
 				return shim.Error(err.Error())
 			}
+			if list == modules.MediatorList {
+				//  对应jury
+				err = moveCandidate(modules.JuryList, a, stub)
+				if err != nil {
+					log.Debugf("move list error: %s", err.Error())
+					return shim.Error(err.Error())
+				}
+			}
 		}
 		return shim.Success(nil)
 	}
