@@ -12,6 +12,8 @@ ${juryAddr_02}    ${EMPTY}
 ${developerAddr_02}    ${EMPTY}
 ${juryAddr_01_pubkey}    ${EMPTY}
 ${juryAddr_02_pubkey}    ${EMPTY}
+${m1_pubkey}      ${EMPTY}
+${m2_pubkey}      ${EMPTY}
 
 *** Test Cases ***
 Business_01
@@ -25,7 +27,7 @@ Business_01
     ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${amount}    #0
     Should Be Equal As Numbers    ${amount}    0
-    ${result}    applyBecomeMediator    ${mediatorAddr_01}    #节点申请加入列表    #1
+    ${result}    applyBecomeMediator    ${mediatorAddr_01}    ${m1_pubkey}    #1
     log    ${result}
     ${addressMap1}    getBecomeMediatorApplyList
     log    ${addressMap1}
@@ -102,7 +104,7 @@ Business_02
     [Documentation]    没收mediator节点
     ...
     ...    mediator节点申请并且进入申请列表-》基金会同意并移除申请列表-》进入同意列表-》节点交够保证金-》进入候选列表（自动进入Jury候选列表）-》某节点申请没收该mediator节点并进入没收列表-》基金会同意并移除候选列表，该节点的PTN转到基金会地址。结果：同意列表有该mediator节点地址，账户余额为0
-    ${result}    applyBecomeMediator    ${mediatorAddr_02}    #节点申请加入列表
+    ${result}    applyBecomeMediator    ${mediatorAddr_02}    ${m2_pubkey}
     log    ${result}
     ${addressMap1}    getBecomeMediatorApplyList
     log    ${addressMap1}
