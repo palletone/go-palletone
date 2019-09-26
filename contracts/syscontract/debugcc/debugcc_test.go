@@ -45,11 +45,11 @@ func TestGetPutState(t *testing.T) {
 		}
 	}).AnyTimes()
 	cc := &DebugChainCode{}
-	cc.addBalance(stub, []string{"a", "100"})
-	result := cc.getBalance(stub, []string{"a"})
+	cc.AddBalance(stub, "a", "100")
+	result := cc.GetBalance(stub, "a")
 	assert.Equal(t, result.Payload, []byte("100"))
 
-	cc.addBalance(stub, []string{"a", "100"})
-	result = cc.getBalance(stub, []string{"a"})
+	cc.AddBalance(stub, "a", "100")
+	result = cc.GetBalance(stub, "a")
 	assert.Equal(t, result.Payload, []byte("200"))
 }
