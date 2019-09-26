@@ -56,7 +56,8 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 		return shim.Error(err.Error())
 	}
 
-	jde, err := jdej.Validate(invokeAddr.String())
+	invokeAddrStr := invokeAddr.String()
+	jde, err := jdej.Validate(invokeAddrStr)
 	if err != nil {
 		errStr := fmt.Sprintf("invalid args: %v", err.Error())
 		log.Errorf(errStr)
@@ -82,7 +83,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 	cp := gp.ChainParameters
 
 	//获取账户
-	balance, err := GetJuryBalance(stub, invokeAddr.String())
+	balance, err := GetJuryBalance(stub, invokeAddrStr)
 	if err != nil {
 		log.Error("get node balance err: ", "error", err)
 		return shim.Error(err.Error())
@@ -107,9 +108,9 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 		//  没有
 		balance.Balance = invokeTokens.Amount
 		balance.Role = modules.Jury
-		balance.Address = invokeAddr.String()
+		balance.Address = invokeAddrStr
 		balance.JurorDepositExtra = jde
-		err = SaveJuryBalance(stub, invokeAddr.String(), balance)
+		err = SaveJuryBalance(stub, invokeAddrStr, balance)
 		if err != nil {
 			log.Error("save node balance err: ", "error", err)
 			return shim.Error(err.Error())
@@ -127,7 +128,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 			return shim.Error(str.Error())
 		}
 		//这里需要判断是否以及被基金会提前移除候选列表，即在规定时间内该节点没有追缴保证金
-		b, err := isInCandidate(stub, invokeAddr.String(), modules.JuryList)
+		b, err := isInCandidate(stub, invokeAddrStr, modules.JuryList)
 		if err != nil {
 			log.Debugf("isInCandidate error: %s", err.Error())
 			return shim.Error(err.Error())
@@ -141,7 +142,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 			}
 		}
 		balance.Balance = all
-		err = SaveJuryBalance(stub, invokeAddr.String(), balance)
+		err = SaveJuryBalance(stub, invokeAddrStr, balance)
 		if err != nil {
 			log.Error("save node balance err: ", "error", err)
 			return shim.Error(err.Error())
