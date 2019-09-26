@@ -74,7 +74,6 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 	}
 	//  第一次想加入
 	if balance == nil {
-		balance = &modules.JurorDeposit{}
 		//  可以加入列表
 		if invokeTokens.Amount != cp.DepositAmountForJury {
 			str := fmt.Errorf("jury needs to pay only %d  deposit.", cp.DepositAmountForJury)
@@ -87,6 +86,8 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 			log.Error("addCandaditeList err: ", "error", err)
 			return shim.Error(err.Error())
 		}
+
+		balance = &modules.JurorDeposit{}
 		balance.EnterTime = getTime(stub)
 		//  没有
 		balance.Balance = invokeTokens.Amount

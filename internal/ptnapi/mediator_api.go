@@ -216,7 +216,7 @@ func (a *PrivateMediatorAPI) Apply(args modules.MediatorCreateArgs) (*TxExecuteR
 		return nil, fmt.Errorf("invalid args, is null")
 	}
 
-	addr, err := args.Validate()
+	addr, _, err := args.Validate()
 	if err != nil {
 		return nil, err
 	}
