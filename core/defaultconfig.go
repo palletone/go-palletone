@@ -52,8 +52,9 @@ const (
 
 	DefaultTokenHolder = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
 
-	DefaultMediator = "P1Da7wwuvXgwqFm17GsLs4Cp4SLiPXZ6paF"
-	DefaultNodeInfo = "pnode://4bdc1c533f6e3700a0a6cc346bf2364eace58a10d8a782762c8d2b27cf4d96c25827c82a15" +
+	DefaultMediator  = "P1nqukWkjFKk4UCUd2mdfV5VAgVuCApyXd"
+	DefaultPublickey = "0236b88303d4c1986de09a2d1c292b16fd2b90fb89b5d2874705e4e17c4e648c26"
+	DefaultNodeInfo  = "pnode://4bdc1c533f6e3700a0a6cc346bf2364eace58a10d8a782762c8d2b27cf4d96c25827c82a15" +
 		"684d348e88722b259f31abcccd4d0eaae0f52eeb85e1eb5342b862@127.0.0.1:30303"
 	DefaultInitPubKey = "2SvBCoCHWA8Zg2Q8v2onmaTeZj6YmWLbp6mzoCZeDwiUcmuqFwd8fZXCfdmEhTodbWaSJ8T7MvjQiZkn4S9VTQnKDr" +
 		"EkETt84Sr58vmjVdhdXNjjzqn8j6oHzvduxGo4UjWB66wd1GFXKoz5XD8hcPDzCyGVqZLjb7wu2pkJxeG1Mt3"
