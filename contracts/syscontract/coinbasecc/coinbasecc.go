@@ -40,10 +40,10 @@ func (d *CoinbaseChainCode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 }
 
 func (d *CoinbaseChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
-	funcName, args := stub.GetFunctionAndParameters()
+	funcName, _ := stub.GetFunctionAndParameters()
 	switch funcName {
 	case "queryReward":
-		return d.queryGenerateUnitReward(stub, args)
+		return d.QueryGenerateUnitReward(stub)
 	default:
 		return shim.Error("coinbase cc Invoke error" + funcName)
 	}
@@ -51,7 +51,7 @@ func (d *CoinbaseChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.Response
 }
 
 //出块奖励记录查询
-func (d *CoinbaseChainCode) queryGenerateUnitReward(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (d *CoinbaseChainCode) QueryGenerateUnitReward(stub shim.ChaincodeStubInterface) pb.Response {
 	kvs, err := stub.GetStateByPrefix(constants.RewardAddressPrefix)
 	if err != nil {
 		return shim.Error(err.Error())

@@ -40,39 +40,39 @@ func (d *DebugChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	funcName, args := stub.GetFunctionAndParameters()
 	switch funcName {
 	case "add":
-		return d.add(args)
+		a, _ := strconv.Atoi(args[0])
+		b, _ := strconv.Atoi(args[1])
+		return d.Add(a, b)
 	case "testError":
-		return d.error(stub)
+		return d.Error(stub)
 	case "testAddBalance":
-		return d.addBalance(stub, args)
+		return d.AddBalance(stub, args[0], args[1])
 	case "testGetBalance":
-		return d.getBalance(stub, args)
+		return d.GetBalance(stub, args[0])
 	case "getbalance":
-		return d.getbalance(stub, args)
+		return d.Getbalance(stub, args[0])
 	case "getRequesterCert":
-		return d.getRequesterCert(stub)
+		return d.GetRequesterCert(stub)
 	case "checkRequesterCert":
-		return d.checkRequesterCert(stub)
+		return d.CheckRequesterCert(stub)
 	case "ForfeitureDeposit":
 	case "getRootCABytes":
-		return d.getRootCABytes(stub)
+		return d.GetRootCABytes(stub)
 	default:
 		return shim.Error("debug cc Invoke error" + funcName)
 	}
 	return shim.Error("debug cc Invoke error" + funcName)
 }
-func (d *DebugChainCode) error(stub shim.ChaincodeStubInterface) pb.Response {
+func (d *DebugChainCode) Error(stub shim.ChaincodeStubInterface) pb.Response {
 	stub.PutState("CannotPut", []byte("Your error will ignore this put."))
 	return shim.Error("Test Error")
 }
-func (d *DebugChainCode) add(args []string) pb.Response {
-	a, _ := strconv.Atoi(args[0])
-	b, _ := strconv.Atoi(args[1])
+func (d *DebugChainCode) Add(a, b int) pb.Response {
+
 	rspStr := fmt.Sprintf("Value:%d", a+b)
 	return shim.Success([]byte(rspStr))
 }
-func (d *DebugChainCode) getbalance(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	addr := args[0]
+func (d *DebugChainCode) Getbalance(stub shim.ChaincodeStubInterface, addr string) pb.Response {
 	result, err := stub.GetTokenBalance(addr, nil)
 	if err != nil {
 		return shim.Error(err.Error())
@@ -85,7 +85,7 @@ func (d *DebugChainCode) getbalance(stub shim.ChaincodeStubInterface, args []str
 	return shim.Success(b)
 }
 
-func (d *DebugChainCode) getRequesterCert(stub shim.ChaincodeStubInterface) pb.Response {
+func (d *DebugChainCode) GetRequesterCert(stub shim.ChaincodeStubInterface) pb.Response {
 	certBytes, err := stub.GetRequesterCert()
 	if err != nil {
 		return shim.Error(err.Error())
@@ -97,7 +97,7 @@ func (d *DebugChainCode) getRequesterCert(stub shim.ChaincodeStubInterface) pb.R
 	return shim.Success(b)
 }
 
-func (d *DebugChainCode) checkRequesterCert(stub shim.ChaincodeStubInterface) pb.Response {
+func (d *DebugChainCode) CheckRequesterCert(stub shim.ChaincodeStubInterface) pb.Response {
 	isValid, err := stub.IsRequesterCertValid()
 	//b := []byte{}
 	if isValid {
@@ -108,7 +108,7 @@ func (d *DebugChainCode) checkRequesterCert(stub shim.ChaincodeStubInterface) pb
 	}
 }
 
-func (d *DebugChainCode) getRootCABytes(stub shim.ChaincodeStubInterface) pb.Response {
+func (d *DebugChainCode) GetRootCABytes(stub shim.ChaincodeStubInterface) pb.Response {
 	val, err := stub.GetState("RootCABytes")
 	if err != nil {
 		return shim.Error(err.Error())
@@ -119,9 +119,8 @@ func (d *DebugChainCode) getRootCABytes(stub shim.ChaincodeStubInterface) pb.Res
 	}
 	return shim.Success(b)
 }
-func (d *DebugChainCode) addBalance(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	account := args[0]
-	amt, _ := strconv.Atoi(args[1])
+func (d *DebugChainCode) AddBalance(stub shim.ChaincodeStubInterface, account string, amount string) pb.Response {
+	amt, _ := strconv.Atoi(amount)
 	balanceB, _ := stub.GetState(account)
 	balance, _ := strconv.Atoi(string(balanceB))
 	balance = balance + amt
@@ -129,10 +128,7 @@ func (d *DebugChainCode) addBalance(stub shim.ChaincodeStubInterface, args []str
 	stub.PutState(account, []byte(str))
 	return shim.Success([]byte(str))
 }
-func (d *DebugChainCode) getBalance(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	account := args[0]
-
+func (d *DebugChainCode) GetBalance(stub shim.ChaincodeStubInterface, account string) pb.Response {
 	balanceB, _ := stub.GetState(account)
-
 	return shim.Success(balanceB)
 }
