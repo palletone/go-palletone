@@ -373,8 +373,8 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		return queryPledgeListByDate(stub, args)
 	case modules.QueryPledgeWithdraw:
 		log.Info("Enter DepositChaincode Contract " + modules.QueryPledgeWithdraw + " Query")
-		list,err:= getAllPledgeWithdrawRecords(stub)
-		if err!=nil{
+		list, err := getAllPledgeWithdrawRecords(stub)
+		if err != nil {
 			return shim.Error(err.Error())
 		}
 		result, _ := json.Marshal(list)
@@ -451,27 +451,36 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		return shim.Success([]byte("{}"))
 	case modules.GetAllJury:
 		log.Info("Enter DepositChaincode Contract " + modules.GetAllJury + " Query")
-		juryvalues, err := stub.GetStateByPrefix(string(constants.DEPOSIT_JURY_BALANCE_PREFIX))
+		listb, err := stub.GetState(modules.JuryList)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-		if len(juryvalues) > 0 {
-			jurynode := make(map[string]*modules.JurorDeposit)
-			for _, v := range juryvalues {
-				n := modules.JurorDeposit{}
-				err := json.Unmarshal(v.Value, &n)
-				if err != nil {
-					return shim.Error(err.Error())
-				}
-				jurynode[v.Key] = &n
-			}
-			bytes, err := json.Marshal(jurynode)
+		if listb == nil {
+			return shim.Success([]byte("{}"))
+		}
+		allJurorAddrs := make(map[string]bool)
+		err = json.Unmarshal(listb, &allJurorAddrs)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		jurynodes := make(map[string]*modules.JurorDeposit)
+		for a := range allJurorAddrs {
+			j, err := stub.GetState(string(constants.DEPOSIT_JURY_BALANCE_PREFIX) + a)
 			if err != nil {
 				return shim.Error(err.Error())
 			}
-			return shim.Success(bytes)
+			juror := modules.JurorDeposit{}
+			err = json.Unmarshal(j, &juror)
+			if err != nil {
+				shim.Error(err.Error())
+			}
+			jurynodes[a] = &juror
 		}
-		return shim.Success([]byte("{}"))
+		juryb, err := json.Marshal(jurynodes)
+		if err != nil {
+			shim.Error(err.Error())
+		}
+		return shim.Success(juryb)
 	case modules.UpdateJuryInfo:
 		log.Info("Enter DepositChaincode Contract " + modules.UpdateJuryInfo + " Invoke")
 		return d.updateJuryInfo(stub, args)
