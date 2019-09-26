@@ -575,7 +575,7 @@ func (s *PrivateContractAPI) DepositContractInvoke(ctx context.Context, from, to
 			return "", fmt.Errorf("param error(%v), please use mediator.apply()", err.Error())
 		} else {
 			// 参数验证
-			_, err := args.Validate()
+			_, _, err := args.Validate()
 			if err != nil {
 				return "", fmt.Errorf("error(%v), please use mediator.apply()", err.Error())
 			}

@@ -317,7 +317,7 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 				mi.MediatorInfoBase = mco.MediatorInfoBase
 				mi.MediatorApplyInfo = mco.MediatorApplyInfo
 
-				addr, err := mco.Validate()
+				addr, _, err := mco.Validate()
 				if err == nil {
 					statedb.StoreMediatorInfo(addr, mi)
 				} else {
