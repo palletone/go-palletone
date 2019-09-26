@@ -981,6 +981,23 @@ func (b *PtnApiBackend) GetContractStatesByPrefix(contractid []byte,
 	prefix string) (map[string]*modules.ContractStateValue, error) {
 	return b.ptn.dag.GetContractStatesByPrefix(contractid, prefix)
 }
+func (b *PtnApiBackend) GetContractStateJsonByPrefix(contractid []byte, prefix string) ([]ptnjson.ContractStateJson, error) {
+	mapData, err := b.ptn.dag.GetContractStatesByPrefix(contractid, prefix)
+	if err != nil {
+		return nil, err
+	}
+	result := []ptnjson.ContractStateJson{}
+	for k, v := range mapData {
+		jdata := ptnjson.ContractStateJson{
+			Key:     k,
+			Value:   string(v.Value),
+			Version: v.Version,
+		}
+		result = append(result, jdata)
+	}
+	return result, nil
+}
+
 func (b *PtnApiBackend) GetAddressBalanceStatistics(token string, topN int) (*statistics.TokenAddressBalanceJson,
 	error) {
 	utxos, err := b.ptn.dag.GetAllUtxos()
