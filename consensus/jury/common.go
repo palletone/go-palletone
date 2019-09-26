@@ -907,7 +907,7 @@ func getSysCfgContractElectionNum(dag iDag) int {
 }
 
 func randSelectEle(ele []modules.ElectionInf) []modules.ElectionInf {
-	out := make([]modules.ElectionInf, len(ele))
+	out := make([]modules.ElectionInf, 0)
 	out = append(out, ele...)
 
 	rand.Seed(time.Now().UnixNano())
