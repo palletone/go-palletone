@@ -160,6 +160,12 @@ type JurorDepositExtraJson struct {
 	PublicKey string `json:"public_key"` //账户地址对应的公钥
 }
 
+func NewJurorDepositExtraJson() JurorDepositExtraJson {
+	return JurorDepositExtraJson{
+		PublicKey:DefaultPublickey,
+	}
+}
+
 func (json *JurorDepositExtraJson) Validate(addStr string) (jde JurorDepositExtra, errs error) {
 	byte, err := hex.DecodeString(json.PublicKey)
 	if err != nil {

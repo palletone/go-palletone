@@ -153,6 +153,7 @@ func NewInitialMediator() *InitialMediator {
 	return &InitialMediator{
 		MediatorInfoBase: NewMediatorInfoBase(),
 		//MediatorApplyInfo: NewMediatorApplyInfo(),
+		JurorDepositExtraJson: NewJurorDepositExtraJson(),
 	}
 }
 

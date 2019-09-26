@@ -500,12 +500,15 @@ func accountDumpPubKey(ctx *cli.Context) error {
 	addr := ctx.Args().First()
 	account, _ := utils.MakeAddress(ks, addr)
 	pwd := getPassPhrase("Please give a password to unlock your account", false, 0, nil)
-	ks.Unlock(account, pwd)
-	a, _ := common.StringToAddress(addr)
-	b, _ := ks.GetPublicKey(a)
+	prvKey, _ := ks.DumpKey(account, pwd)
+	b, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(prvKey)
+	//ks.Unlock(account, pwd)
+	//a, _ := common.StringToAddress(addr)
+	//b, _ := ks.GetPublicKey(a)
 	fmt.Println(hex.EncodeToString(b))
 	return nil
 }
+
 func accountSignVerify(ctx *cli.Context) error {
 	if len(ctx.Args()) == 0 {
 		utils.Fatalf("No accounts specified to update")
