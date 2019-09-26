@@ -540,11 +540,19 @@ func (s *PrivateContractAPI) SysConfigContractInvoke(ctx context.Context, from, 
 	return rsp.ReqId, err
 }
 
-//  TODO
-func (s *PublicContractAPI) GetContractState(contractid []byte, key string) ([]byte, *modules.StateVersion, error) {
-	return s.b.GetContractState(contractid, key)
+func (s *PublicContractAPI) GetContractState(ctx context.Context,
+	contractAddr, prefix string) (string, error) {
+	addr, err := common.StringToAddress(contractAddr)
+	if err != nil {
+		return "", err
+	}
+	mvalue, err := s.b.GetContractStateJsonByPrefix(addr.Bytes(), prefix)
+	if err != nil {
+		return "", err
+	}
+	data, _ := json.Marshal(mvalue)
+	return string(data), nil
 }
-
 func (s *PublicContractAPI) GetContractFeeLevel(ctx context.Context) (*ContractFeeLevelRsp, error) {
 	cp := s.b.Dag().GetChainParameters()
 	feeLevel := &ContractFeeLevelRsp{
