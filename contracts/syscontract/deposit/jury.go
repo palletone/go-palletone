@@ -40,33 +40,18 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 		return shim.Error(errStr)
 	}
 
-	//if len(args[0]) != 68 {
-	//	return shim.Error("public key is error")
-	//}
-	////TODO 验证公钥和地址的关系
-	//byte, err := hexutil.Decode(args[0])
-	//if err != nil {
-	//	return shim.Error(err.Error())
-	//}
-
 	//  交付地址
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
 		log.Error("get invoke address err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-
 	jde, err := jdej.Validate(invokeAddr.String())
 	if err != nil {
 		errStr := fmt.Sprintf("invalid args: %v", err.Error())
 		log.Errorf(errStr)
 		return shim.Error(errStr)
 	}
-
-	//// TODO 放开导致BDD测试过不了
-	//if crypto.PubkeyBytesToAddress(byte).String() != invokeAddr.String() {
-	//	return shim.Error("public key is error")
-	//}
 
 	//  判断是否交付保证金交易
 	invokeTokens, err := isContainDepositContractAddr(stub)
