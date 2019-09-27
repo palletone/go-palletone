@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"math/rand"
 	"strconv"
 	"strings"
 	"time"
@@ -31,12 +32,11 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/tokenengine"
-	"github.com/palletone/go-palletone/core"
-	"math/rand"
 )
 
 const (
@@ -68,18 +68,29 @@ func localIsMinSignature(tx *modules.Transaction) bool {
 	}
 	return false
 }
-func generateJuryRedeemScript(jury []modules.ElectionInf) []byte {
-	count := len(jury)
+func (p *Processor) generateJuryRedeemScript(jury *modules.ElectionNode) []byte {
+	if jury == nil {
+		return nil
+	}
+	count := int(jury.JuryCount)
+	if count == 0 {
+		count = len(jury.EleList)
+	}
 	needed := byte(math.Ceil((float64(count)*2 + 1) / 3))
 	pubKeys := [][]byte{}
-	for _, jurior := range jury {
-		pubKeys = append(pubKeys, jurior.PublicKey)
+	for _, ju := range jury.EleList {
+		juror, err := p.dag.GetJurorByAddrHash(ju.AddrHash)
+		if err != nil {
+			log.Errorf(err.Error())
+			return nil
+		}
+		pubKeys = append(pubKeys, juror.PublicKey)
 	}
 	return tokenengine.Instance.GenerateRedeemScript(needed, pubKeys)
 }
 
 //对于Contract Payout的情况，将SignatureSet转移到Payment的解锁脚本中
-func processContractPayout(tx *modules.Transaction, ele *modules.ElectionNode) {
+func (p *Processor) processContractPayout(tx *modules.Transaction, ele *modules.ElectionNode) {
 	if tx == nil || ele == nil {
 		log.Error("processContractPayout param is nil")
 		return
@@ -87,7 +98,7 @@ func processContractPayout(tx *modules.Transaction, ele *modules.ElectionNode) {
 	reqId := tx.RequestHash()
 	if has, payout := tx.HasContractPayoutMsg(); has {
 		pubkeys, signs := getSignature(tx)
-		redeem := generateJuryRedeemScript(ele.EleList)
+		redeem := p.generateJuryRedeemScript(ele)
 
 		signsOrder := SortSigs(pubkeys, signs, redeem)
 		unlock := tokenengine.Instance.MergeContractUnlockScript(signsOrder, redeem)

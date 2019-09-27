@@ -1945,3 +1945,18 @@ func (mr *MockIDagMockRecorder) RebuildAddrTxIndex() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RebuildAddrTxIndex", reflect.TypeOf((*MockIDag)(nil).RebuildAddrTxIndex))
 }
+
+// GetJurorByAddrHash mocks base method
+func (m *MockIDag) GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetJurorByAddrHash", hash)
+	ret0, _ := ret[0].(*modules.JurorDeposit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetJurorByAddrHash indicates an expected call of GetJurorByAddrHash
+func (mr *MockIDagMockRecorder) GetJurorByAddrHash(hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetJurorByAddrHash", reflect.TypeOf((*MockIDag)(nil).GetJurorByAddrHash), hash)
+}
