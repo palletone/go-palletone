@@ -406,7 +406,6 @@ func RemoveExpiredContainers(client *docker.Client, dag dag.IDag, rmExpConFromSy
 func RestartContainer(idag dag.IDag, chainID string, addr common.Address, txId string) ([]byte, error) {
 	log.Info("enter RestartContainer", "chainID", chainID, "contract addr", addr.String(), "txId", txId)
 	defer log.Info("exit RestartContainer", "txId", txId)
-	defer log.Info("exit RestartContainer Deploy", "txId", txId)
 	//setChainId := "palletone"
 	setTimeOut := time.Duration(50) * time.Second
 	//if chainID != "" {
