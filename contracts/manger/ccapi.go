@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
-	"strings"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -347,23 +346,36 @@ func StopByName(contractid []byte, chainID string, txid string, usercc *cclist.C
 	return stopResult, nil
 }
 
-func RestartContainers(client *docker.Client, dag dag.IDag, cons []docker.APIContainers) {
+func RestartContainers(dag dag.IDag, cons []docker.APIContainers, jury core.IAdapterJury) {
 	//  获取所有退出容器
 	addrs, err := utils.GetAllExitedContainer(cons)
 	if err != nil {
 		log.Infof("client.GetAllExitedContainer err: %s\n", err.Error())
 		return
 	}
-	if len(addrs) > 0 {
-		for _, v := range addrs {
-			rd, _ := crypto.GetRandomBytes(32)
-			txid := util.RlpHash(rd)
-			log.Infof("==============需要重启====容器地址为--->%s", hex.EncodeToString(v.Bytes21()))
-			_, err = RestartContainer(dag, "palletone", v.Bytes21(), txid.String())
-			if err != nil {
-				log.Infof("RestartContainer err: %s", err.Error())
-				return
-			}
+	for _, v := range addrs {
+		//  判断是否是担任jury地址
+		juryAddrs := jury.GetLocalJuryAddrs()
+		juryAddr := ""
+		if len(juryAddrs) != 0 {
+			juryAddr = juryAddrs[0].String()
+		}
+		cc, err := GetChaincode(dag, v)
+		if err != nil {
+			log.Info(err.Error())
+			continue
+		}
+		if juryAddr != cc.Address {
+			log.Infof("the local jury address %s was not equal address %s in the dag", juryAddr, cc.Address)
+			continue
+		}
+		rd, _ := crypto.GetRandomBytes(32)
+		txid := util.RlpHash(rd)
+		log.Infof("==============需要重启====容器地址为--->%s", hex.EncodeToString(v.Bytes21()))
+		_, err = RestartContainer(dag, "palletone", v, txid.String())
+		if err != nil {
+			log.Infof("RestartContainer err: %s", err.Error())
+			return
 		}
 	}
 }
@@ -391,13 +403,9 @@ func RemoveExpiredContainers(client *docker.Client, dag dag.IDag, rmExpConFromSy
 	}
 }
 
-func RestartContainer(idag dag.IDag, chainID string, deployId []byte, txId string) ([]byte, error) {
-	//_, err := Stop(nil, idag, deployId, chainID, deployId, txId, false, true)
-	//if err != nil {
-	//	return nil, err
-	//}
-	log.Infof("enter jury node %s", contractcfg.GetConfig().ContractAddress)
-	log.Info("enter RestartContainer Deploy", "chainID", chainID, "templateId", hex.EncodeToString(deployId), "txId", txId)
+func RestartContainer(idag dag.IDag, chainID string, addr common.Address, txId string) ([]byte, error) {
+	log.Info("enter RestartContainer", "chainID", chainID, "contract addr", addr.String(), "txId", txId)
+	defer log.Info("exit RestartContainer", "txId", txId)
 	defer log.Info("exit RestartContainer Deploy", "txId", txId)
 	//setChainId := "palletone"
 	setTimeOut := time.Duration(50) * time.Second
@@ -405,18 +413,10 @@ func RestartContainer(idag dag.IDag, chainID string, deployId []byte, txId strin
 	//	setChainId = chainID
 	//}
 	//test
-	address := common.NewAddress(deployId, common.ContractHash)
-	cc, err := GetChaincode(idag, address)
+	cc, err := GetChaincode(idag, addr)
 	if err != nil {
 		return nil, err
 	}
-	//  再次判断重启容器是否是特定jury所维护的
-	name := cc.Name + ":" + cc.Version
-	name = strings.ReplaceAll(name, ":", "-")
-	if utils.IsRunning(name) {
-		return nil, fmt.Errorf("%s is running", name)
-	}
-	log.Infof("Restarted the container %s", name)
 	usrcc := &ucc.UserChaincode{
 		Name:    cc.Name,
 		Path:    cc.Path,
@@ -441,13 +441,13 @@ func RestartContainer(idag dag.IDag, chainID string, deployId []byte, txId strin
 	spec.Memory = cp.UccMemory      //字节单位 物理内存  1073741824  1G 2147483648 2G 209715200 200m 104857600 100m
 	_, chaincodeData, err := ucc.RecoverChainCodeFromDb(chainID, cc.TempleId)
 	if err != nil {
-		log.Error("RestartContainer Deploy", "chainid:", chainID, "templateId:", cc.TempleId, "RecoverChainCodeFromDb err", err)
+		log.Error("RestartContainer", "chainid:", chainID, "templateId:", cc.TempleId, "RecoverChainCodeFromDb err", err)
 		return nil, err
 	}
-	err = ucc.DeployUserCC(address.Bytes(), chaincodeData, spec, chainID, txId, nil, setTimeOut)
+	err = ucc.DeployUserCC(addr.Bytes(), chaincodeData, spec, chainID, txId, nil, setTimeOut)
 	if err != nil {
-		log.Error("deployUserCC err:", "error", err)
-		return nil, errors.WithMessage(err, "RestartContainer Deploy fail")
+		log.Error("RestartContainer err:", "error", err)
+		return nil, errors.WithMessage(err, "RestartContainer fail")
 	}
 	return cc.Id, err
 }

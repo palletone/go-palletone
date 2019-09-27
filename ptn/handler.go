@@ -42,7 +42,6 @@ import (
 	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/common/crypto"
 	util2 "github.com/palletone/go-palletone/common/util"
-	"github.com/palletone/go-palletone/contracts/comm"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/manger"
 	"github.com/palletone/go-palletone/contracts/utils"
@@ -468,7 +467,8 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 				//  启动gptn时启动Jury对应的没有过期的用户合约容器
 				if !c.IsExpired {
 					log.Infof("restart container %s with jury address %s", c.Name, c.Address)
-					manger.RestartContainer(pm.dag, "palletone", c.Id, txid.String())
+					address := common.NewAddress(c.Id, common.ContractHash)
+					manger.RestartContainer(pm.dag, "palletone", address, txid.String())
 				}
 			}
 		}()
@@ -823,11 +823,6 @@ func (pm *ProtocolManager) ceBroadcastLoop() {
 
 func (pm *ProtocolManager) dockerLoop(client *docker.Client) {
 	log.Debugf("starting docker loop")
-	dag, err := comm.GetCcDagHand()
-	if err != nil {
-		log.Infof("db.GetCcDagHand err: %s", err.Error())
-		return
-	}
 	for {
 		select {
 		case <-pm.dockerQuitSync:
@@ -842,9 +837,9 @@ func (pm *ProtocolManager) dockerLoop(client *docker.Client) {
 				log.Errorf("utils.GetAllContainers error %s", err.Error())
 			}
 			//  重启退出且不过期容器
-			manger.RestartContainers(client, dag, cons)
+			manger.RestartContainers(pm.dag, cons, pm.contract.IAdapterJury)
 			//  删除过期容器
-			manger.RemoveExpiredContainers(client, dag, dag.GetChainParameters().RmExpConFromSysParam, cons)
+			manger.RemoveExpiredContainers(client, pm.dag, pm.dag.GetChainParameters().RmExpConFromSysParam, cons)
 		}
 	}
 }
