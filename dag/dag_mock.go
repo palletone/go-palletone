@@ -5,17 +5,17 @@
 package dag
 
 import (
-	"github.com/golang/mock/gomock"
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
-	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/palletone/go-palletone/contracts/list"
-	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/txspool"
-	"math/big"
-	"reflect"
-	"time"
+	gomock "github.com/golang/mock/gomock"
+	common "github.com/palletone/go-palletone/common"
+	event "github.com/palletone/go-palletone/common/event"
+	discover "github.com/palletone/go-palletone/common/p2p/discover"
+	list "github.com/palletone/go-palletone/contracts/list"
+	core "github.com/palletone/go-palletone/core"
+	modules "github.com/palletone/go-palletone/dag/modules"
+	txspool "github.com/palletone/go-palletone/txspool"
+	big "math/big"
+	reflect "reflect"
+	time "time"
 )
 
 // MockIDag is a mock of IDag interface
@@ -54,32 +54,32 @@ func (mr *MockIDagMockRecorder) Close() *gomock.Call {
 }
 
 // GetCommon mocks base method
-func (m *MockIDag) GetCommon(key []byte) ([]byte, error) {
+func (m *MockIDag) GetCommon(key []byte, stableDb bool) ([]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCommon", key)
+	ret := m.ctrl.Call(m, "GetCommon", key, stableDb)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetCommon indicates an expected call of GetCommon
-func (mr *MockIDagMockRecorder) GetCommon(key interface{}) *gomock.Call {
+func (mr *MockIDagMockRecorder) GetCommon(key, stableDb interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommon", reflect.TypeOf((*MockIDag)(nil).GetCommon), key)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommon", reflect.TypeOf((*MockIDag)(nil).GetCommon), key, stableDb)
 }
 
 // GetCommonByPrefix mocks base method
-func (m *MockIDag) GetCommonByPrefix(prefix []byte) map[string][]byte {
+func (m *MockIDag) GetCommonByPrefix(prefix []byte, stableDb bool) map[string][]byte {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCommonByPrefix", prefix)
+	ret := m.ctrl.Call(m, "GetCommonByPrefix", prefix, stableDb)
 	ret0, _ := ret[0].(map[string][]byte)
 	return ret0
 }
 
 // GetCommonByPrefix indicates an expected call of GetCommonByPrefix
-func (mr *MockIDagMockRecorder) GetCommonByPrefix(prefix interface{}) *gomock.Call {
+func (mr *MockIDagMockRecorder) GetCommonByPrefix(prefix, stableDb interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommonByPrefix", reflect.TypeOf((*MockIDag)(nil).GetCommonByPrefix), prefix)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommonByPrefix", reflect.TypeOf((*MockIDag)(nil).GetCommonByPrefix), prefix, stableDb)
 }
 
 // SaveCommon mocks base method
