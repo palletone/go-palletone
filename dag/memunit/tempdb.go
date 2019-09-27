@@ -245,6 +245,7 @@ func (b *tempBatch) Write() error {
 			delete(b.db.kv, string(kv.k))
 		} else {
 			b.db.kv[string(kv.k)] = kv.v
+			delete(b.db.deleted, string(kv.k))
 		}
 	}
 	return nil
