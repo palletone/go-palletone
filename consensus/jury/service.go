@@ -221,7 +221,7 @@ func (p *Processor) GetLocalJuryAddrs() []common.Address {
 	if num <= 0 {
 		return nil
 	}
-	addrs := make([]common.Address, num)
+	addrs := make([]common.Address, 0)
 	for addr := range p.local {
 		addrs = append(addrs, addr)
 	}

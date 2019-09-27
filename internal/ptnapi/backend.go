@@ -194,6 +194,7 @@ type Backend interface {
 	//get contract key
 	GetContractState(contractid []byte, key string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
+	GetContractStateJsonByPrefix(id []byte, prefix string) ([]ptnjson.ContractStateJson, error)
 
 	//SPV
 	GetProofTxInfoByHash(txhash string) ([][]byte, error)

@@ -168,6 +168,11 @@ web3._extend({
         	params: 1, //param[]string
 			inputFormatter: [null]
 		}),
+		new web3._extend.Method({
+			name: 'getContractState',
+			call: 'contract_getContractState',
+			params: 2
+		}),
 	],
 	properties: [
 		new web3._extend.Property({
