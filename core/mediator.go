@@ -162,7 +162,7 @@ type JurorDepositExtraJson struct {
 
 func NewJurorDepositExtraJson() JurorDepositExtraJson {
 	return JurorDepositExtraJson{
-		PublicKey:DefaultPublickey,
+		PublicKey: DefaultPublickey,
 	}
 }
 
@@ -174,8 +174,10 @@ func (json *JurorDepositExtraJson) Validate(addStr string) (jde JurorDepositExtr
 	}
 	jde.PublicKey = byte
 
-	if crypto.PubkeyBytesToAddress(byte).String() != addStr {
-		errs = fmt.Errorf("public key(%v) does not match the address(%v)", json.PublicKey, addStr)
+	add := crypto.PubkeyBytesToAddress(byte).String()
+	if add != addStr {
+		errs = fmt.Errorf("public key(%v) does not match the address(%v), another address(%v) is corresponding",
+			json.PublicKey, addStr, add)
 		return
 	}
 
