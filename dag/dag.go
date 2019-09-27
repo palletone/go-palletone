@@ -1034,12 +1034,18 @@ func (d *Dag) GetCurrentUnitIndex(token modules.AssetId) (*modules.ChainIndex, e
 }
 
 // dag's common geter, return the key's value
-func (d *Dag) GetCommon(key []byte) ([]byte, error) {
+func (d *Dag) GetCommon(key []byte,stableDb bool) ([]byte, error) {
+	if stableDb{
+		return d.stableUnitRep.GetCommon(key)
+	}
 	return d.unstableUnitRep.GetCommon(key)
 }
 
 // return the prefix's all key && value.
-func (d *Dag) GetCommonByPrefix(prefix []byte) map[string][]byte {
+func (d *Dag) GetCommonByPrefix(prefix []byte,stableDb bool) map[string][]byte {
+	if stableDb{
+		return d.stableUnitRep.GetCommonByPrefix(prefix)
+	}
 	return d.unstableUnitRep.GetCommonByPrefix(prefix)
 }
 
@@ -1308,4 +1314,7 @@ func (d *Dag) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, er
 }
 func (d *Dag) RebuildAddrTxIndex() error {
 	return d.stableUnitRep.RebuildAddrTxIndex()
+}
+func (d *Dag) GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, error) {
+	return d.stableStateRep.GetJurorByAddrHash(hash)
 }

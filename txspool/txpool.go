@@ -79,9 +79,6 @@ var (
 	ErrOversizedData = errors.New("oversized data")
 )
 
-
-
-
 type TxPool struct {
 	config      TxPoolConfig
 	unit        dags
@@ -130,8 +127,17 @@ type TxDesc struct {
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
 // transactions from the network.
-func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit dags,
-	tokenEngine tokenengine.ITokenEngine) *TxPool { // chainconfig *params.ChainConfig,
+func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit dags) *TxPool {
+	tokenEngine := tokenengine.Instance
+	pool := NewTxPool4DI(config, cachedb, unit, tokenEngine, nil)
+	val := validator.NewValidate(unit, pool, unit, unit, cachedb)
+	pool.txValidator = val
+	return pool
+}
+
+//构造函数的依赖注入，主要用于UT
+func NewTxPool4DI(config TxPoolConfig, cachedb palletcache.ICache, unit dags,
+	tokenEngine tokenengine.ITokenEngine, validator IValidator) *TxPool { // chainconfig *params.ChainConfig,
 	// Sanitize the input to ensure no vulnerable gas prices are set
 	config = (&config).sanitize()
 	// Create the transaction pool with its initial settings
@@ -149,8 +155,8 @@ func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit dags,
 	}
 	pool.mu = sync.RWMutex{}
 	pool.priority_sorted = newTxPrioritiedList(&pool.all)
-	//pool.txValidator = validator
-	pool.txValidator = validator.NewValidate(unit, pool, unit, unit, pool.cache)
+	pool.txValidator = validator
+
 	// If local transactions and journaling is enabled, load from disk
 	if !config.NoLocals && config.Journal != "" {
 		log.Info("Journal path:" + config.Journal)

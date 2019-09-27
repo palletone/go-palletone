@@ -479,7 +479,7 @@ func (b *PtnApiBackend) GetHeaderByNumber(number *modules.ChainIndex) (*modules.
 }
 
 func (b *PtnApiBackend) GetPrefix(prefix string) map[string][]byte {
-	return b.ptn.dag.GetCommonByPrefix([]byte(prefix))
+	return b.ptn.dag.GetCommonByPrefix([]byte(prefix),false)
 } //getprefix
 
 func (b *PtnApiBackend) GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error) {
@@ -790,12 +790,12 @@ func (b *PtnApiBackend) GetJuryAccount() []common.Address {
 func (b *PtnApiBackend) SaveCommon(key, val []byte) error {
 	return b.ptn.dag.SaveCommon(key, val)
 }
-func (b *PtnApiBackend) GetCommon(key []byte) ([]byte, error) {
-	return b.ptn.dag.GetCommon(key)
+func (b *PtnApiBackend) GetCommon(key []byte,stableDb bool) ([]byte, error) {
+	return b.ptn.dag.GetCommon(key,stableDb)
 }
 
-func (b *PtnApiBackend) GetCommonByPrefix(prefix []byte) map[string][]byte {
-	return b.ptn.dag.GetCommonByPrefix(prefix)
+func (b *PtnApiBackend) GetCommonByPrefix(prefix []byte,stableDb bool) map[string][]byte {
+	return b.ptn.dag.GetCommonByPrefix(prefix,stableDb)
 }
 func (b *PtnApiBackend) DecodeTx(hexStr string) (string, error) {
 	tx := &modules.Transaction{}

@@ -232,11 +232,11 @@ func (b *LesApiBackend) SaveCommon(key, val []byte) error {
 }
 
 // dag's get common
-func (b *LesApiBackend) GetCommon(key []byte) ([]byte, error) {
-	return b.ptn.dag.GetCommon(key)
+func (b *LesApiBackend) GetCommon(key []byte,stableDb bool) ([]byte, error) {
+	return b.ptn.dag.GetCommon(key,stableDb)
 }
-func (b *LesApiBackend) GetCommonByPrefix(prefix []byte) map[string][]byte {
-	return b.ptn.dag.GetCommonByPrefix(prefix)
+func (b *LesApiBackend) GetCommonByPrefix(prefix []byte,stableDb bool) map[string][]byte {
+	return b.ptn.dag.GetCommonByPrefix(prefix,stableDb)
 }
 func (b *LesApiBackend) GetContractStateJsonByPrefix(contractid []byte, prefix string) ([]ptnjson.ContractStateJson, error) {
 	return nil, nil
