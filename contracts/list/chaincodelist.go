@@ -20,6 +20,7 @@ type CCInfo struct {
 	SysCC     bool
 	Language  string
 	IsExpired bool
+	Address   string
 }
 
 type chain struct {

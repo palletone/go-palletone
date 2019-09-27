@@ -136,7 +136,7 @@ func Install(dag dag.IDag, chainID, ccName, ccPath, ccVersion, ccDescription, cc
 	return payloadUnit, nil
 }
 
-func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
+func Deploy(jA string, rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
 	log.Info("Deploy enter", "chainID", chainID, "templateId", templateId, "txId", txId)
 	defer log.Info("Deploy exit", "chainID", chainID, "templateId", templateId, "txId", txId)
 	setTimeOut := time.Duration(30) * time.Second
@@ -199,6 +199,7 @@ func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byt
 		Version:  usrcc.Version,
 		Language: usrcc.Language,
 		SysCC:    false,
+		Address:  jA,
 	}
 	//if depId.IsSystemContractAddress() {
 	//	cc.SysCC = true
@@ -368,7 +369,7 @@ func RestartContainers(client *docker.Client, dag dag.IDag, cons []docker.APICon
 }
 
 //删除所有过期容器
-func RemoveExpiredConatiners(client *docker.Client, dag dag.IDag, rmExpConFromSysParam bool, con []docker.APIContainers) {
+func RemoveExpiredContainers(client *docker.Client, dag dag.IDag, rmExpConFromSysParam bool, con []docker.APIContainers) {
 	//获取容器id，以及对应用户合约的地址，更新状态
 	idStrMap := utils.RetrieveExpiredContainers(dag, con, rmExpConFromSysParam)
 	if len(idStrMap) > 0 {

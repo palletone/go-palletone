@@ -321,12 +321,12 @@ func IsRunning(name string) bool {
 	client, err := util.NewDockerClient()
 	if err != nil {
 		log.Errorf(err.Error())
-		return true
+		return false
 	}
 	c, err := client.InspectContainer(name)
 	if err != nil {
 		log.Errorf(err.Error())
-		return true
+		return false
 	}
 	return c.State.Running
 }

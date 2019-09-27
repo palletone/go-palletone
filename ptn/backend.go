@@ -175,7 +175,7 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache) (*P
 
 	gasToken := config.Dag.GetGasToken()
 	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, gasToken, ptn.txPool,
-		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine); err != nil {
+		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine, ptn.contract); err != nil {
 		log.Error("NewProtocolManager err:", "error", err)
 		return nil, err
 	}
