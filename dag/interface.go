@@ -36,8 +36,8 @@ import (
 type IDag interface {
 	Close()
 
-	GetCommon(key []byte) ([]byte, error)
-	GetCommonByPrefix(prefix []byte) map[string][]byte
+	GetCommon(key []byte,stableDb bool) ([]byte, error)
+	GetCommonByPrefix(prefix []byte,stableDb bool) map[string][]byte
 	SaveCommon(key, val []byte) error
 
 	IsEmpty() bool
