@@ -85,6 +85,11 @@ web3._extend({
             call: 'dag_getCommon',
             params: 1,
         }),
+		new web3._extend.Method({
+            name: 'getLdbCommon',
+            call: 'dag_getLdbCommon',
+            params: 1,
+        }),
         new web3._extend.Method({
             name: 'getCommonByPrefix',
             call: 'dag_getCommonByPrefix',

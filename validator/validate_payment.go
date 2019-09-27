@@ -229,7 +229,7 @@ func (validate *Validate) checkTokenStatus(asset *modules.Asset) ValidationCode 
 //var BlacklistAddress=[]byte("BlacklistAddress")
 func (validate *Validate) getBlacklistAddress() map[common.Address]bool {
 	result := make(map[common.Address]bool)
-	if validate.statequery==nil{
+	if validate.statequery == nil {
 		log.Warn("don't set statequery, blacklist is empty")
 		return result
 	}
@@ -254,11 +254,19 @@ func (validate *Validate) generateJuryRedeemScript(jury *modules.ElectionNode) [
 	if jury == nil {
 		return nil
 	}
-	count := len(jury.EleList)
+	count := int(jury.JuryCount)
+	if count == 0 {
+		count = len(jury.EleList)
+	}
 	needed := byte(math.Ceil((float64(count)*2 + 1) / 3))
 	pubKeys := [][]byte{}
-	for _, jurior := range jury.EleList {
-		pubKeys = append(pubKeys, jurior.PublicKey)
+	for _, ju := range jury.EleList {
+		juror, err := validate.statequery.GetJurorByAddrHash(ju.AddrHash)
+		if err != nil {
+			log.Errorf(err.Error())
+			return nil
+		}
+		pubKeys = append(pubKeys, juror.PublicKey)
 	}
 	return validate.tokenEngine.GenerateRedeemScript(needed, pubKeys)
 }

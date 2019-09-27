@@ -190,6 +190,11 @@ web3._extend({
 			call: 'ptn_getPledge'
 			params: 1,
 		}),
+		new web3._extend.Method({
+			name: 'getAddressWithPublicKey',
+			call: 'ptn_getAddressWithPublicKey'
+			params: 1,
+		}),
 	],
 
 	properties: [

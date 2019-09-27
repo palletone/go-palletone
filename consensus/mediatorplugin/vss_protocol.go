@@ -69,13 +69,14 @@ func (mp *MediatorPlugin) startVSSProtocol() {
 	// 开启处理其他 mediator 的 deals 的循环，准备完成vss协议
 	mp.launchVSSDealLoops()
 
-	interval := mp.dag.GetGlobalProp().ChainParameters.MediatorInterval / 2
+	interval := mp.dag.GetGlobalProp().ChainParameters.MediatorInterval
 
-	// 隔1个生产间隔，等待其他节点接收新unit，并处理好vss协议相关准备工作
+	// 隔1个生产间隔，等待其他节点接收新unit，并做好vss协议相关准备工作
 	select {
 	case <-mp.quit:
 		return
 	case <-time.After(time.Second * time.Duration(interval)):
+		// 广播 vss deal 给其他节点，并处理来自其他节点的deal
 		mp.broadcastVSSDeals()
 	}
 
@@ -87,11 +88,11 @@ func (mp *MediatorPlugin) startVSSProtocol() {
 		mp.launchVSSRespLoops()
 	}
 
-	// 再隔1个生产间隔，验证vss协议是否完成，并开始群签名
+	// 再隔半个生产间隔，验证vss协议是否完成，并开始群签名
 	select {
 	case <-mp.quit:
 		return
-	case <-time.After(time.Second * time.Duration(interval)):
+	case <-time.After(time.Second * time.Duration((interval+1)/2)):
 		mp.completeVSSProtocol()
 	}
 }
@@ -192,7 +193,7 @@ func (mp *MediatorPlugin) processVSSDeal(localMed common.Address, deal *dkg.Deal
 	}
 
 	vrfrMed := mp.dag.GetActiveMediatorAddr(int(deal.Index))
-	log.Debugf("the mediator(%v) received the vss deal from the mediator(%v)",
+	log.Debugf("the mediator(%v) process the vss deal from the mediator(%v)",
 		localMed.Str(), vrfrMed.Str())
 
 	resp, err := dkgr.ProcessDeal(deal)

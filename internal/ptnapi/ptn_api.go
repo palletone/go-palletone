@@ -42,6 +42,7 @@ import (
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/ptnjson/statistics"
 	"github.com/shopspring/decimal"
+	"github.com/palletone/go-palletone/common/crypto"
 )
 
 // PublicPalletOneAPI provides an API to access PalletOne related information.
@@ -180,6 +181,16 @@ func (s *PublicBlockChainAPI) GetPledge(addStr string) (*modules.PledgeStatusJso
 	}
 
 	return nil, fmt.Errorf(string(rsp))
+}
+
+func (s *PublicBlockChainAPI) GetAddressWithPublicKey(pubkey string) (addStr string, err error) {
+	byte, err := hex.DecodeString(pubkey)
+	if err != nil {
+		return
+	}
+
+	addStr = crypto.PubkeyBytesToAddress(byte).String()
+	return 
 }
 
 func (s *PublicBlockChainAPI) AddressBalanceStatistics(ctx context.Context, token string,

@@ -196,7 +196,7 @@ func (p *Processor) contractSigEvent(tx *modules.Transaction, ele *modules.Elect
 			if localIsMinSignature(ctx.sigTx) { //todo
 				//签名数量足够，而且当前节点是签名最新的节点，那么合并签名并广播完整交易
 				log.Infof("[%s]runContractReq, localIsMinSignature Ok!", shortId(reqId.String()))
-				processContractPayout(ctx.sigTx, ele)
+				p.processContractPayout(ctx.sigTx, ele)
 				go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_COMMIT, Ele: ele, Tx: ctx.sigTx}, true)
 			}
 		}

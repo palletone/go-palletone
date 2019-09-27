@@ -97,7 +97,7 @@ function ExecDeploy()
     mkdir "node"$1
     #if [ $1 -eq 4 ] ;then
     #echo "=="$1
-    cp gptn ./createaccount.sh modifyconfig.sh modifyjson.sh init.sh node$1
+    cp gptn ./createaccount.sh modifyconfig.sh modifyjson.sh init.sh createpk.sh node$1
     cd node$1
     /bin/bash modifyconfig.sh
     #source ./modifyjson.sh
@@ -143,7 +143,7 @@ LoopDeploy $n;
 json="node1/ptn-genesis.json"
 replacejson $json 
 
-ModifyBootstrapNodes $n
+ModifyP2PConfig $n
 
 ExecInit $n
 

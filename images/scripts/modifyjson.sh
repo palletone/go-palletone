@@ -4,18 +4,17 @@ function ModifyJson()
 {
 
 filename=../node1/ptn-genesis.json
-
+pk=$5
 index=$[ $4 - 1 ]
 
-add=`cat $filename | jq ".initialMediatorCandidates[$index] |= . + {\"account\": \"$1\", \"rewardAdd\": \"$1\", \"initPubKey\": \"$2\", \"node\": \"$3\"}"`
+add=`cat $filename | jq ".initialMediatorCandidates[$index] |= . + {\"account\": \"$1\", \"rewardAdd\": \"$1\", \"initPubKey\": \"$2\", \"node\": \"$3\",\"public_key\": \"$pk\"}"`
 
 if [ $index -eq 0 ] ; then
 
     createaccount=`./createaccount.sh`
     account=`echo $createaccount | sed -n '$p'| awk '{print $NF}'`
     account=${account:0:35}
-    account=`echo ${account//
-/}`
+    account=`echo ${account///}`
 
     add=`echo $add | jq ".tokenHolder = \"$account\""`
     add=`echo $add | jq ".digitalIdentityConfig.rootCAHolder = \"$account\""`
@@ -23,8 +22,7 @@ if [ $index -eq 0 ] ; then
     createaccount=`./createaccount.sh`
     account=`echo $createaccount | sed -n '$p'| awk '{print $NF}'`
     account=${account:0:35}
-    account=`echo ${account//
-/}`
+    account=`echo ${account///}`
 
     add=`echo $add | jq ".initialParameters.foundation_address = \"$account\""`
 

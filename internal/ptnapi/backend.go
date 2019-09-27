@@ -87,8 +87,8 @@ type Backend interface {
 	//WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
 	QueryProofOfExistenceByReference(ref string) ([]*ptnjson.ProofOfExistenceJson, error)
 	// dag's get common
-	GetCommon(key []byte) ([]byte, error)
-	GetCommonByPrefix(prefix []byte) map[string][]byte
+	GetCommon(key []byte,stableDb bool) ([]byte, error)
+	GetCommonByPrefix(prefix []byte,stableDb bool) map[string][]byte
 	SaveCommon(key, val []byte) error
 	// Get Contract Api
 	GetContract(contractAddr common.Address) (*ptnjson.ContractJson, error)

@@ -18,44 +18,43 @@
  *
  */
 
-package txspool
+package validator
 
 import (
+	"time"
+
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/validator"
-	"time"
 )
 
-type dags interface {
-	CurrentUnit(token modules.AssetId) *modules.Unit
-	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
-	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
-	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
-	IsTransactionExist(hash common.Hash) (bool, error)
-	GetHeaderByHash(common.Hash) (*modules.Header, error)
+type IUtxoQuery interface {
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
-	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
-	// getTxfee
-	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
 	GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error)
+}
+
+type IStateQuery interface {
 	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
+	//获得系统配置的最低手续费要求
 	GetMinFee() (*modules.AmountAsset, error)
 	GetContractJury(contractId []byte) (*modules.ElectionNode, error)
 	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
-
 	GetMediators() map[common.Address]bool
-	GetChainParameters() *core.ChainParameters
-	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
-	GetScheduledMediator(slotNum uint32) common.Address
-	GetSlotAtTime(when time.Time) uint32
 	GetMediator(add common.Address) *core.Mediator
 	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
 	GetJurorByAddrHash(addrHash common.Hash) (*modules.JurorDeposit, error)
 }
-type IValidator interface {
-	ValidateTx(tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, validator.ValidationCode, error)
+
+type IDagQuery interface {
+	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
+	IsTransactionExist(hash common.Hash) (bool, error)
+	GetHeaderByHash(common.Hash) (*modules.Header, error)
+}
+
+type IPropQuery interface {
+	GetSlotAtTime(when time.Time) uint32
+	GetScheduledMediator(slotNum uint32) common.Address
+	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
+	GetChainParameters() *core.ChainParameters
 }
