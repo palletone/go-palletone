@@ -266,7 +266,10 @@ func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode)
 		return err
 	}
 	//计算交易费用，将deploy持续时间写入交易中
-	addContractDeployDuringTime(p.dag, tx)
+	err = addContractDeployDuringTime(p.dag, tx)
+	if err != nil {
+		log.Debugf("[%s]runContractReq, addContractDeployDuringTime error:%s", shortId(reqId.String()), err.Error())
+	}
 
 	//如果系统合约，直接添加到缓存池
 	//如果用户合约，需要签名，添加到缓存池并广播

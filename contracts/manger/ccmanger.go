@@ -130,20 +130,7 @@ func SignedEndorserProposa(chainID string, txid string, cs *peer.ChaincodeSpec, 
 	return &peer.SignedProposal{ProposalBytes: propBytes, Signature: signature}, prop, nil
 }
 
-func peerCreateChain(cid string) error {
-	//chains.Lock()
-	//defer chains.Unlock()
-
-	//chains.list[cid] = &chain{
-	//	//cs: &chainSupport{
-	//	//},
-	//}
-
-	return nil
-}
-
 var grpcServer *grpc.Server
-
 func peerServerInit(jury core.IAdapterJury) error {
 	var opts []grpc.ServerOption
 
@@ -180,7 +167,6 @@ func peerServerDeInit() error {
 
 func systemContractInit() error {
 	chainID := util.GetTestChainID()
-	peerCreateChain(chainID)
 	scc.RegisterSysCCs()
 	scc.DeploySysCCs(chainID)
 	return nil
