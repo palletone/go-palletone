@@ -96,6 +96,8 @@ func (m *Migration103alpha_103beta) upgradeDefaultMediatorsWithJurorInfo() error
 	addrAndPubKey["P1HD5bnL5JSHGghYcfkY19A6wgJR49kfszT"] = "02187443be44501236925c2ee322bfc9edfb0b359b9d5f139d33cae64ea4c12bf4"
 	//  还没有补交保证金
 	addrAndPubKey["P1HAFPiPTq7APjqzWC9qvw8jFFWWxPjdBvH"] = "022dafe2ce408c1d6389767da353fa4daeb7409627e956dccd2cff8379c7ddb7a0"
+	//  新加的
+	addrAndPubKey["P1HD5bnL5JSHGghYcfkY19A6wgJR49kfszT"] = "02187443be44501236925c2ee322bfc9edfb0b359b9d5f139d33cae64ea4c12bf4"
 	//  mainnet
 
 	statedb := storage.NewStateDb(m.statedb)
