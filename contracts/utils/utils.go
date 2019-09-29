@@ -8,6 +8,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/list"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/vm/common"
 	"io"
@@ -329,4 +330,14 @@ func IsRunning(name string) bool {
 		return false
 	}
 	return c.State.Running
+}
+func CreateGptnNet(client *docker.Client) {
+	_, err := client.NetworkInfo(core.DefaultUccNetworkMode)
+	if err != nil {
+		log.Debugf("client.NetworkInfo error: %s", err.Error())
+		_, err := client.CreateNetwork(docker.CreateNetworkOptions{Name: core.DefaultUccNetworkMode, Driver: "bridge"})
+		if err != nil {
+			log.Debugf("client.CreateNetwork error: %s", err.Error())
+		}
+	}
 }
