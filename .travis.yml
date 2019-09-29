@@ -303,7 +303,6 @@ matrix:
       script:
         - ip addr
         - make gptn
-        - make golang-baseimage-dev
         - docker images
         - cat /proc/sys/net/ipv4/ip_forward
         - sudo ./jurySec.sh
@@ -318,6 +317,7 @@ matrix:
         - ./editConfig.sh 3 3
         - ./start.sh 3
         - sleep 30
+        - docker images
         - docker network ls
         - cd $BASE_DIR
         - mkdir -p ${BDD_LOG_PATH}/${USER_CONTRACT_DIR}
