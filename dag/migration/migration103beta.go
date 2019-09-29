@@ -93,7 +93,6 @@ func (m *Migration103alpha_103beta) upgradeDefaultMediatorsWithJurorInfo() error
 	addrAndPubKey["P17rPHgV9D61JKrbpcHtArktyuQrG7NM2xu"] = "0214e22f395f7af11ffe75cd7a992d15dc6478bb30abb0fd3dca997a9766e8ee5f"
 	addrAndPubKey["P1FzmurBnMv15SEkcKKiVoshMrP3ngULmi"] = "022babc996955a7552919caecbb022ccb2fbd84d8162b8b4c7ee823dfd52b074fa"
 	addrAndPubKey["P1EkrPBuLATsTyz4qda52HtcUcuCxdUeF9e"] = "03cdd9b7c57f19d4284bca24aa3725e7610f7cacf6b16624af62d7be2a9d300a96"
-	addrAndPubKey["P1HD5bnL5JSHGghYcfkY19A6wgJR49kfszT"] = "02187443be44501236925c2ee322bfc9edfb0b359b9d5f139d33cae64ea4c12bf4"
 	//  还没有补交保证金
 	addrAndPubKey["P1HAFPiPTq7APjqzWC9qvw8jFFWWxPjdBvH"] = "022dafe2ce408c1d6389767da353fa4daeb7409627e956dccd2cff8379c7ddb7a0"
 	//  新加的
