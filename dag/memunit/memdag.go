@@ -482,7 +482,7 @@ func (chain *MemDag) SetStableUnit(unit *modules.Unit, isGenesis bool) {
 	if isGenesis {
 		chain.setLastMainchainUnit(unit)
 		// set tempdb
-		temp_db, _ := NewChainTempDb(chain.db, chain.cache, chain.tokenEngine)
+		temp_db, _ := NewChainTempDb(chain.db, chain.cache, chain.tokenEngine, chain.saveHeaderOnly)
 		chain.tempdb.Store(hash, temp_db)
 		chain.chainUnits.Store(hash, temp_db)
 		chain.addUnitHeight(unit)
