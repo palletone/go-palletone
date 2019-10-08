@@ -25,7 +25,7 @@ import (
 	"sort"
 	"testing"
 
-	csort "github.com/palletone/go-palletone/core/sort"
+	csort "github.com/palletone/go-palletone/common/sort"
 )
 
 var ints = [...]int{74, 59, 238, -784, 9845, 959, 905, 0, 0, 42, 7586, -5467984, 7586}

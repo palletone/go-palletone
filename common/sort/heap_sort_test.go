@@ -26,7 +26,7 @@ import (
 	"sort"
 	"testing"
 
-	csort "github.com/palletone/go-palletone/core/sort"
+	csort "github.com/palletone/go-palletone/common/sort"
 )
 
 const (
