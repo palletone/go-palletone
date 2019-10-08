@@ -389,10 +389,12 @@ func RemoveExpiredContainers(client *docker.Client, dag dag.IDag, rmExpConFromSy
 			err := client.RemoveContainer(docker.RemoveContainerOptions{ID: id, Force: true})
 			if err != nil {
 				log.Errorf("client.RemoveContainer id=%s error=%s", id, err.Error())
+				continue
 			}
 			cc, err := GetChaincode(dag, str)
 			if err != nil {
 				log.Errorf("get chaincode error %s", err.Error())
+				continue
 			}
 			cc.IsExpired = true
 			err = SaveChaincode(dag, str, cc)
