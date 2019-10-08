@@ -24,6 +24,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/uint128"
 	"github.com/palletone/go-palletone/core"
 )
 
@@ -90,7 +91,7 @@ type DynamicGlobalProperty struct {
 	// 记录每个生产slot的unit生产情况，用于计算mediator的参与率。
 	// 每一位表示一个生产slot，mediator正常生产unit则值为1，否则为0。
 	// 最低位表示最近一个slot， 初始值全为1。
-	RecentSlotsFilled uint64
+	RecentSlotsFilled uint128.Uint128
 
 	// If MaintenanceFlag is true, then the head unit is a maintenance unit.
 	// This means GetTimeSlot(1) - HeadBlockTime() will have a gap due to maintenance duration.
@@ -113,7 +114,7 @@ func NewDynGlobalProp() *DynamicGlobalProperty {
 		LastMaintenanceTime: 0,
 		CurrentASlot:        0,
 
-		RecentSlotsFilled: ^uint64(0),
+		RecentSlotsFilled: uint128.MaxValue,
 
 		MaintenanceFlag: false,
 	}

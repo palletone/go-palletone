@@ -241,7 +241,7 @@ func (rep *UnitProduceRepository) updateDynGlobalProp(unit *modules.Unit, missed
 
 	dgp.LastMediator = unit.Author()
 	dgp.IsShuffledSchedule = false
-	dgp.RecentSlotsFilled = (dgp.RecentSlotsFilled << (missedUnits + 1)) + 1
+	dgp.RecentSlotsFilled = dgp.RecentSlotsFilled.Lsh(uint(missedUnits + 1)).Add64(1)
 	dgp.CurrentASlot += missedUnits + 1
 
 	rep.propRep.StoreDynGlobalProp(dgp)
