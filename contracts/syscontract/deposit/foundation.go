@@ -52,19 +52,19 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 	if md == nil {
 		return shim.Error(addr.String() + " is nil")
 	}
-	if md.Status != Apply {
+	if md.Status != modules.Apply {
 		return shim.Error(addr.String() + "is not applying")
 	}
 
 	//  不同意，直接删除
-	if isOk == No {
+	if isOk == modules.No {
 		err = DelMediatorDeposit(stub, addr.String())
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-	} else if isOk == Ok {
+	} else if isOk == modules.Ok {
 		//  获取同意列表
-		agreeList, err := getList(stub, ListForAgreeBecomeMediator)
+		agreeList, err := getList(stub, modules.ListForAgreeBecomeMediator)
 		if err != nil {
 			log.Error("get agree list err: ", "error", err)
 			return shim.Error(err.Error())
@@ -74,14 +74,14 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 		}
 		agreeList[addr.String()] = true
 		//  保存同意列表
-		err = saveList(stub, ListForAgreeBecomeMediator, agreeList)
+		err = saveList(stub, modules.ListForAgreeBecomeMediator, agreeList)
 		if err != nil {
 			log.Error("save agree list err: ", "error", err)
 			return shim.Error(err.Error())
 		}
 		// 修改同意时间
-		md.AgreeTime = getTiem(stub)
-		md.Status = Agree
+		md.AgreeTime = getTime(stub)
+		md.Status = modules.Agree
 		err = SaveMediatorDeposit(stub, addr.Str(), md)
 		if err != nil {
 			log.Error("save mediator info err: ", "error", err)
@@ -92,14 +92,14 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 		return shim.Error("please enter Ok or No")
 	}
 	//  不管同意还是不同意都需要移除申请列表
-	becomeList, err := getList(stub, ListForApplyBecomeMediator)
+	becomeList, err := getList(stub, modules.ListForApplyBecomeMediator)
 	if err != nil {
 		log.Error("get become list err: ", "error", err)
 		return shim.Error(err.Error())
 	}
 	delete(becomeList, addr.String())
 	//  保存成为列表
-	err = saveList(stub, ListForApplyBecomeMediator, becomeList)
+	err = saveList(stub, modules.ListForApplyBecomeMediator, becomeList)
 	if err != nil {
 		log.Error("save become list err: ", "error", err)
 		return shim.Error(err.Error())
@@ -109,12 +109,12 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 
 //处理退出 参数：同意或不同意，节点的地址
 func handleForApplyQuitJury(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return handleForApplyQuitNode(stub, args, Jury)
+	return handleForApplyQuitNode(stub, args, modules.Jury)
 }
 
 //处理退出 参数：同意或不同意，节点的地址
 func handleForApplyQuitDev(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return handleForApplyQuitNode(stub, args, Developer)
+	return handleForApplyQuitNode(stub, args, modules.Developer)
 }
 
 func handleForApplyQuitNode(stub shim.ChaincodeStubInterface, args []string, role string) pb.Response {
@@ -135,17 +135,17 @@ func handleForApplyQuitNode(stub shim.ChaincodeStubInterface, args []string, rol
 		return shim.Error(err.Error())
 	}
 	isOk := strings.ToLower(args[1])
-	if isOk == Ok {
-		if role == Developer {
+	if isOk == modules.Ok {
+		if role == modules.Developer {
 			err = handleDev(stub, addr)
 		}
-		if role == Jury {
+		if role == modules.Jury {
 			err = handleJury(stub, addr)
 		}
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-	} else if isOk == No {
+	} else if isOk == modules.No {
 		//  移除退出列表
 		listForQuit, err := GetListForQuit(stub)
 		if err != nil {
@@ -182,12 +182,12 @@ func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string)
 		return shim.Error(err.Error())
 	}
 	isOk := strings.ToLower(args[1])
-	if isOk == Ok {
+	if isOk == modules.Ok {
 		err = handleMediator(stub, addr)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-	} else if isOk == No {
+	} else if isOk == modules.No {
 		//  移除退出列表
 		listForQuit, err := GetListForQuit(stub)
 		if err != nil {
@@ -249,12 +249,12 @@ func handleForForfeitureApplication(stub shim.ChaincodeStubInterface, args []str
 	//  处理操作ok or no
 	isOk := strings.ToLower(args[1])
 	//check 如果为ok，则同意此申请，如果为no，则不同意此申请
-	if isOk == Ok {
+	if isOk == modules.Ok {
 		err = agreeForApplyForfeiture(stub, invokeAddr.String(), f.String(), forfeitureNode.ForfeitureRole)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-	} else if isOk == No {
+	} else if isOk == modules.No {
 		//移除申请列表，不做处理
 		log.Info("not agree to for apply forfeiture")
 	} else {
@@ -275,25 +275,50 @@ func agreeForApplyForfeiture(stub shim.ChaincodeStubInterface, foundationA strin
 	log.Info("Start entering agreeForApplyForfeiture func.")
 	//判断节点类型
 	switch {
-	case forfeitureRole == Mediator:
+	case forfeitureRole == modules.Mediator:
 		return handleMediatorForfeitureDeposit(stub, foundationA, forfeitureAddr)
-	case forfeitureRole == Jury:
+	case forfeitureRole == modules.Jury:
 		return handleJuryForfeitureDeposit(stub, foundationA, forfeitureAddr)
-	case forfeitureRole == Developer:
+	case forfeitureRole == modules.Developer:
 		return handleDevForfeitureDeposit(stub, foundationA, forfeitureAddr)
 	default:
-		return fmt.Errorf("please enter validate role.")
+		return fmt.Errorf("%s", "please enter validate role.")
 	}
 }
 func handleJuryForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA string, forfeitureAddr string) error {
-	return handleNodeForfeitureDeposit(stub, foundationA, forfeitureAddr)
+	node, err := GetJuryBalance(stub, forfeitureAddr)
+	if err != nil {
+		return err
+	}
+	if node == nil {
+		return fmt.Errorf("node is nil")
+	}
+
+	//  移除列表
+	err = moveCandidate(modules.JuryList, forfeitureAddr, stub)
+	if err != nil {
+		return err
+	}
+	//  退还保证金
+	//cp, err := stub.GetSystemConfig()
+	//if err != nil {
+	//	return err
+	//}
+	//  调用从合约把token转到请求地址
+	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
+	err = stub.PayOutToken(foundationA, modules.NewAmountAsset(node.Balance, gasToken), 0)
+	if err != nil {
+		log.Error("stub.PayOutToken err:", "error", err)
+		return err
+	}
+	err = DelJuryBalance(stub, forfeitureAddr)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func handleDevForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA string, forfeitureAddr string) error {
-	return handleNodeForfeitureDeposit(stub, foundationA, forfeitureAddr)
-}
-
-func handleNodeForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA string, forfeitureAddr string) error {
 	node, err := GetNodeBalance(stub, forfeitureAddr)
 	if err != nil {
 		return err
@@ -301,15 +326,8 @@ func handleNodeForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA s
 	if node == nil {
 		return fmt.Errorf("node is nil")
 	}
-	list := ""
-	if node.Role == Developer {
-		list = modules.DeveloperList
-	}
-	if node.Role == Jury {
-		list = modules.JuryList
-	}
 	//  移除列表
-	err = moveCandidate(list, forfeitureAddr, stub)
+	err = moveCandidate(modules.DeveloperList, forfeitureAddr, stub)
 	if err != nil {
 		return err
 	}
@@ -331,6 +349,10 @@ func handleNodeForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA s
 	}
 	return nil
 }
+
+//func handleNodeForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA string, forfeitureAddr string) error {
+//
+//}
 
 //处理没收Mediator保证金
 func handleMediatorForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA string, forfeitureAddr string) error {
@@ -366,7 +388,7 @@ func handleMediatorForfeitureDeposit(stub shim.ChaincodeStubInterface, foundatio
 		return err
 	}
 	//  更新
-	md.Status = Quited
+	md.Status = modules.Quited
 	md.Balance = 0
 	md.EnterTime = ""
 	//  保存
@@ -385,12 +407,12 @@ func hanldeNodeRemoveFromAgreeList(stub shim.ChaincodeStubInterface, args []stri
 	if !isFoundationInvoke(stub) {
 		return shim.Error("please use foundation address")
 	}
-	agreeList, err := getList(stub, ListForAgreeBecomeMediator)
+	agreeList, err := getList(stub, modules.ListForAgreeBecomeMediator)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 	delete(agreeList, address.String())
-	err = saveList(stub, ListForAgreeBecomeMediator, agreeList)
+	err = saveList(stub, modules.ListForAgreeBecomeMediator, agreeList)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -435,11 +457,11 @@ func handleNodeInList(stub shim.ChaincodeStubInterface, args []string, role stri
 		//
 		list := ""
 		switch role {
-		case Mediator:
+		case modules.Mediator:
 			list = modules.MediatorList
-		case Jury:
+		case modules.Jury:
 			list = modules.JuryList
-		case Developer:
+		case modules.Developer:
 			list = modules.DeveloperList
 		}
 		for _, a := range args {
@@ -454,6 +476,14 @@ func handleNodeInList(stub shim.ChaincodeStubInterface, args []string, role stri
 			if err != nil {
 				log.Debugf("move list error: %s", err.Error())
 				return shim.Error(err.Error())
+			}
+			if list == modules.MediatorList {
+				//  对应jury
+				err = moveCandidate(modules.JuryList, a, stub)
+				if err != nil {
+					log.Debugf("move list error: %s", err.Error())
+					return shim.Error(err.Error())
+				}
 			}
 		}
 		return shim.Success(nil)

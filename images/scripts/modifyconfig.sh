@@ -132,14 +132,16 @@ fi
 
 done
 
-
+createpk=`./createpk.sh $account`
+tempinfo=`echo $createpk | sed -n '$p'| awk '{print $NF}'`
+pk=`echo ${tempinfo///}`
 
 echo "account: "$account
-echo "publickey: "$publickey
+echo "initpublickey: "$publickey
 echo "nodeinfo: "$nodeinfo
-nodeinfo=`echo ${nodeinfo/127.0.0.1/mediator$1}`
-echo "update nodeinfo " $nodeinfo
-ModifyJson  $account $publickey $nodeinfo $1
+echo "publickey: "$pk
+
+ModifyJson  $account $publickey $nodeinfo $1 $pk
 }
 
 

@@ -55,7 +55,7 @@ const (
 	TxValidationCode_INVALID_PAYMMENT_INPUT       ValidationCode = 27
 	TxValidationCode_INVALID_PAYMMENT_INPUT_COUNT ValidationCode = 28
 	TxValidationCode_INVALID_COINBASE             ValidationCode = 29
-	TxValidationCode_INVALID_OUTPOINT             ValidationCode = 30
+	TxValidationCode_ADDRESS_IN_BLACKLIST             ValidationCode = 30
 	TxValidationCode_INVALID_AMOUNT               ValidationCode = 31
 	TxValidationCode_INVALID_ASSET                ValidationCode = 32
 	TxValidationCode_INVALID_CONTRACT             ValidationCode = 33
@@ -72,7 +72,7 @@ const (
 	UNIT_STATE_INVALID_AUTHOR_SIGNATURE  ValidationCode = 103
 	UNIT_STATE_INVALID_GROUP_SIGNATURE   ValidationCode = 104
 	UNIT_STATE_HAS_INVALID_TRANSACTIONS  ValidationCode = 105
-	UNIT_STATE_INVALID_SIZE              ValidationCode = 106
+	UNIT_STATE_INVALID_AUTHOR              ValidationCode = 106
 	UNIT_STATE_INVALID_EXTRA_DATA        ValidationCode = 107
 	UNIT_STATE_INVALID_HEADER            ValidationCode = 108
 	UNIT_STATE_INVALID_HEADER_NUMBER     ValidationCode = 109
@@ -112,19 +112,20 @@ var validationCode_name = map[byte]string{
 	27:  "INVALID_PAYMMENT_INPUT",
 	28:  "INVALID_PAYMMENT_INPUT_COUNT",
 	29:  "INVALID_PAYMMENT_COINBASE",
-	30:  "INVALID_OUTPOINT",
+	30:  "ADDRESS_IN_BLACKLIST",
 	31:  "INVALID_AMOUNT",
 	32:  "INVALID_ASSET",
 	33:  "INVALID_CONTRACT",
 	34:  "INVALID_DATAPAYLOAD",
 	35:  "DOUBLE_SPEND",
-	37: "NOT_COMPARE_SIZE",
+	36:  "INVALID_TOKEN_STATUS",
+	37:  "NOT_COMPARE_SIZE",
 	101: "AUTHOR_SIGNATURE_PASSED",
 	102: "UNIT_STATE_INVALID_MEDIATOR_SCHEDULE",
 	103: "INVALID_AUTHOR_SIGNATURE",
 	104: "INVALID_GROUP_SIGNATURE",
 	105: "HAS_INVALID_TRANSACTIONS",
-	106: "INVALID_SIZE",
+	106: "INVALID_AUTHOR",
 	107: "INVALID_EXTRA_DATA",
 	108: "INVALID_HEADER",
 	109: "CHECK_HEADER_PASSED",

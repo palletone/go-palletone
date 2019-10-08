@@ -37,8 +37,8 @@ import (
 	"github.com/palletone/go-palletone/dag/storage"
 
 	"github.com/palletone/go-palletone/contracts/syscontract"
-	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/txspool"
 
 	//"github.com/palletone/go-palletone/validator"
 	"encoding/json"
@@ -104,6 +104,7 @@ type IUnitRepository interface {
 	QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error)
 	SubscribeSysContractStateChangeEvent(ob AfterSysContractStateChangeEventFunc)
 	SaveCommon(key, val []byte) error
+	RebuildAddrTxIndex() error
 }
 type UnitRepository struct {
 	dagdb          storage.IDagDb
@@ -509,7 +510,7 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 	//TODO must recover
 	if len(poolTxs) > 0 {
 		for idx, tx := range poolTxs {
-			t := txspool.PooltxToTx(tx)
+			t := tx.Tx
 			reqId := t.RequestHash()
 
 			//标记交易有效性
@@ -636,7 +637,7 @@ func (rep *UnitRepository) ComputeGenerateUnitReward(m common.Address, asset *mo
 
 //获取保证金利息
 //func (rep *UnitRepository) ComputeAwardsFees(addr *common.Address,
-// poolTxs []*modules.TxPoolTransaction) (*modules.Addition, error) {
+// poolTxs []*txspool.TxPoolTransaction) (*modules.Addition, error) {
 //	if poolTxs == nil {
 //		return nil, errors.New("ComputeAwardsFees param is nil")
 //	}
@@ -825,12 +826,15 @@ func (rep *UnitRepository) updateAccountInfo(msg *modules.Message, account commo
 func (rep *UnitRepository) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
 	msg0 := tx.TxMessages[0]
 	if msg0.App != modules.APP_PAYMENT {
-		return common.Address{}, errors.New("Invalid Tx, first message must be a payment")
+		errStr := "Invalid Tx, first message must be a payment"
+		log.Debug(errStr)
+		return common.Address{}, errors.New(errStr)
 	}
 	pay := msg0.Payload.(*modules.PaymentPayload)
 
 	utxo, err := rep.utxoRepository.GetUtxoEntry(pay.Inputs[0].PreviousOutPoint)
 	if err != nil {
+		log.Debug(err.Error())
 		return common.Address{}, err
 	}
 	return rep.tokenEngine.GetAddressFromScript(utxo.PkScript)
@@ -854,12 +858,13 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		log.Info("SaveHeader:", "error", err.Error())
 		return modules.ErrUnit(-3)
 	}
-	// step2. traverse transactions and save them
 
+	// step2. traverse transactions and save them
 	txHashSet := []common.Hash{}
 	for txIndex, tx := range unit.Txs {
 		err := rep.saveTx4Unit(unit, txIndex, tx)
 		if err != nil {
+			log.Debugf(err.Error())
 			return err
 		}
 		//log.Debugf("save transaction, hash[%s] tx_index[%d]", tx.Hash().String(), txIndex)
@@ -990,6 +995,14 @@ func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Trans
 	for _, addr := range fromAddrs {
 		rep.idxdb.SaveAddressTxId(addr, txHash)
 	}
+	//Index contract address to tx
+	for _,msg:=range tx.TxMessages{
+		if msg.App== modules.APP_CONTRACT_INVOKE_REQUEST{
+			invoke:=msg.Payload.(*modules.ContractInvokeRequestPayload)
+			addr:=common.NewAddress(invoke.ContractId,common.ContractHash)
+			rep.idxdb.SaveAddressTxId(addr, txHash)
+		}
+	}
 }
 
 func (rep *UnitRepository) getPayToAddresses(tx *modules.Transaction) []common.Address {
@@ -1019,12 +1032,26 @@ func (rep *UnitRepository) getPayFromAddresses(tx *modules.Transaction) []common
 			pay := msg.Payload.(*modules.PaymentPayload)
 			for _, input := range pay.Inputs {
 				if input.PreviousOutPoint != nil {
+					var lockScript []byte
 					utxo, err := rep.utxoRepository.GetUtxoEntry(input.PreviousOutPoint)
-					if err != nil {
-						log.Errorf("Get utxo by [%s] throw an error:%s", input.PreviousOutPoint.String(), err.Error())
-						return []common.Address{}
+					if err == nil {
+						lockScript = utxo.PkScript
 					}
-					addr, _ := rep.tokenEngine.GetAddressFromScript(utxo.PkScript)
+					if err != nil {
+						stxo, err := rep.utxoRepository.GetStxoEntry(input.PreviousOutPoint)
+						if err != nil {
+							if input.PreviousOutPoint.TxHash.IsSelfHash() {
+								out := tx.TxMessages[input.PreviousOutPoint.MessageIndex].Payload.(*modules.PaymentPayload).Outputs[input.PreviousOutPoint.OutIndex]
+								lockScript = out.PkScript
+							} else {
+								log.Errorf("Cannot find txo by:%s", input.PreviousOutPoint.String())
+								return []common.Address{}
+							}
+						} else {
+							lockScript = stxo.PkScript
+						}
+					}
+					addr, _ := rep.tokenEngine.GetAddressFromScript(lockScript)
 					if _, ok := resultMap[addr]; !ok {
 						resultMap[addr] = 1
 					}
@@ -1038,6 +1065,31 @@ func (rep *UnitRepository) getPayFromAddresses(tx *modules.Transaction) []common
 		keys = append(keys, k)
 	}
 	return keys
+}
+
+func (rep *UnitRepository) RebuildAddrTxIndex() error {
+	log.Info("Star rebuild address tx index. truncate old index data...")
+	rep.idxdb.TruncateAddressTxIds()
+	i := 0
+	err := rep.dagdb.ForEachAllTxDo(func(key []byte, tx *modules.Transaction) error {
+		txHash := common.BytesToHash(key[2:])
+		//TODO Devin检查Genesis Tx的Hash问题
+		if txHash.String() == "0xccbb34cecf684c58ea2c44f37ef491ac40efb5cdf7952d52002a18c8ea47210c" {
+			log.Warnf("tx[0xccbb34cecf684c58ea2c44f37ef491ac40efb5cdf7952d52002a18c8ea47210c],key:%x", key)
+			return errors.ErrInvalidNumber
+		}
+		rep.saveAddrTxIndex(txHash, tx)
+		i++
+		if i%1000 == 0 {
+			log.Infof("Build address tx index:%d", i)
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	log.Info("Rebuild address tx index complete.")
+	return nil
 }
 
 func getDataPayload(tx *modules.Transaction) *modules.DataPayload {

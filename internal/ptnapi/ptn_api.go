@@ -25,19 +25,24 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math/big"
+	"math/rand"
 	"strconv"
+	"time"
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/ptnjson/statistics"
 	"github.com/shopspring/decimal"
+	"github.com/palletone/go-palletone/common/crypto"
 )
 
 // PublicPalletOneAPI provides an API to access PalletOne related information.
@@ -150,6 +155,42 @@ func (s *PublicBlockChainAPI) ListSysConfig() ([]*ptnjson.ConfigJson, error) {
 
 func (s *PublicBlockChainAPI) GetChainParameters() (*core.ChainParameters, error) {
 	return s.b.Dag().GetChainParameters(), nil
+}
+
+func (s *PublicBlockChainAPI) GetPledge(addStr string) (*modules.PledgeStatusJson, error) {
+	// 参数检查
+	_, err := common.StringToAddress(addStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid account address: %v", addStr)
+	}
+
+	// 构建参数
+	cArgs := [][]byte{defaultMsg0, defaultMsg1, []byte(modules.QueryPledgeStatusByAddr), []byte(addStr)}
+	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().Unix())).Int31n(100000000))
+
+	// 调用系统合约
+	rsp, err := s.b.ContractQuery(syscontract.DepositContractAddress.Bytes(), txid[:], cArgs, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	pledge := &modules.PledgeStatusJson{}
+	err = json.Unmarshal(rsp, pledge)
+	if err == nil {
+		return pledge, nil
+	}
+
+	return nil, fmt.Errorf(string(rsp))
+}
+
+func (s *PublicBlockChainAPI) GetAddressWithPublicKey(pubkey string) (addStr string, err error) {
+	byte, err := hex.DecodeString(pubkey)
+	if err != nil {
+		return
+	}
+
+	addStr = crypto.PubkeyBytesToAddress(byte).String()
+	return 
 }
 
 func (s *PublicBlockChainAPI) AddressBalanceStatistics(ctx context.Context, token string,
@@ -347,6 +388,9 @@ func (s *PublicBlockChainAPI) GetPrefix(condition string) string /*map[string][]
 
 func (s *PublicBlockChainAPI) DecodeTx(ctx context.Context, hex string) (string, error) {
 	return s.b.DecodeTx(hex)
+}
+func (s *PublicBlockChainAPI) DecodeJsonTx(ctx context.Context, hex string) (string, error) {
+	return s.b.DecodeJsonTx(hex)
 }
 
 func (s *PublicBlockChainAPI) EncodeTx(ctx context.Context, json string) (string, error) {

@@ -8,6 +8,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/list"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/vm/common"
 	"io"
@@ -161,7 +162,7 @@ func GetDiskForEachContainer(client *docker.Client, disk int64) {
 	if diskUsage != nil {
 		for _, c := range diskUsage.Containers {
 			if strings.Contains(c.Names[0][1:3], "PC") {
-				log.Infof("=======%#v\n", c)
+				//log.Infof("=======%#v\n", c)
 				log.Debugf("Current usage of container disk is %d", c.SizeRw)
 				if c.SizeRw > disk {
 					//  移除掉
@@ -175,24 +176,66 @@ func GetDiskForEachContainer(client *docker.Client, disk int64) {
 	}
 }
 
-//  获取用户合约异常退出的监听函数
-func GetAllExitedContainer(client *docker.Client) ([]common.Address, error) {
+//获取所有容器
+func GetAllContainers(client *docker.Client) ([]docker.APIContainers, error) {
 	cons, err := client.ListContainers(docker.ListContainersOptions{All: true})
 	if err != nil {
 		log.Infof("client.ListContainers err: %s\n", err.Error())
 		return nil, err
 	}
-	addr := make([]common.Address, 0)
+	return cons, nil
+}
+
+//  获取所有过期的容器ID(通过交易上的)
+func RetrieveExpiredContainers(idag dag.IDag, containers []docker.APIContainers, rmExpConFromSysParam bool) map[string]common.Address {
+	log.Debugf("enter RetrieveExpiredContainers func")
+	idStr := make(map[string]common.Address)
+	if len(containers) > 0 {
+		for _, c := range containers {
+			if strings.Contains(c.Names[0][1:3], "PC") && len(c.Names[0]) > 40 {
+				contractName := c.Names[0][1:36]
+				contractAddr, err := common.StringToAddress(contractName)
+				if err != nil {
+					log.Errorf("string to address error: %s", err.Error())
+					continue
+				}
+				containerDurTime := uint64(0)
+				if rmExpConFromSysParam {
+					log.Info("rm exp con from sys param............")
+					containerDurTime = uint64(idag.GetChainParameters().UccDuringTime)
+				} else {
+					log.Info("rm exp con from contact info..........")
+					contract, err := idag.GetContract(contractAddr.Bytes())
+					if err != nil {
+						log.Errorf("get contract error: %s", err.Error())
+						continue
+					}
+					containerDurTime = contract.DuringTime
+				}
+				duration := time.Now().Unix() - c.Created
+				if uint64(duration) >= containerDurTime {
+					log.Infof("container name = %s was expired.", c.Names[0])
+					idStr[c.ID] = contractAddr
+				}
+			}
+		}
+	}
+	return idStr
+}
+
+//  获取用户合约异常退出的监听函数
+func GetAllExitedContainer(cons []docker.APIContainers) ([]common.Address, error) {
 	if len(cons) > 0 {
-		for i, v := range cons {
-			log.Debugf("the %d container ===>%s", i, v.Names)
-			if strings.Contains(v.Names[0][1:3], "PC") && strings.Contains(v.Status, "Exited") {
+		addr := make([]common.Address, 0)
+		for _, v := range cons {
+			if strings.Contains(v.Names[0][1:3], "PC") && strings.Contains(v.Status, "Exited") && len(v.Names[0]) > 40 {
 				name := v.Names[0][1:36]
 				contractAddr, err := common.StringToAddress(name)
 				if err != nil {
 					log.Infof("common.StringToAddress err: %s", err.Error())
 					continue
 				}
+				log.Infof("container name = %s was exited.", v.Names[0])
 				addr = append(addr, contractAddr)
 			}
 		}
@@ -272,4 +315,29 @@ func RemoveConWhenOverDisk(cc *list.CCInfo, dag dag.IDag) (sizeRW int64, disk in
 		}
 	}
 	return 0, 0, false
+}
+
+//判断容器是否正在运行
+func IsRunning(name string) bool {
+	client, err := util.NewDockerClient()
+	if err != nil {
+		log.Errorf(err.Error())
+		return false
+	}
+	c, err := client.InspectContainer(name)
+	if err != nil {
+		log.Errorf(err.Error())
+		return false
+	}
+	return c.State.Running
+}
+func CreateGptnNet(client *docker.Client) {
+	_, err := client.NetworkInfo(core.DefaultUccNetworkMode)
+	if err != nil {
+		log.Debugf("client.NetworkInfo error: %s", err.Error())
+		_, err := client.CreateNetwork(docker.CreateNetworkOptions{Name: core.DefaultUccNetworkMode, Driver: "bridge"})
+		if err != nil {
+			log.Debugf("client.CreateNetwork error: %s", err.Error())
+		}
+	}
 }

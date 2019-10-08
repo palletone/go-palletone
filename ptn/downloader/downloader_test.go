@@ -19,7 +19,7 @@ package downloader
 import (
 	"errors"
 	"fmt"
-	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/txspool"
 	"log"
 	"sync"
 	"sync/atomic"

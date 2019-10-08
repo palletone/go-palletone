@@ -36,7 +36,7 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/palletcache"
-	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/txspool"
 	"github.com/palletone/go-palletone/validator"
 	"go.dedis.ch/kyber/v3/sign/bls"
 )
@@ -127,12 +127,11 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 		db:                 db,
 		tokenEngine:        tokenEngine,
 	}
-	if err == nil {
-		temp, _ := NewChainTempDb(db, cache, tokenEngine)
-		temp.Unit = stableUnit
-		memdag.tempdb.Store(stablehash, temp)
-		memdag.chainUnits.Store(stablehash, temp)
-	}
+	temp, _ := NewChainTempDb(db, cache, tokenEngine, saveHeaderOnly)
+	temp.Unit = stableUnit
+	memdag.tempdb.Store(stablehash, temp)
+	memdag.chainUnits.Store(stablehash, temp)
+
 	go memdag.loopRebuildTmpDb()
 	return memdag
 }
@@ -171,7 +170,7 @@ func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2
 	if err != nil { // 重启后memdag的chainUnits还清被清空，需要重新以memdag的db构建unstable repositoreis
 		temp_inter, has := chain.tempdb.Load(last_main_hash)
 		if !has {
-			log.Errorf("the last_unit: %s , is not exist in memdag", last_main_hash.String())
+			log.Warnf("the last_unit: %s , is not exist in memdag", last_main_hash.String())
 			tempdb, _ := NewTempdb(chain.db)
 			trep := common2.NewUnitRepository4Db(tempdb, chain.tokenEngine)
 			tutxoRep := common2.NewUtxoRepository4Db(tempdb, chain.tokenEngine)
@@ -274,10 +273,12 @@ func (chain *MemDag) setStableUnit(hash common.Hash, height uint64, txpool txspo
 		return fmt.Sprintf("set next stable unit cost time: %s ,index: %d, hash: %s",
 			time.Since(tt), height, hash.String())
 	})
+
 	//remove fork units, and remove lower than stable unit
 	for _, funit := range chain_units {
 		if funit.NumberU64() <= max_height && funit.Hash() != hash {
-			chain.removeUnitAndChildren(funit.Hash(), txpool)
+			chain_units := chain.getChainUnits()
+			chain.removeUnitAndChildren(chain_units, funit.Hash(), txpool)
 		}
 	}
 	//remove too low orphan unit
@@ -454,20 +455,19 @@ func (chain *MemDag) saveUnitToDb(unitRep common2.IUnitRepository, produceRep co
 }
 
 //从ChainUnits集合中删除一个单元以及其所有子孙单元
-func (chain *MemDag) removeUnitAndChildren(hash common.Hash, txpool txspool.ITxPool) {
+func (chain *MemDag) removeUnitAndChildren(chain_units map[common.Hash]*modules.Unit, hash common.Hash, txpool txspool.ITxPool) {
 	log.Debugf("Remove unit[%s] and it's children from chain unit", hash.String())
-	chain_units := chain.getChainUnits()
+
 	for h, unit := range chain_units {
 		if h == hash {
 			if txs := unit.Transactions(); len(txs) > 1 {
 				go txpool.ResetPendingTxs(txs)
 			}
 			chain.chainUnits.Delete(h)
+			delete(chain_units, h)
 			log.Debugf("Remove unit[%s] from chainUnits", hash.String())
-		} else {
-			if unit.ParentHash()[0] == hash {
-				chain.removeUnitAndChildren(h, txpool)
-			}
+		} else if unit.ParentHash()[0] == hash {
+			chain.removeUnitAndChildren(chain_units, h, txpool)
 		}
 	}
 }
@@ -482,7 +482,7 @@ func (chain *MemDag) SetStableUnit(unit *modules.Unit, isGenesis bool) {
 	if isGenesis {
 		chain.setLastMainchainUnit(unit)
 		// set tempdb
-		temp_db, _ := NewChainTempDb(chain.db, chain.cache, chain.tokenEngine)
+		temp_db, _ := NewChainTempDb(chain.db, chain.cache, chain.tokenEngine, chain.saveHeaderOnly)
 		chain.tempdb.Store(hash, temp_db)
 		chain.chainUnits.Store(hash, temp_db)
 		chain.addUnitHeight(unit)
@@ -559,7 +559,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 			inter_temp, has := chain.tempdb.Load(parentHash)
 			if !has { // 分叉链
 				p_temp := inter.(*ChainTempDb)
-				temp_db, _ = NewChainTempDb(p_temp.Tempdb, chain.cache, chain.tokenEngine)
+				temp_db, _ = NewChainTempDb(p_temp.Tempdb, chain.cache, chain.tokenEngine, chain.saveHeaderOnly)
 			} else {
 				temp_db = inter_temp.(*ChainTempDb)
 			}
@@ -579,7 +579,12 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 					return nil, nil, nil, nil, nil, vali_err
 				}
 			}
-			tempdb, _ := temp_db.AddUnit(unit, chain.saveHeaderOnly)
+			tempdb, err := temp_db.AddUnit(unit, chain.saveHeaderOnly)
+			if err != nil {
+				log.Error(err.Error())
+				return nil, nil, nil, nil, nil, err
+			}
+
 			// go tempdb.AddUnit(unit, chain.saveHeaderOnly)
 			chain.tempdb.Store(uHash, tempdb)
 			chain.chainUnits.Store(uHash, tempdb)
@@ -610,7 +615,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 			var main_temp *ChainTempDb
 			inter_main, has := chain.tempdb.Load(parentHash)
 			if !has { // 分叉
-				main_temp, _ = NewChainTempDb(chain.db, chain.cache, chain.tokenEngine)
+				main_temp, _ = NewChainTempDb(chain.db, chain.cache, chain.tokenEngine, chain.saveHeaderOnly)
 				forks := chain.getForkUnits(unit)
 				for i := 0; i < len(forks)-1; i++ {
 					main_temp, _ = main_temp.AddUnit(forks[i], chain.saveHeaderOnly)

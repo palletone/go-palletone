@@ -305,8 +305,6 @@ func (unit *Unit) String4Log() string {
 	return fmt.Sprintf("Hash:%s,Index:%d,Txs:%x", unit.Hash().String(), unit.NumberU64(), txs)
 }
 
-//type Transactions []*Transaction
-type TxPoolTxs []*TxPoolTransaction
 
 //出于DAG和基于Token的分区共识的考虑，设计了该ChainIndex，
 type ChainIndex struct {

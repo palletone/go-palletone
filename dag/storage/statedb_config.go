@@ -25,6 +25,9 @@ package storage
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/constants"
 
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
@@ -111,7 +114,10 @@ func (statedb *StateDb) GetPartitionChains() ([]*modules.PartitionChain, error) 
 
 	for _, v := range rows {
 		partition := &modules.PartitionChain{}
-		json.Unmarshal(v.Value, &partition)
+		err = json.Unmarshal(v.Value, &partition)
+		if err != nil {
+			return nil, err
+		}
 		result = append(result, partition)
 	}
 	return result, nil
@@ -129,4 +135,19 @@ func (statedb *StateDb) GetMainChain() (*modules.MainChain, error) {
 		return nil, err
 	}
 	return mainChain, nil
+}
+func (statedb *StateDb) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error) {
+	id := syscontract.BlacklistContractAddress.Bytes()
+	data, v, err := statedb.GetContractState(id, constants.BlacklistAddress)
+	if err != nil { //未初始化黑名单
+		log.Debug("Don't have blacklist:" + err.Error())
+		return []common.Address{}, nil, nil
+	}
+	result := []common.Address{}
+	err = rlp.DecodeBytes(data, &result)
+	log.DebugDynamic(func() string {
+		data, _ := json.Marshal(result)
+		return "query blacklist result is:" + string(data)
+	})
+	return result, v, err
 }

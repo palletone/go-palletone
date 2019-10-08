@@ -49,6 +49,11 @@ web3._extend({
 			call: 'ptn_decodeTx',
 			params: 1
 		}),
+		new web3._extend.Method({
+			name: 'decodeJsonTx',
+			call: 'ptn_decodeJsonTx',
+			params: 1
+		}),
 		//new web3._extend.Method({
 		//	name: 'resend',
 		//	call: 'ptn_resend',
@@ -179,6 +184,16 @@ web3._extend({
 			name: 'listSysConfig',
 			call: 'ptn_listSysConfig'
 			params: 0,
+		}),
+		new web3._extend.Method({
+			name: 'getPledge',
+			call: 'ptn_getPledge'
+			params: 1,
+		}),
+		new web3._extend.Method({
+			name: 'getAddressWithPublicKey',
+			call: 'ptn_getAddressWithPublicKey'
+			params: 1,
 		}),
 	],
 

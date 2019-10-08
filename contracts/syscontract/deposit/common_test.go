@@ -15,7 +15,10 @@
 package deposit
 
 import (
+	"encoding/hex"
 	"fmt"
+	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/hexutil"
 	"testing"
 	"time"
 )
@@ -40,9 +43,18 @@ func TestTime(t *testing.T) {
 	fmt.Println(t1.String())
 }
 
-func TestArray(t *testing.T) {
-	var arr []string
-	for i, v := range arr {
-		fmt.Println(i, v)
+func TestLaa(t *testing.T) {
+	//mainnetAddrAndPubKey["P1NzevLMVCFJKWr4KAcHxyyh9xXaVU8yv3N"] = "0326a0b144fd1df92f7d9e87d8d9929bc383059de4e0038b6d870f6f1d6ebb5219"
+	b, _ := hex.DecodeString("0326a0b144fd1df92f7d9e87d8d9929bc383059de4e0038b6d870f6f1d6ebb5219")
+	fmt.Println(crypto.PubkeyBytesToAddress(b).String())
+	addr := "P1J7o5ri49ed1SNCw66A2UsmeZ1oRHiZCo7"
+	encode := "0x03a3412f5ec867d575f01af8c60c73180ce6d00d0717f03c4c094a038acde0832b"
+	fmt.Println(len(encode))
+	byte, _ := hexutil.Decode(encode)
+	fmt.Println(len(byte))
+	if crypto.PubkeyBytesToAddress(byte).String() == addr {
+		t.Log("success")
+		return
 	}
+	t.Error("failed")
 }

@@ -85,6 +85,10 @@ func (statedb *StateDb) GetContractIdsByTpl(tplId []byte) ([][]byte, error) {
 	return result, nil
 }
 
+func MediatorDepositKey(medAddr string) string {
+	return string(constants.MEDIATOR_INFO_PREFIX) + string(constants.DEPOSIT_BALANCE_PREFIX) + medAddr
+}
+
 func (statedb *StateDb) SaveContractState(contractId []byte, ws *modules.ContractWriteSet,
 	version *modules.StateVersion) error {
 	cid := contractId
@@ -238,7 +242,7 @@ func (statedb *StateDb) GetContractState(id []byte, field string) ([]byte, *modu
 	key := getContractStateKey(id, field)
 	log.Debugf("DB[%s] GetContractState for key:%x. field:%s ", reflect.TypeOf(statedb.db).String(), key, field)
 	data, version, err := retrieveWithVersion(statedb.db, key)
-	log.Debugf("GetContractState Result:%x,version:%s", data, version.String())
+	//log.Debugf("GetContractState Result:%x,version:%s", data, version.String())
 	return data, version, err
 }
 
@@ -313,7 +317,7 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 				mi.MediatorInfoBase = mco.MediatorInfoBase
 				mi.MediatorApplyInfo = mco.MediatorApplyInfo
 
-				addr, err := mco.Validate()
+				addr, _, err := mco.Validate()
 				if err == nil {
 					statedb.StoreMediatorInfo(addr, mi)
 				} else {

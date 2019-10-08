@@ -26,9 +26,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/ptn/downloader"
-	//"github.com/ethereum/go-ethereum/consensus"
-	//"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/tokenengine"
+
 	//	"github.com/palletone/go-palletone/ptn/filters"
 	//"github.com/ethereum/go-ethereum/eth/gasprice"
 	//"github.com/ethereum/go-ethereum/light"
@@ -44,9 +42,9 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/palletcache"
-	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/light/cors"
+	"github.com/palletone/go-palletone/txspool"
 )
 
 type LightPalletone struct {
@@ -126,8 +124,8 @@ func New(ctx *node.ServiceContext, config *ptn.Config, protocolname string, cach
 	//lptn.serverPool = newServerPool(chainDb, quitSync, &leth.wg)
 	//lptn.retriever = newRetrieveManager(peers, leth.reqDist, leth.serverPool)
 	//lptn.odr = NewLesOdr(chainDb, leth.chtIndexer, leth.bloomTrieIndexer, leth.bloomIndexer, leth.retriever)
-
-	lptn.txPool = txspool.NewTxPool(config.TxPool, cache, lptn.dag, tokenengine.Instance)
+	//val:=validator.NewValidate(lptn.dag,nil,nil,nil,cache)
+	lptn.txPool = txspool.NewTxPool(config.TxPool, cache, lptn.dag)
 
 	if lptn.protocolManager, err = NewProtocolManager(true, lptn.peers, config.NetworkId, gasToken, nil,
 		dag, lptn.eventMux, genesis, quitSync, configure.LPSProtocol); err != nil {

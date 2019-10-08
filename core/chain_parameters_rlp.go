@@ -40,15 +40,17 @@ type ChainParametersTemp struct {
 	UccCpuShares string
 	UccCpuQuota  string
 	//UccCpuPeriod  string
-	UccDisk string
+	UccDisk       string
+	UccDuringTime string
 
 	TempUccMemory string
 	//TempUccMemorySwap string
 	TempUccCpuShares string
 	TempUccCpuQuota  string
 
-	ContractSignatureNum string
-	ContractElectionNum  string
+	ContractSystemVersion string
+	ContractSignatureNum  string
+	ContractElectionNum   string
 
 	ContractTxTimeoutUnitFee  string
 	ContractTxSizeUnitFee     string
@@ -72,17 +74,19 @@ func (cp *ChainParameters) getCPT() *ChainParametersTemp {
 		//DepositDailyReward: strconv.FormatInt(int64(cp.PledgeDailyReward), 10),
 		//DepositPeriod:      strconv.FormatInt(int64(cp.DepositPeriod), 10),
 
-		UccMemory:    strconv.FormatInt(cp.UccMemory, 10),
-		UccCpuShares: strconv.FormatInt(cp.UccCpuShares, 10),
-		UccCpuQuota:  strconv.FormatInt(cp.UccCpuQuota, 10),
-		UccDisk:      strconv.FormatInt(cp.UccDisk, 10),
+		UccMemory:     strconv.FormatInt(cp.UccMemory, 10),
+		UccCpuShares:  strconv.FormatInt(cp.UccCpuShares, 10),
+		UccCpuQuota:   strconv.FormatInt(cp.UccCpuQuota, 10),
+		UccDisk:       strconv.FormatInt(cp.UccDisk, 10),
+		UccDuringTime: strconv.FormatInt(cp.UccDuringTime, 10),
 
 		TempUccMemory:    strconv.FormatInt(cp.TempUccMemory, 10),
 		TempUccCpuShares: strconv.FormatInt(cp.TempUccCpuShares, 10),
 		TempUccCpuQuota:  strconv.FormatInt(cp.TempUccCpuQuota, 10),
 
-		ContractSignatureNum: strconv.FormatInt(int64(cp.ContractSignatureNum), 10),
-		ContractElectionNum:  strconv.FormatInt(int64(cp.ContractElectionNum), 10),
+		ContractSystemVersion: cp.ContractSystemVersion,
+		ContractSignatureNum:  strconv.FormatInt(int64(cp.ContractSignatureNum), 10),
+		ContractElectionNum:   strconv.FormatInt(int64(cp.ContractElectionNum), 10),
 
 		ContractTxTimeoutUnitFee:  strconv.FormatUint(cp.ContractTxTimeoutUnitFee, 10),
 		ContractTxSizeUnitFee:     strconv.FormatUint(cp.ContractTxSizeUnitFee, 10),
@@ -138,6 +142,12 @@ func (cpt *ChainParametersTemp) getCP(cp *ChainParameters) error {
 	}
 	cp.UccDisk = UccDisk
 
+	UccDuringTime, err := strconv.ParseInt(cpt.UccDuringTime, 10, 64)
+	if err != nil {
+		return err
+	}
+	cp.UccDuringTime = UccDuringTime
+
 	TempUccMemory, err := strconv.ParseInt(cpt.TempUccMemory, 10, 64)
 	if err != nil {
 		return err
@@ -160,6 +170,7 @@ func (cpt *ChainParametersTemp) getCP(cp *ChainParameters) error {
 	if err != nil {
 		return err
 	}
+	cp.ContractSystemVersion = cpt.ContractSystemVersion
 	cp.ContractSignatureNum = int(ContractSignatureNum)
 
 	ContractElectionNum, err := strconv.ParseInt(cpt.ContractElectionNum, 10, 64)

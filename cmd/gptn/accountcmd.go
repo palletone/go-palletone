@@ -17,6 +17,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"gopkg.in/urfave/cli.v1"
@@ -269,6 +270,21 @@ this import mechanism is not needed when you transfer an account between
 nodes.
 `,
 			},
+			{
+				Name:      "dumppubkey",
+				Usage:     "Dump the public key",
+				Action:    utils.MigrateFlags(accountDumpPubKey),
+				ArgsUsage: "<address>",
+				Flags: []cli.Flag{
+					utils.DataDirFlag,
+					utils.KeyStoreDirFlag,
+					utils.PasswordFileFlag,
+				},
+				Description: `
+    gptn account dumppubkey <address>
+    Dump the public key.
+`,
+			},
 		},
 	}
 )
@@ -475,6 +491,24 @@ func accountDumpKey(ctx *cli.Context) error {
 	return nil
 }
 
+func accountDumpPubKey(ctx *cli.Context) error {
+	if len(ctx.Args()) == 0 {
+		utils.Fatalf("No accounts specified to dump public key")
+	}
+	stack, _ := makeConfigNode(ctx, false)
+	ks := stack.GetKeyStore()
+	addr := ctx.Args().First()
+	account, _ := utils.MakeAddress(ks, addr)
+	pwd := getPassPhrase("Please give a password to unlock your account", false, 0, nil)
+	prvKey, _ := ks.DumpKey(account, pwd)
+	b, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(prvKey)
+	//ks.Unlock(account, pwd)
+	//a, _ := common.StringToAddress(addr)
+	//b, _ := ks.GetPublicKey(a)
+	fmt.Println(hex.EncodeToString(b))
+	return nil
+}
+
 func accountSignVerify(ctx *cli.Context) error {
 	if len(ctx.Args()) == 0 {
 		utils.Fatalf("No accounts specified to update")
@@ -629,7 +663,7 @@ func accountSignTx(ctx *cli.Context) error {
 		return nil
 	}
 	//transaction inputs
-	rawinputs:=make( []ptnjson.RawTxInput,0,len(signTransactionParams.Inputs))
+	rawinputs := make([]ptnjson.RawTxInput, 0, len(signTransactionParams.Inputs))
 	for _, inputOne := range signTransactionParams.Inputs {
 		input := ptnjson.RawTxInput{Txid: inputOne.Txid, Vout: inputOne.Vout, MessageIndex: inputOne.MessageIndex,
 			ScriptPubKey: inputOne.ScriptPubKey, RedeemScript: inputOne.RedeemScript}
@@ -638,7 +672,7 @@ func accountSignTx(ctx *cli.Context) error {
 	if len(rawinputs) == 0 {
 		return nil
 	}
-	keys:=make( []string,0,len(signTransactionParams.PrivKeys))
+	keys := make([]string, 0, len(signTransactionParams.PrivKeys))
 	for _, key := range signTransactionParams.PrivKeys {
 		key = strings.TrimSpace(key) //Trim whitespace
 		if len(key) == 0 {

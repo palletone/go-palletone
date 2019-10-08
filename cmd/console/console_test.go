@@ -103,7 +103,7 @@ func DevGenesisBlock() *core.Genesis {
 		InitialTimestamp:    gen.InitialTimestamp(initParams.MediatorInterval),
 		//InitialActiveMediators: core.DefaultMediatorCount,
 		InitialMediatorCandidates: gen.InitialMediatorCandidates(core.DefaultActiveMediatorCount,
-			core.DefaultMediator),
+			core.DefaultMediator, core.DefaultPublickey),
 		//SystemConfig: SystemConfig,
 	}
 }

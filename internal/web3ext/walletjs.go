@@ -37,8 +37,18 @@ const Wallet_JS = `
 			params: 1
 		}),
 		new web3._extend.Method({
+			name: 'getBalance2',
+			call: 'wallet_getBalance2',
+			params: 1
+		}),
+		new web3._extend.Method({
             name: 'getAddrTxHistory',
             call: 'wallet_getAddrTxHistory',
+            params: 1
+        }),
+		new web3._extend.Method({
+            name: 'getContractInvokeHistory',
+            call: 'wallet_getContractInvokeHistory',
             params: 1
         }),
 		new web3._extend.Method({
@@ -46,11 +56,11 @@ const Wallet_JS = `
 			call: 'wallet_getAddrUtxos',
 			params: 1
 		}),
- 		//new web3._extend.Method({
-		//	name: 'createPaymentTx',
-		//	call: 'wallet_createPaymentTx',
-		//	params: 4
-		//}),
+ 		new web3._extend.Method({
+			name: 'getAddrUtxos2',
+			call: 'wallet_getAddrUtxos2',
+			params: 1
+		}),
 		new web3._extend.Method({
 			name: 'createRawTransaction',
 			call: 'wallet_createRawTransaction',
@@ -166,7 +176,12 @@ const Wallet_JS = `
 		new web3._extend.Method({
             name: 'aggregateUtxo',
             call: 'wallet_aggregateUtxo',
-            params: 3,
+            params: 2,
+        }),
+		new web3._extend.Method({
+            name: 'getAddrTokenFlow',
+            call: 'wallet_getAddrTokenFlow',
+            params: 2,
         }),
  	]
  });

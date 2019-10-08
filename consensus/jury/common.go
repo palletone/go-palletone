@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"math/rand"
 	"strconv"
 	"strings"
 	"time"
@@ -31,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
@@ -66,18 +68,29 @@ func localIsMinSignature(tx *modules.Transaction) bool {
 	}
 	return false
 }
-func generateJuryRedeemScript(jury []modules.ElectionInf) []byte {
-	count := len(jury)
+func (p *Processor) generateJuryRedeemScript(jury *modules.ElectionNode) []byte {
+	if jury == nil {
+		return nil
+	}
+	count := int(jury.JuryCount)
+	if count == 0 {
+		count = len(jury.EleList)
+	}
 	needed := byte(math.Ceil((float64(count)*2 + 1) / 3))
 	pubKeys := [][]byte{}
-	for _, jurior := range jury {
-		pubKeys = append(pubKeys, jurior.PublicKey)
+	for _, ju := range jury.EleList {
+		juror, err := p.dag.GetJurorByAddrHash(ju.AddrHash)
+		if err != nil {
+			log.Errorf(err.Error())
+			return nil
+		}
+		pubKeys = append(pubKeys, juror.PublicKey)
 	}
 	return tokenengine.Instance.GenerateRedeemScript(needed, pubKeys)
 }
 
 //对于Contract Payout的情况，将SignatureSet转移到Payment的解锁脚本中
-func processContractPayout(tx *modules.Transaction, ele *modules.ElectionNode) {
+func (p *Processor) processContractPayout(tx *modules.Transaction, ele *modules.ElectionNode) {
 	if tx == nil || ele == nil {
 		log.Error("processContractPayout param is nil")
 		return
@@ -85,7 +98,7 @@ func processContractPayout(tx *modules.Transaction, ele *modules.ElectionNode) {
 	reqId := tx.RequestHash()
 	if has, payout := tx.HasContractPayoutMsg(); has {
 		pubkeys, signs := getSignature(tx)
-		redeem := generateJuryRedeemScript(ele.EleList)
+		redeem := p.generateJuryRedeemScript(ele)
 
 		signsOrder := SortSigs(pubkeys, signs, redeem)
 		unlock := tokenengine.Instance.MergeContractUnlockScript(signsOrder, redeem)
@@ -185,40 +198,6 @@ func getSignature(tx *modules.Transaction) ([][]byte, [][]byte) {
 	}
 	return nil, nil
 }
-
-//func checkAndAddSigSet(local *modules.Transaction, recv *modules.Transaction) error {
-//	if local == nil || recv == nil {
-//		return errors.New("checkAndAddSigSet param is nil")
-//	}
-//	var app modules.MessageType
-//	for _, msg := range local.TxMessages {
-//		if msg.App >= modules.APP_CONTRACT_TPL && msg.App <= modules.APP_SIGNATURE {
-//			app = msg.App
-//			break
-//		}
-//	}
-//	if app <= 0 {
-//		return errors.New("checkAndAddSigSet not find contract app type")
-//	}
-//	if msgsCompare(local.TxMessages, recv.TxMessages, app) {
-//		getSigPay := func(mesgs []*modules.Message) *modules.SignaturePayload {
-//			for _, v := range mesgs {
-//				if v.App == modules.APP_SIGNATURE {
-//					return v.Payload.(*modules.SignaturePayload)
-//				}
-//			}
-//			return nil
-//		}
-//		localSigPay := getSigPay(local.TxMessages)
-//		recvSigPay := getSigPay(recv.TxMessages)
-//		if localSigPay != nil && recvSigPay != nil {
-//			localSigPay.Signatures = append(localSigPay.Signatures, recvSigPay.Signatures[0])
-//			log.Debug("checkAndAddSigSet", "local transaction", local.RequestHash(), "recv transaction", recv.RequestHash())
-//			return nil
-//		}
-//	}
-//	return errors.New("checkAndAddSigSet add sig fail")
-//}
 
 func genContractErrorMsg(dag iDag, tx *modules.Transaction, addr []byte,
 	errIn error, errMsgEnable bool) ([]*modules.Message, error) {
@@ -796,7 +775,7 @@ func checkJuryCountValid(numIn, numLocal uint64) bool {
 }
 
 //根据交易和费用类型，获取费用基数(dao),其中计算单位
-//timeout:毫秒 ？
+//timeout:秒
 //size:字节
 func getContractFeeLevel(dag iDag, msg modules.MessageType, feeType int) (level float64) {
 	level = 1 //todo
@@ -822,31 +801,35 @@ func getContractFeeLevel(dag iDag, msg modules.MessageType, feeType int) (level 
 	return level
 }
 
-func checkContractTxFeeValid(dag iDag, tx *modules.Transaction) bool {
-	//return true //todo
+func getContractTxNeedFee(dag iDag, msgType modules.MessageType, timeout float64, txSize float64) (timeFee float64, sizeFee float64) {
+	timeoutLevel := getContractFeeLevel(dag, msgType, ContractFeeTypeTimeOut)
+	sizeLevel := getContractFeeLevel(dag, msgType, ContractFeeTypeTxSize)
 
+	timeFee = timeoutLevel * timeout
+	sizeFee = sizeLevel * txSize
+	return timeFee, sizeFee
+}
+
+func checkContractTxFeeValid(dag iDag, tx *modules.Transaction) bool {
 	if tx == nil {
 		return false
 	}
-	reqId := tx.RequestHash()
 	var timeout uint32
-	txType, err := getContractTxType(tx)
-	if err != nil {
-		log.Errorf("[%s]checkContractTxFeeValid, getContractTxType fail", shortId(reqId.String()))
-		return false
-	}
-
+	reqId := tx.RequestHash()
+	txSize := tx.Size().Float64()
 	fees, err := dag.GetTxFee(tx)
 	if err != nil {
 		log.Errorf("[%s]checkContractTxFeeValid, GetTxFee fail", shortId(reqId.String()))
 		return false
 	}
-
-	timeoutLevel := getContractFeeLevel(dag, txType, ContractFeeTypeTimeOut)
-	sizeLevel := getContractFeeLevel(dag, txType, ContractFeeTypeTxSize)
+	txType, err := getContractTxType(tx)
+	if err != nil {
+		log.Errorf("[%s]checkContractTxFeeValid, getContractTxType fail", shortId(reqId.String()))
+		return false
+	}
 	switch txType {
-	case modules.APP_CONTRACT_TPL_REQUEST:
-	case modules.APP_CONTRACT_DEPLOY_REQUEST:
+	case modules.APP_CONTRACT_TPL_REQUEST: //todo
+	case modules.APP_CONTRACT_DEPLOY_REQUEST: //todo
 	case modules.APP_CONTRACT_INVOKE_REQUEST:
 		payload, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_INVOKE_REQUEST)
 		if err != nil {
@@ -854,16 +837,13 @@ func checkContractTxFeeValid(dag iDag, tx *modules.Transaction) bool {
 			return false
 		}
 		timeout = payload.(*modules.ContractInvokeRequestPayload).Timeout
-	case modules.APP_CONTRACT_STOP_REQUEST:
+	case modules.APP_CONTRACT_STOP_REQUEST: //todo
 	}
-	txSize := tx.Size()
-	timeFee := timeoutLevel * float64(timeout)
-	sizeFee := sizeLevel * float64(txSize)
-
+	timeFee, sizeFee := getContractTxNeedFee(dag, txType, float64(timeout), txSize)
 	val := math.Max(float64(fees.Amount), timeFee+sizeFee) == float64(fees.Amount)
 	if !val {
-		log.Errorf("[%s]checkContractTxFeeValid invalid, fee amount[%f]-fees[%f], txSize[%f]-timeout[%d]s",
-			shortId(reqId.String()), float64(fees.Amount), timeFee+sizeFee, txSize.Float64(), timeout)
+		log.Errorf("[%s]checkContractTxFeeValid invalid, fee amount[%f]-fees[%f](%f + %f), txSize[%f], timeout[%d]",
+			shortId(reqId.String()), float64(fees.Amount), timeFee+sizeFee, timeFee, sizeFee, txSize, timeout)
 	}
 	return val
 }
@@ -910,6 +890,40 @@ func addContractDeployDuringTime(dag iDag, tx *modules.Transaction) error {
 		return errors.New("addContractDeployDuringTime, getContractTxContractInfo fail")
 	}
 	payload.(*modules.ContractDeployPayload).DuringTime = duringTime
-
 	return nil
+}
+
+func getSysCfgContractSignatureNum(dag iDag) int {
+	var contractSigNum int
+	cp := dag.GetChainParameters()
+
+	if cp.ContractSignatureNum < 1 {
+		contractSigNum = core.DefaultContractSignatureNum
+	} else {
+		contractSigNum = cp.ContractSignatureNum
+	}
+	return contractSigNum
+}
+
+func getSysCfgContractElectionNum(dag iDag) int {
+	var contractEleNum int
+	cp := dag.GetChainParameters()
+
+	if cp.ContractElectionNum < 1 {
+		contractEleNum = core.DefaultContractElectionNum
+	} else {
+		contractEleNum = cp.ContractElectionNum
+	}
+	return contractEleNum
+}
+
+func randSelectEle(ele []modules.ElectionInf) []modules.ElectionInf {
+	out := make([]modules.ElectionInf, 0)
+	out = append(out, ele...)
+
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(out), func(i, j int) {
+		out[i], out[j] = out[j], out[i]
+	})
+	return out
 }

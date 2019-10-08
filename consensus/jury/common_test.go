@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 func TestSortSigs(t *testing.T) {
@@ -61,4 +62,19 @@ func TestDeleOneMax(t *testing.T) {
 	for i := range sigs {
 		fmt.Printf("%d %x\n", i, sigs[i])
 	}
+}
+
+func TestEleRand(t *testing.T) {
+	ele :=[]modules.ElectionInf{
+		{EType:1},
+		{EType:2},
+		{EType:3},
+		{EType:4},
+	}
+	out := randSelectEle(ele )
+
+	fmt.Printf("ele len[%d], out len[%d]\n", len(ele), len(out))
+
+	fmt.Println(out)
+	fmt.Println(ele)
 }

@@ -41,11 +41,11 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/dag/storage"
-	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/txspool"
 	"github.com/shopspring/decimal"
 )
 
@@ -159,7 +159,8 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
-	ptn.txPool = txspool.NewTxPool(config.TxPool, cache, ptn.dag, tokenengine.Instance)
+	//val:=validator.NewValidate(ptn.dag,ptn.dag,ptn.dag,ptn.dag,cache)
+	ptn.txPool = txspool.NewTxPool(config.TxPool, cache, ptn.dag)
 
 	//Test for P2P
 	ptn.engine = consensus.New(d, ptn.txPool)
@@ -192,7 +193,7 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 
 	gasToken := config.Dag.GetGasToken()
 	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, gasToken, ptn.txPool,
-		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine); err != nil {
+		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine, ptn.contract); err != nil {
 		log.Error("NewProtocolManager err:", "error", err)
 		return nil, err
 	}

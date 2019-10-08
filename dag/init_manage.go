@@ -22,6 +22,7 @@ package dag
 
 import (
 	"encoding/json"
+	"github.com/palletone/go-palletone/dag/constants"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -31,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/storage"
 	"go.dedis.ch/kyber/v3/sign/bls"
 )
 
@@ -65,23 +67,34 @@ func (dag *Dag) InitPropertyDB(genesis *core.Genesis, unit *modules.Unit) error 
 	//  初始化mediator调度器，并存在数据库
 	// @author Albert·Gou
 	ms := modules.InitMediatorSchl(gp, dgp)
-	dag.stablePropRep.UpdateMediatorSchedule(ms, gp, dgp)
 	if err := dag.stablePropRep.StoreMediatorSchl(ms); err != nil {
 		return err
 	}
+	dag.stablePropRep.UpdateMediatorSchedule()
 
 	return nil
 }
 
 func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
+	version := &modules.StateVersion{
+		Height:  unit.Number(),
+		TxIndex: ^uint32(0),
+	}
+	ws := &modules.ContractWriteSet{
+		IsDelete: false,
+		//Key:      modules.MediatorList,
+		//Value: imcB,
+	}
+
 	// Create initial mediators
 	list := make(map[string]bool, len(genesis.InitialMediatorCandidates))
+
 	for _, imc := range genesis.InitialMediatorCandidates {
 		// 存储 mediator info
-		addr, err := imc.Validate()
+		addr, jde, err := imc.Validate()
 		if err != nil {
 			log.Debugf(err.Error())
-			panic(err.Error())
+			return err
 		}
 
 		mi := modules.NewMediatorInfo()
@@ -91,10 +104,49 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 		err = dag.stableStateRep.StoreMediatorInfo(addr, mi)
 		if err != nil {
 			log.Debugf(err.Error())
-			panic(err.Error())
+			return err
+		}
+
+		// 将保证金设为0
+		md := modules.NewMediatorDeposit()
+		md.Status = modules.Agree
+		md.Role = modules.Mediator
+		md.ApplyEnterTime = time.Unix(unit.Timestamp(), 0).UTC().Format(modules.Layout2)
+
+		byte, err := json.Marshal(md)
+		if err != nil {
+			return err
+		}
+
+		ws.Value = byte
+		ws.Key = storage.MediatorDepositKey(imc.AddStr)
+		err = dag.stableStateRep.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws, version)
+		if err != nil {
+			log.Debugf(err.Error())
+			return err
 		}
 
 		list[mi.AddStr] = true
+
+		//对应的Juror
+		juror := modules.JurorDeposit{}
+		juror.Address = mi.AddStr
+		juror.Role = modules.Jury
+		juror.Balance = 0
+		juror.JurorDepositExtra = jde
+
+		jurorByte, err := json.Marshal(juror)
+		if err != nil {
+			log.Errorf(err.Error())
+			return err
+		}
+		ws.Value = jurorByte
+		ws.Key = string(constants.DEPOSIT_JURY_BALANCE_PREFIX) + mi.AddStr
+		err = dag.stableStateRep.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws, version)
+		if err != nil {
+			log.Debugf(err.Error())
+			return err
+		}
 	}
 
 	// 存储 initMediatorCandidates/JuryCandidates
@@ -103,18 +155,7 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 		log.Debugf(err.Error())
 		return err
 	}
-
-	version := &modules.StateVersion{
-		Height:  unit.Number(),
-		TxIndex: ^uint32(0),
-	}
-	ws := &modules.ContractWriteSet{
-		IsDelete: false,
-		Key:      modules.MediatorList,
-		Value:    imcB,
-	}
-
-	// todo 将保证金设为0
+	ws.Value = imcB
 
 	//Mediator
 	ws.Key = modules.MediatorList
@@ -136,15 +177,17 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 }
 
 func (dag *Dag) IsSynced() bool {
-	gp := dag.GetGlobalProp()
-	dgp := dag.GetDynGlobalProp()
+	//gp := dag.GetGlobalProp()
+	//dgp := dag.GetDynGlobalProp()
 
 	//nowFine := time.Now()
 	//now := time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
 	now := time.Now()
 	// 防止误判，获取之后的第2个生产槽时间
 	//nextSlotTime := dag.unstablePropRep.GetSlotTime(gp, dgp, 1)
-	nextSlotTime := dag.unstablePropRep.GetSlotTime(gp, dgp, 2)
+	nextSlotTime := dag.unstablePropRep.GetSlotTime(2)
+	//_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
+	//nextSlotTime := rep.GetSlotTime(2)
 
 	return nextSlotTime.After(now)
 }

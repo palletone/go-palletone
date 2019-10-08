@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
+	"fmt"
 )
 
 type PropertyDb struct {
@@ -52,8 +53,9 @@ type IPropertyDb interface {
 	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, int64, error)
 
 	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
-	GetChaincodes(contractId common.Address) (*list.CCInfo, error)
+	GetChaincode(contractId common.Address) (*list.CCInfo, error)
 	GetChainParameters() *core.ChainParameters
+	RetrieveChaincodes() ([]*list.CCInfo, error)
 }
 
 func (propdb *PropertyDb) GetChainParameters() *core.ChainParameters {
@@ -185,16 +187,29 @@ func (db *PropertyDb) GetNewestUnit(asset modules.AssetId) (common.Hash, *module
 
 func (db *PropertyDb) SaveChaincode(contractId common.Address, cc *list.CCInfo) error {
 	log.Debugf("Save chaincodes with contractid %s", contractId.String())
-	return StoreToRlpBytes(db.db, contractId.Bytes(), cc)
+	key := append(constants.JURY_PROPERTY_USER_CONTRACT_KEY, contractId.Bytes()...)
+	return StoreToRlpBytes(db.db, key, cc)
 }
 
-func (db *PropertyDb) GetChaincodes(contractId common.Address) (*list.CCInfo, error) {
+func (db *PropertyDb) GetChaincode(contractId common.Address) (*list.CCInfo, error) {
 	log.Debugf("Get chaincodes with contractid %s", contractId.String())
 	cc := &list.CCInfo{}
-	err := RetrieveFromRlpBytes(db.db, contractId.Bytes(), cc)
+	key := append(constants.JURY_PROPERTY_USER_CONTRACT_KEY, contractId.Bytes()...)
+	err := RetrieveFromRlpBytes(db.db, key, cc)
 	if err != nil {
 		log.Debugf("Cannot retrieve chaincodes by contractid %s", contractId.String())
-		return nil, err
+		return nil, fmt.Errorf("GetChaincode fail, err:%s", err.Error())
 	}
 	return cc, nil
+}
+
+func (db *PropertyDb) RetrieveChaincodes() ([]*list.CCInfo, error) {
+	kv := getprefix(db.db, constants.JURY_PROPERTY_USER_CONTRACT_KEY)
+	result := make([]*list.CCInfo, 0)
+	for _, v := range kv {
+		cc := list.CCInfo{}
+		rlp.DecodeBytes(v, &cc)
+		result = append(result, &cc)
+	}
+	return result, nil
 }

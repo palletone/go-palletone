@@ -63,7 +63,7 @@ func (s *PublicDagAPI) GetHexCommon(ctx context.Context, key string) (string, er
 		return "", err0
 	}
 	//log.Info("GetCommon by hex info.", "key", string(key_bytes), "bytes", key_bytes)
-	items, err := s.b.GetCommon(key_bytes[:])
+	items, err := s.b.GetCommon(key_bytes[:],false)
 	if err != nil {
 		return "", err
 	}
@@ -75,14 +75,20 @@ func (s *PublicDagAPI) GetCommon(ctx context.Context, key string) ([]byte, error
 	if key == "" {
 		return nil, fmt.Errorf("参数为空")
 	}
-	return s.b.GetCommon([]byte(key))
+	return s.b.GetCommon([]byte(key),false)
 }
-
+func (s *PublicDagAPI) GetLdbCommon(ctx context.Context, key string) ([]byte, error) {
+	// key to bytes
+	if key == "" {
+		return nil, fmt.Errorf("参数为空")
+	}
+	return s.b.GetCommon([]byte(key),true)
+}
 func (s *PrivateDagAPI) GetCommonByPrefix(ctx context.Context, prefix string) (string, error) {
 	if prefix == "" {
 		return "", fmt.Errorf("参数为空")
 	}
-	result := s.b.GetCommonByPrefix([]byte(prefix))
+	result := s.b.GetCommonByPrefix([]byte(prefix),false)
 	if len(result) == 0 {
 		return "all_items:null", nil
 	}
@@ -252,7 +258,7 @@ func (s *PublicDagAPI) GetUnitsByIndex(ctx context.Context, start, end decimal.D
 }
 
 func (s *PublicDagAPI) GetFastUnitIndex(ctx context.Context, assetid string) string {
-	log.Info("PublicDagAPI", "GetUnitByNumber condition:", assetid)
+	log.Debug("PublicDagAPI", "GetUnitByNumber condition:", assetid)
 	if assetid == "" {
 		assetid = "PTN"
 	}
@@ -484,4 +490,16 @@ func (s *PrivateDagAPI) GetAllUtxos(ctx context.Context) (string, error) {
 	}
 
 	return string(result_json), nil
+}
+func (s *PrivateDagAPI) CheckHeader(ctx context.Context, number int) (bool, error) {
+	dag := s.b.Dag()
+	err := dag.CheckHeaderCorrect(number)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+func (s *PrivateDagAPI) RebuildAddrTxIndex() error {
+	dag := s.b.Dag()
+	return dag.RebuildAddrTxIndex()
 }

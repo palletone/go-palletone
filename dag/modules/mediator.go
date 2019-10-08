@@ -78,6 +78,23 @@ func (mi *MediatorInfo) InfoToMediator() *core.Mediator {
 type MediatorCreateArgs struct {
 	*core.MediatorInfoBase
 	*core.MediatorApplyInfo
+	core.JurorDepositExtraJson
+}
+
+func (mco *MediatorCreateArgs) Validate() (common.Address, core.JurorDepositExtra, error) {
+	var jde core.JurorDepositExtra
+
+	addr, err := mco.MediatorInfoBase.Validate()
+	if err != nil {
+		return addr, jde, err
+	}
+
+	jde, err = mco.JurorDepositExtraJson.Validate(mco.AddStr)
+	if err != nil {
+		return addr, jde, err
+	}
+
+	return addr, jde, nil
 }
 
 func NewMediatorCreateArgs() *MediatorCreateArgs {

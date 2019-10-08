@@ -74,18 +74,19 @@ func (mp *MediatorPlugin) AddToTBLSSignBufs(newHash common.Hash) {
 		return
 	}
 
-	newHeader, err := mp.dag.GetHeaderByHash(newHash)
-	if newHeader == nil || err != nil {
-		err = fmt.Errorf("fail to get header by hash in dag: %v", newHash.TerminalString())
-		log.Debugf(err.Error())
+	header, err := mp.dag.GetHeaderByHash(newHash)
+	if header == nil {
+		err = fmt.Errorf("fail to get header by hash: %v, err: %v", newHash.TerminalString(), err.Error())
+		log.Errorf(err.Error())
 		return
 	}
 
 	var ms []common.Address
-	if newHeader.Timestamp() <= mp.dag.LastMaintenanceTime() {
-		ms = mp.GetLocalPrecedingMediators()
-	} else {
+	// 严格要求换届unix时间是产块间隔的整数倍
+	if header.Timestamp() > mp.dag.LastMaintenanceTime() {
 		ms = mp.GetLocalActiveMediators()
+	} else {
+		ms = mp.GetLocalPrecedingMediators()
 	}
 
 	for _, localMed := range ms {
@@ -134,9 +135,9 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 	mp.dkgLock.Lock()
 	defer mp.dkgLock.Unlock()
 	var (
-		dkgr    *dkg.DistKeyGenerator
-		newHeader *modules.Header
-		err error
+		dkgr   *dkg.DistKeyGenerator
+		header *modules.Header
+		err    error
 	)
 
 	// 1. 获取群签名所需数据
@@ -148,18 +149,18 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 			return
 		}
 
-		newHeader, err = mp.dag.GetHeaderByHash(unitHash)
-		if newHeader == nil || err != nil {
-			err = fmt.Errorf("fail to get header by hash in dag: %v", unitHash.TerminalString())
-			log.Debugf(err.Error())
+		header, err = dag.GetHeaderByHash(unitHash)
+		if header == nil {
+			err = fmt.Errorf("fail to get header by hash: %v, err: %v", unitHash.TerminalString(), err.Error())
+			log.Errorf(err.Error())
 			return
 		}
 
 		// 判断是否是换届前的单元
-		if newHeader.Timestamp() <= dag.LastMaintenanceTime() {
-			dkgr, ok = mp.precedingDKGs[localMed]
-		} else {
+		if header.Timestamp() > mp.lastMaintenanceTime {
 			dkgr, ok = mp.activeDKGs[localMed]
+		} else {
+			dkgr, ok = mp.precedingDKGs[localMed]
 		}
 
 		if !ok {
@@ -171,7 +172,7 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 	// 2. 判断群签名的相关条件
 	{
 		// 如果单元没有群公钥， 则跳过群签名
-		pkb := newHeader.GetGroupPubKeyByte()
+		pkb := header.GetGroupPubKeyByte()
 		if len(pkb) == 0 {
 			err := fmt.Errorf("this unit(%v)'s group public key is null", unitHash.TerminalString())
 			log.Debug(err.Error())
@@ -179,7 +180,7 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 		}
 
 		// 判断父 unit 是否不可逆
-		parentHash := newHeader.ParentHash()[0]
+		parentHash := header.ParentHash()[0]
 		if !dag.IsIrreversibleUnit(parentHash) {
 			log.Debugf("the unit's(%v) parent unit(%v) is not irreversible",
 				unitHash.TerminalString(), parentHash.TerminalString())
@@ -216,14 +217,14 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 	log.Debugf("received the sign shares of the unit(%v)", newUnitHash.TerminalString())
 
 	dag := mp.dag
-	newUnit, err := dag.GetHeaderByHash(newUnitHash)
-	if newUnit == nil || err != nil {
-		err = fmt.Errorf("fail to get unit by hash in dag: %v", newUnitHash.TerminalString())
-		log.Debugf(err.Error())
+	header, err := dag.GetHeaderByHash(newUnitHash)
+	if header == nil {
+		err = fmt.Errorf("fail to get unit by hash: %v, err: %v", newUnitHash.TerminalString(), err.Error())
+		log.Errorf(err.Error())
 		return
 	}
 
-	localMed := newUnit.Author()
+	localMed := header.Author()
 	mp.recoverBufLock.RLock()
 	defer mp.recoverBufLock.RUnlock()
 
@@ -289,22 +290,22 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 
 	{
 		dag := mp.dag
-		unit, err := dag.GetHeaderByHash(unitHash)
-		if unit == nil || err != nil {
-			err = fmt.Errorf("fail to get unit by hash in dag: %v", unitHash.TerminalString())
-			log.Debugf(err.Error())
+		header, err := dag.GetHeaderByHash(unitHash)
+		if header == nil {
+			err = fmt.Errorf("fail to get header by hash: %v, err: %v", unitHash.TerminalString(), err.Error())
+			log.Errorf(err.Error())
 			return
 		}
 
 		// 判断是否是换届前的单元
-		if unit.Timestamp() <= dag.LastMaintenanceTime() {
-			mSize = dag.PrecedingMediatorsCount()
-			threshold = dag.PrecedingThreshold()
-			dkgr, ok = mp.precedingDKGs[localMed]
-		} else {
+		if header.Timestamp() > mp.lastMaintenanceTime {
 			mSize = dag.ActiveMediatorsCount()
 			threshold = dag.ChainThreshold()
 			dkgr, ok = mp.activeDKGs[localMed]
+		} else {
+			mSize = dag.PrecedingMediatorsCount()
+			threshold = dag.PrecedingThreshold()
+			dkgr, ok = mp.precedingDKGs[localMed]
 		}
 
 		if !ok {

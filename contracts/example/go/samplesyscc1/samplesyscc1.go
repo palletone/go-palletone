@@ -29,54 +29,67 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 )
 
-//var instance SampleSysCC1
+//var instance SampleSysCC
 
 // SampleSysCC example simple Chaincode implementation
-type SampleSysCC1 struct {
+type SampleSysCC struct {
 }
 
 // Init initializes the sample system chaincode by storing the key and value
 // arguments passed in as parameters
-func (t *SampleSysCC1) Init(stub shim.ChaincodeStubInterface) pb.Response {
+func (t *SampleSysCC) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	//as system chaincodes do not take part in consensus and are part of the system,
 	//best practice to do nothing (or very little) in Init.
 
 	//fmt.Println("***sample system contract init***")
+	//stub.PutState("paystate1", []byte("paystate1"))
 	return shim.Success(nil)
 }
 
 // Invoke gets the supplied key and if it exists, updates the key with the newly
 // supplied value.
-func (t *SampleSysCC1) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
+func (t *SampleSysCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	f, args := stub.GetFunctionAndParameters()
 
 	switch f {
+	case "txAddr":
+		return shim.Success(nil)
+	case "deposit":
+		return shim.Success(nil)
+
+	case "addrPTN":
+		return shim.Success(nil)
+	case "transactionPTN":
+		return shim.Success(nil)
+	case "queryPTN":
+		return shim.Success(nil)
+
 	case "add":
 		{
 			a, _ := strconv.Atoi(args[0])
 			b, _ := strconv.Atoi(args[1])
-			rspStr := fmt.Sprintf("Value1:%d", a+b)
+			rspStr := fmt.Sprintf("Value:%d", a+b+1)
 			return shim.Success([]byte(rspStr))
 		}
 	case "sub":
 		{
 			a, _ := strconv.Atoi(args[0])
 			b, _ := strconv.Atoi(args[1])
-			rspStr := fmt.Sprintf("Value1:%d", a-b)
+			rspStr := fmt.Sprintf("Value:%d", a-b)
 			return shim.Success([]byte(rspStr))
 		}
 	case "mul":
 		{
 			a, _ := strconv.Atoi(args[0])
 			b, _ := strconv.Atoi(args[1])
-			rspStr := fmt.Sprintf("Value1:%d", a*b)
+			rspStr := fmt.Sprintf("Value:%d", a*b)
 			return shim.Success([]byte(rspStr))
 		}
 	case "div":
 		{
 			a, _ := strconv.Atoi(args[0])
 			b, _ := strconv.Atoi(args[1])
-			rspStr := fmt.Sprintf("Value1:%d", a/b)
+			rspStr := fmt.Sprintf("Value:%d", a/b)
 			return shim.Success([]byte(rspStr))
 		}
 	case "putval":

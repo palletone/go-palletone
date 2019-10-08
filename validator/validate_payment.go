@@ -37,6 +37,7 @@ import (
 //1. Amount correct
 //2. Asset must be equal
 //3. Unlock correct
+//4.Blacklist check, fromAddr toAddr must not in blacklist
 func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx int,
 	payment *modules.PaymentPayload, usedUtxo map[string]bool) ValidationCode {
 	txId := tx.Hash()
@@ -44,6 +45,11 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 	//	// TODO check locktime
 	//}
 	gasToken := dagconfig.DagConfig.GetGasToken()
+	blacklistAddress := validate.getBlacklistAddress()
+	log.DebugDynamic(func() string {
+		data, _ := json.Marshal(blacklistAddress)
+		return "Blacklist:" + string(data)
+	})
 	var asset *modules.Asset
 	totalInput := uint64(0)
 	isInputnil := false
@@ -127,6 +133,12 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 					statusValid = true
 				}
 			}
+			fromAddr, _ := validate.tokenEngine.GetAddressFromScript(utxo.PkScript)
+			if _, isIn := blacklistAddress[fromAddr]; isIn {
+				log.Infof("address[%s] is in blacklist", fromAddr.String())
+				return TxValidationCode_ADDRESS_IN_BLACKLIST
+			}
+
 			totalInput += utxo.Amount
 			// check SignatureScript
 			utxoScriptMap[in.PreviousOutPoint.String()] = utxo.PkScript
@@ -160,6 +172,11 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 			totalOutput += out.Value
 			if totalOutput < out.Value || out.Value == 0 { //big number overflow
 				return TxValidationCode_INVALID_AMOUNT
+			}
+			toAddr, _ := validate.tokenEngine.GetAddressFromScript(out.PkScript)
+			if _, isIn := blacklistAddress[toAddr]; isIn {
+				log.Infof("address[%s] is in blacklist", toAddr.String())
+				return TxValidationCode_ADDRESS_IN_BLACKLIST
 			}
 		}
 
@@ -209,15 +226,47 @@ func (validate *Validate) checkTokenStatus(asset *modules.Asset) ValidationCode 
 	return TxValidationCode_VALID
 }
 
+//var BlacklistAddress=[]byte("BlacklistAddress")
+func (validate *Validate) getBlacklistAddress() map[common.Address]bool {
+	result := make(map[common.Address]bool)
+	if validate.statequery == nil {
+		log.Warn("don't set statequery, blacklist is empty")
+		return result
+	}
+
+	//data,err:= validate.cache.cache.Get(BlacklistAddress)
+	//if err==nil{
+	// 	addresses,_,_:=	validate.statequery.GetBlacklistAddress()
+	// 	data,_=rlp.EncodeToBytes(addresses)
+	// 	validate.cache.cache.Set(BlacklistAddress,data,60)
+	//}
+	//addresses:=[]common.Address{}
+	//rlp.DecodeBytes(data,&addresses)
+	addresses, _, _ := validate.statequery.GetBlacklistAddress()
+
+	for _, addr := range addresses {
+		result[addr] = true
+	}
+	return result
+}
+
 func (validate *Validate) generateJuryRedeemScript(jury *modules.ElectionNode) []byte {
-	if jury == nil{
+	if jury == nil {
 		return nil
 	}
-	count := len(jury.EleList)
+	count := int(jury.JuryCount)
+	if count == 0 {
+		count = len(jury.EleList)
+	}
 	needed := byte(math.Ceil((float64(count)*2 + 1) / 3))
 	pubKeys := [][]byte{}
-	for _, jurior := range jury.EleList {
-		pubKeys = append(pubKeys, jurior.PublicKey)
+	for _, ju := range jury.EleList {
+		juror, err := validate.statequery.GetJurorByAddrHash(ju.AddrHash)
+		if err != nil {
+			log.Errorf(err.Error())
+			return nil
+		}
+		pubKeys = append(pubKeys, juror.PublicKey)
 	}
 	return validate.tokenEngine.GenerateRedeemScript(needed, pubKeys)
 }

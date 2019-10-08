@@ -22,6 +22,7 @@ package deposit
 
 import (
 	"encoding/json"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -81,7 +82,15 @@ func delPledgeDepositRecord(stub shim.ChaincodeStubInterface, addr string) error
 	return stub.DelState(key)
 }
 func getPledgeDepositRecord(stub shim.ChaincodeStubInterface, addr string) (*modules.AddressAmount, error) {
-	return getPledgeRecord(stub, string(constants.PLEDGE_DEPOSIT_PREFIX), addr)
+	addrAmt,err:= getPledgeRecord(stub, string(constants.PLEDGE_DEPOSIT_PREFIX), addr)
+	if err!=nil{
+		log.Error("getPledgeDepositRecord by %s return error:%s",addr,err.Error())
+		return nil,err
+	}
+	if addrAmt!=nil {
+		log.Debugf("getPledgeDepositRecord by %s,result:%d", addr, addrAmt.Amount)
+	}
+	return addrAmt,err
 }
 func getAllPledgeDepositRecords(stub shim.ChaincodeStubInterface) ([]*modules.AddressAmount, error) {
 	return getAllPledgeRecords(stub, string(constants.PLEDGE_DEPOSIT_PREFIX))
@@ -94,7 +103,15 @@ func delPledgeWithdrawRecord(stub shim.ChaincodeStubInterface, addr string) erro
 	return stub.DelState(key)
 }
 func getPledgeWithdrawRecord(stub shim.ChaincodeStubInterface, addr string) (*modules.AddressAmount, error) {
-	return getPledgeRecord(stub, string(constants.PLEDGE_WITHDRAW_PREFIX), addr)
+	addrAmt,err:=  getPledgeRecord(stub, string(constants.PLEDGE_WITHDRAW_PREFIX), addr)
+	if err!=nil{
+		log.Error("getPledgeWithdrawRecord by %s return error:%s",addr,err.Error())
+		return nil,err
+	}
+	if addrAmt!=nil {
+		log.Debugf("getPledgeWithdrawRecord by %s,result:%d", addr, addrAmt.Amount)
+	}
+	return addrAmt,err
 }
 func getAllPledgeWithdrawRecords(stub shim.ChaincodeStubInterface) ([]*modules.AddressAmount, error) {
 	return getAllPledgeRecords(stub, string(constants.PLEDGE_WITHDRAW_PREFIX))
@@ -113,7 +130,6 @@ func getLastPledgeListDate(stub shim.ChaincodeStubInterface) (string, error) {
 }
 func saveLastPledgeListDate(stub shim.ChaincodeStubInterface, date string) error {
 	return stub.PutState(constants.PledgeListLastDate, []byte(date))
-
 }
 
 //保存最新的质押列表
@@ -127,7 +143,6 @@ func saveLastPledgeList(stub shim.ChaincodeStubInterface, allM *modules.PledgeLi
 		return err
 	}
 	return saveLastPledgeListDate(stub, allM.Date)
-
 }
 
 //获得最新的质押列表
