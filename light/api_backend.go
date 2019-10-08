@@ -241,6 +241,9 @@ func (b *LesApiBackend) GetCommonByPrefix(prefix []byte,stableDb bool) map[strin
 func (b *LesApiBackend) GetContractStateJsonByPrefix(contractid []byte, prefix string) ([]ptnjson.ContractStateJson, error) {
 	return nil, nil
 }
+func (b *LesApiBackend) GetAllData() ([][]byte, [][]byte) {
+	return b.ptn.dag.GetAllData()
+}
 
 // Get Contract Api
 func (b *LesApiBackend) GetContract(contractAddr common.Address) (*ptnjson.ContractJson, error) {

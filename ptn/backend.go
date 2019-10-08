@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
@@ -108,7 +109,7 @@ func (p *PalletOne) AddCorsServer(cs LesServer) *PalletOne {
 
 // New creates a new PalletOne object (including the
 // initialisation of the common PalletOne object)
-func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache) (*PalletOne, error) {
+func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isTestNet bool) (*PalletOne, error) {
 	if !config.SyncMode.IsValid() {
 		return nil, fmt.Errorf("invalid sync mode %d", config.SyncMode)
 	}
@@ -118,13 +119,30 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache) (*P
 		log.Error("PalletOne New", "CreateDB err:", err)
 		return nil, err
 	}
-	dag, err := dag.NewDag(db, cache, false)
+	if has, _ := db.Has([]byte("gpGlobalProperty")); !has {
+		keys, values := make([]string, 0), make([]string, 0)
+		if isTestNet {
+			keys = append(keys, TestNetKeys...)
+			values = append(values, TestNetValues...)
+		} else {
+			keys = append(keys, MainNetKeys...)
+			values = append(values, MainNetValues...)
+		}
+		err := initGenesisData(keys, values, db)
+		if err != nil {
+			return nil, err
+		}
+	}
+	d, err := dag.NewDag(db, cache, false)
 	if err != nil {
 		log.Error("PalletOne New", "NewDag err:", err)
 		return nil, err
+	} else {
+		hash, height := d.Memdag.GetLastStableUnitInfo()
+		log.Debugf("init dag success,index:%d, genesis: %s", height, hash.String())
 	}
 
-	dag.RefreshSysParameters()
+	d.RefreshSysParameters()
 
 	ptn := &PalletOne{
 		config:         config,
@@ -132,7 +150,7 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache) (*P
 		accountManager: ctx.AccountManager,
 		shutdownChan:   make(chan bool),
 		networkId:      config.NetworkId,
-		dag:            dag,
+		dag:            d,
 		unitDb:         db,
 		syncCh:         make(chan bool, 1),
 	}
@@ -145,15 +163,15 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache) (*P
 	ptn.txPool = txspool.NewTxPool(config.TxPool, cache, ptn.dag)
 
 	//Test for P2P
-	ptn.engine = consensus.New(dag, ptn.txPool)
+	ptn.engine = consensus.New(d, ptn.txPool)
 
-	ptn.mediatorPlugin, err = mp.NewMediatorPlugin( /*ctx, */ &config.MediatorPlugin, ptn, dag)
+	ptn.mediatorPlugin, err = mp.NewMediatorPlugin( /*ctx, */ &config.MediatorPlugin, ptn, d)
 	if err != nil {
 		log.Error("Initialize mediator plugin err:", "error", err)
 		return nil, err
 	}
 
-	ptn.contractPorcessor, err = jury.NewContractProcessor(ptn, dag, nil, &config.Jury)
+	ptn.contractPorcessor, err = jury.NewContractProcessor(ptn, d, nil, &config.Jury)
 	if err != nil {
 		log.Error("contract processor creat:", "error", err)
 		return nil, err
@@ -488,4 +506,19 @@ func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal,
 	res.Warning = ptnapi.DefaultResult
 
 	return res, nil
+}
+func initGenesisData(keys, values []string, db ptndb.Database) error {
+	k := len(keys)
+	v := len(values)
+	if k != v {
+		fmt.Errorf("The len[%d] of keys doesn't match the len[%d] of values", k, v)
+	}
+	for i := 0; i < k; i++ {
+		key := util.Hex2Bytes(keys[i])
+		value := util.Hex2Bytes(values[i])
+		if err := db.Put(key, value); err != nil {
+			return err
+		}
+	}
+	return nil
 }

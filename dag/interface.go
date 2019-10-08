@@ -39,6 +39,7 @@ type IDag interface {
 	GetCommon(key []byte,stableDb bool) ([]byte, error)
 	GetCommonByPrefix(prefix []byte,stableDb bool) map[string][]byte
 	SaveCommon(key, val []byte) error
+	GetAllData() ([][]byte, [][]byte)
 
 	IsEmpty() bool
 	GetStableChainIndex(token modules.AssetId) *modules.ChainIndex

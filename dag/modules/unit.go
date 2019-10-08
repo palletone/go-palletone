@@ -82,10 +82,10 @@ func (h *Header) GetGroupPubKey() (kyber.Point, error) {
 
 func (cpy *Header) CopyHeader(h *Header) {
 	index := new(ChainIndex)
-   index.Index = h.Number.Index
-   index.AssetID = h.Number.AssetID
-   *cpy = *h
-   cpy.Number = index
+	index.Index = h.Number.Index
+	index.AssetID = h.Number.AssetID
+	*cpy = *h
+	cpy.Number = index
 }
 
 func NewHeader(parents []common.Hash, used uint64, extra []byte) *Header {
@@ -257,8 +257,8 @@ type Unit struct {
 	UnitSize   common.StorageSize `json:"unit_size"`    // unit size
 	// These fields are used by package ptn to track
 	// inter-peer block relay.
-	ReceivedAt   time.Time
-	ReceivedFrom interface{}
+	ReceivedAt   time.Time   `json:"received_at"`
+	ReceivedFrom interface{} `json:"received_from"`
 }
 
 func (h *Header) GetAssetId() AssetId {

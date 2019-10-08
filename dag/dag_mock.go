@@ -82,6 +82,19 @@ func (mr *MockIDagMockRecorder) GetCommonByPrefix(prefix, stableDb interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommonByPrefix", reflect.TypeOf((*MockIDag)(nil).GetCommonByPrefix), prefix, stableDb)
 }
 
+// GetAllData mocks base method
+func (m *MockIDag) GetAllData() ([][]byte, [][]byte) {
+	ret := m.ctrl.Call(m, "GetAllData")
+	ret0, _ := ret[0].([][]byte)
+	ret1, _ := ret[1].([][]byte)
+	return ret0, ret1
+}
+
+// GetAllData indicates an expected call of GetAllData
+func (mr *MockIDagMockRecorder) GetAllData() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllData", reflect.TypeOf((*MockIDag)(nil).GetAllData))
+}
+
 // SaveCommon mocks base method
 func (m *MockIDag) SaveCommon(key, val []byte) error {
 	m.ctrl.T.Helper()

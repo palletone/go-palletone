@@ -67,8 +67,8 @@ type Config struct {
 	// registered services, instead those can use utility methods to create/access
 	// databases or flat files. This enables ephemeral nodes which can fully reside
 	// in memory.
-	DataDir string
-
+	DataDir   string
+	IsTestNet bool
 	// Configuration of peer-to-peer networking.
 	P2P p2p.Config `toml:"-"`
 
@@ -357,7 +357,7 @@ func (c *Config) parsePersistentNodes(path string) []*discover.Node {
 		return nil
 	}
 	// Interpret the list as a discovery node array
-	nodes:=make( []*discover.Node,0,len(nodelist))
+	nodes := make([]*discover.Node, 0, len(nodelist))
 	for _, url := range nodelist {
 		if url == "" {
 			continue

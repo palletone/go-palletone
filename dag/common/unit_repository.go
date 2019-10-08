@@ -75,6 +75,7 @@ type IUnitRepository interface {
 	GetTxLookupEntry(hash common.Hash) (*modules.TxLookupEntry, error)
 	GetCommon(key []byte) ([]byte, error)
 	GetCommonByPrefix(prefix []byte) map[string][]byte
+	GetAllData() ([][]byte, [][]byte)
 	//GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	//GetAddrOutput(addr string) ([]modules.Output, error)
@@ -277,6 +278,9 @@ func (rep *UnitRepository) GetCommon(key []byte) ([]byte, error) { return rep.da
 func (rep *UnitRepository) GetCommonByPrefix(prefix []byte) map[string][]byte {
 	return rep.dagdb.GetCommonByPrefix(prefix)
 }
+func (rep *UnitRepository) GetAllData() ([][]byte, [][]byte) {
+	return rep.dagdb.GetAllData()
+}
 func (rep *UnitRepository) SaveCommon(key, val []byte) error {
 	return rep.dagdb.SaveCommon(key, val)
 }
@@ -357,7 +361,7 @@ generate genesis unit, need genesis unit configure fields and transactions list
 parentUnitHeight=-1,means don't have parent unit
 */
 func NewGenesisUnit(txs modules.Transactions, time int64, asset *modules.Asset, parentUnitHeight int64,
-	parentUnitHash common.Hash) (*modules.Unit, error) {
+	parentUnitHash common.Hash) *modules.Unit {
 	gUnit := &modules.Unit{}
 
 	// genesis unit height
@@ -383,7 +387,7 @@ func NewGenesisUnit(txs modules.Transactions, time int64, asset *modules.Asset, 
 	gUnit.UnitSize = gUnit.Size()
 	// set unit hash
 	gUnit.UnitHash = gUnit.Hash()
-	return gUnit, nil
+	return gUnit
 }
 
 // WithSignature, returns a new unit with the given signature.

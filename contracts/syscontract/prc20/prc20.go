@@ -23,16 +23,16 @@ package prc20
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
+	"github.com/shopspring/decimal"
+
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	dm "github.com/palletone/go-palletone/dag/modules"
-
-	"github.com/shopspring/decimal"
 )
 
 const symbolsKey = "symbol_"
@@ -241,6 +241,12 @@ func getSupply(supplyStr string, decimals uint64) (uint64, error) {
 		return 0, fmt.Errorf(jsonResp)
 	}
 	totalSupply = totalSupply.Mul(decimal.New(1, int32(decimals)))
+	//uMaxStr := fmt.Sprintf("%d", uint64(math.MaxUint64))
+	uMaxDecimal, _ := decimal.NewFromString("18446744073709551615")
+	if totalSupply.GreaterThan(uMaxDecimal) {
+		jsonResp := "{\"Error\":\"TotalSupply * decimals is too big\"}"
+		return 0, fmt.Errorf(jsonResp)
+	}
 	return uint64(totalSupply.IntPart()), nil
 }
 
@@ -369,7 +375,7 @@ func (p *PRC20) SupplyToken(stub shim.ChaincodeStubInterface, symbol string, sup
 	if err != nil {
 		return fmt.Errorf(err.Error())
 	}
-	if math.MaxInt64-tkInfo.TotalSupply < supplyAmount {
+	if math.MaxUint64-tkInfo.TotalSupply < supplyAmount {
 		jsonResp := "{\"Error\":\"Too big, overflow\"}"
 		return fmt.Errorf(jsonResp)
 	}

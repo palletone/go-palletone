@@ -1196,7 +1196,7 @@ func RegisterPtnService(stack *node.Node, cfg *ptn.Config) {
 		})
 	} else {
 		err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-			fullNode, err := ptn.New(ctx, cfg, stack.CacheDb)
+			fullNode, err := ptn.New(ctx, cfg, stack.CacheDb, stack.IsTestNet)
 			if fullNode != nil && cfg.LightServ > 0 {
 				ls, _ := light.NewLesServer(fullNode, cfg, configure.LPSProtocol)
 				fullNode.AddLesServer(ls)
