@@ -32,12 +32,7 @@ import (
 )
 
 func (mp *MediatorPlugin) newChainBanner() {
-	log.Infof("\n" +
-		"*   ------- NEW CHAIN -------   *\n" +
-		"*   - Welcome to PalletOne! -   *\n" +
-		"*   -------------------------   *\n" +
-		"\n")
-
+	log.Info("raise the flag of palletone")
 	if mp.dag.GetSlotAtTime(time.Now()) > 200 {
 		log.Debugf("Your genesis seems to have an old timestamp. " +
 			"Please consider using the --genesistime option to give your genesis a recent timestamp.")

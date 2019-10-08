@@ -21,6 +21,7 @@
 package ptnapi
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 
@@ -275,5 +276,5 @@ func (s *PrivateAccountAPI) GetPublicKey(address string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return hexutil.Encode(byte), nil
+	return hex.EncodeToString(byte), nil
 }

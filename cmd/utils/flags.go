@@ -45,7 +45,6 @@ import (
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/state"
-	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/light"
 	"github.com/palletone/go-palletone/light/cors"
 	"github.com/palletone/go-palletone/ptn"
@@ -53,6 +52,7 @@ import (
 	"github.com/palletone/go-palletone/statistics/dashboard"
 	"github.com/palletone/go-palletone/statistics/metrics"
 	"github.com/palletone/go-palletone/statistics/ptnstats"
+	"github.com/palletone/go-palletone/txspool"
 	"gopkg.in/urfave/cli.v1"
 )
 

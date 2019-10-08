@@ -38,7 +38,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/palletcache"
-	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/txspool"
 	"github.com/palletone/go-palletone/validator"
 	"testing"
 )

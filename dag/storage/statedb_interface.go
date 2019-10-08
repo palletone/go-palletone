@@ -83,9 +83,11 @@ type IStateDb interface {
 	IsMediator(address common.Address) bool
 	RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error)
 
-	GetCandidateMediatorList() (map[string]string, error)
-	GetJuryCandidateList() (map[string]string, error)
+	GetCandidateMediatorList() (map[string]bool, error)
+	GetJuryCandidateList() (map[string]bool, error)
 	IsInJuryCandidateList(address common.Address) bool
+	GetAllJuror() (map[string]*modules.JurorDeposit, error)
+	GetJurorByAddr(addr string) (*modules.JurorDeposit, error)
 	GetContractDeveloperList() ([]common.Address, error)
 	IsInContractDeveloperList(address common.Address) bool
 
@@ -94,6 +96,8 @@ type IStateDb interface {
 
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
+
+	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
 
 	GetSysParamWithoutVote() (map[string]string, error)
 	GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)

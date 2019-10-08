@@ -91,6 +91,11 @@ web3._extend({
             call: 'dag_getCommon',
             params: 1,
         }),
+		new web3._extend.Method({
+            name: 'getLdbCommon',
+            call: 'dag_getLdbCommon',
+            params: 1,
+        }),
         new web3._extend.Method({
             name: 'getCommonByPrefix',
             call: 'dag_getCommonByPrefix',
@@ -182,6 +187,16 @@ web3._extend({
         new web3._extend.Method({
             name: 'isSynced',
             call: 'dag_isSynced',
+            params: 0,
+        }),
+		new web3._extend.Method({
+            name: 'checkHeader',
+            call: 'dag_checkHeader',
+            params: 1,
+        }),
+		new web3._extend.Method({
+            name: 'rebuildAddrTxIndex',
+            call: 'dag_rebuildAddrTxIndex',
             params: 0,
         }),
         new web3._extend.Method({

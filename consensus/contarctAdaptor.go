@@ -18,3 +18,7 @@ func (a *AdapterJury) AdapterFunResult(reqId common.Hash, contractId common.Addr
 	consultContent []byte, timeOut time.Duration) ([]byte, error) {
 	return a.Processor.AdapterFunResult(reqId, contractId, msgType, consultContent, timeOut)
 }
+
+func (a *AdapterJury) GetLocalJuryAddrs() []common.Address {
+	return a.Processor.GetLocalJuryAddrs()
+}

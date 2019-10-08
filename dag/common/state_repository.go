@@ -22,6 +22,8 @@ package common
 
 import (
 	"encoding/json"
+	"errors"
+	"github.com/palletone/go-palletone/common/util"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -50,11 +52,13 @@ type IStateRepository interface {
 	GetAccountState(address common.Address, statekey string) (*modules.ContractStateValue, error)
 	GetAccountBalance(address common.Address) uint64
 	LookupAccount() map[common.Address]*modules.AccountInfo
-	GetAccountVotedMediators(addr common.Address) map[string]bool
+
 	GetPledgeList() (*modules.PledgeList, error)
+	GetMediatorVotedResults() (map[string]uint64, error)
+	GetAccountVotedMediators(addr common.Address) map[string]bool
+	GetVotingForMediator(addStr string) (map[string]uint64, error)
 
 	GetMediator(add common.Address) *core.Mediator
-	GetMediatorVotedResults() (map[string]uint64, error)
 	RetrieveMediator(address common.Address) (*core.Mediator, error)
 	StoreMediator(med *core.Mediator) error
 	GetMediators() map[common.Address]bool
@@ -66,8 +70,11 @@ type IStateRepository interface {
 	GetMinFee() (*modules.AmountAsset, error)
 	//GetCurrentChainIndex(assetId modules.AssetId) (*modules.ChainIndex, error)
 
-	GetJuryCandidateList() (map[string]string, error)
+	GetJuryCandidateList() (map[string]bool, error)
 	IsJury(address common.Address) bool
+	GetAllJuror() (map[string]*modules.JurorDeposit, error)
+	GetJurorByAddr(addr string) (*modules.JurorDeposit, error)
+	GetJurorByAddrHash(addrHash common.Hash) (*modules.JurorDeposit, error)
 	GetContractDeveloperList() ([]common.Address, error)
 	IsContractDeveloper(address common.Address) bool
 
@@ -82,17 +89,16 @@ type IStateRepository interface {
 	GetSysParamWithoutVote() (map[string]string, error)
 	GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)
 	SaveSysConfigContract(key string, val []byte, ver *modules.StateVersion) error
-	//GetSysConfig(name string) ([]byte, *modules.StateVersion, error)
-	//GetAllConfig() (map[string]*modules.ContractStateValue, error)
+	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
 }
 
 type StateRepository struct {
-	statedb storage.IStateDb
-	//logger  log.ILogger
+	statedb         storage.IStateDb
+	mapHash2Address map[common.Hash]common.Address //For Juror address hash
 }
 
 func NewStateRepository(statedb storage.IStateDb) *StateRepository {
-	return &StateRepository{statedb: statedb}
+	return &StateRepository{statedb: statedb, mapHash2Address: make(map[common.Hash]common.Address)}
 }
 
 func NewStateRepository4Db(db ptndb.Database) *StateRepository {
@@ -108,14 +114,6 @@ func (rep *StateRepository) SaveSysConfigContract(key string, val []byte, ver *m
 	return rep.statedb.SaveSysConfigContract(key, val, ver)
 }
 
-//func (rep *StateRepository) GetSysConfig(name string) ([]byte, *modules.StateVersion, error) {
-//	return rep.statedb.GetSysConfig(name)
-//}
-
-//func (rep *StateRepository) GetAllConfig() (map[string]*modules.ContractStateValue, error) {
-//	return rep.statedb.GetAllSysConfig()
-//}
-
 func (rep *StateRepository) GetSysParamWithoutVote() (map[string]string, error) {
 	return rep.statedb.GetSysParamWithoutVote()
 }
@@ -123,7 +121,9 @@ func (rep *StateRepository) GetSysParamWithoutVote() (map[string]string, error) 
 func (rep *StateRepository) GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error) {
 	return rep.statedb.GetSysParamsWithVotes()
 }
-
+func (rep *StateRepository) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error) {
+	return rep.statedb.GetBlacklistAddress()
+}
 func (rep *StateRepository) GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error) {
 	return rep.statedb.GetContractStatesById(id)
 }
@@ -136,9 +136,11 @@ func (rep *StateRepository) GetContractStatesByPrefix(id []byte,
 func (rep *StateRepository) GetContract(id []byte) (*modules.Contract, error) {
 	return rep.statedb.GetContract(id)
 }
+
 func (rep *StateRepository) GetAllContracts() ([]*modules.Contract, error) {
 	return rep.statedb.GetAllContracts()
 }
+
 func (rep *StateRepository) GetContractsByTpl(tplId []byte) ([]*modules.Contract, error) {
 	cids, err := rep.statedb.GetContractIdsByTpl(tplId)
 	if err != nil {
@@ -158,6 +160,7 @@ func (rep *StateRepository) GetContractsByTpl(tplId []byte) ([]*modules.Contract
 func (rep *StateRepository) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
 	return rep.statedb.GetContractTpl(tplId)
 }
+
 func (rep *StateRepository) GetContractTplCode(tplId []byte) ([]byte, error) {
 	return rep.statedb.GetContractTplCode(tplId)
 }
@@ -200,22 +203,26 @@ func (rep *StateRepository) GetAccountBalance(address common.Address) uint64 {
 func (rep *StateRepository) LookupAccount() map[common.Address]*modules.AccountInfo {
 	return rep.statedb.LookupAccount()
 }
+
 func (rep *StateRepository) GetPledgeList() (*modules.PledgeList, error) {
 	dd, _, err := rep.statedb.GetContractState(syscontract.DepositContractAddress.Bytes(), constants.PledgeListLastDate)
 	if err != nil {
 		return nil, err
 	}
+
 	date := string(dd)
 	key := constants.PledgeList + date
 	data, _, err := rep.statedb.GetContractState(syscontract.DepositContractAddress.Bytes(), key)
 	if err != nil {
 		return nil, err
 	}
+
 	pledgeList := &modules.PledgeList{}
 	err = json.Unmarshal(data, pledgeList)
 	if err != nil {
 		return nil, err
 	}
+
 	return pledgeList, nil
 }
 
@@ -237,6 +244,7 @@ func (rep *StateRepository) GetPledgeDepositApplyList() ([]*modules.AddressAmoun
 	}
 	return result, nil
 }
+
 func (rep *StateRepository) GetPledgeWithdrawApplyList() ([]*modules.AddressAmount, error) {
 	states, err := rep.statedb.GetContractStatesByPrefix(syscontract.DepositContractAddress.Bytes(),
 		string(constants.PLEDGE_WITHDRAW_PREFIX))
@@ -257,44 +265,49 @@ func (rep *StateRepository) GetPledgeWithdrawApplyList() ([]*modules.AddressAmou
 
 //根据用户的新质押和提币申请，以及质押列表计算
 func (rep *StateRepository) GetPledgeListWithNew() (*modules.PledgeList, error) {
+	result := &modules.PledgeList{}
 
-	pledgeList, err := rep.GetPledgeList()
-	if err != nil || pledgeList == nil {
-		pledgeList = &modules.PledgeList{}
+	pledgeList, _ := rep.GetPledgeList()
+	if pledgeList != nil {
+		result = pledgeList
 	}
+
 	newDepositList, _ := rep.GetPledgeDepositApplyList()
 	for _, deposit := range newDepositList {
-		pledgeList.Add(deposit.Address, deposit.Amount, 0)
-	}
-	newWithdrawList, _ := rep.GetPledgeWithdrawApplyList()
-	for _, withdraw := range newWithdrawList {
-		pledgeList.Reduce(withdraw.Address, withdraw.Amount)
+		result.Add(deposit.Address, deposit.Amount, 0)
 	}
 
-	return pledgeList, nil
+	//newWithdrawList, _ := rep.GetPledgeWithdrawApplyList()
+	//for _, withdraw := range newWithdrawList {
+	//	result.Reduce(withdraw.Address, withdraw.Amount)
+	//}
+
+	return result, nil
 }
+
 func (rep *StateRepository) GetMediatorVotedResults() (map[string]uint64, error) {
+	mediatorVoteCount := make(map[string]uint64)
+
 	mediators, err := rep.statedb.GetCandidateMediatorList()
 	if err != nil {
-		log.Debug("GetPledgeListWithNew error" + err.Error())
-		return nil, err
+		log.Debug("GetCandidateMediatorList error" + err.Error())
+		return mediatorVoteCount, err
+	}
+
+	//先将所有mediator的投票数量设为0， 防止某个mediator未被任何账户投票
+	for address := range mediators {
+		mediatorVoteCount[address] = 0
 	}
 
 	pledgeList, err := rep.GetPledgeListWithNew()
 	if err != nil {
 		log.Warn("GetPledgeListWithNew error" + err.Error())
-		return nil, err
+		return mediatorVoteCount, err
 	}
-	log.DebugDynamic(func() string {
-		data, _ := json.Marshal(pledgeList)
-		return "GetPledgeListWithNew result:\r\n" + string(data)
-	})
-
-	mediatorVoteCount := make(map[string]uint64)
-	//先将所有mediator的投票数量设为0， 防止某个mediator未被任何账户投票
-	for address := range mediators {
-		mediatorVoteCount[address] = 0
-	}
+	//log.DebugDynamic(func() string {
+	//	data, _ := json.Marshal(pledgeList)
+	//	return "GetPledgeListWithNew result:\r\n" + string(data)
+	//})
 
 	for _, account := range pledgeList.Members {
 		// 遍历该账户投票的mediator
@@ -313,6 +326,32 @@ func (rep *StateRepository) GetMediatorVotedResults() (map[string]uint64, error)
 
 	return mediatorVoteCount, nil
 }
+
+func (rep *StateRepository) GetVotingForMediator(addStr string) (map[string]uint64, error) {
+	votingMediatorCount := make(map[string]uint64)
+
+	pledgeList, err := rep.GetPledgeListWithNew()
+	if err != nil {
+		log.Debug("GetPledgeListWithNew error" + err.Error())
+		return votingMediatorCount, err
+	}
+
+	for _, account := range pledgeList.Members {
+		// 遍历该账户投票的mediator
+		addr, _ := common.StringToAddress(account.Address)
+		votedMediators := rep.statedb.GetAccountVotedMediators(addr)
+		for med := range votedMediators {
+			// 判断该账户是否投票了指定的mediator
+			if addStr == med {
+				votingMediatorCount[account.Address] = account.Amount
+				break
+			}
+		}
+	}
+
+	return votingMediatorCount, nil
+}
+
 func (rep *StateRepository) RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error) {
 	return rep.statedb.RetrieveMediatorInfo(address)
 }
@@ -333,8 +372,38 @@ func (rep *StateRepository) GetMinFee() (*modules.AmountAsset, error) {
 	return rep.statedb.GetMinFee()
 }
 
-func (rep *StateRepository) GetJuryCandidateList() (map[string]string, error) {
+func (rep *StateRepository) GetJuryCandidateList() (map[string]bool, error) {
 	return rep.statedb.GetJuryCandidateList()
+}
+
+func (rep *StateRepository) GetJurorByAddr(addr string) (*modules.JurorDeposit, error) {
+	return rep.statedb.GetJurorByAddr(addr)
+}
+func (rep *StateRepository) GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, error) {
+	if addr, exist := rep.mapHash2Address[hash]; exist {
+		return rep.statedb.GetJurorByAddr(addr.String())
+	}
+	//Not exist
+	jurors, err := rep.GetAllJuror()
+	if err != nil {
+		return nil, err
+	}
+	var result *modules.JurorDeposit
+	for _, j := range jurors {
+		jaddr, _ := common.StringToAddress(j.Address)
+		jhash := util.RlpHash(jaddr)
+		rep.mapHash2Address[jhash] = jaddr
+		if jhash == hash {
+			result = j
+		}
+	}
+	if result == nil {
+		return nil, errors.New("juror not found by hash:" + hash.String())
+	}
+	return result, nil
+}
+func (rep *StateRepository) GetAllJuror() (map[string]*modules.JurorDeposit, error) {
+	return rep.statedb.GetAllJuror()
 }
 
 func (rep *StateRepository) IsJury(address common.Address) bool {

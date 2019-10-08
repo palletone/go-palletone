@@ -67,7 +67,6 @@ web3._extend({
 			params: 3,
 			inputFormatter: [null, null, null]
 		}),
-	
 		new web3._extend.Method({
 			name: 'lockAccount',
 			call: 'personal_lockAccount',

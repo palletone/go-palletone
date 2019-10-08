@@ -89,6 +89,7 @@ type nextStateInfo struct {
 type IAdapterJury interface {
 	AdapterFunRequest(reqId common.Hash, contractId common.Address, msgType uint32, consultContent []byte, myAnswer []byte) ([]byte, error)
 	AdapterFunResult(reqId common.Hash, contractId common.Address, msgType uint32, consultContent []byte, timeOut time.Duration) ([]byte, error)
+	GetLocalJuryAddrs() []common.Address
 }
 
 // Handler responsible for management of Peer's side of chaincode stream

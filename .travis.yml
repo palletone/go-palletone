@@ -18,6 +18,7 @@ env:
     - MEDIATOR_VOTE_DIR=meidatorvote
     - APPLICATION_DIR=application
     - USER_CONTRACT_DIR=usercontract
+    - BLACKLIST_DIR=blacklist
     - LOG_NAME=log.html
     - REPORT_NAME=report.html
     ##########  control testcase  ##############
@@ -33,7 +34,8 @@ env:
     - IS_RUN_GASTOKEN=true
     - IS_RUN_MEDIATOR_VOTE=true
     - IS_RUN_APPLICATION=true
-    - IS_RUN_LIGHT=true
+    - IS_RUN_LIGHT=false
+    - IS_RUN_BLACKLIST=true
     - GO111MODULE=on
     - IS_UPLOAD=true
 #    - 'SFTP_KEY=[base64-encoded-rsa-key]'
@@ -91,7 +93,11 @@ matrix:
         - netstat -ap | grep gptn
         - if [ $IS_RUN_DEPOSIT == 'true' ]; then
           cd ../dct;
-          ./deposit_test.sh 5;
+          ./deposit_test.sh 6;
+          fi
+        - if [ $IS_RUN_BLACKLIST == 'true' ]; then
+          cd ../blacklist;
+          ./blacklist_test.sh;
           fi
         - if [ $IS_RUN_TESTCONTRACTCASES == 'true' ];then
           cd ../contract/testcases;
@@ -131,12 +137,6 @@ matrix:
           ./init_gas_token.sh;
           sleep 15;
           python -m robot.run -d ${BDD_LOG_PATH}/${GAS_TOKEN_DIR} ./testcases;
-          fi
-
-        - if [ $IS_RUN_LIGHT == 'true' ]; then
-          cd ../light;
-          chmod +x ./bddstart.sh;
-          ./bddstart.sh;
           fi
       after_script:
         - killall gptn
@@ -185,6 +185,12 @@ matrix:
         - mkdir -p ${BDD_LOG_PATH}
         - if [ $IS_RUN_MULTIPLE == 'true' ]; then
           python -m robot.run -d ${BDD_LOG_PATH}/${MULTIPLE_DIR} -i normal ./testcase/zMulti-node;
+          fi
+
+        - if [ $IS_RUN_LIGHT == 'true' ]; then
+          cd ./light;
+          chmod +x ./bddstart.sh;
+          ./bddstart.sh;
           fi
       after_script:
         - killall gptn
@@ -297,7 +303,6 @@ matrix:
       script:
         - ip addr
         - make gptn
-        - make golang-baseimage-dev
         - docker images
         - cat /proc/sys/net/ipv4/ip_forward
         - sudo ./jurySec.sh
@@ -312,6 +317,7 @@ matrix:
         - ./editConfig.sh 3 3
         - ./start.sh 3
         - sleep 30
+        - docker images
         - docker network ls
         - cd $BASE_DIR
         - mkdir -p ${BDD_LOG_PATH}/${USER_CONTRACT_DIR}

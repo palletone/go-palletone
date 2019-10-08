@@ -32,7 +32,7 @@ import (
 )
 
 //  保存相关列表
-func saveList(stub shim.ChaincodeStubInterface, key string, list map[string]string) error {
+func saveList(stub shim.ChaincodeStubInterface, key string, list map[string]bool) error {
 	listByte, err := json.Marshal(list)
 	if err != nil {
 		return err
@@ -45,7 +45,7 @@ func saveList(stub shim.ChaincodeStubInterface, key string, list map[string]stri
 }
 
 //  获取其他list
-func getList(stub shim.ChaincodeStubInterface, typeList string) (map[string]string, error) {
+func getList(stub shim.ChaincodeStubInterface, typeList string) (map[string]bool, error) {
 	byte, err := stub.GetState(typeList)
 	if err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func getList(stub shim.ChaincodeStubInterface, typeList string) (map[string]stri
 	if byte == nil {
 		return nil, nil
 	}
-	list := make(map[string]string)
+	list := make(map[string]bool)
 	err = json.Unmarshal(byte, &list)
 	if err != nil {
 		return nil, err
@@ -97,7 +97,7 @@ func applyQuitList(role string, stub shim.ChaincodeStubInterface) error {
 	}
 	quitNode := &modules.QuitNode{
 		Role: role,
-		Time: getTiem(stub),
+		Time: getTime(stub),
 	}
 
 	//  保存退还列表
@@ -111,14 +111,14 @@ func applyQuitList(role string, stub shim.ChaincodeStubInterface) error {
 }
 
 //  加入相应候选列表，mediator jury dev
-func addCandaditeList(stub shim.ChaincodeStubInterface, invokeAddr common.Address, candidate string, pubKey string) error {
+func addCandaditeList(stub shim.ChaincodeStubInterface, invokeAddr common.Address, candidate string) error {
 	//  获取列表
 	list, err := getList(stub, candidate)
 	if err != nil {
 		return err
 	}
 	if list == nil {
-		list = make(map[string]string)
+		list = make(map[string]bool)
 	}
 
 	// 重复操作一次又何妨
@@ -126,7 +126,7 @@ func addCandaditeList(stub shim.ChaincodeStubInterface, invokeAddr common.Addres
 	//	return fmt.Errorf("node was in the list")
 	//}
 
-	list[invokeAddr.String()] = pubKey
+	list[invokeAddr.String()] = true
 	listByte, err := json.Marshal(list)
 	if err != nil {
 		return err
@@ -306,6 +306,45 @@ func DelNodeBalance(stub shim.ChaincodeStubInterface, balanceAddr string) error 
 	return nil
 }
 
+//保存jury账户
+func SaveJuryBalance(stub shim.ChaincodeStubInterface, balanceAddr string, balance *modules.JurorDeposit) error {
+	balanceByte, err := json.Marshal(balance)
+	if err != nil {
+		return err
+	}
+	err = stub.PutState(string(constants.DEPOSIT_JURY_BALANCE_PREFIX)+balanceAddr, balanceByte)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+//  获取Jury账户
+func GetJuryBalance(stub shim.ChaincodeStubInterface, addr string) (*modules.JurorDeposit, error) {
+	byte, err := stub.GetState(string(constants.DEPOSIT_JURY_BALANCE_PREFIX) + addr)
+	if err != nil {
+		return nil, err
+	}
+	if byte == nil {
+		return nil, nil
+	}
+	b := &modules.JurorDeposit{}
+	err = json.Unmarshal(byte, b)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
+//  删除Jury账户
+func DelJuryBalance(stub shim.ChaincodeStubInterface, addr string) error {
+	err := stub.DelState(string(constants.DEPOSIT_JURY_BALANCE_PREFIX) + addr)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 //  判断是否基金会发起的
 func isFoundationInvoke(stub shim.ChaincodeStubInterface) bool {
 	//  判断是否基金会发起的
@@ -328,18 +367,17 @@ func isFoundationInvoke(stub shim.ChaincodeStubInterface) bool {
 	}
 	return true
 }
-
-func getTiem(stub shim.ChaincodeStubInterface) string {
+func getTime(stub shim.ChaincodeStubInterface) string {
 	t, _ := stub.GetTxTimestamp(10)
 	ti := time.Unix(t.Seconds, 0)
-	return ti.Format(modules.Layout2)
+	return ti.UTC().Format(modules.Layout2)
 }
 
 func getToday(stub shim.ChaincodeStubInterface) string {
 	t, _ := stub.GetTxTimestamp(10)
 
 	ti := time.Unix(t.Seconds, 0)
-	str := ti.Format("20060102")
+	str := ti.UTC().Format("20060102")
 	log.Debugf("getToday GetTxTimestamp 10 result:%d, format string:%s", t.Seconds, str)
 	return str
 }
@@ -393,7 +431,7 @@ func applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, args []string) 
 	forfeiture.ApplyAddress = invokeAddr.String()
 	forfeiture.ForfeitureRole = role
 	forfeiture.Extra = extra
-	forfeiture.ApplyTime = getTiem(stub)
+	forfeiture.ApplyTime = getTime(stub)
 	listForForfeiture[f.String()] = forfeiture
 	//  保存列表
 	err = SaveListForForfeiture(stub, listForForfeiture)
@@ -431,24 +469,46 @@ func handleNode(stub shim.ChaincodeStubInterface, quitAddr common.Address, role 
 	if err != nil {
 		return err
 	}
-	//  获取该节点保证金数量
-	b, err := GetNodeBalance(stub, quitAddr.String())
-	if err != nil {
-		return err
+
+	list := ""
+	balance := uint64(0)
+	if role == modules.Developer {
+		//  获取该节点保证金数量
+		b, err := GetNodeBalance(stub, quitAddr.String())
+		if err != nil {
+			return err
+		}
+		balance = b.Balance
+		list = modules.DeveloperList
+		//  删除节点
+		err = stub.DelState(string(constants.DEPOSIT_BALANCE_PREFIX) + quitAddr.String())
+		if err != nil {
+			log.Error("stub.DelState err:", "error", err)
+			return err
+		}
+
+	}
+	if role == modules.Jury {
+		j, err := GetJuryBalance(stub, quitAddr.String())
+		if err != nil {
+			return err
+		}
+		balance = j.Balance
+		list = modules.JuryList
+		//  删除节点
+		err = stub.DelState(string(constants.DEPOSIT_JURY_BALANCE_PREFIX) + quitAddr.String())
+		if err != nil {
+			log.Error("stub.DelState err:", "error", err)
+			return err
+		}
+
 	}
 	//  调用从合约把token转到请求地址
 	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
-	err = stub.PayOutToken(quitAddr.String(), modules.NewAmountAsset(b.Balance, gasToken), 0)
+	err = stub.PayOutToken(quitAddr.String(), modules.NewAmountAsset(balance, gasToken), 0)
 	if err != nil {
 		log.Error("stub.PayOutToken err:", "error", err)
 		return err
-	}
-	list := ""
-	if role == modules.Developer {
-		list = modules.DeveloperList
-	}
-	if role == modules.Jury {
-		list = modules.JuryList
 	}
 	//  移除候选列表
 	err = moveCandidate(list, quitAddr.String(), stub)
@@ -456,16 +516,11 @@ func handleNode(stub shim.ChaincodeStubInterface, quitAddr common.Address, role 
 		log.Error("moveCandidate err:", "error", err)
 		return err
 	}
-	//  删除节点
-	err = stub.DelState(string(constants.DEPOSIT_BALANCE_PREFIX) + quitAddr.String())
-	if err != nil {
-		log.Error("stub.DelState err:", "error", err)
-		return err
-	}
+
 	return nil
 }
 
-func nodePayToDepositContract(stub shim.ChaincodeStubInterface, role string, args []string) pb.Response {
+func nodePayToDepositContract(stub shim.ChaincodeStubInterface, role string) pb.Response {
 	log.Debug("enter nodePayToDepositContract")
 	//  判断是否交付保证金交易
 	invokeTokens, err := isContainDepositContractAddr(stub)
@@ -499,11 +554,9 @@ func nodePayToDepositContract(stub shim.ChaincodeStubInterface, role string, arg
 	}
 	depositAmount := uint64(0)
 	list := ""
-	pubkey := ""
 	if role == modules.Jury {
 		depositAmount = cp.DepositAmountForJury
 		list = modules.JuryList
-		pubkey = args[0]
 	}
 	if role == modules.Developer {
 		depositAmount = cp.DepositAmountForDeveloper
@@ -519,16 +572,15 @@ func nodePayToDepositContract(stub shim.ChaincodeStubInterface, role string, arg
 			return shim.Error(str.Error())
 		}
 		//  加入候选列表
-		err = addCandaditeList(stub, invokeAddr, list, pubkey)
+		err = addCandaditeList(stub, invokeAddr, list)
 		if err != nil {
 			log.Error("addCandaditeList err: ", "error", err)
 			return shim.Error(err.Error())
 		}
-		balance.EnterTime = getTiem(stub)
+		balance.EnterTime = getTime(stub)
 		//  没有
 		balance.Balance = invokeTokens.Amount
 		balance.Role = role
-		balance.PublicKey = pubkey
 		err = SaveNodeBalance(stub, invokeAddr.String(), balance)
 		if err != nil {
 			log.Error("save node balance err: ", "error", err)
@@ -554,7 +606,7 @@ func nodePayToDepositContract(stub shim.ChaincodeStubInterface, role string, arg
 		}
 		if !b {
 			//  加入jury候选列表
-			err = addCandaditeList(stub, invokeAddr, list, pubkey)
+			err = addCandaditeList(stub, invokeAddr, list)
 			if err != nil {
 				log.Error("addCandidateListAndPutStateForMediator err: ", "error", err)
 				return shim.Error(err.Error())
@@ -568,4 +620,14 @@ func nodePayToDepositContract(stub shim.ChaincodeStubInterface, role string, arg
 		}
 		return shim.Success(nil)
 	}
+}
+
+func convertDepositBalance2Json(db *modules.DepositBalance) *modules.DepositBalanceJson {
+	dbJson := &modules.DepositBalanceJson{}
+	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
+	dbJson.Balance = gasToken.DisplayAmount(db.Balance)
+	dbJson.EnterTime = db.EnterTime
+	dbJson.Role = db.Role
+
+	return dbJson
 }

@@ -51,6 +51,7 @@ var (
 
 	PledgeListLastDate = "PledgeListLastDate"
 	PledgeList         = "PledgeList-"
+	BlacklistAddress="BlacklistAddress"
 )
 
 func init() {

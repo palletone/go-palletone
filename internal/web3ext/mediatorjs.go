@@ -107,6 +107,11 @@ web3._extend({
 			params: 0,
 		}),
 		new web3._extend.Method({
+			name: 'listVotingFor',
+			call: 'mediator_listVotingFor',
+			params: 1,
+		}),
+		new web3._extend.Method({
 			name: 'lookupMediatorInfo',
 			call: 'mediator_lookupMediatorInfo',
 			params: 0,

@@ -68,6 +68,9 @@ func (q *mockStatedbQuery) GetMediators() map[common.Address]bool {
 func (q *mockStatedbQuery) GetMediator(add common.Address) *core.Mediator {
 	return nil
 }
+func (q *mockStatedbQuery) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error) {
+	return []common.Address{}, nil, nil
+}
 
 //获得系统配置的最低手续费要求
 func (q *mockStatedbQuery) GetMinFee() (*modules.AmountAsset, error) {
@@ -81,6 +84,9 @@ func (q *mockStatedbQuery) GetContractState(id []byte, field string) ([]byte, *m
 }
 func (q *mockStatedbQuery) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
 	return map[string]*modules.ContractStateValue{}, nil
+}
+func (q *mockStatedbQuery) GetJurorByAddrHash(addrHash common.Hash) (*modules.JurorDeposit, error) {
+	return nil, nil
 }
 
 type mockUtxoQuery struct {

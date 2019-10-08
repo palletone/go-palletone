@@ -30,14 +30,14 @@ import (
 	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/txspool"
 )
 
 type IDag interface {
 	Close()
 
-	GetCommon(key []byte) ([]byte, error)
-	GetCommonByPrefix(prefix []byte) map[string][]byte
+	GetCommon(key []byte,stableDb bool) ([]byte, error)
+	GetCommonByPrefix(prefix []byte,stableDb bool) map[string][]byte
 	SaveCommon(key, val []byte) error
 	GetAllData() ([][]byte, [][]byte)
 
@@ -94,6 +94,7 @@ type IDag interface {
 	GetTxOutput(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error)
 	GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
+	GetAddrStableUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
@@ -151,7 +152,8 @@ type IDag interface {
 	GetIrreversibleUnitNum(id modules.AssetId) uint64
 
 	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
-	GetChaincodes(contractId common.Address) (*list.CCInfo, error)
+	GetChaincode(contractId common.Address) (*list.CCInfo, error)
+	RetrieveChaincodes() ([]*list.CCInfo, error)
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
 
@@ -170,6 +172,7 @@ type IDag interface {
 	GetAccountVotedMediators(addr common.Address) map[string]bool
 	GetMediatorInfo(address common.Address) *modules.MediatorInfo
 
+	GetVotingForMediator(addStr string) (map[string]uint64, error)
 	MediatorVotedResults() (map[string]uint64, error)
 	LookupMediatorInfo() []*modules.MediatorInfo
 	IsActiveMediator(add common.Address) bool
@@ -196,4 +199,8 @@ type IDag interface {
 	CreateTokenTransaction(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string,
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	ChainThreshold() int
+	CheckHeaderCorrect(number int) error
+	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
+	RebuildAddrTxIndex() error
+	GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, error)
 }

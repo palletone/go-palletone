@@ -31,7 +31,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/txspool"
 )
 
 // GenerateUnit, generate unit

@@ -1,6 +1,7 @@
 package ptnjson
 
 import (
+	"github.com/palletone/go-palletone/txspool"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -36,7 +37,7 @@ type TxSerachEntryJson struct {
 	TxIndex   uint64 `json:"tx_index"`
 }
 
-func ConvertTxPoolTx2PendingJson(tx *modules.TxPoolTransaction) *TxPoolPendingJson {
+func ConvertTxPoolTx2PendingJson(tx *txspool.TxPoolTransaction) *TxPoolPendingJson {
 	if tx == nil {
 		return nil
 	}
@@ -66,7 +67,7 @@ func ConvertTxPoolTx2PendingJson(tx *modules.TxPoolTransaction) *TxPoolPendingJs
 	}
 }
 
-func ConvertTxPoolTx2Json(tx *modules.TxPoolTransaction, hash common.Hash) *TxPoolTxJson {
+func ConvertTxPoolTx2Json(tx *txspool.TxPoolTransaction, hash common.Hash) *TxPoolTxJson {
 	if tx == nil {
 		return nil
 	}

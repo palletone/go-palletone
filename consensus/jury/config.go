@@ -25,8 +25,6 @@ import (
 )
 
 const (
-	DefaultElectionNum      = 2          //todo
-	DefaultContractSigNum   = 2          //todo
 	MaxLengthTplName        = 64         //合约模板名字长度
 	MaxLengthTplPath        = 512        //合约模板文件路径长度
 	MaxLengthTplVersion     = 12         //合约模板版本号长度

@@ -69,14 +69,12 @@ sed -i '/^EnableConsecutiveProduction/c'$newEnableConsecutiveProduction'' ptn-co
 newRequiredParticipation="RequiredParticipation=0"
 sed -i '/^RequiredParticipation/c'$newRequiredParticipation'' ptn-config.toml
 
-newEnableGroupSigning="EnableGroupSigning=false"
+newEnableGroupSigning="EnableGroupSigning=true"
 sed -i '/^EnableGroupSigning/c'$newEnableGroupSigning'' ptn-config.toml
 
 
 createaccount=`./createaccount.sh`
 tempinfo=`echo $createaccount | sed -n '$p'| awk '{print $NF}'`
-#accountlength=35
-#accounttemp=${tempinfo:0:$accountlength}
 account=`echo ${tempinfo///}`
 
 
@@ -133,12 +131,16 @@ fi
 done
 
 
+createpk=`./createpk.sh $account`
+tempinfo=`echo $createpk | sed -n '$p'| awk '{print $NF}'`
+pk=`echo ${tempinfo///}`
 
 echo "account: "$account
-echo "publickey: "$publickey
+echo "initpublickey: "$publickey
 echo "nodeinfo: "$nodeinfo
+echo "publickey: "$pk
 
-ModifyJson  $account $publickey $nodeinfo $1
+ModifyJson  $account $publickey $nodeinfo $1 $pk
 }
 
 
@@ -168,24 +170,27 @@ function addBootstrapNodes()
         newarr=${array:0:$[$l-1]}
         newarr="$newarr]"
     fi
-    #newBootstrapNodes="BootstrapNodes=$newarr"
-    newBootstrapNodes="StaticNodes=$newarr"
+    newBootstrapNodes="BootstrapNodes=$newarr"
+    #newBootstrapNodes="StaticNodes=$newarr"
     echo $newBootstrapNodes
 }
 
 
 
 
-function ModifyBootstrapNodes()
+function ModifyP2PConfig()
 {
     count=1;
     while [ $count -le $1 ] ;
     do
         arrBootstrapNodes=`echo "$(addBootstrapNodes $1 $count)"`
-        #sed -i '/^BootstrapNodes/c'$arrBootstrapNodes'' node$count/ptn-config.toml
-        sed -i '/^StaticNodes/c'$arrBootstrapNodes'' node$count/ptn-config.toml
-        echo "=====addBootstrapNodes $count ok======="
+        sed -i '/^BootstrapNodes/c'$arrBootstrapNodes'' node$count/ptn-config.toml
+        #sed -i '/^StaticNodes/c'$arrBootstrapNodes'' node$count/ptn-config.toml
 
+#	newGenesisHash="GenesisHash=\"$2\""
+#	sed -i '/^GenesisHash/c'$newGenesisHash'' node$count/ptn-config.toml
+
+        echo "=====addBootstrapNodes $count ok======="
         let ++count;
         sleep 1;
     done
@@ -226,8 +231,8 @@ function MakeTestNet()
     cd ../
     #addBootstrapNodes $1 0
     newarrBootstrapNodes=`echo "$(addBootstrapNodes $1 $count)"`
-    #sed -i '/^BootstrapNodes/c'$newarrBootstrapNodes'' node_test$1/ptn-config.toml
-    sed -i '/^StaticNodes/c'$newarrBootstrapNodes'' node_test$1/ptn-config.toml
+    sed -i '/^BootstrapNodes/c'$newarrBootstrapNodes'' node_test$1/ptn-config.toml
+    #sed -i '/^StaticNodes/c'$newarrBootstrapNodes'' node_test$1/ptn-config.toml
 
     newInitPrivKey="InitPrivKey=\"\""
     sed -i '/^InitPrivKey/c'$newInitPrivKey'' node_test$1/ptn-config.toml
@@ -244,6 +249,8 @@ function MakeTestNet()
     newCorsListenAddr="CorsListenAddr=\"\""
     sed -i '/^CorsListenAddr/c'$newCorsListenAddr'' node_test$1/ptn-config.toml
 
+#    newGenesisHash="GenesisHash=\"$2\""
+#    sed -i '/^GenesisHash/c'$newGenesisHash'' node_test$1/ptn-config.toml
     echo "===========node-test ok============="
 }
 
