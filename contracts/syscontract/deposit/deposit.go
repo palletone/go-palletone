@@ -17,6 +17,7 @@ package deposit
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
@@ -33,9 +34,28 @@ func (d *DepositChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success([]byte("init ok"))
 }
 
+//将字符串的首字母大写
+func UpperFirstChar(str string) string {
+	if len(str) == 0 {
+		return str
+	}
+	var b strings.Builder
+	b.Grow(len(str))
+	c := str[0]
+	if c >= 'a' && c <= 'z' {
+		c -= 'a' - 'A'
+	}
+	b.WriteByte(c)
+	for i := 1; i < len(str); i++ {
+		b.WriteByte(str[i])
+	}
+	return b.String()
+}
+
 func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	funcName, args := stub.GetFunctionAndParameters()
-	switch funcName {
+	upperFuncName := UpperFirstChar(funcName)
+	switch upperFuncName {
 	//
 	// 申请成为Mediator
 	case modules.ApplyMediator:
@@ -310,11 +330,11 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Success([]byte("balance is nil"))
 		}
 		dbJson := convertDepositBalance2Json(balance)
-		byte, err := json.Marshal(dbJson)
+		data, err := json.Marshal(dbJson)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-		return shim.Success(byte)
+		return shim.Success(data)
 	case modules.GetJuryDeposit:
 		log.Info("Enter DepositChaincode Contract " + modules.GetJuryDeposit + " Query")
 		balance, err := GetJuryBalance(stub, args[0])
@@ -325,11 +345,11 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Success([]byte("balance is nil"))
 		}
 		dbJson := convertJuryDeposit2Json(balance)
-		byte, err := json.Marshal(dbJson)
+		data, err := json.Marshal(dbJson)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-		return shim.Success(byte)
+		return shim.Success(data)
 		// 获取mediator Deposit
 	case modules.GetMediatorDeposit:
 		log.Info("Enter DepositChaincode Contract " + modules.GetMediatorDeposit + " Query")
@@ -341,11 +361,11 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Success([]byte("mediator is nil"))
 		}
 		mdJson := convertMediatorDeposit2Json(mediator)
-		byte, err := json.Marshal(mdJson)
+		data, err := json.Marshal(mdJson)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-		return shim.Success(byte)
+		return shim.Success(data)
 
 	//  普通用户质押投票
 	case modules.PledgeDeposit:
