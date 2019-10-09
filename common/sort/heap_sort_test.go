@@ -18,15 +18,13 @@
  * @date 2018
  */
 
-package sort_test
+package sort
 
 import (
 	"fmt"
 	"math/rand"
 	"sort"
 	"testing"
-
-	csort "github.com/palletone/go-palletone/common/sort"
 )
 
 const (
@@ -184,5 +182,5 @@ func testBentleyMcIlroy(t *testing.T, sortFn func(sort.Interface), maxswap func(
 }
 
 func TestHeapSortBM(t *testing.T) {
-	testBentleyMcIlroy(t, csort.HeapSort, func(n int) int { return n * lg(n) * 12 / 10 })
+	testBentleyMcIlroy(t, HeapSort, func(n int) int { return n * lg(n) * 12 / 10 })
 }

@@ -31,8 +31,8 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/common/sort"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/parameter"
@@ -241,8 +241,10 @@ func (rep *UnitProduceRepository) updateDynGlobalProp(unit *modules.Unit, missed
 
 	dgp.LastMediator = unit.Author()
 	dgp.IsShuffledSchedule = false
-	dgp.RecentSlotsFilled = dgp.RecentSlotsFilled.Lsh(uint(missedUnits + 1)).Add64(1)
-	dgp.CurrentASlot += missedUnits + 1
+
+	totalSlot := missedUnits + 1
+	dgp.RecentSlotsFilled = dgp.RecentSlotsFilled.Lsh(uint(totalSlot)).Add64(1)
+	dgp.CurrentASlot += totalSlot
 
 	rep.propRep.StoreDynGlobalProp(dgp)
 }
