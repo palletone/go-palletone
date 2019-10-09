@@ -37,7 +37,7 @@ import (
 
 func TestNewUnit(t *testing.T) {
 	txs := make(Transactions, 0)
-	unit := NewUnit(&Header{Extra: []byte("hello"), Time: time.Now().Unix()}, txs)
+	unit := NewUnit(&Header{Number: &ChainIndex{NewPTNIdType(), 1}, Extra: []byte("hello"), Time: time.Now().Unix()}, txs)
 	hash := unit.Hash()
 	unit.UnitHash = common.Hash{}
 	if unit.UnitHash != (common.Hash{}) {
