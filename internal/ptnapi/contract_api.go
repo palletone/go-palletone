@@ -31,7 +31,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"github.com/shopspring/decimal"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
@@ -44,6 +44,7 @@ import (
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
+	"github.com/shopspring/decimal"
 )
 
 var (
@@ -584,7 +585,7 @@ func (s *PrivateContractAPI) DepositContractInvoke(ctx context.Context, from, to
 				return "", fmt.Errorf("invalid args, is null")
 			}
 
-			if from != args.AddStr{
+			if from != args.AddStr {
 				return "", fmt.Errorf("the calling account(%v) is not applying account(%v), "+
 					"please use mediator.apply()", from, args.AddStr)
 			}
@@ -671,7 +672,7 @@ func (s *PrivateContractAPI) SysConfigContractInvoke(ctx context.Context, from, 
 
 				dag := s.b.Dag()
 				gp := s.b.Dag().GetGlobalProp()
-				err = core.CheckChainParameterValue(oneTopic.TopicTitle, oneOption, 	&gp.ImmutableParameters,
+				err = core.CheckChainParameterValue(oneTopic.TopicTitle, oneOption, &gp.ImmutableParameters,
 					&gp.ChainParameters, dag.GetMediatorCount)
 				if err != nil {
 					log.Debugf(err.Error())
