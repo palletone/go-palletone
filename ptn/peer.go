@@ -405,6 +405,8 @@ func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis comm
 				log.Debugf("to send old status err:%s", err.Error())
 				errc <- err
 			}
+		} else {
+			errc <- nil
 		}
 	}()
 	timeout := time.NewTimer(handshakeTimeout)
