@@ -30,9 +30,9 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/core"
 )
 
 func (statedb *StateDb) SaveContract(contract *modules.Contract) error {
@@ -323,7 +323,8 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 				if err == nil {
 					statedb.StoreMediatorInfo(addr, mi)
 				} else {
-					log.Warnf("Validate MediatorCreateArgs err: %v", err.Error())
+					// log.Warnf("Validate MediatorCreateArgs err: %v", err.Error())
+					log.Warnf("StrToMedAdd err: %v", err.Error())
 					return err
 				}
 			} else {
@@ -372,7 +373,7 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 						return err
 					}
 				} else {
-					log.Warnf("Validate err: %v", err.Error())
+					log.Warnf("Validate MediatorUpdateArgs err: %v", err.Error())
 					return err
 				}
 			} else {
