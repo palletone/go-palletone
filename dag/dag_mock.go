@@ -1440,21 +1440,6 @@ func (mr *MockIDagMockRecorder) RefreshAddrTxIndex() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefreshAddrTxIndex", reflect.TypeOf((*MockIDag)(nil).RefreshAddrTxIndex))
 }
 
-// GetMinFee mocks base method
-func (m *MockIDag) GetMinFee() (*modules.AmountAsset, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetMinFee")
-	ret0, _ := ret[0].(*modules.AmountAsset)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetMinFee indicates an expected call of GetMinFee
-func (mr *MockIDagMockRecorder) GetMinFee() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMinFee", reflect.TypeOf((*MockIDag)(nil).GetMinFee))
-}
-
 // GenVoteMediatorTx mocks base method
 func (m *MockIDag) GenVoteMediatorTx(voter common.Address, mediators map[string]bool, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
 	m.ctrl.T.Helper()

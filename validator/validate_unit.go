@@ -231,7 +231,10 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) Validat
 		log.Debugf("validate.statequery.RetrieveMediator %v err", medAdd.Str())
 		return UNIT_STATE_INVALID_AUTHOR_SIGNATURE
 	}
-
+	validate.enableTxFeeCheck = unit.Timestamp() > 1570723200 //20191011 1.0.3升级，支持交易费检查
+	//if validate.enableTxFeeCheck{
+	//	log.Infof("Enable tx fee check since %d",unit.Timestamp())
+	//}
 	code := validate.validateTransactions(unit.Txs, unit.Timestamp(), med.GetRewardAdd())
 	if code != TxValidationCode_VALID {
 		msg := fmt.Sprintf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), code)

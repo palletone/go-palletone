@@ -1034,16 +1034,16 @@ func (d *Dag) GetCurrentUnitIndex(token modules.AssetId) (*modules.ChainIndex, e
 }
 
 // dag's common geter, return the key's value
-func (d *Dag) GetCommon(key []byte,stableDb bool) ([]byte, error) {
-	if stableDb{
+func (d *Dag) GetCommon(key []byte, stableDb bool) ([]byte, error) {
+	if stableDb {
 		return d.stableUnitRep.GetCommon(key)
 	}
 	return d.unstableUnitRep.GetCommon(key)
 }
 
 // return the prefix's all key && value.
-func (d *Dag) GetCommonByPrefix(prefix []byte,stableDb bool) map[string][]byte {
-	if stableDb{
+func (d *Dag) GetCommonByPrefix(prefix []byte, stableDb bool) map[string][]byte {
+	if stableDb {
 		return d.stableUnitRep.GetCommonByPrefix(prefix)
 	}
 	return d.unstableUnitRep.GetCommonByPrefix(prefix)
@@ -1230,11 +1230,6 @@ func (d *Dag) GetAllContracts() ([]*modules.Contract, error) {
 // return all contract by tplId from dag
 func (d *Dag) GetContractsByTpl(tplId []byte) ([]*modules.Contract, error) {
 	return d.unstableStateRep.GetContractsByTpl(tplId)
-}
-
-// return the min transaction fee
-func (d *Dag) GetMinFee() (*modules.AmountAsset, error) {
-	return d.unstableStateRep.GetMinFee()
 }
 
 // subscribe active mediators updated event

@@ -36,8 +36,8 @@ import (
 type IDag interface {
 	Close()
 
-	GetCommon(key []byte,stableDb bool) ([]byte, error)
-	GetCommonByPrefix(prefix []byte,stableDb bool) map[string][]byte
+	GetCommon(key []byte, stableDb bool) ([]byte, error)
+	GetCommonByPrefix(prefix []byte, stableDb bool) map[string][]byte
 	SaveCommon(key, val []byte) error
 
 	IsEmpty() bool
@@ -157,7 +157,6 @@ type IDag interface {
 	GetMainChain() (*modules.MainChain, error)
 
 	RefreshAddrTxIndex() error
-	GetMinFee() (*modules.AmountAsset, error)
 
 	GenVoteMediatorTx(voter common.Address, mediators map[string]bool,
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)

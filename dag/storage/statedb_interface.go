@@ -69,7 +69,6 @@ type IStateDb interface {
 	GetAccountVotedMediators(addr common.Address) map[string]bool
 	LookupAccount() map[common.Address]*modules.AccountInfo
 
-	GetMinFee() (*modules.AmountAsset, error)
 	//获得一个合约的陪审团列表
 	GetContractJury(contractId []byte) (*modules.ElectionNode, error)
 	SaveContractJury(contractId []byte, jury modules.ElectionNode, version *modules.StateVersion) error
