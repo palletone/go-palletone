@@ -43,3 +43,9 @@ func TestHash_IsSelfHash(t *testing.T) {
 	h2 := NewSelfHash()
 	assert.True(t, h2.IsSelfHash())
 }
+func TestPrintHashs(t *testing.T){
+	hash1 := HexToHash("e01c4bae7b396bc3c9bcb9275cef479560141c2010b6537abd78795bc935a2dd")
+	hash2 := HexToHash("12344bae7b396bc3c9bcb9275cef479560141c2010b6537abd78795bc935a2ff")
+	txids:=[]Hash{hash1,hash2}
+	t.Logf("%x",txids)
+}

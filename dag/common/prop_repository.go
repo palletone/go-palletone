@@ -52,9 +52,8 @@ type IPropRepository interface {
 	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
 	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
 	GetScheduledMediator(slotNum uint32) common.Address
-	UpdateMediatorSchedule(ms *modules.MediatorSchedule, gp *modules.GlobalProperty,
-		dgp *modules.DynamicGlobalProperty) bool
-	GetSlotTime(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty, slotNum uint32) time.Time
+	UpdateMediatorSchedule() bool
+	GetSlotTime(slotNum uint32) time.Time
 	GetSlotAtTime(when time.Time) uint32
 
 	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
@@ -138,8 +137,18 @@ func (pRep *PropRepository) GetNewestUnitTimestamp(token modules.AssetId) (int64
 }
 
 // 洗牌算法，更新mediator的调度顺序
-func (pRep *PropRepository) UpdateMediatorSchedule(ms *modules.MediatorSchedule, gp *modules.GlobalProperty,
-	dgp *modules.DynamicGlobalProperty) bool {
+func (pRep *PropRepository) UpdateMediatorSchedule() bool {
+	gp, err := pRep.RetrieveGlobalProp()
+	if err != nil {
+		log.Debugf("Retrieve Global Prop error: %v", err.Error())
+		return false
+	}
+	ms, err := pRep.RetrieveMediatorSchl()
+	if err != nil {
+		log.Debugf("Retrieve MediatorSchl error: %v", err.Error())
+		return false
+	}
+
 	token := dagconfig.DagConfig.GetGasToken()
 	hash, idx, _, err := pRep.db.GetNewestUnit(token)
 	if err != nil {
@@ -170,6 +179,13 @@ func (pRep *PropRepository) UpdateMediatorSchedule(ms *modules.MediatorSchedule,
 
 	// 4. 打乱证人的调度顺序
 	shuffleMediators(ms.CurrentShuffledMediators, binary.BigEndian.Uint64(hash[8:]))
+
+	err = pRep.StoreMediatorSchl(ms)
+	if err != nil {
+		log.Debugf("StoreMediatorSchl error:" + err.Error())
+		return false
+	}
+
 	return true
 }
 
@@ -203,9 +219,19 @@ If slotNum == 0, return time.Unix(0,0).
 如果slotNum == N 且 N > 0，则返回大于UnitTime的第N个单元验证间隔的对齐时间
 If slotNum == N for N > 0, return the Nth next unit-interval-aligned time greater than head_block_time().
 */
-func (pRep *PropRepository) GetSlotTime(gp *modules.GlobalProperty, dgp *modules.DynamicGlobalProperty,
-	slotNum uint32) time.Time {
+func (pRep *PropRepository) GetSlotTime(slotNum uint32) time.Time {
 	if slotNum == 0 {
+		return time.Unix(0, 0)
+	}
+
+	gp, err := pRep.RetrieveGlobalProp()
+	if err != nil {
+		log.Debugf("Retrieve Global Prop error: %v", err.Error())
+		return time.Unix(0, 0)
+	}
+	dgp, err := pRep.RetrieveDynGlobalProp()
+	if err != nil {
+		log.Debugf("Retrieve Dyn Global Prop error: %v", err.Error())
 		return time.Unix(0, 0)
 	}
 
@@ -250,11 +276,11 @@ func (pRep *PropRepository) GetSlotAtTime(when time.Time) uint32 {
 		log.Debugf("Retrieve Global Prop error: %v", err.Error())
 		return 0
 	}
-	dgp, err1 := pRep.RetrieveDynGlobalProp()
-	if err1 != nil {
-		log.Debugf("Retrieve Dyn Global Prop error: %v", err1.Error())
-		return 0
-	}
+	//dgp, err := pRep.RetrieveDynGlobalProp()
+	//if err != nil {
+	//	log.Debugf("Retrieve Dyn Global Prop error: %v", err.Error())
+	//	return 0
+	//}
 
 	/**
 	返回值是所有满足 GetSlotTime（N）<= when 中最大的N
@@ -262,7 +288,7 @@ func (pRep *PropRepository) GetSlotAtTime(when time.Time) uint32 {
 	如果都不满足，则返回 0
 	If no such N exists, return 0.
 	*/
-	firstSlotTime := pRep.GetSlotTime(gp, dgp, 1)
+	firstSlotTime := pRep.GetSlotTime(1)
 
 	if when.Before(firstSlotTime) {
 		return 0

@@ -19,7 +19,6 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 
 	"github.com/palletone/go-palletone/cmd/utils"
@@ -122,7 +121,6 @@ func initGenesis(ctx *cli.Context) error {
 	dag, _ := dag.NewDag4GenesisInit(Dbconn)
 	ks := node.GetKeyStore()
 	account, password := unlockAccount(ks, genesis.TokenHolder, 0, nil)
-
 	err = ks.Unlock(account, password)
 	if err != nil {
 		utils.Fatalf("Failed to unlock account: %v, address: %v", err, account.Address.Str())
@@ -142,7 +140,6 @@ func initGenesis(ctx *cli.Context) error {
 	//将Unit存入数据库中
 	err = dag.SaveUnit(unit, nil, true)
 	if err != nil {
-		fmt.Println("Save Genesis unit to db error:", err)
 		return err
 	}
 

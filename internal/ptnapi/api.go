@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/palletone/go-palletone/txspool"
 	"strings"
 	"time"
 
@@ -183,16 +184,15 @@ func newRPCTransaction(tx *modules.Transaction, blockHash common.Hash, unitIndex
 		Hash: tx.Hash(),
 	}
 	if blockHash != (common.Hash{}) {
-		//result.UnitHash = blockHash
 		result.UnitIndex = unitIndex
 		result.TransactionIndex = hexutil.Uint(index)
 	}
-	result.UnitIndex = unitIndex
+	//result.UnitIndex = unitIndex
 	return result
 }
 
 // newRPCPendingTransaction returns a pending transaction that will serialize to the RPC representation
-func newRPCPendingTransaction(tx *modules.TxPoolTransaction) *RPCTransaction {
+func newRPCPendingTransaction(tx *txspool.TxPoolTransaction) *RPCTransaction {
 	if tx.UnitHash != (common.Hash{}) {
 		return newRPCTransaction(tx.Tx, tx.UnitHash, tx.UnitIndex, tx.Index)
 	}
@@ -596,7 +596,7 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 
 type GetUtxoEntry func(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error)
 
-func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, poolTxs []*modules.TxPoolTransaction,
+func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, poolTxs []*txspool.TxPoolTransaction,
 	from string, asset string) (map[modules.OutPoint]*modules.Utxo, error) {
 	tokenAsset, err := modules.StringToAsset(asset)
 	if err != nil {

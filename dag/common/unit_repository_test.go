@@ -22,6 +22,7 @@ package common
 
 import (
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/txspool"
 	"reflect"
 	"testing"
 	"time"
@@ -60,7 +61,7 @@ func TestGenesisUnit(t *testing.T) {
 	tx := modules.NewTransaction(append(msgs, msg))
 	asset := modules.NewPTNAsset()
 
-	gUnit, _ := NewGenesisUnit(modules.Transactions{tx}, time.Now().Unix(), asset, -1, common.Hash{})
+	gUnit := NewGenesisUnit(modules.Transactions{tx}, time.Now().Unix(), asset, -1, common.Hash{})
 
 	log.Debug("Genesis unit struct:")
 	log.Debugf("parent units:%#x", gUnit.UnitHeader.ParentsHash)
@@ -488,7 +489,7 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 	}
 }
 
-func creatFeeTx(isContractTx bool, pubKey [][]byte, amount uint64, aid modules.AssetId) *modules.TxPoolTransaction {
+func creatFeeTx(isContractTx bool, pubKey [][]byte, amount uint64, aid modules.AssetId) *txspool.TxPoolTransaction {
 	tx := modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
 	}
@@ -513,7 +514,7 @@ func creatFeeTx(isContractTx bool, pubKey [][]byte, amount uint64, aid modules.A
 		tx.TxMessages = append(tx.TxMessages, msgSig)
 	}
 
-	txPTx := &modules.TxPoolTransaction{
+	txPTx := &txspool.TxPoolTransaction{
 		Tx:    &tx,
 		TxFee: make([]*modules.Addition, 0),
 	}
@@ -528,10 +529,10 @@ func creatFeeTx(isContractTx bool, pubKey [][]byte, amount uint64, aid modules.A
 //
 //func TestComputeTxFees(t *testing.T) {
 //	m, _ := common.StringToAddress("P1K7JsRvDc5THJe6TrtfdRNxp6ZkNiboy9z")
-//	txs := make([]*modules.TxPoolTransaction, 0)
+//	txs := make([]*txspool.TxPoolTransaction, 0)
 //	pks := make([][]byte, 0)
 //	aId := modules.AssetId{}
-//	tx := &modules.TxPoolTransaction{}
+//	tx := &txspool.TxPoolTransaction{}
 //
 //	//1
 //	pks = [][]byte{

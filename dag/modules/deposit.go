@@ -14,6 +14,11 @@
 
 package modules
 
+import (
+	"github.com/shopspring/decimal"
+	"github.com/palletone/go-palletone/core"
+)
+
 const (
 	ListForApplyBecomeMediator = "ListForApplyBecomeMediator"
 	ListForAgreeBecomeMediator = "ListForAgreeBecomeMediator"
@@ -60,7 +65,8 @@ const (
 	HandleForApplyQuitDev          = "HandleForApplyQuitDev"
 	HanldeNodeRemoveFromAgreeList  = "HanldeNodeRemoveFromAgreeList"
 
-	GetDeposit = "GetNodeBalance"
+	GetDeposit     = "GetNodeBalance"
+	GetJuryDeposit = "GetJuryDeposit"
 
 	//  质押相关
 	PledgeDeposit           = "PledgeDeposit"
@@ -70,6 +76,7 @@ const (
 	HandlePledgeReward      = "HandlePledgeReward"
 	AllPledgeVotes          = "allPledgeVotes"
 	QueryPledgeList         = "QueryPledgeList"
+	QueryPledgeWithdraw     = "QueryPledgeWithdraw"
 	QueryPledgeListByDate   = "QueryPledgeListByDate"
 
 	//  mediator状态
@@ -83,13 +90,15 @@ const (
 	//  Layout2 = "2006-01-02 15:04"
 	//  Layout3 = "2006-01-02 15:04:05"
 	//  目前使用 time.Now().UTC().Format(Layout) 返回字符串
-	Layout2 = "2006-01-02 15:04:05"
+	Layout2 = "2006-01-02 15:04:05 MST"
 
 	HandleMediatorInCandidateList = "HandleMediatorInCandidateList"
 	HandleJuryInCandidateList     = "HandleJuryInCandidateList"
 	HandleDevInList               = "HandleDevInList"
 	GetAllMediator                = "GetAllMediator"
 	GetAllNode                    = "GetAllNode"
+	GetAllJury                    = "GetAllJury"
+	//UpdateJuryInfo                = "UpdateJuryInfo"
 )
 
 //申请退出
@@ -120,22 +129,34 @@ type DepositBalance struct {
 	Balance   uint64 `json:"balance"`    // 保证金余额
 	EnterTime string `json:"enter_time"` // 交保证金的时间
 	Role      string `json:"role"`       // 角色，包括mediator、jury和developer
-	PublicKey string `json:"public_key"`
 }
 
-// mediator保证金信息
-type MediatorDeposit struct {
+// juror保证金信息
+type JurorDeposit struct {
+	DepositBalance
+	core.JurorDepositExtra
+	Address string `json:"address"` // juror地址
+}
+
+// mediator保证金額外信息
+type MediatorDepositExtra struct {
 	ApplyEnterTime string `json:"apply_enter_time"` // 申请加入时间
 	ApplyQuitTime  string `json:"apply_quit_time"`  // 申请退出时间
 	Status         string `json:"status"`           // 申请状态  申请、同意、退出
 	AgreeTime      string `json:"agree_time"`       // 基金会同意申请时间'
+}
+
+// mediator保证金信息
+type MediatorDeposit struct {
+	MediatorDepositExtra
 	DepositBalance
 }
 
 func NewMediatorDeposit() *MediatorDeposit {
-	return &MediatorDeposit{
-		Status: Quited,
-	}
+	md := &MediatorDeposit{}
+	md.Status = Quited
+
+	return md
 }
 
 type NorNodBal struct {
@@ -146,4 +167,22 @@ type NorNodBal struct {
 type Member struct {
 	Key   string `json:"key"`
 	Value []byte `json:"value"`
+}
+
+type DepositBalanceJson struct {
+	Balance   decimal.Decimal `json:"balance"`
+	EnterTime string          `json:"enter_time"`
+	Role      string          `json:"role"`
+}
+
+type MediatorDepositJson struct {
+	MediatorDepositExtra
+	DepositBalanceJson
+}
+
+// juror保证金信息
+type JuryDepositJson struct {
+	DepositBalanceJson
+	core.JurorDepositExtraJson
+	Address string `json:"address"`
 }

@@ -21,14 +21,15 @@ package prc721
 
 import (
 	"crypto/rand"
+	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"sort"
 	"strconv"
 	"strings"
 
-	"encoding/binary"
-	"encoding/hex"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/contracts/shim"
@@ -43,10 +44,11 @@ const jsonResp3 = "{\"Error\":\"Token not exist\"}"
 const jsonResp4 = "{\"Error\":\"Asset_TokenID invalid\"}"
 const jsonResp5 = "{\"Error\":\"Failed to get invoke address\"}"
 
+//PRC721 chainCode name
 type PRC721 struct {
 }
 
-type TokenInfo struct {
+type tokenInfo struct {
 	Symbol      string
 	TokenType   uint8
 	TokenMax    uint64 //only use when TokenType is Sequence
@@ -54,10 +56,6 @@ type TokenInfo struct {
 	TotalSupply uint64
 	SupplyAddr  string
 	AssetID     dm.AssetId
-}
-
-type Symbols struct {
-	TokenInfos map[string]TokenInfo `json:"tokeninfos"`
 }
 
 func paramCheckValid(args []string) (bool, string) {
@@ -71,10 +69,13 @@ func paramCheckValid(args []string) (bool, string) {
 	}
 	return true, ""
 }
+
+//Init
 func (p *PRC721) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(nil)
 }
 
+//Invoke
 func (p *PRC721) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	f, args := stub.GetFunctionAndParameters()
 
@@ -84,28 +85,67 @@ func (p *PRC721) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	switch f {
 	case "createToken":
-		return createToken(args, stub)
+		if len(args) < 5 {
+			return shim.Error("need 5 args (Name,Symbol,Type,TotalSupply,TokenIDMetas,[SupplyAddress])")
+		}
+		//total supply
+		totalSupply, err := getSupply(args[3])
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		supplyAddr := ""
+		if len(args) > 5 {
+			supplyAddr = args[5]
+		}
+		return p.CreateToken(stub, args[0], args[1], args[2], totalSupply, args[4], supplyAddr)
 	case "supplyToken":
-		return supplyToken(args, stub)
+		if len(args) < 3 {
+			return shim.Error("need 2 args (Symbol,SupplyAmount,[TokenIDMetas])")
+		}
+		//total supply
+		supplyAmount, err := getSupply(args[1])
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		tokenIDMetas := ""
+		if len(args) > 2 {
+			tokenIDMetas = args[2]
+		}
+		return p.SupplyToken(stub, args[0], supplyAmount, tokenIDMetas)
 	case "existTokenID":
-		return existTokenID(args, stub)
+		if len(args) < 1 {
+			return shim.Error("need 1 args (Asset_TokenID)")
+		}
+		return p.ExistTokenID(stub, args[0])
 	case "setTokenURI":
-		return setTokenURI(args, stub)
+		if len(args) < 2 {
+			return shim.Error("need 1 args (Asset_TokenID,TokenURI)")
+		}
+		return p.SetTokenURI(stub, args[0], args[1])
 	case "getTokenURI":
-		return getTokenURI(args, stub)
+		if len(args) < 1 {
+			return shim.Error("need 1 args (Asset_TokenID)")
+		}
+		return p.GetTokenURI(stub, args[0])
 	case "getTokenInfo":
-		return oneToken(args, stub)
+		if len(args) < 1 {
+			return shim.Error("need 1 args (Symbol)")
+		}
+		return p.GetOneTokenInfo(stub, args[0])
 	case "getAllTokenInfo":
-		return allToken(stub)
+		return p.GetAllTokenInfo(stub)
 	case "changeSupplyAddr":
-		return changeSupplyAddr(args, stub)
+		if len(args) < 2 {
+			return shim.Error("need 2 args (Symbol,NewSupplyAddr)")
+		}
+		return p.ChangeSupplyAddr(stub, args[0], args[1])
 	default:
 		jsonResp := "{\"Error\":\"Unknown function " + f + "\"}"
 		return shim.Error(jsonResp)
 	}
 }
 
-func setGlobal(stub shim.ChaincodeStubInterface, tkInfo *TokenInfo) error {
+func setGlobal(stub shim.ChaincodeStubInterface, tkInfo *tokenInfo) error {
 	gTkInfo := dm.GlobalTokenInfo{Symbol: tkInfo.Symbol, TokenType: 2, Status: 0, CreateAddr: tkInfo.CreateAddr,
 		TotalSupply: tkInfo.TotalSupply, SupplyAddr: tkInfo.SupplyAddr, AssetID: tkInfo.AssetID}
 	val, err := json.Marshal(gTkInfo)
@@ -132,7 +172,7 @@ func getGlobal(stub shim.ChaincodeStubInterface, symbol string) *dm.GlobalTokenI
 	return &gTkInfo
 }
 
-func setSymbols(stub shim.ChaincodeStubInterface, tkInfo *TokenInfo) error {
+func setSymbols(stub shim.ChaincodeStubInterface, tkInfo *tokenInfo) error {
 	val, err := json.Marshal(tkInfo)
 	if err != nil {
 		return err
@@ -140,9 +180,9 @@ func setSymbols(stub shim.ChaincodeStubInterface, tkInfo *TokenInfo) error {
 	err = stub.PutState(symbolsKey+tkInfo.Symbol, val)
 	return err
 }
-func getSymbols(stub shim.ChaincodeStubInterface, symbol string) *TokenInfo {
+func getSymbols(stub shim.ChaincodeStubInterface, symbol string) *tokenInfo {
 	//
-	tkInfo := TokenInfo{}
+	tkInfo := tokenInfo{}
 	tkInfoBytes, _ := stub.GetState(symbolsKey + symbol)
 	if len(tkInfoBytes) == 0 {
 		return nil
@@ -156,11 +196,11 @@ func getSymbols(stub shim.ChaincodeStubInterface, symbol string) *TokenInfo {
 	return &tkInfo
 }
 
-func getSymbolsAll(stub shim.ChaincodeStubInterface) []TokenInfo {
+func getSymbolsAll(stub shim.ChaincodeStubInterface) []tokenInfo {
 	KVs, _ := stub.GetStateByPrefix(symbolsKey)
-	tkInfos := make([]TokenInfo, 0, len(KVs))
+	tkInfos := make([]tokenInfo, 0, len(KVs))
 	for _, oneKV := range KVs {
-		tkInfo := TokenInfo{}
+		tkInfo := tokenInfo{}
 		err := json.Unmarshal(oneKV.Value, &tkInfo)
 		if err != nil {
 			continue
@@ -191,12 +231,12 @@ func generateUUID() ([]byte, error) {
 	return uuid, nil
 }
 
-type TokenIDMeta struct {
+type tokenIDMeta struct {
 	TokenID  string
 	MetaData string
 }
 
-func chekcTokenIDRepeat(tokenIDMetas []TokenIDMeta) bool {
+func chekcTokenIDRepeat(tokenIDMetas []tokenIDMeta) bool {
 	tokenIDs := make(map[string]bool)
 	for _, oneTokenMeta := range tokenIDMetas {
 		if _, ok := tokenIDs[oneTokenMeta.TokenID]; ok {
@@ -207,7 +247,7 @@ func chekcTokenIDRepeat(tokenIDMetas []TokenIDMeta) bool {
 	return false
 }
 
-func genNFData(idType dm.UniqueIdType, totalSupply uint64, start uint64, tokenIDMetas []TokenIDMeta) ([]dm.NonFungibleMetaData, string) {
+func genNFData(idType dm.UniqueIdType, totalSupply uint64, start uint64, tokenIDMetas []tokenIDMeta) ([]dm.NonFungibleMetaData, string) {
 	nfDatas := []dm.NonFungibleMetaData{}
 	if idType == dm.UniqueIdType_Sequence {
 		for i := uint64(0); i < totalSupply; i++ {
@@ -256,21 +296,35 @@ func checkAddr(addr string) error {
 	return err
 }
 
-func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 5 {
-		return shim.Error("need 5 args (Name,Symbol,Type,TotalSupply,TokenIDMetas,[SupplyAddress])")
+func getSupply(supplyStr string) (uint64, error) {
+	totalSupply, err := strconv.ParseUint(supplyStr, 10, 64)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to convert total supply\"}"
+		return 0, fmt.Errorf(jsonResp)
 	}
+	if totalSupply == 0 {
+		jsonResp := "{\"Error\":\"Can't be zero\"}"
+		return 0, fmt.Errorf(jsonResp)
+	}
+	if totalSupply > 1000 {
+		jsonResp := "{\"Error\":\"Not allow bigger than 1000 NonFungibleToken when create\"}"
+		return 0, fmt.Errorf(jsonResp)
+	}
+	return totalSupply, nil
+}
 
+//CreateToken
+func (p *PRC721) CreateToken(stub shim.ChaincodeStubInterface, name string, symbol string, UIDType string,
+	totalSupply uint64, tokenIDMetas string, supplyAddress string) pb.Response {
 	//==== convert params to token information
 	var nonFungible dm.NonFungibleToken
 	//name symbol
-	if len(args[0]) > 1024 {
+	if len(name) > 1024 {
 		jsonResp := "{\"Error\":\"Name length should not be greater than 1024\"}"
 		return shim.Error(jsonResp)
 	}
-	nonFungible.Name = args[0]
-	nonFungible.Symbol = strings.ToUpper(args[1])
+	nonFungible.Name = name
+	nonFungible.Symbol = strings.ToUpper(symbol)
 	if nonFungible.Symbol == "PTN" {
 		jsonResp := "{\"Error\":\"Can't use PTN\"}"
 		return shim.Error(jsonResp)
@@ -281,13 +335,13 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	//type
 	var idType dm.UniqueIdType
-	if args[2] == "1" {
+	if UIDType == "1" {
 		idType = dm.UniqueIdType_Sequence
-	} else if args[2] == "2" {
+	} else if UIDType == "2" {
 		idType = dm.UniqueIdType_Uuid
-	} else if args[2] == "3" {
+	} else if UIDType == "3" {
 		idType = dm.UniqueIdType_UserDefine
-	} else if args[2] == "4" {
+	} else if UIDType == "4" {
 		idType = dm.UniqueIdType_Ascii
 	} else {
 		jsonResp := "{\"Error\":\"Only string, 1(Seqence) or 2(UUID) or 3(Custom) or 4(Assii)\"}"
@@ -296,38 +350,25 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	nonFungible.Type = byte(idType)
 
 	//total supply
-	totalSupply, err := strconv.ParseUint(args[3], 10, 64)
-	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to convert total supply\"}"
-		return shim.Error(jsonResp)
-	}
-	if totalSupply == 0 {
-		jsonResp := "{\"Error\":\"Can't be zero\"}"
-		return shim.Error(jsonResp)
-	}
-	if totalSupply > 1000 {
-		jsonResp := "{\"Error\":\"Not allow bigger than 1000 NonFungibleToken when create\"}"
-		return shim.Error(jsonResp)
-	}
 	nonFungible.TotalSupply = totalSupply
 	//tokenIDMetas
-	var tokenIDMetas []TokenIDMeta
-	err = json.Unmarshal([]byte(args[4]), &tokenIDMetas)
+	var tkIDMetas []tokenIDMeta
+	err := json.Unmarshal([]byte(tokenIDMetas), &tkIDMetas)
 	if err != nil {
 		jsonResp := "{\"Error\":\"tokenIDMetas format invalid, must be hex strings\"}"
 		return shim.Error(jsonResp)
 	}
-	if uint64(len(tokenIDMetas)) != totalSupply {
+	if uint64(len(tkIDMetas)) != totalSupply {
 		jsonResp := "{\"Error\":\"tokenIDMetas and totalSupply is not match\"}"
 		return shim.Error(jsonResp)
 	}
-	if idType == dm.UniqueIdType_UserDefine && chekcTokenIDRepeat(tokenIDMetas) {
+	if idType == dm.UniqueIdType_UserDefine && chekcTokenIDRepeat(tkIDMetas) {
 		jsonResp := "{\"Error\":\"tokenIDMetas have repeat tokenID\"}"
 		return shim.Error(jsonResp)
 	}
 	//address of supply
-	if len(args) > 5 {
-		nonFungible.SupplyAddress = args[5]
+	if len(supplyAddress) != 0 {
+		nonFungible.SupplyAddress = supplyAddress
 		err := checkAddr(nonFungible.SupplyAddress)
 		if err != nil {
 			jsonResp := "{\"Error\":\"The SupplyAddress is invalid\"}"
@@ -343,7 +384,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//generate nonFungibleData
-	nFdatas, errStr := genNFData(idType, totalSupply, 1, tokenIDMetas)
+	nFdatas, errStr := genNFData(idType, totalSupply, 1, tkIDMetas)
 	if errStr != "" {
 		return shim.Error(errStr)
 	}
@@ -372,13 +413,13 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	for i, nFdata := range nonFungible.NonFungibleData {
 		newAsset.UniqueId.SetBytes(nFdata.UniqueBytes)
 		key := newAsset.String()
-		err = stub.PutState(key, []byte(tokenIDMetas[i].MetaData))
+		err = stub.PutState(key, []byte(tkIDMetas[i].MetaData))
 		if err != nil {
 			jsonResp := "{\"Error\":\"Failed to set Asset\"}"
 			return shim.Error(jsonResp)
 		}
 	}
-	info := TokenInfo{nonFungible.Symbol, byte(idType), totalSupply, createAddr.String(), totalSupply,
+	info := tokenInfo{nonFungible.Symbol, byte(idType), totalSupply, createAddr.String(), totalSupply,
 		nonFungible.SupplyAddress, assetID}
 	err = setSymbols(stub, &info)
 	if err != nil {
@@ -398,14 +439,10 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(createJson)
 }
 
-func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 3 {
-		return shim.Error("need 2 args (Symbol,SupplyAmout,TokenIDMetas])")
-	}
-
+//SupplyToken
+func (p *PRC721) SupplyToken(stub shim.ChaincodeStubInterface, symbol string, supplyAmount uint64, tokenIDMetas string) pb.Response {
 	//symbol
-	symbol := strings.ToUpper(args[0])
+	symbol = strings.ToUpper(symbol)
 	//check name is exist or not
 	gTkInfo := getGlobal(stub, symbol)
 	if gTkInfo == nil {
@@ -426,37 +463,24 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//supply amount
-	supplyAmount, err := strconv.ParseUint(args[1], 10, 64)
-	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to convert supply amount\"}"
-		return shim.Error(jsonResp)
-	}
-	if supplyAmount == 0 {
-		jsonResp := "{\"Error\":\"Can't be zero\"}"
-		return shim.Error(jsonResp)
-	}
-	if supplyAmount > 1000 {
-		jsonResp := "{\"Error\":\"Not allow bigger than 1000 NonFungibleToken when create\"}"
-		return shim.Error(jsonResp)
-	}
 	if math.MaxInt64-tkInfo.TotalSupply < supplyAmount {
-		jsonResp := "{\"Error\":\"Too big, overflow\"}"
+		jsonResp := "{\"Error\":\"Too big supplyAmount, overflow\"}"
 		return shim.Error(jsonResp)
 	}
 
 	//tokenIDMetas
-	var tokenIDMetas []TokenIDMeta
-	err = json.Unmarshal([]byte(args[2]), &tokenIDMetas)
+	var tkIDMetas []tokenIDMeta
+	err := json.Unmarshal([]byte(tokenIDMetas), &tkIDMetas)
 	if err != nil {
 		jsonResp := "{\"Error\":\"tokenIDMetas format invalid, must be hex strings\"}"
 		return shim.Error(jsonResp)
 	}
-	if uint64(len(tokenIDMetas)) != supplyAmount {
+	if uint64(len(tkIDMetas)) != supplyAmount {
 		jsonResp := "{\"Error\":\"tokenIDMetas and supplyAmount is not match\"}"
 		return shim.Error(jsonResp)
 	}
 	idType := dm.UniqueIdType(tkInfo.TokenType)
-	if idType == dm.UniqueIdType_UserDefine && chekcTokenIDRepeat(tokenIDMetas) {
+	if idType == dm.UniqueIdType_UserDefine && chekcTokenIDRepeat(tkIDMetas) {
 		jsonResp := "{\"Error\":\"tokenIDMetas have repeat tokenID\"}"
 		return shim.Error(jsonResp)
 	}
@@ -473,7 +497,7 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//call SupplyToken
-	nFdatas, errStr := genNFData(idType, supplyAmount, tkInfo.TokenMax+1, tokenIDMetas)
+	nFdatas, errStr := genNFData(idType, supplyAmount, tkInfo.TokenMax+1, tkIDMetas)
 	if errStr != "" {
 		return shim.Error(errStr)
 	}
@@ -493,7 +517,7 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	for i, nFdata := range nFdatas {
 		newAsset.UniqueId.SetBytes(nFdata.UniqueBytes)
 		key := newAsset.String()
-		err = stub.PutState(key, []byte(tokenIDMetas[i].MetaData))
+		err = stub.PutState(key, []byte(tkIDMetas[i].MetaData))
 		if err != nil {
 			jsonResp := "{\"Error\":\"Failed to set Asset\"}"
 			return shim.Error(jsonResp)
@@ -525,14 +549,10 @@ func supplyToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success([]byte(""))
 }
 
-func changeSupplyAddr(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 2 {
-		return shim.Error("need 2 args (Symbol,NewSupplyAddr)")
-	}
-
+//ChangeSupplyAddr
+func (p *PRC721) ChangeSupplyAddr(stub shim.ChaincodeStubInterface, symbol, supplyAddress string) pb.Response {
 	//symbol
-	symbol := strings.ToUpper(args[0])
+	symbol = strings.ToUpper(symbol)
 	//check name is exist or not
 	gTkInfo := getGlobal(stub, symbol)
 	if gTkInfo == nil {
@@ -551,8 +571,7 @@ func changeSupplyAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 	}
 
 	//new supply address
-	newSupplyAddr := args[1]
-	err := checkAddr(newSupplyAddr)
+	err := checkAddr(supplyAddress)
 	if err != nil {
 		jsonResp := "{\"Error\":\"The SupplyAddress is invalid\"}"
 		return shim.Error(jsonResp)
@@ -571,7 +590,7 @@ func changeSupplyAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 	}
 
 	//set supply address
-	tkInfo.SupplyAddr = newSupplyAddr
+	tkInfo.SupplyAddr = supplyAddress
 	err = setSymbols(stub, tkInfo)
 	if err != nil {
 		return shim.Error(jsonResp2)
@@ -585,7 +604,7 @@ func changeSupplyAddr(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 	return shim.Success([]byte(""))
 }
 
-type TokenIDInfo struct {
+type tokenIDInfo struct {
 	Symbol      string
 	CreateAddr  string
 	TokenType   uint8 //no
@@ -595,38 +614,27 @@ type TokenIDInfo struct {
 	TokenIDs    []string //no
 }
 
-func existTokenID(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 1 {
-		return shim.Error("need 1 args (Asset_TokenID)")
-	}
-
+//ExistTokenID
+func (p *PRC721) ExistTokenID(stub shim.ChaincodeStubInterface, assetTokenID string) pb.Response {
 	//asset
-	assetStr := args[0]
 	asset := &dm.Asset{}
-	err := asset.SetString(assetStr)
+	err := asset.SetString(assetTokenID)
 	if err != nil {
 		return shim.Error(jsonResp4)
 	}
 	//
-	valBytes, _ := stub.GetState(assetStr)
+	valBytes, _ := stub.GetState(assetTokenID)
 	if len(valBytes) == 0 {
 		return shim.Success([]byte("False"))
 	}
 	return shim.Success([]byte("True"))
 }
 
-func setTokenURI(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 2 {
-		return shim.Error("need 1 args (Asset_TokenID,TokenURI)")
-	}
-
+//SetTokenURI
+func (p *PRC721) SetTokenURI(stub shim.ChaincodeStubInterface, assetTokenID, tokenURI string) pb.Response {
 	//asset
-	assetStr := args[0]
-	tokenURI := args[1]
 	asset := &dm.Asset{}
-	err := asset.SetString(assetStr)
+	err := asset.SetString(assetTokenID)
 	if err != nil {
 		return shim.Error(jsonResp4)
 	}
@@ -642,13 +650,13 @@ func setTokenURI(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//
-	valBytes, _ := stub.GetState(assetStr)
+	valBytes, _ := stub.GetState(assetTokenID)
 	if len(valBytes) == 0 {
 		jsonResp := "{\"Error\":\"No this tokenID\"}"
 		return shim.Error(jsonResp)
 	}
 
-	err = stub.PutState(assetStr, []byte(tokenURI))
+	err = stub.PutState(assetTokenID, []byte(tokenURI))
 	if err != nil {
 		return shim.Error("Failed to set tokenURI")
 	}
@@ -656,21 +664,16 @@ func setTokenURI(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success([]byte("True"))
 }
 
-func getTokenURI(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 1 {
-		return shim.Error("need 1 args (Asset_TokenID)")
-	}
-
+//GetTokenURI
+func (p *PRC721) GetTokenURI(stub shim.ChaincodeStubInterface, assetTokenID string) pb.Response {
 	//asset
-	assetStr := args[0]
 	asset := &dm.Asset{}
-	err := asset.SetString(assetStr)
+	err := asset.SetString(assetTokenID)
 	if err != nil {
 		return shim.Error(jsonResp4)
 	}
 	//
-	valBytes, _ := stub.GetState(assetStr)
+	valBytes, _ := stub.GetState(assetTokenID)
 	if len(valBytes) == 0 {
 		jsonResp := "{\"Error\":\"No this tokenID\"}"
 		return shim.Error(jsonResp)
@@ -679,14 +682,10 @@ func getTokenURI(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(valBytes)
 }
 
-func oneToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 1 {
-		return shim.Error("need 1 args (Symbol)")
-	}
-
+//GetOneTokenInfo
+func (p *PRC721) GetOneTokenInfo(stub shim.ChaincodeStubInterface, symbol string) pb.Response {
 	//symbol
-	symbol := strings.ToUpper(args[0])
+	symbol = strings.ToUpper(symbol)
 	//check name is exist or not
 	tkInfo := getSymbols(stub, symbol)
 	if tkInfo == nil {
@@ -704,7 +703,7 @@ func oneToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	sort.Strings(tkIDs)
 
 	//
-	tkIDInfo := TokenIDInfo{symbol, tkInfo.CreateAddr, tkInfo.TokenType,
+	tkIDInfo := tokenIDInfo{symbol, tkInfo.CreateAddr, tkInfo.TokenType,
 		tkInfo.TotalSupply, tkInfo.SupplyAddr, tkInfo.AssetID.String(), tkIDs}
 	//return json
 	tkJson, err := json.Marshal(tkIDInfo)
@@ -714,12 +713,13 @@ func oneToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(tkJson)
 }
 
-func allToken(stub shim.ChaincodeStubInterface) pb.Response {
+//GetAllTokenInfo
+func (p *PRC721) GetAllTokenInfo(stub shim.ChaincodeStubInterface) pb.Response {
 	tkInfos := getSymbolsAll(stub)
-	tkIDInfos := make([]TokenIDInfo, 0, len(tkInfos))
+	tkIDInfos := make([]tokenIDInfo, 0, len(tkInfos))
 	tkIDs := []string{"Only return simple information"}
 	for _, tkInfo := range tkInfos {
-		tkIDInfo := TokenIDInfo{tkInfo.Symbol, tkInfo.CreateAddr,
+		tkIDInfo := tokenIDInfo{tkInfo.Symbol, tkInfo.CreateAddr,
 			tkInfo.TokenType, tkInfo.TotalSupply,
 			tkInfo.SupplyAddr, tkInfo.AssetID.String(), tkIDs}
 		tkIDInfos = append(tkIDInfos, tkIDInfo)

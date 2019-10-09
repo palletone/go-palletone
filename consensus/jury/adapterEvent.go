@@ -123,7 +123,7 @@ func (p *Processor) AdapterFunRequest(reqId common.Hash, contractId common.Addre
 	//
 	data := append(consultContent, myAnswer...)
 	sig, err := p.ptn.GetKeyStore().SignMessageWithPassphrase(accounts.Account{Address: account.Address},
-	account.Password, data)
+		account.Password, data)
 	if err != nil {
 		return nil, errors.New("AdapterFunRequest SignHashWithPassphrase failed")
 	}
@@ -174,7 +174,7 @@ func (p *Processor) getRusult(reqId common.Hash, msgType uint32, consultContent 
 		log.Debugf("Not exist consultContent %s", string(consultContent))
 		return nil, errors.New("Not exist consultContent")
 	}
-	if len(adaInf.JuryMsgAll[string(consultContent)].OneMsgAllSig) >= p.contractSigNum {
+	if len(adaInf.JuryMsgAll[string(consultContent)].OneMsgAllSig) >= getSysCfgContractSignatureNum(p.dag) {
 		var juryMsgAddrAll []JuryMsgAddr
 		for pubkey, juryMsgSig := range adaInf.JuryMsgAll[string(consultContent)].OneMsgAllSig {
 			addr := crypto.PubkeyBytesToAddress(common.Hex2Bytes(pubkey))

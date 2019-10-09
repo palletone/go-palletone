@@ -5,14 +5,14 @@ Resource          publicParams.txt
 
 *** Keywords ***
 Jury交付保证金所需参数
-    [Arguments]    ${juryAddr}    ${depositAmounts}
-    ${one}    Create List    JuryPayToDepositContract    0x03fb01988b65751b86d10fc7bfc34b127febb0602ca64edd42003274640bf5148c
+    [Arguments]    ${juryAddr}    ${depositAmounts}    ${pubkey}
+    ${one}    Create List    JuryPayToDepositContract    {\"public_key\":\"${pubkey}\"}
     ${two}    Create List    ${juryAddr}    ${depositContractAddress}    ${depositAmounts}    ${fee}    ${one}
     [Return]    ${two}
 
 juryPayToDepositContract
-    [Arguments]    ${juryAddr}    ${depositAmounts}
-    ${Jury交付保证金所需参数}    Jury交付保证金所需参数    ${juryAddr}    ${depositAmounts}
+    [Arguments]    ${juryAddr}    ${depositAmounts}    ${pubkey}
+    ${Jury交付保证金所需参数}    Jury交付保证金所需参数    ${juryAddr}    ${depositAmounts}    ${pubkey}
     ${result}    创建公用的POST请求    ${depositContractInvoke}    JuryPayToDepositContract    ${Jury交付保证金所需参数}
     sleep    6
     [Return]    ${result}

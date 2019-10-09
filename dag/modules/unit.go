@@ -82,10 +82,10 @@ func (h *Header) GetGroupPubKey() (kyber.Point, error) {
 
 func (cpy *Header) CopyHeader(h *Header) {
 	index := new(ChainIndex)
-   index.Index = h.Number.Index
-   index.AssetID = h.Number.AssetID
-   *cpy = *h
-   cpy.Number = index
+	index.Index = h.Number.Index
+	index.AssetID = h.Number.AssetID
+	*cpy = *h
+	cpy.Number = index
 }
 
 func NewHeader(parents []common.Hash, used uint64, extra []byte) *Header {
@@ -257,8 +257,8 @@ type Unit struct {
 	UnitSize   common.StorageSize `json:"unit_size"`    // unit size
 	// These fields are used by package ptn to track
 	// inter-peer block relay.
-	ReceivedAt   time.Time
-	ReceivedFrom interface{}
+	ReceivedAt   time.Time   `json:"received_at"`
+	ReceivedFrom interface{} `json:"received_from"`
 }
 
 func (h *Header) GetAssetId() AssetId {
@@ -305,8 +305,6 @@ func (unit *Unit) String4Log() string {
 	return fmt.Sprintf("Hash:%s,Index:%d,Txs:%x", unit.Hash().String(), unit.NumberU64(), txs)
 }
 
-//type Transactions []*Transaction
-type TxPoolTxs []*TxPoolTransaction
 
 //出于DAG和基于Token的分区共识的考虑，设计了该ChainIndex，
 type ChainIndex struct {

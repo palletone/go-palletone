@@ -20,6 +20,7 @@ type CCInfo struct {
 	SysCC     bool
 	Language  string
 	IsExpired bool
+	Address   string
 }
 
 type chain struct {
@@ -48,7 +49,7 @@ func addChainCodeInfo(c *chain, cc *CCInfo) error {
 			return errors.New("already exit chaincode")
 		}
 	}
-	c.CClist[cc.Name] = cc
+	c.CClist[cc.Name+cc.Version] = cc
 
 	return nil
 }
@@ -56,10 +57,10 @@ func addChainCodeInfo(c *chain, cc *CCInfo) error {
 func SetChaincode(cid string, version int, chaincode *CCInfo) error {
 	chains.mu.Lock()
 	defer chains.mu.Unlock()
-	log.Info("SetChaincode", "chainId", cid, "version", version, "Name", chaincode.Name, "Id", chaincode.Id)
+	log.Debug("SetChaincode", "chainId", cid, "cVersion", version, "Name", chaincode.Name, "chaincode.version", chaincode.Version, "Id", chaincode.Id)
 	for k, v := range chains.Clist {
 		if k == cid {
-			log.Info("SetChaincode", "chainId already exit, cid:", cid, "version", v)
+			log.Debug("SetChaincode", "chainId already exit, cid:", cid, "version" /*, v*/)
 			return addChainCodeInfo(v, chaincode)
 		}
 	}
@@ -85,16 +86,18 @@ func GetChaincodeList(cid string) (*chain, error) {
 	return nil, errors.New(errmsg)
 }
 
-func GetChaincode(cid string, deployId []byte) (*CCInfo, error) {
+func GetChaincode(cid string, deployId []byte, version string) (*CCInfo, error) {
 	if cid == "" {
 		return nil, errors.New("param is nil")
 	}
 	if chains.Clist[cid] != nil {
 		clist := chains.Clist[cid]
 		for _, v := range clist.CClist {
-			log.Info("GetChaincode", "find chaincode,name", v.Name, "list id", v.Id, "depId", deployId)
+			log.Info("GetChaincode", "find chaincode,name", v.Name, "version", v.Version, "list id", v.Id, "depId", deployId)
 			if bytes.Equal(v.Id, deployId) {
-				return v, nil
+				if version == "" || (version != "" && v.Version == version) {
+					return v, nil
+				}
 			}
 		}
 	}
@@ -117,11 +120,11 @@ func DelChaincode(cid string, ccName string, version string) error {
 		return errors.New("param is nil")
 	}
 	if chains.Clist[cid] != nil {
-		delete(chains.Clist[cid].CClist, ccName)
-		log.Info("DelChaincode", "delete chaincode", ccName)
+		delete(chains.Clist[cid].CClist, ccName+version)
+		log.Info("DelChaincode", "delete chaincode, name", ccName, "version", version)
 		return nil
 	}
-	log.Info("DelChaincode", "not find chaincode", ccName)
+	log.Info("DelChaincode", "not find chaincode", ccName, "version", version)
 
 	return nil
 }

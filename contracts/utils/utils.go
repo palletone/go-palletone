@@ -8,6 +8,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/list"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/vm/common"
 	"io"
@@ -314,4 +315,29 @@ func RemoveConWhenOverDisk(cc *list.CCInfo, dag dag.IDag) (sizeRW int64, disk in
 		}
 	}
 	return 0, 0, false
+}
+
+//判断容器是否正在运行
+func IsRunning(name string) bool {
+	client, err := util.NewDockerClient()
+	if err != nil {
+		log.Errorf(err.Error())
+		return false
+	}
+	c, err := client.InspectContainer(name)
+	if err != nil {
+		log.Errorf(err.Error())
+		return false
+	}
+	return c.State.Running
+}
+func CreateGptnNet(client *docker.Client) {
+	_, err := client.NetworkInfo(core.DefaultUccNetworkMode)
+	if err != nil {
+		log.Debugf("client.NetworkInfo error: %s", err.Error())
+		_, err := client.CreateNetwork(docker.CreateNetworkOptions{Name: core.DefaultUccNetworkMode, Driver: "bridge"})
+		if err != nil {
+			log.Debugf("client.CreateNetwork error: %s", err.Error())
+		}
+	}
 }

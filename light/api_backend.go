@@ -37,11 +37,11 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
-	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/ptnjson/statistics"
+	"github.com/palletone/go-palletone/txspool"
 	"github.com/shopspring/decimal"
 )
 
@@ -53,7 +53,9 @@ type LesApiBackend struct {
 func (b *LesApiBackend) SignAndSendRequest(addr common.Address, tx *modules.Transaction) error {
 	return nil
 }
-
+func (b *LesApiBackend) GetContractInvokeHistory(addr string) ([]*ptnjson.ContractInvokeHistoryJson, error) {
+	return nil, nil
+}
 func (b *LesApiBackend) CurrentBlock() *modules.Unit {
 	return &modules.Unit{}
 }
@@ -139,12 +141,12 @@ func (b *LesApiBackend) Stats() (pending int, queued int, reserve int) {
 	return 0, 0, 0
 }
 
-func (b *LesApiBackend) TxPoolContent() (map[common.Hash]*modules.TxPoolTransaction,
-	map[common.Hash]*modules.TxPoolTransaction) {
+func (b *LesApiBackend) TxPoolContent() (map[common.Hash]*txspool.TxPoolTransaction,
+	map[common.Hash]*txspool.TxPoolTransaction) {
 	return nil, nil
 	//return b.ptn.txPool.Content()
 }
-func (b *LesApiBackend) Queued() ([]*modules.TxPoolTransaction, error) {
+func (b *LesApiBackend) Queued() ([]*txspool.TxPoolTransaction, error) {
 	return nil, nil
 }
 
@@ -216,7 +218,7 @@ func (b *LesApiBackend) GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, e
 func (b *LesApiBackend) GetTxPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJson, error) {
 	return nil, nil
 }
-func (b *LesApiBackend) GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error) {
+func (b *LesApiBackend) GetPoolTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error) {
 	return nil, nil
 }
 
@@ -230,11 +232,17 @@ func (b *LesApiBackend) SaveCommon(key, val []byte) error {
 }
 
 // dag's get common
-func (b *LesApiBackend) GetCommon(key []byte) ([]byte, error) {
-	return b.ptn.dag.GetCommon(key)
+func (b *LesApiBackend) GetCommon(key []byte,stableDb bool) ([]byte, error) {
+	return b.ptn.dag.GetCommon(key,stableDb)
 }
-func (b *LesApiBackend) GetCommonByPrefix(prefix []byte) map[string][]byte {
-	return b.ptn.dag.GetCommonByPrefix(prefix)
+func (b *LesApiBackend) GetCommonByPrefix(prefix []byte,stableDb bool) map[string][]byte {
+	return b.ptn.dag.GetCommonByPrefix(prefix,stableDb)
+}
+func (b *LesApiBackend) GetContractStateJsonByPrefix(contractid []byte, prefix string) ([]ptnjson.ContractStateJson, error) {
+	return nil, nil
+}
+func (b *LesApiBackend) GetAllData() ([][]byte, [][]byte) {
+	return b.ptn.dag.GetAllData()
 }
 
 // Get Contract Api
@@ -336,10 +344,9 @@ func (b *LesApiBackend) GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
 	return result, nil
 
 }
-func (b *LesApiBackend) GetAddrUtxos2(addr string) ([]*ptnjson.UtxoJson,[]*ptnjson.UtxoJson, error){
-	return nil, nil, nil
+func (b *LesApiBackend) GetAddrUtxos2(addr string) ([]*ptnjson.UtxoJson, error) {
+	return nil, nil
 }
-
 
 func (b *LesApiBackend) GetAddrRawUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error) {
 	address, err := common.StringToAddress(addr)
@@ -361,7 +368,9 @@ func (b *LesApiBackend) GetAllUtxos() ([]*ptnjson.UtxoJson, error) {
 	//}
 	//return result, nil
 }
-
+func (b *LesApiBackend) GetAddrTokenFlow(addr, token string) ([]*ptnjson.TokenFlowJson, error) {
+	return nil, nil
+}
 func (b *LesApiBackend) GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson, error) {
 	return nil, nil
 }
@@ -430,7 +439,7 @@ func (b *LesApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, da
 }
 
 func (b *LesApiBackend) ContractInstallReqTxFee(from, to common.Address, daoAmount, daoFee uint64, tplName,
-path, version string, description, abi, language string, addrs []common.Address) (fee float64, size float64, tm uint32,
+	path, version string, description, abi, language string, addrs []common.Address) (fee float64, size float64, tm uint32,
 	err error) {
 	return
 }

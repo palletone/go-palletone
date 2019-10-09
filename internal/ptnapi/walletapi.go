@@ -775,7 +775,7 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransa
 		ptnAmt := addramt.Amount
 		amount := ptnjson.Ptn2Dao(ptnAmt)
 		// Ensure amount is in the valid range for monetary amounts.
-		if amount <= 0 /*|| amount > ptnjson.MaxDao*/ {
+		if amount == 0 /*|| amount > ptnjson.MaxDao*/ {
 			return "", &ptnjson.RPCError{
 				Code:    ptnjson.ErrRPCType,
 				Message: "Invalid amount",
@@ -850,7 +850,17 @@ func (s *PublicWalletAPI) GetAddrUtxos(ctx context.Context, addr string) (string
 	return string(result_json), nil
 
 }
+func (s *PublicWalletAPI) GetAddrUtxos2(ctx context.Context, addr string) (string, error) {
+	utxos, err := s.b.GetAddrUtxos2(addr)
+	if err != nil {
+		return "", err
+	}
 
+	info := NewPublicReturnInfo("address_utxos", utxos)
+	result_json, _ := json.Marshal(info)
+	return string(result_json), nil
+
+}
 func (s *PublicWalletAPI) GetBalance(ctx context.Context, address string) (map[string]decimal.Decimal, error) {
 	utxos, err := s.b.GetAddrUtxos(address)
 	if err != nil {
@@ -868,17 +878,23 @@ func (s *PublicWalletAPI) GetBalance(ctx context.Context, address string) (map[s
 	return result, nil
 }
 func (s *PublicWalletAPI) GetBalance2(ctx context.Context, address string) (*walletjson.StableUnstable, error) {
-	stbutxos,unstbUtxos, err := s.b.GetAddrUtxos2(address)
+	utxos, err := s.b.GetAddrUtxos2(address)
 	if err != nil {
 		return nil, err
 	}
-	balance1:=utxos2Balance(stbutxos)
-	balance2:=utxos2Balance(unstbUtxos)
-	return &walletjson.StableUnstable{Stable:balance1,Unstable:balance2}, nil
+	balance1 := utxos2Balance(utxos, true)
+	balance2 := utxos2Balance(utxos, false)
+	return &walletjson.StableUnstable{Stable: balance1, Unstable: balance2}, nil
 }
-func utxos2Balance(utxos []*ptnjson.UtxoJson)  map[string]decimal.Decimal{
+func utxos2Balance(utxos []*ptnjson.UtxoJson, stable bool) map[string]decimal.Decimal {
 	result := make(map[string]decimal.Decimal)
 	for _, utxo := range utxos {
+		if stable && utxo.FlagStatus == "Unstable" {
+			continue
+		}
+		if !stable && utxo.FlagStatus != "Unstable" {
+			continue
+		}
 		asset, _ := modules.StringToAsset(utxo.Asset)
 		if bal, ok := result[utxo.Asset]; ok {
 			result[utxo.Asset] = bal.Add(ptnjson.AssetAmt2JsonAmt(asset, utxo.Amount))
@@ -888,6 +904,7 @@ func utxos2Balance(utxos []*ptnjson.UtxoJson)  map[string]decimal.Decimal{
 	}
 	return result
 }
+
 //func (s *PublicWalletAPI) GetTranscations(ctx context.Context, address string) (string, error) {
 //	txs, err := s.b.GetAddrTransactions(address)
 //	if err != nil {
@@ -949,6 +966,16 @@ func (s *PublicWalletAPI) GetAddrTxHistory(ctx context.Context, addr string) ([]
 
 	return result, err
 }
+func (s *PublicWalletAPI) GetContractInvokeHistory(ctx context.Context, contractAddr string) ([]*ptnjson.ContractInvokeHistoryJson, error) {
+	result, err := s.b.GetContractInvokeHistory(contractAddr)
+	return result, err
+}
+
+//获得某地址的通证流水
+func (s *PublicWalletAPI) GetAddrTokenFlow(ctx context.Context, addr string, token string) ([]*ptnjson.TokenFlowJson, error) {
+	result, err := s.b.GetAddrTokenFlow(addr, token)
+	return result, err
+}
 
 //sign rawtranscation
 //create raw transction
@@ -972,10 +999,18 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 	}
 	utxos := core.Utxos{}
 	ptn := dagconfig.DagConfig.GetGasToken()
-	for _, json := range utxoJsons {
+	for _, jsonu := range utxoJsons {
 		//utxos = append(utxos, &json)
-		if json.Asset == ptn.String() {
-			utxos = append(utxos, &ptnjson.UtxoJson{TxHash: json.TxHash, MessageIndex: json.MessageIndex, OutIndex: json.OutIndex, Amount: json.Amount, Asset: json.Asset, PkScriptHex: json.PkScriptHex, PkScriptString: json.PkScriptString, LockTime: json.LockTime})
+		if jsonu.Asset == ptn.String() {
+			utxos = append(utxos, &ptnjson.UtxoJson{
+				TxHash:         jsonu.TxHash,
+				MessageIndex:   jsonu.MessageIndex,
+				OutIndex:       jsonu.OutIndex,
+				Amount:         jsonu.Amount,
+				Asset:          jsonu.Asset,
+				PkScriptHex:    jsonu.PkScriptHex,
+				PkScriptString: jsonu.PkScriptString,
+				LockTime:       jsonu.LockTime})
 		}
 	}
 	fee, err := decimal.NewFromString("1")
@@ -1676,7 +1711,7 @@ func (s *PrivateWalletAPI) AggregateUtxo(ctx context.Context,
 			if err != nil {
 				return nil, err
 			}
-			log.Infof("Try to send aggregate UTXO tx[%s]",tx.Hash().String())
+			log.Infof("Try to send aggregate UTXO tx[%s]", tx.Hash().String())
 			err = s.b.SendTx(ctx, tx)
 			inputAmtSum = 0
 			payment = nil
@@ -1695,7 +1730,7 @@ func (s *PrivateWalletAPI) AggregateUtxo(ctx context.Context,
 		if err != nil {
 			return nil, err
 		}
-		log.Infof("Try to send aggregate UTXO tx[%s]",tx.Hash().String())
+		log.Infof("Try to send aggregate UTXO tx[%s]", tx.Hash().String())
 		err = s.b.SendTx(ctx, tx)
 		if err != nil {
 			return nil, err

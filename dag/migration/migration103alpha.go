@@ -89,6 +89,7 @@ func (m *Migration102delta_103alpha) upgradeGP() error {
 
 	//新加的
 	newData.ChainParameters.RmExpConFromSysParam = core.DefaultRmExpConFromSysParam
+	newData.ChainParameters.ContractSystemVersion = core.DefaultContractSystemVersion
 
 	// =======================chainParameters=============================
 	UccMemory, err := strconv.ParseInt(oldGp.ChainParameters.UccMemory, 10, 64)
@@ -207,8 +208,8 @@ type GlobalPropBase102delta struct {
 
 type ChainParameters102delta struct {
 	ChainParametersBase102delta
-	UccMemory string
 
+	UccMemory string
 	UccCpuShares string
 	UccCpuQuota  string
 	UccDisk      string
@@ -222,6 +223,7 @@ type ChainParameters102delta struct {
 
 	ContractTxTimeoutUnitFee  string
 	ContractTxSizeUnitFee     string
+
 	ContractTxInstallFeeLevel string
 	ContractTxDeployFeeLevel  string
 	ContractTxInvokeFeeLevel  string

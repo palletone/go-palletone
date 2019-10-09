@@ -31,7 +31,7 @@ func TestChainCodeList(t *testing.T) {
 		t.Logf("----%s:%v", k, *v)
 	}
 
-	cc, err := GetChaincode("cid", []byte("cc2test"))
+	cc, err := GetChaincode("cid", []byte("cc2test"), "")
 	if err != nil {
 		t.Error("not find chainlist")
 	}

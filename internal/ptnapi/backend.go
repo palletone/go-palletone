@@ -31,10 +31,10 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
-	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/ptnjson/statistics"
+	"github.com/palletone/go-palletone/txspool"
 	"github.com/shopspring/decimal"
 )
 
@@ -68,12 +68,12 @@ type Backend interface {
 	GetPoolTransaction(txHash common.Hash) *modules.Transaction
 	GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, error)
 	GetTxPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJson, error)
-	GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error)
+	GetPoolTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error)
 
 	//GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error)
 	Stats() (int, int, int)
-	TxPoolContent() (map[common.Hash]*modules.TxPoolTransaction, map[common.Hash]*modules.TxPoolTransaction)
-	Queued() ([]*modules.TxPoolTransaction, error)
+	TxPoolContent() (map[common.Hash]*txspool.TxPoolTransaction, map[common.Hash]*txspool.TxPoolTransaction)
+	Queued() ([]*txspool.TxPoolTransaction, error)
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
 
 	//ChainConfig() *configure.ChainConfig
@@ -87,8 +87,9 @@ type Backend interface {
 	//WalletBalance(address string, assetid []byte, uniqueid []byte, chainid uint64) (uint64, error)
 	QueryProofOfExistenceByReference(ref string) ([]*ptnjson.ProofOfExistenceJson, error)
 	// dag's get common
-	GetCommon(key []byte) ([]byte, error)
-	GetCommonByPrefix(prefix []byte) map[string][]byte
+	GetCommon(key []byte, stableDb bool) ([]byte, error)
+	GetCommonByPrefix(prefix []byte, stableDb bool) map[string][]byte
+	GetAllData() ([][]byte, [][]byte)
 	SaveCommon(key, val []byte) error
 	// Get Contract Api
 	GetContract(contractAddr common.Address) (*ptnjson.ContractJson, error)
@@ -124,16 +125,18 @@ type Backend interface {
 	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
 	GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error)
-	GetAddrUtxos2(addr string) ([]*ptnjson.UtxoJson,[]*ptnjson.UtxoJson, error)
+	GetAddrUtxos2(addr string) ([]*ptnjson.UtxoJson, error)
 	GetAddrRawUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAllUtxos() ([]*ptnjson.UtxoJson, error)
 	GetAddressBalanceStatistics(token string, topN int) (*statistics.TokenAddressBalanceJson, error)
 	GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson, error)
+	GetContractInvokeHistory(addr string) ([]*ptnjson.ContractInvokeHistoryJson, error)
+	GetAddrTokenFlow(addr, token string) ([]*ptnjson.TokenFlowJson, error)
 	GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxHistoryJson, error)
 	GetAssetExistence(asset string) ([]*ptnjson.ProofOfExistenceJson, error)
 	//contract control
 	ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi,
-	ccLanguage string) (TemplateId []byte, err error)
+		ccLanguage string) (TemplateId []byte, err error)
 	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)
 	ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 	ContractStop(deployId []byte, txid string, deleteImage bool) error
@@ -166,7 +169,6 @@ type Backend interface {
 	ContractStopReqTxFee(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address,
 		deleteImage bool) (fee float64, size float64, tm uint32, err error)
 
-
 	ElectionVrf(id uint32) ([]byte, error)
 	UpdateJuryAccount(addr common.Address, pwd string) bool
 	GetJuryAccount() []common.Address
@@ -193,6 +195,7 @@ type Backend interface {
 	//get contract key
 	GetContractState(contractid []byte, key string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
+	GetContractStateJsonByPrefix(id []byte, prefix string) ([]ptnjson.ContractStateJson, error)
 
 	//SPV
 	GetProofTxInfoByHash(txhash string) ([][]byte, error)

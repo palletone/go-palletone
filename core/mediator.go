@@ -19,11 +19,13 @@
 package core
 
 import (
+	"encoding/hex"
 	"fmt"
 	"strings"
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing/bn256"
@@ -151,4 +153,38 @@ func StrToPoint(pubStr string) (kyber.Point, error) {
 	}
 
 	return pub, nil
+}
+
+// juror保证金额外信息
+type JurorDepositExtraJson struct {
+	PublicKey string `json:"public_key"` //账户地址对应的公钥
+}
+
+func NewJurorDepositExtraJson() JurorDepositExtraJson {
+	return JurorDepositExtraJson{
+		PublicKey: DefaultPublickey,
+	}
+}
+
+func (json *JurorDepositExtraJson) Validate(addStr string) (jde JurorDepositExtra, errs error) {
+	byte, err := hex.DecodeString(json.PublicKey)
+	if err != nil {
+		errs = err
+		return
+	}
+	jde.PublicKey = byte
+
+	add := crypto.PubkeyBytesToAddress(byte).String()
+	if add != addStr {
+		errs = fmt.Errorf("public key(%v) does not match the address(%v), another address(%v) is corresponding",
+			json.PublicKey, addStr, add)
+		return
+	}
+
+	return
+}
+
+// juror保证金额外信息
+type JurorDepositExtra struct {
+	PublicKey []byte `json:"public_key"` //账户地址对应的公钥
 }

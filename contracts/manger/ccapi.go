@@ -135,7 +135,7 @@ func Install(dag dag.IDag, chainID, ccName, ccPath, ccVersion, ccDescription, cc
 	return payloadUnit, nil
 }
 
-func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
+func Deploy(jA string, rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
 	log.Info("Deploy enter", "chainID", chainID, "templateId", templateId, "txId", txId)
 	defer log.Info("Deploy exit", "chainID", chainID, "templateId", templateId, "txId", txId)
 	setTimeOut := time.Duration(30) * time.Second
@@ -198,6 +198,7 @@ func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byt
 		Version:  usrcc.Version,
 		Language: usrcc.Language,
 		SysCC:    false,
+		Address:  jA,
 	}
 	//if depId.IsSystemContractAddress() {
 	//	cc.SysCC = true
@@ -246,38 +247,36 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 	var err error
 
 	if address.IsSystemContractAddress() {
-		cc, err = cclist.GetChaincode(chainID, deployId)
+		ver := getContractSysVersion(deployId, idag.GetChainParameters().ContractSystemVersion)
+		cc, err = cclist.GetChaincode(chainID, deployId, ver)
 		if err != nil {
 			return nil, err
 		}
 	} else {
 		cc, err = GetChaincode(idag, address)
-		log.Debugf("get chain code")
 		if err != nil {
+			log.Debugf("Invoke, get chain code err:%s", err.Error())
 			return nil, err
 		}
 	}
 	startTm := time.Now()
 	es := NewEndorserServer(mksupt)
-	log.Debugf("new endorser server")
 	spec := &pb.ChaincodeSpec{
-		ChaincodeId: &pb.ChaincodeID{Name: cc.Name},
+		ChaincodeId: &pb.ChaincodeID{Name: cc.Name, Version: cc.Version},
 		Type:        pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value[cc.Language]),
 		Input:       &pb.ChaincodeInput{Args: args},
 	}
 	cid := &pb.ChaincodeID{
-		Path:    cc.Path, //no use
+		Path:    cc.Path,
 		Name:    cc.Name,
 		Version: cc.Version,
 	}
 	sprop, prop, err := SignedEndorserProposa(chainID, txid, spec, creator, []byte("msg1"))
-	log.Debugf("signed endorser proposal")
 	if err != nil {
 		log.Errorf("signedEndorserProposa error[%v]", err)
 		return nil, err
 	}
 	rsp, unit, err := es.ProcessProposal(rwM, idag, deployId, context.Background(), sprop, prop, chainID, cid, timeout)
-	log.Debugf("process proposal")
 	if err != nil {
 		log.Infof("ProcessProposal error[%v]", err)
 		return nil, err
@@ -299,9 +298,9 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 	return unit, nil
 }
 
-func Stop(rwM rwset.TxManager, idag dag.IDag, contractid []byte, chainID string, deployId []byte, txid string, deleteImage bool, dontRmCon bool) (*md.ContractStopPayload, error) {
-	log.Info("Stop enter", "contractid", contractid, "chainID", chainID, "deployId", deployId, "txid", txid)
-	defer log.Info("Stop enter", "contractid", contractid, "chainID", chainID, "deployId", deployId, "txid", txid)
+func Stop(rwM rwset.TxManager, idag dag.IDag, contractid []byte, chainID string, txid string, deleteImage bool, dontRmCon bool) (*md.ContractStopPayload, error) {
+	log.Info("Stop enter", "contractid", contractid, "chainID", chainID, "deployId", contractid, "txid", txid)
+	defer log.Info("Stop enter", "contractid", contractid, "chainID", chainID, "deployId", contractid, "txid", txid)
 
 	setChainId := "palletone"
 	if chainID != "" {
@@ -310,7 +309,7 @@ func Stop(rwM rwset.TxManager, idag dag.IDag, contractid []byte, chainID string,
 	if txid == "" {
 		return nil, errors.New("input param txid is nil")
 	}
-	address := common.NewAddress(deployId, common.ContractHash)
+	address := common.NewAddress(contractid, common.ContractHash)
 	cc, err := GetChaincode(idag, address)
 	if err != nil {
 		return nil, err
@@ -347,29 +346,42 @@ func StopByName(contractid []byte, chainID string, txid string, usercc *cclist.C
 	return stopResult, nil
 }
 
-func RestartContainers(client *docker.Client, dag dag.IDag, cons []docker.APIContainers) {
+func RestartContainers(dag dag.IDag, cons []docker.APIContainers, jury core.IAdapterJury) {
 	//  获取所有退出容器
 	addrs, err := utils.GetAllExitedContainer(cons)
 	if err != nil {
-		log.Infof("client.ListContainers err: %s\n", err.Error())
+		log.Infof("client.GetAllExitedContainer err: %s\n", err.Error())
 		return
 	}
-	if len(addrs) > 0 {
-		for _, v := range addrs {
-			rd, _ := crypto.GetRandomBytes(32)
-			txid := util.RlpHash(rd)
-			log.Infof("==============需要重启====容器地址为--->%s", hex.EncodeToString(v.Bytes21()))
-			_, err = RestartContainer(dag, "palletone", v.Bytes21(), txid.String())
-			if err != nil {
-				log.Infof("RestartContainer err: %s", err.Error())
-				return
-			}
+	for _, v := range addrs {
+		//  判断是否是担任jury地址
+		juryAddrs := jury.GetLocalJuryAddrs()
+		juryAddr := ""
+		if len(juryAddrs) != 0 {
+			juryAddr = juryAddrs[0].String()
+		}
+		cc, err := GetChaincode(dag, v)
+		if err != nil {
+			log.Info(err.Error())
+			continue
+		}
+		if juryAddr != cc.Address {
+			log.Infof("the local jury address %s was not equal address %s in the dag", juryAddr, cc.Address)
+			continue
+		}
+		rd, _ := crypto.GetRandomBytes(32)
+		txid := util.RlpHash(rd)
+		log.Infof("==============需要重启====容器地址为--->%s", hex.EncodeToString(v.Bytes21()))
+		_, err = RestartContainer(dag, "palletone", v, txid.String())
+		if err != nil {
+			log.Infof("RestartContainer err: %s", err.Error())
+			return
 		}
 	}
 }
 
 //删除所有过期容器
-func RemoveExpiredConatiners(client *docker.Client, dag dag.IDag, rmExpConFromSysParam bool, con []docker.APIContainers) {
+func RemoveExpiredContainers(client *docker.Client, dag dag.IDag, rmExpConFromSysParam bool, con []docker.APIContainers) {
 	//获取容器id，以及对应用户合约的地址，更新状态
 	idStrMap := utils.RetrieveExpiredContainers(dag, con, rmExpConFromSysParam)
 	if len(idStrMap) > 0 {
@@ -380,32 +392,27 @@ func RemoveExpiredConatiners(client *docker.Client, dag dag.IDag, rmExpConFromSy
 			}
 			cc, err := GetChaincode(dag, str)
 			if err != nil {
-				log.Error("get chaincode error %s", err.Error())
+				log.Errorf("get chaincode error %s", err.Error())
 			}
 			cc.IsExpired = true
 			err = SaveChaincode(dag, str, cc)
 			if err != nil {
-				log.Error("save chaincode error %s", err.Error())
+				log.Errorf("save chaincode error %s", err.Error())
 			}
 		}
 	}
 }
 
-func RestartContainer(idag dag.IDag, chainID string, deployId []byte, txId string) ([]byte, error) {
-	_, err := Stop(nil, idag, deployId, chainID, deployId, txId, false, true)
-	if err != nil {
-		return nil, err
-	}
-	log.Info("enter Deploy", "chainID", chainID, "templateId", hex.EncodeToString(deployId), "txId", txId)
-	defer log.Info("exit Deploy", "txId", txId)
+func RestartContainer(idag dag.IDag, chainID string, addr common.Address, txId string) ([]byte, error) {
+	log.Info("enter RestartContainer", "chainID", chainID, "contract addr", addr.String(), "txId", txId)
+	defer log.Info("exit RestartContainer", "txId", txId)
 	//setChainId := "palletone"
 	setTimeOut := time.Duration(50) * time.Second
 	//if chainID != "" {
 	//	setChainId = chainID
 	//}
 	//test
-	address := common.NewAddress(deployId, common.ContractHash)
-	cc, err := GetChaincode(idag, address)
+	cc, err := GetChaincode(idag, addr)
 	if err != nil {
 		return nil, err
 	}
@@ -433,13 +440,13 @@ func RestartContainer(idag dag.IDag, chainID string, deployId []byte, txId strin
 	spec.Memory = cp.UccMemory      //字节单位 物理内存  1073741824  1G 2147483648 2G 209715200 200m 104857600 100m
 	_, chaincodeData, err := ucc.RecoverChainCodeFromDb(chainID, cc.TempleId)
 	if err != nil {
-		log.Error("Deploy", "chainid:", chainID, "templateId:", cc.TempleId, "RecoverChainCodeFromDb err", err)
+		log.Error("RestartContainer", "chainid:", chainID, "templateId:", cc.TempleId, "RecoverChainCodeFromDb err", err)
 		return nil, err
 	}
-	err = ucc.DeployUserCC(address.Bytes(), chaincodeData, spec, chainID, txId, nil, setTimeOut)
+	err = ucc.DeployUserCC(addr.Bytes(), chaincodeData, spec, chainID, txId, nil, setTimeOut)
 	if err != nil {
-		log.Error("deployUserCC err:", "error", err)
-		return nil, errors.WithMessage(err, "Deploy fail")
+		log.Error("RestartContainer err:", "error", err)
+		return nil, errors.WithMessage(err, "RestartContainer fail")
 	}
 	return cc.Id, err
 }

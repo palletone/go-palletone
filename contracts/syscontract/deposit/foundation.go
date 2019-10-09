@@ -70,9 +70,9 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 			return shim.Error(err.Error())
 		}
 		if agreeList == nil {
-			agreeList = make(map[string]string)
+			agreeList = make(map[string]bool)
 		}
-		agreeList[addr.String()] = ""
+		agreeList[addr.String()] = true
 		//  保存同意列表
 		err = saveList(stub, modules.ListForAgreeBecomeMediator, agreeList)
 		if err != nil {
@@ -80,7 +80,7 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 			return shim.Error(err.Error())
 		}
 		// 修改同意时间
-		md.AgreeTime = getTiem(stub)
+		md.AgreeTime = getTime(stub)
 		md.Status = modules.Agree
 		err = SaveMediatorDeposit(stub, addr.Str(), md)
 		if err != nil {
@@ -282,18 +282,43 @@ func agreeForApplyForfeiture(stub shim.ChaincodeStubInterface, foundationA strin
 	case forfeitureRole == modules.Developer:
 		return handleDevForfeitureDeposit(stub, foundationA, forfeitureAddr)
 	default:
-		return fmt.Errorf("please enter validate role.")
+		return fmt.Errorf("%s", "please enter validate role.")
 	}
 }
 func handleJuryForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA string, forfeitureAddr string) error {
-	return handleNodeForfeitureDeposit(stub, foundationA, forfeitureAddr)
+	node, err := GetJuryBalance(stub, forfeitureAddr)
+	if err != nil {
+		return err
+	}
+	if node == nil {
+		return fmt.Errorf("node is nil")
+	}
+
+	//  移除列表
+	err = moveCandidate(modules.JuryList, forfeitureAddr, stub)
+	if err != nil {
+		return err
+	}
+	//  退还保证金
+	//cp, err := stub.GetSystemConfig()
+	//if err != nil {
+	//	return err
+	//}
+	//  调用从合约把token转到请求地址
+	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
+	err = stub.PayOutToken(foundationA, modules.NewAmountAsset(node.Balance, gasToken), 0)
+	if err != nil {
+		log.Error("stub.PayOutToken err:", "error", err)
+		return err
+	}
+	err = DelJuryBalance(stub, forfeitureAddr)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func handleDevForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA string, forfeitureAddr string) error {
-	return handleNodeForfeitureDeposit(stub, foundationA, forfeitureAddr)
-}
-
-func handleNodeForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA string, forfeitureAddr string) error {
 	node, err := GetNodeBalance(stub, forfeitureAddr)
 	if err != nil {
 		return err
@@ -301,15 +326,8 @@ func handleNodeForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA s
 	if node == nil {
 		return fmt.Errorf("node is nil")
 	}
-	list := ""
-	if node.Role == modules.Developer {
-		list = modules.DeveloperList
-	}
-	if node.Role == modules.Jury {
-		list = modules.JuryList
-	}
 	//  移除列表
-	err = moveCandidate(list, forfeitureAddr, stub)
+	err = moveCandidate(modules.DeveloperList, forfeitureAddr, stub)
 	if err != nil {
 		return err
 	}
@@ -331,6 +349,10 @@ func handleNodeForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA s
 	}
 	return nil
 }
+
+//func handleNodeForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA string, forfeitureAddr string) error {
+//
+//}
 
 //处理没收Mediator保证金
 func handleMediatorForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA string, forfeitureAddr string) error {
@@ -454,6 +476,14 @@ func handleNodeInList(stub shim.ChaincodeStubInterface, args []string, role stri
 			if err != nil {
 				log.Debugf("move list error: %s", err.Error())
 				return shim.Error(err.Error())
+			}
+			if list == modules.MediatorList {
+				//  对应jury
+				err = moveCandidate(modules.JuryList, a, stub)
+				if err != nil {
+					log.Debugf("move list error: %s", err.Error())
+					return shim.Error(err.Error())
+				}
 			}
 		}
 		return shim.Success(nil)

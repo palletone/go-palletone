@@ -22,6 +22,7 @@ package dag
 
 import (
 	"encoding/json"
+	"github.com/palletone/go-palletone/dag/constants"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -66,10 +67,10 @@ func (dag *Dag) InitPropertyDB(genesis *core.Genesis, unit *modules.Unit) error 
 	//  初始化mediator调度器，并存在数据库
 	// @author Albert·Gou
 	ms := modules.InitMediatorSchl(gp, dgp)
-	dag.stablePropRep.UpdateMediatorSchedule(ms, gp, dgp)
 	if err := dag.stablePropRep.StoreMediatorSchl(ms); err != nil {
 		return err
 	}
+	dag.stablePropRep.UpdateMediatorSchedule()
 
 	return nil
 }
@@ -86,11 +87,11 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 	}
 
 	// Create initial mediators
-	list := make(map[string]string, len(genesis.InitialMediatorCandidates))
+	list := make(map[string]bool, len(genesis.InitialMediatorCandidates))
 
 	for _, imc := range genesis.InitialMediatorCandidates {
 		// 存储 mediator info
-		addr, err := imc.Validate()
+		addr, jde, err := imc.Validate()
 		if err != nil {
 			log.Debugf(err.Error())
 			return err
@@ -110,7 +111,7 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 		md := modules.NewMediatorDeposit()
 		md.Status = modules.Agree
 		md.Role = modules.Mediator
-		md.ApplyEnterTime = time.Unix(unit.Timestamp(), 0).Format(modules.Layout2)
+		md.ApplyEnterTime = time.Unix(unit.Timestamp(), 0).UTC().Format(modules.Layout2)
 
 		byte, err := json.Marshal(md)
 		if err != nil {
@@ -125,8 +126,27 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 			return err
 		}
 
-		//  TODO 加入地址公钥信息
-		list[mi.AddStr] = ""
+		list[mi.AddStr] = true
+
+		//对应的Juror
+		juror := modules.JurorDeposit{}
+		juror.Address = mi.AddStr
+		juror.Role = modules.Jury
+		juror.Balance = 0
+		juror.JurorDepositExtra = jde
+
+		jurorByte, err := json.Marshal(juror)
+		if err != nil {
+			log.Errorf(err.Error())
+			return err
+		}
+		ws.Value = jurorByte
+		ws.Key = string(constants.DEPOSIT_JURY_BALANCE_PREFIX) + mi.AddStr
+		err = dag.stableStateRep.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws, version)
+		if err != nil {
+			log.Debugf(err.Error())
+			return err
+		}
 	}
 
 	// 存储 initMediatorCandidates/JuryCandidates
@@ -157,15 +177,17 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 }
 
 func (dag *Dag) IsSynced() bool {
-	gp := dag.GetGlobalProp()
-	dgp := dag.GetDynGlobalProp()
+	//gp := dag.GetGlobalProp()
+	//dgp := dag.GetDynGlobalProp()
 
 	//nowFine := time.Now()
 	//now := time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
 	now := time.Now()
 	// 防止误判，获取之后的第2个生产槽时间
 	//nextSlotTime := dag.unstablePropRep.GetSlotTime(gp, dgp, 1)
-	nextSlotTime := dag.unstablePropRep.GetSlotTime(gp, dgp, 2)
+	nextSlotTime := dag.unstablePropRep.GetSlotTime(2)
+	//_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
+	//nextSlotTime := rep.GetSlotTime(2)
 
 	return nextSlotTime.After(now)
 }
@@ -247,30 +269,12 @@ func (dag *Dag) IsConsecutiveMediator(nextMediator common.Address) bool {
 	return false
 }
 
-// 计算最近64个生产slots的mediator参与度，不包括当前unit
+// 计算最近128个生产slots的mediator参与度，不包括当前unit
 // Calculate the percent of unit production slots that were missed in the
-// past 64 units, not including the current unit.
+// past 128 units, not including the current unit.
 func (dag *Dag) MediatorParticipationRate() uint32 {
-	popCount := func(x uint64) uint8 {
-		m := []uint64{
-			0x5555555555555555,
-			0x3333333333333333,
-			0x0F0F0F0F0F0F0F0F,
-			0x00FF00FF00FF00FF,
-			0x0000FFFF0000FFFF,
-			0x00000000FFFFFFFF,
-		}
-
-		var i, w uint8
-		for i, w = 0, 1; i < 6; i, w = i+1, w+w {
-			x = (x & m[i]) + ((x >> w) & m[i])
-		}
-
-		return uint8(x)
-	}
-
 	recentSlotsFilled := dag.GetDynGlobalProp().RecentSlotsFilled
-	participationRate := core.PalletOne100Percent * int(popCount(recentSlotsFilled)) / 64
+	participationRate := core.PalletOne100Percent * int(recentSlotsFilled.PopCount()) / 128
 
 	return uint32(participationRate)
 }

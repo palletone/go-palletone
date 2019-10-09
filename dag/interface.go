@@ -30,15 +30,16 @@ import (
 	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/txspool"
 )
 
 type IDag interface {
 	Close()
 
-	GetCommon(key []byte) ([]byte, error)
-	GetCommonByPrefix(prefix []byte) map[string][]byte
+	GetCommon(key []byte,stableDb bool) ([]byte, error)
+	GetCommonByPrefix(prefix []byte,stableDb bool) map[string][]byte
 	SaveCommon(key, val []byte) error
+	GetAllData() ([][]byte, [][]byte)
 
 	IsEmpty() bool
 	GetStableChainIndex(token modules.AssetId) *modules.ChainIndex
@@ -171,6 +172,7 @@ type IDag interface {
 	GetAccountVotedMediators(addr common.Address) map[string]bool
 	GetMediatorInfo(address common.Address) *modules.MediatorInfo
 
+	GetVotingForMediator(addStr string) (map[string]uint64, error)
 	MediatorVotedResults() (map[string]uint64, error)
 	LookupMediatorInfo() []*modules.MediatorInfo
 	IsActiveMediator(add common.Address) bool
@@ -198,4 +200,7 @@ type IDag interface {
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	ChainThreshold() int
 	CheckHeaderCorrect(number int) error
+	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
+	RebuildAddrTxIndex() error
+	GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, error)
 }

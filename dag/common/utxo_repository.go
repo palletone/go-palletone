@@ -79,7 +79,7 @@ type IUtxoRepository interface {
 	GetUxtoSetByInputs(txins []modules.Input) (map[modules.OutPoint]*modules.Utxo, uint64)
 	//GetAccountTokens(addr common.Address) (map[string]*modules.AccountToken, error)
 	//WalletBalance(addr common.Address, asset modules.Asset) uint64
-	// ComputeAwards(txs []*modules.TxPoolTransaction, dagdb storage.IDagDb) (*modules.Addition, error)
+	// ComputeAwards(txs []*txspool.TxPoolTransaction, dagdb storage.IDagDb) (*modules.Addition, error)
 	// ComputeTxAward(tx *modules.Transaction, dagdb storage.IDagDb) (uint64, error)
 	ClearUtxo() error
 	SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error
@@ -558,7 +558,7 @@ To get account token info by query the whole utxo table
 根据交易列表计算交易费总和
 To compute transactions' fees
 */
-// func (repository *UtxoRepository) ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error) {
+// func (repository *UtxoRepository) ComputeFees(txs []*txspool.TxPoolTransaction) (uint64, error) {
 // 	// current time slice mediator default income is 1 ptn
 // 	fees := uint64(0)
 // 	unitUtxo := map[modules.OutPoint]*modules.Utxo{}
@@ -586,7 +586,7 @@ To compute transactions' fees
 /**
 根据交易列表计算保证金交易的收益
 */
-// func (repository *UtxoRepository) ComputeAwards(txs []*modules.TxPoolTransaction,
+// func (repository *UtxoRepository) ComputeAwards(txs []*txspool.TxPoolTransaction,
 // dagdb storage.IDagDb) (*modules.Addition, error) {
 // 	awards := uint64(0)
 // 	for _, tx := range txs {

@@ -31,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
@@ -62,7 +63,7 @@ func (s *PublicDagAPI) GetHexCommon(ctx context.Context, key string) (string, er
 		return "", err0
 	}
 	//log.Info("GetCommon by hex info.", "key", string(key_bytes), "bytes", key_bytes)
-	items, err := s.b.GetCommon(key_bytes[:])
+	items, err := s.b.GetCommon(key_bytes[:],false)
 	if err != nil {
 		return "", err
 	}
@@ -74,14 +75,20 @@ func (s *PublicDagAPI) GetCommon(ctx context.Context, key string) ([]byte, error
 	if key == "" {
 		return nil, fmt.Errorf("参数为空")
 	}
-	return s.b.GetCommon([]byte(key))
+	return s.b.GetCommon([]byte(key),false)
 }
-
+func (s *PublicDagAPI) GetLdbCommon(ctx context.Context, key string) ([]byte, error) {
+	// key to bytes
+	if key == "" {
+		return nil, fmt.Errorf("参数为空")
+	}
+	return s.b.GetCommon([]byte(key),true)
+}
 func (s *PrivateDagAPI) GetCommonByPrefix(ctx context.Context, prefix string) (string, error) {
 	if prefix == "" {
 		return "", fmt.Errorf("参数为空")
 	}
-	result := s.b.GetCommonByPrefix([]byte(prefix))
+	result := s.b.GetCommonByPrefix([]byte(prefix),false)
 	if len(result) == 0 {
 		return "all_items:null", nil
 	}
@@ -90,6 +97,29 @@ func (s *PrivateDagAPI) GetCommonByPrefix(ctx context.Context, prefix string) (s
 	result_json, err := json.Marshal(info)
 	return string(result_json), err
 }
+
+func (s *PublicDagAPI) GetGenesisData(ctx context.Context) (*GenesisData, error) {
+	data := new(GenesisData)
+	keys_byte, values_byte := s.b.GetAllData()
+	data.Count = len(keys_byte)
+	log.Debugf("count:%d, keys:%v", data.Count, keys_byte)
+	log.Debugf("count:%d, values:%v", len(values_byte), values_byte)
+	if data.Count != len(values_byte) {
+		return nil, fmt.Errorf("the keys count[%d] not match the values[%d].", data.Count, len(values_byte))
+	}
+	for i := 0; i < data.Count; i++ {
+		data.Keys = append(data.Keys, util.Bytes2Hex(keys_byte[i]))
+		data.Values = append(data.Values, util.Bytes2Hex(values_byte[i]))
+	}
+	return data, nil
+}
+
+type GenesisData struct {
+	Keys   []string
+	Values []string
+	Count  int
+}
+
 func (s *PublicDagAPI) GetHeaderByHash(ctx context.Context, condition string) (string, error) {
 	hash := common.Hash{}
 	if err := hash.SetHexString(condition); err != nil {
@@ -182,6 +212,29 @@ func (s *PublicDagAPI) GetUnitByNumber(ctx context.Context, condition string) st
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetUnitByNumber Marshal err:", err, "unit:", *unit)
 		return "json UnitMarshal err"
+	}
+	return string(content)
+}
+func (s *PublicDagAPI) GetUnitJsonByIndex(ctx context.Context, asset_id string, index uint64) string {
+	number := &modules.ChainIndex{}
+	number.Index = uint64(index)
+
+	assetId, _, err := modules.String2AssetId(asset_id)
+	if err != nil {
+		return fmt.Sprintf("the [%s] isn't unknow asset_id.", asset_id)
+	}
+	number.AssetID = assetId
+	log.Info("PublicBlockChainAPI info", "GetUnitJsonByIndex:", index, "number:", number.String())
+
+	unit := s.b.GetUnitByNumber(number)
+	if unit == nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByNumber GetUnitByNumber is nil number:", number)
+		return "the unit isn't exist."
+	}
+	content, err := json.Marshal(unit)
+	if err != nil {
+		log.Info("PublicBlockChainAPI", "GetUnitByNumber Marshal err:", err, "unit:", *unit)
+		return "json UnitMarshal err: " + err.Error()
 	}
 	return string(content)
 }
@@ -438,11 +491,15 @@ func (s *PrivateDagAPI) GetAllUtxos(ctx context.Context) (string, error) {
 
 	return string(result_json), nil
 }
-func (s *PrivateDagAPI) CheckHeader(ctx context.Context,number int) (bool,error) {
+func (s *PrivateDagAPI) CheckHeader(ctx context.Context, number int) (bool, error) {
 	dag := s.b.Dag()
-	err:= dag.CheckHeaderCorrect(number)
-	if err!=nil{
-		return false,err
+	err := dag.CheckHeaderCorrect(number)
+	if err != nil {
+		return false, err
 	}
-	return true,nil
+	return true, nil
+}
+func (s *PrivateDagAPI) RebuildAddrTxIndex() error {
+	dag := s.b.Dag()
+	return dag.RebuildAddrTxIndex()
 }

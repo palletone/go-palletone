@@ -34,6 +34,12 @@ web3._extend({
         	params: 1,
         	inputFormatter: [null]
 		}),
+        new web3._extend.Method({
+			name: 'getUnitJsonByIndex',
+        	call: 'dag_getUnitJsonByIndex',
+        	params: 2,
+        	inputFormatter: [null,null]
+		}),
 		new web3._extend.Method({
 			name: 'getUnitsByIndex',
         	call: 'dag_getUnitsByIndex',
@@ -83,6 +89,11 @@ web3._extend({
 		new web3._extend.Method({
             name: 'getCommon',
             call: 'dag_getCommon',
+            params: 1,
+        }),
+		new web3._extend.Method({
+            name: 'getLdbCommon',
+            call: 'dag_getLdbCommon',
             params: 1,
         }),
         new web3._extend.Method({
@@ -182,6 +193,16 @@ web3._extend({
             name: 'checkHeader',
             call: 'dag_checkHeader',
             params: 1,
+        }),
+		new web3._extend.Method({
+            name: 'rebuildAddrTxIndex',
+            call: 'dag_rebuildAddrTxIndex',
+            params: 0,
+        }),
+        new web3._extend.Method({
+            name: 'getGenesisData',
+            call: 'dag_getGenesisData',
+            params: 0,
         }),
 	],
 	properties: [

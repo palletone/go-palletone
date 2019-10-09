@@ -77,7 +77,11 @@ func TestListPartition(t *testing.T) {
 
 	err := addPartitionChain(stub, partitionChain)
 	assert.Nil(t, err)
-	result := listPartition(stub)
+	//result := listPartition(stub)
+	chains, err := getPartitionChains(stub)
+	assert.Nil(t, err)
+	bytesPartitionChain, _ := json.Marshal(chains)
+	result := shim.Success(bytesPartitionChain)
 	t.Log(string(result.Payload))
 }
 

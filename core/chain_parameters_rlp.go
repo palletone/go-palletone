@@ -48,8 +48,9 @@ type ChainParametersTemp struct {
 	TempUccCpuShares string
 	TempUccCpuQuota  string
 
-	ContractSignatureNum string
-	ContractElectionNum  string
+	ContractSystemVersion string
+	ContractSignatureNum  string
+	ContractElectionNum   string
 
 	ContractTxTimeoutUnitFee  string
 	ContractTxSizeUnitFee     string
@@ -83,8 +84,9 @@ func (cp *ChainParameters) getCPT() *ChainParametersTemp {
 		TempUccCpuShares: strconv.FormatInt(cp.TempUccCpuShares, 10),
 		TempUccCpuQuota:  strconv.FormatInt(cp.TempUccCpuQuota, 10),
 
-		ContractSignatureNum: strconv.FormatInt(int64(cp.ContractSignatureNum), 10),
-		ContractElectionNum:  strconv.FormatInt(int64(cp.ContractElectionNum), 10),
+		ContractSystemVersion: cp.ContractSystemVersion,
+		ContractSignatureNum:  strconv.FormatInt(int64(cp.ContractSignatureNum), 10),
+		ContractElectionNum:   strconv.FormatInt(int64(cp.ContractElectionNum), 10),
 
 		ContractTxTimeoutUnitFee:  strconv.FormatUint(cp.ContractTxTimeoutUnitFee, 10),
 		ContractTxSizeUnitFee:     strconv.FormatUint(cp.ContractTxSizeUnitFee, 10),
@@ -168,6 +170,7 @@ func (cpt *ChainParametersTemp) getCP(cp *ChainParameters) error {
 	if err != nil {
 		return err
 	}
+	cp.ContractSystemVersion = cpt.ContractSystemVersion
 	cp.ContractSignatureNum = int(ContractSignatureNum)
 
 	ContractElectionNum, err := strconv.ParseInt(cpt.ContractElectionNum, 10, 64)

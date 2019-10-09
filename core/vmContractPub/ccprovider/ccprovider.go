@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
 * Copyright IBM Corp. All Rights Reserved.
 * @author PalletOne core developers <dev@pallet.one>
@@ -376,10 +377,7 @@ func NewCCContext(contractid []byte, cid, name, version, txid string, syscc bool
 		return nil
 	}
 
-	//TODO xiaozhi
-	//canName := name + ":" + version + ":" + contractcfg.GetConfig().ContractAddress
 	canName := name + ":" + version
-
 	cccid := &CCContext{contractid, cid, name, version, txid, syscc, signedProp, prop, canName, nil}
 
 	log.Debugf("NewCCCC (chain[%s],chaincode[%s],version[%s],txid[%s],syscc[%t],proposal[%p],canname[%s])", cid, name, version, txid, syscc, prop, cccid.canonicalName)

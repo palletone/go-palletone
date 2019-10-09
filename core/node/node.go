@@ -93,9 +93,10 @@ type Node struct {
 	// --- RPC 相关对象 -- End
 
 	// 节点的等待终止通知的channel, node.New()时不创建，node.Start()时创建
-	stop    chan struct{} // Channel to wait for termination notifications
-	lock    sync.RWMutex
-	CacheDb palletcache.ICache // global cache for use by other modules
+	stop      chan struct{} // Channel to wait for termination notifications
+	lock      sync.RWMutex
+	CacheDb   palletcache.ICache // global cache for use by other modules
+	IsTestNet bool
 	//log log.ILogger
 	//for genesis 2018-8-14
 	//dbpath string
@@ -147,6 +148,7 @@ func New(conf *Config) (*Node, error) {
 		httpEndpoint:      conf.HTTPEndpoint(),
 		wsEndpoint:        conf.WSEndpoint(),
 		eventmux:          new(event.TypeMux),
+		IsTestNet:         conf.IsTestNet,
 	}, nil
 }
 

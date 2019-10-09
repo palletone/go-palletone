@@ -113,3 +113,22 @@ func (dagdb *DagDb) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
 
 	return txid, err
 }
+func (dagdb *DagDb) ForEachAllTxDo(txAction func(key []byte, transaction *modules.Transaction) error) error {
+	iter := dagdb.db.NewIteratorWithPrefix(constants.TRANSACTION_PREFIX)
+	for iter.Next() {
+		key := iter.Key()
+		value := iter.Value()
+		tx := new(modules.Transaction)
+		err := rlp.DecodeBytes(value, tx)
+		if err != nil {
+			log.Errorf("Cannot decode key[%s] rlp tx:%x", key, value)
+			return err
+		}
+		err = txAction(key, tx)
+		if err != nil {
+			log.Errorf("tx[%s] action error:%s", tx.Hash().String(), err.Error())
+			return err
+		}
+	}
+	return nil
+}

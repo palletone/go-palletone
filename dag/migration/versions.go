@@ -33,6 +33,12 @@ func NewMigrations(db ptndb.Database) map[string]IMigration {
 
 	/* version: 1.0.0-beta */
 
+	/* version: 1.0.0-beta end */
+	/* version: 1.0.0-beta */
+	//m_101_beta := NewNothingMigration("1.0.1-beta", "1.0.2-beta")
+	//migrations[m_101_beta.FromVersion()] = m_101_beta
+	/* version: 1.0.0-beta end */
+
 	m_100_beta := NewMigration100_101(db)
 	migrations[m_100_beta.FromVersion()] = m_100_beta
 
@@ -51,11 +57,12 @@ func NewMigrations(db ptndb.Database) map[string]IMigration {
 	m_103_alpha := NewMigration102delta_103alpha(db)
 	migrations[m_103_alpha.FromVersion()] = m_103_alpha
 
-	/* version: 1.0.0-beta end */
-	/* version: 1.0.0-beta */
-	//m_101_beta := NewNothingMigration("1.0.1-beta", "1.0.2-beta")
-	//migrations[m_101_beta.FromVersion()] = m_101_beta
-	/* version: 1.0.0-beta end */
+	m_103_beta := NewMigration103alpha_103beta(db)
+	migrations[m_103_beta.FromVersion()] = m_103_beta
+
+	m_103_gamma := NewMigration103beta_103gamma(db)
+	migrations[m_103_gamma.FromVersion()] = m_103_gamma
+
 	return migrations
 }
 
@@ -81,4 +88,12 @@ func NewMigration102gamma_102delta(db ptndb.Database) *Migration102gamma_102delt
 
 func NewMigration102delta_103alpha(db ptndb.Database) *Migration102delta_103alpha {
 	return &Migration102delta_103alpha{dagdb: db, idxdb: db, utxodb: db, statedb: db, propdb: db}
+}
+
+func NewMigration103alpha_103beta(db ptndb.Database) *Migration103alpha_103beta {
+	return &Migration103alpha_103beta{dagdb: db, idxdb: db, utxodb: db, statedb: db, propdb: db}
+}
+
+func NewMigration103beta_103gamma(db ptndb.Database) *Migration103beta_103gamma {
+	return &Migration103beta_103gamma{dagdb: db, idxdb: db, utxodb: db, statedb: db, propdb: db}
 }

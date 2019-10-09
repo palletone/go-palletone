@@ -66,9 +66,9 @@ func createUnit() (*modules.Unit, error) {
 	txs := modules.Transactions{tx}
 	// new unit
 
-	unit, err := dagcomm.NewGenesisUnit(txs, 1536451201, asset, -1, common.Hash{})
-	log.Info("create unit success.", "error", err, "hash", unit.Hash().String())
-	return unit, err
+	unit := dagcomm.NewGenesisUnit(txs, 1536451201, asset, -1, common.Hash{})
+	log.Info("create unit success.", "hash", unit.Hash().String())
+	return unit, nil
 }
 
 func TestTxCountAndUnitSize(t *testing.T) {
@@ -142,3 +142,17 @@ func setupDag() (*Dag, error) {
 	test_dag, err := NewDagForTest(db)
 	return test_dag, err
 }
+
+//func TestDag_GetGenesisUnit(t *testing.T) {
+//	db,_:=ptndb.NewLDBDatabase("./leveldb",0,128)
+//	dag,_:=NewDag4GenesisInit(db)
+//	txid:= common.HexToHash("0x10f0375ea48aa09099b0148d8a19fc3ac297a22b29bff0dfa99546f7af0fb57c")
+//	tx,err:= dag.GetTransactionOnly(txid)
+//	assert.Nil(t,err)
+//	t.Log(tx.Hash().String())
+//	for i,msg:=range tx.TxMessages{
+//		data,_:= json.Marshal(msg.Payload)
+//		t.Logf("Message[%d], APP:%v,%s",i,msg.App,string(data))
+//	}
+//	assert.Equal(t,txid,tx.Hash())
+//}

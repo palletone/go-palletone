@@ -25,7 +25,7 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	common2 "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/txspool"
 )
 
 // type IMemDag interface {
@@ -45,6 +45,7 @@ import (
 
 type IMemDag interface {
 	AddStableUnit(unit *modules.Unit)
+	SetStableUnit(unit *modules.Unit, isGenesis bool)
 	AddUnit(unit *modules.Unit, txpool txspool.ITxPool, isProd bool) (common2.IUnitRepository, common2.IUtxoRepository,
 		common2.IStateRepository, common2.IPropRepository, common2.IUnitProduceRepository, error)
 	GetLastStableUnitInfo() (common.Hash, uint64)
