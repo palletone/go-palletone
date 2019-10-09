@@ -65,6 +65,7 @@ func (m *Migration103alpha_103beta) upgradeDefaultMediatorsWithJurorInfo() error
 	addrAndPubKey["P1P3jZb43Y7stahiv8G3yvRUawGcWWvJBPt"] = "02c2f34e741a5840d49606f9533c1fb810ff4c5df7982773bbf32a058abfb4eaa4"
 	addrAndPubKey["P1PuhsNTmpsSV36wyoEF49b5dhRdaTQYC2C"] = "03bcefd355332c533086f86570aba4ea470e36ada86788f55568f9e08e2f21c3bb"
 	//  testnet
+
 	//  mainnet 25个节点
 	//addrAndPubKey := make(map[string]string)
 	addrAndPubKey["P1JJoNc7EN5ekEduvvT7auJbRUsPeuSK2Rf"] = "03b3806a413f6d05df69eb5cd569f0b77593e4d095d006c7f87150f1e2f54f4f82"

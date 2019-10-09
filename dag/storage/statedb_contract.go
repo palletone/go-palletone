@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/core"
 )
 
 func (statedb *StateDb) SaveContract(contract *modules.Contract) error {
@@ -317,14 +318,17 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 				mi.MediatorInfoBase = mco.MediatorInfoBase
 				mi.MediatorApplyInfo = mco.MediatorApplyInfo
 
-				addr, _, err := mco.Validate()
+				//addr, _, err := mco.Validate()
+				addr, err := core.StrToMedAdd(mi.AddStr)
 				if err == nil {
 					statedb.StoreMediatorInfo(addr, mi)
 				} else {
 					log.Warnf("Validate MediatorCreateArgs err: %v", err.Error())
+					return err
 				}
 			} else {
 				log.Warnf("ApplyMediator Args Unmarshal: %v", err.Error())
+				return err
 			}
 		} else if string(invoke.Args[0]) == modules.UpdateMediatorInfo {
 			//log.Debugf("UpdateMediatorInfo args:%s", string(invoke.Args[1]))
@@ -365,12 +369,15 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 						statedb.StoreMediatorInfo(addr, mi)
 					} else {
 						log.Warnf("RetrieveMediatorInfo error: %v", err.Error())
+						return err
 					}
 				} else {
-					log.Warnf("StrToMedAdd err: %v", err.Error())
+					log.Warnf("Validate err: %v", err.Error())
+					return err
 				}
 			} else {
 				log.Warnf("UpdateMediatorInfo Args Unmarshal: %v", err.Error())
+				return err
 			}
 		}
 	}
