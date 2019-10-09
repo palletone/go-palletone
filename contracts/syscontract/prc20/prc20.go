@@ -121,17 +121,22 @@ func (p *PRC20) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if len(args) < 1 {
 			return shim.Error("need 1 args (Symbol)")
 		}
-		result, err := p.GetTokenInfo(stub, args[0])
+		tkIDInfo, err := p.GetTokenInfo(stub, args[0])
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-		return shim.Success(result)
+		tkJSON, err := json.Marshal(tkIDInfo)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		return shim.Success(tkJSON)
 	case "getAllTokenInfo":
-		result, err := p.GetAllTokenInfo(stub)
+		tkIDInfo := p.GetAllTokenInfo(stub)
+		tkJSON, err := json.Marshal(tkIDInfo)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-		return shim.Success(result)
+		return shim.Success(tkJSON)
 	case "changeSupplyAddr":
 		if len(args) < 2 {
 			return shim.Error("need 2 args (Symbol,NewSupplyAddr)")
@@ -525,28 +530,23 @@ type tokenIDInfo struct {
 }
 
 //GetTokenInfo get one token information
-func (p *PRC20) GetTokenInfo(stub shim.ChaincodeStubInterface, symbol string) ([]byte, error) {
+func (p *PRC20) GetTokenInfo(stub shim.ChaincodeStubInterface, symbol string) (*tokenIDInfo, error) {
 	//check name is exist or not
 	symbol = strings.ToUpper(symbol)
 	tkInfo := getSymbols(stub, symbol)
 	if tkInfo == nil {
-		return []byte{}, fmt.Errorf(jsonResp2)
+		return nil, fmt.Errorf(jsonResp2)
 	}
 
 	//token
 	asset := tkInfo.AssetID
 	tkID := tokenIDInfo{symbol, tkInfo.CreateAddr, tkInfo.TotalSupply,
 		tkInfo.Decimals, tkInfo.SupplyAddr, asset.String()}
-	//return json
-	tkJSON, err := json.Marshal(tkID)
-	if err != nil {
-		return []byte{}, fmt.Errorf(err.Error())
-	}
-	return tkJSON, nil
+	return &tkID, nil
 }
 
 //GetAllTokenInfo get all token information
-func (p *PRC20) GetAllTokenInfo(stub shim.ChaincodeStubInterface) ([]byte, error) {
+func (p *PRC20) GetAllTokenInfo(stub shim.ChaincodeStubInterface) []tokenIDInfo {
 	tkInfos := getSymbolsAll(stub)
 
 	tkIDs := make([]tokenIDInfo, 0, len(tkInfos))
@@ -558,9 +558,5 @@ func (p *PRC20) GetAllTokenInfo(stub shim.ChaincodeStubInterface) ([]byte, error
 	}
 
 	//return json
-	tksJSON, err := json.Marshal(tkIDs)
-	if err != nil {
-		return []byte{}, fmt.Errorf(err.Error())
-	}
-	return tksJSON, nil
+	return tkIDs
 }

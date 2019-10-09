@@ -21,6 +21,7 @@ package vote
 
 import (
 	"encoding/json"
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -110,12 +111,22 @@ func (v *Vote) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if len(args) < 1 {
 			return shim.Error("need 1 args (AssetID)")
 		}
-		return v.GetVoteResult(stub, args[0])
+		tkIDInfo, err := v.GetVoteResult(stub, args[0])
+		tkJSON, err := json.Marshal(tkIDInfo)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		return shim.Success(tkJSON)
 	case "getVoteInfo":
 		if len(args) < 1 {
 			return shim.Error("need 1 args (AssetID)")
 		}
-		return v.GetVoteInfo(stub, args[0])
+		voteInfo, err := v.GetVoteInfo(stub, args[0])
+		vtJSON, err := json.Marshal(voteInfo)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		return shim.Success(vtJSON)
 	default:
 		jsonResp := "{\"Error\":\"Unknown function " + f + "\"}"
 		return shim.Error(jsonResp)
@@ -408,20 +419,20 @@ func sortSupportByCount(tpl voteResultList) voteResultList {
 }
 
 //GetVoteResult
-func (v *Vote) GetVoteResult(stub shim.ChaincodeStubInterface, assetID string) pb.Response {
+func (v *Vote) GetVoteResult(stub shim.ChaincodeStubInterface, assetID string) (*tokenIDInfo, error) {
 	//assetIDStr
 	assetID = strings.ToUpper(assetID)
 	//check name is exist or not
 	tkInfo := getSymbols(stub, assetID)
 	if tkInfo == nil {
-		return shim.Error(jsonResp2)
+		return nil, fmt.Errorf(jsonResp2)
 	}
 
 	//get token information
 	var topicSupports []topicSupports
 	err := json.Unmarshal(tkInfo.VoteContent, &topicSupports)
 	if err != nil {
-		return shim.Error(jsonResp1)
+		return nil, fmt.Errorf(jsonResp1)
 	}
 
 	//
@@ -429,7 +440,7 @@ func (v *Vote) GetVoteResult(stub shim.ChaincodeStubInterface, assetID string) p
 	headerTime, err := stub.GetTxTimestamp(10)
 	if err != nil {
 		jsonResp := "{\"Error\":\"GetTxTimestamp invalid, Error!!!\"}"
-		return shim.Error(jsonResp)
+		return nil, fmt.Errorf(jsonResp)
 	}
 	if headerTime.Seconds > tkInfo.VoteEndTime.Unix() {
 		isVoteEnd = true
@@ -452,13 +463,7 @@ func (v *Vote) GetVoteResult(stub shim.ChaincodeStubInterface, assetID string) p
 	asset := tkInfo.AssetID
 	tkID := tokenIDInfo{IsVoteEnd: isVoteEnd, CreateAddr: tkInfo.CreateAddr, TotalSupply: tkInfo.TotalSupply,
 		SupportResults: supportResults, AssetID: asset.String()}
-
-	//return json
-	tkJson, err := json.Marshal(tkID)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	return shim.Success(tkJson)
+	return &tkID, nil
 }
 
 type voteInfo struct {
@@ -478,20 +483,20 @@ type voteTopicIndex struct {
 }
 
 //GetVoteInfo
-func (v *Vote) GetVoteInfo(stub shim.ChaincodeStubInterface, assetID string) pb.Response {
+func (v *Vote) GetVoteInfo(stub shim.ChaincodeStubInterface, assetID string) (*voteInfo, error) {
 	//assetIDStr
 	assetID = strings.ToUpper(assetID)
 	//check name is exist or not
 	tkInfo := getSymbols(stub, assetID)
 	if tkInfo == nil {
-		return shim.Error(jsonResp2)
+		return nil, fmt.Errorf(jsonResp2)
 	}
 
 	//get token information
 	var topicSupports []topicSupports
 	err := json.Unmarshal(tkInfo.VoteContent, &topicSupports)
 	if err != nil {
-		return shim.Error(jsonResp1)
+		return nil, fmt.Errorf(jsonResp1)
 	}
 
 	//topic info
@@ -512,11 +517,5 @@ func (v *Vote) GetVoteInfo(stub shim.ChaincodeStubInterface, assetID string) pb.
 	tkID := voteInfo{Name: tkInfo.Name, CreateAddr: tkInfo.CreateAddr, VoteType: tkInfo.VoteType,
 		TotalSupply: tkInfo.TotalSupply, VoteEndTime: tkInfo.VoteEndTime.String(),
 		VoteTopics: voteTopicIndexs, AssetID: asset.String()}
-
-	//return json
-	tkJson, err := json.Marshal(tkID)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	return shim.Success(tkJson)
+	return &tkID, nil
 }

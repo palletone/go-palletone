@@ -116,7 +116,11 @@ func (p *PRC721) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if len(args) < 1 {
 			return shim.Error("need 1 args (Asset_TokenID)")
 		}
-		return p.ExistTokenID(stub, args[0])
+		exist, err := p.ExistTokenID(stub, args[0])
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		return shim.Success([]byte(exist))
 	case "setTokenURI":
 		if len(args) < 2 {
 			return shim.Error("need 1 args (Asset_TokenID,TokenURI)")
@@ -126,14 +130,39 @@ func (p *PRC721) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if len(args) < 1 {
 			return shim.Error("need 1 args (Asset_TokenID)")
 		}
-		return p.GetTokenURI(stub, args[0])
+		//asset
+		asset := &dm.Asset{}
+		err := asset.SetString(args[0])
+		if err != nil {
+			return shim.Error(jsonResp4)
+		}
+		tokenURI := p.GetTokenURI(stub, args[0])
+		if len(tokenURI) == 0 {
+			jsonResp := "{\"Error\":\"No this tokenID\"}"
+			return shim.Error(jsonResp)
+		}
+		//
+		return shim.Success([]byte(tokenURI))
 	case "getTokenInfo":
 		if len(args) < 1 {
 			return shim.Error("need 1 args (Symbol)")
 		}
-		return p.GetOneTokenInfo(stub, args[0])
+		tkIDInfo, err := p.GetOneTokenInfo(stub, args[0])
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		tkJSON, err := json.Marshal(tkIDInfo)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		return shim.Success(tkJSON)
 	case "getAllTokenInfo":
-		return p.GetAllTokenInfo(stub)
+		tkIDInfo := p.GetAllTokenInfo(stub)
+		tkJSON, err := json.Marshal(tkIDInfo)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		return shim.Success(tkJSON)
 	case "changeSupplyAddr":
 		if len(args) < 2 {
 			return shim.Error("need 2 args (Symbol,NewSupplyAddr)")
@@ -615,19 +644,19 @@ type tokenIDInfo struct {
 }
 
 //ExistTokenID
-func (p *PRC721) ExistTokenID(stub shim.ChaincodeStubInterface, assetTokenID string) pb.Response {
+func (p *PRC721) ExistTokenID(stub shim.ChaincodeStubInterface, assetTokenID string) (string, error) {
 	//asset
 	asset := &dm.Asset{}
 	err := asset.SetString(assetTokenID)
 	if err != nil {
-		return shim.Error(jsonResp4)
+		return "", fmt.Errorf(jsonResp4)
 	}
 	//
 	valBytes, _ := stub.GetState(assetTokenID)
 	if len(valBytes) == 0 {
-		return shim.Success([]byte("False"))
+		return "False", nil
 	}
-	return shim.Success([]byte("True"))
+	return "True", nil
 }
 
 //SetTokenURI
@@ -665,31 +694,20 @@ func (p *PRC721) SetTokenURI(stub shim.ChaincodeStubInterface, assetTokenID, tok
 }
 
 //GetTokenURI
-func (p *PRC721) GetTokenURI(stub shim.ChaincodeStubInterface, assetTokenID string) pb.Response {
-	//asset
-	asset := &dm.Asset{}
-	err := asset.SetString(assetTokenID)
-	if err != nil {
-		return shim.Error(jsonResp4)
-	}
+func (p *PRC721) GetTokenURI(stub shim.ChaincodeStubInterface, assetTokenID string) string {
 	//
 	valBytes, _ := stub.GetState(assetTokenID)
-	if len(valBytes) == 0 {
-		jsonResp := "{\"Error\":\"No this tokenID\"}"
-		return shim.Error(jsonResp)
-	}
-	//
-	return shim.Success(valBytes)
+	return string(valBytes)
 }
 
 //GetOneTokenInfo
-func (p *PRC721) GetOneTokenInfo(stub shim.ChaincodeStubInterface, symbol string) pb.Response {
+func (p *PRC721) GetOneTokenInfo(stub shim.ChaincodeStubInterface, symbol string) (*tokenIDInfo, error) {
 	//symbol
 	symbol = strings.ToUpper(symbol)
 	//check name is exist or not
 	tkInfo := getSymbols(stub, symbol)
 	if tkInfo == nil {
-		return shim.Error(jsonResp3)
+		return nil, fmt.Errorf(jsonResp3)
 	}
 
 	var tkIDs []string
@@ -705,16 +723,11 @@ func (p *PRC721) GetOneTokenInfo(stub shim.ChaincodeStubInterface, symbol string
 	//
 	tkIDInfo := tokenIDInfo{symbol, tkInfo.CreateAddr, tkInfo.TokenType,
 		tkInfo.TotalSupply, tkInfo.SupplyAddr, tkInfo.AssetID.String(), tkIDs}
-	//return json
-	tkJson, err := json.Marshal(tkIDInfo)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	return shim.Success(tkJson)
+	return &tkIDInfo, nil
 }
 
 //GetAllTokenInfo
-func (p *PRC721) GetAllTokenInfo(stub shim.ChaincodeStubInterface) pb.Response {
+func (p *PRC721) GetAllTokenInfo(stub shim.ChaincodeStubInterface) []tokenIDInfo {
 	tkInfos := getSymbolsAll(stub)
 	tkIDInfos := make([]tokenIDInfo, 0, len(tkInfos))
 	tkIDs := []string{"Only return simple information"}
@@ -724,11 +737,5 @@ func (p *PRC721) GetAllTokenInfo(stub shim.ChaincodeStubInterface) pb.Response {
 			tkInfo.SupplyAddr, tkInfo.AssetID.String(), tkIDs}
 		tkIDInfos = append(tkIDInfos, tkIDInfo)
 	}
-
-	//return json
-	tksJson, err := json.Marshal(tkIDInfos)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	return shim.Success(tksJson)
+	return tkIDInfos
 }

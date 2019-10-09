@@ -34,7 +34,6 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/consensus/jury"
-	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
@@ -253,10 +252,8 @@ func (b *PtnApiBackend) GetContract(addr common.Address) (*ptnjson.ContractJson,
 		return nil, err
 	}
 	cjson := ptnjson.ConvertContract2Json(contract)
-	if addr == syscontract.CreateTokenContractAddress {
-		cjson.Template = ptnjson.GetSysContractTemplate_PRC20()
-	} else {
-
+	cjson.Template = ptnjson.GetSysContractABI(addr.String())
+	if nil == cjson.Template {
 		tpl, err := b.ptn.dag.GetContractTpl(contract.TemplateId)
 		if err != nil {
 			return cjson, nil
@@ -479,7 +476,7 @@ func (b *PtnApiBackend) GetHeaderByNumber(number *modules.ChainIndex) (*modules.
 }
 
 func (b *PtnApiBackend) GetPrefix(prefix string) map[string][]byte {
-	return b.ptn.dag.GetCommonByPrefix([]byte(prefix),false)
+	return b.ptn.dag.GetCommonByPrefix([]byte(prefix), false)
 } //getprefix
 
 func (b *PtnApiBackend) GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error) {
@@ -790,12 +787,12 @@ func (b *PtnApiBackend) GetJuryAccount() []common.Address {
 func (b *PtnApiBackend) SaveCommon(key, val []byte) error {
 	return b.ptn.dag.SaveCommon(key, val)
 }
-func (b *PtnApiBackend) GetCommon(key []byte,stableDb bool) ([]byte, error) {
-	return b.ptn.dag.GetCommon(key,stableDb)
+func (b *PtnApiBackend) GetCommon(key []byte, stableDb bool) ([]byte, error) {
+	return b.ptn.dag.GetCommon(key, stableDb)
 }
 
-func (b *PtnApiBackend) GetCommonByPrefix(prefix []byte,stableDb bool) map[string][]byte {
-	return b.ptn.dag.GetCommonByPrefix(prefix,stableDb)
+func (b *PtnApiBackend) GetCommonByPrefix(prefix []byte, stableDb bool) map[string][]byte {
+	return b.ptn.dag.GetCommonByPrefix(prefix, stableDb)
 }
 func (b *PtnApiBackend) GetAllData() ([][]byte, [][]byte) {
 	return b.ptn.dag.GetAllData()
