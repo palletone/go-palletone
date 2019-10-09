@@ -266,22 +266,28 @@ func (validate *Validate) validateTxFee(tx *modules.Transaction) (bool, []*modul
 		return false, nil
 	}
 	assetId := dagconfig.DagConfig.GetGasToken()
-	minFee := &modules.AmountAsset{Amount: 0, Asset: assetId.ToAsset()}
-	if validate.statequery != nil {
-		minFee, err = validate.statequery.GetMinFee()
-		if err != nil {
-			log.Errorf("GetMinFee throw an error:%s", err.Error())
-			return true, feeAllocate
-		}
+	minFee := uint64(0)
+	sizeFee := uint64(0)
+	//获得系统配置的最低手续费要求
+	if validate.propquery != nil {
+		chainParam := validate.propquery.GetChainParameters()
+		minFee = chainParam.TransferPtnBaseFee
+		sizeFee = chainParam.TransferPtnPricePerKByte
 	}
-	if minFee.Amount > 0 { //需要验证最小手续费
+	if minFee > 0 { //需要验证最小手续费
 		total := uint64(0)
 		var feeAsset *modules.Asset
 		for _, a := range feeAllocate {
 			total += a.Amount
 			feeAsset = a.Asset
 		}
-		if feeAsset.String() != minFee.Asset.String() || total < minFee.Amount {
+		if feeAsset.String() != assetId.String() || total < minFee {
+			log.Warnf("Min fee:%d, but tx[%x] fee:%d", minFee, tx.Hash().String(), total)
+			return false, feeAllocate
+		}
+		minSizeFee := float64(tx.SerializeSize()) / 1024.0 * float64(sizeFee)
+		if total < uint64(minSizeFee) {
+			log.Warnf("Min size fee:%d, but tx[%x] fee:%d", minSizeFee, tx.Hash().String(), total)
 			return false, feeAllocate
 		}
 	}

@@ -72,10 +72,6 @@ func (q *mockStatedbQuery) GetBlacklistAddress() ([]common.Address, *modules.Sta
 	return []common.Address{}, nil, nil
 }
 
-//获得系统配置的最低手续费要求
-func (q *mockStatedbQuery) GetMinFee() (*modules.AmountAsset, error) {
-	return &modules.AmountAsset{Asset: modules.NewPTNAsset(), Amount: uint64(1)}, nil
-}
 func (q *mockStatedbQuery) GetContractJury(contractId []byte) (*modules.ElectionNode, error) {
 	return nil, nil
 }
