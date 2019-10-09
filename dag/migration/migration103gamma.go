@@ -70,7 +70,7 @@ func (m *Migration103beta_103gamma) upgradeDGP() error {
 	newData.CurrentASlot = oldDgp.CurrentASlot
 	newData.MaintenanceFlag = oldDgp.MaintenanceFlag
 
-	newData.RecentSlotsFilled = uint128.New(^uint64(0), oldDgp.RecentSlotsFilled)
+	newData.RecentSlotsFilled = uint128.New(oldDgp.RecentSlotsFilled, ^uint64(0))
 
 	err = storage.StoreToRlpBytes(m.propdb, constants.DYNAMIC_GLOBALPROPERTY_KEY, newData)
 	if err != nil {
