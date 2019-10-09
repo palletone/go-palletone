@@ -274,7 +274,7 @@ func (validate *Validate) validateTxFee(tx *modules.Transaction) (bool, []*modul
 		minFee = chainParam.TransferPtnBaseFee
 		sizeFee = chainParam.TransferPtnPricePerKByte
 	}
-	if minFee > 0 { //需要验证最小手续费
+	if validate.enableTxFeeCheck && minFee > 0 { //需要验证最小手续费
 		total := uint64(0)
 		var feeAsset *modules.Asset
 		for _, a := range feeAllocate {
@@ -282,12 +282,12 @@ func (validate *Validate) validateTxFee(tx *modules.Transaction) (bool, []*modul
 			feeAsset = a.Asset
 		}
 		if feeAsset.String() != assetId.String() || total < minFee {
-			log.Warnf("Min fee:%d, but tx[%x] fee:%d", minFee, tx.Hash().String(), total)
+			log.Warnf("Min fee:%d, but tx[%s] fee:%d", minFee, tx.Hash().String(), total)
 			return false, feeAllocate
 		}
-		minSizeFee := float64(tx.SerializeSize()) / 1024.0 * float64(sizeFee)
-		if total < uint64(minSizeFee) {
-			log.Warnf("Min size fee:%d, but tx[%x] fee:%d", minSizeFee, tx.Hash().String(), total)
+		minSizeFee := uint64(float64(tx.SerializeSize()) / 1024.0 * float64(sizeFee))
+		if total < minSizeFee {
+			log.Warnf("Min size fee:%d, but tx[%s] fee:%d", minSizeFee, tx.Hash().String(), total)
 			return false, feeAllocate
 		}
 	}
