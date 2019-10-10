@@ -382,6 +382,12 @@ func RestartContainers(dag dag.IDag, cons []docker.APIContainers, jury core.IAda
 
 //删除所有过期容器
 func RemoveExpiredContainers(client *docker.Client, dag dag.IDag, rmExpConFromSysParam bool, con []docker.APIContainers) {
+	//  让用户合约容器一直在线，true and 0
+	p := dag.GetChainParameters()
+	if p.RmExpConFromSysParam && p.UccDuringTime == 0 {
+		log.Info("keeping user contract containers online")
+		return
+	}
 	//获取容器id，以及对应用户合约的地址，更新状态
 	idStrMap := utils.RetrieveExpiredContainers(dag, con, rmExpConFromSysParam)
 	if len(idStrMap) > 0 {
