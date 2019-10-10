@@ -22,7 +22,6 @@ package dag
 
 import (
 	"encoding/json"
-	"github.com/palletone/go-palletone/dag/constants"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -75,15 +74,10 @@ func (dag *Dag) InitPropertyDB(genesis *core.Genesis, unit *modules.Unit) error 
 	return nil
 }
 
-func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
+func (dag *Dag) InitStateDB(genesis *core.Genesis, head *modules.Header) error {
 	version := &modules.StateVersion{
-		Height:  unit.Number(),
+		Height:  head.GetNumber(),
 		TxIndex: ^uint32(0),
-	}
-	ws := &modules.ContractWriteSet{
-		IsDelete: false,
-		//Key:      modules.MediatorList,
-		//Value: imcB,
 	}
 
 	// Create initial mediators
@@ -111,15 +105,14 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 		md := modules.NewMediatorDeposit()
 		md.Status = modules.Agree
 		md.Role = modules.Mediator
-		md.ApplyEnterTime = time.Unix(unit.Timestamp(), 0).UTC().Format(modules.Layout2)
+		md.ApplyEnterTime = time.Unix(head.Time, 0).UTC().Format(modules.Layout2)
 
 		byte, err := json.Marshal(md)
 		if err != nil {
 			return err
 		}
 
-		ws.Value = byte
-		ws.Key = storage.MediatorDepositKey(imc.AddStr)
+		ws := modules.NewWriteSet(storage.MediatorDepositKey(imc.AddStr), byte)
 		err = dag.stableStateRep.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws, version)
 		if err != nil {
 			log.Debugf(err.Error())
@@ -133,6 +126,7 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 		juror.Address = mi.AddStr
 		juror.Role = modules.Jury
 		juror.Balance = 0
+		juror.EnterTime = md.ApplyEnterTime
 		juror.JurorDepositExtra = jde
 
 		jurorByte, err := json.Marshal(juror)
@@ -140,8 +134,8 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 			log.Errorf(err.Error())
 			return err
 		}
-		ws.Value = jurorByte
-		ws.Key = string(constants.DEPOSIT_JURY_BALANCE_PREFIX) + mi.AddStr
+
+		ws = modules.NewWriteSet(storage.JuryDepositKey(mi.AddStr), jurorByte)
 		err = dag.stableStateRep.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws, version)
 		if err != nil {
 			log.Debugf(err.Error())
@@ -155,10 +149,9 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 		log.Debugf(err.Error())
 		return err
 	}
-	ws.Value = imcB
 
 	//Mediator
-	ws.Key = modules.MediatorList
+	ws := modules.NewWriteSet(modules.MediatorList, imcB)
 	err = dag.stableStateRep.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws, version)
 	if err != nil {
 		log.Debugf(err.Error())

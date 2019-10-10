@@ -100,8 +100,7 @@ func (m *Migration103alpha_103beta) upgradeDefaultMediatorsWithJurorInfo() error
 				TxIndex: ^uint32(0),
 			}
 
-			ti := time.Unix(uHeader.Timestamp(), 0)
-			juror.EnterTime = ti.UTC().Format(modules.Layout2)
+			juror.EnterTime = time.Unix(uHeader.Time, 0).UTC().Format(modules.Layout2)
 		} else if pubKey, isFind = constants.OldMediatorAndPubKey[addr]; isFind {
 			//  获取超级节点进入时间
 			var mediatorByte []byte
@@ -119,7 +118,7 @@ func (m *Migration103alpha_103beta) upgradeDefaultMediatorsWithJurorInfo() error
 				log.Errorf(err.Error())
 				return err
 			}
-			juror.EnterTime = mediator.EnterTime
+			juror.EnterTime = mediator.ApplyEnterTime
 		} else {
 			errStr := fmt.Sprintf("not find this mediator's PubKey: %v", addr)
 			log.Error(errStr)
@@ -145,9 +144,8 @@ func (m *Migration103alpha_103beta) upgradeDefaultMediatorsWithJurorInfo() error
 			return err
 		}
 
-		ws1 := modules.NewWriteSet(string(constants.DEPOSIT_JURY_BALANCE_PREFIX)+addr, jurorByte)
-		//ws := []modules.ContractWriteSet{*ws1}
-		err = statedb.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws1, version)
+		ws := modules.NewWriteSet(storage.JuryDepositKey(addr), jurorByte)
+		err = statedb.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws, version)
 		if err != nil {
 			log.Errorf(err.Error())
 			return err
