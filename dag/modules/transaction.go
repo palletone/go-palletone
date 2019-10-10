@@ -694,6 +694,70 @@ func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFu
 	if fee.Amount == 0 {
 		return result, nil
 	}
+	isResultMsg := false
+	jury := []common.Address{}
+	for msgIdx, msg := range tx.TxMessages {
+		if msg.App.IsRequest() {
+			isResultMsg = true
+			continue
+		}
+		if isResultMsg && msg.App == APP_SIGNATURE {
+			payload := msg.Payload.(*SignaturePayload)
+			for _, sig := range payload.Signatures {
+				jury = append(jury, crypto.PubkeyBytesToAddress(sig.PubKey))
+			}
+		}
+		if isResultMsg && msg.App == APP_PAYMENT {
+			payment := msg.Payload.(*PaymentPayload)
+			if !payment.IsCoinbase() {
+				jury, err = getSignerFunc(tx, msgIdx, 0)
+				if err != nil {
+					return nil, errors.New("Parse unlock script to get signers error:" + err.Error())
+				}
+			}
+		}
+	}
+	if isResultMsg { //合约执行，Fee需要分配给Jury
+		juryAmount := float64(fee.Amount) * parameter.CurrentSysParameters.ContractFeeJuryPercent
+		juryAllocatedAmt := uint64(0)
+		juryCount := float64(len(jury))
+		for _, jurior := range jury {
+			jIncome := &Addition{
+				Addr:   jurior,
+				Amount: uint64(juryAmount / juryCount),
+				Asset:  fee.Asset,
+			}
+			juryAllocatedAmt += jIncome.Amount
+			result = append(result, jIncome)
+		}
+		mediatorIncome := &Addition{
+			Addr:   mediatorAddr,
+			Amount: fee.Amount - juryAllocatedAmt,
+			Asset:  fee.Asset,
+		}
+		result = append(result, mediatorIncome)
+	} else { //没有合约执行，全部分配给Mediator
+		mediatorIncome := &Addition{
+			Addr:   mediatorAddr,
+			Amount: fee.Amount,
+			Asset:  fee.Asset,
+		}
+		result = append(result, mediatorIncome)
+	}
+	return result, nil
+}
+
+//之前的费用分配有Bug，在ContractInstall的时候会分配错误。在V2中解决了这个问题，但是由于测试网已经有历史数据了，所以需要保留历史计算方法。
+func (tx *Transaction) GetTxFeeAllocateV2(queryUtxoFunc QueryUtxoFunc, getSignerFunc GetScriptSignersFunc,
+	mediatorAddr common.Address) ([]*Addition, error) {
+	fee, err := tx.GetTxFee(queryUtxoFunc)
+	result := []*Addition{}
+	if err != nil {
+		return nil, err
+	}
+	if fee.Amount == 0 {
+		return result, nil
+	}
 	isJuryInside := false
 	jury := []common.Address{}
 	for msgIdx, msg := range tx.TxMessages {

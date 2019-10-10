@@ -259,8 +259,16 @@ func (validate *Validate) validateTxFee(tx *modules.Transaction) (bool, []*modul
 		log.Warn("Cannot validate tx fee, your validate utxoquery not set")
 		return true, nil
 	}
-	feeAllocate, err := tx.GetTxFeeAllocate(validate.utxoquery.GetUtxoEntry,
-		validate.tokenEngine.GetScriptSigners, common.Address{})
+	var feeAllocate []*modules.Addition
+	var err error
+	if validate.enableTxFeeCheck {
+		feeAllocate, err = tx.GetTxFeeAllocateV2(validate.utxoquery.GetUtxoEntry,
+			validate.tokenEngine.GetScriptSigners, common.Address{})
+	} else {
+		feeAllocate, err = tx.GetTxFeeAllocate(validate.utxoquery.GetUtxoEntry,
+			validate.tokenEngine.GetScriptSigners, common.Address{})
+	}
+
 	if err != nil {
 		log.Warn("compute tx fee error: " + err.Error())
 		return false, nil

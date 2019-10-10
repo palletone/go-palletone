@@ -611,7 +611,7 @@ func (rep *UnitRepository) ComputeTxFeesAllocate(m common.Address, txs []*module
 		for o, u := range utxos {
 			tempTxs.allUtxo[o] = u
 		}
-		allowcate, err := tx.GetTxFeeAllocate(tempTxs.getUtxoEntryFromTxs, rep.tokenEngine.GetScriptSigners, m)
+		allowcate, err := tx.GetTxFeeAllocateV2(tempTxs.getUtxoEntryFromTxs, rep.tokenEngine.GetScriptSigners, m)
 		if err != nil {
 			return nil, err
 		}
@@ -992,10 +992,10 @@ func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Trans
 		rep.idxdb.SaveAddressTxId(addr, txHash)
 	}
 	//Index contract address to tx
-	for _,msg:=range tx.TxMessages{
-		if msg.App== modules.APP_CONTRACT_INVOKE_REQUEST{
-			invoke:=msg.Payload.(*modules.ContractInvokeRequestPayload)
-			addr:=common.NewAddress(invoke.ContractId,common.ContractHash)
+	for _, msg := range tx.TxMessages {
+		if msg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
+			invoke := msg.Payload.(*modules.ContractInvokeRequestPayload)
+			addr := common.NewAddress(invoke.ContractId, common.ContractHash)
 			rep.idxdb.SaveAddressTxId(addr, txHash)
 		}
 	}
