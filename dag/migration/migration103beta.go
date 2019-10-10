@@ -20,15 +20,14 @@
 package migration
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"time"
 
-	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/contracts/syscontract"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
@@ -75,9 +74,9 @@ func (m *Migration103alpha_103beta) upgradeDefaultMediatorsWithJurorInfo() error
 		return fmt.Errorf(errStr)
 	}
 
-	statedb := storage.NewStateDb(m.statedb)
+	stateDb := storage.NewStateDb(m.statedb)
 	// 获取mediator候选列表
-	list, err := statedb.GetCandidateMediatorList()
+	list, err := stateDb.GetCandidateMediatorList()
 	if err != nil {
 		log.Errorf(err.Error())
 		return err
@@ -104,7 +103,7 @@ func (m *Migration103alpha_103beta) upgradeDefaultMediatorsWithJurorInfo() error
 		} else if pubKey, isFind = constants.OldMediatorAndPubKey[addr]; isFind {
 			//  获取超级节点进入时间
 			var mediatorByte []byte
-			mediatorByte, version, err = statedb.GetContractState(syscontract.DepositContractAddress.Bytes(),
+			mediatorByte, version, err = stateDb.GetContractState(syscontract.DepositContractAddress.Bytes(),
 				storage.MediatorDepositKey(addr))
 			if err != nil {
 				log.Errorf(err.Error())
@@ -125,19 +124,17 @@ func (m *Migration103alpha_103beta) upgradeDefaultMediatorsWithJurorInfo() error
 			return fmt.Errorf(errStr)
 		}
 
-		pubByte, err := hex.DecodeString(pubKey)
-		if err != nil {
-			log.Errorf(err.Error())
-			return err
+		jdej := core.JurorDepositExtraJson{
+			PublicKey: pubKey,
 		}
-
-		//  判断公钥的正确性
-		if crypto.PubkeyBytesToAddress(pubByte).String() != addr {
-			errStr := fmt.Sprintf("address = %s, public key = %s error", addr, pubKey)
-			log.Error(errStr)
+		jde, err := jdej.Validate(addr)
+		if err != nil {
+			errStr := fmt.Sprintf("JurorDepositExtraJson Validate err: %v", err.Error())
+			log.Errorf(errStr)
 			return fmt.Errorf(errStr)
 		}
-		juror.PublicKey = pubByte
+
+		juror.JurorDepositExtra = jde
 		jurorByte, err := json.Marshal(juror)
 		if err != nil {
 			log.Errorf(err.Error())
@@ -145,7 +142,7 @@ func (m *Migration103alpha_103beta) upgradeDefaultMediatorsWithJurorInfo() error
 		}
 
 		ws := modules.NewWriteSet(storage.JuryDepositKey(addr), jurorByte)
-		err = statedb.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws, version)
+		err = stateDb.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws, version)
 		if err != nil {
 			log.Errorf(err.Error())
 			return err

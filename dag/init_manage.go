@@ -84,7 +84,7 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, head *modules.Header) error {
 	list := make(map[string]bool, len(genesis.InitialMediatorCandidates))
 
 	for _, imc := range genesis.InitialMediatorCandidates {
-		// 存储 mediator info
+		// 1 存储 mediator info
 		addr, jde, err := imc.Validate()
 		if err != nil {
 			log.Debugf(err.Error())
@@ -101,7 +101,7 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, head *modules.Header) error {
 			return err
 		}
 
-		// 将保证金设为0
+		// 2 初始化mediator保证金设为0
 		md := modules.NewMediatorDeposit()
 		md.Status = modules.Agree
 		md.Role = modules.Mediator
@@ -119,9 +119,7 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, head *modules.Header) error {
 			return err
 		}
 
-		list[mi.AddStr] = true
-
-		//对应的Juror
+		// 3 初始化 juror保证金为0
 		juror := modules.JurorDeposit{}
 		juror.Address = mi.AddStr
 		juror.Role = modules.Jury
@@ -141,6 +139,9 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, head *modules.Header) error {
 			log.Debugf(err.Error())
 			return err
 		}
+
+		// 加入 mediator和jury列表
+		list[mi.AddStr] = true
 	}
 
 	// 存储 initMediatorCandidates/JuryCandidates
