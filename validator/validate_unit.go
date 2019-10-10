@@ -302,7 +302,8 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 		if parentHeader.Number.Index+1 != header.Number.Index {
 			return UNIT_STATE_INVALID_HEADER_NUMBER
 		}
-		if header.Time > 1564675200 { //2019.8.2主网升级，有些之前的mediator schedule可能验证不过。
+		// 1570723200 //20191011 1.0.3升级，
+		if header.Time > 1570723200 { //之前的mediator schedule可能验证不过。
 			vcode := validate.validateMediatorSchedule(header)
 			if vcode != TxValidationCode_VALID {
 				return vcode
