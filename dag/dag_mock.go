@@ -5,17 +5,17 @@
 package dag
 
 import (
-	gomock "github.com/golang/mock/gomock"
-	common "github.com/palletone/go-palletone/common"
-	event "github.com/palletone/go-palletone/common/event"
-	discover "github.com/palletone/go-palletone/common/p2p/discover"
-	list "github.com/palletone/go-palletone/contracts/list"
-	core "github.com/palletone/go-palletone/core"
-	modules "github.com/palletone/go-palletone/dag/modules"
-	txspool "github.com/palletone/go-palletone/txspool"
-	big "math/big"
-	reflect "reflect"
-	time "time"
+	"github.com/golang/mock/gomock"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/p2p/discover"
+	"github.com/palletone/go-palletone/contracts/list"
+	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/txspool"
+	"math/big"
+	"reflect"
+	"time"
 )
 
 // MockIDag is a mock of IDag interface
@@ -1282,17 +1282,31 @@ func (mr *MockIDagMockRecorder) GetAllLeafNodes() *gomock.Call {
 }
 
 // ClearUtxo mocks base method
-func (m *MockIDag) ClearUtxo(addr common.Address) error {
+func (m *MockIDag) ClearUtxo() error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ClearUtxo", addr)
+	ret := m.ctrl.Call(m, "ClearUtxo")
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ClearUtxo indicates an expected call of ClearUtxo
-func (mr *MockIDagMockRecorder) ClearUtxo(addr interface{}) *gomock.Call {
+func (mr *MockIDagMockRecorder) ClearUtxo() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearUtxo", reflect.TypeOf((*MockIDag)(nil).ClearUtxo), addr)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearUtxo", reflect.TypeOf((*MockIDag)(nil).ClearUtxo))
+}
+
+// ClearAddrUtxo mocks base method
+func (m *MockIDag) ClearAddrUtxo(addr common.Address) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ClearAddrUtxo", addr)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ClearAddrUtxo indicates an expected call of ClearAddrUtxo
+func (mr *MockIDagMockRecorder) ClearAddrUtxo(addr interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearAddrUtxo", reflect.TypeOf((*MockIDag)(nil).ClearAddrUtxo), addr)
 }
 
 // SaveUtxoView mocks base method

@@ -36,8 +36,8 @@ import (
 type IDag interface {
 	Close()
 
-	GetCommon(key []byte,stableDb bool) ([]byte, error)
-	GetCommonByPrefix(prefix []byte,stableDb bool) map[string][]byte
+	GetCommon(key []byte, stableDb bool) ([]byte, error)
+	GetCommonByPrefix(prefix []byte, stableDb bool) map[string][]byte
 	SaveCommon(key, val []byte) error
 	GetAllData() ([][]byte, [][]byte)
 
@@ -143,7 +143,8 @@ type IDag interface {
 	GetLightChainHeight(assetId modules.AssetId) uint64
 	InsertLightHeader(headers []*modules.Header) (int, error)
 	GetAllLeafNodes() ([]*modules.Header, error)
-	ClearUtxo(addr common.Address) error
+	ClearUtxo() error
+	ClearAddrUtxo(addr common.Address) error
 	SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error
 
 	HeadUnitTime() int64

@@ -32,12 +32,12 @@ import (
 )
 
 type UtxoDb struct {
-	db ptndb.Database
+	db          ptndb.Database
 	tokenEngine tokenengine.ITokenEngine
 }
 
-func NewUtxoDb(db ptndb.Database,tokenEngine tokenengine.ITokenEngine) *UtxoDb {
-	return &UtxoDb{db: db,tokenEngine:tokenEngine}
+func NewUtxoDb(db ptndb.Database, tokenEngine tokenengine.ITokenEngine) *UtxoDb {
+	return &UtxoDb{db: db, tokenEngine: tokenEngine}
 }
 
 type IUtxoDb interface {
@@ -51,6 +51,7 @@ type IUtxoDb interface {
 	DeleteUtxo(outpoint *modules.OutPoint, spentTxId common.Hash, spentTime uint64) error
 	IsUtxoSpent(outpoint *modules.OutPoint) (bool, error)
 	GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error)
+	ClearAddrUtxo(addr common.Address) error
 	ClearUtxo() error
 }
 
@@ -249,6 +250,20 @@ func (db *UtxoDb) ClearUtxo() error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+func (db *UtxoDb) ClearAddrUtxo(addr common.Address) error {
+	outpoints, err := db.GetAddrOutpoints(addr)
+	if err != nil {
+		return err
+	}
+	for _, outpoint := range outpoints {
+		err := db.db.Delete(outpoint.ToKey())
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 func clearByPrefix(db ptndb.Database, prefix []byte) error {
