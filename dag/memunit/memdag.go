@@ -210,7 +210,7 @@ func (chain *MemDag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Hea
 //	return nil, fmt.Errorf("the header[%s] not exist.", number.String())
 //}
 
-func (chain *MemDag) SetUnitGroupSign(uHash common.Hash /*, groupPubKey []byte*/, groupSign []byte,
+func (chain *MemDag) SetUnitGroupSign(uHash common.Hash /*, groupPubKey []byte*/ , groupSign []byte,
 	txpool txspool.ITxPool) error {
 	//1. Set this unit as stable
 	unit_temp, err := chain.getChainUnit(uHash)
@@ -676,9 +676,14 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 		chain.orphanUnitsParants.Store(unit.ParentHash()[0], uHash)
 	}
 	chain.addUnitHeight(unit)
-	inter_tmp, _ := chain.tempdb.Load(chain.lastMainChainUnit.Hash())
-	tmp := inter_tmp.(*ChainTempDb)
-	return tmp.UnitRep, tmp.UtxoRep, tmp.StateRep, tmp.PropRep, tmp.UnitProduceRep, nil
+	inter_tmp, has := chain.tempdb.Load(chain.lastMainChainUnit.Hash())
+	if has {
+		tmp := inter_tmp.(*ChainTempDb)
+		return tmp.UnitRep, tmp.UtxoRep, tmp.StateRep, tmp.PropRep, tmp.UnitProduceRep, nil
+	}
+	temp_db, _ := NewChainTempDb(chain.db, chain.cache, chain.tokenEngine, chain.saveHeaderOnly)
+	return temp_db.UnitRep, temp_db.UtxoRep, temp_db.StateRep, temp_db.PropRep, temp_db.UnitProduceRep, nil
+
 }
 
 // 缓存该高度的所有单元hash
