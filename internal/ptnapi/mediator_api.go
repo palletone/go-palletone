@@ -173,14 +173,14 @@ func (a *PublicMediatorAPI) GetNextUpdateTime() string {
 }
 
 func (a *PublicMediatorAPI) GetInfo(addStr string) (*modules.MediatorInfo, error) {
-	mediator, err := common.StringToAddress(addStr)
+	mediator, err := core.StrToMedAdd(addStr)
 	if err != nil {
 		return nil, err
 	}
 
-	if !a.Dag().IsMediator(mediator) {
-		return nil, fmt.Errorf("%v is not mediator", addStr)
-	}
+	//if !a.Dag().IsMediator(mediator) {
+	//	return nil, fmt.Errorf("%v is not mediator", addStr)
+	//}
 
 	return a.Dag().GetMediatorInfo(mediator), nil
 }

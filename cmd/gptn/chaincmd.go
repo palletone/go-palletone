@@ -147,7 +147,7 @@ func initGenesis(ctx *cli.Context) error {
 
 	// 初始化 stateDB
 	// append by albert·gou
-	err = dag.InitStateDB(genesis, unit)
+	err = dag.InitStateDB(genesis, unit.Header())
 	if err != nil {
 		utils.Fatalf("Failed to InitStateDB: %v", err)
 		return err

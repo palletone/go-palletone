@@ -262,10 +262,10 @@ func (d *Dag) GetPtnBalance(addr common.Address) uint64 {
 }
 
 func (d *Dag) GetMediatorInfo(address common.Address) *modules.MediatorInfo {
-	_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
-
-	mi, _ := state.RetrieveMediatorInfo(address)
-	//mi, _ := d.unstableStateRep.RetrieveMediatorInfo(address)
+	//_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
+	//
+	//mi, _ := state.RetrieveMediatorInfo(address)
+	mi, _ := d.unstableStateRep.RetrieveMediatorInfo(address)
 	return mi
 }
 

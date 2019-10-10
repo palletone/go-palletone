@@ -312,7 +312,7 @@ func SaveJuryBalance(stub shim.ChaincodeStubInterface, balanceAddr string, balan
 	if err != nil {
 		return err
 	}
-	err = stub.PutState(string(constants.DEPOSIT_JURY_BALANCE_PREFIX)+balanceAddr, balanceByte)
+	err = stub.PutState(storage.JuryDepositKey(balanceAddr), balanceByte)
 	if err != nil {
 		return err
 	}
@@ -321,7 +321,7 @@ func SaveJuryBalance(stub shim.ChaincodeStubInterface, balanceAddr string, balan
 
 //  获取Jury账户
 func GetJuryBalance(stub shim.ChaincodeStubInterface, addr string) (*modules.JurorDeposit, error) {
-	byte, err := stub.GetState(string(constants.DEPOSIT_JURY_BALANCE_PREFIX) + addr)
+	byte, err := stub.GetState(storage.JuryDepositKey(addr))
 	if err != nil {
 		return nil, err
 	}
@@ -338,7 +338,7 @@ func GetJuryBalance(stub shim.ChaincodeStubInterface, addr string) (*modules.Jur
 
 //  删除Jury账户
 func DelJuryBalance(stub shim.ChaincodeStubInterface, addr string) error {
-	err := stub.DelState(string(constants.DEPOSIT_JURY_BALANCE_PREFIX) + addr)
+	err := stub.DelState(storage.JuryDepositKey(addr))
 	if err != nil {
 		return err
 	}
@@ -459,12 +459,13 @@ func isInCandidate(stub shim.ChaincodeStubInterface, invokeAddr string, candidat
 
 //
 func handleNode(stub shim.ChaincodeStubInterface, quitAddr common.Address, role string) error {
+	addStr := quitAddr.String()
 	//  移除退出列表
 	listForQuit, err := GetListForQuit(stub)
 	if err != nil {
 		return err
 	}
-	delete(listForQuit, quitAddr.String())
+	delete(listForQuit, addStr)
 	err = SaveListForQuit(stub, listForQuit)
 	if err != nil {
 		return err
@@ -474,14 +475,14 @@ func handleNode(stub shim.ChaincodeStubInterface, quitAddr common.Address, role 
 	balance := uint64(0)
 	if role == modules.Developer {
 		//  获取该节点保证金数量
-		b, err := GetNodeBalance(stub, quitAddr.String())
+		b, err := GetNodeBalance(stub, addStr)
 		if err != nil {
 			return err
 		}
 		balance = b.Balance
 		list = modules.DeveloperList
 		//  删除节点
-		err = stub.DelState(string(constants.DEPOSIT_BALANCE_PREFIX) + quitAddr.String())
+		err = stub.DelState(string(constants.DEPOSIT_BALANCE_PREFIX) + addStr)
 		if err != nil {
 			log.Error("stub.DelState err:", "error", err)
 			return err
@@ -489,14 +490,14 @@ func handleNode(stub shim.ChaincodeStubInterface, quitAddr common.Address, role 
 
 	}
 	if role == modules.Jury {
-		j, err := GetJuryBalance(stub, quitAddr.String())
+		j, err := GetJuryBalance(stub, addStr)
 		if err != nil {
 			return err
 		}
 		balance = j.Balance
 		list = modules.JuryList
 		//  删除节点
-		err = stub.DelState(string(constants.DEPOSIT_JURY_BALANCE_PREFIX) + quitAddr.String())
+		err = stub.DelState(storage.JuryDepositKey(addStr))
 		if err != nil {
 			log.Error("stub.DelState err:", "error", err)
 			return err
@@ -505,13 +506,13 @@ func handleNode(stub shim.ChaincodeStubInterface, quitAddr common.Address, role 
 	}
 	//  调用从合约把token转到请求地址
 	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
-	err = stub.PayOutToken(quitAddr.String(), modules.NewAmountAsset(balance, gasToken), 0)
+	err = stub.PayOutToken(addStr, modules.NewAmountAsset(balance, gasToken), 0)
 	if err != nil {
 		log.Error("stub.PayOutToken err:", "error", err)
 		return err
 	}
 	//  移除候选列表
-	err = moveCandidate(list, quitAddr.String(), stub)
+	err = moveCandidate(list, addStr, stub)
 	if err != nil {
 		log.Error("moveCandidate err:", "error", err)
 		return err
