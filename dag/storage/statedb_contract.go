@@ -90,6 +90,10 @@ func MediatorDepositKey(medAddr string) string {
 	return string(constants.MEDIATOR_INFO_PREFIX) + string(constants.DEPOSIT_BALANCE_PREFIX) + medAddr
 }
 
+func JuryDepositKey(jurorAddr string) string {
+	return string(constants.DEPOSIT_JURY_BALANCE_PREFIX) + jurorAddr
+}
+
 func (statedb *StateDb) SaveContractState(contractId []byte, ws *modules.ContractWriteSet,
 	version *modules.StateVersion) error {
 	cid := contractId

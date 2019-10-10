@@ -24,6 +24,7 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/storage"
 )
 
 type DepositChaincode struct {
@@ -485,7 +486,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		jurynodes := make(map[string]*modules.JurorDeposit)
 		for a := range allJurorAddrs {
-			j, err := stub.GetState(string(constants.DEPOSIT_JURY_BALANCE_PREFIX) + a)
+			j, err := stub.GetState(storage.JuryDepositKey(a))
 			if err != nil {
 				return shim.Error(err.Error())
 			}
