@@ -56,10 +56,7 @@ func processPledgeDeposit(stub shim.ChaincodeStubInterface) pb.Response {
 }
 
 //  每天计算各节点收益
-func handlePledgeReward(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	if len(args) != 0 {
-		return shim.Error("need 0 args")
-	}
+func handlePledgeReward(stub shim.ChaincodeStubInterface) pb.Response {
 	gp, err := stub.GetSystemConfig()
 	if err != nil {
 		return shim.Error(err.Error())
@@ -84,17 +81,14 @@ func handlePledgeReward(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 }
 
 //  普通节点申请提取PTN
-func processPledgeWithdraw(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	if len(args) != 1 {
-		return shim.Error("need 1 arg, withdraw Dao amount")
-	}
+func processPledgeWithdraw(stub shim.ChaincodeStubInterface, amount string) pb.Response {
+
 	//  获取请求地址
 	inAddr, err := stub.GetInvokeAddress()
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 
-	amount := args[0]
 	ptnAccount := uint64(0)
 	if strings.ToLower(amount) == "all" {
 		ptnAccount = math.MaxUint64
@@ -112,11 +106,9 @@ func processPledgeWithdraw(stub shim.ChaincodeStubInterface, args []string) pb.R
 	return shim.Success(nil)
 }
 
-func queryPledgeStatusByAddr(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	if len(args) != 1 {
-		return shim.Error("need 1 arg, Address")
-	}
-	status, err := getPledgeStatus(stub, args[0])
+func queryPledgeStatusByAddr(stub shim.ChaincodeStubInterface, address string) pb.Response {
+
+	status, err := getPledgeStatus(stub, address)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -144,8 +136,7 @@ func queryPledgeList(stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(result)
 }
 
-func queryPledgeListByDate(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	date := args[0]
+func queryPledgeListByDate(stub shim.ChaincodeStubInterface, date string) pb.Response {
 	reg := regexp.MustCompile(`[\d]{8}`)
 	if !reg.Match([]byte(date)) {
 		return shim.Error("must use YYYYMMDD format")

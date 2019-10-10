@@ -27,14 +27,10 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+func juryPayToDepositContract(stub shim.ChaincodeStubInterface, pubkey string) peer.Response {
 	log.Debug("Start entering JuryPayToDepositContract func")
-	if len(args) != 1 {
-		return shim.Error("need 1 parameter")
-	}
-
 	var jdej core.JurorDepositExtraJson
-	err := json.Unmarshal([]byte(args[0]), &jdej)
+	err := json.Unmarshal([]byte(pubkey), &jdej)
 	if err != nil {
 		errStr := fmt.Sprintf("invalid args: %v", err.Error())
 		log.Errorf(errStr)

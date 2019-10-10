@@ -29,17 +29,10 @@ import (
 )
 
 //  申请加入
-func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func applyBecomeMediator(stub shim.ChaincodeStubInterface,  mediatorCreateArgs string) pb.Response {
 	log.Info("Start entering apply for become mediator func")
-	//  检查参数
-	if len(args) != 1 {
-		errStr := "Arg need only one parameter."
-		log.Error(errStr)
-		return shim.Error(errStr)
-	}
-
 	var mco modules.MediatorCreateArgs
-	err := json.Unmarshal([]byte(args[0]), &mco)
+	err := json.Unmarshal([]byte(mediatorCreateArgs), &mco)
 	if err != nil {
 		errStr := fmt.Sprintf("invalid args: %v", err.Error())
 		log.Errorf(errStr)
@@ -133,7 +126,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Res
 }
 
 //mediator 交付保证金：
-func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface /*, args []string*/) pb.Response {
+func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface) pb.Response {
 	log.Info("starting entering MediatorPayToDepositContract func.")
 	//  判断是否是交付保证金到保证金合约地址
 	invokeTokens, err := isContainDepositContractAddr(stub)
@@ -243,7 +236,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface /*, args []st
 }
 
 //  申请退出 参数：暂时 节点地址
-func mediatorApplyQuit(stub shim.ChaincodeStubInterface /*, args []string*/) pb.Response {
+func mediatorApplyQuit(stub shim.ChaincodeStubInterface) pb.Response {
 	err := applyQuitList(modules.Mediator, stub)
 	if err != nil {
 		log.Error("mediatorApplyQuitMediator err: ", "error", err)
@@ -275,17 +268,12 @@ func mediatorApplyQuit(stub shim.ChaincodeStubInterface /*, args []string*/) pb.
 }
 
 //  申请加入
-func updateMediatorInfo(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func updateMediatorInfo(stub shim.ChaincodeStubInterface, mediatorUpdateArgs string) pb.Response {
 	log.Info("Start entering UpdateMediatorInfo func")
-	//  检查参数
-	if len(args) != 1 {
-		errStr := "Arg need only one parameter."
-		log.Error(errStr)
-		return shim.Error(errStr)
-	}
+
 
 	var mua modules.MediatorUpdateArgs
-	err := json.Unmarshal([]byte(args[0]), &mua)
+	err := json.Unmarshal([]byte(mediatorUpdateArgs), &mua)
 	if err != nil {
 		errStr := fmt.Sprintf("invalid args: %v", err.Error())
 		log.Errorf(errStr)

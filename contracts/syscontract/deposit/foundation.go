@@ -26,20 +26,17 @@ import (
 )
 
 //  处理mediator申请退出保证金
-func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface,address string, okOrNo string) pb.Response {
 	log.Info("HandleForApplyBecomeMediator")
-	if len(args) != 2 {
-		log.Error("args need two parameters")
-		return shim.Error("args need two parameters")
-	}
+
 	//  判断是否基金会发起的
 	if !isFoundationInvoke(stub) {
 		log.Error("please use foundation address")
 		return shim.Error("please use foundation address")
 	}
 	//  判断处理地址是否申请过
-	isOk := strings.ToLower(args[1])
-	addr, err := common.StringToAddress(args[0])
+	isOk := strings.ToLower(okOrNo)
+	addr, err := common.StringToAddress(address)
 	if err != nil {
 		log.Error("string to address err: ", "error", err)
 		return shim.Error(err.Error())
@@ -108,33 +105,29 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, args []strin
 }
 
 //处理退出 参数：同意或不同意，节点的地址
-func handleForApplyQuitJury(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return handleForApplyQuitNode(stub, args, modules.Jury)
+func handleForApplyQuitJury(stub shim.ChaincodeStubInterface, address string ,okOrNo string) pb.Response {
+	return handleForApplyQuitNode(stub, address,okOrNo, modules.Jury)
 }
 
 //处理退出 参数：同意或不同意，节点的地址
-func handleForApplyQuitDev(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return handleForApplyQuitNode(stub, args, modules.Developer)
+func handleForApplyQuitDev(stub shim.ChaincodeStubInterface, address string ,okOrNo string) pb.Response {
+	return handleForApplyQuitNode(stub, address,okOrNo, modules.Developer)
 }
 
-func handleForApplyQuitNode(stub shim.ChaincodeStubInterface, args []string, role string) pb.Response {
+func handleForApplyQuitNode(stub shim.ChaincodeStubInterface, address string ,okOrNo string, role string) pb.Response {
 	log.Info("Start enter HandleForApplyQuitMediator func")
-	//参数
-	if len(args) != 2 {
-		log.Error("Arg need two parameter.")
-		return shim.Error("Arg need two parameter.")
-	}
+
 	//  判断是否基金会发起的
 	if !isFoundationInvoke(stub) {
 		log.Error("please use foundation address")
 		return shim.Error("please use foundation address")
 	}
-	addr, err := common.StringToAddress(args[0])
+	addr, err := common.StringToAddress(address)
 	if err != nil {
 		log.Error("common.StringToAddress err:", "error", err)
 		return shim.Error(err.Error())
 	}
-	isOk := strings.ToLower(args[1])
+	isOk := strings.ToLower(okOrNo)
 	if isOk == modules.Ok {
 		if role == modules.Developer {
 			err = handleDev(stub, addr)
@@ -164,24 +157,20 @@ func handleForApplyQuitNode(stub shim.ChaincodeStubInterface, args []string, rol
 }
 
 //处理退出 参数：同意或不同意，节点的地址
-func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, address string,okOrNo string) pb.Response {
 	log.Info("Start enter HandleForApplyQuitMediator func")
-	//参数
-	if len(args) != 2 {
-		log.Error("Arg need two parameter.")
-		return shim.Error("Arg need two parameter.")
-	}
+
 	//  判断是否基金会发起的
 	if !isFoundationInvoke(stub) {
 		log.Error("please use foundation address")
 		return shim.Error("please use foundation address")
 	}
-	addr, err := common.StringToAddress(args[0])
+	addr, err := common.StringToAddress(address)
 	if err != nil {
 		log.Error("common.StringToAddress err:", "error", err)
 		return shim.Error(err.Error())
 	}
-	isOk := strings.ToLower(args[1])
+	isOk := strings.ToLower(okOrNo)
 	if isOk == modules.Ok {
 		err = handleMediator(stub, addr)
 		if err != nil {
@@ -205,22 +194,17 @@ func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, args []string)
 	return shim.Success(nil)
 }
 
-func handleForForfeitureApplication(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func handleForForfeitureApplication(stub shim.ChaincodeStubInterface, address string,okOrNo string) pb.Response {
 	log.Info("HandleForForfeitureApplication")
-	//  地址，是否同意
-	if len(args) != 2 {
-		log.Error("args need two parameters.")
-		return shim.Error("args need two parameters.")
-	}
+
 	//  判断是否基金会发起的
 	if !isFoundationInvoke(stub) {
 		log.Error("please use foundation address")
 		return shim.Error("please use foundation address")
 	}
 	//  处理没收地址
-	addr := args[0]
 	//  判断没收地址是否正确
-	f, err := common.StringToAddress(addr)
+	f, err := common.StringToAddress(address)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -247,7 +231,7 @@ func handleForForfeitureApplication(stub shim.ChaincodeStubInterface, args []str
 	//获取节点信息
 	forfeitureNode := listForForfeiture[f.String()]
 	//  处理操作ok or no
-	isOk := strings.ToLower(args[1])
+	isOk := strings.ToLower(okOrNo)
 	//check 如果为ok，则同意此申请，如果为no，则不同意此申请
 	if isOk == modules.Ok {
 		err = agreeForApplyForfeiture(stub, invokeAddr.String(), f.String(), forfeitureNode.ForfeitureRole)
@@ -262,7 +246,7 @@ func handleForForfeitureApplication(stub shim.ChaincodeStubInterface, args []str
 		return shim.Error("Please enter Ok or No.")
 	}
 	//  不管同意与否都需要从列表中移除
-	delete(listForForfeiture, addr)
+	delete(listForForfeiture, address)
 	err = saveListForForfeiture(stub, listForForfeiture)
 	if err != nil {
 		return shim.Error(err.Error())
@@ -399,8 +383,8 @@ func handleMediatorForfeitureDeposit(stub shim.ChaincodeStubInterface, foundatio
 	return nil
 }
 
-func hanldeNodeRemoveFromAgreeList(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	address, err := common.StringToAddress(args[0])
+func hanldeNodeRemoveFromAgreeList(stub shim.ChaincodeStubInterface, address string) pb.Response {
+	addr, err := common.StringToAddress(address)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -411,7 +395,7 @@ func hanldeNodeRemoveFromAgreeList(stub shim.ChaincodeStubInterface, args []stri
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	delete(agreeList, address.String())
+	delete(agreeList, addr.String())
 	err = saveList(stub, modules.ListForAgreeBecomeMediator, agreeList)
 	if err != nil {
 		return shim.Error(err.Error())
@@ -448,8 +432,8 @@ func hanldeNodeRemoveFromAgreeList(stub shim.ChaincodeStubInterface, args []stri
 //	return shim.Success(nil)
 //}
 
-func handleNodeInList(stub shim.ChaincodeStubInterface, args []string, role string) pb.Response {
-	if len(args) > 0 {
+func handleNodeInList(stub shim.ChaincodeStubInterface, addresses []string, role string) pb.Response {
+	if len(addresses) > 0 {
 		if !isFoundationInvoke(stub) {
 			log.Debugf("please use foundation address")
 			return shim.Error("please use foundation address")
@@ -464,7 +448,7 @@ func handleNodeInList(stub shim.ChaincodeStubInterface, args []string, role stri
 		case modules.Developer:
 			list = modules.DeveloperList
 		}
-		for _, a := range args {
+		for _, a := range addresses {
 			// 判断地址是否合法
 			_, err := common.StringToAddress(a)
 			if err != nil {

@@ -383,21 +383,17 @@ func getToday(stub shim.ChaincodeStubInterface) string {
 }
 
 //  社区申请没收某节点的保证金数量
-func applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, forfeitureAddress string,role string,reason string) pb.Response {
 	log.Info("ApplyForForfeitureDeposit")
-	if len(args) != 3 {
-		log.Error("args need three parameters")
-		return shim.Error("args need three parameters")
-	}
+
 	//  需要判断是否基金会发起的
 	//if !isFoundationInvoke(stub) {
 	//	log.Error("please use foundation address")
 	//	return shim.Error("please use foundation address")
 	//}
 	//  被没收地址
-	forfeitureAddr := args[0]
 	//  判断没收地址是否正确
-	f, err := common.StringToAddress(forfeitureAddr)
+	f, err := common.StringToAddress(forfeitureAddress)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -416,9 +412,7 @@ func applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, args []string) 
 		}
 	}
 	//  被没收地址属于哪种类型
-	role := args[1]
 	//  没收理由
-	extra := args[2]
 
 	//  申请地址
 	invokeAddr, err := stub.GetInvokeAddress()
@@ -430,7 +424,7 @@ func applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, args []string) 
 	forfeiture := &modules.Forfeiture{}
 	forfeiture.ApplyAddress = invokeAddr.String()
 	forfeiture.ForfeitureRole = role
-	forfeiture.Extra = extra
+	forfeiture.Extra = reason
 	forfeiture.ApplyTime = getTime(stub)
 	listForForfeiture[f.String()] = forfeiture
 	//  保存列表
