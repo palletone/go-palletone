@@ -92,12 +92,13 @@ func (s *SysConfigChainCode) Invoke(stub shim.ChaincodeStubInterface) peer.Respo
 		return shim.Success(resultByte)
 	case "getVotesResult":
 		log.Info("Start getVotesResult Invoke")
-		resultByte, err := s.GetVotesResult(stub /*, args*/)
+		result, err := s.GetVotesResult(stub /*, args*/)
 		if err != nil {
 			jsonResp := "{\"Error\":\"getVotesResult err: " + err.Error() + "\"}"
-			return shim.Success([]byte(jsonResp))
+			return shim.Error(jsonResp)
 		}
-		return shim.Success(resultByte)
+		data, _ := json.Marshal(result)
+		return shim.Success(data)
 	case CreateVotesTokens:
 		if len(args) != 5 {
 			err := "need 5 args (Name,TotalSupply,LeastNum,VoteEndTime,VoteContentJson)"
@@ -151,7 +152,7 @@ func (s *SysConfigChainCode) Invoke(stub shim.ChaincodeStubInterface) peer.Respo
 func (s *SysConfigChainCode) GetWithoutVoteResult(stub shim.ChaincodeStubInterface) ([]byte, error) {
 	return stub.GetState(modules.DesiredSysParamsWithoutVote)
 }
-func (s *SysConfigChainCode) GetVotesResult(stub shim.ChaincodeStubInterface /*, args []string*/) ([]byte, error) {
+func (s *SysConfigChainCode) GetVotesResult(stub shim.ChaincodeStubInterface /*, args []string*/) (*modules.SysTokenIDInfo, error) {
 	//log.Debug("getVotesResult", args)
 	//params check
 	//if len(args) < 1 {
@@ -199,14 +200,8 @@ func (s *SysConfigChainCode) GetVotesResult(stub shim.ChaincodeStubInterface /*,
 	//token
 	asset := tkInfo.AssetID
 	tkID := modules.SysTokenIDInfo{IsVoteEnd: isVoteEnd, CreateAddr: tkInfo.CreateAddr, TotalSupply: tkInfo.TotalSupply,
-		SupportResults: supportResults, AssetID: asset.String(), CreateTime: tkInfo.VoteEndTime.UTC(), LeastNum: tkInfo.LeastNum}
-
-	//return json
-	tkJson, err := json.Marshal(tkID)
-	if err != nil {
-		return nil, fmt.Errorf(err.Error())
-	}
-	return tkJson, nil //test
+		SupportResults: supportResults, AssetID: asset.String(), CreateTime: tkInfo.VoteEndTime.UTC().Unix(), LeastNum: tkInfo.LeastNum}
+	return &tkID, nil
 }
 
 func (s *SysConfigChainCode) CreateVotesTokens(stub shim.ChaincodeStubInterface, name string, totalSupply uint64,

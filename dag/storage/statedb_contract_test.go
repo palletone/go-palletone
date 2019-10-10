@@ -130,7 +130,7 @@ func TestStateDb_GetSysParamsWithVotes(t *testing.T) {
 	sysTokenIDInfo := &modules.SysTokenIDInfo{}
 	sysSupportResult := &modules.SysSupportResult{}
 	sysVoteResult := &modules.SysVoteResult{}
-	sysTokenIDInfo.CreateTime = time.Now().UTC()
+	sysTokenIDInfo.CreateTime = time.Now().UTC().Unix()
 	sysTokenIDInfo.AssetID = modules.DesiredSysParamsWithVote
 	sysTokenIDInfo.CreateAddr = "P1--------xxxxxxxxxxxxxxxxx"
 	sysTokenIDInfo.IsVoteEnd = false

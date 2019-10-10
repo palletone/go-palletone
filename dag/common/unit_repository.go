@@ -996,10 +996,10 @@ func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Trans
 		rep.idxdb.SaveAddressTxId(addr, txHash)
 	}
 	//Index contract address to tx
-	for _,msg:=range tx.TxMessages{
-		if msg.App== modules.APP_CONTRACT_INVOKE_REQUEST{
-			invoke:=msg.Payload.(*modules.ContractInvokeRequestPayload)
-			addr:=common.NewAddress(invoke.ContractId,common.ContractHash)
+	for _, msg := range tx.TxMessages {
+		if msg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
+			invoke := msg.Payload.(*modules.ContractInvokeRequestPayload)
+			addr := common.NewAddress(invoke.ContractId, common.ContractHash)
 			rep.idxdb.SaveAddressTxId(addr, txHash)
 		}
 	}
@@ -1472,7 +1472,7 @@ func (rep *UnitRepository) createCoinbasePayment(ads []*modules.Addition) (*modu
 	contractId := syscontract.CoinbaseContractAddress.Bytes()
 
 	//在Coinbase合约的StateDB中保存每个Mediator和Jury的奖励值，
-	//key为奖励地址，Value为[]AmountAsset
+	//	//key为奖励地址，Value为[]AmountAsset
 	//读取之前的奖励统计值
 	addrMap, err := rep.statedb.GetContractStatesByPrefix(contractId, constants.RewardAddressPrefix)
 	if err != nil {
