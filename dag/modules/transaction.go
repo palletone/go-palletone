@@ -24,7 +24,6 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/rlp"
@@ -39,11 +38,12 @@ import (
 )
 
 var (
-	TXFEE       = big.NewInt(100000000) // transaction fee =1ptn
-	TX_MAXSIZE  = (256 * 1024)
-	TX_BASESIZE = (100 * 1024) //100kb
+	//TXFEE       = big.NewInt(100000000) // transaction fee =1ptn
+	TX_MAXSIZE  = 256 * 1024
+	TX_BASESIZE = 100 * 1024 //100kb
 )
-var DepositContractLockScript = common.Hex2Bytes("140000000000000000000000000000000000000001c8")
+
+//var DepositContractLockScript = common.Hex2Bytes("140000000000000000000000000000000000000001c8")
 
 // TxOut defines a bitcoin transaction output.
 type TxOut struct {
@@ -179,23 +179,22 @@ func (s Transactions) GetRlp(i int) []byte {
 }
 
 // TxDifference returns a new set t which is the difference between a to b.
-func TxDifference(a, b Transactions) (keep Transactions) {
-	keep = make(Transactions, 0, len(a))
-
-	remove := make(map[common.Hash]struct{})
-	for _, tx := range b {
-		remove[tx.Hash()] = struct{}{}
-	}
-
-	for _, tx := range a {
-		if _, ok := remove[tx.Hash()]; !ok {
-			keep = append(keep, tx)
-		}
-	}
-
-	return keep
-}
-
+//func TxDifference(a, b Transactions) (keep Transactions) {
+//	keep = make(Transactions, 0, len(a))
+//
+//	remove := make(map[common.Hash]struct{})
+//	for _, tx := range b {
+//		remove[tx.Hash()] = struct{}{}
+//	}
+//
+//	for _, tx := range a {
+//		if _, ok := remove[tx.Hash()]; !ok {
+//			keep = append(keep, tx)
+//		}
+//	}
+//
+//	return keep
+//}
 
 type WriteCounter common.StorageSize
 
@@ -695,20 +694,21 @@ func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFu
 	if fee.Amount == 0 {
 		return result, nil
 	}
-	isResultMsg := false
+	isJuryInside := false
 	jury := []common.Address{}
 	for msgIdx, msg := range tx.TxMessages {
-		if msg.App.IsRequest() {
-			isResultMsg = true
+		if msg.App == APP_CONTRACT_INVOKE_REQUEST || msg.App == APP_CONTRACT_DEPLOY_REQUEST {
+			isJuryInside = true
+			//只有合约部署和调用的时候会涉及到Jury，才会分手续费给Jury
 			continue
 		}
-		if isResultMsg && msg.App == APP_SIGNATURE {
+		if isJuryInside && msg.App == APP_SIGNATURE {
 			payload := msg.Payload.(*SignaturePayload)
 			for _, sig := range payload.Signatures {
 				jury = append(jury, crypto.PubkeyBytesToAddress(sig.PubKey))
 			}
 		}
-		if isResultMsg && msg.App == APP_PAYMENT {
+		if isJuryInside && msg.App == APP_PAYMENT {
 			payment := msg.Payload.(*PaymentPayload)
 			if !payment.IsCoinbase() {
 				jury, err = getSignerFunc(tx, msgIdx, 0)
@@ -718,7 +718,7 @@ func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFu
 			}
 		}
 	}
-	if isResultMsg { //合约执行，Fee需要分配给Jury
+	if isJuryInside { //合约执行，Fee需要分配给Jury
 		juryAmount := float64(fee.Amount) * parameter.CurrentSysParameters.ContractFeeJuryPercent
 		juryAllocatedAmt := uint64(0)
 		juryCount := float64(len(jury))
@@ -737,7 +737,7 @@ func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFu
 			Asset:  fee.Asset,
 		}
 		result = append(result, mediatorIncome)
-	} else { //没有合约执行，全部分配给Mediator
+	} else { //没有合约部署或者执行，全部分配给Mediator
 		mediatorIncome := &Addition{
 			Addr:   mediatorAddr,
 			Amount: fee.Amount,
