@@ -29,11 +29,11 @@ func developerPayToDepositContract(stub shim.ChaincodeStubInterface) peer.Respon
 
 //  申请
 func devApplyQuit(stub shim.ChaincodeStubInterface) peer.Response {
-	log.Info("devApplyQuit")
+	log.Info("DevApplyQuit")
 	//  处理逻辑
 	err := applyQuitList(modules.Developer, stub)
 	if err != nil {
-		log.Error("devApplyQuit err: ", "error", err)
+		log.Error("DevApplyQuit err: ", "error", err)
 		return shim.Error(err.Error())
 	}
 	return shim.Success(nil)
