@@ -4,7 +4,7 @@ rm ../../../../contracts/example/go/container/vendor/github.com/palletone/adapto
 
 cp -r ../../../../contracts/example/go/container/vendor/ .
 
-docker build -t palletone/goimg .
+docker build --no-cache -t palletone/goimg .
 
 rm -rf vendor
 

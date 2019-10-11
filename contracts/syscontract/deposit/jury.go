@@ -27,14 +27,10 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) peer.Response {
-	log.Debug("Start entering juryPayToDepositContract func")
-	if len(args) != 1 {
-		return shim.Error("need 1 parameter")
-	}
-
+func juryPayToDepositContract(stub shim.ChaincodeStubInterface, pubkey string) peer.Response {
+	log.Debug("Start entering JuryPayToDepositContract func")
 	var jdej core.JurorDepositExtraJson
-	err := json.Unmarshal([]byte(args[0]), &jdej)
+	err := json.Unmarshal([]byte(pubkey), &jdej)
 	if err != nil {
 		errStr := fmt.Sprintf("invalid args: %v", err.Error())
 		log.Errorf(errStr)
@@ -70,7 +66,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 	cp := gp.ChainParameters
 
 	//获取账户
-	balance, err := GetJuryBalance(stub, invokeAddrStr)
+	balance, err := getJuryBalance(stub, invokeAddrStr)
 	if err != nil {
 		log.Error("get node balance err: ", "error", err)
 		return shim.Error(err.Error())
@@ -97,7 +93,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 		balance.Role = modules.Jury
 		balance.Address = invokeAddrStr
 		balance.JurorDepositExtra = jde
-		err = SaveJuryBalance(stub, invokeAddrStr, balance)
+		err = saveJuryBalance(stub, invokeAddrStr, balance)
 		if err != nil {
 			log.Error("save node balance err: ", "error", err)
 			return shim.Error(err.Error())
@@ -129,7 +125,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 			}
 		}
 		balance.Balance = all
-		err = SaveJuryBalance(stub, invokeAddrStr, balance)
+		err = saveJuryBalance(stub, invokeAddrStr, balance)
 		if err != nil {
 			log.Error("save node balance err: ", "error", err)
 			return shim.Error(err.Error())
@@ -139,13 +135,13 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 }
 
 func juryApplyQuit(stub shim.ChaincodeStubInterface) peer.Response {
-	log.Debug("juryApplyQuit")
+	log.Debug("JuryApplyQuit")
 	err := applyQuitList(modules.Jury, stub)
 	if err != nil {
 		log.Error("applyQuitList err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	return shim.Success([]byte(nil))
+	return shim.Success(nil)
 }
 
 //  处理
@@ -174,7 +170,7 @@ func convertJuryDepositExtra2Json(extra *core.JurorDepositExtra) (json core.Juro
 //	if err != nil {
 //		return shim.Error(err.Error())
 //	}
-//	b, err := GetJuryBalance(stub, addr.String())
+//	b, err := getJuryBalance(stub, addr.String())
 //	if err != nil {
 //		return shim.Error(err.Error())
 //	}
@@ -191,7 +187,7 @@ func convertJuryDepositExtra2Json(extra *core.JurorDepositExtra) (json core.Juro
 //		return shim.Error(err.Error())
 //	}
 //	b.PublicKey = byte
-//	err = SaveJuryBalance(stub, addr.String(), b)
+//	err = saveJuryBalance(stub, addr.String(), b)
 //	if err != nil {
 //		return shim.Error(err.Error())
 //	}
