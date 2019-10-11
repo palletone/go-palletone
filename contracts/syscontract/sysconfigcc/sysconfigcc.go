@@ -152,15 +152,27 @@ func (s *SysConfigChainCode) Invoke(stub shim.ChaincodeStubInterface) peer.Respo
 func (s *SysConfigChainCode) GetWithoutVoteResult(stub shim.ChaincodeStubInterface) ([]byte, error) {
 	return stub.GetState(modules.DesiredSysParamsWithoutVote)
 }
-func (s *SysConfigChainCode) GetVotesResult(stub shim.ChaincodeStubInterface /*, args []string*/) (*modules.SysTokenIDInfo, error) {
-	//log.Debug("getVotesResult", args)
-	//params check
-	//if len(args) < 1 {
-	//	return nil, fmt.Errorf("need 1 args (AssetID String)")
-	//}
 
-	//assetIDStr
-	//assetIDStr := strings.ToUpper(args[0])
+type SysTokenIDInfo struct {
+	CreateAddr     string
+	TotalSupply    uint64
+	LeastNum       uint64
+	AssetID        string
+	CreateTime     int64
+	IsVoteEnd      bool
+	SupportResults []*SysSupportResult
+}
+type SysSupportResult struct {
+	TopicIndex  uint64
+	TopicTitle  string
+	VoteResults []*SysVoteResult
+}
+type SysVoteResult struct {
+	SelectOption string
+	Num          uint64
+}
+
+func (s *SysConfigChainCode) GetVotesResult(stub shim.ChaincodeStubInterface /*, args []string*/) (*SysTokenIDInfo, error) {
 	//check name is exist or not
 	tkInfo := getSymbols(stub)
 	if tkInfo == nil {
@@ -184,9 +196,9 @@ func (s *SysConfigChainCode) GetVotesResult(stub shim.ChaincodeStubInterface /*,
 		isVoteEnd = true
 	}
 	//calculate result
-	supportResults := make([]*modules.SysSupportResult, 0, len(topicSupports))
+	supportResults := make([]*SysSupportResult, 0, len(topicSupports))
 	for i, oneTopicSupport := range topicSupports {
-		oneResult := &modules.SysSupportResult{}
+		oneResult := &SysSupportResult{}
 		oneResult.TopicIndex = uint64(i) + 1
 		oneResult.TopicTitle = oneTopicSupport.TopicTitle
 		oneResultSort := sortSupportByCount(oneTopicSupport.VoteResults)
@@ -199,7 +211,7 @@ func (s *SysConfigChainCode) GetVotesResult(stub shim.ChaincodeStubInterface /*,
 
 	//token
 	asset := tkInfo.AssetID
-	tkID := modules.SysTokenIDInfo{IsVoteEnd: isVoteEnd, CreateAddr: tkInfo.CreateAddr, TotalSupply: tkInfo.TotalSupply,
+	tkID := SysTokenIDInfo{IsVoteEnd: isVoteEnd, CreateAddr: tkInfo.CreateAddr, TotalSupply: tkInfo.TotalSupply,
 		SupportResults: supportResults, AssetID: asset.String(), CreateTime: tkInfo.VoteEndTime.UTC().Unix(), LeastNum: tkInfo.LeastNum}
 	return &tkID, nil
 }

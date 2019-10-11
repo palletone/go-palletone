@@ -86,7 +86,12 @@ func (p *PartitionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		return p.SetMainChain(stub, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], peers)
 	case "getMainChain":
-		return p.GetMainChain(stub)
+		result, err := p.GetMainChain(stub)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		data, _ := json.Marshal(result)
+		return shim.Success(data)
 	default:
 		jsonResp := "{\"Error\":\"Unknown function " + f + "\"}"
 		return shim.Error(jsonResp)
@@ -268,15 +273,15 @@ func (p *PartitionMgr) SetMainChain(stub shim.ChaincodeStubInterface, genesisHea
 	}
 	return shim.Success(nil)
 }
-func (p *PartitionMgr) GetMainChain(stub shim.ChaincodeStubInterface) pb.Response {
+func (p *PartitionMgr) GetMainChain(stub shim.ChaincodeStubInterface) (*dm.MainChain, error) {
 	data, err := stub.GetState(MainChainKey)
 	if err != nil {
-		return shim.Error(err.Error())
+		return nil, err
 	}
 	var mainChain *dm.MainChain
 	err = json.Unmarshal(data, &mainChain)
 	if err != nil {
-		return shim.Error(err.Error())
+		return nil, err
 	}
-	return shim.Success(data)
+	return mainChain, nil
 }
