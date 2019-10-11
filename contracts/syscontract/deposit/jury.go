@@ -141,7 +141,7 @@ func juryApplyQuit(stub shim.ChaincodeStubInterface) peer.Response {
 		log.Error("applyQuitList err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	return shim.Success([]byte(nil))
+	return shim.Success(nil)
 }
 
 //  处理

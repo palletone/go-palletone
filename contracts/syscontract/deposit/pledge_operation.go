@@ -19,11 +19,11 @@ import (
 	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/errors"
 	"regexp"
 	"strconv"
 	"strings"
 
-	"encoding/json"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -106,47 +106,30 @@ func processPledgeWithdraw(stub shim.ChaincodeStubInterface, amount string) pb.R
 	return shim.Success(nil)
 }
 
-func queryPledgeStatusByAddr(stub shim.ChaincodeStubInterface, address string) pb.Response {
+func queryPledgeStatusByAddr(stub shim.ChaincodeStubInterface, address string) (*modules.PledgeStatusJson,error) {
 
 	status, err := getPledgeStatus(stub, address)
 	if err != nil {
-		return shim.Error(err.Error())
+		return nil,err
 	}
 	pjson := convertPledgeStatus2Json(status)
-	data, _ := json.Marshal(pjson)
-	return shim.Success(data)
+	return pjson,nil
 }
 
-func queryAllPledgeHistory(stub shim.ChaincodeStubInterface) pb.Response {
-
-	history, err := getAllPledgeRewardHistory(stub)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	data, _ := json.Marshal(history)
-	return shim.Success(data)
+func queryAllPledgeHistory(stub shim.ChaincodeStubInterface) ([]*modules.PledgeList, error) {
+	return getAllPledgeRewardHistory(stub)
 }
 
-func queryPledgeList(stub shim.ChaincodeStubInterface) pb.Response {
-	list, err := getLastPledgeList(stub)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	result, _ := json.Marshal(list)
-	return shim.Success(result)
+func queryPledgeList(stub shim.ChaincodeStubInterface) (*modules.PledgeList, error) {
+	return getLastPledgeList(stub)
 }
 
-func queryPledgeListByDate(stub shim.ChaincodeStubInterface, date string) pb.Response {
+func queryPledgeListByDate(stub shim.ChaincodeStubInterface, date string) (*modules.PledgeList, error) {
 	reg := regexp.MustCompile(`[\d]{8}`)
 	if !reg.Match([]byte(date)) {
-		return shim.Error("must use YYYYMMDD format")
+		return nil,errors.New("must use YYYYMMDD format")
 	}
-	list, err := getPledgeListByDate(stub, date)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	result, _ := json.Marshal(list)
-	return shim.Success(result)
+	return getPledgeListByDate(stub, date)
 }
 
 func convertPledgeStatus2Json(p *modules.PledgeStatus) *modules.PledgeStatusJson {
