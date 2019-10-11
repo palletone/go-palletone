@@ -67,6 +67,7 @@ type TplJson struct {
 }
 type DeployJson struct {
 	Number       int    `json:"row_number"`
+	TemplateId   string `json:"tpl_id"`
 	ContractId   string `json:"contract_id"`
 	Name         string `json:"name"`
 	EleNode      string `json:"election_node"`
@@ -253,6 +254,7 @@ func convertDeploy2Json(deploy *modules.ContractDeployPayload) *DeployJson {
 	djson := new(DeployJson)
 	djson.Name = deploy.Name
 	djson.ContractId = hex.EncodeToString(deploy.ContractId)
+	djson.TemplateId = hex.EncodeToString(deploy.TemplateId)
 	ele, _ := json.Marshal(deploy.EleNode)
 	djson.EleNode = string(ele)
 	rset, _ := json.Marshal(deploy.ReadSet)

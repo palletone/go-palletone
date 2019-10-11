@@ -186,7 +186,7 @@ func validateUnitBasic(unit *modules.Unit) ValidationCode {
 	//validate tx root
 	root := core.DeriveSha(unit.Txs)
 	if root != unit.UnitHeader.TxRoot {
-		log.Debugf("Validate unit's header failed, root:[%#x],  unit.UnitHeader.TxRoot:[%#x], txs:[%#x]", root, unit.UnitHeader.TxRoot, unit.Txs.GetTxIds())
+		log.Warnf("Validate unit's header failed, root:[%#x],  unit.UnitHeader.TxRoot:[%#x], txs:[%#x]", root, unit.UnitHeader.TxRoot, unit.Txs.GetTxIds())
 		return UNIT_STATE_INVALID_HEADER_TXROOT
 	}
 
@@ -220,7 +220,7 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) Validat
 	//validate tx root
 	root := core.DeriveSha(unit.Txs)
 	if root != unit.UnitHeader.TxRoot {
-		log.Debugf("Validate unit's header failed, root:[%#x],  unit.UnitHeader.TxRoot:[%#x], txs:[%#x]", root, unit.UnitHeader.TxRoot, unit.Txs.GetTxIds())
+		log.Warnf("Validate unit's header failed, root:[%#x],  unit.UnitHeader.TxRoot:[%#x], txs:[%#x]", root, unit.UnitHeader.TxRoot, unit.Txs.GetTxIds())
 		return UNIT_STATE_INVALID_HEADER_TXROOT
 	}
 
@@ -228,7 +228,7 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) Validat
 	medAdd := unit.Author()
 	med := validate.statequery.GetMediator(medAdd)
 	if med == nil {
-		log.Debugf("validate.statequery.RetrieveMediator %v err", medAdd.Str())
+		log.Warnf("validate.statequery.RetrieveMediator %v err", medAdd.Str())
 		return UNIT_STATE_INVALID_AUTHOR_SIGNATURE
 	}
 	validate.enableTxFeeCheck = unit.Timestamp() > 1570723200 //20191011 1.0.3升级，支持交易费检查
