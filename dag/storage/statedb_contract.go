@@ -328,45 +328,43 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 			mi.MediatorInfoBase = mco.MediatorInfoBase
 			mi.MediatorApplyInfo = mco.MediatorApplyInfo
 
-			addr, _, err := mco.Validate()
-			//addr, err := core.StrToMedAdd(mi.AddStr)
-			if err != nil {
-				// 判断是否是1.0.2之前的mediator
-				if pubKey, isFind := constants.OldMediatorAndPubKey[mco.AddStr]; isFind {
-					juror := modules.JurorDeposit{}
-					juror.Address = mco.AddStr
-					juror.Role = modules.Jury
-					juror.Balance = 0
-					juror.EnterTime = time.Unix(unitTime, 0).UTC().Format(modules.Layout2)
+			// 判断是否是1.0.2之前的mediator
+			if pubKey, isFind := constants.OldMediatorAndPubKey[mco.AddStr]; isFind {
+				juror := modules.JurorDeposit{}
+				juror.Address = mco.AddStr
+				juror.Role = modules.Jury
+				juror.Balance = 0
+				juror.EnterTime = time.Unix(unitTime, 0).UTC().Format(modules.Layout2)
 
-					jdej := core.JurorDepositExtraJson{
-						PublicKey: pubKey,
-					}
-					jde, err := jdej.Validate(juror.Address)
-					if err != nil {
-						errStr := fmt.Sprintf("JurorDepositExtraJson Validate err: %v", err.Error())
-						log.Errorf(errStr)
-						return fmt.Errorf(errStr)
-					}
+				jdej := core.JurorDepositExtraJson{
+					PublicKey: pubKey,
+				}
+				jde, err := jdej.Validate(juror.Address)
+				if err != nil {
+					errStr := fmt.Sprintf("JurorDepositExtraJson Validate err: %v", err.Error())
+					log.Errorf(errStr)
+					return fmt.Errorf(errStr)
+				}
 
-					juror.JurorDepositExtra = jde
-					jurorByte, err := json.Marshal(juror)
-					if err != nil {
-						log.Errorf(err.Error())
-						return err
-					}
-
-					ws := modules.NewWriteSet(JuryDepositKey(juror.Address), jurorByte)
-					err = statedb.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws, version)
-					if err != nil {
-						log.Warnf(err.Error())
-						return err
-					}
-				} else {
-					log.Warnf("Validate MediatorCreateArgs err: %v", err.Error())
-					//log.Warnf("StrToMedAdd err: %v", err.Error())
+				juror.JurorDepositExtra = jde
+				jurorByte, err := json.Marshal(juror)
+				if err != nil {
+					log.Errorf(err.Error())
 					return err
 				}
+
+				ws := modules.NewWriteSet(JuryDepositKey(juror.Address), jurorByte)
+				err = statedb.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws, version)
+				if err != nil {
+					log.Warnf(err.Error())
+					return err
+				}
+			}
+
+			addr, err := core.StrToMedAdd(mi.AddStr)
+			if err != nil {
+				log.Warnf("StrToMedAdd err: %v", err.Error())
+				return err
 			}
 
 			statedb.StoreMediatorInfo(addr, mi)
