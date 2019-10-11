@@ -202,15 +202,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		//获取申请退出列表
 	case modules.GetQuitApplyList:
 		log.Info("Enter DepositChaincode Contract " + modules.GetQuitApplyList + " Query")
-		list,err :=  d.GetQuitApplyList(stub)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-		b, err := json.Marshal(list)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-		return shim.Success(b)
+		return  d.GetQuitApplyList(stub)
 		//  查看是否在退出列表中
 	case modules.IsInQuitList:
 		log.Info("Enter DepositChaincode Contract " + modules.IsInQuitList + " Query")
@@ -224,15 +216,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		//  获取没收保证金申请列表
 	case modules.GetListForForfeitureApplication:
 		log.Info("Enter DepositChaincode Contract " + modules.GetListForForfeitureApplication + " Query")
-		list,err :=  d.GetListForForfeitureApplication(stub)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-		b, err := json.Marshal(list)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-		return shim.Success(b)
+		return d.GetListForForfeitureApplication(stub)
 		//
 	case modules.IsInForfeitureList:
 		log.Info("Enter DepositChaincode Contract " + modules.IsInForfeitureList + " Query")
@@ -567,8 +551,15 @@ func (d *DepositChaincode) IsInForfeitureList(stub shim.ChaincodeStubInterface,a
 	return false
 }
 
-func (d *DepositChaincode) GetListForForfeitureApplication(stub shim.ChaincodeStubInterface) (map[string]*modules.Forfeiture, error) {
-	return getListForForfeiture(stub)
+func (d *DepositChaincode) GetListForForfeitureApplication(stub shim.ChaincodeStubInterface) pb.Response {
+	list, err := stub.GetState(modules.ListForForfeiture)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	if list == nil {
+		return shim.Success([]byte("{}"))
+	}
+	return shim.Success(list)
 }
 
 func (d *DepositChaincode) IsInQuitList(stub shim.ChaincodeStubInterface,address string) bool {
@@ -587,20 +578,15 @@ func (d *DepositChaincode) IsInQuitList(stub shim.ChaincodeStubInterface,address
 	return false
 }
 
-func (d *DepositChaincode) GetQuitApplyList(stub shim.ChaincodeStubInterface) (map[string]*modules.QuitNode,error) {
+func (d *DepositChaincode) GetQuitApplyList(stub shim.ChaincodeStubInterface) pb.Response {
 	list, err := stub.GetState(modules.ListForQuit)
 	if err != nil {
-		return nil,err
+		return shim.Error(err.Error())
 	}
 	if list == nil {
-		return nil,nil
+		return shim.Success([]byte("{}"))
 	}
-	quitNodes := make(map[string]*modules.QuitNode)
-	err = json.Unmarshal(list,&quitNodes)
-	if err != nil {
-		return nil,err
-	}
-	return quitNodes,nil
+	return shim.Success(list)
 }
 
 func (d *DepositChaincode) IsInAgreeList(stub shim.ChaincodeStubInterface, address string) bool {
