@@ -280,7 +280,7 @@ func (s *SysConfigChainCode) CreateVotesTokens(stub shim.ChaincodeStubInterface,
 				return nil, err
 			}
 
-			oneResult := &modules.SysVoteResult{}
+			oneResult := &SysVoteResult{}
 			oneResult.SelectOption = oneOption
 			oneSupport.VoteResults = append(oneSupport.VoteResults, oneResult)
 		}
@@ -589,7 +589,7 @@ func setSymbols(stub shim.ChaincodeStubInterface, tkInfo *SysTokenInfo) error {
 }
 
 // A slice of TopicResult that implements sort.Interface to sort by Value.
-type voteResultList []*modules.SysVoteResult
+type voteResultList []*SysVoteResult
 
 func (p voteResultList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 func (p voteResultList) Len() int           { return len(p) }
