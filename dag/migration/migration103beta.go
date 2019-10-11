@@ -120,8 +120,9 @@ func (m *Migration103alpha_103beta) upgradeDefaultMediatorsWithJurorInfo() error
 			juror.EnterTime = mediator.ApplyEnterTime
 		} else {
 			errStr := fmt.Sprintf("not find this mediator's PubKey: %v", addr)
-			log.Error(errStr)
-			return fmt.Errorf(errStr)
+			log.Debugf(errStr)
+			//return fmt.Errorf(errStr)
+			continue
 		}
 
 		jdej := core.JurorDepositExtraJson{
