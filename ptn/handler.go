@@ -412,13 +412,18 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 		//创建 docker client
 		client, err := util.NewDockerClient()
 		if err != nil {
-			log.Error("util.NewDockerClient", "error", err)
+			log.Info("util.NewDockerClient", "error", err)
 			dockerBool = false
 		}
-		_,err = client.Info()
-		if err != nil {
-			log.Error("client.Info","error",err)
+		if client == nil {
+			log.Info("client is nil")
 			dockerBool = false
+		}else {
+			_,err = client.Info()
+			if err != nil {
+				log.Info("client.Info","error",err)
+				dockerBool = false
+			}
 		}
 		if dockerBool {
 			log.Info("docker service starting...")
