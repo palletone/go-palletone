@@ -317,7 +317,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		result,err :=  d.GetNodeBalance(stub,args[0])
 		if err != nil {
-			return shim.Error(err.Error())
+			return shim.Success([]byte(err.Error()))
 		}
 		b, err := json.Marshal(result)
 		if err != nil {
@@ -331,7 +331,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		result,err :=  d.GetJuryDeposit(stub,args[0])
 		if err != nil {
-			return shim.Error(err.Error())
+			return shim.Success([]byte(err.Error()))
 		}
 		b, err := json.Marshal(result)
 		if err != nil {
@@ -447,46 +447,13 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		return d.HandleDevInList(stub, args)
 	case modules.GetAllMediator:
 		log.Info("Enter DepositChaincode Contract " + modules.GetAllMediator + " Query")
-		result,err :=  d.GetAllMediator(stub)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-		if result == nil {
-			return shim.Success([]byte("{}"))
-		}
-		b, err := json.Marshal(result)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-		return shim.Success(b)
+		return d.GetAllMediator(stub)
 	case modules.GetAllNode:
 		log.Info("Enter DepositChaincode Contract " + modules.GetAllNode + " Query")
-		result,err :=  d.GetAllNode(stub)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-		if result == nil {
-			return shim.Success([]byte("{}"))
-		}
-		b, err := json.Marshal(result)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-		return shim.Success(b)
+		return  d.GetAllNode(stub)
 	case modules.GetAllJury:
 		log.Info("Enter DepositChaincode Contract " + modules.GetAllJury + " Query")
-		result,err :=  d.GetAllJury(stub)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-		if result == nil {
-			return shim.Success([]byte("{}"))
-		}
-		b, err := json.Marshal(result)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-		return shim.Success(b)
+		return  d.GetAllJury(stub)
 	}
 	return shim.Error("please enter validate function name")
 }
@@ -600,8 +567,8 @@ func (d *DepositChaincode) IsInForfeitureList(stub shim.ChaincodeStubInterface,a
 	return false
 }
 
-func (d *DepositChaincode) GetListForForfeitureApplication(stub shim.ChaincodeStubInterface) (map[string]bool, error) {
-	return getList(stub,modules.ListForForfeiture)
+func (d *DepositChaincode) GetListForForfeitureApplication(stub shim.ChaincodeStubInterface) (map[string]*modules.Forfeiture, error) {
+	return getListForForfeiture(stub)
 }
 
 func (d *DepositChaincode) IsInQuitList(stub shim.ChaincodeStubInterface,address string) bool {
@@ -801,12 +768,12 @@ func (d DepositChaincode) HandleDevInList(stub shim.ChaincodeStubInterface, addr
 	return handleNodeInList(stub, addresses, modules.Developer)
 }
 
-func (d DepositChaincode) GetAllMediator(stub shim.ChaincodeStubInterface) (map[string]*modules.MediatorDeposit,error) {
+func (d DepositChaincode) GetAllMediator(stub shim.ChaincodeStubInterface) pb.Response {
 	values, err := stub.GetStateByPrefix(string(constants.MEDIATOR_INFO_PREFIX) +
 		string(constants.DEPOSIT_BALANCE_PREFIX))
 	if err != nil {
 		log.Debugf("stub.GetStateByPrefix error: %s", err.Error())
-		return nil,err
+		return shim.Error(err.Error())
 	}
 	mediators := make(map[string]*modules.MediatorDeposit)
 	if len(values) > 0 {
@@ -815,19 +782,25 @@ func (d DepositChaincode) GetAllMediator(stub shim.ChaincodeStubInterface) (map[
 			err := json.Unmarshal(v.Value, &m)
 			if err != nil {
 				log.Debugf("json.Unmarshal error: %s", err.Error())
-				return nil,err
+				return shim.Error(err.Error())
 			}
 			mediators[v.Key] = &m
 		}
+		bytes, err := json.Marshal(mediators)
+		if err != nil {
+			log.Debugf("json.Marshal error: %s", err.Error())
+			return shim.Error(err.Error())
+		}
+		return shim.Success(bytes)
 	}
-	return mediators,nil
+	return shim.Success([]byte("{}"))
 }
 
-func (d DepositChaincode) GetAllNode(stub shim.ChaincodeStubInterface) (map[string]*modules.DepositBalance,error) {
+func (d DepositChaincode) GetAllNode(stub shim.ChaincodeStubInterface) pb.Response {
 	values, err := stub.GetStateByPrefix(string(constants.DEPOSIT_BALANCE_PREFIX))
 	if err != nil {
 		log.Debugf("stub.GetStateByPrefix error: %s", err.Error())
-		return nil,err
+		return shim.Error(err.Error())
 	}
 	node := make(map[string]*modules.DepositBalance)
 	if len(values) > 0 {
@@ -836,29 +809,35 @@ func (d DepositChaincode) GetAllNode(stub shim.ChaincodeStubInterface) (map[stri
 			err := json.Unmarshal(v.Value, &n)
 			if err != nil {
 				log.Debugf("json.Unmarshal error: %s", err.Error())
-				return nil,err
+				return shim.Error(err.Error())
 			}
 			node[v.Key] = &n
 		}
+		bytes, err := json.Marshal(node)
+		if err != nil {
+			log.Debugf("json.Marshal error: %s", err.Error())
+			return shim.Error(err.Error())
+		}
+		return shim.Success(bytes)
 	}
-	return node,nil
+	return shim.Success([]byte("{}"))
 }
 
-func (d DepositChaincode) GetAllJury(stub shim.ChaincodeStubInterface) (map[string]*modules.JurorDeposit,error) {
+func (d DepositChaincode) GetAllJury(stub shim.ChaincodeStubInterface) pb.Response {
 	listb, err := stub.GetState(modules.JuryList)
 	if err != nil {
-		return nil,err
+		return shim.Error(err.Error())
 	}
 	allJurorAddrs := make(map[string]bool)
 	err = json.Unmarshal(listb, &allJurorAddrs)
 	if err != nil {
-		return nil,err
+		return shim.Error(err.Error())
 	}
 	jurynodes := make(map[string]*modules.JurorDeposit)
 	for a := range allJurorAddrs {
 		j, err := stub.GetState(string(constants.DEPOSIT_JURY_BALANCE_PREFIX) + a)
 		if err != nil {
-			return nil,err
+			return shim.Error(err.Error())
 		}
 		juror := modules.JurorDeposit{}
 		err = json.Unmarshal(j, &juror)
@@ -867,7 +846,11 @@ func (d DepositChaincode) GetAllJury(stub shim.ChaincodeStubInterface) (map[stri
 		}
 		jurynodes[a] = &juror
 	}
-	return jurynodes,nil
+	juryb, err := json.Marshal(jurynodes)
+	if err != nil {
+		shim.Error(err.Error())
+	}
+	return shim.Success(juryb)
 }
 //
 //func (d DepositChaincode) handleRemoveMediatorNode(stub shim.ChaincodeStubInterface, args []string) pb.Response {
