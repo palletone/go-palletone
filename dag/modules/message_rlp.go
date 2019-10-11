@@ -23,6 +23,7 @@ package modules
 import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"io"
 )
 
@@ -36,10 +37,22 @@ type ContractDeployPayloadV1 struct {
 	WriteSet   []ContractWriteSet `json:"write_set"`      // the set data of write, and value could be any type
 	ErrMsg     ContractError      `json:"contract_error"` // contract error message
 }
+type ContractDeployPayloadV2 struct {
+	TemplateId []byte             `json:"template_id"`   // delete--
+	ContractId []byte             `json:"contract_id"`   // contract id
+	Name       string             `json:"name"`          // the name for contract
+	Args       [][]byte           `json:"args"`          // delete--
+	EleNode    ElectionNode       `json:"election_node"` // contract jurors node info
+	ReadSet    []ContractReadSet  `json:"read_set"`      // the set data of read, and value could be any type
+	WriteSet   []ContractWriteSet `json:"write_set"`     // the set data of write, and value could be any type
+	DuringTime uint64             `json:"during_time"`
+	ErrMsg     ContractError      `json:"contract_error"` // contract error message
+}
 
 func (input *ContractDeployPayload) EncodeRLP(w io.Writer) error {
 
 	if common.IsSystemContractAddress(input.ContractId) { //系统合约
+		log.Debugf("System contract[%x] deploy payload rlp", input.ContractId)
 		temp := &ContractDeployPayloadV1{}
 		temp.TemplateId = input.TemplateId
 		temp.ContractId = input.ContractId
@@ -51,5 +64,15 @@ func (input *ContractDeployPayload) EncodeRLP(w io.Writer) error {
 		temp.ErrMsg = input.ErrMsg
 		return rlp.Encode(w, temp)
 	}
-	return rlp.Encode(w, input)
+	temp := &ContractDeployPayloadV2{}
+	temp.TemplateId = input.TemplateId
+	temp.ContractId = input.ContractId
+	temp.Name = input.Name
+	temp.Args = input.Args
+	temp.EleNode = input.EleNode
+	temp.ReadSet = input.ReadSet
+	temp.WriteSet = input.WriteSet
+	temp.DuringTime = input.DuringTime
+	temp.ErrMsg = input.ErrMsg
+	return rlp.Encode(w, temp)
 }

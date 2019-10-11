@@ -231,7 +231,7 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) Validat
 		log.Warnf("validate.statequery.RetrieveMediator %v err", medAdd.Str())
 		return UNIT_STATE_INVALID_AUTHOR_SIGNATURE
 	}
-	validate.enableTxFeeCheck = unit.Timestamp() > 1570723200 //20191011 1.0.3升级，支持交易费检查
+	validate.enableTxFeeCheck = unit.Timestamp() > 1571068800 //20191015 1.0.3升级，支持交易费检查
 	//if validate.enableTxFeeCheck{
 	//	log.Infof("Enable tx fee check since %d",unit.Timestamp())
 	//}
