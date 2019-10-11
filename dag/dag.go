@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/contracts/syscontract"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/types"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -1303,7 +1304,69 @@ func (d *Dag) CheckHeaderCorrect(number int) error {
 	}
 	return nil
 }
+func (d *Dag) CheckUnitsCorrect(assetId string, number int) error {
+	asset, _, err := modules.String2AssetId(assetId)
+	var incorrect_num string
+	var incorrect_root bool
+	if number == 0 {
+		newestUnitHash, newestIndex, _ := d.stablePropRep.GetNewestUnit(asset)
+		log.Infof("Newest unit[%s] height:%d", newestUnitHash.String(), newestIndex.Index)
+		number = int(newestIndex.Index)
+	}
+	header, err := d.stableUnitRep.GetHeaderByNumber(modules.NewChainIndex(asset, uint64(number)))
+	if err != nil {
+		return fmt.Errorf("Unit height:%d not exits", number)
+	}
+	txs, err1 := d.stableUnitRep.GetUnitTransactions(header.Hash())
+	if err1 != nil {
+		return fmt.Errorf("unit height:%d 's body not exist, maybe the txroot is incorrect.", number)
+	}
+	// check txroot
+	root := core.DeriveSha(txs)
+	if root != header.TxRoot {
+		return fmt.Errorf("unit height:%d 's txroot:%s is not equal to %s",
+			number, header.TxRoot.String(), root.String())
+	}
+	parentHash := header.ParentsHash[0]
+	parentNumber := header.NumberU64() - 1
+	for {
+		header, err = d.stableUnitRep.GetHeaderByHash(parentHash)
+		if err != nil {
+			return fmt.Errorf("Unit :%s not exits", parentHash.String())
+		}
+		if header.NumberU64() != parentNumber {
+			return fmt.Errorf("Number not correct,%d,%d", header.NumberU64(), parentNumber)
+		}
+		txs, err1 := d.stableUnitRep.GetUnitTransactions(header.Hash())
+		if err1 != nil {
+			return fmt.Errorf("unit height:%d 's body not exist, maybe the txroot is incorrect.",
+				header.NumberU64())
+		}
+		// check txroot
+		root := core.DeriveSha(txs)
+		if root != header.TxRoot {
+			incorrect_root = true
+			incorrect_num += fmt.Sprintf("%d,", header.NumberU64())
+			log.Debugf("unit height[%d] 's txroot[%s] is not equal the correct[%s].", header.NumberU64(),
+				header.TxRoot.String(), root.String())
+		}
 
+		if len(header.ParentsHash) > 0 {
+			parentHash = header.ParentsHash[0]
+			parentNumber = header.NumberU64() - 1
+		} else {
+			log.Infof("Check complete!%d", header.NumberU64())
+			break
+		}
+		if header.NumberU64()%1000 == 0 {
+			log.Infof("Check header correct:%d", header.NumberU64())
+		}
+	}
+	if incorrect_root {
+		return fmt.Errorf("unit height[%s] 's txroot is not equal the correct.", incorrect_num)
+	}
+	return nil
+}
 func (d *Dag) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error) {
 	return d.unstableStateRep.GetBlacklistAddress()
 }

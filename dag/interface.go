@@ -198,6 +198,7 @@ type IDag interface {
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	ChainThreshold() int
 	CheckHeaderCorrect(number int) error
+	CheckUnitsCorrect(assetId string, number int) error
 	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
 	RebuildAddrTxIndex() error
 	GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, error)
