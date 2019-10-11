@@ -308,7 +308,7 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 				//return count, err
 				log.Errorf("Memdag addUnit[%s] #%d signed by %v error:%s",
 					u.UnitHash.String(), u.NumberU64(), u.Author().Str(), err.Error())
-				return count, nil
+				return count, err
 			} else {
 				if a != nil {
 					d.unstableUnitRep = a

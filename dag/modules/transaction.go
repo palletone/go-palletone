@@ -621,6 +621,16 @@ func (msg *Transaction) SerializeSize() int {
 	n := msg.baseSize()
 	return n
 }
+func (tx *Transaction) DataPayloadSize() int {
+	size := 0
+	for _, msg := range tx.TxMessages {
+		if msg.App == APP_DATA {
+			data := msg.Payload.(*DataPayload)
+			size += len(data.MainData) + len(data.ExtraData) + len(data.Reference)
+		}
+	}
+	return size
+}
 
 //Deep copy transaction to a new object
 func (tx *Transaction) Clone() Transaction {

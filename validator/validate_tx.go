@@ -293,7 +293,7 @@ func (validate *Validate) validateTxFee(tx *modules.Transaction) (bool, []*modul
 			log.Warnf("Min fee:%d, but tx[%s] fee:%d", minFee, tx.Hash().String(), total)
 			return false, feeAllocate
 		}
-		minSizeFee := uint64(float64(tx.SerializeSize()) / 1024.0 * float64(sizeFee))
+		minSizeFee := uint64(float64(tx.DataPayloadSize()) / 1024.0 * float64(sizeFee))
 		if total < minSizeFee {
 			log.Warnf("Min size fee:%d, but tx[%s] fee:%d", minSizeFee, tx.Hash().String(), total)
 			return false, feeAllocate
