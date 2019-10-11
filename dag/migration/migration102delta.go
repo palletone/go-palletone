@@ -24,7 +24,6 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 )
 
@@ -54,7 +53,7 @@ func (m *Migration102gamma_102delta) ExecuteUpgrade() error {
 }
 
 func (m *Migration102gamma_102delta) upgradeGP() error {
-	oldGp := &modules.GlobalPropertyTemp{}
+	oldGp := &GlobalProperty102delta{}
 	err := storage.RetrieveFromRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, oldGp)
 	if err != nil {
 		log.Errorf(err.Error())

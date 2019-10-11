@@ -31,8 +31,8 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/common/sort"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/core/sort"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/parameter"
@@ -186,7 +186,7 @@ func (rep *UnitProduceRepository) ApplyUnit(nextUnit *modules.Unit) error {
 	//rep.updateLastIrreversibleUnit()
 
 	// 判断是否到了链维护周期，并维护
-	maintenanceNeeded := !(rep.GetDynGlobalProp().NextMaintenanceTime > uint32(nextUnit.Timestamp()))
+	maintenanceNeeded := !(uint32(nextUnit.Timestamp()) < rep.GetDynGlobalProp().NextMaintenanceTime)
 	if maintenanceNeeded {
 		rep.performChainMaintenance(nextUnit)
 	}
@@ -241,8 +241,10 @@ func (rep *UnitProduceRepository) updateDynGlobalProp(unit *modules.Unit, missed
 
 	dgp.LastMediator = unit.Author()
 	dgp.IsShuffledSchedule = false
-	dgp.RecentSlotsFilled = (dgp.RecentSlotsFilled << (missedUnits + 1)) + 1
-	dgp.CurrentASlot += missedUnits + 1
+
+	totalSlot := missedUnits + 1
+	dgp.RecentSlotsFilled = dgp.RecentSlotsFilled.Lsh(uint(totalSlot)).Add64(1)
+	dgp.CurrentASlot += totalSlot
 
 	rep.propRep.StoreDynGlobalProp(dgp)
 }
@@ -309,10 +311,6 @@ func (dag *UnitProduceRepository) performChainMaintenance(nextUnit *modules.Unit
 	// 统计投票并更新活跃 mediator 列表
 	isChanged := dag.updateActiveMediators()
 
-	// 发送更新活跃 mediator 事件，以方便其他模块做相应处理
-	log.Debugf("send ActiveMediatorsUpdated event")
-	go dag.activeMediatorsUpdatedFeed.Send(modules.ActiveMediatorsUpdatedEvent{IsChanged: isChanged})
-
 	// 更新要修改的区块链参数
 	dag.updateChainParameters(nextUnit)
 
@@ -321,6 +319,11 @@ func (dag *UnitProduceRepository) performChainMaintenance(nextUnit *modules.Unit
 
 	// 清理中间处理缓存数据
 	dag.mediatorVoteTally = nil
+
+	// 发送更新活跃 mediator 事件，以方便其他模块做相应处理
+	log.Debugf("send ActiveMediatorsUpdated event")
+	go dag.activeMediatorsUpdatedFeed.Send(modules.ActiveMediatorsUpdatedEvent{IsChanged: isChanged})
+
 	//触发ChainMaintenanceEvent事件
 	eventArg := &modules.ChainMaintenanceEvent{}
 	for _, eventFunc := range dag.observers {
@@ -433,8 +436,6 @@ func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion)
 			log.Errorf(err.Error())
 		}
 	}
-
-	//core.ImmutableChainParameterCheck(&gp.ImmutableParameters, &gp.ChainParameters)
 
 	err = dag.propRep.StoreGlobalProp(gp)
 	if err != nil {
@@ -598,6 +599,7 @@ func (dag *UnitProduceRepository) updateNextMaintenanceTime(nextUnit *modules.Un
 	maintenanceInterval := int64(gp.ChainParameters.MaintenanceInterval)
 
 	if nextUnit.NumberU64() == 1 {
+		// 对第一个unit之后的特殊换届，进行调整，让其回到普通换届时间来
 		nextMaintenanceTime = uint32((nextUnit.Timestamp()/maintenanceInterval + 1) * maintenanceInterval)
 	} else {
 		// We want to find the smallest k such that nextMaintenanceTime + k * maintenanceInterval > HeadUnitTime()

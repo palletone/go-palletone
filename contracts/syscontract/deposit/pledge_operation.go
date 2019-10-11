@@ -27,7 +27,6 @@ import (
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/shopspring/decimal"
 )
 
 //  质押PTN
@@ -112,6 +111,7 @@ func processPledgeWithdraw(stub shim.ChaincodeStubInterface, args []string) pb.R
 	}
 	return shim.Success(nil)
 }
+
 func queryPledgeStatusByAddr(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	if len(args) != 1 {
 		return shim.Error("need 1 arg, Address")
@@ -125,15 +125,41 @@ func queryPledgeStatusByAddr(stub shim.ChaincodeStubInterface, args []string) pb
 	return shim.Success(data)
 }
 
-type pledgeStatusJson struct {
-	NewDepositAmount    decimal.Decimal
-	PledgeAmount        decimal.Decimal
-	WithdrawApplyAmount string
-	OtherAmount         decimal.Decimal
+func queryAllPledgeHistory(stub shim.ChaincodeStubInterface) pb.Response {
+
+	history, err := getAllPledgeRewardHistory(stub)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	data, _ := json.Marshal(history)
+	return shim.Success(data)
 }
 
-func convertPledgeStatus2Json(p *modules.PledgeStatus) *pledgeStatusJson {
-	data := &pledgeStatusJson{}
+func queryPledgeList(stub shim.ChaincodeStubInterface) pb.Response {
+	list, err := getLastPledgeList(stub)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	result, _ := json.Marshal(list)
+	return shim.Success(result)
+}
+
+func queryPledgeListByDate(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	date := args[0]
+	reg := regexp.MustCompile(`[\d]{8}`)
+	if !reg.Match([]byte(date)) {
+		return shim.Error("must use YYYYMMDD format")
+	}
+	list, err := getPledgeListByDate(stub, date)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	result, _ := json.Marshal(list)
+	return shim.Success(result)
+}
+
+func convertPledgeStatus2Json(p *modules.PledgeStatus) *modules.PledgeStatusJson {
+	data := &modules.PledgeStatusJson{}
 	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
 	data.NewDepositAmount = gasToken.DisplayAmount(p.NewDepositAmount)
 	data.PledgeAmount = gasToken.DisplayAmount(p.PledgeAmount)
@@ -144,35 +170,4 @@ func convertPledgeStatus2Json(p *modules.PledgeStatus) *pledgeStatusJson {
 		data.WithdrawApplyAmount = gasToken.DisplayAmount(p.WithdrawApplyAmount).String()
 	}
 	return data
-}
-
-func queryAllPledgeHistory(stub shim.ChaincodeStubInterface) pb.Response {
-
-	history, err := getAllPledgeRewardHistory(stub)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	data, _ := json.Marshal(history)
-	return shim.Success(data)
-}
-func queryPledgeList(stub shim.ChaincodeStubInterface) pb.Response {
-	list, err := getLastPledgeList(stub)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	result, _ := json.Marshal(list)
-	return shim.Success(result)
-}
-func queryPledgeListByDate(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	date:=args[0]
-	reg := regexp.MustCompile(`[\d]{8}`)
-	if !reg.Match([]byte(date)){
-		return shim.Error("must use YYYYMMDD format")
-	}
-	list, err := getPledgeListByDate(stub,date)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	result, _ := json.Marshal(list)
-	return shim.Success(result)
 }

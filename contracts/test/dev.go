@@ -184,8 +184,6 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 
 	var mksupt manger.Support = &manger.SupportImpl{}
 	creator := []byte(chainID)
-	//cc := &list2.CCInfo{}
-	//var err error
 	chain := list2.GetAllChaincode(chainID)
 	if chain != nil {
 		for k, v := range chain.CClist {
@@ -193,11 +191,10 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 			log.Infof("\n\nchaincode info =======%v", v)
 		}
 	}
-	cc, err := list2.GetChaincode(chainID, deployId)
+	cc, err := list2.GetChaincode(chainID, deployId, "")
 	if err != nil {
 		return nil, err
 	}
-
 	startTm := time.Now()
 	es := manger.NewEndorserServer(mksupt)
 	spec := &pb.ChaincodeSpec{
@@ -210,7 +207,6 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 		Name:    cc.Name,
 		Version: cc.Version,
 	}
-
 	sprop, prop, err := manger.SignedEndorserProposa(chainID, txid, spec, creator, []byte("msg1"))
 	if err != nil {
 		log.Errorf("signedEndorserProposa error[%v]", err)
@@ -241,7 +237,7 @@ func Stop(contractid []byte, chainID string, deployId []byte, txid string, delet
 	if txid == "" {
 		return nil, errors.New("input param txid is nil")
 	}
-	cc, err := list2.GetChaincode(chainID, deployId)
+	cc, err := list2.GetChaincode(chainID, deployId, "") //todo
 	if err != nil {
 		return nil, err
 	}

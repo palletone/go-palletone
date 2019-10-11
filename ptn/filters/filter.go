@@ -34,7 +34,6 @@ type Backend interface {
 	HeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*modules.Header, error)
 	//GetReceipts(ctx context.Context, blockHash common.Hash) (modules.Receipts, error)
 	//GetLogs(ctx context.Context, blockHash common.Hash) ([][]*types.Log, error)
-
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
 	//SubscribeChainEvent(ch chan<- coredata.ChainEvent) event.Subscription
 	//SubscribeRemovedLogsEvent(ch chan<- coredata.RemovedLogsEvent) event.Subscription

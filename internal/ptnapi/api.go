@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/palletone/go-palletone/txspool"
 	"strings"
 	"time"
 
@@ -54,29 +55,6 @@ const (
 	SINGLE = "SINGLE"
 )
 
-//const (
-//	defaultGasPrice = 0.0001 * configure.PalletOne
-//
-//	// rpcAuthTimeoutSeconds is the number of seconds a connection to the
-//	// RPC server is allowed to stay open without authenticating before it
-//	// is closed.
-//	rpcAuthTimeoutSeconds = 10
-//	// uint256Size is the number of bytes needed to represent an unsigned
-//	// 256-bit integer.
-//	uint256Size = 32
-//	// gbtNonceRange is two 32-bit big-endian hexadecimal integers which
-//	// represent the valid ranges of nonces returned by the getblocktemplate
-//	// RPC.
-//	gbtNonceRange = "00000000ffffffff"
-//	// gbtRegenerateSeconds is the number of seconds that must pass before
-//	// a new template is generated when the previous block hash has not
-//	// changed and there have been changes to the available transactions
-//	// in the memory pool.
-//	gbtRegenerateSeconds = 60
-//	// maxProtocolVersion is the max protocol version the server supports.
-//	maxProtocolVersion = 70002
-//)
-
 type ContractInstallRsp struct {
 	ReqId string `json:"reqId"`
 	TplId string `json:"tplId"`
@@ -87,13 +65,19 @@ type ContractDeployRsp struct {
 	ContractId string `json:"ContractId"`
 }
 
+type ContractFeeRsp struct {
+	TxSize         float64 `json:"tx_size(byte)"`
+	TimeOut        uint32 `json:"time_out(s)"`
+	ApproximateFee float64 `json:"approximate_fee(dao)"`
+}
+
 type JuryList struct {
 	Addr []string `json:"account"`
 }
 
 type ContractFeeLevelRsp struct {
-	ContractTxTimeoutUnitFee  uint64  `json:"contract_tx_timeout_unit_fee(ptn)"`
-	ContractTxSizeUnitFee     uint64  `json:"contract_tx_size_unit_fee(ptn)"`
+	ContractTxTimeoutUnitFee  uint64  `json:"contract_tx_timeout_unit_fee"`
+	ContractTxSizeUnitFee     uint64  `json:"contract_tx_size_unit_fee"`
 	ContractTxInstallFeeLevel float64 `json:"contract_tx_install_fee_level"`
 	ContractTxDeployFeeLevel  float64 `json:"contract_tx_deploy_fee_level"`
 	ContractTxInvokeFeeLevel  float64 `json:"contract_tx_invoke_fee_level"`
@@ -209,7 +193,7 @@ func newRPCTransaction(tx *modules.Transaction, blockHash common.Hash, unitIndex
 }
 
 // newRPCPendingTransaction returns a pending transaction that will serialize to the RPC representation
-func newRPCPendingTransaction(tx *modules.TxPoolTransaction) *RPCTransaction {
+func newRPCPendingTransaction(tx *txspool.TxPoolTransaction) *RPCTransaction {
 	if tx.UnitHash != (common.Hash{}) {
 		return newRPCTransaction(tx.Tx, tx.UnitHash, tx.UnitIndex, tx.Index)
 	}
@@ -613,7 +597,7 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 
 type GetUtxoEntry func(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error)
 
-func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, poolTxs []*modules.TxPoolTransaction,
+func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, poolTxs []*txspool.TxPoolTransaction,
 	from string, asset string) (map[modules.OutPoint]*modules.Utxo, error) {
 	tokenAsset, err := modules.StringToAsset(asset)
 	if err != nil {

@@ -333,6 +333,9 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 	pro := NewMockproducer(mockCtrl)
 	height := 10
 	mockUnit := unitForTest(height)
+	stable_index := new(modules.ChainIndex)
+	stable_index.Index = uint64(height - 1)
+	stable_index.AssetID = modules.PTNCOIN
 
 	dag.EXPECT().GetUnitByNumber(gomock.Any()).Return(mockUnit, nil).AnyTimes()
 	dag.EXPECT().GetActiveMediatorNodes().Return(map[string]*discover.Node{}).AnyTimes()
@@ -345,7 +348,9 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 	dag.EXPECT().GetChainParameters().Return(&par).AnyTimes()
 	dag.EXPECT().SubscribeActiveMediatorsUpdatedEvent(gomock.Any()).Return(&rpc.ClientSubscription{}).AnyTimes()
 	dag.EXPECT().SubscribeToGroupSignEvent(gomock.Any()).Return(&rpc.ClientSubscription{}).AnyTimes()
+	dag.EXPECT().GetStableChainIndex(gomock.Any()).Return(mockUnit.UnitHeader.Number).AnyTimes()
 	pro.EXPECT().LocalHaveActiveMediator().Return(false).AnyTimes()
+
 	/*
 		pro.EXPECT().SubscribeNewUnitEvent(gomock.Any()).DoAndReturn(func(ch chan<- mp.NewUnitEvent) event.Subscription {
 			return nil

@@ -35,7 +35,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/txspool"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing/bn256"
 	"go.dedis.ch/kyber/v3/share/dkg/pedersen"
@@ -116,11 +116,12 @@ type MediatorPlugin struct {
 	newProducedUnitFeed  event.Feed              // 订阅的时候自动初始化一次
 	newProducedUnitScope event.SubscriptionScope // 零值已准备就绪待用
 
-	// dkg 初始化 相关
-	suite         *bn256.Suite
-	activeDKGs    map[common.Address]*dkg.DistKeyGenerator
-	precedingDKGs map[common.Address]*dkg.DistKeyGenerator
-	dkgLock       *sync.RWMutex
+	// dkg 处理和使用 相关
+	suite               *bn256.Suite
+	activeDKGs          map[common.Address]*dkg.DistKeyGenerator
+	precedingDKGs       map[common.Address]*dkg.DistKeyGenerator
+	lastMaintenanceTime int64
+	dkgLock             *sync.RWMutex
 
 	// dkg 完成 vss 协议相关
 	dealBuf    map[common.Address]chan *dkg.Deal
@@ -137,7 +138,7 @@ type MediatorPlugin struct {
 	vssResponseScope event.SubscriptionScope
 
 	// unit阈值签名相关
-	toTBLSSignBuf    map[common.Address]*sync.Map
+	toTBLSSignBuf    map[common.Address]*sync.Map // todo 改变字段类型，并加锁
 	toTBLSRecoverBuf map[common.Address]map[common.Hash]*sigShareSet
 	recoverBufLock   *sync.RWMutex
 
@@ -262,7 +263,7 @@ func RegisterMediatorPluginService(stack *node.Node, cfg *Config) {
 	}
 }
 
-func NewMediatorPlugin(/*ctx *node.ServiceContext, */cfg *Config, ptn PalletOne, dag iDag) (*MediatorPlugin, error) {
+func NewMediatorPlugin( /*ctx *node.ServiceContext, */ cfg *Config, ptn PalletOne, dag iDag) (*MediatorPlugin, error) {
 	log.Infof("mediator plugin initialize begin")
 
 	if ptn == nil || dag == nil || cfg == nil {
@@ -284,13 +285,14 @@ func NewMediatorPlugin(/*ctx *node.ServiceContext, */cfg *Config, ptn PalletOne,
 		requiredParticipation:     cfg.RequiredParticipation * core.PalletOne1Percent,
 		groupSigningEnabled:       cfg.EnableGroupSigning,
 
-		suite:         core.Suite,
-		activeDKGs:    make(map[common.Address]*dkg.DistKeyGenerator),
-		precedingDKGs: make(map[common.Address]*dkg.DistKeyGenerator),
-		dkgLock:       new(sync.RWMutex),
+		suite:               core.Suite,
+		activeDKGs:          make(map[common.Address]*dkg.DistKeyGenerator),
+		precedingDKGs:       make(map[common.Address]*dkg.DistKeyGenerator),
+		lastMaintenanceTime: dag.LastMaintenanceTime(),
+		dkgLock:             new(sync.RWMutex),
 	}
 
-	mp.initLocalConfigMediator(cfg.Mediators/*, ctx.AccountManager*/)
+	mp.initLocalConfigMediator(cfg.Mediators /*, ctx.AccountManager*/)
 
 	if mp.groupSigningEnabled {
 		mp.initGroupSignBuf()
@@ -300,7 +302,7 @@ func NewMediatorPlugin(/*ctx *node.ServiceContext, */cfg *Config, ptn PalletOne,
 	return &mp, nil
 }
 
-func (mp *MediatorPlugin) initLocalConfigMediator(mcs []*MediatorConf/*, am *accounts.Manager*/) {
+func (mp *MediatorPlugin) initLocalConfigMediator(mcs []*MediatorConf /*, am *accounts.Manager*/) {
 	mas := make(map[common.Address]*MediatorAccount, len(mcs))
 	//ks := am.Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 
@@ -351,6 +353,7 @@ func (mp *MediatorPlugin) UpdateMediatorsDKG(isRenew bool) {
 	// 保存旧的 dkg ， 用于之前的unit群签名确认
 	mp.dkgLock.RLock()
 	mp.precedingDKGs = mp.activeDKGs
+	mp.lastMaintenanceTime = mp.dag.LastMaintenanceTime()
 	mp.dkgLock.RUnlock()
 
 	// 判断是否重新 初始化DKG 和 VSS 协议

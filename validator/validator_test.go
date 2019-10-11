@@ -68,11 +68,10 @@ func (q *mockStatedbQuery) GetMediators() map[common.Address]bool {
 func (q *mockStatedbQuery) GetMediator(add common.Address) *core.Mediator {
 	return nil
 }
-
-//获得系统配置的最低手续费要求
-func (q *mockStatedbQuery) GetMinFee() (*modules.AmountAsset, error) {
-	return &modules.AmountAsset{Asset: modules.NewPTNAsset(), Amount: uint64(1)}, nil
+func (q *mockStatedbQuery) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error) {
+	return []common.Address{}, nil, nil
 }
+
 func (q *mockStatedbQuery) GetContractJury(contractId []byte) (*modules.ElectionNode, error) {
 	return nil, nil
 }
@@ -81,6 +80,9 @@ func (q *mockStatedbQuery) GetContractState(id []byte, field string) ([]byte, *m
 }
 func (q *mockStatedbQuery) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
 	return map[string]*modules.ContractStateValue{}, nil
+}
+func (q *mockStatedbQuery) GetJurorByAddrHash(addrHash common.Hash) (*modules.JurorDeposit, error) {
+	return nil, nil
 }
 
 type mockUtxoQuery struct {
@@ -295,7 +297,7 @@ func TestSignAndVerifyATx(t *testing.T) {
 
 }
 func TestTime(t *testing.T) {
-	ti, _ := time.ParseInLocation("2006-01-02 15:04:05", "2019-08-02 00:00:00", time.Local)
+	ti, _ := time.ParseInLocation("2006-01-02 15:04:05", "2019-10-11 00:00:00", time.Local)
 	t.Log(ti.Format("2006-01-02 15:04:05"))
 	t.Log(ti.Unix())
 }

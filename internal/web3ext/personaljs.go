@@ -67,11 +67,16 @@ web3._extend({
 			params: 3,
 			inputFormatter: [null, null, null]
 		}),
-	
 		new web3._extend.Method({
 			name: 'lockAccount',
 			call: 'personal_lockAccount',
 			params: 1
+		}),
+        new web3._extend.Method({
+			name: 'getPublicKey',
+			call: 'personal_getPublicKey',
+			params: 1,
+			inputFormatter: [null]
 		})
 	],
 	properties: [

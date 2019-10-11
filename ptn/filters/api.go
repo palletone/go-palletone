@@ -16,26 +16,20 @@
 
 package filters
 
-import (
-	"time"
-
-	"github.com/palletone/go-palletone/common"
-)
-
-var (
-	deadline = 5 * time.Minute // consider a filter inactive if it has not been polled for within deadline
-)
+//var (
+//	deadline = 5 * time.Minute // consider a filter inactive if it has not been polled for within deadline
+//)
 
 // filter is a helper struct that holds meta information over the filter type
 // and associated subscription in the event system.
-type filter struct {
-	typ      Type
-	deadline *time.Timer // filter is inactiv when deadline triggers
-	hashes   []common.Hash
-	//crit     FilterCriteria
-	//logs     []*types.Log
-	s *Subscription // associated subscription in event system
-}
+//type filter struct {
+//	typ      Type
+//	deadline *time.Timer // filter is inactiv when deadline triggers
+//	hashes   []common.Hash
+//	//crit     FilterCriteria
+//	//logs     []*types.Log
+//	s *Subscription // associated subscription in event system
+//}
 
 // PublicFilterAPI offers support to create and manage filters. This will allow external clients to retrieve various
 // information related to the PalletOne protocol such als blocks, transactions and logs.

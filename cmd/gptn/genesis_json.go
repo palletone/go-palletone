@@ -20,6 +20,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -29,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/cmd/console"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/files"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
@@ -113,21 +115,35 @@ func getTokenAccount(ctx *cli.Context) (string, error) {
 	return account, nil
 }
 
-func createExampleMediators(ctx *cli.Context, mcLen int) []*mp.MediatorConf {
+func createExampleMediators(ctx *cli.Context, mcLen int) ([]*mp.MediatorConf, []core.JurorDepositExtraJson) {
 	exampleMediators := make([]*mp.MediatorConf, mcLen)
+	jdes := make([]core.JurorDepositExtraJson, mcLen)
+
+	stack, _ := makeConfigNode(ctx, false)
+	ks := stack.GetKeyStore()
+	password := mp.DefaultPassword
+
 	for i := 0; i < mcLen; i++ {
-		account, password, _ := createExampleAccount(ctx)
+		//account, password, _ := createExampleAccount(ctx)
+		account, _ := ks.NewAccount(password)
 		secStr, pubStr := core.CreateInitDKS()
 
 		exampleMediators[i] = &mp.MediatorConf{
-			Address:     account,
+			Address:     account.Address.Str(),
 			Password:    password,
 			InitPrivKey: secStr,
 			InitPubKey:  pubStr,
 		}
+
+		prvKey, _ := ks.DumpKey(account, password)
+		b, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(prvKey)
+
+		jdes[i] = core.JurorDepositExtraJson{
+			PublicKey: hex.EncodeToString(b),
+		}
 	}
 
-	return exampleMediators
+	return exampleMediators, jdes
 }
 
 // createGenesisJson, Create a json file for the genesis state of a new chain.
@@ -142,11 +158,8 @@ func createGenesisJson(ctx *cli.Context) error {
 		return err
 	}
 
-	mcs := createExampleMediators(ctx, core.DefaultActiveMediatorCount)
-	nodeStr /*, err*/ := getNodeInfo(ctx)
-	//if err != nil {
-	//	return err
-	//}
+	mcs, jdes := createExampleMediators(ctx, core.DefaultActiveMediatorCount)
+	nodeStr := getNodeInfo(ctx)
 
 	genesisState := createExampleGenesis()
 	genesisState.TokenHolder = account
@@ -157,7 +170,7 @@ func createGenesisJson(ctx *cli.Context) error {
 	genesisState.InitialParameters.MediatorInterval = 3
 	genesisState.InitialTimestamp = genesisState.InitialTimestamp / 3 * 3
 	genesisState.InitialParameters.MaintenanceSkipSlots = 2
-	genesisState.InitialMediatorCandidates = initialMediatorCandidates(mcs, nodeStr)
+	genesisState.InitialMediatorCandidates = initialMediatorCandidates(mcs, nodeStr, jdes)
 
 	//配置测试的基金会地址及密码
 	//account, _, err = createExampleAccount(ctx)
@@ -201,6 +214,7 @@ func createGenesisJson(ctx *cli.Context) error {
 
 	return nil
 }
+
 func initSysContracts() []core.SysContract {
 	list := make([]core.SysContract, 0)
 	list = append(list, core.SysContract{Address: syscontract.CreateTokenContractAddress, Name: "PRC20", Active: true})
@@ -219,6 +233,7 @@ func initSysContracts() []core.SysContract {
 
 	return list
 }
+
 func modifyConfig(ctx *cli.Context, mediators []*mp.MediatorConf) error {
 	cfg := new(FullConfig)
 	configPath := getConfigPath(ctx)
@@ -297,49 +312,18 @@ func initialAccount(ctx *cli.Context) (string, error) {
 	return address.Str(), nil
 }
 
-func createExampleAccount(ctx *cli.Context) (addrStr, password string, err error) {
-	password = mp.DefaultPassword
-	address, err := createAccount(ctx, password)
-	addrStr = address.Str()
-	return
-}
+//func createExampleAccount(ctx *cli.Context) (addrStr, password string, err error) {
+//	password = mp.DefaultPassword
+//	address, err := createAccount(ctx, password)
+//	addrStr = address.Str()
+//	return
+//}
 
 // createExampleGenesis, create the genesis state of new chain with the specified account
 func createExampleGenesis() *core.Genesis {
-	//SystemConfig := core.SystemConfig{
-	//	DepositRate:               core.DefaultDepositRate,
-	//	TxCoinYearRate:            core.DefaultTxCoinYearRate,
-	//	GenerateUnitReward:        core.DefaultGenerateUnitReward,
-	//	RewardHeight:              core.DefaultRewardHeight,
-	//	FoundationAddress:         core.DefaultFoundationAddress,
-	//	DepositAmountForMediator:  core.DefaultDepositAmountForMediator,
-	//	DepositAmountForJury:      core.DefaultDepositAmountForJury,
-	//	DepositAmountForDeveloper: core.DefaultDepositAmountForDeveloper,
-	//	DepositPeriod:             core.DefaultDepositPeriod,
-	//	UccMemory:                 core.DefaultUccMemory,
-	//	UccMemorySwap:             core.DefaultUccMemorySwap,
-	//	UccCpuShares:              core.DefaultUccCpuShares,
-	//	UccCpuPeriod:              core.DefaultCpuPeriod,
-	//	UccCpuQuota:               core.DefaultUccCpuQuota,
-	//	UccCpuSetCpus:             core.DefaultUccCpuSetCpus,
-	//	TempUccMemory:             core.DefaultTempUccMemory,
-	//	TempUccMemorySwap:         core.DefaultTempUccMemorySwap,
-	//	TempUccCpuShares:          core.DefaultTempUccCpuShares,
-	//	TempUccCpuQuota:           core.DefaultTempUccCpuQuota,
-	//	ContractSignatureNum:      core.DefaultContractSignatureNum,
-	//	ContractElectionNum:       core.DefaultContractElectionNum,
-	//
-	//	ActiveMediatorCount: strconv.FormatUint(core.DefaultMediatorCount, 10),
-	//}
-
-	//DigitalIdentityConfig := core.DigitalIdentityConfig{
-	//	// default root ca holder, 默认是基金会地址
-	//	RootCAHolder: core.DefaultFoundationAddress,
-	//	RootCABytes:  core.DefaultRootCABytes,
-	//}
-
 	initParams := core.NewChainParams()
 	mediators := []*mp.MediatorConf{mp.DefaultMediatorConf()}
+	jdes := []core.JurorDepositExtraJson{core.NewJurorDepositExtraJson()}
 
 	return &core.Genesis{
 		Version:     configure.Version,
@@ -356,20 +340,23 @@ func createExampleGenesis() *core.Genesis {
 		ImmutableParameters:   core.NewImmutChainParams(),
 		InitialTimestamp:      gen.InitialTimestamp(initParams.MediatorInterval),
 		//InitialActiveMediators:    core.DefaultMediatorCount,
-		InitialMediatorCandidates: initialMediatorCandidates(mediators, core.DefaultNodeInfo),
+		InitialMediatorCandidates: initialMediatorCandidates(mediators, core.DefaultNodeInfo, jdes),
 		SystemContracts:           initSysContracts(),
 	}
 }
 
-func initialMediatorCandidates(mediators []*mp.MediatorConf, nodeInfo string) []*core.InitialMediator {
+func initialMediatorCandidates(mediators []*mp.MediatorConf, nodeInfo string,
+	jdes []core.JurorDepositExtraJson) []*core.InitialMediator {
 	mcLen := len(mediators)
 	initialMediators := make([]*core.InitialMediator, mcLen)
 	for i := 0; i < mcLen; i++ {
+		m := mediators[i]
 		im := core.NewInitialMediator()
-		im.AddStr = mediators[i].Address
-		im.RewardAdd = mediators[i].Address
-		im.InitPubKey = mediators[i].InitPubKey
+		im.AddStr = m.Address
+		im.RewardAdd = m.Address
+		im.InitPubKey = m.InitPubKey
 		im.Node = nodeInfo
+		im.JurorDepositExtraJson = jdes[i]
 		initialMediators[i] = im
 	}
 

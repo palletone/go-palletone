@@ -37,7 +37,8 @@ type IStateDb interface {
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 
-	UpdateStateByContractInvoke(invoke *modules.ContractInvokeRequestPayload) error
+	UpdateStateByContractInvoke(invoke *modules.ContractInvokeRequestPayload,
+		unitTime int64, version *modules.StateVersion) error
 
 	SaveContractTpl(tpl *modules.ContractTemplate) error
 	SaveContractTplCode(tplId []byte, byteCode []byte) error
@@ -69,7 +70,6 @@ type IStateDb interface {
 	GetAccountVotedMediators(addr common.Address) map[string]bool
 	LookupAccount() map[common.Address]*modules.AccountInfo
 
-	GetMinFee() (*modules.AmountAsset, error)
 	//获得一个合约的陪审团列表
 	GetContractJury(contractId []byte) (*modules.ElectionNode, error)
 	SaveContractJury(contractId []byte, jury modules.ElectionNode, version *modules.StateVersion) error
@@ -86,6 +86,8 @@ type IStateDb interface {
 	GetCandidateMediatorList() (map[string]bool, error)
 	GetJuryCandidateList() (map[string]bool, error)
 	IsInJuryCandidateList(address common.Address) bool
+	GetAllJuror() (map[string]*modules.JurorDeposit, error)
+	GetJurorByAddr(addr string) (*modules.JurorDeposit, error)
 	GetContractDeveloperList() ([]common.Address, error)
 	IsInContractDeveloperList(address common.Address) bool
 
@@ -94,6 +96,8 @@ type IStateDb interface {
 
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
+
+	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
 
 	GetSysParamWithoutVote() (map[string]string, error)
 	GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)

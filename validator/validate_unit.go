@@ -100,9 +100,9 @@ func (validate *Validate) validateUnitAuthor(h *modules.Header) ValidationCode {
 
 	mediators := validate.statequery.GetMediators()
 	authorAddr := h.Authors.Address()
-	if has, _ := mediators[authorAddr]; !has {
+	if !mediators[authorAddr] {
 		mediatorAddrs := ""
-		for m, _ := range mediators {
+		for m := range mediators {
 			mediatorAddrs += m.String() + ","
 		}
 		log.Warnf("Active mediator list is:%s, current unit[%s %d] author is %s",
@@ -129,7 +129,7 @@ func (validate *Validate) validateMediatorSchedule(header *modules.Header) Valid
 	}
 
 	slotNum := validate.propquery.GetSlotAtTime(time.Unix(header.Time, 0))
-	if slotNum <= 0 {
+	if slotNum == 0 {
 		log.Info("invalidated unit's slot")
 		return UNIT_STATE_INVALID_MEDIATOR_SCHEDULE
 	}
@@ -214,14 +214,14 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) Validat
 		unitHeaderValidateResult != UNIT_STATE_AUTHOR_SIGNATURE_PASSED &&
 		unitHeaderValidateResult != UNIT_STATE_ORPHAN {
 		log.Debug("Validate unit's header failed.", "error code", unitHeaderValidateResult)
-		return (unitHeaderValidateResult)
+		return unitHeaderValidateResult
 	}
 
 	//validate tx root
 	root := core.DeriveSha(unit.Txs)
 	if root != unit.UnitHeader.TxRoot {
 		log.Debugf("Validate unit's header failed, root:[%#x],  unit.UnitHeader.TxRoot:[%#x], txs:[%#x]", root, unit.UnitHeader.TxRoot, unit.Txs.GetTxIds())
-		return (UNIT_STATE_INVALID_HEADER_TXROOT)
+		return UNIT_STATE_INVALID_HEADER_TXROOT
 	}
 
 	// step2. check transactions in unit
@@ -231,16 +231,19 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) Validat
 		log.Debugf("validate.statequery.RetrieveMediator %v err", medAdd.Str())
 		return UNIT_STATE_INVALID_AUTHOR_SIGNATURE
 	}
-
+	validate.enableTxFeeCheck = unit.Timestamp() > 1570723200 //20191011 1.0.3升级，支持交易费检查
+	//if validate.enableTxFeeCheck{
+	//	log.Infof("Enable tx fee check since %d",unit.Timestamp())
+	//}
 	code := validate.validateTransactions(unit.Txs, unit.Timestamp(), med.GetRewardAdd())
 	if code != TxValidationCode_VALID {
 		msg := fmt.Sprintf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), code)
 		log.Debug(msg)
-		return (code)
+		return code
 	}
 	//maybe orphan unit
 	if unitHeaderValidateResult != TxValidationCode_VALID {
-		return (unitHeaderValidateResult)
+		return unitHeaderValidateResult
 	}
 	validate.cache.AddUnitValidateResult(unitHash, TxValidationCode_VALID)
 	return TxValidationCode_VALID
@@ -299,10 +302,12 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 		if parentHeader.Number.Index+1 != header.Number.Index {
 			return UNIT_STATE_INVALID_HEADER_NUMBER
 		}
-
-		vcode := validate.validateMediatorSchedule(header)
-		if vcode != TxValidationCode_VALID {
-			return vcode
+		// 1570723200 //20191011 1.0.3升级，
+		if header.Time > 1570723200 { //之前的mediator schedule可能验证不过。
+			vcode := validate.validateMediatorSchedule(header)
+			if vcode != TxValidationCode_VALID {
+				return vcode
+			}
 		}
 	}
 	return TxValidationCode_VALID

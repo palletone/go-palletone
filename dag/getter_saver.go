@@ -33,23 +33,23 @@ import (
 )
 
 func (d *Dag) GetGlobalProp() *modules.GlobalProperty {
-	_, _, _, rep, _ := d.Memdag.GetUnstableRepositories()
-	//gp, _ := d.unstablePropRep.RetrieveGlobalProp()
-	gp, _ := rep.RetrieveGlobalProp()
+	//_, _, _, rep, _ := d.Memdag.GetUnstableRepositories()
+	//gp, _ := rep.RetrieveGlobalProp()
+	gp, _ := d.unstablePropRep.RetrieveGlobalProp()
 	return gp
 }
 
 func (d *Dag) GetDynGlobalProp() *modules.DynamicGlobalProperty {
-	_, _, _, rep, _ := d.Memdag.GetUnstableRepositories()
-	//dgp, _ := d.unstablePropRep.RetrieveDynGlobalProp()
-	dgp, _ := rep.RetrieveDynGlobalProp()
+	//_, _, _, rep, _ := d.Memdag.GetUnstableRepositories()
+	//dgp, _ := rep.RetrieveDynGlobalProp()
+	dgp, _ := d.unstablePropRep.RetrieveDynGlobalProp()
 	return dgp
 }
 
 func (d *Dag) GetMediatorSchl() *modules.MediatorSchedule {
-	_, _, _, rep, _ := d.Memdag.GetUnstableRepositories()
-	//ms, _ := d.unstablePropRep.RetrieveMediatorSchl()
-	ms, _ := rep.RetrieveMediatorSchl()
+	//_, _, _, rep, _ := d.Memdag.GetUnstableRepositories()
+	//ms, _ := rep.RetrieveMediatorSchl()
+	ms, _ := d.unstablePropRep.RetrieveMediatorSchl()
 	return ms
 }
 
@@ -124,10 +124,11 @@ func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
 }
 
 func (d *Dag) GetMediator(add common.Address) *core.Mediator {
-	_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
-	//med, err := d.unstableStateRep.RetrieveMediator(add)
+	//_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
+	//med, err := state.RetrieveMediator(add)
 
-	med, err := state.RetrieveMediator(add)
+	med, err := d.unstableStateRep.RetrieveMediator(add)
+
 	if err != nil {
 		log.Debugf("Retrieve Mediator error: %v", err.Error())
 		return nil
@@ -223,7 +224,9 @@ func (dag *Dag) GetImmutableChainParameters() *core.ImmutableChainParameters {
 }
 
 func (dag *Dag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
-	unit, err := dag.unstableUnitRep.GetUnit(hash)
+	rep, _, _, _, _ := dag.Memdag.GetUnstableRepositories()
+	unit, err := rep.GetUnit(hash)
+	//unit, err := dag.unstableUnitRep.GetUnit(hash)
 
 	if err != nil {
 		log.Debug("get unit by hash is failed.", "hash", hash)
@@ -259,10 +262,10 @@ func (d *Dag) GetPtnBalance(addr common.Address) uint64 {
 }
 
 func (d *Dag) GetMediatorInfo(address common.Address) *modules.MediatorInfo {
-	_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
-
-	mi, _ := state.RetrieveMediatorInfo(address)
-	//mi, _ := d.unstableStateRep.RetrieveMediatorInfo(address)
+	//_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
+	//
+	//mi, _ := state.RetrieveMediatorInfo(address)
+	mi, _ := d.unstableStateRep.RetrieveMediatorInfo(address)
 	return mi
 }
 
@@ -299,7 +302,9 @@ func (d *Dag) IsContractDeveloper(addr common.Address) bool {
 }
 
 func (d *Dag) GetUnitHash(number *modules.ChainIndex) (common.Hash, error) {
-	return d.unstableUnitRep.GetHashByNumber(number)
+	unitRep, _, _, _, _ := d.Memdag.GetUnstableRepositories()
+	return unitRep.GetHashByNumber(number)
+	//return d.unstableUnitRep.GetHashByNumber(number)
 }
 
 // return all mediators voted results

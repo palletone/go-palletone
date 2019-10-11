@@ -260,7 +260,7 @@ func newDuplicateChaincodeHandlerError(chaincodeHandler *Handler) error {
 }
 
 func (chaincodeSupport *ChaincodeSupport) registerHandler(chaincodehandler *Handler) error {
-	key := chaincodehandler.ChaincodeID.Name
+	key := chaincodehandler.ChaincodeID.Name + chaincodehandler.ChaincodeID.Version
 
 	chaincodeSupport.runningChaincodes.Lock()
 	defer chaincodeSupport.runningChaincodes.Unlock()
@@ -305,7 +305,7 @@ func (chaincodeSupport *ChaincodeSupport) deregisterHandler(chaincodehandler *Ha
 	//	}
 	//}
 
-	key := chaincodehandler.ChaincodeID.Name
+	key := chaincodehandler.ChaincodeID.Name + chaincodehandler.ChaincodeID.Version
 	log.Debugf("Deregister handler: %s", key)
 	chaincodeSupport.runningChaincodes.Lock()
 	defer chaincodeSupport.runningChaincodes.Unlock()
@@ -701,11 +701,11 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context,
 	if cds != nil {
 		cID = cds.ChaincodeSpec.ChaincodeId
 		cMsg = cds.ChaincodeSpec.Input
-		log.Debugf("cds != nil-------这是部署用户合约---------------， cID=%v", cID)
+		log.Debugf("cds != nil-------这是部署合约---------------， cID=%v", cID)
 	} else {
 		cID = ci.ChaincodeSpec.ChaincodeId
 		cMsg = ci.ChaincodeSpec.Input
-		log.Debugf("cds == nil---------这是调用用户合约-------------, cID=%v", cID)
+		log.Debugf("cds == nil---------这是调用合约-------------, cID=%v", cID)
 	}
 
 	canName := cccid.GetCanonicalName()

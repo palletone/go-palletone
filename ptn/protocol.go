@@ -20,7 +20,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/txspool"
 	"time"
 )
 
@@ -135,12 +135,12 @@ type txPool interface {
 	AddSequenTx(tx *modules.Transaction) error
 	AddSequenTxs(txs []*modules.Transaction) error
 	AllHashs() []*common.Hash
-	AllTxpoolTxs() map[common.Hash]*modules.TxPoolTransaction
-	Content() (map[common.Hash]*modules.TxPoolTransaction, map[common.Hash]*modules.TxPoolTransaction)
-	Get(hash common.Hash) (*modules.TxPoolTransaction, common.Hash)
-	GetPoolTxsByAddr(addr string) ([]*modules.TxPoolTransaction, error)
+	AllTxpoolTxs() map[common.Hash]*txspool.TxPoolTransaction
+	Content() (map[common.Hash]*txspool.TxPoolTransaction, map[common.Hash]*txspool.TxPoolTransaction)
+	Get(hash common.Hash) (*txspool.TxPoolTransaction, common.Hash)
+	GetPoolTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error)
 	Stats() (int, int, int)
-	GetSortedTxs(hash common.Hash, index uint64) ([]*modules.TxPoolTransaction, common.StorageSize)
+	GetSortedTxs(hash common.Hash, index uint64) ([]*txspool.TxPoolTransaction, common.StorageSize)
 	SendStoredTxs(hashs []common.Hash) error
 	DiscardTxs(hashs []common.Hash) error
 	//DiscardTx(hash common.Hash) error
@@ -151,8 +151,8 @@ type txPool interface {
 		tag txspool.Tag) ([]*txspool.TxDesc, error)
 	// Pending should return pending transactions.
 	// The slice should be modifiable by the caller.
-	Pending() (map[common.Hash][]*modules.TxPoolTransaction, error)
-	Queued() ([]*modules.TxPoolTransaction, error)
+	Pending() (map[common.Hash][]*txspool.TxPoolTransaction, error)
+	Queued() ([]*txspool.TxPoolTransaction, error)
 	SetPendingTxs(unit_hash common.Hash, num uint64, txs []*modules.Transaction) error
 	ResetPendingTxs(txs []*modules.Transaction) error
 	// SubscribeTxPreEvent should return an event subscription of
@@ -170,7 +170,7 @@ type statusData struct {
 	Index           *modules.ChainIndex
 	GenesisUnit     common.Hash
 	CurrentHeader   common.Hash
-	//Mediator        bool
+	//StableIndex     *modules.ChainIndex
 }
 
 // newBlockHashesData is the network packet for the block announcements.

@@ -7,7 +7,7 @@ Library           BuiltIn
 
 *** Keywords ***
 queryCAHolder
-    ${args}=    Create List    getRootCAHoler
+    ${args}=    Create List    getRootCAHolder
     ${params}=    Create List    ${certContractAddr}    ${args}    ${0}
     ${respJson}=    sendRpcPost    ${host}    ${ccqueryMethod}    ${params}    getCAHolder
     Dictionary Should Contain Key    ${respJson}    result

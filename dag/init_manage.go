@@ -31,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/storage"
 	"go.dedis.ch/kyber/v3/sign/bls"
 )
 
@@ -73,15 +74,21 @@ func (dag *Dag) InitPropertyDB(genesis *core.Genesis, unit *modules.Unit) error 
 	return nil
 }
 
-func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
+func (dag *Dag) InitStateDB(genesis *core.Genesis, head *modules.Header) error {
+	version := &modules.StateVersion{
+		Height:  head.GetNumber(),
+		TxIndex: ^uint32(0),
+	}
+
 	// Create initial mediators
 	list := make(map[string]bool, len(genesis.InitialMediatorCandidates))
+
 	for _, imc := range genesis.InitialMediatorCandidates {
-		// 存储 mediator info
-		addr, err := imc.Validate()
+		// 1 存储 mediator info
+		addr, jde, err := imc.Validate()
 		if err != nil {
 			log.Debugf(err.Error())
-			panic(err.Error())
+			return err
 		}
 
 		mi := modules.NewMediatorInfo()
@@ -91,9 +98,49 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 		err = dag.stableStateRep.StoreMediatorInfo(addr, mi)
 		if err != nil {
 			log.Debugf(err.Error())
-			panic(err.Error())
+			return err
 		}
 
+		// 2 初始化mediator保证金设为0
+		md := modules.NewMediatorDeposit()
+		md.Status = modules.Agree
+		md.Role = modules.Mediator
+		md.ApplyEnterTime = time.Unix(head.Time, 0).UTC().Format(modules.Layout2)
+
+		byte, err := json.Marshal(md)
+		if err != nil {
+			return err
+		}
+
+		ws := modules.NewWriteSet(storage.MediatorDepositKey(imc.AddStr), byte)
+		err = dag.stableStateRep.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws, version)
+		if err != nil {
+			log.Debugf(err.Error())
+			return err
+		}
+
+		// 3 初始化 juror保证金为0
+		juror := modules.JurorDeposit{}
+		juror.Address = mi.AddStr
+		juror.Role = modules.Jury
+		juror.Balance = 0
+		juror.EnterTime = md.ApplyEnterTime
+		juror.JurorDepositExtra = jde
+
+		jurorByte, err := json.Marshal(juror)
+		if err != nil {
+			log.Errorf(err.Error())
+			return err
+		}
+
+		ws = modules.NewWriteSet(storage.JuryDepositKey(mi.AddStr), jurorByte)
+		err = dag.stableStateRep.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws, version)
+		if err != nil {
+			log.Debugf(err.Error())
+			return err
+		}
+
+		// 加入 mediator和jury列表
 		list[mi.AddStr] = true
 	}
 
@@ -104,20 +151,8 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, unit *modules.Unit) error {
 		return err
 	}
 
-	version := &modules.StateVersion{
-		Height:  unit.Number(),
-		TxIndex: ^uint32(0),
-	}
-	ws := &modules.ContractWriteSet{
-		IsDelete: false,
-		Key:      modules.MediatorList,
-		Value:    imcB,
-	}
-
-	// todo 将保证金设为0
-
 	//Mediator
-	ws.Key = modules.MediatorList
+	ws := modules.NewWriteSet(modules.MediatorList, imcB)
 	err = dag.stableStateRep.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws, version)
 	if err != nil {
 		log.Debugf(err.Error())
@@ -144,9 +179,9 @@ func (dag *Dag) IsSynced() bool {
 	now := time.Now()
 	// 防止误判，获取之后的第2个生产槽时间
 	//nextSlotTime := dag.unstablePropRep.GetSlotTime(gp, dgp, 1)
-	//nextSlotTime := dag.unstablePropRep.GetSlotTime(2)
-	_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
-	nextSlotTime := rep.GetSlotTime(2)
+	nextSlotTime := dag.unstablePropRep.GetSlotTime(2)
+	//_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
+	//nextSlotTime := rep.GetSlotTime(2)
 
 	return nextSlotTime.After(now)
 }
@@ -228,30 +263,12 @@ func (dag *Dag) IsConsecutiveMediator(nextMediator common.Address) bool {
 	return false
 }
 
-// 计算最近64个生产slots的mediator参与度，不包括当前unit
+// 计算最近128个生产slots的mediator参与度，不包括当前unit
 // Calculate the percent of unit production slots that were missed in the
-// past 64 units, not including the current unit.
+// past 128 units, not including the current unit.
 func (dag *Dag) MediatorParticipationRate() uint32 {
-	popCount := func(x uint64) uint8 {
-		m := []uint64{
-			0x5555555555555555,
-			0x3333333333333333,
-			0x0F0F0F0F0F0F0F0F,
-			0x00FF00FF00FF00FF,
-			0x0000FFFF0000FFFF,
-			0x00000000FFFFFFFF,
-		}
-
-		var i, w uint8
-		for i, w = 0, 1; i < 6; i, w = i+1, w+w {
-			x = (x & m[i]) + ((x >> w) & m[i])
-		}
-
-		return uint8(x)
-	}
-
 	recentSlotsFilled := dag.GetDynGlobalProp().RecentSlotsFilled
-	participationRate := core.PalletOne100Percent * int(popCount(recentSlotsFilled)) / 64
+	participationRate := core.PalletOne100Percent * int(recentSlotsFilled.PopCount()) / 128
 
 	return uint32(participationRate)
 }

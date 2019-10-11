@@ -20,42 +20,34 @@
 
 package modules
 
-//
-//import (
-//	"github.com/ethereum/go-ethereum/rlp"
-//	"io"
-//	"time"
-//)
-//
-//type ContractDeployRequestPayloadRlp struct {
-//	TplId   []byte   `json:"tpl_name"`
-//	TxId    string   `json:"transaction_id"`
-//	Args    [][]byte `json:"args"`
-//	Timeout uint32   `json:"timeout"`
-//}
-//
-//func (input *ContractDeployRequestPayload) DecodeRLP(s *rlp.Stream) error {
-//	raw, err := s.Raw()
-//	if err != nil {
-//		return err
-//	}
-//	temp := &ContractDeployRequestPayloadRlp{}
-//	err = rlp.DecodeBytes(raw, temp)
-//	if err != nil {
-//		return err
-//	}
-//
-//	input.TplId = temp.TplId
-//	input.TxId = temp.TxId
-//	input.Args = temp.Args
-//	input.Timeout = time.Duration(temp.Timeout)
-//	return nil
-//}
-//func (input *ContractDeployRequestPayload) EncodeRLP(w io.Writer) error {
-//	temp := &ContractDeployRequestPayloadRlp{}
-//	temp.TplId = input.TplId
-//	temp.TxId = input.TxId
-//	temp.Args = input.Args
-//	temp.Timeout = uint32(input.Timeout)
-//	return rlp.Encode(w, temp)
-//}
+import (
+	"github.com/ethereum/go-ethereum/rlp"
+	"io"
+)
+
+type ContractDeployPayloadV1 struct {
+	TemplateId []byte             `json:"template_id"`    // contract template id
+	ContractId []byte             `json:"contract_id"`    // contract id
+	Name       string             `json:"name"`           // the name for contract
+	Args       [][]byte           `json:"args"`           // contract arguments list
+	EleList    []ElectionInf      `json:"election_list"`  // contract jurors list
+	ReadSet    []ContractReadSet  `json:"read_set"`       // the set data of read, and value could be any type
+	WriteSet   []ContractWriteSet `json:"write_set"`      // the set data of write, and value could be any type
+	ErrMsg     ContractError      `json:"contract_error"` // contract error message
+}
+
+func (input *ContractDeployPayload) EncodeRLP(w io.Writer) error {
+	if len(input.TemplateId) == 0 { //系统合约
+		temp := &ContractDeployPayloadV1{}
+		temp.TemplateId = input.TemplateId
+		temp.ContractId = input.ContractId
+		temp.Name = input.Name
+		temp.Args = input.Args
+		temp.EleList = input.EleNode.EleList
+		temp.ReadSet = input.ReadSet
+		temp.WriteSet = input.WriteSet
+		temp.ErrMsg = input.ErrMsg
+		return rlp.Encode(w, temp)
+	}
+	return rlp.Encode(w, input)
+}

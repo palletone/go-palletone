@@ -45,7 +45,7 @@ func NewImmutChainParams() ImmutableChainParameters {
 		UccCapDrop: []string{"mknod", "setfcap", "audit_write", "net_bind_service", "net_raw",
 			"kill", "setgid", "setuid", "setpcap", "chown", "fowner", "sys_chroot"},
 		UccNetworkMode:    DefaultUccNetworkMode,
-		UccOOMKillDisable: defaultUccOOMKillDisable,
+		UccOOMKillDisable: DefaultUccOOMKillDisable,
 	}
 }
 
@@ -55,6 +55,7 @@ func NewChainParametersBase() ChainParametersBase {
 		RewardHeight:              DefaultRewardHeight,
 		PledgeDailyReward:         DefaultPledgeDailyReward,
 		FoundationAddress:         DefaultFoundationAddress,
+		RmExpConFromSysParam:      DefaultRmExpConFromSysParam,
 		DepositAmountForMediator:  DefaultDepositAmountForMediator,
 		DepositAmountForJury:      DefaultDepositAmountForJury,
 		DepositAmountForDeveloper: DefaultDepositAmountForDeveloper,
@@ -82,7 +83,7 @@ type ChainParametersBase struct {
 	DepositAmountForMediator  uint64 `json:"deposit_amount_for_mediator"` //保证金的数量
 	DepositAmountForJury      uint64 `json:"deposit_amount_for_jury"`
 	DepositAmountForDeveloper uint64 `json:"deposit_amount_for_developer"`
-
+	RmExpConFromSysParam      bool   `json:"remove_expired_container_from_system_parameter"`
 	//UccCpuSetCpus string `json:"ucc_cpu_set_cpus"` //限制使用某些CPUS  "1,3"  "0-2"
 
 	// 活跃mediator的数量。 number of active mediators
@@ -94,6 +95,7 @@ type ChainParametersBase struct {
 	// unit生产之间的间隔时间，以秒为单元。 interval in seconds between Units
 	MediatorInterval uint8 `json:"mediator_interval"`
 
+	// MaintenanceInterval 必须是 MediatorInterval的整数倍
 	// 区块链维护事件之间的间隔，以秒为单元。 interval in sections between unit maintenance events
 	MaintenanceInterval uint32 `json:"maintenance_interval"`
 
@@ -113,15 +115,18 @@ func NewChainParams() ChainParameters {
 		ChainParametersBase: NewChainParametersBase(),
 		// TxCoinYearRate:       DefaultTxCoinYearRate,
 		//DepositPeriod:        DefaultDepositPeriod,
-		UccMemory:            DefaultUccMemory,
-		UccCpuShares:         DefaultUccCpuShares,
-		UccCpuQuota:          DefaultUccCpuQuota,
-		UccDisk:              DefaultUccDisk,
-		TempUccMemory:        DefaultTempUccMemory,
-		TempUccCpuShares:     DefaultTempUccCpuShares,
-		TempUccCpuQuota:      DefaultTempUccCpuQuota,
-		ContractSignatureNum: DefaultContractSignatureNum,
-		ContractElectionNum:  DefaultContractElectionNum,
+		UccMemory:     DefaultUccMemory,
+		UccCpuShares:  DefaultUccCpuShares,
+		UccCpuQuota:   DefaultUccCpuQuota,
+		UccDisk:       DefaultUccDisk,
+		UccDuringTime: DefaultContainerDuringTime,
+
+		TempUccMemory:         DefaultTempUccMemory,
+		TempUccCpuShares:      DefaultTempUccCpuShares,
+		TempUccCpuQuota:       DefaultTempUccCpuQuota,
+		ContractSystemVersion: DefaultContractSystemVersion,
+		ContractSignatureNum:  DefaultContractSignatureNum,
+		ContractElectionNum:   DefaultContractElectionNum,
 
 		ContractTxTimeoutUnitFee:  DefaultContractTxTimeoutUnitFee,
 		ContractTxSizeUnitFee:     DefaultContractTxSizeUnitFee,
@@ -142,18 +147,21 @@ type ChainParameters struct {
 	//DepositPeriod int     `json:"deposit_period"` //保证金周期
 
 	//对启动用户合约容器的相关资源的限制
-	UccMemory    int64 `json:"ucc_memory"`
-	UccCpuShares int64 `json:"ucc_cpu_shares"`
-	UccCpuQuota  int64 `json:"ucc_cpu_quota"`
-	UccDisk      int64 `json:"ucc_disk"`
+	UccMemory     int64 `json:"ucc_memory"`
+	UccCpuShares  int64 `json:"ucc_cpu_shares"`
+	UccCpuQuota   int64 `json:"ucc_cpu_quota"`
+	UccDisk       int64 `json:"ucc_disk"`
+	UccDuringTime int64 `json:"ucc_during_time"`
+
 	//对中间容器的相关资源限制
 	TempUccMemory    int64 `json:"temp_ucc_memory"`
 	TempUccCpuShares int64 `json:"temp_ucc_cpu_shares"`
 	TempUccCpuQuota  int64 `json:"temp_ucc_cpu_quota"`
 
 	//contract about
-	ContractSignatureNum int `json:"contract_signature_num"`
-	ContractElectionNum  int `json:"contract_election_num"`
+	ContractSystemVersion string `json:"contract_system_version"`
+	ContractSignatureNum  int    `json:"contract_signature_num"`
+	ContractElectionNum   int    `json:"contract_election_num"`
 
 	ContractTxTimeoutUnitFee  uint64  `json:"contract_tx_timeout_unit_fee"`
 	ContractTxSizeUnitFee     uint64  `json:"contract_tx_size_unit_fee"`
@@ -163,7 +171,7 @@ type ChainParameters struct {
 	ContractTxStopFeeLevel    float64 `json:"contract_tx_stop_fee_level"`
 }
 
-func CheckSysConfigArgs(field, value string) error {
+func CheckSysConfigArgType(field, value string) error {
 	var err error
 	vn := reflect.ValueOf(ChainParameters{}).FieldByName(field)
 
@@ -189,7 +197,8 @@ func CheckSysConfigArgs(field, value string) error {
 
 type GetMediatorCountFn func() int
 
-func ImmutableChainParameterCheck(field, value string, icp *ImmutableChainParameters, fn GetMediatorCountFn) error {
+func CheckChainParameterValue(field, value string, icp *ImmutableChainParameters, cp *ChainParameters,
+	fn GetMediatorCountFn) error {
 	var err error
 
 	switch field {
@@ -222,6 +231,19 @@ func ImmutableChainParameterCheck(field, value string, icp *ImmutableChainParame
 					newActiveMediatorCount, mediatorCount)
 			}
 		}
+	case "MaintenanceInterval":
+		newMaintenanceInterval, _ := strconv.ParseUint(value, 10, 64)
+		minMaintenanceInterval := cp.MediatorInterval * cp.MaintenanceSkipSlots
+		if !(newMaintenanceInterval > uint64(minMaintenanceInterval)) {
+			// 保证MaintenanceInterval大于必要的时长
+			err = fmt.Errorf("new MaintenanceInterval(%v) must be larger than %v",
+				newMaintenanceInterval, minMaintenanceInterval)
+		} else if newMaintenanceInterval%uint64(cp.MediatorInterval) != 0 {
+			// 保证MaintenanceInterval能被MediatorInterval整除
+			err = fmt.Errorf("new MaintenanceInterval(%v) must be divisible by mediator interval(%v)",
+				newMaintenanceInterval, cp.MediatorInterval)
+		}
+
 	default:
 		err = nil
 	}

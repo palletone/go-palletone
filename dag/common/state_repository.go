@@ -22,6 +22,8 @@ package common
 
 import (
 	"encoding/json"
+	"errors"
+	"github.com/palletone/go-palletone/common/util"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -65,11 +67,13 @@ type IStateRepository interface {
 	RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error)
 	StoreMediatorInfo(add common.Address, mi *modules.MediatorInfo) error
 
-	GetMinFee() (*modules.AmountAsset, error)
 	//GetCurrentChainIndex(assetId modules.AssetId) (*modules.ChainIndex, error)
 
 	GetJuryCandidateList() (map[string]bool, error)
 	IsJury(address common.Address) bool
+	GetAllJuror() (map[string]*modules.JurorDeposit, error)
+	GetJurorByAddr(addr string) (*modules.JurorDeposit, error)
+	GetJurorByAddrHash(addrHash common.Hash) (*modules.JurorDeposit, error)
 	GetContractDeveloperList() ([]common.Address, error)
 	IsContractDeveloper(address common.Address) bool
 
@@ -84,15 +88,16 @@ type IStateRepository interface {
 	GetSysParamWithoutVote() (map[string]string, error)
 	GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)
 	SaveSysConfigContract(key string, val []byte, ver *modules.StateVersion) error
+	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
 }
 
 type StateRepository struct {
-	statedb storage.IStateDb
-	//logger  log.ILogger
+	statedb         storage.IStateDb
+	mapHash2Address map[common.Hash]common.Address //For Juror address hash
 }
 
 func NewStateRepository(statedb storage.IStateDb) *StateRepository {
-	return &StateRepository{statedb: statedb}
+	return &StateRepository{statedb: statedb, mapHash2Address: make(map[common.Hash]common.Address)}
 }
 
 func NewStateRepository4Db(db ptndb.Database) *StateRepository {
@@ -115,7 +120,9 @@ func (rep *StateRepository) GetSysParamWithoutVote() (map[string]string, error) 
 func (rep *StateRepository) GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error) {
 	return rep.statedb.GetSysParamsWithVotes()
 }
-
+func (rep *StateRepository) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error) {
+	return rep.statedb.GetBlacklistAddress()
+}
 func (rep *StateRepository) GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error) {
 	return rep.statedb.GetContractStatesById(id)
 }
@@ -360,12 +367,38 @@ func (rep *StateRepository) GetContractDeploy(tempId, contractId []byte, name st
 	return rep.statedb.GetContractDeploy(tempId[:])
 }
 
-func (rep *StateRepository) GetMinFee() (*modules.AmountAsset, error) {
-	return rep.statedb.GetMinFee()
-}
-
 func (rep *StateRepository) GetJuryCandidateList() (map[string]bool, error) {
 	return rep.statedb.GetJuryCandidateList()
+}
+
+func (rep *StateRepository) GetJurorByAddr(addr string) (*modules.JurorDeposit, error) {
+	return rep.statedb.GetJurorByAddr(addr)
+}
+func (rep *StateRepository) GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, error) {
+	if addr, exist := rep.mapHash2Address[hash]; exist {
+		return rep.statedb.GetJurorByAddr(addr.String())
+	}
+	//Not exist
+	jurors, err := rep.GetAllJuror()
+	if err != nil {
+		return nil, err
+	}
+	var result *modules.JurorDeposit
+	for _, j := range jurors {
+		jaddr, _ := common.StringToAddress(j.Address)
+		jhash := util.RlpHash(jaddr)
+		rep.mapHash2Address[jhash] = jaddr
+		if jhash == hash {
+			result = j
+		}
+	}
+	if result == nil {
+		return nil, errors.New("juror not found by hash:" + hash.String())
+	}
+	return result, nil
+}
+func (rep *StateRepository) GetAllJuror() (map[string]*modules.JurorDeposit, error) {
+	return rep.statedb.GetAllJuror()
 }
 
 func (rep *StateRepository) IsJury(address common.Address) bool {
