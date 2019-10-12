@@ -72,10 +72,7 @@ func (p *Processor) generateJuryRedeemScript(jury *modules.ElectionNode) []byte 
 	if jury == nil {
 		return nil
 	}
-	count := int(jury.JuryCount)
-	if count == 0 {
-		count = len(jury.EleList)
-	}
+	count := len(jury.EleList)
 	needed := byte(math.Ceil((float64(count)*2 + 1) / 3))
 	pubKeys := [][]byte{}
 	for _, ju := range jury.EleList {

@@ -386,8 +386,8 @@ func (rep *StateRepository) GetJurorByAddrHash(hash common.Hash) (*modules.Juror
 		log.Warn("GetAllJuror return error:%s", err.Error())
 		return nil, err
 	}
-	data, _ := json.Marshal(jurors)
-	log.Infof("Jurors:%s", string(data))
+	//data, _ := json.Marshal(jurors)
+	//log.Debugf("Jurors:%s", string(data))
 	var result *modules.JurorDeposit
 	for _, j := range jurors {
 		jaddr, _ := common.StringToAddress(j.Address)
