@@ -1,0 +1,9 @@
+*** Settings ***
+Resource          publicParams.txt
+
+*** Keywords ***
+queryPledgeList
+    ${contractParam}    Create List    QueryPledgeList
+    ${param}    Create List    ${depositContractAddress}    ${contractParam}    ${10}
+    ${result}    创建公用的POST请求    contract_ccquery    contract_ccquery    ${param}
+    [Return]    ${result}

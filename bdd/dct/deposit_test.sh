@@ -80,6 +80,10 @@ echo "mdi_01_pubkey =>" $m11
 
 m2=`../node/gptn --exec "personal.getPublicKey($mediatorAddr_02)" attach ../node/palletone/gptn.ipc`
 m22=`echo ${m2//\"/}`
+
+votedAddr=`echo $list | jq ".[12]"`
+votedAddress=`echo ${votedAddr//\"/}`
+
 echo "mdi_02_pubkey =>" $m22
 echo "mdi_01" $mdi_01
 echo "found" $found
@@ -88,15 +92,18 @@ echo "devA_01" $developer_01
 echo "mdi_02" $mdi_02
 echo "juryA_02" $jury_02
 echo "developerAddr_02" $developer_02
+echo "votedAddress" $votedAddress
 #pybot -d ./log -v mediatorAddr_01:$mdi_01 -v foundationAddr:$found --test Business_01 ./deposit_test_cases/DepositContractTest.robot
 #pybot -d ./log -v mediatorAddr_02:$mdi_02 -v foundationAddr:$found --test Business_02 ./deposit_test_cases/DepositContractTest.robot
 #pybot -d ./log -v juryAddr_01:$jury_01 -v foundationAddr:$found --test Business_03 ./deposit_test_cases/DepositContractTest.robot
 #pybot -d ./log -v developerAddr_01:$developer_01 -v foundationAddr:$found --test Business_04 ./deposit_test_cases/DepositContractTest.robot
 #pybot -d ./log -v juryAddr_02:$jury_02 -v foundationAddr:$found --test Business_05 ./deposit_test_cases/DepositContractTest.robot
 #pybot -d ./log -v developerAddr_02:$developer_02 -v foundationAddr:$found --test Business_06 ./deposit_test_cases/DepositContractTest.robot
-pybot -d ../logs/deposit -v m1_pubkey:$m11 -v m2_pubkey:$m22 -v juryAddr_01_pubkey:$jury_01_pub -v juryAddr_02_pubkey:$jury_02_pub -v mediatorAddr_01:$mdi_01 -v foundationAddr:$found -v mediatorAddr_02:$mdi_02 -v juryAddr_01:$jury_01 -v developerAddr_01:$developer_01 -v juryAddr_02:$jury_02 -v developerAddr_02:$developer_02 ./deposit_test_cases/DepositContractTest.robot
+pybot -d ../logs/deposit -v votedAddress:$votedAddress -v m1_pubkey:$m11 -v m2_pubkey:$m22 -v juryAddr_01_pubkey:$jury_01_pub -v juryAddr_02_pubkey:$jury_02_pub -v mediatorAddr_01:$mdi_01 -v foundationAddr:$found -v mediatorAddr_02:$mdi_02 -v juryAddr_01:$jury_01 -v developerAddr_01:$developer_01 -v juryAddr_02:$jury_02 -v developerAddr_02:$developer_02 ./deposit_test_cases/DepositContractTest.robot
 #pybot -d ./log -v mediatorAddr_01:$mdi_01 -v foundationAddr:$found -v mediatorAddr_02:$mdi_02 -v juryAddr_01:$jury_01 -v developerAddr_01:$developer_01 -v juryAddr_02:$jury_02 -v developerAddr_02:$developer_02 --test Business_01 --test Business_03 --test Business_05 ./deposit_test_cases/DepositContractTest.robot
 #pybot -d ./log -v mediatorAddr_01:$mdi_01 -v foundationAddr:$found -v otherAddr:$otherAddr --test Business_07 ./deposit_test_cases/DepositContractTest.robot
+
+#pybot -d ./log -v votedAddress:$votedAddress --test PledgeTest ./deposit_test_cases/DepositContractTest.robot
 
 #./test_case_teardown.sh
 

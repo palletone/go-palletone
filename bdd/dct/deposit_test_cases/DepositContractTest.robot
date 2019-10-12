@@ -14,6 +14,7 @@ ${juryAddr_01_pubkey}    ${EMPTY}
 ${juryAddr_02_pubkey}    ${EMPTY}
 ${m1_pubkey}      ${EMPTY}
 ${m2_pubkey}      ${EMPTY}
+${votedAddress}    ${EMPTY}
 
 *** Test Cases ***
 Business_01
@@ -267,7 +268,7 @@ Business_07
     ...    DPT+10102JC6CQU8OK204BXA
     ${amount}    getBalance    ${foundationAddr}    PTN
     log    ${amount}
-    Should Be Equal As Numbers    ${amount}    999940044
+    Should Be Equal As Numbers    ${amount}    999930043
     ${amount}    getBalance    ${mediatorAddr_02}    PTN
     log    ${amount}
     Should Be Equal As Numbers    ${amount}    9948
@@ -377,3 +378,74 @@ Business_08
     ${resul}    getListForJuryCandidate
     Dictionary Should Contain Key    ${resul}    ${mediatorAddr_02}
     log    ${resul}
+
+PledgeTest
+    ${result}    mediatorListAll    #查看所有超级节点
+    log    ${result}
+    sleep    3
+    ${mediatorAddress}    Set Variable    ${result[0]}
+    ${result}    mediatorListVoteResults    #查看超级节点投票结果
+    log    ${result}
+    sleep    3
+    ${result}    mediatorVote    ${votedAddress}    ${mediatorAddress}    #投票某超级节点
+    log    ${result}
+    sleep    3
+    ${result}    mediatorGetVoted    ${votedAddress}    #查看该节点所投票的情况
+    log    ${result}
+    sleep    3
+    ${result}    getBalance    ${votedAddress}    PTN
+    log    ${result}
+    sleep    3
+    ${result}    pledgeDeposit    ${votedAddress}    100    #质押PTN
+    log    ${result}
+    sleep    3
+    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    log    ${result}
+    sleep    3
+    ${result}    getBalance    ${votedAddress}    PTN
+    log    ${result}
+    sleep    3
+    ${result}    mediatorListVoteResults    #查看超级节点投票结果
+    log    ${result}
+    #    3
+    #    queryPledgeStatusByAddr    all    #如果要查询所有地址（整个网络）的质押情况，可以传参数all
+    #    ${result}
+    sleep    3
+    ${result}    queryPledgeList    #查看整个网络所有质押情况
+    log    ${result}
+    sleep    3
+    ${result}    QueryPledgeListByDate    20191012
+    log    ${result}
+    sleep    3
+    ${result}    QueryAllPledgeHistory
+    log    ${result}
+    sleep    3
+    ${result}    PledgeWithdraw    ${votedAddress}    10000000000
+    log    ${result}
+    sleep    3
+    ${result}    queryPledgeList    #查看整个网络所有质押情况
+    log    ${result}
+    sleep    3
+    ${result}    QueryPledgeListByDate    20191012
+    log    ${result}
+    sleep    3
+    ${result}    QueryAllPledgeHistory
+    log    ${result}
+    sleep    3
+    ${result}    HandlePledgeReward    ${votedAddress}
+    log    ${result}
+    sleep    3
+    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    log    ${result}
+    sleep    3
+    ${result}    queryPledgeList    #查看整个网络所有质押情况
+    log    ${result}
+    sleep    3
+    ${result}    QueryPledgeListByDate    20191012
+    log    ${result}
+    sleep    3
+    ${result}    QueryAllPledgeHistory
+    log    ${result}
+    sleep    3
+    ${result}    getBalance    ${votedAddress}    PTN
+    log    ${result}
