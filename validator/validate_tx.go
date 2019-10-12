@@ -257,6 +257,11 @@ func (validate *Validate) validateTxFeeEnough(tx *modules.Transaction) bool {
 	if tx == nil {
 		return false
 	}
+	if validate.dagquery == nil {
+		log.Warn("Cannot validate tx fee, your validate dagquery not set")
+		return false //todo  ?
+	}
+
 	var onlyPayment bool = true
 	var timeout uint32
 	var opFee, sizeFee, timeFee, accountUpdateFee, appDataFee, allFee float64
@@ -288,7 +293,7 @@ func (validate *Validate) validateTxFeeEnough(tx *modules.Transaction) bool {
 			opFee = cp.ContractTxStopFeeLevel
 		case modules.APP_DATA:
 			onlyPayment = false
-			appDataFee = float64(cp.ChainParametersBase.TransferPtnPricePerKByte) * (txSize/1024)
+			appDataFee = float64(cp.ChainParametersBase.TransferPtnPricePerKByte) * (txSize / 1024)
 		case modules.APP_ACCOUNT_UPDATE:
 			onlyPayment = false
 			accountUpdateFee = float64(cp.ChainParametersBase.AccountUpdateFee)
@@ -318,7 +323,7 @@ func (validate *Validate) validateTxFeeValid(tx *modules.Transaction) (bool, []*
 		log.Warn("Cannot validate tx fee, your validate utxoquery not set")
 		return true, nil
 	}
-	if !validate.validateTxFeeEnough(tx){
+	if !validate.validateTxFeeEnough(tx) {
 		log.Error("validateTxFeeValid, tx fee is not enough")
 		return false, nil
 	}

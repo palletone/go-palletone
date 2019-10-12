@@ -64,7 +64,7 @@ func TestValidate_ValidateTx_MsgCodeIncorrect(t *testing.T) {
 	tx := &modules.Transaction{}
 	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, &modules.DataPayload{MainData: []byte("m")}))
 	utxoq := &testutxoQuery{}
-	validat := NewValidate(nil, utxoq, nil, nil, newCache())
+	validat := NewValidate(utxoq, utxoq, nil, nil, newCache())
 	_, _, err := validat.ValidateTx(tx, true)
 	assert.NotNil(t, err)
 	t.Log(err)
