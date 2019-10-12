@@ -24,7 +24,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-
+	"math"
 	"github.com/ethereum/go-ethereum/rlp"
 
 	"github.com/palletone/go-palletone/common"
@@ -54,7 +54,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 	if tx.TxMessages[0].App != modules.APP_PAYMENT { // 交易费
 		return TxValidationCode_INVALID_MSG, nil
 	}
-	txFeePass, txFee := validate.validateTxFee(tx)
+	txFeePass, txFee := validate.validateTxFeeValid(tx)
 	if !txFeePass {
 		return TxValidationCode_INVALID_FEE, nil
 	}
@@ -253,11 +253,74 @@ func (v *Validate) validateVoteMediatorTx(payload interface{}) ValidationCode {
 	return TxValidationCode_VALID
 }
 
+func (validate *Validate) validateTxFeeEnough(tx *modules.Transaction) bool {
+	if tx == nil {
+		return false
+	}
+	var onlyPayment bool = true
+	var timeout uint32
+	var opFee, sizeFee, timeFee, accountUpdateFee, appDataFee, allFee float64
+
+	reqId := tx.RequestHash()
+	txSize := tx.Size().Float64()
+	fees, err := validate.dagquery.GetTxFee(tx)
+	if err != nil {
+		log.Errorf("[%s]validateTxFeeEnough, GetTxFee err:%s", reqId.String()[:8], err.Error())
+		return false
+	}
+	cp := validate.propquery.GetChainParameters()
+	timeUnitFee := float64(cp.ContractTxTimeoutUnitFee)
+	sizeUnitFee := float64(cp.ContractTxSizeUnitFee)
+	for _, msg := range tx.TxMessages {
+		switch msg.App {
+		case modules.APP_CONTRACT_TPL_REQUEST:
+			onlyPayment = false
+			opFee = cp.ContractTxInstallFeeLevel
+		case modules.APP_CONTRACT_DEPLOY_REQUEST:
+			onlyPayment = false
+			opFee = cp.ContractTxDeployFeeLevel
+		case modules.APP_CONTRACT_INVOKE_REQUEST:
+			onlyPayment = false
+			opFee = cp.ContractTxInvokeFeeLevel
+			timeout = msg.Payload.(*modules.ContractInvokeRequestPayload).Timeout
+		case modules.APP_CONTRACT_STOP_REQUEST:
+			onlyPayment = false
+			opFee = cp.ContractTxStopFeeLevel
+		case modules.APP_DATA:
+			onlyPayment = false
+			appDataFee = float64(cp.ChainParametersBase.TransferPtnPricePerKByte) * (txSize/1024)
+		case modules.APP_ACCOUNT_UPDATE:
+			onlyPayment = false
+			accountUpdateFee = float64(cp.ChainParametersBase.AccountUpdateFee)
+		}
+	}
+	if onlyPayment {
+		allFee = float64(cp.ChainParametersBase.TransferPtnBaseFee)
+	} else {
+		sizeFee = opFee * sizeUnitFee * txSize
+		timeFee = opFee * timeUnitFee * float64(timeout)
+		allFee = sizeFee + timeFee + accountUpdateFee + appDataFee
+	}
+	val := math.Max(float64(fees.Amount), allFee) == float64(fees.Amount)
+	if !val {
+		log.Errorf("[%s]validateTxFeeEnough invalid, fee amount[%f]-fees[%f](%f + %f + %f + %f), txSize[%f], timeout[%d]",
+			reqId.String()[:8], float64(fees.Amount), allFee, sizeFee, timeFee, accountUpdateFee, appDataFee, txSize, timeout)
+	}
+
+	log.Debugf("[%s]validateTxFeeEnough is %v, fee amount[%f]-fees[%f](%f + %f + %f + %f), txSize[%f], timeout[%d]",
+		reqId.String()[:8], val, float64(fees.Amount), allFee, sizeFee, timeFee, accountUpdateFee, appDataFee, txSize, timeout)
+	return val
+}
+
 //验证手续费是否合法，并返回手续费的分配情况
-func (validate *Validate) validateTxFee(tx *modules.Transaction) (bool, []*modules.Addition) {
+func (validate *Validate) validateTxFeeValid(tx *modules.Transaction) (bool, []*modules.Addition) {
 	if validate.utxoquery == nil {
 		log.Warn("Cannot validate tx fee, your validate utxoquery not set")
 		return true, nil
+	}
+	if !validate.validateTxFeeEnough(tx){
+		log.Error("validateTxFeeValid, tx fee is not enough")
+		return false, nil
 	}
 	feeAllocate, err := tx.GetTxFeeAllocate(validate.utxoquery.GetUtxoEntry,
 		validate.tokenEngine.GetScriptSigners, common.Address{})

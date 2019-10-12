@@ -330,6 +330,10 @@ func (rep *UnitRepository) GetAssetTxHistory(asset *modules.Asset) ([]*modules.T
 	return result, nil
 }
 
+func (rep *UnitRepository) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error) {
+	return rep.utxoRepository.ComputeTxFee(pay)
+}
+
 //func (rep *UnitRepository) SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error {
 //	return rep.dagdb.SaveNumberByHash(uHash, number)
 //}
@@ -1472,7 +1476,7 @@ func (rep *UnitRepository) createCoinbasePayment(ads []*modules.Addition) (*modu
 	contractId := syscontract.CoinbaseContractAddress.Bytes()
 
 	//在Coinbase合约的StateDB中保存每个Mediator和Jury的奖励值，
-	//	//key为奖励地址，Value为[]AmountAsset
+	//key为奖励地址，Value为[]AmountAsset
 	//读取之前的奖励统计值
 	addrMap, err := rep.statedb.GetContractStatesByPrefix(contractId, constants.RewardAddressPrefix)
 	if err != nil {

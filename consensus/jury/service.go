@@ -98,6 +98,11 @@ type iDag interface {
 	GetMediator(add common.Address) *core.Mediator
 	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
 	GetJurorByAddrHash(addrHash common.Hash) (*modules.JurorDeposit, error)
+
+	//nouse
+	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
+	GetScheduledMediator(slotNum uint32) common.Address
+	GetSlotAtTime(when time.Time) uint32
 }
 
 type electionVrf struct {
@@ -164,7 +169,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 	log.Debug("NewContractProcessor", "contractEleNum", cfgEleNum, "contractSigNum", cfgSigNum)
 
 	cache := freecache.NewCache(20 * 1024 * 1024)
-	validator := validator.NewValidate(dag, dag, dag, nil, cache)
+	validator := validator.NewValidate(dag, dag, dag, dag, cache)
 	p := &Processor{
 		name:         "contractProcessor",
 		ptn:          ptn,
@@ -525,8 +530,8 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 	if p.validator.CheckTxIsExist(tx) {
 		return false
 	}
-	if !p.checkTxValid(tx) {
-		log.Errorf("[%s]CheckContractTxValid checkTxValid fail", shortId(reqId.String()))
+	if v, err := p.checkTxValid(tx); !v {
+		log.Errorf("[%s]CheckContractTxValid checkTxValid fail, err:", shortId(reqId.String()), err.Error())
 		return false
 	}
 	//只检查invoke类型
@@ -691,7 +696,7 @@ func (p *Processor) createContractTxReqToken(contractId, from, to, toToken commo
 	}
 	log.Debugf("[%s]createContractTxReqToken,contractId[%s],tx[%v]",
 		shortId(tx.RequestHash().String()), contractId.String(), tx)
-	return p.signAndExecute(contractId, from, tx)
+	return p.signGenericTx(contractId, from, tx)
 }
 
 func (p *Processor) createContractTxReq(contractId, from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
@@ -700,7 +705,7 @@ func (p *Processor) createContractTxReq(contractId, from, to common.Address, dao
 	if err != nil {
 		return common.Hash{}, nil, err
 	}
-	return p.signAndExecute(contractId, from, tx)
+	return p.signGenericTx(contractId, from, tx)
 }
 func (p *Processor) SignAndExecuteAndSendRequest(from common.Address,
 	tx *modules.Transaction) (*modules.Transaction, error) {
@@ -708,7 +713,7 @@ func (p *Processor) SignAndExecuteAndSendRequest(from common.Address,
 	if requestMsg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
 		request := requestMsg.Payload.(*modules.ContractInvokeRequestPayload)
 		contractId := common.NewAddress(request.ContractId, common.ContractHash)
-		reqId, tx, err := p.signAndExecute(contractId, from, tx)
+		reqId, tx, err := p.signGenericTx(contractId, from, tx)
 		if err != nil {
 			return nil, err
 		}
@@ -718,7 +723,7 @@ func (p *Processor) SignAndExecuteAndSendRequest(from common.Address,
 	}
 	return nil, errors.New("Not support request")
 }
-func (p *Processor) signAndExecute(contractId common.Address, from common.Address,
+func (p *Processor) signGenericTx(contractId common.Address, from common.Address,
 	tx *modules.Transaction) (common.Hash, *modules.Transaction, error) {
 	tx, err := p.ptn.SignGenericTransaction(from, tx)
 	if err != nil {
@@ -728,9 +733,8 @@ func (p *Processor) signAndExecute(contractId common.Address, from common.Addres
 	defer p.locker.Unlock()
 
 	reqId := tx.RequestHash()
-	if !checkContractTxFeeValid(p.dag, tx) {
-		log.Errorf("[%s]signAndExecute, checkContractTxFeeValid fail", shortId(reqId.String()))
-		return common.Hash{}, nil, errors.New("checkContractTxFeeValid false")
+	if v, err := p.checkTxValid(tx); !v {
+		return common.Hash{}, nil, fmt.Errorf("signAndExecute, checkTxValid fail:%s", err.Error())
 	}
 	log.Debugf("[%s]signAndExecute, contractId[%s]", shortId(reqId.String()), contractId.String())
 	if p.mtx[reqId] != nil {

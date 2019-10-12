@@ -543,21 +543,16 @@ func (p *Processor) checkTxReqIdIsExist(reqId common.Hash) bool {
 	return false
 }
 
-func (p *Processor) checkTxValid(tx *modules.Transaction) bool {
+func (p *Processor) checkTxValid(tx *modules.Transaction) (bool, error) {
 	reqId := tx.RequestHash()
 	txHash := tx.Hash()
 	_, _, err := p.validator.ValidateTx(tx, false)
 	if err != nil {
 		log.Debugf("[%s]checkTxValid, Validate fail, txHash[%s], err:%s",
 			shortId(reqId.String()), txHash.String(), err.Error())
-		return false
+		return false, err
 	}
-	if !checkContractTxFeeValid(p.dag, tx) {
-		log.Debugf("[%s]checkTxValid, checkContractTxFeeValid fail, txHash[%s]",
-			shortId(reqId.String()), txHash.String())
-		return false
-	}
-	return true
+	return true, nil
 }
 
 func (p *Processor) checkTxAddrValid(tx *modules.Transaction) bool {
@@ -810,43 +805,43 @@ func getContractTxNeedFee(dag iDag, msgType modules.MessageType, timeout float64
 	return timeFee, sizeFee
 }
 
-func checkContractTxFeeValid(dag iDag, tx *modules.Transaction) bool {
-	if tx == nil {
-		return false
-	}
-	var timeout uint32
-	reqId := tx.RequestHash()
-	txSize := tx.Size().Float64()
-	fees, err := dag.GetTxFee(tx)
-	if err != nil {
-		log.Errorf("[%s]checkContractTxFeeValid, GetTxFee fail", shortId(reqId.String()))
-		return false
-	}
-	txType, err := getContractTxType(tx)
-	if err != nil {
-		log.Errorf("[%s]checkContractTxFeeValid, getContractTxType fail", shortId(reqId.String()))
-		return false
-	}
-	switch txType {
-	case modules.APP_CONTRACT_TPL_REQUEST: //todo
-	case modules.APP_CONTRACT_DEPLOY_REQUEST: //todo
-	case modules.APP_CONTRACT_INVOKE_REQUEST:
-		payload, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_INVOKE_REQUEST)
-		if err != nil {
-			log.Errorf("[%s]checkContractTxFeeValid, getContractTxContractInfo fail", shortId(reqId.String()))
-			return false
-		}
-		timeout = payload.(*modules.ContractInvokeRequestPayload).Timeout
-	case modules.APP_CONTRACT_STOP_REQUEST: //todo
-	}
-	timeFee, sizeFee := getContractTxNeedFee(dag, txType, float64(timeout), txSize)
-	val := math.Max(float64(fees.Amount), timeFee+sizeFee) == float64(fees.Amount)
-	if !val {
-		log.Errorf("[%s]checkContractTxFeeValid invalid, fee amount[%f]-fees[%f](%f + %f), txSize[%f], timeout[%d]",
-			shortId(reqId.String()), float64(fees.Amount), timeFee+sizeFee, timeFee, sizeFee, txSize, timeout)
-	}
-	return val
-}
+//func checkContractTxFeeValid(dag iDag, tx *modules.Transaction) bool {
+//	if tx == nil {
+//		return false
+//	}
+//	var timeout uint32
+//	reqId := tx.RequestHash()
+//	txSize := tx.Size().Float64()
+//	fees, err := dag.GetTxFee(tx)
+//	if err != nil {
+//		log.Errorf("[%s]checkContractTxFeeValid, GetTxFee fail", shortId(reqId.String()))
+//		return false
+//	}
+//	txType, err := getContractTxType(tx)
+//	if err != nil {
+//		log.Errorf("[%s]checkContractTxFeeValid, getContractTxType fail", shortId(reqId.String()))
+//		return false
+//	}
+//	switch txType {
+//	case modules.APP_CONTRACT_TPL_REQUEST: //todo
+//	case modules.APP_CONTRACT_DEPLOY_REQUEST: //todo
+//	case modules.APP_CONTRACT_INVOKE_REQUEST:
+//		payload, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_INVOKE_REQUEST)
+//		if err != nil {
+//			log.Errorf("[%s]checkContractTxFeeValid, getContractTxContractInfo fail", shortId(reqId.String()))
+//			return false
+//		}
+//		timeout = payload.(*modules.ContractInvokeRequestPayload).Timeout
+//	case modules.APP_CONTRACT_STOP_REQUEST: //todo
+//	}
+//	timeFee, sizeFee := getContractTxNeedFee(dag, txType, float64(timeout), txSize)
+//	val := math.Max(float64(fees.Amount), timeFee+sizeFee) == float64(fees.Amount)
+//	if !val {
+//		log.Errorf("[%s]checkContractTxFeeValid invalid, fee amount[%f]-fees[%f](%f + %f), txSize[%f], timeout[%d]",
+//			shortId(reqId.String()), float64(fees.Amount), timeFee+sizeFee, timeFee, sizeFee, txSize, timeout)
+//	}
+//	return val
+//}
 
 func calculateContractDeployDuringTime(dag iDag, tx *modules.Transaction) (uint64, error) {
 	if tx == nil {

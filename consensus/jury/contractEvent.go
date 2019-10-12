@@ -45,9 +45,9 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) error {
 		return fmt.Errorf("[%s]ProcessContractEvent, event Tx reqId is exist, txId:%s",
 			shortId(reqId.String()), event.Tx.Hash().String())
 	}
-	if !p.checkTxValid(event.Tx) {
-		return fmt.Errorf("[%s]ProcessContractEvent, event Tx is invalid, txId:%s",
-			shortId(reqId.String()), event.Tx.Hash().String())
+	if v, err := p.checkTxValid(event.Tx); !v {
+		return fmt.Errorf("[%s]ProcessContractEvent, event Tx is invalid, txId:%s, err:%s",
+			shortId(reqId.String()), event.Tx.Hash().String(), err.Error())
 	}
 	if !p.checkTxAddrValid(event.Tx) {
 		return fmt.Errorf("[%s]ProcessContractEvent, event Tx addr is invalid, txId:%s",

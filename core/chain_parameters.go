@@ -103,11 +103,10 @@ type ChainParametersBase struct {
 	MaintenanceSkipSlots uint8 `json:"maintenance_skip_slots"`
 
 	// 目前的操作交易费，current schedule of fees
-	MediatorCreateFee        uint64 `json:"mediator_create_fee"`
+	MediatorCreateFee        uint64 `json:"mediator_create_fee"` //no use, delete
 	AccountUpdateFee         uint64 `json:"account_update_fee"`
 	TransferPtnBaseFee       uint64 `json:"transfer_ptn_base_fee"`
-	TransferPtnPricePerKByte uint64 `json:"transfer_ptn_price_per_KByte"`
-	// ContractInvokeFee        uint64 `json:"contract_invoke_fee"`
+	TransferPtnPricePerKByte uint64 `json:"transfer_ptn_price_per_KByte"` //APP_DATA
 }
 
 func NewChainParams() ChainParameters {
@@ -164,7 +163,7 @@ type ChainParameters struct {
 	ContractElectionNum   int    `json:"contract_election_num"`
 
 	ContractTxTimeoutUnitFee  uint64  `json:"contract_tx_timeout_unit_fee"`
-	ContractTxSizeUnitFee     uint64  `json:"contract_tx_size_unit_fee"`
+	ContractTxSizeUnitFee     uint64  `json:"contract_tx_size_unit_fee"` // price:  dao/byte
 	ContractTxInstallFeeLevel float64 `json:"contract_tx_install_fee_level"`
 	ContractTxDeployFeeLevel  float64 `json:"contract_tx_deploy_fee_level"`
 	ContractTxInvokeFeeLevel  float64 `json:"contract_tx_invoke_fee_level"`

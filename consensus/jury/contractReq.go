@@ -67,6 +67,15 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 		addrHash = append(addrHash, util.RlpHash(addr))
 	}
 	log.Debug("ContractInstallReq", "enter, tplName ", tplName, "path", path, "version", version, "addrHash", addrHash)
+
+	if daoFee == 0 { //dynamic calculation fee
+		fee, _, _, err := p.ContractInstallReqFee(from, to, daoAmount, daoFee, tplName, path, version, description, abi, language, local, addrs)
+		if err != nil {
+			return common.Hash{}, nil, fmt.Errorf("ContractInstallReq, ContractInstallReqFee err:%s", err.Error())
+		}
+		daoFee = uint64(fee) + 1
+		log.Debug("ContractInstallReq", "dynamic calculation fee:", daoFee)
+	}
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_TPL_REQUEST,
 		Payload: &modules.ContractInstallRequestPayload{
@@ -129,6 +138,14 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 			return common.Hash{}, common.Address{}, errors.New("ContractDeployReq request param len overflow")
 		}
 	}
+	if daoFee == 0 { //dynamic calculation fee
+		fee, _, _, err := p.ContractDeployReqFee(from, to, daoAmount, daoFee, templateId, args, extData, timeout)
+		if err != nil {
+			return common.Hash{}, common.Address{}, fmt.Errorf("ContractDeployReq, ContractDeployReqFee err:%s", err.Error())
+		}
+		daoFee = uint64(fee) + 1
+		log.Debug("ContractDeployReq", "dynamic calculation fee:", daoFee)
+	}
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_DEPLOY_REQUEST,
 		Payload: &modules.ContractDeployRequestPayload{
@@ -166,6 +183,14 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 			log.Error("ContractInvokeReq", "request param len overflow,len(arg)", len(arg))
 			return common.Hash{}, errors.New("ContractInvokeReq request param args len overflow")
 		}
+	}
+	if daoFee == 0 { //dynamic calculation fee
+		fee, _, _, err := p.ContractInvokeReqFee(from, to, daoAmount, daoFee, certID, contractId, args, timeout)
+		if err != nil {
+			return common.Hash{}, fmt.Errorf("ContractInvokeReq, ContractInvokeReqFee err:%s", err.Error())
+		}
+		daoFee = uint64(fee) + 1
+		log.Debug("ContractInvokeReq", "dynamic calculation fee:", daoFee)
 	}
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_INVOKE_REQUEST,
@@ -207,6 +232,14 @@ func (p *Processor) ContractInvokeReqToken(from, to, toToken common.Address, dao
 			return common.Hash{}, errors.New("ContractInvokeReqToken request param args len overflow")
 		}
 	}
+	if daoFee == 0 { //dynamic calculation fee
+		fee, _, _, err := p.ContractInvokeReqFee(from, to, daoAmount, daoFee, nil, contractId, args, timeout)
+		if err != nil {
+			return common.Hash{}, fmt.Errorf("ContractInvokeReqToken, ContractInvokeReqFee err:%s", err.Error())
+		}
+		daoFee = uint64(fee) + 1
+		log.Debug("ContractInvokeReqToken", "dynamic calculation fee:", daoFee)
+	}
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_INVOKE_REQUEST,
 		Payload: &modules.ContractInvokeRequestPayload{
@@ -236,6 +269,14 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 	randNum, err := crypto.GetRandomNonce()
 	if err != nil {
 		return common.Hash{}, errors.New("ContractStopReq, GetRandomNonce error")
+	}
+	if daoFee == 0 { //dynamic calculation fee
+		fee, _, _, err := p.ContractStopReqFee(from, to, daoAmount, daoFee, contractId, deleteImage)
+		if err != nil {
+			return common.Hash{}, fmt.Errorf("ContractStopReq, ContractStopReqFee err:%s", err.Error())
+		}
+		daoFee = uint64(fee) + 1
+		log.Debug("ContractStopReq", "dynamic calculation fee:", daoFee)
 	}
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_STOP_REQUEST,
