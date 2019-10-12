@@ -60,21 +60,53 @@ func (m *Migration103alpha_103beta) ExecuteUpgrade() error {
 func (m *Migration103alpha_103beta) upgradeDefaultMediatorsWithJurorInfo() error {
 	// 处理genesis中的几个特殊的mediator（由于没有初始保证金的bug）
 	dagDb := storage.NewDagDb(m.dagdb)
-	ghash, err := dagDb.GetGenesisUnitHash()
+	gHash, err := dagDb.GetGenesisUnitHash()
 	if err != nil {
 		errStr := fmt.Sprintf("GetGenesisUnitHash err: %v", err.Error())
 		log.Error(errStr)
 		return fmt.Errorf(errStr)
 	}
 
-	uHeader, err := dagDb.GetHeaderByHash(ghash)
+	uHeader, err := dagDb.GetHeaderByHash(gHash)
 	if err != nil {
 		errStr := fmt.Sprintf("GetHeaderByHash err: %v", err.Error())
 		log.Error(errStr)
 		return fmt.Errorf(errStr)
 	}
 
+	genesisVersion := &modules.StateVersion{
+		Height:  uHeader.GetNumber(),
+		TxIndex: ^uint32(0),
+	}
+
+	// 将 gene文件中定义的mediator放入 jury列表
+	var oldGenesisMediatorAndPubKey map[string]string
+	gHashHex := gHash.Hex()
+	if gHashHex == constants.MainNetGenesisHash {
+		oldGenesisMediatorAndPubKey = constants.OldMainNetGenesisMediatorAndPubKey
+	} else if gHashHex == constants.TestNetGenesisHash {
+		oldGenesisMediatorAndPubKey = constants.OldTestNetGenesisMediatorAndPubKey
+	}
+
+	var juryList map[string]bool
+	for add := range oldGenesisMediatorAndPubKey {
+		juryList[add] = true
+	}
+
+	juryListB, err := json.Marshal(juryList)
+	if err != nil {
+		log.Errorf(err.Error())
+		return err
+	}
+
 	stateDb := storage.NewStateDb(m.statedb)
+	ws := modules.NewWriteSet(modules.JuryList, juryListB)
+	err = stateDb.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws, genesisVersion)
+	if err != nil {
+		log.Errorf(err.Error())
+		return err
+	}
+
 	// 获取mediator候选列表
 	list, err := stateDb.GetCandidateMediatorList()
 	if err != nil {
@@ -82,6 +114,7 @@ func (m *Migration103alpha_103beta) upgradeDefaultMediatorsWithJurorInfo() error
 		return err
 	}
 
+	genesisTime := time.Unix(uHeader.Time, 0).UTC().Format(modules.Layout2)
 	for addr := range list {
 		var pubKey string
 		var isFind bool
@@ -93,14 +126,10 @@ func (m *Migration103alpha_103beta) upgradeDefaultMediatorsWithJurorInfo() error
 		juror.Balance = 0
 
 		// genesis的mediator可能没有缴纳保证金
-		if pubKey, isFind = constants.OldGenesisMediatorAndPubKey[addr]; isFind {
-			version = &modules.StateVersion{
-				Height:  uHeader.GetNumber(),
-				TxIndex: ^uint32(0),
-			}
-
-			juror.EnterTime = time.Unix(uHeader.Time, 0).UTC().Format(modules.Layout2)
-		} else if pubKey, isFind = constants.OldMediatorAndPubKey[addr]; isFind {
+		if pubKey, isFind = constants.OldTestNetGenesisMediatorAndPubKey[addr]; isFind {
+			version = genesisVersion
+			juror.EnterTime = genesisTime
+		} else if pubKey, isFind = constants.OldMainNetMediatorAndPubKey[addr]; isFind {
 			//  获取超级节点进入时间
 			var mediatorByte []byte
 			mediatorByte, version, err = stateDb.GetContractState(syscontract.DepositContractAddress.Bytes(),
@@ -120,7 +149,7 @@ func (m *Migration103alpha_103beta) upgradeDefaultMediatorsWithJurorInfo() error
 			juror.EnterTime = mediator.ApplyEnterTime
 		} else {
 			errStr := fmt.Sprintf("not find this mediator's PubKey: %v", addr)
-			log.Debugf(errStr)
+			log.Warnf(errStr)
 			//return fmt.Errorf(errStr)
 			continue
 		}

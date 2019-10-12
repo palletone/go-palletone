@@ -329,7 +329,7 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 			mi.MediatorApplyInfo = mco.MediatorApplyInfo
 
 			// 判断是否是1.0.2之前的mediator
-			if pubKey, isFind := constants.OldMediatorAndPubKey[mco.AddStr]; isFind {
+			if pubKey, isFind := constants.OldMainNetMediatorAndPubKey[mco.AddStr]; isFind {
 				juror := modules.JurorDeposit{}
 				juror.Address = mco.AddStr
 				juror.Role = modules.Jury
