@@ -192,8 +192,9 @@ func (validate *Validate) pickJuryFn(contractAddr common.Address) ([]byte, error
 	log.Debugf("Try to pickup jury for address:%s", contractAddr.String())
 	var redeemScript []byte
 	var err error
+	var jury *modules.ElectionNode
 	if !contractAddr.IsSystemContractAddress() { //only user contract has jury
-		jury, err := validate.statequery.GetContractJury(contractAddr.Bytes())
+		jury, err = validate.statequery.GetContractJury(contractAddr.Bytes())
 		if err != nil {
 			log.Errorf("Cannot get contract[%s] jury", contractAddr.String())
 			return nil, errors.New("Cannot get contract jury")
