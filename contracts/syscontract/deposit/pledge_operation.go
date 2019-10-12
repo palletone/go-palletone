@@ -29,6 +29,8 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
+const ALL = "all"
+
 //  质押PTN
 func processPledgeDeposit(stub shim.ChaincodeStubInterface) pb.Response {
 	//  获取是否是保证金合约
@@ -96,7 +98,7 @@ func processPledgeWithdraw(stub shim.ChaincodeStubInterface, args []string) pb.R
 
 	amount := args[0]
 	ptnAccount := uint64(0)
-	if strings.ToLower(amount) == "all" {
+	if strings.ToLower(amount) == ALL {
 		ptnAccount = math.MaxUint64
 	} else {
 		ptnAccount, err = strconv.ParseUint(amount, 10, 64)
@@ -118,7 +120,7 @@ func queryPledgeStatusByAddr(stub shim.ChaincodeStubInterface, args []string) pb
 	}
 	var status *modules.PledgeStatus
 	var err error
-	if strings.ToLower(args[0]) == "all" || len(args[0]) == 0 { //查询整个网络的质押情况
+	if strings.ToLower(args[0]) == ALL || len(args[0]) == 0 { //查询整个网络的质押情况
 		status, err = getTotalPledgeStatus(stub)
 	} else {
 		status, err = getPledgeStatus(stub, args[0])
@@ -171,7 +173,7 @@ func convertPledgeStatus2Json(p *modules.PledgeStatus) *modules.PledgeStatusJson
 	data.PledgeAmount = gasToken.DisplayAmount(p.PledgeAmount)
 	data.OtherAmount = gasToken.DisplayAmount(p.OtherAmount)
 	if p.WithdrawApplyAmount == math.MaxUint64 {
-		data.WithdrawApplyAmount = "all"
+		data.WithdrawApplyAmount = ALL
 	} else {
 		data.WithdrawApplyAmount = gasToken.DisplayAmount(p.WithdrawApplyAmount).String()
 	}
