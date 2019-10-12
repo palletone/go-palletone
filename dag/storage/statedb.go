@@ -114,18 +114,12 @@ func (statedb *StateDb) GetAllJuror() (map[string]*modules.JurorDeposit, error) 
 	}
 	jurynode := make(map[string]*modules.JurorDeposit)
 	for a := range allJurorAddrs {
-		depositeContractAddress := syscontract.DepositContractAddress
-		val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), JuryDepositKey(a))
+		juror, err := statedb.GetJurorByAddr(a)
 		if err != nil {
-			return nil, err
+			log.Warnf("Don't find JurorDeposit by %s", a)
+			continue
 		}
-		juror := modules.JurorDeposit{}
-		err = json.Unmarshal(val, &juror)
-		if err != nil {
-			return nil, err
-		}
-		jurynode[a] = &juror
-
+		jurynode[a] = juror
 	}
 	return jurynode, nil
 }
