@@ -116,7 +116,13 @@ func queryPledgeStatusByAddr(stub shim.ChaincodeStubInterface, args []string) pb
 	if len(args) != 1 {
 		return shim.Error("need 1 arg, Address")
 	}
-	status, err := getPledgeStatus(stub, args[0])
+	var status *modules.PledgeStatus
+	var err error
+	if strings.ToLower(args[0]) == "all" || len(args[0]) == 0 { //查询整个网络的质押情况
+		status, err = getTotalPledgeStatus(stub)
+	} else {
+		status, err = getPledgeStatus(stub, args[0])
+	}
 	if err != nil {
 		return shim.Error(err.Error())
 	}
