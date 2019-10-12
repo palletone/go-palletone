@@ -694,7 +694,9 @@ func (tx *Transaction) GetContractInvokeReqMsgIdx() int {
 	}
 	return -1
 }
-func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFunc GetScriptSignersFunc,
+
+//之前的费用分配有Bug，在ContractInstall的时候会分配错误。在V2中解决了这个问题，但是由于测试网已经有历史数据了，所以需要保留历史计算方法。
+func (tx *Transaction) GetTxFeeAllocateLegacyV1(queryUtxoFunc QueryUtxoFunc, getSignerFunc GetScriptSignersFunc,
 	mediatorAddr common.Address) ([]*Addition, error) {
 	fee, err := tx.GetTxFee(queryUtxoFunc)
 	result := []*Addition{}
@@ -757,8 +759,7 @@ func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFu
 	return result, nil
 }
 
-//之前的费用分配有Bug，在ContractInstall的时候会分配错误。在V2中解决了这个问题，但是由于测试网已经有历史数据了，所以需要保留历史计算方法。
-func (tx *Transaction) GetTxFeeAllocateV2(queryUtxoFunc QueryUtxoFunc, getSignerFunc GetScriptSignersFunc,
+func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFunc GetScriptSignersFunc,
 	mediatorAddr common.Address) ([]*Addition, error) {
 	fee, err := tx.GetTxFee(queryUtxoFunc)
 	result := []*Addition{}
@@ -771,7 +772,9 @@ func (tx *Transaction) GetTxFeeAllocateV2(queryUtxoFunc QueryUtxoFunc, getSigner
 	isJuryInside := false
 	jury := []common.Address{}
 	for msgIdx, msg := range tx.TxMessages {
-		if msg.App == APP_CONTRACT_INVOKE_REQUEST || msg.App == APP_CONTRACT_DEPLOY_REQUEST {
+		if msg.App == APP_CONTRACT_INVOKE_REQUEST ||
+			msg.App == APP_CONTRACT_DEPLOY_REQUEST ||
+			msg.App == APP_CONTRACT_STOP_REQUEST {
 			isJuryInside = true
 			//只有合约部署和调用的时候会涉及到Jury，才会分手续费给Jury
 			continue

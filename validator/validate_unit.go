@@ -32,6 +32,8 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
+const ENABLE_TX_FEE_CHECK_TIME = 1570870800
+
 /**
 验证unit的签名，需要比对见证人列表
 To validate unit's signature, and mediators' signature
@@ -231,7 +233,7 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) Validat
 		log.Warnf("validate.statequery.RetrieveMediator %v err", medAdd.Str())
 		return UNIT_STATE_INVALID_AUTHOR_SIGNATURE
 	}
-	validate.enableTxFeeCheck = unit.Timestamp() > 1571068800 //20191015 1.0.3升级，支持交易费检查
+	validate.enableTxFeeCheck = unit.Timestamp() > ENABLE_TX_FEE_CHECK_TIME // 1.0.3升级，支持交易费检查
 	//if validate.enableTxFeeCheck{
 	//	log.Infof("Enable tx fee check since %d",unit.Timestamp())
 	//}
