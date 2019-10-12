@@ -88,7 +88,7 @@ func (m *Migration103alpha_103beta) upgradeDefaultMediatorsWithJurorInfo() error
 		oldGenesisMediatorAndPubKey = constants.OldTestNetGenesisMediatorAndPubKey
 	}
 
-	var juryList map[string]bool
+	juryList := make(map[string]bool, len(oldGenesisMediatorAndPubKey))
 	for add := range oldGenesisMediatorAndPubKey {
 		juryList[add] = true
 	}
