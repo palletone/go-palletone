@@ -196,7 +196,6 @@ func TxDifference(a, b Transactions) (keep Transactions) {
 	return keep
 }
 
-
 type WriteCounter common.StorageSize
 
 func (c *WriteCounter) Write(b []byte) (int, error) {
@@ -373,7 +372,6 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 				payload := new(ContractInstallRequestPayload)
 				obj.DeepCopy(payload, msg.Payload)
 				request.AddMessage(NewMessage(msg.App, payload))
-
 			} else if msg.App == APP_CONTRACT_DEPLOY_REQUEST {
 				payload := new(ContractDeployRequestPayload)
 				obj.DeepCopy(payload, msg.Payload)
@@ -382,7 +380,6 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 				payload := new(ContractInvokeRequestPayload)
 				obj.DeepCopy(payload, msg.Payload)
 				request.AddMessage(NewMessage(msg.App, payload))
-
 			} else if msg.App == APP_CONTRACT_STOP_REQUEST {
 				payload := new(ContractStopRequestPayload)
 				obj.DeepCopy(payload, msg.Payload)

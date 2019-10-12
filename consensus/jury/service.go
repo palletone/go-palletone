@@ -531,7 +531,7 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 		return false
 	}
 	if v, err := p.checkTxValid(tx); !v {
-		log.Errorf("[%s]CheckContractTxValid checkTxValid fail, err:", shortId(reqId.String()), err.Error())
+		log.Errorf("[%s]CheckContractTxValid checkTxValid fail, err:%s", shortId(reqId.String()), err.Error())
 		return false
 	}
 	//只检查invoke类型
@@ -551,6 +551,8 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 		log.Errorf("[%s]CheckContractTxValid runContractCmd,error:%s", shortId(reqId.String()), err.Error())
 		return false
 	}
+	//reqTx := tx.GetRequestTx()
+	//txTmp, err := gen.GenContractTransction(reqTx, msgs)
 	return msgsCompare(msgs, tx.TxMessages, modules.APP_CONTRACT_INVOKE)
 }
 

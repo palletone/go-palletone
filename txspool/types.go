@@ -34,16 +34,16 @@ type TxPoolTransaction struct {
 	Tx *modules.Transaction
 
 	From         []*modules.OutPoint
-	CreationDate time.Time `json:"creation_date"`
-	Priority_lvl string    `json:"priority_lvl"` // 打包的优先级
+	CreationDate time.Time           `json:"creation_date"`
+	Priority_lvl string              `json:"priority_lvl"` // 打包的优先级
 	UnitHash     common.Hash
 	UnitIndex    uint64
 	Pending      bool
 	Confirmed    bool
 	IsOrphan     bool
-	Discarded    bool        // will remove
+	Discarded    bool // will remove
 	TxFee        []*modules.Addition `json:"tx_fee"`
-	Index        uint64      `json:"index"` // index 是该Unit位置。
+	Index        uint64              `json:"index"` // index 是该Unit位置。
 	Extra        []byte
 	Tag          uint64
 	Expiration   time.Time
@@ -67,7 +67,7 @@ func (tx *TxPoolTransaction) GetPriorityLvl() string {
 			tx.CreationDate = time.Now()
 		}
 		priority_lvl, _ = strconv.ParseFloat(fmt.Sprintf("%f", float64(txfee.Int64())/
-			tx.Tx.Size().Float64()*(1+float64(time.Now().Second()-tx.CreationDate.Second())/(24*3600))), 64)
+			tx.Tx.Size().Float64()* (1 + float64(time.Now().Second()-tx.CreationDate.Second())/(24*3600))), 64)
 	}
 	tx.Priority_lvl = strconv.FormatFloat(priority_lvl, 'f', -1, 64)
 	return tx.Priority_lvl
@@ -83,7 +83,7 @@ func (tx *TxPoolTransaction) GetPriorityfloat64() float64 {
 			tx.CreationDate = time.Now()
 		}
 		priority_lvl, _ = strconv.ParseFloat(fmt.Sprintf("%f", float64(txfee.Int64())/
-			tx.Tx.Size().Float64()*(1+float64(time.Now().Second()-tx.CreationDate.Second())/(24*3600))), 64)
+			tx.Tx.Size().Float64()* (1 + float64(time.Now().Second()-tx.CreationDate.Second())/(24*3600))), 64)
 	}
 	return priority_lvl
 }
@@ -101,6 +101,7 @@ func (tx *TxPoolTransaction) GetTxFee() *big.Int {
 	}
 	return big.NewInt(int64(fee))
 }
+
 //type Transactions []*Transaction
 type TxPoolTxs []*TxPoolTransaction
 
@@ -144,7 +145,6 @@ type TxByCreationDate []*TxPoolTransaction
 func (tc TxByCreationDate) Len() int           { return len(tc) }
 func (tc TxByCreationDate) Less(i, j int) bool { return tc[i].Priority_lvl > tc[j].Priority_lvl }
 func (tc TxByCreationDate) Swap(i, j int)      { tc[i], tc[j] = tc[j], tc[i] }
-
 
 type SequeueTxPoolTxs struct {
 	seqtxs []*TxPoolTransaction
