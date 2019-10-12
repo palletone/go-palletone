@@ -1306,21 +1306,26 @@ func (d *Dag) CheckHeaderCorrect(number int) error {
 }
 func (d *Dag) CheckUnitsCorrect(assetId string, number int) error {
 	asset, _, err := modules.String2AssetId(assetId)
-	var incorrect_num string
-	var incorrect_root bool
+	if err != nil {
+		return err
+	}
+
 	if number == 0 {
 		newestUnitHash, newestIndex, _ := d.stablePropRep.GetNewestUnit(asset)
 		log.Infof("Newest unit[%s] height:%d", newestUnitHash.String(), newestIndex.Index)
 		number = int(newestIndex.Index)
 	}
+
 	header, err := d.stableUnitRep.GetHeaderByNumber(modules.NewChainIndex(asset, uint64(number)))
 	if err != nil {
 		return fmt.Errorf("Unit height:%d not exits", number)
 	}
+
 	txs, err1 := d.stableUnitRep.GetUnitTransactions(header.Hash())
 	if err1 != nil {
 		return fmt.Errorf("unit height:%d 's body not exist, maybe the txroot is incorrect.", number)
 	}
+
 	// check txroot
 	root := core.DeriveSha(txs)
 	if root != header.TxRoot {
@@ -1329,6 +1334,9 @@ func (d *Dag) CheckUnitsCorrect(assetId string, number int) error {
 	}
 	parentHash := header.ParentsHash[0]
 	parentNumber := header.NumberU64() - 1
+
+	var incorrect_num string
+	var incorrect_root bool
 	for {
 		header, err = d.stableUnitRep.GetHeaderByHash(parentHash)
 		if err != nil {
@@ -1362,9 +1370,11 @@ func (d *Dag) CheckUnitsCorrect(assetId string, number int) error {
 			log.Infof("Check header correct:%d", header.NumberU64())
 		}
 	}
+
 	if incorrect_root {
 		return fmt.Errorf("unit height[%s] 's txroot is not equal the correct.", incorrect_num)
 	}
+
 	return nil
 }
 func (d *Dag) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error) {
