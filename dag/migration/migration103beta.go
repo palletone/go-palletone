@@ -88,24 +88,25 @@ func (m *Migration103alpha_103beta) upgradeDefaultMediatorsWithJurorInfo() error
 		oldGenesisMediatorAndPubKey = constants.OldTestNetGenesisMediatorAndPubKey
 	}
 
-	juryList := make(map[string]bool, len(oldGenesisMediatorAndPubKey))
-	for add := range oldGenesisMediatorAndPubKey {
-		juryList[add] = true
-	}
-
-	juryListB, err := json.Marshal(juryList)
-	if err != nil {
-		log.Errorf(err.Error())
-		return err
-	}
+	// 此处理唯有意义，因为系统合约已经在过去执行了，读集为空
+	//juryList := make(map[string]bool, len(oldGenesisMediatorAndPubKey))
+	//for add := range oldGenesisMediatorAndPubKey {
+	//	juryList[add] = true
+	//}
+	//
+	//juryListB, err := json.Marshal(juryList)
+	//if err != nil {
+	//	log.Errorf(err.Error())
+	//	return err
+	//}
 
 	stateDb := storage.NewStateDb(m.statedb)
-	ws := modules.NewWriteSet(modules.JuryList, juryListB)
-	err = stateDb.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws, genesisVersion)
-	if err != nil {
-		log.Errorf(err.Error())
-		return err
-	}
+	//ws := modules.NewWriteSet(modules.JuryList, juryListB)
+	//err = stateDb.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws, genesisVersion)
+	//if err != nil {
+	//	log.Errorf(err.Error())
+	//	return err
+	//}
 
 	// 获取mediator候选列表
 	list, err := stateDb.GetCandidateMediatorList()
@@ -126,7 +127,7 @@ func (m *Migration103alpha_103beta) upgradeDefaultMediatorsWithJurorInfo() error
 		juror.Balance = 0
 
 		// genesis的mediator可能没有缴纳保证金
-		if pubKey, isFind = constants.OldTestNetGenesisMediatorAndPubKey[addr]; isFind {
+		if pubKey, isFind = oldGenesisMediatorAndPubKey[addr]; isFind {
 			version = genesisVersion
 			juror.EnterTime = genesisTime
 		} else if pubKey, isFind = constants.OldMainNetMediatorAndPubKey[addr]; isFind {
