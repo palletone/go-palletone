@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 	"golang.org/x/crypto/ripemd160"
 	"hash"
@@ -865,7 +866,7 @@ func opcode1Negate(op *parsedOpcode, vm *Engine) error {
 func opcodeN(op *parsedOpcode, vm *Engine) error {
 	// The opcodes are all defined consecutively, so the numeric value is
 	// the difference.
-	vm.dstack.PushInt(scriptNum((op.opcode.value - (OP_1 - 1))))
+	vm.dstack.PushInt(scriptNum(op.opcode.value - (OP_1 - 1)))
 	return nil
 }
 
@@ -2149,9 +2150,9 @@ func opcodeCheckMultiSigVerify(op *parsedOpcode, vm *Engine) error {
 
 // OpcodeByName is a map that can be used to lookup an opcode by its
 // human-readable name (OP_CHECKMULTISIG, OP_CHECKSIG, etc).
-var OpcodeByName =initOpcodeByName()
+var OpcodeByName = initOpcodeByName()
 
-func initOpcodeByName() map[string]byte{
+func initOpcodeByName() map[string]byte {
 	var OpcodeByName = make(map[string]byte)
 	// Initialize the opcode name to value map using the contents of the
 	// opcode array.  Also add entries for "OP_FALSE", "OP_TRUE", and
@@ -2192,9 +2193,14 @@ func opcodeCheckJuryRedeemEqual(op *parsedOpcode, vm *Engine) error {
 	if !addr.IsSystemContractAddress() {
 		dbRedeem, err := vm.pickupJuryRedeemScript(addr)
 		if err != nil {
+			log.Warnf("contract[%s] pickupJuryRedeemScript error:%s", addr.String(), err.Error())
 			return err //scriptError(ErrPickupJuryRedeemScript, err.Error())
 		}
 		result = bytes.Equal(dbRedeem, redeemScript)
+		if !result {
+			log.Warnf("contract[%s] db redeem script[%x] not equal script redeem script[%x]",
+				addr.String(), dbRedeem, redeemScript)
+		}
 	}
 	vm.dstack.PushBool(result)
 	return nil

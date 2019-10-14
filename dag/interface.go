@@ -36,8 +36,8 @@ import (
 type IDag interface {
 	Close()
 
-	GetCommon(key []byte,stableDb bool) ([]byte, error)
-	GetCommonByPrefix(prefix []byte,stableDb bool) map[string][]byte
+	GetCommon(key []byte, stableDb bool) ([]byte, error)
+	GetCommonByPrefix(prefix []byte, stableDb bool) map[string][]byte
 	SaveCommon(key, val []byte) error
 	GetAllData() ([][]byte, [][]byte)
 
@@ -158,7 +158,6 @@ type IDag interface {
 	GetMainChain() (*modules.MainChain, error)
 
 	RefreshAddrTxIndex() error
-	GetMinFee() (*modules.AmountAsset, error)
 
 	GenVoteMediatorTx(voter common.Address, mediators map[string]bool,
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
@@ -200,6 +199,7 @@ type IDag interface {
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	ChainThreshold() int
 	CheckHeaderCorrect(number int) error
+	CheckUnitsCorrect(assetId string, number int) error
 	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
 	RebuildAddrTxIndex() error
 	GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, error)

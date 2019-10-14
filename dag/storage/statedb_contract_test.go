@@ -23,6 +23,8 @@ package storage
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"testing"
 	"time"
 
@@ -31,11 +33,8 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts/syscontract"
-	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
-	"os"
 )
 
 func TestGetContractState(t *testing.T) {
@@ -218,8 +217,8 @@ func TestJurors(t *testing.T) {
 	list[j2.Address] = true
 	b2, _ := json.Marshal(j2)
 	lb, _ := json.Marshal(list)
-	ws1 := modules.NewWriteSet(string(constants.DEPOSIT_JURY_BALANCE_PREFIX)+"p1", b1)
-	ws2 := modules.NewWriteSet(string(constants.DEPOSIT_JURY_BALANCE_PREFIX)+"p2", b2)
+	ws1 := modules.NewWriteSet(JuryDepositKey("p1"), b1)
+	ws2 := modules.NewWriteSet(JuryDepositKey("p2"), b2)
 	ws3 := modules.NewWriteSet(modules.JuryList, lb)
 	ws := []modules.ContractWriteSet{}
 	ws = append(ws, *ws1)

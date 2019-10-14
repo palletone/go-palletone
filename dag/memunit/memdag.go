@@ -277,8 +277,8 @@ func (chain *MemDag) setStableUnit(hash common.Hash, height uint64, txpool txspo
 	//remove fork units, and remove lower than stable unit
 	for _, funit := range chain_units {
 		if funit.NumberU64() <= max_height && funit.Hash() != hash {
-			chain_units := chain.getChainUnits()
-			chain.removeUnitAndChildren(chain_units, funit.Hash(), txpool)
+			allChainUnits := chain.getChainUnits()
+			chain.removeUnitAndChildren(allChainUnits, funit.Hash(), txpool)
 		}
 	}
 	//remove too low orphan unit
@@ -459,6 +459,9 @@ func (chain *MemDag) removeUnitAndChildren(chain_units map[common.Hash]*modules.
 	log.Debugf("Remove unit[%s] and it's children from chain unit", hash.String())
 
 	for h, unit := range chain_units {
+		if unit.NumberU64()==0{
+			continue
+		}
 		if h == hash {
 			if txs := unit.Transactions(); len(txs) > 1 {
 				go txpool.ResetPendingTxs(txs)

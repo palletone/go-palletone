@@ -200,10 +200,6 @@ func (ud *UnitDag4Test) GetBlacklistAddress() ([]common.Address, *modules.StateV
 	return []common.Address{}, nil, nil
 }
 
-func (ud *UnitDag4Test) GetMinFee() (*modules.AmountAsset, error) {
-	return nil, nil
-}
-
 func (ud *UnitDag4Test) GetContractJury(contractId []byte) (*modules.ElectionNode, error) {
 	return nil, nil
 }

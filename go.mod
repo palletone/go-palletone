@@ -38,7 +38,7 @@ require (
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/looplab/fsm v0.0.0-20180515091235-f980bdb68a89
-	github.com/magiconair/properties v1.8.0 // indirect
+	github.com/magiconair/properties v1.8.0
 	github.com/martinlindhe/base36 v0.0.0-20180729042928-5cda0030da17
 	github.com/maruel/panicparse v0.0.0-20160720141634-ad661195ed0e // indirect
 	github.com/maruel/ut v1.0.0 // indirect

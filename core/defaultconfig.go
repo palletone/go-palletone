@@ -43,8 +43,8 @@ const (
 	//DefaultUccNetworkMode    = "host" //TODO xiaozhi 测试容器运行网络模式
 	DefaultUccOOMKillDisable = false
 
-	DefaultContainerDuringTime  = 604800 //7天 = 604800 秒
-	DefaultRmExpConFromSysParam = true   //默认删除过期合约容器以系统参数 7 天为主
+	DefaultContainerDuringTime  = 0    //7天 = 604800 秒
+	DefaultRmExpConFromSysParam = true //默认删除过期合约容器以系统参数 7 天为主
 
 	DefaultTempUccMemory    = 1073741824
 	DefaultTempUccCpuShares = 1024
@@ -55,7 +55,7 @@ const (
 	DefaultMediator  = "P1nqukWkjFKk4UCUd2mdfV5VAgVuCApyXd"
 	DefaultPublickey = "0236b88303d4c1986de09a2d1c292b16fd2b90fb89b5d2874705e4e17c4e648c26"
 
-	DefaultNodeInfo  = "pnode://4bdc1c533f6e3700a0a6cc346bf2364eace58a10d8a782762c8d2b27cf4d96c25827c82a15" +
+	DefaultNodeInfo = "pnode://4bdc1c533f6e3700a0a6cc346bf2364eace58a10d8a782762c8d2b27cf4d96c25827c82a15" +
 		"684d348e88722b259f31abcccd4d0eaae0f52eeb85e1eb5342b862@127.0.0.1:30303"
 	DefaultInitPubKey = "2SvBCoCHWA8Zg2Q8v2onmaTeZj6YmWLbp6mzoCZeDwiUcmuqFwd8fZXCfdmEhTodbWaSJ8T7MvjQiZkn4S9VTQnKDr" +
 		"EkETt84Sr58vmjVdhdXNjjzqn8j6oHzvduxGo4UjWB66wd1GFXKoz5XD8hcPDzCyGVqZLjb7wu2pkJxeG1Mt3"
@@ -137,10 +137,11 @@ const (
 	DefaultMaintenanceInterval  = 60 * 5 // 60 * 60 * 24 // seconds, aka: 1 day
 	DefaultMaintenanceSkipSlots = 0      //Devin: Don't change // 1 // number of slots to skip for maintenance interval
 
-	DefaultMediatorCreateFee        = 50000
-	DefaultAccountUpdateFee         = 5000
-	DefaultTransferPtnBaseFee       = 5000
-	DefaultTransferPtnPricePerKByte = 30000
+	DefaultMediatorCreateFee  = 50000
+	DefaultAccountUpdateFee   = 5000
+	DefaultTransferPtnBaseFee = 5000
+	//DefaultTransferPtnPricePerKByte = 30000
+	DefaultTransferPtnPricePerKByte = 15000
 	DefaultContractInvokeFee        = 100000000
 
 	DefaultUnitMaxSize = 5 * 1024 * 1024 //5M

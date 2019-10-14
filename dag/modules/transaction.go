@@ -24,7 +24,6 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/rlp"
@@ -39,11 +38,12 @@ import (
 )
 
 var (
-	TXFEE       = big.NewInt(100000000) // transaction fee =1ptn
-	TX_MAXSIZE  = (256 * 1024)
-	TX_BASESIZE = (100 * 1024) //100kb
+	//TXFEE       = big.NewInt(100000000) // transaction fee =1ptn
+	TX_MAXSIZE  = 256 * 1024
+	TX_BASESIZE = 100 * 1024 //100kb
 )
-var DepositContractLockScript = common.Hex2Bytes("140000000000000000000000000000000000000001c8")
+
+//var DepositContractLockScript = common.Hex2Bytes("140000000000000000000000000000000000000001c8")
 
 // TxOut defines a bitcoin transaction output.
 type TxOut struct {
@@ -179,22 +179,22 @@ func (s Transactions) GetRlp(i int) []byte {
 }
 
 // TxDifference returns a new set t which is the difference between a to b.
-func TxDifference(a, b Transactions) (keep Transactions) {
-	keep = make(Transactions, 0, len(a))
-
-	remove := make(map[common.Hash]struct{})
-	for _, tx := range b {
-		remove[tx.Hash()] = struct{}{}
-	}
-
-	for _, tx := range a {
-		if _, ok := remove[tx.Hash()]; !ok {
-			keep = append(keep, tx)
-		}
-	}
-
-	return keep
-}
+//func TxDifference(a, b Transactions) (keep Transactions) {
+//	keep = make(Transactions, 0, len(a))
+//
+//	remove := make(map[common.Hash]struct{})
+//	for _, tx := range b {
+//		remove[tx.Hash()] = struct{}{}
+//	}
+//
+//	for _, tx := range a {
+//		if _, ok := remove[tx.Hash()]; !ok {
+//			keep = append(keep, tx)
+//		}
+//	}
+//
+//	return keep
+//}
 
 type WriteCounter common.StorageSize
 
@@ -619,6 +619,16 @@ func (msg *Transaction) SerializeSize() int {
 	n := msg.baseSize()
 	return n
 }
+func (tx *Transaction) DataPayloadSize() int {
+	size := 0
+	for _, msg := range tx.TxMessages {
+		if msg.App == APP_DATA {
+			data := msg.Payload.(*DataPayload)
+			size += len(data.MainData) + len(data.ExtraData) + len(data.Reference)
+		}
+	}
+	return size
+}
 
 //Deep copy transaction to a new object
 func (tx *Transaction) Clone() Transaction {
@@ -682,7 +692,9 @@ func (tx *Transaction) GetContractInvokeReqMsgIdx() int {
 	}
 	return -1
 }
-func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFunc GetScriptSignersFunc,
+
+//之前的费用分配有Bug，在ContractInstall的时候会分配错误。在V2中解决了这个问题，但是由于测试网已经有历史数据了，所以需要保留历史计算方法。
+func (tx *Transaction) GetTxFeeAllocateLegacyV1(queryUtxoFunc QueryUtxoFunc, getSignerFunc GetScriptSignersFunc,
 	mediatorAddr common.Address) ([]*Addition, error) {
 	fee, err := tx.GetTxFee(queryUtxoFunc)
 	result := []*Addition{}
@@ -735,6 +747,72 @@ func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFu
 		}
 		result = append(result, mediatorIncome)
 	} else { //没有合约执行，全部分配给Mediator
+		mediatorIncome := &Addition{
+			Addr:   mediatorAddr,
+			Amount: fee.Amount,
+			Asset:  fee.Asset,
+		}
+		result = append(result, mediatorIncome)
+	}
+	return result, nil
+}
+
+func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFunc GetScriptSignersFunc,
+	mediatorAddr common.Address) ([]*Addition, error) {
+	fee, err := tx.GetTxFee(queryUtxoFunc)
+	result := []*Addition{}
+	if err != nil {
+		return nil, err
+	}
+	if fee.Amount == 0 {
+		return result, nil
+	}
+	isJuryInside := false
+	jury := []common.Address{}
+	for msgIdx, msg := range tx.TxMessages {
+		if msg.App == APP_CONTRACT_INVOKE_REQUEST ||
+			msg.App == APP_CONTRACT_DEPLOY_REQUEST ||
+			msg.App == APP_CONTRACT_STOP_REQUEST {
+			isJuryInside = true
+			//只有合约部署和调用的时候会涉及到Jury，才会分手续费给Jury
+			continue
+		}
+		if isJuryInside && msg.App == APP_SIGNATURE {
+			payload := msg.Payload.(*SignaturePayload)
+			for _, sig := range payload.Signatures {
+				jury = append(jury, crypto.PubkeyBytesToAddress(sig.PubKey))
+			}
+		}
+		if isJuryInside && msg.App == APP_PAYMENT {
+			payment := msg.Payload.(*PaymentPayload)
+			if !payment.IsCoinbase() {
+				jury, err = getSignerFunc(tx, msgIdx, 0)
+				if err != nil {
+					return nil, errors.New("Parse unlock script to get signers error:" + err.Error())
+				}
+			}
+		}
+	}
+	if isJuryInside { //合约执行，Fee需要分配给Jury
+		juryAmount := float64(fee.Amount) * parameter.CurrentSysParameters.ContractFeeJuryPercent
+		juryAllocatedAmt := uint64(0)
+		juryCount := float64(len(jury))
+		for _, jurior := range jury {
+			jIncome := &Addition{
+				Addr:   jurior,
+				Amount: uint64(juryAmount / juryCount),
+				Asset:  fee.Asset,
+			}
+			juryAllocatedAmt += jIncome.Amount
+			result = append(result, jIncome)
+		}
+		mediatorIncome := &Addition{
+			Addr:   mediatorAddr,
+			Amount: fee.Amount - juryAllocatedAmt,
+			Asset:  fee.Asset,
+		}
+		result = append(result, mediatorIncome)
+	} else { //没有合约部署或者执行，全部分配给Mediator
 		mediatorIncome := &Addition{
 			Addr:   mediatorAddr,
 			Amount: fee.Amount,

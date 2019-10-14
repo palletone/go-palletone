@@ -17,12 +17,15 @@ package deposit
 
 import (
 	"encoding/json"
+	"strings"
+
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/storage"
 )
 
 type DepositChaincode struct {
@@ -33,9 +36,28 @@ func (d *DepositChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(nil)
 }
 
+//将字符串的首字母大写
+func UpperFirstChar(str string) string {
+	if len(str) == 0 {
+		return str
+	}
+	var b strings.Builder
+	b.Grow(len(str))
+	c := str[0]
+	if c >= 'a' && c <= 'z' {
+		c -= 'a' - 'A'
+	}
+	b.WriteByte(c)
+	for i := 1; i < len(str); i++ {
+		b.WriteByte(str[i])
+	}
+	return b.String()
+}
+
 func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	funcName, args := stub.GetFunctionAndParameters()
-	switch funcName {
+	upperFuncName := UpperFirstChar(funcName)
+	switch upperFuncName {
 	//
 	// 申请成为Mediator
 	case modules.ApplyMediator:
@@ -303,11 +325,15 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		if err != nil {
 			return shim.Success([]byte(err.Error()))
 		}
-		b, err := json.Marshal(result)
+		if balance == nil {
+			return shim.Success([]byte("balance is nil"))
+		}
+		dbJson := convertDepositBalance2Json(balance)
+		data, err := json.Marshal(dbJson)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-		return shim.Success(b)
+		return shim.Success(data)
 	case modules.GetJuryDeposit:
 		log.Info("Enter DepositChaincode Contract " + modules.GetJuryDeposit + " Query")
 		if len(args) != 1 {
@@ -317,11 +343,15 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		if err != nil {
 			return shim.Success([]byte(err.Error()))
 		}
-		b, err := json.Marshal(result)
+		if balance == nil {
+			return shim.Success([]byte("balance is nil"))
+		}
+		dbJson := convertJuryDeposit2Json(balance)
+		data, err := json.Marshal(dbJson)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-		return shim.Success(b)
+		return shim.Success(data)
 		// 获取mediator Deposit
 	case modules.GetMediatorDeposit:
 		log.Info("Enter DepositChaincode Contract " + modules.GetMediatorDeposit + " Query")
@@ -332,11 +362,16 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-		b, err := json.Marshal(result)
+		if mediator == nil {
+			return shim.Success([]byte("mediator is nil"))
+		}
+		mdJson := convertMediatorDeposit2Json(mediator)
+		data, err := json.Marshal(mdJson)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-		return shim.Success(b)
+		return shim.Success(data)
+
 	//  普通用户质押投票
 	case modules.PledgeDeposit:
 		log.Info("Enter DepositChaincode Contract " + modules.PledgeDeposit + " Invoke")
@@ -437,7 +472,36 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		return  d.GetAllNode(stub)
 	case modules.GetAllJury:
 		log.Info("Enter DepositChaincode Contract " + modules.GetAllJury + " Query")
-		return  d.GetAllJury(stub)
+		listb, err := stub.GetState(modules.JuryList)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		if listb == nil {
+			return shim.Success([]byte("{}"))
+		}
+		allJurorAddrs := make(map[string]bool)
+		err = json.Unmarshal(listb, &allJurorAddrs)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		jurynodes := make(map[string]*modules.JurorDeposit)
+		for a := range allJurorAddrs {
+			j, err := stub.GetState(storage.JuryDepositKey(a))
+			if err != nil {
+				return shim.Error(err.Error())
+			}
+			juror := modules.JurorDeposit{}
+			err = json.Unmarshal(j, &juror)
+			if err != nil {
+				shim.Error(err.Error())
+			}
+			jurynodes[a] = &juror
+		}
+		juryb, err := json.Marshal(jurynodes)
+		if err != nil {
+			shim.Error(err.Error())
+		}
+		return shim.Success(juryb)
 	}
 	return shim.Error("please enter validate function name")
 }

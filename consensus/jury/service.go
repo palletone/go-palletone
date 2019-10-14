@@ -88,8 +88,6 @@ type iDag interface {
 	GetContractJury(contractId []byte) (*modules.ElectionNode, error)
 	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
 	GetContract(contractId []byte) (*modules.Contract, error)
-	//获得系统配置的最低手续费要求
-	GetMinFee() (*modules.AmountAsset, error)
 	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 	ChainThreshold() int

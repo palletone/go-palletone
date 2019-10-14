@@ -112,7 +112,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface,  mediatorCreateArgs s
 	// 保存juror保证金
 	jd := &modules.JurorDeposit{}
 	jd.Balance = 0
-	jd.EnterTime = getTime(stub)
+	jd.EnterTime = md.ApplyEnterTime
 	jd.Role = modules.Jury
 	jd.Address = applyingAddrStr
 	jd.JurorDepositExtra = jde

@@ -138,7 +138,7 @@ type MediatorPlugin struct {
 	vssResponseScope event.SubscriptionScope
 
 	// unit阈值签名相关
-	toTBLSSignBuf    map[common.Address]*sync.Map
+	toTBLSSignBuf    map[common.Address]*sync.Map // todo 改变字段类型，并加锁
 	toTBLSRecoverBuf map[common.Address]map[common.Hash]*sigShareSet
 	recoverBufLock   *sync.RWMutex
 
