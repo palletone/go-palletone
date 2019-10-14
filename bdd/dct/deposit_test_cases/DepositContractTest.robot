@@ -380,72 +380,147 @@ Business_08
     log    ${resul}
 
 PledgeTest
+    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${votedAddress}    PTN
+    log    ${result}
+    Should Be Equal As Numbers    ${result}    10000
+    sleep    5
     ${result}    mediatorListAll    #查看所有超级节点
     log    ${result}
-    sleep    3
+    sleep    5
     ${mediatorAddress}    Set Variable    ${result[0]}
     ${result}    mediatorListVoteResults    #查看超级节点投票结果
     log    ${result}
-    sleep    3
-    ${result}    mediatorVote    ${votedAddress}    ${mediatorAddress}    #投票某超级节点
+    sleep    5
+    ${result}    mediatorVote    ${votedAddress}    ${mediatorAddress}    #投票某超级节点    #5000DAO
     log    ${result}
-    sleep    3
+    sleep    5
+    ${result}    getBalance    ${votedAddress}    PTN
+    log    ${result}
+    Should Be Equal As Numbers    ${result}    9999.99995
+    sleep    5
     ${result}    mediatorGetVoted    ${votedAddress}    #查看该节点所投票的情况
     log    ${result}
-    sleep    3
-    ${result}    getBalance    ${votedAddress}    PTN
+    Should Be Equal As Strings    ${result[0]}    ${mediatorAddress}
+    sleep    5
+    ${result}    pledgeDeposit    ${votedAddress}    100    #质押PTN    #101
     log    ${result}
-    sleep    3
-    ${result}    pledgeDeposit    ${votedAddress}    100    #质押PTN
-    log    ${result}
-    sleep    3
+    sleep    5
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
     log    ${result}
-    sleep    3
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    newDepositAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    100
+    sleep    5
     ${result}    getBalance    ${votedAddress}    PTN
     log    ${result}
-    sleep    3
+    Should Be Equal As Numbers    ${result}    9898.99995
+    sleep    5
     ${result}    mediatorListVoteResults    #查看超级节点投票结果
     log    ${result}
-    #    3
-    #    queryPledgeStatusByAddr    all    #如果要查询所有地址（整个网络）的质押情况，可以传参数all
-    #    ${result}
-    sleep    3
+    ${amount}    Get From Dictionary    ${result}    ${mediatorAddress}
+    Should Be Equal As Numbers    ${amount}    10000000000
+    sleep    5
     ${result}    queryPledgeList    #查看整个网络所有质押情况
     log    ${result}
-    sleep    3
-    ${result}    QueryPledgeListByDate    20191012
+    sleep    5
+    ${result}    QueryPledgeListByDate    20191014
     log    ${result}
-    sleep    3
+    sleep    5
     ${result}    QueryAllPledgeHistory
     log    ${result}
-    sleep    3
-    ${result}    PledgeWithdraw    ${votedAddress}    10000000000
+    sleep    5
+    ${result}    HandlePledgeReward    ${votedAddress}    #1
     log    ${result}
-    sleep    3
+    sleep    5
+    ${result}    getBalance    ${votedAddress}    PTN
+    log    ${result}
+    Should Be Equal As Numbers    ${result}    9897.99995
+    sleep    5
     ${result}    queryPledgeList    #查看整个网络所有质押情况
     log    ${result}
-    sleep    3
-    ${result}    QueryPledgeListByDate    20191012
+    ${resultJson}    To Json    ${result}
+    ${total_amount}    Get From Dictionary    ${resultJson}    total_amount
+    Should Be Equal As Strings    ${total_amount}    10000000000
+    sleep    5
+    ${result}    QueryPledgeListByDate    20191014
     log    ${result}
-    sleep    3
+    sleep    5
     ${result}    QueryAllPledgeHistory
     log    ${result}
-    sleep    3
-    ${result}    HandlePledgeReward    ${votedAddress}
-    log    ${result}
-    sleep    3
+    sleep    5
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
     log    ${result}
-    sleep    3
+    ${resultJson}    To Json    ${result}
+    ${pledgeAmount}    Get From Dictionary    ${resultJson}    pledgeAmount
+    log    ${pledgeAmount}
+    Should Be Equal As Strings    ${pledgeAmount}    100
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
     ${result}    queryPledgeList    #查看整个网络所有质押情况
     log    ${result}
-    sleep    3
-    ${result}    QueryPledgeListByDate    20191012
+    ${resultJson}    To Json    ${result}
+    ${total_amount}    Get From Dictionary    ${resultJson}    total_amount
+    Should Be Equal As Strings    ${total_amount}    10288745000
+    sleep    5
+    ${result}    QueryPledgeListByDate    20191015
     log    ${result}
-    sleep    3
+    sleep    5
     ${result}    QueryAllPledgeHistory
     log    ${result}
-    sleep    3
+    sleep    5
+    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    log    ${result}
+    ${resultJson}    To Json    ${result}
+    ${pledgeAmount}    Get From Dictionary    ${resultJson}    pledgeAmount
+    log    ${pledgeAmount}
+    Should Be Equal As Strings    ${pledgeAmount}    102.88745
+    sleep    5
+    ${result}    PledgeWithdraw    ${votedAddress}    10000000000    #1
+    log    ${result}
+    sleep    5
     ${result}    getBalance    ${votedAddress}    PTN
+    log    ${result}
+    Should Be Equal As Numbers    ${result}    9896.99995
+    sleep    5
+    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    log    ${result}
+    ${resultJson}    To Json    ${result}
+    ${pledgeAmount}    Get From Dictionary    ${resultJson}    pledgeAmount
+    log    ${pledgeAmount}
+    Should Be Equal As Strings    ${pledgeAmount}    102.88745
+    ${withdrawApplyAmount}    Get From Dictionary    ${resultJson}    withdrawApplyAmount
+    log    ${withdrawApplyAmount}
+    Should Be Equal As Strings    ${withdrawApplyAmount}    100
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    ${result}    getBalance    ${votedAddress}    PTN
+    log    ${result}
+    Should Be Equal As Numbers    ${result}    9996.99995
+    sleep    5
+    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    log    ${result}
+    ${resultJson}    To Json    ${result}
+    ${pledgeAmount}    Get From Dictionary    ${resultJson}    pledgeAmount
+    log    ${pledgeAmount}
+    Should Be Equal As Strings    ${pledgeAmount}    5.7749
+    sleep    5
+    ${result}    queryPledgeList    #查看整个网络所有质押情况
+    log    ${result}
+    ${resultJson}    To Json    ${result}
+    ${total_amount}    Get From Dictionary    ${resultJson}    total_amount
+    Should Be Equal As Strings    ${total_amount}    577490000
+    sleep    5
+    ${result}    QueryPledgeListByDate    20191016
+    log    ${result}
+    sleep    5
+    ${result}    QueryAllPledgeHistory
+    log    ${result}
+    ${result}    mediatorListVoteResults    #查看超级节点投票结果
     log    ${result}

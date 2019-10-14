@@ -350,7 +350,7 @@ func RestartContainers(dag dag.IDag, cons []docker.APIContainers, jury core.IAda
 	//  获取所有退出容器
 	addrs, err := utils.GetAllExitedContainer(cons)
 	if err != nil {
-		log.Infof("client.GetAllExitedContainer err: %s\n", err.Error())
+		log.Infof("client.GetAllExitedContainer err: %s", err.Error())
 		return
 	}
 	for _, v := range addrs {

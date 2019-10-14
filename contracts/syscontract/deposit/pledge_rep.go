@@ -27,6 +27,8 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
+	"strconv"
+
 	//pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	//"github.com/palletone/go-palletone/dag/constants"
 	//"github.com/palletone/go-palletone/dag/modules"
@@ -87,8 +89,15 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward
 	if err != nil {
 		return err
 	}
-	if lastDate == today {
-		return fmt.Errorf("%s pledge reward has been allocated before", today)
+	//判断是否是基金会触发
+	if isFoundationInvoke(stub) {
+		t ,_ :=strconv.Atoi(lastDate)
+		t +=1
+		today = strconv.Itoa(t)
+	}else {
+		if lastDate == today {
+			return fmt.Errorf("%s pledge reward has been allocated before", today)
+		}
 	}
 	allM, err := getLastPledgeList(stub)
 	if err != nil {

@@ -5,7 +5,7 @@ Resource          publicParams.txt
 HandlePledgeReward
     [Arguments]    ${votedAddress}
     ${contractParam}    Create List    HandlePledgeReward
-    ${param}    Create List    ${votedAddress}    ${depositContractAddress}    0    1    ${depositContractAddress}
+    ${param}    Create List    ${votedAddress}    ${votedAddress}    1    1    ${depositContractAddress}
     ...    ${contractParam}    \    10
     ${result}    创建公用的POST请求    contract_ccinvoketx    contract_ccinvoketx    ${param}
     [Return]    ${result}
