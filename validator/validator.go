@@ -55,7 +55,7 @@ func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propq
 		statequery:       statedb,
 		propquery:        propquery,
 		tokenEngine:      tokenengine.Instance,
-		enableTxFeeCheck: false,
+		enableTxFeeCheck: true,
 	}
 }
 

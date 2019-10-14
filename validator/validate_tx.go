@@ -262,10 +262,10 @@ func (validate *Validate) validateTxFee(tx *modules.Transaction) (bool, []*modul
 	var feeAllocate []*modules.Addition
 	var err error
 	if validate.enableTxFeeCheck {
-		feeAllocate, err = tx.GetTxFeeAllocateV2(validate.utxoquery.GetUtxoEntry,
+		feeAllocate, err = tx.GetTxFeeAllocate(validate.utxoquery.GetUtxoEntry,
 			validate.tokenEngine.GetScriptSigners, common.Address{})
 	} else {
-		feeAllocate, err = tx.GetTxFeeAllocate(validate.utxoquery.GetUtxoEntry,
+		feeAllocate, err = tx.GetTxFeeAllocateLegacyV1(validate.utxoquery.GetUtxoEntry,
 			validate.tokenEngine.GetScriptSigners, common.Address{})
 	}
 

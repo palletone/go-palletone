@@ -611,7 +611,7 @@ func (rep *UnitRepository) ComputeTxFeesAllocate(m common.Address, txs []*module
 		for o, u := range utxos {
 			tempTxs.allUtxo[o] = u
 		}
-		allowcate, err := tx.GetTxFeeAllocateV2(tempTxs.getUtxoEntryFromTxs, rep.tokenEngine.GetScriptSigners, m)
+		allowcate, err := tx.GetTxFeeAllocate(tempTxs.getUtxoEntryFromTxs, rep.tokenEngine.GetScriptSigners, m)
 		if err != nil {
 			return nil, err
 		}
