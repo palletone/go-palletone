@@ -88,7 +88,7 @@ func (m *Migration103alpha_103beta) upgradeDefaultMediatorsWithJurorInfo() error
 		oldGenesisMediatorAndPubKey = constants.OldTestNetGenesisMediatorAndPubKey
 	}
 
-	// 此处理唯有意义，因为系统合约已经在过去执行了，读集为空
+	// 此处将mediator加入jury列表没有意义，因为系统合约已经在过去执行时读集为空，会在新的写集里置空
 	//juryList := make(map[string]bool, len(oldGenesisMediatorAndPubKey))
 	//for add := range oldGenesisMediatorAndPubKey {
 	//	juryList[add] = true

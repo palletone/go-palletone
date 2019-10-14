@@ -302,11 +302,16 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 		if parentHeader.Number.Index+1 != header.Number.Index {
 			return UNIT_STATE_INVALID_HEADER_NUMBER
 		}
-		// 1568197800 2019-09-11 18:30:00 testnet分叉修复后，统一的leveldb
+
+		// 1568197800 2019-09-11 18:30:00 testNet分叉修复后，统一的leveldb
 		// 2019-07-11 12:56:46 849c2cb5c7b3fbd37b2ac5f318716f90613259f2 将洗牌算法的种子由时间戳改成hash
 		// 并在 1.0.1 版本升级后，在主网和测试网中使用新的调度策略
+
+		// 1565085600 2019-08-06 18:00:00 1.0.1 版本主网升级完成
+		//if header.Time > 1565085600 { //之前的mediator schedule可能验证通不过
+
 		//1570870800 20191012 17:00:00
-		if header.Time > 1570870800 { //之前的mediator schedule可能验证不过。
+		if header.Time > 1570870800 { //之前的mediator schedule可能验证通不过
 			vcode := validate.validateMediatorSchedule(header)
 			if vcode != TxValidationCode_VALID {
 				return vcode
