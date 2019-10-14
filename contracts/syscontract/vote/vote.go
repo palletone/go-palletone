@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * Copyright IBM Corp. All Rights Reserved.
  * @author PalletOne core developers <dev@pallet.one>
@@ -111,7 +112,10 @@ func (v *Vote) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if len(args) < 1 {
 			return shim.Error("need 1 args (AssetID)")
 		}
-		tkIDInfo, err := v.GetVoteResult(stub, args[0])
+		tkIDInfo, err0 := v.GetVoteResult(stub, args[0])
+		if err0 != nil {
+			return shim.Error(err0.Error())
+		}
 		tkJSON, err := json.Marshal(tkIDInfo)
 		if err != nil {
 			return shim.Error(err.Error())
@@ -121,7 +125,10 @@ func (v *Vote) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if len(args) < 1 {
 			return shim.Error("need 1 args (AssetID)")
 		}
-		voteInfo, err := v.GetVoteInfo(stub, args[0])
+		voteInfo, err0 := v.GetVoteInfo(stub, args[0])
+		if err0 != nil {
+			return shim.Error(err0.Error())
+		}
 		vtJSON, err := json.Marshal(voteInfo)
 		if err != nil {
 			return shim.Error(err.Error())
