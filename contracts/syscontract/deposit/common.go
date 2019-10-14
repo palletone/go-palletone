@@ -383,7 +383,7 @@ func getToday(stub shim.ChaincodeStubInterface) string {
 }
 
 //  社区申请没收某节点的保证金数量
-func applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, forfeitureAddress string,role string,reason string) pb.Response {
+func applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, forfeitureAddress string, role string, reason string) pb.Response {
 	log.Info("ApplyForForfeitureDeposit")
 
 	//  需要判断是否基金会发起的
@@ -460,7 +460,7 @@ func handleNode(stub shim.ChaincodeStubInterface, quitAddr common.Address, role 
 		return err
 	}
 	delete(listForQuit, addStr)
-	err = SaveListForQuit(stub, listForQuit)
+	err = saveListForQuit(stub, listForQuit)
 	if err != nil {
 		return err
 	}
@@ -469,7 +469,7 @@ func handleNode(stub shim.ChaincodeStubInterface, quitAddr common.Address, role 
 	balance := uint64(0)
 	if role == modules.Developer {
 		//  获取该节点保证金数量
-		b, err := GetNodeBalance(stub, addStr)
+		b, err := getNodeBalance(stub, addStr)
 		if err != nil {
 			return err
 		}

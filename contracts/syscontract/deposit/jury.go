@@ -66,7 +66,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, pubkey string) p
 	cp := gp.ChainParameters
 
 	//获取账户
-	balance, err := getJuryBalance(stub, invokeAddrStr)
+	balance, err := GetJuryBalance(stub, invokeAddrStr)
 	if err != nil {
 		log.Error("get node balance err: ", "error", err)
 		return shim.Error(err.Error())

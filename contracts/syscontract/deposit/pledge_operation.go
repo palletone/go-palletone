@@ -108,22 +108,14 @@ func processPledgeWithdraw(stub shim.ChaincodeStubInterface, amount string) pb.R
 	return shim.Success(nil)
 }
 
-func queryPledgeStatusByAddr(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	if len(args) != 1 {
-		return shim.Error("need 1 arg, Address")
-	}
-	var status *modules.PledgeStatus
-	var err error
-	if strings.ToLower(args[0]) == ALL || len(args[0]) == 0 { //查询整个网络的质押情况
-		status, err = getTotalPledgeStatus(stub)
-	} else {
-		status, err = getPledgeStatus(stub, args[0])
-	}
+func queryPledgeStatusByAddr(stub shim.ChaincodeStubInterface, address string) (*modules.PledgeStatusJson, error) {
+
+	status, err := getPledgeStatus(stub, address)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	pjson := convertPledgeStatus2Json(status)
-	return pjson,nil
+	return pjson, nil
 }
 
 func queryAllPledgeHistory(stub shim.ChaincodeStubInterface) ([]*modules.PledgeList, error) {
@@ -137,7 +129,7 @@ func queryPledgeList(stub shim.ChaincodeStubInterface) (*modules.PledgeList, err
 func queryPledgeListByDate(stub shim.ChaincodeStubInterface, date string) (*modules.PledgeList, error) {
 	reg := regexp.MustCompile(`[\d]{8}`)
 	if !reg.Match([]byte(date)) {
-		return nil,errors.New("must use YYYYMMDD format")
+		return nil, errors.New("must use YYYYMMDD format")
 	}
 	return getPledgeListByDate(stub, date)
 }

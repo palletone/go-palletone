@@ -26,7 +26,7 @@ import (
 )
 
 //  处理mediator申请退出保证金
-func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface,address string, okOrNo string) pb.Response {
+func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, address string, okOrNo string) pb.Response {
 	log.Info("HandleForApplyBecomeMediator")
 
 	//  判断是否基金会发起的
@@ -105,16 +105,16 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface,address strin
 }
 
 //处理退出 参数：同意或不同意，节点的地址
-func handleForApplyQuitJury(stub shim.ChaincodeStubInterface, address string ,okOrNo string) pb.Response {
-	return handleForApplyQuitNode(stub, address,okOrNo, modules.Jury)
+func handleForApplyQuitJury(stub shim.ChaincodeStubInterface, address string, okOrNo string) pb.Response {
+	return handleForApplyQuitNode(stub, address, okOrNo, modules.Jury)
 }
 
 //处理退出 参数：同意或不同意，节点的地址
-func handleForApplyQuitDev(stub shim.ChaincodeStubInterface, address string ,okOrNo string) pb.Response {
-	return handleForApplyQuitNode(stub, address,okOrNo, modules.Developer)
+func handleForApplyQuitDev(stub shim.ChaincodeStubInterface, address string, okOrNo string) pb.Response {
+	return handleForApplyQuitNode(stub, address, okOrNo, modules.Developer)
 }
 
-func handleForApplyQuitNode(stub shim.ChaincodeStubInterface, address string ,okOrNo string, role string) pb.Response {
+func handleForApplyQuitNode(stub shim.ChaincodeStubInterface, address string, okOrNo string, role string) pb.Response {
 	log.Info("Start enter HandleForApplyQuitMediator func")
 
 	//  判断是否基金会发起的
@@ -157,7 +157,7 @@ func handleForApplyQuitNode(stub shim.ChaincodeStubInterface, address string ,ok
 }
 
 //处理退出 参数：同意或不同意，节点的地址
-func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, address string,okOrNo string) pb.Response {
+func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, address string, okOrNo string) pb.Response {
 	log.Info("Start enter HandleForApplyQuitMediator func")
 
 	//  判断是否基金会发起的
@@ -194,7 +194,7 @@ func handleForApplyQuitMediator(stub shim.ChaincodeStubInterface, address string
 	return shim.Success(nil)
 }
 
-func handleForForfeitureApplication(stub shim.ChaincodeStubInterface, address string,okOrNo string) pb.Response {
+func handleForForfeitureApplication(stub shim.ChaincodeStubInterface, address string, okOrNo string) pb.Response {
 	log.Info("HandleForForfeitureApplication")
 
 	//  判断是否基金会发起的
@@ -270,7 +270,7 @@ func agreeForApplyForfeiture(stub shim.ChaincodeStubInterface, foundationA strin
 	}
 }
 func handleJuryForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA string, forfeitureAddr string) error {
-	node, err := getJuryBalance(stub, forfeitureAddr)
+	node, err := GetJuryBalance(stub, forfeitureAddr)
 	if err != nil {
 		return err
 	}
@@ -295,7 +295,7 @@ func handleJuryForfeitureDeposit(stub shim.ChaincodeStubInterface, foundationA s
 		log.Error("stub.PayOutToken err:", "error", err)
 		return err
 	}
-	err = delJuryBalance(stub, forfeitureAddr)
+	err = DelJuryBalance(stub, forfeitureAddr)
 	if err != nil {
 		return err
 	}
