@@ -34,6 +34,7 @@ import (
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core"
 	"go.dedis.ch/kyber/v3"
+	"io"
 )
 
 // unit state
@@ -305,9 +306,12 @@ func (unit *Unit) String4Log() string {
 	return fmt.Sprintf("Hash:%s,Index:%d,Txs:%x", unit.Hash().String(), unit.NumberU64(), txs)
 }
 
-
 //出于DAG和基于Token的分区共识的考虑，设计了该ChainIndex，
 type ChainIndex struct {
+	AssetID AssetId `json:"asset_id"`
+	Index   uint64  `json:"index"`
+}
+type ChainIndexTemp struct {
 	AssetID AssetId `json:"asset_id"`
 	Index   uint64  `json:"index"`
 }
@@ -569,4 +573,28 @@ func FillBytes(data []byte, lenth uint8) []byte {
 		newBytes = data[:lenth]
 	}
 	return newBytes
+}
+
+func (input *ChainIndex) DecodeRLP(s *rlp.Stream) error {
+	raw, err := s.Raw()
+	if err != nil {
+		return err
+	}
+	temp := &ChainIndexTemp{}
+	err = rlp.DecodeBytes(raw, temp)
+	if err != nil {
+		return err
+	}
+
+	input.AssetID = temp.AssetID
+	input.Index = temp.Index
+
+	return nil
+}
+func (input *ChainIndex) EncodeRLP(w io.Writer) error {
+	temp := &ChainIndexTemp{}
+	temp.AssetID = input.AssetID
+	temp.Index = input.Index
+
+	return rlp.Encode(w, temp)
 }

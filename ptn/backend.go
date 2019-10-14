@@ -507,12 +507,9 @@ func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal,
 
 	return res, nil
 }
-func initGenesisData(keys, values []string, db ptndb.Database) error {
+func initGenesisData(keys, values []string, db ptndb.Putter) error {
 	k := len(keys)
-	v := len(values)
-	if k != v {
-		fmt.Errorf("The len[%d] of keys doesn't match the len[%d] of values", k, v)
-	}
+
 	for i := 0; i < k; i++ {
 		key := util.Hex2Bytes(keys[i])
 		value := util.Hex2Bytes(values[i])

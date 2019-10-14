@@ -1282,17 +1282,31 @@ func (mr *MockIDagMockRecorder) GetAllLeafNodes() *gomock.Call {
 }
 
 // ClearUtxo mocks base method
-func (m *MockIDag) ClearUtxo(addr common.Address) error {
+func (m *MockIDag) ClearUtxo() error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ClearUtxo", addr)
+	ret := m.ctrl.Call(m, "ClearUtxo")
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ClearUtxo indicates an expected call of ClearUtxo
-func (mr *MockIDagMockRecorder) ClearUtxo(addr interface{}) *gomock.Call {
+func (mr *MockIDagMockRecorder) ClearUtxo() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearUtxo", reflect.TypeOf((*MockIDag)(nil).ClearUtxo), addr)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearUtxo", reflect.TypeOf((*MockIDag)(nil).ClearUtxo))
+}
+
+// ClearAddrUtxo mocks base method
+func (m *MockIDag) ClearAddrUtxo(addr common.Address) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ClearAddrUtxo", addr)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ClearAddrUtxo indicates an expected call of ClearAddrUtxo
+func (mr *MockIDagMockRecorder) ClearAddrUtxo(addr interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearAddrUtxo", reflect.TypeOf((*MockIDag)(nil).ClearAddrUtxo), addr)
 }
 
 // SaveUtxoView mocks base method

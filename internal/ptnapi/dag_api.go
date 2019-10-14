@@ -217,7 +217,7 @@ func (s *PublicDagAPI) GetUnitByNumber(ctx context.Context, condition string) st
 }
 func (s *PublicDagAPI) GetUnitJsonByIndex(ctx context.Context, asset_id string, index uint64) string {
 	number := &modules.ChainIndex{}
-	number.Index = uint64(index)
+	number.Index = index
 
 	assetId, _, err := modules.String2AssetId(asset_id)
 	if err != nil {

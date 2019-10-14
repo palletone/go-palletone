@@ -143,7 +143,8 @@ type IDag interface {
 	GetLightChainHeight(assetId modules.AssetId) uint64
 	InsertLightHeader(headers []*modules.Header) (int, error)
 	GetAllLeafNodes() ([]*modules.Header, error)
-	ClearUtxo(addr common.Address) error
+	ClearUtxo() error
+	ClearAddrUtxo(addr common.Address) error
 	SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error
 
 	HeadUnitTime() int64
