@@ -680,7 +680,7 @@ func (chaincodeSupport *ChaincodeSupport) Destroy(context context.Context, cccid
 }
 
 // Launch will launch the chaincode if not running (if running return nil) and will wait for handler of the chaincode to get into FSM ready state.
-func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, 
+func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context,
 	cccid *ccprovider.CCContext, spec interface{}) (*pb.ChaincodeID, *pb.ChaincodeInput, error) {
 	log.Debugf("launch enter")
 	//build the chaincode
@@ -881,7 +881,7 @@ func (chaincodeSupport *ChaincodeSupport) Execute(ctxt context.Context, cccid *c
 	var ccresp *pb.ChaincodeMessage
 	select {
 	case ccresp = <-notfy:
-		log.Infof("notfy = %v", ccresp)
+		log.Debugf("notfy = %v", ccresp)
 		//response is sent to user or calling chaincode. ChaincodeMessage_ERROR
 		//are typically treated as error
 		//log.Errorf("{{{{{ time out [%d]", setTimeout)

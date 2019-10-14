@@ -35,8 +35,6 @@ type IUtxoQuery interface {
 
 type IStateQuery interface {
 	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
-	//获得系统配置的最低手续费要求
-	GetMinFee() (*modules.AmountAsset, error)
 	GetContractJury(contractId []byte) (*modules.ElectionNode, error)
 	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
@@ -50,6 +48,7 @@ type IDagQuery interface {
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	IsTransactionExist(hash common.Hash) (bool, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
+	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
 }
 
 type IPropQuery interface {

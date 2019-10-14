@@ -67,7 +67,6 @@ type IStateRepository interface {
 	RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error)
 	StoreMediatorInfo(add common.Address, mi *modules.MediatorInfo) error
 
-	GetMinFee() (*modules.AmountAsset, error)
 	//GetCurrentChainIndex(assetId modules.AssetId) (*modules.ChainIndex, error)
 
 	GetJuryCandidateList() (map[string]bool, error)
@@ -368,10 +367,6 @@ func (rep *StateRepository) GetContractDeploy(tempId, contractId []byte, name st
 	return rep.statedb.GetContractDeploy(tempId[:])
 }
 
-func (rep *StateRepository) GetMinFee() (*modules.AmountAsset, error) {
-	return rep.statedb.GetMinFee()
-}
-
 func (rep *StateRepository) GetJuryCandidateList() (map[string]bool, error) {
 	return rep.statedb.GetJuryCandidateList()
 }
@@ -381,13 +376,18 @@ func (rep *StateRepository) GetJurorByAddr(addr string) (*modules.JurorDeposit, 
 }
 func (rep *StateRepository) GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, error) {
 	if addr, exist := rep.mapHash2Address[hash]; exist {
+		log.Infof("GetJurorByAddrHash(hash:%s) in cache map,addr:%s",
+			hash.String(), addr.String())
 		return rep.statedb.GetJurorByAddr(addr.String())
 	}
 	//Not exist
 	jurors, err := rep.GetAllJuror()
 	if err != nil {
+		log.Warn("GetAllJuror return error:%s", err.Error())
 		return nil, err
 	}
+	//data, _ := json.Marshal(jurors)
+	//log.Debugf("Jurors:%s", string(data))
 	var result *modules.JurorDeposit
 	for _, j := range jurors {
 		jaddr, _ := common.StringToAddress(j.Address)

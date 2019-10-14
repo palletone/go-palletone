@@ -21,12 +21,10 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"strings"
-	"time"
-
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"strings"
 )
 
 type MessageType byte
@@ -666,7 +664,7 @@ type SysTokenIDInfo struct {
 	TotalSupply    uint64
 	LeastNum       uint64
 	AssetID        string
-	CreateTime     time.Time
+	CreateTime     int64
 	IsVoteEnd      bool
 	SupportResults []*SysSupportResult
 }

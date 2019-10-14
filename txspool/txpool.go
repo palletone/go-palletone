@@ -1563,7 +1563,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 	return list, total
 }
 func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
-	orphanTxs map[common.Hash]*TxPoolTransaction) []*TxPoolTransaction {
+orphanTxs map[common.Hash]*TxPoolTransaction) []*TxPoolTransaction {
 	pretxs := make([]*TxPoolTransaction, 0)
 	for _, msg := range tx.Tx.Messages() {
 		if msg.App == modules.APP_PAYMENT {

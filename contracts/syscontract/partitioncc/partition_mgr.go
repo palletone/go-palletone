@@ -29,7 +29,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/palletone/go-palletone/dag/errors"
 	dm "github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -47,37 +46,52 @@ func (p *PartitionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	case "registerPartition":
 		if len(args) < 11 {
 			return shim.Error("need 11 args (GenesisHeaderRlp,ForkUnitHash,ForkUnitHeight,GasToken,Status," +
-				"SyncModel,NetworkId,Version,StableThreshold,[Peers],[CrossChainToken])")
+				"SyncModel,NetworkId,Version,StableThreshold,CrossChainToken,[]Peers)")
 		}
-		//params check
-		partitionChain, err := buildPartitionChain(args)
+		peers := []string{}
+		err := json.Unmarshal([]byte(args[10]), &peers)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-		return p.RegisterPartition(stub, partitionChain)
+		return p.RegisterPartition(stub, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7],
+			args[8], args[9], peers)
 	case "listPartition":
-		return p.ListPartition(stub)
+		result, err := p.ListPartition(stub)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		data, _ := json.Marshal(result)
+		return shim.Success(data)
 	case "updatePartition":
 		if len(args) < 11 {
 			return shim.Error("need 11 args (GenesisHeaderRlp,ForkUnitHash,ForkUnitHeight,GasToken,Status," +
-				"SyncModel,NetworkId,Version,StableThreshold,[Peers],[CrossChainToken])")
+				"SyncModel,NetworkId,Version,StableThreshold,CrossChainToken,[]Peers)")
 		}
-		partitionChain, err := buildPartitionChain(args)
+		peers := []string{}
+		err := json.Unmarshal([]byte(args[10]), &peers)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-		return p.UpdatePartition(stub, partitionChain)
+		return p.UpdatePartition(stub, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7],
+			args[8], args[9], peers)
 	case "setMainChain":
-		if len(args) < 8 {
-			return shim.Error("need 8 args (GenesisHeaderHex,GasToken,Status,SyncModel,StableThreshold,[Peers],[CrossChainToken])")
+		if len(args) < 9 {
+			return shim.Error("need 9 args (GenesisHeaderHex,GasToken,Status,SyncModel,NetworkId,Version," +
+				"StableThreshold,CrossChainToken,[]Peers)")
 		}
-		mainChain, err := buildMainChain(args)
+		peers := []string{}
+		err := json.Unmarshal([]byte(args[10]), &peers)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-		return p.SetMainChain(stub, mainChain)
+		return p.SetMainChain(stub, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], peers)
 	case "getMainChain":
-		return p.GetMainChain(stub)
+		result, err := p.GetMainChain(stub)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		data, _ := json.Marshal(result)
+		return shim.Success(data)
 	default:
 		jsonResp := "{\"Error\":\"Unknown function " + f + "\"}"
 		return shim.Error(jsonResp)
@@ -114,12 +128,10 @@ func addPartitionChain(stub shim.ChaincodeStubInterface, chain *dm.PartitionChai
 	}
 	return stub.PutState(key, value)
 }
-func buildPartitionChain(args []string) (*dm.PartitionChain, error) {
-	//if len(args) < 11 {
-	//	return nil, errors.New("need 11 args (GenesisHeaderRlp,ForkUnitHash,ForkUnitHeight,GasToken,Status,SyncModel,NetworkId,Version,StableThreshold,[Peers],[CrossChainToken])")
-	//}
+func buildPartitionChain(genesisHeaderRlp, forkUnitHash, forkUnitHeight, gasToken, status, syncModel, networkId, version,
+	stableThreshold, crossChainToken string, peers []string) (*dm.PartitionChain, error) {
 	var err error
-	gbytes, err := hex.DecodeString(args[0])
+	gbytes, err := hex.DecodeString(genesisHeaderRlp)
 	if err != nil {
 		return nil, err
 	}
@@ -131,28 +143,22 @@ func buildPartitionChain(args []string) (*dm.PartitionChain, error) {
 	partitionChain := &dm.PartitionChain{}
 	partitionChain.GenesisHeaderRlp = gbytes
 	//partitionChain.GenesisHeight, _ = strconv.ParseUint(args[1], 10, 64)
-	partitionChain.ForkUnitHash = common.HexToHash(args[1])
-	partitionChain.ForkUnitHeight, _ = strconv.ParseUint(args[2], 10, 64)
-	partitionChain.GasToken, _, err = dm.String2AssetId(args[3])
+	partitionChain.ForkUnitHash = common.HexToHash(forkUnitHash)
+	partitionChain.ForkUnitHeight, _ = strconv.ParseUint(forkUnitHeight, 10, 64)
+	partitionChain.GasToken, _, err = dm.String2AssetId(gasToken)
 	if err != nil {
 		return nil, err
 	}
-	partitionChain.Status = args[4][0] - '0'
-	partitionChain.SyncModel = args[5][0] - '0'
-	partitionChain.NetworkId, _ = strconv.ParseUint(args[6], 10, 64)
-	partitionChain.Version, _ = strconv.ParseUint(args[7], 10, 64)
-	threshold, _ := strconv.ParseUint(args[8], 10, 32)
+	partitionChain.Status = status[0] - '0'
+	partitionChain.SyncModel = syncModel[0] - '0'
+	partitionChain.NetworkId, _ = strconv.ParseUint(networkId, 10, 64)
+	partitionChain.Version, _ = strconv.ParseUint(version, 10, 64)
+	threshold, _ := strconv.ParseUint(stableThreshold, 10, 32)
 	partitionChain.StableThreshold = uint32(threshold)
-	if len(args[9]) > 0 {
-		peers := []string{}
-		err = json.Unmarshal([]byte(args[9]), &peers)
-		if err != nil {
-			return nil, err
-		}
-		partitionChain.Peers = peers
-	}
+	partitionChain.Peers = peers
+
 	tokens := []dm.AssetId{}
-	err = json.Unmarshal([]byte(args[10]), &tokens)
+	err = json.Unmarshal([]byte(crossChainToken), &tokens)
 	if err != nil {
 		return nil, err
 	}
@@ -170,11 +176,19 @@ func hasPermission(stub shim.ChaincodeStubInterface) bool {
 	foundationAddress := gp.ChainParameters.FoundationAddress
 	return foundationAddress == requester.String()
 }
-func (p *PartitionMgr) RegisterPartition(stub shim.ChaincodeStubInterface, partitionChain *dm.PartitionChain) pb.Response {
+func (p *PartitionMgr) RegisterPartition(stub shim.ChaincodeStubInterface, genesisHeaderRlp, forkUnitHash,
+	forkUnitHeight, gasToken, status, syncModel, networkId, version, stableThreshold, crossChainToken string,
+	peers []string) pb.Response {
+	partitionChain, err := buildPartitionChain(genesisHeaderRlp, forkUnitHash, forkUnitHeight, gasToken, status,
+		syncModel, networkId, version, stableThreshold, crossChainToken, peers)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
 	if !hasPermission(stub) {
 		return shim.Error(ErrorForbiddenAccess)
 	}
-	err := addPartitionChain(stub, partitionChain)
+	err = addPartitionChain(stub, partitionChain)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -182,31 +196,32 @@ func (p *PartitionMgr) RegisterPartition(stub shim.ChaincodeStubInterface, parti
 	return shim.Success(nil)
 }
 
-func (p *PartitionMgr) ListPartition(stub shim.ChaincodeStubInterface) pb.Response {
-	chains, err := getPartitionChains(stub)
+func (p *PartitionMgr) ListPartition(stub shim.ChaincodeStubInterface) ([]*dm.PartitionChain, error) {
+	return getPartitionChains(stub)
+}
+
+func (p *PartitionMgr) UpdatePartition(stub shim.ChaincodeStubInterface, genesisHeaderRlp, forkUnitHash,
+	forkUnitHeight, gasToken, status, syncModel, networkId, version, stableThreshold, crossChainToken string,
+	peers []string) pb.Response {
+	partitionChain, err := buildPartitionChain(genesisHeaderRlp, forkUnitHash, forkUnitHeight, gasToken, status,
+		syncModel, networkId, version, stableThreshold, crossChainToken, peers)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	data, _ := json.Marshal(chains)
-	return shim.Success(data)
-}
 
-func (p *PartitionMgr) UpdatePartition(stub shim.ChaincodeStubInterface, partitionChain *dm.PartitionChain) pb.Response {
 	if !hasPermission(stub) {
 		return shim.Error(ErrorForbiddenAccess)
 	}
-	err := addPartitionChain(stub, partitionChain)
+	err = addPartitionChain(stub, partitionChain)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 
 	return shim.Success(nil)
 }
-func buildMainChain(args []string) (*dm.MainChain, error) {
-	if len(args) < 8 {
-		return nil, errors.New("need 8 args (GenesisHeaderHex,GasToken,Status,SyncModel,StableThreshold,[Peers],[CrossChainToken])")
-	}
-	gbytes, _ := hex.DecodeString(args[0])
+func buildMainChain(genesisHeaderHex, gasToken, status, syncModel, networkId, version, stableThreshold,
+	crossChainToken string, peers []string) (*dm.MainChain, error) {
+	gbytes, _ := hex.DecodeString(genesisHeaderHex)
 	var err error
 	header := &dm.Header{}
 	err = rlp.DecodeBytes(gbytes, header)
@@ -216,27 +231,20 @@ func buildMainChain(args []string) (*dm.MainChain, error) {
 
 	mainChain := &dm.MainChain{}
 	mainChain.GenesisHeaderRlp = gbytes
-	mainChain.GasToken, _, err = dm.String2AssetId(args[1])
+	mainChain.GasToken, _, err = dm.String2AssetId(gasToken)
 	if err != nil {
 		return nil, err
 	}
-	mainChain.Status = args[2][0] - '0'
-	mainChain.SyncModel = args[3][0] - '0'
-	mainChain.NetworkId, _ = strconv.ParseUint(args[4], 10, 64)
-	mainChain.Version, _ = strconv.ParseUint(args[5], 10, 64)
-	threshold, _ := strconv.ParseUint(args[6], 10, 32)
+	mainChain.Status = status[0] - '0'
+	mainChain.SyncModel = syncModel[0] - '0'
+	mainChain.NetworkId, _ = strconv.ParseUint(networkId, 10, 64)
+	mainChain.Version, _ = strconv.ParseUint(version, 10, 64)
+	threshold, _ := strconv.ParseUint(stableThreshold, 10, 32)
 	mainChain.StableThreshold = uint32(threshold)
-	if len(args[7]) > 0 {
-		peers := []string{}
-		err = json.Unmarshal([]byte(args[7]), &peers)
-		if err != nil {
-			return nil, err
-		}
-		mainChain.Peers = peers
-	}
+	mainChain.Peers = peers
 
 	tokens := []dm.AssetId{}
-	err = json.Unmarshal([]byte(args[8]), &tokens)
+	err = json.Unmarshal([]byte(crossChainToken), &tokens)
 	if err != nil {
 		return nil, err
 	}
@@ -244,7 +252,14 @@ func buildMainChain(args []string) (*dm.MainChain, error) {
 
 	return mainChain, nil
 }
-func (p *PartitionMgr) SetMainChain(stub shim.ChaincodeStubInterface, mainChain *dm.MainChain) pb.Response {
+func (p *PartitionMgr) SetMainChain(stub shim.ChaincodeStubInterface, genesisHeaderHex, gasToken, status, syncModel,
+	networkId, version, stableThreshold, crossChainToken string, peers []string) pb.Response {
+	mainChain, err := buildMainChain(genesisHeaderHex, gasToken, status, syncModel,
+		networkId, version, stableThreshold, crossChainToken, peers)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
 	if !hasPermission(stub) {
 		return shim.Error(ErrorForbiddenAccess)
 	}
@@ -258,15 +273,15 @@ func (p *PartitionMgr) SetMainChain(stub shim.ChaincodeStubInterface, mainChain 
 	}
 	return shim.Success(nil)
 }
-func (p *PartitionMgr) GetMainChain(stub shim.ChaincodeStubInterface) pb.Response {
+func (p *PartitionMgr) GetMainChain(stub shim.ChaincodeStubInterface) (*dm.MainChain, error) {
 	data, err := stub.GetState(MainChainKey)
 	if err != nil {
-		return shim.Error(err.Error())
+		return nil, err
 	}
 	var mainChain *dm.MainChain
 	err = json.Unmarshal(data, &mainChain)
 	if err != nil {
-		return shim.Error(err.Error())
+		return nil, err
 	}
-	return shim.Success(data)
+	return mainChain, nil
 }

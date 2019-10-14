@@ -408,64 +408,78 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 	}
 	//  是否为linux系統
 	if runtime.GOOS == "linux" {
+		dockerBool := true
 		//创建 docker client
 		client, err := util.NewDockerClient()
 		if err != nil {
-			log.Error("util.NewDockerClient", "error", err)
-			return
+			log.Info("util.NewDockerClient", "error", err)
+			dockerBool = false
 		}
-		//创建gptn程序默认网络
-		utils.CreateGptnNet(client)
-		//拉取gptn发布版本对应的goimg基础镜像，防止卡住
-		go func() {
-			log.Info("docker start...")
-			goimg := contractcfg.Goimg + ":" + contractcfg.GptnVersion
-			_, err = client.InspectImage(goimg)
+		if client == nil {
+			log.Info("client is nil")
+			dockerBool = false
+		}else {
+			_,err = client.Info()
 			if err != nil {
-				log.Debugf("Image %s does not exist locally, attempt pull", goimg)
-				err = client.PullImage(docker.PullImageOptions{Repository: contractcfg.Goimg, Tag: contractcfg.GptnVersion}, docker.AuthConfiguration{})
+				log.Info("client.Info","error",err)
+				dockerBool = false
+			}
+		}
+		if dockerBool {
+			log.Info("docker service starting...")
+			//创建gptn程序默认网络
+			utils.CreateGptnNet(client)
+			//拉取gptn发布版本对应的goimg基础镜像，防止卡住
+			go func() {
+				log.Info("docker start...")
+				goimg := contractcfg.Goimg + ":" + contractcfg.GptnVersion
+				_, err = client.InspectImage(goimg)
 				if err != nil {
-					log.Debugf("Failed to pull %s: %s", goimg, err)
+					log.Debugf("Image %s does not exist locally, attempt pull", goimg)
+					err = client.PullImage(docker.PullImageOptions{Repository: contractcfg.Goimg, Tag: contractcfg.GptnVersion}, docker.AuthConfiguration{})
+					if err != nil {
+						log.Debugf("Failed to pull %s: %s", goimg, err)
+					}
 				}
-			}
-			//  获取本地列表，迁移服务器的重启容器，容器不存在且不过期
-			//dag, err := comm.GetCcDagHand()
-			//if err != nil {
-			//	log.Debugf("get contract dag error %s", err.Error())
-			//	return
-			//}
-			//  获取本地用户合约列表
-			log.Info("get local user contracts")
-			ccs, err := manger.GetChaincodes(pm.dag)
-			if err != nil {
-				log.Debugf("get chaincodes error %s", err.Error())
-				return
-			}
-			//启动退出的容器，包括本地有的和本地没有的
-			for _, c := range ccs {
-				//  判断是否是担任jury地址
-				juryAddrs := pm.contract.GetLocalJuryAddrs()
-				juryAddr := ""
-				if len(juryAddrs) != 0 {
-					juryAddr = juryAddrs[0].String()
+				//  获取本地列表，迁移服务器的重启容器，容器不存在且不过期
+				//dag, err := comm.GetCcDagHand()
+				//if err != nil {
+				//	log.Debugf("get contract dag error %s", err.Error())
+				//	return
+				//}
+				//  获取本地用户合约列表
+				log.Info("get local user contracts")
+				ccs, err := manger.GetChaincodes(pm.dag)
+				if err != nil {
+					log.Debugf("get chaincodes error %s", err.Error())
+					return
 				}
-				if juryAddr != c.Address {
-					log.Infof("the local jury address %s was not equal address %s in the dag", juryAddr, c.Address)
-					continue
+				//启动退出的容器，包括本地有的和本地没有的
+				for _, c := range ccs {
+					//  判断是否是担任jury地址
+					juryAddrs := pm.contract.GetLocalJuryAddrs()
+					juryAddr := ""
+					if len(juryAddrs) != 0 {
+						juryAddr = juryAddrs[0].String()
+					}
+					if juryAddr != c.Address {
+						log.Infof("the local jury address %s was not equal address %s in the dag", juryAddr, c.Address)
+						continue
+					}
+					//conName := c.Name+c.Version+":"+contractcfg.GetConfig().ContractAddress
+					rd, _ := crypto.GetRandomBytes(32)
+					txid := util2.RlpHash(rd)
+					//  启动gptn时启动Jury对应的没有过期的用户合约容器
+					if !c.IsExpired {
+						log.Infof("restart container %s with jury address %s", c.Name, c.Address)
+						address := common.NewAddress(c.Id, common.ContractHash)
+						manger.RestartContainer(pm.dag, "palletone", address, txid.String())
+					}
 				}
-				//conName := c.Name+c.Version+":"+contractcfg.GetConfig().ContractAddress
-				rd, _ := crypto.GetRandomBytes(32)
-				txid := util2.RlpHash(rd)
-				//  启动gptn时启动Jury对应的没有过期的用户合约容器
-				if !c.IsExpired {
-					log.Infof("restart container %s with jury address %s", c.Name, c.Address)
-					address := common.NewAddress(c.Id, common.ContractHash)
-					manger.RestartContainer(pm.dag, "palletone", address, txid.String())
-				}
-			}
-		}()
+			}()
 
-		go pm.dockerLoop(client)
+			go pm.dockerLoop(client)
+		}
 
 	}
 }

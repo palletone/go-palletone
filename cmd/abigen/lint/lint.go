@@ -402,6 +402,7 @@ func (p *pkg) GenerateABI() (string, error) {
 				if strings.HasSuffix(funcName, "Pay") {
 					oneFunc.Payable = true
 				}
+				oneFunc.StateMutability = "nonpayable"
 			}
 
 			//paramsCount := 0

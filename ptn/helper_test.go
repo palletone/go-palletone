@@ -22,27 +22,23 @@ package ptn
 import (
 	"crypto/ecdsa"
 	"crypto/rand"
-	//"math/big"
 	"fmt"
 	"log"
 	"sync"
 	"testing"
 
 	"github.com/palletone/go-palletone/common"
-
-	//"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/ptn/downloader"
-
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/consensus/jury"
 	"github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/txspool"
 	"math/big"
@@ -358,7 +354,7 @@ func (p *testPeer) handshake(t *testing.T, index, stalbe *modules.ChainIndex, he
 		NetworkId:       DefaultConfig.NetworkId,
 		Index:           index,
 		GenesisUnit:     genesis,
-		//StableIndex:     stalbe,
+		StableIndex:     stalbe,
 	}
 	if err := p2p.ExpectMsg(p.app, StatusMsg, msg); err != nil {
 		//log.Fatalf("status recv: %v", err)

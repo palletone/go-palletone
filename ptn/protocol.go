@@ -17,10 +17,12 @@
 package ptn
 
 import (
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/txspool"
+	"io"
 	"time"
 )
 
@@ -170,7 +172,15 @@ type statusData struct {
 	Index           *modules.ChainIndex
 	GenesisUnit     common.Hash
 	CurrentHeader   common.Hash
-	//StableIndex     *modules.ChainIndex
+	StableIndex     *modules.ChainIndex
+}
+type statusDataTemp struct {
+	ProtocolVersion uint32
+	NetworkId       uint64
+	Index           *modules.ChainIndex
+	GenesisUnit     common.Hash
+	CurrentHeader   common.Hash
+	StableIndex     *modules.ChainIndex
 }
 type old_status_data struct {
 	ProtocolVersion uint32
@@ -178,6 +188,76 @@ type old_status_data struct {
 	Index           *modules.ChainIndex
 	GenesisUnit     common.Hash
 	CurrentHeader   common.Hash
+}
+type old_status_data_temp struct {
+	ProtocolVersion uint32
+	NetworkId       uint64
+	Index           *modules.ChainIndex
+	GenesisUnit     common.Hash
+	CurrentHeader   common.Hash
+}
+
+func (input *statusData) DecodeRLP(s *rlp.Stream) error {
+	raw, err := s.Raw()
+	if err != nil {
+		return err
+	}
+	temp := &statusDataTemp{}
+	err = rlp.DecodeBytes(raw, temp)
+	if err != nil {
+		return err
+	}
+
+	input.ProtocolVersion = temp.ProtocolVersion
+	input.NetworkId = temp.NetworkId
+	input.Index = temp.Index
+	input.GenesisUnit = temp.GenesisUnit
+	input.CurrentHeader = temp.CurrentHeader
+	input.StableIndex = temp.StableIndex
+	return nil
+}
+func (input *statusData) EncodeRLP(w io.Writer) error {
+	temp := &statusDataTemp{}
+	temp.ProtocolVersion = input.ProtocolVersion
+	temp.NetworkId = input.NetworkId
+	temp.Index = input.Index
+	temp.GenesisUnit = input.GenesisUnit
+	temp.CurrentHeader = input.CurrentHeader
+	if input.StableIndex == nil {
+		temp.StableIndex = &modules.ChainIndex{}
+	} else {
+		temp.StableIndex = input.StableIndex
+	}
+
+	return rlp.Encode(w, temp)
+}
+func (input *old_status_data) DecodeRLP(s *rlp.Stream) error {
+	raw, err := s.Raw()
+	if err != nil {
+		return err
+	}
+	temp := &old_status_data_temp{}
+	err = rlp.DecodeBytes(raw, temp)
+	if err != nil {
+		return err
+	}
+
+	input.ProtocolVersion = temp.ProtocolVersion
+	input.NetworkId = temp.NetworkId
+	input.Index = temp.Index
+	input.GenesisUnit = temp.GenesisUnit
+	input.CurrentHeader = temp.CurrentHeader
+	return nil
+}
+func (input *old_status_data) EncodeRLP(w io.Writer) error {
+	temp := &old_status_data_temp{}
+	temp.ProtocolVersion = input.ProtocolVersion
+	temp.NetworkId = input.NetworkId
+	temp.Index = input.Index
+	temp.GenesisUnit = input.GenesisUnit
+	temp.CurrentHeader = input.CurrentHeader
+
+	return rlp.Encode(w, temp)
 }
 
 // newBlockHashesData is the network packet for the block announcements.

@@ -177,3 +177,35 @@ func getPledgeStatus(stub shim.ChaincodeStubInterface, addr string) (*modules.Pl
 
 	return status, nil
 }
+
+//func getTotalPledgeStatus(stub shim.ChaincodeStubInterface) (*modules.PledgeStatus, error) {
+//
+//	d, err := getAllPledgeDepositRecords(stub)
+//	if err != nil {
+//		return nil, err
+//	}
+//	totalDeposit := uint64(0)
+//	for _, dep := range d {
+//		totalDeposit += dep.Amount
+//	}
+//	//w, err := getPledgeWithdrawRecord(stub, addr)
+//	//if err != nil {
+//	//	return nil, err
+//	//}
+//	list, err := getLastPledgeList(stub)
+//	if err != nil {
+//		return nil, err
+//	}
+//	status := &modules.PledgeStatus{}
+//	if d != nil {
+//		status.NewDepositAmount = totalDeposit
+//	}
+//	//if w != nil {
+//	//	status.WithdrawApplyAmount = w.Amount
+//	//}
+//	if list != nil {
+//		status.PledgeAmount = list.TotalAmount
+//	}
+//
+//	return status, nil
+//}

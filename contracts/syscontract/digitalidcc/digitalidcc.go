@@ -70,7 +70,18 @@ func (d *DigitalIdentityChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.R
 			reqStr := fmt.Sprintf("Need one args: [issuer address]")
 			return shim.Error(reqStr)
 		}
-		return d.GetIssuerCertsInfo(stub, args[0])
+		result, err := d.GetIssuerCertsInfo(stub, args[0])
+		if err != nil {
+			reqStr := fmt.Sprintf("get issuer certs info error:%s", err.Error())
+			return shim.Error(reqStr)
+		}
+
+		//return json
+		cerIDsJson, err := json.Marshal(result)
+		if err != nil {
+			return shim.Error(fmt.Sprintf("marshal issuer cert info error:%s", err.Error()))
+		}
+		return shim.Success(cerIDsJson)
 	case "getCertFormateInfo":
 		if len(args) != 1 {
 			reqStr := fmt.Sprintf("Need one args: [certificate serial number]")
@@ -257,19 +268,8 @@ func (d *DigitalIdentityChainCode) GetAddressCertIDs(stub shim.ChaincodeStubInte
 	return shim.Success(cerIDsJson)
 }
 
-func (d *DigitalIdentityChainCode) GetIssuerCertsInfo(stub shim.ChaincodeStubInterface, issuerAddr string) pb.Response {
-	issuerCertInfo, err := getIssuerCertsInfo(issuerAddr, stub)
-	if err != nil {
-		reqStr := fmt.Sprintf("get issuer certs info error:%s", err.Error())
-		return shim.Error(reqStr)
-	}
-
-	//return json
-	cerIDsJson, err := json.Marshal(issuerCertInfo)
-	if err != nil {
-		return shim.Error(fmt.Sprintf("marshal issuer cert info error:%s", err.Error()))
-	}
-	return shim.Success(cerIDsJson)
+func (d *DigitalIdentityChainCode) GetIssuerCertsInfo(stub shim.ChaincodeStubInterface, issuerAddr string) ([]*dagModules.CertHolderInfo, error) {
+	return getIssuerCertsInfo(issuerAddr, stub)
 }
 
 func (d *DigitalIdentityChainCode) GetCertFormateInfo(stub shim.ChaincodeStubInterface, certID string) pb.Response {

@@ -169,7 +169,7 @@ func (u *UtxosSync) SaveUtxoView(respdata *utxosRespData) error {
 		return err
 	}
 
-	if err := u.dag.ClearUtxo(address); err != nil {
+	if err := u.dag.ClearAddrUtxo(address); err != nil {
 		log.Debug("Light PalletOne", "SaveUtxoView ClearUtxo err:", err, "addr", respdata.addr)
 		return err
 	}

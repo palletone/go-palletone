@@ -18,22 +18,24 @@
  *
  */
 
-package dag
+package deposit
 
 import (
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
-// clear all utxo by address
-func (dag *Dag) ClearUtxo() error {
-	return dag.stableUtxoRep.ClearUtxo()
-}
-func (dag *Dag) ClearAddrUtxo(addr common.Address) error {
-	return dag.stableUtxoRep.ClearAddrUtxo(addr)
-}
-
-// save all utxo of a view
-func (dag *Dag) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error {
-	return dag.stableUtxoRep.SaveUtxoView(view)
+func TestUpperFirstChar(t *testing.T) {
+	a := ""
+	a1 := UpperFirstChar(a)
+	assert.Equal(t, a, a1)
+	b := "a"
+	b1 := UpperFirstChar(b)
+	assert.Equal(t, "A", b1)
+	c := "aB"
+	c1 := UpperFirstChar(c)
+	assert.Equal(t, "AB", c1)
+	d := "AB"
+	d1 := UpperFirstChar(d)
+	assert.Equal(t, "AB", d1)
 }
