@@ -56,6 +56,7 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) error {
 	}
 	if !p.contractEventExecutable(event.CType, event.Tx, event.Ele) {
 		log.Debugf("[%s]ProcessContractEvent, contractEventExecutable is false", shortId(reqId.String()))
+		go p.ptn.ContractBroadcast(*event, false)
 		return nil
 	}
 	log.Debugf("[%s]ProcessContractEvent, event type:%v ", shortId(reqId.String()), event.CType)
