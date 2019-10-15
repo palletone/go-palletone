@@ -410,7 +410,7 @@ PledgeTest
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
     log    ${result}
     ${resultJson}    To Json    ${result}
-    ${newDepositAmount}    Get From Dictionary    ${resultJson}    newDepositAmount
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    NewDepositAmount
     log    ${newDepositAmount}
     Should Be Equal As Strings    ${newDepositAmount}    100
     sleep    5
@@ -454,7 +454,7 @@ PledgeTest
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
     log    ${result}
     ${resultJson}    To Json    ${result}
-    ${pledgeAmount}    Get From Dictionary    ${resultJson}    pledgeAmount
+    ${pledgeAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
     log    ${pledgeAmount}
     Should Be Equal As Strings    ${pledgeAmount}    100
     sleep    5
@@ -476,7 +476,7 @@ PledgeTest
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
     log    ${result}
     ${resultJson}    To Json    ${result}
-    ${pledgeAmount}    Get From Dictionary    ${resultJson}    pledgeAmount
+    ${pledgeAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
     log    ${pledgeAmount}
     Should Be Equal As Strings    ${pledgeAmount}    102.88745
     sleep    5
@@ -490,10 +490,10 @@ PledgeTest
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
     log    ${result}
     ${resultJson}    To Json    ${result}
-    ${pledgeAmount}    Get From Dictionary    ${resultJson}    pledgeAmount
+    ${pledgeAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
     log    ${pledgeAmount}
     Should Be Equal As Strings    ${pledgeAmount}    102.88745
-    ${withdrawApplyAmount}    Get From Dictionary    ${resultJson}    withdrawApplyAmount
+    ${withdrawApplyAmount}    Get From Dictionary    ${resultJson}    WithdrawApplyAmount
     log    ${withdrawApplyAmount}
     Should Be Equal As Strings    ${withdrawApplyAmount}    100
     sleep    5
@@ -507,7 +507,7 @@ PledgeTest
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
     log    ${result}
     ${resultJson}    To Json    ${result}
-    ${pledgeAmount}    Get From Dictionary    ${resultJson}    pledgeAmount
+    ${pledgeAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
     log    ${pledgeAmount}
     Should Be Equal As Strings    ${pledgeAmount}    5.7749
     sleep    5
