@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/validator"
 )
 
 func (p *Processor) SubscribeContractEvent(ch chan<- ContractEvent) event.Subscription {
@@ -45,7 +46,7 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) error {
 		return fmt.Errorf("[%s]ProcessContractEvent, event Tx reqId is exist, txId:%s",
 			shortId(reqId.String()), event.Tx.Hash().String())
 	}
-	if v, err := p.checkTxValid(event.Tx); !v {
+	if _, v, err := p.validator.ValidateTx(event.Tx, false); v != validator.TxValidationCode_VALID {
 		return fmt.Errorf("[%s]ProcessContractEvent, event Tx is invalid, txId:%s, err:%s",
 			shortId(reqId.String()), event.Tx.Hash().String(), err.Error())
 	}

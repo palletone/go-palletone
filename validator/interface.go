@@ -37,7 +37,9 @@ type Validator interface {
 	//验证一个Header是否合法（Mediator签名有效）
 	ValidateHeader(h *modules.Header) ValidationCode
 	ValidateUnitGroupSign(h *modules.Header) error
+	ValidateTxFeeEnough(tx *modules.Transaction, extSize float64, extTime float64) bool
 	CheckTxIsExist(tx *modules.Transaction) bool
+
 	//验证一个交易是否是双花交易
 	//ValidateTxDoubleSpend(tx *modules.Transaction) error
 }
