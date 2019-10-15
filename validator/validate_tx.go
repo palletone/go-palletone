@@ -267,7 +267,7 @@ func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize f
 
 	if validate.dagquery == nil || validate.propquery == nil {
 		log.Warnf("[%s]ValidateTxFeeEnough, Cannot validate tx fee, your validate dagquery or propquery not set", reqId.String()[:8])
-		return false //todo  ?
+		return true //todo  ?
 	}
 	fees, err := validate.dagquery.GetTxFee(tx)
 	if err != nil {
