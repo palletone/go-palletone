@@ -20,17 +20,16 @@
 package prc721
 
 import (
-	"crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
 	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
@@ -247,12 +246,9 @@ func convertToByte(n uint64) []byte {
 	return by16
 }
 
-func generateUUID() ([]byte, error) {
-	uuid := make([]byte, 16)
-	_, err := io.ReadFull(rand.Reader, uuid)
-	if err != nil {
-		return nil, err
-	}
+func generateUUID(seed []byte) ([]byte, error) {
+	newHash, _ := crypto.MyCryptoLib.Hash(seed)
+	uuid := newHash[0:16]
 	// variant bits; see section 4.1.1
 	uuid[8] = uuid[8]&^0xc0 | 0x80
 	// version 4 (pseudo-random); see section 4.1.3
@@ -276,7 +272,7 @@ func chekcTokenIDRepeat(tokenIDMetas []tokenIDMeta) bool {
 	return false
 }
 
-func genNFData(idType dm.UniqueIdType, totalSupply uint64, start uint64, tokenIDMetas []tokenIDMeta) ([]dm.NonFungibleMetaData, string) {
+func genNFData(txid []byte, idType dm.UniqueIdType, totalSupply uint64, start uint64, tokenIDMetas []tokenIDMeta) ([]dm.NonFungibleMetaData, string) {
 	nfDatas := []dm.NonFungibleMetaData{}
 	if idType == dm.UniqueIdType_Sequence {
 		for i := uint64(0); i < totalSupply; i++ {
@@ -285,13 +281,15 @@ func genNFData(idType dm.UniqueIdType, totalSupply uint64, start uint64, tokenID
 			nfDatas = append(nfDatas, nFdata)
 		}
 	} else if idType == dm.UniqueIdType_Uuid {
+		seed := txid
 		for i := uint64(0); i < totalSupply; i++ {
-			UUID, _ := generateUUID()
+			UUID, _ := generateUUID(seed)
 			if len(UUID) < 16 {
 				jsonResp := "{\"Error\":\"generateUUID() failed\"}"
 				return nil, jsonResp
 			}
 			nFdata := dm.NonFungibleMetaData{UniqueBytes: UUID}
+			seed = UUID
 			nfDatas = append(nfDatas, nFdata)
 		}
 	} else if idType == dm.UniqueIdType_UserDefine {
@@ -412,8 +410,10 @@ func (p *PRC721) CreateToken(stub shim.ChaincodeStubInterface, name string, symb
 		return shim.Error(jsonResp)
 	}
 
+	txid := stub.GetTxID()
+	txidHash := common.Hex2Bytes(txid[2:])
 	//generate nonFungibleData
-	nFdatas, errStr := genNFData(idType, totalSupply, 1, tkIDMetas)
+	nFdatas, errStr := genNFData(txidHash, idType, totalSupply, 1, tkIDMetas)
 	if errStr != "" {
 		return shim.Error(errStr)
 	}
@@ -432,9 +432,8 @@ func (p *PRC721) CreateToken(stub shim.ChaincodeStubInterface, name string, symb
 	}
 
 	//last put state
-	txid := stub.GetTxID()
 	assetID, _ := dm.NewAssetId(nonFungible.Symbol, dm.AssetType_NonFungibleToken,
-		0, common.Hex2Bytes(txid[2:]), idType)
+		0, txidHash, idType)
 
 	//
 	newAsset := &dm.Asset{}
@@ -525,8 +524,10 @@ func (p *PRC721) SupplyToken(stub shim.ChaincodeStubInterface, symbol string, su
 		return shim.Error(jsonResp)
 	}
 
+	txid := stub.GetTxID()
+	txidHash := common.Hex2Bytes(txid[2:])
 	//call SupplyToken
-	nFdatas, errStr := genNFData(idType, supplyAmount, tkInfo.TokenMax+1, tkIDMetas)
+	nFdatas, errStr := genNFData(txidHash, idType, supplyAmount, tkInfo.TokenMax+1, tkIDMetas)
 	if errStr != "" {
 		return shim.Error(errStr)
 	}
