@@ -178,7 +178,7 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 	}
 
 	aJury := &consensus.AdapterJury{Processor: ptn.contractPorcessor}
-	ptn.contract, err = contracts.Initialize(ptn.dag, aJury, &config.Contract)
+	ptn.contract, err = contracts.Initialize(ptn.dag, aJury, config.Contract)
 	if err != nil {
 		log.Error("Contract Initialize err:", "error", err)
 		return nil, err
