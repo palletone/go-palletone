@@ -166,7 +166,27 @@ func (s *PublicDagAPI) GetHeaderByNumber(ctx context.Context, condition string) 
 	}
 	return string(content), nil
 }
-
+func (s *PrivateDagAPI) GetHeaderByAuthor(ctx context.Context, author string, startHeight, count uint64) (string, error) {
+	authorAddr, err := common.StringToAddress(author)
+	if err != nil {
+		return "", err
+	}
+	headers, err := s.b.Dag().GetHeadersByAuthor(authorAddr, startHeight, count)
+	if err != nil {
+		return "", err
+	}
+	result := []*ptnjson.HeaderJson{}
+	for _, header := range headers {
+		headerJson := ptnjson.ConvertUnitHeader2Json(header)
+		result = append(result, headerJson)
+	}
+	content, err := json.Marshal(result)
+	if err != nil {
+		log.Info("PrivateDagAPI", "GetHeaderByAuthor Marshal err:", err, "author", author)
+		return "", err
+	}
+	return string(content), nil
+}
 func (s *PublicDagAPI) GetUnitByHash(ctx context.Context, condition string) string {
 	log.Info("PublicDagAPI", "GetUnitByHash condition:", condition)
 	hash := common.Hash{}

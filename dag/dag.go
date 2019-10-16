@@ -223,6 +223,9 @@ func (d *Dag) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 
 	return uHeader, nil
 }
+func (d *Dag) GetHeadersByAuthor(authorAddr common.Address, startHeight, count uint64) ([]*modules.Header, error) {
+	return d.unstableUnitRep.GetHeadersByAuthor(authorAddr, startHeight, count)
+}
 
 // return the header by hash in memdag
 func (d *Dag) getHeaderByHashFromPMemDag(hash common.Hash) (*modules.Header, error) {
