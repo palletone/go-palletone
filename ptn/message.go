@@ -593,7 +593,7 @@ func (pm *ProtocolManager) ElectionMsg(msg p2p.Msg, p *peer) error {
 		log.Debug("ElectionMsg, ToElectionEvent fail")
 		return nil
 	}
-	_, err = pm.contractProc.ProcessElectionEvent(event)
+	err = pm.contractProc.ProcessElectionEvent(event)
 	if err != nil {
 		log.Debug("ElectionMsg", "ProcessElectionEvent error:", err)
 	}
