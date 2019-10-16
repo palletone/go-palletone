@@ -396,6 +396,7 @@ func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis comm
 
 	go func() {
 		errc <- p.readStatus(network, &status, genesis)
+
 	}()
 	timeout := time.NewTimer(handshakeTimeout)
 	defer timeout.Stop()
@@ -409,6 +410,7 @@ func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis comm
 			return p2p.DiscReadTimeout
 		}
 	}
+
 	stableIndex := &modules.ChainIndex{AssetID: modules.PTNCOIN, Index: uint64(1)}
 	log.Debug("peer Handshake", "p.id", p.id, "index", status.Index, "stable", stableIndex) //status.StableIndex)
 	p.SetHead(status.CurrentHeader, status.Index, stableIndex)
@@ -417,6 +419,7 @@ func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis comm
 	//} else {
 	//	p.SetHead(status.CurrentHeader, status.Index, stableIndex)
 	//}
+
 	return nil
 }
 

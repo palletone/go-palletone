@@ -109,7 +109,7 @@ type pkg struct {
 	typesInfo *types.Info
 
 	// sortable is the set of types in the package that implement sort.Interface.
-	sortable map[string]bool
+	//sortable map[string]bool
 	// main is whether this is a "main" package.
 	main bool
 
@@ -137,7 +137,7 @@ type file struct {
 	filename string
 }
 
-func (f *file) isTest() bool { return strings.HasSuffix(f.filename, "_test.go") }
+//func (f *file) isTest() bool { return strings.HasSuffix(f.filename, "_test.go") }
 
 var newImporter = func(fset *token.FileSet) types.ImporterFrom {
 	return gcexportdata.NewImporter(fset, make(map[string]*types.Package))
@@ -156,7 +156,7 @@ func (p *pkg) typeCheck() error {
 		Scopes: make(map[ast.Node]*types.Scope),
 	}
 	var anyFile *file
-	var astFiles []*ast.File
+	astFiles := make([]*ast.File, 0)
 	for _, f := range p.files {
 		anyFile = f
 		astFiles = append(astFiles, f.f)
@@ -176,34 +176,34 @@ func (p *pkg) typeOf(expr ast.Expr) types.Type {
 	return p.typesInfo.TypeOf(expr)
 }
 
-func (p *pkg) isNamedType(typ types.Type, importPath, name string) bool {
-	n, ok := typ.(*types.Named)
-	if !ok {
-		return false
-	}
-	tn := n.Obj()
-	return tn != nil && tn.Pkg() != nil && tn.Pkg().Path() == importPath && tn.Name() == name
-}
+//func (p *pkg) isNamedType(typ types.Type, importPath, name string) bool {
+//	n, ok := typ.(*types.Named)
+//	if !ok {
+//		return false
+//	}
+//	tn := n.Obj()
+//	return tn != nil && tn.Pkg() != nil && tn.Pkg().Path() == importPath && tn.Name() == name
+//}
 
 // scopeOf returns the tightest scope encompassing id.
-func (p *pkg) scopeOf(id *ast.Ident) *types.Scope {
-	var scope *types.Scope
-	if obj := p.typesInfo.ObjectOf(id); obj != nil {
-		scope = obj.Parent()
-	}
-	if scope == p.typesPkg.Scope() {
-		// We were given a top-level identifier.
-		// Use the file-level scope instead of the package-level scope.
-		pos := id.Pos()
-		for _, f := range p.files {
-			if f.f.Pos() <= pos && pos < f.f.End() {
-				scope = p.typesInfo.Scopes[f.f]
-				break
-			}
-		}
-	}
-	return scope
-}
+//func (p *pkg) scopeOf(id *ast.Ident) *types.Scope {
+//	var scope *types.Scope
+//	if obj := p.typesInfo.ObjectOf(id); obj != nil {
+//		scope = obj.Parent()
+//	}
+//	if scope == p.typesPkg.Scope() {
+//		// We were given a top-level identifier.
+//		// Use the file-level scope instead of the package-level scope.
+//		pos := id.Pos()
+//		for _, f := range p.files {
+//			if f.f.Pos() <= pos && pos < f.f.End() {
+//				scope = p.typesInfo.Scopes[f.f]
+//				break
+//			}
+//		}
+//	}
+//	return scope
+//}
 
 type ABI_Param struct {
 	Components string `json:"components,omitempty"`
@@ -410,7 +410,7 @@ func (p *pkg) GenerateABI() (string, error) {
 				if len(field.Names) == 0 { //str1, str2 string
 					fmt.Println("Invalid Input ==== ==== ==== ====")
 				} else {
-					typeName, detailName := p.getTypeName(f.pkg.typeOf(field.Type))
+					typeName, detailName := p.getTypeName(p.typeOf(field.Type))
 					if typeName == "" {
 						continue
 					}
@@ -431,14 +431,14 @@ func (p *pkg) GenerateABI() (string, error) {
 				for _, field := range fn.Type.Results.List {
 					if len(field.Names) == 0 { //str1, str2 string
 						resultName := ""
-						typeName, detailName := p.getTypeName(f.pkg.typeOf(field.Type))
+						typeName, detailName := p.getTypeName(p.typeOf(field.Type))
 						if typeName != "" {
 							//fmt.Print(resultName, " ", typeName)
 							oneOutput := ABI_Param{Name: resultName, Type: typeName, Components: detailName}
 							oneFunc.Outputs = append(oneFunc.Outputs, oneOutput)
 						}
 					} else {
-						typeName, detailName := p.getTypeName(f.pkg.typeOf(field.Type))
+						typeName, detailName := p.getTypeName(p.typeOf(field.Type))
 						if typeName == "" {
 							continue
 						}
@@ -510,21 +510,21 @@ func (f *file) isMain() bool {
 // exportedType reports whether typ is an exported type.
 // It is imprecise, and will err on the side of returning true,
 // such as for composite types.
-func exportedType(typ types.Type) bool {
-	switch T := typ.(type) {
-	case *types.Named:
-		// Builtin types have no package.
-		return T.Obj().Pkg() == nil || T.Obj().Exported()
-	case *types.Map:
-		return exportedType(T.Key()) && exportedType(T.Elem())
-	case interface {
-		Elem() types.Type
-	}: // array, slice, pointer, chan
-		return exportedType(T.Elem())
-	}
-	// Be conservative about other types, such as struct, interface, etc.
-	return true
-}
+//func exportedType(typ types.Type) bool {
+//	switch T := typ.(type) {
+//	case *types.Named:
+//		// Builtin types have no package.
+//		return T.Obj().Pkg() == nil || T.Obj().Exported()
+//	case *types.Map:
+//		return exportedType(T.Key()) && exportedType(T.Elem())
+//	case interface {
+//		Elem() types.Type
+//	}: // array, slice, pointer, chan
+//		return exportedType(T.Elem())
+//	}
+//	// Be conservative about other types, such as struct, interface, etc.
+//	return true
+//}
 
 // receiverType returns the named type of the method receiver, sans "*",
 // or "invalid-type" if fn.Recv is ill formed.

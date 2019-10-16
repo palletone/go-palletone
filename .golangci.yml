@@ -50,6 +50,7 @@ run:
       - subject.go
       - shim[/\\]handler.go
       - key.go
+      - cmd/abigen/import.go
   #   - ".*\\.my\\.go$"
   #   - lib/bad.go
 

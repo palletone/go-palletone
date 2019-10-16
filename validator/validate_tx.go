@@ -266,8 +266,8 @@ func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize f
 	txSize := tx.Size().Float64()
 
 	if validate.dagquery == nil || validate.propquery == nil {
-		log.Warnf("[%f]ValidateTxFeeEnough, Cannot validate tx fee, your validate dagquery or propquery not set", reqId.String()[:8])
-		return false //todo  ?
+		log.Warnf("[%s]ValidateTxFeeEnough, Cannot validate tx fee, your validate dagquery or propquery not set", reqId.String()[:8])
+		return true //todo  ?
 	}
 	fees, err := validate.dagquery.GetTxFee(tx)
 	if err != nil {
@@ -360,7 +360,7 @@ func (validate *Validate) validateTxFeeValid(tx *modules.Transaction) (bool, []*
 		feeAsset = a.Asset //?
 	}
 	if feeAsset.String() != assetId.String() {
-		log.Warnf("[%s]validateTxFeeValid, assetId is not equal", reqId.String()[:8], feeAsset.String(), assetId.String())
+		log.Warnf("[%s]validateTxFeeValid, assetId is not equal, feeAsset:%s, cfg asset:%s", reqId.String()[:8], feeAsset.String(), assetId.String())
 		return false, feeAllocate
 	}
 	return true, feeAllocate
