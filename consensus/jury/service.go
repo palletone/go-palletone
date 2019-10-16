@@ -560,13 +560,21 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 	}
 	msgs, err := runContractCmd(rwM, p.dag, p.contract, tx, nil, p.errMsgEnable) // long time ...
 	if err != nil {
-		log.Errorf("[%s]CheckContractTxValid runContractCmd,error:%s", shortId(reqId.String()), err.Error())
+		log.Errorf("[%s]CheckContractTxValid, runContractCmd,error:%s", shortId(reqId.String()), err.Error())
 		return false
 	}
 	reqTx := tx.GetRequestTx()
 	txTmp, err := gen.GenContractTransction(reqTx, msgs)
+	if err != nil {
+		log.Errorf("[%s]CheckContractTxValid, GenContractTransction,error:%s", shortId(reqId.String()), err.Error())
+		return false
+	}
 	if !p.validator.ValidateTxFeeEnough(txTmp, ContractDefaultSignatureSize, 0) {
 		msgs, err = genContractErrorMsg(p.dag, txTmp, nil, errors.New("tx fee is invalid"), true)
+		if err != nil {
+			log.Errorf("[%s]CheckContractTxValid, genContractErrorMsg,error:%s", shortId(reqId.String()), err.Error())
+			return false
+		}
 	}
 	return msgsCompare(msgs, tx.TxMessages, modules.APP_CONTRACT_INVOKE)
 }
