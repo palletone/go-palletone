@@ -130,7 +130,7 @@ type FullConfig struct {
 	Dag            dagconfig.Config
 	P2P            p2p.Config
 	Ada            adaptor.Config
-	Contract       contractcfg.Config
+	Contract       *contractcfg.Config
 	Certficate     certficate.CAConfig
 }
 
@@ -359,7 +359,7 @@ func DefaultConfig() FullConfig {
 		Dag:            dagconfig.DefaultConfig,
 		Log:            log.DefaultConfig,
 		Ada:            adaptor.DefaultConfig,
-		Contract:       contractcfg.DefaultConfig,
+		Contract:       contractcfg.NewContractConfig(),
 		Certficate:     certficate.DefaultCAConfig,
 	}
 }

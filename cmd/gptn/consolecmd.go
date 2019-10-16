@@ -18,6 +18,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/palletone/go-palletone/contracts/comm"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -73,6 +74,13 @@ This command allows to open a console on a running gptn node.`,
 		Description: `
 The JavaScript VM exposes a node admin interface as well as the Ðapp
 JavaScript API. See https://github.com/palletone/go-palletone/wiki/JavaScript-Console`,
+	}
+	juryListenerIpCommand = cli.Command{
+		Action:             utils.MigrateFlags(getInternalIp),
+		Name:               "getJuryIp",
+		Usage:              "Get local ip for jury to listener for user contracts",
+		Description:        `
+gptn getJuryIp`,
 	}
 )
 
@@ -276,5 +284,15 @@ func ephemeralConsole(ctx *cli.Context) error {
 	}()
 	console.Stop(true)
 
+	return nil
+}
+
+func getInternalIp(ctx *cli.Context) error {
+	localIp := comm.GetInternalIp()
+	if localIp != "" {
+		fmt.Println(localIp)
+		return nil
+	}
+	fmt.Println("Not find your local ip")
 	return nil
 }
