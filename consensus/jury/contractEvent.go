@@ -26,54 +26,53 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/validator"
 )
 
 func (p *Processor) SubscribeContractEvent(ch chan<- ContractEvent) event.Subscription {
 	return p.contractExecScope.Track(p.contractExecFeed.Subscribe(ch))
 }
 
-func (p *Processor) ProcessContractEvent(event *ContractEvent) error {
+func (p *Processor) ProcessContractEvent(event *ContractEvent) (bool, error) {
 	if event == nil || event.Tx == nil || len(event.Tx.TxMessages) < 1 {
-		return errors.New("ProcessContractEvent param is nil")
+		return false, errors.New("ProcessContractEvent param is nil")
 	}
+	var err error
+	brd := false
 	reqId := event.Tx.RequestHash()
 	if p.checkTxIsExist(event.Tx) {
-		return fmt.Errorf("[%s]ProcessContractEvent, event Tx is exist, txId:%s",
+		return false, fmt.Errorf("[%s]ProcessContractEvent, event Tx is exist, txId:%s",
 			shortId(reqId.String()), event.Tx.Hash().String())
 	}
 	if p.checkTxReqIdIsExist(reqId) {
-		return fmt.Errorf("[%s]ProcessContractEvent, event Tx reqId is exist, txId:%s",
+		return false, fmt.Errorf("[%s]ProcessContractEvent, event Tx reqId is exist, txId:%s",
 			shortId(reqId.String()), event.Tx.Hash().String())
 	}
-	if !p.checkTxValid(event.Tx) {
-		return fmt.Errorf("[%s]ProcessContractEvent, event Tx is invalid, txId:%s",
-			shortId(reqId.String()), event.Tx.Hash().String())
+	if _, v, err := p.validator.ValidateTx(event.Tx, false); v != validator.TxValidationCode_VALID {
+		return false, fmt.Errorf("[%s]ProcessContractEvent, event Tx is invalid, txId:%s, err:%s",
+			shortId(reqId.String()), event.Tx.Hash().String(), err.Error())
 	}
 	if !p.checkTxAddrValid(event.Tx) {
-		return fmt.Errorf("[%s]ProcessContractEvent, event Tx addr is invalid, txId:%s",
+		return true, fmt.Errorf("[%s]ProcessContractEvent, event Tx addr is invalid, txId:%s",
 			shortId(reqId.String()), event.Tx.Hash().String())
 	}
 	if !p.contractEventExecutable(event.CType, event.Tx, event.Ele) {
 		log.Debugf("[%s]ProcessContractEvent, contractEventExecutable is false", shortId(reqId.String()))
-		return nil
+		return true, nil
 	}
+
 	log.Debugf("[%s]ProcessContractEvent, event type:%v ", shortId(reqId.String()), event.CType)
-	broadcast := false
-	var err error
 	switch event.CType {
 	case CONTRACT_EVENT_EXEC:
-		broadcast, err = p.contractExecEvent(event.Tx, event.Ele)
+		brd, err = p.contractExecEvent(event.Tx, event.Ele)
 	case CONTRACT_EVENT_SIG:
-		broadcast, err = p.contractSigEvent(event.Tx, event.Ele)
+		brd, err = p.contractSigEvent(event.Tx, event.Ele)
 	case CONTRACT_EVENT_COMMIT:
-		broadcast, err = p.contractCommitEvent(event.Tx)
+		brd, err = p.contractCommitEvent(event.Tx)
 	case CONTRACT_EVENT_ELE:
-		return p.contractEleEvent(event.Tx)
+		return true, p.contractEleEvent(event.Tx)
 	}
-	if broadcast {
-		go p.ptn.ContractBroadcast(*event, false)
-	}
-	return err
+	return brd, err
 }
 
 func (p *Processor) contractEleEvent(tx *modules.Transaction) error {

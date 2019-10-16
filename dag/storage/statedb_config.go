@@ -31,7 +31,6 @@ import (
 
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -97,11 +96,6 @@ func (statedb *StateDb) GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)
 	}
 
 	return info, nil
-}
-
-func (statedb *StateDb) GetMinFee() (*modules.AmountAsset, error) {
-	assetId := dagconfig.DagConfig.GetGasToken()
-	return &modules.AmountAsset{Amount: 1, Asset: assetId.ToAsset()}, nil
 }
 
 func (statedb *StateDb) GetPartitionChains() ([]*modules.PartitionChain, error) {

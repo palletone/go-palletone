@@ -24,15 +24,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-
+	"math"
 	"github.com/ethereum/go-ethereum/rlp"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/constants"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 )
 
 /**
@@ -54,7 +54,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 	if tx.TxMessages[0].App != modules.APP_PAYMENT { // 交易费
 		return TxValidationCode_INVALID_MSG, nil
 	}
-	txFeePass, txFee := validate.validateTxFee(tx)
+	txFeePass, txFee := validate.validateTxFeeValid(tx)
 	if !txFeePass {
 		return TxValidationCode_INVALID_FEE, nil
 	}
@@ -253,37 +253,115 @@ func (v *Validate) validateVoteMediatorTx(payload interface{}) ValidationCode {
 	return TxValidationCode_VALID
 }
 
-//验证手续费是否合法，并返回手续费的分配情况
-func (validate *Validate) validateTxFee(tx *modules.Transaction) (bool, []*modules.Addition) {
-	if validate.utxoquery == nil {
-		log.Warn("Cannot validate tx fee, your validate utxoquery not set")
-		return true, nil
+//extSize :byte, extTime :s
+func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize float64, extTime float64) bool {
+	if tx == nil {
+		return false
 	}
-	feeAllocate, err := tx.GetTxFeeAllocate(validate.utxoquery.GetUtxoEntry,
-		validate.tokenEngine.GetScriptSigners, common.Address{})
+
+	var onlyPayment bool = true
+	var timeout uint32
+	var opFee, sizeFee, timeFee, accountUpdateFee, appDataFee, allFee float64
+	reqId := tx.RequestHash()
+	txSize := tx.Size().Float64()
+
+	if validate.dagquery == nil || validate.propquery == nil {
+		log.Warnf("[%s]ValidateTxFeeEnough, Cannot validate tx fee, your validate dagquery or propquery not set", reqId.String()[:8])
+		return true //todo  ?
+	}
+	fees, err := validate.dagquery.GetTxFee(tx)
 	if err != nil {
-		log.Warn("compute tx fee error: " + err.Error())
+		log.Errorf("[%s]validateTxFeeEnough, GetTxFee err:%s", reqId.String()[:8], err.Error())
+		return false
+	}
+	cp := validate.propquery.GetChainParameters()
+	timeUnitFee := float64(cp.ContractTxTimeoutUnitFee)
+	sizeUnitFee := float64(cp.ContractTxSizeUnitFee)
+	for _, msg := range tx.TxMessages {
+		switch msg.App {
+		case modules.APP_CONTRACT_TPL_REQUEST:
+			onlyPayment = false
+			opFee = cp.ContractTxInstallFeeLevel
+		case modules.APP_CONTRACT_DEPLOY_REQUEST:
+			onlyPayment = false
+			opFee = cp.ContractTxDeployFeeLevel
+		case modules.APP_CONTRACT_INVOKE_REQUEST:
+			onlyPayment = false
+			opFee = cp.ContractTxInvokeFeeLevel
+			timeout = msg.Payload.(*modules.ContractInvokeRequestPayload).Timeout
+		case modules.APP_CONTRACT_STOP_REQUEST:
+			onlyPayment = false
+			opFee = cp.ContractTxStopFeeLevel
+		case modules.APP_DATA:
+			onlyPayment = false
+			appDataFee = float64(cp.ChainParametersBase.TransferPtnPricePerKByte) * ((txSize + extSize) / 1024)
+		case modules.APP_ACCOUNT_UPDATE:
+			onlyPayment = false
+			accountUpdateFee = float64(cp.ChainParametersBase.AccountUpdateFee)
+		}
+	}
+	if onlyPayment {
+		allFee = float64(cp.ChainParametersBase.TransferPtnBaseFee)
+	} else {
+		sizeFee = opFee * sizeUnitFee * (txSize + extSize)
+		timeFee = opFee * timeUnitFee * (float64(timeout) + extTime)
+		allFee = sizeFee + timeFee + accountUpdateFee + appDataFee
+	}
+	val := math.Max(float64(fees.Amount), allFee) == float64(fees.Amount)
+	if !val {
+		log.Errorf("[%s]validateTxFeeEnough invalid, fee amount[%f]-fees[%f] (%f + %f + %f + %f), "+
+			"txSize[%f], timeout[%d], extSize[%f], extTime[%f]",
+			reqId.String()[:8], float64(fees.Amount), allFee, sizeFee, timeFee, accountUpdateFee, appDataFee,
+			txSize, timeout, extSize, extTime)
+	}
+
+	log.Debugf("[%s]validateTxFeeEnough is %v, fee amount[%f]-fees[%f](%f + %f + %f + %f), "+
+		"txSize[%f], timeout[%d], extSize[%f], extTime[%f]",
+		reqId.String()[:8], val, float64(fees.Amount), allFee, sizeFee, timeFee, accountUpdateFee, appDataFee,
+		txSize, timeout, extSize, extTime)
+	return val
+}
+
+//验证手续费是否合法，并返回手续费的分配情况
+func (validate *Validate) validateTxFeeValid(tx *modules.Transaction) (bool, []*modules.Addition) {
+	if tx == nil {
+		log.Error("validateTxFeeValid, tx is nil")
 		return false, nil
 	}
-	assetId := dagconfig.DagConfig.GetGasToken()
-	minFee := &modules.AmountAsset{Amount: 0, Asset: assetId.ToAsset()}
-	if validate.statequery != nil {
-		minFee, err = validate.statequery.GetMinFee()
-		if err != nil {
-			log.Errorf("GetMinFee throw an error:%s", err.Error())
-			return true, feeAllocate
-		}
+	reqId := tx.RequestHash()
+	if validate.utxoquery == nil {
+		log.Warnf("[%s]validateTxFeeValid, Cannot validate tx fee, your validate utxoquery not set", reqId.String()[:8])
+		return true, nil
 	}
-	if minFee.Amount > 0 { //需要验证最小手续费
-		total := uint64(0)
-		var feeAsset *modules.Asset
-		for _, a := range feeAllocate {
-			total += a.Amount
-			feeAsset = a.Asset
+
+	//check fee is or not enough
+	var feeAllocate []*modules.Addition
+	var err error
+	if validate.enableTxFeeCheck {
+		if !validate.ValidateTxFeeEnough(tx, 0, 0) {
+			log.Warnf("[%s]validateTxFeeValid, tx fee is not enough", reqId.String()[:8])
+			return false, nil
 		}
-		if feeAsset.String() != minFee.Asset.String() || total < minFee.Amount {
-			return false, feeAllocate
-		}
+		feeAllocate, err = tx.GetTxFeeAllocate(validate.utxoquery.GetUtxoEntry,
+			validate.tokenEngine.GetScriptSigners, common.Address{})
+	} else {
+		feeAllocate, err = tx.GetTxFeeAllocateLegacyV1(validate.utxoquery.GetUtxoEntry,
+			validate.tokenEngine.GetScriptSigners, common.Address{})
+	}
+	if err != nil {
+		log.Warnf("[%s]validateTxFeeValid, compute tx fee error:%s", reqId.String()[:8], err.Error())
+		return false, nil
+	}
+
+	//check fee type is ok
+	assetId := dagconfig.DagConfig.GetGasToken()
+	var feeAsset *modules.Asset
+	for _, a := range feeAllocate {
+		feeAsset = a.Asset //?
+	}
+	if feeAsset.String() != assetId.String() {
+		log.Warnf("[%s]validateTxFeeValid, assetId is not equal, feeAsset:%s, cfg asset:%s", reqId.String()[:8], feeAsset.String(), assetId.String())
+		return false, feeAllocate
 	}
 	return true, feeAllocate
 }

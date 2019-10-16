@@ -105,8 +105,8 @@ func (pl *PledgeList) Reduce(addr string, amount uint64) (uint64, error) {
 }
 
 type PledgeStatusJson struct {
-	NewDepositAmount    decimal.Decimal `json:"newDepositAmount"`
-	PledgeAmount        decimal.Decimal `json:"pledgeAmount"`
-	WithdrawApplyAmount string          `json:"withdrawApplyAmount"`
-	OtherAmount         decimal.Decimal `json:"otherAmount"`
+	NewDepositAmount    decimal.Decimal
+	PledgeAmount        decimal.Decimal
+	WithdrawApplyAmount string
+	OtherAmount         decimal.Decimal
 }

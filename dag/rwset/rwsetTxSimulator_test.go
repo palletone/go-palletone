@@ -137,11 +137,12 @@ func getCurrentUnit() *modules.Unit {
 	header := &modules.Header{}
 	header.ParentsHash = []common.Hash{hash}
 	header.TxRoot = core.DeriveSha(txs)
+	header.Number = &modules.ChainIndex{modules.NewPTNIdType(), 1}
 	headerHash := header.HashWithoutAuthor()
 	sign, _ := crypto.Sign(headerHash[:], privKey)
 	header.Authors = modules.Authentifier{PubKey: pubKey, Signature: sign}
 	header.Time = time.Now().Unix()
-	header.Number = &modules.ChainIndex{modules.NewPTNIdType(), 1}
+	//header.Number = &modules.ChainIndex{modules.NewPTNIdType(), 1}
 	return &modules.Unit{UnitHeader: header, Txs: txs, ReceivedAt: time.Now()}
 }
 

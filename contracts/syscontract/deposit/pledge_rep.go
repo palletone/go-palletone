@@ -27,6 +27,8 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
+	"strconv"
+
 	//pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	//"github.com/palletone/go-palletone/dag/constants"
 	//"github.com/palletone/go-palletone/dag/modules"
@@ -87,8 +89,15 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward
 	if err != nil {
 		return err
 	}
-	if lastDate == today {
-		return fmt.Errorf("%s pledge reward has been allocated before", today)
+	//判断是否是基金会触发
+	if isFoundationInvoke(stub) {
+		t ,_ :=strconv.Atoi(lastDate)
+		t +=1
+		today = strconv.Itoa(t)
+	}else {
+		if lastDate == today {
+			return fmt.Errorf("%s pledge reward has been allocated before", today)
+		}
 	}
 	allM, err := getLastPledgeList(stub)
 	if err != nil {
@@ -177,3 +186,35 @@ func getPledgeStatus(stub shim.ChaincodeStubInterface, addr string) (*modules.Pl
 
 	return status, nil
 }
+
+//func getTotalPledgeStatus(stub shim.ChaincodeStubInterface) (*modules.PledgeStatus, error) {
+//
+//	d, err := getAllPledgeDepositRecords(stub)
+//	if err != nil {
+//		return nil, err
+//	}
+//	totalDeposit := uint64(0)
+//	for _, dep := range d {
+//		totalDeposit += dep.Amount
+//	}
+//	//w, err := getPledgeWithdrawRecord(stub, addr)
+//	//if err != nil {
+//	//	return nil, err
+//	//}
+//	list, err := getLastPledgeList(stub)
+//	if err != nil {
+//		return nil, err
+//	}
+//	status := &modules.PledgeStatus{}
+//	if d != nil {
+//		status.NewDepositAmount = totalDeposit
+//	}
+//	//if w != nil {
+//	//	status.WithdrawApplyAmount = w.Amount
+//	//}
+//	if list != nil {
+//		status.PledgeAmount = list.TotalAmount
+//	}
+//
+//	return status, nil
+//}

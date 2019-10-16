@@ -294,7 +294,7 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 	//unit.ExecutionTime = duration
 	requstId := common.HexToHash(txid)
 	unit.RequestId = requstId
-	log.Infof("Invoke Ok, ProcessProposal duration=%v,rsp=%v,%s", duration, rsp, unit.Payload)
+	log.Debugf("Invoke Ok, ProcessProposal duration=%v,rsp=%v,%s", duration, rsp, unit.Payload)
 	return unit, nil
 }
 
@@ -350,7 +350,7 @@ func RestartContainers(dag dag.IDag, cons []docker.APIContainers, jury core.IAda
 	//  获取所有退出容器
 	addrs, err := utils.GetAllExitedContainer(cons)
 	if err != nil {
-		log.Infof("client.GetAllExitedContainer err: %s\n", err.Error())
+		log.Infof("client.GetAllExitedContainer err: %s", err.Error())
 		return
 	}
 	for _, v := range addrs {
@@ -382,6 +382,12 @@ func RestartContainers(dag dag.IDag, cons []docker.APIContainers, jury core.IAda
 
 //删除所有过期容器
 func RemoveExpiredContainers(client *docker.Client, dag dag.IDag, rmExpConFromSysParam bool, con []docker.APIContainers) {
+	//  让用户合约容器一直在线，true and 0
+	p := dag.GetChainParameters()
+	if p.RmExpConFromSysParam && p.UccDuringTime == 0 {
+		log.Info("keeping user contract containers online")
+		return
+	}
 	//获取容器id，以及对应用户合约的地址，更新状态
 	idStrMap := utils.RetrieveExpiredContainers(dag, con, rmExpConFromSysParam)
 	if len(idStrMap) > 0 {
@@ -389,10 +395,12 @@ func RemoveExpiredContainers(client *docker.Client, dag dag.IDag, rmExpConFromSy
 			err := client.RemoveContainer(docker.RemoveContainerOptions{ID: id, Force: true})
 			if err != nil {
 				log.Errorf("client.RemoveContainer id=%s error=%s", id, err.Error())
+				continue
 			}
 			cc, err := GetChaincode(dag, str)
 			if err != nil {
 				log.Errorf("get chaincode error %s", err.Error())
+				continue
 			}
 			cc.IsExpired = true
 			err = SaveChaincode(dag, str, cc)

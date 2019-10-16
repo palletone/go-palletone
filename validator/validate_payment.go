@@ -84,7 +84,7 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 
 			usedUtxoKey := in.PreviousOutPoint.String()
 			if _, exist := usedUtxo[usedUtxoKey]; exist {
-				log.Error("double spend utxo:", usedUtxoKey)
+				log.Errorf("double spend utxo:%s", usedUtxoKey)
 				return TxValidationCode_INVALID_DOUBLE_SPEND
 			}
 			usedUtxo[usedUtxoKey] = true
@@ -191,21 +191,22 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 func (validate *Validate) pickJuryFn(contractAddr common.Address) ([]byte, error) {
 	log.Debugf("Try to pickup jury for address:%s", contractAddr.String())
 	var redeemScript []byte
-
-	if !contractAddr.IsSystemContractAddress() {
-		jury, err := validate.statequery.GetContractJury(contractAddr.Bytes())
+	var err error
+	var jury *modules.ElectionNode
+	if !contractAddr.IsSystemContractAddress() { //only user contract has jury
+		jury, err = validate.statequery.GetContractJury(contractAddr.Bytes())
 		if err != nil {
 			log.Errorf("Cannot get contract[%s] jury", contractAddr.String())
 			return nil, errors.New("Cannot get contract jury")
 		}
-		redeemScript = validate.generateJuryRedeemScript(jury)
+		redeemScript, err = validate.generateJuryRedeemScript(jury)
 		log.DebugDynamic(func() string {
 			redeemStr, _ := validate.tokenEngine.DisasmString(redeemScript)
 			return "Generate RedeemScript: " + redeemStr
 		})
 	}
 
-	return redeemScript, nil
+	return redeemScript, err
 }
 
 //检查转移的Token是否已经冻结，冻结的Token不能再转移
@@ -250,23 +251,20 @@ func (validate *Validate) getBlacklistAddress() map[common.Address]bool {
 	return result
 }
 
-func (validate *Validate) generateJuryRedeemScript(jury *modules.ElectionNode) []byte {
+func (validate *Validate) generateJuryRedeemScript(jury *modules.ElectionNode) ([]byte, error) {
 	if jury == nil {
-		return nil
+		return nil, errors.New("Jury is empty")
 	}
-	count := int(jury.JuryCount)
-	if count == 0 {
-		count = len(jury.EleList)
-	}
+	count := len(jury.EleList)
 	needed := byte(math.Ceil((float64(count)*2 + 1) / 3))
 	pubKeys := [][]byte{}
 	for _, ju := range jury.EleList {
 		juror, err := validate.statequery.GetJurorByAddrHash(ju.AddrHash)
 		if err != nil {
 			log.Errorf(err.Error())
-			return nil
+			return nil, err
 		}
 		pubKeys = append(pubKeys, juror.PublicKey)
 	}
-	return validate.tokenEngine.GenerateRedeemScript(needed, pubKeys)
+	return validate.tokenEngine.GenerateRedeemScript(needed, pubKeys), nil
 }

@@ -63,7 +63,7 @@ func (s *PublicDagAPI) GetHexCommon(ctx context.Context, key string) (string, er
 		return "", err0
 	}
 	//log.Info("GetCommon by hex info.", "key", string(key_bytes), "bytes", key_bytes)
-	items, err := s.b.GetCommon(key_bytes[:],false)
+	items, err := s.b.GetCommon(key_bytes[:], false)
 	if err != nil {
 		return "", err
 	}
@@ -75,20 +75,20 @@ func (s *PublicDagAPI) GetCommon(ctx context.Context, key string) ([]byte, error
 	if key == "" {
 		return nil, fmt.Errorf("参数为空")
 	}
-	return s.b.GetCommon([]byte(key),false)
+	return s.b.GetCommon([]byte(key), false)
 }
 func (s *PublicDagAPI) GetLdbCommon(ctx context.Context, key string) ([]byte, error) {
 	// key to bytes
 	if key == "" {
 		return nil, fmt.Errorf("参数为空")
 	}
-	return s.b.GetCommon([]byte(key),true)
+	return s.b.GetCommon([]byte(key), true)
 }
 func (s *PrivateDagAPI) GetCommonByPrefix(ctx context.Context, prefix string) (string, error) {
 	if prefix == "" {
 		return "", fmt.Errorf("参数为空")
 	}
-	result := s.b.GetCommonByPrefix([]byte(prefix),false)
+	result := s.b.GetCommonByPrefix([]byte(prefix), false)
 	if len(result) == 0 {
 		return "all_items:null", nil
 	}
@@ -166,7 +166,27 @@ func (s *PublicDagAPI) GetHeaderByNumber(ctx context.Context, condition string) 
 	}
 	return string(content), nil
 }
-
+func (s *PrivateDagAPI) GetHeaderByAuthor(ctx context.Context, author string, startHeight, count uint64) (string, error) {
+	authorAddr, err := common.StringToAddress(author)
+	if err != nil {
+		return "", err
+	}
+	headers, err := s.b.Dag().GetHeadersByAuthor(authorAddr, startHeight, count)
+	if err != nil {
+		return "", err
+	}
+	result := []*ptnjson.HeaderJson{}
+	for _, header := range headers {
+		headerJson := ptnjson.ConvertUnitHeader2Json(header)
+		result = append(result, headerJson)
+	}
+	content, err := json.Marshal(result)
+	if err != nil {
+		log.Info("PrivateDagAPI", "GetHeaderByAuthor Marshal err:", err, "author", author)
+		return "", err
+	}
+	return string(content), nil
+}
 func (s *PublicDagAPI) GetUnitByHash(ctx context.Context, condition string) string {
 	log.Info("PublicDagAPI", "GetUnitByHash condition:", condition)
 	hash := common.Hash{}
@@ -217,7 +237,7 @@ func (s *PublicDagAPI) GetUnitByNumber(ctx context.Context, condition string) st
 }
 func (s *PublicDagAPI) GetUnitJsonByIndex(ctx context.Context, asset_id string, index uint64) string {
 	number := &modules.ChainIndex{}
-	number.Index = uint64(index)
+	number.Index = index
 
 	assetId, _, err := modules.String2AssetId(asset_id)
 	if err != nil {
@@ -497,6 +517,16 @@ func (s *PrivateDagAPI) CheckHeader(ctx context.Context, number int) (bool, erro
 	if err != nil {
 		return false, err
 	}
+	return true, nil
+}
+func (s *PrivateDagAPI) CheckUnits(ctx context.Context, assetId string, number int) (bool, error) {
+	dag := s.b.Dag()
+	err := dag.CheckUnitsCorrect(assetId, number)
+	if err != nil {
+		log.Errorf("check units failed, %s", err.Error())
+		return false, err
+	}
+	log.Debugf("check units success,%s", assetId)
 	return true, nil
 }
 func (s *PrivateDagAPI) RebuildAddrTxIndex() error {

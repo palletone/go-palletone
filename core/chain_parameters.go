@@ -68,8 +68,8 @@ func NewChainParametersBase() ChainParametersBase {
 		AccountUpdateFee:          DefaultAccountUpdateFee,
 		TransferPtnBaseFee:        DefaultTransferPtnBaseFee,
 		TransferPtnPricePerKByte:  DefaultTransferPtnPricePerKByte,
-		// ContractInvokeFee:         DefaultContractInvokeFee,
-		UnitMaxSize: DefaultUnitMaxSize,
+		//TransactionMaxSize:        DefaultTransactionMaxSize,
+		UnitMaxSize:               DefaultUnitMaxSize,
 	}
 }
 
@@ -78,6 +78,7 @@ type ChainParametersBase struct {
 	PledgeDailyReward  uint64 `json:"pledge_daily_reward"`  //质押金的日奖励额
 	RewardHeight       uint64 `json:"reward_height"`        //每多少高度进行一次奖励的派发
 	UnitMaxSize        uint64 `json:"unit_max_size"`        //一个单元最大允许多大
+	//TransactionMaxSize uint64 `json:"tx_max_size"`          //一个交易最大允许多大
 	FoundationAddress  string `json:"foundation_address"`   //基金会地址，该地址具有一些特殊权限，比如发起参数修改的投票，发起罚没保证金等
 
 	DepositAmountForMediator  uint64 `json:"deposit_amount_for_mediator"` //保证金的数量
@@ -103,11 +104,10 @@ type ChainParametersBase struct {
 	MaintenanceSkipSlots uint8 `json:"maintenance_skip_slots"`
 
 	// 目前的操作交易费，current schedule of fees
-	MediatorCreateFee        uint64 `json:"mediator_create_fee"`
+	MediatorCreateFee        uint64 `json:"mediator_create_fee"` //no use, delete
 	AccountUpdateFee         uint64 `json:"account_update_fee"`
 	TransferPtnBaseFee       uint64 `json:"transfer_ptn_base_fee"`
-	TransferPtnPricePerKByte uint64 `json:"transfer_ptn_price_per_KByte"`
-	// ContractInvokeFee        uint64 `json:"contract_invoke_fee"`
+	TransferPtnPricePerKByte uint64 `json:"transfer_ptn_price_per_KByte"` //APP_DATA
 }
 
 func NewChainParams() ChainParameters {
@@ -164,7 +164,7 @@ type ChainParameters struct {
 	ContractElectionNum   int    `json:"contract_election_num"`
 
 	ContractTxTimeoutUnitFee  uint64  `json:"contract_tx_timeout_unit_fee"`
-	ContractTxSizeUnitFee     uint64  `json:"contract_tx_size_unit_fee"`
+	ContractTxSizeUnitFee     uint64  `json:"contract_tx_size_unit_fee"` // price:  dao/byte
 	ContractTxInstallFeeLevel float64 `json:"contract_tx_install_fee_level"`
 	ContractTxDeployFeeLevel  float64 `json:"contract_tx_deploy_fee_level"`
 	ContractTxInvokeFeeLevel  float64 `json:"contract_tx_invoke_fee_level"`

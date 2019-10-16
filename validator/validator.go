@@ -34,12 +34,13 @@ import (
 )
 
 type Validate struct {
-	utxoquery   IUtxoQuery
-	statequery  IStateQuery
-	dagquery    IDagQuery
-	propquery   IPropQuery
-	tokenEngine tokenengine.ITokenEngine
-	cache       *ValidatorCache
+	utxoquery        IUtxoQuery
+	statequery       IStateQuery
+	dagquery         IDagQuery
+	propquery        IPropQuery
+	tokenEngine      tokenengine.ITokenEngine
+	cache            *ValidatorCache
+	enableTxFeeCheck bool
 }
 
 const MAX_DATA_PAYLOAD_MAIN_DATA_SIZE = 128
@@ -48,12 +49,13 @@ func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propq
 	//cache := freecache.NewCache(20 * 1024 * 1024)
 	vcache := NewValidatorCache(cache)
 	return &Validate{
-		cache:       vcache,
-		dagquery:    dagdb,
-		utxoquery:   utxoRep,
-		statequery:  statedb,
-		propquery:   propquery,
-		tokenEngine: tokenengine.Instance,
+		cache:            vcache,
+		dagquery:         dagdb,
+		utxoquery:        utxoRep,
+		statequery:       statedb,
+		propquery:        propquery,
+		tokenEngine:      tokenengine.Instance,
+		enableTxFeeCheck: true,
 	}
 }
 
@@ -100,7 +102,7 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 			//每个单元的第一条交易比较特殊，是Coinbase交易，其包含增发和收集的手续费
 
 		}
-		txFeeAllocate, txCode, _ := validate.ValidateTx(tx, true)
+		txFeeAllocate, txCode, _ := validate.validateTxAndCache(tx, true)
 		if txCode != TxValidationCode_VALID {
 			log.Debug("ValidateTx", "txhash", txHash, "error validate code", txCode)
 			return txCode
@@ -198,10 +200,20 @@ return all transactions' fee
 
 func (validate *Validate) ValidateTx(tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, ValidationCode, error) {
 	txId := tx.Hash()
-	if txId.String() == "0x9c6e60e75aa59d253b156d102d6d314f21e57cdda923593346c98c30a841c64e" {
-		log.Warn("Invalid tx:0x9c6e60e75aa59d253b156d102d6d314f21e57cdda923593346c98c30a841c64e")
-		return nil, TxValidationCode_INVALID_MSG, NewValidateError(TxValidationCode_INVALID_MSG)
+	has, add := validate.cache.HasTxValidateResult(txId)
+	if has {
+		return add, TxValidationCode_VALID, nil
 	}
+	validate.enableTxFeeCheck = true
+	code, addition := validate.validateTx(tx, isFullTx)
+	if code == TxValidationCode_VALID {
+		validate.cache.AddTxValidateResult(txId, addition)
+		return addition, code, nil
+	}
+	return addition, code, NewValidateError(code)
+}
+func (validate *Validate) validateTxAndCache(tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, ValidationCode, error) {
+	txId := tx.Hash()
 	has, add := validate.cache.HasTxValidateResult(txId)
 	if has {
 		return add, TxValidationCode_VALID, nil
@@ -211,15 +223,6 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, isFullTx bool) ([]
 		validate.cache.AddTxValidateResult(txId, addition)
 		return addition, code, nil
 	}
-
-	// if code != TxValidationCode_VALID {
-	// 	log.DebugDynamic(func() string {
-	// 		data, _ := json.Marshal(tx)
-	// 		return "ValidateTx not pass,for debug tx: " + string(data)
-	// 	})
-	// 	//log.Debugf("Tx[%s] validate not pass, Validation msg: %v",
-	// 	//	tx.Hash().String(), validationCode_name[int32(code)])
-	// }
 	return addition, code, NewValidateError(code)
 }
 

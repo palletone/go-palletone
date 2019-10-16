@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developer Albert·Gou <dev@pallet.one>
  * @date 2018/11/05
@@ -173,14 +174,14 @@ func (a *PublicMediatorAPI) GetNextUpdateTime() string {
 }
 
 func (a *PublicMediatorAPI) GetInfo(addStr string) (*modules.MediatorInfo, error) {
-	mediator, err := common.StringToAddress(addStr)
+	mediator, err := core.StrToMedAdd(addStr)
 	if err != nil {
 		return nil, err
 	}
 
-	if !a.Dag().IsMediator(mediator) {
-		return nil, fmt.Errorf("%v is not mediator", addStr)
-	}
+	//if !a.Dag().IsMediator(mediator) {
+	//	return nil, fmt.Errorf("%v is not mediator", addStr)
+	//}
 
 	return a.Dag().GetMediatorInfo(mediator), nil
 }
@@ -205,47 +206,40 @@ type TxExecuteResult struct {
 	Warning   string      `json:"warning"`   // 警告
 }
 
-func (a *PrivateMediatorAPI) Apply(args modules.MediatorCreateArgs) (*TxExecuteResult, error) {
+func (a *PrivateMediatorAPI) Apply(args modules.MediatorCreateArgs, fee decimal.Decimal) (*TxExecuteResult, error) {
 	// 参数补全
 	if args.MediatorApplyInfo == nil {
 		args.MediatorApplyInfo = core.NewMediatorApplyInfo()
 	}
-
 	// 参数验证
 	if args.MediatorInfoBase == nil {
 		return nil, fmt.Errorf("invalid args, is null")
 	}
-
 	addr, _, err := args.Validate()
 	if err != nil {
 		return nil, err
 	}
-
 	// 判断本节点是否同步完成，数据是否最新
 	if !a.Dag().IsSynced() {
 		return nil, fmt.Errorf("this node is not synced, and can't apply mediator now")
 	}
-
 	// 判断是否已经是mediator
 	if a.Dag().IsMediator(addr) {
 		return nil, fmt.Errorf("account %v is already a mediator", args.AddStr)
 	}
-
 	// 参数序列化
 	argsB, err := json.Marshal(args)
 	if err != nil {
 		return nil, err
 	}
 	cArgs := [][]byte{[]byte(modules.ApplyMediator), argsB}
-
+	daofee := ptnjson.Ptn2Dao(fee)
 	// 调用系统合约
-	fee := a.Dag().GetChainParameters().MediatorCreateFee
-	reqId, err := a.ContractInvokeReqTx(addr, addr, 0, fee, nil,
+	reqId, err := a.ContractInvokeReqTx(addr, addr, 0, daofee, nil,
 		syscontract.DepositContractAddress, cArgs, 0)
 	if err != nil {
 		return nil, err
 	}
-
 	// 返回执行结果
 	res := &TxExecuteResult{}
 	res.TxContent = fmt.Sprintf("account(%v) apply mediator with rewardAdd: %v, initPubKey: %v, node: %v, "+

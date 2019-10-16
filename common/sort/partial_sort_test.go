@@ -18,14 +18,12 @@
  * @date 2018
  */
 
-package sort_test
+package sort
 
 import (
 	"math"
 	"sort"
 	"testing"
-
-	csort "github.com/palletone/go-palletone/common/sort"
 )
 
 var ints = [...]int{74, 59, 238, -784, 9845, 959, 905, 0, 0, 42, 7586, -5467984, 7586}
@@ -37,9 +35,9 @@ func TestPartialSortIntSlice(t *testing.T) {
 	a := sort.IntSlice(data[0:])
 
 	m := 4
-	csort.PartialSort(a, m)
+	PartialSort(a, m)
 
-	if !csort.IsPartialSorted(a, m) {
+	if !IsPartialSorted(a, m) {
 		t.Errorf("sorted %v", ints)
 		t.Errorf("   got %v", data)
 	}
@@ -50,9 +48,9 @@ func TestPartialSortFloat64Slice(t *testing.T) {
 	a := sort.Float64Slice(data[0:])
 
 	m := 5
-	csort.PartialSort(a, m)
+	PartialSort(a, m)
 
-	if !csort.IsPartialSorted(a, m) {
+	if !IsPartialSorted(a, m) {
 		t.Errorf("sorted %v", ints)
 		t.Errorf("   got %v", data)
 	}
@@ -63,9 +61,9 @@ func TestPartialSortStringSlice(t *testing.T) {
 	a := sort.StringSlice(data[0:])
 
 	m := 3
-	csort.PartialSort(a, m)
+	PartialSort(a, m)
 
-	if !csort.IsPartialSorted(a, m) {
+	if !IsPartialSorted(a, m) {
 		t.Errorf("sorted %v", ints)
 		t.Errorf("   got %v", data)
 	}

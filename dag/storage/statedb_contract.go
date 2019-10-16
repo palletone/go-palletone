@@ -25,11 +25,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -87,6 +89,10 @@ func (statedb *StateDb) GetContractIdsByTpl(tplId []byte) ([][]byte, error) {
 
 func MediatorDepositKey(medAddr string) string {
 	return string(constants.MEDIATOR_INFO_PREFIX) + string(constants.DEPOSIT_BALANCE_PREFIX) + medAddr
+}
+
+func JuryDepositKey(jurorAddr string) string {
+	return string(constants.DEPOSIT_JURY_BALANCE_PREFIX) + jurorAddr
 }
 
 func (statedb *StateDb) SaveContractState(contractId []byte, ws *modules.ContractWriteSet,
@@ -299,7 +305,8 @@ func (statedb *StateDb) GetContractInvoke(reqId []byte) (*modules.ContractInvoke
 	return invoke, nil
 }
 
-func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvokeRequestPayload) error {
+func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvokeRequestPayload, unitTime int64,
+	version *modules.StateVersion) error {
 	contractAddress := common.NewAddress(invoke.ContractId, common.ContractHash)
 
 	if contractAddress == syscontract.DepositContractAddress {
@@ -310,68 +317,105 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 			mco := modules.NewMediatorCreateArgs()
 
 			err := json.Unmarshal(invoke.Args[1], &mco)
-			if err == nil {
-				log.Debugf("Save Apply Mediator Invoke Req for account: (%v)", mco.AddStr)
-
-				mi := modules.NewMediatorInfo()
-				mi.MediatorInfoBase = mco.MediatorInfoBase
-				mi.MediatorApplyInfo = mco.MediatorApplyInfo
-
-				addr, _, err := mco.Validate()
-				if err == nil {
-					statedb.StoreMediatorInfo(addr, mi)
-				} else {
-					log.Warnf("Validate MediatorCreateArgs err: %v", err.Error())
-				}
-			} else {
+			if err != nil {
 				log.Warnf("ApplyMediator Args Unmarshal: %v", err.Error())
+				return err
 			}
+
+			log.Debugf("Save Apply Mediator Invoke Req for account: (%v)", mco.AddStr)
+
+			mi := modules.NewMediatorInfo()
+			mi.MediatorInfoBase = mco.MediatorInfoBase
+			mi.MediatorApplyInfo = mco.MediatorApplyInfo
+
+			// 判断是否是1.0.2之前的mediator
+			if pubKey, isFind := constants.OldMainNetMediatorAndPubKey[mco.AddStr]; isFind {
+				juror := modules.JurorDeposit{}
+				juror.Address = mco.AddStr
+				juror.Role = modules.Jury
+				juror.Balance = 0
+				juror.EnterTime = time.Unix(unitTime, 0).UTC().Format(modules.Layout2)
+
+				jdej := core.JurorDepositExtraJson{
+					PublicKey: pubKey,
+				}
+				jde, err := jdej.Validate(juror.Address)
+				if err != nil {
+					errStr := fmt.Sprintf("JurorDepositExtraJson Validate err: %v", err.Error())
+					log.Errorf(errStr)
+					return fmt.Errorf(errStr)
+				}
+
+				juror.JurorDepositExtra = jde
+				jurorByte, err := json.Marshal(juror)
+				if err != nil {
+					log.Errorf(err.Error())
+					return err
+				}
+
+				ws := modules.NewWriteSet(JuryDepositKey(juror.Address), jurorByte)
+				err = statedb.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws, version)
+				if err != nil {
+					log.Warnf(err.Error())
+					return err
+				}
+			}
+
+			addr, err := core.StrToMedAdd(mi.AddStr)
+			if err != nil {
+				log.Warnf("StrToMedAdd err: %v", err.Error())
+				return err
+			}
+
+			statedb.StoreMediatorInfo(addr, mi)
 		} else if string(invoke.Args[0]) == modules.UpdateMediatorInfo {
 			//log.Debugf("UpdateMediatorInfo args:%s", string(invoke.Args[1]))
 			var mua modules.MediatorUpdateArgs
 
 			err := json.Unmarshal(invoke.Args[1], &mua)
-			if err == nil {
-				log.Debugf("Save Update Mediator(%v) Invoke Req", mua.AddStr)
-
-				addr, err := mua.Validate()
-				if err == nil {
-					mi, err := statedb.RetrieveMediatorInfo(addr)
-					if err == nil {
-						if mua.Logo != nil {
-							mi.Logo = *mua.Logo
-						}
-						if mua.Name != nil {
-							mi.Name = *mua.Name
-						}
-						if mua.Location != nil {
-							mi.Location = *mua.Location
-						}
-						if mua.Url != nil {
-							mi.Url = *mua.Url
-						}
-						if mua.Description != nil {
-							mi.Description = *mua.Description
-						}
-						if mua.Node != nil {
-							mi.Node = *mua.Node
-						}
-						if mua.RewardAdd != nil {
-							mi.RewardAdd = *mua.RewardAdd
-						}
-						if mua.InitPubKey != nil {
-							mi.InitPubKey = *mua.InitPubKey
-						}
-						statedb.StoreMediatorInfo(addr, mi)
-					} else {
-						log.Warnf("RetrieveMediatorInfo error: %v", err.Error())
-					}
-				} else {
-					log.Warnf("StrToMedAdd err: %v", err.Error())
-				}
-			} else {
+			if err != nil {
 				log.Warnf("UpdateMediatorInfo Args Unmarshal: %v", err.Error())
+				return err
 			}
+
+			log.Debugf("Save Update Mediator(%v) Invoke Req", mua.AddStr)
+
+			addr, err := mua.Validate()
+			if err != nil {
+				log.Warnf("Validate MediatorUpdateArgs err: %v", err.Error())
+				return err
+			}
+			mi, err := statedb.RetrieveMediatorInfo(addr)
+			if err != nil {
+				log.Warnf("RetrieveMediatorInfo error: %v", err.Error())
+				return err
+			}
+
+			if mua.Logo != nil {
+				mi.Logo = *mua.Logo
+			}
+			if mua.Name != nil {
+				mi.Name = *mua.Name
+			}
+			if mua.Location != nil {
+				mi.Location = *mua.Location
+			}
+			if mua.Url != nil {
+				mi.Url = *mua.Url
+			}
+			if mua.Description != nil {
+				mi.Description = *mua.Description
+			}
+			if mua.Node != nil {
+				mi.Node = *mua.Node
+			}
+			if mua.RewardAdd != nil {
+				mi.RewardAdd = *mua.RewardAdd
+			}
+			if mua.InitPubKey != nil {
+				mi.InitPubKey = *mua.InitPubKey
+			}
+			statedb.StoreMediatorInfo(addr, mi)
 		}
 	}
 

@@ -13,5 +13,5 @@ Resource          publicParams.txt
     ${respJson}    To Json    ${resp.content}
     Dictionary Should Contain Key    ${respJson}    result
     ${res}    Get From Dictionary    ${respJson}    result
-    log     ${res}
+    log    ${res}
     [Return]    ${res}

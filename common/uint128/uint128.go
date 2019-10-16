@@ -92,7 +92,7 @@ func (u Uint128) And(v Uint128) Uint128 {
 
 // And64 returns u&v.
 func (u Uint128) And64(v uint64) Uint128 {
-	return Uint128{u.lo & v, u.hi & 0}
+	return Uint128{u.lo & v, 0}
 }
 
 // Or returns u|v.
@@ -102,7 +102,7 @@ func (u Uint128) Or(v Uint128) Uint128 {
 
 // Or64 returns u|v.
 func (u Uint128) Or64(v uint64) Uint128 {
-	return Uint128{u.lo | v, u.hi | 0}
+	return Uint128{u.lo | v, u.hi}
 }
 
 // Xor returns u^v.
@@ -112,7 +112,7 @@ func (u Uint128) Xor(v Uint128) Uint128 {
 
 // Xor64 returns u^v.
 func (u Uint128) Xor64(v uint64) Uint128 {
-	return Uint128{u.lo ^ v, u.hi ^ 0}
+	return Uint128{u.lo ^ v, u.hi}
 }
 
 // Add returns u+v.
@@ -298,6 +298,7 @@ func FromBig(i *big.Int) (u Uint128) {
 	return u
 }
 
+// PopCount64, count how many bits of a binary form corresponding to a uint64 type number are 1
 func PopCount64(x uint64) uint8 {
 	m := []uint64{
 		0x5555555555555555,
@@ -316,6 +317,7 @@ func PopCount64(x uint64) uint8 {
 	return uint8(x)
 }
 
+// PopCount, count how many bits of a binary form corresponding to a Uint128 type number are 1
 func (u Uint128) PopCount() uint8 {
 	return PopCount64(u.lo) + PopCount64(u.hi)
 }

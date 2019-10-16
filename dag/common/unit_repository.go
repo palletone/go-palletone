@@ -62,6 +62,7 @@ type IUnitRepository interface {
 	SaveNewestHeader(header *modules.Header) error
 	SaveHeaders(headers []*modules.Header) error
 	GetHeaderByNumber(index *modules.ChainIndex) (*modules.Header, error)
+	GetHeadersByAuthor(authorAddr common.Address, startHeight, count uint64) ([]*modules.Header, error)
 	IsHeaderExist(uHash common.Hash) (bool, error)
 	GetHashByNumber(number *modules.ChainIndex) (common.Hash, error)
 
@@ -210,6 +211,44 @@ func (rep *UnitRepository) GetHeaderByNumber(index *modules.ChainIndex) (*module
 	}
 	return rep.dagdb.GetHeaderByHash(hash)
 }
+func (rep *UnitRepository) GetHeadersByAuthor(authorAddr common.Address, startHeight, count uint64) ([]*modules.Header, error) {
+	token := dagconfig.DefaultConfig.GetGasToken()
+	var uHash common.Hash
+	var err error
+	if startHeight == 0 {
+		hash, _, _, err := rep.propdb.GetNewestUnit(token)
+		if err != nil {
+			return nil, err
+		}
+		uHash = hash
+	} else {
+		uHash, err = rep.dagdb.GetHashByNumber(modules.NewChainIndex(token, startHeight))
+		if err != nil {
+			return nil, err
+		}
+	}
+	result := []*modules.Header{}
+	findCount := uint64(0)
+	for {
+		header, err := rep.dagdb.GetHeaderByHash(uHash)
+		if err != nil {
+			return nil, err
+		}
+		if header.NumberU64() == 0 {
+			break
+		}
+		uHash = header.ParentsHash[0]
+		author := header.Author()
+		if author.Equal(authorAddr) {
+			result = append(result, header)
+			findCount++
+		}
+		if findCount == count {
+			break
+		}
+	}
+	return result, nil
+}
 
 func (rep *UnitRepository) IsHeaderExist(uHash common.Hash) (bool, error) {
 	return rep.dagdb.IsHeaderExist(uHash)
@@ -328,6 +367,10 @@ func (rep *UnitRepository) GetAssetTxHistory(asset *modules.Asset) ([]*modules.T
 		result = append(result, tx)
 	}
 	return result, nil
+}
+
+func (rep *UnitRepository) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error) {
+	return rep.utxoRepository.ComputeTxFee(pay)
 }
 
 //func (rep *UnitRepository) SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error {
@@ -904,7 +947,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 	reqId := tx.RequestHash().Bytes()
 	unitHash := unit.Hash()
 	unitTime := unit.Timestamp()
-	unitHeight := unit.Header().Index()
+	unitHeight := unit.NumberU64()
 
 	templateId := make([]byte, 0)
 	// traverse messages
@@ -923,16 +966,16 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			}
 		case modules.APP_CONTRACT_TPL:
 			tpl := msg.Payload.(*modules.ContractTplPayload)
-			if ok := rep.saveContractTpl(unit.UnitHeader.Number, uint32(txIndex), installReq, tpl); !ok {
+			if ok := rep.saveContractTpl(unit.Number(), uint32(txIndex), installReq, tpl); !ok {
 				return fmt.Errorf("Save contract template error.")
 			}
 		case modules.APP_CONTRACT_DEPLOY:
 			deploy := msg.Payload.(*modules.ContractDeployPayload)
-			if ok := rep.saveContractInitPayload(unit.UnitHeader.Number, uint32(txIndex), templateId, deploy, requester, unitTime); !ok {
+			if ok := rep.saveContractInitPayload(unit.Number(), uint32(txIndex), templateId, deploy, requester, unitTime); !ok {
 				return fmt.Errorf("Save contract init payload error.")
 			}
 		case modules.APP_CONTRACT_INVOKE:
-			if ok := rep.saveContractInvokePayload(tx, unit.UnitHeader.Number, uint32(txIndex), msg, reqIndex); !ok {
+			if ok := rep.saveContractInvokePayload(tx, unit.Number(), uint32(txIndex), msg, reqIndex, unitTime); !ok {
 				return fmt.Errorf("save contract invode payload error")
 			}
 		case modules.APP_CONTRACT_STOP:
@@ -940,7 +983,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 				return fmt.Errorf("save contract stop payload failed.")
 			}
 		case modules.APP_ACCOUNT_UPDATE:
-			if err := rep.updateAccountInfo(msg, requester, unit.UnitHeader.Number, uint32(txIndex)); err != nil {
+			if err := rep.updateAccountInfo(msg, requester, unit.Number(), uint32(txIndex)); err != nil {
 				return fmt.Errorf("apply Account Updating Operation error")
 			}
 		case modules.APP_CONTRACT_TPL_REQUEST:
@@ -996,10 +1039,10 @@ func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Trans
 		rep.idxdb.SaveAddressTxId(addr, txHash)
 	}
 	//Index contract address to tx
-	for _,msg:=range tx.TxMessages{
-		if msg.App== modules.APP_CONTRACT_INVOKE_REQUEST{
-			invoke:=msg.Payload.(*modules.ContractInvokeRequestPayload)
-			addr:=common.NewAddress(invoke.ContractId,common.ContractHash)
+	for _, msg := range tx.TxMessages {
+		if msg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
+			invoke := msg.Payload.(*modules.ContractInvokeRequestPayload)
+			addr := common.NewAddress(invoke.ContractId, common.ContractHash)
 			rep.idxdb.SaveAddressTxId(addr, txHash)
 		}
 	}
@@ -1192,7 +1235,7 @@ func (rep *UnitRepository) saveDataPayload(requester common.Address, unitHash co
 To save contract invoke state
 */
 func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, height *modules.ChainIndex,
-	txIndex uint32, msg *modules.Message, reqIndex int) bool {
+	txIndex uint32, msg *modules.Message, reqIndex int, unitTime int64) bool {
 	pl := msg.Payload
 	payload, ok := pl.(*modules.ContractInvokePayload)
 	if !ok {
@@ -1219,7 +1262,7 @@ func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, he
 		// append by albert
 		if reqIndex != -1 { // 排除创世交易中的系统合约交易没有Request的情况
 			invoke, _ := tx.TxMessages[reqIndex].Payload.(*modules.ContractInvokeRequestPayload)
-			rep.statedb.UpdateStateByContractInvoke(invoke)
+			rep.statedb.UpdateStateByContractInvoke(invoke, unitTime, version)
 		}
 	}
 

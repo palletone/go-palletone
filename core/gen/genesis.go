@@ -89,7 +89,10 @@ func setupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore) (*modules.Un
 	} else {
 		log.Info("Writing custom genesis block")
 	}
-	txs, asset := GetGensisTransctions(ks, genesis)
+	txs, asset, err := GetGensisTransctions(ks, genesis)
+	if err != nil {
+		return nil, err
+	}
 	log.Info("-> Genesis transactions:")
 	for i, tx := range txs {
 		msg := fmt.Sprintf("Tx[%d]: %s\n", i, tx.Hash().String())
@@ -99,37 +102,15 @@ func setupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore) (*modules.Un
 	return dagCommon.NewGenesisUnit(txs, genesis.InitialTimestamp, asset, genesis.ParentUnitHeight, genesis.ParentUnitHash), nil
 }
 
-func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules.Transactions, *modules.Asset) {
+func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules.Transactions, *modules.Asset, error) {
 	// step1, generate payment payload message: coin creation
 	holder, err := common.StringToAddress(genesis.TokenHolder)
 
 	if err != nil || holder.GetType() != common.PublicKeyHash {
 		log.Error("Genesis holder address is an invalid p2pkh address.")
-		return nil, nil
+		return nil, nil, err
 	}
 
-	//assetInfo := modules.FungibleToken{
-	//	Name:        genesis.GasToken,
-	//	TotalSupply: genesis.GetTokenAmount(),
-	//	Decimals:    byte(genesis.TokenDecimal),
-	//	Symbol:      genesis.DecimalUnit,
-	//	//SupplyAddress: holder,
-	//}
-	// get new asset id
-	//asset := modules.NewPTNAsset()
-	//err = err
-	//asset := &modules.Asset{
-	//	AssetId: assetId,
-	//}
-	//assetInfo.AssetID = asset
-	//extra, err := rlp.EncodeToBytes(assetInfo)
-	//if err != nil {
-	//	log.Error("Get genesis assetinfo bytes error.")
-	//	return nil, nil
-	//}
-	//txin := &modules.Input{
-	//	Extra: extra, // save asset info
-	//}
 	// generate p2pkh bytes
 	addr, _ := common.StringToAddress(holder.String())
 	pkscript := tokenengine.Instance.GenerateP2PKHLockScript(addr.Bytes())
@@ -160,7 +141,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 	configPayloads, err := dagCommon.GenGenesisConfigPayload(genesis, asset)
 	if err != nil {
 		log.Error("Generate genesis unit config payload error.")
-		return nil, nil
+		return nil, nil, err
 	}
 
 	for _, payload := range configPayloads {
@@ -188,7 +169,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 	//tx.TxHash = tx.Hash()
 
 	txs := []*modules.Transaction{tx}
-	return txs, asset
+	return txs, asset, nil
 }
 
 //func sigData(key *ecdsa.PrivateKey, data interface{}) ([]byte, error) {

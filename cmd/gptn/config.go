@@ -359,7 +359,7 @@ func DefaultConfig() FullConfig {
 		Dag:            dagconfig.DefaultConfig,
 		Log:            log.DefaultConfig,
 		Ada:            adaptor.DefaultConfig,
-		Contract:       contractcfg.DefaultConfig,
+		Contract:       *contractcfg.NewContractConfig(),
 		Certficate:     certficate.DefaultCAConfig,
 	}
 }
