@@ -72,9 +72,6 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) (bool, error) {
 	case CONTRACT_EVENT_ELE:
 		return true, p.contractEleEvent(event.Tx)
 	}
-	//if brd {
-	//	go p.ptn.ContractBroadcast(*event, false)
-	//}
 	return brd, err
 }
 
