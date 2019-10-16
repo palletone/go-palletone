@@ -394,18 +394,20 @@ func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis comm
 		})
 	}()
 	err_str := `rlp: too few elements for`
+	var is_old_status bool
 	go func() {
 		// 兼容上个版本的status
 		//errc <- p.readStatus(network, &status, genesis)
-		if err := p.readStatus(network, &status, genesis); err != nil {
+		if err := p.readOldStatus(network, &old_status, genesis); err != nil {
 			if strings.Contains(err.Error(), err_str) {
-				log.Debugf("to send old status failed,error: %s ", err.Error())
-				errc <- p.readOldStatus(network, &old_status, genesis)
+				log.Debugf("to read old status ... ,error: %s ", err.Error())
+				errc <- p.readStatus(network, &status, genesis)
 			} else {
-				log.Debugf("to send old status err:%s", err.Error())
+				log.Debugf("read old status err:%s", err.Error())
 				errc <- err
 			}
 		} else {
+			is_old_status = true
 			errc <- nil
 		}
 	}()
@@ -422,12 +424,16 @@ func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis comm
 		}
 	}
 	stableIndex := &modules.ChainIndex{Index: uint64(1)}
-	log.Debug("peer Handshake", "p.id", p.id, "index", status.Index, "stable", stableIndex) //status.StableIndex)
-	if status.StableIndex != nil {
-		p.SetHead(status.CurrentHeader, status.Index, status.StableIndex)
+	if is_old_status {
+		p.SetHead(old_status.CurrentHeader, old_status.Index, stableIndex)
+		log.Debug("peer Handshake old_status", "p.id", p.id, "index", old_status.Index, "stable",
+			stableIndex.String())
 	} else {
-		p.SetHead(status.CurrentHeader, status.Index, stableIndex)
+		p.SetHead(status.CurrentHeader, status.Index, status.StableIndex)
+		log.Debug("peer Handshake status", "p.id", p.id, "index", status.Index, "stable",
+			status.StableIndex.String())
 	}
+
 	return nil
 }
 func (p *peer) readOldStatus(network uint64, status *old_status_data, genesis common.Hash) (err error) {
