@@ -148,6 +148,9 @@ func (s *PrivateDagAPI) GetHeaderByAuthor(ctx context.Context, author string, st
 		return "", err
 	}
 	headers, err := s.b.Dag().GetHeadersByAuthor(authorAddr, startHeight, count)
+	if err != nil {
+		return "", err
+	}
 	result := []*ptnjson.HeaderJson{}
 	for _, header := range headers {
 		headerJson := ptnjson.ConvertUnitHeader2Json(header)
@@ -156,6 +159,7 @@ func (s *PrivateDagAPI) GetHeaderByAuthor(ctx context.Context, author string, st
 	content, err := json.Marshal(result)
 	if err != nil {
 		log.Info("PrivateDagAPI", "GetHeaderByAuthor Marshal err:", err, "author", author)
+		return "", err
 	}
 	return string(content), nil
 }
