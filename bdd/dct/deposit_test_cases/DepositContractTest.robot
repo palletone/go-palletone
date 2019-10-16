@@ -522,5 +522,8 @@ PledgeTest
     sleep    5
     ${result}    QueryAllPledgeHistory
     log    ${result}
+    sleep    5
     ${result}    mediatorListVoteResults    #查看超级节点投票结果
     log    ${result}
+    ${amount}    Get From Dictionary    ${result}    ${mediatorAddress}
+    Should Be Equal As Numbers    ${amount}    577490000
