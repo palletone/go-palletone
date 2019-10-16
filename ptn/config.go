@@ -47,7 +47,7 @@ var DefaultConfig = Config{
 	Dag:            dagconfig.DagConfig,
 	MediatorPlugin: mediatorplugin.DefaultConfig,
 	Jury:           jury.DefaultConfig,
-	Contract:       contractcfg.NewContractConfig(),
+	Contract:       *contractcfg.NewContractConfig(),
 }
 
 func init() {
@@ -113,7 +113,7 @@ type Config struct {
 	Jury jury.Config `toml:"-"`
 
 	//Contract config
-	Contract *contractcfg.Config `toml:"-"`
+	Contract contractcfg.Config `toml:"-"`
 
 	// Miscellaneous options
 	DocRoot string `toml:"-"`

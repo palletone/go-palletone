@@ -49,7 +49,6 @@ func SetConfig(cfg *Config) {
 		config = cfg
 	} else {
 		config = NewContractConfig()
-
 	}
 }
 
