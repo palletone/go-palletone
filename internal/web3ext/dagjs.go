@@ -70,6 +70,11 @@ web3._extend({
         	inputFormatter: [null]
 		}),
 		new web3._extend.Method({
+			name: 'getHeaderByAuthor',
+       		call: 'dag_getHeaderByAuthor',
+        	params: 3,
+		}),
+		new web3._extend.Method({
 		    name: 'getTxHashByReqId',
 		    call: 'dag_getTxHashByReqId',
 			params: 1,

@@ -62,6 +62,7 @@ type IUnitRepository interface {
 	SaveNewestHeader(header *modules.Header) error
 	SaveHeaders(headers []*modules.Header) error
 	GetHeaderByNumber(index *modules.ChainIndex) (*modules.Header, error)
+	GetHeadersByAuthor(authorAddr common.Address, startHeight, count uint64) ([]*modules.Header, error)
 	IsHeaderExist(uHash common.Hash) (bool, error)
 	GetHashByNumber(number *modules.ChainIndex) (common.Hash, error)
 
@@ -208,6 +209,44 @@ func (rep *UnitRepository) GetHeaderByNumber(index *modules.ChainIndex) (*module
 		return nil, err
 	}
 	return rep.dagdb.GetHeaderByHash(hash)
+}
+func (rep *UnitRepository) GetHeadersByAuthor(authorAddr common.Address, startHeight, count uint64) ([]*modules.Header, error) {
+	token := dagconfig.DefaultConfig.GetGasToken()
+	var uHash common.Hash
+	var err error
+	if startHeight == 0 {
+		hash, _, _, err := rep.propdb.GetNewestUnit(token)
+		if err != nil {
+			return nil, err
+		}
+		uHash = hash
+	} else {
+		uHash, err = rep.dagdb.GetHashByNumber(modules.NewChainIndex(token, startHeight))
+		if err != nil {
+			return nil, err
+		}
+	}
+	result := []*modules.Header{}
+	findCount := uint64(0)
+	for {
+		header, err := rep.dagdb.GetHeaderByHash(uHash)
+		if err != nil {
+			return nil, err
+		}
+		if header.NumberU64() == 0 {
+			break
+		}
+		uHash = header.ParentsHash[0]
+		author := header.Author()
+		if author.Equal(authorAddr) {
+			result = append(result, header)
+			findCount++
+		}
+		if findCount == count {
+			break
+		}
+	}
+	return result, nil
 }
 
 func (rep *UnitRepository) IsHeaderExist(uHash common.Hash) (bool, error) {

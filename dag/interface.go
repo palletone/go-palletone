@@ -51,6 +51,7 @@ type IDag interface {
 	HasHeader(common.Hash, uint64) bool
 	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
+	GetHeadersByAuthor(authorAddr common.Address, startHeight, count uint64) ([]*modules.Header, error)
 	GetUnstableUnits() []*modules.Unit
 
 	CurrentHeader(token modules.AssetId) *modules.Header
