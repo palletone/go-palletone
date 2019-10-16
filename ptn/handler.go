@@ -770,7 +770,7 @@ func (pm *ProtocolManager) ContractBroadcast(event jury.ContractEvent, local boo
 	}
 	if local {
 		go func() {
-			err := pm.contractProc.ProcessContractEvent(&event)
+			_ ,err := pm.contractProc.ProcessContractEvent(&event)
 			if err != nil {
 				log.Errorf("[%s]ContractBroadcast, error:%s", reqId.String()[0:8], err.Error())
 			}

@@ -12,7 +12,7 @@ import (
 
 type ContractInf interface {
 	SubscribeContractEvent(ch chan<- jury.ContractEvent) event.Subscription
-	ProcessContractEvent(event *jury.ContractEvent) error
+	ProcessContractEvent(event *jury.ContractEvent) (broadcast bool, err error)
 	ProcessElectionEvent(event *jury.ElectionEvent) (result *jury.ElectionEvent, err error)
 	ProcessAdapterEvent(event *jury.AdapterEvent) (result *jury.AdapterEvent, err error)
 
