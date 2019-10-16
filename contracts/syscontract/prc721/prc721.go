@@ -247,7 +247,10 @@ func convertToByte(n uint64) []byte {
 }
 
 func generateUUID(seed []byte) ([]byte, error) {
-	newHash, _ := crypto.MyCryptoLib.Hash(seed)
+	newHash, err := crypto.MyCryptoLib.Hash(seed)
+	if err != nil {
+		return nil, err
+	}
 	uuid := newHash[0:16]
 	// variant bits; see section 4.1.1
 	uuid[8] = uuid[8]&^0xc0 | 0x80
