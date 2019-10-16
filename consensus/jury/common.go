@@ -201,7 +201,7 @@ func genContractErrorMsg(dag iDag, tx *modules.Transaction, addr []byte,
 	reqType, _ := getContractTxType(tx)
 	errString := fmt.Sprintf("[%s]genContractErrorMsg, reqType:%d,err:%s",
 		shortId(tx.RequestHash().String()), reqType, errIn.Error())
-	log.Error(errString)
+	log.Debug(errString)
 	if !errMsgEnable {
 		return nil, errors.New(errString)
 	}
