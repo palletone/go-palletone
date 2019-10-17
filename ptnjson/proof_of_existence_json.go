@@ -33,7 +33,7 @@ type ProofOfExistenceJson struct {
 	ExtraData  string      `json:"extra_data"`
 	Reference  string      `json:"reference"`
 	UintHeight uint64      `json:"unit_index"`
-	TxId       common.Hash `json:"tx_id"`
+	TxId       common.Hash `json:"tx_hash"`
 	UnitHash   common.Hash `json:"unit_hash"`
 	Timestamp  time.Time   `json:"timestamp"`
 }
