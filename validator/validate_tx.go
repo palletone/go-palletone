@@ -267,12 +267,12 @@ func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize f
 
 	if validate.dagquery == nil || validate.propquery == nil {
 		log.Warnf("[%s]ValidateTxFeeEnough, Cannot validate tx fee, your validate dagquery or propquery not set", reqId.String()[:8])
-		return true //todo  ?
+		return true //todo ?
 	}
 	fees, err := validate.dagquery.GetTxFee(tx)
 	if err != nil {
 		log.Errorf("[%s]validateTxFeeEnough, GetTxFee err:%s", reqId.String()[:8], err.Error())
-		return false
+		return true //todo ?
 	}
 	cp := validate.propquery.GetChainParameters()
 	timeUnitFee := float64(cp.ContractTxTimeoutUnitFee)
