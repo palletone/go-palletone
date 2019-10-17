@@ -47,7 +47,7 @@ var DefaultConfig = Config{
 	Dag:            dagconfig.DagConfig,
 	MediatorPlugin: mediatorplugin.DefaultConfig,
 	Jury:           jury.DefaultConfig,
-	Contract:       contractcfg.DefaultConfig,
+	Contract:       *contractcfg.NewContractConfig(),
 }
 
 func init() {

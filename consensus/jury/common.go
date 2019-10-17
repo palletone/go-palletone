@@ -201,7 +201,7 @@ func genContractErrorMsg(dag iDag, tx *modules.Transaction, addr []byte,
 	reqType, _ := getContractTxType(tx)
 	errString := fmt.Sprintf("[%s]genContractErrorMsg, reqType:%d,err:%s",
 		shortId(tx.RequestHash().String()), reqType, errIn.Error())
-	log.Error(errString)
+	log.Debug(errString)
 	if !errMsgEnable {
 		return nil, errors.New(errString)
 	}
@@ -538,18 +538,6 @@ func (p *Processor) checkTxReqIdIsExist(reqId common.Hash) bool {
 		return true
 	}
 	return false
-}
-
-func (p *Processor) checkTxValid(tx *modules.Transaction) (bool, error) {
-	reqId := tx.RequestHash()
-	txHash := tx.Hash()
-	_, _, err := p.validator.ValidateTx(tx, false)
-	if err != nil {
-		log.Debugf("[%s]checkTxValid, Validate fail, txHash[%s], err:%s",
-			shortId(reqId.String()), txHash.String(), err.Error())
-		return false, err
-	}
-	return true, nil
 }
 
 func (p *Processor) checkTxAddrValid(tx *modules.Transaction) bool {

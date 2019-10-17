@@ -140,7 +140,6 @@ const (
 	DefaultMediatorCreateFee  = 50000
 	DefaultAccountUpdateFee   = 5000
 	DefaultTransferPtnBaseFee = 5000
-	//DefaultTransferPtnPricePerKByte = 30000
 	DefaultTransferPtnPricePerKByte = 15000
 	DefaultContractInvokeFee        = 100000000
 

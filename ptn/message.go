@@ -563,9 +563,18 @@ func (pm *ProtocolManager) ContractMsg(msg p2p.Msg, p *peer) error {
 
 	reqId := event.Tx.RequestHash()
 	log.Debugf("[%s] ProtocolManager ContractMsg, event type[%v]", reqId.String()[0:8], event.CType)
-	err := pm.contractProc.ProcessContractEvent(&event)
+	brd, err := pm.contractProc.ProcessContractEvent(&event)
 	if err != nil {
 		log.Debugf("[%s]ProtocolManager ContractMsg, error:%s", reqId.String()[0:8], err.Error())
+	}
+	if brd && pm.peers != nil {
+		peers := pm.peers.GetPeers()
+		log.Debugf("[%s]ProtocolManager, event type[%d], peers num[%d]", reqId.String()[0:8], event.CType, len(peers))
+		for _, peer := range peers {
+			if err := peer.SendContractTransaction(event); err != nil {
+				log.Error("ContractBroadcast", "SendContractTransaction err:", err.Error())
+			}
+		}
 	}
 	return nil
 }
@@ -584,11 +593,19 @@ func (pm *ProtocolManager) ElectionMsg(msg p2p.Msg, p *peer) error {
 		log.Debug("ElectionMsg, ToElectionEvent fail")
 		return nil
 	}
-	_, err = pm.contractProc.ProcessElectionEvent(event)
+	err = pm.contractProc.ProcessElectionEvent(event)
 	if err != nil {
 		log.Debug("ElectionMsg", "ProcessElectionEvent error:", err)
 	}
-
+	if pm.peers != nil {
+		peers := pm.peers.GetPeers()
+		log.Debugf("ElectionMsg, event type[%d], peers num[%d]", event.EType, len(peers))
+		for _, peer := range peers {
+			if err := peer.SendElectionEvent(*event); err != nil {
+				log.Error("ElectionMsg", "SendContractTransaction err:", err.Error())
+			}
+		}
+	}
 	return nil
 }
 

@@ -182,7 +182,7 @@ func init() {
 		timestampCommand,         // 获取指定时间的时间戳
 		mediatorCommand,          // mediator 管理
 		//certCommand,              //证书管理
-
+		juryListenerIpCommand,
 	}
 	sort.Sort(cli.CommandsByName(app.Commands))
 

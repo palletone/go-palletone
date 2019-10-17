@@ -268,10 +268,24 @@ func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode)
 		log.Error("[%s]runContractReq, GenContractSigTransactions error:%s", shortId(reqId.String()), err.Error())
 		return err
 	}
-	//计算交易费用，将deploy持续时间写入交易中
-	err = addContractDeployDuringTime(p.dag, tx)
-	if err != nil {
-		log.Debugf("[%s]runContractReq, addContractDeployDuringTime error:%s", shortId(reqId.String()), err.Error())
+	if !p.validator.ValidateTxFeeEnough(tx, ContractDefaultSignatureSize, 0) {
+		//费用不足，重新构建费用不足的交易
+		msgs, err = genContractErrorMsg(p.dag, tx, nil, errors.New("tx fee is invalid"), true)
+		if err != nil {
+			log.Error("[%s]runContractReq, genContractErrorMsg error:%s", shortId(reqId.String()), err.Error())
+			return err
+		}
+		tx, err = gen.GenContractTransction(&reqTx, msgs)
+		if err != nil {
+			log.Error("[%s]runContractReq,fee is not enough, GenContractTransction error:%s", shortId(reqId.String()), err.Error())
+			return err
+		}
+	} else {
+		//计算交易费用，将deploy持续时间写入交易中
+		err = addContractDeployDuringTime(p.dag, tx)
+		if err != nil {
+			log.Debugf("[%s]runContractReq, addContractDeployDuringTime error:%s", shortId(reqId.String()), err.Error())
+		}
 	}
 
 	//如果系统合约，直接添加到缓存池
@@ -528,7 +542,7 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 	if p.validator.CheckTxIsExist(tx) {
 		return false
 	}
-	if v, err := p.checkTxValid(tx); !v {
+	if _, v, err := p.validator.ValidateTx(tx, false); v != validator.TxValidationCode_VALID {
 		log.Errorf("[%s]CheckContractTxValid checkTxValid fail, err:%s", shortId(reqId.String()), err.Error())
 		return false
 	}
@@ -546,11 +560,22 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 	}
 	msgs, err := runContractCmd(rwM, p.dag, p.contract, tx, nil, p.errMsgEnable) // long time ...
 	if err != nil {
-		log.Errorf("[%s]CheckContractTxValid runContractCmd,error:%s", shortId(reqId.String()), err.Error())
+		log.Errorf("[%s]CheckContractTxValid, runContractCmd,error:%s", shortId(reqId.String()), err.Error())
 		return false
 	}
-	//reqTx := tx.GetRequestTx()
-	//txTmp, err := gen.GenContractTransction(reqTx, msgs)
+	reqTx := tx.GetRequestTx()
+	txTmp, err := gen.GenContractTransction(reqTx, msgs)
+	if err != nil {
+		log.Errorf("[%s]CheckContractTxValid, GenContractTransction,error:%s", shortId(reqId.String()), err.Error())
+		return false
+	}
+	if !p.validator.ValidateTxFeeEnough(txTmp, ContractDefaultSignatureSize, 0) {
+		msgs, err = genContractErrorMsg(p.dag, txTmp, nil, errors.New("tx fee is invalid"), true)
+		if err != nil {
+			log.Errorf("[%s]CheckContractTxValid, genContractErrorMsg,error:%s", shortId(reqId.String()), err.Error())
+			return false
+		}
+	}
 	return msgsCompare(msgs, tx.TxMessages, modules.APP_CONTRACT_INVOKE)
 }
 
@@ -733,12 +758,12 @@ func (p *Processor) signGenericTx(contractId common.Address, from common.Address
 	defer p.locker.Unlock()
 
 	reqId := tx.RequestHash()
-	if v, err := p.checkTxValid(tx); !v {
-		return common.Hash{}, nil, fmt.Errorf("signAndExecute, checkTxValid fail:%s", err.Error())
+	if !p.validator.ValidateTxFeeEnough(tx, ContractDefaultSignatureSize+ContractDefaultRWSize, 0) {
+		return common.Hash{}, nil, fmt.Errorf("signGenericTx, tx fee is invalid")
 	}
-	log.Debugf("[%s]signAndExecute, contractId[%s]", shortId(reqId.String()), contractId.String())
+	log.Debugf("[%s]signGenericTx, contractId[%s]", shortId(reqId.String()), contractId.String())
 	if p.mtx[reqId] != nil {
-		return reqId, nil, fmt.Errorf("contract request transaction[%s] already created", shortId(reqId.String()))
+		return reqId, nil, fmt.Errorf("signGenericTx, contract request transaction[%s] already created", shortId(reqId.String()))
 	}
 	p.mtx[reqId] = &contractTx{
 		reqTx:  tx.GetRequestTx(),
@@ -754,7 +779,7 @@ func (p *Processor) signGenericTx(contractId common.Address, from common.Address
 		} else { //invoke,stop
 			eleNode, err := p.getContractElectionList(contractId)
 			if err != nil {
-				log.Errorf("[%s]signAndExecute, getContractElectionList fail,err:%s",
+				log.Errorf("[%s]signGenericTx, getContractElectionList fail,err:%s",
 					shortId(tx.RequestHash().String()), err.Error())
 				return common.Hash{}, nil, err
 			}

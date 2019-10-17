@@ -93,7 +93,7 @@ matrix:
         - netstat -ap | grep gptn
         - if [ $IS_RUN_DEPOSIT == 'true' ]; then
           cd ../dct;
-          ./deposit_test.sh 6;
+          ./deposit_test.sh 7;
           fi
         - if [ $IS_RUN_BLACKLIST == 'true' ]; then
           cd ../blacklist;
@@ -133,6 +133,7 @@ matrix:
 
         - if [ $IS_RUN_GASTOKEN == 'true' ]; then
           cd ./GasToken;
+          killall -9 gptn;
           chmod +x ./init_gas_token.sh;
           ./init_gas_token.sh;
           sleep 15;

@@ -63,19 +63,13 @@ func Initialize(idag dag.IDag, jury core.IAdapterJury, cfg *contractcfg.Config) 
 		return nil, errors.New("contract already init")
 	}
 
-	var contractCfg contractcfg.Config
-	if cfg == nil {
-		contractCfg = contractcfg.DefaultConfig
-	} else {
-		contractCfg = *cfg
-	}
 	contract := &Contract{
 		name:         "palletone",
 		dag:          idag,
 		cfg:          cfg,
 		IAdapterJury: jury,
 	}
-	contractcfg.SetConfig(&contractCfg)
+	contractcfg.SetConfig(cfg)
 	if err := cc.Init(idag, jury); err != nil {
 		return nil, err
 	}

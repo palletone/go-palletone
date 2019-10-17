@@ -241,7 +241,7 @@ func (p *Processor) electionEventBroadcast(event *ElectionEvent) (recved bool, i
 		p.mel[reqId].vrfReqEd = true
 		p.mel[reqId].tm = time.Now()
 	}
-	go p.ptn.ElectionBroadcast(*event, false)
+
 	return false, p.mel[reqId].invalid, nil
 }
 
@@ -528,22 +528,22 @@ func (p *Processor) BroadcastElectionSigRequestEvent() {
 	}
 }
 
-func (p *Processor) ProcessElectionEvent(event *ElectionEvent) (result *ElectionEvent, err error) {
+func (p *Processor) ProcessElectionEvent(event *ElectionEvent) (err error) {
 	if event == nil {
-		return nil, errors.New("ProcessElectionEvent, event is nil")
+		return errors.New("ProcessElectionEvent, event is nil")
 	}
 	reqId, isP := p.electionEventIsProcess(event)
 	if !isP {
 		log.Infof("[%s]ProcessElectionEvent, electionEventIsProcess is false, event type[%v]",
 			shortId(reqId.String()), event.EType)
-		return nil, nil
+		return nil
 	}
 	received, invalid, err := p.electionEventBroadcast(event)
 	if err != nil {
-		return nil, err
+		return err
 	} else if received || invalid {
 		log.Debugf("[%s]ProcessElectionEvent, received=%v, invalid=%v", shortId(reqId.String()), received, invalid)
-		return nil, nil
+		return nil
 	}
 	log.Infof("[%s]ProcessElectionEvent, event type[%v] ", shortId(reqId.String()), event.EType)
 
@@ -557,5 +557,5 @@ func (p *Processor) ProcessElectionEvent(event *ElectionEvent) (result *Election
 		err = p.processElectionSigResultEvent(event.Event.(*ElectionSigResultEvent))
 	}
 
-	return nil, err
+	return err
 }

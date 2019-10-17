@@ -1,0 +1,11 @@
+*** Settings ***
+Resource          publicParams.txt
+
+*** Keywords ***
+PledgeWithdraw
+    [Arguments]    ${votedAddress}    ${PTN}
+    ${contractParam}    Create List    PledgeWithdraw    ${PTN}
+    ${param}    Create List    ${votedAddress}    ${votedAddress}    1    1    ${depositContractAddress}
+    ...    ${contractParam}    \    10
+    ${result}    创建公用的POST请求    contract_ccinvoketx    contract_ccinvoketx    ${param}
+    [Return]    ${result}
