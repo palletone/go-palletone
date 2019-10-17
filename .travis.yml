@@ -133,6 +133,7 @@ matrix:
 
         - if [ $IS_RUN_GASTOKEN == 'true' ]; then
           cd ./GasToken;
+          killall -9 gptn;
           chmod +x ./init_gas_token.sh;
           ./init_gas_token.sh;
           sleep 15;
