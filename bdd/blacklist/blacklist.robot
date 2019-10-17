@@ -9,9 +9,6 @@ ${two}            ${EMPTY}
 
 *** Test Cases ***
 blacklist
-    ${f}    getBalance    ${foundation}    PTN
-    log    ${f}
-    Should Be Equal As Numbers    ${f}    999930041
     ${o}    getBalance    ${one}    PTN
     log    ${o}
     Should Be Equal As Numbers    ${o}    9989
@@ -41,9 +38,6 @@ blacklist
     ${res}    payout    ${two}    ${o}    PTN
     log    ${res}
     sleep    5
-    ${f}    getBalance    ${foundation}    PTN
-    log    ${f}
-    Should Be Equal As Numbers    ${f}    999930039
     ${o}    getBalance    ${one}    PTN
     log    ${o}
     Should Be Equal As Numbers    ${o}    9989
