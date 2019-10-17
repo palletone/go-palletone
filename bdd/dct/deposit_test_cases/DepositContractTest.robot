@@ -149,6 +149,14 @@ Business_02
     Dictionary Should Not Contain Key    ${resul}    ${mediatorAddr_02}    #jury候选列表无该地址
     log    ${resul}
     GetAllMediators
+    ${amount}    getBalance    ${juryAddr_01}    PTN
+    log    ${amount}    #9998
+    ${amount}    getBalance    ${juryAddr_02}    PTN
+    log    ${amount}    #9989
+    ${amount}    getBalance    ${developerAddr_01}    PTN
+    log    ${amount}    #9998
+    ${amount}    getBalance    ${developerAddr_02}    PTN
+    log    ${amount}    #9998
 
 Business_03
     [Documentation]    jury 交付 10 ptn 才可以加入候选列表
@@ -176,6 +184,9 @@ Business_03
     ${result}    getQuitMediatorApplyList    #为空
     log    ${result}
     Dictionary Should Not Contain Key    ${result}    ${juryAddr_01}
+    ${result}    getJuryBalance    ${juryAddr_01}    #获取该地址保证金账户详情
+    log    ${result}    #余额为100000000000000
+    Should Be Equal    ${result}    balance is nil
     GetAllJury
 
 Business_04
@@ -297,45 +308,50 @@ Business_07
     Should Be Equal As Numbers    ${amount}    0
 
 middle_cases
+    [Documentation]    查询该阶段，保证金合约地址账户余额及各节点地址账户余额信息，及在保证金里面各节点的相关信息。
     log    Mediator
     ${addressMap1}    getBecomeMediatorApplyList
-    log    ${addressMap1}
+    log    ${addressMap1}    #空
     ${addressMap2}    getAgreeForBecomeMediatorList
-    log    ${addressMap2}
+    log    ${addressMap2}    #同意的2个
     ${addressMap3}    getListForMediatorCandidate
-    log    ${addressMap3}
+    log    ${addressMap3}    #默认的5个
+    GetAllMediators    #加上默认的5个，一共7个
     log    Jury
     ${resul}    getListForJuryCandidate
-    log    ${resul}
+    log    ${resul}    #默认的5个
+    GetAllJury    #默认的5个
     log    Developer
     ${resul}    getListForDeveloperCandidate
-    log    ${resul}
+    log    ${resul}    #空
+    GetAllNodes    #空
     log    All
     ${addressMap4}    getQuitMediatorApplyList
-    log    ${addressMap4}
-    GetAllNodes
-    GetAllMediators
+    log    ${addressMap4}    #空
+    ${list}    getListForForfeitureApplication
+    log    ${list}    #空
+    log    "Balance..."
     ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
-    log    ${amount}
+    log    ${amount}    #0
     ${amount}    getBalance    ${foundationAddr}    PTN
-    log    ${amount}
+    log    ${amount}    #999930043
     ${amount}    getBalance    ${mediatorAddr_01}    PTN
-    log    ${amount}
+    log    ${amount}    #9996
     ${amount}    getBalance    ${mediatorAddr_02}    PTN
-    log    ${amount}
+    log    ${amount}    #9946
     ${amount}    getBalance    ${juryAddr_01}    PTN
-    log    ${amount}
+    log    ${amount}    #9998，花了2个PTN手续费
     ${amount}    getBalance    ${juryAddr_02}    PTN
-    log    ${amount}
+    log    ${amount}    #9989，少10个PTN是因为被没收的，花了1个PTN手续费
     ${amount}    getBalance    ${developerAddr_01}    PTN
-    log    ${amount}
+    log    ${amount}    #9998，花了2个PTN手续费
     ${amount}    getBalance    ${developerAddr_02}    PTN
-    log    ${amount}
+    log    ${amount}    #9998，被没收了1个PTN，花了1个PTN手续费
 
 Business_08
     [Documentation]    退出候选列表的两个Mediator继续交付保证金
     ...
-    ...    mediator交付保证金再次进入候选列表
+    ...    mediator交付保证金再次进入超级节点和jury节点候选列表
     ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}
     log    ${mDeposit}
     ${amount}    getBalance    ${mediatorAddr_01}    PTN
@@ -380,6 +396,10 @@ Business_08
     log    ${resul}
 
 PledgeTest
+    [Documentation]    质押流程的测试用例，包括投票、质押、分红、赎回、查询相关等操作
+    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
+    log    ${amount}    #100，上一个测试的结果
+    Should Be Equal As Numbers    ${amount}    100
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
     log    ${result}
     ${result}    getBalance    ${votedAddress}    PTN
@@ -527,3 +547,137 @@ PledgeTest
     log    ${result}
     ${amount}    Get From Dictionary    ${result}    ${mediatorAddress}
     Should Be Equal As Numbers    ${amount}    577490000
+    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
+    log    ${amount}    #108.66235，866,235,000是质押增发的
+    Should Be Equal As Numbers    ${amount}    108.66235
+
+Business_09
+    [Documentation]    jury 和 dev 交付保证金数量不对流程
+    log    jury
+    ${amount}    getBalance    ${juryAddr_01}    PTN
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    9998
+    ${resul}    juryPayToDepositContract    ${juryAddr_01}    11    ${juryAddr_01_pubkey}    #应该是10，但是为11
+    log    ${resul}
+    sleep    5
+    ${amount}    getBalance    ${juryAddr_01}    PTN
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    9997
+    log    dev
+    ${amount}    getBalance    ${developerAddr_01}    PTN
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    9998
+    ${resul}    developerPayToDepositContract    ${developerAddr_01}    2    #应该为1，但是为2
+    log    ${resul}
+    sleep    5
+    ${amount}    getBalance    ${developerAddr_01}    PTN
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    9997
+    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
+    log    ${amount}    #108.66235，866,235,000是质押增发的，没有变化
+    Should Be Equal As Numbers    ${amount}    108.66235
+
+Business_10
+    [Documentation]    jury 交付 10 ptn 才可以加入候选列表
+    ...
+    ...    Jury 节点交付固定保证金并进入候选列表-》申请退出并进入退出列表-》基金不同意并移除候选列表，退出列表。
+    ${resul}    juryPayToDepositContract    ${juryAddr_01}    10    ${juryAddr_01_pubkey}    #11
+    log    ${resul}
+    ${result}    getJuryBalance    ${juryAddr_01}    #获取该地址保证金账户详情
+    log    ${result}
+    Should Not Be Equal    ${result}    balance is nil
+    ${resul}    getListForJuryCandidate
+    Dictionary Should Contain Key    ${resul}    ${juryAddr_01}    #候选列表有该地址
+    log    ${resul}
+    ${result}    applyQuitMediator    ${juryAddr_01}    JuryApplyQuit    #该节点申请退出mediator候选列表    #1
+    log    ${result}
+    ${addressMap4}    getQuitMediatorApplyList    #获取申请mediator列表里的节点（不为空）
+    log    ${addressMap4}
+    Dictionary Should Contain Key    ${addressMap4}    ${juryAddr_01}
+    ${result}    handleForApplyForQuitMediator    ${foundationAddr}    ${juryAddr_01}    no    HandleForApplyQuitJury    #基金会处理退出候选列表里的节点（同意）
+    log    ${result}
+    ${result}    getJuryBalance    ${juryAddr_01}    #获取该地址保证金账户详情
+    log    ${result}
+    Should Not Be Equal    ${result}    balance is nil
+    ${resul}    getListForJuryCandidate    #mediator退出候选列表，则移除该jury
+    Dictionary Should Contain Key    ${resul}    ${juryAddr_01}
+    log    ${resul}
+    ${result}    getQuitMediatorApplyList    #为空
+    log    ${result}
+    Dictionary Should Not Contain Key    ${result}    ${juryAddr_01}
+    ${amount}    getBalance    ${juryAddr_01}    PTN
+    log    ${amount}    #9985
+    Should Be Equal As Numbers    ${amount}    9985
+
+Business_11
+    [Documentation]    dev 交付 1 ptn 才可以加入合约开发者列表
+    ...
+    ...    Developer 节点交付固定保证金并进入列表-》申请退出并进入退出列表-》基金会不同意并移除列表，退出列表。
+    ${resul}    developerPayToDepositContract    ${developerAddr_01}    1    #2
+    log    ${resul}
+    ${result}    getCandidateBalanceWithAddr    ${developerAddr_01}    #获取该地址保证金账户详情
+    log    ${result}
+    Should Not Be Equal    ${result}    balance is nil
+    ${resul}    getListForDeveloperCandidate
+    Dictionary Should Contain Key    ${resul}    ${developerAddr_01}    #候选列表无该地址
+    log    ${resul}
+    ${result}    applyQuitMediator    ${developerAddr_01}    DeveloperApplyQuit    #该节点申请退出mediator候选列表    #1
+    log    ${result}
+    ${addressMap4}    getQuitMediatorApplyList    #获取申请mediator列表里的节点（不为空）
+    log    ${addressMap4}
+    Dictionary Should Contain Key    ${addressMap4}    ${developerAddr_01}
+    ${result}    handleForApplyForQuitMediator    ${foundationAddr}    ${developerAddr_01}    no    HandleForApplyQuitDev    #基金会处理退出候选列表里的节点（同意）
+    log    ${result}
+    ${resul}    getListForDeveloperCandidate    #mediator退出候选列表，则移除该jury
+    Dictionary Should Contain Key    ${resul}    ${developerAddr_01}
+    log    ${resul}
+    ${result}    getQuitMediatorApplyList    #为空
+    log    ${result}
+    Dictionary Should Not Contain Key    ${result}    ${developerAddr_01}
+    ${amount}    getBalance    ${developerAddr_01}    PTN
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    9994
+    ${result}    getCandidateBalanceWithAddr    ${developerAddr_01}    #获取该地址保证金账户详情
+    log    ${result}
+    Should Not Be Equal    ${result}    balance is nil
+
+Business_12
+    [Documentation]    没收上一个测试用例的jury dev节点，但是基金会不同意
+    log    jury
+    ${result}    applyForForfeitureDeposit    ${foundationAddr}    ${juryAddr_01}    Developer    nothing to do    #某个地址申请没收该节点保证金（全部）
+    log    ${result}
+    ${result}    getListForForfeitureApplication
+    log    ${result}
+    Dictionary Should Contain Key    ${result}    ${juryAddr_01}    #没收列表有该地址
+    ${result}    handleForForfeitureApplication    ${foundationAddr}    ${juryAddr_01}    no    #基金会处理（同意），这是会移除mediator出候选列表
+    log    ${result}
+    ${result}    getJuryBalance    ${juryAddr_01}
+    log    ${result}
+    Should Not Be Equal    ${result}    balance is nil    #不为空
+    ${resul}    getListForJuryCandidate
+    Dictionary Should Contain Key    ${resul}    ${juryAddr_01}    #候选列表无该地址
+    log    ${resul}
+    ${amount}    getBalance    ${juryAddr_01}    PTN
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    9985
+    ${result}    getListForForfeitureApplication
+    log    ${result}
+    log    dev
+    ${result}    applyForForfeitureDeposit    ${foundationAddr}    ${developerAddr_01}    Developer    nothing to do    #某个地址申请没收该节点保证金（全部）
+    log    ${result}
+    ${result}    getListForForfeitureApplication
+    log    ${result}
+    Dictionary Should Contain Key    ${result}    ${developerAddr_01}    #没收列表有该地址
+    ${result}    handleForForfeitureApplication    ${foundationAddr}    ${developerAddr_01}    no    #基金会处理（同意），这是会移除mediator出候选列表
+    log    ${result}
+    ${result}    getCandidateBalanceWithAddr    ${developerAddr_01}
+    log    ${result}
+    Should Not Be Equal    ${result}    balance is nil    #不为空
+    ${resul}    getListForDeveloperCandidate
+    Dictionary Should Contain Key    ${resul}    ${developerAddr_01}    #候选列表无该地址
+    log    ${resul}
+    ${amount}    getBalance    ${developerAddr_01}    PTN
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    9994
+    ${result}    getListForForfeitureApplication
+    log    ${result}
