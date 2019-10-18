@@ -110,6 +110,14 @@ Make sure you backup your keys regularly.`,
 Print a short summary of all accounts`,
 			},
 			{
+				Name:   "convert",
+				Usage:  "Convert account address to hex format address",
+				Action: utils.MigrateFlags(accountConvert),
+				Flags:  []cli.Flag{},
+				Description: `
+Convert account address to hex format address`,
+			},
+			{
 				Name:   "new",
 				Usage:  "Create a new account",
 				Action: utils.MigrateFlags(accountCreate),
@@ -298,6 +306,19 @@ func accountList(ctx *cli.Context) error {
 			index++
 		}
 	}
+	return nil
+}
+func accountConvert(ctx *cli.Context) error {
+	addrStr := ctx.Args().First()
+	if len(addrStr) == 0 {
+		utils.Fatalf("address must be given as argument")
+	}
+	addr, err := common.StringToAddress(addrStr)
+	if err != nil {
+		return err
+	}
+	hexAddr := hexutil.Encode(addr.Bytes())
+	fmt.Printf("Account hex format: %s\n", hexAddr)
 	return nil
 }
 

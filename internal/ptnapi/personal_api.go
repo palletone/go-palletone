@@ -278,3 +278,10 @@ func (s *PrivateAccountAPI) GetPublicKey(address string) (string, error) {
 	}
 	return hex.EncodeToString(byte), nil
 }
+func (s *PrivateAccountAPI) ConvertAccount(address string) (string, error) {
+	addr, err := common.StringToAddress(address)
+	if err != nil {
+		return "", err
+	}
+	return hexutil.Encode(addr.Bytes()), nil
+}

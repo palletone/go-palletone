@@ -77,6 +77,11 @@ web3._extend({
 			call: 'personal_getPublicKey',
 			params: 1,
 			inputFormatter: [null]
+		}),
+		new web3._extend.Method({
+			name: 'convertAccount',
+			call: 'personal_convertAccount',
+			params: 1
 		})
 	],
 	properties: [
