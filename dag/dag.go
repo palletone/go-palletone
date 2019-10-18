@@ -60,13 +60,13 @@ type Dag struct {
 	unstablePropRep        dagcommon.IPropRepository
 	unstableUnitProduceRep dagcommon.IUnitProduceRepository
 
-	stableUnitRep  dagcommon.IUnitRepository
-	stableUtxoRep  dagcommon.IUtxoRepository
-	stableStateRep dagcommon.IStateRepository
-	stablePropRep  dagcommon.IPropRepository
-
+	stableUnitRep        dagcommon.IUnitRepository
+	stableUtxoRep        dagcommon.IUtxoRepository
+	stableStateRep       dagcommon.IStateRepository
+	stablePropRep        dagcommon.IPropRepository
 	stableUnitProduceRep dagcommon.IUnitProduceRepository
-	ChainHeadFeed        *event.Feed
+
+	ChainHeadFeed *event.Feed
 
 	Mutex           sync.RWMutex
 	Memdag          memunit.IMemDag                     // memory unit
@@ -123,14 +123,14 @@ func (d *Dag) GetMainCurrentUnit() *modules.Unit {
 // return higher unit in memdag
 func (d *Dag) GetCurrentUnit(assetId modules.AssetId) *modules.Unit {
 	memUnit := d.GetCurrentMemUnit(assetId, 0)
-	//curUnit := d.CurrentUnit(assetId)
-	//
-	//if memUnit == nil {
-	//	return curUnit
-	//}
-	//if curUnit.NumberU64() >= memUnit.NumberU64() {
-	//	return curUnit
-	//}
+	curUnit := d.CurrentUnit(assetId)
+
+	if memUnit == nil {
+		return curUnit
+	}
+	if curUnit.NumberU64() >= memUnit.NumberU64() {
+		return curUnit
+	}
 	return memUnit
 }
 
@@ -378,10 +378,17 @@ func (d *Dag) CurrentHeader(token modules.AssetId) *modules.Header {
 	}
 	// 从memdag 获取最新的header
 	unit := memdag.GetLastMainChainUnit()
+	stable_hash, s_index := memdag.GetLastStableUnitInfo()
 	if unit != nil {
-		return unit.Header()
+		if unit.NumberU64() >= s_index {
+			return unit.Header()
+		}
 	}
-	return nil
+	if stable_header, err := d.GetHeaderByHash(stable_hash); err != nil {
+		return nil
+	} else {
+		return stable_header
+	}
 }
 
 // return unit's body , all transactions of unit by hash

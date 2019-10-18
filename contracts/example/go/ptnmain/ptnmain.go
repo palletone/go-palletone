@@ -67,17 +67,32 @@ func (p *PTNMain) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 	switch f {
 	case "setOwner":
-		return _setOwner(args, stub)
+		if len(args) < 1 {
+			return shim.Error("need 1 args (PTNAddr)")
+		}
+		return p.SetOwner(args[0], stub)
 	case "setETHContract":
-		return _setETHContract(args, stub)
+		if len(args) < 1 {
+			return shim.Error("need 1 args (MapContractAddr)")
+		}
+		return p.SetETHContract(args[0], stub)
 
 	case "payoutPTNByETHAddr":
-		return _payoutPTNByETHAddr(args, stub)
+		if len(args) < 1 {
+			return shim.Error("need 1  args (ETHAddr)")
+		}
+		return p.PayoutPTNByETHAddr(args[0], stub)
 	case "payoutPTNByTxID":
-		return _payoutPTNByTxID(args, stub)
+		if len(args) < 1 {
+			return shim.Error("need 1  args (ERC20TransferTxID)")
+		}
+		return p.PayoutPTNByTxID(args[0], stub)
 
-	case "get":
-		return get(args, stub)
+	case "getPayout":
+		if len(args) < 1 {
+			return shim.Error("need 1  args (ERC20TransferTxID)")
+		}
+		return p.GetPayout(args[0], stub)
 	default:
 		jsonResp := "{\"Error\":\"Unknown function " + f + "\"}"
 		return shim.Error(jsonResp)
@@ -95,16 +110,21 @@ const symbolsContractMap = "eth_map"
 
 const symbolsPayout = "payout_"
 
-func _setOwner(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 1 {
-		return shim.Error("need 1 args (PTNAddr)")
+func (p *PTNMain) SetOwner(ptnAddr string, stub shim.ChaincodeStubInterface) pb.Response {
+	//only owner can set
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
 	}
-	_, err := getOwner(stub)
-	if err == nil {
-		return shim.Error("Owner has been set")
+	owner, err := getOwner(stub)
+	if err != nil {
+		return shim.Error(err.Error())
 	}
-	err = stub.PutState(symbolsOwner, []byte(args[0]))
+	if owner != invokeAddr.String() {
+		return shim.Error("Only owner can set")
+	}
+	err = stub.PutState(symbolsOwner, []byte(ptnAddr))
 	if err != nil {
 		return shim.Error("write symbolsOwner failed: " + err.Error())
 	}
@@ -120,12 +140,7 @@ func getOwner(stub shim.ChaincodeStubInterface) (string, error) {
 	return string(result), nil
 }
 
-func _setETHContract(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 1 {
-		return shim.Error("need 1 args (MapContractAddr)")
-	}
-
+func (p *PTNMain) SetETHContract(mapContractAddr string, stub shim.ChaincodeStubInterface) pb.Response {
 	//only owner can set
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
@@ -140,7 +155,7 @@ func _setETHContract(args []string, stub shim.ChaincodeStubInterface) pb.Respons
 		return shim.Error("Only owner can set")
 	}
 
-	err = stub.PutState(symbolsContractMap, []byte(args[0]))
+	err = stub.PutState(symbolsContractMap, []byte(mapContractAddr))
 	if err != nil {
 		return shim.Error("write symbolsContractMap failed: " + err.Error())
 	}
@@ -157,30 +172,24 @@ func getMapAddr(stub shim.ChaincodeStubInterface) (string, error) {
 	return string(result), nil
 }
 
-func _payoutPTNByTxID(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 1 {
-		return shim.Error("need 1  args (transferTxID)")
-	}
-
+func (p *PTNMain) PayoutPTNByTxID(ethTxID string, stub shim.ChaincodeStubInterface) pb.Response {
 	//
-	txIDHex := args[0]
-	if "0x" == txIDHex[0:2] || "0X" == txIDHex[0:2] {
-		txIDHex = txIDHex[2:]
+	if "0x" == ethTxID[0:2] || "0X" == ethTxID[0:2] {
+		ethTxID = ethTxID[2:]
 	}
-	result, _ := stub.GetState(symbolsPayout + txIDHex)
+	result, _ := stub.GetState(symbolsPayout + ethTxID)
 	if len(result) != 0 {
 		log.Debugf("The tx has been payout")
 		return shim.Error("The tx has been payout")
 	}
 
 	//get sender receiver amount
-	txID, err := hex.DecodeString(txIDHex)
+	txIDByte, err := hex.DecodeString(ethTxID)
 	if err != nil {
 		log.Debugf("txid invalid: %s", err.Error())
 		return shim.Error(fmt.Sprintf("txid invalid: %s", err.Error()))
 	}
-	txResult, err := GetErc20Tx(txID, stub)
+	txResult, err := GetErc20Tx(txIDByte, stub)
 	if err != nil {
 		log.Debugf("GetErc20Tx failed: %s", err.Error())
 		return shim.Error(err.Error())
@@ -240,7 +249,7 @@ func _payoutPTNByTxID(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 		return shim.Error("Need transfer 1 PTNMap for bind address")
 	}
 	//save payout history
-	err = stub.PutState(symbolsPayout+txIDHex, []byte(ptnAddr+"-"+bigIntAmout.String()))
+	err = stub.PutState(symbolsPayout+ethTxID, []byte(ptnAddr+"-"+bigIntAmout.String()))
 	if err != nil {
 		log.Debugf("write symbolsPayout failed: %s", err.Error())
 		return shim.Error("write symbolsPayout failed: " + err.Error())
@@ -259,15 +268,7 @@ func _payoutPTNByTxID(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 	return shim.Success([]byte("Success"))
 }
 
-func _payoutPTNByETHAddr(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 1 {
-		return shim.Error("need 1  args (ETHAddr)")
-	}
-
-	//
-	ethAddr := args[0]
-
+func (p *PTNMain) PayoutPTNByETHAddr(ethAddr string, stub shim.ChaincodeStubInterface) pb.Response {
 	//
 	mapAddr, err := getMapAddr(stub)
 	if err != nil {
@@ -443,12 +444,11 @@ func getPTNMapAddr(mapAddr, fromAddr string, stub shim.ChaincodeStubInterface) (
 	return output.PalletOneAddress, nil
 }
 
-func get(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	if len(args) > 0 {
-		result, _ := stub.GetState(args[0])
-		return shim.Success(result) //test
+func (p *PTNMain) GetPayout(ethTxID string, stub shim.ChaincodeStubInterface) pb.Response {
+	if "0x" == ethTxID[0:2] || "0X" == ethTxID[0:2] {
+		ethTxID = ethTxID[2:]
 	}
-	result, _ := stub.GetState("result")
+	result, _ := stub.GetState(symbolsPayout + ethTxID)
 	return shim.Success(result)
 }
 

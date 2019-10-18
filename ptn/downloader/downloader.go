@@ -1422,7 +1422,8 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 		blocks[i] = modules.NewUnitWithHeader(result.Header).WithBody(result.Transactions)
 	}
 
-	s_index := uint64(1)//d.GetFastStableIndex()
+	//s_index := uint64(1)
+	s_index := d.GetFastStableIndex()
 	if index, err := d.dag.InsertDag(blocks, d.txpool, s_index > last.NumberU64()); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
 		log.Debug("Downloaded item processing failed", "number", results[index].Header.Number.Index,
 			"hash", results[index].Header.Hash(), "err", err)
@@ -1553,7 +1554,8 @@ func (d *Downloader) commitFastSyncData(results []*fetchResult /*, stateSync *st
 		blocks[i] = modules.NewUnitWithHeader(result.Header).WithBody(result.Transactions)
 	}
 
-	s_index := uint64(1)//d.GetFastStableIndex()
+	//s_index := uint64(1)
+	s_index := d.GetFastStableIndex()
 	if index, err := d.dag.InsertDag(blocks, d.txpool, s_index > last.Number.Index); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
 		log.Debug("Downloaded item processing failed", "number", results[index].Header.Number.Index,
 			"hash", results[index].Header.Hash(), "err", err)
@@ -1570,7 +1572,8 @@ func (d *Downloader) commitPivotBlock(result *fetchResult) error {
 
 	units := []*modules.Unit{}
 	units = append(units, block)
-	s_index := uint64(1)//d.GetFastStableIndex()
+	//s_index := uint64(1)
+	s_index := d.GetFastStableIndex()
 	if _, err := d.dag.InsertDag(units, d.txpool, s_index > block.NumberU64()); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
 		log.Debug("Downloaded item processing failed", "index:", block.UnitHeader.Number.Index, "err:", err)
 		return errInvalidChain

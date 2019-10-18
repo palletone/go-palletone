@@ -16,8 +16,12 @@
 
 package ptnclient
 
-import "github.com/palletone/go-palletone"
-
+import (
+"fmt"
+"github.com/palletone/go-palletone"
+"context"
+"testing"
+)
 // Verify that Client implements the palletone interfaces.
 var (
 	_ = palletone.ChainReader(&Client{})
@@ -32,3 +36,17 @@ var (
 	// _ = palletone.PendingStateEventer(&Client{})
 	_ = palletone.PendingContractCaller(&Client{})
 )
+func TestSimpleContractCcstop(t *testing.T) {
+    client, err := GetClient(rpcParams)
+	if err != nil {
+		return "", err
+	}
+	addr := "P1PwFUG7ydvC1KhGsbyQzXCR8TEgdvx9Hut"
+	result, err := client.Contract_Ccstop(context.Background(), addr)
+	if err != nil {
+		t.Error("TestSimpleContractCcstop No Pass")
+		return "", err
+	}
+	fmt.Println("TestSimpleContractCcstop",result)
+	t.Error("TestSimpleContractCcstop Pass")
+}

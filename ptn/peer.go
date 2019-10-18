@@ -31,6 +31,7 @@ import (
 	set "github.com/deckarep/golang-set"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/dag/modules"
+	"sort"
 	"strings"
 )
 
@@ -645,21 +646,34 @@ func (ps *peerSet) BestPeer(assetId modules.AssetId) *peer {
 	return bestPeer
 }
 
+type stableIndex []uint64
+
+func (si stableIndex) Len() int {
+	return len(si)
+}
+func (si stableIndex) Less(i, j int) bool {
+	return si[i] < si[j]
+}
+func (si stableIndex) Swap(i, j int) {
+	si[i], si[j] = si[j], si[i]
+}
+
 func (ps *peerSet) StableIndex(assetId modules.AssetId) uint64 {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()
 
-	var index uint64
+	var indexs stableIndex
 	for _, p := range ps.peers {
 		if stable := p.StableIndex(assetId); stable != nil {
-			if index == 0 {
-				index = stable.Index
-			} else if stable.Index >= 1 && index > stable.Index {
-				index = stable.Index
-			}
+			indexs = append(indexs, stable.Index)
 		}
 	}
-	return index
+	sort.Sort(indexs)
+	lengh := indexs.Len()
+	if lengh%2 == 0 {
+		return (indexs[(lengh/2)-1] + indexs[lengh/2]) / 2
+	}
+	return indexs[lengh/2]
 }
 
 // Close disconnects all peers.

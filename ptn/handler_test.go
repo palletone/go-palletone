@@ -26,7 +26,7 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-	//mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
+
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag"
