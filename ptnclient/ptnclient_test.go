@@ -37,7 +37,7 @@ var (
 	_ = palletone.PendingContractCaller(&Client{})
 )
 func TestSimpleContractCcstop(t *testing.T) {
-        client, _:= rpc.Dial("http://127.0.0.1:8485")
+    client, _:= rpc.Dial("http://127.0.0.1:8485")
 	defer client.Close()
 	addr := "P1PwFUG7ydvC1KhGsbyQzXCR8TEgdvx9Hut"
 	result, err := client.Contract_Ccstop(context.Background(), addr)
@@ -46,4 +46,16 @@ func TestSimpleContractCcstop(t *testing.T) {
 	}
 	fmt.Println("TestSimpleContractCcstop",result)
 	t.Error("TestSimpleContractCcstop Pass")
+}
+
+func TestSimpleContractCcquery(t *testing.T) {
+    client, _:= rpc.Dial("http://127.0.0.1:8485")
+	defer client.Close()
+	addr := "P1PwFUG7ydvC1KhGsbyQzXCR8TEgdvx9Hut"
+	result, err := client.Contract_CcQuery(context.Background(), addr,"")
+	if err != nil {
+		t.Error("TestSimpleContractCcquery No Pass")
+	}
+	fmt.Println("TestSimpleContractCcquery",result)
+	t.Error("TestSimpleContractCcquery Pass")
 }
