@@ -382,7 +382,9 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	case modules.QueryAllPledgeHistory: //查询质押分红历史
 		log.Info("Enter DepositChaincode Contract " + modules.QueryAllPledgeHistory + " Query")
 		return queryAllPledgeHistory(stub)
-
+	case modules.QueryPledgeHistoryByAddr: //查询某个Address质押分红历史
+		log.Info("Enter DepositChaincode Contract " + modules.QueryPledgeHistoryByAddr + " Query")
+		return queryPledgeHistoryByAddr(stub, args)
 	case modules.HandlePledgeReward: //质押分红处理
 		log.Info("Enter DepositChaincode Contract " + modules.HandlePledgeReward + " Invoke")
 		return d.handlePledgeReward(stub, args)
