@@ -16,9 +16,12 @@
 
 package ptnclient
 
-import "github.com/palletone/go-palletone"
-import "context"
-
+import (
+"fmt"
+"github.com/palletone/go-palletone"
+"context"
+"testing"
+)
 // Verify that Client implements the palletone interfaces.
 var (
 	_ = palletone.ChainReader(&Client{})
