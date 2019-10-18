@@ -32,8 +32,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/hexutil"
 )
 
 var (
@@ -260,7 +260,26 @@ func (c *Client) SupportedModules() (map[string]string, error) {
 	err := c.CallContext(ctx, &result, "rpc_modules")
 	return result, err
 }
-
+func (ec *Client) Contract_Ccstop(ctx context.Context, contractAddr string) (string, error) {
+	var result string
+	err := ec.CallContext(ctx, &result, "contract_Ccstop", contractAddr)
+	return result, err
+}
+func (ec *Client) Contract_CcQuery(ctx context.Context, contractAddr string,param []string) (string, error) {
+	var result string
+	err := ec.CallContext(ctx, &result, "contract_Ccquery", contractAddr,param)
+	return result, err
+}
+func (ec *Client) Contract_Ccinvoke(ctx context.Context, contractAddr string,param []string) (string, error) {
+	var result string
+	err := ec.CallContext(ctx, &result, "contract_Ccinvoke", contractAddr,param)
+	return result, err
+}
+func (ec *Client) Contract_Ccinstall(ctx context.Context, ccname, ccpath, ccversion, ccdescription, ccabi, cclanguage string) (hexutil.Bytes, error) {
+	var result hexutil.Bytes
+	err := ec.CallContext(ctx, &result, "contract_Ccinstall", ccname, ccpath, ccversion, ccdescription, ccabi, cclanguage)
+	return result, err
+}
 // Close closes the client, aborting any in-flight requests.
 func (c *Client) Close() {
 	if c.isHTTP {
