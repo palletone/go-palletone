@@ -138,7 +138,7 @@ type MediatorPlugin struct {
 	vssResponseScope event.SubscriptionScope
 
 	// unit阈值签名相关
-	toTBLSSignBuf    map[common.Address]*sync.Map // todo 改变字段类型，并加锁
+	toTBLSSignBuf    map[common.Address]map[common.Hash]bool
 	toTBLSRecoverBuf map[common.Address]map[common.Hash]*sigShareSet
 	recoverBufLock   *sync.RWMutex
 
@@ -338,7 +338,7 @@ func (mp *MediatorPlugin) initGroupSignBuf() {
 	mp.stopVSS = make(chan struct{})
 	mp.vssBufLock = new(sync.RWMutex)
 
-	mp.toTBLSSignBuf = make(map[common.Address]*sync.Map, lamc)
+	mp.toTBLSSignBuf = make(map[common.Address]map[common.Hash]bool, lamc)
 	mp.toTBLSRecoverBuf = make(map[common.Address]map[common.Hash]*sigShareSet, lamc)
 	mp.recoverBufLock = new(sync.RWMutex)
 }
