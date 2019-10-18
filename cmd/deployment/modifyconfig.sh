@@ -13,7 +13,6 @@ ContractAddress=12345
 LocalHost=localhost
 
 
-
 function ModifyConfig()
 {
 
@@ -43,7 +42,7 @@ sed -i '/^CorsListenAddr/c'$newCorsListenAddr'' ptn-config.toml
 newBtcHost="BtcHost=\"localhost:$[$BtcHost+$1]\""
 sed -i '/^BtcHost/c'$newBtcHost'' ptn-config.toml
 
-newContractAddress="ContractAddress=\"127.0.0.1:$[$ContractAddress+$1]\""
+newContractAddress="ContractAddress=\"$2:$[$ContractAddress+$1]\""
 sed -i '/^ContractAddress/c'$newContractAddress'' ptn-config.toml
 
 
@@ -225,7 +224,7 @@ function MakeTestNet()
     newBtcHost="BtcHost=\"localhost:$[$BtcHost+$1]\""
     sed -i '/^BtcHost/c'$newBtcHost'' ptn-config.toml
 
-    newContractAddress="ContractAddress=\"127.0.0.1:$[$ContractAddress+$1]\""
+    newContractAddress="ContractAddress=\"$3:$[$ContractAddress+$1]\""
     sed -i '/^ContractAddress/c'$newContractAddress'' ptn-config.toml
 
     cd ../
