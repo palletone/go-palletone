@@ -19,6 +19,7 @@ package ptnclient
 
 import (
 	"context"
+	"io/ioutil"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -30,9 +31,58 @@ import (
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
+	"github.com/btcsuite/btcd/rpcclient"
 )
 
+type RPCParams struct {
+	Host      string `json:"host"`
+	RPCUser   string `json:"rpcUser"`
+	RPCPasswd string `json:"rpcPasswd"`
+	CertPath  string `json:"certPath"`
+}
+func GetClient(rpcParams *RPCParams) (*rpcclient.Client, error) {
+	//read cert from file
+	var connCfg *rpcclient.ConnConfig
+	if rpcParams.CertPath == "" {
+		rpcParams.CertPath = ""
+	}
+	if rpcParams.CertPath != "" {
+		certs, err := ioutil.ReadFile(rpcParams.CertPath)
+		if err != nil {
+			return nil, err
+		}
 
+		// Connect to local bitcoin core RPC server using HTTP POST mode.
+		connCfg = &rpcclient.ConnConfig{
+			Host:         rpcParams.Host,
+			Endpoint:     "ws",
+			User:         rpcParams.RPCUser,
+			Pass:         rpcParams.RPCPasswd,
+			HTTPPostMode: true, // Bitcoin core only supports HTTP POST mode
+			//DisableTLS:   true,  // Bitcoin core does not provide TLS by default
+			Certificates: certs, // btcwallet provide TLS by default
+		}
+	} else {
+		// Connect to local bitcoin core RPC server using HTTP POST mode.
+		connCfg = &rpcclient.ConnConfig{
+			Host:         rpcParams.Host,
+			Endpoint:     "ws",
+			User:         rpcParams.RPCUser,
+			Pass:         rpcParams.RPCPasswd,
+			HTTPPostMode: true, // Bitcoin core only supports HTTP POST mode
+			DisableTLS:   true, // Bitcoin core does not provide TLS by default
+			//Certificates: certs, // btcwallet provide TLS by default
+		}
+	}
+
+	// Notice the notification parameter is nil since notifications are
+	// not supported in HTTP POST mode.
+	client, err := rpcclient.New(connCfg, nil)
+	if err != nil {
+		return nil, err
+	}
+	return client, nil
+}
 // Client defines typed wrappers for the Palletone RPC API.
 type Client struct {
 	c *rpc.Client

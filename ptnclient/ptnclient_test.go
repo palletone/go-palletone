@@ -39,8 +39,7 @@ var (
 	_ = palletone.PendingContractCaller(&Client{})
 )
 func TestSimpleContractCcstop(t *testing.T) {
-    client, hs := httpTestClient(server, "http", nil)
-	defer hs.Close()
+    client, _ := rpc.Dial("ws://127.0.0.1:8485")
 	defer client.Close()
 	if err != nil {
 		return "", err
