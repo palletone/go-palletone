@@ -121,6 +121,33 @@ func queryPledgeStatusByAddr(stub shim.ChaincodeStubInterface, address string) (
 func queryAllPledgeHistory(stub shim.ChaincodeStubInterface) ([]*modules.PledgeList, error) {
 	return getAllPledgeRewardHistory(stub)
 }
+func queryPledgeHistoryByAddr(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	if len(args) != 1 {
+		return shim.Error("need 1 arg, Address")
+	}
+	addr := args[0]
+	history, err := getAllPledgeRewardHistory(stub)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
+	result := []*modules.PledgeRecordJson{}
+	for _, row := range history {
+		for _, a := range row.Members {
+			if a.Address == addr {
+				record := &modules.PledgeRecordJson{
+					Date:    row.Date,
+					Address: a.Address,
+					Amount:  gasToken.DisplayAmount(a.Amount),
+					Reward:  gasToken.DisplayAmount(a.Reward),
+				}
+				result = append(result, record)
+			}
+		}
+	}
+	data, _ := json.Marshal(result)
+	return shim.Success(data)
+}
 
 func queryPledgeList(stub shim.ChaincodeStubInterface) (*modules.PledgeList, error) {
 	return getLastPledgeList(stub)
