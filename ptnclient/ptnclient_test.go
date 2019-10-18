@@ -49,10 +49,11 @@ func TestSimpleContractCcstop(t *testing.T) {
 }
 
 func TestSimpleContractCcquery(t *testing.T) {
+    input := []string{"a", "b"}
     client, _:= rpc.Dial("http://127.0.0.1:8485")
 	defer client.Close()
 	addr := "P1PwFUG7ydvC1KhGsbyQzXCR8TEgdvx9Hut"
-	result, err := client.Contract_CcQuery(context.Background(), addr,"")
+	result, err := client.Contract_CcQuery(context.Background(), addr,input)
 	if err != nil {
 		t.Error("TestSimpleContractCcquery No Pass")
 	}
