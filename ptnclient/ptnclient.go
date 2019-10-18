@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/ptnjson"
 )
 
+
 // Client defines typed wrappers for the Palletone RPC API.
 type Client struct {
 	c *rpc.Client

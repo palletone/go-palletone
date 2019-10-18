@@ -16,8 +16,14 @@
 
 package ptnclient
 
-import "github.com/palletone/go-palletone"
-import "context"
+import(
+	"github.com/palletone/go-palletone"
+    "github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/hexutil"
+	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/dag/modules"
+    "context"
+)
 
 // Verify that Client implements the palletone interfaces.
 var (
@@ -34,7 +40,9 @@ var (
 	_ = palletone.PendingContractCaller(&Client{})
 )
 func TestSimpleContractCcstop(t *testing.T) {
-    client, err := GetClient(rpcParams)
+    client, hs := httpTestClient(server, "http", nil)
+	defer hs.Close()
+	defer client.Close()
 	if err != nil {
 		return "", err
 	}
