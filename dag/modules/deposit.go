@@ -15,8 +15,8 @@
 package modules
 
 import (
-	"github.com/shopspring/decimal"
 	"github.com/palletone/go-palletone/core"
+	"github.com/shopspring/decimal"
 )
 
 const (
@@ -69,15 +69,16 @@ const (
 	GetJuryDeposit = "GetJuryDeposit"
 
 	//  质押相关
-	PledgeDeposit           = "PledgeDeposit"
-	PledgeWithdraw          = "PledgeWithdraw"
-	QueryPledgeStatusByAddr = "QueryPledgeStatusByAddr"
-	QueryAllPledgeHistory   = "QueryAllPledgeHistory"
-	HandlePledgeReward      = "HandlePledgeReward"
-	AllPledgeVotes          = "allPledgeVotes"
-	QueryPledgeList         = "QueryPledgeList"
-	QueryPledgeWithdraw     = "QueryPledgeWithdraw"
-	QueryPledgeListByDate   = "QueryPledgeListByDate"
+	PledgeDeposit            = "PledgeDeposit"
+	PledgeWithdraw           = "PledgeWithdraw"
+	QueryPledgeStatusByAddr  = "QueryPledgeStatusByAddr"
+	QueryAllPledgeHistory    = "QueryAllPledgeHistory"
+	QueryPledgeHistoryByAddr = "QueryPledgeHistoryByAddr"
+	HandlePledgeReward       = "HandlePledgeReward"
+	AllPledgeVotes           = "allPledgeVotes"
+	QueryPledgeList          = "QueryPledgeList"
+	QueryPledgeWithdraw      = "QueryPledgeWithdraw"
+	QueryPledgeListByDate    = "QueryPledgeListByDate"
 
 	//  mediator状态
 	Apply    = "Applying"

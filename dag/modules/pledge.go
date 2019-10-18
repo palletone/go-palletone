@@ -110,3 +110,9 @@ type PledgeStatusJson struct {
 	WithdrawApplyAmount string
 	OtherAmount         decimal.Decimal
 }
+type PledgeRecordJson struct {
+	Date    string          `json:"date"`
+	Address string          `json:"address"`
+	Amount  decimal.Decimal `json:"amount"`
+	Reward  decimal.Decimal `json:"reward"`
+}

@@ -399,7 +399,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		return shim.Success(b)
 	case modules.QueryAllPledgeHistory: //查询质押分红历史
 		log.Info("Enter DepositChaincode Contract " + modules.QueryAllPledgeHistory + " Query")
-		result, err := d.QueryAllPledgeHistory(stub)
+		result, err := queryAllPledgeHistory(stub)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -408,6 +408,9 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Error(err.Error())
 		}
 		return shim.Success(b)
+	case modules.QueryPledgeHistoryByAddr: //查询某个Address质押分红历史
+		log.Info("Enter DepositChaincode Contract " + modules.QueryPledgeHistoryByAddr + " Query")
+		return queryPledgeHistoryByAddr(stub, args)
 	case modules.HandlePledgeReward: //质押分红处理
 		log.Info("Enter DepositChaincode Contract " + modules.HandlePledgeReward + " Invoke")
 		return d.HandlePledgeReward(stub)
