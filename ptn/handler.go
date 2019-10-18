@@ -411,6 +411,7 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 	}
 	//  是否为linux系統
 	if runtime.GOOS == "linux" {
+		log.Info("entering docker service...")
 		dockerBool := true
 		//创建 docker client
 		client, err := util.NewDockerClient()
@@ -429,12 +430,12 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 			}
 		}
 		if dockerBool {
-			log.Info("docker service starting...")
+			log.Info("starting docker service...")
 			//创建gptn程序默认网络
 			utils.CreateGptnNet(client)
 			//拉取gptn发布版本对应的goimg基础镜像，防止卡住
 			go func() {
-				log.Info("docker start...")
+				log.Info("downloading palletone base image...")
 				goimg := contractcfg.Goimg + ":" + contractcfg.GptnVersion
 				_, err = client.InspectImage(goimg)
 				if err != nil {
