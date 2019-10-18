@@ -106,7 +106,7 @@ func StrToMedNode(medNode string) (*discover.Node, error) {
 	node, err := discover.ParseNode(medNode)
 	if err != nil {
 		err = fmt.Errorf("invalid mediator node \"%v\" : %v", medNode, err)
-		return nil, err
+		return node, err
 	}
 
 	return node, nil
@@ -136,7 +136,7 @@ func StrToScalar(secStr string) (kyber.Scalar, error) {
 	err := sec.UnmarshalBinary(secB)
 	if err != nil {
 		err = fmt.Errorf("invalid init mediator private key \"%v\" : %v", secStr, err)
-		return nil, err
+		return sec, err
 	}
 
 	return sec, nil
@@ -149,7 +149,7 @@ func StrToPoint(pubStr string) (kyber.Point, error) {
 	err := pub.UnmarshalBinary(pubB)
 	if err != nil {
 		err = fmt.Errorf("invalid init mediator public key \"%v\" : %v", pubStr, err)
-		return nil, err
+		return pub, err
 	}
 
 	return pub, nil
