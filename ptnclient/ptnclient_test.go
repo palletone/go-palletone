@@ -15,16 +15,15 @@
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
 package ptnclient
-
 import(
+	"fmt"
+	"context"
 	"github.com/palletone/go-palletone"
     "github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/dag/modules"
-    "context"
 )
-
 // Verify that Client implements the palletone interfaces.
 var (
 	_ = palletone.ChainReader(&Client{})

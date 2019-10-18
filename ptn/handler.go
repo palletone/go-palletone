@@ -541,6 +541,10 @@ func (pm *ProtocolManager) handle(p *peer) error {
 
 }
 func (pm *ProtocolManager) processversion(name string) (int, error) {
+	pre := name[:4]
+	if strings.ToLower(pre) != strings.ToLower("Gptn") {
+		return 0, nil
+	}
 	arr := strings.Split(name, "/")
 	arr = strings.Split(arr[1], "-")
 	version := arr[0]
