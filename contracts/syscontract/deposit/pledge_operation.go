@@ -15,17 +15,18 @@
 package deposit
 
 import (
-	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/math"
-	"github.com/palletone/go-palletone/contracts/syscontract"
-	"github.com/palletone/go-palletone/dag/dagconfig"
-	"github.com/palletone/go-palletone/dag/errors"
+	"encoding/json"
 	"regexp"
 	"strconv"
 	"strings"
 
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/contracts/shim"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
