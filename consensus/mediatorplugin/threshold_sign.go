@@ -20,7 +20,6 @@ package mediatorplugin
 
 import (
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -34,29 +33,23 @@ import (
 )
 
 func (mp *MediatorPlugin) signUnitsTBLS(localMed common.Address) {
+	mp.toTBLSBufLock.Lock()
+	defer mp.toTBLSBufLock.Unlock()
+
 	medUnitsBuf, ok := mp.toTBLSSignBuf[localMed]
 	if !ok {
 		log.Debugf("the mediator(%v) has no units to sign TBLS yet", localMed.Str())
 		return
 	}
 
-	rangeFn := func(key, value interface{}) bool {
-		newUnitHash, ok := key.(common.Hash)
-		if !ok {
-			log.Debugf("key converted to Hash failed")
-			return true
-		}
-		go mp.signUnitTBLS(localMed, newUnitHash)
-
-		return true
+	for unitHash := range medUnitsBuf {
+		go mp.signUnitTBLS(localMed, unitHash)
 	}
-
-	medUnitsBuf.Range(rangeFn)
 }
 
 func (mp *MediatorPlugin) recoverUnitsTBLS(localMed common.Address) {
-	mp.recoverBufLock.RLock()
-	defer mp.recoverBufLock.RUnlock()
+	mp.toTBLSBufLock.Lock()
+	defer mp.toTBLSBufLock.Unlock()
 
 	sigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
@@ -97,11 +90,14 @@ func (mp *MediatorPlugin) AddToTBLSSignBufs(newHash common.Hash) {
 }
 
 func (mp *MediatorPlugin) addToTBLSSignBuf(localMed common.Address, unitHash common.Hash) {
+	mp.toTBLSBufLock.RLock()
 	if _, ok := mp.toTBLSSignBuf[localMed]; !ok {
-		mp.toTBLSSignBuf[localMed] = new(sync.Map)
+		mp.toTBLSSignBuf[localMed] = make(map[common.Hash]bool)
 	}
 
-	mp.toTBLSSignBuf[localMed].LoadOrStore(unitHash, true)
+	mp.toTBLSSignBuf[localMed][unitHash] = true
+	mp.toTBLSBufLock.RUnlock()
+
 	go mp.signUnitTBLS(localMed, unitHash)
 
 	// 当 unit 过了确认时间后，及时删除待群签名的 unit，防止内存溢出
@@ -112,11 +108,13 @@ func (mp *MediatorPlugin) addToTBLSSignBuf(localMed common.Address, unitHash com
 	case <-mp.quit:
 		return
 	case <-deleteBuf.C:
-		if _, ok := mp.toTBLSSignBuf[localMed].Load(unitHash); ok {
+		mp.toTBLSBufLock.RLock()
+		if _, ok := mp.toTBLSSignBuf[localMed][unitHash]; ok {
 			log.Debugf("the unit(%v) has expired confirmation time, no longer need the mediator(%v)"+
 				" to sign-group", unitHash.TerminalString(), localMed.Str())
-			mp.toTBLSSignBuf[localMed].Delete(unitHash)
+			delete(mp.toTBLSSignBuf[localMed], unitHash)
 		}
+		mp.toTBLSBufLock.RUnlock()
 	}
 }
 
@@ -125,6 +123,9 @@ func (mp *MediatorPlugin) SubscribeSigShareEvent(ch chan<- SigShareEvent) event.
 }
 
 func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.Hash) {
+	mp.toTBLSBufLock.RLock()
+	defer mp.toTBLSBufLock.RUnlock()
+
 	medUnitsBuf, ok := mp.toTBLSSignBuf[localMed]
 	if !ok {
 		log.Debugf("the mediator(%v) has no units to sign TBLS yet", localMed.Str())
@@ -142,7 +143,7 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 
 	// 1. 获取群签名所需数据
 	{
-		_, ok := medUnitsBuf.Load(unitHash)
+		_, ok := medUnitsBuf[unitHash]
 		if !ok {
 			log.Debugf("the mediator(%v) has no unit(%v) to sign TBLS",
 				localMed.Str(), unitHash.TerminalString())
@@ -204,7 +205,7 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 	// 4. 群签名成功后的处理
 	log.Debugf("the mediator(%v) signed-group the unit(%v)", localMed.Str(),
 		unitHash.TerminalString())
-	mp.toTBLSSignBuf[localMed].Delete(unitHash)
+	delete(mp.toTBLSSignBuf[localMed], unitHash)
 	go mp.sigShareFeed.Send(SigShareEvent{UnitHash: unitHash, SigShare: sigShare})
 }
 
@@ -225,8 +226,8 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 	}
 
 	localMed := header.Author()
-	mp.recoverBufLock.RLock()
-	defer mp.recoverBufLock.RUnlock()
+	mp.toTBLSBufLock.RLock()
+	defer mp.toTBLSBufLock.RUnlock()
 
 	medSigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
@@ -255,8 +256,8 @@ func (mp *MediatorPlugin) SubscribeGroupSigEvent(ch chan<- GroupSigEvent) event.
 }
 
 func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash common.Hash) {
-	mp.recoverBufLock.Lock()
-	defer mp.recoverBufLock.Unlock()
+	mp.toTBLSBufLock.RLock()
+	defer mp.toTBLSBufLock.RUnlock()
 
 	// 1. 获取所有的签名分片
 	sigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
