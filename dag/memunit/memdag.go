@@ -210,7 +210,7 @@ func (chain *MemDag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Hea
 //	return nil, fmt.Errorf("the header[%s] not exist.", number.String())
 //}
 
-func (chain *MemDag) SetUnitGroupSign(uHash common.Hash /*, groupPubKey []byte*/ , groupSign []byte,
+func (chain *MemDag) SetUnitGroupSign(uHash common.Hash /*, groupPubKey []byte*/, groupSign []byte,
 	txpool txspool.ITxPool) error {
 	//1. Set this unit as stable
 	unit_temp, err := chain.getChainUnit(uHash)
@@ -459,7 +459,7 @@ func (chain *MemDag) removeUnitAndChildren(chain_units map[common.Hash]*modules.
 	log.Debugf("Remove unit[%s] and it's children from chain unit", hash.String())
 
 	for h, unit := range chain_units {
-		if unit.NumberU64()==0{
+		if unit.NumberU64() == 0 {
 			continue
 		}
 		if h == hash {
@@ -724,19 +724,6 @@ func (chain *MemDag) delHeightUnitsAndTemp(height uint64) {
 		}
 	}
 }
-
-//计算一个单元到稳定单元之间有多少个确认地址数
-//func (chain *MemDag) getChainAddressCount(lastUnit *modules.Unit) int {
-//	addrs := map[common.Address]bool{}
-//	unitHash := lastUnit.Hash()
-//	units := chain.getChainUnits()
-//	for unitHash != chain.stableUnitHash {
-//		unit := units[unitHash]
-//		addrs[unit.Author()] = true
-//		unitHash = unit.ParentHash()[0]
-//	}
-//	return len(addrs)
-//}
 
 //发现一条更长的确认数更多的链，则放弃原有主链，切换成新主链
 //1.将旧主链上包含的交易在交易池中重置(resetPending)。
