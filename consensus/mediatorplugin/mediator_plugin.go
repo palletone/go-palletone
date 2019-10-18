@@ -268,13 +268,13 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 
 func (mp *MediatorPlugin) groupSignUnit(localMed common.Address, unitHash common.Hash) {
 	// 1. 初始化签名unit相关的签名分片的buf
-	mp.recoverBufLock.Lock()
+	mp.toTBLSBufLock.RLock()
 	aSize := mp.dag.ActiveMediatorsCount()
 	if _, ok := mp.toTBLSRecoverBuf[localMed]; !ok {
 		mp.toTBLSRecoverBuf[localMed] = make(map[common.Hash]*sigShareSet)
 	}
 	mp.toTBLSRecoverBuf[localMed][unitHash] = newSigShareSet(aSize)
-	mp.recoverBufLock.Unlock()
+	mp.toTBLSBufLock.RUnlock()
 
 	// 2. 过了 unit 确认时间后，及时删除群签名分片的相关数据，防止内存溢出
 	go func() {
@@ -285,13 +285,13 @@ func (mp *MediatorPlugin) groupSignUnit(localMed common.Address, unitHash common
 		case <-mp.quit:
 			return
 		case <-deleteBuf.C:
-			mp.recoverBufLock.Lock()
+			mp.toTBLSBufLock.RLock()
 			if _, ok := mp.toTBLSRecoverBuf[localMed][unitHash]; ok {
 				log.Debugf("the unit(%v) has expired confirmation time, no longer need the mediator(%v) "+
 					"to recover group-sign", unitHash.TerminalString(), localMed.Str())
 				delete(mp.toTBLSRecoverBuf[localMed], unitHash)
 			}
-			mp.recoverBufLock.Unlock()
+			mp.toTBLSBufLock.RUnlock()
 		}
 	}()
 }

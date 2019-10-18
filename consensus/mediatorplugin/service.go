@@ -140,7 +140,7 @@ type MediatorPlugin struct {
 	// unit阈值签名相关
 	toTBLSSignBuf    map[common.Address]map[common.Hash]bool
 	toTBLSRecoverBuf map[common.Address]map[common.Hash]*sigShareSet
-	recoverBufLock   *sync.RWMutex
+	toTBLSBufLock    *sync.RWMutex
 
 	// unit 签名分片的事件订阅
 	sigShareFeed  event.Feed
@@ -340,7 +340,7 @@ func (mp *MediatorPlugin) initGroupSignBuf() {
 
 	mp.toTBLSSignBuf = make(map[common.Address]map[common.Hash]bool, lamc)
 	mp.toTBLSRecoverBuf = make(map[common.Address]map[common.Hash]*sigShareSet, lamc)
-	mp.recoverBufLock = new(sync.RWMutex)
+	mp.toTBLSBufLock = new(sync.RWMutex)
 }
 
 func (mp *MediatorPlugin) UpdateMediatorsDKG(isRenew bool) {
