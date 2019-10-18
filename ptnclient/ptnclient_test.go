@@ -18,11 +18,9 @@ package ptnclient
 import(
 	"fmt"
 	"context"
+        "testing"
 	"github.com/palletone/go-palletone"
-    "github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/rpc"
-	"github.com/palletone/go-palletone/dag/modules"
 )
 // Verify that Client implements the palletone interfaces.
 var (
@@ -39,16 +37,12 @@ var (
 	_ = palletone.PendingContractCaller(&Client{})
 )
 func TestSimpleContractCcstop(t *testing.T) {
-    client, _ := rpc.Dial("ws://127.0.0.1:8485")
+        client, _:= rpc.Dial("http://127.0.0.1:8485")
 	defer client.Close()
-	if err != nil {
-		return "", err
-	}
 	addr := "P1PwFUG7ydvC1KhGsbyQzXCR8TEgdvx9Hut"
 	result, err := client.Contract_Ccstop(context.Background(), addr)
 	if err != nil {
 		t.Error("TestSimpleContractCcstop No Pass")
-		return "", err
 	}
 	fmt.Println("TestSimpleContractCcstop",result)
 	t.Error("TestSimpleContractCcstop Pass")
