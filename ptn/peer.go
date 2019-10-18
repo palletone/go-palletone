@@ -395,7 +395,7 @@ func (p *peer) Handshakev103(network uint64, index *modules.ChainIndex, genesis 
 		})
 	}()
 	go func() {
-		errc <- p.readStatusv103(network, &status, genesis)
+		errc <- p.readStatus(network, &status, genesis)
 	}()
 	timeout := time.NewTimer(handshakeTimeout)
 	defer timeout.Stop()
@@ -453,7 +453,8 @@ func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis comm
 	p.SetHead(status.CurrentHeader, status.Index, stableIndex)                              //status.StableIndex)
 	return nil
 }
-func (p *peer) readStatusv103(network uint64, status *statusDatav103, genesis common.Hash) (err error) {
+
+func (p *peer) readStatus(network uint64, status interface{}, genesis common.Hash) (err error) {
 	msg, err := p.rw.ReadMsg()
 	if err != nil {
 		return err
@@ -464,45 +465,38 @@ func (p *peer) readStatusv103(network uint64, status *statusDatav103, genesis co
 	if msg.Size > ProtocolMaxMsgSize {
 		return errResp(ErrMsgTooLarge, "%v > %v", msg.Size, ProtocolMaxMsgSize)
 	}
-	// Decode the handshake and make sure everything matches
-	if err := msg.Decode(&status); err != nil {
-		return errResp(ErrDecode, "msg %v: %v", msg, err)
-	}
-	if status.GenesisUnit != genesis {
-		return errResp(ErrGenesisBlockMismatch, "%x (!= %x)", status.GenesisUnit[:8], genesis[:8])
-	}
-	if status.NetworkId != network {
-		return errResp(ErrNetworkIdMismatch, "%d (!= %d)", status.NetworkId, network)
-	}
-	if int(status.ProtocolVersion) != p.version {
-		return errResp(ErrProtocolVersionMismatch, "%d (!= %d)", status.ProtocolVersion, p.version)
+	if status1, ok := status.(*statusData); ok {
+		// Decode the handshake and make sure everything matches
+		if err := msg.Decode(&status1); err != nil {
+			return errResp(ErrDecode, "msg %v: %v", msg, err)
+		}
+
+		if status1.GenesisUnit != genesis {
+			return errResp(ErrGenesisBlockMismatch, "%x (!= %x)", status1.GenesisUnit[:8], genesis[:8])
+		}
+		if status1.NetworkId != network {
+			return errResp(ErrNetworkIdMismatch, "%d (!= %d)", status1.NetworkId, network)
+		}
+		if int(status1.ProtocolVersion) != p.version {
+			return errResp(ErrProtocolVersionMismatch, "%d (!= %d)", status1.ProtocolVersion, p.version)
+		}
 	}
 
-	return nil
-}
-func (p *peer) readStatus(network uint64, status *statusData, genesis common.Hash) (err error) {
-	msg, err := p.rw.ReadMsg()
-	if err != nil {
-		return err
-	}
-	if msg.Code != StatusMsg {
-		return errResp(ErrNoStatusMsg, "first msg has code %x (!= %x)", msg.Code, StatusMsg)
-	}
-	if msg.Size > ProtocolMaxMsgSize {
-		return errResp(ErrMsgTooLarge, "%v > %v", msg.Size, ProtocolMaxMsgSize)
-	}
-	// Decode the handshake and make sure everything matches
-	if err := msg.Decode(&status); err != nil {
-		return errResp(ErrDecode, "msg %v: %v", msg, err)
-	}
-	if status.GenesisUnit != genesis {
-		return errResp(ErrGenesisBlockMismatch, "%x (!= %x)", status.GenesisUnit[:8], genesis[:8])
-	}
-	if status.NetworkId != network {
-		return errResp(ErrNetworkIdMismatch, "%d (!= %d)", status.NetworkId, network)
-	}
-	if int(status.ProtocolVersion) != p.version {
-		return errResp(ErrProtocolVersionMismatch, "%d (!= %d)", status.ProtocolVersion, p.version)
+	if status103, ok := status.(*statusDatav103); ok {
+		// Decode the handshake and make sure everything matches
+		if err := msg.Decode(&status103); err != nil {
+			return errResp(ErrDecode, "msg %v: %v", msg, err)
+		}
+
+		if status103.GenesisUnit != genesis {
+			return errResp(ErrGenesisBlockMismatch, "%x (!= %x)", status103.GenesisUnit[:8], genesis[:8])
+		}
+		if status103.NetworkId != network {
+			return errResp(ErrNetworkIdMismatch, "%d (!= %d)", status103.NetworkId, network)
+		}
+		if int(status103.ProtocolVersion) != p.version {
+			return errResp(ErrProtocolVersionMismatch, "%d (!= %d)", status103.ProtocolVersion, p.version)
+		}
 	}
 
 	return nil
