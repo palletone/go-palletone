@@ -119,7 +119,7 @@ func TestMergeUtxoPayments(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		op := modules.OutPoint{
-			MessageIndex: uint32(i + 10),//
+			MessageIndex: uint32(i + 10), //
 			OutIndex:     uint32(i + 10 + 1),
 		}
 		ut := &modules.Utxo{
