@@ -120,6 +120,7 @@ func resultToContractPayments(dag iDag, result *modules.ContractInvokeResult) ([
 		}
 		payment, err := mergeUtxo(addr, utxos, MaxNumberMergeUtxos)
 		if err == nil && payment != nil {
+			log.Debug("mergeUtxo", "no payouts, addr", addr.String())
 			payments = append(payments, payment)
 		}
 	}
