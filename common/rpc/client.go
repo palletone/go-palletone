@@ -262,22 +262,22 @@ func (c *Client) SupportedModules() (map[string]string, error) {
 }
 func (ec *Client) Contract_Ccstop(ctx context.Context, contractAddr string) (string, error) {
 	var result string
-	err := ec.CallContext(ctx, &result, "contract_Ccstop", contractAddr)
+	err := ec.CallContext(ctx, &result, "contract_ccstop", contractAddr)
 	return result, err
 }
-func (ec *Client) Contract_CcQuery(ctx context.Context, contractAddr string,param []string) (string, error) {
+func (ec *Client) Contract_CcQuery(ctx context.Context,contractAddr string,param []string,timeout int) (string, error) {
 	var result string
-	err := ec.CallContext(ctx, &result, "contract_Ccquery", contractAddr,param)
+	err := ec.CallContext(ctx, &result, "contract_ccquery", contractAddr,param,timeout)
 	return result, err
 }
 func (ec *Client) Contract_Ccinvoke(ctx context.Context, contractAddr string,param []string) (string, error) {
 	var result string
-	err := ec.CallContext(ctx, &result, "contract_Ccinvoke", contractAddr,param)
+	err := ec.CallContext(ctx, &result, "contract_ccinvoke", contractAddr,param)
 	return result, err
 }
 func (ec *Client) Contract_Ccinstall(ctx context.Context, ccname, ccpath, ccversion, ccdescription, ccabi, cclanguage string) (hexutil.Bytes, error) {
 	var result hexutil.Bytes
-	err := ec.CallContext(ctx, &result, "contract_Ccinstall", ccname, ccpath, ccversion, ccdescription, ccabi, cclanguage)
+	err := ec.CallContext(ctx, &result, "contract_ccinstall", ccname, ccpath, ccversion, ccdescription, ccabi, cclanguage)
 	return result, err
 }
 // Close closes the client, aborting any in-flight requests.
