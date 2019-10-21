@@ -36,6 +36,7 @@ const (
 	MaxLengthAbi            = 1024 * 500 //合约Abi数据长度
 	MaxLengthLanguage       = 32         //合约模板语言类型长度
 	MaxLengthDescription    = 1024       //合约描述数据长度
+	MaxNumberMergeUtxos     = 500        //合约合并utxo限制数量
 )
 
 var (

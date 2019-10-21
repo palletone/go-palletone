@@ -42,6 +42,7 @@ func selectUtxo(mUtxos map[modules.OutPoint]*modules.Utxo, num int) (modules.Ass
 			mAssets[*u.Asset] = make([]*modules.UtxoWithOutPoint, 0)
 		}
 		mAssets[*u.Asset] = append(mAssets[*u.Asset], uo)
+		//log.Debug("selectUtxo", "Asset", u.Asset.String(), "len", len(mAssets[*u.Asset]))
 		if len(mAssets[*u.Asset]) >= num {
 			return *u.Asset, mAssets[*u.Asset]
 		}
@@ -49,14 +50,9 @@ func selectUtxo(mUtxos map[modules.OutPoint]*modules.Utxo, num int) (modules.Ass
 	return modules.Asset{}, nil
 }
 
-func mergeUtxo(dag iDag, addr common.Address, limitNum int) (*modules.PaymentPayload, error) {
-	//func mergeUtxo(utxos map[modules.OutPoint]*modules.Utxo, limitNum int) (*modules.PaymentPayload, error) {
-	//	addr := common.Address{}
+//func mergeUtxo(dag iDag, addr common.Address, limitNum int) (*modules.PaymentPayload, error) {
+func mergeUtxo(addr common.Address, utxos map[modules.OutPoint]*modules.Utxo, limitNum int) (*modules.PaymentPayload, error) {
 	var amount uint64
-	utxos, err := dag.GetAddr1TokenUtxos(addr, nil)
-	if err != nil {
-		return nil, fmt.Errorf("mergeUtxo, not find utxo with address:%s", addr.String())
-	}
 	asset, selected := selectUtxo(utxos, limitNum)
 	if selected == nil {
 		return nil, nil
@@ -70,7 +66,7 @@ func mergeUtxo(dag iDag, addr common.Address, limitNum int) (*modules.PaymentPay
 	out := modules.NewTxOut(amount, tokenengine.Instance.GenerateLockScript(addr), &asset)
 	payment.AddTxOut(out)
 	//log.Debugf("mergeUtxo, address[%s], Amount[%d], merge payment[%v]", addr.String(), amount, *payment)
-	log.Debug("mergeUtxo", "address", addr.String(), "amount", amount, "payment", *payment)
+	log.Debug("mergeUtxo", "address", addr.String(), "amount", amount, "asset", asset, "payment", *payment)
 
 	return payment, nil
 }
@@ -118,7 +114,11 @@ func resultToContractPayments(dag iDag, result *modules.ContractInvokeResult) ([
 			payments = append(payments, payment)
 		}
 	} else {
-		payment, err := mergeUtxo(dag, addr, 300)
+		utxos, err := dag.GetAddr1TokenUtxos(addr, nil)
+		if err != nil {
+			return nil, fmt.Errorf("mergeUtxo, address:%s, GetAddr1TokenUtxos err:%s", addr.String(), err.Error())
+		}
+		payment, err := mergeUtxo(addr, utxos, MaxNumberMergeUtxos)
 		if err == nil && payment != nil {
 			payments = append(payments, payment)
 		}
