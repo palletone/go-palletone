@@ -97,3 +97,30 @@ func TestResultToContractPayments(t *testing.T) {
 	d, _ := json.Marshal(payment)
 	t.Log(string(d))
 }
+
+//func TestMergeUtxoPayments(t *testing.T) {
+//	//mockCtrl := gomock.NewController(t)
+//	//defer mockCtrl.Finish()
+//	//
+//	//mdag := dag.NewMockIDag(mockCtrl)
+//
+//	testUtxos := make(map[modules.OutPoint]*modules.Utxo)
+//	asset, _ := modules.NewAsset("ptn",1,  8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},0, modules.UniqueId{})
+//	for i := 0; i < 50; i++ {
+//		op := modules.OutPoint{
+//			MessageIndex: uint32(i),
+//			OutIndex:     uint32(i+1),
+//		}
+//		ut := &modules.Utxo{
+//			Amount:1,
+//			Asset: asset,
+//		}
+//		testUtxos[op] = ut
+//	}
+//	pay, err := mergeUtxo(testUtxos, 20)
+//	if err != nil{
+//		log.Error("TestMergeUtxoPayments", "err", err.Error())
+//	}else{
+//		log.Debug("TestMergeUtxoPayments", "ok, payment", pay)
+//	}
+//}

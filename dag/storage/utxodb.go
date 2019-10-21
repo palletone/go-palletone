@@ -211,10 +211,8 @@ func (db *UtxoDb) GetAddrUtxos(addr common.Address, asset *modules.Asset) (
 		item.MessageIndex = out.MessageIndex
 		item.OutIndex = out.OutIndex
 		if utxo, err := db.GetUtxoEntry(item); err == nil {
-
 			if asset == nil || asset.IsSimilar(utxo.Asset) {
 				allutxos[out] = utxo
-
 			}
 		}
 	}

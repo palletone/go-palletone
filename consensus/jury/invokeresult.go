@@ -29,7 +29,51 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
+	"fmt"
 )
+
+func selectUtxo(mUtxos map[modules.OutPoint]*modules.Utxo, num int) (modules.Asset, []*modules.UtxoWithOutPoint) {
+	mAssets := make(map[modules.Asset][]*modules.UtxoWithOutPoint)
+	for o, u := range mUtxos {
+		uo := &modules.UtxoWithOutPoint{}
+		o1 := o
+		uo.Set(u, &o1)
+		if _, ok := mAssets[*u.Asset]; !ok {
+			mAssets[*u.Asset] = make([]*modules.UtxoWithOutPoint, 0)
+		}
+		mAssets[*u.Asset] = append(mAssets[*u.Asset], uo)
+		if len(mAssets[*u.Asset]) >= num {
+			return *u.Asset, mAssets[*u.Asset]
+		}
+	}
+	return modules.Asset{}, nil
+}
+
+func mergeUtxo(dag iDag, addr common.Address, limitNum int) (*modules.PaymentPayload, error) {
+	//func mergeUtxo(utxos map[modules.OutPoint]*modules.Utxo, limitNum int) (*modules.PaymentPayload, error) {
+	//	addr := common.Address{}
+	var amount uint64
+	utxos, err := dag.GetAddr1TokenUtxos(addr, nil)
+	if err != nil {
+		return nil, fmt.Errorf("mergeUtxo, not find utxo with address:%s", addr.String())
+	}
+	asset, selected := selectUtxo(utxos, limitNum)
+	if selected == nil {
+		return nil, nil
+	}
+	payment := &modules.PaymentPayload{}
+	for _, s := range selected {
+		in := modules.NewTxIn(&s.OutPoint, nil)
+		payment.AddTxIn(in)
+		amount += s.Amount
+	}
+	out := modules.NewTxOut(amount, tokenengine.Instance.GenerateLockScript(addr), &asset)
+	payment.AddTxOut(out)
+	//log.Debugf("mergeUtxo, address[%s], Amount[%d], merge payment[%v]", addr.String(), amount, *payment)
+	log.Debug("mergeUtxo", "address", addr.String(), "amount", amount, "payment", *payment)
+
+	return payment, nil
+}
 
 //将ContractInvokeResult中合约付款出去的请求转换为UTXO对应的Payment
 func resultToContractPayments(dag iDag, result *modules.ContractInvokeResult) ([]*modules.PaymentPayload, error) {
@@ -71,6 +115,11 @@ func resultToContractPayments(dag iDag, result *modules.ContractInvokeResult) ([
 				out2 := modules.NewTxOut(change, tokenengine.Instance.GenerateLockScript(addr), &asset)
 				payment.AddTxOut(out2)
 			}
+			payments = append(payments, payment)
+		}
+	} else {
+		payment, err := mergeUtxo(dag, addr, 300)
+		if err == nil && payment != nil {
 			payments = append(payments, payment)
 		}
 	}
