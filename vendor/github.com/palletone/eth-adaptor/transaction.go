@@ -92,11 +92,11 @@ type GetAddrTxHistoryResult struct {
 	Result  []Tx   `json:"result"`
 }
 
-//https://api-ropsten.etherscan.io/api?module=account&action=txlist&address=0xddbd2b932c763ba5b1b7ae3b362eac3e8d40121a
-// &startblock=0&endblock=99999999&page=1&offset=10&sort=asc&apikey=YourApiKeyToken
+//https://api-ropsten.etherscan.io/api?apikey=YourApiKeyToken&module=account&action=txlist&address=0xddbd2b932c763ba5b1b7ae3b362eac3e8d40121a
+// &startblock=0&endblock=99999999&page=1&offset=10&sort=asc
 func GetAddrTxHistoryHTTP(apiURL string, input *adaptor.GetAddrTxHistoryInput) (*adaptor.GetAddrTxHistoryOutput, error) {
 	request := apiURL
-	request += "?module=account&action=tokentx&address=" + input.FromAddress + "&startblock=0&endblock=99999999"
+	request += "&module=account&action=tokentx&address=" + input.FromAddress + "&startblock=0&endblock=99999999"
 	if input.PageIndex != 0 && input.PageSize != 0 {
 		request += "&page=" + fmt.Sprintf("%d", input.PageIndex)
 		request += "&offset=" + fmt.Sprintf("%d", input.PageSize)
@@ -106,7 +106,7 @@ func GetAddrTxHistoryHTTP(apiURL string, input *adaptor.GetAddrTxHistoryInput) (
 	} else {
 		request += "&sort=desc"
 	}
-	request += "&apikey=YourApiKeyToken"
+	//request += "&apikey=YourApiKeyToken"
 	fmt.Println(request)
 	//
 	strRespose, _, err := httpGet(request)
@@ -180,12 +180,12 @@ func convertSimpleTx(txResult *Tx) *adaptor.SimpleTransferTokenTx {
 	return tx
 }
 
-//https://api-ropsten.etherscan.io/api?module=account&action=tokentx&address=0x588eb98f8814aedb056d549c0bafd5ef4963069c
-// &startblock=0&endblock=99999999&sort=desc&apikey=YourApiKeyToken
+//https://api-ropsten.etherscan.io/api?apikey=YourApiKeyToken&module=account&action=tokentx&address=0x588eb98f8814aedb056d549c0bafd5ef4963069c
+// &startblock=0&endblock=99999999&sort=desc
 func GetAddrErc20TxHistoryHTTP(apiURL string, input *adaptor.GetAddrTxHistoryInput) (*adaptor.GetAddrTxHistoryOutput,
 	error) {
 	request := apiURL
-	request += "?module=account&action=tokentx&address=" + input.FromAddress + "&startblock=0&endblock=99999999"
+	request += "&module=account&action=tokentx&address=" + input.FromAddress + "&startblock=0&endblock=99999999"
 	if input.PageIndex != 0 && input.PageSize != 0 {
 		request += "&page=" + fmt.Sprintf("%d", input.PageIndex)
 		request += "&offset=" + fmt.Sprintf("%d", input.PageSize)
@@ -195,8 +195,8 @@ func GetAddrErc20TxHistoryHTTP(apiURL string, input *adaptor.GetAddrTxHistoryInp
 	} else {
 		request += "&sort=desc"
 	}
-	request += "&apikey=YourApiKeyToken"
-	//fmt.Println(request)
+	//request += "&apikey=YourApiKeyToken"
+	fmt.Println(request)
 	//
 	strRespose, _, err := httpGet(request)
 	if err != nil {
@@ -412,7 +412,7 @@ func GetTransferTx(input *adaptor.GetTransferTxInput, rpcParams *RPCParams, netI
 	} else {
 		result.Tx.FromAddress = result.Tx.CreatorAddress
 		receiptAddr := receipt.ContractAddress.String()
-		if receiptAddr == "0x0000000000000000000000000000000000000000" {
+		if receiptAddr == EMPTY_ADDRESS {
 			result.Tx.ToAddress = result.Tx.TargetAddress
 		} else {
 			result.Tx.ToAddress = receiptAddr

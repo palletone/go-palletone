@@ -290,13 +290,13 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 		// all units must be continuous
 		if i > 0 && units[i].UnitHeader.Number.Index != units[i-1].UnitHeader.Number.Index+1 {
 			return count, fmt.Errorf("Insert dag error: child height are not continuous, "+
-				"parent unit number=%d, hash=%s; "+"child unit number=%d, hash=%s",
+				"parent unit number=%d, hash=%s; "+ "child unit number=%d, hash=%s",
 				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash.String(),
 				units[i].UnitHeader.Number.Index, units[i].UnitHash.String())
 		}
 		if i > 0 && !u.ContainsParent(units[i-1].UnitHash) {
 			return count, fmt.Errorf("Insert dag error: child parents are not continuous, "+
-				"parent unit number=%d, hash=%s; "+"child unit number=%d, hash=%s",
+				"parent unit number=%d, hash=%s; "+ "child unit number=%d, hash=%s",
 				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash.String(),
 				units[i].UnitHeader.Number.Index, units[i].UnitHash.String())
 		}
@@ -306,6 +306,7 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 			u.NumberU64(), u.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
 			u.Author().Str())
 		if is_stable {
+			log.Infof("add stable unit, index[%d],hash[%s]", u.NumberU64(), u.UnitHash.String())
 			d.Memdag.AddStableUnit(u)
 		} else {
 			if a, b, c, dd, e, err := d.Memdag.AddUnit(u, txpool, false); err != nil {
@@ -1100,7 +1101,7 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 	// 群签之后， 更新memdag，将该unit和它的父单元们稳定存储。
 	//go d.Memdag.SetStableUnit(unitHash, groupSign[:], txpool)
 	log.Debugf("Try to update unit[%s] group sign", unitHash.String())
-	d.Memdag.SetUnitGroupSign(unitHash /*, nil*/, groupSign, txpool)
+	d.Memdag.SetUnitGroupSign(unitHash /*, nil*/ , groupSign, txpool)
 
 	//TODO albert 待合并
 	// 状态更新
