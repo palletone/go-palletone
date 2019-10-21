@@ -49,7 +49,8 @@ type Backend interface {
 	EventMux() *event.TypeMux
 	AccountManager() *accounts.Manager
 
-	// BlockChain API
+	// DAG API
+	MemdagInfos() (*modules.MemdagInfos, error)
 	SetHead(number uint64)
 	HeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*modules.Header, error)
 	//BlockByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*types.Block, error)

@@ -290,13 +290,13 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 		// all units must be continuous
 		if i > 0 && units[i].UnitHeader.Number.Index != units[i-1].UnitHeader.Number.Index+1 {
 			return count, fmt.Errorf("Insert dag error: child height are not continuous, "+
-				"parent unit number=%d, hash=%s; "+ "child unit number=%d, hash=%s",
+				"parent unit number=%d, hash=%s; "+"child unit number=%d, hash=%s",
 				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash.String(),
 				units[i].UnitHeader.Number.Index, units[i].UnitHash.String())
 		}
 		if i > 0 && !u.ContainsParent(units[i-1].UnitHash) {
 			return count, fmt.Errorf("Insert dag error: child parents are not continuous, "+
-				"parent unit number=%d, hash=%s; "+ "child unit number=%d, hash=%s",
+				"parent unit number=%d, hash=%s; "+"child unit number=%d, hash=%s",
 				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash.String(),
 				units[i].UnitHeader.Number.Index, units[i].UnitHash.String())
 		}
@@ -1101,7 +1101,7 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 	// 群签之后， 更新memdag，将该unit和它的父单元们稳定存储。
 	//go d.Memdag.SetStableUnit(unitHash, groupSign[:], txpool)
 	log.Debugf("Try to update unit[%s] group sign", unitHash.String())
-	d.Memdag.SetUnitGroupSign(unitHash /*, nil*/ , groupSign, txpool)
+	d.Memdag.SetUnitGroupSign(unitHash /*, nil*/, groupSign, txpool)
 
 	//TODO albert 待合并
 	// 状态更新
@@ -1403,4 +1403,27 @@ func (d *Dag) RebuildAddrTxIndex() error {
 }
 func (d *Dag) GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, error) {
 	return d.stableStateRep.GetJurorByAddrHash(hash)
+}
+
+func (d *Dag) MemdagInfos() (*modules.MemdagInfos, error) {
+	ptn_memdag := d.Memdag
+	memdag_infos := new(modules.MemdagInfos)
+	memdag_infos.MemStatus = make(map[string]*modules.MemdagStatus)
+	if ptn_status, err := ptn_memdag.Info(); err != nil {
+		log.Errorf("get [%s] memdag status failed, error:[%s]", modules.PTNCOIN.String(), err.Error())
+		return nil, err
+	} else {
+		memdag_infos.MemStatus[ptn_status.Token.String()] = ptn_status
+	}
+	for token, memdag := range d.PartitionMemDag {
+		if token == modules.PTNCOIN {
+			continue
+		}
+		if status, err := memdag.Info(); err == nil {
+			memdag_infos.MemStatus[token.String()] = status
+		} else {
+			log.Errorf("get [%s] memdag status failed, error:[%s]", modules.PTNCOIN.String(), err.Error())
+		}
+	}
+	return memdag_infos, nil
 }

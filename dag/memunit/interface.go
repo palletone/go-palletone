@@ -57,6 +57,7 @@ type IMemDag interface {
 	SetUnitGroupSign(uHash common.Hash /*, groupPubKey []byte*/, groupSign []byte, txpool txspool.ITxPool) error
 	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
 	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)
+	Info() (*modules.MemdagStatus, error)
 
 	SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription
 	Close()

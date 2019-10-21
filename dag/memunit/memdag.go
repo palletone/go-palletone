@@ -832,3 +832,39 @@ func (chain *MemDag) setLastMainchainUnit(unit *modules.Unit) {
 func (chain *MemDag) GetChainUnits() map[common.Hash]*modules.Unit {
 	return chain.getChainUnits()
 }
+
+func (chain *MemDag) Info() (*modules.MemdagStatus, error) {
+	chain.lock.RLock()
+	defer chain.lock.RUnlock()
+	memdagInfo := new(modules.MemdagStatus)
+	memdagInfo.Token = chain.token
+	header, err := chain.ldbunitRep.GetHeaderByHash(chain.stableUnitHash)
+	if err != nil {
+		return memdagInfo, nil
+	}
+	memdagInfo.StableHeader = header
+	memdagInfo.FastHeader = chain.lastMainChainUnit.UnitHeader
+	memdagInfo.Forks = make(map[uint64][]common.Hash)
+	memdagInfo.UnstableUnits = make([]common.Hash, 0)
+	memdagInfo.OrphanUnits = make([]common.Hash, 0)
+	chain.height_hashs.Range(func(k, v interface{}) bool {
+		h := k.(uint64)
+		forks := v.([]common.Hash)
+		if hashs, has := memdagInfo.Forks[h]; has {
+			hashs = append(hashs, forks...)
+		}
+		memdagInfo.Forks[h] = forks
+		return true
+	})
+
+	units := chain.getChainUnits()
+	for hash := range units {
+		memdagInfo.UnstableUnits = append(memdagInfo.UnstableUnits, hash)
+	}
+	hashs := chain.getOrphanUnits()
+	for hash := range hashs {
+		memdagInfo.OrphanUnits = append(memdagInfo.OrphanUnits, hash)
+	}
+
+	return memdagInfo, nil
+}

@@ -5,17 +5,17 @@
 package dag
 
 import (
-	gomock "github.com/golang/mock/gomock"
-	common "github.com/palletone/go-palletone/common"
-	event "github.com/palletone/go-palletone/common/event"
-	discover "github.com/palletone/go-palletone/common/p2p/discover"
-	list "github.com/palletone/go-palletone/contracts/list"
-	core "github.com/palletone/go-palletone/core"
-	modules "github.com/palletone/go-palletone/dag/modules"
-	txspool "github.com/palletone/go-palletone/txspool"
-	big "math/big"
-	reflect "reflect"
-	time "time"
+	"github.com/golang/mock/gomock"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/p2p/discover"
+	"github.com/palletone/go-palletone/contracts/list"
+	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/txspool"
+	"math/big"
+	"reflect"
+	"time"
 )
 
 // MockIDag is a mock of IDag interface
@@ -2000,4 +2000,19 @@ func (m *MockIDag) GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, 
 func (mr *MockIDagMockRecorder) GetJurorByAddrHash(hash interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetJurorByAddrHash", reflect.TypeOf((*MockIDag)(nil).GetJurorByAddrHash), hash)
+}
+
+// MemdagInfos mocks base method
+func (m *MockIDag) MemdagInfos() (*modules.MemdagInfos, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MemdagInfos")
+	ret0, _ := ret[0].(*modules.MemdagInfos)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MemdagInfos indicates an expected call of MemdagInfos
+func (mr *MockIDagMockRecorder) MemdagInfos() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MemdagInfos", reflect.TypeOf((*MockIDag)(nil).MemdagInfos))
 }

@@ -449,6 +449,20 @@ func (s *PublicDagAPI) GetTxPoolTxByHash(ctx context.Context, hex string) (strin
 	}
 }
 
+// MemdagInfos returns the pool transaction for the given hash
+func (s *PublicDagAPI) MemdagInfos(ctx context.Context) (string, error) {
+	log.Debug("get the memdag infos...")
+
+	item, err := s.b.MemdagInfos()
+	if err != nil {
+		return "memdag_infos:null", err
+	} else {
+		info := NewPublicReturnInfo("memdag_infos", item)
+		result_json, _ := json.Marshal(info)
+		return string(result_json), nil
+	}
+}
+
 func (s *PublicDagAPI) HeadUnitHash() string {
 	dag := s.b.Dag()
 	if dag != nil {

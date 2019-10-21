@@ -345,6 +345,9 @@ func (b *PtnApiBackend) GetAssetExistence(asset string) ([]*ptnjson.ProofOfExist
 //	return b.ptn.dag.GetHeadFastUnitHash()
 //}
 
+func (b *PtnApiBackend) MemdagInfos() (*modules.MemdagInfos, error) {
+	return b.ptn.dag.MemdagInfos()
+}
 func (b *PtnApiBackend) GetTrieSyncProgress() (uint64, error) {
 	return b.ptn.dag.GetTrieSyncProgress()
 }
