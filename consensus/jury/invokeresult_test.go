@@ -29,6 +29,8 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"fmt"
+	"github.com/palletone/go-palletone/common/log"
 )
 
 var (
@@ -96,4 +98,43 @@ func TestResultToContractPayments(t *testing.T) {
 	assert.Equal(t, 1, len(payment))
 	d, _ := json.Marshal(payment)
 	t.Log(string(d))
+}
+
+func TestMergeUtxoPayments(t *testing.T) {
+	testAddr := common.Address{}
+	testUtxos := make(map[modules.OutPoint]*modules.Utxo)
+	asset1, _ := modules.NewAsset("ptn1", 1, 8, []byte{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}, 0, modules.UniqueId{})
+	asset2, _ := modules.NewAsset("ptn2", 1, 8, []byte{2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2}, 0, modules.UniqueId{})
+	for i := 0; i < 5; i++ {
+		op := modules.OutPoint{
+			MessageIndex: uint32(i),
+			OutIndex:     uint32(i + 1),
+		}
+		ut := &modules.Utxo{
+			Amount: 1,
+			Asset:  asset1,
+		}
+		testUtxos[op] = ut
+	}
+
+	for i := 0; i < 10; i++ {
+		op := modules.OutPoint{
+			MessageIndex: uint32(i + 10),//
+			OutIndex:     uint32(i + 10 + 1),
+		}
+		ut := &modules.Utxo{
+			Amount: 1,
+			Asset:  asset2,
+		}
+		testUtxos[op] = ut
+	}
+	log.Debug("TestMergeUtxoPayments", "asset1", asset1.String())
+	log.Debug("TestMergeUtxoPayments", "asset2", asset2.String())
+
+	pay, err := mergeUtxo(testAddr, testUtxos, 8)
+	if err != nil {
+		fmt.Println("TestMergeUtxoPayments", "err", err.Error())
+	} else {
+		fmt.Println("TestMergeUtxoPayments", "ok, payment", pay)
+	}
 }
