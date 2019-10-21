@@ -13,7 +13,7 @@
 */
 /*
  * @author PalletOne core developers <dev@pallet.one>
- * @date 2018
+ * @date 2018-2019
  */
 package ethadaptor
 
@@ -38,7 +38,7 @@ func NewAdaptorETHTestnet() *AdaptorETH {
 	return &AdaptorETH{
 		NetID: NETID_TEST,
 		RPCParams: RPCParams{Rawurl: "https://ropsten.infura.io",
-			TxQueryUrl: "https://api-ropsten.etherscan.io/api"},
+			TxQueryUrl: "https://api-ropsten.etherscan.io/api?apikey=VYSBPQ383RJXM7HBQVTIK5NGIG8ZYVV6T6"},
 		//lockContractAddress:"0x4d736ed88459b2db85472aab13a9d0ce2a6ea676",
 	}
 }
@@ -46,7 +46,7 @@ func NewAdaptorETHMainnet() *AdaptorETH {
 	return &AdaptorETH{
 		NetID: NETID_MAIN,
 		RPCParams: RPCParams{Rawurl: "https://mainnet.infura.io",
-			TxQueryUrl: "https://api.etherscan.io/api"},
+			TxQueryUrl: "https://api.etherscan.io/api?apikey=VYSBPQ383RJXM7HBQVTIK5NGIG8ZYVV6T6"},
 		//lockContractAddress:"0x1989a21eb0f28063e47e6b448e8d76774bc9b493",
 	}
 }

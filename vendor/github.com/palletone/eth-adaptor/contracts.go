@@ -99,7 +99,6 @@ func convertContractParams(paramsNew *[]interface{}, parsed *abi.ABI, method str
 				*paramsNew = append(*paramsNew, common.Hex2Bytes(str))
 			case abi.FixedPointTy: //#zxl#
 			case abi.FunctionTy: //#zxl#
-
 			}
 		}
 	}
@@ -230,7 +229,6 @@ func CreateContractInitialTx(input *adaptor.CreateContractInitialTxInput, rpcPar
 	//result.ContractAddr = address.String()
 
 	return &result, nil
-
 }
 
 func CreateContractInvokeTx(input *adaptor.CreateContractInvokeTxInput, rpcParams *RPCParams, netID int) (
@@ -352,22 +350,22 @@ func QueryContract(input *adaptor.QueryContractInput, rpcParams *RPCParams) (*ad
 	return &result, nil
 }
 
-func QueryContractCall(input *adaptor.QueryContractInput, rpcParams *RPCParams) (*adaptor.QueryContractOutput, error) {
+func QueryContractCall(input *adaptor.QueryContractInput, rpcParams *RPCParams, ret interface{}) error {
 	//get rpc client
 	client, err := GetClient(rpcParams)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	//
 	parsed, err := abi.JSON(strings.NewReader(string(input.Extra)))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	//
 	if len(input.ContractAddress) == 0 {
-		return nil, fmt.Errorf("ContractAddress is empty")
+		return fmt.Errorf("ContractAddress is empty")
 	}
 	var contractAddr common.Address
 	if "0x" == input.ContractAddress[0:2] || "0X" == input.ContractAddress[0:2] {
@@ -378,29 +376,25 @@ func QueryContractCall(input *adaptor.QueryContractInput, rpcParams *RPCParams) 
 	contract := bind.NewBoundContract(contractAddr, parsed, client, client, client)
 
 	//
-	var (
-		ret0 = new(string)
-	)
+	//var (
+	//	ret = new(string)
+	//)
 	if len(input.Args) != 0 {
 		//
 		var paramsNew []interface{}
 		convertContractParams(&paramsNew, &parsed, input.Function, input.Args)
 
 		//
-		err = contract.Call(&bind.CallOpts{Pending: false}, ret0, input.Function, paramsNew...)
+		err = contract.Call(&bind.CallOpts{Pending: false}, ret, input.Function, paramsNew...)
 	} else {
 		//
-		err = contract.Call(&bind.CallOpts{Pending: false}, ret0, input.Function)
+		err = contract.Call(&bind.CallOpts{Pending: false}, ret, input.Function)
 	}
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	//save result
-	var result adaptor.QueryContractOutput
-	result.QueryResult = []byte(*ret0)
-
-	return &result, nil
+	return nil
 }
 
 func UnpackInput() (string, error) {
