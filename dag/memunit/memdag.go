@@ -849,8 +849,8 @@ func (chain *MemDag) Info() (*modules.MemdagStatus, error) {
 	memdagInfo.OrphanUnits = make([]common.Hash, 0)
 	chain.height_hashs.Range(func(k, v interface{}) bool {
 		h := k.(uint64)
-		forks := make([]common.Hash, 0)
-		forks = v.([]common.Hash)
+		//forks := make([]common.Hash, 0)
+		forks := v.([]common.Hash)
 		if hashs, has := memdagInfo.Forks[h]; has {
 			forks = append(forks, hashs...)
 		}

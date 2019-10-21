@@ -54,8 +54,11 @@ func selectUtxo(mUtxos map[modules.OutPoint]*modules.Utxo, num int) (modules.Ass
 func mergeUtxo(addr common.Address, utxos map[modules.OutPoint]*modules.Utxo, limitNum int) (*modules.PaymentPayload, error) {
 	var amount uint64
 	asset, selected := selectUtxo(utxos, limitNum)
+	//if selected == nil {
+	//	return nil, nil
+	//}
 	if selected == nil {
-		return nil, nil
+		return nil, fmt.Errorf("%s","selected is nil")
 	}
 	payment := &modules.PaymentPayload{}
 	for _, s := range selected {
