@@ -46,6 +46,7 @@ import (
 	"github.com/palletone/go-palletone/txspool"
 	//"github.com/palletone/go-palletone/ptnjson"
 	"github.com/coocood/freecache"
+	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 	"gopkg.in/urfave/cli.v1"
 )
@@ -197,6 +198,10 @@ func maybeLoadConfig(ctx *cli.Context) (FullConfig, string, error) {
 	// 1. cfg加载系统默认的配置信息，cfg是一个字典结构
 	configPath := getConfigPath(ctx)
 	cfg := DefaultConfig()
+	switch {
+	case ctx.GlobalBool(utils.LightModeFlag.Name):
+		cfg.Ptn.SyncMode = downloader.LightSync
+	}
 
 	// 如果配置文件不存在，则使用默认的配置生成一个配置文件
 	if !common.IsExisted(configPath) {

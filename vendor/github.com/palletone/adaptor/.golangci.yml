@@ -205,7 +205,10 @@ issues:
   exclude-rules:
       - linters:
         - golint
-        text: "JSON|API|URL"
+        text: "JSON|API|URL|ID"
+      - linters:
+        - stylecheck
+        text: "JSON|API|URL|ID"
 #     # Exclude some linters from running on tests files.
 #     - path: _test\.go
 #       linters:

@@ -187,6 +187,9 @@ linters:
     - errcheck
     - lll
     - gocyclo
+    - funlen
+    - godox
+    - stylecheck
   disable-all: false
   # presets:
   #   - bugs
