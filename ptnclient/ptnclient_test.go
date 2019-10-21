@@ -36,17 +36,18 @@ var (
 	// _ = palletone.PendingStateEventer(&Client{})
 	_ = palletone.PendingContractCaller(&Client{})
 )
-func TestSimpleContractCcstop(t *testing.T) {
-    client, _:= rpc.Dial("http://127.0.0.1:8485")
+/*func TestSimpleContractCcstop(t *testing.T) {
+    client, _:= rpc.Dial("http://123.126.106.82:38555")
 	defer client.Close()
-	addr := "P1PwFUG7ydvC1KhGsbyQzXCR8TEgdvx9Hut"
+	addr := "PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43"
 	result, err := client.Contract_Ccstop(context.Background(), addr)
 	if err != nil {
+                fmt.Println(err)
 		t.Error("TestSimpleContractCcstop No Pass")
 	}
 	fmt.Println("TestSimpleContractCcstop",result)
-	t.Error("TestSimpleContractCcstop Pass")
-}
+        t.Log("Pass")
+}*/
 
 func TestSimpleContractCcquery(t *testing.T) {
     input := []string{"getTokenInfo", "btc"}
