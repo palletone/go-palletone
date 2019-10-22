@@ -37,6 +37,7 @@ type SigShareEvent struct {
 type VSSDealEvent struct {
 	DstIndex uint32
 	Deal     *dkg.Deal
+	Deadline uint64 // 被广播的截止日期
 }
 
 type VSSResponseEvent struct {
