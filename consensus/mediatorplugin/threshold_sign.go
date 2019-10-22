@@ -33,8 +33,8 @@ import (
 )
 
 func (mp *MediatorPlugin) signUnitsTBLS(localMed common.Address) {
-	mp.toTBLSBufLock.Lock()
-	defer mp.toTBLSBufLock.Unlock()
+	mp.toTBLSBufLock.RLock()
+	defer mp.toTBLSBufLock.RUnlock()
 
 	medUnitsBuf, ok := mp.toTBLSSignBuf[localMed]
 	if !ok {
@@ -48,8 +48,8 @@ func (mp *MediatorPlugin) signUnitsTBLS(localMed common.Address) {
 }
 
 func (mp *MediatorPlugin) recoverUnitsTBLS(localMed common.Address) {
-	mp.toTBLSBufLock.Lock()
-	defer mp.toTBLSBufLock.Unlock()
+	mp.toTBLSBufLock.RLock()
+	defer mp.toTBLSBufLock.RUnlock()
 
 	sigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
@@ -90,13 +90,13 @@ func (mp *MediatorPlugin) AddToTBLSSignBufs(newHash common.Hash) {
 }
 
 func (mp *MediatorPlugin) addToTBLSSignBuf(localMed common.Address, unitHash common.Hash) {
-	mp.toTBLSBufLock.RLock()
+	mp.toTBLSBufLock.Lock()
 	if _, ok := mp.toTBLSSignBuf[localMed]; !ok {
 		mp.toTBLSSignBuf[localMed] = make(map[common.Hash]bool)
 	}
 
 	mp.toTBLSSignBuf[localMed][unitHash] = true
-	mp.toTBLSBufLock.RUnlock()
+	mp.toTBLSBufLock.Unlock()
 
 	go mp.signUnitTBLS(localMed, unitHash)
 
@@ -108,13 +108,13 @@ func (mp *MediatorPlugin) addToTBLSSignBuf(localMed common.Address, unitHash com
 	case <-mp.quit:
 		return
 	case <-deleteBuf.C:
-		mp.toTBLSBufLock.RLock()
+		mp.toTBLSBufLock.Lock()
 		if _, ok := mp.toTBLSSignBuf[localMed][unitHash]; ok {
 			log.Debugf("the unit(%v) has expired confirmation time, no longer need the mediator(%v)"+
 				" to sign-group", unitHash.TerminalString(), localMed.Str())
 			delete(mp.toTBLSSignBuf[localMed], unitHash)
 		}
-		mp.toTBLSBufLock.RUnlock()
+		mp.toTBLSBufLock.Unlock()
 	}
 }
 
@@ -123,8 +123,8 @@ func (mp *MediatorPlugin) SubscribeSigShareEvent(ch chan<- SigShareEvent) event.
 }
 
 func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.Hash) {
-	mp.toTBLSBufLock.RLock()
-	defer mp.toTBLSBufLock.RUnlock()
+	mp.toTBLSBufLock.Lock()
+	defer mp.toTBLSBufLock.Unlock()
 
 	medUnitsBuf, ok := mp.toTBLSSignBuf[localMed]
 	if !ok {
@@ -133,8 +133,8 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 	}
 
 	dag := mp.dag
-	mp.dkgLock.Lock()
-	defer mp.dkgLock.Unlock()
+	mp.dkgLock.RLock()
+	defer mp.dkgLock.RUnlock()
 	var (
 		dkgr   *dkg.DistKeyGenerator
 		header *modules.Header
@@ -226,8 +226,8 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 	}
 
 	localMed := header.Author()
-	mp.toTBLSBufLock.RLock()
-	defer mp.toTBLSBufLock.RUnlock()
+	mp.toTBLSBufLock.Lock()
+	defer mp.toTBLSBufLock.Unlock()
 
 	medSigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
@@ -256,8 +256,8 @@ func (mp *MediatorPlugin) SubscribeGroupSigEvent(ch chan<- GroupSigEvent) event.
 }
 
 func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash common.Hash) {
-	mp.toTBLSBufLock.RLock()
-	defer mp.toTBLSBufLock.RUnlock()
+	mp.toTBLSBufLock.Lock()
+	defer mp.toTBLSBufLock.Unlock()
 
 	// 1. 获取所有的签名分片
 	sigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
@@ -282,8 +282,8 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	}
 
 	// 2. 获取阈值、mediator数量、DKG
-	mp.dkgLock.Lock()
-	defer mp.dkgLock.Unlock()
+	mp.dkgLock.RLock()
+	defer mp.dkgLock.RUnlock()
 	var (
 		mSize, threshold int
 		dkgr             *dkg.DistKeyGenerator
