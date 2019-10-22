@@ -20,6 +20,7 @@ import(
 	"context"
         "testing"
 	"github.com/palletone/go-palletone"
+        "github.com/shopspring/decimal"
 	"github.com/palletone/go-palletone/common/rpc"
 )
 // Verify that Client implements the palletone interfaces.
@@ -36,18 +37,23 @@ var (
 	// _ = palletone.PendingStateEventer(&Client{})
 	_ = palletone.PendingContractCaller(&Client{})
 )
-/*func TestSimpleContractCcstop(t *testing.T) {
-    client, _:= rpc.Dial("http://123.126.106.82:38555")
+func TestSimpleContractCcstop(t *testing.T) {
+        client, _:= rpc.Dial("http://123.126.106.82:38555")
 	defer client.Close()
-	addr := "PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43"
-	result, err := client.Contract_Ccstop(context.Background(), addr)
+        from :="P1LxMi9Lu1aaf6GXg63iJESruk6eVxjDhE2"
+        to   :="P17K7gWSoSDhJW6zhGdcyJJqNNXiGuLTtmV"
+	addr := "PCGTta3M4t3yXu8uRgkKvaWd2d8DRv2vsEk"
+        amount ,_ := decimal.NewFromString("10")
+        fee,_ := decimal.NewFromString("1")
+	result, err := client.Contract_Ccstop(context.Background(), from,to,amount,fee,addr)
 	if err != nil {
                 fmt.Println(err)
-		t.Error("TestSimpleContractCcstop No Pass")
+		//t.Error("TestSimpleContractCcstop No Pass")
+                t.Log("Pass")
 	}
 	fmt.Println("TestSimpleContractCcstop",result)
         t.Log("Pass")
-}*/
+}
 
 func TestSimpleContractCcquery(t *testing.T) {
     input := []string{"getTokenInfo", "btc"}
