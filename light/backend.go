@@ -120,11 +120,9 @@ func New(ctx *node.ServiceContext, config *ptn.Config, protocolname string, cach
 		dag:          dag,
 	}
 
-	//lptn.relay = NewLesTxRelay(peers, leth.reqDist)
-	//lptn.serverPool = newServerPool(chainDb, quitSync, &leth.wg)
-	//lptn.retriever = newRetrieveManager(peers, leth.reqDist, leth.serverPool)
-	//lptn.odr = NewLesOdr(chainDb, leth.chtIndexer, leth.bloomTrieIndexer, leth.bloomIndexer, leth.retriever)
-	//val:=validator.NewValidate(lptn.dag,nil,nil,nil,cache)
+	if config.TxPool.Journal != "" {
+		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
+	}
 	lptn.txPool = txspool.NewTxPool(config.TxPool, cache, lptn.dag)
 
 	if lptn.protocolManager, err = NewProtocolManager(true, lptn.peers, config.NetworkId, gasToken, nil,
