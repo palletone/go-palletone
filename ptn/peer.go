@@ -88,7 +88,9 @@ type peer struct {
 	knownTxs          set.Set // Set of transaction hashes known to be known by this peer
 	knownBlocks       set.Set // Set of block hashes known to be known by this peer
 	knownLightHeaders set.Set
-	knownGroupSig     set.Set // Set of block hashes known to be known by this peer
+	knownGroupSig     set.Set
+
+	knownVSSDeal set.Set
 }
 
 func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
@@ -105,6 +107,8 @@ func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 		knownGroupSig:     set.NewSet(),
 		peermsg:           map[modules.AssetId]peerMsg{},
 		//lightpeermsg:      map[modules.AssetId]peerMsg{},
+
+		knownVSSDeal: set.NewSet(),
 	}
 }
 
@@ -193,10 +197,7 @@ func (p *peer) MarkUnit(hash common.Hash) {
 	p.knownBlocks.Add(hash)
 }
 
-// MarkBlock marks a block as known for the peer, ensuring that the block will
-// never be propagated to this particular peer.
 func (p *peer) MarkGroupSig(hash common.Hash) {
-	// If we reached the memory allowance, drop a previously known block hash
 	for p.knownGroupSig.Cardinality() >= maxKnownBlocks {
 		p.knownGroupSig.Pop()
 	}

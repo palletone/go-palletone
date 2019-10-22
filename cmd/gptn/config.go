@@ -203,6 +203,10 @@ func maybeLoadConfig(ctx *cli.Context) (FullConfig, string, error) {
 		cfg.Ptn.SyncMode = downloader.LightSync
 	}
 
+	switch {
+	case ctx.GlobalBool(utils.LightModeFlag.Name):
+		cfg.Ptn.SyncMode = downloader.LightSync
+	}
 	// 如果配置文件不存在，则使用默认的配置生成一个配置文件
 	if !common.IsExisted(configPath) {
 		//listenAddr := cfg.P2P.ListenAddr

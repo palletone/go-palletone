@@ -92,8 +92,8 @@ func (mp *MediatorPlugin) LocalHavePrecedingMediator() bool {
 
 func (mp *MediatorPlugin) localMediatorPubKey(add common.Address) []byte {
 	var pubKey []byte = nil
-	mp.dkgLock.Lock()
-	defer mp.dkgLock.Unlock()
+	mp.dkgLock.RLock()
+	defer mp.dkgLock.RUnlock()
 
 	dkgr, ok := mp.activeDKGs[add]
 	if !ok || dkgr == nil {

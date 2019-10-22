@@ -3,44 +3,49 @@ version: '2'
 services:
   mediator1:
     container_name: mediator1
-    image: palletone/gptnnode
+    image: palletone/gptn
     volumes:
-     - ./scripts/node1:/palletone/mainnet
+     - ./scripts/node1:/go-palletone
     restart: always
-    command: [--noProduce,--staleProduce]
+    command: [--noProduce,--staleProduce,--testnet]
     network_mode: "gptn-net"
   mediator2:
     container_name: mediator2
-    image: palletone/gptnnode
+    image: palletone/gptn
     volumes:
-     - ./scripts/node2:/palletone/mainnet
+     - ./scripts/node2:/go-palletone
     restart: always
+    command: [--testnet]
     network_mode: "gptn-net"
   mediator3:
     container_name: mediator3
-    image: palletone/gptnnode
+    image: palletone/gptn
     volumes:
-     - ./scripts/node3:/palletone/mainnet
+     - ./scripts/node3:/go-palletone
     restart: always
+    command: [--testnet]
     network_mode: "gptn-net"
   mediator4:
     container_name: mediator4
-    image: palletone/gptnnode
+    image: palletone/gptn
     volumes:
-     - ./scripts/node4:/palletone/mainnet
+     - ./scripts/node4:/go-palletone
     restart: always
+    command: [--testnet]
     network_mode: "gptn-net"
   mediator5:
     container_name: mediator5
-    image: palletone/gptnnode
+    image: palletone/gptn
     volumes:
-     - ./scripts/node5:/palletone/mainnet
+     - ./scripts/node5:/go-palletone
     restart: always
+    command: [--testnet]
     network_mode: "gptn-net"
   node:
     container_name: node
-    image: palletone/gptnnode
+    image: palletone/gptn
     volumes:
-      - ./scripts/node6:/palletone/mainnet
+      - ./scripts/node6:/go-palletone
     restart: always
+    command: [--testnet]
     network_mode: "gptn-net"

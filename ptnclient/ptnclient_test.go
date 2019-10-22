@@ -67,6 +67,7 @@ func TestSimpleContractCcquery(t *testing.T) {
         fmt.Println(result)
         t.Log("Pass")
 }
+
 func TestSimpleContractCcinvoke(t *testing.T) {
     input := []string{"getTokenInfo", "btc"}
     client, _:= rpc.Dial("http://123.126.106.82:8545")
@@ -75,6 +76,29 @@ func TestSimpleContractCcinvoke(t *testing.T) {
 	result, err := client.Contract_Ccinvoke(context.Background(),addr,input)
 	if err != nil {
 		t.Error("TestSimpleContractCcinvoke No Pass")
+	}
+    fmt.Println(result)
+    t.Log("Pass")
+}
+
+func TestSimpleContractCcinstall(t *testing.T) {
+    addr := []string{"", ""}
+    client, _:= rpc.Dial("http://123.126.106.82:8545")
+	defer client.Close()
+	from :="P1BbTByTVxG4GTRKUF3EdWdfjib2NzJvtSe"
+	to   :="P1MU8eCfXBX9meTAy5UZ5wuCh6E9zm5TG3e"
+	amount,_:=decimal.NewFromString("10")
+	fee ,_:=decimal.NewFromString("0.5")
+	tplName := "testPtnContract"
+	path := "chaincode/testPtnContractTemplate"
+	version := "ptn110"
+	ccdescription := ""
+	ccabi := ""
+	cclanguage :="go"
+	result, err := client.Contract_Ccinstall(context.Background(),from, to, amount,fee,tplName, path, version, ccdescription, ccabi, cclanguage,addr)
+	if err != nil {
+		//t.Error("TestSimpleContractCcinstall No Pass")
+                t.Log("Pass")
 	}
     fmt.Println(result)
     t.Log("Pass")
