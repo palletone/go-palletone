@@ -3,7 +3,7 @@ FROM golang:1.12-alpine as builder
 
 RUN apk add --no-cache make gcc musl-dev linux-headers git
 
-RUN git clone -b testnet https://github.com/palletone/go-palletone.git \
+RUN git clone -b master https://github.com/palletone/go-palletone.git \
     && cd go-palletone \
     && make gptn
 
