@@ -67,3 +67,15 @@ func TestSimpleContractCcquery(t *testing.T) {
         fmt.Println(result)
         t.Log("Pass")
 }
+func TestSimpleContractCcinvoke(t *testing.T) {
+    input := []string{"getTokenInfo", "btc"}
+    client, _:= rpc.Dial("http://123.126.106.82:8545")
+	defer client.Close()
+	addr := "PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43"
+	result, err := client.Contract_Ccinvoke(context.Background(),addr,input)
+	if err != nil {
+		t.Error("TestSimpleContractCcinvoke No Pass")
+	}
+    fmt.Println(result)
+    t.Log("Pass")
+}
