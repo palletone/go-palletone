@@ -220,6 +220,9 @@ func (mp *MediatorPlugin) broadcastVSSDeals() {
 	mp.dkgLock.RLock()
 	defer mp.dkgLock.RUnlock()
 
+	cp := mp.dag.GetGlobalProp().ChainParameters
+	deadline := time.Now().Unix() + int64(cp.MediatorInterval*cp.MaintenanceSkipSlots)
+
 	// 将deal广播给其他节点
 	for localMed, dkg := range mp.activeDKGs {
 		deals, err := dkg.Deals()
@@ -233,6 +236,7 @@ func (mp *MediatorPlugin) broadcastVSSDeals() {
 			event := VSSDealEvent{
 				DstIndex: uint32(index),
 				Deal:     deal,
+				Deadline: uint64(deadline),
 			}
 			mp.vssDealFeed.Send(event)
 		}

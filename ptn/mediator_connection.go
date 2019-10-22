@@ -116,60 +116,55 @@ func (pm *ProtocolManager) checkConnectedAndSynced() {
 		return
 	}
 
-	// 2. 是否和所有其他活跃mediator节点相连完成
-	//headNum := pm.dag.HeadUnitNum()
-	//gasToken := dagconfig.DagConfig.GetGasToken()
-	checkFn := func() bool {
-		nodes := pm.dag.GetActiveMediatorNodes()
-		for id, node := range nodes {
-			// 仅当不是本节点，并还未连接完成时，或者未同步，返回false
-			if node.ID == pm.srvr.Self().ID {
-				continue
+	go pm.producer.UpdateMediatorsDKG(true)
+
+	/*
+		// 2. 是否和所有其他活跃mediator节点相连完成
+		checkFn := func() bool {
+			nodes := pm.dag.GetActiveMediatorNodes()
+			for id, node := range nodes {
+				// 仅当不是本节点，并还未连接完成时，或者未同步，返回false
+				if node.ID == pm.srvr.Self().ID {
+					continue
+				}
+
+				peer := pm.peers.Peer(id)
+				if peer == nil {
+					return false
+				}
 			}
 
-			peer := pm.peers.Peer(id)
-			if peer == nil {
-				return false
-			}
-
-			// todo Albert 待使用
-			//_, pHeadNum := peer.Head(gasToken)
-			//if pHeadNum == nil || pHeadNum.Index < headNum {
-			//	return false
-			//}
+			log.Debugf("connected with all active mediator peers")
+			return true
 		}
 
-		log.Debugf("connected with all active mediator peers")
-		//log.Debugf("connected with all active mediator peers, all all peers synced")
-		return true
-	}
+		// 3. 更新DKG和VSS
+		processFn := func() {
+			go pm.producer.UpdateMediatorsDKG(true)
+		}
 
-	// 3. 更新DKG和VSS
-	processFn := func() {
-		go pm.producer.UpdateMediatorsDKG(true)
-	}
+		// 1. 设置Ticker, 每隔一段时间检查一次
+		checkTick := time.NewTicker(200 * time.Millisecond)
 
-	// 1. 设置Ticker, 每隔一段时间检查一次
-	checkTick := time.NewTicker(200 * time.Millisecond)
+		defer checkTick.Stop()
+		// 设置检查期限，防止死循环
+		expiration := pm.dag.UnitIrreversibleTime()
+		killLoop := time.NewTimer(expiration)
 
-	defer checkTick.Stop()
-	// 设置检查期限，防止死循环
-	expiration := pm.dag.UnitIrreversibleTime()
-	killLoop := time.NewTimer(expiration)
-
-	for {
-		select {
-		case <-pm.quitSync:
-			return
-		case <-killLoop.C:
-			return
-		case <-checkTick.C:
-			if checkFn() {
-				processFn()
+		for {
+			select {
+			case <-pm.quitSync:
 				return
+			case <-killLoop.C:
+				return
+			case <-checkTick.C:
+				if checkFn() {
+					processFn()
+					return
+				}
 			}
 		}
-	}
+	*/
 }
 
 func (pm *ProtocolManager) delayDiscPrecedingMediator() {
