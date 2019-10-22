@@ -86,7 +86,8 @@ func (pm *ProtocolManager) switchMediatorConnect(isChanged bool) {
 	go pm.connectWitchActiveMediators()
 
 	// 检查是否连接和同步，并更新DKG和VSS
-	go pm.checkConnectedAndSynced()
+	//go pm.checkConnectedAndSynced()
+	go pm.producer.UpdateMediatorsDKG(true)
 
 	// 延迟关闭和旧活跃mediator节点的连接
 	go pm.delayDiscPrecedingMediator()
@@ -110,62 +111,58 @@ func (pm *ProtocolManager) connectWitchActiveMediators() {
 	}
 }
 
-func (pm *ProtocolManager) checkConnectedAndSynced() {
+/*func (pm *ProtocolManager) checkConnectedAndSynced() {
 	log.Debugf("check if it is connected to all active mediator peers")
 	if !pm.producer.LocalHaveActiveMediator() {
 		return
 	}
 
-	go pm.producer.UpdateMediatorsDKG(true)
-
-	/*
-		// 2. 是否和所有其他活跃mediator节点相连完成
-		checkFn := func() bool {
-			nodes := pm.dag.GetActiveMediatorNodes()
-			for id, node := range nodes {
-				// 仅当不是本节点，并还未连接完成时，或者未同步，返回false
-				if node.ID == pm.srvr.Self().ID {
-					continue
-				}
-
-				peer := pm.peers.Peer(id)
-				if peer == nil {
-					return false
-				}
+	// 2. 是否和所有其他活跃mediator节点相连完成
+	checkFn := func() bool {
+		nodes := pm.dag.GetActiveMediatorNodes()
+		for id, node := range nodes {
+			// 仅当不是本节点，并还未连接完成时，或者未同步，返回false
+			if node.ID == pm.srvr.Self().ID {
+				continue
 			}
 
-			log.Debugf("connected with all active mediator peers")
-			return true
-		}
-
-		// 3. 更新DKG和VSS
-		processFn := func() {
-			go pm.producer.UpdateMediatorsDKG(true)
-		}
-
-		// 1. 设置Ticker, 每隔一段时间检查一次
-		checkTick := time.NewTicker(200 * time.Millisecond)
-
-		defer checkTick.Stop()
-		// 设置检查期限，防止死循环
-		expiration := pm.dag.UnitIrreversibleTime()
-		killLoop := time.NewTimer(expiration)
-
-		for {
-			select {
-			case <-pm.quitSync:
-				return
-			case <-killLoop.C:
-				return
-			case <-checkTick.C:
-				if checkFn() {
-					processFn()
-					return
-				}
+			peer := pm.peers.Peer(id)
+			if peer == nil {
+				return false
 			}
 		}
-	*/
-}
+
+		log.Debugf("connected with all active mediator peers")
+		return true
+	}
+
+	// 3. 更新DKG和VSS
+	processFn := func() {
+		go pm.producer.UpdateMediatorsDKG(true)
+	}
+
+	// 1. 设置Ticker, 每隔一段时间检查一次
+	checkTick := time.NewTicker(200 * time.Millisecond)
+
+	defer checkTick.Stop()
+	// 设置检查期限，防止死循环
+	expiration := pm.dag.UnitIrreversibleTime()
+	killLoop := time.NewTimer(expiration)
+
+	for {
+		select {
+		case <-pm.quitSync:
+			return
+		case <-killLoop.C:
+			return
+		case <-checkTick.C:
+			if checkFn() {
+				processFn()
+				return
+			}
+		}
+	}
+}*/
 
 func (pm *ProtocolManager) delayDiscPrecedingMediator() {
 	// 1. 判断当前节点是否是上一届活跃mediator

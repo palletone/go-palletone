@@ -548,7 +548,10 @@ func (pm *ProtocolManager) GroupSigMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
+	p.MarkGroupSig(gSign.UnitHash)
+
 	go pm.dag.SetUnitGroupSign(gSign.UnitHash, gSign.GroupSig, pm.txpool)
+
 	return nil
 }
 
