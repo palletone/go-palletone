@@ -131,9 +131,9 @@ func TestMergeUtxoPayments(t *testing.T) {
 	log.Debug("TestMergeUtxoPayments", "asset1", asset1.String())
 	log.Debug("TestMergeUtxoPayments", "asset2", asset2.String())
 
-	pay, err := mergeUtxo(testAddr, testUtxos, 8)
-	if err != nil {
-		fmt.Println("TestMergeUtxoPayments", "err", err.Error())
+	pay := mergeUtxo(testAddr, testUtxos, 8)
+	if pay != nil {
+		fmt.Println("TestMergeUtxoPayments fail")
 	} else {
 		fmt.Println("TestMergeUtxoPayments", "ok, payment", pay)
 	}
