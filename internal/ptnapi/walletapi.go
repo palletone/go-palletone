@@ -1285,7 +1285,7 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 func (s *PrivateWalletAPI) CreateProofOfExistenceTx(ctx context.Context, addr string,
 	mainData, extraData, reference string, password string) (common.Hash, error) {
 	gasToken := dagconfig.DagConfig.GasToken
-	ptn1 := decimal.New(1, 0)
+	ptn1 := decimal.New(1, -2)
 	rawTx, usedUtxo, err := s.buildRawTransferTx(gasToken, addr, addr, decimal.New(0, 0), ptn1)
 	if err != nil {
 		return common.Hash{}, err
@@ -1336,7 +1336,7 @@ func (s *PrivateWalletAPI) CreateTraceability(ctx context.Context, addr, uid, sy
 	contractAddr, _ := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DRijspoq")
 	str := "[{\"TokenID\":\"" + uid + "\",\"MetaData\":\"\"}]"
 	gasToken := dagconfig.DagConfig.GasToken
-	ptn1 := decimal.New(1, 0)
+	ptn1 := decimal.New(1, -1)
 	rawTx, usedUtxo, err := s.buildRawTransferTx(gasToken, addr, addr, decimal.New(0, 0), ptn1)
 	if err != nil {
 		return common.Hash{}, err
