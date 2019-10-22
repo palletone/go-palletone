@@ -569,6 +569,12 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele *modules.Ele
 		log.Errorf("[%s]isValidateElection, GetTxRequesterAddress fail, err:%s", shortId(reqId.String()), err)
 		return false
 	}
+	cType, err := getContractTxType(tx)
+	if err != nil {
+		log.Errorf("[%s]isValidateElection, getContractTxType fail", shortId(reqId.String()))
+		return false
+	}
+	jjhAd := p.dag.GetChainParameters().FoundationAddress
 	isExit := false
 	elr := newElector(uint(cfgEleNum), ele.JuryCount, common.Address{}, "", p.ptn.GetKeyStore())
 	for i, e := range ele.EleList {
@@ -583,14 +589,17 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele *modules.Ele
 		}
 		//检查指定节点模式下，是否为jjh请求地址
 		if e.EType == 1 {
-			jjhAd := p.dag.GetChainParameters().FoundationAddress
-			if jjhAd == reqAddr.Str() { //true
-				log.Debugf("[%s]isValidateElection, e.EType == 1, ok", shortId(reqId.String()))
+			if cType == modules.APP_CONTRACT_INVOKE_REQUEST {
 				continue
 			} else {
-				log.Debugf("[%s]isValidateElection, e.EType == 1, but not jjh request addr", shortId(reqId.String()))
-				log.Debugf("[%s]isValidateElection, reqAddr[%s], jjh[%s]", shortId(reqId.String()), reqAddr.Str(), jjhAd)
-				return false
+				if jjhAd == reqAddr.Str() { //true
+					log.Debugf("[%s]isValidateElection, e.EType == 1, ok", shortId(reqId.String()))
+					continue
+				} else {
+					log.Debugf("[%s]isValidateElection, e.EType == 1, but not jjh request addr", shortId(reqId.String()))
+					log.Debugf("[%s]isValidateElection, reqAddr[%s], jjh[%s]", shortId(reqId.String()), reqAddr.Str(), jjhAd)
+					return false
+				}
 			}
 		}
 
