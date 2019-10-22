@@ -87,9 +87,6 @@ func (pm *ProtocolManager) sigShareTransmitLoop() {
 	for {
 		select {
 		case event := <-pm.sigShareCh:
-			//unit, err := pm.dag.GetUnitByHash(event.UnitHash)
-			//if unit != nil && err == nil {
-			//	med := unit.Author()
 			header, err := pm.dag.GetHeaderByHash(event.UnitHash)
 			if err == nil {
 				// 换届后，某些节点已经被替换下去，但仍然需要群签名
@@ -250,13 +247,12 @@ func (pm *ProtocolManager) GetActiveMediatorPeers() map[string]*peer {
 }
 
 // @author Albert·Gou
-//func (p *peer) SendVSSDeal(deal *vssMsg) error {
 func (p *peer) SendVSSDeal(deal *mp.VSSDealEvent) error {
+	//p.knownVSSDeal.Add() todo
 	return p2p.Send(p.rw, VSSDealMsg, deal)
 }
 
 // @author Albert·Gou
-//func (p *peer) SendVSSResponse(resp *vssRespMsg) error {
 func (p *peer) SendVSSResponse(resp *mp.VSSResponseEvent) error {
 	return p2p.Send(p.rw, VSSResponseMsg, resp)
 }
@@ -268,6 +264,6 @@ func (p *peer) SendSigShare(sigShare *mp.SigShareEvent) error {
 
 //BroadcastGroupSig
 func (p *peer) SendGroupSig(groupSig *mp.GroupSigEvent) error {
-	p.knownGroupSig.Add(groupSig.UnitHash)
+	p.MarkGroupSig(groupSig.UnitHash)
 	return p2p.Send(p.rw, GroupSigMsg, groupSig)
 }

@@ -491,7 +491,9 @@ func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	pm.producer.AddToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
+	// todo albert 清除在限制时间范围之外的SigShare消息
+
+	go pm.producer.AddToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
 	return nil
 }
 
@@ -546,7 +548,10 @@ func (pm *ProtocolManager) GroupSigMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
+	p.MarkGroupSig(gSign.UnitHash)
+
 	go pm.dag.SetUnitGroupSign(gSign.UnitHash, gSign.GroupSig, pm.txpool)
+
 	return nil
 }
 

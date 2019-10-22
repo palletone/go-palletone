@@ -30,10 +30,10 @@ import (
 )
 
 func (mp *MediatorPlugin) newDKGAndInitVSSBuf() {
-	mp.dkgLock.RLock()
-	defer mp.dkgLock.RUnlock()
-	mp.vssBufLock.RLock()
-	defer mp.vssBufLock.RUnlock()
+	mp.dkgLock.Lock()
+	defer mp.dkgLock.Unlock()
+	mp.vssBufLock.Lock()
+	defer mp.vssBufLock.Unlock()
 
 	dag := mp.dag
 	lams := mp.GetLocalActiveMediators()
@@ -102,11 +102,11 @@ func (mp *MediatorPlugin) completeVSSProtocol() {
 	mp.stopVSS <- struct{}{}
 
 	// 删除vss相关缓存
-	mp.vssBufLock.RLock()
+	mp.vssBufLock.Lock()
 	lamc := len(mp.mediators)
 	mp.dealBuf = make(map[common.Address]chan *dkg.Deal, lamc)
 	mp.respBuf = make(map[common.Address]map[common.Address]chan *dkg.Response, lamc)
-	mp.vssBufLock.RUnlock()
+	mp.vssBufLock.Unlock()
 
 	// 验证vss是否完成，并开启群签名
 	mp.launchGroupSignLoops()
@@ -114,8 +114,8 @@ func (mp *MediatorPlugin) completeVSSProtocol() {
 
 func (mp *MediatorPlugin) launchGroupSignLoops() {
 	lams := mp.GetLocalActiveMediators()
-	mp.dkgLock.RLock()
-	defer mp.dkgLock.RUnlock()
+	mp.dkgLock.Lock()
+	defer mp.dkgLock.Unlock()
 
 	for _, localMed := range lams {
 		dkgr, ok := mp.activeDKGs[localMed]
@@ -160,9 +160,9 @@ func (mp *MediatorPlugin) launchVSSRespLoops() {
 func (mp *MediatorPlugin) processDealLoop(localMed common.Address) {
 	log.Debugf("the local active mediator(%v) run the loop to deal", localMed.Str())
 
-	mp.vssBufLock.Lock()
+	mp.vssBufLock.RLock()
 	dealCh, ok := mp.dealBuf[localMed]
-	mp.vssBufLock.Unlock()
+	mp.vssBufLock.RUnlock()
 
 	if !ok {
 		log.Debugf("the mediator(%v)'s dealBuf is not initialized", localMed.Str())
@@ -183,8 +183,8 @@ func (mp *MediatorPlugin) processDealLoop(localMed common.Address) {
 }
 
 func (mp *MediatorPlugin) processVSSDeal(localMed common.Address, deal *dkg.Deal) {
-	mp.dkgLock.RLock()
-	defer mp.dkgLock.RUnlock()
+	mp.dkgLock.Lock()
+	defer mp.dkgLock.Unlock()
 
 	dkgr, ok := mp.activeDKGs[localMed]
 	if !ok || dkgr == nil {
@@ -217,8 +217,11 @@ func (mp *MediatorPlugin) processVSSDeal(localMed common.Address, deal *dkg.Deal
 }
 
 func (mp *MediatorPlugin) broadcastVSSDeals() {
-	mp.dkgLock.RLock()
-	defer mp.dkgLock.RUnlock()
+	mp.dkgLock.Lock()
+	defer mp.dkgLock.Unlock()
+
+	cp := mp.dag.GetGlobalProp().ChainParameters
+	deadline := time.Now().Unix() + int64(cp.MediatorInterval*cp.MaintenanceSkipSlots)
 
 	// 将deal广播给其他节点
 	for localMed, dkg := range mp.activeDKGs {
@@ -233,6 +236,7 @@ func (mp *MediatorPlugin) broadcastVSSDeals() {
 			event := VSSDealEvent{
 				DstIndex: uint32(index),
 				Deal:     deal,
+				Deadline: uint64(deadline),
 			}
 			mp.vssDealFeed.Send(event)
 		}
@@ -256,14 +260,14 @@ func (mp *MediatorPlugin) AddToDealBuf(dealEvent *VSSDealEvent) {
 	log.Debugf("the mediator(%v) received the vss deal from the mediator(%v)",
 		localMed.Str(), vrfrMed.Str())
 
-	mp.vssBufLock.RLock()
+	mp.vssBufLock.Lock()
 	dealCh, ok := mp.dealBuf[localMed]
 	if !ok {
 		log.Debugf("the mediator(%v)'s dealBuf is not initialized", localMed.Str())
 	} else {
 		dealCh <- deal
 	}
-	mp.vssBufLock.RUnlock()
+	mp.vssBufLock.Unlock()
 }
 
 func (mp *MediatorPlugin) SubscribeVSSResponseEvent(ch chan<- VSSResponseEvent) event.Subscription {
@@ -291,7 +295,7 @@ func (mp *MediatorPlugin) AddToResponseBuf(respEvent *VSSResponseEvent) {
 		log.Debugf("the mediator(%v) received the vss response from the mediator(%v) to the mediator(%v)",
 			localMed.Str(), srcMed.Str(), vrfrMed.Str())
 
-		mp.vssBufLock.RLock()
+		mp.vssBufLock.Lock()
 		respCh, ok := mp.respBuf[localMed][vrfrMed]
 		if !ok {
 			log.Debugf("the mediator(%v)'s respBuf corresponding the mediator(%v) is not initialized",
@@ -299,7 +303,7 @@ func (mp *MediatorPlugin) AddToResponseBuf(respEvent *VSSResponseEvent) {
 		} else {
 			respCh <- resp
 		}
-		mp.vssBufLock.RUnlock()
+		mp.vssBufLock.Unlock()
 	}
 }
 
@@ -307,9 +311,9 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 	log.Debugf("the mediator(%v) run the loop to process response regarding the mediator(%v)",
 		localMed.Str(), vrfrMed.Str())
 
-	mp.vssBufLock.Lock()
+	mp.vssBufLock.RLock()
 	respCh, ok := mp.respBuf[localMed][vrfrMed]
-	mp.vssBufLock.Unlock()
+	mp.vssBufLock.RUnlock()
 
 	if !ok {
 		log.Debugf("the mediator(%v)'s respBuf corresponding the mediator(%v) is not initialized",
@@ -330,8 +334,8 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 }
 
 func (mp *MediatorPlugin) processVSSResp(localMed common.Address, resp *dkg.Response) {
-	mp.dkgLock.RLock()
-	defer mp.dkgLock.RUnlock()
+	mp.dkgLock.Lock()
+	defer mp.dkgLock.Unlock()
 
 	dkgr, ok := mp.activeDKGs[localMed]
 	if !ok || dkgr == nil {

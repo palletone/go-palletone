@@ -351,10 +351,10 @@ func (mp *MediatorPlugin) UpdateMediatorsDKG(isRenew bool) {
 	}
 
 	// 保存旧的 dkg ， 用于之前的unit群签名确认
-	mp.dkgLock.RLock()
+	mp.dkgLock.Lock()
 	mp.precedingDKGs = mp.activeDKGs
 	mp.lastMaintenanceTime = mp.dag.LastMaintenanceTime()
-	mp.dkgLock.RUnlock()
+	mp.dkgLock.Unlock()
 
 	// 判断是否重新 初始化DKG 和 VSS 协议
 	// todo albert 待优化
