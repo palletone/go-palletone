@@ -442,7 +442,9 @@ func (d *Dag) InsertHeaderDag(headers []*modules.Header) (int, error) {
 		if err != nil {
 			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at saveHeader Error:%s", i, err.Error())
 		}
-
+		if header.NumberU64()%2000 == 0 {
+			log.Infof("Insert header[%s] #%d", header.Hash().String(), header.NumberU64())
+		}
 	}
 	return len(headers), nil
 }
