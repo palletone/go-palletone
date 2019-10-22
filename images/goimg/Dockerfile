@@ -7,7 +7,7 @@ RUN go get -u -v github.com/palletone/adaptor
 
 RUN mkdir -p src/github.com/palletone \
     && cd src/github.com/palletone \
-    && git clone -b xiaozhi https://github.com/palletone/go-palletone.git
+    && git clone -b master https://github.com/palletone/go-palletone.git
 
 RUN go get -u -v github.com/kardianos/govendor
 
