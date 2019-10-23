@@ -447,7 +447,7 @@ func (chain *MemDag) removeUnitAndChildren(chain_units map[common.Hash]*modules.
 	log.Debugf("Remove unit[%s] and it's children from chain unit", hash.String())
 
 	for h, unit := range chain_units {
-		if unit.NumberU64()==0{
+		if unit.NumberU64() == 0 {
 			continue
 		}
 		if h == hash {
@@ -483,8 +483,8 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 	chain.lock.Lock()
 	defer chain.lock.Unlock()
 	if unit.NumberU64() <= chain.stableUnitHeight {
-		log.Debugf("This unit is too old! Ignore it,stable unit height:%d, stable hash:%s",
-			chain.stableUnitHeight, chain.stableUnitHash.String())
+		log.Debugf("This unit is too old hight:%d,hash:%s .Ignore it,stable unit height:%d, stable hash:%s",
+			unit.Number().Index, unit.UnitHash.String(), chain.stableUnitHeight, chain.stableUnitHash.String())
 		go txpool.ResetPendingTxs(unit.Transactions())
 		return nil, nil, nil, nil, nil, nil
 	}
