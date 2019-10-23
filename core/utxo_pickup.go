@@ -55,6 +55,25 @@ func find_min(utxos []UtxoInterface) UtxoInterface {
 	return min_utxo
 }
 
+func New_SelectUtxo_Greedy(utxos Utxos, amount uint64) (Utxos, uint64, error) {
+	var taken_utxo Utxos
+	var accum uint64
+	var change uint64
+	accum = 0
+	for _, utxo := range utxos {
+		accum += utxo.GetAmount()
+		taken_utxo = append(taken_utxo, utxo)
+                
+	}
+        fmt.Println("accum is ---",accum)
+	if accum < amount  {
+		return nil, 0, errors.New("Amount Not Enough to pay")
+	}
+
+	change = accum - amount
+	fmt.Printf("Total is %d,output is %d,change is %d",accum, amount,change)
+	return taken_utxo, change, nil
+}
 func Select_utxo_Greedy(utxos Utxos, amount uint64) (Utxos, uint64, error) {
 	var greaters Utxos
 	var lessers Utxos
