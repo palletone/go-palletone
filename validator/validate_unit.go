@@ -209,9 +209,14 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) Validat
 	defer func() {
 		log.Debugf("ValidateUnitExceptGroupSig unit[%s],cost:%s", unit.Hash().String(), time.Since(start))
 	}()
-
+	// 1568197800 2019-09-11 18:30:00 testNet分叉修复后，统一的leveldb
+	// 2019-07-11 12:56:46 849c2cb5c7b3fbd37b2ac5f318716f90613259f2 将洗牌算法的种子由时间戳改成hash
+	// 并在 1.0.1 版本升级后，在主网和测试网中使用新的调度策略
+	//1570870800 20191012 17:00:00 之前的mediator schedule可能验证通不过
+	enableMediatorSchedule := unit.UnitHeader.Time > 1570870800
 	// step1. check header ---New unit is no group signature yet
-	unitHeaderValidateResult := validate.validateHeaderExceptGroupSig(unit.UnitHeader)
+	unitHeaderValidateResult := validate.validateHeaderExceptGroupSig(
+		unit.UnitHeader, enableMediatorSchedule)
 	if unitHeaderValidateResult != TxValidationCode_VALID &&
 		unitHeaderValidateResult != UNIT_STATE_AUTHOR_SIGNATURE_PASSED &&
 		unitHeaderValidateResult != UNIT_STATE_ORPHAN {
@@ -251,7 +256,7 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) Validat
 	return TxValidationCode_VALID
 }
 
-func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) ValidationCode {
+func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header, enableMediatorSchedule bool) ValidationCode {
 	if header == nil {
 		log.Info("header is nil.")
 		return UNIT_STATE_INVALID_HEADER
@@ -290,9 +295,11 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 		return sigState
 	}
 	//Check author
-	validateAuthorCode := validate.validateUnitAuthor(header)
-	if validateAuthorCode != TxValidationCode_VALID {
-		return validateAuthorCode
+	if !validate.light { //轻节点无法验证Mediator
+		validateAuthorCode := validate.validateUnitAuthor(header)
+		if validateAuthorCode != TxValidationCode_VALID {
+			return validateAuthorCode
+		}
 	}
 	//Is orphan?
 	parent := header.ParentsHash[0]
@@ -305,15 +312,7 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header) V
 			return UNIT_STATE_INVALID_HEADER_NUMBER
 		}
 
-		// 1568197800 2019-09-11 18:30:00 testNet分叉修复后，统一的leveldb
-		// 2019-07-11 12:56:46 849c2cb5c7b3fbd37b2ac5f318716f90613259f2 将洗牌算法的种子由时间戳改成hash
-		// 并在 1.0.1 版本升级后，在主网和测试网中使用新的调度策略
-
-		// 1565085600 2019-08-06 18:00:00 1.0.1 版本主网升级完成
-		//if header.Time > 1565085600 { //之前的mediator schedule可能验证通不过
-
-		//1570870800 20191012 17:00:00
-		if header.Time > 1570870800 { //之前的mediator schedule可能验证通不过
+		if enableMediatorSchedule && !validate.light {
 			vcode := validate.validateMediatorSchedule(header)
 			if vcode != TxValidationCode_VALID {
 				return vcode
@@ -329,7 +328,7 @@ func (validate *Validate) ValidateHeader(h *modules.Header) ValidationCode {
 	if has {
 		return code
 	}
-	unitHeaderValidateResult := validate.validateHeaderExceptGroupSig(h)
+	unitHeaderValidateResult := validate.validateHeaderExceptGroupSig(h, false)
 	if unitHeaderValidateResult != TxValidationCode_VALID &&
 		unitHeaderValidateResult != UNIT_STATE_AUTHOR_SIGNATURE_PASSED &&
 		unitHeaderValidateResult != UNIT_STATE_ORPHAN {

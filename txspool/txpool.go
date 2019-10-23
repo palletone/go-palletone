@@ -130,8 +130,9 @@ type TxDesc struct {
 func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit dags) *TxPool {
 	tokenEngine := tokenengine.Instance
 	pool := NewTxPool4DI(config, cachedb, unit, tokenEngine, nil)
-	val := validator.NewValidate(unit, pool, unit, unit, cachedb)
+	val := validator.NewValidate(unit, pool, unit, unit, cachedb, false)
 	pool.txValidator = val
+	pool.startJournal(config)
 	return pool
 }
 
@@ -157,6 +158,9 @@ func NewTxPool4DI(config TxPoolConfig, cachedb palletcache.ICache, unit dags,
 	pool.priority_sorted = newTxPrioritiedList(&pool.all)
 	pool.txValidator = validator
 
+	return pool
+}
+func (pool *TxPool) startJournal(config TxPoolConfig) {
 	// If local transactions and journaling is enabled, load from disk
 	if !config.NoLocals && config.Journal != "" {
 		log.Info("Journal path:" + config.Journal)
@@ -172,8 +176,6 @@ func NewTxPool4DI(config TxPoolConfig, cachedb palletcache.ICache, unit dags,
 	// Start the event loop and return
 	pool.wg.Add(1)
 	go pool.loop()
-
-	return pool
 }
 
 // return a utxo by the outpoint in txpool
@@ -1563,7 +1565,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 	return list, total
 }
 func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
-orphanTxs map[common.Hash]*TxPoolTransaction) []*TxPoolTransaction {
+	orphanTxs map[common.Hash]*TxPoolTransaction) []*TxPoolTransaction {
 	pretxs := make([]*TxPoolTransaction, 0)
 	for _, msg := range tx.Tx.Messages() {
 		if msg.App == modules.APP_PAYMENT {

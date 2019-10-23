@@ -78,14 +78,10 @@ func (journal *txJournal) load(add func(*TxPoolTransaction) error) error {
 	stream := rlp.NewStream(input, 0)
 	total, dropped := 0, 0
 
-	var failure error
 	for {
 		// Parse the next transaction and terminate on error
 		tx := new(TxPoolTransaction)
 		if err = stream.Decode(tx); err != nil {
-			if err != io.EOF {
-				failure = err
-			}
 			break
 		}
 		// Import the transaction and bump the appropriate progress counters
@@ -102,7 +98,7 @@ func (journal *txJournal) load(add func(*TxPoolTransaction) error) error {
 	}
 	log.Info("Loaded local transaction journal", "transactions", total, "dropped", dropped)
 
-	return failure
+	return err
 }
 
 // insert adds the specified transaction to the local disk journal.

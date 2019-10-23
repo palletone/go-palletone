@@ -41,11 +41,11 @@ type Validate struct {
 	tokenEngine      tokenengine.ITokenEngine
 	cache            *ValidatorCache
 	enableTxFeeCheck bool
+	light            bool
 }
 
-const MAX_DATA_PAYLOAD_MAIN_DATA_SIZE = 128
-
-func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propquery IPropQuery, cache palletcache.ICache) *Validate {
+func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propquery IPropQuery,
+	cache palletcache.ICache, light bool) *Validate {
 	//cache := freecache.NewCache(20 * 1024 * 1024)
 	vcache := NewValidatorCache(cache)
 	return &Validate{
@@ -56,6 +56,7 @@ func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propq
 		propquery:        propquery,
 		tokenEngine:      tokenengine.Instance,
 		enableTxFeeCheck: true,
+		light:            light,
 	}
 }
 
