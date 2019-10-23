@@ -237,3 +237,37 @@ func (ps *peerSet) PeersWithoutVSSDeal(hash common.Hash) []*peer {
 	}
 	return list
 }
+
+func (p *peer) MarkVSSResponse(hash common.Hash) {
+	for p.knownVSSResponse.Cardinality() >= maxKnownVSSResponse {
+		p.knownVSSResponse.Pop()
+	}
+	p.knownVSSResponse.Add(hash)
+}
+
+func (pm *ProtocolManager) BroadcastVSSResponse(deal *mp.VSSResponseEvent) {
+	now := uint64(time.Now().Unix())
+	if now > deal.Deadline {
+		return
+	}
+
+	peers := pm.peers.PeersWithoutVSSResponse(deal.Hash())
+	for _, peer := range peers {
+		peer.SendVSSResponse(deal)
+	}
+
+	return
+}
+
+func (ps *peerSet) PeersWithoutVSSResponse(hash common.Hash) []*peer {
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
+
+	list := make([]*peer, 0, len(ps.peers))
+	for _, p := range ps.peers {
+		if !p.knownVSSResponse.Contains(hash) {
+			list = append(list, p)
+		}
+	}
+	return list
+}

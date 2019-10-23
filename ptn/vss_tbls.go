@@ -216,6 +216,8 @@ func (pm *ProtocolManager) broadcastVssResp(resp *mp.VSSResponseEvent) {
 			log.Debugf(err.Error())
 		}
 	}
+
+	pm.BroadcastVSSResponse(resp)
 }
 
 // GetPeer, retrieve specified peer. If it is the node itself, p is nil and self is true
@@ -259,6 +261,7 @@ func (p *peer) SendVSSDeal(deal *mp.VSSDealEvent) error {
 
 // @author Albert·Gou
 func (p *peer) SendVSSResponse(resp *mp.VSSResponseEvent) error {
+	p.MarkVSSResponse(resp.Hash())
 	return p2p.Send(p.rw, VSSResponseMsg, resp)
 }
 

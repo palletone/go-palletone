@@ -208,8 +208,12 @@ func (mp *MediatorPlugin) processVSSDeal(localMed common.Address, deal *dkg.Deal
 		return
 	}
 
+	cp := mp.dag.GetGlobalProp().ChainParameters
+	deadline := time.Now().Unix() + int64(cp.MediatorInterval*cp.MaintenanceSkipSlots)
+
 	respEvent := VSSResponseEvent{
-		Resp: resp,
+		Resp:     resp,
+		Deadline: uint64(deadline),
 	}
 	mp.vssResponseFeed.Send(respEvent)
 	log.Debugf("the mediator(%v) broadcast the vss response to the mediator(%v)",

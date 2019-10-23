@@ -957,23 +957,14 @@ func (d *Dag) saveHeader(header *modules.Header) error {
 	if header == nil {
 		return errors.ErrNullPoint
 	}
-	unit := &modules.Unit{UnitHeader: header}
 	asset := header.Number.AssetID
 	memdag, err := d.getMemDag(asset)
 	if err != nil {
 		log.Error(err.Error())
 		return err
 	}
-	if a, b, c, dd, e, err := memdag.AddUnit(unit, nil, false); err != nil {
+	if err := memdag.SaveHeader(header); err != nil {
 		return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
-	} else {
-		if a != nil {
-			d.unstableUnitRep = a
-			d.unstableUtxoRep = b
-			d.unstableStateRep = c
-			d.unstablePropRep = dd
-			d.unstableUnitProduceRep = e
-		}
 	}
 
 	return nil
