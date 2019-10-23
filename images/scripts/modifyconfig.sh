@@ -139,6 +139,8 @@ pk=`echo ${tempinfo///}`
 echo "account: "$account
 echo "initpublickey: "$publickey
 echo "nodeinfo: "$nodeinfo
+nodeinfo=`echo ${nodeinfo/127.0.0.1/mediator$1}`
+echo "nodeinfo new " $nodeinfo
 echo "publickey: "$pk
 
 ModifyJson  $account $publickey $nodeinfo $1 $pk

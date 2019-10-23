@@ -4,11 +4,11 @@ source ./modifyconfig.sh
 
 function ExecInit()
 {
-    count=1  
-    while [ $count -le $1 ] ;  
-    do  
+    count=1
+    while [ $count -le $1 ] ;
+    do
     #echo $count;
-    #ExecDeploy $count 
+    #ExecDeploy $count
     if [ $count -eq 1 ] ;then
     cd node$count
     cp ../init.sh .
@@ -37,8 +37,8 @@ function ExecInit()
         rm -rf log
         cd ../
     fi
-    let ++count;  
-    sleep 1;  
+    let ++count;
+    sleep 1;
     done
 
     length=${#initinfo}
@@ -49,7 +49,7 @@ function ExecInit()
     genesishash=${str:$pos:66}
     echo "Init OK GenesisHash="$genesishash
 
-    return 0;  
+    return 0;
 }
 
 
@@ -103,17 +103,17 @@ function ExecDeploy()
 
 
 
-function LoopDeploy()  
-{  
-    count=1;  
-    while [ $count -le $1 ] ;  
-    do  
+function LoopDeploy()
+{
+    count=1;
+    while [ $count -le $1 ] ;
+    do
     #echo $count;
-    ExecDeploy $count 
-    let ++count;  
-    sleep 1;  
-    done  
-    return 0;  
+    ExecDeploy $count
+    let ++count;
+    sleep 1;
+    done
+    return 0;
 }
 path=`echo $GOPATH`
 src=/src/github.com/palletone/go-palletone/build/bin/gptn
@@ -130,7 +130,7 @@ fi
 LoopDeploy $n;
 
 json="node1/ptn-genesis.json"
-replacejson $json 
+replacejson $json
 
 #ModifyBootstrapNodes $n
 ModifyP2PConfig $n $genesishash
@@ -140,7 +140,7 @@ cp node1/ptn-config.toml node1/ptn-config.toml.bak
 
 #todo node1/ptn-config.toml mediator->127.0.0.1
 count=2
-while [ $count -le $1 ] 
+while [ $count -le $1 ]
 do
   sed -i "s/mediator$count:/127.0.0.1:/g" node1/ptn-config.toml
   let ++count
@@ -169,3 +169,7 @@ MakeTestNet $num $genesishash
 node1staticnodes=`cat node1/ptn-config.toml | grep StaticNodes`
 sed -i '/^StaticNodes/c'$node1staticnodes'' node6/ptn-config.toml
 
+num=$[$n+2]
+MakeTestNet $num $genesishash
+node1staticnodes=`cat node1/ptn-config.toml | grep StaticNodes`
+sed -i '/^StaticNodes/c'$node1staticnodes'' node7/ptn-config.toml
