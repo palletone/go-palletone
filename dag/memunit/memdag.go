@@ -472,7 +472,13 @@ func (chain *MemDag) AddStableUnit(unit *modules.Unit) {
 	chain.stableUnitHash = hash
 	chain.stableUnitHeight = unit.NumberU64()
 }
-
+func (chain *MemDag) SaveHeader(header *modules.Header) error {
+	chain.lock.Lock()
+	defer chain.lock.Unlock()
+	hash := header.Hash()
+	log.Debugf("add header to dag, hash[%s], index:%d", hash.String(), header.NumberU64())
+	return chain.ldbunitRep.SaveNewestHeader(header)
+}
 func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenerate bool) (common2.IUnitRepository,
 	common2.IUtxoRepository, common2.IStateRepository, common2.IPropRepository,
 	common2.IUnitProduceRepository, error) {
