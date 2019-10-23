@@ -33,6 +33,7 @@ type NewProducedUnitEvent struct {
 type SigShareEvent struct {
 	UnitHash common.Hash
 	SigShare []byte
+	Deadline uint64 // 被广播的截止日期
 }
 
 type VSSDealEvent struct {

@@ -55,6 +55,7 @@ const (
 
 	maxKnownVSSDeal     = 21 * 21
 	maxKnownVSSResponse = 21 * 21 * 21
+	maxKnownSigShare    = 21 * 15
 )
 
 // PeerInfo represents a short summary of the PalletOne sub-protocol metadata known
@@ -94,6 +95,7 @@ type peer struct {
 
 	knownVSSDeal     set.Set
 	knownVSSResponse set.Set
+	knownSigShare    set.Set
 }
 
 func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
@@ -113,6 +115,7 @@ func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 
 		knownVSSDeal:     set.NewSet(),
 		knownVSSResponse: set.NewSet(),
+		knownSigShare:    set.NewSet(),
 	}
 }
 
