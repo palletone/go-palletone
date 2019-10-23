@@ -510,7 +510,7 @@ func (pm *ProtocolManager) VSSDealMsg(msg p2p.Msg, p *peer) error {
 	p.MarkVSSDeal(deal.Hash())
 	pm.BroadcastVSSDeal(&deal)
 
-	// 判断是否同步, 如果没同步完成，接收到的vss deal是超前的
+	// 判断是否同步, 如果没同步完成，接收到的vss deal 对当前节点来说是超前的
 	if !pm.dag.IsSynced() {
 		errStr := "we are not synced"
 		log.Debugf(errStr)
@@ -532,7 +532,16 @@ func (pm *ProtocolManager) VSSResponseMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	// todo albert 清除在限制时间范围之外的response消息
+	p.MarkVSSResponse(resp.Hash())
+	pm.BroadcastVSSResponse(&resp)
+
+	// 判断是否同步, 如果没同步完成，接收到的 vss response 对当前节点来说是超前的
+	if !pm.dag.IsSynced() {
+		errStr := "we are not synced"
+		log.Debugf(errStr)
+		//return fmt.Errorf(errStr)
+		return nil
+	}
 
 	go pm.producer.AddToResponseBuf(&resp)
 	return nil

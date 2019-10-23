@@ -19,18 +19,17 @@ package ptn
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
+	set "github.com/deckarep/golang-set"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/consensus/jury"
-	//"github.com/palletone/go-palletone/dag/dagconfig"
-	set "github.com/deckarep/golang-set"
 	"github.com/palletone/go-palletone/dag/modules"
-	"strings"
 )
 
 var (
@@ -52,7 +51,8 @@ const (
 	//transitionStep2  = 2 //vss success
 	//transitionCancel = 3 //retranstion
 
-	maxKnownVSSDeal = 21*21
+	maxKnownVSSDeal     = 21 * 21
+	maxKnownVSSResponse = 21 * 21 * 21
 )
 
 // PeerInfo represents a short summary of the PalletOne sub-protocol metadata known
@@ -90,7 +90,8 @@ type peer struct {
 	knownLightHeaders set.Set
 	knownGroupSig     set.Set
 
-	knownVSSDeal set.Set
+	knownVSSDeal     set.Set
+	knownVSSResponse set.Set
 }
 
 func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
@@ -108,7 +109,8 @@ func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 		peermsg:           map[modules.AssetId]peerMsg{},
 		//lightpeermsg:      map[modules.AssetId]peerMsg{},
 
-		knownVSSDeal: set.NewSet(),
+		knownVSSDeal:     set.NewSet(),
+		knownVSSResponse: set.NewSet(),
 	}
 }
 
@@ -412,9 +414,9 @@ func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis comm
 		}
 	}
 	//stableIndex :=&modules.ChainIndex{Index:uint64(1085100)}
-	stableIndex :=&modules.ChainIndex{Index:uint64(1)}
-	log.Debug("peer Handshake", "p.id", p.id, "index", status.Index, "stable", stableIndex)//status.StableIndex)
-	p.SetHead(status.CurrentHeader, status.Index, stableIndex)//status.StableIndex)
+	stableIndex := &modules.ChainIndex{Index: uint64(1)}
+	log.Debug("peer Handshake", "p.id", p.id, "index", status.Index, "stable", stableIndex) //status.StableIndex)
+	p.SetHead(status.CurrentHeader, status.Index, stableIndex)                              //status.StableIndex)
 	return nil
 }
 
