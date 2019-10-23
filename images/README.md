@@ -1,16 +1,11 @@
 ## 运行脚本
 
-    ./bytn.sh 1.0.1
+    ./bytn.sh
 
 ## 说明：
 
     首先，该脚本默认生成有 5 个超级节点和 1 个普通全节点的本地私有链；
-    然后，从 Dcoker hub 上下载 palletone/gptn:1.0.1 (脚本参数)镜像作为节点容器镜像，镜像标签与当前主网发布版本一致。
-
-## 修改配置文件
-
-    需要手动修改各个节点的 ptn-config.toml 配置文件中的 VmEndpoint 的值，该值主要是作为宿主机 Docker server 的 tcp 监听端口，将 VmEndpoint 的值修改为 tcp://宿主机ip:2375，请确保宿主机 Docker server 已开启监听该端口。
-    如： VmEndpoint = "tcp://192.168.152.128:2375"
+    然后，从 Dcoker hub 上下载 palletone/private-gptn:latest 镜像作为节点容器镜像。
 
 ## 使用docker-compose 启动容器
 
@@ -18,11 +13,11 @@
 
 ## 进入超级节点 1 容器
 
-    docker exec -it mediator1 sh
+    docker exec -it mediator1 bash
 
 ## 进入gptn程序控制台
 
-    gptn attach
+    ./gptn attach
 
 ## 启动节点产块
 
@@ -40,3 +35,13 @@
 ----
 * 使用docker-compose 停止并移除容器
     * docker-compose down
+    
+## 本地连接私有网络，并安装用户合约
+进入目录node7，修改配置文件 ptn-config.toml，将 StaticNodes 的值修改为任意一个容器节点的 pnode 的信息  
+**注意:**格式要正确：["pnode://xxx@ip:port"]
+如：**["pnode://163d38776688c1d050c09aa8398ba3eb4862bc0de4b1366b7cfa41e3fbde191b593cd83f271a3dc7c40545a41df68127367c7fe6f2831bbb11d4de1a49d70df2@172.18.0.4:30305"]**  
+修改完成后，启动即可
+* nohup ./gptn &
+
+进入控制台
+* ./gptn attach
