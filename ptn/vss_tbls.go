@@ -111,14 +111,17 @@ func (pm *ProtocolManager) transmitSigShare(node *discover.Node, sigShare *mp.Si
 		return
 	}
 
-	if peer == nil {
+	if peer != nil {
+		err := peer.SendSigShare(sigShare)
+		if err != nil {
+			log.Debug(err.Error())
+		}
+
 		return
 	}
 
-	err := peer.SendSigShare(sigShare)
-	if err != nil {
-		log.Debug(err.Error())
-	}
+	// 如果没有和对应的mediator有网络连接，则进行转发
+	pm.BroadcastSigShare(sigShare)
 }
 
 // @author Albert·Gou
@@ -267,6 +270,7 @@ func (p *peer) SendVSSResponse(resp *mp.VSSResponseEvent) error {
 
 // @author Albert·Gou
 func (p *peer) SendSigShare(sigShare *mp.SigShareEvent) error {
+	p.MarkSigShare(sigShare.UnitHash)
 	return p2p.Send(p.rw, SigShareMsg, sigShare)
 }
 

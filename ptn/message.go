@@ -491,7 +491,16 @@ func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	// todo albert 清除在限制时间范围之外的SigShare消息
+	p.MarkSigShare(sigShare.UnitHash)
+	pm.BroadcastSigShare(&sigShare)
+
+	// 判断是否同步, 如果没同步完成，接收到的 sigShare 对当前节点来说是超前的
+	if !pm.dag.IsSynced() {
+		errStr := "we are not synced"
+		log.Debugf(errStr)
+		//return fmt.Errorf(errStr)
+		return nil
+	}
 
 	go pm.producer.AddToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
 	return nil
@@ -510,7 +519,7 @@ func (pm *ProtocolManager) VSSDealMsg(msg p2p.Msg, p *peer) error {
 	p.MarkVSSDeal(deal.Hash())
 	pm.BroadcastVSSDeal(&deal)
 
-	// 判断是否同步, 如果没同步完成，接收到的vss deal 对当前节点来说是超前的
+	// 判断是否同步, 如果没同步完成，接收到的 vss deal 对当前节点来说是超前的
 	if !pm.dag.IsSynced() {
 		errStr := "we are not synced"
 		log.Debugf(errStr)
