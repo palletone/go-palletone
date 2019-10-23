@@ -167,7 +167,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 	log.Debug("NewContractProcessor", "contractEleNum", cfgEleNum, "contractSigNum", cfgSigNum)
 
 	cache := freecache.NewCache(20 * 1024 * 1024)
-	validator := validator.NewValidate(dag, dag, dag, dag, cache)
+	validator := validator.NewValidate(dag, dag, dag, dag, cache, false)
 	p := &Processor{
 		name:         "contractProcessor",
 		ptn:          ptn,
