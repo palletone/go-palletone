@@ -46,7 +46,12 @@ func (e *VSSDealEvent) Hash() common.Hash {
 }
 
 type VSSResponseEvent struct {
-	Resp *dkg.Response
+	Resp     *dkg.Response
+	Deadline uint64 // 被广播的截止日期
+}
+
+func (e *VSSResponseEvent) Hash() common.Hash {
+	return util.RlpHash(e)
 }
 
 type GroupSigEvent struct {
