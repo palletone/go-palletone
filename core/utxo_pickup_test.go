@@ -70,7 +70,7 @@ func TestNew_Selectutxo_Greedy(t *testing.T) {
 
 	utxos := []*Utxo4Test{}
 	for i := 0;i < 600; i++ {
-             utxos = append(utxos, &Utxo4Test{Amount: 1, TxId: common.Hash{}, MsgIdx: 0, OutIdx: uint32(i)})
+             utxos = append(utxos, &Utxo4Test{Amount: uint64(i+1), TxId: common.Hash{}, MsgIdx: 0, OutIdx: uint32(i)})
 	}
 	
 	ut := Utxos{}
@@ -78,9 +78,30 @@ func TestNew_Selectutxo_Greedy(t *testing.T) {
 		ut = append(ut, u)
 	}
 	result, change, err := New_SelectUtxo_Greedy(ut, 400)
-        fmt.Println("result is ",result)
+        //fmt.Println("result is ",result)
         fmt.Println("change is ",change)
 	assert.Nil(t, err)
-	assert.Equal(t, len(result), 600)
-	assert.Equal(t, change, uint64(200))
+	assert.Equal(t, len(result), 500)
+	assert.Equal(t, change, uint64(174850))
+
+        result, change, err = New_SelectUtxo_Greedy(ut, 200000)
+        //fmt.Println("result is ",result)
+        fmt.Println("change is ",change)
+        assert.NotNil(t, err)
+        assert.Equal(t, len(result), 0)
+        assert.Equal(t, change, uint64(0))
+
+        result, change, err = New_SelectUtxo_Greedy(ut, 174850)
+        //fmt.Println("result is ",result)
+        fmt.Println("change is ",change)
+        assert.Nil(t, err)
+        assert.Equal(t, len(result), 500)
+        assert.Equal(t, change, uint64(400))
+     
+        result, change, err = New_SelectUtxo_Greedy(ut, 600)
+        //fmt.Println("result is ",result)
+        fmt.Println("change is ",change)
+        assert.Nil(t, err)
+        assert.Equal(t, len(result), 500)
+        assert.Equal(t, change, uint64(174650))
 }
