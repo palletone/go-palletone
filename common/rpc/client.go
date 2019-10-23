@@ -32,6 +32,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+        "github.com/shopspring/decimal"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/hexutil"
 )
@@ -260,9 +261,9 @@ func (c *Client) SupportedModules() (map[string]string, error) {
 	err := c.CallContext(ctx, &result, "rpc_modules")
 	return result, err
 }
-func (ec *Client) Contract_Ccstop(ctx context.Context, contractAddr string) (string, error) {
+func (ec *Client) Contract_Ccstop(ctx context.Context,from, to string, amount, fee decimal.Decimal, contractAddr string) (string, error) {
 	var result string
-	err := ec.CallContext(ctx, &result, "contract_ccstop", contractAddr)
+	err := ec.CallContext(ctx, &result, "contract_ccstoptx", from, to, amount, fee,contractAddr)
 	return result, err
 }
 func (ec *Client) Contract_CcQuery(ctx context.Context,contractAddr string,param []string,timeout int) (string, error) {
@@ -275,9 +276,9 @@ func (ec *Client) Contract_Ccinvoke(ctx context.Context, contractAddr string,par
 	err := ec.CallContext(ctx, &result, "contract_ccinvoke", contractAddr,param)
 	return result, err
 }
-func (ec *Client) Contract_Ccinstall(ctx context.Context, ccname, ccpath, ccversion, ccdescription, ccabi, cclanguage string) (hexutil.Bytes, error) {
+func (ec *Client) Contract_Ccinstall(ctx context.Context, from, to string, amount,fee decimal.Decimal,tplName, ccpath, ccversion, ccdescription, ccabi, cclanguage string,addr []string) (hexutil.Bytes, error) {
 	var result hexutil.Bytes
-	err := ec.CallContext(ctx, &result, "contract_ccinstall", ccname, ccpath, ccversion, ccdescription, ccabi, cclanguage)
+	err := ec.CallContext(ctx, &result, "contract_ccinstalltx",from, to, amount,fee,tplName, ccpath, ccversion, ccdescription, ccabi, cclanguage,addr)
 	return result, err
 }
 // Close closes the client, aborting any in-flight requests.
