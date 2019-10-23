@@ -306,7 +306,6 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 			u.NumberU64(), u.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
 			u.Author().Str())
 		if is_stable {
-			log.Infof("add stable unit, index[%d],hash[%s]", u.NumberU64(), u.UnitHash.String())
 			d.Memdag.AddStableUnit(u)
 		} else {
 			if a, b, c, dd, e, err := d.Memdag.AddUnit(u, txpool, false); err != nil {
@@ -958,23 +957,14 @@ func (d *Dag) saveHeader(header *modules.Header) error {
 	if header == nil {
 		return errors.ErrNullPoint
 	}
-	unit := &modules.Unit{UnitHeader: header}
 	asset := header.Number.AssetID
 	memdag, err := d.getMemDag(asset)
 	if err != nil {
 		log.Error(err.Error())
 		return err
 	}
-	if a, b, c, dd, e, err := memdag.AddUnit(unit, nil, false); err != nil {
+	if err := memdag.SaveHeader(header); err != nil {
 		return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
-	} else {
-		if a != nil {
-			d.unstableUnitRep = a
-			d.unstableUtxoRep = b
-			d.unstableStateRep = c
-			d.unstablePropRep = dd
-			d.unstableUnitProduceRep = e
-		}
 	}
 
 	return nil

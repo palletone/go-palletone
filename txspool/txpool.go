@@ -554,6 +554,9 @@ func (pool *TxPool) add(tx *TxPoolTransaction, local bool) (bool, error) {
 // deemed to have been sent from a local account.
 func (pool *TxPool) journalTx(tx *TxPoolTransaction) {
 	// Only journal if it's enabled and the transaction is local
+	if pool.config.NoLocals {
+		return
+	}
 	if len(tx.From) > 0 {
 		if pool.journal == nil {
 			log.Trace("Pool journal is nil.", "journal", pool.journal.path)

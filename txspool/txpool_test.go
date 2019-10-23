@@ -257,6 +257,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 	unitchain := &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed), nil}
 	config := DefaultTxPoolConfig
 	config.GlobalSlots = 4096
+	config.NoLocals = true
 
 	utxos := mockPtnUtxos()
 	for outpoint, utxo := range utxos {
@@ -266,7 +267,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 	pool := NewTxPool4DI(config, freecache.NewCache(1*1024*1024), unitchain,
 		tokenengine.Instance, &validator.ValidatorAllPass{})
 	defer pool.Stop()
-
+	pool.startJournal(config)
 	var pending_cache, queue_cache, all, origin int
 	address := "P13pBrshF6JU7QhMmzJjXx3mWHh13YHAUAa"
 	txs := createTxs(address)
@@ -344,7 +345,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 		//  add tx : failed , and discared the tx.
 		err := p.addTx(pool_tx, !pool.config.NoLocals)
 		if err == nil {
-			log.Error("test added tx failed.")
+			log.Errorf("test added tx failed, :%s", err.Error())
 			return
 		}
 		err1 := p.resetPendingTx(pool_tx.Tx)

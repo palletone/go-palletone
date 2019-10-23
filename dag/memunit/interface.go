@@ -48,6 +48,7 @@ type IMemDag interface {
 	SetStableUnit(unit *modules.Unit, isGenesis bool)
 	AddUnit(unit *modules.Unit, txpool txspool.ITxPool, isProd bool) (common2.IUnitRepository, common2.IUtxoRepository,
 		common2.IStateRepository, common2.IPropRepository, common2.IUnitProduceRepository, error)
+	SaveHeader(header *modules.Header) error
 	GetLastStableUnitInfo() (common.Hash, uint64)
 	GetLastMainChainUnit() *modules.Unit
 	GetChainUnits() map[common.Hash]*modules.Unit

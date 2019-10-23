@@ -21,6 +21,7 @@
 package core
 
 import (
+        "fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -63,4 +64,23 @@ func TestSelect_utxo_Greedy(t *testing.T) {
 	assert.NotNil(t, err)
 	t.Logf("get error:%s", err)
 
+}
+func TestNew_Selectutxo_Greedy(t *testing.T) {
+	//log.NewTestLog()
+
+	utxos := []*Utxo4Test{}
+	for i := 0;i < 600; i++ {
+             utxos = append(utxos, &Utxo4Test{Amount: 1, TxId: common.Hash{}, MsgIdx: 0, OutIdx: uint32(i)})
+	}
+	
+	ut := Utxos{}
+	for _, u := range utxos {
+		ut = append(ut, u)
+	}
+	result, change, err := New_SelectUtxo_Greedy(ut, 400)
+        fmt.Println("result is ",result)
+        fmt.Println("change is ",change)
+	assert.Nil(t, err)
+	assert.Equal(t, len(result), 600)
+	assert.Equal(t, change, uint64(200))
 }
