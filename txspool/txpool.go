@@ -132,6 +132,7 @@ func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit dags) *TxPo
 	pool := NewTxPool4DI(config, cachedb, unit, tokenEngine, nil)
 	val := validator.NewValidate(unit, pool, unit, unit, cachedb, false)
 	pool.txValidator = val
+	pool.startJournal(config)
 	return pool
 }
 
@@ -157,6 +158,9 @@ func NewTxPool4DI(config TxPoolConfig, cachedb palletcache.ICache, unit dags,
 	pool.priority_sorted = newTxPrioritiedList(&pool.all)
 	pool.txValidator = validator
 
+	return pool
+}
+func (pool *TxPool) startJournal(config TxPoolConfig) {
 	// If local transactions and journaling is enabled, load from disk
 	if !config.NoLocals && config.Journal != "" {
 		log.Info("Journal path:" + config.Journal)
@@ -172,8 +176,6 @@ func NewTxPool4DI(config TxPoolConfig, cachedb palletcache.ICache, unit dags,
 	// Start the event loop and return
 	pool.wg.Add(1)
 	go pool.loop()
-
-	return pool
 }
 
 // return a utxo by the outpoint in txpool

@@ -507,6 +507,9 @@ func (pm *ProtocolManager) VSSDealMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
+	p.MarkVSSDeal(deal.Hash())
+	pm.BroadcastVSSDeal(&deal)
+
 	// 判断是否同步, 如果没同步完成，接收到的vss deal是超前的
 	if !pm.dag.IsSynced() {
 		errStr := "we are not synced"
@@ -514,8 +517,6 @@ func (pm *ProtocolManager) VSSDealMsg(msg p2p.Msg, p *peer) error {
 		//return fmt.Errorf(errStr)
 		return nil
 	}
-
-	// todo albert 清除在限制时间范围之外的deal消息
 
 	go pm.producer.AddToDealBuf(&deal)
 	return nil
@@ -549,6 +550,7 @@ func (pm *ProtocolManager) GroupSigMsg(msg p2p.Msg, p *peer) error {
 	}
 
 	p.MarkGroupSig(gSign.UnitHash)
+	pm.BroadcastGroupSig(&gSign)
 
 	go pm.dag.SetUnitGroupSign(gSign.UnitHash, gSign.GroupSig, pm.txpool)
 

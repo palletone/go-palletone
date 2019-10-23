@@ -266,7 +266,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 	pool := NewTxPool4DI(config, freecache.NewCache(1*1024*1024), unitchain,
 		tokenengine.Instance, &validator.ValidatorAllPass{})
 	defer pool.Stop()
-
+	pool.startJournal(config)
 	var pending_cache, queue_cache, all, origin int
 	address := "P13pBrshF6JU7QhMmzJjXx3mWHh13YHAUAa"
 	txs := createTxs(address)
