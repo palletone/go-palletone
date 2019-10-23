@@ -1,0 +1,49 @@
+version: '2'
+
+services:
+  mediator1:
+    container_name: mediator1
+    image: xiaozhi
+    volumes:
+     - /var/run/docker.sock:/var/run/docker.sock
+    restart: always
+    command: [/go-palletone/node1/gptn,--noProduce,--staleProduce]
+    network_mode: "gptn-net"
+  mediator2:
+    container_name: mediator2
+    image: xiaozhi
+    volumes:
+     - /var/run/docker.sock:/var/run/docker.sock
+    restart: always
+    command: [/go-palletone/node2/gptn]
+    network_mode: "gptn-net"
+  mediator3:
+    container_name: mediator3
+    image: xiaozhi
+    volumes:
+     - /var/run/docker.sock:/var/run/docker.sock
+    restart: always
+    command: [/go-palletone/node3/gptn]
+    network_mode: "gptn-net"
+  mediator4:
+    container_name: mediator4
+    image: xiaozhi
+    volumes:
+     - /var/run/docker.sock:/var/run/docker.sock
+    restart: always
+    command: [/go-palletone/node4/gptn]
+    network_mode: "gptn-net"
+  mediator5:
+    container_name: mediator5
+    image: xiaozhi
+    volumes:
+     - /var/run/docker.sock:/var/run/docker.sock
+    restart: always
+    command: [/go-palletone/node5/gptn]
+    network_mode: "gptn-net"
+  node:
+    container_name: node
+    image: xiaozhi
+    restart: always
+    command: [/go-palletone/node6/gptn]
+    network_mode: "gptn-net"
