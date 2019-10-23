@@ -203,3 +203,37 @@ func (pm *ProtocolManager) delayDiscPrecedingMediator() {
 		disconnectFn()
 	}
 }
+
+func (p *peer) MarkVSSDeal(hash common.Hash) {
+	for p.knownVSSDeal.Cardinality() >= maxKnownVSSDeal {
+		p.knownVSSDeal.Pop()
+	}
+	p.knownVSSDeal.Add(hash)
+}
+
+func (pm *ProtocolManager) BroadcastVSSDeal(deal *mp.VSSDealEvent) {
+	now := uint64(time.Now().Unix())
+	if now > deal.Deadline {
+		return
+	}
+
+	peers := pm.peers.PeersWithoutVSSDeal(deal.Hash())
+	for _, peer := range peers {
+		peer.SendVSSDeal(deal)
+	}
+
+	return
+}
+
+func (ps *peerSet) PeersWithoutVSSDeal(hash common.Hash) []*peer {
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
+
+	list := make([]*peer, 0, len(ps.peers))
+	for _, p := range ps.peers {
+		if !p.knownVSSDeal.Contains(hash) {
+			list = append(list, p)
+		}
+	}
+	return list
+}
