@@ -173,14 +173,19 @@ func (pm *ProtocolManager) transmitVSSDeal(deal *mp.VSSDealEvent) {
 		return
 	}
 
-	if peer == nil {
+	if peer != nil {
+		err := peer.SendVSSDeal(deal)
+		if err != nil {
+			log.Debugf(err.Error())
+		}
+
 		return
 	}
 
-	err := peer.SendVSSDeal(deal)
-	if err != nil {
-		log.Debugf(err.Error())
-	}
+	// 如果没有和对应的mediator有网络连接，则进行转发
+	pm.BroadcastVSSDeal(deal)
+
+	return
 }
 
 // @author Albert·Gou
@@ -248,7 +253,7 @@ func (pm *ProtocolManager) GetActiveMediatorPeers() map[string]*peer {
 
 // @author Albert·Gou
 func (p *peer) SendVSSDeal(deal *mp.VSSDealEvent) error {
-	//p.knownVSSDeal.Add() todo
+	p.MarkVSSDeal(deal.Hash())
 	return p2p.Send(p.rw, VSSDealMsg, deal)
 }
 

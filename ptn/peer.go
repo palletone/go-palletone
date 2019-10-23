@@ -53,6 +53,8 @@ const (
 	//transitionStep1  = 1 //All transition mediator each other connected to star vss
 	//transitionStep2  = 2 //vss success
 	//transitionCancel = 3 //retranstion
+
+	maxKnownVSSDeal = 21*21
 )
 
 // PeerInfo represents a short summary of the PalletOne sub-protocol metadata known
@@ -599,7 +601,6 @@ func (ps *peerSet) PeersWithoutLightHeader(hash common.Hash) []*peer {
 	return list
 }
 
-//GroupSig
 func (ps *peerSet) PeersWithoutGroupSig(hash common.Hash) []*peer {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()
