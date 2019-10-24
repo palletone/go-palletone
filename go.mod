@@ -7,7 +7,6 @@ require (
 	github.com/armon/consul-api v0.0.0-20180202201655-eb2c6b5be1b6 // indirect
 	github.com/btcsuite/btcd v0.0.0-20190807005414-4063feeff79a
 	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
-	github.com/cespare/cp v1.1.1 // indirect
 	github.com/cloudflare/cfssl v0.0.0-20190726000631-633726f6bcb7 // indirect
 	github.com/containerd/continuity v0.0.0-20190426062206-aaeac12a7ffc // indirect
 	github.com/coocood/freecache v0.0.0-20180304015925-036298587d3a
@@ -28,7 +27,7 @@ require (
 	github.com/golang/snappy v0.0.1
 	github.com/golangci/golangci-lint v1.17.1 // indirect
 	github.com/gomodule/redigo v0.0.0-20180627144507-2cd21d9966bf
-	github.com/google/uuid v1.1.1 // indirect
+	github.com/gorilla/websocket v1.4.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.3
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/huin/goupnp v1.0.0
@@ -48,12 +47,10 @@ require (
 	github.com/naoina/go-stringutil v0.1.0 // indirect
 	github.com/naoina/toml v0.0.0-20170410220130-ac014c6b6502
 	github.com/nsf/termbox-go v0.0.0-20170211012700-3540b76b9c77 // indirect
-	github.com/onsi/ginkgo v1.8.0 // indirect
-	github.com/onsi/gomega v1.5.0 // indirect
-	github.com/palletone/adaptor v0.6.1-0.20190823165629-94ce197415e9
+	github.com/palletone/adaptor v1.0.0
 	github.com/palletone/btc-adaptor v0.6.1-0.20190718062616-d31b41f123f7
 	github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb
-	github.com/palletone/eth-adaptor v0.6.1-0.20190823172410-3ebb6f741360
+	github.com/palletone/eth-adaptor v1.0.1-0.20191024055153-b0b022477802
 	github.com/pborman/uuid v1.2.0
 	github.com/pelletier/go-toml v1.2.0 // indirect
 	github.com/peterh/liner v0.0.0-20170902204657-a37ad3984311
@@ -80,7 +77,6 @@ require (
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
 	golang.org/x/net v0.0.0-20190724013045-ca1201d0de80
 	golang.org/x/sys v0.0.0-20190726091711-fc99dfbffb4e // indirect
-	golang.org/x/text v0.3.2 // indirect
 	google.golang.org/appengine v1.4.0 // indirect
 	google.golang.org/genproto v0.0.0-20190716160619-c506a9f90610 // indirect
 	google.golang.org/grpc v1.22.0
