@@ -38,7 +38,10 @@ func TestUnmarshal(t *testing.T) {
 }
 
 func TestGetTransferTx(t *testing.T) {
-	txID, _ := hex.DecodeString("86c4920a8698a5aadaf9f5eedd45efdedbb924cb59dab4a46231a2d8286039c6")
+	//txID, _ := hex.DecodeString("51121d1124fb844132f994ef5067ec73f9bbe92b41c12720ae073401f746dc99") //eth transfer
+	//txID, _ := hex.DecodeString("498b634c39fbd19af340d66c8866623c124eb0e2160a45aa433644adc636bedb") //eth pending transfer
+	txID, _ := hex.DecodeString("61cded704bd23d8ff7cbe0ac4b62b940bd76f3709f784db695c95efa8074b7df") //panz transfer
+	//txID, _ := hex.DecodeString("4ef356ce0fc244ffb43cc0a941ca293c5b80e91254ad70474ba27acb9eb7b8fd")//panz approve
 	input := adaptor.GetTransferTxInput{TxID: txID}
 	inputBytes, err := json.Marshal(input)
 	if err != nil {
@@ -51,6 +54,7 @@ func TestGetTransferTx(t *testing.T) {
 	result, err := ProcessOutChainCall("sample_syscc", outChainCall)
 	if err != nil {
 		fmt.Println("err: ", err)
+		return
 	} else {
 		fmt.Println(result)
 	}
