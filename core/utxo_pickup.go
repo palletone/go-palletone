@@ -55,33 +55,36 @@ func find_min(utxos []UtxoInterface) UtxoInterface {
 	return min_utxo
 }
 
-func New_SelectUtxo_Greedy(utxos Utxos, amount uint64) (Utxos, uint64, error) {
+func Select_utxo_Greedy(utxos Utxos, amount uint64) (Utxos, uint64, error) {
 	var taken_utxo Utxos
 	var accum uint64
 	var change uint64
 	accum = 0
-        sort.Sort(utxos)
+	logPickedAmt := ""
+    sort.Sort(utxos)
 	for i, utxo := range utxos {
 		accum += utxo.GetAmount()
 		taken_utxo = append(taken_utxo, utxo)
                 //fmt.Println("utxo amount is ",utxo.GetAmount())
-                if i >= 499 { 
-                     if accum < amount {
-                          return nil, 0, errors.New("Utxo Fragment More 500,Please Decrease Amount To Pay")
-                     }
-                     change = accum - amount
-                     return taken_utxo, change, nil
-	        }
+        if i >= 499 { 
+             if accum < amount {
+             	  logPickedAmt = fmt.Sprintf("%d,", accum)
+             	  log.Debugf("Pickup count[%d] utxos, each amount:%s to match wanted amount:%d", len(taken_utxo), logPickedAmt, amount)
+                  return nil, 0, errors.New("Utxo Fragment More 500,Please Decrease Amount To Pay")
+             }
+             change = accum - amount
+             return taken_utxo, change, nil
         }
-        fmt.Println("accum is ---",accum)
+    }
 	if accum < amount  {
 		return nil, 0, errors.New("Amount Not Enough to pay")
 	}
-	     change = accum - amount
-	     fmt.Printf("Total is %d,output is %d,change is %d",accum, amount,change)
-	     return taken_utxo, change, nil
-        }
-func Select_utxo_Greedy(utxos Utxos, amount uint64) (Utxos, uint64, error) {
+	change = accum - amount
+	logPickedAmt = fmt.Sprintf("%d,", accum)
+	log.Debugf("Pickup count[%d] utxos, each amount:%s to match wanted amount:%d", len(taken_utxo), logPickedAmt, amount)
+	return taken_utxo, change, nil
+}
+/*func Select_utxo_Greedy(utxos Utxos, amount uint64) (Utxos, uint64, error) {
 	var greaters Utxos
 	var lessers Utxos
 	var taken_lutxo Utxos
@@ -122,4 +125,4 @@ func Select_utxo_Greedy(utxos Utxos, amount uint64) (Utxos, uint64, error) {
 
 	log.Debugf("Pickup count[%d] utxos, each amount:%s to match wanted amount:%d", len(taken_gutxo), logPickedAmt, amount)
 	return taken_gutxo, change, nil
-}
+}*/
