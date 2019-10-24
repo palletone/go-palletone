@@ -5,7 +5,7 @@
 ## 说明：
 
     首先，该脚本默认生成有 5 个超级节点和 1 个普通全节点的本地私有链；
-    然后，从 Dcoker hub 上下载 palletone/private-gptn:latest 镜像作为节点容器镜像。
+    然后，从 Dcoker hub 上下载 palletone/gptn:latest 镜像作为节点容器镜像。
 
 ## 使用docker-compose 启动容器
 

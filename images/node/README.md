@@ -18,9 +18,9 @@ gptn is used as the base image for the go-palletone node,such as the main networ
 
   - 启动容器：docker run -d --network gptn-net --name mainnetgptn palletone/gptn:1.0.3
 
-  - 进入容器：docker exec -it mainnetgptn sh
+  - 进入容器：docker exec -it mainnetgptn bash
 
-  - 再进入gptn控制台：gptn attach palletone/gptn.ipc
+  - 再进入 gptn 控制台：gptn attach
 
     **注意：**
 
@@ -31,7 +31,7 @@ gptn is used as the base image for the go-palletone node,such as the main networ
 
   - 启动容器：docker run -d --network gptn-net --name mainnetgptn -v host_absolute_path/palletone:/go-palletone/palletone -v host_absolute_path/ptn-config.toml:/go-palletone/ptn-config.toml palletone/gptn:1.0.3
 
-  - 进入容器：docker exec -it mainnetgptn sh
+  - 进入容器：docker exec -it mainnetgptn bash
 
   - 再进入gptn控制台：gptn attach palletone/gptn.ipc    
 
@@ -48,7 +48,7 @@ gptn is used as the base image for the go-palletone node,such as the main networ
 
   - 启动容器：docker run -d --network gptn-net --name testnetgptn palletone/gptn:1.0.3 --testnet
 
-  - 进入容器：docker exec -it testnetgptn sh
+  - 进入容器：docker exec -it testnetgptn bash
 
   - 再进入gptn控制台：gptn attach palletone/testnet/gptn.ipc
 
@@ -61,7 +61,7 @@ gptn is used as the base image for the go-palletone node,such as the main networ
 
   - 启动容器：docker run -d --network gptn-net --name testnetgptn  -v host_absolute_path/palletone:/go-palletone/palletone -v host_absolute_path/ptn-config.toml:/go-palletone/ptn-config.toml palletone/gptn:1.0.3 --testnet
 
-  - 进入容器：docker exec -it testnetgptn sh
+  - 进入容器：docker exec -it testnetgptn bash
 
   - 再进入gptn控制台：gptn attach palletone/testnet/gptn.ipc
 

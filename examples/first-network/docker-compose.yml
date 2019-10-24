@@ -3,47 +3,49 @@ version: '2'
 services:
   mediator1:
     container_name: mediator1
-    image: palletone/private-gptn
+    image: palletone/gptn
     volumes:
+     - ./scripts/node1:/go-palletone
      - /var/run/docker.sock:/var/run/docker.sock
     restart: always
-    command: [/go-palletone/node1/gptn,--noProduce,--staleProduce]
+    command: [--noProduce,--staleProduce]
     network_mode: "gptn-net"
   mediator2:
     container_name: mediator2
-    image: palletone/private-gptn
+    image: palletone/gptn
     volumes:
+     - ./scripts/node2:/go-palletone
      - /var/run/docker.sock:/var/run/docker.sock
     restart: always
-    command: [/go-palletone/node2/gptn]
     network_mode: "gptn-net"
   mediator3:
     container_name: mediator3
-    image: palletone/private-gptn
+    image: palletone/gptn
     volumes:
+     - ./scripts/node3:/go-palletone
      - /var/run/docker.sock:/var/run/docker.sock
     restart: always
-    command: [/go-palletone/node3/gptn]
     network_mode: "gptn-net"
   mediator4:
     container_name: mediator4
-    image: palletone/private-gptn
+    image: palletone/gptn
     volumes:
+     - ./scripts/node4:/go-palletone
      - /var/run/docker.sock:/var/run/docker.sock
     restart: always
-    command: [/go-palletone/node4/gptn]
     network_mode: "gptn-net"
   mediator5:
     container_name: mediator5
-    image: palletone/private-gptn
+    image: palletone/gptn
     volumes:
+     - ./scripts/node5:/go-palletone
      - /var/run/docker.sock:/var/run/docker.sock
     restart: always
-    command: [/go-palletone/node5/gptn]
     network_mode: "gptn-net"
   node:
     container_name: node
-    image: palletone/private-gptn
+    image: palletone/gptn
+    volumes:
+      - ./scripts/node6:/go-palletone
     restart: always
-    command: [/go-palletone/node6/gptn]
     network_mode: "gptn-net"

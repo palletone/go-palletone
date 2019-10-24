@@ -21,4 +21,4 @@ done
 cd ..
 
 #拉取官方提供的镜像文件
-docker pull palletone/private-gptn:latest
+docker pull palletone/gptn:latest
