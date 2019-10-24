@@ -217,6 +217,9 @@ func (ec *Client) TransactionsByHash(ctx context.Context, hash common.Hash) (tx 
 	if json.From != nil && json.BlockHash != nil {
 		setSenderFromServer(json.tx, *json.From, *json.BlockHash)
 	}
+	if json.BlockHash == nil {
+		return json.tx, "", "", nil
+	}
 	return json.tx, *json.BlockNumber, json.BlockHash.String(), nil
 }
 

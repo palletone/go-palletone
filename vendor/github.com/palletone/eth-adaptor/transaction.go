@@ -18,8 +18,10 @@
 package ethadaptor
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/big"
@@ -92,11 +94,11 @@ type GetAddrTxHistoryResult struct {
 	Result  []Tx   `json:"result"`
 }
 
-//https://api-ropsten.etherscan.io/api?module=account&action=txlist&address=0xddbd2b932c763ba5b1b7ae3b362eac3e8d40121a
-// &startblock=0&endblock=99999999&page=1&offset=10&sort=asc&apikey=YourApiKeyToken
+//https://api-ropsten.etherscan.io/api?apikey=YourApiKeyToken&module=account&action=txlist&address=0xddbd2b932c763ba5b1b7ae3b362eac3e8d40121a
+// &startblock=0&endblock=99999999&page=1&offset=10&sort=asc
 func GetAddrTxHistoryHTTP(apiURL string, input *adaptor.GetAddrTxHistoryInput) (*adaptor.GetAddrTxHistoryOutput, error) {
 	request := apiURL
-	request += "?module=account&action=tokentx&address=" + input.FromAddress + "&startblock=0&endblock=99999999"
+	request += "&module=account&action=tokentx&address=" + input.FromAddress + "&startblock=0&endblock=99999999"
 	if input.PageIndex != 0 && input.PageSize != 0 {
 		request += "&page=" + fmt.Sprintf("%d", input.PageIndex)
 		request += "&offset=" + fmt.Sprintf("%d", input.PageSize)
@@ -106,7 +108,7 @@ func GetAddrTxHistoryHTTP(apiURL string, input *adaptor.GetAddrTxHistoryInput) (
 	} else {
 		request += "&sort=desc"
 	}
-	request += "&apikey=YourApiKeyToken"
+	//request += "&apikey=YourApiKeyToken"
 	fmt.Println(request)
 	//
 	strRespose, _, err := httpGet(request)
@@ -180,12 +182,12 @@ func convertSimpleTx(txResult *Tx) *adaptor.SimpleTransferTokenTx {
 	return tx
 }
 
-//https://api-ropsten.etherscan.io/api?module=account&action=tokentx&address=0x588eb98f8814aedb056d549c0bafd5ef4963069c
-// &startblock=0&endblock=99999999&sort=desc&apikey=YourApiKeyToken
+//https://api-ropsten.etherscan.io/api?apikey=YourApiKeyToken&module=account&action=tokentx&address=0x588eb98f8814aedb056d549c0bafd5ef4963069c
+// &startblock=0&endblock=99999999&sort=desc
 func GetAddrErc20TxHistoryHTTP(apiURL string, input *adaptor.GetAddrTxHistoryInput) (*adaptor.GetAddrTxHistoryOutput,
 	error) {
 	request := apiURL
-	request += "?module=account&action=tokentx&address=" + input.FromAddress + "&startblock=0&endblock=99999999"
+	request += "&module=account&action=tokentx&address=" + input.FromAddress + "&startblock=0&endblock=99999999"
 	if input.PageIndex != 0 && input.PageSize != 0 {
 		request += "&page=" + fmt.Sprintf("%d", input.PageIndex)
 		request += "&offset=" + fmt.Sprintf("%d", input.PageSize)
@@ -195,8 +197,8 @@ func GetAddrErc20TxHistoryHTTP(apiURL string, input *adaptor.GetAddrTxHistoryInp
 	} else {
 		request += "&sort=desc"
 	}
-	request += "&apikey=YourApiKeyToken"
-	//fmt.Println(request)
+	//request += "&apikey=YourApiKeyToken"
+	fmt.Println(request)
 	//
 	strRespose, _, err := httpGet(request)
 	if err != nil {
@@ -338,7 +340,9 @@ func GetTxBasicInfo(input *adaptor.GetTxBasicInfoInput, rpcParams *RPCParams, ne
 	return &result, nil
 }
 
-func GetTransferTx(input *adaptor.GetTransferTxInput, rpcParams *RPCParams, netID int) (
+var transferMethodId = Hex2Bytes("a9059cbb")
+
+func GetTransferTx(input *adaptor.GetTransferTxInput, rpcParams *RPCParams, netID int, isErc20 bool) (
 	*adaptor.GetTransferTxOutput, error) {
 	//get rpc client
 	client, err := GetClient(rpcParams)
@@ -353,24 +357,27 @@ func GetTransferTx(input *adaptor.GetTransferTxInput, rpcParams *RPCParams, netI
 		//fmt.Println("0")//pending not found
 		return nil, err
 	}
+	data := tx.Data()
+	if isErc20 && !bytes.HasPrefix(data, transferMethodId) {
+		return nil, errors.New("not a transfer method invoke")
+	}
 
 	//conver to msg for from address
 	bigIntBlockNum := new(big.Int)
 	bigIntBlockNum.SetString(blockNumber, 0)
 
 	var signer types.Signer
-	if netID == NETID_MAIN {
-		signer = types.MakeSigner(params.MainnetChainConfig, bigIntBlockNum)
+	if tx.Protected() {
+		signer = types.NewEIP155Signer(tx.ChainId())
 	} else {
-		signer = types.MakeSigner(params.TestnetChainConfig, bigIntBlockNum)
+		if netID == NETID_MAIN {
+			signer = types.MakeSigner(params.MainnetChainConfig, bigIntBlockNum)
+		} else {
+			signer = types.MakeSigner(params.TestnetChainConfig, bigIntBlockNum)
+		}
 	}
 
-	msg, err := tx.AsMessage(signer)
-	if err != nil {
-		return nil, err
-	}
-
-	receipt, err := client.TransactionReceipt(context.Background(), hash)
+	from, err := types.Sender(signer, tx)
 	if err != nil {
 		return nil, err
 	}
@@ -379,11 +386,35 @@ func GetTransferTx(input *adaptor.GetTransferTxInput, rpcParams *RPCParams, netI
 	var result adaptor.GetTransferTxOutput
 	result.Tx.TxID = tx.Hash().Bytes()
 	result.Tx.TxRawData = tx.Data()
-	result.Tx.CreatorAddress = msg.From().String()
-	toAddr := msg.To()
-	if toAddr != nil {
-		result.Tx.TargetAddress = msg.To().String()
+
+	toAddr := tx.To().String()
+	result.Tx.TargetAddress = toAddr
+	result.Tx.ToAddress = toAddr
+	fromAddr := from.String()
+	result.Tx.CreatorAddress = fromAddr
+	result.Tx.FromAddress = fromAddr
+
+	asset := "ETH"
+	if isErc20 {
+		asset = toAddr
 	}
+	result.Tx.Amount = adaptor.NewAmountAsset(tx.Value(), asset)
+	result.Tx.Fee = adaptor.NewAmountAssetUint64(tx.Gas(), "ETH")
+	//result.Tx.Fee.Amount.SetUint64(tx.Gas())
+	result.Tx.AttachData = tx.Data()
+
+	receipt, err := client.TransactionReceipt(context.Background(), hash)
+	if err != nil {
+		if isErc20 { //for pending erc20 tx
+			recvAddr := common.BytesToAddress(data[16:36])
+			result.Tx.ToAddress = recvAddr.String()
+			tokenValue := new(big.Int)
+			tokenValue.SetBytes(data[36:])
+			result.Tx.Amount = adaptor.NewAmountAsset(tokenValue, asset)
+		}
+		return &result, nil
+	}
+
 	result.Tx.IsInBlock = true
 	if receipt.Status > 0 {
 		result.Tx.IsSuccess = true
@@ -397,7 +428,7 @@ func GetTransferTx(input *adaptor.GetTransferTxInput, rpcParams *RPCParams, netI
 		result.Tx.BlockID = Hex2Bytes(blockHash)
 	}
 	result.Tx.BlockHeight = uint(bigIntBlockNum.Uint64())
-	result.Tx.TxIndex = 0   //receipt.Logs[0].TxIndex //todo delete
+	result.Tx.TxIndex = receipt.TransactionIndex
 	result.Tx.Timestamp = 0 //todo delete
 
 	if len(receipt.Logs) > 0 && len(receipt.Logs[0].Topics) > 2 {
@@ -408,22 +439,18 @@ func GetTransferTx(input *adaptor.GetTransferTxInput, rpcParams *RPCParams, netI
 		//result.Tx.Amount.Amount.SetBytes(receipt.Logs[0].Data)
 		amt := new(big.Int)
 		amt.SetBytes(receipt.Logs[0].Data)
-		result.Tx.Amount = adaptor.NewAmountAsset(amt, "ETH")
+		result.Tx.Amount = adaptor.NewAmountAsset(amt, asset)
 	} else {
 		result.Tx.FromAddress = result.Tx.CreatorAddress
 		receiptAddr := receipt.ContractAddress.String()
-		if receiptAddr == "0x0000000000000000000000000000000000000000" {
+		if receiptAddr == EMPTY_ADDRESS {
 			result.Tx.ToAddress = result.Tx.TargetAddress
 		} else {
 			result.Tx.ToAddress = receiptAddr
 		}
-		result.Tx.Amount = adaptor.NewAmountAsset(msg.Value(), "ETH")
-		//result.Tx.Amount.Amount.Set(msg.Value())
+		result.Tx.Amount = adaptor.NewAmountAsset(tx.Value(), asset)
+		//result.Tx.Amount.Amount.Set(tx.Value())
 	}
-
-	result.Tx.Fee = adaptor.NewAmountAssetUint64(msg.Gas(), "ETH")
-	//result.Tx.Fee.Amount.SetUint64(msg.Gas())
-	result.Tx.AttachData = msg.Data()
 
 	return &result, nil
 }

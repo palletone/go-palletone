@@ -1,5 +1,9 @@
 # adaptor
 Abstract Blockchain Adaptor for PalletOne
+
+[![Build Status](https://cloud.drone.io/api/badges/palletone/adaptor/status.svg)](https://cloud.drone.io/palletone/adaptor)
+[![Coverage Status](https://coveralls.io/repos/github/palletone/adaptor/badge.svg)](https://coveralls.io/github/palletone/adaptor)
+
 ## IUtility 通用操作接口
 通用接口包含了最基本的钱包和区块链的操作。钱包操作就包括公私钥的生成和地址的生成，区块链的基本操作就包括对区块和交易的构建查询。
 另外为了跨链时地址的映射，有一个特殊的接口：GetPalletOneMappingAddress，用于从链上取的链上地址与PTN地址的映射。
