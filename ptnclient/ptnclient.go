@@ -24,7 +24,7 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/rlp"
+	//"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
@@ -179,7 +179,7 @@ func (tx *rpcTransaction) UnmarshalJSON(msg []byte) error {
 }
 
 // TransactionByHash returns the transaction with the given hash.
-func (ec *Client) TransactionByHash(ctx context.Context, hash common.Hash) (tx *modules.Transaction,
+/*func (ec *Client) TransactionByHash(ctx context.Context, hash common.Hash) (tx *modules.Transaction,
 	isPending bool, err error) {
 	var json *rpcTransaction
 	err = ec.c.CallContext(ctx, &json, "ptn_getTransactionByHash", hash)
@@ -192,7 +192,7 @@ func (ec *Client) TransactionByHash(ctx context.Context, hash common.Hash) (tx *
 	//	}
 	//setSenderFromServer(json.tx, json.From, json.BlockHash)
 	return json.tx, json.BlockNumber == nil, err
-}
+}*/
 
 // TransactionSender returns the sender address of the given transaction. The transaction
 // must be known to the remote node and included in the blockchain at the given block and
@@ -220,14 +220,14 @@ func (ec *Client) TransactionByHash(ctx context.Context, hash common.Hash) (tx *
 //}
 
 // TransactionCount returns the total number of transactions in the given block.
-func (ec *Client) TransactionCount(ctx context.Context, blockHash common.Hash) (uint, error) {
+/*func (ec *Client) TransactionCount(ctx context.Context, blockHash common.Hash) (uint, error) {
 	var num hexutil.Uint
 	err := ec.c.CallContext(ctx, &num, "ptn_getBlockTransactionCountByHash", blockHash)
 	return uint(num), err
-}
+}*/
 
 // TransactionInBlock returns a single transaction at index in the given block.
-func (ec *Client) TransactionInBlock(ctx context.Context, blockHash common.Hash, index uint) (*modules.Transaction, error) {
+/*func (ec *Client) TransactionInBlock(ctx context.Context, blockHash common.Hash, index uint) (*modules.Transaction, error) {
 	var json *rpcTransaction
 	err := ec.c.CallContext(ctx, &json, "ptn_getTransactionByBlockHashAndIndex", blockHash, hexutil.Uint64(index))
 	//if err == nil {
@@ -239,7 +239,7 @@ func (ec *Client) TransactionInBlock(ctx context.Context, blockHash common.Hash,
 	//}
 	//setSenderFromServer(json.tx, json.From, json.BlockHash)
 	return json.tx, err
-}
+}*/
 
 // TransactionReceipt returns the receipt of a transaction by transaction hash.
 // Note that the receipt is not available for pending transactions.
@@ -443,27 +443,26 @@ func (ec *Client) PendingCallContract(ctx context.Context, msg palletone.CallMsg
 
 // SuggestGasPrice retrieves the currently suggested gas price to allow a timely
 // execution of a transaction.
-func (ec *Client) SuggestGasPrice(ctx context.Context) (*big.Int, error) {
+/*func (ec *Client) SuggestGasPrice(ctx context.Context) (*big.Int, error) {
 	var hex hexutil.Big
 	if err := ec.c.CallContext(ctx, &hex, "ptn_gasPrice"); err != nil {
 		return nil, err
 	}
 	return (*big.Int)(&hex), nil
-}
+}*/
 
 // EstimateGas tries to estimate the gas needed to execute a specific transaction based on
 // the current pending state of the backend blockchain. There is no guarantee that this is
 // the true gas limit requirement as other transactions may be added or removed by miners,
 // but it should provide a basis for setting a reasonable default.
-func (ec *Client) EstimateGas(ctx context.Context, msg palletone.CallMsg) (uint64, error) {
+/*func (ec *Client) EstimateGas(ctx context.Context, msg palletone.CallMsg) (uint64, error) {
 	var hex hexutil.Uint64
 	err := ec.c.CallContext(ctx, &hex, "ptn_estimateGas", toCallArg(msg))
 	if err != nil {
 		return 0, err
 	}
 	return uint64(hex), nil
-}
-
+}*/
 /*func (ec *Client) CmdCreateTransaction(ctx context.Context, from string, to string, amount uint64, fee uint64) (string, error) {
 	var result string
 	err := ec.c.CallContext(ctx, &result, "ptn_cmdCreateTransaction", from, to, amount)
@@ -502,13 +501,13 @@ func (ec *Client) SignRawTransaction(ctx context.Context, params string, passwor
 //
 // If the transaction was a contract creation use the TransactionReceipt method to get the
 // contract address after the transaction has been mined.
-func (ec *Client) SendTransaction(ctx context.Context, tx *modules.Transaction) error {
+/*func (ec *Client) SendTransaction(ctx context.Context, tx *modules.Transaction) error {
 	data, err := rlp.EncodeToBytes(tx)
 	if err != nil {
 		return err
 	}
 	return ec.c.CallContext(ctx, nil, "ptn_sendRawTransaction", common.ToHex(data))
-}
+}*/
 func (ec *Client) WalletSendTransaction(ctx context.Context, params string) (string, error) {
 	var result string
 	err := ec.c.CallContext(ctx, &result, "wallet_sendRawTransaction", params)
@@ -607,25 +606,25 @@ func (ec *Client) WalletBalance(ctx context.Context, address string, assetid []b
 	err := ec.c.CallContext(ctx, &result, "ptn_walletBalance", address, assetid, uniqueid, chainid)
 	return result, err
 }
-func (ec *Client) GetTransactionsByTxid(ctx context.Context, txid string) (*modules.Transaction, error) {
+/*func (ec *Client) GetTransactionsByTxid(ctx context.Context, txid string) (*modules.Transaction, error) {
 	var result *modules.Transaction
 	err := ec.c.CallContext(ctx, &result, "ptn_getTransactionsByTxid", txid)
 	return result, err
-}
+}*/
 
 // GetContract
-func (ec *Client) GetContract(ctx context.Context, id common.Hash) (*modules.Contract, error) {
+/*func (ec *Client) GetContract(ctx context.Context, id common.Hash) (*modules.Contract, error) {
 	result := new(modules.Contract)
 	err := ec.c.CallContext(ctx, &result, "ptn_getContract", id)
 	return result, err
-}
+}*/
 
 // Get Header
-func (ec *Client) GetHeader(ctx context.Context, hash common.Hash, index uint64) (*modules.Header, error) {
+/*func (ec *Client) GetHeader(ctx context.Context, hash common.Hash, index uint64) (*modules.Header, error) {
 	result := new(modules.Header)
 	err := ec.c.CallContext(ctx, &result, "ptn_getHeader", hash, index)
 	return result, err
-}
+}*/
 
 // Get Unit
 func (ec *Client) GetUnit(ctx context.Context, hash common.Hash) (*modules.Unit, error) {
@@ -649,29 +648,29 @@ func (ec *Client) GetUnitNumber(ctx context.Context, hash common.Hash) (uint64, 
 //}
 
 // Get state
-func (ec *Client) GetHeadHeaderHash(ctx context.Context) (common.Hash, error) {
+/*func (ec *Client) GetHeadHeaderHash(ctx context.Context) (common.Hash, error) {
 	var result common.Hash
 	err := ec.c.CallContext(ctx, &result, "dag_getHeadHeaderHash", nil)
 	return result, err
-}
+}*/
 
-func (ec *Client) GetHeadUnitHash(ctx context.Context) (common.Hash, error) {
+/*func (ec *Client) GetHeadUnitHash(ctx context.Context) (common.Hash, error) {
 	var result common.Hash
 	err := ec.c.CallContext(ctx, &result, "dag_getHeadUnitHash", nil)
 	return result, err
-}
+}*/
 
-func (ec *Client) GetHeadFastUnitHash(ctx context.Context) (common.Hash, error) {
+/*func (ec *Client) GetHeadFastUnitHash(ctx context.Context) (common.Hash, error) {
 	var result common.Hash
 	err := ec.c.CallContext(ctx, &result, "dag_getHeadFastUnitHash", nil)
 	return result, err
-}
+}*/
 
-func (ec *Client) GetTrieSyncProgress(ctx context.Context) (uint64, error) {
+/*func (ec *Client) GetTrieSyncProgress(ctx context.Context) (uint64, error) {
 	var result uint64
 	err := ec.c.CallContext(ctx, &result, "ptn_getTrieSyncProgress", nil)
 	return result, err
-}
+}*/
 
 func (ec *Client) GetUtxoEntry(ctx context.Context, key []byte) (*ptnjson.UtxoJson, error) {
 	result := new(ptnjson.UtxoJson)
