@@ -506,6 +506,9 @@ func (chain *MemDag) SaveHeader(header *modules.Header) error {
 	defer chain.lock.Unlock()
 	hash := header.Hash()
 	log.Debugf("add header to dag, hash[%s], index:%d", hash.String(), header.NumberU64())
+	chain.stableUnitHash = hash
+	chain.stableUnitHeight = header.NumberU64()
+
 	return chain.ldbunitRep.SaveNewestHeader(header)
 }
 func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenerate bool) (common2.IUnitRepository,
