@@ -22,23 +22,22 @@ type adaptereth interface {
 	GetPublicKey(prikeyHex string) (pubKey string)
 	GetAddress(prikeyHex string) (address string)
 
-	CreateMultiSigAddress(params *CreateMultiSigAddressParams) (string, error)
-	Keccak256HashPackedSig(params *Keccak256HashPackedSigParams) (string, error)
-	RecoverAddr(params *RecoverParams) (string, error)
+	Keccak256HashPackedSig(params *Keccak256HashPackedSigParams) (*Keccak256HashPackedSigResult, error)
+	RecoverAddr(params *RecoverParams) (*RecoverResult, error)
 
-	SignTransaction(params *ETHSignTransactionParams) (string, error) //not same as btc, members
-	SendTransaction(params *SendTransactionParams) (string, error)    //same as btc
+	SignTransaction(params *ETHSignTransactionParams) (*ETHSignTransactionResult, error) //not same as btc, members
+	SendTransaction(params *SendTransactionParams) (*SendTransactionResult, error)       //same as btc
 
-	QueryContract(params *QueryContractParams) (string, error)
-	GenInvokeContractTX(params *GenInvokeContractTXParams) (string, error)
-	GenDeployContractTX(params *GenDeployContractTXParams) (string, error)
+	QueryContract(params *QueryContractParams) (*QueryContractResult, error)
+	GenInvokeContractTX(params *GenInvokeContractTXParams) (*GenInvokeContractTXResult, error)
+	GenDeployContractTX(params *GenDeployContractTXParams) (*GenDeployContractTXResult, error)
 
-	GetEventByAddress(params *GetEventByAddressParams) (string, error)
+	GetEventByAddress(params *GetEventByAddressParams) (*GetEventByAddressResult, error)
 
-	GetTransactionByHash(params *GetTransactionParams) (string, error)
-	GetErc20TxByHash(params *GetErc20TxByHashParams) (string, error)
+	GetTransactionByHash(params *GetTransactionParams) (*GetTransactionResult, error)
+	GetErc20TxByHash(params *GetErc20TxByHashParams) (*GetErc20TxByHashResult, error)
 
-	GetBestHeader(params *GetBestHeaderParams) (string, error)
+	GetBestHeader(params *GetBestHeaderParams) (*GetBestHeaderResult, error)
 }
 
 //

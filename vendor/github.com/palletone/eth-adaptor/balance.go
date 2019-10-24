@@ -13,7 +13,7 @@
 */
 /*
  * @author PalletOne core developers <dev@pallet.one>
- * @date 2018
+ * @date 2018-2019
  */
 package ethadaptor
 

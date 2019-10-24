@@ -160,7 +160,6 @@ func SendTransaction(input *adaptor.SendTransactionInput, rpcParams *RPCParams) 
 	result.TxID = tx.Hash().Bytes()
 
 	return &result, nil
-
 }
 
 func CreateETHTx(input *adaptor.CreateTransferTokenTxInput, rpcParams *RPCParams) (

@@ -22,27 +22,27 @@ type adapterbtc interface {
 	GetPublicKey(wifPriKey string) (pubKey string)
 	GetAddress(wifPriKey string) (address string)
 	GetAddressByPubkey(pubKeyHex string) (string, error)
-	CreateMultiSigAddress(params *CreateMultiSigParams) (string, error)
+	CreateMultiSigAddress(params *CreateMultiSigParams) (*CreateMultiSigResult, error)
 
-	RawTransactionGen(params *RawTransactionGenParams) (string, error)
-	DecodeRawTransaction(params *DecodeRawTransactionParams) (string, error)
-	GetTransactionByHash(params *GetTransactionByHashParams) (string, error)
-	GetTransactionHttp(getTransactionByHashParams *GetTransactionHttpParams) (string, error)
+	RawTransactionGen(params *RawTransactionGenParams) (*RawTransactionGenResult, error)
+	DecodeRawTransaction(params *DecodeRawTransactionParams) (*DecodeRawTransactionResult, error)
+	GetTransactionByHash(params *GetTransactionByHashParams) (*GetTransactionByHashResult, error)
+	GetTransactionHttp(getTransactionByHashParams *GetTransactionHttpParams) (*GetTransactionHttpResult, error)
 
-	SignTransaction(params *SignTransactionParams) (string, error)
-	SignTxSend(params *SignTxSendParams) (string, error)
-	MergeTransaction(params *MergeTransactionParams) (string, error)
+	SignTransaction(params *SignTransactionParams) (*SignTransactionResult, error)
+	SignTxSend(params *SignTxSendParams) (*SignTxSendResult, error)
+	MergeTransaction(params *MergeTransactionParams) (*MergeTransactionResult, error)
 
-	SignMessage(signMessageParams *SignMessageParams) (string, error)
-	VerifyMessage(verifyMessageParams *VerifyMessageParams) (string, error)
+	SignMessage(signMessageParams *SignMessageParams) (*SignMessageResult, error)
+	VerifyMessage(verifyMessageParams *VerifyMessageParams) (*VerifyMessageResult, error)
 
-	GetUTXO(params *GetUTXOParams) string
-	GetUTXOHttp(params *GetUTXOHttpParams) (string, error)
+	GetUTXO(params *GetUTXOParams) (*GetUTXOResult, error)
+	GetUTXOHttp(params *GetUTXOHttpParams) (*GetUTXOHttpResult, error)
 
-	GetBalance(params *GetBalanceParams) (string, error)
-	GetTransactions(params *GetTransactionsParams) (string, error)
-	SendTransaction(params *SendTransactionParams) string
-	SendTransactionHttp(sendTransactionParams *SendTransactionHttpParams) (string, error)
+	GetBalance(params *GetBalanceParams) (*GetBalanceResult, error)
+	GetTransactions(params *GetTransactionsParams) (*TransactionsResult, error)
+	SendTransaction(params *SendTransactionParams) (*SendTransactionResult, error)
+	SendTransactionHttp(sendTransactionParams *SendTransactionHttpParams) (*SendTransactionHttpResult, error)
 }
 
 //

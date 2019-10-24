@@ -25,8 +25,11 @@ import (
 
 	"github.com/btcsuite/btcutil/base58"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/palletone/adaptor"
 )
+
+const EMPTY_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 type AdaptorErc20 struct {
 	NetID int
@@ -41,7 +44,7 @@ func NewAdaptorErc20Testnet() *AdaptorErc20 {
 	return &AdaptorErc20{
 		NetID: NETID_TEST,
 		RPCParams: RPCParams{Rawurl: "https://ropsten.infura.io",
-			TxQueryUrl: "https://api-ropsten.etherscan.io/api"},
+			TxQueryUrl: "https://api-ropsten.etherscan.io/api?apikey=VYSBPQ383RJXM7HBQVTIK5NGIG8ZYVV6T6"},
 		//lockContractAddress: "0x4d736ed88459b2db85472aab13a9d0ce2a6ea676",
 	}
 }
@@ -49,7 +52,7 @@ func NewAdaptorErc20Mainnet() *AdaptorErc20 {
 	return &AdaptorErc20{
 		NetID: NETID_MAIN,
 		RPCParams: RPCParams{Rawurl: "https://mainnet.infura.io",
-			TxQueryUrl: "https://api.etherscan.io/api"},
+			TxQueryUrl: "https://api.etherscan.io/api?apikey=VYSBPQ383RJXM7HBQVTIK5NGIG8ZYVV6T6"},
 		//lockContractAddress: "0x1989a21eb0f28063e47e6b448e8d76774bc9b493",
 	}
 }
@@ -129,11 +132,27 @@ func GetMappAddr(addr *adaptor.GetPalletOneMappingAddressInput,
 	}
 ]`
 
+	var result adaptor.GetPalletOneMappingAddressOutput
+
 	var input adaptor.QueryContractInput
 	input.ContractAddress = queryContractAddr
+	input.Extra = []byte(MapAddrABI)
 	if len(addr.ChainAddress) != 0 { //ETH地址
+		//
 		input.Function = "getMapPtnAddr"
 		input.Args = append(input.Args, []byte(addr.ChainAddress))
+		//
+		ret := new(string)
+		err := QueryContractCall(&input, rpcParams, ret)
+		if err != nil {
+			return nil, err
+		}
+		resultStr := *ret
+		fmt.Println("resultStr", resultStr)
+		if len(resultStr) == 0 || resultStr == EMPTY_ADDRESS {
+			return nil, adaptor.ErrNotFound
+		}
+		result.PalletOneAddress = resultStr
 	} else { //PTN地址 P开头
 		input.Function = "getMapEthAddr"
 		if addr.PalletOneAddress[0] != byte('P') {
@@ -145,23 +164,19 @@ func GetMappAddr(addr *adaptor.GetPalletOneMappingAddressInput,
 		}
 		addrHex := fmt.Sprintf("%x", addrBytes)
 		input.Args = append(input.Args, []byte(addrHex))
+		//
+		ret := new(common.Address)
+		err = QueryContractCall(&input, rpcParams, ret)
+		if err != nil {
+			return nil, err
+		}
+		resultStr := ret.String()
+		fmt.Println("resultStr", resultStr)
+		if len(resultStr) == 0 || resultStr == EMPTY_ADDRESS {
+			return nil, adaptor.ErrNotFound
+		}
+		result.ChainAddress = resultStr
 	}
-	input.Extra = []byte(MapAddrABI)
-
-	//
-	resultQuery, err := QueryContract(&input, rpcParams)
-	if err != nil {
-		return nil, err
-	}
-	resultStr := string(resultQuery.QueryResult)
-	fmt.Println("address map:", resultStr)
-	if len(resultStr) == 0 || resultStr == "0x0000000000000000000000000000000000000000" {
-		return nil, adaptor.ErrNotFound
-	}
-
-	var result adaptor.GetPalletOneMappingAddressOutput
-	result.PalletOneAddress = resultStr[2 : len(resultStr)-2]
-
 	return &result, nil
 }
 func (aerc20 *AdaptorErc20) GetPalletOneMappingAddress(addr *adaptor.GetPalletOneMappingAddressInput) (
@@ -283,7 +298,7 @@ func (aerc20 *AdaptorErc20) GetAddrTxHistory(input *adaptor.GetAddrTxHistoryInpu
 
 //根据交易ID获得对应的转账交易
 func (aerc20 *AdaptorErc20) GetTransferTx(input *adaptor.GetTransferTxInput) (*adaptor.GetTransferTxOutput, error) {
-	return GetTransferTx(input, &aerc20.RPCParams, aerc20.NetID)
+	return GetTransferTx(input, &aerc20.RPCParams, aerc20.NetID, true)
 }
 
 //创建一个多签地址，该地址必须要满足signCount个签名才能解锁
