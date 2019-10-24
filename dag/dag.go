@@ -1254,12 +1254,12 @@ func (d *Dag) GetDataVersion() (*modules.DataVersion, error) {
 
 // return proof of existence
 func (d *Dag) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error) {
-	return d.stableUnitRep.QueryProofOfExistenceByReference(ref)
+	return d.unstableUnitRep.QueryProofOfExistenceByReference(ref)
 }
 
 // return proof of existence by asset
 func (d *Dag) GetAssetReference(asset []byte) ([]*modules.ProofOfExistence, error) {
-	return d.stableUnitRep.GetAssetReference(asset)
+	return d.unstableUnitRep.GetAssetReference(asset)
 }
 func (d *Dag) CheckHeaderCorrect(number int) error {
 	ptn := modules.PTNCOIN
