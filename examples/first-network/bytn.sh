@@ -1,13 +1,15 @@
 #!/bin/bash
 
-cd ./scripts/
+cd ./scripts
 
-#生成5个超级节点和一个普通全节点
-./deploy.sh 5
+mediatorCount=$1
+
+#生成 $1 个超级节点和 2 个普通全节点
+./deploy.sh $mediatorCount
 
 count=1
 
-while [ $count -le 5 ]
+while [ $count -le $mediatorCount ]
 do
   if [ $count == 1 ]; then
     newContractAddress="ContractAddress=\"mediator1:12345\""
@@ -20,5 +22,5 @@ done
 
 cd ..
 
-#拉取官方提供的镜像文件
+#拉取官方提供的最镜像文件
 docker pull palletone/gptn:latest

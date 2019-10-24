@@ -72,6 +72,6 @@ gptn is used as the base image for the go-palletone node,such as the main networ
 
 - ## 作为本地搭建私有链节点
 
-- 克隆 go-palletone 项目， **git clone -b mainnet https://github.com/palletone/go-palletone.git **，进入根目录下的 images 目录下，查看 README.md 文件中相应的操作步骤即可
+- 克隆 go-palletone 项目， **git clone -b mainnet https://github.com/palletone/go-palletone.git **，进入根目录下的 examples 目录下的 first-network 目录下，查看 README.md 文件中相应的操作步骤即可
 
-- [REDAME.md](https://github.com/palletone/go-palletone/tree/master/images)
+- [REDAME.md](https://github.com/palletone/go-palletone/tree/master/examples/first-network)
