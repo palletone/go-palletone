@@ -271,3 +271,37 @@ func (ps *peerSet) PeersWithoutVSSResponse(hash common.Hash) []*peer {
 	}
 	return list
 }
+
+func (p *peer) MarkSigShare(hash common.Hash) {
+	for p.knownSigShare.Cardinality() >= maxKnownSigShare {
+		p.knownSigShare.Pop()
+	}
+	p.knownSigShare.Add(hash)
+}
+
+func (pm *ProtocolManager) BroadcastSigShare(sigShare *mp.SigShareEvent) {
+	now := uint64(time.Now().Unix())
+	if now > sigShare.Deadline {
+		return
+	}
+
+	peers := pm.peers.PeersWithoutSigShare(sigShare.UnitHash)
+	for _, peer := range peers {
+		peer.SendSigShare(sigShare)
+	}
+
+	return
+}
+
+func (ps *peerSet) PeersWithoutSigShare(hash common.Hash) []*peer {
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
+
+	list := make([]*peer, 0, len(ps.peers))
+	for _, p := range ps.peers {
+		if !p.knownSigShare.Contains(hash) {
+			list = append(list, p)
+		}
+	}
+	return list
+}

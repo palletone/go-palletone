@@ -206,7 +206,15 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 	log.Debugf("the mediator(%v) signed-group the unit(%v)", localMed.Str(),
 		unitHash.TerminalString())
 	delete(mp.toTBLSSignBuf[localMed], unitHash)
-	go mp.sigShareFeed.Send(SigShareEvent{UnitHash: unitHash, SigShare: sigShare})
+
+	deadline := time.Now().Add(mp.dag.UnitIrreversibleTime())
+	event := SigShareEvent{
+		UnitHash: unitHash,
+		SigShare: sigShare,
+		Deadline: uint64(deadline.Unix()),
+	}
+
+	go mp.sigShareFeed.Send(event)
 }
 
 // 收集签名分片
