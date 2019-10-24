@@ -51,19 +51,18 @@ func TestSelect_utxo_Greedy(t *testing.T) {
 	}
 	result, change, err := Select_utxo_Greedy(ut, 4)
 	assert.Nil(t, err)
-	assert.Equal(t, len(result), 3)
-	assert.Equal(t, change, uint64(2))
+	assert.Equal(t, len(result), 2)
+	assert.Equal(t, change, uint64(1))
 	result, change, err = Select_utxo_Greedy(ut, 6)
 	assert.Nil(t, err)
 	for _, u := range result {
 		t.Logf("Selected: %+v\n", u)
 	}
-	assert.Equal(t, len(result), 3)
-	assert.Equal(t, change, uint64(0))
+	assert.Equal(t, len(result), 2)
+	assert.Equal(t, change, uint64(2))
 	result, change, err = Select_utxo_Greedy(ut, 12)
 	assert.NotNil(t, err)
 	t.Logf("get error:%s", err)
-
 }
 func TestNew_Selectutxo_Greedy(t *testing.T) {
 	//log.NewTestLog()
