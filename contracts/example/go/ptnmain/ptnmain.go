@@ -202,8 +202,8 @@ func (p *PTNMain) PayoutPTNByTxID(ethTxID string, stub shim.ChaincodeStubInterfa
 	}
 	//check contract address, must be ptn erc20 contract address
 	if strings.ToLower(txResult.Tx.TargetAddress) != PTN_ERC20Addr {
-		log.Debugf("The tx is't PTN contract")
-		return shim.Error("The tx is't PTN contract")
+		log.Debugf("The tx is't ERC20 contract transfer of PTN")
+		return shim.Error("The tx is't ERC20 contract transfer of PTN")
 	}
 	//check receiver, must be ptnmap contract address
 	mapAddr, err := getMapAddr(stub)
@@ -217,15 +217,15 @@ func (p *PTNMain) PayoutPTNByTxID(ethTxID string, stub shim.ChaincodeStubInterfa
 		return shim.Error("Not send token to the Map contract")
 	}
 	//check token amount
-	bigIntAmout := txResult.Tx.Amount.Amount.Div(txResult.Tx.Amount.Amount, big.NewInt(1e10)) //Token's decimal is 18, PTN's decimal is 8
-	amt := txResult.Tx.Amount.Amount.Uint64()
+	bigIntAmount := txResult.Tx.Amount.Amount.Div(txResult.Tx.Amount.Amount, big.NewInt(1e10)) //Token's decimal is 18, PTN's decimal is 8
+	amt := bigIntAmount.Uint64()
 	if amt == 0 {
 		log.Debugf("Amount is 0")
 		return shim.Error("Amount is 0")
 	}
 
 	//check confirms
-	curHeight, err := getHight(stub)
+	curHeight, err := getHeight(stub)
 	if curHeight == 0 || err != nil {
 		return shim.Error("getHeight failed")
 	}
@@ -249,7 +249,7 @@ func (p *PTNMain) PayoutPTNByTxID(ethTxID string, stub shim.ChaincodeStubInterfa
 		return shim.Error("Need transfer 1 PTNMap for bind address")
 	}
 	//save payout history
-	err = stub.PutState(symbolsPayout+ethTxID, []byte(ptnAddr+"-"+bigIntAmout.String()))
+	err = stub.PutState(symbolsPayout+ethTxID, []byte(ptnAddr+"-"+bigIntAmount.String()))
 	if err != nil {
 		log.Debugf("write symbolsPayout failed: %s", err.Error())
 		return shim.Error("write symbolsPayout failed: " + err.Error())
@@ -295,7 +295,7 @@ func (p *PTNMain) PayoutPTNByETHAddr(ethAddr string, stub shim.ChaincodeStubInte
 		return shim.Error(err.Error())
 	}
 
-	curHeight, err := getHight(stub)
+	curHeight, err := getHeight(stub)
 	if curHeight == 0 || err != nil {
 		return shim.Error("getHeight failed")
 	}
@@ -355,7 +355,7 @@ func GetErc20Tx(txID []byte, stub shim.ChaincodeStubInterface) (*adaptor.GetTran
 	//
 	result, err := stub.OutChainCall("erc20", "GetTransferTx", inputBytes)
 	if err != nil {
-		return nil, errors.New("GetTransferTx error")
+		return nil, errors.New("GetTransferTx error: " + err.Error())
 	}
 	log.Debugf("result : %s", string(result))
 
@@ -378,7 +378,7 @@ func GetAddrHistory(ethAddrFrom, mapAddrTo string, stub shim.ChaincodeStubInterf
 	//
 	result, err := stub.OutChainCall("erc20", "GetAddrTxHistory", inputBytes)
 	if err != nil {
-		return nil, errors.New("GetAddrHistory error")
+		return nil, errors.New("GetAddrHistory error: " + err.Error())
 	}
 	log.Debugf("result : %s", string(result))
 	//
@@ -390,7 +390,7 @@ func GetAddrHistory(ethAddrFrom, mapAddrTo string, stub shim.ChaincodeStubInterf
 	return &output, nil
 }
 
-func getHight(stub shim.ChaincodeStubInterface) (uint, error) {
+func getHeight(stub shim.ChaincodeStubInterface) (uint, error) {
 	//
 	input := adaptor.GetBlockInfoInput{Latest: true} //get best hight
 	//
@@ -401,7 +401,7 @@ func getHight(stub shim.ChaincodeStubInterface) (uint, error) {
 	//adaptor.
 	result, err := stub.OutChainCall("erc20", "GetBlockInfo", inputBytes)
 	if err != nil {
-		return 0, err
+		return 0, errors.New("GetBlockInfo error: " + err.Error())
 	}
 	//
 	var output adaptor.GetBlockInfoOutput
@@ -429,7 +429,7 @@ func getPTNMapAddr(mapAddr, fromAddr string, stub shim.ChaincodeStubInterface) (
 	//
 	result, err := stub.OutChainCall("erc20", "GetPalletOneMappingAddress", inputBytes)
 	if err != nil {
-		return "", errors.New("GetPalletOneMappingAddress failed")
+		return "", errors.New("GetPalletOneMappingAddress failed: " + err.Error())
 	}
 	//
 	var output adaptor.GetPalletOneMappingAddressOutput
