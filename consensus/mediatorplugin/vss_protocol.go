@@ -66,33 +66,26 @@ func (mp *MediatorPlugin) newDKGAndInitVSSBuf() {
 func (mp *MediatorPlugin) startVSSProtocol() {
 	log.Debugf("start completing the VSS protocol")
 
-	// 开启处理其他 mediator 的 deals 的循环，准备完成vss协议
-	mp.launchVSSDealLoops()
+	// 开启处理其他 mediator 的 deals 以及所有 response，准备完成vss协议
+	mp.launchDealAndRespLoops()
 
 	interval := mp.dag.GetGlobalProp().ChainParameters.MediatorInterval
+	sleepTime := time.Second * time.Duration(interval)
 
 	// 隔1个生产间隔，等待其他节点接收新unit，并做好vss协议相关准备工作
 	select {
 	case <-mp.quit:
 		return
-	case <-time.After(time.Second * time.Duration(interval)):
+	case <-time.After(sleepTime):
 		// 广播 vss deal 给其他节点，并处理来自其他节点的deal
 		mp.broadcastVSSDeals()
 	}
 
-	// 再隔1个生产间隔，处理response
+	// 再隔1个生产间隔，验证vss协议是否完成，并开始群签名
 	select {
 	case <-mp.quit:
 		return
-	case <-time.After(time.Second * time.Duration(interval)):
-		mp.launchVSSRespLoops()
-	}
-
-	// 再隔半个生产间隔，验证vss协议是否完成，并开始群签名
-	select {
-	case <-mp.quit:
-		return
-	case <-time.After(time.Second * time.Duration((interval+1)/2)):
+	case <-time.After(sleepTime):
 		mp.completeVSSProtocol()
 	}
 }
@@ -133,24 +126,13 @@ func (mp *MediatorPlugin) launchGroupSignLoops() {
 	}
 }
 
-func (mp *MediatorPlugin) launchVSSDealLoops() {
-	lams := mp.GetLocalActiveMediators()
-	//ams := mp.dag.GetActiveMediators()
-
-	for _, localMed := range lams {
-		go mp.processDealLoop(localMed)
-
-		//for _, vrfrMed := range ams {
-		//	go mp.processResponseLoop(localMed, vrfrMed)
-		//}
-	}
-}
-
-func (mp *MediatorPlugin) launchVSSRespLoops() {
+func (mp *MediatorPlugin) launchDealAndRespLoops() {
 	lams := mp.GetLocalActiveMediators()
 	ams := mp.dag.GetActiveMediators()
 
 	for _, localMed := range lams {
+		go mp.processDealLoop(localMed)
+
 		for _, vrfrMed := range ams {
 			go mp.processResponseLoop(localMed, vrfrMed)
 		}
@@ -177,7 +159,7 @@ func (mp *MediatorPlugin) processDealLoop(localMed common.Address) {
 			return
 		case deal := <-dealCh:
 			// 处理deal，并广播response
-			mp.processVSSDeal(localMed, deal)
+			go mp.processVSSDeal(localMed, deal)
 		}
 	}
 }
@@ -198,12 +180,12 @@ func (mp *MediatorPlugin) processVSSDeal(localMed common.Address, deal *dkg.Deal
 
 	resp, err := dkgr.ProcessDeal(deal)
 	if err != nil {
-		log.Debugf("dkg: cannot process own deal: " + err.Error())
+		log.Debugf("dkg cannot process this deal: " + err.Error())
 		return
 	}
 
 	if resp.Response.Status != vss.StatusApproval {
-		err = fmt.Errorf("DKG: own deal gave a complaint: %v", localMed.String())
+		err = fmt.Errorf("dag gave this deal a complaint: %v", localMed.String())
 		log.Debugf(err.Error())
 		return
 	}
@@ -260,16 +242,14 @@ func (mp *MediatorPlugin) AddToDealBuf(dealEvent *VSSDealEvent) {
 	localMed := dag.GetActiveMediatorAddr(int(dealEvent.DstIndex))
 
 	deal := dealEvent.Deal
-	vrfrMed := dag.GetActiveMediatorAddr(int(deal.Index))
-	log.Debugf("the mediator(%v) received the vss deal from the mediator(%v)",
-		localMed.Str(), vrfrMed.Str())
 
 	mp.vssBufLock.Lock()
 	dealCh, ok := mp.dealBuf[localMed]
-	if !ok {
-		log.Debugf("the mediator(%v)'s dealBuf is not initialized", localMed.Str())
-	} else {
+	if ok {
 		dealCh <- deal
+		vrfrMed := dag.GetActiveMediatorAddr(int(deal.Index))
+		log.Debugf("the mediator(%v) received the vss deal from the mediator(%v)",
+			localMed.Str(), vrfrMed.Str())
 	}
 	mp.vssBufLock.Unlock()
 }
@@ -296,16 +276,13 @@ func (mp *MediatorPlugin) AddToResponseBuf(respEvent *VSSResponseEvent) {
 		}
 
 		vrfrMed := dag.GetActiveMediatorAddr(int(resp.Index))
-		log.Debugf("the mediator(%v) received the vss response from the mediator(%v) to the mediator(%v)",
-			localMed.Str(), srcMed.Str(), vrfrMed.Str())
 
 		mp.vssBufLock.Lock()
 		respCh, ok := mp.respBuf[localMed][vrfrMed]
-		if !ok {
-			log.Debugf("the mediator(%v)'s respBuf corresponding the mediator(%v) is not initialized",
-				localMed.Str(), vrfrMed.Str())
-		} else {
+		if ok {
 			respCh <- resp
+			log.Debugf("the mediator(%v) received the vss response from the mediator(%v) to the mediator(%v)",
+				localMed.Str(), srcMed.Str(), vrfrMed.Str())
 		}
 		mp.vssBufLock.Unlock()
 	}
@@ -332,7 +309,7 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 		case <-mp.stopVSS:
 			return
 		case resp := <-respCh:
-			mp.processVSSResp(localMed, resp)
+			go mp.processVSSResp(localMed, resp)
 		}
 	}
 }

@@ -207,19 +207,20 @@ func (pm *ProtocolManager) vssResponseBroadcastLoop() {
 
 // @author Albert·Gou
 func (pm *ProtocolManager) broadcastVssResp(resp *mp.VSSResponseEvent) {
-	peers := pm.GetActiveMediatorPeers()
-	for _, peer := range peers {
-		if peer == nil { // 此时为本节点
-			go pm.producer.AddToResponseBuf(resp)
-			continue
-		}
+	//peers := pm.GetActiveMediatorPeers()
+	//for _, peer := range peers {
+	//	if peer == nil { // 此时为本节点
+	//		go pm.producer.AddToResponseBuf(resp)
+	//		continue
+	//	}
+	//
+	//	err := peer.SendVSSResponse(resp)
+	//	if err != nil {
+	//		log.Debugf(err.Error())
+	//	}
+	//}
 
-		err := peer.SendVSSResponse(resp)
-		if err != nil {
-			log.Debugf(err.Error())
-		}
-	}
-
+	go pm.producer.AddToResponseBuf(resp)
 	pm.BroadcastVSSResponse(resp)
 }
 

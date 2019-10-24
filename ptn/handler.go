@@ -649,7 +649,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return pm.VSSDealMsg(msg, p)
 
 		// 21*21 deal => 21*21 resp
-		// 21*21 resp => 21*21*20 respMsg
+		// 21*21 resp => 21*20 respMsg
 		// append by Albert·Gou
 	case msg.Code == VSSResponseMsg:
 		return pm.VSSResponseMsg(msg, p)
