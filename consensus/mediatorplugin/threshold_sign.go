@@ -223,8 +223,6 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 		return
 	}
 
-	log.Debugf("received the sign shares of the unit(%v)", newUnitHash.TerminalString())
-
 	dag := mp.dag
 	header, err := dag.GetHeaderByHash(newUnitHash)
 	if header == nil {
@@ -239,17 +237,19 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 
 	medSigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
-		err = fmt.Errorf("the mediator(%v)'s toTBLSRecoverBuf has not initialized yet", localMed.Str())
-		log.Debugf(err.Error())
+		//err = fmt.Errorf("the mediator(%v) is not local", localMed.Str())
+		//log.Debugf(err.Error())
 		return
 	}
+
+	log.Debugf("received the sign shares of the unit(%v)", newUnitHash.TerminalString())
 
 	// 当buf不存在时，说明已经recover出群签名, 或者已经过了unit确认时间，忽略该签名分片
 	sigShareSet, ok := medSigSharesBuf[newUnitHash]
 	if !ok {
-		err = fmt.Errorf("the unit(%v) has already recovered the group signature",
-			newUnitHash.TerminalString())
-		log.Debugf(err.Error())
+		//err = fmt.Errorf("the unit(%v) has already recovered the group signature",
+		//	newUnitHash.TerminalString())
+		//log.Debugf(err.Error())
 		return
 	}
 
@@ -270,13 +270,13 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	// 1. 获取所有的签名分片
 	sigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
-		log.Debugf("the mediator((%v) has no signature shares to recover group sign yet", localMed.Str())
+		log.Debugf("the mediator((%v) has not units to recover group sign yet", localMed.Str())
 		return
 	}
 
 	sigShareSet, ok := sigSharesBuf[unitHash]
 	if !ok {
-		log.Debugf("the mediator(%v) has no sign shares corresponding unit(%v) yet",
+		log.Debugf("the mediator(%v) has not sign shares corresponding unit(%v) yet",
 			localMed.Str(), unitHash.TerminalString())
 		return
 	}
@@ -284,10 +284,10 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	sigShareSet.lock()
 	defer sigShareSet.unlock()
 
-	// 为了保证多协程安全， 加锁后，再判断一次
-	if _, ok = mp.toTBLSRecoverBuf[localMed][unitHash]; !ok {
-		return
-	}
+	//// 为了保证多协程安全， 加锁后，再判断一次
+	//if _, ok = mp.toTBLSRecoverBuf[localMed][unitHash]; !ok {
+	//	return
+	//}
 
 	// 2. 获取阈值、mediator数量、DKG
 	mp.dkgLock.RLock()

@@ -60,6 +60,9 @@ const (
 	// txChanSize is the size of channel listening to TxPreEvent.
 	// The number is referenced from the size of tx pool.
 	txChanSize = 4096
+
+	unitsCacheSize   = 5 * 1024 * 1024
+	unitCacheTimeout = 60 * 5
 )
 
 // errIncompatibleConfig is returned if the requested protocols and configs are
@@ -178,7 +181,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 		producer:       producer,
 		contractProc:   contractProc,
 		lightSync:      uint32(1),
-		receivedCache:  freecache.NewCache(5 * 1024 * 1024),
+		receivedCache:  freecache.NewCache(unitsCacheSize),
 		contract:       contract,
 	}
 	symbol, _, _, _, _ := gasToken.ParseAssetId()
@@ -254,7 +257,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 func (pm *ProtocolManager) IsExistInCache(id []byte) bool {
 	_, err := pm.receivedCache.Get(id)
 	if err != nil { //Not exist, add it!
-		pm.receivedCache.Set(id, nil, 60*5)
+		pm.receivedCache.Set(id, nil, unitCacheTimeout)
 	}
 	return err == nil
 }
@@ -773,7 +776,7 @@ func (pm *ProtocolManager) ContractBroadcast(event jury.ContractEvent, local boo
 // NodeInfo represents a short summary of the PalletOne sub-protocol metadata
 // known about the host peer.
 type NodeInfo struct {
-	Network uint64      `json:"network"` // PalletOne network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
+	Network uint64 `json:"network"` // PalletOne network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
 	Index   uint64
 	Genesis common.Hash `json:"genesis"` // SHA3 hash of the host's genesis block
 	Head    common.Hash `json:"head"`    // SHA3 hash of the host's best owned block

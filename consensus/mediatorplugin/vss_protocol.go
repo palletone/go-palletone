@@ -151,7 +151,7 @@ func (mp *MediatorPlugin) processDealLoop(localMed common.Address) {
 	mp.vssBufLock.RUnlock()
 
 	if !ok {
-		log.Debugf("the mediator(%v)'s dealBuf is not initialized", localMed.Str())
+		log.Debugf("the mediator(%v)'s dealBuf has not initialized yet", localMed.Str())
 		return
 	}
 
@@ -301,7 +301,7 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 	mp.vssBufLock.RUnlock()
 
 	if !ok {
-		log.Debugf("the mediator(%v)'s respBuf corresponding the mediator(%v) is not initialized",
+		log.Debugf("the mediator(%v)'s respBuf corresponding the mediator(%v) has not initialized yet",
 			localMed.Str(), vrfrMed.Str())
 		return
 	}
