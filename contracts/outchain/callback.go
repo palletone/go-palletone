@@ -53,7 +53,7 @@ func GetERC20Adaptor() adaptor.ICryptoCurrency {
 }
 
 func ProcessOutChainCall(chaincodeID string, outChainCall *pb.OutChainCall) (string, error) {
-	log.Debugf("Get Request method : %s", outChainCall.Method)
+	log.Infof("Get Request method : %s %s", outChainCall.Method, cfg.Ada.Eth.Rawurl)
 
 	chainName := strings.ToLower(outChainCall.OutChainName)
 	if _, existChain := exceptMethond[chainName]; existChain {
