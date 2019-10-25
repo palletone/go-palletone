@@ -38,7 +38,7 @@ type producer interface {
 	AddToTBLSSignBufs(newHash common.Hash)
 
 	SubscribeSigShareEvent(ch chan<- mp.SigShareEvent) event.Subscription
-	AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare []byte)
+	AddToTBLSRecoverBuf(sigShare *mp.SigShareEvent)
 
 	SubscribeVSSDealEvent(ch chan<- mp.VSSDealEvent) event.Subscription
 	AddToDealBuf(deal *mp.VSSDealEvent)

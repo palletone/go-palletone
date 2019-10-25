@@ -87,14 +87,7 @@ func (pm *ProtocolManager) sigShareTransmitLoop() {
 	for {
 		select {
 		case event := <-pm.sigShareCh:
-			header, err := pm.dag.GetHeaderByHash(event.UnitHash)
-			if err == nil {
-				// 换届后，某些节点已经被替换下去，但仍然需要群签名
-				//node := pm.dag.GetActiveMediator(med).Node
-				med := header.Author()
-				node := pm.dag.GetMediator(med).Node
-				pm.transmitSigShare(node, &event)
-			}
+			pm.transmitSigShare(&event)
 
 			// Err() channel will be closed when unsubscribing.
 		case <-pm.sigShareSub.Err():
@@ -104,10 +97,23 @@ func (pm *ProtocolManager) sigShareTransmitLoop() {
 }
 
 // @author Albert·Gou
-func (pm *ProtocolManager) transmitSigShare(node *discover.Node, sigShare *mp.SigShareEvent) {
-	peer, self := pm.GetPeer(node)
+func (pm *ProtocolManager) transmitSigShare(sigShare *mp.SigShareEvent) {
+	header, err := pm.dag.GetHeaderByHash(sigShare.UnitHash)
+	if err != nil {
+		log.Debugf("fail to get header of unit(%v)", sigShare.UnitHash.TerminalString())
+		return
+	}
+
+	ma := header.Author()
+	med := pm.dag.GetMediator(ma)
+	if med == nil {
+		log.Debugf("fail to get mediator(%v)", ma.Str())
+		return
+	}
+
+	peer, self := pm.GetPeer(med.Node)
 	if self {
-		pm.producer.AddToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
+		pm.producer.AddToTBLSRecoverBuf(sigShare)
 		return
 	}
 

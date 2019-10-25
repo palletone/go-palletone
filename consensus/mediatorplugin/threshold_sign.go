@@ -218,12 +218,13 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 }
 
 // 收集签名分片
-func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare []byte) {
+func (mp *MediatorPlugin) AddToTBLSRecoverBuf(event *SigShareEvent) {
 	if !mp.groupSigningEnabled {
 		return
 	}
 
 	dag := mp.dag
+	newUnitHash := event.UnitHash
 	header, err := dag.GetHeaderByHash(newUnitHash)
 	if header == nil {
 		err = fmt.Errorf("fail to get unit by hash: %v, err: %v", newUnitHash.TerminalString(), err.Error())
@@ -253,7 +254,7 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 		return
 	}
 
-	sigShareSet.append(sigShare)
+	sigShareSet.append(event.SigShare)
 
 	// recover群签名
 	go mp.recoverUnitTBLS(localMed, newUnitHash)

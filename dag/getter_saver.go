@@ -105,14 +105,6 @@ func (d *Dag) GetActiveMediatorAddr(index int) common.Address {
 	return d.GetGlobalProp().GetActiveMediatorAddr(index)
 }
 
-//// author Albert·Gou
-//func (d *Dag) GetActiveMediatorNode(index int) *discover.Node {
-//	ma := d.GetActiveMediatorAddr(index)
-//	med := d.GetMediator(ma)
-//
-//	return med.Node
-//}
-
 // author Albert·Gou
 func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
 	if !d.IsActiveMediator(add) {

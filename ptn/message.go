@@ -502,7 +502,7 @@ func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	go pm.producer.AddToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
+	go pm.producer.AddToTBLSRecoverBuf(&sigShare)
 	return nil
 }
 
