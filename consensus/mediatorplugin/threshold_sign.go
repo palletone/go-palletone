@@ -238,6 +238,7 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(event *SigShareEvent) {
 
 	medSigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
+		// 不是本地mediator生产的 unit
 		//err = fmt.Errorf("the mediator(%v) is not local", localMed.Str())
 		//log.Debugf(err.Error())
 		return
@@ -245,7 +246,7 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(event *SigShareEvent) {
 
 	log.Debugf("received the sign shares of the unit(%v)", newUnitHash.TerminalString())
 
-	// 当buf不存在时，说明已经recover出群签名, 或者已经过了unit确认时间，忽略该签名分片
+	// 当buf不存在时，说明已经成功recover出群签名, 或者已经过了unit确认时间，不需要群签名，忽略该签名分片
 	sigShareSet, ok := medSigSharesBuf[newUnitHash]
 	if !ok {
 		//err = fmt.Errorf("the unit(%v) has already recovered the group signature",
@@ -352,6 +353,5 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	// 5. recover后的相关处理
 	// recover后 删除buf
 	delete(mp.toTBLSRecoverBuf[localMed], unitHash)
-	go mp.dag.SetUnitGroupSign(unitHash, groupSig, mp.ptn.TxPool())
 	go mp.groupSigFeed.Send(GroupSigEvent{UnitHash: unitHash, GroupSig: groupSig})
 }

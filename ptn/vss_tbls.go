@@ -79,7 +79,7 @@ func (pm *ProtocolManager) toGroupSign(event modules.ToGroupSignEvent) {
 		return
 	}
 
-	go pm.producer.AddToTBLSSignBufs(newHash)
+	pm.producer.AddToTBLSSignBufs(newHash)
 }
 
 // @author Albert·Gou
@@ -87,7 +87,7 @@ func (pm *ProtocolManager) sigShareTransmitLoop() {
 	for {
 		select {
 		case event := <-pm.sigShareCh:
-			pm.transmitSigShare(&event)
+			go pm.transmitSigShare(&event)
 
 			// Err() channel will be closed when unsubscribing.
 		case <-pm.sigShareSub.Err():
@@ -135,7 +135,8 @@ func (pm *ProtocolManager) groupSigBroadcastLoop() {
 	for {
 		select {
 		case event := <-pm.groupSigCh:
-			pm.BroadcastGroupSig(&event)
+			pm.dag.SetUnitGroupSign(event.UnitHash, event.GroupSig, pm.txpool)
+			go pm.BroadcastGroupSig(&event)
 
 		// Err() channel will be closed when unsubscribing.
 		case <-pm.groupSigSub.Err():
@@ -158,7 +159,7 @@ func (pm *ProtocolManager) vssDealTransmitLoop() {
 	for {
 		select {
 		case event := <-pm.vssDealCh:
-			pm.transmitVSSDeal(&event)
+			go pm.transmitVSSDeal(&event)
 
 			// Err() channel will be closed when unsubscribing.
 		case <-pm.vssDealSub.Err():
@@ -186,7 +187,7 @@ func (pm *ProtocolManager) transmitVSSDeal(deal *mp.VSSDealEvent) {
 	//peer, self := pm.GetPeer(node)
 	peer, self := pm.GetPeer(med.Node)
 	if self {
-		go pm.producer.AddToDealBuf(deal)
+		pm.producer.AddToDealBuf(deal)
 		return
 	}
 
@@ -210,7 +211,7 @@ func (pm *ProtocolManager) vssResponseBroadcastLoop() {
 	for {
 		select {
 		case event := <-pm.vssResponseCh:
-			pm.broadcastVssResp(&event)
+			go pm.broadcastVssResp(&event)
 
 			// Err() channel will be closed when unsubscribing.
 		case <-pm.vssResponseSub.Err():
@@ -234,7 +235,7 @@ func (pm *ProtocolManager) broadcastVssResp(resp *mp.VSSResponseEvent) {
 	//	}
 	//}
 
-	go pm.producer.AddToResponseBuf(resp)
+	pm.producer.AddToResponseBuf(resp)
 	pm.BroadcastVSSResponse(resp)
 }
 

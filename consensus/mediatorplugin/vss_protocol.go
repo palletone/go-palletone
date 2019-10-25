@@ -247,6 +247,7 @@ func (mp *MediatorPlugin) AddToDealBuf(dealEvent *VSSDealEvent) {
 
 	deal := dealEvent.Deal
 
+	// 判断是否本地mediator的deal
 	mp.vssBufLock.Lock()
 	dealCh, ok := mp.dealBuf[localMed]
 	if ok {

@@ -198,8 +198,7 @@ func (chain *MemDag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Hea
 //	return nil, fmt.Errorf("the header[%s] not exist.", number.String())
 //}
 
-func (chain *MemDag) SetUnitGroupSign(uHash common.Hash /*, groupPubKey []byte*/, groupSign []byte,
-	txpool txspool.ITxPool) error {
+func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupSign []byte,	txpool txspool.ITxPool) error {
 	//1. Set this unit as stable
 	unit_temp, err := chain.getChainUnit(uHash)
 	if err != nil {

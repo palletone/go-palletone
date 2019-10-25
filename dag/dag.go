@@ -1062,7 +1062,8 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 	}
 
 	if d.IsIrreversibleUnit(unitHash) {
-		log.Debugf("this unit(%v) is irreversible", unitHash.TerminalString())
+		// 由于采用广播的形式，所以可能会很多次收到同一个unit的群签名
+		//log.Debugf("this unit(%v) is irreversible", unitHash.TerminalString())
 		return nil
 	}
 
@@ -1074,7 +1075,7 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 	// 群签之后， 更新memdag，将该unit和它的父单元们稳定存储。
 	//go d.Memdag.SetStableUnit(unitHash, groupSign[:], txpool)
 	log.Debugf("Try to update unit[%s] group sign", unitHash.String())
-	d.Memdag.SetUnitGroupSign(unitHash /*, nil*/, groupSign, txpool)
+	d.Memdag.SetUnitGroupSign(unitHash, groupSign, txpool)
 
 	//TODO albert 待合并
 	// 状态更新
