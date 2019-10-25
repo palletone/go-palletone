@@ -43,7 +43,7 @@ func (c Utxos) Less(i, j int) bool {
 	return c[i].GetAmount() > c[j].GetAmount()
 }
 
-func find_min(utxos []UtxoInterface) UtxoInterface {
+/*func find_min(utxos []UtxoInterface) UtxoInterface {
 	amout := utxos[0].GetAmount()
 	min_utxo := utxos[0]
 	for _, utxo := range utxos {
@@ -53,10 +53,10 @@ func find_min(utxos []UtxoInterface) UtxoInterface {
 		}
 	}
 	return min_utxo
-}
+}*/
 
 func Select_utxo_Greedy(utxos Utxos, amount uint64) (Utxos, uint64, error) {
-	var taken_utxo Utxos
+	taken_utxo:= Utxos{}
 	var accum uint64
 	var change uint64
 	accum = 0
