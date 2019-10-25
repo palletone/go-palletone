@@ -61,7 +61,7 @@ var DefaultConfig = Config{
 			WalletPasswd: "1",
 		},
 		Eth: ETH{
-			NetID:      1,
+			NetID:      0,
 			Rawurl:     "https://mainnet.infura.io/",
 			TxQueryUrl: "http://api-cn.etherscan.com/api?apikey=VYSBPQ383RJXM7HBQVTIK5NGIG8ZYVV6T6",
 		},
