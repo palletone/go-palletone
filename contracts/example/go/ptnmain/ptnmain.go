@@ -26,11 +26,13 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/shopspring/decimal"
 
 	"github.com/palletone/adaptor"
 )
@@ -87,6 +89,20 @@ func (p *PTNMain) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			return shim.Error("need 1  args (ERC20TransferTxID)")
 		}
 		return p.PayoutPTNByTxID(args[0], stub)
+
+	case "withdrawAmount":
+		if len(args) < 2 {
+			return shim.Error("need 2  args (PTNAddress,PTNAmount)")
+		}
+		withdrawAddr, err := common.StringToAddress(args[0])
+		if err != nil {
+			return shim.Error("Invalid address string:" + args[0])
+		}
+		amount, err := decimal.NewFromString(args[1])
+		if err != nil {
+			return shim.Error("Invalid amount:" + args[1])
+		}
+		return p.WithdrawAmount(stub, withdrawAddr, amount)
 
 	case "getPayout":
 		if len(args) < 1 {
@@ -450,6 +466,32 @@ func (p *PTNMain) GetPayout(ethTxID string, stub shim.ChaincodeStubInterface) pb
 	}
 	result, _ := stub.GetState(symbolsPayout + ethTxID)
 	return shim.Success(result)
+}
+
+func (p *PTNMain) WithdrawAmount(stub shim.ChaincodeStubInterface, withdrawAddr common.Address, amount decimal.Decimal) pb.Response {
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
+	}
+	owner, err := getOwner(stub)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	if owner != invokeAddr.String() {
+		return shim.Error("Only owner can withdraw")
+	}
+
+	//contractAddr
+	amount = amount.Mul(decimal.New(100000000, 0))
+	amtToken := &modules.AmountAsset{Amount: uint64(amount.IntPart()), Asset: modules.NewPTNAsset()}
+	err = stub.PayOutToken(withdrawAddr.String(), amtToken, 0)
+	if err != nil {
+		log.Debugf("PayOutToken failed: %s", err.Error())
+		return shim.Error("PayOutToken failed: " + err.Error())
+	}
+
+	return shim.Success([]byte("Success"))
 }
 
 func main() {
