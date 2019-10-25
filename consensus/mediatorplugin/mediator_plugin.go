@@ -256,9 +256,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	detail["ParentHash"] = newUnit.ParentHash()[0].TerminalString()
 
 	// 3. 对 unit 进行群签名和广播
-	if mp.groupSigningEnabled {
-		go mp.groupSignUnit(scheduledMediator, unitHash)
-	}
+	go mp.groupSignUnit(scheduledMediator, unitHash)
 
 	// 4. 异步向区块链网络广播新unit
 	go mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit: newUnit})
@@ -267,12 +265,16 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 }
 
 func (mp *MediatorPlugin) groupSignUnit(localMed common.Address, unitHash common.Hash) {
+	if !mp.groupSigningEnabled {
+		return
+	}
+
 	// 1. 初始化签名unit相关的签名分片的buf
 	mp.toTBLSBufLock.Lock()
-	aSize := mp.dag.ActiveMediatorsCount()
 	if _, ok := mp.toTBLSRecoverBuf[localMed]; !ok {
 		mp.toTBLSRecoverBuf[localMed] = make(map[common.Hash]*sigShareSet)
 	}
+	aSize := mp.dag.ActiveMediatorsCount()
 	mp.toTBLSRecoverBuf[localMed][unitHash] = newSigShareSet(aSize)
 	mp.toTBLSBufLock.Unlock()
 

@@ -30,6 +30,8 @@ import (
 )
 
 func (mp *MediatorPlugin) newDKGAndInitVSSBuf() {
+	log.Debugf("initialize all mediator's dkgs, dealBufs, and responseBufs")
+	// 初始化dkg，并初始化与完成vss相关的buf
 	mp.dkgLock.Lock()
 	defer mp.dkgLock.Unlock()
 	mp.vssBufLock.Lock()
@@ -47,6 +49,7 @@ func (mp *MediatorPlugin) newDKGAndInitVSSBuf() {
 	aSize := len(ams)
 
 	for _, localMed := range lams {
+		// 初始化本地所有mediator的dkg
 		initSec := mp.mediators[localMed].InitPrivKey
 		dkgr, err := dkg.NewDistKeyGenerator(mp.suite, initSec, initPubs, curThreshold)
 		if err != nil {
@@ -55,6 +58,7 @@ func (mp *MediatorPlugin) newDKGAndInitVSSBuf() {
 		}
 		mp.activeDKGs[localMed] = dkgr
 
+		// 初始化所有与完成vss相关的buf
 		mp.dealBuf[localMed] = make(chan *dkg.Deal, aSize-1)
 		mp.respBuf[localMed] = make(map[common.Address]chan *dkg.Response, aSize)
 		for _, vrfrMed := range ams {

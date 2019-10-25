@@ -294,9 +294,7 @@ func NewMediatorPlugin( /*ctx *node.ServiceContext, */ cfg *Config, ptn PalletOn
 
 	mp.initLocalConfigMediator(cfg.Mediators /*, ctx.AccountManager*/)
 
-	if mp.groupSigningEnabled {
-		mp.initGroupSignBuf()
-	}
+	mp.initGroupSignBuf()
 
 	log.Debugf("mediator plugin initialize end")
 	return &mp, nil
@@ -331,6 +329,10 @@ func (mp *MediatorPlugin) initLocalConfigMediator(mcs []*MediatorConf /*, am *ac
 
 // initGroupSignBuf, 初始化与群签名相关(vss和tbls)的buf
 func (mp *MediatorPlugin) initGroupSignBuf() {
+	if !mp.groupSigningEnabled {
+		return
+	}
+
 	lamc := len(mp.mediators)
 
 	mp.dealBuf = make(map[common.Address]chan *dkg.Deal, lamc)

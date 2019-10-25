@@ -250,6 +250,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 	//manager.lightFetcher = manager.newLightFetcher()
 	return manager, nil
 }
+
 func (pm *ProtocolManager) IsExistInCache(id []byte) bool {
 	_, err := pm.receivedCache.Get(id)
 	if err != nil { //Not exist, add it!
