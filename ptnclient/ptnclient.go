@@ -179,7 +179,7 @@ func (tx *rpcTransaction) UnmarshalJSON(msg []byte) error {
 }
 
 // TransactionByHash returns the transaction with the given hash.
-/*func (ec *Client) TransactionByHash(ctx context.Context, hash common.Hash) (tx *modules.Transaction,
+func (ec *Client) TransactionByHash(ctx context.Context, hash common.Hash) (tx *modules.Transaction,
 	isPending bool, err error) {
 	var json *rpcTransaction
 	err = ec.c.CallContext(ctx, &json, "ptn_getTransactionByHash", hash)
@@ -192,7 +192,7 @@ func (tx *rpcTransaction) UnmarshalJSON(msg []byte) error {
 	//	}
 	//setSenderFromServer(json.tx, json.From, json.BlockHash)
 	return json.tx, json.BlockNumber == nil, err
-}*/
+}
 
 // TransactionSender returns the sender address of the given transaction. The transaction
 // must be known to the remote node and included in the blockchain at the given block and
@@ -443,26 +443,26 @@ func (ec *Client) PendingCallContract(ctx context.Context, msg palletone.CallMsg
 
 // SuggestGasPrice retrieves the currently suggested gas price to allow a timely
 // execution of a transaction.
-/*func (ec *Client) SuggestGasPrice(ctx context.Context) (*big.Int, error) {
+func (ec *Client) SuggestGasPrice(ctx context.Context) (*big.Int, error) {
 	var hex hexutil.Big
 	if err := ec.c.CallContext(ctx, &hex, "ptn_gasPrice"); err != nil {
 		return nil, err
 	}
 	return (*big.Int)(&hex), nil
-}*/
+}
 
 // EstimateGas tries to estimate the gas needed to execute a specific transaction based on
 // the current pending state of the backend blockchain. There is no guarantee that this is
 // the true gas limit requirement as other transactions may be added or removed by miners,
 // but it should provide a basis for setting a reasonable default.
-/*func (ec *Client) EstimateGas(ctx context.Context, msg palletone.CallMsg) (uint64, error) {
+func (ec *Client) EstimateGas(ctx context.Context, msg palletone.CallMsg) (uint64, error) {
 	var hex hexutil.Uint64
 	err := ec.c.CallContext(ctx, &hex, "ptn_estimateGas", toCallArg(msg))
 	if err != nil {
 		return 0, err
 	}
 	return uint64(hex), nil
-}*/
+}
 /*func (ec *Client) CmdCreateTransaction(ctx context.Context, from string, to string, amount uint64, fee uint64) (string, error) {
 	var result string
 	err := ec.c.CallContext(ctx, &result, "ptn_cmdCreateTransaction", from, to, amount)
