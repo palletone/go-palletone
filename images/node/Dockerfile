@@ -23,7 +23,7 @@ RUN mkdir /go-palletone
 
 # Copy gptn from stock Go builder container
 #COPY --from=builder /go/go-palletone/build/bin/gptn /usr/local/bin/
-COPY --from=builder /go/src/github.com/palletone/go-palletone/cmd/gptn/gptn /go-palletone
+COPY --from=builder /go/src/github.com/palletone/go-palletone/cmd/gptn/gptn /usr/local/bin/
 
 # Working in the go-palletone directory
 WORKDIR /go-palletone
@@ -32,4 +32,4 @@ WORKDIR /go-palletone
 EXPOSE 8545 8546 30303 30303/udp
 
 # Default start command
-ENTRYPOINT ["./gptn"]
+ENTRYPOINT ["gptn"]

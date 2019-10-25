@@ -115,10 +115,10 @@ function LoopDeploy()
     done
     return 0;
 }
-path=`echo $GOPATH`
-src=/src/github.com/palletone/go-palletone/build/bin/gptn
-fullpath=$path$src
-cp $fullpath .
+#path=`echo $GOPATH`
+#src=/src/github.com/palletone/go-palletone/build/bin/gptn
+#fullpath=$path$src
+#cp $fullpath .
 
 n=
 if [ -n "$1" ]; then

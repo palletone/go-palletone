@@ -20,7 +20,7 @@ gptn is used as the base image for the go-palletone node,such as the main networ
 
   - 进入容器：docker exec -it mainnetgptn bash
 
-  - 再进入 gptn 控制台：./gptn attach
+  - 再进入 gptn 控制台：gptn attach
 
     **注意：**
 
@@ -34,7 +34,7 @@ gptn is used as the base image for the go-palletone node,such as the main networ
 
   - 进入容器：docker exec -it mainnetgptn bash
 
-  - 再进入gptn控制台：./gptn attach    
+  - 再进入gptn控制台：gptn attach    
 
     **注意：**
 
@@ -52,7 +52,7 @@ gptn is used as the base image for the go-palletone node,such as the main networ
 
   - 进入容器：docker exec -it testnetgptn bash
 
-  - 再进入gptn控制台：./gptn attach palletone/testnet/gptn.ipc
+  - 再进入gptn控制台：gptn attach palletone/testnet/gptn.ipc
 
     **注意：**
 
@@ -66,7 +66,7 @@ gptn is used as the base image for the go-palletone node,such as the main networ
 
   - 进入容器：docker exec -it testnetgptn bash
 
-  - 再进入gptn控制台：./gptn attach palletone/testnet/gptn.ipc
+  - 再进入gptn控制台：gptn attach palletone/testnet/gptn.ipc
 
     **注意：**
 

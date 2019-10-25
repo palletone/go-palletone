@@ -1,11 +1,10 @@
-## 运行脚本
-
-    ./bytn.sh mediatorCount
+## 运行明显生成多节点
+    ./start.sh 5
+    5 为构建的 mediator 节点数量
 
 ## 说明：
 
-    首先，该脚本默认生成有 mediatorCount 个超级节点和 2 个普通全节点的本地私有链；
-    然后，从 Dcoker hub 上下载 palletone/gptn:latest 镜像作为节点容器镜像。
+    首先，该脚本默认生成有 5 个超级节点和 2 个普通全节点的本地私有链，一个普通全节点使用容器自动运行，另一个在本地需要手动运行。
 
 ## 使用docker-compose 启动容器
 
@@ -17,7 +16,7 @@
 
 ## 进入gptn程序控制台
 
-    ./gptn attach
+    gptn attach
 
 ## 启动节点产块
 
@@ -25,7 +24,7 @@
 
 ## 注意：
 
-    以 mediatorCount = 5 为例，其中，有 5 个容器名为：mediator1，mediator2，mediator3，mediator4，mediator5 为超级节点容器，1 个名为 node 是一个普通全节点。
+    以 mediator 节点数量 = 5 为例，其中，有 5 个容器名为：mediator1，mediator2，mediator3，mediator4，mediator5 为超级节点容器，1 个名为 node 是一个普通全节点。
 
 ## 此时，测试网络搭建完成
 
