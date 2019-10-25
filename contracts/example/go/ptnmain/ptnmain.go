@@ -81,12 +81,12 @@ func (p *PTNMain) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 	case "payoutPTNByETHAddr":
 		if len(args) < 1 {
-			return shim.Error("need 1  args (ETHAddr)")
+			return shim.Error("need 1 args (ETHAddr)")
 		}
 		return p.PayoutPTNByETHAddr(args[0], stub)
 	case "payoutPTNByTxID":
 		if len(args) < 1 {
-			return shim.Error("need 1  args (ERC20TransferTxID)")
+			return shim.Error("need 1 args (ERC20TransferTxID)")
 		}
 		return p.PayoutPTNByTxID(args[0], stub)
 
@@ -106,9 +106,15 @@ func (p *PTNMain) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 	case "getPayout":
 		if len(args) < 1 {
-			return shim.Error("need 1  args (ERC20TransferTxID)")
+			return shim.Error("need 1 args (ERC20TransferTxID)")
 		}
 		return p.GetPayout(args[0], stub)
+
+	case "get":
+		if len(args) < 1 {
+			return shim.Error("need 1 args (Key)")
+		}
+		return p.Get(stub, args[0])
 	default:
 		jsonResp := "{\"Error\":\"Unknown function " + f + "\"}"
 		return shim.Error(jsonResp)
@@ -116,10 +122,10 @@ func (p *PTNMain) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 }
 
 //todo modify PTN ERC20 address
-const PTN_ERC20Addr = "0xa54880da9a63cdd2ddacf25af68daf31a1bcc0c9"
+const PTN_ERC20Addr = "0xfe76be9cec465ed3219a9972c21655d57d21aec6"
 
 //todo modify conforms 15
-const Confirms = uint(1)
+const Confirms = uint(15)
 
 const symbolsOwner = "owner_"
 const symbolsContractMap = "eth_map"
@@ -465,6 +471,11 @@ func (p *PTNMain) GetPayout(ethTxID string, stub shim.ChaincodeStubInterface) pb
 		ethTxID = ethTxID[2:]
 	}
 	result, _ := stub.GetState(symbolsPayout + ethTxID)
+	return shim.Success(result)
+}
+
+func (p *PTNMain) Get(stub shim.ChaincodeStubInterface, key string) pb.Response {
+	result, _ := stub.GetState(key)
 	return shim.Success(result)
 }
 
