@@ -62,15 +62,15 @@ var DefaultConfig = Config{
 		},
 		Eth: ETH{
 			NetID:      1,
-			Rawurl:     "https://ropsten.infura.io/",
-			TxQueryUrl: "https://api-ropsten.etherscan.io/api?apikey=VYSBPQ383RJXM7HBQVTIK5NGIG8ZYVV6T6",
+			Rawurl:     "https://mainnet.infura.io/",
+			TxQueryUrl: "http://api-cn.etherscan.com/api?apikey=VYSBPQ383RJXM7HBQVTIK5NGIG8ZYVV6T6",
 		},
 		ChainKeyKV: map[string]KeyInfo{
-			"btc": KeyInfo{
+			"btc": {
 				ChaincodeKeys: map[string][]byte{},
 				AddressKeys:   map[string][]byte{},
 			},
-			"eth": KeyInfo{
+			"eth": {
 				ChaincodeKeys: map[string][]byte{},
 				AddressKeys:   map[string][]byte{},
 			},
