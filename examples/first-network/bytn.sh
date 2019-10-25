@@ -1,13 +1,21 @@
 #!/bin/bash
 
-cd ./scripts/
+cp /usr/local/bin/gptn /go-palletone/scripts
 
-#生成5个超级节点和一个普通全节点
-./deploy.sh 5
+export DEBIAN_FRONTEND=noninteractive
+
+apt-get update -q
+
+apt-get install -y tcl tk jq expect
+
+cd scripts
+
+#生成 $1 个超级节点和 2 个普通全节点
+./deploy.sh $MEDIATOR_COUNT
 
 count=1
 
-while [ $count -le 5 ]
+while [ $count -le $MEDIATOR_COUNT ]
 do
   if [ $count == 1 ]; then
     newContractAddress="ContractAddress=\"mediator1:12345\""
@@ -17,8 +25,3 @@ do
   sed -i "s/127.0.0.1/mediator$count/g" node$count/ptn-config.toml
   let ++count
 done
-
-cd ..
-
-#拉取官方提供的镜像文件
-docker pull palletone/private-gptn:latest

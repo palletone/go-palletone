@@ -115,10 +115,10 @@ function LoopDeploy()
     done
     return 0;
 }
-path=`echo $GOPATH`
-src=/src/github.com/palletone/go-palletone/build/bin/gptn
-fullpath=$path$src
-cp $fullpath .
+#path=`echo $GOPATH`
+#src=/src/github.com/palletone/go-palletone/build/bin/gptn
+#fullpath=$path$src
+#cp $fullpath .
 
 n=
 if [ -n "$1" ]; then
@@ -167,9 +167,9 @@ num=$[$n+1]
 MakeTestNet $num $genesishash
 
 node1staticnodes=`cat node1/ptn-config.toml | grep StaticNodes`
-sed -i '/^StaticNodes/c'$node1staticnodes'' node6/ptn-config.toml
+sed -i '/^StaticNodes/c'$node1staticnodes'' node$num/ptn-config.toml
 
 num=$[$n+2]
 MakeTestNet $num $genesishash
 node1staticnodes=`cat node1/ptn-config.toml | grep StaticNodes`
-sed -i '/^StaticNodes/c'$node1staticnodes'' node7/ptn-config.toml
+sed -i '/^StaticNodes/c'$node1staticnodes'' node$num/ptn-config.toml
