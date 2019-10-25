@@ -103,5 +103,19 @@ func TestNew_Selectutxo_Greedy(t *testing.T) {
         assert.Nil(t, err)
         assert.Equal(t, len(result), 500)
         assert.Equal(t, change, uint64(174650))
+
+        result, change, err = Select_utxo_Greedy(ut, 174750)
+        fmt.Println("result is ",result)
+        fmt.Println("change is ",change)
+        assert.Nil(t, err)
+        assert.Equal(t, len(result), 500)
+        assert.Equal(t, change, uint64(500))
+
+        result, change, err = Select_utxo_Greedy(ut, 175850)
+        fmt.Println("result is ",result)
+        fmt.Println("change is ",change)
+        assert.NotNil(t, err)
+        assert.Equal(t, len(result), 0)
+        assert.Equal(t, change, uint64(0))
 }
 
