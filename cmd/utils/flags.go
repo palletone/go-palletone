@@ -1192,7 +1192,7 @@ func RegisterPtnService(stack *node.Node, cfg *ptn.Config) {
 	var err error
 	if cfg.SyncMode == downloader.LightSync {
 		err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-			return light.New(ctx, cfg, configure.LPSProtocol, stack.CacheDb)
+			return light.New(ctx, cfg, configure.LPSProtocol, stack.CacheDb, stack.IsTestNet)
 		})
 	} else {
 		err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
