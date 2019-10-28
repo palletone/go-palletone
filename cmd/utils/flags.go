@@ -799,7 +799,7 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 	if ctx.GlobalIsSet(MaxPendingPeersFlag.Name) {
 		cfg.MaxPendingPeers = ctx.GlobalInt(MaxPendingPeersFlag.Name)
 	}
-	if ctx.GlobalIsSet(NoDiscoverFlag.Name) || lightClient {
+	if ctx.GlobalIsSet(NoDiscoverFlag.Name) { //|| lightClient {
 		cfg.NoDiscovery = true
 	}
 

@@ -198,22 +198,17 @@ func maybeLoadConfig(ctx *cli.Context) (FullConfig, string, error) {
 	// 1. cfg加载系统默认的配置信息，cfg是一个字典结构
 	configPath := getConfigPath(ctx)
 	cfg := DefaultConfig()
-	switch {
-	case ctx.GlobalBool(utils.LightModeFlag.Name):
-		cfg.Ptn.SyncMode = downloader.LightSync
-	}
 
 	switch {
+	case ctx.GlobalIsSet(utils.SyncModeFlag.Name):
+		cfg.Ptn.SyncMode = *utils.GlobalTextMarshaler(ctx, utils.SyncModeFlag.Name).(*downloader.SyncMode)
+	case ctx.GlobalBool(utils.FastSyncFlag.Name):
+		cfg.Ptn.SyncMode = downloader.FastSync
 	case ctx.GlobalBool(utils.LightModeFlag.Name):
 		cfg.Ptn.SyncMode = downloader.LightSync
 	}
 	// 如果配置文件不存在，则使用默认的配置生成一个配置文件
 	if !common.IsExisted(configPath) {
-		//listenAddr := cfg.P2P.ListenAddr
-		//if strings.HasPrefix(listenAddr, ":") {
-		//	cfg.P2P.ListenAddr = "127.0.0.1" + listenAddr
-		//}
-
 		err := makeConfigFile(&cfg, configPath)
 		if err != nil {
 			utils.Fatalf("%v", err)

@@ -68,7 +68,7 @@ type Config struct {
 	// databases or flat files. This enables ephemeral nodes which can fully reside
 	// in memory.
 	DataDir   string
-	IsTestNet bool
+	IsTestNet bool `toml:"-"`
 	// Configuration of peer-to-peer networking.
 	P2P p2p.Config `toml:"-"`
 

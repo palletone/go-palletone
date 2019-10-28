@@ -244,17 +244,6 @@ func (n *Node) Start() error {
 	}
 	log.Debug("Node Start", "len(running.Protocols)", len(running.Protocols), "len(corss.Protocols)", len(corss.Protocols))
 
-	//for /*kind*/ _, service := range services {
-	//	if pallet, ok := service.(*ptn.PalletOne); ok {
-	//		pallet.Dag().GetGenesisUnit()
-	//		if unit, err := pallet.Dag().GetGenesisUnit(); err != nil {
-	//			log.Debug("===GetGenesisUnit===", "err", err)
-	//		} else {
-	//			log.Debug("===GetGenesisUnit===", "genesis hash", unit.Hash())
-	//		}
-	//	}
-	//}
-
 	if err := corss.Start(); err != nil {
 		return convertFileLockError(err)
 	}
