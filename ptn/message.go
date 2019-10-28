@@ -492,7 +492,16 @@ func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 	}
 
 	p.MarkSigShare(sigShare.UnitHash)
-	pm.BroadcastSigShare(&sigShare)
+
+	header, err := pm.dag.GetHeaderByHash(sigShare.UnitHash)
+	if err != nil {
+		log.Debugf("fail to get header of unit(%v), err: %v", sigShare.UnitHash.TerminalString(), err.Error())
+		return nil
+	}
+
+	if !pm.producer.IsLocalMediator(header.Author()) {
+		pm.BroadcastSigShare(&sigShare)
+	}
 
 	// 判断是否同步, 如果没同步完成，接收到的 sigShare 对当前节点来说是超前的
 	if !pm.dag.IsSynced() {
@@ -517,7 +526,10 @@ func (pm *ProtocolManager) VSSDealMsg(msg p2p.Msg, p *peer) error {
 	}
 
 	p.MarkVSSDeal(deal.Hash())
-	pm.BroadcastVSSDeal(&deal)
+	ma := pm.dag.GetActiveMediatorAddr(int(deal.DstIndex))
+	if !pm.producer.IsLocalMediator(ma) {
+		pm.BroadcastVSSDeal(&deal)
+	}
 
 	// 判断是否同步, 如果没同步完成，接收到的 vss deal 对当前节点来说是超前的
 	if !pm.dag.IsSynced() {

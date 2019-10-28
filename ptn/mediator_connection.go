@@ -51,6 +51,8 @@ type producer interface {
 
 	SubscribeGroupSigEvent(ch chan<- mp.GroupSigEvent) event.Subscription
 	UpdateMediatorsDKG(isRenew bool)
+
+	IsLocalMediator(add common.Address) bool
 }
 
 func (pm *ProtocolManager) activeMediatorsUpdatedEventRecvLoop() {

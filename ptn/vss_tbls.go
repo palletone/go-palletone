@@ -100,7 +100,7 @@ func (pm *ProtocolManager) sigShareTransmitLoop() {
 func (pm *ProtocolManager) transmitSigShare(sigShare *mp.SigShareEvent) {
 	header, err := pm.dag.GetHeaderByHash(sigShare.UnitHash)
 	if err != nil {
-		log.Debugf("fail to get header of unit(%v)", sigShare.UnitHash.TerminalString())
+		log.Debugf("fail to get header of unit(%v), err: %v", sigShare.UnitHash.TerminalString(), err.Error())
 		return
 	}
 
@@ -176,7 +176,6 @@ func (pm *ProtocolManager) transmitVSSDeal(deal *mp.VSSDealEvent) {
 		return
 	}
 
-	//node := pm.dag.GetActiveMediatorNode(int(deal.DstIndex))
 	ma := pm.dag.GetActiveMediatorAddr(int(deal.DstIndex))
 	med := pm.dag.GetMediator(ma)
 	if med == nil {

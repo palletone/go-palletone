@@ -71,12 +71,10 @@ func (mp *MediatorPlugin) LocalHaveActiveMediator() bool {
 	return false
 }
 
-func (mp *MediatorPlugin) IsLocalActiveMediator(add common.Address) bool {
-	if _, ok := mp.mediators[add]; ok {
-		return mp.dag.IsActiveMediator(add)
-	}
+func (mp *MediatorPlugin) IsLocalMediator(add common.Address) bool {
+	_, found := mp.mediators[add]
 
-	return false
+	return found
 }
 
 func (mp *MediatorPlugin) LocalHavePrecedingMediator() bool {
