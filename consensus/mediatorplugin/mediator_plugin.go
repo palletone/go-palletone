@@ -50,6 +50,7 @@ func (mp *MediatorPlugin) SubscribeNewProducedUnitEvent(ch chan<- NewProducedUni
 }
 
 func (mp *MediatorPlugin) scheduleProductionLoop() {
+	log.Debugf("launch scheduleProductionLoop")
 	// 1. 计算下一秒的滴答时刻，如果少于50毫秒，则多等一秒开始
 	now := time.Now()
 	timeToNextSecond := time.Second - time.Duration(now.Nanosecond())
@@ -90,6 +91,7 @@ const (
 )
 
 func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
+	log.Debugf("launch unitProductionLoop")
 	mp.wg.Add(1)
 	defer mp.wg.Done()
 
@@ -134,6 +136,7 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 }
 
 func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]string) {
+	log.Debugf("try to produce unit")
 	detail := make(map[string]string)
 	dag := mp.dag
 
