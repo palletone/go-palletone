@@ -218,14 +218,13 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 }
 
 // 收集签名分片
-func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare []byte) {
+func (mp *MediatorPlugin) AddToTBLSRecoverBuf(event *SigShareEvent) {
 	if !mp.groupSigningEnabled {
 		return
 	}
 
-	log.Debugf("received the sign shares of the unit(%v)", newUnitHash.TerminalString())
-
 	dag := mp.dag
+	newUnitHash := event.UnitHash
 	header, err := dag.GetHeaderByHash(newUnitHash)
 	if header == nil {
 		err = fmt.Errorf("fail to get unit by hash: %v, err: %v", newUnitHash.TerminalString(), err.Error())
@@ -239,21 +238,24 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare 
 
 	medSigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
-		err = fmt.Errorf("the mediator(%v)'s toTBLSRecoverBuf has not initialized yet", localMed.Str())
-		log.Debugf(err.Error())
+		// 不是本地mediator生产的 unit
+		//err = fmt.Errorf("the mediator(%v) is not local", localMed.Str())
+		//log.Debugf(err.Error())
 		return
 	}
 
-	// 当buf不存在时，说明已经recover出群签名, 或者已经过了unit确认时间，忽略该签名分片
+	log.Debugf("received the sign shares of the unit(%v)", newUnitHash.TerminalString())
+
+	// 当buf不存在时，说明已经成功recover出群签名, 或者已经过了unit确认时间，不需要群签名，忽略该签名分片
 	sigShareSet, ok := medSigSharesBuf[newUnitHash]
 	if !ok {
-		err = fmt.Errorf("the unit(%v) has already recovered the group signature",
-			newUnitHash.TerminalString())
-		log.Debugf(err.Error())
+		//err = fmt.Errorf("the unit(%v) has already recovered the group signature",
+		//	newUnitHash.TerminalString())
+		//log.Debugf(err.Error())
 		return
 	}
 
-	sigShareSet.append(sigShare)
+	sigShareSet.append(event.SigShare)
 
 	// recover群签名
 	go mp.recoverUnitTBLS(localMed, newUnitHash)
@@ -270,13 +272,13 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	// 1. 获取所有的签名分片
 	sigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
-		log.Debugf("the mediator((%v) has no signature shares to recover group sign yet", localMed.Str())
+		log.Debugf("the mediator((%v) has not units to recover group sign yet", localMed.Str())
 		return
 	}
 
 	sigShareSet, ok := sigSharesBuf[unitHash]
 	if !ok {
-		log.Debugf("the mediator(%v) has no sign shares corresponding unit(%v) yet",
+		log.Debugf("the mediator(%v) has not sign shares corresponding unit(%v) yet",
 			localMed.Str(), unitHash.TerminalString())
 		return
 	}
@@ -284,10 +286,10 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	sigShareSet.lock()
 	defer sigShareSet.unlock()
 
-	// 为了保证多协程安全， 加锁后，再判断一次
-	if _, ok = mp.toTBLSRecoverBuf[localMed][unitHash]; !ok {
-		return
-	}
+	//// 为了保证多协程安全， 加锁后，再判断一次
+	//if _, ok = mp.toTBLSRecoverBuf[localMed][unitHash]; !ok {
+	//	return
+	//}
 
 	// 2. 获取阈值、mediator数量、DKG
 	mp.dkgLock.RLock()
@@ -351,6 +353,39 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	// 5. recover后的相关处理
 	// recover后 删除buf
 	delete(mp.toTBLSRecoverBuf[localMed], unitHash)
-	go mp.dag.SetUnitGroupSign(unitHash, groupSig, mp.ptn.TxPool())
 	go mp.groupSigFeed.Send(GroupSigEvent{UnitHash: unitHash, GroupSig: groupSig})
+}
+
+func (mp *MediatorPlugin) groupSignUnit(localMed common.Address, unitHash common.Hash) {
+	if !mp.groupSigningEnabled {
+		return
+	}
+
+	// 1. 初始化签名unit相关的签名分片的buf
+	mp.toTBLSBufLock.Lock()
+	if _, ok := mp.toTBLSRecoverBuf[localMed]; !ok {
+		mp.toTBLSRecoverBuf[localMed] = make(map[common.Hash]*sigShareSet)
+	}
+	aSize := mp.dag.ActiveMediatorsCount()
+	mp.toTBLSRecoverBuf[localMed][unitHash] = newSigShareSet(aSize)
+	mp.toTBLSBufLock.Unlock()
+
+	// 2. 过了 unit 确认时间后，及时删除群签名分片的相关数据，防止内存溢出
+	go func() {
+		expiration := mp.dag.UnitIrreversibleTime()
+		deleteBuf := time.NewTimer(expiration)
+
+		select {
+		case <-mp.quit:
+			return
+		case <-deleteBuf.C:
+			mp.toTBLSBufLock.Lock()
+			if _, ok := mp.toTBLSRecoverBuf[localMed][unitHash]; ok {
+				log.Debugf("the unit(%v) has expired confirmation time, no longer need the mediator(%v) "+
+					"to recover group-sign", unitHash.TerminalString(), localMed.Str())
+				delete(mp.toTBLSRecoverBuf[localMed], unitHash)
+			}
+			mp.toTBLSBufLock.Unlock()
+		}
+	}()
 }

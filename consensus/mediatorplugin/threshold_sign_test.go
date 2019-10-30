@@ -91,6 +91,13 @@ func fullExchange(t *testing.T) {
 			require.Equal(t, vss.StatusApproval, resp.Response.Status)
 			resps = append(resps, resp)
 		}
+
+		//for i, d := range deals {
+		//	_, err := dkgs[i].ProcessDeal(d)
+		//	if err != nil {
+		//		fmt.Println(err.Error())
+		//	}
+		//}
 	}
 
 	// 2. Broadcast responses
@@ -105,6 +112,13 @@ func fullExchange(t *testing.T) {
 			require.Nil(t, err)
 			require.Nil(t, j)
 		}
+
+		//for _, dkg := range dkgs {
+		//	_, err := dkg.ProcessResponse(resp)
+		//	if err != nil {
+		//		fmt.Println(err.Error())
+		//	}
+		//}
 	}
 }
 

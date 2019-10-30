@@ -964,7 +964,7 @@ func (d *Dag) saveHeader(header *modules.Header) error {
 		return err
 	}
 	if err := memdag.SaveHeader(header); err != nil {
-		return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
+		return fmt.Errorf("Save Header in MemDag, occurred error: %s", err.Error())
 	}
 
 	return nil
@@ -1081,7 +1081,8 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 	}
 
 	if d.IsIrreversibleUnit(unitHash) {
-		log.Debugf("this unit(%v) is irreversible", unitHash.TerminalString())
+		// 由于采用广播的形式，所以可能会很多次收到同一个unit的群签名
+		//log.Debugf("this unit(%v) is irreversible", unitHash.TerminalString())
 		return nil
 	}
 
@@ -1093,7 +1094,7 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 	// 群签之后， 更新memdag，将该unit和它的父单元们稳定存储。
 	//go d.Memdag.SetStableUnit(unitHash, groupSign[:], txpool)
 	log.Debugf("Try to update unit[%s] group sign", unitHash.String())
-	d.Memdag.SetUnitGroupSign(unitHash /*, nil*/, groupSign, txpool)
+	d.Memdag.SetUnitGroupSign(unitHash, groupSign, txpool)
 
 	//TODO albert 待合并
 	// 状态更新
@@ -1273,12 +1274,12 @@ func (d *Dag) GetDataVersion() (*modules.DataVersion, error) {
 
 // return proof of existence
 func (d *Dag) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error) {
-	return d.stableUnitRep.QueryProofOfExistenceByReference(ref)
+	return d.unstableUnitRep.QueryProofOfExistenceByReference(ref)
 }
 
 // return proof of existence by asset
 func (d *Dag) GetAssetReference(asset []byte) ([]*modules.ProofOfExistence, error) {
-	return d.stableUnitRep.GetAssetReference(asset)
+	return d.unstableUnitRep.GetAssetReference(asset)
 }
 func (d *Dag) CheckHeaderCorrect(number int) error {
 	ptn := modules.PTNCOIN

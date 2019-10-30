@@ -298,17 +298,17 @@ func FromBig(i *big.Int) (u Uint128) {
 	return u
 }
 
+var m = []uint64{
+	0x5555555555555555,
+	0x3333333333333333,
+	0x0F0F0F0F0F0F0F0F,
+	0x00FF00FF00FF00FF,
+	0x0000FFFF0000FFFF,
+	0x00000000FFFFFFFF,
+}
+
 // PopCount64, count how many bits of a binary form corresponding to a uint64 type number are 1
 func PopCount64(x uint64) uint8 {
-	m := []uint64{
-		0x5555555555555555,
-		0x3333333333333333,
-		0x0F0F0F0F0F0F0F0F,
-		0x00FF00FF00FF00FF,
-		0x0000FFFF0000FFFF,
-		0x00000000FFFFFFFF,
-	}
-
 	var i, w uint8
 	for i, w = 0, 1; i < 6; i, w = i+1, w+w {
 		x = (x & m[i]) + ((x >> w) & m[i])

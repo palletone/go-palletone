@@ -63,6 +63,9 @@ const (
 	// txChanSize is the size of channel listening to TxPreEvent.
 	// The number is referenced from the size of tx pool.
 	txChanSize = 4096
+
+	cacheSize    = 5 * 1024 * 1024
+	cacheTimeout = 60 * 5
 )
 
 // errIncompatibleConfig is returned if the requested protocols and configs are
@@ -181,7 +184,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 		producer:       producer,
 		contractProc:   contractProc,
 		lightSync:      uint32(1),
-		receivedCache:  freecache.NewCache(5 * 1024 * 1024),
+		receivedCache:  freecache.NewCache(cacheSize),
 		contract:       contract,
 	}
 	symbol, _, _, _, _ := gasToken.ParseAssetId()
@@ -253,10 +256,11 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 	//manager.lightFetcher = manager.newLightFetcher()
 	return manager, nil
 }
+
 func (pm *ProtocolManager) IsExistInCache(id []byte) bool {
 	_, err := pm.receivedCache.Get(id)
 	if err != nil { //Not exist, add it!
-		pm.receivedCache.Set(id, nil, 60*5)
+		pm.receivedCache.Set(id, nil, cacheTimeout)
 	}
 	return err == nil
 }
@@ -711,7 +715,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return pm.VSSDealMsg(msg, p)
 
 		// 21*21 deal => 21*21 resp
-		// 21*21 resp => 21*21*20 respMsg
+		// 21*21 resp => 21*20 respMsg
 		// append by Albert·Gou
 	case msg.Code == VSSResponseMsg:
 		return pm.VSSResponseMsg(msg, p)

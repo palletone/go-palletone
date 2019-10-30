@@ -491,18 +491,33 @@ func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	p.MarkSigShare(sigShare.UnitHash)
-	pm.BroadcastSigShare(&sigShare)
+	hash := sigShare.Hash()
+	p.MarkSigShare(hash)
+
+	unitHash := sigShare.UnitHash
+	header, err := pm.dag.GetHeaderByHash(unitHash)
+	if err != nil {
+		log.Debugf("fail to get header of unit(%v), err: %v", unitHash.TerminalString(), err.Error())
+		return nil
+	}
+
+	if !pm.producer.IsLocalMediator(header.Author()) {
+		pm.BroadcastSigShare(&sigShare)
+	}
+
+	if pm.IsExistInCache(hash.Bytes()) {
+		return nil
+	}
 
 	// 判断是否同步, 如果没同步完成，接收到的 sigShare 对当前节点来说是超前的
 	if !pm.dag.IsSynced() {
-		errStr := "we are not synced"
+		errStr := "this node is not synced"
 		log.Debugf(errStr)
 		//return fmt.Errorf(errStr)
 		return nil
 	}
 
-	go pm.producer.AddToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
+	go pm.producer.AddToTBLSRecoverBuf(&sigShare)
 	return nil
 }
 
@@ -516,8 +531,16 @@ func (pm *ProtocolManager) VSSDealMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	p.MarkVSSDeal(deal.Hash())
-	pm.BroadcastVSSDeal(&deal)
+	hash := deal.Hash()
+	p.MarkVSSDeal(hash)
+	ma := pm.dag.GetActiveMediatorAddr(int(deal.DstIndex))
+	if !pm.producer.IsLocalMediator(ma) {
+		pm.BroadcastVSSDeal(&deal)
+	}
+
+	if pm.IsExistInCache(hash.Bytes()) {
+		return nil
+	}
 
 	// 判断是否同步, 如果没同步完成，接收到的 vss deal 对当前节点来说是超前的
 	if !pm.dag.IsSynced() {
@@ -541,12 +564,17 @@ func (pm *ProtocolManager) VSSResponseMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	p.MarkVSSResponse(resp.Hash())
+	hash := resp.Hash()
+	p.MarkVSSResponse(hash)
 	pm.BroadcastVSSResponse(&resp)
+
+	if pm.IsExistInCache(hash.Bytes()) {
+		return nil
+	}
 
 	// 判断是否同步, 如果没同步完成，接收到的 vss response 对当前节点来说是超前的
 	if !pm.dag.IsSynced() {
-		errStr := "we are not synced"
+		errStr := "not synced"
 		log.Debugf(errStr)
 		//return fmt.Errorf(errStr)
 		return nil
@@ -567,8 +595,13 @@ func (pm *ProtocolManager) GroupSigMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	p.MarkGroupSig(gSign.UnitHash)
+	hash := gSign.Hash()
+	p.MarkGroupSig(hash)
 	pm.BroadcastGroupSig(&gSign)
+
+	if pm.IsExistInCache(hash.Bytes()) {
+		return nil
+	}
 
 	go pm.dag.SetUnitGroupSign(gSign.UnitHash, gSign.GroupSig, pm.txpool)
 

@@ -27,10 +27,11 @@ import (
 )
 
 type TxHistoryJson struct {
-	TxHash   string       `json:"tx_hash"`
-	UnitHash string       `json:"unit_hash"`
-	TxSize   float64      `json:"tx_size"`
-	Payment  *PaymentJson `json:"payment"`
+	TxHash     string       `json:"tx_hash"`
+	UnitHash   string       `json:"unit_hash"`
+	UnitHeight uint64       `json:"unit_height"`
+	TxSize     float64      `json:"tx_size"`
+	Payment    *PaymentJson `json:"payment"`
 
 	Data *DataJson `json:"data"`
 	//InstallRequest *InstallRequestJson `json:"install_request"`
@@ -45,6 +46,7 @@ func ConvertTx2HistoryJson(tx *modules.TransactionWithUnitInfo, utxoQuery module
 		TxHash:   tx.Hash().String(),
 		UnitHash: tx.UnitHash.String(),
 		TxSize:   float64(tx.Size()),
+		UnitHeight:tx.UnitIndex,
 	}
 	for _, m := range tx.TxMessages {
 		if m.App == modules.APP_PAYMENT {

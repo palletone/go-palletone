@@ -115,7 +115,7 @@ type IDag interface {
 
 	//Mediator
 	GetActiveMediator(add common.Address) *core.Mediator
-	GetActiveMediatorNode(index int) *discover.Node
+	GetActiveMediatorAddr(index int) common.Address
 	GetActiveMediatorNodes() map[string]*discover.Node
 
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)

@@ -22,12 +22,6 @@ github.com/btcsuite/btcd/wire
 github.com/btcsuite/btclog
 # github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
 github.com/btcsuite/btcutil/base58
-github.com/btcsuite/btcutil
-github.com/btcsuite/btcutil/bech32
-# github.com/btcsuite/go-socks v0.0.0-20170105172521-4720035b7bfd
-github.com/btcsuite/go-socks/socks
-# github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792
-github.com/btcsuite/websocket
 # github.com/cespare/xxhash v1.1.0
 github.com/cespare/xxhash
 # github.com/cloudflare/cfssl v0.0.0-20190726000631-633726f6bcb7
@@ -213,6 +207,7 @@ github.com/palletone/adaptor
 github.com/palletone/digital-identity/client
 github.com/palletone/digital-identity/config
 # github.com/palletone/eth-adaptor v1.0.0
+# github.com/palletone/eth-adaptor v1.0.1-0.20191024055153-b0b022477802
 github.com/palletone/eth-adaptor
 github.com/palletone/eth-adaptor/bind
 github.com/palletone/eth-adaptor/ethclient

@@ -506,25 +506,13 @@ func (dag *UnitProduceRepository) performAccountMaintenance() {
 
 func (dag *UnitProduceRepository) updateActiveMediators() bool {
 	// 1. 统计出活跃mediator数量n
-	//maxFn := func(x, y int) int {
-	//	if x > y {
-	//		return x
-	//	}
-	//	return y
-	//}
-
 	gp := dag.GetGlobalProp()
 
 	// 保证活跃mediator的总数必须大于MinimumMediatorCount
 	minMediatorCount := gp.ImmutableParameters.MinimumMediatorCount
 	mediatorCount := dag.getDesiredActiveMediatorCount()
-	//mediatorCount := maxFn((countInSystem-1)/2*2+1, int(minMediatorCount))
 
 	mediatorLen := dag.mediatorVoteTally.Len()
-	//if mediatorLen < mediatorCount {
-	//	// 保证活跃mediator的总数为奇数
-	//	mediatorCount = (mediatorLen-1)/2*2 + 1
-	//}
 	log.Debugf("the desired mediator count is %v, the actual mediator count is %v,"+
 		" the minimum mediator count is %v", mediatorCount, mediatorLen, minMediatorCount)
 
@@ -563,8 +551,6 @@ func (dag *UnitProduceRepository) updateActiveMediators() bool {
 
 func (d *UnitProduceRepository) getDesiredActiveMediatorCount() int {
 	// 获取之前的设置
-	//activeMediatorStr, _, _ := d.stateRep.GetConfig(modules.DesiredActiveMediatorCount)
-	//activeMediator, _ := strconv.ParseUint(string(activeMediatorStr), 10, 16)
 	activeMediator := d.propRep.GetChainParameters().ActiveMediatorCount
 
 	// 获取基金会直接修改的设置
