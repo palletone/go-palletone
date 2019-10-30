@@ -536,6 +536,10 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 		//不执行合约或者用户合约
 		return true
 	}
+	if !p.ptn.LocalHaveActiveMediator() {
+		//只有mediator处理系统合约
+		return true
+	}
 	if p.checkTxReqIdIsExist(tx.RequestHash()) {
 		return false
 	}
