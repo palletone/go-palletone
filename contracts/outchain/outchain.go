@@ -118,6 +118,9 @@ func init() {
 
 	//load config
 	GetConfigTest()
+
+	//init all chain adaptor
+	setAllChain()
 }
 
 func makeDefaultConfig() Config {

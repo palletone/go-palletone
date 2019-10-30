@@ -16,12 +16,18 @@ import (
 )
 
 var (
-	allChain      = map[string]adaptor.ICryptoCurrency{"btc": GetBTCAdaptor(), "eth": GetETHAdaptor(), "erc20": GetERC20Adaptor()}
+	allChain      = map[string]adaptor.ICryptoCurrency{}
 	exceptMethond = map[string]CallbackExcpet{ //some method need private key, list in map, first key is methodName
 		"GetJuryPubkey": GetJuryPubkey, "GetJuryAddr": GetJuryAddr,
 		"SignTransaction": SignTransaction, "SignMessage": SignMessage,
 	}
 )
+
+func setAllChain() {
+	allChain["btc"] = GetBTCAdaptor()
+	allChain["eth"] = GetETHAdaptor()
+	allChain["erc20"] = GetERC20Adaptor()
+}
 
 type Callback func() adaptor.ICryptoCurrency
 
