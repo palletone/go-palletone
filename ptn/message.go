@@ -491,12 +491,13 @@ func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	hash := sigShare.UnitHash
+	hash := sigShare.Hash()
 	p.MarkSigShare(hash)
 
-	header, err := pm.dag.GetHeaderByHash(hash)
+	unitHash := sigShare.UnitHash
+	header, err := pm.dag.GetHeaderByHash(unitHash)
 	if err != nil {
-		log.Debugf("fail to get header of unit(%v), err: %v", hash.TerminalString(), err.Error())
+		log.Debugf("fail to get header of unit(%v), err: %v", unitHash.TerminalString(), err.Error())
 		return nil
 	}
 
@@ -594,7 +595,7 @@ func (pm *ProtocolManager) GroupSigMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	hash := gSign.UnitHash
+	hash := gSign.Hash()
 	p.MarkGroupSig(hash)
 	pm.BroadcastGroupSig(&gSign)
 
@@ -602,7 +603,7 @@ func (pm *ProtocolManager) GroupSigMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	go pm.dag.SetUnitGroupSign(hash, gSign.GroupSig, pm.txpool)
+	go pm.dag.SetUnitGroupSign(gSign.UnitHash, gSign.GroupSig, pm.txpool)
 
 	return nil
 }

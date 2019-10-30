@@ -287,7 +287,7 @@ func (pm *ProtocolManager) BroadcastSigShare(sigShare *mp.SigShareEvent) {
 		return
 	}
 
-	peers := pm.peers.PeersWithoutSigShare(sigShare.UnitHash)
+	peers := pm.peers.PeersWithoutSigShare(sigShare.Hash())
 	for _, peer := range peers {
 		peer.SendSigShare(sigShare)
 	}

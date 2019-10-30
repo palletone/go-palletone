@@ -98,9 +98,10 @@ func (pm *ProtocolManager) sigShareTransmitLoop() {
 
 // @author Albert·Gou
 func (pm *ProtocolManager) transmitSigShare(sigShare *mp.SigShareEvent) {
-	header, err := pm.dag.GetHeaderByHash(sigShare.UnitHash)
+	unitHash := sigShare.UnitHash
+	header, err := pm.dag.GetHeaderByHash(unitHash)
 	if err != nil {
-		log.Debugf("fail to get header of unit(%v), err: %v", sigShare.UnitHash.TerminalString(), err.Error())
+		log.Debugf("fail to get header of unit(%v), err: %v", unitHash.TerminalString(), err.Error())
 		return
 	}
 
@@ -148,7 +149,7 @@ func (pm *ProtocolManager) groupSigBroadcastLoop() {
 // @author Albert·Gou
 // BroadcastGroupSig will propagate the group signature of unit to p2p network
 func (pm *ProtocolManager) BroadcastGroupSig(groupSig *mp.GroupSigEvent) {
-	peers := pm.peers.PeersWithoutGroupSig(groupSig.UnitHash)
+	peers := pm.peers.PeersWithoutGroupSig(groupSig.Hash())
 	for _, peer := range peers {
 		peer.SendGroupSig(groupSig)
 	}
@@ -285,12 +286,12 @@ func (p *peer) SendVSSResponse(resp *mp.VSSResponseEvent) error {
 
 // @author Albert·Gou
 func (p *peer) SendSigShare(sigShare *mp.SigShareEvent) error {
-	p.MarkSigShare(sigShare.UnitHash)
+	p.MarkSigShare(sigShare.Hash())
 	return p2p.Send(p.rw, SigShareMsg, sigShare)
 }
 
 //BroadcastGroupSig
 func (p *peer) SendGroupSig(groupSig *mp.GroupSigEvent) error {
-	p.MarkGroupSig(groupSig.UnitHash)
+	p.MarkGroupSig(groupSig.Hash())
 	return p2p.Send(p.rw, GroupSigMsg, groupSig)
 }
