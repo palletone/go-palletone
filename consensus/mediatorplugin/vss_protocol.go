@@ -126,6 +126,8 @@ func (mp *MediatorPlugin) launchGroupSignLoops() {
 
 			go mp.signUnitsTBLS(localMed)
 			go mp.recoverUnitsTBLS(localMed)
+		} else {
+			log.Debugf("the mediator(%v)'s DKG verification failed", localMed.Str())
 		}
 	}
 }
@@ -138,13 +140,14 @@ func (mp *MediatorPlugin) launchDealAndRespLoops() {
 		go mp.processDealLoop(localMed)
 
 		for _, vrfrMed := range ams {
+			// todo 必须处理 当收到response时 deal还没收到的情况
 			go mp.processResponseLoop(localMed, vrfrMed)
 		}
 	}
 }
 
 func (mp *MediatorPlugin) processDealLoop(localMed common.Address) {
-	log.Debugf("the local active mediator(%v) run the loop to deal", localMed.Str())
+	log.Debugf("the local active mediator(%v) run the loop to process deal", localMed.Str())
 
 	mp.vssBufLock.RLock()
 	dealCh, ok := mp.dealBuf[localMed]
