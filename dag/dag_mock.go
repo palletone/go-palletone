@@ -5,10 +5,6 @@
 package dag
 
 import (
-	big "math/big"
-	reflect "reflect"
-	time "time"
-
 	gomock "github.com/golang/mock/gomock"
 	common "github.com/palletone/go-palletone/common"
 	event "github.com/palletone/go-palletone/common/event"
@@ -17,6 +13,9 @@ import (
 	core "github.com/palletone/go-palletone/core"
 	modules "github.com/palletone/go-palletone/dag/modules"
 	txspool "github.com/palletone/go-palletone/txspool"
+	big "math/big"
+	reflect "reflect"
+	time "time"
 )
 
 // MockIDag is a mock of IDag interface
@@ -77,6 +76,18 @@ func (mr *MockIDagMockRecorder) GetCommonByPrefix(prefix, stableDb interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommonByPrefix", reflect.TypeOf((*MockIDag)(nil).GetCommonByPrefix), prefix, stableDb)
 }
 
+// SaveCommon mocks base method
+func (m *MockIDag) SaveCommon(key, val []byte) error {
+	ret := m.ctrl.Call(m, "SaveCommon", key, val)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveCommon indicates an expected call of SaveCommon
+func (mr *MockIDagMockRecorder) SaveCommon(key, val interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveCommon", reflect.TypeOf((*MockIDag)(nil).SaveCommon), key, val)
+}
+
 // GetAllData mocks base method
 func (m *MockIDag) GetAllData() ([][]byte, [][]byte) {
 	ret := m.ctrl.Call(m, "GetAllData")
@@ -90,16 +101,17 @@ func (mr *MockIDagMockRecorder) GetAllData() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllData", reflect.TypeOf((*MockIDag)(nil).GetAllData))
 }
 
-// SaveCommon mocks base method
-func (m *MockIDag) SaveCommon(key, val []byte) error {
-	ret := m.ctrl.Call(m, "SaveCommon", key, val)
-	ret0, _ := ret[0].(error)
-	return ret0
+// MemdagInfos mocks base method
+func (m *MockIDag) MemdagInfos() (*modules.MemdagInfos, error) {
+	ret := m.ctrl.Call(m, "MemdagInfos")
+	ret0, _ := ret[0].(*modules.MemdagInfos)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// SaveCommon indicates an expected call of SaveCommon
-func (mr *MockIDagMockRecorder) SaveCommon(key, val interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveCommon", reflect.TypeOf((*MockIDag)(nil).SaveCommon), key, val)
+// MemdagInfos indicates an expected call of MemdagInfos
+func (mr *MockIDagMockRecorder) MemdagInfos() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MemdagInfos", reflect.TypeOf((*MockIDag)(nil).MemdagInfos))
 }
 
 // IsEmpty mocks base method
@@ -240,7 +252,6 @@ func (mr *MockIDagMockRecorder) GetHeaderByHash(arg0 interface{}) *gomock.Call {
 
 // GetHeadersByAuthor mocks base method
 func (m *MockIDag) GetHeadersByAuthor(authorAddr common.Address, startHeight, count uint64) ([]*modules.Header, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetHeadersByAuthor", authorAddr, startHeight, count)
 	ret0, _ := ret[0].([]*modules.Header)
 	ret1, _ := ret[1].(error)
@@ -249,7 +260,6 @@ func (m *MockIDag) GetHeadersByAuthor(authorAddr common.Address, startHeight, co
 
 // GetHeadersByAuthor indicates an expected call of GetHeadersByAuthor
 func (mr *MockIDagMockRecorder) GetHeadersByAuthor(authorAddr, startHeight, count interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeadersByAuthor", reflect.TypeOf((*MockIDag)(nil).GetHeadersByAuthor), authorAddr, startHeight, count)
 }
 
@@ -1131,7 +1141,6 @@ func (mr *MockIDagMockRecorder) GetAllLeafNodes() *gomock.Call {
 
 // ClearUtxo mocks base method
 func (m *MockIDag) ClearUtxo() error {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ClearUtxo")
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -1139,13 +1148,11 @@ func (m *MockIDag) ClearUtxo() error {
 
 // ClearUtxo indicates an expected call of ClearUtxo
 func (mr *MockIDagMockRecorder) ClearUtxo() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearUtxo", reflect.TypeOf((*MockIDag)(nil).ClearUtxo))
 }
 
 // ClearAddrUtxo mocks base method
 func (m *MockIDag) ClearAddrUtxo(addr common.Address) error {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ClearAddrUtxo", addr)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -1153,7 +1160,6 @@ func (m *MockIDag) ClearAddrUtxo(addr common.Address) error {
 
 // ClearAddrUtxo indicates an expected call of ClearAddrUtxo
 func (mr *MockIDagMockRecorder) ClearAddrUtxo(addr interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearAddrUtxo", reflect.TypeOf((*MockIDag)(nil).ClearAddrUtxo), addr)
 }
 
@@ -1699,7 +1705,6 @@ func (m *MockIDag) CheckUnitsCorrect(assetId string, number int) error {
 
 // CheckUnitsCorrect indicates an expected call of CheckUnitsCorrect
 func (mr *MockIDagMockRecorder) CheckUnitsCorrect(assetId, number interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckUnitsCorrect", reflect.TypeOf((*MockIDag)(nil).CheckUnitsCorrect), assetId, number)
 }
 
@@ -1740,19 +1745,4 @@ func (m *MockIDag) GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, 
 // GetJurorByAddrHash indicates an expected call of GetJurorByAddrHash
 func (mr *MockIDagMockRecorder) GetJurorByAddrHash(hash interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetJurorByAddrHash", reflect.TypeOf((*MockIDag)(nil).GetJurorByAddrHash), hash)
-}
-
-// MemdagInfos mocks base method
-func (m *MockIDag) MemdagInfos() (*modules.MemdagInfos, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MemdagInfos")
-	ret0, _ := ret[0].(*modules.MemdagInfos)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// MemdagInfos indicates an expected call of MemdagInfos
-func (mr *MockIDagMockRecorder) MemdagInfos() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MemdagInfos", reflect.TypeOf((*MockIDag)(nil).MemdagInfos))
 }
