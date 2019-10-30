@@ -61,8 +61,8 @@ const (
 	// The number is referenced from the size of tx pool.
 	txChanSize = 4096
 
-	unitsCacheSize   = 5 * 1024 * 1024
-	unitCacheTimeout = 60 * 5
+	cacheSize    = 5 * 1024 * 1024
+	cacheTimeout = 60 * 5
 )
 
 // errIncompatibleConfig is returned if the requested protocols and configs are
@@ -181,7 +181,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 		producer:       producer,
 		contractProc:   contractProc,
 		lightSync:      uint32(1),
-		receivedCache:  freecache.NewCache(unitsCacheSize),
+		receivedCache:  freecache.NewCache(cacheSize),
 		contract:       contract,
 	}
 	symbol, _, _, _, _ := gasToken.ParseAssetId()
@@ -257,7 +257,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 func (pm *ProtocolManager) IsExistInCache(id []byte) bool {
 	_, err := pm.receivedCache.Get(id)
 	if err != nil { //Not exist, add it!
-		pm.receivedCache.Set(id, nil, unitCacheTimeout)
+		pm.receivedCache.Set(id, nil, cacheTimeout)
 	}
 	return err == nil
 }

@@ -355,3 +355,37 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	delete(mp.toTBLSRecoverBuf[localMed], unitHash)
 	go mp.groupSigFeed.Send(GroupSigEvent{UnitHash: unitHash, GroupSig: groupSig})
 }
+
+func (mp *MediatorPlugin) groupSignUnit(localMed common.Address, unitHash common.Hash) {
+	if !mp.groupSigningEnabled {
+		return
+	}
+
+	// 1. 初始化签名unit相关的签名分片的buf
+	mp.toTBLSBufLock.Lock()
+	if _, ok := mp.toTBLSRecoverBuf[localMed]; !ok {
+		mp.toTBLSRecoverBuf[localMed] = make(map[common.Hash]*sigShareSet)
+	}
+	aSize := mp.dag.ActiveMediatorsCount()
+	mp.toTBLSRecoverBuf[localMed][unitHash] = newSigShareSet(aSize)
+	mp.toTBLSBufLock.Unlock()
+
+	// 2. 过了 unit 确认时间后，及时删除群签名分片的相关数据，防止内存溢出
+	go func() {
+		expiration := mp.dag.UnitIrreversibleTime()
+		deleteBuf := time.NewTimer(expiration)
+
+		select {
+		case <-mp.quit:
+			return
+		case <-deleteBuf.C:
+			mp.toTBLSBufLock.Lock()
+			if _, ok := mp.toTBLSRecoverBuf[localMed][unitHash]; ok {
+				log.Debugf("the unit(%v) has expired confirmation time, no longer need the mediator(%v) "+
+					"to recover group-sign", unitHash.TerminalString(), localMed.Str())
+				delete(mp.toTBLSRecoverBuf[localMed], unitHash)
+			}
+			mp.toTBLSBufLock.Unlock()
+		}
+	}()
+}
