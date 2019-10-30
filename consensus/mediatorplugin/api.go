@@ -89,6 +89,7 @@ func (mp *MediatorPlugin) LocalHavePrecedingMediator() bool {
 }
 
 func (mp *MediatorPlugin) localMediatorPubKey(add common.Address) []byte {
+	log.Debugf("try to get pubkey of mediator(%v)", add.Str())
 	var pubKey []byte = nil
 	mp.dkgLock.RLock()
 	defer mp.dkgLock.RUnlock()

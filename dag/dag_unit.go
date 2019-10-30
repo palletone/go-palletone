@@ -44,6 +44,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	}(t0)
 
 	// 1. 判断是否满足生产的若干条件
+	log.Debugf("generate unit ...")
 
 	// 2. 生产unit，添加交易集、时间戳、签名
 	newUnit, err := dag.CreateUnit(producer, txpool, when)
@@ -92,6 +93,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 		return nil, fmt.Errorf(errStr)
 	}
 	sign_unit.ReceivedAt = time.Now()
+
 	//4.PostChainEvents
 	//TODO add PostChainEvents
 	go func() {
