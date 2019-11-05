@@ -58,8 +58,16 @@ func GetERC20Adaptor() adaptor.ICryptoCurrency {
 	return &ethAdaptor
 }
 
-func ProcessOutChainCall(chaincodeID string, outChainCall *pb.OutChainCall) (string, error) {
+func ProcessOutChainCall(chaincodeID string, outChainCall *pb.OutChainCall) (result string, err error) {
 	log.Infof("Get Request method : %s %s", outChainCall.Method, cfg.Ada.Eth.Rawurl)
+
+	defer func() {
+		errRecover := recover()
+		if errRecover != nil {
+			err = errors.New("panic in adaptor")
+			log.Infof("ProcessOutChainCall() panic : %s", err)
+		}
+	}()
 
 	chainName := strings.ToLower(outChainCall.OutChainName)
 	if _, existChain := exceptMethond[chainName]; existChain {
