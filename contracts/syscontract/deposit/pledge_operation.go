@@ -20,10 +20,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/contracts/shim"
-	"github.com/palletone/go-palletone/contracts/syscontract"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/errors"
@@ -70,15 +68,7 @@ func handlePledgeReward(stub shim.ChaincodeStubInterface) pb.Response {
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	if depositDailyReward > 0 {
-		//增发到合约
-		log.Debugf("Create coinbase %d to pledge contract", depositDailyReward)
-		err = stub.SupplyToken(dagconfig.DagConfig.GetGasToken().Bytes(),
-			[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, depositDailyReward, syscontract.DepositContractAddress.String())
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-	}
+
 	return shim.Success(nil)
 
 }

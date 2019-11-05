@@ -23,8 +23,9 @@ package core
 const (
 	DefaultTokenAmount = "100000000000000000"
 	//DefaultTokenDecimal              = 8
-	DefaultChainID           = 1
-	DefaultPledgeDailyReward = 288745000
+	DefaultChainID = 1
+	//DefaultPledgeDailyReward = 288745000
+	DefaultPledgeDailyReward = 300000000
 	// DefaultTxCoinYearRate            = 0
 	DefaultRewardHeight              = 100
 	DefaultGenerateUnitReward        = 15000
@@ -137,9 +138,9 @@ const (
 	DefaultMaintenanceInterval  = 60 * 5 // 60 * 60 * 24 // seconds, aka: 1 day
 	DefaultMaintenanceSkipSlots = 0      //Devin: Don't change // 1 // number of slots to skip for maintenance interval
 
-	DefaultMediatorCreateFee  = 50000
-	DefaultAccountUpdateFee   = 5000
-	DefaultTransferPtnBaseFee = 5000
+	DefaultMediatorCreateFee        = 50000
+	DefaultAccountUpdateFee         = 5000
+	DefaultTransferPtnBaseFee       = 5000
 	DefaultTransferPtnPricePerKByte = 15000
 	DefaultContractInvokeFee        = 100000000
 

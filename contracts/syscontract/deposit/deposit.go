@@ -505,6 +505,15 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			shim.Error(err.Error())
 		}
 		return shim.Success(juryb)
+	case "IsFinishAllocated":
+		h,err := stub.GetState("haveAllcocatedCount")
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		if h == nil {
+			return shim.Success([]byte("true"))
+		}
+		return shim.Success([]byte("false"))
 	}
 	return shim.Error("please enter validate function name")
 }
