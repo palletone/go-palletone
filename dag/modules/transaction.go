@@ -22,6 +22,7 @@ package modules
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/palletone/go-palletone/dag/constants"
 	"io"
 	"math"
 	"time"
@@ -237,6 +238,7 @@ type Transaction struct {
 type QueryUtxoFunc func(outpoint *OutPoint) (*Utxo, error)
 type GetAddressFromScriptFunc func(lockScript []byte) (common.Address, error)
 type GetScriptSignersFunc func(tx *Transaction, msgIdx, inputIndex int) ([]common.Address, error)
+type QueryStateByVersionFunc func(id []byte, field string, version *StateVersion) ([]byte, error)
 
 //计算该交易的手续费，基于UTXO，所以传入查询UTXO的函数指针
 func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, error) {
@@ -298,6 +300,75 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 	fees := inAmount - outAmount
 
 	return &AmountAsset{Amount: fees, Asset: feeAsset}, nil
+}
+
+func (tx *Transaction) GetCoinbaseReward(versionFunc QueryStateByVersionFunc,
+	scriptFunc GetAddressFromScriptFunc) (*AmountAsset, error) {
+	writeMap := make(map[string][]AmountAsset)
+	readMap := make(map[string][]AmountAsset)
+	if len(tx.TxMessages) == 2 && tx.TxMessages[0].App == APP_PAYMENT &&
+		tx.TxMessages[1].App == APP_CONTRACT_INVOKE { //进行了汇总付款
+		invoke := tx.TxMessages[1].Payload.(*ContractInvokePayload)
+		for _, read := range invoke.ReadSet {
+			readResult, err := versionFunc(read.ContractId, read.Key, read.Version)
+			if err != nil {
+				return nil, err
+			}
+			var aa []AmountAsset
+			err = rlp.DecodeBytes(readResult, &aa)
+			if err != nil {
+				return nil, err
+			}
+			addr := read.Key[len(constants.RewardAddressPrefix):]
+			readMap[addr] = aa
+		}
+		payment := tx.TxMessages[0].Payload.(*PaymentPayload)
+		for _, out := range payment.Outputs {
+			aa := AmountAsset{
+				Amount: out.Value,
+				Asset:  out.Asset,
+			}
+			addr, _ := scriptFunc(out.PkScript)
+			writeMap[addr.String()] = []AmountAsset{aa}
+		}
+	}
+	if tx.TxMessages[0].App == APP_CONTRACT_INVOKE { //进行了记账
+		invoke := tx.TxMessages[0].Payload.(*ContractInvokePayload)
+		for _, write := range invoke.WriteSet {
+			var aa []AmountAsset
+			err := rlp.DecodeBytes(write.Value, &aa)
+			if err != nil {
+				return nil, err
+			}
+			addr := write.Key[len(constants.RewardAddressPrefix):]
+			writeMap[addr] = aa
+		}
+
+		for _, read := range invoke.ReadSet {
+			readResult, err := versionFunc(read.ContractId, read.Key, read.Version)
+			if err != nil {
+				return nil, err
+			}
+			var aa []AmountAsset
+			err = rlp.DecodeBytes(readResult, &aa)
+			if err != nil {
+				return nil, err
+			}
+			addr := read.Key[len(constants.RewardAddressPrefix):]
+			readMap[addr] = aa
+		}
+	}
+	//计算Write Map和Read Map的差，获得Reward值
+	reward := &AmountAsset{}
+	for writeAddr, writeAA := range writeMap {
+		reward.Asset = writeAA[0].Asset
+		if readAA, ok := readMap[writeAddr]; ok {
+			reward.Amount += writeAA[0].Amount - readAA[0].Amount
+		} else {
+			reward.Amount += writeAA[0].Amount
+		}
+	}
+	return reward, nil
 }
 
 //该Tx如果保存后，会产生的新的Utxo

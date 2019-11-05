@@ -60,7 +60,7 @@ func TestMemDag_AddUnit(t *testing.T) {
 	unitRep.SaveUnit(lastHeader, false)
 	propRep := dagcommon.NewPropRepository(propDb)
 	propRep.StoreGlobalProp(modules.NewGlobalProp())
-	stateRep := dagcommon.NewStateRepository(stateDb)
+	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 	gasToken := dagconfig.DagConfig.GetGasToken()
 	memdag := NewMemDag(gasToken, 2, false,
 		db, unitRep, propRep, stateRep, cache(), tokenengine.Instance)
@@ -85,7 +85,7 @@ func BenchmarkMemDag_AddUnit(b *testing.B) {
 	unitRep.SaveUnit(lastHeader, false)
 	propRep := dagcommon.NewPropRepository(propDb)
 	propRep.StoreGlobalProp(modules.NewGlobalProp())
-	stateRep := dagcommon.NewStateRepository(stateDb)
+	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 	gasToken := modules.PTNCOIN
 	memdag := NewMemDag(gasToken, 2, false,
 		db, unitRep, propRep, stateRep, cache(), tokenengine.Instance)
@@ -166,7 +166,7 @@ func TestMemDag_AddOrphanUnit(t *testing.T) {
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenengine.Instance)
 	unitRep.SaveUnit(lastHeader, false)
 	propRep := dagcommon.NewPropRepository(propDb)
-	stateRep := dagcommon.NewStateRepository(stateDb)
+	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 	gasToken := modules.PTNCOIN
 	memdag := NewMemDag(gasToken, 2, false,
 		db, unitRep, propRep, stateRep, cache(), tokenengine.Instance)
@@ -211,7 +211,7 @@ func TestMemDag_SwitchMainChain(t *testing.T) {
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenengine.Instance)
 	unitRep.SaveUnit(u0, false)
 	propRep := dagcommon.NewPropRepository(propDb)
-	stateRep := dagcommon.NewStateRepository(stateDb)
+	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 	gasToken := modules.PTNCOIN
 	memdag := NewMemDag(gasToken, 2,
 		false, db, unitRep, propRep, stateRep, cache(), tokenengine.Instance)

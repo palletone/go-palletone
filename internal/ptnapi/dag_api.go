@@ -199,7 +199,7 @@ func (s *PublicDagAPI) GetUnitByHash(ctx context.Context, condition string) stri
 		log.Info("PublicBlockChainAPI", "GetUnitByHash GetUnitByHash is nil hash:", hash)
 		return "GetUnitByHash nil"
 	}
-	jsonUnit := ptnjson.ConvertUnit2Json(unit, s.b.Dag().GetTxOutput)
+	jsonUnit := ptnjson.ConvertUnit2Json(unit, s.b.Dag().GetTxOutput, s.b.Dag().GetContractStateByVersion)
 	content, err := json.Marshal(jsonUnit)
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetUnitByHash Marshal err:", err, "unit:", *unit)
@@ -227,7 +227,7 @@ func (s *PublicDagAPI) GetUnitByNumber(ctx context.Context, condition string) st
 		log.Info("PublicBlockChainAPI", "GetUnitByNumber GetUnitByNumber is nil number:", number)
 		return "GetUnitByNumber nil"
 	}
-	jsonUnit := ptnjson.ConvertUnit2Json(unit, s.b.Dag().GetTxOutput)
+	jsonUnit := ptnjson.ConvertUnit2Json(unit, s.b.Dag().GetTxOutput, s.b.Dag().GetContractStateByVersion)
 	content, err := json.Marshal(jsonUnit)
 	if err != nil {
 		log.Info("PublicBlockChainAPI", "GetUnitByNumber Marshal err:", err, "unit:", *unit)
@@ -266,7 +266,7 @@ func (s *PublicDagAPI) GetUnitsByIndex(ctx context.Context, start, end decimal.D
 	jsonUnits := make([]*ptnjson.UnitJson, 0)
 
 	for _, u := range units {
-		jsonu := ptnjson.ConvertUnit2Json(u, s.b.Dag().GetTxOutput)
+		jsonu := ptnjson.ConvertUnit2Json(u, s.b.Dag().GetTxOutput, s.b.Dag().GetContractStateByVersion)
 		jsonUnits = append(jsonUnits, jsonu)
 	}
 	info := NewPublicReturnInfo("units", jsonUnits)

@@ -83,7 +83,7 @@ func NewUnitProduceRepository4Db(db ptndb.Database,
 
 	unitRep := NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenEngine)
 	propRep := NewPropRepository(propDb)
-	stateRep := NewStateRepository(stateDb)
+	stateRep := NewStateRepository(stateDb, dagDb)
 
 	return &UnitProduceRepository{
 		unitRep:  unitRep,

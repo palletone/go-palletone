@@ -561,7 +561,7 @@ func NewDag(db ptndb.Database, cache palletcache.ICache, light bool) (*Dag, erro
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb, tokenEngine)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenEngine)
 	propRep := dagcommon.NewPropRepository(propDb)
-	stateRep := dagcommon.NewStateRepository(stateDb)
+	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 	stableUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
 	gasToken := dagconfig.DagConfig.GetGasToken()
 	threshold, _ := propRep.GetChainThreshold()
@@ -675,7 +675,7 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb, tokenEngine)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenEngine)
 	propRep := dagcommon.NewPropRepository(propDb)
-	stateRep := dagcommon.NewStateRepository(stateDb)
+	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 
 	statleUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
 
@@ -706,7 +706,7 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 	propDb := storage.NewPropertyDb(db)
 
 	propRep := dagcommon.NewPropRepository(propDb)
-	stateRep := dagcommon.NewStateRepository(stateDb)
+	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb, tokenEngine)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenEngine)
 	statleUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
@@ -924,6 +924,9 @@ func (d *Dag) GetAddrTransactions(addr common.Address) ([]*modules.TransactionWi
 // get contract state return codes, state version by contractId and field
 func (d *Dag) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {
 	return d.unstableStateRep.GetContractState(id, field)
+}
+func (d *Dag) GetContractStateByVersion(id []byte, field string, version *modules.StateVersion) ([]byte, error) {
+	return d.unstableStateRep.GetContractStateByVersion(id, field, version)
 }
 
 // get contract all state
