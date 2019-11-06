@@ -78,6 +78,8 @@ type IDag interface {
 	GetGenesisUnit() (*modules.Unit, error)
 
 	GetContractState(contractid []byte, field string) ([]byte, *modules.StateVersion, error)
+	GetContractStateByVersion(id []byte, field string, version *modules.StateVersion) ([]byte, error)
+
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 	GetContractJury(contractId []byte) (*modules.ElectionNode, error)
@@ -115,7 +117,7 @@ type IDag interface {
 
 	//Mediator
 	GetActiveMediator(add common.Address) *core.Mediator
-	GetActiveMediatorNode(index int) *discover.Node
+	GetActiveMediatorAddr(index int) common.Address
 	GetActiveMediatorNodes() map[string]*discover.Node
 
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)

@@ -36,6 +36,10 @@ type SigShareEvent struct {
 	Deadline uint64 // 被广播的截止日期
 }
 
+func (e *SigShareEvent) Hash() common.Hash {
+	return util.RlpHash(e)
+}
+
 type VSSDealEvent struct {
 	DstIndex uint32
 	Deal     *dkg.Deal
@@ -58,4 +62,8 @@ func (e *VSSResponseEvent) Hash() common.Hash {
 type GroupSigEvent struct {
 	UnitHash common.Hash
 	GroupSig []byte
+}
+
+func (e *GroupSigEvent) Hash() common.Hash {
+	return util.RlpHash(e)
 }

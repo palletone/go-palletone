@@ -219,6 +219,7 @@ linters:
     - stylecheck
     - whitespace
     - gosimple
+    - interfacer
   disable-all: false
   # presets:
   #   - bugs

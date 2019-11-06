@@ -64,7 +64,7 @@ function replacejson()
 
     add=`echo $add | jq ".initialParameters.maintenance_skip_slots = 2"`
 
-    add=`echo $add | jq ".immutableChainParameters.min_maint_skip_slots = 2"`
+    add=`echo $add | jq ".immutableChainParameters.min_maint_skip_slots = 0"`
 
     add=`echo $add | jq ".initialParameters.mediator_interval = 3"`
 

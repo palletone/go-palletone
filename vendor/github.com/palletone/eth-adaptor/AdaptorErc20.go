@@ -298,7 +298,7 @@ func (aerc20 *AdaptorErc20) GetAddrTxHistory(input *adaptor.GetAddrTxHistoryInpu
 
 //根据交易ID获得对应的转账交易
 func (aerc20 *AdaptorErc20) GetTransferTx(input *adaptor.GetTransferTxInput) (*adaptor.GetTransferTxOutput, error) {
-	return GetTransferTx(input, &aerc20.RPCParams, aerc20.NetID)
+	return GetTransferTx(input, &aerc20.RPCParams, aerc20.NetID, true)
 }
 
 //创建一个多签地址，该地址必须要满足signCount个签名才能解锁

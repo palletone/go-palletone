@@ -22,9 +22,10 @@ package memunit
 
 import (
 	"fmt"
-	"github.com/palletone/go-palletone/tokenengine"
 	"sync"
 	"time"
+
+	"github.com/palletone/go-palletone/tokenengine"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
@@ -210,8 +211,7 @@ func (chain *MemDag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Hea
 //	return nil, fmt.Errorf("the header[%s] not exist.", number.String())
 //}
 
-func (chain *MemDag) SetUnitGroupSign(uHash common.Hash /*, groupPubKey []byte*/, groupSign []byte,
-	txpool txspool.ITxPool) error {
+func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error {
 	//1. Set this unit as stable
 	unit_temp, err := chain.getChainUnit(uHash)
 	if err != nil {
@@ -521,8 +521,8 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 	chain.lock.Lock()
 	defer chain.lock.Unlock()
 	if unit.NumberU64() <= chain.stableUnitHeight {
-		log.Debugf("This unit is too old! Ignore it,stable unit height:%d, stable hash:%s",
-			chain.stableUnitHeight, chain.stableUnitHash.String())
+		log.Debugf("This unit is too old hight:%d,hash:%s .Ignore it,stable unit height:%d, stable hash:%s",
+			unit.Number().Index, unit.UnitHash.String(), chain.stableUnitHeight, chain.stableUnitHash.String())
 		go txpool.ResetPendingTxs(unit.Transactions())
 		return nil, nil, nil, nil, nil, nil
 	}

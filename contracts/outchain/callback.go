@@ -16,12 +16,18 @@ import (
 )
 
 var (
-	allChain      = map[string]adaptor.ICryptoCurrency{"btc": GetBTCAdaptor(), "eth": GetETHAdaptor(), "erc20": GetERC20Adaptor()}
+	allChain      = map[string]adaptor.ICryptoCurrency{}
 	exceptMethond = map[string]CallbackExcpet{ //some method need private key, list in map, first key is methodName
 		"GetJuryPubkey": GetJuryPubkey, "GetJuryAddr": GetJuryAddr,
 		"SignTransaction": SignTransaction, "SignMessage": SignMessage,
 	}
 )
+
+func setAllChain() {
+	allChain["btc"] = GetBTCAdaptor()
+	allChain["eth"] = GetETHAdaptor()
+	allChain["erc20"] = GetERC20Adaptor()
+}
 
 type Callback func() adaptor.ICryptoCurrency
 
@@ -52,8 +58,16 @@ func GetERC20Adaptor() adaptor.ICryptoCurrency {
 	return &ethAdaptor
 }
 
-func ProcessOutChainCall(chaincodeID string, outChainCall *pb.OutChainCall) (string, error) {
-	log.Debugf("Get Request method : %s", outChainCall.Method)
+func ProcessOutChainCall(chaincodeID string, outChainCall *pb.OutChainCall) (result string, err error) {
+	log.Infof("Get Request method : %s %s", outChainCall.Method, cfg.Ada.Eth.Rawurl)
+
+	defer func() {
+		errRecover := recover()
+		if errRecover != nil {
+			err = errors.New("panic in adaptor")
+			log.Infof("ProcessOutChainCall() panic : %s", err)
+		}
+	}()
 
 	chainName := strings.ToLower(outChainCall.OutChainName)
 	if _, existChain := exceptMethond[chainName]; existChain {

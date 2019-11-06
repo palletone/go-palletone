@@ -37,6 +37,8 @@ import (
 
 type IStateRepository interface {
 	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
+	GetContractStateByVersion(id []byte, field string, version *modules.StateVersion) ([]byte, error)
+
 	SaveContractState(id []byte, w *modules.ContractWriteSet, version *modules.StateVersion) error
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
@@ -93,16 +95,57 @@ type IStateRepository interface {
 
 type StateRepository struct {
 	statedb         storage.IStateDb
+	dagdb           storage.IDagDb
 	mapHash2Address map[common.Hash]common.Address //For Juror address hash
 }
 
-func NewStateRepository(statedb storage.IStateDb) *StateRepository {
-	return &StateRepository{statedb: statedb, mapHash2Address: make(map[common.Hash]common.Address)}
+func NewStateRepository(statedb storage.IStateDb, dagdb storage.IDagDb) *StateRepository {
+	return &StateRepository{statedb: statedb,
+		mapHash2Address: make(map[common.Hash]common.Address),
+		dagdb:           dagdb,
+	}
 }
 
 func NewStateRepository4Db(db ptndb.Database) *StateRepository {
 	statedb := storage.NewStateDb(db)
-	return NewStateRepository(statedb)
+	dagdb := storage.NewDagDb(db)
+	return NewStateRepository(statedb, dagdb)
+}
+
+//获取某个版本的值
+//先根据StateVersion查到对应的交易
+//然后交易的WriteSet找出来对应的key和value
+func (rep *StateRepository) GetContractStateByVersion(id []byte,
+	field string, version *modules.StateVersion) ([]byte, error) {
+	unitHash, err := rep.dagdb.GetHashByNumber(version.Height)
+	if err != nil {
+		return nil, err
+	}
+	body, err := rep.dagdb.GetBody(unitHash)
+	if err != nil {
+		return nil, err
+	}
+	if len(body) <= int(version.TxIndex) {
+		return nil, errors.New("tx body count less than version tx index")
+	}
+	txHash := body[version.TxIndex]
+	tx, err := rep.dagdb.GetTransactionOnly(txHash)
+	if err != nil {
+		return nil, err
+	}
+	for _, msg := range tx.TxMessages {
+		if msg.App == modules.APP_CONTRACT_INVOKE {
+			invoke := msg.Payload.(*modules.ContractInvokePayload)
+			//if bytes.Equal(	invoke.ContractId,id){
+			for _, write := range invoke.WriteSet {
+				if write.Key == field {
+					return write.Value, nil
+				}
+			}
+			//}
+		}
+	}
+	return nil, errors.New("WriteSet not found")
 }
 
 func (rep *StateRepository) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {

@@ -53,8 +53,8 @@ const (
 	//transitionStep2  = 2 //vss success
 	//transitionCancel = 3 //retranstion
 
-	maxKnownVSSDeal     = 21 * 21
-	maxKnownVSSResponse = 21 * 21 * 21
+	maxKnownVSSDeal     = 21 * 20
+	maxKnownVSSResponse = 21 * 20
 	maxKnownSigShare    = 21 * 15
 )
 

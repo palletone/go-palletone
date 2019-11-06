@@ -178,7 +178,7 @@ func (aeth *AdaptorETH) GetAddrTxHistory(input *adaptor.GetAddrTxHistoryInput) (
 
 //根据交易ID获得对应的转账交易
 func (aeth *AdaptorETH) GetTransferTx(input *adaptor.GetTransferTxInput) (*adaptor.GetTransferTxOutput, error) {
-	return GetTransferTx(input, &aeth.RPCParams, aeth.NetID)
+	return GetTransferTx(input, &aeth.RPCParams, aeth.NetID, false)
 }
 
 //创建一个多签地址，该地址必须要满足signCount个签名才能解锁 //eth没有多签，not implement

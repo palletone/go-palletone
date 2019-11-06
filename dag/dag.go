@@ -561,7 +561,7 @@ func NewDag(db ptndb.Database, cache palletcache.ICache, light bool) (*Dag, erro
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb, tokenEngine)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenEngine)
 	propRep := dagcommon.NewPropRepository(propDb)
-	stateRep := dagcommon.NewStateRepository(stateDb)
+	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 	stableUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
 	gasToken := dagconfig.DagConfig.GetGasToken()
 	threshold, _ := propRep.GetChainThreshold()
@@ -675,7 +675,7 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb, tokenEngine)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenEngine)
 	propRep := dagcommon.NewPropRepository(propDb)
-	stateRep := dagcommon.NewStateRepository(stateDb)
+	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 
 	statleUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
 
@@ -706,7 +706,7 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 	propDb := storage.NewPropertyDb(db)
 
 	propRep := dagcommon.NewPropRepository(propDb)
-	stateRep := dagcommon.NewStateRepository(stateDb)
+	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb, tokenEngine)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenEngine)
 	statleUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
@@ -925,6 +925,9 @@ func (d *Dag) GetAddrTransactions(addr common.Address) ([]*modules.TransactionWi
 func (d *Dag) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {
 	return d.unstableStateRep.GetContractState(id, field)
 }
+func (d *Dag) GetContractStateByVersion(id []byte, field string, version *modules.StateVersion) ([]byte, error) {
+	return d.unstableStateRep.GetContractStateByVersion(id, field, version)
+}
 
 // get contract all state
 func (d *Dag) GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error) {
@@ -964,7 +967,7 @@ func (d *Dag) saveHeader(header *modules.Header) error {
 		return err
 	}
 	if err := memdag.SaveHeader(header); err != nil {
-		return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
+		return fmt.Errorf("Save Header in MemDag, occurred error: %s", err.Error())
 	}
 
 	return nil
@@ -1081,7 +1084,8 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 	}
 
 	if d.IsIrreversibleUnit(unitHash) {
-		log.Debugf("this unit(%v) is irreversible", unitHash.TerminalString())
+		// 由于采用广播的形式，所以可能会很多次收到同一个unit的群签名
+		//log.Debugf("this unit(%v) is irreversible", unitHash.TerminalString())
 		return nil
 	}
 
@@ -1093,7 +1097,7 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 	// 群签之后， 更新memdag，将该unit和它的父单元们稳定存储。
 	//go d.Memdag.SetStableUnit(unitHash, groupSign[:], txpool)
 	log.Debugf("Try to update unit[%s] group sign", unitHash.String())
-	d.Memdag.SetUnitGroupSign(unitHash /*, nil*/, groupSign, txpool)
+	d.Memdag.SetUnitGroupSign(unitHash, groupSign, txpool)
 
 	//TODO albert 待合并
 	// 状态更新
@@ -1273,12 +1277,12 @@ func (d *Dag) GetDataVersion() (*modules.DataVersion, error) {
 
 // return proof of existence
 func (d *Dag) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error) {
-	return d.stableUnitRep.QueryProofOfExistenceByReference(ref)
+	return d.unstableUnitRep.QueryProofOfExistenceByReference(ref)
 }
 
 // return proof of existence by asset
 func (d *Dag) GetAssetReference(asset []byte) ([]*modules.ProofOfExistence, error) {
-	return d.stableUnitRep.GetAssetReference(asset)
+	return d.unstableUnitRep.GetAssetReference(asset)
 }
 func (d *Dag) CheckHeaderCorrect(number int) error {
 	ptn := modules.PTNCOIN

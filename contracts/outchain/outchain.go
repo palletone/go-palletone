@@ -63,14 +63,14 @@ var DefaultConfig = Config{
 		Eth: ETH{
 			NetID:      0,
 			Rawurl:     "https://mainnet.infura.io/",
-			TxQueryUrl: "https://api.etherscan.io/api?apikey=VYSBPQ383RJXM7HBQVTIK5NGIG8ZYVV6T6",
+			TxQueryUrl: "http://api-cn.etherscan.com/api?apikey=VYSBPQ383RJXM7HBQVTIK5NGIG8ZYVV6T6",
 		},
 		ChainKeyKV: map[string]KeyInfo{
-			"btc": KeyInfo{
+			"btc": {
 				ChaincodeKeys: map[string][]byte{},
 				AddressKeys:   map[string][]byte{},
 			},
-			"eth": KeyInfo{
+			"eth": {
 				ChaincodeKeys: map[string][]byte{},
 				AddressKeys:   map[string][]byte{},
 			},
@@ -118,6 +118,9 @@ func init() {
 
 	//load config
 	GetConfigTest()
+
+	//init all chain adaptor
+	setAllChain()
 }
 
 func makeDefaultConfig() Config {
