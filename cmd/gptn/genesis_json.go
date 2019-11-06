@@ -165,11 +165,11 @@ func createGenesisJson(ctx *cli.Context) error {
 	genesisState.TokenHolder = account
 	genesisState.InitialParameters.FoundationAddress = account
 	genesisState.DigitalIdentityConfig.RootCAHolder = account
-	genesisState.ImmutableParameters.MinMaintSkipSlots = 0
+	genesisState.ImmutableParameters.MinMaintSkipSlots = 2
 
 	genesisState.InitialParameters.MediatorInterval = 3
 	genesisState.InitialTimestamp = genesisState.InitialTimestamp / 3 * 3
-	genesisState.InitialParameters.MaintenanceSkipSlots = 1
+	genesisState.InitialParameters.MaintenanceSkipSlots = 2
 	genesisState.InitialMediatorCandidates = initialMediatorCandidates(mcs, nodeStr, jdes)
 
 	//配置测试的基金会地址及密码
