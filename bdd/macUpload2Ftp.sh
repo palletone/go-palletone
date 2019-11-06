@@ -3,7 +3,7 @@
 set timeout 120
 set ftppwd [lindex $argv 0]
 set folder [lindex $argv 1]
-spawn ftp 47.74.209.46
+spawn ftp 182.92.193.121
 expect "Name"
 send "travis\r"
 expect "Password"

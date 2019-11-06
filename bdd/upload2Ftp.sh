@@ -4,7 +4,7 @@ set timeout 120
 set ftppwd [lindex $argv 0]
 set folder [lindex $argv 1]
 set number [lindex $argv 2]
-spawn lftp travis:$ftppwd@47.74.209.46
+spawn lftp travis:$ftppwd@182.92.193.121
 expect "lftp"
 send "mkdir ${folder}\n"
 expect "mkdir"
