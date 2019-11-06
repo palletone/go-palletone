@@ -29,12 +29,25 @@ Resource          getBalance.txt
 Resource          CreateToken.txt
 Resource          GetAllMediators.txt
 Resource          GetAllNodes.txt
+Resource          getJuryBalance.txt
+Resource          getAllJury.txt
+Resource          mediatorListAll.txt
+Resource          mediatorListVoteResults.txt
+Resource          mediatorVote.txt
+Resource          mediatorGetVoted.txt
+Resource          pledgeDeposit.txt
+Resource          queryPledgeStatusByAddr.txt
+Resource          queryPledgeList.txt
+Resource          queryPledgeListByDate.txt
+Resource          queryAllPledgeHistory.txt
+Resource          PledgeWithdraw.txt
+Resource          HandlePledgeReward.txt
 
 *** Variables ***
 ${depositContractQuery}    contract_depositContractQuery
 ${depositContractInvoke}    contract_depositContractInvoke
 ${Url}            http://127.0.0.1:8545
 ${depositContractAddress}    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM
-${amount}         0
+${amount}         1
 ${fee}            1
 ${medDepositAmount}    50

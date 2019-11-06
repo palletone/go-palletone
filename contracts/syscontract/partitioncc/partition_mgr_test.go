@@ -71,13 +71,15 @@ func TestListPartition(t *testing.T) {
 	}).AnyTimes()
 
 	peers := []string{"127.0.0.1:1234", "192.168.100.2:9090"}
-	peersJson, _ := json.Marshal(peers)
-	args := []string{headerHexString, "222222222", "2", "PTN", "1", "1", "1", "1", "2", string(peersJson), "[\"PTN\"]"}
-	partitionChain, _ := buildPartitionChain(args)
-
+	args := []string{headerHexString, "222222222", "2", "PTN", "1", "1", "1", "1", "2", "[\"PTN\"]"}
+	partitionChain, _ := buildPartitionChain(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], peers)
 	err := addPartitionChain(stub, partitionChain)
 	assert.Nil(t, err)
-	result := listPartition(stub)
+	//result := listPartition(stub)
+	chains, err := getPartitionChains(stub)
+	assert.Nil(t, err)
+	bytesPartitionChain, _ := json.Marshal(chains)
+	result := shim.Success(bytesPartitionChain)
 	t.Log(string(result.Payload))
 }
 

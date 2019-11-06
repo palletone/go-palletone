@@ -173,7 +173,6 @@ func WriteJavaProjectToPackage(tw *tar.Writer, srcPath string) error {
 
 //WriteFileToPackage writes a file to the tarball
 func WriteFileToPackage(localpath string, packagepath string, tw *tar.Writer) error {
-	//glh
 	//log.Debug("Writing file to tarball:", packagepath)
 	fd, err := os.Open(localpath)
 	if err != nil {
@@ -187,7 +186,10 @@ func WriteFileToPackage(localpath string, packagepath string, tw *tar.Writer) er
 }
 
 //WriteStreamToPackage writes bytes (from a file reader) to the tarball
-func WriteStreamToPackage(is io.Reader, localpath string, packagepath string, tw *tar.Writer) error {
+func WriteStreamToPackage(is io.Reader, localPath string, packagePath string, tw *tar.Writer) error { //localpath string, packagepath
+	localpath := strings.Replace(localPath, "\\", "/", -1)
+	packagepath := strings.Replace(packagePath, "\\", "/", -1)
+
 	info, err := os.Stat(localpath)
 	if err != nil {
 		return fmt.Errorf("%s: %s", localpath, err)

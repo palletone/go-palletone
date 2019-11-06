@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * Copyright IBM Corp. All Rights Reserved.
  * @author PalletOne core developers <dev@pallet.one>
@@ -21,6 +22,7 @@ package vote
 
 import (
 	"encoding/json"
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -36,30 +38,31 @@ const symbolsKey = "symbol_"
 const jsonResp1 = "{\"Error\":\"Results format invalid, Error!!!\"}"
 const jsonResp2 = "{\"Error\":\"Token not exist\"}"
 
+//Vote
 type Vote struct {
 }
 
 //one topic
-type VoteTopic struct {
+type voteTopic struct {
 	TopicTitle    string
 	SelectOptions []string
 	SelectMax     uint64
 }
-type VoteResult struct {
+type voteResult struct {
 	SelectOption string
 	Num          uint64
 }
 
 //topic support result
-type TopicSupports struct {
+type topicSupports struct {
 	TopicTitle  string
-	VoteResults []VoteResult
+	VoteResults []voteResult
 	SelectMax   uint64
 	//SelectOptionsNum  uint64
 }
 
 //vote token information
-type TokenInfo struct {
+type tokenInfo struct {
 	Name        string
 	Symbol      string
 	CreateAddr  string
@@ -71,38 +74,73 @@ type TokenInfo struct {
 }
 
 //one user's support
-type SupportRequest struct {
+type supportRequest struct {
 	TopicIndex   uint64
 	SelectIndexs []uint64
 }
 
-type Symbols struct {
-	TokenInfos map[string]TokenInfo `json:"tokeninfos"`
-}
-
+//Init
 func (v *Vote) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(nil)
 }
 
+//Invoke
 func (v *Vote) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	f, args := stub.GetFunctionAndParameters()
 
 	switch f {
 	case "createToken":
-		return createToken(args, stub)
+		if len(args) < 5 {
+			return shim.Error("need 5 args (Name,VoteType,TotalSupply,VoteEndTime,VoteContentJson)")
+		}
+		totalSupply, err := strconv.ParseUint(args[2], 10, 64)
+		if err != nil {
+			jsonResp := "{\"Error\":\"Failed to convert total supply\"}"
+			return shim.Error(jsonResp)
+		}
+		if totalSupply == 0 {
+			jsonResp := "{\"Error\":\"Can't be zero\"}"
+			return shim.Error(jsonResp)
+		}
+		return v.CreateToken(stub, args[0], args[1], totalSupply, args[3], args[4])
 	case "support":
-		return support(args, stub)
+		if len(args) < 1 {
+			return shim.Error("need 1 args (SupportRequestJson)")
+		}
+		return v.Support(stub, args[0])
 	case "getVoteResult":
-		return getVoteResult(args, stub)
+		if len(args) < 1 {
+			return shim.Error("need 1 args (AssetID)")
+		}
+		tkIDInfo, err0 := v.GetVoteResult(stub, args[0])
+		if err0 != nil {
+			return shim.Error(err0.Error())
+		}
+		tkJSON, err := json.Marshal(tkIDInfo)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		return shim.Success(tkJSON)
 	case "getVoteInfo":
-		return getVoteInfo(args, stub)
+		if len(args) < 1 {
+			return shim.Error("need 1 args (AssetID)")
+		}
+		voteInfo, err0 := v.GetVoteInfo(stub, args[0])
+		if err0 != nil {
+			return shim.Error(err0.Error())
+		}
+		vtJSON, err := json.Marshal(voteInfo)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		return shim.Success(vtJSON)
 	default:
 		jsonResp := "{\"Error\":\"Unknown function " + f + "\"}"
 		return shim.Error(jsonResp)
 	}
 }
 
-func setGlobal(stub shim.ChaincodeStubInterface, tkInfo *TokenInfo) error {
+func setGlobal(stub shim.ChaincodeStubInterface, tkInfo *tokenInfo) error {
 	gTkInfo := dm.GlobalTokenInfo{Symbol: tkInfo.Symbol, TokenType: 3, Status: 0, CreateAddr: tkInfo.CreateAddr,
 		TotalSupply: tkInfo.TotalSupply, SupplyAddr: "", AssetID: tkInfo.AssetID}
 	val, err := json.Marshal(gTkInfo)
@@ -113,7 +151,7 @@ func setGlobal(stub shim.ChaincodeStubInterface, tkInfo *TokenInfo) error {
 	return err
 }
 
-func setSymbols(stub shim.ChaincodeStubInterface, tkInfo *TokenInfo) error {
+func setSymbols(stub shim.ChaincodeStubInterface, tkInfo *tokenInfo) error {
 	val, err := json.Marshal(tkInfo)
 	if err != nil {
 		return err
@@ -121,9 +159,9 @@ func setSymbols(stub shim.ChaincodeStubInterface, tkInfo *TokenInfo) error {
 	err = stub.PutState(symbolsKey+tkInfo.AssetID.String(), val)
 	return err
 }
-func getSymbols(stub shim.ChaincodeStubInterface, assetID string) *TokenInfo {
+func getSymbols(stub shim.ChaincodeStubInterface, assetID string) *tokenInfo {
 	//
-	tkInfo := TokenInfo{}
+	tkInfo := tokenInfo{}
 	tkInfoBytes, _ := stub.GetState(symbolsKey + assetID)
 	if len(tkInfoBytes) == 0 {
 		return nil
@@ -137,65 +175,60 @@ func getSymbols(stub shim.ChaincodeStubInterface, assetID string) *TokenInfo {
 	return &tkInfo
 }
 
-func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 5 {
-		return shim.Error("need 5 args (Name,VoteType,TotalSupply,VoteEndTime,VoteContentJson)")
-	}
-
+func (v *Vote) CreateToken(stub shim.ChaincodeStubInterface, name string, voteType string, totalSupply uint64,
+	voteEndTime string, voteContentJSON string) pb.Response {
 	//==== convert params to token information
 	var vt dm.VoteToken
 	//name symbol
-	vt.Name = args[0]
+	if len(name) > 1024 {
+		jsonResp := "{\"Error\":\"Name length should not be greater than 1024\"}"
+		return shim.Error(jsonResp)
+	}
+	vt.Name = name
 	vt.Symbol = "VOTE"
 
 	//vote type
-	if args[1] == "0" {
+	if voteType == "0" {
 		vt.VoteType = byte(0)
-	} else if args[1] == "1" {
+	} else if voteType == "1" {
 		vt.VoteType = byte(1)
-	} else if args[1] == "2" {
+	} else if voteType == "2" {
 		vt.VoteType = byte(2)
 	} else {
 		jsonResp := "{\"Error\":\"Only string, 0 or 1 or 2\"}"
 		return shim.Error(jsonResp)
 	}
 	//total supply
-	totalSupply, err := strconv.ParseUint(args[2], 10, 64)
-	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to convert total supply\"}"
-		return shim.Error(jsonResp)
-	}
-	if totalSupply == 0 {
-		jsonResp := "{\"Error\":\"Can't be zero\"}"
-		return shim.Error(jsonResp)
-	}
 	vt.TotalSupply = totalSupply
 	//VoteEndTime
-	VoteEndTime, err := time.Parse("2006-01-02 15:04:05", args[3])
+	endTime, err := time.Parse("2006-01-02 15:04:05", voteEndTime)
 	if err != nil {
 		jsonResp := "{\"Error\":\"No vote end time\"}"
 		return shim.Error(jsonResp)
 	}
-	vt.VoteEndTime = VoteEndTime
+	vt.VoteEndTime = endTime
 	//VoteContent
-	var voteTopics []VoteTopic
-	err = json.Unmarshal([]byte(args[4]), &voteTopics)
+	var voteTopics []voteTopic
+	err = json.Unmarshal([]byte(voteContentJSON), &voteTopics)
 	if err != nil {
 		jsonResp := "{\"Error\":\"VoteContent format invalid\"}"
 		return shim.Error(jsonResp)
 	}
 	//init support
-	supports := make([]TopicSupports, 0, len(voteTopics))
+	supports := make([]topicSupports, 0, len(voteTopics))
 	for _, oneTopic := range voteTopics {
-		var oneSupport TopicSupports
+		var oneSupport topicSupports
 		oneSupport.TopicTitle = oneTopic.TopicTitle
 		for _, oneOption := range oneTopic.SelectOptions {
-			var oneResult VoteResult
+			var oneResult voteResult
 			oneResult.SelectOption = oneOption
 			oneSupport.VoteResults = append(oneSupport.VoteResults, oneResult)
 		}
 		//oneResult.SelectOptionsNum = uint64(len(oneRequest.SelectOptions))
+		if oneTopic.SelectMax > uint64(len(oneTopic.SelectOptions)) {
+			jsonResp := "{\"Error\":\"VoteContent 's SelectMax invalid\"}"
+			return shim.Error(jsonResp)
+		}
 		oneSupport.SelectMax = oneTopic.SelectMax
 		supports = append(supports, oneSupport)
 	}
@@ -231,8 +264,8 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//last put state
-	info := TokenInfo{vt.Name, vt.Symbol, createAddr.String(), vt.VoteType, totalSupply,
-		VoteEndTime, voteContentJson, assetID}
+	info := tokenInfo{vt.Name, vt.Symbol, createAddr.String(), vt.VoteType, totalSupply,
+		endTime, voteContentJson, assetID}
 
 	err = setSymbols(stub, &info)
 	if err != nil {
@@ -257,12 +290,7 @@ func createToken(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(createJson)
 }
 
-func support(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 1 {
-		return shim.Error("need 1 args (SupportRequestJson)")
-	}
-
+func (v *Vote) Support(stub shim.ChaincodeStubInterface, supportRequestJSON string) pb.Response {
 	//check token
 	invokeTokens, err := stub.GetInvokeTokens()
 	if err != nil {
@@ -295,23 +323,23 @@ func support(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	//parse support requests
-	var supportRequests []SupportRequest
-	err = json.Unmarshal([]byte(args[0]), &supportRequests)
+	var requests []supportRequest
+	err = json.Unmarshal([]byte(supportRequestJSON), &requests)
 	if err != nil {
 		jsonResp := "{\"Error\":\"SupportRequestJson format invalid\"}"
 		return shim.Error(jsonResp)
 	}
 	//get token information
-	var topicSupports []TopicSupports
+	var topicSupports []topicSupports
 	err = json.Unmarshal(tkInfo.VoteContent, &topicSupports)
 	if err != nil {
 		return shim.Error(jsonResp1)
 	}
 
-	if voteNum < uint64(len(supportRequests)) { //vote token more than request
-		jsonResp := "{\"Error\":\"Vote token more than support request\"}"
-		return shim.Error(jsonResp)
-	}
+	//if voteNum < uint64(len(supportRequests)) { //vote token more than request
+	//	jsonResp := "{\"Error\":\"Vote token more than support request\"}"
+	//	return shim.Error(jsonResp)
+	//}
 
 	//check time
 	headerTime, err := stub.GetTxTimestamp(10)
@@ -327,7 +355,7 @@ func support(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	//save support
 	indexHistory := make(map[uint64]uint8)
 	indexRepeat := false
-	for _, oneSupport := range supportRequests {
+	for _, oneSupport := range requests {
 		topicIndex := oneSupport.TopicIndex - 1
 		if _, ok := indexHistory[topicIndex]; ok { //check select repeat
 			indexRepeat = true
@@ -345,7 +373,7 @@ func support(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 					}
 					selIndexHistory[selectIndex] = 1
 					if selectIndex < lenOfVoteResult { //3.index must be real select options
-						topicSupports[topicIndex].VoteResults[selectIndex].Num += 1
+						topicSupports[topicIndex].VoteResults[selectIndex].Num += voteNum //1
 					}
 				}
 			}
@@ -371,50 +399,47 @@ func support(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success([]byte(""))
 }
 
-type TokenIDInfo struct {
+type tokenIDInfo struct {
 	IsVoteEnd      bool
 	CreateAddr     string
 	TotalSupply    uint64
-	SupportResults []SupportResult
+	SupportResults []supportResult
 	AssetID        string
 }
-type SupportResult struct {
+type supportResult struct {
 	TopicIndex  uint64
 	TopicTitle  string
-	VoteResults []VoteResult
+	VoteResults []voteResult
 }
 
 // A slice of TopicResult that implements sort.Interface to sort by Value.
-type VoteResultList []VoteResult
+type voteResultList []voteResult
 
-func (p VoteResultList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
-func (p VoteResultList) Len() int           { return len(p) }
-func (p VoteResultList) Less(i, j int) bool { return p[i].Num > p[j].Num }
+func (p voteResultList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+func (p voteResultList) Len() int           { return len(p) }
+func (p voteResultList) Less(i, j int) bool { return p[i].Num > p[j].Num }
 
 // A function to turn a map into a TopicResultList, then sort and return it.
-func sortSupportByCount(tpl VoteResultList) VoteResultList {
+func sortSupportByCount(tpl voteResultList) voteResultList {
 	sort.Stable(tpl) //sort.Sort(tpl)
 	return tpl
 }
-func getVoteResult(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 1 {
-		return shim.Error("need 1 args (AssetID String)")
-	}
 
+//GetVoteResult
+func (v *Vote) GetVoteResult(stub shim.ChaincodeStubInterface, assetID string) (*tokenIDInfo, error) {
 	//assetIDStr
-	assetIDStr := strings.ToUpper(args[0])
+	assetID = strings.ToUpper(assetID)
 	//check name is exist or not
-	tkInfo := getSymbols(stub, assetIDStr)
+	tkInfo := getSymbols(stub, assetID)
 	if tkInfo == nil {
-		return shim.Error(jsonResp2)
+		return nil, fmt.Errorf(jsonResp2)
 	}
 
 	//get token information
-	var topicSupports []TopicSupports
+	var topicSupports []topicSupports
 	err := json.Unmarshal(tkInfo.VoteContent, &topicSupports)
 	if err != nil {
-		return shim.Error(jsonResp1)
+		return nil, fmt.Errorf(jsonResp1)
 	}
 
 	//
@@ -422,15 +447,15 @@ func getVoteResult(args []string, stub shim.ChaincodeStubInterface) pb.Response 
 	headerTime, err := stub.GetTxTimestamp(10)
 	if err != nil {
 		jsonResp := "{\"Error\":\"GetTxTimestamp invalid, Error!!!\"}"
-		return shim.Error(jsonResp)
+		return nil, fmt.Errorf(jsonResp)
 	}
 	if headerTime.Seconds > tkInfo.VoteEndTime.Unix() {
 		isVoteEnd = true
 	}
 	//calculate result
-	supportResults := make([]SupportResult, 0, len(topicSupports))
+	supportResults := make([]supportResult, 0, len(topicSupports))
 	for i, oneTopicSupport := range topicSupports {
-		var oneResult SupportResult
+		var oneResult supportResult
 		oneResult.TopicIndex = uint64(i) + 1
 		oneResult.TopicTitle = oneTopicSupport.TopicTitle
 		oneResultSort := sortSupportByCount(oneTopicSupport.VoteResults)
@@ -443,58 +468,48 @@ func getVoteResult(args []string, stub shim.ChaincodeStubInterface) pb.Response 
 
 	//token
 	asset := tkInfo.AssetID
-	tkID := TokenIDInfo{IsVoteEnd: isVoteEnd, CreateAddr: tkInfo.CreateAddr, TotalSupply: tkInfo.TotalSupply,
+	tkID := tokenIDInfo{IsVoteEnd: isVoteEnd, CreateAddr: tkInfo.CreateAddr, TotalSupply: tkInfo.TotalSupply,
 		SupportResults: supportResults, AssetID: asset.String()}
-
-	//return json
-	tkJson, err := json.Marshal(tkID)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	return shim.Success(tkJson)
+	return &tkID, nil
 }
 
-type VoteInfo struct {
+type voteInfo struct {
 	Name        string
 	CreateAddr  string
 	VoteType    byte
 	TotalSupply uint64
 	VoteEndTime string
-	VoteTopics  []VoteTopicIndex
+	VoteTopics  []voteTopicIndex
 	AssetID     string
 }
-type VoteTopicIndex struct {
+type voteTopicIndex struct {
 	TopicIndex    uint64
 	TopicTitle    string
 	SelectOptions []string
 	SelectMax     uint64
 }
 
-func getVoteInfo(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 1 {
-		return shim.Error("need 1 args (AssetID String)")
-	}
-
+//GetVoteInfo
+func (v *Vote) GetVoteInfo(stub shim.ChaincodeStubInterface, assetID string) (*voteInfo, error) {
 	//assetIDStr
-	assetIDStr := strings.ToUpper(args[0])
+	assetID = strings.ToUpper(assetID)
 	//check name is exist or not
-	tkInfo := getSymbols(stub, assetIDStr)
+	tkInfo := getSymbols(stub, assetID)
 	if tkInfo == nil {
-		return shim.Error(jsonResp2)
+		return nil, fmt.Errorf(jsonResp2)
 	}
 
 	//get token information
-	var topicSupports []TopicSupports
+	var topicSupports []topicSupports
 	err := json.Unmarshal(tkInfo.VoteContent, &topicSupports)
 	if err != nil {
-		return shim.Error(jsonResp1)
+		return nil, fmt.Errorf(jsonResp1)
 	}
 
 	//topic info
-	voteTopicIndexs := make([]VoteTopicIndex, 0, len(topicSupports))
+	voteTopicIndexs := make([]voteTopicIndex, 0, len(topicSupports))
 	for i, oneTopicSupport := range topicSupports {
-		var oneResult VoteTopicIndex
+		var oneResult voteTopicIndex
 		oneResult.TopicIndex = uint64(i) + 1
 		oneResult.TopicTitle = oneTopicSupport.TopicTitle
 		for i := range oneTopicSupport.VoteResults {
@@ -506,14 +521,8 @@ func getVoteInfo(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 
 	//token
 	asset := tkInfo.AssetID
-	tkID := VoteInfo{Name: tkInfo.Name, CreateAddr: tkInfo.CreateAddr, VoteType: tkInfo.VoteType,
+	tkID := voteInfo{Name: tkInfo.Name, CreateAddr: tkInfo.CreateAddr, VoteType: tkInfo.VoteType,
 		TotalSupply: tkInfo.TotalSupply, VoteEndTime: tkInfo.VoteEndTime.String(),
 		VoteTopics: voteTopicIndexs, AssetID: asset.String()}
-
-	//return json
-	tkJson, err := json.Marshal(tkID)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	return shim.Success(tkJson)
+	return &tkID, nil
 }

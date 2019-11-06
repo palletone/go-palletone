@@ -21,6 +21,8 @@
 package common
 
 import (
+	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/txspool"
 	"reflect"
 	"testing"
 	"time"
@@ -42,7 +44,7 @@ import (
 func mockUnitRepository() *UnitRepository {
 	db, _ := ptndb.NewMemDatabase()
 	//l := plog.NewTestLog()
-	return NewUnitRepository4Db(db)
+	return NewUnitRepository4Db(db, tokenengine.Instance)
 }
 
 //func mockUnitRepositoryLeveldb(path string) *UnitRepository {
@@ -59,7 +61,7 @@ func TestGenesisUnit(t *testing.T) {
 	tx := modules.NewTransaction(append(msgs, msg))
 	asset := modules.NewPTNAsset()
 
-	gUnit, _ := NewGenesisUnit(modules.Transactions{tx}, time.Now().Unix(), asset, -1, common.Hash{})
+	gUnit := NewGenesisUnit(modules.Transactions{tx}, time.Now().Unix(), asset, -1, common.Hash{})
 
 	log.Debug("Genesis unit struct:")
 	log.Debugf("parent units:%#x", gUnit.UnitHeader.ParentsHash)
@@ -141,7 +143,6 @@ func TestSaveUnit(t *testing.T) {
 
 	invokePayload := &modules.ContractInvokePayload{
 		ContractId: []byte("contract0000"),
-		Args:       [][]byte{[]byte("initial")},
 		ReadSet:    readSet,
 		WriteSet: []modules.ContractWriteSet{
 			{
@@ -434,10 +435,9 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 	addr.SetString("P12EA8oRMJbAtKHbaXGy8MGgzM8AMPYxkN1")
 	//et := time.Duration(12)
 	deployPayload := modules.ContractDeployPayload{
-		TemplateId: []byte("contract_template0000"),
+		//TemplateId: []byte("contract_template0000"),
 		ContractId: []byte("contract0000"),
 		Name:       "testdeploy",
-		Args:       [][]byte{[]byte{1, 2, 3}, []byte{4, 5, 6}},
 		//ExecutionTime: et,
 		//Jury:     []common.Address{addr},
 		ReadSet:  readSet,
@@ -489,7 +489,7 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 	}
 }
 
-func creatFeeTx(isContractTx bool, pubKey [][]byte, amount uint64, aid modules.AssetId) *modules.TxPoolTransaction {
+func creatFeeTx(isContractTx bool, pubKey [][]byte, amount uint64, aid modules.AssetId) *txspool.TxPoolTransaction {
 	tx := modules.Transaction{
 		TxMessages: make([]*modules.Message, 0),
 	}
@@ -514,7 +514,7 @@ func creatFeeTx(isContractTx bool, pubKey [][]byte, amount uint64, aid modules.A
 		tx.TxMessages = append(tx.TxMessages, msgSig)
 	}
 
-	txPTx := &modules.TxPoolTransaction{
+	txPTx := &txspool.TxPoolTransaction{
 		Tx:    &tx,
 		TxFee: make([]*modules.Addition, 0),
 	}
@@ -529,10 +529,10 @@ func creatFeeTx(isContractTx bool, pubKey [][]byte, amount uint64, aid modules.A
 //
 //func TestComputeTxFees(t *testing.T) {
 //	m, _ := common.StringToAddress("P1K7JsRvDc5THJe6TrtfdRNxp6ZkNiboy9z")
-//	txs := make([]*modules.TxPoolTransaction, 0)
+//	txs := make([]*txspool.TxPoolTransaction, 0)
 //	pks := make([][]byte, 0)
 //	aId := modules.AssetId{}
-//	tx := &modules.TxPoolTransaction{}
+//	tx := &txspool.TxPoolTransaction{}
 //
 //	//1
 //	pks = [][]byte{
@@ -686,10 +686,9 @@ func TestContractTxsIllegal(t *testing.T) {
 	addr := common.Address{}
 	addr.SetString("PC2EA8oRMJbAtKHbaXGy8MGgzM8AMPYxkN1")
 	deployPayload := &modules.ContractDeployPayload{
-		TemplateId: []byte("contract_template0000"),
+		//TemplateId: []byte("contract_template0000"),
 		ContractId: []byte("contract0000"),
 		Name:       "testDeploy",
-		Args:       [][]byte{[]byte{1, 2, 3}, []byte{4, 5, 6}},
 		ReadSet:    readSet,
 		WriteSet:   writeSet,
 	}

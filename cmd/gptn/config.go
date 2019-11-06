@@ -42,10 +42,11 @@ import (
 	"github.com/palletone/go-palletone/core/certficate"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/dagconfig"
-	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/ptn"
+	"github.com/palletone/go-palletone/txspool"
 	//"github.com/palletone/go-palletone/ptnjson"
 	"github.com/coocood/freecache"
+	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 	"gopkg.in/urfave/cli.v1"
 )
@@ -154,8 +155,8 @@ func defaultNodeConfig() node.Config {
 	cfg.P2P = p2p.DefaultConfig
 	cfg.Name = clientIdentifier
 	cfg.Version = configure.VersionWithCommit(gitCommit)
-	cfg.HTTPModules = append(cfg.HTTPModules, "ptn" /*, "shh"*/)
-	cfg.WSModules = append(cfg.WSModules, "ptn" /*, "shh"*/)
+	cfg.HTTPModules = append(cfg.HTTPModules, "ptn", "debug")
+	cfg.WSModules = append(cfg.WSModules, "ptn")
 	cfg.IPCPath = "gptn.ipc"
 	cfg.WSExposeAll = false
 	return cfg
@@ -198,13 +199,16 @@ func maybeLoadConfig(ctx *cli.Context) (FullConfig, string, error) {
 	configPath := getConfigPath(ctx)
 	cfg := DefaultConfig()
 
+	switch {
+	case ctx.GlobalIsSet(utils.SyncModeFlag.Name):
+		cfg.Ptn.SyncMode = *utils.GlobalTextMarshaler(ctx, utils.SyncModeFlag.Name).(*downloader.SyncMode)
+	case ctx.GlobalBool(utils.FastSyncFlag.Name):
+		cfg.Ptn.SyncMode = downloader.FastSync
+	case ctx.GlobalBool(utils.LightModeFlag.Name):
+		cfg.Ptn.SyncMode = downloader.LightSync
+	}
 	// 如果配置文件不存在，则使用默认的配置生成一个配置文件
 	if !common.IsExisted(configPath) {
-		//listenAddr := cfg.P2P.ListenAddr
-		//if strings.HasPrefix(listenAddr, ":") {
-		//	cfg.P2P.ListenAddr = "127.0.0.1" + listenAddr
-		//}
-
 		err := makeConfigFile(&cfg, configPath)
 		if err != nil {
 			utils.Fatalf("%v", err)
@@ -239,7 +243,9 @@ func makeConfigNode(ctx *cli.Context, isInConsole bool) (*node.Node, FullConfig)
 	utils.SetLogConfig(ctx, &cfg.Log, configDir, isInConsole)
 	utils.SetP2PConfig(ctx, &cfg.P2P)
 	adaptorNodeConfig(&cfg)
-
+	if ctx.GlobalBool(utils.TestnetFlag.Name) {
+		cfg.Node.IsTestNet = true
+	}
 	dataDir := utils.SetNodeConfig(ctx, &cfg.Node, configDir)
 	//通过Node的配置来创建一个Node, 变量名叫stack，代表协议栈的含义。
 	stack, err := node.New(&cfg.Node)
@@ -357,7 +363,7 @@ func DefaultConfig() FullConfig {
 		Dag:            dagconfig.DefaultConfig,
 		Log:            log.DefaultConfig,
 		Ada:            adaptor.DefaultConfig,
-		Contract:       contractcfg.DefaultConfig,
+		Contract:       *contractcfg.NewContractConfig(),
 		Certficate:     certficate.DefaultCAConfig,
 	}
 }
@@ -387,6 +393,7 @@ func makeConfigFile(cfg *FullConfig, configPath string) error {
 		log.Error(err.Error())
 		return err
 	}
+	//log.Debugf("%v", string(configToml))
 
 	_, err = configFile.Write(configToml)
 	if err != nil {

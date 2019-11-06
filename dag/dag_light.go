@@ -26,8 +26,11 @@ import (
 )
 
 // clear all utxo by address
-func (dag *Dag) ClearUtxo(addr common.Address) error {
+func (dag *Dag) ClearUtxo() error {
 	return dag.stableUtxoRep.ClearUtxo()
+}
+func (dag *Dag) ClearAddrUtxo(addr common.Address) error {
+	return dag.stableUtxoRep.ClearAddrUtxo(addr)
 }
 
 // save all utxo of a view

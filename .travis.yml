@@ -18,6 +18,7 @@ env:
     - MEDIATOR_VOTE_DIR=meidatorvote
     - APPLICATION_DIR=application
     - USER_CONTRACT_DIR=usercontract
+    - BLACKLIST_DIR=blacklist
     - LOG_NAME=log.html
     - REPORT_NAME=report.html
     ##########  control testcase  ##############
@@ -33,8 +34,10 @@ env:
     - IS_RUN_GASTOKEN=true
     - IS_RUN_MEDIATOR_VOTE=true
     - IS_RUN_APPLICATION=true
+    - IS_RUN_LIGHT=false
+    - IS_RUN_BLACKLIST=true
     - GO111MODULE=on
-    - IS_UPLOAD=true
+    - IS_UPLOAD=false
 #    - 'SFTP_KEY=[base64-encoded-rsa-key]'
 matrix:
   include:
@@ -75,7 +78,7 @@ matrix:
     #     - go test ./...
     - os: linux
       dist: xenial
-      go: 1.12.7
+      go: 1.12.9
       env: one_node_bdd
       script:
         - go build -mod=vendor ./cmd/gptn
@@ -90,7 +93,11 @@ matrix:
         - netstat -ap | grep gptn
         - if [ $IS_RUN_DEPOSIT == 'true' ]; then
           cd ../dct;
-          ./deposit_test.sh 5;
+          ./deposit_test.sh 7;
+          fi
+        - if [ $IS_RUN_BLACKLIST == 'true' ]; then
+          cd ../blacklist;
+          ./blacklist_test.sh;
           fi
         - if [ $IS_RUN_TESTCONTRACTCASES == 'true' ];then
           cd ../contract/testcases;
@@ -126,6 +133,7 @@ matrix:
 
         - if [ $IS_RUN_GASTOKEN == 'true' ]; then
           cd ./GasToken;
+          killall -9 gptn;
           chmod +x ./init_gas_token.sh;
           ./init_gas_token.sh;
           sleep 15;
@@ -160,7 +168,7 @@ matrix:
         - chmod +x bdd/upload2Ftp.sh bdd/targz_node.sh
     - os: linux
       dist: xenial
-      go: 1.12.7
+      go: 1.12.9
       env: multiple_nodes_bdd
       script:
         # - go build -mod=vendor ./cmd/gptn
@@ -180,6 +188,12 @@ matrix:
         - mkdir -p ${BDD_LOG_PATH}
         - if [ $IS_RUN_MULTIPLE == 'true' ]; then
           python -m robot.run -d ${BDD_LOG_PATH}/${MULTIPLE_DIR} -i normal ./testcase/zMulti-node;
+          fi
+
+        - if [ $IS_RUN_LIGHT == 'true' ]; then
+          cd ./light;
+          chmod +x ./bddstart.sh;
+          ./bddstart.sh;
           fi
       after_script:
         - killall gptn
@@ -214,7 +228,7 @@ matrix:
         - chmod +x bdd/upload2Ftp.sh bdd/targz_node.sh
     - os: linux
       dist: xenial
-      go: 1.12.7
+      go: 1.12.9
       env: mediator_bdd
       script:
         - go build -mod=vendor ./cmd/gptn
@@ -251,7 +265,7 @@ matrix:
         - chmod +x bdd/upload2Ftp.sh bdd/targz_node.sh
     - os: linux
       dist: xenial
-      go: 1.12.7
+      go: 1.12.9
       env: application_bdd
       script:
         - go build -mod=vendor ./cmd/gptn
@@ -289,12 +303,11 @@ matrix:
     - os: linux
       env: usercontract_bdd_3-3
       dist: xenial
-      go: 1.12.5
+      go: 1.12.9
       services: docker
       script:
         - ip addr
         - make gptn
-        - make golang-baseimage-dev
         - docker images
         - cat /proc/sys/net/ipv4/ip_forward
         - sudo ./jurySec.sh
@@ -304,10 +317,13 @@ matrix:
         - chmod +x ./start.sh
         - cp $BASE_DIR/bdd/UserContract/editConfig.sh ./
         - chmod +x editConfig.sh
-        - ./deploy.sh 3
+        - docker network ls
+        - ./deploy.sh 3 3
         - ./editConfig.sh 3 3
         - ./start.sh 3
         - sleep 30
+        - docker images
+        - docker network ls
         - cd $BASE_DIR
         - mkdir -p ${BDD_LOG_PATH}/${USER_CONTRACT_DIR}
         - python -m robot.run -d ${BDD_LOG_PATH}/${USER_CONTRACT_DIR} ./bdd/UserContract/Testcases;

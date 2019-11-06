@@ -20,6 +20,7 @@ package mediatorplugin
 
 import (
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/modules"
 	"go.dedis.ch/kyber/v3/share/dkg/pedersen"
 )
@@ -32,18 +33,37 @@ type NewProducedUnitEvent struct {
 type SigShareEvent struct {
 	UnitHash common.Hash
 	SigShare []byte
+	Deadline uint64 // 被广播的截止日期
+}
+
+func (e *SigShareEvent) Hash() common.Hash {
+	return util.RlpHash(e)
 }
 
 type VSSDealEvent struct {
 	DstIndex uint32
 	Deal     *dkg.Deal
+	Deadline uint64 // 被广播的截止日期
+}
+
+func (e *VSSDealEvent) Hash() common.Hash {
+	return util.RlpHash(e)
 }
 
 type VSSResponseEvent struct {
-	Resp *dkg.Response
+	Resp     *dkg.Response
+	Deadline uint64 // 被广播的截止日期
+}
+
+func (e *VSSResponseEvent) Hash() common.Hash {
+	return util.RlpHash(e)
 }
 
 type GroupSigEvent struct {
 	UnitHash common.Hash
 	GroupSig []byte
+}
+
+func (e *GroupSigEvent) Hash() common.Hash {
+	return util.RlpHash(e)
 }

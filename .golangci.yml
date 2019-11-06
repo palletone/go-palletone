@@ -50,6 +50,7 @@ run:
       - subject.go
       - shim[/\\]handler.go
       - key.go
+      - cmd/abigen/import.go
   #   - ".*\\.my\\.go$"
   #   - lib/bad.go
 
@@ -61,7 +62,7 @@ run:
   # If invoked with -mod=vendor, the go command assumes that the vendor
   # directory holds the correct copies of dependencies and ignores
   # the dependency descriptions in go.mod.
-  # modules-download-mode: vendor
+  modules-download-mode: vendor
 
 
 # output configuration options
@@ -212,6 +213,13 @@ linters:
     - maligned
     - gochecknoinits
     - lll
+    - godox
+    - dogsled
+    - funlen
+    - stylecheck
+    - whitespace
+    - gosimple
+    - interfacer
   disable-all: false
   # presets:
   #   - bugs
@@ -235,9 +243,9 @@ issues:
       - linters:
         - goimports
         text: "File is not `goimports`-ed"
-      - linters:
-        - stylecheck
-        text: "ST1005:"
+      # - linters:
+      #   - stylecheck
+      #   text: "ST1005:"
       - linters:
         - govet
         text: "shadows declaration"

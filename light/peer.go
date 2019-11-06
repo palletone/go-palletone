@@ -107,7 +107,6 @@ func (p *peer) SetHead(data *announceData) {
 	data.Number = *data.Header.Number
 	data.Hash = data.Header.Hash()
 	p.lightpeermsg[data.Number.AssetID] = data
-
 }
 
 // Head retrieves a copy of the current head (most recent) hash of the peer.
@@ -124,7 +123,6 @@ func (p *peer) Head(assetid modules.AssetId) (hash common.Hash) {
 func (p *peer) HeadAndNumber(assetid modules.AssetId) (hash common.Hash, number *modules.ChainIndex) {
 	p.lightlock.RLock()
 	defer p.lightlock.RUnlock()
-
 	if v, ok := p.lightpeermsg[assetid]; ok {
 		copy(hash[:], v.Hash[:])
 		return hash, &v.Number
@@ -317,7 +315,7 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 	var send keyValueList
 	send = send.add("protocolVersion", uint64(p.version))
 	send = send.add("networkId", p.network)
-	send = send.add("headNum", *number)
+	send = send.add("headNum", number)
 	send = send.add("headHash", headhash)
 	send = send.add("genesisHash", genesis)
 	send = send.add("assetids", assetids)
@@ -346,7 +344,7 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 	var rGenesis, rHash common.Hash
 	var rVersion, rNetwork uint64
 	//var rTd *big.Int
-	var rNum modules.ChainIndex
+	var rNum *modules.ChainIndex
 
 	if err := recv.get("protocolVersion", &rVersion); err != nil {
 		return err
@@ -425,7 +423,7 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 		log.Debug("Light PalletOne Handshake all assetids", "assetid", number.AssetID, "index", number.Index)
 		p.lightpeermsg[number.AssetID] = &announceData{Hash: hash, Number: number}
 	}
-	p.lightpeermsg[rNum.AssetID] = &announceData{Hash: rHash, Number: rNum}
+	p.lightpeermsg[rNum.AssetID] = &announceData{Hash: rHash, Number: *rNum}
 	return nil
 }
 

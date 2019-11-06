@@ -23,6 +23,8 @@ package storage
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"testing"
 	"time"
 
@@ -30,10 +32,9 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/util"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
-	"os"
 )
 
 func TestGetContractState(t *testing.T) {
@@ -128,7 +129,7 @@ func TestStateDb_GetSysParamsWithVotes(t *testing.T) {
 	sysTokenIDInfo := &modules.SysTokenIDInfo{}
 	sysSupportResult := &modules.SysSupportResult{}
 	sysVoteResult := &modules.SysVoteResult{}
-	sysTokenIDInfo.CreateTime = time.Now().UTC()
+	sysTokenIDInfo.CreateTime = time.Now().UTC().Unix()
 	sysTokenIDInfo.AssetID = modules.DesiredSysParamsWithVote
 	sysTokenIDInfo.CreateAddr = "P1--------xxxxxxxxxxxxxxxxx"
 	sysTokenIDInfo.IsVoteEnd = false
@@ -198,4 +199,40 @@ func newTestLDB() (*ptndb.LDBDatabase, func()) {
 		db.Close()
 		os.RemoveAll(dirname)
 	}
+}
+
+func TestJurors(t *testing.T) {
+	db, _ := ptndb.NewMemDatabase()
+	statedb := NewStateDb(db)
+	depositeContractAddress := syscontract.DepositContractAddress
+	contractId := depositeContractAddress.Bytes()
+	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123}, TxIndex: 1}
+	list := make(map[string]bool)
+	j1 := &modules.JurorDeposit{}
+	j1.Address = "p1"
+	list[j1.Address] = true
+	b1, _ := json.Marshal(j1)
+	j2 := &modules.JurorDeposit{}
+	j2.Address = "p2"
+	list[j2.Address] = true
+	b2, _ := json.Marshal(j2)
+	lb, _ := json.Marshal(list)
+	ws1 := modules.NewWriteSet(JuryDepositKey("p1"), b1)
+	ws2 := modules.NewWriteSet(JuryDepositKey("p2"), b2)
+	ws3 := modules.NewWriteSet(modules.JuryList, lb)
+	ws := []modules.ContractWriteSet{}
+	ws = append(ws, *ws1)
+	ws = append(ws, *ws2)
+	ws = append(ws, *ws3)
+	err := statedb.SaveContractStates(contractId, ws, version)
+	assert.Nil(t, err)
+	jl, err := statedb.GetJuryCandidateList()
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(jl))
+	juror, err := statedb.GetAllJuror()
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(juror))
+	j, err := statedb.GetJurorByAddr("p1")
+	assert.Nil(t, err)
+	assert.NotNil(t, j)
 }

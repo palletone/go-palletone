@@ -400,7 +400,9 @@ func (ks *KeyStore) TimedUnlock(a accounts.Account, passphrase string, timeout t
 }
 
 func (ks *KeyStore) IsUnlock(addr common.Address) bool {
+	ks.mu.Lock()
 	_, found := ks.unlocked[addr]
+	ks.mu.Unlock()
 
 	return found
 }

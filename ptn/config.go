@@ -27,7 +27,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/dagconfig"
-	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/txspool"
 	"github.com/palletone/go-palletone/ptn/downloader"
 )
 
@@ -47,7 +47,7 @@ var DefaultConfig = Config{
 	Dag:            dagconfig.DagConfig,
 	MediatorPlugin: mediatorplugin.DefaultConfig,
 	Jury:           jury.DefaultConfig,
-	Contract:       contractcfg.DefaultConfig,
+	Contract:       *contractcfg.NewContractConfig(),
 }
 
 func init() {

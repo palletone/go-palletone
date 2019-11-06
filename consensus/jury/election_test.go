@@ -5,10 +5,11 @@ import (
 	"math/rand"
 	"time"
 	"fmt"
+	"math"
+
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
-	alg "github.com/palletone/go-palletone/consensus/jury/algorithm"
-	"math"
+	alg "github.com/palletone/go-palletone/consensus/jury/vrf/algorithm"
 )
 
 //func createVrfCount() (*vrfAccount, error) {

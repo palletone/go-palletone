@@ -27,6 +27,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/fsouza/go-dockerclient"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/platforms"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	cutil "github.com/palletone/go-palletone/vm/common"
@@ -41,6 +42,7 @@ type VM struct {
 func NewVM() (*VM, error) {
 	client, err := cutil.NewDockerClient()
 	if err != nil {
+		log.Error("util.NewDockerClient", "error", err)
 		return nil, err
 	}
 	VM := &VM{Client: client}

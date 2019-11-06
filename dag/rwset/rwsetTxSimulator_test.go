@@ -4,8 +4,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/palletone/go-palletone/common"
@@ -15,8 +17,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/stretchr/testify/assert"
-	"log"
-	"time"
 )
 
 func TestRwSetTxSimulator_GetTokenBalance(t *testing.T) {
@@ -137,18 +137,19 @@ func getCurrentUnit() *modules.Unit {
 	header := &modules.Header{}
 	header.ParentsHash = []common.Hash{hash}
 	header.TxRoot = core.DeriveSha(txs)
+	header.Number = &modules.ChainIndex{modules.NewPTNIdType(), 1}
 	headerHash := header.HashWithoutAuthor()
 	sign, _ := crypto.Sign(headerHash[:], privKey)
 	header.Authors = modules.Authentifier{PubKey: pubKey, Signature: sign}
 	header.Time = time.Now().Unix()
-	header.Number = &modules.ChainIndex{modules.NewPTNIdType(), 1}
+	//header.Number = &modules.ChainIndex{modules.NewPTNIdType(), 1}
 	return &modules.Unit{UnitHeader: header, Txs: txs, ReceivedAt: time.Now()}
 }
 
 func createTx() *modules.Transaction {
 	pay1s := &modules.PaymentPayload{}
 	addr, _ := common.StringToAddress("P1KFk1oV2W5N3Ek86Cxv64RZH2RBGMAQoAC")
-	lockScript := tokenengine.GenerateLockScript(addr)
+	lockScript := tokenengine.Instance.GenerateLockScript(addr)
 	output := modules.NewTxOut(99, lockScript, modules.NewPTNAsset())
 	pay1s.AddTxOut(output)
 	hash := common.HexToHash("1")
@@ -177,7 +178,7 @@ func createTx() *modules.Transaction {
 	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
 		return crypto.Sign(hash, privKey)
 	}
-	_, err := tokenengine.SignTxAllPaymentInput(tx, 1, lockScripts, nil, getPubKeyFn, getSignFn)
+	_, err := tokenengine.Instance.SignTxAllPaymentInput(tx, 1, lockScripts, nil, getPubKeyFn, getSignFn)
 	if err != nil {
 		log.Println(err)
 	}

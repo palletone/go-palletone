@@ -193,8 +193,6 @@ func (pm *ProtocolManager) BlockHeadersMsg(msg p2p.Msg, p *peer) error {
 
 func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 	// Decode the retrieval message
-	log.Debug("Enter GetBlockBodiesMsg")
-	defer log.Debug("End GetBlockBodiesMsg")
 	msgStream := rlp.NewStream(msg.Payload, uint64(msg.Size))
 	if _, err := msgStream.List(); err != nil {
 		log.Debug("msgStream.List() err:", err)
@@ -216,7 +214,7 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 			log.Debug("msgStream.Decode", "err", err)
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
-		log.Debug("GetBlockBodiesMsg", "hash", hash)
+		//log.Debug("GetBlockBodiesMsg", "hash", hash)
 		// Retrieve the requested block body, stopping if enough was found
 		txs, err := pm.dag.GetUnitTransactions(hash)
 		if err != nil || len(txs) == 0 {
@@ -225,13 +223,13 @@ func (pm *ProtocolManager) GetBlockBodiesMsg(msg p2p.Msg, p *peer) error {
 			continue
 		}
 
-		data, err := json.Marshal(txs)
+		data, err := rlp.EncodeToBytes(txs)
 		if err != nil {
 			log.Debug("Get body Marshal encode", "error", err.Error(), "unit hash", hash.String())
 			//return errResp(ErrDecode, "msg %v: %v", msg, err)
 			continue
 		}
-		log.Debug("Get body Marshal", "data:", string(data))
+		//log.Debug("Get body Marshal", "data:", string(data))
 		bytes += len(data)
 		bodies = append(bodies, data)
 	}
@@ -256,8 +254,8 @@ func (pm *ProtocolManager) BlockBodiesMsg(msg p2p.Msg, p *peer) error {
 			continue
 		}
 		var txs modules.Transactions
-		if err := json.Unmarshal(body, &txs); err != nil {
-			log.Debug("have body Unmarshal encode", "error", err.Error(), "body", string(body))
+		if err := rlp.DecodeBytes(body, &txs); err != nil {
+			log.Debug("have body rlp decode", "error", err.Error(), "body", string(body))
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
 
@@ -355,8 +353,8 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	}
 
 	unit := &modules.Unit{}
-	if err := json.Unmarshal(data, &unit); err != nil {
-		log.Info("ProtocolManager", "NewBlockMsg json ummarshal err:", err, "data", string(data))
+	if err := rlp.DecodeBytes(data, &unit); err != nil {
+		log.Info("ProtocolManager", "NewBlockMsg rlp decode err:", err, "data", string(data))
 		return err
 	}
 
@@ -380,7 +378,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	if pm.IsExistInCache(unitHash.Bytes()) {
 		//log.Debugf("Received unit(%v) again, ignore it", unitHash.TerminalString())
 		p.MarkUnit(unitHash)
-		p.SetHead(unitHash, unit.Number())
+		p.SetHead(unitHash, unit.Number(), nil)
 		return nil
 	}
 
@@ -430,7 +428,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	if common.EmptyHash(hash) || (!common.EmptyHash(hash) && requestNumber.Index > number.Index) {
 		log.Debug("ProtocolManager", "NewBlockMsg SetHead request.Index:", requestNumber.Index,
 			"local peer index:", number.Index)
-		p.SetHead(unit.Hash(), requestNumber)
+		p.SetHead(unit.Hash(), requestNumber, nil)
 
 		//currentUnitIndex := pm.dag.GetCurrentUnit(unit.Number().AssetID).UnitHeader.Number.Index
 		currentUnitIndex := pm.dag.HeadUnitNum()
@@ -493,7 +491,33 @@ func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	pm.producer.AddToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
+	hash := sigShare.Hash()
+	p.MarkSigShare(hash)
+
+	unitHash := sigShare.UnitHash
+	header, err := pm.dag.GetHeaderByHash(unitHash)
+	if err != nil {
+		log.Debugf("fail to get header of unit(%v), err: %v", unitHash.TerminalString(), err.Error())
+		return nil
+	}
+
+	if !pm.producer.IsLocalMediator(header.Author()) {
+		pm.BroadcastSigShare(&sigShare)
+	}
+
+	if pm.IsExistInCache(hash.Bytes()) {
+		return nil
+	}
+
+	// 判断是否同步, 如果没同步完成，接收到的 sigShare 对当前节点来说是超前的
+	if !pm.dag.IsSynced() {
+		errStr := "this node is not synced"
+		log.Debugf(errStr)
+		//return fmt.Errorf(errStr)
+		return nil
+	}
+
+	go pm.producer.AddToTBLSRecoverBuf(&sigShare)
 	return nil
 }
 
@@ -507,15 +531,24 @@ func (pm *ProtocolManager) VSSDealMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	// 判断是否同步, 如果没同步完成，接收到的vss deal是超前的
+	hash := deal.Hash()
+	p.MarkVSSDeal(hash)
+	ma := pm.dag.GetActiveMediatorAddr(int(deal.DstIndex))
+	if !pm.producer.IsLocalMediator(ma) {
+		pm.BroadcastVSSDeal(&deal)
+	}
+
+	if pm.IsExistInCache(hash.Bytes()) {
+		return nil
+	}
+
+	// 判断是否同步, 如果没同步完成，接收到的 vss deal 对当前节点来说是超前的
 	if !pm.dag.IsSynced() {
 		errStr := "we are not synced"
 		log.Debugf(errStr)
 		//return fmt.Errorf(errStr)
 		return nil
 	}
-
-	// todo albert 清除在限制时间范围之外的deal消息
 
 	go pm.producer.AddToDealBuf(&deal)
 	return nil
@@ -531,7 +564,21 @@ func (pm *ProtocolManager) VSSResponseMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	// todo albert 清除在限制时间范围之外的response消息
+	hash := resp.Hash()
+	p.MarkVSSResponse(hash)
+	pm.BroadcastVSSResponse(&resp)
+
+	if pm.IsExistInCache(hash.Bytes()) {
+		return nil
+	}
+
+	// 判断是否同步, 如果没同步完成，接收到的 vss response 对当前节点来说是超前的
+	if !pm.dag.IsSynced() {
+		errStr := "not synced"
+		log.Debugf(errStr)
+		//return fmt.Errorf(errStr)
+		return nil
+	}
 
 	go pm.producer.AddToResponseBuf(&resp)
 	return nil
@@ -548,7 +595,16 @@ func (pm *ProtocolManager) GroupSigMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
+	hash := gSign.Hash()
+	p.MarkGroupSig(hash)
+	pm.BroadcastGroupSig(&gSign)
+
+	if pm.IsExistInCache(hash.Bytes()) {
+		return nil
+	}
+
 	go pm.dag.SetUnitGroupSign(gSign.UnitHash, gSign.GroupSig, pm.txpool)
+
 	return nil
 }
 
@@ -565,9 +621,18 @@ func (pm *ProtocolManager) ContractMsg(msg p2p.Msg, p *peer) error {
 
 	reqId := event.Tx.RequestHash()
 	log.Debugf("[%s] ProtocolManager ContractMsg, event type[%v]", reqId.String()[0:8], event.CType)
-	err := pm.contractProc.ProcessContractEvent(&event)
+	brd, err := pm.contractProc.ProcessContractEvent(&event)
 	if err != nil {
 		log.Debugf("[%s]ProtocolManager ContractMsg, error:%s", reqId.String()[0:8], err.Error())
+	}
+	if brd && pm.peers != nil {
+		peers := pm.peers.GetPeers()
+		log.Debugf("[%s]ProtocolManager, event type[%d], peers num[%d]", reqId.String()[0:8], event.CType, len(peers))
+		for _, peer := range peers {
+			if err := peer.SendContractTransaction(event); err != nil {
+				log.Error("ContractBroadcast", "SendContractTransaction err:", err.Error())
+			}
+		}
 	}
 	return nil
 }
@@ -586,11 +651,19 @@ func (pm *ProtocolManager) ElectionMsg(msg p2p.Msg, p *peer) error {
 		log.Debug("ElectionMsg, ToElectionEvent fail")
 		return nil
 	}
-	_, err = pm.contractProc.ProcessElectionEvent(event)
+	err = pm.contractProc.ProcessElectionEvent(event)
 	if err != nil {
 		log.Debug("ElectionMsg", "ProcessElectionEvent error:", err)
 	}
-
+	if pm.peers != nil {
+		peers := pm.peers.GetPeers()
+		log.Debugf("ElectionMsg, event type[%d], peers num[%d]", event.EType, len(peers))
+		for _, peer := range peers {
+			if err := peer.SendElectionEvent(*event); err != nil {
+				log.Error("ElectionMsg", "SendContractTransaction err:", err.Error())
+			}
+		}
+	}
 	return nil
 }
 

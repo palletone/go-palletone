@@ -56,7 +56,7 @@ func (utxo *UtxoJson) GetAmount() uint64 {
 //}
 
 func ConvertUtxo2Json(outPoint *modules.OutPoint, utxo *modules.Utxo) *UtxoJson {
-	scriptStr, _ := tokenengine.DisasmString(utxo.PkScript)
+	scriptStr, _ := tokenengine.Instance.DisasmString(utxo.PkScript)
 	json := &UtxoJson{
 		TxHash:         outPoint.TxHash.String(),
 		MessageIndex:   outPoint.MessageIndex,

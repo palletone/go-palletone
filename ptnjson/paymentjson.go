@@ -31,7 +31,7 @@ type PaymentJson struct {
 	Inputs   []*InputJson  `json:"inputs"`
 	Outputs  []*OutputJson `json:"outputs"`
 	LockTime uint32        `json:"locktime"`
-	Number int  `json:"number"`
+	Number   int           `json:"number"`
 }
 type InputJson struct {
 	TxHash       string `json:"txid"`          // reference Utxo struct key field
@@ -62,7 +62,7 @@ func ConvertPayment2JsonIncludeFromAddr(payment *modules.PaymentPayload, utxoQue
 			if err != nil {
 				log.Warnf("Query utxo error:%s", err.Error())
 			} else {
-				addr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
+				addr, _ := tokenengine.Instance.GetAddressFromScript(utxo.PkScript)
 				input.FromAddress = addr.String()
 			}
 		}
@@ -87,7 +87,7 @@ func ConvertPayment2Json(payment *modules.PaymentPayload) *PaymentJson {
 			}
 			unlock := ""
 			if in.SignatureScript != nil {
-				unlock, _ = tokenengine.DisasmString(in.SignatureScript)
+				unlock, _ = tokenengine.Instance.DisasmString(in.SignatureScript)
 			}
 			input := &InputJson{TxHash: hstr, MessageIndex: mindex, OutIndex: outindex, UnlockScript: unlock}
 			json.Inputs = append(json.Inputs, input)
@@ -96,8 +96,8 @@ func ConvertPayment2Json(payment *modules.PaymentPayload) *PaymentJson {
 	}
 
 	for _, out := range payment.Outputs {
-		addr, _ := tokenengine.GetAddressFromScript(out.PkScript)
-		lock, _ := tokenengine.DisasmString(out.PkScript)
+		addr, _ := tokenengine.Instance.GetAddressFromScript(out.PkScript)
+		lock, _ := tokenengine.Instance.DisasmString(out.PkScript)
 		output := &OutputJson{Amount: out.Value, Asset: out.Asset.String(), ToAddress: addr.String(), LockScript: lock}
 		json.Outputs = append(json.Outputs, output)
 	}
@@ -114,7 +114,7 @@ func ConvertJson2Payment(json *PaymentJson) *modules.PaymentPayload {
 	}
 	for _, out := range json.Outputs {
 		addr, _ := common.StringToAddress(out.ToAddress)
-		lockScript := tokenengine.GenerateLockScript(addr)
+		lockScript := tokenengine.Instance.GenerateLockScript(addr)
 		asset := modules.Asset{}
 		asset.SetString(out.Asset)
 		output := modules.NewTxOut(out.Amount, lockScript, &asset)
@@ -129,4 +129,59 @@ func ConvertOutPoint2Json(outpoint *modules.OutPoint) *OutPointJson {
 		MessageIndex: outpoint.MessageIndex,
 		OutIndex:     outpoint.OutIndex,
 	}
+}
+
+type PaymentSummaryJson struct {
+	Inputs  []*InputSummaryJson  `json:"inputs"`
+	Outputs []*OutputSummaryJson `json:"outputs"`
+	Number  int                  `json:"number"`
+}
+type InputSummaryJson struct {
+	TxHash       string `json:"txid"`          // reference Utxo struct key field
+	MessageIndex uint32 `json:"message_index"` // message index in transaction
+	OutIndex     uint32 `json:"out_index"`
+	FromAddress  string `json:"from_address"`
+}
+type OutputSummaryJson struct {
+	Amount    uint64 `json:"amount"`
+	Asset     string `json:"asset"`
+	ToAddress string `json:"to_address"`
+}
+
+func ConvertPayment2SummaryJson(payment *modules.PaymentPayload, utxoQuery modules.QueryUtxoFunc) *PaymentSummaryJson {
+	json := &PaymentSummaryJson{}
+	json.Inputs = []*InputSummaryJson{}
+	json.Outputs = []*OutputSummaryJson{}
+	if len(payment.Inputs) > 0 {
+		for _, in := range payment.Inputs {
+			var hstr string
+			var mindex uint32
+			var outindex uint32
+			var fromAddr string
+			if in.PreviousOutPoint != nil {
+				hstr = in.PreviousOutPoint.TxHash.String()
+				mindex = in.PreviousOutPoint.MessageIndex
+				outindex = in.PreviousOutPoint.OutIndex
+				utxo, err := utxoQuery(modules.NewOutPoint(in.PreviousOutPoint.TxHash, in.PreviousOutPoint.MessageIndex, in.PreviousOutPoint.OutIndex))
+				if err != nil {
+					log.Warnf("Query utxo error:%s", err.Error())
+				} else {
+					addr, _ := tokenengine.Instance.GetAddressFromScript(utxo.PkScript)
+					fromAddr = addr.String()
+				}
+			}
+			input := &InputSummaryJson{TxHash: hstr,
+				MessageIndex: mindex, OutIndex: outindex,
+				FromAddress: fromAddr}
+			json.Inputs = append(json.Inputs, input)
+		}
+	}
+
+	for _, out := range payment.Outputs {
+		addr, _ := tokenengine.Instance.GetAddressFromScript(out.PkScript)
+
+		output := &OutputSummaryJson{Amount: out.Value, Asset: out.Asset.String(), ToAddress: addr.String()}
+		json.Outputs = append(json.Outputs, output)
+	}
+	return json
 }

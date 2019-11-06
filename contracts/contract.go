@@ -39,6 +39,8 @@ type Contract struct {
 	cfg  *contractcfg.Config
 	name string
 	dag  dag.IDag
+	core.IAdapterJury
+
 	//status int32 //   1:init   2:start
 }
 
@@ -61,18 +63,13 @@ func Initialize(idag dag.IDag, jury core.IAdapterJury, cfg *contractcfg.Config) 
 		return nil, errors.New("contract already init")
 	}
 
-	var contractCfg contractcfg.Config
-	if cfg == nil {
-		contractCfg = contractcfg.DefaultConfig
-	} else {
-		contractCfg = *cfg
-	}
 	contract := &Contract{
-		name: "palletone",
-		dag:  idag,
-		cfg:  cfg,
+		name:         "palletone",
+		dag:          idag,
+		cfg:          cfg,
+		IAdapterJury: jury,
 	}
-	contractcfg.SetConfig(&contractCfg)
+	contractcfg.SetConfig(cfg)
 	if err := cc.Init(idag, jury); err != nil {
 		return nil, err
 	}
@@ -133,7 +130,12 @@ func (c *Contract) Deploy(rwM rwset.TxManager, chainID string, templateId []byte
 		log.Info("contract test deploy")
 		return test.Deploy(rwM, c.dag, chainID, templateId, txId, args)
 	}
-	return cc.Deploy(rwM, c.dag, chainID, templateId, txId, args, timeout)
+	juryAddrs := c.GetLocalJuryAddrs()
+	juryAddr := ""
+	if len(juryAddrs) != 0 {
+		juryAddr = juryAddrs[0].String()
+	}
+	return cc.Deploy(juryAddr, rwM, c.dag, chainID, templateId, txId, args, timeout)
 
 }
 
@@ -169,5 +171,5 @@ func (c *Contract) Stop(rwM rwset.TxManager, chainID string, deployId []byte, tx
 		log.Info("contract test stop")
 		return test.Stop(deployId, chainID, deployId, txid, deleteImage)
 	}
-	return cc.Stop(rwM, c.dag, deployId, chainID, deployId, txid, deleteImage, false)
+	return cc.Stop(rwM, c.dag, deployId, chainID, txid, deleteImage, false)
 }

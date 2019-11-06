@@ -38,11 +38,11 @@ import (
 
 func mockUtxoRepository() *UtxoRepository {
 	db, _ := ptndb.NewMemDatabase()
-	utxodb := storage.NewUtxoDb(db)
+	utxodb := storage.NewUtxoDb(db, tokenengine.Instance)
 	idxdb := storage.NewIndexDb(db)
 	statedb := storage.NewStateDb(db)
 	propDb := storage.NewPropertyDb(db)
-	return NewUtxoRepository(utxodb, idxdb, statedb, propDb)
+	return NewUtxoRepository(utxodb, idxdb, statedb, propDb, tokenengine.Instance)
 }
 
 func TestUpdateUtxo(t *testing.T) {
@@ -124,7 +124,7 @@ func getTempDir(t *testing.T) string {
 
 func Test_SaveUtxoView(t *testing.T) {
 	db, _ := ptndb.NewMemDatabase()
-	rep := NewUtxoRepository4Db(db)
+	rep := NewUtxoRepository4Db(db, tokenengine.Instance)
 	utxoViews := mockUtxoViews()
 	err := rep.SaveUtxoView(utxoViews)
 	assert.Nil(t, err)
@@ -149,7 +149,7 @@ func mockUtxoViews() map[modules.OutPoint]*modules.Utxo {
 
 	result := make(map[modules.OutPoint]*modules.Utxo)
 	addr, _ := common.StringToAddress("P124gB1bXHDTXmox58g4hd4u13HV3e5vKie")
-	lockScript := tokenengine.GenerateLockScript(addr)
+	lockScript := tokenengine.Instance.GenerateLockScript(addr)
 	o1 := modules.NewOutPoint(common.HexToHash("1111111"), 0, 0)
 	utxo1 := modules.NewUtxo(&modules.Output{Value: 123, Asset: modules.NewPTNAsset(), PkScript: lockScript}, 0, 0)
 	result[*o1] = utxo1

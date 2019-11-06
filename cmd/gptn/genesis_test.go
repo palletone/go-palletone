@@ -18,6 +18,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/palletone/go-palletone/tokenengine"
 	"testing"
 
 	//"github.com/palletone/go-palletone/common/log"
@@ -120,7 +121,7 @@ func TestGenesisGet(t *testing.T) {
 		return
 	}
 	//l := log.NewTestLog()
-	unitrep := common.NewUnitRepository4Db(dbconn)
+	unitrep := common.NewUnitRepository4Db(dbconn, tokenengine.Instance)
 	if unitrep == nil {
 		t.Error("new unit rep error.")
 	}

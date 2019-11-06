@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
@@ -40,12 +41,11 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/dag/storage"
-	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
-	"github.com/palletone/go-palletone/ptn/filters"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/txspool"
 	"github.com/shopspring/decimal"
 )
 
@@ -109,7 +109,7 @@ func (p *PalletOne) AddCorsServer(cs LesServer) *PalletOne {
 
 // New creates a new PalletOne object (including the
 // initialisation of the common PalletOne object)
-func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache) (*PalletOne, error) {
+func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isTestNet bool) (*PalletOne, error) {
 	if !config.SyncMode.IsValid() {
 		return nil, fmt.Errorf("invalid sync mode %d", config.SyncMode)
 	}
@@ -119,13 +119,30 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache) (*P
 		log.Error("PalletOne New", "CreateDB err:", err)
 		return nil, err
 	}
-	dag, err := dag.NewDag(db, cache, false)
+	if has, _ := db.Has([]byte("gpGlobalProperty")); !has {
+		keys, values := make([]string, 0), make([]string, 0)
+		if isTestNet {
+			keys = append(keys, TestNetKeys...)
+			values = append(values, TestNetValues...)
+		} else {
+			keys = append(keys, MainNetKeys...)
+			values = append(values, MainNetValues...)
+		}
+		err := initGenesisData(keys, values, db)
+		if err != nil {
+			return nil, err
+		}
+	}
+	d, err := dag.NewDag(db, cache, false)
 	if err != nil {
 		log.Error("PalletOne New", "NewDag err:", err)
 		return nil, err
+	} else {
+		hash, height := d.Memdag.GetLastStableUnitInfo()
+		log.Debugf("init dag success,index:%d, genesis: %s", height, hash.String())
 	}
 
-	dag.RefreshSysParameters()
+	d.RefreshSysParameters()
 
 	ptn := &PalletOne{
 		config:         config,
@@ -133,7 +150,7 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache) (*P
 		accountManager: ctx.AccountManager,
 		shutdownChan:   make(chan bool),
 		networkId:      config.NetworkId,
-		dag:            dag,
+		dag:            d,
 		unitDb:         db,
 		syncCh:         make(chan bool, 1),
 	}
@@ -142,18 +159,19 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache) (*P
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
+	//val:=validator.NewValidate(ptn.dag,ptn.dag,ptn.dag,ptn.dag,cache)
 	ptn.txPool = txspool.NewTxPool(config.TxPool, cache, ptn.dag)
 
 	//Test for P2P
-	ptn.engine = consensus.New(dag, ptn.txPool)
+	ptn.engine = consensus.New(d, ptn.txPool)
 
-	ptn.mediatorPlugin, err = mp.NewMediatorPlugin(ctx, &config.MediatorPlugin, ptn, dag)
+	ptn.mediatorPlugin, err = mp.NewMediatorPlugin( /*ctx, */ &config.MediatorPlugin, ptn, d)
 	if err != nil {
 		log.Error("Initialize mediator plugin err:", "error", err)
 		return nil, err
 	}
 
-	ptn.contractPorcessor, err = jury.NewContractProcessor(ptn, dag, nil, &config.Jury)
+	ptn.contractPorcessor, err = jury.NewContractProcessor(ptn, d, nil, &config.Jury)
 	if err != nil {
 		log.Error("contract processor creat:", "error", err)
 		return nil, err
@@ -175,7 +193,7 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache) (*P
 
 	gasToken := config.Dag.GetGasToken()
 	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, gasToken, ptn.txPool,
-		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine); err != nil {
+		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine, ptn.contract); err != nil {
 		log.Error("NewProtocolManager err:", "error", err)
 		return nil, err
 	}
@@ -225,12 +243,12 @@ func (s *PalletOne) APIs() []rpc.API {
 			Service:   downloader.NewPublicDownloaderAPI(s.protocolManager.downloader, s.eventMux),
 			Public:    true,
 		},
-		{
+		/*{
 			Namespace: "ptn",
 			Version:   "1.0",
 			Service:   filters.NewPublicFilterAPI(s.ApiBackend, false),
 			Public:    true,
-		}, {
+		}, */{
 			Namespace: "admin",
 			Version:   "1.0",
 			//Service:   NewPrivateAdminAPI(s),
@@ -280,10 +298,6 @@ func (s *PalletOne) GetLocalMediators() []common.Address {
 
 func (s *PalletOne) GetLocalActiveMediators() []common.Address {
 	return s.mediatorPlugin.GetLocalActiveMediators()
-}
-
-func (s *PalletOne) IsLocalActiveMediator(addr common.Address) bool {
-	return s.mediatorPlugin.IsLocalActiveMediator(addr)
 }
 
 func (s *PalletOne) LocalHaveActiveMediator() bool {
@@ -408,7 +422,7 @@ func (p *PalletOne) SignGenericTransaction(from common.Address, tx *modules.Tran
 
 	// 3. 使用tokenengine 和 KeyStore 给 tx 签名
 	ks := p.GetKeyStore()
-	_, err := tokenengine.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, inputpoints, nil,
+	_, err := tokenengine.Instance.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, inputpoints, nil,
 		ks.GetPublicKey, ks.SignMessage)
 	if err != nil {
 		return nil, err
@@ -488,4 +502,16 @@ func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal,
 	res.Warning = ptnapi.DefaultResult
 
 	return res, nil
+}
+func initGenesisData(keys, values []string, db ptndb.Putter) error {
+	k := len(keys)
+
+	for i := 0; i < k; i++ {
+		key := util.Hex2Bytes(keys[i])
+		value := util.Hex2Bytes(values[i])
+		if err := db.Put(key, value); err != nil {
+			return err
+		}
+	}
+	return nil
 }

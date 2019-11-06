@@ -101,11 +101,46 @@ func (statedb *StateDb) IsInJuryCandidateList(address common.Address) bool {
 	if err != nil {
 		return false
 	}
-	if _, ok := list[address.String()]; ok {
-		return true
-	}
-	return false
+
+	_, found := list[address.String()]
+	return found
 }
+
+func (statedb *StateDb) GetAllJuror() (map[string]*modules.JurorDeposit, error) {
+	allJurorAddrs, err := statedb.GetJuryCandidateList()
+	if err != nil {
+		return nil, err
+	}
+	jurynode := make(map[string]*modules.JurorDeposit)
+	for a := range allJurorAddrs {
+		juror, err := statedb.GetJurorByAddr(a)
+		if err != nil {
+			log.Warnf("Don't find JurorDeposit by %s", a)
+			continue
+		}
+		jurynode[a] = juror
+	}
+	return jurynode, nil
+}
+
+func (statedb *StateDb) GetJurorByAddr(addr string) (*modules.JurorDeposit, error) {
+	depositeContractAddress := syscontract.DepositContractAddress
+	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), JuryDepositKey(addr))
+	if err != nil {
+		log.Warnf(err.Error())
+		return nil, err
+	}
+
+	juror := &modules.JurorDeposit{}
+	err = json.Unmarshal(val, juror)
+	if err != nil {
+		log.Warnf(err.Error())
+		return nil, err
+	}
+
+	return juror, nil
+}
+
 func (statedb *StateDb) GetContractDeveloperList() ([]common.Address, error) {
 	depositeContractAddress := syscontract.DepositContractAddress
 	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), modules.DeveloperList)

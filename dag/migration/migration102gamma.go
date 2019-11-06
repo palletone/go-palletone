@@ -92,39 +92,37 @@ func (m *Migration102beta_102gamma) upgradeMediatorInfo() error {
 	return nil
 }
 
-/*
-func (m *Migration102beta_102gamma) upgradeGP() error {
-	oldGp := GlobalProperty101{}
-	err := storage.RetrieveFromRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, &oldGp)
-	if err != nil {
-		log.Errorf(err.Error())
-		return err
-	}
-
-	newData := &modules.GlobalPropertyTemp{}
-	newData.ActiveJuries = oldGp.ActiveJuries
-	newData.ActiveMediators = oldGp.ActiveMediators
-	newData.PrecedingMediators = oldGp.PrecedingMediators
-	newData.ChainParameters = oldGp.ChainParameters
-
-	newData.ImmutableParameters.MinMaintSkipSlots = 2
-	newData.ImmutableParameters.MinimumMediatorCount = oldGp.ImmutableParameters.MinimumMediatorCount
-	newData.ImmutableParameters.MinMediatorInterval = oldGp.ImmutableParameters.MinMediatorInterval
-	newData.ImmutableParameters.UccPrivileged = oldGp.ImmutableParameters.UccPrivileged
-	newData.ImmutableParameters.UccCapDrop = oldGp.ImmutableParameters.UccCapDrop
-	newData.ImmutableParameters.UccNetworkMode = oldGp.ImmutableParameters.UccNetworkMode
-	newData.ImmutableParameters.UccOOMKillDisable = oldGp.ImmutableParameters.UccOOMKillDisable
-
-	err = storage.StoreToRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, newData)
-	if err != nil {
-		log.Errorf(err.Error())
-		return err
-	}
-
-	return nil
-}
-*/
+//func (m *Migration102beta_102gamma) upgradeGP() error {
+//	oldGp := &GlobalProperty101{}
+//	err := storage.RetrieveFromRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, oldGp)
+//	if err != nil {
+//		log.Errorf(err.Error())
+//		return err
+//	}
 //
+//	newData := &modules.GlobalPropertyTemp{}
+//	newData.ActiveJuries = oldGp.ActiveJuries
+//	newData.ActiveMediators = oldGp.ActiveMediators
+//	newData.PrecedingMediators = oldGp.PrecedingMediators
+//	newData.ChainParameters = oldGp.ChainParameters
+//
+//	newData.ImmutableParameters.MinMaintSkipSlots = 2
+//	newData.ImmutableParameters.MinimumMediatorCount = oldGp.ImmutableParameters.MinimumMediatorCount
+//	newData.ImmutableParameters.MinMediatorInterval = oldGp.ImmutableParameters.MinMediatorInterval
+//	newData.ImmutableParameters.UccPrivileged = oldGp.ImmutableParameters.UccPrivileged
+//	newData.ImmutableParameters.UccCapDrop = oldGp.ImmutableParameters.UccCapDrop
+//	newData.ImmutableParameters.UccNetworkMode = oldGp.ImmutableParameters.UccNetworkMode
+//	newData.ImmutableParameters.UccOOMKillDisable = oldGp.ImmutableParameters.UccOOMKillDisable
+//
+//	err = storage.StoreToRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, newData)
+//	if err != nil {
+//		log.Errorf(err.Error())
+//		return err
+//	}
+//
+//	return nil
+//}
+
 //type GlobalProperty101 struct {
 //	GlobalPropBase101
 //
@@ -147,14 +145,14 @@ func (m *Migration102beta_102gamma) upgradeGP() error {
 //	UccOOMKillDisable    bool     `json:"ucc_oom_kill_disable"`  // 是否内存使用量超过上限时系统杀死进程
 //}
 
-//type MediatorInfoBase101 struct {
-//	AddStr     string `json:"account"`    // mediator账户地址
-//	InitPubKey string `json:"initPubKey"` // mediator的群签名初始公钥
-//	Node       string `json:"node"`       // mediator节点网络信息，包括ip和端口等
-//}
-//
-//type MediatorInfo101 struct {
-//	*MediatorInfoBase101
-//	*core.MediatorApplyInfo
-//	*core.MediatorInfoExpand
-//}
+type MediatorInfoBase101 struct {
+	AddStr     string `json:"account"`    // mediator账户地址
+	InitPubKey string `json:"initPubKey"` // mediator的群签名初始公钥
+	Node       string `json:"node"`       // mediator节点网络信息，包括ip和端口等
+}
+
+type MediatorInfo101 struct {
+	*MediatorInfoBase101
+	*core.MediatorApplyInfo
+	*core.MediatorInfoExpand
+}

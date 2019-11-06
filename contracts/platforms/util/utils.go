@@ -27,7 +27,6 @@ import (
 	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/comm"
-	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/utils"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	cutil "github.com/palletone/go-palletone/vm/common"
@@ -151,15 +150,16 @@ func DockerBuild(opts DockerBuildOptions) error {
 
 	client, err := cutil.NewDockerClient()
 	if err != nil {
-		return fmt.Errorf("Error creating docker client: %s", err)
+		log.Error("util.NewDockerClient", "error", err)
+		return fmt.Errorf("error creating docker client: %s", err)
 	}
-	if opts.Image == "" {
-		//通用的本地编译环境
-		opts.Image = contractcfg.GetConfig().CommonBuilder //cutil.GetDockerfileFromConfig("chaincode.builder")
-		if opts.Image == "" {
-			return fmt.Errorf("No image provided and \"chaincode.builder\" default does not exist")
-		}
-	}
+	//if opts.Image == "" {
+	//	//通用的本地编译环境
+	//	opts.Image = contractcfg.GetConfig().CommonBuilder //cutil.GetDockerfileFromConfig("chaincode.builder")
+	//	if opts.Image == "" {
+	//		return fmt.Errorf("No image provided and \"chaincode.builder\" default does not exist")
+	//	}
+	//}
 
 	log.Debugf("Attempting build with image %s", opts.Image)
 

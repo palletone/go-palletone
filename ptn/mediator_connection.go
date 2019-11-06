@@ -38,7 +38,7 @@ type producer interface {
 	AddToTBLSSignBufs(newHash common.Hash)
 
 	SubscribeSigShareEvent(ch chan<- mp.SigShareEvent) event.Subscription
-	AddToTBLSRecoverBuf(newUnitHash common.Hash, sigShare []byte)
+	AddToTBLSRecoverBuf(sigShare *mp.SigShareEvent)
 
 	SubscribeVSSDealEvent(ch chan<- mp.VSSDealEvent) event.Subscription
 	AddToDealBuf(deal *mp.VSSDealEvent)
@@ -51,6 +51,8 @@ type producer interface {
 
 	SubscribeGroupSigEvent(ch chan<- mp.GroupSigEvent) event.Subscription
 	UpdateMediatorsDKG(isRenew bool)
+
+	IsLocalMediator(add common.Address) bool
 }
 
 func (pm *ProtocolManager) activeMediatorsUpdatedEventRecvLoop() {
@@ -86,7 +88,8 @@ func (pm *ProtocolManager) switchMediatorConnect(isChanged bool) {
 	go pm.connectWitchActiveMediators()
 
 	// 检查是否连接和同步，并更新DKG和VSS
-	go pm.checkConnectedAndSynced()
+	//go pm.checkConnectedAndSynced()
+	go pm.producer.UpdateMediatorsDKG(true)
 
 	// 延迟关闭和旧活跃mediator节点的连接
 	go pm.delayDiscPrecedingMediator()
@@ -110,15 +113,13 @@ func (pm *ProtocolManager) connectWitchActiveMediators() {
 	}
 }
 
-func (pm *ProtocolManager) checkConnectedAndSynced() {
+/*func (pm *ProtocolManager) checkConnectedAndSynced() {
 	log.Debugf("check if it is connected to all active mediator peers")
 	if !pm.producer.LocalHaveActiveMediator() {
 		return
 	}
 
 	// 2. 是否和所有其他活跃mediator节点相连完成
-	//headNum := pm.dag.HeadUnitNum()
-	//gasToken := dagconfig.DagConfig.GetGasToken()
 	checkFn := func() bool {
 		nodes := pm.dag.GetActiveMediatorNodes()
 		for id, node := range nodes {
@@ -131,16 +132,9 @@ func (pm *ProtocolManager) checkConnectedAndSynced() {
 			if peer == nil {
 				return false
 			}
-
-			// todo Albert 待使用
-			//_, pHeadNum := peer.Head(gasToken)
-			//if pHeadNum == nil || pHeadNum.Index < headNum {
-			//	return false
-			//}
 		}
 
 		log.Debugf("connected with all active mediator peers")
-		//log.Debugf("connected with all active mediator peers, all all peers synced")
 		return true
 	}
 
@@ -170,7 +164,7 @@ func (pm *ProtocolManager) checkConnectedAndSynced() {
 			}
 		}
 	}
-}
+}*/
 
 func (pm *ProtocolManager) delayDiscPrecedingMediator() {
 	// 1. 判断当前节点是否是上一届活跃mediator
@@ -210,4 +204,106 @@ func (pm *ProtocolManager) delayDiscPrecedingMediator() {
 		log.Debugf("disconnect with preceding mediator nodes")
 		disconnectFn()
 	}
+}
+
+func (p *peer) MarkVSSDeal(hash common.Hash) {
+	for p.knownVSSDeal.Cardinality() >= maxKnownVSSDeal {
+		p.knownVSSDeal.Pop()
+	}
+	p.knownVSSDeal.Add(hash)
+}
+
+func (pm *ProtocolManager) BroadcastVSSDeal(deal *mp.VSSDealEvent) {
+	now := uint64(time.Now().Unix())
+	if now > deal.Deadline {
+		return
+	}
+
+	peers := pm.peers.PeersWithoutVSSDeal(deal.Hash())
+	for _, peer := range peers {
+		peer.SendVSSDeal(deal)
+	}
+
+	return
+}
+
+func (ps *peerSet) PeersWithoutVSSDeal(hash common.Hash) []*peer {
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
+
+	list := make([]*peer, 0, len(ps.peers))
+	for _, p := range ps.peers {
+		if !p.knownVSSDeal.Contains(hash) {
+			list = append(list, p)
+		}
+	}
+	return list
+}
+
+func (p *peer) MarkVSSResponse(hash common.Hash) {
+	for p.knownVSSResponse.Cardinality() >= maxKnownVSSResponse {
+		p.knownVSSResponse.Pop()
+	}
+	p.knownVSSResponse.Add(hash)
+}
+
+func (pm *ProtocolManager) BroadcastVSSResponse(deal *mp.VSSResponseEvent) {
+	now := uint64(time.Now().Unix())
+	if now > deal.Deadline {
+		return
+	}
+
+	peers := pm.peers.PeersWithoutVSSResponse(deal.Hash())
+	for _, peer := range peers {
+		peer.SendVSSResponse(deal)
+	}
+
+	return
+}
+
+func (ps *peerSet) PeersWithoutVSSResponse(hash common.Hash) []*peer {
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
+
+	list := make([]*peer, 0, len(ps.peers))
+	for _, p := range ps.peers {
+		if !p.knownVSSResponse.Contains(hash) {
+			list = append(list, p)
+		}
+	}
+	return list
+}
+
+func (p *peer) MarkSigShare(hash common.Hash) {
+	for p.knownSigShare.Cardinality() >= maxKnownSigShare {
+		p.knownSigShare.Pop()
+	}
+	p.knownSigShare.Add(hash)
+}
+
+func (pm *ProtocolManager) BroadcastSigShare(sigShare *mp.SigShareEvent) {
+	now := uint64(time.Now().Unix())
+	if now > sigShare.Deadline {
+		return
+	}
+
+	peers := pm.peers.PeersWithoutSigShare(sigShare.UnitHash)
+	for _, peer := range peers {
+		peer.SendSigShare(sigShare)
+	}
+
+	return
+}
+
+func (ps *peerSet) PeersWithoutSigShare(hash common.Hash) []*peer {
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
+
+	list := make([]*peer, 0, len(ps.peers))
+	for _, p := range ps.peers {
+		if !p.knownSigShare.Contains(hash) {
+			list = append(list, p)
+		}
+	}
+	return list
 }

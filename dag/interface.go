@@ -21,6 +21,7 @@
 package dag
 
 import (
+	"math/big"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -29,26 +30,30 @@ import (
 	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/txspool"
 )
 
 type IDag interface {
 	Close()
 
-	GetCommon(key []byte) ([]byte, error)
-	GetCommonByPrefix(prefix []byte) map[string][]byte
+	GetCommon(key []byte, stableDb bool) ([]byte, error)
+	GetCommonByPrefix(prefix []byte, stableDb bool) map[string][]byte
 	SaveCommon(key, val []byte) error
+	GetAllData() ([][]byte, [][]byte)
 
+	MemdagInfos() (*modules.MemdagInfos, error)
 	IsEmpty() bool
+	GetStableChainIndex(token modules.AssetId) *modules.ChainIndex
 	CurrentUnit(token modules.AssetId) *modules.Unit
 	GetCurrentUnit(assetId modules.AssetId) *modules.Unit
 	GetMainCurrentUnit() *modules.Unit
 	GetCurrentMemUnit(assetId modules.AssetId, index uint64) *modules.Unit
-	InsertDag(units modules.Units, txpool txspool.ITxPool) (int, error)
+	InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable bool) (int, error)
 	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
 	HasHeader(common.Hash, uint64) bool
 	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
+	GetHeadersByAuthor(authorAddr common.Address, startHeight, count uint64) ([]*modules.Header, error)
 	GetUnstableUnits() []*modules.Unit
 
 	CurrentHeader(token modules.AssetId) *modules.Header
@@ -73,6 +78,8 @@ type IDag interface {
 	GetGenesisUnit() (*modules.Unit, error)
 
 	GetContractState(contractid []byte, field string) ([]byte, *modules.StateVersion, error)
+	GetContractStateByVersion(id []byte, field string, version *modules.StateVersion) ([]byte, error)
+
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 	GetContractJury(contractId []byte) (*modules.ElectionNode, error)
@@ -91,6 +98,7 @@ type IDag interface {
 	GetTxOutput(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error)
 	GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
+	GetAddrStableUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
@@ -109,7 +117,7 @@ type IDag interface {
 
 	//Mediator
 	GetActiveMediator(add common.Address) *core.Mediator
-	GetActiveMediatorNode(index int) *discover.Node
+	GetActiveMediatorAddr(index int) common.Address
 	GetActiveMediatorNodes() map[string]*discover.Node
 
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
@@ -139,7 +147,8 @@ type IDag interface {
 	GetLightChainHeight(assetId modules.AssetId) uint64
 	InsertLightHeader(headers []*modules.Header) (int, error)
 	GetAllLeafNodes() ([]*modules.Header, error)
-	ClearUtxo(addr common.Address) error
+	ClearUtxo() error
+	ClearAddrUtxo(addr common.Address) error
 	SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error
 
 	HeadUnitTime() int64
@@ -148,16 +157,18 @@ type IDag interface {
 	GetIrreversibleUnitNum(id modules.AssetId) uint64
 
 	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
-	GetChaincodes(contractId common.Address) (*list.CCInfo, error)
+	GetChaincode(contractId common.Address) (*list.CCInfo, error)
+	RetrieveChaincodes() ([]*list.CCInfo, error)
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
 
 	RefreshAddrTxIndex() error
-	GetMinFee() (*modules.AmountAsset, error)
 
 	GenVoteMediatorTx(voter common.Address, mediators map[string]bool,
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
+	GetGlobalProp() *modules.GlobalProperty
+	GetMediatorCount() int
 
 	IsMediator(address common.Address) bool
 	GetMediators() map[common.Address]bool
@@ -165,9 +176,11 @@ type IDag interface {
 	GetAccountVotedMediators(addr common.Address) map[string]bool
 	GetMediatorInfo(address common.Address) *modules.MediatorInfo
 
+	GetVotingForMediator(addStr string) (map[string]uint64, error)
 	MediatorVotedResults() (map[string]uint64, error)
 	LookupMediatorInfo() []*modules.MediatorInfo
 	IsActiveMediator(add common.Address) bool
+	GetMediator(add common.Address) *core.Mediator
 
 	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
 	GetScheduledMediator(slotNum uint32) common.Address
@@ -179,4 +192,20 @@ type IDag interface {
 	StoreDataVersion(dv *modules.DataVersion) error
 	QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error)
 	GetAssetReference(asset []byte) ([]*modules.ProofOfExistence, error)
+
+	IsActiveJury(addr common.Address) bool
+	JuryCount() uint
+	GetContractDevelopers() ([]common.Address, error)
+	IsContractDeveloper(addr common.Address) bool
+	GetActiveJuries() []common.Address
+	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
+		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+	CreateTokenTransaction(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string,
+		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+	ChainThreshold() int
+	CheckHeaderCorrect(number int) error
+	CheckUnitsCorrect(assetId string, number int) error
+	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
+	RebuildAddrTxIndex() error
+	GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, error)
 }

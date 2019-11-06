@@ -24,16 +24,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-
+	"math"
 	"github.com/ethereum/go-ethereum/rlp"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/constants"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 )
 
 /**
@@ -55,7 +54,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 	if tx.TxMessages[0].App != modules.APP_PAYMENT { // 交易费
 		return TxValidationCode_INVALID_MSG, nil
 	}
-	txFeePass, txFee := validate.validateTxFee(tx)
+	txFeePass, txFee := validate.validateTxFeeValid(tx)
 	if !txFeePass {
 		return TxValidationCode_INVALID_FEE, nil
 	}
@@ -136,11 +135,11 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 			requestMsgIndex = msgIdx
 			// 参数临界值验证
 			payload, _ := msg.Payload.(*modules.ContractDeployRequestPayload)
-			if len(payload.TplId) == 0 {
+			if len(payload.TemplateId) == 0 {
 				return TxValidationCode_INVALID_CONTRACT, txFee
 			}
 
-			validateCode := validate.validateContractdeploy(payload.TplId)
+			validateCode := validate.validateContractdeploy(payload.TemplateId)
 			if validateCode != TxValidationCode_VALID {
 				return validateCode, txFee
 			}
@@ -254,36 +253,115 @@ func (v *Validate) validateVoteMediatorTx(payload interface{}) ValidationCode {
 	return TxValidationCode_VALID
 }
 
-//验证手续费是否合法，并返回手续费的分配情况
-func (validate *Validate) validateTxFee(tx *modules.Transaction) (bool, []*modules.Addition) {
-	if validate.utxoquery == nil {
-		log.Warn("Cannot validate tx fee, your validate utxoquery not set")
-		return true, nil
+//extSize :byte, extTime :s
+func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize float64, extTime float64) bool {
+	if tx == nil {
+		return false
 	}
-	feeAllocate, err := tx.GetTxFeeAllocate(validate.utxoquery.GetUtxoEntry, tokenengine.GetScriptSigners, common.Address{})
+
+	var onlyPayment bool = true
+	var timeout uint32
+	var opFee, sizeFee, timeFee, accountUpdateFee, appDataFee, allFee float64
+	reqId := tx.RequestHash()
+	txSize := tx.Size().Float64()
+
+	if validate.dagquery == nil || validate.propquery == nil {
+		log.Warnf("[%s]ValidateTxFeeEnough, Cannot validate tx fee, your validate dagquery or propquery not set", reqId.String()[:8])
+		return true //todo ?
+	}
+	fees, err := validate.dagquery.GetTxFee(tx)
 	if err != nil {
-		log.Warn("compute tx fee error: " + err.Error())
+		log.Errorf("[%s]validateTxFeeEnough, GetTxFee err:%s", reqId.String()[:8], err.Error())
+		return true //todo ?
+	}
+	cp := validate.propquery.GetChainParameters()
+	timeUnitFee := float64(cp.ContractTxTimeoutUnitFee)
+	sizeUnitFee := float64(cp.ContractTxSizeUnitFee)
+	for _, msg := range tx.TxMessages {
+		switch msg.App {
+		case modules.APP_CONTRACT_TPL_REQUEST:
+			onlyPayment = false
+			opFee = cp.ContractTxInstallFeeLevel
+		case modules.APP_CONTRACT_DEPLOY_REQUEST:
+			onlyPayment = false
+			opFee = cp.ContractTxDeployFeeLevel
+		case modules.APP_CONTRACT_INVOKE_REQUEST:
+			onlyPayment = false
+			opFee = cp.ContractTxInvokeFeeLevel
+			timeout = msg.Payload.(*modules.ContractInvokeRequestPayload).Timeout
+		case modules.APP_CONTRACT_STOP_REQUEST:
+			onlyPayment = false
+			opFee = cp.ContractTxStopFeeLevel
+		case modules.APP_DATA:
+			onlyPayment = false
+			appDataFee = float64(cp.ChainParametersBase.TransferPtnPricePerKByte) * ((txSize + extSize) / 1024)
+		case modules.APP_ACCOUNT_UPDATE:
+			onlyPayment = false
+			accountUpdateFee = float64(cp.ChainParametersBase.AccountUpdateFee)
+		}
+	}
+	if onlyPayment {
+		allFee = float64(cp.ChainParametersBase.TransferPtnBaseFee)
+	} else {
+		sizeFee = opFee * sizeUnitFee * (txSize + extSize)
+		timeFee = opFee * timeUnitFee * (float64(timeout) + extTime)
+		allFee = sizeFee + timeFee + accountUpdateFee + appDataFee
+	}
+	val := math.Max(float64(fees.Amount), allFee) == float64(fees.Amount)
+	if !val {
+		log.Errorf("[%s]validateTxFeeEnough invalid, fee amount[%f]-fees[%f] (%f + %f + %f + %f), "+
+			"txSize[%f], timeout[%d], extSize[%f], extTime[%f]",
+			reqId.String()[:8], float64(fees.Amount), allFee, sizeFee, timeFee, accountUpdateFee, appDataFee,
+			txSize, timeout, extSize, extTime)
+	}
+
+	log.Debugf("[%s]validateTxFeeEnough is %v, fee amount[%f]-fees[%f](%f + %f + %f + %f), "+
+		"txSize[%f], timeout[%d], extSize[%f], extTime[%f]",
+		reqId.String()[:8], val, float64(fees.Amount), allFee, sizeFee, timeFee, accountUpdateFee, appDataFee,
+		txSize, timeout, extSize, extTime)
+	return val
+}
+
+//验证手续费是否合法，并返回手续费的分配情况
+func (validate *Validate) validateTxFeeValid(tx *modules.Transaction) (bool, []*modules.Addition) {
+	if tx == nil {
+		log.Error("validateTxFeeValid, tx is nil")
 		return false, nil
 	}
-	assetId := dagconfig.DagConfig.GetGasToken()
-	minFee := &modules.AmountAsset{Amount: 0, Asset: assetId.ToAsset()}
-	if validate.statequery != nil {
-		minFee, err = validate.statequery.GetMinFee()
-		if err != nil {
-			log.Errorf("GetMinFee throw an error:%s", err.Error())
-			return true, feeAllocate
-		}
+	reqId := tx.RequestHash()
+	if validate.utxoquery == nil {
+		log.Warnf("[%s]validateTxFeeValid, Cannot validate tx fee, your validate utxoquery not set", reqId.String()[:8])
+		return true, nil
 	}
-	if minFee.Amount > 0 { //需要验证最小手续费
-		total := uint64(0)
-		var feeAsset *modules.Asset
-		for _, a := range feeAllocate {
-			total += a.Amount
-			feeAsset = a.Asset
+
+	//check fee is or not enough
+	var feeAllocate []*modules.Addition
+	var err error
+	if validate.enableTxFeeCheck {
+		if !validate.ValidateTxFeeEnough(tx, 0, 0) {
+			log.Warnf("[%s]validateTxFeeValid, tx fee is not enough", reqId.String()[:8])
+			return false, nil
 		}
-		if feeAsset.String() != minFee.Asset.String() || total < minFee.Amount {
-			return false, feeAllocate
-		}
+		feeAllocate, err = tx.GetTxFeeAllocate(validate.utxoquery.GetUtxoEntry,
+			validate.tokenEngine.GetScriptSigners, common.Address{})
+	} else {
+		feeAllocate, err = tx.GetTxFeeAllocateLegacyV1(validate.utxoquery.GetUtxoEntry,
+			validate.tokenEngine.GetScriptSigners, common.Address{})
+	}
+	if err != nil {
+		log.Warnf("[%s]validateTxFeeValid, compute tx fee error:%s", reqId.String()[:8], err.Error())
+		return false, nil
+	}
+
+	//check fee type is ok
+	assetId := dagconfig.DagConfig.GetGasToken()
+	var feeAsset *modules.Asset
+	for _, a := range feeAllocate {
+		feeAsset = a.Asset //?
+	}
+	if feeAsset.String() != assetId.String() {
+		log.Warnf("[%s]validateTxFeeValid, assetId is not equal, feeAsset:%s, cfg asset:%s", reqId.String()[:8], feeAsset.String(), assetId.String())
+		return false, feeAllocate
 	}
 	return true, feeAllocate
 }
@@ -377,12 +455,12 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			if !ok {
 				reward = []modules.AmountAsset{}
 			}
-			reward = addIncome(reward, ad.Amount, ad.Asset)
+			reward = validate.addIncome(reward, ad.Amount, ad.Asset)
 			rewards[ad.Addr] = reward
 		}
 		//Check payment output is correct
 		payment := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
-		if !compareRewardAndOutput(rewards, payment.Outputs) {
+		if !validate.compareRewardAndOutput(rewards, payment.Outputs) {
 			log.Errorf("Coinbase tx[%s] Output not match", tx.Hash().String())
 			log.DebugDynamic(func() string {
 				rjson, _ := json.Marshal(rewards)
@@ -399,13 +477,12 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 				log.Errorf("Coinbase tx[%s] contract id not correct", tx.Hash().String())
 				return TxValidationCode_INVALID_COINBASE
 			}
-			if !compareRewardAndStateClear(rewards, clearStateInvoke.WriteSet) {
-				log.Errorf("Coinbase tx[%s] Clear statedb not match", tx.Hash().String())
-				log.DebugDynamic(func() string {
-					rjson, _ := json.Marshal(rewards)
-					ojson, _ := json.Marshal(clearStateInvoke)
-					return fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nInvoke result:%s", string(rjson), string(ojson))
-				})
+			if !validate.compareRewardAndStateClear(rewards, clearStateInvoke.WriteSet) {
+				rjson, _ := json.Marshal(rewards)
+				ojson, _ := json.Marshal(clearStateInvoke)
+				data := fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nInvoke result:%s", string(rjson), string(ojson))
+				log.Errorf("Coinbase tx[%s] Clear statedb not match, detail data:%s",
+					tx.Hash().String(), data)
 				return TxValidationCode_INVALID_COINBASE
 			}
 		}
@@ -427,7 +504,7 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 				return v1.Addr.String() + " Coinbase History reward:" + string(data)
 			})
 			log.Debugf("Add reward %d %s to %s", v.Amount, v.Asset.String(), v.Addr.String())
-			newValue := addIncome(income, v.Amount, v.Asset)
+			newValue := validate.addIncome(income, v.Amount, v.Asset)
 			rewards[v.Addr] = newValue
 		}
 		//比对reward和writeset是否一致
@@ -436,25 +513,25 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			log.Errorf("Coinbase tx[%s] contract id not correct", tx.Hash().String())
 			return TxValidationCode_INVALID_COINBASE
 		}
-		if compareRewardAndWriteset(rewards, invoke.WriteSet) {
+		if validate.compareRewardAndWriteset(rewards, invoke.WriteSet) {
 			return TxValidationCode_VALID
 		} else {
-			log.Errorf("Coinbase tx[%s] contract write set not correct", tx.Hash().String())
-			log.DebugDynamic(func() string {
-				rjson, _ := json.Marshal(rewards)
-				ojson, _ := json.Marshal(invoke)
-				return fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nInvoke result:%s", string(rjson), string(ojson))
-			})
+			rjson, _ := json.Marshal(rewards)
+			ojson, _ := json.Marshal(invoke)
+			debugData := fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nInvoke result:%s", string(rjson), string(ojson))
+
+			log.Errorf("Coinbase tx[%s] contract write set not correct, %s",
+				tx.Hash().String(), debugData)
 			return TxValidationCode_INVALID_COINBASE
 		}
 	}
 	return TxValidationCode_VALID
 }
 
-func compareRewardAndOutput(rewards map[common.Address][]modules.AmountAsset, outputs []*modules.Output) bool {
+func (validate *Validate) compareRewardAndOutput(rewards map[common.Address][]modules.AmountAsset, outputs []*modules.Output) bool {
 	comparedCount := 0
 	for addr, reward := range rewards {
-		if rewardExistInOutputs(addr, reward, outputs) {
+		if validate.rewardExistInOutputs(addr, reward, outputs) {
 			comparedCount++
 		} else {
 			return false
@@ -467,9 +544,9 @@ func compareRewardAndOutput(rewards map[common.Address][]modules.AmountAsset, ou
 	// }
 	// return true
 }
-func rewardExistInOutputs(addr common.Address, aa []modules.AmountAsset, outputs []*modules.Output) bool {
+func (validate *Validate) rewardExistInOutputs(addr common.Address, aa []modules.AmountAsset, outputs []*modules.Output) bool {
 	for _, out := range outputs {
-		outAddr, _ := tokenengine.GetAddressFromScript(out.PkScript)
+		outAddr, _ := validate.tokenEngine.GetAddressFromScript(out.PkScript)
 		if outAddr.Equal(addr) {
 
 			for _, a := range aa {
@@ -483,7 +560,7 @@ func rewardExistInOutputs(addr common.Address, aa []modules.AmountAsset, outputs
 	}
 	return true
 }
-func compareRewardAndStateClear(rewards map[common.Address][]modules.AmountAsset, writeset []modules.ContractWriteSet) bool {
+func (validate *Validate) compareRewardAndStateClear(rewards map[common.Address][]modules.AmountAsset, writeset []modules.ContractWriteSet) bool {
 	comparedCount := 0
 	empty, _ := rlp.EncodeToBytes([]modules.AmountAsset{})
 	for addr := range rewards {
@@ -498,17 +575,18 @@ func compareRewardAndStateClear(rewards map[common.Address][]modules.AmountAsset
 		}
 
 	}
-	return comparedCount == len(writeset)
-	// if comparedCount != len(rewards) { //所有的Reward的状态数据库被清空
-	// 	return false
-	// }
-	// return true
+	//return comparedCount == len(writeset)
+	if comparedCount != len(rewards) { //所有的Reward的状态数据库被清空
+		log.Warnf("write set comparedCount:%d clean count:%d", comparedCount, len(rewards))
+		return false
+	}
+	return true
 }
-func compareRewardAndWriteset(rewards map[common.Address][]modules.AmountAsset, writeset []modules.ContractWriteSet) bool {
+func (validate *Validate) compareRewardAndWriteset(rewards map[common.Address][]modules.AmountAsset, writeset []modules.ContractWriteSet) bool {
 	comparedCount := 0
 	for addr, reward := range rewards {
 
-		if rewardExist(addr, reward, writeset) {
+		if validate.rewardExist(addr, reward, writeset) {
 			comparedCount++
 		} else {
 
@@ -522,7 +600,7 @@ func compareRewardAndWriteset(rewards map[common.Address][]modules.AmountAsset, 
 	// }
 	// return true
 }
-func rewardExist(addr common.Address, aa []modules.AmountAsset, writeset []modules.ContractWriteSet) bool {
+func (validate *Validate) rewardExist(addr common.Address, aa []modules.AmountAsset, writeset []modules.ContractWriteSet) bool {
 	for _, w := range writeset {
 		if w.Key == constants.RewardAddressPrefix+addr.String() {
 			dbAa := []modules.AmountAsset{}
@@ -549,7 +627,7 @@ func rewardExist(addr common.Address, aa []modules.AmountAsset, writeset []modul
 	return true
 }
 
-func addIncome(income []modules.AmountAsset, newAmount uint64, asset *modules.Asset) []modules.AmountAsset {
+func (validate *Validate) addIncome(income []modules.AmountAsset, newAmount uint64, asset *modules.Asset) []modules.AmountAsset {
 	newValue := []modules.AmountAsset{}
 	hasOldValue := false
 	for _, aa := range income {

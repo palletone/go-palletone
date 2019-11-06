@@ -33,16 +33,22 @@ import (
 )
 
 func (d *Dag) GetGlobalProp() *modules.GlobalProperty {
+	//_, _, _, rep, _ := d.Memdag.GetUnstableRepositories()
+	//gp, _ := rep.RetrieveGlobalProp()
 	gp, _ := d.unstablePropRep.RetrieveGlobalProp()
 	return gp
 }
 
 func (d *Dag) GetDynGlobalProp() *modules.DynamicGlobalProperty {
+	//_, _, _, rep, _ := d.Memdag.GetUnstableRepositories()
+	//dgp, _ := rep.RetrieveDynGlobalProp()
 	dgp, _ := d.unstablePropRep.RetrieveDynGlobalProp()
 	return dgp
 }
 
 func (d *Dag) GetMediatorSchl() *modules.MediatorSchedule {
+	//_, _, _, rep, _ := d.Memdag.GetUnstableRepositories()
+	//ms, _ := rep.RetrieveMediatorSchl()
 	ms, _ := d.unstablePropRep.RetrieveMediatorSchl()
 	return ms
 }
@@ -53,8 +59,6 @@ func (d *Dag) GetActiveMediatorNodes() map[string]*discover.Node {
 
 	meds := d.GetActiveMediators()
 	for _, add := range meds {
-		// todo albert  待检查
-		//med := d.GetActiveMediator(add)
 		med := d.GetMediator(add)
 		if med == nil {
 			continue
@@ -102,14 +106,6 @@ func (d *Dag) GetActiveMediatorAddr(index int) common.Address {
 }
 
 // author Albert·Gou
-func (d *Dag) GetActiveMediatorNode(index int) *discover.Node {
-	ma := d.GetActiveMediatorAddr(index)
-	med := d.GetActiveMediator(ma)
-
-	return med.Node
-}
-
-// author Albert·Gou
 func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
 	if !d.IsActiveMediator(add) {
 		log.Debugf("%v is not active mediator!", add.Str())
@@ -120,7 +116,11 @@ func (d *Dag) GetActiveMediator(add common.Address) *core.Mediator {
 }
 
 func (d *Dag) GetMediator(add common.Address) *core.Mediator {
+	//_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
+	//med, err := state.RetrieveMediator(add)
+
 	med, err := d.unstableStateRep.RetrieveMediator(add)
+
 	if err != nil {
 		log.Debugf("Retrieve Mediator error: %v", err.Error())
 		return nil
@@ -141,11 +141,15 @@ func (dag *Dag) GetNewestUnitTimestamp(token modules.AssetId) (int64, error) {
 }
 
 func (dag *Dag) GetSlotTime(slotNum uint32) time.Time {
-	return dag.unstablePropRep.GetSlotTime(dag.GetGlobalProp(), dag.GetDynGlobalProp(), slotNum)
+	_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
+	return rep.GetSlotTime(slotNum)
+	//return dag.unstablePropRep.GetSlotTime(slotNum)
 }
 
 func (dag *Dag) GetScheduledMediator(slotNum uint32) common.Address {
-	return dag.unstablePropRep.GetScheduledMediator(slotNum)
+	_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
+	return rep.GetScheduledMediator(slotNum)
+	//return dag.unstablePropRep.GetScheduledMediator(slotNum)
 }
 
 func (dag *Dag) HeadUnitTime() int64 {
@@ -174,23 +178,37 @@ func (dag *Dag) HeadUnitHash() common.Hash {
 }
 
 func (dag *Dag) GetMediators() map[common.Address]bool {
-	return dag.unstableStateRep.GetMediators()
+	_, _, state, _, _ := dag.Memdag.GetUnstableRepositories()
+
+	return state.GetMediators()
+	//return dag.unstableStateRep.GetMediators()
+}
+
+func (dag *Dag) GetMediatorCount() int {
+	_, _, state, _, _ := dag.Memdag.GetUnstableRepositories()
+
+	return len(state.GetMediators())
+	//return len(dag.unstableStateRep.GetMediators())
 }
 
 func (dag *Dag) LookupMediatorInfo() []*modules.MediatorInfo {
-	return dag.unstableStateRep.LookupMediatorInfo()
+	_, _, state, _, _ := dag.Memdag.GetUnstableRepositories()
+
+	return state.LookupMediatorInfo()
+	//return dag.unstableStateRep.LookupMediatorInfo()
 }
 
 func (dag *Dag) IsMediator(address common.Address) bool {
-	return dag.unstableStateRep.IsMediator(address)
+	_, _, state, _, _ := dag.Memdag.GetUnstableRepositories()
+
+	return state.IsMediator(address)
+	//return dag.unstableStateRep.IsMediator(address)
 }
 
-//func (dag *Dag) CurrentFeeSchedule() core.FeeSchedule {
-//	return dag.GetGlobalProp().ChainParameters.CurrentFees
-//}
-
 func (dag *Dag) GetChainParameters() *core.ChainParameters {
-	return dag.unstablePropRep.GetChainParameters()
+	_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
+	return rep.GetChainParameters()
+	//return dag.unstablePropRep.GetChainParameters()
 }
 
 func (dag *Dag) GetImmutableChainParameters() *core.ImmutableChainParameters {
@@ -198,7 +216,9 @@ func (dag *Dag) GetImmutableChainParameters() *core.ImmutableChainParameters {
 }
 
 func (dag *Dag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
-	unit, err := dag.unstableUnitRep.GetUnit(hash)
+	rep, _, _, _, _ := dag.Memdag.GetUnstableRepositories()
+	unit, err := rep.GetUnit(hash)
+	//unit, err := dag.unstableUnitRep.GetUnit(hash)
 
 	if err != nil {
 		log.Debug("get unit by hash is failed.", "hash", hash)
@@ -221,14 +241,22 @@ func (d *Dag) GetPrecedingMediatorNodes() map[string]*discover.Node {
 }
 
 func (d *Dag) GetAccountVotedMediators(addr common.Address) map[string]bool {
-	return d.unstableStateRep.GetAccountVotedMediators(addr)
+	_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
+	return state.GetAccountVotedMediators(addr)
+	//return d.unstableStateRep.GetAccountVotedMediators(addr)
 }
 
 func (d *Dag) GetPtnBalance(addr common.Address) uint64 {
-	return d.unstableStateRep.GetAccountBalance(addr)
+	_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
+
+	return state.GetAccountBalance(addr)
+	//return d.unstableStateRep.GetAccountBalance(addr)
 }
 
 func (d *Dag) GetMediatorInfo(address common.Address) *modules.MediatorInfo {
+	//_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
+	//
+	//mi, _ := state.RetrieveMediatorInfo(address)
 	mi, _ := d.unstableStateRep.RetrieveMediatorInfo(address)
 	return mi
 }
@@ -266,5 +294,19 @@ func (d *Dag) IsContractDeveloper(addr common.Address) bool {
 }
 
 func (d *Dag) GetUnitHash(number *modules.ChainIndex) (common.Hash, error) {
-	return d.unstableUnitRep.GetHashByNumber(number)
+	unitRep, _, _, _, _ := d.Memdag.GetUnstableRepositories()
+	return unitRep.GetHashByNumber(number)
+	//return d.unstableUnitRep.GetHashByNumber(number)
+}
+
+// return all mediators voted results
+func (d *Dag) MediatorVotedResults() (map[string]uint64, error) {
+	_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
+	return state.GetMediatorVotedResults()
+	//return d.unstableStateRep.GetMediatorVotedResults()
+}
+
+func (d *Dag) GetVotingForMediator(addStr string) (map[string]uint64, error) {
+	_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
+	return state.GetVotingForMediator(addStr)
 }

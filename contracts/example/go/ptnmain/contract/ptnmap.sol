@@ -82,19 +82,26 @@ contract PTNMap is IERC20 {
     string constant public name = "PTN Mapping";
     string constant public symbol = "PTNMap";
 
+    address private admin;
 
-    constructor() public {
-       ptnToken = IERC20(0xa54880da9a63cdd2ddacf25af68daf31a1bcc0c9);
+    modifier isAdmin() {//debug
+      require(msg.sender == admin);
+      _;
     }
-    
+
+    constructor(address _erc20Addr) public {
+       admin = msg.sender;
+       ptnToken = IERC20(_erc20Addr);
+    }
+
     function transfer(address _ptnhex, uint256 _amt) external returns (bool) {
-        if (addrmap[msg.sender] == address(0)) {
+        if (addrmap[msg.sender] == address(0) && (addrmapPTN[_ptnhex] == address(0))) {
             addrmap[msg.sender] = _ptnhex;
             addrmapPTN[_ptnhex] = msg.sender;
             emit Transfer(msg.sender, _ptnhex, _amt);
             return true;
         } else {
-            return false;
+            revert();
         }
     }
 
@@ -127,9 +134,27 @@ contract PTNMap is IERC20 {
     }
 
 
-    function getptnhex(address addr) external view returns (string){
+    function resetMapAddr(address _addr, address _ptnhex) public isAdmin {
+        if (addrmap[_addr] == _ptnhex && addrmapPTN[_ptnhex] == _addr) {
+            addrmap[_addr] = address(0);
+            addrmapPTN[_ptnhex] = address(0);
+        } else {
+            revert();
+        }
+    }
+
+
+    function getMapPtnAddr(address addr) external view returns (string){
+        if (addrmap[addr] == address(0)) {
+            return "";
+        }
         return encodeBase58(addrmap[addr]);
-    }  
+    }
+    function getMapEthAddr(address ptnAddr) external view returns (address){
+        return addrmapPTN[ptnAddr];
+    }
+
+
     function bytesConcat(bytes _b) internal returns (string){
         string memory ret = new string(2 + _b.length);
         bytes memory bret = bytes(ret);
@@ -202,5 +227,8 @@ contract PTNMap is IERC20 {
             output[i] = array[i];
         }
         return output;
+    }
+    function () payable {
+        // can receive eth
     }
 }

@@ -260,7 +260,7 @@ func newDuplicateChaincodeHandlerError(chaincodeHandler *Handler) error {
 }
 
 func (chaincodeSupport *ChaincodeSupport) registerHandler(chaincodehandler *Handler) error {
-	key := chaincodehandler.ChaincodeID.Name
+	key := chaincodehandler.ChaincodeID.Name + chaincodehandler.ChaincodeID.Version
 
 	chaincodeSupport.runningChaincodes.Lock()
 	defer chaincodeSupport.runningChaincodes.Unlock()
@@ -305,7 +305,7 @@ func (chaincodeSupport *ChaincodeSupport) deregisterHandler(chaincodehandler *Ha
 	//	}
 	//}
 
-	key := chaincodehandler.ChaincodeID.Name
+	key := chaincodehandler.ChaincodeID.Name + chaincodehandler.ChaincodeID.Version
 	log.Debugf("Deregister handler: %s", key)
 	chaincodeSupport.runningChaincodes.Lock()
 	defer chaincodeSupport.runningChaincodes.Unlock()
@@ -680,7 +680,7 @@ func (chaincodeSupport *ChaincodeSupport) Destroy(context context.Context, cccid
 }
 
 // Launch will launch the chaincode if not running (if running return nil) and will wait for handler of the chaincode to get into FSM ready state.
-func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context, 
+func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context,
 	cccid *ccprovider.CCContext, spec interface{}) (*pb.ChaincodeID, *pb.ChaincodeInput, error) {
 	log.Debugf("launch enter")
 	//build the chaincode
@@ -701,11 +701,11 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context,
 	if cds != nil {
 		cID = cds.ChaincodeSpec.ChaincodeId
 		cMsg = cds.ChaincodeSpec.Input
-		log.Debugf("cds != nil-------这是部署用户合约---------------， cID=%v", cID)
+		log.Debugf("cds != nil-------这是部署合约---------------， cID=%v", cID)
 	} else {
 		cID = ci.ChaincodeSpec.ChaincodeId
 		cMsg = ci.ChaincodeSpec.Input
-		log.Debugf("cds == nil---------这是调用用户合约-------------, cID=%v", cID)
+		log.Debugf("cds == nil---------这是调用合约-------------, cID=%v", cID)
 	}
 
 	canName := cccid.GetCanonicalName()
@@ -881,7 +881,7 @@ func (chaincodeSupport *ChaincodeSupport) Execute(ctxt context.Context, cccid *c
 	var ccresp *pb.ChaincodeMessage
 	select {
 	case ccresp = <-notfy:
-		log.Infof("notfy = %v", ccresp)
+		log.Debugf("notfy = %v", ccresp)
 		//response is sent to user or calling chaincode. ChaincodeMessage_ERROR
 		//are typically treated as error
 		//log.Errorf("{{{{{ time out [%d]", setTimeout)

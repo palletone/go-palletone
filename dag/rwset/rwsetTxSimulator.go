@@ -58,10 +58,21 @@ func NewBasedTxSimulator(idag dag.IDag, hash common.Hash) *RwSetTxSimulator {
 		write_cache: make(map[string][]byte), dag: idag}
 }
 
-func (s *RwSetTxSimulator) GetChainParameters() ([]byte, error) {
-	cp := s.dag.GetChainParameters()
+//func (s *RwSetTxSimulator) GetChainParameters() ([]byte, error) {
+//	cp := s.dag.GetChainParameters()
+//
+//	data, err := rlp.EncodeToBytes(cp)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	return data, nil
+//}
 
-	data, err := rlp.EncodeToBytes(cp)
+func (s *RwSetTxSimulator) GetGlobalProp() ([]byte, error) {
+	gp := s.dag.GetGlobalProp()
+
+	data, err := rlp.EncodeToBytes(gp)
 	if err != nil {
 		return nil, err
 	}

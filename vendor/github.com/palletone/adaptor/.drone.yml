@@ -1,0 +1,12 @@
+kind: pipeline
+name: default
+steps:
+  - name: test
+    image: golang
+    commands:
+      - go test ./...
+  - name: lint
+    image: golang
+    commands:
+      - curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $(go env GOPATH)/bin v1.19.0
+      - golangci-lint run .

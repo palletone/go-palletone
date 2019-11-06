@@ -22,30 +22,31 @@
 package common
 
 import (
-	"testing"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/stretchr/testify/assert"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestStateRepository_GetContractsByTpl(t *testing.T) {
-	db,_:=ptndb.NewMemDatabase()
-	statedb:=storage.NewStateDb(db)
-	rep:=NewStateRepository(statedb)
-	tplId:=[]byte("111")
-	c1:=&modules.Contract{ContractId:[]byte("1"),TemplateId:tplId,Name:"C1"}
+	db, _ := ptndb.NewMemDatabase()
+	statedb := storage.NewStateDb(db)
+	dagDb := storage.NewDagDb(db)
+	rep := NewStateRepository(statedb, dagDb)
+	tplId := []byte("111")
+	c1 := &modules.Contract{ContractId: []byte("1"), TemplateId: tplId, Name: "C1"}
 	statedb.SaveContract(c1)
-	c2:=&modules.Contract{ContractId:[]byte("2"),TemplateId:tplId,Name:"C2"}
+	c2 := &modules.Contract{ContractId: []byte("2"), TemplateId: tplId, Name: "C2"}
 	statedb.SaveContract(c2)
 
-	c3:=&modules.Contract{ContractId:[]byte("3"),TemplateId:tplId,Name:"C3"}
+	c3 := &modules.Contract{ContractId: []byte("3"), TemplateId: tplId, Name: "C3"}
 	statedb.SaveContract(c3)
 
-	contracts,err:= rep.GetContractsByTpl(tplId)
-	assert.Nil(t,err)
-	assert.Equal(t,3,len(contracts))
-	for _,c:=range contracts{
-		t.Logf("Contract:%#v",c)
+	contracts, err := rep.GetContractsByTpl(tplId)
+	assert.Nil(t, err)
+	assert.Equal(t, 3, len(contracts))
+	for _, c := range contracts {
+		t.Logf("Contract:%#v", c)
 	}
 }

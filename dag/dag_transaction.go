@@ -30,8 +30,7 @@ import (
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
-	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/txspool"
 )
 
 type Txo4Greedy struct {
@@ -52,13 +51,7 @@ func newTxo4Greedy(outPoint modules.OutPoint, amount uint64) *Txo4Greedy {
 
 func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
 	txPool txspool.ITxPool) (*modules.Transaction, error) {
-	// 条件判断
-	if daoFee == 0 {
-		return nil, fmt.Errorf("transaction fee cannot be 0")
-	}
-
 	daoTotal := daoAmount + daoFee
-
 	// 1. 获取转出账户所有的PTN utxo
 	//allUtxos, err := dag.GetAddrUtxos(from)
 	coreUtxos, err := dag.getAddrCoreUtxos(from, txPool)
@@ -114,7 +107,7 @@ func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee
 	}
 	asset := dagconfig.DagConfig.GetGasToken().ToAsset()
 	for _, outAmount := range outAmounts {
-		pkScript := tokenengine.GenerateLockScript(outAmount.addr)
+		pkScript := dag.tokenEngine.GenerateLockScript(outAmount.addr)
 		txOut := modules.NewTxOut(outAmount.amount, pkScript, asset)
 		pload.AddTxOut(txOut)
 	}
@@ -157,11 +150,11 @@ func (dag *Dag) createTokenTransaction(from, to, toToken common.Address, daoAmou
 		return nil, fmt.Errorf("%v 's  utxo of this Token is empty", from.Str())
 	}
 	//2. 获取 PaymentPayload
-	ploadPTN, err := getPayload(from, to, daoAmount, daoFee, coreUtxos)
+	ploadPTN, err := dag.getPayload(from, to, daoAmount, daoFee, coreUtxos)
 	if err != nil {
 		return nil, err
 	}
-	ploadToken, err := getPayload(from, toToken, daoAmountToken, 0, tokenUtxos)
+	ploadToken, err := dag.getPayload(from, toToken, daoAmountToken, 0, tokenUtxos)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +168,7 @@ func (dag *Dag) createTokenTransaction(from, to, toToken common.Address, daoAmou
 	return tx, nil
 }
 
-func getPayload(from, to common.Address, daoAmount, daoFee uint64,
+func (dag *Dag)getPayload(from, to common.Address, daoAmount, daoFee uint64,
 	utxos map[modules.OutPoint]*modules.Utxo) (*modules.PaymentPayload, error) {
 	// 1. 利用贪心算法得到指定额度的utxo集合
 	greedyUtxos := core.Utxos{}
@@ -231,7 +224,7 @@ func getPayload(from, to common.Address, daoAmount, daoFee uint64,
 	}
 
 	for _, outAmount := range outAmounts {
-		pkScript := tokenengine.GenerateLockScript(outAmount.addr)
+		pkScript := dag.tokenEngine.GenerateLockScript(outAmount.addr)
 		txOut := modules.NewTxOut(outAmount.amount, pkScript, &asset)
 		pload.AddTxOut(txOut)
 	}

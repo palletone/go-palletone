@@ -79,7 +79,7 @@ func (pm *ProtocolManager) toGroupSign(event modules.ToGroupSignEvent) {
 		return
 	}
 
-	go pm.producer.AddToTBLSSignBufs(newHash)
+	pm.producer.AddToTBLSSignBufs(newHash)
 }
 
 // @author Albert·Gou
@@ -87,12 +87,7 @@ func (pm *ProtocolManager) sigShareTransmitLoop() {
 	for {
 		select {
 		case event := <-pm.sigShareCh:
-			unit, err := pm.dag.GetUnitByHash(event.UnitHash)
-			if unit != nil && err == nil {
-				med := unit.Author()
-				node := pm.dag.GetActiveMediator(med).Node
-				pm.transmitSigShare(node, &event)
-			}
+			go pm.transmitSigShare(&event)
 
 			// Err() channel will be closed when unsubscribing.
 		case <-pm.sigShareSub.Err():
@@ -102,21 +97,38 @@ func (pm *ProtocolManager) sigShareTransmitLoop() {
 }
 
 // @author Albert·Gou
-func (pm *ProtocolManager) transmitSigShare(node *discover.Node, sigShare *mp.SigShareEvent) {
-	peer, self := pm.GetPeer(node)
-	if self {
-		pm.producer.AddToTBLSRecoverBuf(sigShare.UnitHash, sigShare.SigShare)
-		return
-	}
-
-	if peer == nil {
-		return
-	}
-
-	err := peer.SendSigShare(sigShare)
+func (pm *ProtocolManager) transmitSigShare(sigShare *mp.SigShareEvent) {
+	unitHash := sigShare.UnitHash
+	header, err := pm.dag.GetHeaderByHash(unitHash)
 	if err != nil {
-		log.Debug(err.Error())
+		log.Debugf("fail to get header of unit(%v), err: %v", unitHash.TerminalString(), err.Error())
+		return
 	}
+
+	ma := header.Author()
+	med := pm.dag.GetMediator(ma)
+	if med == nil {
+		log.Debugf("fail to get mediator(%v)", ma.Str())
+		return
+	}
+
+	peer, self := pm.GetPeer(med.Node)
+	if self {
+		pm.producer.AddToTBLSRecoverBuf(sigShare)
+		return
+	}
+
+	if peer != nil {
+		err := peer.SendSigShare(sigShare)
+		if err != nil {
+			log.Debug(err.Error())
+		}
+
+		return
+	}
+
+	// 如果没有和对应的mediator有网络连接，则进行转发
+	pm.BroadcastSigShare(sigShare)
 }
 
 // @author Albert·Gou
@@ -124,7 +136,8 @@ func (pm *ProtocolManager) groupSigBroadcastLoop() {
 	for {
 		select {
 		case event := <-pm.groupSigCh:
-			pm.BroadcastGroupSig(&event)
+			pm.dag.SetUnitGroupSign(event.UnitHash, event.GroupSig, pm.txpool)
+			go pm.BroadcastGroupSig(&event)
 
 		// Err() channel will be closed when unsubscribing.
 		case <-pm.groupSigSub.Err():
@@ -136,7 +149,7 @@ func (pm *ProtocolManager) groupSigBroadcastLoop() {
 // @author Albert·Gou
 // BroadcastGroupSig will propagate the group signature of unit to p2p network
 func (pm *ProtocolManager) BroadcastGroupSig(groupSig *mp.GroupSigEvent) {
-	peers := pm.peers.PeersWithoutGroupSig(groupSig.UnitHash)
+	peers := pm.peers.PeersWithoutGroupSig(groupSig.Hash())
 	for _, peer := range peers {
 		peer.SendGroupSig(groupSig)
 	}
@@ -147,7 +160,7 @@ func (pm *ProtocolManager) vssDealTransmitLoop() {
 	for {
 		select {
 		case event := <-pm.vssDealCh:
-			pm.transmitVSSDeal(&event)
+			go pm.transmitVSSDeal(&event)
 
 			// Err() channel will be closed when unsubscribing.
 		case <-pm.vssDealSub.Err():
@@ -164,21 +177,33 @@ func (pm *ProtocolManager) transmitVSSDeal(deal *mp.VSSDealEvent) {
 		return
 	}
 
-	node := pm.dag.GetActiveMediatorNode(int(deal.DstIndex))
-	peer, self := pm.GetPeer(node)
+	ma := pm.dag.GetActiveMediatorAddr(int(deal.DstIndex))
+	med := pm.dag.GetMediator(ma)
+	if med == nil {
+		log.Debugf("fail to get mediator(%v)", ma.Str())
+		return
+	}
+
+	//peer, self := pm.GetPeer(node)
+	peer, self := pm.GetPeer(med.Node)
 	if self {
-		go pm.producer.AddToDealBuf(deal)
+		pm.producer.AddToDealBuf(deal)
 		return
 	}
 
-	if peer == nil {
+	if peer != nil {
+		err := peer.SendVSSDeal(deal)
+		if err != nil {
+			log.Debugf(err.Error())
+		}
+
 		return
 	}
 
-	err := peer.SendVSSDeal(deal)
-	if err != nil {
-		log.Debugf(err.Error())
-	}
+	// 如果没有和对应的mediator有网络连接，则进行转发
+	pm.BroadcastVSSDeal(deal)
+
+	return
 }
 
 // @author Albert·Gou
@@ -186,7 +211,7 @@ func (pm *ProtocolManager) vssResponseBroadcastLoop() {
 	for {
 		select {
 		case event := <-pm.vssResponseCh:
-			pm.broadcastVssResp(&event)
+			go pm.broadcastVssResp(&event)
 
 			// Err() channel will be closed when unsubscribing.
 		case <-pm.vssResponseSub.Err():
@@ -197,18 +222,21 @@ func (pm *ProtocolManager) vssResponseBroadcastLoop() {
 
 // @author Albert·Gou
 func (pm *ProtocolManager) broadcastVssResp(resp *mp.VSSResponseEvent) {
-	peers := pm.GetActiveMediatorPeers()
-	for _, peer := range peers {
-		if peer == nil { // 此时为本节点
-			go pm.producer.AddToResponseBuf(resp)
-			continue
-		}
+	//peers := pm.GetActiveMediatorPeers()
+	//for _, peer := range peers {
+	//	if peer == nil { // 此时为本节点
+	//		go pm.producer.AddToResponseBuf(resp)
+	//		continue
+	//	}
+	//
+	//	err := peer.SendVSSResponse(resp)
+	//	if err != nil {
+	//		log.Debugf(err.Error())
+	//	}
+	//}
 
-		err := peer.SendVSSResponse(resp)
-		if err != nil {
-			log.Debugf(err.Error())
-		}
-	}
+	pm.producer.AddToResponseBuf(resp)
+	pm.BroadcastVSSResponse(resp)
 }
 
 // GetPeer, retrieve specified peer. If it is the node itself, p is nil and self is true
@@ -245,24 +273,25 @@ func (pm *ProtocolManager) GetActiveMediatorPeers() map[string]*peer {
 }
 
 // @author Albert·Gou
-//func (p *peer) SendVSSDeal(deal *vssMsg) error {
 func (p *peer) SendVSSDeal(deal *mp.VSSDealEvent) error {
+	p.MarkVSSDeal(deal.Hash())
 	return p2p.Send(p.rw, VSSDealMsg, deal)
 }
 
 // @author Albert·Gou
-//func (p *peer) SendVSSResponse(resp *vssRespMsg) error {
 func (p *peer) SendVSSResponse(resp *mp.VSSResponseEvent) error {
+	p.MarkVSSResponse(resp.Hash())
 	return p2p.Send(p.rw, VSSResponseMsg, resp)
 }
 
 // @author Albert·Gou
 func (p *peer) SendSigShare(sigShare *mp.SigShareEvent) error {
+	p.MarkSigShare(sigShare.Hash())
 	return p2p.Send(p.rw, SigShareMsg, sigShare)
 }
 
 //BroadcastGroupSig
 func (p *peer) SendGroupSig(groupSig *mp.GroupSigEvent) error {
-	p.knownGroupSig.Add(groupSig.UnitHash)
+	p.MarkGroupSig(groupSig.Hash())
 	return p2p.Send(p.rw, GroupSigMsg, groupSig)
 }

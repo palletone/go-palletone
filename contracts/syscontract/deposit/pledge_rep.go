@@ -25,7 +25,10 @@ package deposit
 
 import (
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
+	"strconv"
+
 	//pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	//"github.com/palletone/go-palletone/dag/constants"
 	//"github.com/palletone/go-palletone/dag/modules"
@@ -64,11 +67,15 @@ func pledgeWithdrawRep(stub shim.ChaincodeStubInterface, addr common.Address, am
 
 //质押分红,按持仓比例分固定金额
 func pledgeRewardAllocation(pledgeList *modules.PledgeList, rewardAmount uint64) *modules.PledgeList {
-	newPledgeList := &modules.PledgeList{TotalAmount: 0, Members: []*modules.AddressAmount{}}
+	newPledgeList := &modules.PledgeList{TotalAmount: 0, Members: []*modules.AddressRewardAmount{}}
 	rewardPerDao := float64(rewardAmount) / float64(pledgeList.TotalAmount)
 	for _, pledge := range pledgeList.Members {
-		newAmount := pledge.Amount + uint64(rewardPerDao*float64(pledge.Amount))
-		newPledgeList.Members = append(newPledgeList.Members, &modules.AddressAmount{Address: pledge.Address, Amount: newAmount})
+		reward := uint64(rewardPerDao * float64(pledge.Amount))
+		newAmount := pledge.Amount + reward
+		newPledgeList.Members = append(newPledgeList.Members, &modules.AddressRewardAmount{
+			Address: pledge.Address,
+			Reward:  reward,
+			Amount:  newAmount})
 		newPledgeList.TotalAmount += newAmount
 	}
 	return newPledgeList
@@ -82,8 +89,15 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward
 	if err != nil {
 		return err
 	}
-	if lastDate == today {
-		return fmt.Errorf("%s pledge reward has been allocated before", today)
+	//判断是否是基金会触发
+	if isFoundationInvoke(stub) {
+		t ,_ :=strconv.Atoi(lastDate)
+		t +=1
+		today = strconv.Itoa(t)
+	}else {
+		if lastDate == today {
+			return fmt.Errorf("%s pledge reward has been allocated before", today)
+		}
 	}
 	allM, err := getLastPledgeList(stub)
 	if err != nil {
@@ -105,7 +119,7 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward
 
 	for _, awardNode := range depositList {
 
-		allM.Add(awardNode.Address, awardNode.Amount)
+		allM.Add(awardNode.Address, awardNode.Amount, 0) //新增加的质押当天不会有分红
 		err = delPledgeDepositRecord(stub, awardNode.Address)
 		if err != nil {
 			return err
@@ -118,7 +132,10 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward
 	}
 	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
 	for _, withdraw := range withdrawList {
-		withdrawAmt, _ := allM.Reduce(withdraw.Address, withdraw.Amount)
+		withdrawAmt, err := allM.Reduce(withdraw.Address, withdraw.Amount)
+		if err != nil {
+			log.Warnf("address[%s] withdraw pledge %d error:", withdraw.Address, withdraw.Amount)
+		}
 		if withdrawAmt > 0 {
 			err := stub.PayOutToken(withdraw.Address, modules.NewAmountAsset(withdrawAmt, gasToken), 0)
 			if err != nil {
@@ -139,6 +156,11 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward
 
 //查询一个账户的质押状态
 func getPledgeStatus(stub shim.ChaincodeStubInterface, addr string) (*modules.PledgeStatus, error) {
+	//Check addr format
+	_, err := common.StringToAddress(addr)
+	if err != nil {
+		return nil, err
+	}
 	d, err := getPledgeDepositRecord(stub, addr)
 	if err != nil {
 		return nil, err
@@ -161,6 +183,38 @@ func getPledgeStatus(stub shim.ChaincodeStubInterface, addr string) (*modules.Pl
 	if list != nil {
 		status.PledgeAmount = list.GetAmount(addr)
 	}
-	//TODO 保证金部分？
+
 	return status, nil
 }
+
+//func getTotalPledgeStatus(stub shim.ChaincodeStubInterface) (*modules.PledgeStatus, error) {
+//
+//	d, err := getAllPledgeDepositRecords(stub)
+//	if err != nil {
+//		return nil, err
+//	}
+//	totalDeposit := uint64(0)
+//	for _, dep := range d {
+//		totalDeposit += dep.Amount
+//	}
+//	//w, err := getPledgeWithdrawRecord(stub, addr)
+//	//if err != nil {
+//	//	return nil, err
+//	//}
+//	list, err := getLastPledgeList(stub)
+//	if err != nil {
+//		return nil, err
+//	}
+//	status := &modules.PledgeStatus{}
+//	if d != nil {
+//		status.NewDepositAmount = totalDeposit
+//	}
+//	//if w != nil {
+//	//	status.WithdrawApplyAmount = w.Amount
+//	//}
+//	if list != nil {
+//		status.PledgeAmount = list.TotalAmount
+//	}
+//
+//	return status, nil
+//}

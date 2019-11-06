@@ -20,7 +20,7 @@ type SysVoteTopic struct {
 //topic support result
 type SysTopicSupports struct {
 	TopicTitle  string
-	VoteResults []*modules.SysVoteResult
+	VoteResults []*SysVoteResult
 	SelectMax   uint64
 	//SelectOptionsNum  uint64
 }

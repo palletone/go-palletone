@@ -24,11 +24,9 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/core/accounts"
-	//"github.com/ethereum/go-ethereum/consensus"
-	//"github.com/palletone/go-palletone/core"
-	//"github.com/ethereum/go-ethereum/core/bloombits"
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/ptn/downloader"
+
 	//	"github.com/palletone/go-palletone/ptn/filters"
 	//"github.com/ethereum/go-ethereum/eth/gasprice"
 	//"github.com/ethereum/go-ethereum/light"
@@ -39,14 +37,15 @@ import (
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/node"
 	//"github.com/palletone/go-palletone/core/types"
+	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/palletcache"
-	"github.com/palletone/go-palletone/dag/txspool"
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/light/cors"
+	"github.com/palletone/go-palletone/txspool"
 )
 
 type LightPalletone struct {
@@ -87,13 +86,28 @@ type LightPalletone struct {
 	txSub event.Subscription
 }
 
-func New(ctx *node.ServiceContext, config *ptn.Config, protocolname string, cache palletcache.ICache) (*LightPalletone,
-	error) {
-	chainDb, err := ptn.CreateDB(ctx, config /*, "lightchaindata"*/)
+func New(ctx *node.ServiceContext, config *ptn.Config, protocolname string, cache palletcache.ICache,
+	isTestNet bool) (*LightPalletone, error) {
+	db, err := ptn.CreateDB(ctx, config /*, "lightchaindata"*/)
 	if err != nil {
 		return nil, err
 	}
-	dag, err := dag.NewDag(chainDb, cache, true)
+	if has, _ := db.Has([]byte("gpGlobalProperty")); !has {
+		keys, values := make([]string, 0), make([]string, 0)
+		if isTestNet {
+			keys = append(keys, ptn.TestNetKeys...)
+			values = append(values, ptn.TestNetValues...)
+		} else {
+			keys = append(keys, ptn.MainNetKeys...)
+			values = append(values, ptn.MainNetValues...)
+		}
+		err := initGenesisData(keys, values, db)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	dag, err := dag.NewDag(db, cache, true)
 	if err != nil {
 		log.Error("PalletOne New", "NewDag err:", err)
 		return nil, err
@@ -111,7 +125,7 @@ func New(ctx *node.ServiceContext, config *ptn.Config, protocolname string, cach
 	lptn := &LightPalletone{
 		config: config,
 		//chainConfig:      chainConfig,
-		unitDb:   chainDb,
+		unitDb:   db,
 		eventMux: ctx.EventMux,
 		peers:    peers,
 		//reqDist:          newRequestDistributor(peers, quitSync),
@@ -122,11 +136,9 @@ func New(ctx *node.ServiceContext, config *ptn.Config, protocolname string, cach
 		dag:          dag,
 	}
 
-	//lptn.relay = NewLesTxRelay(peers, leth.reqDist)
-	//lptn.serverPool = newServerPool(chainDb, quitSync, &leth.wg)
-	//lptn.retriever = newRetrieveManager(peers, leth.reqDist, leth.serverPool)
-	//lptn.odr = NewLesOdr(chainDb, leth.chtIndexer, leth.bloomTrieIndexer, leth.bloomIndexer, leth.retriever)
-
+	if config.TxPool.Journal != "" {
+		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
+	}
 	lptn.txPool = txspool.NewTxPool(config.TxPool, cache, lptn.dag)
 
 	if lptn.protocolManager, err = NewProtocolManager(true, lptn.peers, config.NetworkId, gasToken, nil,
@@ -262,4 +274,16 @@ func (p *LightPalletone) txBroadcastLoop() {
 			return
 		}
 	}
+}
+func initGenesisData(keys, values []string, db ptndb.Putter) error {
+	k := len(keys)
+
+	for i := 0; i < k; i++ {
+		key := util.Hex2Bytes(keys[i])
+		value := util.Hex2Bytes(values[i])
+		if err := db.Put(key, value); err != nil {
+			return err
+		}
+	}
+	return nil
 }

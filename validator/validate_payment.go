@@ -29,7 +29,6 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/tokenengine"
 	"time"
 )
 
@@ -38,6 +37,7 @@ import (
 //1. Amount correct
 //2. Asset must be equal
 //3. Unlock correct
+//4.Blacklist check, fromAddr toAddr must not in blacklist
 func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx int,
 	payment *modules.PaymentPayload, usedUtxo map[string]bool) ValidationCode {
 	txId := tx.Hash()
@@ -45,6 +45,11 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 	//	// TODO check locktime
 	//}
 	gasToken := dagconfig.DagConfig.GetGasToken()
+	blacklistAddress := validate.getBlacklistAddress()
+	log.DebugDynamic(func() string {
+		data, _ := json.Marshal(blacklistAddress)
+		return "Blacklist:" + string(data)
+	})
 	var asset *modules.Asset
 	totalInput := uint64(0)
 	isInputnil := false
@@ -79,7 +84,7 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 
 			usedUtxoKey := in.PreviousOutPoint.String()
 			if _, exist := usedUtxo[usedUtxoKey]; exist {
-				log.Error("double spend utxo:", usedUtxoKey)
+				log.Errorf("double spend utxo:%s", usedUtxoKey)
 				return TxValidationCode_INVALID_DOUBLE_SPEND
 			}
 			usedUtxo[usedUtxoKey] = true
@@ -128,13 +133,19 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 					statusValid = true
 				}
 			}
+			fromAddr, _ := validate.tokenEngine.GetAddressFromScript(utxo.PkScript)
+			if _, isIn := blacklistAddress[fromAddr]; isIn {
+				log.Infof("address[%s] is in blacklist", fromAddr.String())
+				return TxValidationCode_ADDRESS_IN_BLACKLIST
+			}
+
 			totalInput += utxo.Amount
 			// check SignatureScript
 			utxoScriptMap[in.PreviousOutPoint.String()] = utxo.PkScript
 
 		}
 		t1 := time.Now()
-		err := tokenengine.ScriptValidate1Msg(utxoScriptMap, validate.pickJuryFn, txForSign, msgIdx)
+		err := validate.tokenEngine.ScriptValidate1Msg(utxoScriptMap, validate.pickJuryFn, txForSign, msgIdx)
 		if err != nil {
 			return TxValidationCode_INVALID_PAYMMENT_INPUT
 		} else {
@@ -149,20 +160,27 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 	if len(payment.Outputs) > 0 {
 		asset0 := payment.Outputs[0].Asset
 		for _, out := range payment.Outputs {
-			if !asset0.IsSameAssetId(out.Asset) {
-				return TxValidationCode_INVALID_ASSET
+			if isInputnil { //Input为空，可能是721的创币，所以只检查AssetId相同，不检查UniqueId
+				if !asset0.IsSameAssetId(out.Asset) {
+					return TxValidationCode_INVALID_ASSET
+				}
+			} else { //Input不为空，则Input和Output必须是同样的Asset
+				if !asset.IsSimilar(out.Asset) { //Input Output asset mustbe same
+					return TxValidationCode_INVALID_ASSET
+				}
 			}
 			totalOutput += out.Value
 			if totalOutput < out.Value || out.Value == 0 { //big number overflow
 				return TxValidationCode_INVALID_AMOUNT
 			}
+			toAddr, _ := validate.tokenEngine.GetAddressFromScript(out.PkScript)
+			if _, isIn := blacklistAddress[toAddr]; isIn {
+				log.Infof("address[%s] is in blacklist", toAddr.String())
+				return TxValidationCode_ADDRESS_IN_BLACKLIST
+			}
 		}
 
 		if !isInputnil {
-			//Input Output asset mustbe same
-			if !asset.IsSameAssetId(asset0) {
-				return TxValidationCode_INVALID_ASSET
-			}
 			if msgIdx != 0 && totalOutput > totalInput { //相当于进行了增发
 				return TxValidationCode_INVALID_AMOUNT
 			}
@@ -173,21 +191,22 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 func (validate *Validate) pickJuryFn(contractAddr common.Address) ([]byte, error) {
 	log.Debugf("Try to pickup jury for address:%s", contractAddr.String())
 	var redeemScript []byte
-
-	if !contractAddr.IsSystemContractAddress() {
-		jury, err := validate.statequery.GetContractJury(contractAddr.Bytes())
+	var err error
+	var jury *modules.ElectionNode
+	if !contractAddr.IsSystemContractAddress() { //only user contract has jury
+		jury, err = validate.statequery.GetContractJury(contractAddr.Bytes())
 		if err != nil {
 			log.Errorf("Cannot get contract[%s] jury", contractAddr.String())
 			return nil, errors.New("Cannot get contract jury")
 		}
-		redeemScript = generateJuryRedeemScript(jury)
+		redeemScript, err = validate.generateJuryRedeemScript(jury)
 		log.DebugDynamic(func() string {
-			redeemStr, _ := tokenengine.DisasmString(redeemScript)
+			redeemStr, _ := validate.tokenEngine.DisasmString(redeemScript)
 			return "Generate RedeemScript: " + redeemStr
 		})
 	}
 
-	return redeemScript, nil
+	return redeemScript, err
 }
 
 //检查转移的Token是否已经冻结，冻结的Token不能再转移
@@ -208,15 +227,44 @@ func (validate *Validate) checkTokenStatus(asset *modules.Asset) ValidationCode 
 	return TxValidationCode_VALID
 }
 
-func generateJuryRedeemScript(jury *modules.ElectionNode) []byte {
-	if jury == nil{
-		return nil
+//var BlacklistAddress=[]byte("BlacklistAddress")
+func (validate *Validate) getBlacklistAddress() map[common.Address]bool {
+	result := make(map[common.Address]bool)
+	if validate.statequery == nil {
+		log.Warn("don't set statequery, blacklist is empty")
+		return result
+	}
+
+	//data,err:= validate.cache.cache.Get(BlacklistAddress)
+	//if err==nil{
+	// 	addresses,_,_:=	validate.statequery.GetBlacklistAddress()
+	// 	data,_=rlp.EncodeToBytes(addresses)
+	// 	validate.cache.cache.Set(BlacklistAddress,data,60)
+	//}
+	//addresses:=[]common.Address{}
+	//rlp.DecodeBytes(data,&addresses)
+	addresses, _, _ := validate.statequery.GetBlacklistAddress()
+
+	for _, addr := range addresses {
+		result[addr] = true
+	}
+	return result
+}
+
+func (validate *Validate) generateJuryRedeemScript(jury *modules.ElectionNode) ([]byte, error) {
+	if jury == nil {
+		return nil, errors.New("Jury is empty")
 	}
 	count := len(jury.EleList)
 	needed := byte(math.Ceil((float64(count)*2 + 1) / 3))
 	pubKeys := [][]byte{}
-	for _, jurior := range jury.EleList {
-		pubKeys = append(pubKeys, jurior.PublicKey)
+	for _, ju := range jury.EleList {
+		juror, err := validate.statequery.GetJurorByAddrHash(ju.AddrHash)
+		if err != nil {
+			log.Errorf(err.Error())
+			return nil, err
+		}
+		pubKeys = append(pubKeys, juror.PublicKey)
 	}
-	return tokenengine.GenerateRedeemScript(needed, pubKeys)
+	return validate.tokenEngine.GenerateRedeemScript(needed, pubKeys), nil
 }

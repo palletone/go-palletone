@@ -19,18 +19,19 @@ package ptn
 import (
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 
+	set "github.com/deckarep/golang-set"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/consensus/jury"
-	//"github.com/palletone/go-palletone/dag/dagconfig"
-	set "github.com/deckarep/golang-set"
 	"github.com/palletone/go-palletone/dag/modules"
-	"strings"
 )
 
 var (
@@ -51,6 +52,10 @@ const (
 	//transitionStep1  = 1 //All transition mediator each other connected to star vss
 	//transitionStep2  = 2 //vss success
 	//transitionCancel = 3 //retranstion
+
+	maxKnownVSSDeal     = 21 * 20
+	maxKnownVSSResponse = 21 * 20
+	maxKnownSigShare    = 21 * 15
 )
 
 // PeerInfo represents a short summary of the PalletOne sub-protocol metadata known
@@ -63,8 +68,9 @@ type PeerInfo struct {
 }
 
 type peerMsg struct {
-	head   common.Hash
-	number *modules.ChainIndex
+	head         common.Hash
+	number       *modules.ChainIndex
+	stableNumber *modules.ChainIndex
 }
 
 type peer struct {
@@ -85,7 +91,11 @@ type peer struct {
 	knownTxs          set.Set // Set of transaction hashes known to be known by this peer
 	knownBlocks       set.Set // Set of block hashes known to be known by this peer
 	knownLightHeaders set.Set
-	knownGroupSig     set.Set // Set of block hashes known to be known by this peer
+	knownGroupSig     set.Set
+
+	knownVSSDeal     set.Set
+	knownVSSResponse set.Set
+	knownSigShare    set.Set
 }
 
 func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
@@ -102,6 +112,10 @@ func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 		knownGroupSig:     set.NewSet(),
 		peermsg:           map[modules.AssetId]peerMsg{},
 		//lightpeermsg:      map[modules.AssetId]peerMsg{},
+
+		knownVSSDeal:     set.NewSet(),
+		knownVSSResponse: set.NewSet(),
+		knownSigShare:    set.NewSet(),
 	}
 }
 
@@ -129,6 +143,17 @@ func (p *peer) Info(protocol string) *PeerInfo {
 	}
 }
 
+func (p *peer) StableIndex(assetID modules.AssetId) (stableIndex *modules.ChainIndex) {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+
+	msg, ok := p.peermsg[assetID]
+	if ok {
+		stableIndex = msg.stableNumber
+	}
+	return stableIndex
+}
+
 // Head retrieves a copy of the current head hash and total difficulty of the
 // peer.
 //only retain the max index header.will in other mediator,not in ptn mediator.
@@ -146,15 +171,25 @@ func (p *peer) Head(assetID modules.AssetId) (hash common.Hash, number *modules.
 
 // SetHead updates the head hash and total difficulty of the peer.
 //only retain the max index header
-func (p *peer) SetHead(hash common.Hash, number *modules.ChainIndex) {
+func (p *peer) SetHead(hash common.Hash, number, index *modules.ChainIndex) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
 	msg, ok := p.peermsg[number.AssetID]
+	tempstableIndex := &modules.ChainIndex{}
+	if ok && index == nil {
+		tempstableIndex = msg.stableNumber
+	}
 
 	if (ok && number.Index > msg.number.Index) || !ok {
 		copy(msg.head[:], hash[:])
 		msg.number = number
+		if index != nil {
+			msg.stableNumber = index
+		} else {
+			msg.stableNumber = tempstableIndex
+		}
+
 	}
 	p.peermsg[number.AssetID] = msg
 }
@@ -169,10 +204,7 @@ func (p *peer) MarkUnit(hash common.Hash) {
 	p.knownBlocks.Add(hash)
 }
 
-// MarkBlock marks a block as known for the peer, ensuring that the block will
-// never be propagated to this particular peer.
 func (p *peer) MarkGroupSig(hash common.Hash) {
-	// If we reached the memory allowance, drop a previously known block hash
 	for p.knownGroupSig.Cardinality() >= maxKnownBlocks {
 		p.knownGroupSig.Pop()
 	}
@@ -355,19 +387,20 @@ func (p *peer) RequestReceipts(hashes []common.Hash) error {
 
 // Handshake executes the ptn protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
-func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis common.Hash,
-/*mediator bool,*/ headHash common.Hash) error {
+func (p *peer) Handshakev103(network uint64, index *modules.ChainIndex, genesis common.Hash, headHash common.Hash,
+	stable *modules.ChainIndex) error {
 	// Send out own handshake in a new thread
 	errc := make(chan error, 2)
-	var status statusData // safe to read after two values have been received from errc
+	var status statusDatav103 // safe to read after two values have been received from errc
 
 	go func() {
-		errc <- p2p.Send(p.rw, StatusMsg, &statusData{
+		errc <- p2p.Send(p.rw, StatusMsg, &statusDatav103{
 			ProtocolVersion: uint32(p.version),
 			NetworkId:       network,
 			Index:           index,
 			GenesisUnit:     genesis,
 			CurrentHeader:   headHash,
+			StableIndex:     stable,
 		})
 	}()
 	go func() {
@@ -385,12 +418,52 @@ func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis comm
 			return p2p.DiscReadTimeout
 		}
 	}
-	log.Debug("peer Handshake", "p.id", p.id, "index", index.Index)
-	p.SetHead(status.CurrentHeader, status.Index)
+	//stableIndex :=&modules.ChainIndex{Index:uint64(1085100)}
+	//stableIndex := &modules.ChainIndex{AssetID: modules.PTNCOIN, Index: uint64(1)}
+	log.Debug("peer Handshakev103", "p.id", p.id, "index", status.Index, "stable", status.StableIndex)
+	p.SetHead(status.CurrentHeader, status.Index, status.StableIndex)
 	return nil
 }
 
-func (p *peer) readStatus(network uint64, status *statusData, genesis common.Hash) (err error) {
+func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis common.Hash, headHash common.Hash,
+	stable *modules.ChainIndex) error {
+	// Send out own handshake in a new thread
+	errc := make(chan error, 2)
+	var status statusData // safe to read after two values have been received from errc
+
+	go func() {
+		errc <- p2p.Send(p.rw, StatusMsg, &statusData{
+			ProtocolVersion: uint32(p.version),
+			NetworkId:       network,
+			Index:           index,
+			GenesisUnit:     genesis,
+			CurrentHeader:   headHash,
+			//StableIndex:     stable,
+		})
+	}()
+	go func() {
+		errc <- p.readStatus(network, &status, genesis)
+	}()
+	timeout := time.NewTimer(handshakeTimeout)
+	defer timeout.Stop()
+	for i := 0; i < 2; i++ {
+		select {
+		case err := <-errc:
+			if err != nil {
+				return err
+			}
+		case <-timeout.C:
+			return p2p.DiscReadTimeout
+		}
+	}
+	//stableIndex :=&modules.ChainIndex{Index:uint64(1085100)}
+	stableIndex := &modules.ChainIndex{AssetID: modules.PTNCOIN, Index: uint64(configure.StableIndex)}
+	log.Debug("peer Handshake", "p.id", p.id, "index", status.Index, "stable", stableIndex) //status.StableIndex)
+	p.SetHead(status.CurrentHeader, status.Index, stableIndex)                              //status.StableIndex)
+	return nil
+}
+
+func (p *peer) readStatus(network uint64, status interface{}, genesis common.Hash) (err error) {
 	msg, err := p.rw.ReadMsg()
 	if err != nil {
 		return err
@@ -401,18 +474,38 @@ func (p *peer) readStatus(network uint64, status *statusData, genesis common.Has
 	if msg.Size > ProtocolMaxMsgSize {
 		return errResp(ErrMsgTooLarge, "%v > %v", msg.Size, ProtocolMaxMsgSize)
 	}
-	// Decode the handshake and make sure everything matches
-	if err := msg.Decode(&status); err != nil {
-		return errResp(ErrDecode, "msg %v: %v", msg, err)
+	if status1, ok := status.(*statusData); ok {
+		// Decode the handshake and make sure everything matches
+		if err := msg.Decode(&status1); err != nil {
+			return errResp(ErrDecode, "msg %v: %v", msg, err)
+		}
+
+		if status1.GenesisUnit != genesis {
+			return errResp(ErrGenesisBlockMismatch, "%x (!= %x)", status1.GenesisUnit[:8], genesis[:8])
+		}
+		if status1.NetworkId != network {
+			return errResp(ErrNetworkIdMismatch, "%d (!= %d)", status1.NetworkId, network)
+		}
+		if int(status1.ProtocolVersion) != p.version {
+			return errResp(ErrProtocolVersionMismatch, "%d (!= %d)", status1.ProtocolVersion, p.version)
+		}
 	}
-	if status.GenesisUnit != genesis {
-		return errResp(ErrGenesisBlockMismatch, "%x (!= %x)", status.GenesisUnit[:8], genesis[:8])
-	}
-	if status.NetworkId != network {
-		return errResp(ErrNetworkIdMismatch, "%d (!= %d)", status.NetworkId, network)
-	}
-	if int(status.ProtocolVersion) != p.version {
-		return errResp(ErrProtocolVersionMismatch, "%d (!= %d)", status.ProtocolVersion, p.version)
+
+	if status103, ok := status.(*statusDatav103); ok {
+		// Decode the handshake and make sure everything matches
+		if err := msg.Decode(&status103); err != nil {
+			return errResp(ErrDecode, "msg %v: %v", msg, err)
+		}
+
+		if status103.GenesisUnit != genesis {
+			return errResp(ErrGenesisBlockMismatch, "%x (!= %x)", status103.GenesisUnit[:8], genesis[:8])
+		}
+		if status103.NetworkId != network {
+			return errResp(ErrNetworkIdMismatch, "%d (!= %d)", status103.NetworkId, network)
+		}
+		if int(status103.ProtocolVersion) != p.version {
+			return errResp(ErrProtocolVersionMismatch, "%d (!= %d)", status103.ProtocolVersion, p.version)
+		}
 	}
 
 	return nil
@@ -513,7 +606,6 @@ func (ps *peerSet) PeersWithoutLightHeader(hash common.Hash) []*peer {
 	return list
 }
 
-//GroupSig
 func (ps *peerSet) PeersWithoutGroupSig(hash common.Hash) []*peer {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()
@@ -559,6 +651,36 @@ func (ps *peerSet) BestPeer(assetId modules.AssetId) *peer {
 		}
 	}
 	return bestPeer
+}
+
+type stableIndex []uint64
+
+func (si stableIndex) Len() int {
+	return len(si)
+}
+func (si stableIndex) Less(i, j int) bool {
+	return si[i] < si[j]
+}
+func (si stableIndex) Swap(i, j int) {
+	si[i], si[j] = si[j], si[i]
+}
+
+func (ps *peerSet) StableIndex(assetId modules.AssetId) uint64 {
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
+
+	var indexs stableIndex
+	for _, p := range ps.peers {
+		if stable := p.StableIndex(assetId); stable != nil {
+			indexs = append(indexs, stable.Index)
+		}
+	}
+	sort.Sort(indexs)
+	lengh := indexs.Len()
+	if lengh%2 == 0 {
+		return (indexs[(lengh/2)-1] + indexs[lengh/2]) / 2
+	}
+	return indexs[lengh/2]
 }
 
 // Close disconnects all peers.

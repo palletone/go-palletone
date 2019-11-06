@@ -39,9 +39,12 @@ const (
 	DefaultUccCpuQuota    = 100000     //  每个容器最多使用CPU核数 = 1 CPU
 	DefaultUccDisk        = 1073741824 //  每个容器磁盘使用量最多使用 = 1073741824 = 1G
 	DefaultUccPrivileged  = false
-	DefaultUccNetworkMode = "bridge" //TODO xiaozhi 生产环境
+	DefaultUccNetworkMode = "gptn-net" //TODO xiaozhi 生产环境
 	//DefaultUccNetworkMode    = "host" //TODO xiaozhi 测试容器运行网络模式
-	defaultUccOOMKillDisable = false
+	DefaultUccOOMKillDisable = false
+
+	DefaultContainerDuringTime  = 0    //7天 = 604800 秒
+	DefaultRmExpConFromSysParam = true //默认删除过期合约容器以系统参数 7 天为主
 
 	DefaultTempUccMemory    = 1073741824
 	DefaultTempUccCpuShares = 1024
@@ -49,7 +52,9 @@ const (
 
 	DefaultTokenHolder = "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gJ"
 
-	DefaultMediator = "P1Da7wwuvXgwqFm17GsLs4Cp4SLiPXZ6paF"
+	DefaultMediator  = "P1nqukWkjFKk4UCUd2mdfV5VAgVuCApyXd"
+	DefaultPublickey = "0236b88303d4c1986de09a2d1c292b16fd2b90fb89b5d2874705e4e17c4e648c26"
+
 	DefaultNodeInfo = "pnode://4bdc1c533f6e3700a0a6cc346bf2364eace58a10d8a782762c8d2b27cf4d96c25827c82a15" +
 		"684d348e88722b259f31abcccd4d0eaae0f52eeb85e1eb5342b862@127.0.0.1:30303"
 	DefaultInitPubKey = "2SvBCoCHWA8Zg2Q8v2onmaTeZj6YmWLbp6mzoCZeDwiUcmuqFwd8fZXCfdmEhTodbWaSJ8T7MvjQiZkn4S9VTQnKDr" +
@@ -64,8 +69,10 @@ const (
 	DefaultMinMaintSkipSlots   = 0
 
 	//contract
+	DefaultContractSystemVersion = "" //contractId1:v1;contractId2:v2;contractId3:v3
+
 	DefaultContractSignatureNum = 3
-	DefaultContractElectionNum  = 3
+	DefaultContractElectionNum  = 4
 
 	DefaultContractTxTimeoutUnitFee  = 10 //s
 	DefaultContractTxSizeUnitFee     = 1  //byte
@@ -130,11 +137,11 @@ const (
 	DefaultMaintenanceInterval  = 60 * 5 // 60 * 60 * 24 // seconds, aka: 1 day
 	DefaultMaintenanceSkipSlots = 0      //Devin: Don't change // 1 // number of slots to skip for maintenance interval
 
-	DefaultMediatorCreateFee        = 5000
+	DefaultMediatorCreateFee  = 50000
+	DefaultAccountUpdateFee   = 5000
+	DefaultTransferPtnBaseFee = 5000
+	DefaultTransferPtnPricePerKByte = 15000
 	DefaultContractInvokeFee        = 100000000
-	DefaultAccountUpdateFee         = 20
-	DefaultTransferPtnBaseFee       = 20
-	DefaultTransferPtnPricePerKByte = 20
 
 	DefaultUnitMaxSize = 5 * 1024 * 1024 //5M
 )

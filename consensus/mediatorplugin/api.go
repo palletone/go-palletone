@@ -71,12 +71,10 @@ func (mp *MediatorPlugin) LocalHaveActiveMediator() bool {
 	return false
 }
 
-func (mp *MediatorPlugin) IsLocalActiveMediator(add common.Address) bool {
-	if _, ok := mp.mediators[add]; ok {
-		return mp.dag.IsActiveMediator(add)
-	}
+func (mp *MediatorPlugin) IsLocalMediator(add common.Address) bool {
+	_, found := mp.mediators[add]
 
-	return false
+	return found
 }
 
 func (mp *MediatorPlugin) LocalHavePrecedingMediator() bool {
@@ -91,9 +89,10 @@ func (mp *MediatorPlugin) LocalHavePrecedingMediator() bool {
 }
 
 func (mp *MediatorPlugin) localMediatorPubKey(add common.Address) []byte {
+	log.Debugf("try to get pubkey of mediator(%v)", add.Str())
 	var pubKey []byte = nil
-	mp.dkgLock.Lock()
-	defer mp.dkgLock.Unlock()
+	mp.dkgLock.RLock()
+	defer mp.dkgLock.RUnlock()
 
 	dkgr, ok := mp.activeDKGs[add]
 	if !ok || dkgr == nil {

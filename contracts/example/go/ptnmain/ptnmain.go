@@ -20,17 +20,21 @@
 package main
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math/big"
-	"strconv"
 	"strings"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/shopspring/decimal"
+
+	"github.com/palletone/adaptor"
 )
 
 type PTNMain struct {
@@ -65,41 +69,84 @@ func (p *PTNMain) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 	switch f {
 	case "setOwner":
-		return _setOwner(args, stub)
+		if len(args) < 1 {
+			return shim.Error("need 1 args (PTNAddr)")
+		}
+		return p.SetOwner(args[0], stub)
 	case "setETHContract":
-		return _setETHContract(args, stub)
+		if len(args) < 1 {
+			return shim.Error("need 1 args (MapContractAddr)")
+		}
+		return p.SetETHContract(args[0], stub)
 
-	case "payoutPTN":
-		return _payoutPTN(args, stub)
+	case "payoutPTNByETHAddr":
+		if len(args) < 1 {
+			return shim.Error("need 1 args (ETHAddr)")
+		}
+		return p.PayoutPTNByETHAddr(args[0], stub)
+	case "payoutPTNByTxID":
+		if len(args) < 1 {
+			return shim.Error("need 1 args (ERC20TransferTxID)")
+		}
+		return p.PayoutPTNByTxID(args[0], stub)
+
+	case "withdrawAmount":
+		if len(args) < 2 {
+			return shim.Error("need 2  args (PTNAddress,PTNAmount)")
+		}
+		withdrawAddr, err := common.StringToAddress(args[0])
+		if err != nil {
+			return shim.Error("Invalid address string:" + args[0])
+		}
+		amount, err := decimal.NewFromString(args[1])
+		if err != nil {
+			return shim.Error("Invalid amount:" + args[1])
+		}
+		return p.WithdrawAmount(stub, withdrawAddr, amount)
+
+	case "getPayout":
+		if len(args) < 1 {
+			return shim.Error("need 1 args (ERC20TransferTxID)")
+		}
+		return p.GetPayout(args[0], stub)
 
 	case "get":
-		return get(args, stub)
+		if len(args) < 1 {
+			return shim.Error("need 1 args (Key)")
+		}
+		return p.Get(stub, args[0])
 	default:
 		jsonResp := "{\"Error\":\"Unknown function " + f + "\"}"
 		return shim.Error(jsonResp)
 	}
 }
 
-const PTN_ERC20Addr = "0xa54880da9a63cdd2ddacf25af68daf31a1bcc0c9"
+//todo modify PTN ERC20 address
+const PTN_ERC20Addr = "0xfe76be9cec465ed3219a9972c21655d57d21aec6"
 
-//const PTNMapABI = "[{\"constant\":true,\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"ptnToken\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"from\",\"type\":\"address\"},{\"name\":\"to\",\"type\":\"address\"},{\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"decimals\",\"outputs\":[{\"name\":\"\",\"type\":\"uint8\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"\",\"type\":\"address\"}],\"name\":\"addrmap\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"addrHex\",\"type\":\"address\"}],\"name\":\"encodeBase58\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"symbol\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_ptnhex\",\"type\":\"address\"},{\"name\":\"_amt\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"owner\",\"type\":\"address\"},{\"name\":\"spender\",\"type\":\"address\"}],\"name\":\"allowance\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"getptnhex\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"addr\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"ptnhex\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"Deposit\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"spender\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Approval\",\"type\":\"event\"}]"
-const PTNMapABI = "[{\"constant\":true,\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"ptnToken\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"from\",\"type\":\"address\"},{\"name\":\"to\",\"type\":\"address\"},{\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"decimals\",\"outputs\":[{\"name\":\"\",\"type\":\"uint8\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"\",\"type\":\"address\"}],\"name\":\"addrmapPTN\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"\",\"type\":\"address\"}],\"name\":\"addrmap\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"addrHex\",\"type\":\"address\"}],\"name\":\"encodeBase58\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"symbol\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_ptnhex\",\"type\":\"address\"},{\"name\":\"_amt\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"owner\",\"type\":\"address\"},{\"name\":\"spender\",\"type\":\"address\"}],\"name\":\"allowance\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"getptnhex\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"spender\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Approval\",\"type\":\"event\"}]"
+//todo modify conforms 15
+const Confirms = uint(15)
 
 const symbolsOwner = "owner_"
 const symbolsContractMap = "eth_map"
 
 const symbolsPayout = "payout_"
 
-func _setOwner(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 1 {
-		return shim.Error("need 1 args (PTNAddr)")
+func (p *PTNMain) SetOwner(ptnAddr string, stub shim.ChaincodeStubInterface) pb.Response {
+	//only owner can set
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
 	}
-	_, err := getOwner(stub)
-	if err == nil {
-		return shim.Error("Owner has been set")
+	owner, err := getOwner(stub)
+	if err != nil {
+		return shim.Error(err.Error())
 	}
-	err = stub.PutState(symbolsOwner, []byte(args[0]))
+	if owner != invokeAddr.String() {
+		return shim.Error("Only owner can set")
+	}
+	err = stub.PutState(symbolsOwner, []byte(ptnAddr))
 	if err != nil {
 		return shim.Error("write symbolsOwner failed: " + err.Error())
 	}
@@ -115,12 +162,7 @@ func getOwner(stub shim.ChaincodeStubInterface) (string, error) {
 	return string(result), nil
 }
 
-func _setETHContract(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 1 {
-		return shim.Error("need 1 args (MapContractAddr)")
-	}
-
+func (p *PTNMain) SetETHContract(mapContractAddr string, stub shim.ChaincodeStubInterface) pb.Response {
 	//only owner can set
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
@@ -135,7 +177,7 @@ func _setETHContract(args []string, stub shim.ChaincodeStubInterface) pb.Respons
 		return shim.Error("Only owner can set")
 	}
 
-	err = stub.PutState(symbolsContractMap, []byte(args[0]))
+	err = stub.PutState(symbolsContractMap, []byte(mapContractAddr))
 	if err != nil {
 		return shim.Error("write symbolsContractMap failed: " + err.Error())
 	}
@@ -152,39 +194,38 @@ func getMapAddr(stub shim.ChaincodeStubInterface) (string, error) {
 	return string(result), nil
 }
 
-func _payoutPTN(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 1 {
-		return shim.Error("need 1  args (transferTxID)")
-	}
-
+func (p *PTNMain) PayoutPTNByTxID(ethTxID string, stub shim.ChaincodeStubInterface) pb.Response {
 	//
-	txID := args[0]
-	if "0x" != txID[0:2] {
-		txID = "0x" + txID
+	if "0x" == ethTxID[0:2] || "0X" == ethTxID[0:2] {
+		ethTxID = ethTxID[2:]
 	}
-	result, _ := stub.GetState(symbolsPayout + txID)
+	result, _ := stub.GetState(symbolsPayout + ethTxID)
 	if len(result) != 0 {
 		log.Debugf("The tx has been payout")
 		return shim.Error("The tx has been payout")
 	}
 
 	//get sender receiver amount
-	txResult, err := GetErc20Tx(args[0], stub)
+	txIDByte, err := hex.DecodeString(ethTxID)
+	if err != nil {
+		log.Debugf("txid invalid: %s", err.Error())
+		return shim.Error(fmt.Sprintf("txid invalid: %s", err.Error()))
+	}
+	txResult, err := GetErc20Tx(txIDByte, stub)
 	if err != nil {
 		log.Debugf("GetErc20Tx failed: %s", err.Error())
 		return shim.Error(err.Error())
 	}
 
 	//check tx status
-	if txResult.Status != "1" {
+	if !txResult.Tx.IsSuccess {
 		log.Debugf("The tx is failed")
 		return shim.Error("The tx is failed")
 	}
 	//check contract address, must be ptn erc20 contract address
-	if strings.ToLower(txResult.ContractAddr) != PTN_ERC20Addr {
-		log.Debugf("The tx is't PTN contract")
-		return shim.Error("The tx is't PTN contract")
+	if strings.ToLower(txResult.Tx.TargetAddress) != PTN_ERC20Addr {
+		log.Debugf("The tx is't ERC20 contract transfer of PTN")
+		return shim.Error("The tx is't ERC20 contract transfer of PTN")
 	}
 	//check receiver, must be ptnmap contract address
 	mapAddr, err := getMapAddr(stub)
@@ -193,50 +234,126 @@ func _payoutPTN(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(err.Error())
 	}
 
-	if strings.ToLower(txResult.To) != mapAddr {
-		log.Debugf("strings.ToLower(txResult.To): %s, mapAddr: %s ", strings.ToLower(txResult.To), mapAddr)
+	if strings.ToLower(txResult.Tx.ToAddress) != mapAddr {
+		log.Debugf("strings.ToLower(txResult.To): %s, mapAddr: %s ", strings.ToLower(txResult.Tx.ToAddress), mapAddr)
 		return shim.Error("Not send token to the Map contract")
 	}
 	//check token amount
-	bigIntAmout := new(big.Int)
-	bigIntAmout.SetString(txResult.Amount, 10)
-	bigIntAmout = bigIntAmout.Div(bigIntAmout, big.NewInt(1e10)) //Token's decimal is 18, PTN's decimal is 8
-	amt := bigIntAmout.Uint64()
+	bigIntAmount := txResult.Tx.Amount.Amount.Div(txResult.Tx.Amount.Amount, big.NewInt(1e10)) //Token's decimal is 18, PTN's decimal is 8
+	amt := bigIntAmount.Uint64()
 	if amt == 0 {
 		log.Debugf("Amount is 0")
 		return shim.Error("Amount is 0")
 	}
 
 	//check confirms
-	curHeight, err := getHight(stub)
+	curHeight, err := getHeight(stub)
 	if curHeight == 0 || err != nil {
 		return shim.Error("getHeight failed")
 	}
-	blockNum, _ := strconv.ParseUint(txResult.BlockNumber, 10, 64)
-	if curHeight-blockNum < 1 {
+	if curHeight-txResult.Tx.BlockHeight < Confirms {
 		log.Debugf("Need more confirms")
 		return shim.Error("Need more confirms")
 	}
 
-	//query ptnmap contract for get ptnAddr
-	ptnAddr, err := getPTNHex(mapAddr, stub)
+	//get the mapping ptnAddr
+	ptnAddr, err := getPTNMapAddr(mapAddr, txResult.Tx.FromAddress, stub)
 	if err != nil {
-		log.Debugf("getPTNHex failed: %s", err.Error())
+		log.Debugf("getPTNMapAddr failed: %s", err.Error())
 		return shim.Error(err.Error())
 	}
 
 	//get addrPTN
 	//ptnAddr := common.HexToAddress(ptnHex).String()
 	//ptnAddr := "P" + base58.CheckEncode(common.FromHex(ptnHex), 0)
-	if ptnAddr == "P14oLvT2" {
+	if ptnAddr == "" {
 		log.Debugf("Need transfer 1 PTNMap for bind address")
 		return shim.Error("Need transfer 1 PTNMap for bind address")
 	}
 	//save payout history
-	err = stub.PutState(symbolsPayout+txID, []byte(ptnAddr+"-"+bigIntAmout.String()))
+	err = stub.PutState(symbolsPayout+ethTxID, []byte(ptnAddr+"-"+bigIntAmount.String()))
 	if err != nil {
 		log.Debugf("write symbolsPayout failed: %s", err.Error())
 		return shim.Error("write symbolsPayout failed: " + err.Error())
+	}
+
+	//payout
+	//asset := modules.NewPTNAsset()
+	asset, _ := modules.StringToAsset("PTN")
+	amtToken := &modules.AmountAsset{Amount: amt, Asset: asset}
+	err = stub.PayOutToken(ptnAddr, amtToken, 0)
+	if err != nil {
+		log.Debugf("PayOutToken failed: %s", err.Error())
+		return shim.Error("PayOutToken failed: " + err.Error())
+	}
+
+	return shim.Success([]byte("Success"))
+}
+
+func (p *PTNMain) PayoutPTNByETHAddr(ethAddr string, stub shim.ChaincodeStubInterface) pb.Response {
+	//
+	mapAddr, err := getMapAddr(stub)
+	if err != nil {
+		log.Debugf("getMapAddr failed: %s", err.Error())
+		return shim.Error(err.Error())
+	}
+
+	//get the mapping ptnAddr
+	ptnAddr, err := getPTNMapAddr(mapAddr, ethAddr, stub)
+	if err != nil {
+		log.Debugf("getPTNMapAddr failed: %s", err.Error())
+		return shim.Error(err.Error())
+	}
+
+	//get addrPTN
+	if ptnAddr == "" {
+		log.Debugf("Need transfer 1 PTNMap for bind address")
+		return shim.Error("Need transfer 1 PTNMap for bind address")
+	}
+
+	txResults, err := GetAddrHistory(ethAddr, mapAddr, stub)
+	if err != nil {
+		log.Debugf("GetAddrHistory failed: %s", err.Error())
+		return shim.Error(err.Error())
+	}
+
+	curHeight, err := getHeight(stub)
+	if curHeight == 0 || err != nil {
+		return shim.Error("getHeight failed")
+	}
+
+	var amt uint64
+	for _, txResult := range txResults.Txs {
+		txIDHex := hex.EncodeToString(txResult.TxID)
+		//check confirms
+		if curHeight-txResult.BlockHeight < Confirms {
+			log.Debugf("Need more confirms %s", txIDHex)
+			continue
+		}
+		//
+		result, _ := stub.GetState(symbolsPayout + txIDHex)
+		if len(result) != 0 {
+			log.Debugf("The tx %s has been payout", txIDHex)
+			continue
+		}
+		log.Debugf("The tx %s need be payout", txIDHex)
+
+		//check token amount
+		bigIntAmout := txResult.Amount.Amount.Div(txResult.Amount.Amount, big.NewInt(1e10)) //Token's decimal is 18, PTN's decimal is 8
+		amt += txResult.Amount.Amount.Uint64()
+
+		//save payout history
+		err = stub.PutState(symbolsPayout+txIDHex, []byte(ptnAddr+"-"+bigIntAmout.String()))
+		if err != nil {
+			log.Debugf("write symbolsPayout failed: %s", err.Error())
+			return shim.Error("write symbolsPayout failed: " + err.Error())
+		}
+
+	}
+
+	if amt == 0 {
+		log.Debugf("Amount is 0")
+		return shim.Error("Amount is 0")
 	}
 
 	//payout
@@ -251,139 +368,141 @@ func _payoutPTN(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success([]byte("Success"))
 }
 
-//refer to the struct GetErc20TxByHashParams in "github.com/palletone/adaptor/AdaptorETH.go",
-type ETH_GetErc20TxByHash struct {
-	Hash string `json:"hash"`
-}
-type GetErc20TxByHashResult struct {
-	Hash         string `json:"hash"`
-	Status       string `json:"status"`
-	BlockHash    string `json:"blockHash"`
-	BlockNumber  string `json:"blockNumber"`
-	ContractAddr string `json:"contractaddr"`
-	From         string `json:"from"`
-	To           string `json:"to"`
-	Amount       string `json:"amount"`
-}
-
-func GetErc20Tx(hash string, stub shim.ChaincodeStubInterface) (*GetErc20TxByHashResult, error) {
-	ethGetTX := ETH_GetErc20TxByHash{hash}
-	reqBytes, err := json.Marshal(ethGetTX)
+func GetErc20Tx(txID []byte, stub shim.ChaincodeStubInterface) (*adaptor.GetTransferTxOutput, error) {
+	input := adaptor.GetTransferTxInput{TxID: txID}
+	inputBytes, err := json.Marshal(input)
 	if err != nil {
 		return nil, err
 	}
 	//
-	result, err := stub.OutChainCall("eth", "GetErc20TxByHash", reqBytes)
+	result, err := stub.OutChainCall("erc20", "GetTransferTx", inputBytes)
 	if err != nil {
-		return nil, errors.New("GetErc20TxByHash error")
+		return nil, errors.New("GetTransferTx error: " + err.Error())
 	}
+	log.Debugf("result : %s", string(result))
+
 	//
-	var txResult GetErc20TxByHashResult
-	err = json.Unmarshal(result, &txResult)
+	var output adaptor.GetTransferTxOutput
+	err = json.Unmarshal(result, &output)
 	if err != nil {
 		return nil, err
 	}
-	return &txResult, nil
+	return &output, nil
 }
 
-//refer to the struct GetBestHeaderParams in "github.com/palletone/adaptor/AdaptorETH.go",
-type ETHQuery_GetBestHeader struct { //GetBestHeaderParams
-	Number string `json:"Number"` //if empty, return the best header
-}
-
-type GetBestHeaderResult struct {
-	Number string `json:"number"`
-}
-
-func getHight(stub shim.ChaincodeStubInterface) (uint64, error) {
+func GetAddrHistory(ethAddrFrom, mapAddrTo string, stub shim.ChaincodeStubInterface) (*adaptor.GetAddrTxHistoryOutput, error) {
+	input := adaptor.GetAddrTxHistoryInput{FromAddress: ethAddrFrom, ToAddress: mapAddrTo, Asset: PTN_ERC20Addr,
+		AddressLogicAndOr: true}
+	inputBytes, err := json.Marshal(input)
+	if err != nil {
+		return nil, err
+	}
 	//
-	getheader := ETHQuery_GetBestHeader{""} //get best hight
+	result, err := stub.OutChainCall("erc20", "GetAddrTxHistory", inputBytes)
+	if err != nil {
+		return nil, errors.New("GetAddrHistory error: " + err.Error())
+	}
+	log.Debugf("result : %s", string(result))
 	//
-	reqBytes, err := json.Marshal(getheader)
+	var output adaptor.GetAddrTxHistoryOutput
+	err = json.Unmarshal(result, &output)
+	if err != nil {
+		return nil, err
+	}
+	return &output, nil
+}
+
+func getHeight(stub shim.ChaincodeStubInterface) (uint, error) {
+	//
+	input := adaptor.GetBlockInfoInput{Latest: true} //get best hight
+	//
+	inputBytes, err := json.Marshal(input)
 	if err != nil {
 		return 0, err
 	}
-	//
-	result, err := stub.OutChainCall("eth", "GetBestHeader", reqBytes)
+	//adaptor.
+	result, err := stub.OutChainCall("erc20", "GetBlockInfo", inputBytes)
 	if err != nil {
-		return 0, err
+		return 0, errors.New("GetBlockInfo error: " + err.Error())
 	}
 	//
-	var getheadresult GetBestHeaderResult
-	err = json.Unmarshal(result, &getheadresult)
+	var output adaptor.GetBlockInfoOutput
+	err = json.Unmarshal(result, &output)
 	if err != nil {
 		return 0, err
 	}
 
-	if getheadresult.Number == "" {
+	if output.Block.BlockHeight == 0 {
 		return 0, errors.New("{\"Error\":\"Failed to get eth height\"}")
 	}
 
-	curHeight, err := strconv.ParseUint(getheadresult.Number, 10, 64)
-	if err != nil {
-		return 0, errors.New("{\"Error\":\"Failed to parse eth height\"}")
-	}
-
-	return curHeight, nil
+	return output.Block.BlockHeight, nil
 }
 
-//refer to the struct QueryContractParams in "github.com/palletone/adaptor/AdaptorETH.go",
-type ETH_QueryContract struct {
-	ContractABI  string        `json:"contractABI"`
-	ContractAddr string        `json:"contractAddr"`
-	Method       string        `json:"method"`
-	Params       string        `json:"params"`
-	ParamsArray  []interface{} `json:"paramsarray"`
-}
-type QueryContractResult struct {
-	Result string `json:"result"`
-}
+func getPTNMapAddr(mapAddr, fromAddr string, stub shim.ChaincodeStubInterface) (string, error) {
+	var input adaptor.GetPalletOneMappingAddressInput
+	input.MappingDataSource = mapAddr
+	input.ChainAddress = fromAddr
 
-func getPTNHex(mapAddr string, stub shim.ChaincodeStubInterface) (string, error) {
-	var queryContract ETH_QueryContract
-	queryContract.ContractAddr = mapAddr
-	queryContract.ContractABI = PTNMapABI
-	queryContract.Method = "getptnhex"
-	//senderAddr := adaptoreth.HexToAddress(sender)
-	//queryContract.ParamsArray = append(queryContract.ParamsArray, senderAddr)
-	params := []string{"0x588eb98f8814aedb056d549c0bafd5ef4963069c"}
-	reqBytesParams, _ := json.Marshal(params)
-	queryContract.Params = string(reqBytesParams)
-
-	reqBytes, err := json.Marshal(queryContract)
+	inputBytes, err := json.Marshal(input)
 	if err != nil {
 		return "", err
 	}
 	//
-	result, err := stub.OutChainCall("eth", "QueryContract", reqBytes)
+	result, err := stub.OutChainCall("erc20", "GetPalletOneMappingAddress", inputBytes)
 	if err != nil {
-		return "", errors.New("QueryContract failed")
+		return "", errors.New("GetPalletOneMappingAddress failed: " + err.Error())
 	}
 	//
-	var getResult QueryContractResult
-	err = json.Unmarshal(result, &getResult)
+	var output adaptor.GetPalletOneMappingAddressOutput
+	err = json.Unmarshal(result, &output)
 	if err != nil {
 		return "", err
 	}
-	if getResult.Result == "" {
-		return "", errors.New("QueryContract result empty")
-	}
-	var addrs []string
-	err = json.Unmarshal([]byte(getResult.Result), &addrs)
-	if err != nil || len(addrs) == 0 {
-		return "", errors.New("QueryContract getResult.Result Unmarshal failed")
+	if output.PalletOneAddress == "" {
+		return "", errors.New("GetPalletOneMappingAddress result empty")
 	}
 
-	return addrs[0], nil
+	return output.PalletOneAddress, nil
 }
 
-func get(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	if len(args) > 0 {
-		result, _ := stub.GetState(args[0])
-		return shim.Success(result) //test
+func (p *PTNMain) GetPayout(ethTxID string, stub shim.ChaincodeStubInterface) pb.Response {
+	if "0x" == ethTxID[0:2] || "0X" == ethTxID[0:2] {
+		ethTxID = ethTxID[2:]
 	}
-	result, _ := stub.GetState("result")
+	result, _ := stub.GetState(symbolsPayout + ethTxID)
 	return shim.Success(result)
+}
+
+func (p *PTNMain) Get(stub shim.ChaincodeStubInterface, key string) pb.Response {
+	result, _ := stub.GetState(key)
+	return shim.Success(result)
+}
+
+func (p *PTNMain) WithdrawAmount(stub shim.ChaincodeStubInterface, withdrawAddr common.Address, amount decimal.Decimal) pb.Response {
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
+	}
+	owner, err := getOwner(stub)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	if owner != invokeAddr.String() {
+		return shim.Error("Only owner can withdraw")
+	}
+
+	//contractAddr
+	amount = amount.Mul(decimal.New(100000000, 0))
+	amtToken := &modules.AmountAsset{Amount: uint64(amount.IntPart()), Asset: modules.NewPTNAsset()}
+	err = stub.PayOutToken(withdrawAddr.String(), amtToken, 0)
+	if err != nil {
+		log.Debugf("PayOutToken failed: %s", err.Error())
+		return shim.Error("PayOutToken failed: " + err.Error())
+	}
+
+	return shim.Success([]byte("Success"))
 }
 
 func main() {

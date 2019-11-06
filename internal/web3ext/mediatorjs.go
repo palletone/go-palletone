@@ -44,7 +44,7 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'apply',
 			call: 'mediator_apply',
-			params: 1,
+			params: 2,
 		}),
 		new web3._extend.Method({
 			name: 'isApproved',
@@ -105,6 +105,11 @@ web3._extend({
 			name: 'listVoteResults',
 			call: 'mediator_listVoteResults',
 			params: 0,
+		}),
+		new web3._extend.Method({
+			name: 'listVotingFor',
+			call: 'mediator_listVotingFor',
+			params: 1,
 		}),
 		new web3._extend.Method({
 			name: 'lookupMediatorInfo',

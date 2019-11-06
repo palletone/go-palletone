@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/palletone/go-palletone/txspool"
 	"strings"
 	"time"
 
@@ -54,29 +55,6 @@ const (
 	SINGLE = "SINGLE"
 )
 
-//const (
-//	defaultGasPrice = 0.0001 * configure.PalletOne
-//
-//	// rpcAuthTimeoutSeconds is the number of seconds a connection to the
-//	// RPC server is allowed to stay open without authenticating before it
-//	// is closed.
-//	rpcAuthTimeoutSeconds = 10
-//	// uint256Size is the number of bytes needed to represent an unsigned
-//	// 256-bit integer.
-//	uint256Size = 32
-//	// gbtNonceRange is two 32-bit big-endian hexadecimal integers which
-//	// represent the valid ranges of nonces returned by the getblocktemplate
-//	// RPC.
-//	gbtNonceRange = "00000000ffffffff"
-//	// gbtRegenerateSeconds is the number of seconds that must pass before
-//	// a new template is generated when the previous block hash has not
-//	// changed and there have been changes to the available transactions
-//	// in the memory pool.
-//	gbtRegenerateSeconds = 60
-//	// maxProtocolVersion is the max protocol version the server supports.
-//	maxProtocolVersion = 70002
-//)
-
 type ContractInstallRsp struct {
 	ReqId string `json:"reqId"`
 	TplId string `json:"tplId"`
@@ -87,13 +65,19 @@ type ContractDeployRsp struct {
 	ContractId string `json:"ContractId"`
 }
 
+type ContractFeeRsp struct {
+	TxSize         float64 `json:"tx_size(byte)"`
+	TimeOut        uint32 `json:"time_out(s)"`
+	ApproximateFee float64 `json:"approximate_fee(dao)"`
+}
+
 type JuryList struct {
 	Addr []string `json:"account"`
 }
 
 type ContractFeeLevelRsp struct {
-	ContractTxTimeoutUnitFee  uint64  `json:"contract_tx_timeout_unit_fee(ptn)"`
-	ContractTxSizeUnitFee     uint64  `json:"contract_tx_size_unit_fee(ptn)"`
+	ContractTxTimeoutUnitFee  uint64  `json:"contract_tx_timeout_unit_fee"`
+	ContractTxSizeUnitFee     uint64  `json:"contract_tx_size_unit_fee"`
 	ContractTxInstallFeeLevel float64 `json:"contract_tx_install_fee_level"`
 	ContractTxDeployFeeLevel  float64 `json:"contract_tx_deploy_fee_level"`
 	ContractTxInvokeFeeLevel  float64 `json:"contract_tx_invoke_fee_level"`
@@ -200,16 +184,15 @@ func newRPCTransaction(tx *modules.Transaction, blockHash common.Hash, unitIndex
 		Hash: tx.Hash(),
 	}
 	if blockHash != (common.Hash{}) {
-		//result.UnitHash = blockHash
 		result.UnitIndex = unitIndex
 		result.TransactionIndex = hexutil.Uint(index)
 	}
-	result.UnitIndex = unitIndex
+	//result.UnitIndex = unitIndex
 	return result
 }
 
 // newRPCPendingTransaction returns a pending transaction that will serialize to the RPC representation
-func newRPCPendingTransaction(tx *modules.TxPoolTransaction) *RPCTransaction {
+func newRPCPendingTransaction(tx *txspool.TxPoolTransaction) *RPCTransaction {
 	if tx.UnitHash != (common.Hash{}) {
 		return newRPCTransaction(tx.Tx, tx.UnitHash, tx.UnitIndex, tx.Index)
 	}
@@ -578,7 +561,7 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 			}
 		}
 		// Create a new script which pays to the provided address.
-		pkScript := tokenengine.GenerateLockScript(addr)
+		pkScript := tokenengine.Instance.GenerateLockScript(addr)
 		// Convert the amount to satoshi.
 		dao := ptnjson.Ptn2Dao(ptnAmt)
 		//if err != nil {
@@ -613,7 +596,7 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 
 type GetUtxoEntry func(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error)
 
-func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, poolTxs []*modules.TxPoolTransaction,
+func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, poolTxs []*txspool.TxPoolTransaction,
 	from string, asset string) (map[modules.OutPoint]*modules.Utxo, error) {
 	tokenAsset, err := modules.StringToAsset(asset)
 	if err != nil {
@@ -652,7 +635,7 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, poolTxs
 					op.TxHash = tx.Tx.Hash()
 					op.MessageIndex = uint32(msgindex)
 					op.OutIndex = uint32(outIndex)
-					addr, err = tokenengine.GetAddressFromScript(output.PkScript)
+					addr, err = tokenengine.Instance.GetAddressFromScript(output.PkScript)
 					if err != nil {
 						return nil, err
 					}
@@ -1134,7 +1117,7 @@ func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine
 	//}
 
 	var signErrs []common.SignatureError
-	signErrs, err = tokenengine.SignTxAllPaymentInput(tx, hashType, inputpoints, redeem, pubKeyFn, hashFn)
+	signErrs, err = tokenengine.Instance.SignTxAllPaymentInput(tx, hashType, inputpoints, redeem, pubKeyFn, hashFn)
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
 	}
@@ -1144,7 +1127,7 @@ func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine
 			continue
 		}
 		for inputindex := range payload.Inputs {
-			err = tokenengine.ScriptValidate(PkScript, nil, tx, msgidx, inputindex)
+			err = tokenengine.Instance.ScriptValidate(PkScript, nil, tx, msgidx, inputindex)
 			if err != nil {
 				return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
 			}
@@ -1157,7 +1140,7 @@ func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine
 			case tokenengine.SigHashSingle:
 				// Resize output array to up to and including requested index.
 				payload.Outputs = payload.Outputs[:1+1]
-				pk_addr, err := tokenengine.GetAddressFromScript(payload.Outputs[k].PkScript)
+				pk_addr, err := tokenengine.Instance.GetAddressFromScript(payload.Outputs[k].PkScript)
 				if err != nil {
 					return ptnjson.SignRawTransactionResult{}, errors.New("Get addr FromScript is err when signtx")
 				}
@@ -1242,7 +1225,7 @@ func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, f
 	txHash := common.HexToHash(txid)
 	toAddr, _ := common.StringToAddress(toAddress)
 	fromAddr, _ := common.StringToAddress(fromAddress)
-	utxoScript := tokenengine.GenerateLockScript(fromAddr)
+	utxoScript := tokenengine.Instance.GenerateLockScript(fromAddr)
 	ks := s.b.GetKeyStore()
 	ks.Unlock(accounts.Account{Address: fromAddr}, password)
 	pubKey, _ := ks.GetPublicKey(fromAddr)
@@ -1253,12 +1236,12 @@ func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, f
 		pay := &modules.PaymentPayload{}
 		outPoint := modules.NewOutPoint(txHash, 0, uint32(i))
 		pay.AddTxIn(modules.NewTxIn(outPoint, []byte{}))
-		lockScript := tokenengine.GenerateLockScript(toAddr)
+		lockScript := tokenengine.Instance.GenerateLockScript(toAddr)
 		pay.AddTxOut(modules.NewTxOut(uint64(amount), lockScript, asset))
 		tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay))
 		utxoLookup := map[modules.OutPoint][]byte{}
 		utxoLookup[*outPoint] = utxoScript
-		errs, err := tokenengine.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, utxoLookup, nil, func(addresses common.Address) ([]byte, error) {
+		errs, err := tokenengine.Instance.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, utxoLookup, nil, func(addresses common.Address) ([]byte, error) {
 			return pubKey, nil
 		},
 			func(addresses common.Address, msg []byte) ([]byte, error) {

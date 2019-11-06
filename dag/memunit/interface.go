@@ -25,7 +25,7 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	common2 "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/txspool"
+	"github.com/palletone/go-palletone/txspool"
 )
 
 // type IMemDag interface {
@@ -44,17 +44,21 @@ import (
 // }
 
 type IMemDag interface {
-	AddUnit(unit *modules.Unit, txpool txspool.ITxPool) (common2.IUnitRepository, common2.IUtxoRepository,
+	AddStableUnit(unit *modules.Unit)
+	SetStableUnit(unit *modules.Unit, isGenesis bool)
+	AddUnit(unit *modules.Unit, txpool txspool.ITxPool, isProd bool) (common2.IUnitRepository, common2.IUtxoRepository,
 		common2.IStateRepository, common2.IPropRepository, common2.IUnitProduceRepository, error)
+	SaveHeader(header *modules.Header) error
 	GetLastStableUnitInfo() (common.Hash, uint64)
 	GetLastMainChainUnit() *modules.Unit
 	GetChainUnits() map[common.Hash]*modules.Unit
 	SetStableThreshold(threshold int)
 	GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository,
 		common2.IPropRepository, common2.IUnitProduceRepository)
-	SetUnitGroupSign(uHash common.Hash /*, groupPubKey []byte*/, groupSign []byte, txpool txspool.ITxPool) error
+	SetUnitGroupSign(uHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error
 	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
 	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)
+	Info() (*modules.MemdagStatus, error)
 
 	SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription
 	Close()

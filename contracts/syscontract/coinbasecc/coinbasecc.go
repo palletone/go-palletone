@@ -22,7 +22,6 @@ package coinbasecc
 
 import (
 	"encoding/json"
-
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
@@ -40,21 +39,26 @@ func (d *CoinbaseChainCode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 }
 
 func (d *CoinbaseChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
-	funcName, args := stub.GetFunctionAndParameters()
+	funcName, _ := stub.GetFunctionAndParameters()
 	switch funcName {
 	case "queryReward":
-		return d.queryGenerateUnitReward(stub, args)
+		result, err := d.QueryGenerateUnitReward(stub)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		data, _ := json.Marshal(result)
+		return shim.Success(data)
 	default:
-		return shim.Error("Invoke error")
+		return shim.Error("coinbase cc Invoke error" + funcName)
 	}
-	return shim.Error("Invoke error")
+	return shim.Error("coinbase cc Invoke error" + funcName)
 }
 
 //出块奖励记录查询
-func (d *CoinbaseChainCode) queryGenerateUnitReward(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (d *CoinbaseChainCode) QueryGenerateUnitReward(stub shim.ChaincodeStubInterface) ([]*RewardRecord, error) {
 	kvs, err := stub.GetStateByPrefix(constants.RewardAddressPrefix)
 	if err != nil {
-		return shim.Error(err.Error())
+		return nil, err
 	}
 	log.Debugf("queryGenerateUnitReward, return count:%d", len(kvs))
 	result := []*RewardRecord{}
@@ -71,8 +75,7 @@ func (d *CoinbaseChainCode) queryGenerateUnitReward(stub shim.ChaincodeStubInter
 			result = append(result, record)
 		}
 	}
-	data, _ := json.Marshal(result)
-	return shim.Success(data)
+	return result, nil
 }
 
 type RewardRecord struct {

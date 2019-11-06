@@ -21,13 +21,10 @@ package modules
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
+	"github.com/palletone/go-palletone/dag/constants"
 	"io"
 	"math"
-	"math/big"
-	"strconv"
-	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/rlp"
@@ -42,11 +39,12 @@ import (
 )
 
 var (
-	TXFEE       = big.NewInt(100000000) // transaction fee =1ptn
-	TX_MAXSIZE  = (256 * 1024)
-	TX_BASESIZE = (100 * 1024) //100kb
+	//TXFEE       = big.NewInt(100000000) // transaction fee =1ptn
+	TX_MAXSIZE  = 256 * 1024
+	TX_BASESIZE = 100 * 1024 //100kb
 )
-var DepositContractLockScript = common.Hex2Bytes("140000000000000000000000000000000000000001c8")
+
+//var DepositContractLockScript = common.Hex2Bytes("140000000000000000000000000000000000000001c8")
 
 // TxOut defines a bitcoin transaction output.
 type TxOut struct {
@@ -90,78 +88,6 @@ type TransactionWithUnitInfo struct {
 	UnitIndex uint64
 	Timestamp uint64
 	TxIndex   uint64
-}
-
-type TxPoolTransaction struct {
-	Tx *Transaction
-
-	From         []*OutPoint
-	CreationDate time.Time `json:"creation_date"`
-	Priority_lvl string    `json:"priority_lvl"` // 打包的优先级
-	UnitHash     common.Hash
-	UnitIndex    uint64
-	Pending      bool
-	Confirmed    bool
-	IsOrphan     bool
-	Discarded    bool        // will remove
-	TxFee        []*Addition `json:"tx_fee"`
-	Index        uint64      `json:"index"` // index 是该Unit位置。
-	Extra        []byte
-	Tag          uint64
-	Expiration   time.Time
-	//该Tx依赖于哪些TxId作为先决条件
-	DependOnTxs []common.Hash
-}
-
-func (tx *TxPoolTransaction) Less(otherTx interface{}) bool {
-	ap, _ := strconv.ParseFloat(tx.Priority_lvl, 64)
-	bp, _ := strconv.ParseFloat(otherTx.(*TxPoolTransaction).Priority_lvl, 64)
-	return ap < bp
-}
-
-func (tx *TxPoolTransaction) GetPriorityLvl() string {
-	if tx.Priority_lvl != "" && tx.Priority_lvl > "0" {
-		return tx.Priority_lvl
-	}
-	var priority_lvl float64
-	if txfee := tx.GetTxFee(); txfee.Int64() > 0 {
-		if tx.CreationDate.Unix() <= 0 {
-			tx.CreationDate = time.Now()
-		}
-		priority_lvl, _ = strconv.ParseFloat(fmt.Sprintf("%f", float64(txfee.Int64())/
-			tx.Tx.Size().Float64()*(1+float64(time.Now().Second()-tx.CreationDate.Second())/(24*3600))), 64)
-	}
-	tx.Priority_lvl = strconv.FormatFloat(priority_lvl, 'f', -1, 64)
-	return tx.Priority_lvl
-}
-func (tx *TxPoolTransaction) GetPriorityfloat64() float64 {
-	level, _ := strconv.ParseFloat(tx.Priority_lvl, 64)
-	if level > 0 {
-		return level
-	}
-	var priority_lvl float64
-	if txfee := tx.GetTxFee(); txfee.Int64() > 0 {
-		if tx.CreationDate.Unix() <= 0 {
-			tx.CreationDate = time.Now()
-		}
-		priority_lvl, _ = strconv.ParseFloat(fmt.Sprintf("%f", float64(txfee.Int64())/
-			tx.Tx.Size().Float64()*(1+float64(time.Now().Second()-tx.CreationDate.Second())/(24*3600))), 64)
-	}
-	return priority_lvl
-}
-func (tx *TxPoolTransaction) SetPriorityLvl(priority float64) {
-	tx.Priority_lvl = strconv.FormatFloat(priority, 'f', -1, 64)
-}
-func (tx *TxPoolTransaction) GetTxFee() *big.Int {
-	var fee uint64
-	if tx.TxFee != nil {
-		for _, ad := range tx.TxFee {
-			fee += ad.Amount
-		}
-	} else {
-		fee = 20 // 20dao
-	}
-	return big.NewInt(int64(fee))
 }
 
 // Hash hashes the RLP encoding of tx.
@@ -252,75 +178,24 @@ func (s Transactions) GetRlp(i int) []byte {
 	enc, _ := rlp.EncodeToBytes(s[i])
 	return enc
 }
-func (s Transactions) Hash() common.Hash {
-	b, err := json.Marshal(s)
-	if err != nil {
-		log.Error("json marshal error", "error", err)
-		return common.Hash{}
-	}
-
-	v := util.RlpHash(b[:])
-	return v
-}
 
 // TxDifference returns a new set t which is the difference between a to b.
-func TxDifference(a, b Transactions) (keep Transactions) {
-	keep = make(Transactions, 0, len(a))
-
-	remove := make(map[common.Hash]struct{})
-	for _, tx := range b {
-		remove[tx.Hash()] = struct{}{}
-	}
-
-	for _, tx := range a {
-		if _, ok := remove[tx.Hash()]; !ok {
-			keep = append(keep, tx)
-		}
-	}
-
-	return keep
-}
-
-// TxByPrice implements both the sort and the heap interface, making it useful
-// for all at once sorting as well as individually adding and removing elements.
-type TxByPrice TxPoolTxs
-
-func (s TxByPrice) Len() int      { return len(s) }
-func (s TxByPrice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-func (s *TxByPrice) Push(x interface{}) {
-	*s = append(*s, x.(*TxPoolTransaction))
-}
-func (s *TxByPrice) Pop() interface{} {
-	old := *s
-	n := len(old)
-	x := old[n-1]
-	*s = old[0 : n-1]
-	return x
-}
-
-type TxByPriority []*TxPoolTransaction
-
-func (s TxByPriority) Len() int           { return len(s) }
-func (s TxByPriority) Less(i, j int) bool { return s[i].Priority_lvl > s[j].Priority_lvl }
-func (s TxByPriority) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
-
-func (s *TxByPriority) Push(x interface{}) {
-	*s = append(*s, x.(*TxPoolTransaction))
-}
-
-func (s *TxByPriority) Pop() interface{} {
-	old := *s
-	n := len(old)
-	x := old[n-1]
-	*s = old[0 : n-1]
-	return x
-}
-
-type TxByCreationDate []*TxPoolTransaction
-
-func (tc TxByCreationDate) Len() int           { return len(tc) }
-func (tc TxByCreationDate) Less(i, j int) bool { return tc[i].Priority_lvl > tc[j].Priority_lvl }
-func (tc TxByCreationDate) Swap(i, j int)      { tc[i], tc[j] = tc[j], tc[i] }
+//func TxDifference(a, b Transactions) (keep Transactions) {
+//	keep = make(Transactions, 0, len(a))
+//
+//	remove := make(map[common.Hash]struct{})
+//	for _, tx := range b {
+//		remove[tx.Hash()] = struct{}{}
+//	}
+//
+//	for _, tx := range a {
+//		if _, ok := remove[tx.Hash()]; !ok {
+//			keep = append(keep, tx)
+//		}
+//	}
+//
+//	return keep
+//}
 
 type WriteCounter common.StorageSize
 
@@ -363,6 +238,7 @@ type Transaction struct {
 type QueryUtxoFunc func(outpoint *OutPoint) (*Utxo, error)
 type GetAddressFromScriptFunc func(lockScript []byte) (common.Address, error)
 type GetScriptSignersFunc func(tx *Transaction, msgIdx, inputIndex int) ([]common.Address, error)
+type QueryStateByVersionFunc func(id []byte, field string, version *StateVersion) ([]byte, error)
 
 //计算该交易的手续费，基于UTXO，所以传入查询UTXO的函数指针
 func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, error) {
@@ -379,12 +255,13 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 	outAmount := uint64(0)
 	var feeAsset *Asset
 	for _, txin := range payload.Inputs {
-		utxo, _ := queryUtxoFunc(txin.PreviousOutPoint)
-		if utxo == nil {
-			return nil, fmt.Errorf("Txin(txhash=%s, msgindex=%v, outindex=%v)'s utxo is empty:",
+		utxo, err := queryUtxoFunc(txin.PreviousOutPoint)
+		if err != nil {
+			return nil, fmt.Errorf("Txin(txhash=%s, msgindex=%v, outindex=%v)'s utxo is empty:%s",
 				txin.PreviousOutPoint.TxHash.String(),
 				txin.PreviousOutPoint.MessageIndex,
-				txin.PreviousOutPoint.OutIndex)
+				txin.PreviousOutPoint.OutIndex,
+				err.Error())
 		}
 		feeAsset = utxo.Asset
 		// check overflow
@@ -417,14 +294,81 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 		outAmount += txout.Value
 	}
 	if inAmount < outAmount {
-
 		return nil, fmt.Errorf("Compute fees: tx %s txin amount less than txout amount. amount:%d ,outAmount:%d ",
 			tx.Hash().String(), inAmount, outAmount)
 	}
 	fees := inAmount - outAmount
 
 	return &AmountAsset{Amount: fees, Asset: feeAsset}, nil
+}
 
+func (tx *Transaction) GetCoinbaseReward(versionFunc QueryStateByVersionFunc,
+	scriptFunc GetAddressFromScriptFunc) (*AmountAsset, error) {
+	writeMap := make(map[string][]AmountAsset)
+	readMap := make(map[string][]AmountAsset)
+	if len(tx.TxMessages) == 2 && tx.TxMessages[0].App == APP_PAYMENT &&
+		tx.TxMessages[1].App == APP_CONTRACT_INVOKE { //进行了汇总付款
+		invoke := tx.TxMessages[1].Payload.(*ContractInvokePayload)
+		for _, read := range invoke.ReadSet {
+			readResult, err := versionFunc(read.ContractId, read.Key, read.Version)
+			if err != nil {
+				return nil, err
+			}
+			var aa []AmountAsset
+			err = rlp.DecodeBytes(readResult, &aa)
+			if err != nil {
+				return nil, err
+			}
+			addr := read.Key[len(constants.RewardAddressPrefix):]
+			readMap[addr] = aa
+		}
+		payment := tx.TxMessages[0].Payload.(*PaymentPayload)
+		for _, out := range payment.Outputs {
+			aa := AmountAsset{
+				Amount: out.Value,
+				Asset:  out.Asset,
+			}
+			addr, _ := scriptFunc(out.PkScript)
+			writeMap[addr.String()] = []AmountAsset{aa}
+		}
+	}
+	if tx.TxMessages[0].App == APP_CONTRACT_INVOKE { //进行了记账
+		invoke := tx.TxMessages[0].Payload.(*ContractInvokePayload)
+		for _, write := range invoke.WriteSet {
+			var aa []AmountAsset
+			err := rlp.DecodeBytes(write.Value, &aa)
+			if err != nil {
+				return nil, err
+			}
+			addr := write.Key[len(constants.RewardAddressPrefix):]
+			writeMap[addr] = aa
+		}
+
+		for _, read := range invoke.ReadSet {
+			readResult, err := versionFunc(read.ContractId, read.Key, read.Version)
+			if err != nil {
+				return nil, err
+			}
+			var aa []AmountAsset
+			err = rlp.DecodeBytes(readResult, &aa)
+			if err != nil {
+				return nil, err
+			}
+			addr := read.Key[len(constants.RewardAddressPrefix):]
+			readMap[addr] = aa
+		}
+	}
+	//计算Write Map和Read Map的差，获得Reward值
+	reward := &AmountAsset{}
+	for writeAddr, writeAA := range writeMap {
+		reward.Asset = writeAA[0].Asset
+		if readAA, ok := readMap[writeAddr]; ok {
+			reward.Amount += writeAA[0].Amount - readAA[0].Amount
+		} else {
+			reward.Amount += writeAA[0].Amount
+		}
+	}
+	return reward, nil
 }
 
 //该Tx如果保存后，会产生的新的Utxo
@@ -495,12 +439,10 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 	request.CertId = tx.CertId
 	for _, msg := range tx.TxMessages {
 		if msg.App.IsRequest() {
-
 			if msg.App == APP_CONTRACT_TPL_REQUEST {
 				payload := new(ContractInstallRequestPayload)
 				obj.DeepCopy(payload, msg.Payload)
 				request.AddMessage(NewMessage(msg.App, payload))
-
 			} else if msg.App == APP_CONTRACT_DEPLOY_REQUEST {
 				payload := new(ContractDeployRequestPayload)
 				obj.DeepCopy(payload, msg.Payload)
@@ -509,7 +451,6 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 				payload := new(ContractInvokeRequestPayload)
 				obj.DeepCopy(payload, msg.Payload)
 				request.AddMessage(NewMessage(msg.App, payload))
-
 			} else if msg.App == APP_CONTRACT_STOP_REQUEST {
 				payload := new(ContractStopRequestPayload)
 				obj.DeepCopy(payload, msg.Payload)
@@ -749,6 +690,16 @@ func (msg *Transaction) SerializeSize() int {
 	n := msg.baseSize()
 	return n
 }
+func (tx *Transaction) DataPayloadSize() int {
+	size := 0
+	for _, msg := range tx.TxMessages {
+		if msg.App == APP_DATA {
+			data := msg.Payload.(*DataPayload)
+			size += len(data.MainData) + len(data.ExtraData) + len(data.Reference)
+		}
+	}
+	return size
+}
 
 //Deep copy transaction to a new object
 func (tx *Transaction) Clone() Transaction {
@@ -812,7 +763,9 @@ func (tx *Transaction) GetContractInvokeReqMsgIdx() int {
 	}
 	return -1
 }
-func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFunc GetScriptSignersFunc,
+
+//之前的费用分配有Bug，在ContractInstall的时候会分配错误。在V2中解决了这个问题，但是由于测试网已经有历史数据了，所以需要保留历史计算方法。
+func (tx *Transaction) GetTxFeeAllocateLegacyV1(queryUtxoFunc QueryUtxoFunc, getSignerFunc GetScriptSignersFunc,
 	mediatorAddr common.Address) ([]*Addition, error) {
 	fee, err := tx.GetTxFee(queryUtxoFunc)
 	result := []*Addition{}
@@ -875,6 +828,72 @@ func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFu
 	return result, nil
 }
 
+func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFunc GetScriptSignersFunc,
+	mediatorAddr common.Address) ([]*Addition, error) {
+	fee, err := tx.GetTxFee(queryUtxoFunc)
+	result := []*Addition{}
+	if err != nil {
+		return nil, err
+	}
+	if fee.Amount == 0 {
+		return result, nil
+	}
+	isJuryInside := false
+	jury := []common.Address{}
+	for msgIdx, msg := range tx.TxMessages {
+		if msg.App == APP_CONTRACT_INVOKE_REQUEST ||
+			msg.App == APP_CONTRACT_DEPLOY_REQUEST ||
+			msg.App == APP_CONTRACT_STOP_REQUEST {
+			isJuryInside = true
+			//只有合约部署和调用的时候会涉及到Jury，才会分手续费给Jury
+			continue
+		}
+		if isJuryInside && msg.App == APP_SIGNATURE {
+			payload := msg.Payload.(*SignaturePayload)
+			for _, sig := range payload.Signatures {
+				jury = append(jury, crypto.PubkeyBytesToAddress(sig.PubKey))
+			}
+		}
+		if isJuryInside && msg.App == APP_PAYMENT {
+			payment := msg.Payload.(*PaymentPayload)
+			if !payment.IsCoinbase() {
+				jury, err = getSignerFunc(tx, msgIdx, 0)
+				if err != nil {
+					return nil, errors.New("Parse unlock script to get signers error:" + err.Error())
+				}
+			}
+		}
+	}
+	if isJuryInside { //合约执行，Fee需要分配给Jury
+		juryAmount := float64(fee.Amount) * parameter.CurrentSysParameters.ContractFeeJuryPercent
+		juryAllocatedAmt := uint64(0)
+		juryCount := float64(len(jury))
+		for _, jurior := range jury {
+			jIncome := &Addition{
+				Addr:   jurior,
+				Amount: uint64(juryAmount / juryCount),
+				Asset:  fee.Asset,
+			}
+			juryAllocatedAmt += jIncome.Amount
+			result = append(result, jIncome)
+		}
+		mediatorIncome := &Addition{
+			Addr:   mediatorAddr,
+			Amount: fee.Amount - juryAllocatedAmt,
+			Asset:  fee.Asset,
+		}
+		result = append(result, mediatorIncome)
+	} else { //没有合约部署或者执行，全部分配给Mediator
+		mediatorIncome := &Addition{
+			Addr:   mediatorAddr,
+			Amount: fee.Amount,
+			Asset:  fee.Asset,
+		}
+		result = append(result, mediatorIncome)
+	}
+	return result, nil
+}
+
 // SerializeSizeStripped returns the number of bytes it would take to serialize
 // the transaction, excluding any included witness data.
 func (tx *Transaction) SerializeSizeStripped() int {
@@ -893,68 +912,4 @@ func (a *Addition) IsEqualStyle(b *Addition) (bool, error) {
 func (a *Addition) Key() string {
 	b := append(a.Addr.Bytes21(), a.Asset.Bytes()...)
 	return hex.EncodeToString(b)
-}
-
-type SequeueTxPoolTxs struct {
-	seqtxs []*TxPoolTransaction
-	mu     sync.RWMutex
-}
-
-// add
-func (seqTxs *SequeueTxPoolTxs) Len() int {
-	seqTxs.mu.RLock()
-	defer seqTxs.mu.RUnlock()
-	return len((*seqTxs).seqtxs)
-}
-func (seqTxs *SequeueTxPoolTxs) Add(newPoolTx *TxPoolTransaction) {
-	seqTxs.mu.Lock()
-	defer seqTxs.mu.Unlock()
-	(*seqTxs).seqtxs = append((*seqTxs).seqtxs, newPoolTx)
-}
-
-// add priority
-func (seqTxs *SequeueTxPoolTxs) AddPriority(newPoolTx *TxPoolTransaction) {
-	seqTxs.mu.Lock()
-	defer seqTxs.mu.Unlock()
-	if seqTxs.Len() == 0 {
-		(*seqTxs).seqtxs = append((*seqTxs).seqtxs, newPoolTx)
-	} else {
-		added := false
-		for i, item := range (*seqTxs).seqtxs {
-			if newPoolTx.GetPriorityfloat64() > item.GetPriorityfloat64() {
-				(*seqTxs).seqtxs = append((*seqTxs).seqtxs[:i], append([]*TxPoolTransaction{newPoolTx}, (*seqTxs).seqtxs[i:]...)...)
-				added = true
-				break
-			}
-		}
-		if !added {
-			(*seqTxs).seqtxs = append((*seqTxs).seqtxs, newPoolTx)
-		}
-	}
-}
-
-// get
-func (seqTxs *SequeueTxPoolTxs) Get() *TxPoolTransaction {
-	seqTxs.mu.Lock()
-	defer seqTxs.mu.Unlock()
-	if seqTxs.Len() <= 0 {
-		return nil
-	}
-	if seqTxs.Len() == 1 {
-		first := (*seqTxs).seqtxs[0]
-		(*seqTxs).seqtxs = make([]*TxPoolTransaction, 0)
-		return first
-	}
-	first, rest := (*seqTxs).seqtxs[0], (*seqTxs).seqtxs[1:]
-	(*seqTxs).seqtxs = rest
-	return first
-}
-
-// get all
-func (seqTxs *SequeueTxPoolTxs) All() []*TxPoolTransaction {
-	seqTxs.mu.Lock()
-	defer seqTxs.mu.Unlock()
-	items := (*seqTxs).seqtxs[:]
-	(*seqTxs).seqtxs = make([]*TxPoolTransaction, 0)
-	return items
 }

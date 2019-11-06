@@ -22,7 +22,6 @@ package shim
 import (
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/core"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -144,7 +143,7 @@ type ChaincodeStubInterface interface {
 
 	//获取合约的一些配置参数
 	//GetSystemConfig(filed string) (value string, err error)
-	GetSystemConfig() (cp *core.ChainParameters, err error)
+	GetSystemConfig() (gp *modules.GlobalProperty, err error)
 	//获取支付合约的 from 地址
 	GetInvokeAddress() (invokeAddr common.Address, err error)
 	//获取支付ptn数量

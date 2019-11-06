@@ -19,20 +19,21 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 func developerPayToDepositContract(stub shim.ChaincodeStubInterface) peer.Response {
-	return nodePayToDepositContract(stub, Developer)
+	return nodePayToDepositContract(stub, modules.Developer)
 
 }
 
 //  申请
 func devApplyQuit(stub shim.ChaincodeStubInterface) peer.Response {
-	log.Info("devApplyQuit")
+	log.Info("DevApplyQuit")
 	//  处理逻辑
-	err := applyQuitList(Developer, stub)
+	err := applyQuitList(modules.Developer, stub)
 	if err != nil {
-		log.Error("devApplyQuit err: ", "error", err)
+		log.Error("DevApplyQuit err: ", "error", err)
 		return shim.Error(err.Error())
 	}
 	return shim.Success(nil)
@@ -40,5 +41,5 @@ func devApplyQuit(stub shim.ChaincodeStubInterface) peer.Response {
 
 //  处理
 func handleDev(stub shim.ChaincodeStubInterface, quitAddr common.Address) error {
-	return handleNode(stub, quitAddr, Developer)
+	return handleNode(stub, quitAddr, modules.Developer)
 }

@@ -69,8 +69,14 @@ func (s *SysConfigChainCode) Invoke(stub shim.ChaincodeStubInterface) peer.Respo
 	//	}
 	//	return shim.Success(resultByte)
 	case UpdateSysParamWithoutVote:
+		if len(args) != 2 {
+			err := "args len not equal 2"
+			log.Debugf(err)
+			jsonResp := "{\"Error\":\"updateSysParamWithoutVote err: " + err + "\"}"
+			return shim.Error(jsonResp)
+		}
 		log.Info("Start updateSysParamWithoutVote Invoke")
-		resultByte, err := s.updateSysParamWithoutVote(stub, args)
+		resultByte, err := s.UpdateSysParamWithoutVote(stub, args[0], args[1])
 		if err != nil {
 			jsonResp := "{\"Error\":\"updateSysParamWithoutVote err: " + err.Error() + "\"}"
 			return shim.Error(jsonResp)
@@ -78,7 +84,7 @@ func (s *SysConfigChainCode) Invoke(stub shim.ChaincodeStubInterface) peer.Respo
 		return shim.Success(resultByte)
 	case "getWithoutVoteResult":
 		log.Info("Start getWithoutVoteResult Invoke")
-		resultByte, err := stub.GetState(modules.DesiredSysParamsWithoutVote)
+		resultByte, err := s.GetWithoutVoteResult(stub)
 		if err != nil {
 			jsonResp := "{\"Error\":\"getWithoutVoteResult err: " + err.Error() + "\"}"
 			return shim.Success([]byte(jsonResp))
@@ -86,23 +92,52 @@ func (s *SysConfigChainCode) Invoke(stub shim.ChaincodeStubInterface) peer.Respo
 		return shim.Success(resultByte)
 	case "getVotesResult":
 		log.Info("Start getVotesResult Invoke")
-		resultByte, err := s.getVotesResult(stub, args)
+		result, err := s.GetVotesResult(stub /*, args*/)
 		if err != nil {
 			jsonResp := "{\"Error\":\"getVotesResult err: " + err.Error() + "\"}"
+			return shim.Error(jsonResp)
+		}
+		data, _ := json.Marshal(result)
+		return shim.Success(data)
+	case CreateVotesTokens:
+		if len(args) != 5 {
+			err := "need 5 args (Name,TotalSupply,LeastNum,VoteEndTime,VoteContentJson)"
+			jsonResp := "{\"Error\":\"createVotesTokens err: " + err + "\"}"
 			return shim.Success([]byte(jsonResp))
 		}
-		return shim.Success(resultByte)
-	case CreateVotesTokens:
 		log.Info("Start createVotesTokens Invoke")
-		resultByte, err := s.createVotesTokens(stub, args)
+		totalSupply, err := strconv.ParseUint(args[1], 10, 64)
+		if err != nil {
+			jsonResp := "{\"Error\":\"Failed to convert total supply\"}"
+			return shim.Error(jsonResp)
+		}
+		if totalSupply == 0 {
+			jsonResp := "{\"Error\":\"Can't be zero\"}"
+			return shim.Error(jsonResp)
+		}
+		leastNum, err := strconv.ParseUint(args[2], 10, 64)
+		if err != nil {
+			jsonResp := "{\"Error\":\"Failed to convert least numbers\"}"
+			return shim.Error(jsonResp)
+		}
+		if leastNum == 0 {
+			jsonResp := "{\"Error\":\"Can't be zero\"}"
+			return shim.Error(jsonResp)
+		}
+		resultByte, err := s.CreateVotesTokens(stub, args[0], totalSupply, leastNum, args[3], args[4])
 		if err != nil {
 			jsonResp := "{\"Error\":\"createVotesTokens err: " + err.Error() + "\"}"
 			return shim.Success([]byte(jsonResp))
 		}
 		return shim.Success(resultByte)
 	case "nodesVote":
+		if len(args) < 1 {
+			err := "need 1 args (SupportRequestJson)"
+			jsonResp := "{\"Error\":\"nodesVote err: " + err + "\"}"
+			return shim.Success([]byte(jsonResp))
+		}
 		log.Info("Start nodesVote Invoke")
-		resultByte, err := s.nodesVote(stub, args)
+		resultByte, err := s.NodesVote(stub, args[0])
 		if err != nil {
 			jsonResp := "{\"Error\":\"nodesVote err: " + err.Error() + "\"}"
 			return shim.Success([]byte(jsonResp))
@@ -114,16 +149,30 @@ func (s *SysConfigChainCode) Invoke(stub shim.ChaincodeStubInterface) peer.Respo
 		return shim.Error(jsonResp)
 	}
 }
+func (s *SysConfigChainCode) GetWithoutVoteResult(stub shim.ChaincodeStubInterface) ([]byte, error) {
+	return stub.GetState(modules.DesiredSysParamsWithoutVote)
+}
 
-func (s *SysConfigChainCode) getVotesResult(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	log.Debug("getVotesResult", args)
-	//params check
-	//if len(args) < 1 {
-	//	return nil, fmt.Errorf("need 1 args (AssetID String)")
-	//}
+type SysTokenIDInfo struct {
+	CreateAddr     string
+	TotalSupply    uint64
+	LeastNum       uint64
+	AssetID        string
+	CreateTime     int64
+	IsVoteEnd      bool
+	SupportResults []*SysSupportResult
+}
+type SysSupportResult struct {
+	TopicIndex  uint64
+	TopicTitle  string
+	VoteResults []*SysVoteResult
+}
+type SysVoteResult struct {
+	SelectOption string
+	Num          uint64
+}
 
-	//assetIDStr
-	//assetIDStr := strings.ToUpper(args[0])
+func (s *SysConfigChainCode) GetVotesResult(stub shim.ChaincodeStubInterface /*, args []string*/) (*SysTokenIDInfo, error) {
 	//check name is exist or not
 	tkInfo := getSymbols(stub)
 	if tkInfo == nil {
@@ -147,9 +196,9 @@ func (s *SysConfigChainCode) getVotesResult(stub shim.ChaincodeStubInterface, ar
 		isVoteEnd = true
 	}
 	//calculate result
-	supportResults := make([]*modules.SysSupportResult, 0, len(topicSupports))
+	supportResults := make([]*SysSupportResult, 0, len(topicSupports))
 	for i, oneTopicSupport := range topicSupports {
-		oneResult := &modules.SysSupportResult{}
+		oneResult := &SysSupportResult{}
 		oneResult.TopicIndex = uint64(i) + 1
 		oneResult.TopicTitle = oneTopicSupport.TopicTitle
 		oneResultSort := sortSupportByCount(oneTopicSupport.VoteResults)
@@ -162,22 +211,13 @@ func (s *SysConfigChainCode) getVotesResult(stub shim.ChaincodeStubInterface, ar
 
 	//token
 	asset := tkInfo.AssetID
-	tkID := modules.SysTokenIDInfo{IsVoteEnd: isVoteEnd, CreateAddr: tkInfo.CreateAddr, TotalSupply: tkInfo.TotalSupply,
-		SupportResults: supportResults, AssetID: asset.String(), CreateTime: tkInfo.VoteEndTime.UTC(), LeastNum: tkInfo.LeastNum}
-
-	//return json
-	tkJson, err := json.Marshal(tkID)
-	if err != nil {
-		return nil, fmt.Errorf(err.Error())
-	}
-	return tkJson, nil //test
+	tkID := SysTokenIDInfo{IsVoteEnd: isVoteEnd, CreateAddr: tkInfo.CreateAddr, TotalSupply: tkInfo.TotalSupply,
+		SupportResults: supportResults, AssetID: asset.String(), CreateTime: tkInfo.VoteEndTime.UTC().Unix(), LeastNum: tkInfo.LeastNum}
+	return &tkID, nil
 }
 
-func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	//params check
-	if len(args) != 5 {
-		return nil, fmt.Errorf("need 5 args (Name,VoteType,TotalSupply,VoteEndTime,VoteContentJson)")
-	}
+func (s *SysConfigChainCode) CreateVotesTokens(stub shim.ChaincodeStubInterface, name string, totalSupply uint64,
+	leastNum uint64, voteEndTime string, voteContentJSON string) ([]byte, error) {
 	//get creator
 	createAddr, err := stub.GetInvokeAddress()
 	if err != nil {
@@ -185,11 +225,11 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 		return nil, fmt.Errorf(jsonResp)
 	}
 
-	cp, err := stub.GetSystemConfig()
+	gp, err := stub.GetSystemConfig()
 	if err != nil {
 		return nil, fmt.Errorf("fail to get system config err")
 	}
-	if createAddr.Str() != cp.FoundationAddress {
+	if createAddr.Str() != gp.ChainParameters.FoundationAddress {
 		jsonResp := "{\"Error\":\"Only foundation can call this function\"}"
 		return nil, fmt.Errorf(jsonResp)
 	}
@@ -197,50 +237,26 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 	//==== convert params to token information
 	var vt modules.VoteToken
 	//name symbol
-	vt.Name = args[0]
+	if len(name) > 1024 {
+		jsonResp := "{\"Error\":\"Name length should not be greater than 1024\"}"
+		return []byte{}, fmt.Errorf(jsonResp)
+	}
+	vt.Name = name
 	vt.Symbol = "SVOTE"
 
-	//vote type
-	//if args[1] == "0" {
-	//	vt.VoteType = byte(0)
-	//} else if args[1] == "1" {
-	//	vt.VoteType = byte(1)
-	//} else if args[1] == "2" {
-	//	vt.VoteType = byte(2)
-	//} else {
-	//	jsonResp := "{\"Error\":\"Only string, 0 or 1 or 2\"}"
-	//	return shim.Success([]byte(jsonResp))
-	//}
 	//total supply
-	totalSupply, err := strconv.ParseUint(args[1], 10, 64)
-	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to convert total supply\"}"
-		return nil, fmt.Errorf(jsonResp)
-	}
-	if totalSupply == 0 {
-		jsonResp := "{\"Error\":\"Can't be zero\"}"
-		return nil, fmt.Errorf(jsonResp)
-	}
 	vt.TotalSupply = totalSupply
-	leastNum, err := strconv.ParseUint(args[2], 10, 64)
-	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to convert least numbers\"}"
-		return nil, fmt.Errorf(jsonResp)
-	}
-	if leastNum == 0 {
-		jsonResp := "{\"Error\":\"Can't be zero\"}"
-		return nil, fmt.Errorf(jsonResp)
-	}
-	//VoteEndTime
-	VoteEndTime, err := time.Parse("2006-01-02 15:04:05", args[3])
+
+	//endTime
+	endTime, err := time.Parse("2006-01-02 15:04:05", voteEndTime)
 	if err != nil {
 		jsonResp := "{\"Error\":\"No vote end time\"}"
 		return nil, fmt.Errorf(jsonResp)
 	}
-	vt.VoteEndTime = VoteEndTime
+	vt.VoteEndTime = endTime
 	//VoteContent
 	var voteTopics []SysVoteTopic
-	err = json.Unmarshal([]byte(args[4]), &voteTopics)
+	err = json.Unmarshal([]byte(voteContentJSON), &voteTopics)
 	if err != nil {
 		jsonResp := "{\"Error\":\"VoteContent format invalid\"}"
 		return nil, fmt.Errorf(jsonResp)
@@ -251,13 +267,20 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 		oneSupport := SysTopicSupports{TopicTitle: oneTopic.TopicTitle}
 		for _, oneOption := range oneTopic.SelectOptions {
 			// 检查参数
-			err := core.CheckSysConfigArgs(oneSupport.TopicTitle, oneOption)
+			err := core.CheckSysConfigArgType(oneSupport.TopicTitle, oneOption)
 			if err != nil {
 				log.Debugf(err.Error())
 				return nil, err
 			}
 
-			oneResult := &modules.SysVoteResult{}
+			err = core.CheckChainParameterValue(oneSupport.TopicTitle, oneOption, &gp.ImmutableParameters,
+				&gp.ChainParameters, func() int { return getMediatorCount(stub) })
+			if err != nil {
+				log.Debugf(err.Error())
+				return nil, err
+			}
+
+			oneResult := &SysVoteResult{}
 			oneResult.SelectOption = oneOption
 			oneSupport.VoteResults = append(oneSupport.VoteResults, oneResult)
 		}
@@ -292,7 +315,7 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 
 	//last put state
 	info := SysTokenInfo{vt.Name, vt.Symbol, createAddr.String(), leastNum, totalSupply,
-		VoteEndTime, voteContentJson, assetID}
+		endTime, voteContentJson, assetID}
 
 	err = setSymbols(stub, &info)
 	if err != nil {
@@ -317,12 +340,7 @@ func (s *SysConfigChainCode) createVotesTokens(stub shim.ChaincodeStubInterface,
 	return createJson, nil //test
 }
 
-func (s *SysConfigChainCode) nodesVote(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	//params check
-	if len(args) < 1 {
-		return nil, fmt.Errorf("need 1 args (SupportRequestJson)")
-	}
-
+func (s *SysConfigChainCode) NodesVote(stub shim.ChaincodeStubInterface, supportRequestJson string) ([]byte, error) {
 	//check token
 	invokeTokens, err := stub.GetInvokeTokens()
 	if err != nil {
@@ -354,7 +372,7 @@ func (s *SysConfigChainCode) nodesVote(stub shim.ChaincodeStubInterface, args []
 
 	//parse support requests
 	var supportRequests []SysSupportRequest
-	err = json.Unmarshal([]byte(args[0]), &supportRequests)
+	err = json.Unmarshal([]byte(supportRequestJson), &supportRequests)
 	if err != nil {
 		return nil, fmt.Errorf("SupportRequestJson format invalid")
 	}
@@ -366,10 +384,9 @@ func (s *SysConfigChainCode) nodesVote(stub shim.ChaincodeStubInterface, args []
 
 	}
 
-	if voteNum < uint64(len(supportRequests)) { //vote token more than request
-		return nil, fmt.Errorf("Vote token more than support request")
-
-	}
+	//if voteNum < uint64(len(supportRequests)) { //vote token more than request
+	//	return nil, fmt.Errorf("Vote token more than support request")
+	//}
 
 	//check time
 	headerTime, err := stub.GetTxTimestamp(10)
@@ -403,7 +420,7 @@ func (s *SysConfigChainCode) nodesVote(stub shim.ChaincodeStubInterface, args []
 					}
 					selIndexHistory[selectIndex] = 1
 					if selectIndex < lenOfVoteResult { //3.index must be real select options
-						topicSupports[topicIndex].VoteResults[selectIndex].Num += 1
+						topicSupports[topicIndex].VoteResults[selectIndex].Num += voteNum //1
 					}
 				}
 			}
@@ -437,17 +454,39 @@ func (s *SysConfigChainCode) nodesVote(stub shim.ChaincodeStubInterface, args []
 //	return sysVal, nil
 //}
 
-func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	if len(args) != 2 {
-		err := "args len not equal 2"
-		log.Debugf(err)
-		return nil, fmt.Errorf(err)
+func getMediatorCount(stub shim.ChaincodeStubInterface) int {
+	byte, err := stub.GetState(modules.MediatorList)
+	if err != nil {
+		return 0
+	}
+	if len(byte) == 0 {
+		return 0
 	}
 
-	field, value := args[0], args[1]
+	list := make(map[string]string)
+	err = json.Unmarshal(byte, &list)
+	if err != nil {
+		return 0
+	}
 
+	return len(list)
+}
+
+func (s *SysConfigChainCode) UpdateSysParamWithoutVote(stub shim.ChaincodeStubInterface, field, value string) ([]byte, error) {
 	// 检查参数
-	err := core.CheckSysConfigArgs(field, value)
+	err := core.CheckSysConfigArgType(field, value)
+	if err != nil {
+		log.Debugf(err.Error())
+		return nil, err
+	}
+
+	gp, err := stub.GetSystemConfig()
+	if err != nil {
+		return nil, fmt.Errorf("fail to get system config err")
+	}
+
+	err = core.CheckChainParameterValue(field, value, &gp.ImmutableParameters,
+		&gp.ChainParameters, func() int { return getMediatorCount(stub) })
 	if err != nil {
 		log.Debugf(err.Error())
 		return nil, err
@@ -459,11 +498,7 @@ func (s *SysConfigChainCode) updateSysParamWithoutVote(stub shim.ChaincodeStubIn
 		return nil, fmt.Errorf(jsonResp)
 	}
 
-	cp, err := stub.GetSystemConfig()
-	if err != nil {
-		return nil, fmt.Errorf("fail to get system config err")
-	}
-	if createAddr.Str() != cp.FoundationAddress {
+	if createAddr.Str() != gp.ChainParameters.FoundationAddress {
 		jsonResp := "{\"Error\":\"Only foundation can call this function\"}"
 		return nil, fmt.Errorf(jsonResp)
 	}
@@ -554,14 +589,14 @@ func setSymbols(stub shim.ChaincodeStubInterface, tkInfo *SysTokenInfo) error {
 }
 
 // A slice of TopicResult that implements sort.Interface to sort by Value.
-type VoteResultList []*modules.SysVoteResult
+type voteResultList []*SysVoteResult
 
-func (p VoteResultList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
-func (p VoteResultList) Len() int           { return len(p) }
-func (p VoteResultList) Less(i, j int) bool { return p[i].Num > p[j].Num }
+func (p voteResultList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+func (p voteResultList) Len() int           { return len(p) }
+func (p voteResultList) Less(i, j int) bool { return p[i].Num > p[j].Num }
 
 // A function to turn a map into a TopicResultList, then sort and return it.
-func sortSupportByCount(tpl VoteResultList) VoteResultList {
+func sortSupportByCount(tpl voteResultList) voteResultList {
 	sort.Stable(tpl) //sort.Sort(tpl)
 	return tpl
 }

@@ -62,11 +62,15 @@ function replacejson()
 
     add=`echo $add | jq ".immutableChainParameters.min_mediator_count = $length"`
 
-    add=`echo $add | jq ".initialParameters.maintenance_skip_slots = 2"`
+    add=`echo $add | jq ".initialParameters.maintenance_skip_slots = 1"`
 
-    add=`echo $add | jq ".immutableChainParameters.min_maint_skip_slots = 2"`
+    add=`echo $add | jq ".immutableChainParameters.min_maint_skip_slots = 0"`
 
     add=`echo $add | jq ".initialParameters.mediator_interval = 3"`
+
+    if [ -n "$2" ]; then
+        add=`echo $add | jq ".initialParameters.contract_election_num = 3"`
+    fi
 
     tempstamp=`cat $1 | jq '.initialTimestamp'`
     tempstamp=$[$tempstamp/3]
@@ -84,16 +88,16 @@ function replacejson()
 
 function ExecDeploy()
 {
-    echo ===============$1===============
+    echo ===============$1==$2===============
     mkdir "node"$1
     #if [ $1 -eq 4 ] ;then
     #echo "=="$1
-    cp gptn ./createaccount.sh modifyconfig.sh modifyjson.sh init.sh node$1
+    cp gptn ./createaccount.sh modifyconfig.sh modifyjson.sh init.sh createpk.sh node$1
     cd node$1
     /bin/bash modifyconfig.sh
     #source ./modifyjson.sh
     source ./modifyconfig.sh
-    ModifyConfig $1
+    ModifyConfig $1 $2
     rm *.sh
     cd ../
     #else
@@ -104,12 +108,12 @@ function ExecDeploy()
 
 
 function LoopDeploy()  
-{  
+{
     count=1;  
     while [ $count -le $1 ] ;  
     do  
     #echo $count;
-    ExecDeploy $count 
+    ExecDeploy $count $2
     let ++count;  
     sleep 1;  
     done  
@@ -127,10 +131,20 @@ else
     read -p "Please input the numbers of nodes you want: " n;
 fi
 
-LoopDeploy $n;
+eleNum=
+if [ -n "$2" ]; then
+    eleNum=$2
+fi
+
+
+getJuryIp=`./gptn getJuryIp`
+tempinfo=`echo $getJuryIp | sed -n '$p'| awk '{print $NF}'`
+ip=`echo ${tempinfo///}`
+
+LoopDeploy $n $ip;
 
 json="node1/ptn-genesis.json"
-replacejson $json 
+replacejson $json $eleNum
 
 #ModifyBootstrapNodes $n
 
@@ -144,19 +158,19 @@ genesishash=${initvalue:$pos:66}
 ModifyP2PConfig $n $genesishash
 
 num=$[$n+1]
-MakeTestNet $num $genesishash
+MakeTestNet $num $genesishash $ip
 
 num=$[$n+2]
-MakeTestNet $num $genesishash
+MakeTestNet $num $genesishash $ip
 
 num=$[$n+3]
-MakeTestNet $num $genesishash
+MakeTestNet $num $genesishash $ip
 
 
 num=$[$n+4]
-MakeTestNet $num $genesishash
+MakeTestNet $num $genesishash $ip
 
 num=$[$n+5]
-MakeTestNet $num $genesishash
+MakeTestNet $num $genesishash $ip
 
-
+rm -f node*/gptn

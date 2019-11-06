@@ -33,23 +33,37 @@ import (
 )
 
 type UtxoRepository struct {
-	utxodb  storage.IUtxoDb
-	idxdb   storage.IIndexDb
-	statedb storage.IStateDb
-	propDb  storage.IPropertyDb
+	utxodb      storage.IUtxoDb
+	idxdb       storage.IIndexDb
+	statedb     storage.IStateDb
+	propDb      storage.IPropertyDb
+	tokenEngine tokenengine.ITokenEngine
 }
 
-func NewUtxoRepository(utxodb storage.IUtxoDb, idxdb storage.IIndexDb, statedb storage.IStateDb,
-	propDb storage.IPropertyDb) *UtxoRepository {
-	return &UtxoRepository{utxodb: utxodb, idxdb: idxdb, statedb: statedb, propDb: propDb}
+func NewUtxoRepository(utxodb storage.IUtxoDb, idxdb storage.IIndexDb,
+	statedb storage.IStateDb, propDb storage.IPropertyDb,
+	tokenEngine tokenengine.ITokenEngine) *UtxoRepository {
+	return &UtxoRepository{
+		utxodb:      utxodb,
+		idxdb:       idxdb,
+		statedb:     statedb,
+		propDb:      propDb,
+		tokenEngine: tokenEngine,
+	}
 }
-func NewUtxoRepository4Db(db ptndb.Database) *UtxoRepository {
-	utxodb := storage.NewUtxoDb(db)
+func NewUtxoRepository4Db(db ptndb.Database, tokenEngine tokenengine.ITokenEngine) *UtxoRepository {
+	utxodb := storage.NewUtxoDb(db, tokenEngine)
 	statedb := storage.NewStateDb(db)
 	idxdb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
 
-	return &UtxoRepository{utxodb: utxodb, idxdb: idxdb, statedb: statedb, propDb: propDb}
+	return &UtxoRepository{
+		utxodb:      utxodb,
+		idxdb:       idxdb,
+		statedb:     statedb,
+		propDb:      propDb,
+		tokenEngine: tokenEngine,
+	}
 }
 
 type IUtxoRepository interface {
@@ -65,9 +79,10 @@ type IUtxoRepository interface {
 	GetUxtoSetByInputs(txins []modules.Input) (map[modules.OutPoint]*modules.Utxo, uint64)
 	//GetAccountTokens(addr common.Address) (map[string]*modules.AccountToken, error)
 	//WalletBalance(addr common.Address, asset modules.Asset) uint64
-	// ComputeAwards(txs []*modules.TxPoolTransaction, dagdb storage.IDagDb) (*modules.Addition, error)
+	// ComputeAwards(txs []*txspool.TxPoolTransaction, dagdb storage.IDagDb) (*modules.Addition, error)
 	// ComputeTxAward(tx *modules.Transaction, dagdb storage.IDagDb) (uint64, error)
 	ClearUtxo() error
+	ClearAddrUtxo(addr common.Address) error
 	SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error
 	SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.Utxo) error
 }
@@ -99,6 +114,9 @@ func (repository *UtxoRepository) SaveUtxoEntity(outpoint *modules.OutPoint, utx
 }
 func (repository *UtxoRepository) ClearUtxo() error {
 	return repository.utxodb.ClearUtxo()
+}
+func (repository *UtxoRepository) ClearAddrUtxo(addr common.Address) error {
+	return repository.utxodb.ClearAddrUtxo(addr)
 }
 
 /**
@@ -265,11 +283,15 @@ func (repository *UtxoRepository) writeUtxo(unitTime int64, txHash common.Hash,
 			continue
 		}
 
-		sAddr, _ := tokenengine.GetAddressFromScript(txout.PkScript)
+		sAddr, _ := repository.tokenEngine.GetAddressFromScript(txout.PkScript)
 		//update address account info
 		gasToken := dagconfig.DagConfig.GetGasToken()
 		if txout.Asset.AssetId == gasToken {
-			repository.statedb.UpdateAccountBalance(sAddr, int64(txout.Value))
+			err := repository.statedb.UpdateAccountBalance(sAddr, int64(txout.Value))
+			if err != nil {
+				log.Error("UpdateAccountBalance", "error", err.Error())
+				errs = append(errs, err)
+			}
 		}
 	}
 	return errs
@@ -297,7 +319,7 @@ func (repository *UtxoRepository) destroyUtxo(txid common.Hash, unitTime uint64,
 		// get utxo info
 		utxo, err := repository.utxodb.GetUtxoEntry(outpoint)
 		if err != nil {
-			log.Error("Query utxo when destroy uxto", "error", err.Error())
+			log.Error("Query utxo when destroy uxto", "error", err.Error(), "outpoint", outpoint.String())
 			return err
 		}
 
@@ -307,7 +329,7 @@ func (repository *UtxoRepository) destroyUtxo(txid common.Hash, unitTime uint64,
 			return err
 		}
 		// delete index data
-		sAddr, _ := tokenengine.GetAddressFromScript(utxo.PkScript)
+		sAddr, _ := repository.tokenEngine.GetAddressFromScript(utxo.PkScript)
 		if utxo.Asset.AssetId == dagconfig.DagConfig.GetGasToken() { // modules.PTNCOIN
 			err := repository.statedb.UpdateAccountBalance(sAddr, -int64(utxo.Amount))
 			if err != nil {
@@ -540,7 +562,7 @@ To get account token info by query the whole utxo table
 根据交易列表计算交易费总和
 To compute transactions' fees
 */
-// func (repository *UtxoRepository) ComputeFees(txs []*modules.TxPoolTransaction) (uint64, error) {
+// func (repository *UtxoRepository) ComputeFees(txs []*txspool.TxPoolTransaction) (uint64, error) {
 // 	// current time slice mediator default income is 1 ptn
 // 	fees := uint64(0)
 // 	unitUtxo := map[modules.OutPoint]*modules.Utxo{}
@@ -568,7 +590,7 @@ To compute transactions' fees
 /**
 根据交易列表计算保证金交易的收益
 */
-// func (repository *UtxoRepository) ComputeAwards(txs []*modules.TxPoolTransaction,
+// func (repository *UtxoRepository) ComputeAwards(txs []*txspool.TxPoolTransaction,
 // dagdb storage.IDagDb) (*modules.Addition, error) {
 // 	awards := uint64(0)
 // 	for _, tx := range txs {

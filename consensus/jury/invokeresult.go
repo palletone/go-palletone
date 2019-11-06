@@ -29,15 +29,56 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
+	"fmt"
 )
+
+func selectUtxo(mUtxos map[modules.OutPoint]*modules.Utxo, num int) (modules.Asset, []*modules.UtxoWithOutPoint) {
+	mAssets := make(map[modules.Asset][]*modules.UtxoWithOutPoint)
+	for o, u := range mUtxos {
+		uo := &modules.UtxoWithOutPoint{}
+		o1 := o
+		uo.Set(u, &o1)
+		if _, ok := mAssets[*u.Asset]; !ok {
+			mAssets[*u.Asset] = make([]*modules.UtxoWithOutPoint, 0)
+		}
+		mAssets[*u.Asset] = append(mAssets[*u.Asset], uo)
+		//log.Debug("selectUtxo", "Asset", u.Asset.String(), "len", len(mAssets[*u.Asset]))
+		if len(mAssets[*u.Asset]) >= num {
+			return *u.Asset, mAssets[*u.Asset]
+		}
+	}
+	return modules.Asset{}, nil
+}
+
+//func mergeUtxo(dag iDag, addr common.Address, limitNum int) (*modules.PaymentPayload, error) {
+func mergeUtxo(addr common.Address, utxos map[modules.OutPoint]*modules.Utxo, limitNum int) (*modules.PaymentPayload) {
+	var amount uint64
+	asset, selected := selectUtxo(utxos, limitNum)
+	if selected == nil {
+		return nil
+	}
+	payment := &modules.PaymentPayload{}
+	for _, s := range selected {
+		in := modules.NewTxIn(&s.OutPoint, nil)
+		payment.AddTxIn(in)
+		amount += s.Amount
+	}
+	out := modules.NewTxOut(amount, tokenengine.Instance.GenerateLockScript(addr), &asset)
+	payment.AddTxOut(out)
+	//log.Debugf("mergeUtxo, address[%s], Amount[%d], merge payment[%v]", addr.String(), amount, *payment)
+	log.Debug("mergeUtxo", "address", addr.String(), "amount", amount, "asset", asset, "payment", *payment)
+	return payment
+}
 
 //将ContractInvokeResult中合约付款出去的请求转换为UTXO对应的Payment
 func resultToContractPayments(dag iDag, result *modules.ContractInvokeResult) ([]*modules.PaymentPayload, error) {
 	addr := common.NewAddress(result.ContractId, common.ContractHash)
 	payments := []*modules.PaymentPayload{}
 	if result.TokenPayOut != nil && len(result.TokenPayOut) > 0 {
-		for _, payout := range result.TokenPayOut {
-			utxos, err := dag.GetAddr1TokenUtxos(addr, payout.Asset)
+		payouts := tokenPayOutGroupByAsset(result.TokenPayOut)
+		for ast, aa := range payouts {
+			asset := ast
+			utxos, err := dag.GetAddr1TokenUtxos(addr, &asset)
 			if err != nil {
 				return nil, err
 			}
@@ -46,7 +87,11 @@ func resultToContractPayments(dag iDag, result *modules.ContractInvokeResult) ([
 			for _, u := range utxo2 {
 				us = append(us, u)
 			}
-			selected, change, err := core.Select_utxo_Greedy(us, payout.Amount)
+			totalPayAmt := uint64(0)
+			for _, a := range aa {
+				totalPayAmt += a.Amount
+			}
+			selected, change, err := core.Select_utxo_Greedy(us, totalPayAmt)
 			if err != nil {
 				return nil, err
 			}
@@ -56,17 +101,58 @@ func resultToContractPayments(dag iDag, result *modules.ContractInvokeResult) ([
 				in := modules.NewTxIn(&sutxo.OutPoint, nil)
 				payment.AddTxIn(in)
 			}
-			out := modules.NewTxOut(payout.Amount, tokenengine.GenerateLockScript(payout.PayTo), payout.Asset)
-			payment.AddTxOut(out)
+			for _, a := range aa {
+				out := modules.NewTxOut(a.Amount, tokenengine.Instance.GenerateLockScript(a.Address), &asset)
+				payment.AddTxOut(out)
+			}
 			//Change
 			if change > 0 {
-				out2 := modules.NewTxOut(change, tokenengine.GenerateLockScript(addr), payout.Asset)
+				out2 := modules.NewTxOut(change, tokenengine.Instance.GenerateLockScript(addr), &asset)
 				payment.AddTxOut(out2)
 			}
 			payments = append(payments, payment)
 		}
+	} else {
+		utxos, err := dag.GetAddr1TokenUtxos(addr, nil)
+		if err != nil {
+			return nil, fmt.Errorf("mergeUtxo, address:%s, GetAddr1TokenUtxos err:%s", addr.String(), err.Error())
+		}
+		payment := mergeUtxo(addr, utxos, MaxNumberMergeUtxos)
+		if payment != nil {
+			log.Debug("mergeUtxo", "no payouts, addr", addr.String())
+			payments = append(payments, payment)
+		}
 	}
 	return payments, nil
+}
+
+type addrAmount struct {
+	Address common.Address
+	Amount  uint64
+}
+
+func tokenPayOutGroupByAsset(payouts []*modules.TokenPayOut) map[modules.Asset][]*addrAmount {
+	result := make(map[modules.Asset][]*addrAmount)
+	for _, payout := range payouts {
+		asset := *payout.Asset
+		if aa, ok := result[asset]; ok {
+			hasSameAddr := false
+			for _, a := range aa {
+				if a.Address == payout.PayTo {
+					hasSameAddr = true
+					a.Amount += payout.Amount
+					break
+				}
+			}
+			if !hasSameAddr {
+				aa = append(aa, &addrAmount{Address: payout.PayTo, Amount: payout.Amount})
+			}
+			result[asset] = aa
+		} else {
+			result[asset] = []*addrAmount{{Address: payout.PayTo, Amount: payout.Amount}}
+		}
+	}
+	return result
 }
 
 func resultToCoinbase(result *modules.ContractInvokeResult) ([]*modules.PaymentPayload, error) {
@@ -83,7 +169,7 @@ func resultToCoinbase(result *modules.ContractInvokeResult) ([]*modules.PaymentP
 			newAsset := &modules.Asset{}
 			newAsset.AssetId, _ = modules.NewAssetId(token.Symbol, modules.AssetType_FungibleToken,
 				token.Decimals, result.RequestId.Bytes(), modules.UniqueIdType_Null)
-			out := modules.NewTxOut(token.TotalSupply, tokenengine.GenerateLockScript(result.TokenDefine.Creator), newAsset)
+			out := modules.NewTxOut(token.TotalSupply, tokenengine.Instance.GenerateLockScript(result.TokenDefine.Creator), newAsset)
 			coinbase.AddTxOut(out)
 		} else if result.TokenDefine.TokenType == 1 { //ERC721
 			token := modules.NonFungibleToken{}
@@ -101,7 +187,7 @@ func resultToCoinbase(result *modules.ContractInvokeResult) ([]*modules.PaymentP
 				newAsset.AssetId, _ = modules.NewAssetId(token.Symbol, modules.AssetType_NonFungibleToken,
 					0, result.RequestId.Bytes(), modules.UniqueIdType(token.Type))
 				newAsset.UniqueId.SetBytes(token.NonFungibleData[i].UniqueBytes)
-				out := modules.NewTxOut(1, tokenengine.GenerateLockScript(result.TokenDefine.Creator), newAsset)
+				out := modules.NewTxOut(1, tokenengine.Instance.GenerateLockScript(result.TokenDefine.Creator), newAsset)
 				coinbase.AddTxOut(out)
 			}
 		} else if result.TokenDefine.TokenType == 2 { //VoteToken
@@ -114,7 +200,7 @@ func resultToCoinbase(result *modules.ContractInvokeResult) ([]*modules.PaymentP
 			newAsset := &modules.Asset{}
 			newAsset.AssetId, _ = modules.NewAssetId(token.Symbol, modules.AssetType_VoteToken,
 				0, result.RequestId.Bytes(), modules.UniqueIdType_Null)
-			out := modules.NewTxOut(token.TotalSupply, tokenengine.GenerateLockScript(result.TokenDefine.Creator), newAsset)
+			out := modules.NewTxOut(token.TotalSupply, tokenengine.Instance.GenerateLockScript(result.TokenDefine.Creator), newAsset)
 			coinbase.AddTxOut(out)
 		}
 		//TODO Devin ERC721
@@ -126,7 +212,7 @@ func resultToCoinbase(result *modules.ContractInvokeResult) ([]*modules.PaymentP
 			assetId := &modules.Asset{}
 			assetId.AssetId.SetBytes(tokenSupply.AssetId)
 			assetId.UniqueId.SetBytes(tokenSupply.UniqueId)
-			out := modules.NewTxOut(tokenSupply.Amount, tokenengine.GenerateLockScript(tokenSupply.Creator), assetId)
+			out := modules.NewTxOut(tokenSupply.Amount, tokenengine.Instance.GenerateLockScript(tokenSupply.Creator), assetId)
 			//
 			coinbase.AddTxOut(out)
 		}

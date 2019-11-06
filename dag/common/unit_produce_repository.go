@@ -22,6 +22,7 @@ package common
 
 import (
 	"fmt"
+	"github.com/palletone/go-palletone/tokenengine"
 	"reflect"
 	"strconv"
 	"time"
@@ -30,8 +31,8 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/common/sort"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/core/sort"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/parameter"
@@ -41,7 +42,6 @@ import (
 type IUnitProduceRepository interface {
 	PushUnit(nextUnit *modules.Unit) error
 	ApplyUnit(nextUnit *modules.Unit) error
-	//MediatorVotedResults() map[string]uint64
 	Close()
 	SubscribeChainMaintenanceEvent(ob AfterChainMaintenanceEventFunc)
 	SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription
@@ -73,16 +73,17 @@ func NewUnitProduceRepository(unitRep IUnitRepository, propRep IPropRepository,
 	}
 }
 
-func NewUnitProduceRepository4Db(db ptndb.Database) *UnitProduceRepository {
+func NewUnitProduceRepository4Db(db ptndb.Database,
+	tokenEngine tokenengine.ITokenEngine) *UnitProduceRepository {
 	dagDb := storage.NewDagDb(db)
-	utxoDb := storage.NewUtxoDb(db)
+	utxoDb := storage.NewUtxoDb(db, tokenEngine)
 	stateDb := storage.NewStateDb(db)
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
 
-	unitRep := NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb)
+	unitRep := NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenEngine)
 	propRep := NewPropRepository(propDb)
-	stateRep := NewStateRepository(stateDb)
+	stateRep := NewStateRepository(stateDb, dagDb)
 
 	return &UnitProduceRepository{
 		unitRep:  unitRep,
@@ -185,7 +186,7 @@ func (rep *UnitProduceRepository) ApplyUnit(nextUnit *modules.Unit) error {
 	//rep.updateLastIrreversibleUnit()
 
 	// 判断是否到了链维护周期，并维护
-	maintenanceNeeded := !(rep.GetDynGlobalProp().NextMaintenanceTime > uint32(nextUnit.Timestamp()))
+	maintenanceNeeded := !(uint32(nextUnit.Timestamp()) < rep.GetDynGlobalProp().NextMaintenanceTime)
 	if maintenanceNeeded {
 		rep.performChainMaintenance(nextUnit)
 	}
@@ -240,20 +241,21 @@ func (rep *UnitProduceRepository) updateDynGlobalProp(unit *modules.Unit, missed
 
 	dgp.LastMediator = unit.Author()
 	dgp.IsShuffledSchedule = false
-	dgp.RecentSlotsFilled = (dgp.RecentSlotsFilled << (missedUnits + 1)) + 1
-	dgp.CurrentASlot += missedUnits + 1
+
+	totalSlot := missedUnits + 1
+	dgp.RecentSlotsFilled = dgp.RecentSlotsFilled.Lsh(uint(totalSlot)).Add64(1)
+	dgp.CurrentASlot += totalSlot
 
 	rep.propRep.StoreDynGlobalProp(dgp)
 }
 
 func (rep *UnitProduceRepository) updateMediatorSchedule() {
-	gp := rep.GetGlobalProp()
+	//gp := rep.GetGlobalProp()
 	dgp := rep.GetDynGlobalProp()
-	ms := rep.GetMediatorSchl()
+	//ms := rep.GetMediatorSchl()
 
-	if rep.propRep.UpdateMediatorSchedule(ms, gp, dgp) {
-		log.Debugf("shuffle the scheduling order of mediators")
-		rep.propRep.StoreMediatorSchl(ms)
+	if rep.propRep.UpdateMediatorSchedule() {
+		log.Debugf("shuffled the scheduling order of mediators")
 
 		dgp.IsShuffledSchedule = true
 		rep.propRep.StoreDynGlobalProp(dgp)
@@ -309,10 +311,6 @@ func (dag *UnitProduceRepository) performChainMaintenance(nextUnit *modules.Unit
 	// 统计投票并更新活跃 mediator 列表
 	isChanged := dag.updateActiveMediators()
 
-	// 发送更新活跃 mediator 事件，以方便其他模块做相应处理
-	log.Debugf("send ActiveMediatorsUpdated event")
-	go dag.activeMediatorsUpdatedFeed.Send(modules.ActiveMediatorsUpdatedEvent{IsChanged: isChanged})
-
 	// 更新要修改的区块链参数
 	dag.updateChainParameters(nextUnit)
 
@@ -321,6 +319,11 @@ func (dag *UnitProduceRepository) performChainMaintenance(nextUnit *modules.Unit
 
 	// 清理中间处理缓存数据
 	dag.mediatorVoteTally = nil
+
+	// 发送更新活跃 mediator 事件，以方便其他模块做相应处理
+	log.Debugf("send ActiveMediatorsUpdated event")
+	go dag.activeMediatorsUpdatedFeed.Send(modules.ActiveMediatorsUpdatedEvent{IsChanged: isChanged})
+
 	//触发ChainMaintenanceEvent事件
 	eventArg := &modules.ChainMaintenanceEvent{}
 	for _, eventFunc := range dag.observers {
@@ -393,9 +396,9 @@ func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion)
 	modifies, err := dag.stateRep.GetSysParamWithoutVote()
 	if err == nil {
 		for k, v := range modifies {
-			if k == modules.DesiredActiveMediatorCount {
-				continue // 已更新，不需要处理
-			}
+			//if k == modules.DesiredActiveMediatorCount {
+			//	continue // 已更新，不需要处理
+			//}
 
 			err = updateChainParameter(&gp.ChainParameters, k, v)
 			if err != nil {
@@ -416,9 +419,9 @@ func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion)
 	infos := dag.getSysParamsWithVote()
 	if len(infos) > 0 {
 		for k, v := range infos {
-			if k == modules.DesiredActiveMediatorCount {
-				continue // 已更新，不需要处理
-			}
+			//if k == modules.DesiredActiveMediatorCount {
+			//	continue // 已更新，不需要处理
+			//}
 
 			err = updateChainParameter(&gp.ChainParameters, k, v)
 			if err != nil {
@@ -434,7 +437,6 @@ func (dag *UnitProduceRepository) UpdateSysParams(version *modules.StateVersion)
 		}
 	}
 
-	core.ImmutableChainParameterCheck(&gp.ImmutableParameters, &gp.ChainParameters)
 	err = dag.propRep.StoreGlobalProp(gp)
 	if err != nil {
 		return err
@@ -502,50 +504,24 @@ func (dag *UnitProduceRepository) performAccountMaintenance() {
 	}
 }
 
-//func (dag *UnitProduceRepository) MediatorVotedResults() map[string]uint64 {
-//	mediatorVoteCount := make(map[string]uint64)
-//
-//	allAccount := dag.stateRep.LookupAccount()
-//	for _, info := range allAccount {
-//		// 遍历该账户投票的mediator
-//		for med, _ := range info.VotedMediators {
-//			// 累加投票数量
-//			mediatorVoteCount[med] += info.Balance
-//		}
-//	}
-//
-//	return mediatorVoteCount
-//}
-
 func (dag *UnitProduceRepository) updateActiveMediators() bool {
 	// 1. 统计出活跃mediator数量n
-	maxFn := func(x, y int) int {
-		if x > y {
-			return x
-		}
-		return y
-	}
-
 	gp := dag.GetGlobalProp()
 
 	// 保证活跃mediator的总数必须大于MinimumMediatorCount
 	minMediatorCount := gp.ImmutableParameters.MinimumMediatorCount
-	countInSystem := dag.getDesiredActiveMediatorCount()
-	mediatorCount := maxFn((countInSystem-1)/2*2+1, int(minMediatorCount))
+	mediatorCount := dag.getDesiredActiveMediatorCount()
 
 	mediatorLen := dag.mediatorVoteTally.Len()
-	if mediatorLen < mediatorCount {
-		// 保证活跃mediator的总数为奇数
-		mediatorCount = (mediatorLen-1)/2*2 + 1
-	}
 	log.Debugf("the desired mediator count is %v, the actual mediator count is %v,"+
-		" the minimum mediator count is %v", countInSystem, mediatorLen, minMediatorCount)
+		" the minimum mediator count is %v", mediatorCount, mediatorLen, minMediatorCount)
 
 	// 2. 根据每个mediator的得票数，排序出前n个 active mediator
 	log.Debugf("In this round, The active mediator's count is %v", mediatorCount)
 	if dag.mediatorVoteTally.Len() > 0 {
 		sort.PartialSort(dag.mediatorVoteTally, mediatorCount)
 	}
+
 	// 3. 更新每个mediator的得票数
 	for _, voteTally := range dag.mediatorVoteTally {
 		med := dag.GetMediator(voteTally.candidate)
@@ -559,7 +535,7 @@ func (dag *UnitProduceRepository) updateActiveMediators() bool {
 	// 4. 更新 global property 中的 active mediator 和 Preceding Mediators
 	gp.PrecedingMediators = gp.ActiveMediators
 	gp.ActiveMediators = make(map[common.Address]bool, mediatorCount)
-	gp.ChainParameters.ActiveMediatorCount = uint8(mediatorCount)
+	//gp.ChainParameters.ActiveMediatorCount = uint8(mediatorCount)
 	if dag.mediatorVoteTally.Len() > 0 {
 		for index := 0; index < mediatorCount; index++ {
 			voteTally := dag.mediatorVoteTally[index]
@@ -570,13 +546,11 @@ func (dag *UnitProduceRepository) updateActiveMediators() bool {
 
 	// todo albert 待使用
 	//return isActiveMediatorsChanged(gp)
-	return false
+	return true
 }
 
 func (d *UnitProduceRepository) getDesiredActiveMediatorCount() int {
 	// 获取之前的设置
-	//activeMediatorStr, _, _ := d.stateRep.GetConfig(modules.DesiredActiveMediatorCount)
-	//activeMediator, _ := strconv.ParseUint(string(activeMediatorStr), 10, 16)
 	activeMediator := d.propRep.GetChainParameters().ActiveMediatorCount
 
 	// 获取基金会直接修改的设置
@@ -611,6 +585,7 @@ func (dag *UnitProduceRepository) updateNextMaintenanceTime(nextUnit *modules.Un
 	maintenanceInterval := int64(gp.ChainParameters.MaintenanceInterval)
 
 	if nextUnit.NumberU64() == 1 {
+		// 对第一个unit之后的特殊换届，进行调整，让其回到普通换届时间来
 		nextMaintenanceTime = uint32((nextUnit.Timestamp()/maintenanceInterval + 1) * maintenanceInterval)
 	} else {
 		// We want to find the smallest k such that nextMaintenanceTime + k * maintenanceInterval > HeadUnitTime()

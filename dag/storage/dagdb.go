@@ -69,9 +69,11 @@ type IDagDb interface {
 	GetCommon(key []byte) ([]byte, error)
 	GetCommonByPrefix(prefix []byte) map[string][]byte
 	SaveCommon(key, val []byte) error
+	GetAllData() ([][]byte, [][]byte)
 	// get txhash  and save index
 	//GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
+	ForEachAllTxDo(txAction func(key []byte, transaction *modules.Transaction) error) error
 }
 
 func (dagdb *DagDb) IsHeaderExist(uHash common.Hash) (bool, error) {
@@ -100,6 +102,11 @@ func (dagdb *DagDb) GetCommonByPrefix(prefix []byte) map[string][]byte {
 	}
 	return result
 }
+
+func (dagdb *DagDb) GetAllData() ([][]byte, [][]byte) {
+	return getAllData(dagdb.db)
+}
+
 func (dagdb *DagDb) GetGenesisUnitHash() (common.Hash, error) {
 	hash := common.Hash{}
 	hashb, err := dagdb.db.Get(constants.GenesisUnitHash)
@@ -184,6 +191,7 @@ value: all transactions hash set's rlp encoding bytes
 */
 func (dagdb *DagDb) SaveBody(unitHash common.Hash, txsHash []common.Hash) error {
 	key := append(constants.BODY_PREFIX, unitHash.Bytes()...)
+	log.Debugf("Save unit[%s] body,txs:%x",unitHash.String(),txsHash)
 	return StoreToRlpBytes(dagdb.db, key, txsHash)
 }
 

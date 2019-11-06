@@ -22,6 +22,7 @@ package common
 
 import (
 	"encoding/json"
+	"github.com/palletone/go-palletone/tokenengine"
 	"testing"
 	"time"
 
@@ -36,7 +37,7 @@ func Test_UnitProduceRepository_UpdateSysParams(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	upRep := NewUnitProduceRepository4Db(db)
+	upRep := NewUnitProduceRepository4Db(db, tokenengine.Instance)
 
 	// 初始化若干个链参数
 	gp := modules.NewGlobalProp()
@@ -61,7 +62,7 @@ func Test_UnitProduceRepository_UpdateSysParams(t *testing.T) {
 	// 2, 通过投票修改参数
 	sysTokenIDInfo := &modules.SysTokenIDInfo{}
 	sysSupportResult := &modules.SysSupportResult{}
-	sysTokenIDInfo.CreateTime = time.Now()
+	sysTokenIDInfo.CreateTime = time.Now().Unix()
 	sysTokenIDInfo.AssetID = modules.DesiredSysParamsWithVote
 	sysTokenIDInfo.CreateAddr = "P1--------xxxxxxxxxxxxxxxxx"
 	sysTokenIDInfo.IsVoteEnd = true
