@@ -155,8 +155,8 @@ func defaultNodeConfig() node.Config {
 	cfg.P2P = p2p.DefaultConfig
 	cfg.Name = clientIdentifier
 	cfg.Version = configure.VersionWithCommit(gitCommit)
-	cfg.HTTPModules = append(cfg.HTTPModules, "ptn" /*, "shh"*/)
-	cfg.WSModules = append(cfg.WSModules, "ptn" /*, "shh"*/)
+	cfg.HTTPModules = append(cfg.HTTPModules, "ptn", "debug")
+	cfg.WSModules = append(cfg.WSModules, "ptn")
 	cfg.IPCPath = "gptn.ipc"
 	cfg.WSExposeAll = false
 	return cfg
