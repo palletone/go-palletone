@@ -181,12 +181,6 @@ func (mp *MediatorPlugin) Start(server *p2p.Server) error {
 		go mp.launchProduction()
 	}
 
-	// 开始完成 vss 协议
-	// todo albert 待优化
-	//if mp.groupSigningEnabled {
-	//	go mp.startVSSProtocol()
-	//}
-
 	log.Debugf("mediator plugin startup end")
 	return nil
 }
