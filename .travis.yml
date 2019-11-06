@@ -37,7 +37,7 @@ env:
     - IS_RUN_LIGHT=false
     - IS_RUN_BLACKLIST=true
     - GO111MODULE=on
-    - IS_UPLOAD=true
+    - IS_UPLOAD=false
 #    - 'SFTP_KEY=[base64-encoded-rsa-key]'
 matrix:
   include:
