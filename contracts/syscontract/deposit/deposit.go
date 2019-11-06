@@ -506,7 +506,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		return shim.Success(juryb)
 	case "IsFinishAllocated":
-		h,err := stub.GetState("haveAllcocatedCount")
+		h,err := stub.GetState("haveAllocatedCount")
 		if err != nil {
 			return shim.Error(err.Error())
 		}
