@@ -26,6 +26,8 @@ import (
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
+	"strconv"
+	"strings"
 )
 
 //质押相关的状态数据库操作，包括增加质押，质押分红，质押列表查询，质押提现等
@@ -210,4 +212,64 @@ func getAllPledgeRewardHistory(stub shim.ChaincodeStubInterface) ([]*modules.Ple
 	}
 
 	return result, nil
+}
+
+//  如果都满了，就获取最新的key
+func getLastDateKey(stub shim.ChaincodeStubInterface) string {
+	date, err := getLastPledgeListDate(stub)
+	if err != nil {
+		log.Info("getLastPledgeListDate error: ", err.Error())
+		return ""
+	}
+	b, err := stub.GetStateByPrefix(constants.PledgeList + date)
+	if err != nil {
+		log.Info("GetStateByPrefix error: ", err.Error())
+		return ""
+	}
+	lastKey := 0
+	for _, kv := range b {
+		idx := strings.Index(kv.Key, "-")
+		date := kv.Key[idx+1:]
+		log.Info("key = ",date)
+		key, err := strconv.Atoi(date)
+		if err != nil {
+			log.Info("Atoi error: ", err.Error())
+			return ""
+		}
+		if lastKey < key {
+			lastKey = key
+		}
+	}
+	return strconv.Itoa(lastKey)
+}
+
+//  添加新质押时，查看当前日期批次是否都满了
+func getNeedAddMemberPledgeList(stub shim.ChaincodeStubInterface) (pledgeList *modules.PledgeList, key string) {
+	//  获取最新列表，查看是否批次都满了
+	date, err := getLastPledgeListDate(stub)
+	if err != nil {
+		log.Info("getLastPledgeListDate error: ", err.Error())
+		return nil, ""
+	}
+	b, err := stub.GetStateByPrefix(constants.PledgeList + date)
+	if err != nil {
+		log.Info("GetStateByPrefix error: ", err.Error())
+		return nil, ""
+	}
+	for i, kv := range b {
+		each := modules.PledgeList{}
+		err = json.Unmarshal(kv.Value, &each)
+		log.Infof("i = %d, members lens = %d", i, len(each.Members))
+		if err != nil {
+			log.Info("Unmarshal error: ", err.Error())
+			return nil, ""
+		}
+		if len(each.Members) < 2 {
+			idx := strings.Index(kv.Key, "-")
+			key := kv.Key[idx+1:]
+			log.Info("key = ",key)
+			return &each, key
+		}
+	}
+	return nil, ""
 }

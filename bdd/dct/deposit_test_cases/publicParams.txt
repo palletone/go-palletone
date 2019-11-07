@@ -43,6 +43,7 @@ Resource          queryAllPledgeHistory.txt
 Resource          PledgeWithdraw.txt
 Resource          HandlePledgeReward.txt
 Resource          isFinishAllocated.txt
+Resource          AddNewAddrPledgeRecords.txt
 
 *** Variables ***
 ${depositContractQuery}    contract_depositContractQuery

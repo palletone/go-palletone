@@ -248,7 +248,7 @@ func need(stub shim.ChaincodeStubInterface, haveCount int, pledgeList *modules.P
 	if haveAllocatedCount != nil {
 		haveCount, _ = strconv.Atoi(string(haveAllocatedCount))
 	}
-	log.Infof("rewardPerDao = %d,haveCount = %d", rewardPerDao, haveCount)
+	log.Infof("rewardPerDao = %f,haveCount = %d", rewardPerDao, haveCount)
 	//  分红当前阈值之内的地址
 	allM := pledgeRewardAllocation(pledgeList, rewardPerDao, haveCount, threshold)
 	allM.Date = today
@@ -330,7 +330,7 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward
 	if err != nil {
 		return err
 	}
-	//判断是否是基金会触发
+	//  判断是否是基金会触发
 	if isFoundationInvoke(stub) {
 		t, _ := strconv.Atoi(lastDate)
 		t += 1
@@ -344,16 +344,16 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward
 	if err != nil {
 		return err
 	}
-	//计算分红
+	//  计算分红
 	if allM != nil {
 		log.Infof("allM is not nil, today = %s", today)
 		//  当前的分红奖励与当前的分红数量的比例
 		rewardPerDao := float64(depositDailyReward) / float64(allM.TotalAmount)
-		//len(allM.Members) = 3
+		//  len(allM.Members) = 3
 		//  当前分红默认处理个数
 		//threshold := 1
-		//threshold := 2
-		threshold := 3
+		threshold := 2
+		//threshold := 3
 		//threshold := 4
 		//  获取已分红个数
 		haveCount := 0
@@ -395,69 +395,103 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward
 		return err
 	}
 	return nil
-	//b, err := json.Marshal(allM)
-	//if err != nil {
-	//	return err
-	//}
-	//err = stub.PutState(constants.PledgeList+allM.Date, b)
-	//if err != nil {
-	//	return err
-	//}
-	//err = saveLastPledgeListDate(stub,today)
-	//if err != nil {
-	//	return err
-	//}
-	//return nil
+}
+func isAllocated(stub shim.ChaincodeStubInterface) bool {
+	date, err := getLastPledgeListDate(stub)
+	if err != nil {
+		return true
+	}
+	if date == "" {
+		return true
+	}
+	today := getToday(stub)
+	if date == today {
+		return true
+	}
+	return false
+}
 
-	////计算分红
-	//if allM != nil {
-	//
-	//	allM = pledgeRewardAllocation(allM, depositDailyReward)
-	//} else {
-	//	allM = &modules.PledgeList{}
+//  增加新地址的质押
+func addNewAddrPledgeRecords(stub shim.ChaincodeStubInterface) error {
+	//  前提：最新的date是今天
+	//if !isAllocated(stub){
+	//	log.Info("need to allocate for today")
+	//	return fmt.Errorf("need to allocate for today")
 	//}
-	//allM.Date = today
-	//// 增加新的质押
-	//depositList, err := getAllPledgeDepositRecords(stub)
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//for _, awardNode := range depositList {
-	//
-	//	allM.Add(awardNode.Address, awardNode.Amount, 0) //新增加的质押当天不会有分红
-	//	err = delPledgeDepositRecord(stub, awardNode.Address)
-	//	if err != nil {
-	//		return err
-	//	}
-	//}
-	////处理提币请求
-	//withdrawList, err := getAllPledgeWithdrawRecords(stub)
-	//if err != nil {
-	//	return err
-	//}
-	//gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
-	//for _, withdraw := range withdrawList {
-	//	withdrawAmt, err := allM.Reduce(withdraw.Address, withdraw.Amount)
-	//	if err != nil {
-	//		log.Warnf("address[%s] withdraw pledge %d error:", withdraw.Address, withdraw.Amount)
-	//	}
-	//	if withdrawAmt > 0 {
-	//		err := stub.PayOutToken(withdraw.Address, modules.NewAmountAsset(withdrawAmt, gasToken), 0)
-	//		if err != nil {
-	//			return err
-	//		}
-	//		err = delPledgeWithdrawRecord(stub, withdraw.Address) //清空提取请求列表
-	//		if err != nil {
-	//			return err
-	//		}
-	//	}
-	//}
-	//err = saveLastPledgeList(stub, allM)
-	//if err != nil {
-	//	return err
-	//}
-	//return nil
+	//  判断当天是否处理过
+	today := getToday(stub)
+	lastDate, err := getLastPledgeListDate(stub)
+	if err != nil {
+		return err
+	}
+	//  判断是否是基金会触发
+	if isFoundationInvoke(stub) {
+		t, _ := strconv.Atoi(lastDate)
+		t += 1
+		today = strconv.Itoa(t)
+	} else {
+		if lastDate == today {
+			return fmt.Errorf("%s pledge reward has been allocated before", today)
+		}
+	}
+	h := 0
+	//t := 1
+	//t := 2
+	t := 3
+	//t := 4
+	// 增加新的质押
+	depositList, err := getAllPledgeDepositRecords(stub)
+	if err != nil {
+		log.Info("getAllPledgeDepositRecords error: ", err.Error())
+		return err
+	}
+	if depositList != nil {
+		log.Infof("depositList lens = %d", len(depositList))
+		haveAllocatedCount, _ := stub.GetState("haveAllocatedCount")
+		if haveAllocatedCount != nil {
+			h, _ = strconv.Atoi(string(haveAllocatedCount))
+		}
+		pledgeList := &modules.PledgeList{}
+		for i,m := range depositList {
+			if i + 1 >  t {
+				log.Infof("break in i = %d, i + 1 = %d, t = %d", i, i+1, t)
+				break
+			}
+			pledgeList.Date = today
+			pledgeList.Add(m.Address, m.Amount, 0)
+			err = delPledgeDepositRecord(stub, m.Address)
+			if err != nil {
+				return err
+			}
+		}
+		b, err := json.Marshal(pledgeList)
+		if err != nil {
+			return err
+		}
+		err = stub.PutState(constants.PledgeList+today+"addNew"+strconv.Itoa(h/t), b)
+		if err != nil {
+			return err
+		}
+		if len(depositList) <= t {
+				//  置为0
+				err = stub.DelState("haveAllocatedCount")
+				if err != nil {
+					return err
+				}
+				err = saveLastPledgeListDate(stub, today)
+				if err != nil {
+					return err
+				}
+				return nil
+		}
+		h += t
+		err = stub.PutState("haveAllocatedCount", []byte(strconv.Itoa(h)))
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	return nil
 }
 
 //查询一个账户的质押状态
