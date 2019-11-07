@@ -1065,7 +1065,7 @@ PledgeTest04
     ${result}    queryPledgeList    #查看整个网络所有质押情况
     log    ${result}
     sleep    1
-    ${result}    QueryPledgeListByDate    20191106
+    ${result}    QueryPledgeListByDate    20191107
     log    ${result}
     sleep    1
     ${result}    QueryAllPledgeHistory
@@ -1087,7 +1087,7 @@ PledgeTest04
     #    Get From Dictionary    ${resultJson}    total_amount
     #    ${total_amount}    10000000000
     sleep    1
-    ${result}    QueryPledgeListByDate    20191106
+    ${result}    QueryPledgeListByDate    20191107
     log    ${result}
     sleep    1
     ${result}    QueryAllPledgeHistory
@@ -1121,7 +1121,7 @@ PledgeTest04
     ${result}    isFinishAllocated
     log    ${result}
     sleep    3
-    ${result}    QueryPledgeListByDate    20191107
+    ${result}    QueryPledgeListByDate    20191108
     log    ${result}
     sleep    1
     ${result}    queryPledgeList    #查看整个网络所有质押情况
@@ -1160,7 +1160,7 @@ PledgeTest04
     ${result}    queryPledgeList    #查看整个网络所有质押情况
     log    ${result}
     sleep    1
-    ${result}    QueryPledgeListByDate    20191108
+    ${result}    QueryPledgeListByDate    20191109
     log    ${result}
     sleep    1
     ${result}    QueryAllPledgeHistory
@@ -1193,7 +1193,7 @@ PledgeTest04
     ${result}    isFinishAllocated
     log    ${result}
     sleep    3
-    ${result}    QueryPledgeListByDate    20191109
+    ${result}    QueryPledgeListByDate    20191110
     log    ${result}
     sleep    1
     ${result}    queryPledgeList    #查看整个网络所有质押情况
@@ -1232,7 +1232,7 @@ PledgeTest04
     ${result}    queryPledgeList    #查看整个网络所有质押情况
     log    ${result}
     sleep    2
-    ${result}    QueryPledgeListByDate    20191110
+    ${result}    QueryPledgeListByDate    20191111
     log    ${result}
     sleep    2
     ${result}    QueryAllPledgeHistory
@@ -1251,7 +1251,7 @@ PledgeTest04
     ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${amount}    #108.66235，866,235,000是质押增发的
     #    ${amount}    108.66235
-    ${result}    QueryPledgeListByDate    20191110
+    ${result}    QueryPledgeListByDate    20191111
     log    ${result}
     sleep    2
     ${result}    QueryAllPledgeHistory

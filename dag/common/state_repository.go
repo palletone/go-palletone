@@ -208,21 +208,27 @@ func (rep *StateRepository) GetPledgeList() (*modules.PledgeList, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	date := string(dd)
 	key := constants.PledgeList + date
-	data, _, err := rep.statedb.GetContractState(syscontract.DepositContractAddress.Bytes(), key)
+	allM := &modules.PledgeList{}
+	states, err := rep.statedb.GetContractStatesByPrefix(syscontract.DepositContractAddress.Bytes(),
+		key)
 	if err != nil {
 		return nil, err
 	}
-
-	pledgeList := &modules.PledgeList{}
-	err = json.Unmarshal(data, pledgeList)
-	if err != nil {
-		return nil, err
+	log.Infof("lens = %s",len(states))
+	for _,v := range states {
+		pledgeList := modules.PledgeList{}
+		err = json.Unmarshal(v.Value, &pledgeList)
+		if err != nil {
+			log.Info("Unmarshal error: ",err.Error())
+			return nil, err
+		}
+		allM.TotalAmount += pledgeList.TotalAmount
+		allM.Members = append(allM.Members,pledgeList.Members...)
 	}
-
-	return pledgeList, nil
+	allM.Date = date
+	return allM, nil
 }
 
 //获得新的用户的质押申请列表
