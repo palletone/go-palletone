@@ -550,7 +550,7 @@ func (pm *ProtocolManager) processversion(name string) (int, error) {
 	//if strings.ToLower(pre) != strings.ToLower("Gptn") {
 	//	return 0, nil
 	//}
-	if !strings.EqualFold(pre,"Gpth") {
+	if !strings.EqualFold(pre, "Gpth") {
 		return 0, nil
 	}
 	arr := strings.Split(name, "/")
@@ -573,10 +573,10 @@ func (pm *ProtocolManager) LocalHandle(p *peer) error {
 	// Ignore maxPeers if this is a trusted peer
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
 		log.Debug("ProtocolManager", "handler DiscTooManyPeers:", p2p.DiscTooManyPeers,
-			"pm.peers.Len()", pm.peers.Len(), "peers", pm.peers.GetPeers())
+			"pm.peers.Len()", pm.peers.Len(), "maxPeers", pm.maxPeers)
 		return p2p.DiscTooManyPeers
 	}
-	log.Debug("PalletOne peer connected", "name", p.id, "p Trusted:", p.Peer.Info().Network.Trusted)
+	log.Debug("PalletOne peer connected", "id", p.id, "p Trusted:", p.Peer.Info().Network.Trusted)
 	// @分区后需要用token获取
 	//head := pm.dag.CurrentHeader(pm.mainAssetId)
 	var (
