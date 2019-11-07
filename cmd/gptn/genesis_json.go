@@ -128,8 +128,9 @@ func createExampleMediators(ctx *cli.Context, mcLen int) ([]*mp.MediatorConf, []
 		account, _ := ks.NewAccount(password)
 		secStr, pubStr := core.CreateInitDKS()
 
+		addStr := account.Address.Str()
 		exampleMediators[i] = &mp.MediatorConf{
-			Address:     account.Address.Str(),
+			Address:     addStr,
 			Password:    password,
 			InitPrivKey: secStr,
 			InitPubKey:  pubStr,
@@ -140,6 +141,7 @@ func createExampleMediators(ctx *cli.Context, mcLen int) ([]*mp.MediatorConf, []
 
 		jdes[i] = core.JurorDepositExtraJson{
 			PublicKey: hex.EncodeToString(b),
+			RewardAddr: addStr,
 		}
 	}
 

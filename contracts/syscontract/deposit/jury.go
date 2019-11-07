@@ -162,6 +162,12 @@ func convertJuryDeposit2Json(juror *modules.JurorDeposit) *modules.JuryDepositJs
 
 func convertJuryDepositExtra2Json(extra *core.JurorDepositExtra) (json core.JurorDepositExtraJson) {
 	json.PublicKey = hex.EncodeToString(extra.PublicKey)
+	if extra.RewardAddr == (common.Address{}) {
+		json.RewardAddr = ""
+	} else {
+		json.RewardAddr = extra.RewardAddr.Str()
+	}
+
 	return
 }
 

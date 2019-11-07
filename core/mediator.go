@@ -157,12 +157,14 @@ func StrToPoint(pubStr string) (kyber.Point, error) {
 
 // juror保证金额外信息
 type JurorDepositExtraJson struct {
-	PublicKey string `json:"public_key"` //账户地址对应的公钥
+	PublicKey  string `json:"public_key"`     // 账户地址对应的公钥
+	RewardAddr string `json:"reward_address"` // 奖励地址，用于奖励
 }
 
 func NewJurorDepositExtraJson() JurorDepositExtraJson {
 	return JurorDepositExtraJson{
-		PublicKey: DefaultPublickey,
+		PublicKey:  DefaultPublickey,
+		RewardAddr: "",
 	}
 }
 
@@ -181,10 +183,22 @@ func (json *JurorDepositExtraJson) Validate(addStr string) (jde JurorDepositExtr
 		return
 	}
 
+	if json.RewardAddr != "" {
+		add, err := common.StringToAddress(json.RewardAddr)
+		if err != nil {
+			errs = err
+			return
+		}
+		jde.RewardAddr = add
+	} else {
+		jde.RewardAddr = common.Address{}
+	}
+
 	return
 }
 
 // juror保证金额外信息
 type JurorDepositExtra struct {
-	PublicKey []byte `json:"public_key"` //账户地址对应的公钥
+	PublicKey  []byte         `json:"public_key"`     // 账户地址对应的公钥
+	RewardAddr common.Address `json:"reward_address"` // 奖励地址，用于奖励
 }
