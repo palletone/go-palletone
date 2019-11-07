@@ -157,16 +157,6 @@ const Wallet_JS = `
 			name: 'getStxo',
 			call: 'wallet_getStxo',
 			params: 3
-		}),	
-		new web3._extend.Method({
-			name: 'genCert',
-			call: 'wallet_genCert',
-			params: 7
-		}),
-        new web3._extend.Method({
-			name: 'revokeCert',
-			call: 'wallet_revokeCert',
-			params: 3
 		}),
         new web3._extend.Method({
             name: 'addBatchTxs',
