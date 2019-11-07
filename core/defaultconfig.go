@@ -66,7 +66,7 @@ const (
 	DefaultActiveMediatorCount = 5 //21
 	DefaultMinMediatorCount    = 1 //21
 	DefaultMinMediatorInterval = 1
-	DefaultMinMaintSkipSlots   = 0
+	DefaultMinMaintSkipSlots   = 2
 
 	//contract
 	DefaultContractSystemVersion = "" //contractId1:v1;contractId2:v2;contractId3:v3
