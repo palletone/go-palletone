@@ -382,6 +382,10 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 func contractPayBack(tx *modules.Transaction, addr []byte, queryUtxoFunc modules.QueryUtxoFunc) []*modules.Message {
 	messages := []*modules.Message{}
 	for msgIdx, msg := range tx.TxMessages {
+		if msg.App.IsRequest() {
+			break
+		}
+		//如果在Request中有Payment付款到了合约，则产生payback的Message
 		if msg.App == modules.APP_PAYMENT {
 			payment := msg.Payload.(*modules.PaymentPayload)
 			for outIdx, out := range payment.Outputs {
