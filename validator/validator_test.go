@@ -240,7 +240,8 @@ func TestValidate_ValidateHeader(t *testing.T) {
 	tx := newTx1(t)
 
 	header := newHeader(modules.Transactions{tx})
-	v := NewValidate(nil, nil, nil, nil, newCache(), true)
+	stateQ := &mockStatedbQuery{}
+	v := NewValidate(nil, nil, stateQ, nil, newCache(), true)
 	vresult := v.validateHeaderExceptGroupSig(header, false)
 	t.Log(vresult)
 	assert.Equal(t, vresult, TxValidationCode_VALID)

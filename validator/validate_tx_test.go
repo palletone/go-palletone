@@ -51,7 +51,8 @@ func newCache() palletcache.ICache {
 }
 func TestValidate_ValidateTx_EmptyTx_NoPayment(t *testing.T) {
 	tx := &modules.Transaction{} //Empty Tx
-	validat := NewValidate(nil, nil, nil, nil, newCache(), false)
+	stateQ := &mockStatedbQuery{}
+	validat := NewValidate(nil, nil, stateQ, nil, newCache(), false)
 	_, _, err := validat.ValidateTx(tx, true)
 	assert.NotNil(t, err)
 	t.Log(err)
@@ -213,7 +214,8 @@ func TestValidateDoubleSpendOn1Tx(t *testing.T) {
 
 	signTx(tx, outPoint)
 	utxoq := &testutxoQuery{}
-	validate := NewValidate(nil, utxoq, nil, nil, newCache(), false)
+	stateQ := &mockStatedbQuery{}
+	validate := NewValidate(nil, utxoq, stateQ, nil, newCache(), false)
 	_, _, err := validate.ValidateTx(tx, true)
 	assert.Nil(t, err)
 	pay2 := newTestPayment(outPoint, 2)
@@ -258,7 +260,8 @@ func TestValidateLargeInputPayment(t *testing.T) {
 	//t.Logf("Signed Tx:%s", string(data))
 
 	utxoq := &testutxoQuery{}
-	validate := NewValidate(nil, utxoq, nil, nil, newCache(), false)
+	stateQ := &mockStatedbQuery{}
+	validate := NewValidate(nil, utxoq, stateQ, nil, newCache(), false)
 	_, _, err := validate.ValidateTx(tx, true)
 
 	t1 := time.Now()
