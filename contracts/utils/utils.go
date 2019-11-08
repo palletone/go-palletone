@@ -224,18 +224,22 @@ func RetrieveExpiredContainers(idag dag.IDag, containers []docker.APIContainers,
 }
 
 //  获取用户合约异常退出的监听函数
-func GetAllExitedContainer(cons []docker.APIContainers) ([]common.Address, error) {
+//status: Up， Exited
+func GetAllContainerAddr(cons []docker.APIContainers, status string) ([]common.Address, error) {
 	if len(cons) > 0 {
 		addr := make([]common.Address, 0)
 		for _, v := range cons {
-			if strings.Contains(v.Names[0][1:3], "PC") && strings.Contains(v.Status, "Exited") && len(v.Names[0]) > 40 {
+			if strings.Contains(v.Names[0][1:3], "PC") && len(v.Names[0]) > 40 {
+				if status != "" && !strings.Contains(v.Status, status) {
+					continue
+				}
 				name := v.Names[0][1:36]
 				contractAddr, err := common.StringToAddress(name)
 				if err != nil {
 					log.Infof("common.StringToAddress err: %s", err.Error())
 					continue
 				}
-				log.Infof("container name = %s was exited.", v.Names[0])
+				log.Infof("find container name = %s", v.Names[0])
 				addr = append(addr, contractAddr)
 			}
 		}
@@ -341,5 +345,3 @@ func CreateGptnNet(client *docker.Client) {
 		}
 	}
 }
-
-
