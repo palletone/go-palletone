@@ -116,15 +116,15 @@ func (d *Dag) createUnit(mAddr common.Address, txpool txspool.ITxPool) (*modules
 		return nil, err
 	}
 
-	fun := func(jurorAdd common.Address) common.Address {
-		jd, err := state.GetJurorByAddr(jurorAdd.Str())
-		if err != nil {
-			log.Debugf(err.Error())
-			return jurorAdd
-		}
+	//fun := func(jurorAdd common.Address) common.Address {
+	//	jd, err := state.GetJurorByAddr(jurorAdd.Str())
+	//	if err != nil {
+	//		log.Debugf(err.Error())
+	//		return jurorAdd
+	//	}
+	//
+	//	return jd.GetRewardAdd()
+	//}
 
-		return jd.GetRewardAdd()
-	}
-
-	return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool, rep, fun)
+	return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool, rep, state.GetJurorReward)
 }

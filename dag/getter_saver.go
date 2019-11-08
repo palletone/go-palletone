@@ -310,3 +310,8 @@ func (d *Dag) GetVotingForMediator(addStr string) (map[string]uint64, error) {
 	_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
 	return state.GetVotingForMediator(addStr)
 }
+
+func (d *Dag) GetJurorReward(jurorAdd common.Address) common.Address {
+	_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
+	return state.GetJurorReward(jurorAdd)
+}

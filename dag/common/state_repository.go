@@ -74,7 +74,8 @@ type IStateRepository interface {
 	GetJuryCandidateList() (map[string]bool, error)
 	IsJury(address common.Address) bool
 	GetAllJuror() (map[string]*modules.JurorDeposit, error)
-	GetJurorByAddr(addr string) (*modules.JurorDeposit, error)
+	//GetJurorByAddr(addr string) (*modules.JurorDeposit, error)
+	GetJurorReward(jurorAdd common.Address) common.Address
 	GetJurorByAddrHash(addrHash common.Hash) (*modules.JurorDeposit, error)
 	GetContractDeveloperList() ([]common.Address, error)
 	IsContractDeveloper(address common.Address) bool
@@ -414,9 +415,20 @@ func (rep *StateRepository) GetJuryCandidateList() (map[string]bool, error) {
 	return rep.statedb.GetJuryCandidateList()
 }
 
-func (rep *StateRepository) GetJurorByAddr(addr string) (*modules.JurorDeposit, error) {
-	return rep.statedb.GetJurorByAddr(addr)
+//func (rep *StateRepository) GetJurorByAddr(addr string) (*modules.JurorDeposit, error) {
+//	return rep.statedb.GetJurorByAddr(addr)
+//}
+
+func (rep *StateRepository) GetJurorReward(jurorAdd common.Address) common.Address {
+	jd, err := rep.statedb.GetJurorByAddr(jurorAdd.Str())
+	if err != nil {
+		log.Debugf(err.Error())
+		return jurorAdd
+	}
+
+	return jd.GetRewardAdd()
 }
+
 func (rep *StateRepository) GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, error) {
 	if addr, exist := rep.mapHash2Address[hash]; exist {
 		log.Infof("GetJurorByAddrHash(hash:%s) in cache map,addr:%s",

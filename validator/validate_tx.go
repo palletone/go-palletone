@@ -343,7 +343,7 @@ func (validate *Validate) validateTxFeeValid(tx *modules.Transaction) (bool, []*
 			return false, nil
 		}
 		feeAllocate, err = tx.GetTxFeeAllocate(validate.utxoquery.GetUtxoEntry,
-			validate.tokenEngine.GetScriptSigners, common.Address{})
+			validate.tokenEngine.GetScriptSigners, common.Address{}, validate.statequery.GetJurorReward)
 	} else {
 		feeAllocate, err = tx.GetTxFeeAllocateLegacyV1(validate.utxoquery.GetUtxoEntry,
 			validate.tokenEngine.GetScriptSigners, common.Address{})

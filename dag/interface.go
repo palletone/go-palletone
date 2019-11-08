@@ -203,9 +203,11 @@ type IDag interface {
 	CreateTokenTransaction(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string,
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	ChainThreshold() int
+
 	CheckHeaderCorrect(number int) error
 	CheckUnitsCorrect(assetId string, number int) error
 	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
 	RebuildAddrTxIndex() error
 	GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, error)
+	GetJurorReward(jurorAdd common.Address) common.Address
 }

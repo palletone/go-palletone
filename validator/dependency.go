@@ -42,6 +42,7 @@ type IStateQuery interface {
 	GetMediator(add common.Address) *core.Mediator
 	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
 	GetJurorByAddrHash(addrHash common.Hash) (*modules.JurorDeposit, error)
+	GetJurorReward(jurorAdd common.Address) common.Address
 }
 
 type IDagQuery interface {
