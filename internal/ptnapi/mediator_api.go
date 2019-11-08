@@ -23,7 +23,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -46,10 +45,10 @@ func NewPublicMediatorAPI(b Backend) *PublicMediatorAPI {
 func (a *PublicMediatorAPI) IsApproved(addStr string) (string, error) {
 	// 构建参数
 	cArgs := [][]byte{defaultMsg0, defaultMsg1, []byte(modules.IsApproved), []byte(addStr)}
-	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
+	//txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
 
 	// 调用系统合约
-	rsp, err := a.ContractQuery(syscontract.DepositContractAddress.Bytes(), txid[:], cArgs, 0)
+	rsp, err := a.ContractQuery(syscontract.DepositContractAddress.Bytes(),cArgs, 0)
 	if err != nil {
 		return "", err
 	}
@@ -60,10 +59,10 @@ func (a *PublicMediatorAPI) IsApproved(addStr string) (string, error) {
 func getDeposit(addStr string, a Backend) (*modules.MediatorDepositJson, error) {
 	// 构建参数
 	cArgs := [][]byte{defaultMsg0, defaultMsg1, []byte(modules.GetMediatorDeposit), []byte(addStr)}
-	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().Unix())).Int31n(100000000))
+	//txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().Unix())).Int31n(100000000))
 
 	// 调用系统合约
-	rsp, err := a.ContractQuery(syscontract.DepositContractAddress.Bytes(), txid[:], cArgs, 0)
+	rsp, err := a.ContractQuery(syscontract.DepositContractAddress.Bytes(),  cArgs, 0)
 	if err != nil {
 		return nil, err
 	}

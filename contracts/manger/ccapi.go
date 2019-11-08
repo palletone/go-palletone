@@ -348,7 +348,7 @@ func StopByName(contractid []byte, chainID string, txid string, usercc *cclist.C
 
 func RestartContainers(dag dag.IDag, cons []docker.APIContainers, jury core.IAdapterJury) {
 	//  获取所有退出容器
-	addrs, err := utils.GetAllExitedContainer(cons)
+	addrs, err := utils.GetAllContainerAddr(cons, "Exited")
 	if err != nil {
 		log.Infof("client.GetAllExitedContainer err: %s", err.Error())
 		return

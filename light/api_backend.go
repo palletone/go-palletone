@@ -470,7 +470,7 @@ func (b *LesApiBackend) GetJuryAccount() []common.Address {
 	return nil
 }
 
-func (b *LesApiBackend) ContractQuery(contractId []byte, txid string, args [][]byte,
+func (b *LesApiBackend) ContractQuery(id []byte, args [][]byte,
 	timeout time.Duration) (rspPayload []byte, err error) {
 	return nil, nil
 }
