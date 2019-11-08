@@ -75,14 +75,21 @@ func (q *mockStatedbQuery) GetBlacklistAddress() ([]common.Address, *modules.Sta
 func (q *mockStatedbQuery) GetContractJury(contractId []byte) (*modules.ElectionNode, error) {
 	return nil, nil
 }
+
 func (q *mockStatedbQuery) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {
 	return nil, nil, nil
 }
+
 func (q *mockStatedbQuery) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
 	return map[string]*modules.ContractStateValue{}, nil
 }
+
 func (q *mockStatedbQuery) GetJurorByAddrHash(addrHash common.Hash) (*modules.JurorDeposit, error) {
 	return nil, nil
+}
+
+func (q *mockStatedbQuery) GetJurorReward(jurorAdd common.Address) common.Address {
+	return jurorAdd
 }
 
 type mockUtxoQuery struct {

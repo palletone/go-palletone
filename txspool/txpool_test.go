@@ -99,6 +99,10 @@ func (q *UnitDag4Test) GetMediators() map[common.Address]bool {
 	return nil
 }
 
+func (q *UnitDag4Test) GetJurorReward(jurorAdd common.Address) common.Address {
+	return jurorAdd
+}
+
 func (q *UnitDag4Test) GetSlotAtTime(when time.Time) uint32 {
 	return 0
 }
