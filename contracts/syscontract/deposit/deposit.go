@@ -58,7 +58,6 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	funcName, args := stub.GetFunctionAndParameters()
 	upperFuncName := UpperFirstChar(funcName)
 	switch upperFuncName {
-	//
 	// 申请成为Mediator
 	case modules.ApplyMediator:
 		log.Info("Enter DepositChaincode Contract " + modules.ApplyMediator + " Invoke")
@@ -94,7 +93,6 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Error(errStr)
 		}
 		return d.UpdateMediatorInfo(stub, args[0])
-	//
 	//  jury 交付保证金
 	case modules.JuryPayToDepositContract:
 		log.Info("Enter DepositChaincode Contract " + modules.JuryPayToDepositContract + " Invoke")
@@ -102,11 +100,20 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Error("need 1 parameter")
 		}
 		return d.JuryPayToDepositContract(stub, args[0])
+		// 更新 Juror 信息
+	case modules.UpdateJuryInfo:
+		log.Info("Enter DepositChaincode Contract " + modules.UpdateJuryInfo + " Invoke")
+		//  检查参数
+		if len(args) != 1 {
+			errStr := "Arg need only one parameter."
+			log.Error(errStr)
+			return shim.Error(errStr)
+		}
+		return d.updateJuryInfo(stub, args[0])
 		//  jury 申请退出
 	case modules.JuryApplyQuit:
 		log.Info("Enter DepositChaincode Contract " + modules.JuryApplyQuit + " Invoke")
 		return d.JuryApplyQuit(stub)
-	//
 	//  developer 交付保证金
 	case modules.DeveloperPayToDepositContract:
 		log.Info("Enter DepositChaincode Contract " + modules.DeveloperPayToDepositContract + " Invoke")
@@ -115,7 +122,6 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	case modules.DeveloperApplyQuit:
 		log.Info("Enter DepositChaincode Contract " + modules.DeveloperApplyQuit + " Invoke")
 		return d.DevApplyQuit(stub)
-	//
 	//  基金会对加入申请Mediator进行处理
 	case modules.HandleForApplyBecomeMediator:
 		log.Info("Enter DepositChaincode Contract " + modules.HandleForApplyBecomeMediator + " Invoke")
@@ -917,7 +923,7 @@ func (d DepositChaincode) GetAllJury(stub shim.ChaincodeStubInterface) pb.Respon
 //	return handleRemoveNormalNode(stub, args)
 //}
 
-//  更新陪审员信息
-//func (d DepositChaincode) updateJuryInfo(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-//	return updateJuryInfo(stub, args)
-//}
+// 更新陪审员信息
+func (d DepositChaincode) updateJuryInfo(stub shim.ChaincodeStubInterface, args string) pb.Response {
+	return updateJuryInfo(stub, args)
+}

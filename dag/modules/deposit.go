@@ -99,7 +99,7 @@ const (
 	GetAllMediator                = "GetAllMediator"
 	GetAllNode                    = "GetAllNode"
 	GetAllJury                    = "GetAllJury"
-	//UpdateJuryInfo                = "UpdateJuryInfo"
+	UpdateJuryInfo                = "UpdateJuryInfo"
 )
 
 //申请退出

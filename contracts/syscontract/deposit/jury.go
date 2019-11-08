@@ -168,31 +168,44 @@ func convertJuryDepositExtra2Json(extra *core.JurorDepositExtra) (json core.Juro
 	return
 }
 
-//func updateJuryInfo(stub shim.ChaincodeStubInterface, args []string) peer.Response {
-//	addr, err := stub.GetInvokeAddress()
-//	if err != nil {
-//		return shim.Error(err.Error())
-//	}
-//	b, err := getJuryBalance(stub, addr.String())
-//	if err != nil {
-//		return shim.Error(err.Error())
-//	}
-//	//  TODO
-//	if len(args) != 1 {
-//		return shim.Error("need 1 parameter")
-//	}
-//	if len(args[0]) != 68 {
-//		return shim.Error("public key is error")
-//	}
-//	//TODO 验证公钥和地址的关系
-//	byte, err := hexutil.Decode(args[0])
-//	if err != nil {
-//		return shim.Error(err.Error())
-//	}
-//	b.PublicKey = byte
-//	err = saveJuryBalance(stub, addr.String(), b)
-//	if err != nil {
-//		return shim.Error(err.Error())
-//	}
-//	return shim.Success(nil)
-//}
+// 更新 juror 信息所需参数
+type JurorUpdateArgs struct {
+	RewardAddr *string `json:"reward_address"` // 奖励地址，用于奖励
+}
+
+func updateJuryInfo(stub shim.ChaincodeStubInterface, args string) peer.Response {
+	addr, err := stub.GetInvokeAddress()
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	addStr := addr.String()
+
+	b, err := GetJuryBalance(stub, addStr)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	var jua JurorUpdateArgs
+	err = json.Unmarshal([]byte(args), &jua)
+	if err != nil {
+		errStr := fmt.Sprintf("invalid args: %v", err.Error())
+		log.Errorf(errStr)
+		return shim.Error(errStr)
+	}
+
+	if jua.RewardAddr != nil {
+		add, err := common.StringToAddress(*jua.RewardAddr)
+		if err != nil {
+			errStr := fmt.Sprintf("invalid args: %v", err.Error())
+			log.Errorf(errStr)
+			return shim.Error(errStr)
+		}
+		b.RewardAddr = add
+	}
+
+	err = saveJuryBalance(stub, addStr, b)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	return shim.Success(nil)
+}
