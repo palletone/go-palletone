@@ -44,7 +44,7 @@ require (
 	github.com/palletone/adaptor v1.0.0
 	github.com/palletone/btc-adaptor v1.0.0 // indirect
 	github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb
-	github.com/palletone/eth-adaptor v1.0.1-0.20191024055153-b0b022477802
+	github.com/palletone/eth-adaptor v1.1.0
 	github.com/pborman/uuid v1.2.0
 	github.com/pelletier/go-toml v1.2.0 // indirect
 	github.com/peterh/liner v0.0.0-20170902204657-a37ad3984311

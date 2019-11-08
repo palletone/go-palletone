@@ -212,7 +212,7 @@ github.com/palletone/adaptor
 # github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb
 github.com/palletone/digital-identity/client
 github.com/palletone/digital-identity/config
-# github.com/palletone/eth-adaptor v1.0.1-0.20191024055153-b0b022477802
+# github.com/palletone/eth-adaptor v1.1.0
 github.com/palletone/eth-adaptor
 github.com/palletone/eth-adaptor/bind
 github.com/palletone/eth-adaptor/ethclient
