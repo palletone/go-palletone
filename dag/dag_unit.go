@@ -47,7 +47,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	log.Debugf("generate unit ...")
 
 	// 2. 生产unit，添加交易集、时间戳、签名
-	newUnit, err := dag.CreateUnit(producer, txpool, when)
+	newUnit, err := dag.createUnit(producer, txpool)
 	if err != nil {
 		errStr := fmt.Sprintf("GenerateUnit error: %v", err.Error())
 		log.Debug(errStr)

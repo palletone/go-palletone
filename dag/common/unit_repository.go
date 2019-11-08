@@ -53,7 +53,7 @@ type IUnitRepository interface {
 	GetGenesisUnit() (*modules.Unit, error)
 	//GenesisHeight() modules.ChainIndex
 	SaveUnit(unit *modules.Unit, isGenesis bool) error
-	CreateUnit(mAddr common.Address, txpool txspool.ITxPool, propdb IPropRepository, t time.Time) (*modules.Unit, error)
+	CreateUnit(mediatorReward common.Address, txpool txspool.ITxPool, propdb IPropRepository) (*modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
 	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
@@ -472,8 +472,8 @@ create common unit
 @param mAddr is minner addr
 return: correct if error is nil, and otherwise is incorrect
 */
-func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPool,
-	propdb IPropRepository, t time.Time) (*modules.Unit, error) {
+func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txspool.ITxPool,
+	propdb IPropRepository) (*modules.Unit, error) {
 	log.Debug("create unit lock unitRepository.")
 	rep.lock.RLock()
 	defer rep.lock.RUnlock()
@@ -513,7 +513,7 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 	for _, tx := range poolTxs {
 		txs2 = append(txs2, tx.Tx)
 	}
-	ads, err := rep.ComputeTxFeesAllocate(mAddr, txs2)
+	ads, err := rep.ComputeTxFeesAllocate(mediatorReward, txs2)
 	if err != nil {
 		txs2Ids := ""
 		for _, tx := range txs2 {
@@ -529,7 +529,7 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 	}
 
 	//出块奖励
-	rewardAd := rep.ComputeGenerateUnitReward(mAddr, assetId.ToAsset())
+	rewardAd := rep.ComputeGenerateUnitReward(mediatorReward, assetId.ToAsset())
 	if rewardAd != nil && rewardAd.Amount > 0 {
 		ads = append(ads, rewardAd)
 	}
@@ -648,7 +648,8 @@ func (txs *tempTxs) getUtxoEntryFromTxs(outpoint *modules.OutPoint) (*modules.Ut
 	}
 	return txs.rep.GetUtxoEntry(outpoint)
 }
-func (rep *UnitRepository) ComputeTxFeesAllocate(m common.Address, txs []*modules.Transaction) (
+
+func (rep *UnitRepository) ComputeTxFeesAllocate(mediatorReward common.Address, txs []*modules.Transaction) (
 	[]*modules.Addition, error) {
 
 	ads := make([]*modules.Addition, 0)
@@ -658,7 +659,8 @@ func (rep *UnitRepository) ComputeTxFeesAllocate(m common.Address, txs []*module
 		for o, u := range utxos {
 			tempTxs.allUtxo[o] = u
 		}
-		allowcate, err := tx.GetTxFeeAllocate(tempTxs.getUtxoEntryFromTxs, rep.tokenEngine.GetScriptSigners, m)
+		allowcate, err := tx.GetTxFeeAllocate(tempTxs.getUtxoEntryFromTxs,
+			rep.tokenEngine.GetScriptSigners, mediatorReward)
 		if err != nil {
 			return nil, err
 		}
@@ -669,9 +671,9 @@ func (rep *UnitRepository) ComputeTxFeesAllocate(m common.Address, txs []*module
 }
 
 //,Mediator奖励
-func (rep *UnitRepository) ComputeGenerateUnitReward(m common.Address, asset *modules.Asset) *modules.Addition {
+func (rep *UnitRepository) ComputeGenerateUnitReward(mediatorReward common.Address, asset *modules.Asset) *modules.Addition {
 	a := &modules.Addition{
-		Addr:   m,
+		Addr:   mediatorReward,
 		Amount: ComputeGenerateUnitReward(),
 		Asset:  asset,
 	}
