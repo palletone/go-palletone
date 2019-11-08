@@ -38,7 +38,18 @@ type PledgeStatus struct {
 type PledgeList struct {
 	TotalAmount uint64                 `json:"total_amount"`
 	Date        string                 `json:"date"` //质押列表所在的日期yyyyMMdd
-	Members     []*AddressRewardAmount `json:"members"`
+	Members     addressRewardAmount `json:"members"`
+}
+
+type addressRewardAmount []*AddressRewardAmount
+func (m addressRewardAmount) Len() int {
+	return len(m)
+}
+func (m addressRewardAmount) Swap(i,j int) {
+	m[i],m[j] = m[j],m[i]
+}
+func (m addressRewardAmount) Less(i,j int) bool {
+	return m[i].Address < m[j].Address
 }
 
 //账户质押情况

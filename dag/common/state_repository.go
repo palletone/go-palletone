@@ -216,7 +216,6 @@ func (rep *StateRepository) GetPledgeList() (*modules.PledgeList, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Infof("lens = %s",len(states))
 	for _,v := range states {
 		pledgeList := modules.PledgeList{}
 		err = json.Unmarshal(v.Value, &pledgeList)

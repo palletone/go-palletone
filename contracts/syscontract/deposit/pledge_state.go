@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
+	"sort"
 )
 
 //质押相关的状态数据库操作，包括增加质押，质押分红，质押列表查询，质押提现等
@@ -171,6 +172,8 @@ func getPledgeListByDate(stub shim.ChaincodeStubInterface, date string) (*module
 		allM.TotalAmount += each.TotalAmount
 		allM.Members = append(allM.Members, each.Members...)
 	}
+	//  排序
+	sort.Sort(allM.Members)
 	allM.Date = date
 	return allM, nil
 }
