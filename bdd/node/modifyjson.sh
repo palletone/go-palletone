@@ -7,7 +7,7 @@ filename=../node1/ptn-genesis.json
 pk=$5
 index=$[ $4 - 1 ]
 
-add=`cat $filename | jq ".initialMediatorCandidates[$index] |= . + {\"account\": \"$1\", \"rewardAdd\": \"$1\", \"initPubKey\": \"$2\", \"node\": \"$3\",\"public_key\": \"$pk\"}"`
+add=`cat $filename | jq ".initialMediatorCandidates[$index] |= . + {\"account\": \"$1\", \"rewardAdd\": \"$1\", \"initPubKey\": \"$2\", \"node\": \"$3\",\"public_key\": \"$pk\", \"reward_address\": \"$1\"}"`
 
 if [ $index -eq 0 ] ; then
 
