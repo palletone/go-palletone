@@ -103,6 +103,7 @@ type iDag interface {
 	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
 	GetScheduledMediator(slotNum uint32) common.Address
 	GetSlotAtTime(when time.Time) uint32
+	GetJurorReward(jurorAdd common.Address) common.Address
 }
 
 type electionVrf struct {
