@@ -107,3 +107,24 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 
 	return sign_unit, nil
 }
+
+// createUnit, create a unit when mediator being produced
+func (d *Dag) createUnit(mAddr common.Address, txpool txspool.ITxPool) (*modules.Unit, error) {
+	_, _, state, rep, _ := d.Memdag.GetUnstableRepositories()
+	med, err := state.RetrieveMediator(mAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	fun := func(jurorAdd common.Address) common.Address {
+		jd, err := state.GetJurorByAddr(jurorAdd.Str())
+		if err != nil {
+			log.Debugf(err.Error())
+			return jurorAdd
+		}
+
+		return jd.GetRewardAdd()
+	}
+
+	return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool, rep, fun)
+}

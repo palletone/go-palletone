@@ -53,7 +53,8 @@ type IUnitRepository interface {
 	GetGenesisUnit() (*modules.Unit, error)
 	//GenesisHeight() modules.ChainIndex
 	SaveUnit(unit *modules.Unit, isGenesis bool) error
-	CreateUnit(mediatorReward common.Address, txpool txspool.ITxPool, propdb IPropRepository) (*modules.Unit, error)
+	CreateUnit(mediatorReward common.Address, txpool txspool.ITxPool, propdb IPropRepository,
+		getJurorRewardFunc modules.GetJurorRewardAddFunc) (*modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
 	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
@@ -473,7 +474,7 @@ create common unit
 return: correct if error is nil, and otherwise is incorrect
 */
 func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txspool.ITxPool,
-	propdb IPropRepository) (*modules.Unit, error) {
+	propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc) (*modules.Unit, error) {
 	log.Debug("create unit lock unitRepository.")
 	rep.lock.RLock()
 	defer rep.lock.RUnlock()
@@ -513,7 +514,7 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 	for _, tx := range poolTxs {
 		txs2 = append(txs2, tx.Tx)
 	}
-	ads, err := rep.ComputeTxFeesAllocate(mediatorReward, txs2)
+	ads, err := rep.ComputeTxFeesAllocate(mediatorReward, txs2, getJurorRewardFunc)
 	if err != nil {
 		txs2Ids := ""
 		for _, tx := range txs2 {
@@ -649,8 +650,8 @@ func (txs *tempTxs) getUtxoEntryFromTxs(outpoint *modules.OutPoint) (*modules.Ut
 	return txs.rep.GetUtxoEntry(outpoint)
 }
 
-func (rep *UnitRepository) ComputeTxFeesAllocate(mediatorReward common.Address, txs []*modules.Transaction) (
-	[]*modules.Addition, error) {
+func (rep *UnitRepository) ComputeTxFeesAllocate(mediatorReward common.Address, txs []*modules.Transaction,
+	getJurorRewardFunc modules.GetJurorRewardAddFunc) (	[]*modules.Addition, error) {
 
 	ads := make([]*modules.Addition, 0)
 	tempTxs := &tempTxs{allUtxo: make(map[modules.OutPoint]*modules.Utxo), rep: rep.utxoRepository}
@@ -660,7 +661,7 @@ func (rep *UnitRepository) ComputeTxFeesAllocate(mediatorReward common.Address, 
 			tempTxs.allUtxo[o] = u
 		}
 		allowcate, err := tx.GetTxFeeAllocate(tempTxs.getUtxoEntryFromTxs,
-			rep.tokenEngine.GetScriptSigners, mediatorReward)
+			rep.tokenEngine.GetScriptSigners, mediatorReward, getJurorRewardFunc)
 		if err != nil {
 			return nil, err
 		}

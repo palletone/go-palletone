@@ -239,6 +239,7 @@ type QueryUtxoFunc func(outpoint *OutPoint) (*Utxo, error)
 type GetAddressFromScriptFunc func(lockScript []byte) (common.Address, error)
 type GetScriptSignersFunc func(tx *Transaction, msgIdx, inputIndex int) ([]common.Address, error)
 type QueryStateByVersionFunc func(id []byte, field string, version *StateVersion) ([]byte, error)
+type GetJurorRewardAddFunc func(jurorAdd common.Address) common.Address
 
 //计算该交易的手续费，基于UTXO，所以传入查询UTXO的函数指针
 func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, error) {
@@ -766,7 +767,7 @@ func (tx *Transaction) GetContractInvokeReqMsgIdx() int {
 
 //之前的费用分配有Bug，在ContractInstall的时候会分配错误。在V2中解决了这个问题，但是由于测试网已经有历史数据了，所以需要保留历史计算方法。
 func (tx *Transaction) GetTxFeeAllocateLegacyV1(queryUtxoFunc QueryUtxoFunc, getSignerFunc GetScriptSignersFunc,
-	mediatorAddr common.Address) ([]*Addition, error) {
+	mediatorReward common.Address) ([]*Addition, error) {
 	fee, err := tx.GetTxFee(queryUtxoFunc)
 	result := []*Addition{}
 	if err != nil {
@@ -775,6 +776,7 @@ func (tx *Transaction) GetTxFeeAllocateLegacyV1(queryUtxoFunc QueryUtxoFunc, get
 	if fee.Amount == 0 {
 		return result, nil
 	}
+
 	isResultMsg := false
 	jury := []common.Address{}
 	for msgIdx, msg := range tx.TxMessages {
@@ -798,9 +800,10 @@ func (tx *Transaction) GetTxFeeAllocateLegacyV1(queryUtxoFunc QueryUtxoFunc, get
 			}
 		}
 	}
+
+	juryAllocatedAmt := uint64(0)
 	if isResultMsg { //合约执行，Fee需要分配给Jury
 		juryAmount := float64(fee.Amount) * parameter.CurrentSysParameters.ContractFeeJuryPercent
-		juryAllocatedAmt := uint64(0)
 		juryCount := float64(len(jury))
 		for _, jurior := range jury {
 			jIncome := &Addition{
@@ -811,25 +814,33 @@ func (tx *Transaction) GetTxFeeAllocateLegacyV1(queryUtxoFunc QueryUtxoFunc, get
 			juryAllocatedAmt += jIncome.Amount
 			result = append(result, jIncome)
 		}
-		mediatorIncome := &Addition{
-			Addr:   mediatorAddr,
-			Amount: fee.Amount - juryAllocatedAmt,
-			Asset:  fee.Asset,
-		}
-		result = append(result, mediatorIncome)
-	} else { //没有合约执行，全部分配给Mediator
-		mediatorIncome := &Addition{
-			Addr:   mediatorAddr,
-			Amount: fee.Amount,
-			Asset:  fee.Asset,
-		}
-		result = append(result, mediatorIncome)
+		//	mediatorIncome := &Addition{
+		//		Addr:   mediatorAddr,
+		//		Amount: fee.Amount - juryAllocatedAmt,
+		//		Asset:  fee.Asset,
+		//	}
+		//	result = append(result, mediatorIncome)
+		//} else { //没有合约执行，全部分配给Mediator
+		//	mediatorIncome := &Addition{
+		//		Addr:   mediatorAddr,
+		//		Amount: fee.Amount,
+		//		Asset:  fee.Asset,
+		//	}
+		//	result = append(result, mediatorIncome)
 	}
+
+	mediatorIncome := &Addition{
+		Addr:   mediatorReward,
+		Amount: fee.Amount - juryAllocatedAmt,
+		Asset:  fee.Asset,
+	}
+	result = append(result, mediatorIncome)
+
 	return result, nil
 }
 
 func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFunc GetScriptSignersFunc,
-	mediatorAddr common.Address) ([]*Addition, error) {
+	mediatorReward common.Address, getJurorRewardFunc GetJurorRewardAddFunc) ([]*Addition, error) {
 	fee, err := tx.GetTxFee(queryUtxoFunc)
 	result := []*Addition{}
 	if err != nil {
@@ -838,6 +849,7 @@ func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFu
 	if fee.Amount == 0 {
 		return result, nil
 	}
+
 	isJuryInside := false
 	jury := []common.Address{}
 	for msgIdx, msg := range tx.TxMessages {
@@ -864,33 +876,43 @@ func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFu
 			}
 		}
 	}
+
+	juryAllocatedAmt := uint64(0)
 	if isJuryInside { //合约执行，Fee需要分配给Jury
 		juryAmount := float64(fee.Amount) * parameter.CurrentSysParameters.ContractFeeJuryPercent
-		juryAllocatedAmt := uint64(0)
 		juryCount := float64(len(jury))
 		for _, jurior := range jury {
 			jIncome := &Addition{
-				Addr:   jurior,
+				//Addr:   jurior,
+				Addr:   getJurorRewardFunc(jurior),
 				Amount: uint64(juryAmount / juryCount),
 				Asset:  fee.Asset,
 			}
 			juryAllocatedAmt += jIncome.Amount
 			result = append(result, jIncome)
 		}
-		mediatorIncome := &Addition{
-			Addr:   mediatorAddr,
-			Amount: fee.Amount - juryAllocatedAmt,
-			Asset:  fee.Asset,
-		}
-		result = append(result, mediatorIncome)
-	} else { //没有合约部署或者执行，全部分配给Mediator
-		mediatorIncome := &Addition{
-			Addr:   mediatorAddr,
-			Amount: fee.Amount,
-			Asset:  fee.Asset,
-		}
-		result = append(result, mediatorIncome)
+		//	mediatorIncome := &Addition{
+		//		Addr:   mediatorAddr,
+		//		Amount: fee.Amount - juryAllocatedAmt,
+		//		Asset:  fee.Asset,
+		//	}
+		//	result = append(result, mediatorIncome)
+		//} else { //没有合约部署或者执行，全部分配给Mediator
+		//	mediatorIncome := &Addition{
+		//		Addr:   mediatorAddr,
+		//		Amount: fee.Amount,
+		//		Asset:  fee.Asset,
+		//	}
+		//	result = append(result, mediatorIncome)
 	}
+
+	mediatorIncome := &Addition{
+		Addr:   mediatorReward,
+		Amount: fee.Amount - juryAllocatedAmt,
+		Asset:  fee.Asset,
+	}
+	result = append(result, mediatorIncome)
+
 	return result, nil
 }
 

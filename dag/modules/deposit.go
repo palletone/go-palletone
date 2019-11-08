@@ -15,6 +15,7 @@
 package modules
 
 import (
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core"
 	"github.com/shopspring/decimal"
 )
@@ -137,6 +138,15 @@ type JurorDeposit struct {
 	DepositBalance
 	core.JurorDepositExtra
 	Address string `json:"address"` // juror地址
+}
+
+func (jd *JurorDeposit) GetRewardAdd() common.Address {
+	if jd.RewardAddr != (common.Address{}) {
+		return jd.RewardAddr
+	} else {
+		add, _ := common.StringToAddress(jd.Address)
+		return add
+	}
 }
 
 // mediator保证金額外信息
