@@ -27,10 +27,10 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-func juryPayToDepositContract(stub shim.ChaincodeStubInterface, pubkey string) peer.Response {
+func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args string) peer.Response {
 	log.Debug("Start entering JuryPayToDepositContract func")
 	var jdej core.JurorDepositExtraJson
-	err := json.Unmarshal([]byte(pubkey), &jdej)
+	err := json.Unmarshal([]byte(args), &jdej)
 	if err != nil {
 		errStr := fmt.Sprintf("invalid args: %v", err.Error())
 		log.Errorf(errStr)
@@ -45,12 +45,6 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, pubkey string) p
 	}
 
 	invokeAddrStr := invokeAddr.String()
-	jde, err := jdej.Validate(invokeAddrStr)
-	if err != nil {
-		errStr := fmt.Sprintf("invalid args: %v", err.Error())
-		log.Errorf(errStr)
-		return shim.Error(errStr)
-	}
 
 	//  判断是否交付保证金交易
 	invokeTokens, err := isContainDepositContractAddr(stub)
@@ -73,6 +67,13 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, pubkey string) p
 	}
 	//  第一次想加入
 	if balance == nil {
+		jde, err := jdej.Validate(invokeAddrStr)
+		if err != nil {
+			errStr := fmt.Sprintf("invalid args: %v", err.Error())
+			log.Errorf(errStr)
+			return shim.Error(errStr)
+		}
+
 		//  可以加入列表
 		if invokeTokens.Amount != cp.DepositAmountForJury {
 			str := fmt.Errorf("jury needs to pay only %d  deposit.", cp.DepositAmountForJury)
@@ -93,12 +94,6 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, pubkey string) p
 		balance.Role = modules.Jury
 		balance.Address = invokeAddrStr
 		balance.JurorDepositExtra = jde
-		err = saveJuryBalance(stub, invokeAddrStr, balance)
-		if err != nil {
-			log.Error("save node balance err: ", "error", err)
-			return shim.Error(err.Error())
-		}
-		return shim.Success(nil)
 	} else {
 		//  追缴逻辑
 		//if balance.Role != Jury {
@@ -125,13 +120,15 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, pubkey string) p
 			}
 		}
 		balance.Balance = all
-		err = saveJuryBalance(stub, invokeAddrStr, balance)
-		if err != nil {
-			log.Error("save node balance err: ", "error", err)
-			return shim.Error(err.Error())
-		}
-		return shim.Success(nil)
 	}
+
+	err = saveJuryBalance(stub, invokeAddrStr, balance)
+	if err != nil {
+		log.Error("save node balance err: ", "error", err)
+		return shim.Error(err.Error())
+	}
+
+	return shim.Success(nil)
 }
 
 func juryApplyQuit(stub shim.ChaincodeStubInterface) peer.Response {

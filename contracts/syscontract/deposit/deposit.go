@@ -717,8 +717,8 @@ func (d *DepositChaincode) UpdateMediatorInfo(stub shim.ChaincodeStubInterface, 
 }
 
 //  陪审员交付保证金
-func (d *DepositChaincode) JuryPayToDepositContract(stub shim.ChaincodeStubInterface, pubkey string) pb.Response {
-	return juryPayToDepositContract(stub, pubkey)
+func (d *DepositChaincode) JuryPayToDepositContract(stub shim.ChaincodeStubInterface, args string) pb.Response {
+	return juryPayToDepositContract(stub, args)
 }
 
 //  陪审员申请退出候选列表

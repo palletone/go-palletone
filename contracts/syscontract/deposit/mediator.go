@@ -47,6 +47,10 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface,  mediatorCreateArgs s
 		return errors.New(errStr)
 	}
 
+	if mco.RewardAddr == "" {
+		mco.RewardAddr = mco.RewardAdd
+	}
+
 	_, jde, err := mco.Validate()
 	if err != nil {
 		errStr := fmt.Sprintf("invalid args: %v", err.Error())
