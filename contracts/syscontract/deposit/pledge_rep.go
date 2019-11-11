@@ -331,7 +331,7 @@ func unNeed(stub shim.ChaincodeStubInterface, haveCount int, allM *modules.Pledg
 }
 
 //质押分红处理
-func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward uint64) error {
+func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward uint64,pledgeAllocateThreshold int) error {
 	//  判断当天是否处理过
 	today := getToday(stub)
 	lastDate, err := getLastPledgeListDate(stub)
@@ -360,50 +360,50 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward
 		//  len(allM.Members) = 3
 		//  当前分红默认处理个数
 		//threshold := 1
-		//  当 t = 2 时，即按批分红，且继续质押，且提取时，tx_size = 2644 kb,当前单元大小为 5 m = 5120 kb
-		threshold := 2
+		//当 t = 2 时，即按批分红，且继续质押，且提取时，tx_size = 2644 b,当前单元大小为 5 m = 5120 kb =>1,982.934947049924
+		threshold := pledgeAllocateThreshold
 		//threshold := 3
 		//threshold := 4
 		//  获取已分红个数
 		haveCount := 0
 		//  判断是否超过默认个数
 		if len(allM.Members) > threshold {
-			log.Infof("allM lens = %s", len(allM.Members))
 			log.Infof("handle need func, today = %s", today)
 			err := need(stub, haveCount, allM, today, rewardPerDao, depositDailyReward, threshold)
 			if err != nil {
 				return err
 			}
-			return nil
+			//return nil
 		} else {
 			log.Infof("handle unNeed func, today = %s", today)
 			err := unNeed(stub, haveCount, allM, today, rewardPerDao, depositDailyReward, threshold)
 			if err != nil {
 				return err
 			}
-			return nil
-		}
-	} else {
-		log.Infof("allM is nil, today = %s", today)
-		allM = &modules.PledgeList{}
-	}
-	allM.Date = today
-	// 增加新的质押
-	depositList, err := getAllPledgeDepositRecords(stub)
-	if err != nil {
-		return err
-	}
-	for _, awardNode := range depositList {
-		allM.Add(awardNode.Address, awardNode.Amount, 0) //新增加的质押当天不会有分红
-		err = delPledgeDepositRecord(stub, awardNode.Address)
-		if err != nil {
-			return err
+			//return nil
 		}
 	}
-	err = saveLastPledgeList(stub, allM)
-	if err != nil {
-		return err
-	}
+	//else {
+	//	log.Infof("allM is nil, today = %s", today)
+	//	allM = &modules.PledgeList{}
+	//}
+	//allM.Date = today
+	//// 增加新的质押
+	//depositList, err := getAllPledgeDepositRecords(stub)
+	//if err != nil {
+	//	return err
+	//}
+	//for _, awardNode := range depositList {
+	//	allM.Add(awardNode.Address, awardNode.Amount, 0) //新增加的质押当天不会有分红
+	//	err = delPledgeDepositRecord(stub, awardNode.Address)
+	//	if err != nil {
+	//		return err
+	//	}
+	//}
+	//err = saveLastPledgeList(stub, allM)
+	//if err != nil {
+	//	return err
+	//}
 	return nil
 }
 
@@ -425,23 +425,34 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward
 //  增加新地址的质押
 func addNewAddrPledgeRecords(stub shim.ChaincodeStubInterface) error {
 	//
-	//today := getToday(stub)
+	today := getToday(stub)
 	lastDate, err := getLastPledgeListDate(stub)
 	if err != nil {
 		return err
 	}
 	//  确保今天已经分红完毕
-	//if lastDate == today {
-	//	return fmt.Errorf("%s pledge reward should be allocated before", today)
-	//}
-	//  如果第一天触发这个函数
-	//if lastDate == "" {
-	//	lastDate = today
-	//}
-	//  当添加新质押地址 t = 2 时，tx_size = 1267 kb,当前单元大小为 5 m = 5120 kb
+	//  判断是否是基金会触发
+	isF := false
+	if isFoundationInvoke(stub) {
+		//t, _ := strconv.Atoi(lastDate)
+		//t += 1
+		//today = strconv.Itoa(t)
+		today = lastDate
+		isF = true
+	} else {
+		if lastDate == today {
+			return fmt.Errorf("%s pledge reward should be allocated before", today)
+		}
+	}
+
+	gp, err := stub.GetSystemConfig()
+	if err != nil {
+		return err
+	}
+	//  当添加新质押地址 t = 2 时，tx_size = 1267 b,当前单元大小为 5 m = 5120 kb =>3,236.345679012346
 	h := 0
 	//t := 1
-	t := 2
+	t := gp.ChainParameters.PledgeRecordsThreshold
 	//t := 3
 	//t := 4
 	// 增加新的质押
@@ -462,7 +473,7 @@ func addNewAddrPledgeRecords(stub shim.ChaincodeStubInterface) error {
 				log.Infof("break in i = %d, i + 1 = %d, t = %d", i, i+1, t)
 				break
 			}
-			pledgeList.Date = lastDate
+			pledgeList.Date = today
 			pledgeList.Add(m.Address, m.Amount, 0)
 			err = delPledgeDepositRecord(stub, m.Address)
 			if err != nil {
@@ -473,7 +484,7 @@ func addNewAddrPledgeRecords(stub shim.ChaincodeStubInterface) error {
 		if err != nil {
 			return err
 		}
-		err = stub.PutState(constants.PledgeList+lastDate+"addNew"+strconv.Itoa(h/t), b)
+		err = stub.PutState(constants.PledgeList+today+"addNew"+strconv.Itoa(h/t), b)
 		if err != nil {
 			return err
 		}
@@ -483,9 +494,12 @@ func addNewAddrPledgeRecords(stub shim.ChaincodeStubInterface) error {
 			if err != nil {
 				return err
 			}
-			err = saveLastPledgeListDate(stub, lastDate)
-			if err != nil {
-				return err
+			//  TODO 当第一次调用该函数
+			if !isF {
+				err = saveLastPledgeListDate(stub, today)
+				if err != nil {
+					return err
+				}
 			}
 			return nil
 		}
@@ -494,7 +508,6 @@ func addNewAddrPledgeRecords(stub shim.ChaincodeStubInterface) error {
 		if err != nil {
 			return err
 		}
-		return nil
 	}
 	return nil
 }

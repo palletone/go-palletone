@@ -58,6 +58,9 @@ type ChainParametersTemp struct {
 	ContractTxDeployFeeLevel  string
 	ContractTxInvokeFeeLevel  string
 	ContractTxStopFeeLevel    string
+
+	PledgeAllocateThreshold string
+	PledgeRecordsThreshold  string
 }
 
 func (cp *ChainParameters) EncodeRLP(w io.Writer) error {
@@ -94,6 +97,9 @@ func (cp *ChainParameters) getCPT() *ChainParametersTemp {
 		ContractTxDeployFeeLevel:  strconv.FormatFloat(cp.ContractTxDeployFeeLevel, 'f', -1, 64),
 		ContractTxInvokeFeeLevel:  strconv.FormatFloat(cp.ContractTxInvokeFeeLevel, 'f', -1, 64),
 		ContractTxStopFeeLevel:    strconv.FormatFloat(cp.ContractTxStopFeeLevel, 'f', -1, 64),
+
+		PledgeAllocateThreshold: strconv.FormatInt(int64(cp.PledgeAllocateThreshold), 10),
+		PledgeRecordsThreshold:  strconv.FormatInt(int64(cp.PledgeRecordsThreshold), 10),
 	}
 }
 
@@ -214,6 +220,18 @@ func (cpt *ChainParametersTemp) getCP(cp *ChainParameters) error {
 		return err
 	}
 	cp.ContractTxStopFeeLevel = ContractTxStopFeeLevel
+
+	PledgeAllocateThreshold, err := strconv.ParseInt(cpt.PledgeAllocateThreshold, 10, 64)
+	if err != nil {
+		return err
+	}
+	cp.PledgeAllocateThreshold = int(PledgeAllocateThreshold)
+
+	PledgeRecordsThreshold, err := strconv.ParseInt(cpt.PledgeRecordsThreshold, 10, 64)
+	if err != nil {
+		return err
+	}
+	cp.PledgeRecordsThreshold = int(PledgeRecordsThreshold)
 
 	return nil
 }

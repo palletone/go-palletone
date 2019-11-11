@@ -64,7 +64,7 @@ func handlePledgeReward(stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	depositDailyReward := gp.ChainParameters.PledgeDailyReward
 
-	err = handleRewardAllocation(stub, depositDailyReward)
+	err = handleRewardAllocation(stub, depositDailyReward,gp.ChainParameters.PledgeAllocateThreshold)
 	if err != nil {
 		return shim.Error(err.Error())
 	}

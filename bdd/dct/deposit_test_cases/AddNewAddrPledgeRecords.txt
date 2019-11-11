@@ -1,5 +1,5 @@
 *** Settings ***
-Resource          publicParams.txt
+Resource          postRequest.txt
 
 *** Keywords ***
 AddNewAddrPledgeRecords

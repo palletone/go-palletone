@@ -754,26 +754,32 @@ PledgeTest02
     ${result}    queryPledgeList    #查看整个网络所有质押情况
     log    ${result}
     sleep    1
-    ${result}    QueryPledgeListByDate    20191108
+    ${result}    QueryPledgeListByDate    20191111
     log    ${result}
     sleep    1
     ${result}    QueryAllPledgeHistory
     log    ${result}
     sleep    1
     log    tiaojiaxinzhiya
-    ${result}    isFinishAllocated
+    ${result}    IsFinishAddNewRecords
     log    ${result}
-    sleep    1
-    ${result}    HandlePledgeReward    ${votedAddress}    #1
+    sleep    3
+    ${result}    AddNewAddrPledgeRecords    ${votedAddress}    #1
     log    ${result}
     sleep    5
-    ${result}    isFinishAllocated
+    ${result}    IsFinishAddNewRecords
+    log    ${result}
+    sleep    3
+    ${result}    AddNewAddrPledgeRecords    ${votedAddress}    #1
+    log    ${result}
+    sleep    5
+    ${result}    IsFinishAddNewRecords
     log    ${result}
     sleep    3
     ${result}    queryPledgeList    #查看整个网络所有质押情况
     log    ${result}
     sleep    1
-    ${result}    QueryPledgeListByDate    20191108
+    ${result}    QueryPledgeListByDate    20191111
     log    ${result}
     sleep    1
     ${result}    QueryAllPledgeHistory
@@ -872,16 +878,19 @@ PledgeTest02
     ${result}    isFinishAllocated
     log    ${result}
     sleep    3
-    ${result}    AddNewAddrPledgeRecords    ${votedAddress}    #1
-    log    ${result}
-    sleep    5
-    ${result}    isFinishAllocated
+    ${result}    IsFinishAddNewRecords
     log    ${result}
     sleep    3
-    ${result}    AddNewAddrPledgeRecords    ${votedAddress}    #1
+    ${result}    AddNewAddrPledgeRecords    ${foundationAddr}    #1
     log    ${result}
     sleep    5
-    ${result}    isFinishAllocated
+    ${result}    IsFinishAddNewRecords
+    log    ${result}
+    sleep    3
+    ${result}    AddNewAddrPledgeRecords    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    ${result}    IsFinishAddNewRecords
     log    ${result}
     sleep    3
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
@@ -909,7 +918,7 @@ PledgeTest02
     ${result}    getBalance    ${developerAddr_01}    PTN
     log    ${result}
     sleep    1
-    ${result}    QueryPledgeListByDate    20191109
+    ${result}    QueryPledgeListByDate    20191112
     log    ${result}
     sleep    1
     ${result}    queryPledgeList    #查看整个网络所有质押情况
@@ -969,7 +978,7 @@ PledgeTest02
     log    ${result}
     ${result}    getBalance    ${developerAddr_01}    PTN
     log    ${result}
-    ${result}    QueryPledgeListByDate    20191110
+    ${result}    QueryPledgeListByDate    20191113
     log    ${result}
     sleep    1
     ${result}    queryPledgeList    #查看整个网络所有质押情况
@@ -1047,7 +1056,7 @@ PledgeTest02
     log    ${result}
     ${result}    getBalance    ${developerAddr_01}    PTN
     log    ${result}
-    ${result}    QueryPledgeListByDate    20191111
+    ${result}    QueryPledgeListByDate    20191114
     log    ${result}
     sleep    2
     ${result}    queryPledgeList    #查看整个网络所有质押情况
@@ -1086,7 +1095,7 @@ PledgeTest02
     ${result}    queryPledgeList    #查看整个网络所有质押情况
     log    ${result}
     sleep    1
-    ${result}    QueryPledgeListByDate    20191112
+    ${result}    QueryPledgeListByDate    20191115
     log    ${result}
     sleep    2
     ${result}    QueryAllPledgeHistory
