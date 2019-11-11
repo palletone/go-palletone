@@ -85,24 +85,27 @@ func (gp *GlobalProperty) getGPT() *GlobalPropertyTemp {
 }
 
 func (gpt *GlobalPropertyTemp) getGP(gp *GlobalProperty) {
-	ajs := make(map[common.Address]bool)
-	ams := make(map[common.Address]bool)
-	pms := make(map[common.Address]bool)
+	//ajs := make(map[common.Address]bool)
+	//ams := make(map[common.Address]bool)
+	//pms := make(map[common.Address]bool)
+	gp.ActiveJuries = make(map[common.Address]bool)
+	gp.ActiveMediators = make(map[common.Address]bool)
+	gp.PrecedingMediators = make(map[common.Address]bool)
 
 	for _, addStr := range gpt.ActiveJuries {
-		ajs[addStr] = true
+		gp.ActiveJuries[addStr] = true
 	}
 
 	for _, addStr := range gpt.ActiveMediators {
-		ams[addStr] = true
+		gp.ActiveMediators[addStr] = true
 	}
 
 	for _, addStr := range gpt.PrecedingMediators {
-		pms[addStr] = true
+		gp.PrecedingMediators[addStr] = true
 	}
 
 	gp.GlobalPropBase = gpt.GlobalPropBase
-	gp.ActiveJuries = ajs
-	gp.ActiveMediators = ams
-	gp.PrecedingMediators = pms
+	//gp.ActiveJuries = ajs
+	//gp.ActiveMediators = ams
+	//gp.PrecedingMediators = pms
 }
