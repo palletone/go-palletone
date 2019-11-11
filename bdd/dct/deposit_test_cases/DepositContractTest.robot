@@ -420,7 +420,7 @@ PledgeTest
     sleep    5
     ${result}    getBalance    ${votedAddress}    PTN
     log    ${result}
-    Should Be Equal As Numbers    ${result}    9999.99995
+    Should Be Equal As Numbers    ${result}    9999.99
     sleep    5
     ${result}    mediatorGetVoted    ${votedAddress}    #查看该节点所投票的情况
     log    ${result}
@@ -438,7 +438,7 @@ PledgeTest
     sleep    5
     ${result}    getBalance    ${votedAddress}    PTN
     log    ${result}
-    Should Be Equal As Numbers    ${result}    9898.99995
+    Should Be Equal As Numbers    ${result}    9898.99
     sleep    5
     ${result}    mediatorListVoteResults    #查看超级节点投票结果
     log    ${result}
@@ -465,7 +465,7 @@ PledgeTest
     sleep    3
     ${result}    getBalance    ${votedAddress}    PTN
     log    ${result}
-    Should Be Equal As Numbers    ${result}    9897.99995
+    Should Be Equal As Numbers    ${result}    9897.99
     sleep    5
     ${result}    queryPledgeList    #查看整个网络所有质押情况
     log    ${result}
@@ -519,7 +519,7 @@ PledgeTest
     sleep    5
     ${result}    getBalance    ${votedAddress}    PTN
     log    ${result}
-    Should Be Equal As Numbers    ${result}    9896.99995
+    Should Be Equal As Numbers    ${result}    9896.99
     sleep    5
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
     log    ${result}
@@ -542,7 +542,7 @@ PledgeTest
     sleep    3
     ${result}    getBalance    ${votedAddress}    PTN
     log    ${result}
-    Should Be Equal As Numbers    ${result}    9996.99995
+    Should Be Equal As Numbers    ${result}    9996.99
     sleep    5
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
     log    ${result}
