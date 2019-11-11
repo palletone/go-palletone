@@ -19,20 +19,24 @@
 package jury
 
 import (
-	"encoding/hex"
 	"fmt"
-	"math/big"
 	"time"
+	"sync"
+	"bytes"
+	"math/big"
+	"encoding/json"
+	"encoding/hex"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
-
-	"encoding/json"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/rwset"
+	"github.com/palletone/go-palletone/contracts/utils"
+	com "github.com/palletone/go-palletone/vm/common"
 )
 
 func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string,
@@ -295,6 +299,81 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_EXEC, Ele: p.mtx[reqId].eleNode, Tx: tx}, true)
 	return reqId, nil
+}
+
+//deploy -->invoke
+func (p *Processor) ContractQuery(id []byte, args [][]byte, timeout time.Duration) (rsp []byte, err error) {
+	var contractId []byte
+	var lock sync.Mutex
+	txid := "query"
+	exist := false
+	chainId := rwset.ChainId
+	idStr := hex.EncodeToString(id)
+	lock.Lock()
+	defer lock.Unlock()
+
+	if len(id) == 32 { //模板ID
+		cAddr := common.Address{}
+		cList, _ := p.dag.RetrieveChaincodes()
+		for _, cc := range cList {
+			if bytes.Equal(cc.TempleId, id) {
+				ca := common.NewAddress(cc.Id, common.ContractHash)
+				if !ca.IsSystemContractAddress() { //检查确认是用户合约
+					cAddr = ca
+					log.Debugf("ContractQuery, find templateId[%s] contractId[%s]", idStr, cAddr.String())
+					break
+				}
+			}
+		}
+		if !cAddr.IsZero() { //检查本地容器是否存在，并且状态正常
+			client, err := com.NewDockerClient()
+			if err != nil {
+				log.Errorf("ContractQuery, id[%s], NewDockerClient err:%s", idStr, err.Error())
+				return nil, err
+			}
+			cons, err := utils.GetAllContainers(client)
+			if err != nil {
+				log.Errorf("ContractQuery, id[%s], GetAllContainers err:%s", idStr, err.Error())
+				return nil, err
+			}
+			contractAddrs, _ := utils.GetAllContainerAddr(cons, "Up")
+			for _, ca := range contractAddrs {
+				if ca.Equal(cAddr) { //use first
+					log.Debugf("ContractQuery, templateId[%s], contractId[%s],find container(Up)", idStr, cAddr.String())
+					contractId = cAddr.Bytes()
+					exist = true
+					break
+				}
+			}
+		}
+		if !exist {
+			contractId, _, err = p.contract.Deploy(rwset.RwM, chainId, id, txid, nil, timeout)
+			if err != nil {
+				log.Errorf("ContractQuery, id[%s], Deploy err:%s", idStr, err.Error())
+				return nil, err
+			}
+		}
+	} else { //系统合约ID
+		addr, err := common.StringToAddress(string(id))
+		if err != nil {
+			return nil, err
+		}
+		if !addr.IsSystemContractAddress() {
+			return nil, fmt.Errorf("contractId[%s] is not system contract", addr.String())
+		}
+		log.Debugf("ContractQuery, is contract id[%v], addr[%s]", contractId, addr.String())
+		contractId = addr.Bytes()
+	}
+	log.Debugf("ContractQuery, id[%s] begin to invoke contract:%s", idStr, hex.EncodeToString(contractId))
+	rst, err := p.contract.Invoke(rwset.RwM, chainId, contractId, txid, args, timeout)
+	rwset.RwM.CloseTxSimulator(chainId, txid)
+	rwset.RwM.Close()
+	if err != nil {
+		log.Errorf("ContractQuery, id[%s], Invoke err:%s", idStr, err.Error())
+		return nil, err
+	}
+	log.Debugf("ContractQuery, id[%s], query result:%s", idStr, hex.EncodeToString(rst.Payload))
+	return rst.Payload, nil
 }
 
 func (p *Processor) ElectionVrfReq(id uint32) ([]byte, error) {

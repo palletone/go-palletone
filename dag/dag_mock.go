@@ -43,19 +43,16 @@ func (m *MockIDag) EXPECT() *MockIDagMockRecorder {
 
 // Close mocks base method
 func (m *MockIDag) Close() {
-	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Close")
 }
 
 // Close indicates an expected call of Close
 func (mr *MockIDagMockRecorder) Close() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockIDag)(nil).Close))
 }
 
 // GetCommon mocks base method
 func (m *MockIDag) GetCommon(key []byte, stableDb bool) ([]byte, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCommon", key, stableDb)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
@@ -64,13 +61,11 @@ func (m *MockIDag) GetCommon(key []byte, stableDb bool) ([]byte, error) {
 
 // GetCommon indicates an expected call of GetCommon
 func (mr *MockIDagMockRecorder) GetCommon(key, stableDb interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommon", reflect.TypeOf((*MockIDag)(nil).GetCommon), key, stableDb)
 }
 
 // GetCommonByPrefix mocks base method
 func (m *MockIDag) GetCommonByPrefix(prefix []byte, stableDb bool) map[string][]byte {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCommonByPrefix", prefix, stableDb)
 	ret0, _ := ret[0].(map[string][]byte)
 	return ret0
@@ -78,13 +73,11 @@ func (m *MockIDag) GetCommonByPrefix(prefix []byte, stableDb bool) map[string][]
 
 // GetCommonByPrefix indicates an expected call of GetCommonByPrefix
 func (mr *MockIDagMockRecorder) GetCommonByPrefix(prefix, stableDb interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommonByPrefix", reflect.TypeOf((*MockIDag)(nil).GetCommonByPrefix), prefix, stableDb)
 }
 
 // SaveCommon mocks base method
 func (m *MockIDag) SaveCommon(key, val []byte) error {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SaveCommon", key, val)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -92,13 +85,11 @@ func (m *MockIDag) SaveCommon(key, val []byte) error {
 
 // SaveCommon indicates an expected call of SaveCommon
 func (mr *MockIDagMockRecorder) SaveCommon(key, val interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveCommon", reflect.TypeOf((*MockIDag)(nil).SaveCommon), key, val)
 }
 
 // GetAllData mocks base method
 func (m *MockIDag) GetAllData() ([][]byte, [][]byte) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllData")
 	ret0, _ := ret[0].([][]byte)
 	ret1, _ := ret[1].([][]byte)
@@ -107,13 +98,11 @@ func (m *MockIDag) GetAllData() ([][]byte, [][]byte) {
 
 // GetAllData indicates an expected call of GetAllData
 func (mr *MockIDagMockRecorder) GetAllData() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllData", reflect.TypeOf((*MockIDag)(nil).GetAllData))
 }
 
 // MemdagInfos mocks base method
 func (m *MockIDag) MemdagInfos() (*modules.MemdagInfos, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MemdagInfos")
 	ret0, _ := ret[0].(*modules.MemdagInfos)
 	ret1, _ := ret[1].(error)
@@ -122,13 +111,11 @@ func (m *MockIDag) MemdagInfos() (*modules.MemdagInfos, error) {
 
 // MemdagInfos indicates an expected call of MemdagInfos
 func (mr *MockIDagMockRecorder) MemdagInfos() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MemdagInfos", reflect.TypeOf((*MockIDag)(nil).MemdagInfos))
 }
 
 // IsEmpty mocks base method
 func (m *MockIDag) IsEmpty() bool {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsEmpty")
 	ret0, _ := ret[0].(bool)
 	return ret0
@@ -136,13 +123,11 @@ func (m *MockIDag) IsEmpty() bool {
 
 // IsEmpty indicates an expected call of IsEmpty
 func (mr *MockIDagMockRecorder) IsEmpty() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsEmpty", reflect.TypeOf((*MockIDag)(nil).IsEmpty))
 }
 
 // GetStableChainIndex mocks base method
 func (m *MockIDag) GetStableChainIndex(token modules.AssetId) *modules.ChainIndex {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetStableChainIndex", token)
 	ret0, _ := ret[0].(*modules.ChainIndex)
 	return ret0
@@ -150,13 +135,11 @@ func (m *MockIDag) GetStableChainIndex(token modules.AssetId) *modules.ChainInde
 
 // GetStableChainIndex indicates an expected call of GetStableChainIndex
 func (mr *MockIDagMockRecorder) GetStableChainIndex(token interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStableChainIndex", reflect.TypeOf((*MockIDag)(nil).GetStableChainIndex), token)
 }
 
 // CurrentUnit mocks base method
 func (m *MockIDag) CurrentUnit(token modules.AssetId) *modules.Unit {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CurrentUnit", token)
 	ret0, _ := ret[0].(*modules.Unit)
 	return ret0
@@ -164,13 +147,11 @@ func (m *MockIDag) CurrentUnit(token modules.AssetId) *modules.Unit {
 
 // CurrentUnit indicates an expected call of CurrentUnit
 func (mr *MockIDagMockRecorder) CurrentUnit(token interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentUnit", reflect.TypeOf((*MockIDag)(nil).CurrentUnit), token)
 }
 
 // GetCurrentUnit mocks base method
 func (m *MockIDag) GetCurrentUnit(assetId modules.AssetId) *modules.Unit {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCurrentUnit", assetId)
 	ret0, _ := ret[0].(*modules.Unit)
 	return ret0
@@ -178,13 +159,11 @@ func (m *MockIDag) GetCurrentUnit(assetId modules.AssetId) *modules.Unit {
 
 // GetCurrentUnit indicates an expected call of GetCurrentUnit
 func (mr *MockIDagMockRecorder) GetCurrentUnit(assetId interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentUnit", reflect.TypeOf((*MockIDag)(nil).GetCurrentUnit), assetId)
 }
 
 // GetMainCurrentUnit mocks base method
 func (m *MockIDag) GetMainCurrentUnit() *modules.Unit {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMainCurrentUnit")
 	ret0, _ := ret[0].(*modules.Unit)
 	return ret0
@@ -192,13 +171,11 @@ func (m *MockIDag) GetMainCurrentUnit() *modules.Unit {
 
 // GetMainCurrentUnit indicates an expected call of GetMainCurrentUnit
 func (mr *MockIDagMockRecorder) GetMainCurrentUnit() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMainCurrentUnit", reflect.TypeOf((*MockIDag)(nil).GetMainCurrentUnit))
 }
 
 // GetCurrentMemUnit mocks base method
 func (m *MockIDag) GetCurrentMemUnit(assetId modules.AssetId, index uint64) *modules.Unit {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCurrentMemUnit", assetId, index)
 	ret0, _ := ret[0].(*modules.Unit)
 	return ret0
@@ -206,13 +183,11 @@ func (m *MockIDag) GetCurrentMemUnit(assetId modules.AssetId, index uint64) *mod
 
 // GetCurrentMemUnit indicates an expected call of GetCurrentMemUnit
 func (mr *MockIDagMockRecorder) GetCurrentMemUnit(assetId, index interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentMemUnit", reflect.TypeOf((*MockIDag)(nil).GetCurrentMemUnit), assetId, index)
 }
 
 // InsertDag mocks base method
 func (m *MockIDag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable bool) (int, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "InsertDag", units, txpool, is_stable)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
@@ -221,13 +196,11 @@ func (m *MockIDag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_sta
 
 // InsertDag indicates an expected call of InsertDag
 func (mr *MockIDagMockRecorder) InsertDag(units, txpool, is_stable interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertDag", reflect.TypeOf((*MockIDag)(nil).InsertDag), units, txpool, is_stable)
 }
 
 // GetUnitByHash mocks base method
 func (m *MockIDag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUnitByHash", hash)
 	ret0, _ := ret[0].(*modules.Unit)
 	ret1, _ := ret[1].(error)
@@ -236,13 +209,11 @@ func (m *MockIDag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
 
 // GetUnitByHash indicates an expected call of GetUnitByHash
 func (mr *MockIDagMockRecorder) GetUnitByHash(hash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnitByHash", reflect.TypeOf((*MockIDag)(nil).GetUnitByHash), hash)
 }
 
 // HasHeader mocks base method
 func (m *MockIDag) HasHeader(arg0 common.Hash, arg1 uint64) bool {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "HasHeader", arg0, arg1)
 	ret0, _ := ret[0].(bool)
 	return ret0
@@ -250,13 +221,11 @@ func (m *MockIDag) HasHeader(arg0 common.Hash, arg1 uint64) bool {
 
 // HasHeader indicates an expected call of HasHeader
 func (mr *MockIDagMockRecorder) HasHeader(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasHeader", reflect.TypeOf((*MockIDag)(nil).HasHeader), arg0, arg1)
 }
 
 // GetHeaderByNumber mocks base method
 func (m *MockIDag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetHeaderByNumber", number)
 	ret0, _ := ret[0].(*modules.Header)
 	ret1, _ := ret[1].(error)
@@ -265,13 +234,11 @@ func (m *MockIDag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Heade
 
 // GetHeaderByNumber indicates an expected call of GetHeaderByNumber
 func (mr *MockIDagMockRecorder) GetHeaderByNumber(number interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeaderByNumber", reflect.TypeOf((*MockIDag)(nil).GetHeaderByNumber), number)
 }
 
 // GetHeaderByHash mocks base method
 func (m *MockIDag) GetHeaderByHash(arg0 common.Hash) (*modules.Header, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetHeaderByHash", arg0)
 	ret0, _ := ret[0].(*modules.Header)
 	ret1, _ := ret[1].(error)
@@ -280,13 +247,11 @@ func (m *MockIDag) GetHeaderByHash(arg0 common.Hash) (*modules.Header, error) {
 
 // GetHeaderByHash indicates an expected call of GetHeaderByHash
 func (mr *MockIDagMockRecorder) GetHeaderByHash(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeaderByHash", reflect.TypeOf((*MockIDag)(nil).GetHeaderByHash), arg0)
 }
 
 // GetHeadersByAuthor mocks base method
 func (m *MockIDag) GetHeadersByAuthor(authorAddr common.Address, startHeight, count uint64) ([]*modules.Header, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetHeadersByAuthor", authorAddr, startHeight, count)
 	ret0, _ := ret[0].([]*modules.Header)
 	ret1, _ := ret[1].(error)
@@ -295,13 +260,11 @@ func (m *MockIDag) GetHeadersByAuthor(authorAddr common.Address, startHeight, co
 
 // GetHeadersByAuthor indicates an expected call of GetHeadersByAuthor
 func (mr *MockIDagMockRecorder) GetHeadersByAuthor(authorAddr, startHeight, count interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeadersByAuthor", reflect.TypeOf((*MockIDag)(nil).GetHeadersByAuthor), authorAddr, startHeight, count)
 }
 
 // GetUnstableUnits mocks base method
 func (m *MockIDag) GetUnstableUnits() []*modules.Unit {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUnstableUnits")
 	ret0, _ := ret[0].([]*modules.Unit)
 	return ret0
@@ -309,13 +272,11 @@ func (m *MockIDag) GetUnstableUnits() []*modules.Unit {
 
 // GetUnstableUnits indicates an expected call of GetUnstableUnits
 func (mr *MockIDagMockRecorder) GetUnstableUnits() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnstableUnits", reflect.TypeOf((*MockIDag)(nil).GetUnstableUnits))
 }
 
 // CurrentHeader mocks base method
 func (m *MockIDag) CurrentHeader(token modules.AssetId) *modules.Header {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CurrentHeader", token)
 	ret0, _ := ret[0].(*modules.Header)
 	return ret0
@@ -323,13 +284,11 @@ func (m *MockIDag) CurrentHeader(token modules.AssetId) *modules.Header {
 
 // CurrentHeader indicates an expected call of CurrentHeader
 func (mr *MockIDagMockRecorder) CurrentHeader(token interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentHeader", reflect.TypeOf((*MockIDag)(nil).CurrentHeader), token)
 }
 
 // GetUnitTransactions mocks base method
 func (m *MockIDag) GetUnitTransactions(hash common.Hash) (modules.Transactions, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUnitTransactions", hash)
 	ret0, _ := ret[0].(modules.Transactions)
 	ret1, _ := ret[1].(error)
@@ -338,13 +297,11 @@ func (m *MockIDag) GetUnitTransactions(hash common.Hash) (modules.Transactions, 
 
 // GetUnitTransactions indicates an expected call of GetUnitTransactions
 func (mr *MockIDagMockRecorder) GetUnitTransactions(hash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnitTransactions", reflect.TypeOf((*MockIDag)(nil).GetUnitTransactions), hash)
 }
 
 // GetUnitTxsHash mocks base method
 func (m *MockIDag) GetUnitTxsHash(hash common.Hash) ([]common.Hash, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUnitTxsHash", hash)
 	ret0, _ := ret[0].([]common.Hash)
 	ret1, _ := ret[1].(error)
@@ -353,13 +310,11 @@ func (m *MockIDag) GetUnitTxsHash(hash common.Hash) ([]common.Hash, error) {
 
 // GetUnitTxsHash indicates an expected call of GetUnitTxsHash
 func (mr *MockIDagMockRecorder) GetUnitTxsHash(hash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnitTxsHash", reflect.TypeOf((*MockIDag)(nil).GetUnitTxsHash), hash)
 }
 
 // GetTransaction mocks base method
 func (m *MockIDag) GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTransaction", hash)
 	ret0, _ := ret[0].(*modules.TransactionWithUnitInfo)
 	ret1, _ := ret[1].(error)
@@ -368,13 +323,11 @@ func (m *MockIDag) GetTransaction(hash common.Hash) (*modules.TransactionWithUni
 
 // GetTransaction indicates an expected call of GetTransaction
 func (mr *MockIDagMockRecorder) GetTransaction(hash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransaction", reflect.TypeOf((*MockIDag)(nil).GetTransaction), hash)
 }
 
 // GetTransactionOnly mocks base method
 func (m *MockIDag) GetTransactionOnly(hash common.Hash) (*modules.Transaction, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTransactionOnly", hash)
 	ret0, _ := ret[0].(*modules.Transaction)
 	ret1, _ := ret[1].(error)
@@ -383,13 +336,11 @@ func (m *MockIDag) GetTransactionOnly(hash common.Hash) (*modules.Transaction, e
 
 // GetTransactionOnly indicates an expected call of GetTransactionOnly
 func (mr *MockIDagMockRecorder) GetTransactionOnly(hash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactionOnly", reflect.TypeOf((*MockIDag)(nil).GetTransactionOnly), hash)
 }
 
 // IsTransactionExist mocks base method
 func (m *MockIDag) IsTransactionExist(hash common.Hash) (bool, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsTransactionExist", hash)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
@@ -398,13 +349,11 @@ func (m *MockIDag) IsTransactionExist(hash common.Hash) (bool, error) {
 
 // IsTransactionExist indicates an expected call of IsTransactionExist
 func (mr *MockIDagMockRecorder) IsTransactionExist(hash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTransactionExist", reflect.TypeOf((*MockIDag)(nil).IsTransactionExist), hash)
 }
 
 // GetTxSearchEntry mocks base method
 func (m *MockIDag) GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTxSearchEntry", hash)
 	ret0, _ := ret[0].(*modules.TxLookupEntry)
 	ret1, _ := ret[1].(error)
@@ -413,13 +362,11 @@ func (m *MockIDag) GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, e
 
 // GetTxSearchEntry indicates an expected call of GetTxSearchEntry
 func (mr *MockIDagMockRecorder) GetTxSearchEntry(hash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxSearchEntry", reflect.TypeOf((*MockIDag)(nil).GetTxSearchEntry), hash)
 }
 
 // GetTxRequesterAddress mocks base method
 func (m *MockIDag) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTxRequesterAddress", tx)
 	ret0, _ := ret[0].(common.Address)
 	ret1, _ := ret[1].(error)
@@ -428,13 +375,11 @@ func (m *MockIDag) GetTxRequesterAddress(tx *modules.Transaction) (common.Addres
 
 // GetTxRequesterAddress indicates an expected call of GetTxRequesterAddress
 func (mr *MockIDagMockRecorder) GetTxRequesterAddress(tx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxRequesterAddress", reflect.TypeOf((*MockIDag)(nil).GetTxRequesterAddress), tx)
 }
 
 // InsertHeaderDag mocks base method
 func (m *MockIDag) InsertHeaderDag(arg0 []*modules.Header) (int, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "InsertHeaderDag", arg0)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
@@ -443,13 +388,11 @@ func (m *MockIDag) InsertHeaderDag(arg0 []*modules.Header) (int, error) {
 
 // InsertHeaderDag indicates an expected call of InsertHeaderDag
 func (mr *MockIDagMockRecorder) InsertHeaderDag(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertHeaderDag", reflect.TypeOf((*MockIDag)(nil).InsertHeaderDag), arg0)
 }
 
 // HasUnit mocks base method
 func (m *MockIDag) HasUnit(hash common.Hash) bool {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "HasUnit", hash)
 	ret0, _ := ret[0].(bool)
 	return ret0
@@ -457,13 +400,11 @@ func (m *MockIDag) HasUnit(hash common.Hash) bool {
 
 // HasUnit indicates an expected call of HasUnit
 func (mr *MockIDagMockRecorder) HasUnit(hash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasUnit", reflect.TypeOf((*MockIDag)(nil).HasUnit), hash)
 }
 
 // ParentsIsConfirmByHash mocks base method
 func (m *MockIDag) ParentsIsConfirmByHash(hash common.Hash) bool {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ParentsIsConfirmByHash", hash)
 	ret0, _ := ret[0].(bool)
 	return ret0
@@ -471,13 +412,11 @@ func (m *MockIDag) ParentsIsConfirmByHash(hash common.Hash) bool {
 
 // ParentsIsConfirmByHash indicates an expected call of ParentsIsConfirmByHash
 func (mr *MockIDagMockRecorder) ParentsIsConfirmByHash(hash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ParentsIsConfirmByHash", reflect.TypeOf((*MockIDag)(nil).ParentsIsConfirmByHash), hash)
 }
 
 // IsHeaderExist mocks base method
 func (m *MockIDag) IsHeaderExist(hash common.Hash) bool {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsHeaderExist", hash)
 	ret0, _ := ret[0].(bool)
 	return ret0
@@ -485,13 +424,11 @@ func (m *MockIDag) IsHeaderExist(hash common.Hash) bool {
 
 // IsHeaderExist indicates an expected call of IsHeaderExist
 func (mr *MockIDagMockRecorder) IsHeaderExist(hash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsHeaderExist", reflect.TypeOf((*MockIDag)(nil).IsHeaderExist), hash)
 }
 
 // SaveUnit mocks base method
 func (m *MockIDag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SaveUnit", unit, txpool, isGenesis)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -499,28 +436,11 @@ func (m *MockIDag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesi
 
 // SaveUnit indicates an expected call of SaveUnit
 func (mr *MockIDagMockRecorder) SaveUnit(unit, txpool, isGenesis interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveUnit", reflect.TypeOf((*MockIDag)(nil).SaveUnit), unit, txpool, isGenesis)
-}
-
-// CreateUnit mocks base method
-func (m *MockIDag) CreateUnit(mAddr common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateUnit", mAddr, txpool, t)
-	ret0, _ := ret[0].(*modules.Unit)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreateUnit indicates an expected call of CreateUnit
-func (mr *MockIDagMockRecorder) CreateUnit(mAddr, txpool, t interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUnit", reflect.TypeOf((*MockIDag)(nil).CreateUnit), mAddr, txpool, t)
 }
 
 // FastSyncCommitHead mocks base method
 func (m *MockIDag) FastSyncCommitHead(arg0 common.Hash) error {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FastSyncCommitHead", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -528,13 +448,11 @@ func (m *MockIDag) FastSyncCommitHead(arg0 common.Hash) error {
 
 // FastSyncCommitHead indicates an expected call of FastSyncCommitHead
 func (mr *MockIDagMockRecorder) FastSyncCommitHead(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FastSyncCommitHead", reflect.TypeOf((*MockIDag)(nil).FastSyncCommitHead), arg0)
 }
 
 // GetGenesisUnit mocks base method
 func (m *MockIDag) GetGenesisUnit() (*modules.Unit, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetGenesisUnit")
 	ret0, _ := ret[0].(*modules.Unit)
 	ret1, _ := ret[1].(error)
@@ -543,13 +461,11 @@ func (m *MockIDag) GetGenesisUnit() (*modules.Unit, error) {
 
 // GetGenesisUnit indicates an expected call of GetGenesisUnit
 func (mr *MockIDagMockRecorder) GetGenesisUnit() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGenesisUnit", reflect.TypeOf((*MockIDag)(nil).GetGenesisUnit))
 }
 
 // GetContractState mocks base method
 func (m *MockIDag) GetContractState(contractid []byte, field string) ([]byte, *modules.StateVersion, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContractState", contractid, field)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(*modules.StateVersion)
@@ -559,13 +475,11 @@ func (m *MockIDag) GetContractState(contractid []byte, field string) ([]byte, *m
 
 // GetContractState indicates an expected call of GetContractState
 func (mr *MockIDagMockRecorder) GetContractState(contractid, field interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractState", reflect.TypeOf((*MockIDag)(nil).GetContractState), contractid, field)
 }
 
 // GetContractStateByVersion mocks base method
 func (m *MockIDag) GetContractStateByVersion(id []byte, field string, version *modules.StateVersion) ([]byte, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContractStateByVersion", id, field, version)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
@@ -574,13 +488,11 @@ func (m *MockIDag) GetContractStateByVersion(id []byte, field string, version *m
 
 // GetContractStateByVersion indicates an expected call of GetContractStateByVersion
 func (mr *MockIDagMockRecorder) GetContractStateByVersion(id, field, version interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractStateByVersion", reflect.TypeOf((*MockIDag)(nil).GetContractStateByVersion), id, field, version)
 }
 
 // GetContractStatesById mocks base method
 func (m *MockIDag) GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContractStatesById", id)
 	ret0, _ := ret[0].(map[string]*modules.ContractStateValue)
 	ret1, _ := ret[1].(error)
@@ -589,13 +501,11 @@ func (m *MockIDag) GetContractStatesById(id []byte) (map[string]*modules.Contrac
 
 // GetContractStatesById indicates an expected call of GetContractStatesById
 func (mr *MockIDagMockRecorder) GetContractStatesById(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractStatesById", reflect.TypeOf((*MockIDag)(nil).GetContractStatesById), id)
 }
 
 // GetContractStatesByPrefix mocks base method
 func (m *MockIDag) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContractStatesByPrefix", id, prefix)
 	ret0, _ := ret[0].(map[string]*modules.ContractStateValue)
 	ret1, _ := ret[1].(error)
@@ -604,13 +514,11 @@ func (m *MockIDag) GetContractStatesByPrefix(id []byte, prefix string) (map[stri
 
 // GetContractStatesByPrefix indicates an expected call of GetContractStatesByPrefix
 func (mr *MockIDagMockRecorder) GetContractStatesByPrefix(id, prefix interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractStatesByPrefix", reflect.TypeOf((*MockIDag)(nil).GetContractStatesByPrefix), id, prefix)
 }
 
 // GetContractJury mocks base method
 func (m *MockIDag) GetContractJury(contractId []byte) (*modules.ElectionNode, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContractJury", contractId)
 	ret0, _ := ret[0].(*modules.ElectionNode)
 	ret1, _ := ret[1].(error)
@@ -619,13 +527,11 @@ func (m *MockIDag) GetContractJury(contractId []byte) (*modules.ElectionNode, er
 
 // GetContractJury indicates an expected call of GetContractJury
 func (mr *MockIDagMockRecorder) GetContractJury(contractId interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractJury", reflect.TypeOf((*MockIDag)(nil).GetContractJury), contractId)
 }
 
 // GetUnitNumber mocks base method
 func (m *MockIDag) GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUnitNumber", hash)
 	ret0, _ := ret[0].(*modules.ChainIndex)
 	ret1, _ := ret[1].(error)
@@ -634,13 +540,11 @@ func (m *MockIDag) GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error) 
 
 // GetUnitNumber indicates an expected call of GetUnitNumber
 func (mr *MockIDagMockRecorder) GetUnitNumber(hash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnitNumber", reflect.TypeOf((*MockIDag)(nil).GetUnitNumber), hash)
 }
 
 // GetUtxoView mocks base method
 func (m *MockIDag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUtxoView", tx)
 	ret0, _ := ret[0].(*txspool.UtxoViewpoint)
 	ret1, _ := ret[1].(error)
@@ -649,13 +553,11 @@ func (m *MockIDag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint,
 
 // GetUtxoView indicates an expected call of GetUtxoView
 func (mr *MockIDagMockRecorder) GetUtxoView(tx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUtxoView", reflect.TypeOf((*MockIDag)(nil).GetUtxoView), tx)
 }
 
 // IsUtxoSpent mocks base method
 func (m *MockIDag) IsUtxoSpent(outpoint *modules.OutPoint) (bool, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsUtxoSpent", outpoint)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
@@ -664,13 +566,11 @@ func (m *MockIDag) IsUtxoSpent(outpoint *modules.OutPoint) (bool, error) {
 
 // IsUtxoSpent indicates an expected call of IsUtxoSpent
 func (mr *MockIDagMockRecorder) IsUtxoSpent(outpoint interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsUtxoSpent", reflect.TypeOf((*MockIDag)(nil).IsUtxoSpent), outpoint)
 }
 
 // SubscribeChainHeadEvent mocks base method
 func (m *MockIDag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubscribeChainHeadEvent", ch)
 	ret0, _ := ret[0].(event.Subscription)
 	return ret0
@@ -678,13 +578,11 @@ func (m *MockIDag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) eve
 
 // SubscribeChainHeadEvent indicates an expected call of SubscribeChainHeadEvent
 func (mr *MockIDagMockRecorder) SubscribeChainHeadEvent(ch interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeChainHeadEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeChainHeadEvent), ch)
 }
 
 // SubscribeChainEvent mocks base method
 func (m *MockIDag) SubscribeChainEvent(ch chan<- modules.ChainEvent) event.Subscription {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubscribeChainEvent", ch)
 	ret0, _ := ret[0].(event.Subscription)
 	return ret0
@@ -692,25 +590,21 @@ func (m *MockIDag) SubscribeChainEvent(ch chan<- modules.ChainEvent) event.Subsc
 
 // SubscribeChainEvent indicates an expected call of SubscribeChainEvent
 func (mr *MockIDagMockRecorder) SubscribeChainEvent(ch interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeChainEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeChainEvent), ch)
 }
 
 // PostChainEvents mocks base method
 func (m *MockIDag) PostChainEvents(events []interface{}) {
-	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "PostChainEvents", events)
 }
 
 // PostChainEvents indicates an expected call of PostChainEvents
 func (mr *MockIDagMockRecorder) PostChainEvents(events interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostChainEvents", reflect.TypeOf((*MockIDag)(nil).PostChainEvents), events)
 }
 
 // GetTrieSyncProgress mocks base method
 func (m *MockIDag) GetTrieSyncProgress() (uint64, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTrieSyncProgress")
 	ret0, _ := ret[0].(uint64)
 	ret1, _ := ret[1].(error)
@@ -719,13 +613,11 @@ func (m *MockIDag) GetTrieSyncProgress() (uint64, error) {
 
 // GetTrieSyncProgress indicates an expected call of GetTrieSyncProgress
 func (mr *MockIDagMockRecorder) GetTrieSyncProgress() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTrieSyncProgress", reflect.TypeOf((*MockIDag)(nil).GetTrieSyncProgress))
 }
 
 // GetUtxoEntry mocks base method
 func (m *MockIDag) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUtxoEntry", outpoint)
 	ret0, _ := ret[0].(*modules.Utxo)
 	ret1, _ := ret[1].(error)
@@ -734,13 +626,11 @@ func (m *MockIDag) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, erro
 
 // GetUtxoEntry indicates an expected call of GetUtxoEntry
 func (mr *MockIDagMockRecorder) GetUtxoEntry(outpoint interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUtxoEntry", reflect.TypeOf((*MockIDag)(nil).GetUtxoEntry), outpoint)
 }
 
 // GetStxoEntry mocks base method
 func (m *MockIDag) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetStxoEntry", outpoint)
 	ret0, _ := ret[0].(*modules.Stxo)
 	ret1, _ := ret[1].(error)
@@ -749,13 +639,11 @@ func (m *MockIDag) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, erro
 
 // GetStxoEntry indicates an expected call of GetStxoEntry
 func (mr *MockIDagMockRecorder) GetStxoEntry(outpoint interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStxoEntry", reflect.TypeOf((*MockIDag)(nil).GetStxoEntry), outpoint)
 }
 
 // GetTxOutput mocks base method
 func (m *MockIDag) GetTxOutput(outpoint *modules.OutPoint) (*modules.Utxo, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTxOutput", outpoint)
 	ret0, _ := ret[0].(*modules.Utxo)
 	ret1, _ := ret[1].(error)
@@ -764,13 +652,11 @@ func (m *MockIDag) GetTxOutput(outpoint *modules.OutPoint) (*modules.Utxo, error
 
 // GetTxOutput indicates an expected call of GetTxOutput
 func (mr *MockIDagMockRecorder) GetTxOutput(outpoint interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxOutput", reflect.TypeOf((*MockIDag)(nil).GetTxOutput), outpoint)
 }
 
 // GetAddrOutpoints mocks base method
 func (m *MockIDag) GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAddrOutpoints", addr)
 	ret0, _ := ret[0].([]modules.OutPoint)
 	ret1, _ := ret[1].(error)
@@ -779,13 +665,11 @@ func (m *MockIDag) GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, er
 
 // GetAddrOutpoints indicates an expected call of GetAddrOutpoints
 func (mr *MockIDagMockRecorder) GetAddrOutpoints(addr interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddrOutpoints", reflect.TypeOf((*MockIDag)(nil).GetAddrOutpoints), addr)
 }
 
 // GetAddrUtxos mocks base method
 func (m *MockIDag) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAddrUtxos", addr)
 	ret0, _ := ret[0].(map[modules.OutPoint]*modules.Utxo)
 	ret1, _ := ret[1].(error)
@@ -794,13 +678,11 @@ func (m *MockIDag) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modu
 
 // GetAddrUtxos indicates an expected call of GetAddrUtxos
 func (mr *MockIDagMockRecorder) GetAddrUtxos(addr interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddrUtxos", reflect.TypeOf((*MockIDag)(nil).GetAddrUtxos), addr)
 }
 
 // GetAddrStableUtxos mocks base method
 func (m *MockIDag) GetAddrStableUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAddrStableUtxos", addr)
 	ret0, _ := ret[0].(map[modules.OutPoint]*modules.Utxo)
 	ret1, _ := ret[1].(error)
@@ -809,13 +691,11 @@ func (m *MockIDag) GetAddrStableUtxos(addr common.Address) (map[modules.OutPoint
 
 // GetAddrStableUtxos indicates an expected call of GetAddrStableUtxos
 func (mr *MockIDagMockRecorder) GetAddrStableUtxos(addr interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddrStableUtxos", reflect.TypeOf((*MockIDag)(nil).GetAddrStableUtxos), addr)
 }
 
 // GetAddr1TokenUtxos mocks base method
 func (m *MockIDag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAddr1TokenUtxos", addr, asset)
 	ret0, _ := ret[0].(map[modules.OutPoint]*modules.Utxo)
 	ret1, _ := ret[1].(error)
@@ -824,13 +704,11 @@ func (m *MockIDag) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset)
 
 // GetAddr1TokenUtxos indicates an expected call of GetAddr1TokenUtxos
 func (mr *MockIDagMockRecorder) GetAddr1TokenUtxos(addr, asset interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddr1TokenUtxos", reflect.TypeOf((*MockIDag)(nil).GetAddr1TokenUtxos), addr, asset)
 }
 
 // GetAllUtxos mocks base method
 func (m *MockIDag) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllUtxos")
 	ret0, _ := ret[0].(map[modules.OutPoint]*modules.Utxo)
 	ret1, _ := ret[1].(error)
@@ -839,13 +717,11 @@ func (m *MockIDag) GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error) {
 
 // GetAllUtxos indicates an expected call of GetAllUtxos
 func (mr *MockIDagMockRecorder) GetAllUtxos() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllUtxos", reflect.TypeOf((*MockIDag)(nil).GetAllUtxos))
 }
 
 // GetAddrTransactions mocks base method
 func (m *MockIDag) GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAddrTransactions", addr)
 	ret0, _ := ret[0].([]*modules.TransactionWithUnitInfo)
 	ret1, _ := ret[1].(error)
@@ -854,13 +730,11 @@ func (m *MockIDag) GetAddrTransactions(addr common.Address) ([]*modules.Transact
 
 // GetAddrTransactions indicates an expected call of GetAddrTransactions
 func (mr *MockIDagMockRecorder) GetAddrTransactions(addr interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddrTransactions", reflect.TypeOf((*MockIDag)(nil).GetAddrTransactions), addr)
 }
 
 // GetAssetTxHistory mocks base method
 func (m *MockIDag) GetAssetTxHistory(asset *modules.Asset) ([]*modules.TransactionWithUnitInfo, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAssetTxHistory", asset)
 	ret0, _ := ret[0].([]*modules.TransactionWithUnitInfo)
 	ret1, _ := ret[1].(error)
@@ -869,13 +743,11 @@ func (m *MockIDag) GetAssetTxHistory(asset *modules.Asset) ([]*modules.Transacti
 
 // GetAssetTxHistory indicates an expected call of GetAssetTxHistory
 func (mr *MockIDagMockRecorder) GetAssetTxHistory(asset interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssetTxHistory", reflect.TypeOf((*MockIDag)(nil).GetAssetTxHistory), asset)
 }
 
 // GetContractTpl mocks base method
 func (m *MockIDag) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContractTpl", tplId)
 	ret0, _ := ret[0].(*modules.ContractTemplate)
 	ret1, _ := ret[1].(error)
@@ -884,13 +756,11 @@ func (m *MockIDag) GetContractTpl(tplId []byte) (*modules.ContractTemplate, erro
 
 // GetContractTpl indicates an expected call of GetContractTpl
 func (mr *MockIDagMockRecorder) GetContractTpl(tplId interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractTpl", reflect.TypeOf((*MockIDag)(nil).GetContractTpl), tplId)
 }
 
 // GetContractTplCode mocks base method
 func (m *MockIDag) GetContractTplCode(tplId []byte) ([]byte, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContractTplCode", tplId)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
@@ -899,13 +769,11 @@ func (m *MockIDag) GetContractTplCode(tplId []byte) ([]byte, error) {
 
 // GetContractTplCode indicates an expected call of GetContractTplCode
 func (mr *MockIDagMockRecorder) GetContractTplCode(tplId interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractTplCode", reflect.TypeOf((*MockIDag)(nil).GetContractTplCode), tplId)
 }
 
 // GetAllContractTpl mocks base method
 func (m *MockIDag) GetAllContractTpl() ([]*modules.ContractTemplate, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllContractTpl")
 	ret0, _ := ret[0].([]*modules.ContractTemplate)
 	ret1, _ := ret[1].(error)
@@ -914,13 +782,11 @@ func (m *MockIDag) GetAllContractTpl() ([]*modules.ContractTemplate, error) {
 
 // GetAllContractTpl indicates an expected call of GetAllContractTpl
 func (mr *MockIDagMockRecorder) GetAllContractTpl() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllContractTpl", reflect.TypeOf((*MockIDag)(nil).GetAllContractTpl))
 }
 
 // GetContract mocks base method
 func (m *MockIDag) GetContract(id []byte) (*modules.Contract, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContract", id)
 	ret0, _ := ret[0].(*modules.Contract)
 	ret1, _ := ret[1].(error)
@@ -929,13 +795,11 @@ func (m *MockIDag) GetContract(id []byte) (*modules.Contract, error) {
 
 // GetContract indicates an expected call of GetContract
 func (mr *MockIDagMockRecorder) GetContract(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContract", reflect.TypeOf((*MockIDag)(nil).GetContract), id)
 }
 
 // GetAllContracts mocks base method
 func (m *MockIDag) GetAllContracts() ([]*modules.Contract, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllContracts")
 	ret0, _ := ret[0].([]*modules.Contract)
 	ret1, _ := ret[1].(error)
@@ -944,13 +808,11 @@ func (m *MockIDag) GetAllContracts() ([]*modules.Contract, error) {
 
 // GetAllContracts indicates an expected call of GetAllContracts
 func (mr *MockIDagMockRecorder) GetAllContracts() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllContracts", reflect.TypeOf((*MockIDag)(nil).GetAllContracts))
 }
 
 // GetContractsByTpl mocks base method
 func (m *MockIDag) GetContractsByTpl(tplId []byte) ([]*modules.Contract, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContractsByTpl", tplId)
 	ret0, _ := ret[0].([]*modules.Contract)
 	ret1, _ := ret[1].(error)
@@ -959,13 +821,11 @@ func (m *MockIDag) GetContractsByTpl(tplId []byte) ([]*modules.Contract, error) 
 
 // GetContractsByTpl indicates an expected call of GetContractsByTpl
 func (mr *MockIDagMockRecorder) GetContractsByTpl(tplId interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractsByTpl", reflect.TypeOf((*MockIDag)(nil).GetContractsByTpl), tplId)
 }
 
 // GetUnitByNumber mocks base method
 func (m *MockIDag) GetUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUnitByNumber", number)
 	ret0, _ := ret[0].(*modules.Unit)
 	ret1, _ := ret[1].(error)
@@ -974,13 +834,11 @@ func (m *MockIDag) GetUnitByNumber(number *modules.ChainIndex) (*modules.Unit, e
 
 // GetUnitByNumber indicates an expected call of GetUnitByNumber
 func (mr *MockIDagMockRecorder) GetUnitByNumber(number interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnitByNumber", reflect.TypeOf((*MockIDag)(nil).GetUnitByNumber), number)
 }
 
 // GetUnitHashesFromHash mocks base method
 func (m *MockIDag) GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUnitHashesFromHash", hash, max)
 	ret0, _ := ret[0].([]common.Hash)
 	return ret0
@@ -988,13 +846,11 @@ func (m *MockIDag) GetUnitHashesFromHash(hash common.Hash, max uint64) []common.
 
 // GetUnitHashesFromHash indicates an expected call of GetUnitHashesFromHash
 func (mr *MockIDagMockRecorder) GetUnitHashesFromHash(hash, max interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnitHashesFromHash", reflect.TypeOf((*MockIDag)(nil).GetUnitHashesFromHash), hash, max)
 }
 
 // GetUnitHash mocks base method
 func (m *MockIDag) GetUnitHash(number *modules.ChainIndex) (common.Hash, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUnitHash", number)
 	ret0, _ := ret[0].(common.Hash)
 	ret1, _ := ret[1].(error)
@@ -1003,13 +859,11 @@ func (m *MockIDag) GetUnitHash(number *modules.ChainIndex) (common.Hash, error) 
 
 // GetUnitHash indicates an expected call of GetUnitHash
 func (mr *MockIDagMockRecorder) GetUnitHash(number interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnitHash", reflect.TypeOf((*MockIDag)(nil).GetUnitHash), number)
 }
 
 // GetActiveMediator mocks base method
 func (m *MockIDag) GetActiveMediator(add common.Address) *core.Mediator {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetActiveMediator", add)
 	ret0, _ := ret[0].(*core.Mediator)
 	return ret0
@@ -1017,13 +871,11 @@ func (m *MockIDag) GetActiveMediator(add common.Address) *core.Mediator {
 
 // GetActiveMediator indicates an expected call of GetActiveMediator
 func (mr *MockIDagMockRecorder) GetActiveMediator(add interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveMediator", reflect.TypeOf((*MockIDag)(nil).GetActiveMediator), add)
 }
 
 // GetActiveMediatorAddr mocks base method
 func (m *MockIDag) GetActiveMediatorAddr(index int) common.Address {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetActiveMediatorAddr", index)
 	ret0, _ := ret[0].(common.Address)
 	return ret0
@@ -1031,13 +883,11 @@ func (m *MockIDag) GetActiveMediatorAddr(index int) common.Address {
 
 // GetActiveMediatorAddr indicates an expected call of GetActiveMediatorAddr
 func (mr *MockIDagMockRecorder) GetActiveMediatorAddr(index interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveMediatorAddr", reflect.TypeOf((*MockIDag)(nil).GetActiveMediatorAddr), index)
 }
 
 // GetActiveMediatorNodes mocks base method
 func (m *MockIDag) GetActiveMediatorNodes() map[string]*discover.Node {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetActiveMediatorNodes")
 	ret0, _ := ret[0].(map[string]*discover.Node)
 	return ret0
@@ -1045,13 +895,11 @@ func (m *MockIDag) GetActiveMediatorNodes() map[string]*discover.Node {
 
 // GetActiveMediatorNodes indicates an expected call of GetActiveMediatorNodes
 func (mr *MockIDagMockRecorder) GetActiveMediatorNodes() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveMediatorNodes", reflect.TypeOf((*MockIDag)(nil).GetActiveMediatorNodes))
 }
 
 // GetAddrByOutPoint mocks base method
 func (m *MockIDag) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAddrByOutPoint", outPoint)
 	ret0, _ := ret[0].(common.Address)
 	ret1, _ := ret[1].(error)
@@ -1060,13 +908,11 @@ func (m *MockIDag) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address
 
 // GetAddrByOutPoint indicates an expected call of GetAddrByOutPoint
 func (mr *MockIDagMockRecorder) GetAddrByOutPoint(outPoint interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddrByOutPoint", reflect.TypeOf((*MockIDag)(nil).GetAddrByOutPoint), outPoint)
 }
 
 // GetTxFee mocks base method
 func (m *MockIDag) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTxFee", pay)
 	ret0, _ := ret[0].(*modules.AmountAsset)
 	ret1, _ := ret[1].(error)
@@ -1075,13 +921,11 @@ func (m *MockIDag) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, err
 
 // GetTxFee indicates an expected call of GetTxFee
 func (mr *MockIDagMockRecorder) GetTxFee(pay interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxFee", reflect.TypeOf((*MockIDag)(nil).GetTxFee), pay)
 }
 
 // SetUnitGroupSign mocks base method
 func (m *MockIDag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetUnitGroupSign", unitHash, groupSign, txpool)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -1089,13 +933,11 @@ func (m *MockIDag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpo
 
 // SetUnitGroupSign indicates an expected call of SetUnitGroupSign
 func (mr *MockIDagMockRecorder) SetUnitGroupSign(unitHash, groupSign, txpool interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetUnitGroupSign", reflect.TypeOf((*MockIDag)(nil).SetUnitGroupSign), unitHash, groupSign, txpool)
 }
 
 // SubscribeToGroupSignEvent mocks base method
 func (m *MockIDag) SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubscribeToGroupSignEvent", ch)
 	ret0, _ := ret[0].(event.Subscription)
 	return ret0
@@ -1103,13 +945,11 @@ func (m *MockIDag) SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent)
 
 // SubscribeToGroupSignEvent indicates an expected call of SubscribeToGroupSignEvent
 func (mr *MockIDagMockRecorder) SubscribeToGroupSignEvent(ch interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeToGroupSignEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeToGroupSignEvent), ch)
 }
 
 // IsSynced mocks base method
 func (m *MockIDag) IsSynced() bool {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsSynced")
 	ret0, _ := ret[0].(bool)
 	return ret0
@@ -1117,13 +957,11 @@ func (m *MockIDag) IsSynced() bool {
 
 // IsSynced indicates an expected call of IsSynced
 func (mr *MockIDagMockRecorder) IsSynced() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSynced", reflect.TypeOf((*MockIDag)(nil).IsSynced))
 }
 
 // SubscribeActiveMediatorsUpdatedEvent mocks base method
 func (m *MockIDag) SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubscribeActiveMediatorsUpdatedEvent", ch)
 	ret0, _ := ret[0].(event.Subscription)
 	return ret0
@@ -1131,13 +969,11 @@ func (m *MockIDag) SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.Active
 
 // SubscribeActiveMediatorsUpdatedEvent indicates an expected call of SubscribeActiveMediatorsUpdatedEvent
 func (mr *MockIDagMockRecorder) SubscribeActiveMediatorsUpdatedEvent(ch interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeActiveMediatorsUpdatedEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeActiveMediatorsUpdatedEvent), ch)
 }
 
 // GetPrecedingMediatorNodes mocks base method
 func (m *MockIDag) GetPrecedingMediatorNodes() map[string]*discover.Node {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPrecedingMediatorNodes")
 	ret0, _ := ret[0].(map[string]*discover.Node)
 	return ret0
@@ -1145,13 +981,11 @@ func (m *MockIDag) GetPrecedingMediatorNodes() map[string]*discover.Node {
 
 // GetPrecedingMediatorNodes indicates an expected call of GetPrecedingMediatorNodes
 func (mr *MockIDagMockRecorder) GetPrecedingMediatorNodes() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPrecedingMediatorNodes", reflect.TypeOf((*MockIDag)(nil).GetPrecedingMediatorNodes))
 }
 
 // UnitIrreversibleTime mocks base method
 func (m *MockIDag) UnitIrreversibleTime() time.Duration {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UnitIrreversibleTime")
 	ret0, _ := ret[0].(time.Duration)
 	return ret0
@@ -1159,13 +993,11 @@ func (m *MockIDag) UnitIrreversibleTime() time.Duration {
 
 // UnitIrreversibleTime indicates an expected call of UnitIrreversibleTime
 func (mr *MockIDagMockRecorder) UnitIrreversibleTime() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnitIrreversibleTime", reflect.TypeOf((*MockIDag)(nil).UnitIrreversibleTime))
 }
 
 // GenTransferPtnTx mocks base method
 func (m *MockIDag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GenTransferPtnTx", from, to, daoAmount, text, txPool)
 	ret0, _ := ret[0].(*modules.Transaction)
 	ret1, _ := ret[1].(uint64)
@@ -1175,13 +1007,11 @@ func (m *MockIDag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, t
 
 // GenTransferPtnTx indicates an expected call of GenTransferPtnTx
 func (mr *MockIDagMockRecorder) GenTransferPtnTx(from, to, daoAmount, text, txPool interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenTransferPtnTx", reflect.TypeOf((*MockIDag)(nil).GenTransferPtnTx), from, to, daoAmount, text, txPool)
 }
 
 // QueryDbByKey mocks base method
 func (m *MockIDag) QueryDbByKey(key []byte) ([]byte, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "QueryDbByKey", key)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
@@ -1190,13 +1020,11 @@ func (m *MockIDag) QueryDbByKey(key []byte) ([]byte, error) {
 
 // QueryDbByKey indicates an expected call of QueryDbByKey
 func (mr *MockIDagMockRecorder) QueryDbByKey(key interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryDbByKey", reflect.TypeOf((*MockIDag)(nil).QueryDbByKey), key)
 }
 
 // QueryDbByPrefix mocks base method
 func (m *MockIDag) QueryDbByPrefix(prefix []byte) ([]*modules.DbRow, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "QueryDbByPrefix", prefix)
 	ret0, _ := ret[0].([]*modules.DbRow)
 	ret1, _ := ret[1].(error)
@@ -1205,13 +1033,11 @@ func (m *MockIDag) QueryDbByPrefix(prefix []byte) ([]*modules.DbRow, error) {
 
 // QueryDbByPrefix indicates an expected call of QueryDbByPrefix
 func (mr *MockIDagMockRecorder) QueryDbByPrefix(prefix interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryDbByPrefix", reflect.TypeOf((*MockIDag)(nil).QueryDbByPrefix), prefix)
 }
 
 // GetTxHashByReqId mocks base method
 func (m *MockIDag) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTxHashByReqId", reqid)
 	ret0, _ := ret[0].(common.Hash)
 	ret1, _ := ret[1].(error)
@@ -1220,13 +1046,11 @@ func (m *MockIDag) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
 
 // GetTxHashByReqId indicates an expected call of GetTxHashByReqId
 func (mr *MockIDagMockRecorder) GetTxHashByReqId(reqid interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxHashByReqId", reflect.TypeOf((*MockIDag)(nil).GetTxHashByReqId), reqid)
 }
 
 // GetTxByReqId mocks base method
 func (m *MockIDag) GetTxByReqId(reqid common.Hash) (*modules.TransactionWithUnitInfo, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTxByReqId", reqid)
 	ret0, _ := ret[0].(*modules.TransactionWithUnitInfo)
 	ret1, _ := ret[1].(error)
@@ -1235,13 +1059,11 @@ func (m *MockIDag) GetTxByReqId(reqid common.Hash) (*modules.TransactionWithUnit
 
 // GetTxByReqId indicates an expected call of GetTxByReqId
 func (mr *MockIDagMockRecorder) GetTxByReqId(reqid interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxByReqId", reflect.TypeOf((*MockIDag)(nil).GetTxByReqId), reqid)
 }
 
 // GetTxFromAddress mocks base method
 func (m *MockIDag) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTxFromAddress", tx)
 	ret0, _ := ret[0].([]common.Address)
 	ret1, _ := ret[1].(error)
@@ -1250,13 +1072,11 @@ func (m *MockIDag) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, 
 
 // GetTxFromAddress indicates an expected call of GetTxFromAddress
 func (mr *MockIDagMockRecorder) GetTxFromAddress(tx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxFromAddress", reflect.TypeOf((*MockIDag)(nil).GetTxFromAddress), tx)
 }
 
 // GetFileInfo mocks base method
 func (m *MockIDag) GetFileInfo(filehash []byte) ([]*modules.FileInfo, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFileInfo", filehash)
 	ret0, _ := ret[0].([]*modules.FileInfo)
 	ret1, _ := ret[1].(error)
@@ -1265,13 +1085,11 @@ func (m *MockIDag) GetFileInfo(filehash []byte) ([]*modules.FileInfo, error) {
 
 // GetFileInfo indicates an expected call of GetFileInfo
 func (mr *MockIDagMockRecorder) GetFileInfo(filehash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFileInfo", reflect.TypeOf((*MockIDag)(nil).GetFileInfo), filehash)
 }
 
 // GetLightHeaderByHash mocks base method
 func (m *MockIDag) GetLightHeaderByHash(headerHash common.Hash) (*modules.Header, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLightHeaderByHash", headerHash)
 	ret0, _ := ret[0].(*modules.Header)
 	ret1, _ := ret[1].(error)
@@ -1280,13 +1098,11 @@ func (m *MockIDag) GetLightHeaderByHash(headerHash common.Hash) (*modules.Header
 
 // GetLightHeaderByHash indicates an expected call of GetLightHeaderByHash
 func (mr *MockIDagMockRecorder) GetLightHeaderByHash(headerHash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLightHeaderByHash", reflect.TypeOf((*MockIDag)(nil).GetLightHeaderByHash), headerHash)
 }
 
 // GetLightChainHeight mocks base method
 func (m *MockIDag) GetLightChainHeight(assetId modules.AssetId) uint64 {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLightChainHeight", assetId)
 	ret0, _ := ret[0].(uint64)
 	return ret0
@@ -1294,13 +1110,11 @@ func (m *MockIDag) GetLightChainHeight(assetId modules.AssetId) uint64 {
 
 // GetLightChainHeight indicates an expected call of GetLightChainHeight
 func (mr *MockIDagMockRecorder) GetLightChainHeight(assetId interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLightChainHeight", reflect.TypeOf((*MockIDag)(nil).GetLightChainHeight), assetId)
 }
 
 // InsertLightHeader mocks base method
 func (m *MockIDag) InsertLightHeader(headers []*modules.Header) (int, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "InsertLightHeader", headers)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
@@ -1309,13 +1123,11 @@ func (m *MockIDag) InsertLightHeader(headers []*modules.Header) (int, error) {
 
 // InsertLightHeader indicates an expected call of InsertLightHeader
 func (mr *MockIDagMockRecorder) InsertLightHeader(headers interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertLightHeader", reflect.TypeOf((*MockIDag)(nil).InsertLightHeader), headers)
 }
 
 // GetAllLeafNodes mocks base method
 func (m *MockIDag) GetAllLeafNodes() ([]*modules.Header, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllLeafNodes")
 	ret0, _ := ret[0].([]*modules.Header)
 	ret1, _ := ret[1].(error)
@@ -1324,13 +1136,11 @@ func (m *MockIDag) GetAllLeafNodes() ([]*modules.Header, error) {
 
 // GetAllLeafNodes indicates an expected call of GetAllLeafNodes
 func (mr *MockIDagMockRecorder) GetAllLeafNodes() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllLeafNodes", reflect.TypeOf((*MockIDag)(nil).GetAllLeafNodes))
 }
 
 // ClearUtxo mocks base method
 func (m *MockIDag) ClearUtxo() error {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ClearUtxo")
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -1338,13 +1148,11 @@ func (m *MockIDag) ClearUtxo() error {
 
 // ClearUtxo indicates an expected call of ClearUtxo
 func (mr *MockIDagMockRecorder) ClearUtxo() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearUtxo", reflect.TypeOf((*MockIDag)(nil).ClearUtxo))
 }
 
 // ClearAddrUtxo mocks base method
 func (m *MockIDag) ClearAddrUtxo(addr common.Address) error {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ClearAddrUtxo", addr)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -1352,13 +1160,11 @@ func (m *MockIDag) ClearAddrUtxo(addr common.Address) error {
 
 // ClearAddrUtxo indicates an expected call of ClearAddrUtxo
 func (mr *MockIDagMockRecorder) ClearAddrUtxo(addr interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearAddrUtxo", reflect.TypeOf((*MockIDag)(nil).ClearAddrUtxo), addr)
 }
 
 // SaveUtxoView mocks base method
 func (m *MockIDag) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SaveUtxoView", view)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -1366,13 +1172,11 @@ func (m *MockIDag) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error {
 
 // SaveUtxoView indicates an expected call of SaveUtxoView
 func (mr *MockIDagMockRecorder) SaveUtxoView(view interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveUtxoView", reflect.TypeOf((*MockIDag)(nil).SaveUtxoView), view)
 }
 
 // HeadUnitTime mocks base method
 func (m *MockIDag) HeadUnitTime() int64 {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "HeadUnitTime")
 	ret0, _ := ret[0].(int64)
 	return ret0
@@ -1380,13 +1184,11 @@ func (m *MockIDag) HeadUnitTime() int64 {
 
 // HeadUnitTime indicates an expected call of HeadUnitTime
 func (mr *MockIDagMockRecorder) HeadUnitTime() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HeadUnitTime", reflect.TypeOf((*MockIDag)(nil).HeadUnitTime))
 }
 
 // HeadUnitNum mocks base method
 func (m *MockIDag) HeadUnitNum() uint64 {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "HeadUnitNum")
 	ret0, _ := ret[0].(uint64)
 	return ret0
@@ -1394,13 +1196,11 @@ func (m *MockIDag) HeadUnitNum() uint64 {
 
 // HeadUnitNum indicates an expected call of HeadUnitNum
 func (mr *MockIDagMockRecorder) HeadUnitNum() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HeadUnitNum", reflect.TypeOf((*MockIDag)(nil).HeadUnitNum))
 }
 
 // HeadUnitHash mocks base method
 func (m *MockIDag) HeadUnitHash() common.Hash {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "HeadUnitHash")
 	ret0, _ := ret[0].(common.Hash)
 	return ret0
@@ -1408,13 +1208,11 @@ func (m *MockIDag) HeadUnitHash() common.Hash {
 
 // HeadUnitHash indicates an expected call of HeadUnitHash
 func (mr *MockIDagMockRecorder) HeadUnitHash() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HeadUnitHash", reflect.TypeOf((*MockIDag)(nil).HeadUnitHash))
 }
 
 // GetIrreversibleUnitNum mocks base method
 func (m *MockIDag) GetIrreversibleUnitNum(id modules.AssetId) uint64 {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetIrreversibleUnitNum", id)
 	ret0, _ := ret[0].(uint64)
 	return ret0
@@ -1422,13 +1220,11 @@ func (m *MockIDag) GetIrreversibleUnitNum(id modules.AssetId) uint64 {
 
 // GetIrreversibleUnitNum indicates an expected call of GetIrreversibleUnitNum
 func (mr *MockIDagMockRecorder) GetIrreversibleUnitNum(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIrreversibleUnitNum", reflect.TypeOf((*MockIDag)(nil).GetIrreversibleUnitNum), id)
 }
 
 // SaveChaincode mocks base method
 func (m *MockIDag) SaveChaincode(contractId common.Address, cc *list.CCInfo) error {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SaveChaincode", contractId, cc)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -1436,13 +1232,11 @@ func (m *MockIDag) SaveChaincode(contractId common.Address, cc *list.CCInfo) err
 
 // SaveChaincode indicates an expected call of SaveChaincode
 func (mr *MockIDagMockRecorder) SaveChaincode(contractId, cc interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveChaincode", reflect.TypeOf((*MockIDag)(nil).SaveChaincode), contractId, cc)
 }
 
 // GetChaincode mocks base method
 func (m *MockIDag) GetChaincode(contractId common.Address) (*list.CCInfo, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetChaincode", contractId)
 	ret0, _ := ret[0].(*list.CCInfo)
 	ret1, _ := ret[1].(error)
@@ -1451,13 +1245,11 @@ func (m *MockIDag) GetChaincode(contractId common.Address) (*list.CCInfo, error)
 
 // GetChaincode indicates an expected call of GetChaincode
 func (mr *MockIDagMockRecorder) GetChaincode(contractId interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChaincode", reflect.TypeOf((*MockIDag)(nil).GetChaincode), contractId)
 }
 
 // RetrieveChaincodes mocks base method
 func (m *MockIDag) RetrieveChaincodes() ([]*list.CCInfo, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RetrieveChaincodes")
 	ret0, _ := ret[0].([]*list.CCInfo)
 	ret1, _ := ret[1].(error)
@@ -1466,13 +1258,11 @@ func (m *MockIDag) RetrieveChaincodes() ([]*list.CCInfo, error) {
 
 // RetrieveChaincodes indicates an expected call of RetrieveChaincodes
 func (mr *MockIDagMockRecorder) RetrieveChaincodes() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RetrieveChaincodes", reflect.TypeOf((*MockIDag)(nil).RetrieveChaincodes))
 }
 
 // GetPartitionChains mocks base method
 func (m *MockIDag) GetPartitionChains() ([]*modules.PartitionChain, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPartitionChains")
 	ret0, _ := ret[0].([]*modules.PartitionChain)
 	ret1, _ := ret[1].(error)
@@ -1481,13 +1271,11 @@ func (m *MockIDag) GetPartitionChains() ([]*modules.PartitionChain, error) {
 
 // GetPartitionChains indicates an expected call of GetPartitionChains
 func (mr *MockIDagMockRecorder) GetPartitionChains() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartitionChains", reflect.TypeOf((*MockIDag)(nil).GetPartitionChains))
 }
 
 // GetMainChain mocks base method
 func (m *MockIDag) GetMainChain() (*modules.MainChain, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMainChain")
 	ret0, _ := ret[0].(*modules.MainChain)
 	ret1, _ := ret[1].(error)
@@ -1496,13 +1284,11 @@ func (m *MockIDag) GetMainChain() (*modules.MainChain, error) {
 
 // GetMainChain indicates an expected call of GetMainChain
 func (mr *MockIDagMockRecorder) GetMainChain() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMainChain", reflect.TypeOf((*MockIDag)(nil).GetMainChain))
 }
 
 // RefreshAddrTxIndex mocks base method
 func (m *MockIDag) RefreshAddrTxIndex() error {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RefreshAddrTxIndex")
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -1510,13 +1296,11 @@ func (m *MockIDag) RefreshAddrTxIndex() error {
 
 // RefreshAddrTxIndex indicates an expected call of RefreshAddrTxIndex
 func (mr *MockIDagMockRecorder) RefreshAddrTxIndex() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefreshAddrTxIndex", reflect.TypeOf((*MockIDag)(nil).RefreshAddrTxIndex))
 }
 
 // GenVoteMediatorTx mocks base method
 func (m *MockIDag) GenVoteMediatorTx(voter common.Address, mediators map[string]bool, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GenVoteMediatorTx", voter, mediators, txPool)
 	ret0, _ := ret[0].(*modules.Transaction)
 	ret1, _ := ret[1].(uint64)
@@ -1526,13 +1310,11 @@ func (m *MockIDag) GenVoteMediatorTx(voter common.Address, mediators map[string]
 
 // GenVoteMediatorTx indicates an expected call of GenVoteMediatorTx
 func (mr *MockIDagMockRecorder) GenVoteMediatorTx(voter, mediators, txPool interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenVoteMediatorTx", reflect.TypeOf((*MockIDag)(nil).GenVoteMediatorTx), voter, mediators, txPool)
 }
 
 // GetDynGlobalProp mocks base method
 func (m *MockIDag) GetDynGlobalProp() *modules.DynamicGlobalProperty {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDynGlobalProp")
 	ret0, _ := ret[0].(*modules.DynamicGlobalProperty)
 	return ret0
@@ -1540,13 +1322,11 @@ func (m *MockIDag) GetDynGlobalProp() *modules.DynamicGlobalProperty {
 
 // GetDynGlobalProp indicates an expected call of GetDynGlobalProp
 func (mr *MockIDagMockRecorder) GetDynGlobalProp() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDynGlobalProp", reflect.TypeOf((*MockIDag)(nil).GetDynGlobalProp))
 }
 
 // GetGlobalProp mocks base method
 func (m *MockIDag) GetGlobalProp() *modules.GlobalProperty {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetGlobalProp")
 	ret0, _ := ret[0].(*modules.GlobalProperty)
 	return ret0
@@ -1554,13 +1334,11 @@ func (m *MockIDag) GetGlobalProp() *modules.GlobalProperty {
 
 // GetGlobalProp indicates an expected call of GetGlobalProp
 func (mr *MockIDagMockRecorder) GetGlobalProp() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGlobalProp", reflect.TypeOf((*MockIDag)(nil).GetGlobalProp))
 }
 
 // GetMediatorCount mocks base method
 func (m *MockIDag) GetMediatorCount() int {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMediatorCount")
 	ret0, _ := ret[0].(int)
 	return ret0
@@ -1568,13 +1346,11 @@ func (m *MockIDag) GetMediatorCount() int {
 
 // GetMediatorCount indicates an expected call of GetMediatorCount
 func (mr *MockIDagMockRecorder) GetMediatorCount() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMediatorCount", reflect.TypeOf((*MockIDag)(nil).GetMediatorCount))
 }
 
 // IsMediator mocks base method
 func (m *MockIDag) IsMediator(address common.Address) bool {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsMediator", address)
 	ret0, _ := ret[0].(bool)
 	return ret0
@@ -1582,13 +1358,11 @@ func (m *MockIDag) IsMediator(address common.Address) bool {
 
 // IsMediator indicates an expected call of IsMediator
 func (mr *MockIDagMockRecorder) IsMediator(address interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsMediator", reflect.TypeOf((*MockIDag)(nil).IsMediator), address)
 }
 
 // GetMediators mocks base method
 func (m *MockIDag) GetMediators() map[common.Address]bool {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMediators")
 	ret0, _ := ret[0].(map[common.Address]bool)
 	return ret0
@@ -1596,13 +1370,11 @@ func (m *MockIDag) GetMediators() map[common.Address]bool {
 
 // GetMediators indicates an expected call of GetMediators
 func (mr *MockIDagMockRecorder) GetMediators() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMediators", reflect.TypeOf((*MockIDag)(nil).GetMediators))
 }
 
 // GetActiveMediators mocks base method
 func (m *MockIDag) GetActiveMediators() []common.Address {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetActiveMediators")
 	ret0, _ := ret[0].([]common.Address)
 	return ret0
@@ -1610,13 +1382,11 @@ func (m *MockIDag) GetActiveMediators() []common.Address {
 
 // GetActiveMediators indicates an expected call of GetActiveMediators
 func (mr *MockIDagMockRecorder) GetActiveMediators() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveMediators", reflect.TypeOf((*MockIDag)(nil).GetActiveMediators))
 }
 
 // GetAccountVotedMediators mocks base method
 func (m *MockIDag) GetAccountVotedMediators(addr common.Address) map[string]bool {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAccountVotedMediators", addr)
 	ret0, _ := ret[0].(map[string]bool)
 	return ret0
@@ -1624,13 +1394,11 @@ func (m *MockIDag) GetAccountVotedMediators(addr common.Address) map[string]bool
 
 // GetAccountVotedMediators indicates an expected call of GetAccountVotedMediators
 func (mr *MockIDagMockRecorder) GetAccountVotedMediators(addr interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountVotedMediators", reflect.TypeOf((*MockIDag)(nil).GetAccountVotedMediators), addr)
 }
 
 // GetMediatorInfo mocks base method
 func (m *MockIDag) GetMediatorInfo(address common.Address) *modules.MediatorInfo {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMediatorInfo", address)
 	ret0, _ := ret[0].(*modules.MediatorInfo)
 	return ret0
@@ -1638,13 +1406,11 @@ func (m *MockIDag) GetMediatorInfo(address common.Address) *modules.MediatorInfo
 
 // GetMediatorInfo indicates an expected call of GetMediatorInfo
 func (mr *MockIDagMockRecorder) GetMediatorInfo(address interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMediatorInfo", reflect.TypeOf((*MockIDag)(nil).GetMediatorInfo), address)
 }
 
 // GetVotingForMediator mocks base method
 func (m *MockIDag) GetVotingForMediator(addStr string) (map[string]uint64, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetVotingForMediator", addStr)
 	ret0, _ := ret[0].(map[string]uint64)
 	ret1, _ := ret[1].(error)
@@ -1653,13 +1419,11 @@ func (m *MockIDag) GetVotingForMediator(addStr string) (map[string]uint64, error
 
 // GetVotingForMediator indicates an expected call of GetVotingForMediator
 func (mr *MockIDagMockRecorder) GetVotingForMediator(addStr interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVotingForMediator", reflect.TypeOf((*MockIDag)(nil).GetVotingForMediator), addStr)
 }
 
 // MediatorVotedResults mocks base method
 func (m *MockIDag) MediatorVotedResults() (map[string]uint64, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MediatorVotedResults")
 	ret0, _ := ret[0].(map[string]uint64)
 	ret1, _ := ret[1].(error)
@@ -1668,13 +1432,11 @@ func (m *MockIDag) MediatorVotedResults() (map[string]uint64, error) {
 
 // MediatorVotedResults indicates an expected call of MediatorVotedResults
 func (mr *MockIDagMockRecorder) MediatorVotedResults() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MediatorVotedResults", reflect.TypeOf((*MockIDag)(nil).MediatorVotedResults))
 }
 
 // LookupMediatorInfo mocks base method
 func (m *MockIDag) LookupMediatorInfo() []*modules.MediatorInfo {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "LookupMediatorInfo")
 	ret0, _ := ret[0].([]*modules.MediatorInfo)
 	return ret0
@@ -1682,13 +1444,11 @@ func (m *MockIDag) LookupMediatorInfo() []*modules.MediatorInfo {
 
 // LookupMediatorInfo indicates an expected call of LookupMediatorInfo
 func (mr *MockIDagMockRecorder) LookupMediatorInfo() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LookupMediatorInfo", reflect.TypeOf((*MockIDag)(nil).LookupMediatorInfo))
 }
 
 // IsActiveMediator mocks base method
 func (m *MockIDag) IsActiveMediator(add common.Address) bool {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsActiveMediator", add)
 	ret0, _ := ret[0].(bool)
 	return ret0
@@ -1696,13 +1456,11 @@ func (m *MockIDag) IsActiveMediator(add common.Address) bool {
 
 // IsActiveMediator indicates an expected call of IsActiveMediator
 func (mr *MockIDagMockRecorder) IsActiveMediator(add interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsActiveMediator", reflect.TypeOf((*MockIDag)(nil).IsActiveMediator), add)
 }
 
 // GetMediator mocks base method
 func (m *MockIDag) GetMediator(add common.Address) *core.Mediator {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMediator", add)
 	ret0, _ := ret[0].(*core.Mediator)
 	return ret0
@@ -1710,13 +1468,11 @@ func (m *MockIDag) GetMediator(add common.Address) *core.Mediator {
 
 // GetMediator indicates an expected call of GetMediator
 func (mr *MockIDagMockRecorder) GetMediator(add interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMediator", reflect.TypeOf((*MockIDag)(nil).GetMediator), add)
 }
 
 // GetNewestUnitTimestamp mocks base method
 func (m *MockIDag) GetNewestUnitTimestamp(token modules.AssetId) (int64, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetNewestUnitTimestamp", token)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
@@ -1725,13 +1481,11 @@ func (m *MockIDag) GetNewestUnitTimestamp(token modules.AssetId) (int64, error) 
 
 // GetNewestUnitTimestamp indicates an expected call of GetNewestUnitTimestamp
 func (mr *MockIDagMockRecorder) GetNewestUnitTimestamp(token interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNewestUnitTimestamp", reflect.TypeOf((*MockIDag)(nil).GetNewestUnitTimestamp), token)
 }
 
 // GetScheduledMediator mocks base method
 func (m *MockIDag) GetScheduledMediator(slotNum uint32) common.Address {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetScheduledMediator", slotNum)
 	ret0, _ := ret[0].(common.Address)
 	return ret0
@@ -1739,13 +1493,11 @@ func (m *MockIDag) GetScheduledMediator(slotNum uint32) common.Address {
 
 // GetScheduledMediator indicates an expected call of GetScheduledMediator
 func (mr *MockIDagMockRecorder) GetScheduledMediator(slotNum interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScheduledMediator", reflect.TypeOf((*MockIDag)(nil).GetScheduledMediator), slotNum)
 }
 
 // GetSlotAtTime mocks base method
 func (m *MockIDag) GetSlotAtTime(when time.Time) uint32 {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSlotAtTime", when)
 	ret0, _ := ret[0].(uint32)
 	return ret0
@@ -1753,13 +1505,11 @@ func (m *MockIDag) GetSlotAtTime(when time.Time) uint32 {
 
 // GetSlotAtTime indicates an expected call of GetSlotAtTime
 func (mr *MockIDagMockRecorder) GetSlotAtTime(when interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSlotAtTime", reflect.TypeOf((*MockIDag)(nil).GetSlotAtTime), when)
 }
 
 // GetChainParameters mocks base method
 func (m *MockIDag) GetChainParameters() *core.ChainParameters {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetChainParameters")
 	ret0, _ := ret[0].(*core.ChainParameters)
 	return ret0
@@ -1767,13 +1517,11 @@ func (m *MockIDag) GetChainParameters() *core.ChainParameters {
 
 // GetChainParameters indicates an expected call of GetChainParameters
 func (mr *MockIDagMockRecorder) GetChainParameters() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChainParameters", reflect.TypeOf((*MockIDag)(nil).GetChainParameters))
 }
 
 // GetImmutableChainParameters mocks base method
 func (m *MockIDag) GetImmutableChainParameters() *core.ImmutableChainParameters {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetImmutableChainParameters")
 	ret0, _ := ret[0].(*core.ImmutableChainParameters)
 	return ret0
@@ -1781,13 +1529,11 @@ func (m *MockIDag) GetImmutableChainParameters() *core.ImmutableChainParameters 
 
 // GetImmutableChainParameters indicates an expected call of GetImmutableChainParameters
 func (mr *MockIDagMockRecorder) GetImmutableChainParameters() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImmutableChainParameters", reflect.TypeOf((*MockIDag)(nil).GetImmutableChainParameters))
 }
 
 // GetDataVersion mocks base method
 func (m *MockIDag) GetDataVersion() (*modules.DataVersion, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDataVersion")
 	ret0, _ := ret[0].(*modules.DataVersion)
 	ret1, _ := ret[1].(error)
@@ -1796,13 +1542,11 @@ func (m *MockIDag) GetDataVersion() (*modules.DataVersion, error) {
 
 // GetDataVersion indicates an expected call of GetDataVersion
 func (mr *MockIDagMockRecorder) GetDataVersion() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDataVersion", reflect.TypeOf((*MockIDag)(nil).GetDataVersion))
 }
 
 // StoreDataVersion mocks base method
 func (m *MockIDag) StoreDataVersion(dv *modules.DataVersion) error {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "StoreDataVersion", dv)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -1810,13 +1554,11 @@ func (m *MockIDag) StoreDataVersion(dv *modules.DataVersion) error {
 
 // StoreDataVersion indicates an expected call of StoreDataVersion
 func (mr *MockIDagMockRecorder) StoreDataVersion(dv interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreDataVersion", reflect.TypeOf((*MockIDag)(nil).StoreDataVersion), dv)
 }
 
 // QueryProofOfExistenceByReference mocks base method
 func (m *MockIDag) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "QueryProofOfExistenceByReference", ref)
 	ret0, _ := ret[0].([]*modules.ProofOfExistence)
 	ret1, _ := ret[1].(error)
@@ -1825,13 +1567,11 @@ func (m *MockIDag) QueryProofOfExistenceByReference(ref []byte) ([]*modules.Proo
 
 // QueryProofOfExistenceByReference indicates an expected call of QueryProofOfExistenceByReference
 func (mr *MockIDagMockRecorder) QueryProofOfExistenceByReference(ref interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryProofOfExistenceByReference", reflect.TypeOf((*MockIDag)(nil).QueryProofOfExistenceByReference), ref)
 }
 
 // GetAssetReference mocks base method
 func (m *MockIDag) GetAssetReference(asset []byte) ([]*modules.ProofOfExistence, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAssetReference", asset)
 	ret0, _ := ret[0].([]*modules.ProofOfExistence)
 	ret1, _ := ret[1].(error)
@@ -1840,13 +1580,11 @@ func (m *MockIDag) GetAssetReference(asset []byte) ([]*modules.ProofOfExistence,
 
 // GetAssetReference indicates an expected call of GetAssetReference
 func (mr *MockIDagMockRecorder) GetAssetReference(asset interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssetReference", reflect.TypeOf((*MockIDag)(nil).GetAssetReference), asset)
 }
 
 // IsActiveJury mocks base method
 func (m *MockIDag) IsActiveJury(addr common.Address) bool {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsActiveJury", addr)
 	ret0, _ := ret[0].(bool)
 	return ret0
@@ -1854,13 +1592,11 @@ func (m *MockIDag) IsActiveJury(addr common.Address) bool {
 
 // IsActiveJury indicates an expected call of IsActiveJury
 func (mr *MockIDagMockRecorder) IsActiveJury(addr interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsActiveJury", reflect.TypeOf((*MockIDag)(nil).IsActiveJury), addr)
 }
 
 // JuryCount mocks base method
 func (m *MockIDag) JuryCount() uint {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "JuryCount")
 	ret0, _ := ret[0].(uint)
 	return ret0
@@ -1868,13 +1604,11 @@ func (m *MockIDag) JuryCount() uint {
 
 // JuryCount indicates an expected call of JuryCount
 func (mr *MockIDagMockRecorder) JuryCount() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "JuryCount", reflect.TypeOf((*MockIDag)(nil).JuryCount))
 }
 
 // GetContractDevelopers mocks base method
 func (m *MockIDag) GetContractDevelopers() ([]common.Address, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContractDevelopers")
 	ret0, _ := ret[0].([]common.Address)
 	ret1, _ := ret[1].(error)
@@ -1883,13 +1617,11 @@ func (m *MockIDag) GetContractDevelopers() ([]common.Address, error) {
 
 // GetContractDevelopers indicates an expected call of GetContractDevelopers
 func (mr *MockIDagMockRecorder) GetContractDevelopers() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractDevelopers", reflect.TypeOf((*MockIDag)(nil).GetContractDevelopers))
 }
 
 // IsContractDeveloper mocks base method
 func (m *MockIDag) IsContractDeveloper(addr common.Address) bool {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsContractDeveloper", addr)
 	ret0, _ := ret[0].(bool)
 	return ret0
@@ -1897,13 +1629,11 @@ func (m *MockIDag) IsContractDeveloper(addr common.Address) bool {
 
 // IsContractDeveloper indicates an expected call of IsContractDeveloper
 func (mr *MockIDagMockRecorder) IsContractDeveloper(addr interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsContractDeveloper", reflect.TypeOf((*MockIDag)(nil).IsContractDeveloper), addr)
 }
 
 // GetActiveJuries mocks base method
 func (m *MockIDag) GetActiveJuries() []common.Address {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetActiveJuries")
 	ret0, _ := ret[0].([]common.Address)
 	return ret0
@@ -1911,13 +1641,11 @@ func (m *MockIDag) GetActiveJuries() []common.Address {
 
 // GetActiveJuries indicates an expected call of GetActiveJuries
 func (mr *MockIDagMockRecorder) GetActiveJuries() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveJuries", reflect.TypeOf((*MockIDag)(nil).GetActiveJuries))
 }
 
 // CreateGenericTransaction mocks base method
 func (m *MockIDag) CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateGenericTransaction", from, to, daoAmount, daoFee, certID, msg, txPool)
 	ret0, _ := ret[0].(*modules.Transaction)
 	ret1, _ := ret[1].(uint64)
@@ -1927,13 +1655,11 @@ func (m *MockIDag) CreateGenericTransaction(from, to common.Address, daoAmount, 
 
 // CreateGenericTransaction indicates an expected call of CreateGenericTransaction
 func (mr *MockIDagMockRecorder) CreateGenericTransaction(from, to, daoAmount, daoFee, certID, msg, txPool interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateGenericTransaction", reflect.TypeOf((*MockIDag)(nil).CreateGenericTransaction), from, to, daoAmount, daoFee, certID, msg, txPool)
 }
 
 // CreateTokenTransaction mocks base method
 func (m *MockIDag) CreateTokenTransaction(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string, msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateTokenTransaction", from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, msg, txPool)
 	ret0, _ := ret[0].(*modules.Transaction)
 	ret1, _ := ret[1].(uint64)
@@ -1943,13 +1669,11 @@ func (m *MockIDag) CreateTokenTransaction(from, to, toToken common.Address, daoA
 
 // CreateTokenTransaction indicates an expected call of CreateTokenTransaction
 func (mr *MockIDagMockRecorder) CreateTokenTransaction(from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, msg, txPool interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTokenTransaction", reflect.TypeOf((*MockIDag)(nil).CreateTokenTransaction), from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, msg, txPool)
 }
 
 // ChainThreshold mocks base method
 func (m *MockIDag) ChainThreshold() int {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ChainThreshold")
 	ret0, _ := ret[0].(int)
 	return ret0
@@ -1957,13 +1681,11 @@ func (m *MockIDag) ChainThreshold() int {
 
 // ChainThreshold indicates an expected call of ChainThreshold
 func (mr *MockIDagMockRecorder) ChainThreshold() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChainThreshold", reflect.TypeOf((*MockIDag)(nil).ChainThreshold))
 }
 
 // CheckHeaderCorrect mocks base method
 func (m *MockIDag) CheckHeaderCorrect(number int) error {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckHeaderCorrect", number)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -1971,13 +1693,11 @@ func (m *MockIDag) CheckHeaderCorrect(number int) error {
 
 // CheckHeaderCorrect indicates an expected call of CheckHeaderCorrect
 func (mr *MockIDagMockRecorder) CheckHeaderCorrect(number interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckHeaderCorrect", reflect.TypeOf((*MockIDag)(nil).CheckHeaderCorrect), number)
 }
 
 // CheckUnitsCorrect mocks base method
 func (m *MockIDag) CheckUnitsCorrect(assetId string, number int) error {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckUnitsCorrect", assetId, number)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -1985,13 +1705,11 @@ func (m *MockIDag) CheckUnitsCorrect(assetId string, number int) error {
 
 // CheckUnitsCorrect indicates an expected call of CheckUnitsCorrect
 func (mr *MockIDagMockRecorder) CheckUnitsCorrect(assetId, number interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckUnitsCorrect", reflect.TypeOf((*MockIDag)(nil).CheckUnitsCorrect), assetId, number)
 }
 
 // GetBlacklistAddress mocks base method
 func (m *MockIDag) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBlacklistAddress")
 	ret0, _ := ret[0].([]common.Address)
 	ret1, _ := ret[1].(*modules.StateVersion)
@@ -2001,13 +1719,11 @@ func (m *MockIDag) GetBlacklistAddress() ([]common.Address, *modules.StateVersio
 
 // GetBlacklistAddress indicates an expected call of GetBlacklistAddress
 func (mr *MockIDagMockRecorder) GetBlacklistAddress() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlacklistAddress", reflect.TypeOf((*MockIDag)(nil).GetBlacklistAddress))
 }
 
 // RebuildAddrTxIndex mocks base method
 func (m *MockIDag) RebuildAddrTxIndex() error {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RebuildAddrTxIndex")
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -2015,13 +1731,11 @@ func (m *MockIDag) RebuildAddrTxIndex() error {
 
 // RebuildAddrTxIndex indicates an expected call of RebuildAddrTxIndex
 func (mr *MockIDagMockRecorder) RebuildAddrTxIndex() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RebuildAddrTxIndex", reflect.TypeOf((*MockIDag)(nil).RebuildAddrTxIndex))
 }
 
 // GetJurorByAddrHash mocks base method
 func (m *MockIDag) GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetJurorByAddrHash", hash)
 	ret0, _ := ret[0].(*modules.JurorDeposit)
 	ret1, _ := ret[1].(error)
@@ -2030,6 +1744,17 @@ func (m *MockIDag) GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, 
 
 // GetJurorByAddrHash indicates an expected call of GetJurorByAddrHash
 func (mr *MockIDagMockRecorder) GetJurorByAddrHash(hash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetJurorByAddrHash", reflect.TypeOf((*MockIDag)(nil).GetJurorByAddrHash), hash)
+}
+
+// GetJurorReward mocks base method
+func (m *MockIDag) GetJurorReward(jurorAdd common.Address) common.Address {
+	ret := m.ctrl.Call(m, "GetJurorReward", jurorAdd)
+	ret0, _ := ret[0].(common.Address)
+	return ret0
+}
+
+// GetJurorReward indicates an expected call of GetJurorReward
+func (mr *MockIDagMockRecorder) GetJurorReward(jurorAdd interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetJurorReward", reflect.TypeOf((*MockIDag)(nil).GetJurorReward), jurorAdd)
 }

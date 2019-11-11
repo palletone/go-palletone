@@ -699,20 +699,6 @@ func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, args [][]by
 	return unit.Payload, err
 }
 
-func (b *PtnApiBackend) ContractQuery(contractId []byte, txid string, args [][]byte,
-	timeout time.Duration) (rspPayload []byte, err error) {
-	rsp, err := b.ptn.contract.Invoke(rwset.RwM, rwset.ChainId, contractId, txid, args, timeout)
-	rwset.RwM.CloseTxSimulator(rwset.ChainId, txid)
-	rwset.RwM.Close()
-
-	if err != nil {
-		log.Debugf(" err!=nil =====>ContractQuery:contractId[%s]txid[%s]", hex.EncodeToString(contractId), txid)
-		return nil, err
-	}
-	log.Debugf("=====>ContractQuery:contractId[%s]txid[%s]", hex.EncodeToString(contractId), txid)
-	return rsp.Payload, nil
-}
-
 func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage bool) error {
 	log.Debugf("======>ContractStop:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
 	_, err := b.ptn.contract.Stop(rwset.RwM, "palletone", deployId, txid, deleteImage)
@@ -775,6 +761,9 @@ func (b *PtnApiBackend) ContractInvokeReqTxFee(from, to common.Address, daoAmoun
 func (b *PtnApiBackend) ContractStopReqTxFee(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address,
 	deleteImage bool) (fee float64, size float64, tm uint32, err error) {
 	return b.ptn.contractPorcessor.ContractStopReqFee(from, to, daoAmount, daoFee, contractId, deleteImage)
+}
+func (b *PtnApiBackend) ContractQuery(id []byte, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
+	return b.ptn.contractPorcessor.ContractQuery(id, args, timeout)
 }
 
 func (b *PtnApiBackend) ElectionVrf(id uint32) ([]byte, error) {

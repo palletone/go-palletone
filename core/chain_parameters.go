@@ -133,6 +133,9 @@ func NewChainParams() ChainParameters {
 		ContractTxDeployFeeLevel:  DefaultContractTxDeployFeeLevel,
 		ContractTxInvokeFeeLevel:  DefaultContractTxInvokeFeeLevel,
 		ContractTxStopFeeLevel:    DefaultContractTxStopFeeLevel,
+
+		PledgeAllocateThreshold: DefaultPledgeAllocateThreshold,
+		PledgeRecordsThreshold:  DefaultPledgeRecordsThreshold,
 	}
 }
 
@@ -168,6 +171,9 @@ type ChainParameters struct {
 	ContractTxDeployFeeLevel  float64 `json:"contract_tx_deploy_fee_level"`
 	ContractTxInvokeFeeLevel  float64 `json:"contract_tx_invoke_fee_level"`
 	ContractTxStopFeeLevel    float64 `json:"contract_tx_stop_fee_level"`
+
+	PledgeAllocateThreshold int `json:"pledge_allocate_threshold"`
+	PledgeRecordsThreshold  int `json:"pledge_records_threshold"`
 }
 
 func CheckSysConfigArgType(field, value string) error {

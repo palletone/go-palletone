@@ -133,16 +133,17 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 			return nil, err
 		}
 	}
-	d, err := dag.NewDag(db, cache, false)
+
+	dag, err := dag.NewDag(db, cache, false)
 	if err != nil {
 		log.Error("PalletOne New", "NewDag err:", err)
 		return nil, err
 	} else {
-		hash, height := d.Memdag.GetLastStableUnitInfo()
+		hash, height := dag.Memdag.GetLastStableUnitInfo()
 		log.Debugf("init dag success,index:%d, genesis: %s", height, hash.String())
 	}
 
-	d.RefreshSysParameters()
+	dag.RefreshSysParameters()
 
 	ptn := &PalletOne{
 		config:         config,
@@ -150,7 +151,7 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 		accountManager: ctx.AccountManager,
 		shutdownChan:   make(chan bool),
 		networkId:      config.NetworkId,
-		dag:            d,
+		dag:            dag,
 		unitDb:         db,
 		syncCh:         make(chan bool, 1),
 	}
@@ -160,18 +161,18 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
 	//val:=validator.NewValidate(ptn.dag,ptn.dag,ptn.dag,ptn.dag,cache)
-	ptn.txPool = txspool.NewTxPool(config.TxPool, cache, ptn.dag)
+	ptn.txPool = txspool.NewTxPool(config.TxPool, cache, dag)
 
 	//Test for P2P
-	ptn.engine = consensus.New(d, ptn.txPool)
+	ptn.engine = consensus.New(dag, ptn.txPool)
 
-	ptn.mediatorPlugin, err = mp.NewMediatorPlugin( /*ctx, */ &config.MediatorPlugin, ptn, d)
+	ptn.mediatorPlugin, err = mp.NewMediatorPlugin( /*ctx, */ &config.MediatorPlugin, ptn, dag)
 	if err != nil {
 		log.Error("Initialize mediator plugin err:", "error", err)
 		return nil, err
 	}
 
-	ptn.contractPorcessor, err = jury.NewContractProcessor(ptn, d, nil, &config.Jury)
+	ptn.contractPorcessor, err = jury.NewContractProcessor(ptn, dag, nil, &config.Jury)
 	if err != nil {
 		log.Error("contract processor creat:", "error", err)
 		return nil, err

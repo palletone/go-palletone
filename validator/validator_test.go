@@ -75,14 +75,21 @@ func (q *mockStatedbQuery) GetBlacklistAddress() ([]common.Address, *modules.Sta
 func (q *mockStatedbQuery) GetContractJury(contractId []byte) (*modules.ElectionNode, error) {
 	return nil, nil
 }
+
 func (q *mockStatedbQuery) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {
 	return nil, nil, nil
 }
+
 func (q *mockStatedbQuery) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
 	return map[string]*modules.ContractStateValue{}, nil
 }
+
 func (q *mockStatedbQuery) GetJurorByAddrHash(addrHash common.Hash) (*modules.JurorDeposit, error) {
 	return nil, nil
+}
+
+func (q *mockStatedbQuery) GetJurorReward(jurorAdd common.Address) common.Address {
+	return jurorAdd
 }
 
 type mockUtxoQuery struct {
@@ -233,7 +240,8 @@ func TestValidate_ValidateHeader(t *testing.T) {
 	tx := newTx1(t)
 
 	header := newHeader(modules.Transactions{tx})
-	v := NewValidate(nil, nil, nil, nil, newCache(), true)
+	stateQ := &mockStatedbQuery{}
+	v := NewValidate(nil, nil, stateQ, nil, newCache(), true)
 	vresult := v.validateHeaderExceptGroupSig(header, false)
 	t.Log(vresult)
 	assert.Equal(t, vresult, TxValidationCode_VALID)

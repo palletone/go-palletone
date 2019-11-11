@@ -109,7 +109,7 @@ func GetAddrTxHistoryHTTP(apiURL string, input *adaptor.GetAddrTxHistoryInput) (
 		request += "&sort=desc"
 	}
 	//request += "&apikey=YourApiKeyToken"
-	fmt.Println(request)
+	//fmt.Println(request)
 	//
 	strRespose, _, err := httpGet(request)
 	if err != nil {
@@ -340,8 +340,6 @@ func GetTxBasicInfo(input *adaptor.GetTxBasicInfoInput, rpcParams *RPCParams, ne
 	return &result, nil
 }
 
-var transferMethodId = Hex2Bytes("a9059cbb")
-
 func GetTransferTx(input *adaptor.GetTransferTxInput, rpcParams *RPCParams, netID int, isErc20 bool) (
 	*adaptor.GetTransferTxOutput, error) {
 	//get rpc client
@@ -358,7 +356,10 @@ func GetTransferTx(input *adaptor.GetTransferTxInput, rpcParams *RPCParams, netI
 		return nil, err
 	}
 	data := tx.Data()
-	if isErc20 && !bytes.HasPrefix(data, transferMethodId) {
+	transferMethodId := Hex2Bytes("a9059cbb")
+	transferFromMethodId := Hex2Bytes("23b872dd")
+	isTransfer := bytes.HasPrefix(data, transferMethodId)
+	if isErc20 && !isTransfer && !bytes.HasPrefix(data, transferFromMethodId) {
 		return nil, errors.New("not a transfer method invoke")
 	}
 
@@ -406,11 +407,22 @@ func GetTransferTx(input *adaptor.GetTransferTxInput, rpcParams *RPCParams, netI
 	receipt, err := client.TransactionReceipt(context.Background(), hash)
 	if err != nil {
 		if isErc20 { //for pending erc20 tx
-			recvAddr := common.BytesToAddress(data[16:36])
-			result.Tx.ToAddress = recvAddr.String()
-			tokenValue := new(big.Int)
-			tokenValue.SetBytes(data[36:])
-			result.Tx.Amount = adaptor.NewAmountAsset(tokenValue, asset)
+			dataLen := len(data)
+			if isTransfer && dataLen == 68 { //transfer 4+32+32 32=(12+20)
+				recvAddr := common.BytesToAddress(data[16:36])
+				result.Tx.ToAddress = recvAddr.String()
+				tokenValue := new(big.Int)
+				tokenValue.SetBytes(data[36:])
+				result.Tx.Amount = adaptor.NewAmountAsset(tokenValue, asset)
+			} else if dataLen == 100 { //transferFrom 4+32+32+32 32=(12+20)
+				recvAddr := common.BytesToAddress(data[48:68])
+				result.Tx.ToAddress = recvAddr.String()
+				tokenValue := new(big.Int)
+				tokenValue.SetBytes(data[68:])
+				result.Tx.Amount = adaptor.NewAmountAsset(tokenValue, asset)
+			} else {
+				return nil, errors.New("tx data's length is invalid")
+			}
 		}
 		return &result, nil
 	}
@@ -422,10 +434,12 @@ func GetTransferTx(input *adaptor.GetTransferTxInput, rpcParams *RPCParams, netI
 		result.Tx.IsSuccess = false
 	}
 	result.Tx.IsStable = true //todo delete
-	if "0x" == blockHash[:2] || "0X" == blockHash[:2] {
-		result.Tx.BlockID = Hex2Bytes(blockHash[2:])
-	} else {
-		result.Tx.BlockID = Hex2Bytes(blockHash)
+	if len(blockHash) > 2 {
+		if "0x" == blockHash[:2] || "0X" == blockHash[:2] {
+			result.Tx.BlockID = Hex2Bytes(blockHash[2:])
+		} else {
+			result.Tx.BlockID = Hex2Bytes(blockHash)
+		}
 	}
 	result.Tx.BlockHeight = uint(bigIntBlockNum.Uint64())
 	result.Tx.TxIndex = receipt.TransactionIndex

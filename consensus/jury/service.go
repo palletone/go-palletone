@@ -45,6 +45,7 @@ import (
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/txspool"
 	"github.com/palletone/go-palletone/validator"
+	"github.com/palletone/go-palletone/contracts/list"
 )
 
 type PalletOne interface {
@@ -96,11 +97,13 @@ type iDag interface {
 	GetMediator(add common.Address) *core.Mediator
 	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
 	GetJurorByAddrHash(addrHash common.Hash) (*modules.JurorDeposit, error)
+	RetrieveChaincodes() ([]*list.CCInfo, error)
 
 	//nouse
 	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
 	GetScheduledMediator(slotNum uint32) common.Address
 	GetSlotAtTime(when time.Time) uint32
+	GetJurorReward(jurorAdd common.Address) common.Address
 }
 
 type electionVrf struct {

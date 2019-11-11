@@ -74,7 +74,8 @@ type IStateRepository interface {
 	GetJuryCandidateList() (map[string]bool, error)
 	IsJury(address common.Address) bool
 	GetAllJuror() (map[string]*modules.JurorDeposit, error)
-	GetJurorByAddr(addr string) (*modules.JurorDeposit, error)
+	//GetJurorByAddr(addr string) (*modules.JurorDeposit, error)
+	GetJurorReward(jurorAdd common.Address) common.Address
 	GetJurorByAddrHash(addrHash common.Hash) (*modules.JurorDeposit, error)
 	GetContractDeveloperList() ([]common.Address, error)
 	IsContractDeveloper(address common.Address) bool
@@ -251,21 +252,26 @@ func (rep *StateRepository) GetPledgeList() (*modules.PledgeList, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	date := string(dd)
 	key := constants.PledgeList + date
-	data, _, err := rep.statedb.GetContractState(syscontract.DepositContractAddress.Bytes(), key)
+	allM := &modules.PledgeList{}
+	states, err := rep.statedb.GetContractStatesByPrefix(syscontract.DepositContractAddress.Bytes(),
+		key)
 	if err != nil {
 		return nil, err
 	}
-
-	pledgeList := &modules.PledgeList{}
-	err = json.Unmarshal(data, pledgeList)
-	if err != nil {
-		return nil, err
+	for _,v := range states {
+		pledgeList := modules.PledgeList{}
+		err = json.Unmarshal(v.Value, &pledgeList)
+		if err != nil {
+			log.Info("Unmarshal error: ",err.Error())
+			return nil, err
+		}
+		allM.TotalAmount += pledgeList.TotalAmount
+		allM.Members = append(allM.Members,pledgeList.Members...)
 	}
-
-	return pledgeList, nil
+	allM.Date = date
+	return allM, nil
 }
 
 //获得新的用户的质押申请列表
@@ -414,9 +420,20 @@ func (rep *StateRepository) GetJuryCandidateList() (map[string]bool, error) {
 	return rep.statedb.GetJuryCandidateList()
 }
 
-func (rep *StateRepository) GetJurorByAddr(addr string) (*modules.JurorDeposit, error) {
-	return rep.statedb.GetJurorByAddr(addr)
+//func (rep *StateRepository) GetJurorByAddr(addr string) (*modules.JurorDeposit, error) {
+//	return rep.statedb.GetJurorByAddr(addr)
+//}
+
+func (rep *StateRepository) GetJurorReward(jurorAdd common.Address) common.Address {
+	jd, err := rep.statedb.GetJurorByAddr(jurorAdd.Str())
+	if err != nil {
+		log.Debugf(err.Error())
+		return jurorAdd
+	}
+
+	return jd.GetRewardAdd()
 }
+
 func (rep *StateRepository) GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, error) {
 	if addr, exist := rep.mapHash2Address[hash]; exist {
 		log.Infof("GetJurorByAddrHash(hash:%s) in cache map,addr:%s",

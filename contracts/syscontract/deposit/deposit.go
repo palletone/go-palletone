@@ -58,12 +58,11 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	funcName, args := stub.GetFunctionAndParameters()
 	upperFuncName := UpperFirstChar(funcName)
 	switch upperFuncName {
-	//
 	// 申请成为Mediator
 	case modules.ApplyMediator:
 		log.Info("Enter DepositChaincode Contract " + modules.ApplyMediator + " Invoke")
 		if len(args) != 1 {
-			errStr := "Arg need only one parameter."
+			errStr := "Arg need only 1 parameter"
 			log.Error(errStr)
 			return shim.Error(errStr)
 		}
@@ -89,12 +88,11 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		log.Info("Enter DepositChaincode Contract " + modules.UpdateMediatorInfo + " Invoke")
 		//  检查参数
 		if len(args) != 1 {
-			errStr := "Arg need only one parameter."
+			errStr := "arg need only one parameter"
 			log.Error(errStr)
 			return shim.Error(errStr)
 		}
 		return d.UpdateMediatorInfo(stub, args[0])
-	//
 	//  jury 交付保证金
 	case modules.JuryPayToDepositContract:
 		log.Info("Enter DepositChaincode Contract " + modules.JuryPayToDepositContract + " Invoke")
@@ -102,11 +100,20 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Error("need 1 parameter")
 		}
 		return d.JuryPayToDepositContract(stub, args[0])
+		// 更新 Juror 信息
+	case modules.UpdateJuryInfo:
+		log.Info("Enter DepositChaincode Contract " + modules.UpdateJuryInfo + " Invoke")
+		//  检查参数
+		if len(args) != 1 {
+			errStr := "arg need only 1 parameter."
+			log.Error(errStr)
+			return shim.Error(errStr)
+		}
+		return d.updateJuryInfo(stub, args[0])
 		//  jury 申请退出
 	case modules.JuryApplyQuit:
 		log.Info("Enter DepositChaincode Contract " + modules.JuryApplyQuit + " Invoke")
 		return d.JuryApplyQuit(stub)
-	//
 	//  developer 交付保证金
 	case modules.DeveloperPayToDepositContract:
 		log.Info("Enter DepositChaincode Contract " + modules.DeveloperPayToDepositContract + " Invoke")
@@ -115,7 +122,6 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	case modules.DeveloperApplyQuit:
 		log.Info("Enter DepositChaincode Contract " + modules.DeveloperApplyQuit + " Invoke")
 		return d.DevApplyQuit(stub)
-	//
 	//  基金会对加入申请Mediator进行处理
 	case modules.HandleForApplyBecomeMediator:
 		log.Info("Enter DepositChaincode Contract " + modules.HandleForApplyBecomeMediator + " Invoke")
@@ -505,6 +511,22 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			shim.Error(err.Error())
 		}
 		return shim.Success(juryb)
+	case "IsFinishAllocated":
+		if d.IsFinishAllocated(stub) {
+			return shim.Success([]byte("true"))
+		}
+		return shim.Success([]byte("false"))
+	case "IsFinishAddNewRecords":
+		if d.IsFinishAddNewRecords(stub) {
+			return shim.Success([]byte("true"))
+		}
+		return shim.Success([]byte("false"))
+	case "AddNewAddrPledgeRecords":
+		err := d.AddNewAddrPledgeRecords(stub)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		return shim.Success(nil)
 	}
 	return shim.Error("please enter validate function name")
 }
@@ -717,8 +739,8 @@ func (d *DepositChaincode) UpdateMediatorInfo(stub shim.ChaincodeStubInterface, 
 }
 
 //  陪审员交付保证金
-func (d *DepositChaincode) JuryPayToDepositContract(stub shim.ChaincodeStubInterface, pubkey string) pb.Response {
-	return juryPayToDepositContract(stub, pubkey)
+func (d *DepositChaincode) JuryPayToDepositContract(stub shim.ChaincodeStubInterface, args string) pb.Response {
+	return juryPayToDepositContract(stub, args)
 }
 
 //  陪审员申请退出候选列表
@@ -907,6 +929,32 @@ func (d DepositChaincode) GetAllJury(stub shim.ChaincodeStubInterface) pb.Respon
 	return shim.Success(juryb)
 }
 
+func (d DepositChaincode) AddNewAddrPledgeRecords(stub shim.ChaincodeStubInterface) error {
+	return addNewAddrPledgeRecords(stub)
+}
+
+func (d DepositChaincode)IsFinishAllocated(stub shim.ChaincodeStubInterface) bool {
+	h, err := stub.GetState("haveAllocatedCount")
+	if err != nil {
+		return true
+	}
+	if h == nil {
+		return true
+	}
+	return false
+}
+
+func (d DepositChaincode)IsFinishAddNewRecords(stub shim.ChaincodeStubInterface) bool {
+	h, err := stub.GetState("haveAllocatedCount")
+	if err != nil {
+		return true
+	}
+	if h == nil {
+		return true
+	}
+	return false
+}
+
 //
 //func (d DepositChaincode) handleRemoveMediatorNode(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 //	return handleRemoveMediatorNode(stub, args)
@@ -917,7 +965,7 @@ func (d DepositChaincode) GetAllJury(stub shim.ChaincodeStubInterface) pb.Respon
 //	return handleRemoveNormalNode(stub, args)
 //}
 
-//  更新陪审员信息
-//func (d DepositChaincode) updateJuryInfo(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-//	return updateJuryInfo(stub, args)
-//}
+// 更新陪审员信息
+func (d DepositChaincode) updateJuryInfo(stub shim.ChaincodeStubInterface, args string) pb.Response {
+	return updateJuryInfo(stub, args)
+}

@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
+	"sort"
 )
 
 //质押相关的状态数据库操作，包括增加质押，质押分红，质押列表查询，质押提现等
@@ -82,15 +83,15 @@ func delPledgeDepositRecord(stub shim.ChaincodeStubInterface, addr string) error
 	return stub.DelState(key)
 }
 func getPledgeDepositRecord(stub shim.ChaincodeStubInterface, addr string) (*modules.AddressAmount, error) {
-	addrAmt,err:= getPledgeRecord(stub, string(constants.PLEDGE_DEPOSIT_PREFIX), addr)
-	if err!=nil{
-		log.Error("getPledgeDepositRecord by %s return error:%s",addr,err.Error())
-		return nil,err
+	addrAmt, err := getPledgeRecord(stub, string(constants.PLEDGE_DEPOSIT_PREFIX), addr)
+	if err != nil {
+		log.Error("getPledgeDepositRecord by %s return error:%s", addr, err.Error())
+		return nil, err
 	}
-	if addrAmt!=nil {
+	if addrAmt != nil {
 		log.Debugf("getPledgeDepositRecord by %s,result:%d", addr, addrAmt.Amount)
 	}
-	return addrAmt,err
+	return addrAmt, err
 }
 func getAllPledgeDepositRecords(stub shim.ChaincodeStubInterface) ([]*modules.AddressAmount, error) {
 	return getAllPledgeRecords(stub, string(constants.PLEDGE_DEPOSIT_PREFIX))
@@ -103,15 +104,15 @@ func delPledgeWithdrawRecord(stub shim.ChaincodeStubInterface, addr string) erro
 	return stub.DelState(key)
 }
 func getPledgeWithdrawRecord(stub shim.ChaincodeStubInterface, addr string) (*modules.AddressAmount, error) {
-	addrAmt,err:=  getPledgeRecord(stub, string(constants.PLEDGE_WITHDRAW_PREFIX), addr)
-	if err!=nil{
-		log.Error("getPledgeWithdrawRecord by %s return error:%s",addr,err.Error())
-		return nil,err
+	addrAmt, err := getPledgeRecord(stub, string(constants.PLEDGE_WITHDRAW_PREFIX), addr)
+	if err != nil {
+		log.Error("getPledgeWithdrawRecord by %s return error:%s", addr, err.Error())
+		return nil, err
 	}
-	if addrAmt!=nil {
+	if addrAmt != nil {
 		log.Debugf("getPledgeWithdrawRecord by %s,result:%d", addr, addrAmt.Amount)
 	}
-	return addrAmt,err
+	return addrAmt, err
 }
 func getAllPledgeWithdrawRecords(stub shim.ChaincodeStubInterface) ([]*modules.AddressAmount, error) {
 	return getAllPledgeRecords(stub, string(constants.PLEDGE_WITHDRAW_PREFIX))
@@ -151,10 +152,10 @@ func getLastPledgeList(stub shim.ChaincodeStubInterface) (*modules.PledgeList, e
 	if err != nil {
 		return nil, err
 	}
-	return getPledgeListByDate(stub,date)
+	return getPledgeListByDate(stub, date)
 }
-func getPledgeListByDate(stub shim.ChaincodeStubInterface,date string) (*modules.PledgeList, error) {
-	b, err := stub.GetState(constants.PledgeList + date)
+func getPledgeListByDate(stub shim.ChaincodeStubInterface, date string) (*modules.PledgeList, error) {
+	b, err := stub.GetStateByPrefix(constants.PledgeList + date)
 	if err != nil {
 		return nil, err
 	}
@@ -162,12 +163,36 @@ func getPledgeListByDate(stub shim.ChaincodeStubInterface,date string) (*modules
 		return nil, nil
 	}
 	allM := &modules.PledgeList{}
-	err = json.Unmarshal(b, allM)
-	if err != nil {
-		return nil, err
+	for _, kv := range b {
+		each := modules.PledgeList{}
+		err = json.Unmarshal(kv.Value, &each)
+		if err != nil {
+			return nil, err
+		}
+		allM.TotalAmount += each.TotalAmount
+		allM.Members = append(allM.Members, each.Members...)
 	}
+	//  排序
+	sort.Sort(allM.Members)
+	allM.Date = date
 	return allM, nil
 }
+
+//func getPledgeListByDate(stub shim.ChaincodeStubInterface,date string) (*modules.PledgeList, error) {
+//	b, err := stub.GetState(constants.PledgeList + date)
+//	if err != nil {
+//		return nil, err
+//	}
+//	if b == nil {
+//		return nil, nil
+//	}
+//	allM := &modules.PledgeList{}
+//	err = json.Unmarshal(b, allM)
+//	if err != nil {
+//		return nil, err
+//	}
+//	return allM, nil
+//}
 //查询历史上的所有质押列表记录
 func getAllPledgeRewardHistory(stub shim.ChaincodeStubInterface) ([]*modules.PledgeList, error) {
 	b, err := stub.GetStateByPrefix(constants.PledgeList)
@@ -189,3 +214,63 @@ func getAllPledgeRewardHistory(stub shim.ChaincodeStubInterface) ([]*modules.Ple
 
 	return result, nil
 }
+
+//  如果都满了，就获取最新的key
+//func getLastDateKey(stub shim.ChaincodeStubInterface) string {
+//	date, err := getLastPledgeListDate(stub)
+//	if err != nil {
+//		log.Info("getLastPledgeListDate error: ", err.Error())
+//		return ""
+//	}
+//	b, err := stub.GetStateByPrefix(constants.PledgeList + date)
+//	if err != nil {
+//		log.Info("GetStateByPrefix error: ", err.Error())
+//		return ""
+//	}
+//	lastKey := 0
+//	for _, kv := range b {
+//		idx := strings.Index(kv.Key, "-")
+//		date := kv.Key[idx+1:]
+//		log.Info("key = ",date)
+//		key, err := strconv.Atoi(date)
+//		if err != nil {
+//			log.Info("Atoi error: ", err.Error())
+//			return ""
+//		}
+//		if lastKey < key {
+//			lastKey = key
+//		}
+//	}
+//	return strconv.Itoa(lastKey)
+//}
+
+//  添加新质押时，查看当前日期批次是否都满了
+//func getNeedAddMemberPledgeList(stub shim.ChaincodeStubInterface) (pledgeList *modules.PledgeList, key string) {
+//	//  获取最新列表，查看是否批次都满了
+//	date, err := getLastPledgeListDate(stub)
+//	if err != nil {
+//		log.Info("getLastPledgeListDate error: ", err.Error())
+//		return nil, ""
+//	}
+//	b, err := stub.GetStateByPrefix(constants.PledgeList + date)
+//	if err != nil {
+//		log.Info("GetStateByPrefix error: ", err.Error())
+//		return nil, ""
+//	}
+//	for i, kv := range b {
+//		each := modules.PledgeList{}
+//		err = json.Unmarshal(kv.Value, &each)
+//		log.Infof("i = %d, members lens = %d", i, len(each.Members))
+//		if err != nil {
+//			log.Info("Unmarshal error: ", err.Error())
+//			return nil, ""
+//		}
+//		if len(each.Members) < 2 {
+//			idx := strings.Index(kv.Key, "-")
+//			key := kv.Key[idx+1:]
+//			log.Info("key = ",key)
+//			return &each, key
+//		}
+//	}
+//	return nil, ""
+//}

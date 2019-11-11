@@ -23,8 +23,13 @@ package core
 const (
 	DefaultTokenAmount = "100000000000000000"
 	//DefaultTokenDecimal              = 8
-	DefaultChainID           = 1
-	DefaultPledgeDailyReward = 288745000
+	DefaultChainID = 1
+	//DefaultPledgeDailyReward = 288745000
+	DefaultPledgeDailyReward = 300000000
+	//当 t = 2 时，即按批分红，且继续质押，且提取时，tx_size = 2644 b,当前单元大小为 5 m = 5120 kb =>1,982.934947049924
+	DefaultPledgeAllocateThreshold = 2
+	//  当添加新质押地址 t = 2 时，tx_size = 1267 b,当前单元大小为 5 m = 5120 kb =>3,236.345679012346
+	DefaultPledgeRecordsThreshold = 2
 	// DefaultTxCoinYearRate            = 0
 	DefaultRewardHeight              = 100
 	DefaultGenerateUnitReward        = 15000
@@ -66,7 +71,7 @@ const (
 	DefaultActiveMediatorCount = 5 //21
 	DefaultMinMediatorCount    = 1 //21
 	DefaultMinMediatorInterval = 1
-	DefaultMinMaintSkipSlots   = 0
+	DefaultMinMaintSkipSlots   = 2
 
 	//contract
 	DefaultContractSystemVersion = "" //contractId1:v1;contractId2:v2;contractId3:v3
@@ -137,9 +142,9 @@ const (
 	DefaultMaintenanceInterval  = 60 * 5 // 60 * 60 * 24 // seconds, aka: 1 day
 	DefaultMaintenanceSkipSlots = 0      //Devin: Don't change // 1 // number of slots to skip for maintenance interval
 
-	DefaultMediatorCreateFee  = 50000
-	DefaultAccountUpdateFee   = 5000
-	DefaultTransferPtnBaseFee = 5000
+	DefaultMediatorCreateFee        = 50000
+	DefaultAccountUpdateFee         = 5000
+	DefaultTransferPtnBaseFee       = 5000
 	DefaultTransferPtnPricePerKByte = 15000
 	DefaultContractInvokeFee        = 100000000
 

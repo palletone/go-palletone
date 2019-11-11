@@ -47,7 +47,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	log.Debugf("generate unit ...")
 
 	// 2. 生产unit，添加交易集、时间戳、签名
-	newUnit, err := dag.CreateUnit(producer, txpool, when)
+	newUnit, err := dag.createUnit(producer, txpool)
 	if err != nil {
 		errStr := fmt.Sprintf("GenerateUnit error: %v", err.Error())
 		log.Debug(errStr)
@@ -106,4 +106,25 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	}()
 
 	return sign_unit, nil
+}
+
+// createUnit, create a unit when mediator being produced
+func (d *Dag) createUnit(mAddr common.Address, txpool txspool.ITxPool) (*modules.Unit, error) {
+	_, _, state, rep, _ := d.Memdag.GetUnstableRepositories()
+	med, err := state.RetrieveMediator(mAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	//fun := func(jurorAdd common.Address) common.Address {
+	//	jd, err := state.GetJurorByAddr(jurorAdd.Str())
+	//	if err != nil {
+	//		log.Debugf(err.Error())
+	//		return jurorAdd
+	//	}
+	//
+	//	return jd.GetRewardAdd()
+	//}
+
+	return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool, rep, state.GetJurorReward)
 }

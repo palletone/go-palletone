@@ -171,7 +171,7 @@ func GetMappAddr(addr *adaptor.GetPalletOneMappingAddressInput,
 			return nil, err
 		}
 		resultStr := ret.String()
-		fmt.Println("resultStr", resultStr)
+		//fmt.Println("resultStr", resultStr)
 		if len(resultStr) == 0 || resultStr == EMPTY_ADDRESS {
 			return nil, adaptor.ErrNotFound
 		}
