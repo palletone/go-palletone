@@ -251,7 +251,7 @@ matrix:
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
             ./upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH} ${TRAVIS_BUILD_NUMBER};
-            echo "The path of all bdd log in vsftpd is 'ftp://182.92.193.121"
+            echo "The path of all bdd log in vsftpd is 'ftp://182.92.193.121";
           fi
       install:
         - sudo -H pip install --upgrade pip
@@ -288,7 +288,7 @@ matrix:
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
             ./upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH} ${TRAVIS_BUILD_NUMBER};
-            echo "The path of all bdd log in vsftpd is 'ftp://182.92.193.121"
+            echo "The path of all bdd log in vsftpd is 'ftp://182.92.193.121";
           fi
       install:
         - sudo -H pip install --upgrade pip

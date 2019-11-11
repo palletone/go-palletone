@@ -511,6 +511,22 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			shim.Error(err.Error())
 		}
 		return shim.Success(juryb)
+	case "IsFinishAllocated":
+		if d.IsFinishAllocated(stub) {
+			return shim.Success([]byte("true"))
+		}
+		return shim.Success([]byte("false"))
+	case "IsFinishAddNewRecords":
+		if d.IsFinishAddNewRecords(stub) {
+			return shim.Success([]byte("true"))
+		}
+		return shim.Success([]byte("false"))
+	case "AddNewAddrPledgeRecords":
+		err := d.AddNewAddrPledgeRecords(stub)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		return shim.Success(nil)
 	}
 	return shim.Error("please enter validate function name")
 }
@@ -911,6 +927,32 @@ func (d DepositChaincode) GetAllJury(stub shim.ChaincodeStubInterface) pb.Respon
 		shim.Error(err.Error())
 	}
 	return shim.Success(juryb)
+}
+
+func (d DepositChaincode) AddNewAddrPledgeRecords(stub shim.ChaincodeStubInterface) error {
+	return addNewAddrPledgeRecords(stub)
+}
+
+func (d DepositChaincode)IsFinishAllocated(stub shim.ChaincodeStubInterface) bool {
+	h, err := stub.GetState("haveAllocatedCount")
+	if err != nil {
+		return true
+	}
+	if h == nil {
+		return true
+	}
+	return false
+}
+
+func (d DepositChaincode)IsFinishAddNewRecords(stub shim.ChaincodeStubInterface) bool {
+	h, err := stub.GetState("haveAllocatedCount")
+	if err != nil {
+		return true
+	}
+	if h == nil {
+		return true
+	}
+	return false
 }
 
 //
