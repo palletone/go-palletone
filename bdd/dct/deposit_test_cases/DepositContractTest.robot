@@ -359,6 +359,7 @@ Business_08
     Should Be Equal As Numbers    ${amount}    9996
     ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    50
     log    ${result}
+    sleep    5
     ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}
     log    ${mDeposit}
     ${amount}    getBalance    ${mediatorAddr_01}    PTN
@@ -380,6 +381,7 @@ Business_08
     Should Be Equal As Numbers    ${amount}    9946
     ${result}    mediatorPayToDepositContract    ${mediatorAddr_02}    50
     log    ${result}
+    sleep    5
     ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_02}
     log    ${mDeposit}
     ${amount}    getBalance    ${mediatorAddr_02}    PTN
@@ -446,15 +448,21 @@ PledgeTest
     ${result}    queryPledgeList    #查看整个网络所有质押情况
     log    ${result}
     sleep    5
-    ${result}    QueryPledgeListByDate    20191014
+    ${result}    QueryPledgeListByDate    20191111
     log    ${result}
     sleep    5
     ${result}    QueryAllPledgeHistory
     log    ${result}
     sleep    5
-    ${result}    HandlePledgeReward    ${votedAddress}    #1
+    ${result}    IsFinishAddNewRecords
+    log    ${result}
+    sleep    3
+    ${result}    AddNewAddrPledgeRecords    ${votedAddress}    #1
     log    ${result}
     sleep    5
+    ${result}    IsFinishAddNewRecords
+    log    ${result}
+    sleep    3
     ${result}    getBalance    ${votedAddress}    PTN
     log    ${result}
     Should Be Equal As Numbers    ${result}    9897.99995
@@ -465,7 +473,7 @@ PledgeTest
     ${total_amount}    Get From Dictionary    ${resultJson}    total_amount
     Should Be Equal As Strings    ${total_amount}    10000000000
     sleep    5
-    ${result}    QueryPledgeListByDate    20191014
+    ${result}    QueryPledgeListByDate    20191111
     log    ${result}
     sleep    5
     ${result}    QueryAllPledgeHistory
@@ -478,16 +486,22 @@ PledgeTest
     log    ${pledgeAmount}
     Should Be Equal As Strings    ${pledgeAmount}    100
     sleep    5
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    3
     ${result}    HandlePledgeReward    ${foundationAddr}    #1
     log    ${result}
     sleep    5
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    3
     ${result}    queryPledgeList    #查看整个网络所有质押情况
     log    ${result}
     ${resultJson}    To Json    ${result}
     ${total_amount}    Get From Dictionary    ${resultJson}    total_amount
     Should Be Equal As Strings    ${total_amount}    10288745000
     sleep    5
-    ${result}    QueryPledgeListByDate    20191015
+    ${result}    QueryPledgeListByDate    20191112
     log    ${result}
     sleep    5
     ${result}    QueryAllPledgeHistory
@@ -517,9 +531,15 @@ PledgeTest
     log    ${withdrawApplyAmount}
     Should Be Equal As Strings    ${withdrawApplyAmount}    100
     sleep    5
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    3
     ${result}    HandlePledgeReward    ${foundationAddr}    #1
     log    ${result}
     sleep    5
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    3
     ${result}    getBalance    ${votedAddress}    PTN
     log    ${result}
     Should Be Equal As Numbers    ${result}    9996.99995
@@ -537,7 +557,7 @@ PledgeTest
     ${total_amount}    Get From Dictionary    ${resultJson}    total_amount
     Should Be Equal As Strings    ${total_amount}    577490000
     sleep    5
-    ${result}    QueryPledgeListByDate    20191016
+    ${result}    QueryPledgeListByDate    20191113
     log    ${result}
     sleep    5
     ${result}    QueryAllPledgeHistory
@@ -549,7 +569,7 @@ PledgeTest
     Should Be Equal As Numbers    ${amount}    577490000
     ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${amount}    #108.66235，866,235,000是质押增发的
-    Should Be Equal As Numbers    ${amount}    108.66235
+    Should Be Equal As Numbers    ${amount}    105.7749
 
 Business_09
     [Documentation]    jury 和 dev 交付保证金数量不对流程
@@ -557,6 +577,7 @@ Business_09
     ${amount}    getBalance    ${juryAddr_01}    PTN
     log    ${amount}
     Should Be Equal As Numbers    ${amount}    9998
+    sleep    1
     ${resul}    juryPayToDepositContract    ${juryAddr_01}    11    ${juryAddr_01_pubkey}    #应该是10，但是为11
     log    ${resul}
     sleep    5
@@ -564,18 +585,21 @@ Business_09
     log    ${amount}
     Should Be Equal As Numbers    ${amount}    9997
     log    dev
+    sleep    1
     ${amount}    getBalance    ${developerAddr_01}    PTN
     log    ${amount}
     Should Be Equal As Numbers    ${amount}    9998
+    sleep    1
     ${resul}    developerPayToDepositContract    ${developerAddr_01}    2    #应该为1，但是为2
     log    ${resul}
     sleep    5
     ${amount}    getBalance    ${developerAddr_01}    PTN
     log    ${amount}
     Should Be Equal As Numbers    ${amount}    9997
+    sleep    1
     ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${amount}    #108.66235，866,235,000是质押增发的，没有变化
-    Should Be Equal As Numbers    ${amount}    108.66235
+    Should Be Equal As Numbers    ${amount}    105.7749
 
 Business_10
     [Documentation]    jury 交付 10 ptn 才可以加入候选列表
@@ -821,10 +845,13 @@ PledgeTest02
     log    ${result}
     ${result}    getBalance    ${juryAddr_02}    PTN
     log    ${result}
-    ${result}    mediatorVote    ${developerAddr_01}    ${mediatorAddress}    #投票某超级节点    #5000DAO
+    ${result}    getBalance    ${developerAddr_01}    PTN
+    log    ${result}
+    sleep    1
+    ${result}    pledgeDeposit    ${developerAddr_01}    100    #质押PTN    #101
     log    ${result}
     sleep    3
-    ${result}    pledgeDeposit    ${developerAddr_01}    100    #质押PTN    #101
+    ${result}    mediatorVote    ${developerAddr_01}    ${mediatorAddress}    #投票某超级节点    #5000DAO
     log    ${result}
     sleep    3
     ${result}    queryPledgeStatusByAddr    ${developerAddr_01}    #查看某地址的质押结果
