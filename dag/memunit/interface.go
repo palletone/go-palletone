@@ -28,21 +28,6 @@ import (
 	"github.com/palletone/go-palletone/txspool"
 )
 
-// type IMemDag interface {
-// 	Save(unit *modules.Unit, txpool txspool.ITxPool) error
-// 	GetUnit(hash common.Hash) (*modules.Unit, error)
-// 	GetHashByNumber(chainIndex *modules.ChainIndex) (common.Hash, error)
-// 	UpdateMemDag(hash common.Hash, sign []byte, txpool txspool.ITxPool) error
-// 	Exists(uHash common.Hash) bool
-// 	Prune(assetId string, hashs []common.Hash) error
-// 	SwitchMainChain() error
-// 	QueryIndex(assetId string, maturedUnitHash common.Hash) (uint64, int)
-// 	GetCurrentUnit(assetid modules.AssetId, index uint64) (*modules.Unit, error)
-// 	GetNewestUnit(assetid modules.AssetId) (*modules.Unit, error)
-// 	GetDelhashs() chan common.Hash
-// 	PushDelHashs(hashs []common.Hash)
-// }
-
 type IMemDag interface {
 	AddStableUnit(unit *modules.Unit)
 	SetStableUnit(unit *modules.Unit, isGenesis bool)
