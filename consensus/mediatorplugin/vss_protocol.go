@@ -82,7 +82,7 @@ func (mp *MediatorPlugin) startVSSProtocol() {
 		return
 	case <-time.After(sleepTime):
 		// 广播 vss deal 给其他节点，并处理来自其他节点的deal
-		mp.broadcastVSSDeals()
+		go mp.broadcastVSSDeals()
 	}
 
 	// 再隔1个生产间隔，才处理response，防止对应的 deal 还没收到的情况
@@ -90,7 +90,7 @@ func (mp *MediatorPlugin) startVSSProtocol() {
 	case <-mp.quit:
 		return
 	case <-time.After(sleepTime):
-		mp.launchVSSRespLoops()
+		go mp.launchVSSRespLoops()
 	}
 
 	// 再隔半个生产间隔，验证vss协议是否完成，并开始群签名
@@ -98,7 +98,7 @@ func (mp *MediatorPlugin) startVSSProtocol() {
 	case <-mp.quit:
 		return
 	case <-time.After(time.Second * time.Duration((interval+1)/2)):
-		mp.completeVSSProtocol()
+		go mp.completeVSSProtocol()
 	}
 }
 
@@ -114,7 +114,7 @@ func (mp *MediatorPlugin) completeVSSProtocol() {
 	mp.vssBufLock.Unlock()
 
 	// 验证vss是否完成，并开启群签名
-	mp.launchGroupSignLoops()
+	go mp.launchGroupSignLoops()
 }
 
 func (mp *MediatorPlugin) launchGroupSignLoops() {
@@ -218,7 +218,8 @@ func (mp *MediatorPlugin) processVSSDeal(localMed common.Address, deal *dkg.Deal
 		Resp:     resp,
 		Deadline: uint64(deadline),
 	}
-	mp.vssResponseFeed.Send(respEvent)
+
+	go mp.vssResponseFeed.Send(respEvent)
 	log.Debugf("the mediator(%v) broadcast the vss response to the mediator(%v)",
 		localMed.Str(), vrfrMed.Str())
 }
@@ -245,7 +246,7 @@ func (mp *MediatorPlugin) broadcastVSSDeals() {
 				Deal:     deal,
 				Deadline: uint64(deadline),
 			}
-			mp.vssDealFeed.Send(event)
+			go mp.vssDealFeed.Send(event)
 		}
 	}
 }
