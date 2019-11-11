@@ -131,6 +131,11 @@ web3._extend({
             // outputFormatter: utils.toDecimal
         }), 
         new web3._extend.Method({
+            name: 'getTxStatusByHash',
+            call: 'dag_getTxStatusByHash',  
+            params: 1,
+        }),
+        new web3._extend.Method({
             name: 'getUtxoEntry',
             call: 'dag_getUtxoEntry',
             params: 1,

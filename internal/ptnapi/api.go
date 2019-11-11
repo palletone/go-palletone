@@ -67,7 +67,7 @@ type ContractDeployRsp struct {
 
 type ContractFeeRsp struct {
 	TxSize         float64 `json:"tx_size(byte)"`
-	TimeOut        uint32 `json:"time_out(s)"`
+	TimeOut        uint32  `json:"time_out(s)"`
 	ApproximateFee float64 `json:"approximate_fee(dao)"`
 }
 
@@ -373,18 +373,15 @@ func (s *PublicTransactionPoolAPI) GetTxHashByReqId(ctx context.Context, hashHex
 }
 
 // GetTxPoolTxByHash returns the pool transaction for the given hash
-func (s *PublicTransactionPoolAPI) GetTxPoolTxByHash(ctx context.Context, hex string) (string, error) {
+func (s *PublicTransactionPoolAPI) GetTxPoolTxByHash(ctx context.Context, hex string) (*ptnjson.TxPoolTxJson, error) {
 	log.Debug("this is hash tx's hash hex to find tx.", "hex", hex)
 	hash := common.HexToHash(hex)
 	log.Debug("this is hash tx's hash  to find tx.", "hash", hash.String())
 	item, err := s.b.GetTxPoolTxByHash(hash)
 	if err != nil {
-		return "pool_tx:null", err
-	} else {
-		info := NewPublicReturnInfo("txpool_tx", item)
-		result_json, _ := json.Marshal(info)
-		return string(result_json), nil
+		return nil, err
 	}
+	return item, nil
 }
 
 /* old version
