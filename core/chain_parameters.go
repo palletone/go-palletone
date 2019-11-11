@@ -172,8 +172,8 @@ type ChainParameters struct {
 	ContractTxInvokeFeeLevel  float64 `json:"contract_tx_invoke_fee_level"`
 	ContractTxStopFeeLevel    float64 `json:"contract_tx_stop_fee_level"`
 
-	PledgeAllocateThreshold int `json:pledge_allocate_threshold`
-	PledgeRecordsThreshold  int `json:pledge_records_threshold`
+	PledgeAllocateThreshold int `json:"pledge_allocate_threshold"`
+	PledgeRecordsThreshold  int `json:"pledge_records_threshold"`
 }
 
 func CheckSysConfigArgType(field, value string) error {
