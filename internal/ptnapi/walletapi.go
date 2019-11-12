@@ -1411,7 +1411,7 @@ func (s *PublicWalletAPI) getFileInfo(filehash string) ([]*ptnjson.ProofOfExiste
 	for _, file := range files {
 		return s.b.QueryProofOfExistenceByReference(file.Reference)
 	}
-	return nil, nil
+	return result, nil
 }
 
 //根据交易哈希 查询存证结果
