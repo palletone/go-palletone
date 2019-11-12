@@ -112,6 +112,13 @@ type ChainParametersBase struct {
 func NewChainParams() ChainParameters {
 	return ChainParameters{
 		ChainParametersBase: NewChainParametersBase(),
+
+		ChainParametersExtra: NewChainParametersExtra(),
+	}
+}
+
+func NewChainParametersExtra104alpha() ChainParametersExtra104alpha {
+	return ChainParametersExtra104alpha{
 		// TxCoinYearRate:       DefaultTxCoinYearRate,
 		//DepositPeriod:        DefaultDepositPeriod,
 		UccMemory:     DefaultUccMemory,
@@ -133,6 +140,19 @@ func NewChainParams() ChainParameters {
 		ContractTxDeployFeeLevel:  DefaultContractTxDeployFeeLevel,
 		ContractTxInvokeFeeLevel:  DefaultContractTxInvokeFeeLevel,
 		ContractTxStopFeeLevel:    DefaultContractTxStopFeeLevel,
+	}
+}
+
+type ChainParametersExtra struct {
+	ChainParametersExtra104alpha
+
+	PledgeAllocateThreshold int `json:"pledge_allocate_threshold"`
+	PledgeRecordsThreshold  int `json:"pledge_records_threshold"`
+}
+
+func NewChainParametersExtra() ChainParametersExtra {
+	return ChainParametersExtra{
+		ChainParametersExtra104alpha: NewChainParametersExtra104alpha(),
 
 		PledgeAllocateThreshold: DefaultPledgeAllocateThreshold,
 		PledgeRecordsThreshold:  DefaultPledgeRecordsThreshold,
@@ -144,6 +164,10 @@ func NewChainParams() ChainParameters {
 type ChainParameters struct {
 	ChainParametersBase
 
+	ChainParametersExtra
+}
+
+type ChainParametersExtra104alpha struct {
 	// TxCoinYearRate float64 `json:"tx_coin_year_rate"` //交易币天的年利率
 	//DepositRate   float64 `json:"deposit_rate"`   //保证金的年利率
 	//DepositPeriod int     `json:"deposit_period"` //保证金周期
@@ -171,9 +195,6 @@ type ChainParameters struct {
 	ContractTxDeployFeeLevel  float64 `json:"contract_tx_deploy_fee_level"`
 	ContractTxInvokeFeeLevel  float64 `json:"contract_tx_invoke_fee_level"`
 	ContractTxStopFeeLevel    float64 `json:"contract_tx_stop_fee_level"`
-
-	PledgeAllocateThreshold int `json:"pledge_allocate_threshold"`
-	PledgeRecordsThreshold  int `json:"pledge_records_threshold"`
 }
 
 func CheckSysConfigArgType(field, value string) error {
