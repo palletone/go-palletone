@@ -23,9 +23,9 @@ package core
 const (
 	DefaultTokenAmount = "100000000000000000"
 	//DefaultTokenDecimal              = 8
-	DefaultChainID = 1
-	//DefaultPledgeDailyReward = 288745000
-	DefaultPledgeDailyReward = 300000000
+	DefaultChainID           = 1
+	DefaultPledgeDailyReward = 288745000
+	//DefaultPledgeDailyReward = 300000000
 	//当 t = 2 时，即按批分红，且继续质押，且提取时，tx_size = 2644 b,当前单元大小为 5 m = 5120 kb =>1,982.934947049924
 	DefaultPledgeAllocateThreshold = 2
 	//  当添加新质押地址 t = 2 时，tx_size = 1267 b,当前单元大小为 5 m = 5120 kb =>3,236.345679012346
@@ -143,9 +143,9 @@ const (
 	DefaultMaintenanceSkipSlots = 0      //Devin: Don't change // 1 // number of slots to skip for maintenance interval
 
 	DefaultMediatorCreateFee        = 50000
-	DefaultAccountUpdateFee         = 5000
+	DefaultAccountUpdateFee         = 1000000
 	DefaultTransferPtnBaseFee       = 5000
-	DefaultTransferPtnPricePerKByte = 15000
+	DefaultTransferPtnPricePerKByte = 30000
 	DefaultContractInvokeFee        = 100000000
 
 	DefaultUnitMaxSize = 5 * 1024 * 1024 //5M
