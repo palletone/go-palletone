@@ -72,7 +72,7 @@ type ChainParametersExtraTemp104alpha struct {
 }
 
 func (cp *ChainParameters) EncodeRLP(w io.Writer) error {
-	cpt := cp.getCPT()
+	cpt := cp.GetCPT()
 
 	return rlp.Encode(w, cpt)
 }
@@ -115,7 +115,7 @@ func (cp *ChainParametersExtra) GetCPT() *ChainParametersExtraTemp {
 	}
 }
 
-func (cp *ChainParameters) getCPT() *ChainParametersTemp {
+func (cp *ChainParameters) GetCPT() *ChainParametersTemp {
 	return &ChainParametersTemp{
 		ChainParametersBase: cp.ChainParametersBase,
 
@@ -264,7 +264,7 @@ func (cpt *ChainParametersExtraTemp) GetCP(cp *ChainParametersExtra) error {
 	return nil
 }
 
-func (cpt *ChainParametersTemp) getCP(cp *ChainParameters) error {
+func (cpt *ChainParametersTemp) GetCP(cp *ChainParameters) error {
 	cp.ChainParametersBase = cpt.ChainParametersBase
 
 	err := cpt.ChainParametersExtraTemp.GetCP(&cp.ChainParametersExtra)
@@ -287,7 +287,7 @@ func (cp *ChainParameters) DecodeRLP(s *rlp.Stream) error {
 		return err
 	}
 
-	err = cpt.getCP(cp)
+	err = cpt.GetCP(cp)
 	if err != nil {
 		return err
 	}
