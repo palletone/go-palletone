@@ -1395,33 +1395,35 @@ func (s *PrivateWalletAPI) CreateTraceability(ctx context.Context, addr, uid, sy
 
 //根据maindata信息 查询存证结果  filehash  --> maindata
 func (s *PublicWalletAPI) getFileInfo(filehash string) ([]*ptnjson.ProofOfExistenceJson, error) {
-	//get fileinfos
 	files, err := s.b.GetFileInfo(filehash)
 	if err != nil {
 		return nil, err
 	}
-    result := []*ptnjson.ProofOfExistenceJson{}
+	result := []*ptnjson.ProofOfExistenceJson{}
 	for _, file := range files {
-		poe,err := s.b.QueryProofOfExistenceByReference(file.Reference)
+		poe, err := s.b.QueryProofOfExistenceByReference(file.Reference)
 		if err != nil {
-			return nil,err
+			return nil, err
 		}
-		result = append(result,poe...)
+		result = append(result, poe...)
 	}
 
-	return result, nil
+	for _, file := range files {
+		return s.b.QueryProofOfExistenceByReference(file.Reference)
+	}
+	return nil, nil
 }
 
 //根据交易哈希 查询存证结果
 func (s *PublicWalletAPI) GetFileInfoByTxid(ctx context.Context, txid common.Hash) ([]*ptnjson.ProofOfExistenceJson, error) {
-	tx,err := s.b.GetTxByHash(txid)
+	tx, err := s.b.GetTxByHash(txid)
 	result := []*ptnjson.ProofOfExistenceJson{}
-	for _,data := range tx.Data {
-		poe,err :=s.b.QueryProofOfExistenceByReference(data.Reference)
+	for _, data := range tx.Data {
+		poe, err := s.b.QueryProofOfExistenceByReference(data.Reference)
 		if err != nil {
-			return nil,err
+			return nil, err
 		}
-		result = append(result,poe...)
+		result = append(result, poe...)
 	}
 	return result, err
 }
