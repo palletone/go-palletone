@@ -64,7 +64,7 @@ function replacejson()
 
     add=`echo $add | jq ".initialParameters.maintenance_skip_slots = 2"`
 
-    add=`echo $add | jq ".immutableChainParameters.min_maint_skip_slots = 2"`
+    # add=`echo $add | jq ".immutableChainParameters.min_maint_skip_slots = 2"`
 
     add=`echo $add | jq ".initialParameters.mediator_interval = 3"`
 
@@ -139,7 +139,8 @@ fi
 
 getJuryIp=`./gptn getJuryIp`
 tempinfo=`echo $getJuryIp | sed -n '$p'| awk '{print $NF}'`
-ip=`echo ${tempinfo///}`
+ip=`echo ${tempinfo//
+/}`
 
 LoopDeploy $n $ip;
 

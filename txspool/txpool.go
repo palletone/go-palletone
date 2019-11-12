@@ -976,10 +976,10 @@ func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*TxPoolTransaction, error) 
 // and nil otherwise.
 func (pool *TxPool) Get(hash common.Hash) (*TxPoolTransaction, common.Hash) {
 	var u_hash common.Hash
-	tx := new(TxPoolTransaction)
+	//tx := new(TxPoolTransaction)
 	interTx, has := pool.all.Load(hash)
 	if has {
-		tx = interTx.(*TxPoolTransaction)
+		tx := interTx.(*TxPoolTransaction)
 		if tx.Tx.Hash() != hash {
 			pool.all.Delete(hash)
 			pool.priority_sorted.Removed()
