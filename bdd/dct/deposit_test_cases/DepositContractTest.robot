@@ -1,6 +1,7 @@
 *** Settings ***
 Resource          publicParams.txt
 Library           RequestsLibrary
+Library           String
 
 *** Variables ***
 ${mediatorAddr_01}    ${EMPTY}
@@ -448,7 +449,12 @@ PledgeTest
     ${result}    queryPledgeList    #查看整个网络所有质押情况
     log    ${result}
     sleep    5
-    ${result}    QueryPledgeListByDate    20191111
+    ${time}    Get Time
+    ${date}    Get Substring    ${time}    0    10
+    log    ${date}
+    ${yyyy}    ${mm}    ${dd} =    Get Time    year,month,day
+    ${date}    Catenate    SEPARATOR=    ${yyyy}    ${mm}    ${dd}
+    ${result}    QueryPledgeListByDate    ${date}
     log    ${result}
     sleep    5
     ${result}    QueryAllPledgeHistory
@@ -473,7 +479,12 @@ PledgeTest
     ${total_amount}    Get From Dictionary    ${resultJson}    total_amount
     Should Be Equal As Strings    ${total_amount}    10000000000
     sleep    5
-    ${result}    QueryPledgeListByDate    20191111
+    ${time}    Get Time
+    ${date}    Get Substring    ${time}    0    10
+    log    ${date}
+    ${yyyy}    ${mm}    ${dd} =    Get Time    year,month,day
+    ${date}    Catenate    SEPARATOR=    ${yyyy}    ${mm}    ${dd}
+    ${result}    QueryPledgeListByDate    ${date}
     log    ${result}
     sleep    5
     ${result}    QueryAllPledgeHistory
@@ -500,9 +511,6 @@ PledgeTest
     ${resultJson}    To Json    ${result}
     ${total_amount}    Get From Dictionary    ${resultJson}    total_amount
     Should Be Equal As Strings    ${total_amount}    10288745000
-    sleep    5
-    ${result}    QueryPledgeListByDate    20191112
-    log    ${result}
     sleep    5
     ${result}    QueryAllPledgeHistory
     log    ${result}
@@ -556,9 +564,6 @@ PledgeTest
     ${resultJson}    To Json    ${result}
     ${total_amount}    Get From Dictionary    ${resultJson}    total_amount
     Should Be Equal As Strings    ${total_amount}    577490000
-    sleep    5
-    ${result}    QueryPledgeListByDate    20191113
-    log    ${result}
     sleep    5
     ${result}    QueryAllPledgeHistory
     log    ${result}
@@ -778,7 +783,12 @@ PledgeTest02
     ${result}    queryPledgeList    #查看整个网络所有质押情况
     log    ${result}
     sleep    1
-    ${result}    QueryPledgeListByDate    20191111
+    ${time}    Get Time
+    ${date}    Get Substring    ${time}    0    10
+    log    ${date}
+    ${yyyy}    ${mm}    ${dd} =    Get Time    year,month,day
+    ${date}    Catenate    SEPARATOR=    ${yyyy}    ${mm}    ${dd}
+    ${result}    QueryPledgeListByDate    ${date}
     log    ${result}
     sleep    1
     ${result}    QueryAllPledgeHistory
@@ -803,7 +813,7 @@ PledgeTest02
     ${result}    queryPledgeList    #查看整个网络所有质押情况
     log    ${result}
     sleep    1
-    ${result}    QueryPledgeListByDate    20191111
+    ${result}    QueryPledgeListByDate    ${date}
     log    ${result}
     sleep    1
     ${result}    QueryAllPledgeHistory
@@ -945,9 +955,6 @@ PledgeTest02
     ${result}    getBalance    ${developerAddr_01}    PTN
     log    ${result}
     sleep    1
-    ${result}    QueryPledgeListByDate    20191112
-    log    ${result}
-    sleep    1
     ${result}    queryPledgeList    #查看整个网络所有质押情况
     log    ${result}
     sleep    1
@@ -1005,9 +1012,6 @@ PledgeTest02
     log    ${result}
     ${result}    getBalance    ${developerAddr_01}    PTN
     log    ${result}
-    ${result}    QueryPledgeListByDate    20191113
-    log    ${result}
-    sleep    1
     ${result}    queryPledgeList    #查看整个网络所有质押情况
     log    ${result}
     sleep    1
@@ -1083,9 +1087,6 @@ PledgeTest02
     log    ${result}
     ${result}    getBalance    ${developerAddr_01}    PTN
     log    ${result}
-    ${result}    QueryPledgeListByDate    20191114
-    log    ${result}
-    sleep    2
     ${result}    queryPledgeList    #查看整个网络所有质押情况
     log    ${result}
     sleep    1
@@ -1122,9 +1123,6 @@ PledgeTest02
     ${result}    queryPledgeList    #查看整个网络所有质押情况
     log    ${result}
     sleep    1
-    ${result}    QueryPledgeListByDate    20191115
-    log    ${result}
-    sleep    2
     ${result}    QueryAllPledgeHistory
     log    ${result}
     sleep    1
