@@ -415,31 +415,31 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 	}
 	//  是否为linux系統
 	if runtime.GOOS == "linux" {
-		log.Info("entering docker service...")
+		log.Debug("entering docker service...")
 		dockerBool := true
 		//创建 docker client
 		client, err := util.NewDockerClient()
 		if err != nil {
-			log.Info("util.NewDockerClient", "error", err)
+			log.Debug("util.NewDockerClient", "error", err)
 			dockerBool = false
 		}
 		if client == nil {
-			log.Info("client is nil")
+			log.Debug("client is nil")
 			dockerBool = false
 		} else {
 			_, err = client.Info()
 			if err != nil {
-				log.Info("client.Info", "error", err)
+				log.Debug("client.Info", "error", err)
 				dockerBool = false
 			}
 		}
 		if dockerBool {
-			log.Info("starting docker service...")
+			log.Debug("starting docker service...")
 			//创建gptn程序默认网络
 			utils.CreateGptnNet(client)
 			//拉取gptn发布版本对应的goimg基础镜像，防止卡住
 			go func() {
-				log.Info("downloading palletone base image...")
+				log.Debug("downloading palletone base image...")
 				goimg := contractcfg.Goimg + ":" + contractcfg.GptnVersion
 				_, err = client.InspectImage(goimg)
 				if err != nil {
@@ -456,7 +456,7 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 				//	return
 				//}
 				//  获取本地用户合约列表
-				log.Info("get local user contracts")
+				log.Debug("get local user contracts")
 				ccs, err := manger.GetChaincodes(pm.dag)
 				if err != nil {
 					log.Debugf("get chaincodes error %s", err.Error())
@@ -471,7 +471,7 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 						juryAddr = juryAddrs[0].String()
 					}
 					if juryAddr != c.Address {
-						log.Infof("the local jury address %s was not equal address %s in the dag", juryAddr, c.Address)
+						log.Debugf("the local jury address %s was not equal address %s in the dag", juryAddr, c.Address)
 						continue
 					}
 					//conName := c.Name+c.Version+":"+contractcfg.GetConfig().ContractAddress
@@ -479,7 +479,7 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 					txid := util2.RlpHash(rd)
 					//  启动gptn时启动Jury对应的没有过期的用户合约容器
 					if !c.IsExpired {
-						log.Infof("restart container %s with jury address %s", c.Name, c.Address)
+						log.Debugf("restart container %s with jury address %s", c.Name, c.Address)
 						address := common.NewAddress(c.Id, common.ContractHash)
 						manger.RestartContainer(pm.dag, "palletone", address, txid.String())
 					}
@@ -885,19 +885,19 @@ func (pm *ProtocolManager) ceBroadcastLoop() {
 }
 
 func (pm *ProtocolManager) dockerLoop(client *docker.Client) {
-	log.Debugf("starting docker loop")
+	log.Debug("starting docker loop")
 	for {
 		select {
 		case <-pm.dockerQuitSync:
-			log.Infof("quit from docker loop")
+			log.Debug("quit from docker loop")
 			return
 		case <-time.After(time.Duration(30) * time.Second):
-			log.Debugf("each 30 second to get all containers")
+			log.Debug("each 30 second to get all containers")
 			//  程序启动过程中的,获取所有的容器
 			//  获取所有容器
 			cons, err := utils.GetAllContainers(client)
 			if err != nil {
-				log.Errorf("utils.GetAllContainers error %s", err.Error())
+				log.Debugf("utils.GetAllContainers error %s", err.Error())
 			}
 			//  重启退出且不过期容器
 			manger.RestartContainers(pm.dag, cons, pm.contract.IAdapterJury)
