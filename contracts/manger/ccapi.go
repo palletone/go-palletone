@@ -350,7 +350,7 @@ func RestartContainers(dag dag.IDag, cons []docker.APIContainers, jury core.IAda
 	//  获取所有退出容器
 	addrs, err := utils.GetAllContainerAddr(cons, "Exited")
 	if err != nil {
-		log.Infof("client.GetAllExitedContainer err: %s", err.Error())
+		log.Debugf("client.GetAllExitedContainer err: %s", err.Error())
 		return
 	}
 	for _, v := range addrs {
@@ -362,19 +362,19 @@ func RestartContainers(dag dag.IDag, cons []docker.APIContainers, jury core.IAda
 		}
 		cc, err := GetChaincode(dag, v)
 		if err != nil {
-			log.Info(err.Error())
+			log.Debug(err.Error())
 			continue
 		}
 		if juryAddr != cc.Address {
-			log.Infof("the local jury address %s was not equal address %s in the dag", juryAddr, cc.Address)
+			log.Debugf("the local jury address %s was not equal address %s in the dag", juryAddr, cc.Address)
 			continue
 		}
 		rd, _ := crypto.GetRandomBytes(32)
 		txid := util.RlpHash(rd)
-		log.Infof("==============需要重启====容器地址为--->%s", hex.EncodeToString(v.Bytes21()))
+		log.Debugf("==============需要重启====容器地址为--->%s", hex.EncodeToString(v.Bytes21()))
 		_, err = RestartContainer(dag, "palletone", v, txid.String())
 		if err != nil {
-			log.Infof("RestartContainer err: %s", err.Error())
+			log.Debugf("RestartContainer err: %s", err.Error())
 			return
 		}
 	}
@@ -385,7 +385,7 @@ func RemoveExpiredContainers(client *docker.Client, dag dag.IDag, rmExpConFromSy
 	//  让用户合约容器一直在线，true and 0
 	p := dag.GetChainParameters()
 	if p.RmExpConFromSysParam && p.UccDuringTime == 0 {
-		log.Info("keeping user contract containers online")
+		log.Debug("keeping user contract containers online")
 		return
 	}
 	//获取容器id，以及对应用户合约的地址，更新状态
@@ -394,18 +394,18 @@ func RemoveExpiredContainers(client *docker.Client, dag dag.IDag, rmExpConFromSy
 		for id, str := range idStrMap {
 			err := client.RemoveContainer(docker.RemoveContainerOptions{ID: id, Force: true})
 			if err != nil {
-				log.Errorf("client.RemoveContainer id=%s error=%s", id, err.Error())
+				log.Debugf("client.RemoveContainer id=%s error=%s", id, err.Error())
 				continue
 			}
 			cc, err := GetChaincode(dag, str)
 			if err != nil {
-				log.Errorf("get chaincode error %s", err.Error())
+				log.Debugf("get chaincode error %s", err.Error())
 				continue
 			}
 			cc.IsExpired = true
 			err = SaveChaincode(dag, str, cc)
 			if err != nil {
-				log.Errorf("save chaincode error %s", err.Error())
+				log.Debugf("save chaincode error %s", err.Error())
 			}
 		}
 	}
