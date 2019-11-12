@@ -449,6 +449,9 @@ func (b *PtnApiBackend) GetTxSearchEntry(hash common.Hash) (*ptnjson.TxSerachEnt
 // GetPoolTxByHash return a json of the tx in pool.
 func (b *PtnApiBackend) GetTxPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJson, error) {
 	tx, unit_hash := b.ptn.txPool.Get(hash)
+	if tx == nil {
+		return nil, fmt.Errorf("the tx[%s] is not exist in txppol.", hash.String())
+	}
 	return ptnjson.ConvertTxPoolTx2Json(tx, unit_hash), nil
 }
 

@@ -997,7 +997,7 @@ func (pool *TxPool) Get(hash common.Hash) (*TxPoolTransaction, common.Hash) {
 			return tx, u_hash
 		}
 	}
-	return tx, u_hash
+	return nil, u_hash
 }
 
 // DeleteTx
@@ -1529,6 +1529,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 			tx.Pending = true
 			tx.UnitHash = hash
 			tx.UnitIndex = index
+			tx.IsOrphan = false
 			pool.all.Store(txhash, tx)
 			pool.orphans.Delete(txhash)
 			list = append(list, tx)

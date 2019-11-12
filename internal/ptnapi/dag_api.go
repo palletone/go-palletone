@@ -438,7 +438,6 @@ func (s *PublicDagAPI) GetTxHashByReqId(ctx context.Context, hashHex string) (st
 func (s *PublicDagAPI) GetTxPoolTxByHash(ctx context.Context, hex string) (string, error) {
 	log.Debug("this is hash tx's hash hex to find tx.", "hex", hex)
 	hash := common.HexToHash(hex)
-	log.Debug("this is hash tx's hash  to find tx.", "hash", hash.String())
 	item, err := s.b.GetTxPoolTxByHash(hash)
 	if err != nil {
 		return "pool_tx:null", err
@@ -447,6 +446,29 @@ func (s *PublicDagAPI) GetTxPoolTxByHash(ctx context.Context, hex string) (strin
 		result_json, _ := json.Marshal(info)
 		return string(result_json), nil
 	}
+}
+
+//GetTxStatusByHash returns the transaction status for hash
+func (s *PublicDagAPI) GetTxStatusByHash(ctx context.Context, hex string) (*ptnjson.TxPoolTxJson, error) {
+	log.Debug("this is hash tx's hash hex to find tx.", "hex", hex)
+	if len(hex) > 72 || len(hex) < 64 {
+		return nil, fmt.Errorf("the hex[%s] is illegal.", hex)
+	}
+	hash := common.HexToHash(hex)
+
+	tx_status := new(ptnjson.TxPoolTxJson)
+	item, err := s.b.GetTxPoolTxByHash(hash)
+	if err != nil {
+		if tx_info, err := s.b.Dag().GetTransaction(hash); err != nil {
+			tx_status.NotExsit = true
+			log.Debugf("the txhash[%s] is not exist in dag,error[%s]", hash.String(), err.Error())
+			tx_status.TxHash = hex
+			return tx_status, nil
+		} else {
+			return ptnjson.ConvertTxWithInfo2Json(tx_info), nil
+		}
+	}
+	return item, nil
 }
 
 // MemdagInfos returns the pool transaction for the given hash

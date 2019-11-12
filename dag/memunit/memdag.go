@@ -570,8 +570,13 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 			var temp_db *ChainTempDb
 			inter_temp, has := chain.tempdb.Load(parentHash)
 			if !has { // 分叉链
-				p_temp := inter.(*ChainTempDb)
-				temp_db, _ = NewChainTempDb(p_temp.Tempdb, chain.cache, chain.tokenEngine, chain.saveHeaderOnly)
+				if inter != nil {
+					p_temp := inter.(*ChainTempDb)
+					temp_db, _ = NewChainTempDb(p_temp.Tempdb, chain.cache, chain.tokenEngine, chain.saveHeaderOnly)
+				} else { // 父单元没有在memdag，节点重启后产的第一个单元
+					temp_db, _ = NewChainTempDb(chain.db, chain.cache, chain.tokenEngine, chain.saveHeaderOnly)
+				}
+
 			} else {
 				temp_db = inter_temp.(*ChainTempDb)
 			}
@@ -688,14 +693,13 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 		chain.orphanUnitsParants.Store(unit.ParentHash()[0], uHash)
 	}
 	chain.addUnitHeight(unit)
-	inter_tmp, has := chain.tempdb.Load(chain.lastMainChainUnit.Hash())
-	if has {
-		tmp := inter_tmp.(*ChainTempDb)
-		return tmp.UnitRep, tmp.UtxoRep, tmp.StateRep, tmp.PropRep, tmp.UnitProduceRep, nil
+	inter_tmp, has := chain.chainUnits.Load(chain.lastMainChainUnit.Hash())
+	if !has {
+		temp, _ := NewChainTempDb(chain.db, chain.cache, chain.tokenEngine, chain.saveHeaderOnly)
+		return temp.UnitRep, temp.UtxoRep, temp.StateRep, temp.PropRep, temp.UnitProduceRep, nil
 	}
-	temp_db, _ := NewChainTempDb(chain.db, chain.cache, chain.tokenEngine, chain.saveHeaderOnly)
-	return temp_db.UnitRep, temp_db.UtxoRep, temp_db.StateRep, temp_db.PropRep, temp_db.UnitProduceRep, nil
-
+	tmp := inter_tmp.(*ChainTempDb)
+	return tmp.UnitRep, tmp.UtxoRep, tmp.StateRep, tmp.PropRep, tmp.UnitProduceRep, nil
 }
 
 // 缓存该高度的所有单元hash

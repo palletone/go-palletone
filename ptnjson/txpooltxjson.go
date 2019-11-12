@@ -11,6 +11,9 @@ import (
 type TxPoolTxJson struct {
 	TxHash     string       `json:"tx_hash"`
 	UnitHash   string       `json:"unit_hash"`
+	UnitIndex  uint64       `json:"unit_index"`
+	Timestamp  uint64       `json:"timestamp"`
+	TxIndex    uint64       `json:"tx_index"`
 	Payment    *PaymentJson `json:"payment"`
 	TxMessages string       `json:"tx_messages"`
 
@@ -20,6 +23,7 @@ type TxPoolTxJson struct {
 	Pending      bool            `json:"pending"`
 	Confirmed    bool            `json:"confirmed"`
 	IsOrphan     bool            `json:"is_orphan"`
+	NotExsit     bool            `json:"not_exist"`
 	Index        int             `json:"index"` // index 是该tx在优先级堆中的位置
 	Extra        []byte          `json:"extra"`
 }
@@ -111,5 +115,29 @@ func ConvertTxEntry2Json(entry *modules.TxLookupEntry) *TxSerachEntryJson {
 		UnitHash:  entry.UnitHash.String(),
 		UnitIndex: entry.UnitIndex,
 		TxIndex:   entry.Index,
+	}
+}
+
+func ConvertTxWithInfo2Json(tx *modules.TransactionWithUnitInfo) *TxPoolTxJson {
+	pay := new(modules.PaymentPayload)
+	if len(tx.TxMessages) > 0 {
+		pay = tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+
+	}
+
+	payJson := ConvertPayment2Json(pay)
+	return &TxPoolTxJson{
+		TxHash:     tx.Hash().String(),
+		UnitHash:   tx.UnitHash.String(),
+		UnitIndex:  tx.UnitIndex,
+		Timestamp:  tx.Timestamp,
+		TxIndex:    tx.TxIndex,
+		Payment:    payJson,
+		TxMessages: ConvertMegs2Json(tx.TxMessages),
+
+		Pending:   true,
+		Confirmed: true,
+		IsOrphan:  false,
+		NotExsit:  false,
 	}
 }
