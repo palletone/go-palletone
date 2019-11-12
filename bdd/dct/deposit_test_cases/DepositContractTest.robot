@@ -808,12 +808,6 @@ PledgeTest02
     ${result}    IsFinishAddNewRecords
     log    ${result}
     sleep    3
-    ${result}    AddNewAddrPledgeRecords    ${votedAddress}    #1
-    log    ${result}
-    sleep    5
-    ${result}    IsFinishAddNewRecords
-    log    ${result}
-    sleep    3
     ${result}    queryPledgeList    #查看整个网络所有质押情况
     log    ${result}
     sleep    1
@@ -919,18 +913,6 @@ PledgeTest02
     ${result}    isFinishAllocated
     log    ${result}
     sleep    3
-    ${result}    HandlePledgeReward    ${foundationAddr}    #1
-    log    ${result}
-    sleep    5
-    ${result}    isFinishAllocated
-    log    ${result}
-    sleep    3
-    ${result}    IsFinishAddNewRecords
-    log    ${result}
-    sleep    3
-    ${result}    AddNewAddrPledgeRecords    ${foundationAddr}    #1
-    log    ${result}
-    sleep    5
     ${result}    IsFinishAddNewRecords
     log    ${result}
     sleep    3
@@ -985,18 +967,6 @@ PledgeTest02
     log    ${result}
     sleep    5
     log    chuli12
-    ${result}    isFinishAllocated
-    log    ${result}
-    sleep    3
-    ${result}    HandlePledgeReward    ${foundationAddr}    #1
-    log    ${result}
-    sleep    5
-    ${result}    isFinishAllocated
-    log    ${result}
-    sleep    3
-    ${result}    HandlePledgeReward    ${foundationAddr}    #1
-    log    ${result}
-    sleep    5
     ${result}    isFinishAllocated
     log    ${result}
     sleep    3
@@ -1067,18 +1037,6 @@ PledgeTest02
     ${result}    isFinishAllocated
     log    ${result}
     sleep    2
-    ${result}    HandlePledgeReward    ${foundationAddr}    #1
-    log    ${result}
-    sleep    5
-    ${result}    isFinishAllocated
-    log    ${result}
-    sleep    3
-    ${result}    HandlePledgeReward    ${foundationAddr}    #1
-    log    ${result}
-    sleep    5
-    ${result}    isFinishAllocated
-    log    ${result}
-    sleep    3
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
     log    ${result}
     ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
@@ -1123,18 +1081,6 @@ PledgeTest02
     log    ${result}
     sleep    5
     log    chuli32
-    ${result}    isFinishAllocated
-    log    ${result}
-    sleep    3
-    ${result}    HandlePledgeReward    ${foundationAddr}    #1
-    log    ${result}
-    sleep    5
-    ${result}    isFinishAllocated
-    log    ${result}
-    sleep    3
-    ${result}    HandlePledgeReward    ${foundationAddr}    #1
-    log    ${result}
-    sleep    5
     ${result}    isFinishAllocated
     log    ${result}
     sleep    3

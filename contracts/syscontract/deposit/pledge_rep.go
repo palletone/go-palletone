@@ -440,7 +440,8 @@ func addNewAddrPledgeRecords(stub shim.ChaincodeStubInterface) error {
 		today = lastDate
 		isF = true
 	} else {
-		if lastDate == today {
+		//  第二次起
+		if lastDate != "" &&lastDate != today {
 			return fmt.Errorf("%s pledge reward should be allocated before", today)
 		}
 	}
