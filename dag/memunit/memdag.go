@@ -576,7 +576,6 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 				} else { // 父单元没有在memdag，节点重启后产的第一个单元
 					temp_db, _ = NewChainTempDb(chain.db, chain.cache, chain.tokenEngine, chain.saveHeaderOnly)
 				}
-
 			} else {
 				temp_db = inter_temp.(*ChainTempDb)
 			}
