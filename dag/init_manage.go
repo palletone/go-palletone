@@ -57,7 +57,7 @@ func (dag *Dag) InitPropertyDB(genesis *core.Genesis, unit *modules.Unit) error 
 
 	//  动态全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
-	dgp := modules.InitDynGlobalProp(unit)
+	dgp := modules.InitDynGlobalProp()
 	if err := dag.stablePropRep.StoreDynGlobalProp(dgp); err != nil {
 		return err
 	}

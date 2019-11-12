@@ -56,7 +56,10 @@ func (gp *GlobalProperty) EncodeRLP(w io.Writer) error {
 // only for serialization(storage/p2p)
 type GlobalPropertyTemp struct {
 	GlobalPropBaseTemp
+	GlobalPropExtraTemp
+}
 
+type GlobalPropExtraTemp struct {
 	ActiveJuries       []common.Address
 	ActiveMediators    []common.Address
 	PrecedingMediators []common.Address
@@ -73,11 +76,15 @@ func (gp *GlobalProperty) getGPT() *GlobalPropertyTemp {
 		ChainParametersTemp: *gp.ChainParameters.GetCPT(),
 	}
 
-	gpt := &GlobalPropertyTemp{
-		GlobalPropBaseTemp: gpbt,
+	gpet := GlobalPropExtraTemp{
 		ActiveJuries:       make([]common.Address, 0, len(gp.ActiveJuries)),
 		ActiveMediators:    make([]common.Address, 0, len(gp.ActiveMediators)),
 		PrecedingMediators: make([]common.Address, 0, len(gp.PrecedingMediators)),
+	}
+
+	gpt := &GlobalPropertyTemp{
+		GlobalPropBaseTemp:  gpbt,
+		GlobalPropExtraTemp: gpet,
 	}
 
 	for juryAdd := range gp.ActiveJuries {
