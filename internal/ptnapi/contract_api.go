@@ -134,11 +134,12 @@ func (s *PublicContractAPI) Ccquery(ctx context.Context, id string, param []stri
 	var idByte []byte
 
 	log.Debugf("Ccquery, id len:%d, id[%s]", len(id), id)
-	if len(id) > 35 {
-		idByte, _ = hex.DecodeString(id)
-	}else{
-		idByte = []byte(id)
-	}
+	//if len(id) > 35 {
+	//	idByte, _ = hex.DecodeString(id)
+	//}else{
+	//	idByte = []byte(id)
+	//}
+	idByte = []byte(id)
 	args := make([][]byte, len(param))
 	for i, arg := range param {
 		args[i] = []byte(arg)
