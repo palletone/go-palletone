@@ -198,7 +198,7 @@ func (chain *MemDag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Hea
 //	return nil, fmt.Errorf("the header[%s] not exist.", number.String())
 //}
 
-func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupSign []byte,	txpool txspool.ITxPool) error {
+func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error {
 	//1. Set this unit as stable
 	unit_temp, err := chain.getChainUnit(uHash)
 	if err != nil {
@@ -537,8 +537,12 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 			var temp_db *ChainTempDb
 			inter_temp, has := chain.tempdb.Load(parentHash)
 			if !has { // 分叉链
-				p_temp := inter.(*ChainTempDb)
-				temp_db, _ = NewChainTempDb(p_temp.Tempdb, chain.cache, chain.tokenEngine, chain.saveHeaderOnly)
+				if inter != nil {
+					p_temp := inter.(*ChainTempDb)
+					temp_db, _ = NewChainTempDb(p_temp.Tempdb, chain.cache, chain.tokenEngine, chain.saveHeaderOnly)
+				} else { // 父单元没有在memdag，节点重启后产的第一个单元
+					temp_db, _ = NewChainTempDb(chain.db, chain.cache, chain.tokenEngine, chain.saveHeaderOnly)
+				}
 			} else {
 				temp_db = inter_temp.(*ChainTempDb)
 			}
@@ -655,7 +659,11 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 		chain.orphanUnitsParants.Store(unit.ParentHash()[0], uHash)
 	}
 	chain.addUnitHeight(unit)
-	inter_tmp, _ := chain.tempdb.Load(chain.lastMainChainUnit.Hash())
+	inter_tmp, ok := chain.chainUnits.Load(chain.lastMainChainUnit.Hash())
+	if !ok {
+		temp, _ := NewChainTempDb(chain.db, chain.cache, chain.tokenEngine, chain.saveHeaderOnly)
+		return temp.UnitRep, temp.UtxoRep, temp.StateRep, temp.PropRep, temp.UnitProduceRep, nil
+	}
 	tmp := inter_tmp.(*ChainTempDb)
 	return tmp.UnitRep, tmp.UtxoRep, tmp.StateRep, tmp.PropRep, tmp.UnitProduceRep, nil
 }
