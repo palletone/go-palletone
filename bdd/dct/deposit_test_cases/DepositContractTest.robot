@@ -1156,3 +1156,5 @@ PledgeTest02
     log    ${result}
     ${result}    getBalance    ${developerAddr_01}    PTN
     log    ${result}
+    ${amount}    getBalance    ${foundationAddr}    PTN
+    log    ${amount}    #100，上一个测试的结果
