@@ -62,7 +62,7 @@ func (m *Migration102delta_103alpha) upgradeGP() error {
 		return err
 	}
 
-	newData := &GlobalProperty104beta{}
+	newData := &GlobalProperty104alpha{}
 	newData.ActiveJuries = oldGp.ActiveJuries
 	newData.ActiveMediators = oldGp.ActiveMediators
 	newData.PrecedingMediators = oldGp.PrecedingMediators
