@@ -46,6 +46,7 @@ Resource          isFinishAllocated.txt
 Resource          AddNewAddrPledgeRecords.txt
 Resource          AddNewAddrPledgeRecords.txt
 Resource          IsFinishAddNewRecords.txt
+Resource          QueryPledgeHistoryByAddr.txt
 
 *** Variables ***
 ${depositContractQuery}    contract_depositContractQuery

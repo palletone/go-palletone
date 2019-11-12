@@ -727,6 +727,8 @@ PledgeTest02
     log    ${amount}    #100，上一个测试的结果
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
     log    ${result}
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
+    log    ${result}
     ${result}    getBalance    ${votedAddress}    PTN
     log    ${result}
     ${result}    queryPledgeStatusByAddr    ${mediatorAddr_01}    #查看某地址的质押结果
@@ -765,6 +767,8 @@ PledgeTest02
     log    ${result}
     sleep    3
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
     log    ${result}
     ${result}    getBalance    ${votedAddress}    PTN
     log    ${result}
@@ -820,6 +824,8 @@ PledgeTest02
     log    ${result}
     sleep    1
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
     log    ${result}
     ${result}    getBalance    ${votedAddress}    PTN
     log    ${result}
@@ -877,6 +883,8 @@ PledgeTest02
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
     log    ${result}
     sleep    1
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
+    log    ${result}
     ${result}    pledgeDeposit    ${mediatorAddr_01}    100    #质押PTN    #101
     log    ${result}
     sleep    3
@@ -891,6 +899,8 @@ PledgeTest02
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
     log    ${result}
     sleep    1
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
+    log    ${result}
     ${result}    PledgeWithdraw    ${mediatorAddr_01}    10000000000
     log    ${result}
     sleep    5
@@ -931,6 +941,8 @@ PledgeTest02
     log    ${result}
     sleep    3
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
     log    ${result}
     ${result}    getBalance    ${votedAddress}    PTN
     log    ${result}
@@ -990,6 +1002,8 @@ PledgeTest02
     sleep    3
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
     log    ${result}
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
+    log    ${result}
     ${result}    getBalance    ${votedAddress}    PTN
     log    ${result}
     ${result}    queryPledgeStatusByAddr    ${mediatorAddr_01}    #查看某地址的质押结果
@@ -1024,6 +1038,8 @@ PledgeTest02
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
     log    ${result}
     sleep    1
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
+    log    ${result}
     ${result}    PledgeWithdraw    ${mediatorAddr_01}    10000000000
     log    ${result}
     sleep    5
@@ -1064,6 +1080,8 @@ PledgeTest02
     log    ${result}
     sleep    3
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
     log    ${result}
     ${result}    getBalance    ${votedAddress}    PTN
     log    ${result}
@@ -1131,6 +1149,8 @@ PledgeTest02
     ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${amount}    #108.66235，866,235,000是质押增发的
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
     log    ${result}
     ${result}    getBalance    ${votedAddress}    PTN
     log    ${result}
