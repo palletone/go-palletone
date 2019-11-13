@@ -288,7 +288,6 @@ func need(stub shim.ChaincodeStubInterface, haveCount int, pledgeList *modules.P
 	}
 	haveCount += threshold
 	log.Infof("haveCount = %d", haveCount)
-	log.Infof("len(pledgeList.Members) = %d", len(pledgeList.Members))
 	//  如果已经分配的 haveCount 大于等于 len(allM.Members) 个数，则证明按批次已经分配完成
 	if haveCount >= len(pledgeList.Members) {
 		log.Info("over...")
@@ -357,13 +356,7 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward
 		log.Infof("allM is not nil, today = %s", today)
 		//  当前的分红奖励与当前的分红数量的比例
 		rewardPerDao := float64(depositDailyReward) / float64(allM.TotalAmount)
-		//  len(allM.Members) = 3
-		//  当前分红默认处理个数
-		//threshold := 1
-		//当 t = 2 时，即按批分红，且继续质押，且提取时，tx_size = 2644 b,当前单元大小为 5 m = 5120 kb =>1,982.934947049924
 		threshold := pledgeAllocateThreshold
-		//threshold := 3
-		//threshold := 4
 		//  获取已分红个数
 		haveCount := 0
 		//  判断是否超过默认个数
@@ -373,37 +366,14 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward
 			if err != nil {
 				return err
 			}
-			//return nil
 		} else {
 			log.Infof("handle unNeed func, today = %s", today)
 			err := unNeed(stub, haveCount, allM, today, rewardPerDao, depositDailyReward, threshold)
 			if err != nil {
 				return err
 			}
-			//return nil
 		}
 	}
-	//else {
-	//	log.Infof("allM is nil, today = %s", today)
-	//	allM = &modules.PledgeList{}
-	//}
-	//allM.Date = today
-	//// 增加新的质押
-	//depositList, err := getAllPledgeDepositRecords(stub)
-	//if err != nil {
-	//	return err
-	//}
-	//for _, awardNode := range depositList {
-	//	allM.Add(awardNode.Address, awardNode.Amount, 0) //新增加的质押当天不会有分红
-	//	err = delPledgeDepositRecord(stub, awardNode.Address)
-	//	if err != nil {
-	//		return err
-	//	}
-	//}
-	//err = saveLastPledgeList(stub, allM)
-	//if err != nil {
-	//	return err
-	//}
 	return nil
 }
 
@@ -546,34 +516,34 @@ func getPledgeStatus(stub shim.ChaincodeStubInterface, addr string) (*modules.Pl
 	return status, nil
 }
 
-//func getTotalPledgeStatus(stub shim.ChaincodeStubInterface) (*modules.PledgeStatus, error) {
-//
-//	d, err := getAllPledgeDepositRecords(stub)
-//	if err != nil {
-//		return nil, err
-//	}
-//	totalDeposit := uint64(0)
-//	for _, dep := range d {
-//		totalDeposit += dep.Amount
-//	}
-//	//w, err := getPledgeWithdrawRecord(stub, addr)
-//	//if err != nil {
-//	//	return nil, err
-//	//}
-//	list, err := getLastPledgeList(stub)
-//	if err != nil {
-//		return nil, err
-//	}
-//	status := &modules.PledgeStatus{}
-//	if d != nil {
-//		status.NewDepositAmount = totalDeposit
-//	}
-//	//if w != nil {
-//	//	status.WithdrawApplyAmount = w.Amount
-//	//}
-//	if list != nil {
-//		status.PledgeAmount = list.TotalAmount
-//	}
-//
-//	return status, nil
-//}
+func getTotalPledgeStatus(stub shim.ChaincodeStubInterface) (*modules.PledgeStatus, error) {
+
+	d, err := getAllPledgeDepositRecords(stub)
+	if err != nil {
+		return nil, err
+	}
+	totalDeposit := uint64(0)
+	for _, dep := range d {
+		totalDeposit += dep.Amount
+	}
+	//w, err := getPledgeWithdrawRecord(stub, addr)
+	//if err != nil {
+	//	return nil, err
+	//}
+	list, err := getLastPledgeList(stub)
+	if err != nil {
+		return nil, err
+	}
+	status := &modules.PledgeStatus{}
+	if d != nil {
+		status.NewDepositAmount = totalDeposit
+	}
+	//if w != nil {
+	//	status.WithdrawApplyAmount = w.Amount
+	//}
+	if list != nil {
+		status.PledgeAmount = list.TotalAmount
+	}
+
+	return status, nil
+}
