@@ -230,7 +230,7 @@ func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupSign []byte, txpoo
 	//2. Update unit.groupSign
 	header := unit.Header()
 	//header.GroupPubKey = groupPubKey
-	header.GroupSign = groupSign
+	header.SetGroupSign(groupSign)
 	log.Debugf("Try to update unit[%s] header group sign, and send go groupSign event.", uHash.String())
 	// 进行下一个unit的群签名
 	go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})

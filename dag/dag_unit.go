@@ -61,8 +61,8 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 		return nil, fmt.Errorf(errStr)
 	}
 
-	newUnit.UnitHeader.Time = when.Unix()
-	newUnit.UnitHeader.GroupPubKey = groupPubKey
+	newUnit.UnitHeader.SetTime(when.Unix())
+	newUnit.UnitHeader.SetGroupPubkey(groupPubKey)
 	newUnit.Hash()
 
 	sign_unit, err := dagcommon.GetUnitWithSig(newUnit, ks, producer)
@@ -75,7 +75,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	sign_unit.UnitSize = sign_unit.Size()
 	log.Infof("Generate new unit index:[%d],hash:[%s],size:%s, parent unit[%s],txs[%d], spent time: %s",
 		sign_unit.NumberU64(), sign_unit.Hash().String(), sign_unit.UnitSize.String(),
-		sign_unit.UnitHeader.ParentsHash[0].String(), sign_unit.Txs.Len(), time.Since(t0).String())
+		sign_unit.UnitHeader.ParentHash()[0].String(), sign_unit.Txs.Len(), time.Since(t0).String())
 
 	//3.将新单元添加到MemDag中
 	a, b, c, d, e, err := dag.Memdag.AddUnit(sign_unit, txpool, true)

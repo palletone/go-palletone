@@ -181,10 +181,10 @@ func (rep *UnitRepository) GetHeaderList(hash common.Hash, parentCount int) ([]*
 			return nil, err
 		}
 		result = append(result, h)
-		if len(h.ParentsHash) == 0 { //Genesis unit
+		if len(h.ParentHash()) == 0 { //Genesis unit
 			break
 		}
-		uhash = h.ParentsHash[0]
+		uhash = h.ParentHash()[0]
 	}
 	return result, nil
 }
@@ -238,7 +238,7 @@ func (rep *UnitRepository) GetHeadersByAuthor(authorAddr common.Address, startHe
 		if header.NumberU64() == 0 {
 			break
 		}
-		uHash = header.ParentsHash[0]
+		uHash = header.ParentHash()[0]
 		author := header.Author()
 		if author.Equal(authorAddr) {
 			result = append(result, header)
@@ -351,7 +351,7 @@ func (rep *UnitRepository) GetNumberWithUnitHash(hash common.Hash) (*modules.Cha
 	if err != nil {
 		return nil, err
 	}
-	return header.Number, nil
+	return header.GetNumber(), nil
 }
 
 func (rep *UnitRepository) GetAssetTxHistory(asset *modules.Asset) ([]*modules.TransactionWithUnitInfo, error) {
@@ -415,13 +415,19 @@ func NewGenesisUnit(txs modules.Transactions, time int64, asset *modules.Asset, 
 	root := core.DeriveSha(txs)
 
 	// generate genesis unit header
-	header := &modules.Header{
-		Number: chainIndex,
-		TxRoot: root,
-		Time:   time,
-	}
+	//header := &modules.Header{
+	//	Number: chainIndex,
+	//	TxRoot: root,
+	//	Time:   time,
+	//}
+	header := new(modules.Header)
+	//header.SetGroupSign(make([]byte, 0))
+	//header.SetGroupPubkey(make([]byte, 0))
+	header.SetNumber(chainIndex)
+	header.SetTxRoot(root)
+	header.SetTime(time)
 	if parentUnitHeight >= 0 { //has parent unit
-		header.ParentsHash = []common.Hash{parentUnitHash}
+		header.SetParentHash([]common.Hash{parentUnitHash})
 	}
 
 	gUnit.UnitHeader = header
@@ -455,10 +461,7 @@ func GetUnitWithSig(unit *modules.Unit, ks *keystore.KeyStore, signer common.Add
 	//	return unit, errors.New("error.")
 	//}
 	log.Debugf("Unit[%s] signed by address:%s", unit.Hash().String(), signer.String())
-	unit.UnitHeader.Authors = modules.Authentifier{
-		PubKey:    pubKey,
-		Signature: sign,
-	}
+	unit.UnitHeader.SetAuthor(modules.Authentifier{PubKey: pubKey, Signature: sign})
 	// to set witness list, should be creator himself
 	// var authentifier modules.Authentifier
 	// authentifier.Address = signer
@@ -495,11 +498,10 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 	}
 
 	// step3. generate genesis unit header
-	header := modules.Header{
-		Number:      chainIndex,
-		ParentsHash: []common.Hash{},
-	}
-	header.ParentsHash = append(header.ParentsHash, phash)
+	header := modules.Header{}
+	header.SetNumber(chainIndex)
+	parents := make([]common.Hash, 0)
+	header.SetParentHash(append(parents, phash))
 	h_hash := header.HashWithOutTxRoot()
 	log.Infof("Start txpool.GetSortedTxs..., parent hash:%s", phash.String())
 
@@ -575,8 +577,8 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 	// step8. transactions merkle root
 	root := core.DeriveSha(txs)
 	// step9. generate genesis unit header
-	header.TxsIllegal = illegalTxs
-	header.TxRoot = root
+	header.SetTxsIllegal(illegalTxs)
+	header.SetTxRoot(root)
 	unit := &modules.Unit{}
 	unit.UnitHeader = &header
 	unit.UnitHash = header.Hash()
@@ -651,7 +653,7 @@ func (txs *tempTxs) getUtxoEntryFromTxs(outpoint *modules.OutPoint) (*modules.Ut
 }
 
 func (rep *UnitRepository) ComputeTxFeesAllocate(mediatorReward common.Address, txs []*modules.Transaction,
-	getJurorRewardFunc modules.GetJurorRewardAddFunc) (	[]*modules.Addition, error) {
+	getJurorRewardFunc modules.GetJurorRewardAddFunc) ([]*modules.Addition, error) {
 
 	ads := make([]*modules.Addition, 0)
 	tempTxs := &tempTxs{allUtxo: make(map[modules.OutPoint]*modules.Utxo), rep: rep.utxoRepository}

@@ -82,8 +82,9 @@ func TestTxCountAndUnitSize(t *testing.T) {
 		txs := modules.Transactions{}
 		for j := 0; j < i; j++ {
 			tx := modules.NewTransaction([]*modules.Message{})
-			tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, modules.NewPaymentPayload([]*modules.Input{modules.NewTxIn(modules.NewOutPoint(common.Hash{}, 0, 0), unlockScript)},
-				[]*modules.Output{modules.NewTxOut(1, lockScript, a)})))
+			tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, modules.NewPaymentPayload(
+				[]*modules.Input{modules.NewTxIn(modules.NewOutPoint(common.Hash{}, 0, 0),
+					unlockScript)}, []*modules.Output{modules.NewTxOut(1, lockScript, a)})))
 			txs = append(txs, tx)
 		}
 		unit := modules.NewUnit(newHeader(), txs)
@@ -94,23 +95,26 @@ func newHeader() *modules.Header {
 	key := new(ecdsa.PrivateKey)
 	key, _ = crypto.GenerateKey()
 	h := new(modules.Header)
-	//h.AssetIDs = append(h.AssetIDs, modules.PTNCOIN)
+
 	au := modules.Authentifier{}
 	//address := crypto.PubkeyToAddress(&key.PublicKey)
 
-	h.GroupSign = []byte("group_sign")
-	h.GroupPubKey = []byte("group_pubKey")
-	h.Number = &modules.ChainIndex{}
-	h.Number.AssetID = modules.PTNCOIN
-	h.Number.Index = uint64(333333)
-	h.Extra = make([]byte, 20)
-	h.ParentsHash = append(h.ParentsHash, h.TxRoot)
+	h.SetGroupSign([]byte("group_sign"))
+	h.SetGroupPubkey([]byte("group_pubKey"))
 
-	h.TxRoot = h.Hash()
-	sig, _ := crypto.Sign(h.TxRoot[:], key)
+	number := new(modules.ChainIndex)
+	number.AssetID = modules.PTNCOIN
+	number.Index = uint64(333333)
+	h.SetNumber(number)
+	h.SetExtra(make([]byte, 20))
+	parents := make([]common.Hash, 0)
+	h.SetParentHash(append(parents, h.TxRoot()))
+
+	h.SetTxRoot(h.Hash())
+	sig, _ := crypto.Sign(h.TxRoot().Bytes(), key)
 	au.Signature = sig
 	au.PubKey = crypto.CompressPubkey(&key.PublicKey)
-	h.Authors = au
+	h.SetAuthor(au)
 	return h
 }
 func TestDag_InsertHeaderDag(t *testing.T) {
