@@ -748,24 +748,24 @@ PledgeTest02
     sleep    1
     ${result}    mediatorVote    ${votedAddress}    ${mediatorAddress}    #投票某超级节点    #5000DAO
     log    ${result}
-    sleep    3
+    sleep    5
     ${result}    mediatorVote    ${mediatorAddr_01}    ${mediatorAddress}    #投票某超级节点    #5000DAO
     log    ${result}
-    sleep    3
+    sleep    5
     ${result}    mediatorVote    ${mediatorAddr_02}    ${mediatorAddress}    #投票某超级节点    #5000DAO
     log    ${result}
-    sleep    3
+    sleep    5
     ${result}    mediatorGetVoted    ${votedAddress}    #查看该节点所投票的情况
     log    ${result}
     ${result}    pledgeDeposit    ${votedAddress}    100    #质押PTN    #101
     log    ${result}
-    sleep    3
+    sleep    5
     ${result}    pledgeDeposit    ${mediatorAddr_01}    100    #质押PTN    #101
     log    ${result}
-    sleep    3
+    sleep    5
     ${result}    pledgeDeposit    ${mediatorAddr_02}    100    #质押PTN    #101
     log    ${result}
-    sleep    3
+    sleep    5
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
     log    ${result}
     ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
@@ -801,13 +801,13 @@ PledgeTest02
     log    tiaojiaxinzhiya
     ${result}    IsFinishAddNewRecords
     log    ${result}
-    sleep    3
+    sleep    5
     ${result}    AddNewAddrPledgeRecords    ${votedAddress}    #1
     log    ${result}
     sleep    5
     ${result}    IsFinishAddNewRecords
     log    ${result}
-    sleep    3
+    sleep    5
     ${result}    queryPledgeList    #查看整个网络所有质押情况
     log    ${result}
     sleep    1
@@ -837,20 +837,20 @@ PledgeTest02
     sleep    1
     ${result}    mediatorVote    ${juryAddr_01}    ${mediatorAddress}    #投票某超级节点    #5000DAO
     log    ${result}
-    sleep    3
+    sleep    5
     ${result}    pledgeDeposit    ${juryAddr_01}    100    #质押PTN    #101
     log    ${result}
-    sleep    3
+    sleep    5
     ${result}    queryPledgeStatusByAddr    ${juryAddr_01}    #查看某地址的质押结果
     log    ${result}
     ${result}    getBalance    ${juryAddr_01}    PTN
     log    ${result}
     ${result}    mediatorVote    ${juryAddr_02}    ${mediatorAddress}    #投票某超级节点    #5000DAO
     log    ${result}
-    sleep    3
+    sleep    5
     ${result}    pledgeDeposit    ${juryAddr_02}    100    #质押PTN    #101
     log    ${result}
-    sleep    3
+    sleep    5
     ${result}    queryPledgeStatusByAddr    ${juryAddr_02}    #查看某地址的质押结果
     log    ${result}
     ${result}    getBalance    ${juryAddr_02}    PTN
@@ -860,10 +860,10 @@ PledgeTest02
     sleep    1
     ${result}    pledgeDeposit    ${developerAddr_01}    100    #质押PTN    #101
     log    ${result}
-    sleep    3
+    sleep    5
     ${result}    mediatorVote    ${developerAddr_01}    ${mediatorAddress}    #投票某超级节点    #5000DAO
     log    ${result}
-    sleep    3
+    sleep    5
     ${result}    queryPledgeStatusByAddr    ${developerAddr_01}    #查看某地址的质押结果
     log    ${result}
     ${result}    getBalance    ${developerAddr_01}    PTN
@@ -873,7 +873,7 @@ PledgeTest02
     log    ${result}
     ${result}    pledgeDeposit    ${votedAddress}    100    #质押PTN    #101
     log    ${result}
-    sleep    3
+    sleep    5
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
     log    ${result}
     sleep    1
@@ -881,7 +881,7 @@ PledgeTest02
     log    ${result}
     ${result}    pledgeDeposit    ${mediatorAddr_01}    100    #质押PTN    #101
     log    ${result}
-    sleep    3
+    sleep    5
     ${result}    queryPledgeStatusByAddr    ${mediatorAddr_01}    #查看某地址的质押结果
     log    ${result}
     sleep    1
@@ -905,23 +905,23 @@ PledgeTest02
     log    ${result}
     ${result}    isFinishAllocated
     log    ${result}
-    sleep    3
+    sleep    5
     ${result}    HandlePledgeReward    ${foundationAddr}    #1
     log    ${result}
     sleep    5
     log    chuli2
     ${result}    isFinishAllocated
     log    ${result}
-    sleep    3
+    sleep    5
     ${result}    IsFinishAddNewRecords
     log    ${result}
-    sleep    3
+    sleep    5
     ${result}    AddNewAddrPledgeRecords    ${foundationAddr}    #1
     log    ${result}
     sleep    5
     ${result}    IsFinishAddNewRecords
     log    ${result}
-    sleep    3
+    sleep    5
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
     log    ${result}
     ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
@@ -962,14 +962,14 @@ PledgeTest02
     log    chuli11
     ${result}    isFinishAllocated
     log    ${result}
-    sleep    3
+    sleep    5
     ${result}    HandlePledgeReward    ${foundationAddr}    #1
     log    ${result}
     sleep    5
     log    chuli12
     ${result}    isFinishAllocated
     log    ${result}
-    sleep    3
+    sleep    5
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
     log    ${result}
     ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
@@ -1076,14 +1076,14 @@ PledgeTest02
     log    chuli31
     ${result}    isFinishAllocated
     log    ${result}
-    sleep    3
+    sleep    5
     ${result}    HandlePledgeReward    ${foundationAddr}    #1
     log    ${result}
     sleep    5
     log    chuli32
     ${result}    isFinishAllocated
     log    ${result}
-    sleep    3
+    sleep    5
     ${result}    queryPledgeList    #查看整个网络所有质押情况
     log    ${result}
     sleep    1
