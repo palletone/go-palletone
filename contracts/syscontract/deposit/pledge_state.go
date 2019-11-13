@@ -212,7 +212,23 @@ func getAllPledgeRewardHistory(stub shim.ChaincodeStubInterface) ([]*modules.Ple
 		result = append(result, allM)
 	}
 
-	return result, nil
+	pledgeList := []*modules.PledgeList{}
+	for i :=  0 ;i < len(result);i++ {
+		if result[i].Date == ""{
+			continue
+		}
+		for j := i+1; j < len(result);j++ {
+			if result[i].Date == result[j].Date {
+				result[i].Members = append(result[i].Members,result[j].Members...)
+				result[i].TotalAmount += result[j].TotalAmount
+				result[j].Date = ""
+			}
+		}
+		pledgeList = append(pledgeList,result[i])
+	}
+	return pledgeList,nil
+
+	//return result, nil
 }
 
 //  如果都满了，就获取最新的key
