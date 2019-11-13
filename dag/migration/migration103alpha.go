@@ -68,47 +68,47 @@ func (m *Migration102delta_103alpha) upgradeGP() error {
 	newData.PrecedingMediators = oldGp.PrecedingMediators
 	newData.ImmutableParameters = oldGp.ImmutableParameters
 
-	newData.ChainParameters.GenerateUnitReward = oldGp.ChainParameters.GenerateUnitReward
-	newData.ChainParameters.PledgeDailyReward = oldGp.ChainParameters.PledgeDailyReward
-	newData.ChainParameters.RewardHeight = oldGp.ChainParameters.RewardHeight
-	newData.ChainParameters.UnitMaxSize = oldGp.ChainParameters.UnitMaxSize
-	newData.ChainParameters.FoundationAddress = oldGp.ChainParameters.FoundationAddress
-	newData.ChainParameters.DepositAmountForMediator = oldGp.ChainParameters.DepositAmountForMediator
-	newData.ChainParameters.DepositAmountForJury = oldGp.ChainParameters.DepositAmountForJury
-	newData.ChainParameters.DepositAmountForDeveloper = oldGp.ChainParameters.DepositAmountForDeveloper
-	newData.ChainParameters.ActiveMediatorCount = oldGp.ChainParameters.ActiveMediatorCount
-	newData.ChainParameters.MaximumMediatorCount = oldGp.ChainParameters.MaximumMediatorCount
-	newData.ChainParameters.MediatorInterval = oldGp.ChainParameters.MediatorInterval
-	newData.ChainParameters.MaintenanceInterval = oldGp.ChainParameters.MaintenanceInterval
-	newData.ChainParameters.MaintenanceSkipSlots = oldGp.ChainParameters.MaintenanceSkipSlots
-	newData.ChainParameters.MediatorCreateFee = oldGp.ChainParameters.MediatorCreateFee
-	newData.ChainParameters.AccountUpdateFee = oldGp.ChainParameters.AccountUpdateFee
-	newData.ChainParameters.TransferPtnBaseFee = oldGp.ChainParameters.TransferPtnBaseFee
-	newData.ChainParameters.TransferPtnPricePerKByte = oldGp.ChainParameters.TransferPtnPricePerKByte
+	newData.ChainParametersTemp.GenerateUnitReward = oldGp.ChainParameters.GenerateUnitReward
+	newData.ChainParametersTemp.PledgeDailyReward = oldGp.ChainParameters.PledgeDailyReward
+	newData.ChainParametersTemp.RewardHeight = oldGp.ChainParameters.RewardHeight
+	newData.ChainParametersTemp.UnitMaxSize = oldGp.ChainParameters.UnitMaxSize
+	newData.ChainParametersTemp.FoundationAddress = oldGp.ChainParameters.FoundationAddress
+	newData.ChainParametersTemp.DepositAmountForMediator = oldGp.ChainParameters.DepositAmountForMediator
+	newData.ChainParametersTemp.DepositAmountForJury = oldGp.ChainParameters.DepositAmountForJury
+	newData.ChainParametersTemp.DepositAmountForDeveloper = oldGp.ChainParameters.DepositAmountForDeveloper
+	newData.ChainParametersTemp.ActiveMediatorCount = oldGp.ChainParameters.ActiveMediatorCount
+	newData.ChainParametersTemp.MaximumMediatorCount = oldGp.ChainParameters.MaximumMediatorCount
+	newData.ChainParametersTemp.MediatorInterval = oldGp.ChainParameters.MediatorInterval
+	newData.ChainParametersTemp.MaintenanceInterval = oldGp.ChainParameters.MaintenanceInterval
+	newData.ChainParametersTemp.MaintenanceSkipSlots = oldGp.ChainParameters.MaintenanceSkipSlots
+	newData.ChainParametersTemp.MediatorCreateFee = oldGp.ChainParameters.MediatorCreateFee
+	newData.ChainParametersTemp.AccountUpdateFee = oldGp.ChainParameters.AccountUpdateFee
+	newData.ChainParametersTemp.TransferPtnBaseFee = oldGp.ChainParameters.TransferPtnBaseFee
+	newData.ChainParametersTemp.TransferPtnPricePerKByte = oldGp.ChainParameters.TransferPtnPricePerKByte
 
 	//新加的
-	newData.ChainParameters.RmExpConFromSysParam = core.DefaultRmExpConFromSysParam
+	newData.ChainParametersTemp.RmExpConFromSysParam = core.DefaultRmExpConFromSysParam
 
-	newData.ChainParameters.UccMemory = oldGp.ChainParameters.UccMemory
-	newData.ChainParameters.UccCpuShares = oldGp.ChainParameters.UccCpuShares
-	newData.ChainParameters.UccCpuQuota = oldGp.ChainParameters.UccCpuQuota
-	newData.ChainParameters.UccDisk = oldGp.ChainParameters.UccDisk
-	newData.ChainParameters.TempUccMemory = oldGp.ChainParameters.TempUccMemory
-	newData.ChainParameters.TempUccCpuShares = oldGp.ChainParameters.TempUccCpuShares
-	newData.ChainParameters.TempUccCpuQuota = oldGp.ChainParameters.TempUccCpuQuota
-	newData.ChainParameters.ContractSignatureNum = oldGp.ChainParameters.ContractSignatureNum
-	newData.ChainParameters.ContractElectionNum = oldGp.ChainParameters.ContractElectionNum
-	newData.ChainParameters.ContractTxTimeoutUnitFee = oldGp.ChainParameters.ContractTxTimeoutUnitFee
-	newData.ChainParameters.ContractTxSizeUnitFee = oldGp.ChainParameters.ContractTxSizeUnitFee
-	newData.ChainParameters.ContractTxInstallFeeLevel = oldGp.ChainParameters.ContractTxInstallFeeLevel
-	newData.ChainParameters.ContractTxDeployFeeLevel = oldGp.ChainParameters.ContractTxDeployFeeLevel
-	newData.ChainParameters.ContractTxInvokeFeeLevel = oldGp.ChainParameters.ContractTxInvokeFeeLevel
-	newData.ChainParameters.ContractTxStopFeeLevel = oldGp.ChainParameters.ContractTxStopFeeLevel
+	newData.ChainParametersTemp.UccMemory = oldGp.ChainParameters.UccMemory
+	newData.ChainParametersTemp.UccCpuShares = oldGp.ChainParameters.UccCpuShares
+	newData.ChainParametersTemp.UccCpuQuota = oldGp.ChainParameters.UccCpuQuota
+	newData.ChainParametersTemp.UccDisk = oldGp.ChainParameters.UccDisk
+	newData.ChainParametersTemp.TempUccMemory = oldGp.ChainParameters.TempUccMemory
+	newData.ChainParametersTemp.TempUccCpuShares = oldGp.ChainParameters.TempUccCpuShares
+	newData.ChainParametersTemp.TempUccCpuQuota = oldGp.ChainParameters.TempUccCpuQuota
+	newData.ChainParametersTemp.ContractSignatureNum = oldGp.ChainParameters.ContractSignatureNum
+	newData.ChainParametersTemp.ContractElectionNum = oldGp.ChainParameters.ContractElectionNum
+	newData.ChainParametersTemp.ContractTxTimeoutUnitFee = oldGp.ChainParameters.ContractTxTimeoutUnitFee
+	newData.ChainParametersTemp.ContractTxSizeUnitFee = oldGp.ChainParameters.ContractTxSizeUnitFee
+	newData.ChainParametersTemp.ContractTxInstallFeeLevel = oldGp.ChainParameters.ContractTxInstallFeeLevel
+	newData.ChainParametersTemp.ContractTxDeployFeeLevel = oldGp.ChainParameters.ContractTxDeployFeeLevel
+	newData.ChainParametersTemp.ContractTxInvokeFeeLevel = oldGp.ChainParameters.ContractTxInvokeFeeLevel
+	newData.ChainParametersTemp.ContractTxStopFeeLevel = oldGp.ChainParameters.ContractTxStopFeeLevel
 
 	//新加的
-	newData.ChainParameters.ContractSystemVersion = core.DefaultContractSystemVersion
+	newData.ChainParametersTemp.ContractSystemVersion = core.DefaultContractSystemVersion
 
-	newData.ChainParameters.UccDuringTime = strconv.FormatInt(int64(core.DefaultContainerDuringTime), 10)
+	newData.ChainParametersTemp.UccDuringTime = strconv.FormatInt(int64(core.DefaultContainerDuringTime), 10)
 
 	err = storage.StoreToRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, newData)
 	if err != nil {
