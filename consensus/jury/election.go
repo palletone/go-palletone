@@ -410,30 +410,31 @@ func (p *Processor) processElectionSigRequestEvent(evt *ElectionSigRequestEvent)
 		log.Debugf("[%s]processElectionSigRequestEvent,LocalActiveMediators < 1", shortId(reqId.String()))
 		return nil
 	}
-	mAddr := mAddrs[0] //first
 	ks := p.ptn.GetKeyStore()
-	pk, err := ks.GetPublicKey(mAddr)
-	if err != nil {
-		log.Debugf("[%s]processElectionSigRequestEvent, GetPublicKey fail", shortId(reqId.String()))
-		return nil
+	//mAddr := mAddrs[0] //first
+	for _, mAddr := range mAddrs {
+		pk, err := ks.GetPublicKey(mAddr)
+		if err != nil {
+			log.Debugf("[%s]processElectionSigRequestEvent, GetPublicKey fail", shortId(reqId.String()))
+			return nil
+		}
+		sig, err := ks.SigData(evt, mAddr)
+		if err != nil {
+			log.Debugf("[%s]processElectionSigRequestEvent, SigData fail", shortId(reqId.String()))
+			return nil
+		}
+		resultEvt := &ElectionSigResultEvent{
+			ReqId:     reqId,
+			JuryCount: evt.JuryCount,
+			Sig:       modules.SignatureSet{PubKey: pk, Signature: sig},
+		}
+		//广播resultEvt
+		go p.ptn.ElectionBroadcast(ElectionEvent{EType: ELECTION_EVENT_SIG_RESULT, Event: resultEvt}, true)
 	}
-	sig, err := ks.SigData(evt, mAddr)
-	if err != nil {
-		log.Debugf("[%s]processElectionSigRequestEvent, SigData fail", shortId(reqId.String()))
-		return nil
-	}
-
 	if e, ok := p.mel[reqId]; ok {
 		e.brded = true //关闭签名广播请求
 		e.sigReqEd = true
 	}
-	resultEvt := &ElectionSigResultEvent{
-		ReqId:     reqId,
-		JuryCount: evt.JuryCount,
-		Sig:       modules.SignatureSet{PubKey: pk, Signature: sig},
-	}
-	//广播resultEvt
-	go p.ptn.ElectionBroadcast(ElectionEvent{EType: ELECTION_EVENT_SIG_RESULT, Event: resultEvt}, true)
 	return nil
 }
 

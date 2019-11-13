@@ -100,7 +100,14 @@ func processPledgeWithdraw(stub shim.ChaincodeStubInterface, amount string) pb.R
 }
 
 func queryPledgeStatusByAddr(stub shim.ChaincodeStubInterface, address string) (*modules.PledgeStatusJson, error) {
-
+	if strings.ToLower(address) == ALL{
+		status,err := getTotalPledgeStatus(stub)
+		if err != nil {
+			return nil, err
+		}
+		pjson := convertPledgeStatus2Json(status)
+		return pjson, nil
+	}
 	status, err := getPledgeStatus(stub, address)
 	if err != nil {
 		return nil, err
