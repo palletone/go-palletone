@@ -1197,6 +1197,9 @@ func (pool *TxPool) checkPoolDoubleSpend(tx *TxPoolTransaction) error {
 }
 
 func (pool *TxPool) OutPointIsSpend(outPoint *modules.OutPoint) (bool, error) {
+	if outPoint.TxHash.IsSelfHash() {
+		return false, nil
+	}
 	if tx, ok := pool.outpoints.Load(*outPoint); ok {
 		str := fmt.Sprintf("output %v already spent by "+
 			"transaction %x in the txpool",
