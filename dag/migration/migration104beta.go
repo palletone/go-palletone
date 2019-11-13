@@ -75,7 +75,7 @@ func (m *Migration104alpha_104beta) upgradeGP() error {
 	newData.ChainParametersTemp.PledgeRecordsThreshold =
 		strconv.FormatInt(int64(core.DefaultPledgeRecordsThreshold), 10)
 
-	// 修复在 1.0.2版本升级的初始化值的错误，重新改为0
+	// 修复在 1.0.2版本升级时初始化值的错误，重新改为0
 	newData.ImmutableParameters.MinMaintSkipSlots = core.DefaultMinMaintSkipSlots
 
 	err = storage.StoreToRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, newData)

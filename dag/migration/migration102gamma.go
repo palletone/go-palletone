@@ -46,11 +46,6 @@ func (m *Migration102beta_102gamma) ToVersion() string {
 }
 
 func (m *Migration102beta_102gamma) ExecuteUpgrade() error {
-	//转换GLOBALPROPERTY结构体
-	//if err := m.upgradeGP(); err != nil {
-	//	return err
-	//}
-
 	// 转换mediator结构体
 	if err := m.upgradeMediatorInfo(); err != nil {
 		return err
