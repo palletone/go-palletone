@@ -181,7 +181,7 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 	inserter := func(headers []*modules.Header) (int, error) {
 		// If fast sync is running, deny importing weird blocks
 		log.Debug("Cors ProtocolManager InsertLightHeader", "manager.dag.InsertDag index:",
-			headers[0].Number.Index, "hash", headers[0].Hash())
+			headers[0].GetNumber().Index, "hash", headers[0].Hash())
 		return pm.dag.InsertLightHeader(headers)
 	}
 	return NewLightFetcher(pm.dag.GetHeaderByHash, pm.dag.GetLightChainHeight, headerVerifierFn,
@@ -192,8 +192,8 @@ func (pm *ProtocolManager) BroadcastCorsHeader(p *peer, header *modules.Header) 
 	pm.bdlock.RLock()
 	v, ok := pm.needboradcast[p.id]
 	pm.bdlock.RUnlock()
-	if ok && header.Number.Index >= v {
-		log.Debug("Cors ProtocolManager BroadcastCorsHeader", "assetid:", header.Number.AssetID.String(),
+	if ok && header.GetNumber().Index >= v {
+		log.Debug("Cors ProtocolManager BroadcastCorsHeader", "assetid:", header.GetNumber().AssetID.String(),
 			"index:", header.Index(), "hash", header.Hash())
 		pm.server.SendEvents(header)
 	}
@@ -300,7 +300,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		headhash = common.Hash{}
 	)
 	if head := pm.dag.CurrentHeader(pm.assetId); head != nil {
-		number = head.Number
+		number = head.GetNumber()
 		headhash = head.Hash()
 	}
 
@@ -422,7 +422,7 @@ func (pm *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
 		hash  = common.Hash{}
 	)
 	if header != nil {
-		index = header.Number.Index
+		index = header.GetNumber().Index
 		hash = header.Hash()
 	} else {
 		log.Debug("Light PalletOne NodeInfo header is nil")

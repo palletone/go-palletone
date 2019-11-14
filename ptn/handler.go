@@ -585,7 +585,7 @@ func (pm *ProtocolManager) LocalHandle(p *peer) error {
 		stable = &modules.ChainIndex{}
 	)
 	if head := pm.dag.CurrentHeader(pm.mainAssetId); head != nil {
-		number = head.Number
+		number = head.GetNumber()
 		hash = head.Hash()
 		stable = pm.dag.GetStableChainIndex(pm.mainAssetId)
 	}
@@ -784,7 +784,7 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
 	for _, peer := range peers {
 		peer.SendNewRawUnit(unit, data)
 	}
-	log.Trace("BroadcastUnit Propagated block", "index:", unit.Header().Number.Index,
+	log.Trace("BroadcastUnit Propagated block", "index:", unit.Header().GetNumber().Index,
 		"hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
 }
 

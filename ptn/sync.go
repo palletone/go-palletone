@@ -235,7 +235,7 @@ func (pm *ProtocolManager) synchronize(peer *peer, assetId modules.AssetId, sync
 	log.Info("ptn sync complete")
 
 	cunit := pm.dag.GetCurrentUnit(assetId)
-	if cunit != nil && cunit.UnitHeader.Number.Index > 0 {
+	if cunit != nil && cunit.UnitHeader.GetNumber().Index > 0 {
 		go pm.BroadcastUnit(cunit, false)
 		//TODO notice light protocol to sync corsheader
 		if syncCh != nil {

@@ -251,7 +251,7 @@ func (q *queue) resultSlots(pendPool map[string]*fetchRequest, donePool map[comm
 	for _, request := range pendPool {
 		for _, header := range request.Headers {
 			//if header.Number.Uint64() < q.resultOffset+uint64(limit) {
-			if header.Number.Index < q.resultOffset+uint64(limit) {
+			if header.GetNumber().Index < q.resultOffset+uint64(limit) {
 				pending++
 			}
 		}
@@ -310,18 +310,18 @@ func (q *queue) Schedule(headers []*modules.Header, from uint64) []*modules.Head
 		// Make sure chain order is honored and preserved throughout
 		hash := header.Hash()
 		//if header.Number == nil || header.Number.Uint64() != from {
-		if header.Number.Index != from {
-			log.Warn("Header broke chain ordering", "number", header.Number.Index, "hash", hash, "expected", from)
+		if header.GetNumber().Index != from {
+			log.Warn("Header broke chain ordering", "number", header.GetNumber().Index, "hash", hash, "expected", from)
 			break
 		}
 
-		if q.headerHead != (common.Hash{}) && q.headerHead != header.ParentsHash[0] {
-			log.Warn("Header broke chain ancestry", "number", header.Number.Index, "hash", hash)
+		if q.headerHead != (common.Hash{}) && q.headerHead != header.ParentHash()[0] {
+			log.Warn("Header broke chain ancestry", "number", header.GetNumber().Index, "hash", hash)
 			break
 		}
 		// Make sure no duplicate requests are executed
 		if _, ok := q.blockTaskPool[hash]; ok {
-			log.Warn("Header  already scheduled for block fetch", "number", header.Number.Index, "hash", hash)
+			log.Warn("Header  already scheduled for block fetch", "number", header.GetNumber().Index, "hash", hash)
 			continue
 		}
 		//		if _, ok := q.receiptTaskPool[hash]; ok {
@@ -331,7 +331,7 @@ func (q *queue) Schedule(headers []*modules.Header, from uint64) []*modules.Head
 		// Queue the header for content retrieval
 		q.blockTaskPool[hash] = header
 		//q.blockTaskQueue.Push(header, -float32(header.Number.Uint64()))
-		q.blockTaskQueue.Push(header, -float32(header.Number.Index))
+		q.blockTaskQueue.Push(header, -float32(header.GetNumber().Index))
 
 		//		if q.mode == FastSync {
 		//			q.receiptTaskPool[hash] = header
@@ -460,7 +460,7 @@ func (q *queue) ReserveBodies(p *peerConnection, count int) (*fetchRequest, bool
 		//if header.TxRoot == modules.EmptyRootHash {
 		//	log.Debug("ReserveBodies", "header.TxRoot == modules.EmptyRootHash:", header.TxRoot == modules.EmptyRootHash)
 		//}
-		return header.TxRoot == modules.EmptyRootHash
+		return header.TxRoot() == modules.EmptyRootHash
 	}
 	q.lock.Lock()
 	defer q.lock.Unlock()
@@ -503,7 +503,7 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 
 		// If we're the first to request this task, initialize the result container
 		//index := int(header.Number.Int64() - int64(q.resultOffset))
-		index := int(header.Number.Index - q.resultOffset)
+		index := int(header.GetNumber().Index - q.resultOffset)
 		if index >= len(q.resultCache) || index < 0 {
 			common.Report("index allocation went beyond available resultCache space")
 			return nil, false, errInvalidChain
@@ -543,7 +543,7 @@ func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common
 	// Merge all the skipped headers back
 	for _, header := range skip {
 		//taskQueue.Push(header, -float32(header.Number.Uint64()))
-		taskQueue.Push(header, -float32(header.Number.Index))
+		taskQueue.Push(header, -float32(header.GetNumber().Index))
 	}
 	if progress {
 		// Wake WaitResults, resultCache was modified
@@ -590,7 +590,7 @@ func (q *queue) cancel(request *fetchRequest, taskQueue *prque.Prque, pendPool m
 	}
 	for _, header := range request.Headers {
 		//taskQueue.Push(header, -float32(header.Number.Uint64()))
-		taskQueue.Push(header, -float32(header.Number.Index))
+		taskQueue.Push(header, -float32(header.GetNumber().Index))
 	}
 	delete(pendPool, request.Peer.id)
 }
@@ -605,7 +605,7 @@ func (q *queue) Revoke(peerId string) {
 	if request, ok := q.blockPendPool[peerId]; ok {
 		for _, header := range request.Headers {
 			//q.blockTaskQueue.Push(header, -float32(header.Number.Uint64()))
-			q.blockTaskQueue.Push(header, -float32(header.Number.Index))
+			q.blockTaskQueue.Push(header, -float32(header.GetNumber().Index))
 		}
 		delete(q.blockPendPool, peerId)
 	}
@@ -665,7 +665,7 @@ func (q *queue) expire(timeout time.Duration, pendPool map[string]*fetchRequest,
 			}
 			for _, header := range request.Headers {
 				//taskQueue.Push(header, -float32(header.Number.Uint64()))
-				taskQueue.Push(header, -float32(header.Number.Index))
+				taskQueue.Push(header, -float32(header.GetNumber().Index))
 			}
 			// Add the peer to the expiry report along the the number of failed requests
 			expiries[id] = len(request.Headers)
@@ -701,13 +701,13 @@ func (q *queue) DeliverHeaders(id string, headers []*modules.Header, headerProcC
 	target := q.headerTaskPool[request.From].Hash()
 	accepted := len(headers) == MaxHeaderFetch
 	if accepted {
-		if headers[0].Number.Index != request.From {
+		if headers[0].GetNumber().Index != request.From {
 			log.Trace("First header broke chain ordering", "peer", id, "number",
-				headers[0].Number.Index, "hash", headers[0].Hash(), "request.From", request.From)
+				headers[0].GetNumber().Index, "hash", headers[0].Hash(), "request.From", request.From)
 			accepted = false
 		} else if headers[len(headers)-1].Hash() != target {
 			log.Trace("Last header broke skeleton structure ", "peer", id, "number",
-				headers[len(headers)-1].Number.Index, "hash", headers[len(headers)-1].Hash(), "expected", target)
+				headers[len(headers)-1].GetNumber().Index, "hash", headers[len(headers)-1].Hash(), "expected", target)
 			accepted = false
 		}
 	}
@@ -715,15 +715,15 @@ func (q *queue) DeliverHeaders(id string, headers []*modules.Header, headerProcC
 		for i, header := range headers[1:] {
 			hash := header.Hash()
 			//if want := request.From + 1 + uint64(i); header.Number.Uint64() != want {
-			if want := request.From + 1 + uint64(i); header.Number.Index != want {
-				log.Warn("Header broke chain ordering", "peer", id, "number", header.Number.Index,
+			if want := request.From + 1 + uint64(i); header.GetNumber().Index != want {
+				log.Warn("Header broke chain ordering", "peer", id, "number", header.GetNumber().Index,
 					"hash", hash, "expected", want)
 				accepted = false
 				break
 			}
 			//TODO  must recover //if headers[i].Hash() != header.ParentHash { //ptn
-			if headers[i].Hash() != header.ParentsHash[0] {
-				log.Warn("Header broke chain ancestry", "peer", id, "number", header.Number.Index, "hash", hash)
+			if headers[i].Hash() != header.ParentHash()[0] {
+				log.Warn("Header broke chain ancestry", "peer", id, "number", header.GetNumber().Index, "hash", hash)
 				accepted = false
 				break
 			}
@@ -758,7 +758,7 @@ func (q *queue) DeliverHeaders(id string, headers []*modules.Header, headerProcC
 
 		select {
 		case headerProcCh <- process:
-			log.Trace("Pre-scheduled new headers", "peer", id, "count", len(process), "from", process[0].Number.Index)
+			log.Trace("Pre-scheduled new headers", "peer", id, "count", len(process), "from", process[0].GetNumber().Index)
 			q.headerProced += len(process)
 		default:
 		}
@@ -825,7 +825,7 @@ func (q *queue) deliver(id string, taskPool map[common.Hash]*modules.Header, tas
 			break
 		}
 		// Reconstruct the next result if contents match up
-		index := int(header.Number.Index - q.resultOffset)
+		index := int(header.GetNumber().Index - q.resultOffset)
 		if index >= len(q.resultCache) || index < 0 || q.resultCache[index] == nil {
 			failure = errInvalidChain
 			break
@@ -850,7 +850,7 @@ func (q *queue) deliver(id string, taskPool map[common.Hash]*modules.Header, tas
 	for _, header := range request.Headers {
 		if header != nil {
 			//taskQueue.Push(header, -float32(header.Number.Uint64()))
-			taskQueue.Push(header, -float32(header.Number.Index))
+			taskQueue.Push(header, -float32(header.GetNumber().Index))
 			sum++
 		}
 	}

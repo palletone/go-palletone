@@ -79,9 +79,9 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 		if origin == nil {
 			break
 		}
-		log.Debug("ProtocolManager", "GetBlockHeadersMsg origin index:", origin.Number.Index)
+		log.Debug("ProtocolManager", "GetBlockHeadersMsg origin index:", origin.GetNumber().Index)
 
-		number := origin.Number.Index
+		number := origin.GetNumber().Index
 		headers = append(headers, origin)
 		bytes += estHeaderRlpSize
 
@@ -92,7 +92,7 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 			for i := 0; i < int(query.Skip)+1; i++ {
 				if header, err := pm.dag.GetHeaderByHash(query.Origin.Hash); err == nil && header != nil {
 					if number != 0 {
-						query.Origin.Hash = header.ParentsHash[0]
+						query.Origin.Hash = header.ParentHash()[0]
 					}
 					number--
 				} else {
@@ -104,9 +104,9 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 			// Hash based traversal towards the leaf block
 			//log.Debug("ProtocolManager", "GetBlockHeadersMsg ", "Hash based towards the leaf block")
 			var (
-				current = origin.Number.Index
+				current = origin.GetNumber().Index
 				next    = current + query.Skip + 1
-				index   = origin.Number
+				index   = origin.GetNumber()
 			)
 			//log.Debug("ProtocolManager", "GetBlockHeadersMsg next", next, "current:", current)
 			if next <= current {
@@ -120,7 +120,7 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 				if header, _ := pm.dag.GetHeaderByNumber(index); header != nil {
 					hashs := pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)
 					log.Debug("ProtocolManager", "GetUnitHashesFromHash len(hashs):", len(hashs),
-						"header.index:", header.Number.Index, "header.hash:", header.Hash().String(),
+						"header.index:", header.GetNumber().Index, "header.hash:", header.Hash().String(),
 						"query.Skip+1", query.Skip+1)
 					if len(hashs) > int(query.Skip) && (hashs[query.Skip] == query.Origin.Hash) {
 						query.Origin.Hash = header.Hash()
@@ -157,7 +157,7 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 	number := len(headers)
 	if number > 0 {
 		log.Debug("ProtocolManager", "GetBlockHeadersMsg query.Amount", query.Amount, "send number:", number,
-			"start:", headers[0].Number.Index, "end:", headers[number-1].Number.Index, " getBlockHeadersData:", query)
+			"start:", headers[0].GetNumber().Index, "end:", headers[number-1].GetNumber().Index, " getBlockHeadersData:", query)
 	} else {
 		log.Debug("ProtocolManager", "GetBlockHeadersMsg query.Amount", query.Amount, "send number:", 0,
 			" getBlockHeadersData:", query)

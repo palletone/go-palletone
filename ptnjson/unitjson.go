@@ -85,24 +85,24 @@ func ConvertUnit2Json(unit *modules.Unit, utxoQuery modules.QueryUtxoFunc,
 }
 func ConvertUnitHeader2Json(header *modules.Header) *HeaderJson {
 	json := &HeaderJson{
-		ParentsHash:   header.ParentsHash,
+		ParentsHash:   header.ParentHash(),
 		Hash:          header.Hash().String(),
-		AuthorAddress: header.Authors.Address().String(),
-		AuthorPubKey:  hex.EncodeToString(header.Authors.PubKey),
-		AuthorSign:    hex.EncodeToString(header.Authors.Signature),
-		GroupSign:     hex.EncodeToString(header.GroupSign),
-		GroupPubKey:   hex.EncodeToString(header.GroupPubKey),
-		TxRoot:        header.TxRoot,
+		AuthorAddress: header.Author().String(),
+		AuthorPubKey:  hex.EncodeToString(header.GetAuthors().PubKey),
+		AuthorSign:    hex.EncodeToString(header.GetAuthors().Signature),
+		GroupSign:     hex.EncodeToString(header.GetGroupSign()),
+		GroupPubKey:   hex.EncodeToString(header.GetGroupPubkey()),
+		TxRoot:        header.TxRoot(),
 		TxsIllegal:    make([]string, 0),
-		Extra:         hex.EncodeToString(header.Extra),
-		CreationTime:  time.Unix(header.Time, 0),
+		Extra:         hex.EncodeToString(header.Extra()),
+		CreationTime:  time.Unix(header.Timestamp(), 0),
 	}
-	for _, txI := range header.TxsIllegal {
+	for _, txI := range header.GetTxsIllegal() {
 		json.TxsIllegal = append(json.TxsIllegal, strconv.Itoa(int(txI)))
 	}
 	json.Number = ChainIndexJson{
-		AssetID: header.Number.AssetID.String(),
-		Index:   header.Number.Index,
+		AssetID: header.GetNumber().AssetID.String(),
+		Index:   header.GetNumber().Index,
 	}
 	return json
 }

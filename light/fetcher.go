@@ -209,7 +209,7 @@ func (f *LightFetcher) insert(p *peer, header *modules.Header) {
 			return
 		}
 		p.lightlock.Lock()
-		p.lightpeermsg[header.Number.AssetID] = &announceData{Hash: header.Hash(), Number: *header.Number}
+		p.lightpeermsg[header.GetNumber().AssetID] = &announceData{Hash: header.Hash(), Number: *header.GetNumber()}
 		p.lightlock.Unlock()
 		// If import succeeded, broadcast the block
 		go f.broadcastHeader(header, false)
@@ -231,8 +231,8 @@ func (f *LightFetcher) enqueue(p *peer, header *modules.Header) {
 		return
 	}
 	// Discard any past or too distant blocks
-	heightChain := int64(f.lightChainHeight(header.Number.AssetID))
-	if dist := int64(header.Number.Index) - heightChain; dist < -maxUncleDist || dist > maxQueueDist {
+	heightChain := int64(f.lightChainHeight(header.GetNumber().AssetID))
+	if dist := int64(header.GetNumber().Index) - heightChain; dist < -maxUncleDist || dist > maxQueueDist {
 		log.Debug("Discarded propagated block, too far away", "peer", p.id, "number", header.Index(),
 			"heightChain", heightChain, "distance", dist)
 		return

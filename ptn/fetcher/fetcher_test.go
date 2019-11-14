@@ -38,13 +38,13 @@ var (
 
 func newGenesisForTest(db ptndb.Database) *modules.Unit {
 	header := modules.NewHeader([]common.Hash{}, 1, []byte{})
-
-	header.Number.AssetID = modules.PTNCOIN
-	//header.Number.IsMain = true
-	header.Number.Index = 0
-	header.Authors = modules.Authentifier{[]byte{}, []byte{}}
-	header.GroupSign = []byte{}
-	header.GroupPubKey = []byte{}
+	number := new(modules.ChainIndex)
+	number.AssetID = modules.PTNCOIN
+	number.Index = 0
+	header.SetNumber(number)
+	header.SetAuthor(modules.Authentifier{[]byte{}, []byte{}})
+	header.SetGroupSign([]byte{})
+	header.SetGroupPubkey([]byte{})
 	tx, _ := NewCoinbaseTransaction()
 	txs := modules.Transactions{tx}
 	genesisUnit := modules.NewUnit(header, txs)
@@ -89,12 +89,12 @@ func newDag(db ptndb.Database, gunit *modules.Unit, number int) (modules.Units, 
 	par := gunit
 	for i := 0; i < number; i++ {
 		header := modules.NewHeader([]common.Hash{par.UnitHash}, 1, []byte{})
-		header.Number.AssetID = par.UnitHeader.Number.AssetID
-		//header.Number.IsMain = par.UnitHeader.Number.IsMain
-		header.Number.Index = par.UnitHeader.Number.Index + 1
-		header.Authors = modules.Authentifier{[]byte{}, []byte{}}
-		header.GroupSign = []byte{}
-		header.GroupPubKey = []byte{}
+		index := new(modules.ChainIndex)
+		index.AssetID = par.UnitHeader.GetNumber().AssetID
+		index.Index = par.UnitHeader.GetNumber().Index + 1
+		header.SetAuthor(modules.Authentifier{[]byte{}, []byte{}})
+		header.SetGroupSign([]byte{})
+		header.SetGroupPubkey([]byte{})
 		tx, _ := NewCoinbaseTransaction()
 		txs := modules.Transactions{tx}
 		unit := modules.NewUnit(header, txs)
@@ -147,7 +147,7 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 	if err := dagDb.SaveTxLookupEntry(unit); err != nil {
 		return err
 	}
-	if err := saveHashByIndex(db, unit.UnitHash, unit.UnitHeader.Number.Index); err != nil {
+	if err := saveHashByIndex(db, unit.UnitHash, unit.UnitHeader.GetNumber().Index); err != nil {
 		return err
 	}
 	// update state

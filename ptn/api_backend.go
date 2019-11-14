@@ -409,7 +409,7 @@ func (b *PtnApiBackend) GetUnitTxsInfo(hash common.Hash) ([]*ptnjson.TxSummaryJs
 	txs_json := make([]*ptnjson.TxSummaryJson, 0)
 
 	for txIdx, tx := range txs {
-		txs_json = append(txs_json, ptnjson.ConvertTx2SummaryJson(tx, hash, header.Number.Index, header.Time,
+		txs_json = append(txs_json, ptnjson.ConvertTx2SummaryJson(tx, hash, header.GetNumber().Index, header.Timestamp(),
 			uint64(txIdx), b.ptn.dag.GetTxOutput))
 	}
 	return txs_json, nil
@@ -892,9 +892,9 @@ func (s *PtnApiBackend) GetProofTxInfoByHash(strtxhash string) ([][]byte, error)
 		return [][]byte{[]byte(fmt.Sprintf("Get Trie err %v", err))}, err
 	}
 
-	if trieRootHash.String() != unit.UnitHeader.TxRoot.String() {
+	if trieRootHash.String() != unit.UnitHeader.TxRoot().String() {
 		log.Debug("Light PalletOne", "GetProofTxInfoByHash hash is not equal.trieRootHash.String()",
-			trieRootHash.String(), "unit.UnitHeader.TxRoot.String()", unit.UnitHeader.TxRoot.String())
+			trieRootHash.String(), "unit.UnitHeader.TxRoot.String()", unit.UnitHeader.TxRoot().String())
 		return [][]byte{[]byte("trie root hash is not equal")}, errors.New("hash not equal")
 	}
 

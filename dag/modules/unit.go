@@ -361,6 +361,18 @@ func (unit *Unit) GetAssetId() AssetId {
 func (h *Header) Extra() []byte {
 	return h.header.Extra
 }
+func (h *Header) GetAuthors() Authentifier {
+	if h == nil {
+		log.Error("the Unit Header pointer is nil!")
+	}
+	return h.header.Authors
+}
+func (h *Header) GetTxsIllegal() []uint16 {
+	if h.header == nil {
+		log.Error("the Unit Header pointer is nil!")
+	}
+	return h.header.TxsIllegal
+}
 func (h *Header) Author() common.Address {
 	if h == nil {
 		log.Error("the Unit Header pointer is nil!")
