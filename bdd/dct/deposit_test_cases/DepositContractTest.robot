@@ -463,7 +463,7 @@ PledgeTest
     ${result}    IsFinishAddNewRecords
     log    ${result}
     sleep    3
-    ${result}    AddNewAddrPledgeRecords    ${votedAddress}    #1
+    ${result}    HandlePledgeReward    ${votedAddress}    #1
     log    ${result}
     sleep    5
     ${result}    IsFinishAddNewRecords

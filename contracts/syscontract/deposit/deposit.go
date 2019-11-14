@@ -952,6 +952,7 @@ func (d DepositChaincode) IsFinishAllocated(stub shim.ChaincodeStubInterface) bo
 		log.Warn("GetState error: ", err.Error())
 		return true
 	}
+	log.Infof("allocate = %s, today = %s, lastDate = %s, depositList length = %d", finish, today, lastDate, len(depositList))
 	//  1.添加完了，finish == nil
 	//  2.分配完了，finish == []byte("allocate"),depositList > 0
 	if today == lastDate {
