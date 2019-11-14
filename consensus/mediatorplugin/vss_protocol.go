@@ -34,9 +34,11 @@ func (mp *MediatorPlugin) newDKGAndInitVSSBuf() {
 	// 初始化dkg，并初始化与完成vss相关的buf
 	mp.dkgLock.Lock()
 	log.Debugf("dkgLock.Lock()")
-	log.Debugf("dkgLock.Unlock()")
+	defer log.Debugf("dkgLock.Unlock()")
 	defer mp.dkgLock.Unlock()
 	mp.vssBufLock.Lock()
+	log.Debugf("vssBufLock.Lock()")
+	defer log.Debugf("vssBufLock.Unlock()")
 	defer mp.vssBufLock.Unlock()
 
 	dag := mp.dag
@@ -105,8 +107,11 @@ func (mp *MediatorPlugin) startVSSProtocol() {
 }
 
 func (mp *MediatorPlugin) completeVSSProtocol() {
+	log.Debugf("to complete vss protocol")
 	// 停止所有vss相关的循环
-	mp.stopVSS <- struct{}{}
+	go func() {
+		mp.stopVSS <- struct{}{}
+	}()
 
 	// 删除vss相关缓存
 	mp.vssBufLock.Lock()
@@ -123,7 +128,7 @@ func (mp *MediatorPlugin) launchGroupSignLoops() {
 	lams := mp.GetLocalActiveMediators()
 	mp.dkgLock.Lock()
 	log.Debugf("dkgLock.Lock()")
-	log.Debugf("dkgLock.Unlock()")
+	defer log.Debugf("dkgLock.Unlock()")
 	defer mp.dkgLock.Unlock()
 
 	for _, localMed := range lams {
@@ -194,7 +199,7 @@ func (mp *MediatorPlugin) processDealLoop(localMed common.Address) {
 func (mp *MediatorPlugin) processVSSDeal(localMed common.Address, deal *dkg.Deal) {
 	mp.dkgLock.Lock()
 	log.Debugf("dkgLock.Lock()")
-	log.Debugf("dkgLock.Unlock()")
+	defer log.Debugf("dkgLock.Unlock()")
 	defer mp.dkgLock.Unlock()
 
 	dkgr, ok := mp.activeDKGs[localMed]
@@ -235,7 +240,7 @@ func (mp *MediatorPlugin) processVSSDeal(localMed common.Address, deal *dkg.Deal
 func (mp *MediatorPlugin) broadcastVSSDeals() {
 	mp.dkgLock.Lock()
 	log.Debugf("dkgLock.Lock()")
-	log.Debugf("dkgLock.Unlock()")
+	defer log.Debugf("dkgLock.Unlock()")
 	defer mp.dkgLock.Unlock()
 
 	cp := mp.dag.GetGlobalProp().ChainParameters
@@ -350,7 +355,7 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 func (mp *MediatorPlugin) processVSSResp(localMed common.Address, resp *dkg.Response) {
 	mp.dkgLock.Lock()
 	log.Debugf("dkgLock.Lock()")
-	log.Debugf("dkgLock.Unlock()")
+	defer log.Debugf("dkgLock.Unlock()")
 	defer mp.dkgLock.Unlock()
 
 	dkgr, ok := mp.activeDKGs[localMed]

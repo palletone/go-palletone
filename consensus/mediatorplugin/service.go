@@ -219,6 +219,8 @@ func (mp *MediatorPlugin) launchProduction() {
 
 func (mp *MediatorPlugin) Stop() error {
 	close(mp.quit)
+	close(mp.stopProduce)
+	close(mp.stopVSS)
 
 	mp.newProducedUnitScope.Close()
 	mp.vssDealScope.Close()
