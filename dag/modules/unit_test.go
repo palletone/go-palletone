@@ -21,7 +21,6 @@ package modules
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"log"
 	"reflect"
@@ -29,6 +28,7 @@ import (
 	"time"
 	"unsafe"
 
+	"encoding/json"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -37,7 +37,10 @@ import (
 
 func TestNewUnit(t *testing.T) {
 	txs := make(Transactions, 0)
-	unit := NewUnit(&Header{Number: &ChainIndex{NewPTNIdType(), 1}, Extra: []byte("hello"), Time: time.Now().Unix()}, txs)
+	h := NewHeader([]common.Hash{}, []byte("hello"))
+	h.SetNumber(&ChainIndex{NewPTNIdType(), 1})
+	h.SetTime(time.Now().Unix())
+	unit := NewUnit(h, txs)
 	hash := unit.Hash()
 	unit.UnitHash = common.Hash{}
 	if unit.UnitHash != (common.Hash{}) {
@@ -94,16 +97,14 @@ func TestCopyHeader(t *testing.T) {
 	w = append(w, []byte("sign")...)
 	assetID := AssetId{}
 	assetID.SetBytes([]byte("0000000011111111"))
-	h := Header{
-		ParentsHash: []common.Hash{u1, u2},
-		Authors:     auth,
-		GroupSign:   w,
-		GroupPubKey: w,
-		TxRoot:      common.Hash{},
-		Number:      &ChainIndex{AssetID: assetID, Index: 0},
-	}
+	h := NewHeader([]common.Hash{u1, u2}, []byte{})
+	h.SetAuthor(auth)
+	h.SetGroupSign(w)
+	h.SetGroupPubkey(w)
+	h.SetTxRoot(common.Hash{})
+	h.SetNumber(&ChainIndex{AssetID: assetID, Index: 0})
 
-	newH := CopyHeader(&h)
+	newH := CopyHeader(h)
 	//newH.GroupSign = make([]byte, 0)
 	//newH.GroupPubKey = make([]byte, 0)
 	hh := Header{}
@@ -121,19 +122,20 @@ func TestUnitSize(t *testing.T) {
 	address := crypto.PubkeyBytesToAddress(pubKey)
 	log.Println("address:", address)
 
-	h.GroupSign = []byte("group_sign")
-	h.GroupPubKey = []byte("group_pubKey")
-	h.Number = &ChainIndex{}
-	h.Number.AssetID = PTNCOIN
-	h.Number.Index = uint64(333333)
-	h.Extra = make([]byte, 20)
-	h.ParentsHash = append(h.ParentsHash, h.TxRoot)
+	h.SetGroupSign([]byte("group_sign"))
+	h.SetGroupPubkey([]byte("group_pubKey"))
+	index := new(ChainIndex)
+	index.AssetID = PTNCOIN
+	index.Index = uint64(333333)
+	h.SetNumber(index)
+	h.SetExtra(make([]byte, 20))
+	h.SetParentHash([]common.Hash{h.TxRoot()})
 
-	h.TxRoot = h.Hash()
-	sig, _ := crypto.MyCryptoLib.Sign(key, h.TxRoot[:])
+	h.SetTxRoot(h.hash)
+	sig, _ := crypto.MyCryptoLib.Sign(key, h.TxRoot().Bytes())
 	au.Signature = sig
 	au.PubKey = pubKey
-	h.Authors = au
+	h.SetAuthor(au)
 
 	log.Println("size: ", unsafe.Sizeof(h))
 }
@@ -152,37 +154,38 @@ func TestOutPointToKey(t *testing.T) {
 func TestHeaderPointer(t *testing.T) {
 	h := new(Header)
 	//h.AssetIDs = []AssetId{PTNCOIN}
-	h.Time = time.Now().Unix()
-	h.Extra = []byte("jay")
+	h.SetTime(time.Now().Unix())
+	h.SetExtra([]byte("jay"))
 	index := new(ChainIndex)
 	index.AssetID = PTNCOIN
 	index.Index = 1
-	//index.IsMain = true
-	h.Number = index
+	h.SetNumber(index)
 
 	h1 := CopyHeader(h)
-	h1.TxRoot = h.Hash()
+	h1.SetTxRoot(h.hash)
 	h2 := new(Header)
-	h2.Number = h1.Number
-	fmt.Println("h:=1", h.Number.Index, "h1:=1", h1.Number.Index, "h2:=1", h2.Number.Index)
-	h1.Number.Index = 100
+	h2.SetNumber(h1.GetNumber())
+	fmt.Println("h:=1", h.GetNumber().Index, "h1:=1", h1.GetNumber().Index, "h2:=1", h2.GetNumber().Index)
+	index.Index = 100
+	h1.SetNumber(index)
 
-	if h.Number.Index == h1.Number.Index {
-		fmt.Println("failed copy:", h.Number.Index)
+	if h.GetNumber().Index == h1.GetNumber().Index {
+		fmt.Println("failed copy:", h.GetNumber().Index)
 	} else {
 		fmt.Println("success copy!")
 	}
-	fmt.Println("h:1", h.Number.Index, "h1:=100", h1.Number.Index, "h2:=100", h2.Number.Index)
-	h.Number.Index = 666
-	h1.Number.Index = 888
-	fmt.Println("h:=666", h.Number.Index, "h1:=888", h1.Number.Index, "h2:=888", h2.Number.Index)
+	fmt.Println("h:1", h.GetNumber().Index, "h1:=100", h1.GetNumber().Index, "h2:=100", h2.GetNumber().Index)
+	index.Index = 666
+	h.SetNumber(index)
+	index.Index = 888
+	h1.SetNumber(index)
+	fmt.Println("h:=666", h.GetNumber().Index, "h1:=888", h1.GetNumber().Index, "h2:=888", h2.GetNumber().Index)
 }
 
 func TestHeaderRLP(t *testing.T) {
 	key, _ := crypto.MyCryptoLib.KeyGen()
 	pubKey, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(key)
 	h := new(headerTemp)
-	//h.AssetIDs = append(h.AssetIDs, PTNCOIN)
 	au := Authentifier{}
 	address := crypto.PubkeyBytesToAddress(pubKey)
 	log.Println("address:", address)
@@ -226,44 +229,51 @@ func assertEqualRlp(t *testing.T, a, b interface{}) {
 
 func TestHeader_Copy(t *testing.T) {
 	h := mockHeader()
-	data, _ := json.Marshal(h)
+	data, _ := json.Marshal(h.Header())
 	t.Log("Header1", string(data))
 	headerHash := "0x4dcf5cffcc5eb4f103d9222d4551e337c73f7f5d0c4f50de170920cc42db302b"
 	t.Logf("Header Hash:%s", h.Hash().String())
 	assert.Equal(t, headerHash, h.Hash().String())
-	h2 := &Header{}
+	h2 := new(Header)
 	h2.CopyHeader(h)
-	data, _ = json.Marshal(h2)
-	t.Log("Header2", string(data))
+	data, _ = json.Marshal(h2.Header())
+	t.Log("Header2", string(data), "h2_hash", h2.Hash().String())
 	assert.Equal(t, headerHash, h2.Hash().String())
-	h2.ParentsHash = append(h2.ParentsHash, common.HexToHash(headerHash))
-	h2.Authors.PubKey = []byte("Test")
-	h2.Number.Index = 999
-	h2.Extra = []byte("dddd")
-	data, _ = json.Marshal(h)
-	t.Log("Header1", string(data))
+	h.hash = common.Hash{}
+	h2.hash = common.Hash{}
+	h2.SetParentHash([]common.Hash{common.HexToHash(headerHash)})
+	h2.SetAuthor(Authentifier{PubKey: []byte("Test")})
+	index := new(ChainIndex)
+	index.Index = 999
+	index.AssetID = h2.GetNumber().AssetID
+	h2.SetNumber(index)
+	h2.SetExtra([]byte("dddd"))
+	h2.SetTime(321)
+	data, _ = json.Marshal(h.Header())
+	t.Log("Header1", string(data), "h_hash", h.Hash().String())
 	assert.Equal(t, headerHash, h.Hash().String())
 }
 func mockHeader() *Header {
 	key, _ := hex.DecodeString("ebe665c202f9393b85fe9bddbc31f39f7ad9a1eb14149a60f4ff23e806c111a6")
 	pubKey, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(key)
-	h := &Header{}
-	h.GroupSign = []byte("group_sign")
-	h.GroupPubKey = []byte("group_pubKey")
-	h.Number = &ChainIndex{}
-	h.Number.AssetID, _, _ = String2AssetId("DEVIN")
-	h.Number.Index = uint64(123)
-	h.Extra = []byte("Extra")
-	h.CryptoLib = []byte{0x1, 0x2}
-	h.ParentsHash = []common.Hash{
-		common.HexToHash("57c56162990aac482ae2b66196cd1f5129e6f026578470ab105042bf42d6a2dc")}
-	h.TxRoot = common.HexToHash("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f")
-	sig, _ := crypto.MyCryptoLib.Sign(key, h.TxRoot[:])
+	h := new(Header)
+	h.SetGroupSign([]byte("group_sign"))
+	h.SetGroupPubkey([]byte("group_pubKey"))
+	index := &ChainIndex{}
+	index.AssetID, _, _ = String2AssetId("DEVIN")
+	index.Index = uint64(123)
+	h.SetNumber(index)
+	h.SetExtra([]byte("Extra"))
+	h.SetCryptoLib([]byte{0x1, 0x2})
+	h.SetParentHash([]common.Hash{
+		common.HexToHash("57c56162990aac482ae2b66196cd1f5129e6f026578470ab105042bf42d6a2dc")})
+	h.SetTxRoot(common.HexToHash("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f"))
+	sig, _ := crypto.MyCryptoLib.Sign(key, h.TxRoot().Bytes())
 	au := Authentifier{}
 	au.Signature = sig
 	au.PubKey = pubKey
-	h.Authors = au
-	h.Time = 123
-	h.TxsIllegal = []uint16{666}
+	h.SetAuthor(au)
+	h.SetTime(123)
+	h.SetTxsIllegal([]uint16{666})
 	return h
 }

@@ -331,7 +331,7 @@ func newTestPeer(name string, version int, pm *ProtocolManager, shake bool, dag 
 			//}
 			//genesis = pm.dag.GetUnitByNumber(number)
 			head   = pm.dag.CurrentHeader(modules.PTNCOIN)
-			index  = head.Number
+			index  = head.GetNumber()
 			stable = pm.dag.GetStableChainIndex(modules.PTNCOIN)
 		)
 		fmt.Println("==========================================index:", index.Index)
@@ -377,13 +377,14 @@ func MakeDags(Memdb ptndb.Database, unitAccount int) (*dag.Dag, error) {
 	return dag, nil
 }
 func unitForTest(index int) *modules.Unit {
-	header := modules.NewHeader([]common.Hash{}, 1, []byte{})
-	header.Number.AssetID = modules.PTNCOIN
-	//header.Number.IsMain = true
-	header.Number.Index = uint64(index)
-	header.Authors = modules.Authentifier{[]byte{}, []byte{}}
-	header.GroupSign = []byte{}
-	header.GroupPubKey = []byte{}
+	header := modules.NewHeader([]common.Hash{}, []byte{})
+	number := new(modules.ChainIndex)
+	number.AssetID = modules.PTNCOIN
+	number.Index = uint64(index)
+	header.SetNumber(number)
+	header.SetAuthor(modules.Authentifier{[]byte{}, []byte{}})
+	header.SetGroupSign([]byte{})
+	header.SetGroupPubkey([]byte{})
 	//tx, _ := NewCoinbaseTransaction()
 	tx, _ := CreateCoinbase()
 	fmt.Printf("----------%#v\n", tx)
@@ -393,13 +394,14 @@ func unitForTest(index int) *modules.Unit {
 }
 
 func newGenesisForTest(db ptndb.Database) *modules.Unit {
-	header := modules.NewHeader([]common.Hash{}, 1, []byte{})
-	header.Number.AssetID = modules.PTNCOIN
-	//header.Number.IsMain = true
-	header.Number.Index = 0
-	header.Authors = modules.Authentifier{[]byte{}, []byte{}}
-	header.GroupSign = []byte{}
-	header.GroupPubKey = []byte{}
+	header := modules.NewHeader([]common.Hash{}, []byte{})
+	index := new(modules.ChainIndex)
+	index.AssetID = modules.PTNCOIN
+	index.Index = 0
+	header.SetNumber(index)
+	header.SetAuthor(modules.Authentifier{[]byte{}, []byte{}})
+	header.SetGroupSign([]byte{})
+	header.SetGroupPubkey([]byte{})
 	//tx, _ := NewCoinbaseTransaction()
 	tx, _ := CreateCoinbase()
 	fmt.Printf("----------%#v\n", tx)
@@ -416,13 +418,14 @@ func newDag(memdb ptndb.Database, gunit *modules.Unit, number int) (modules.Unit
 	units := make(modules.Units, number)
 	par := gunit
 	for i := 0; i < number; i++ {
-		header := modules.NewHeader([]common.Hash{par.UnitHash}, 1, []byte{})
-		header.Number.AssetID = par.UnitHeader.Number.AssetID
-		//header.Number.IsMain = par.UnitHeader.Number.IsMain
-		header.Number.Index = par.UnitHeader.Number.Index + 1
-		header.Authors = modules.Authentifier{[]byte{}, []byte{}}
-		header.GroupSign = []byte{}
-		header.GroupPubKey = []byte{}
+		header := modules.NewHeader([]common.Hash{par.UnitHash}, []byte{})
+		index := new(modules.ChainIndex)
+		index.AssetID = par.UnitHeader.GetNumber().AssetID
+		index.Index = par.UnitHeader.GetNumber().Index + 1
+		header.SetNumber(index)
+		header.SetAuthor(modules.Authentifier{[]byte{}, []byte{}})
+		header.SetGroupSign([]byte{})
+		header.SetGroupPubkey([]byte{})
 		//tx, _ := NewCoinbaseTransaction()
 		tx, _ := CreateCoinbase()
 		txs := modules.Transactions{tx}

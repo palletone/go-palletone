@@ -37,7 +37,7 @@ var (
 )
 
 func newGenesisForTest(db ptndb.Database) *modules.Unit {
-	header := modules.NewHeader([]common.Hash{}, 1, []byte{})
+	header := modules.NewHeader([]common.Hash{}, []byte{})
 	number := new(modules.ChainIndex)
 	number.AssetID = modules.PTNCOIN
 	number.Index = 0
@@ -88,7 +88,7 @@ func newDag(db ptndb.Database, gunit *modules.Unit, number int) (modules.Units, 
 	units := make(modules.Units, number)
 	par := gunit
 	for i := 0; i < number; i++ {
-		header := modules.NewHeader([]common.Hash{par.UnitHash}, 1, []byte{})
+		header := modules.NewHeader([]common.Hash{par.UnitHash}, []byte{})
 		index := new(modules.ChainIndex)
 		index.AssetID = par.UnitHeader.GetNumber().AssetID
 		index.Index = par.UnitHeader.GetNumber().Index + 1

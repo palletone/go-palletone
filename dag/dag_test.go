@@ -98,7 +98,6 @@ func newHeader() *modules.Header {
 	h := new(modules.Header)
 
 	au := modules.Authentifier{}
-	//address := crypto.PubkeyToAddress(&key.PublicKey)
 
 	h.SetGroupSign([]byte("group_sign"))
 	h.SetGroupPubkey([]byte("group_pubKey"))

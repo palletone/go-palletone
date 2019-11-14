@@ -45,10 +45,10 @@ const (
 )
 
 type Header struct {
-	header       *header_sdw `json:"header"`
-	hash         common.Hash `json:"hash"`
-	group_sign   []byte      `json:"group_sign"`   // 群签名, 用于加快单元确认速度
-	group_pubKey []byte      `json:"group_pubKey"` // 群公钥, 用于验证群签名
+	header       *header_sdw
+	hash         common.Hash
+	group_sign   []byte // 群签名, 用于加快单元确认速度
+	group_pubKey []byte // 群公钥, 用于验证群签名
 }
 type header_sdw struct {
 	ParentsHash []common.Hash `json:"parents_hash"`
@@ -64,13 +64,14 @@ type header_sdw struct {
 }
 
 func new_header_sdw() *header_sdw {
-	return &header_sdw{ParentsHash: make([]common.Hash, 0),
-		Authors:    Authentifier{},
-		TxRoot:     common.Hash{},
-		TxsIllegal: make([]uint16, 0),
-		Number:     new(ChainIndex),
-		Extra:      make([]byte, 0),
-		CryptoLib:  make([]byte, 0)}
+	//return &header_sdw{ParentsHash: make([]common.Hash, 0),
+	//	Authors:    Authentifier{},
+	//	TxRoot:     common.Hash{},
+	//	TxsIllegal: make([]uint16, 0),
+	//	Number:     new(ChainIndex),
+	//	Extra:      make([]byte, 0),
+	//	CryptoLib:  make([]byte, 0)}
+	return new(header_sdw)
 }
 func (h *Header) NumberU64() uint64 {
 	return h.header.Number.Index
@@ -157,24 +158,19 @@ func (h *Header) SetCryptoLib(cryptolib []byte) {
 	}
 }
 func (cpy *Header) CopyHeader(h *Header) {
-	index := new(ChainIndex)
-	if h.header == nil {
-		h.header = new_header_sdw()
+	if cpy.header == nil {
+		cpy.header = new_header_sdw()
 	}
-	index.Index = h.header.Number.Index
-	index.AssetID = h.header.Number.AssetID
-	*cpy = *h
-	cpy.header.Number = index
+	*cpy.header = *h.header
+	copy(cpy.group_sign, h.group_sign)
+	copy(cpy.group_pubKey, h.group_pubKey)
 }
 
-func NewHeader(parents []common.Hash, used uint64, extra []byte) *Header {
-	//hashs := make([]common.Hash, 0)
-	//hashs = append(hashs, parents...) // 切片指针传递的问题，这里得再review一下。
-	number := &ChainIndex{}
+func NewHeader(parents []common.Hash, extra []byte) *Header {
 	h := new(Header)
+	h.header = new_header_sdw()
 	h.header.ParentsHash = make([]common.Hash, 0)
 	h.header.ParentsHash = append(h.header.ParentsHash, parents...)
-	h.header.Number = number
 	h.header.Extra = make([]byte, 0)
 	h.header.Extra = append(h.header.Extra, extra...)
 	return h
@@ -200,7 +196,7 @@ func (h *Header) Hash() common.Hash {
 	//h.GroupPubKey = append(h.GroupPubKey, groupPubKey...)
 
 	if h.hash == (common.Hash{}) {
-		h.hash.Set(util.RlpHash(h))
+		h.hash = util.RlpHash(h)
 	}
 	return h.hash
 }
