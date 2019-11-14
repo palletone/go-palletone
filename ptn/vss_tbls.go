@@ -25,12 +25,14 @@ import (
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/common/util"
 )
 
 func (pm *ProtocolManager) newProducedUnitBroadcastLoop() {
 	for {
 		select {
 		case event := <-pm.newProducedUnitCh:
+			pm.IsExistInCache(event.Unit.UnitHash.Bytes())
 			pm.BroadcastUnit(event.Unit, true)
 			//self.BroadcastCorsHeader(event.Unit.Header(), self.SubProtocols[0].Name)
 
@@ -79,6 +81,9 @@ func (pm *ProtocolManager) toGroupSign(event modules.ToGroupSignEvent) {
 		return
 	}
 
+	if pm.IsExistInCache(util.RlpHash(newHash).Bytes()) {
+		return
+	}
 	pm.producer.AddToTBLSSignBufs(newHash)
 }
 
@@ -114,6 +119,7 @@ func (pm *ProtocolManager) transmitSigShare(sigShare *mp.SigShareEvent) {
 
 	peer, self := pm.GetPeer(med.Node)
 	if self {
+		pm.IsExistInCache(sigShare.Hash().Bytes())
 		pm.producer.AddToTBLSRecoverBuf(sigShare)
 		return
 	}
@@ -136,6 +142,7 @@ func (pm *ProtocolManager) groupSigBroadcastLoop() {
 	for {
 		select {
 		case event := <-pm.groupSigCh:
+			pm.IsExistInCache(event.Hash().Bytes())
 			pm.dag.SetUnitGroupSign(event.UnitHash, event.GroupSig, pm.txpool)
 			go pm.BroadcastGroupSig(&event)
 
@@ -187,6 +194,7 @@ func (pm *ProtocolManager) transmitVSSDeal(deal *mp.VSSDealEvent) {
 	//peer, self := pm.GetPeer(node)
 	peer, self := pm.GetPeer(med.Node)
 	if self {
+		pm.IsExistInCache(deal.Hash().Bytes())
 		pm.producer.AddToDealBuf(deal)
 		return
 	}
@@ -235,6 +243,7 @@ func (pm *ProtocolManager) broadcastVssResp(resp *mp.VSSResponseEvent) {
 	//	}
 	//}
 
+	pm.IsExistInCache(resp.Hash().Bytes())
 	pm.producer.AddToResponseBuf(resp)
 	pm.BroadcastVSSResponse(resp)
 }
