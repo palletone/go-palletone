@@ -110,7 +110,6 @@ func pledgeRewardAllocation(pledgeList *modules.PledgeList, rewardPerDao float64
 //  增发分红奖励
 func payoutDepositDailyReward(stub shim.ChaincodeStubInterface, depositDailyReward uint64) error {
 	if depositDailyReward > 0 {
-		log.Infof("xiaozhi===>>>")
 		//增发到合约
 		log.Debugf("Create coinbase %d to pledge contract", depositDailyReward)
 		err := stub.SupplyToken(dagconfig.DagConfig.GetGasToken().Bytes(),
