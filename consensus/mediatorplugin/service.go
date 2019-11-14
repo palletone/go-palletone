@@ -283,6 +283,7 @@ func NewMediatorPlugin( /*ctx *node.ServiceContext, */ cfg *Config, ptn PalletOn
 		precedingDKGs:       make(map[common.Address]*dkg.DistKeyGenerator),
 		lastMaintenanceTime: dag.LastMaintenanceTime(),
 		dkgLock:             new(sync.RWMutex),
+		stopVSS:             make(chan struct{}),
 	}
 
 	mp.initLocalConfigMediator(cfg.Mediators /*, ctx.AccountManager*/)
@@ -330,7 +331,6 @@ func (mp *MediatorPlugin) initGroupSignBuf() {
 
 	mp.dealBuf = make(map[common.Address]chan *dkg.Deal, lamc)
 	mp.respBuf = make(map[common.Address]map[common.Address]chan *dkg.Response, lamc)
-	mp.stopVSS = make(chan struct{})
 	mp.vssBufLock = new(sync.RWMutex)
 
 	mp.toTBLSSignBuf = make(map[common.Address]map[common.Hash]bool, lamc)
