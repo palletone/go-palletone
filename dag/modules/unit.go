@@ -263,7 +263,7 @@ func CopyHeader(h *Header) *Header {
 		return nil
 	}
 	cpy := Header{}
-	//	cpy.Number = h.Number
+	cpy.header = new(header_sdw)
 	if h.header.Number != nil {
 		cpy.header.Number = CopyChainIndex(h.header.Number)
 	}

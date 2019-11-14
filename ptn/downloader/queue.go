@@ -723,7 +723,8 @@ func (q *queue) DeliverHeaders(id string, headers []*modules.Header, headerProcC
 			}
 			//TODO  must recover //if headers[i].Hash() != header.ParentHash { //ptn
 			if headers[i].Hash() != header.ParentHash()[0] {
-				log.Warn("Header broke chain ancestry", "peer", id, "number", header.GetNumber().Index, "hash", hash)
+				log.Warn("Header broke chain ancestry", "peer", id, "number", header.GetNumber().Index,
+					"hash", hash, "parent", header.ParentHash()[0])
 				accepted = false
 				break
 			}
