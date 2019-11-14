@@ -103,8 +103,10 @@ func TestCopyHeader(t *testing.T) {
 	h.SetGroupPubkey(w)
 	h.SetTxRoot(common.Hash{})
 	h.SetNumber(assetID, 1)
+	newH := new(Header)
+	newH.CopyHeader(h)
+	//newH:= CopyHeader(h)
 
-	newH := CopyHeader(h)
 	//newH.GroupSign = make([]byte, 0)
 	//newH.GroupPubKey = make([]byte, 0)
 	hh := Header{}
@@ -228,12 +230,13 @@ func TestHeader_Copy(t *testing.T) {
 	data, _ := json.Marshal(h.Header())
 	t.Log("Header1", string(data))
 	headerHash := "0x4dcf5cffcc5eb4f103d9222d4551e337c73f7f5d0c4f50de170920cc42db302b"
-	t.Logf("Header Hash:%s", h.Hash().String())
+	t.Logf("Header Hash:%s, sign:%s", h.Hash().String(), string(h.group_sign))
 	assert.Equal(t, headerHash, h.Hash().String())
 	h2 := new(Header)
 	h2.CopyHeader(h)
+	//h2 := CopyHeader(h)
 	data, _ = json.Marshal(h2.Header())
-	t.Log("Header2", string(data), "h2_hash", h2.Hash().String())
+	t.Log("Header2", string(data), "h2_hash", h2.Hash().String(), string(h2.group_sign))
 	assert.Equal(t, headerHash, h2.Hash().String())
 	h.hash = common.Hash{}
 	h2.hash = common.Hash{}
@@ -244,7 +247,7 @@ func TestHeader_Copy(t *testing.T) {
 	h2.SetExtra([]byte("dddd"))
 	h2.SetTime(321)
 	data, _ = json.Marshal(h.Header())
-	t.Log("Header1", string(data), "h_hash", h.Hash().String())
+	t.Log("Header1", string(data), "h_hash", h.Hash().String(), string(h.group_sign))
 	assert.Equal(t, headerHash, h.Hash().String())
 }
 func mockHeader() *Header {

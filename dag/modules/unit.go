@@ -165,8 +165,20 @@ func (cpy *Header) CopyHeader(h *Header) {
 		cpy.header = new_header_sdw()
 	}
 	*cpy.header = *h.header
-	copy(cpy.group_sign, h.group_sign)
-	copy(cpy.group_pubKey, h.group_pubKey)
+	if h.header.Number != nil {
+		cpy.header.Number = CopyChainIndex(h.header.Number)
+	}
+
+	if len(h.group_sign) > 0 {
+		cpy.group_sign = make([]byte, len(h.group_sign))
+		copy(cpy.group_sign, h.group_sign)
+	}
+
+	if len(h.group_pubKey) > 0 {
+		cpy.group_pubKey = make([]byte, len(h.group_pubKey))
+		copy(cpy.group_pubKey, h.group_pubKey)
+	}
+
 }
 
 func NewHeader(parents []common.Hash, extra []byte) *Header {
@@ -189,17 +201,15 @@ func (h *Header) TxRoot() common.Hash {
 	return h.header.TxRoot
 }
 func (h *Header) Hash() common.Hash {
-	// 计算header’hash时 剔除群签
-	//groupSign := h.GroupSign
-	//groupPubKey := h.GroupPubKey
-	//h.GroupSign = make([]byte, 0)
-	//h.GroupPubKey = make([]byte, 0)
-	//hash := util.RlpHash(h)
-	//h.GroupSign = append(h.GroupSign, groupSign...)
-	//h.GroupPubKey = append(h.GroupPubKey, groupPubKey...)
-
 	if h.hash == (common.Hash{}) {
+		// 计算header’hash时 剔除群签
+		groupSign := h.group_sign
+		groupPubKey := h.group_pubKey
+		h.group_sign = make([]byte, 0)
+		h.group_pubKey = make([]byte, 0)
 		h.hash = util.RlpHash(h)
+		h.group_sign = append(h.group_sign, groupSign...)
+		h.group_pubKey = append(h.group_pubKey, groupPubKey...)
 	}
 	return h.hash
 }
@@ -288,9 +298,6 @@ func CopyHeader(h *Header) *Header {
 
 	if len(h.header.TxsIllegal) > 0 {
 		cpy.header.TxsIllegal = make([]uint16, 0)
-		//for _, txsI := range h.TxsIllegal {
-		//	cpy.TxsIllegal = append(cpy.TxsIllegal, txsI)
-		//}
 		cpy.header.TxsIllegal = append(cpy.header.TxsIllegal, h.header.TxsIllegal...)
 	}
 
@@ -560,8 +567,8 @@ func (h *Header) Header() *header_sdw {
 	return h.header
 }
 func (h *Header) SetGroupSign(sign []byte) {
+	h.group_sign = make([]byte, 0)
 	if len(sign) > 0 {
-		h.group_sign = make([]byte, 0)
 		h.group_sign = append(h.group_sign, sign...)
 	}
 }
@@ -574,8 +581,8 @@ func (h *Header) GetGroupSign() []byte {
 	return h.group_sign
 }
 func (h *Header) SetGroupPubkey(key []byte) {
+	h.group_pubKey = make([]byte, 0)
 	if len(key) > 0 {
-		h.group_pubKey = make([]byte, 0)
 		h.group_pubKey = append(h.group_pubKey, key...)
 	}
 }
