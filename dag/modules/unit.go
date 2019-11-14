@@ -200,7 +200,7 @@ func (h *Header) Hash() common.Hash {
 	//h.GroupPubKey = append(h.GroupPubKey, groupPubKey...)
 
 	if h.hash == (common.Hash{}) {
-		h.hash.Set(util.RlpHash(h.header))
+		h.hash.Set(util.RlpHash(h))
 	}
 	return h.hash
 }

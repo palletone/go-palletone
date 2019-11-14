@@ -91,6 +91,7 @@ func TestTxCountAndUnitSize(t *testing.T) {
 		t.Logf("Tx count:%d,Unit size:%s", i, unit.Size().String())
 	}
 }
+
 func newHeader() *modules.Header {
 	key := new(ecdsa.PrivateKey)
 	key, _ = crypto.GenerateKey()
