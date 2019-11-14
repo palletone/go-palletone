@@ -802,7 +802,13 @@ PledgeTest02
     ${result}    IsFinishAddNewRecords
     log    ${result}
     sleep    5
-    ${result}    AddNewAddrPledgeRecords    ${votedAddress}    #1
+    ${result}    HandlePledgeReward    ${votedAddress}    #1
+    log    ${result}
+    sleep    5
+    ${result}    IsFinishAddNewRecords
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${votedAddress}    #1
     log    ${result}
     sleep    5
     ${result}    IsFinishAddNewRecords
@@ -913,10 +919,468 @@ PledgeTest02
     ${result}    isFinishAllocated
     log    ${result}
     sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
     ${result}    IsFinishAddNewRecords
     log    ${result}
     sleep    5
-    ${result}    AddNewAddrPledgeRecords    ${foundationAddr}    #1
+    ${result}    HandlePledgeReward    ${votedAddress}    #1
+    log    ${result}
+    sleep    5
+    ${result}    IsFinishAddNewRecords
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${votedAddress}    #1
+    log    ${result}
+    sleep    5
+    ${result}    IsFinishAddNewRecords
+    log    ${result}
+    sleep    5
+    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
+    log    ${result}
+    ${result}    getBalance    ${votedAddress}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_01}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${mediatorAddr_01}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_02}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${mediatorAddr_02}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${juryAddr_01}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${juryAddr_01}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${juryAddr_02}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${juryAddr_02}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${developerAddr_01}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${developerAddr_01}    PTN
+    log    ${result}
+    sleep    1
+    ${result}    queryPledgeList    #查看整个网络所有质押情况
+    log    ${result}
+    sleep    1
+    ${result}    QueryAllPledgeHistory
+    log    ${result}
+    sleep    1
+    ${result}    mediatorListVoteResults    #查看超级节点投票结果
+    log    ${result}
+    ${amount}    Get From Dictionary    ${result}    ${mediatorAddress}
+    sleep    1
+    log    chuli11
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    log    chuli12
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    ${result}    IsFinishAddNewRecords
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    ${result}    IsFinishAddNewRecords
+    log    ${result}
+    sleep    5
+    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
+    log    ${result}
+    ${result}    getBalance    ${votedAddress}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_01}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${mediatorAddr_01}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_02}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${mediatorAddr_02}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${juryAddr_01}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${juryAddr_01}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${juryAddr_02}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${juryAddr_02}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${developerAddr_01}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${developerAddr_01}    PTN
+    log    ${result}
+    ${result}    queryPledgeList    #查看整个网络所有质押情况
+    log    ${result}
+    sleep    1
+    ${result}    QueryAllPledgeHistory
+    log    ${result}
+    sleep    1
+    ${result}    PledgeWithdraw    ${votedAddress}    10000000000
+    log    ${result}
+    sleep    5
+    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    log    ${result}
+    sleep    1
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
+    log    ${result}
+    ${result}    PledgeWithdraw    ${mediatorAddr_01}    10000000000
+    log    ${result}
+    sleep    5
+    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_01}    #查看某地址的质押结果
+    log    ${result}
+    sleep    1
+    ${result}    PledgeWithdraw    ${developerAddr_01}    10000000000
+    log    ${result}
+    sleep    5
+    ${result}    queryPledgeStatusByAddr    ${developerAddr_01}    #查看某地址的质押结果
+    log    ${result}
+    sleep    1
+    ${result}    mediatorListVoteResults    #查看超级节点投票结果
+    log    ${result}
+    ${amount}    Get From Dictionary    ${result}    ${mediatorAddress}
+    sleep    1
+    log    chuli21
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    1
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    log    chuli22
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    2
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    ${result}    IsFinishAddNewRecords
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    ${result}    IsFinishAddNewRecords
+    log    ${result}
+    sleep    5
+    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
+    log    ${result}
+    ${result}    getBalance    ${votedAddress}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_01}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${mediatorAddr_01}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_02}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${mediatorAddr_02}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${juryAddr_01}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${juryAddr_01}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${juryAddr_02}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${juryAddr_02}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${developerAddr_01}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${developerAddr_01}    PTN
+    log    ${result}
+    ${result}    queryPledgeList    #查看整个网络所有质押情况
+    log    ${result}
+    sleep    1
+    ${result}    QueryAllPledgeHistory
+    log    ${result}
+    sleep    1
+    ${result}    mediatorListVoteResults    #查看超级节点投票结果
+    log    ${result}
+    ${amount}    Get From Dictionary    ${result}    ${mediatorAddress}
+    sleep    1
+    log    chuli31
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    log    chuli32
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    ${result}    IsFinishAddNewRecords
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    ${result}    queryPledgeList    #查看整个网络所有质押情况
+    log    ${result}
+    sleep    1
+    ${result}    QueryAllPledgeHistory
+    log    ${result}
+    sleep    1
+    ${result}    mediatorListVoteResults    #查看超级节点投票结果
+    log    ${result}
+    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
+    log    ${amount}    #108.66235，866,235,000是质押增发的
+    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
+    log    ${result}
+    ${result}    getBalance    ${votedAddress}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_01}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${mediatorAddr_01}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_02}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${mediatorAddr_02}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${juryAddr_01}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${juryAddr_01}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${juryAddr_02}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${juryAddr_02}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${developerAddr_01}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${developerAddr_01}    PTN
+    log    ${result}
+    ${amount}    getBalance    ${foundationAddr}    PTN
+    log    ${amount}    #100，上一个测试的结果
+
+PledgeTest03
+    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
+    log    ${amount}    #100，上一个测试的结果
+    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
+    log    ${result}
+    ${result}    getBalance    ${votedAddress}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_01}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${mediatorAddr_01}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_02}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${mediatorAddr_02}    PTN
+    log    ${result}
+    ${result}    mediatorListAll    #查看所有超级节点
+    log    ${result}
+    sleep    1
+    ${mediatorAddress}    Set Variable    ${result[0]}
+    ${result}    mediatorListVoteResults    #查看超级节点投票结果
+    log    ${result}
+    sleep    1
+    ${result}    mediatorVote    ${votedAddress}    ${mediatorAddress}    #投票某超级节点    #5000DAO
+    log    ${result}
+    sleep    5
+    ${result}    mediatorVote    ${mediatorAddr_01}    ${mediatorAddress}    #投票某超级节点    #5000DAO
+    log    ${result}
+    sleep    5
+    ${result}    mediatorVote    ${mediatorAddr_02}    ${mediatorAddress}    #投票某超级节点    #5000DAO
+    log    ${result}
+    sleep    5
+    ${result}    mediatorGetVoted    ${votedAddress}    #查看该节点所投票的情况
+    log    ${result}
+    ${result}    pledgeDeposit    ${votedAddress}    100    #质押PTN    #101
+    log    ${result}
+    sleep    5
+    ${result}    pledgeDeposit    ${mediatorAddr_01}    100    #质押PTN    #101
+    log    ${result}
+    sleep    5
+    ${result}    pledgeDeposit    ${mediatorAddr_02}    100    #质押PTN    #101
+    log    ${result}
+    sleep    5
+    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
+    log    ${result}
+    ${result}    getBalance    ${votedAddress}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_01}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${mediatorAddr_01}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_02}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${mediatorAddr_02}    PTN
+    log    ${result}
+    ${result}    mediatorListVoteResults    #查看超级节点投票结果
+    log    ${result}
+    ${amount}    Get From Dictionary    ${result}    ${mediatorAddress}
+    sleep    1
+    ${result}    queryPledgeList    #查看整个网络所有质押情况
+    log    ${result}
+    sleep    1
+    ${time}    Get Time
+    ${date}    Get Substring    ${time}    0    10
+    log    ${date}
+    ${yyyy}    ${mm}    ${dd} =    Get Time    year,month,day
+    ${date}    Catenate    SEPARATOR=    ${yyyy}    ${mm}    ${dd}
+    ${result}    QueryPledgeListByDate    ${date}
+    log    ${result}
+    sleep    1
+    ${result}    QueryAllPledgeHistory
+    log    ${result}
+    sleep    1
+    log    tiaojiaxinzhiya
+    ${result}    IsFinishAddNewRecords
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${votedAddress}    #1
+    log    ${result}
+    sleep    5
+    ${result}    IsFinishAddNewRecords
+    log    ${result}
+    sleep    5
+    ${result}    queryPledgeList    #查看整个网络所有质押情况
+    log    ${result}
+    sleep    1
+    ${result}    QueryPledgeListByDate    ${date}
+    log    ${result}
+    sleep    1
+    ${result}    QueryAllPledgeHistory
+    log    ${result}
+    sleep    1
+    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
+    log    ${result}
+    ${result}    getBalance    ${votedAddress}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_01}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${mediatorAddr_01}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_02}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${mediatorAddr_02}    PTN
+    log    ${result}
+    ${result}    mediatorListVoteResults    #查看超级节点投票结果
+    log    ${result}
+    ${amount}    Get From Dictionary    ${result}    ${mediatorAddress}
+    sleep    1
+    ${result}    mediatorVote    ${juryAddr_01}    ${mediatorAddress}    #投票某超级节点    #5000DAO
+    log    ${result}
+    sleep    5
+    ${result}    pledgeDeposit    ${juryAddr_01}    100    #质押PTN    #101
+    log    ${result}
+    sleep    5
+    ${result}    queryPledgeStatusByAddr    ${juryAddr_01}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${juryAddr_01}    PTN
+    log    ${result}
+    ${result}    mediatorVote    ${juryAddr_02}    ${mediatorAddress}    #投票某超级节点    #5000DAO
+    log    ${result}
+    sleep    5
+    ${result}    pledgeDeposit    ${juryAddr_02}    100    #质押PTN    #101
+    log    ${result}
+    sleep    5
+    ${result}    queryPledgeStatusByAddr    ${juryAddr_02}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${juryAddr_02}    PTN
+    log    ${result}
+    ${result}    getBalance    ${developerAddr_01}    PTN
+    log    ${result}
+    sleep    1
+    ${result}    pledgeDeposit    ${developerAddr_01}    100    #质押PTN    #101
+    log    ${result}
+    sleep    5
+    ${result}    mediatorVote    ${developerAddr_01}    ${mediatorAddress}    #投票某超级节点    #5000DAO
+    log    ${result}
+    sleep    5
+    ${result}    queryPledgeStatusByAddr    ${developerAddr_01}    #查看某地址的质押结果
+    log    ${result}
+    ${result}    getBalance    ${developerAddr_01}    PTN
+    log    ${result}
+    sleep    1
+    ${result}    mediatorListVoteResults    #查看超级节点投票结果
+    log    ${result}
+    ${result}    pledgeDeposit    ${votedAddress}    100    #质押PTN    #101
+    log    ${result}
+    sleep    5
+    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    log    ${result}
+    sleep    1
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
+    log    ${result}
+    ${result}    pledgeDeposit    ${mediatorAddr_01}    100    #质押PTN    #101
+    log    ${result}
+    sleep    5
+    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_01}    #查看某地址的质押结果
+    log    ${result}
+    sleep    1
+    ${result}    mediatorListVoteResults    #查看超级节点投票结果
+    log    ${result}
+    ${result}    PledgeWithdraw    ${votedAddress}    10000000000
+    log    ${result}
+    sleep    5
+    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    log    ${result}
+    sleep    1
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
+    log    ${result}
+    ${result}    PledgeWithdraw    ${mediatorAddr_01}    10000000000
+    log    ${result}
+    sleep    5
+    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_01}    #查看某地址的质押结果
+    log    ${result}
+    sleep    1
+    ${result}    mediatorListVoteResults    #查看超级节点投票结果
+    log    ${result}
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    log    chuli2
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${votedAddress}    #1
     log    ${result}
     sleep    5
     ${result}    IsFinishAddNewRecords
