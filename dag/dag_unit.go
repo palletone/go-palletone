@@ -44,7 +44,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	}(t0)
 
 	// 1. 判断是否满足生产的若干条件
-	log.Debugf("generate unit ...")
+	//log.Debugf("generate unit ...")
 
 	// 2. 生产unit，添加交易集、时间戳、签名
 	newUnit, err := dag.createUnit(producer, txpool)
@@ -115,16 +115,6 @@ func (d *Dag) createUnit(mAddr common.Address, txpool txspool.ITxPool) (*modules
 	if err != nil {
 		return nil, err
 	}
-
-	//fun := func(jurorAdd common.Address) common.Address {
-	//	jd, err := state.GetJurorByAddr(jurorAdd.Str())
-	//	if err != nil {
-	//		log.Debugf(err.Error())
-	//		return jurorAdd
-	//	}
-	//
-	//	return jd.GetRewardAdd()
-	//}
 
 	return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool, rep, state.GetJurorReward)
 }

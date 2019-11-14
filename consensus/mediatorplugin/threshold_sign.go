@@ -124,6 +124,8 @@ func (mp *MediatorPlugin) SubscribeSigShareEvent(ch chan<- SigShareEvent) event.
 
 func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.Hash) {
 	mp.toTBLSBufLock.Lock()
+	log.Debugf("toTBLSBufLock.Lock()")
+	defer log.Debugf("toTBLSBufLock.Unlock()")
 	defer mp.toTBLSBufLock.Unlock()
 
 	medUnitsBuf, ok := mp.toTBLSSignBuf[localMed]
@@ -234,6 +236,8 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(event *SigShareEvent) {
 
 	localMed := header.Author()
 	mp.toTBLSBufLock.Lock()
+	log.Debugf("toTBLSBufLock.Lock()")
+	defer log.Debugf("toTBLSBufLock.Unlock()")
 	defer mp.toTBLSBufLock.Unlock()
 
 	medSigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
@@ -267,6 +271,8 @@ func (mp *MediatorPlugin) SubscribeGroupSigEvent(ch chan<- GroupSigEvent) event.
 
 func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash common.Hash) {
 	mp.toTBLSBufLock.Lock()
+	log.Debugf("toTBLSBufLock.Lock()")
+	defer log.Debugf("toTBLSBufLock.Unlock()")
 	defer mp.toTBLSBufLock.Unlock()
 
 	// 1. 获取所有的签名分片
@@ -284,12 +290,9 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	}
 
 	sigShareSet.lock()
+	log.Debugf("sigShareSet.lock()")
+	defer log.Debugf("sigShareSet.unlock()")
 	defer sigShareSet.unlock()
-
-	//// 为了保证多协程安全， 加锁后，再判断一次
-	//if _, ok = mp.toTBLSRecoverBuf[localMed][unitHash]; !ok {
-	//	return
-	//}
 
 	// 2. 获取阈值、mediator数量、DKG
 	mp.dkgLock.RLock()

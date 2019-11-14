@@ -61,6 +61,25 @@ func Keccak256Hash(data ...[]byte) (h common.Hash) {
 	return h
 }
 
+//兼容以太坊的老版本Keccak256
+func LegacyKeccak256(data ...[]byte) []byte {
+	d := sha3.NewLegacyKeccak256()
+	for _, b := range data {
+		d.Write(b)
+	}
+	return d.Sum(nil)
+}
+
+//兼容以太坊的老版本Keccak256
+func LegacyKeccak256Hash(data ...[]byte) (h common.Hash) {
+	d := sha3.NewLegacyKeccak256()
+	for _, b := range data {
+		d.Write(b)
+	}
+	d.Sum(h[:0])
+	return h
+}
+
 // Keccak512 calculates and returns the Keccak512 hash of the input data.
 //func Keccak512(data ...[]byte) []byte {
 //	d := sha3.NewKeccak512()

@@ -364,7 +364,11 @@ func (tx *Transaction) GetCoinbaseReward(versionFunc QueryStateByVersionFunc,
 	for writeAddr, writeAA := range writeMap {
 		reward.Asset = writeAA[0].Asset
 		if readAA, ok := readMap[writeAddr]; ok {
-			reward.Amount += writeAA[0].Amount - readAA[0].Amount
+			readAmt := uint64(0)
+			if len(readAA) != 0 { //上一次没有清空
+				readAmt = readAA[0].Amount
+			}
+			reward.Amount += writeAA[0].Amount - readAmt
 		} else {
 			reward.Amount += writeAA[0].Amount
 		}
