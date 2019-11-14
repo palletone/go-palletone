@@ -110,7 +110,7 @@ func newTestUnit(parentHash common.Hash, height uint64, key []byte) *modules.Uni
 	msgs = append(msgs, &modules.Message{App: modules.APP_DATA, Payload: payload})
 	msgs = append(msgs, &modules.Message{App: modules.APP_SIGNATURE, Payload: sig})
 	txs = append(txs, modules.NewTransaction(msgs))
-	h.TxRoot = core.DeriveSha(txs)
+	h.SetTxRoot(core.DeriveSha(txs))
 	return modules.NewUnit(h, txs)
 }
 
@@ -130,20 +130,19 @@ func newTestHeader(parentHash common.Hash, height uint64, key []byte) *modules.H
 	h := new(modules.Header)
 	au := modules.Authentifier{}
 
-	h.GroupSign = []byte("group_sign")
-	h.GroupPubKey = []byte("group_pubKey")
-	h.Number = &modules.ChainIndex{}
-	h.Number.AssetID = dagconfig.DagConfig.GetGasToken()
-	h.Number.Index = height
-	h.Extra = make([]byte, 20)
-	h.ParentsHash = []common.Hash{parentHash}
-	h.TxRoot = common.HexToHash("0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421")
+	h.SetGroupSign([]byte("group_sign"))
+	h.SetGroupPubkey([]byte("group_pubKey"))
 
-	sig, _ := crypto.MyCryptoLib.Sign(key, h.TxRoot[:])
+	h.SetNumber(dagconfig.DagConfig.GetGasToken(), height)
+	h.SetExtra(make([]byte, 20))
+	h.SetParentHash([]common.Hash{parentHash})
+	h.SetTxRoot(common.HexToHash("0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"))
+
+	sig, _ := crypto.MyCryptoLib.Sign(key, h.TxRoot().Bytes())
 	au.Signature = sig
 	au.PubKey, _ = crypto.MyCryptoLib.PrivateKeyToPubKey(key)
-	h.Authors = au
-	h.Time = int64(1536451200) + 1000
+	h.SetAuthor(au)
+	h.SetTime(int64(1536451200) + 1000)
 	return h
 }
 

@@ -38,7 +38,7 @@ import (
 func TestNewUnit(t *testing.T) {
 	txs := make(Transactions, 0)
 	h := NewHeader([]common.Hash{}, []byte("hello"))
-	h.SetNumber(&ChainIndex{NewPTNIdType(), 1})
+	h.SetNumber(NewPTNIdType(), 1)
 	h.SetTime(time.Now().Unix())
 	unit := NewUnit(h, txs)
 	hash := unit.Hash()
@@ -102,13 +102,14 @@ func TestCopyHeader(t *testing.T) {
 	h.SetGroupSign(w)
 	h.SetGroupPubkey(w)
 	h.SetTxRoot(common.Hash{})
-	h.SetNumber(&ChainIndex{AssetID: assetID, Index: 0})
+	h.SetNumber(assetID, 1)
 
 	newH := CopyHeader(h)
 	//newH.GroupSign = make([]byte, 0)
 	//newH.GroupPubKey = make([]byte, 0)
 	hh := Header{}
-	log.Printf("\n newh=%v \n oldH=%v \n hh=%v", *newH, h, hh)
+	log.Printf("\n newh=%v,hash:%s \n oldH=%v ,hash:%s \n hh=%v", *newH, newH.Hash().String(), h,
+		h.Hash().String(), hh)
 }
 
 // test unit's size of header
@@ -124,10 +125,7 @@ func TestUnitSize(t *testing.T) {
 
 	h.SetGroupSign([]byte("group_sign"))
 	h.SetGroupPubkey([]byte("group_pubKey"))
-	index := new(ChainIndex)
-	index.AssetID = PTNCOIN
-	index.Index = uint64(333333)
-	h.SetNumber(index)
+	h.SetNumber(PTNCOIN, 333333)
 	h.SetExtra(make([]byte, 20))
 	h.SetParentHash([]common.Hash{h.TxRoot()})
 
@@ -156,30 +154,28 @@ func TestHeaderPointer(t *testing.T) {
 	//h.AssetIDs = []AssetId{PTNCOIN}
 	h.SetTime(time.Now().Unix())
 	h.SetExtra([]byte("jay"))
-	index := new(ChainIndex)
-	index.AssetID = PTNCOIN
-	index.Index = 1
-	h.SetNumber(index)
+
+	h.SetNumber(PTNCOIN, 1)
 
 	h1 := CopyHeader(h)
 	h1.SetTxRoot(h.hash)
 	h2 := new(Header)
-	h2.SetNumber(h1.GetNumber())
+	h2.SetNumber(h1.GetNumber().AssetID, h1.GetNumber().Index)
 	fmt.Println("h:=1", h.GetNumber().Index, "h1:=1", h1.GetNumber().Index, "h2:=1", h2.GetNumber().Index)
-	index.Index = 100
-	h1.SetNumber(index)
+
+	h1.SetNumber(PTNCOIN, 100)
 
 	if h.GetNumber().Index == h1.GetNumber().Index {
-		fmt.Println("failed copy:", h.GetNumber().Index)
+		fmt.Println("failed copy:", h.GetNumber().Index, h1.GetNumber().Index)
 	} else {
 		fmt.Println("success copy!")
 	}
-	fmt.Println("h:1", h.GetNumber().Index, "h1:=100", h1.GetNumber().Index, "h2:=100", h2.GetNumber().Index)
-	index.Index = 666
-	h.SetNumber(index)
-	index.Index = 888
-	h1.SetNumber(index)
-	fmt.Println("h:=666", h.GetNumber().Index, "h1:=888", h1.GetNumber().Index, "h2:=888", h2.GetNumber().Index)
+	fmt.Println("h:1", h.GetNumber().Index, "h1:=100", h1.GetNumber().Index, "h2:=1", h2.GetNumber().Index)
+
+	h.SetNumber(PTNCOIN, 666)
+
+	h1.SetNumber(PTNCOIN, 888)
+	fmt.Println("h:=666", h.GetNumber().Index, "h1:=888", h1.GetNumber().Index, "h2:=1", h2.GetNumber().Index)
 }
 
 func TestHeaderRLP(t *testing.T) {
@@ -243,10 +239,8 @@ func TestHeader_Copy(t *testing.T) {
 	h2.hash = common.Hash{}
 	h2.SetParentHash([]common.Hash{common.HexToHash(headerHash)})
 	h2.SetAuthor(Authentifier{PubKey: []byte("Test")})
-	index := new(ChainIndex)
-	index.Index = 999
-	index.AssetID = h2.GetNumber().AssetID
-	h2.SetNumber(index)
+
+	h2.SetNumber(h2.GetNumber().AssetID, 999)
 	h2.SetExtra([]byte("dddd"))
 	h2.SetTime(321)
 	data, _ = json.Marshal(h.Header())
@@ -259,10 +253,9 @@ func mockHeader() *Header {
 	h := new(Header)
 	h.SetGroupSign([]byte("group_sign"))
 	h.SetGroupPubkey([]byte("group_pubKey"))
-	index := &ChainIndex{}
-	index.AssetID, _, _ = String2AssetId("DEVIN")
-	index.Index = uint64(123)
-	h.SetNumber(index)
+
+	asset_id, _, _ := String2AssetId("DEVIN")
+	h.SetNumber(asset_id, 123)
 	h.SetExtra([]byte("Extra"))
 	h.SetCryptoLib([]byte{0x1, 0x2})
 	h.SetParentHash([]common.Hash{

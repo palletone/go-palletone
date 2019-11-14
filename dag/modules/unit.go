@@ -20,7 +20,6 @@ package modules
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -96,11 +95,15 @@ func (h *Header) GetGroupPubKey() (kyber.Point, error) {
 
 	return pubKey, err
 }
-func (h *Header) SetNumber(number *ChainIndex) {
+func (h *Header) SetNumber(aseet_id AssetId, index uint64) {
 	if h.header == nil {
 		h.header = new_header_sdw()
 	}
-	h.header.Number = number
+	if h.header.Number == nil {
+		h.header.Number = new(ChainIndex)
+	}
+	h.header.Number.AssetID = aseet_id
+	h.header.Number.Index = index
 }
 func (h *Header) SetParentHash(parents []common.Hash) {
 	if h.header == nil {
@@ -207,7 +210,7 @@ func (h *Header) HashWithoutAuthor() common.Hash {
 	//h.header.GroupSign = make([]byte, 0)
 	//h.header.GroupPubKey = make([]byte, 0)
 	h.header.Authors = Authentifier{}
-	hash := util.RlpHash(h.header)
+	hash := util.RlpHash(h)
 	//h.header.GroupSign = append(h.header.GroupSign, groupSign...)
 	//h.header.GroupPubKey = append(h.header.GroupPubKey, groupPubKey...)
 	h.header.Authors.PubKey = author.PubKey[:]
@@ -226,12 +229,7 @@ func (h *Header) HashWithOutTxRoot() common.Hash {
 	h.header.Authors = Authentifier{}
 	h.header.TxRoot = common.Hash{}
 
-	b, err := json.Marshal(h.header)
-	if err != nil {
-		log.Error("json marshal error", "error", err)
-		return common.Hash{}
-	}
-	hash := util.RlpHash(b[:])
+	hash := util.RlpHash(h)
 	//h.header.GroupSign = append(h.header.GroupSign, groupSign...)
 	//h.header.GroupPubKey = append(h.header.GroupPubKey, groupPubKey...)
 	h.header.Authors.PubKey = author.PubKey[:]
@@ -250,7 +248,6 @@ func (h *Header) Size() common.StorageSize {
 func CopyChainIndex(index *ChainIndex) *ChainIndex {
 	cop := new(ChainIndex)
 	cop.AssetID = index.AssetID
-	//cop.IsMain = index.IsMain
 	cop.Index = index.Index
 	return cop
 }
@@ -259,7 +256,8 @@ func CopyHeader(h *Header) *Header {
 		return nil
 	}
 	cpy := Header{}
-	cpy.header = new(header_sdw)
+	cpy.header = new_header_sdw()
+
 	if h.header.Number != nil {
 		cpy.header.Number = CopyChainIndex(h.header.Number)
 	}

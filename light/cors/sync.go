@@ -148,8 +148,7 @@ func (pm *ProtocolManager) pushSync() (uint64, []*modules.Header) {
 		log.Info("Cors ProtocolManager", "pushSync SendHeaders len(headers)", len(headers), "index", index)
 		if len(headers) == 0 {
 			header := modules.Header{}
-			number := modules.ChainIndex{AssetID: pm.assetId, Index: 0}
-			header.SetNumber(&number)
+			header.SetNumber(pm.assetId, 0)
 			headers = append(headers, &header)
 		}
 		p.SendHeaders(headers)

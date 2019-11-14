@@ -71,10 +71,7 @@ type downloadTester struct {
 
 func newGenesisForTest(db ptndb.Database) *modules.Unit {
 	header := modules.NewHeader([]common.Hash{}, []byte{})
-	index := new(modules.ChainIndex)
-	index.AssetID = modules.PTNCOIN
-	index.Index = 0
-	header.SetNumber(index)
+	header.SetNumber(modules.PTNCOIN, 0)
 	header.SetTime(time.Now().Unix())
 	header.SetAuthor(modules.Authentifier{[]byte{}, []byte{}})
 	header.SetGroupSign([]byte{})
@@ -123,10 +120,7 @@ func newDag(db ptndb.Database, gunit *modules.Unit, number int, seed byte) (modu
 	par := gunit
 	for i := 0; i < number; i++ {
 		header := modules.NewHeader([]common.Hash{par.UnitHash}, []byte{seed})
-		index := new(modules.ChainIndex)
-		index.AssetID = par.UnitHeader.GetNumber().AssetID
-		index.Index = par.UnitHeader.GetNumber().Index + 1
-		header.SetNumber(index)
+		header.SetNumber(par.UnitHeader.GetNumber().AssetID, par.UnitHeader.GetNumber().Index+1)
 		header.SetTime(time.Now().Unix())
 		header.SetAuthor(modules.Authentifier{[]byte{}, []byte{}})
 		header.SetGroupSign([]byte{})

@@ -38,10 +38,7 @@ var (
 
 func newGenesisForTest(db ptndb.Database) *modules.Unit {
 	header := modules.NewHeader([]common.Hash{}, []byte{})
-	number := new(modules.ChainIndex)
-	number.AssetID = modules.PTNCOIN
-	number.Index = 0
-	header.SetNumber(number)
+	header.SetNumber(modules.PTNCOIN, 0)
 	header.SetAuthor(modules.Authentifier{[]byte{}, []byte{}})
 	header.SetGroupSign([]byte{})
 	header.SetGroupPubkey([]byte{})

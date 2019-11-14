@@ -423,7 +423,7 @@ func NewGenesisUnit(txs modules.Transactions, time int64, asset *modules.Asset, 
 	header := new(modules.Header)
 	//header.SetGroupSign(make([]byte, 0))
 	//header.SetGroupPubkey(make([]byte, 0))
-	header.SetNumber(chainIndex)
+	header.SetNumber(chainIndex.AssetID, chainIndex.Index)
 	header.SetTxRoot(root)
 	header.SetTime(time)
 	if parentUnitHeight >= 0 { //has parent unit
@@ -499,7 +499,7 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 
 	// step3. generate genesis unit header
 	header := modules.Header{}
-	header.SetNumber(chainIndex)
+	header.SetNumber(chainIndex.AssetID, chainIndex.Index)
 	parents := make([]common.Hash, 0)
 	header.SetParentHash(append(parents, phash))
 	h_hash := header.HashWithOutTxRoot()

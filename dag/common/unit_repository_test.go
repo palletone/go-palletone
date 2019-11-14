@@ -64,11 +64,11 @@ func TestGenesisUnit(t *testing.T) {
 	gUnit := NewGenesisUnit(modules.Transactions{tx}, time.Now().Unix(), asset, -1, common.Hash{})
 
 	log.Debug("Genesis unit struct:")
-	log.Debugf("parent units:%#x", gUnit.UnitHeader.ParentsHash)
+	log.Debugf("parent units:%#x", gUnit.UnitHeader.ParentHash())
 	//log.Println("asset ids:", gUnit.UnitHeader.AssetIDs)
-	log.Debugf("group_sign:%x", gUnit.UnitHeader.GroupSign)
+	log.Debugf("group_sign:%x", gUnit.UnitHeader.GetGroupSign())
 	log.Debugf("Root:%x", gUnit.UnitHeader.TxRoot)
-	log.Debugf("Number:%s", gUnit.UnitHeader.Number.String())
+	log.Debugf("Number:%s", gUnit.UnitHeader.GetNumber().String())
 
 }
 
@@ -105,8 +105,8 @@ func TestSaveUnit(t *testing.T) {
 	aid := modules.AssetId{}
 	aid.SetBytes([]byte("xxxxxxxxxxxxxxxxxx"))
 	header := new(modules.Header)
-	header.ParentsHash = append(header.ParentsHash, p)
-	header.Number = &modules.ChainIndex{AssetID: modules.PTNCOIN, Index: 0}
+	header.SetParentHash(append(header.ParentHash(), p))
+	header.SetNumber(modules.PTNCOIN, 0)
 	//header.AssetIDs = []modules.AssetId{aid}
 	key, _ := crypto.GenerateKey()
 	//addr0 := crypto.PubkeyToAddress(&key.PublicKey)
@@ -119,7 +119,7 @@ func TestSaveUnit(t *testing.T) {
 	auth.Signature = sig
 	auth.PubKey = crypto.CompressPubkey(&key.PublicKey)
 
-	header.Authors = *auth
+	header.SetAuthor(*auth)
 	contractTplPayload := modules.NewContractTplPayload([]byte("contract_template0000"),
 		1024,
 		[]byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159}, modules.ContractError{})
