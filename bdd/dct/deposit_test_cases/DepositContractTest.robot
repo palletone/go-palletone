@@ -506,6 +506,12 @@ PledgeTest
     ${result}    isFinishAllocated
     log    ${result}
     sleep    3
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    ${result}    IsFinishAddNewRecords
+    log    ${result}
+    sleep    3
     ${result}    queryPledgeList    #查看整个网络所有质押情况
     log    ${result}
     ${resultJson}    To Json    ${result}
@@ -546,6 +552,12 @@ PledgeTest
     log    ${result}
     sleep    5
     ${result}    isFinishAllocated
+    log    ${result}
+    sleep    3
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    ${result}    IsFinishAddNewRecords
     log    ${result}
     sleep    3
     ${result}    getBalance    ${votedAddress}    PTN

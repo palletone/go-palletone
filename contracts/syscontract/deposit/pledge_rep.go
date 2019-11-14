@@ -241,7 +241,11 @@ func handleRewardAllocationOver(stub shim.ChaincodeStubInterface, today string, 
 	if err != nil {
 		return err
 	}
-	err = saveLastPledgeListDate(stub, today)
+	//err = saveLastPledgeListDate(stub, today)
+	//if err != nil {
+	//	return err
+	//}
+	err = stub.PutState(constants.AddNewAddress, []byte(today))
 	if err != nil {
 		return err
 	}
@@ -322,15 +326,24 @@ func unNeed(stub shim.ChaincodeStubInterface, haveCount int, allM *modules.Pledg
 	if err != nil {
 		return err
 	}
-	err = saveLastPledgeList(stub, allM)
-	if err != nil {
-		return err
-	}
+	//err = saveLastPledgeList(stub, allM)
+	//if err != nil {
+	//	return err
+	//}
+
 	b, err := json.Marshal(allM)
 	if err != nil {
 		return err
 	}
 	err = stub.PutState(constants.PledgeList+allM.Date, b)
+	if err != nil {
+		return err
+	}
+	err = stub.PutState(constants.AddNewAddress, []byte(allM.Date))
+	if err != nil {
+		return err
+	}
+	err = stub.PutState("allocate", []byte("allocate"))
 	if err != nil {
 		return err
 	}
@@ -397,13 +410,16 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward
 			}
 		}
 	} else {
-		if lastDate != "" {
-			today = lastDate
+		newdate,err := stub.GetState(constants.AddNewAddress)
+		if err != nil {
+			return err
 		}
-		isFirst := lastDate == ""
+		if newdate != nil {
+			today = string(newdate)
+		}
 		//  添加新地址
-		log.Infof("today = %s, lastDate = %s", today, lastDate)
-		return addNewAddrPledgeRecords(stub, today, isFirst)
+		log.Infof("today = %s, lastDate = %s", today, newdate)
+		return addNewAddrPledgeRecords(stub, today)
 	}
 	return nil
 }
@@ -424,7 +440,7 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward
 //}
 
 //  增加新地址的质押
-func addNewAddrPledgeRecords(stub shim.ChaincodeStubInterface, date string, isFirst bool) error {
+func addNewAddrPledgeRecords(stub shim.ChaincodeStubInterface, date string) error {
 
 	// 增加新的质押
 	depositList, err := getAllPledgeDepositRecords(stub)
@@ -475,13 +491,15 @@ func addNewAddrPledgeRecords(stub shim.ChaincodeStubInterface, date string, isFi
 			if err != nil {
 				return err
 			}
+			err = stub.PutState(constants.AddNewAddress, []byte(date))
+			if err != nil {
+				return err
+			}
 			//  TODO 当第一次调用该函数
-			if isFirst {
 				err = saveLastPledgeListDate(stub, date)
 				if err != nil {
 					return err
 				}
-			}
 			return nil
 		}
 		h += t
@@ -492,6 +510,10 @@ func addNewAddrPledgeRecords(stub shim.ChaincodeStubInterface, date string, isFi
 		return nil
 	}
 	err = stub.DelState("allocate")
+	if err != nil {
+		return err
+	}
+	err = saveLastPledgeListDate(stub, date)
 	if err != nil {
 		return err
 	}
