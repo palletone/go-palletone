@@ -25,8 +25,8 @@ var DefaultConfig = Config{
 	LoggerLvl:           "DEBUG",
 	Encoding:            "console",
 	Development:         true,
-	RotationMaxSize:     500,
-	RotationMaxAge:      28,
+	RotationMaxSize:     200,
+	RotationMaxAge:      5,
 	MaxLogMessageLength: 1024 * 1024, //1M
 }
 

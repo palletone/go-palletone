@@ -58,6 +58,7 @@ func (s *sigShareSet) append(sigShare []byte) {
 	defer s.dataLock.Unlock()
 
 	s.sigShares = append(s.sigShares, sigShare)
+	return
 }
 
 func (s *sigShareSet) popSigShares() (sigShares [][]byte) {

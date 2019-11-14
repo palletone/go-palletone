@@ -33,6 +33,8 @@ func (mp *MediatorPlugin) newDKGAndInitVSSBuf() {
 	log.Debugf("initialize all mediator's dkgs, dealBufs, and responseBufs")
 	// 初始化dkg，并初始化与完成vss相关的buf
 	mp.dkgLock.Lock()
+	log.Debugf("dkgLock.Lock()")
+	log.Debugf("dkgLock.Unlock()")
 	defer mp.dkgLock.Unlock()
 	mp.vssBufLock.Lock()
 	defer mp.vssBufLock.Unlock()
@@ -120,6 +122,8 @@ func (mp *MediatorPlugin) completeVSSProtocol() {
 func (mp *MediatorPlugin) launchGroupSignLoops() {
 	lams := mp.GetLocalActiveMediators()
 	mp.dkgLock.Lock()
+	log.Debugf("dkgLock.Lock()")
+	log.Debugf("dkgLock.Unlock()")
 	defer mp.dkgLock.Unlock()
 
 	for _, localMed := range lams {
@@ -189,6 +193,8 @@ func (mp *MediatorPlugin) processDealLoop(localMed common.Address) {
 
 func (mp *MediatorPlugin) processVSSDeal(localMed common.Address, deal *dkg.Deal) {
 	mp.dkgLock.Lock()
+	log.Debugf("dkgLock.Lock()")
+	log.Debugf("dkgLock.Unlock()")
 	defer mp.dkgLock.Unlock()
 
 	dkgr, ok := mp.activeDKGs[localMed]
@@ -228,6 +234,8 @@ func (mp *MediatorPlugin) processVSSDeal(localMed common.Address, deal *dkg.Deal
 
 func (mp *MediatorPlugin) broadcastVSSDeals() {
 	mp.dkgLock.Lock()
+	log.Debugf("dkgLock.Lock()")
+	log.Debugf("dkgLock.Unlock()")
 	defer mp.dkgLock.Unlock()
 
 	cp := mp.dag.GetGlobalProp().ChainParameters
@@ -341,6 +349,8 @@ func (mp *MediatorPlugin) processResponseLoop(localMed, vrfrMed common.Address) 
 
 func (mp *MediatorPlugin) processVSSResp(localMed common.Address, resp *dkg.Response) {
 	mp.dkgLock.Lock()
+	log.Debugf("dkgLock.Lock()")
+	log.Debugf("dkgLock.Unlock()")
 	defer mp.dkgLock.Unlock()
 
 	dkgr, ok := mp.activeDKGs[localMed]
