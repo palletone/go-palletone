@@ -91,11 +91,13 @@ func (mp *MediatorPlugin) AddToTBLSSignBufs(newHash common.Hash) {
 
 func (mp *MediatorPlugin) addToTBLSSignBuf(localMed common.Address, unitHash common.Hash) {
 	mp.toTBLSBufLock.Lock()
+	log.Debugf("toTBLSBufLock.Lock()")
 	if _, ok := mp.toTBLSSignBuf[localMed]; !ok {
 		mp.toTBLSSignBuf[localMed] = make(map[common.Hash]bool)
 	}
 
 	mp.toTBLSSignBuf[localMed][unitHash] = true
+	log.Debugf("toTBLSBufLock.Unlock()")
 	mp.toTBLSBufLock.Unlock()
 
 	go mp.signUnitTBLS(localMed, unitHash)
@@ -109,11 +111,13 @@ func (mp *MediatorPlugin) addToTBLSSignBuf(localMed common.Address, unitHash com
 		return
 	case <-deleteBuf.C:
 		mp.toTBLSBufLock.Lock()
+		log.Debugf("toTBLSBufLock.Lock()")
 		if _, ok := mp.toTBLSSignBuf[localMed][unitHash]; ok {
 			log.Debugf("the unit(%v) has expired confirmation time, no longer need the mediator(%v)"+
 				" to sign-group", unitHash.TerminalString(), localMed.Str())
 			delete(mp.toTBLSSignBuf[localMed], unitHash)
 		}
+		log.Debugf("toTBLSBufLock.Unlock()")
 		mp.toTBLSBufLock.Unlock()
 	}
 }
@@ -366,11 +370,13 @@ func (mp *MediatorPlugin) groupSignUnit(localMed common.Address, unitHash common
 
 	// 1. 初始化签名unit相关的签名分片的buf
 	mp.toTBLSBufLock.Lock()
+	log.Debugf("toTBLSBufLock.Lock()")
 	if _, ok := mp.toTBLSRecoverBuf[localMed]; !ok {
 		mp.toTBLSRecoverBuf[localMed] = make(map[common.Hash]*sigShareSet)
 	}
 	aSize := mp.dag.ActiveMediatorsCount()
 	mp.toTBLSRecoverBuf[localMed][unitHash] = newSigShareSet(aSize)
+	log.Debugf("toTBLSBufLock.Unlock()")
 	mp.toTBLSBufLock.Unlock()
 
 	// 2. 过了 unit 确认时间后，及时删除群签名分片的相关数据，防止内存溢出
@@ -383,11 +389,13 @@ func (mp *MediatorPlugin) groupSignUnit(localMed common.Address, unitHash common
 			return
 		case <-deleteBuf.C:
 			mp.toTBLSBufLock.Lock()
+			log.Debugf("toTBLSBufLock.Lock()")
 			if _, ok := mp.toTBLSRecoverBuf[localMed][unitHash]; ok {
 				log.Debugf("the unit(%v) has expired confirmation time, no longer need the mediator(%v) "+
 					"to recover group-sign", unitHash.TerminalString(), localMed.Str())
 				delete(mp.toTBLSRecoverBuf[localMed], unitHash)
 			}
+			log.Debugf("toTBLSBufLock.Unlock()")
 			mp.toTBLSBufLock.Unlock()
 		}
 	}()

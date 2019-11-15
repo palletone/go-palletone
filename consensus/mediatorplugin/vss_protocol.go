@@ -115,9 +115,11 @@ func (mp *MediatorPlugin) completeVSSProtocol() {
 
 	// 删除vss相关缓存
 	mp.vssBufLock.Lock()
+	log.Debugf("vssBufLock.Lock()")
 	lamc := len(mp.mediators)
 	mp.dealBuf = make(map[common.Address]chan *dkg.Deal, lamc)
 	mp.respBuf = make(map[common.Address]map[common.Address]chan *dkg.Response, lamc)
+	log.Debugf("vssBufLock.Unlock()")
 	mp.vssBufLock.Unlock()
 
 	// 验证vss是否完成，并开启群签名
@@ -282,6 +284,7 @@ func (mp *MediatorPlugin) AddToDealBuf(dealEvent *VSSDealEvent) {
 
 	// 判断是否本地mediator的deal
 	mp.vssBufLock.Lock()
+	log.Debugf("vssBufLock.Lock()")
 	dealCh, ok := mp.dealBuf[localMed]
 	if ok {
 		dealCh <- deal
@@ -289,6 +292,7 @@ func (mp *MediatorPlugin) AddToDealBuf(dealEvent *VSSDealEvent) {
 		log.Debugf("the mediator(%v) received the vss deal from the mediator(%v)",
 			localMed.Str(), vrfrMed.Str())
 	}
+	log.Debugf("vssBufLock.Unlock()")
 	mp.vssBufLock.Unlock()
 }
 
@@ -316,12 +320,14 @@ func (mp *MediatorPlugin) AddToResponseBuf(respEvent *VSSResponseEvent) {
 		vrfrMed := dag.GetActiveMediatorAddr(int(resp.Index))
 
 		mp.vssBufLock.Lock()
+		log.Debugf("vssBufLock.Lock()")
 		respCh, ok := mp.respBuf[localMed][vrfrMed]
 		if ok {
 			respCh <- resp
 			log.Debugf("the mediator(%v) received the vss response from the mediator(%v) to the mediator(%v)",
 				localMed.Str(), srcMed.Str(), vrfrMed.Str())
 		}
+		log.Debugf("vssBufLock.Unlock()")
 		mp.vssBufLock.Unlock()
 	}
 }
