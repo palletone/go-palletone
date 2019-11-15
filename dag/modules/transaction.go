@@ -332,8 +332,7 @@ func (tx *Transaction) GetCoinbaseReward(versionFunc QueryStateByVersionFunc,
 			addr, _ := scriptFunc(out.PkScript)
 			writeMap[addr.String()] = []AmountAsset{aa}
 		}
-	}
-	if tx.TxMessages[0].App == APP_CONTRACT_INVOKE { //进行了记账
+	} else if tx.TxMessages[0].App == APP_CONTRACT_INVOKE { //进行了记账
 		invoke := tx.TxMessages[0].Payload.(*ContractInvokePayload)
 		for _, write := range invoke.WriteSet {
 			var aa []AmountAsset
@@ -358,6 +357,8 @@ func (tx *Transaction) GetCoinbaseReward(versionFunc QueryStateByVersionFunc,
 			addr := read.Key[len(constants.RewardAddressPrefix):]
 			readMap[addr] = aa
 		}
+	} else {
+		return &AmountAsset{Asset: NewPTNAsset()}, nil
 	}
 	//计算Write Map和Read Map的差，获得Reward值
 	reward := &AmountAsset{}
