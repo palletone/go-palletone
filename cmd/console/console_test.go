@@ -22,20 +22,22 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
-	//"github.com/palletone/go-palletone/common/ptndb"
-	//"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/gen"
 	"github.com/palletone/go-palletone/core/node"
 	dag2 "github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/internal/jsre"
 	"github.com/palletone/go-palletone/ptn"
+	"path/filepath"
 )
 
 const (
@@ -117,7 +119,6 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 		t.Fatalf("failed to create temporary keystore: %v", err)
 	}
 	testCfg := &node.Config{DataDir: workspace, UseLightweightKDF: true, Name: testInstance}
-	//testCfg.Logger = log.NewTestLog()
 	// Create a networkless protocol stack and start an PalletOne service within
 	stack, err := node.New(testCfg)
 	if err != nil {
@@ -125,6 +126,7 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 	}
 	ptnConf := &ptn.Config{
 		Genesis: DevGenesisBlock(),
+		Dag:     dagconfig.Config{GasToken: "ptn"},
 		//Etherbase: common.HexToAddress(testAddress),
 	}
 
@@ -134,6 +136,7 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 
 	//fmt.Println("------------start open leveldb and store test genesis unit--------------")
 	dbPath := filepath.Join(workspace, "./leveldb")
+	log.Debugf("workspace path:%s, dbpath:%s", workspace, dbPath)
 	dagconfig.DagConfig.DbPath = dbPath
 	if err := os.MkdirAll(dbPath, 0777); err != nil {
 		fmt.Println("mkdir error:", err)
@@ -146,9 +149,8 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 		return nil
 	}
 
-	// fmt.Println("new account success and address=", account.Address.String())
-	db, _ := stack.OpenDatabase(dbPath, 0, 0)
-	//db, _ := ptndb.NewMemDatabase()
+	//db, _ := stack.OpenDatabase(dbPath, 0, 0)
+	db, _ := ptndb.NewMemDatabase()
 	dag, _ := dag2.NewDag4GenesisInit(db)
 	err = ks.Unlock(account, password)
 	if err != nil {
@@ -161,8 +163,12 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 		fmt.Printf("Failed to write genesis unit: %v \n", err)
 		return nil
 	}
-	dag.SaveUnit(unit, nil, true)
 
+	dag.SaveUnit(unit, nil, true)
+	dv := new(modules.DataVersion)
+	dv.Name = "Gptn"
+	dv.Version = configure.Version
+	dag.StoreDataVersion(dv)
 	err = dag.InitPropertyDB(ptnConf.Genesis, unit)
 	if err != nil {
 		fmt.Printf("Failed to InitPropertyDB: %v \n", err)

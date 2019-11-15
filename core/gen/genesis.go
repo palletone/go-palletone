@@ -93,7 +93,7 @@ func setupGenesisUnit(genesis *core.Genesis, ks *keystore.KeyStore) (*modules.Un
 	if err != nil {
 		return nil, err
 	}
-	log.Info("-> Genesis transactions:")
+	log.Infof("-> Genesis transactions:[%#x]", txs.GetTxIds())
 	for i, tx := range txs {
 		msg := fmt.Sprintf("Tx[%d]: %s\n", i, tx.Hash().String())
 		log.Info(msg)

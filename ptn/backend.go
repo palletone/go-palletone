@@ -209,7 +209,7 @@ func CreateDB(ctx *node.ServiceContext, config *Config /*, name string*/) (palle
 	//path := ctx.DatabasePath(name)
 	path := dagconfig.DagConfig.DbPath
 
-	log.Debug("Open leveldb path:", "path", path)
+	log.Debugf("Open leveldb path: %s", path)
 	db, err := storage.Init(path, config.DatabaseCache, config.DatabaseHandles)
 	if err != nil {
 		return nil, err
