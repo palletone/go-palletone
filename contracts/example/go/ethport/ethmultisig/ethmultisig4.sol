@@ -210,10 +210,10 @@ contract ethmultisig is ERC20 {
     address private addrB;
     address private addrC;
     address private addrD;
-    mapping(string => uint8) private reqHistory; 
+    mapping(bytes32 => uint8) private reqHistory; 
 
     event Deposit(address token, address user, uint amount);
-    event Withdraw(address token, address user, address recver, uint amount, string reqid, uint confirmvalue, string state);
+    event Withdraw(address token, address user, address recver, uint amount, bytes32 reqid);
     
     modifier isAdmin() {//debug
       require(msg.sender == admin);
@@ -295,7 +295,7 @@ contract ethmultisig is ERC20 {
       return confirms;  
     }
 
-    function withdraw(address recver, uint amount, string reqid, bytes sigstr1, bytes sigstr2, bytes sigstr3) public {
+    function withdraw(address recver, uint amount, bytes32 reqid, bytes sigstr1, bytes sigstr2, bytes sigstr3) public {
       require(reqHistory[reqid] == 0);
       
       address[] memory owners = new address[](4);
@@ -312,10 +312,10 @@ contract ethmultisig is ERC20 {
 
       reqHistory[reqid] = 1;
       recver.transfer(amount);
-      emit Withdraw(0, msg.sender, recver, amount, reqid, confirms, "withdraw");
+      emit Withdraw(0, msg.sender, recver, amount, reqid);
     }
 
-    function getmultisig(string reqid) public view returns(uint8) {
+    function getmultisig(bytes32 reqid) public view returns(uint8) {
       return (reqHistory[reqid]);
     }
 
