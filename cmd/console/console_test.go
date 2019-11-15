@@ -27,7 +27,6 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/gen"
@@ -149,8 +148,8 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 		return nil
 	}
 
-	//db, _ := stack.OpenDatabase(dbPath, 0, 0)
-	db, _ := ptndb.NewMemDatabase()
+	db, _ := stack.OpenDatabase(dbPath, 0, 0)
+	// db, _ := ptndb.NewMemDatabase()
 	dag, _ := dag2.NewDag4GenesisInit(db)
 	err = ks.Unlock(account, password)
 	if err != nil {
