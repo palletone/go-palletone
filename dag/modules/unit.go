@@ -218,15 +218,15 @@ func (h *Header) Hash() common.Hash {
 
 }
 func (h *Header) HashWithoutAuthor() common.Hash {
-	//groupSign := h.header.GroupSign
-	//groupPubKey := h.header.GroupPubKey
+	groupSign := h.group_sign
+	groupPubKey := h.group_pubKey
 	author := h.header.Authors
-	//h.header.GroupSign = make([]byte, 0)
-	//h.header.GroupPubKey = make([]byte, 0)
+	h.group_sign = make([]byte, 0)
+	h.group_pubKey = make([]byte, 0)
 	h.header.Authors = Authentifier{}
 	hash := util.RlpHash(h)
-	//h.header.GroupSign = append(h.header.GroupSign, groupSign...)
-	//h.header.GroupPubKey = append(h.header.GroupPubKey, groupPubKey...)
+	h.group_sign = append(h.group_sign, groupSign...)
+	h.group_pubKey = append(h.group_pubKey, groupPubKey...)
 	h.header.Authors.PubKey = author.PubKey[:]
 	h.header.Authors.Signature = author.Signature[:]
 	return hash
@@ -234,18 +234,18 @@ func (h *Header) HashWithoutAuthor() common.Hash {
 
 // HashWithOutTxRoot return  header's hash without txs root.
 func (h *Header) HashWithOutTxRoot() common.Hash {
-	//groupSign := h.header.GroupSign
-	//groupPubKey := h.header.GroupPubKey
+	groupSign := h.group_sign
+	groupPubKey := h.group_pubKey
 	author := h.header.Authors
 	txroot := h.header.TxRoot
-	//h.header.GroupSign = make([]byte, 0)
-	//h.header.GroupPubKey = make([]byte, 0)
+	h.group_sign = make([]byte, 0)
+	h.group_pubKey = make([]byte, 0)
 	h.header.Authors = Authentifier{}
 	h.header.TxRoot = common.Hash{}
 
 	hash := util.RlpHash(h)
-	//h.header.GroupSign = append(h.header.GroupSign, groupSign...)
-	//h.header.GroupPubKey = append(h.header.GroupPubKey, groupPubKey...)
+	h.group_sign = append(h.group_sign, groupSign...)
+	h.group_pubKey = append(h.group_pubKey, groupPubKey...)
 	h.header.Authors.PubKey = author.PubKey[:]
 	h.header.Authors.Signature = author.Signature[:]
 	h.header.TxRoot = txroot
@@ -490,7 +490,7 @@ type UnitNonce [8]byte
 
 /************************** Unit Members  *****************************/
 func (u *Unit) Header() *Header {
-	return CopyHeader(u.UnitHeader)
+	return u.UnitHeader
 }
 
 // transactions
