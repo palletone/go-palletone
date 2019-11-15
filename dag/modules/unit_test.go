@@ -103,13 +103,15 @@ func TestCopyHeader(t *testing.T) {
 	newH.CopyHeader(h)
 
 	assert.Equal(t, h.Hash().String(), newH.Hash().String())
+	newH.hash = common.Hash{}
+	h.hash = common.Hash{}
 	newH.SetExtra([]byte("add extra"))
 	newH.SetNumber(PTNCOIN, 22)
 	newH.SetGroupSign([]byte("sign123"))
 	newH.SetGroupPubkey([]byte("sign123"))
 	assert.NotEqual(t, h.Hash().String(), newH.Hash().String())
-	//log.Printf("\n newh=%v,hash:%s \n oldH=%v ,hash:%s \n hh=%v", *newH.Header(), newH.Hash().String(),
-	//	h.Header(), h.Hash().String(), hh)
+	log.Printf("\n newh=%v,hash:%s \n oldH=%v ,hash:%s \n ", *newH.Header(), newH.Hash().String(),
+		h.Header(), h.Hash().String())
 }
 
 // test unit's size of header
