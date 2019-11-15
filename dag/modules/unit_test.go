@@ -86,32 +86,30 @@ func TestCopyHeader(t *testing.T) {
 	u1.SetString("00000000000000000000000000000000")
 	u2 := common.Hash{}
 	u2.SetString("111111111111111111111111111111111")
-	addr := common.Address{}
-	addr.SetString("0000000011111111")
 
 	auth := Authentifier{
 		Signature: []byte("1234567890123456789"),
 		PubKey:    []byte("1234567890123456789"),
 	}
-	w := make([]byte, 0)
-	w = append(w, []byte("sign")...)
-	assetID := AssetId{}
-	assetID.SetBytes([]byte("0000000011111111"))
+
 	h := NewHeader([]common.Hash{u1, u2}, []byte{})
 	h.SetAuthor(auth)
-	h.SetGroupSign(w)
-	h.SetGroupPubkey(w)
+	h.SetGroupSign([]byte("sign"))
+	h.SetGroupPubkey([]byte("sign"))
 	h.SetTxRoot(common.Hash{})
-	h.SetNumber(assetID, 1)
+	h.SetNumber(PTNCOIN, 11)
 	newH := new(Header)
+	//newH := CopyHeader(h)
 	newH.CopyHeader(h)
-	//newH:= CopyHeader(h)
 
-	//newH.GroupSign = make([]byte, 0)
-	//newH.GroupPubKey = make([]byte, 0)
-	hh := Header{}
-	log.Printf("\n newh=%v,hash:%s \n oldH=%v ,hash:%s \n hh=%v", *newH, newH.Hash().String(), h,
-		h.Hash().String(), hh)
+	assert.Equal(t, h.Hash().String(), newH.Hash().String())
+	newH.SetExtra([]byte("add extra"))
+	newH.SetNumber(PTNCOIN, 22)
+	newH.SetGroupSign([]byte("sign123"))
+	newH.SetGroupPubkey([]byte("sign123"))
+	assert.NotEqual(t, h.Hash().String(), newH.Hash().String())
+	//log.Printf("\n newh=%v,hash:%s \n oldH=%v ,hash:%s \n hh=%v", *newH.Header(), newH.Hash().String(),
+	//	h.Header(), h.Hash().String(), hh)
 }
 
 // test unit's size of header

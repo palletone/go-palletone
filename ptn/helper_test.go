@@ -556,7 +556,7 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 	if err := dagDb.SaveTxLookupEntry(unit); err != nil {
 		return err
 	}
-	if err := saveHashByIndex(db, unit.UnitHash, unit.UnitHeader.Number.Index); err != nil {
+	if err := saveHashByIndex(db, unit.UnitHash, unit.UnitHeader.GetNumber().Index); err != nil {
 		return err
 	}
 	// update state
@@ -582,7 +582,12 @@ func NewHeader(parents []common.Hash, asset []modules.AssetId, extra []byte) *mo
 	hashs = append(hashs, parents...) // 切片指针传递的问题，这里得再review一下。
 	var b []byte
 	//return &modules.Header{ParentsHash: hashs, AssetIDs: asset, Extra: append(b, extra...), Time: time.Now().Unix()}
-	return &modules.Header{ParentsHash: hashs, Extra: append(b, extra...), Time: time.Now().Unix()}
+	h := new(modules.Header)
+	h.SetParentHash(hashs)
+	h.SetExtra(append(b, extra...))
+	h.SetTime(time.Now().Unix())
+
+	return h
 }
 func NewCoinbaseTransaction() (*modules.Transaction, error) {
 	input := &modules.Input{}

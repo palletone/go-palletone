@@ -63,14 +63,14 @@ type header_sdw struct {
 }
 
 func new_header_sdw() *header_sdw {
-	//return &header_sdw{ParentsHash: make([]common.Hash, 0),
-	//	Authors:    Authentifier{},
-	//	TxRoot:     common.Hash{},
-	//	TxsIllegal: make([]uint16, 0),
-	//	Number:     new(ChainIndex),
-	//	Extra:      make([]byte, 0),
-	//	CryptoLib:  make([]byte, 0)}
-	return new(header_sdw)
+	return &header_sdw{ParentsHash: make([]common.Hash, 0),
+		Authors:    Authentifier{},
+		TxRoot:     common.Hash{},
+		TxsIllegal: make([]uint16, 0),
+		Number:     new(ChainIndex),
+		Extra:      make([]byte, 0),
+		CryptoLib:  make([]byte, 0)}
+	//return new(header_sdw)
 }
 func (h *Header) NumberU64() uint64 {
 	return h.header.Number.Index
@@ -185,9 +185,13 @@ func NewHeader(parents []common.Hash, extra []byte) *Header {
 	h := new(Header)
 	h.header = new_header_sdw()
 	h.header.ParentsHash = make([]common.Hash, 0)
-	h.header.ParentsHash = append(h.header.ParentsHash, parents...)
+	if len(parents) > 0 {
+		h.header.ParentsHash = append(h.header.ParentsHash, parents...)
+	}
 	h.header.Extra = make([]byte, 0)
-	h.header.Extra = append(h.header.Extra, extra...)
+	if len(extra) > 0 {
+		h.header.Extra = append(h.header.Extra, extra...)
+	}
 	return h
 }
 
@@ -201,16 +205,24 @@ func (h *Header) TxRoot() common.Hash {
 	return h.header.TxRoot
 }
 func (h *Header) Hash() common.Hash {
-	if h.hash == (common.Hash{}) {
-		// 计算header’hash时 剔除群签
-		groupSign := h.group_sign
-		groupPubKey := h.group_pubKey
-		h.group_sign = make([]byte, 0)
-		h.group_pubKey = make([]byte, 0)
-		h.hash = util.RlpHash(h)
-		h.group_sign = append(h.group_sign, groupSign...)
-		h.group_pubKey = append(h.group_pubKey, groupPubKey...)
-	}
+	//if h.hash == (common.Hash{}) {
+	//	// 计算header’hash时 剔除群签
+	//	groupSign := h.group_sign
+	//	groupPubKey := h.group_pubKey
+	//	h.group_sign = make([]byte, 0)
+	//	h.group_pubKey = make([]byte, 0)
+	//	h.hash = util.RlpHash(h)
+	//	h.group_sign = append(h.group_sign, groupSign...)
+	//	h.group_pubKey = append(h.group_pubKey, groupPubKey...)
+	//}
+	//return h.hash
+	groupSign := h.group_sign
+	groupPubKey := h.group_pubKey
+	h.group_sign = make([]byte, 0)
+	h.group_pubKey = make([]byte, 0)
+	h.hash = util.RlpHash(h)
+	h.group_sign = append(h.group_sign, groupSign...)
+	h.group_pubKey = append(h.group_pubKey, groupPubKey...)
 	return h.hash
 }
 func (h *Header) HashWithoutAuthor() common.Hash {
@@ -271,7 +283,9 @@ func CopyHeader(h *Header) *Header {
 	if h.header.Number != nil {
 		cpy.header.Number = CopyChainIndex(h.header.Number)
 	}
-	cpy.header.Extra = h.header.Extra[:]
+	var b []byte
+	cpy.header.Extra = append(b, h.header.Extra...)
+	cpy.header.CryptoLib = append(b, h.header.CryptoLib...)
 	cpy.header.Time = h.header.Time
 	cpy.header.Authors = h.header.Authors
 
@@ -484,7 +498,7 @@ type UnitNonce [8]byte
 
 /************************** Unit Members  *****************************/
 func (u *Unit) Header() *Header {
-	return u.UnitHeader
+	return CopyHeader(u.UnitHeader)
 }
 
 // transactions
@@ -518,9 +532,10 @@ func (u *Unit) Size() common.StorageSize {
 		return u.UnitSize
 	}
 	emptyUnit := &Unit{}
-	emptyUnit.UnitHeader = u.UnitHeader
-	//emptyUnit.UnitHeader.Authors = nil
+	emptyUnit.UnitHeader = new(Header)
+	emptyUnit.UnitHeader.CopyHeader(u.Header())
 	emptyUnit.UnitHeader.group_sign = make([]byte, 0)
+	emptyUnit.UnitHeader.group_pubKey = make([]byte, 0)
 	emptyUnit.CopyBody(u.Txs[:])
 
 	b, err := rlp.EncodeToBytes(emptyUnit)

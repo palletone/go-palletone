@@ -67,7 +67,7 @@ func TestGenesisUnit(t *testing.T) {
 	log.Debugf("parent units:%#x", gUnit.UnitHeader.ParentHash())
 	//log.Println("asset ids:", gUnit.UnitHeader.AssetIDs)
 	log.Debugf("group_sign:%x", gUnit.UnitHeader.GetGroupSign())
-	log.Debugf("Root:%x", gUnit.UnitHeader.TxRoot)
+	log.Debugf("Root:%x", gUnit.UnitHeader.TxRoot())
 	log.Debugf("Number:%s", gUnit.UnitHeader.GetNumber().String())
 
 }
@@ -105,9 +105,9 @@ func TestSaveUnit(t *testing.T) {
 	aid := modules.AssetId{}
 	aid.SetBytes([]byte("xxxxxxxxxxxxxxxxxx"))
 	header := new(modules.Header)
-	header.SetParentHash(append(header.ParentHash(), p))
+	var perents []common.Hash
+	header.SetParentHash(append(perents, p))
 	header.SetNumber(modules.PTNCOIN, 0)
-	//header.AssetIDs = []modules.AssetId{aid}
 	key, _ := crypto.GenerateKey()
 	//addr0 := crypto.PubkeyToAddress(&key.PublicKey)
 

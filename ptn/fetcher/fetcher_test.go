@@ -86,9 +86,7 @@ func newDag(db ptndb.Database, gunit *modules.Unit, number int) (modules.Units, 
 	par := gunit
 	for i := 0; i < number; i++ {
 		header := modules.NewHeader([]common.Hash{par.UnitHash}, []byte{})
-		index := new(modules.ChainIndex)
-		index.AssetID = par.UnitHeader.GetNumber().AssetID
-		index.Index = par.UnitHeader.GetNumber().Index + 1
+		header.SetNumber(par.UnitHeader.GetNumber().AssetID, par.UnitHeader.GetNumber().Index+1)
 		header.SetAuthor(modules.Authentifier{[]byte{}, []byte{}})
 		header.SetGroupSign([]byte{})
 		header.SetGroupPubkey([]byte{})
