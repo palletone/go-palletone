@@ -22,13 +22,14 @@ package ptnjson
 
 import (
 	"encoding/hex"
+	"strconv"
+	"time"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/shopspring/decimal"
-	"strconv"
-	"time"
 )
 
 type UnitJson struct {

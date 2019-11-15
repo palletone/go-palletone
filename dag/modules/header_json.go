@@ -33,6 +33,22 @@ type headerJsonTemp struct {
 	CryptoLib   []byte        `json:"crypto_lib"`    //该区块使用的加解密算法和哈希算法，0位表示非对称加密算法，1位表示Hash算法
 }
 
+func (input *Header) MarshalJSON() ([]byte, error) {
+	temp := &headerJsonTemp{}
+	temp.ParentsHash = input.header.ParentsHash
+	temp.Authors = input.header.Authors
+	temp.GroupSign = input.group_sign
+	temp.GroupPubKey = input.group_pubKey
+	temp.TxRoot = input.header.TxRoot
+	temp.TxsIllegal = input.header.TxsIllegal
+	temp.Number = new(ChainIndex)
+	temp.Number.AssetID = input.header.Number.AssetID
+	temp.Number.Index = input.header.Number.Index
+	temp.Extra = input.header.Extra
+	temp.Time = uint32(input.header.Time)
+	temp.CryptoLib = input.header.CryptoLib
+	return json.Marshal(temp)
+}
 func (input *Header) UnmarshalJSON(b []byte) error {
 
 	temp := &headerJsonTemp{}
@@ -55,20 +71,4 @@ func (input *Header) UnmarshalJSON(b []byte) error {
 	input.header.Time = int64(temp.Time)
 	input.header.CryptoLib = temp.CryptoLib
 	return nil
-}
-func (input *Header) MarshalJSON() ([]byte, error) {
-	temp := &headerJsonTemp{}
-	temp.ParentsHash = input.header.ParentsHash
-	temp.Authors = input.header.Authors
-	temp.GroupSign = input.group_sign
-	temp.GroupPubKey = input.group_pubKey
-	temp.TxRoot = input.header.TxRoot
-	temp.TxsIllegal = input.header.TxsIllegal
-	temp.Number = new(ChainIndex)
-	temp.Number.AssetID = input.header.Number.AssetID
-	temp.Number.Index = input.header.Number.Index
-	temp.Extra = input.header.Extra
-	temp.Time = uint32(input.header.Time)
-	temp.CryptoLib = input.header.CryptoLib
-	return json.Marshal(temp)
 }
