@@ -441,7 +441,6 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward
 
 //  增加新地址的质押
 func addNewAddrPledgeRecords(stub shim.ChaincodeStubInterface, date string) error {
-
 	// 增加新的质押
 	depositList, err := getAllPledgeDepositRecords(stub)
 	if err != nil {
@@ -496,10 +495,10 @@ func addNewAddrPledgeRecords(stub shim.ChaincodeStubInterface, date string) erro
 				return err
 			}
 			//  TODO 当第一次调用该函数
-				err = saveLastPledgeListDate(stub, date)
-				if err != nil {
-					return err
-				}
+			err = saveLastPledgeListDate(stub, date)
+			if err != nil {
+				return err
+			}
 			return nil
 		}
 		h += t
