@@ -941,6 +941,10 @@ func (d DepositChaincode) IsFinishAllocated(stub shim.ChaincodeStubInterface) bo
 		log.Warn("GetState error: ", err.Error())
 		return true
 	}
+	lastDate, err := getLastPledgeListDate(stub)
+	if err != nil {
+		return true
+	}
 	// 增加新的质押
 	depositList, err := getAllPledgeDepositRecords(stub)
 	if err != nil {
@@ -952,21 +956,21 @@ func (d DepositChaincode) IsFinishAllocated(stub shim.ChaincodeStubInterface) bo
 		log.Warn("GetState error: ", err.Error())
 		return true
 	}
-	log.Infof("allocate = %s, today = %s, lastDate = %s, depositList length = %d", finish, today, newdate, len(depositList))
 	//  1.添加完了，finish == nil
 	//  2.分配完了，finish == []byte("allocate"),depositList > 0
 	if today == string(newdate) {
 		if len(depositList) == 0 {
 			if string(finish) == "allocate" {
-				log.Infof("allocate = %s, today = %s, lastDate = %s, depositList length = %d", finish, today, newdate, len(depositList))
+				log.Infof("allocate = %s, today = %s, lastDate = %s, newdate = %s, depositList length = %d", finish, today,lastDate, newdate, len(depositList))
 				return false
 			}
-			log.Infof("allocate = %s, today = %s, lastDate = %s, depositList length = %d", finish, today, newdate, len(depositList))
+			log.Infof("allocate = %s, today = %s, lastDate = %s, newdate = %s, depositList length = %d", finish, today, lastDate,newdate, len(depositList))
 			return true
 		}
-		log.Infof("allocate = %s, today = %s, lastDate = %s, depositList length = %d", finish, today, newdate, len(depositList))
+		log.Infof("allocate = %s, today = %s, lastDate = %s, newdate = %s, depositList length = %d", finish, today, lastDate,newdate, len(depositList))
 		return false
 	}
+	log.Infof("allocate = %s, today = %s, lastDate = %s, newdate = %s, depositList length = %d", finish, today, lastDate,newdate, len(depositList))
 	return false
 	//if /*today != lastDate &&*/ len(depositList) != 0 && string(finish)!="allocate" {
 	//	log.Infof("allocate = %s, today = %s, lastDate = %s, depositList length = %d",finish, today, lastDate, len(depositList))
@@ -975,6 +979,7 @@ func (d DepositChaincode) IsFinishAllocated(stub shim.ChaincodeStubInterface) bo
 	//log.Infof("allocate = %s, today = %s, lastDate = %s, depositList length = %d",finish, today, lastDate, len(depositList))
 	//return true
 }
+
 
 func (d DepositChaincode) IsFinishAddNewRecords(stub shim.ChaincodeStubInterface) bool {
 	h, err := stub.GetState("haveAllocatedCount")
