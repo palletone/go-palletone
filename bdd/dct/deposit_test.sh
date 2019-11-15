@@ -84,6 +84,24 @@ m22=`echo ${m2//\"/}`
 votedAddr=`echo $list | jq ".[12]"`
 votedAddress=`echo ${votedAddr//\"/}`
 
+vote01=`echo $list | jq ".[13]"`
+votedAddress01=`echo ${vote01//\"/}`
+
+vote02=`echo $list | jq ".[14]"`
+votedAddress02=`echo ${vote02//\"/}`
+
+vote03=`echo $list | jq ".[15]"`
+votedAddress03=`echo ${vote03//\"/}`
+
+vote04=`echo $list | jq ".[16]"`
+votedAddress04=`echo ${vote04//\"/}`
+
+vote05=`echo $list | jq ".[17]"`
+votedAddress05=`echo ${vote05//\"/}`
+
+vote06=`echo $list | jq ".[18]"`
+votedAddress06=`echo ${vote06//\"/}`
+
 echo "mdi_02_pubkey =>" $m22
 echo "mdi_01" $mdi_01
 echo "found" $found
@@ -92,15 +110,21 @@ echo "devA_01" $developer_01
 echo "mdi_02" $mdi_02
 echo "juryA_02" $jury_02
 echo "developerAddr_02" $developer_02
-echo "votedAddress" $votedAddress
+echo "vote" $votedAddress
+echo "vote01" $votedAddress01
+echo "vote02" $votedAddress02
+echo "vote03" $votedAddress03
+echo "vote04" $votedAddress04
+echo "vote05" $votedAddress05
+echo "vote06" $votedAddress06
 #pybot -d ./log -v mediatorAddr_01:$mdi_01 -v foundationAddr:$found --test Business_01 ./deposit_test_cases/DepositContractTest.robot
 #pybot -d ./log -v mediatorAddr_02:$mdi_02 -v foundationAddr:$found --test Business_02 ./deposit_test_cases/DepositContractTest.robot
 #pybot -d ./log -v juryAddr_01:$jury_01 -v foundationAddr:$found --test Business_03 ./deposit_test_cases/DepositContractTest.robot
 #pybot -d ./log -v developerAddr_01:$developer_01 -v foundationAddr:$found --test Business_04 ./deposit_test_cases/DepositContractTest.robot
 #pybot -d ./log -v juryAddr_02:$jury_02 -v foundationAddr:$found --test Business_05 ./deposit_test_cases/DepositContractTest.robot
 #pybot -d ./log -v developerAddr_02:$developer_02 -v foundationAddr:$found --test Business_06 ./deposit_test_cases/DepositContractTest.robot
-pybot -d ../logs/deposit -v votedAddress:$votedAddress -v m1_pubkey:$m11 -v m2_pubkey:$m22 -v juryAddr_01_pubkey:$jury_01_pub -v juryAddr_02_pubkey:$jury_02_pub -v mediatorAddr_01:$mdi_01 -v foundationAddr:$found -v mediatorAddr_02:$mdi_02 -v juryAddr_01:$jury_01 -v developerAddr_01:$developer_01 -v juryAddr_02:$jury_02 -v developerAddr_02:$developer_02 ./deposit_test_cases/DepositContractTest.robot
-###pybot -d ../logs/deposit -v votedAddress:$votedAddress -v m1_pubkey:$m11 -v m2_pubkey:$m22 -v juryAddr_01_pubkey:$jury_01_pub -v juryAddr_02_pubkey:$jury_02_pub -v mediatorAddr_01:$mdi_01 -v foundationAddr:$found -v mediatorAddr_02:$mdi_02 -v juryAddr_01:$jury_01 -v developerAddr_01:$developer_01 -v juryAddr_02:$jury_02 -v developerAddr_02:$developer_02 --test PledgeTest02 ./deposit_test_cases/DepositContractTest.robot
+pybot -d ../logs/deposit -v votedAddress02:$votedAddress02 -v votedAddress03:$votedAddress03 -v votedAddress04:$votedAddress04 -v votedAddress05:$votedAddress05 -v votedAddress06:$votedAddress06 -v votedAddress01:$votedAddress01 -v votedAddress:$votedAddress -v m1_pubkey:$m11 -v m2_pubkey:$m22 -v juryAddr_01_pubkey:$jury_01_pub -v juryAddr_02_pubkey:$jury_02_pub -v mediatorAddr_01:$mdi_01 -v foundationAddr:$found -v mediatorAddr_02:$mdi_02 -v juryAddr_01:$jury_01 -v developerAddr_01:$developer_01 -v juryAddr_02:$jury_02 -v developerAddr_02:$developer_02 ./deposit_test_cases/DepositContractTest.robot
+###pybot -d ../logs/deposit -v votedAddress02:$votedAddress02 -v votedAddress03:$votedAddress03 -v votedAddress04:$votedAddress04 -v votedAddress05:$votedAddress05 -v votedAddress06:$votedAddress06 -v votedAddress01:$votedAddress01 -v votedAddress:$votedAddress -v m1_pubkey:$m11 -v m2_pubkey:$m22 -v juryAddr_01_pubkey:$jury_01_pub -v juryAddr_02_pubkey:$jury_02_pub -v mediatorAddr_01:$mdi_01 -v foundationAddr:$found -v mediatorAddr_02:$mdi_02 -v juryAddr_01:$jury_01 -v developerAddr_01:$developer_01 -v juryAddr_02:$jury_02 -v developerAddr_02:$developer_02 --test PledgeTest02 ./deposit_test_cases/DepositContractTest.robot
 #pybot -d ../logs/deposit -v votedAddress:$votedAddress -v m1_pubkey:$m11 -v m2_pubkey:$m22 -v juryAddr_01_pubkey:$jury_01_pub -v juryAddr_02_pubkey:$jury_02_pub -v mediatorAddr_01:$mdi_01 -v foundationAddr:$found -v mediatorAddr_02:$mdi_02 -v juryAddr_01:$jury_01 -v developerAddr_01:$developer_01 -v juryAddr_02:$jury_02 -v developerAddr_02:$developer_02 --test PledgeTest04 ./deposit_test_cases/DepositContractTest.robot
 #pybot -d ./log -v mediatorAddr_01:$mdi_01 -v foundationAddr:$found -v mediatorAddr_02:$mdi_02 -v juryAddr_01:$jury_01 -v developerAddr_01:$developer_01 -v juryAddr_02:$jury_02 -v developerAddr_02:$developer_02 --test Business_01 --test Business_03 --test Business_05 ./deposit_test_cases/DepositContractTest.robot
 #pybot -d ./log -v mediatorAddr_01:$mdi_01 -v foundationAddr:$found -v otherAddr:$otherAddr --test Business_07 ./deposit_test_cases/DepositContractTest.robot
