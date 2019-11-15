@@ -93,7 +93,7 @@ matrix:
         - netstat -ap | grep gptn
         - if [ $IS_RUN_DEPOSIT == 'true' ]; then
           cd ../dct;
-          ./deposit_test.sh 7;
+          ./deposit_test.sh 13;
           fi
         - if [ $IS_RUN_BLACKLIST == 'true' ]; then
           cd ../blacklist;
