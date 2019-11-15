@@ -39,6 +39,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/ucc"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
+	"github.com/palletone/go-palletone/contracts/list"
 )
 
 func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string,
@@ -369,9 +370,9 @@ func (p *Processor) ContractQuery(id []byte, args [][]byte, timeout time.Duratio
 				},
 			}
 			cp := p.dag.GetChainParameters()
-			spec.CpuQuota = cp.UccCpuQuota  //微妙单位（100ms=100000us=上限为1个CPU）
-			spec.CpuShare = cp.UccCpuShares //占用率，默认1024，即可占用一个CPU，相对值
-			spec.Memory = cp.UccMemory      //字节单位 物理内存  1073741824  1G 2147483648 2G 209715200 200m 104857600 100m
+			spec.CpuQuota = cp.UccCpuQuota
+			spec.CpuShare = cp.UccCpuShares
+			spec.Memory = cp.UccMemory
 			_, chaincodeData, err := ucc.RecoverChainCodeFromDb(chainId, cc.TemplateId)
 			if err != nil {
 				log.Error("ContractQuery", "chainid:", chainId, "templateId:", cc.TemplateId, "RecoverChainCodeFromDb err", err)
@@ -381,6 +382,23 @@ func (p *Processor) ContractQuery(id []byte, args [][]byte, timeout time.Duratio
 			if err != nil {
 				log.Error("ContractQuery ", "DeployUserCC error", err)
 				return nil, nil
+			}
+			cInf := &list.CCInfo{
+				Id:       addr.Bytes(),
+				Name:     addr.String(),
+				Path:     ct.Path,
+				TempleId: ct.TplId,
+				Version:  cv,
+				Language: ct.Language,
+				SysCC:    false,
+				//Address:  jA,
+			}
+			_, err = p.dag.GetChaincode(addr)
+			if err != nil {
+				err = p.dag.SaveChaincode(addr, cInf)
+				if err != nil {
+					log.Debugf("ContractQuery, SaveChaincode err:%s", err.Error())
+				}
 			}
 		}
 	}
