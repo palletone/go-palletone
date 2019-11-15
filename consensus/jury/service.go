@@ -104,6 +104,9 @@ type iDag interface {
 	GetScheduledMediator(slotNum uint32) common.Address
 	GetSlotAtTime(when time.Time) uint32
 	GetJurorReward(jurorAdd common.Address) common.Address
+
+	GetChaincode(contractId common.Address) (*list.CCInfo, error)
+	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
 }
 
 type electionVrf struct {
