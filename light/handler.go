@@ -24,8 +24,8 @@ import (
 	"math/big"
 	"sync"
 
+	"encoding/json"
 	"github.com/coocood/freecache"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -386,10 +386,9 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		for {
 			select {
 			case announce := <-p.announceChn:
-				log.Debug("Light Palletone ProtocolManager->handle", "assetId", announce.Header.GetNumber().AssetID,
-					"index", announce.Header.GetNumber().Index)
-				//data, err := json.Marshal(announce.Header)
-				data, err := rlp.EncodeToBytes(announce.Header)
+				log.Debug("Light Palletone ProtocolManager->handle", "assetId",
+					announce.Header.GetNumber().AssetID, "index", announce.Header.GetNumber().Index)
+				data, err := json.Marshal(announce.Header)
 				if err != nil {
 					log.Error("Light Palletone ProtocolManager->handle", "Marshal err", err,
 						"announce", announce)

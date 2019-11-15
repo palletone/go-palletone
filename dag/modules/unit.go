@@ -70,7 +70,6 @@ func new_header_sdw() *header_sdw {
 		Number:     new(ChainIndex),
 		Extra:      make([]byte, 0),
 		CryptoLib:  make([]byte, 0)}
-	//return new(header_sdw)
 }
 func (h *Header) NumberU64() uint64 {
 	return h.header.Number.Index
@@ -205,25 +204,18 @@ func (h *Header) TxRoot() common.Hash {
 	return h.header.TxRoot
 }
 func (h *Header) Hash() common.Hash {
-	//if h.hash == (common.Hash{}) {
-	//	// 计算header’hash时 剔除群签
-	//	groupSign := h.group_sign
-	//	groupPubKey := h.group_pubKey
-	//	h.group_sign = make([]byte, 0)
-	//	h.group_pubKey = make([]byte, 0)
-	//	h.hash = util.RlpHash(h)
-	//	h.group_sign = append(h.group_sign, groupSign...)
-	//	h.group_pubKey = append(h.group_pubKey, groupPubKey...)
-	//}
-	//return h.hash
-	groupSign := h.group_sign
-	groupPubKey := h.group_pubKey
-	h.group_sign = make([]byte, 0)
-	h.group_pubKey = make([]byte, 0)
-	h.hash = util.RlpHash(h)
-	h.group_sign = append(h.group_sign, groupSign...)
-	h.group_pubKey = append(h.group_pubKey, groupPubKey...)
+	if h.hash == (common.Hash{}) {
+		// 计算header’hash时 剔除群签
+		groupSign := h.group_sign
+		groupPubKey := h.group_pubKey
+		h.group_sign = make([]byte, 0)
+		h.group_pubKey = make([]byte, 0)
+		h.hash = util.RlpHash(h)
+		h.group_sign = append(h.group_sign, groupSign...)
+		h.group_pubKey = append(h.group_pubKey, groupPubKey...)
+	}
 	return h.hash
+
 }
 func (h *Header) HashWithoutAuthor() common.Hash {
 	//groupSign := h.header.GroupSign
