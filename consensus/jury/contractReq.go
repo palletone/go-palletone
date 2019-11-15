@@ -383,6 +383,11 @@ func (p *Processor) ContractQuery(id []byte, args [][]byte, timeout time.Duratio
 				log.Error("ContractQuery ", "DeployUserCC error", err)
 				return nil, nil
 			}
+			juryAddrs := p.GetLocalJuryAddrs()
+			juryAddr := ""
+			if len(juryAddrs) != 0 {
+				juryAddr = juryAddrs[0].String()
+			}
 			cInf := &list.CCInfo{
 				Id:       addr.Bytes(),
 				Name:     addr.String(),
@@ -391,7 +396,7 @@ func (p *Processor) ContractQuery(id []byte, args [][]byte, timeout time.Duratio
 				Version:  cv,
 				Language: ct.Language,
 				SysCC:    false,
-				//Address:  jA,
+				Address:  juryAddr,
 			}
 			_, err = p.dag.GetChaincode(addr)
 			if err != nil {
