@@ -262,7 +262,7 @@ func (h *Header) HashWithOutTxRoot() common.Hash {
 
 func (h *Header) Size() common.StorageSize {
 	header := h.header
-	return common.StorageSize(unsafe.Sizeof(*header)) + common.StorageSize(len(h.header.Extra)/8)
+	return common.StorageSize(unsafe.Sizeof(*header)) + common.StorageSize(len(header.Extra)/8)
 }
 
 // CopyHeader creates a deep copy of a block header to prevent side effects from
