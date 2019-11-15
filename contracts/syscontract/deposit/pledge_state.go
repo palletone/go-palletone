@@ -134,17 +134,17 @@ func saveLastPledgeListDate(stub shim.ChaincodeStubInterface, date string) error
 }
 
 //保存最新的质押列表
-func saveLastPledgeList(stub shim.ChaincodeStubInterface, allM *modules.PledgeList) error {
-	b, err := json.Marshal(allM)
-	if err != nil {
-		return err
-	}
-	err = stub.PutState(constants.PledgeList+allM.Date, b)
-	if err != nil {
-		return err
-	}
-	return saveLastPledgeListDate(stub, allM.Date)
-}
+//func saveLastPledgeList(stub shim.ChaincodeStubInterface, allM *modules.PledgeList) error {
+//	b, err := json.Marshal(allM)
+//	if err != nil {
+//		return err
+//	}
+//	err = stub.PutState(constants.PledgeList+allM.Date, b)
+//	if err != nil {
+//		return err
+//	}
+//	return saveLastPledgeListDate(stub, allM.Date)
+//}
 
 //获得最新的质押列表
 func getLastPledgeList(stub shim.ChaincodeStubInterface) (*modules.PledgeList, error) {
