@@ -28,10 +28,10 @@ const (
 	//DefaultPledgeDailyReward = 300000000
 	//当 t = 2 时，即按批分红，且继续质押，且提取时，tx_size = 2644 b,当前单元大小为 5 m = 5120 kb =>1,982.934947049924
 	//  即 t = 1时，tx_size = 1322 b unit =5120 kb,t = 3,872.919818456884
-	DefaultPledgeAllocateThreshold = 1000
+	DefaultPledgeAllocateThreshold = 2
 	//  当添加新质押地址 t = 2 时，tx_size = 1267 b,当前单元大小为 5 m = 5120 kb =>3,236.345679012346
 	//  即 t = 1 时， tx_size = 633.5 b,当前单元大小为 5 m = 5120 kb =>8,088.467614533965
-	DefaultPledgeRecordsThreshold = 2000
+	DefaultPledgeRecordsThreshold = 2
 	// DefaultTxCoinYearRate            = 0
 	DefaultRewardHeight              = 100
 	DefaultGenerateUnitReward        = 15000
