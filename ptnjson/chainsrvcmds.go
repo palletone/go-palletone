@@ -333,7 +333,6 @@ type SignRawTransactionCmd struct {
 	PrivKeys *[]string
 	Flags    *string `jsonrpcdefault:"\"ALL\""`
 }
-
 func NewSignRawTransactionCmd(hexEncodedTx string, inputs *[]RawTxInput, privKeys *[]string, flags *string) *SignRawTransactionCmd {
 	return &SignRawTransactionCmd{
 		RawTx:    hexEncodedTx,
@@ -343,6 +342,22 @@ func NewSignRawTransactionCmd(hexEncodedTx string, inputs *[]RawTxInput, privKey
 	}
 }
 
+type MutiSignRawTransactionCmd struct {
+	RawTx    string
+	Inputs   *[]RawTxInput
+	msgIdx   int
+	id       int
+	PrivKeys *[]string
+	Flags    *string `jsonrpcdefault:"\"ALL\""`
+}
+func NewMutiSignRawTransactionCmd(hexEncodedTx string, inputs *[]RawTxInput,privKeys *[]string, flags *string) *MutiSignRawTransactionCmd {
+	return &MutiSignRawTransactionCmd{
+		RawTx:    hexEncodedTx,
+		Inputs:   inputs,
+		PrivKeys: privKeys,
+		Flags:    flags,
+	}
+}
 type SignRawTransactionResult struct {
 	Hex      string                    `json:"hex"`
 	Txid     string                    `json:"txid"`

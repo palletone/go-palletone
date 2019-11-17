@@ -398,6 +398,7 @@ func (engine *TokenEngine) SignTxAllPaymentInput(tx *modules.Transaction, hashTy
 			for j, input := range pay.Inputs {
 				if len(input.SignatureScript) > 0 {
 					//已经签名了，不需要再次签名
+					//判断是否是多签，处理多签的情况
 					continue
 				}
 				utxoLockScript, find := utxoLockScripts[*input.PreviousOutPoint]
