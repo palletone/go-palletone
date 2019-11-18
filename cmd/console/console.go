@@ -217,10 +217,16 @@ func (c *Console) init(preload []string) error {
 			return err
 		}
 		if obj := wallet.Object(); obj != nil { // make sure the admin api is enabled over the interface
-                        if _, err = c.jsre.Run(`jptn.signRawTransaction = wallet.signRawTransaction;`); err != nil {
-                                return fmt.Errorf("wallet.signRawTransaction: %v", err)
-                        }
-                        obj.Set("signRawTransaction", bridge.SignRawTransaction)
+            if _, err = c.jsre.Run(`jptn.signRawTransaction = wallet.signRawTransaction;`); err != nil {
+                    return fmt.Errorf("wallet.signRawTransaction: %v", err)
+            }
+            obj.Set("signRawTransaction", bridge.SignRawTransaction)
+
+            if _, err = c.jsre.Run(`jptn.mutisignRawTransaction = wallet.mutisignRawTransaction;`); err != nil {
+                    return fmt.Errorf("wallet.mutisignRawTransaction: %v", err)
+            }
+            obj.Set("mutisignRawTransaction", bridge.MutiSignRawTransaction)
+
 			if _, err = c.jsre.Run(`jptn.transferToken = wallet.transferToken;`); err != nil {
 				return fmt.Errorf("wallet.transferToken: %v", err)
 			}
