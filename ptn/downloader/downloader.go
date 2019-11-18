@@ -1424,7 +1424,7 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 	s_index := d.GetFastStableIndex()
 	log.Debug("Inserting downloaded chain", "items", len(results),
 		"index", first.Number.Index, "index", last.Number.Index, "fastnum", s_index)
-	if index, err := d.dag.InsertDag(blocks, d.txpool, s_index > last.NumberU64()); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
+	if index, err := d.dag.InsertDag(blocks, d.txpool, s_index >= last.NumberU64()); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
 		log.Debug("Downloaded item processing failed", "number", results[index].Header.Number.Index,
 			"hash", results[index].Header.Hash(), "err", err)
 		return errInvalidChain
@@ -1556,7 +1556,7 @@ func (d *Downloader) commitFastSyncData(results []*fetchResult /*, stateSync *st
 	log.Debug("Inserting fast-sync blocks", "items", len(results),
 		"firstnum", first.Number.Index, "lastnumn", last.Number.Index, "fastnum", s_index,
 	)
-	if index, err := d.dag.InsertDag(blocks, d.txpool, s_index > last.Number.Index); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
+	if index, err := d.dag.InsertDag(blocks, d.txpool, s_index >= last.Number.Index); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
 		log.Debug("Downloaded item processing failed", "number", results[index].Header.Number.Index,
 			"hash", results[index].Header.Hash(), "err", err)
 		return errInvalidChain
@@ -1575,7 +1575,7 @@ func (d *Downloader) commitPivotBlock(result *fetchResult) error {
 	s_index := d.GetFastStableIndex()
 	log.Debug("Committing fast sync pivot as new head", "index:", block.UnitHeader.Number.Index, "unit", *block,
 		"fastnum", s_index)
-	if _, err := d.dag.InsertDag(units, d.txpool, s_index > block.NumberU64()); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
+	if _, err := d.dag.InsertDag(units, d.txpool, s_index >= block.NumberU64()); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
 		log.Debug("Downloaded item processing failed", "index:", block.UnitHeader.Number.Index, "err:", err)
 		return errInvalidChain
 	}

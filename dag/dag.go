@@ -300,11 +300,13 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash.String(),
 				units[i].UnitHeader.Number.Index, units[i].UnitHash.String())
 		}
+
 		t1 := time.Now()
 		timestamp := time.Unix(u.Timestamp(), 0)
 		log.Debugf("Start InsertDag unit(%v) #%v parent(%v) @%v signed by %v", u.UnitHash.TerminalString(),
 			u.NumberU64(), u.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
 			u.Author().Str())
+
 		if is_stable {
 			d.Memdag.AddStableUnit(u)
 		} else {
@@ -315,6 +317,10 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 				return count, err
 			} else {
 				if a != nil {
+					if d.unstableUnitProduceRep != e {
+						// todo albert·gou 更新事件
+					}
+
 					d.unstableUnitRep = a
 					d.unstableUtxoRep = b
 					d.unstableStateRep = c
@@ -328,6 +334,19 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 			log.Infof("Insert unit[%s] #%d to local", u.UnitHash.String(), u.NumberU64())
 		}
 		count += 1
+	}
+
+	if is_stable {
+		tunitRep, tutxoRep, tstateRep, tpropRep, tUnitProduceRep := d.Memdag.GetUnstableRepositories()
+		if tUnitProduceRep != d.unstableUnitProduceRep {
+			// todo albert·gou 更新事件
+		}
+
+		d.unstableUnitRep = tunitRep
+		d.unstableUtxoRep = tutxoRep
+		d.unstableStateRep = tstateRep
+		d.unstablePropRep = tpropRep
+		d.unstableUnitProduceRep = tUnitProduceRep
 	}
 
 	return count, nil
@@ -999,6 +1018,10 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 		return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
 	} else {
 		if a != nil {
+			if d.unstableUnitProduceRep != e {
+				// todo albert·gou 更新事件
+			}
+
 			d.unstableUnitRep = a
 			d.unstableUtxoRep = b
 			d.unstableStateRep = c

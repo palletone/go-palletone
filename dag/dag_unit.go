@@ -80,6 +80,10 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	//3.将新单元添加到MemDag中
 	a, b, c, d, e, err := dag.Memdag.AddUnit(sign_unit, txpool, true)
 	if a != nil && err == nil {
+		if dag.unstableUnitProduceRep != e {
+			// todo albert·gou 更新事件
+		}
+
 		dag.unstableUnitRep = a
 		dag.unstableUtxoRep = b
 		dag.unstableStateRep = c
