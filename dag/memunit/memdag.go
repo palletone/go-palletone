@@ -135,6 +135,7 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 		ldbUnitProduceRep:  ldbUnitProduceRep,
 		db:                 db,
 		tokenEngine:        tokenEngine,
+		observers:          []SwitchMainChainEventFunc{},
 	}
 	temp, _ := NewChainTempDb(db, cache, tokenEngine, saveHeaderOnly)
 	temp.Unit = stableUnit
@@ -786,7 +787,7 @@ func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPo
 		}
 	}
 	//设置最新主链单元
-	oldUnit := chain.GetLastMainChainUnit()
+	oldUnit := chain.lastMainChainUnit
 	chain.setLastMainchainUnit(newUnit)
 	//Event notice
 	eventArg := &SwitchMainChainEvent{OldLastUnit: oldUnit, NewLastUnit: newUnit}
