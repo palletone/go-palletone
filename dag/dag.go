@@ -588,7 +588,7 @@ func NewDag(db ptndb.Database, cache palletcache.ICache, light bool) (*Dag, erro
 	}
 	dag.stableUnitRep.SubscribeSysContractStateChangeEvent(dag.AfterSysContractStateChangeEvent)
 	dag.stableUnitProduceRep.SubscribeChainMaintenanceEvent(dag.AfterChainMaintenanceEvent)
-
+	dag.Memdag.SubscribeSwitchMainChainEvent(dag.SwitchMainChainEvent)
 	//hash, chainIndex, _ := dag.stablePropRep.GetNewestUnit(gasToken)
 	log.Infof("newDag success, current unit, chain info[%s]", gasToken.String())
 	// init partition memdag
@@ -661,6 +661,10 @@ func (dag *Dag) AfterChainMaintenanceEvent(arg *modules.ChainMaintenanceEvent) {
 	//换届完成，dag需要进行的操作：
 	threshold, _ := dag.stablePropRep.GetChainThreshold()
 	dag.Memdag.SetStableThreshold(threshold)
+}
+func (dag *Dag) SwitchMainChainEvent(arg *memunit.SwitchMainChainEvent) {
+	log.Debugf("Switch main chain event!!! old unit:%s %d,new unit:%s %d", arg.OldLastUnit.Hash().String(),
+		arg.OldLastUnit.NumberU64(), arg.NewLastUnit.Hash().String(), arg.NewLastUnit.NumberU64())
 }
 
 // to build a new dag when init genesis

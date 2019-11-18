@@ -44,7 +44,7 @@ type IMemDag interface {
 	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
 	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)
 	Info() (*modules.MemdagStatus, error)
-
+	SubscribeSwitchMainChainEvent(ob SwitchMainChainEventFunc)
 	SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription
 	Close()
 }

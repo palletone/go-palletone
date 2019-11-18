@@ -66,6 +66,14 @@ type MemDag struct {
 	db               ptndb.Database
 	tokenEngine      tokenengine.ITokenEngine
 	quit             chan struct{} // used for exit
+	observers        []SwitchMainChainEventFunc
+}
+
+func (pmg *MemDag) SubscribeSwitchMainChainEvent(ob SwitchMainChainEventFunc) {
+	if pmg.observers == nil {
+		pmg.observers = []SwitchMainChainEventFunc{}
+	}
+	pmg.observers = append(pmg.observers, ob)
 }
 
 func (pmg *MemDag) Close() {
@@ -768,7 +776,13 @@ func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPo
 		}
 	}
 	//设置最新主链单元
+	oldUnit := chain.GetLastMainChainUnit()
 	chain.setLastMainchainUnit(newUnit)
+	//Event notice
+	eventArg := &SwitchMainChainEvent{OldLastUnit: oldUnit, NewLastUnit: newUnit}
+	for _, eventFunc := range chain.observers {
+		eventFunc(eventArg)
+	}
 }
 
 //将其从孤儿单元列表中删除，并添加到ChainUnits中。
