@@ -236,16 +236,17 @@ func (b *bridge) MutiSignRawTransaction(call otto.FunctionCall) (response otto.V
 		throwJSException("first argument must be the rawtx to sign")
 	}
 	rawtx := call.Argument(0)
+	addr  := call.Argument(1)
 
-	if !call.Argument(1).IsString() {
+	if !call.Argument(2).IsString() {
 		throwJSException("second argument must be the hashtype ")
 	}
-	hashtype := call.Argument(1)
+	hashtype := call.Argument(2)
 
 	// If password is not given or is the null value, prompt the user for it
 	var passwd otto.Value
 
-	if call.Argument(2).IsUndefined() || call.Argument(2).IsNull() {
+	if call.Argument(3).IsUndefined() || call.Argument(3).IsNull() {
 		fmt.Fprintf(b.printer, "Sign rawtx %s\n", rawtx)
 		if input, err := b.prompter.PromptPassword("Passphrase: "); err != nil {
 			throwJSException(err.Error())
@@ -253,21 +254,21 @@ func (b *bridge) MutiSignRawTransaction(call otto.FunctionCall) (response otto.V
 			passwd, _ = otto.ToValue(input)
 		}
 	} else {
-		if !call.Argument(2).IsString() {
+		if !call.Argument(3).IsString() {
 			throwJSException("password must be a string")
 		}
-		passwd = call.Argument(2)
+		passwd = call.Argument(3)
 	}
 	// Third argument is the duration how long the account must be unlocked.
 	duration := otto.NullValue()
-	if call.Argument(3).IsDefined() && !call.Argument(3).IsNull() {
-		if !call.Argument(3).IsNumber() {
+	if call.Argument(4).IsDefined() && !call.Argument(3).IsNull() {
+		if !call.Argument(4).IsNumber() {
 			throwJSException("unlock duration must be a number")
 		}
-		duration = call.Argument(3)
+		duration = call.Argument(4)
 	}
 	// Send the request to the backend and return
-	val, err := call.Otto.Call("jptn.mutisignRawTransaction", nil, rawtx, hashtype, passwd, duration)
+	val, err := call.Otto.Call("jptn.mutisignRawTransaction", nil, rawtx,addr,hashtype,passwd, duration)
 	if err != nil {
 		throwJSException(err.Error())
 	}
