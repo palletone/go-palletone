@@ -516,17 +516,6 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Success([]byte("true"))
 		}
 		return shim.Success([]byte("false"))
-	case "IsFinishAddNewRecords":
-		if d.IsFinishAllocated(stub) {
-			return shim.Success([]byte("true"))
-		}
-		return shim.Success([]byte("false"))
-		//case "AddNewAddrPledgeRecords":
-		//	err := d.AddNewAddrPledgeRecords(stub)
-		//	if err != nil {
-		//		return shim.Error(err.Error())
-		//	}
-		//	return shim.Success(nil)
 	}
 	return shim.Error("please enter validate function name")
 }
@@ -929,10 +918,6 @@ func (d DepositChaincode) GetAllJury(stub shim.ChaincodeStubInterface) pb.Respon
 	return shim.Success(juryb)
 }
 
-//func (d DepositChaincode) AddNewAddrPledgeRecords(stub shim.ChaincodeStubInterface) error {
-//	return addNewAddrPledgeRecords(stub)
-//}
-
 func (d DepositChaincode) IsFinishAllocated(stub shim.ChaincodeStubInterface) bool {
 	//  判断当天是否处理过
 	today := getToday(stub)
@@ -956,9 +941,11 @@ func (d DepositChaincode) IsFinishAllocated(stub shim.ChaincodeStubInterface) bo
 		log.Warn("GetState error: ", err.Error())
 		return true
 	}
-	//  1.添加完了，finish == nil
-	//  2.分配完了，finish == []byte("allocate"),depositList > 0
 	if today == string(newdate) {
+		if today ==  lastDate {
+			log.Infof("allocate = %s, today = %s, lastDate = %s, newdate = %s, depositList length = %d", finish, today, lastDate,newdate, len(depositList))
+			return true
+		}
 		if len(depositList) == 0 {
 			if string(finish) == "allocate" {
 				log.Infof("allocate = %s, today = %s, lastDate = %s, newdate = %s, depositList length = %d", finish, today,lastDate, newdate, len(depositList))
@@ -972,12 +959,6 @@ func (d DepositChaincode) IsFinishAllocated(stub shim.ChaincodeStubInterface) bo
 	}
 	log.Infof("allocate = %s, today = %s, lastDate = %s, newdate = %s, depositList length = %d", finish, today, lastDate,newdate, len(depositList))
 	return false
-	//if /*today != lastDate &&*/ len(depositList) != 0 && string(finish)!="allocate" {
-	//	log.Infof("allocate = %s, today = %s, lastDate = %s, depositList length = %d",finish, today, lastDate, len(depositList))
-	//	return false
-	//}
-	//log.Infof("allocate = %s, today = %s, lastDate = %s, depositList length = %d",finish, today, lastDate, len(depositList))
-	//return true
 }
 
 
