@@ -460,13 +460,13 @@ PledgeTest
     ${result}    QueryAllPledgeHistory
     log    ${result}
     sleep    5
-    ${result}    IsFinishAddNewRecords
+    ${result}    isFinishAllocated
     log    ${result}
     sleep    3
     ${result}    HandlePledgeReward    ${votedAddress}    #1
     log    ${result}
     sleep    5
-    ${result}    IsFinishAddNewRecords
+    ${result}    isFinishAllocated
     log    ${result}
     sleep    3
     ${result}    getBalance    ${votedAddress}    PTN
@@ -509,7 +509,7 @@ PledgeTest
     ${result}    HandlePledgeReward    ${foundationAddr}    #1
     log    ${result}
     sleep    5
-    ${result}    IsFinishAddNewRecords
+    ${result}    isFinishAllocated
     log    ${result}
     sleep    3
     ${result}    queryPledgeList    #查看整个网络所有质押情况
@@ -557,7 +557,7 @@ PledgeTest
     ${result}    HandlePledgeReward    ${foundationAddr}    #1
     log    ${result}
     sleep    5
-    ${result}    IsFinishAddNewRecords
+    ${result}    isFinishAllocated
     log    ${result}
     sleep    3
     ${result}    getBalance    ${votedAddress}    PTN
@@ -800,13 +800,13 @@ PledgeTest02
     log    ${result}
     sleep    1
     log    tiaojiaxinzhiya
-    ${result}    IsFinishAddNewRecords
+    ${result}    isFinishAllocated
     log    ${result}
     sleep    5
     ${result}    HandlePledgeReward    ${votedAddress}    #1
     log    ${result}
     sleep    5
-    ${result}    IsFinishAddNewRecords
+    ${result}    isFinishAllocated
     log    ${result}
     sleep    5
     ${result}    queryPledgeList    #查看整个网络所有质押情况
@@ -917,7 +917,7 @@ PledgeTest02
     ${result}    HandlePledgeReward    ${foundationAddr}    #1
     log    ${result}
     sleep    5
-    ${result}    IsFinishAddNewRecords
+    ${result}    isFinishAllocated
     log    ${result}
     sleep    5
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
