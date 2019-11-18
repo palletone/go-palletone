@@ -190,6 +190,16 @@ func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2
 		}
 		tempdb := temp_inter.(*ChainTempDb)
 		return tempdb.UnitRep, tempdb.UtxoRep, tempdb.StateRep, tempdb.PropRep, tempdb.UnitProduceRep
+	} else { // 如果lastmainUnit很久没更新了，既快速同步刚结束时，使用stalbeUnit重构tempdb状态
+		if temp_rep.Unit.NumberU64() < chain.stableUnitHeight {
+			tempdb, _ := NewTempdb(chain.db)
+			trep := common2.NewUnitRepository4Db(tempdb, chain.tokenEngine)
+			tutxoRep := common2.NewUtxoRepository4Db(tempdb, chain.tokenEngine)
+			tstateRep := common2.NewStateRepository4Db(tempdb)
+			tpropRep := common2.NewPropRepository4Db(tempdb)
+			tunitProduceRep := common2.NewUnitProduceRepository(trep, tpropRep, tstateRep)
+			return trep, tutxoRep, tstateRep, tpropRep, tunitProduceRep
+		}
 	}
 	return temp_rep.UnitRep, temp_rep.UtxoRep, temp_rep.StateRep, temp_rep.PropRep, temp_rep.UnitProduceRep
 }
