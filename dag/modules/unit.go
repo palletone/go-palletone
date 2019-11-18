@@ -52,24 +52,22 @@ type Header struct {
 type header_sdw struct {
 	ParentsHash []common.Hash `json:"parents_hash"`
 	Authors     Authentifier  `json:"mediator"` // the unit creation authors
-	//GroupSign   []byte        `json:"group_sign"`   // 群签名, 用于加快单元确认速度
-	//GroupPubKey []byte        `json:"group_pubKey"` // 群公钥, 用于验证群签名
-	TxRoot     common.Hash `json:"root"`
-	TxsIllegal []uint16    `json:"txs_illegal"` //Unit中非法交易索引
-	Number     *ChainIndex `json:"index"`
-	Extra      []byte      `json:"extra"`
-	Time       int64       `json:"creation_time"` // unit create time
-	CryptoLib  []byte      `json:"crypto_lib"`    //该区块使用的加解密算法和哈希算法，0位表示非对称加密算法，1位表示Hash算法
+	TxRoot      common.Hash   `json:"root"`
+	TxsIllegal  []uint16      `json:"txs_illegal"` //Unit中非法交易索引
+	Number      *ChainIndex   `json:"index"`
+	Extra       []byte        `json:"extra"`
+	Time        int64         `json:"creation_time"` // unit create time
+	CryptoLib   []byte        `json:"crypto_lib"`    //该区块使用的加解密算法和哈希算法，0位表示非对称加密算法，1位表示Hash算法
 }
 
 func new_header_sdw() *header_sdw {
 	return &header_sdw{ParentsHash: make([]common.Hash, 0),
-		Authors:    Authentifier{},
-		TxRoot:     common.Hash{},
+		Authors: Authentifier{},
+		TxRoot: common.Hash{},
 		TxsIllegal: make([]uint16, 0),
-		Number:     new(ChainIndex),
-		Extra:      make([]byte, 0),
-		CryptoLib:  make([]byte, 0)}
+		Number: new(ChainIndex),
+		Extra: make([]byte, 0),
+		CryptoLib: make([]byte, 0)}
 }
 func (h *Header) NumberU64() uint64 {
 	return h.header.Number.Index
@@ -103,6 +101,7 @@ func (h *Header) SetNumber(aseet_id AssetId, index uint64) {
 	}
 	h.header.Number.AssetID = aseet_id
 	h.header.Number.Index = index
+	h.hash = common.Hash{}
 }
 func (h *Header) SetParentHash(parents []common.Hash) {
 	if h.header == nil {
@@ -111,6 +110,7 @@ func (h *Header) SetParentHash(parents []common.Hash) {
 	if len(parents) > 0 {
 		h.header.ParentsHash = make([]common.Hash, 0)
 		h.header.ParentsHash = append(h.header.ParentsHash, parents...)
+		h.hash = common.Hash{}
 	}
 }
 func (h *Header) SetTxRoot(txroot common.Hash) {
@@ -118,6 +118,7 @@ func (h *Header) SetTxRoot(txroot common.Hash) {
 		h.header = new_header_sdw()
 	}
 	h.header.TxRoot.Set(txroot)
+	h.hash = common.Hash{}
 }
 func (h *Header) SetAuthor(author Authentifier) {
 	if h.header == nil {
@@ -125,12 +126,14 @@ func (h *Header) SetAuthor(author Authentifier) {
 	}
 	h.header.Authors.Signature = author.Signature
 	h.header.Authors.PubKey = author.PubKey
+	h.hash = common.Hash{}
 }
 func (h *Header) SetTime(timestamp int64) {
 	if h.header == nil {
 		h.header = new_header_sdw()
 	}
 	h.header.Time = timestamp
+	h.hash = common.Hash{}
 }
 func (h *Header) SetTxsIllegal(txsillegal []uint16) {
 	if h.header == nil {
@@ -139,6 +142,7 @@ func (h *Header) SetTxsIllegal(txsillegal []uint16) {
 	if len(txsillegal) > 0 {
 		h.header.TxsIllegal = make([]uint16, 0)
 		h.header.TxsIllegal = append(h.header.TxsIllegal, txsillegal...)
+		h.hash = common.Hash{}
 	}
 }
 func (h *Header) SetExtra(extra []byte) {
@@ -148,6 +152,7 @@ func (h *Header) SetExtra(extra []byte) {
 	if len(extra) > 0 {
 		h.header.Extra = make([]byte, 0)
 		h.header.Extra = append(h.header.Extra, extra...)
+		h.hash = common.Hash{}
 	}
 }
 func (h *Header) SetCryptoLib(cryptolib []byte) {
@@ -157,6 +162,7 @@ func (h *Header) SetCryptoLib(cryptolib []byte) {
 	if len(cryptolib) > 0 {
 		h.header.CryptoLib = make([]byte, 0)
 		h.header.CryptoLib = append(h.header.CryptoLib, cryptolib...)
+		h.hash = common.Hash{}
 	}
 }
 func (cpy *Header) CopyHeader(h *Header) {

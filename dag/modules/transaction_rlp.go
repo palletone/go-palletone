@@ -58,7 +58,7 @@ func (tx *Transaction) EncodeRLP(w io.Writer) error {
 }
 func tx2Temp(tx *Transaction) (*transactionTemp, error) {
 	temp := &transactionTemp{}
-	temp.Illegal = tx.Illegal
+	//temp.Illegal = tx.Illegal
 	temp.CertId = tx.CertId
 
 	for _, m := range tx.TxMessages {
