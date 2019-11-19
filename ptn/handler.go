@@ -151,13 +151,16 @@ type ProtocolManager struct {
 	wg sync.WaitGroup
 
 	genesis *modules.Unit
+	contract       *contracts.Contract
 
 	activeMediatorsUpdatedCh  chan modules.ActiveMediatorsUpdatedEvent
 	activeMediatorsUpdatedSub event.Subscription
 
 	toGroupSignCh  chan modules.ToGroupSignEvent
 	toGroupSignSub event.Subscription
-	contract       *contracts.Contract
+
+	unstableRepositoryUpdatedCh  chan modules.UnstableRepositoryUpdatedEvent
+	unstableRepositoryUpdatedSub event.Subscription
 }
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
@@ -408,11 +411,16 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 	pm.toGroupSignSub = pm.dag.SubscribeToGroupSignEvent(pm.toGroupSignCh)
 	go pm.toGroupSignEventRecvLoop()
 
+	pm.unstableRepositoryUpdatedCh = make(chan modules.UnstableRepositoryUpdatedEvent)
+	pm.unstableRepositoryUpdatedSub = pm.dag.SubscribeUnstableRepositoryUpdateEvent(pm.unstableRepositoryUpdatedCh)
+	go pm.unstableRepositoryUpdatedRecvLoop()
+
 	if pm.consEngine != nil {
 		pm.ceCh = make(chan core.ConsensusEvent, txChanSize)
 		pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
 		go pm.ceBroadcastLoop()
 	}
+
 	//  是否为linux系統
 	if runtime.GOOS == "linux" {
 		log.Debug("entering docker service...")
@@ -433,6 +441,7 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 				dockerBool = false
 			}
 		}
+
 		if dockerBool {
 			log.Debug("starting docker service...")
 			//创建gptn程序默认网络
@@ -496,10 +505,14 @@ func (pm *ProtocolManager) Stop() {
 	pm.newProducedUnitSub.Unsubscribe()
 	pm.sigShareSub.Unsubscribe()
 	pm.groupSigSub.Unsubscribe()
+
 	pm.vssDealSub.Unsubscribe()
 	pm.vssResponseSub.Unsubscribe()
 	pm.activeMediatorsUpdatedSub.Unsubscribe()
+
 	pm.toGroupSignSub.Unsubscribe()
+	pm.unstableRepositoryUpdatedSub.Unsubscribe()
+
 	pm.contractSub.Unsubscribe()
 	pm.txSub.Unsubscribe() // quits txBroadcastLoop
 	//pm.ceSub.Unsubscribe()

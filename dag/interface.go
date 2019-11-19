@@ -210,4 +210,6 @@ type IDag interface {
 	RebuildAddrTxIndex() error
 	GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, error)
 	GetJurorReward(jurorAdd common.Address) common.Address
+
+	SubscribeUnstableRepositoryUpdateEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription
 }

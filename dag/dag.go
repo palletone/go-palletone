@@ -77,15 +77,20 @@ type Dag struct {
 	//SPV
 	rmLogsFeed event.Feed
 	chainFeed  event.Feed
+
 	//chainSideFeed event.Feed
 	chainHeadFeed event.Feed
 	logsFeed      event.Feed
 	scope         event.SubscriptionScope
+
+	unstableRepositoryUpdatedFeed  event.Feed
+	unstableRepositoryUpdatedScope event.SubscriptionScope
 }
 
 func cache() palletcache.ICache {
 	return freecache.NewCache(1000 * 1024)
 }
+
 func (d *Dag) IsEmpty() bool {
 	it := d.Db.NewIterator()
 	return !it.Next()
@@ -318,7 +323,7 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 			} else {
 				if a != nil {
 					if d.unstableUnitProduceRep != e {
-						// todo albert·gou 更新事件
+						go d.unstableRepositoryUpdatedFeed.Send(modules.UnstableRepositoryUpdatedEvent{})
 					}
 
 					d.unstableUnitRep = a
@@ -339,7 +344,7 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 	if is_stable {
 		tunitRep, tutxoRep, tstateRep, tpropRep, tUnitProduceRep := d.Memdag.GetUnstableRepositories()
 		if tUnitProduceRep != d.unstableUnitProduceRep {
-			// todo albert·gou 更新事件
+			go d.unstableRepositoryUpdatedFeed.Send(modules.UnstableRepositoryUpdatedEvent{})
 		}
 
 		d.unstableUnitRep = tunitRep
@@ -1019,7 +1024,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 	} else {
 		if a != nil {
 			if d.unstableUnitProduceRep != e {
-				// todo albert·gou 更新事件
+				go d.unstableRepositoryUpdatedFeed.Send(modules.UnstableRepositoryUpdatedEvent{})
 			}
 
 			d.unstableUnitRep = a
@@ -1263,15 +1268,13 @@ func (d *Dag) GetContractsByTpl(tplId []byte) ([]*modules.Contract, error) {
 	return d.unstableStateRep.GetContractsByTpl(tplId)
 }
 
-// subscribe active mediators updated event
-func (d *Dag) SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription {
-	return d.unstableUnitProduceRep.SubscribeActiveMediatorsUpdatedEvent(ch)
-}
-
 // close a dag
 func (d *Dag) Close() {
 	d.unstableUnitProduceRep.Close()
 	d.Memdag.Close()
+
+	d.scope.Close()
+	d.unstableRepositoryUpdatedScope.Close()
 
 	for _, pmg := range d.PartitionMemDag {
 		pmg.Close()

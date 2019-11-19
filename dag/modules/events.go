@@ -45,3 +45,6 @@ type ChainMaintenanceEvent struct {
 
 type ToGroupSignEvent struct {
 }
+
+type UnstableRepositoryUpdatedEvent struct {
+}

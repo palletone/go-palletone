@@ -272,3 +272,12 @@ func (dag *Dag) MediatorParticipationRate() uint32 {
 
 	return uint32(participationRate)
 }
+
+// subscribe active mediators updated event
+func (d *Dag) SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription {
+	return d.unstableUnitProduceRep.SubscribeActiveMediatorsUpdatedEvent(ch)
+}
+
+func (d *Dag) SubscribeUnstableRepositoryUpdateEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription {
+	return d.unstableRepositoryUpdatedScope.Track(d.unstableRepositoryUpdatedFeed.Subscribe(ch))
+}
