@@ -87,7 +87,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, idag dag.IDag,
 	}
 	genesisUint, _ := idag.GetUnitByNumber(index0)
 
-	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, modules.NewPTNIdType(), &testTxPool{added: newtx}, idag, typemux, pro, genesisUint, nil, nil, nil)
+	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, modules.NewPTNIdType(), &testTxPool{added: newtx}, idag, typemux, pro, genesisUint, nil, nil, nil,nil)
 	if err != nil {
 		return nil, nil, err
 	}

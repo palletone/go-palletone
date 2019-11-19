@@ -21,6 +21,7 @@ package jury
 import (
 	"bytes"
 	"fmt"
+	"github.com/palletone/go-palletone/contracts/utils"
 	"math/big"
 	"sync"
 	"time"
@@ -151,9 +152,10 @@ type Processor struct {
 
 	contractExecFeed  event.Feed
 	contractExecScope event.SubscriptionScope
+	pDocker *utils.PalletOneDocker
 }
 
-func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract, cfg *Config) (*Processor, error) {
+func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract, cfg *Config,pDocker *utils.PalletOneDocker) (*Processor, error) {
 	if ptn == nil || dag == nil {
 		return nil, errors.New("NewContractProcessor, param is nil")
 	}
@@ -187,6 +189,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 		lockVrf:      make(map[common.Address][]modules.ElectionInf),
 		validator:    validator,
 		errMsgEnable: true,
+		pDocker:pDocker,
 	}
 	log.Info("NewContractProcessor ok", "local address:", p.local)
 

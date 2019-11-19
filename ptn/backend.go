@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/contracts"
+	"github.com/palletone/go-palletone/contracts/utils"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
@@ -171,17 +172,18 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 		log.Error("Initialize mediator plugin err:", "error", err)
 		return nil, err
 	}
-
-	ptn.contractPorcessor, err = jury.NewContractProcessor(ptn, dag, nil, &config.Jury)
-	if err != nil {
-		log.Error("contract processor creat:", "error", err)
-		return nil, err
-	}
-
 	aJury := &consensus.AdapterJury{Processor: ptn.contractPorcessor}
+
+
 	ptn.contract, err = contracts.Initialize(ptn.dag, aJury, &config.Contract)
 	if err != nil {
 		log.Error("Contract Initialize err:", "error", err)
+		return nil, err
+	}
+	pDocker := utils.NewPalletOneDocker(dag,aJury)
+	ptn.contractPorcessor, err = jury.NewContractProcessor(ptn, dag, nil, &config.Jury,pDocker)
+	if err != nil {
+		log.Error("contract processor creat:", "error", err)
 		return nil, err
 	}
 	ptn.contractPorcessor.SetContract(ptn.contract)
@@ -194,7 +196,7 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 
 	gasToken := config.Dag.GetGasToken()
 	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, gasToken, ptn.txPool,
-		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine, ptn.contract); err != nil {
+		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine, ptn.contract,pDocker); err != nil {
 		log.Error("NewProtocolManager err:", "error", err)
 		return nil, err
 	}

@@ -19,27 +19,25 @@
 package jury
 
 import (
-	"fmt"
-	"time"
-	"sync"
-	"math/big"
-	"encoding/json"
 	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"math/big"
+	"sync"
+	"time"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/contracts/contractcfg"
+	"github.com/palletone/go-palletone/contracts/list"
+	"github.com/palletone/go-palletone/contracts/ucc"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
-	"github.com/palletone/go-palletone/contracts/utils"
-	com "github.com/palletone/go-palletone/vm/common"
-	"github.com/palletone/go-palletone/contracts/ucc"
-	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/palletone/go-palletone/contracts/contractcfg"
-	"github.com/palletone/go-palletone/contracts/list"
 )
 
 func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string,
@@ -328,17 +326,14 @@ func (p *Processor) ContractQuery(id []byte, args [][]byte, timeout time.Duratio
 	if addr.IsSystemContractAddress() {
 		log.Debugf("ContractQuery, is system contract, addr[%s]", addr.String())
 	} else {
-		client, err := com.NewDockerClient()
-		if err != nil {
-			log.Errorf("ContractQuery, id[%s], NewDockerClient err:%s", addr.String(), err.Error())
-			return nil, err
-		}
-		cons, err := utils.GetAllContainers(client)
+		//cons, err := utils.GetAllContainers(client)
+		cons, err :=p.pDocker.GetAllContainers()
 		if err != nil {
 			log.Errorf("ContractQuery, id[%s], GetAllContainers err:%s", addr.String(), err.Error())
 			return nil, err
 		}
-		cas, _ := utils.GetAllContainerAddr(cons, "Up")
+		//cas, _ := utils.GetAllContainerAddr(cons, "Up")
+		cas,_ := p.pDocker.GetAllContainersAddrsWithStatus(cons,"Up")
 		for _, ca := range cas {
 			if ca.Equal(addr) { //use first
 				log.Debugf("ContractQuery, contractId[%s],find container(Up)", addr.String())
