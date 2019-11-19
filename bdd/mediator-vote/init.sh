@@ -25,10 +25,11 @@ if [ -e "$jsonFile" ]; then
     sed -i "s/\"maintenance_interval\": [0-9]*/\"maintenance_interval\": 150/g" $jsonFile
     sed -i "s/\"maintenance_skip_slots\": 2/\"maintenance_skip_slots\": 0/g" $jsonFile
     sed -i "s/\"mediator_interval\": 3,/\"mediator_interval\": 2,/g" $jsonFile
+    sed -i "s/\"initialTimestamp\": [0-9]*,/\"initialTimestamp\": 1566269000,/g" $jsonFile
 else
     #file not found, new file
     echo "no $jsonFile"
-    exit -1
+    exit 1
 fi
 
 # edit toml file
@@ -47,7 +48,7 @@ if [ -e "$tomlFile" ]; then
 else
     #file not found, new file
     echo "no $tomlFile"
-    exit -1
+    exit 1
 fi
 
 # gptn init

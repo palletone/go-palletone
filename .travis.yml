@@ -263,7 +263,7 @@ matrix:
         - sudo -H pip install pexpect
         - sudo -H apt-get install expect
         - sudo -H apt-get install lftp
-        - chmod +x bdd/upload2Ftp.sh bdd/targz_node.sh
+        - chmod +x bdd/upload2Ftp.sh bdd/mediator-vote/targz_node.sh
     - os: linux
       dist: xenial
       go: 1.12.9
