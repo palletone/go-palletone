@@ -77,8 +77,8 @@ const Wallet_JS = `
 		    params: 4
 		}),	
 		new web3._extend.Method({
-		    name: 'mutisignRawTransaction',
-		    call: 'wallet_mutisignRawTransaction',
+		    name: 'mutiSignRawTransaction',
+		    call: 'wallet_mutiSignRawTransaction',
 		    params: 5
 		}),	
         new web3._extend.Method({

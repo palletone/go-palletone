@@ -222,10 +222,10 @@ func (c *Console) init(preload []string) error {
             }
             obj.Set("signRawTransaction", bridge.SignRawTransaction)
 
-            if _, err = c.jsre.Run(`jptn.mutisignRawTransaction = wallet.mutisignRawTransaction;`); err != nil {
+            if _, err = c.jsre.Run(`jptn.mutiSignRawTransaction = wallet.mutiSignRawTransaction;`); err != nil {
                     return fmt.Errorf("wallet.mutisignRawTransaction: %v", err)
             }
-            obj.Set("mutisignRawTransaction", bridge.MutiSignRawTransaction)
+            obj.Set("mutiSignRawTransaction", bridge.MutiSignRawTransaction)
 
 			if _, err = c.jsre.Run(`jptn.transferToken = wallet.transferToken;`); err != nil {
 				return fmt.Errorf("wallet.transferToken: %v", err)
