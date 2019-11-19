@@ -211,5 +211,5 @@ type IDag interface {
 	GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, error)
 	GetJurorReward(jurorAdd common.Address) common.Address
 
-	SubscribeUnstableRepositoryUpdateEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription
+	SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription
 }

@@ -1759,14 +1759,14 @@ func (mr *MockIDagMockRecorder) GetJurorReward(jurorAdd interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetJurorReward", reflect.TypeOf((*MockIDag)(nil).GetJurorReward), jurorAdd)
 }
 
-// SubscribeUnstableRepositoryUpdateEvent mocks base method
-func (m *MockIDag) SubscribeUnstableRepositoryUpdateEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription {
-	ret := m.ctrl.Call(m, "SubscribeUnstableRepositoryUpdateEvent", ch)
+// SubscribeUnstableRepositoryUpdatedEvent mocks base method
+func (m *MockIDag) SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription {
+	ret := m.ctrl.Call(m, "SubscribeUnstableRepositoryUpdatedEvent", ch)
 	ret0, _ := ret[0].(event.Subscription)
 	return ret0
 }
 
-// SubscribeUnstableRepositoryUpdateEvent indicates an expected call of SubscribeUnstableRepositoryUpdateEvent
-func (mr *MockIDagMockRecorder) SubscribeUnstableRepositoryUpdateEvent(ch interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeUnstableRepositoryUpdateEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeUnstableRepositoryUpdateEvent), ch)
+// SubscribeUnstableRepositoryUpdatedEvent indicates an expected call of SubscribeUnstableRepositoryUpdatedEvent
+func (mr *MockIDagMockRecorder) SubscribeUnstableRepositoryUpdatedEvent(ch interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeUnstableRepositoryUpdatedEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeUnstableRepositoryUpdatedEvent), ch)
 }
