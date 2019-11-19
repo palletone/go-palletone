@@ -278,6 +278,6 @@ func (d *Dag) SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMedia
 	return d.unstableUnitProduceRep.SubscribeActiveMediatorsUpdatedEvent(ch)
 }
 
-func (d *Dag) SubscribeUnstableRepositoryUpdateEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription {
+func (d *Dag) SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription {
 	return d.unstableRepositoryUpdatedScope.Track(d.unstableRepositoryUpdatedFeed.Subscribe(ch))
 }

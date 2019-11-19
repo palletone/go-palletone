@@ -81,6 +81,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	a, b, c, d, e, err := dag.Memdag.AddUnit(sign_unit, txpool, true)
 	if a != nil && err == nil {
 		if dag.unstableUnitProduceRep != e {
+			log.Debugf("send UnstableRepositoryUpdatedEvent")
 			go dag.unstableRepositoryUpdatedFeed.Send(modules.UnstableRepositoryUpdatedEvent{})
 		}
 

@@ -74,6 +74,7 @@ func (pm *ProtocolManager) unstableRepositoryUpdatedRecvLoop() {
 	for {
 		select {
 		case <-pm.unstableRepositoryUpdatedCh:
+			log.Debugf("receive UnstableRepositoryUpdatedEvent")
 			pm.activeMediatorsUpdatedSub = pm.dag.SubscribeActiveMediatorsUpdatedEvent(pm.activeMediatorsUpdatedCh)
 
 			// Err() channel will be closed when unsubscribing.

@@ -412,7 +412,7 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 	go pm.toGroupSignEventRecvLoop()
 
 	pm.unstableRepositoryUpdatedCh = make(chan modules.UnstableRepositoryUpdatedEvent)
-	pm.unstableRepositoryUpdatedSub = pm.dag.SubscribeUnstableRepositoryUpdateEvent(pm.unstableRepositoryUpdatedCh)
+	pm.unstableRepositoryUpdatedSub = pm.dag.SubscribeUnstableRepositoryUpdatedEvent(pm.unstableRepositoryUpdatedCh)
 	go pm.unstableRepositoryUpdatedRecvLoop()
 
 	if pm.consEngine != nil {
