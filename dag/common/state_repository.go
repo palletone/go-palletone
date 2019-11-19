@@ -260,15 +260,15 @@ func (rep *StateRepository) GetPledgeList() (*modules.PledgeList, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _,v := range states {
+	for _, v := range states {
 		pledgeList := modules.PledgeList{}
 		err = json.Unmarshal(v.Value, &pledgeList)
 		if err != nil {
-			log.Info("Unmarshal error: ",err.Error())
+			log.Info("Unmarshal error: ", err.Error())
 			return nil, err
 		}
 		allM.TotalAmount += pledgeList.TotalAmount
-		allM.Members = append(allM.Members,pledgeList.Members...)
+		allM.Members = append(allM.Members, pledgeList.Members...)
 	}
 	allM.Date = date
 	return allM, nil
@@ -427,7 +427,7 @@ func (rep *StateRepository) GetJuryCandidateList() (map[string]bool, error) {
 func (rep *StateRepository) GetJurorReward(jurorAdd common.Address) common.Address {
 	jd, err := rep.statedb.GetJurorByAddr(jurorAdd.Str())
 	if err != nil {
-		log.Debugf(err.Error())
+		log.Infof("Juror[%s] don't have reward address, use default account address.error:%s", jurorAdd.String(), err.Error())
 		return jurorAdd
 	}
 

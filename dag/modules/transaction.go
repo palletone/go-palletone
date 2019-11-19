@@ -810,9 +810,9 @@ func (tx *Transaction) GetTxFeeAllocateLegacyV1(queryUtxoFunc QueryUtxoFunc, get
 	if isResultMsg { //合约执行，Fee需要分配给Jury
 		juryAmount := float64(fee.Amount) * parameter.CurrentSysParameters.ContractFeeJuryPercent
 		juryCount := float64(len(jury))
-		for _, jurior := range jury {
+		for _, juror := range jury {
 			jIncome := &Addition{
-				Addr:   jurior,
+				Addr:   juror,
 				Amount: uint64(juryAmount / juryCount),
 				Asset:  fee.Asset,
 			}
@@ -844,6 +844,7 @@ func (tx *Transaction) GetTxFeeAllocateLegacyV1(queryUtxoFunc QueryUtxoFunc, get
 	return result, nil
 }
 
+//获得一笔交易的手续费分配情况,包括Mediator的打包费，Juror的合约执行费
 func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFunc GetScriptSignersFunc,
 	mediatorReward common.Address, getJurorRewardFunc GetJurorRewardAddFunc) ([]*Addition, error) {
 	fee, err := tx.GetTxFee(queryUtxoFunc)
@@ -886,10 +887,10 @@ func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFu
 	if isJuryInside { //合约执行，Fee需要分配给Jury
 		juryAmount := float64(fee.Amount) * parameter.CurrentSysParameters.ContractFeeJuryPercent
 		juryCount := float64(len(jury))
-		for _, jurior := range jury {
+		for _, juror := range jury {
 			jIncome := &Addition{
-				//Addr:   jurior,
-				Addr:   getJurorRewardFunc(jurior),
+				//Addr:   juror,
+				Addr:   getJurorRewardFunc(juror),
 				Amount: uint64(juryAmount / juryCount),
 				Asset:  fee.Asset,
 			}

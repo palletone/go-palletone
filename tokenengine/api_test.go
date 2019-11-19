@@ -477,8 +477,8 @@ func TestGenerateRedeemScript(t *testing.T) {
 	jury := []string{"03f28978eeb02f2c97db338f76b093ada5a36022964d85ff3ad5c04b800602b071", "0312857d1e1c5c151f37cede37d694f6b8661f37690f5b3b87946489c479e6dc80"}
 
 	pubKeys := [][]byte{}
-	for _, jurior := range jury {
-		pubKey1, _ := hex.DecodeString(jurior)
+	for _, juror := range jury {
+		pubKey1, _ := hex.DecodeString(juror)
 		pubKeys = append(pubKeys, pubKey1)
 	}
 	redeem := Instance.GenerateRedeemScript(2, pubKeys)
