@@ -268,7 +268,8 @@ func (b *bridge) MutiSignRawTransaction(call otto.FunctionCall) (response otto.V
 		duration = call.Argument(4)
 	}
 	// Send the request to the backend and return
-	val, err := call.Otto.Call("jptn.mutisignRawTransaction", nil, rawtx,addr,hashtype, passwd, duration)
+	// sencond CHAR must upper
+	val, err := call.Otto.Call("jptn.mutiSignRawTransaction", nil, rawtx,addr,hashtype, passwd, duration)
 	if err != nil {
 		throwJSException(err.Error())
 	}
