@@ -244,9 +244,10 @@ matrix:
       after_script:
         - killall gptn
         - sleep 2
-        - cd ${BASE_DIR}/bdd
-        - zip -j ./logs/mediatorVote_log.zip ./mediator-vote/node/log/*
+        - cd ${BASE_DIR}/bdd/mediator-vote
+#        - zip -j ./logs/mediatorVote_log.zip ./mediator-vote/node/log/*
         - ./targz_node.sh mediatorVote
+        - cd ${BASE_DIR}/bdd
         - |
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
