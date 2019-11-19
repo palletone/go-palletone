@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developers <dev@pallet.one>
  * @date 2018
@@ -37,6 +38,7 @@ var (
 	ErrPrunedAncestor  = errors.New("pruned ancestor")
 	ErrFutureBlock     = errors.New("block in the future")
 	ErrInvalidNumber   = errors.New("invalid block number")
+	ErrEOF             = errors.New("EOF")
 )
 
 // New returns an error that formats as the given text.
@@ -46,7 +48,7 @@ func New(text string) error {
 
 //是数据库中找不到对应数据的Error
 func IsNotFoundError(err error) bool {
-	if err==nil{
+	if err == nil {
 		return false
 	}
 	return err.Error() == LDB_NOT_FOUND

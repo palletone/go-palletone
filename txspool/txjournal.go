@@ -20,12 +20,12 @@
 package txspool
 
 import (
-	"errors"
 	"io"
 	"os"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/common/log"
 	"path/filepath"
 )
@@ -33,7 +33,6 @@ import (
 // errNoActiveJournal is returned if a transaction is attempted to be inserted
 // into the journal, but no such file is currently open.
 var errNoActiveJournal = errors.New("no active journal")
-
 // devNull is a WriteCloser that just discards anything written into it. Its
 // goal is to allow the transaction journal to write into a fake journal when
 // loading transactions on startup without printing warnings due to no file
@@ -90,14 +89,17 @@ func (journal *txJournal) load(add func(*TxPoolTransaction) error) error {
 
 	// Inject all transactions from the journal into the pool
 	stream := rlp.NewStream(input, 0)
-
 	total, dropped := 0, 0
 
 	for {
 		// Parse the next transaction and terminate on error
 		tx := new(TxPoolTransaction)
 		if err = stream.Decode(tx); err != nil {
-			log.Infof("decode error:%s", err.Error())
+			if err.Error() == errors.ErrEOF.Error() {
+				err = nil
+			} else {
+				log.Infof("decode error:%s", err.Error())
+			}
 			break
 		}
 		// Import the transaction and bump the appropriate progress counters

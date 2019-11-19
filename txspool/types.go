@@ -214,7 +214,7 @@ func (seqTxs *SequeueTxPoolTxs) All() []*TxPoolTransaction {
 }
 
 type txpoolTransactionTemp struct {
-	Msgs    []modules.Message
+	Msgs    []messageTemp
 	CertId  []byte
 	Illegal bool
 
@@ -235,11 +235,24 @@ type txpoolTransactionTemp struct {
 	DependOnTxs  []common.Hash
 }
 
+type messageTemp struct {
+	App  modules.MessageType
+	Data []byte
+}
+
 func (pooltx *TxPoolTransaction) EncodeRLP(w io.Writer) error {
 	temp := &txpoolTransactionTemp{}
 	msgs := pooltx.Tx.Messages()
 	for _, m := range msgs {
-		temp.Msgs = append(temp.Msgs, *m)
+		m1 := messageTemp{
+			App: m.App,
+		}
+		d, err := rlp.EncodeToBytes(m.Payload)
+		if err != nil {
+			return err
+		}
+		m1.Data = d
+		temp.Msgs = append(temp.Msgs, m1)
 	}
 	temp.CertId = common.CopyBytes(pooltx.Tx.CertId)
 	temp.Illegal = pooltx.Tx.Illegal
@@ -277,9 +290,114 @@ func (pooltx *TxPoolTransaction) DecodeRLP(s *rlp.Stream) error {
 		return err
 	}
 	msgs := make([]*modules.Message, 0)
+
 	for _, m := range temp.Msgs {
-		msgs = append(msgs, &m)
+		m1 := &modules.Message{
+			App: m.App,
+		}
+		if m.App == modules.APP_PAYMENT {
+			var pay modules.PaymentPayload
+			err := rlp.DecodeBytes(m.Data, &pay)
+			if err != nil {
+				return err
+			}
+			m1.Payload = &pay
+		} else if m.App == modules.APP_DATA {
+			var text modules.DataPayload
+			err := rlp.DecodeBytes(m.Data, &text)
+			if err != nil {
+				return err
+			}
+			m1.Payload = &text
+		} else if m.App == modules.APP_CONTRACT_TPL_REQUEST {
+			var payload modules.ContractInstallRequestPayload
+			err := rlp.DecodeBytes(m.Data, &payload)
+			if err != nil {
+				return err
+			}
+			m1.Payload = &payload
+		} else if m.App == modules.APP_CONTRACT_TPL {
+			var payload modules.ContractTplPayload
+			err := rlp.DecodeBytes(m.Data, &payload)
+			if err != nil {
+				return err
+			}
+			m1.Payload = &payload
+		} else if m.App == modules.APP_CONTRACT_DEPLOY_REQUEST {
+			var payload modules.ContractDeployRequestPayload
+			err := rlp.DecodeBytes(m.Data, &payload)
+			if err != nil {
+				return err
+			}
+			m1.Payload = &payload
+		} else if m.App == modules.APP_CONTRACT_DEPLOY {
+			var payload modules.ContractDeployPayload
+			err := rlp.DecodeBytes(m.Data, &payload)
+			if err != nil {
+				temp := &modules.ContractDeployPayloadV1{}
+				err = rlp.DecodeBytes(m.Data, temp)
+				if err != nil {
+					return err
+				}
+
+				payload.TemplateId = temp.TemplateId
+				payload.ContractId = temp.ContractId
+				payload.Name = temp.Name
+				payload.Args = temp.Args
+				payload.EleNode.EleList = temp.EleList
+				payload.ReadSet = temp.ReadSet
+				payload.WriteSet = temp.WriteSet
+				payload.ErrMsg = temp.ErrMsg
+			}
+			m1.Payload = &payload
+		} else if m.App == modules.APP_CONTRACT_INVOKE_REQUEST {
+			var payload modules.ContractInvokeRequestPayload
+			err := rlp.DecodeBytes(m.Data, &payload)
+			if err != nil {
+				return err
+			}
+			m1.Payload = &payload
+		} else if m.App == modules.APP_CONTRACT_INVOKE {
+			var payload modules.ContractInvokePayload
+			err := rlp.DecodeBytes(m.Data, &payload)
+			if err != nil {
+				return err
+			}
+			m1.Payload = &payload
+		} else if m.App == modules.APP_CONTRACT_STOP_REQUEST {
+			var payload modules.ContractStopRequestPayload
+			err := rlp.DecodeBytes(m.Data, &payload)
+			if err != nil {
+				return err
+			}
+			m1.Payload = &payload
+		} else if m.App == modules.APP_CONTRACT_STOP {
+			var payload modules.ContractStopPayload
+			err := rlp.DecodeBytes(m.Data, &payload)
+			if err != nil {
+				return err
+			}
+			m1.Payload = &payload
+		} else if m.App == modules.APP_SIGNATURE {
+			var sigPayload modules.SignaturePayload
+			err := rlp.DecodeBytes(m.Data, &sigPayload)
+			if err != nil {
+				return err
+			}
+			m1.Payload = &sigPayload
+		} else if m.App == modules.APP_ACCOUNT_UPDATE {
+			var accountUpdateOp modules.AccountStateUpdatePayload
+			err := rlp.DecodeBytes(m.Data, &accountUpdateOp)
+			if err != nil {
+				return err
+			}
+			m1.Payload = &accountUpdateOp
+		} else {
+			fmt.Println("Unknown message app type:", m.App)
+		}
+		msgs = append(msgs, m1)
 	}
+
 	pooltx.Tx = modules.NewTransaction(msgs)
 	pooltx.Tx.Illegal = temp.Illegal
 	pooltx.Tx.CertId = common.CopyBytes(temp.CertId)
