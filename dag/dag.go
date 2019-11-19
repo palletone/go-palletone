@@ -323,6 +323,7 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 			} else {
 				if a != nil {
 					if d.unstableUnitProduceRep != e {
+						log.Debugf("send UnstableRepositoryUpdatedEvent")
 						go d.unstableRepositoryUpdatedFeed.Send(modules.UnstableRepositoryUpdatedEvent{})
 					}
 
@@ -344,6 +345,7 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 	if is_stable {
 		tunitRep, tutxoRep, tstateRep, tpropRep, tUnitProduceRep := d.Memdag.GetUnstableRepositories()
 		if tUnitProduceRep != d.unstableUnitProduceRep {
+			log.Debugf("send UnstableRepositoryUpdatedEvent")
 			go d.unstableRepositoryUpdatedFeed.Send(modules.UnstableRepositoryUpdatedEvent{})
 		}
 
@@ -1024,6 +1026,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 	} else {
 		if a != nil {
 			if d.unstableUnitProduceRep != e {
+				log.Debugf("send UnstableRepositoryUpdatedEvent")
 				go d.unstableRepositoryUpdatedFeed.Send(modules.UnstableRepositoryUpdatedEvent{})
 			}
 
