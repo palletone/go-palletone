@@ -143,6 +143,31 @@ password to file or expose in any other way.
 `,
 			},
 			{
+				Name:   "muti",
+				Usage:  "Create a new mutisign account",
+				Action: utils.MigrateFlags(accountMutiCreate),
+				Flags: []cli.Flag{
+					utils.DataDirFlag,
+					utils.KeyStoreDirFlag,
+					utils.PasswordFileFlag,
+					utils.LightKDFFlag,
+				},
+				Description: `
+    gptn account muti
+
+Creates a new mutisign account and prints the address and redeemScript.
+
+The account is saved in encrypted format, you are prompted for a passphrase.
+
+You must remember this passphrase to unlock your account in the future.
+
+For non-interactive use the passphrase can be specified with the --password flag:
+
+Note, this is meant to be used for testing only, it is a bad idea to save your
+password to file or expose in any other way.
+`,
+			},
+			{
 				Name:      "update",
 				Usage:     "Update an existing account",
 				Action:    utils.MigrateFlags(accountUpdate),
@@ -457,6 +482,16 @@ func accountCreate(ctx *cli.Context) error {
 	return nil
 }
 
+func accountMutiCreate(ctx *cli.Context) error {
+	address, err := newAccount(ctx)
+	if err != nil {
+		utils.Fatalf("%v", err)
+	}
+
+	//	fmt.Printf("Address Hex: {%x}\n", address)
+	fmt.Printf("Address: %s\n", address.String())
+	return nil
+}
 // accountUpdate transitions an account from a previous format to the current
 // one, also providing the possibility to change the pass-phrase.
 func accountUpdate(ctx *cli.Context) error {
