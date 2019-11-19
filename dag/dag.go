@@ -682,7 +682,7 @@ func (dag *Dag) AfterChainMaintenanceEvent(arg *modules.ChainMaintenanceEvent) {
 	dag.Memdag.SetStableThreshold(threshold)
 }
 func (dag *Dag) SwitchMainChainEvent(arg *memunit.SwitchMainChainEvent) {
-	log.Debugf("Switch main chain event!!! old unit:%s %d,new unit:%s %d", arg.OldLastUnit.Hash().String(),
+	log.Infof("Switch main chain event!!! old unit:%s %d,new unit:%s %d", arg.OldLastUnit.Hash().String(),
 		arg.OldLastUnit.NumberU64(), arg.NewLastUnit.Hash().String(), arg.NewLastUnit.NumberU64())
 }
 
