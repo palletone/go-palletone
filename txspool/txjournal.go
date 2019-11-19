@@ -27,6 +27,7 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"path/filepath"
 )
 
 // errNoActiveJournal is returned if a transaction is attempted to be inserted
@@ -55,6 +56,14 @@ func newTxJournal(path string) *txJournal {
 		path: path,
 	}
 }
+func getFileSize(filename string) int64 {
+	var size int64
+	filepath.Walk(filename, func(path string, f os.FileInfo, err error) error {
+		size = f.Size()
+		return nil
+	})
+	return size
+}
 
 // load parses a transaction journal dump from disk, loading its contents into
 // the specified pool.
@@ -63,6 +72,11 @@ func (journal *txJournal) load(add func(*TxPoolTransaction) error) error {
 	if _, err := os.Stat(journal.path); os.IsNotExist(err) {
 		return nil
 	}
+	if getFileSize(journal.path) <= 0 {
+		log.Infof("the transaction.rlp is empty file.")
+		return nil
+	}
+
 	// Open the journal for loading any past transactions
 	input, err := os.Open(journal.path)
 	if err != nil {
@@ -76,12 +90,14 @@ func (journal *txJournal) load(add func(*TxPoolTransaction) error) error {
 
 	// Inject all transactions from the journal into the pool
 	stream := rlp.NewStream(input, 0)
+
 	total, dropped := 0, 0
 
 	for {
 		// Parse the next transaction and terminate on error
 		tx := new(TxPoolTransaction)
 		if err = stream.Decode(tx); err != nil {
+			log.Infof("decode error:%s", err.Error())
 			break
 		}
 		// Import the transaction and bump the appropriate progress counters

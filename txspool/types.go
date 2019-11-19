@@ -22,12 +22,15 @@ package txspool
 
 import (
 	"fmt"
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/dag/modules"
 	"math/big"
 	"strconv"
 	"sync"
 	"time"
+	"io"
+
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 type TxPoolTransaction struct {
@@ -208,4 +211,102 @@ func (seqTxs *SequeueTxPoolTxs) All() []*TxPoolTransaction {
 	items := (*seqTxs).seqtxs[:]
 	(*seqTxs).seqtxs = make([]*TxPoolTransaction, 0)
 	return items
+}
+
+type txpoolTransactionTemp struct {
+	Msgs    []modules.Message
+	CertId  []byte
+	Illegal bool
+
+	From         []modules.OutPoint
+	CreationDate time.Time           `json:"creation_date"`
+	Priority_lvl string              `json:"priority_lvl"`
+	UnitHash     common.Hash
+	UnitIndex    uint64
+	Pending      bool
+	Confirmed    bool
+	IsOrphan     bool
+	Discarded    bool // will remove
+	TxFee        [] modules.Addition `json:"tx_fee"`
+	Index        uint64              `json:"index"`
+	Extra        []byte
+	Tag          uint64
+	Expiration   time.Time
+	DependOnTxs  []common.Hash
+}
+
+func (pooltx *TxPoolTransaction) EncodeRLP(w io.Writer) error {
+	temp := &txpoolTransactionTemp{}
+	msgs := pooltx.Tx.Messages()
+	for _, m := range msgs {
+		temp.Msgs = append(temp.Msgs, *m)
+	}
+	temp.CertId = common.CopyBytes(pooltx.Tx.CertId)
+	temp.Illegal = pooltx.Tx.Illegal
+	for _, from := range pooltx.From {
+		temp.From = append(temp.From, *from)
+	}
+	temp.CreationDate = pooltx.CreationDate
+	temp.Priority_lvl = pooltx.Priority_lvl
+	temp.UnitHash = pooltx.UnitHash
+	temp.UnitIndex = pooltx.UnitIndex
+	temp.Pending = pooltx.Pending
+	temp.Confirmed = pooltx.Confirmed
+	temp.IsOrphan = pooltx.IsOrphan
+	temp.Discarded = pooltx.Discarded
+	for _, addition := range pooltx.TxFee {
+		temp.TxFee = append(temp.TxFee, *addition)
+	}
+	temp.Index = pooltx.Index
+	temp.Extra = pooltx.Extra
+	temp.Tag = pooltx.Tag
+	temp.Expiration = pooltx.Expiration
+	if len(pooltx.DependOnTxs) > 0 {
+		temp.DependOnTxs = append(temp.DependOnTxs, pooltx.DependOnTxs...)
+	}
+	return rlp.Encode(w, temp)
+}
+func (pooltx *TxPoolTransaction) DecodeRLP(s *rlp.Stream) error {
+	raw, err := s.Raw()
+	if err != nil {
+		return err
+	}
+	temp := &txpoolTransactionTemp{}
+	err = rlp.DecodeBytes(raw, temp)
+	if err != nil {
+		return err
+	}
+	msgs := make([]*modules.Message, 0)
+	for _, m := range temp.Msgs {
+		msgs = append(msgs, &m)
+	}
+	pooltx.Tx = modules.NewTransaction(msgs)
+	pooltx.Tx.Illegal = temp.Illegal
+	pooltx.Tx.CertId = common.CopyBytes(temp.CertId)
+
+	pooltx.From = make([]*modules.OutPoint, 0)
+	for _, from := range temp.From {
+		pooltx.From = append(pooltx.From, &from)
+	}
+	pooltx.CreationDate = temp.CreationDate
+	pooltx.Priority_lvl = temp.Priority_lvl
+	pooltx.UnitHash = temp.UnitHash
+	pooltx.UnitIndex = temp.UnitIndex
+	pooltx.Pending = temp.Pending
+	pooltx.Confirmed = temp.Confirmed
+	pooltx.IsOrphan = temp.IsOrphan
+	pooltx.Discarded = temp.Discarded
+	pooltx.TxFee = make([]*modules.Addition, 0)
+	for _, addition := range temp.TxFee {
+		pooltx.TxFee = append(pooltx.TxFee, &addition)
+	}
+	pooltx.Index = temp.Index
+	pooltx.Extra = common.CopyBytes(temp.Extra)
+	pooltx.Tag = temp.Tag
+	pooltx.Expiration = temp.Expiration
+	if len(temp.DependOnTxs) > 0 {
+		pooltx.DependOnTxs = append(temp.DependOnTxs, temp.DependOnTxs...)
+	}
+
+	return nil
 }
