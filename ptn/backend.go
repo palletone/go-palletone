@@ -172,20 +172,22 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 		log.Error("Initialize mediator plugin err:", "error", err)
 		return nil, err
 	}
-	//aJury := consensus.AdapterJury{Processor: ptn.contractPorcessor}
-	pDocker := utils.NewPalletOneDocker(dag,&consensus.AdapterJury{Processor: ptn.contractPorcessor})
-	ptn.contractPorcessor, err = jury.NewContractProcessor(ptn, dag, nil, &config.Jury,pDocker)
+	ptn.contractPorcessor, err = jury.NewContractProcessor(ptn, dag, nil, &config.Jury)
 	if err != nil {
 		log.Error("contract processor creat:", "error", err)
 		return nil, err
 	}
-	ptn.contract, err = contracts.Initialize(ptn.dag, &consensus.AdapterJury{Processor: ptn.contractPorcessor}, &config.Contract)
+
+	aJury := &consensus.AdapterJury{Processor: ptn.contractPorcessor}
+	ptn.contract, err = contracts.Initialize(ptn.dag, aJury, &config.Contract)
 	if err != nil {
 		log.Error("Contract Initialize err:", "error", err)
 		return nil, err
 	}
-
 	ptn.contractPorcessor.SetContract(ptn.contract)
+
+	pDocker := utils.NewPalletOneDocker(dag,ptn.contract.IAdapterJury)
+	ptn.contractPorcessor.SetDocker(pDocker)
 
 	genesis, err := ptn.dag.GetGenesisUnit()
 	if err != nil {

@@ -155,7 +155,7 @@ type Processor struct {
 	pDocker *utils.PalletOneDocker
 }
 
-func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract, cfg *Config,pDocker *utils.PalletOneDocker) (*Processor, error) {
+func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract, cfg *Config) (*Processor, error) {
 	if ptn == nil || dag == nil {
 		return nil, errors.New("NewContractProcessor, param is nil")
 	}
@@ -189,7 +189,6 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 		lockVrf:      make(map[common.Address][]modules.ElectionInf),
 		validator:    validator,
 		errMsgEnable: true,
-		pDocker:pDocker,
 	}
 	log.Info("NewContractProcessor ok", "local address:", p.local)
 
@@ -197,6 +196,10 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 }
 func (p *Processor) SetContract(contract *contracts.Contract) {
 	p.contract = contract
+}
+
+func (p *Processor) SetDocker(pDocker *utils.PalletOneDocker) {
+	p.pDocker = pDocker
 }
 
 func (p *Processor) Start(server *p2p.Server) error {

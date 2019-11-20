@@ -318,6 +318,7 @@ matrix:
         - cp $BASE_DIR/bdd/UserContract/editConfig.sh ./
         - chmod +x editConfig.sh
         - docker network ls
+        - docker network create gptn-net
         - ./deploy.sh 3 3
         - ./editConfig.sh 3 3
         - ./start.sh 3
