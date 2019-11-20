@@ -188,7 +188,11 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 
 		// 判断父 unit 是否不可逆
 		parentHash := header.ParentHash()[0]
-		if !dag.IsIrreversibleUnit(parentHash) {
+		isStable, err := dag.IsIrreversibleUnit(parentHash)
+		if err!= nil {
+			return
+		}
+		if !isStable {
 			log.Debugf("the unit's(%v) parent unit(%v) is not irreversible",
 				unitHash.TerminalString(), parentHash.TerminalString())
 			return

@@ -28,23 +28,39 @@ import (
 	"github.com/palletone/go-palletone/txspool"
 )
 
+//不稳定单元和新单元的操作
 type IMemDag interface {
-	AddStableUnit(unit *modules.Unit)
+	//增加一个稳定单元
+	AddStableUnit(unit *modules.Unit) error
+	//设置MemDag的稳定单元
 	SetStableUnit(unit *modules.Unit, isGenesis bool)
+	//增加一个单元到MemDag
 	AddUnit(unit *modules.Unit, txpool txspool.ITxPool, isProd bool) (common2.IUnitRepository, common2.IUtxoRepository,
 		common2.IStateRepository, common2.IPropRepository, common2.IUnitProduceRepository, error)
+	//保存Header
 	SaveHeader(header *modules.Header) error
+	//获取最新稳定单元的信息
 	GetLastStableUnitInfo() (common.Hash, uint64)
+	//获取主链的最新单元
 	GetLastMainChainUnit() *modules.Unit
+	//获取所有的不稳定单元
 	GetChainUnits() map[common.Hash]*modules.Unit
+	//设置要形成稳定单元的阈值，一般是2/3*Count(Mediator)
 	SetStableThreshold(threshold int)
+	//获得不稳定的Repository
 	GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository,
 		common2.IPropRepository, common2.IUnitProduceRepository)
+	//设置一个单元的群签名，使得该单元稳定
 	SetUnitGroupSign(uHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error
+	//通过Hash获得Header
 	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
+	//通过高度获得Header
 	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)
+	//获得MemDag的信息，包括分叉情况，孤儿块等
 	Info() (*modules.MemdagStatus, error)
+	//订阅切换主链事件
 	SubscribeSwitchMainChainEvent(ob SwitchMainChainEventFunc)
 	SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription
+	//关闭
 	Close()
 }
