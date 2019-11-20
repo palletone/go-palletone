@@ -407,7 +407,9 @@ func (u *Unit) Hash() common.Hash {
 	}
 	return u.UnitHash
 }
-
+func (u *Unit) DisplayId() string {
+	return fmt.Sprintf("%s-%d",u.Hash().String(),u.NumberU64())
+}
 // function Size, return the unit's StorageSize.
 func (u *Unit) Size() common.StorageSize {
 	if u.UnitSize > 0 {

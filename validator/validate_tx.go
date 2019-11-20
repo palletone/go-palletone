@@ -47,6 +47,7 @@ To validate one transaction
 如果isFullTx为false，意味着这个Tx还没有被陪审团处理完，所以结果部分的Payment不验证
 */
 func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (ValidationCode, []*modules.Addition) {
+	txHash:=tx.Hash()
 	if len(tx.TxMessages) == 0 {
 		return TxValidationCode_INVALID_MSG, nil
 	}
@@ -58,6 +59,29 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 	if !txFeePass {
 		return TxValidationCode_INVALID_FEE, nil
 	}
+	// validate tx size
+	if tx.Size().Float64() > float64(modules.TX_MAXSIZE) {
+		log.Debug("Tx size is to big.")
+		return TxValidationCode_NOT_COMPARE_SIZE, txFee
+	}
+	//用户合约的执行结果必须有Jury签名
+	if isFullTx && tx.IsContractTx()&& !tx.IsSystemContract(){
+		isResultMsg:=false
+		hasSignMsg:=false
+		for _,msg:=range tx.TxMessages{
+			if msg.App.IsRequest(){
+				isResultMsg=true
+				continue
+			}
+			if isResultMsg && (msg.App==modules.APP_SIGNATURE||msg.App==modules.APP_PAYMENT){
+				hasSignMsg=true
+			}
+		}
+		if !hasSignMsg{
+			log.Warnf("Tx[%s] is an user contract invoke, but don't have jury signature",txHash.String())
+			return TxValidationCode_INVALID_CONTRACT_SIGN,txFee
+		}
+	}
 	hasRequestMsg := false
 	requestMsgIndex := 9999
 	isSysContractCall := false
@@ -66,11 +90,6 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 		// check message type and payload
 		if !validateMessageType(msg.App, msg.Payload) {
 			return TxValidationCode_UNKNOWN_TX_TYPE, txFee
-		}
-		// validate tx size
-		if tx.Size().Float64() > float64(modules.TX_MAXSIZE) {
-			log.Debug("Tx size is to big.")
-			return TxValidationCode_NOT_COMPARE_SIZE, txFee
 		}
 
 		// validate every type payload
@@ -139,7 +158,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 				return TxValidationCode_INVALID_CONTRACT, txFee
 			}
 
-			validateCode := validate.validateContractdeploy(payload.TemplateId)
+			validateCode := validate.validateContractDeploy(payload.TemplateId)
 			if validateCode != TxValidationCode_VALID {
 				return validateCode, txFee
 			}
@@ -203,7 +222,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 	return TxValidationCode_VALID, txFee
 }
 
-func (v *Validate) validateVoteMediatorTx(payload interface{}) ValidationCode {
+func (validate *Validate) validateVoteMediatorTx(payload interface{}) ValidationCode {
 	accountUpdate, ok := payload.(*modules.AccountStateUpdatePayload)
 	if !ok {
 		log.Errorf("tx payload do not match type")
@@ -222,7 +241,7 @@ func (v *Validate) validateVoteMediatorTx(payload interface{}) ValidationCode {
 			return TxValidationCode_UNSUPPORTED_TX_PAYLOAD
 		}
 
-		maxMediatorCount := int(v.propquery.GetChainParameters().MaximumMediatorCount)
+		maxMediatorCount := int(validate.propquery.GetChainParameters().MaximumMediatorCount)
 		mediatorCount := len(mediators)
 		if mediatorCount > maxMediatorCount {
 			log.Errorf("the total number(%v) of mediators voted exceeds the maximum limit: %v",
@@ -230,7 +249,7 @@ func (v *Validate) validateVoteMediatorTx(payload interface{}) ValidationCode {
 			return TxValidationCode_UNSUPPORTED_TX_PAYLOAD
 		}
 
-		mp := v.statequery.GetMediators()
+		mp := validate.statequery.GetMediators()
 		for mediatorStr, ok := range mediators {
 			if !ok {
 				log.Errorf("the value of map can only be true")

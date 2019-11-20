@@ -67,10 +67,11 @@ func (validate *Validate) validateContractTplPayload(contractTplPayload *modules
 	return TxValidationCode_VALID
 }
 
-func (validate *Validate) validateContractdeploy(tplId []byte) ValidationCode {
+func (validate *Validate) validateContractDeploy(tplId []byte) ValidationCode {
 	return TxValidationCode_VALID
 }
-
-func (validate *Validate) validateContractSignature(sinatures []modules.SignatureSet, tx *modules.Transaction) ValidationCode {
+//验证陪审团签名是否有效
+func (validate *Validate) validateContractSignature(signatures []modules.SignatureSet, tx *modules.Transaction) ValidationCode {
+	//TODO 验证陪审团签名是否有效
 	return TxValidationCode_VALID
 }

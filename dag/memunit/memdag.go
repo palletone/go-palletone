@@ -522,7 +522,7 @@ func (chain *MemDag) AddStableUnit(unit *modules.Unit) error {
 	hash := unit.Hash()
 	// leveldb 查重
 	if s_hash, index, err := chain.ldbPropRep.GetNewestUnit(chain.token); err == nil && index.Index >= unit.NumberU64() {
-		log.Warnf("Dag[%s] received a old unit than stable[%s], this hash[%s] ", chain.token.String(),
+		log.Warnf("Dag[%s] received a old unit than stable[%s], ignore this unit[%s] ", chain.token.String(),
 			s_hash.String(), unit.Hash().String())
 		return nil
 	}

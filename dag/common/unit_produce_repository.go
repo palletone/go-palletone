@@ -159,7 +159,8 @@ func (rep *UnitProduceRepository) PushUnit(newUnit *modules.Unit) error {
 		return err
 	}
 	if !newUnit.ContainsParent(uHash) {
-		return errors.New(fmt.Sprintf("PushUnit[%s] parent is not newest unit[%s]", newUnit.Hash().String(), uHash.String()))
+		return errors.New(fmt.Sprintf("PushUnit[%s] parent is not newest unit[%s] %d",
+			newUnit.DisplayId(), uHash.String(),uIndex.Index))
 	}
 	if newUnit.NumberU64()-1 != uIndex.Index {
 		return errors.New(fmt.Sprintf("PushUnit[%s] height:%d, but newest unit height:%d",
