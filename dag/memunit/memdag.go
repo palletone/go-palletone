@@ -165,6 +165,8 @@ func (chain *MemDag) loopRebuildTmpDb() {
 }
 func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository,
 	common2.IStateRepository, common2.IPropRepository, common2.IUnitProduceRepository) {
+	chain.lock.RLock()
+	defer chain.lock.RUnlock()
 	if chain.lastMainChainUnit == nil {
 		log.Infof("the last_unit is nil, want rebuild memdag repository by db.")
 		tempdb, _ := NewTempdb(chain.db)
@@ -177,7 +179,7 @@ func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2
 	}
 	last_main_hash := chain.lastMainChainUnit.Hash()
 	temp_rep, err := chain.getChainUnit(last_main_hash)
-	if err != nil { // 重启后memdag的chainUnits还清被清空，需要重新以memdag的db构建unstable repositoreis
+	if err != nil { // 重启后memdag的chainUnits被清空，需要重新以memdag的db构建unstable repositoreis
 		temp_inter, has := chain.tempdb.Load(last_main_hash)
 		if !has {
 			log.Warnf("the last_unit: %s , is not exist in memdag", last_main_hash.String())

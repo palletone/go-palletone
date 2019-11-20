@@ -216,9 +216,9 @@ func (dag *Dag) GetImmutableChainParameters() *core.ImmutableChainParameters {
 }
 
 func (dag *Dag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
-	rep, _, _, _, _ := dag.Memdag.GetUnstableRepositories()
-	unit, err := rep.GetUnit(hash)
-	//unit, err := dag.unstableUnitRep.GetUnit(hash)
+	//rep, _, _, _, _ := dag.Memdag.GetUnstableRepositories()
+	//unit, err := rep.GetUnit(hash)
+	unit, err := dag.unstableUnitRep.GetUnit(hash)
 
 	if err != nil {
 		log.Debug("get unit by hash is failed.", "hash", hash)
