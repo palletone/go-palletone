@@ -91,13 +91,9 @@ matrix:
         - nohup ./gptn &
         - sleep 15
         - netstat -ap | grep gptn
-        - if [ $IS_RUN_DEPOSIT == 'true' ]; then
-          cd ../dct;
-          ./deposit_test.sh 13;
-          fi
         - if [ $IS_RUN_BLACKLIST == 'true' ]; then
           cd ../blacklist;
-          ./blacklist_test.sh;
+          ./blacklist_test.sh 2;
           fi
         - if [ $IS_RUN_TESTCONTRACTCASES == 'true' ];then
           cd ../contract/testcases;
@@ -129,6 +125,11 @@ matrix:
 
         - if [ $IS_RUN_DIGITAL == 'true' ]; then
           python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ./DigitalIdentityCert;
+          fi
+
+        - if [ $IS_RUN_DEPOSIT == 'true' ]; then
+          cd ./dct;
+          ./deposit_test.sh 13;
           fi
 
         - if [ $IS_RUN_GASTOKEN == 'true' ]; then
