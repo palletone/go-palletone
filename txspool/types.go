@@ -404,6 +404,7 @@ func (pooltx *TxPoolTransaction) DecodeRLP(s *rlp.Stream) error {
 
 	pooltx.From = make([]*modules.OutPoint, 0)
 	for _, from := range temp.From {
+		from :=from
 		pooltx.From = append(pooltx.From, &from)
 	}
 	pooltx.CreationDate = temp.CreationDate
@@ -416,6 +417,7 @@ func (pooltx *TxPoolTransaction) DecodeRLP(s *rlp.Stream) error {
 	pooltx.Discarded = temp.Discarded
 	pooltx.TxFee = make([]*modules.Addition, 0)
 	for _, addition := range temp.TxFee {
+		addition := addition
 		pooltx.TxFee = append(pooltx.TxFee, &addition)
 	}
 	pooltx.Index = temp.Index
