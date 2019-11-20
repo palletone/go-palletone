@@ -70,7 +70,7 @@ type iDag interface {
 		txpool txspool.ITxPool) (*modules.Unit, error)
 
 	IsPrecedingMediator(add common.Address) bool
-	IsIrreversibleUnit(hash common.Hash) bool
+	IsIrreversibleUnit(hash common.Hash) (bool, error)
 	IsMediator(address common.Address) bool
 
 	PrecedingThreshold() int

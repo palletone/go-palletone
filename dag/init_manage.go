@@ -202,22 +202,18 @@ func (d *Dag) UnitIrreversibleTime() time.Duration {
 	return time.Duration(it) * time.Second
 }
 
-func (d *Dag) IsIrreversibleUnit(hash common.Hash) bool {
+func (d *Dag) IsIrreversibleUnit(hash common.Hash) (bool, error) {
 	header, err := d.unstableUnitRep.GetHeaderByHash(hash)
 	if err != nil {
-		//return false // 存在于memdag，不稳定
-		header, err = d.stableUnitRep.GetHeaderByHash(hash)
-		if err != nil {
 			log.Debugf("UnitRep GetHeaderByHash error:%s", err.Error())
-			return false // 不存在该unit
-		}
+			return false, err // 不存在该unit
 	}
 
 	if header.NumberU64() > d.GetIrreversibleUnitNum(header.GetAssetId()) {
-		return false
+		return false, nil
 	}
 
-	return true
+	return true, nil
 }
 
 func (d *Dag) GetIrreversibleUnitNum(id modules.AssetId) uint64 {
