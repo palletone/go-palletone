@@ -313,7 +313,11 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 			u.Author().Str())
 
 		if is_stable {
-			d.Memdag.AddStableUnit(u)
+			err := d.Memdag.AddStableUnit(u)
+			if err != nil {
+				log.Errorf("AddStableUnit failed,error:%s", err.Error())
+				return i, err
+			}
 		} else {
 			if a, b, c, dd, e, err := d.Memdag.AddUnit(u, txpool, false); err != nil {
 				//return count, err

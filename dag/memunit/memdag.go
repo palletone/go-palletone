@@ -312,7 +312,10 @@ func (chain *MemDag) setNextStableUnit(unit *modules.Unit, txpool txspool.ITxPoo
 	height := unit.NumberU64()
 	// memdag不依赖apply unit的存储，因此用协程提高setStable的效率
 	// 虽然与memdag无关，但是下一个unit的 apply 处理依赖上一个unit apply的结果，所以不能用协程并发处理
-	chain.saveUnitToDb(chain.ldbunitRep, chain.ldbUnitProduceRep, unit)
+	err := chain.saveUnitToDb(chain.ldbunitRep, chain.ldbUnitProduceRep, unit)
+	if err != nil {
+		log.Errorf("Save unit to db error:%s", err.Error())
+	}
 	if !chain.saveHeaderOnly && len(unit.Txs) > 1 {
 		go txpool.SendStoredTxs(unit.Txs.GetTxIds())
 	}
@@ -466,12 +469,12 @@ func (chain *MemDag) getForkUnits(unit *modules.Unit) []*modules.Unit {
 
 //判断当前设置是保存Header还是Unit，将对应的对象保存到Tempdb数据库
 func (chain *MemDag) saveUnitToDb(unitRep common2.IUnitRepository, produceRep common2.IUnitProduceRepository,
-	unit *modules.Unit) {
+	unit *modules.Unit) error {
 	log.Debugf("Save unit[%s] to db", unit.Hash().String())
 	if chain.saveHeaderOnly {
-		unitRep.SaveNewestHeader(unit.Header())
+		return unitRep.SaveNewestHeader(unit.Header())
 	} else {
-		produceRep.PushUnit(unit)
+		return produceRep.PushUnit(unit)
 	}
 }
 
@@ -512,15 +515,19 @@ func (chain *MemDag) SetStableUnit(unit *modules.Unit, isGenesis bool) {
 		chain.addUnitHeight(unit)
 	}
 }
-func (chain *MemDag) AddStableUnit(unit *modules.Unit) {
+func (chain *MemDag) AddStableUnit(unit *modules.Unit) error {
 	chain.lock.Lock()
 	defer chain.lock.Unlock()
 	hash := unit.Hash()
 	log.Debugf("add stable unit to dag, hash[%s], index:%d", hash.String(), unit.NumberU64())
-	chain.saveUnitToDb(chain.ldbunitRep, chain.ldbUnitProduceRep, unit)
+	err := chain.saveUnitToDb(chain.ldbunitRep, chain.ldbUnitProduceRep, unit)
+	if err != nil {
+		return err
+	}
 	//Set stable unit
 	chain.stableUnitHash = hash
 	chain.stableUnitHeight = unit.NumberU64()
+	return nil
 }
 func (chain *MemDag) SaveHeader(header *modules.Header) error {
 	chain.lock.Lock()
