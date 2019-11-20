@@ -457,6 +457,7 @@ func (chain *MemDag) getForkUnits(unit *modules.Unit) []*modules.Unit {
 		if !ok {
 			log.Errorf("getforks chainUnits don't have unit[%s], last_main[%s]",
 				hash.String(), chain.lastMainChainUnit.Hash().String())
+			break
 		}
 		unstableUnits[fork_len-i-1] = u
 		hash = u.ParentHash()[0]
