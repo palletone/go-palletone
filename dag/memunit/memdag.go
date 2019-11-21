@@ -117,7 +117,6 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 	} else {
 		log.Debugf("last stable unit isn't exist, want to rebuild memdag.")
 	}
-
 	memdag := &MemDag{
 		token:              token,
 		threshold:          threshold,
@@ -136,7 +135,6 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 		ldbUnitProduceRep:  ldbUnitProduceRep,
 		db:                 db,
 		tokenEngine:        tokenEngine,
-		ldbValidator:       newValidator(db, cache, tokenEngine),
 		observers:          []SwitchMainChainEventFunc{},
 	}
 	temp, _ := NewChainTempDb(db, cache, tokenEngine, saveHeaderOnly)
@@ -147,16 +145,6 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 	go memdag.loopRebuildTmpDb()
 	return memdag
 }
-func newValidator(db ptndb.Database, cache palletcache.ICache,
-	tokenEngine tokenengine.ITokenEngine) validator.Validator {
-	trep := common2.NewUnitRepository4Db(db, tokenEngine)
-	tutxoRep := common2.NewUtxoRepository4Db(db, tokenEngine)
-	tstateRep := common2.NewStateRepository4Db(db)
-	tpropRep := common2.NewPropRepository4Db(db)
-	//tunitProduceRep := common2.NewUnitProduceRepository(trep, tpropRep, tstateRep)
-	return validator.NewValidate(trep, tutxoRep, tstateRep, tpropRep, cache, false)
-}
-
 func (chain *MemDag) loopRebuildTmpDb() {
 	rebuild := time.NewTicker(10 * time.Minute)
 	defer rebuild.Stop()
@@ -532,10 +520,13 @@ func (chain *MemDag) AddStableUnit(unit *modules.Unit) error {
 	chain.lock.Lock()
 	defer chain.lock.Unlock()
 	hash := unit.Hash()
+	number := unit.NumberU64()
 	// leveldb 查重
-	if s_hash, index, err := chain.ldbPropRep.GetNewestUnit(chain.token); err == nil && index.Index >= unit.NumberU64() {
-		log.Infof("Dag[%s] received a old unit than stable[%s], ignore this unit[%s] ", chain.token.String(),
-			s_hash.String(), unit.Hash().String())
+	if s_hash, _, err := chain.ldbPropRep.GetNewestUnit(chain.token); err != nil {
+		return err
+	} else if !unit.ContainsParent(s_hash) {
+		log.Warnf("Dag[%s] received a discontinuity unit,the stable unit[%s], ignore this unit[%s]",
+			chain.token.String(), s_hash.String(), unit.Hash().String())
 		return nil
 	}
 	validateResult := chain.ldbValidator.ValidateHeader(unit.UnitHeader)
