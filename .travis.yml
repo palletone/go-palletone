@@ -22,7 +22,7 @@ env:
     - LOG_NAME=log.html
     - REPORT_NAME=report.html
     ##########  control testcase  ##############
-    - IS_RUN_DEPOSIT=true
+    - IS_RUN_DEPOSIT=false
     - IS_RUN_TESTCONTRACTCASES=true
     - IS_RUN_CREATE_TRANS=true
     - IS_RUN_20CONTRACT=true
