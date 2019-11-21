@@ -53,13 +53,13 @@ type MemDag struct {
 	orphanUnitsParants sync.Map
 	chainUnits         sync.Map
 	tempdb             sync.Map
-
-	ldbunitRep        common2.IUnitRepository
-	ldbPropRep        common2.IPropRepository
-	ldbUnitProduceRep common2.IUnitProduceRepository
-	saveHeaderOnly    bool
-	lock              sync.RWMutex
-	cache             palletcache.ICache
+	ldbValidator       validator.Validator
+	ldbunitRep         common2.IUnitRepository
+	ldbPropRep         common2.IPropRepository
+	ldbUnitProduceRep  common2.IUnitProduceRepository
+	saveHeaderOnly     bool
+	lock               sync.RWMutex
+	cache              palletcache.ICache
 	// append by albert·gou 用于通知群签名
 	toGroupSignFeed  event.Feed
 	toGroupSignScope event.SubscriptionScope
@@ -117,6 +117,7 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 	} else {
 		log.Debugf("last stable unit isn't exist, want to rebuild memdag.")
 	}
+
 	memdag := &MemDag{
 		token:              token,
 		threshold:          threshold,
@@ -135,6 +136,7 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 		ldbUnitProduceRep:  ldbUnitProduceRep,
 		db:                 db,
 		tokenEngine:        tokenEngine,
+		ldbValidator:       newValidator(db, cache, tokenEngine),
 		observers:          []SwitchMainChainEventFunc{},
 	}
 	temp, _ := NewChainTempDb(db, cache, tokenEngine, saveHeaderOnly)
@@ -145,6 +147,16 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 	go memdag.loopRebuildTmpDb()
 	return memdag
 }
+func newValidator(db ptndb.Database, cache palletcache.ICache,
+	tokenEngine tokenengine.ITokenEngine) validator.Validator {
+	trep := common2.NewUnitRepository4Db(db, tokenEngine)
+	tutxoRep := common2.NewUtxoRepository4Db(db, tokenEngine)
+	tstateRep := common2.NewStateRepository4Db(db)
+	tpropRep := common2.NewPropRepository4Db(db)
+	//tunitProduceRep := common2.NewUnitProduceRepository(trep, tpropRep, tstateRep)
+	return validator.NewValidate(trep, tutxoRep, tstateRep, tpropRep, cache, false)
+}
+
 func (chain *MemDag) loopRebuildTmpDb() {
 	rebuild := time.NewTicker(10 * time.Minute)
 	defer rebuild.Stop()
@@ -522,9 +534,13 @@ func (chain *MemDag) AddStableUnit(unit *modules.Unit) error {
 	hash := unit.Hash()
 	// leveldb 查重
 	if s_hash, index, err := chain.ldbPropRep.GetNewestUnit(chain.token); err == nil && index.Index >= unit.NumberU64() {
-		log.Warnf("Dag[%s] received a old unit than stable[%s], ignore this unit[%s] ", chain.token.String(),
+		log.Infof("Dag[%s] received a old unit than stable[%s], ignore this unit[%s] ", chain.token.String(),
 			s_hash.String(), unit.Hash().String())
 		return nil
+	}
+	validateResult := chain.ldbValidator.ValidateHeader(unit.UnitHeader)
+	if validateResult != validator.TxValidationCode_VALID {
+		return validator.NewValidateError(validateResult)
 	}
 	log.Debugf("add stable unit to dag, hash[%s], index:%d", hash.String(), unit.NumberU64())
 	err := chain.saveUnitToDb(chain.ldbunitRep, chain.ldbUnitProduceRep, unit)
