@@ -520,23 +520,20 @@ func (chain *MemDag) AddStableUnit(unit *modules.Unit) error {
 	chain.lock.Lock()
 	defer chain.lock.Unlock()
 	hash := unit.Hash()
-	number := unit.NumberU64()
 	// leveldb 查重
-	if s_hash, _, err := chain.ldbPropRep.GetNewestUnit(chain.token); err != nil {
-		return err
-	} else if ! unit.ContainsParent(s_hash) {
-		log.Warnf("Dag[%s] received a discontinuity unit, the stable unit[%s], ignore this unit[%s] ", chain.token.String(),
+	if s_hash, index, err := chain.ldbPropRep.GetNewestUnit(chain.token); err == nil && index.Index >= unit.NumberU64() {
+		log.Warnf("Dag[%s] received a old unit than stable[%s], ignore this unit[%s] ", chain.token.String(),
 			s_hash.String(), unit.Hash().String())
 		return nil
 	}
-	log.Debugf("add stable unit to dag, hash[%s], index:%d", hash.String(), number)
+	log.Debugf("add stable unit to dag, hash[%s], index:%d", hash.String(), unit.NumberU64())
 	err := chain.saveUnitToDb(chain.ldbunitRep, chain.ldbUnitProduceRep, unit)
 	if err != nil {
 		return err
 	}
 	//Set stable unit
 	chain.stableUnitHash = hash
-	chain.stableUnitHeight = number
+	chain.stableUnitHeight = unit.NumberU64()
 	return nil
 }
 func (chain *MemDag) SaveHeader(header *modules.Header) error {
