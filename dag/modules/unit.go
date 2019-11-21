@@ -60,6 +60,19 @@ type header_sdw struct {
 	CryptoLib   []byte        `json:"crypto_lib"`    //该区块使用的加解密算法和哈希算法，0位表示非对称加密算法，1位表示Hash算法
 }
 
+func initHeaderSdw(parents []common.Hash, tx_root common.Hash, pubkey, sig, extra, crypto_lib []byte,
+	txs_illgal []uint16, asset_id AssetId, index uint64, t int64) *header_sdw {
+	h := header_sdw{ParentsHash: parents, TxRoot: tx_root, CryptoLib: crypto_lib, Extra: extra, Time: t}
+	h.Authors.PubKey = pubkey
+	h.Authors.Signature = sig
+	h.Number = &ChainIndex{
+		AssetID: asset_id,
+		Index:   index,
+	}
+	h.TxsIllegal = txs_illgal
+	return &h
+
+}
 func new_header_sdw() *header_sdw {
 	return &header_sdw{ParentsHash: make([]common.Hash, 0),
 		Authors: Authentifier{},
@@ -111,17 +124,25 @@ func (h *Header) SetParentHash(parents []common.Hash) {
 	}
 }
 func (h *Header) SetTxRoot(txroot common.Hash) {
-	if h.header == nil {
-		h.header = new_header_sdw()
-	}
-	h.header.TxRoot.Set(txroot)
+	// init header
+	group_sign := h.group_sign
+	group_pubkey := h.group_pubKey
+	author := h.GetAuthors()
+	h.header = initHeaderSdw(h.ParentHash(), txroot, author.PubKey, author.Signature, h.Extra(),
+		h.header.CryptoLib, h.header.TxsIllegal, h.GetNumber().AssetID, h.GetNumber().Index, h.Timestamp())
+
+	h.group_sign = group_sign
+	h.group_pubKey = group_pubkey
 }
 func (h *Header) SetAuthor(author Authentifier) {
-	if h.header == nil {
-		h.header = new_header_sdw()
-	}
-	h.header.Authors.Signature = author.Signature
-	h.header.Authors.PubKey = author.PubKey
+	group_sign := h.group_sign
+	group_pubkey := h.group_pubKey
+	h.header = initHeaderSdw(h.ParentHash(), h.TxRoot(), author.PubKey, author.Signature, h.Extra(),
+		h.header.CryptoLib, h.header.TxsIllegal, h.GetNumber().AssetID, h.GetNumber().Index, h.Timestamp())
+
+	h.group_sign = group_sign
+	h.group_pubKey = group_pubkey
+
 }
 func (h *Header) SetTime(timestamp int64) {
 	if h.header == nil {
@@ -189,6 +210,7 @@ func (cpy *Header) CopyHeader(h *Header) {
 
 func NewHeader(parents []common.Hash, extra []byte) *Header {
 	h := new(Header)
+	// init header
 	h.header = new_header_sdw()
 	h.header.ParentsHash = make([]common.Hash, 0)
 	if len(parents) > 0 {
