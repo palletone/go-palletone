@@ -505,7 +505,15 @@ func (t *SimpleChaincode) test_SendRecvJury(stub shim.ChaincodeStubInterface) pb
 		if err != nil {
 			return shim.Error("Unmarshal result failed: " + string(result))
 		}
-		err = stub.PutState("result", result)
+		isSame := true
+		for i := range juryMsg {
+			if "result" != string(juryMsg[i].Answer) { //juryMsg have 4 different address
+				isSame = false
+				break
+			}
+		}
+		fmt.Println(isSame)
+		err = stub.PutState("result", []byte(fmt.Sprintf("%v", isSame)))
 		if err != nil {
 			return shim.Error("PutState: " + string(result))
 		}

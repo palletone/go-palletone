@@ -212,7 +212,7 @@ func (p *Processor) AdapterFunResult(reqId common.Hash, contractId common.Addres
 		}
 		log.Debug("AdapterFunResult, time out")
 		return nil, errors.New("AdapterFunResult, time out")
-	default:
+		//default:
 	}
 	return nil, nil
 }
