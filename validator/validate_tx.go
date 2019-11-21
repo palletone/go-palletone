@@ -64,8 +64,8 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 		log.Debug("Tx size is to big.")
 		return TxValidationCode_NOT_COMPARE_SIZE, txFee
 	}
-	//用户合约的执行结果必须有Jury签名
-	if validate.enableContractSignCheck && isFullTx && tx.IsContractTx() && !tx.IsSystemContract() {
+	//合约的执行结果必须有Jury签名
+	if validate.enableContractSignCheck && isFullTx && tx.IsContractTx() {
 		isResultMsg := false
 		hasSignMsg := false
 		for _, msg := range tx.TxMessages {

@@ -406,6 +406,8 @@ func (tx *Transaction) GetNewUtxos() map[OutPoint]*Utxo {
 	}
 	return result
 }
+
+//获取一个交易中花费了哪些OutPoint
 func (tx *Transaction) GetSpendOutpoints() []*OutPoint {
 	result := []*OutPoint{}
 	for _, msg := range tx.TxMessages {
@@ -416,12 +418,19 @@ func (tx *Transaction) GetSpendOutpoints() []*OutPoint {
 		inputs := pay.Inputs
 		for _, input := range inputs {
 			if input.PreviousOutPoint != nil {
-				result = append(result, input.PreviousOutPoint)
+				if input.PreviousOutPoint.TxHash.IsSelfHash() { //合约Payback的情形
+					op := NewOutPoint(tx.Hash(), input.PreviousOutPoint.MessageIndex, input.PreviousOutPoint.OutIndex)
+					result = append(result, op)
+				} else {
+					result = append(result, input.PreviousOutPoint)
+				}
 			}
 		}
 	}
 	return result
 }
+
+//获得合约交易的签名对应的陪审员地址
 func (tx *Transaction) GetContractTxSignatureAddress() []common.Address {
 	if !tx.IsContractTx() {
 		return nil
@@ -536,18 +545,18 @@ func (tx *Transaction) GetResultRawTx() *Transaction {
 	return result
 }
 
-func (tx *Transaction) GetResultTx() *Transaction {
-	txCopy := tx.Clone()
-	result := &Transaction{}
-	result.CertId = tx.CertId
-	for _, msg := range txCopy.TxMessages {
-		if msg.App == APP_SIGNATURE {
-			continue //移除SignaturePayload
-		}
-		result.TxMessages = append(result.TxMessages, msg)
-	}
-	return result
-}
+//func (tx *Transaction) GetResultTx() *Transaction {
+//	txCopy := tx.Clone()
+//	result := &Transaction{}
+//	result.CertId = tx.CertId
+//	for _, msg := range txCopy.TxMessages {
+//		if msg.App == APP_SIGNATURE {
+//			continue //移除SignaturePayload
+//		}
+//		result.TxMessages = append(result.TxMessages, msg)
+//	}
+//	return result
+//}
 
 //Request 这条Message的Index是多少
 func (tx *Transaction) GetRequestMsgIndex() int {
@@ -577,6 +586,7 @@ func (tx *Transaction) HasContractPayoutMsg() (bool, *PaymentPayload) {
 	return false, nil
 }
 
+//对于合约调用Tx，获得调用的合约ID，如果不是合约调用Tx，则返回nil
 func (tx *Transaction) InvokeContractId() []byte {
 	for _, msg := range tx.TxMessages {
 		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
