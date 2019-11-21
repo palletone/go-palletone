@@ -107,16 +107,16 @@ func (p *Processor) processContractPayout(tx *modules.Transaction, ele *modules.
 		for _, input := range payout.Inputs {
 			input.SignatureScript = unlock
 		}
-	}
-	//remove signature payload
-	msgs := []*modules.Message{}
-	for _, msg := range tx.TxMessages {
-		if msg.App != modules.APP_SIGNATURE {
-			msgs = append(msgs, msg)
+		//remove signature payload
+		msgs := []*modules.Message{}
+		for _, msg := range tx.TxMessages {
+			if msg.App != modules.APP_SIGNATURE {
+				msgs = append(msgs, msg)
+			}
 		}
+		log.Debugf("[%s]processContractPayout, Remove SignaturePayload from req[%s]", shortId(reqId.String()), reqId.String())
+		tx.TxMessages = msgs
 	}
-	log.Debugf("[%s]processContractPayout, Remove SignaturePayload from req[%s]", shortId(reqId.String()), reqId.String())
-	tx.TxMessages = msgs
 }
 
 func DeleOneMax(signs [][]byte) [][]byte {

@@ -352,60 +352,11 @@ middle_cases
     ${amount}    getBalance    ${developerAddr_02}    PTN
     log    ${amount}    #9998，被没收了1个PTN，花了1个PTN手续费
 
-Business_08
-    [Documentation]    退出候选列表的两个Mediator继续交付保证金
-    ...
-    ...    mediator交付保证金再次进入超级节点和jury节点候选列表
-    ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}
-    log    ${mDeposit}
-    ${amount}    getBalance    ${mediatorAddr_01}    PTN
-    log    ${amount}
-    Should Be Equal As Numbers    ${amount}    9996
-    ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    50
-    log    ${result}
-    sleep    5
-    ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}
-    log    ${mDeposit}
-    ${amount}    getBalance    ${mediatorAddr_01}    PTN
-    log    ${amount}
-    Should Be Equal As Numbers    ${amount}    9945
-    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
-    log    ${amount}
-    Should Be Equal As Numbers    ${amount}    50
-    ${addressMap3}    getListForMediatorCandidate
-    log    ${addressMap3}
-    Dictionary Should Contain Key    ${addressMap3}    ${mediatorAddr_01}
-    ${resul}    getListForJuryCandidate
-    Dictionary Should Contain Key    ${resul}    ${mediatorAddr_01}
-    log    ${resul}
-    ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_02}
-    log    ${mDeposit}
-    ${amount}    getBalance    ${mediatorAddr_02}    PTN
-    log    ${amount}
-    Should Be Equal As Numbers    ${amount}    9946
-    ${result}    mediatorPayToDepositContract    ${mediatorAddr_02}    50
-    log    ${result}
-    sleep    5
-    ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_02}
-    log    ${mDeposit}
-    ${amount}    getBalance    ${mediatorAddr_02}    PTN
-    log    ${amount}
-    Should Be Equal As Numbers    ${amount}    9895
-    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
-    log    ${amount}
-    Should Be Equal As Numbers    ${amount}    100
-    ${addressMap3}    getListForMediatorCandidate
-    log    ${addressMap3}
-    Dictionary Should Contain Key    ${addressMap3}    ${mediatorAddr_02}
-    ${resul}    getListForJuryCandidate
-    Dictionary Should Contain Key    ${resul}    ${mediatorAddr_02}
-    log    ${resul}
-
 PledgeTest
     [Documentation]    质押流程的测试用例，包括投票、质押、分红、赎回、查询相关等操作
     ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${amount}    #100，上一个测试的结果
-    Should Be Equal As Numbers    ${amount}    100
+    Should Be Equal As Numbers    ${amount}    0
     ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
     log    ${result}
     ${result}    getBalance    ${votedAddress}    PTN
@@ -589,7 +540,7 @@ PledgeTest
     Should Be Equal As Numbers    ${amount}    577490000
     ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${amount}    #108.66235，866,235,000是质押增发的
-    Should Be Equal As Numbers    ${amount}    105.7749
+    Should Be Equal As Numbers    ${amount}    5.7749
 
 Business_09
     [Documentation]    jury 和 dev 交付保证金数量不对流程
@@ -619,7 +570,7 @@ Business_09
     sleep    1
     ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${amount}    #108.66235，866,235,000是质押增发的，没有变化
-    Should Be Equal As Numbers    ${amount}    105.7749
+    Should Be Equal As Numbers    ${amount}    5.7749
 
 Business_10
     [Documentation]    jury 交付 10 ptn 才可以加入候选列表
@@ -1146,3 +1097,52 @@ PledgeTest02
     log    ${result}
     ${amount}    getBalance    ${foundationAddr}    PTN
     log    ${amount}    #100，上一个测试的结果
+
+Business_08
+    [Documentation]    退出候选列表的两个Mediator继续交付保证金
+    ...
+    ...    mediator交付保证金再次进入超级节点和jury节点候选列表
+    ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}
+    log    ${mDeposit}
+    ${amount}    getBalance    ${mediatorAddr_01}    PTN
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    9996
+    ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    50
+    log    ${result}
+    sleep    5
+    ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}
+    log    ${mDeposit}
+    ${amount}    getBalance    ${mediatorAddr_01}    PTN
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    9945
+    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    381.21215
+    ${addressMap3}    getListForMediatorCandidate
+    log    ${addressMap3}
+    Dictionary Should Contain Key    ${addressMap3}    ${mediatorAddr_01}
+    ${resul}    getListForJuryCandidate
+    Dictionary Should Contain Key    ${resul}    ${mediatorAddr_01}
+    log    ${resul}
+    ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_02}
+    log    ${mDeposit}
+    ${amount}    getBalance    ${mediatorAddr_02}    PTN
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    9946
+    ${result}    mediatorPayToDepositContract    ${mediatorAddr_02}    50
+    log    ${result}
+    sleep    5
+    ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_02}
+    log    ${mDeposit}
+    ${amount}    getBalance    ${mediatorAddr_02}    PTN
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    9895
+    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    431.21215
+    ${addressMap3}    getListForMediatorCandidate
+    log    ${addressMap3}
+    Dictionary Should Contain Key    ${addressMap3}    ${mediatorAddr_02}
+    ${resul}    getListForJuryCandidate
+    Dictionary Should Contain Key    ${resul}    ${mediatorAddr_02}
+    log    ${resul}
