@@ -150,8 +150,8 @@ type ProtocolManager struct {
 	// and processing
 	wg sync.WaitGroup
 
-	genesis *modules.Unit
-	contract       *contracts.Contract
+	genesis  *modules.Unit
+	contract *contracts.Contract
 
 	activeMediatorsUpdatedCh  chan modules.ActiveMediatorsUpdatedEvent
 	activeMediatorsUpdatedSub event.Subscription
@@ -190,19 +190,10 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 		receivedCache:  freecache.NewCache(cacheSize),
 		contract:       contract,
 	}
-	symbol, _, _, _, _ := gasToken.ParseAssetId()
-	protocolName := symbol
-	//asset, err := modules.NewAsset(strings.ToUpper(gasToken), modules.AssetType_FungibleToken,
-	// 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, modules.UniqueIdType_Null, modules.UniqueId{})
-	//if err != nil {
-	//	log.Error("ProtocolManager new asset err", err)
-	//	return nil, err
-	//}
-	//manager.mainAssetId = asset.AssetId
+	protocolName, _, _, _, _ := gasToken.ParseAssetId()
 	manager.mainAssetId = gasToken
+
 	// Figure out whether to allow fast sync or not
-	/*blockchain.CurrentBlock().NumberU64() > 0 */
-	//TODO must modify.The second start would Blockchain not empty, fast sync disabled
 	//if mode == downloader.FastSync && dag.CurrentUnit().UnitHeader.Index() > 0 {
 	//	log.Info("dag not empty, fast sync disabled")
 	//	mode = downloader.FullSync

@@ -33,6 +33,7 @@ import (
 )
 
 const ENABLE_TX_FEE_CHECK_TIME = 1570870800
+const ENABLE_CONTRACT_SIGN_CHECK_TIME = 1575129600 //2019-12-1
 
 /**
 验证unit的签名，需要比对见证人列表
@@ -139,7 +140,7 @@ func (validate *Validate) validateMediatorSchedule(header *modules.Header) Valid
 	scheduledMediator := validate.propquery.GetScheduledMediator(slotNum)
 	if !scheduledMediator.Equal(header.Author()) {
 		errStr := fmt.Sprintf("mediator(%v) produced unit at wrong time,scheduled slot number:%d, mediator is %v",
-			header.Author().Str(),slotNum,scheduledMediator.String())
+			header.Author().Str(), slotNum, scheduledMediator.String())
 		log.Warn(errStr)
 		return UNIT_STATE_INVALID_MEDIATOR_SCHEDULE
 	}
@@ -239,7 +240,9 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) Validat
 		log.Warnf("validate.statequery.RetrieveMediator %v err", medAdd.Str())
 		return UNIT_STATE_INVALID_AUTHOR_SIGNATURE
 	}
-	validate.enableTxFeeCheck = unit.Timestamp() > ENABLE_TX_FEE_CHECK_TIME // 1.0.3升级，支持交易费检查
+	validate.enableTxFeeCheck = unit.Timestamp() > ENABLE_TX_FEE_CHECK_TIME               // 1.0.3升级，支持交易费检查
+	validate.enableContractSignCheck = unit.Timestamp() > ENABLE_CONTRACT_SIGN_CHECK_TIME // 1.0.4升级，支持交易费检查
+
 	//if validate.enableTxFeeCheck{
 	//	log.Infof("Enable tx fee check since %d",unit.Timestamp())
 	//}
