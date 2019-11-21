@@ -24,15 +24,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"math"
 	"github.com/ethereum/go-ethereum/rlp"
+	"math"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/constants"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 /**
@@ -47,7 +47,7 @@ To validate one transaction
 如果isFullTx为false，意味着这个Tx还没有被陪审团处理完，所以结果部分的Payment不验证
 */
 func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (ValidationCode, []*modules.Addition) {
-	txHash:=tx.Hash()
+	txHash := tx.Hash()
 	if len(tx.TxMessages) == 0 {
 		return TxValidationCode_INVALID_MSG, nil
 	}
@@ -65,21 +65,21 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 		return TxValidationCode_NOT_COMPARE_SIZE, txFee
 	}
 	//用户合约的执行结果必须有Jury签名
-	if isFullTx && tx.IsContractTx()&& !tx.IsSystemContract(){
-		isResultMsg:=false
-		hasSignMsg:=false
-		for _,msg:=range tx.TxMessages{
-			if msg.App.IsRequest(){
-				isResultMsg=true
+	if validate.enableContractSignCheck && isFullTx && tx.IsContractTx() && !tx.IsSystemContract() {
+		isResultMsg := false
+		hasSignMsg := false
+		for _, msg := range tx.TxMessages {
+			if msg.App.IsRequest() {
+				isResultMsg = true
 				continue
 			}
-			if isResultMsg && (msg.App==modules.APP_SIGNATURE||msg.App==modules.APP_PAYMENT){
-				hasSignMsg=true
+			if isResultMsg && (msg.App == modules.APP_SIGNATURE || msg.App == modules.APP_PAYMENT) {
+				hasSignMsg = true
 			}
 		}
-		if !hasSignMsg{
-			log.Warnf("Tx[%s] is an user contract invoke, but don't have jury signature",txHash.String())
-			return TxValidationCode_INVALID_CONTRACT_SIGN,txFee
+		if !hasSignMsg {
+			log.Warnf("Tx[%s] is an user contract invoke, but don't have jury signature", txHash.String())
+			return TxValidationCode_INVALID_CONTRACT_SIGN, txFee
 		}
 	}
 	hasRequestMsg := false
