@@ -808,7 +808,7 @@ func (d *Dag) GetTxOutput(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error) {
 	neededSet := make(map[modules.OutPoint]struct{})
 
-	for _, msgcopy := range tx.TxMessages {
+	for _, msgcopy := range tx.TxMessages() {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 				if !msg.IsCoinbase() {

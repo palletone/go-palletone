@@ -114,7 +114,7 @@ func (view *UtxoViewpoint) FetchUnitUtxos(db utxoBaseGetOp, unit *modules.Unit) 
 		// NOTE: The >= is correct here because i is one less
 		// than the actual position of the transaction within
 		// the block due to skipping the coinbase.
-		for j, msgcopy := range tx.TxMessages {
+		for j, msgcopy := range tx.TxMessages() {
 			if msgcopy.App == modules.APP_PAYMENT {
 				if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 					for _, txIn := range msg.Inputs {
@@ -191,11 +191,11 @@ func (view *UtxoViewpoint) addTxOut(outpoint modules.OutPoint, txOut *modules.Tx
 }
 
 func (view *UtxoViewpoint) AddTxOut(tx *modules.Transaction, msgIdx, txoutIdx uint32) {
-	if msgIdx >= uint32(len(tx.TxMessages)) {
+	if msgIdx >= uint32(len(tx.TxMessages())) {
 		return
 	}
 
-	for i, msgcopy := range tx.TxMessages {
+	for i, msgcopy := range tx.TxMessages() {
 
 		if (uint32(i) == msgIdx) && (msgcopy.App == modules.APP_PAYMENT) {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
@@ -214,7 +214,7 @@ func (view *UtxoViewpoint) AddTxOut(tx *modules.Transaction, msgIdx, txoutIdx ui
 
 func (view *UtxoViewpoint) AddTxOuts(tx *modules.Transaction) {
 	preout := modules.OutPoint{TxHash: tx.Hash()}
-	for i, msgcopy := range tx.TxMessages {
+	for i, msgcopy := range tx.TxMessages() {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 				msgIdx := uint32(i)
@@ -288,7 +288,7 @@ const (
 
 func CheckTransactionSanity(tx *modules.Transaction) error {
 	// A transaction must have at least one input.
-	if len(tx.TxMessages) == 0 {
+	if len(tx.TxMessages()) == 0 {
 		return errors.New(fmt.Sprintf("transaction has no inputs,hash: %s", tx.Hash().String()))
 	}
 	// A transaction must not exceed the maximum allowed block payload when
@@ -307,7 +307,7 @@ func CheckTransactionSanity(tx *modules.Transaction) error {
 	// as a satoshi.  One bitcoin is a quantity of satoshi as defined by the
 	// SatoshiPerBitcoin constant.
 	// var totalSatoshi uint64
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if !ok {
 			continue

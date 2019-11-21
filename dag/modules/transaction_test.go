@@ -50,8 +50,8 @@ func TestTransactionJson(t *testing.T) {
 	if errNew != nil {
 		fmt.Println(errNew)
 	} else {
-		fmt.Println("json_result_payload: ", errNew, tx_item.TxMessages[0].Payload)
-		data1, err1 := json.Marshal(tx_item.TxMessages[0].Payload)
+		fmt.Println("json_result_payload: ", errNew, tx_item.TxMessages()[0].Payload)
+		data1, err1 := json.Marshal(tx_item.TxMessages()[0].Payload)
 		if err1 != nil {
 			fmt.Println(err1)
 			return
@@ -84,7 +84,7 @@ func TestTxClone(t *testing.T) {
 	tx2 := tx.Clone()
 
 	t.Logf("%#v", tx2)
-	t.Logf("msg count:%d", len(tx2.TxMessages))
+	t.Logf("msg count:%d", len(tx2.TxMessages()))
 }
 
 //func TestTxHash(t *testing.T) {
@@ -211,10 +211,10 @@ func TestTransactionEncode(t *testing.T) {
 			}
 		}
 	}
-	if len(tx.TxMessages) != 3 {
+	if len(tx.TxMessages()) != 3 {
 		t.Error("Rlp decode message count error")
 	}
-	msg0 := tx.TxMessages[0]
+	msg0 := tx.TxMessages()[0]
 	if msg0.App != APP_PAYMENT {
 		t.Error("Payment decode error")
 	}
@@ -230,7 +230,7 @@ func TestTransactionEncode(t *testing.T) {
 	}
 
 	fmt.Printf("PaymentData:%+v", payment)
-	msg2 := tx.TxMessages[1]
+	msg2 := tx.TxMessages()[1]
 	if msg2.App != APP_DATA {
 		t.Error("Data decode error")
 	}
@@ -243,7 +243,7 @@ func TestTransactionEncode(t *testing.T) {
 	}
 	t.Log("DataPayload:", data)
 
-	msg3 := tx.TxMessages[2]
+	msg3 := tx.TxMessages()[2]
 	if msg3.App != APP_CONTRACT_INVOKE_REQUEST {
 		t.Error("Data decode error")
 	}

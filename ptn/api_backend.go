@@ -164,7 +164,7 @@ func (b *PtnApiBackend) GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, e
 	//	hex_hash = unitHash.String()
 	//}
 	var txresult []byte
-	for _, msgcopy := range tx.TxMessages {
+	for _, msgcopy := range tx.TxMessages() {
 		if msgcopy.App == modules.APP_DATA {
 			if msg, ok := msgcopy.Payload.(*modules.DataPayload); ok {
 				txresult = msg.MainData
@@ -816,9 +816,7 @@ func (b *PtnApiBackend) DecodeJsonTx(hexStr string) (string, error) {
 	if err := rlp.DecodeBytes(decoded, &btxjson); err != nil {
 		return "", errors.New("RLP Decode To Byte is invalid")
 	}
-	tx := &modules.Transaction{
-		TxMessages: make([]*modules.Message, 0),
-	}
+	tx := modules.NewTransaction(make([]*modules.Message, 0))
 	err = json.Unmarshal(btxjson, tx)
 	if err != nil {
 		return "", errors.New("Json Unmarshal To Tx is invalid")

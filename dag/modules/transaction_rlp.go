@@ -58,10 +58,10 @@ func (tx *Transaction) EncodeRLP(w io.Writer) error {
 }
 func tx2Temp(tx *Transaction) (*transactionTemp, error) {
 	temp := &transactionTemp{}
-	//temp.Illegal = tx.Illegal
-	temp.CertId = tx.CertId
+	//temp.Illegal = tx.Illegal()
+	temp.CertId = tx.CertId()
 
-	for _, m := range tx.TxMessages {
+	for _, m := range tx.TxMessages() {
 		m1 := messageTemp{
 			App: m.App,
 		}
@@ -77,6 +77,7 @@ func tx2Temp(tx *Transaction) (*transactionTemp, error) {
 	return temp, nil
 }
 func temp2Tx(temp *transactionTemp, tx *Transaction) error {
+	d := transaction_sdw{}
 	for _, m := range temp.TxMessages {
 		m1 := &Message{
 			App: m.App,
@@ -121,7 +122,8 @@ func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 			log.Debugf("ContractDeployPayload hex:%x", m.Data)
 			err := rlp.DecodeBytes(m.Data, &payload)
 			if err != nil {
-				log.Debugf("data [%x] cannot decode to newest ContractDeployPayload, try decode to ContractDeployPayloadV1", m.Data)
+				log.Debugf("data [%x] cannot decode to newest ContractDeployPayload, try decode to"+
+					" ContractDeployPayloadV1", m.Data)
 				temp := &ContractDeployPayloadV1{}
 				err = rlp.DecodeBytes(m.Data, temp)
 				if err != nil {
@@ -187,11 +189,12 @@ func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 		} else {
 			fmt.Println("Unknown message app type:", m.App)
 		}
-		tx.TxMessages = append(tx.TxMessages, m1)
+		d.TxMessages = append(d.TxMessages, m1)
 
 	}
-	tx.Illegal = temp.Illegal
-	tx.CertId = temp.CertId
+	d.Illegal = temp.Illegal
+	d.CertId = temp.CertId
+	tx = &Transaction{txdata: d}
 	return nil
 
 }

@@ -1055,7 +1055,7 @@ func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
 	//
 	// The lockTimes in both the script and transaction must be of the same
 	// type.
-	msg0 := vm.tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+	msg0 := vm.tx.TxMessages()[0].Payload.(*modules.PaymentPayload)
 	txlockTime := msg0.LockTime
 	if !((txlockTime < LockTimeThreshold && int64(lockTime) < int64(LockTimeThreshold)) ||
 		(txlockTime >= LockTimeThreshold && int64(lockTime) >= int64(LockTimeThreshold))) {

@@ -153,7 +153,7 @@ func (ud *UnitDag4Test) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo,
 func (ud *UnitDag4Test) GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error) {
 	neededSet := make(map[modules.OutPoint]struct{})
 	preout := modules.OutPoint{TxHash: tx.Hash()}
-	for i, msgcopy := range tx.TxMessages {
+	for i, msgcopy := range tx.TxMessages() {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 				msgIdx := uint32(i)
@@ -223,10 +223,10 @@ func createTxs(address string) []*modules.Transaction {
 	addr, _ := common.StringToAddress(address)
 	lockScript := tokenengine.Instance.GenerateLockScript(addr)
 	for j := 0; j < 16; j++ {
-		tx := modules.NewTransaction([]*modules.Message{})
 		output := modules.NewTxOut(uint64(j+10), lockScript, a)
-		tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, modules.NewPaymentPayload([]*modules.Input{modules.NewTxIn(modules.NewOutPoint(common.NewSelfHash(),
-			0, 0), unlockScript)}, []*modules.Output{output})))
+		m := modules.NewMessage(modules.APP_PAYMENT, modules.NewPaymentPayload([]*modules.Input{modules.NewTxIn(
+			modules.NewOutPoint(common.NewSelfHash(), 0, 0), unlockScript)}, []*modules.Output{output}))
+		tx := modules.NewTransaction([]*modules.Message{m})
 		txs = append(txs, tx)
 	}
 	return txs

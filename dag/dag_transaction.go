@@ -117,11 +117,8 @@ func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee
 	if certID != nil {
 		certIDBytes = certID.Bytes()
 	}
-	tx := &modules.Transaction{
-		TxMessages: make([]*modules.Message, 0),
-		CertId:     certIDBytes,
-	}
-	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
+	tx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, pload)})
+	tx.SetCertId(certIDBytes)
 	return tx, nil
 }
 
@@ -159,16 +156,12 @@ func (dag *Dag) createTokenTransaction(from, to, toToken common.Address, daoAmou
 		return nil, err
 	}
 	// 3. 构建Transaction
-	tx := &modules.Transaction{
-		TxMessages: make([]*modules.Message, 0),
-	}
-	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, ploadPTN))
-	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, ploadToken))
-
+	tx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, ploadPTN),
+		modules.NewMessage(modules.APP_PAYMENT, ploadToken)})
 	return tx, nil
 }
 
-func (dag *Dag)getPayload(from, to common.Address, daoAmount, daoFee uint64,
+func (dag *Dag) getPayload(from, to common.Address, daoAmount, daoFee uint64,
 	utxos map[modules.OutPoint]*modules.Utxo) (*modules.PaymentPayload, error) {
 	// 1. 利用贪心算法得到指定额度的utxo集合
 	greedyUtxos := core.Utxos{}

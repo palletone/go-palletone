@@ -134,9 +134,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 		App:     modules.APP_DATA,
 		Payload: &modules.DataPayload{MainData: []byte("Genesis Text"), ExtraData: []byte(genesis.Text)},
 	}
-	tx := &modules.Transaction{
-		TxMessages: []*modules.Message{msg0, msg1},
-	}
+	tx := modules.NewTransaction([]*modules.Message{msg0, msg1})
 	// step3, generate global config payload message
 	configPayloads, err := dagCommon.GenGenesisConfigPayload(genesis, asset)
 	if err != nil {
@@ -149,7 +147,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 			App:     modules.APP_CONTRACT_INVOKE,
 			Payload: payload,
 		}
-		tx.TxMessages = append(tx.TxMessages, newMsg)
+		tx.AddMessage(newMsg)
 	}
 	//Init system contract
 	for _, sc := range genesis.SystemContracts {
@@ -158,7 +156,7 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 			Payload: &modules.ContractDeployPayload{ContractId: sc.Address.Bytes(), Name: sc.Name},
 		}
 		if sc.Active {
-			tx.TxMessages = append(tx.TxMessages, newMsg)
+			tx.AddMessage(newMsg)
 		}
 	}
 	// step4, generate initial mediator info payload
@@ -181,18 +179,17 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 //}
 
 func GenContractTransction(orgTx *modules.Transaction, msgs []*modules.Message) (*modules.Transaction, error) {
-	if orgTx == nil || len(orgTx.TxMessages) < 2 {
+	if orgTx == nil || len(orgTx.TxMessages()) < 2 {
 		return nil, errors.New(fmt.Sprintf("GenContractTransction param is error"))
 	}
 	tx := &modules.Transaction{}
-	for i := 0; i < len(orgTx.TxMessages); i++ {
-		tx.AddMessage(orgTx.TxMessages[i])
-	}
+	tx.SetMessages(orgTx.TxMessages())
+
 	for i := 0; i < len(msgs); i++ {
 		tx.AddMessage(msgs[i])
 	}
-	tx.CertId = orgTx.CertId
-	tx.Illegal = orgTx.Illegal
+	tx.SetCertId(orgTx.CertId())
+	tx.SetIllegal(orgTx.Illegal())
 	return tx, nil
 }
 

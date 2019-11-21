@@ -198,7 +198,7 @@ func (engine *TokenEngine) ScriptValidate(utxoLockScript []byte,
 	txCopy := tx
 	if tx.IsContractTx() {
 		isRequestMsg := false
-		for idx, msg := range tx.TxMessages {
+		for idx, msg := range tx.TxMessages() {
 			if msg.App.IsRequest() {
 				isRequestMsg = true
 			}
@@ -227,7 +227,7 @@ func (engine *TokenEngine) ScriptValidate1Msg(utxoLockScripts map[string][]byte,
 	txCopy := tx
 	if tx.IsContractTx() {
 		isRequestMsg := false
-		for idx, msg := range tx.TxMessages {
+		for idx, msg := range tx.TxMessages() {
 			if msg.App.IsRequest() {
 				isRequestMsg = true
 			}
@@ -238,7 +238,7 @@ func (engine *TokenEngine) ScriptValidate1Msg(utxoLockScripts map[string][]byte,
 		}
 	}
 	log.Debugf("SignCache count:%d", engine.signCache.Count())
-	for inputIndex, input := range txCopy.TxMessages[msgIdx].Payload.(*modules.PaymentPayload).Inputs {
+	for inputIndex, input := range txCopy.TxMessages()[msgIdx].Payload.(*modules.PaymentPayload).Inputs {
 		utxoLockScript := utxoLockScripts[input.PreviousOutPoint.String()]
 		vm, err := txscript.NewEngine(utxoLockScript,
 			func(addr common.Address) ([]byte, error) { return pickupJuryRedeemScript(addr) },
@@ -271,7 +271,7 @@ func (engine *TokenEngine) GetScriptSigners(tx *modules.Transaction, msgIdx, inp
 	pubkeys := [][]byte{}
 	var redeem []byte
 	var hashType byte
-	script := tx.TxMessages[msgIdx].Payload.(*modules.PaymentPayload).Inputs[inputIndex].SignatureScript
+	script := tx.TxMessages()[msgIdx].Payload.(*modules.PaymentPayload).Inputs[inputIndex].SignatureScript
 	scriptStr, _ := txscript.DisasmString(script)
 	ops := strings.Fields(scriptStr)
 	for i, op := range ops {
@@ -389,7 +389,7 @@ func (engine *TokenEngine) SignTxAllPaymentInput(tx *modules.Transaction, hashTy
 	}
 	tmpAcc := &account{pubKeyFn: pubKeyFn, signFn: hashFn}
 	var signErrors []common.SignatureError
-	for i, msg := range tx.TxMessages {
+	for i, msg := range tx.TxMessages() {
 		if msg.App == modules.APP_PAYMENT {
 			pay, ok := msg.Payload.(*modules.PaymentPayload)
 			if !ok {

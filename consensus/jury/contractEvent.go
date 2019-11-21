@@ -34,7 +34,7 @@ func (p *Processor) SubscribeContractEvent(ch chan<- ContractEvent) event.Subscr
 }
 
 func (p *Processor) ProcessContractEvent(event *ContractEvent) (bool, error) {
-	if event == nil || event.Tx == nil || len(event.Tx.TxMessages) < 1 {
+	if event == nil || event.Tx == nil || len(event.Tx.TxMessages()) < 1 {
 		return false, errors.New("ProcessContractEvent param is nil")
 	}
 	var err error

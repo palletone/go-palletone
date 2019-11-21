@@ -577,10 +577,7 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 	//	// is intentionally not directly returning because the first return
 	//	// value is a string and it would result in returning an empty string to
 	//	// the client instead of nothing (nil) in the case of an error.
-	mtx := &modules.Transaction{
-		TxMessages: make([]*modules.Message, 0),
-	}
-	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
+	mtx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, pload)})
 	//mtx.TxHash = mtx.Hash()
 	mtxbt, err := rlp.EncodeToBytes(mtx)
 	if err != nil {
@@ -610,7 +607,7 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, poolTxs
 	}
 
 	for _, tx := range poolTxs {
-		for msgindex, msg := range tx.Tx.TxMessages {
+		for msgindex, msg := range tx.Tx.TxMessages() {
 			if msg.App == modules.APP_PAYMENT {
 				pay := msg.Payload.(*modules.PaymentPayload)
 
@@ -1025,9 +1022,7 @@ func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, err
 	}
-	tx := &modules.Transaction{
-		TxMessages: make([]*modules.Message, 0),
-	}
+	tx := modules.NewTransaction(make([]*modules.Message, 0))
 	if err := rlp.DecodeBytes(serializedTx, tx); err != nil {
 		return ptnjson.SignRawTransactionResult{}, err
 	}
@@ -1118,7 +1113,7 @@ func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
 	}
-	for msgidx, msg := range tx.TxMessages {
+	for msgidx, msg := range tx.TxMessages() {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if !ok {
 			continue

@@ -342,7 +342,7 @@ func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode)
 
 func (p *Processor) GenContractSigTransaction(signer common.Address, password string, orgTx *modules.Transaction,
 	ks *keystore.KeyStore) (*modules.Transaction, error) {
-	if orgTx == nil || len(orgTx.TxMessages) < 3 {
+	if orgTx == nil || len(orgTx.TxMessages()) < 3 {
 		return nil, fmt.Errorf("GenContractSigTransctions param is error")
 	}
 	if password != "" {
@@ -357,7 +357,7 @@ func (p *Processor) GenContractSigTransaction(signer common.Address, password st
 	resultMsg := false
 	isSysContract := false
 	reqId := tx.RequestHash()
-	for msgidx, msg := range tx.TxMessages {
+	for msgidx, msg := range tx.TxMessages() {
 		if msg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
 			resultMsg = true
 			requestMsg := msg.Payload.(*modules.ContractInvokeRequestPayload)
@@ -379,7 +379,7 @@ func (p *Processor) GenContractSigTransaction(signer common.Address, password st
 						var utxo *modules.Utxo
 						var err error
 						if input.PreviousOutPoint.TxHash.IsSelfHash() { //引用Tx本身
-							output := tx.TxMessages[input.PreviousOutPoint.MessageIndex].Payload.(*modules.PaymentPayload).
+							output := tx.TxMessages()[input.PreviousOutPoint.MessageIndex].Payload.(*modules.PaymentPayload).
 								Outputs[input.PreviousOutPoint.OutIndex]
 							utxo = &modules.Utxo{
 								Amount:    output.Value,
@@ -442,7 +442,7 @@ func (p *Processor) GenContractSigTransaction(signer common.Address, password st
 			}
 			log.Debugf("[%s]GenContractSigTransactions, Add sign message[%s] to tx requestId[%s]",
 				shortId(reqId.String()), sigSet.String(), reqId.String())
-			tx.TxMessages = append(tx.TxMessages, msgSig)
+			tx.AddMessage(msgSig)
 		}
 		log.Debugf("[%s]GenContractSigTransactions, ok, tx[%s]", shortId(reqId.String()), tx.Hash().String())
 	}
@@ -583,7 +583,7 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 			return false
 		}
 	}
-	return msgsCompare(msgs, tx.TxMessages, modules.APP_CONTRACT_INVOKE)
+	return msgsCompare(msgs, tx.TxMessages(), modules.APP_CONTRACT_INVOKE)
 }
 
 func (p *Processor) IsSystemContractTx(tx *modules.Transaction) bool {
@@ -749,7 +749,7 @@ func (p *Processor) createContractTxReq(contractId, from, to common.Address, dao
 }
 func (p *Processor) SignAndExecuteAndSendRequest(from common.Address,
 	tx *modules.Transaction) (*modules.Transaction, error) {
-	requestMsg := tx.TxMessages[tx.GetRequestMsgIndex()]
+	requestMsg := tx.TxMessages()[tx.GetRequestMsgIndex()]
 	if requestMsg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
 		request := requestMsg.Payload.(*modules.ContractInvokeRequestPayload)
 		contractId := common.NewAddress(request.ContractId, common.ContractHash)

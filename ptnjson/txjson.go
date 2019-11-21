@@ -162,7 +162,7 @@ func ConvertTx2FullJson(tx *modules.Transaction,
 	txjson.TxHash = tx.Hash().String()
 	txjson.RequestHash = tx.RequestHash().String()
 	txjson.TxSize = float64(tx.Size())
-	for i, m := range tx.TxMessages {
+	for i, m := range tx.TxMessages() {
 		if m.App == modules.APP_PAYMENT {
 			pay := m.Payload.(*modules.PaymentPayload)
 			if utxoQuery == nil {

@@ -74,7 +74,7 @@ func TestGetBody(t *testing.T) {
 		if err := rlp.DecodeBytes(data1, &tx); err != nil {
 			fmt.Println("decode tx error:", string(key1), err)
 		}
-		for _, msg := range tx.TxMessages {
+		for _, msg := range tx.TxMessages() {
 			fmt.Println("tx msg info ", msg)
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			fmt.Println("payment info ", ok, payment)

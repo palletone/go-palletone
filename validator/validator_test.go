@@ -175,7 +175,7 @@ func newTx1(t *testing.T) *modules.Transaction {
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
-	unlockScript := tx.TxMessages[0].Payload.(*modules.PaymentPayload).Inputs[0].SignatureScript
+	unlockScript := tx.TxMessages()[0].Payload.(*modules.PaymentPayload).Inputs[0].SignatureScript
 	t.Logf("UnlockScript:%x", unlockScript)
 
 	return tx
@@ -216,7 +216,7 @@ func newTx2(t *testing.T, outpoint *modules.OutPoint) *modules.Transaction {
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
-	unlockScript := tx.TxMessages[0].Payload.(*modules.PaymentPayload).Inputs[0].SignatureScript
+	unlockScript := tx.TxMessages()[0].Payload.(*modules.PaymentPayload).Inputs[0].SignatureScript
 	t.Logf("UnlockScript:%x", unlockScript)
 	return tx
 }
@@ -259,9 +259,6 @@ func TestSignAndVerifyATx(t *testing.T) {
 	lockScript := tokenengine.Instance.GenerateP2PKHLockScript(pubKeyHash)
 	t.Logf("UTXO lock script:%x", lockScript)
 
-	tx := &modules.Transaction{
-		TxMessages: make([]*modules.Message, 0),
-	}
 	payment := &modules.PaymentPayload{}
 	utxoTxId := common.HexToHash("5651870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
 	outPoint := modules.NewOutPoint(utxoTxId, 0, 0)
@@ -276,11 +273,11 @@ func TestSignAndVerifyATx(t *testing.T) {
 	payment2.AddTxIn(txIn2)
 	asset1 := &modules.Asset{AssetId: modules.PTNCOIN}
 	payment2.AddTxOut(modules.NewTxOut(1, lockScript, asset1))
-	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payment))
-	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, payment2))
+	m1 := modules.NewMessage(modules.APP_PAYMENT, payment)
+	m2 := modules.NewMessage(modules.APP_PAYMENT, payment2)
 
-	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_DATA, &modules.DataPayload{MainData: []byte("Hello PalletOne")}))
-
+	m3 := modules.NewMessage(modules.APP_DATA, &modules.DataPayload{MainData: []byte("Hello PalletOne")})
+	tx := modules.NewTransaction([]*modules.Message{m1, m2, m3})
 	lockScripts := map[modules.OutPoint][]byte{
 		*outPoint:  lockScript[:],
 		*outPoint2: tokenengine.Instance.GenerateP2PKHLockScript(pubKeyHash),
@@ -300,7 +297,7 @@ func TestSignAndVerifyATx(t *testing.T) {
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
-	unlockScript := tx.TxMessages[0].Payload.(*modules.PaymentPayload).Inputs[0].SignatureScript
+	unlockScript := tx.TxMessages()[0].Payload.(*modules.PaymentPayload).Inputs[0].SignatureScript
 	t.Logf("UnlockScript:%x", unlockScript)
 
 }

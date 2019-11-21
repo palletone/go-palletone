@@ -36,6 +36,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/parameter"
+	"sync/atomic"
 )
 
 var (
@@ -64,22 +65,26 @@ func NewTransaction(msg []*Message) *Transaction {
 	return newTransaction(msg)
 }
 
-func NewContractCreation(msg []*Message) *Transaction {
-	return newTransaction(msg)
-}
+//func NewContractCreation(msg []*Message) *Transaction {
+//	return newTransaction(msg)
+//}
 
 func newTransaction(msg []*Message) *Transaction {
-	tx := new(Transaction)
-	//for _, m := range msg {
-	//	tx.TxMessages = append(tx.TxMessages, m)
-	//}
-	tx.TxMessages = append(tx.TxMessages, msg...)
-	return tx
+	tx := transaction_sdw{}
+	if len(msg) > 0 {
+		tx.TxMessages = make([]*Message, len(msg))
+		copy(tx.TxMessages, msg)
+	}
+	return &Transaction{txdata: tx}
 }
 
 // AddTxIn adds a transaction input to the message.
 func (tx *Transaction) AddMessage(msg *Message) {
-	tx.TxMessages = append(tx.TxMessages, msg)
+	msgs := tx.TxMessages()
+	if msg != nil {
+		msgs = append(msgs, msg)
+	}
+	tx.SetMessages(msgs)
 }
 
 type TransactionWithUnitInfo struct {
@@ -93,28 +98,35 @@ type TransactionWithUnitInfo struct {
 // Hash hashes the RLP encoding of tx.
 // It uniquely identifies the transaction.
 func (tx *Transaction) Hash() common.Hash {
-	oldFlag := tx.Illegal
-	tx.Illegal = false
-
+	if hash := tx.hash.Load(); hash != nil {
+		return hash.(common.Hash)
+	}
+	oldFlag := tx.Illegal()
+	if oldFlag {
+		tx.SetIllegal(false)
+		v := util.RlpHash(tx)
+		tx.SetIllegal(oldFlag)
+		tx.hash.Store(v)
+		return v
+	}
 	v := util.RlpHash(tx)
-	tx.Illegal = oldFlag
-
+	tx.hash.Store(v)
 	return v
 }
 
 func (tx *Transaction) RequestHash() common.Hash {
-	req := &Transaction{}
-	for _, msg := range tx.TxMessages {
-		req.AddMessage(msg)
+	d := transaction_sdw{}
+	for _, msg := range tx.TxMessages() {
+		d.TxMessages = append(d.TxMessages, msg)
 		if msg.App >= APP_CONTRACT_TPL_REQUEST { //100以上的APPCode是请求
 			break
 		}
 	}
-	return util.RlpHash(req)
+	return util.RlpHash(&Transaction{txdata: d})
 }
 
 func (tx *Transaction) ContractIdBytes() []byte {
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		switch msg.App {
 		case APP_CONTRACT_DEPLOY_REQUEST:
 			addr := crypto.RequestIdToContractAddress(tx.RequestHash())
@@ -131,13 +143,18 @@ func (tx *Transaction) ContractIdBytes() []byte {
 }
 
 func (tx *Transaction) Messages() []*Message {
-	return tx.TxMessages[:]
+	return tx.TxMessages()
 }
 
 // Size returns the true RLP encoded storage UnitSize of the transaction, either by
 // encoding and returning it, or returning a previsouly cached value.
 func (tx *Transaction) Size() common.StorageSize {
-	return CalcDateSize(tx)
+	if size := tx.size.Load(); size != nil {
+		return size.(common.StorageSize)
+	}
+	size := CalcDateSize(tx)
+	tx.size.Store(size)
+	return size
 }
 
 func (tx *Transaction) CreateDate() string {
@@ -179,24 +196,6 @@ func (s Transactions) GetRlp(i int) []byte {
 	return enc
 }
 
-// TxDifference returns a new set t which is the difference between a to b.
-//func TxDifference(a, b Transactions) (keep Transactions) {
-//	keep = make(Transactions, 0, len(a))
-//
-//	remove := make(map[common.Hash]struct{})
-//	for _, tx := range b {
-//		remove[tx.Hash()] = struct{}{}
-//	}
-//
-//	for _, tx := range a {
-//		if _, ok := remove[tx.Hash()]; !ok {
-//			keep = append(keep, tx)
-//		}
-//	}
-//
-//	return keep
-//}
-
 type WriteCounter common.StorageSize
 
 func (c *WriteCounter) Write(b []byte) (int, error) {
@@ -231,6 +230,11 @@ func (txs Transactions) GetTxIds() []common.Hash {
 }
 
 type Transaction struct {
+	txdata transaction_sdw
+	hash   atomic.Value
+	size   atomic.Value
+}
+type transaction_sdw struct {
 	TxMessages []*Message `json:"messages"`
 	CertId     []byte     `json:"cert_id"` // should be big.Int byte
 	Illegal    bool       `json:"Illegal"` // not hash, 1:no valid, 0:ok
@@ -243,7 +247,7 @@ type GetJurorRewardAddFunc func(jurorAdd common.Address) common.Address
 
 //计算该交易的手续费，基于UTXO，所以传入查询UTXO的函数指针
 func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, error) {
-	msg0 := tx.TxMessages[0]
+	msg0 := tx.TxMessages()[0]
 	if msg0.App != APP_PAYMENT {
 		return nil, errors.New("Tx message 0 must a payment payload")
 	}
@@ -302,14 +306,63 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 
 	return &AmountAsset{Amount: fees, Asset: feeAsset}, nil
 }
+func (tx *Transaction) TxMessages() []*Message {
+	//msgs := make([]*Message, len(tx.txdata.TxMessages))
+	//copy(msgs, tx.txdata.TxMessages)
+	msgs := make([]*Message, 0)
+	msgs = append(msgs, tx.txdata.TxMessages...)
+	return msgs
+}
+func (tx *Transaction) CertId() []byte { return common.CopyBytes(tx.txdata.CertId) }
+func (tx *Transaction) Illegal() bool  { return tx.txdata.Illegal }
+func (tx *Transaction) SetMessages(msgs []*Message) {
+	if len(msgs) > 0 {
+		d := transaction_sdw{}
+		d.TxMessages = make([]*Message, len(msgs))
+		copy(d.TxMessages, msgs)
+		d.CertId = tx.CertId()
+		d.Illegal = tx.Illegal()
+		tx = &Transaction{txdata: d}
+	}
+}
+func (tx *Transaction) SetCertId(certid []byte) {
+	d := transaction_sdw{}
+	d.CertId = common.CopyBytes(certid)
+	d.Illegal = tx.Illegal()
+	d.TxMessages = append(d.TxMessages, tx.TxMessages()...)
+	tx = &Transaction{txdata: d}
+}
+func (tx *Transaction) SetIllegal(illegal bool) {
+	d := transaction_sdw{}
+	d.Illegal = illegal
+	d.CertId = common.CopyBytes(tx.CertId())
+	d.TxMessages = append(d.TxMessages, tx.TxMessages()...)
+	tx = &Transaction{txdata: d}
+}
+func (tx *Transaction) ModifiedMsg(index int, msg *Message) {
+	if len(tx.Messages()) < index {
+		return
+	}
+	sdw := transaction_sdw{}
+	for i, m := range tx.Messages() {
+		if i == index {
+			sdw.TxMessages = append(sdw.TxMessages, msg)
+		} else {
+			sdw.TxMessages = append(sdw.TxMessages, m)
+		}
+	}
+	sdw.Illegal = tx.Illegal()
+	sdw.CertId = tx.CertId()
+	tx = &Transaction{txdata: sdw}
+}
 
 func (tx *Transaction) GetCoinbaseReward(versionFunc QueryStateByVersionFunc,
 	scriptFunc GetAddressFromScriptFunc) (*AmountAsset, error) {
 	writeMap := make(map[string][]AmountAsset)
 	readMap := make(map[string][]AmountAsset)
-	if len(tx.TxMessages) == 2 && tx.TxMessages[0].App == APP_PAYMENT &&
-		tx.TxMessages[1].App == APP_CONTRACT_INVOKE { //进行了汇总付款
-		invoke := tx.TxMessages[1].Payload.(*ContractInvokePayload)
+	if len(tx.TxMessages()) == 2 && tx.TxMessages()[0].App == APP_PAYMENT &&
+		tx.TxMessages()[1].App == APP_CONTRACT_INVOKE { //进行了汇总付款
+		invoke := tx.TxMessages()[1].Payload.(*ContractInvokePayload)
 		for _, read := range invoke.ReadSet {
 			readResult, err := versionFunc(read.ContractId, read.Key, read.Version)
 			if err != nil {
@@ -323,7 +376,7 @@ func (tx *Transaction) GetCoinbaseReward(versionFunc QueryStateByVersionFunc,
 			addr := read.Key[len(constants.RewardAddressPrefix):]
 			readMap[addr] = aa
 		}
-		payment := tx.TxMessages[0].Payload.(*PaymentPayload)
+		payment := tx.TxMessages()[0].Payload.(*PaymentPayload)
 		for _, out := range payment.Outputs {
 			aa := AmountAsset{
 				Amount: out.Value,
@@ -332,8 +385,8 @@ func (tx *Transaction) GetCoinbaseReward(versionFunc QueryStateByVersionFunc,
 			addr, _ := scriptFunc(out.PkScript)
 			writeMap[addr.String()] = []AmountAsset{aa}
 		}
-	} else if tx.TxMessages[0].App == APP_CONTRACT_INVOKE { //进行了记账
-		invoke := tx.TxMessages[0].Payload.(*ContractInvokePayload)
+	} else if tx.TxMessages()[0].App == APP_CONTRACT_INVOKE { //进行了记账
+		invoke := tx.TxMessages()[0].Payload.(*ContractInvokePayload)
 		for _, write := range invoke.WriteSet {
 			var aa []AmountAsset
 			err := rlp.DecodeBytes(write.Value, &aa)
@@ -378,7 +431,7 @@ func (tx *Transaction) GetCoinbaseReward(versionFunc QueryStateByVersionFunc,
 func (tx *Transaction) GetNewUtxos() map[OutPoint]*Utxo {
 	result := map[OutPoint]*Utxo{}
 	txHash := tx.Hash()
-	for msgIndex, msg := range tx.TxMessages {
+	for msgIndex, msg := range tx.TxMessages() {
 		if msg.App != APP_PAYMENT {
 			continue
 		}
@@ -405,7 +458,7 @@ func (tx *Transaction) GetNewUtxos() map[OutPoint]*Utxo {
 }
 func (tx *Transaction) GetSpendOutpoints() []*OutPoint {
 	result := []*OutPoint{}
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		if msg.App != APP_PAYMENT {
 			continue
 		}
@@ -424,7 +477,7 @@ func (tx *Transaction) GetContractTxSignatureAddress() []common.Address {
 		return nil
 	}
 	addrs := make([]common.Address, 0)
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		switch msg.App {
 		case APP_SIGNATURE:
 			payload := msg.Payload.(*SignaturePayload)
@@ -438,33 +491,33 @@ func (tx *Transaction) GetContractTxSignatureAddress() []common.Address {
 
 //如果是合约调用交易，Copy其中的Msg0到ContractRequest的部分，如果不是请求，那么返回完整Tx
 func (tx *Transaction) GetRequestTx() *Transaction {
-	request := &Transaction{}
-	request.CertId = tx.CertId
-	for _, msg := range tx.TxMessages {
+	request := transaction_sdw{}
+	for _, msg := range tx.TxMessages() {
 		if msg.App.IsRequest() {
 			if msg.App == APP_CONTRACT_TPL_REQUEST {
 				payload := new(ContractInstallRequestPayload)
 				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
+				request.TxMessages = append(request.TxMessages, NewMessage(msg.App, payload))
 			} else if msg.App == APP_CONTRACT_DEPLOY_REQUEST {
 				payload := new(ContractDeployRequestPayload)
 				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
+				request.TxMessages = append(request.TxMessages, NewMessage(msg.App, payload))
 			} else if msg.App == APP_CONTRACT_INVOKE_REQUEST {
 				payload := new(ContractInvokeRequestPayload)
 				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
+				request.TxMessages = append(request.TxMessages, NewMessage(msg.App, payload))
 			} else if msg.App == APP_CONTRACT_STOP_REQUEST {
 				payload := new(ContractStopRequestPayload)
 				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
+				request.TxMessages = append(request.TxMessages, NewMessage(msg.App, payload))
 			}
-			return request
+			request.CertId = tx.CertId()
+			return &Transaction{txdata: request}
 		} else {
 			if msg.App == APP_PAYMENT {
 				payload := new(PaymentPayload)
 				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
+				request.TxMessages = append(request.TxMessages, NewMessage(msg.App, payload))
 				// } else if msg.App == APP_CONTRACT_TPL {
 				// 	payload := new(ContractTplPayload)
 				// 	obj.DeepCopy(payload, msg.Payload)
@@ -492,28 +545,28 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 			} else if msg.App == APP_DATA {
 				payload := new(DataPayload)
 				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
+				request.TxMessages = append(request.TxMessages, NewMessage(msg.App, payload))
 			} else if msg.App == APP_ACCOUNT_UPDATE {
 				payload := new(AccountStateUpdatePayload)
 				obj.DeepCopy(payload, msg.Payload)
-				request.AddMessage(NewMessage(msg.App, payload))
+				request.TxMessages = append(request.TxMessages, NewMessage(msg.App, payload))
 			} else {
 				log.Error("Invalid tx message")
 				return nil
 			}
 		}
 	}
-	return request
+	request.CertId = tx.CertId()
+	return &Transaction{txdata: request}
 }
 
 //获取一个被Jury执行完成后，但是还没有进行陪审员签名的交易
 func (tx *Transaction) GetResultRawTx() *Transaction {
 
-	txCopy := tx.Clone()
-	result := &Transaction{}
+	sdw := transaction_sdw{}
 	//result.CertId = tx.CertId
 	isResultMsg := false
-	for _, msg := range txCopy.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		if msg.App.IsRequest() {
 			isResultMsg = true
 		}
@@ -526,29 +579,28 @@ func (tx *Transaction) GetResultRawTx() *Transaction {
 				in.SignatureScript = nil
 			}
 		}
-		result.TxMessages = append(result.TxMessages, msg)
+		sdw.TxMessages = append(sdw.TxMessages, msg)
 	}
-	result.CertId = txCopy.CertId
-	result.Illegal = txCopy.Illegal
-	return result
+	sdw.CertId = tx.CertId()
+	sdw.Illegal = tx.Illegal()
+	return &Transaction{txdata: sdw}
 }
 
 func (tx *Transaction) GetResultTx() *Transaction {
-	txCopy := tx.Clone()
-	result := &Transaction{}
-	result.CertId = tx.CertId
-	for _, msg := range txCopy.TxMessages {
+	sdw := transaction_sdw{}
+	for _, msg := range tx.TxMessages() {
 		if msg.App == APP_SIGNATURE {
 			continue //移除SignaturePayload
 		}
-		result.TxMessages = append(result.TxMessages, msg)
+		sdw.TxMessages = append(sdw.TxMessages, msg)
 	}
-	return result
+	sdw.CertId = tx.CertId()
+	return &Transaction{txdata: sdw}
 }
 
 //Request 这条Message的Index是多少
 func (tx *Transaction) GetRequestMsgIndex() int {
-	for idx, msg := range tx.TxMessages {
+	for idx, msg := range tx.TxMessages() {
 		if msg.App.IsRequest() {
 			return idx
 		}
@@ -559,7 +611,7 @@ func (tx *Transaction) GetRequestMsgIndex() int {
 //这个交易是否包含了从合约付款出去的结果,有则返回该Payment
 func (tx *Transaction) HasContractPayoutMsg() (bool, *PaymentPayload) {
 	isInvokeResult := false
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		if msg.App.IsRequest() {
 			isInvokeResult = true
 			continue
@@ -575,7 +627,7 @@ func (tx *Transaction) HasContractPayoutMsg() (bool, *PaymentPayload) {
 }
 
 func (tx *Transaction) InvokeContractId() []byte {
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
 			contractId := msg.Payload.(*ContractInvokeRequestPayload).ContractId
 			return contractId
@@ -588,7 +640,7 @@ func (tx *Transaction) InvokeContractId() []byte {
 func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc GetAddressFromScriptFunc) (
 	[]common.Address, error) {
 	addrMap := map[common.Address]bool{}
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		if msg.App == APP_PAYMENT {
 			pay := msg.Payload.(*PaymentPayload)
 			for _, input := range pay.Inputs {
@@ -613,7 +665,7 @@ func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc Get
 //获取该交易的发起人地址
 func (tx *Transaction) GetRequesterAddr(queryUtxoFunc QueryUtxoFunc, getAddrFunc GetAddressFromScriptFunc) (
 	common.Address, error) {
-	msg0 := tx.TxMessages[0]
+	msg0 := tx.TxMessages()[0]
 	if msg0.App != APP_PAYMENT {
 		return common.Address{}, errors.New("Coinbase or Invalid Tx, first message must be a payment")
 	}
@@ -695,7 +747,7 @@ func (msg *Transaction) SerializeSize() int {
 }
 func (tx *Transaction) DataPayloadSize() int {
 	size := 0
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		if msg.App == APP_DATA {
 			data := msg.Payload.(*DataPayload)
 			size += len(data.MainData) + len(data.ExtraData) + len(data.Reference)
@@ -725,7 +777,7 @@ func (msg *Transaction) baseSize() int {
 	return len(b)
 }
 func (tx *Transaction) IsContractTx() bool {
-	for _, m := range tx.TxMessages {
+	for _, m := range tx.TxMessages() {
 		if m.App >= APP_CONTRACT_TPL && m.App <= APP_SIGNATURE {
 			return true
 		}
@@ -734,7 +786,7 @@ func (tx *Transaction) IsContractTx() bool {
 }
 
 func (tx *Transaction) IsSystemContract() bool {
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
 			contractId := msg.Payload.(*ContractInvokeRequestPayload).ContractId
 			contractAddr := common.NewAddress(contractId, common.ContractHash)
@@ -752,14 +804,14 @@ func (tx *Transaction) IsSystemContract() bool {
 
 //判断一个交易是否是一个合约请求交易，并且还没有被执行
 func (tx *Transaction) IsNewContractInvokeRequest() bool {
-	lastMsg := tx.TxMessages[len(tx.TxMessages)-1]
+	lastMsg := tx.TxMessages()[len(tx.TxMessages())-1]
 	return lastMsg.App.IsRequest()
 
 }
 
 //获得合约请求Msg的Index
 func (tx *Transaction) GetContractInvokeReqMsgIdx() int {
-	for idx, msg := range tx.TxMessages {
+	for idx, msg := range tx.TxMessages() {
 		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
 			return idx
 		}
@@ -781,7 +833,7 @@ func (tx *Transaction) GetTxFeeAllocateLegacyV1(queryUtxoFunc QueryUtxoFunc, get
 
 	isResultMsg := false
 	jury := []common.Address{}
-	for msgIdx, msg := range tx.TxMessages {
+	for msgIdx, msg := range tx.TxMessages() {
 		if msg.App.IsRequest() {
 			isResultMsg = true
 			continue
@@ -854,7 +906,7 @@ func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFu
 
 	isJuryInside := false
 	jury := []common.Address{}
-	for msgIdx, msg := range tx.TxMessages {
+	for msgIdx, msg := range tx.TxMessages() {
 		if msg.App == APP_CONTRACT_INVOKE_REQUEST ||
 			msg.App == APP_CONTRACT_DEPLOY_REQUEST ||
 			msg.App == APP_CONTRACT_STOP_REQUEST {

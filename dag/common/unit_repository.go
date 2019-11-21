@@ -561,7 +561,7 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 
 			//标记交易有效性
 			markTxIllegal(rep.statedb, t)
-			if t.Illegal {
+			if t.Illegal() {
 				illegalTxs = append(illegalTxs, uint16(idx))
 				log.Debugf("[%s]CreateUnit, contract is illegal, txHash[%s]", reqId.String()[0:8], t.Hash().String())
 			}
@@ -620,7 +620,7 @@ func markTxIllegal(dag storage.IStateDb, tx *modules.Transaction) {
 	var readSet []modules.ContractReadSet
 	var contractId []byte
 
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		switch msg.App {
 		case modules.APP_CONTRACT_DEPLOY:
 			payload := msg.Payload.(*modules.ContractDeployPayload)
@@ -637,7 +637,7 @@ func markTxIllegal(dag storage.IStateDb, tx *modules.Transaction) {
 		}
 	}
 	valid := checkReadSetValid(dag, contractId, readSet)
-	tx.Illegal = !valid
+	tx.SetIllegal(!valid)
 }
 
 type tempTxs struct {
@@ -872,7 +872,7 @@ func (rep *UnitRepository) updateAccountInfo(msg *modules.Message, account commo
 
 //Get who send this transaction
 func (rep *UnitRepository) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
-	msg0 := tx.TxMessages[0]
+	msg0 := tx.TxMessages()[0]
 	if msg0.App != modules.APP_PAYMENT {
 		errStr := "Invalid Tx, first message must be a payment"
 		log.Debug(errStr)
@@ -958,9 +958,9 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 	// traverse messages
 	var installReq *modules.ContractInstallRequestPayload
 	reqIndex := tx.GetRequestMsgIndex()
-	for msgIndex, msg := range tx.TxMessages {
+	for msgIndex, msg := range tx.TxMessages() {
 		// handle different messages
-		if tx.Illegal && msgIndex > reqIndex {
+		if tx.Illegal() && msgIndex > reqIndex {
 			break
 		}
 		switch msg.App {
@@ -1044,7 +1044,7 @@ func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Trans
 		rep.idxdb.SaveAddressTxId(addr, txHash)
 	}
 	//Index contract address to tx
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		if msg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
 			invoke := msg.Payload.(*modules.ContractInvokeRequestPayload)
 			addr := common.NewAddress(invoke.ContractId, common.ContractHash)
@@ -1055,7 +1055,7 @@ func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Trans
 
 func (rep *UnitRepository) getPayToAddresses(tx *modules.Transaction) []common.Address {
 	resultMap := map[common.Address]int{}
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		if msg.App == modules.APP_PAYMENT {
 			pay := msg.Payload.(*modules.PaymentPayload)
 			for _, out := range pay.Outputs {
@@ -1075,7 +1075,7 @@ func (rep *UnitRepository) getPayToAddresses(tx *modules.Transaction) []common.A
 
 func (rep *UnitRepository) getPayFromAddresses(tx *modules.Transaction) []common.Address {
 	resultMap := map[common.Address]int{}
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		if msg.App == modules.APP_PAYMENT {
 			pay := msg.Payload.(*modules.PaymentPayload)
 			for _, input := range pay.Inputs {
@@ -1089,7 +1089,7 @@ func (rep *UnitRepository) getPayFromAddresses(tx *modules.Transaction) []common
 						stxo, err := rep.utxoRepository.GetStxoEntry(input.PreviousOutPoint)
 						if err != nil {
 							if input.PreviousOutPoint.TxHash.IsSelfHash() {
-								out := tx.TxMessages[input.PreviousOutPoint.MessageIndex].Payload.(*modules.PaymentPayload).Outputs[input.PreviousOutPoint.OutIndex]
+								out := tx.TxMessages()[input.PreviousOutPoint.MessageIndex].Payload.(*modules.PaymentPayload).Outputs[input.PreviousOutPoint.OutIndex]
 								lockScript = out.PkScript
 							} else {
 								log.Errorf("Cannot find txo by:%s", input.PreviousOutPoint.String())
@@ -1142,7 +1142,7 @@ func (rep *UnitRepository) RebuildAddrTxIndex() error {
 
 func getDataPayload(tx *modules.Transaction) *modules.DataPayload {
 	dp := &modules.DataPayload{}
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		if msg.App == modules.APP_DATA {
 			pay := msg.Payload.(*modules.DataPayload)
 			dp.MainData = pay.MainData
@@ -1266,7 +1266,7 @@ func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, he
 
 		// append by albert
 		if reqIndex != -1 { // 排除创世交易中的系统合约交易没有Request的情况
-			invoke, _ := tx.TxMessages[reqIndex].Payload.(*modules.ContractInvokeRequestPayload)
+			invoke, _ := tx.TxMessages()[reqIndex].Payload.(*modules.ContractInvokeRequestPayload)
 			rep.statedb.UpdateStateByContractInvoke(invoke, unitTime, version)
 		}
 	}
@@ -1493,8 +1493,7 @@ func (rep *UnitRepository) createCoinbaseState(ads []*modules.Addition) (*module
 		App:     modules.APP_CONTRACT_INVOKE,
 		Payload: &payload,
 	}
-	coinbase := new(modules.Transaction)
-	coinbase.TxMessages = append(coinbase.TxMessages, msg)
+	coinbase := modules.NewTransaction([]*modules.Message{msg})
 	return coinbase, totalIncome, nil
 }
 func addIncome(income []modules.AmountAsset, newAmount uint64, asset *modules.Asset) []modules.AmountAsset {
@@ -1551,8 +1550,7 @@ func (rep *UnitRepository) createCoinbasePayment(ads []*modules.Addition) (*modu
 	}
 	//所有奖励转换成PaymentPayload
 	msg := rep.createCoinbasePaymentMsg(rewards)
-	coinbase := new(modules.Transaction)
-	coinbase.TxMessages = append(coinbase.TxMessages, msg)
+	coinbase := modules.NewTransaction([]*modules.Message{msg})
 	//清空历史奖励的记账值
 	payload := &modules.ContractInvokePayload{}
 	payload.ContractId = contractId
@@ -1570,7 +1568,7 @@ func (rep *UnitRepository) createCoinbasePayment(ads []*modules.Addition) (*modu
 		App:     modules.APP_CONTRACT_INVOKE,
 		Payload: payload,
 	}
-	coinbase.TxMessages = append(coinbase.TxMessages, msg1)
+	coinbase.AddMessage(msg1)
 	return coinbase, totalIncome, nil
 }
 func (rep *UnitRepository) createCoinbasePaymentMsg(rewards map[common.Address][]modules.AmountAsset) *modules.Message {
@@ -1711,7 +1709,7 @@ func (rep *UnitRepository) GetTxFromAddress(tx *modules.Transaction) ([]common.A
 	defer log.Debug("GetTxFromAddress unitRepository unlock.")
 	defer rep.lock.RUnlock()
 	result := []common.Address{}
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		if msg.App == modules.APP_PAYMENT {
 			pay := msg.Payload.(*modules.PaymentPayload)
 			for _, input := range pay.Inputs {

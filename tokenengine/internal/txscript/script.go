@@ -292,7 +292,7 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType,
 // verification.
 func calcSignatureData(script []parsedOpcode, hashType SigHashType, 
 	tx *modules.Transaction, msgIdx, idx int) []byte {
-	pay := tx.TxMessages[msgIdx].Payload.(*modules.PaymentPayload)
+	pay := tx.TxMessages()[msgIdx].Payload.(*modules.PaymentPayload)
 	// The SigHashSingle signature type signs only the corresponding input
 	// and output (the output with the same index number as the input).
 	//
@@ -326,16 +326,16 @@ func calcSignatureData(script []parsedOpcode, hashType SigHashType,
 	// inputs that are not currently being processed.
 
 	txCopy := tx.Clone()
-	payCopy := txCopy.TxMessages[msgIdx].Payload.(*modules.PaymentPayload)
+	payCopy := txCopy.TxMessages()[msgIdx].Payload.(*modules.PaymentPayload)
 	requestIndex := tx.GetRequestMsgIndex()
 	isInResult := false
 	if msgIdx > requestIndex && requestIndex != -1 {
 		isInResult = true
 	}
 
-	for mIdx, mCopy := range txCopy.TxMessages {
+	for mIdx, mCopy := range txCopy.TxMessages() {
 		if mCopy.App == modules.APP_PAYMENT {
-			pay := txCopy.TxMessages[mIdx].Payload.(*modules.PaymentPayload)
+			pay := txCopy.TxMessages()[mIdx].Payload.(*modules.PaymentPayload)
 			if isInResult && mIdx < requestIndex {
 				continue // 对于请求部分的Payment，不做任何处理
 			}

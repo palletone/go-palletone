@@ -75,6 +75,15 @@ type Message struct {
 	Payload interface{} `json:"payload"` // the true transaction data
 }
 
+func (m *Message) GetApp() MessageType     { return m.App }
+func (m *Message) GetPayload() interface{} { return m.Payload }
+func (m *Message) GetPaymentPayLoad() *PaymentPayload {
+	if m.App != APP_PAYMENT {
+		return nil
+	}
+	return m.Payload.(*PaymentPayload)
+}
+
 // return message struct
 func NewMessage(app MessageType, payload interface{}) *Message {
 	m := new(Message)

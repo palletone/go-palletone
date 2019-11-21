@@ -85,8 +85,8 @@ func ConvertTxPoolTx2Json(tx *txspool.TxPoolTransaction, hash common.Hash) *TxPo
 
 	froms := make([]*OutPointJson, 0)
 	pay := new(modules.PaymentPayload)
-	if len(tx.Tx.TxMessages) > 0 {
-		pay = tx.Tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+	if len(tx.Tx.TxMessages()) > 0 {
+		pay = tx.Tx.TxMessages()[0].Payload.(*modules.PaymentPayload)
 
 		for _, out := range tx.From {
 			froms = append(froms, ConvertOutPoint2Json(out))
@@ -98,7 +98,7 @@ func ConvertTxPoolTx2Json(tx *txspool.TxPoolTransaction, hash common.Hash) *TxPo
 		TxHash:     tx.Tx.Hash().String(),
 		UnitHash:   hex_hash,
 		Payment:    payJson,
-		TxMessages: ConvertMegs2Json(tx.Tx.TxMessages),
+		TxMessages: ConvertMegs2Json(tx.Tx.TxMessages()),
 
 		Froms:        froms,
 		CreationDate: tx.CreationDate,
@@ -120,8 +120,8 @@ func ConvertTxEntry2Json(entry *modules.TxLookupEntry) *TxSerachEntryJson {
 
 func ConvertTxWithInfo2Json(tx *modules.TransactionWithUnitInfo) *TxPoolTxJson {
 	pay := new(modules.PaymentPayload)
-	if len(tx.TxMessages) > 0 {
-		pay = tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+	if len(tx.TxMessages()) > 0 {
+		pay = tx.TxMessages()[0].Payload.(*modules.PaymentPayload)
 
 	}
 
@@ -133,7 +133,7 @@ func ConvertTxWithInfo2Json(tx *modules.TransactionWithUnitInfo) *TxPoolTxJson {
 		Timestamp:  tx.Timestamp,
 		TxIndex:    tx.TxIndex,
 		Payment:    payJson,
-		TxMessages: ConvertMegs2Json(tx.TxMessages),
+		TxMessages: ConvertMegs2Json(tx.TxMessages()),
 
 		Pending:   true,
 		Confirmed: true,

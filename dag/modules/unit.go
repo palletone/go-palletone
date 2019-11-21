@@ -86,7 +86,6 @@ func (h *Header) GetGroupPubKey() (kyber.Point, error) {
 	if len(pubKeyB) == 0 {
 		return nil, errors.New("group public key is null")
 	}
-
 	pubKey := core.Suite.Point()
 	err := pubKey.UnmarshalBinary(pubKeyB)
 
@@ -101,7 +100,6 @@ func (h *Header) SetNumber(aseet_id AssetId, index uint64) {
 	}
 	h.header.Number.AssetID = aseet_id
 	h.header.Number.Index = index
-	h.hash = common.Hash{}
 }
 func (h *Header) SetParentHash(parents []common.Hash) {
 	if h.header == nil {
@@ -110,7 +108,6 @@ func (h *Header) SetParentHash(parents []common.Hash) {
 	if len(parents) > 0 {
 		h.header.ParentsHash = make([]common.Hash, 0)
 		h.header.ParentsHash = append(h.header.ParentsHash, parents...)
-		h.hash = common.Hash{}
 	}
 }
 func (h *Header) SetTxRoot(txroot common.Hash) {
@@ -118,7 +115,6 @@ func (h *Header) SetTxRoot(txroot common.Hash) {
 		h.header = new_header_sdw()
 	}
 	h.header.TxRoot.Set(txroot)
-	h.hash = common.Hash{}
 }
 func (h *Header) SetAuthor(author Authentifier) {
 	if h.header == nil {
@@ -126,7 +122,6 @@ func (h *Header) SetAuthor(author Authentifier) {
 	}
 	h.header.Authors.Signature = author.Signature
 	h.header.Authors.PubKey = author.PubKey
-	h.hash = common.Hash{}
 }
 func (h *Header) SetTime(timestamp int64) {
 	if h.header == nil {
@@ -142,7 +137,6 @@ func (h *Header) SetTxsIllegal(txsillegal []uint16) {
 	if len(txsillegal) > 0 {
 		h.header.TxsIllegal = make([]uint16, 0)
 		h.header.TxsIllegal = append(h.header.TxsIllegal, txsillegal...)
-		h.hash = common.Hash{}
 	}
 }
 func (h *Header) SetExtra(extra []byte) {
@@ -152,17 +146,24 @@ func (h *Header) SetExtra(extra []byte) {
 	if len(extra) > 0 {
 		h.header.Extra = make([]byte, 0)
 		h.header.Extra = append(h.header.Extra, extra...)
-		h.hash = common.Hash{}
 	}
 }
 func (h *Header) SetCryptoLib(cryptolib []byte) {
-	if h.header == nil {
-		h.header = new_header_sdw()
+	sdw := new_header_sdw()
+	if h.header != nil {
+		sdw.ParentsHash = h.header.ParentsHash
+		sdw.Extra = common.CopyBytes(h.header.Extra)
+		if h.header.Number != nil {
+			sdw.Number = &ChainIndex{AssetID: h.header.Number.AssetID, Index: h.header.Number.Index}
+		}
+		sdw.TxRoot = h.header.TxRoot
+		sdw.TxsIllegal = h.header.TxsIllegal
 	}
+	sdw.CryptoLib = common.CopyBytes(cryptolib)
+
 	if len(cryptolib) > 0 {
 		h.header.CryptoLib = make([]byte, 0)
 		h.header.CryptoLib = append(h.header.CryptoLib, cryptolib...)
-		h.hash = common.Hash{}
 	}
 }
 func (cpy *Header) CopyHeader(h *Header) {
@@ -320,18 +321,15 @@ func (u *Unit) CopyBody(txs Transactions) Transactions {
 	if len(txs) > 0 {
 		u.Txs = make([]*Transaction, len(txs))
 		for i, pTx := range txs {
-			//hash := pTx.Hash()
 
-			tx := Transaction{}
-			if len(pTx.TxMessages) > 0 {
-				tx.TxMessages = make([]*Message, len(pTx.TxMessages))
-				for j := 0; j < len(pTx.TxMessages); j++ {
-					tx.TxMessages[j] = pTx.TxMessages[j]
-				}
+			sdw := transaction_sdw{}
+			if len(pTx.TxMessages()) > 0 {
+				sdw.TxMessages = make([]*Message, len(pTx.TxMessages()))
+				copy(sdw.TxMessages, pTx.TxMessages())
 			}
-			tx.CertId = pTx.CertId
-			tx.Illegal = pTx.Illegal
-			u.Txs[i] = &tx
+			sdw.CertId = pTx.CertId()
+			sdw.Illegal = pTx.Illegal()
+			u.Txs[i] = &Transaction{txdata: sdw}
 		}
 	}
 	return u.Txs
