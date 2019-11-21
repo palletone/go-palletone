@@ -22,7 +22,6 @@
 package configure
 
 const UdpVersion = 1070
-const StableIndex = 1098407
 
 var GenesisHash = []byte("")
 
