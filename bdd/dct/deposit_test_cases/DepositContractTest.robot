@@ -733,6 +733,17 @@ Business_12
     log    ${amount}    #108.66235，866,235,000是质押增发的，没有变化
 
 PledgeTest02
+    [Documentation]    1.质押为 3 ，阈值为 2
+    ...    2.添加到分红列表
+    ...    3.1.新地址质押：3，阈值为2
+    ...    3.2.原来质押的继续质押2
+    ...    3.3.原来质押的继续提取2
+    ...    4.分红
+    ...    5.添加新地址到分红列表
+    ...    6.变为质押6，阈值2
+    ...    7.分红
+    ...    8.提取3
+    ...    9.分红
     ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${amount}    #100，上一个测试的结果
     ${result}    queryPledgeStatusByAddr    ${votedAddress01}    #查看某地址的质押结果
@@ -812,7 +823,13 @@ PledgeTest02
     ${result}    isFinishAllocated
     log    ${result}
     sleep    5
-    ${result}    HandlePledgeReward    ${votedAddress01}    #1
+    ${result}    HandlePledgeReward    ${votedAddress}    #1
+    log    ${result}
+    sleep    5
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${votedAddress}    #1
     log    ${result}
     sleep    5
     ${result}    isFinishAllocated
@@ -919,7 +936,18 @@ PledgeTest02
     ${result}    HandlePledgeReward    ${foundationAddr}    #1
     log    ${result}
     sleep    5
-    log    chuli2
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
     ${result}    isFinishAllocated
     log    ${result}
     sleep    5
@@ -966,7 +994,18 @@ PledgeTest02
     log    ${result}
     ${amount}    Get From Dictionary    ${result}    ${mediatorAddress}
     sleep    1
-    log    chuli11
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
     ${result}    isFinishAllocated
     log    ${result}
     sleep    5
@@ -1045,10 +1084,21 @@ PledgeTest02
     ${result}    HandlePledgeReward    ${foundationAddr}    #1
     log    ${result}
     sleep    5
-    log    chuli22
     ${result}    isFinishAllocated
     log    ${result}
     sleep    2
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
     ${result}    HandlePledgeReward    ${foundationAddr}    #1
     log    ${result}
     sleep    5
@@ -1098,7 +1148,18 @@ PledgeTest02
     ${result}    HandlePledgeReward    ${foundationAddr}    #1
     log    ${result}
     sleep    5
-    log    chuli32
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
     ${result}    isFinishAllocated
     log    ${result}
     sleep    5
