@@ -141,7 +141,12 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 	temp.Unit = stableUnit
 	memdag.tempdb.Store(stablehash, temp)
 	memdag.chainUnits.Store(stablehash, temp)
-
+	// init ldbvalidator
+	trep := common2.NewUnitRepository4Db(db, tokenEngine)
+	tutxoRep := common2.NewUtxoRepository4Db(db, tokenEngine)
+	tstateRep := common2.NewStateRepository4Db(db)
+	tpropRep := common2.NewPropRepository4Db(db)
+	memdag.ldbValidator = validator.NewValidate(trep, tutxoRep, tstateRep, tpropRep, cache, saveHeaderOnly)
 	go memdag.loopRebuildTmpDb()
 	return memdag
 }
@@ -533,10 +538,13 @@ func (chain *MemDag) AddStableUnit(unit *modules.Unit) error {
 	if validateResult != validator.TxValidationCode_VALID {
 		return validator.NewValidateError(validateResult)
 	}
-	log.Debugf("add stable unit to dag, hash[%s], index:%d", hash.String(), number)
 	err := chain.saveUnitToDb(chain.ldbunitRep, chain.ldbUnitProduceRep, unit)
 	if err != nil {
 		return err
+	}
+	log.Debugf("add stable unit to dag, hash[%s], index:%d", hash.String(), number)
+	if number%1000 == 0 {
+		log.Infof("add stable unit to dag, hash[%s], index:%d", hash.String(), number)
 	}
 	//Set stable unit
 	chain.stableUnitHash = hash
