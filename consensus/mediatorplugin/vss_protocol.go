@@ -65,8 +65,13 @@ func (mp *MediatorPlugin) newDKGAndInitVSSBuf() {
 		// 初始化所有与完成vss相关的buf
 		mp.dealBuf[localMed] = make(chan *dkg.Deal, aSize-1)
 		mp.respBuf[localMed] = make(map[common.Address]chan *dkg.Response, aSize)
+		//mp.respBuf[localMed] = make(map[common.Address]chan *dkg.Response, aSize-1)
 		for _, vrfrMed := range ams {
-			mp.respBuf[localMed][vrfrMed] = make(chan *dkg.Response, aSize-1)
+			//if vrfrMed == localMed {
+			//	continue
+			//}
+			mp.respBuf[localMed][vrfrMed] = make(chan *dkg.Response, aSize)
+			//mp.respBuf[localMed][vrfrMed] = make(chan *dkg.Response, aSize-1)
 		}
 	}
 }
@@ -310,10 +315,10 @@ func (mp *MediatorPlugin) AddToResponseBuf(respEvent *VSSResponseEvent) {
 	for _, localMed := range lams {
 		dag := mp.dag
 
-		// ignore the message from myself
 		srcIndex := resp.Response.Index
 		srcMed := dag.GetActiveMediatorAddr(int(srcIndex))
 		if srcMed == localMed {
+			//log.Debugf("ignore the vss response message from myself(mediator: %v)", srcMed.Str())
 			continue
 		}
 
