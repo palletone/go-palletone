@@ -533,14 +533,14 @@ func (chain *MemDag) AddStableUnit(unit *modules.Unit) error {
 	if validateResult != validator.TxValidationCode_VALID {
 		return validator.NewValidateError(validateResult)
 	}
-	log.Debugf("add stable unit to dag, hash[%s], index:%d", hash.String(), unit.NumberU64())
+	log.Debugf("add stable unit to dag, hash[%s], index:%d", hash.String(), number)
 	err := chain.saveUnitToDb(chain.ldbunitRep, chain.ldbUnitProduceRep, unit)
 	if err != nil {
 		return err
 	}
 	//Set stable unit
 	chain.stableUnitHash = hash
-	chain.stableUnitHeight = unit.NumberU64()
+	chain.stableUnitHeight = number
 	return nil
 }
 func (chain *MemDag) SaveHeader(header *modules.Header) error {
