@@ -64,6 +64,8 @@ var (
 	//fsHeaderForceVerify = 24              // Number of headers to verify before and after the pivot to accept it
 	fsHeaderContCheck = 3 * time.Second // Time interval to check for header continuations during state download
 	fsMinFullBlocks   = 64              // Number of blocks to retrieve fully even in fast sync
+
+	stepStable = uint64(10240)
 )
 
 var (
@@ -1421,7 +1423,9 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 	}
 	s_index := uint64(0)
 	if d.mode == FastSync {
-		s_index = d.GetFastStableIndex()
+		if d.GetFastStableIndex() > stepStable {
+			s_index = d.GetFastStableIndex() - stepStable
+		}
 	}
 
 	log.Debug("Inserting downloaded chain", "items", len(results),
@@ -1555,7 +1559,9 @@ func (d *Downloader) commitFastSyncData(results []*fetchResult /*, stateSync *st
 
 	s_index := uint64(0)
 	if d.mode == FastSync {
-		s_index = d.GetFastStableIndex()
+		if d.GetFastStableIndex() > stepStable {
+			s_index = d.GetFastStableIndex() - stepStable
+		}
 	}
 
 	log.Debug("Inserting fast-sync blocks", "items", len(results),
@@ -1578,7 +1584,9 @@ func (d *Downloader) commitPivotBlock(result *fetchResult) error {
 	units = append(units, block)
 	s_index := uint64(0)
 	if d.mode == FastSync {
-		s_index = d.GetFastStableIndex()
+		if d.GetFastStableIndex() > stepStable {
+			s_index = d.GetFastStableIndex() - stepStable
+		}
 	}
 	log.Debug("Committing fast sync pivot as new head", "index:", block.UnitHeader.Number.Index, "unit", *block,
 		"fastnum", s_index)
