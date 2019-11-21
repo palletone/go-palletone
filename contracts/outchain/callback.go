@@ -70,7 +70,7 @@ func ProcessOutChainCall(chaincodeID string, outChainCall *pb.OutChainCall) (res
 	}()
 
 	chainName := strings.ToLower(outChainCall.OutChainName)
-	if _, existChain := exceptMethond[chainName]; existChain {
+	if _, existChain := allChain[chainName]; existChain {
 		ef, existMethod := exceptMethond[outChainCall.Method]
 		if existMethod {
 			return ef(chaincodeID, chainName, outChainCall.Params)
