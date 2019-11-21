@@ -257,16 +257,6 @@ func (c *Console) init(preload []string) error {
 			obj.Set("getUnitsByIndex", bridge.GetUnitsByIndex)
 		}
 	}
-	// The admin.sleep and admin.sleepBlocks are offered by the console and not by the RPC layer.
-	//admin, err := c.jsre.Get("admin")
-	//if err != nil {
-	//	return err
-	//}
-	//if obj := admin.Object(); obj != nil { // make sure the admin api is enabled over the interface
-		//obj.Set("sleepBlocks", bridge.SleepBlocks)
-		//obj.Set("sleep", bridge.Sleep)
-		//obj.Set("clearHistory", c.clearHistory)
-	//}
 	//Add by wzhyuan
 	// Preload any JavaScript files before starting the console
 	for _, path := range preload {
