@@ -19,7 +19,6 @@ package ptn
 import (
 	"errors"
 	"fmt"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -31,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/consensus/jury"
 	"github.com/palletone/go-palletone/dag/modules"
+	"sort"
 )
 
 var (
@@ -673,11 +673,11 @@ func (ps *peerSet) StableIndex(assetId modules.AssetId) uint64 {
 			indexs = append(indexs, stable.Index)
 		}
 	}
-	sort.Sort(indexs)
 	length := indexs.Len()
 	if length == 0 {
 		return 0
 	}
+	sort.Sort(indexs)
 	if length%2 == 0 {
 		return (indexs[(length/2)-1] + indexs[length/2]) / 2
 	}

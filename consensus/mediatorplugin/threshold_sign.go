@@ -364,7 +364,14 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	// 5. recover后的相关处理
 	// recover后 删除buf
 	delete(mp.toTBLSRecoverBuf[localMed], unitHash)
-	go mp.groupSigFeed.Send(GroupSigEvent{UnitHash: unitHash, GroupSig: groupSig})
+
+	deadline := time.Now().Add(mp.dag.UnitIrreversibleTime())
+	event := GroupSigEvent{
+		UnitHash: unitHash,
+		GroupSig: groupSig,
+		Deadline: uint64(deadline.Unix()),
+	}
+	go mp.groupSigFeed.Send(event)
 }
 
 func (mp *MediatorPlugin) groupSignUnit(localMed common.Address, unitHash common.Hash) {

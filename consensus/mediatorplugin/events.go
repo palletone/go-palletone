@@ -62,6 +62,7 @@ func (e *VSSResponseEvent) Hash() common.Hash {
 type GroupSigEvent struct {
 	UnitHash common.Hash
 	GroupSig []byte
+	Deadline uint64 // 被广播的截止日期
 }
 
 func (e *GroupSigEvent) Hash() common.Hash {

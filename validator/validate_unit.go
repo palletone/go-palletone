@@ -22,13 +22,13 @@ package validator
 
 import (
 	"fmt"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"time"
 
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
