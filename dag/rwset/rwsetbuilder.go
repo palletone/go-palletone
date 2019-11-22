@@ -20,12 +20,14 @@
 package rwset
 
 import (
+	"sync"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
 type RWSetBuilder struct {
 	pubRwBuilderMap map[string]*nsPubRwBuilder
+	locker          *sync.RWMutex
 }
 
 type nsPubRwBuilder struct {
@@ -38,7 +40,10 @@ type nsPubRwBuilder struct {
 }
 
 func NewRWSetBuilder() *RWSetBuilder {
-	return &RWSetBuilder{make(map[string]*nsPubRwBuilder)}
+	return &RWSetBuilder{
+		pubRwBuilderMap: make(map[string]*nsPubRwBuilder),
+		locker:          new(sync.RWMutex),
+	}
 }
 
 func (b *RWSetBuilder) AddToReadSet(contractId []byte, ns string, key string, version *modules.StateVersion) {
@@ -118,6 +123,9 @@ func (b *RWSetBuilder) AddSupplyToken(ns string, assetId, uniqueId []byte, amt u
 }
 
 func (b *RWSetBuilder) getOrCreateNsPubRwBuilder(ns string) *nsPubRwBuilder {
+	b.locker.Lock()
+	defer b.locker.Unlock()
+
 	nsPubRwBuilder, ok := b.pubRwBuilderMap[ns]
 	if !ok {
 		nsPubRwBuilder = newNsPubRwBuilder(ns)
