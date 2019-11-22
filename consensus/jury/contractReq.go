@@ -327,13 +327,13 @@ func (p *Processor) ContractQuery(id []byte, args [][]byte, timeout time.Duratio
 		log.Debugf("ContractQuery, is system contract, addr[%s]", addr.String())
 	} else {
 		//cons, err := utils.GetAllContainers(client)
-		cons, err :=p.pDocker.GetAllContainers()
+		cons, err := p.pDocker.GetAllContainers()
 		if err != nil {
 			log.Errorf("ContractQuery, id[%s], GetAllContainers err:%s", addr.String(), err.Error())
 			return nil, err
 		}
 		//cas, _ := utils.GetAllContainerAddr(cons, "Up")
-		cas,_ := p.pDocker.GetAllContainersAddrsWithStatus(cons,"Up")
+		cas, _ := p.pDocker.GetAllContainersAddrsWithStatus(cons, "Up")
 		for _, ca := range cas {
 			if ca.Equal(addr) { //use first
 				log.Debugf("ContractQuery, contractId[%s],find container(Up)", addr.String())

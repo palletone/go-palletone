@@ -69,6 +69,21 @@ func (pm *ProtocolManager) activeMediatorsUpdatedEventRecvLoop() {
 	}
 }
 
+func (pm *ProtocolManager) unstableRepositoryUpdatedRecvLoop() {
+	log.Debugf("unstableRepositoryUpdatedRecvLoop")
+	for {
+		select {
+		case <-pm.unstableRepositoryUpdatedCh:
+			log.Debugf("receive UnstableRepositoryUpdatedEvent")
+			pm.activeMediatorsUpdatedSub = pm.dag.SubscribeActiveMediatorsUpdatedEvent(pm.activeMediatorsUpdatedCh)
+
+			// Err() channel will be closed when unsubscribing.
+		case <-pm.unstableRepositoryUpdatedSub.Err():
+			return
+		}
+	}
+}
+
 func (pm *ProtocolManager) switchMediatorConnect(isChanged bool) {
 	log.Debug("switchMediatorConnect", "isChanged", isChanged)
 

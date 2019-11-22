@@ -245,9 +245,10 @@ matrix:
       after_script:
         - killall gptn
         - sleep 2
-        - cd ${BASE_DIR}/bdd
-        - zip -j ./logs/mediatorVote_log.zip ./mediator-vote/node/log/*
+        - cd ${BASE_DIR}/bdd/mediator-vote
+#        - zip -j ./logs/mediatorVote_log.zip ./mediator-vote/node/log/*
         - ./targz_node.sh mediatorVote
+        - cd ${BASE_DIR}/bdd
         - |
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
@@ -263,7 +264,7 @@ matrix:
         - sudo -H pip install pexpect
         - sudo -H apt-get install expect
         - sudo -H apt-get install lftp
-        - chmod +x bdd/upload2Ftp.sh bdd/targz_node.sh
+        - chmod +x bdd/upload2Ftp.sh bdd/mediator-vote/targz_node.sh
     - os: linux
       dist: xenial
       go: 1.12.9

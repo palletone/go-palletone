@@ -2,14 +2,14 @@
 #pkill gptn
 #tskill gptn
 #cd ../../cmd/gptn && go build
-cd ../../
 #rm -rf ./bdd/mediator-vote/node*
 #cp ./cmd/gptn/gptn ./bdd/mediator-vote/node
-cd ./bdd/mediator-vote/node
+# shellcheck disable=SC2164
+cd ./node
 chmod +x gptn
 
 # new genesis
-./gptn newgenesis "" fasle << EOF
+./gptn newgenesis "" false << EOF
 y
 1
 1
@@ -19,15 +19,17 @@ EOF
 jsonFile="ptn-genesis.json"
 if [ -e "$jsonFile" ]; then
     #file already exist, modify
-    sed -i "s/\"active_mediator_count\": \"5\"/\"active_mediator_count\": \"3\"/g" $jsonFile
-    sed -i "s/\"initial_active_mediators\": \"5\"/\"initial_active_mediators\": \"3\"/g" $jsonFile
-    sed -i "s/\"min_mediator_count\": \"5\"/\"min_mediator_count\": \"3\"/g" $jsonFile
-    sed -i "s/\"maintenance_interval\": \"600\"/\"maintenance_interval\": \"150\"/g" $jsonFile
-    sed -i "s/\"maintenance_skip_slots\": \"2\"/\"maintenance_skip_slots\": \"0\"/g" $jsonFile
+    sed -i "s/\"active_mediator_count\": 5/\"active_mediator_count\": 3/g" $jsonFile
+    sed -i "s/\"initial_active_mediators\": 5/\"initial_active_mediators\": 3/g" $jsonFile
+    sed -i "s/\"min_mediator_count\": 5/\"min_mediator_count\": 3/g" $jsonFile
+    sed -i "s/\"maintenance_interval\": [0-9]*/\"maintenance_interval\": 150/g" $jsonFile
+    sed -i "s/\"maintenance_skip_slots\": 2/\"maintenance_skip_slots\": 0/g" $jsonFile
+    sed -i "s/\"mediator_interval\": 3,/\"mediator_interval\": 2,/g" $jsonFile
+    sed -i "s/\"initialTimestamp\": [0-9]*,/\"initialTimestamp\": 1566269000,/g" $jsonFile
 else
     #file not found, new file
     echo "no $jsonFile"
-    exit -1
+    exit 1
 fi
 
 # edit toml file
@@ -46,7 +48,7 @@ if [ -e "$tomlFile" ]; then
 else
     #file not found, new file
     echo "no $tomlFile"
-    exit -1
+    exit 1
 fi
 
 # gptn init

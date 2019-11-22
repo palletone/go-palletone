@@ -121,7 +121,8 @@ func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 			log.Debugf("ContractDeployPayload hex:%x", m.Data)
 			err := rlp.DecodeBytes(m.Data, &payload)
 			if err != nil {
-				log.Debugf("data [%x] cannot decode to newest ContractDeployPayload, try decode to ContractDeployPayloadV1", m.Data)
+				log.Debugf("data [%x] cannot decode to newest ContractDeployPayload, try decode to"+
+					" ContractDeployPayloadV1", m.Data)
 				temp := &ContractDeployPayloadV1{}
 				err = rlp.DecodeBytes(m.Data, temp)
 				if err != nil {

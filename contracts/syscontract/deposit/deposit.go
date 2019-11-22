@@ -25,7 +25,6 @@ import (
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/storage"
 )
 
 type DepositChaincode struct {
@@ -481,36 +480,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		return d.GetAllNode(stub)
 	case modules.GetAllJury:
 		log.Info("Enter DepositChaincode Contract " + modules.GetAllJury + " Query")
-		listb, err := stub.GetState(modules.JuryList)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-		if listb == nil {
-			return shim.Success([]byte("{}"))
-		}
-		allJurorAddrs := make(map[string]bool)
-		err = json.Unmarshal(listb, &allJurorAddrs)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-		jurynodes := make(map[string]*modules.JurorDeposit)
-		for a := range allJurorAddrs {
-			j, err := stub.GetState(storage.JuryDepositKey(a))
-			if err != nil {
-				return shim.Error(err.Error())
-			}
-			juror := modules.JurorDeposit{}
-			err = json.Unmarshal(j, &juror)
-			if err != nil {
-				shim.Error(err.Error())
-			}
-			jurynodes[a] = &juror
-		}
-		juryb, err := json.Marshal(jurynodes)
-		if err != nil {
-			shim.Error(err.Error())
-		}
-		return shim.Success(juryb)
+		return d.GetAllJury(stub)
 	case "IsFinishAllocated":
 		if d.IsFinishAllocated(stub) {
 			return shim.Success([]byte("true"))
@@ -893,23 +863,25 @@ func (d DepositChaincode) GetAllJury(stub shim.ChaincodeStubInterface) pb.Respon
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	allJurorAddrs := make(map[string]bool)
+	if listb == nil {
+		return shim.Success([]byte("{}"))
+	}
+	var allJurorAddrs map[string]bool
 	err = json.Unmarshal(listb, &allJurorAddrs)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	jurynodes := make(map[string]*modules.JurorDeposit)
+
+	jurynodes := make(map[string]*modules.JuryDepositJson)
 	for a := range allJurorAddrs {
-		j, err := stub.GetState(string(constants.DEPOSIT_JURY_BALANCE_PREFIX) + a)
+		balance, err := d.GetJuryDeposit(stub, a)
 		if err != nil {
-			return shim.Error(err.Error())
+			return shim.Success([]byte(err.Error()))
 		}
-		juror := modules.JurorDeposit{}
-		err = json.Unmarshal(j, &juror)
-		if err != nil {
-			shim.Error(err.Error())
+		if balance == nil {
+			return shim.Success([]byte("balance is nil"))
 		}
-		jurynodes[a] = &juror
+		jurynodes[a] = balance
 	}
 	juryb, err := json.Marshal(jurynodes)
 	if err != nil {

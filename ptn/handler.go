@@ -19,10 +19,11 @@ package ptn
 import (
 	"errors"
 	"fmt"
-	"github.com/palletone/go-palletone/contracts"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/palletone/go-palletone/contracts"
 
 	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
@@ -37,6 +38,9 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/palletcache"
 
+	"strconv"
+	"strings"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/contracts/utils"
@@ -45,8 +49,6 @@ import (
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
 	"github.com/palletone/go-palletone/validator"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -143,22 +145,26 @@ type ProtocolManager struct {
 	// and processing
 	wg sync.WaitGroup
 
-	genesis *modules.Unit
+	genesis  *modules.Unit
+	contract *contracts.Contract
 
 	activeMediatorsUpdatedCh  chan modules.ActiveMediatorsUpdatedEvent
 	activeMediatorsUpdatedSub event.Subscription
 
 	toGroupSignCh  chan modules.ToGroupSignEvent
 	toGroupSignSub event.Subscription
-	contract       *contracts.Contract
-	pDocker *utils.PalletOneDocker
+
+	pDocker        *utils.PalletOneDocker
+
+	unstableRepositoryUpdatedCh  chan modules.UnstableRepositoryUpdatedEvent
+	unstableRepositoryUpdatedSub event.Subscription
 }
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
 func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken modules.AssetId, txpool txPool,
 	dag dag.IDag, mux *event.TypeMux, producer producer, genesis *modules.Unit,
-	contractProc consensus.ContractInf, engine core.ConsensusEngine, contract *contracts.Contract,pDocker *utils.PalletOneDocker) (*ProtocolManager, error) {
+	contractProc consensus.ContractInf, engine core.ConsensusEngine, contract *contracts.Contract, pDocker *utils.PalletOneDocker) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId: networkId,
@@ -180,21 +186,12 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 		lightSync:      uint32(1),
 		receivedCache:  freecache.NewCache(cacheSize),
 		contract:       contract,
-		pDocker:pDocker,
+		pDocker:        pDocker,
 	}
-	symbol, _, _, _, _ := gasToken.ParseAssetId()
-	protocolName := symbol
-	//asset, err := modules.NewAsset(strings.ToUpper(gasToken), modules.AssetType_FungibleToken,
-	// 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, modules.UniqueIdType_Null, modules.UniqueId{})
-	//if err != nil {
-	//	log.Error("ProtocolManager new asset err", err)
-	//	return nil, err
-	//}
-	//manager.mainAssetId = asset.AssetId
+	protocolName, _, _, _, _ := gasToken.ParseAssetId()
 	manager.mainAssetId = gasToken
+
 	// Figure out whether to allow fast sync or not
-	/*blockchain.CurrentBlock().NumberU64() > 0 */
-	//TODO must modify.The second start would Blockchain not empty, fast sync disabled
 	//if mode == downloader.FastSync && dag.CurrentUnit().UnitHeader.Index() > 0 {
 	//	log.Info("dag not empty, fast sync disabled")
 	//	mode = downloader.FullSync
@@ -403,11 +400,16 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 	pm.toGroupSignSub = pm.dag.SubscribeToGroupSignEvent(pm.toGroupSignCh)
 	go pm.toGroupSignEventRecvLoop()
 
+	pm.unstableRepositoryUpdatedCh = make(chan modules.UnstableRepositoryUpdatedEvent)
+	pm.unstableRepositoryUpdatedSub = pm.dag.SubscribeUnstableRepositoryUpdatedEvent(pm.unstableRepositoryUpdatedCh)
+	go pm.unstableRepositoryUpdatedRecvLoop()
+
 	if pm.consEngine != nil {
 		pm.ceCh = make(chan core.ConsensusEvent, txChanSize)
 		pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
 		go pm.ceBroadcastLoop()
 	}
+
 	//  container related
 	if pm.pDocker.DockerClient != nil {
 		log.Debug("start docker service...")
@@ -419,10 +421,11 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 		go pm.pDocker.PullUserContractImages(next1)
 		//
 		next2 := make(chan struct{})
-		go pm.pDocker.RestartUserContractsWhenStartGptn(next1,next2)
+		go pm.pDocker.RestartUserContractsWhenStartGptn(next1, next2)
 		//
 		go pm.dockerLoop(next2)
 	}
+
 	//  是否为linux系統
 	//if runtime.GOOS == "linux" {
 	//	log.Debug("entering docker service...")
@@ -500,10 +503,14 @@ func (pm *ProtocolManager) Stop() {
 	pm.newProducedUnitSub.Unsubscribe()
 	pm.sigShareSub.Unsubscribe()
 	pm.groupSigSub.Unsubscribe()
+
 	pm.vssDealSub.Unsubscribe()
 	pm.vssResponseSub.Unsubscribe()
 	pm.activeMediatorsUpdatedSub.Unsubscribe()
+
 	pm.toGroupSignSub.Unsubscribe()
+	pm.unstableRepositoryUpdatedSub.Unsubscribe()
+
 	pm.contractSub.Unsubscribe()
 	pm.txSub.Unsubscribe() // quits txBroadcastLoop
 	//pm.ceSub.Unsubscribe()

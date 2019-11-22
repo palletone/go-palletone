@@ -21,8 +21,13 @@
 package validator
 
 import (
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/modules"
+	"math"
 )
 
 /**
@@ -67,10 +72,58 @@ func (validate *Validate) validateContractTplPayload(contractTplPayload *modules
 	return TxValidationCode_VALID
 }
 
-func (validate *Validate) validateContractdeploy(tplId []byte) ValidationCode {
+func (validate *Validate) validateContractDeploy(tplId []byte) ValidationCode {
 	return TxValidationCode_VALID
 }
 
-func (validate *Validate) validateContractSignature(sinatures []modules.SignatureSet, tx *modules.Transaction) ValidationCode {
+//验证陪审团签名是否有效
+func (validate *Validate) validateContractSignature(signatures []modules.SignatureSet, tx *modules.Transaction) ValidationCode {
+	contractId := tx.ContractIdBytes()
+	txHash := tx.Hash().String()
+	needSign := 1
+	// 1.确认签名者都是Jury或者是Mediator
+	if !common.IsSystemContractAddress(contractId) { // user contract
+		jury, err := validate.statequery.GetContractJury(contractId)
+		if err != nil {
+			log.Error(err.Error())
+			return TxValidationCode_INVALID_CONTRACT_SIGN
+		}
+		jurorCount := len(jury.EleList)
+		needSign = int(math.Ceil((float64(jurorCount)*2 + 1) / 3))
+		for _, s := range signatures {
+			jAddr := crypto.PubkeyBytesToAddress(s.PubKey)
+			jAddrHash := util.RlpHash(jAddr)
+			find := false
+			for _, node := range jury.EleList {
+				if jAddrHash == node.AddrHash {
+					find = true
+					break
+				}
+			}
+			if !find { //签名者不是合法的陪审员
+				log.Warnf("Tx[%s] signature payload pubKey[%x] is not a valid juror", txHash, s.PubKey)
+				return TxValidationCode_INVALID_CONTRACT_SIGN
+			}
+		}
+	}
+	//2.确认签名都验证通过
+	tx4Sign := tx.GetResultRawTx()
+	txBytes, _ := rlp.EncodeToBytes(tx4Sign)
+	passCount := 0
+	for _, s := range signatures {
+		pass, err := crypto.MyCryptoLib.Verify(s.PubKey, s.Signature, txBytes)
+		if err != nil {
+			log.Error(err.Error())
+			return TxValidationCode_INVALID_CONTRACT_SIGN
+		}
+		if pass {
+			passCount++
+		}
+	}
+	//3.确认签名数量满足系统要求
+	if passCount < needSign {
+		log.Errorf("Tx[%s] need signature count:%d, but current has %d", txHash, needSign, passCount)
+		return TxValidationCode_INVALID_CONTRACT_SIGN
+	}
 	return TxValidationCode_VALID
 }

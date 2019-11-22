@@ -100,7 +100,7 @@ func createKey(name string) error {
 }
 
 //func sendETH(rawURL, priKey, toAddr, amountWei string) (string, error) {
-//	client, err := ethclient.Dial(rawURL)
+//	client, err := ethclient.Dial(gWallet.EthConfig.Rawurl)
 //	if err != nil {
 //		return "", err
 //	}
@@ -158,7 +158,61 @@ func createKey(name string) error {
 //	return signedTx.Hash().String(), nil
 //}
 
-func sendETHToMultiSigAddr(contractAddr, value, gasPrice, gasLimit, privateKey string) error {
+func sendETHToMultiSigAddr(contractAddr, value, gasPrice, gasLimit, prikeyHex string) error {
+
+	if "0x" == prikeyHex[0:2] || "0X" == prikeyHex[0:2] {
+		prikeyHex = prikeyHex[2:]
+	}
+	prikey, err := hex.DecodeString(prikeyHex)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	}
+	eth := ethadaptor.NewAdaptorETHTestnet()
+
+	callerAddr := getAddrByPrikey(prikey)
+
+	var txInput adaptor.CreateTransferTokenTxInput
+	txInput.FromAddress = callerAddr
+	txInput.ToAddress = contractAddr
+	amt := new(big.Int)
+	amt.SetString(value, 10) //10000000000 10gwei*2100000
+	txInput.Amount = adaptor.NewAmountAsset(amt, "ETH")
+	amtFee := new(big.Int)
+	amtFee.SetString("21000000000000000", 10) //10000000000 10gwei*2100000
+	txInput.Fee = adaptor.NewAmountAsset(amtFee, "ETH")
+
+	resultTx, err := eth.CreateTransferTokenTx(&txInput)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	} else {
+		fmt.Println(resultTx)
+	}
+
+	//2.sign tx
+	var input adaptor.SignTransactionInput
+	input.PrivateKey = prikey
+	//input.Transaction = Hex2Bytes("f9024981848203e883200b20946817cfb2c442693d850332c3b755b2342ec4afb280b902248c2e032100000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000aaa919a7c465be9b053673c567d73be8603179630000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000001a000000000000000000000000000000000000000000000000000000000000000407d7116a8706ae08baa7f4909e26728fa7a5f0365aaa919a7c465be9b053673c567d73be8603179636c7110482920e0af149a82189251f292a84148a85b7cd70d00000000000000000000000000000000000000000000000000000000000000417197961c5ae032ed6f33650f1f3a3ba111e8548a3dad14b3afa1cb6bc8f4601a6cb2b21aedcd575784e923942f3130f3290d56522ab2b28afca478e489426a4601000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000041ae94b0e599ef0508ba7bec41db5b46d5a065b30d3d5c4b0a4c85ea2d4899d6607e80e3314ee0741049963d30fb3aceaa5506e13835a41ef54a8f44a04ef0f1e40100000000000000000000000000000000000000000000000000000000000000808080")
+	input.Transaction = resultTx.Transaction
+	resultSign, err := eth.SignTransaction(&input)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	} else {
+		fmt.Println(resultSign)
+	}
+
+	//3.send tx
+	var sendTransactionParams adaptor.SendTransactionInput
+	input.Transaction = resultSign.Extra
+	resultSend, err := eth.SendTransaction(&sendTransactionParams)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	} else {
+		fmt.Println(resultSend)
+	}
 
 	return nil
 }
