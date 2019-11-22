@@ -105,6 +105,8 @@ func (validate *Validate) validateContractSignature(signatures []modules.Signatu
 				contractId, err.Error())
 			return TxValidationCode_INVALID_CONTRACT_SIGN
 		}
+	}
+	if jury != nil { //有陪审团信息,判断公钥和陪审员是否匹配
 		jurorCount := len(jury.EleList)
 		needSign = int(math.Ceil((float64(jurorCount)*2 + 1) / 3))
 		for _, s := range signatures {
