@@ -176,7 +176,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 				return TxValidationCode_INVALID_CONTRACT, txFee
 			}
 			contractId := payload.ContractId
-			if common.IsSystemContractAddress(contractId) {
+			if common.IsSystemContractId(contractId) {
 				isSysContractCall = true
 			}
 		case modules.APP_CONTRACT_STOP_REQUEST:
@@ -198,7 +198,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 		case modules.APP_SIGNATURE:
 			// 签名验证
 			payload, _ := msg.Payload.(*modules.SignaturePayload)
-			validateCode := validate.validateContractSignature(payload.Signatures[:], tx)
+			validateCode := validate.validateContractSignature(payload.Signatures[:], tx, isFullTx)
 			if validateCode != TxValidationCode_VALID {
 				return validateCode, txFee
 			}
@@ -279,7 +279,7 @@ func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize f
 		return false
 	}
 
-	var onlyPayment bool = true
+	var onlyPayment = true
 	var timeout uint32
 	var opFee, sizeFee, timeFee, accountUpdateFee, appDataFee, allFee float64
 	reqId := tx.RequestHash()

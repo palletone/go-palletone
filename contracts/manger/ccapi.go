@@ -199,7 +199,7 @@ func Deploy(jA string, rwM rwset.TxManager, idag dag.IDag, chainID string, templ
 		SysCC:    false,
 		Address:  jA,
 	}
-	//if depId.IsSystemContractAddress() {
+	//if depId.IsSystemContractId() {
 	//	cc.SysCC = true
 	//	err = cclist.SetChaincode(chainID, 0, cc)
 	//	if err != nil {

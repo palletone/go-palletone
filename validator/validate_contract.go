@@ -77,17 +77,37 @@ func (validate *Validate) validateContractDeploy(tplId []byte) ValidationCode {
 }
 
 //验证陪审团签名是否有效
-func (validate *Validate) validateContractSignature(signatures []modules.SignatureSet, tx *modules.Transaction) ValidationCode {
-	contractId := tx.ContractIdBytes()
+func (validate *Validate) validateContractSignature(signatures []modules.SignatureSet,
+	tx *modules.Transaction, isFullTx bool) ValidationCode {
+	//contractId := tx.ContractIdBytes()
 	txHash := tx.Hash().String()
 	needSign := 1
-	// 1.确认签名者都是Jury或者是Mediator
-	if !common.IsSystemContractAddress(contractId) { // user contract
-		jury, err := validate.statequery.GetContractJury(contractId)
+	//如果是Deploy，那么Jury在DeployPayload里面
+	var jury *modules.ElectionNode
+	var err error
+	var contractId []byte
+	for _, msg := range tx.TxMessages {
+		if msg.App == modules.APP_CONTRACT_DEPLOY {
+			deploy := msg.Payload.(*modules.ContractDeployPayload)
+			jury = &deploy.EleNode
+		} else if msg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
+			invokeReq := msg.Payload.(*modules.ContractInvokeRequestPayload)
+			contractId = invokeReq.ContractId
+		} else if msg.App == modules.APP_CONTRACT_STOP_REQUEST {
+			stopReq := msg.Payload.(*modules.ContractStopRequestPayload)
+			contractId = stopReq.ContractId
+		}
+	}
+	// 1.对于用户合约，确认签名者都是Jury
+	if common.IsUserContractId(contractId) { // user contract
+		jury, err = validate.statequery.GetContractJury(contractId)
 		if err != nil {
-			log.Error(err.Error())
+			log.Errorf("GetContractJury by contractId[%x] throw an error:%s",
+				contractId, err.Error())
 			return TxValidationCode_INVALID_CONTRACT_SIGN
 		}
+	}
+	if jury != nil { //有陪审团信息,判断公钥和陪审员是否匹配
 		jurorCount := len(jury.EleList)
 		needSign = int(math.Ceil((float64(jurorCount)*2 + 1) / 3))
 		for _, s := range signatures {
@@ -106,6 +126,7 @@ func (validate *Validate) validateContractSignature(signatures []modules.Signatu
 			}
 		}
 	}
+
 	//2.确认签名都验证通过
 	tx4Sign := tx.GetResultRawTx()
 	txBytes, _ := rlp.EncodeToBytes(tx4Sign)
@@ -121,7 +142,7 @@ func (validate *Validate) validateContractSignature(signatures []modules.Signatu
 		}
 	}
 	//3.确认签名数量满足系统要求
-	if passCount < needSign {
+	if isFullTx && passCount < needSign {
 		log.Errorf("Tx[%s] need signature count:%d, but current has %d", txHash, needSign, passCount)
 		return TxValidationCode_INVALID_CONTRACT_SIGN
 	}
