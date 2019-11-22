@@ -481,15 +481,12 @@ func CreateCoinbase() (*modules.Transaction, error) {
 		Payload: &payload,
 	}
 	// step4. create coinbase
-	var coinbase modules.Transaction
 	//coinbase := modules.Transaction{
 	//	TxMessages: []modules.Message{msg},
 	//}
-	coinbase.TxMessages = append(coinbase.TxMessages, msg)
-	// coinbase.CreationDate = coinbase.CreateDate()
-	//coinbase.TxHash = coinbase.Hash()
+	coinbase := modules.NewTransaction([]*modules.Message{msg})
 
-	return &coinbase, nil
+	return coinbase, nil
 }
 
 func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
@@ -584,14 +581,13 @@ func NewCoinbaseTransaction() (*modules.Transaction, error) {
 		Inputs:  []*modules.Input{input},
 		Outputs: []*modules.Output{output},
 	}
-	msg := modules.Message{
+	msg := &modules.Message{
 		App:     modules.APP_PAYMENT,
 		Payload: payload,
 	}
-	var coinbase modules.Transaction
-	coinbase.TxMessages = append(coinbase.TxMessages, &msg)
-	//coinbase.TxHash = coinbase.Hash()
-	return &coinbase, nil
+	coinbase := modules.NewTransaction([]*modules.Message{msg})
+
+	return coinbase, nil
 }
 
 func saveHashByIndex(db ptndb.Database, hash common.Hash, index uint64) error {
