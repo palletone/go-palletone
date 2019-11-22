@@ -37,7 +37,7 @@ var (
 	// _ = palletone.PendingStateEventer(&Client{})
 	_ = palletone.PendingContractCaller(&Client{})
 )
-func TestSimpleContractCcstop(t *testing.T) {
+/*func TestSimpleContractCcstop(t *testing.T) {
         client, _:= rpc.Dial("http://123.126.106.82:38555")
 	defer client.Close()
         from :="P1LxMi9Lu1aaf6GXg63iJESruk6eVxjDhE2"
@@ -103,3 +103,4 @@ func TestSimpleContractCcinstall(t *testing.T) {
     fmt.Println(result)
     t.Log("Pass")
 }
+*/
