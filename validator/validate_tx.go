@@ -358,7 +358,7 @@ func (validate *Validate) validateTxFeeValid(tx *modules.Transaction) (bool, []*
 	var err error
 	if validate.enableTxFeeCheck {
 		if !validate.ValidateTxFeeEnough(tx, 0, 0) {
-			log.Warnf("[%s]validateTxFeeValid, tx fee is not enough", reqId.String()[:8])
+			log.Warnf("validateTxFeeValid, Tx[%s] fee is not enough", tx.Hash().String())
 			return false, nil
 		}
 		feeAllocate, err = tx.GetTxFeeAllocate(validate.utxoquery.GetUtxoEntry,
@@ -368,7 +368,7 @@ func (validate *Validate) validateTxFeeValid(tx *modules.Transaction) (bool, []*
 			validate.tokenEngine.GetScriptSigners, common.Address{})
 	}
 	if err != nil {
-		log.Warnf("[%s]validateTxFeeValid, compute tx fee error:%s", reqId.String()[:8], err.Error())
+		log.Warnf("[%s]validateTxFeeValid, compute tx[%s] fee error:%s", reqId.String()[:8], tx.Hash().String(),err.Error())
 		return false, nil
 	}
 

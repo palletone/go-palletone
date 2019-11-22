@@ -31,7 +31,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-const ENABLE_TX_FEE_CHECK_TIME = 1570870800
+const ENABLE_TX_FEE_CHECK_TIME = 1570870800 //2019-10-12 17:00:00
 const ENABLE_CONTRACT_SIGN_CHECK_TIME = 1575129600 //2019-12-1
 
 /**
