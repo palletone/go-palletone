@@ -78,34 +78,52 @@ func (validate *Validate) validateContractDeploy(tplId []byte) ValidationCode {
 
 //验证陪审团签名是否有效
 func (validate *Validate) validateContractSignature(signatures []modules.SignatureSet, tx *modules.Transaction) ValidationCode {
-	contractId := tx.ContractIdBytes()
+	//contractId := tx.ContractIdBytes()
 	txHash := tx.Hash().String()
 	needSign := 1
-	// 1.确认签名者都是Jury或者是Mediator
-	if !common.IsSystemContractAddress(contractId) { // user contract
-		jury, err := validate.statequery.GetContractJury(contractId)
-		if err != nil {
-			log.Error(err.Error())
-			return TxValidationCode_INVALID_CONTRACT_SIGN
-		}
-		jurorCount := len(jury.EleList)
-		needSign = int(math.Ceil((float64(jurorCount)*2 + 1) / 3))
-		for _, s := range signatures {
-			jAddr := crypto.PubkeyBytesToAddress(s.PubKey)
-			jAddrHash := util.RlpHash(jAddr)
-			find := false
-			for _, node := range jury.EleList {
-				if jAddrHash == node.AddrHash {
-					find = true
-					break
-				}
-			}
-			if !find { //签名者不是合法的陪审员
-				log.Warnf("Tx[%s] signature payload pubKey[%x] is not a valid juror", txHash, s.PubKey)
-				return TxValidationCode_INVALID_CONTRACT_SIGN
-			}
+	//如果是Deploy，那么Jury在DeployPayload里面
+	var jury *modules.ElectionNode
+	var err error
+	var contractId []byte
+	for _, msg := range tx.TxMessages {
+		if msg.App == modules.APP_CONTRACT_DEPLOY {
+			deploy := msg.Payload.(*modules.ContractDeployPayload)
+			jury = &deploy.EleNode
+		} else if msg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
+			invokeReq := msg.Payload.(*modules.ContractInvokeRequestPayload)
+			contractId = invokeReq.ContractId
+		} else if msg.App == modules.APP_CONTRACT_STOP_REQUEST {
+			stopReq := msg.Payload.(*modules.ContractStopRequestPayload)
+			contractId = stopReq.ContractId
 		}
 	}
+	// 1.确认签名者都是Jury或者是Mediator
+	if common.IsUserContractId(contractId) { // user contract
+		jury, err = validate.statequery.GetContractJury(contractId)
+		if err != nil {
+			log.Errorf("GetContractJury by contractId[%x] throw an error:%s",
+				contractId, err.Error())
+			return TxValidationCode_INVALID_CONTRACT_SIGN
+		}
+	}
+	jurorCount := len(jury.EleList)
+	needSign = int(math.Ceil((float64(jurorCount)*2 + 1) / 3))
+	for _, s := range signatures {
+		jAddr := crypto.PubkeyBytesToAddress(s.PubKey)
+		jAddrHash := util.RlpHash(jAddr)
+		find := false
+		for _, node := range jury.EleList {
+			if jAddrHash == node.AddrHash {
+				find = true
+				break
+			}
+		}
+		if !find { //签名者不是合法的陪审员
+			log.Warnf("Tx[%s] signature payload pubKey[%x] is not a valid juror", txHash, s.PubKey)
+			return TxValidationCode_INVALID_CONTRACT_SIGN
+		}
+	}
+
 	//2.确认签名都验证通过
 	tx4Sign := tx.GetResultRawTx()
 	txBytes, _ := rlp.EncodeToBytes(tx4Sign)

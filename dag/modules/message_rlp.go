@@ -51,7 +51,7 @@ type ContractDeployPayloadV2 struct {
 
 func (input *ContractDeployPayload) EncodeRLP(w io.Writer) error {
 
-	if common.IsSystemContractAddress(input.ContractId) { //系统合约
+	if common.IsSystemContractId(input.ContractId) { //系统合约
 		log.Debugf("System contract[%x] deploy payload rlp", input.ContractId)
 		temp := &ContractDeployPayloadV1{}
 		temp.TemplateId = input.TemplateId

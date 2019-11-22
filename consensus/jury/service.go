@@ -364,7 +364,7 @@ func (p *Processor) GenContractSigTransaction(signer common.Address, password st
 		if msg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
 			resultMsg = true
 			requestMsg := msg.Payload.(*modules.ContractInvokeRequestPayload)
-			isSysContract = common.IsSystemContractAddress(requestMsg.ContractId)
+			isSysContract = common.IsSystemContractId(requestMsg.ContractId)
 			continue
 		}
 		if resultMsg {

@@ -651,7 +651,7 @@ func (txs *tempTxs) getUtxoEntryFromTxs(outpoint *modules.OutPoint) (*modules.Ut
 }
 
 func (rep *UnitRepository) ComputeTxFeesAllocate(mediatorReward common.Address, txs []*modules.Transaction,
-	getJurorRewardFunc modules.GetJurorRewardAddFunc) (	[]*modules.Addition, error) {
+	getJurorRewardFunc modules.GetJurorRewardAddFunc) ([]*modules.Addition, error) {
 
 	ads := make([]*modules.Addition, 0)
 	tempTxs := &tempTxs{allUtxo: make(map[modules.OutPoint]*modules.Utxo), rep: rep.utxoRepository}
@@ -1256,7 +1256,7 @@ func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, he
 		return false
 	}
 
-	if common.IsSystemContractAddress(payload.ContractId) && payload.ErrMsg.Code == 0 {
+	if common.IsSystemContractId(payload.ContractId) && payload.ErrMsg.Code == 0 {
 		eventArg := &modules.SysContractStateChangeEvent{ContractId: payload.ContractId, WriteSet: payload.WriteSet}
 		for _, eventFunc := range rep.observers {
 			eventFunc(eventArg)

@@ -175,7 +175,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 				return TxValidationCode_INVALID_CONTRACT, txFee
 			}
 			contractId := payload.ContractId
-			if common.IsSystemContractAddress(contractId) {
+			if common.IsSystemContractId(contractId) {
 				isSysContractCall = true
 			}
 		case modules.APP_CONTRACT_STOP_REQUEST:
@@ -368,7 +368,7 @@ func (validate *Validate) validateTxFeeValid(tx *modules.Transaction) (bool, []*
 			validate.tokenEngine.GetScriptSigners, common.Address{})
 	}
 	if err != nil {
-		log.Warnf("[%s]validateTxFeeValid, compute tx[%s] fee error:%s", reqId.String()[:8], tx.Hash().String(),err.Error())
+		log.Warnf("[%s]validateTxFeeValid, compute tx[%s] fee error:%s", reqId.String()[:8], tx.Hash().String(), err.Error())
 		return false, nil
 	}
 
