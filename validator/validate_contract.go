@@ -77,7 +77,8 @@ func (validate *Validate) validateContractDeploy(tplId []byte) ValidationCode {
 }
 
 //验证陪审团签名是否有效
-func (validate *Validate) validateContractSignature(signatures []modules.SignatureSet, tx *modules.Transaction) ValidationCode {
+func (validate *Validate) validateContractSignature(signatures []modules.SignatureSet,
+	tx *modules.Transaction, isFullTx bool) ValidationCode {
 	//contractId := tx.ContractIdBytes()
 	txHash := tx.Hash().String()
 	needSign := 1
@@ -141,7 +142,7 @@ func (validate *Validate) validateContractSignature(signatures []modules.Signatu
 		}
 	}
 	//3.确认签名数量满足系统要求
-	if passCount < needSign {
+	if isFullTx && passCount < needSign {
 		log.Errorf("Tx[%s] need signature count:%d, but current has %d", txHash, needSign, passCount)
 		return TxValidationCode_INVALID_CONTRACT_SIGN
 	}
