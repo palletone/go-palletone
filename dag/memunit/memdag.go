@@ -535,7 +535,7 @@ func (chain *MemDag) AddStableUnit(unit *modules.Unit) error {
 			chain.token.String(), s_hash.String(), unit.Hash().String())
 		return nil
 	}
-	validateResult := chain.ldbValidator.ValidateHeader(unit.UnitHeader)
+	validateResult := chain.ldbValidator.ValidateUnitExceptGroupSig(unit)
 	if validateResult != validator.TxValidationCode_VALID {
 		return validator.NewValidateError(validateResult)
 	}

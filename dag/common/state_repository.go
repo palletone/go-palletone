@@ -436,7 +436,7 @@ func (rep *StateRepository) GetJurorReward(jurorAdd common.Address) common.Addre
 
 func (rep *StateRepository) GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, error) {
 	if addr, exist := rep.mapHash2Address[hash]; exist {
-		log.Infof("GetJurorByAddrHash(hash:%s) in cache map,addr:%s",
+		log.Debugf("GetJurorByAddrHash(hash:%s) in cache map,addr:%s",
 			hash.String(), addr.String())
 		return rep.statedb.GetJurorByAddr(addr.String())
 	}
