@@ -1758,3 +1758,15 @@ func (m *MockIDag) GetJurorReward(jurorAdd common.Address) common.Address {
 func (mr *MockIDagMockRecorder) GetJurorReward(jurorAdd interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetJurorReward", reflect.TypeOf((*MockIDag)(nil).GetJurorReward), jurorAdd)
 }
+
+// SubscribeUnstableRepositoryUpdatedEvent mocks base method
+func (m *MockIDag) SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription {
+	ret := m.ctrl.Call(m, "SubscribeUnstableRepositoryUpdatedEvent", ch)
+	ret0, _ := ret[0].(event.Subscription)
+	return ret0
+}
+
+// SubscribeUnstableRepositoryUpdatedEvent indicates an expected call of SubscribeUnstableRepositoryUpdatedEvent
+func (mr *MockIDagMockRecorder) SubscribeUnstableRepositoryUpdatedEvent(ch interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeUnstableRepositoryUpdatedEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeUnstableRepositoryUpdatedEvent), ch)
+}

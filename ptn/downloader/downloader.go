@@ -64,6 +64,8 @@ var (
 	//fsHeaderForceVerify = 24              // Number of headers to verify before and after the pivot to accept it
 	fsHeaderContCheck = 3 * time.Second // Time interval to check for header continuations during state download
 	fsMinFullBlocks   = 64              // Number of blocks to retrieve fully even in fast sync
+
+	stepStable = uint64(10240)
 )
 
 var (
@@ -1419,12 +1421,16 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 	for i, result := range results {
 		blocks[i] = modules.NewUnitWithHeader(result.Header).WithBody(result.Transactions)
 	}
+	s_index := uint64(0)
+	if d.mode == FastSync {
+		if d.GetFastStableIndex() > stepStable {
+			s_index = d.GetFastStableIndex() - stepStable
+		}
+	}
 
-	//s_index := uint64(1)
-	s_index := d.GetFastStableIndex()
 	log.Debug("Inserting downloaded chain", "items", len(results),
 		"index", first.Number.Index, "index", last.Number.Index, "fastnum", s_index)
-	if index, err := d.dag.InsertDag(blocks, d.txpool, s_index > last.NumberU64()); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
+	if index, err := d.dag.InsertDag(blocks, d.txpool, s_index >= last.NumberU64()); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
 		log.Debug("Downloaded item processing failed", "number", results[index].Header.Number.Index,
 			"hash", results[index].Header.Hash(), "err", err)
 		return errInvalidChain
@@ -1551,12 +1557,17 @@ func (d *Downloader) commitFastSyncData(results []*fetchResult /*, stateSync *st
 		blocks[i] = modules.NewUnitWithHeader(result.Header).WithBody(result.Transactions)
 	}
 
-	//s_index := uint64(1)
-	s_index := d.GetFastStableIndex()
+	s_index := uint64(0)
+	if d.mode == FastSync {
+		if d.GetFastStableIndex() > stepStable {
+			s_index = d.GetFastStableIndex() - stepStable
+		}
+	}
+
 	log.Debug("Inserting fast-sync blocks", "items", len(results),
 		"firstnum", first.Number.Index, "lastnumn", last.Number.Index, "fastnum", s_index,
 	)
-	if index, err := d.dag.InsertDag(blocks, d.txpool, s_index > last.Number.Index); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
+	if index, err := d.dag.InsertDag(blocks, d.txpool, s_index >= last.Number.Index); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
 		log.Debug("Downloaded item processing failed", "number", results[index].Header.Number.Index,
 			"hash", results[index].Header.Hash(), "err", err)
 		return errInvalidChain
@@ -1571,11 +1582,15 @@ func (d *Downloader) commitPivotBlock(result *fetchResult) error {
 
 	units := []*modules.Unit{}
 	units = append(units, block)
-	//s_index := uint64(1)
-	s_index := d.GetFastStableIndex()
+	s_index := uint64(0)
+	if d.mode == FastSync {
+		if d.GetFastStableIndex() > stepStable {
+			s_index = d.GetFastStableIndex() - stepStable
+		}
+	}
 	log.Debug("Committing fast sync pivot as new head", "index:", block.UnitHeader.Number.Index, "unit", *block,
 		"fastnum", s_index)
-	if _, err := d.dag.InsertDag(units, d.txpool, s_index > block.NumberU64()); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
+	if _, err := d.dag.InsertDag(units, d.txpool, s_index >= block.NumberU64()); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
 		log.Debug("Downloaded item processing failed", "index:", block.UnitHeader.Number.Index, "err:", err)
 		return errInvalidChain
 	}

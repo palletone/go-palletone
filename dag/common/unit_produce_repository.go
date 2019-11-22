@@ -22,6 +22,7 @@ package common
 
 import (
 	"fmt"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/tokenengine"
 	"reflect"
 	"strconv"
@@ -148,12 +149,25 @@ func (d *UnitProduceRepository) Close() {
  * push unit is successful the block is appended to the chain database on disk.
  *
  * 推块“可能会失败”，在这种情况下，每个部分地更改都会撤销。 推块成功后，该块将附加到磁盘上的链数据库。
- *
+ * 推块必须连续，如果不连续的推块，会返回错误
  * @return true if we switched forks as a result of this push.
  */
 func (rep *UnitProduceRepository) PushUnit(newUnit *modules.Unit) error {
+	//要增加的Unit必须是NewestUnit后的一个单元，否则报错
+	uHash, uIndex, err := rep.propRep.GetNewestUnit(newUnit.GetAssetId())
+	if err != nil {
+		return err
+	}
+	if !newUnit.ContainsParent(uHash) {
+		return errors.New(fmt.Sprintf("PushUnit[%s] parent is not newest unit[%s] %d",
+			newUnit.DisplayId(), uHash.String(),uIndex.Index))
+	}
+	if newUnit.NumberU64()-1 != uIndex.Index {
+		return errors.New(fmt.Sprintf("PushUnit[%s] height:%d, but newest unit height:%d",
+			newUnit.Hash().String(), newUnit.NumberU64(), uIndex.Index))
+	}
 	//更新数据库
-	err := rep.unitRep.SaveUnit(newUnit, false)
+	err = rep.unitRep.SaveUnit(newUnit, false)
 	if err != nil {
 		return err
 	}
@@ -176,7 +190,7 @@ func (rep *UnitProduceRepository) ApplyUnit(nextUnit *modules.Unit) error {
 	// 计算当前 unit 到上一个 unit 之间的缺失数量，并更新每个mediator的unit的缺失数量
 	missed := rep.updateMediatorMissedUnits(nextUnit)
 
-	// 更新全局动态属性值
+	// 更新全局动态属性值，包括最新单元等
 	rep.updateDynGlobalProp(nextUnit, missed)
 
 	// 更新 mediator 的相关数据

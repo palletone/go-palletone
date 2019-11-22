@@ -49,6 +49,10 @@ func TestAddressNotValidate(t *testing.T) {
 
 }
 func TestHexToAddrString(t *testing.T) {
+	destroyAddr := HexToAddress("0x000000000000000000000000000000000000000000")
+	t.Logf("destroyAddr %s", destroyAddr.String())
+	emptyAddr := Address{}
+	t.Logf("Empty address:%s", emptyAddr.String())
 	adds := HexToAddress("0x00000000000000000000000000000000000095271C")
 	t.Logf("Test %s", adds.String())
 	addr := HexToAddress("0x00000000000000000000000000000000000000011C")

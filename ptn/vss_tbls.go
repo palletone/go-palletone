@@ -19,13 +19,15 @@
 package ptn
 
 import (
+	"time"
+
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
+	"github.com/palletone/go-palletone/common/util"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/common/util"
 )
 
 func (pm *ProtocolManager) newProducedUnitBroadcastLoop() {
@@ -33,7 +35,7 @@ func (pm *ProtocolManager) newProducedUnitBroadcastLoop() {
 		select {
 		case event := <-pm.newProducedUnitCh:
 			pm.IsExistInCache(event.Unit.UnitHash.Bytes())
-			pm.BroadcastUnit(event.Unit, true)
+			go pm.BroadcastUnit(event.Unit, true)
 			//self.BroadcastCorsHeader(event.Unit.Header(), self.SubProtocols[0].Name)
 
 		case <-pm.newProducedUnitSub.Err():
@@ -84,7 +86,7 @@ func (pm *ProtocolManager) toGroupSign(event modules.ToGroupSignEvent) {
 	if pm.IsExistInCache(util.RlpHash(newHash).Bytes()) {
 		return
 	}
-	pm.producer.AddToTBLSSignBufs(newHash)
+	go pm.producer.AddToTBLSSignBufs(newHash)
 }
 
 // @author Albert·Gou
@@ -120,7 +122,7 @@ func (pm *ProtocolManager) transmitSigShare(sigShare *mp.SigShareEvent) {
 	peer, self := pm.GetPeer(med.Node)
 	if self {
 		pm.IsExistInCache(sigShare.Hash().Bytes())
-		pm.producer.AddToTBLSRecoverBuf(sigShare)
+		go pm.producer.AddToTBLSRecoverBuf(sigShare)
 		return
 	}
 
@@ -134,7 +136,7 @@ func (pm *ProtocolManager) transmitSigShare(sigShare *mp.SigShareEvent) {
 	}
 
 	// 如果没有和对应的mediator有网络连接，则进行转发
-	pm.BroadcastSigShare(sigShare)
+	go pm.BroadcastSigShare(sigShare)
 }
 
 // @author Albert·Gou
@@ -143,7 +145,7 @@ func (pm *ProtocolManager) groupSigBroadcastLoop() {
 		select {
 		case event := <-pm.groupSigCh:
 			pm.IsExistInCache(event.Hash().Bytes())
-			pm.dag.SetUnitGroupSign(event.UnitHash, event.GroupSig, pm.txpool)
+			go pm.dag.SetUnitGroupSign(event.UnitHash, event.GroupSig, pm.txpool)
 			go pm.BroadcastGroupSig(&event)
 
 		// Err() channel will be closed when unsubscribing.
@@ -156,6 +158,11 @@ func (pm *ProtocolManager) groupSigBroadcastLoop() {
 // @author Albert·Gou
 // BroadcastGroupSig will propagate the group signature of unit to p2p network
 func (pm *ProtocolManager) BroadcastGroupSig(groupSig *mp.GroupSigEvent) {
+	now := uint64(time.Now().Unix())
+	if now > groupSig.Deadline {
+		return
+	}
+
 	peers := pm.peers.PeersWithoutGroupSig(groupSig.Hash())
 	for _, peer := range peers {
 		peer.SendGroupSig(groupSig)
@@ -195,7 +202,7 @@ func (pm *ProtocolManager) transmitVSSDeal(deal *mp.VSSDealEvent) {
 	peer, self := pm.GetPeer(med.Node)
 	if self {
 		pm.IsExistInCache(deal.Hash().Bytes())
-		pm.producer.AddToDealBuf(deal)
+		go pm.producer.AddToDealBuf(deal)
 		return
 	}
 
@@ -209,7 +216,7 @@ func (pm *ProtocolManager) transmitVSSDeal(deal *mp.VSSDealEvent) {
 	}
 
 	// 如果没有和对应的mediator有网络连接，则进行转发
-	pm.BroadcastVSSDeal(deal)
+	go pm.BroadcastVSSDeal(deal)
 
 	return
 }
@@ -244,8 +251,8 @@ func (pm *ProtocolManager) broadcastVssResp(resp *mp.VSSResponseEvent) {
 	//}
 
 	pm.IsExistInCache(resp.Hash().Bytes())
-	pm.producer.AddToResponseBuf(resp)
-	pm.BroadcastVSSResponse(resp)
+	go pm.producer.AddToResponseBuf(resp)
+	go pm.BroadcastVSSResponse(resp)
 }
 
 // GetPeer, retrieve specified peer. If it is the node itself, p is nil and self is true

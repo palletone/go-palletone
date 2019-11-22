@@ -332,8 +332,7 @@ func (tx *Transaction) GetCoinbaseReward(versionFunc QueryStateByVersionFunc,
 			addr, _ := scriptFunc(out.PkScript)
 			writeMap[addr.String()] = []AmountAsset{aa}
 		}
-	}
-	if tx.TxMessages[0].App == APP_CONTRACT_INVOKE { //进行了记账
+	} else if tx.TxMessages[0].App == APP_CONTRACT_INVOKE { //进行了记账
 		invoke := tx.TxMessages[0].Payload.(*ContractInvokePayload)
 		for _, write := range invoke.WriteSet {
 			var aa []AmountAsset
@@ -358,6 +357,8 @@ func (tx *Transaction) GetCoinbaseReward(versionFunc QueryStateByVersionFunc,
 			addr := read.Key[len(constants.RewardAddressPrefix):]
 			readMap[addr] = aa
 		}
+	} else {
+		return &AmountAsset{Asset: NewPTNAsset()}, nil
 	}
 	//计算Write Map和Read Map的差，获得Reward值
 	reward := &AmountAsset{}
@@ -405,6 +406,8 @@ func (tx *Transaction) GetNewUtxos() map[OutPoint]*Utxo {
 	}
 	return result
 }
+
+//获取一个交易中花费了哪些OutPoint
 func (tx *Transaction) GetSpendOutpoints() []*OutPoint {
 	result := []*OutPoint{}
 	for _, msg := range tx.TxMessages {
@@ -415,12 +418,19 @@ func (tx *Transaction) GetSpendOutpoints() []*OutPoint {
 		inputs := pay.Inputs
 		for _, input := range inputs {
 			if input.PreviousOutPoint != nil {
-				result = append(result, input.PreviousOutPoint)
+				if input.PreviousOutPoint.TxHash.IsSelfHash() { //合约Payback的情形
+					op := NewOutPoint(tx.Hash(), input.PreviousOutPoint.MessageIndex, input.PreviousOutPoint.OutIndex)
+					result = append(result, op)
+				} else {
+					result = append(result, input.PreviousOutPoint)
+				}
 			}
 		}
 	}
 	return result
 }
+
+//获得合约交易的签名对应的陪审员地址
 func (tx *Transaction) GetContractTxSignatureAddress() []common.Address {
 	if !tx.IsContractTx() {
 		return nil
@@ -535,18 +545,18 @@ func (tx *Transaction) GetResultRawTx() *Transaction {
 	return result
 }
 
-func (tx *Transaction) GetResultTx() *Transaction {
-	txCopy := tx.Clone()
-	result := &Transaction{}
-	result.CertId = tx.CertId
-	for _, msg := range txCopy.TxMessages {
-		if msg.App == APP_SIGNATURE {
-			continue //移除SignaturePayload
-		}
-		result.TxMessages = append(result.TxMessages, msg)
-	}
-	return result
-}
+//func (tx *Transaction) GetResultTx() *Transaction {
+//	txCopy := tx.Clone()
+//	result := &Transaction{}
+//	result.CertId = tx.CertId
+//	for _, msg := range txCopy.TxMessages {
+//		if msg.App == APP_SIGNATURE {
+//			continue //移除SignaturePayload
+//		}
+//		result.TxMessages = append(result.TxMessages, msg)
+//	}
+//	return result
+//}
 
 //Request 这条Message的Index是多少
 func (tx *Transaction) GetRequestMsgIndex() int {
@@ -576,6 +586,7 @@ func (tx *Transaction) HasContractPayoutMsg() (bool, *PaymentPayload) {
 	return false, nil
 }
 
+//对于合约调用Tx，获得调用的合约ID，如果不是合约调用Tx，则返回nil
 func (tx *Transaction) InvokeContractId() []byte {
 	for _, msg := range tx.TxMessages {
 		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
@@ -809,9 +820,9 @@ func (tx *Transaction) GetTxFeeAllocateLegacyV1(queryUtxoFunc QueryUtxoFunc, get
 	if isResultMsg { //合约执行，Fee需要分配给Jury
 		juryAmount := float64(fee.Amount) * parameter.CurrentSysParameters.ContractFeeJuryPercent
 		juryCount := float64(len(jury))
-		for _, jurior := range jury {
+		for _, juror := range jury {
 			jIncome := &Addition{
-				Addr:   jurior,
+				Addr:   juror,
 				Amount: uint64(juryAmount / juryCount),
 				Asset:  fee.Asset,
 			}
@@ -843,6 +854,7 @@ func (tx *Transaction) GetTxFeeAllocateLegacyV1(queryUtxoFunc QueryUtxoFunc, get
 	return result, nil
 }
 
+//获得一笔交易的手续费分配情况,包括Mediator的打包费，Juror的合约执行费
 func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFunc GetScriptSignersFunc,
 	mediatorReward common.Address, getJurorRewardFunc GetJurorRewardAddFunc) ([]*Addition, error) {
 	fee, err := tx.GetTxFee(queryUtxoFunc)
@@ -885,10 +897,10 @@ func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFu
 	if isJuryInside { //合约执行，Fee需要分配给Jury
 		juryAmount := float64(fee.Amount) * parameter.CurrentSysParameters.ContractFeeJuryPercent
 		juryCount := float64(len(jury))
-		for _, jurior := range jury {
+		for _, juror := range jury {
 			jIncome := &Addition{
-				//Addr:   jurior,
-				Addr:   getJurorRewardFunc(jurior),
+				//Addr:   juror,
+				Addr:   getJurorRewardFunc(juror),
 				Amount: uint64(juryAmount / juryCount),
 				Asset:  fee.Asset,
 			}

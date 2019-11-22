@@ -53,19 +53,27 @@ type MemDag struct {
 	orphanUnitsParants sync.Map
 	chainUnits         sync.Map
 	tempdb             sync.Map
-
-	ldbunitRep        common2.IUnitRepository
-	ldbPropRep        common2.IPropRepository
-	ldbUnitProduceRep common2.IUnitProduceRepository
-	saveHeaderOnly    bool
-	lock              sync.RWMutex
-	cache             palletcache.ICache
+	ldbValidator       validator.Validator
+	ldbunitRep         common2.IUnitRepository
+	ldbPropRep         common2.IPropRepository
+	ldbUnitProduceRep  common2.IUnitProduceRepository
+	saveHeaderOnly     bool
+	lock               sync.RWMutex
+	cache              palletcache.ICache
 	// append by albert·gou 用于通知群签名
 	toGroupSignFeed  event.Feed
 	toGroupSignScope event.SubscriptionScope
 	db               ptndb.Database
 	tokenEngine      tokenengine.ITokenEngine
 	quit             chan struct{} // used for exit
+	observers        []SwitchMainChainEventFunc
+}
+
+func (pmg *MemDag) SubscribeSwitchMainChainEvent(ob SwitchMainChainEventFunc) {
+	if pmg.observers == nil {
+		pmg.observers = []SwitchMainChainEventFunc{}
+	}
+	pmg.observers = append(pmg.observers, ob)
 }
 
 func (pmg *MemDag) Close() {
@@ -127,12 +135,18 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 		ldbUnitProduceRep:  ldbUnitProduceRep,
 		db:                 db,
 		tokenEngine:        tokenEngine,
+		observers:          []SwitchMainChainEventFunc{},
 	}
 	temp, _ := NewChainTempDb(db, cache, tokenEngine, saveHeaderOnly)
 	temp.Unit = stableUnit
 	memdag.tempdb.Store(stablehash, temp)
 	memdag.chainUnits.Store(stablehash, temp)
-
+	// init ldbvalidator
+	trep := common2.NewUnitRepository4Db(db, tokenEngine)
+	tutxoRep := common2.NewUtxoRepository4Db(db, tokenEngine)
+	tstateRep := common2.NewStateRepository4Db(db)
+	tpropRep := common2.NewPropRepository4Db(db)
+	memdag.ldbValidator = validator.NewValidate(trep, tutxoRep, tstateRep, tpropRep, cache, saveHeaderOnly)
 	go memdag.loopRebuildTmpDb()
 	return memdag
 }
@@ -156,6 +170,8 @@ func (chain *MemDag) loopRebuildTmpDb() {
 }
 func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository,
 	common2.IStateRepository, common2.IPropRepository, common2.IUnitProduceRepository) {
+	chain.lock.RLock()
+	defer chain.lock.RUnlock()
 	if chain.lastMainChainUnit == nil {
 		log.Infof("the last_unit is nil, want rebuild memdag repository by db.")
 		tempdb, _ := NewTempdb(chain.db)
@@ -168,7 +184,7 @@ func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2
 	}
 	last_main_hash := chain.lastMainChainUnit.Hash()
 	temp_rep, err := chain.getChainUnit(last_main_hash)
-	if err != nil { // 重启后memdag的chainUnits还清被清空，需要重新以memdag的db构建unstable repositoreis
+	if err != nil { // 重启后memdag的chainUnits被清空，需要重新以memdag的db构建unstable repositoreis
 		temp_inter, has := chain.tempdb.Load(last_main_hash)
 		if !has {
 			log.Warnf("the last_unit: %s , is not exist in memdag", last_main_hash.String())
@@ -182,6 +198,16 @@ func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2
 		}
 		tempdb := temp_inter.(*ChainTempDb)
 		return tempdb.UnitRep, tempdb.UtxoRep, tempdb.StateRep, tempdb.PropRep, tempdb.UnitProduceRep
+	} else { // 如果lastmainUnit很久没更新了，既快速同步刚结束时，使用stalbeUnit重构tempdb状态
+		if temp_rep.Unit.NumberU64() < chain.stableUnitHeight {
+			tempdb, _ := NewTempdb(chain.db)
+			trep := common2.NewUnitRepository4Db(tempdb, chain.tokenEngine)
+			tutxoRep := common2.NewUtxoRepository4Db(tempdb, chain.tokenEngine)
+			tstateRep := common2.NewStateRepository4Db(tempdb)
+			tpropRep := common2.NewPropRepository4Db(tempdb)
+			tunitProduceRep := common2.NewUnitProduceRepository(trep, tpropRep, tstateRep)
+			return trep, tutxoRep, tstateRep, tpropRep, tunitProduceRep
+		}
 	}
 	return temp_rep.UnitRep, temp_rep.UtxoRep, temp_rep.StateRep, temp_rep.PropRep, temp_rep.UnitProduceRep
 }
@@ -212,6 +238,9 @@ func (chain *MemDag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Hea
 //}
 
 func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error {
+	chain.lock.Lock()
+	defer chain.lock.Unlock()
+
 	//1. Set this unit as stable
 	unit_temp, err := chain.getChainUnit(uHash)
 	if err != nil {
@@ -223,8 +252,7 @@ func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupSign []byte, txpoo
 		return nil
 	}
 
-	chain.lock.Lock()
-	defer chain.lock.Unlock()
+	log.Infof("Unit[%s] has group sign, make it stable.", uHash.String())
 	chain.setStableUnit(uHash, unit.NumberU64(), txpool)
 
 	//2. Update unit.groupSign
@@ -291,7 +319,10 @@ func (chain *MemDag) setNextStableUnit(unit *modules.Unit, txpool txspool.ITxPoo
 	height := unit.NumberU64()
 	// memdag不依赖apply unit的存储，因此用协程提高setStable的效率
 	// 虽然与memdag无关，但是下一个unit的 apply 处理依赖上一个unit apply的结果，所以不能用协程并发处理
-	chain.saveUnitToDb(chain.ldbunitRep, chain.ldbUnitProduceRep, unit)
+	err := chain.saveUnitToDb(chain.ldbunitRep, chain.ldbUnitProduceRep, unit)
+	if err != nil {
+		log.Errorf("Save unit to db error:%s", err.Error())
+	}
 	if !chain.saveHeaderOnly && len(unit.Txs) > 1 {
 		go txpool.SendStoredTxs(unit.Txs.GetTxIds())
 	}
@@ -328,7 +359,7 @@ func (chain *MemDag) checkUnitIrreversibleWithGroupSign(unit *modules.Unit) bool
 func (chain *MemDag) checkStableCondition(unit *modules.Unit, txpool txspool.ITxPool) bool {
 	// append by albert, 使用群签名判断是否稳定
 	if chain.checkUnitIrreversibleWithGroupSign(unit) {
-		log.Debugf("the unit(%s) have group sign(%s), make it to irreversible.",
+		log.Infof("the unit(%s) have group sign(%s), make it to irreversible.",
 			unit.UnitHash.TerminalString(), hexutil.Encode(unit.GetGroupSign()))
 		chain.setStableUnit(unit.UnitHash, unit.NumberU64(), txpool)
 		return true
@@ -436,6 +467,7 @@ func (chain *MemDag) getForkUnits(unit *modules.Unit) []*modules.Unit {
 		if !ok {
 			log.Errorf("getforks chainUnits don't have unit[%s], last_main[%s]",
 				hash.String(), chain.lastMainChainUnit.Hash().String())
+			break
 		}
 		unstableUnits[fork_len-i-1] = u
 		hash = u.ParentHash()[0]
@@ -445,12 +477,12 @@ func (chain *MemDag) getForkUnits(unit *modules.Unit) []*modules.Unit {
 
 //判断当前设置是保存Header还是Unit，将对应的对象保存到Tempdb数据库
 func (chain *MemDag) saveUnitToDb(unitRep common2.IUnitRepository, produceRep common2.IUnitProduceRepository,
-	unit *modules.Unit) {
+	unit *modules.Unit) error {
 	log.Debugf("Save unit[%s] to db", unit.Hash().String())
 	if chain.saveHeaderOnly {
-		unitRep.SaveNewestHeader(unit.Header())
+		return unitRep.SaveNewestHeader(unit.Header())
 	} else {
-		produceRep.PushUnit(unit)
+		return produceRep.PushUnit(unit)
 	}
 }
 
@@ -491,15 +523,36 @@ func (chain *MemDag) SetStableUnit(unit *modules.Unit, isGenesis bool) {
 		chain.addUnitHeight(unit)
 	}
 }
-func (chain *MemDag) AddStableUnit(unit *modules.Unit) {
+func (chain *MemDag) AddStableUnit(unit *modules.Unit) error {
 	chain.lock.Lock()
 	defer chain.lock.Unlock()
 	hash := unit.Hash()
-	log.Debugf("add stable unit to dag, hash[%s], index:%d", hash.String(), unit.NumberU64())
-	chain.saveUnitToDb(chain.ldbunitRep, chain.ldbUnitProduceRep, unit)
+	number := unit.NumberU64()
+	// 重复验证 comment by albert
+	//// leveldb 查重
+	//if s_hash, _, err := chain.ldbPropRep.GetNewestUnit(chain.token); err != nil {
+	//	return err
+	//} else if !unit.ContainsParent(s_hash) {
+	//	log.Warnf("Dag[%s] received a discontinuity unit,the stable unit[%s], ignore this unit[%s]",
+	//		chain.token.String(), s_hash.String(), unit.Hash().String())
+	//	return nil
+	//}
+	validateResult := chain.ldbValidator.ValidateUnitExceptGroupSig(unit)
+	if validateResult != validator.TxValidationCode_VALID {
+		return validator.NewValidateError(validateResult)
+	}
+	err := chain.saveUnitToDb(chain.ldbunitRep, chain.ldbUnitProduceRep, unit)
+	if err != nil {
+		return err
+	}
+	log.Debugf("add stable unit to dag, hash[%s], index:%d", hash.String(), number)
+	if number%1000 == 0 {
+		log.Infof("add stable unit to dag, hash[%s], index:%d", hash.String(), number)
+	}
 	//Set stable unit
 	chain.stableUnitHash = hash
-	chain.stableUnitHeight = unit.NumberU64()
+	chain.stableUnitHeight = number
+	return nil
 }
 func (chain *MemDag) SaveHeader(header *modules.Header) error {
 	chain.lock.Lock()
@@ -529,6 +582,11 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 	chain_units := chain.getChainUnits()
 	if _, has := chain_units[unit.Hash()]; has { // 不重复添加
 		log.Debugf("MemDag[%s] received a repeated unit, hash[%s] ", chain.token.String(), unit.Hash().String())
+		return nil, nil, nil, nil, nil, nil
+	}
+	// leveldb 查重
+	if h, err := chain.ldbunitRep.GetHeaderByHash(unit.Hash()); err == nil && h != nil {
+		log.Debugf("Dag[%s] received a repeated unit, hash[%s] ", chain.token.String(), unit.Hash().String())
 		return nil, nil, nil, nil, nil, nil
 	}
 	a, b, c, d, e, err := chain.addUnit(unit, txpool, isGenerate)
@@ -768,7 +826,13 @@ func (chain *MemDag) switchMainChain(newUnit *modules.Unit, txpool txspool.ITxPo
 		}
 	}
 	//设置最新主链单元
+	oldUnit := chain.lastMainChainUnit
 	chain.setLastMainchainUnit(newUnit)
+	//Event notice
+	eventArg := &SwitchMainChainEvent{OldLastUnit: oldUnit, NewLastUnit: newUnit}
+	for _, eventFunc := range chain.observers {
+		eventFunc(eventArg)
+	}
 }
 
 //将其从孤儿单元列表中删除，并添加到ChainUnits中。

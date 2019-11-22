@@ -70,7 +70,7 @@ type iDag interface {
 		txpool txspool.ITxPool) (*modules.Unit, error)
 
 	IsPrecedingMediator(add common.Address) bool
-	IsIrreversibleUnit(hash common.Hash) bool
+	IsIrreversibleUnit(hash common.Hash) (bool, error)
 	IsMediator(address common.Address) bool
 
 	PrecedingThreshold() int
@@ -347,8 +347,10 @@ func (mp *MediatorPlugin) UpdateMediatorsDKG(isRenew bool) {
 
 	// 保存旧的 dkg ， 用于之前的unit群签名确认
 	mp.dkgLock.Lock()
+	//log.Debugf("dkgLock.Lock()")
 	mp.precedingDKGs = mp.activeDKGs
 	mp.lastMaintenanceTime = mp.dag.LastMaintenanceTime()
+	//log.Debugf("dkgLock.Unlock()")
 	mp.dkgLock.Unlock()
 
 	// 判断是否重新 初始化DKG 和 VSS 协议

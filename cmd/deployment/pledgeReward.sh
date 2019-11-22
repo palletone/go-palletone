@@ -26,4 +26,4 @@ while { $p_loop } {
         }
     }
 }
-send "exit\n"  
+send "exit\n"

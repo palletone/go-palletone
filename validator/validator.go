@@ -34,14 +34,15 @@ import (
 )
 
 type Validate struct {
-	utxoquery        IUtxoQuery
-	statequery       IStateQuery
-	dagquery         IDagQuery
-	propquery        IPropQuery
-	tokenEngine      tokenengine.ITokenEngine
-	cache            *ValidatorCache
-	enableTxFeeCheck bool
-	light            bool
+	utxoquery               IUtxoQuery
+	statequery              IStateQuery
+	dagquery                IDagQuery
+	propquery               IPropQuery
+	tokenEngine             tokenengine.ITokenEngine
+	cache                   *ValidatorCache
+	enableTxFeeCheck        bool
+	enableContractSignCheck bool
+	light                   bool
 }
 
 func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propquery IPropQuery,
@@ -49,14 +50,15 @@ func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propq
 	//cache := freecache.NewCache(20 * 1024 * 1024)
 	vcache := NewValidatorCache(cache)
 	return &Validate{
-		cache:            vcache,
-		dagquery:         dagdb,
-		utxoquery:        utxoRep,
-		statequery:       statedb,
-		propquery:        propquery,
-		tokenEngine:      tokenengine.Instance,
-		enableTxFeeCheck: true,
-		light:            light,
+		cache:                   vcache,
+		dagquery:                dagdb,
+		utxoquery:               utxoRep,
+		statequery:              statedb,
+		propquery:               propquery,
+		tokenEngine:             tokenengine.Instance,
+		enableTxFeeCheck:        true,
+		enableContractSignCheck: true,
+		light:                   light,
 	}
 }
 
@@ -206,6 +208,7 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, isFullTx bool) ([]
 		return add, TxValidationCode_VALID, nil
 	}
 	validate.enableTxFeeCheck = true
+	validate.enableContractSignCheck = true
 	code, addition := validate.validateTx(tx, isFullTx)
 	if code == TxValidationCode_VALID {
 		validate.cache.AddTxValidateResult(txId, addition)
