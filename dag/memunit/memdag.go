@@ -238,6 +238,9 @@ func (chain *MemDag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Hea
 //}
 
 func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error {
+	chain.lock.Lock()
+	defer chain.lock.Unlock()
+
 	//1. Set this unit as stable
 	unit_temp, err := chain.getChainUnit(uHash)
 	if err != nil {
@@ -249,8 +252,6 @@ func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupSign []byte, txpoo
 		return nil
 	}
 
-	chain.lock.Lock()
-	defer chain.lock.Unlock()
 	log.Infof("Unit[%s] has group sign, make it stable.", uHash.String())
 	chain.setStableUnit(uHash, unit.NumberU64(), txpool)
 
