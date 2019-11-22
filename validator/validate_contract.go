@@ -97,7 +97,7 @@ func (validate *Validate) validateContractSignature(signatures []modules.Signatu
 			contractId = stopReq.ContractId
 		}
 	}
-	// 1.确认签名者都是Jury或者是Mediator
+	// 1.对于用户合约，确认签名者都是Jury
 	if common.IsUserContractId(contractId) { // user contract
 		jury, err = validate.statequery.GetContractJury(contractId)
 		if err != nil {
@@ -105,22 +105,22 @@ func (validate *Validate) validateContractSignature(signatures []modules.Signatu
 				contractId, err.Error())
 			return TxValidationCode_INVALID_CONTRACT_SIGN
 		}
-	}
-	jurorCount := len(jury.EleList)
-	needSign = int(math.Ceil((float64(jurorCount)*2 + 1) / 3))
-	for _, s := range signatures {
-		jAddr := crypto.PubkeyBytesToAddress(s.PubKey)
-		jAddrHash := util.RlpHash(jAddr)
-		find := false
-		for _, node := range jury.EleList {
-			if jAddrHash == node.AddrHash {
-				find = true
-				break
+		jurorCount := len(jury.EleList)
+		needSign = int(math.Ceil((float64(jurorCount)*2 + 1) / 3))
+		for _, s := range signatures {
+			jAddr := crypto.PubkeyBytesToAddress(s.PubKey)
+			jAddrHash := util.RlpHash(jAddr)
+			find := false
+			for _, node := range jury.EleList {
+				if jAddrHash == node.AddrHash {
+					find = true
+					break
+				}
 			}
-		}
-		if !find { //签名者不是合法的陪审员
-			log.Warnf("Tx[%s] signature payload pubKey[%x] is not a valid juror", txHash, s.PubKey)
-			return TxValidationCode_INVALID_CONTRACT_SIGN
+			if !find { //签名者不是合法的陪审员
+				log.Warnf("Tx[%s] signature payload pubKey[%x] is not a valid juror", txHash, s.PubKey)
+				return TxValidationCode_INVALID_CONTRACT_SIGN
+			}
 		}
 	}
 
