@@ -288,10 +288,10 @@ func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize f
 		log.Warnf("[%s]ValidateTxFeeEnough, Cannot validate tx fee, your validate dagquery or propquery not set", reqId.String()[:8])
 		return true //todo ?
 	}
-	fees, err := validate.dagquery.GetTxFee(tx)
+	fees, err := tx.GetTxFee(validate.utxoquery.GetUtxoEntry)
 	if err != nil {
-		log.Errorf("[%s]validateTxFeeEnough, GetTxFee err:%s", reqId.String()[:8], err.Error())
-		return true //todo ?
+		log.Errorf("Tx[%s] [%s]validateTxFeeEnough, GetTxFee err:%s", tx.Hash().String(), reqId.String()[:8], err.Error())
+		return false //todo ?
 	}
 	cp := validate.propquery.GetChainParameters()
 	timeUnitFee := float64(cp.ContractTxTimeoutUnitFee)
@@ -512,7 +512,7 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 		rewards := map[common.Address][]modules.AmountAsset{}
 		for _, v := range ads {
 			key := constants.RewardAddressPrefix + v.Addr.String()
-			data, _, err := validate.statequery.GetContractState(contractId, key)
+			data, version, err := validate.statequery.GetContractState(contractId, key)
 			income := []modules.AmountAsset{}
 			if err == nil { //之前有奖励
 				rlp.DecodeBytes(data, &income)
@@ -520,7 +520,7 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			v1 := *v
 			log.DebugDynamic(func() string {
 				data, _ := json.Marshal(income)
-				return v1.Addr.String() + " Coinbase History reward:" + string(data)
+				return v1.Addr.String() + " Coinbase History reward:" + string(data) + " version:" + version.String()
 			})
 			log.Debugf("Add reward %d %s to %s", v.Amount, v.Asset.String(), v.Addr.String())
 			newValue := validate.addIncome(income, v.Amount, v.Asset)
@@ -537,7 +537,11 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 		} else {
 			rjson, _ := json.Marshal(rewards)
 			ojson, _ := json.Marshal(invoke)
-			debugData := fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nInvoke result:%s", string(rjson), string(ojson))
+			dbAa := []modules.AmountAsset{}
+			rlp.DecodeBytes(invoke.WriteSet[0].Value, &dbAa)
+			aajson, _ := json.Marshal(dbAa)
+			debugData := fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nInvoke result:%s, Writeset:%s",
+				string(rjson), string(ojson), string(aajson))
 
 			log.Errorf("Coinbase tx[%s] contract write set not correct, %s",
 				tx.Hash().String(), debugData)
