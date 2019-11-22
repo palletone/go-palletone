@@ -674,11 +674,14 @@ func (ps *peerSet) StableIndex(assetId modules.AssetId) uint64 {
 		}
 	}
 	sort.Sort(indexs)
-	lengh := indexs.Len()
-	if lengh%2 == 0 {
-		return (indexs[(lengh/2)-1] + indexs[lengh/2]) / 2
+	length := indexs.Len()
+	if length == 0 {
+		return 0
 	}
-	return indexs[lengh/2]
+	if length%2 == 0 {
+		return (indexs[(length/2)-1] + indexs[length/2]) / 2
+	}
+	return indexs[length/2]
 }
 
 // Close disconnects all peers.
