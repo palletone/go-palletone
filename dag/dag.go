@@ -292,19 +292,20 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 	count := int(0)
 
 	for i, u := range units {
-		// all units must be continuous
-		if i > 0 && units[i].UnitHeader.Number.Index != units[i-1].UnitHeader.Number.Index+1 {
-			return count, fmt.Errorf("Insert dag error: child height are not continuous, "+
-				"parent unit number=%d, hash=%s; "+"child unit number=%d, hash=%s",
-				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash.String(),
-				units[i].UnitHeader.Number.Index, units[i].UnitHash.String())
-		}
-		if i > 0 && !u.ContainsParent(units[i-1].UnitHash) {
-			return count, fmt.Errorf("Insert dag error: child parents are not continuous, "+
-				"parent unit number=%d, hash=%s; "+"child unit number=%d, hash=%s",
-				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash.String(),
-				units[i].UnitHeader.Number.Index, units[i].UnitHash.String())
-		}
+		// 重复验证 comment by albert
+		//// all units must be continuous
+		//if i > 0 && units[i].UnitHeader.Number.Index != units[i-1].UnitHeader.Number.Index+1 {
+		//	return count, fmt.Errorf("Insert dag error: child height are not continuous, "+
+		//		"parent unit number=%d, hash=%s; "+"child unit number=%d, hash=%s",
+		//		units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash.String(),
+		//		units[i].UnitHeader.Number.Index, units[i].UnitHash.String())
+		//}
+		//if i > 0 && !u.ContainsParent(units[i-1].UnitHash) {
+		//	return count, fmt.Errorf("Insert dag error: child parents are not continuous, "+
+		//		"parent unit number=%d, hash=%s; "+"child unit number=%d, hash=%s",
+		//		units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash.String(),
+		//		units[i].UnitHeader.Number.Index, units[i].UnitHash.String())
+		//}
 
 		t1 := time.Now()
 		timestamp := time.Unix(u.Timestamp(), 0)
@@ -1112,7 +1113,7 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 	}
 
 	isStable, err := d.IsIrreversibleUnit(unitHash)
-	if err!= nil {
+	if err != nil {
 		return err
 	}
 

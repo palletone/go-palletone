@@ -23,7 +23,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 	"unsafe"
 
@@ -520,9 +519,12 @@ func (b *Unit) WithBody(transactions []*Transaction) *Unit {
 }
 
 func (u *Unit) ContainsParent(pHash common.Hash) bool {
-	ps := pHash.String()
+	//ps := pHash.String()
 	for _, hash := range u.UnitHeader.ParentsHash {
-		if strings.Compare(hash.String(), ps) == 0 {
+		//if strings.Compare(hash.String(), ps) == 0 {
+		//	return true
+		//}
+		if pHash == hash {
 			return true
 		}
 	}
