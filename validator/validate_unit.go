@@ -28,11 +28,10 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-const ENABLE_TX_FEE_CHECK_TIME = 1570870800
+const ENABLE_TX_FEE_CHECK_TIME = 1570870800 //2019-10-12 17:00:00
 const ENABLE_CONTRACT_SIGN_CHECK_TIME = 1575129600 //2019-12-1
 
 /**
@@ -117,33 +116,33 @@ func (validate *Validate) validateUnitAuthor(h *modules.Header) ValidationCode {
 
 // 验证该单元是否是满足调度顺序的mediator生产的
 func (validate *Validate) validateMediatorSchedule(header *modules.Header) ValidationCode {
-	if validate.propquery == nil {
-		log.Warn("Validator don't have propquery, cannot validate mediator schedule")
-		return TxValidationCode_VALID
-	}
-
-	gasToken := dagconfig.DagConfig.GetGasToken()
-	ts, _ := validate.propquery.GetNewestUnitTimestamp(gasToken)
-	if !(header.Time > ts) {
-		errStr := "invalidated unit's timestamp"
-		log.Warnf("%s,db newest unit timestamp=%d,current unit[%s] timestamp=%d", errStr, ts,
-			header.Hash().String(), header.Time)
-		return UNIT_STATE_INVALID_HEADER_TIME
-	}
-
-	slotNum := validate.propquery.GetSlotAtTime(time.Unix(header.Time, 0))
-	if slotNum == 0 {
-		log.Info("invalidated unit's slot")
-		return UNIT_STATE_INVALID_MEDIATOR_SCHEDULE
-	}
-
-	scheduledMediator := validate.propquery.GetScheduledMediator(slotNum)
-	if !scheduledMediator.Equal(header.Author()) {
-		errStr := fmt.Sprintf("mediator(%v) produced unit at wrong time,scheduled slot number:%d, mediator is %v",
-			header.Author().Str(), slotNum, scheduledMediator.String())
-		log.Warn(errStr)
-		return UNIT_STATE_INVALID_MEDIATOR_SCHEDULE
-	}
+	//if validate.propquery == nil {
+	//	log.Warn("Validator don't have propquery, cannot validate mediator schedule")
+	//	return TxValidationCode_VALID
+	//}
+	//
+	//gasToken := dagconfig.DagConfig.GetGasToken()
+	//ts, _ := validate.propquery.GetNewestUnitTimestamp(gasToken)
+	//if !(header.Time > ts) {
+	//	errStr := "invalidated unit's timestamp"
+	//	log.Warnf("%s,db newest unit timestamp=%d,current unit[%s] timestamp=%d", errStr, ts,
+	//		header.Hash().String(), header.Time)
+	//	return UNIT_STATE_INVALID_HEADER_TIME
+	//}
+	//
+	//slotNum := validate.propquery.GetSlotAtTime(time.Unix(header.Time, 0))
+	//if slotNum == 0 {
+	//	log.Info("invalidated unit's slot")
+	//	return UNIT_STATE_INVALID_MEDIATOR_SCHEDULE
+	//}
+	//
+	//scheduledMediator := validate.propquery.GetScheduledMediator(slotNum)
+	//if !scheduledMediator.Equal(header.Author()) {
+	//	errStr := fmt.Sprintf("mediator(%v) produced unit at wrong time,scheduled slot number:%d, mediator is %v",
+	//		header.Author().Str(), slotNum, scheduledMediator.String())
+	//	log.Warn(errStr)
+	//	return UNIT_STATE_INVALID_MEDIATOR_SCHEDULE
+	//}
 
 	return TxValidationCode_VALID
 }
@@ -248,8 +247,8 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) Validat
 	//}
 	code := validate.validateTransactions(unit.Txs, unit.Timestamp(), med.GetRewardAdd())
 	if code != TxValidationCode_VALID {
-		msg := fmt.Sprintf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), code)
-		log.Debug(msg)
+		msg := fmt.Sprintf("Validate unit(%s) transactions failed code: %v", unit.DisplayId(), code)
+		log.Error(msg)
 		return code
 	}
 	//maybe orphan unit

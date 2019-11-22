@@ -251,6 +251,7 @@ func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupSign []byte, txpoo
 
 	chain.lock.Lock()
 	defer chain.lock.Unlock()
+	log.Infof("Unit[%s] has group sign, make it stable.", uHash.String())
 	chain.setStableUnit(uHash, unit.NumberU64(), txpool)
 
 	//2. Update unit.groupSign
@@ -357,7 +358,7 @@ func (chain *MemDag) checkUnitIrreversibleWithGroupSign(unit *modules.Unit) bool
 func (chain *MemDag) checkStableCondition(unit *modules.Unit, txpool txspool.ITxPool) bool {
 	// append by albert, 使用群签名判断是否稳定
 	if chain.checkUnitIrreversibleWithGroupSign(unit) {
-		log.Debugf("the unit(%s) have group sign(%s), make it to irreversible.",
+		log.Infof("the unit(%s) have group sign(%s), make it to irreversible.",
 			unit.UnitHash.TerminalString(), hexutil.Encode(unit.GetGroupSign()))
 		chain.setStableUnit(unit.UnitHash, unit.NumberU64(), txpool)
 		return true
@@ -535,7 +536,7 @@ func (chain *MemDag) AddStableUnit(unit *modules.Unit) error {
 	//		chain.token.String(), s_hash.String(), unit.Hash().String())
 	//	return nil
 	//}
-	validateResult := chain.ldbValidator.ValidateHeader(unit.UnitHeader)
+	validateResult := chain.ldbValidator.ValidateUnitExceptGroupSig(unit)
 	if validateResult != validator.TxValidationCode_VALID {
 		return validator.NewValidateError(validateResult)
 	}

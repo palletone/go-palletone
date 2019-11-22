@@ -37,6 +37,9 @@ const (
 	AddressLength = 21 //byte[0:20] is hash160, byte[20] is AddressType
 )
 
+//销毁地址 P1111111111111111111114oLvT2
+var DestroyAddress = Address{}
+
 //var (
 //	addressT = reflect.TypeOf(Address{})
 //)

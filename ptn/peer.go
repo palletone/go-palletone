@@ -29,7 +29,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/consensus/jury"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -456,10 +455,9 @@ func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis comm
 			return p2p.DiscReadTimeout
 		}
 	}
-	//stableIndex :=&modules.ChainIndex{Index:uint64(1085100)}
-	stableIndex := &modules.ChainIndex{AssetID: modules.PTNCOIN, Index: uint64(configure.StableIndex)}
-	log.Debug("peer Handshake", "p.id", p.id, "index", status.Index, "stable", stableIndex) //status.StableIndex)
-	p.SetHead(status.CurrentHeader, status.Index, stableIndex)                              //status.StableIndex)
+
+	log.Debug("peer Handshake", "p.id", p.id, "index", status.Index, "stable", stable.Index)
+	p.SetHead(status.CurrentHeader, status.Index, stable)
 	return nil
 }
 
