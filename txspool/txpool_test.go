@@ -74,8 +74,9 @@ func NewUnitDag4Test() *UnitDag4Test {
 
 	propdb := storage.NewPropertyDb(db)
 	hash := common.HexToHash("0x0e7e7e3bd7c1e9ce440089712d61de38f925eb039f152ae03c6688ed714af729")
-	h := modules.NewHeader([]common.Hash{hash}, []byte("hello"))
-	h.SetNumber(modules.PTNCOIN, 0)
+	b := []byte("hello")
+	h := modules.NewHeader([]common.Hash{hash}, common.Hash{}, b, b, b, b, []uint16{},
+		modules.PTNCOIN, 0, int64(1598766666))
 	propdb.SetNewestUnit(h)
 	mutex := new(sync.RWMutex)
 
@@ -84,8 +85,9 @@ func NewUnitDag4Test() *UnitDag4Test {
 }
 
 func (ud *UnitDag4Test) CurrentUnit(token modules.AssetId) *modules.Unit {
-	h := modules.NewHeader([]common.Hash{}, []byte("test pool"))
-	h.SetNumber(token, 0)
+	b := []byte("test pool")
+	h := modules.NewHeader([]common.Hash{}, common.Hash{}, b, b, b, b, []uint16{},
+		token, 0, int64(1598766666))
 	return modules.NewUnit(h, nil)
 }
 

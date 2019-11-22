@@ -53,8 +53,8 @@ type IUnitRepository interface {
 	GetGenesisUnit() (*modules.Unit, error)
 	//GenesisHeight() modules.ChainIndex
 	SaveUnit(unit *modules.Unit, isGenesis bool) error
-	CreateUnit(mediatorReward common.Address, txpool txspool.ITxPool, propdb IPropRepository,
-		getJurorRewardFunc modules.GetJurorRewardAddFunc) (*modules.Unit, error)
+	CreateUnit(mediatorReward common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, when time.Time,
+		propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc) (*modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
 	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
@@ -415,22 +415,15 @@ func NewGenesisUnit(txs modules.Transactions, time int64, asset *modules.Asset, 
 	root := core.DeriveSha(txs)
 
 	// generate genesis unit header
-	//header := &modules.Header{
-	//	Number: chainIndex,
-	//	TxRoot: root,
-	//	Time:   time,
-	//}
-	header := new(modules.Header)
-	//header.SetGroupSign(make([]byte, 0))
-	//header.SetGroupPubkey(make([]byte, 0))
-	header.SetNumber(chainIndex.AssetID, chainIndex.Index)
-	header.SetTxRoot(root)
-	header.SetTime(time)
+	b := []byte{}
 	if parentUnitHeight >= 0 { //has parent unit
-		header.SetParentHash([]common.Hash{parentUnitHash})
+		gUnit.UnitHeader = modules.NewHeader([]common.Hash{parentUnitHash}, root, b, b, b, b, []uint16{},
+			chainIndex.AssetID, chainIndex.Index, time)
+	} else {
+		gUnit.UnitHeader = modules.NewHeader([]common.Hash{}, root, b, b, b, b, []uint16{}, chainIndex.AssetID,
+			chainIndex.Index, time)
 	}
 
-	gUnit.UnitHeader = header
 	// copy txs
 	gUnit.CopyBody(txs)
 	// set unit size
@@ -454,20 +447,25 @@ func GetUnitWithSig(unit *modules.Unit, ks *keystore.KeyStore, signer common.Add
 	if err != nil {
 		return nil, err
 	}
-	//r := sign[:32]
-	//s := sign[32:64]
-	//v := sign[64:]
-	//if len(v) != 1 {
-	//	return unit, errors.New("error.")
-	//}
 	log.Debugf("Unit[%s] signed by address:%s", unit.Hash().String(), signer.String())
 	unit.UnitHeader.SetAuthor(modules.Authentifier{PubKey: pubKey, Signature: sign})
-	// to set witness list, should be creator himself
-	// var authentifier modules.Authentifier
-	// authentifier.Address = signer
-	// unit.UnitHeader.Witness = append(unit.UnitHeader.Witness, &authentifier)
-	// unit.UnitHeader.GroupSign = sign
+
 	return unit, nil
+}
+func sigHeader(h *modules.Header, ks *keystore.KeyStore, signer common.Address) error {
+	// signature unit: only sign header data(without witness and authors fields)
+	sign, err1 := ks.SigUnit(h, signer)
+	if err1 != nil {
+		msg := fmt.Sprintf("Failed to Sig Unit:%v", err1.Error())
+		log.Error(msg)
+		return err1
+	}
+	pubKey, err := ks.GetPublicKey(signer)
+	if err != nil {
+		return err
+	}
+	h.SetAuthor(modules.Authentifier{PubKey: pubKey, Signature: sign})
+	return nil
 }
 
 /**
@@ -476,8 +474,8 @@ create common unit
 @param mAddr is minner addr
 return: correct if error is nil, and otherwise is incorrect
 */
-func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txspool.ITxPool,
-	propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc) (*modules.Unit, error) {
+func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore,
+	when time.Time, propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc) (*modules.Unit, error) {
 	log.Debug("create unit lock unitRepository.")
 	rep.lock.RLock()
 	defer rep.lock.RUnlock()
@@ -498,19 +496,20 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 	}
 
 	// step3. generate genesis unit header
-	header := modules.Header{}
-	header.SetNumber(chainIndex.AssetID, chainIndex.Index)
-	parents := make([]common.Hash, 0)
-	header.SetParentHash(append(parents, phash))
+	b := []byte{}
+	header := modules.NewHeader([]common.Hash{phash}, common.Hash{}, b, b, b, b, []uint16{},
+		chainIndex.AssetID, chainIndex.Index, when.Unix())
+	if err := sigHeader(header, ks, mediatorReward); err != nil {
+		errStr := fmt.Sprintf("GetUnitWithSig error: %v", err.Error())
+		log.Debug(errStr)
+		return nil, fmt.Errorf(errStr)
+	}
 	h_hash := header.HashWithOutTxRoot()
-	log.Infof("Start txpool.GetSortedTxs..., parent hash:%s", phash.String())
 
 	// step4. get transactions from txspool
 	poolTxs, _ := txpool.GetSortedTxs(h_hash, chainIndex.Index)
 
-	log.Debugf("txpool.GetSortedTxs cost time %s", time.Since(begin))
 	// step5. compute minner income: transaction fees + interest
-	tt := time.Now()
 	//交易费用(包含利息)
 	txs2 := []*modules.Transaction{}
 	for _, tx := range poolTxs {
@@ -527,7 +526,8 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 		for txid, pooltx := range txpool.AllTxpoolTxs() {
 			pooltxStatusStr += txid.String() + ":UnitHash[" + pooltx.UnitHash.String() + "];"
 		}
-		log.Error("CreateUnit", "ComputeTxFees is failed, error", err.Error(), "txs in this unit", txs2Ids, "pool all tx:", pooltxStatusStr)
+		log.Error("CreateUnit", "ComputeTxFees is failed, error", err.Error(), "txs in this unit", txs2Ids,
+			"pool all tx:", pooltxStatusStr)
 		return nil, err
 	}
 
@@ -568,7 +568,6 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 			txs = append(txs, t)
 		}
 	}
-	log.Debugf("create coinbase tx cost time %s, unit tx num[%d]", time.Since(tt), len(txs))
 	/**
 	todo 需要根据交易中涉及到的token类型来确定交易打包到哪个区块
 	todo 如果交易中涉及到其他币种的交易，则需要将交易费的单独打包
@@ -580,7 +579,7 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 	header.SetTxsIllegal(illegalTxs)
 	header.SetTxRoot(root)
 	unit := &modules.Unit{}
-	unit.UnitHeader = &header
+	unit.UnitHeader = header
 	unit.UnitHash = header.Hash()
 
 	// step10. copy txs
@@ -588,7 +587,8 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 
 	// step11. set size
 	unit.UnitSize = unit.Size()
-	log.Debugf("CreateUnit[%s] and create unit unlock unitRepository cost time %s", unit.UnitHash.String(), time.Since(begin))
+	log.Debugf("CreateUnit[%s] and create unit unlock unitRepository cost time %s,txs[%d]",
+		unit.UnitHash.String(), time.Since(begin), len(txs))
 	return unit, nil
 }
 

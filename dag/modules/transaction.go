@@ -25,8 +25,6 @@ import (
 	"github.com/palletone/go-palletone/dag/constants"
 	"io"
 	"math"
-	"time"
-
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -157,10 +155,10 @@ func (tx *Transaction) Size() common.StorageSize {
 	return size
 }
 
-func (tx *Transaction) CreateDate() string {
-	n := time.Now()
-	return n.Format(TimeFormatString)
-}
+//func (tx *Transaction) CreateDate() string {
+//	n := time.Now()
+//	return n.Format(TimeFormatString)
+//}
 
 func (tx *Transaction) Asset() *Asset {
 	if tx == nil {
@@ -307,10 +305,8 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 	return &AmountAsset{Amount: fees, Asset: feeAsset}, nil
 }
 func (tx *Transaction) TxMessages() []*Message {
-	//msgs := make([]*Message, len(tx.txdata.TxMessages))
-	//copy(msgs, tx.txdata.TxMessages)
-	msgs := make([]*Message, 0)
-	msgs = append(msgs, tx.txdata.TxMessages...)
+	msgs := make([]*Message, len(tx.txdata.TxMessages))
+	copy(msgs, tx.txdata.TxMessages)
 	return msgs
 }
 func (tx *Transaction) CertId() []byte { return common.CopyBytes(tx.txdata.CertId) }
@@ -322,7 +318,8 @@ func (tx *Transaction) SetMessages(msgs []*Message) {
 		copy(d.TxMessages, msgs)
 		d.CertId = tx.CertId()
 		d.Illegal = tx.Illegal()
-		tx = &Transaction{txdata: d}
+		//tx = new(Transaction)
+		tx.txdata = d
 	}
 }
 func (tx *Transaction) SetCertId(certid []byte) {
@@ -330,14 +327,20 @@ func (tx *Transaction) SetCertId(certid []byte) {
 	d.CertId = common.CopyBytes(certid)
 	d.Illegal = tx.Illegal()
 	d.TxMessages = append(d.TxMessages, tx.TxMessages()...)
-	tx = &Transaction{txdata: d}
+	temp := &Transaction{txdata: d}
+	tx.txdata = d
+	tx.hash.Store(temp.Hash())
+	tx.size.Store(temp.Size())
 }
 func (tx *Transaction) SetIllegal(illegal bool) {
 	d := transaction_sdw{}
 	d.Illegal = illegal
 	d.CertId = common.CopyBytes(tx.CertId())
 	d.TxMessages = append(d.TxMessages, tx.TxMessages()...)
-	tx = &Transaction{txdata: d}
+	temp := &Transaction{txdata: d}
+	tx.txdata = d
+	tx.hash.Store(temp.Hash())
+	tx.size.Store(temp.Size())
 }
 func (tx *Transaction) ModifiedMsg(index int, msg *Message) {
 	if len(tx.Messages()) < index {
@@ -353,7 +356,10 @@ func (tx *Transaction) ModifiedMsg(index int, msg *Message) {
 	}
 	sdw.Illegal = tx.Illegal()
 	sdw.CertId = tx.CertId()
-	tx = &Transaction{txdata: sdw}
+	temp := &Transaction{txdata: sdw}
+	tx.txdata = sdw
+	tx.hash.Store(temp.Hash())
+	tx.size.Store(temp.Size())
 }
 
 func (tx *Transaction) GetCoinbaseReward(versionFunc QueryStateByVersionFunc,
@@ -564,7 +570,6 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 func (tx *Transaction) GetResultRawTx() *Transaction {
 
 	sdw := transaction_sdw{}
-	//result.CertId = tx.CertId
 	isResultMsg := false
 	for _, msg := range tx.TxMessages() {
 		if msg.App.IsRequest() {
@@ -758,9 +763,11 @@ func (tx *Transaction) DataPayloadSize() int {
 
 //Deep copy transaction to a new object
 func (tx *Transaction) Clone() Transaction {
+	hash := tx.Hash()
 	newTx := &Transaction{}
 	data, _ := rlp.EncodeToBytes(tx)
 	rlp.DecodeBytes(data, newTx)
+	log.Infof("clone transaction[%s], tx_hash[%s]", newTx.Hash().String(), hash.String())
 	return *newTx
 }
 

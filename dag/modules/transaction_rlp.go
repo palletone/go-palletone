@@ -58,7 +58,7 @@ func (tx *Transaction) EncodeRLP(w io.Writer) error {
 }
 func tx2Temp(tx *Transaction) (*transactionTemp, error) {
 	temp := &transactionTemp{}
-	//temp.Illegal = tx.Illegal()
+	temp.Illegal = tx.Illegal()
 	temp.CertId = tx.CertId()
 
 	for _, m := range tx.TxMessages() {
@@ -79,9 +79,8 @@ func tx2Temp(tx *Transaction) (*transactionTemp, error) {
 func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 	d := transaction_sdw{}
 	for _, m := range temp.TxMessages {
-		m1 := &Message{
-			App: m.App,
-		}
+		m1 := new(Message)
+		m1.App = m.App
 		if m.App == APP_PAYMENT {
 			var pay PaymentPayload
 			err := rlp.DecodeBytes(m.Data, &pay)
@@ -194,7 +193,8 @@ func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 	}
 	d.Illegal = temp.Illegal
 	d.CertId = temp.CertId
-	tx = &Transaction{txdata: d}
+	//tx = &Transaction{txdata: d}
+	tx.txdata = d
 	return nil
 
 }

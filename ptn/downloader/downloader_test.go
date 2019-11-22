@@ -70,10 +70,9 @@ type downloadTester struct {
 }
 
 func newGenesisForTest(db ptndb.Database) *modules.Unit {
-	header := modules.NewHeader([]common.Hash{}, []byte{})
-	header.SetNumber(modules.PTNCOIN, 0)
-	header.SetTime(time.Now().Unix())
-	header.SetAuthor(modules.Authentifier{[]byte{}, []byte{}})
+	b := []byte{}
+	tt := int64(1598766666)
+	header := modules.NewHeader([]common.Hash{}, common.Hash{}, b, b, b, b, []uint16{}, modules.PTNCOIN, 0, tt)
 	header.SetGroupSign([]byte{})
 	header.SetGroupPubkey([]byte{})
 	tx, _ := NewCoinbaseTransaction()
@@ -110,19 +109,17 @@ func NewCoinbaseTransaction() (*modules.Transaction, error) {
 		App:     modules.APP_PAYMENT,
 		Payload: payload,
 	}
-	var coinbase modules.Transaction
-	coinbase.TxMessages = append(coinbase.TxMessages, &msg)
-	//coinbase.TxHash = coinbase.Hash()
-	return &coinbase, nil
+
+	coinbase := modules.NewTransaction([]*modules.Message{&msg})
+	return coinbase, nil
 }
 func newDag(db ptndb.Database, gunit *modules.Unit, number int, seed byte) (modules.Units, error) {
 	units := make(modules.Units, number)
 	par := gunit
 	for i := 0; i < number; i++ {
-		header := modules.NewHeader([]common.Hash{par.UnitHash}, []byte{seed})
-		header.SetNumber(par.UnitHeader.GetNumber().AssetID, par.UnitHeader.GetNumber().Index+1)
-		header.SetTime(time.Now().Unix())
-		header.SetAuthor(modules.Authentifier{[]byte{}, []byte{}})
+		b := []byte{}
+		header := modules.NewHeader([]common.Hash{par.UnitHash}, common.Hash{}, b, b, []byte{seed}, b, []uint16{},
+			par.UnitHeader.GetNumber().AssetID, par.UnitHeader.GetNumber().Index+1, time.Now().Unix())
 		header.SetGroupSign([]byte{})
 		header.SetGroupPubkey([]byte{})
 		tx, _ := NewCoinbaseTransaction()

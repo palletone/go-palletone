@@ -103,7 +103,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, idag dag.IDag,
 // channels for different events. In case of an error, the constructor force-
 // fails the test.
 func newTestProtocolManagerMust(t *testing.T, mode downloader.SyncMode, blocks int, dag dag.IDag, pro producer, newtx chan<- []*modules.Transaction, ju *jury.Processor) (*ProtocolManager, ptndb.Database) {
-	pm, db, err := newTestProtocolManager(mode, blocks /*generator,*/, dag, pro, newtx)
+	pm, db, err := newTestProtocolManager(mode, blocks /*generator,*/ , dag, pro, newtx)
 	if err != nil {
 		t.Fatalf("Failed to create protocol manager: %v", err)
 	}
@@ -377,28 +377,24 @@ func MakeDags(Memdb ptndb.Database, unitAccount int) (*dag.Dag, error) {
 	return dag, nil
 }
 func unitForTest(index int) *modules.Unit {
-	header := modules.NewHeader([]common.Hash{}, []byte{})
-	header.SetNumber(modules.PTNCOIN, uint64(index))
-	header.SetAuthor(modules.Authentifier{[]byte{}, []byte{}})
+	b := []byte{}
+	tt := int64(1579666666)
+	header := modules.NewHeader([]common.Hash{}, common.Hash{}, b, b, b, b, []uint16{}, modules.PTNCOIN, uint64(index), tt)
 	header.SetGroupSign([]byte{})
 	header.SetGroupPubkey([]byte{})
-	//tx, _ := NewCoinbaseTransaction()
 	tx, _ := CreateCoinbase()
-	fmt.Printf("----------%#v\n", tx)
 	txs := modules.Transactions{tx}
 	genesisUnit := modules.NewUnit(header, txs)
 	return genesisUnit
 }
 
 func newGenesisForTest(db ptndb.Database) *modules.Unit {
-	header := modules.NewHeader([]common.Hash{}, []byte{})
-	header.SetNumber(modules.PTNCOIN, 0)
-	header.SetAuthor(modules.Authentifier{[]byte{}, []byte{}})
+	b := []byte{}
+	tt := int64(1579666666)
+	header := modules.NewHeader([]common.Hash{}, common.Hash{}, b, b, b, b, []uint16{}, modules.PTNCOIN, 0, tt)
 	header.SetGroupSign([]byte{})
 	header.SetGroupPubkey([]byte{})
-	//tx, _ := NewCoinbaseTransaction()
 	tx, _ := CreateCoinbase()
-	fmt.Printf("----------%#v\n", tx)
 	txs := modules.Transactions{tx}
 	genesisUnit := modules.NewUnit(header, txs)
 	err := SaveGenesis(db, genesisUnit)
@@ -411,14 +407,14 @@ func newGenesisForTest(db ptndb.Database) *modules.Unit {
 func newDag(memdb ptndb.Database, gunit *modules.Unit, number int) (modules.Units, error) {
 	units := make(modules.Units, number)
 	par := gunit
+	b := []byte{}
+	tt := int64(1574390000)
 	for i := 0; i < number; i++ {
-		header := modules.NewHeader([]common.Hash{par.UnitHash}, []byte{})
+		header := modules.NewHeader([]common.Hash{par.UnitHash}, common.Hash{}, b, b, b, b, []uint16{},
+			par.UnitHeader.GetNumber().AssetID, par.UnitHeader.GetNumber().Index+1, tt)
 
-		header.SetNumber(par.UnitHeader.GetNumber().AssetID, par.UnitHeader.GetNumber().Index+1)
-		header.SetAuthor(modules.Authentifier{[]byte{}, []byte{}})
 		header.SetGroupSign([]byte{})
 		header.SetGroupPubkey([]byte{})
-		//tx, _ := NewCoinbaseTransaction()
 		tx, _ := CreateCoinbase()
 		txs := modules.Transactions{tx}
 		unit := modules.NewUnit(header, txs)
@@ -577,17 +573,9 @@ func NewUnit(header *modules.Header, txs modules.Transactions) *modules.Unit {
 	u.UnitHash = u.Hash()
 	return u
 }
-func NewHeader(parents []common.Hash, asset []modules.AssetId, extra []byte) *modules.Header {
-	hashs := make([]common.Hash, 0)
-	hashs = append(hashs, parents...) // 切片指针传递的问题，这里得再review一下。
-	var b []byte
-	//return &modules.Header{ParentsHash: hashs, AssetIDs: asset, Extra: append(b, extra...), Time: time.Now().Unix()}
-	h := new(modules.Header)
-	h.SetParentHash(hashs)
-	h.SetExtra(append(b, extra...))
-	h.SetTime(time.Now().Unix())
-
-	return h
+func NewHeader(parents []common.Hash, root common.Hash, pub, sig, extra, cry []byte, asset modules.AssetId,
+	index uint64) *modules.Header {
+	return modules.NewHeader(parents, root, pub, sig, extra, cry, []uint16{}, asset, index, 0)
 }
 func NewCoinbaseTransaction() (*modules.Transaction, error) {
 	input := &modules.Input{}

@@ -226,14 +226,13 @@ func newHeader(txs modules.Transactions) *modules.Header {
 	privKey, _ := crypto.ToECDSA(privKeyBytes)
 	pubKey, _ := hex.DecodeString("038cc8c907b29a58b00f8c2590303bfc93c69d773b9da204337678865ee0cafadb")
 	//addr:= crypto.PubkeyBytesToAddress(pubKey)
-	header := &modules.Header{}
-	header.SetParentHash([]common.Hash{hash})
-	header.SetTxRoot(core.DeriveSha(txs))
-	header.SetNumber(modules.NewPTNIdType(), 1)
+
+	b := []byte{}
+	header := modules.NewHeader([]common.Hash{hash}, core.DeriveSha(txs), b, b, b, b, []uint16{},
+		modules.NewPTNIdType(), 1, int64(15987666666))
 	headerHash := header.HashWithoutAuthor()
 	sign, _ := crypto.Sign(headerHash[:], privKey)
 	header.SetAuthor(modules.Authentifier{PubKey: pubKey, Signature: sign})
-	header.SetTime(time.Now().Unix())
 	return header
 }
 func TestValidate_ValidateHeader(t *testing.T) {

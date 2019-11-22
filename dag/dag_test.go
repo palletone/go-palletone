@@ -95,26 +95,21 @@ func TestTxCountAndUnitSize(t *testing.T) {
 func newHeader() *modules.Header {
 	key := new(ecdsa.PrivateKey)
 	key, _ = crypto.GenerateKey()
-	h := new(modules.Header)
 
-	au := modules.Authentifier{}
-
-	h.SetGroupSign([]byte("group_sign"))
-	h.SetGroupPubkey([]byte("group_pubKey"))
-
+	hash := common.HexToHash("0386df0aef707cc5bc8d115c2576f844d2734b05040ef2541e691763f802092c09")
 	number := new(modules.ChainIndex)
 	number.AssetID = modules.PTNCOIN
 	number.Index = uint64(333333)
-	h.SetNumber(number.AssetID, number.Index)
-	h.SetExtra(make([]byte, 20))
-	parents := make([]common.Hash, 0)
-	h.SetParentHash(append(parents, h.TxRoot()))
 
-	h.SetTxRoot(h.Hash())
-	sig, _ := crypto.Sign(h.TxRoot().Bytes(), key)
+	sig, _ := crypto.Sign(hash.Bytes(), key)
+	au := modules.Authentifier{}
 	au.Signature = sig
 	au.PubKey = crypto.CompressPubkey(&key.PublicKey)
-	h.SetAuthor(au)
+
+	h := modules.NewHeader([]common.Hash{hash}, hash, au.PubKey, au.Signature, []byte("20"), []byte{}, []uint16{},
+		number.AssetID, number.Index, int64(1598766666))
+	h.SetGroupSign([]byte("group_sign"))
+	h.SetGroupPubkey([]byte("group_pubKey"))
 	return h
 }
 func TestDag_InsertHeaderDag(t *testing.T) {

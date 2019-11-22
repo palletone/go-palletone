@@ -127,22 +127,19 @@ var (
 
 func newTestHeader(parentHash common.Hash, height uint64, key []byte) *modules.Header {
 
-	h := new(modules.Header)
 	au := modules.Authentifier{}
 
-	h.SetGroupSign([]byte("group_sign"))
-	h.SetGroupPubkey([]byte("group_pubKey"))
-
-	h.SetNumber(dagconfig.DagConfig.GetGasToken(), height)
-	h.SetExtra(make([]byte, 20))
-	h.SetParentHash([]common.Hash{parentHash})
-	h.SetTxRoot(common.HexToHash("0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"))
-
+	root := common.HexToHash("0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421")
+	b := []byte{}
+	h := modules.NewHeader([]common.Hash{parentHash}, root, b, b, make([]byte, 20), b, []uint16{},
+		dagconfig.DagConfig.GetGasToken(), height, int64(1536451200)+1000)
 	sig, _ := crypto.MyCryptoLib.Sign(key, h.TxRoot().Bytes())
 	au.Signature = sig
 	au.PubKey, _ = crypto.MyCryptoLib.PrivateKeyToPubKey(key)
 	h.SetAuthor(au)
-	h.SetTime(int64(1536451200) + 1000)
+
+	h.SetGroupSign([]byte("group_sign"))
+	h.SetGroupPubkey([]byte("group_pubKey"))
 	return h
 }
 

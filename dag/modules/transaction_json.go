@@ -251,7 +251,7 @@ func jsonTemp2tx(tx *Transaction, temp *txJsonTemp) error {
 	if processed < temp.MsgCount {
 		return errors.New("Some message don't process in transaction_json.go")
 	}
-	tx = &Transaction{txdata: sdw}
+	tx.txdata = sdw
 	return nil
 }
 

@@ -104,22 +104,20 @@ func TestSaveUnit(t *testing.T) {
 	p.SetString("0000000000000000000000000000000")
 	aid := modules.AssetId{}
 	aid.SetBytes([]byte("xxxxxxxxxxxxxxxxxx"))
-	header := new(modules.Header)
-	var perents []common.Hash
-	header.SetParentHash(append(perents, p))
-	header.SetNumber(modules.PTNCOIN, 0)
+	b := []byte{}
+	header := modules.NewHeader([]common.Hash{p}, common.Hash{}, b, b, b, b, []uint16{}, modules.PTNCOIN,
+		0, int64(1598766666))
 	key, _ := crypto.GenerateKey()
-	//addr0 := crypto.PubkeyToAddress(&key.PublicKey)
 
 	sig, err := crypto.Sign(header.Hash().Bytes(), key)
 	if err != nil {
 		log.Debug("sign header occured error: ", err)
 	}
-	auth := new(modules.Authentifier)
+	auth := modules.Authentifier{}
 	auth.Signature = sig
 	auth.PubKey = crypto.CompressPubkey(&key.PublicKey)
 
-	header.SetAuthor(*auth)
+	header.SetAuthor(auth)
 	contractTplPayload := modules.NewContractTplPayload([]byte("contract_template0000"),
 		1024,
 		[]byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159}, modules.ContractError{})
@@ -634,7 +632,7 @@ func TestContractTxsIllegal(t *testing.T) {
 		ReadSet:    readSet,
 		WriteSet:   writeSet,
 	}
-	m1 := modules.NewMessage(modules.APP_CONTRACT_DEPLOY_REQUEST, nil)
+	m1 := modules.NewMessage(modules.APP_CONTRACT_DEPLOY_REQUEST, deployPayload)
 	m2 := modules.NewMessage(modules.APP_CONTRACT_DEPLOY, deployPayload)
 	tx1 := modules.NewTransaction([]*modules.Message{m1, m2})
 	txs := make([]*modules.Transaction, 0)

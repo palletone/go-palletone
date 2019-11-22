@@ -51,25 +51,19 @@ func TestPrintHashList(t *testing.T) {
 func TestGetHeader(t *testing.T) {
 	key, _ := crypto.MyCryptoLib.KeyGen()
 	pubKey, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(key)
-	h := new(modules.Header)
 	au := modules.Authentifier{}
 	address := crypto.PubkeyBytesToAddress(pubKey)
 	t.Log("address:", address)
 
-	h.SetGroupSign([]byte("group_sign"))
-	h.SetGroupPubkey([]byte("group_pubKey"))
-	h.SetNumber(modules.PTNCOIN, 333333)
-	h.SetExtra(make([]byte, 20))
-	h.SetParentHash([]common.Hash{h.TxRoot()})
-	h.SetTxRoot(common.HexToHash("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f"))
+	hash := common.HexToHash("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f")
+	b := []byte{}
+	h := modules.NewHeader([]common.Hash{hash}, hash, b, b, b, b, []uint16{}, modules.NewPTNIdType(), 20, 123)
 	sig, _ := crypto.MyCryptoLib.Sign(key, h.TxRoot().Bytes())
 	au.Signature = sig
 	au.PubKey = pubKey
 	h.SetAuthor(au)
-	h.SetTime(123)
-
 	t.Logf("%#v", h)
-
+	
 	db, _ := ptndb.NewMemDatabase()
 	dagdb := NewDagDb(db)
 

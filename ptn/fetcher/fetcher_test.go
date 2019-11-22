@@ -37,16 +37,15 @@ var (
 )
 
 func newGenesisForTest(db ptndb.Database) *modules.Unit {
-	header := modules.NewHeader([]common.Hash{}, []byte{})
-	header.SetNumber(modules.PTNCOIN, 0)
-	header.SetAuthor(modules.Authentifier{[]byte{}, []byte{}})
+	b := []byte{}
+	header := modules.NewHeader([]common.Hash{}, common.Hash{}, b, b, b, b, []uint16{},
+		modules.PTNCOIN, 0, int64(1598766666))
+
 	header.SetGroupSign([]byte{})
 	header.SetGroupPubkey([]byte{})
 	tx, _ := NewCoinbaseTransaction()
 	txs := modules.Transactions{tx}
 	genesisUnit := modules.NewUnit(header, txs)
-	//fmt.Println("genesisUnit=", genesisUnit.Hash())
-	//fmt.Println("genesisUTx=", genesisUnit.Transactions()[0])
 	err := SaveGenesis(db, genesisUnit)
 	if err != nil {
 		log.Println("SaveGenesis, err", err)
@@ -76,18 +75,17 @@ func NewCoinbaseTransaction() (*modules.Transaction, error) {
 		App:     modules.APP_PAYMENT,
 		Payload: payload,
 	}
-	var coinbase modules.Transaction
-	coinbase.TxMessages = append(coinbase.TxMessages, &msg)
-	//coinbase.TxHash = coinbase.Hash()
-	return &coinbase, nil
+
+	coinbase := modules.NewTransaction([]*modules.Message{&msg})
+	return coinbase, nil
 }
 func newDag(db ptndb.Database, gunit *modules.Unit, number int) (modules.Units, error) {
 	units := make(modules.Units, number)
 	par := gunit
 	for i := 0; i < number; i++ {
-		header := modules.NewHeader([]common.Hash{par.UnitHash}, []byte{})
-		header.SetNumber(par.UnitHeader.GetNumber().AssetID, par.UnitHeader.GetNumber().Index+1)
-		header.SetAuthor(modules.Authentifier{[]byte{}, []byte{}})
+		b := []byte{}
+		header := modules.NewHeader([]common.Hash{par.UnitHash}, common.Hash{}, b, b, b, b, []uint16{},
+			par.UnitHeader.GetNumber().AssetID, par.UnitHeader.GetNumber().Index+1, int64(1598766666))
 		header.SetGroupSign([]byte{})
 		header.SetGroupPubkey([]byte{})
 		tx, _ := NewCoinbaseTransaction()
