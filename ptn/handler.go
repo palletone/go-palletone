@@ -153,7 +153,7 @@ type ProtocolManager struct {
 
 	toGroupSignCh  chan modules.ToGroupSignEvent
 	toGroupSignSub event.Subscription
-	contract       *contracts.Contract
+
 	pDocker        *utils.PalletOneDocker
 
 	unstableRepositoryUpdatedCh  chan modules.UnstableRepositoryUpdatedEvent
