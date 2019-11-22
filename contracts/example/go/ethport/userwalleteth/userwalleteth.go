@@ -2,12 +2,18 @@ package main
 
 import (
 	"bufio"
+	"context"
+	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
 	"math/big"
 	"os"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/naoina/toml"
 
 	"github.com/palletone/adaptor"
@@ -99,68 +105,71 @@ func createKey(name string) error {
 	return saveConfig(gWalletFile, gWallet)
 }
 
-//func sendETH(rawURL, priKey, toAddr, amountWei string) (string, error) {
-//	client, err := ethclient.Dial(rawURL)
-//	if err != nil {
-//		return "", err
-//	}
-//
-//	privateKey, err := crypto.HexToECDSA(priKey)
-//	if err != nil {
-//		return "", err
-//	}
-//
-//	publicKey := privateKey.Public()
-//	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
-//	if !ok {
-//		return "", fmt.Errorf("cannot assert type: publicKey is not of type *ecdsa.PublicKey")
-//	}
-//
-//	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
-//	nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
-//	if err != nil {
-//		return "", err
-//	}
-//	//nonce = 509
-//
-//	//value := big.NewInt(1000000000000000000) // in wei (1 eth)
-//	value := new(big.Int)
-//	value.SetString(amountWei, 10)
-//	gasLimit := uint64(21000) // in units
-//	gasPrice, err := client.SuggestGasPrice(context.Background())
-//	if err != nil {
-//		return "", err
-//	}
-//	//fmt.Println(gasPrice.String())
-//	//gasPrice.SetString("1", 10)
-//	//fmt.Println(gasPrice.String())
-//
-//	toAddress := common.HexToAddress(toAddr)
-//	var data []byte
-//	tx := types.NewTransaction(nonce, toAddress, value, gasLimit, gasPrice, data)
-//
-//	chainID, err := client.NetworkID(context.Background())
-//	if err != nil {
-//		return "", err
-//	}
-//
-//	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
-//	if err != nil {
-//		return "", err
-//	}
-//
-//	err = client.SendTransaction(context.Background(), signedTx)
-//	if err != nil {
-//		return "", err
-//	}
-//
-//	fmt.Printf("tx sent: %s\n", signedTx.Hash().Hex())
-//	return signedTx.Hash().String(), nil
-//}
+func sendETH(rawURL, priKey, toAddr, amountWei string) (string, error) {
+	client, err := ethclient.Dial(gWallet.EthConfig.Rawurl)
+	if err != nil {
+		return "", err
+	}
+
+	privateKey, err := crypto.HexToECDSA(priKey)
+	if err != nil {
+		return "", err
+	}
+
+	publicKey := privateKey.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		return "", fmt.Errorf("cannot assert type: publicKey is not of type *ecdsa.PublicKey")
+	}
+
+	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+	nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
+	if err != nil {
+		return "", err
+	}
+	//nonce = 509
+
+	//value := big.NewInt(1000000000000000000) // in wei (1 eth)
+	value := new(big.Int)
+	value.SetString(amountWei, 10)
+	gasLimit := uint64(21000) // in units
+	gasPrice, err := client.SuggestGasPrice(context.Background())
+	if err != nil {
+		return "", err
+	}
+	//fmt.Println(gasPrice.String())
+	//gasPrice.SetString("1", 10)
+	//fmt.Println(gasPrice.String())
+
+	toAddress := common.HexToAddress(toAddr)
+	var data []byte
+	tx := types.NewTransaction(nonce, toAddress, value, gasLimit, gasPrice, data)
+
+	chainID, err := client.NetworkID(context.Background())
+	if err != nil {
+		return "", err
+	}
+
+	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
+	if err != nil {
+		return "", err
+	}
+
+	err = client.SendTransaction(context.Background(), signedTx)
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Printf("tx sent: %s\n", signedTx.Hash().Hex())
+	return signedTx.Hash().String(), nil
+}
 
 func sendETHToMultiSigAddr(contractAddr, value, gasPrice, gasLimit, privateKey string) error {
-
-	return nil
+	txid, err := sendETH(gWallet.EthConfig.Rawurl, privateKey, contractAddr, value)
+	if txid != "" {
+		fmt.Println("sendETHToMultiSigAddr: ", txid)
+	}
+	return err
 }
 
 func getAddrByPrikey(prikey []byte) string {

@@ -157,7 +157,7 @@ func (p *Processor) AdapterFunRequest(reqId common.Hash, contractId common.Addre
 	return sig, nil
 }
 
-func (p *Processor) getRusult(reqId common.Hash, msgType uint32, consultContent []byte) ([]byte, error) {
+func (p *Processor) getResult(reqId common.Hash, msgType uint32, consultContent []byte) ([]byte, error) {
 	p.locker.Lock()
 	defer p.locker.Unlock()
 
@@ -193,28 +193,26 @@ func (p *Processor) AdapterFunResult(reqId common.Hash, contractId common.Addres
 		return nil, errors.New("AdapterFunRequest param is nil")
 	}
 	log.Infof("AdapterFunResult reqid: %x, consultContent: %s", reqId, string(consultContent))
-	result, err := p.getRusult(reqId, msgType, consultContent)
+	result, err := p.getResult(reqId, msgType, consultContent)
 	if err == nil {
 		return result, nil
 	}
 
-	timeout := make(chan bool, 1)
-	go func() {
-		time.Sleep(timeOut)
-		timeout <- true
-	}()
+	//timeout := make(chan bool, 1)
+	//go func() {
+	//	time.Sleep(timeOut)
+	//	//timeout <- true
+	//}()
 
 	select {
-	case <-timeout:
-		result, err := p.getRusult(reqId, msgType, consultContent)
+	case <-time.After(timeOut):
+		result, err := p.getResult(reqId, msgType, consultContent)
 		if err == nil {
 			return result, nil
 		}
-		log.Debug("AdapterFunResult, time out")
-		return nil, errors.New("AdapterFunResult, time out")
-		//default:
+		log.Debug("AdapterFunResult getResult failed " + err.Error())
+		return nil, errors.New("AdapterFunResult getResult failed " + err.Error())
 	}
-	return nil, nil
 }
 
 func (p *Processor) ProcessAdapterEvent(event *AdapterEvent) (result *AdapterEvent, err error) {
