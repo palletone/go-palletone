@@ -2,6 +2,7 @@ package contractcfg
 
 import (
 	"fmt"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/contracts/comm"
 	"time"
@@ -16,7 +17,8 @@ const (
 	Nodejsimg = "palletone/nodejsimg"
 	defaultListenerPort = ":12345"
 	defaultListenerIp = "0.0.0.0"
-	defaultVmEndpoint = "unix:///var/run/docker.sock")
+	defaultVmEndpoint = "unix:///var/run/docker.sock"
+)
 
 type Config struct {
 	ContractAddress        string        //Jury节点ip地址
@@ -45,6 +47,7 @@ func NewContractConfig() *Config {
 var config =  &Config{}
 
 func SetConfig(cfg *Config) {
+	log.Debugf("set config = %v",cfg)
 	if cfg != nil {
 		config = cfg
 	} else {
@@ -53,5 +56,6 @@ func SetConfig(cfg *Config) {
 }
 
 func GetConfig() *Config {
+	log.Debugf("get config = %v",config)
 	return config
 }
