@@ -176,6 +176,7 @@ func (s *RwSetTxSimulator) GetRwData(ns string) ([]*KVRead, []*KVWrite, error) {
 	log.Info("GetRwData", "ns info", ns)
 
 	if s.rwsetBuilder != nil {
+		s.rwsetBuilder.locker.RLock()
 		if s.rwsetBuilder.pubRwBuilderMap != nil {
 			if s.rwsetBuilder.pubRwBuilderMap[ns] != nil {
 				pubRwBuilderMap, ok := s.rwsetBuilder.pubRwBuilderMap[ns]
@@ -183,10 +184,12 @@ func (s *RwSetTxSimulator) GetRwData(ns string) ([]*KVRead, []*KVWrite, error) {
 					rd = pubRwBuilderMap.readMap
 					wt = pubRwBuilderMap.writeMap
 				} else {
+					s.rwsetBuilder.locker.RUnlock()
 					return nil, nil, errors.New("rw_data not found.")
 				}
 			}
 		}
+		s.rwsetBuilder.locker.RUnlock()
 	}
 	//sort keys and convert map to slice
 	return convertReadMap2Slice(rd), convertWriteMap2Slice(wt), nil

@@ -265,11 +265,11 @@ func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize f
 	reqId := tx.RequestHash()
 	txSize := tx.Size().Float64()
 
-	if validate.dagquery == nil || validate.propquery == nil {
-		log.Warnf("[%s]ValidateTxFeeEnough, Cannot validate tx fee, your validate dagquery or propquery not set", reqId.String()[:8])
+	if validate.propquery == nil || validate.utxoquery == nil {
+		log.Warnf("[%s]ValidateTxFeeEnough, Cannot validate tx fee, your validate utxoquery or propquery not set", reqId.String()[:8])
 		return true //todo ?
 	}
-	fees, err := validate.dagquery.GetTxFee(tx)
+	fees, err := tx.GetTxFee(validate.utxoquery.GetUtxoEntry) //validate.dagquery.GetTxFee(tx)
 	if err != nil {
 		log.Errorf("[%s]validateTxFeeEnough, GetTxFee err:%s", reqId.String()[:8], err.Error())
 		return true //todo ?
