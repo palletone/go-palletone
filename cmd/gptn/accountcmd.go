@@ -463,7 +463,7 @@ func createAccount(ctx *cli.Context, password string) (common.Address, error) {
 }
 
 // accountCreate creates a new account into the keystore defined by the CLI flags.
-func createMutiAccount(ctx *cli.Context, total int,pubkey [][]byte, check int) (common.Address, []byte,error) {
+func createMutiAccount(ctx *cli.Context, pubkey [][]byte, check int) (common.Address, []byte,error) {
 	var err error
 	var cfg FullConfig
 	var configDir string
@@ -502,12 +502,12 @@ func IntToByte(num int64) []byte {
 	}
    return buffer.Bytes()
 }
-func BytesToInt(bys []byte) int {
+/*func BytesToInt(bys []byte) int {
     bytebuff := bytes.NewBuffer(bys)
     var data int64
     binary.Read(bytebuff, binary.BigEndian, &data)
     return int(data)
-}
+}*/
 func newMutiAccount(ctx *cli.Context) (common.Address, []byte , error) {
 	if len(ctx.Args()) == 0 {
 		utils.Fatalf("No pubkey specified to create muti account")
@@ -531,7 +531,7 @@ func newMutiAccount(ctx *cli.Context) (common.Address, []byte , error) {
     if err != nil || check < 0 ||check > 5 {
 		return common.Address{}, []byte{}, err
 	}
-	address,redeemScript,err := createMutiAccount(ctx,total,pk,check)
+	address,redeemScript,err := createMutiAccount(ctx,pk,check)
 	if err != nil {
 		return common.Address{}, []byte{}, err
 	}

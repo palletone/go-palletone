@@ -345,8 +345,6 @@ func NewSignRawTransactionCmd(hexEncodedTx string, inputs *[]RawTxInput, privKey
 type MutiSignRawTransactionCmd struct {
 	RawTx    string
 	Inputs   *[]RawTxInput
-	msgIdx   int
-	id       int
 	PrivKeys *[]string
 	Flags    *string `jsonrpcdefault:"\"ALL\""`
 }
