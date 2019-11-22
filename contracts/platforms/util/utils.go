@@ -27,13 +27,14 @@ import (
 	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/comm"
-	"github.com/palletone/go-palletone/contracts/utils"
+	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/core/vmContractPub/util"
 	cutil "github.com/palletone/go-palletone/vm/common"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 //var log = flogging.MustGetLogger("util")
@@ -253,7 +254,13 @@ func DockerBuild(opts DockerBuildOptions) error {
 		return fmt.Errorf("Error executing build: %s \"%s\"", err, stdout.String())
 	}
 	//解决临时容器一直运行的情况
-	go utils.RemoveContainerWhenGoBuildTimeOut(container.ID)
+	go func(id string) {
+		<-time.After(contractcfg.GetConfig().ContractDeploytimeout)
+		err = client.RemoveContainer(docker.RemoveContainerOptions{ID: id, Force: true})
+		if err != nil {
+			log.Infof("remove container error: %s", err.Error())
+		}
+	}(container.ID)
 
 	//-----------------------------------------------------------------------------------
 	// Wait for the build to complete and gather the return value

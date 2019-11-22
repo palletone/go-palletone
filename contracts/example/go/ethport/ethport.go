@@ -129,9 +129,10 @@ type JuryMsgAddr struct {
 }
 
 //todo modify conforms 15
-const Confirms = uint(15)
+const Confirms = uint(1)
 
-const symbolsJuryAddress = "juryPubkeyAddress"
+const symbolsJuryAddress = "juryAddress"
+const symbolsJuryPubkeyAddress = "juryPubkeyAddress"
 
 const symbolsETHAsset = "eth_asset"
 const symbolsETHContract = "eth_contract"
@@ -174,8 +175,8 @@ func consult(stub shim.ChaincodeStubInterface, content []byte, myAnswer []byte) 
 }
 
 type pubkeyAddr struct {
-	addr   string
-	pubkey []byte
+	Addr   string
+	Pubkey []byte
 }
 type pubkeyAddrWrapper struct {
 	pubAddr []pubkeyAddr
@@ -198,12 +199,12 @@ func sortPubAddr(thePubAddr []pubkeyAddr, by SortBy) { // sortPubAddr 方法
 }
 
 func addrIncrease(p, q *pubkeyAddr) bool {
-	return p.addr < q.addr // addr increase sort
+	return p.Addr < q.Addr // addr increase sort
 }
 
 func (p *ETHPort) InitDepositAddr(stub shim.ChaincodeStubInterface) pb.Response {
 	//
-	saveResult, _ := stub.GetState(symbolsJuryAddress)
+	saveResult, _ := stub.GetState(symbolsJuryPubkeyAddress)
 	if len(saveResult) != 0 {
 		return shim.Error("DepositAddr has been init")
 	}
@@ -214,6 +215,7 @@ func (p *ETHPort) InitDepositAddr(stub shim.ChaincodeStubInterface) pb.Response 
 		log.Debugf("OutChainCall GetJuryETHAddr err: %s", err.Error())
 		return shim.Error("OutChainCall GetJuryETHAddr failed" + err.Error())
 	}
+	log.Debugf("juryAddr: %s", string(juryAddr))
 
 	result, err := stub.OutChainCall("eth", "GetJuryPubkey", []byte(""))
 	if err != nil {
@@ -226,11 +228,18 @@ func (p *ETHPort) InitDepositAddr(stub shim.ChaincodeStubInterface) pb.Response 
 		log.Debugf("OutChainCall GetJuryPubkey Unmarshal err: %s", err.Error())
 		return shim.Error("OutChainCall GetJuryPubkey Unmarshal failed" + err.Error())
 	}
+	log.Debugf("juryPubkey.PublicKey: %x", juryPubkey.PublicKey)
 
 	myPubkeyAddr := pubkeyAddr{string(juryAddr), juryPubkey.PublicKey}
-	myPubkeyAddrByte, _ := json.Marshal(myPubkeyAddr)
+	myPubkeyAddrJSON, err := json.Marshal(myPubkeyAddr)
+	if err != nil {
+		log.Debugf("myPubkeyAddr Marshal failed: " + err.Error())
+		return shim.Error("myPubkeyAddr Marshal failed: " + err.Error())
+	}
+	log.Debugf("myPubkeyAddrJSON: %s", string(myPubkeyAddrJSON))
+
 	//
-	recvResult, err := consult(stub, []byte("juryETHPubkey"), myPubkeyAddrByte)
+	recvResult, err := consult(stub, []byte("juryETHPubkey"), myPubkeyAddrJSON)
 	if err != nil {
 		log.Debugf("consult juryETHPubkey failed: " + err.Error())
 		return shim.Error("consult juryETHPubkey failed: " + err.Error())
@@ -260,30 +269,35 @@ func (p *ETHPort) InitDepositAddr(stub shim.ChaincodeStubInterface) pb.Response 
 	sortPubAddr(pubkeyAddrs, addrIncrease)
 
 	address := make([]string, 0, len(pubkeyAddrs))
-	//pubkeys := make([][]byte, 0, len(pubkeyAddrs))
 	for i := range pubkeyAddrs {
-		address = append(address, pubkeyAddrs[i].addr)
-		//pubkeys = append(pubkeys, pubkeyAddrs[i].pubkey)
+		address = append(address, pubkeyAddrs[i].Addr)
 	}
-	addressJson, err := json.Marshal(address)
+	addressJSON, err := json.Marshal(address)
 	if err != nil {
 		return shim.Error("address Marshal failed: " + err.Error())
 	}
-
-	pubkeyAddrsJson, err := json.Marshal(pubkeyAddrs)
+	log.Debugf("addressJSON: %s", string(addressJSON))
+	pubkeyAddrsJSON, err := json.Marshal(pubkeyAddrs)
 	if err != nil {
 		return shim.Error("pubkeyAddrs Marshal failed: " + err.Error())
 	}
+	log.Debugf("pubkeyAddrsJson: %s", string(pubkeyAddrsJSON))
+
 	// Write the state to the ledger
-	err = stub.PutState(symbolsJuryAddress, pubkeyAddrsJson)
+	err = stub.PutState(symbolsJuryAddress, addressJSON)
 	if err != nil {
 		return shim.Error("write " + symbolsJuryAddress + " failed: " + err.Error())
 	}
-	return shim.Success(addressJson)
+	err = stub.PutState(symbolsJuryPubkeyAddress, pubkeyAddrsJSON)
+	if err != nil {
+		return shim.Error("write " + symbolsJuryPubkeyAddress + " failed: " + err.Error())
+	}
+
+	return shim.Success(addressJSON)
 }
 
 func getETHAddrs(stub shim.ChaincodeStubInterface) []pubkeyAddr {
-	result, _ := stub.GetState(symbolsJuryAddress)
+	result, _ := stub.GetState(symbolsJuryPubkeyAddress)
 	if len(result) == 0 {
 		return []pubkeyAddr{}
 	}
@@ -884,7 +898,7 @@ func verifySigs(msg []byte, juryMsg []JuryMsgAddr, pubkeyAddrs []pubkeyAddr, stu
 		}
 		isJuryETHPubkey := false
 		for j := range pubkeyAddrs {
-			if bytes.Equal(pubkeyAddrs[j].pubkey, onePubkeySig.pubkey) {
+			if bytes.Equal(pubkeyAddrs[j].Pubkey, onePubkeySig.pubkey) {
 				isJuryETHPubkey = true
 			}
 		}

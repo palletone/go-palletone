@@ -21,7 +21,10 @@
 package core
 
 import (
+	"bytes"
 	"fmt"
+	docker "github.com/fsouza/go-dockerclient"
+	util "github.com/palletone/go-palletone/vm/common"
 	"io"
 	"reflect"
 	"strconv"
@@ -36,7 +39,6 @@ import (
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/platforms"
 	"github.com/palletone/go-palletone/contracts/shim"
-	"github.com/palletone/go-palletone/contracts/utils"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/rwset"
@@ -890,7 +892,7 @@ func (chaincodeSupport *ChaincodeSupport) Execute(ctxt context.Context, cccid *c
 		//err = errors.New("timeout expired while executing transaction")
 		//log.Info("====================================timeout expired while executing transaction")
 		//  试图从容器获取错误信息
-		containerErrStr := utils.GetLogFromContainer(cccid.GetContainerName())
+		containerErrStr := getLogFromContainer(cccid.GetContainerName())
 		if containerErrStr != "" {
 			log.Error("error from container %s", containerErrStr)
 			err = errors.New(containerErrStr)
@@ -900,7 +902,8 @@ func (chaincodeSupport *ChaincodeSupport) Execute(ctxt context.Context, cccid *c
 			err = errors.New("timeout expired while executing transaction")
 		}
 		//  调用合约超时，停止该容器
-		utils.StopContainerWhenInvokeTimeOut(cccid.GetContainerName())
+		stopContainerWhenInvokeTimeOut(cccid.GetContainerName())
+
 	}
 	//our responsibility to delete transaction context if sendExecuteMessage succeeded
 	chrte.handler.deleteTxContext(msg.ChannelId, msg.Txid)
@@ -913,3 +916,64 @@ func IsDevMode() bool {
 
 	return mode == DevModeUserRunsChaincode
 }
+
+//  当调用合约时，发生超时，即停止掉容器
+func stopContainerWhenInvokeTimeOut(name string) {
+	log.Debugf("enter StopContainerWhenInvokeTimeOut name = %s", name)
+	defer log.Debugf("exit StopContainerWhenInvokeTimeOut name = %s", name)
+	client, err := util.NewDockerClient()
+	if err != nil {
+		log.Error("util.NewDockerClient", "error", err)
+		return
+	}
+	err = client.StopContainer(name, 3)
+	if err != nil {
+		log.Infof("stop container error: %s", err.Error())
+		return
+	}
+}
+
+//  通过容器名称获取容器里面的错误信息，返回最后一条
+func getLogFromContainer(name string) string {
+	client, err := util.NewDockerClient()
+	if err != nil {
+		log.Error("util.NewDockerClient", "error", err)
+		return ""
+	}
+	var buf bytes.Buffer
+	logsO := docker.LogsOptions{
+		Container:         name,
+		ErrorStream:       &buf,
+		Follow:            true,
+		Stderr:            true,
+		InactivityTimeout: 3 * time.Second,
+	}
+	log.Debugf("start docker logs")
+	err = client.Logs(logsO)
+	log.Debugf("end docker logs")
+	if err != nil {
+		log.Infof("get log from container %s error: %s", name, err.Error())
+		return ""
+	}
+	errArray := make([]string, 0)
+	for {
+		line, err := buf.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return ""
+		}
+		line = strings.TrimSpace(line)
+		if strings.Contains(line, "panic: runtime error") || strings.Contains(line, "fatal error: runtime") {
+			log.Infof("container %s error %s", name, line)
+			errArray = append(errArray, line)
+		}
+	}
+	if len(errArray) != 0 {
+		return errArray[len(errArray)-1]
+	}
+	return ""
+}
+
+
