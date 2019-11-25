@@ -44,7 +44,10 @@ func NewContract(templateId []byte, deploy *ContractDeployPayload, creator commo
 		Status:       1,
 		Creator:      creator.Bytes(),
 		CreationTime: unitTime,
-		DuringTime:   uint64(time.Now().Unix())+deploy.DuringTime,
+		//DuringTime:   uint64(time.Now().Unix())+deploy.DuringTime,
+	}
+	if deploy.DuringTime != 0 {
+		c.DuringTime = uint64(time.Now().Unix())+deploy.DuringTime
 	}
 	for _,v := range deploy.EleNode.EleList{
 		c.JuryPubkeys =  append(c.JuryPubkeys,string(v.PublicKey))
