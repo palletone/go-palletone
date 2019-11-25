@@ -20,6 +20,7 @@ package downloader
 
 import (
 	"github.com/palletone/go-palletone/statistics/metrics"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 var (
@@ -40,4 +41,14 @@ var (
 	//receiptReqTimer     = metrics.NewRegisteredTimer("ptn/downloader/receipts/req", nil)
 	//receiptDropMeter    = metrics.NewRegisteredMeter("ptn/downloader/receipts/drop", nil)
 	//receiptTimeoutMeter = metrics.NewRegisteredMeter("ptn/downloader/receipts/timeout", nil)
+)
+var (
+	cpuTemp = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "cpu_temperature_celsius",
+		Help: "Current temperature of the CPU.",
+	})
+	hdFailures = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "hd_errors_total",
+		Help: "Number of hard-disk errors.",
+	})
 )
