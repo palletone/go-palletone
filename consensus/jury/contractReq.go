@@ -368,7 +368,7 @@ func (p *Processor) ContractQuery(id []byte, args [][]byte, timeout time.Duratio
 			spec.CpuQuota = cp.UccCpuQuota
 			spec.CpuShare = cp.UccCpuShares
 			spec.Memory = cp.UccMemory
-			_, chaincodeData, err := ucc.RecoverChainCodeFromDb(chainId, cc.TemplateId)
+			_, chaincodeData, err := ucc.RecoverChainCodeFromDb(nil, cc.TemplateId)
 			if err != nil {
 				log.Error("ContractQuery", "chainid:", chainId, "templateId:", cc.TemplateId, "RecoverChainCodeFromDb err", err)
 				return nil, err

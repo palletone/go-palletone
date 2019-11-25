@@ -873,6 +873,7 @@ func addContractDeployDuringTime(dag iDag, tx *modules.Transaction) error {
 	if err != nil {
 		return errors.New("addContractDeployDuringTime, getContractTxContractInfo fail")
 	}
+	//  过期时间
 	payload.(*modules.ContractDeployPayload).DuringTime = duringTime
 	return nil
 }

@@ -19,6 +19,7 @@ package ptnapi
 
 import (
 	"context"
+	"github.com/palletone/go-palletone/contracts/list"
 	"math/big"
 	"time"
 
@@ -199,6 +200,8 @@ type Backend interface {
 	ProofTransactionByRlptx(rlptx [][]byte) (string, error)
 	SyncUTXOByAddr(addr string) string
 	StartCorsSync() (string, error)
+
+	RetrieveChaincodes() ([]*list.CCInfo, error)
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {

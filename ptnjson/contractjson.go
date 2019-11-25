@@ -23,6 +23,7 @@ package ptnjson
 import (
 	"encoding/hex"
 	"github.com/palletone/go-palletone/common"
+	crypto2 "github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/dag/modules"
 	"time"
 )
@@ -37,23 +38,29 @@ type ContractJson struct {
 	Status          byte                  `json:"status"` // 合约状态
 	Creator         string                `json:"creator"`
 	CreationTime    time.Time             `json:"creation_time"` // creation date
-	DuringTime      uint64                `json:"during_time"`   // deploy during date
+	DuringTime      time.Time                `json:"during_time"`   // deploy during date
 	Template        *ContractTemplateJson `json:"template"`
+	AddrPubKey       []string `json:"jury_address"`
 }
 
 func ConvertContract2Json(contract *modules.Contract) *ContractJson {
 	addr := common.NewAddress(contract.ContractId, common.ContractHash)
 	creatorAddr := common.NewAddress(contract.Creator, common.PublicKeyHash)
-	return &ContractJson{
+
+	c := &ContractJson{
 		ContractId:      hex.EncodeToString(contract.ContractId),
 		ContractAddress: addr.String(),
 		TemplateId:      hex.EncodeToString(contract.TemplateId),
 		Name:            contract.Name,
 		Status:          contract.Status,
 		Creator:         creatorAddr.String(),
-		CreationTime:    time.Unix(int64(contract.CreationTime), 0),
-		DuringTime:      contract.DuringTime,
+		CreationTime:    time.Unix(int64(contract.CreationTime), 0).UTC(),
+		DuringTime:      time.Unix(int64(contract.DuringTime), 0).UTC(),
 	}
+	for _,a := range contract.JuryPubkeys {
+		c.AddrPubKey = append(c.AddrPubKey,crypto2.PubkeyBytesToAddress([]byte(a)).String())
+	}
+	return c
 }
 
 type ContractTemplateJson struct {
@@ -67,6 +74,7 @@ type ContractTemplateJson struct {
 	AddrHash       []string `json:"addr_hash" rlp:"nil"`
 	Size           uint16   `json:"size"`
 	Creator        string   `json:"creator"`
+	CreateTime time.Time `json:"create_time"`
 }
 
 func ConvertContractTemplate2Json(tpl *modules.ContractTemplate) *ContractTemplateJson {
@@ -82,6 +90,7 @@ func ConvertContractTemplate2Json(tpl *modules.ContractTemplate) *ContractTempla
 		Size:           tpl.Size,
 		AddrHash:       []string{},
 		Creator:        tpl.Creator,
+		CreateTime:time.Unix(int64(tpl.CreateTime),0).UTC(),
 	}
 	for _, addH := range tpl.AddrHash {
 		json.AddrHash = append(json.AddrHash, addH.String())

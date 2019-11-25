@@ -91,19 +91,19 @@ func GetSysCCList() (ccInf []cclist.CCInfo, ccCount int, errs error) {
 }
 
 //install but not into db
-func Install(dag dag.IDag, chainID, ccName, ccPath, ccVersion, ccDescription, ccAbi, ccLanguage string) (payload *md.ContractTplPayload, err error) {
-	log.Info("Install enter", "chainID", chainID, "name", ccName, "path", ccPath, "version", ccVersion, "ccdescription", ccDescription, "ccabi", ccAbi, "cclanguage", ccLanguage)
-	defer log.Info("Install exit", "chainID", chainID, "name", ccName, "path", ccPath, "version", ccVersion, "ccdescription", ccDescription, "ccabi", ccAbi, "cclanguage", ccLanguage)
+func Install(dag dag.IDag, chainID, ccName, ccPath, ccVersion, ccLanguage string) (payload *md.ContractTplPayload, err error) {
+	log.Info("Install enter", "chainID", chainID, "name", ccName, "path", ccPath, "version", ccVersion, "cclanguage", ccLanguage)
+	defer log.Info("Install exit", "chainID", chainID, "name", ccName, "path", ccPath, "version", ccVersion,  "cclanguage", ccLanguage)
+
 	//  用于合约实列
 	usrcc := &ucc.UserChaincode{
 		Name:    ccName,
 		Path:    ccPath,
 		Version: ccVersion,
-		//Desciption: ccDescription,
-		//Abi:        ccAbi,
 		Language: ccLanguage,
 		Enabled:  true,
 	}
+
 	//  产生唯一模板id
 	var buffer bytes.Buffer
 	buffer.Write([]byte(ccName))
@@ -112,9 +112,6 @@ func Install(dag dag.IDag, chainID, ccName, ccPath, ccVersion, ccDescription, cc
 	tpid := crypto.Keccak256Hash(buffer.Bytes())
 	payloadUnit := &md.ContractTplPayload{
 		TemplateId: tpid[:],
-		//Name:       ccName,
-		//Path:       ccPath,
-		//Version:    ccVersion,
 	}
 
 	//查询一下是否已经安装过
@@ -123,6 +120,7 @@ func Install(dag dag.IDag, chainID, ccName, ccPath, ccVersion, ccDescription, cc
 		log.Debug("Install", "err", errMsg)
 		return nil, errors.New(errMsg)
 	}
+
 	//将合约代码文件打包成 tar 文件
 	paylod, err := ucc.GetUserCCPayload(usrcc)
 	if err != nil {
@@ -141,17 +139,21 @@ func Deploy(jA string, rwM rwset.TxManager, idag dag.IDag, chainID string, templ
 	if timeout > 0 {
 		setTimeOut = timeout
 	}
-	templateCC, chaincodeData, err := ucc.RecoverChainCodeFromDb(chainID, templateId)
+
+	// 通过模板id获取源码
+	templateCC, chaincodeData, err := ucc.RecoverChainCodeFromDb(idag,templateId)
 	if err != nil {
 		log.Error("Deploy", "chainid:", chainID, "templateId:", templateId, "RecoverChainCodeFromDb err", err)
 		return nil, nil, err
 	}
+
 	mksupt := &SupportImpl{}
 	txsim, err := mksupt.GetTxSimulator(rwM, idag, chainID, txId)
 	if err != nil {
 		log.Error("getTxSimulator err:", "error", err)
 		return nil, nil, errors.WithMessage(err, "GetTxSimulator error")
 	}
+
 	txHash := common.HexToHash(txId)
 	depId := crypto.RequestIdToContractAddress(txHash) //common.NewAddress(btxId[:20], common.ContractHash)
 	usrccName := depId.String()
@@ -189,6 +191,7 @@ func Deploy(jA string, rwM rwset.TxManager, idag dag.IDag, chainID string, templ
 		log.Error("deployUserCC err:", "error", err)
 		return nil, nil, errors.WithMessage(err, "Deploy fail")
 	}
+
 	cc := &cclist.CCInfo{
 		Id:       depId.Bytes(),
 		Name:     usrcc.Name,
@@ -199,18 +202,13 @@ func Deploy(jA string, rwM rwset.TxManager, idag dag.IDag, chainID string, templ
 		SysCC:    false,
 		Address:  jA,
 	}
-	//if depId.IsSystemContractId() {
-	//	cc.SysCC = true
-	//	err = cclist.SetChaincode(chainID, 0, cc)
-	//	if err != nil {
-	//		log.Error("Deploy", "SetChaincode fail, chainId", chainID, "name", cc.Name)
-	//	}
-	//} else {
+
+	// 保存本地信息
 	err = SaveChaincode(idag, depId, cc)
 	if err != nil {
 		log.Error("Deploy saveChaincodeSet", "SetChaincode fail, channel", chainID, "name", cc.Name, "error", err.Error())
 	}
-	//}
+
 	unit, err := RwTxResult2DagDeployUnit(txsim, templateId, cc.Name, cc.Id, args, timeout)
 	if err != nil {
 		log.Errorf("chainID[%s] converRwTxResult2DagUnit failed", chainID)
@@ -454,7 +452,7 @@ func RestartContainer(idag dag.IDag, chainID string, addr common.Address, txId s
 	spec.CpuQuota = cp.UccCpuQuota  //微妙单位（100ms=100000us=上限为1个CPU）
 	spec.CpuShare = cp.UccCpuShares //占用率，默认1024，即可占用一个CPU，相对值
 	spec.Memory = cp.UccMemory      //字节单位 物理内存  1073741824  1G 2147483648 2G 209715200 200m 104857600 100m
-	_, chaincodeData, err := ucc.RecoverChainCodeFromDb(chainID, cc.TempleId)
+	_, chaincodeData, err := ucc.RecoverChainCodeFromDb(idag, cc.TempleId)
 	if err != nil {
 		log.Error("RestartContainer", "chainid:", chainID, "templateId:", cc.TempleId, "RecoverChainCodeFromDb err", err)
 		return nil, err

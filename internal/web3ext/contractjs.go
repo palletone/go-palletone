@@ -173,6 +173,11 @@ web3._extend({
 			call: 'contract_getContractState',
 			params: 2
 		}),
+        new web3._extend.Method({
+			name: 'getChaincodesInfo',
+			call: 'contract_getChaincodesInfo',
+			params: 0
+		}),
 	],
 	properties: [
 		new web3._extend.Property({

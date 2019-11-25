@@ -26,6 +26,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/palletone/go-palletone/contracts/list"
 	"math"
 	"math/big"
 	"strconv"
@@ -716,4 +717,9 @@ func (s *PublicContractAPI) GetContractFeeLevel(ctx context.Context) (*ContractF
 		ContractTxStopFeeLevel:    cp.ContractTxStopFeeLevel,
 	}
 	return feeLevel, nil
+}
+
+//获取所担任的用户合约相关信息
+func(s *PublicContractAPI) GetChaincodesInfo(ctx context.Context) ([]*list.CCInfo,error) {
+	return s.b.RetrieveChaincodes()
 }

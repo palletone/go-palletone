@@ -22,6 +22,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/palletone/go-palletone/contracts/list"
 	"math/big"
 	"sort"
 	"time"
@@ -1078,4 +1079,8 @@ func (a addressBalanceList) Swap(i, j int) { // 重写 Swap() 方法
 }
 func (a addressBalanceList) Less(i, j int) bool { // 重写 Less() 方法， 从大到小排序
 	return a[j].Balance < a[i].Balance
+}
+
+func (b *PtnApiBackend) RetrieveChaincodes() ([]*list.CCInfo, error){
+	return b.Dag().RetrieveChaincodes()
 }

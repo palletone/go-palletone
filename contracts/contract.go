@@ -106,7 +106,7 @@ func (c *Contract) Install(channelId, ccName, ccPath, ccVersion, ccDescription, 
 		log.Info("contract test install")
 		return test.Install(channelId, ccName, ccPath, ccVersion, ccDescription, ccAbi, ccLanguage)
 	}
-	return cc.Install(c.dag, channelId, ccName, ccPath, ccVersion, ccDescription, ccAbi, ccLanguage)
+	return cc.Install(c.dag, channelId, ccName, ccPath, ccVersion, ccLanguage)
 
 }
 
