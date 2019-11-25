@@ -505,8 +505,8 @@ PledgeTest02
     ...    7.分红
     ...    8.提取3
     ...    9.分红
-    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
-    log    ${amount}    #100，上一个测试的结果
+    ${depositOne}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
+    log    ${depositOne}    #100，上一个测试的结果
     ${result}    queryPledgeStatusByAddr    ${votedAddress01}    #查看某地址的质押结果
     log    ${result}
     ${result}    QueryPledgeHistoryByAddr    ${votedAddress01}
