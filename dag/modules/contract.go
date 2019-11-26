@@ -34,6 +34,7 @@ type Contract struct {
 	CreationTime uint64 // creation  date
 	DuringTime   uint64 //合约部署持续时间，单位秒
 	JuryPubkeys       []string
+	Version string
 }
 
 func NewContract(templateId []byte, deploy *ContractDeployPayload, creator common.Address, unitTime uint64) *Contract {
@@ -44,6 +45,7 @@ func NewContract(templateId []byte, deploy *ContractDeployPayload, creator commo
 		Status:       1,
 		Creator:      creator.Bytes(),
 		CreationTime: unitTime,
+		Version:deploy.Version,
 		//DuringTime:   uint64(time.Now().Unix())+deploy.DuringTime,
 	}
 	if deploy.DuringTime != 0 {

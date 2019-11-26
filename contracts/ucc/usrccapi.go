@@ -2,6 +2,7 @@ package ucc
 
 import (
 	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	"time"
@@ -119,10 +120,10 @@ func GetUserCCPayload(usrcc *UserChaincode) (payload []byte, err error) {
 	return chaincodeData, nil
 }
 
-func RecoverChainCodeFromDb(dag dag.IDag,templateId []byte) (*UserChaincode, []byte, error) {
+func RecoverChainCodeFromDb(dag dag.IDag,templateId []byte) (*modules.ContractTemplate, []byte, error) {
 	//todo, for test
 	if cfg.DebugTest {
-		usrCC1 := &UserChaincode{}
+		usrCC1 := &modules.ContractTemplate{}
 		return usrCC1, nil, nil
 	}
 
@@ -135,13 +136,7 @@ func RecoverChainCodeFromDb(dag dag.IDag,templateId []byte) (*UserChaincode, []b
 	if err != nil {
 		return nil, nil, errors.New("GetContractTpl contract code err")
 	}
-	usrCC := &UserChaincode{
-		Name:     tpl.TplName,
-		Version:  tpl.Version,
-		Path:     tpl.Path,
-		Language: tpl.Language,
-	}
-	return usrCC, chaincodeData, nil
+	return tpl, chaincodeData, nil
 
 	//todo, For future testing, please don't delete this code.
 	//envpath, err := platforms.GetPlatformEnvPath(spec)

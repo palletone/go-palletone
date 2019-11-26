@@ -41,6 +41,7 @@ type ContractJson struct {
 	DuringTime      time.Time                `json:"during_time"`   // deploy during date
 	Template        *ContractTemplateJson `json:"template"`
 	AddrPubKey       []string `json:"jury_address"`
+	Version string `json:"version"`
 }
 
 func ConvertContract2Json(contract *modules.Contract) *ContractJson {
@@ -56,6 +57,7 @@ func ConvertContract2Json(contract *modules.Contract) *ContractJson {
 		Creator:         creatorAddr.String(),
 		CreationTime:    time.Unix(int64(contract.CreationTime), 0).UTC(),
 		DuringTime:      time.Unix(int64(contract.DuringTime), 0).UTC(),
+		Version:contract.Version,
 	}
 	for _,a := range contract.JuryPubkeys {
 		c.AddrPubKey = append(c.AddrPubKey,crypto2.PubkeyBytesToAddress([]byte(a)).String())

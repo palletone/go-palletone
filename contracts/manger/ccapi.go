@@ -157,28 +157,17 @@ func Deploy(jA string, rwM rwset.TxManager, idag dag.IDag, chainID string, templ
 	txHash := common.HexToHash(txId)
 	depId := crypto.RequestIdToContractAddress(txHash) //common.NewAddress(btxId[:20], common.ContractHash)
 	usrccName := depId.String()
-	usrcc := &ucc.UserChaincode{
-		Name:    usrccName,
-		Path:    templateCC.Path,
-		Version: templateCC.Version,
-		//Desciption: templateCC.Desciption,
-		Language: templateCC.Language,
-		//Abi:        templateCC.Abi,
-		//InitArgs:   args,
-		Enabled: true,
-	}
+
 	//  TODO 可以开启单机多容器,防止容器名冲突
-	usrcc.Version += ":"
-	usrcc.Version += contractcfg.GetConfig().ContractAddress
 	spec := &pb.ChaincodeSpec{
 		Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value[templateCC.Language]),
 		Input: &pb.ChaincodeInput{
 			Args: args,
 		},
 		ChaincodeId: &pb.ChaincodeID{
-			Name:    usrcc.Name,
-			Path:    usrcc.Path,
-			Version: usrcc.Version,
+			Name:    usrccName,
+			Path:    templateCC.Path,
+			Version: templateCC.Version+":"+contractcfg.GetConfig().ContractAddress,
 		},
 	}
 	//TODO 这里获取运行用户合约容器的相关资源  CpuQuota  CpuShare  MEMORY
@@ -192,29 +181,13 @@ func Deploy(jA string, rwM rwset.TxManager, idag dag.IDag, chainID string, templ
 		return nil, nil, errors.WithMessage(err, "Deploy fail")
 	}
 
-	cc := &cclist.CCInfo{
-		Id:       depId.Bytes(),
-		Name:     usrcc.Name,
-		Path:     usrcc.Path,
-		TempleId: templateId,
-		Version:  usrcc.Version,
-		Language: usrcc.Language,
-		SysCC:    false,
-		Address:  jA,
-	}
-
-	// 保存本地信息
-	err = SaveChaincode(idag, depId, cc)
-	if err != nil {
-		log.Error("Deploy saveChaincodeSet", "SetChaincode fail, channel", chainID, "name", cc.Name, "error", err.Error())
-	}
-
-	unit, err := RwTxResult2DagDeployUnit(txsim, templateId, cc.Name, cc.Id, args, timeout)
+	unit, err := RwTxResult2DagDeployUnit(txsim, templateId, usrccName, depId.Bytes(), args, timeout)
 	if err != nil {
 		log.Errorf("chainID[%s] converRwTxResult2DagUnit failed", chainID)
 		return nil, nil, errors.WithMessage(err, "Conver RwSet to dag unit fail")
 	}
-	return cc.Id, unit, err
+unit.Version = templateCC.Version
+	return depId.Bytes(), unit, err
 }
 
 func GetChaincode(dag dag.IDag, contractId common.Address) (*cclist.CCInfo, error) {
@@ -240,33 +213,44 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 	var mksupt Support = &SupportImpl{}
 	creator := []byte("palletone")
 	address := common.NewAddress(deployId, common.ContractHash)
-	var cc *cclist.CCInfo
-	var err error
 
+	//var cc *cclist.CCInfo
+	//var err error
+var contractName string
+	var contractVersion string
 	if address.IsSystemContractAddress() {
 		ver := getContractSysVersion(deployId, idag.GetChainParameters().ContractSystemVersion)
-		cc, err = cclist.GetChaincode(chainID, deployId, ver)
+		cc, err := cclist.GetChaincode(chainID, deployId, ver)
 		if err != nil {
 			return nil, err
 		}
+		contractName = cc.Name
+		contractVersion = cc.Version
 	} else {
-		cc, err = GetChaincode(idag, address)
+		//cc, err = GetChaincode(idag, address)
+		//if err != nil {
+		//	log.Debugf("Invoke, get chain code err:%s", err.Error())
+		//	return nil, err
+		//}
+		contract,err := idag.GetContract(address.Bytes())
 		if err != nil {
 			log.Debugf("Invoke, get chain code err:%s", err.Error())
 			return nil, err
 		}
+		contractName = contract.Name
+		contractVersion = contract.Version+":"+contractcfg.GetConfig().ContractAddress
 	}
 	startTm := time.Now()
 	es := NewEndorserServer(mksupt)
 	spec := &pb.ChaincodeSpec{
-		ChaincodeId: &pb.ChaincodeID{Name: cc.Name, Version: cc.Version},
-		Type:        pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value[cc.Language]),
+		ChaincodeId: &pb.ChaincodeID{Name: contractName, Version: contractVersion},
+		//Type:        pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value[cc.Language]),
 		Input:       &pb.ChaincodeInput{Args: args},
 	}
 	cid := &pb.ChaincodeID{
-		Path:    cc.Path,
-		Name:    cc.Name,
-		Version: cc.Version,
+		//Path:    cc.Path,
+		Name:    contractName,
+		Version: contractVersion,
 	}
 	sprop, prop, err := SignedEndorserProposa(chainID, txid, spec, creator, []byte("msg1"))
 	if err != nil {
@@ -278,19 +262,11 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 		log.Infof("ProcessProposal error[%v]", err)
 		return nil, err
 	}
-	// TODO
-	//if !cc.SysCC {
-	//	sizeRW, disk, isOver := utils.RemoveConWhenOverDisk(cc, idag)
-	//	if isOver {
-	//		log.Debugf("utils.KillAndRmWhenOver name = %s,sizeRW = %d,disk = %d", cc.Name, sizeRW, disk)
-	//		return nil, fmt.Errorf("utils.KillAndRmWhenOver name = %s,sizeRW = %d bytes,disk = %d bytes", cc.Name, sizeRW, disk)
-	//	}
-	//}
-	if !cc.SysCC {
-		sizeRW, disk, isOver := removeConWhenOverDisk(cc, idag)
+	if !address.IsSystemContractAddress() {
+		sizeRW, disk, isOver := removeConWhenOverDisk(contractName+":"+contractVersion, idag)
 		if isOver {
-			log.Debugf("utils.KillAndRmWhenOver name = %s,sizeRW = %d,disk = %d", cc.Name, sizeRW, disk)
-			return nil, fmt.Errorf("utils.KillAndRmWhenOver name = %s,sizeRW = %d bytes,disk = %d bytes", cc.Name, sizeRW, disk)
+			log.Debugf("utils.KillAndRmWhenOver name = %s,sizeRW = %d,disk = %d", contractName, sizeRW, disk)
+			return nil, fmt.Errorf("utils.KillAndRmWhenOver name = %s,sizeRW = %d bytes,disk = %d bytes", contractName, sizeRW, disk)
 		}
 	}
 	stopTm := time.Now()
@@ -314,30 +290,36 @@ func Stop(rwM rwset.TxManager, idag dag.IDag, contractid []byte, chainID string,
 		return nil, errors.New("input param txid is nil")
 	}
 	address := common.NewAddress(contractid, common.ContractHash)
-	cc, err := GetChaincode(idag, address)
+	//cc, err := GetChaincode(idag, address)
+	//if err != nil {
+	//	return nil, err
+	//}
+	contract,err := idag.GetContract(address.Bytes())
+	if err != nil {
+		log.Debugf("Invoke, get chain code err:%s", err.Error())
+		return nil, err
+	}
+	contract.Version += ":"+contractcfg.GetConfig().ContractAddress
+	stopResult, err := StopByName(contractid, setChainId, txid, contract, deleteImage, dontRmCon)
 	if err != nil {
 		return nil, err
 	}
-	stopResult, err := StopByName(contractid, setChainId, txid, cc, deleteImage, dontRmCon)
-	if err != nil {
-		return nil, err
-	}
-	if !dontRmCon {
-		err := SaveChaincode(idag, address, nil)
-		if err != nil {
-			return nil, err
-		}
-	}
+	//if !dontRmCon {
+	//	err := SaveChaincode(idag, address, nil)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//}
 	return stopResult, err
 }
 
-func StopByName(contractid []byte, chainID string, txid string, usercc *cclist.CCInfo, deleteImage bool, dontRmCon bool) (*md.ContractStopPayload, error) {
+func StopByName(contractid []byte, chainID string, txid string, usercc *md.Contract, deleteImage bool, dontRmCon bool) (*md.ContractStopPayload, error) {
 	usrcc := &ucc.UserChaincode{
 		Name:     usercc.Name,
-		Path:     usercc.Path,
+		//Path:     usercc.Path,
 		Version:  usercc.Version,
 		Enabled:  true,
-		Language: usercc.Language,
+		//Language: usercc.Language,
 	}
 	err := ucc.StopUserCC(contractid, chainID, usrcc, txid, deleteImage, dontRmCon)
 	if err != nil {
@@ -466,7 +448,7 @@ func RestartContainer(idag dag.IDag, chainID string, addr common.Address, txId s
 }
 
 //  调用的时候，若调用完发现磁盘使用超过系统上限，则kill掉并移除
-func removeConWhenOverDisk(cc *cclist.CCInfo, dag dag.IDag) (sizeRW int64, disk int64, isOver bool) {
+func removeConWhenOverDisk(containerName string, dag dag.IDag) (sizeRW int64, disk int64, isOver bool) {
 	log.Debugf("start KillAndRmWhenOver")
 	defer log.Debugf("end KillAndRmWhenOver")
 	client, err := util.NewDockerClient()
@@ -482,11 +464,10 @@ func removeConWhenOverDisk(cc *cclist.CCInfo, dag dag.IDag) (sizeRW int64, disk 
 	}
 	if len(allCon) > 0 {
 		//  获取name对应的容器
-		name := cc.Name + ":" + cc.Version
-		name = strings.Replace(name, ":", "-", -1)
+		containerName = strings.Replace(containerName, ":", "-", -1)
 		cp := dag.GetChainParameters()
 		for _, c := range allCon {
-			if c.Names[0][1:] == name && c.SizeRw > cp.UccDisk {
+			if c.Names[0][1:] == containerName && c.SizeRw > cp.UccDisk {
 				err := client.RemoveContainer(docker.RemoveContainerOptions{ID: c.ID, Force: true})
 				if err != nil {
 					log.Debugf("client.RemoveContainer %s", err.Error())
