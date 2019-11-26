@@ -318,10 +318,10 @@ func (tx *Transaction) SetMessages(msgs []*Message) {
 		copy(d.TxMessages, msgs)
 		d.CertId = tx.CertId()
 		d.Illegal = tx.Illegal()
-		temp := &Transaction{txdata: d}
+		//temp := &Transaction{txdata: d}
 		tx.txdata = d
-		tx.hash.Store(temp.Hash())
-		tx.size.Store(temp.Size())
+		//tx.hash.Store(temp.Hash())
+		//tx.size.Store(temp.Size())
 	}
 }
 func (tx *Transaction) SetCertId(certid []byte) {
