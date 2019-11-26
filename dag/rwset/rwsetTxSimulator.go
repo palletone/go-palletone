@@ -173,7 +173,7 @@ func (s *RwSetTxSimulator) DeleteState(contractId []byte, ns string, key string)
 func (s *RwSetTxSimulator) GetRwData(ns string) ([]*KVRead, []*KVWrite, error) {
 	rd := make(map[string]*KVRead)
 	wt := make(map[string]*KVWrite)
-	log.Info("GetRwData", "ns info", ns)
+	log.Debug("GetRwData", "ns info", ns)
 
 	if s.rwsetBuilder != nil {
 		if s.rwsetBuilder.pubRwBuilderMap != nil {
@@ -296,7 +296,7 @@ func (s *RwSetTxSimulator) SupplyToken(ns string, assetId, uniqueId []byte, amt 
 func (s *RwSetTxSimulator) String() string {
 	str := "rwSet_txSimulator: "
 	for k, v := range s.rwsetBuilder.pubRwBuilderMap {
-		str += ("key:" + k)
+		str += "key:" + k
 		for rk, rv := range v.readMap {
 			//str += fmt.Sprintf("val__[key:%s],[value:%s]", rk, rv.String())
 			log.Debug("RwSetTxSimulator) String", "key", rk, "val-", rv)
