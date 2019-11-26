@@ -54,7 +54,7 @@ const (
 
 	maxKnownVSSDeal     = 21 * 20
 	maxKnownVSSResponse = 21 * 20
-	maxKnownSigShare    = 21 * 15
+	maxKnownSigShare    = 21 * 2
 )
 
 // PeerInfo represents a short summary of the PalletOne sub-protocol metadata known
