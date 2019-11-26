@@ -252,7 +252,7 @@ func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupSign []byte, txpoo
 		return nil
 	}
 
-	log.Infof("Unit[%s] has group sign, make it stable.", uHash.String())
+	log.Infof("Unit(hash: %v , #%v) has group sign, make it stable.", uHash.String(), unit.NumberU64())
 	chain.setStableUnit(uHash, unit.NumberU64(), txpool)
 
 	//2. Update unit.groupSign

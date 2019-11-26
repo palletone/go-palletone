@@ -217,11 +217,10 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 		unitHash.TerminalString())
 	delete(mp.toTBLSSignBuf[localMed], unitHash)
 
-	deadline := time.Now().Add(mp.dag.UnitIrreversibleTime())
 	event := SigShareEvent{
 		UnitHash: unitHash,
 		SigShare: sigShare,
-		Deadline: uint64(deadline.Unix()),
+		Deadline: mp.getGroupSignMessageDeadline(),
 	}
 
 	go mp.sigShareFeed.Send(event)
