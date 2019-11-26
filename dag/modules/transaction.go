@@ -318,10 +318,10 @@ func (tx *Transaction) SetMessages(msgs []*Message) {
 		copy(d.TxMessages, msgs)
 		d.CertId = tx.CertId()
 		d.Illegal = tx.Illegal()
-		//temp := &Transaction{txdata: d}
+		temp := &Transaction{txdata: d}
 		tx.txdata = d
-		//tx.hash.Store(temp.Hash())
-		//tx.size.Store(temp.Size())
+		tx.hash.Store(temp.Hash())
+		tx.size.Store(temp.Size())
 	}
 }
 func (tx *Transaction) SetCertId(certid []byte) {
@@ -616,9 +616,9 @@ func (tx *Transaction) GetRequestMsgIndex() int {
 }
 
 //这个交易是否包含了从合约付款出去的结果,有则返回该Payment
-func (tx *Transaction) HasContractPayoutMsg() (bool, *PaymentPayload) {
+func (tx *Transaction) HasContractPayoutMsg() (bool, int, *Message) {
 	isInvokeResult := false
-	for _, msg := range tx.TxMessages() {
+	for i, msg := range tx.TxMessages() {
 		if msg.App.IsRequest() {
 			isInvokeResult = true
 			continue
@@ -626,11 +626,11 @@ func (tx *Transaction) HasContractPayoutMsg() (bool, *PaymentPayload) {
 		if isInvokeResult && msg.App == APP_PAYMENT {
 			pay := msg.Payload.(*PaymentPayload)
 			if !pay.IsCoinbase() {
-				return true, pay
+				return true, i, msg
 			}
 		}
 	}
-	return false, nil
+	return false, 0, nil
 }
 
 func (tx *Transaction) InvokeContractId() []byte {

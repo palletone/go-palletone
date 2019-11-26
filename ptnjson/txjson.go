@@ -234,12 +234,13 @@ func ConvertTx2FullJson(tx *modules.Transaction,
 	return txjson
 }
 func ConvertJson2Tx(json *TxJson) *modules.Transaction {
-	tx := &modules.Transaction{}
+	msgs := make([]*modules.Message, 0)
 	for _, payjson := range json.Payment {
 		pay := ConvertJson2Payment(payjson)
-		tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay))
+		msgs = append(msgs, modules.NewMessage(modules.APP_PAYMENT, pay))
 	}
-	return tx
+
+	return modules.NewTransaction(msgs)
 }
 func convertTpl2Json(tpl *modules.ContractTplPayload) *TplJson {
 	tpljson := new(TplJson)

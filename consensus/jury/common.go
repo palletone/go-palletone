@@ -93,7 +93,7 @@ func (p *Processor) processContractPayout(tx *modules.Transaction, ele *modules.
 		return
 	}
 	reqId := tx.RequestHash()
-	if has, payout := tx.HasContractPayoutMsg(); has {
+	if has, index, msg := tx.HasContractPayoutMsg(); has {
 		pubkeys, signs := getSignature(tx)
 		redeem := p.generateJuryRedeemScript(ele)
 
@@ -104,9 +104,10 @@ func (p *Processor) processContractPayout(tx *modules.Transaction, ele *modules.
 			return fmt.Sprintf("[%s]processContractPayout, Move sign payload to contract payout unlock script:%s",
 				shortId(reqId.String()), unlockStr)
 		})
-		for _, input := range payout.Inputs {
+		for _, input := range msg.Payload.(*modules.PaymentPayload).Inputs {
 			input.SignatureScript = unlock
 		}
+		tx.ModifiedMsg(index, msg)
 	}
 	//remove signature payload
 	msgs := []*modules.Message{}

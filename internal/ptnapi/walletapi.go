@@ -1598,8 +1598,8 @@ func (s *PrivateWalletAPI) generateTx(payment *modules.PaymentPayload, address c
 	inputAmtSum, fee uint64, asset *modules.Asset) (*modules.Transaction, error) {
 	out := modules.NewTxOut(inputAmtSum-fee, tokenengine.Instance.GenerateLockScript(address), asset)
 	payment.AddTxOut(out)
-	tx := &modules.Transaction{}
-	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, payment))
+
+	tx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, payment)})
 	//Sign
 	utxoLockScripts := make(map[modules.OutPoint][]byte)
 	lockScript := tokenengine.Instance.GenerateLockScript(address)

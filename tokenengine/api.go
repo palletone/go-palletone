@@ -410,8 +410,7 @@ func (engine *TokenEngine) SignTxAllPaymentInput(tx *modules.Transaction, hashTy
 				copy(checkscript, utxoLockScript)
 				if (hashType&uint32(txscript.SigHashSingle)) != uint32(txscript.SigHashSingle) || j < len(pay.Outputs) {
 					sigScript, err := txscript.SignTxOutput(tx, i, j, checkscript, txscript.SigHashType(hashType),
-						tmpAcc, txscript.ScriptClosure(lookupRedeemScript),
-						input.SignatureScript)
+						tmpAcc, txscript.ScriptClosure(lookupRedeemScript), input.SignatureScript)
 					if err != nil {
 						signErrors = append(signErrors, common.SignatureError{
 							InputIndex: uint32(j),

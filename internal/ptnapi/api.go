@@ -1224,13 +1224,12 @@ func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, f
 	result := []string{}
 	asset := dagconfig.DagConfig.GetGasToken().ToAsset()
 	for i := 0; i < count; i++ {
-		tx := &modules.Transaction{}
 		pay := &modules.PaymentPayload{}
 		outPoint := modules.NewOutPoint(txHash, 0, uint32(i))
 		pay.AddTxIn(modules.NewTxIn(outPoint, []byte{}))
 		lockScript := tokenengine.Instance.GenerateLockScript(toAddr)
 		pay.AddTxOut(modules.NewTxOut(uint64(amount), lockScript, asset))
-		tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay))
+		tx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, pay)})
 		utxoLookup := map[modules.OutPoint][]byte{}
 		utxoLookup[*outPoint] = utxoScript
 		errs, err := tokenengine.Instance.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, utxoLookup, nil, func(addresses common.Address) ([]byte, error) {

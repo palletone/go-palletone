@@ -300,11 +300,10 @@ func TestTransaction_EncodeRLP_Size(t *testing.T) {
 		App:     APP_PAYMENT,
 		Payload: pay1s,
 	}
-	tx := NewTransaction(
-		[]*Message{},
-	)
+	msgs := make([]*Message, 0)
 	for i := 1; i < 1000; i++ {
-		tx.AddMessage(msg)
+		msgs = append(msgs, msg)
+		tx := NewTransaction(msgs)
 		txb, _ := rlp.EncodeToBytes(tx)
 		t.Logf("input count:{%d}, encode tx size:%d\n", i, len(txb))
 	}
