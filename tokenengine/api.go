@@ -423,7 +423,7 @@ func (engine *TokenEngine) SignTxAllPaymentInput(tx *modules.Transaction, hashTy
 					input.SignatureScript = sigScript
 					// modified msg
 					tx.ModifiedMsg(i, msg)
-					checkscript = nil
+					//checkscript = make([]byte, 0)
 				}
 			}
 		}
