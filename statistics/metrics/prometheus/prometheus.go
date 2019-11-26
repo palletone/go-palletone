@@ -16,14 +16,8 @@
 
 package prometheus
 
-//go:generate yarn --cwd ./assets install
-//go:generate yarn --cwd ./assets build
-//go:generate go-bindata -nometadata -o assets.go -prefix assets -nocompress -pkg dashboard assets/index.html assets/bundle.js
-//go:generate sh -c "sed 's#var _bundleJs#//nolint:misspell\\\n&#' assets.go > assets.go.tmp && mv assets.go.tmp assets.go"
-//go:generate sh -c "sed 's#var _indexHtml#//nolint:misspell\\\n&#' assets.go > assets.go.tmp && mv assets.go.tmp assets.go"
-//go:generate gofmt -w -s assets.go
-
 import (
+	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
@@ -37,12 +31,12 @@ var nextID uint32 // Next connection id
 
 // Prometheus contains the dashboard internals.
 type Prometheus struct {
-	url string
+	config Config
 }
 
 // New creates a new dashboard instance with the given configuration.
-func New(url string) (*Prometheus, error) {
-	return &Prometheus{url: url}, nil
+func New(config Config) (*Prometheus, error) {
+	return &Prometheus{config: config}, nil
 }
 
 // Protocols is a meaningless implementation of node.Service.
@@ -59,7 +53,7 @@ func (db *Prometheus) Start(server *p2p.Server, corss *p2p.Server) error {
 	log.Info("Starting dashboard")
 
 	http.Handle("/", promhttp.Handler())
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(fmt.Sprintf("%s:%d", db.config.Host, db.config.Port), nil)
 
 	return nil
 }
