@@ -783,10 +783,15 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
 	if err != nil {
 		log.Errorf("BroadcastUnit rlp encode err:%s", err.Error())
 	}
-
+	log.Trace("BroadcastUnit Propagated block before", "index:", unit.Header().Number.Index,
+		"hash", hash)
 	peers := pm.peers.PeersWithoutUnit(hash)
 	for _, peer := range peers {
-		peer.SendNewRawUnit(unit, data)
+		log.Trace("BroadcastUnit Propagated block", "peer.id", peer.id, "index:", unit.Header().Number.Index,
+			"hash", hash)
+		if err = peer.SendNewRawUnit(unit, data); err != nil {
+			log.Error("BroadcastUnit Propagated block err", "peer.id", peer.id, "err", err)
+		}
 	}
 	log.Trace("BroadcastUnit Propagated block", "index:", unit.Header().Number.Index,
 		"hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
