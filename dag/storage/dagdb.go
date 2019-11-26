@@ -278,7 +278,7 @@ func (dagdb *DagDb) GetUnitTransactions(hash common.Hash) (modules.Transactions,
 
 func (dagdb *DagDb) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 	key := append(constants.HEADER_PREFIX, hash.Bytes()...)
-	log.Debugf("DB[%s](%p) Get Header by unit hash:%s,key:%x",
+	log.Warnf("DB[%s](%p) Get Header by unit hash:%s,key:%x",
 		reflect.TypeOf(dagdb.db).String(), dagdb, hash.String(), key)
 	header := new(modules.Header)
 	err := RetrieveFromRlpBytes(dagdb.db, key, header)
