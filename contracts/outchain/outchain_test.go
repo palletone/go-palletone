@@ -87,6 +87,23 @@ func TestVerifySignature(t *testing.T) {
 		fmt.Println(result)
 	}
 
+	type pubkeyAddr struct {
+		Addr   string
+		Pubkey []byte
+	}
+
+	pubkeyJSON := "[{\"Addr\":\"0x085170BcBd6D9Bb0824592377a43373024A2770F\",\"Pubkey\":\"Ak6WRbraNDCOjfqwZeAd91Joiex5WT0ZGDh7Rlsjl2O0\"},{\"Addr\":\"0x4125cc53BD98242DAD705036BF5AF6EdA96ac0E8\",\"Pubkey\":\"A4E2Gmw3NT8GiiNKcKt2FCCzWp38NpyOWhk6/QgKVATG\"},{\"Addr\":\"0xdd65409A78795a96724800160C539c10640519F6\",\"Pubkey\":\"AzjQhRHkNuHTs3os7DMNdnY72R1yx0yKq6SJp+gCL4ra\"},{\"Addr\":\"0xf7B9D545fD51732FD81eD10426D329c48B20d57A\",\"Pubkey\":\"A2Yk9xTrOgdEjl2aCwHS9XfpJmNLY5JgvyrbZ646XCxI\"}]"
+	pubkeyAddrObj := make([]pubkeyAddr, 0)
+	json.Unmarshal([]byte(pubkeyJSON), &pubkeyAddrObj)
+	for i := range pubkeyAddrObj {
+		fmt.Printf("%x\n", pubkeyAddrObj[i].Pubkey)
+	}
+	for i := range pubkeyAddrObj {
+		eth := GetETHAdaptor()
+		out, _ := eth.GetAddress(&adaptor.GetAddressInput{Key: pubkeyAddrObj[i].Pubkey})
+		addr := out.Address
+		fmt.Println("addr : 	", addr)
+	}
 }
 
 func TestUnmarshal(t *testing.T) {
