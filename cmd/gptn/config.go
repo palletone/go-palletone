@@ -299,7 +299,7 @@ func makeFullNode(ctx *cli.Context, isInConsole bool) *node.Node {
 		// 注册状态服务。 默认情况下是没有启动的。
 		utils.RegisterPtnStatsService(stack, cfg.Ptnstats.URL)
 	}
-
+	utils.RegisterPrometheusService(stack, "abc")
 	return stack
 }
 

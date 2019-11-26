@@ -51,6 +51,7 @@ import (
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 	"github.com/palletone/go-palletone/statistics/metrics"
+	"github.com/palletone/go-palletone/statistics/metrics/prometheus"
 	"github.com/palletone/go-palletone/statistics/ptnstats"
 	"github.com/palletone/go-palletone/txspool"
 	"gopkg.in/urfave/cli.v1"
@@ -1234,6 +1235,12 @@ func RegisterPtnStatsService(stack *node.Node, url string) {
 	if err != nil {
 		Fatalf("Failed to register the PalletOne Stats service: %v", err)
 	}
+}
+
+func RegisterPrometheusService(stack *node.Node, url string) {
+	stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
+		return prometheus.New(url)
+	})
 }
 
 // SetupNetwork configures the system for either the main net or some test network.
