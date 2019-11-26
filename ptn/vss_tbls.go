@@ -34,6 +34,7 @@ func (pm *ProtocolManager) newProducedUnitBroadcastLoop() {
 	for {
 		select {
 		case event := <-pm.newProducedUnitCh:
+			log.Debugf("receive NewProducedUnitEvent")
 			pm.IsExistInCache(event.Unit.UnitHash.Bytes())
 			go pm.BroadcastUnit(event.Unit, true)
 			//self.BroadcastCorsHeader(event.Unit.Header(), self.SubProtocols[0].Name)
@@ -165,7 +166,7 @@ func (pm *ProtocolManager) BroadcastGroupSig(groupSig *mp.GroupSigEvent) {
 
 	peers := pm.peers.PeersWithoutGroupSig(groupSig.Hash())
 	for _, peer := range peers {
-		peer.SendGroupSig(groupSig)
+		go peer.SendGroupSig(groupSig)
 	}
 }
 

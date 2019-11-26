@@ -236,7 +236,7 @@ func (pm *ProtocolManager) BroadcastVSSDeal(deal *mp.VSSDealEvent) {
 
 	peers := pm.peers.PeersWithoutVSSDeal(deal.Hash())
 	for _, peer := range peers {
-		peer.SendVSSDeal(deal)
+		go peer.SendVSSDeal(deal)
 	}
 
 	return
@@ -270,7 +270,7 @@ func (pm *ProtocolManager) BroadcastVSSResponse(deal *mp.VSSResponseEvent) {
 
 	peers := pm.peers.PeersWithoutVSSResponse(deal.Hash())
 	for _, peer := range peers {
-		peer.SendVSSResponse(deal)
+		go peer.SendVSSResponse(deal)
 	}
 
 	return
@@ -304,7 +304,7 @@ func (pm *ProtocolManager) BroadcastSigShare(sigShare *mp.SigShareEvent) {
 
 	peers := pm.peers.PeersWithoutSigShare(sigShare.UnitHash)
 	for _, peer := range peers {
-		peer.SendSigShare(sigShare)
+		go peer.SendSigShare(sigShare)
 	}
 
 	return

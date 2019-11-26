@@ -263,6 +263,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 
 	// 4. 异步向区块链网络广播新unit
 	go mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit: newUnit})
+	log.Debugf("send NewProducedUnitEvent")
 
 	return Produced, detail
 }

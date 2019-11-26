@@ -231,12 +231,9 @@ func (mp *MediatorPlugin) processVSSDeal(localMed common.Address, deal *dkg.Deal
 		return
 	}
 
-	cp := mp.dag.GetGlobalProp().ChainParameters
-	deadline := time.Now().Unix() + int64(cp.MediatorInterval*cp.MaintenanceSkipSlots)
-
 	respEvent := VSSResponseEvent{
 		Resp:     resp,
-		Deadline: uint64(deadline),
+		Deadline: mp.getGroupSignMessageDeadline(),
 	}
 
 	go mp.vssResponseFeed.Send(respEvent)
@@ -249,9 +246,6 @@ func (mp *MediatorPlugin) broadcastVSSDeals() {
 	//log.Debugf("dkgLock.Lock()")
 	//defer log.Debugf("dkgLock.Unlock()")
 	defer mp.dkgLock.Unlock()
-
-	cp := mp.dag.GetGlobalProp().ChainParameters
-	deadline := time.Now().Unix() + int64(cp.MediatorInterval*cp.MaintenanceSkipSlots)
 
 	// 将deal广播给其他节点
 	for localMed, dkg := range mp.activeDKGs {
@@ -266,7 +260,7 @@ func (mp *MediatorPlugin) broadcastVSSDeals() {
 			event := VSSDealEvent{
 				DstIndex: uint32(index),
 				Deal:     deal,
-				Deadline: uint64(deadline),
+				Deadline: mp.getGroupSignMessageDeadline(),
 			}
 			go mp.vssDealFeed.Send(event)
 		}
@@ -385,4 +379,15 @@ func (mp *MediatorPlugin) processVSSResp(localMed common.Address, resp *dkg.Resp
 		log.Debugf("DKG: wrong Process Response: %v", localMed.String())
 		return
 	}
+}
+
+func (mp *MediatorPlugin) getGroupSignMessageDeadline() uint64 {
+	cp := mp.dag.GetGlobalProp().ChainParameters
+	slots := cp.MaintenanceSkipSlots
+	if slots == 0 {
+		slots = 1
+	}
+	deadline := time.Now().Unix() + int64(cp.MediatorInterval*slots)
+
+	return uint64(deadline)
 }

@@ -561,7 +561,7 @@ func (pm *ProtocolManager) processversion(name string) (int, error) {
 	//if strings.ToLower(pre) != strings.ToLower("Gptn") {
 	//	return 0, nil
 	//}
-	if !strings.EqualFold(pre, "Gpth") {
+	if !strings.EqualFold(pre, "Gptn") {
 		return 0, nil
 	}
 	arr := strings.Split(name, "/")
@@ -793,7 +793,8 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
 
 	peers := pm.peers.PeersWithoutUnit(hash)
 	for _, peer := range peers {
-		peer.SendNewRawUnit(unit, data)
+		go peer.SendNewRawUnit(unit, data)
+
 	}
 	log.Trace("BroadcastUnit Propagated block", "index:", unit.Header().Number.Index,
 		"hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
