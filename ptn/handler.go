@@ -554,7 +554,7 @@ func (pm *ProtocolManager) processversion(name string) (int, error) {
 	//if strings.ToLower(pre) != strings.ToLower("Gptn") {
 	//	return 0, nil
 	//}
-	if !strings.EqualFold(pre, "Gpth") {
+	if !strings.EqualFold(pre, "Gptn") {
 		return 0, nil
 	}
 	arr := strings.Split(name, "/")
