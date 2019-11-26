@@ -222,22 +222,22 @@ func createContractErrorPayloadMsg(tx *modules.Transaction, errIn error) *module
 		Message: errIn.Error(),
 	}
 	reqType, _ := getContractTxType(tx)
-	contractReq, _ := getContractTxContractInfo(tx, reqType)
+	_, contractReq, _ := getContractTxContractInfo(tx, reqType)
 	switch reqType {
 	case modules.APP_CONTRACT_TPL_REQUEST:
 		//req := contractReq.(*modules.ContractInstallRequestPayload)
 		payload := modules.NewContractTplPayload(nil, 0, nil, contractErr)
 		return modules.NewMessage(modules.APP_CONTRACT_TPL, payload)
 	case modules.APP_CONTRACT_DEPLOY_REQUEST:
-		req := contractReq.(*modules.ContractDeployRequestPayload)
+		req := contractReq.Payload.(*modules.ContractDeployRequestPayload)
 		payload := modules.NewContractDeployPayload(req.TemplateId, nil, "", req.Args, nil, nil, nil, contractErr)
 		return modules.NewMessage(modules.APP_CONTRACT_DEPLOY, payload)
 	case modules.APP_CONTRACT_INVOKE_REQUEST:
-		req := contractReq.(*modules.ContractInvokeRequestPayload)
+		req := contractReq.Payload.(*modules.ContractInvokeRequestPayload)
 		payload := modules.NewContractInvokePayload(req.ContractId, nil, nil, nil, contractErr)
 		return modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload)
 	case modules.APP_CONTRACT_STOP_REQUEST:
-		req := contractReq.(*modules.ContractStopRequestPayload)
+		req := contractReq.Payload.(*modules.ContractStopRequestPayload)
 		payload := modules.NewContractStopPayload(req.ContractId, nil, nil, contractErr)
 		return modules.NewMessage(modules.APP_CONTRACT_STOP, payload)
 	}
@@ -673,17 +673,17 @@ func getContractTxType(tx *modules.Transaction) (modules.MessageType, error) {
 	return modules.APP_UNKNOW, fmt.Errorf("getContractTxType not contract Tx, txHash[%s]", shortId(tx.Hash().String()))
 }
 
-func getContractTxContractInfo(tx *modules.Transaction, msgType modules.MessageType) (interface{}, error) {
+func getContractTxContractInfo(tx *modules.Transaction, msgType modules.MessageType) (int, *modules.Message, error) {
 	if tx == nil {
-		return nil, errors.New("getContractTxType get param is nil")
+		return 0, nil, errors.New("getContractTxType get param is nil")
 	}
-	for _, msg := range tx.TxMessages() {
+	for i, msg := range tx.TxMessages() {
 		if msg.App == msgType {
-			return msg.Payload, nil
+			return i, msg, nil
 		}
 	}
 	log.Debugf("[%s]getContractTxContractInfo,  not find msgType[%v]", shortId(tx.RequestHash().String()), msgType)
-	return nil, nil
+	return 0, nil, nil
 }
 
 func getElectionSeedData(in common.Hash) []byte {
@@ -870,11 +870,13 @@ func addContractDeployDuringTime(dag iDag, tx *modules.Transaction) error {
 	if err != nil {
 		return fmt.Errorf("addContractDeployDuringTime, err:%s", err)
 	}
-	payload, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_DEPLOY)
+	index, msg, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_DEPLOY)
 	if err != nil {
 		return errors.New("addContractDeployDuringTime, getContractTxContractInfo fail")
 	}
-	payload.(*modules.ContractDeployPayload).DuringTime = duringTime
+	msg.Payload.(*modules.ContractDeployPayload).DuringTime = duringTime
+	tx.ModifiedMsg(index, msg)
+	//
 	return nil
 }
 

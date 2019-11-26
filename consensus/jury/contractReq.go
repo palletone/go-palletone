@@ -111,12 +111,12 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 			return common.Hash{}, nil, err
 		}
 		tx := ctx.rstTx
-		tpl, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_TPL)
+		_, tpl, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_TPL)
 		if err != nil || tpl == nil {
 			errMsg := fmt.Sprintf("[%s]getContractTxContractInfo fail, tpl Name[%s]", shortId(reqId.String()), tplName)
 			return common.Hash{}, nil, errors.New(errMsg)
 		}
-		templateId := tpl.(*modules.ContractTplPayload).TemplateId
+		templateId := tpl.Payload.(*modules.ContractTplPayload).TemplateId
 		log.Infof("[%s]ContractInstallReq ok, reqId[%s] templateId[%x]", shortId(reqId.String()), reqId.String(), templateId)
 		//broadcast
 		go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_COMMIT, Tx: tx}, false)
