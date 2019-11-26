@@ -23,11 +23,8 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"golang.org/x/net/websocket"
 	"net/http"
 )
-
-var nextID uint32 // Next connection id
 
 // Prometheus contains the dashboard internals.
 type Prometheus struct {
@@ -50,7 +47,7 @@ func (db *Prometheus) APIs() []rpc.API { return nil }
 
 // Start implements node.Service, starting the data collection thread and the listening server of the dashboard.
 func (db *Prometheus) Start(server *p2p.Server, corss *p2p.Server) error {
-	log.Info("Starting dashboard")
+	log.Info("Starting Prometheus")
 
 	http.Handle("/", promhttp.Handler())
 	http.ListenAndServe(fmt.Sprintf("%s:%d", db.config.Host, db.config.Port), nil)
@@ -65,24 +62,4 @@ func (db *Prometheus) Stop() error {
 	log.Info("Prometheus stopped")
 
 	return nil
-}
-
-// webHandler handles all non-api requests, simply flattening and returning the dashboard website.
-func (db *Prometheus) webHandler(w http.ResponseWriter, r *http.Request) {
-	log.Debug("Request", "URL", r.URL)
-}
-
-// apiHandler handles requests for the dashboard.
-func (db *Prometheus) apiHandler(conn *websocket.Conn) {
-
-}
-
-// collectData collects the required data to plot on the dashboard.
-func (db *Prometheus) collectData() {
-
-}
-
-// collectLogs collects and sends the logs to the active dashboards.
-func (db *Prometheus) collectLogs() {
-
 }
