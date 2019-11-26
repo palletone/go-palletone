@@ -223,7 +223,7 @@ loop:
 			break loop
 		}
 	}
-
+	//log.Debug("Peer->run", "p.id", p.ID().TerminalString(), "reason", reason.String(), "err", err)
 	close(p.closed)
 	p.rw.close(reason)
 	p.wg.Wait()
