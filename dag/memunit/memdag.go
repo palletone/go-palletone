@@ -252,18 +252,25 @@ func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupSign []byte, txpoo
 		return nil
 	}
 
-	log.Infof("Unit[%s] has group sign, make it stable.", uHash.String())
+	log.Infof("Unit(hash: %v , #%v) has group sign, make it stable.", uHash.String(), unit.NumberU64())
 	chain.setStableUnit(uHash, unit.NumberU64(), txpool)
 
 	//2. Update unit.groupSign
+	log.Debugf("Try to update unit[%s] header group sign", uHash.String())
 	header := unit.Header()
 	//header.GroupPubKey = groupPubKey
 	header.GroupSign = groupSign
-	log.Debugf("Try to update unit[%s] header group sign, and send go groupSign event.", uHash.String())
+	err = chain.ldbunitRep.SaveHeader(header)
+	if err != nil {
+		log.Debugf(err.Error())
+		return err
+	}
+
 	// 进行下一个unit的群签名
+	log.Debugf("send go groupSign event")
 	go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
 
-	return chain.ldbunitRep.SaveHeader(header)
+	return nil
 }
 
 //设置某个单元和高度为稳定单元。设置后会更新当前的稳定单元，并将所有稳定单元写入到StableDB中，并且将ChainUnit中的稳定单元删除。
@@ -274,7 +281,7 @@ func (chain *MemDag) setStableUnit(hash common.Hash, height uint64, txpool txspo
 	stable_height := chain.stableUnitHeight
 	stableCount := int(height - stable_height)
 	if stableCount <= 0 {
-		log.Errorf("Current stable height is %d, impossible set stable height to %d", stable_height, height)
+		log.Debug("Current stable height is %d, impossible set stable height to %d", stable_height, height)
 		return
 	}
 	newStableUnits := make([]*modules.Unit, stableCount)
@@ -668,9 +675,11 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 
 				start := time.Now()
 				if chain.checkStableCondition(unit, txpool) { //增加了单元后检查是否满足稳定单元的条件
-					// 进行下一个unit的群签名
-					log.Debugf("send toGroupSign event")
-					go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
+					// comment by albert 重复操作
+					//// 进行下一个unit的群签名
+					//log.Debugf("send toGroupSign event")
+					//go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
+
 					log.Debugf("unit[%s] checkStableCondition =true", uHash.String())
 					log.DebugDynamic(func() string {
 						return fmt.Sprintf("check stable cost time: %s ,index: %d, hash: %s",
