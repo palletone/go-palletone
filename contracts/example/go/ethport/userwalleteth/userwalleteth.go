@@ -190,31 +190,7 @@ func sendETHToMultiSigAddr(contractAddr, value, gasPrice, gasLimit, prikeyHex st
 		fmt.Println(resultTx)
 	}
 
-	//2.sign tx
-	var input adaptor.SignTransactionInput
-	input.PrivateKey = prikey
-	//input.Transaction = Hex2Bytes("f9024981848203e883200b20946817cfb2c442693d850332c3b755b2342ec4afb280b902248c2e032100000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000aaa919a7c465be9b053673c567d73be8603179630000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000001a000000000000000000000000000000000000000000000000000000000000000407d7116a8706ae08baa7f4909e26728fa7a5f0365aaa919a7c465be9b053673c567d73be8603179636c7110482920e0af149a82189251f292a84148a85b7cd70d00000000000000000000000000000000000000000000000000000000000000417197961c5ae032ed6f33650f1f3a3ba111e8548a3dad14b3afa1cb6bc8f4601a6cb2b21aedcd575784e923942f3130f3290d56522ab2b28afca478e489426a4601000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000041ae94b0e599ef0508ba7bec41db5b46d5a065b30d3d5c4b0a4c85ea2d4899d6607e80e3314ee0741049963d30fb3aceaa5506e13835a41ef54a8f44a04ef0f1e40100000000000000000000000000000000000000000000000000000000000000808080")
-	input.Transaction = resultTx.Transaction
-	resultSign, err := eth.SignTransaction(&input)
-	if err != nil {
-		fmt.Println(err.Error())
-		return err
-	} else {
-		fmt.Println(resultSign)
-	}
-
-	//3.send tx
-	var sendTransactionParams adaptor.SendTransactionInput
-	input.Transaction = resultSign.Extra
-	resultSend, err := eth.SendTransaction(&sendTransactionParams)
-	if err != nil {
-		fmt.Println(err.Error())
-		return err
-	} else {
-		fmt.Println(resultSend)
-	}
-
-	return nil
+	return signAndSend(eth, resultTx.Transaction, prikey)
 }
 
 func getAddrByPrikey(prikey []byte) string {
@@ -263,33 +239,35 @@ func spendEtHFromMultiAddr(contractAddr, gasPrice, gasLimit, ethRecvddr, amount,
 		fmt.Println(resultTx)
 	}
 
+	return signAndSend(eth, resultTx.RawTransaction, prikey)
+}
+
+func signAndSend(eth *ethadaptor.AdaptorETH, rawTransaction, prikey []byte) error {
 	//2.sign tx
 	var input adaptor.SignTransactionInput
 	input.PrivateKey = prikey
 	//input.Transaction = Hex2Bytes("f9024981848203e883200b20946817cfb2c442693d850332c3b755b2342ec4afb280b902248c2e032100000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000aaa919a7c465be9b053673c567d73be8603179630000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000001a000000000000000000000000000000000000000000000000000000000000000407d7116a8706ae08baa7f4909e26728fa7a5f0365aaa919a7c465be9b053673c567d73be8603179636c7110482920e0af149a82189251f292a84148a85b7cd70d00000000000000000000000000000000000000000000000000000000000000417197961c5ae032ed6f33650f1f3a3ba111e8548a3dad14b3afa1cb6bc8f4601a6cb2b21aedcd575784e923942f3130f3290d56522ab2b28afca478e489426a4601000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000041ae94b0e599ef0508ba7bec41db5b46d5a065b30d3d5c4b0a4c85ea2d4899d6607e80e3314ee0741049963d30fb3aceaa5506e13835a41ef54a8f44a04ef0f1e40100000000000000000000000000000000000000000000000000000000000000808080")
-	input.Transaction = resultTx.RawTransaction
+	input.Transaction = rawTransaction
 	resultSign, err := eth.SignTransaction(&input)
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println("SignTransaction failed : ", err.Error())
 		return err
 	} else {
-		fmt.Println(resultSign)
+		fmt.Println("tx: %x", resultSign.Extra)
 	}
 
 	//3.send tx
 	var sendTransactionParams adaptor.SendTransactionInput
-	input.Transaction = resultSign.Extra
+	sendTransactionParams.Transaction = resultSign.Extra
 	resultSend, err := eth.SendTransaction(&sendTransactionParams)
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println("SendTransaction failed : ", err.Error())
 		return err
 	} else {
-		fmt.Println(resultSend)
+		fmt.Printf("%x", resultSend.TxID)
 	}
-
 	return nil
 }
-
 func setJuryAddrs(contractAddr, gasPrice, gasLimit, addr1, addr2, addr3, addr4, prikeyHex string) error {
 	eth := ethadaptor.NewAdaptorETHTestnet()
 
@@ -310,7 +288,7 @@ func setJuryAddrs(contractAddr, gasPrice, gasLimit, addr1, addr2, addr3, addr4, 
 	amt := new(big.Int)
 	amt.SetString("21000000000000000", 10) //10000000000 10gwei*2100000
 	invokeContractParams.Fee = adaptor.NewAmountAsset(amt, "ETH")
-	invokeContractParams.Function = "withdraw"
+	invokeContractParams.Function = "setaddrs"
 	invokeContractParams.Extra = []byte(EthmultisigABI)
 	invokeContractParams.Args = append(invokeContractParams.Args, []byte(addr1))
 	invokeContractParams.Args = append(invokeContractParams.Args, []byte(addr2))
@@ -320,37 +298,13 @@ func setJuryAddrs(contractAddr, gasPrice, gasLimit, addr1, addr2, addr3, addr4, 
 	//1.gen tx
 	resultTx, err := eth.CreateContractInvokeTx(&invokeContractParams)
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println("CreateContractInvokeTx failed : ", err.Error())
 		return err
 	} else {
 		fmt.Println(resultTx)
 	}
 
-	//2.sign tx
-	var input adaptor.SignTransactionInput
-	input.PrivateKey = prikey
-	//input.Transaction = Hex2Bytes("f9024981848203e883200b20946817cfb2c442693d850332c3b755b2342ec4afb280b902248c2e032100000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000aaa919a7c465be9b053673c567d73be8603179630000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000001a000000000000000000000000000000000000000000000000000000000000000407d7116a8706ae08baa7f4909e26728fa7a5f0365aaa919a7c465be9b053673c567d73be8603179636c7110482920e0af149a82189251f292a84148a85b7cd70d00000000000000000000000000000000000000000000000000000000000000417197961c5ae032ed6f33650f1f3a3ba111e8548a3dad14b3afa1cb6bc8f4601a6cb2b21aedcd575784e923942f3130f3290d56522ab2b28afca478e489426a4601000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000041ae94b0e599ef0508ba7bec41db5b46d5a065b30d3d5c4b0a4c85ea2d4899d6607e80e3314ee0741049963d30fb3aceaa5506e13835a41ef54a8f44a04ef0f1e40100000000000000000000000000000000000000000000000000000000000000808080")
-	input.Transaction = resultTx.RawTransaction
-	resultSign, err := eth.SignTransaction(&input)
-	if err != nil {
-		fmt.Println(err.Error())
-		return err
-	} else {
-		fmt.Println(resultSign)
-	}
-
-	//3.send tx
-	var sendTransactionParams adaptor.SendTransactionInput
-	input.Transaction = resultSign.Extra
-	resultSend, err := eth.SendTransaction(&sendTransactionParams)
-	if err != nil {
-		fmt.Println(err.Error())
-		return err
-	} else {
-		fmt.Println(resultSend)
-	}
-
-	return nil
+	return signAndSend(eth, resultTx.RawTransaction, prikey)
 }
 
 func deploy(gasPrice, gasLimit, addr1, addr2, addr3, addr4, privateKey string) error {

@@ -335,7 +335,7 @@ func (p *ETHPort) SetETHContract(ethContractAddr string, stub shim.ChaincodeStub
 		return shim.Error("TokenAsset has been init")
 	}
 
-	err := stub.PutState(symbolsETHContract, []byte(ethContractAddr))
+	err := stub.PutState(symbolsETHContract, []byte(strings.ToLower(ethContractAddr)))
 	if err != nil {
 		return shim.Error("write symbolsETHContract failed: " + err.Error())
 	}
@@ -868,6 +868,8 @@ func calSig(msg []byte, stub shim.ChaincodeStubInterface) ([]byte, error) {
 }
 
 func recoverAddr(msg, pubkey, sig []byte, stub shim.ChaincodeStubInterface) (bool, error) {
+	log.Debugf("recover %x-%x-%x", msg, pubkey, sig)
+
 	ethTX := adaptor.VerifySignatureInput{Message: msg, Signature: sig, PublicKey: pubkey}
 	reqBytes, err := json.Marshal(ethTX)
 	if err != nil {
@@ -896,26 +898,30 @@ func verifySigs(msg []byte, juryMsg []JuryMsgAddr, pubkeyAddrs []pubkeyAddr, stu
 		if err != nil {
 			continue
 		}
+		log.Debugf("verifySigs %x-%x", onePubkeySig.Pubkey, onePubkeySig.Sig)
 		isJuryETHPubkey := false
 		for j := range pubkeyAddrs {
-			if bytes.Equal(pubkeyAddrs[j].Pubkey, onePubkeySig.pubkey) {
+			if bytes.Equal(pubkeyAddrs[j].Pubkey, onePubkeySig.Pubkey) {
 				isJuryETHPubkey = true
 			}
 		}
 		if !isJuryETHPubkey {
 			continue
 		}
-		valid, err := recoverAddr(msg, onePubkeySig.pubkey, onePubkeySig.sig, stub)
+		valid, err := recoverAddr(msg, onePubkeySig.Pubkey, onePubkeySig.Sig, stub)
 		if err != nil {
 			continue
 		}
 		if valid {
-			sigs = append(sigs, fmt.Sprintf("%x", onePubkeySig.sig))
+			sigs = append(sigs, fmt.Sprintf("%x", onePubkeySig.Sig))
 		}
 	}
+	log.Debugf("sigs : %s", sigs)
+
 	//sort
 	a := sort.StringSlice(sigs[0:])
 	sort.Sort(a)
+	log.Debugf("sigs sort : %s", sigs)
 	return sigs
 }
 
@@ -927,8 +933,8 @@ type Withdraw struct {
 }
 
 type pubkeySig struct {
-	pubkey []byte
-	sig    []byte
+	Pubkey []byte
+	Sig    []byte
 }
 
 func processWithdrawSig(reqid, reqidNew, recvAddr string, ethAmount uint64, stub shim.ChaincodeStubInterface) ([]string, error) {
@@ -963,7 +969,7 @@ func processWithdrawSig(reqid, reqidNew, recvAddr string, ethAmount uint64, stub
 	tempHashHex := fmt.Sprintf("%x", tempHash)
 	log.Debugf("tempHashHex:%s", tempHashHex)
 	//用交易哈希协商交易签名，作适当安全防护
-	myPubkeySig := pubkeySig{pubkey: juryPubkey.PublicKey, sig: sig}
+	myPubkeySig := pubkeySig{Pubkey: juryPubkey.PublicKey, Sig: sig}
 	myPubkeySigBytes, _ := json.Marshal(myPubkeySig)
 	recvResult, err := consult(stub, []byte(tempHashHex), myPubkeySigBytes)
 	if err != nil {
@@ -1059,6 +1065,10 @@ func (p *ETHPort) WithdrawETH(reqid string, stub shim.ChaincodeStubInterface) pb
 
 	reqidNew := stub.GetTxID()
 	sigs, err := processWithdrawSig(reqid, reqidNew, prepare.EthAddr, prepare.EthAmount-prepare.EthFee, stub)
+	if nil != err {
+		jsonResp := "processWithdrawSig failed " + err.Error()
+		return shim.Error(jsonResp)
+	}
 
 	//记录签名
 	var withdraw Withdraw

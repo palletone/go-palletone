@@ -16,12 +16,77 @@ func TestGetJuryKeyInfo(t *testing.T) {
 	inputJSON, err := json.Marshal(&input)
 	fmt.Println(string(inputJSON))
 
-	key, err := GetJuryKeyInfo("sample_syscc", "erc20", inputJSON, GetERC20Adaptor())
+	key, err := GetJuryKeyInfo("PCYL82nJX3rKjxMUTHxWA4wswzWyn1EvpYx", "eth", inputJSON, GetETHAdaptor())
 	if err != nil {
 		fmt.Println(err.Error())
 	} else {
 		fmt.Printf("prikey: %x\n", key)
 	}
+}
+func TestGetJuryPubkey(t *testing.T) {
+	outChainCall := &pb.OutChainCall{OutChainName: "eth", Method: "GetJuryPubkey", Params: []byte("")}
+	result, err := ProcessOutChainCall("PCYL82nJX3rKjxMUTHxWA4wswzWyn1EvpYx", outChainCall)
+	if err != nil {
+		fmt.Println("err: ", err)
+		return
+	} else {
+		fmt.Println(result)
+	}
+	output := adaptor.GetPublicKeyOutput{}
+	json.Unmarshal([]byte(result), &output)
+	fmt.Printf("%x\n", output.PublicKey)
+}
+func TestGetJuryAddr(t *testing.T) {
+	outChainCall := &pb.OutChainCall{OutChainName: "eth", Method: "GetJuryAddr", Params: []byte("")}
+	result, err := ProcessOutChainCall("PCYL82nJX3rKjxMUTHxWA4wswzWyn1EvpYx", outChainCall)
+	if err != nil {
+		fmt.Println("err: ", err)
+		return
+	} else {
+		fmt.Println(result)
+	}
+}
+func TestSignMessage(t *testing.T) {
+	msg, _ := hex.DecodeString("c47369fa0759702c6e36bc265eae32dccdd13a0e7d7116a8706ae08baa7f4909e26728fa7a5f03650000000000000000000000000000000000000000000000000000000002fac97091450669af63f6d2a87054ef72c9b24e78e5c48ea2653e3b391559c4b12e798b")
+	input := adaptor.SignMessageInput{Message: msg}
+	reqBytes, err := json.Marshal(input)
+	if err != nil {
+		return
+	}
+
+	outChainCall := &pb.OutChainCall{OutChainName: "eth", Method: "SignMessage", Params: reqBytes}
+	result, err := ProcessOutChainCall("PCYL82nJX3rKjxMUTHxWA4wswzWyn1EvpYx", outChainCall)
+	if err != nil {
+		fmt.Println("err: ", err)
+		return
+	} else {
+		fmt.Println(result)
+	}
+
+	output := adaptor.SignMessageOutput{}
+	json.Unmarshal([]byte(result), &output)
+	fmt.Printf("%x\n", output.Signature)
+}
+
+func TestVerifySignature(t *testing.T) {
+	msg, _ := hex.DecodeString("c47369fa0759702c6e36bc265eae32dccdd13a0e7d7116a8706ae08baa7f4909e26728fa7a5f03650000000000000000000000000000000000000000000000000000000002fac97091450669af63f6d2a87054ef72c9b24e78e5c48ea2653e3b391559c4b12e798b")
+	pubkey, _ := hex.DecodeString("0381361a6c37353f068a234a70ab761420b35a9dfc369c8e5a193afd080a5404c6")
+	sig, _ := hex.DecodeString("c3e56e6968e507447da66da70394bab74780bb67e97a08f4097d5d952375d05101d144c8d06677750d63965cb2a9a14cb04937ef6b3d47558208d5bf192c926400")
+	input := adaptor.VerifySignatureInput{Message: msg, Signature: sig, PublicKey: pubkey}
+	reqBytes, err := json.Marshal(input)
+	if err != nil {
+		return
+	}
+
+	outChainCall := &pb.OutChainCall{OutChainName: "eth", Method: "VerifySignature", Params: reqBytes}
+	result, err := ProcessOutChainCall("PCYL82nJX3rKjxMUTHxWA4wswzWyn1EvpYx", outChainCall)
+	if err != nil {
+		fmt.Println("err: ", err)
+		return
+	} else {
+		fmt.Println(result)
+	}
+
 }
 
 func TestUnmarshal(t *testing.T) {
