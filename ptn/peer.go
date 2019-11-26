@@ -55,6 +55,7 @@ const (
 	maxKnownVSSDeal     = 21 * 20
 	maxKnownVSSResponse = 21 * 20
 	maxKnownSigShare    = 21 * 2
+	maxKnownGroupSign   = 21 * 15
 )
 
 // PeerInfo represents a short summary of the PalletOne sub-protocol metadata known
@@ -204,7 +205,7 @@ func (p *peer) MarkUnit(hash common.Hash) {
 }
 
 func (p *peer) MarkGroupSig(hash common.Hash) {
-	for p.knownGroupSig.Cardinality() >= maxKnownBlocks {
+	for p.knownGroupSig.Cardinality() >= maxKnownGroupSign {
 		p.knownGroupSig.Pop()
 	}
 	p.knownGroupSig.Add(hash)
