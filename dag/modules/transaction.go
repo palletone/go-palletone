@@ -762,13 +762,14 @@ func (tx *Transaction) DataPayloadSize() int {
 }
 
 //Deep copy transaction to a new object
-func (tx *Transaction) Clone() Transaction {
+func (tx *Transaction) Clone() *Transaction {
 	hash := tx.Hash()
-	newTx := &Transaction{}
+	newTx := new(Transaction)
+
 	data, _ := rlp.EncodeToBytes(tx)
 	rlp.DecodeBytes(data, newTx)
-	log.Infof("clone transaction[%s], tx_hash[%s]", newTx.Hash().String(), hash.String())
-	return *newTx
+	log.Warnf("clone transaction[%s], tx_hash[%s]", newTx.Hash().String(), hash.String())
+	return newTx
 }
 
 // SerializeNoWitness encodes the transaction to w in an identical manner to

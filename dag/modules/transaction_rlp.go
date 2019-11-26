@@ -29,8 +29,8 @@ import (
 
 type transactionTemp struct {
 	TxMessages []messageTemp
-	CertId     []byte `json:"cert_id"` // should be big.Int byte
-	Illegal    bool   `json:"Illegal"` // not hash, 1:no valid, 0:ok
+	CertId     []byte // should be big.Int byte
+	Illegal    bool   // not hash, 1:no valid, 0:ok
 }
 type messageTemp struct {
 	App  MessageType
@@ -57,7 +57,7 @@ func (tx *Transaction) EncodeRLP(w io.Writer) error {
 	return rlp.Encode(w, temp)
 }
 func tx2Temp(tx *Transaction) (*transactionTemp, error) {
-	temp := &transactionTemp{}
+	temp := transactionTemp{}
 	temp.Illegal = tx.Illegal()
 	temp.CertId = tx.CertId()
 
@@ -74,7 +74,7 @@ func tx2Temp(tx *Transaction) (*transactionTemp, error) {
 		temp.TxMessages = append(temp.TxMessages, m1)
 
 	}
-	return temp, nil
+	return &temp, nil
 }
 func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 	d := transaction_sdw{}
@@ -82,12 +82,12 @@ func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 		m1 := new(Message)
 		m1.App = m.App
 		if m.App == APP_PAYMENT {
-			var pay PaymentPayload
-			err := rlp.DecodeBytes(m.Data, &pay)
+			pay := new(PaymentPayload)
+			err := rlp.DecodeBytes(m.Data, pay)
 			if err != nil {
 				return err
 			}
-			m1.Payload = &pay
+			m1.Payload = pay
 		} else if m.App == APP_DATA {
 			var text DataPayload
 			err := rlp.DecodeBytes(m.Data, &text)
@@ -193,8 +193,11 @@ func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 	}
 	d.Illegal = temp.Illegal
 	d.CertId = temp.CertId
-	//tx = &Transaction{txdata: d}
+	//tempTx := &Transaction{txdata: d}
+	// init tx
 	tx.txdata = d
+	//tx.hash.Store(tempTx.Hash())
+	//tx.size.Store(tempTx.Size())
 	return nil
 
 }

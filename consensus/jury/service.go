@@ -258,7 +258,7 @@ func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode)
 	reqTx := ctx.reqTx.Clone()
 	p.locker.Unlock()
 
-	msgs, err := runContractCmd(rwset.RwM, p.dag, p.contract, &reqTx, ele, p.errMsgEnable) //contract exec long time...
+	msgs, err := runContractCmd(rwset.RwM, p.dag, p.contract, reqTx, ele, p.errMsgEnable) //contract exec long time...
 	if err != nil {
 		log.Errorf("[%s]runContractReq, runContractCmd reqTx, err：%s", shortId(reqId.String()), err.Error())
 		return err
@@ -266,7 +266,7 @@ func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode)
 	p.locker.Lock()
 	defer p.locker.Unlock()
 
-	tx, err := gen.GenContractTransction(&reqTx, msgs)
+	tx, err := gen.GenContractTransction(reqTx, msgs)
 	if err != nil {
 		log.Error("[%s]runContractReq, GenContractSigTransactions error:%s", shortId(reqId.String()), err.Error())
 		return err
@@ -278,7 +278,7 @@ func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode)
 			log.Error("[%s]runContractReq, genContractErrorMsg error:%s", shortId(reqId.String()), err.Error())
 			return err
 		}
-		tx, err = gen.GenContractTransction(&reqTx, msgs)
+		tx, err = gen.GenContractTransction(reqTx, msgs)
 		if err != nil {
 			log.Error("[%s]runContractReq,fee is not enough, GenContractTransction error:%s", shortId(reqId.String()), err.Error())
 			return err

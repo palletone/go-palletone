@@ -85,6 +85,7 @@ func TestTxClone(t *testing.T) {
 
 	t.Logf("%#v", tx2)
 	t.Logf("msg count:%d", len(tx2.TxMessages()))
+	assert.Equal(t, tx.Hash().String(), tx2.Hash().String())
 }
 
 //func TestTxHash(t *testing.T) {

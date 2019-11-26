@@ -342,7 +342,7 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 			continue
 		}
 		for inputindex := range payload.Inputs {
-			hashforsign, err := tokenengine.Instance.CalcSignatureHash(&mtxtmp, tokenengine.SigHashAll, msgindex,
+			hashforsign, err := tokenengine.Instance.CalcSignatureHash(mtxtmp, tokenengine.SigHashAll, msgindex,
 				inputindex, ppscript)
 			if err != nil {
 				return "", err
@@ -350,7 +350,7 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 			msg := mtx.TxMessages()[msgindex]
 			payloadtmp := msg.Payload.(*modules.PaymentPayload)
 			payloadtmp.Inputs[inputindex].SignatureScript = hashforsign
-			mtx.ModifiedMsg(inputindex, msg)
+			mtx.ModifiedMsg(msgindex, msg)
 		}
 	}
 
