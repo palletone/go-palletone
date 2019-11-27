@@ -355,7 +355,7 @@ func initialMediatorCandidates(mediators []*mp.MediatorConf, nodeInfo string,
 		m := mediators[i]
 		im := core.NewInitialMediator()
 		im.AddStr = m.Address
-		im.RewardAdd = m.Address
+		//im.RewardAdd = m.Address
 		im.InitPubKey = m.InitPubKey
 		im.Node = nodeInfo
 		im.JurorDepositExtraJson = jdes[i]
