@@ -43,23 +43,23 @@ var (
 	//receiptTimeoutMeter = metrics.NewRegisteredMeter("ptn/downloader/receipts/timeout", nil)
 )
 var (
-	//headerInPrometheus = prometheus.NewCounter(prometheus.CounterOpts{
-	//	Name: "ptn/downloader/headers/in",
-	//	Help: "Ptn downloader headers in",
-	//})
-	//headerDropPrometheus = prometheus.NewCounter(prometheus.CounterOpts{
-	//	Name: "ptn/downloader/headers/drop",
-	//	Help: "Ptn downloader headers drop",
-	//})
-	//
-	//bodyInPrometheus = prometheus.NewCounter(prometheus.CounterOpts{
-	//	Name: "ptn/downloader/bodies/in",
-	//	Help: "Ptn downloader bodies in",
-	//})
-	//bodyDropPrometheus = prometheus.NewCounter(prometheus.CounterOpts{
-	//	Name: "ptn/downloader/bodies/drop",
-	//	Help: "Ptn downloader bodies drop",
-	//})
+	headerInPrometheus = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "prometheus:downloader:headers:in",
+		Help: "headers in",
+	})
+	headerDropPrometheus = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "prometheus:downloader:headers:drop",
+		Help: "headers drop",
+	})
+
+	bodyInPrometheus = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "prometheus:downloader:bodies:in",
+		Help: "bodies in",
+	})
+	bodyDropPrometheus = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "prometheus:downloader:bodies:drop",
+		Help: "bodies drop",
+	})
 
 	hdFailures = prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "hd_errors_total",
@@ -68,10 +68,10 @@ var (
 )
 
 func init() {
-	//prometheus.MustRegister(headerInPrometheus)
-	//prometheus.MustRegister(headerDropPrometheus)
-	//prometheus.MustRegister(bodyInPrometheus)
-	//prometheus.MustRegister(bodyDropPrometheus)
+	prometheus.MustRegister(headerInPrometheus)
+	prometheus.MustRegister(headerDropPrometheus)
+	prometheus.MustRegister(bodyInPrometheus)
+	prometheus.MustRegister(bodyDropPrometheus)
 
 	prometheus.MustRegister(hdFailures)
 }
