@@ -93,13 +93,13 @@ func GetSysCCList() (ccInf []cclist.CCInfo, ccCount int, errs error) {
 //install but not into db
 func Install(dag dag.IDag, chainID, ccName, ccPath, ccVersion, ccLanguage string) (payload *md.ContractTplPayload, err error) {
 	log.Info("Install enter", "chainID", chainID, "name", ccName, "path", ccPath, "version", ccVersion, "cclanguage", ccLanguage)
-	defer log.Info("Install exit", "chainID", chainID, "name", ccName, "path", ccPath, "version", ccVersion,  "cclanguage", ccLanguage)
+	defer log.Info("Install exit", "chainID", chainID, "name", ccName, "path", ccPath, "version", ccVersion, "cclanguage", ccLanguage)
 
 	//  用于合约实列
 	usrcc := &ucc.UserChaincode{
-		Name:    ccName,
-		Path:    ccPath,
-		Version: ccVersion,
+		Name:     ccName,
+		Path:     ccPath,
+		Version:  ccVersion,
 		Language: ccLanguage,
 		Enabled:  true,
 	}
@@ -132,7 +132,7 @@ func Install(dag dag.IDag, chainID, ccName, ccPath, ccVersion, ccLanguage string
 	return payloadUnit, nil
 }
 
-func Deploy(jA string, rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
+func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
 	log.Info("Deploy enter", "chainID", chainID, "templateId", templateId, "txId", txId)
 	defer log.Info("Deploy exit", "chainID", chainID, "templateId", templateId, "txId", txId)
 	setTimeOut := time.Duration(30) * time.Second
@@ -141,7 +141,7 @@ func Deploy(jA string, rwM rwset.TxManager, idag dag.IDag, chainID string, templ
 	}
 
 	// 通过模板id获取源码
-	templateCC, chaincodeData, err := ucc.RecoverChainCodeFromDb(idag,templateId)
+	templateCC, chaincodeData, err := ucc.RecoverChainCodeFromDb(idag, templateId)
 	if err != nil {
 		log.Error("Deploy", "chainid:", chainID, "templateId:", templateId, "RecoverChainCodeFromDb err", err)
 		return nil, nil, err
@@ -167,7 +167,7 @@ func Deploy(jA string, rwM rwset.TxManager, idag dag.IDag, chainID string, templ
 		ChaincodeId: &pb.ChaincodeID{
 			Name:    usrccName,
 			Path:    templateCC.Path,
-			Version: templateCC.Version+":"+contractcfg.GetConfig().ContractAddress,
+			Version: templateCC.Version + ":" + contractcfg.GetConfig().ContractAddress,
 		},
 	}
 	//TODO 这里获取运行用户合约容器的相关资源  CpuQuota  CpuShare  MEMORY
@@ -186,21 +186,21 @@ func Deploy(jA string, rwM rwset.TxManager, idag dag.IDag, chainID string, templ
 		log.Errorf("chainID[%s] converRwTxResult2DagUnit failed", chainID)
 		return nil, nil, errors.WithMessage(err, "Conver RwSet to dag unit fail")
 	}
-unit.Version = templateCC.Version
+	unit.Version = templateCC.Version
 	return depId.Bytes(), unit, err
 }
 
-func GetChaincode(dag dag.IDag, contractId common.Address) (*cclist.CCInfo, error) {
-	return dag.GetChaincode(contractId)
-}
-
-func SaveChaincode(dag dag.IDag, contractId common.Address, chaincode *cclist.CCInfo) error {
-	return dag.SaveChaincode(contractId, chaincode)
-}
-
-func GetChaincodes(dag dag.IDag) ([]*cclist.CCInfo, error) {
-	return dag.RetrieveChaincodes()
-}
+//func GetChaincode(dag dag.IDag, contractId common.Address) (*cclist.CCInfo, error) {
+//	return dag.GetChaincode(contractId)
+//}
+//
+//func SaveChaincode(dag dag.IDag, contractId common.Address, chaincode *cclist.CCInfo) error {
+//	return dag.SaveChaincode(contractId, chaincode)
+//}
+//
+//func GetChaincodes(dag dag.IDag) ([]*cclist.CCInfo, error) {
+//	return dag.RetrieveChaincodes()
+//}
 
 //timeout:ms
 // ccName can be contract Id
@@ -214,9 +214,7 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 	creator := []byte("palletone")
 	address := common.NewAddress(deployId, common.ContractHash)
 
-	//var cc *cclist.CCInfo
-	//var err error
-var contractName string
+	var contractName string
 	var contractVersion string
 	if address.IsSystemContractAddress() {
 		ver := getContractSysVersion(deployId, idag.GetChainParameters().ContractSystemVersion)
@@ -227,25 +225,20 @@ var contractName string
 		contractName = cc.Name
 		contractVersion = cc.Version
 	} else {
-		//cc, err = GetChaincode(idag, address)
-		//if err != nil {
-		//	log.Debugf("Invoke, get chain code err:%s", err.Error())
-		//	return nil, err
-		//}
-		contract,err := idag.GetContract(address.Bytes())
+		contract, err := idag.GetContract(address.Bytes())
 		if err != nil {
 			log.Debugf("Invoke, get chain code err:%s", err.Error())
 			return nil, err
 		}
 		contractName = contract.Name
-		contractVersion = contract.Version+":"+contractcfg.GetConfig().ContractAddress
+		contractVersion = contract.Version + ":" + contractcfg.GetConfig().ContractAddress
 	}
 	startTm := time.Now()
 	es := NewEndorserServer(mksupt)
 	spec := &pb.ChaincodeSpec{
 		ChaincodeId: &pb.ChaincodeID{Name: contractName, Version: contractVersion},
 		//Type:        pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value[cc.Language]),
-		Input:       &pb.ChaincodeInput{Args: args},
+		Input: &pb.ChaincodeInput{Args: args},
 	}
 	cid := &pb.ChaincodeID{
 		//Path:    cc.Path,
@@ -290,35 +283,25 @@ func Stop(rwM rwset.TxManager, idag dag.IDag, contractid []byte, chainID string,
 		return nil, errors.New("input param txid is nil")
 	}
 	address := common.NewAddress(contractid, common.ContractHash)
-	//cc, err := GetChaincode(idag, address)
-	//if err != nil {
-	//	return nil, err
-	//}
-	contract,err := idag.GetContract(address.Bytes())
+	contract, err := idag.GetContract(address.Bytes())
 	if err != nil {
 		log.Debugf("Invoke, get chain code err:%s", err.Error())
 		return nil, err
 	}
-	contract.Version += ":"+contractcfg.GetConfig().ContractAddress
+	contract.Version += ":" + contractcfg.GetConfig().ContractAddress
 	stopResult, err := StopByName(contractid, setChainId, txid, contract, deleteImage, dontRmCon)
 	if err != nil {
 		return nil, err
 	}
-	//if !dontRmCon {
-	//	err := SaveChaincode(idag, address, nil)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//}
 	return stopResult, err
 }
 
 func StopByName(contractid []byte, chainID string, txid string, usercc *md.Contract, deleteImage bool, dontRmCon bool) (*md.ContractStopPayload, error) {
 	usrcc := &ucc.UserChaincode{
-		Name:     usercc.Name,
+		Name: usercc.Name,
 		//Path:     usercc.Path,
-		Version:  usercc.Version,
-		Enabled:  true,
+		Version: usercc.Version,
+		Enabled: true,
 		//Language: usercc.Language,
 	}
 	err := ucc.StopUserCC(contractid, chainID, usrcc, txid, deleteImage, dontRmCon)
@@ -332,73 +315,6 @@ func StopByName(contractid []byte, chainID string, txid string, usercc *md.Contr
 	return stopResult, nil
 }
 
-
-
-//func RestartContainers(dag dag.IDag, cons []docker.APIContainers, jury core.IAdapterJury) {
-//	//  获取所有退出容器
-//	addrs, err := utils.GetAllContainerAddr(cons, "Exited")
-//	if err != nil {
-//		log.Debugf("client.GetAllExitedContainer err: %s", err.Error())
-//		return
-//	}
-//	for _, v := range addrs {
-//		//  判断是否是担任jury地址
-//		juryAddrs := jury.GetLocalJuryAddrs()
-//		juryAddr := ""
-//		if len(juryAddrs) != 0 {
-//			juryAddr = juryAddrs[0].String()
-//		}
-//		cc, err := GetChaincode(dag, v)
-//		if err != nil {
-//			log.Debug(err.Error())
-//			continue
-//		}
-//		if juryAddr != cc.Address {
-//			log.Debugf("the local jury address %s was not equal address %s in the dag", juryAddr, cc.Address)
-//			continue
-//		}
-//		rd, _ := crypto.GetRandomBytes(32)
-//		txid := util.RlpHash(rd)
-//		log.Debugf("==============需要重启====容器地址为--->%s", hex.EncodeToString(v.Bytes21()))
-//		_, err = RestartContainer(dag, "palletone", v, txid.String())
-//		if err != nil {
-//			log.Debugf("RestartContainer err: %s", err.Error())
-//			return
-//		}
-//	}
-//}
-
-//删除所有过期容器
-//func RemoveExpiredContainers(client *docker.Client, dag dag.IDag, rmExpConFromSysParam bool, con []docker.APIContainers) {
-//	//  让用户合约容器一直在线，true and 0
-//	p := dag.GetChainParameters()
-//	if p.RmExpConFromSysParam && p.UccDuringTime == 0 {
-//		log.Debug("keeping user contract containers online")
-//		return
-//	}
-//	//获取容器id，以及对应用户合约的地址，更新状态
-//	idStrMap := utils.RetrieveExpiredContainers(dag, con, rmExpConFromSysParam)
-//	if len(idStrMap) > 0 {
-//		for id, str := range idStrMap {
-//			err := client.RemoveContainer(docker.RemoveContainerOptions{ID: id, Force: true})
-//			if err != nil {
-//				log.Debugf("client.RemoveContainer id=%s error=%s", id, err.Error())
-//				continue
-//			}
-//			cc, err := GetChaincode(dag, str)
-//			if err != nil {
-//				log.Debugf("get chaincode error %s", err.Error())
-//				continue
-//			}
-//			cc.IsExpired = true
-//			err = SaveChaincode(dag, str, cc)
-//			if err != nil {
-//				log.Debugf("save chaincode error %s", err.Error())
-//			}
-//		}
-//	}
-//}
-
 func RestartContainer(idag dag.IDag, chainID string, addr common.Address, txId string) ([]byte, error) {
 	log.Info("enter RestartContainer", "chainID", chainID, "contract addr", addr.String(), "txId", txId)
 	defer log.Info("exit RestartContainer", "txId", txId)
@@ -407,36 +323,34 @@ func RestartContainer(idag dag.IDag, chainID string, addr common.Address, txId s
 	//if chainID != "" {
 	//	setChainId = chainID
 	//}
-	//test
-	cc, err := GetChaincode(idag, addr)
+	contract, err := idag.GetContract(addr.Bytes())
 	if err != nil {
+		log.Debugf("Invoke, get chain code err:%s", err.Error())
 		return nil, err
 	}
-	usrcc := &ucc.UserChaincode{
-		Name:    cc.Name,
-		Path:    cc.Path,
-		Version: cc.Version,
-		//InitArgs: [][]byte{},
-		Enabled: true,
+	temptpl, err := idag.GetContractTpl(contract.TemplateId)
+	if err != nil {
+		log.Debugf("get contract template with id = %s, error: %s", contract.TemplateId, err.Error())
+		return nil, err
 	}
 	spec := &pb.ChaincodeSpec{
-		Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value[cc.Language]),
+		Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value[temptpl.Language]),
 		Input: &pb.ChaincodeInput{
 			Args: [][]byte{},
 		},
 		ChaincodeId: &pb.ChaincodeID{
-			Name:    usrcc.Name,
-			Path:    usrcc.Path,
-			Version: usrcc.Version,
+			Name:    contract.Name,
+			Path:    temptpl.Path,
+			Version: contract.Version + ":" + contractcfg.GetConfig().ContractAddress,
 		},
 	}
 	cp := idag.GetChainParameters()
 	spec.CpuQuota = cp.UccCpuQuota  //微妙单位（100ms=100000us=上限为1个CPU）
 	spec.CpuShare = cp.UccCpuShares //占用率，默认1024，即可占用一个CPU，相对值
 	spec.Memory = cp.UccMemory      //字节单位 物理内存  1073741824  1G 2147483648 2G 209715200 200m 104857600 100m
-	_, chaincodeData, err := ucc.RecoverChainCodeFromDb(idag, cc.TempleId)
+	_, chaincodeData, err := ucc.RecoverChainCodeFromDb(idag, contract.TemplateId)
 	if err != nil {
-		log.Error("RestartContainer", "chainid:", chainID, "templateId:", cc.TempleId, "RecoverChainCodeFromDb err", err)
+		log.Error("RestartContainer", "chainid:", chainID, "templateId:", contract.TemplateId, "RecoverChainCodeFromDb err", err)
 		return nil, err
 	}
 	err = ucc.DeployUserCC(addr.Bytes(), chaincodeData, spec, chainID, txId, nil, setTimeOut)
@@ -444,7 +358,7 @@ func RestartContainer(idag dag.IDag, chainID string, addr common.Address, txId s
 		log.Error("RestartContainer err:", "error", err)
 		return nil, errors.WithMessage(err, "RestartContainer fail")
 	}
-	return cc.Id, err
+	return contract.ContractId, err
 }
 
 //  调用的时候，若调用完发现磁盘使用超过系统上限，则kill掉并移除

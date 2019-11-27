@@ -18,43 +18,44 @@ import (
 	"strings"
 	"time"
 )
+
 type PalletOneDocker struct {
 	DockerClient *docker.Client
 	dag          dag.IDag
 	jury         core2.IAdapterJury
 }
 
-func NewPalletOneDocker(dag dag.IDag,jury core2.IAdapterJury) *PalletOneDocker {
+func NewPalletOneDocker(dag dag.IDag, jury core2.IAdapterJury) *PalletOneDocker {
 	log.Debug("start NewPalletOneDocker")
 	defer log.Debug("end NewPalletOneDocker")
-	dockerClient,err := util.NewDockerClient()
+	dockerClient, err := util.NewDockerClient()
 	if err != nil {
-		log.Debugf("NewDockerClient error %s",err.Error())
+		log.Debugf("NewDockerClient error %s", err.Error())
 		return &PalletOneDocker{DockerClient: nil}
 	}
-	return &PalletOneDocker{DockerClient: dockerClient,dag:dag,jury:jury}
+	return &PalletOneDocker{DockerClient: dockerClient, dag: dag, jury: jury}
 }
 
-func (pD *PalletOneDocker) CreateDefaultUserContractNetWork(){
+func (pD *PalletOneDocker) CreateDefaultUserContractNetWork() {
 	log.Debug("start CreateDefaultUserContractNetWork")
 	defer log.Debug("end CreateDefaultUserContractNetWork")
-	network,err := pD.DockerClient.NetworkInfo(core.DefaultUccNetworkMode)
+	network, err := pD.DockerClient.NetworkInfo(core.DefaultUccNetworkMode)
 	if err != nil {
 		//  不存在，需要创建
-		log.Debugf("networkInfo error: %s",err.Error())
-		network,err = pD.DockerClient.CreateNetwork(docker.CreateNetworkOptions{Name: core.DefaultUccNetworkMode,Driver:"bridge"})
+		log.Debugf("networkInfo error: %s", err.Error())
+		network, err = pD.DockerClient.CreateNetwork(docker.CreateNetworkOptions{Name: core.DefaultUccNetworkMode, Driver: "bridge"})
 		if err != nil {
 			//  打印一些错误信息
-			log.Debugf("createNetwork error: %s",err.Error())
+			log.Debugf("createNetwork error: %s", err.Error())
 			return
 		}
-		log.Debugf("network name = %s is created",network.Name)
+		log.Debugf("network name = %s is created", network.Name)
 		return
 	}
-	log.Debugf("network name = %s had already existed",network.Name)
+	log.Debugf("network name = %s had already existed", network.Name)
 }
 
-func(pD *PalletOneDocker) PullUserContractImages(n chan struct{}) {
+func (pD *PalletOneDocker) PullUserContractImages(n chan struct{}) {
 	defer close(n)
 	log.Debug("start PullUserContractImages")
 	defer log.Debug("end PullUserContractImages")
@@ -67,63 +68,84 @@ func(pD *PalletOneDocker) PullUserContractImages(n chan struct{}) {
 			log.Debugf("Failed to pull %s, error: %s", goimgNameTag, err)
 			return
 		}
-		log.Debugf("go image name = %s is pulled",goimgNameTag)
+		log.Debugf("go image name = %s is pulled", goimgNameTag)
 		return
 	}
-	log.Debugf("go image name = %s had already existed",goimgNameTag)
+	log.Debugf("go image name = %s had already existed", goimgNameTag)
 }
 
-func (pD *PalletOneDocker) RestartUserContractsWhenStartGptn(n1 chan struct{},n2 chan struct{}) {
+func (pD *PalletOneDocker) RestartUserContractsWhenStartGptn(n1 chan struct{}, n2 chan struct{}) {
 	log.Debug("waiting pull image")
 	<-n1
 	log.Debug("start RestartUserContractsWhenStartGptn")
 	defer log.Debug("end RestartUserContractsWhenStartGptn")
 	defer close(n2)
 	//  获取本地用户合约列表
-	userContractsInfo, err := pD.dag.RetrieveChaincodes()
+	//userContractsInfo, err := pD.dag.RetrieveChaincodes()
+	//if err != nil {
+	//	log.Debugf("RetrieveChaincodes error: %s", err.Error())
+	//	return
+	//}
+	contracts, err := pD.dag.GetAllContracts()
 	if err != nil {
-		log.Debugf("RetrieveChaincodes error: %s", err.Error())
+		log.Debugf("get all contracts error: %s", err.Error())
 		return
 	}
 	//  启动退出的容器，包括本地有的和本地没有的
-	if len(userContractsInfo) != 0 {
-		log.Debugf("userContractsInfo length = %d", len(userContractsInfo))
-		for _, c := range userContractsInfo {
+	if len(contracts) != 0 {
+		log.Debugf("contracts length = %d", len(contracts))
+		for _, c := range contracts {
+			log.Debugf("contract id = %v", c.ContractId)
 			//  判断是否是担任jury地址
 			juryAddrs := pD.jury.GetLocalJuryAddrs()
 			juryAddr := ""
 			if len(juryAddrs) != 0 {
 				juryAddr = juryAddrs[0].String()
 			}
-			if juryAddr != c.Address {
-				log.Debugf("the local jury address = [%s] was not equal address = [%s] in the dag", juryAddr, c.Address)
+			isMe := false
+			for _, a := range c.JuryPubkeys {
+				if juryAddr == crypto.PubkeyBytesToAddress([]byte(a)).String() {
+					isMe = true
+					break
+				}
+			}
+			if !isMe {
+				log.Debugf("continue")
 				continue
 			}
+			log.Debug(c.Name)
 			rd, _ := crypto.GetRandomBytes(32)
 			txid := util2.RlpHash(rd)
 			//  启动 gptn 时启动Jury对应的没有过期的用户合约容器
-			if !c.IsExpired {
-				log.Debugf("restart container %s with jury address %s", c.Name, c.Address)
-				address := common.NewAddress(c.Id, common.ContractHash)
+			expiredTime := time.Unix(int64(c.DuringTime), 0).UTC()
+			nowTime := time.Now().UTC()
+			log.Debugf("expiredTime = %s", expiredTime)
+			log.Debugf("nowTime = %s", nowTime)
+			isExpired := time.Now().UTC().After(expiredTime)
+			if !isExpired {
+				log.Debugf("restart container %s with jury address %s", c.Name, juryAddr)
+				address := common.NewAddress(c.ContractId, common.ContractHash)
 				_, _ = manger.RestartContainer(pD.dag, "palletone", address, txid.String())
+			} else {
+				log.Debugf("contract name = %s was expired", c.Name)
 			}
 		}
 		return
 	}
-	log.Debugf("userContractsInfo length =%d", len(userContractsInfo))
+	//log.Debugf("userContractsInfo length =%d", len(contracts))
 }
 
-func (pD *PalletOneDocker)GetAllContainers()([]docker.APIContainers, error) {
+func (pD *PalletOneDocker) GetAllContainers() ([]docker.APIContainers, error) {
 	log.Debug("start GetAllContainers")
 	defer log.Debug("end GetAllContainers")
-	return pD.DockerClient.ListContainers(docker.ListContainersOptions{All:true,Size:true})
+	return pD.DockerClient.ListContainers(docker.ListContainersOptions{All: true, Size: true})
 }
 
 func (pD *PalletOneDocker) RestartExitedAndUnExpiredContainers(cons []docker.APIContainers) {
 	log.Debug("start RestartExitedAndUnExpiredContainers")
 	defer log.Debug("end RestartExitedAndUnExpiredContainers")
 	//  获取所有退出容器
-	addrs,err := pD.GetAllContainersAddrsWithStatus(cons,"Exited")
+	addrs, err := pD.GetAllContainersAddrsWithStatus(cons, "Exited")
 	if err != nil {
 		log.Debugf("client.GetAllExitedContainer err: %s", err.Error())
 		return
@@ -135,13 +157,25 @@ func (pD *PalletOneDocker) RestartExitedAndUnExpiredContainers(cons []docker.API
 		if len(juryAddrs) != 0 {
 			juryAddr = juryAddrs[0].String()
 		}
-		cc, err := pD.dag.GetChaincode(v)
+		//cc, err := pD.dag.GetChaincode(v)
+		//if err != nil {
+		//	log.Debug(err.Error())
+		//	continue
+		//}
+		contract, err := pD.dag.GetContract(v.Bytes())
 		if err != nil {
 			log.Debug(err.Error())
 			continue
 		}
-		if juryAddr != cc.Address {
-			log.Debugf("the local jury address %s was not equal address %s in the dag", juryAddr, cc.Address)
+		isMe := false
+		for _, ja := range contract.JuryPubkeys {
+			if juryAddr == crypto.PubkeyBytesToAddress([]byte(ja)).String() {
+				isMe = true
+				break
+			}
+		}
+		if !isMe {
+			log.Debugf("continue")
 			continue
 		}
 		rd, _ := crypto.GetRandomBytes(32)
@@ -180,15 +214,13 @@ func (pD *PalletOneDocker) RemoveExpiredContainers(cons []docker.APIContainers) 
 				continue
 			}
 			cc.IsExpired = true
-			err = pD.dag.SaveChaincode(str,cc)
+			err = pD.dag.SaveChaincode(str, cc)
 			if err != nil {
 				log.Debugf("save chaincode error %s", err.Error())
 			}
 		}
 	}
 }
-
-
 
 func (pD *PalletOneDocker) RetrieveExpiredContainers(containers []docker.APIContainers) map[string]common.Address {
 	log.Debug("start RetrieveExpiredContainers")
@@ -227,10 +259,9 @@ func (pD *PalletOneDocker) RetrieveExpiredContainers(containers []docker.APICont
 	return idStr
 }
 
-
 //  获取用户合约异常退出的监听函数
 //status: Up， Exited
-func (pD *PalletOneDocker) GetAllContainersAddrsWithStatus(cons []docker.APIContainers,status string) ([]common.Address, error) {
+func (pD *PalletOneDocker) GetAllContainersAddrsWithStatus(cons []docker.APIContainers, status string) ([]common.Address, error) {
 	log.Debug("start GetAllContainersAddrsWithStatus")
 	defer log.Debug("end GetAllContainersAddrsWithStatus")
 	if len(cons) != 0 {
@@ -255,22 +286,21 @@ func (pD *PalletOneDocker) GetAllContainersAddrsWithStatus(cons []docker.APICont
 	return nil, fmt.Errorf("without any container")
 }
 
-
 //  调用的时候，若调用完发现磁盘使用超过系统上限，则kill掉并移除
-func (pD *PalletOneDocker) RmConsOverDisk(cc *list.CCInfo) (sizeRW int64, disk int64, isOver bool){
+func (pD *PalletOneDocker) RmConsOverDisk(cc *list.CCInfo) (sizeRW int64, disk int64, isOver bool) {
 	log.Debug("start RmConsOverDisk")
 	defer log.Debug("end RmConsOverDisk")
-	cons,err := pD.GetAllContainers()
+	cons, err := pD.GetAllContainers()
 	if err != nil {
-		log.Debugf("GetAllContainers error: %s",err.Error())
-		return 0,0,false
+		log.Debugf("GetAllContainers error: %s", err.Error())
+		return 0, 0, false
 	}
 	if len(cons) != 0 {
 		//  获取name对应的容器
 		name := cc.Name + ":" + cc.Version
 		name = strings.Replace(name, ":", "-", -1)
 		cp := pD.dag.GetChainParameters()
-		for _,c := range cons {
+		for _, c := range cons {
 			if c.Names[0][1:] == name && c.SizeRw > cp.UccDisk {
 				err := pD.DockerClient.RemoveContainer(docker.RemoveContainerOptions{ID: c.ID, Force: true})
 				if err != nil {
@@ -434,7 +464,6 @@ func (pD *PalletOneDocker) RmConsOverDisk(cc *list.CCInfo) (sizeRW int64, disk i
 //	return cons, nil
 //}
 
-
 //  获取所有过期的容器ID(通过交易上的)
 //func RetrieveExpiredContainers(idag dag.IDag, containers []docker.APIContainers, rmExpConFromSysParam bool) map[string]common.Address {
 //	log.Debugf("enter RetrieveExpiredContainers func")
@@ -471,7 +500,6 @@ func (pD *PalletOneDocker) RmConsOverDisk(cc *list.CCInfo) (sizeRW int64, disk i
 //	}
 //	return idStr
 //}
-
 
 //  获取用户合约异常退出的监听函数
 //status: Up， Exited
