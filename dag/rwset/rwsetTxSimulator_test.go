@@ -178,8 +178,6 @@ func createTx() *modules.Transaction {
 	if err != nil {
 		log.Println(err)
 	}
-	unlockScript := tx.TxMessages()[0].Payload.(*modules.PaymentPayload).Inputs[0].SignatureScript
-	log.Printf("UnlockScript:%x", unlockScript)
 	return tx
 }
 func mockTestUtxos(assid modules.AssetId) map[modules.OutPoint]*modules.Utxo {

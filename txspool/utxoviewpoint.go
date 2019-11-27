@@ -191,11 +191,12 @@ func (view *UtxoViewpoint) addTxOut(outpoint modules.OutPoint, txOut *modules.Tx
 }
 
 func (view *UtxoViewpoint) AddTxOut(tx *modules.Transaction, msgIdx, txoutIdx uint32) {
-	if msgIdx >= uint32(len(tx.TxMessages())) {
+	msgs := tx.TxMessages()
+	if msgIdx >= uint32(len(msgs)) {
 		return
 	}
 
-	for i, msgcopy := range tx.TxMessages() {
+	for i, msgcopy := range msgs {
 
 		if (uint32(i) == msgIdx) && (msgcopy.App == modules.APP_PAYMENT) {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
@@ -288,7 +289,8 @@ const (
 
 func CheckTransactionSanity(tx *modules.Transaction) error {
 	// A transaction must have at least one input.
-	if len(tx.TxMessages()) == 0 {
+	msgs:=tx.TxMessages()
+	if len(msgs) == 0 {
 		return errors.New(fmt.Sprintf("transaction has no inputs,hash: %s", tx.Hash().String()))
 	}
 	// A transaction must not exceed the maximum allowed block payload when
@@ -307,7 +309,7 @@ func CheckTransactionSanity(tx *modules.Transaction) error {
 	// as a satoshi.  One bitcoin is a quantity of satoshi as defined by the
 	// SatoshiPerBitcoin constant.
 	// var totalSatoshi uint64
-	for _, msg := range tx.TxMessages() {
+	for _, msg := range msgs {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if !ok {
 			continue

@@ -28,7 +28,6 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/obj"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core"
@@ -78,9 +77,9 @@ func newTransaction(msg []*Message) *Transaction {
 
 // AddTxIn adds a transaction input to the message.
 func (tx *Transaction) AddMessage(msg *Message) {
-	msgs := tx.TxMessages()
+	msgs := tx.Messages()
 	if msg != nil {
-		msgs = append(msgs, msg)
+		msgs = append(msgs, CopyMessage(msg))
 	}
 	tx.SetMessages(msgs)
 }
@@ -131,17 +130,20 @@ func (tx *Transaction) ContractIdBytes() []byte {
 			return addr.Bytes()
 		case APP_CONTRACT_INVOKE_REQUEST:
 			payload := msg.Payload.(*ContractInvokeRequestPayload)
-			return payload.ContractId
+			return common.CopyBytes(payload.ContractId)
 		case APP_CONTRACT_STOP_REQUEST:
 			payload := msg.Payload.(*ContractStopRequestPayload)
-			return payload.ContractId
+			return common.CopyBytes(payload.ContractId)
 		}
 	}
 	return nil
 }
 
+// 浅拷贝
 func (tx *Transaction) Messages() []*Message {
-	return tx.TxMessages()
+	msgs := make([]*Message, len(tx.txdata.TxMessages))
+	copy(msgs, tx.txdata.TxMessages)
+	return msgs
 }
 
 // Size returns the true RLP encoded storage UnitSize of the transaction, either by
@@ -165,7 +167,7 @@ func (tx *Transaction) Asset() *Asset {
 		return nil
 	}
 	asset := new(Asset)
-	msg := tx.Messages()[0]
+	msg := tx.TxMessages()[0]
 	if msg.App == APP_PAYMENT {
 		pay := msg.Payload.(*PaymentPayload)
 		for _, out := range pay.Outputs {
@@ -304,10 +306,15 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 
 	return &AmountAsset{Amount: fees, Asset: feeAsset}, nil
 }
+
+// 深拷贝
 func (tx *Transaction) TxMessages() []*Message {
-	msgs := make([]*Message, len(tx.txdata.TxMessages))
-	copy(msgs, tx.txdata.TxMessages)
-	return msgs
+	temp_msgs := make([]*Message, 0)
+	for _, msg := range tx.txdata.TxMessages {
+		temp_msgs = append(temp_msgs, CopyMessage(msg))
+	}
+
+	return temp_msgs
 }
 func (tx *Transaction) CertId() []byte { return common.CopyBytes(tx.txdata.CertId) }
 func (tx *Transaction) Illegal() bool  { return tx.txdata.Illegal }
@@ -368,9 +375,10 @@ func (tx *Transaction) GetCoinbaseReward(versionFunc QueryStateByVersionFunc,
 	scriptFunc GetAddressFromScriptFunc) (*AmountAsset, error) {
 	writeMap := make(map[string][]AmountAsset)
 	readMap := make(map[string][]AmountAsset)
-	if len(tx.TxMessages()) == 2 && tx.TxMessages()[0].App == APP_PAYMENT &&
-		tx.TxMessages()[1].App == APP_CONTRACT_INVOKE { //进行了汇总付款
-		invoke := tx.TxMessages()[1].Payload.(*ContractInvokePayload)
+	msgs := tx.TxMessages()
+	if len(msgs) == 2 && msgs[0].App == APP_PAYMENT &&
+		msgs[1].App == APP_CONTRACT_INVOKE { //进行了汇总付款
+		invoke := msgs[1].Payload.(*ContractInvokePayload)
 		for _, read := range invoke.ReadSet {
 			readResult, err := versionFunc(read.ContractId, read.Key, read.Version)
 			if err != nil {
@@ -384,7 +392,7 @@ func (tx *Transaction) GetCoinbaseReward(versionFunc QueryStateByVersionFunc,
 			addr := read.Key[len(constants.RewardAddressPrefix):]
 			readMap[addr] = aa
 		}
-		payment := tx.TxMessages()[0].Payload.(*PaymentPayload)
+		payment := msgs[0].Payload.(*PaymentPayload)
 		for _, out := range payment.Outputs {
 			aa := AmountAsset{
 				Amount: out.Value,
@@ -393,8 +401,8 @@ func (tx *Transaction) GetCoinbaseReward(versionFunc QueryStateByVersionFunc,
 			addr, _ := scriptFunc(out.PkScript)
 			writeMap[addr.String()] = []AmountAsset{aa}
 		}
-	} else if tx.TxMessages()[0].App == APP_CONTRACT_INVOKE { //进行了记账
-		invoke := tx.TxMessages()[0].Payload.(*ContractInvokePayload)
+	} else if msgs[0].App == APP_CONTRACT_INVOKE { //进行了记账
+		invoke := msgs[0].Payload.(*ContractInvokePayload)
 		for _, write := range invoke.WriteSet {
 			var aa []AmountAsset
 			err := rlp.DecodeBytes(write.Value, &aa)
@@ -500,70 +508,27 @@ func (tx *Transaction) GetContractTxSignatureAddress() []common.Address {
 //如果是合约调用交易，Copy其中的Msg0到ContractRequest的部分，如果不是请求，那么返回完整Tx
 func (tx *Transaction) GetRequestTx() *Transaction {
 	request := transaction_sdw{}
-	for _, msg := range tx.TxMessages() {
+	msgs := tx.TxMessages()
+	var is_request bool
+	req_msgs := make([]*Message, 0)
+	for _, msg := range msgs {
 		if msg.App.IsRequest() {
-			if msg.App == APP_CONTRACT_TPL_REQUEST {
-				payload := new(ContractInstallRequestPayload)
-				obj.DeepCopy(payload, msg.Payload)
-				request.TxMessages = append(request.TxMessages, NewMessage(msg.App, payload))
-			} else if msg.App == APP_CONTRACT_DEPLOY_REQUEST {
-				payload := new(ContractDeployRequestPayload)
-				obj.DeepCopy(payload, msg.Payload)
-				request.TxMessages = append(request.TxMessages, NewMessage(msg.App, payload))
-			} else if msg.App == APP_CONTRACT_INVOKE_REQUEST {
-				payload := new(ContractInvokeRequestPayload)
-				obj.DeepCopy(payload, msg.Payload)
-				request.TxMessages = append(request.TxMessages, NewMessage(msg.App, payload))
-			} else if msg.App == APP_CONTRACT_STOP_REQUEST {
-				payload := new(ContractStopRequestPayload)
-				obj.DeepCopy(payload, msg.Payload)
-				request.TxMessages = append(request.TxMessages, NewMessage(msg.App, payload))
-			}
-			request.CertId = tx.CertId()
-			return &Transaction{txdata: request}
-		} else {
-			if msg.App == APP_PAYMENT {
-				payload := new(PaymentPayload)
-				obj.DeepCopy(payload, msg.Payload)
-				request.TxMessages = append(request.TxMessages, NewMessage(msg.App, payload))
-				// } else if msg.App == APP_CONTRACT_TPL {
-				// 	payload := new(ContractTplPayload)
-				// 	obj.DeepCopy(payload, msg.Payload)
-				// 	request.AddMessage(NewMessage(msg.App, payload))
-				// } else if msg.App == APP_CONTRACT_DEPLOY {
-				// 	payload := new(ContractDeployPayload)
-				// 	obj.DeepCopy(payload, msg.Payload)
-				// 	request.AddMessage(NewMessage(msg.App, payload))
-				// } else if msg.App == APP_CONTRACT_INVOKE {
-				// 	payload := new(ContractInvokePayload)
-				// 	obj.DeepCopy(payload, msg.Payload)
-				// 	request.AddMessage(NewMessage(msg.App, payload))
-				// } else if msg.App == APP_CONTRACT_STOP {
-				// 	payload := new(ContractStopPayload)
-				// 	obj.DeepCopy(payload, msg.Payload)
-				// 	request.AddMessage(NewMessage(msg.App, payload))
-				// } else if msg.App == APP_SIGNATURE {
-				// 	payload := new(SignaturePayload)
-				// 	obj.DeepCopy(payload, msg.Payload)
-				// 	request.AddMessage(NewMessage(msg.App, payload))
-				//} else if msg.App == APP_CONFIG {
-				//	payload := new(ConfigPayload)
-				//	obj.DeepCopy(payload, msg.Payload)
-				//	request.AddMessage(NewMessage(msg.App, payload))
-			} else if msg.App == APP_DATA {
-				payload := new(DataPayload)
-				obj.DeepCopy(payload, msg.Payload)
-				request.TxMessages = append(request.TxMessages, NewMessage(msg.App, payload))
-			} else if msg.App == APP_ACCOUNT_UPDATE {
-				payload := new(AccountStateUpdatePayload)
-				obj.DeepCopy(payload, msg.Payload)
-				request.TxMessages = append(request.TxMessages, NewMessage(msg.App, payload))
-			} else {
-				log.Error("Invalid tx message")
-				return nil
-			}
+			is_request = true
+			req_msgs = append(req_msgs, msg)
+			//break
 		}
 	}
+	if is_request {
+		for _, msg := range msgs {
+			if msg.App == APP_PAYMENT || msg.App == APP_DATA || msg.App == APP_ACCOUNT_UPDATE {
+				request.TxMessages = append(request.TxMessages, msg)
+			}
+		}
+		request.TxMessages = append(request.TxMessages, req_msgs...)
+		request.CertId = tx.CertId()
+		return &Transaction{txdata: request}
+	}
+	request.TxMessages = append(request.TxMessages, msgs...)
 	request.CertId = tx.CertId()
 	return &Transaction{txdata: request}
 }
@@ -607,7 +572,7 @@ func (tx *Transaction) GetResultTx() *Transaction {
 
 //Request 这条Message的Index是多少
 func (tx *Transaction) GetRequestMsgIndex() int {
-	for idx, msg := range tx.TxMessages() {
+	for idx, msg := range tx.Messages() {
 		if msg.App.IsRequest() {
 			return idx
 		}
@@ -637,7 +602,7 @@ func (tx *Transaction) InvokeContractId() []byte {
 	for _, msg := range tx.TxMessages() {
 		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
 			contractId := msg.Payload.(*ContractInvokeRequestPayload).ContractId
-			return contractId
+			return common.CopyBytes(contractId)
 		}
 	}
 	return nil
@@ -765,12 +730,10 @@ func (tx *Transaction) DataPayloadSize() int {
 
 //Deep copy transaction to a new object
 func (tx *Transaction) Clone() *Transaction {
-	hash := tx.Hash()
 	newTx := new(Transaction)
-
 	data, _ := rlp.EncodeToBytes(tx)
 	rlp.DecodeBytes(data, newTx)
-	log.Warnf("clone transaction[%s], tx_hash[%s]", newTx.Hash().String(), hash.String())
+
 	return newTx
 }
 
@@ -787,7 +750,7 @@ func (msg *Transaction) baseSize() int {
 	return len(b)
 }
 func (tx *Transaction) IsContractTx() bool {
-	for _, m := range tx.TxMessages() {
+	for _, m := range tx.Messages() {
 		if m.App >= APP_CONTRACT_TPL && m.App <= APP_SIGNATURE {
 			return true
 		}
@@ -814,14 +777,14 @@ func (tx *Transaction) IsSystemContract() bool {
 
 //判断一个交易是否是一个合约请求交易，并且还没有被执行
 func (tx *Transaction) IsNewContractInvokeRequest() bool {
-	lastMsg := tx.TxMessages()[len(tx.TxMessages())-1]
+	lastMsg := tx.Messages()[len(tx.Messages())-1]
 	return lastMsg.App.IsRequest()
 
 }
 
 //获得合约请求Msg的Index
 func (tx *Transaction) GetContractInvokeReqMsgIdx() int {
-	for idx, msg := range tx.TxMessages() {
+	for idx, msg := range tx.Messages() {
 		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
 			return idx
 		}

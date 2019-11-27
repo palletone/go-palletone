@@ -620,20 +620,20 @@ func markTxIllegal(dag storage.IStateDb, tx *modules.Transaction) {
 	var readSet []modules.ContractReadSet
 	var contractId []byte
 
-	for _, msg := range tx.TxMessages() {
+	for _, msg := range tx.Messages() {
 		switch msg.App {
 		case modules.APP_CONTRACT_DEPLOY:
 			payload := msg.Payload.(*modules.ContractDeployPayload)
 			readSet = payload.ReadSet
-			contractId = payload.ContractId
+			contractId = common.CopyBytes(payload.ContractId)
 		case modules.APP_CONTRACT_INVOKE:
 			payload := msg.Payload.(*modules.ContractInvokePayload)
 			readSet = payload.ReadSet
-			contractId = payload.ContractId
+			contractId = common.CopyBytes(payload.ContractId)
 		case modules.APP_CONTRACT_STOP:
 			payload := msg.Payload.(*modules.ContractStopPayload)
 			readSet = payload.ReadSet
-			contractId = payload.ContractId
+			contractId = common.CopyBytes(payload.ContractId)
 		}
 	}
 	valid := checkReadSetValid(dag, contractId, readSet)
@@ -1044,10 +1044,10 @@ func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Trans
 		rep.idxdb.SaveAddressTxId(addr, txHash)
 	}
 	//Index contract address to tx
-	for _, msg := range tx.TxMessages() {
+	for _, msg := range tx.Messages() {
 		if msg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
 			invoke := msg.Payload.(*modules.ContractInvokeRequestPayload)
-			addr := common.NewAddress(invoke.ContractId, common.ContractHash)
+			addr := common.NewAddress(common.CopyBytes(invoke.ContractId), common.ContractHash)
 			rep.idxdb.SaveAddressTxId(addr, txHash)
 		}
 	}
@@ -1055,11 +1055,11 @@ func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Trans
 
 func (rep *UnitRepository) getPayToAddresses(tx *modules.Transaction) []common.Address {
 	resultMap := map[common.Address]int{}
-	for _, msg := range tx.TxMessages() {
+	for _, msg := range tx.Messages() {
 		if msg.App == modules.APP_PAYMENT {
 			pay := msg.Payload.(*modules.PaymentPayload)
 			for _, out := range pay.Outputs {
-				addr, _ := rep.tokenEngine.GetAddressFromScript(out.PkScript)
+				addr, _ := rep.tokenEngine.GetAddressFromScript(common.CopyBytes(out.PkScript))
 				if _, ok := resultMap[addr]; !ok {
 					resultMap[addr] = 1
 				}
@@ -1075,7 +1075,8 @@ func (rep *UnitRepository) getPayToAddresses(tx *modules.Transaction) []common.A
 
 func (rep *UnitRepository) getPayFromAddresses(tx *modules.Transaction) []common.Address {
 	resultMap := map[common.Address]int{}
-	for _, msg := range tx.TxMessages() {
+	msgs := tx.TxMessages()
+	for _, msg := range msgs {
 		if msg.App == modules.APP_PAYMENT {
 			pay := msg.Payload.(*modules.PaymentPayload)
 			for _, input := range pay.Inputs {
@@ -1089,7 +1090,8 @@ func (rep *UnitRepository) getPayFromAddresses(tx *modules.Transaction) []common
 						stxo, err := rep.utxoRepository.GetStxoEntry(input.PreviousOutPoint)
 						if err != nil {
 							if input.PreviousOutPoint.TxHash.IsSelfHash() {
-								out := tx.TxMessages()[input.PreviousOutPoint.MessageIndex].Payload.(*modules.PaymentPayload).Outputs[input.PreviousOutPoint.OutIndex]
+								out := msgs[input.PreviousOutPoint.MessageIndex].Payload.
+								(*modules.PaymentPayload).Outputs[input.PreviousOutPoint.OutIndex]
 								lockScript = out.PkScript
 							} else {
 								log.Errorf("Cannot find txo by:%s", input.PreviousOutPoint.String())
@@ -1141,13 +1143,10 @@ func (rep *UnitRepository) RebuildAddrTxIndex() error {
 }
 
 func getDataPayload(tx *modules.Transaction) *modules.DataPayload {
-	dp := &modules.DataPayload{}
+
 	for _, msg := range tx.TxMessages() {
 		if msg.App == modules.APP_DATA {
 			pay := msg.Payload.(*modules.DataPayload)
-			dp.MainData = pay.MainData
-			dp.ExtraData = pay.ExtraData
-			dp.Reference = pay.Reference
 			return pay
 		}
 	}

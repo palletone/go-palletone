@@ -189,8 +189,8 @@ func TestGetRequestTx(t *testing.T) {
 		return
 	}
 
-	t_msgs := tx.Messages()
-	r_msgs := req_tx.Messages()
+	t_msgs := tx.TxMessages()
+	r_msgs := req_tx.TxMessages()
 	t_hash := tx.Hash()
 	r_hash := req_tx.Hash()
 	if t_hash != r_hash {

@@ -127,8 +127,9 @@ type txJsonTemp struct {
 
 func tx2JsonTemp(tx *Transaction) (*txJsonTemp, error) {
 	intCertID := new(big.Int).SetBytes(tx.CertId())
-	temp := &txJsonTemp{MsgCount: len(tx.TxMessages()), CertId: intCertID.String(), Illegal: tx.Illegal()}
-	for idx, msg := range tx.TxMessages() {
+	msgs := tx.TxMessages()
+	temp := &txJsonTemp{MsgCount: len(msgs), CertId: intCertID.String(), Illegal: tx.Illegal()}
+	for idx, msg := range msgs {
 		if msg.App == APP_PAYMENT {
 			temp.Payment = append(temp.Payment, &idxPaymentPayload{
 				Index: idx, PaymentPayload: msg.Payload.(*PaymentPayload)})

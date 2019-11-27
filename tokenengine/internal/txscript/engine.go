@@ -282,7 +282,7 @@ func (vm *Engine) Step() (done bool, err error) {
 	vm.scriptOff++
 	if vm.scriptOff >= len(vm.scripts[vm.scriptIdx]) {
 		// Illegal to have an `if' that straddles two scripts.
-		if  len(vm.condStack) != 0 {
+		if len(vm.condStack) != 0 {
 			return false, ErrStackMissingEndif
 		}
 
@@ -581,9 +581,9 @@ func (vm *Engine) SetAltStack(data [][]byte) {
 // transaction, and input index.  The flags modify the behavior of the script
 // engine according to the description provided by each flag.
 func NewEngine(scriptPubKey []byte,
-	 pickupJuryRedeemScript PickupJuryRedeemScript, 
-	 tx *modules.Transaction, msgIdx, txIdx int, 
-	 flags ScriptFlags, sigCache *SigCache, crypto ICrypto) (*Engine, error) {
+	pickupJuryRedeemScript PickupJuryRedeemScript,
+	tx *modules.Transaction, msgIdx, txIdx int,
+	flags ScriptFlags, sigCache *SigCache, crypto ICrypto) (*Engine, error) {
 	// The provided transaction input index must refer to a valid input.
 	pay := tx.TxMessages()[msgIdx].Payload.(*modules.PaymentPayload)
 	if txIdx < 0 || txIdx >= len(pay.Inputs) {

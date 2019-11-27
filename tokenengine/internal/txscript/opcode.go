@@ -771,7 +771,7 @@ func (pop *parsedOpcode) bytes() ([]byte, error) {
 	if pop.opcode.length > 0 {
 		retbytes = make([]byte, 1, pop.opcode.length)
 	} else {
-		retbytes = make([]byte, 1, 1+len(pop.data)-
+		retbytes = make([]byte, 1, 1 + len(pop.data)-
 			pop.opcode.length)
 	}
 

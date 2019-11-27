@@ -335,19 +335,19 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 	mtx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, pload)})
 	//mtx.TxHash = mtx.Hash()
 	//sign mtx
-	mtxtmp := mtx.Clone()
-	for msgindex, msg := range mtxtmp.TxMessages() {
+	msgs := mtx.TxMessages()
+	for msgindex, msg := range msgs {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if !ok {
 			continue
 		}
 		for inputindex := range payload.Inputs {
-			hashforsign, err := tokenengine.Instance.CalcSignatureHash(mtxtmp, tokenengine.SigHashAll, msgindex,
+			hashforsign, err := tokenengine.Instance.CalcSignatureHash(mtx, tokenengine.SigHashAll, msgindex,
 				inputindex, ppscript)
 			if err != nil {
 				return "", err
 			}
-			msg := mtx.TxMessages()[msgindex]
+			msg := msgs[msgindex]
 			payloadtmp := msg.Payload.(*modules.PaymentPayload)
 			payloadtmp.Inputs[inputindex].SignatureScript = hashforsign
 			mtx.ModifiedMsg(msgindex, msg)
@@ -476,7 +476,7 @@ func (s *PublicWalletAPI) SendRawTransaction(ctx context.Context, signedTxHex st
 		return common.Hash{}, errors.New("encodedTx decode is invalid")
 	}
 
-	if 0 == len(tx.TxMessages()) {
+	if 0 == len(tx.Messages()) {
 		return common.Hash{}, errors.New("Invalid Tx, message length is 0")
 	}
 	//var outAmount uint64
@@ -512,13 +512,13 @@ func (s *PublicWalletAPI) SendJsonTransaction(ctx context.Context, params string
 	if err != nil {
 		return common.Hash{}, errors.New("Json Unmarshal To Tx is invalid")
 	}
-
-	if 0 == len(tx.TxMessages()) {
+	msgs := tx.TxMessages()
+	if 0 == len(msgs) {
 		return common.Hash{}, errors.New("Invalid Tx, message length is 0")
 	}
 	var outAmount uint64
 	var outpoint_txhash common.Hash
-	for _, msg := range tx.TxMessages() {
+	for _, msg := range msgs {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if !ok {
 			continue
@@ -547,7 +547,7 @@ func (s *PublicWalletAPI) SendRlpTransaction(ctx context.Context, encodedTx stri
 	if err := rlp.DecodeBytes(serializedTx, tx); err != nil {
 		return common.Hash{}, errors.New("encodedTx decode is invalid")
 	}
-	if 0 == len(tx.TxMessages()) {
+	if 0 == len(tx.Messages()) {
 		return common.Hash{}, errors.New("Invalid Tx, message length is 0")
 	}
 	var outAmount uint64
@@ -708,12 +708,13 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	if err := rlp.DecodeBytes(sserializedTx, stx); err != nil {
 		return common.Hash{}, err
 	}
-	if 0 == len(stx.TxMessages()) {
+	msgs := stx.TxMessages()
+	if 0 == len(msgs) {
 		log.Info("+++++++++++++++++++++++++++++++++++++++++invalid Tx++++++")
 		return common.Hash{}, errors.New("Invalid Tx, message length is 0")
 	}
 	var outAmount uint64
-	for _, msg := range stx.TxMessages() {
+	for _, msg := range msgs {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if !ok {
 			continue
@@ -726,7 +727,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	}
 	log.Info("--------------------------send tx ----------------------------", "txOutAmount", outAmount)
 
-	log.Debugf("Tx outpoint tx hash:%s", stx.TxMessages()[0].Payload.(*modules.PaymentPayload).Inputs[0].PreviousOutPoint.TxHash.String())
+	log.Debugf("Tx outpoint tx hash:%s", msgs[0].Payload.(*modules.PaymentPayload).Inputs[0].PreviousOutPoint.TxHash.String())
 	return submitTransaction(ctx, s.b, stx)
 }
 func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransactionCmd) (string, error) {
@@ -1111,12 +1112,13 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 	if err := rlp.DecodeBytes(sserializedTx, stx); err != nil {
 		return common.Hash{}, err
 	}
-	if 0 == len(stx.TxMessages()) {
+	s_msgs := stx.TxMessages()
+	if 0 == len(s_msgs) {
 		log.Info("+++++++++++++++++++++++++++++++++++++++++invalid Tx++++++")
 		return common.Hash{}, errors.New("Invalid Tx, message length is 0")
 	}
 	var outAmount uint64
-	for _, msg := range stx.TxMessages() {
+	for _, msg := range s_msgs {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if !ok {
 			continue
@@ -1129,7 +1131,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 	}
 	log.Info("--------------------------send tx ----------------------------", "txOutAmount", outAmount)
 
-	log.Debugf("Tx outpoint tx hash:%s", stx.TxMessages()[0].Payload.(*modules.PaymentPayload).Inputs[0].PreviousOutPoint.TxHash.String())
+	log.Debugf("Tx outpoint tx hash:%s", s_msgs[0].Payload.(*modules.PaymentPayload).Inputs[0].PreviousOutPoint.TxHash.String())
 	return submitTransaction(ctx, s.b, stx)
 }
 

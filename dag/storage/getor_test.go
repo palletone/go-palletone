@@ -118,7 +118,7 @@ func TestRLPTxDecode(t *testing.T) {
 	val, _ := dbconn.Get(key)
 	tx := new(modules.Transaction)
 	rlp.DecodeBytes(val, &tx)
-	for _, msg := range tx.Messages() {
+	for _, msg := range tx.TxMessages() {
 		if msg.App == modules.APP_PAYMENT {
 			pay, ok := msg.Payload.(*modules.PaymentPayload)
 			fmt.Println("断言结果：", ok)

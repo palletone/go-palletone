@@ -195,7 +195,7 @@ func (engine *TokenEngine) ScriptValidate(utxoLockScript []byte,
 	tx *modules.Transaction,
 	msgIdx, inputIndex int) error {
 	acc := &account{}
-	txCopy := tx
+	txCopy := tx.Clone()
 	if tx.IsContractTx() {
 		isRequestMsg := false
 		for idx, msg := range tx.TxMessages() {
@@ -224,7 +224,7 @@ func (engine *TokenEngine) ScriptValidate1Msg(utxoLockScripts map[string][]byte,
 	pickupJuryRedeemScript PickupJuryRedeemScript,
 	tx *modules.Transaction, msgIdx int) error {
 	acc := &account{}
-	txCopy := tx
+	txCopy := tx.Clone()
 	if tx.IsContractTx() {
 		isRequestMsg := false
 		for idx, msg := range tx.TxMessages() {
@@ -238,7 +238,7 @@ func (engine *TokenEngine) ScriptValidate1Msg(utxoLockScripts map[string][]byte,
 		}
 	}
 	log.Debugf("SignCache count:%d", engine.signCache.Count())
-	for inputIndex, input := range txCopy.TxMessages()[msgIdx].Payload.(*modules.PaymentPayload).Inputs {
+	for inputIndex, input := range txCopy.Messages()[msgIdx].Payload.(*modules.PaymentPayload).Inputs {
 		utxoLockScript := utxoLockScripts[input.PreviousOutPoint.String()]
 		vm, err := txscript.NewEngine(utxoLockScript,
 			func(addr common.Address) ([]byte, error) { return pickupJuryRedeemScript(addr) },

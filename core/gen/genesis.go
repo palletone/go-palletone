@@ -179,11 +179,9 @@ func GetGensisTransctions(ks *keystore.KeyStore, genesis *core.Genesis) (modules
 //}
 
 func GenContractTransction(orgTx *modules.Transaction, msgs []*modules.Message) (*modules.Transaction, error) {
-	if orgTx == nil || len(orgTx.TxMessages()) < 2 {
+	if orgTx == nil || len(orgTx.Messages()) < 2 {
 		return nil, errors.New(fmt.Sprintf("GenContractTransction param is error"))
 	}
-	//tx := &modules.Transaction{}
-	//tx.SetMessages(orgTx.TxMessages())
 	org_msgs := orgTx.TxMessages()
 
 	for i := 0; i < len(msgs); i++ {

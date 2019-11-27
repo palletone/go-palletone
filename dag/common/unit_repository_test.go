@@ -325,7 +325,7 @@ func TestContractTplPayloadTransactionRLP(t *testing.T) {
 		Height:  &modules.ChainIndex{},
 		TxIndex: 0,
 	}})
-	tx1 := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_CONTRACT_TPL, contractTplPayload)})
+	tx1 := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_CONTRACT_TPL, &contractTplPayload)})
 
 	//tx1.TxHash = tx1.Hash()
 
@@ -392,7 +392,7 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 		ReadSet:  readSet,
 		WriteSet: writeSet,
 	}
-	tx1 := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_CONTRACT_DEPLOY, deployPayload)})
+	tx1 := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_CONTRACT_DEPLOY, &deployPayload)})
 	//tx1.TxHash = tx1.Hash()
 
 	fmt.Println(">>>>>>>>  Original transaction:")
@@ -632,7 +632,10 @@ func TestContractTxsIllegal(t *testing.T) {
 		ReadSet:    readSet,
 		WriteSet:   writeSet,
 	}
-	m1 := modules.NewMessage(modules.APP_CONTRACT_DEPLOY_REQUEST, deployPayload)
+	requestPayload := &modules.ContractDeployRequestPayload{
+		TemplateId: []byte("contract_template0000"),
+	}
+	m1 := modules.NewMessage(modules.APP_CONTRACT_DEPLOY_REQUEST, requestPayload)
 	m2 := modules.NewMessage(modules.APP_CONTRACT_DEPLOY, deployPayload)
 	tx1 := modules.NewTransaction([]*modules.Message{m1, m2})
 	txs := make([]*modules.Transaction, 0)
@@ -663,20 +666,20 @@ func markTxsIllegal(dag storage.IStateDb, txs []*modules.Transaction) {
 		var readSet []modules.ContractReadSet
 		var contractId []byte
 
-		for _, msg := range tx.TxMessages() {
+		for _, msg := range tx.Messages() {
 			switch msg.App {
 			case modules.APP_CONTRACT_DEPLOY:
 				payload := msg.Payload.(*modules.ContractDeployPayload)
 				readSet = payload.ReadSet
-				contractId = payload.ContractId
+				contractId = common.CopyBytes(payload.ContractId)
 			case modules.APP_CONTRACT_INVOKE:
 				payload := msg.Payload.(*modules.ContractInvokePayload)
 				readSet = payload.ReadSet
-				contractId = payload.ContractId
+				contractId = common.CopyBytes(payload.ContractId)
 			case modules.APP_CONTRACT_STOP:
 				payload := msg.Payload.(*modules.ContractStopPayload)
 				readSet = payload.ReadSet
-				contractId = payload.ContractId
+				contractId = common.CopyBytes(payload.ContractId)
 			}
 		}
 		valid := checkReadSetValid(dag, contractId, readSet)

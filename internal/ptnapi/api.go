@@ -1113,7 +1113,7 @@ func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
 	}
-	for msgidx, msg := range tx.TxMessages() {
+	for msgidx, msg := range tx.TxMessages() { // msg的改动会更改tx内部数据，所以要用深拷贝
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if !ok {
 			continue
@@ -1144,6 +1144,8 @@ func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine
 				}
 			}
 		}
+		// 更新msg
+		tx.ModifiedMsg(msgidx, msg)
 	}
 	// All returned errors (not OOM, which panics) encountered during
 	// bytes.Buffer writes are unexpected.

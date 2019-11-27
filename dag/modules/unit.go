@@ -291,11 +291,11 @@ func (u *Unit) CopyBody(txs Transactions) Transactions {
 	if len(txs) > 0 {
 		u.Txs = make([]*Transaction, len(txs))
 		for i, pTx := range txs {
-
+			msgs := pTx.TxMessages()
 			sdw := transaction_sdw{}
-			if len(pTx.TxMessages()) > 0 {
-				sdw.TxMessages = make([]*Message, len(pTx.TxMessages()))
-				copy(sdw.TxMessages, pTx.TxMessages())
+			if len(msgs) > 0 {
+				sdw.TxMessages = make([]*Message, len(msgs))
+				copy(sdw.TxMessages, msgs)
 			}
 			sdw.CertId = pTx.CertId()
 			sdw.Illegal = pTx.Illegal()

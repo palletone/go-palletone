@@ -298,7 +298,7 @@ func TestMultiSign1Step(t *testing.T) {
 		t.Logf("Sign error:%s", err)
 	}
 	t.Logf("PrvKey1&2 sign result:%x\n", sign12)
-	pay1 := tx.TxMessages()[0].Payload.(*modules.PaymentPayload)
+	pay1 := tx.Messages()[0].Payload.(*modules.PaymentPayload)
 	pay1.Inputs[0].SignatureScript = sign12
 	str, _ := txscript.DisasmString(sign12)
 	t.Logf("Signed script:{%s}", str)
@@ -353,7 +353,7 @@ func TestMultiSign2Step(t *testing.T) {
 		t.Logf("Sign error:%s", err)
 	}
 	t.Logf("PrvKey1 sign result:%x\n", sign1)
-	pay1 := tx.TxMessages()[0].Payload.(*modules.PaymentPayload)
+	pay1 := tx.Messages()[0].Payload.(*modules.PaymentPayload)
 	pay1.Inputs[0].SignatureScript = sign1
 
 	//privKeys2 := map[common.Address]*ecdsa.PrivateKey{
@@ -367,7 +367,7 @@ func TestMultiSign2Step(t *testing.T) {
 	}
 	t.Logf("PrvKey2 sign result:%x\n", sign2)
 
-	pay1 = tx.TxMessages()[0].Payload.(*modules.PaymentPayload)
+	pay1 = tx.Messages()[0].Payload.(*modules.PaymentPayload)
 	pay1.Inputs[0].SignatureScript = sign2
 	str, _ := txscript.DisasmString(sign2)
 	t.Logf("Signed script:{%s}", str)
@@ -442,7 +442,7 @@ func TestContractPayout(t *testing.T) {
 		t.Logf("Sign error:%s", err)
 	}
 	t.Logf("PrvKey1&2 sign result:%x\n", sign0)
-	pay1 := tx.TxMessages()[0].Payload.(*modules.PaymentPayload)
+	pay1 := tx.Messages()[0].Payload.(*modules.PaymentPayload)
 	pay1.Inputs[0].SignatureScript = sign0
 	str, _ := txscript.DisasmString(sign0)
 	t.Logf("Signed script:{%s}", str)
@@ -619,7 +619,7 @@ func Test22MutiSign(t *testing.T) {
 		t.Logf("Sign error:%s", err)
 	}
 	t.Logf("PrvKey1&2 sign result:%x\n", sign12)
-	pay1 := tx.TxMessages()[0].Payload.(*modules.PaymentPayload)
+	pay1 := tx.Messages()[0].Payload.(*modules.PaymentPayload)
 	pay1.Inputs[0].SignatureScript = sign12
 	str, _ := txscript.DisasmString(sign12)
 	t.Logf("Unlock script:{%s}", str)
@@ -668,7 +668,7 @@ func TestSampleTx(t *testing.T) {
 	txjson, _ := json.Marshal(tx)
 	txrlp, _ := rlp.EncodeToBytes(tx)
 	t.Logf("Tx len:%d, txjson:%s", len(txrlp), string(txjson))
-	msg := tx.TxMessages()[0]
+	msg := tx.Messages()[0]
 	unlockScript := msg.Payload.(*modules.PaymentPayload).Inputs[0].SignatureScript
 	t.Logf("UnlockScript:%x", unlockScript)
 	s, _ := Instance.DisasmString(unlockScript)

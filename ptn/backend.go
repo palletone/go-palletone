@@ -396,7 +396,7 @@ func (p *PalletOne) GetKeyStore() *keystore.KeyStore {
 func (p *PalletOne) SignGenericTransaction(from common.Address, tx *modules.Transaction) (*modules.Transaction, error) {
 	inputpoints := make(map[modules.OutPoint][]byte)
 
-	for i := 0; i < len(tx.TxMessages()); i++ {
+	for i := 0; i < len(tx.Messages()); i++ {
 		// 1. 获取PaymentPayload
 		msg := tx.TxMessages()[i]
 		if msg.App != modules.APP_PAYMENT {
