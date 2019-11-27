@@ -24,7 +24,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-
 	"math/big"
 	"sort"
 	"strconv"
@@ -111,6 +110,12 @@ func (p *ETHPort) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			return shim.Error("need 1 args (ethAddr)")
 		}
 		return p.WithdrawFee(args[0], stub)
+
+	case "GetWithdrawData":
+		if len(args) < 1 {
+			return shim.Error("need 1 args (reqID (from withdrawPrepare))")
+		}
+		return p.GetWithdrawData(stub, args[0])
 
 	case "get":
 		if len(args) < 1 {
@@ -666,6 +671,9 @@ func (p *ETHPort) WithdrawPrepare(ethAddr string, feeDecimal decimal.Decimal, st
 	log.Debugf("ethTokenAmount %d", ethTokenAmount)
 
 	reqid := stub.GetTxID()
+	if "0x" == reqid[0:2] || "0X" == reqid[0:2] {
+		reqid = reqid[2:]
+	}
 	// 产生交易
 	rawTx := fmt.Sprintf("%s %d %s", ethAddr, ethTokenAmount, reqid)
 	log.Debugf("rawTx:%s", rawTx)
@@ -837,6 +845,7 @@ func getPadderBytes(contractAddr, reqid, recvAddr string, ethAmount uint64) []by
 
 	paramBigInt := new(big.Int)
 	paramBigInt.SetUint64(ethAmount)
+	paramBigInt.Mul(paramBigInt, big.NewInt(1e10)) //eth's decimal is 18, ethToken in PTN is decimal is 8
 	paramBigIntBytes := LeftPadBytes(paramBigInt.Bytes(), 32)
 	allBytes = append(allBytes, paramBigIntBytes...)
 
@@ -1042,8 +1051,8 @@ func processWithdrawSig(reqid, reqidNew, recvAddr string, ethAmount uint64, stub
 }
 
 func (p *ETHPort) WithdrawETH(reqid string, stub shim.ChaincodeStubInterface) pb.Response {
-	if "0x" != reqid[0:2] {
-		reqid = "0x" + reqid
+	if "0x" == reqid[0:2] || "0X" == reqid[0:2] {
+		reqid = reqid[0:2]
 	}
 
 	resultWithdraw, _ := stub.GetState(symbolsWithdraw + reqid)
@@ -1223,6 +1232,96 @@ func (p *ETHPort) WithdrawFee(ptnRecvAddr string, stub shim.ChaincodeStubInterfa
 		return shim.Error(err.Error())
 	}
 	return shim.Success([]byte("Success"))
+}
+
+func getInputData(contractAddr, reqid, recvAddr string, ethAmount uint64, sig1, sig2, sig3 string, stub shim.ChaincodeStubInterface) (string, error) {
+	const withdrawABI = `[{
+		"constant": false,
+		"inputs": [{
+			"name": "recver",
+			"type": "address"
+		}, {
+			"name": "amount",
+			"type": "uint256"
+		}, {
+			"name": "reqid",
+			"type": "bytes32"
+		}, {
+			"name": "sigstr1",
+			"type": "bytes"
+		}, {
+			"name": "sigstr2",
+			"type": "bytes"
+		}, {
+			"name": "sigstr3",
+			"type": "bytes"
+		}],
+		"name": "withdraw",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	}]`
+
+	callerAddr := "0x7D7116A8706Ae08bAA7F4909e26728fa7A5f0365"
+
+	//
+	var invokeInput adaptor.CreateContractInvokeTxInput
+	invokeInput.Address = callerAddr
+	invokeInput.ContractAddress = contractAddr
+	amt := new(big.Int)
+	amt.SetString("21000000000000000", 10) //10000000000 10gwei*2100000
+	invokeInput.Fee = adaptor.NewAmountAsset(amt, "ETH")
+	invokeInput.Function = "withdraw"
+	invokeInput.Extra = []byte(withdrawABI)
+	invokeInput.Args = append(invokeInput.Args, []byte(recvAddr))
+	amountBigInt := new(big.Int)
+	amountBigInt.SetUint64(ethAmount)
+	amountBigInt.Mul(amountBigInt, big.NewInt(1e10)) //eth's decimal is 18, ethToken in PTN is decimal is 8
+	invokeInput.Args = append(invokeInput.Args, []byte(amountBigInt.String()))
+	invokeInput.Args = append(invokeInput.Args, []byte(reqid))
+	invokeInput.Args = append(invokeInput.Args, []byte(sig1))
+	invokeInput.Args = append(invokeInput.Args, []byte(sig2))
+	invokeInput.Args = append(invokeInput.Args, []byte(sig3))
+
+	invokeInputJSON, _ := json.Marshal(invokeInput)
+	invokeTxJSON, err := stub.OutChainCall("eth", "CreateContractInvokeTx", invokeInputJSON)
+	if err != nil {
+		log.Debugf("OutChainCall CreateContractInvokeTx err: %s", err.Error())
+		return "", fmt.Errorf("OutChainCall CreateContractInvokeTx failed" + err.Error())
+	}
+
+	invokeOutput := adaptor.CreateContractInvokeTxOutput{}
+	json.Unmarshal(invokeTxJSON, &invokeOutput)
+
+	return fmt.Sprintf("%x", invokeOutput.Extra), nil
+}
+
+func (p *ETHPort) GetWithdrawData(stub shim.ChaincodeStubInterface, reqid string) pb.Response {
+	if "0x" == reqid[0:2] || "0X" == reqid[0:2] {
+		reqid = reqid[0:2]
+	}
+	result, _ := stub.GetState(symbolsWithdraw + reqid)
+	if len(result) == 0 {
+		return shim.Success([]byte{})
+	}
+
+	mapAddr := getETHContract(stub)
+	if mapAddr == "" {
+		return shim.Error(jsonResp1)
+	}
+
+	var withdraw Withdraw
+	err := json.Unmarshal(result, &withdraw)
+	if err != nil {
+		return shim.Success([]byte{})
+	}
+	data, err := getInputData(mapAddr, reqid, withdraw.EthAddr, withdraw.EthAmount-withdraw.EthFee, withdraw.Sigs[0],
+		withdraw.Sigs[1], withdraw.Sigs[2], stub)
+	if err != nil {
+		return shim.Success([]byte{})
+	}
+	return shim.Success([]byte(data))
 }
 
 func (p *ETHPort) Get(stub shim.ChaincodeStubInterface, key string) pb.Response {
