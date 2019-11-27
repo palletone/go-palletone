@@ -43,12 +43,39 @@ var (
 	//receiptTimeoutMeter = metrics.NewRegisteredMeter("ptn/downloader/receipts/timeout", nil)
 )
 var (
-	cpuTemp = prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "cpu_temperature_celsius",
-		Help: "Current temperature of the CPU.",
+	headerInPrometheus = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "ptn/downloader/headers/in",
+		Help: "Ptn downloader headers in",
 	})
+	headerDropPrometheus = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "ptn/downloader/headers/drop",
+		Help: "Ptn downloader headers drop",
+	})
+
+	bodyInPrometheus = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "ptn/downloader/bodies/in",
+		Help: "Ptn downloader bodies in",
+	})
+	bodyDropPrometheus = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "ptn/downloader/bodies/drop",
+		Help: "Ptn downloader bodies drop",
+	})
+
 	hdFailures = prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "hd_errors_total",
 		Help: "Number of hard-disk errors.",
 	})
+	//headerInPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+	//	Name: "ptn/downloader/headers/in",
+	//	Help: "Ptn downloader headers in",
+	//})
 )
+
+func init() {
+	prometheus.MustRegister(headerInPrometheus)
+	prometheus.MustRegister(headerDropPrometheus)
+	prometheus.MustRegister(bodyInPrometheus)
+	prometheus.MustRegister(bodyDropPrometheus)
+
+	prometheus.MustRegister(hdFailures)
+}
