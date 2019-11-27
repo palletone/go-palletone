@@ -167,7 +167,7 @@ func (s *PublicBlockChainAPI) GetPledge(addStr string) (*modules.PledgeStatusJso
 	//txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().Unix())).Int31n(100000000))
 
 	// 调用系统合约
-	rsp, err := s.b.ContractQuery(syscontract.DepositContractAddress.Bytes(), cArgs, 0)
+	rsp, err := s.b.ContractQuery([]byte(syscontract.DepositContractAddress.Str()), cArgs, 0)
 	if err != nil {
 		return nil, err
 	}

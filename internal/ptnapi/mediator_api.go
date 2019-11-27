@@ -48,7 +48,7 @@ func (a *PublicMediatorAPI) IsApproved(addStr string) (string, error) {
 	//txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
 
 	// 调用系统合约
-	rsp, err := a.ContractQuery(syscontract.DepositContractAddress.Bytes(), cArgs, 0)
+	rsp, err := a.ContractQuery([]byte(syscontract.DepositContractAddress.Str()), cArgs, 0)
 	if err != nil {
 		return "", err
 	}
@@ -62,7 +62,7 @@ func getDeposit(addStr string, a Backend) (*modules.MediatorDepositJson, error) 
 	//txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().Unix())).Int31n(100000000))
 
 	// 调用系统合约
-	rsp, err := a.ContractQuery(syscontract.DepositContractAddress.Bytes(), cArgs, 0)
+	rsp, err := a.ContractQuery([]byte(syscontract.DepositContractAddress.Str()), cArgs, 0)
 	if err != nil {
 		return nil, err
 	}
