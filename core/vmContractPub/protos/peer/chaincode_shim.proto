@@ -62,6 +62,7 @@ message ChaincodeMessage {
         RECV_JURY = 31;
         GET_CERT_STATE = 32;
         OUTCHAIN_CALL = 33;
+        GET_STABLE_TRANSACTION = 34;
     }
 
     Type type = 1;
@@ -173,6 +174,11 @@ message GetTokenBalance {
     string address = 1;
     string asset = 2;
 }
+
+message GetStableTransaction {
+    string txHash = 1;
+}
+
 message PayOutToken {
     bytes asset = 1;
     uint64 amount = 2;

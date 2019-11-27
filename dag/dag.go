@@ -451,6 +451,11 @@ func (d *Dag) GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	return d.unstableUnitRep.GetTransactionOnly(hash)
 }
 
+// return the transaction by hash
+func (d *Dag) GetStableTransactionOnly(hash common.Hash) (*modules.Transaction, error) {
+	return d.stableUnitRep.GetTransactionOnly(hash)
+}
+
 // retunr the txLookEntry by transaction hash
 func (d *Dag) GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error) {
 	txlookup, err := d.unstableUnitRep.GetTxLookupEntry(hash)

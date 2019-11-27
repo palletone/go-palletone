@@ -61,6 +61,7 @@ type IDag interface {
 	GetUnitTxsHash(hash common.Hash) ([]common.Hash, error)
 	GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
+	GetStableTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	IsTransactionExist(hash common.Hash) (bool, error)
 	GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error)
 	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)

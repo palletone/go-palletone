@@ -611,6 +611,10 @@ func (stub *ChaincodeStub) GetTokenBalance(address string, token *modules.Asset)
 	return stub.handler.handleGetTokenBalance(address, token, stub.ContractId, stub.ChannelId, stub.TxID)
 }
 
+func (stub *ChaincodeStub) GetStableTransactionByHash(txHash string) (*modules.Transaction, error) {
+	return stub.handler.handleGetStableTransactionByHash(txHash, stub.ContractId, stub.ChannelId, stub.TxID)
+}
+
 func (stub *ChaincodeStub) DefineToken(tokenType byte, define []byte, creator string) error {
 	if !common.IsSystemContractId(stub.ContractId) {
 		return ERROR_ONLY_SYS_CONTRACT

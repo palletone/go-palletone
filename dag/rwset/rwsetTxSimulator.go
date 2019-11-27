@@ -262,6 +262,10 @@ func (s *RwSetTxSimulator) GetTokenBalance(ns string, addr common.Address, asset
 	return convertUtxo2Balance(utxos), nil
 }
 
+func (s *RwSetTxSimulator) GetStableTransactionByHash(ns string, hash common.Hash) (*modules.Transaction, error) {
+	return s.dag.GetStableTransactionOnly(hash)
+}
+
 func convertUtxo2Balance(utxos map[modules.OutPoint]*modules.Utxo) map[modules.Asset]uint64 {
 	result := map[modules.Asset]uint64{}
 	for _, v := range utxos {
