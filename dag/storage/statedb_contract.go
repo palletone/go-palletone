@@ -327,9 +327,10 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 			mi := modules.NewMediatorInfo()
 			mi.MediatorInfoBase = mco.MediatorInfoBase
 			mi.MediatorApplyInfo = mco.MediatorApplyInfo
-			if mi.RewardAdd == "" {
-				mi.RewardAdd = mi.AddStr
-			}
+
+			//if mi.RewardAdd == "" {
+			//	mi.RewardAdd = mi.AddStr
+			//}
 
 			// 判断是否是1.0.2之前的mediator
 			if pubKey, isFind := constants.OldMainNetMediatorAndPubKey[mco.AddStr]; isFind {

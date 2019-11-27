@@ -494,6 +494,10 @@ func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 	hash := sigShare.Hash()
 	p.MarkSigShare(hash)
 
+	if pm.IsExistInCache(hash.Bytes()) {
+		return nil
+	}
+
 	unitHash := sigShare.UnitHash
 	header, err := pm.dag.GetHeaderByHash(unitHash)
 	if err != nil {
@@ -503,10 +507,6 @@ func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 
 	if !pm.producer.IsLocalMediator(header.Author()) {
 		pm.BroadcastSigShare(&sigShare)
-	}
-
-	if pm.IsExistInCache(hash.Bytes()) {
-		return nil
 	}
 
 	// 判断是否同步, 如果没同步完成，接收到的 sigShare 对当前节点来说是超前的
@@ -533,13 +533,14 @@ func (pm *ProtocolManager) VSSDealMsg(msg p2p.Msg, p *peer) error {
 
 	hash := deal.Hash()
 	p.MarkVSSDeal(hash)
-	ma := pm.dag.GetActiveMediatorAddr(int(deal.DstIndex))
-	if !pm.producer.IsLocalMediator(ma) {
-		pm.BroadcastVSSDeal(&deal)
-	}
 
 	if pm.IsExistInCache(hash.Bytes()) {
 		return nil
+	}
+
+	ma := pm.dag.GetActiveMediatorAddr(int(deal.DstIndex))
+	if !pm.producer.IsLocalMediator(ma) {
+		pm.BroadcastVSSDeal(&deal)
 	}
 
 	// 判断是否同步, 如果没同步完成，接收到的 vss deal 对当前节点来说是超前的
@@ -566,11 +567,12 @@ func (pm *ProtocolManager) VSSResponseMsg(msg p2p.Msg, p *peer) error {
 
 	hash := resp.Hash()
 	p.MarkVSSResponse(hash)
-	pm.BroadcastVSSResponse(&resp)
 
 	if pm.IsExistInCache(hash.Bytes()) {
 		return nil
 	}
+
+	pm.BroadcastVSSResponse(&resp)
 
 	// 判断是否同步, 如果没同步完成，接收到的 vss response 对当前节点来说是超前的
 	if !pm.dag.IsSynced() {
@@ -597,11 +599,12 @@ func (pm *ProtocolManager) GroupSigMsg(msg p2p.Msg, p *peer) error {
 
 	hash := gSign.Hash()
 	p.MarkGroupSig(hash)
-	pm.BroadcastGroupSig(&gSign)
 
 	if pm.IsExistInCache(hash.Bytes()) {
 		return nil
 	}
+
+	pm.BroadcastGroupSig(&gSign)
 
 	go pm.dag.SetUnitGroupSign(gSign.UnitHash, gSign.GroupSig, pm.txpool)
 

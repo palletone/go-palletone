@@ -81,7 +81,7 @@ func (m *RwSetTxMgr) NewTxSimulator(idag dag.IDag, chainid string, txid string, 
 		m.baseTxSim[chainid] = t
 		m.wg.Add(1)
 		m.rwLock.Unlock()
-		log.Infof("creat sys rwSetTx [%s]", hash.String())
+		log.Debugf("creat sys rwSetTx [%s]", hash.String())
 
 		return t, nil
 	}
