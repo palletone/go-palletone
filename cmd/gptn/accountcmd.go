@@ -463,14 +463,14 @@ func createAccount(ctx *cli.Context, password string) (common.Address, error) {
 }
 
 // accountCreate creates a new account into the keystore defined by the CLI flags.
-func createMutiAccount(ctx *cli.Context, pubkey [][]byte, check int) (common.Address, []byte,error) {
+func createMutiAccount(ctx *cli.Context, pubkey [][]byte, check int) ([]byte,[]byte,common.Address,error) {
 	var err error
 	var cfg FullConfig
 	var configDir string
 	// Load config file.
 	if cfg, configDir, err = maybeLoadConfig(ctx); err != nil {
 		utils.Fatalf("%v", err)
-		return common.Address{},[]byte{}, err
+		return []byte{},[]byte{},common.Address{}, err
 	}
 
 	cfg.Node.P2P = cfg.P2P
@@ -480,7 +480,7 @@ func createMutiAccount(ctx *cli.Context, pubkey [][]byte, check int) (common.Add
 	lockScript := tokenengine.Instance.GenerateP2SHLockScript(crypto.Hash160(redeemScript))
 	addressMulti, _ := tokenengine.Instance.GetAddressFromScript(lockScript)
 
-	return addressMulti, redeemScript,nil
+	return lockScript, redeemScript,addressMulti,nil
 }
 
 func newAccount(ctx *cli.Context) (common.Address, error) {
@@ -508,7 +508,7 @@ func IntToByte(num int64) []byte {
     binary.Read(bytebuff, binary.BigEndian, &data)
     return int(data)
 }*/
-func newMutiAccount(ctx *cli.Context) (common.Address, []byte , error) {
+func newMutiAccount(ctx *cli.Context) ([]byte ,[]byte , common.Address,  error) {
 	if len(ctx.Args()) == 0 {
 		utils.Fatalf("No pubkey specified to create muti account")
 	}
@@ -517,25 +517,25 @@ func newMutiAccount(ctx *cli.Context) (common.Address, []byte , error) {
 	totalstring := ctx.Args().First()
 	total, err := strconv.Atoi(totalstring)
 	if err != nil || total < 0 ||total > 5{
-		return common.Address{}, []byte{}, err
+		return []byte{},[]byte{},common.Address{}, err
 	}
 	for arg_s := 1 ; arg_s < total+1 ; arg_s++ {
 		pki, err = hex.DecodeString(ctx.Args()[arg_s])
 		if err != nil || total < 0 ||total > 5 {
-		    return common.Address{}, []byte{}, err
+		   return []byte{},[]byte{},common.Address{}, err
 	    }
 	    pk = append(pk,pki)
     }
     s_check := ctx.Args()[total+1]
     check , err := strconv.Atoi(s_check)
     if err != nil || check < 0 ||check > 5 {
-		return common.Address{}, []byte{}, err
+		return []byte{},[]byte{},common.Address{}, err
 	}
-	address,redeemScript,err := createMutiAccount(ctx,pk,check)
+	lockscript,redeemScript,address,err := createMutiAccount(ctx,pk,check)
 	if err != nil {
-		return common.Address{}, []byte{}, err
+		return []byte{},[]byte{},common.Address{}, err
 	}
-	return address, redeemScript,nil
+	return lockscript, redeemScript,address, nil
 }
 
 
@@ -552,13 +552,13 @@ func accountCreate(ctx *cli.Context) error {
 }
 
 func accountMutiCreate(ctx *cli.Context) error {
-	address, redeem,err := newMutiAccount(ctx)
+	lockscript,redeem,address,err := newMutiAccount(ctx)
 	if err != nil {
 		utils.Fatalf("%v", err)
 	}
 
 	//	fmt.Printf("Address Hex: {%x}\n", address)
-	fmt.Printf("Address: %s  redeem : %x\n", address.String(),redeem)
+	fmt.Printf("Address: %s lockscript:%x redeem : %x\n", address.String(),lockscript,redeem)
 	return nil
 }
 // accountUpdate transitions an account from a previous format to the current

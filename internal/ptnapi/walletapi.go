@@ -466,7 +466,7 @@ func (s *PrivateWalletAPI) SignRawTransaction(ctx context.Context, params string
 }
 
 
-func (s *PrivateWalletAPI) MutiSignRawTransaction(ctx context.Context, params string, addr common.Address, hashtype string, password string, duration *uint64) (ptnjson.SignRawTransactionResult, error) {
+func (s *PrivateWalletAPI) MutiSignRawTransaction(ctx context.Context, params , lockScript, redeemScript string, addr common.Address, hashtype string, password string, duration *uint64) (ptnjson.SignRawTransactionResult, error) {
 
 	//transaction inputs
 	if params == "" {
@@ -524,8 +524,9 @@ func (s *PrivateWalletAPI) MutiSignRawTransaction(ctx context.Context, params st
 				return ptnjson.SignRawTransactionResult{}, err
 			}
 			TxHash := trimx(uvu.TxHash)
-			PkScriptHex := trimx(uvu.PkScriptHex)
-			input := ptnjson.RawTxInput{Txid: TxHash, Vout: uvu.OutIndex, MessageIndex: uvu.MessageIndex, ScriptPubKey: PkScriptHex, RedeemScript: ""}
+			//PkScriptHex := trimx(uvu.PkScriptHex)
+			PkScriptHex := trimx(lockScript)
+			input := ptnjson.RawTxInput{Txid: TxHash, Vout: uvu.OutIndex, MessageIndex: uvu.MessageIndex, ScriptPubKey: PkScriptHex, RedeemScript:redeemScript }
 			srawinputs = append(srawinputs, input)
 		}
 	}

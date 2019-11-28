@@ -345,17 +345,21 @@ func TestMultiSign2Step(t *testing.T) {
 		}
 		return nil, nil
 	}
-	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
+	getSignFn1 := func(addr common.Address, msg []byte) ([]byte, error) {
 
 		if addr == address1 {
 			return crypto.MyCryptoLib.Sign(prvKey1B, msg)
 		}
+		
+		return nil, nil
+	}
+	getSignFn2 := func(addr common.Address, msg []byte) ([]byte, error) {
 		if addr == address2 {
 			return crypto.MyCryptoLib.Sign(prvKey2B, msg)
 		}
 		return nil, nil
 	}
-	sign1, err := Instance.MultiSignOnePaymentInput(tx, SigHashAll, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn, nil)
+	sign1, err := Instance.MultiSignOnePaymentInput(tx, SigHashAll, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn1, nil)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
@@ -368,7 +372,7 @@ func TestMultiSign2Step(t *testing.T) {
 	//}
 	//scriptCp2:=make([]byte,len(lockScript))
 	//copy(scriptCp2,lockScript)
-	sign2, err := Instance.MultiSignOnePaymentInput(tx, SigHashAll, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn, sign1)
+	sign2, err := Instance.MultiSignOnePaymentInput(tx, SigHashAll, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn2, sign1)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}

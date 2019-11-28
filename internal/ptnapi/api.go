@@ -1254,10 +1254,10 @@ func MutiSignRawTransaction(cmd *ptnjson.MutiSignRawTransactionCmd, pubKeyFn tok
 		        return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
 	        }
 	        payload.Inputs[inputindex].SignatureScript = signed
-			err = tokenengine.Instance.ScriptValidate(PkScript, nil, tx, msgidx, inputindex)
-			if err != nil {
-				return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
-			}
+			//err = tokenengine.Instance.ScriptValidate(PkScript, nil, tx, msgidx, inputindex)
+			//if err != nil {
+			//	return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
+			//}
 		}
 
 		for k := range payload.Outputs {
