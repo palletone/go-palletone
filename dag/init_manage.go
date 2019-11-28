@@ -170,18 +170,17 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, head *modules.Header) error {
 	return nil
 }
 
-func (dag *Dag) IsSynced() bool {
-	//gp := dag.GetGlobalProp()
-	//dgp := dag.GetDynGlobalProp()
-
-	//nowFine := time.Now()
-	//now := time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
-	now := time.Now()
-	// 防止误判，获取之后的第2个生产槽时间
-	//nextSlotTime := dag.unstablePropRep.GetSlotTime(gp, dgp, 1)
-	nextSlotTime := dag.unstablePropRep.GetSlotTime(2)
-	//_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
-	//nextSlotTime := rep.GetSlotTime(2)
+func (dag *Dag) IsSynced(isStrict bool) bool {
+	var now, nextSlotTime time.Time
+	if isStrict {
+		nowFine := time.Now()
+		now = time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
+		nextSlotTime = dag.unstablePropRep.GetSlotTime(1)
+	} else {
+		// 防止误判，获取之后的第3个生产槽时间
+		now = time.Now()
+		nextSlotTime = dag.unstablePropRep.GetSlotTime(3)
+	}
 
 	return nextSlotTime.After(now)
 }
