@@ -183,10 +183,8 @@ func GenContractTransction(orgTx *modules.Transaction, msgs []*modules.Message) 
 		return nil, errors.New(fmt.Sprintf("GenContractTransction param is error"))
 	}
 	org_msgs := orgTx.TxMessages()
+	org_msgs = append(org_msgs, msgs...)
 
-	for i := 0; i < len(msgs); i++ {
-		org_msgs = append(org_msgs, msgs[i])
-	}
 	tx := modules.NewTransaction(org_msgs)
 	tx.SetCertId(orgTx.CertId())
 	tx.SetIllegal(orgTx.Illegal())

@@ -180,10 +180,13 @@ func CopyMessage(cpyMsg *Message) *Message {
 		}
 		readSet := []ContractReadSet{}
 		for _, rs := range payload.ReadSet {
-			version := *rs.Version
-			if rs.Version != nil && rs.Version.Height != nil {
-				version.Height.AssetID = rs.Version.Height.AssetID
-				version.Height.Index = rs.Version.Height.Index
+			var version StateVersion
+			if rs.Version != nil {
+				version = *(rs.Version)
+				if rs.Version != nil && rs.Version.Height != nil {
+					version.Height.AssetID = rs.Version.Height.AssetID
+					version.Height.Index = rs.Version.Height.Index
+				}
 			}
 
 			cs := ContractReadSet{Key: rs.Key, Version: &version, ContractId: common.CopyBytes(rs.ContractId)}
