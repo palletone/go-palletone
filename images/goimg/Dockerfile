@@ -32,5 +32,10 @@ RUN wget -o download.log https://studygolang.com/dl/golang/go1.12.linux-amd64.ta
     && rm go1.12.linux-amd64.tar.gz download.log \
     && mkdir -p /gopath/bin /gopath/src /gopath/pkg /chaincode/input
 
+# Set ENV
+ENV GOPATH=/gopath
+ENV GOROOT=/usr/local/go
+ENV PATH=$PATH:$GOPATH/bin:$GOROOT/bin
+
 # Copy all package dependencies from stock Go builder container
 COPY --from=builder /go/src/github.com/palletone/go-palletone/contracts/example/go/container/vendor /gopath/src/
