@@ -73,7 +73,7 @@ func NewCoinbaseTransaction() (*modules.Transaction, error) {
 	}
 	msg := modules.Message{
 		App:     modules.APP_PAYMENT,
-		Payload: payload,
+		Payload: &payload,
 	}
 
 	coinbase := modules.NewTransaction([]*modules.Message{&msg})
