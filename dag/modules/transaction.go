@@ -157,11 +157,6 @@ func (tx *Transaction) Size() common.StorageSize {
 	return size
 }
 
-//func (tx *Transaction) CreateDate() string {
-//	n := time.Now()
-//	return n.Format(TimeFormatString)
-//}
-
 func (tx *Transaction) Asset() *Asset {
 	if tx == nil {
 		return nil
@@ -515,7 +510,7 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 		if msg.App.IsRequest() {
 			is_request = true
 			req_msgs = append(req_msgs, msg)
-			//break
+			break
 		}
 	}
 	if is_request {

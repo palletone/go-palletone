@@ -195,7 +195,7 @@ func (engine *TokenEngine) ScriptValidate(utxoLockScript []byte,
 	tx *modules.Transaction,
 	msgIdx, inputIndex int) error {
 	acc := &account{}
-	txCopy := tx.Clone()
+	txCopy := tx
 	if tx.IsContractTx() {
 		isRequestMsg := false
 		for idx, msg := range tx.TxMessages() {
