@@ -53,7 +53,7 @@ func (id *mockiDagQuery) GetHeaderByHash(common.Hash) (*modules.Header, error) {
 	return nil, nil
 }
 func (id *mockiDagQuery) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error) {
-	return &modules.AmountAsset{Amount: 5000, Asset: modules.NewPTNAsset()}, nil
+	return &modules.AmountAsset{Amount: 15000, Asset: modules.NewPTNAsset()}, nil
 }
 
 type mockiPropQuery struct{}
@@ -127,7 +127,7 @@ func (u *testutxoQuery) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo,
 	_, _, addr := getAccount()
 	lockScript := tokenengine.Instance.GenerateLockScript(addr)
 	if outpoint.TxHash == hash1 {
-		return &modules.Utxo{Asset: modules.NewPTNAsset(), Amount: 1000, PkScript: lockScript}, nil
+		return &modules.Utxo{Asset: modules.NewPTNAsset(), Amount: 5001, PkScript: lockScript}, nil
 	}
 	return nil, errors.New("Incorrect Hash")
 }
@@ -154,7 +154,8 @@ func TestGetRequestTx(t *testing.T) {
 	msg.App = modules.APP_PAYMENT
 	input := make([]*modules.Input, 0)
 	out := make([]*modules.Output, 0)
-	input = []*modules.Input{{PreviousOutPoint: modules.NewOutPoint(common.HexToHash("0xb17041fe6ef735b8be14f1f54b7b888b663c3074730cc8f82455d69450a533bf"), 0, 0), SignatureScript: []byte("test_sig"), Extra: []byte("jay")}}
+	input = []*modules.Input{{PreviousOutPoint: modules.NewOutPoint(common.HexToHash("0xb17041fe6ef735b8be14f1f54b7b888b663c3074730cc8f82455d69450a533bf"), 0, 0),
+		SignatureScript: []byte("test_sig"), Extra: []byte("jay")}}
 	out = []*modules.Output{{Value: 10000, PkScript: []byte("test_pk"), Asset: modules.NewPTNAsset()}}
 	pay := modules.NewPaymentPayload(input, out)
 	msg.Payload = pay

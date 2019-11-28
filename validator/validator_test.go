@@ -38,20 +38,21 @@ import (
 func TestValidate_ValidateUnitTxs(t *testing.T) {
 	parameter.CurrentSysParameters.GenerateUnitReward = 0
 	//构造一个Unit包含3个Txs，
-	//0是Coinbase，收集3Dao手续费
-	//1是普通Tx，100->99 付1Dao手续费，产生1Utxo
-	//2是普通Tx， 99->97 付2Dao手续费，使用Tx1中的一个Utxo，产生1Utxo
+	//0是Coinbase，收集30000Dao手续费
+	//1是普通Tx，20000->15000 付5000Dao手续费，产生1Utxo
+	//2是普通Tx， 15000->5000 付10000Dao手续费，使用Tx1中的一个Utxo，产生1Utxo
 	tx0 := newCoinbaseTx()
 	tx1 := newTx1(t)
 	outPoint := modules.NewOutPoint(tx1.Hash(), 0, 0)
 	tx2 := newTx2(t, outPoint)
 	txs := modules.Transactions{tx0, tx1, tx2}
-
+	dagq := &mockiDagQuery{}
 	utxoQuery := &mockUtxoQuery{}
 	mockStatedbQuery := &mockStatedbQuery{}
-	validate := NewValidate(nil, utxoQuery, mockStatedbQuery, nil, newCache(), false)
+	prop := &mockiPropQuery{}
+	validate := NewValidate(dagq, utxoQuery, mockStatedbQuery, prop, newCache(), false)
 	addr, _ := common.StringToAddress("P1HXNZReTByQHgWQNGMXotMyTkMG9XeEQfX")
-	code := validate.validateTransactions(txs, time.Now().Unix(), addr)
+	code := validate.validateTransactions(txs, 1564675200, addr)
 	assert.Equal(t, code, TxValidationCode_VALID)
 }
 
@@ -101,17 +102,13 @@ func (q *mockUtxoQuery) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo,
 
 func (q *mockUtxoQuery) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	hash := common.HexToHash("1")
-	//result := map[*modules.OutPoint]*modules.Utxo{}
 	addr, _ := common.StringToAddress("P1HXNZReTByQHgWQNGMXotMyTkMG9XeEQfX")
 	lockScript := tokenengine.Instance.GenerateLockScript(addr)
-	utxo := &modules.Utxo{Amount: 100, LockTime: 0, Asset: modules.NewPTNAsset(), PkScript: lockScript}
+	utxo := &modules.Utxo{Amount: 20000, LockTime: 0, Asset: modules.NewPTNAsset(), PkScript: lockScript}
 	if outpoint.TxHash == hash {
 		return utxo, nil
 	}
-	//result[modules.NewOutPoint(hash, 0, 0)] = utxo
-	//if u, ok := result[outpoint]; ok {
-	//	return u, nil
-	//}
+
 	return nil, errors.New("No utxo found")
 }
 
@@ -119,7 +116,7 @@ func newCoinbaseTx() *modules.Transaction {
 	pay1s := &modules.PaymentPayload{}
 	addr, _ := common.StringToAddress("P1HXNZReTByQHgWQNGMXotMyTkMG9XeEQfX")
 	lockScript := tokenengine.Instance.GenerateLockScript(addr)
-	output := modules.NewTxOut(3, lockScript, modules.NewPTNAsset())
+	output := modules.NewTxOut(30000, lockScript, modules.NewPTNAsset())
 	pay1s.AddTxOut(output)
 	input := modules.Input{}
 	input.Extra = []byte("Coinbase")
@@ -141,7 +138,7 @@ func newTx1(t *testing.T) *modules.Transaction {
 	pay1s := &modules.PaymentPayload{}
 	addr, _ := common.StringToAddress("P1HXNZReTByQHgWQNGMXotMyTkMG9XeEQfX")
 	lockScript := tokenengine.Instance.GenerateLockScript(addr)
-	output := modules.NewTxOut(99, lockScript, modules.NewPTNAsset())
+	output := modules.NewTxOut(15000, lockScript, modules.NewPTNAsset())
 	pay1s.AddTxOut(output)
 	hash := common.HexToHash("1")
 	input := modules.Input{}
@@ -182,7 +179,7 @@ func newTx1(t *testing.T) *modules.Transaction {
 }
 func newTx2(t *testing.T, outpoint *modules.OutPoint) *modules.Transaction {
 	pay1s := &modules.PaymentPayload{}
-	output := modules.NewTxOut(97, []byte{}, modules.NewPTNAsset())
+	output := modules.NewTxOut(5000, []byte{}, modules.NewPTNAsset())
 	pay1s.AddTxOut(output)
 	input := modules.Input{}
 	input.PreviousOutPoint = outpoint
@@ -304,6 +301,6 @@ func TestTime(t *testing.T) {
 	ti, _ := time.ParseInLocation("2006-01-02 15:04:05", "2019-12-01 00:00:00", time.Local)
 	t.Log(ti.Format("2006-01-02 15:04:05"))
 	t.Log(ti.Unix())
-	t2:=time.Unix(1570870800,0)
+	t2 := time.Unix(1570870800, 0)
 	t.Logf("Time2:%v", t2.Format("2006-01-02 15:04:05"))
 }
