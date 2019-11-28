@@ -128,7 +128,7 @@ type IDag interface {
 	SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error
 	SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription
 
-	IsSynced(isStrict bool) bool
+	IsSynced(toStrictly bool) bool
 	SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription
 	GetPrecedingMediatorNodes() map[string]*discover.Node
 	UnitIrreversibleTime() time.Duration
