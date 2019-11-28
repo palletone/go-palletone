@@ -330,7 +330,7 @@ func (tx *Transaction) SetCertId(certid []byte) {
 	d := transaction_sdw{}
 	d.CertId = common.CopyBytes(certid)
 	d.Illegal = tx.Illegal()
-	d.TxMessages = append(d.TxMessages, tx.TxMessages()...)
+	d.TxMessages = append(d.TxMessages, tx.txdata.TxMessages...)
 	temp := &Transaction{txdata: d}
 	tx.txdata = d
 	tx.hash.Store(temp.Hash())
@@ -340,7 +340,7 @@ func (tx *Transaction) SetIllegal(illegal bool) {
 	d := transaction_sdw{}
 	d.Illegal = illegal
 	d.CertId = common.CopyBytes(tx.CertId())
-	d.TxMessages = append(d.TxMessages, tx.TxMessages()...)
+	d.TxMessages = append(d.TxMessages, tx.txdata.TxMessages...)
 	temp := &Transaction{txdata: d}
 	tx.txdata = d
 	tx.hash.Store(temp.Hash())

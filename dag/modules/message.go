@@ -148,9 +148,13 @@ func CopyMessage(cpyMsg *Message) *Message {
 		}
 		readSet := []ContractReadSet{}
 		for _, rs := range payload.ReadSet {
-			cs := ContractReadSet{Key: rs.Key, Version: &StateVersion{
-				Height: NewChainIndex(rs.Version.Height.AssetID, rs.Version.Height.Index), TxIndex: rs.Version.TxIndex}}
-			cs.ContractId = common.CopyBytes(rs.ContractId)
+			version := *rs.Version
+			if rs.Version != nil && rs.Version.Height != nil {
+				version.Height.AssetID = rs.Version.Height.AssetID
+				version.Height.Index = rs.Version.Height.Index
+			}
+
+			cs := ContractReadSet{Key: rs.Key, Version: &version, ContractId: common.CopyBytes(rs.ContractId)}
 			readSet = append(readSet, cs)
 		}
 
@@ -176,9 +180,13 @@ func CopyMessage(cpyMsg *Message) *Message {
 		}
 		readSet := []ContractReadSet{}
 		for _, rs := range payload.ReadSet {
-			cs := ContractReadSet{Key: rs.Key, Version: &StateVersion{
-				Height: NewChainIndex(rs.Version.Height.AssetID, rs.Version.Height.Index), TxIndex: rs.Version.TxIndex}}
-			cs.ContractId = common.CopyBytes(rs.ContractId)
+			version := *rs.Version
+			if rs.Version != nil && rs.Version.Height != nil {
+				version.Height.AssetID = rs.Version.Height.AssetID
+				version.Height.Index = rs.Version.Height.Index
+			}
+
+			cs := ContractReadSet{Key: rs.Key, Version: &version, ContractId: common.CopyBytes(rs.ContractId)}
 			readSet = append(readSet, cs)
 		}
 
@@ -198,9 +206,13 @@ func CopyMessage(cpyMsg *Message) *Message {
 		temp_load.ContractId = common.CopyBytes(payload.ContractId)
 		readSet := []ContractReadSet{}
 		for _, rs := range payload.ReadSet {
-			cs := ContractReadSet{Key: rs.Key, Version: &StateVersion{
-				Height: NewChainIndex(rs.Version.Height.AssetID, rs.Version.Height.Index), TxIndex: rs.Version.TxIndex}}
-			cs.ContractId = common.CopyBytes(rs.ContractId)
+			version := *rs.Version
+			if rs.Version != nil && rs.Version.Height != nil {
+				version.Height.AssetID = rs.Version.Height.AssetID
+				version.Height.Index = rs.Version.Height.Index
+			}
+
+			cs := ContractReadSet{Key: rs.Key, Version: &version, ContractId: common.CopyBytes(rs.ContractId)}
 			readSet = append(readSet, cs)
 		}
 
