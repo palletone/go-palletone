@@ -93,13 +93,12 @@ func (d *Dag) IsEmpty() bool {
 
 // return stable unit in dag
 func (d *Dag) CurrentUnit(token modules.AssetId) *modules.Unit {
-	memdag, err := d.getMemDag(token)
+	hash, _, err := d.stablePropRep.GetNewestUnit(token)
 	if err != nil {
-		log.Errorf("Get CurrentUnit by token[%s] error:%s", token.String(), err.Error())
+		log.Errorf("Get stable unit by token[%s] error:%s", token.String(), err.Error())
 		return nil
 	}
-	stable_hash, _ := memdag.GetLastStableUnitInfo()
-	unit, err := d.GetUnitByHash(stable_hash)
+	unit, err := d.GetUnitByHash(hash)
 	if err != nil {
 		return nil
 	}
@@ -290,13 +289,13 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 		// all units must be continuous
 		if i > 0 && units[i].UnitHeader.GetNumber().Index != units[i-1].UnitHeader.GetNumber().Index+1 {
 			return count, fmt.Errorf("Insert dag error: child height are not continuous, "+
-				"parent unit number=%d, hash=%s; "+"child unit number=%d, hash=%s",
+				"parent unit number=%d, hash=%s; "+ "child unit number=%d, hash=%s",
 				units[i-1].UnitHeader.GetNumber().Index, units[i-1].UnitHash.String(),
 				units[i].UnitHeader.GetNumber().Index, units[i].UnitHash.String())
 		}
 		if i > 0 && !u.ContainsParent(units[i-1].UnitHash) {
 			return count, fmt.Errorf("Insert dag error: child parents are not continuous, "+
-				"parent unit number=%d, hash=%s; "+"child unit number=%d, hash=%s",
+				"parent unit number=%d, hash=%s; "+ "child unit number=%d, hash=%s",
 				units[i-1].UnitHeader.GetNumber().Index, units[i-1].UnitHash.String(),
 				units[i].UnitHeader.GetNumber().Index, units[i].UnitHash.String())
 		}
