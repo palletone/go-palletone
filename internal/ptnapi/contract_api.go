@@ -26,7 +26,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/palletone/go-palletone/contracts/list"
 	"math"
 	"math/big"
 	"strconv"
@@ -720,6 +719,16 @@ func (s *PublicContractAPI) GetContractFeeLevel(ctx context.Context) (*ContractF
 }
 
 //获取所担任的用户合约相关信息
-func(s *PublicContractAPI) GetChaincodesInfo(ctx context.Context) ([]*list.CCInfo,error) {
-	return s.b.RetrieveChaincodes()
+func (s *PublicContractAPI) GetContractsWithJuryAddress(ctx context.Context, addr string) ([]*ptnjson.ContractJson, error) {
+	a, err := common.StringToAddress(addr)
+	if err != nil {
+		return nil, err
+	}
+	log.Debugf("jury address %s", a.String())
+	cs := s.b.GetContractsWithJuryAddr(a)
+	cj := make([]*ptnjson.ContractJson, 0, len(cs))
+	for _, c := range cs {
+		cj = append(cj, ptnjson.ConvertContract2Json(c))
+	}
+	return cj, nil
 }

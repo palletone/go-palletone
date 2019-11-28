@@ -98,7 +98,6 @@ type iDag interface {
 	GetMediator(add common.Address) *core.Mediator
 	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
 	GetJurorByAddrHash(addrHash common.Hash) (*modules.JurorDeposit, error)
-	RetrieveChaincodes() ([]*list.CCInfo, error)
 
 	//nouse
 	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
@@ -152,7 +151,7 @@ type Processor struct {
 
 	contractExecFeed  event.Feed
 	contractExecScope event.SubscriptionScope
-	pDocker *utils.PalletOneDocker
+	pDocker           *utils.PalletOneDocker
 }
 
 func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract, cfg *Config) (*Processor, error) {

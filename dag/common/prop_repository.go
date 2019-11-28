@@ -58,7 +58,6 @@ type IPropRepository interface {
 
 	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
 	GetChaincode(contractId common.Address) (*list.CCInfo, error)
-	RetrieveChaincodes() ([]*list.CCInfo, error)
 	GetChainParameters() *core.ChainParameters
 }
 
@@ -74,9 +73,6 @@ func (pRep *PropRepository) SaveChaincode(contractId common.Address, cc *list.CC
 	return pRep.db.SaveChaincode(contractId, cc)
 }
 
-func (pRep *PropRepository) RetrieveChaincodes() ([]*list.CCInfo, error) {
-	return pRep.db.RetrieveChaincodes()
-}
 func NewPropRepository(db storage.IPropertyDb) *PropRepository {
 	return &PropRepository{db: db}
 }

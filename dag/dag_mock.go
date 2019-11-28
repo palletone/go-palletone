@@ -1440,21 +1440,6 @@ func (mr *MockIDagMockRecorder) GetChaincode(contractId interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChaincode", reflect.TypeOf((*MockIDag)(nil).GetChaincode), contractId)
 }
 
-// RetrieveChaincodes mocks base method
-func (m *MockIDag) RetrieveChaincodes() ([]*list.CCInfo, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RetrieveChaincodes")
-	ret0, _ := ret[0].([]*list.CCInfo)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// RetrieveChaincodes indicates an expected call of RetrieveChaincodes
-func (mr *MockIDagMockRecorder) RetrieveChaincodes() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RetrieveChaincodes", reflect.TypeOf((*MockIDag)(nil).RetrieveChaincodes))
-}
-
 // GetPartitionChains mocks base method
 func (m *MockIDag) GetPartitionChains() ([]*modules.PartitionChain, error) {
 	m.ctrl.T.Helper()

@@ -775,10 +775,6 @@ func (d *Dag) GetChaincode(contractId common.Address) (*list.CCInfo, error) {
 	return d.stablePropRep.GetChaincode(contractId)
 }
 
-func (d *Dag) RetrieveChaincodes() ([]*list.CCInfo, error) {
-	return d.stablePropRep.RetrieveChaincodes()
-}
-
 // save chain code by contract id
 func (d *Dag) SaveChaincode(contractId common.Address, cc *list.CCInfo) error {
 	return d.stablePropRep.SaveChaincode(contractId, cc)

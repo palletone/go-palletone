@@ -174,9 +174,9 @@ web3._extend({
 			params: 2
 		}),
         new web3._extend.Method({
-			name: 'getChaincodesInfo',
-			call: 'contract_getChaincodesInfo',
-			params: 0
+			name: 'getContractsWithJuryAddress',
+			call: 'contract_getContractsWithJuryAddress',
+			params: 1
 		}),
 	],
 	properties: [

@@ -24,6 +24,7 @@ import (
 	"encoding/binary"
 	"reflect"
 
+	"fmt"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -32,7 +33,6 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
-	"fmt"
 )
 
 type PropertyDb struct {
@@ -55,7 +55,6 @@ type IPropertyDb interface {
 	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
 	GetChaincode(contractId common.Address) (*list.CCInfo, error)
 	GetChainParameters() *core.ChainParameters
-	RetrieveChaincodes() ([]*list.CCInfo, error)
 }
 
 func (propdb *PropertyDb) GetChainParameters() *core.ChainParameters {
@@ -201,15 +200,4 @@ func (db *PropertyDb) GetChaincode(contractId common.Address) (*list.CCInfo, err
 		return nil, fmt.Errorf("GetChaincode fail, err:%s", err.Error())
 	}
 	return cc, nil
-}
-
-func (db *PropertyDb) RetrieveChaincodes() ([]*list.CCInfo, error) {
-	kv := getprefix(db.db, constants.JURY_PROPERTY_USER_CONTRACT_KEY)
-	result := make([]*list.CCInfo, 0)
-	for _, v := range kv {
-		cc := list.CCInfo{}
-		rlp.DecodeBytes(v, &cc)
-		result = append(result, &cc)
-	}
-	return result, nil
 }

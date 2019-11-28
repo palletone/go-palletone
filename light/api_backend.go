@@ -22,7 +22,6 @@ package light
 
 import (
 	"context"
-	"github.com/palletone/go-palletone/contracts/list"
 	"math/big"
 	"time"
 
@@ -555,6 +554,6 @@ func (b *LesApiBackend) GetAddressBalanceStatistics(token string, topN int) (*st
 func (b *LesApiBackend) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
 	return nil, nil
 }
-func (b *LesApiBackend) RetrieveChaincodes() ([]*list.CCInfo, error){
-	return nil,nil
+func (b *LesApiBackend) GetContractsWithJuryAddr(addr common.Address) []*modules.Contract {
+	return nil
 }

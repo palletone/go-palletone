@@ -158,7 +158,6 @@ type IDag interface {
 
 	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
 	GetChaincode(contractId common.Address) (*list.CCInfo, error)
-	RetrieveChaincodes() ([]*list.CCInfo, error)
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
 
