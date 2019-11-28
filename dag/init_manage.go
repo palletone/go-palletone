@@ -170,9 +170,10 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, head *modules.Header) error {
 	return nil
 }
 
-func (dag *Dag) IsSynced(isStrict bool) bool {
+func (dag *Dag) IsSynced(toStrictly bool) bool {
 	var now, nextSlotTime time.Time
-	if isStrict {
+
+	if toStrictly {
 		nowFine := time.Now()
 		now = time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
 		nextSlotTime = dag.unstablePropRep.GetSlotTime(1)
@@ -204,8 +205,8 @@ func (d *Dag) UnitIrreversibleTime() time.Duration {
 func (d *Dag) IsIrreversibleUnit(hash common.Hash) (bool, error) {
 	header, err := d.unstableUnitRep.GetHeaderByHash(hash)
 	if err != nil {
-			log.Debugf("UnitRep GetHeaderByHash error:%s", err.Error())
-			return false, err // 不存在该unit
+		log.Debugf("UnitRep GetHeaderByHash error:%s", err.Error())
+		return false, err // 不存在该unit
 	}
 
 	if header.NumberU64() > d.GetIrreversibleUnitNum(header.GetAssetId()) {

@@ -303,7 +303,7 @@ type ElectionNode struct {
 
 type ContractReadSet struct {
 	Key        string        `json:"key"`
-	Version    *StateVersion `json:"version"`
+	Version    *StateVersion `json:"version" rlp:"nil"`
 	ContractId []byte        `json:"contract_id"`
 }
 
