@@ -92,6 +92,9 @@ type IStateRepository interface {
 	GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)
 	SaveSysConfigContract(key string, val []byte, ver *modules.StateVersion) error
 	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
+
+	SaveContractWithJuryAddr(addr common.Address, contract *modules.Contract) error
+	GetContractsWithJuryAddr(addr common.Address) []*modules.Contract
 }
 
 type StateRepository struct {
@@ -513,4 +516,11 @@ func (rep *StateRepository) GetDataVersion() (*modules.DataVersion, error) {
 }
 func (rep *StateRepository) StoreDataVersion(dv *modules.DataVersion) error {
 	return rep.statedb.SaveDataVersion(dv)
+}
+func (rep *StateRepository) SaveContractWithJuryAddr(addr common.Address, contract *modules.Contract) error {
+	return rep.statedb.SaveContractWithJuryAddr(addr, contract)
+}
+
+func (rep *StateRepository) GetContractsWithJuryAddr(addr common.Address) []*modules.Contract {
+	return rep.statedb.GetContractsWithJuryAddr(addr)
 }

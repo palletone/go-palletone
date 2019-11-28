@@ -81,39 +81,17 @@ func (pD *PalletOneDocker) RestartUserContractsWhenStartGptn(n1 chan struct{}, n
 	defer log.Debug("end RestartUserContractsWhenStartGptn")
 	defer close(n2)
 	//  获取本地用户合约列表
-	//userContractsInfo, err := pD.dag.RetrieveChaincodes()
-	//if err != nil {
-	//	log.Debugf("RetrieveChaincodes error: %s", err.Error())
-	//	return
-	//}
-	contracts, err := pD.dag.GetAllContracts()
-	if err != nil {
-		log.Debugf("get all contracts error: %s", err.Error())
-		return
+	juryAddrs := pD.jury.GetLocalJuryAddrs()
+	juryAddr := common.Address{}
+	if len(juryAddrs) != 0 {
+		juryAddr = juryAddrs[0]
 	}
+	contracts := pD.dag.GetContractsWithJuryAddr(juryAddr)
 	//  启动退出的容器，包括本地有的和本地没有的
 	if len(contracts) != 0 {
 		log.Debugf("contracts length = %d", len(contracts))
 		for _, c := range contracts {
 			log.Debugf("contract id = %v", c.ContractId)
-			//  判断是否是担任jury地址
-			juryAddrs := pD.jury.GetLocalJuryAddrs()
-			juryAddr := ""
-			if len(juryAddrs) != 0 {
-				juryAddr = juryAddrs[0].String()
-			}
-			isMe := false
-			for _, a := range c.JuryPubkeys {
-				if juryAddr == crypto.PubkeyBytesToAddress([]byte(a)).String() {
-					isMe = true
-					break
-				}
-			}
-			if !isMe {
-				log.Debugf("continue")
-				continue
-			}
-			log.Debug(c.Name)
 			rd, _ := crypto.GetRandomBytes(32)
 			txid := util2.RlpHash(rd)
 			//  启动 gptn 时启动Jury对应的没有过期的用户合约容器
@@ -123,7 +101,7 @@ func (pD *PalletOneDocker) RestartUserContractsWhenStartGptn(n1 chan struct{}, n
 			log.Debugf("nowTime = %s", nowTime)
 			isExpired := time.Now().UTC().After(expiredTime)
 			if !isExpired {
-				log.Debugf("restart container %s with jury address %s", c.Name, juryAddr)
+				log.Debugf("restart container %s with jury address %s", c.Name, juryAddr.String())
 				address := common.NewAddress(c.ContractId, common.ContractHash)
 				_, _ = manger.RestartContainer(pD.dag, "palletone", address, txid.String())
 			} else {
@@ -132,7 +110,7 @@ func (pD *PalletOneDocker) RestartUserContractsWhenStartGptn(n1 chan struct{}, n
 		}
 		return
 	}
-	//log.Debugf("userContractsInfo length =%d", len(contracts))
+	log.Debugf("contracts length =%d", len(contracts))
 }
 
 func (pD *PalletOneDocker) GetAllContainers() ([]docker.APIContainers, error) {
@@ -153,28 +131,12 @@ func (pD *PalletOneDocker) RestartExitedAndUnExpiredContainers(cons []docker.API
 	for _, v := range addrs {
 		//  判断是否是担任jury地址
 		juryAddrs := pD.jury.GetLocalJuryAddrs()
-		juryAddr := ""
+		juryAddr := common.Address{}
 		if len(juryAddrs) != 0 {
-			juryAddr = juryAddrs[0].String()
+			juryAddr = juryAddrs[0]
 		}
-		//cc, err := pD.dag.GetChaincode(v)
-		//if err != nil {
-		//	log.Debug(err.Error())
-		//	continue
-		//}
-		contract, err := pD.dag.GetContract(v.Bytes())
-		if err != nil {
-			log.Debug(err.Error())
-			continue
-		}
-		isMe := false
-		for _, ja := range contract.JuryPubkeys {
-			if juryAddr == crypto.PubkeyBytesToAddress([]byte(ja)).String() {
-				isMe = true
-				break
-			}
-		}
-		if !isMe {
+		contract := pD.dag.GetContractsWithJuryAddr(juryAddr)
+		if len(contract) == 0 {
 			log.Debugf("continue")
 			continue
 		}
