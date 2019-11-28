@@ -266,6 +266,14 @@ func (s *RwSetTxSimulator) GetStableTransactionByHash(ns string, hash common.Has
 	return s.dag.GetStableTransactionOnly(hash)
 }
 
+func (s *RwSetTxSimulator) GetStableUnit(ns string, hash common.Hash, unitNumber uint64) (*modules.Unit, error) {
+	if !hash.IsZero() {
+		return s.dag.GetStableUnit(hash)
+	}
+	gasToken := dagconfig.DagConfig.GetGasToken()
+	number := &modules.ChainIndex{AssetID: gasToken, Index: unitNumber}
+	return s.dag.GetStableUnitByNumber(number)
+}
 func convertUtxo2Balance(utxos map[modules.OutPoint]*modules.Utxo) map[modules.Asset]uint64 {
 	result := map[modules.Asset]uint64{}
 	for _, v := range utxos {

@@ -451,9 +451,24 @@ func (d *Dag) GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	return d.unstableUnitRep.GetTransactionOnly(hash)
 }
 
-// return the transaction by hash
+// return the stable transaction by hash
 func (d *Dag) GetStableTransactionOnly(hash common.Hash) (*modules.Transaction, error) {
 	return d.stableUnitRep.GetTransactionOnly(hash)
+}
+
+// return the stable unit by hash or number
+func (d *Dag) GetStableUnit(hash common.Hash) (*modules.Unit, error) {
+	return d.stableUnitRep.GetUnit(hash)
+}
+
+// return the stable unit by chain index
+func (d *Dag) GetStableUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error) {
+	hash, err := d.stableUnitRep.GetHashByNumber(number)
+	if err != nil {
+		log.Debug("GetStableUnitByNumber dagdb.GetHashByNumber err:", "error", err)
+		return nil, err
+	}
+	return d.stableUnitRep.GetUnit(hash)
 }
 
 // retunr the txLookEntry by transaction hash
@@ -1111,7 +1126,7 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 	}
 
 	// 判断本节点是否正在同步数据
-	if !d.IsSynced() {
+	if !d.IsSynced(false) {
 		err := "this node is syncing"
 		log.Debugf(err)
 		return fmt.Errorf(err)
