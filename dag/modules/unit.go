@@ -596,11 +596,7 @@ func (b *Unit) WithBody(transactions []*Transaction) *Unit {
 }
 
 func (u *Unit) ContainsParent(pHash common.Hash) bool {
-	//ps := pHash.String()
-	for _, hash := range u.UnitHeader.ParentsHash {
-		//if strings.Compare(hash.String(), ps) == 0 {
-		//	return true
-		//}
+	for _, hash := range u.UnitHeader.header.ParentsHash {
 		if pHash == hash {
 			return true
 		}
@@ -611,7 +607,6 @@ func (u *Unit) ContainsParent(pHash common.Hash) bool {
 func MsgstoAddress(msgs []*Message) common.Address {
 	forms := make([]common.Address, 0)
 	//payment load to address.
-
 	for _, msg := range msgs {
 		payment, ok := msg.Payload.(PaymentPayload)
 		if !ok {

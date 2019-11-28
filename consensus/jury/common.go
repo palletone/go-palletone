@@ -116,7 +116,7 @@ func (p *Processor) processContractPayout(tx *modules.Transaction, ele *modules.
 			msgs = append(msgs, msg)
 		}
 		log.Debugf("[%s]processContractPayout, Remove SignaturePayload from req[%s]", shortId(reqId.String()), reqId.String())
-		tx.TxMessages = msgs
+		msgs = append(msgs, msg)
 	}
 	log.Debugf("[%s]processContractPayout, Remove SignaturePayload from req[%s]", shortId(reqId.String()), reqId.String())
 	tx.SetMessages(msgs)

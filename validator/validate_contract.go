@@ -86,7 +86,7 @@ func (validate *Validate) validateContractSignature(signatures []modules.Signatu
 	var jury *modules.ElectionNode
 	var err error
 	var contractId []byte
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		if msg.App == modules.APP_CONTRACT_DEPLOY {
 			deploy := msg.Payload.(*modules.ContractDeployPayload)
 			jury = &deploy.EleNode

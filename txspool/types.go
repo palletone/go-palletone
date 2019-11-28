@@ -37,14 +37,14 @@ type TxPoolTransaction struct {
 	Tx *modules.Transaction
 
 	From         []*modules.OutPoint
-	CreationDate time.Time `json:"creation_date"`
-	Priority_lvl string    `json:"priority_lvl"` // 打包的优先级
+	CreationDate time.Time           `json:"creation_date"`
+	Priority_lvl string              `json:"priority_lvl"` // 打包的优先级
 	UnitHash     common.Hash
 	UnitIndex    uint64
 	Pending      bool
 	Confirmed    bool
 	IsOrphan     bool
-	Discarded    bool                // will remove
+	Discarded    bool // will remove
 	TxFee        []*modules.Addition `json:"tx_fee"`
 	Index        uint64              `json:"index"` // index 是该Unit位置。
 	Extra        []byte
@@ -70,7 +70,7 @@ func (tx *TxPoolTransaction) GetPriorityLvl() string {
 			tx.CreationDate = time.Now()
 		}
 		priority_lvl, _ = strconv.ParseFloat(fmt.Sprintf("%f", float64(txfee.Int64())/
-			tx.Tx.Size().Float64()*(1+float64(time.Now().Second()-tx.CreationDate.Second())/(24*3600))), 64)
+			tx.Tx.Size().Float64()* (1 + float64(time.Now().Second()-tx.CreationDate.Second())/(24*3600))), 64)
 	}
 	tx.Priority_lvl = strconv.FormatFloat(priority_lvl, 'f', -1, 64)
 	return tx.Priority_lvl
@@ -86,7 +86,7 @@ func (tx *TxPoolTransaction) GetPriorityfloat64() float64 {
 			tx.CreationDate = time.Now()
 		}
 		priority_lvl, _ = strconv.ParseFloat(fmt.Sprintf("%f", float64(txfee.Int64())/
-			tx.Tx.Size().Float64()*(1+float64(time.Now().Second()-tx.CreationDate.Second())/(24*3600))), 64)
+			tx.Tx.Size().Float64()* (1 + float64(time.Now().Second()-tx.CreationDate.Second())/(24*3600))), 64)
 	}
 	return priority_lvl
 }
@@ -219,14 +219,14 @@ type txpoolTransactionTemp struct {
 	Illegal bool
 
 	From         []modules.OutPoint
-	CreationDate time.Time `json:"creation_date"`
-	Priority_lvl string    `json:"priority_lvl"`
+	CreationDate time.Time          `json:"creation_date"`
+	Priority_lvl string             `json:"priority_lvl"`
 	UnitHash     common.Hash
 	UnitIndex    uint64
 	Pending      bool
 	Confirmed    bool
 	IsOrphan     bool
-	Discarded    bool               // will remove
+	Discarded    bool // will remove
 	TxFee        []modules.Addition `json:"tx_fee"`
 	Index        uint64             `json:"index"`
 	Extra        []byte
@@ -254,8 +254,8 @@ func (pooltx *TxPoolTransaction) EncodeRLP(w io.Writer) error {
 		m1.Data = d
 		temp.Msgs = append(temp.Msgs, m1)
 	}
-	temp.CertId = common.CopyBytes(pooltx.Tx.CertId)
-	temp.Illegal = pooltx.Tx.Illegal
+	temp.CertId = common.CopyBytes(pooltx.Tx.CertId())
+	temp.Illegal = pooltx.Tx.Illegal()
 	for _, from := range pooltx.From {
 		temp.From = append(temp.From, *from)
 	}
@@ -399,9 +399,8 @@ func (pooltx *TxPoolTransaction) DecodeRLP(s *rlp.Stream) error {
 	}
 
 	pooltx.Tx = modules.NewTransaction(msgs)
-	pooltx.Tx.Illegal = temp.Illegal
-	pooltx.Tx.CertId = common.CopyBytes(temp.CertId)
-
+	pooltx.Tx.SetIllegal(temp.Illegal)
+	pooltx.Tx.SetCertId(common.CopyBytes(temp.CertId))
 	pooltx.From = make([]*modules.OutPoint, 0)
 	for _, from := range temp.From {
 		f := from

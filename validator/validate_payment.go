@@ -69,8 +69,7 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 			txForSign = tx.GetRequestTx()
 			log.Debugf("msgIdx %d, GetRequestTx 1", msgIdx)
 		} else if invokeReqMsgIdx > 0 && msgIdx > invokeReqMsgIdx {
-			txCopy:=tx.Clone()
-			txForSign =&txCopy
+			//txForSign := tx.Clone()
 			log.Debugf("msgIdx %d, GetResultTx 1", msgIdx)
 		}
 

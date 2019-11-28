@@ -1168,9 +1168,7 @@ func MutiSignRawTransaction(cmd *ptnjson.MutiSignRawTransactionCmd, pubKeyFn tok
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, err
 	}
-	tx := &modules.Transaction{
-		TxMessages: make([]*modules.Message, 0),
-	}
+	tx := new(modules.Transaction)
 	if err := rlp.DecodeBytes(serializedTx, tx); err != nil {
 		return ptnjson.SignRawTransactionResult{}, err
 	}
@@ -1239,18 +1237,19 @@ func MutiSignRawTransaction(cmd *ptnjson.MutiSignRawTransactionCmd, pubKeyFn tok
 	}
 
 	var signErrs []common.SignatureError
-	
-	for msgidx, msg := range tx.TxMessages {
+
+	for msgidx, msg := range tx.Messages() {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if !ok {
 			continue
 		}
 		for inputindex := range payload.Inputs {
-			signed, err := tokenengine.Instance.MultiSignOnePaymentInput(tx, hashType, msgidx,inputindex,PkScript, redeem, pubKeyFn, hashFn,payload.Inputs[inputindex].SignatureScript)
-	        if err != nil {
-		        return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
-	        }
-	        payload.Inputs[inputindex].SignatureScript = signed
+			signed, err := tokenengine.Instance.MultiSignOnePaymentInput(tx, hashType, msgidx, inputindex, PkScript,
+				redeem, pubKeyFn, hashFn, payload.Inputs[inputindex].SignatureScript)
+			if err != nil {
+				return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
+			}
+			payload.Inputs[inputindex].SignatureScript = signed
 			//err = tokenengine.Instance.ScriptValidate(PkScript, nil, tx, msgidx, inputindex)
 			//if err != nil {
 			//	return ptnjson.SignRawTransactionResult{}, DeserializationError{err}

@@ -462,8 +462,7 @@ func (s *PrivateWalletAPI) SignRawTransaction(ctx context.Context, params string
 	return result, err
 }
 
-
-func (s *PrivateWalletAPI) MutiSignRawTransaction(ctx context.Context, params , lockScript, redeemScript string, addr common.Address, hashtype string, password string, duration *uint64) (ptnjson.SignRawTransactionResult, error) {
+func (s *PrivateWalletAPI) MutiSignRawTransaction(ctx context.Context, params, lockScript, redeemScript string, addr common.Address, hashtype string, password string, duration *uint64) (ptnjson.SignRawTransactionResult, error) {
 
 	//transaction inputs
 	if params == "" {
@@ -478,10 +477,8 @@ func (s *PrivateWalletAPI) MutiSignRawTransaction(ctx context.Context, params , 
 		return ptnjson.SignRawTransactionResult{}, errors.New("Params is invalid")
 	}
 
-	tx := &modules.Transaction{
-		TxMessages: make([]*modules.Message, 0),
-	}
-	if err := rlp.DecodeBytes(serializedTx, &tx); err != nil {
+	tx := new(modules.Transaction)
+	if err := rlp.DecodeBytes(serializedTx, tx); err != nil {
 		return ptnjson.SignRawTransactionResult{}, errors.New("Params decode is invalid")
 	}
 
@@ -504,7 +501,7 @@ func (s *PrivateWalletAPI) MutiSignRawTransaction(ctx context.Context, params , 
 
 	//var addr common.Address
 	var keys []string
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if !ok {
 			continue
@@ -523,7 +520,8 @@ func (s *PrivateWalletAPI) MutiSignRawTransaction(ctx context.Context, params , 
 			TxHash := trimx(uvu.TxHash)
 			//PkScriptHex := trimx(uvu.PkScriptHex)
 			PkScriptHex := trimx(lockScript)
-			input := ptnjson.RawTxInput{Txid: TxHash, Vout: uvu.OutIndex, MessageIndex: uvu.MessageIndex, ScriptPubKey: PkScriptHex, RedeemScript:redeemScript }
+			input := ptnjson.RawTxInput{Txid: TxHash, Vout: uvu.OutIndex, MessageIndex: uvu.MessageIndex,
+			ScriptPubKey: PkScriptHex, RedeemScript: redeemScript}
 			srawinputs = append(srawinputs, input)
 		}
 	}
@@ -554,6 +552,7 @@ func (s *PrivateWalletAPI) MutiSignRawTransaction(ctx context.Context, params , 
 	}
 	return result, err
 }
+
 // walletSendTransaction will add the signed transaction to the transaction pool.
 // The sender is responsible for signing the transaction and using the correct nonce.
 func (s *PublicWalletAPI) SendRawTransaction(ctx context.Context, signedTxHex string) (common.Hash, error) {

@@ -69,7 +69,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 	if validate.enableContractSignCheck && isFullTx && tx.IsContractTx() {
 		isResultMsg := false
 		hasSignMsg := false
-		for _, msg := range tx.TxMessages {
+		for _, msg := range tx.TxMessages() {
 			if msg.App.IsRequest() {
 				isResultMsg = true
 				continue
@@ -79,7 +79,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 			}
 		}
 		if !hasSignMsg {
-			log.Warnf("Tx[%s] is an user contract invoke, but don't have jury signature", txHash.String())
+			log.Warnf("Tx[%s] is an user contract invoke, but don't have jury signature", tx.Hash().String())
 			return TxValidationCode_INVALID_CONTRACT_SIGN, txFee
 		}
 	}
