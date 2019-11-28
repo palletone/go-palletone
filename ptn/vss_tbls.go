@@ -64,7 +64,7 @@ func (pm *ProtocolManager) toGroupSign(event modules.ToGroupSignEvent) {
 
 	// 判断是否满足群签名的条件
 	if !pm.dag.IsSynced(false) {
-		log.Debugf("dag is not synced")
+		log.Debugf(errStr)
 		return
 	}
 
@@ -188,7 +188,7 @@ func (pm *ProtocolManager) vssDealTransmitLoop() {
 func (pm *ProtocolManager) transmitVSSDeal(deal *mp.VSSDealEvent) {
 	// 判断是否同步, 如果没同步完成，发起的vss deal是无效的，浪费带宽
 	if !pm.dag.IsSynced(true) {
-		log.Debugf("this node is not synced")
+		log.Debugf(errStr)
 		return
 	}
 
