@@ -253,7 +253,7 @@ func signAndSend(eth *ethadaptor.AdaptorETH, rawTransaction, prikey []byte) erro
 		fmt.Println("SignTransaction failed : ", err.Error())
 		return err
 	} else {
-		fmt.Println("tx: %x", resultSign.Extra)
+		fmt.Printf("tx: %x", resultSign.Extra)
 	}
 
 	//3.send tx
