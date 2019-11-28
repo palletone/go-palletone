@@ -35,23 +35,38 @@ type ConfigJson struct {
 
 func ConvertAllSysConfigToJson(configs *core.ChainParameters) []*ConfigJson {
 	result := make([]*ConfigJson, 0)
-
 	tt := reflect.TypeOf(*configs)
 	vv := reflect.ValueOf(*configs)
+
 	for i := 0; i < vv.NumField(); i++ {
-		// 内嵌的 ChainParametersBase 特殊处理
-		if i == 0 {
-			st := tt.Field(i).Type
-			sv := vv.Field(i)
-			for j := 0; j < st.NumField(); j++ {
-				result = append(result, &ConfigJson{Key: st.Field(j).Name, Value: toString(sv.Field(j))})
-			}
-		} else {
-			result = append(result, &ConfigJson{Key: tt.Field(i).Name, Value: toString(vv.Field(i))})
-		}
+		sf := tt.Field(i)
+		sv := vv.Field(i)
+		scjs := getConfigJson(sf, sv)
+
+		result =append(result, scjs...)
 	}
 
 	return result
+}
+
+func getConfigJson(sf reflect.StructField, vv reflect.Value) []*ConfigJson {
+	var res []*ConfigJson
+
+	sft := sf.Type
+	if sft.Kind() == reflect.Struct {
+		for i := 0; i < vv.NumField(); i++  {
+			ssf := sft.Field(i)
+			svv := vv.Field(i)
+			cjs := getConfigJson(ssf, svv)
+
+			res = append(res, cjs...)
+		}
+	} else {
+		cj := &ConfigJson{Key: sf.Name, Value: toString(vv)}
+		res = append(res, cj)
+	}
+
+	return res
 }
 
 func toString(v reflect.Value) string {
