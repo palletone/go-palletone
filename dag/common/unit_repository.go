@@ -544,8 +544,7 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 	}
 	txs := make(modules.Transactions, 0)
 	if len(outAds) > 0 {
-		log.Debug("=======================Is rewards && coinbase tx info ================",
-			"amount", rewards, "hash", coinbase.Hash().String())
+		log.Debug("rewards && coinbase tx info: ", "amount", rewards, "hash", coinbase.Hash().String())
 		txs = append(txs, coinbase)
 	}
 

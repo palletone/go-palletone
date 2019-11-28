@@ -24,6 +24,7 @@ import (
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
+	"os"
 )
 
 // Prometheus contains the dashboard internals.
@@ -51,7 +52,8 @@ func (db *Prometheus) Start(server *p2p.Server, corss *p2p.Server) error {
 	go func() {
 		http.Handle("/", promhttp.Handler())
 		if err := http.ListenAndServe(fmt.Sprintf("%s:%d", db.config.Host, db.config.Port), nil); err != nil {
-			log.Error("Starting Prometheus", "err", err)
+			log.Error("Failed to starting prometheus", "err", err)
+			os.Exit(1)
 		}
 	}()
 
