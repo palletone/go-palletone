@@ -516,19 +516,22 @@ func newMutiAccount(ctx *cli.Context) ([]byte ,[]byte , common.Address,  error) 
 	var pk [][]byte
 	totalstring := ctx.Args().First()
 	total, err := strconv.Atoi(totalstring)
-	if err != nil || total < 0 ||total > 5{
+	if err != nil || total < 0 ||total > 15{
+		utils.Fatalf("Pubkey specified to create muti account cannot more than 15")
 		return []byte{},[]byte{},common.Address{}, err
 	}
 	for arg_s := 1 ; arg_s < total+1 ; arg_s++ {
 		pki, err = hex.DecodeString(ctx.Args()[arg_s])
-		if err != nil || total < 0 ||total > 5 {
+		if err != nil || total < 0 ||total > 15 {
+		   utils.Fatalf("Pubkey specified to create muti account cannot more than 15")
 		   return []byte{},[]byte{},common.Address{}, err
 	    }
 	    pk = append(pk,pki)
     }
     s_check := ctx.Args()[total+1]
     check , err := strconv.Atoi(s_check)
-    if err != nil || check < 0 ||check > 5 {
+    if err != nil || check < 0 ||check > 15 {
+    	utils.Fatalf("Pubkey specified to create muti account cannot more than 15")
 		return []byte{},[]byte{},common.Address{}, err
 	}
 	lockscript,redeemScript,address,err := createMutiAccount(ctx,pk,check)
