@@ -89,7 +89,7 @@ func (pm *ProtocolManager) switchMediatorConnect(isChanged bool) {
 
 	// 若干数据还没同步完成，则忽略本次切换，继续同步
 	if !pm.dag.IsSynced(true) {
-		log.Debugf("this node is not synced")
+		log.Debugf(errStr)
 		return
 	}
 

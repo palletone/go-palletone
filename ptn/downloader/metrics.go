@@ -24,54 +24,44 @@ import (
 )
 
 var (
-	headerInMeter      = metrics.NewRegisteredMeter("ptn/downloader/headers/in", nil)
-	headerReqTimer     = metrics.NewRegisteredTimer("ptn/downloader/headers/req", nil)
-	headerDropMeter    = metrics.NewRegisteredMeter("ptn/downloader/headers/drop", nil)
-	headerTimeoutMeter = metrics.NewRegisteredMeter("ptn/downloader/headers/timeout", nil)
-
-	bodyInMeter      = metrics.NewRegisteredMeter("ptn/downloader/bodies/in", nil)
-	bodyReqTimer     = metrics.NewRegisteredTimer("ptn/downloader/bodies/req", nil)
-	bodyDropMeter    = metrics.NewRegisteredMeter("ptn/downloader/bodies/drop", nil)
-	bodyTimeoutMeter = metrics.NewRegisteredMeter("ptn/downloader/bodies/timeout", nil)
-
-	stateInMeter   = metrics.NewRegisteredMeter("ptn/downloader/states/in", nil)
-	stateDropMeter = metrics.NewRegisteredMeter("ptn/downloader/states/drop", nil)
-
-	//receiptInMeter      = metrics.NewRegisteredMeter("ptn/downloader/receipts/in", nil)
-	//receiptReqTimer     = metrics.NewRegisteredTimer("ptn/downloader/receipts/req", nil)
-	//receiptDropMeter    = metrics.NewRegisteredMeter("ptn/downloader/receipts/drop", nil)
-	//receiptTimeoutMeter = metrics.NewRegisteredMeter("ptn/downloader/receipts/timeout", nil)
+	headerReqTimer = metrics.NewRegisteredTimer("ptn/downloader/headers/req", nil)
+	bodyReqTimer   = metrics.NewRegisteredTimer("ptn/downloader/bodies/req", nil)
 )
+
 var (
-	headerInPrometheus = prometheus.NewCounter(prometheus.CounterOpts{
+	headerInPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "prometheus:downloader:headers:in",
 		Help: "headers in",
 	})
-	headerDropPrometheus = prometheus.NewCounter(prometheus.CounterOpts{
+	headerDropPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "prometheus:downloader:headers:drop",
 		Help: "headers drop",
 	})
+	headerTimeoutPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:downloader:headers:timeout",
+		Help: "headers timeout",
+	})
 
-	bodyInPrometheus = prometheus.NewCounter(prometheus.CounterOpts{
+	bodyInPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "prometheus:downloader:bodies:in",
 		Help: "bodies in",
 	})
-	bodyDropPrometheus = prometheus.NewCounter(prometheus.CounterOpts{
+	bodyDropPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "prometheus:downloader:bodies:drop",
 		Help: "bodies drop",
 	})
-
-	hdFailures = prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "hd_errors_total",
-		Help: "Number of hard-disk errors.",
+	bodyTimeoutPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:downloader:bodies:timeout",
+		Help: "bodies timeout",
 	})
 )
 
 func init() {
 	prometheus.MustRegister(headerInPrometheus)
 	prometheus.MustRegister(headerDropPrometheus)
+	prometheus.MustRegister(headerTimeoutPrometheus)
+
 	prometheus.MustRegister(bodyInPrometheus)
 	prometheus.MustRegister(bodyDropPrometheus)
-
-	prometheus.MustRegister(hdFailures)
+	prometheus.MustRegister(bodyTimeoutPrometheus)
 }

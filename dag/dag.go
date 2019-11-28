@@ -98,13 +98,12 @@ func (d *Dag) IsEmpty() bool {
 
 // return stable unit in dag
 func (d *Dag) CurrentUnit(token modules.AssetId) *modules.Unit {
-	memdag, err := d.getMemDag(token)
+	hash, _, err := d.stablePropRep.GetNewestUnit(token)
 	if err != nil {
-		log.Errorf("Get CurrentUnit by token[%s] error:%s", token.String(), err.Error())
+		log.Errorf("Get stable unit by token[%s] error:%s", token.String(), err.Error())
 		return nil
 	}
-	stable_hash, _ := memdag.GetLastStableUnitInfo()
-	unit, err := d.GetUnitByHash(stable_hash)
+	unit, err := d.GetUnitByHash(hash)
 	if err != nil {
 		return nil
 	}
@@ -341,7 +340,7 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 			}
 		}
 		log.Debugf("InsertDag[%s] #%d spent time:%s", u.UnitHash.String(), u.NumberU64(), time.Since(t1))
-		if u.NumberU64()%1000 == 0 {
+		if !is_stable && u.NumberU64()%1000 == 0 {
 			log.Infof("Insert unit[%s] #%d to local", u.UnitHash.String(), u.NumberU64())
 		}
 		count += 1
@@ -1127,7 +1126,7 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 
 	// 判断本节点是否正在同步数据
 	if !d.IsSynced(false) {
-		err := "this node is syncing"
+		err := "this node is synced"
 		log.Debugf(err)
 		return fmt.Errorf(err)
 	}

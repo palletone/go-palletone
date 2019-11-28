@@ -31,8 +31,8 @@ import (
 	"github.com/palletone/go-palletone/configure"
 	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/statistics/metrics"
 	"github.com/palletone/go-palletone/txspool"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 var (
@@ -929,7 +929,8 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64, 
 			}
 			// Header retrieval timed out, consider the peer bad and drop
 			log.Debug("Header request timed out", "elapsed", ttl)
-			headerTimeoutMeter.Mark(1)
+			//headerTimeoutMeter.Mark(1)
+			headerTimeoutPrometheus.Add(1)
 			d.dropPeer(p.id)
 
 			// Finish the sync gracefully instead of dumping the gathered data though
@@ -1196,7 +1197,7 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 			// Make sure that we have peers available for fetching. If all peers have been tried
 			// and all failed throw an error
 			if !progressed && !throttled && !running && len(idles) == total && pending() > 0 {
-				log.Error("Downloader fetchParts", "progressed", progressed, "throttled", throttled,
+				log.Warn("Downloader fetchParts", "progressed", progressed, "throttled", throttled,
 					"running", running, "len(idles)", len(idles), "total", total, "pending()", pending())
 				return errPeersUnavailable
 			}
@@ -1601,28 +1602,29 @@ func (d *Downloader) commitPivotBlock(result *fetchResult) error {
 // DeliverHeaders injects a new batch of block headers received from a remote
 // node into the download schedule.
 func (d *Downloader) DeliverHeaders(id string, headers []*modules.Header) (err error) {
-	return d.deliver(id, d.headerCh, &headerPack{id, headers}, headerInMeter, headerDropMeter)
+	return d.deliver(id, d.headerCh, &headerPack{id, headers}, headerInPrometheus, headerDropPrometheus)
 }
 
 // DeliverBodies injects a new batch of block bodies received from a remote node.
 func (d *Downloader) DeliverBodies(id string, transactions [][]*modules.Transaction) (err error) {
-	return d.deliver(id, d.bodyCh, &bodyPack{id, transactions}, bodyInMeter, bodyDropMeter)
+	return d.deliver(id, d.bodyCh, &bodyPack{id, transactions}, bodyInPrometheus, bodyDropPrometheus)
 }
 
 // DeliverNodeData injects a new batch of node state data received from a remote node.
 func (d *Downloader) DeliverNodeData(id string, data [][]byte) (err error) {
-	return d.deliver(id, d.stateCh, &statePack{id, data}, stateInMeter, stateDropMeter)
+	//return d.deliver(id, d.stateCh, &statePack{id, data}, stateInMeter, stateDropMeter)
+	return nil
 }
 
 // deliver injects a new batch of data received from a remote node.
 func (d *Downloader) deliver(id string, destCh chan dataPack, packet dataPack, inMeter,
-	dropMeter metrics.Meter) (err error) {
+	dropMeter prometheus.Gauge /*metrics.Meter*/) (err error) {
 	// Update the delivery metrics for both good and failed deliveries
-	inMeter.Mark(int64(packet.Items()))
+	inMeter.Add(float64(packet.Items()))
 	defer func() {
 		if err != nil {
 			log.Debug("dropMeter.Mark", "id", id)
-			dropMeter.Mark(int64(packet.Items()))
+			dropMeter.Sub(float64(packet.Items()))
 		}
 	}()
 	// Deliver or abort if the sync is canceled while queuing
