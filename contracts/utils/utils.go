@@ -233,13 +233,16 @@ func GetAllContainerAddr(cons []docker.APIContainers, status string) ([]common.A
 				if status != "" && !strings.Contains(v.Status, status) {
 					continue
 				}
+
 				name := v.Names[0][1:36]
 				contractAddr, err := common.StringToAddress(name)
 				if err != nil {
 					log.Debugf("common.StringToAddress err: %s", err.Error())
 					continue
 				}
+
 				log.Debugf("find container name = %s", v.Names[0])
+
 				addr = append(addr, contractAddr)
 			}
 		}
