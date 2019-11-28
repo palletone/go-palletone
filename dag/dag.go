@@ -1111,7 +1111,7 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 	}
 
 	// 判断本节点是否正在同步数据
-	if !d.IsSynced() {
+	if !d.IsSynced(false) {
 		err := "this node is syncing"
 		log.Debugf(err)
 		return fmt.Errorf(err)

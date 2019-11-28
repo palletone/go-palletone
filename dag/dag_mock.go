@@ -1108,17 +1108,15 @@ func (mr *MockIDagMockRecorder) SubscribeToGroupSignEvent(ch interface{}) *gomoc
 }
 
 // IsSynced mocks base method
-func (m *MockIDag) IsSynced() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsSynced")
+func (m *MockIDag) IsSynced(isStrict bool) bool {
+	ret := m.ctrl.Call(m, "IsSynced", isStrict)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
 // IsSynced indicates an expected call of IsSynced
-func (mr *MockIDagMockRecorder) IsSynced() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSynced", reflect.TypeOf((*MockIDag)(nil).IsSynced))
+func (mr *MockIDagMockRecorder) IsSynced(isStrict interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSynced", reflect.TypeOf((*MockIDag)(nil).IsSynced), isStrict)
 }
 
 // SubscribeActiveMediatorsUpdatedEvent mocks base method
