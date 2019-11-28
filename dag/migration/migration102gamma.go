@@ -46,11 +46,6 @@ func (m *Migration102beta_102gamma) ToVersion() string {
 }
 
 func (m *Migration102beta_102gamma) ExecuteUpgrade() error {
-	//转换GLOBALPROPERTY结构体
-	//if err := m.upgradeGP(); err != nil {
-	//	return err
-	//}
-
 	// 转换mediator结构体
 	if err := m.upgradeMediatorInfo(); err != nil {
 		return err
@@ -71,7 +66,8 @@ func (m *Migration102beta_102gamma) upgradeMediatorInfo() error {
 
 		mib := &core.MediatorInfoBase{
 			AddStr:     oldMediator.AddStr,
-			RewardAdd:  oldMediator.AddStr,
+			//RewardAdd:  oldMediator.AddStr,
+			RewardAdd:  "",
 			InitPubKey: oldMediator.InitPubKey,
 			Node:       oldMediator.Node,
 		}

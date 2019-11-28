@@ -33,17 +33,17 @@ import (
 //NewDockerClient creates a docker client
 func NewDockerClient() (client *docker.Client, err error) {
 	//endpoint := viper.GetString("vm.endpoint")
-	endpoint := cfg.GetConfig().VmEndpoint
-	log.Infof("NewDockerClient enter, endpoint:%s", endpoint)
-
+	contractCfg := cfg.GetConfig()
+	log.Debugf("contractt config = %v",contractCfg)
+	log.Debugf("NewDockerClient enter, endpoint:%s", contractCfg.VmEndpoint)
 	tlsenabled := viper.GetBool("vm.docker.tls.enabled")
 	if tlsenabled {
 		cert := "" // config.GetPath("vm.docker.tls.cert.file")
 		key := ""  //config.GetPath("vm.docker.tls.key.file")
 		ca := ""   //config.GetPath("vm.docker.tls.ca.file")
-		client, err = docker.NewTLSClient(endpoint, cert, key, ca)
+		client, err = docker.NewTLSClient(contractCfg.VmEndpoint, cert, key, ca)
 	} else {
-		client, err = docker.NewClient(endpoint)
+		client, err = docker.NewClient(contractCfg.VmEndpoint)
 	}
 	return
 }

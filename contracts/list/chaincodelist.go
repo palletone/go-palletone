@@ -93,7 +93,7 @@ func GetChaincode(cid string, deployId []byte, version string) (*CCInfo, error) 
 	if chains.Clist[cid] != nil {
 		clist := chains.Clist[cid]
 		for _, v := range clist.CClist {
-			log.Info("GetChaincode", "find chaincode,name", v.Name, "version", v.Version, "list id", v.Id, "depId", deployId)
+			log.Debug("GetChaincode", "find chaincode,name", v.Name, "version", v.Version, "list id", v.Id, "depId", deployId)
 			if bytes.Equal(v.Id, deployId) {
 				if version == "" || (version != "" && v.Version == version) {
 					return v, nil

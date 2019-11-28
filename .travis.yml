@@ -91,13 +91,9 @@ matrix:
         - nohup ./gptn &
         - sleep 15
         - netstat -ap | grep gptn
-        - if [ $IS_RUN_DEPOSIT == 'true' ]; then
-          cd ../dct;
-          ./deposit_test.sh 7;
-          fi
         - if [ $IS_RUN_BLACKLIST == 'true' ]; then
           cd ../blacklist;
-          ./blacklist_test.sh;
+          ./blacklist_test.sh 2;
           fi
         - if [ $IS_RUN_TESTCONTRACTCASES == 'true' ];then
           cd ../contract/testcases;
@@ -131,8 +127,13 @@ matrix:
           python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ./DigitalIdentityCert;
           fi
 
+        - if [ $IS_RUN_DEPOSIT == 'true' ]; then
+          cd ./dct;
+          ./deposit_test.sh 13;
+          fi
+
         - if [ $IS_RUN_GASTOKEN == 'true' ]; then
-          cd ./GasToken;
+          cd ../GasToken;
           killall -9 gptn;
           chmod +x ./init_gas_token.sh;
           ./init_gas_token.sh;
@@ -244,9 +245,10 @@ matrix:
       after_script:
         - killall gptn
         - sleep 2
-        - cd ${BASE_DIR}/bdd
-        - zip -j ./logs/mediatorVote_log.zip ./mediator-vote/node/log/*
+        - cd ${BASE_DIR}/bdd/mediator-vote
+#        - zip -j ./logs/mediatorVote_log.zip ./mediator-vote/node/log/*
         - ./targz_node.sh mediatorVote
+        - cd ${BASE_DIR}/bdd
         - |
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
@@ -262,7 +264,7 @@ matrix:
         - sudo -H pip install pexpect
         - sudo -H apt-get install expect
         - sudo -H apt-get install lftp
-        - chmod +x bdd/upload2Ftp.sh bdd/targz_node.sh
+        - chmod +x bdd/upload2Ftp.sh bdd/mediator-vote/targz_node.sh
     - os: linux
       dist: xenial
       go: 1.12.9
@@ -318,6 +320,7 @@ matrix:
         - cp $BASE_DIR/bdd/UserContract/editConfig.sh ./
         - chmod +x editConfig.sh
         - docker network ls
+        - docker network create gptn-net
         - ./deploy.sh 3 3
         - ./editConfig.sh 3 3
         - ./start.sh 3

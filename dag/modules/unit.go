@@ -22,7 +22,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 	"unsafe"
 
@@ -464,7 +463,9 @@ func (u *Unit) Hash() common.Hash {
 	}
 	return u.UnitHash
 }
-
+func (u *Unit) DisplayId() string {
+	return fmt.Sprintf("%s-%d",u.Hash().String(),u.NumberU64())
+}
 // function Size, return the unit's StorageSize.
 func (u *Unit) Size() common.StorageSize {
 	if u.UnitSize > 0 {
@@ -595,9 +596,12 @@ func (b *Unit) WithBody(transactions []*Transaction) *Unit {
 }
 
 func (u *Unit) ContainsParent(pHash common.Hash) bool {
-	ps := pHash.String()
-	for _, hash := range u.UnitHeader.header.ParentsHash {
-		if strings.Compare(hash.String(), ps) == 0 {
+	//ps := pHash.String()
+	for _, hash := range u.UnitHeader.ParentsHash {
+		//if strings.Compare(hash.String(), ps) == 0 {
+		//	return true
+		//}
+		if pHash == hash {
 			return true
 		}
 	}

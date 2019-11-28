@@ -563,7 +563,7 @@ func nodePayToDepositContract(stub shim.ChaincodeStubInterface, role string) pb.
 		//  可以加入列表
 		if invokeTokens.Amount != depositAmount {
 			str := fmt.Errorf("%s needs to pay only %d  deposit.", role, depositAmount)
-			log.Error(str.Error())
+			log.Warn(str.Error())
 			return shim.Error(str.Error())
 		}
 		//  加入候选列表
@@ -590,13 +590,13 @@ func nodePayToDepositContract(stub shim.ChaincodeStubInterface, role string) pb.
 		all := balance.Balance + invokeTokens.Amount
 		if all != depositAmount {
 			str := fmt.Errorf("%s needs to pay only %d  deposit.", role, depositAmount-balance.Balance)
-			log.Error(str.Error())
+			log.Warn(str.Error())
 			return shim.Error(str.Error())
 		}
 		//这里需要判断是否以及被基金会提前移除候选列表，即在规定时间内该节点没有追缴保证金
 		b, err := isInCandidate(stub, invokeAddr.String(), list)
 		if err != nil {
-			log.Debugf("isInCandidate error: %s", err.Error())
+			log.Errorf("isInCandidate error: %s", err.Error())
 			return shim.Error(err.Error())
 		}
 		if !b {

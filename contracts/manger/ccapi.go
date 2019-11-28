@@ -2,10 +2,12 @@ package manger
 
 import (
 	"bytes"
-	"encoding/hex"
 	"fmt"
+	docker "github.com/fsouza/go-dockerclient"
+	util "github.com/palletone/go-palletone/vm/common"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
+	"strings"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -17,10 +19,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/contracts/ucc"
 
-	"github.com/fsouza/go-dockerclient"
-	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
-	"github.com/palletone/go-palletone/contracts/utils"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag"
 	md "github.com/palletone/go-palletone/dag/modules"
@@ -200,7 +199,7 @@ func Deploy(jA string, rwM rwset.TxManager, idag dag.IDag, chainID string, templ
 		SysCC:    false,
 		Address:  jA,
 	}
-	//if depId.IsSystemContractAddress() {
+	//if depId.IsSystemContractId() {
 	//	cc.SysCC = true
 	//	err = cclist.SetChaincode(chainID, 0, cc)
 	//	if err != nil {
@@ -281,9 +280,16 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 		log.Infof("ProcessProposal error[%v]", err)
 		return nil, err
 	}
-	//
+	// TODO
+	//if !cc.SysCC {
+	//	sizeRW, disk, isOver := utils.RemoveConWhenOverDisk(cc, idag)
+	//	if isOver {
+	//		log.Debugf("utils.KillAndRmWhenOver name = %s,sizeRW = %d,disk = %d", cc.Name, sizeRW, disk)
+	//		return nil, fmt.Errorf("utils.KillAndRmWhenOver name = %s,sizeRW = %d bytes,disk = %d bytes", cc.Name, sizeRW, disk)
+	//	}
+	//}
 	if !cc.SysCC {
-		sizeRW, disk, isOver := utils.RemoveConWhenOverDisk(cc, idag)
+		sizeRW, disk, isOver := removeConWhenOverDisk(cc, idag)
 		if isOver {
 			log.Debugf("utils.KillAndRmWhenOver name = %s,sizeRW = %d,disk = %d", cc.Name, sizeRW, disk)
 			return nil, fmt.Errorf("utils.KillAndRmWhenOver name = %s,sizeRW = %d bytes,disk = %d bytes", cc.Name, sizeRW, disk)
@@ -346,70 +352,72 @@ func StopByName(contractid []byte, chainID string, txid string, usercc *cclist.C
 	return stopResult, nil
 }
 
-func RestartContainers(dag dag.IDag, cons []docker.APIContainers, jury core.IAdapterJury) {
-	//  获取所有退出容器
-	addrs, err := utils.GetAllContainerAddr(cons, "Exited")
-	if err != nil {
-		log.Debugf("client.GetAllExitedContainer err: %s", err.Error())
-		return
-	}
-	for _, v := range addrs {
-		//  判断是否是担任jury地址
-		juryAddrs := jury.GetLocalJuryAddrs()
-		juryAddr := ""
-		if len(juryAddrs) != 0 {
-			juryAddr = juryAddrs[0].String()
-		}
-		cc, err := GetChaincode(dag, v)
-		if err != nil {
-			log.Debug(err.Error())
-			continue
-		}
-		if juryAddr != cc.Address {
-			log.Debugf("the local jury address %s was not equal address %s in the dag", juryAddr, cc.Address)
-			continue
-		}
-		rd, _ := crypto.GetRandomBytes(32)
-		txid := util.RlpHash(rd)
-		log.Debugf("==============需要重启====容器地址为--->%s", hex.EncodeToString(v.Bytes21()))
-		_, err = RestartContainer(dag, "palletone", v, txid.String())
-		if err != nil {
-			log.Debugf("RestartContainer err: %s", err.Error())
-			return
-		}
-	}
-}
+
+
+//func RestartContainers(dag dag.IDag, cons []docker.APIContainers, jury core.IAdapterJury) {
+//	//  获取所有退出容器
+//	addrs, err := utils.GetAllContainerAddr(cons, "Exited")
+//	if err != nil {
+//		log.Debugf("client.GetAllExitedContainer err: %s", err.Error())
+//		return
+//	}
+//	for _, v := range addrs {
+//		//  判断是否是担任jury地址
+//		juryAddrs := jury.GetLocalJuryAddrs()
+//		juryAddr := ""
+//		if len(juryAddrs) != 0 {
+//			juryAddr = juryAddrs[0].String()
+//		}
+//		cc, err := GetChaincode(dag, v)
+//		if err != nil {
+//			log.Debug(err.Error())
+//			continue
+//		}
+//		if juryAddr != cc.Address {
+//			log.Debugf("the local jury address %s was not equal address %s in the dag", juryAddr, cc.Address)
+//			continue
+//		}
+//		rd, _ := crypto.GetRandomBytes(32)
+//		txid := util.RlpHash(rd)
+//		log.Debugf("==============需要重启====容器地址为--->%s", hex.EncodeToString(v.Bytes21()))
+//		_, err = RestartContainer(dag, "palletone", v, txid.String())
+//		if err != nil {
+//			log.Debugf("RestartContainer err: %s", err.Error())
+//			return
+//		}
+//	}
+//}
 
 //删除所有过期容器
-func RemoveExpiredContainers(client *docker.Client, dag dag.IDag, rmExpConFromSysParam bool, con []docker.APIContainers) {
-	//  让用户合约容器一直在线，true and 0
-	p := dag.GetChainParameters()
-	if p.RmExpConFromSysParam && p.UccDuringTime == 0 {
-		log.Debug("keeping user contract containers online")
-		return
-	}
-	//获取容器id，以及对应用户合约的地址，更新状态
-	idStrMap := utils.RetrieveExpiredContainers(dag, con, rmExpConFromSysParam)
-	if len(idStrMap) > 0 {
-		for id, str := range idStrMap {
-			err := client.RemoveContainer(docker.RemoveContainerOptions{ID: id, Force: true})
-			if err != nil {
-				log.Debugf("client.RemoveContainer id=%s error=%s", id, err.Error())
-				continue
-			}
-			cc, err := GetChaincode(dag, str)
-			if err != nil {
-				log.Debugf("get chaincode error %s", err.Error())
-				continue
-			}
-			cc.IsExpired = true
-			err = SaveChaincode(dag, str, cc)
-			if err != nil {
-				log.Debugf("save chaincode error %s", err.Error())
-			}
-		}
-	}
-}
+//func RemoveExpiredContainers(client *docker.Client, dag dag.IDag, rmExpConFromSysParam bool, con []docker.APIContainers) {
+//	//  让用户合约容器一直在线，true and 0
+//	p := dag.GetChainParameters()
+//	if p.RmExpConFromSysParam && p.UccDuringTime == 0 {
+//		log.Debug("keeping user contract containers online")
+//		return
+//	}
+//	//获取容器id，以及对应用户合约的地址，更新状态
+//	idStrMap := utils.RetrieveExpiredContainers(dag, con, rmExpConFromSysParam)
+//	if len(idStrMap) > 0 {
+//		for id, str := range idStrMap {
+//			err := client.RemoveContainer(docker.RemoveContainerOptions{ID: id, Force: true})
+//			if err != nil {
+//				log.Debugf("client.RemoveContainer id=%s error=%s", id, err.Error())
+//				continue
+//			}
+//			cc, err := GetChaincode(dag, str)
+//			if err != nil {
+//				log.Debugf("get chaincode error %s", err.Error())
+//				continue
+//			}
+//			cc.IsExpired = true
+//			err = SaveChaincode(dag, str, cc)
+//			if err != nil {
+//				log.Debugf("save chaincode error %s", err.Error())
+//			}
+//		}
+//	}
+//}
 
 func RestartContainer(idag dag.IDag, chainID string, addr common.Address, txId string) ([]byte, error) {
 	log.Info("enter RestartContainer", "chainID", chainID, "contract addr", addr.String(), "txId", txId)
@@ -457,6 +465,41 @@ func RestartContainer(idag dag.IDag, chainID string, addr common.Address, txId s
 		return nil, errors.WithMessage(err, "RestartContainer fail")
 	}
 	return cc.Id, err
+}
+
+//  调用的时候，若调用完发现磁盘使用超过系统上限，则kill掉并移除
+func removeConWhenOverDisk(cc *cclist.CCInfo, dag dag.IDag) (sizeRW int64, disk int64, isOver bool) {
+	log.Debugf("start KillAndRmWhenOver")
+	defer log.Debugf("end KillAndRmWhenOver")
+	client, err := util.NewDockerClient()
+	if err != nil {
+		log.Error("util.NewDockerClient", "error", err)
+		return 0, 0, false
+	}
+	//  获取所有容器
+	allCon, err := client.ListContainers(docker.ListContainersOptions{All: true, Size: true})
+	if err != nil {
+		log.Debugf("client.ListContainers %s", err.Error())
+		return 0, 0, false
+	}
+	if len(allCon) > 0 {
+		//  获取name对应的容器
+		name := cc.Name + ":" + cc.Version
+		name = strings.Replace(name, ":", "-", -1)
+		cp := dag.GetChainParameters()
+		for _, c := range allCon {
+			if c.Names[0][1:] == name && c.SizeRw > cp.UccDisk {
+				err := client.RemoveContainer(docker.RemoveContainerOptions{ID: c.ID, Force: true})
+				if err != nil {
+					log.Debugf("client.RemoveContainer %s", err.Error())
+					return 0, 0, false
+				}
+				log.Debugf("remove container %s", c.Names[0][1:36])
+				return c.SizeRw, cp.UccDisk, true
+			}
+		}
+	}
+	return 0, 0, false
 }
 
 //func StartChaincodeContainer(idag dag.IDag, chainID string, deployId []byte, txId string) ([]byte, error) {

@@ -19,7 +19,6 @@ package ptn
 import (
 	"errors"
 	"fmt"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -29,9 +28,9 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
-	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/consensus/jury"
 	"github.com/palletone/go-palletone/dag/modules"
+	"sort"
 )
 
 var (
@@ -55,7 +54,8 @@ const (
 
 	maxKnownVSSDeal     = 21 * 20
 	maxKnownVSSResponse = 21 * 20
-	maxKnownSigShare    = 21 * 15
+	maxKnownSigShare    = 21 * 2
+	maxKnownGroupSign   = 21 * 15
 )
 
 // PeerInfo represents a short summary of the PalletOne sub-protocol metadata known
@@ -205,7 +205,7 @@ func (p *peer) MarkUnit(hash common.Hash) {
 }
 
 func (p *peer) MarkGroupSig(hash common.Hash) {
-	for p.knownGroupSig.Cardinality() >= maxKnownBlocks {
+	for p.knownGroupSig.Cardinality() >= maxKnownGroupSign {
 		p.knownGroupSig.Pop()
 	}
 	p.knownGroupSig.Add(hash)
@@ -456,10 +456,9 @@ func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis comm
 			return p2p.DiscReadTimeout
 		}
 	}
-	//stableIndex :=&modules.ChainIndex{Index:uint64(1085100)}
-	stableIndex := &modules.ChainIndex{AssetID: modules.PTNCOIN, Index: uint64(configure.StableIndex)}
-	log.Debug("peer Handshake", "p.id", p.id, "index", status.Index, "stable", stableIndex) //status.StableIndex)
-	p.SetHead(status.CurrentHeader, status.Index, stableIndex)                              //status.StableIndex)
+
+	log.Debug("peer Handshake", "p.id", p.id, "index", status.Index, "stable", stable.Index)
+	p.SetHead(status.CurrentHeader, status.Index, stable)
 	return nil
 }
 
@@ -675,12 +674,15 @@ func (ps *peerSet) StableIndex(assetId modules.AssetId) uint64 {
 			indexs = append(indexs, stable.Index)
 		}
 	}
-	sort.Sort(indexs)
-	lengh := indexs.Len()
-	if lengh%2 == 0 {
-		return (indexs[(lengh/2)-1] + indexs[lengh/2]) / 2
+	length := indexs.Len()
+	if length == 0 {
+		return 0
 	}
-	return indexs[lengh/2]
+	sort.Sort(indexs)
+	if length%2 == 0 {
+		return (indexs[(length/2)-1] + indexs[length/2]) / 2
+	}
+	return indexs[length/2]
 }
 
 // Close disconnects all peers.

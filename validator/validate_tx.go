@@ -25,14 +25,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+
 	"github.com/ethereum/go-ethereum/rlp"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/constants"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 /**
@@ -59,6 +60,29 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 	if !txFeePass {
 		return TxValidationCode_INVALID_FEE, nil
 	}
+	// validate tx size
+	if tx.Size().Float64() > float64(modules.TX_MAXSIZE) {
+		log.Debug("Tx size is to big.")
+		return TxValidationCode_NOT_COMPARE_SIZE, txFee
+	}
+	//合约的执行结果必须有Jury签名
+	if validate.enableContractSignCheck && isFullTx && tx.IsContractTx() {
+		isResultMsg := false
+		hasSignMsg := false
+		for _, msg := range tx.TxMessages {
+			if msg.App.IsRequest() {
+				isResultMsg = true
+				continue
+			}
+			if isResultMsg && (msg.App == modules.APP_SIGNATURE || msg.App == modules.APP_PAYMENT) {
+				hasSignMsg = true
+			}
+		}
+		if !hasSignMsg {
+			log.Warnf("Tx[%s] is an user contract invoke, but don't have jury signature", txHash.String())
+			return TxValidationCode_INVALID_CONTRACT_SIGN, txFee
+		}
+	}
 	hasRequestMsg := false
 	requestMsgIndex := 9999
 	isSysContractCall := false
@@ -67,11 +91,6 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 		// check message type and payload
 		if !validateMessageType(msg.App, msg.Payload) {
 			return TxValidationCode_UNKNOWN_TX_TYPE, txFee
-		}
-		// validate tx size
-		if tx.Size().Float64() > float64(modules.TX_MAXSIZE) {
-			log.Debug("Tx size is to big.")
-			return TxValidationCode_NOT_COMPARE_SIZE, txFee
 		}
 
 		// validate every type payload
@@ -140,7 +159,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 				return TxValidationCode_INVALID_CONTRACT, txFee
 			}
 
-			validateCode := validate.validateContractdeploy(payload.TemplateId)
+			validateCode := validate.validateContractDeploy(payload.TemplateId)
 			if validateCode != TxValidationCode_VALID {
 				return validateCode, txFee
 			}
@@ -157,7 +176,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 				return TxValidationCode_INVALID_CONTRACT, txFee
 			}
 			contractId := payload.ContractId
-			if common.IsSystemContractAddress(contractId) {
+			if common.IsSystemContractId(contractId) {
 				isSysContractCall = true
 			}
 		case modules.APP_CONTRACT_STOP_REQUEST:
@@ -179,7 +198,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 		case modules.APP_SIGNATURE:
 			// 签名验证
 			payload, _ := msg.Payload.(*modules.SignaturePayload)
-			validateCode := validate.validateContractSignature(payload.Signatures[:], tx)
+			validateCode := validate.validateContractSignature(payload.Signatures[:], tx, isFullTx)
 			if validateCode != TxValidationCode_VALID {
 				return validateCode, txFee
 			}
@@ -204,7 +223,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 	return TxValidationCode_VALID, txFee
 }
 
-func (v *Validate) validateVoteMediatorTx(payload interface{}) ValidationCode {
+func (validate *Validate) validateVoteMediatorTx(payload interface{}) ValidationCode {
 	accountUpdate, ok := payload.(*modules.AccountStateUpdatePayload)
 	if !ok {
 		log.Errorf("tx payload do not match type")
@@ -223,7 +242,7 @@ func (v *Validate) validateVoteMediatorTx(payload interface{}) ValidationCode {
 			return TxValidationCode_UNSUPPORTED_TX_PAYLOAD
 		}
 
-		maxMediatorCount := int(v.propquery.GetChainParameters().MaximumMediatorCount)
+		maxMediatorCount := int(validate.propquery.GetChainParameters().MaximumMediatorCount)
 		mediatorCount := len(mediators)
 		if mediatorCount > maxMediatorCount {
 			log.Errorf("the total number(%v) of mediators voted exceeds the maximum limit: %v",
@@ -231,7 +250,7 @@ func (v *Validate) validateVoteMediatorTx(payload interface{}) ValidationCode {
 			return TxValidationCode_UNSUPPORTED_TX_PAYLOAD
 		}
 
-		mp := v.statequery.GetMediators()
+		mp := validate.statequery.GetMediators()
 		for mediatorStr, ok := range mediators {
 			if !ok {
 				log.Errorf("the value of map can only be true")
@@ -260,20 +279,20 @@ func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize f
 		return false
 	}
 
-	var onlyPayment bool = true
+	var onlyPayment = true
 	var timeout uint32
 	var opFee, sizeFee, timeFee, accountUpdateFee, appDataFee, allFee float64
 	reqId := tx.RequestHash()
 	txSize := tx.Size().Float64()
 
-	if validate.dagquery == nil || validate.propquery == nil {
-		log.Warnf("[%s]ValidateTxFeeEnough, Cannot validate tx fee, your validate dagquery or propquery not set", reqId.String()[:8])
+	if validate.propquery == nil || validate.utxoquery == nil {
+		log.Warnf("[%s]ValidateTxFeeEnough, Cannot validate tx fee, your validate utxoquery or propquery not set", reqId.String()[:8])
 		return true //todo ?
 	}
-	fees, err := validate.dagquery.GetTxFee(tx)
+	fees, err := tx.GetTxFee(validate.utxoquery.GetUtxoEntry) //validate.dagquery.GetTxFee(tx)
 	if err != nil {
-		log.Errorf("[%s]validateTxFeeEnough, GetTxFee err:%s", reqId.String()[:8], err.Error())
-		return true //todo ?
+		log.Errorf("Tx[%s] [%s]validateTxFeeEnough, GetTxFee err:%s", tx.Hash().String(), reqId.String()[:8], err.Error())
+		return false //todo ?
 	}
 	cp := validate.propquery.GetChainParameters()
 	timeUnitFee := float64(cp.ContractTxTimeoutUnitFee)
@@ -340,7 +359,7 @@ func (validate *Validate) validateTxFeeValid(tx *modules.Transaction) (bool, []*
 	var err error
 	if validate.enableTxFeeCheck {
 		if !validate.ValidateTxFeeEnough(tx, 0, 0) {
-			log.Warnf("[%s]validateTxFeeValid, tx fee is not enough", reqId.String()[:8])
+			log.Warnf("validateTxFeeValid, Tx[%s] fee is not enough", tx.Hash().String())
 			return false, nil
 		}
 		feeAllocate, err = tx.GetTxFeeAllocate(validate.utxoquery.GetUtxoEntry,
@@ -350,7 +369,7 @@ func (validate *Validate) validateTxFeeValid(tx *modules.Transaction) (bool, []*
 			validate.tokenEngine.GetScriptSigners, common.Address{})
 	}
 	if err != nil {
-		log.Warnf("[%s]validateTxFeeValid, compute tx fee error:%s", reqId.String()[:8], err.Error())
+		log.Warnf("[%s]validateTxFeeValid, compute tx[%s] fee error:%s", reqId.String()[:8], tx.Hash().String(), err.Error())
 		return false, nil
 	}
 
@@ -495,7 +514,7 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 		rewards := map[common.Address][]modules.AmountAsset{}
 		for _, v := range ads {
 			key := constants.RewardAddressPrefix + v.Addr.String()
-			data, _, err := validate.statequery.GetContractState(contractId, key)
+			data, version, err := validate.statequery.GetContractState(contractId, key)
 			income := []modules.AmountAsset{}
 			if err == nil { //之前有奖励
 				rlp.DecodeBytes(data, &income)
@@ -503,7 +522,7 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			v1 := *v
 			log.DebugDynamic(func() string {
 				data, _ := json.Marshal(income)
-				return v1.Addr.String() + " Coinbase History reward:" + string(data)
+				return v1.Addr.String() + " Coinbase History reward:" + string(data) + " version:" + version.String()
 			})
 			log.Debugf("Add reward %d %s to %s", v.Amount, v.Asset.String(), v.Addr.String())
 			newValue := validate.addIncome(income, v.Amount, v.Asset)
@@ -520,7 +539,11 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 		} else {
 			rjson, _ := json.Marshal(rewards)
 			ojson, _ := json.Marshal(invoke)
-			debugData := fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nInvoke result:%s", string(rjson), string(ojson))
+			dbAa := []modules.AmountAsset{}
+			rlp.DecodeBytes(invoke.WriteSet[0].Value, &dbAa)
+			aajson, _ := json.Marshal(dbAa)
+			debugData := fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nInvoke result:%s, Writeset:%s",
+				string(rjson), string(ojson), string(aajson))
 
 			log.Errorf("Coinbase tx[%s] contract write set not correct, %s",
 				tx.Hash().String(), debugData)

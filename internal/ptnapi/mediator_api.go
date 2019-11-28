@@ -48,7 +48,7 @@ func (a *PublicMediatorAPI) IsApproved(addStr string) (string, error) {
 	//txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
 
 	// 调用系统合约
-	rsp, err := a.ContractQuery(syscontract.DepositContractAddress.Bytes(),cArgs, 0)
+	rsp, err := a.ContractQuery([]byte(syscontract.DepositContractAddress.Str()), cArgs, 0)
 	if err != nil {
 		return "", err
 	}
@@ -62,7 +62,7 @@ func getDeposit(addStr string, a Backend) (*modules.MediatorDepositJson, error) 
 	//txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().Unix())).Int31n(100000000))
 
 	// 调用系统合约
-	rsp, err := a.ContractQuery(syscontract.DepositContractAddress.Bytes(),  cArgs, 0)
+	rsp, err := a.ContractQuery([]byte(syscontract.DepositContractAddress.Str()), cArgs, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -167,9 +167,9 @@ func (a *PublicMediatorAPI) GetVoted(addStr string) ([]string, error) {
 
 func (a *PublicMediatorAPI) GetNextUpdateTime() string {
 	dgp := a.Dag().GetDynGlobalProp()
-	time := time.Unix(int64(dgp.NextMaintenanceTime), 0)
+	t := time.Unix(int64(dgp.NextMaintenanceTime), 0)
 
-	return time.Format("2006-01-02 15:04:05")
+	return t.Format("2006-01-02 15:04:05")
 }
 
 func (a *PublicMediatorAPI) GetInfo(addStr string) (*modules.MediatorInfo, error) {
@@ -219,7 +219,7 @@ func (a *PrivateMediatorAPI) Apply(args modules.MediatorCreateArgs, fee decimal.
 		return nil, err
 	}
 	// 判断本节点是否同步完成，数据是否最新
-	if !a.Dag().IsSynced() {
+	if !a.Dag().IsSynced(false) {
 		return nil, fmt.Errorf("this node is not synced, and can't apply mediator now")
 	}
 	// 判断是否已经是mediator
@@ -264,7 +264,7 @@ func (a *PrivateMediatorAPI) PayDeposit(from string, amount decimal.Decimal) (*T
 	}
 
 	// 判断本节点是否同步完成，数据是否最新
-	if !a.Dag().IsSynced() {
+	if !a.Dag().IsSynced(false) {
 		return nil, fmt.Errorf("this node is not synced, and can't pay deposit now")
 	}
 
@@ -316,7 +316,7 @@ func (a *PrivateMediatorAPI) Quit(medAddStr string) (*TxExecuteResult, error) {
 	}
 
 	// 判断本节点是否同步完成，数据是否最新
-	if !a.Dag().IsSynced() {
+	if !a.Dag().IsSynced(false) {
 		return nil, fmt.Errorf("this node is not synced, and can't quit now")
 	}
 
@@ -353,7 +353,7 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxEx
 	}
 
 	// 判断本节点是否同步完成，数据是否最新
-	if !a.Dag().IsSynced() {
+	if !a.Dag().IsSynced(false) {
 		return nil, fmt.Errorf("this node is not synced, and can't vote now")
 	}
 
@@ -414,7 +414,7 @@ func (a *PrivateMediatorAPI) Update(args modules.MediatorUpdateArgs) (*TxExecute
 	}
 
 	// 判断本节点是否同步完成，数据是否最新
-	if !a.Dag().IsSynced() {
+	if !a.Dag().IsSynced(false) {
 		return nil, fmt.Errorf("this node is not synced, and can't update mediator now")
 	}
 

@@ -11,19 +11,19 @@ ${two}            ${EMPTY}
 blacklist
     ${o}    getBalance    ${one}    PTN
     log    ${o}
-    #    ${o}    9989    #Should Be Equal As Numbers
+    Should Be Equal As Numbers    ${o}    10000    #Should Be Equal As Numbers
     ${t}    getBalance    ${two}    PTN
     log    ${t}
-    #    ${t}    9998
+    Should Be Equal As Numbers    ${t}    10000
     ${b}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF    PTN
     log    ${b}
-    #    ${b}    0
+    Should Be Equal As Numbers    ${b}    0
     ${res}    addBlacklist    ${one}    lsls
     log    ${res}
     sleep    5
     ${b}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF    PTN
     log    ${b}
-    #    ${b}    9989
+    Should Be Equal As Numbers    ${b}    10000
     ${res}    getBlacklistRecords
     log    ${res}
     ${res}    getBlacklistAddress
@@ -40,13 +40,13 @@ blacklist
     sleep    5
     ${o}    getBalance    ${one}    PTN
     log    ${o}
-    #    ${o}    9989
+    Should Be Equal As Numbers    ${o}    10000
     ${t}    getBalance    ${two}    PTN
     log    ${t}
-    #    ${t}    19987
+    Should Be Equal As Numbers    ${t}    20000
     ${b}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF    PTN
     log    ${b}
-    #    ${b}    0
+    Should Be Equal As Numbers    ${b}    0
 
 *** Keywords ***
 getBalance

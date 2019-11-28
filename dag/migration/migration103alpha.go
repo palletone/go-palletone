@@ -68,138 +68,47 @@ func (m *Migration102delta_103alpha) upgradeGP() error {
 	newData.PrecedingMediators = oldGp.PrecedingMediators
 	newData.ImmutableParameters = oldGp.ImmutableParameters
 
-	newData.ChainParameters.GenerateUnitReward = oldGp.ChainParameters.GenerateUnitReward
-	newData.ChainParameters.PledgeDailyReward = oldGp.ChainParameters.PledgeDailyReward
-	newData.ChainParameters.RewardHeight = oldGp.ChainParameters.RewardHeight
-	newData.ChainParameters.UnitMaxSize = oldGp.ChainParameters.UnitMaxSize
-	newData.ChainParameters.FoundationAddress = oldGp.ChainParameters.FoundationAddress
-	newData.ChainParameters.DepositAmountForMediator = oldGp.ChainParameters.DepositAmountForMediator
-	newData.ChainParameters.DepositAmountForJury = oldGp.ChainParameters.DepositAmountForJury
-	newData.ChainParameters.DepositAmountForDeveloper = oldGp.ChainParameters.DepositAmountForDeveloper
-	newData.ChainParameters.ActiveMediatorCount = oldGp.ChainParameters.ActiveMediatorCount
-	newData.ChainParameters.MaximumMediatorCount = oldGp.ChainParameters.MaximumMediatorCount
-	newData.ChainParameters.MediatorInterval = oldGp.ChainParameters.MediatorInterval
-	newData.ChainParameters.MaintenanceInterval = oldGp.ChainParameters.MaintenanceInterval
-	newData.ChainParameters.MaintenanceSkipSlots = oldGp.ChainParameters.MaintenanceSkipSlots
-	newData.ChainParameters.MediatorCreateFee = oldGp.ChainParameters.MediatorCreateFee
-	newData.ChainParameters.AccountUpdateFee = oldGp.ChainParameters.AccountUpdateFee
-	newData.ChainParameters.TransferPtnBaseFee = oldGp.ChainParameters.TransferPtnBaseFee
-	newData.ChainParameters.TransferPtnPricePerKByte = oldGp.ChainParameters.TransferPtnPricePerKByte
+	newData.ChainParametersTemp.GenerateUnitReward = oldGp.ChainParameters.GenerateUnitReward
+	newData.ChainParametersTemp.PledgeDailyReward = oldGp.ChainParameters.PledgeDailyReward
+	newData.ChainParametersTemp.RewardHeight = oldGp.ChainParameters.RewardHeight
+	newData.ChainParametersTemp.UnitMaxSize = oldGp.ChainParameters.UnitMaxSize
+	newData.ChainParametersTemp.FoundationAddress = oldGp.ChainParameters.FoundationAddress
+	newData.ChainParametersTemp.DepositAmountForMediator = oldGp.ChainParameters.DepositAmountForMediator
+	newData.ChainParametersTemp.DepositAmountForJury = oldGp.ChainParameters.DepositAmountForJury
+	newData.ChainParametersTemp.DepositAmountForDeveloper = oldGp.ChainParameters.DepositAmountForDeveloper
+	newData.ChainParametersTemp.ActiveMediatorCount = oldGp.ChainParameters.ActiveMediatorCount
+	newData.ChainParametersTemp.MaximumMediatorCount = oldGp.ChainParameters.MaximumMediatorCount
+	newData.ChainParametersTemp.MediatorInterval = oldGp.ChainParameters.MediatorInterval
+	newData.ChainParametersTemp.MaintenanceInterval = oldGp.ChainParameters.MaintenanceInterval
+	newData.ChainParametersTemp.MaintenanceSkipSlots = oldGp.ChainParameters.MaintenanceSkipSlots
+	newData.ChainParametersTemp.MediatorCreateFee = oldGp.ChainParameters.MediatorCreateFee
+	newData.ChainParametersTemp.AccountUpdateFee = oldGp.ChainParameters.AccountUpdateFee
+	newData.ChainParametersTemp.TransferPtnBaseFee = oldGp.ChainParameters.TransferPtnBaseFee
+	newData.ChainParametersTemp.TransferPtnPricePerKByte = oldGp.ChainParameters.TransferPtnPricePerKByte
 
 	//新加的
-	newData.ChainParameters.RmExpConFromSysParam = core.DefaultRmExpConFromSysParam
+	newData.ChainParametersTemp.RmExpConFromSysParam = core.DefaultRmExpConFromSysParam
 
-	// =======================chainParameters=============================
-	//UccMemory, err := strconv.ParseInt(oldGp.ChainParameters.UccMemory, 10, 64)
-	//if err != nil {
-	//	return err
-	//}
-	//newData.ChainParameters.UccMemory = UccMemory
-	newData.ChainParameters.UccMemory = oldGp.ChainParameters.UccMemory
-
-	//UccCpuShares, err := strconv.ParseInt(oldGp.ChainParameters.UccCpuShares, 10, 64)
-	//if err != nil {
-	//	return err
-	//}
-	//newData.ChainParameters.UccCpuShares = UccCpuShares
-	newData.ChainParameters.UccCpuShares = oldGp.ChainParameters.UccCpuShares
-
-	//UccCpuQuota, err := strconv.ParseInt(oldGp.ChainParameters.UccCpuQuota, 10, 64)
-	//if err != nil {
-	//	return err
-	//}
-	//newData.ChainParameters.UccCpuQuota = UccCpuQuota
-	newData.ChainParameters.UccCpuQuota = oldGp.ChainParameters.UccCpuQuota
-
-	//UccDisk, err := strconv.ParseInt(oldGp.ChainParameters.UccDisk, 10, 64)
-	//if err != nil {
-	//	return err
-	//}
-	//newData.ChainParameters.UccDisk = UccDisk
-	newData.ChainParameters.UccDisk = oldGp.ChainParameters.UccDisk
-
-	//TempUccMemory, err := strconv.ParseInt(oldGp.ChainParameters.TempUccMemory, 10, 64)
-	//if err != nil {
-	//	return err
-	//}
-	//newData.ChainParameters.TempUccMemory = TempUccMemory
-	newData.ChainParameters.TempUccMemory = oldGp.ChainParameters.TempUccMemory
-
-	//TempUccCpuShares, err := strconv.ParseInt(oldGp.ChainParameters.TempUccCpuShares, 10, 64)
-	//if err != nil {
-	//	return err
-	//}
-	//newData.ChainParameters.TempUccCpuShares = TempUccCpuShares
-	newData.ChainParameters.TempUccCpuShares = oldGp.ChainParameters.TempUccCpuShares
-
-	//TempUccCpuQuota, err := strconv.ParseInt(oldGp.ChainParameters.TempUccCpuQuota, 10, 64)
-	//if err != nil {
-	//	return err
-	//}
-	//newData.ChainParameters.TempUccCpuQuota = TempUccCpuQuota
-	newData.ChainParameters.TempUccCpuQuota = oldGp.ChainParameters.TempUccCpuQuota
-
-	//ContractSignatureNum, err := strconv.ParseInt(oldGp.ChainParameters.ContractSignatureNum, 10, 64)
-	//if err != nil {
-	//	return err
-	//}
-	//newData.ChainParameters.ContractSignatureNum = int(ContractSignatureNum)
-	newData.ChainParameters.ContractSignatureNum = oldGp.ChainParameters.ContractSignatureNum
-
-	//ContractElectionNum, err := strconv.ParseInt(oldGp.ChainParameters.ContractElectionNum, 10, 64)
-	//if err != nil {
-	//	return err
-	//}
-	//newData.ChainParameters.ContractElectionNum = int(ContractElectionNum)
-	newData.ChainParameters.ContractElectionNum = oldGp.ChainParameters.ContractElectionNum
-
-	//ContractTxTimeoutUnitFee, err := strconv.ParseUint(oldGp.ChainParameters.ContractTxTimeoutUnitFee, 10, 64)
-	//if err != nil {
-	//	return err
-	//}
-	//newData.ChainParameters.ContractTxTimeoutUnitFee = ContractTxTimeoutUnitFee
-	newData.ChainParameters.ContractTxTimeoutUnitFee = oldGp.ChainParameters.ContractTxTimeoutUnitFee
-
-	//ContractTxSizeUnitFee, err := strconv.ParseUint(oldGp.ChainParameters.ContractTxSizeUnitFee, 10, 64)
-	//if err != nil {
-	//	return err
-	//}
-	//newData.ChainParameters.ContractTxSizeUnitFee = ContractTxSizeUnitFee
-	newData.ChainParameters.ContractTxSizeUnitFee = oldGp.ChainParameters.ContractTxSizeUnitFee
-
-	//ContractTxInstallFeeLevel, err := strconv.ParseFloat(oldGp.ChainParameters.ContractTxInstallFeeLevel, 64)
-	//if err != nil {
-	//	return err
-	//}
-	//newData.ChainParameters.ContractTxInstallFeeLevel = ContractTxInstallFeeLevel
-	newData.ChainParameters.ContractTxInstallFeeLevel = oldGp.ChainParameters.ContractTxInstallFeeLevel
-
-	//ContractTxDeployFeeLevel, err := strconv.ParseFloat(oldGp.ChainParameters.ContractTxDeployFeeLevel, 64)
-	//if err != nil {
-	//	return err
-	//}
-	//newData.ChainParameters.ContractTxDeployFeeLevel = ContractTxDeployFeeLevel
-	newData.ChainParameters.ContractTxDeployFeeLevel = oldGp.ChainParameters.ContractTxDeployFeeLevel
-
-	//ContractTxInvokeFeeLevel, err := strconv.ParseFloat(oldGp.ChainParameters.ContractTxInvokeFeeLevel, 64)
-	//if err != nil {
-	//	return err
-	//}
-	//newData.ChainParameters.ContractTxInvokeFeeLevel = ContractTxInvokeFeeLevel
-	newData.ChainParameters.ContractTxInvokeFeeLevel = oldGp.ChainParameters.ContractTxInvokeFeeLevel
-
-	//ContractTxStopFeeLevel, err := strconv.ParseFloat(oldGp.ChainParameters.ContractTxStopFeeLevel, 64)
-	//if err != nil {
-	//	return err
-	//}
-	//newData.ChainParameters.ContractTxStopFeeLevel = ContractTxStopFeeLevel
-	newData.ChainParameters.ContractTxStopFeeLevel = oldGp.ChainParameters.ContractTxStopFeeLevel
+	newData.ChainParametersTemp.UccMemory = oldGp.ChainParameters.UccMemory
+	newData.ChainParametersTemp.UccCpuShares = oldGp.ChainParameters.UccCpuShares
+	newData.ChainParametersTemp.UccCpuQuota = oldGp.ChainParameters.UccCpuQuota
+	newData.ChainParametersTemp.UccDisk = oldGp.ChainParameters.UccDisk
+	newData.ChainParametersTemp.TempUccMemory = oldGp.ChainParameters.TempUccMemory
+	newData.ChainParametersTemp.TempUccCpuShares = oldGp.ChainParameters.TempUccCpuShares
+	newData.ChainParametersTemp.TempUccCpuQuota = oldGp.ChainParameters.TempUccCpuQuota
+	newData.ChainParametersTemp.ContractSignatureNum = oldGp.ChainParameters.ContractSignatureNum
+	newData.ChainParametersTemp.ContractElectionNum = oldGp.ChainParameters.ContractElectionNum
+	newData.ChainParametersTemp.ContractTxTimeoutUnitFee = oldGp.ChainParameters.ContractTxTimeoutUnitFee
+	newData.ChainParametersTemp.ContractTxSizeUnitFee = oldGp.ChainParameters.ContractTxSizeUnitFee
+	newData.ChainParametersTemp.ContractTxInstallFeeLevel = oldGp.ChainParameters.ContractTxInstallFeeLevel
+	newData.ChainParametersTemp.ContractTxDeployFeeLevel = oldGp.ChainParameters.ContractTxDeployFeeLevel
+	newData.ChainParametersTemp.ContractTxInvokeFeeLevel = oldGp.ChainParameters.ContractTxInvokeFeeLevel
+	newData.ChainParametersTemp.ContractTxStopFeeLevel = oldGp.ChainParameters.ContractTxStopFeeLevel
 
 	//新加的
-	newData.ChainParameters.ContractSystemVersion = core.DefaultContractSystemVersion
+	newData.ChainParametersTemp.ContractSystemVersion = core.DefaultContractSystemVersion
 
-	//newData.ChainParameters.UccDuringTime = core.DefaultContainerDuringTime
-	newData.ChainParameters.UccDuringTime = strconv.FormatInt(int64(core.DefaultContainerDuringTime), 10)
+	newData.ChainParametersTemp.UccDuringTime = strconv.FormatInt(int64(core.DefaultContainerDuringTime), 10)
 
 	err = storage.StoreToRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, newData)
 	if err != nil {

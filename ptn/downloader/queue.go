@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/statistics/metrics"
+	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
 
@@ -623,7 +624,7 @@ func (q *queue) ExpireHeaders(timeout time.Duration) map[string]int {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
-	return q.expire(timeout, q.headerPendPool, q.headerTaskQueue, headerTimeoutMeter)
+	return q.expire(timeout, q.headerPendPool, q.headerTaskQueue, headerTimeoutPrometheus)
 }
 
 // ExpireBodies checks for in flight block body requests that exceeded a timeout
@@ -632,7 +633,7 @@ func (q *queue) ExpireBodies(timeout time.Duration) map[string]int {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
-	return q.expire(timeout, q.blockPendPool, q.blockTaskQueue, bodyTimeoutMeter)
+	return q.expire(timeout, q.blockPendPool, q.blockTaskQueue, bodyTimeoutPrometheus)
 }
 
 // ExpireReceipts checks for in flight receipt requests that exceeded a timeout
@@ -651,13 +652,13 @@ func (q *queue) ExpireBodies(timeout time.Duration) map[string]int {
 // reason the lock is not obtained in here is because the parameters already need
 // to access the queue, so they already need a lock anyway.
 func (q *queue) expire(timeout time.Duration, pendPool map[string]*fetchRequest, taskQueue *prque.Prque,
-	timeoutMeter metrics.Meter) map[string]int {
+	timeoutMeter prometheus.Gauge) map[string]int {
 	// Iterate over the expired requests and return each to the queue
 	expiries := make(map[string]int)
 	for id, request := range pendPool {
 		if time.Since(request.Time) > timeout {
 			// Update the metrics with the timeout
-			timeoutMeter.Mark(1)
+			timeoutMeter.Add(1)
 
 			// Return any non satisfied requests to the pool
 			if request.From > 0 {

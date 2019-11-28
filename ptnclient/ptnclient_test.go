@@ -15,14 +15,11 @@
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
 package ptnclient
-import(
-	"fmt"
-	"context"
-        "testing"
+
+import (
 	"github.com/palletone/go-palletone"
-        "github.com/shopspring/decimal"
-	"github.com/palletone/go-palletone/common/rpc"
 )
+
 // Verify that Client implements the palletone interfaces.
 var (
 	_ = palletone.ChainReader(&Client{})
@@ -37,7 +34,7 @@ var (
 	// _ = palletone.PendingStateEventer(&Client{})
 	_ = palletone.PendingContractCaller(&Client{})
 )
-func TestSimpleContractCcstop(t *testing.T) {
+/*func TestSimpleContractCcstop(t *testing.T) {
         client, _:= rpc.Dial("http://123.126.106.82:38555")
 	defer client.Close()
         from :="P1LxMi9Lu1aaf6GXg63iJESruk6eVxjDhE2"
@@ -103,3 +100,4 @@ func TestSimpleContractCcinstall(t *testing.T) {
     fmt.Println(result)
     t.Log("Pass")
 }
+*/

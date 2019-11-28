@@ -31,8 +31,8 @@ import (
 	"github.com/palletone/go-palletone/configure"
 	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/statistics/metrics"
 	"github.com/palletone/go-palletone/txspool"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 var (
@@ -64,6 +64,8 @@ var (
 	//fsHeaderForceVerify = 24              // Number of headers to verify before and after the pivot to accept it
 	fsHeaderContCheck = 3 * time.Second // Time interval to check for header continuations during state download
 	fsMinFullBlocks   = 64              // Number of blocks to retrieve fully even in fast sync
+
+	stepStable = uint64(10240)
 )
 
 var (
@@ -927,7 +929,8 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64, pivot uint64, 
 			}
 			// Header retrieval timed out, consider the peer bad and drop
 			log.Debug("Header request timed out", "elapsed", ttl)
-			headerTimeoutMeter.Mark(1)
+			//headerTimeoutMeter.Mark(1)
+			headerTimeoutPrometheus.Add(1)
 			d.dropPeer(p.id)
 
 			// Finish the sync gracefully instead of dumping the gathered data though
@@ -1194,7 +1197,7 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 			// Make sure that we have peers available for fetching. If all peers have been tried
 			// and all failed throw an error
 			if !progressed && !throttled && !running && len(idles) == total && pending() > 0 {
-				log.Error("Downloader fetchParts", "progressed", progressed, "throttled", throttled,
+				log.Warn("Downloader fetchParts", "progressed", progressed, "throttled", throttled,
 					"running", running, "len(idles)", len(idles), "total", total, "pending()", pending())
 				return errPeersUnavailable
 			}
@@ -1419,9 +1422,13 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 	for i, result := range results {
 		blocks[i] = modules.NewUnitWithHeader(result.Header).WithBody(result.Transactions)
 	}
+	s_index := uint64(0)
+	if d.mode == FastSync {
+		if d.GetFastStableIndex() > stepStable {
+			s_index = d.GetFastStableIndex() - stepStable
+		}
+	}
 
-	//s_index := uint64(1)
-	s_index := d.GetFastStableIndex()
 	log.Debug("Inserting downloaded chain", "items", len(results),
 		"index", first.GetNumber().Index, "index", last.GetNumber().Index, "fastnum", s_index)
 	if index, err := d.dag.InsertDag(blocks, d.txpool, s_index > last.NumberU64()); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
@@ -1551,8 +1558,13 @@ func (d *Downloader) commitFastSyncData(results []*fetchResult /*, stateSync *st
 		blocks[i] = modules.NewUnitWithHeader(result.Header).WithBody(result.Transactions)
 	}
 
-	//s_index := uint64(1)
-	s_index := d.GetFastStableIndex()
+	s_index := uint64(0)
+	if d.mode == FastSync {
+		if d.GetFastStableIndex() > stepStable {
+			s_index = d.GetFastStableIndex() - stepStable
+		}
+	}
+
 	log.Debug("Inserting fast-sync blocks", "items", len(results),
 		"firstnum", first.GetNumber().Index, "lastnumn", last.GetNumber().Index, "fastnum", s_index,
 	)
@@ -1571,8 +1583,12 @@ func (d *Downloader) commitPivotBlock(result *fetchResult) error {
 
 	units := []*modules.Unit{}
 	units = append(units, block)
-	//s_index := uint64(1)
-	s_index := d.GetFastStableIndex()
+	s_index := uint64(0)
+	if d.mode == FastSync {
+		if d.GetFastStableIndex() > stepStable {
+			s_index = d.GetFastStableIndex() - stepStable
+		}
+	}
 	log.Debug("Committing fast sync pivot as new head", "index:", block.UnitHeader.GetNumber().Index, "unit", *block,
 		"fastnum", s_index)
 	if _, err := d.dag.InsertDag(units, d.txpool, s_index > block.NumberU64()); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
@@ -1586,28 +1602,29 @@ func (d *Downloader) commitPivotBlock(result *fetchResult) error {
 // DeliverHeaders injects a new batch of block headers received from a remote
 // node into the download schedule.
 func (d *Downloader) DeliverHeaders(id string, headers []*modules.Header) (err error) {
-	return d.deliver(id, d.headerCh, &headerPack{id, headers}, headerInMeter, headerDropMeter)
+	return d.deliver(id, d.headerCh, &headerPack{id, headers}, headerInPrometheus, headerDropPrometheus)
 }
 
 // DeliverBodies injects a new batch of block bodies received from a remote node.
 func (d *Downloader) DeliverBodies(id string, transactions [][]*modules.Transaction) (err error) {
-	return d.deliver(id, d.bodyCh, &bodyPack{id, transactions}, bodyInMeter, bodyDropMeter)
+	return d.deliver(id, d.bodyCh, &bodyPack{id, transactions}, bodyInPrometheus, bodyDropPrometheus)
 }
 
 // DeliverNodeData injects a new batch of node state data received from a remote node.
 func (d *Downloader) DeliverNodeData(id string, data [][]byte) (err error) {
-	return d.deliver(id, d.stateCh, &statePack{id, data}, stateInMeter, stateDropMeter)
+	//return d.deliver(id, d.stateCh, &statePack{id, data}, stateInMeter, stateDropMeter)
+	return nil
 }
 
 // deliver injects a new batch of data received from a remote node.
 func (d *Downloader) deliver(id string, destCh chan dataPack, packet dataPack, inMeter,
-	dropMeter metrics.Meter) (err error) {
+	dropMeter prometheus.Gauge /*metrics.Meter*/) (err error) {
 	// Update the delivery metrics for both good and failed deliveries
-	inMeter.Mark(int64(packet.Items()))
+	inMeter.Add(float64(packet.Items()))
 	defer func() {
 		if err != nil {
 			log.Debug("dropMeter.Mark", "id", id)
-			dropMeter.Mark(int64(packet.Items()))
+			dropMeter.Sub(float64(packet.Items()))
 		}
 	}()
 	// Deliver or abort if the sync is canceled while queuing

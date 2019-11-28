@@ -69,12 +69,27 @@ func (pm *ProtocolManager) activeMediatorsUpdatedEventRecvLoop() {
 	}
 }
 
+func (pm *ProtocolManager) unstableRepositoryUpdatedRecvLoop() {
+	log.Debugf("unstableRepositoryUpdatedRecvLoop")
+	for {
+		select {
+		case <-pm.unstableRepositoryUpdatedCh:
+			log.Debugf("receive UnstableRepositoryUpdatedEvent")
+			pm.activeMediatorsUpdatedSub = pm.dag.SubscribeActiveMediatorsUpdatedEvent(pm.activeMediatorsUpdatedCh)
+
+			// Err() channel will be closed when unsubscribing.
+		case <-pm.unstableRepositoryUpdatedSub.Err():
+			return
+		}
+	}
+}
+
 func (pm *ProtocolManager) switchMediatorConnect(isChanged bool) {
 	log.Debug("switchMediatorConnect", "isChanged", isChanged)
 
 	// 若干数据还没同步完成，则忽略本次切换，继续同步
-	if !pm.dag.IsSynced() {
-		log.Debugf("this node is not synced")
+	if !pm.dag.IsSynced(true) {
+		log.Debugf(errStr)
 		return
 	}
 
@@ -221,7 +236,7 @@ func (pm *ProtocolManager) BroadcastVSSDeal(deal *mp.VSSDealEvent) {
 
 	peers := pm.peers.PeersWithoutVSSDeal(deal.Hash())
 	for _, peer := range peers {
-		peer.SendVSSDeal(deal)
+		go peer.SendVSSDeal(deal)
 	}
 
 	return
@@ -255,7 +270,7 @@ func (pm *ProtocolManager) BroadcastVSSResponse(deal *mp.VSSResponseEvent) {
 
 	peers := pm.peers.PeersWithoutVSSResponse(deal.Hash())
 	for _, peer := range peers {
-		peer.SendVSSResponse(deal)
+		go peer.SendVSSResponse(deal)
 	}
 
 	return
@@ -289,7 +304,7 @@ func (pm *ProtocolManager) BroadcastSigShare(sigShare *mp.SigShareEvent) {
 
 	peers := pm.peers.PeersWithoutSigShare(sigShare.UnitHash)
 	for _, peer := range peers {
-		peer.SendSigShare(sigShare)
+		go peer.SendSigShare(sigShare)
 	}
 
 	return

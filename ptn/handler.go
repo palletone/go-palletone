@@ -19,11 +19,11 @@ package ptn
 import (
 	"errors"
 	"fmt"
-	"github.com/palletone/go-palletone/contracts"
-	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/palletone/go-palletone/contracts"
 
 	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
@@ -38,22 +38,17 @@ import (
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/palletcache"
 
+	"strconv"
+	"strings"
+
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/fsouza/go-dockerclient"
-	"github.com/palletone/go-palletone/common/crypto"
-	util2 "github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/contracts/contractcfg"
-	"github.com/palletone/go-palletone/contracts/manger"
 	"github.com/palletone/go-palletone/contracts/utils"
 	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptn/fetcher"
 	"github.com/palletone/go-palletone/validator"
-	"github.com/palletone/go-palletone/vm/common"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -150,21 +145,26 @@ type ProtocolManager struct {
 	// and processing
 	wg sync.WaitGroup
 
-	genesis *modules.Unit
+	genesis  *modules.Unit
+	contract *contracts.Contract
 
 	activeMediatorsUpdatedCh  chan modules.ActiveMediatorsUpdatedEvent
 	activeMediatorsUpdatedSub event.Subscription
 
 	toGroupSignCh  chan modules.ToGroupSignEvent
 	toGroupSignSub event.Subscription
-	contract       *contracts.Contract
+
+	pDocker        *utils.PalletOneDocker
+
+	unstableRepositoryUpdatedCh  chan modules.UnstableRepositoryUpdatedEvent
+	unstableRepositoryUpdatedSub event.Subscription
 }
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
 func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken modules.AssetId, txpool txPool,
 	dag dag.IDag, mux *event.TypeMux, producer producer, genesis *modules.Unit,
-	contractProc consensus.ContractInf, engine core.ConsensusEngine, contract *contracts.Contract) (*ProtocolManager, error) {
+	contractProc consensus.ContractInf, engine core.ConsensusEngine, contract *contracts.Contract, pDocker *utils.PalletOneDocker) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId: networkId,
@@ -186,20 +186,12 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 		lightSync:      uint32(1),
 		receivedCache:  freecache.NewCache(cacheSize),
 		contract:       contract,
+		pDocker:        pDocker,
 	}
-	symbol, _, _, _, _ := gasToken.ParseAssetId()
-	protocolName := symbol
-	//asset, err := modules.NewAsset(strings.ToUpper(gasToken), modules.AssetType_FungibleToken,
-	// 8, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, modules.UniqueIdType_Null, modules.UniqueId{})
-	//if err != nil {
-	//	log.Error("ProtocolManager new asset err", err)
-	//	return nil, err
-	//}
-	//manager.mainAssetId = asset.AssetId
+	protocolName, _, _, _, _ := gasToken.ParseAssetId()
 	manager.mainAssetId = gasToken
+
 	// Figure out whether to allow fast sync or not
-	/*blockchain.CurrentBlock().NumberU64() > 0 */
-	//TODO must modify.The second start would Blockchain not empty, fast sync disabled
 	//if mode == downloader.FastSync && dag.CurrentUnit().UnitHeader.Index() > 0 {
 	//	log.Info("dag not empty, fast sync disabled")
 	//	mode = downloader.FullSync
@@ -408,86 +400,101 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 	pm.toGroupSignSub = pm.dag.SubscribeToGroupSignEvent(pm.toGroupSignCh)
 	go pm.toGroupSignEventRecvLoop()
 
+	pm.unstableRepositoryUpdatedCh = make(chan modules.UnstableRepositoryUpdatedEvent)
+	pm.unstableRepositoryUpdatedSub = pm.dag.SubscribeUnstableRepositoryUpdatedEvent(pm.unstableRepositoryUpdatedCh)
+	go pm.unstableRepositoryUpdatedRecvLoop()
+
 	if pm.consEngine != nil {
 		pm.ceCh = make(chan core.ConsensusEvent, txChanSize)
 		pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
 		go pm.ceBroadcastLoop()
 	}
-	//  是否为linux系統
-	if runtime.GOOS == "linux" {
-		log.Debug("entering docker service...")
-		dockerBool := true
-		//创建 docker client
-		client, err := util.NewDockerClient()
-		if err != nil {
-			log.Debug("util.NewDockerClient", "error", err)
-			dockerBool = false
-		}
-		if client == nil {
-			log.Debug("client is nil")
-			dockerBool = false
-		} else {
-			_, err = client.Info()
-			if err != nil {
-				log.Debug("client.Info", "error", err)
-				dockerBool = false
-			}
-		}
-		if dockerBool {
-			log.Debug("starting docker service...")
-			//创建gptn程序默认网络
-			utils.CreateGptnNet(client)
-			//拉取gptn发布版本对应的goimg基础镜像，防止卡住
-			go func() {
-				log.Debug("downloading palletone base image...")
-				goimg := contractcfg.Goimg + ":" + contractcfg.GptnVersion
-				_, err = client.InspectImage(goimg)
-				if err != nil {
-					log.Debugf("Image %s does not exist locally, attempt pull", goimg)
-					err = client.PullImage(docker.PullImageOptions{Repository: contractcfg.Goimg, Tag: contractcfg.GptnVersion}, docker.AuthConfiguration{})
-					if err != nil {
-						log.Debugf("Failed to pull %s: %s", goimg, err)
-					}
-				}
-				//  获取本地列表，迁移服务器的重启容器，容器不存在且不过期
-				//dag, err := comm.GetCcDagHand()
-				//if err != nil {
-				//	log.Debugf("get contract dag error %s", err.Error())
-				//	return
-				//}
-				//  获取本地用户合约列表
-				log.Debug("get local user contracts")
-				ccs, err := manger.GetChaincodes(pm.dag)
-				if err != nil {
-					log.Debugf("get chaincodes error %s", err.Error())
-					return
-				}
-				//启动退出的容器，包括本地有的和本地没有的
-				for _, c := range ccs {
-					//  判断是否是担任jury地址
-					juryAddrs := pm.contract.GetLocalJuryAddrs()
-					juryAddr := ""
-					if len(juryAddrs) != 0 {
-						juryAddr = juryAddrs[0].String()
-					}
-					if juryAddr != c.Address {
-						log.Debugf("the local jury address %s was not equal address %s in the dag", juryAddr, c.Address)
-						continue
-					}
-					//conName := c.Name+c.Version+":"+contractcfg.GetConfig().ContractAddress
-					rd, _ := crypto.GetRandomBytes(32)
-					txid := util2.RlpHash(rd)
-					//  启动gptn时启动Jury对应的没有过期的用户合约容器
-					if !c.IsExpired {
-						log.Debugf("restart container %s with jury address %s", c.Name, c.Address)
-						address := common.NewAddress(c.Id, common.ContractHash)
-						manger.RestartContainer(pm.dag, "palletone", address, txid.String())
-					}
-				}
-			}()
-			go pm.dockerLoop(client)
-		}
+
+	//  container related
+	if pm.pDocker.DockerClient != nil {
+		log.Debug("start docker service...")
+		defer log.Debug("end docker service...")
+		//
+		pm.pDocker.CreateDefaultUserContractNetWork()
+		//
+		next1 := make(chan struct{})
+		go pm.pDocker.PullUserContractImages(next1)
+		//
+		next2 := make(chan struct{})
+		go pm.pDocker.RestartUserContractsWhenStartGptn(next1, next2)
+		//
+		go pm.dockerLoop(next2)
 	}
+
+	//  是否为linux系統
+	//if runtime.GOOS == "linux" {
+	//	log.Debug("entering docker service...")
+	//	dockerBool := true
+	//	//创建 docker client
+	//	client, err := util.NewDockerClient()
+	//	if err != nil {
+	//		log.Debug("util.NewDockerClient", "error", err)
+	//		dockerBool = false
+	//	}
+	//	if client == nil {
+	//		log.Debug("client is nil")
+	//		dockerBool = false
+	//	} else {
+	//		_, err = client.Info()
+	//		if err != nil {
+	//			log.Debug("client.Info", "error", err)
+	//			dockerBool = false
+	//		}
+	//	}
+	//	if dockerBool {
+	//		log.Debug("starting docker service...")
+	//		//创建gptn程序默认网络
+	//		utils.CreateGptnNet(client)
+	//		//拉取gptn发布版本对应的goimg基础镜像，防止卡住
+	//		go func() {
+	//			log.Debug("downloading palletone base image...")
+	//			goimg := contractcfg.Goimg + ":" + contractcfg.GptnVersion
+	//			_, err = client.InspectImage(goimg)
+	//			if err != nil {
+	//				log.Debugf("Image %s does not exist locally, attempt pull", goimg)
+	//				err = client.PullImage(docker.PullImageOptions{Repository: contractcfg.Goimg, Tag: contractcfg.GptnVersion}, docker.AuthConfiguration{})
+	//				if err != nil {
+	//					log.Debugf("Failed to pull %s: %s", goimg, err)
+	//				}
+	//			}
+	//			//  获取本地用户合约列表
+	//			log.Debug("get local user contracts")
+	//			ccs, err := manger.GetChaincodes(pm.dag)
+	//			if err != nil {
+	//				log.Debugf("get chaincodes error %s", err.Error())
+	//				return
+	//			}
+	//			//启动退出的容器，包括本地有的和本地没有的
+	//			for _, c := range ccs {
+	//				//  判断是否是担任jury地址
+	//				juryAddrs := pm.contract.GetLocalJuryAddrs()
+	//				juryAddr := ""
+	//				if len(juryAddrs) != 0 {
+	//					juryAddr = juryAddrs[0].String()
+	//				}
+	//				if juryAddr != c.Address {
+	//					log.Debugf("the local jury address %s was not equal address %s in the dag", juryAddr, c.Address)
+	//					continue
+	//				}
+	//				//conName := c.Name+c.Version+":"+contractcfg.GetConfig().ContractAddress
+	//				rd, _ := crypto.GetRandomBytes(32)
+	//				txid := util2.RlpHash(rd)
+	//				//  启动gptn时启动Jury对应的没有过期的用户合约容器
+	//				if !c.IsExpired {
+	//					log.Debugf("restart container %s with jury address %s", c.Name, c.Address)
+	//					address := common.NewAddress(c.Id, common.ContractHash)
+	//					manger.RestartContainer(pm.dag, "palletone", address, txid.String())
+	//				}
+	//			}
+	//		}()
+	//		go pm.dockerLoop(client)
+	//	}
+	//}
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -496,10 +503,14 @@ func (pm *ProtocolManager) Stop() {
 	pm.newProducedUnitSub.Unsubscribe()
 	pm.sigShareSub.Unsubscribe()
 	pm.groupSigSub.Unsubscribe()
+
 	pm.vssDealSub.Unsubscribe()
 	pm.vssResponseSub.Unsubscribe()
 	pm.activeMediatorsUpdatedSub.Unsubscribe()
+
 	pm.toGroupSignSub.Unsubscribe()
+	pm.unstableRepositoryUpdatedSub.Unsubscribe()
+
 	pm.contractSub.Unsubscribe()
 	pm.txSub.Unsubscribe() // quits txBroadcastLoop
 	//pm.ceSub.Unsubscribe()
@@ -550,7 +561,7 @@ func (pm *ProtocolManager) processversion(name string) (int, error) {
 	//if strings.ToLower(pre) != strings.ToLower("Gptn") {
 	//	return 0, nil
 	//}
-	if !strings.EqualFold(pre, "Gpth") {
+	if !strings.EqualFold(pre, "Gptn") {
 		return 0, nil
 	}
 	arr := strings.Split(name, "/")
@@ -782,7 +793,8 @@ func (pm *ProtocolManager) BroadcastUnit(unit *modules.Unit, propagate bool) {
 
 	peers := pm.peers.PeersWithoutUnit(hash)
 	for _, peer := range peers {
-		peer.SendNewRawUnit(unit, data)
+		go peer.SendNewRawUnit(unit, data)
+
 	}
 	log.Trace("BroadcastUnit Propagated block", "index:", unit.Header().GetNumber().Index,
 		"hash", hash, "recipients", len(peers), "duration", common.PrettyDuration(time.Since(unit.ReceivedAt)))
@@ -884,8 +896,11 @@ func (pm *ProtocolManager) ceBroadcastLoop() {
 	}
 }
 
-func (pm *ProtocolManager) dockerLoop(client *docker.Client) {
-	log.Debug("starting docker loop")
+func (pm *ProtocolManager) dockerLoop(n chan struct{}) {
+	log.Debug("waiting RestartUserContractsWhenStartGptn func")
+	<-n
+	log.Debug("start docker loop")
+	defer log.Debug("end docker loop")
 	for {
 		select {
 		case <-pm.dockerQuitSync:
@@ -893,16 +908,16 @@ func (pm *ProtocolManager) dockerLoop(client *docker.Client) {
 			return
 		case <-time.After(time.Duration(30) * time.Second):
 			log.Debug("each 30 second to get all containers")
-			//  程序启动过程中的,获取所有的容器
 			//  获取所有容器
-			cons, err := utils.GetAllContainers(client)
+			cons, err := pm.pDocker.GetAllContainers()
 			if err != nil {
-				log.Debugf("utils.GetAllContainers error %s", err.Error())
+				log.Debugf("GetAllContainers error %s", err.Error())
+				continue
 			}
 			//  重启退出且不过期容器
-			manger.RestartContainers(pm.dag, cons, pm.contract.IAdapterJury)
+			pm.pDocker.RestartExitedAndUnExpiredContainers(cons)
 			//  删除过期容器
-			manger.RemoveExpiredContainers(client, pm.dag, pm.dag.GetChainParameters().RmExpConFromSysParam, cons)
+			pm.pDocker.RemoveExpiredContainers(cons)
 		}
 	}
 }

@@ -180,7 +180,6 @@ func (pm *ProtocolManager) synchronize(peer *peer, assetId modules.AssetId, sync
 	defer log.Debug("End ProtocolManager synchronize", "peer id:", peer.id)
 
 	// Make sure the peer's TD is higher than our own
-	//TODO compare local assetId & chainIndex with remote peer assetId & chainIndex
 	currentUnit := pm.dag.GetCurrentUnit(assetId)
 	if currentUnit == nil {
 		log.Error("synchronize currentUnit is nil have not genesis")
@@ -194,7 +193,6 @@ func (pm *ProtocolManager) synchronize(peer *peer, assetId modules.AssetId, sync
 		_, err = pm.dag.GetUnitByHash(currentUnit.ParentHash()[0])
 	}
 
-	//if index >= pindex && pindex > 0 && err == nil {
 	if index >= pindex && err == nil {
 		if atomic.LoadUint32(&pm.fastSync) == 1 {
 			log.Debug("Fast sync complete, auto disabling")
@@ -203,7 +201,7 @@ func (pm *ProtocolManager) synchronize(peer *peer, assetId modules.AssetId, sync
 		atomic.StoreUint32(&pm.acceptTxs, 1)
 		log.Debug("Do not need synchronize", "local peer.index:", pindex, "local index:", number.Index,
 			"header hash:", pHead)
-		//TODO notice light protocol to sync corsheader
+		//notice light protocol to sync corsheader
 		if syncCh != nil {
 			syncCh <- true
 		}
@@ -217,10 +215,11 @@ func (pm *ProtocolManager) synchronize(peer *peer, assetId modules.AssetId, sync
 	if atomic.LoadUint32(&pm.fastSync) == 1 {
 		// Fast sync was explicitly requested, and explicitly granted
 		mode = downloader.FastSync
+		pm.downloader.SetFastStableIndex(pm.peers.StableIndex(assetId))
 	}
 	log.Debug("ProtocolManager", "synchronize local unit index:", index, "peer index:", pindex,
 		"header hash:", pHead)
-	pm.downloader.SetFastStableIndex(pm.peers.StableIndex(assetId))
+
 	// Run the sync cycle, and disable fast sync if we've went past the pivot block
 	if err := pm.downloader.Synchronize(peer.id, pHead, pindex, mode, assetId); err != nil {
 		log.Debug("ptn sync downloader.", "Synchronize err:", err)
@@ -237,7 +236,7 @@ func (pm *ProtocolManager) synchronize(peer *peer, assetId modules.AssetId, sync
 	cunit := pm.dag.GetCurrentUnit(assetId)
 	if cunit != nil && cunit.UnitHeader.GetNumber().Index > 0 {
 		go pm.BroadcastUnit(cunit, false)
-		//TODO notice light protocol to sync corsheader
+		//Notice light protocol to sync corsheader
 		if syncCh != nil {
 			syncCh <- true
 		}

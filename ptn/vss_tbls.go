@@ -19,9 +19,12 @@
 package ptn
 
 import (
+	"time"
+
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
+	"github.com/palletone/go-palletone/common/util"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -31,7 +34,9 @@ func (pm *ProtocolManager) newProducedUnitBroadcastLoop() {
 	for {
 		select {
 		case event := <-pm.newProducedUnitCh:
-			pm.BroadcastUnit(event.Unit, true)
+			log.Debugf("receive NewProducedUnitEvent")
+			pm.IsExistInCache(event.Unit.UnitHash.Bytes())
+			go pm.BroadcastUnit(event.Unit, true)
 			//self.BroadcastCorsHeader(event.Unit.Header(), self.SubProtocols[0].Name)
 
 		case <-pm.newProducedUnitSub.Err():
@@ -58,8 +63,8 @@ func (pm *ProtocolManager) toGroupSign(event modules.ToGroupSignEvent) {
 	log.Debugf("receive toGroupSign event")
 
 	// 判断是否满足群签名的条件
-	if !pm.dag.IsSynced() {
-		log.Debugf("dag is not synced")
+	if !pm.dag.IsSynced(false) {
+		log.Debugf(errStr)
 		return
 	}
 
@@ -79,7 +84,10 @@ func (pm *ProtocolManager) toGroupSign(event modules.ToGroupSignEvent) {
 		return
 	}
 
-	pm.producer.AddToTBLSSignBufs(newHash)
+	if pm.IsExistInCache(util.RlpHash(newHash).Bytes()) {
+		return
+	}
+	go pm.producer.AddToTBLSSignBufs(newHash)
 }
 
 // @author Albert·Gou
@@ -114,7 +122,8 @@ func (pm *ProtocolManager) transmitSigShare(sigShare *mp.SigShareEvent) {
 
 	peer, self := pm.GetPeer(med.Node)
 	if self {
-		pm.producer.AddToTBLSRecoverBuf(sigShare)
+		pm.IsExistInCache(sigShare.Hash().Bytes())
+		go pm.producer.AddToTBLSRecoverBuf(sigShare)
 		return
 	}
 
@@ -128,7 +137,7 @@ func (pm *ProtocolManager) transmitSigShare(sigShare *mp.SigShareEvent) {
 	}
 
 	// 如果没有和对应的mediator有网络连接，则进行转发
-	pm.BroadcastSigShare(sigShare)
+	go pm.BroadcastSigShare(sigShare)
 }
 
 // @author Albert·Gou
@@ -136,7 +145,8 @@ func (pm *ProtocolManager) groupSigBroadcastLoop() {
 	for {
 		select {
 		case event := <-pm.groupSigCh:
-			pm.dag.SetUnitGroupSign(event.UnitHash, event.GroupSig, pm.txpool)
+			pm.IsExistInCache(event.Hash().Bytes())
+			go pm.dag.SetUnitGroupSign(event.UnitHash, event.GroupSig, pm.txpool)
 			go pm.BroadcastGroupSig(&event)
 
 		// Err() channel will be closed when unsubscribing.
@@ -149,9 +159,14 @@ func (pm *ProtocolManager) groupSigBroadcastLoop() {
 // @author Albert·Gou
 // BroadcastGroupSig will propagate the group signature of unit to p2p network
 func (pm *ProtocolManager) BroadcastGroupSig(groupSig *mp.GroupSigEvent) {
+	now := uint64(time.Now().Unix())
+	if now > groupSig.Deadline {
+		return
+	}
+
 	peers := pm.peers.PeersWithoutGroupSig(groupSig.Hash())
 	for _, peer := range peers {
-		peer.SendGroupSig(groupSig)
+		go peer.SendGroupSig(groupSig)
 	}
 }
 
@@ -172,8 +187,8 @@ func (pm *ProtocolManager) vssDealTransmitLoop() {
 // @author Albert·Gou
 func (pm *ProtocolManager) transmitVSSDeal(deal *mp.VSSDealEvent) {
 	// 判断是否同步, 如果没同步完成，发起的vss deal是无效的，浪费带宽
-	if !pm.dag.IsSynced() {
-		log.Debugf("this node is not synced")
+	if !pm.dag.IsSynced(true) {
+		log.Debugf(errStr)
 		return
 	}
 
@@ -187,7 +202,8 @@ func (pm *ProtocolManager) transmitVSSDeal(deal *mp.VSSDealEvent) {
 	//peer, self := pm.GetPeer(node)
 	peer, self := pm.GetPeer(med.Node)
 	if self {
-		pm.producer.AddToDealBuf(deal)
+		pm.IsExistInCache(deal.Hash().Bytes())
+		go pm.producer.AddToDealBuf(deal)
 		return
 	}
 
@@ -201,7 +217,7 @@ func (pm *ProtocolManager) transmitVSSDeal(deal *mp.VSSDealEvent) {
 	}
 
 	// 如果没有和对应的mediator有网络连接，则进行转发
-	pm.BroadcastVSSDeal(deal)
+	go pm.BroadcastVSSDeal(deal)
 
 	return
 }
@@ -235,8 +251,9 @@ func (pm *ProtocolManager) broadcastVssResp(resp *mp.VSSResponseEvent) {
 	//	}
 	//}
 
-	pm.producer.AddToResponseBuf(resp)
-	pm.BroadcastVSSResponse(resp)
+	pm.IsExistInCache(resp.Hash().Bytes())
+	go pm.producer.AddToResponseBuf(resp)
+	go pm.BroadcastVSSResponse(resp)
 }
 
 // GetPeer, retrieve specified peer. If it is the node itself, p is nil and self is true

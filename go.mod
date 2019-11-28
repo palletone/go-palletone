@@ -49,6 +49,7 @@ require (
 	github.com/pelletier/go-toml v1.2.0 // indirect
 	github.com/peterh/liner v0.0.0-20170902204657-a37ad3984311
 	github.com/pkg/errors v0.8.1
+	github.com/prometheus/client_golang v1.0.0
 	github.com/prometheus/tsdb v0.10.0
 	github.com/rjeczalik/notify v0.9.2
 	github.com/robertkrimen/otto v0.0.0-20170205013659-6a77b7cbc37d

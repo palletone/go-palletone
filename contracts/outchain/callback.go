@@ -70,7 +70,7 @@ func ProcessOutChainCall(chaincodeID string, outChainCall *pb.OutChainCall) (res
 	}()
 
 	chainName := strings.ToLower(outChainCall.OutChainName)
-	if _, existChain := exceptMethond[chainName]; existChain {
+	if _, existChain := allChain[chainName]; existChain {
 		ef, existMethod := exceptMethond[outChainCall.Method]
 		if existMethod {
 			return ef(chaincodeID, chainName, outChainCall.Params)
@@ -105,6 +105,10 @@ func SignTransaction(chaincodeID string, chainName string, params []byte) (strin
 	}
 	//
 	var input adaptor.SignTransactionInput
+	err = json.Unmarshal(params, &input)
+	if err != nil {
+		return "", err
+	}
 	input.PrivateKey = priKey
 
 	//
@@ -135,9 +139,15 @@ func SignMessage(chaincodeID string, chainName string, params []byte) (string, e
 	if err != nil {
 		return "", err
 	}
+	//fmt.Printf("prikey : %x\n", priKey)
 	//
 	var input adaptor.SignMessageInput
+	err = json.Unmarshal(params, &input)
+	if err != nil {
+		return "", err
+	}
 	input.PrivateKey = priKey
+	//fmt.Printf("msg : %x\n", input.Message)
 
 	//
 	result, err := adaptorObj.SignMessage(&input)

@@ -1163,6 +1163,136 @@ func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine
 	}, nil
 }
 
+func MutiSignRawTransaction(cmd *ptnjson.MutiSignRawTransactionCmd, pubKeyFn tokenengine.AddressGetPubKey, hashFn tokenengine.AddressGetSign, addr common.Address) (ptnjson.SignRawTransactionResult, error) {
+	serializedTx, err := decodeHexStr(cmd.RawTx)
+	if err != nil {
+		return ptnjson.SignRawTransactionResult{}, err
+	}
+	tx := &modules.Transaction{
+		TxMessages: make([]*modules.Message, 0),
+	}
+	if err := rlp.DecodeBytes(serializedTx, tx); err != nil {
+		return ptnjson.SignRawTransactionResult{}, err
+	}
+	//log.Debugf("InputOne txid:{%+v}", tx.TxMessages[0].Payload.(*modules.PaymentPayload).Input[0])
+
+	var hashType uint32
+	switch strings.ToUpper(*cmd.Flags) {
+	case ALL:
+		hashType = tokenengine.SigHashAll
+	case NONE:
+		hashType = tokenengine.SigHashNone
+	case SINGLE:
+		hashType = tokenengine.SigHashSingle
+	case "ALL|ANYONECANPAY":
+		hashType = tokenengine.SigHashAll | tokenengine.SigHashAnyOneCanPay
+	case "NONE|ANYONECANPAY":
+		hashType = tokenengine.SigHashNone | tokenengine.SigHashAnyOneCanPay
+	case "SINGLE|ANYONECANPAY":
+		hashType = tokenengine.SigHashSingle | tokenengine.SigHashAnyOneCanPay
+	default:
+		//e := errors.New("Invalid sighash parameter")
+		return ptnjson.SignRawTransactionResult{}, err
+	}
+
+	inputpoints := make(map[modules.OutPoint][]byte)
+	//scripts := make(map[string][]byte)
+	//var params *chaincfg.Params
+	var cmdInputs []ptnjson.RawTxInput
+	if cmd.Inputs != nil {
+		cmdInputs = *cmd.Inputs
+	}
+	var redeem []byte
+	var PkScript []byte
+	for _, rti := range cmdInputs {
+		inputHash := common.HexToHash(rti.Txid)
+		script, err := decodeHexStr(trimx(rti.ScriptPubKey))
+		if err != nil {
+			return ptnjson.SignRawTransactionResult{}, err
+		}
+		// redeemScript is only actually used iff the user provided
+		// private keys. In which case, it is used to get the scripts
+		// for signing. If the user did not provide keys then we always
+		// get scripts from the wallet.
+		//		// Empty strings are ok for this one and hex.DecodeString will
+		//		// DTRT.
+		if rti.RedeemScript != "" {
+			redeemScript, err := decodeHexStr(rti.RedeemScript)
+			if err != nil {
+				return ptnjson.SignRawTransactionResult{}, err
+			}
+			//lockScript := tokenengine.GenerateP2SHLockScript(crypto.Hash160(redeemScript))
+			//addressMulti,err:=tokenengine.GetAddressFromScript(lockScript)
+			//if err != nil {
+			//	return nil, DeserializationError{err}
+			//}
+			//mutiAddr = addressMulti
+			//scripts[addressMulti.Str()] = redeemScript
+			redeem = redeemScript
+		}
+		inputpoints[modules.OutPoint{
+			TxHash:       inputHash,
+			OutIndex:     rti.Vout,
+			MessageIndex: rti.MessageIndex,
+		}] = script
+		PkScript = script
+	}
+
+	var signErrs []common.SignatureError
+	
+	for msgidx, msg := range tx.TxMessages {
+		payload, ok := msg.Payload.(*modules.PaymentPayload)
+		if !ok {
+			continue
+		}
+		for inputindex := range payload.Inputs {
+			signed, err := tokenengine.Instance.MultiSignOnePaymentInput(tx, hashType, msgidx,inputindex,PkScript, redeem, pubKeyFn, hashFn,payload.Inputs[inputindex].SignatureScript)
+	        if err != nil {
+		        return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
+	        }
+	        payload.Inputs[inputindex].SignatureScript = signed
+			//err = tokenengine.Instance.ScriptValidate(PkScript, nil, tx, msgidx, inputindex)
+			//if err != nil {
+			//	return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
+			//}
+		}
+
+		for k := range payload.Outputs {
+			switch hashType & 0x1f {
+			case tokenengine.SigHashNone:
+				payload.Outputs[k].PkScript = payload.Outputs[k].PkScript[0:0] // Empty slice.
+			case tokenengine.SigHashSingle:
+				// Resize output array to up to and including requested index.
+				payload.Outputs = payload.Outputs[:1+1]
+				pk_addr, err := tokenengine.Instance.GetAddressFromScript(payload.Outputs[k].PkScript)
+				if err != nil {
+					return ptnjson.SignRawTransactionResult{}, errors.New("Get addr FromScript is err when signtx")
+				}
+				// All but current output get zeroed out.
+				if pk_addr != addr {
+					payload.Outputs[k].PkScript = nil
+					payload.Outputs[k].Value = 0
+					payload.Outputs[k].Asset = &modules.Asset{}
+				}
+			}
+		}
+	}
+	// All returned errors (not OOM, which panics) encountered during
+	// bytes.Buffer writes are unexpected.
+	mtxbt, err := rlp.EncodeToBytes(tx)
+	if err != nil {
+		return ptnjson.SignRawTransactionResult{}, err
+	}
+	signedHex := hex.EncodeToString(mtxbt)
+	signErrors := make([]ptnjson.SignRawTransactionError, 0, len(signErrs))
+	return ptnjson.SignRawTransactionResult{
+		Hex:      signedHex,
+		Txid:     tx.Hash().String(),
+		Complete: len(signErrors) == 0,
+		Errors:   signErrors,
+	}, nil
+}
+
 func trimx(para string) string {
 	if strings.HasPrefix(para, "0x") || strings.HasPrefix(para, "0X") {
 		return para[2:]

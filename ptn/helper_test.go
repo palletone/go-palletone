@@ -23,6 +23,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"fmt"
+	"github.com/palletone/go-palletone/contracts/utils"
 	"log"
 	"sync"
 	"testing"
@@ -87,7 +88,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, idag dag.IDag,
 	}
 	genesisUint, _ := idag.GetUnitByNumber(index0)
 
-	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, modules.NewPTNIdType(), &testTxPool{added: newtx}, idag, typemux, pro, genesisUint, nil, nil, nil)
+	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, modules.NewPTNIdType(), &testTxPool{added: newtx}, idag, typemux, pro, genesisUint, nil, nil, nil,&utils.PalletOneDocker{DockerClient:nil})
 	if err != nil {
 		return nil, nil, err
 	}

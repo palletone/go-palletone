@@ -50,7 +50,7 @@ run:
       - subject.go
       - shim[/\\]handler.go
       - key.go
-      - cmd/abigen/import.go
+      - cmd[/\\]abigen[/\\]import.go
   #   - ".*\\.my\\.go$"
   #   - lib/bad.go
 
@@ -196,31 +196,31 @@ linters-settings:
   #       paramsOnly: true
   #     rangeValCopy:
   #       sizeThreshold: 32
-
 linters:
-  # enable:
-  #   - gosec
-  #   - dupl
-  #   - misspell
-  #   - goimports
-  enable-all: true
-  disable:
-    - errcheck
-    - golint
-    - gocritic
-    - gochecknoglobals
-    - gocyclo
-    - maligned
-    - gochecknoinits
-    - lll
-    - godox
-    - dogsled
-    - funlen
-    - stylecheck
-    - whitespace
-    - gosimple
-    - interfacer
-  disable-all: false
+  enable:
+    - deadcode
+    - govet
+    - ineffassign
+    - staticcheck
+    - structcheck
+    - typecheck
+    - unused
+    - varcheck
+    - bodyclose
+    - depguard
+    - dupl
+    - goconst
+    - gofmt
+    - goimports
+    - gosec
+    - misspell
+    - nakedret
+    - prealloc
+    - scopelint
+    - unconvert
+    - unparam
+  enable-all: false
+  disable-all: true
   # presets:
   #   - bugs
   #   - unused

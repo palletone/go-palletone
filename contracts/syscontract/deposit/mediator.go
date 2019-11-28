@@ -189,7 +189,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface) error {
 	all := invokeTokens.Amount + md.Balance
 	if all != cp.DepositAmountForMediator {
 		str := fmt.Errorf("Mediator needs to pay only %d  deposit.", cp.DepositAmountForMediator-md.Balance)
-		log.Error(str.Error())
+		log.Warn(str.Error())
 		return str
 	}
 

@@ -16,6 +16,12 @@ ${juryAddr_02_pubkey}    ${EMPTY}
 ${m1_pubkey}      ${EMPTY}
 ${m2_pubkey}      ${EMPTY}
 ${votedAddress}    ${EMPTY}
+${votedAddress01}    ${EMPTY}
+${votedAddress02}    ${EMPTY}
+${votedAddress03}    ${EMPTY}
+${votedAddress04}    ${EMPTY}
+${votedAddress05}    ${EMPTY}
+${votedAddress06}    ${EMPTY}
 
 *** Test Cases ***
 Business_01
@@ -278,9 +284,6 @@ Business_07
     ...    DPT+10E7XBWEBT0K2H2GE0O
     ...
     ...    DPT+10102JC6CQU8OK204BXA
-    ${amount}    getBalance    ${foundationAddr}    PTN
-    log    ${amount}
-    Should Be Equal As Numbers    ${amount}    999930043
     ${amount}    getBalance    ${mediatorAddr_02}    PTN
     log    ${amount}
     Should Be Equal As Numbers    ${amount}    9948
@@ -349,233 +352,6 @@ middle_cases
     ${amount}    getBalance    ${developerAddr_02}    PTN
     log    ${amount}    #9998，被没收了1个PTN，花了1个PTN手续费
 
-Business_08
-    [Documentation]    退出候选列表的两个Mediator继续交付保证金
-    ...
-    ...    mediator交付保证金再次进入超级节点和jury节点候选列表
-    ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}
-    log    ${mDeposit}
-    ${amount}    getBalance    ${mediatorAddr_01}    PTN
-    log    ${amount}
-    Should Be Equal As Numbers    ${amount}    9996
-    ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    50
-    log    ${result}
-    sleep    5
-    ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}
-    log    ${mDeposit}
-    ${amount}    getBalance    ${mediatorAddr_01}    PTN
-    log    ${amount}
-    Should Be Equal As Numbers    ${amount}    9945
-    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
-    log    ${amount}
-    Should Be Equal As Numbers    ${amount}    50
-    ${addressMap3}    getListForMediatorCandidate
-    log    ${addressMap3}
-    Dictionary Should Contain Key    ${addressMap3}    ${mediatorAddr_01}
-    ${resul}    getListForJuryCandidate
-    Dictionary Should Contain Key    ${resul}    ${mediatorAddr_01}
-    log    ${resul}
-    ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_02}
-    log    ${mDeposit}
-    ${amount}    getBalance    ${mediatorAddr_02}    PTN
-    log    ${amount}
-    Should Be Equal As Numbers    ${amount}    9946
-    ${result}    mediatorPayToDepositContract    ${mediatorAddr_02}    50
-    log    ${result}
-    sleep    5
-    ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_02}
-    log    ${mDeposit}
-    ${amount}    getBalance    ${mediatorAddr_02}    PTN
-    log    ${amount}
-    Should Be Equal As Numbers    ${amount}    9895
-    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
-    log    ${amount}
-    Should Be Equal As Numbers    ${amount}    100
-    ${addressMap3}    getListForMediatorCandidate
-    log    ${addressMap3}
-    Dictionary Should Contain Key    ${addressMap3}    ${mediatorAddr_02}
-    ${resul}    getListForJuryCandidate
-    Dictionary Should Contain Key    ${resul}    ${mediatorAddr_02}
-    log    ${resul}
-
-PledgeTest
-    [Documentation]    质押流程的测试用例，包括投票、质押、分红、赎回、查询相关等操作
-    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
-    log    ${amount}    #100，上一个测试的结果
-    Should Be Equal As Numbers    ${amount}    100
-    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
-    log    ${result}
-    ${result}    getBalance    ${votedAddress}    PTN
-    log    ${result}
-    Should Be Equal As Numbers    ${result}    10000
-    sleep    5
-    ${result}    mediatorListAll    #查看所有超级节点
-    log    ${result}
-    sleep    5
-    ${mediatorAddress}    Set Variable    ${result[0]}
-    ${result}    mediatorListVoteResults    #查看超级节点投票结果
-    log    ${result}
-    sleep    5
-    ${result}    mediatorVote    ${votedAddress}    ${mediatorAddress}    #投票某超级节点    #5000DAO
-    log    ${result}
-    sleep    5
-    ${result}    getBalance    ${votedAddress}    PTN
-    log    ${result}
-    Should Be Equal As Numbers    ${result}    9999.99
-    sleep    5
-    ${result}    mediatorGetVoted    ${votedAddress}    #查看该节点所投票的情况
-    log    ${result}
-    Should Be Equal As Strings    ${result[0]}    ${mediatorAddress}
-    sleep    5
-    ${result}    pledgeDeposit    ${votedAddress}    100    #质押PTN    #101
-    log    ${result}
-    sleep    5
-    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
-    log    ${result}
-    ${resultJson}    To Json    ${result}
-    ${newDepositAmount}    Get From Dictionary    ${resultJson}    NewDepositAmount
-    log    ${newDepositAmount}
-    Should Be Equal As Strings    ${newDepositAmount}    100
-    sleep    5
-    ${result}    getBalance    ${votedAddress}    PTN
-    log    ${result}
-    Should Be Equal As Numbers    ${result}    9898.99
-    sleep    5
-    ${result}    mediatorListVoteResults    #查看超级节点投票结果
-    log    ${result}
-    ${amount}    Get From Dictionary    ${result}    ${mediatorAddress}
-    Should Be Equal As Numbers    ${amount}    10000000000
-    sleep    5
-    ${result}    queryPledgeList    #查看整个网络所有质押情况
-    log    ${result}
-    sleep    5
-    ${time}    Get Time
-    ${date}    Get Substring    ${time}    0    10
-    log    ${date}
-    ${yyyy}    ${mm}    ${dd} =    Get Time    year,month,day
-    ${date}    Catenate    SEPARATOR=    ${yyyy}    ${mm}    ${dd}
-    ${result}    QueryPledgeListByDate    ${date}
-    log    ${result}
-    sleep    5
-    ${result}    QueryAllPledgeHistory
-    log    ${result}
-    sleep    5
-    ${result}    IsFinishAddNewRecords
-    log    ${result}
-    sleep    3
-    ${result}    AddNewAddrPledgeRecords    ${votedAddress}    #1
-    log    ${result}
-    sleep    5
-    ${result}    IsFinishAddNewRecords
-    log    ${result}
-    sleep    3
-    ${result}    getBalance    ${votedAddress}    PTN
-    log    ${result}
-    Should Be Equal As Numbers    ${result}    9897.99
-    sleep    5
-    ${result}    queryPledgeList    #查看整个网络所有质押情况
-    log    ${result}
-    ${resultJson}    To Json    ${result}
-    ${total_amount}    Get From Dictionary    ${resultJson}    total_amount
-    Should Be Equal As Strings    ${total_amount}    10000000000
-    sleep    5
-    ${time}    Get Time
-    ${date}    Get Substring    ${time}    0    10
-    log    ${date}
-    ${yyyy}    ${mm}    ${dd} =    Get Time    year,month,day
-    ${date}    Catenate    SEPARATOR=    ${yyyy}    ${mm}    ${dd}
-    ${result}    QueryPledgeListByDate    ${date}
-    log    ${result}
-    sleep    5
-    ${result}    QueryAllPledgeHistory
-    log    ${result}
-    sleep    5
-    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
-    log    ${result}
-    ${resultJson}    To Json    ${result}
-    ${pledgeAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
-    log    ${pledgeAmount}
-    Should Be Equal As Strings    ${pledgeAmount}    100
-    sleep    5
-    ${result}    isFinishAllocated
-    log    ${result}
-    sleep    3
-    ${result}    HandlePledgeReward    ${foundationAddr}    #1
-    log    ${result}
-    sleep    5
-    ${result}    isFinishAllocated
-    log    ${result}
-    sleep    3
-    ${result}    queryPledgeList    #查看整个网络所有质押情况
-    log    ${result}
-    ${resultJson}    To Json    ${result}
-    ${total_amount}    Get From Dictionary    ${resultJson}    total_amount
-    Should Be Equal As Strings    ${total_amount}    10288745000
-    sleep    5
-    ${result}    QueryAllPledgeHistory
-    log    ${result}
-    sleep    5
-    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
-    log    ${result}
-    ${resultJson}    To Json    ${result}
-    ${pledgeAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
-    log    ${pledgeAmount}
-    Should Be Equal As Strings    ${pledgeAmount}    102.88745
-    sleep    5
-    ${result}    PledgeWithdraw    ${votedAddress}    10000000000    #1
-    log    ${result}
-    sleep    5
-    ${result}    getBalance    ${votedAddress}    PTN
-    log    ${result}
-    Should Be Equal As Numbers    ${result}    9896.99
-    sleep    5
-    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
-    log    ${result}
-    ${resultJson}    To Json    ${result}
-    ${pledgeAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
-    log    ${pledgeAmount}
-    Should Be Equal As Strings    ${pledgeAmount}    102.88745
-    ${withdrawApplyAmount}    Get From Dictionary    ${resultJson}    WithdrawApplyAmount
-    log    ${withdrawApplyAmount}
-    Should Be Equal As Strings    ${withdrawApplyAmount}    100
-    sleep    5
-    ${result}    isFinishAllocated
-    log    ${result}
-    sleep    3
-    ${result}    HandlePledgeReward    ${foundationAddr}    #1
-    log    ${result}
-    sleep    5
-    ${result}    isFinishAllocated
-    log    ${result}
-    sleep    3
-    ${result}    getBalance    ${votedAddress}    PTN
-    log    ${result}
-    Should Be Equal As Numbers    ${result}    9996.99
-    sleep    5
-    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
-    log    ${result}
-    ${resultJson}    To Json    ${result}
-    ${pledgeAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
-    log    ${pledgeAmount}
-    Should Be Equal As Strings    ${pledgeAmount}    5.7749
-    sleep    5
-    ${result}    queryPledgeList    #查看整个网络所有质押情况
-    log    ${result}
-    ${resultJson}    To Json    ${result}
-    ${total_amount}    Get From Dictionary    ${resultJson}    total_amount
-    Should Be Equal As Strings    ${total_amount}    577490000
-    sleep    5
-    ${result}    QueryAllPledgeHistory
-    log    ${result}
-    sleep    5
-    ${result}    mediatorListVoteResults    #查看超级节点投票结果
-    log    ${result}
-    ${amount}    Get From Dictionary    ${result}    ${mediatorAddress}
-    Should Be Equal As Numbers    ${amount}    577490000
-    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
-    log    ${amount}    #108.66235，866,235,000是质押增发的
-    Should Be Equal As Numbers    ${amount}    105.7749
-
 Business_09
     [Documentation]    jury 和 dev 交付保证金数量不对流程
     log    jury
@@ -603,8 +379,8 @@ Business_09
     Should Be Equal As Numbers    ${amount}    9997
     sleep    1
     ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
-    log    ${amount}    #108.66235，866,235,000是质押增发的，没有变化
-    Should Be Equal As Numbers    ${amount}    105.7749
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    0
 
 Business_10
     [Documentation]    jury 交付 10 ptn 才可以加入候选列表
@@ -637,6 +413,8 @@ Business_10
     ${amount}    getBalance    ${juryAddr_01}    PTN
     log    ${amount}    #9985
     Should Be Equal As Numbers    ${amount}    9985
+    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
+    log    ${amount}    #108.66235，866,235,000是质押增发的，没有变化
 
 Business_11
     [Documentation]    dev 交付 1 ptn 才可以加入合约开发者列表
@@ -669,6 +447,8 @@ Business_11
     ${result}    getCandidateBalanceWithAddr    ${developerAddr_01}    #获取该地址保证金账户详情
     log    ${result}
     Should Not Be Equal    ${result}    balance is nil
+    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
+    log    ${amount}    #108.66235，866,235,000是质押增发的，没有变化
 
 Business_12
     [Documentation]    没收上一个测试用例的jury dev节点，但是基金会不同意
@@ -710,35 +490,34 @@ Business_12
     Should Be Equal As Numbers    ${amount}    9994
     ${result}    getListForForfeitureApplication
     log    ${result}
+    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
+    log    ${amount}    #108.66235，866,235,000是质押增发的，没有变化
 
 PledgeTest02
-    [Documentation]    1.质押为 3 ，阈值为 2
-    ...    2.添加到分红列表
-    ...    3.1.新地址质押：3，阈值为2
-    ...    3.2.原来质押的继续质押2
-    ...    3.3.原来质押的继续提取2
-    ...    4.分红
-    ...    5.添加新地址到分红列表
-    ...    6.变为质押6，阈值2
-    ...    7.分红
-    ...    8.提取3
-    ...    9.分红
-    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
-    log    ${amount}    #100，上一个测试的结果
-    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    [Documentation]    1.3个地址质押，每个地址质押100ptn
+    ...    2.第一次将3个地址添加
+    ...    3.继续有3个新地址质押，每个地址质押100ptn，这个时候，前面有两个地址分别继续质押并赎回相同ptn数量
+    ...    4.这里第一次分红：质押总量=30000000000，日分红总量=288745000，得288745000/30000000000=0.0096248333333333
+    ...    5.这里是第二次分红：质押总量=30000000000+30000000000+288745000=60288744999，日分红总量=288745000，得288745000/60288744999=0.0047893682312476
+    ${depositOne}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
+    log    ${depositOne}
+    ${result}    queryPledgeStatusByAddr    ${votedAddress01}    #查看某地址的质押结果
     log    ${result}
-    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress01}
     log    ${result}
-    ${result}    getBalance    ${votedAddress}    PTN
+    ${result}    getBalance    ${votedAddress01}    PTN
     log    ${result}
-    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_01}    #查看某地址的质押结果
+    Should Be Equal As Numbers    ${result}    10000
+    ${result}    queryPledgeStatusByAddr    ${votedAddress02}    #查看某地址的质押结果
     log    ${result}
-    ${result}    getBalance    ${mediatorAddr_01}    PTN
+    ${result}    getBalance    ${votedAddress02}    PTN
     log    ${result}
-    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_02}    #查看某地址的质押结果
+    Should Be Equal As Numbers    ${result}    10000
+    ${result}    queryPledgeStatusByAddr    ${votedAddress03}    #查看某地址的质押结果
     log    ${result}
-    ${result}    getBalance    ${mediatorAddr_02}    PTN
+    ${result}    getBalance    ${votedAddress03}    PTN
     log    ${result}
+    Should Be Equal As Numbers    ${result}    10000
     ${result}    mediatorListAll    #查看所有超级节点
     log    ${result}
     sleep    1
@@ -746,39 +525,51 @@ PledgeTest02
     ${result}    mediatorListVoteResults    #查看超级节点投票结果
     log    ${result}
     sleep    1
-    ${result}    mediatorVote    ${votedAddress}    ${mediatorAddress}    #投票某超级节点    #5000DAO
+    ${result}    mediatorVote    ${votedAddress01}    ${mediatorAddress}    #投票某超级节点    #5000DAO
     log    ${result}
     sleep    5
-    ${result}    mediatorVote    ${mediatorAddr_01}    ${mediatorAddress}    #投票某超级节点    #5000DAO
+    ${result}    mediatorVote    ${votedAddress02}    ${mediatorAddress}    #投票某超级节点    #5000DAO
     log    ${result}
     sleep    5
-    ${result}    mediatorVote    ${mediatorAddr_02}    ${mediatorAddress}    #投票某超级节点    #5000DAO
+    ${result}    mediatorVote    ${votedAddress03}    ${mediatorAddress}    #投票某超级节点    #5000DAO
     log    ${result}
     sleep    5
-    ${result}    mediatorGetVoted    ${votedAddress}    #查看该节点所投票的情况
+    ${result}    mediatorGetVoted    ${votedAddress01}    #查看该节点所投票的情况
     log    ${result}
-    ${result}    pledgeDeposit    ${votedAddress}    100    #质押PTN    #101
-    log    ${result}
-    sleep    5
-    ${result}    pledgeDeposit    ${mediatorAddr_01}    100    #质押PTN    #101
+    ${result}    pledgeDeposit    ${votedAddress01}    100    #质押PTN    #101
     log    ${result}
     sleep    5
-    ${result}    pledgeDeposit    ${mediatorAddr_02}    100    #质押PTN    #101
+    ${result}    pledgeDeposit    ${votedAddress02}    100    #质押PTN    #101
     log    ${result}
     sleep    5
-    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    ${result}    pledgeDeposit    ${votedAddress03}    100    #质押PTN    #101
     log    ${result}
-    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
+    sleep    5
+    ${result}    queryPledgeStatusByAddr    ${votedAddress01}    #查看某地址的质押结果
     log    ${result}
-    ${result}    getBalance    ${votedAddress}    PTN
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    NewDepositAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    100
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress01}
     log    ${result}
-    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_01}    #查看某地址的质押结果
+    ${result}    getBalance    ${votedAddress01}    PTN
     log    ${result}
-    ${result}    getBalance    ${mediatorAddr_01}    PTN
+    ${result}    queryPledgeStatusByAddr    ${votedAddress02}    #查看某地址的质押结果
     log    ${result}
-    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_02}    #查看某地址的质押结果
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    NewDepositAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    100
+    ${result}    getBalance    ${votedAddress02}    PTN
     log    ${result}
-    ${result}    getBalance    ${mediatorAddr_02}    PTN
+    ${result}    queryPledgeStatusByAddr    ${votedAddress03}    #查看某地址的质押结果
+    log    ${result}
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    NewDepositAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    100
+    ${result}    getBalance    ${votedAddress03}    PTN
     log    ${result}
     ${result}    mediatorListVoteResults    #查看超级节点投票结果
     log    ${result}
@@ -799,14 +590,16 @@ PledgeTest02
     log    ${result}
     sleep    1
     log    tiaojiaxinzhiya
-    ${result}    IsFinishAddNewRecords
+    ${result}    isFinishAllocated
+    log    ${result}
+    Should Be Equal As Strings    ${result}    false
+    sleep    5
+    ${result}    HandlePledgeReward    ${votedAddress01}    #1
     log    ${result}
     sleep    5
-    ${result}    AddNewAddrPledgeRecords    ${votedAddress}    #1
+    ${result}    isFinishAllocated
     log    ${result}
-    sleep    5
-    ${result}    IsFinishAddNewRecords
-    log    ${result}
+    Should Be Equal As Strings    ${result}    true
     sleep    5
     ${result}    queryPledgeList    #查看整个网络所有质押情况
     log    ${result}
@@ -817,89 +610,129 @@ PledgeTest02
     ${result}    QueryAllPledgeHistory
     log    ${result}
     sleep    1
-    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    ${result}    queryPledgeStatusByAddr    ${votedAddress01}    #查看某地址的质押结果
     log    ${result}
-    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    100
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress01}
     log    ${result}
-    ${result}    getBalance    ${votedAddress}    PTN
+    ${result}    getBalance    ${votedAddress01}    PTN
     log    ${result}
-    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_01}    #查看某地址的质押结果
+    ${result}    queryPledgeStatusByAddr    ${votedAddress02}    #查看某地址的质押结果
     log    ${result}
-    ${result}    getBalance    ${mediatorAddr_01}    PTN
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    100
+    ${result}    getBalance    ${votedAddress02}    PTN
     log    ${result}
-    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_02}    #查看某地址的质押结果
+    ${result}    queryPledgeStatusByAddr    ${votedAddress03}    #查看某地址的质押结果
     log    ${result}
-    ${result}    getBalance    ${mediatorAddr_02}    PTN
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    100
+    ${result}    getBalance    ${votedAddress03}    PTN
     log    ${result}
     ${result}    mediatorListVoteResults    #查看超级节点投票结果
     log    ${result}
     ${amount}    Get From Dictionary    ${result}    ${mediatorAddress}
     sleep    1
-    ${result}    mediatorVote    ${juryAddr_01}    ${mediatorAddress}    #投票某超级节点    #5000DAO
+    ${result}    mediatorVote    ${votedAddress04}    ${mediatorAddress}    #投票某超级节点    #5000DAO
     log    ${result}
     sleep    5
-    ${result}    pledgeDeposit    ${juryAddr_01}    100    #质押PTN    #101
+    ${result}    pledgeDeposit    ${votedAddress04}    100    #质押PTN    #101
     log    ${result}
     sleep    5
-    ${result}    queryPledgeStatusByAddr    ${juryAddr_01}    #查看某地址的质押结果
+    ${result}    queryPledgeStatusByAddr    ${votedAddress04}    #查看某地址的质押结果
     log    ${result}
-    ${result}    getBalance    ${juryAddr_01}    PTN
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    NewDepositAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    100
+    ${result}    getBalance    ${votedAddress04}    PTN
     log    ${result}
-    ${result}    mediatorVote    ${juryAddr_02}    ${mediatorAddress}    #投票某超级节点    #5000DAO
+    ${result}    mediatorVote    ${votedAddress05}    ${mediatorAddress}    #投票某超级节点    #5000DAO
     log    ${result}
     sleep    5
-    ${result}    pledgeDeposit    ${juryAddr_02}    100    #质押PTN    #101
+    ${result}    pledgeDeposit    ${votedAddress05}    100    #质押PTN    #101
     log    ${result}
     sleep    5
-    ${result}    queryPledgeStatusByAddr    ${juryAddr_02}    #查看某地址的质押结果
+    ${result}    queryPledgeStatusByAddr    ${votedAddress05}    #查看某地址的质押结果
     log    ${result}
-    ${result}    getBalance    ${juryAddr_02}    PTN
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    NewDepositAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    100
+    ${result}    getBalance    ${votedAddress05}    PTN
     log    ${result}
-    ${result}    getBalance    ${developerAddr_01}    PTN
+    ${result}    getBalance    ${votedAddress06}    PTN
     log    ${result}
     sleep    1
-    ${result}    pledgeDeposit    ${developerAddr_01}    100    #质押PTN    #101
+    ${result}    pledgeDeposit    ${votedAddress06}    100    #质押PTN    #101
     log    ${result}
     sleep    5
-    ${result}    mediatorVote    ${developerAddr_01}    ${mediatorAddress}    #投票某超级节点    #5000DAO
+    ${result}    mediatorVote    ${votedAddress06}    ${mediatorAddress}    #投票某超级节点    #5000DAO
     log    ${result}
     sleep    5
-    ${result}    queryPledgeStatusByAddr    ${developerAddr_01}    #查看某地址的质押结果
+    ${result}    queryPledgeStatusByAddr    ${votedAddress06}    #查看某地址的质押结果
     log    ${result}
-    ${result}    getBalance    ${developerAddr_01}    PTN
-    log    ${result}
-    sleep    1
-    ${result}    mediatorListVoteResults    #查看超级节点投票结果
-    log    ${result}
-    ${result}    pledgeDeposit    ${votedAddress}    100    #质押PTN    #101
-    log    ${result}
-    sleep    5
-    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
-    log    ${result}
-    sleep    1
-    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
-    log    ${result}
-    ${result}    pledgeDeposit    ${mediatorAddr_01}    100    #质押PTN    #101
-    log    ${result}
-    sleep    5
-    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_01}    #查看某地址的质押结果
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    NewDepositAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    100
+    ${result}    getBalance    ${votedAddress06}    PTN
     log    ${result}
     sleep    1
     ${result}    mediatorListVoteResults    #查看超级节点投票结果
     log    ${result}
-    ${result}    PledgeWithdraw    ${votedAddress}    10000000000
+    ${result}    pledgeDeposit    ${votedAddress01}    100    #质押PTN    #101
     log    ${result}
     sleep    5
-    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    ${result}    queryPledgeStatusByAddr    ${votedAddress01}    #查看某地址的质押结果
     log    ${result}
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    NewDepositAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    100
     sleep    1
-    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress01}
     log    ${result}
-    ${result}    PledgeWithdraw    ${mediatorAddr_01}    10000000000
+    ${result}    pledgeDeposit    ${votedAddress02}    100    #质押PTN    #101
     log    ${result}
     sleep    5
-    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_01}    #查看某地址的质押结果
+    ${result}    queryPledgeStatusByAddr    ${votedAddress02}    #查看某地址的质押结果
     log    ${result}
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    NewDepositAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    100
+    sleep    1
+    ${result}    mediatorListVoteResults    #查看超级节点投票结果
+    log    ${result}
+    ${result}    PledgeWithdraw    ${votedAddress01}    10000000000
+    log    ${result}
+    sleep    5
+    ${result}    queryPledgeStatusByAddr    ${votedAddress01}    #查看某地址的质押结果
+    log    ${result}
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    WithdrawApplyAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    100
+    sleep    1
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress01}
+    log    ${result}
+    ${result}    PledgeWithdraw    ${votedAddress02}    10000000000
+    log    ${result}
+    sleep    5
+    ${result}    queryPledgeStatusByAddr    ${votedAddress02}    #查看某地址的质押结果
+    log    ${result}
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    WithdrawApplyAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    100
     sleep    1
     ${result}    mediatorListVoteResults    #查看超级节点投票结果
     log    ${result}
@@ -913,40 +746,62 @@ PledgeTest02
     ${result}    isFinishAllocated
     log    ${result}
     sleep    5
-    ${result}    IsFinishAddNewRecords
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
     log    ${result}
     sleep    5
-    ${result}    AddNewAddrPledgeRecords    ${foundationAddr}    #1
+    ${result}    isFinishAllocated
     log    ${result}
     sleep    5
-    ${result}    IsFinishAddNewRecords
+    log    第一次分红
+    ${result}    queryPledgeStatusByAddr    ${votedAddress01}    #查看某地址的质押结果
     log    ${result}
-    sleep    5
-    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    100.96248333
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress01}
     log    ${result}
-    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
+    ${result}    getBalance    ${votedAddress01}    PTN
     log    ${result}
-    ${result}    getBalance    ${votedAddress}    PTN
+    ${result}    queryPledgeStatusByAddr    ${votedAddress02}    #查看某地址的质押结果
     log    ${result}
-    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_01}    #查看某地址的质押结果
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    100.96248333
+    ${result}    getBalance    ${votedAddress02}    PTN
     log    ${result}
-    ${result}    getBalance    ${mediatorAddr_01}    PTN
+    ${result}    queryPledgeStatusByAddr    ${votedAddress03}    #查看某地址的质押结果
     log    ${result}
-    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_02}    #查看某地址的质押结果
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    100.96248333
+    ${result}    getBalance    ${votedAddress03}    PTN
     log    ${result}
-    ${result}    getBalance    ${mediatorAddr_02}    PTN
+    ${result}    queryPledgeStatusByAddr    ${votedAddress04}    #查看某地址的质押结果
     log    ${result}
-    ${result}    queryPledgeStatusByAddr    ${juryAddr_01}    #查看某地址的质押结果
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    100
+    ${result}    getBalance    ${votedAddress04}    PTN
     log    ${result}
-    ${result}    getBalance    ${juryAddr_01}    PTN
+    ${result}    queryPledgeStatusByAddr    ${votedAddress05}    #查看某地址的质押结果
     log    ${result}
-    ${result}    queryPledgeStatusByAddr    ${juryAddr_02}    #查看某地址的质押结果
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    100
+    ${result}    getBalance    ${votedAddress05}    PTN
     log    ${result}
-    ${result}    getBalance    ${juryAddr_02}    PTN
+    ${result}    queryPledgeStatusByAddr    ${votedAddress06}    #查看某地址的质押结果
     log    ${result}
-    ${result}    queryPledgeStatusByAddr    ${developerAddr_01}    #查看某地址的质押结果
-    log    ${result}
-    ${result}    getBalance    ${developerAddr_01}    PTN
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    100
+    ${result}    getBalance    ${votedAddress06}    PTN
     log    ${result}
     sleep    1
     ${result}    queryPledgeList    #查看整个网络所有质押情况
@@ -959,42 +814,71 @@ PledgeTest02
     log    ${result}
     ${amount}    Get From Dictionary    ${result}    ${mediatorAddress}
     sleep    1
-    log    chuli11
+    log    第二次分红
     ${result}    isFinishAllocated
     log    ${result}
     sleep    5
     ${result}    HandlePledgeReward    ${foundationAddr}    #1
     log    ${result}
     sleep    5
-    log    chuli12
     ${result}    isFinishAllocated
     log    ${result}
     sleep    5
-    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
     log    ${result}
-    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
+    sleep    5
+    ${result}    isFinishAllocated
     log    ${result}
-    ${result}    getBalance    ${votedAddress}    PTN
+    sleep    5
+    ${result}    queryPledgeStatusByAddr    ${votedAddress01}    #查看某地址的质押结果
     log    ${result}
-    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_01}    #查看某地址的质押结果
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    101.44602984
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress01}
     log    ${result}
-    ${result}    getBalance    ${mediatorAddr_01}    PTN
+    ${result}    getBalance    ${votedAddress01}    PTN
     log    ${result}
-    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_02}    #查看某地址的质押结果
+    ${result}    queryPledgeStatusByAddr    ${votedAddress02}    #查看某地址的质押结果
     log    ${result}
-    ${result}    getBalance    ${mediatorAddr_02}    PTN
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    101.44602984
+    ${result}    getBalance    ${votedAddress02}    PTN
     log    ${result}
-    ${result}    queryPledgeStatusByAddr    ${juryAddr_01}    #查看某地址的质押结果
+    ${result}    queryPledgeStatusByAddr    ${votedAddress03}    #查看某地址的质押结果
     log    ${result}
-    ${result}    getBalance    ${juryAddr_01}    PTN
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    101.44602984
+    ${result}    getBalance    ${votedAddress03}    PTN
     log    ${result}
-    ${result}    queryPledgeStatusByAddr    ${juryAddr_02}    #查看某地址的质押结果
+    ${result}    queryPledgeStatusByAddr    ${votedAddress04}    #查看某地址的质押结果
     log    ${result}
-    ${result}    getBalance    ${juryAddr_02}    PTN
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    100.47893682
+    ${result}    getBalance    ${votedAddress04}    PTN
     log    ${result}
-    ${result}    queryPledgeStatusByAddr    ${developerAddr_01}    #查看某地址的质押结果
+    ${result}    queryPledgeStatusByAddr    ${votedAddress05}    #查看某地址的质押结果
     log    ${result}
-    ${result}    getBalance    ${developerAddr_01}    PTN
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    100.47893682
+    ${result}    getBalance    ${votedAddress05}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${votedAddress06}    #查看某地址的质押结果
+    log    ${result}
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    100.47893682
+    ${result}    getBalance    ${votedAddress06}    PTN
     log    ${result}
     ${result}    queryPledgeList    #查看整个网络所有质押情况
     log    ${result}
@@ -1002,66 +886,103 @@ PledgeTest02
     ${result}    QueryAllPledgeHistory
     log    ${result}
     sleep    1
-    ${result}    PledgeWithdraw    ${votedAddress}    10000000000
+    ${result}    PledgeWithdraw    ${votedAddress01}    10000000000
     log    ${result}
     sleep    5
-    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    ${result}    queryPledgeStatusByAddr    ${votedAddress01}    #查看某地址的质押结果
     log    ${result}
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    WithdrawApplyAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    100
     sleep    1
-    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress01}
     log    ${result}
-    ${result}    PledgeWithdraw    ${mediatorAddr_01}    10000000000
+    ${result}    PledgeWithdraw    ${votedAddress02}    10000000000
     log    ${result}
     sleep    5
-    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_01}    #查看某地址的质押结果
+    ${result}    queryPledgeStatusByAddr    ${votedAddress02}    #查看某地址的质押结果
     log    ${result}
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    WithdrawApplyAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    100
     sleep    1
-    ${result}    PledgeWithdraw    ${developerAddr_01}    10000000000
+    ${result}    PledgeWithdraw    ${votedAddress06}    10000000000
     log    ${result}
     sleep    5
-    ${result}    queryPledgeStatusByAddr    ${developerAddr_01}    #查看某地址的质押结果
+    ${result}    queryPledgeStatusByAddr    ${votedAddress06}    #查看某地址的质押结果
     log    ${result}
     sleep    1
     ${result}    mediatorListVoteResults    #查看超级节点投票结果
     log    ${result}
     ${amount}    Get From Dictionary    ${result}    ${mediatorAddress}
     sleep    1
-    log    chuli21
+    log    第三次分红
     ${result}    isFinishAllocated
     log    ${result}
     sleep    1
     ${result}    HandlePledgeReward    ${foundationAddr}    #1
     log    ${result}
     sleep    5
-    log    chuli22
     ${result}    isFinishAllocated
     log    ${result}
     sleep    2
-    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
     log    ${result}
-    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
+    sleep    5
+    ${result}    isFinishAllocated
     log    ${result}
-    ${result}    getBalance    ${votedAddress}    PTN
+    sleep    5
+    ${result}    queryPledgeStatusByAddr    ${votedAddress01}    #查看某地址的质押结果
     log    ${result}
-    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_01}    #查看某地址的质押结果
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    1.92957635
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress01}
     log    ${result}
-    ${result}    getBalance    ${mediatorAddr_01}    PTN
+    ${result}    getBalance    ${votedAddress01}    PTN
     log    ${result}
-    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_02}    #查看某地址的质押结果
+    ${result}    queryPledgeStatusByAddr    ${votedAddress02}    #查看某地址的质押结果
     log    ${result}
-    ${result}    getBalance    ${mediatorAddr_02}    PTN
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    1.92957635
+    ${result}    getBalance    ${votedAddress02}    PTN
     log    ${result}
-    ${result}    queryPledgeStatusByAddr    ${juryAddr_01}    #查看某地址的质押结果
+    ${result}    queryPledgeStatusByAddr    ${votedAddress03}    #查看某地址的质押结果
     log    ${result}
-    ${result}    getBalance    ${juryAddr_01}    PTN
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    101.92957635
+    ${result}    getBalance    ${votedAddress03}    PTN
     log    ${result}
-    ${result}    queryPledgeStatusByAddr    ${juryAddr_02}    #查看某地址的质押结果
+    ${result}    queryPledgeStatusByAddr    ${votedAddress04}    #查看某地址的质押结果
     log    ${result}
-    ${result}    getBalance    ${juryAddr_02}    PTN
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    100.95787364
+    ${result}    getBalance    ${votedAddress04}    PTN
     log    ${result}
-    ${result}    queryPledgeStatusByAddr    ${developerAddr_01}    #查看某地址的质押结果
+    ${result}    queryPledgeStatusByAddr    ${votedAddress05}    #查看某地址的质押结果
     log    ${result}
-    ${result}    getBalance    ${developerAddr_01}    PTN
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    100.95787364
+    ${result}    getBalance    ${votedAddress05}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${votedAddress06}    #查看某地址的质押结果
+    log    ${result}
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    0.95787364
+    ${result}    getBalance    ${votedAddress06}    PTN
     log    ${result}
     ${result}    queryPledgeList    #查看整个网络所有质押情况
     log    ${result}
@@ -1073,7 +994,7 @@ PledgeTest02
     log    ${result}
     ${amount}    Get From Dictionary    ${result}    ${mediatorAddress}
     sleep    1
-    log    chuli31
+    log    第四次分红
     ${result}    isFinishAllocated
     log    ${result}
     sleep    5
@@ -1084,6 +1005,12 @@ PledgeTest02
     ${result}    isFinishAllocated
     log    ${result}
     sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
     ${result}    queryPledgeList    #查看整个网络所有质押情况
     log    ${result}
     sleep    1
@@ -1092,33 +1019,109 @@ PledgeTest02
     sleep    1
     ${result}    mediatorListVoteResults    #查看超级节点投票结果
     log    ${result}
-    ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
-    log    ${amount}    #108.66235，866,235,000是质押增发的
-    ${result}    queryPledgeStatusByAddr    ${votedAddress}    #查看某地址的质押结果
+    ${result}    queryPledgeStatusByAddr    ${votedAddress01}    #查看某地址的质押结果
     log    ${result}
-    ${result}    QueryPledgeHistoryByAddr    ${votedAddress}
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    1.94762699
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress01}
     log    ${result}
-    ${result}    getBalance    ${votedAddress}    PTN
+    ${result}    getBalance    ${votedAddress01}    PTN
     log    ${result}
-    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_01}    #查看某地址的质押结果
+    ${result}    queryPledgeStatusByAddr    ${votedAddress02}    #查看某地址的质押结果
     log    ${result}
-    ${result}    getBalance    ${mediatorAddr_01}    PTN
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    1.94762699
+    ${result}    getBalance    ${votedAddress02}    PTN
     log    ${result}
-    ${result}    queryPledgeStatusByAddr    ${mediatorAddr_02}    #查看某地址的质押结果
+    ${result}    queryPledgeStatusByAddr    ${votedAddress03}    #查看某地址的质押结果
     log    ${result}
-    ${result}    getBalance    ${mediatorAddr_02}    PTN
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    102.88309904
+    ${result}    getBalance    ${votedAddress03}    PTN
     log    ${result}
-    ${result}    queryPledgeStatusByAddr    ${juryAddr_01}    #查看某地址的质押结果
+    ${result}    queryPledgeStatusByAddr    ${votedAddress04}    #查看某地址的质押结果
     log    ${result}
-    ${result}    getBalance    ${juryAddr_01}    PTN
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    101.90230632
+    ${result}    getBalance    ${votedAddress04}    PTN
     log    ${result}
-    ${result}    queryPledgeStatusByAddr    ${juryAddr_02}    #查看某地址的质押结果
+    ${result}    queryPledgeStatusByAddr    ${votedAddress05}    #查看某地址的质押结果
     log    ${result}
-    ${result}    getBalance    ${juryAddr_02}    PTN
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    101.90230632
+    ${result}    getBalance    ${votedAddress05}    PTN
     log    ${result}
-    ${result}    queryPledgeStatusByAddr    ${developerAddr_01}    #查看某地址的质押结果
+    ${result}    queryPledgeStatusByAddr    ${votedAddress06}    #查看某地址的质押结果
     log    ${result}
-    ${result}    getBalance    ${developerAddr_01}    PTN
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    Should Be Equal As Strings    ${newDepositAmount}    0.96683428
+    ${result}    getBalance    ${votedAddress06}    PTN
     log    ${result}
     ${amount}    getBalance    ${foundationAddr}    PTN
-    log    ${amount}    #100，上一个测试的结果
+    log    ${amount}
+    ${depositTwo}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
+    log    ${depositTwo}
+    log    ${depositOne}
+    ${all}    Evaluate    ${depositTwo}-${depositOne}
+    Should Be Equal As Numbers    ${all}    311.5498
+
+Business_08
+    [Documentation]    退出候选列表的两个Mediator继续交付保证金
+    ...
+    ...    mediator交付保证金再次进入超级节点和jury节点候选列表
+    ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}
+    log    ${mDeposit}
+    ${amount}    getBalance    ${mediatorAddr_01}    PTN
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    9996
+    ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    50
+    log    ${result}
+    sleep    5
+    ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_01}
+    log    ${mDeposit}
+    ${amount}    getBalance    ${mediatorAddr_01}    PTN
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    9945
+    ${depositOne}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
+    log    ${depositOne}
+    ${addressMap3}    getListForMediatorCandidate
+    log    ${addressMap3}
+    Dictionary Should Contain Key    ${addressMap3}    ${mediatorAddr_01}
+    ${resul}    getListForJuryCandidate
+    Dictionary Should Contain Key    ${resul}    ${mediatorAddr_01}
+    log    ${resul}
+    ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_02}
+    log    ${mDeposit}
+    ${amount}    getBalance    ${mediatorAddr_02}    PTN
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    9946
+    ${result}    mediatorPayToDepositContract    ${mediatorAddr_02}    50
+    log    ${result}
+    sleep    5
+    ${mDeposit}    getMediatorDepositWithAddr    ${mediatorAddr_02}
+    log    ${mDeposit}
+    ${amount}    getBalance    ${mediatorAddr_02}    PTN
+    log    ${amount}
+    Should Be Equal As Numbers    ${amount}    9895
+    ${addressMap3}    getListForMediatorCandidate
+    log    ${addressMap3}
+    Dictionary Should Contain Key    ${addressMap3}    ${mediatorAddr_02}
+    ${resul}    getListForJuryCandidate
+    Dictionary Should Contain Key    ${resul}    ${mediatorAddr_02}
+    log    ${resul}
+    ${depositTwo}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
+    log    ${depositTwo}
+    ${all}    Evaluate    ${depositTwo}-${depositOne}
+    Should Be Equal As Numbers    ${all}    50

@@ -21,6 +21,7 @@ package jury
 import (
 	"bytes"
 	"fmt"
+	"github.com/palletone/go-palletone/contracts/utils"
 	"math/big"
 	"sync"
 	"time"
@@ -35,6 +36,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts"
+	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
@@ -45,7 +47,6 @@ import (
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/txspool"
 	"github.com/palletone/go-palletone/validator"
-	"github.com/palletone/go-palletone/contracts/list"
 )
 
 type PalletOne interface {
@@ -104,6 +105,9 @@ type iDag interface {
 	GetScheduledMediator(slotNum uint32) common.Address
 	GetSlotAtTime(when time.Time) uint32
 	GetJurorReward(jurorAdd common.Address) common.Address
+
+	GetChaincode(contractId common.Address) (*list.CCInfo, error)
+	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
 }
 
 type electionVrf struct {
@@ -148,6 +152,7 @@ type Processor struct {
 
 	contractExecFeed  event.Feed
 	contractExecScope event.SubscriptionScope
+	pDocker *utils.PalletOneDocker
 }
 
 func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract, cfg *Config) (*Processor, error) {
@@ -170,7 +175,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 	log.Debug("NewContractProcessor", "contractEleNum", cfgEleNum, "contractSigNum", cfgSigNum)
 
 	cache := freecache.NewCache(20 * 1024 * 1024)
-	validator := validator.NewValidate(dag, dag, dag, dag, cache, false)
+	val := validator.NewValidate(dag, dag, dag, dag, cache, false)
 	p := &Processor{
 		name:         "contractProcessor",
 		ptn:          ptn,
@@ -182,7 +187,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 		mtx:          make(map[common.Hash]*contractTx),
 		mel:          make(map[common.Hash]*electionVrf),
 		lockVrf:      make(map[common.Address][]modules.ElectionInf),
-		validator:    validator,
+		validator:    val,
 		errMsgEnable: true,
 	}
 	log.Info("NewContractProcessor ok", "local address:", p.local)
@@ -191,6 +196,10 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 }
 func (p *Processor) SetContract(contract *contracts.Contract) {
 	p.contract = contract
+}
+
+func (p *Processor) SetDocker(pDocker *utils.PalletOneDocker) {
+	p.pDocker = pDocker
 }
 
 func (p *Processor) Start(server *p2p.Server) error {
@@ -363,7 +372,7 @@ func (p *Processor) GenContractSigTransaction(signer common.Address, password st
 		if msg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
 			resultMsg = true
 			requestMsg := msg.Payload.(*modules.ContractInvokeRequestPayload)
-			isSysContract = common.IsSystemContractAddress(requestMsg.ContractId)
+			isSysContract = common.IsSystemContractId(requestMsg.ContractId)
 			continue
 		}
 		if resultMsg {
@@ -469,7 +478,7 @@ func GetTxSig(tx *modules.Transaction, ks *keystore.KeyStore, signer common.Addr
 		if err != nil {
 			return err.Error()
 		}
-		return fmt.Sprintf("Jurior[%s] try to sign tx reqid:%s,signature:%x, tx json: %s\n rlpcode for debug: %x",
+		return fmt.Sprintf("Juror[%s] try to sign tx reqid:%s,signature:%x, tx json: %s\n rlpcode for debug: %x",
 			signer.String(), reqId.String(), sign, string(js), data)
 	})
 	return sign, nil
@@ -554,7 +563,7 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 	if p.validator.CheckTxIsExist(tx) {
 		return false
 	}
-	if _, v, err := p.validator.ValidateTx(tx, false); v != validator.TxValidationCode_VALID {
+	if _, v, err := p.validator.ValidateTx(tx, false); v != validator.TxValidationCode_VALID && err != nil {
 		log.Errorf("[%s]CheckContractTxValid checkTxValid fail, err:%s", shortId(reqId.String()), err.Error())
 		return false
 	}

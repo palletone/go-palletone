@@ -110,7 +110,7 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 	}
 	tokenDefine, _ := tx.GetTokenDefineData(nm)
 	tokenSupply, _ := tx.GetTokenSupplyData(nm)
-	log.Infof("txid=%s, nm=%s, rd=%#v, wt=%v", txid, nm, rd, wt)
+	log.Debugf("txid=%s, nm=%s, rd=%#v, wt=%v", txid, nm, rd, wt)
 	invoke := &md.ContractInvokeResult{
 		ContractId:  deployId,
 		Args:        args,
@@ -128,7 +128,7 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 			ContractId: val.ContractId,
 		}
 		invoke.ReadSet = append(invoke.ReadSet, rs)
-		log.Infof("ReadSet: idx[%v], fun[%s], key[%s], val[%v]", idx, args[2], val.GetKey(), val.GetVersion())
+		log.Debugf("ReadSet: idx[%v], fun[%s], key[%s], val[%v]", idx, args[2], val.GetKey(), val.GetVersion())
 	}
 	for idx, val := range wt {
 		ws := md.ContractWriteSet{
@@ -138,7 +138,7 @@ func RwTxResult2DagInvokeUnit(tx rwset.TxSimulator, txid string, nm string, depl
 			ContractId: val.ContractId,
 		}
 		invoke.WriteSet = append(invoke.WriteSet, ws)
-		log.Infof("WriteSet: idx[%d], fun[%s], key[%s], val[%v], delete[%t]", idx, args[2], val.GetKey(), val.GetValue(), val.GetIsDelete())
+		log.Debugf("WriteSet: idx[%d], fun[%s], key[%s], val[%v], delete[%t]", idx, args[2], val.GetKey(), val.GetValue(), val.GetIsDelete())
 	}
 
 	return invoke, nil
@@ -152,7 +152,7 @@ func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, nm string
 	if err != nil {
 		return nil, err
 	}
-	log.Info("RwTxResult2DagDeployUnit", "nm=", nm, "rd=", rd, "wt=", wt)
+	log.Debug("RwTxResult2DagDeployUnit", "nm=", nm, "rd=", rd, "wt=", wt)
 	deploy := &md.ContractDeployPayload{
 		ContractId: contractId,
 		Name:       nm,
@@ -167,7 +167,7 @@ func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, nm string
 			ContractId: val.ContractId,
 		}
 		deploy.ReadSet = append(deploy.ReadSet, rs)
-		log.Info("RwTxResult2DagDeployUnit", "ReadSet: idx", idx, "args", args, "key", val.GetKey(), "val", *val.GetVersion())
+		log.Debug("RwTxResult2DagDeployUnit", "ReadSet: idx", idx, "args", args, "key", val.GetKey(), "val", *val.GetVersion())
 	}
 	for idx, val := range wt {
 		ws := md.ContractWriteSet{
@@ -177,7 +177,7 @@ func RwTxResult2DagDeployUnit(tx rwset.TxSimulator, templateId []byte, nm string
 			ContractId: val.ContractId,
 		}
 		deploy.WriteSet = append(deploy.WriteSet, ws)
-		log.Info("RwTxResult2DagDeployUnit", "WriteSet: idx", idx, "args", args, "key", val.GetKey(), "val", val.GetValue(), "delete", val.GetIsDelete())
+		log.Debug("RwTxResult2DagDeployUnit", "WriteSet: idx", idx, "args", args, "key", val.GetKey(), "val", val.GetValue(), "delete", val.GetIsDelete())
 	}
 
 	return deploy, nil

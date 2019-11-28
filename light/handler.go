@@ -419,7 +419,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	// main loop. handle incoming messages.
 	for {
 		if err := pm.handleMsg(p); err != nil {
-			log.Debug("Light PalletOne message handling failed", "err", err)
+			log.Debug("Light PalletOne message handling failed", "err", err, "p.id", p.id)
 			return err
 		}
 	}

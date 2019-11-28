@@ -1,6 +1,6 @@
 # github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
-github.com/Azure/go-ansiterm/winterm
 github.com/Azure/go-ansiterm
+github.com/Azure/go-ansiterm/winterm
 # github.com/Microsoft/go-winio v0.4.13
 github.com/Microsoft/go-winio
 github.com/Microsoft/go-winio/pkg/guid
@@ -11,18 +11,20 @@ github.com/allegro/bigcache
 github.com/allegro/bigcache/queue
 # github.com/aristanetworks/goarista v0.0.0-20190712234253-ed1100a1c015
 github.com/aristanetworks/goarista/monotime
+# github.com/beorn7/perks v1.0.0
+github.com/beorn7/perks/quantile
 # github.com/btcsuite/btcd v0.0.0-20190807005414-4063feeff79a
 github.com/btcsuite/btcd/btcec
-github.com/btcsuite/btcd/rpcclient
 github.com/btcsuite/btcd/btcjson
 github.com/btcsuite/btcd/chaincfg
 github.com/btcsuite/btcd/chaincfg/chainhash
+github.com/btcsuite/btcd/rpcclient
 github.com/btcsuite/btcd/wire
 # github.com/btcsuite/btclog v0.0.0-20170628155309-84c8d2346e9f
 github.com/btcsuite/btclog
 # github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
-github.com/btcsuite/btcutil/base58
 github.com/btcsuite/btcutil
+github.com/btcsuite/btcutil/base58
 github.com/btcsuite/btcutil/bech32
 # github.com/btcsuite/go-socks v0.0.0-20170105172521-4720035b7bfd
 github.com/btcsuite/go-socks/socks
@@ -31,12 +33,12 @@ github.com/btcsuite/websocket
 # github.com/cespare/xxhash v1.1.0
 github.com/cespare/xxhash
 # github.com/cloudflare/cfssl v0.0.0-20190726000631-633726f6bcb7
+github.com/cloudflare/cfssl/crypto/pkcs7
 github.com/cloudflare/cfssl/csr
 github.com/cloudflare/cfssl/errors
 github.com/cloudflare/cfssl/helpers
-github.com/cloudflare/cfssl/log
-github.com/cloudflare/cfssl/crypto/pkcs7
 github.com/cloudflare/cfssl/helpers/derhelpers
+github.com/cloudflare/cfssl/log
 # github.com/containerd/continuity v0.0.0-20190426062206-aaeac12a7ffc
 github.com/containerd/continuity/pathdriver
 # github.com/coocood/freecache v0.0.0-20180304015925-036298587d3a
@@ -48,27 +50,27 @@ github.com/deckarep/golang-set
 # github.com/docker/distribution v2.7.1+incompatible
 github.com/docker/distribution/registry/api/errcode
 # github.com/docker/docker v1.4.2-0.20190710153559-aa8249ae1b8b
-github.com/docker/docker/pkg/reexec
-github.com/docker/docker/api/types/registry
-github.com/docker/docker/api/types/swarm
-github.com/docker/docker/pkg/fileutils
-github.com/docker/docker/pkg/homedir
-github.com/docker/docker/pkg/stdcopy
+github.com/docker/docker/api/types/blkiodev
 github.com/docker/docker/api/types/container
+github.com/docker/docker/api/types/filters
 github.com/docker/docker/api/types/mount
 github.com/docker/docker/api/types/network
-github.com/docker/docker/api/types/swarm/runtime
-github.com/docker/docker/pkg/idtools
-github.com/docker/docker/pkg/longpath
-github.com/docker/docker/pkg/pools
-github.com/docker/docker/pkg/system
-github.com/docker/docker/api/types/blkiodev
+github.com/docker/docker/api/types/registry
 github.com/docker/docker/api/types/strslice
-github.com/docker/docker/api/types/filters
-github.com/docker/docker/errdefs
-github.com/docker/docker/pkg/ioutils
-github.com/docker/docker/pkg/mount
+github.com/docker/docker/api/types/swarm
+github.com/docker/docker/api/types/swarm/runtime
 github.com/docker/docker/api/types/versions
+github.com/docker/docker/errdefs
+github.com/docker/docker/pkg/fileutils
+github.com/docker/docker/pkg/homedir
+github.com/docker/docker/pkg/idtools
+github.com/docker/docker/pkg/ioutils
+github.com/docker/docker/pkg/longpath
+github.com/docker/docker/pkg/mount
+github.com/docker/docker/pkg/pools
+github.com/docker/docker/pkg/reexec
+github.com/docker/docker/pkg/stdcopy
+github.com/docker/docker/pkg/system
 # github.com/docker/go-connections v0.4.0
 github.com/docker/go-connections/nat
 # github.com/docker/go-units v0.4.0
@@ -77,32 +79,32 @@ github.com/docker/go-units
 github.com/elastic/gosigar
 github.com/elastic/gosigar/sys/windows
 # github.com/ethereum/go-ethereum v1.9.0
-github.com/ethereum/go-ethereum/rlp
+github.com/ethereum/go-ethereum
+github.com/ethereum/go-ethereum/accounts
 github.com/ethereum/go-ethereum/accounts/abi
+github.com/ethereum/go-ethereum/accounts/keystore
 github.com/ethereum/go-ethereum/common
+github.com/ethereum/go-ethereum/common/hexutil
+github.com/ethereum/go-ethereum/common/math
+github.com/ethereum/go-ethereum/common/mclock
+github.com/ethereum/go-ethereum/common/prque
 github.com/ethereum/go-ethereum/core/types
 github.com/ethereum/go-ethereum/crypto
-github.com/ethereum/go-ethereum/params
-github.com/ethereum/go-ethereum/common/math
-github.com/ethereum/go-ethereum/common/hexutil
-github.com/ethereum/go-ethereum/trie
 github.com/ethereum/go-ethereum/crypto/secp256k1
-github.com/ethereum/go-ethereum
-github.com/ethereum/go-ethereum/accounts/keystore
+github.com/ethereum/go-ethereum/ethdb
 github.com/ethereum/go-ethereum/event
 github.com/ethereum/go-ethereum/log
-github.com/ethereum/go-ethereum/rpc
-github.com/ethereum/go-ethereum/common/prque
-github.com/ethereum/go-ethereum/ethdb
 github.com/ethereum/go-ethereum/metrics
-github.com/ethereum/go-ethereum/accounts
-github.com/ethereum/go-ethereum/common/mclock
 github.com/ethereum/go-ethereum/p2p/netutil
+github.com/ethereum/go-ethereum/params
+github.com/ethereum/go-ethereum/rlp
+github.com/ethereum/go-ethereum/rpc
+github.com/ethereum/go-ethereum/trie
 # github.com/fatih/color v1.6.0
 github.com/fatih/color
 # github.com/fjl/memsize v0.0.0-20180418122429-ca190fb6ffbc
-github.com/fjl/memsize/memsizeui
 github.com/fjl/memsize
+github.com/fjl/memsize/memsizeui
 # github.com/fsnotify/fsnotify v1.4.7
 github.com/fsnotify/fsnotify
 # github.com/fsouza/go-dockerclient v1.4.2
@@ -120,20 +122,20 @@ github.com/gogo/protobuf/proto
 github.com/golang/mock/gomock
 # github.com/golang/protobuf v1.3.2
 github.com/golang/protobuf/proto
-github.com/golang/protobuf/ptypes/timestamp
 github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/ptypes/any
 github.com/golang/protobuf/ptypes/duration
+github.com/golang/protobuf/ptypes/timestamp
 # github.com/golang/snappy v0.0.1
 github.com/golang/snappy
 # github.com/gomodule/redigo v0.0.0-20180627144507-2cd21d9966bf
-github.com/gomodule/redigo/redis
 github.com/gomodule/redigo/internal
+github.com/gomodule/redigo/redis
 # github.com/google/certificate-transparency-go v1.0.21
 github.com/google/certificate-transparency-go
+github.com/google/certificate-transparency-go/asn1
 github.com/google/certificate-transparency-go/tls
 github.com/google/certificate-transparency-go/x509
-github.com/google/certificate-transparency-go/asn1
 github.com/google/certificate-transparency-go/x509/pkix
 # github.com/google/uuid v1.1.1
 github.com/google/uuid
@@ -142,13 +144,13 @@ github.com/hashicorp/golang-lru
 github.com/hashicorp/golang-lru/simplelru
 # github.com/hashicorp/hcl v1.0.0
 github.com/hashicorp/hcl
-github.com/hashicorp/hcl/hcl/printer
 github.com/hashicorp/hcl/hcl/ast
 github.com/hashicorp/hcl/hcl/parser
-github.com/hashicorp/hcl/hcl/token
-github.com/hashicorp/hcl/json/parser
+github.com/hashicorp/hcl/hcl/printer
 github.com/hashicorp/hcl/hcl/scanner
 github.com/hashicorp/hcl/hcl/strconv
+github.com/hashicorp/hcl/hcl/token
+github.com/hashicorp/hcl/json/parser
 github.com/hashicorp/hcl/json/scanner
 github.com/hashicorp/hcl/json/token
 # github.com/huin/goupnp v1.0.0
@@ -189,6 +191,8 @@ github.com/mattn/go-colorable
 github.com/mattn/go-isatty
 # github.com/mattn/go-runewidth v0.0.4
 github.com/mattn/go-runewidth
+# github.com/matttproud/golang_protobuf_extensions v1.0.1
+github.com/matttproud/golang_protobuf_extensions/pbutil
 # github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7
 github.com/mitchellh/go-wordwrap
 # github.com/mitchellh/mapstructure v1.1.2
@@ -203,8 +207,8 @@ github.com/nsf/termbox-go
 # github.com/opencontainers/go-digest v1.0.0-rc1
 github.com/opencontainers/go-digest
 # github.com/opencontainers/image-spec v1.0.1
-github.com/opencontainers/image-spec/specs-go/v1
 github.com/opencontainers/image-spec/specs-go
+github.com/opencontainers/image-spec/specs-go/v1
 # github.com/opencontainers/runc v0.1.1
 github.com/opencontainers/runc/libcontainer/user
 # github.com/palletone/adaptor v1.0.0
@@ -226,6 +230,19 @@ github.com/peterh/liner
 github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
+# github.com/prometheus/client_golang v1.0.0
+github.com/prometheus/client_golang/prometheus
+github.com/prometheus/client_golang/prometheus/internal
+github.com/prometheus/client_golang/prometheus/promhttp
+# github.com/prometheus/client_model v0.0.0-20190129233127-fd36f4220a90
+github.com/prometheus/client_model/go
+# github.com/prometheus/common v0.4.1
+github.com/prometheus/common/expfmt
+github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg
+github.com/prometheus/common/model
+# github.com/prometheus/procfs v0.0.2
+github.com/prometheus/procfs
+github.com/prometheus/procfs/internal/fs
 # github.com/prometheus/tsdb v0.10.0
 github.com/prometheus/tsdb/fileutil
 # github.com/rjeczalik/notify v0.9.2
@@ -264,33 +281,33 @@ github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
 # github.com/syndtr/goleveldb v1.0.0
 github.com/syndtr/goleveldb/leveldb
-github.com/syndtr/goleveldb/leveldb/errors
-github.com/syndtr/goleveldb/leveldb/iterator
-github.com/syndtr/goleveldb/leveldb/opt
-github.com/syndtr/goleveldb/leveldb/storage
-github.com/syndtr/goleveldb/leveldb/util
-github.com/syndtr/goleveldb/leveldb/filter
 github.com/syndtr/goleveldb/leveldb/cache
 github.com/syndtr/goleveldb/leveldb/comparer
+github.com/syndtr/goleveldb/leveldb/errors
+github.com/syndtr/goleveldb/leveldb/filter
+github.com/syndtr/goleveldb/leveldb/iterator
 github.com/syndtr/goleveldb/leveldb/journal
 github.com/syndtr/goleveldb/leveldb/memdb
+github.com/syndtr/goleveldb/leveldb/opt
+github.com/syndtr/goleveldb/leveldb/storage
 github.com/syndtr/goleveldb/leveldb/table
+github.com/syndtr/goleveldb/leveldb/util
 # go.dedis.ch/fixbuf v1.0.3
 go.dedis.ch/fixbuf
 # go.dedis.ch/kyber/v3 v3.0.3
 go.dedis.ch/kyber/v3
+go.dedis.ch/kyber/v3/group/internal/marshalling
+go.dedis.ch/kyber/v3/group/mod
+go.dedis.ch/kyber/v3/pairing
 go.dedis.ch/kyber/v3/pairing/bn256
 go.dedis.ch/kyber/v3/share
 go.dedis.ch/kyber/v3/share/dkg/pedersen
 go.dedis.ch/kyber/v3/share/vss/pedersen
-go.dedis.ch/kyber/v3/sign/tbls
 go.dedis.ch/kyber/v3/sign/bls
-go.dedis.ch/kyber/v3/group/mod
+go.dedis.ch/kyber/v3/sign/schnorr
+go.dedis.ch/kyber/v3/sign/tbls
 go.dedis.ch/kyber/v3/util/random
 go.dedis.ch/kyber/v3/xof/blake2xb
-go.dedis.ch/kyber/v3/sign/schnorr
-go.dedis.ch/kyber/v3/pairing
-go.dedis.ch/kyber/v3/group/internal/marshalling
 # go.dedis.ch/protobuf v1.0.5
 go.dedis.ch/protobuf
 # go.uber.org/atomic v1.3.2
@@ -299,44 +316,44 @@ go.uber.org/atomic
 go.uber.org/multierr
 # go.uber.org/zap v0.0.0-20180531205250-88c71ae3d702
 go.uber.org/zap
-go.uber.org/zap/zapcore
-go.uber.org/zap/internal/bufferpool
 go.uber.org/zap/buffer
+go.uber.org/zap/internal/bufferpool
 go.uber.org/zap/internal/color
 go.uber.org/zap/internal/exit
+go.uber.org/zap/zapcore
 # golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
-golang.org/x/crypto/openpgp
-golang.org/x/crypto/ripemd160
-golang.org/x/crypto/sha3
+golang.org/x/crypto/blake2b
+golang.org/x/crypto/cast5
+golang.org/x/crypto/cryptobyte
+golang.org/x/crypto/cryptobyte/asn1
 golang.org/x/crypto/ed25519
-golang.org/x/crypto/pbkdf2
-golang.org/x/crypto/scrypt
+golang.org/x/crypto/ed25519/internal/edwards25519
+golang.org/x/crypto/hkdf
+golang.org/x/crypto/ocsp
+golang.org/x/crypto/openpgp
 golang.org/x/crypto/openpgp/armor
+golang.org/x/crypto/openpgp/elgamal
 golang.org/x/crypto/openpgp/errors
 golang.org/x/crypto/openpgp/packet
 golang.org/x/crypto/openpgp/s2k
-golang.org/x/crypto/ed25519/internal/edwards25519
-golang.org/x/crypto/hkdf
-golang.org/x/crypto/cast5
-golang.org/x/crypto/openpgp/elgamal
-golang.org/x/crypto/blake2b
-golang.org/x/crypto/ocsp
+golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/pkcs12
-golang.org/x/crypto/cryptobyte
-golang.org/x/crypto/cryptobyte/asn1
 golang.org/x/crypto/pkcs12/internal/rc2
+golang.org/x/crypto/ripemd160
+golang.org/x/crypto/scrypt
+golang.org/x/crypto/sha3
 # golang.org/x/net v0.0.0-20190724013045-ca1201d0de80
-golang.org/x/net/websocket
 golang.org/x/net/context
-golang.org/x/net/html/charset
-golang.org/x/net/trace
 golang.org/x/net/html
-golang.org/x/net/internal/timeseries
+golang.org/x/net/html/atom
+golang.org/x/net/html/charset
+golang.org/x/net/http/httpguts
 golang.org/x/net/http2
 golang.org/x/net/http2/hpack
-golang.org/x/net/html/atom
-golang.org/x/net/http/httpguts
 golang.org/x/net/idna
+golang.org/x/net/internal/timeseries
+golang.org/x/net/trace
+golang.org/x/net/websocket
 # golang.org/x/sys v0.0.0-20190726091711-fc99dfbffb4e
 golang.org/x/sys/cpu
 golang.org/x/sys/unix
@@ -345,23 +362,23 @@ golang.org/x/sys/windows
 golang.org/x/text/encoding
 golang.org/x/text/encoding/charmap
 golang.org/x/text/encoding/htmlindex
-golang.org/x/text/transform
-golang.org/x/text/unicode/norm
-golang.org/x/text/encoding/internal/identifier
 golang.org/x/text/encoding/internal
+golang.org/x/text/encoding/internal/identifier
 golang.org/x/text/encoding/japanese
 golang.org/x/text/encoding/korean
 golang.org/x/text/encoding/simplifiedchinese
 golang.org/x/text/encoding/traditionalchinese
 golang.org/x/text/encoding/unicode
-golang.org/x/text/language
-golang.org/x/text/internal/utf8internal
-golang.org/x/text/runes
 golang.org/x/text/internal/language
 golang.org/x/text/internal/language/compact
-golang.org/x/text/secure/bidirule
-golang.org/x/text/unicode/bidi
 golang.org/x/text/internal/tag
+golang.org/x/text/internal/utf8internal
+golang.org/x/text/language
+golang.org/x/text/runes
+golang.org/x/text/secure/bidirule
+golang.org/x/text/transform
+golang.org/x/text/unicode/bidi
+golang.org/x/text/unicode/norm
 # golang.org/x/tools v0.0.0-20190524140312-2c0ae7006135
 golang.org/x/tools/go/gcexportdata
 golang.org/x/tools/go/internal/gcimporter
@@ -369,13 +386,14 @@ golang.org/x/tools/go/internal/gcimporter
 google.golang.org/genproto/googleapis/rpc/status
 # google.golang.org/grpc v1.22.0
 google.golang.org/grpc
-google.golang.org/grpc/credentials
-google.golang.org/grpc/peer
-google.golang.org/grpc/keepalive
 google.golang.org/grpc/balancer
+google.golang.org/grpc/balancer/base
 google.golang.org/grpc/balancer/roundrobin
+google.golang.org/grpc/binarylog/grpc_binarylog_v1
 google.golang.org/grpc/codes
 google.golang.org/grpc/connectivity
+google.golang.org/grpc/credentials
+google.golang.org/grpc/credentials/internal
 google.golang.org/grpc/encoding
 google.golang.org/grpc/encoding/proto
 google.golang.org/grpc/grpclog
@@ -387,9 +405,12 @@ google.golang.org/grpc/internal/channelz
 google.golang.org/grpc/internal/envconfig
 google.golang.org/grpc/internal/grpcrand
 google.golang.org/grpc/internal/grpcsync
+google.golang.org/grpc/internal/syscall
 google.golang.org/grpc/internal/transport
+google.golang.org/grpc/keepalive
 google.golang.org/grpc/metadata
 google.golang.org/grpc/naming
+google.golang.org/grpc/peer
 google.golang.org/grpc/resolver
 google.golang.org/grpc/resolver/dns
 google.golang.org/grpc/resolver/passthrough
@@ -397,10 +418,6 @@ google.golang.org/grpc/serviceconfig
 google.golang.org/grpc/stats
 google.golang.org/grpc/status
 google.golang.org/grpc/tap
-google.golang.org/grpc/credentials/internal
-google.golang.org/grpc/balancer/base
-google.golang.org/grpc/binarylog/grpc_binarylog_v1
-google.golang.org/grpc/internal/syscall
 # gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
 gopkg.in/check.v1
 # gopkg.in/errgo.v1 v1.0.1

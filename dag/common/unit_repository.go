@@ -546,8 +546,7 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 	}
 	txs := make(modules.Transactions, 0)
 	if len(outAds) > 0 {
-		log.Debug("=======================Is rewards && coinbase tx info ================",
-			"amount", rewards, "hash", coinbase.Hash().String())
+		log.Debug("rewards && coinbase tx info: ", "amount", rewards, "hash", coinbase.Hash().String())
 		txs = append(txs, coinbase)
 	}
 
@@ -1257,7 +1256,7 @@ func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, he
 		return false
 	}
 
-	if common.IsSystemContractAddress(payload.ContractId) && payload.ErrMsg.Code == 0 {
+	if common.IsSystemContractId(payload.ContractId) && payload.ErrMsg.Code == 0 {
 		eventArg := &modules.SysContractStateChangeEvent{ContractId: payload.ContractId, WriteSet: payload.WriteSet}
 		for _, eventFunc := range rep.observers {
 			eventFunc(eventArg)

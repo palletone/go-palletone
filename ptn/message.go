@@ -38,6 +38,8 @@ import (
 
 type Tag uint64
 
+const errStr = "this node is not synced"
+
 func (pm *ProtocolManager) StatusMsg(msg p2p.Msg, p *peer) error {
 	// Status messages should never arrive after the handshake
 	return errResp(ErrExtraStatusMsg, "uncontrolled status message")
@@ -494,6 +496,19 @@ func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 	hash := sigShare.Hash()
 	p.MarkSigShare(hash)
 
+	if pm.IsExistInCache(hash.Bytes()) {
+		return nil
+	}
+
+	// 判断是否同步, 如果没同步完成，接收到的 sigShare 对当前节点来说是超前的
+	if !pm.dag.IsSynced(false) {
+		log.Debugf(errStr)
+
+		pm.BroadcastSigShare(&sigShare)
+		//return fmt.Errorf(errStr)
+		return nil
+	}
+
 	unitHash := sigShare.UnitHash
 	header, err := pm.dag.GetHeaderByHash(unitHash)
 	if err != nil {
@@ -503,18 +518,6 @@ func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 
 	if !pm.producer.IsLocalMediator(header.Author()) {
 		pm.BroadcastSigShare(&sigShare)
-	}
-
-	if pm.IsExistInCache(hash.Bytes()) {
-		return nil
-	}
-
-	// 判断是否同步, 如果没同步完成，接收到的 sigShare 对当前节点来说是超前的
-	if !pm.dag.IsSynced() {
-		errStr := "this node is not synced"
-		log.Debugf(errStr)
-		//return fmt.Errorf(errStr)
-		return nil
 	}
 
 	go pm.producer.AddToTBLSRecoverBuf(&sigShare)
@@ -533,21 +536,23 @@ func (pm *ProtocolManager) VSSDealMsg(msg p2p.Msg, p *peer) error {
 
 	hash := deal.Hash()
 	p.MarkVSSDeal(hash)
-	ma := pm.dag.GetActiveMediatorAddr(int(deal.DstIndex))
-	if !pm.producer.IsLocalMediator(ma) {
-		pm.BroadcastVSSDeal(&deal)
-	}
 
 	if pm.IsExistInCache(hash.Bytes()) {
 		return nil
 	}
 
 	// 判断是否同步, 如果没同步完成，接收到的 vss deal 对当前节点来说是超前的
-	if !pm.dag.IsSynced() {
-		errStr := "we are not synced"
+	if !pm.dag.IsSynced(true) {
 		log.Debugf(errStr)
+		pm.BroadcastVSSDeal(&deal)
+
 		//return fmt.Errorf(errStr)
 		return nil
+	}
+
+	ma := pm.dag.GetActiveMediatorAddr(int(deal.DstIndex))
+	if !pm.producer.IsLocalMediator(ma) {
+		pm.BroadcastVSSDeal(&deal)
 	}
 
 	go pm.producer.AddToDealBuf(&deal)
@@ -566,15 +571,15 @@ func (pm *ProtocolManager) VSSResponseMsg(msg p2p.Msg, p *peer) error {
 
 	hash := resp.Hash()
 	p.MarkVSSResponse(hash)
-	pm.BroadcastVSSResponse(&resp)
 
 	if pm.IsExistInCache(hash.Bytes()) {
 		return nil
 	}
 
+	pm.BroadcastVSSResponse(&resp)
+
 	// 判断是否同步, 如果没同步完成，接收到的 vss response 对当前节点来说是超前的
-	if !pm.dag.IsSynced() {
-		errStr := "not synced"
+	if !pm.dag.IsSynced(true) {
 		log.Debugf(errStr)
 		//return fmt.Errorf(errStr)
 		return nil
@@ -597,11 +602,12 @@ func (pm *ProtocolManager) GroupSigMsg(msg p2p.Msg, p *peer) error {
 
 	hash := gSign.Hash()
 	p.MarkGroupSig(hash)
-	pm.BroadcastGroupSig(&gSign)
 
 	if pm.IsExistInCache(hash.Bytes()) {
 		return nil
 	}
+
+	pm.BroadcastGroupSig(&gSign)
 
 	go pm.dag.SetUnitGroupSign(gSign.UnitHash, gSign.GroupSig, pm.txpool)
 
@@ -616,6 +622,13 @@ func (pm *ProtocolManager) ContractMsg(msg p2p.Msg, p *peer) error {
 	}
 	if pm.IsExistInCache(event.Hash().Bytes()) {
 		//log.Debugf("Received event(%v) again, ignore it", event.Hash().String())
+		return nil
+	}
+
+	// 判断是否同步, 如果没同步完成，接收到的 ContractMsg 对当前节点来说是超前的
+	if !pm.dag.IsSynced(false) {
+		log.Debugf(errStr)
+		//return fmt.Errorf(errStr)
 		return nil
 	}
 
@@ -646,6 +659,14 @@ func (pm *ProtocolManager) ElectionMsg(msg p2p.Msg, p *peer) error {
 	if pm.IsExistInCache(evs.Hash().Bytes()) {
 		return nil
 	}
+
+	// 判断是否同步, 如果没同步完成，接收到的 ElectionMsg 对当前节点来说是超前的
+	if !pm.dag.IsSynced(false) {
+		log.Debugf(errStr)
+		//return fmt.Errorf(errStr)
+		return nil
+	}
+
 	event, err := evs.ToElectionEvent()
 	if err != nil {
 		log.Debug("ElectionMsg, ToElectionEvent fail")

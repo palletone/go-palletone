@@ -77,15 +77,20 @@ type Dag struct {
 	//SPV
 	rmLogsFeed event.Feed
 	chainFeed  event.Feed
+
 	//chainSideFeed event.Feed
 	chainHeadFeed event.Feed
 	logsFeed      event.Feed
 	scope         event.SubscriptionScope
+
+	unstableRepositoryUpdatedFeed  event.Feed
+	unstableRepositoryUpdatedScope event.SubscriptionScope
 }
 
 func cache() palletcache.ICache {
 	return freecache.NewCache(1000 * 1024)
 }
+
 func (d *Dag) IsEmpty() bool {
 	it := d.Db.NewIterator()
 	return !it.Next()
@@ -286,26 +291,33 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 	count := int(0)
 
 	for i, u := range units {
-		// all units must be continuous
-		if i > 0 && units[i].UnitHeader.GetNumber().Index != units[i-1].UnitHeader.GetNumber().Index+1 {
-			return count, fmt.Errorf("Insert dag error: child height are not continuous, "+
-				"parent unit number=%d, hash=%s; "+ "child unit number=%d, hash=%s",
-				units[i-1].UnitHeader.GetNumber().Index, units[i-1].UnitHash.String(),
-				units[i].UnitHeader.GetNumber().Index, units[i].UnitHash.String())
-		}
-		if i > 0 && !u.ContainsParent(units[i-1].UnitHash) {
-			return count, fmt.Errorf("Insert dag error: child parents are not continuous, "+
-				"parent unit number=%d, hash=%s; "+ "child unit number=%d, hash=%s",
-				units[i-1].UnitHeader.GetNumber().Index, units[i-1].UnitHash.String(),
-				units[i].UnitHeader.GetNumber().Index, units[i].UnitHash.String())
-		}
+		// 重复验证 comment by albert
+		//// all units must be continuous
+		//if i > 0 && units[i].UnitHeader.Number.Index != units[i-1].UnitHeader.Number.Index+1 {
+		//	return count, fmt.Errorf("Insert dag error: child height are not continuous, "+
+		//		"parent unit number=%d, hash=%s; "+"child unit number=%d, hash=%s",
+		//		units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash.String(),
+		//		units[i].UnitHeader.Number.Index, units[i].UnitHash.String())
+		//}
+		//if i > 0 && !u.ContainsParent(units[i-1].UnitHash) {
+		//	return count, fmt.Errorf("Insert dag error: child parents are not continuous, "+
+		//		"parent unit number=%d, hash=%s; "+"child unit number=%d, hash=%s",
+		//		units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash.String(),
+		//		units[i].UnitHeader.Number.Index, units[i].UnitHash.String())
+		//}
+
 		t1 := time.Now()
 		timestamp := time.Unix(u.Timestamp(), 0)
 		log.Debugf("Start InsertDag unit(%v) #%v parent(%v) @%v signed by %v", u.UnitHash.TerminalString(),
 			u.NumberU64(), u.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
 			u.Author().Str())
+
 		if is_stable {
-			d.Memdag.AddStableUnit(u)
+			err := d.Memdag.AddStableUnit(u)
+			if err != nil {
+				log.Errorf("AddStableUnit failed,error:%s", err.Error())
+				return i, err
+			}
 		} else {
 			if a, b, c, dd, e, err := d.Memdag.AddUnit(u, txpool, false); err != nil {
 				//return count, err
@@ -314,6 +326,11 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 				return count, err
 			} else {
 				if a != nil {
+					if d.unstableUnitProduceRep != e {
+						log.Debugf("send UnstableRepositoryUpdatedEvent")
+						go d.unstableRepositoryUpdatedFeed.Send(modules.UnstableRepositoryUpdatedEvent{})
+					}
+
 					d.unstableUnitRep = a
 					d.unstableUtxoRep = b
 					d.unstableStateRep = c
@@ -323,10 +340,24 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 			}
 		}
 		log.Debugf("InsertDag[%s] #%d spent time:%s", u.UnitHash.String(), u.NumberU64(), time.Since(t1))
-		if u.NumberU64()%1000 == 0 {
+		if !is_stable && u.NumberU64()%1000 == 0 {
 			log.Infof("Insert unit[%s] #%d to local", u.UnitHash.String(), u.NumberU64())
 		}
 		count += 1
+	}
+
+	if is_stable {
+		tunitRep, tutxoRep, tstateRep, tpropRep, tUnitProduceRep := d.Memdag.GetUnstableRepositories()
+		if tUnitProduceRep != d.unstableUnitProduceRep {
+			log.Debugf("send UnstableRepositoryUpdatedEvent")
+			go d.unstableRepositoryUpdatedFeed.Send(modules.UnstableRepositoryUpdatedEvent{})
+		}
+
+		d.unstableUnitRep = tunitRep
+		d.unstableUtxoRep = tutxoRep
+		d.unstableStateRep = tstateRep
+		d.unstablePropRep = tpropRep
+		d.unstableUnitProduceRep = tUnitProduceRep
 	}
 
 	return count, nil
@@ -417,6 +448,26 @@ func (d *Dag) GetTxByReqId(reqid common.Hash) (*modules.TransactionWithUnitInfo,
 // return the transaction by hash
 func (d *Dag) GetTransactionOnly(hash common.Hash) (*modules.Transaction, error) {
 	return d.unstableUnitRep.GetTransactionOnly(hash)
+}
+
+// return the stable transaction by hash
+func (d *Dag) GetStableTransactionOnly(hash common.Hash) (*modules.Transaction, error) {
+	return d.stableUnitRep.GetTransactionOnly(hash)
+}
+
+// return the stable unit by hash or number
+func (d *Dag) GetStableUnit(hash common.Hash) (*modules.Unit, error) {
+	return d.stableUnitRep.GetUnit(hash)
+}
+
+// return the stable unit by chain index
+func (d *Dag) GetStableUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error) {
+	hash, err := d.stableUnitRep.GetHashByNumber(number)
+	if err != nil {
+		log.Debug("GetStableUnitByNumber dagdb.GetHashByNumber err:", "error", err)
+		return nil, err
+	}
+	return d.stableUnitRep.GetUnit(hash)
 }
 
 // retunr the txLookEntry by transaction hash
@@ -587,7 +638,7 @@ func NewDag(db ptndb.Database, cache palletcache.ICache, light bool) (*Dag, erro
 	}
 	dag.stableUnitRep.SubscribeSysContractStateChangeEvent(dag.AfterSysContractStateChangeEvent)
 	dag.stableUnitProduceRep.SubscribeChainMaintenanceEvent(dag.AfterChainMaintenanceEvent)
-
+	dag.Memdag.SubscribeSwitchMainChainEvent(dag.SwitchMainChainEvent)
 	//hash, chainIndex, _ := dag.stablePropRep.GetNewestUnit(gasToken)
 	log.Infof("newDag success, current unit, chain info[%s]", gasToken.String())
 	// init partition memdag
@@ -660,6 +711,10 @@ func (dag *Dag) AfterChainMaintenanceEvent(arg *modules.ChainMaintenanceEvent) {
 	//换届完成，dag需要进行的操作：
 	threshold, _ := dag.stablePropRep.GetChainThreshold()
 	dag.Memdag.SetStableThreshold(threshold)
+}
+func (dag *Dag) SwitchMainChainEvent(arg *memunit.SwitchMainChainEvent) {
+	log.Infof("Switch main chain event!!! old unit:%s %d,new unit:%s %d", arg.OldLastUnit.Hash().String(),
+		arg.OldLastUnit.NumberU64(), arg.NewLastUnit.Hash().String(), arg.NewLastUnit.NumberU64())
 }
 
 // to build a new dag when init genesis
@@ -994,6 +1049,11 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 		return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
 	} else {
 		if a != nil {
+			if d.unstableUnitProduceRep != e {
+				log.Debugf("send UnstableRepositoryUpdatedEvent")
+				go d.unstableRepositoryUpdatedFeed.Send(modules.UnstableRepositoryUpdatedEvent{})
+			}
+
 			d.unstableUnitRep = a
 			d.unstableUtxoRep = b
 			d.unstableStateRep = c
@@ -1065,20 +1125,26 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 	}
 
 	// 判断本节点是否正在同步数据
-	if !d.IsSynced() {
-		err := "this node is syncing"
+	if !d.IsSynced(false) {
+		err := "this node is synced"
 		log.Debugf(err)
 		return fmt.Errorf(err)
 	}
 
-	if d.IsIrreversibleUnit(unitHash) {
+	isStable, err := d.IsIrreversibleUnit(unitHash)
+	if err != nil {
+		return err
+	}
+
+	if isStable {
 		// 由于采用广播的形式，所以可能会很多次收到同一个unit的群签名
+		// 或者由于网络延迟，该单元在收到群签名之前，已经根据深度转为不可逆了
 		//log.Debugf("this unit(%v) is irreversible", unitHash.TerminalString())
 		return nil
 	}
 
 	// 验证群签名：
-	err := d.VerifyUnitGroupSign(unitHash, groupSign)
+	err = d.VerifyUnitGroupSign(unitHash, groupSign)
 	if err != nil {
 		return err
 	}
@@ -1235,15 +1301,13 @@ func (d *Dag) GetContractsByTpl(tplId []byte) ([]*modules.Contract, error) {
 	return d.unstableStateRep.GetContractsByTpl(tplId)
 }
 
-// subscribe active mediators updated event
-func (d *Dag) SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription {
-	return d.unstableUnitProduceRep.SubscribeActiveMediatorsUpdatedEvent(ch)
-}
-
 // close a dag
 func (d *Dag) Close() {
 	d.unstableUnitProduceRep.Close()
 	d.Memdag.Close()
+
+	d.scope.Close()
+	d.unstableRepositoryUpdatedScope.Close()
 
 	for _, pmg := range d.PartitionMemDag {
 		pmg.Close()

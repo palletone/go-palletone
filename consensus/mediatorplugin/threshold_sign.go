@@ -91,11 +91,13 @@ func (mp *MediatorPlugin) AddToTBLSSignBufs(newHash common.Hash) {
 
 func (mp *MediatorPlugin) addToTBLSSignBuf(localMed common.Address, unitHash common.Hash) {
 	mp.toTBLSBufLock.Lock()
+	//log.Debugf("toTBLSBufLock.Lock()")
 	if _, ok := mp.toTBLSSignBuf[localMed]; !ok {
 		mp.toTBLSSignBuf[localMed] = make(map[common.Hash]bool)
 	}
 
 	mp.toTBLSSignBuf[localMed][unitHash] = true
+	//log.Debugf("toTBLSBufLock.Unlock()")
 	mp.toTBLSBufLock.Unlock()
 
 	go mp.signUnitTBLS(localMed, unitHash)
@@ -109,11 +111,13 @@ func (mp *MediatorPlugin) addToTBLSSignBuf(localMed common.Address, unitHash com
 		return
 	case <-deleteBuf.C:
 		mp.toTBLSBufLock.Lock()
+		//log.Debugf("toTBLSBufLock.Lock()")
 		if _, ok := mp.toTBLSSignBuf[localMed][unitHash]; ok {
 			log.Debugf("the unit(%v) has expired confirmation time, no longer need the mediator(%v)"+
 				" to sign-group", unitHash.TerminalString(), localMed.Str())
 			delete(mp.toTBLSSignBuf[localMed], unitHash)
 		}
+		//log.Debugf("toTBLSBufLock.Unlock()")
 		mp.toTBLSBufLock.Unlock()
 	}
 }
@@ -124,6 +128,8 @@ func (mp *MediatorPlugin) SubscribeSigShareEvent(ch chan<- SigShareEvent) event.
 
 func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.Hash) {
 	mp.toTBLSBufLock.Lock()
+	log.Debugf("toTBLSBufLock.Lock()")
+	defer log.Debugf("toTBLSBufLock.Unlock()")
 	defer mp.toTBLSBufLock.Unlock()
 
 	medUnitsBuf, ok := mp.toTBLSSignBuf[localMed]
@@ -182,7 +188,11 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 
 		// 判断父 unit 是否不可逆
 		parentHash := header.ParentHash()[0]
-		if !dag.IsIrreversibleUnit(parentHash) {
+		isStable, err := dag.IsIrreversibleUnit(parentHash)
+		if err!= nil {
+			return
+		}
+		if !isStable {
 			log.Debugf("the unit's(%v) parent unit(%v) is not irreversible",
 				unitHash.TerminalString(), parentHash.TerminalString())
 			return
@@ -207,11 +217,10 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 		unitHash.TerminalString())
 	delete(mp.toTBLSSignBuf[localMed], unitHash)
 
-	deadline := time.Now().Add(mp.dag.UnitIrreversibleTime())
 	event := SigShareEvent{
 		UnitHash: unitHash,
 		SigShare: sigShare,
-		Deadline: uint64(deadline.Unix()),
+		Deadline: mp.getGroupSignMessageDeadline(),
 	}
 
 	go mp.sigShareFeed.Send(event)
@@ -234,6 +243,8 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(event *SigShareEvent) {
 
 	localMed := header.Author()
 	mp.toTBLSBufLock.Lock()
+	//log.Debugf("toTBLSBufLock.Lock()")
+	//defer log.Debugf("toTBLSBufLock.Unlock()")
 	defer mp.toTBLSBufLock.Unlock()
 
 	medSigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
@@ -267,6 +278,8 @@ func (mp *MediatorPlugin) SubscribeGroupSigEvent(ch chan<- GroupSigEvent) event.
 
 func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash common.Hash) {
 	mp.toTBLSBufLock.Lock()
+	//log.Debugf("toTBLSBufLock.Lock()")
+	//defer log.Debugf("toTBLSBufLock.Unlock()")
 	defer mp.toTBLSBufLock.Unlock()
 
 	// 1. 获取所有的签名分片
@@ -284,12 +297,9 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	}
 
 	sigShareSet.lock()
+	log.Debugf("sigShareSet.lock()")
+	defer log.Debugf("sigShareSet.unlock()")
 	defer sigShareSet.unlock()
-
-	//// 为了保证多协程安全， 加锁后，再判断一次
-	//if _, ok = mp.toTBLSRecoverBuf[localMed][unitHash]; !ok {
-	//	return
-	//}
 
 	// 2. 获取阈值、mediator数量、DKG
 	mp.dkgLock.RLock()
@@ -353,7 +363,14 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	// 5. recover后的相关处理
 	// recover后 删除buf
 	delete(mp.toTBLSRecoverBuf[localMed], unitHash)
-	go mp.groupSigFeed.Send(GroupSigEvent{UnitHash: unitHash, GroupSig: groupSig})
+
+	deadline := time.Now().Add(mp.dag.UnitIrreversibleTime())
+	event := GroupSigEvent{
+		UnitHash: unitHash,
+		GroupSig: groupSig,
+		Deadline: uint64(deadline.Unix()),
+	}
+	go mp.groupSigFeed.Send(event)
 }
 
 func (mp *MediatorPlugin) groupSignUnit(localMed common.Address, unitHash common.Hash) {
@@ -363,11 +380,13 @@ func (mp *MediatorPlugin) groupSignUnit(localMed common.Address, unitHash common
 
 	// 1. 初始化签名unit相关的签名分片的buf
 	mp.toTBLSBufLock.Lock()
+	//log.Debugf("toTBLSBufLock.Lock()")
 	if _, ok := mp.toTBLSRecoverBuf[localMed]; !ok {
 		mp.toTBLSRecoverBuf[localMed] = make(map[common.Hash]*sigShareSet)
 	}
 	aSize := mp.dag.ActiveMediatorsCount()
 	mp.toTBLSRecoverBuf[localMed][unitHash] = newSigShareSet(aSize)
+	//log.Debugf("toTBLSBufLock.Unlock()")
 	mp.toTBLSBufLock.Unlock()
 
 	// 2. 过了 unit 确认时间后，及时删除群签名分片的相关数据，防止内存溢出
@@ -380,11 +399,13 @@ func (mp *MediatorPlugin) groupSignUnit(localMed common.Address, unitHash common
 			return
 		case <-deleteBuf.C:
 			mp.toTBLSBufLock.Lock()
+			//log.Debugf("toTBLSBufLock.Lock()")
 			if _, ok := mp.toTBLSRecoverBuf[localMed][unitHash]; ok {
 				log.Debugf("the unit(%v) has expired confirmation time, no longer need the mediator(%v) "+
 					"to recover group-sign", unitHash.TerminalString(), localMed.Str())
 				delete(mp.toTBLSRecoverBuf[localMed], unitHash)
 			}
+			//log.Debugf("toTBLSBufLock.Unlock()")
 			mp.toTBLSBufLock.Unlock()
 		}
 	}()

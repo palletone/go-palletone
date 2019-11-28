@@ -20,6 +20,7 @@
 package migration
 
 import (
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
@@ -64,10 +65,33 @@ func (m *Migration104alpha_104beta) upgradeGP() error {
 
 	newData := &modules.GlobalPropertyTemp{}
 
-	newData.GlobalPropExtraTemp = oldGp.GlobalPropExtraTemp
+	//newData.GlobalPropExtraTemp = oldGp.GlobalPropExtraTemp
+	newData.ActiveJuries = oldGp.ActiveJuries
+	newData.ActiveMediators = oldGp.ActiveMediators
+	newData.PrecedingMediators = oldGp.PrecedingMediators
+
 	newData.ImmutableParameters = oldGp.ImmutableParameters
-	newData.ChainParametersTemp.ChainParametersBase = oldGp.ChainParameters.ChainParametersBase
-	newData.ChainParametersTemp.ChainParametersExtraTemp104alpha = oldGp.ChainParameters.ChainParametersExtraTemp104alpha
+	newData.ChainParametersTemp.ChainParametersBase = oldGp.ChainParametersTemp.ChainParametersBase
+	//newData.ChainParametersTemp.ChainParametersExtraTemp104alpha =
+	//	oldGp.ChainParametersTemp.ChainParametersExtraTemp104alpha
+
+	newData.ChainParametersTemp.UccMemory = oldGp.ChainParametersTemp.UccMemory
+	newData.ChainParametersTemp.UccCpuShares = oldGp.ChainParametersTemp.UccCpuShares
+	newData.ChainParametersTemp.UccCpuQuota = oldGp.ChainParametersTemp.UccCpuQuota
+	newData.ChainParametersTemp.UccDisk = oldGp.ChainParametersTemp.UccDisk
+	newData.ChainParametersTemp.UccDuringTime = oldGp.ChainParametersTemp.UccDuringTime
+	newData.ChainParametersTemp.TempUccMemory = oldGp.ChainParametersTemp.TempUccMemory
+	newData.ChainParametersTemp.TempUccCpuShares = oldGp.ChainParametersTemp.TempUccCpuShares
+	newData.ChainParametersTemp.TempUccCpuQuota = oldGp.ChainParametersTemp.TempUccCpuQuota
+	newData.ChainParametersTemp.ContractSystemVersion = oldGp.ChainParametersTemp.ContractSystemVersion
+	newData.ChainParametersTemp.ContractSignatureNum = oldGp.ChainParametersTemp.ContractSignatureNum
+	newData.ChainParametersTemp.ContractElectionNum = oldGp.ChainParametersTemp.ContractElectionNum
+	newData.ChainParametersTemp.ContractTxTimeoutUnitFee = oldGp.ChainParametersTemp.ContractTxTimeoutUnitFee
+	newData.ChainParametersTemp.ContractTxSizeUnitFee = oldGp.ChainParametersTemp.ContractTxSizeUnitFee
+	newData.ChainParametersTemp.ContractTxInstallFeeLevel = oldGp.ChainParametersTemp.ContractTxInstallFeeLevel
+	newData.ChainParametersTemp.ContractTxDeployFeeLevel = oldGp.ChainParametersTemp.ContractTxDeployFeeLevel
+	newData.ChainParametersTemp.ContractTxInvokeFeeLevel = oldGp.ChainParametersTemp.ContractTxInvokeFeeLevel
+	newData.ChainParametersTemp.ContractTxStopFeeLevel = oldGp.ChainParametersTemp.ContractTxStopFeeLevel
 
 	//新加的
 	newData.ChainParametersTemp.PledgeAllocateThreshold =
@@ -75,7 +99,7 @@ func (m *Migration104alpha_104beta) upgradeGP() error {
 	newData.ChainParametersTemp.PledgeRecordsThreshold =
 		strconv.FormatInt(int64(core.DefaultPledgeRecordsThreshold), 10)
 
-	// 修复在 1.0.2版本升级的初始化值的错误，重新改为0
+	// 修复在 1.0.2版本升级时初始化值的错误，重新改为0
 	newData.ImmutableParameters.MinMaintSkipSlots = core.DefaultMinMaintSkipSlots
 
 	err = storage.StoreToRlpBytes(m.propdb, constants.GLOBALPROPERTY_KEY, newData)
@@ -89,15 +113,37 @@ func (m *Migration104alpha_104beta) upgradeGP() error {
 
 type GlobalProperty104alpha struct {
 	GlobalPropBase104alpha
-	modules.GlobalPropExtraTemp
+	//modules.GlobalPropExtraTemp
+
+	ActiveJuries       []common.Address
+	ActiveMediators    []common.Address
+	PrecedingMediators []common.Address
 }
 
 type GlobalPropBase104alpha struct {
 	ImmutableParameters core.ImmutableChainParameters // 不可改变的区块链网络参数
-	ChainParameters     ChainParameters104alpha       // 区块链网络参数
+	ChainParametersTemp ChainParameters104alpha       // 区块链网络参数
 }
 
 type ChainParameters104alpha struct {
 	core.ChainParametersBase
-	core.ChainParametersExtraTemp104alpha
+	//core.ChainParametersExtraTemp104alpha
+
+	UccMemory                 string
+	UccCpuShares              string
+	UccCpuQuota               string
+	UccDisk                   string
+	UccDuringTime             string
+	TempUccMemory             string
+	TempUccCpuShares          string
+	TempUccCpuQuota           string
+	ContractSystemVersion     string
+	ContractSignatureNum      string
+	ContractElectionNum       string
+	ContractTxTimeoutUnitFee  string
+	ContractTxSizeUnitFee     string
+	ContractTxInstallFeeLevel string
+	ContractTxDeployFeeLevel  string
+	ContractTxInvokeFeeLevel  string
+	ContractTxStopFeeLevel    string
 }

@@ -43,7 +43,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	}(t0)
 
 	// 1. 判断是否满足生产的若干条件
-	log.Debugf("start generate unit ...")
+	//log.Debugf("generate unit ...")
 
 	// 2. 生产unit，添加交易集、时间戳、签名
 	sign_unit, err := dag.createUnit(producer, txpool, ks, when)
@@ -62,13 +62,18 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 
 	sign_unit.Hash()
 	sign_unit.UnitSize = sign_unit.Size()
-	log.Infof("Generate new unit index:[%d],hash:[%s],size:%s, parent unit[%s],txs[%d], spent time: %s",
+	log.Debugf("Generate new unit index:[%d],hash:[%s],size:%s, parent unit[%s],txs[%d], spent time: %s ",
 		sign_unit.NumberU64(), sign_unit.Hash().String(), sign_unit.UnitSize.String(),
 		sign_unit.UnitHeader.ParentHash()[0].String(), sign_unit.Txs.Len(), time.Since(t0).String())
 
 	//3.将新单元添加到MemDag中
 	a, b, c, d, e, err := dag.Memdag.AddUnit(sign_unit, txpool, true)
 	if a != nil && err == nil {
+		if dag.unstableUnitProduceRep != e {
+			log.Debugf("send UnstableRepositoryUpdatedEvent")
+			go dag.unstableRepositoryUpdatedFeed.Send(modules.UnstableRepositoryUpdatedEvent{})
+		}
+
 		dag.unstableUnitRep = a
 		dag.unstableUtxoRep = b
 		dag.unstableStateRep = c
@@ -98,22 +103,16 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 }
 
 // createUnit, create a unit when mediator being produced
-func (d *Dag) createUnit(mAddr common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, when time.Time) (*modules.Unit, error) {
-	_, _, state, rep, _ := d.Memdag.GetUnstableRepositories()
-	med, err := state.RetrieveMediator(mAddr)
+func (d *Dag) createUnit(mAddr common.Address, txpool txspool.ITxPool) (*modules.Unit, error) {
+	//_, _, state, rep, _ := d.Memdag.GetUnstableRepositories()
+	//med, err := state.RetrieveMediator(mAddr)
+
+	med, err := d.unstableStateRep.RetrieveMediator(mAddr)
 	if err != nil {
 		return nil, err
 	}
 
-	//fun := func(jurorAdd common.Address) common.Address {
-	//	jd, err := state.GetJurorByAddr(jurorAdd.Str())
-	//	if err != nil {
-	//		log.Debugf(err.Error())
-	//		return jurorAdd
-	//	}
-	//
-	//	return jd.GetRewardAdd()
-	//}
-
-	return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool, ks, when, rep, state.GetJurorReward)
+	//return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool, rep, state.GetJurorReward)
+	return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool,
+		d.unstablePropRep, d.unstableStateRep.GetJurorReward)
 }

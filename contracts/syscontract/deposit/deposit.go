@@ -25,7 +25,6 @@ import (
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/storage"
 )
 
 type DepositChaincode struct {
@@ -481,52 +480,12 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		return d.GetAllNode(stub)
 	case modules.GetAllJury:
 		log.Info("Enter DepositChaincode Contract " + modules.GetAllJury + " Query")
-		listb, err := stub.GetState(modules.JuryList)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-		if listb == nil {
-			return shim.Success([]byte("{}"))
-		}
-		allJurorAddrs := make(map[string]bool)
-		err = json.Unmarshal(listb, &allJurorAddrs)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-		jurynodes := make(map[string]*modules.JurorDeposit)
-		for a := range allJurorAddrs {
-			j, err := stub.GetState(storage.JuryDepositKey(a))
-			if err != nil {
-				return shim.Error(err.Error())
-			}
-			juror := modules.JurorDeposit{}
-			err = json.Unmarshal(j, &juror)
-			if err != nil {
-				shim.Error(err.Error())
-			}
-			jurynodes[a] = &juror
-		}
-		juryb, err := json.Marshal(jurynodes)
-		if err != nil {
-			shim.Error(err.Error())
-		}
-		return shim.Success(juryb)
+		return d.GetAllJury(stub)
 	case "IsFinishAllocated":
 		if d.IsFinishAllocated(stub) {
 			return shim.Success([]byte("true"))
 		}
 		return shim.Success([]byte("false"))
-	case "IsFinishAddNewRecords":
-		if d.IsFinishAddNewRecords(stub) {
-			return shim.Success([]byte("true"))
-		}
-		return shim.Success([]byte("false"))
-	case "AddNewAddrPledgeRecords":
-		err := d.AddNewAddrPledgeRecords(stub)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-		return shim.Success(nil)
 	}
 	return shim.Error("please enter validate function name")
 }
@@ -904,23 +863,25 @@ func (d DepositChaincode) GetAllJury(stub shim.ChaincodeStubInterface) pb.Respon
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	allJurorAddrs := make(map[string]bool)
+	if listb == nil {
+		return shim.Success([]byte("{}"))
+	}
+	var allJurorAddrs map[string]bool
 	err = json.Unmarshal(listb, &allJurorAddrs)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	jurynodes := make(map[string]*modules.JurorDeposit)
+
+	jurynodes := make(map[string]*modules.JuryDepositJson)
 	for a := range allJurorAddrs {
-		j, err := stub.GetState(string(constants.DEPOSIT_JURY_BALANCE_PREFIX) + a)
+		balance, err := d.GetJuryDeposit(stub, a)
 		if err != nil {
-			return shim.Error(err.Error())
+			return shim.Success([]byte(err.Error()))
 		}
-		juror := modules.JurorDeposit{}
-		err = json.Unmarshal(j, &juror)
-		if err != nil {
-			shim.Error(err.Error())
+		if balance == nil {
+			return shim.Success([]byte("balance is nil"))
 		}
-		jurynodes[a] = &juror
+		jurynodes[a] = balance
 	}
 	juryb, err := json.Marshal(jurynodes)
 	if err != nil {
@@ -929,22 +890,51 @@ func (d DepositChaincode) GetAllJury(stub shim.ChaincodeStubInterface) pb.Respon
 	return shim.Success(juryb)
 }
 
-func (d DepositChaincode) AddNewAddrPledgeRecords(stub shim.ChaincodeStubInterface) error {
-	return addNewAddrPledgeRecords(stub)
-}
-
-func (d DepositChaincode)IsFinishAllocated(stub shim.ChaincodeStubInterface) bool {
-	h, err := stub.GetState("haveAllocatedCount")
+func (d DepositChaincode) IsFinishAllocated(stub shim.ChaincodeStubInterface) bool {
+	//  判断当天是否处理过
+	today := getToday(stub)
+	newdate,err := stub.GetState(constants.AddNewAddress)
+	if err != nil {
+		log.Warn("GetState error: ", err.Error())
+		return true
+	}
+	lastDate, err := getLastPledgeListDate(stub)
 	if err != nil {
 		return true
 	}
-	if h == nil {
+	// 增加新的质押
+	depositList, err := getAllPledgeDepositRecords(stub)
+	if err != nil {
+		log.Warn("getAllPledgeDepositRecords error: ", err.Error())
 		return true
 	}
+	finish, err := stub.GetState("allocate")
+	if err != nil {
+		log.Warn("GetState error: ", err.Error())
+		return true
+	}
+	if today == string(newdate) {
+		if today ==  lastDate {
+			log.Infof("allocate = %s, today = %s, lastDate = %s, newdate = %s, depositList length = %d", finish, today, lastDate,newdate, len(depositList))
+			return true
+		}
+		if len(depositList) == 0 {
+			if string(finish) == "allocate" {
+				log.Infof("allocate = %s, today = %s, lastDate = %s, newdate = %s, depositList length = %d", finish, today,lastDate, newdate, len(depositList))
+				return false
+			}
+			log.Infof("allocate = %s, today = %s, lastDate = %s, newdate = %s, depositList length = %d", finish, today, lastDate,newdate, len(depositList))
+			return true
+		}
+		log.Infof("allocate = %s, today = %s, lastDate = %s, newdate = %s, depositList length = %d", finish, today, lastDate,newdate, len(depositList))
+		return false
+	}
+	log.Infof("allocate = %s, today = %s, lastDate = %s, newdate = %s, depositList length = %d", finish, today, lastDate,newdate, len(depositList))
 	return false
 }
 
-func (d DepositChaincode)IsFinishAddNewRecords(stub shim.ChaincodeStubInterface) bool {
+
+func (d DepositChaincode) IsFinishAddNewRecords(stub shim.ChaincodeStubInterface) bool {
 	h, err := stub.GetState("haveAllocatedCount")
 	if err != nil {
 		return true

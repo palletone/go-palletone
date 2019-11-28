@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/contracts"
+	"github.com/palletone/go-palletone/contracts/utils"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
@@ -171,7 +172,6 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 		log.Error("Initialize mediator plugin err:", "error", err)
 		return nil, err
 	}
-
 	ptn.contractPorcessor, err = jury.NewContractProcessor(ptn, dag, nil, &config.Jury)
 	if err != nil {
 		log.Error("contract processor creat:", "error", err)
@@ -186,6 +186,9 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 	}
 	ptn.contractPorcessor.SetContract(ptn.contract)
 
+	pDocker := utils.NewPalletOneDocker(dag,ptn.contract.IAdapterJury)
+	ptn.contractPorcessor.SetDocker(pDocker)
+
 	genesis, err := ptn.dag.GetGenesisUnit()
 	if err != nil {
 		log.Error("PalletOne New", "get genesis err:", err)
@@ -194,7 +197,7 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 
 	gasToken := config.Dag.GetGasToken()
 	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, gasToken, ptn.txPool,
-		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine, ptn.contract); err != nil {
+		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine, ptn.contract,pDocker); err != nil {
 		log.Error("NewProtocolManager err:", "error", err)
 		return nil, err
 	}
@@ -472,7 +475,7 @@ func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal,
 	}
 
 	// 判断本节点是否同步完成，数据是否最新
-	if !p.dag.IsSynced() {
+	if !p.dag.IsSynced(false) {
 		return nil, fmt.Errorf("the data of this node is not synced, and can't transfer now")
 	}
 

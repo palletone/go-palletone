@@ -172,9 +172,10 @@ func (s *RwSetTxSimulator) DeleteState(contractId []byte, ns string, key string)
 func (s *RwSetTxSimulator) GetRwData(ns string) ([]*KVRead, []*KVWrite, error) {
 	rd := make(map[string]*KVRead)
 	wt := make(map[string]*KVWrite)
-	log.Info("GetRwData", "ns info", ns)
+	log.Debug("GetRwData", "ns info", ns)
 
 	if s.rwsetBuilder != nil {
+		s.rwsetBuilder.locker.RLock()
 		if s.rwsetBuilder.pubRwBuilderMap != nil {
 			if s.rwsetBuilder.pubRwBuilderMap[ns] != nil {
 				pubRwBuilderMap, ok := s.rwsetBuilder.pubRwBuilderMap[ns]
@@ -182,10 +183,12 @@ func (s *RwSetTxSimulator) GetRwData(ns string) ([]*KVRead, []*KVWrite, error) {
 					rd = pubRwBuilderMap.readMap
 					wt = pubRwBuilderMap.writeMap
 				} else {
+					s.rwsetBuilder.locker.RUnlock()
 					return nil, nil, errors.New("rw_data not found.")
 				}
 			}
 		}
+		s.rwsetBuilder.locker.RUnlock()
 	}
 	//sort keys and convert map to slice
 	return convertReadMap2Slice(rd), convertWriteMap2Slice(wt), nil
@@ -258,6 +261,18 @@ func (s *RwSetTxSimulator) GetTokenBalance(ns string, addr common.Address, asset
 	return convertUtxo2Balance(utxos), nil
 }
 
+func (s *RwSetTxSimulator) GetStableTransactionByHash(ns string, hash common.Hash) (*modules.Transaction, error) {
+	return s.dag.GetStableTransactionOnly(hash)
+}
+
+func (s *RwSetTxSimulator) GetStableUnit(ns string, hash common.Hash, unitNumber uint64) (*modules.Unit, error) {
+	if !hash.IsZero() {
+		return s.dag.GetStableUnit(hash)
+	}
+	gasToken := dagconfig.DagConfig.GetGasToken()
+	number := &modules.ChainIndex{AssetID: gasToken, Index: unitNumber}
+	return s.dag.GetStableUnitByNumber(number)
+}
 func convertUtxo2Balance(utxos map[modules.OutPoint]*modules.Utxo) map[modules.Asset]uint64 {
 	result := map[modules.Asset]uint64{}
 	for _, v := range utxos {
@@ -295,7 +310,7 @@ func (s *RwSetTxSimulator) SupplyToken(ns string, assetId, uniqueId []byte, amt 
 func (s *RwSetTxSimulator) String() string {
 	str := "rwSet_txSimulator: "
 	for k, v := range s.rwsetBuilder.pubRwBuilderMap {
-		str += ("key:" + k)
+		str += "key:" + k
 		for rk, rv := range v.readMap {
 			//str += fmt.Sprintf("val__[key:%s],[value:%s]", rk, rv.String())
 			log.Debug("RwSetTxSimulator) String", "key", rk, "val-", rv)

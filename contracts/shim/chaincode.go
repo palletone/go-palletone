@@ -428,7 +428,7 @@ func (stub *ChaincodeStub) PutGlobalState(key string, value []byte) error {
 	if key == "" {
 		return errors.New("key must not be an empty string")
 	}
-	if !common.IsSystemContractAddress(stub.ContractId) {
+	if !common.IsSystemContractId(stub.ContractId) {
 		return ERROR_ONLY_SYS_CONTRACT
 	}
 	// Access public data by setting the collection to empty string
@@ -444,7 +444,7 @@ func (stub *ChaincodeStub) DelState(key string) error {
 	return stub.handler.handleDelState(collection, nil, key, stub.ChannelId, stub.TxID)
 }
 func (stub *ChaincodeStub) DelGlobalState(key string) error {
-	if !common.IsSystemContractAddress(stub.ContractId) {
+	if !common.IsSystemContractId(stub.ContractId) {
 		return ERROR_ONLY_SYS_CONTRACT
 	}
 	return stub.handler.handleDelState("", GlobalStateContractId, key, stub.ChannelId, stub.TxID)
@@ -611,8 +611,16 @@ func (stub *ChaincodeStub) GetTokenBalance(address string, token *modules.Asset)
 	return stub.handler.handleGetTokenBalance(address, token, stub.ContractId, stub.ChannelId, stub.TxID)
 }
 
+func (stub *ChaincodeStub) GetStableTransactionByHash(txHash string) (*modules.Transaction, error) {
+	return stub.handler.handleGetStableTransactionByHash(txHash, stub.ContractId, stub.ChannelId, stub.TxID)
+}
+
+func (stub *ChaincodeStub) GetStableUnit(unitHash string, unitNumber uint64) (*modules.Unit, error) {
+	return stub.handler.handleGetStableUnit(unitHash, unitNumber, stub.ContractId, stub.ChannelId, stub.TxID)
+}
+
 func (stub *ChaincodeStub) DefineToken(tokenType byte, define []byte, creator string) error {
-	if !common.IsSystemContractAddress(stub.ContractId) {
+	if !common.IsSystemContractId(stub.ContractId) {
 		return ERROR_ONLY_SYS_CONTRACT
 	}
 	return stub.handler.handleDefineToken(tokenType, define, creator, stub.ContractId, stub.ChannelId, stub.TxID)
@@ -621,7 +629,7 @@ func (stub *ChaincodeStub) DefineToken(tokenType byte, define []byte, creator st
 //增发一种之前已经定义好的Token
 //如果是ERC20增发，则uniqueId为空，如果是ERC721增发，则必须指定唯一的uniqueId
 func (stub *ChaincodeStub) SupplyToken(assetId []byte, uniqueId []byte, amt uint64, creator string) error {
-	if !common.IsSystemContractAddress(stub.ContractId) {
+	if !common.IsSystemContractId(stub.ContractId) {
 		return ERROR_ONLY_SYS_CONTRACT
 	}
 	return stub.handler.handleSupplyToken(assetId, uniqueId, amt, creator, stub.ContractId, stub.ChannelId, stub.TxID)

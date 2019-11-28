@@ -22,7 +22,9 @@ import (
 	"fmt"
 	"gopkg.in/urfave/cli.v1"
 	"strings"
-
+    "bytes"
+    "strconv"
+    "encoding/binary"
 	"github.com/palletone/go-palletone/cmd/console"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common"
@@ -33,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptnjson"
+	"github.com/palletone/go-palletone/tokenengine"
 	//"github.com/btcsuite/btcd/btcjson"
 	"github.com/shopspring/decimal"
 )
@@ -131,6 +134,32 @@ Convert account address to hex format address`,
     gptn account new
 
 Creates a new account and prints the address.
+
+The account is saved in encrypted format, you are prompted for a passphrase.
+
+You must remember this passphrase to unlock your account in the future.
+
+For non-interactive use the passphrase can be specified with the --password flag:
+
+Note, this is meant to be used for testing only, it is a bad idea to save your
+password to file or expose in any other way.
+`,
+			},
+			{
+				Name:   "muti",
+				Usage:  "Create a new mutisign account",
+				Action: utils.MigrateFlags(accountMutiCreate),
+				ArgsUsage: "<string>",
+				Flags: []cli.Flag{
+					utils.DataDirFlag,
+					utils.KeyStoreDirFlag,
+					utils.PasswordFileFlag,
+					utils.LightKDFFlag,
+				},
+				Description: `
+    gptn account muti <string> 
+
+Creates a new mutisign account and prints the address and redeemScript.
 
 The account is saved in encrypted format, you are prompted for a passphrase.
 
@@ -433,6 +462,27 @@ func createAccount(ctx *cli.Context, password string) (common.Address, error) {
 	return address, nil
 }
 
+// accountCreate creates a new account into the keystore defined by the CLI flags.
+func createMutiAccount(ctx *cli.Context, pubkey [][]byte, check int) ([]byte,[]byte,common.Address,error) {
+	var err error
+	var cfg FullConfig
+	var configDir string
+	// Load config file.
+	if cfg, configDir, err = maybeLoadConfig(ctx); err != nil {
+		utils.Fatalf("%v", err)
+		return []byte{},[]byte{},common.Address{}, err
+	}
+
+	cfg.Node.P2P = cfg.P2P
+	utils.SetNodeConfig(ctx, &cfg.Node, configDir)
+    bcheck := IntToByte(int64(check))
+    redeemScript := tokenengine.Instance.GenerateRedeemScript(bcheck[7], pubkey)
+	lockScript := tokenengine.Instance.GenerateP2SHLockScript(crypto.Hash160(redeemScript))
+	addressMulti, _ := tokenengine.Instance.GetAddressFromScript(lockScript)
+
+	return lockScript, redeemScript,addressMulti,nil
+}
+
 func newAccount(ctx *cli.Context) (common.Address, error) {
 	password := getPassPhrase("Your new account is locked with a password. Please give a password. "+
 		"Do not forget this password.", true, 0, utils.MakePasswordList(ctx))
@@ -444,6 +494,50 @@ func newAccount(ctx *cli.Context) (common.Address, error) {
 
 	return address, nil
 }
+func IntToByte(num int64) []byte {
+   var buffer bytes.Buffer
+   err := binary.Write(&buffer, binary.BigEndian, num)
+   if err != nil {
+		return  []byte{}
+	}
+   return buffer.Bytes()
+}
+/*func BytesToInt(bys []byte) int {
+    bytebuff := bytes.NewBuffer(bys)
+    var data int64
+    binary.Read(bytebuff, binary.BigEndian, &data)
+    return int(data)
+}*/
+func newMutiAccount(ctx *cli.Context) ([]byte ,[]byte , common.Address,  error) {
+	if len(ctx.Args()) == 0 {
+		utils.Fatalf("No pubkey specified to create muti account")
+	}
+	var pki []byte 
+	var pk [][]byte
+	totalstring := ctx.Args().First()
+	total, err := strconv.Atoi(totalstring)
+	if err != nil || total < 0 ||total > 5{
+		return []byte{},[]byte{},common.Address{}, err
+	}
+	for arg_s := 1 ; arg_s < total+1 ; arg_s++ {
+		pki, err = hex.DecodeString(ctx.Args()[arg_s])
+		if err != nil || total < 0 ||total > 5 {
+		   return []byte{},[]byte{},common.Address{}, err
+	    }
+	    pk = append(pk,pki)
+    }
+    s_check := ctx.Args()[total+1]
+    check , err := strconv.Atoi(s_check)
+    if err != nil || check < 0 ||check > 5 {
+		return []byte{},[]byte{},common.Address{}, err
+	}
+	lockscript,redeemScript,address,err := createMutiAccount(ctx,pk,check)
+	if err != nil {
+		return []byte{},[]byte{},common.Address{}, err
+	}
+	return lockscript, redeemScript,address, nil
+}
+
 
 // accountCreate creates a new account into the keystore defined by the CLI flags.
 func accountCreate(ctx *cli.Context) error {
@@ -457,6 +551,16 @@ func accountCreate(ctx *cli.Context) error {
 	return nil
 }
 
+func accountMutiCreate(ctx *cli.Context) error {
+	lockscript,redeem,address,err := newMutiAccount(ctx)
+	if err != nil {
+		utils.Fatalf("%v", err)
+	}
+
+	//	fmt.Printf("Address Hex: {%x}\n", address)
+	fmt.Printf("Address: %s lockscript:%x redeem : %x\n", address.String(),lockscript,redeem)
+	return nil
+}
 // accountUpdate transitions an account from a previous format to the current
 // one, also providing the possibility to change the pass-phrase.
 func accountUpdate(ctx *cli.Context) error {

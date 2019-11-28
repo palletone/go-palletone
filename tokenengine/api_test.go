@@ -338,17 +338,21 @@ func TestMultiSign2Step(t *testing.T) {
 		}
 		return nil, nil
 	}
-	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
+	getSignFn1 := func(addr common.Address, msg []byte) ([]byte, error) {
 
 		if addr == address1 {
 			return crypto.MyCryptoLib.Sign(prvKey1B, msg)
 		}
+		
+		return nil, nil
+	}
+	getSignFn2 := func(addr common.Address, msg []byte) ([]byte, error) {
 		if addr == address2 {
 			return crypto.MyCryptoLib.Sign(prvKey2B, msg)
 		}
 		return nil, nil
 	}
-	sign1, err := Instance.MultiSignOnePaymentInput(tx, SigHashAll, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn, nil)
+	sign1, err := Instance.MultiSignOnePaymentInput(tx, SigHashAll, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn1, nil)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
@@ -361,7 +365,7 @@ func TestMultiSign2Step(t *testing.T) {
 	//}
 	//scriptCp2:=make([]byte,len(lockScript))
 	//copy(scriptCp2,lockScript)
-	sign2, err := Instance.MultiSignOnePaymentInput(tx, SigHashAll, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn, sign1)
+	sign2, err := Instance.MultiSignOnePaymentInput(tx, SigHashAll, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn2, sign1)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
@@ -468,8 +472,8 @@ func TestGenerateRedeemScript(t *testing.T) {
 	jury := []string{"03f28978eeb02f2c97db338f76b093ada5a36022964d85ff3ad5c04b800602b071", "0312857d1e1c5c151f37cede37d694f6b8661f37690f5b3b87946489c479e6dc80"}
 
 	pubKeys := [][]byte{}
-	for _, jurior := range jury {
-		pubKey1, _ := hex.DecodeString(jurior)
+	for _, juror := range jury {
+		pubKey1, _ := hex.DecodeString(juror)
 		pubKeys = append(pubKeys, pubKey1)
 	}
 	redeem := Instance.GenerateRedeemScript(2, pubKeys)
