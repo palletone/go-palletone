@@ -219,7 +219,7 @@ func (a *PrivateMediatorAPI) Apply(args modules.MediatorCreateArgs, fee decimal.
 		return nil, err
 	}
 	// 判断本节点是否同步完成，数据是否最新
-	if !a.Dag().IsSynced() {
+	if !a.Dag().IsSynced(false) {
 		return nil, fmt.Errorf("this node is not synced, and can't apply mediator now")
 	}
 	// 判断是否已经是mediator
@@ -264,7 +264,7 @@ func (a *PrivateMediatorAPI) PayDeposit(from string, amount decimal.Decimal) (*T
 	}
 
 	// 判断本节点是否同步完成，数据是否最新
-	if !a.Dag().IsSynced() {
+	if !a.Dag().IsSynced(false) {
 		return nil, fmt.Errorf("this node is not synced, and can't pay deposit now")
 	}
 
@@ -316,7 +316,7 @@ func (a *PrivateMediatorAPI) Quit(medAddStr string) (*TxExecuteResult, error) {
 	}
 
 	// 判断本节点是否同步完成，数据是否最新
-	if !a.Dag().IsSynced() {
+	if !a.Dag().IsSynced(false) {
 		return nil, fmt.Errorf("this node is not synced, and can't quit now")
 	}
 
@@ -353,9 +353,9 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxEx
 	}
 
 	// 判断本节点是否同步完成，数据是否最新
-	//if !a.Dag().IsSynced() {
-	//	return nil, fmt.Errorf("this node is not synced, and can't vote now")
-	//}
+	if !a.Dag().IsSynced(false) {
+		return nil, fmt.Errorf("this node is not synced, and can't vote now")
+	}
 
 	maxMediatorCount := int(a.Dag().GetChainParameters().MaximumMediatorCount)
 	mediatorCount := len(mediatorStrs)
@@ -414,7 +414,7 @@ func (a *PrivateMediatorAPI) Update(args modules.MediatorUpdateArgs) (*TxExecute
 	}
 
 	// 判断本节点是否同步完成，数据是否最新
-	if !a.Dag().IsSynced() {
+	if !a.Dag().IsSynced(false) {
 		return nil, fmt.Errorf("this node is not synced, and can't update mediator now")
 	}
 

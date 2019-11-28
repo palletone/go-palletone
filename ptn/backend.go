@@ -472,7 +472,7 @@ func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal,
 	}
 
 	// 判断本节点是否同步完成，数据是否最新
-	if !p.dag.IsSynced() {
+	if !p.dag.IsSynced(false) {
 		return nil, fmt.Errorf("the data of this node is not synced, and can't transfer now")
 	}
 

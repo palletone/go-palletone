@@ -525,7 +525,7 @@ func (s *PublicDagAPI) StableUnitNum() uint64 {
 func (s *PublicDagAPI) IsSynced() bool {
 	dag := s.b.Dag()
 	if dag != nil {
-		return dag.IsSynced()
+		return dag.IsSynced(false)
 	}
 
 	return false
