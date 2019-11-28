@@ -100,7 +100,7 @@ func SaveGenesis(db ptndb.Database, unit *modules.Unit) error {
 func NewCoinbaseTransaction() (*modules.Transaction, error) {
 	input := &modules.Input{}
 	input.Extra = []byte{byte(time.Now().Unix())}
-	output := &modules.Output{}
+	output := modules.NewTxOut(1, []byte{}, modules.NewPTNAsset())
 	payload := &modules.PaymentPayload{
 		Inputs:  []*modules.Input{input},
 		Outputs: []*modules.Output{output},

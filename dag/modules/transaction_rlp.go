@@ -61,7 +61,7 @@ func tx2Temp(tx *Transaction) (*transactionTemp, error) {
 	temp.Illegal = tx.Illegal()
 	temp.CertId = tx.CertId()
 
-	for _, m := range tx.TxMessages() {
+	for _, m := range tx.Messages() {
 		m1 := messageTemp{
 			App: m.App,
 		}
@@ -193,11 +193,8 @@ func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 	}
 	d.Illegal = temp.Illegal
 	d.CertId = temp.CertId
-	//tempTx := &Transaction{txdata: d}
 	// init tx
 	tx.txdata = d
-	//tx.hash.Store(tempTx.Hash())
-	//tx.size.Store(tempTx.Size())
 	return nil
 
 }
