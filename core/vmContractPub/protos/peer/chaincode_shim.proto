@@ -63,6 +63,7 @@ message ChaincodeMessage {
         GET_CERT_STATE = 32;
         OUTCHAIN_CALL = 33;
         GET_STABLE_TRANSACTION = 34;
+        GET_STABLE_UNIT = 35;
     }
 
     Type type = 1;
@@ -177,6 +178,11 @@ message GetTokenBalance {
 
 message GetStableTransaction {
     string txHash = 1;
+}
+
+message GetStableUnit {
+    string unitHash = 1;
+    uint64 unitNumber = 2;
 }
 
 message PayOutToken {

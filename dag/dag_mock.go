@@ -402,6 +402,36 @@ func (mr *MockIDagMockRecorder) GetStableTransactionOnly(hash interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStableTransactionOnly", reflect.TypeOf((*MockIDag)(nil).GetStableTransactionOnly), hash)
 }
 
+// GetStableUnit mocks base method
+func (m *MockIDag) GetStableUnit(hash common.Hash) (*modules.Unit, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetStableUnit", hash)
+	ret0, _ := ret[0].(*modules.Unit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetStableUnit indicates an expected call of GetStableUnit
+func (mr *MockIDagMockRecorder) GetStableUnit(hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStableUnit", reflect.TypeOf((*MockIDag)(nil).GetStableUnit), hash)
+}
+
+// GetStableUnitByNumber mocks base method
+func (m *MockIDag) GetStableUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetStableUnitByNumber", number)
+	ret0, _ := ret[0].(*modules.Unit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetStableUnitByNumber indicates an expected call of GetStableUnitByNumber
+func (mr *MockIDagMockRecorder) GetStableUnitByNumber(number interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStableUnitByNumber", reflect.TypeOf((*MockIDag)(nil).GetStableUnitByNumber), number)
+}
+
 // IsTransactionExist mocks base method
 func (m *MockIDag) IsTransactionExist(hash common.Hash) (bool, error) {
 	m.ctrl.T.Helper()
@@ -1109,6 +1139,7 @@ func (mr *MockIDagMockRecorder) SubscribeToGroupSignEvent(ch interface{}) *gomoc
 
 // IsSynced mocks base method
 func (m *MockIDag) IsSynced(isStrict bool) bool {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsSynced", isStrict)
 	ret0, _ := ret[0].(bool)
 	return ret0
@@ -1116,6 +1147,7 @@ func (m *MockIDag) IsSynced(isStrict bool) bool {
 
 // IsSynced indicates an expected call of IsSynced
 func (mr *MockIDagMockRecorder) IsSynced(isStrict interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSynced", reflect.TypeOf((*MockIDag)(nil).IsSynced), isStrict)
 }
 

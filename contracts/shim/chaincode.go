@@ -615,6 +615,10 @@ func (stub *ChaincodeStub) GetStableTransactionByHash(txHash string) (*modules.T
 	return stub.handler.handleGetStableTransactionByHash(txHash, stub.ContractId, stub.ChannelId, stub.TxID)
 }
 
+func (stub *ChaincodeStub) GetStableUnit(unitHash string, unitNumber uint64) (*modules.Unit, error) {
+	return stub.handler.handleGetStableUnit(unitHash, unitNumber, stub.ContractId, stub.ChannelId, stub.TxID)
+}
+
 func (stub *ChaincodeStub) DefineToken(tokenType byte, define []byte, creator string) error {
 	if !common.IsSystemContractId(stub.ContractId) {
 		return ERROR_ONLY_SYS_CONTRACT
