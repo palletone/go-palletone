@@ -100,7 +100,7 @@ func (api *PrivateAdminAPI) RemoveTrustedPeer(url string) (bool, error) {
 	}
 	node, err := discover.ParseNode(url)
 	if err != nil {
-		return false, fmt.Errorf("invalid enode: %v", err)
+		return false, fmt.Errorf("invalid pnode: %v", err)
 	}
 	server.RemoveTrustedPeer(node)
 	return true, nil
