@@ -18,9 +18,14 @@ import (
 // The values in those tests are from the Transaction Tests
 // at github.com/ethereum/tests.
 func TestTransactionHash(t *testing.T) {
-	tx := &Transaction{}
-	//tx.SetHash(common.HexToHash("e01c4bae7b396bc3c9bcb9275cef479560141c2010b6537abd78795bc935a2dd"))
+	tx := newTestTx()
 	t.Log(tx.Hash().String())
+	payment := newPaymenForTestt(true)
+	msg := NewMessage(APP_PAYMENT, payment)
+	tx.AddMessage(msg)
+	t.Log(tx.Hash().String())
+	payment.LockTime = 1
+	assert.NotEqual(t, uint32(1), tx.TxMessages()[3].Payload.(*PaymentPayload).LockTime)
 }
 func TestTransactionJson(t *testing.T) {
 	pay1s := &PaymentPayload{
@@ -50,8 +55,7 @@ func TestTransactionJson(t *testing.T) {
 	if errNew != nil {
 		fmt.Println(errNew)
 	} else {
-		fmt.Println("json_result_payload: ", errNew, tx_item.TxMessages[0].Payload)
-		data1, err1 := json.Marshal(tx_item.TxMessages[0].Payload)
+		data1, err1 := json.Marshal(tx_item.TxMessages()[0].Payload)
 		if err1 != nil {
 			fmt.Println(err1)
 			return
@@ -78,64 +82,26 @@ func TestTxHash(t *testing.T) {
 	assert.Nil(t, err)
 	t.Logf("Unmarsal tx:%#v", tx2)
 	assert.Equal(t, tx2.Hash(), tx.Hash())
+	msg := tx2.TxMessages()[0]
+	for _, in := range msg.Payload.(*PaymentPayload).Inputs {
+		in.Extra = []byte("test!")
+	}
+
+	tx3 := NewTransaction(tx2.TxMessages())
+	for _, input := range tx3.TxMessages()[0].Payload.(*PaymentPayload).Inputs {
+		fmt.Println("extra:", string(input.Extra))
+	}
+	assert.Equal(t, tx3.Hash().String(), tx2.Hash().String())
 }
 func TestTxClone(t *testing.T) {
 	tx := newTestTx()
 	tx2 := tx.Clone()
 
 	t.Logf("%#v", tx2)
-	t.Logf("msg count:%d", len(tx2.TxMessages))
+	t.Logf("msg count:%d", len(tx2.TxMessages()))
+	assert.Equal(t, tx.Hash().String(), tx2.Hash().String())
 }
 
-//func TestTxHash(t *testing.T) {
-//data := `{"messages":[{"app":0,"payload":{"inputs":[{"pre_outpoint":{"txhash":"0xefcbb3619e2b144da01bf971509b99cc50d107c4698d27a37a8ba2fd4163581d","message_index":0,"out_index":0},"signature_script":"QG/9d+nQKetVVI0YSHvdlgS5fpUOCUkLikt8Ks34TH3mUDX6Bdw+uGBZjuMBiZf22Xs3BTOJ8SF1SIHNmmlt77khAgWOS0I9+ukHx0UyH1CK9jlXT9WXsWJofO7Pi0uG2rs0","extra":null}],"outputs":[{"value":"99999999999999999","pk_script":"dqkUX3Q90SF0P766C6FcplbeGpbOue+IrA==","asset":{"asset_id":[64,0,130,187,8,0,0,0,0,0,0,0,0,0,0,0],"unique_id":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}}],"lock_time":0}},{"app":102,"payload":{"contract_id":"AAAAAAAAAAAAAAAAAAAAAAAAAAI=","function_name":"","args":["Y3JlYXRlVG9rZW4=","enhsIHRlc3QgZGVzY3JpcHRpb24=","enhs","MQ==","MTAwMA==","UDE5aGlTcGpXRGN1UWtQa2hEam1jYlZhMzlhMmRhc3RFS3A="],"timeout":0}},{"app":3,"payload":{"contract_id":"AAAAAAAAAAAAAAAAAAAAAAAAAAI=","function_name":"","args":["eyJpbnZva2VfYWRkcmVzcyI6IlAxOWhpU3BqV0RjdVFrUGtoRGptY2JWYTM5YTJkYXN0RUtwIiwiaW52b2tlX3Rva2VucyI6eyJhbW91bnQiOjAsImFzc2V0Ijp7ImFzc2V0X2lkIjpbNjQsMCwxMzAsMTg3LDgsMCwwLDAsMCwwLDAsMCwwLDAsMCwwXSwidW5pcXVlX2lkIjpbMCwwLDAsMCwwLDAsMCwwLDAsMCwwLDAsMCwwLDAsMF19fSwiaW52b2tlX2ZlZXMiOnsiYW1vdW50IjoxLCJhc3NldCI6eyJhc3NldF9pZCI6WzY0LDAsMTMwLDE4Nyw4LDAsMCwwLDAsMCwwLDAsMCwwLDAsMF0sInVuaXF1ZV9pZCI6WzAsMCwwLDAsMCwwLDAsMCwwLDAsMCwwLDAsMCwwLDBdfX19","Y3JlYXRlVG9rZW4=","enhsIHRlc3QgZGVzY3JpcHRpb24=","enhs","MQ==","MTAwMA==","UDE5aGlTcGpXRGN1UWtQa2hEam1jYlZhMzlhMmRhc3RFS3A="],"read_set":[],"write_set":[{"IsDelete":false,"Key":"symbols","Value":"eyJ0b2tlbmluZm9zIjp7IlpYTCI6eyJTdXBwbHlBZGRyIjoiUDE5aGlTcGpXRGN1UWtQa2hEam1jYlZhMzlhMmRhc3RFS3AiLCJBc3NldElEIjpbNjQsMCwxODEsMjMzLDEsMjIsMTY4LDEyMiw5OSwxNTMsMTQzLDI1NSwyMywxNDMsMjAsNDZdfX19"}],"payload":"eyJuYW1lIjoienhsIHRlc3QgZGVzY3JpcHRpb24iLCJzeW1ib2wiOiJaWEwiLCJkZWNpbWFscyI6MSwidG90YWxfc3VwcGx5IjoxMDAwLCJzdXBwbHlfYWRkcmVzcyI6IlAxOWhpU3BqV0RjdVFrUGtoRGptY2JWYTM5YTJkYXN0RUtwIn0="}},{"app":0,"payload":{"inputs":null,"outputs":[{"value":"1000","pk_script":"dqkUX3Q90SF0P766C6FcplbeGpbOue+IrA==","asset":{"asset_id":[64,0,181,233,1,22,168,122,99,153,143,255,23,143,20,46],"unique_id":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}}],"lock_time":0}},{"app":5,"payload":{"signature_set":[{"PubKey":"AgWOS0I9+ukHx0UyH1CK9jlXT9WXsWJofO7Pi0uG2rs0","Signature":"05W6jF7uZMeZoySKwkHF+97YcXflqyIRACKpYza+ezsjF2KgB4cHrr8h3FQL4jvTaN4aaekD87lPgnAtkSnQxgE="}]}}]}`
-//
-//errNew := json.Unmarshal([]byte(data), tx_item)
-//b, _ := rlp.EncodeToBytes(tx_item)
-//tx_item2 := new(Transaction)
-//errNew = json.Unmarshal([]byte(data), tx_item2)
-//b2, _ := rlp.EncodeToBytes(tx_item2)
-//assert.Equal(t, b, b2)
-//if errNew != nil {
-//	fmt.Println(errNew)
-//} else {
-//	fmt.Println("json_result_payload: ", errNew, tx_item.TxMessages[0].Payload)
-//	data1, err1 := json.Marshal(tx_item.TxMessages[0].Payload)
-//	if err1 != nil {
-//		fmt.Println(err1)
-//		return
-//	}
-//	fmt.Println("str_date1:", string(data1))
-//	payment := new(PaymentPayload)
-//	err2 := json.Unmarshal(data1, &payment)
-//	if err2 != nil {
-//		fmt.Println(err2)
-//	} else {
-//		fmt.Println("value:=", payment.Outputs[0].Value)
-//	}
-//
-//	fmt.Printf("Tx: %+v\nTxHex: %x\n", tx_item, b)
-//	fmt.Println("tx_hash", tx_item.Hash_old().String()) //every different
-//	fmt.Println("tx_hashstr", tx_item.Hash().String())  //every same
-//}
-func newTestTransaction() *Transaction {
-	msg := &Message{
-		App:     APP_PAYMENT,
-		Payload: &PaymentPayload{},
-	}
-	msg2 := &Message{
-		App:     APP_DATA,
-		Payload: &DataPayload{},
-	}
-	msg3 := &Message{
-		App:     APP_CONTRACT_INVOKE_REQUEST,
-		Payload: &TestContractInvokeRequestPayload{},
-	}
-	tx := newTransaction(
-		[]*Message{msg, msg2, msg3},
-	)
-	return tx
-}
 func newTestTx() *Transaction {
 	pay1s := &PaymentPayload{
 		LockTime: 12345,
@@ -161,15 +127,13 @@ func newTestTx() *Transaction {
 		App:     APP_DATA,
 		Payload: &DataPayload{MainData: []byte("Hello PalletOne"), ExtraData: []byte("Hi PalletOne")},
 	}
-	//txmsg2 := NewTransaction(
-	//	[]*Message{msg, msg},
-	//)
+
 	req := &ContractInvokeRequestPayload{ContractId: []byte{123}, Args: [][]byte{{0x11}, {0x22}}, Timeout: 300}
 	msg3 := &Message{App: APP_CONTRACT_INVOKE_REQUEST, Payload: req}
 	tx := newTransaction(
 		[]*Message{msg, msg2, msg3},
 	)
-	fmt.Println("paoload：", msg.Payload, msg2.Payload, msg3.Payload)
+	fmt.Println("payload：", msg.Payload, msg2.Payload, msg3.Payload)
 	return tx
 }
 
@@ -202,7 +166,8 @@ func TestTransactionEncode(t *testing.T) {
 	t.Log("data", tx)
 
 	assertEqualRlp(t, txmsg3, tx)
-	for _, msg := range tx.Messages() {
+	msgs:=tx.TxMessages()
+	for _, msg := range msgs {
 		if msg.App == APP_PAYMENT {
 			pay := msg.Payload.(*PaymentPayload)
 			fmt.Println("msg", pay.Inputs, pay.Outputs)
@@ -211,10 +176,10 @@ func TestTransactionEncode(t *testing.T) {
 			}
 		}
 	}
-	if len(tx.TxMessages) != 3 {
+	if len(msgs) != 3 {
 		t.Error("Rlp decode message count error")
 	}
-	msg0 := tx.TxMessages[0]
+	msg0 := msgs[0]
 	if msg0.App != APP_PAYMENT {
 		t.Error("Payment decode error")
 	}
@@ -230,7 +195,7 @@ func TestTransactionEncode(t *testing.T) {
 	}
 
 	fmt.Printf("PaymentData:%+v", payment)
-	msg2 := tx.TxMessages[1]
+	msg2 := msgs[1]
 	if msg2.App != APP_DATA {
 		t.Error("Data decode error")
 	}
@@ -243,7 +208,7 @@ func TestTransactionEncode(t *testing.T) {
 	}
 	t.Log("DataPayload:", data)
 
-	msg3 := tx.TxMessages[2]
+	msg3 := msgs[2]
 	if msg3.App != APP_CONTRACT_INVOKE_REQUEST {
 		t.Error("Data decode error")
 	}
@@ -272,7 +237,7 @@ func TestIDType16Hex(t *testing.T) {
 	str := "{\"txhash\":\"0xaa0fbe87c07b063cd6a88ab8e2c0075bec35bc80a56956cd50ce98aad3febca6\",\"messages\":[{\"App\":0,\"Payload\":{\"Inputs\":[{\"PreviousOutPoint\":null,\"SignatureScript\":null,\"Extra\":\"W+vkvg==\"}],\"Outputs\":[{\"Value\":100000000,\"PkScript\":\"dqkUj1ulfgUxOae0LG5IueWUIzBQk2WIrA==\",\"Asset\":{\"asset_id\":[119,169,59,162,215,104,17,232,157,4,140,133,144,10,158,67],\"unique_id\":[119,169,59,162,215,104,17,232,157,4,140,133,144,10,158,67],\"chain_id\":1}}],\"LockTime\":0}}]}"
 	err := json.Unmarshal([]byte(str), &tx)
 	fmt.Println("error: ", err)
-	for _, msg := range tx.Messages() {
+	for _, msg := range tx.TxMessages() {
 		fmt.Println("info: ", msg.Payload)
 		data, err := json.Marshal(msg.Payload)
 		if err != nil {
@@ -299,11 +264,10 @@ func TestTransaction_EncodeRLP_Size(t *testing.T) {
 		App:     APP_PAYMENT,
 		Payload: pay1s,
 	}
-	tx := NewTransaction(
-		[]*Message{},
-	)
+	msgs := make([]*Message, 0)
 	for i := 1; i < 1000; i++ {
-		tx.AddMessage(msg)
+		msgs = append(msgs, msg)
+		tx := NewTransaction(msgs)
 		txb, _ := rlp.EncodeToBytes(tx)
 		t.Logf("input count:{%d}, encode tx size:%d\n", i, len(txb))
 	}
@@ -351,4 +315,20 @@ func TestTransaction_GetTxFee(t *testing.T) {
 }
 func Ptn2Dao(ptn uint64) uint64 {
 	return ptn * 100000000
+}
+
+func newPaymenForTestt(includeCoinbase bool) *PaymentPayload {
+	pay := &PaymentPayload{LockTime: 123, Inputs: []*Input{}, Outputs: []*Output{}}
+	if includeCoinbase {
+		pay.Inputs = append(pay.Inputs, &Input{SignatureScript: []byte("test"), Extra: []byte("Extra")})
+	}
+	hash := common.HexToHash("0x76a914bd05274d98bb768c0e87a55d9a6024f76beb462a88ac")
+	input := &Input{SignatureScript: []byte{1, 2, 3}, Extra: nil, PreviousOutPoint:
+	NewOutPoint(hash, 123, 9999)}
+	pay.Inputs = append(pay.Inputs, input)
+	a := &Asset{AssetId: PTNCOIN}
+
+	output := NewTxOut(1, common.Hex2Bytes("0x76a914bd05274d98bb768c0e87a55d9a6024f76beb462a88ac"), a)
+	pay.Outputs = append(pay.Outputs, output)
+	return pay
 }

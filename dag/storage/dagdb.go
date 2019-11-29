@@ -164,14 +164,14 @@ func (dagdb *DagDb) saveHeader(putter ptndb.Putter, h *modules.Header) error {
 
 //为Unit的Height建立索引,这个索引是必须的，所以在dagdb中实现，而不是在indexdb实现。
 func (dagdb *DagDb) saveHeaderChainIndex(putter ptndb.Putter, h *modules.Header) error {
-	idxKey := append(constants.HEADER_HEIGTH_PREFIX, h.Number.Bytes()...)
+	idxKey := append(constants.HEADER_HEIGTH_PREFIX, h.GetNumber().Bytes()...)
 	uHash := h.Hash()
 	err := StoreToRlpBytes(putter, idxKey, uHash)
 	if err != nil {
 		log.Error("Save Header height index error", err.Error())
 		return err
 	}
-	log.Debugf("Save header number %s for unit: %#x", h.Number.String(), uHash.Bytes())
+	log.Debugf("Save header number %s for unit: %#x", h.GetNumber().String(), uHash.Bytes())
 	return nil
 }
 func (dagdb *DagDb) GetHashByNumber(number *modules.ChainIndex) (common.Hash, error) {
@@ -191,7 +191,7 @@ value: all transactions hash set's rlp encoding bytes
 */
 func (dagdb *DagDb) SaveBody(unitHash common.Hash, txsHash []common.Hash) error {
 	key := append(constants.BODY_PREFIX, unitHash.Bytes()...)
-	log.Debugf("Save unit[%s] body,txs:%x",unitHash.String(),txsHash)
+	log.Debugf("Save unit[%s] body,txs:%x", unitHash.String(), txsHash)
 	return StoreToRlpBytes(dagdb.db, key, txsHash)
 }
 
@@ -219,7 +219,7 @@ func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
 			UnitHash:  unit.Hash(),
 			UnitIndex: unit.NumberU64(),
 			Index:     uint64(i),
-			Timestamp: uint64(unit.UnitHeader.Time),
+			Timestamp: uint64(unit.UnitHeader.Timestamp()),
 		}
 		key := append(constants.LOOKUP_PREFIX, tx.Hash().Bytes()...)
 

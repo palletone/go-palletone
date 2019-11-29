@@ -52,8 +52,7 @@ func NewBasedTxSimulator(idag dag.IDag, hash common.Hash) *RwSetTxSimulator {
 	rwsetBuilder := NewRWSetBuilder()
 	gasToken := dagconfig.DagConfig.GetGasToken()
 	unit := idag.GetCurrentUnit(gasToken)
-	cIndex := unit.Header().Number
-	log.Debugf("constructing new tx simulator txid = [%s]", hash.String())
+	cIndex := unit.Header().GetNumber()
 	return &RwSetTxSimulator{chainIndex: cIndex, txid: hash, rwsetBuilder: rwsetBuilder,
 		write_cache: make(map[string][]byte), dag: idag}
 }
@@ -131,7 +130,7 @@ func (s *RwSetTxSimulator) GetStatesByPrefix(contractid []byte, ns string, prefi
 		}
 	}
 
-	log.Debugf("RW:GetStatesByPrefix,ns[%s]--contractid[%x]---prefix[%s]", ns, contractid, prefix)
+	//log.Debugf("RW:GetStatesByPrefix,ns[%s]--contractid[%x]---prefix[%s]", ns, contractid, prefix)
 
 	return result, nil
 }
@@ -144,13 +143,13 @@ func (s *RwSetTxSimulator) GetTimestamp(ns string, rangeNumber uint32) ([]byte, 
 	}
 	gasToken := dagconfig.DagConfig.GetGasToken()
 	header := s.dag.CurrentHeader(gasToken)
-	timeIndex := header.Number.Index / uint64(rangeNumber) * uint64(rangeNumber)
-	timeHeader, err := s.dag.GetHeaderByNumber(&modules.ChainIndex{AssetID: header.Number.AssetID, Index: timeIndex})
+	timeIndex := header.GetNumber().Index / uint64(rangeNumber) * uint64(rangeNumber)
+	timeHeader, err := s.dag.GetHeaderByNumber(&modules.ChainIndex{AssetID: header.GetNumber().AssetID, Index: timeIndex})
 	if err != nil {
 		return nil, errors.New("GetHeaderByNumber failed" + err.Error())
 	}
 
-	return []byte(fmt.Sprintf("%d", timeHeader.Time)), nil
+	return []byte(fmt.Sprintf("%d", timeHeader.Timestamp())), nil
 }
 func (s *RwSetTxSimulator) SetState(contractId []byte, ns string, key string, value []byte) error {
 	if err := s.CheckDone(); err != nil {

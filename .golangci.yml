@@ -258,6 +258,9 @@ issues:
       - linters:
         - staticcheck
         text: "SA1019:"
+      - linters:
+        - staticcheck
+        text: "SA9005:"
 #      - linters:
 #        - staticcheck
 #        text: "this value of `-s` is never used"

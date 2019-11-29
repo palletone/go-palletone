@@ -24,6 +24,7 @@ import (
 	"encoding/binary"
 	"reflect"
 
+	"fmt"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -32,7 +33,6 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
-	"fmt"
 )
 
 type PropertyDb struct {
@@ -164,8 +164,8 @@ func (propdb *PropertyDb) RetrieveGlobalPropHistories() ([]*modules.GlobalProper
 
 func (db *PropertyDb) SetNewestUnit(header *modules.Header) error {
 	hash := header.Hash()
-	index := header.Number
-	timestamp := uint32(header.Time)
+	index := header.GetNumber()
+	timestamp := uint32(header.Timestamp())
 	data := &modules.UnitProperty{Hash: hash, Index: index, Timestamp: timestamp}
 	key := append(constants.LastUnitInfo, index.AssetID.Bytes()...)
 	log.Debugf("DB[%s]Save newest unit %s,index:%s", reflect.TypeOf(db.db).String(), hash.String(), index.String())

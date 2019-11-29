@@ -64,13 +64,12 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 		isInputnil = true
 	} else {
 		invokeReqMsgIdx := tx.GetContractInvokeReqMsgIdx()
-		txForSign := tx
+		txForSign := tx.Clone()
 		if msgIdx < invokeReqMsgIdx {
 			txForSign = tx.GetRequestTx()
 			log.Debugf("msgIdx %d, GetRequestTx 1", msgIdx)
 		} else if invokeReqMsgIdx > 0 && msgIdx > invokeReqMsgIdx {
-			txCopy:=tx.Clone()
-			txForSign =&txCopy
+			//txForSign := tx.Clone()
 			log.Debugf("msgIdx %d, GetResultTx 1", msgIdx)
 		}
 
@@ -85,7 +84,7 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 
 			usedUtxoKey := in.PreviousOutPoint.String()
 			if _, exist := usedUtxo[usedUtxoKey]; exist {
-				log.Errorf("double spend utxo:%s", usedUtxoKey)
+				log.Warnf("double spend utxo:%s", usedUtxoKey)
 				return TxValidationCode_INVALID_DOUBLE_SPEND
 			}
 			usedUtxo[usedUtxoKey] = true
@@ -93,7 +92,8 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 			var utxo *modules.Utxo
 			var err error
 			if in.PreviousOutPoint.TxHash.IsSelfHash() {
-				output := tx.TxMessages[in.PreviousOutPoint.MessageIndex].Payload.(*modules.PaymentPayload).Outputs[in.PreviousOutPoint.OutIndex]
+				output := tx.TxMessages()[in.PreviousOutPoint.MessageIndex].Payload.
+				(*modules.PaymentPayload).Outputs[in.PreviousOutPoint.OutIndex]
 				utxo = &modules.Utxo{
 					Amount:    output.Value,
 					Asset:     output.Asset,

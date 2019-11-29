@@ -70,15 +70,11 @@ type downloadTester struct {
 }
 
 func newGenesisForTest(db ptndb.Database) *modules.Unit {
-	header := modules.NewHeader([]common.Hash{}, 1, []byte{})
-	header.Number.AssetID = modules.PTNCOIN
-	//header.Number.IsMain = true
-	header.Number.Index = 0
-	//
-	header.Time = time.Now().Unix()
-	header.Authors = modules.Authentifier{[]byte{}, []byte{}}
-	header.GroupSign = []byte{}
-	header.GroupPubKey = []byte{}
+	b := []byte{}
+	tt := int64(1598766666)
+	header := modules.NewHeader([]common.Hash{}, common.Hash{}, b, b, b, b, []uint16{}, modules.PTNCOIN, 0, tt)
+	header.SetGroupSign([]byte{})
+	header.SetGroupPubkey([]byte{})
 	tx, _ := NewCoinbaseTransaction()
 	txs := modules.Transactions{tx}
 	genesisUnit := modules.NewUnit(header, txs)
@@ -104,7 +100,7 @@ func SaveGenesis(db ptndb.Database, unit *modules.Unit) error {
 func NewCoinbaseTransaction() (*modules.Transaction, error) {
 	input := &modules.Input{}
 	input.Extra = []byte{byte(time.Now().Unix())}
-	output := &modules.Output{}
+	output := modules.NewTxOut(1, []byte{}, modules.NewPTNAsset())
 	payload := &modules.PaymentPayload{
 		Inputs:  []*modules.Input{input},
 		Outputs: []*modules.Output{output},
@@ -113,24 +109,19 @@ func NewCoinbaseTransaction() (*modules.Transaction, error) {
 		App:     modules.APP_PAYMENT,
 		Payload: payload,
 	}
-	var coinbase modules.Transaction
-	coinbase.TxMessages = append(coinbase.TxMessages, &msg)
-	//coinbase.TxHash = coinbase.Hash()
-	return &coinbase, nil
+
+	coinbase := modules.NewTransaction([]*modules.Message{&msg})
+	return coinbase, nil
 }
 func newDag(db ptndb.Database, gunit *modules.Unit, number int, seed byte) (modules.Units, error) {
 	units := make(modules.Units, number)
 	par := gunit
 	for i := 0; i < number; i++ {
-		header := modules.NewHeader([]common.Hash{par.UnitHash}, 1, []byte{seed})
-		header.Number.AssetID = par.UnitHeader.Number.AssetID
-		//header.Number.IsMain = par.UnitHeader.Number.IsMain
-		header.Number.Index = par.UnitHeader.Number.Index + 1
-		//
-		header.Time = time.Now().Unix()
-		header.Authors = modules.Authentifier{[]byte{}, []byte{}}
-		header.GroupSign = []byte{}
-		header.GroupPubKey = []byte{}
+		b := []byte{}
+		header := modules.NewHeader([]common.Hash{par.UnitHash}, common.Hash{}, b, b, []byte{seed}, b, []uint16{},
+			par.UnitHeader.GetNumber().AssetID, par.UnitHeader.GetNumber().Index+1, time.Now().Unix())
+		header.SetGroupSign([]byte{})
+		header.SetGroupPubkey([]byte{})
 		tx, _ := NewCoinbaseTransaction()
 		txs := modules.Transactions{tx}
 		unit := modules.NewUnit(header, txs)
@@ -183,7 +174,7 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 	if err := dagDb.SaveTxLookupEntry(unit); err != nil {
 		return err
 	}
-	if err := saveHashByIndex(db, unit.UnitHash, unit.UnitHeader.Number.Index); err != nil {
+	if err := saveHashByIndex(db, unit.UnitHash, unit.UnitHeader.GetNumber().Index); err != nil {
 		return err
 	}
 	// update state
@@ -458,11 +449,11 @@ func (dl *downloadTester) InsertHeaderDag(headers []*modules.Header, checkFreq i
 	defer dl.lock.Unlock()
 
 	// Do a quick check, as the blockchain.InsertHeaderChain doesn't insert anything in case of errors
-	if _, ok := dl.ownHeaders[headers[0].ParentsHash[0]]; !ok {
+	if _, ok := dl.ownHeaders[headers[0].ParentHash()[0]]; !ok {
 		return 0, errors.New("unknown parent")
 	}
 	for i := 1; i < len(headers); i++ {
-		if headers[i].ParentsHash[0] != headers[i-1].Hash() {
+		if headers[i].ParentHash()[0] != headers[i-1].Hash() {
 			return i, errors.New("unknown parent")
 		}
 	}
@@ -471,12 +462,12 @@ func (dl *downloadTester) InsertHeaderDag(headers []*modules.Header, checkFreq i
 		if _, ok := dl.ownHeaders[header.Hash()]; ok {
 			continue
 		}
-		if _, ok := dl.ownHeaders[header.ParentsHash[0]]; !ok {
+		if _, ok := dl.ownHeaders[header.ParentHash()[0]]; !ok {
 			return i, errors.New("unknown parent")
 		}
 		dl.ownHashes = append(dl.ownHashes, header.Hash())
 		dl.ownHeaders[header.Hash()] = header
-		dl.ownChainTd[header.Hash()] = dl.ownChainTd[header.ParentsHash[0]] + header.Index()
+		dl.ownChainTd[header.Hash()] = dl.ownChainTd[header.ParentHash()[0]] + header.Index()
 	}
 	return len(headers), nil
 }
@@ -601,8 +592,8 @@ func (dl *downloadTester) newSlowPeer(id string, version int, hashes []common.Ha
 
 			if header, ok := headers[hash]; ok {
 				dl.peerHeaders[id][hash] = header
-				if _, ok := dl.peerHeaders[id][header.ParentsHash[0]]; ok {
-					dl.peerChainTds[id][hash] = header.Index() + dl.peerChainTds[id][header.ParentsHash[0]]
+				if _, ok := dl.peerHeaders[id][header.ParentHash()[0]]; ok {
+					dl.peerChainTds[id][hash] = header.Index() + dl.peerChainTds[id][header.ParentHash()[0]]
 				}
 			}
 			if block, ok := blocks[hash]; ok {
@@ -1440,7 +1431,7 @@ func testInvalidHeaderRollback(t *testing.T, protocol int, mode SyncMode) {
 	if err := tester.sync("fast-attack", 0, mode); err == nil {
 		t.Fatalf("succeeded fast attacker synchronisation")
 	}
-	if head := tester.CurrentHeader(token).Number.Index; int(head) > MaxHeaderFetch {
+	if head := tester.CurrentHeader(token).GetNumber().Index; int(head) > MaxHeaderFetch {
 		t.Errorf("rollback head mismatch: have %v, want at most %v", head, MaxHeaderFetch)
 	}
 	// Attempt to sync with an attacker that feeds junk during the block import phase.
@@ -1454,7 +1445,7 @@ func testInvalidHeaderRollback(t *testing.T, protocol int, mode SyncMode) {
 	if err := tester.sync("block-attack", 0, mode); err == nil {
 		t.Fatalf("succeeded block attacker synchronisation")
 	}
-	if head := tester.CurrentHeader(token).Number.Index; int(head) > 2*fsHeaderSafetyNet+MaxHeaderFetch {
+	if head := tester.CurrentHeader(token).GetNumber().Index; int(head) > 2*fsHeaderSafetyNet+MaxHeaderFetch {
 		t.Errorf("rollback head mismatch: have %v, want at most %v", head, 2*fsHeaderSafetyNet+MaxHeaderFetch)
 	}
 	if mode == FastSync {
@@ -1478,7 +1469,7 @@ func testInvalidHeaderRollback(t *testing.T, protocol int, mode SyncMode) {
 	if err := tester.sync("withhold-attack", 0, mode); err == nil {
 		t.Fatalf("succeeded withholding attacker synchronisation")
 	}
-	if head := tester.CurrentHeader(token).Number.Index; int(head) > 2*fsHeaderSafetyNet+MaxHeaderFetch {
+	if head := tester.CurrentHeader(token).GetNumber().Index; int(head) > 2*fsHeaderSafetyNet+MaxHeaderFetch {
 		t.Errorf("rollback head mismatch: have %v, want at most %v", head, 2*fsHeaderSafetyNet+MaxHeaderFetch)
 	}
 	if mode == FastSync {

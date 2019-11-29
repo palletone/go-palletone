@@ -259,7 +259,7 @@ func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupSign []byte, txpoo
 	log.Debugf("Try to update unit[%s] header group sign", uHash.String())
 	header := unit.Header()
 	//header.GroupPubKey = groupPubKey
-	header.GroupSign = groupSign
+	header.SetGroupSign(groupSign)
 	err = chain.ldbunitRep.SaveHeader(header)
 	if err != nil {
 		log.Debugf(err.Error())

@@ -81,36 +81,36 @@ func TestTxCountAndUnitSize(t *testing.T) {
 	for i := 1; i < 100000; i *= 2 {
 		txs := modules.Transactions{}
 		for j := 0; j < i; j++ {
-			tx := modules.NewTransaction([]*modules.Message{})
-			tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, modules.NewPaymentPayload([]*modules.Input{modules.NewTxIn(modules.NewOutPoint(common.Hash{}, 0, 0), unlockScript)},
-				[]*modules.Output{modules.NewTxOut(1, lockScript, a)})))
+			tx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT,
+				modules.NewPaymentPayload([]*modules.Input{modules.NewTxIn(modules.NewOutPoint(common.Hash{},
+					0, 0), unlockScript)}, []*modules.Output{modules.NewTxOut(1,
+					lockScript, a)}))})
+
 			txs = append(txs, tx)
 		}
 		unit := modules.NewUnit(newHeader(), txs)
 		t.Logf("Tx count:%d,Unit size:%s", i, unit.Size().String())
 	}
 }
+
 func newHeader() *modules.Header {
 	key := new(ecdsa.PrivateKey)
 	key, _ = crypto.GenerateKey()
-	h := new(modules.Header)
-	//h.AssetIDs = append(h.AssetIDs, modules.PTNCOIN)
+
+	hash := common.HexToHash("0386df0aef707cc5bc8d115c2576f844d2734b05040ef2541e691763f802092c09")
+	number := new(modules.ChainIndex)
+	number.AssetID = modules.PTNCOIN
+	number.Index = uint64(333333)
+
+	sig, _ := crypto.Sign(hash.Bytes(), key)
 	au := modules.Authentifier{}
-	//address := crypto.PubkeyToAddress(&key.PublicKey)
-
-	h.GroupSign = []byte("group_sign")
-	h.GroupPubKey = []byte("group_pubKey")
-	h.Number = &modules.ChainIndex{}
-	h.Number.AssetID = modules.PTNCOIN
-	h.Number.Index = uint64(333333)
-	h.Extra = make([]byte, 20)
-	h.ParentsHash = append(h.ParentsHash, h.TxRoot)
-
-	h.TxRoot = h.Hash()
-	sig, _ := crypto.Sign(h.TxRoot[:], key)
 	au.Signature = sig
 	au.PubKey = crypto.CompressPubkey(&key.PublicKey)
-	h.Authors = au
+
+	h := modules.NewHeader([]common.Hash{hash}, hash, au.PubKey, au.Signature, []byte("20"), []byte{}, []uint16{},
+		number.AssetID, number.Index, int64(1598766666))
+	h.SetGroupSign([]byte("group_sign"))
+	h.SetGroupPubkey([]byte("group_pubKey"))
 	return h
 }
 func TestDag_InsertHeaderDag(t *testing.T) {
@@ -134,7 +134,6 @@ func setupDag() (*Dag, error) {
 		log.Error("New dag error", "error", err.Error())
 		return nil, err
 	}
-	//txpool := txspool.NewTxPool(txspool.DefaultTxPoolConfig, test_dag)
 	if err := initDag.SaveUnit(unit, nil, true); err != nil {
 		log.Error("Save unit error", "error", err.Error())
 		return nil, err
@@ -142,17 +141,3 @@ func setupDag() (*Dag, error) {
 	test_dag, err := NewDagForTest(db)
 	return test_dag, err
 }
-
-//func TestDag_GetGenesisUnit(t *testing.T) {
-//	db,_:=ptndb.NewLDBDatabase("./leveldb",0,128)
-//	dag,_:=NewDag4GenesisInit(db)
-//	txid:= common.HexToHash("0x10f0375ea48aa09099b0148d8a19fc3ac297a22b29bff0dfa99546f7af0fb57c")
-//	tx,err:= dag.GetTransactionOnly(txid)
-//	assert.Nil(t,err)
-//	t.Log(tx.Hash().String())
-//	for i,msg:=range tx.TxMessages{
-//		data,_:= json.Marshal(msg.Payload)
-//		t.Logf("Message[%d], APP:%v,%s",i,msg.App,string(data))
-//	}
-//	assert.Equal(t,txid,tx.Hash())
-//}

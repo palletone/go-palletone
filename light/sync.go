@@ -93,9 +93,9 @@ func (pm *ProtocolManager) syncall() {
 	}
 	//log.Debug("Light PalletOne syncall FetchAllToken", "len(headers)", len(headers), "headers", headers)
 	for _, header := range headers {
-		log.Debug("Light PalletOne syncall synchronize", "asset", header.Number.AssetID,
-			"index", header.Number.Index)
-		pm.synchronize(p, header.Number.AssetID)
+		log.Debug("Light PalletOne syncall synchronize", "asset", header.GetNumber().AssetID,
+			"index", header.GetNumber().Index)
+		pm.synchronize(p, header.GetNumber().AssetID)
 	}
 }
 
@@ -140,9 +140,9 @@ func (pm *ProtocolManager) synchronize(peer *peer, assetId modules.AssetId) {
 	}
 
 	lheader := pm.dag.CurrentHeader(assetId)
-	if lheader != nil && lheader.Number.Index >= number.Index {
+	if lheader != nil && lheader.GetNumber().Index >= number.Index {
 		log.Debug("Light PalletOne synchronize is not need sync", "local index",
-			lheader.Number.Index, "peer index", number.Index)
+			lheader.GetNumber().Index, "peer index", number.Index)
 		return
 	}
 	if lheader == nil {
@@ -172,7 +172,7 @@ func (pm *ProtocolManager) synchronize(peer *peer, assetId modules.AssetId) {
 	//}
 
 	header := pm.dag.CurrentHeader(assetId)
-	if header != nil && header.Number.Index > 0 {
+	if header != nil && header.GetNumber().Index > 0 {
 		go pm.BroadcastLightHeader(header)
 	}
 

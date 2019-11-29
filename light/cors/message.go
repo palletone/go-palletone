@@ -37,8 +37,8 @@ func (pm *ProtocolManager) CorsHeaderMsg(msg p2p.Msg, p *peer) error {
 
 	if pm.fetcher != nil {
 		for _, header := range headers {
-			log.Trace("CorsHeaderMsg message content", "assetid:", header.Number.AssetID,
-				"index:", header.Number.Index)
+			log.Trace("CorsHeaderMsg message content", "assetid:", header.GetNumber().AssetID,
+				"index:", header.GetNumber().Index)
 			pm.fetcher.Enqueue(p, header)
 		}
 	}
@@ -59,9 +59,9 @@ func (pm *ProtocolManager) CorsHeadersMsg(msg p2p.Msg, p *peer) error {
 		}
 		if len(headers) < MaxHeaderFetch {
 			pm.bdlock.Lock()
-			log.Info("CorsHeadersMsg message needboradcast", "assetid", headers[len(headers)-1].Number.AssetID,
-				"index", headers[len(headers)-1].Number.Index)
-			pm.needboradcast[p.id] = headers[len(headers)-1].Number.Index
+			log.Info("CorsHeadersMsg message needboradcast", "assetid", headers[len(headers)-1].GetNumber().AssetID,
+				"index", headers[len(headers)-1].GetNumber().Index)
+			pm.needboradcast[p.id] = headers[len(headers)-1].GetNumber().Index
 			pm.bdlock.Unlock()
 
 			ps := pm.peers.AllPeers()
@@ -98,8 +98,8 @@ func (pm *ProtocolManager) CurrentHeaderMsg(msg p2p.Msg, p *peer) error {
 		log.Info("CurrentHeaderMsg len err", "len(headers)", len(headers))
 		return errResp(ErrDecode, "msg %v: %v", msg, "len is err")
 	}
-	if headers[0].Number.AssetID.String() != pm.assetId.String() {
-		log.Info("CurrentHeaderMsg", "assetid not equal response", headers[0].Number.AssetID.String(),
+	if headers[0].GetNumber().AssetID.String() != pm.assetId.String() {
+		log.Info("CurrentHeaderMsg", "assetid not equal response", headers[0].GetNumber().AssetID.String(),
 			"local", pm.assetId.String())
 		return errBadPeer
 	}
@@ -161,9 +161,9 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 		if origin == nil {
 			break
 		}
-		log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg origin index:", origin.Number.Index)
+		log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg origin index:", origin.GetNumber().Index)
 
-		number := origin.Number.Index
+		number := origin.GetNumber().Index
 		headers = append(headers, origin)
 		bytes += estHeaderRlpSize
 
@@ -175,7 +175,7 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 			for i := 0; i < int(query.Skip)+1; i++ {
 				if header, err := pm.dag.GetHeaderByHash(query.Origin.Hash); err == nil && header != nil {
 					if number != 0 {
-						query.Origin.Hash = header.ParentsHash[0]
+						query.Origin.Hash = header.ParentHash()[0]
 					}
 					number--
 				} else {
@@ -188,9 +188,9 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 			// Hash based traversal towards the leaf block
 			log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg ", "Hash based towards the leaf block")
 			var (
-				currentIndex = origin.Number.Index
+				currentIndex = origin.GetNumber().Index
 				nextIndex    = currentIndex + query.Skip + 1
-				number       = origin.Number
+				number       = origin.GetNumber()
 			)
 
 			log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg next", nextIndex, "current:", currentIndex)
@@ -230,7 +230,7 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 	number := len(headers)
 	if number > 0 {
 		log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg query.Amount", query.Amount, "send number:", number,
-			"start:", headers[0].Number.Index, "end:", headers[number-1].Number.Index,
+			"start:", headers[0].GetNumber().Index, "end:", headers[number-1].GetNumber().Index,
 			" getBlockHeadersData:", query)
 	} else {
 		log.Debug("Cors ProtocolManager", "GetBlockHeadersMsg query.Amount", query.Amount, "send number:", 0,

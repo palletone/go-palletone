@@ -104,7 +104,7 @@ func (p *peer) Info(assetId modules.AssetId) *ptn.PeerInfo {
 func (p *peer) SetHead(data *announceData) {
 	p.lightlock.Lock()
 	defer p.lightlock.Unlock()
-	data.Number = *data.Header.Number
+	data.Number = *data.Header.GetNumber()
 	data.Hash = data.Header.Hash()
 	p.lightpeermsg[data.Number.AssetID] = data
 }

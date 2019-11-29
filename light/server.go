@@ -143,9 +143,9 @@ func (s *LesServer) loopCors() {
 			case header := <-headCh:
 				peers := s.protocolManager.peers.AllPeers(s.protocolManager.assetId)
 				log.Debug("LesServer loopCors Light recv Cors header", "len(peers)", len(peers), "assetid",
-					header.Number.AssetID, "index", header.Number.Index, "hash", header.Hash())
+					header.GetNumber().AssetID, "index", header.GetNumber().Index, "hash", header.Hash())
 				if len(peers) > 0 {
-					announce := announceData{Hash: header.Hash(), Number: *header.Number, Header: *header}
+					announce := announceData{Hash: header.Hash(), Number: *header.GetNumber(), Header: *header}
 					for _, p := range peers {
 						p.announceChn <- announce
 						//switch p.announceType {
@@ -245,17 +245,17 @@ func (pm *ProtocolManager) blockLoop() {
 		for {
 			select {
 			case ev := <-headCh:
-				peers := pm.peers.AllPeers(ev.Unit.UnitHeader.Number.AssetID)
+				peers := pm.peers.AllPeers(ev.Unit.UnitHeader.GetNumber().AssetID)
 				if len(peers) > 0 {
 					header := ev.Unit.Header()
 					hash := header.Hash()
-					number := header.Number.Index
+					number := header.GetNumber().Index
 					//td := core.GetTd(pm.chainDb, hash, number)
-					if lastHead == nil || (header.Number.Index > lastHead.Number.Index) {
+					if lastHead == nil || (header.GetNumber().Index > lastHead.GetNumber().Index) {
 						lastHead = header
 						log.Debug("Announcing block to peers", "number", number, "hash", hash)
 
-						announce := announceData{Hash: hash, Number: *lastHead.Number, Header: *lastHead}
+						announce := announceData{Hash: hash, Number: *lastHead.GetNumber(), Header: *lastHead}
 						var (
 							signed         bool
 							signedAnnounce announceData

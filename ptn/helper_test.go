@@ -104,7 +104,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, idag dag.IDag,
 // channels for different events. In case of an error, the constructor force-
 // fails the test.
 func newTestProtocolManagerMust(t *testing.T, mode downloader.SyncMode, blocks int, dag dag.IDag, pro producer, newtx chan<- []*modules.Transaction, ju *jury.Processor) (*ProtocolManager, ptndb.Database) {
-	pm, db, err := newTestProtocolManager(mode, blocks /*generator,*/, dag, pro, newtx)
+	pm, db, err := newTestProtocolManager(mode, blocks /*generator,*/ , dag, pro, newtx)
 	if err != nil {
 		t.Fatalf("Failed to create protocol manager: %v", err)
 	}
@@ -332,7 +332,7 @@ func newTestPeer(name string, version int, pm *ProtocolManager, shake bool, dag 
 			//}
 			//genesis = pm.dag.GetUnitByNumber(number)
 			head   = pm.dag.CurrentHeader(modules.PTNCOIN)
-			index  = head.Number
+			index  = head.GetNumber()
 			stable = pm.dag.GetStableChainIndex(modules.PTNCOIN)
 		)
 		fmt.Println("==========================================index:", index.Index)
@@ -378,32 +378,24 @@ func MakeDags(Memdb ptndb.Database, unitAccount int) (*dag.Dag, error) {
 	return dag, nil
 }
 func unitForTest(index int) *modules.Unit {
-	header := modules.NewHeader([]common.Hash{}, 1, []byte{})
-	header.Number.AssetID = modules.PTNCOIN
-	//header.Number.IsMain = true
-	header.Number.Index = uint64(index)
-	header.Authors = modules.Authentifier{[]byte{}, []byte{}}
-	header.GroupSign = []byte{}
-	header.GroupPubKey = []byte{}
-	//tx, _ := NewCoinbaseTransaction()
+	b := []byte{}
+	tt := int64(1579666666)
+	header := modules.NewHeader([]common.Hash{}, common.Hash{}, b, b, b, b, []uint16{}, modules.PTNCOIN, uint64(index), tt)
+	header.SetGroupSign([]byte{})
+	header.SetGroupPubkey([]byte{})
 	tx, _ := CreateCoinbase()
-	fmt.Printf("----------%#v\n", tx)
 	txs := modules.Transactions{tx}
 	genesisUnit := modules.NewUnit(header, txs)
 	return genesisUnit
 }
 
 func newGenesisForTest(db ptndb.Database) *modules.Unit {
-	header := modules.NewHeader([]common.Hash{}, 1, []byte{})
-	header.Number.AssetID = modules.PTNCOIN
-	//header.Number.IsMain = true
-	header.Number.Index = 0
-	header.Authors = modules.Authentifier{[]byte{}, []byte{}}
-	header.GroupSign = []byte{}
-	header.GroupPubKey = []byte{}
-	//tx, _ := NewCoinbaseTransaction()
+	b := []byte{}
+	tt := int64(1579666666)
+	header := modules.NewHeader([]common.Hash{}, common.Hash{}, b, b, b, b, []uint16{}, modules.PTNCOIN, 0, tt)
+	header.SetGroupSign([]byte{})
+	header.SetGroupPubkey([]byte{})
 	tx, _ := CreateCoinbase()
-	fmt.Printf("----------%#v\n", tx)
 	txs := modules.Transactions{tx}
 	genesisUnit := modules.NewUnit(header, txs)
 	err := SaveGenesis(db, genesisUnit)
@@ -416,15 +408,14 @@ func newGenesisForTest(db ptndb.Database) *modules.Unit {
 func newDag(memdb ptndb.Database, gunit *modules.Unit, number int) (modules.Units, error) {
 	units := make(modules.Units, number)
 	par := gunit
+	b := []byte{}
+	tt := int64(1574390000)
 	for i := 0; i < number; i++ {
-		header := modules.NewHeader([]common.Hash{par.UnitHash}, 1, []byte{})
-		header.Number.AssetID = par.UnitHeader.Number.AssetID
-		//header.Number.IsMain = par.UnitHeader.Number.IsMain
-		header.Number.Index = par.UnitHeader.Number.Index + 1
-		header.Authors = modules.Authentifier{[]byte{}, []byte{}}
-		header.GroupSign = []byte{}
-		header.GroupPubKey = []byte{}
-		//tx, _ := NewCoinbaseTransaction()
+		header := modules.NewHeader([]common.Hash{par.UnitHash}, common.Hash{}, b, b, b, b, []uint16{},
+			par.UnitHeader.GetNumber().AssetID, par.UnitHeader.GetNumber().Index+1, tt)
+
+		header.SetGroupSign([]byte{})
+		header.SetGroupPubkey([]byte{})
 		tx, _ := CreateCoinbase()
 		txs := modules.Transactions{tx}
 		unit := modules.NewUnit(header, txs)
@@ -491,15 +482,12 @@ func CreateCoinbase() (*modules.Transaction, error) {
 		Payload: &payload,
 	}
 	// step4. create coinbase
-	var coinbase modules.Transaction
 	//coinbase := modules.Transaction{
 	//	TxMessages: []modules.Message{msg},
 	//}
-	coinbase.TxMessages = append(coinbase.TxMessages, msg)
-	// coinbase.CreationDate = coinbase.CreateDate()
-	//coinbase.TxHash = coinbase.Hash()
+	coinbase := modules.NewTransaction([]*modules.Message{msg})
 
-	return &coinbase, nil
+	return coinbase, nil
 }
 
 func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
@@ -562,7 +550,7 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 	if err := dagDb.SaveTxLookupEntry(unit); err != nil {
 		return err
 	}
-	if err := saveHashByIndex(db, unit.UnitHash, unit.UnitHeader.Number.Index); err != nil {
+	if err := saveHashByIndex(db, unit.UnitHash, unit.UnitHeader.GetNumber().Index); err != nil {
 		return err
 	}
 	// update state
@@ -583,12 +571,9 @@ func NewUnit(header *modules.Header, txs modules.Transactions) *modules.Unit {
 	u.UnitHash = u.Hash()
 	return u
 }
-func NewHeader(parents []common.Hash, asset []modules.AssetId, extra []byte) *modules.Header {
-	hashs := make([]common.Hash, 0)
-	hashs = append(hashs, parents...) // 切片指针传递的问题，这里得再review一下。
-	var b []byte
-	//return &modules.Header{ParentsHash: hashs, AssetIDs: asset, Extra: append(b, extra...), Time: time.Now().Unix()}
-	return &modules.Header{ParentsHash: hashs, Extra: append(b, extra...), Time: time.Now().Unix()}
+func NewHeader(parents []common.Hash, root common.Hash, pub, sig, extra, cry []byte, asset modules.AssetId,
+	index uint64) *modules.Header {
+	return modules.NewHeader(parents, root, pub, sig, extra, cry, []uint16{}, asset, index, 0)
 }
 func NewCoinbaseTransaction() (*modules.Transaction, error) {
 	input := &modules.Input{}
@@ -597,14 +582,13 @@ func NewCoinbaseTransaction() (*modules.Transaction, error) {
 		Inputs:  []*modules.Input{input},
 		Outputs: []*modules.Output{output},
 	}
-	msg := modules.Message{
+	msg := &modules.Message{
 		App:     modules.APP_PAYMENT,
 		Payload: payload,
 	}
-	var coinbase modules.Transaction
-	coinbase.TxMessages = append(coinbase.TxMessages, &msg)
-	//coinbase.TxHash = coinbase.Hash()
-	return &coinbase, nil
+	coinbase := modules.NewTransaction([]*modules.Message{msg})
+
+	return coinbase, nil
 }
 
 func saveHashByIndex(db ptndb.Database, hash common.Hash, index uint64) error {

@@ -192,7 +192,7 @@ func (f *LightFetcher) insert(p *peer, header *modules.Header) {
 		defer func() { f.done <- hash }()
 		// Run the actual import and log any issues
 		if _, err := f.insertHeader([]*modules.Header{header}); err != nil {
-			log.Debug("Propagated block import failed", "peer", p.id, "number", header.Number,
+			log.Debug("Propagated block import failed", "peer", p.id, "number", header.GetNumber(),
 				"hash", hash, "err", err)
 			return
 		}
@@ -219,8 +219,8 @@ func (f *LightFetcher) enqueue(p *peer, header *modules.Header) {
 	}
 	log.Debug("Cors Fetcher propagated block, current allowance", "count", count, "limit", blockLimit)
 	// Discard any past or too distant blocks
-	heightChain := int64(f.lightChainHeight(header.Number.AssetID))
-	if dist := int64(header.Number.Index) - heightChain; dist < -maxUncleDist || dist > maxQueueDist {
+	heightChain := int64(f.lightChainHeight(header.GetNumber().AssetID))
+	if dist := int64(header.GetNumber().Index) - heightChain; dist < -maxUncleDist || dist > maxQueueDist {
 		log.Debug("Discarded propagated block, too far away", "peer", p.id, "number", header.Index(),
 			"heightChain", heightChain, "distance", dist)
 		return

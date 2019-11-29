@@ -226,14 +226,14 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 		return dagerrors.ErrFutureBlock
 	}
 	headerBroadcaster := func(header *modules.Header, propagate bool) {
-		log.Info("Light PalletOne ProtocolManager headerBroadcaster", "assetid", header.Number.AssetID,
-			"index", header.Number.Index, "hash:", header.Hash().String())
+		log.Info("Light PalletOne ProtocolManager headerBroadcaster", "assetid", header.GetNumber().AssetID,
+			"index", header.GetNumber().Index, "hash:", header.Hash().String())
 		pm.BroadcastLightHeader(header)
 	}
 	inserter := func(headers []*modules.Header) (int, error) {
 		// If fast sync is running, deny importing weird blocks
-		log.Debug("Light PalletOne ProtocolManager InsertLightHeader", "assetId", headers[0].Number.AssetID,
-			"index:", headers[0].Number.Index, "hash", headers[0].Hash())
+		log.Debug("Light PalletOne ProtocolManager InsertLightHeader", "assetId", headers[0].GetNumber().AssetID,
+			"index:", headers[0].GetNumber().Index, "hash", headers[0].Hash())
 		return pm.dag.InsertLightHeader(headers)
 	}
 	return NewLightFetcher(pm.dag.GetHeaderByHash, pm.dag.GetLightChainHeight, headerVerifierFn,
@@ -242,15 +242,15 @@ func (pm *ProtocolManager) newLightFetcher() *LightFetcher {
 
 func (pm *ProtocolManager) BroadcastLightHeader(header *modules.Header) {
 	//peers := pm.peers.PeersWithoutHeader(header.Number.AssetID, header.Hash())
-	peers := pm.peers.AllPeers(header.Number.AssetID)
-	announce := announceData{Hash: header.Hash(), Number: *header.Number, Header: *header}
+	peers := pm.peers.AllPeers(header.GetNumber().AssetID)
+	announce := announceData{Hash: header.Hash(), Number: *header.GetNumber(), Header: *header}
 	log.Debug("Light PalletOne ProtocolManager BroadcastLightHeader", "index:", header.Index(),
-		"assetId:", header.Number.AssetID.String(), "len(peers)", len(peers))
+		"assetId:", header.GetNumber().AssetID.String(), "len(peers)", len(peers))
 	for _, p := range peers {
 		if p == nil {
 			continue
 		}
-		if !p.fullnode && header.Number.AssetID != pm.assetId {
+		if !p.fullnode && header.GetNumber().AssetID != pm.assetId {
 			log.Debug("Light PalletOne ProtocolManager BroadcastLightHeader", "p.id", p.id)
 			continue
 		}
@@ -314,7 +314,7 @@ func (pm *ProtocolManager) getcorsinfo() [][][]byte {
 		for _, header := range headers {
 			var data [][]byte
 			data = append(data, header.Hash().Bytes())
-			data = append(data, header.Number.Bytes())
+			data = append(data, header.GetNumber().Bytes())
 			datas = append(datas, data)
 		}
 	}
@@ -349,7 +349,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		headhash = common.Hash{}
 	)
 	if head := pm.dag.CurrentHeader(pm.assetId); head != nil {
-		number = head.Number
+		number = head.GetNumber()
 		headhash = head.Hash()
 	}
 
@@ -386,8 +386,8 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		for {
 			select {
 			case announce := <-p.announceChn:
-				log.Debug("Light Palletone ProtocolManager->handle", "assetId", announce.Header.Number.AssetID,
-					"index", announce.Header.Number.Index)
+				log.Debug("Light Palletone ProtocolManager->handle", "assetId",
+					announce.Header.GetNumber().AssetID, "index", announce.Header.GetNumber().Index)
 				data, err := json.Marshal(announce.Header)
 				if err != nil {
 					log.Error("Light Palletone ProtocolManager->handle", "Marshal err", err,
@@ -395,7 +395,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 				} else {
 					p.lightlock.Lock()
 					announce.Hash = announce.Header.Hash()
-					announce.Number = *announce.Header.Number
+					announce.Number = *announce.Header.GetNumber()
 					p.lightpeermsg[announce.Number.AssetID] = &announce
 					p.lightlock.Unlock()
 
@@ -449,7 +449,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// Status messages should never arrive after the handshake
 		return errResp(ErrExtraStatusMsg, "uncontrolled status message")
 
-	// Block header query, collect the requested headers and reply
+		// Block header query, collect the requested headers and reply
 	case AnnounceMsg:
 		return pm.AnnounceMsg(msg, p)
 
@@ -515,7 +515,7 @@ func (pm *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
 		hash  = common.Hash{}
 	)
 	if header != nil {
-		index = header.Number.Index
+		index = header.GetNumber().Index
 		hash = header.Hash()
 	} else {
 		log.Debug("Light PalletOne NodeInfo header is nil")

@@ -16,14 +16,11 @@
 package modules
 
 import (
-	"io"
-	"time"
-
-	"github.com/ethereum/go-ethereum/rlp"
+	"encoding/json"
 	"github.com/palletone/go-palletone/common"
 )
 
-type headerTemp struct {
+type headerJsonTemp struct {
 	ParentsHash []common.Hash `json:"parents_hash"`
 	Authors     Authentifier  `json:"mediator"`    // the unit creation authors
 	GroupSign   []byte        `json:"groupSign"`   // 群签名, 用于加快单元确认速度
@@ -36,13 +33,26 @@ type headerTemp struct {
 	CryptoLib   []byte        `json:"crypto_lib"`    //该区块使用的加解密算法和哈希算法，0位表示非对称加密算法，1位表示Hash算法
 }
 
-func (input *Header) DecodeRLP(s *rlp.Stream) error {
-	raw, err := s.Raw()
-	if err != nil {
-		return err
-	}
-	temp := &headerTemp{}
-	err = rlp.DecodeBytes(raw, temp)
+func (input *Header) MarshalJSON() ([]byte, error) {
+	temp := &headerJsonTemp{}
+	temp.ParentsHash = input.header.ParentsHash
+	temp.Authors = input.header.Authors
+	temp.GroupSign = input.group_sign
+	temp.GroupPubKey = input.group_pubKey
+	temp.TxRoot = input.header.TxRoot
+	temp.TxsIllegal = input.header.TxsIllegal
+	temp.Number = new(ChainIndex)
+	temp.Number.AssetID = input.header.Number.AssetID
+	temp.Number.Index = input.header.Number.Index
+	temp.Extra = input.header.Extra
+	temp.Time = uint32(input.header.Time)
+	temp.CryptoLib = input.header.CryptoLib
+	return json.Marshal(temp)
+}
+func (input *Header) UnmarshalJSON(b []byte) error {
+
+	temp := &headerJsonTemp{}
+	err := json.Unmarshal(b, temp)
 	if err != nil {
 		return err
 	}
@@ -55,65 +65,10 @@ func (input *Header) DecodeRLP(s *rlp.Stream) error {
 	input.group_pubKey = temp.GroupPubKey
 	input.header.TxRoot = temp.TxRoot
 	input.header.TxsIllegal = temp.TxsIllegal
-	input.header.Number = temp.Number
+	input.header.Number.AssetID = temp.Number.AssetID
+	input.header.Number.Index = temp.Number.Index
 	input.header.Extra = temp.Extra
 	input.header.Time = int64(temp.Time)
 	input.header.CryptoLib = temp.CryptoLib
 	return nil
-}
-func (input *Header) EncodeRLP(w io.Writer) error {
-	temp := &headerTemp{}
-	temp.ParentsHash = input.header.ParentsHash
-	temp.Authors = input.header.Authors
-	temp.GroupSign = input.group_sign
-	temp.GroupPubKey = input.group_pubKey
-	temp.TxRoot = input.header.TxRoot
-	temp.TxsIllegal = input.header.TxsIllegal
-	temp.Number = input.header.Number
-	temp.Extra = input.header.Extra
-	temp.Time = uint32(input.header.Time)
-	temp.CryptoLib = input.header.CryptoLib
-	return rlp.Encode(w, temp)
-}
-
-type unitTemp struct {
-	UnitHeader *Header      `json:"unit_header"`  // unit header
-	Txs        Transactions `json:"transactions"` // transaction list
-	UnitHash   common.Hash  `json:"unit_hash"`    // unit hash
-	UnitSize   uint32       `json:"unit_size"`    // unit size
-	// These fields are used by package ptn to track
-	// inter-peer block relay.
-	ReceivedAt   uint32
-	ReceivedFrom []byte
-}
-
-func (input *Unit) DecodeRLP(s *rlp.Stream) error {
-	raw, err := s.Raw()
-	if err != nil {
-		return err
-	}
-	temp := &unitTemp{}
-	err = rlp.DecodeBytes(raw, temp)
-	if err != nil {
-		return err
-	}
-
-	input.UnitHeader = temp.UnitHeader
-	input.Txs = temp.Txs
-	input.UnitHash = temp.UnitHash
-	input.UnitSize = common.StorageSize(temp.UnitSize)
-
-	input.ReceivedAt = time.Unix(int64(temp.ReceivedAt), 0)
-	//todo  ReceivedFrom
-	return nil
-}
-func (input *Unit) EncodeRLP(w io.Writer) error {
-	temp := &unitTemp{}
-	temp.UnitHeader = input.UnitHeader
-	temp.Txs = input.Txs
-	temp.UnitHash = input.UnitHash
-	temp.UnitSize = uint32(input.UnitSize)
-	temp.ReceivedAt = uint32(input.ReceivedAt.Unix())
-
-	return rlp.Encode(w, temp)
 }

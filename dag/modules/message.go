@@ -75,6 +75,15 @@ type Message struct {
 	Payload interface{} `json:"payload"` // the true transaction data
 }
 
+func (m *Message) GetApp() MessageType     { return m.App }
+func (m *Message) GetPayload() interface{} { return m.Payload }
+func (m *Message) GetPaymentPayLoad() *PaymentPayload {
+	if m.App != APP_PAYMENT {
+		return nil
+	}
+	return m.Payload.(*PaymentPayload)
+}
+
 // return message struct
 func NewMessage(app MessageType, payload interface{}) *Message {
 	m := new(Message)
@@ -83,65 +92,201 @@ func NewMessage(app MessageType, payload interface{}) *Message {
 	return m
 }
 
-func (msg *Message) CopyMessages(cpyMsg *Message) *Message {
-	msg.App = cpyMsg.App
-	//msg.Payload = cpyMsg.Payload
+// message深拷贝
+func CopyMessage(cpyMsg *Message) *Message {
+	msg := *cpyMsg
+
 	switch cpyMsg.App {
 	default:
-		//case APP_PAYMENT, APP_CONTRACT_TPL, APP_DATA:
 		msg.Payload = cpyMsg.Payload
+	case APP_PAYMENT:
+		payload, _ := cpyMsg.Payload.(*PaymentPayload)
+		payment := *payload
+		if len(payload.Inputs) > 0 {
+			payment.Inputs = make([]*Input, 0)
+			for _, in := range payload.Inputs {
+				temp := *in
+				temp.Extra = common.CopyBytes(in.Extra)
+				temp.SignatureScript = common.CopyBytes(in.SignatureScript)
+				if in.PreviousOutPoint != nil { // 创币message的previous outpoint 为空
+					temp.PreviousOutPoint = &OutPoint{TxHash: in.PreviousOutPoint.TxHash, MessageIndex:
+					in.PreviousOutPoint.MessageIndex, OutIndex: in.PreviousOutPoint.OutIndex}
+				}
+				payment.Inputs = append(payment.Inputs, &temp)
+			}
+		}
+		if len(payload.Outputs) > 0 {
+			payment.Outputs = make([]*Output, 0)
+			for _, out := range payload.Outputs {
+				temp := *out
+				temp.Asset = &Asset{AssetId: out.Asset.AssetId, UniqueId: out.Asset.UniqueId}
+				temp.PkScript = common.CopyBytes(out.PkScript)
+				payment.Outputs = append(payment.Outputs, &temp)
+			}
+		}
+		msg.Payload = &payment
+	case APP_CONTRACT_TPL:
+		payload, _ := cpyMsg.Payload.(*ContractTplPayload)
+		temp_load := *payload
+		temp_load.TemplateId = common.CopyBytes(payload.TemplateId)
+		temp_load.ByteCode = common.CopyBytes(payload.ByteCode)
+		msg.Payload = &temp_load
 
 	case APP_CONTRACT_DEPLOY:
 		payload, _ := cpyMsg.Payload.(*ContractDeployPayload)
 		newPayload := ContractDeployPayload{
-			ContractId: payload.ContractId,
+			TemplateId: common.CopyBytes(payload.TemplateId),
+			ContractId: common.CopyBytes(payload.ContractId),
+			Name:       payload.Name,
+			DuringTime: payload.DuringTime,
 			EleNode:    payload.EleNode,
+			ErrMsg:     payload.ErrMsg,
+		}
+		if len(payload.Args) > 0 {
+			newPayload.Args = make([][]byte, 0)
+			newPayload.Args = append(newPayload.Args, payload.Args...)
 		}
 		readSet := []ContractReadSet{}
 		for _, rs := range payload.ReadSet {
-			readSet = append(readSet, ContractReadSet{Key: rs.Key, Version: &StateVersion{
-				Height: rs.Version.Height, TxIndex: rs.Version.TxIndex}})
+			version := *rs.Version
+			if rs.Version != nil && rs.Version.Height != nil {
+				version.Height.AssetID = rs.Version.Height.AssetID
+				version.Height.Index = rs.Version.Height.Index
+			}
+
+			cs := ContractReadSet{Key: rs.Key, Version: &version, ContractId: common.CopyBytes(rs.ContractId)}
+			readSet = append(readSet, cs)
 		}
+
 		writeSet := []ContractWriteSet{}
 		for _, ws := range payload.WriteSet {
-			writeSet = append(writeSet, ContractWriteSet{Key: ws.Key, Value: ws.Value})
+			cs := ContractWriteSet{Key: ws.Key, Value: common.CopyBytes(ws.Value), IsDelete: ws.IsDelete,
+				ContractId: common.CopyBytes(ws.ContractId)}
+			writeSet = append(writeSet, cs)
 		}
 		newPayload.ReadSet = readSet
 		newPayload.WriteSet = writeSet
-		msg.Payload = newPayload
-	case APP_CONTRACT_INVOKE_REQUEST:
-		payload, _ := cpyMsg.Payload.(*ContractInvokeRequestPayload)
-		newPayload := ContractInvokeRequestPayload{
-			ContractId: payload.ContractId,
-			Args:       payload.Args,
-			Timeout:    payload.Timeout,
-		}
-		msg.Payload = newPayload
+		msg.Payload = &newPayload
 	case APP_CONTRACT_INVOKE:
 		payload, _ := cpyMsg.Payload.(*ContractInvokePayload)
 		newPayload := ContractInvokePayload{
-			ContractId: payload.ContractId,
+			ContractId: common.CopyBytes(payload.ContractId),
+			Payload:    common.CopyBytes(payload.Payload),
+			ErrMsg:     payload.ErrMsg,
+		}
+		if len(payload.Args) > 0 {
+			newPayload.Args = make([][]byte, 0)
+			newPayload.Args = append(newPayload.Args, payload.Args...)
 		}
 		readSet := []ContractReadSet{}
 		for _, rs := range payload.ReadSet {
-			readSet = append(readSet, ContractReadSet{Key: rs.Key, Version: &StateVersion{
-				Height: rs.Version.Height, TxIndex: rs.Version.TxIndex}})
+			var version StateVersion
+			if rs.Version != nil {
+				version = *(rs.Version)
+				if rs.Version != nil && rs.Version.Height != nil {
+					version.Height.AssetID = rs.Version.Height.AssetID
+					version.Height.Index = rs.Version.Height.Index
+				}
+			}
+
+			cs := ContractReadSet{Key: rs.Key, Version: &version, ContractId: common.CopyBytes(rs.ContractId)}
+			readSet = append(readSet, cs)
 		}
+
 		writeSet := []ContractWriteSet{}
 		for _, ws := range payload.WriteSet {
-			writeSet = append(writeSet, ContractWriteSet{Key: ws.Key, Value: ws.Value})
+			cs := ContractWriteSet{Key: ws.Key, Value: common.CopyBytes(ws.Value), IsDelete: ws.IsDelete,
+				ContractId: common.CopyBytes(ws.ContractId)}
+			writeSet = append(writeSet, cs)
 		}
 		newPayload.ReadSet = readSet
 		newPayload.WriteSet = writeSet
-		msg.Payload = newPayload
+		msg.Payload = &newPayload
+
+	case APP_CONTRACT_STOP:
+		payload, _ := cpyMsg.Payload.(*ContractStopPayload)
+		temp_load := *payload
+		temp_load.ContractId = common.CopyBytes(payload.ContractId)
+		readSet := []ContractReadSet{}
+		for _, rs := range payload.ReadSet {
+			version := *rs.Version
+			if rs.Version != nil && rs.Version.Height != nil {
+				version.Height.AssetID = rs.Version.Height.AssetID
+				version.Height.Index = rs.Version.Height.Index
+			}
+
+			cs := ContractReadSet{Key: rs.Key, Version: &version, ContractId: common.CopyBytes(rs.ContractId)}
+			readSet = append(readSet, cs)
+		}
+
+		writeSet := []ContractWriteSet{}
+		for _, ws := range payload.WriteSet {
+			cs := ContractWriteSet{Key: ws.Key, Value: common.CopyBytes(ws.Value), IsDelete: ws.IsDelete,
+				ContractId: common.CopyBytes(ws.ContractId)}
+			writeSet = append(writeSet, cs)
+		}
+		temp_load.ReadSet = readSet
+		temp_load.WriteSet = writeSet
+		msg.Payload = &temp_load
+
 	case APP_SIGNATURE:
 		payload, _ := cpyMsg.Payload.(*SignaturePayload)
 		newPayload := SignaturePayload{}
-		newPayload.Signatures = payload.Signatures
-		msg.Payload = newPayload
+		newPayload.Signatures = make([]SignatureSet, len(payload.Signatures))
+		copy(newPayload.Signatures, payload.Signatures)
+		msg.Payload = &newPayload
+	case APP_DATA:
+		payload, _ := cpyMsg.Payload.(*DataPayload)
+		temp_load := *payload
+		temp_load.MainData = common.CopyBytes(payload.MainData)
+		temp_load.ExtraData = common.CopyBytes(payload.ExtraData)
+		temp_load.Reference = common.CopyBytes(payload.Reference)
+		msg.Payload = &temp_load
+	case APP_ACCOUNT_UPDATE:
+		payload, _ := cpyMsg.Payload.(*AccountStateUpdatePayload)
+		temp_load := *payload
+		temp_load.WriteSet = make([]AccountStateWriteSet, 0)
+		for _, set := range payload.WriteSet {
+			temp_load.WriteSet = append(temp_load.WriteSet, set)
+		}
+		msg.Payload = &temp_load
+	case APP_CONTRACT_TPL_REQUEST:
+		payload, _ := cpyMsg.Payload.(*ContractTplPayload)
+		temp_load := *payload
+		temp_load.TemplateId = common.CopyBytes(payload.TemplateId)
+		temp_load.ByteCode = common.CopyBytes(payload.ByteCode)
+		msg.Payload = &temp_load
+	case APP_CONTRACT_DEPLOY_REQUEST:
+		payload, _ := cpyMsg.Payload.(*ContractDeployRequestPayload)
+		temp_load := *payload
+		temp_load.TemplateId = common.CopyBytes(payload.TemplateId)
+		temp_load.ExtData = common.CopyBytes(payload.ExtData)
+		if len(payload.Args) > 0 {
+			temp_load.Args = make([][]byte, 0)
+			temp_load.Args = append(temp_load.Args, payload.Args...)
+		}
+		msg.Payload = &temp_load
+	case APP_CONTRACT_INVOKE_REQUEST:
+		payload, _ := cpyMsg.Payload.(*ContractInvokeRequestPayload)
+		newPayload := ContractInvokeRequestPayload{
+			ContractId: common.CopyBytes(payload.ContractId),
+			Args:       payload.Args,
+			Timeout:    payload.Timeout,
+		}
+		if len(payload.Args) > 0 {
+			newPayload.Args = make([][]byte, 0)
+			newPayload.Args = append(newPayload.Args, payload.Args...)
+		}
+		msg.Payload = &newPayload
+
+	case APP_CONTRACT_STOP_REQUEST:
+		payload, _ := cpyMsg.Payload.(*ContractStopRequestPayload)
+		temp_load := *payload
+		temp_load.ContractId = common.CopyBytes(payload.ContractId)
+		msg.Payload = &temp_load
 	}
 
-	return msg
+	return &msg
 }
 
 func (msg *Message) CompareMessages(inMsg *Message) bool {
@@ -303,8 +448,15 @@ type ElectionNode struct {
 
 type ContractReadSet struct {
 	Key        string        `json:"key"`
-	Version    *StateVersion `json:"version" rlp:"nil"`
+	Version    *StateVersion `json:"version" rlp:"-"`
 	ContractId []byte        `json:"contract_id"`
+}
+type contractReadSetTemp struct {
+	Key        string  `json:"key"`
+	AssetId    AssetId `json:"asset_id"`
+	Index      uint64  `json:"chain_index"`
+	TxIndex    uint32  `json:"tx_index"`
+	ContractId []byte  `json:"contract_id"`
 }
 
 //请求合约信息

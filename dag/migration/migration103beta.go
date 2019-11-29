@@ -115,7 +115,7 @@ func (m *Migration103alpha_103beta) upgradeDefaultMediatorsWithJurorInfo() error
 		return err
 	}
 
-	genesisTime := time.Unix(uHeader.Time, 0).UTC().Format(modules.Layout2)
+	genesisTime := time.Unix(uHeader.Timestamp(), 0).UTC().Format(modules.Layout2)
 	for addr := range list {
 		var pubKey string
 		var isFind bool

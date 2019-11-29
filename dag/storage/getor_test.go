@@ -74,7 +74,7 @@ func TestGetBody(t *testing.T) {
 		if err := rlp.DecodeBytes(data1, &tx); err != nil {
 			fmt.Println("decode tx error:", string(key1), err)
 		}
-		for _, msg := range tx.TxMessages {
+		for _, msg := range tx.TxMessages() {
 			fmt.Println("tx msg info ", msg)
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			fmt.Println("payment info ", ok, payment)
@@ -118,7 +118,7 @@ func TestRLPTxDecode(t *testing.T) {
 	val, _ := dbconn.Get(key)
 	tx := new(modules.Transaction)
 	rlp.DecodeBytes(val, &tx)
-	for _, msg := range tx.Messages() {
+	for _, msg := range tx.TxMessages() {
 		if msg.App == modules.APP_PAYMENT {
 			pay, ok := msg.Payload.(*modules.PaymentPayload)
 			fmt.Println("断言结果：", ok)

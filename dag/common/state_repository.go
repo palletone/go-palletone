@@ -134,7 +134,7 @@ func (rep *StateRepository) GetContractStateByVersion(id []byte,
 	if err != nil {
 		return nil, err
 	}
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		if msg.App == modules.APP_CONTRACT_INVOKE {
 			invoke := msg.Payload.(*modules.ContractInvokePayload)
 			//if bytes.Equal(	invoke.ContractId,id){

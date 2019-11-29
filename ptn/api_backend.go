@@ -164,7 +164,7 @@ func (b *PtnApiBackend) GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, e
 	//	hex_hash = unitHash.String()
 	//}
 	var txresult []byte
-	for _, msgcopy := range tx.TxMessages {
+	for _, msgcopy := range tx.TxMessages() {
 		if msgcopy.App == modules.APP_DATA {
 			if msg, ok := msgcopy.Payload.(*modules.DataPayload); ok {
 				txresult = msg.MainData
@@ -409,7 +409,7 @@ func (b *PtnApiBackend) GetUnitTxsInfo(hash common.Hash) ([]*ptnjson.TxSummaryJs
 	txs_json := make([]*ptnjson.TxSummaryJson, 0)
 
 	for txIdx, tx := range txs {
-		txs_json = append(txs_json, ptnjson.ConvertTx2SummaryJson(tx, hash, header.Number.Index, header.Time,
+		txs_json = append(txs_json, ptnjson.ConvertTx2SummaryJson(tx, hash, header.GetNumber().Index, header.Timestamp(),
 			uint64(txIdx), b.ptn.dag.GetTxOutput))
 	}
 	return txs_json, nil
@@ -816,9 +816,7 @@ func (b *PtnApiBackend) DecodeJsonTx(hexStr string) (string, error) {
 	if err := rlp.DecodeBytes(decoded, &btxjson); err != nil {
 		return "", errors.New("RLP Decode To Byte is invalid")
 	}
-	tx := &modules.Transaction{
-		TxMessages: make([]*modules.Message, 0),
-	}
+	tx := modules.NewTransaction(make([]*modules.Message, 0))
 	err = json.Unmarshal(btxjson, tx)
 	if err != nil {
 		return "", errors.New("Json Unmarshal To Tx is invalid")
@@ -892,9 +890,9 @@ func (s *PtnApiBackend) GetProofTxInfoByHash(strtxhash string) ([][]byte, error)
 		return [][]byte{[]byte(fmt.Sprintf("Get Trie err %v", err))}, err
 	}
 
-	if trieRootHash.String() != unit.UnitHeader.TxRoot.String() {
+	if trieRootHash.String() != unit.UnitHeader.TxRoot().String() {
 		log.Debug("Light PalletOne", "GetProofTxInfoByHash hash is not equal.trieRootHash.String()",
-			trieRootHash.String(), "unit.UnitHeader.TxRoot.String()", unit.UnitHeader.TxRoot.String())
+			trieRootHash.String(), "unit.UnitHeader.TxRoot.String()", unit.UnitHeader.TxRoot().String())
 		return [][]byte{[]byte("trie root hash is not equal")}, errors.New("hash not equal")
 	}
 

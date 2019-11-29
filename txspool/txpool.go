@@ -454,7 +454,7 @@ func TxtoTxpoolTx(tx *modules.Transaction) *TxPoolTransaction {
 	txpool_tx := new(TxPoolTransaction)
 	txpool_tx.Tx = tx
 
-	for _, msgcopy := range tx.TxMessages {
+	for _, msgcopy := range tx.TxMessages() {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 				for _, script := range msg.Inputs {
@@ -485,7 +485,7 @@ func TxtoTxpoolTx(tx *modules.Transaction) *TxPoolTransaction {
 // the pool due to pricing constraints.
 
 func (pool *TxPool) add(tx *TxPoolTransaction, local bool) (bool, error) {
-	msgs := tx.Tx.Messages()
+	msgs := tx.Tx.TxMessages()
 	if msgs[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
 		return true, nil
 	}
@@ -534,7 +534,7 @@ func (pool *TxPool) add(tx *TxPoolTransaction, local bool) (bool, error) {
 		if count > 0 {
 			drop := pool.priority_sorted.Discard(count)
 			for _, tx := range drop {
-				log.Trace("Discarding freshly underpriced transaction", "hash", tx.Tx.Hash(), "price", tx.GetTxFee().Int64())
+				log.Trace("Discarding freshly underpriced transaction", "hash", hash, "price", tx.GetTxFee().Int64())
 				pool.removeTransaction(tx, true)
 			}
 		}
@@ -634,7 +634,7 @@ func (pool *TxPool) AddRemote(tx *modules.Transaction) error {
 		log.Infof("Tx[%s] is a request, do not allow add to txpool", tx.Hash().String())
 		return nil
 	}
-	if tx.TxMessages[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
+	if tx.TxMessages()[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
 		return nil
 	}
 	pool_tx := TxtoTxpoolTx(tx)
@@ -739,10 +739,11 @@ func (pool *TxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan bool
 }
 
 func IsCoinBase(tx *modules.Transaction) bool {
-	if len(tx.TxMessages) != 1 {
+	msgs := tx.TxMessages()
+	if len(msgs) != 1 {
 		return false
 	}
-	msg, ok := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+	msg, ok := msgs[0].Payload.(*modules.PaymentPayload)
 	if !ok {
 		return false
 	}
@@ -899,7 +900,7 @@ func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*TxPoolTransaction, error) 
 	poolTxs := pool.AllTxpoolTxs()
 	for _, tx := range poolTxs {
 		if !tx.Confirmed {
-			for _, msg := range tx.Tx.Messages() {
+			for _, msg := range tx.Tx.TxMessages() {
 				if msg.App == modules.APP_PAYMENT {
 					payment, ok := msg.Payload.(*modules.PaymentPayload)
 					if ok {
@@ -927,7 +928,7 @@ func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*TxPoolTransaction, error) 
 		if _, exist := pool.all.Load(or_hash); exist {
 			continue
 		}
-		for _, msg := range tx.Tx.Messages() {
+		for _, msg := range tx.Tx.TxMessages() {
 			if msg.App == modules.APP_PAYMENT {
 				payment, ok := msg.Payload.(*modules.PaymentPayload)
 				if ok {
@@ -1039,7 +1040,7 @@ func (pool *TxPool) DeleteTxByHash(hash common.Hash) error {
 	pool.priority_sorted.Removed()
 
 	if tx != nil {
-		for i, msg := range tx.Tx.Messages() {
+		for i, msg := range tx.Tx.TxMessages() {
 			if msg.App == modules.APP_PAYMENT {
 				payment, ok := msg.Payload.(*modules.PaymentPayload)
 				if ok {
@@ -1080,7 +1081,7 @@ func (pool *TxPool) removeTx(hash common.Hash) {
 	tx.Confirmed = true
 	pool.all.Store(hash, tx)
 
-	for i, msg := range tx.Tx.Messages() {
+	for i, msg := range tx.Tx.TxMessages() {
 		if msg.App == modules.APP_PAYMENT {
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			if ok {
@@ -1111,7 +1112,7 @@ func (pool *TxPool) removeTransaction(tx *TxPoolTransaction, removeRedeemers boo
 	hash := tx.Tx.Hash()
 	if removeRedeemers {
 		// Remove any transactions whitch rely on this one.
-		for i, msgcopy := range tx.Tx.TxMessages {
+		for i, msgcopy := range tx.Tx.TxMessages() {
 			if msgcopy.App == modules.APP_PAYMENT {
 				if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 					for j := uint32(0); j < uint32(len(msg.Outputs)); j++ {
@@ -1131,7 +1132,7 @@ func (pool *TxPool) removeTransaction(tx *TxPoolTransaction, removeRedeemers boo
 	}
 	if pooltx, ok := interTx.(*TxPoolTransaction); ok {
 		// mark the referenced outpoints as unspent by the pool.
-		for _, msgcopy := range pooltx.Tx.TxMessages {
+		for _, msgcopy := range pooltx.Tx.TxMessages() {
 			if msgcopy.App == modules.APP_PAYMENT {
 				if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 					for _, input := range msg.Inputs {
@@ -1159,7 +1160,7 @@ func (pool *TxPool) RemoveTransaction(hash common.Hash, removeRedeemers bool) {
 // to the main chain because the block may contain transactions whitch were previously unknow to
 // the memory pool.
 func (pool *TxPool) RemoveDoubleSpends(tx *modules.Transaction) {
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		if msg.App == modules.APP_PAYMENT {
 			inputs := msg.Payload.(*modules.PaymentPayload)
 			for _, input := range inputs.Inputs {
@@ -1173,7 +1174,7 @@ func (pool *TxPool) RemoveDoubleSpends(tx *modules.Transaction) {
 }
 
 func (pool *TxPool) checkPoolDoubleSpend(tx *TxPoolTransaction) error {
-	for _, msg := range tx.Tx.TxMessages {
+	for _, msg := range tx.Tx.TxMessages() {
 		if msg.App == modules.APP_PAYMENT {
 			inputs, ok := msg.Payload.(*modules.PaymentPayload)
 			if !ok {
@@ -1220,7 +1221,7 @@ func (pool *TxPool) CheckSpend(output modules.OutPoint) *modules.Transaction {
 func (pool *TxPool) GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error) {
 	neededSet := make(map[modules.OutPoint]struct{})
 
-	for _, msgcopy := range tx.TxMessages {
+	for _, msgcopy := range tx.TxMessages() {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 				if !msg.IsCoinbase() {
@@ -1247,7 +1248,7 @@ func (pool *TxPool) FetchInputUtxos(tx *modules.Transaction) (*UtxoViewpoint, er
 		utxo.Spend()
 	}
 	// Attempt to populate any missing inputs from the transaction pool.
-	for i, msgcopy := range tx.TxMessages {
+	for i, msgcopy := range tx.TxMessages() {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 				for _, txIn := range msg.Inputs {
@@ -1423,7 +1424,7 @@ func (pool *TxPool) addCache(tx *TxPoolTransaction) {
 	if tx == nil {
 		return
 	}
-	for i, msgcopy := range tx.Tx.TxMessages {
+	for i, msgcopy := range tx.Tx.TxMessages() {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 				for _, txin := range msg.Inputs {
@@ -1572,9 +1573,9 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 	return list, total
 }
 func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
-	orphanTxs map[common.Hash]*TxPoolTransaction) []*TxPoolTransaction {
+orphanTxs map[common.Hash]*TxPoolTransaction) []*TxPoolTransaction {
 	pretxs := make([]*TxPoolTransaction, 0)
-	for _, msg := range tx.Tx.Messages() {
+	for _, msg := range tx.Tx.TxMessages() {
 		if msg.App == modules.APP_PAYMENT {
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			if ok {
@@ -1695,7 +1696,7 @@ func (pool *TxPool) addOrphan(otx *TxPoolTransaction, tag uint64) {
 	otx.IsOrphan = true
 	pool.orphans.Store(otx.Tx.Hash(), otx)
 
-	for i, msg := range otx.Tx.Messages() {
+	for i, msg := range otx.Tx.TxMessages() {
 		if msg.App == modules.APP_PAYMENT {
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			if ok {
@@ -1724,7 +1725,7 @@ func (pool *TxPool) removeOrphan(tx *TxPoolTransaction, reRedeemers bool) {
 		return
 	}
 
-	for _, msg := range otx.Tx.Messages() {
+	for _, msg := range otx.Tx.TxMessages() {
 		if msg.App == modules.APP_PAYMENT {
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			if ok {
@@ -1739,7 +1740,7 @@ func (pool *TxPool) removeOrphan(tx *TxPoolTransaction, reRedeemers bool) {
 	// remove any orphans that redeem outputs from this one if requested.
 	if reRedeemers {
 		prevOut := modules.OutPoint{TxHash: hash}
-		for i, msg := range tx.Tx.Messages() {
+		for i, msg := range tx.Tx.TxMessages() {
 			if msg.App == modules.APP_PAYMENT {
 				payment, ok := msg.Payload.(*modules.PaymentPayload)
 				if ok {
@@ -1789,7 +1790,7 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 	}
 	var isOrphan bool
 	var err error
-	for _, msg := range tx.Messages() {
+	for _, msg := range tx.TxMessages() {
 		if isOrphan {
 			break
 		}
@@ -1820,7 +1821,7 @@ func (pool *TxPool) deleteOrphanTxOutputs(outpoint modules.OutPoint) {
 }
 
 func (pool *TxPool) deletePoolUtxos(tx *modules.Transaction) {
-	for _, msg := range tx.Messages() {
+	for _, msg := range tx.TxMessages() {
 		if msg.App == modules.APP_PAYMENT {
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			if ok {

@@ -126,9 +126,10 @@ type txJsonTemp struct {
 }
 
 func tx2JsonTemp(tx *Transaction) (*txJsonTemp, error) {
-	intCertID := new(big.Int).SetBytes(tx.CertId)
-	temp := &txJsonTemp{MsgCount: len(tx.TxMessages), CertId: intCertID.String(), Illegal: tx.Illegal}
-	for idx, msg := range tx.TxMessages {
+	intCertID := new(big.Int).SetBytes(tx.CertId())
+	msgs := tx.TxMessages()
+	temp := &txJsonTemp{MsgCount: len(msgs), CertId: intCertID.String(), Illegal: tx.Illegal()}
+	for idx, msg := range msgs {
 		if msg.App == APP_PAYMENT {
 			temp.Payment = append(temp.Payment, &idxPaymentPayload{
 				Index: idx, PaymentPayload: msg.Payload.(*PaymentPayload)})
@@ -185,71 +186,73 @@ func tx2JsonTemp(tx *Transaction) (*txJsonTemp, error) {
 }
 
 func jsonTemp2tx(tx *Transaction, temp *txJsonTemp) error {
+	sdw := transaction_sdw{}
 	if len(temp.CertId) > 0 {
 		intCertID, _ := new(big.Int).SetString(temp.CertId, 10)
 		if intCertID == nil {
 			return fmt.Errorf("certid is invalid")
 		}
-		tx.CertId = intCertID.Bytes()
+		sdw.CertId = intCertID.Bytes()
 	}
-	tx.Illegal = temp.Illegal
-	tx.TxMessages = make([]*Message, temp.MsgCount)
+	sdw.Illegal = temp.Illegal
+	sdw.TxMessages = make([]*Message, temp.MsgCount)
 	processed := 0
 	for _, p := range temp.Payment {
-		tx.TxMessages[p.Index] = NewMessage(APP_PAYMENT, p.PaymentPayload)
+		sdw.TxMessages[p.Index] = NewMessage(APP_PAYMENT, p.PaymentPayload)
 		processed++
 	}
 	//request
 	for _, p := range temp.ContractInstallRequest {
-		tx.TxMessages[p.Index] = NewMessage(APP_CONTRACT_TPL_REQUEST, p.ContractInstallRequestPayload)
+		sdw.TxMessages[p.Index] = NewMessage(APP_CONTRACT_TPL_REQUEST, p.ContractInstallRequestPayload)
 		processed++
 	}
 	for _, p := range temp.ContractDeployRequest {
-		tx.TxMessages[p.Index] = NewMessage(APP_CONTRACT_DEPLOY_REQUEST, p.ContractDeployRequestPayload)
+		sdw.TxMessages[p.Index] = NewMessage(APP_CONTRACT_DEPLOY_REQUEST, p.ContractDeployRequestPayload)
 		processed++
 	}
 	for _, p := range temp.ContractInvokeRequest {
-		tx.TxMessages[p.Index] = NewMessage(APP_CONTRACT_INVOKE_REQUEST, p.ContractInvokeRequestPayload)
+		sdw.TxMessages[p.Index] = NewMessage(APP_CONTRACT_INVOKE_REQUEST, p.ContractInvokeRequestPayload)
 		processed++
 	}
 	for _, p := range temp.ContractStopRequest {
-		tx.TxMessages[p.Index] = NewMessage(APP_CONTRACT_STOP_REQUEST, p.ContractStopRequestPayload)
+		sdw.TxMessages[p.Index] = NewMessage(APP_CONTRACT_STOP_REQUEST, p.ContractStopRequestPayload)
 		processed++
 	}
 
 	//content
 	for _, p := range temp.ContractTpl {
-		tx.TxMessages[p.Index] = NewMessage(APP_CONTRACT_TPL, p.ContractTplPayload)
+		sdw.TxMessages[p.Index] = NewMessage(APP_CONTRACT_TPL, p.ContractTplPayload)
 		processed++
 	}
 	for _, p := range temp.ContractDeploy {
-		tx.TxMessages[p.Index] = NewMessage(APP_CONTRACT_DEPLOY, p.ContractDeployPayload)
+		sdw.TxMessages[p.Index] = NewMessage(APP_CONTRACT_DEPLOY, p.ContractDeployPayload)
 		processed++
 	}
 	for _, p := range temp.ContractInvoke {
-		tx.TxMessages[p.Index] = NewMessage(APP_CONTRACT_INVOKE, p.ContractInvokePayload)
+		sdw.TxMessages[p.Index] = NewMessage(APP_CONTRACT_INVOKE, p.ContractInvokePayload)
 		processed++
 	}
 	for _, p := range temp.ContractStop {
-		tx.TxMessages[p.Index] = NewMessage(APP_CONTRACT_STOP, p.ContractStopPayload)
+		sdw.TxMessages[p.Index] = NewMessage(APP_CONTRACT_STOP, p.ContractStopPayload)
 		processed++
 	}
 
 	for _, p := range temp.Text {
-		tx.TxMessages[p.Index] = NewMessage(APP_DATA, p.DataPayload)
+		sdw.TxMessages[p.Index] = NewMessage(APP_DATA, p.DataPayload)
 		processed++
 	}
 	for _, p := range temp.Signature {
-		tx.TxMessages[p.Index] = NewMessage(APP_SIGNATURE, p.SignaturePayload)
+		sdw.TxMessages[p.Index] = NewMessage(APP_SIGNATURE, p.SignaturePayload)
 		processed++
 	}
 	for _, p := range temp.AccountUpdateOperation {
-		tx.TxMessages[p.Index] = NewMessage(APP_ACCOUNT_UPDATE, p.AccountStateUpdatePayload)
+		sdw.TxMessages[p.Index] = NewMessage(APP_ACCOUNT_UPDATE, p.AccountStateUpdatePayload)
 		processed++
 	}
 	if processed < temp.MsgCount {
 		return errors.New("Some message don't process in transaction_json.go")
 	}
+	tx.txdata = sdw
 	return nil
 }
 

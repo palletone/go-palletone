@@ -195,10 +195,10 @@ func (engine *TokenEngine) ScriptValidate(utxoLockScript []byte,
 	tx *modules.Transaction,
 	msgIdx, inputIndex int) error {
 	acc := &account{}
-	txCopy := tx
+	txCopy := tx.Clone()
 	if tx.IsContractTx() {
 		isRequestMsg := false
-		for idx, msg := range tx.TxMessages {
+		for idx, msg := range tx.TxMessages() {
 			if msg.App.IsRequest() {
 				isRequestMsg = true
 			}
@@ -224,10 +224,10 @@ func (engine *TokenEngine) ScriptValidate1Msg(utxoLockScripts map[string][]byte,
 	pickupJuryRedeemScript PickupJuryRedeemScript,
 	tx *modules.Transaction, msgIdx int) error {
 	acc := &account{}
-	txCopy := tx
+	txCopy := tx.Clone()
 	if tx.IsContractTx() {
 		isRequestMsg := false
-		for idx, msg := range tx.TxMessages {
+		for idx, msg := range tx.TxMessages() {
 			if msg.App.IsRequest() {
 				isRequestMsg = true
 			}
@@ -238,7 +238,7 @@ func (engine *TokenEngine) ScriptValidate1Msg(utxoLockScripts map[string][]byte,
 		}
 	}
 	log.Debugf("SignCache count:%d", engine.signCache.Count())
-	for inputIndex, input := range txCopy.TxMessages[msgIdx].Payload.(*modules.PaymentPayload).Inputs {
+	for inputIndex, input := range txCopy.Messages()[msgIdx].Payload.(*modules.PaymentPayload).Inputs {
 		utxoLockScript := utxoLockScripts[input.PreviousOutPoint.String()]
 		vm, err := txscript.NewEngine(utxoLockScript,
 			func(addr common.Address) ([]byte, error) { return pickupJuryRedeemScript(addr) },
@@ -271,7 +271,7 @@ func (engine *TokenEngine) GetScriptSigners(tx *modules.Transaction, msgIdx, inp
 	pubkeys := [][]byte{}
 	var redeem []byte
 	var hashType byte
-	script := tx.TxMessages[msgIdx].Payload.(*modules.PaymentPayload).Inputs[inputIndex].SignatureScript
+	script := tx.TxMessages()[msgIdx].Payload.(*modules.PaymentPayload).Inputs[inputIndex].SignatureScript
 	scriptStr, _ := txscript.DisasmString(script)
 	ops := strings.Fields(scriptStr)
 	for i, op := range ops {
@@ -389,7 +389,7 @@ func (engine *TokenEngine) SignTxAllPaymentInput(tx *modules.Transaction, hashTy
 	}
 	tmpAcc := &account{pubKeyFn: pubKeyFn, signFn: hashFn}
 	var signErrors []common.SignatureError
-	for i, msg := range tx.TxMessages {
+	for i, msg := range tx.TxMessages() {
 		if msg.App == modules.APP_PAYMENT {
 			pay, ok := msg.Payload.(*modules.PaymentPayload)
 			if !ok {
@@ -410,9 +410,8 @@ func (engine *TokenEngine) SignTxAllPaymentInput(tx *modules.Transaction, hashTy
 				checkscript := make([]byte, len(utxoLockScript))
 				copy(checkscript, utxoLockScript)
 				if (hashType&uint32(txscript.SigHashSingle)) != uint32(txscript.SigHashSingle) || j < len(pay.Outputs) {
-					sigScript, err := txscript.SignTxOutput(tx, i, j, utxoLockScript, txscript.SigHashType(hashType),
-						tmpAcc, txscript.ScriptClosure(lookupRedeemScript),
-						input.SignatureScript)
+					sigScript, err := txscript.SignTxOutput(tx, i, j, checkscript, txscript.SigHashType(hashType),
+						tmpAcc, txscript.ScriptClosure(lookupRedeemScript), input.SignatureScript)
 					if err != nil {
 						signErrors = append(signErrors, common.SignatureError{
 							InputIndex: uint32(j),
@@ -422,7 +421,9 @@ func (engine *TokenEngine) SignTxAllPaymentInput(tx *modules.Transaction, hashTy
 						return signErrors, err
 					}
 					input.SignatureScript = sigScript
-					// checkscript = nil
+					// modified msg
+					tx.ModifiedMsg(i, msg)
+					//checkscript = make([]byte, 0)
 				}
 			}
 		}

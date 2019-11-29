@@ -47,7 +47,8 @@ func validateUnitSignature(h *modules.Header) ValidationCode {
 	//header.GroupSign = make([]byte, 0)
 	// recover signature
 	//if h.Authors == nil {
-	if h.Authors.Empty() {
+	header := h.Header()
+	if header.Authors.Empty() {
 		log.Debug("Verify unit signature ,header's authors is nil.")
 		return UNIT_STATE_INVALID_AUTHOR_SIGNATURE
 	}
@@ -61,12 +62,12 @@ func validateUnitSignature(h *modules.Header) ValidationCode {
 	//  pubKey to pubKey_bytes
 	//pubKey_bytes := crypto.CompressPubkey(pubKey)
 
-	if pass, _ := crypto.MyCryptoLib.Verify(h.Authors.PubKey, h.Authors.Signature, hash.Bytes()); !pass {
+	if pass, _ := crypto.MyCryptoLib.Verify(header.Authors.PubKey, header.Authors.Signature, hash.Bytes()); !pass {
 		log.Debug("Verify unit signature error.")
 		return UNIT_STATE_INVALID_AUTHOR_SIGNATURE
 	}
 	// if genesis unit just return
-	if len(h.ParentsHash) == 0 {
+	if len(header.ParentsHash) == 0 {
 		return TxValidationCode_VALID
 	}
 
@@ -102,7 +103,7 @@ func (validate *Validate) validateUnitAuthor(h *modules.Header) ValidationCode {
 	}
 
 	mediators := validate.statequery.GetMediators()
-	authorAddr := h.Authors.Address()
+	authorAddr := h.Header().Authors.Address()
 	if !mediators[authorAddr] {
 		mediatorAddrs := ""
 		for m := range mediators {
@@ -124,14 +125,14 @@ func (validate *Validate) validateMediatorSchedule(header *modules.Header) Valid
 
 	gasToken := dagconfig.DagConfig.GetGasToken()
 	ts, _ := validate.propquery.GetNewestUnitTimestamp(gasToken)
-	if !(header.Time > ts) {
+	if !(header.Timestamp() > ts) {
 		errStr := "invalidated unit's timestamp"
 		log.Warnf("%s,db newest unit timestamp=%d,current unit[%s] timestamp=%d", errStr, ts,
-			header.Hash().String(), header.Time)
+			header.Hash().String(), header.Timestamp())
 		return UNIT_STATE_INVALID_HEADER_TIME
 	}
 
-	slotNum := validate.propquery.GetSlotAtTime(time.Unix(header.Time, 0))
+	slotNum := validate.propquery.GetSlotAtTime(time.Unix(header.Timestamp(), 0))
 	if slotNum == 0 {
 		log.Info("invalidated unit's slot")
 		return UNIT_STATE_INVALID_MEDIATOR_SCHEDULE
@@ -161,25 +162,25 @@ func validateUnitBasic(unit *modules.Unit) ValidationCode {
 		return UNIT_STATE_INVALID_HEADER
 	}
 
-	if len(header.ParentsHash) == 0 {
+	if len(header.ParentHash()) == 0 {
 		log.Info("the header's parentHash is null.")
 		return UNIT_STATE_INVALID_HEADER
 	}
 
 	//  check header's extra data
-	if uint64(len(header.Extra)) > configure.MaximumExtraDataSize {
-		msg := fmt.Sprintf("extra-data too long: %d > %d", len(header.Extra), configure.MaximumExtraDataSize)
+	if uint64(len(header.Extra())) > configure.MaximumExtraDataSize {
+		msg := fmt.Sprintf("extra-data too long: %d > %d", len(header.Extra()), configure.MaximumExtraDataSize)
 		log.Info(msg)
 		return UNIT_STATE_INVALID_EXTRA_DATA
 	}
 
 	// check creation_time
-	if header.Time <= modules.UNIT_CREATION_DATE_INITIAL_UINT64 {
+	if header.Timestamp() <= modules.UNIT_CREATION_DATE_INITIAL_UINT64 {
 		return UNIT_STATE_INVALID_HEADER_TIME
 	}
 
 	// check header's number
-	if header.Number == nil {
+	if header.GetNumber() == nil {
 		return UNIT_STATE_INVALID_HEADER_NUMBER
 	}
 	var thisUnitIsNotTransmitted bool
@@ -189,8 +190,8 @@ func validateUnitBasic(unit *modules.Unit) ValidationCode {
 	}
 	//validate tx root
 	root := core.DeriveSha(unit.Txs)
-	if root != unit.UnitHeader.TxRoot {
-		log.Warnf("Validate unit's header failed, root:[%#x],  unit.UnitHeader.TxRoot:[%#x], txs:[%#x]", root, unit.UnitHeader.TxRoot, unit.Txs.GetTxIds())
+	if root != unit.UnitHeader.TxRoot() {
+		log.Warnf("Validate unit's header failed, root:[%#x],  unit.UnitHeader.TxRoot:[%#x], txs:[%#x]", root, unit.UnitHeader.TxRoot(), unit.Txs.GetTxIds())
 		return UNIT_STATE_INVALID_HEADER_TXROOT
 	}
 
@@ -215,7 +216,7 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) Validat
 	// 2019-07-11 12:56:46 849c2cb5c7b3fbd37b2ac5f318716f90613259f2 将洗牌算法的种子由时间戳改成hash
 	// 并在 1.0.1 版本升级后，在主网和测试网中使用新的调度策略
 	//1570870800 20191012 17:00:00 之前的mediator schedule可能验证通不过
-	enableMediatorSchedule := unit.UnitHeader.Time > 1570870800
+	enableMediatorSchedule := unit.UnitHeader.Timestamp() > 1570870800
 	// step1. check header ---New unit is no group signature yet
 	unitHeaderValidateResult := validate.validateHeaderExceptGroupSig(
 		unit.UnitHeader, enableMediatorSchedule)
@@ -228,8 +229,8 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) Validat
 
 	//validate tx root
 	root := core.DeriveSha(unit.Txs)
-	if root != unit.UnitHeader.TxRoot {
-		log.Warnf("Validate unit's header failed, root:[%#x],  unit.UnitHeader.TxRoot:[%#x], txs:[%#x]", root, unit.UnitHeader.TxRoot, unit.Txs.GetTxIds())
+	if root != unit.UnitHeader.TxRoot() {
+		log.Warnf("Validate unit's header failed, root:[%#x],  unit.UnitHeader.TxRoot:[%#x], txs:[%#x]", root, unit.UnitHeader.TxRoot(), unit.Txs.GetTxIds())
 		return UNIT_STATE_INVALID_HEADER_TXROOT
 	}
 
@@ -266,14 +267,14 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header, e
 		return UNIT_STATE_INVALID_HEADER
 	}
 
-	if len(header.ParentsHash) == 0 {
+	if len(header.ParentHash()) == 0 {
 		log.Info("the header's parentHash is null.")
 		return UNIT_STATE_INVALID_HEADER
 	}
 
 	//  check header's extra data
-	if uint64(len(header.Extra)) > configure.MaximumExtraDataSize {
-		msg := fmt.Sprintf("extra-data too long: %d > %d", len(header.Extra), configure.MaximumExtraDataSize)
+	if uint64(len(header.Extra())) > configure.MaximumExtraDataSize {
+		msg := fmt.Sprintf("extra-data too long: %d > %d", len(header.Extra()), configure.MaximumExtraDataSize)
 		log.Info(msg)
 		return UNIT_STATE_INVALID_EXTRA_DATA
 	}
@@ -285,12 +286,12 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header, e
 	//}
 
 	// check creation_time
-	if header.Time <= modules.UNIT_CREATION_DATE_INITIAL_UINT64 {
+	if header.Timestamp() <= modules.UNIT_CREATION_DATE_INITIAL_UINT64 {
 		return UNIT_STATE_INVALID_HEADER_TIME
 	}
 
 	// check header's number
-	if header.Number == nil {
+	if header.GetNumber() == nil {
 		return UNIT_STATE_INVALID_HEADER_NUMBER
 	}
 	var thisUnitIsNotTransmitted bool
@@ -306,13 +307,13 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header, e
 		}
 	}
 	//Is orphan?
-	parent := header.ParentsHash[0]
+	parent := header.ParentHash()[0]
 	if validate.dagquery != nil {
 		parentHeader, err := validate.dagquery.GetHeaderByHash(parent)
 		if err != nil {
 			return UNIT_STATE_ORPHAN
 		}
-		if parentHeader.Number.Index+1 != header.Number.Index {
+		if parentHeader.GetNumber().Index+1 != header.GetNumber().Index {
 			return UNIT_STATE_INVALID_HEADER_NUMBER
 		}
 

@@ -151,7 +151,6 @@ func (s *PrivateWalletAPI) buildRawTransferTx(tokenId, from, to string, amount, 
 	if tokenId == ptn {
 		ptnAmount = ptnjson.Ptn2Dao(amount)
 	}
-	tx := &modules.Transaction{}
 
 	//构造转移PTN的Message0
 	dbUtxos, err := s.b.GetAddrRawUtxos(from)
@@ -172,7 +171,7 @@ func (s *PrivateWalletAPI) buildRawTransferTx(tokenId, from, to string, amount, 
 	if err != nil {
 		return nil, nil, err
 	}
-	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pay1))
+	tx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, pay1)})
 	if tokenId == ptn {
 		return tx, usedUtxo1, nil
 	}
@@ -186,7 +185,7 @@ func (s *PrivateWalletAPI) buildRawTransferTx(tokenId, from, to string, amount, 
 	if err != nil {
 		return nil, nil, err
 	}
-	tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pay2))
+	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay2))
 	//for _, u := range usedUtxo2 {
 	usedUtxo1 = append(usedUtxo1, usedUtxo2...)
 	//}
@@ -333,25 +332,25 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 	//	// value is a string and it would result in returning an empty string to
 	//	// the client instead of nothing (nil) in the case of an error.
 
-	mtx := &modules.Transaction{
-		TxMessages: make([]*modules.Message, 0),
-	}
-	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
+	mtx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, pload)})
 	//mtx.TxHash = mtx.Hash()
 	//sign mtx
-	mtxtmp := mtx
-	for msgindex, msg := range mtxtmp.TxMessages {
+	msgs := mtx.TxMessages()
+	for msgindex, msg := range msgs {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if !ok {
 			continue
 		}
 		for inputindex := range payload.Inputs {
-			hashforsign, err := tokenengine.Instance.CalcSignatureHash(mtxtmp, tokenengine.SigHashAll, msgindex, inputindex, ppscript)
+			hashforsign, err := tokenengine.Instance.CalcSignatureHash(mtx, tokenengine.SigHashAll, msgindex,
+				inputindex, ppscript)
 			if err != nil {
 				return "", err
 			}
-			payloadtmp := mtx.TxMessages[msgindex].Payload.(*modules.PaymentPayload)
+			msg := msgs[msgindex]
+			payloadtmp := msg.Payload.(*modules.PaymentPayload)
 			payloadtmp.Inputs[inputindex].SignatureScript = hashforsign
+			mtx.ModifiedMsg(msgindex, msg)
 		}
 	}
 
@@ -378,10 +377,8 @@ func (s *PrivateWalletAPI) SignRawTransaction(ctx context.Context, params string
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, errors.New("Params is invalid")
 	}
+	tx := modules.NewTransaction(make([]*modules.Message, 0))
 
-	tx := &modules.Transaction{
-		TxMessages: make([]*modules.Message, 0),
-	}
 	if err := rlp.DecodeBytes(serializedTx, &tx); err != nil {
 		return ptnjson.SignRawTransactionResult{}, errors.New("Params decode is invalid")
 	}
@@ -405,7 +402,7 @@ func (s *PrivateWalletAPI) SignRawTransaction(ctx context.Context, params string
 
 	var addr common.Address
 	var keys []string
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if !ok {
 			continue
@@ -465,8 +462,7 @@ func (s *PrivateWalletAPI) SignRawTransaction(ctx context.Context, params string
 	return result, err
 }
 
-
-func (s *PrivateWalletAPI) MutiSignRawTransaction(ctx context.Context, params , lockScript, redeemScript string, addr common.Address, hashtype string, password string, duration *uint64) (ptnjson.SignRawTransactionResult, error) {
+func (s *PrivateWalletAPI) MutiSignRawTransaction(ctx context.Context, params, lockScript, redeemScript string, addr common.Address, hashtype string, password string, duration *uint64) (ptnjson.SignRawTransactionResult, error) {
 
 	//transaction inputs
 	if params == "" {
@@ -481,10 +477,8 @@ func (s *PrivateWalletAPI) MutiSignRawTransaction(ctx context.Context, params , 
 		return ptnjson.SignRawTransactionResult{}, errors.New("Params is invalid")
 	}
 
-	tx := &modules.Transaction{
-		TxMessages: make([]*modules.Message, 0),
-	}
-	if err := rlp.DecodeBytes(serializedTx, &tx); err != nil {
+	tx := new(modules.Transaction)
+	if err := rlp.DecodeBytes(serializedTx, tx); err != nil {
 		return ptnjson.SignRawTransactionResult{}, errors.New("Params decode is invalid")
 	}
 
@@ -507,7 +501,7 @@ func (s *PrivateWalletAPI) MutiSignRawTransaction(ctx context.Context, params , 
 
 	//var addr common.Address
 	var keys []string
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if !ok {
 			continue
@@ -526,7 +520,8 @@ func (s *PrivateWalletAPI) MutiSignRawTransaction(ctx context.Context, params , 
 			TxHash := trimx(uvu.TxHash)
 			//PkScriptHex := trimx(uvu.PkScriptHex)
 			PkScriptHex := trimx(lockScript)
-			input := ptnjson.RawTxInput{Txid: TxHash, Vout: uvu.OutIndex, MessageIndex: uvu.MessageIndex, ScriptPubKey: PkScriptHex, RedeemScript:redeemScript }
+			input := ptnjson.RawTxInput{Txid: TxHash, Vout: uvu.OutIndex, MessageIndex: uvu.MessageIndex,
+			ScriptPubKey: PkScriptHex, RedeemScript: redeemScript}
 			srawinputs = append(srawinputs, input)
 		}
 	}
@@ -557,6 +552,7 @@ func (s *PrivateWalletAPI) MutiSignRawTransaction(ctx context.Context, params , 
 	}
 	return result, err
 }
+
 // walletSendTransaction will add the signed transaction to the transaction pool.
 // The sender is responsible for signing the transaction and using the correct nonce.
 func (s *PublicWalletAPI) SendRawTransaction(ctx context.Context, signedTxHex string) (common.Hash, error) {
@@ -566,14 +562,12 @@ func (s *PublicWalletAPI) SendRawTransaction(ctx context.Context, signedTxHex st
 		return common.Hash{}, errors.New("Decode Signedtx is invalid")
 	}
 
-	tx := &modules.Transaction{
-		TxMessages: make([]*modules.Message, 0),
-	}
+	tx := modules.NewTransaction(make([]*modules.Message, 0))
 	if err := rlp.DecodeBytes(serializedTx, tx); err != nil {
 		return common.Hash{}, errors.New("encodedTx decode is invalid")
 	}
 
-	if 0 == len(tx.TxMessages) {
+	if 0 == len(tx.Messages()) {
 		return common.Hash{}, errors.New("Invalid Tx, message length is 0")
 	}
 	//var outAmount uint64
@@ -604,20 +598,18 @@ func (s *PublicWalletAPI) SendJsonTransaction(ctx context.Context, params string
 	if err := rlp.DecodeBytes(decoded, &btxjson); err != nil {
 		return common.Hash{}, errors.New("RLP Decode To Byte is invalid")
 	}
-	tx := &modules.Transaction{
-		TxMessages: make([]*modules.Message, 0),
-	}
+	tx := modules.NewTransaction(make([]*modules.Message, 0))
 	err = json.Unmarshal(btxjson, tx)
 	if err != nil {
 		return common.Hash{}, errors.New("Json Unmarshal To Tx is invalid")
 	}
-
-	if 0 == len(tx.TxMessages) {
+	msgs := tx.TxMessages()
+	if 0 == len(msgs) {
 		return common.Hash{}, errors.New("Invalid Tx, message length is 0")
 	}
 	var outAmount uint64
 	var outpoint_txhash common.Hash
-	for _, msg := range tx.TxMessages {
+	for _, msg := range msgs {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if !ok {
 			continue
@@ -646,11 +638,11 @@ func (s *PublicWalletAPI) SendRlpTransaction(ctx context.Context, encodedTx stri
 	if err := rlp.DecodeBytes(serializedTx, tx); err != nil {
 		return common.Hash{}, errors.New("encodedTx decode is invalid")
 	}
-	if 0 == len(tx.TxMessages) {
+	if 0 == len(tx.Messages()) {
 		return common.Hash{}, errors.New("Invalid Tx, message length is 0")
 	}
 	var outAmount uint64
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if !ok {
 			continue
@@ -742,9 +734,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 		return common.Hash{}, err
 	}
 
-	tx := &modules.Transaction{
-		TxMessages: make([]*modules.Message, 0),
-	}
+	tx := modules.NewTransaction(make([]*modules.Message, 0))
 	if err := rlp.DecodeBytes(serializedTx, &tx); err != nil {
 		return common.Hash{}, err
 	}
@@ -770,7 +760,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	from, _ := common.StringToAddress(proofTransactionGenParams.From)
 	PkScript := tokenengine.Instance.GenerateLockScript(from)
 	PkScriptHex := hexutil.Encode(PkScript)
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if !ok {
 			continue
@@ -809,12 +799,13 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	if err := rlp.DecodeBytes(sserializedTx, stx); err != nil {
 		return common.Hash{}, err
 	}
-	if 0 == len(stx.TxMessages) {
+	msgs := stx.TxMessages()
+	if 0 == len(msgs) {
 		log.Info("+++++++++++++++++++++++++++++++++++++++++invalid Tx++++++")
 		return common.Hash{}, errors.New("Invalid Tx, message length is 0")
 	}
 	var outAmount uint64
-	for _, msg := range stx.TxMessages {
+	for _, msg := range msgs {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if !ok {
 			continue
@@ -827,7 +818,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	}
 	log.Info("--------------------------send tx ----------------------------", "txOutAmount", outAmount)
 
-	log.Debugf("Tx outpoint tx hash:%s", stx.TxMessages[0].Payload.(*modules.PaymentPayload).Inputs[0].PreviousOutPoint.TxHash.String())
+	log.Debugf("Tx outpoint tx hash:%s", msgs[0].Payload.(*modules.PaymentPayload).Inputs[0].PreviousOutPoint.TxHash.String())
 	return submitTransaction(ctx, s.b, stx)
 }
 func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransactionCmd) (string, error) {
@@ -913,12 +904,9 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransa
 	//	// value is a string and it would result in returning an empty string to
 	//	// the client instead of nothing (nil) in the case of an error.
 
-	mtx := &modules.Transaction{
-		TxMessages: make([]*modules.Message, 0),
-	}
-	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
-
-	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_DATA, textPayload))
+	m1 := modules.NewMessage(modules.APP_PAYMENT, pload)
+	m2 := modules.NewMessage(modules.APP_DATA, textPayload)
+	mtx := modules.NewTransaction([]*modules.Message{m1, m2})
 	mtxbt, err := rlp.EncodeToBytes(mtx)
 	if err != nil {
 		return "", err
@@ -1137,9 +1125,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 		return common.Hash{}, err
 	}
 
-	tx := &modules.Transaction{
-		TxMessages: make([]*modules.Message, 0),
-	}
+	tx := modules.NewTransaction(make([]*modules.Message, 0))
 	if err := rlp.DecodeBytes(serializedTx, &tx); err != nil {
 		return common.Hash{}, err
 	}
@@ -1161,7 +1147,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 
 	var addr common.Address
 	var keys []string
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if !ok {
 			continue
@@ -1217,12 +1203,13 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 	if err := rlp.DecodeBytes(sserializedTx, stx); err != nil {
 		return common.Hash{}, err
 	}
-	if 0 == len(stx.TxMessages) {
+	s_msgs := stx.TxMessages()
+	if 0 == len(s_msgs) {
 		log.Info("+++++++++++++++++++++++++++++++++++++++++invalid Tx++++++")
 		return common.Hash{}, errors.New("Invalid Tx, message length is 0")
 	}
 	var outAmount uint64
-	for _, msg := range stx.TxMessages {
+	for _, msg := range s_msgs {
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if !ok {
 			continue
@@ -1235,7 +1222,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 	}
 	log.Info("--------------------------send tx ----------------------------", "txOutAmount", outAmount)
 
-	log.Debugf("Tx outpoint tx hash:%s", stx.TxMessages[0].Payload.(*modules.PaymentPayload).Inputs[0].PreviousOutPoint.TxHash.String())
+	log.Debugf("Tx outpoint tx hash:%s", s_msgs[0].Payload.(*modules.PaymentPayload).Inputs[0].PreviousOutPoint.TxHash.String())
 	return submitTransaction(ctx, s.b, stx)
 }
 
@@ -1338,7 +1325,7 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 		textPayload := new(modules.DataPayload)
 		textPayload.Reference = []byte(asset)
 		textPayload.MainData = []byte(Extra)
-		rawTx.TxMessages = append(rawTx.TxMessages, modules.NewMessage(modules.APP_DATA, textPayload))
+		rawTx.AddMessage(modules.NewMessage(modules.APP_DATA, textPayload))
 	}
 	//lockscript
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
@@ -1387,7 +1374,7 @@ func (s *PrivateWalletAPI) CreateProofOfExistenceTx(ctx context.Context, addr st
 	textPayload.MainData = []byte(mainData)
 	textPayload.ExtraData = []byte(extraData)
 	textPayload.Reference = []byte(reference)
-	rawTx.TxMessages = append(rawTx.TxMessages, modules.NewMessage(modules.APP_DATA, textPayload))
+	rawTx.AddMessage(modules.NewMessage(modules.APP_DATA, textPayload))
 
 	//lockscript
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
@@ -1449,8 +1436,8 @@ func (s *PrivateWalletAPI) CreateTraceability(ctx context.Context, addr, uid, sy
 	ccinvokePayload.ContractId = contractAddr.Bytes()
 	ccinvokePayload.Timeout = 0
 
-	rawTx.TxMessages = append(rawTx.TxMessages, modules.NewMessage(modules.APP_DATA, textPayload))
-	rawTx.TxMessages = append(rawTx.TxMessages, modules.NewMessage(modules.APP_CONTRACT_INVOKE_REQUEST, ccinvokePayload))
+	rawTx.AddMessage(modules.NewMessage(modules.APP_DATA, textPayload))
+	rawTx.AddMessage(modules.NewMessage(modules.APP_CONTRACT_INVOKE_REQUEST, ccinvokePayload))
 	//lockscript
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
 		//TODO use keystore
@@ -1585,9 +1572,7 @@ func (s *PublicWalletAPI) AddBatchTxs(ctx context.Context, path string) (int, er
 			return 0, errors.New("Decode Signedtx is invalid")
 		}
 
-		tx := &modules.Transaction{
-			TxMessages: make([]*modules.Message, 0),
-		}
+		tx := modules.NewTransaction(make([]*modules.Message, 0))
 		if err := rlp.DecodeBytes(serializedTx, tx); err != nil {
 			return 0, errors.New("encodedTx decode is invalid")
 		}
@@ -1706,8 +1691,8 @@ func (s *PrivateWalletAPI) generateTx(payment *modules.PaymentPayload, address c
 	inputAmtSum, fee uint64, asset *modules.Asset) (*modules.Transaction, error) {
 	out := modules.NewTxOut(inputAmtSum-fee, tokenengine.Instance.GenerateLockScript(address), asset)
 	payment.AddTxOut(out)
-	tx := &modules.Transaction{}
-	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, payment))
+
+	tx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, payment)})
 	//Sign
 	utxoLockScripts := make(map[modules.OutPoint][]byte)
 	lockScript := tokenengine.Instance.GenerateLockScript(address)

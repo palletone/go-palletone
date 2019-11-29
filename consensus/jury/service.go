@@ -267,7 +267,7 @@ func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode)
 	reqTx := ctx.reqTx.Clone()
 	p.locker.Unlock()
 
-	msgs, err := runContractCmd(rwset.RwM, p.dag, p.contract, &reqTx, ele, p.errMsgEnable) //contract exec long time...
+	msgs, err := runContractCmd(rwset.RwM, p.dag, p.contract, reqTx, ele, p.errMsgEnable) //contract exec long time...
 	if err != nil {
 		log.Errorf("[%s]runContractReq, runContractCmd reqTx, err：%s", shortId(reqId.String()), err.Error())
 		return err
@@ -275,7 +275,7 @@ func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode)
 	p.locker.Lock()
 	defer p.locker.Unlock()
 
-	tx, err := gen.GenContractTransction(&reqTx, msgs)
+	tx, err := gen.GenContractTransction(reqTx, msgs)
 	if err != nil {
 		log.Error("[%s]runContractReq, GenContractSigTransactions error:%s", shortId(reqId.String()), err.Error())
 		return err
@@ -287,7 +287,7 @@ func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode)
 			log.Error("[%s]runContractReq, genContractErrorMsg error:%s", shortId(reqId.String()), err.Error())
 			return err
 		}
-		tx, err = gen.GenContractTransction(&reqTx, msgs)
+		tx, err = gen.GenContractTransction(reqTx, msgs)
 		if err != nil {
 			log.Error("[%s]runContractReq,fee is not enough, GenContractTransction error:%s", shortId(reqId.String()), err.Error())
 			return err
@@ -351,7 +351,7 @@ func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode)
 
 func (p *Processor) GenContractSigTransaction(signer common.Address, password string, orgTx *modules.Transaction,
 	ks *keystore.KeyStore) (*modules.Transaction, error) {
-	if orgTx == nil || len(orgTx.TxMessages) < 3 {
+	if orgTx == nil || len(orgTx.Messages()) < 3 {
 		return nil, fmt.Errorf("GenContractSigTransctions param is error")
 	}
 	if password != "" {
@@ -361,12 +361,14 @@ func (p *Processor) GenContractSigTransaction(signer common.Address, password st
 		}
 	}
 	tx := orgTx
+	txhash := tx.Hash()
 	needSignMsg := true
 	//Find contract pay out payment messages
 	resultMsg := false
 	isSysContract := false
 	reqId := tx.RequestHash()
-	for msgidx, msg := range tx.TxMessages {
+	msgs := tx.TxMessages()
+	for msgidx, msg := range msgs {
 		if msg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
 			resultMsg = true
 			requestMsg := msg.Payload.(*modules.ContractInvokeRequestPayload)
@@ -388,7 +390,7 @@ func (p *Processor) GenContractSigTransaction(signer common.Address, password st
 						var utxo *modules.Utxo
 						var err error
 						if input.PreviousOutPoint.TxHash.IsSelfHash() { //引用Tx本身
-							output := tx.TxMessages[input.PreviousOutPoint.MessageIndex].Payload.(*modules.PaymentPayload).
+							output := msgs[input.PreviousOutPoint.MessageIndex].Payload.(*modules.PaymentPayload).
 								Outputs[input.PreviousOutPoint.OutIndex]
 							utxo = &modules.Utxo{
 								Amount:    output.Value,
@@ -409,8 +411,9 @@ func (p *Processor) GenContractSigTransaction(signer common.Address, password st
 						if err != nil {
 							log.Errorf("[%s]GenContractSigTransaction, Sign error:%s", shortId(reqId.String()), err)
 						}
-						log.Debugf("[%s]Sign a contract payout payment,tx[%s],sign:%x", shortId(reqId.String()), tx.Hash().String(), sign)
+						log.Debugf("[%s]Sign a contract payout payment,tx[%s],sign:%x", shortId(reqId.String()), txhash.String(), sign)
 						input.SignatureScript = sign
+						tx.ModifiedMsg(msgidx,msg)
 					}
 				}
 			}
@@ -433,13 +436,15 @@ func (p *Processor) GenContractSigTransaction(signer common.Address, password st
 			PubKey:    pubKey,
 			Signature: sig,
 		}
-		SigPayload, err := getContractTxContractInfo(tx, modules.APP_SIGNATURE)
+		index, SigMsg, err := getContractTxContractInfo(tx, modules.APP_SIGNATURE)
 		if err != nil {
 			return nil, fmt.Errorf("GenContractSigTransctions getContractTxContractInfo err, address[%s], reqId[%s], err:%s",
 				signer.String(), reqId.String(), err.Error())
 		}
-		if SigPayload != nil {
-			SigPayload.(*modules.SignaturePayload).Signatures = append(SigPayload.(*modules.SignaturePayload).Signatures, sigSet)
+		if SigMsg != nil {
+			SigMsg.Payload.(*modules.SignaturePayload).Signatures = append(SigMsg.Payload.(*modules.SignaturePayload).Signatures, sigSet)
+			// modified tx's msg
+			tx.ModifiedMsg(index, SigMsg)
 		} else {
 			sigs := make([]modules.SignatureSet, 0)
 			sigs = append(sigs, sigSet)
@@ -451,9 +456,9 @@ func (p *Processor) GenContractSigTransaction(signer common.Address, password st
 			}
 			log.Debugf("[%s]GenContractSigTransactions, Add sign message[%s] to tx requestId[%s]",
 				shortId(reqId.String()), sigSet.String(), reqId.String())
-			tx.TxMessages = append(tx.TxMessages, msgSig)
+			tx.AddMessage(msgSig)
 		}
-		log.Debugf("[%s]GenContractSigTransactions, ok, tx[%s]", shortId(reqId.String()), tx.Hash().String())
+		log.Debugf("[%s]GenContractSigTransactions, ok, tx[%s]", shortId(reqId.String()), txhash.String())
 	}
 	return tx, nil
 }
@@ -531,7 +536,8 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 			log.Errorf("[%s]AddContractLoop, error:%s", shortId(reqId.String()), err.Error())
 			continue
 		}
-		log.Debugf("[%s]AddContractLoop, OK, index[%d], Tx hash[%s], txSize[%f]", shortId(reqId.String()), index, tx.Hash().String(), tx.Size().Float64())
+		log.Debugf("[%s]AddContractLoop, OK, index[%d], Tx hash[%s], txSize[%f]", shortId(reqId.String()),
+			index, tx.Hash().String(), tx.Size().Float64())
 		index++
 	}
 	return nil
@@ -592,7 +598,7 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 			return false
 		}
 	}
-	return msgsCompare(msgs, tx.TxMessages, modules.APP_CONTRACT_INVOKE)
+	return msgsCompare(msgs, tx.TxMessages(), modules.APP_CONTRACT_INVOKE)
 }
 
 func (p *Processor) IsSystemContractTx(tx *modules.Transaction) bool {
@@ -758,7 +764,7 @@ func (p *Processor) createContractTxReq(contractId, from, to common.Address, dao
 }
 func (p *Processor) SignAndExecuteAndSendRequest(from common.Address,
 	tx *modules.Transaction) (*modules.Transaction, error) {
-	requestMsg := tx.TxMessages[tx.GetRequestMsgIndex()]
+	requestMsg := tx.Messages()[tx.GetRequestMsgIndex()]
 	if requestMsg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
 		request := requestMsg.Payload.(*modules.ContractInvokeRequestPayload)
 		contractId := common.NewAddress(request.ContractId, common.ContractHash)
@@ -849,14 +855,14 @@ func (p *Processor) getContractAssignElectionList(tx *modules.Transaction) ([]mo
 		return nil, errors.New("getContractAssignElectionList, param is nil")
 	}
 	reqId := tx.RequestHash()
-	payload, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_DEPLOY_REQUEST)
+	_, msg, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_DEPLOY_REQUEST)
 	if err != nil {
 		return nil, fmt.Errorf("[%s]getContractAssignElectionList, getContractTxContractInfo fail", shortId(reqId.String()))
 	}
 
 	num := 0
 	eels := make([]modules.ElectionInf, 0)
-	tplId := payload.(*modules.ContractDeployRequestPayload).TemplateId
+	tplId := msg.Payload.(*modules.ContractDeployRequestPayload).TemplateId
 	//find the address of the contract template binding in the dag
 	//addrHash, err := p.getTemplateAddrHash(tplId)
 	tpl, err := p.dag.GetContractTpl(tplId)

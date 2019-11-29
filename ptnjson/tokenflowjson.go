@@ -45,7 +45,7 @@ type TokenFlowJson struct {
 func ConvertTx2TokenFlowJson(addr common.Address, token *modules.Asset, preBalance uint64,
 	tx *modules.TransactionWithUnitInfo, utxoQuery modules.QueryUtxoFunc) ([]*TokenFlowJson, uint64) {
 	result := []*TokenFlowJson{}
-	for _, m := range tx.TxMessages {
+	for _, m := range tx.TxMessages() {
 		if m.App == modules.APP_PAYMENT {
 			pay := m.Payload.(*modules.PaymentPayload)
 			spent := uint64(0)

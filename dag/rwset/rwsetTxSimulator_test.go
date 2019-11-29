@@ -133,16 +133,12 @@ func getCurrentUnit() *modules.Unit {
 	privKeyBytes, _ := hex.DecodeString("2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644")
 	privKey, _ := crypto.ToECDSA(privKeyBytes)
 	pubKey, _ := hex.DecodeString("038cc8c907b29a58b00f8c2590303bfc93c69d773b9da204337678865ee0cafadb")
-	//addr:= crypto.PubkeyBytesToAddress(pubKey)
-	header := &modules.Header{}
-	header.ParentsHash = []common.Hash{hash}
-	header.TxRoot = core.DeriveSha(txs)
-	header.Number = &modules.ChainIndex{modules.NewPTNIdType(), 1}
+	b := []byte{}
+	header := modules.NewHeader([]common.Hash{hash}, core.DeriveSha(txs), b, b, b, b, []uint16{},
+		modules.NewPTNIdType(), 1, int64(1598766666))
 	headerHash := header.HashWithoutAuthor()
 	sign, _ := crypto.Sign(headerHash[:], privKey)
-	header.Authors = modules.Authentifier{PubKey: pubKey, Signature: sign}
-	header.Time = time.Now().Unix()
-	//header.Number = &modules.ChainIndex{modules.NewPTNIdType(), 1}
+	header.SetAuthor(modules.Authentifier{PubKey: pubKey, Signature: sign})
 	return &modules.Unit{UnitHeader: header, Txs: txs, ReceivedAt: time.Now()}
 }
 
@@ -182,8 +178,6 @@ func createTx() *modules.Transaction {
 	if err != nil {
 		log.Println(err)
 	}
-	unlockScript := tx.TxMessages[0].Payload.(*modules.PaymentPayload).Inputs[0].SignatureScript
-	log.Printf("UnlockScript:%x", unlockScript)
 	return tx
 }
 func mockTestUtxos(assid modules.AssetId) map[modules.OutPoint]*modules.Utxo {

@@ -251,7 +251,7 @@ func (validate *Validate) CheckTxIsExist(tx *modules.Transaction) bool {
 	return validate.checkTxIsExist(tx)
 }
 func (validate *Validate) checkTxIsExist(tx *modules.Transaction) bool {
-	if len(tx.TxMessages) > 2 {
+	if len(tx.TxMessages()) > 2 {
 		txHash := tx.Hash()
 		if validate.dagquery == nil {
 			log.Warnf("Validate DagQuery doesn't set, cannot check tx[%s] is exist or not", txHash.String())

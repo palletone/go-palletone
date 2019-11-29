@@ -47,8 +47,8 @@ type TxSummaryJson struct {
 
 func ConvertTxWithUnitInfo2SummaryJson(tx *modules.TransactionWithUnitInfo,
 	utxoQuery modules.QueryUtxoFunc) *TxSummaryJson {
-
-	pay := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+	msgs := tx.TxMessages()
+	pay := msgs[0].Payload.(*modules.PaymentPayload)
 	payment := ConvertPayment2JsonIncludeFromAddr(pay, utxoQuery)
 	return &TxSummaryJson{
 		TxHash:      tx.Hash().String(),
@@ -59,7 +59,7 @@ func ConvertTxWithUnitInfo2SummaryJson(tx *modules.TransactionWithUnitInfo,
 		TxIndex:     tx.TxIndex,
 		TxSize:      float64(tx.Size()),
 		Payment:     payment,
-		TxMessages:  ConvertMegs2Json(tx.TxMessages),
+		TxMessages:  ConvertMegs2Json(msgs),
 	}
 }
 func ConvertTx2SummaryJson(tx *modules.Transaction,
@@ -68,8 +68,8 @@ func ConvertTx2SummaryJson(tx *modules.Transaction,
 	unitTimestamp int64,
 	txIndex uint64,
 	utxoQuery modules.QueryUtxoFunc) *TxSummaryJson {
-
-	pay := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+	msgs := tx.TxMessages()
+	pay := msgs[0].Payload.(*modules.PaymentPayload)
 	payment := ConvertPayment2JsonIncludeFromAddr(pay, utxoQuery)
 	return &TxSummaryJson{
 		TxHash:      tx.Hash().String(),
@@ -80,7 +80,7 @@ func ConvertTx2SummaryJson(tx *modules.Transaction,
 		TxIndex:     txIndex,
 		TxSize:      float64(tx.Size()),
 		Payment:     payment,
-		TxMessages:  ConvertMegs2Json(tx.TxMessages),
+		TxMessages:  ConvertMegs2Json(msgs),
 	}
 }
 func ConvertMegs2Json(msgs []*modules.Message) string {

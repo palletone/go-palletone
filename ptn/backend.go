@@ -212,7 +212,7 @@ func CreateDB(ctx *node.ServiceContext, config *Config /*, name string*/) (palle
 	//path := ctx.DatabasePath(name)
 	path := dagconfig.DagConfig.DbPath
 
-	log.Debug("Open leveldb path:", "path", path)
+	log.Debugf("Open leveldb path: %s", path)
 	db, err := storage.Init(path, config.DatabaseCache, config.DatabaseHandles)
 	if err != nil {
 		return nil, err
@@ -399,9 +399,9 @@ func (p *PalletOne) GetKeyStore() *keystore.KeyStore {
 func (p *PalletOne) SignGenericTransaction(from common.Address, tx *modules.Transaction) (*modules.Transaction, error) {
 	inputpoints := make(map[modules.OutPoint][]byte)
 
-	for i := 0; i < len(tx.TxMessages); i++ {
+	for i := 0; i < len(tx.Messages()); i++ {
 		// 1. 获取PaymentPayload
-		msg := tx.TxMessages[i]
+		msg := tx.TxMessages()[i]
 		if msg.App != modules.APP_PAYMENT {
 			continue
 		}

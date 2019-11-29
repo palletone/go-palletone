@@ -376,7 +376,7 @@ func (d *Dag) GetUnitHashesFromHash(hash common.Hash, max uint64) []common.Hash 
 		if header.Index() == 0 {
 			break
 		}
-		next := header.ParentsHash[0]
+		next := header.ParentHash()[0]
 		h, err := d.unstableUnitRep.GetHeaderByHash(next)
 		if err != nil {
 			break
@@ -862,7 +862,7 @@ func (d *Dag) GetTxOutput(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 func (d *Dag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error) {
 	neededSet := make(map[modules.OutPoint]struct{})
 
-	for _, msgcopy := range tx.TxMessages {
+	for _, msgcopy := range tx.TxMessages() {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 				if !msg.IsCoinbase() {
@@ -1003,7 +1003,7 @@ func (d *Dag) saveHeader(header *modules.Header) error {
 	if header == nil {
 		return errors.ErrNullPoint
 	}
-	asset := header.Number.AssetID
+	asset := header.GetNumber().AssetID
 	memdag, err := d.getMemDag(asset)
 	if err != nil {
 		log.Error(err.Error())
@@ -1194,7 +1194,7 @@ func (d *Dag) GetLightHeaderByHash(headerHash common.Hash) (*modules.Header, err
 func (d *Dag) GetLightChainHeight(assetId modules.AssetId) uint64 {
 	header := d.CurrentHeader(assetId)
 	if header != nil {
-		return header.Number.Index
+		return header.GetNumber().Index
 	}
 	return uint64(0)
 }
@@ -1204,7 +1204,7 @@ func (d *Dag) InsertLightHeader(headers []*modules.Header) (int, error) {
 	log.Debug("Dag InsertLightHeader numbers", "", len(headers))
 	for _, header := range headers {
 		log.Debug("Dag InsertLightHeader info", "header index:", header.Index(),
-			"assetid", header.Number.AssetID)
+			"assetid", header.GetNumber().AssetID)
 	}
 	count, err := d.InsertHeaderDag(headers)
 
@@ -1347,7 +1347,7 @@ func (d *Dag) CheckHeaderCorrect(number int) error {
 	if err != nil {
 		return fmt.Errorf("Unit height:%d not exits", number)
 	}
-	parentHash := header.ParentsHash[0]
+	parentHash := header.ParentHash()[0]
 	parentNumber := header.NumberU64() - 1
 	for {
 		header, err = d.stableUnitRep.GetHeaderByHash(parentHash)
@@ -1357,8 +1357,8 @@ func (d *Dag) CheckHeaderCorrect(number int) error {
 		if header.NumberU64() != parentNumber {
 			return fmt.Errorf("Number not correct,%d,%d", header.NumberU64(), parentNumber)
 		}
-		if len(header.ParentsHash) > 0 {
-			parentHash = header.ParentsHash[0]
+		if len(header.ParentHash()) > 0 {
+			parentHash = header.ParentHash()[0]
 			parentNumber = header.NumberU64() - 1
 		} else {
 			log.Infof("Check complete!%d", header.NumberU64())
@@ -1394,11 +1394,11 @@ func (d *Dag) CheckUnitsCorrect(assetId string, number int) error {
 
 	// check txroot
 	root := core.DeriveSha(txs)
-	if root != header.TxRoot {
+	if root != header.TxRoot() {
 		return fmt.Errorf("unit height:%d 's txroot:%s is not equal to %s",
-			number, header.TxRoot.String(), root.String())
+			number, header.TxRoot().String(), root.String())
 	}
-	parentHash := header.ParentsHash[0]
+	parentHash := header.ParentHash()[0]
 	parentNumber := header.NumberU64() - 1
 
 	var incorrect_num string
@@ -1418,15 +1418,15 @@ func (d *Dag) CheckUnitsCorrect(assetId string, number int) error {
 		}
 		// check txroot
 		root := core.DeriveSha(txs)
-		if root != header.TxRoot {
+		if root != header.TxRoot() {
 			incorrect_root = true
 			incorrect_num += fmt.Sprintf("%d,", header.NumberU64())
 			log.Debugf("unit height[%d] 's txroot[%s] is not equal the correct[%s].", header.NumberU64(),
-				header.TxRoot.String(), root.String())
+				header.TxRoot().String(), root.String())
 		}
 
-		if len(header.ParentsHash) > 0 {
-			parentHash = header.ParentsHash[0]
+		if len(header.ParentHash()) > 0 {
+			parentHash = header.ParentHash()[0]
 			parentNumber = header.NumberU64() - 1
 		} else {
 			log.Infof("Check complete!%d", header.NumberU64())

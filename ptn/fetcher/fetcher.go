@@ -461,10 +461,10 @@ func (f *Fetcher) loop() {
 				if announce := f.fetching[hash]; announce != nil && announce.origin == task.peer && f.fetched[hash] == nil &&
 					f.completing[hash] == nil && f.queued[hash] == nil {
 					// If the delivered header does not match the promised number, drop the announcer
-					if header.Number.Index != announce.number.Index &&
-						header.Number.AssetID == announce.number.AssetID {
+					if header.GetNumber().Index != announce.number.Index &&
+						header.GetNumber().AssetID == announce.number.AssetID {
 						log.Trace("Invalid block number fetched", "peer", announce.origin, "hash",
-							header.Hash(), "announced", announce.number, "provided", header.Number)
+							header.Hash(), "announced", announce.number, "provided", header.GetNumber())
 						f.dropPeer(announce.origin)
 						f.forgetHash(hash)
 						continue
@@ -477,9 +477,9 @@ func (f *Fetcher) loop() {
 
 						// If the block is empty (header only), short circuit into the final import queue
 						//TODO modify
-						if header.TxRoot == core.DeriveSha(modules.Transactions{}) {
+						if header.TxRoot() == core.DeriveSha(modules.Transactions{}) {
 							log.Trace("Block empty, skipping body retrieval", "peer", announce.origin,
-								"number", header.Number, "hash", header.Hash())
+								"number", header.GetNumber(), "hash", header.Hash())
 
 							block := modules.NewUnitWithHeader(header)
 							block.ReceivedAt = task.time
@@ -492,7 +492,7 @@ func (f *Fetcher) loop() {
 						incomplete = append(incomplete, announce)
 					} else {
 						log.Trace("Block already imported, discarding header", "peer", announce.origin,
-							"number", header.Number, "hash", header.Hash())
+							"number", header.GetNumber(), "hash", header.Hash())
 						f.forgetHash(hash)
 					}
 				} else {
