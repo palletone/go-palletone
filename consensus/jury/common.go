@@ -228,8 +228,7 @@ func createContractErrorPayloadMsg(tx *modules.Transaction, errIn error) *module
 	_, contractReq, _ := getContractTxContractInfo(tx, reqType)
 	switch reqType {
 	case modules.APP_CONTRACT_TPL_REQUEST:
-		//req := contractReq.(*modules.ContractInstallRequestPayload)
-		payload := modules.NewContractTplPayload(nil, 0, nil, contractErr)
+		payload := contractReq.Payload.(*modules.ContractInstallRequestPayload)
 		return modules.NewMessage(modules.APP_CONTRACT_TPL, payload)
 	case modules.APP_CONTRACT_DEPLOY_REQUEST:
 		req := contractReq.Payload.(*modules.ContractDeployRequestPayload)
