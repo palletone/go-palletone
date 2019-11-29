@@ -79,10 +79,10 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return t.test_SendRecvJury(stub)
 	case "testSetEvent":
 		return t.test_SetEvent(stub)
-	case "GetStableTransactionByHash":
-		return t.test_GetStableTransactionByHash(args, stub)
-	case "GetStableUnit":
-		return t.test_GetStableUnit(args, stub)
+		//case "GetStableTransactionByHash":
+		//	return t.test_GetStableTransactionByHash(args, stub)
+		//case "GetStableUnit":
+		//	return t.test_GetStableUnit(args, stub)
 	}
 	return shim.Error("Invalid invoke function name. Expecting \"invoke\"")
 }
@@ -385,36 +385,36 @@ func (t *SimpleChaincode) test_SetEvent(stub shim.ChaincodeStubInterface) pb.Res
 	return shim.Success(nil)
 }
 
-func (t *SimpleChaincode) test_GetStableTransactionByHash(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	if len(args) != 1 {
-		return shim.Error("input: <transaction hash>")
-	}
-	tx, err := stub.GetStableTransactionByHash(args[0])
-	if err != nil {
-		return shim.Error(err.Error())
-	} else {
-		txJSON, _ := json.Marshal(tx)
-		return shim.Success(txJSON)
-	}
-}
-
-func (t *SimpleChaincode) test_GetStableUnit(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	if len(args) != 2 {
-		return shim.Error("input: <unit hash> <unit number>")
-	}
-	unitNumber, err := strconv.ParseUint(args[1], 10, 64)
-	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to convert unitNumber\"}"
-		return shim.Error(jsonResp)
-	}
-	tx, err := stub.GetStableUnit(args[0], unitNumber)
-	if err != nil {
-		return shim.Error(err.Error())
-	} else {
-		txJSON, _ := json.Marshal(tx)
-		return shim.Success(txJSON)
-	}
-}
+//func (t *SimpleChaincode) test_GetStableTransactionByHash(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+//	if len(args) != 1 {
+//		return shim.Error("input: <transaction hash>")
+//	}
+//	tx, err := stub.GetStableTransactionByHash(args[0])
+//	if err != nil {
+//		return shim.Error(err.Error())
+//	} else {
+//		txJSON, _ := json.Marshal(tx)
+//		return shim.Success(txJSON)
+//	}
+//}
+//
+//func (t *SimpleChaincode) test_GetStableUnit(args []string, stub shim.ChaincodeStubInterface) pb.Response {
+//	if len(args) != 2 {
+//		return shim.Error("input: <unit hash> <unit number>")
+//	}
+//	unitNumber, err := strconv.ParseUint(args[1], 10, 64)
+//	if err != nil {
+//		jsonResp := "{\"Error\":\"Failed to convert unitNumber\"}"
+//		return shim.Error(jsonResp)
+//	}
+//	tx, err := stub.GetStableUnit(args[0], unitNumber)
+//	if err != nil {
+//		return shim.Error(err.Error())
+//	} else {
+//		txJSON, _ := json.Marshal(tx)
+//		return shim.Success(txJSON)
+//	}
+//}
 
 func (t *SimpleChaincode) test_DefineToken(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	// stub.DefineToken(byte(dm.AssetType_FungibleToken), createJson, createAddr.String())
