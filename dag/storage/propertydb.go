@@ -24,12 +24,10 @@ import (
 	"encoding/binary"
 	"reflect"
 
-	"fmt"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -52,8 +50,6 @@ type IPropertyDb interface {
 	SetNewestUnit(header *modules.Header) error
 	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, int64, error)
 
-	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
-	GetChaincode(contractId common.Address) (*list.CCInfo, error)
 	GetChainParameters() *core.ChainParameters
 }
 
@@ -182,22 +178,4 @@ func (db *PropertyDb) GetNewestUnit(asset modules.AssetId) (common.Hash, *module
 	log.Debugf("DB[%s] GetNewestUnit: %s,Index:%s,timestamp:%d", reflect.TypeOf(db.db).String(),
 		data.Hash.String(), data.Index.String(), data.Timestamp)
 	return data.Hash, data.Index, int64(data.Timestamp), nil
-}
-
-func (db *PropertyDb) SaveChaincode(contractId common.Address, cc *list.CCInfo) error {
-	log.Debugf("Save chaincodes with contractid %s", contractId.String())
-	key := append(constants.JURY_PROPERTY_USER_CONTRACT_KEY, contractId.Bytes()...)
-	return StoreToRlpBytes(db.db, key, cc)
-}
-
-func (db *PropertyDb) GetChaincode(contractId common.Address) (*list.CCInfo, error) {
-	log.Debugf("Get chaincodes with contractid %s", contractId.String())
-	cc := &list.CCInfo{}
-	key := append(constants.JURY_PROPERTY_USER_CONTRACT_KEY, contractId.Bytes()...)
-	err := RetrieveFromRlpBytes(db.db, key, cc)
-	if err != nil {
-		log.Debugf("Cannot retrieve chaincodes by contractid %s", contractId.String())
-		return nil, fmt.Errorf("GetChaincode fail, err:%s", err.Error())
-	}
-	return cc, nil
 }

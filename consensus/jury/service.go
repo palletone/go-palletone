@@ -36,7 +36,6 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts"
-	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
@@ -104,9 +103,6 @@ type iDag interface {
 	GetScheduledMediator(slotNum uint32) common.Address
 	GetSlotAtTime(when time.Time) uint32
 	GetJurorReward(jurorAdd common.Address) common.Address
-
-	GetChaincode(contractId common.Address) (*list.CCInfo, error)
-	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
 }
 
 type electionVrf struct {

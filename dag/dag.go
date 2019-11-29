@@ -33,7 +33,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
-	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/types"
@@ -770,19 +769,13 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 	return dag, nil
 }
 
-// get chain codes by contract id
-func (d *Dag) GetChaincode(contractId common.Address) (*list.CCInfo, error) {
-	return d.stablePropRep.GetChaincode(contractId)
-}
-
-// save chain code by contract id
-func (d *Dag) SaveChaincode(contractId common.Address, cc *list.CCInfo) error {
-	return d.stablePropRep.SaveChaincode(contractId, cc)
-}
-
 // get contract by contract id
 func (d *Dag) GetContract(id []byte) (*modules.Contract, error) {
 	return d.unstableStateRep.GetContract(id)
+}
+
+func (d *Dag) SaveContract(contract *modules.Contract) error {
+	return d.unstableStateRep.SaveContract(contract)
 }
 
 // get contract deploy by tempId, contractId, and name

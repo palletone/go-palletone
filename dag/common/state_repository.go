@@ -39,6 +39,7 @@ type IStateRepository interface {
 	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStateByVersion(id []byte, field string, version *modules.StateVersion) ([]byte, error)
 
+	SaveContract(contract *modules.Contract) error
 	SaveContractState(id []byte, w *modules.ContractWriteSet, version *modules.StateVersion) error
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
@@ -181,6 +182,10 @@ func (rep *StateRepository) GetContractStatesByPrefix(id []byte,
 
 func (rep *StateRepository) GetContract(id []byte) (*modules.Contract, error) {
 	return rep.statedb.GetContract(id)
+}
+
+func (rep *StateRepository) SaveContract(contract *modules.Contract) error {
+	return rep.statedb.SaveContract(contract)
 }
 
 func (rep *StateRepository) GetAllContracts() ([]*modules.Contract, error) {

@@ -33,7 +33,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
-	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/contracts/ucc"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/errors"
@@ -384,28 +383,28 @@ func (p *Processor) ContractQuery(id []byte, args [][]byte, timeout time.Duratio
 				log.Error("ContractQuery ", "DeployUserCC error", err)
 				return nil, nil
 			}
-			juryAddrs := p.GetLocalJuryAddrs()
-			juryAddr := ""
-			if len(juryAddrs) != 0 {
-				juryAddr = juryAddrs[0].String()
-			}
-			cInf := &list.CCInfo{
-				Id:       addr.Bytes(),
-				Name:     addr.String(),
-				Path:     ct.Path,
-				TempleId: ct.TplId,
-				Version:  cv,
-				Language: ct.Language,
-				SysCC:    false,
-				Address:  juryAddr,
-			}
-			_, err = p.dag.GetChaincode(addr)
-			if err != nil {
-				err = p.dag.SaveChaincode(addr, cInf)
-				if err != nil {
-					log.Debugf("ContractQuery, SaveChaincode err:%s", err.Error())
-				}
-			}
+			//juryAddrs := p.GetLocalJuryAddrs()
+			//juryAddr := ""
+			//if len(juryAddrs) != 0 {
+			//	juryAddr = juryAddrs[0].String()
+			//}
+			//cInf := &list.CCInfo{
+			//	Id:       addr.Bytes(),
+			//	Name:     addr.String(),
+			//	Path:     ct.Path,
+			//	TempleId: ct.TplId,
+			//	Version:  cv,
+			//	Language: ct.Language,
+			//	SysCC:    false,
+			//	Address:  juryAddr,
+			//}
+			//_,err = p.dag.GetContract(addr.Bytes())
+			//if err != nil {
+			//	err = p.dag.SaveChaincode(addr, cInf)
+			//	if err != nil {
+			//		log.Debugf("ContractQuery, SaveChaincode err:%s", err.Error())
+			//	}
+			//}
 		}
 	}
 

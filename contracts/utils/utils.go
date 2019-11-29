@@ -170,15 +170,15 @@ func (pD *PalletOneDocker) RemoveExpiredContainers(cons []docker.APIContainers) 
 				log.Debugf("client.RemoveContainer id=%s error=%s", id, err.Error())
 				continue
 			}
-			cc, err := pD.dag.GetChaincode(str)
+			c, err := pD.dag.GetContract(str.Bytes())
 			if err != nil {
-				log.Debugf("get chaincode error %s", err.Error())
+				log.Debugf("get contract error %s", err.Error())
 				continue
 			}
-			cc.IsExpired = true
-			err = pD.dag.SaveChaincode(str, cc)
+			c.Status = 0
+			err = pD.dag.SaveContract(c)
 			if err != nil {
-				log.Debugf("save chaincode error %s", err.Error())
+				log.Debugf("save contract error %s", err.Error())
 			}
 		}
 	}
@@ -211,6 +211,7 @@ func (pD *PalletOneDocker) RetrieveExpiredContainers(containers []docker.APICont
 					containerDurTime = contract.DuringTime
 				}
 				duration := time.Now().Unix() - c.Created
+				log.Infof("")
 				if uint64(duration) >= containerDurTime {
 					log.Infof("container name = %s was expired.", c.Names[0])
 					idStr[c.ID] = contractAddr
