@@ -228,7 +228,6 @@ func (h *Header) HashWithOutTxRoot() common.Hash {
 	txroot := h.header.TxRoot
 	h.group_sign = make([]byte, 0)
 	h.group_pubKey = make([]byte, 0)
-	h.header.Authors = Authentifier{}
 	h.header.TxRoot = common.Hash{}
 
 	hash := util.RlpHash(h)
@@ -421,11 +420,11 @@ func (au *Authentifier) Address() common.Address {
 
 func NewUnit(header *Header, txs Transactions) *Unit {
 	u := &Unit{
-		UnitHeader: CopyHeader(header),
+		UnitHeader: header,
 		Txs:        CopyTransactions(txs),
 	}
 	u.UnitSize = u.Size()
-	u.UnitHash = u.Hash()
+	u.UnitHash = header.Hash()
 	return u
 }
 
@@ -464,8 +463,9 @@ func (u *Unit) Hash() common.Hash {
 	return u.UnitHash
 }
 func (u *Unit) DisplayId() string {
-	return fmt.Sprintf("%s-%d",u.Hash().String(),u.NumberU64())
+	return fmt.Sprintf("%s-%d", u.Hash().String(), u.NumberU64())
 }
+
 // function Size, return the unit's StorageSize.
 func (u *Unit) Size() common.StorageSize {
 	if u.UnitSize > 0 {
