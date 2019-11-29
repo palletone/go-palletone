@@ -251,10 +251,10 @@ func CopyMessage(cpyMsg *Message) *Message {
 		}
 		msg.Payload = &temp_load
 	case APP_CONTRACT_TPL_REQUEST:
-		payload, _ := cpyMsg.Payload.(*ContractTplPayload)
+		payload, _ := cpyMsg.Payload.(*ContractInstallRequestPayload)
 		temp_load := *payload
-		temp_load.TemplateId = common.CopyBytes(payload.TemplateId)
-		temp_load.ByteCode = common.CopyBytes(payload.ByteCode)
+		temp_load.AddrHash = make([]common.Hash,0)
+		temp_load.AddrHash = append(temp_load.AddrHash, payload.AddrHash...)
 		msg.Payload = &temp_load
 	case APP_CONTRACT_DEPLOY_REQUEST:
 		payload, _ := cpyMsg.Payload.(*ContractDeployRequestPayload)

@@ -110,7 +110,7 @@ func (validate *Validate) validateUnitAuthor(h *modules.Header) ValidationCode {
 			mediatorAddrs += m.String() + ","
 		}
 		log.Warnf("Active mediator list is:%s, current unit[%s %d] author is %s",
-			mediatorAddrs, h.Hash(), h.NumberU64(), authorAddr.String())
+			mediatorAddrs, h.Hash().String(), h.NumberU64(), authorAddr.String())
 		return UNIT_STATE_INVALID_AUTHOR
 	}
 	return TxValidationCode_VALID
