@@ -448,8 +448,15 @@ type ElectionNode struct {
 
 type ContractReadSet struct {
 	Key        string        `json:"key"`
-	Version    *StateVersion `json:"version" rlp:"nil"`
+	Version    *StateVersion `json:"version" rlp:"-"`
 	ContractId []byte        `json:"contract_id"`
+}
+type contractReadSetTemp struct {
+	Key        string  `json:"key"`
+	AssetId    AssetId `json:"asset_id"`
+	Index      uint64  `json:"chain_index"`
+	TxIndex    uint32  `json:"tx_index"`
+	ContractId []byte  `json:"contract_id"`
 }
 
 //请求合约信息
