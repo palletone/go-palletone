@@ -958,13 +958,13 @@ func getWithdrawPrepare(txID, ethAddrInput string, stub shim.ChaincodeStubInterf
 	}
 
 	//2 sender address, get it from txPre output
-	payment := tx.TxMessages[0].Payload.(*dm.PaymentPayload)
+	payment := tx.TxMessages()[0].Payload.(*dm.PaymentPayload)
 	outPoint := payment.Inputs[0].PreviousOutPoint
 	txPre, err := stub.GetStableTransactionByHash(outPoint.TxHash.String())
 	if nil != err {
 		return nil, fmt.Errorf("GetStableTransactionByHash txPre failed" + err.Error())
 	}
-	paymentPre := txPre.TxMessages[outPoint.MessageIndex].Payload.(*dm.PaymentPayload)
+	paymentPre := txPre.TxMessages()[outPoint.MessageIndex].Payload.(*dm.PaymentPayload)
 	outputPre := paymentPre.Outputs[outPoint.OutIndex]
 	toAddr, _ := tokenengine.Instance.GetAddressFromScript(outputPre.PkScript)
 
@@ -985,7 +985,7 @@ func getWithdrawPrepare(txID, ethAddrInput string, stub shim.ChaincodeStubInterf
 
 	//4 op_return
 	ethAddr := ""
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.Messages() {
 		if msg.App == dm.APP_DATA {
 			text := msg.Payload.(*dm.DataPayload)
 			ethAddr = string(text.MainData)
