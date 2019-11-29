@@ -310,6 +310,7 @@ matrix:
       script:
         - ip addr
         - make gptn
+        - gptnVersion=`./build/bin/gptn version|grep ^Version|awk '{print $2}'|awk -F '-' '{print $1}'`
         - docker images
         - cat /proc/sys/net/ipv4/ip_forward
         - sudo ./jurySec.sh
@@ -321,6 +322,8 @@ matrix:
         - chmod +x editConfig.sh
         - docker network ls
         - docker network create gptn-net
+        - docker pull palletone/goimg
+        - docker tag palletone/goimg palletone/goimg:$gptnVersion
         - ./deploy.sh 3 3
         - ./editConfig.sh 3 3
         - ./start.sh 3
