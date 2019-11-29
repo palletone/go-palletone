@@ -486,6 +486,16 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Success([]byte("true"))
 		}
 		return shim.Success([]byte("false"))
+	case "UpdateKeyValue":
+		if len(args) != 2 {
+			return shim.Error("args need two param")
+		}
+		return d.UpdateKeyValue(stub, args[0], args[1])
+	case "DeleteKey":
+		if len(args) != 1 {
+			return shim.Error("arg needs one param")
+		}
+		return d.DeteleKey(stub, args[0])
 	}
 	return shim.Error("please enter validate function name")
 }
@@ -893,7 +903,7 @@ func (d DepositChaincode) GetAllJury(stub shim.ChaincodeStubInterface) pb.Respon
 func (d DepositChaincode) IsFinishAllocated(stub shim.ChaincodeStubInterface) bool {
 	//  判断当天是否处理过
 	today := getToday(stub)
-	newdate,err := stub.GetState(constants.AddNewAddress)
+	newdate, err := stub.GetState(constants.AddNewAddress)
 	if err != nil {
 		log.Warn("GetState error: ", err.Error())
 		return true
@@ -914,22 +924,22 @@ func (d DepositChaincode) IsFinishAllocated(stub shim.ChaincodeStubInterface) bo
 		return true
 	}
 	if today == string(newdate) {
-		if today ==  lastDate {
-			log.Infof("allocate = %s, today = %s, lastDate = %s, newdate = %s, depositList length = %d", finish, today, lastDate,newdate, len(depositList))
+		if today == lastDate {
+			log.Infof("allocate = %s, today = %s, lastDate = %s, newdate = %s, depositList length = %d", finish, today, lastDate, newdate, len(depositList))
 			return true
 		}
 		if len(depositList) == 0 {
 			if string(finish) == "allocate" {
-				log.Infof("allocate = %s, today = %s, lastDate = %s, newdate = %s, depositList length = %d", finish, today,lastDate, newdate, len(depositList))
+				log.Infof("allocate = %s, today = %s, lastDate = %s, newdate = %s, depositList length = %d", finish, today, lastDate, newdate, len(depositList))
 				return false
 			}
-			log.Infof("allocate = %s, today = %s, lastDate = %s, newdate = %s, depositList length = %d", finish, today, lastDate,newdate, len(depositList))
+			log.Infof("allocate = %s, today = %s, lastDate = %s, newdate = %s, depositList length = %d", finish, today, lastDate, newdate, len(depositList))
 			return true
 		}
-		log.Infof("allocate = %s, today = %s, lastDate = %s, newdate = %s, depositList length = %d", finish, today, lastDate,newdate, len(depositList))
+		log.Infof("allocate = %s, today = %s, lastDate = %s, newdate = %s, depositList length = %d", finish, today, lastDate, newdate, len(depositList))
 		return false
 	}
-	log.Infof("allocate = %s, today = %s, lastDate = %s, newdate = %s, depositList length = %d", finish, today, lastDate,newdate, len(depositList))
+	log.Infof("allocate = %s, today = %s, lastDate = %s, newdate = %s, depositList length = %d", finish, today, lastDate, newdate, len(depositList))
 	return false
 }
 
@@ -957,4 +967,37 @@ func (d DepositChaincode) IsFinishAddNewRecords(stub shim.ChaincodeStubInterface
 // 更新陪审员信息
 func (d DepositChaincode) updateJuryInfo(stub shim.ChaincodeStubInterface, args string) pb.Response {
 	return updateJuryInfo(stub, args)
+}
+
+// 更新某个key
+func (d DepositChaincode) UpdateKeyValue(stub shim.ChaincodeStubInterface, key, value string) pb.Response {
+	if !isFoundationInvoke(stub) {
+		return shim.Error("please use foundation address")
+	}
+	b, err := stub.GetState(key)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	log.Infof("update key = %s, old value = %s to new value = %s", key, string(b), value)
+	err = stub.PutState(key, []byte(value))
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	return shim.Success(nil)
+}
+
+func (d DepositChaincode) DeteleKey(stub shim.ChaincodeStubInterface, key string) pb.Response {
+	if !isFoundationInvoke(stub) {
+		return shim.Error("please use foundation address")
+	}
+	b, err := stub.GetState(key)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	log.Infof("delete key = %s, value = %s", key, string(b))
+	err = stub.DelState(key)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	return shim.Success(nil)
 }
