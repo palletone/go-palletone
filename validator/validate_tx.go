@@ -531,7 +531,7 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			if err == nil { //之前有奖励
 				rlp.DecodeBytes(data, &income)
 			}
-			data = [] byte{}
+			//data = [] byte{}
 			data, _ = json.Marshal(income)
 			log.Debug(v.Addr.String() + ": Coinbase History reward:" + string(data) + " version:" + version.String())
 			log.Debugf("Add reward %d %s to %s", v.Amount, v.Asset.String(), v.Addr.String())
