@@ -209,16 +209,20 @@ func TestJurors(t *testing.T) {
 	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123}, TxIndex: 1}
 	list := make(map[string]bool)
 	j1 := &modules.JurorDeposit{}
-	j1.Address = "p1"
+	j1.Address = "P18jiWZTYN3KzHknFpeqPGJ9h1Zc4Tp5F5Z"
+	a, _ := common.StringToAddress(j1.Address)
+	j1.RewardAddr = a
 	list[j1.Address] = true
 	b1, _ := json.Marshal(j1)
 	j2 := &modules.JurorDeposit{}
-	j2.Address = "p2"
+	j2.Address = "P154af9pTuUadTXhzgZewJRskqbRkuKW13f"
+	b, _ := common.StringToAddress(j2.Address)
+	j2.RewardAddr = b
 	list[j2.Address] = true
 	b2, _ := json.Marshal(j2)
 	lb, _ := json.Marshal(list)
-	ws1 := modules.NewWriteSet(JuryDepositKey("p1"), b1)
-	ws2 := modules.NewWriteSet(JuryDepositKey("p2"), b2)
+	ws1 := modules.NewWriteSet(JuryDepositKey(j1.Address), b1)
+	ws2 := modules.NewWriteSet(JuryDepositKey(j2.Address), b2)
 	ws3 := modules.NewWriteSet(modules.JuryList, lb)
 	ws := []modules.ContractWriteSet{}
 	ws = append(ws, *ws1)
@@ -232,7 +236,7 @@ func TestJurors(t *testing.T) {
 	juror, err := statedb.GetAllJuror()
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(juror))
-	j, err := statedb.GetJurorByAddr("p1")
+	j, err := statedb.GetJurorByAddr(j1.Address)
 	assert.Nil(t, err)
 	assert.NotNil(t, j)
 }
