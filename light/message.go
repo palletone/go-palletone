@@ -31,7 +31,7 @@ func (pm *ProtocolManager) AnnounceMsg(msg p2p.Msg, p *peer) error {
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
 
-	if err := json.Unmarshal(data, &req.Header); err != nil {
+	if err := rlp.DecodeBytes(data, &req.Header); err != nil {
 		log.Error("AnnounceMsg", "Unmarshal err", err, "data", data)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
