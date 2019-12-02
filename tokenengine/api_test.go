@@ -366,6 +366,7 @@ func TestMultiSign2Step(t *testing.T) {
 		}
 		return nil, nil
 	}
+	
 	sign1, err := Instance.MultiSignOnePaymentInput(tx, SigHashAll, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn1, nil)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
@@ -388,6 +389,100 @@ func TestMultiSign2Step(t *testing.T) {
 	pay1 = tx.Messages()[0].Payload.(*modules.PaymentPayload)
 	pay1.Inputs[0].SignatureScript = sign2
 	str, _ := txscript.DisasmString(sign2)
+	t.Logf("Signed script:{%s}", str)
+
+
+	err = Instance.ScriptValidate(lockScript, nil, tx, 0, 0)
+	assert.Nil(t, err, fmt.Sprintf("validate error:%s", err))
+}
+
+//构造一个3/5签名的地址和UTXO，然后用其中的3个私钥分两步对其进行签名
+func TestMultiSign3Step(t *testing.T) {
+	lockScript, redeemScript, addressMulti := build35Address()
+	t.Logf("MultiSign Address:%s\n", addressMulti)
+	t.Logf("RedeemScript: %x\n", redeemScript)
+	t.Logf("RedeemScript: %d\n", redeemScript)
+
+	payment := &modules.PaymentPayload{}
+	utxoTxId := common.HexToHash("1111870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
+	outPoint := modules.NewOutPoint(utxoTxId, 0, 0)
+	txIn := modules.NewTxIn(outPoint, []byte{})
+	payment.AddTxIn(txIn)
+	p1lockScript := Instance.GenerateP2PKHLockScript(crypto.Hash160(pubKey1B))
+	asset0 := &modules.Asset{}
+	payment.AddTxOut(modules.NewTxOut(1, p1lockScript, asset0))
+	m1 := modules.NewMessage(modules.APP_PAYMENT, payment)
+	tx := modules.NewTransaction([]*modules.Message{m1})
+	//scriptCp:=make([]byte,len(lockScript))
+	//copy(scriptCp,lockScript)
+	//privKeys := map[common.Address]*ecdsa.PrivateKey{
+	//	address1: prvKey1,
+	//}
+	getPubKeyFn := func(addr common.Address) ([]byte, error) {
+		if addr == address1 {
+			return crypto.CompressPubkey(&prvKey1.PublicKey), nil
+		}
+		if addr == address2 {
+			return crypto.CompressPubkey(&prvKey2.PublicKey), nil
+		}
+		return nil, nil
+	}
+	getSignFn1 := func(addr common.Address, msg []byte) ([]byte, error) {
+
+		if addr == address1 {
+			return crypto.MyCryptoLib.Sign(prvKey1B, msg)
+		}
+		
+		return nil, nil
+	}
+	getSignFn2 := func(addr common.Address, msg []byte) ([]byte, error) {
+		if addr == address2 {
+			return crypto.MyCryptoLib.Sign(prvKey2B, msg)
+		}
+		return nil, nil
+	}
+
+	getSignFn3 := func(addr common.Address, msg []byte) ([]byte, error) {
+		if addr == address3 {
+			return crypto.MyCryptoLib.Sign(prvKey3B, msg)
+		}
+		return nil, nil
+	}
+   
+
+	sign1, err := Instance.MultiSignOnePaymentInput(tx, SigHashAll, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn1, nil)
+	if err != nil {
+		t.Logf("Sign error:%s", err)
+	}
+	t.Logf("PrvKey1 sign result:%x\n", sign1)
+	pay1 := tx.Messages()[0].Payload.(*modules.PaymentPayload)
+	pay1.Inputs[0].SignatureScript = sign1
+
+	//privKeys2 := map[common.Address]*ecdsa.PrivateKey{
+	//	address2: prvKey2,
+	//}
+	//scriptCp2:=make([]byte,len(lockScript))
+	//copy(scriptCp2,lockScript)
+	sign2, err := Instance.MultiSignOnePaymentInput(tx, SigHashAll, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn2, sign1)
+	if err != nil {
+		t.Logf("Sign error:%s", err)
+	}
+	t.Logf("PrvKey2 sign result:%x\n", sign2)
+
+	pay1 = tx.Messages()[0].Payload.(*modules.PaymentPayload)
+	pay1.Inputs[0].SignatureScript = sign2
+	str, _ := txscript.DisasmString(sign2)
+	t.Logf("Signed script:{%s}", str)
+
+    sign3, err := Instance.MultiSignOnePaymentInput(tx, SigHashAll, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn2, sign1)
+	if err != nil {
+		t.Logf("Sign error:%s", err)
+	}
+	t.Logf("PrvKey2 sign result:%x\n", sign3)
+
+    pay1 = tx.Messages()[0].Payload.(*modules.PaymentPayload)
+	pay1.Inputs[0].SignatureScript = sign3
+	str, _ := txscript.DisasmString(sign3)
 	t.Logf("Signed script:{%s}", str)
 
 	err = Instance.ScriptValidate(lockScript, nil, tx, 0, 0)
