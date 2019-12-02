@@ -60,18 +60,16 @@ func (p *ETHPort) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			return shim.Error("need 1 args (AssetStr)")
 		}
 		return p.SetETHTokenAsset(args[0], stub)
-	case "getETHToken":
-		fallthrough
-	case "getETHTokenByAddr":
+	case "payoutETHTokenByAddr":
 		if len(args) < 1 {
 			return shim.Error("need 1 args (ETHAddr)")
 		}
-		return p.GetETHTokenByAddr(args[0], stub)
-	case "getETHTokenByTxID":
+		return p.PayoutETHTokenByAddr(args[0], stub)
+	case "payoutETHTokenByTxID":
 		if len(args) < 1 {
 			return shim.Error("need 1 args (ETHTransferTxID)")
 		}
-		return p.GetETHTokenByTxID(args[0], stub)
+		return p.PayoutETHTokenByTxID(args[0], stub)
 
 	case "setETHContract":
 		if len(args) < 1 {
@@ -105,7 +103,7 @@ func (p *ETHPort) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		return p.WithdrawFee(args[0], stub)
 
-	case "GetWithdrawData":
+	case "getWithdrawData":
 		if len(args) < 1 {
 			return shim.Error("need 1 args (reqID (from withdrawPrepare))")
 		}
@@ -212,20 +210,20 @@ func (p *ETHPort) InitDepositAddr(stub shim.ChaincodeStubInterface) pb.Response 
 	juryAddr, err := stub.OutChainCall("eth", "GetJuryAddr", []byte(""))
 	if err != nil {
 		log.Debugf("OutChainCall GetJuryETHAddr err: %s", err.Error())
-		return shim.Error("OutChainCall GetJuryETHAddr failed" + err.Error())
+		return shim.Error("OutChainCall GetJuryETHAddr failed " + err.Error())
 	}
 	log.Debugf("juryAddr: %s", string(juryAddr))
 
 	result, err := stub.OutChainCall("eth", "GetJuryPubkey", []byte(""))
 	if err != nil {
 		log.Debugf("OutChainCall GetJuryPubkey err: %s", err.Error())
-		return shim.Error("OutChainCall GetJuryPubkey failed" + err.Error())
+		return shim.Error("OutChainCall GetJuryPubkey failed " + err.Error())
 	}
 	var juryPubkey adaptor.GetPublicKeyOutput
 	err = json.Unmarshal(result, &juryPubkey)
 	if err != nil {
 		log.Debugf("OutChainCall GetJuryPubkey Unmarshal err: %s", err.Error())
-		return shim.Error("OutChainCall GetJuryPubkey Unmarshal failed" + err.Error())
+		return shim.Error("OutChainCall GetJuryPubkey Unmarshal failed " + err.Error())
 	}
 	log.Debugf("juryPubkey.PublicKey: %x", juryPubkey.PublicKey)
 
@@ -407,7 +405,7 @@ func getHeight(stub shim.ChaincodeStubInterface) (uint, error) {
 	return output.Block.BlockHeight, nil
 }
 
-func (p *ETHPort) GetETHTokenByAddr(ethAddr string, stub shim.ChaincodeStubInterface) pb.Response {
+func (p *ETHPort) PayoutETHTokenByAddr(ethAddr string, stub shim.ChaincodeStubInterface) pb.Response {
 	//
 	mapAddr := getETHContract(stub)
 	if mapAddr == "" {
@@ -532,7 +530,7 @@ func GetETHTx(txID []byte, stub shim.ChaincodeStubInterface) (*adaptor.GetTransf
 	return &output, nil
 }
 
-func (p *ETHPort) GetETHTokenByTxID(ethTxID string, stub shim.ChaincodeStubInterface) pb.Response {
+func (p *ETHPort) PayoutETHTokenByTxID(ethTxID string, stub shim.ChaincodeStubInterface) pb.Response {
 	//
 	if "0x" == ethTxID[0:2] || "0X" == ethTxID[0:2] {
 		ethTxID = ethTxID[2:]
@@ -859,13 +857,13 @@ func processWithdrawSig(txID, reqidNew, recvAddr string, ethAmount uint64, stub 
 	resultPubkey, err := stub.OutChainCall("eth", "GetJuryPubkey", []byte(""))
 	if err != nil {
 		log.Debugf("OutChainCall GetJuryPubkey err: %s", err.Error())
-		return []string{}, fmt.Errorf("OutChainCall GetJuryPubkey failed" + err.Error())
+		return []string{}, fmt.Errorf("OutChainCall GetJuryPubkey failed " + err.Error())
 	}
 	var juryPubkey adaptor.GetPublicKeyOutput
 	err = json.Unmarshal(resultPubkey, &juryPubkey)
 	if err != nil {
 		log.Debugf("OutChainCall GetJuryPubkey Unmarshal err: %s", err.Error())
-		return []string{}, fmt.Errorf("OutChainCall GetJuryPubkey Unmarshal failed" + err.Error())
+		return []string{}, fmt.Errorf("OutChainCall GetJuryPubkey Unmarshal failed " + err.Error())
 	}
 	//计算交易哈希
 	rawTx := fmt.Sprintf("%s %d %s", recvAddr, ethAmount, reqidNew)
@@ -954,17 +952,19 @@ func getWithdrawPrepare(txID, ethAddrInput string, stub shim.ChaincodeStubInterf
 	// 1 get this tx
 	tx, err := stub.GetStableTransactionByHash(txID)
 	if nil != err {
-		return nil, fmt.Errorf("GetStableTransactionByHash failed" + err.Error())
+		return nil, fmt.Errorf("GetStableTransactionByHash failed " + err.Error())
 	}
 
 	//2 sender address, get it from txPre output
-	payment := tx.TxMessages()[0].Payload.(*dm.PaymentPayload)
+	txMsgs := tx.TxMessages()
+	payment := txMsgs[0].Payload.(*dm.PaymentPayload)
 	outPoint := payment.Inputs[0].PreviousOutPoint
 	txPre, err := stub.GetStableTransactionByHash(outPoint.TxHash.String())
 	if nil != err {
-		return nil, fmt.Errorf("GetStableTransactionByHash txPre failed" + err.Error())
+		return nil, fmt.Errorf("GetStableTransactionByHash txPre failed " + err.Error())
 	}
-	paymentPre := txPre.TxMessages()[outPoint.MessageIndex].Payload.(*dm.PaymentPayload)
+	txPreMsgs := txPre.TxMessages()
+	paymentPre := txPreMsgs[outPoint.MessageIndex].Payload.(*dm.PaymentPayload)
 	outputPre := paymentPre.Outputs[outPoint.OutIndex]
 	toAddr, _ := tokenengine.Instance.GetAddressFromScript(outputPre.PkScript)
 
@@ -985,7 +985,7 @@ func getWithdrawPrepare(txID, ethAddrInput string, stub shim.ChaincodeStubInterf
 
 	//4 op_return
 	ethAddr := ""
-	for _, msg := range tx.Messages() {
+	for _, msg := range txMsgs {
 		if msg.App == dm.APP_DATA {
 			text := msg.Payload.(*dm.DataPayload)
 			ethAddr = string(text.MainData)
@@ -1010,7 +1010,7 @@ func getWithdrawPrepare(txID, ethAddrInput string, stub shim.ChaincodeStubInterf
 }
 func (p *ETHPort) WithdrawETH(txID, ethAddrInput string, stub shim.ChaincodeStubInterface) pb.Response {
 	if "0x" == txID[0:2] || "0X" == txID[0:2] {
-		txID = txID[0:2]
+		txID = txID[2:]
 	}
 
 	resultWithdraw, _ := stub.GetState(symbolsWithdraw + txID)
@@ -1153,7 +1153,7 @@ func (p *ETHPort) WithdrawSubmit(ethTxID string, stub shim.ChaincodeStubInterfac
 	err = stub.PutState(symbolsSubmit+ethTxID, []byte(ptnAddr+"-"+fmt.Sprintf("%d", prepare.EthFee)))
 	if err != nil {
 		log.Debugf("PutState symbolsSubmit failed err: %s", err.Error())
-		return shim.Error("PutState symbolsSubmit failed" + err.Error())
+		return shim.Error("PutState symbolsSubmit failed " + err.Error())
 	}
 
 	//
@@ -1255,7 +1255,7 @@ func getInputData(contractAddr, reqid, recvAddr string, ethAmount uint64, sig1, 
 	invokeTxJSON, err := stub.OutChainCall("eth", "CreateContractInvokeTx", invokeInputJSON)
 	if err != nil {
 		log.Debugf("OutChainCall CreateContractInvokeTx err: %s", err.Error())
-		return "", fmt.Errorf("OutChainCall CreateContractInvokeTx failed" + err.Error())
+		return "", fmt.Errorf("OutChainCall CreateContractInvokeTx failed " + err.Error())
 	}
 
 	invokeOutput := adaptor.CreateContractInvokeTxOutput{}
@@ -1266,7 +1266,7 @@ func getInputData(contractAddr, reqid, recvAddr string, ethAmount uint64, sig1, 
 
 func (p *ETHPort) GetWithdrawData(stub shim.ChaincodeStubInterface, reqid string) pb.Response {
 	if "0x" == reqid[0:2] || "0X" == reqid[0:2] {
-		reqid = reqid[0:2]
+		reqid = reqid[2:]
 	}
 	result, _ := stub.GetState(symbolsWithdraw + reqid)
 	if len(result) == 0 {
