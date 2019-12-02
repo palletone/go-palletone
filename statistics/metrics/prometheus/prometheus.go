@@ -97,7 +97,7 @@ func (db *Prometheus) Start(server *p2p.Server, corss *p2p.Server) error {
 	go func() {
 		http.Handle("/", promhttp.Handler())
 		///api/v1/query
-		http.Handle("/api/v1/query", db.QueryHandler())
+		//http.Handle("/api/v1/query", db.QueryHandler())
 
 		if err := http.ListenAndServe(fmt.Sprintf("%s:%d", db.config.Host, db.config.Port), nil); err != nil {
 			log.Error("Failed to starting prometheus", "err", err)
@@ -159,3 +159,44 @@ func (db *Prometheus) Stop() error {
 
 	return nil
 }
+
+// Start implements node.Service, starting the data collection thread and the listening server of the dashboard.
+//func (db *Prometheus) Start(server *p2p.Server, corss *p2p.Server) error {
+//
+//	webcfg := web.Options{}
+//	webcfg.ListenAddress = "0.0.0.0:9090"
+//	webcfg.MaxConnections = 512
+//	webcfg.EnableLifecycle = false
+//	webcfg.EnableAdminAPI = false
+//	webcfg.ConsoleTemplatesPath = "consoles"
+//	webcfg.ConsoleLibrariesPath = "console_libraries"
+//	webcfg.PageTitle = "Prometheus Time Series Collection and Processing Server"
+//	webcfg.RemoteReadConcurrencyLimit = 10
+//	webcfg.RemoteReadBytesInFrame = 1048576
+//
+//	webHandler := web.New(nil, &webcfg)
+//	ctxWeb, cancelWeb := context.WithCancel(context.Background())
+//	plog.Debug("======================")
+//	var g run.Group
+//	{
+//		// Web handler.
+//		g.Add(
+//			func() error {
+//				if err := webHandler.Run(ctxWeb); err != nil {
+//					return errors.Wrapf(err, "error starting web server")
+//				}
+//				return nil
+//			},
+//			func(err error) {
+//				cancelWeb()
+//			},
+//		)
+//	}
+//
+//	if err := g.Run(); err != nil {
+//		plog.Error("Prometheus g.run", "error", err)
+//		os.Exit(1)
+//	}
+//	plog.Info("Prometheus See you next time!")
+//	return nil
+//}

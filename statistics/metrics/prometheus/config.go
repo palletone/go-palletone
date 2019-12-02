@@ -21,7 +21,7 @@ import "time"
 // DefaultConfig contains default settings for the dashboard.
 var DefaultConfig = Config{
 	Host:    "0.0.0.0",
-	Port:    9090,
+	Port:    8080,
 	Refresh: 5 * time.Second,
 }
 
