@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-
 	"time"
 
 	"github.com/ethereum/go-ethereum/rlp"
@@ -166,7 +165,7 @@ func TestTransactionEncode(t *testing.T) {
 	t.Log("data", tx)
 
 	assertEqualRlp(t, txmsg3, tx)
-	msgs:=tx.TxMessages()
+	msgs := tx.TxMessages()
 	for _, msg := range msgs {
 		if msg.App == APP_PAYMENT {
 			pay := msg.Payload.(*PaymentPayload)

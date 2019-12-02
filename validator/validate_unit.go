@@ -210,7 +210,7 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) Validat
 	}
 	start := time.Now()
 	defer func() {
-		log.Debugf("ValidateUnitExceptGroupSig unit[%s],cost:%s", unit.Hash().String(), time.Since(start))
+		log.Debugf("ValidateUnitExceptGroupSig unit[%s],cost:%s", unitHash.String(), time.Since(start))
 	}()
 	// 1568197800 2019-09-11 18:30:00 testNet分叉修复后，统一的leveldb
 	// 2019-07-11 12:56:46 849c2cb5c7b3fbd37b2ac5f318716f90613259f2 将洗牌算法的种子由时间戳改成hash

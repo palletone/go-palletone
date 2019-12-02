@@ -82,7 +82,7 @@ func (validate *Validate) setUtxoQuery(q IUtxoQuery) {
 
 //逐条验证每一个Tx，并返回总手续费的分配情况，然后与Coinbase进行比较
 func (validate *Validate) validateTransactions(txs modules.Transactions, unitTime int64, unitAuthor common.Address) ValidationCode {
-	ads := []*modules.Addition{}
+	ads := make([]*modules.Addition, 0)
 
 	oldUtxoQuery := validate.utxoquery
 
@@ -226,7 +226,7 @@ func (validate *Validate) validateTxAndCache(tx *modules.Transaction, isFullTx b
 		validate.cache.AddTxValidateResult(txId, addition)
 		return addition, code, nil
 	}
-	return addition, code, NewValidateError(code)
+	return nil, code, NewValidateError(code)
 }
 
 // todo
