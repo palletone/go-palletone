@@ -54,7 +54,7 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'payDeposit',
 			call: 'mediator_payDeposit',
-			params: 2,
+			params: 3,
 		}),
 		new web3._extend.Method({
 			name: 'getDeposit',
@@ -69,7 +69,7 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'quit',
 			call: 'mediator_quit',
-			params: 1,
+			params: 2,
 		}),
 		new web3._extend.Method({
 			name: 'vote',
@@ -79,7 +79,7 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'update',
 			call: 'mediator_update',
-			params: 1,
+			params: 2,
 		}),
 		new web3._extend.Method({
 			name: 'getNextUpdateTime',

@@ -969,6 +969,8 @@ func (a *Addition) IsEqualStyle(b *Addition) (bool, error) {
 	return false, nil
 }
 func (a *Addition) Key() string {
-	b := append(a.Addr.Bytes21(), a.Asset.Bytes()...)
-	return hex.EncodeToString(b)
+	if a.Asset != nil {
+		return hex.EncodeToString(append(a.Addr.Bytes21(), a.Asset.Bytes()...))
+	}
+	return hex.EncodeToString(a.Addr.Bytes21())
 }

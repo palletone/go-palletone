@@ -194,6 +194,9 @@ func IsHexAddress(s string) bool {
 
 // Get the string representation of the underlying address
 func (a Address) Str() string {
+	if a == (Address{}) {
+		return ""
+	}
 	return "P" + base58.CheckEncode(a[0:20], a[20])
 }
 

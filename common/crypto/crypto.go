@@ -242,6 +242,9 @@ func ValidateSignatureValues(v byte, r, s *big.Int, homestead bool) bool {
 //	return PubkeyBytesToAddress(pubBytes)
 //}
 func PubkeyBytesToAddress(pubKeyCompressBytes []byte) common.Address {
+	if len(pubKeyCompressBytes) == 0 {
+		return common.Address{}
+	}
 	pubKeyHash := Hash160(pubKeyCompressBytes)
 	return common.NewAddress(pubKeyHash, common.PublicKeyHash)
 }

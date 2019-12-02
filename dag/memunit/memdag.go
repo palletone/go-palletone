@@ -544,18 +544,23 @@ func (chain *MemDag) AddStableUnit(unit *modules.Unit) error {
 	//		chain.token.String(), s_hash.String(), unit.Hash().String())
 	//	return nil
 	//}
+
 	validateResult := chain.ldbValidator.ValidateUnitExceptGroupSig(unit)
 	if validateResult != validator.TxValidationCode_VALID {
 		return validator.NewValidateError(validateResult)
 	}
+
 	err := chain.saveUnitToDb(chain.ldbunitRep, chain.ldbUnitProduceRep, unit)
 	if err != nil {
 		return err
 	}
-	log.Debugf("add stable unit to dag, hash[%s], index:%d", hash.String(), number)
+
+	log.Debugf("add stable unit to dag, index: %d , hash[%s]", number, hash.TerminalString())
+
 	if number%1000 == 0 {
-		log.Infof("add stable unit to dag, hash[%s], index:%d", hash.String(), number)
+		log.Infof("add stable unit to dag, index: %d , hash[%s]", number, hash.TerminalString())
 	}
+
 	//Set stable unit
 	chain.stableUnitHash = hash
 	chain.stableUnitHeight = number

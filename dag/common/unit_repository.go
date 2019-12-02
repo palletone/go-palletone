@@ -577,17 +577,10 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 	// step9. generate genesis unit header
 	header.SetTxsIllegal(illegalTxs)
 	header.SetTxRoot(root)
-	unit := &modules.Unit{}
-	unit.UnitHeader = header
-	unit.UnitHash = header.Hash()
-
-	// step10. copy txs
-	unit.CopyBody(txs)
-
-	// step11. set size
-	unit.UnitSize = unit.Size()
-	log.Debugf("CreateUnit[%s] and create unit unlock unitRepository cost time %s,txs[%d]",
-		unit.UnitHash.String(), time.Since(begin), len(txs))
+	unit := modules.NewUnit(header, txs)
+	
+	log.Debugf("mediator:[%s] create unit[%s] and create unit unlock unitRepository cost time %s,txs[%d]",
+		unit.Author().String(), unit.UnitHash.String(), time.Since(begin), len(txs))
 	return unit, nil
 }
 
