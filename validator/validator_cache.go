@@ -52,7 +52,7 @@ func (s *ValidatorCache) AddTxValidateResult(txId common.Hash, validateResult []
 }
 func (s *ValidatorCache) HasTxValidateResult(txId common.Hash) (bool, []*modules.Addition) {
 	data, err := s.cache.Get(append(prefixTx, txId.Bytes()...))
-	if err != nil {
+	if err != nil || len(data) == 0 {
 		return false, nil
 	}
 

@@ -880,7 +880,7 @@ func (tx *Transaction) GetTxFeeAllocateLegacyV1(queryUtxoFunc QueryUtxoFunc, get
 func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFunc GetScriptSignersFunc,
 	mediatorReward common.Address, getJurorRewardFunc GetJurorRewardAddFunc) ([]*Addition, error) {
 	fee, err := tx.GetTxFee(queryUtxoFunc)
-	result := []*Addition{}
+	result := make([]*Addition, 0)
 	if err != nil {
 		return nil, err
 	}

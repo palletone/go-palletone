@@ -183,7 +183,7 @@ func arrangeAdditionFeeList(ads []*modules.Addition) []*modules.Addition {
 	if len(out) < 1 {
 		return nil
 	}
-	result := []*modules.Addition{}
+	result := make([]*modules.Addition, 0)
 	for _, v := range out {
 		result = append(result, v)
 	}

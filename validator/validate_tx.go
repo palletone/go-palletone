@@ -355,35 +355,47 @@ func (validate *Validate) validateTxFeeValid(tx *modules.Transaction) (bool, []*
 	}
 
 	//check fee is or not enough
-	var feeAllocate []*modules.Addition
-	var err error
+	assetId := dagconfig.DagConfig.GetGasToken()
 	if validate.enableTxFeeCheck {
 		if !validate.ValidateTxFeeEnough(tx, 0, 0) {
 			log.Warnf("validateTxFeeValid, Tx[%s] fee is not enough", tx.Hash().String())
 			return false, nil
 		}
-		feeAllocate, err = tx.GetTxFeeAllocate(validate.utxoquery.GetUtxoEntry,
+		feeAllocate, err := tx.GetTxFeeAllocate(validate.utxoquery.GetUtxoEntry,
 			validate.tokenEngine.GetScriptSigners, common.Address{}, validate.statequery.GetJurorReward)
-	} else {
-		feeAllocate, err = tx.GetTxFeeAllocateLegacyV1(validate.utxoquery.GetUtxoEntry,
-			validate.tokenEngine.GetScriptSigners, common.Address{})
-	}
-	if err != nil {
-		log.Warnf("[%s]validateTxFeeValid, compute tx[%s] fee error:%s", reqId.String()[:8], tx.Hash().String(), err.Error())
-		return false, nil
-	}
-
-	//check fee type is ok
-	assetId := dagconfig.DagConfig.GetGasToken()
-	for _, feeAsset := range feeAllocate {
-		if feeAsset.Asset.String() != assetId.String() {
-			log.Warnf("[%s]validateTxFeeValid, assetId is not equal, feeAsset:%s, cfg asset:%s", reqId.String()[:8],
-				feeAsset.Asset.String(), assetId.String())
-			return false, feeAllocate
+		if err != nil {
+			log.Warnf("[%s]validateTxFeeValid, compute tx[%s] fee error:%s", reqId.String()[:8], tx.Hash().String(), err.Error())
+			return false, nil
 		}
+		//check fee type is ok
+
+		for _, feeAsset := range feeAllocate {
+			if feeAsset.Asset.String() != assetId.String() {
+				log.Warnf("[%s]validateTxFeeValid, assetId is not equal, feeAsset:%s, cfg asset:%s", reqId.String()[:8],
+					feeAsset.Asset.String(), assetId.String())
+				return false, feeAllocate
+			}
+		}
+
+		return true, feeAllocate
+	} else {
+		feeAllocate, err := tx.GetTxFeeAllocateLegacyV1(validate.utxoquery.GetUtxoEntry,
+			validate.tokenEngine.GetScriptSigners, common.Address{})
+		if err != nil {
+			log.Warnf("[%s]validateTxFeeValid, compute tx[%s] fee error:%s", reqId.String()[:8], tx.Hash().String(), err.Error())
+			return false, nil
+		}
+		//check fee type is ok
+		for _, feeAsset := range feeAllocate {
+			if feeAsset.Asset.String() != assetId.String() {
+				log.Warnf("[%s]validateTxFeeValid, assetId is not equal, feeAsset:%s, cfg asset:%s", reqId.String()[:8],
+					feeAsset.Asset.String(), assetId.String())
+				return false, feeAllocate
+			}
+		}
+		return true, feeAllocate
 	}
 
-	return true, feeAllocate
 }
 
 /**
