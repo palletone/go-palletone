@@ -22,9 +22,10 @@ package modules
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/palletone/go-palletone/dag/constants"
+	"sync/atomic"
 	"io"
 	"math"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -33,7 +34,8 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/parameter"
-	"sync/atomic"
+	"github.com/palletone/go-palletone/dag/constants"
+
 )
 
 var (
