@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"encoding/hex"
 	"fmt"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/common"
@@ -101,6 +100,7 @@ func (pD *PalletOneDocker) RestartUserContractsWhenStartGptn(n1 chan struct{}, n
 			log.Debugf("nowTime = %s", nowTime)
 			isExpired := time.Now().UTC().After(expiredTime)
 			if !isExpired {
+				//if c.Status == 1 {
 				log.Debugf("restart container %s with jury address %s", c.Name, juryAddr.String())
 				address := common.NewAddress(c.ContractId, common.ContractHash)
 				_, _ = manger.RestartContainer(pD.dag, "palletone", address, txid.String())
@@ -123,30 +123,40 @@ func (pD *PalletOneDocker) RestartExitedAndUnExpiredContainers(cons []docker.API
 	log.Debug("start RestartExitedAndUnExpiredContainers")
 	defer log.Debug("end RestartExitedAndUnExpiredContainers")
 	//  获取所有退出容器
-	addrs, err := pD.GetAllContainersAddrsWithStatus(cons, "Exited")
+	containerNames, err := pD.GetAllContainersAddrsWithStatus(cons, "Exited")
 	if err != nil {
 		log.Debugf("client.GetAllExitedContainer err: %s", err.Error())
 		return
 	}
-	for _, v := range addrs {
-		//  判断是否是担任jury地址
-		juryAddrs := pD.jury.GetLocalJuryAddrs()
-		juryAddr := common.Address{}
-		if len(juryAddrs) != 0 {
-			juryAddr = juryAddrs[0]
-		}
-		contract := pD.dag.GetContractsWithJuryAddr(juryAddr)
-		if len(contract) == 0 {
-			log.Debugf("continue")
-			continue
-		}
-		rd, _ := crypto.GetRandomBytes(32)
-		txid := util2.RlpHash(rd)
-		log.Debugf("==============需要重启====容器地址为--->%s", hex.EncodeToString(v.Bytes21()))
-		_, err = manger.RestartContainer(pD.dag, "palletone", v, txid.String())
-		if err != nil {
-			log.Debugf("RestartContainer err: %s", err.Error())
-			return
+	log.Debugf("the exited containers len = %d", len(containerNames))
+	//  判断是否是担任jury地址
+	juryAddrs := pD.jury.GetLocalJuryAddrs()
+	juryAddr := common.Address{}
+	if len(juryAddrs) != 0 {
+		juryAddr = juryAddrs[0]
+	}
+	contracts := pD.dag.GetContractsWithJuryAddr(juryAddr)
+	if len(contracts) == 0 {
+		log.Debugf("without any contact")
+		return
+	}
+	log.Debugf("jury address = %s, the contracts len = %d", juryAddr.String(), len(contracts))
+	for _, v := range containerNames {
+		for _, c := range contracts {
+			name := c.Name + ":" + c.Version + ":" + contractcfg.GetConfig().ContractAddress
+			name = strings.Replace(name, ":", "-", -1)
+			log.Debugf("name1 = %s,name2 = %s", v, name)
+			if name == v {
+				rd, _ := crypto.GetRandomBytes(32)
+				txid := util2.RlpHash(rd)
+				log.Debugf("container name = %s,user contract address = %s", v, c.Name)
+				addr, _ := common.StringToAddress(c.Name)
+				_, err = manger.RestartContainer(pD.dag, "palletone", addr, txid.String())
+				if err != nil {
+					log.Debugf("RestartContainer err: %s", err.Error())
+					continue
+				}
+			}
 		}
 	}
 }
@@ -224,27 +234,29 @@ func (pD *PalletOneDocker) RetrieveExpiredContainers(containers []docker.APICont
 
 //  获取用户合约异常退出的监听函数
 //status: Up， Exited
-func (pD *PalletOneDocker) GetAllContainersAddrsWithStatus(cons []docker.APIContainers, status string) ([]common.Address, error) {
+func (pD *PalletOneDocker) GetAllContainersAddrsWithStatus(cons []docker.APIContainers, status string) ([]string, error) {
 	log.Debug("start GetAllContainersAddrsWithStatus")
 	defer log.Debug("end GetAllContainersAddrsWithStatus")
 	if len(cons) != 0 {
-		addr := make([]common.Address, 0)
+		containerNames := make([]string, 0)
 		for _, v := range cons {
 			if strings.Contains(v.Names[0][1:3], "PC") && len(v.Names[0]) > 40 {
 				if status != "" && !strings.Contains(v.Status, status) {
 					continue
 				}
-				name := v.Names[0][1:36]
-				contractAddr, err := common.StringToAddress(name)
-				if err != nil {
-					log.Debugf("common.StringToAddress err: %s", err.Error())
-					continue
-				}
 				log.Debugf("find container name = %s", v.Names[0])
-				addr = append(addr, contractAddr)
+				containerNames = append(containerNames, v.Names[0][1:])
+				//name := v.Names[0][1:36]
+				//contractAddr, err := common.StringToAddress(name)
+				//if err != nil {
+				//	log.Debugf("common.StringToAddress err: %s", err.Error())
+				//	continue
+				//}
+				//log.Debugf("find container name = %s", v.Names[0])
+				//addr = append(addr, contractAddr)
 			}
 		}
-		return addr, nil
+		return containerNames, nil
 	}
 	return nil, fmt.Errorf("without any container")
 }
