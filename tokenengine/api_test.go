@@ -231,8 +231,22 @@ var (
 	prvKey4B    = crypto.FromECDSA(prvKey4)
 	pubKey4B, _ = hex.DecodeString("0342ccc3459303c6a24fd3382249af438763c7fab9ca57e919aec658f7d05eab68")
 	address4, _ = common.StringToAddress("P1Lcf8CTxgUwmFamn2qM7SrAukNyezakAbK")
+
+	
+    prvKey5, _  = crypto.FromWIF("L3EUb1nAS9HkzMP343KUfd2dnyUdXwEW6mty7D7pqtd3Bh6Eezqg") //"c3ecda5c797ef8d7ded2d332eb1cb83198ef88ede1bf9de7b60910644b45f83f" //P1MzuBUT7ubGpkAFqUB6chqTSXmBThQv2HT
+	prvKey5B    = crypto.FromECDSA(prvKey4)
+	pubKey5B, _ = hex.DecodeString("022b36fcc484b09d54b58264aeaeb2989ec1552baa69a0dd4f8c496dd96c10dad8")
+	address5, _ = common.StringToAddress("P1AUq4v2iGUnqm6keuv5LqKaYvxpUDdriM7")
 )
 
+func build35Address() ([]byte, []byte, string) {
+
+	redeemScript := Instance.GenerateRedeemScript(3, [][]byte{pubKey1B, pubKey2B, pubKey3B,pubKey4B,pubKey5B})
+	lockScript := Instance.GenerateP2SHLockScript(crypto.Hash160(redeemScript))
+	addressMulti, _ := Instance.GetAddressFromScript(lockScript)
+
+	return lockScript, redeemScript, addressMulti.Str()
+}
 func build23Address() ([]byte, []byte, string) {
 
 	redeemScript := Instance.GenerateRedeemScript(2, [][]byte{pubKey1B, pubKey2B, pubKey3B})
