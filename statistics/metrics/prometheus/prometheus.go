@@ -22,6 +22,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 	"os"
@@ -51,6 +52,9 @@ func (db *Prometheus) Start(server *p2p.Server, corss *p2p.Server) error {
 	log.Info("Starting Prometheus")
 	go func() {
 		http.Handle("/", promhttp.Handler())
+		///api/v1/query
+		http.Handle("/api/v1/query", db.QueryHandler())
+
 		if err := http.ListenAndServe(fmt.Sprintf("%s:%d", db.config.Host, db.config.Port), nil); err != nil {
 			log.Error("Failed to starting prometheus", "err", err)
 			os.Exit(1)
@@ -58,6 +62,19 @@ func (db *Prometheus) Start(server *p2p.Server, corss *p2p.Server) error {
 	}()
 
 	return nil
+}
+func (db *Prometheus) QueryHandler() http.Handler {
+	return promhttp.InstrumentMetricHandler(
+		prometheus.DefaultRegisterer, db.HandlerFor(prometheus.DefaultGatherer, promhttp.HandlerOpts{}),
+	)
+}
+
+func (db *Prometheus) HandlerFor(reg prometheus.Gatherer, opts promhttp.HandlerOpts) http.Handler {
+	h := http.HandlerFunc(func(rsp http.ResponseWriter, req *http.Request) {
+		log.Debug("======HandlerFor======")
+		rsp.WriteHeader(200)
+	})
+	return h
 }
 
 // Stop implements node.Service, stopping the data collection thread and the connection listener of the dashboard.
