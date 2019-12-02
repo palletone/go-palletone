@@ -103,13 +103,16 @@ func (d *Dag) CurrentUnit(token modules.AssetId) *modules.Unit {
 		log.Errorf("Get CurrentUnit by token[%s] error:%s", token.String(), err.Error())
 		return nil
 	}
+
 	stable_hash, _ := memdag.GetLastStableUnitInfo()
 	unit, err := d.GetUnitByHash(stable_hash)
 	if err != nil {
 		return nil
 	}
+
 	return unit
 }
+
 func (d *Dag) GetStableChainIndex(token modules.AssetId) *modules.ChainIndex {
 	memdag, err := d.getMemDag(token)
 	if err != nil {
@@ -130,12 +133,18 @@ func (d *Dag) GetCurrentUnit(assetId modules.AssetId) *modules.Unit {
 	memUnit := d.GetCurrentMemUnit(assetId, 0)
 	curUnit := d.CurrentUnit(assetId)
 
+	if curUnit == nil {
+		return nil
+	}
+
 	if memUnit == nil {
 		return curUnit
 	}
+
 	if curUnit.NumberU64() >= memUnit.NumberU64() {
 		return curUnit
 	}
+
 	return memUnit
 }
 
@@ -344,7 +353,7 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 		log.Debugf("InsertDag[%s] #%d spent time:%s", u.UnitHash.String(), u.NumberU64(), time.Since(t1))
 
 		if !is_stable && u.NumberU64()%1000 == 0 {
-			log.Infof("Insert unit[%s] #%d to local", u.UnitHash.String(), u.NumberU64())
+			log.Infof("Insert unit[%s] #%d to local", u.UnitHash.TerminalString(), u.NumberU64())
 		}
 
 		count += 1
@@ -696,9 +705,10 @@ func (dag *Dag) AfterChainMaintenanceEvent(arg *modules.ChainMaintenanceEvent) {
 	threshold, _ := dag.stablePropRep.GetChainThreshold()
 	dag.Memdag.SetStableThreshold(threshold)
 }
+
 func (dag *Dag) SwitchMainChainEvent(arg *memunit.SwitchMainChainEvent) {
-	log.Infof("Switch main chain event!!! old unit:%s %d,new unit:%s %d", arg.OldLastUnit.Hash().String(),
-		arg.OldLastUnit.NumberU64(), arg.NewLastUnit.Hash().String(), arg.NewLastUnit.NumberU64())
+	log.Debugf("Switch main chain event!!! old unit:%s %d,new unit:%s %d", arg.OldLastUnit.Hash().TerminalString(),
+		arg.OldLastUnit.NumberU64(), arg.NewLastUnit.Hash().TerminalString(), arg.NewLastUnit.NumberU64())
 }
 
 // to build a new dag when init genesis

@@ -735,11 +735,12 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 				return fmt.Sprintf("save fork unit cost time: %s ,index: %d, hash: %s",
 					time.Since(start1), height, uHash.String())
 			})
+
 			// 满足切换主链条件， 则切换主链，更新主链单元。
 			if height > chain.lastMainChainUnit.NumberU64() {
 				log.Infof("switch main chain starting, fork index:%d, chain index:%d ,"+
 					"fork hash:%s, main hash:%s", height, chain.lastMainChainUnit.NumberU64(),
-					uHash.String(), chain.lastMainChainUnit.Hash().String())
+					uHash.TerminalString(), chain.lastMainChainUnit.Hash().TerminalString())
 				chain.switchMainChain(unit, txpool)
 				log.DebugDynamic(func() string {
 					main_chains := chain.getMainChainUnits()
