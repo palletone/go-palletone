@@ -23,9 +23,9 @@ package modules
 import (
 	"fmt"
 	"strings"
-
 	"bytes"
 	"encoding/json"
+
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/shopspring/decimal"
 )
@@ -43,7 +43,7 @@ type Asset struct {
 type AssetType byte
 
 const (
-	AssetType_FungibleToken AssetType = iota
+	AssetType_FungibleToken    AssetType = iota
 	AssetType_NonFungibleToken
 	AssetType_VoteToken
 )
@@ -58,14 +58,12 @@ func NewPTNAsset() *Asset {
 }
 func NewAsset(symbol string, assetType AssetType, decimal byte, requestId []byte,
 	uidType UniqueIdType, uniqueId UniqueId) (*Asset, error) {
-	asset := &Asset{}
+
 	assetId, err := NewAssetId(symbol, assetType, decimal, requestId, uidType)
 	if err != nil {
 		return nil, err
 	}
-	asset.AssetId = assetId
-	asset.UniqueId = uniqueId
-	return asset, nil
+	return &Asset{AssetId: assetId, UniqueId: uniqueId}, nil
 }
 
 func NewPTNIdType() AssetId {

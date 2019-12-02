@@ -32,8 +32,8 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/constants"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 )
 
 /**
@@ -48,7 +48,7 @@ To validate one transaction
 如果isFullTx为false，意味着这个Tx还没有被陪审团处理完，所以结果部分的Payment不验证
 */
 func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (ValidationCode, []*modules.Addition) {
-	msgs:=tx.TxMessages()
+	msgs := tx.TxMessages()
 	if len(msgs) == 0 {
 		return TxValidationCode_INVALID_MSG, nil
 	}
@@ -355,35 +355,47 @@ func (validate *Validate) validateTxFeeValid(tx *modules.Transaction) (bool, []*
 	}
 
 	//check fee is or not enough
-	var feeAllocate []*modules.Addition
-	var err error
+	assetId := dagconfig.DagConfig.GetGasToken()
 	if validate.enableTxFeeCheck {
 		if !validate.ValidateTxFeeEnough(tx, 0, 0) {
 			log.Warnf("validateTxFeeValid, Tx[%s] fee is not enough", tx.Hash().String())
 			return false, nil
 		}
-		feeAllocate, err = tx.GetTxFeeAllocate(validate.utxoquery.GetUtxoEntry,
+		feeAllocate, err := tx.GetTxFeeAllocate(validate.utxoquery.GetUtxoEntry,
 			validate.tokenEngine.GetScriptSigners, common.Address{}, validate.statequery.GetJurorReward)
+		if err != nil {
+			log.Warnf("[%s]validateTxFeeValid, compute tx[%s] fee error:%s", reqId.String()[:8], tx.Hash().String(), err.Error())
+			return false, nil
+		}
+		//check fee type is ok
+
+		for _, feeAsset := range feeAllocate {
+			if feeAsset.Asset.String() != assetId.String() {
+				log.Warnf("[%s]validateTxFeeValid, assetId is not equal, feeAsset:%s, cfg asset:%s", reqId.String()[:8],
+					feeAsset.Asset.String(), assetId.String())
+				return false, feeAllocate
+			}
+		}
+
+		return true, feeAllocate
 	} else {
-		feeAllocate, err = tx.GetTxFeeAllocateLegacyV1(validate.utxoquery.GetUtxoEntry,
+		feeAllocate, err := tx.GetTxFeeAllocateLegacyV1(validate.utxoquery.GetUtxoEntry,
 			validate.tokenEngine.GetScriptSigners, common.Address{})
-	}
-	if err != nil {
-		log.Warnf("[%s]validateTxFeeValid, compute tx[%s] fee error:%s", reqId.String()[:8], tx.Hash().String(), err.Error())
-		return false, nil
+		if err != nil {
+			log.Warnf("[%s]validateTxFeeValid, compute tx[%s] fee error:%s", reqId.String()[:8], tx.Hash().String(), err.Error())
+			return false, nil
+		}
+		//check fee type is ok
+		for _, feeAsset := range feeAllocate {
+			if feeAsset.Asset.String() != assetId.String() {
+				log.Warnf("[%s]validateTxFeeValid, assetId is not equal, feeAsset:%s, cfg asset:%s", reqId.String()[:8],
+					feeAsset.Asset.String(), assetId.String())
+				return false, feeAllocate
+			}
+		}
+		return true, feeAllocate
 	}
 
-	//check fee type is ok
-	assetId := dagconfig.DagConfig.GetGasToken()
-	var feeAsset *modules.Asset
-	for _, a := range feeAllocate {
-		feeAsset = a.Asset //?
-	}
-	if feeAsset.String() != assetId.String() {
-		log.Warnf("[%s]validateTxFeeValid, assetId is not equal, feeAsset:%s, cfg asset:%s", reqId.String()[:8], feeAsset.String(), assetId.String())
-		return false, feeAllocate
-	}
-	return true, feeAllocate
 }
 
 /**
@@ -519,12 +531,11 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			if err == nil { //之前有奖励
 				rlp.DecodeBytes(data, &income)
 			}
-			v1 := *v
-			log.DebugDynamic(func() string {
-				data, _ := json.Marshal(income)
-				return v1.Addr.String() + " Coinbase History reward:" + string(data) + " version:" + version.String()
-			})
+			//data = [] byte{}
+			data, _ = json.Marshal(income)
+			log.Debug(v.Addr.String() + ": Coinbase History reward:" + string(data) + " version:" + version.String())
 			log.Debugf("Add reward %d %s to %s", v.Amount, v.Asset.String(), v.Addr.String())
+
 			newValue := validate.addIncome(income, v.Amount, v.Asset)
 			rewards[v.Addr] = newValue
 		}

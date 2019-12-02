@@ -35,12 +35,11 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/parameter"
 	"github.com/palletone/go-palletone/dag/constants"
-
 )
 
 var (
 	//TXFEE       = big.NewInt(100000000) // transaction fee =1ptn
-	TX_MAXSIZE  = 256 * 1024
+	TX_MAXSIZE  = 256 * 1024 //256kb
 	TX_BASESIZE = 100 * 1024 //100kb
 )
 
@@ -807,7 +806,7 @@ func (tx *Transaction) GetContractInvokeReqMsgIdx() int {
 func (tx *Transaction) GetTxFeeAllocateLegacyV1(queryUtxoFunc QueryUtxoFunc, getSignerFunc GetScriptSignersFunc,
 	mediatorReward common.Address) ([]*Addition, error) {
 	fee, err := tx.GetTxFee(queryUtxoFunc)
-	result := []*Addition{}
+	result := make([]*Addition, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -881,7 +880,7 @@ func (tx *Transaction) GetTxFeeAllocateLegacyV1(queryUtxoFunc QueryUtxoFunc, get
 func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFunc GetScriptSignersFunc,
 	mediatorReward common.Address, getJurorRewardFunc GetJurorRewardAddFunc) ([]*Addition, error) {
 	fee, err := tx.GetTxFee(queryUtxoFunc)
-	result := []*Addition{}
+	result := make([]*Addition, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -922,7 +921,6 @@ func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFu
 		juryCount := float64(len(jury))
 		for _, juror := range jury {
 			jIncome := &Addition{
-				//Addr:   juror,
 				Addr:   getJurorRewardFunc(juror),
 				Amount: uint64(juryAmount / juryCount),
 				Asset:  fee.Asset,
