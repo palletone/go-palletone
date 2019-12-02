@@ -257,7 +257,7 @@ issues:
       text: "can be `fmt.Stringer`|can be `.*/protobuf/proto.Message`"
     - linters:
         - staticcheck
-        text: "SA1019:"
+      text: "SA1019:"
 
 #     # Exclude some linters from running on tests files.
 #     - path: _test\.go
