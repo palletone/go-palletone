@@ -30,7 +30,7 @@ import (
 )
 
 //  申请加入
-func applyBecomeMediator(stub shim.ChaincodeStubInterface,  mediatorCreateArgs string) error {
+func applyBecomeMediator(stub shim.ChaincodeStubInterface, mediatorCreateArgs string) error {
 	log.Info("Start entering apply for become mediator func")
 	var mco modules.MediatorCreateArgs
 	err := json.Unmarshal([]byte(mediatorCreateArgs), &mco)
@@ -119,6 +119,7 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface,  mediatorCreateArgs s
 	jd.EnterTime = md.ApplyEnterTime
 	jd.Role = modules.Jury
 	jd.Address = applyingAddrStr
+	jd.RewardAddr = common.Address{}
 	jd.JurorDepositExtra = jde
 	err = saveJuryBalance(stub, applyingAddrStr, jd)
 	if err != nil {
@@ -275,7 +276,6 @@ func mediatorApplyQuit(stub shim.ChaincodeStubInterface) pb.Response {
 //  申请加入
 func updateMediatorInfo(stub shim.ChaincodeStubInterface, mediatorUpdateArgs string) pb.Response {
 	log.Info("Start entering UpdateMediatorInfo func")
-
 
 	var mua modules.MediatorUpdateArgs
 	err := json.Unmarshal([]byte(mediatorUpdateArgs), &mua)
