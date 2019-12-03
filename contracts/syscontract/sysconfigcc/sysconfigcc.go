@@ -552,7 +552,7 @@ func (s *SysConfigChainCode) UpdateSysParamWithoutVote(stub shim.ChaincodeStubIn
 //}
 
 func setGlobal(stub shim.ChaincodeStubInterface, tkInfo *SysTokenInfo) error {
-	gTkInfo := modules.GlobalTokenInfo{Symbol: tkInfo.Symbol, TokenType: 4, Status: 0, CreateAddr: tkInfo.CreateAddr,
+	gTkInfo := modules.GlobalTokenInfo{Symbol: tkInfo.Symbol, Name: tkInfo.Name, TokenType: 4, Status: 0, CreateAddr: tkInfo.CreateAddr,
 		TotalSupply: tkInfo.TotalSupply, SupplyAddr: "", AssetID: tkInfo.AssetID}
 	val, err := json.Marshal(gTkInfo)
 	if err != nil {

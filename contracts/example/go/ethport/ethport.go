@@ -1125,7 +1125,7 @@ func (p *ETHPort) WithdrawSubmit(ethTxID string, stub shim.ChaincodeStubInterfac
 		return shim.Error("The tx is't transfer to eth port contract")
 	}
 	withdrawMethodId := Hex2Bytes("73432d0a")
-	if bytes.HasPrefix(txResult.Tx.TxRawData, withdrawMethodId) {
+	if !bytes.HasPrefix(txResult.Tx.TxRawData, withdrawMethodId) {
 		log.Debugf("The tx is't call withdraw")
 		return shim.Error("The tx is't call withdraw")
 	}
