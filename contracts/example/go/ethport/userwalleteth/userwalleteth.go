@@ -226,8 +226,8 @@ func spendEtHFromMultiAddr(contractAddr, gasPrice, gasLimit, reqid, ethRecvddr, 
 	invokeContractParams.Extra = []byte(EthmultisigABI)
 	invokeContractParams.Args = append(invokeContractParams.Args, []byte(ethRecvddr))
 
-	amountU, _ := strconv.ParseUint(amount, 1, 64)
-	feeU, _ := strconv.ParseUint(fee, 1, 64)
+	amountU, _ := strconv.ParseUint(amount, 10, 64)
+	feeU, _ := strconv.ParseUint(fee, 10, 64)
 	amountBigInt := new(big.Int)
 	amountBigInt.SetUint64(amountU - feeU)
 	amountBigInt.Mul(amountBigInt, big.NewInt(1e10)) //eth's decimal is 18, ethToken in PTN is decimal is 8
@@ -244,7 +244,7 @@ func spendEtHFromMultiAddr(contractAddr, gasPrice, gasLimit, reqid, ethRecvddr, 
 		fmt.Println(err.Error())
 		return err
 	} else {
-		fmt.Println(resultTx)
+		fmt.Printf("RawTransaction: %x\n", resultTx.RawTransaction)
 	}
 
 	return signAndSend(eth, resultTx.RawTransaction, prikey)
@@ -261,7 +261,7 @@ func signAndSend(eth *ethadaptor.AdaptorETH, rawTransaction, prikey []byte) erro
 		fmt.Println("SignTransaction failed : ", err.Error())
 		return err
 	} else {
-		fmt.Printf("tx: %x", resultSign.Extra)
+		fmt.Printf("tx: %x\n", resultSign.Extra)
 	}
 
 	//3.send tx
@@ -272,7 +272,7 @@ func signAndSend(eth *ethadaptor.AdaptorETH, rawTransaction, prikey []byte) erro
 		fmt.Println("SendTransaction failed : ", err.Error())
 		return err
 	} else {
-		fmt.Printf("%x", resultSend.TxID)
+		fmt.Printf("%x\n", resultSend.TxID)
 	}
 	return nil
 }
@@ -309,7 +309,7 @@ func setJuryAddrs(contractAddr, gasPrice, gasLimit, addr1, addr2, addr3, addr4, 
 		fmt.Println("CreateContractInvokeTx failed : ", err.Error())
 		return err
 	} else {
-		fmt.Println(resultTx)
+		fmt.Printf("RawTransaction: %x\n", resultTx.RawTransaction)
 	}
 
 	return signAndSend(eth, resultTx.RawTransaction, prikey)
