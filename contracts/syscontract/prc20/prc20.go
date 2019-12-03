@@ -47,6 +47,7 @@ type PRC20 struct {
 
 type tokenInfo struct {
 	Symbol      string
+	Name        string
 	CreateAddr  string
 	TotalSupply uint64
 	Decimals    uint64
@@ -162,7 +163,7 @@ func (p *PRC20) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 }
 
 func setGlobal(stub shim.ChaincodeStubInterface, tkInfo *tokenInfo) error {
-	gTkInfo := dm.GlobalTokenInfo{Symbol: tkInfo.Symbol, TokenType: 1, Status: 0, CreateAddr: tkInfo.CreateAddr,
+	gTkInfo := dm.GlobalTokenInfo{Symbol: tkInfo.Symbol, Name: tkInfo.Name, TokenType: 1, Status: 0, CreateAddr: tkInfo.CreateAddr,
 		TotalSupply: tkInfo.TotalSupply, SupplyAddr: tkInfo.SupplyAddr, AssetID: tkInfo.AssetID}
 	val, err := json.Marshal(gTkInfo)
 	if err != nil {
@@ -322,7 +323,7 @@ func (p *PRC20) CreateToken(stub shim.ChaincodeStubInterface, name string, symbo
 	txid := stub.GetTxID()
 	assetID, _ := dm.NewAssetId(fungible.Symbol, dm.AssetType_FungibleToken,
 		fungible.Decimals, common.Hex2Bytes(txid[2:]), dm.UniqueIdType_Null)
-	info := tokenInfo{fungible.Symbol, createAddr.String(), totalSupply, uint64(decimals),
+	info := tokenInfo{fungible.Symbol, name, createAddr.String(), totalSupply, uint64(decimals),
 		fungible.SupplyAddress, assetID}
 
 	err = setSymbols(stub, &info)
@@ -522,6 +523,7 @@ func (p *PRC20) FrozenToken(stub shim.ChaincodeStubInterface, symbol string) err
 
 type tokenIDInfo struct {
 	Symbol      string
+	Name        string
 	CreateAddr  string
 	TotalSupply uint64
 	Decimals    uint64
@@ -540,7 +542,7 @@ func (p *PRC20) GetTokenInfo(stub shim.ChaincodeStubInterface, symbol string) (*
 
 	//token
 	asset := tkInfo.AssetID
-	tkID := tokenIDInfo{symbol, tkInfo.CreateAddr, tkInfo.TotalSupply,
+	tkID := tokenIDInfo{symbol, tkInfo.Name, tkInfo.CreateAddr, tkInfo.TotalSupply,
 		tkInfo.Decimals, tkInfo.SupplyAddr, asset.String()}
 	return &tkID, nil
 }
@@ -552,7 +554,7 @@ func (p *PRC20) GetAllTokenInfo(stub shim.ChaincodeStubInterface) []tokenIDInfo 
 	tkIDs := make([]tokenIDInfo, 0, len(tkInfos))
 	for _, tkInfo := range tkInfos {
 		asset := tkInfo.AssetID
-		tkID := tokenIDInfo{tkInfo.Symbol, tkInfo.CreateAddr, tkInfo.TotalSupply,
+		tkID := tokenIDInfo{tkInfo.Symbol, tkInfo.Name, tkInfo.CreateAddr, tkInfo.TotalSupply,
 			tkInfo.Decimals, tkInfo.SupplyAddr, asset.String()}
 		tkIDs = append(tkIDs, tkID)
 	}

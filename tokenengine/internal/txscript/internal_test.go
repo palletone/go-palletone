@@ -2397,22 +2397,22 @@ func TestUnparsingInvalidOpcodes(t *testing.T) {
 			},
 			expectedErr: ErrStackInvalidOpcode,
 		},
-		{
-			name: "OP_RETURN",
-			pop: &parsedOpcode{
-				opcode: &opcodeArray[OP_RETURN],
-				data:   nil,
-			},
-			expectedErr: nil,
-		},
-		{
-			name: "OP_RETURN long",
-			pop: &parsedOpcode{
-				opcode: &opcodeArray[OP_RETURN],
-				data:   make([]byte, 1),
-			},
-			expectedErr: ErrStackInvalidOpcode,
-		},
+		//{
+		//	name: "OP_RETURN",
+		//	pop: &parsedOpcode{
+		//		opcode: &opcodeArray[OP_RETURN],
+		//		data:   nil,
+		//	},
+		//	expectedErr: nil,
+		//},
+		//{
+		//	name: "OP_RETURN long",
+		//	pop: &parsedOpcode{
+		//		opcode: &opcodeArray[OP_RETURN],
+		//		data:   make([]byte, 1),
+		//	},
+		//	expectedErr: ErrStackInvalidOpcode,
+		//},
 		{
 			name: "OP_TOALTSTACK",
 			pop: &parsedOpcode{

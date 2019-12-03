@@ -50,9 +50,10 @@ func (c *CryptoS256) PrivateKeyToPubKey(privKey []byte) ([]byte, error) {
 	pubKey := prvKey.PublicKey
 	return compressPubkey(&pubKey), nil
 }
-func (c *CryptoS256) PrivateKeyToInstance(privKey []byte) (interface{}, error){
+func (c *CryptoS256) PrivateKeyToInstance(privKey []byte) (interface{}, error) {
 	return ToECDSA(privKey)
 }
+
 // DecompressPubkey parses a public key in the 33-byte compressed format.
 //func decompressPubkey(pubkey []byte) (*ecdsa.PublicKey, error) {
 //	if len(pubkey) != 33 {
@@ -111,7 +112,7 @@ func (c *CryptoS256) Verify(pubKey, signature, message []byte) (valid bool, err 
 	} else {
 		sig, err = btcec.ParseSignature(signature, btcec.S256())
 		if err != nil {
-			log.Info("ParseSignature error:" + err.Error())
+			log.Debug("ParseSignature error:" + err.Error())
 			return false, err
 		}
 	}

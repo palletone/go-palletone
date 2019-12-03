@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/naoina/toml"
@@ -200,7 +201,7 @@ func getAddrByPrikey(prikey []byte) string {
 	return address.Address
 }
 
-func spendEtHFromMultiAddr(contractAddr, gasPrice, gasLimit, ethRecvddr, amount, reqid, sig1, sig2, sig3, prikeyHex string) error {
+func spendEtHFromMultiAddr(contractAddr, gasPrice, gasLimit, reqid, ethRecvddr, amount, fee, sig1, sig2, sig3, prikeyHex string) error {
 
 	eth := ethadaptor.NewAdaptorETHTestnet()
 
@@ -224,7 +225,14 @@ func spendEtHFromMultiAddr(contractAddr, gasPrice, gasLimit, ethRecvddr, amount,
 	invokeContractParams.Function = "withdraw"
 	invokeContractParams.Extra = []byte(EthmultisigABI)
 	invokeContractParams.Args = append(invokeContractParams.Args, []byte(ethRecvddr))
-	invokeContractParams.Args = append(invokeContractParams.Args, []byte(amount))
+
+	amountU, _ := strconv.ParseUint(amount, 10, 64)
+	feeU, _ := strconv.ParseUint(fee, 10, 64)
+	amountBigInt := new(big.Int)
+	amountBigInt.SetUint64(amountU - feeU)
+	amountBigInt.Mul(amountBigInt, big.NewInt(1e10)) //eth's decimal is 18, ethToken in PTN is decimal is 8
+
+	invokeContractParams.Args = append(invokeContractParams.Args, []byte(amountBigInt.String()))
 	invokeContractParams.Args = append(invokeContractParams.Args, []byte(reqid))
 	invokeContractParams.Args = append(invokeContractParams.Args, []byte(sig1))
 	invokeContractParams.Args = append(invokeContractParams.Args, []byte(sig2))
@@ -236,7 +244,7 @@ func spendEtHFromMultiAddr(contractAddr, gasPrice, gasLimit, ethRecvddr, amount,
 		fmt.Println(err.Error())
 		return err
 	} else {
-		fmt.Println(resultTx)
+		fmt.Printf("RawTransaction: %x\n", resultTx.RawTransaction)
 	}
 
 	return signAndSend(eth, resultTx.RawTransaction, prikey)
@@ -253,7 +261,7 @@ func signAndSend(eth *ethadaptor.AdaptorETH, rawTransaction, prikey []byte) erro
 		fmt.Println("SignTransaction failed : ", err.Error())
 		return err
 	} else {
-		fmt.Printf("tx: %x", resultSign.Extra)
+		fmt.Printf("tx: %x\n", resultSign.Extra)
 	}
 
 	//3.send tx
@@ -264,7 +272,7 @@ func signAndSend(eth *ethadaptor.AdaptorETH, rawTransaction, prikey []byte) erro
 		fmt.Println("SendTransaction failed : ", err.Error())
 		return err
 	} else {
-		fmt.Printf("%x", resultSend.TxID)
+		fmt.Printf("%x\n", resultSend.TxID)
 	}
 	return nil
 }
@@ -301,7 +309,7 @@ func setJuryAddrs(contractAddr, gasPrice, gasLimit, addr1, addr2, addr3, addr4, 
 		fmt.Println("CreateContractInvokeTx failed : ", err.Error())
 		return err
 	} else {
-		fmt.Println(resultTx)
+		fmt.Printf("RawTransaction: %x\n", resultTx.RawTransaction)
 	}
 
 	return signAndSend(eth, resultTx.RawTransaction, prikey)
@@ -394,7 +402,7 @@ func helper() {
 	fmt.Println("Params : deploy, gasPrice, gasLimit, ethAddr1, ethAddr2, ethAddr3, ethAddr4, ethPrivateKey")
 	fmt.Println("Params : setaddrs, contractAddr, gasPrice, gasLimit, ethAddr1, ethAddr2, ethAddr3, ethAddr4, ethPrivateKey")
 	fmt.Println("Params : deposit, contractAddr, value, gasPrice, gasLimit, ethPrivateKey")
-	fmt.Println("Params : withdraw, contractAddr, gasPrice, gasLimit, ethAddr, amount, reqid, sig1, sig2, sig3, ethPrivateKey")
+	fmt.Println("Params : withdraw, contractAddr, gasPrice, gasLimit, reqid, ethAddr, amount, fee, sig1, sig2, sig3, ethPrivateKey")
 }
 
 func main() {
@@ -449,11 +457,11 @@ func main() {
 			fmt.Println(err.Error())
 		}
 	case "withdraw": //withdraw eth of multisigContract
-		if len(args) < 12 {
-			fmt.Println("Params : withdraw, contractAddr, gasPrice, gasLimit, ethAddr, amount, reqid, sig1, sig2, sig3, ethPrivateKey")
+		if len(args) < 13 {
+			fmt.Println("Params : withdraw, contractAddr, gasPrice, gasLimit, reqid, ethAddr, amount, fee, sig1, sig2, sig3, ethPrivateKey")
 			return
 		}
-		err := spendEtHFromMultiAddr(args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11])
+		err := spendEtHFromMultiAddr(args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12])
 		if err != nil {
 			fmt.Println(err.Error())
 		}

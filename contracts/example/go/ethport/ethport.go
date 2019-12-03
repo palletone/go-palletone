@@ -1125,7 +1125,7 @@ func (p *ETHPort) WithdrawSubmit(ethTxID string, stub shim.ChaincodeStubInterfac
 		return shim.Error("The tx is't transfer to eth port contract")
 	}
 	withdrawMethodId := Hex2Bytes("73432d0a")
-	if bytes.HasPrefix(txResult.Tx.TxRawData, withdrawMethodId) {
+	if !bytes.HasPrefix(txResult.Tx.TxRawData, withdrawMethodId) {
 		log.Debugf("The tx is't call withdraw")
 		return shim.Error("The tx is't call withdraw")
 	}
@@ -1138,26 +1138,26 @@ func (p *ETHPort) WithdrawSubmit(ethTxID string, stub shim.ChaincodeStubInterfac
 	}
 
 	reqid := hex.EncodeToString(txResult.Tx.TxRawData[68:100]) //4method+32recvAddr+32amount+32reqid
-	resultPrepare, _ := stub.GetState(symbolsWithdrawPrepare + reqid)
+	resultWithdraw, _ := stub.GetState(symbolsWithdraw + reqid)
 	if len(result) == 0 {
-		return shim.Error("Not exist withdrawPrepare of reqid : " + reqid)
+		return shim.Error("Not exist withdraw of reqid : " + reqid)
 	}
 	// 检查交易
-	var prepare WithdrawPrepare
-	err = json.Unmarshal(resultPrepare, &prepare)
+	var withdraw Withdraw
+	err = json.Unmarshal(resultWithdraw, &withdraw)
 	if nil != err {
-		jsonResp := "Unmarshal WithdrawPrepare failed"
+		jsonResp := "Unmarshal withdraw failed"
 		return shim.Error(jsonResp)
 	}
 	//
-	err = stub.PutState(symbolsSubmit+ethTxID, []byte(ptnAddr+"-"+fmt.Sprintf("%d", prepare.EthFee)))
+	err = stub.PutState(symbolsSubmit+ethTxID, []byte(ptnAddr+"-"+fmt.Sprintf("%d", withdraw.EthFee)))
 	if err != nil {
 		log.Debugf("PutState symbolsSubmit failed err: %s", err.Error())
 		return shim.Error("PutState symbolsSubmit failed " + err.Error())
 	}
 
 	//
-	err = updateFeeAdd(prepare.EthFee, ptnAddr, stub)
+	err = updateFeeAdd(withdraw.EthFee, ptnAddr, stub)
 	if err != nil {
 		return shim.Error(err.Error())
 	}

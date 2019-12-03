@@ -93,7 +93,6 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args string) pee
 		balance.Balance = invokeTokens.Amount
 		balance.Role = modules.Jury
 		balance.Address = invokeAddrStr
-		balance.RewardAddr = common.Address{}
 		balance.JurorDepositExtra = jde
 	} else {
 		//  追缴逻辑
