@@ -1005,6 +1005,9 @@ PledgeTest02
     ${result}    isFinishAllocated
     log    ${result}
     sleep    5
+    ${result}    pledgeDeposit    ${votedAddress01}    100    #质押PTN    #101
+    log    ${result}
+    sleep    5
     ${result}    HandlePledgeReward    ${foundationAddr}    #1
     log    ${result}
     sleep    5
@@ -1024,7 +1027,7 @@ PledgeTest02
     ${resultJson}    To Json    ${result}
     ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
     log    ${newDepositAmount}
-    Should Be Equal As Strings    ${newDepositAmount}    1.94762699
+    Should Be Equal As Strings    ${newDepositAmount}    101.94762699
     ${result}    QueryPledgeHistoryByAddr    ${votedAddress01}
     log    ${result}
     ${result}    getBalance    ${votedAddress01}    PTN
@@ -1074,8 +1077,86 @@ PledgeTest02
     ${depositTwo}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${depositTwo}
     log    ${depositOne}
-    ${all}    Evaluate    ${depositTwo}-${depositOne}
-    Should Be Equal As Numbers    ${all}    311.5498
+    #    Evaluate    ${depositTwo}-${depositOne}
+    #    ${all}    311.5498
+    log    第四次分红
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    log    chuli32
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    queryPledgeStatusByAddr    ${votedAddress01}    #查看某地址的质押结果
+    log    ${result}
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    #    ${newDepositAmount}
+    #    ${newDepositAmount}    1.94762699
+    ${result}    QueryPledgeHistoryByAddr    ${votedAddress01}
+    log    ${result}
+    ${result}    getBalance    ${votedAddress01}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${votedAddress02}    #查看某地址的质押结果
+    log    ${result}
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    #    ${newDepositAmount}    1.94762699
+    ${result}    getBalance    ${votedAddress02}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${votedAddress03}    #查看某地址的质押结果
+    log    ${result}
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    #    ${newDepositAmount}    102.88309904
+    ${result}    getBalance    ${votedAddress03}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${votedAddress04}    #查看某地址的质押结果
+    log    ${result}
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    #    ${newDepositAmount}    101.90230632
+    ${result}    getBalance    ${votedAddress04}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${votedAddress05}    #查看某地址的质押结果
+    log    ${result}
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    #    ${newDepositAmount}    101.90230632
+    ${result}    getBalance    ${votedAddress05}    PTN
+    log    ${result}
+    ${result}    queryPledgeStatusByAddr    ${votedAddress06}    #查看某地址的质押结果
+    log    ${result}
+    ${resultJson}    To Json    ${result}
+    ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
+    log    ${newDepositAmount}
+    #    ${newDepositAmount}    0.96683428
+    ${result}    getBalance    ${votedAddress06}    PTN
+    log    ${result}
+    ${amount}    getBalance    ${foundationAddr}    PTN
+    log    ${amount}
+    ${depositTwo}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
+    log    ${depositTwo}
+    log    ${depositOne}
+    ${result}    queryPledgeList    #查看整个网络所有质押情况
+    log    ${result}
+    sleep    1
+    ${result}    QueryAllPledgeHistory
+    log    ${result}
+    sleep    1
 
 Business_08
     [Documentation]    退出候选列表的两个Mediator继续交付保证金
