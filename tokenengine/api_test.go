@@ -22,18 +22,21 @@ package tokenengine
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto"
 	"testing"
 
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
+
 	"encoding/json"
+
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine/internal/txscript"
 	"github.com/stretchr/testify/assert"
-	"github.com/palletone/go-palletone/common/log"
 )
 
 func TestGetAddressFromScript(t *testing.T) {
@@ -232,16 +235,15 @@ var (
 	pubKey4B, _ = hex.DecodeString("0342ccc3459303c6a24fd3382249af438763c7fab9ca57e919aec658f7d05eab68")
 	address4, _ = common.StringToAddress("P1Lcf8CTxgUwmFamn2qM7SrAukNyezakAbK")
 
-	
-    prvKey5, _  = crypto.FromWIF("L3EUb1nAS9HkzMP343KUfd2dnyUdXwEW6mty7D7pqtd3Bh6Eezqg") //"c3ecda5c797ef8d7ded2d332eb1cb83198ef88ede1bf9de7b60910644b45f83f" //P1MzuBUT7ubGpkAFqUB6chqTSXmBThQv2HT
-	prvKey5B    = crypto.FromECDSA(prvKey4)
+	prvKey5, _  = crypto.FromWIF("L3EUb1nAS9HkzMP343KUfd2dnyUdXwEW6mty7D7pqtd3Bh6Eezqg") //"c3ecda5c797ef8d7ded2d332eb1cb83198ef88ede1bf9de7b60910644b45f83f" //P1MzuBUT7ubGpkAFqUB6chqTSXmBThQv2HT
+	prvKey5B    = crypto.FromECDSA(prvKey5)
 	pubKey5B, _ = hex.DecodeString("022b36fcc484b09d54b58264aeaeb2989ec1552baa69a0dd4f8c496dd96c10dad8")
 	address5, _ = common.StringToAddress("P1AUq4v2iGUnqm6keuv5LqKaYvxpUDdriM7")
 )
 
 func build35Address() ([]byte, []byte, string) {
 
-	redeemScript := Instance.GenerateRedeemScript(3, [][]byte{pubKey1B, pubKey2B, pubKey3B,pubKey4B,pubKey5B})
+	redeemScript := Instance.GenerateRedeemScript(3, [][]byte{pubKey1B, pubKey2B, pubKey3B, pubKey4B, pubKey5B})
 	lockScript := Instance.GenerateP2SHLockScript(crypto.Hash160(redeemScript))
 	addressMulti, _ := Instance.GetAddressFromScript(lockScript)
 
@@ -295,7 +297,7 @@ func TestMultiSign1Step(t *testing.T) {
 		if addr == address2 {
 			return crypto.CompressPubkey(&prvKey2.PublicKey), nil
 		}
-		return nil, nil
+		return nil, errors.New("not found")
 	}
 	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
 
@@ -305,7 +307,7 @@ func TestMultiSign1Step(t *testing.T) {
 		if addr == address2 {
 			return crypto.MyCryptoLib.Sign(prvKey2B, msg)
 		}
-		return nil, nil
+		return nil, errors.New("not found")
 	}
 	sign12, err := Instance.MultiSignOnePaymentInput(tx, SigHashAll, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn, nil)
 	if err != nil {
@@ -350,23 +352,23 @@ func TestMultiSign2Step(t *testing.T) {
 		if addr == address2 {
 			return crypto.CompressPubkey(&prvKey2.PublicKey), nil
 		}
-		return nil, nil
+		return nil, errors.New("not found")
 	}
 	getSignFn1 := func(addr common.Address, msg []byte) ([]byte, error) {
 
 		if addr == address1 {
 			return crypto.MyCryptoLib.Sign(prvKey1B, msg)
 		}
-		
-		return nil, nil
+
+		return nil, errors.New("not found")
 	}
 	getSignFn2 := func(addr common.Address, msg []byte) ([]byte, error) {
 		if addr == address2 {
 			return crypto.MyCryptoLib.Sign(prvKey2B, msg)
 		}
-		return nil, nil
+		return nil, errors.New("not found")
 	}
-	
+
 	sign1, err := Instance.MultiSignOnePaymentInput(tx, SigHashAll, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn1, nil)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
@@ -391,17 +393,17 @@ func TestMultiSign2Step(t *testing.T) {
 	str, _ := txscript.DisasmString(sign2)
 	t.Logf("Signed script:{%s}", str)
 
-
 	err = Instance.ScriptValidate(lockScript, nil, tx, 0, 0)
 	assert.Nil(t, err, fmt.Sprintf("validate error:%s", err))
 }
 
 //构造一个3/5签名的地址和UTXO，然后用其中的3个私钥分两步对其进行签名
-/*func TestMultiSign3Step(t *testing.T) {
+func TestMultiSign3Step(t *testing.T) {
 	lockScript, redeemScript, addressMulti := build35Address()
 	t.Logf("MultiSign Address:%s\n", addressMulti)
 	t.Logf("RedeemScript: %x\n", redeemScript)
-	t.Logf("RedeemScript: %d\n", redeemScript)
+	scriptStr, _ := Instance.DisasmString(redeemScript)
+	t.Logf("RedeemScript: %s\n", scriptStr)
 
 	payment := &modules.PaymentPayload{}
 	utxoTxId := common.HexToHash("1111870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
@@ -420,39 +422,43 @@ func TestMultiSign2Step(t *testing.T) {
 		if addr == address2 {
 			return crypto.CompressPubkey(&prvKey2.PublicKey), nil
 		}
-                if addr == address3 {
-                        return crypto.CompressPubkey(&prvKey3.PublicKey), nil
-                }
-		return nil, nil
+		if addr == address3 {
+			return crypto.CompressPubkey(&prvKey3.PublicKey), nil
+		}
+		if addr == address4 {
+			return crypto.CompressPubkey(&prvKey4.PublicKey), nil
+		}
+		return nil, errors.New("not found")
 	}
 	getSignFn1 := func(addr common.Address, msg []byte) ([]byte, error) {
 
 		if addr == address1 {
 			return crypto.MyCryptoLib.Sign(prvKey1B, msg)
 		}
-		
-		return nil, nil
+
+		return nil, errors.New("not found")
 	}
 	getSignFn2 := func(addr common.Address, msg []byte) ([]byte, error) {
 		if addr == address2 {
 			return crypto.MyCryptoLib.Sign(prvKey2B, msg)
 		}
-		return nil, nil
+		return nil, errors.New("not found")
 	}
 
-	getSignFn3 := func(addr common.Address, msg []byte) ([]byte, error) {
+	getSignFn4 := func(addr common.Address, msg []byte) ([]byte, error) {
 		if addr == address3 {
 			return crypto.MyCryptoLib.Sign(prvKey3B, msg)
 		}
-		return nil, nil
+		return nil, errors.New("not found")
 	}
-   
 
 	sign1, err := Instance.MultiSignOnePaymentInput(tx, SigHashAll, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn1, nil)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
 	t.Logf("PrvKey1 sign result:%x\n", sign1)
+	str1, _ := txscript.DisasmString(sign1)
+	t.Logf("Signed script1:{%s}", str1)
 	pay1 := tx.Messages()[0].Payload.(*modules.PaymentPayload)
 	pay1.Inputs[0].SignatureScript = sign1
 
@@ -470,22 +476,22 @@ func TestMultiSign2Step(t *testing.T) {
 	pay1 = tx.Messages()[0].Payload.(*modules.PaymentPayload)
 	pay1.Inputs[0].SignatureScript = sign2
 	str, _ := txscript.DisasmString(sign2)
-	t.Logf("Signed script:{%s}", str)
+	t.Logf("Signed script2:{%s}", str)
 
-    sign3, err := Instance.MultiSignOnePaymentInput(tx, SigHashAll, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn3, sign2)
+	sign3, err := Instance.MultiSignOnePaymentInput(tx, SigHashAll, 0, 0, lockScript, redeemScript, getPubKeyFn, getSignFn4, sign2)
 	if err != nil {
 		t.Logf("Sign error:%s", err)
 	}
 	t.Logf("PrvKey3 sign result:%x\n", sign3)
 
-        pay1 = tx.Messages()[0].Payload.(*modules.PaymentPayload)
+	pay1 = tx.Messages()[0].Payload.(*modules.PaymentPayload)
 	pay1.Inputs[0].SignatureScript = sign3
 	str, _ = txscript.DisasmString(sign3)
-	t.Logf("Signed script:{%s}", str)
+	t.Logf("Signed script3:{%s}", str)
 
 	err = Instance.ScriptValidate(lockScript, nil, tx, 0, 0)
 	assert.Nil(t, err, fmt.Sprintf("validate error:%s", err))
-}*/
+}
 func mockPickupJuryRedeemScript(addr common.Address) ([]byte, error) {
 	return Instance.GenerateRedeemScript(2, [][]byte{pubKey1B, pubKey2B, pubKey3B, pubKey4B}), nil
 }
