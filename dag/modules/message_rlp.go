@@ -76,29 +76,3 @@ func (input *ContractDeployPayload) EncodeRLP(w io.Writer) error {
 	temp.ErrMsg = input.ErrMsg
 	return rlp.Encode(w, temp)
 }
-func (crs *ContractReadSet) EncodeRLP(w io.Writer) error {
-	temp := contractReadSetTemp{Key: crs.Key, ContractId: common.CopyBytes(crs.ContractId)}
-	if crs.Version != nil {
-		temp.TxIndex = crs.Version.TxIndex
-		if crs.Version.Height != nil {
-			temp.AssetId = crs.Version.Height.AssetID
-			temp.Index = crs.Version.Height.Index
-		}
-	}
-	return rlp.Encode(w, temp)
-}
-func (crs *ContractReadSet) DecodeRLP(s *rlp.Stream) error {
-	raw, err := s.Raw()
-	if err != nil {
-		return err
-	}
-	temp := new(contractReadSetTemp)
-	err = rlp.DecodeBytes(raw, temp)
-	if err != nil {
-		return err
-	}
-	crs.Version = &StateVersion{Height: &ChainIndex{AssetID: temp.AssetId, Index: temp.Index}, TxIndex: temp.TxIndex}
-	crs.ContractId = temp.ContractId
-	crs.Key = temp.Key
-	return nil
-}

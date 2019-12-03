@@ -253,7 +253,7 @@ func CopyMessage(cpyMsg *Message) *Message {
 	case APP_CONTRACT_TPL_REQUEST:
 		payload, _ := cpyMsg.Payload.(*ContractInstallRequestPayload)
 		temp_load := *payload
-		temp_load.AddrHash = make([]common.Hash,0)
+		temp_load.AddrHash = make([]common.Hash, 0)
 		temp_load.AddrHash = append(temp_load.AddrHash, payload.AddrHash...)
 		msg.Payload = &temp_load
 	case APP_CONTRACT_DEPLOY_REQUEST:
@@ -448,15 +448,8 @@ type ElectionNode struct {
 
 type ContractReadSet struct {
 	Key        string        `json:"key"`
-	Version    *StateVersion `json:"version" rlp:"-"`
+	Version    *StateVersion `json:"version" rlp:"nil"`
 	ContractId []byte        `json:"contract_id"`
-}
-type contractReadSetTemp struct {
-	Key        string  `json:"key"`
-	AssetId    AssetId `json:"asset_id"`
-	Index      uint64  `json:"chain_index"`
-	TxIndex    uint32  `json:"tx_index"`
-	ContractId []byte  `json:"contract_id"`
 }
 
 //请求合约信息
