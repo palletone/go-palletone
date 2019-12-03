@@ -93,7 +93,7 @@ func (p *Processor) processContractPayout(tx *modules.Transaction, ele *modules.
 		return
 	}
 	reqId := tx.RequestHash()
-	if has, index, msg := tx.HasContractPayoutMsg(); has {
+	if has, index, payout_msg := tx.HasContractPayoutMsg(); has {
 		pubkeys, signs := getSignature(tx)
 		redeem := p.generateJuryRedeemScript(ele)
 
@@ -104,22 +104,22 @@ func (p *Processor) processContractPayout(tx *modules.Transaction, ele *modules.
 			return fmt.Sprintf("[%s]processContractPayout, Move sign payload to contract payout unlock script:%s",
 				shortId(reqId.String()), unlockStr)
 		})
-		for _, input := range msg.Payload.(*modules.PaymentPayload).Inputs {
+		for _, input := range payout_msg.Payload.(*modules.PaymentPayload).Inputs {
 			input.SignatureScript = unlock
 		}
-		tx.ModifiedMsg(index, msg)
-	}
-	//remove signature payload
-	msgs := []*modules.Message{}
-	for _, msg := range tx.Messages() {
-		if msg.App != modules.APP_SIGNATURE {
+		tx.ModifiedMsg(index, payout_msg)
+		//remove signature payload
+		msgs := []*modules.Message{}
+		for _, msg := range tx.Messages() {
+			if msg.App != modules.APP_SIGNATURE {
+				msgs = append(msgs, msg)
+			}
+			log.Debugf("[%s]processContractPayout, Remove SignaturePayload from req[%s]", shortId(reqId.String()), reqId.String())
 			msgs = append(msgs, msg)
 		}
+		tx.SetMessages(msgs)
 		log.Debugf("[%s]processContractPayout, Remove SignaturePayload from req[%s]", shortId(reqId.String()), reqId.String())
-		msgs = append(msgs, msg)
 	}
-	log.Debugf("[%s]processContractPayout, Remove SignaturePayload from req[%s]", shortId(reqId.String()), reqId.String())
-	tx.SetMessages(msgs)
 }
 
 func DeleOneMax(signs [][]byte) [][]byte {
