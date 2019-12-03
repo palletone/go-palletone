@@ -119,7 +119,6 @@ func applyBecomeMediator(stub shim.ChaincodeStubInterface, mediatorCreateArgs st
 	jd.EnterTime = md.ApplyEnterTime
 	jd.Role = modules.Jury
 	jd.Address = applyingAddrStr
-	jd.RewardAddr = common.Address{}
 	jd.JurorDepositExtra = jde
 	err = saveJuryBalance(stub, applyingAddrStr, jd)
 	if err != nil {
