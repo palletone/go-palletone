@@ -342,6 +342,8 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward
 	}
 	//  计算分红
 	if allM != nil && finish == nil {
+		//  这里需要合并列表中地址相同的成员
+		allM = mergeMember(allM)
 		log.Infof("allM is not nil, today = %s, lastDate = %s", today, lastDate)
 		//  当前的分红奖励与当前的分红数量的比例
 		rewardPerDao := float64(depositDailyReward) / float64(allM.TotalAmount)
@@ -363,7 +365,7 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward
 			}
 		}
 	} else {
-		newdate,err := stub.GetState(constants.AddNewAddress)
+		newdate, err := stub.GetState(constants.AddNewAddress)
 		if err != nil {
 			return err
 		}
@@ -398,12 +400,12 @@ func addNewAddrPledgeRecords(stub shim.ChaincodeStubInterface, date string) erro
 			h, _ = strconv.Atoi(string(haveAllocatedCount))
 		}
 		pledgeList := &modules.PledgeList{}
+		pledgeList.Date = date
 		for i, m := range depositList {
 			if i+1 > t {
 				log.Infof("break in i = %d, i + 1 = %d, t = %d", i, i+1, t)
 				break
 			}
-			pledgeList.Date = date
 			pledgeList.Add(m.Address, m.Amount, 0)
 			err = delPledgeDepositRecord(stub, m.Address)
 			if err != nil {
@@ -519,4 +521,13 @@ func getTotalPledgeStatus(stub shim.ChaincodeStubInterface) (*modules.PledgeStat
 		status.PledgeAmount = list.TotalAmount
 	}
 	return status, nil
+}
+
+func mergeMember(pledgeList *modules.PledgeList) *modules.PledgeList {
+	//  已经排好序了
+	mergePledgeList := &modules.PledgeList{TotalAmount: 0, Members: []*modules.AddressRewardAmount{}}
+	for _, m := range pledgeList.Members {
+		mergePledgeList.Add(m.Address, m.Amount, m.Reward)
+	}
+	return mergePledgeList
 }

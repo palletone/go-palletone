@@ -36,19 +36,20 @@ type PledgeStatus struct {
 
 //质押列表
 type PledgeList struct {
-	TotalAmount uint64                 `json:"total_amount"`
-	Date        string                 `json:"date"` //质押列表所在的日期yyyyMMdd
+	TotalAmount uint64              `json:"total_amount"`
+	Date        string              `json:"date"` //质押列表所在的日期yyyyMMdd
 	Members     addressRewardAmount `json:"members"`
 }
 
 type addressRewardAmount []*AddressRewardAmount
+
 func (m addressRewardAmount) Len() int {
 	return len(m)
 }
-func (m addressRewardAmount) Swap(i,j int) {
-	m[i],m[j] = m[j],m[i]
+func (m addressRewardAmount) Swap(i, j int) {
+	m[i], m[j] = m[j], m[i]
 }
-func (m addressRewardAmount) Less(i,j int) bool {
+func (m addressRewardAmount) Less(i, j int) bool {
 	return m[i].Address < m[j].Address
 }
 
@@ -85,12 +86,13 @@ func (pl *PledgeList) Add(addr string, amount, reward uint64) {
 }
 
 func (pl *PledgeList) GetAmount(addr string) uint64 {
+	amount := uint64(0)
 	for _, row := range pl.Members {
 		if row.Address == addr {
-			return row.Amount
+			amount += row.Amount
 		}
 	}
-	return 0
+	return amount
 }
 
 //从质押列表中提币，Amount =MaxUint64表示全部提取
