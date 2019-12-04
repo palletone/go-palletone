@@ -282,7 +282,7 @@ func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode)
 	}
 	if !p.validator.ValidateTxFeeEnough(tx, ContractDefaultSignatureSize, 0) {
 		//费用不足，重新构建费用不足的交易
-		msgs, err = genContractErrorMsg(p.dag, tx, nil, errors.New("tx fee is invalid"), true)
+		msgs, err = genContractErrorMsg(p.dag, tx, errors.New("tx fee is invalid"), true)
 		if err != nil {
 			log.Error("[%s]runContractReq, genContractErrorMsg error:%s", shortId(reqId.String()), err.Error())
 			return err
@@ -592,7 +592,7 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 		return false
 	}
 	if !p.validator.ValidateTxFeeEnough(txTmp, ContractDefaultSignatureSize, 0) {
-		msgs, err = genContractErrorMsg(p.dag, txTmp, nil, errors.New("tx fee is invalid"), true)
+		msgs, err = genContractErrorMsg(p.dag, txTmp, errors.New("tx fee is invalid"), true)
 		if err != nil {
 			log.Errorf("[%s]CheckContractTxValid, genContractErrorMsg,error:%s", shortId(reqId.String()), err.Error())
 			return false
@@ -617,7 +617,7 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele *modules.Ele
 			shortId(reqId.String()), len(ele.EleList), cfgEleNum)
 		return false
 	}
-	contractId := tx.ContractIdBytes()
+	contractId := tx.GetContractId()
 	reqAddr, err := p.dag.GetTxRequesterAddress(tx)
 	if err != nil {
 		log.Errorf("[%s]isValidateElection, GetTxRequesterAddress fail, err:%s", shortId(reqId.String()), err)
