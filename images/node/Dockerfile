@@ -11,7 +11,7 @@ RUN mkdir -p src/github.com/palletone \
     && cd src/github.com/palletone \
     && git clone -b testnet https://github.com/palletone/go-palletone.git \
     && cd go-palletone/cmd/gptn \
-    && go build -tags mainnet
+    && go build -mod=vendor -tags mainnet
 
 # Pull Gptn into a second stage deploy ubuntu container
 FROM ubuntu:latest
