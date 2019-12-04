@@ -36,7 +36,15 @@ func mediatorKey(address common.Address) []byte {
 }
 
 func (statedb *StateDb) StoreMediator(med *core.Mediator) error {
-	mi := modules.MediatorToInfo(med)
+	//mi := modules.MediatorToInfo(med)
+
+	mi,err := statedb.RetrieveMediatorInfo(med.Address)
+	if err != nil {
+		log.Errorf(err.Error())
+		return nil
+	}
+
+	mi.MediatorInfoExpand = med.MediatorInfoExpand
 	return statedb.StoreMediatorInfo(med.Address, mi)
 }
 
