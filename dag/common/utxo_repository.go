@@ -262,6 +262,10 @@ func (repository *UtxoRepository) writeUtxo(unitTime int64, txHash common.Hash,
 	msgIndex uint32, txouts []*modules.Output, lockTime uint32) []error {
 	var errs []error
 	for outIndex, txout := range txouts {
+		sAddr, _ := repository.tokenEngine.GetAddressFromScript(txout.PkScript)
+		if sAddr == common.DestroyAddress { //销毁地址，不产生UTXO
+			continue
+		}
 		utxo := &modules.Utxo{
 			Amount:    txout.Value,
 			Asset:     txout.Asset,
@@ -283,7 +287,6 @@ func (repository *UtxoRepository) writeUtxo(unitTime int64, txHash common.Hash,
 			continue
 		}
 
-		sAddr, _ := repository.tokenEngine.GetAddressFromScript(txout.PkScript)
 		//update address account info
 		gasToken := dagconfig.DagConfig.GetGasToken()
 		if txout.Asset.AssetId == gasToken {

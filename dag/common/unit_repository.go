@@ -169,9 +169,9 @@ func (rep *UnitRepository) GetHeaderByHash(hash common.Hash) (*modules.Header, e
 	return rep.dagdb.GetHeaderByHash(hash)
 }
 func (rep *UnitRepository) GetHeaderList(hash common.Hash, parentCount int) ([]*modules.Header, error) {
-	log.Debugf("GetHeaderList unitRepository lock [%s].", hash.String())
 	rep.lock.RLock()
-	defer log.Debugf("GetHeaderList unitRepository unlock [%s].", hash.String())
+	//log.Debugf("GetHeaderList unitRepository lock [%s].", hash.String())
+	//defer log.Debugf("GetHeaderList unitRepository unlock [%s].", hash.String())
 	defer rep.lock.RUnlock()
 	result := []*modules.Header{}
 	uhash := hash
@@ -202,9 +202,9 @@ func (rep *UnitRepository) SaveHeaders(headers []*modules.Header) error {
 	return rep.dagdb.SaveHeaders(headers)
 }
 func (rep *UnitRepository) GetHeaderByNumber(index *modules.ChainIndex) (*modules.Header, error) {
-	log.Debugf("GetHeaderByNumber unitRepository lock [%s].", index.String())
 	rep.lock.RLock()
-	defer log.Debugf("GetHeaderByNumber unitRepository unlock [%s].", index.String())
+	//log.Debugf("GetHeaderByNumber unitRepository lock [%s].", index.String())
+	//defer log.Debugf("GetHeaderByNumber unitRepository unlock [%s].", index.String())
 	defer rep.lock.RUnlock()
 	hash, err := rep.dagdb.GetHashByNumber(index)
 	if err != nil {
@@ -260,9 +260,9 @@ func (rep *UnitRepository) IsTransactionExist(txHash common.Hash) (bool, error) 
 }
 
 func (rep *UnitRepository) GetUnit(hash common.Hash) (*modules.Unit, error) {
-	log.Debugf("GetUnit unitRepository lock [%s].", hash.String())
 	rep.lock.RLock()
-	defer log.Debugf("GetUnit unitRepository unlock [%s].", hash.String())
+	//log.Debugf("GetUnit unitRepository lock [%s].", hash.String())
+	//defer log.Debugf("GetUnit unitRepository unlock [%s].", hash.String())
 	defer rep.lock.RUnlock()
 	return rep.getUnit(hash)
 }
@@ -578,7 +578,7 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 	header.SetTxsIllegal(illegalTxs)
 	header.SetTxRoot(root)
 	unit := modules.NewUnit(header, txs)
-	
+
 	log.Debugf("mediator:[%s] create unit[%s] and create unit unlock unitRepository cost time %s,txs[%d]",
 		unit.Author().String(), unit.UnitHash.String(), time.Since(begin), len(txs))
 	return unit, nil
@@ -887,9 +887,9 @@ save genesis unit data
 */
 func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 	tt := time.Now()
-	log.Debugf("saveUnit[%s] lock unitRepository.", unit.UnitHash.String())
 	rep.lock.Lock()
-	defer log.Debugf("saveUnit[%s] and unlock unitRepository cost time: %s", unit.UnitHash.String(), time.Since(tt))
+	//log.Debugf("saveUnit[%s] lock unitRepository.", unit.UnitHash.String())
+	defer log.Debugf("save Unit[%s] cost time: %s", unit.UnitHash.String(), time.Since(tt))
 	defer rep.lock.Unlock()
 	uHash := unit.Hash()
 	// step1. save unit header
@@ -1082,8 +1082,7 @@ func (rep *UnitRepository) getPayFromAddresses(tx *modules.Transaction) []common
 						stxo, err := rep.utxoRepository.GetStxoEntry(input.PreviousOutPoint)
 						if err != nil {
 							if input.PreviousOutPoint.TxHash.IsSelfHash() {
-								out := msgs[input.PreviousOutPoint.MessageIndex].Payload.
-								(*modules.PaymentPayload).Outputs[input.PreviousOutPoint.OutIndex]
+								out := msgs[input.PreviousOutPoint.MessageIndex].Payload.(*modules.PaymentPayload).Outputs[input.PreviousOutPoint.OutIndex]
 								lockScript = out.PkScript
 							} else {
 								log.Errorf("Cannot find txo by:%s", input.PreviousOutPoint.String())
@@ -1622,9 +1621,9 @@ To Sign transaction
 
 // GetAddrTransactions containing from && to address
 func (rep *UnitRepository) GetAddrTransactions(address common.Address) ([]*modules.TransactionWithUnitInfo, error) {
-	log.Debug("getAddrTxs unitRepository lock.")
 	rep.lock.RLock()
-	defer log.Debug("getAddrTxs unitRepository unlock.")
+	//log.Debug("getAddrTxs unitRepository lock.")
+	//defer log.Debug("getAddrTxs unitRepository unlock.")
 	defer rep.lock.RUnlock()
 	hashs, err := rep.idxdb.GetAddressTxIds(address)
 	if err != nil {
@@ -1683,9 +1682,9 @@ func (rep *UnitRepository) GetFileInfoByHash(hashs []common.Hash) ([]*modules.Fi
 }
 
 func (rep *UnitRepository) GetLastIrreversibleUnit(assetID modules.AssetId) (*modules.Unit, error) {
-	log.Debug("GetLastIrreversibleUnit unitRepository lock.")
 	rep.lock.RLock()
-	defer log.Debug("GetLastIrreversibleUnit unitRepository unlock.")
+	//log.Debug("GetLastIrreversibleUnit unitRepository lock.")
+	//defer log.Debug("GetLastIrreversibleUnit unitRepository unlock.")
 	defer rep.lock.RUnlock()
 	hash, _, _, err := rep.propdb.GetNewestUnit(assetID)
 	if err != nil {
@@ -1695,9 +1694,9 @@ func (rep *UnitRepository) GetLastIrreversibleUnit(assetID modules.AssetId) (*mo
 }
 
 func (rep *UnitRepository) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error) {
-	log.Debug("GetTxFromAddress unitRepository lock.")
 	rep.lock.RLock()
-	defer log.Debug("GetTxFromAddress unitRepository unlock.")
+	//log.Debug("GetTxFromAddress unitRepository lock.")
+	//defer log.Debug("GetTxFromAddress unitRepository unlock.")
 	defer rep.lock.RUnlock()
 	result := []common.Address{}
 	for _, msg := range tx.TxMessages() {
@@ -1718,12 +1717,13 @@ func (rep *UnitRepository) GetTxFromAddress(tx *modules.Transaction) ([]common.A
 	return result, nil
 }
 func (rep *UnitRepository) RefreshAddrTxIndex() error {
-	log.Debugf("RefreshAddrTxIndex unitRepository lock.")
 	rep.lock.RLock()
+	//log.Debugf("RefreshAddrTxIndex unitRepository lock.")
 	defer func() {
 		rep.lock.RUnlock()
-		log.Debug("RefreshAddrTxIndex unitRepository unlock.")
+		//log.Debug("RefreshAddrTxIndex unitRepository unlock.")
 	}()
+
 	if !dagconfig.DagConfig.AddrTxsIndex {
 		return errors.New("Please enable AddrTxsIndex in toml DagConfig")
 	}
