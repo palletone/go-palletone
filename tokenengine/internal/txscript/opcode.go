@@ -415,6 +415,7 @@ var opcodeArray = [256]opcode{
 	OP_ENDIF:               {OP_ENDIF, "OP_ENDIF", 1, opcodeEndif},
 	OP_VERIFY:              {OP_VERIFY, "OP_VERIFY", 1, opcodeVerify},
 	//OP_RETURN:              {OP_RETURN, "OP_RETURN", 1, opcodeReturn},
+        OP_RETURN:              {OP_RETURN, "OP_RETURN", 1, opcodeFalse},
 	OP_CHECKLOCKTIMEVERIFY: {OP_CHECKLOCKTIMEVERIFY, "OP_CHECKLOCKTIMEVERIFY", 1, opcodeCheckLockTimeVerify},
 
 	// Stack opcodes.
