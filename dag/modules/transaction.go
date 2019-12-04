@@ -780,6 +780,16 @@ func (tx *Transaction) GetContractInvokeReqMsgIdx() int {
 	return -1
 }
 
+//获得被调用的合约ID
+func (tx *Transaction) GetInvokeContractId() []byte {
+	for _, msg := range tx.TxMessages {
+		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
+			return msg.Payload.(*ContractInvokeRequestPayload).ContractId
+		}
+	}
+	return nil
+}
+
 //之前的费用分配有Bug，在ContractInstall的时候会分配错误。在V2中解决了这个问题，但是由于测试网已经有历史数据了，所以需要保留历史计算方法。
 func (tx *Transaction) GetTxFeeAllocateLegacyV1(queryUtxoFunc QueryUtxoFunc, getSignerFunc GetScriptSignersFunc,
 	mediatorReward common.Address) ([]*Addition, error) {
