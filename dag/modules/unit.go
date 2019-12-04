@@ -662,6 +662,7 @@ func (input *ChainIndex) EncodeRLP(w io.Writer) error {
 	if input != nil {
 		temp.AssetID = input.AssetID
 		temp.Index = input.Index
+		return rlp.Encode(w, temp)
 	}
-	return rlp.Encode(w, temp)
+	return nil
 }
