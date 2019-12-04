@@ -49,7 +49,7 @@ func TestOpcodeDisasm(t *testing.T) {
 		0x50: "OP_RESERVED", 0x61: "OP_NOP", 0x62: "OP_VER",
 		0x63: "OP_IF", 0x64: "OP_NOTIF", 0x65: "OP_VERIF",
 		0x66: "OP_VERNOTIF", 0x67: "OP_ELSE", 0x68: "OP_ENDIF",
-		0x69: "OP_VERIFY", 0x6a: "OP_RETURN", 0x6b: "OP_TOALTSTACK",
+		0x69: "OP_VERIFY", /*0x6a: "OP_RETURN", */0x6b: "OP_TOALTSTACK",
 		0x6c: "OP_FROMALTSTACK", 0x6d: "OP_2DROP", 0x6e: "OP_2DUP",
 		0x6f: "OP_3DUP", 0x70: "OP_2OVER", 0x71: "OP_2ROT",
 		0x72: "OP_2SWAP", 0x73: "OP_IFDUP", 0x74: "OP_DEPTH",
