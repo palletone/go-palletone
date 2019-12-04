@@ -652,7 +652,6 @@ func (input *ChainIndex) DecodeRLP(s *rlp.Stream) error {
 	if err != nil {
 		return err
 	}
-
 	input.AssetID = temp.AssetID
 	input.Index = temp.Index
 
@@ -660,8 +659,9 @@ func (input *ChainIndex) DecodeRLP(s *rlp.Stream) error {
 }
 func (input *ChainIndex) EncodeRLP(w io.Writer) error {
 	temp := &ChainIndexTemp{}
-	temp.AssetID = input.AssetID
-	temp.Index = input.Index
-
+	if input != nil {
+		temp.AssetID = input.AssetID
+		temp.Index = input.Index
+	}
 	return rlp.Encode(w, temp)
 }
