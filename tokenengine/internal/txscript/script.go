@@ -397,7 +397,7 @@ func calcSignatureData(script []parsedOpcode, hashType SigHashType,
 	//payCopy.Serialize(&wbuf)
 	//binary.Write(&wbuf, binary.LittleEndian, hashType)
 	//return wire.DoubleSha256(wbuf.Bytes())
-	data, err := rlp.EncodeToBytes(&txCopy)
+	data, err := rlp.EncodeToBytes(txCopy)
 	if err != nil {
 		log.Error("Rlp encode tx error:" + err.Error())
 	}

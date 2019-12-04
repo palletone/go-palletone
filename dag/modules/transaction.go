@@ -22,9 +22,9 @@ package modules
 import (
 	"encoding/hex"
 	"fmt"
-	"sync/atomic"
 	"io"
 	"math"
+	"sync/atomic"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -32,9 +32,9 @@ import (
 	"github.com/palletone/go-palletone/common/obj"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/parameter"
-	"github.com/palletone/go-palletone/dag/constants"
 )
 
 var (
@@ -516,30 +516,19 @@ func (tx *Transaction) GetContractTxSignatureAddress() []common.Address {
 
 //如果是合约调用交易，Copy其中的Msg0到ContractRequest的部分，如果不是请求，那么返回完整Tx
 func (tx *Transaction) GetRequestTx() *Transaction {
-	request := transaction_sdw{}
 	msgs := tx.TxMessages()
-	var is_request bool
-	req_msgs := make([]*Message, 0)
+	request := transaction_sdw{}
 	for _, msg := range msgs {
+		request.TxMessages = append(request.TxMessages, msg)
 		if msg.App.IsRequest() {
-			is_request = true
-			req_msgs = append(req_msgs, msg)
+
 			break
 		}
+
 	}
-	if is_request {
-		for _, msg := range msgs {
-			if msg.App == APP_PAYMENT || msg.App == APP_DATA || msg.App == APP_ACCOUNT_UPDATE {
-				request.TxMessages = append(request.TxMessages, msg)
-			}
-		}
-		request.TxMessages = append(request.TxMessages, req_msgs...)
-		request.CertId = tx.CertId()
-		return &Transaction{txdata: request}
-	}
-	request.TxMessages = append(request.TxMessages, msgs...)
 	request.CertId = tx.CertId()
 	return &Transaction{txdata: request}
+
 }
 
 //获取一个被Jury执行完成后，但是还没有进行陪审员签名的交易

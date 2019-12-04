@@ -535,15 +535,14 @@ func (chain *MemDag) AddStableUnit(unit *modules.Unit) error {
 	defer chain.lock.Unlock()
 	hash := unit.Hash()
 	number := unit.NumberU64()
-	// 重复验证 comment by albert
-	//// leveldb 查重
-	//if s_hash, _, err := chain.ldbPropRep.GetNewestUnit(chain.token); err != nil {
-	//	return err
-	//} else if !unit.ContainsParent(s_hash) {
-	//	log.Warnf("Dag[%s] received a discontinuity unit,the stable unit[%s], ignore this unit[%s]",
-	//		chain.token.String(), s_hash.String(), unit.Hash().String())
-	//	return nil
-	//}
+	// leveldb 查重
+	if s_hash, _, err := chain.ldbPropRep.GetNewestUnit(chain.token); err != nil {
+		return err
+	} else if !unit.ContainsParent(s_hash) {
+		log.Warnf("Dag[%s] received a discontinuity unit,the stable unit[%s], ignore this unit[%s]",
+			chain.token.String(), s_hash.String(), unit.Hash().String())
+		return nil
+	}
 
 	validateResult := chain.ldbValidator.ValidateUnitExceptGroupSig(unit)
 	if validateResult != validator.TxValidationCode_VALID {

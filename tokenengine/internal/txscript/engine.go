@@ -585,7 +585,7 @@ func NewEngine(scriptPubKey []byte,
 	tx *modules.Transaction, msgIdx, txIdx int,
 	flags ScriptFlags, sigCache *SigCache, crypto ICrypto) (*Engine, error) {
 	// The provided transaction input index must refer to a valid input.
-	pay := tx.TxMessages()[msgIdx].Payload.(*modules.PaymentPayload)
+	pay := tx.Messages()[msgIdx].Payload.(*modules.PaymentPayload)
 	if txIdx < 0 || txIdx >= len(pay.Inputs) {
 		return nil, ErrInvalidIndex
 	}

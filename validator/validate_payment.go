@@ -70,7 +70,7 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 			log.Debugf("msgIdx %d, GetRequestTx 1", msgIdx)
 		} else if invokeReqMsgIdx > 0 && msgIdx > invokeReqMsgIdx {
 			//txForSign := tx.Clone()
-			log.Debugf("msgIdx %d, GetResultTx 1", msgIdx)
+			log.Debugf("msgIdx %d, Clone 1", msgIdx)
 		}
 
 		statusValid := false
@@ -92,8 +92,8 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 			var utxo *modules.Utxo
 			var err error
 			if in.PreviousOutPoint.TxHash.IsSelfHash() {
-				output := tx.TxMessages()[in.PreviousOutPoint.MessageIndex].Payload.
-				(*modules.PaymentPayload).Outputs[in.PreviousOutPoint.OutIndex]
+				output := tx.Messages()[in.PreviousOutPoint.MessageIndex].Payload.(*modules.PaymentPayload).Outputs[in.
+					PreviousOutPoint.OutIndex]
 				utxo = &modules.Utxo{
 					Amount:    output.Value,
 					Asset:     output.Asset,
@@ -150,7 +150,7 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 		if err != nil {
 			return TxValidationCode_INVALID_PAYMMENT_INPUT
 		} else {
-			log.Debugf("Unlock script validated! tx[%s],%d, spend time:%s", tx.Hash().String(), msgIdx, time.Since(t1))
+			log.Debugf("Unlock script validated! tx[%s],%d, spend time:%s", txId.String(), msgIdx, time.Since(t1))
 		}
 	}
 

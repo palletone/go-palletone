@@ -224,10 +224,12 @@ func (engine *TokenEngine) ScriptValidate1Msg(utxoLockScripts map[string][]byte,
 	pickupJuryRedeemScript PickupJuryRedeemScript,
 	tx *modules.Transaction, msgIdx int) error {
 	acc := &account{}
-	txCopy := tx.Clone()
+	tx_hash := tx.Hash()
+	msgs := tx.Messages()
+	txCopy := tx
 	if tx.IsContractTx() {
 		isRequestMsg := false
-		for idx, msg := range tx.TxMessages() {
+		for idx, msg := range msgs {
 			if msg.App.IsRequest() {
 				isRequestMsg = true
 			}
@@ -238,22 +240,21 @@ func (engine *TokenEngine) ScriptValidate1Msg(utxoLockScripts map[string][]byte,
 		}
 	}
 	log.Debugf("SignCache count:%d", engine.signCache.Count())
-	for inputIndex, input := range txCopy.Messages()[msgIdx].Payload.(*modules.PaymentPayload).Inputs {
+	for inputIndex, input := range msgs[msgIdx].Payload.(*modules.PaymentPayload).Inputs {
 		utxoLockScript := utxoLockScripts[input.PreviousOutPoint.String()]
 		vm, err := txscript.NewEngine(utxoLockScript,
-			func(addr common.Address) ([]byte, error) { return pickupJuryRedeemScript(addr) },
-			txCopy, msgIdx, inputIndex,
-			txscript.StandardVerifyExcludeSignFlags, engine.signCache, acc)
+			func(addr common.Address) ([]byte, error) { return pickupJuryRedeemScript(addr) }, txCopy, msgIdx,
+			inputIndex, txscript.StandardVerifyExcludeSignFlags, engine.signCache, acc)
 		if err != nil {
 			log.Warnf("Unlock script validate fail,tx[%s],MsgIdx[%d],In[%d],unlockScript:%x,utxoScript:%x,error:%s",
-				tx.Hash().String(), msgIdx, inputIndex, input.SignatureScript, utxoLockScript, err.Error())
+				tx_hash.String(), msgIdx, inputIndex, input.SignatureScript, utxoLockScript, err.Error())
 
 			return err
 		}
 		err = vm.Execute()
 		if err != nil {
 			log.Warnf("Unlock script validate fail,tx[%s],MsgIdx[%d],In[%d],unlockScript:%x,utxoScript:%x, error:%s",
-				tx.Hash().String(), msgIdx, inputIndex, input.SignatureScript, utxoLockScript, err.Error())
+				tx_hash.String(), msgIdx, inputIndex, input.SignatureScript, utxoLockScript, err.Error())
 
 			log.DebugDynamic(func() string {
 				data, _ := json.Marshal(txCopy)
@@ -271,8 +272,8 @@ func (engine *TokenEngine) GetScriptSigners(tx *modules.Transaction, msgIdx, inp
 	pubkeys := [][]byte{}
 	var redeem []byte
 	var hashType byte
-	script := tx.TxMessages()[msgIdx].Payload.(*modules.PaymentPayload).Inputs[inputIndex].SignatureScript
-	scriptStr, _ := txscript.DisasmString(script)
+	script := tx.Messages()[msgIdx].Payload.(*modules.PaymentPayload).Inputs[inputIndex].SignatureScript
+	scriptStr, _ := txscript.DisasmString(common.CopyBytes(script))
 	ops := strings.Fields(scriptStr)
 	for i, op := range ops {
 		if op == "0" {
