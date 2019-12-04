@@ -239,7 +239,7 @@ func (engine *TokenEngine) ScriptValidate1Msg(utxoLockScripts map[string][]byte,
 			}
 		}
 	}
-	log.Debugf("SignCache count:%d", engine.signCache.Count())
+	//log.Debugf("SignCache count:%d", engine.signCache.Count())
 	for inputIndex, input := range msgs[msgIdx].Payload.(*modules.PaymentPayload).Inputs {
 		utxoLockScript := utxoLockScripts[input.PreviousOutPoint.String()]
 		vm, err := txscript.NewEngine(utxoLockScript,
