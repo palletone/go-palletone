@@ -272,7 +272,7 @@ func signAndSend(eth *ethadaptor.AdaptorETH, rawTransaction, prikey []byte) erro
 		fmt.Println("SendTransaction failed : ", err.Error())
 		return err
 	} else {
-		fmt.Printf("%x\n", resultSend.TxID)
+		fmt.Printf("txid : %x\n", resultSend.TxID)
 	}
 	return nil
 }
@@ -315,90 +315,46 @@ func setJuryAddrs(contractAddr, gasPrice, gasLimit, addr1, addr2, addr3, addr4, 
 	return signAndSend(eth, resultTx.RawTransaction, prikey)
 }
 
-func deploy(gasPrice, gasLimit, addr1, addr2, addr3, addr4, privateKey string) error {
-	//var ethadaptor adaptoreth.AdaptorETH
-	//ethadaptor.Rawurl = gWallet.EthConfig.Rawurl
-	//
-	//callerAddr := ethadaptor.GetAddress(privateKey)
-	//
-	////
-	//value := "0"
-	////	gasPrice := "1000"
-	////	gasLimit := "2100000"
-	//
-	////
-	//paramsArray := []string{
-	//	addr1,
-	//	addr2,
-	//	addr3,
-	//	addr4}
-	//paramsJson, err := json.Marshal(paramsArray)
-	//if err != nil {
-	//	fmt.Println(err.Error())
-	//	return err
-	//}
-	//
-	////
-	//var invokeContractParams adaptor.GenDeployContractTXParams
-	//invokeContractParams.ContractABI = contractABI
-	//invokeContractParams.ContractBin = contractBin
-	//invokeContractParams.DeployerAddr = callerAddr
-	//invokeContractParams.Value = value
-	//invokeContractParams.GasPrice = gasPrice
-	//invokeContractParams.GasLimit = gasLimit
-	//invokeContractParams.Params = string(paramsJson)
-	//
-	////1.gen tx
-	//resultTx, err := ethadaptor.GenDeployContractTX(&invokeContractParams)
-	//if err != nil {
-	//	fmt.Println(err.Error())
-	//	return err
-	//} else {
-	//	fmt.Println(resultTx)
-	//}
-	////parse result
-	//var genDeployContractTXResult adaptor.GenDeployContractTXResult
-	//err = json.Unmarshal([]byte(resultTx), &genDeployContractTXResult)
-	//if err != nil {
-	//	fmt.Println(err.Error())
-	//}
-	//fmt.Println("ContractAddr:", genDeployContractTXResult.ContractAddr)
-	//
-	////2.sign tx
-	//var signTransactionParams adaptor.ETHSignTransactionParams
-	//signTransactionParams.PrivateKeyHex = privateKey
-	//signTransactionParams.TransactionHex = genDeployContractTXResult.TransactionHex
-	//resultSign, err := ethadaptor.SignTransaction(&signTransactionParams)
-	//if err != nil {
-	//	fmt.Println(err.Error())
-	//	return err
-	//} else {
-	//	fmt.Println(resultSign)
-	//}
-	//
-	////parse result
-	//var signTransactionResult adaptor.ETHSignTransactionResult
-	//err = json.Unmarshal([]byte(resultSign), &signTransactionResult)
-	//if err != nil {
-	//	fmt.Println(err.Error())
-	//}
-	//
-	////3.send tx
-	//var sendTransactionParams adaptor.SendTransactionParams
-	//sendTransactionParams.TransactionHex = signTransactionResult.TransactionHex
-	//resultSend, err := ethadaptor.SendTransaction(&sendTransactionParams)
-	//if err != nil {
-	//	fmt.Println(err.Error())
-	//	return err
-	//} else {
-	//	fmt.Println(resultSend)
-	//}
+func deploy(gasPrice, gasLimit, addr1, addr2, addr3, addr4, prikeyHex string) error {
+	eth := ethadaptor.NewAdaptorETHTestnet()
 
-	return nil
+	if "0x" == prikeyHex[0:2] || "0X" == prikeyHex[0:2] {
+		prikeyHex = prikeyHex[2:]
+	}
+	prikey, err := hex.DecodeString(prikeyHex)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	}
+	callerAddr := getAddrByPrikey(prikey)
+
+	//
+	var input adaptor.CreateContractInitialTxInput
+	input.Address = callerAddr
+	input.Contract = []byte(EthmultisigABI)
+	amt := new(big.Int)
+	amt.SetString("21000000000000000", 10) //10000000000 10gwei*2100000
+	input.Fee = adaptor.NewAmountAsset(amt, "ETH")
+	input.Extra = []byte(EthmultisigBin)
+	input.Args = append(input.Args, []byte(addr1))
+	input.Args = append(input.Args, []byte(addr2))
+	input.Args = append(input.Args, []byte(addr3))
+	input.Args = append(input.Args, []byte(addr4))
+
+	//1.gen tx
+	resultTx, err := eth.CreateContractInitialTx(&input)
+	if err != nil {
+		fmt.Println("CreateContractInitialTx failed : ", err.Error())
+		return err
+	} else {
+		fmt.Printf("RawTransaction: %x\n", resultTx.RawTransaction)
+	}
+
+	return signAndSend(eth, resultTx.RawTransaction, prikey)
 }
 
 func helper() {
-	fmt.Println("functions : send, withdraw")
+	fmt.Println("functions : deploy, setaddrs, deposit, withdraw")
 	fmt.Println("Params : deploy, gasPrice, gasLimit, ethAddr1, ethAddr2, ethAddr3, ethAddr4, ethPrivateKey")
 	fmt.Println("Params : setaddrs, contractAddr, gasPrice, gasLimit, ethAddr1, ethAddr2, ethAddr3, ethAddr4, ethPrivateKey")
 	fmt.Println("Params : deposit, contractAddr, value, gasPrice, gasLimit, ethPrivateKey")

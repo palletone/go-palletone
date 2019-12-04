@@ -1111,7 +1111,7 @@ func (p *ETHPort) WithdrawSubmit(ethTxID string, stub shim.ChaincodeStubInterfac
 	}
 	txResult, err := GetETHContractTx(txIDByte, stub)
 	if err != nil {
-		log.Debugf("GetETHTx failed: %s", err.Error())
+		log.Debugf("GetETHContractTx failed: %s", err.Error())
 		return shim.Error(err.Error())
 	}
 	//check tx status
@@ -1139,7 +1139,7 @@ func (p *ETHPort) WithdrawSubmit(ethTxID string, stub shim.ChaincodeStubInterfac
 
 	reqid := hex.EncodeToString(txResult.Tx.TxRawData[68:100]) //4method+32recvAddr+32amount+32reqid
 	resultWithdraw, _ := stub.GetState(symbolsWithdraw + reqid)
-	if len(result) == 0 {
+	if len(resultWithdraw) == 0 {
 		return shim.Error("Not exist withdraw of reqid : " + reqid)
 	}
 	// 检查交易
