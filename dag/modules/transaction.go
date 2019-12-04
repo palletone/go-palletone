@@ -101,10 +101,10 @@ func (tx *Transaction) Hash() common.Hash {
 	}
 	oldFlag := tx.Illegal()
 	if oldFlag {
-		tx.SetIllegal(false)
+		tx.txdata.Illegal = false
 		v := util.RlpHash(tx)
-		tx.SetIllegal(oldFlag)
 		tx.hash.Store(v)
+		tx.txdata.Illegal = true
 		return v
 	}
 	v := util.RlpHash(tx)
