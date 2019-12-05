@@ -348,7 +348,7 @@ type MultiSignRawTransactionCmd struct {
 	PrivKeys *[]string
 	Flags    *string `jsonrpcdefault:"\"ALL\""`
 }
-func NewMultiSignRawTransactionCmd(hexEncodedTx string, inputs *[]RawTxInput,privKeys *[]string, flags *string) *MutiSignRawTransactionCmd {
+func NewMultiSignRawTransactionCmd(hexEncodedTx string, inputs *[]RawTxInput,privKeys *[]string, flags *string) *MultiSignRawTransactionCmd {
 	return &MultiSignRawTransactionCmd{
 		RawTx:    hexEncodedTx,
 		Inputs:   inputs,
