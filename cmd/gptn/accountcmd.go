@@ -148,7 +148,7 @@ password to file or expose in any other way.
 			{
 				Name:      "multi",
 				Usage:     "Create a new multisign account",
-				Action:    utils.MigrateFlags(accountMutiCreate),
+				Action:    utils.MigrateFlags(accountMultiCreate),
 				ArgsUsage: "<string>",
 				Flags: []cli.Flag{
 					utils.DataDirFlag,
@@ -458,7 +458,7 @@ func createAccount(ctx *cli.Context, password string) (common.Address, error) {
 }
 
 // accountCreate creates a new account into the keystore defined by the CLI flags.
-func createMutiAccount(ctx *cli.Context, pubkey [][]byte, check int) ([]byte, []byte, common.Address, error) {
+func createMultiAccount(ctx *cli.Context, pubkey [][]byte, check int) ([]byte, []byte, common.Address, error) {
 	var err error
 	var cfg FullConfig
 	var configDir string
@@ -504,22 +504,22 @@ func IntToByte(num int64) []byte {
     binary.Read(bytebuff, binary.BigEndian, &data)
     return int(data)
 }*/
-func newMutiAccount(ctx *cli.Context) ([]byte, []byte, common.Address, error) {
+func newMultiAccount(ctx *cli.Context) ([]byte, []byte, common.Address, error) {
 	if len(ctx.Args()) == 0 {
-		utils.Fatalf("No pubkey specified to create muti account")
+		utils.Fatalf("No pubkey specified to create multi account")
 	}
 	var pki []byte
 	var pk [][]byte
 	totalstring := ctx.Args().First()
 	total, err := strconv.Atoi(totalstring)
 	if err != nil || total < 0 || total > 15 {
-		utils.Fatalf("Pubkey specified to create muti account cannot more than 15")
+		utils.Fatalf("Pubkey specified to create multi account cannot more than 15")
 		return []byte{}, []byte{}, common.Address{}, err
 	}
 	for arg_s := 1; arg_s < total+1; arg_s++ {
 		pki, err = hex.DecodeString(ctx.Args()[arg_s])
 		if err != nil || total < 0 || total > 15 {
-			utils.Fatalf("Pubkey specified to create muti account cannot more than 15")
+			utils.Fatalf("Pubkey specified to create multi account cannot more than 15")
 			return []byte{}, []byte{}, common.Address{}, err
 		}
 		pk = append(pk, pki)
@@ -527,10 +527,10 @@ func newMutiAccount(ctx *cli.Context) ([]byte, []byte, common.Address, error) {
 	s_check := ctx.Args()[total+1]
 	check, err := strconv.Atoi(s_check)
 	if err != nil || check < 0 || check > 15 {
-		utils.Fatalf("Pubkey specified to create muti account cannot more than 15")
+		utils.Fatalf("Pubkey specified to create multi account cannot more than 15")
 		return []byte{}, []byte{}, common.Address{}, err
 	}
-	lockscript, redeemScript, address, err := createMutiAccount(ctx, pk, check)
+	lockscript, redeemScript, address, err := createMultiAccount(ctx, pk, check)
 	if err != nil {
 		return []byte{}, []byte{}, common.Address{}, err
 	}
@@ -549,8 +549,8 @@ func accountCreate(ctx *cli.Context) error {
 	return nil
 }
 
-func accountMutiCreate(ctx *cli.Context) error {
-	lockscript, redeem, address, err := newMutiAccount(ctx)
+func accountMultiCreate(ctx *cli.Context) error {
+	lockscript, redeem, address, err := newMultiAccount(ctx)
 	if err != nil {
 		utils.Fatalf("%v", err)
 	}
