@@ -24,7 +24,6 @@ import (
 	"encoding/binary"
 	"reflect"
 
-	"fmt"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
