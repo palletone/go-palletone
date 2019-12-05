@@ -73,8 +73,12 @@ func NewMigrations(db ptndb.Database) map[string]IMigration {
 
 	m_104_beta := NewMigration104alpha_104beta(db)
 	migrations[m_104_beta.FromVersion()] = m_104_beta
+
 	m_104_beta_release := NewNothingMigration("1.0.4-beta", "1.0.4-release")
 	migrations[m_104_beta_release.FromVersion()] = m_104_beta_release
+
+	m_105_alpha := NewMigration104beta_105alpha(db)
+	migrations[m_105_alpha.FromVersion()] = m_105_alpha
 
 	return migrations
 }
@@ -113,4 +117,8 @@ func NewMigration103beta_103gamma(db ptndb.Database) *Migration103beta_103gamma 
 
 func NewMigration104alpha_104beta(db ptndb.Database) *Migration104alpha_104beta {
 	return &Migration104alpha_104beta{dagdb: db, idxdb: db, utxodb: db, statedb: db, propdb: db}
+}
+
+func NewMigration104beta_105alpha(db ptndb.Database) *Migration104beta_105alpha {
+	return &Migration104beta_105alpha{dagdb: db, idxdb: db, utxodb: db, statedb: db, propdb: db}
 }
