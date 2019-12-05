@@ -261,6 +261,7 @@ func mockMediatorInit(statedb storage.IStateDb, propDb storage.IPropertyDb) {
 	ms.CurrentShuffledMediators = append(ms.CurrentShuffledMediators, addr2)
 	propDb.StoreMediatorSchl(ms)
 }
+
 func mockValidator() validator.Validator {
 	return &mockValidate{}
 }

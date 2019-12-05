@@ -50,21 +50,21 @@ func NewMediatorInfo() *MediatorInfo {
 	}
 }
 
-//func MediatorToInfo(md *core.Mediator) *MediatorInfo {
-//	mi := NewMediatorInfo()
-//	mi.AddStr = md.Address.Str()
-//	if md.RewardAdd == (common.Address{}) {
-//		mi.RewardAdd = ""
-//	} else {
-//		mi.RewardAdd = md.RewardAdd.Str()
-//	}
-//	mi.InitPubKey = core.PointToStr(md.InitPubKey)
-//	mi.Node = md.Node.String()
-//	*mi.MediatorApplyInfo = *md.MediatorApplyInfo
-//	*mi.MediatorInfoExpand = *md.MediatorInfoExpand
-//
-//	return mi
-//}
+func MediatorToInfo(md *core.Mediator) *MediatorInfo {
+	mi := NewMediatorInfo()
+	mi.AddStr = md.Address.Str()
+	if md.RewardAdd == (common.Address{}) {
+		mi.RewardAdd = ""
+	} else {
+		mi.RewardAdd = md.RewardAdd.Str()
+	}
+	mi.InitPubKey = core.PointToStr(md.InitPubKey)
+	mi.Node = md.Node.String()
+	*mi.MediatorApplyInfo = *md.MediatorApplyInfo
+	*mi.MediatorInfoExpand = *md.MediatorInfoExpand
+
+	return mi
+}
 
 func (mi *MediatorInfo) InfoToMediator() *core.Mediator {
 	md := core.NewMediator()

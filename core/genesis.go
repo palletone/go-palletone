@@ -131,7 +131,6 @@ func (mib *MediatorInfoBase) Validate() (common.Address, error) {
 // genesis 文件定义的mediator结构体
 type InitialMediator struct {
 	*MediatorInfoBase
-	//*MediatorApplyInfo
 	JurorDepositExtraJson
 }
 
@@ -154,7 +153,6 @@ func (im *InitialMediator) Validate() (common.Address, JurorDepositExtra, error)
 func NewInitialMediator() *InitialMediator {
 	return &InitialMediator{
 		MediatorInfoBase: NewMediatorInfoBase(),
-		//MediatorApplyInfo: NewMediatorApplyInfo(),
 		JurorDepositExtraJson: NewJurorDepositExtraJson(),
 	}
 }
