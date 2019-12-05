@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/stretchr/testify/require"
 )
 
 func ExampleNewNode() {
@@ -347,4 +348,6 @@ func TestNodeParseAndString(t *testing.T) {
 	if str != nodeStr {
 		t.Logf("test Node.String() mismatch: \n got:  %s \n want: %s", str, nodeStr)
 	}
+
+	require.NotEqual(t, str, nodeStr)
 }

@@ -233,7 +233,7 @@ func (statedb *StateDb) GetContractStatesByPrefix(id []byte,
 		realKey := dbkey[len(key):]
 		if realKey != "" {
 			result[realKey] = &modules.ContractStateValue{Value: state, Version: version}
-			log.Debug("the contract's state get info.", "key", realKey)
+			log.Debug("get the contract's state", "key", realKey)
 		}
 	}
 	return result, err
