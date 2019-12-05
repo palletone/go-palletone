@@ -76,6 +76,7 @@ type IStateDb interface {
 	// world state chainIndex
 
 	StoreMediator(med *core.Mediator) error
+	UpdateMediatorInfoExpand(med *core.Mediator) error
 	StoreMediatorInfo(add common.Address, mi *modules.MediatorInfo) error
 	RetrieveMediator(address common.Address) (*core.Mediator, error)
 	GetMediators() map[common.Address]bool
