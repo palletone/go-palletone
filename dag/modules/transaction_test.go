@@ -322,12 +322,21 @@ func newPaymenForTestt(includeCoinbase bool) *PaymentPayload {
 		pay.Inputs = append(pay.Inputs, &Input{SignatureScript: []byte("test"), Extra: []byte("Extra")})
 	}
 	hash := common.HexToHash("0x76a914bd05274d98bb768c0e87a55d9a6024f76beb462a88ac")
-	input := &Input{SignatureScript: []byte{1, 2, 3}, Extra: nil, PreviousOutPoint:
-	NewOutPoint(hash, 123, 9999)}
+	input := &Input{SignatureScript: []byte{1, 2, 3}, Extra: nil, PreviousOutPoint: NewOutPoint(hash, 123, 9999)}
 	pay.Inputs = append(pay.Inputs, input)
 	a := &Asset{AssetId: PTNCOIN}
 
 	output := NewTxOut(1, common.Hex2Bytes("0x76a914bd05274d98bb768c0e87a55d9a6024f76beb462a88ac"), a)
 	pay.Outputs = append(pay.Outputs, output)
 	return pay
+}
+
+func TestAdditionJson(t *testing.T) {
+	income := &Addition{
+		Addr:   common.DestroyAddress,
+		Amount: 12300000,
+		Asset:  NewPTNAsset(),
+	}
+	data, _ := json.Marshal(income)
+	t.Log(string(data))
 }

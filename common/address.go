@@ -130,7 +130,7 @@ func StringToAddressGodBlessMe(a string) Address {
 }
 
 func (a Address) Validate() (AddressType, error) {
-	var ty AddressType = AddressType(a[20])
+	var ty = AddressType(a[20])
 	return ty, nil
 }
 
@@ -194,9 +194,6 @@ func IsHexAddress(s string) bool {
 
 // Get the string representation of the underlying address
 func (a Address) Str() string {
-	if a == (Address{}) {
-		return ""
-	}
 	return "P" + base58.CheckEncode(a[0:20], a[20])
 }
 

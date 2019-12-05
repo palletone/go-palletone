@@ -45,7 +45,7 @@ func NewValidatorCache(cache palletcache.ICache) *ValidatorCache {
 func (s *ValidatorCache) AddTxValidateResult(txId common.Hash, validateResult []*modules.Addition) {
 	data, err := json.Marshal(validateResult)
 	if err != nil {
-		log.Errorf("json marsal struct fail,error:%s", err.Error())
+		log.Errorf("json marshal struct fail,error:%s", err.Error())
 		return
 	}
 	s.cache.Set(append(prefixTx, txId.Bytes()...), data, expireSeconds)
