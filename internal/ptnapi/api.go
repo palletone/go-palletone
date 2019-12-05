@@ -1163,7 +1163,7 @@ func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine
 	}, nil
 }
 
-func MutiSignRawTransaction(cmd *ptnjson.MutiSignRawTransactionCmd, pubKeyFn tokenengine.AddressGetPubKey, hashFn tokenengine.AddressGetSign, addr common.Address) (ptnjson.SignRawTransactionResult, error) {
+func MultiSignRawTransaction(cmd *ptnjson.MultiSignRawTransactionCmd, pubKeyFn tokenengine.AddressGetPubKey, hashFn tokenengine.AddressGetSign, addr common.Address) (ptnjson.SignRawTransactionResult, error) {
 	serializedTx, err := decodeHexStr(cmd.RawTx)
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, err

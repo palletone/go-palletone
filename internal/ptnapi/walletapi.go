@@ -463,7 +463,7 @@ func (s *PrivateWalletAPI) SignRawTransaction(ctx context.Context, params string
 	return result, err
 }
 
-func (s *PrivateWalletAPI) MutiSignRawTransaction(ctx context.Context, params, redeemScript string, addr common.Address, hashtype string, password string, duration *uint64) (ptnjson.SignRawTransactionResult, error) {
+func (s *PrivateWalletAPI) MultiSignRawTransaction(ctx context.Context, params, redeemScript string, addr common.Address, hashtype string, password string, duration *uint64) (ptnjson.SignRawTransactionResult, error) {
 
 	//transaction inputs
 	if params == "" {
@@ -543,8 +543,8 @@ func (s *PrivateWalletAPI) MutiSignRawTransaction(ctx context.Context, params, r
 		return ptnjson.SignRawTransactionResult{}, newErr
 	}
 
-	newsign := ptnjson.NewMutiSignRawTransactionCmd(params, &srawinputs, &keys, ptnjson.String(hashtype))
-	result, err := MutiSignRawTransaction(newsign, getPubKeyFn, getSignFn, addr)
+	newsign := ptnjson.NewMultiSignRawTransactionCmd(params, &srawinputs, &keys, ptnjson.String(hashtype))
+	result, err := MultiSignRawTransaction(newsign, getPubKeyFn, getSignFn, addr)
 	if !result.Complete {
 		log.Error("Not complete!!!")
 		for _, e := range result.Errors {
