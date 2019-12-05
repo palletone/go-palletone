@@ -230,7 +230,7 @@ func (b *bridge) SignRawTransaction(call otto.FunctionCall) (response otto.Value
 	return val
 }
 //add by wzhyuan
-func (b *bridge) MutiSignRawTransaction(call otto.FunctionCall) (response otto.Value) {
+func (b *bridge) MultiSignRawTransaction(call otto.FunctionCall) (response otto.Value) {
 	// Make sure we have an account specified to unlock
 	if !call.Argument(0).IsString() {
 		throwJSException("first argument must be the rawtx to sign")
@@ -271,7 +271,7 @@ func (b *bridge) MutiSignRawTransaction(call otto.FunctionCall) (response otto.V
 	}
 	// Send the request to the backend and return
 	// sencond CHAR must upper
-	val, err := call.Otto.Call("jptn.mutiSignRawTransaction", nil, rawtx,redeemscript,addr,hashtype,passwd,duration)
+	val, err := call.Otto.Call("jptn.multiSignRawTransaction", nil, rawtx,redeemscript,addr,hashtype,passwd,duration)
 	if err != nil {
 		throwJSException(err.Error())
 	}
