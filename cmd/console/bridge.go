@@ -236,19 +236,19 @@ func (b *bridge) MutiSignRawTransaction(call otto.FunctionCall) (response otto.V
 		throwJSException("first argument must be the rawtx to sign")
 	}
 	rawtx := call.Argument(0)
-	lockscript := call.Argument(1)
-	redeemscript := call.Argument(2)
-	addr  := call.Argument(3)
+	//lockscript := call.Argument(1)
+	redeemscript := call.Argument(1)
+	addr  := call.Argument(2)
 
-	if !call.Argument(4).IsString() {
+	if !call.Argument(3).IsString() {
 		throwJSException("second argument must be the hashtype ")
 	}
-	hashtype := call.Argument(4)
+	hashtype := call.Argument(3)
 
 	// If password is not given or is the null value, prompt the user for it
 	var passwd otto.Value
 
-	if call.Argument(5).IsUndefined() || call.Argument(5).IsNull() {
+	if call.Argument(4).IsUndefined() || call.Argument(4).IsNull() {
 		fmt.Fprintf(b.printer, "Sign rawtx %s\n", rawtx)
 		if input, err := b.prompter.PromptPassword("Passphrase: "); err != nil {
 			throwJSException(err.Error())
@@ -256,22 +256,22 @@ func (b *bridge) MutiSignRawTransaction(call otto.FunctionCall) (response otto.V
 			passwd, _ = otto.ToValue(input)
 		}
 	} else {
-		if !call.Argument(5).IsString() {
+		if !call.Argument(4).IsString() {
 			throwJSException("password must be a string")
 		}
-		passwd = call.Argument(5)
+		passwd = call.Argument(4)
 	}
 	// Third argument is the duration how long the account must be unlocked.
 	duration := otto.NullValue()
-	if call.Argument(6).IsDefined() && !call.Argument(3).IsNull() {
-		if !call.Argument(6).IsNumber() {
+	if call.Argument(5).IsDefined() && !call.Argument(3).IsNull() {
+		if !call.Argument(5).IsNumber() {
 			throwJSException("unlock duration must be a number")
 		}
-		duration = call.Argument(6)
+		duration = call.Argument(5)
 	}
 	// Send the request to the backend and return
 	// sencond CHAR must upper
-	val, err := call.Otto.Call("jptn.mutiSignRawTransaction", nil, rawtx,lockscript,redeemscript,addr,hashtype,passwd,duration)
+	val, err := call.Otto.Call("jptn.mutiSignRawTransaction", nil, rawtx,redeemscript,addr,hashtype,passwd,duration)
 	if err != nil {
 		throwJSException(err.Error())
 	}

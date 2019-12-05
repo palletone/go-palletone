@@ -20,6 +20,7 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/math"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -462,7 +463,7 @@ func (s *PrivateWalletAPI) SignRawTransaction(ctx context.Context, params string
 	return result, err
 }
 
-func (s *PrivateWalletAPI) MutiSignRawTransaction(ctx context.Context, params, lockScript, redeemScript string, addr common.Address, hashtype string, password string, duration *uint64) (ptnjson.SignRawTransactionResult, error) {
+func (s *PrivateWalletAPI) MutiSignRawTransaction(ctx context.Context, params, redeemScript string, addr common.Address, hashtype string, password string, duration *uint64) (ptnjson.SignRawTransactionResult, error) {
 
 	//transaction inputs
 	if params == "" {
@@ -481,21 +482,21 @@ func (s *PrivateWalletAPI) MutiSignRawTransaction(ctx context.Context, params, l
 	if err := rlp.DecodeBytes(serializedTx, tx); err != nil {
 		return ptnjson.SignRawTransactionResult{}, errors.New("Params decode is invalid")
 	}
-
+	rs, err := hex.DecodeString(redeemScript)
+	if err != nil {
+		return ptnjson.SignRawTransactionResult{}, errors.New("redeemScript is invalid")
+	}
+    bls := tokenengine.Instance.GenerateP2SHLockScript(crypto.Hash160(rs))
+    lockScript := hex.EncodeToString(bls)
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
 		//TODO use keystore
 		ks := s.b.GetKeyStore()
 
 		return ks.GetPublicKey(addr)
-		//privKey, _ := ks.DumpPrivateKey(account, "1")
-		//return crypto.CompressPubkey(&privKey.PublicKey), nil
 	}
 	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
 		ks := s.b.GetKeyStore()
-		//account, _ := MakeAddress(ks, addr.String())
-		//privKey, _ := ks.DumpPrivateKey(account, "1")
 		return ks.SignMessage(addr, msg)
-		//return crypto.Sign(hash, privKey)
 	}
 	var srawinputs []ptnjson.RawTxInput
 

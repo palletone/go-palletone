@@ -79,7 +79,7 @@ const Wallet_JS = `
 		new web3._extend.Method({
 		    name: 'mutiSignRawTransaction',
 		    call: 'wallet_mutiSignRawTransaction',
-		    params: 7
+		    params: 6
 		}),	
         new web3._extend.Method({
 		    name: 'sendRlpTransaction',

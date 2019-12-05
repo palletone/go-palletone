@@ -496,9 +496,9 @@ func (ec *Client) SignRawTransaction(ctx context.Context, params string, passwor
 	err := ec.c.CallContext(ctx, &result, "wallet_signRawTransaction", params, password, duration)
 	return result, err
 }
-func (ec *Client) MutiSignRawTransaction(ctx context.Context, params ,lockscript,redeem string, addr common.Address, password string, duration *uint64) (*ptnjson.SignRawTransactionResult, error) {
+func (ec *Client) MutiSignRawTransaction(ctx context.Context, params ,redeem string, addr common.Address, password string, duration *uint64) (*ptnjson.SignRawTransactionResult, error) {
 	var result *ptnjson.SignRawTransactionResult
-	err := ec.c.CallContext(ctx, &result, "wallet_mutisignRawTransaction", params,lockscript,redeem,addr,password,duration)
+	err := ec.c.CallContext(ctx, &result, "wallet_mutisignRawTransaction", params,redeem,addr,password,duration)
 	return result, err
 }
 // SendTransaction injects a signed transaction into the pending pool for execution.
