@@ -793,7 +793,7 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction, rateLimit bo
 		return nil, err
 	}
 	_, err1 := pool.add(p_tx, !pool.config.NoLocals)
-	log.Debug("accepted tx and add pool.", "info", err1, "rateLimit", rateLimit)
+	log.Debug("accepted tx and add pool.", "err", err1, "rateLimit", rateLimit)
 	txdesc := new(TxDesc)
 	txdesc.Tx = tx
 	txdesc.Added = p_tx.CreationDate
