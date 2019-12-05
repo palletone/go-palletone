@@ -424,10 +424,6 @@ func (rep *StateRepository) GetJuryCandidateList() (map[string]bool, error) {
 	return rep.statedb.GetJuryCandidateList()
 }
 
-//func (rep *StateRepository) GetJurorByAddr(addr string) (*modules.JurorDeposit, error) {
-//	return rep.statedb.GetJurorByAddr(addr)
-//}
-
 func (rep *StateRepository) GetJurorReward(jurorAdd common.Address) common.Address {
 	jd, err := rep.statedb.GetJurorByAddr(jurorAdd.Str())
 	if err != nil {

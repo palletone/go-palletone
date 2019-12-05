@@ -501,7 +501,7 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 	}
 	header.ParentsHash = append(header.ParentsHash, phash)
 	h_hash := header.HashWithOutTxRoot()
-	log.Infof("Start txpool.GetSortedTxs..., parent hash:%s", phash.String())
+	log.Debugf("Start txpool.GetSortedTxs..., parent hash:%s", phash.String())
 
 	// step4. get transactions from txspool
 	poolTxs, _ := txpool.GetSortedTxs(h_hash, chainIndex.Index)
@@ -544,7 +544,7 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 	}
 	txs := make(modules.Transactions, 0)
 	if len(outAds) > 0 {
-		log.Debug("rewards && coinbase tx info: ", "amount", rewards, "hash", coinbase.Hash().String())
+		log.Debug("rewards && coinbase tx: ", "amount", rewards, "hash", coinbase.Hash().String())
 		txs = append(txs, coinbase)
 	}
 
