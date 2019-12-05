@@ -106,7 +106,7 @@ func (c *Contract) Install(channelId, ccName, ccPath, ccVersion, ccDescription, 
 		log.Info("contract test install")
 		return test.Install(channelId, ccName, ccPath, ccVersion, ccDescription, ccAbi, ccLanguage)
 	}
-	return cc.Install(c.dag, channelId, ccName, ccPath, ccVersion, ccDescription, ccAbi, ccLanguage)
+	return cc.Install(c.dag, channelId, ccName, ccPath, ccVersion, ccLanguage)
 
 }
 
@@ -130,12 +130,7 @@ func (c *Contract) Deploy(rwM rwset.TxManager, chainID string, templateId []byte
 		log.Info("contract test deploy")
 		return test.Deploy(rwM, c.dag, chainID, templateId, txId, args)
 	}
-	juryAddrs := c.GetLocalJuryAddrs()
-	juryAddr := ""
-	if len(juryAddrs) != 0 {
-		juryAddr = juryAddrs[0].String()
-	}
-	return cc.Deploy(juryAddr, rwM, c.dag, chainID, templateId, txId, args, timeout)
+	return cc.Deploy(rwM, c.dag, chainID, templateId, txId, args, timeout)
 
 }
 

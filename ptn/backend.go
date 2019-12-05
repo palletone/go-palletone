@@ -186,7 +186,7 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 	}
 	ptn.contractPorcessor.SetContract(ptn.contract)
 
-	pDocker := utils.NewPalletOneDocker(dag,ptn.contract.IAdapterJury)
+	pDocker := utils.NewPalletOneDocker(dag, ptn.contract.IAdapterJury)
 	ptn.contractPorcessor.SetDocker(pDocker)
 
 	genesis, err := ptn.dag.GetGenesisUnit()
@@ -197,7 +197,7 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 
 	gasToken := config.Dag.GetGasToken()
 	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, gasToken, ptn.txPool,
-		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine, ptn.contract,pDocker); err != nil {
+		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine, ptn.contract, pDocker); err != nil {
 		log.Error("NewProtocolManager err:", "error", err)
 		return nil, err
 	}

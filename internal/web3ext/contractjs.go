@@ -173,6 +173,11 @@ web3._extend({
 			call: 'contract_getContractState',
 			params: 2
 		}),
+        new web3._extend.Method({
+			name: 'getContractsWithJuryAddress',
+			call: 'contract_getContractsWithJuryAddress',
+			params: 1
+		}),
 	],
 	properties: [
 		new web3._extend.Property({

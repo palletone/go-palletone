@@ -348,6 +348,7 @@ func (pooltx *TxPoolTransaction) DecodeRLP(s *rlp.Stream) error {
 				payload.ReadSet = temp.ReadSet
 				payload.WriteSet = temp.WriteSet
 				payload.ErrMsg = temp.ErrMsg
+				payload.Version = temp.Version
 			}
 			m1.Payload = &payload
 		} else if m.App == modules.APP_CONTRACT_INVOKE_REQUEST {

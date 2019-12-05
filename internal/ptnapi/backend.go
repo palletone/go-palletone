@@ -137,7 +137,7 @@ type Backend interface {
 	GetAssetExistence(asset string) ([]*ptnjson.ProofOfExistenceJson, error)
 	//contract control
 	ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi,
-	ccLanguage string) (TemplateId []byte, err error)
+		ccLanguage string) (TemplateId []byte, err error)
 	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)
 	ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 	ContractStop(deployId []byte, txid string, deleteImage bool) error
@@ -199,6 +199,8 @@ type Backend interface {
 	ProofTransactionByRlptx(rlptx [][]byte) (string, error)
 	SyncUTXOByAddr(addr string) string
 	StartCorsSync() (string, error)
+
+	GetContractsWithJuryAddr(addr common.Address) []*modules.Contract
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {

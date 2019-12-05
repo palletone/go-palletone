@@ -36,6 +36,7 @@ type ContractDeployPayloadV1 struct {
 	ReadSet    []ContractReadSet  `json:"read_set"`       // the set data of read, and value could be any type
 	WriteSet   []ContractWriteSet `json:"write_set"`      // the set data of write, and value could be any type
 	ErrMsg     ContractError      `json:"contract_error"` // contract error message
+	Version string `json:"version"`
 }
 type ContractDeployPayloadV2 struct {
 	TemplateId []byte             `json:"template_id"`   // delete--
@@ -47,6 +48,7 @@ type ContractDeployPayloadV2 struct {
 	WriteSet   []ContractWriteSet `json:"write_set"`     // the set data of write, and value could be any type
 	DuringTime uint64             `json:"during_time"`
 	ErrMsg     ContractError      `json:"contract_error"` // contract error message
+	Version string `json:"version"`
 }
 
 func (input *ContractDeployPayload) EncodeRLP(w io.Writer) error {
@@ -62,6 +64,7 @@ func (input *ContractDeployPayload) EncodeRLP(w io.Writer) error {
 		temp.ReadSet = input.ReadSet
 		temp.WriteSet = input.WriteSet
 		temp.ErrMsg = input.ErrMsg
+		temp.Version = input.Version
 		return rlp.Encode(w, temp)
 	}
 	temp := &ContractDeployPayloadV2{}
@@ -74,5 +77,6 @@ func (input *ContractDeployPayload) EncodeRLP(w io.Writer) error {
 	temp.WriteSet = input.WriteSet
 	temp.DuringTime = input.DuringTime
 	temp.ErrMsg = input.ErrMsg
+	temp.Version = input.Version
 	return rlp.Encode(w, temp)
 }

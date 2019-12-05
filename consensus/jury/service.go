@@ -36,7 +36,6 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts"
-	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
@@ -98,16 +97,12 @@ type iDag interface {
 	GetMediator(add common.Address) *core.Mediator
 	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
 	GetJurorByAddrHash(addrHash common.Hash) (*modules.JurorDeposit, error)
-	RetrieveChaincodes() ([]*list.CCInfo, error)
 
 	//nouse
 	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
 	GetScheduledMediator(slotNum uint32) common.Address
 	GetSlotAtTime(when time.Time) uint32
 	GetJurorReward(jurorAdd common.Address) common.Address
-
-	GetChaincode(contractId common.Address) (*list.CCInfo, error)
-	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
 }
 
 type electionVrf struct {
@@ -152,7 +147,7 @@ type Processor struct {
 
 	contractExecFeed  event.Feed
 	contractExecScope event.SubscriptionScope
-	pDocker *utils.PalletOneDocker
+	pDocker           *utils.PalletOneDocker
 }
 
 func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract, cfg *Config) (*Processor, error) {

@@ -517,6 +517,7 @@ type ContractDeployPayload struct {
 	WriteSet   []ContractWriteSet `json:"write_set"`     // the set data of write, and value could be any type
 	DuringTime uint64             `json:"during_time"`
 	ErrMsg     ContractError      `json:"contract_error"` // contract error message
+	Version string `json:"version"`
 }
 
 // Contract invoke message

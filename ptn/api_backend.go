@@ -1077,3 +1077,7 @@ func (a addressBalanceList) Swap(i, j int) { // 重写 Swap() 方法
 func (a addressBalanceList) Less(i, j int) bool { // 重写 Less() 方法， 从大到小排序
 	return a[j].Balance < a[i].Balance
 }
+
+func (b *PtnApiBackend) GetContractsWithJuryAddr(addr common.Address) []*modules.Contract {
+	return b.Dag().GetContractsWithJuryAddr(addr)
+}

@@ -137,6 +137,7 @@ func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 				payload.ReadSet = temp.ReadSet
 				payload.WriteSet = temp.WriteSet
 				payload.ErrMsg = temp.ErrMsg
+				payload.Version = temp.Version
 			}
 			m1.Payload = &payload
 		} else if m.App == APP_CONTRACT_INVOKE_REQUEST {
