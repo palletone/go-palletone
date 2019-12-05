@@ -63,7 +63,7 @@ type IStateRepository interface {
 
 	GetMediator(add common.Address) *core.Mediator
 	RetrieveMediator(address common.Address) (*core.Mediator, error)
-	StoreMediator(med *core.Mediator) error
+	UpdateMediatorInfoExpand(med *core.Mediator) error
 	GetMediators() map[common.Address]bool
 	LookupMediatorInfo() []*modules.MediatorInfo
 	IsMediator(address common.Address) bool
@@ -232,6 +232,10 @@ func (rep *StateRepository) GetMediator(add common.Address) *core.Mediator {
 
 func (rep *StateRepository) StoreMediator(med *core.Mediator) error {
 	return rep.statedb.StoreMediator(med)
+}
+
+func (rep *StateRepository) UpdateMediatorInfoExpand(med *core.Mediator) error {
+	return rep.statedb.UpdateMediatorInfoExpand(med)
 }
 
 func (rep *StateRepository) GetMediators() map[common.Address]bool {

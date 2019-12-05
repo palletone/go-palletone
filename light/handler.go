@@ -25,6 +25,7 @@ import (
 	"sync"
 
 	"github.com/coocood/freecache"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -35,7 +36,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/ptn/downloader"
-	"github.com/ethereum/go-ethereum/rlp"
 )
 
 const (
@@ -388,9 +388,9 @@ func (pm *ProtocolManager) handle(p *peer) error {
 			case announce := <-p.announceChn:
 				log.Debug("Light Palletone ProtocolManager->handle", "assetId",
 					announce.Header.GetNumber().AssetID, "index", announce.Header.GetNumber().Index)
-				data, err := rlp.EncodeToBytes(announce.Header)
+				data, err := rlp.EncodeToBytes(&announce.Header)
 				if err != nil {
-					log.Error("Light Palletone ProtocolManager->handle", "Marshal err", err,
+					log.Error("Light Palletone ProtocolManager->handle", "encode err", err,
 						"announce", announce)
 				} else {
 					p.lightlock.Lock()
