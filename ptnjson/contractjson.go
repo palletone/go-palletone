@@ -61,17 +61,16 @@ func ConvertContract2Json(contract *modules.Contract) *ContractJson {
 }
 
 type ContractTemplateJson struct {
-	TplId          string    `json:"tpl_id"`
-	TplName        string    `json:"tpl_name"`
-	TplDescription string    `json:"tpl_description"`
-	Path           string    `json:"install_path"`
-	Version        string    `json:"tpl_version"`
-	Abi            string    `json:"abi"`
-	Language       string    `json:"language"`
-	AddrHash       []string  `json:"addr_hash" rlp:"nil"`
-	Size           uint16    `json:"size"`
-	Creator        string    `json:"creator"`
-	CreateTime     time.Time `json:"create_time"`
+	TplId          string   `json:"tpl_id"`
+	TplName        string   `json:"tpl_name"`
+	TplDescription string   `json:"tpl_description"`
+	Path           string   `json:"install_path"`
+	Version        string   `json:"tpl_version"`
+	Abi            string   `json:"abi"`
+	Language       string   `json:"language"`
+	AddrHash       []string `json:"addr_hash" rlp:"nil"`
+	Size           uint16   `json:"size"`
+	Creator        string   `json:"creator"`
 }
 
 func ConvertContractTemplate2Json(tpl *modules.ContractTemplate) *ContractTemplateJson {
@@ -87,7 +86,6 @@ func ConvertContractTemplate2Json(tpl *modules.ContractTemplate) *ContractTempla
 		Size:           tpl.Size,
 		AddrHash:       []string{},
 		Creator:        tpl.Creator,
-		//CreateTime:     time.Unix(int64(tpl.CreateTime), 0).UTC(),
 	}
 	for _, addH := range tpl.AddrHash {
 		json.AddrHash = append(json.AddrHash, addH.String())

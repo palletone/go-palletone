@@ -21,7 +21,6 @@ package modules
 
 import (
 	"github.com/palletone/go-palletone/common"
-	"time"
 )
 
 type Contract struct {
@@ -45,10 +44,7 @@ func NewContract(templateId []byte, deploy *ContractDeployPayload, creator commo
 		Creator:      creator.Bytes(),
 		CreationTime: unitTime,
 		Version:      version,
-		//DuringTime:   uint64(time.Now().Unix())+deploy.DuringTime,
-	}
-	if deploy.DuringTime != 0 {
-		c.DuringTime = uint64(time.Now().Unix()) + deploy.DuringTime
+		DuringTime:   deploy.DuringTime,
 	}
 	return c
 }
