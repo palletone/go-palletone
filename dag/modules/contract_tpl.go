@@ -21,7 +21,6 @@ package modules
 
 import (
 	"github.com/palletone/go-palletone/common"
-	"time"
 )
 
 type ContractTemplate struct {
@@ -35,7 +34,7 @@ type ContractTemplate struct {
 	AddrHash       []common.Hash `json:"addr_hash" rlp:"nil"`
 	Size           uint16        `json:"size"`
 	Creator        string        `json:"creator"`
-	CreateTime 	uint64 `json:"create_time"`
+	//CreateTime 	uint64 `json:"create_time"`
 }
 
 func NewContractTemplate(req *ContractInstallRequestPayload, tpl *ContractTplPayload) *ContractTemplate {
@@ -50,6 +49,6 @@ func NewContractTemplate(req *ContractInstallRequestPayload, tpl *ContractTplPay
 		AddrHash:       req.AddrHash,
 		Size:           uint16(len(tpl.ByteCode[:])),
 		Creator:        req.Creator,
-		CreateTime:uint64(time.Now().Unix()),
+		//CreateTime:uint64(time.Now().Unix()),
 	}
 }

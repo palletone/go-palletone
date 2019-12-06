@@ -87,7 +87,7 @@ func ConvertContractTemplate2Json(tpl *modules.ContractTemplate) *ContractTempla
 		Size:           tpl.Size,
 		AddrHash:       []string{},
 		Creator:        tpl.Creator,
-		CreateTime:     time.Unix(int64(tpl.CreateTime), 0).UTC(),
+		//CreateTime:     time.Unix(int64(tpl.CreateTime), 0).UTC(),
 	}
 	for _, addH := range tpl.AddrHash {
 		json.AddrHash = append(json.AddrHash, addH.String())
