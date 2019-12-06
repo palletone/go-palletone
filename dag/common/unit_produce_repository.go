@@ -158,14 +158,17 @@ func (rep *UnitProduceRepository) PushUnit(newUnit *modules.Unit) error {
 	if err != nil {
 		return err
 	}
+
 	if !newUnit.ContainsParent(uHash) {
 		return errors.New(fmt.Sprintf("PushUnit[%s] parent is not newest unit[%s] %d",
 			newUnit.DisplayId(), uHash.String(), uIndex.Index))
 	}
-	if newUnit.NumberU64()-1 != uIndex.Index {
+
+	if newUnit.NumberU64() != uIndex.Index + 1 {
 		return errors.New(fmt.Sprintf("PushUnit[%s] height:%d, but newest unit height:%d",
 			newUnit.Hash().String(), newUnit.NumberU64(), uIndex.Index))
 	}
+
 	//更新数据库
 	err = rep.unitRep.SaveUnit(newUnit, false)
 	if err != nil {
