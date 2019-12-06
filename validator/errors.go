@@ -49,13 +49,13 @@ const (
 	TxValidationCode_BAD_RESPONSE_PAYLOAD         ValidationCode = 21
 	TxValidationCode_BAD_RWSET                    ValidationCode = 22
 	TxValidationCode_ILLEGAL_WRITESET             ValidationCode = 23
-	TxValidationCode_INVALID_CONTRACT_SIGN             ValidationCode = 24
+	TxValidationCode_INVALID_CONTRACT_SIGN        ValidationCode = 24
 	TxValidationCode_INVALID_MSG                  ValidationCode = 25
 	TxValidationCode_INVALID_PAYMMENTLOAD         ValidationCode = 26
 	TxValidationCode_INVALID_PAYMMENT_INPUT       ValidationCode = 27
 	TxValidationCode_INVALID_PAYMMENT_INPUT_COUNT ValidationCode = 28
 	TxValidationCode_INVALID_COINBASE             ValidationCode = 29
-	TxValidationCode_ADDRESS_IN_BLACKLIST             ValidationCode = 30
+	TxValidationCode_ADDRESS_IN_BLACKLIST         ValidationCode = 30
 	TxValidationCode_INVALID_AMOUNT               ValidationCode = 31
 	TxValidationCode_INVALID_ASSET                ValidationCode = 32
 	TxValidationCode_INVALID_CONTRACT             ValidationCode = 33
@@ -65,20 +65,20 @@ const (
 	TxValidationCode_NOT_COMPARE_SIZE             ValidationCode = 37
 	TxValidationCode_ORPHAN                       ValidationCode = 255
 
-	TxValidationCode_INVALID_OTHER_REASON         ValidationCode = 251
+	TxValidationCode_INVALID_OTHER_REASON ValidationCode = 251
 	TxValidationCode_NOT_VALIDATED        ValidationCode = 250
-	UNIT_STATE_AUTHOR_SIGNATURE_PASSED   ValidationCode = 101
-	UNIT_STATE_INVALID_MEDIATOR_SCHEDULE ValidationCode = 102
-	UNIT_STATE_INVALID_AUTHOR_SIGNATURE  ValidationCode = 103
-	UNIT_STATE_INVALID_GROUP_SIGNATURE   ValidationCode = 104
-	UNIT_STATE_HAS_INVALID_TRANSACTIONS  ValidationCode = 105
-	UNIT_STATE_INVALID_AUTHOR              ValidationCode = 106
-	UNIT_STATE_INVALID_EXTRA_DATA        ValidationCode = 107
-	UNIT_STATE_INVALID_HEADER            ValidationCode = 108
-	UNIT_STATE_INVALID_HEADER_NUMBER     ValidationCode = 109
-	UNIT_STATE_INVALID_HEADER_TXROOT     ValidationCode = 110
-	UNIT_STATE_INVALID_HEADER_TIME       ValidationCode = 111
-	UNIT_STATE_ORPHAN                    ValidationCode = 254
+	UNIT_STATE_AUTHOR_SIGNATURE_PASSED    ValidationCode = 101
+	UNIT_STATE_INVALID_MEDIATOR_SCHEDULE  ValidationCode = 102
+	UNIT_STATE_INVALID_AUTHOR_SIGNATURE   ValidationCode = 103
+	UNIT_STATE_INVALID_GROUP_SIGNATURE    ValidationCode = 104
+	UNIT_STATE_HAS_INVALID_TRANSACTIONS   ValidationCode = 105
+	UNIT_STATE_INVALID_AUTHOR             ValidationCode = 106
+	UNIT_STATE_INVALID_EXTRA_DATA         ValidationCode = 107
+	UNIT_STATE_INVALID_HEADER             ValidationCode = 108
+	UNIT_STATE_INVALID_HEADER_NUMBER      ValidationCode = 109
+	UNIT_STATE_INVALID_HEADER_TXROOT      ValidationCode = 110
+	UNIT_STATE_INVALID_HEADER_TIME        ValidationCode = 111
+	UNIT_STATE_ORPHAN                     ValidationCode = 254
 )
 
 var validationCode_name = map[byte]string{

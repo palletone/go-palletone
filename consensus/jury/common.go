@@ -688,6 +688,31 @@ func getContractTxContractInfo(tx *modules.Transaction, msgType modules.MessageT
 	return 0, nil, nil
 }
 
+func getContractInvokeMulPaymentInputNum(tx *modules.Transaction) int {
+	afterReq := false
+	isSysContract := false
+	cnt := 0
+	msgs := tx.TxMessages()
+	for _, msg := range msgs {
+		if msg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
+			afterReq = true
+			requestMsg := msg.Payload.(*modules.ContractInvokeRequestPayload)
+			isSysContract = common.IsSystemContractId(requestMsg.ContractId)
+			continue
+		}
+		if afterReq {
+			if msg.App == modules.APP_PAYMENT {
+				//Contract result里面的Payment只有2种，创币或者从合约付出
+				payment := msg.Payload.(*modules.PaymentPayload)
+				if !payment.IsCoinbase() && isSysContract {
+					cnt += len(payment.Inputs)
+				}
+			}
+		}
+	}
+	return cnt
+}
+
 func getElectionSeedData(in common.Hash) []byte {
 	addr := crypto.RequestIdToContractAddress(in)
 	return addr.Bytes()
@@ -879,6 +904,32 @@ func addContractDeployDuringTime(dag iDag, tx *modules.Transaction) error {
 	msg.Payload.(*modules.ContractDeployPayload).DuringTime = duringTime
 	tx.ModifiedMsg(index, msg)
 	//
+	return nil
+}
+
+func addContractSignatureSet(tx *modules.Transaction, sigSet *modules.SignatureSet) error {
+	if tx == nil || sigSet == nil {
+		log.Error("addContractSignatureSet, param is nil")
+		return fmt.Errorf("addContractSignatureSet, param is nil")
+	}
+	index, sigMsg, err := getContractTxContractInfo(tx, modules.APP_SIGNATURE)
+	if err != nil {
+		return err
+	}
+	if sigMsg != nil {
+		sigMsg.Payload.(*modules.SignaturePayload).Signatures = append(sigMsg.Payload.(*modules.SignaturePayload).Signatures, *sigSet)
+		tx.ModifiedMsg(index, sigMsg)
+	} else {
+		sigs := make([]modules.SignatureSet, 0)
+		sigs = append(sigs, *sigSet)
+		msgSig := &modules.Message{
+			App: modules.APP_SIGNATURE,
+			Payload: &modules.SignaturePayload{
+				Signatures: sigs,
+			},
+		}
+		tx.AddMessage(msgSig)
+	}
 	return nil
 }
 

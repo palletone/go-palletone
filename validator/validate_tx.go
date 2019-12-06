@@ -278,6 +278,9 @@ func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize f
 	if tx == nil {
 		return false
 	}
+	if !validate.enableTxFeeCheck {
+		return true
+	}
 
 	var onlyPayment = true
 	var timeout uint32
@@ -294,6 +297,8 @@ func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize f
 		log.Errorf("Tx[%s] [%s]validateTxFeeEnough, GetTxFee err:%s", tx.Hash().String(), reqId.String()[:8], err.Error())
 		return false //todo ?
 	}
+
+
 	cp := validate.propquery.GetChainParameters()
 	timeUnitFee := float64(cp.ContractTxTimeoutUnitFee)
 	sizeUnitFee := float64(cp.ContractTxSizeUnitFee)
