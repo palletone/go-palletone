@@ -147,7 +147,7 @@ func (m *Migration104beta_105alpha) upgradeContractInfoInStatedb() error {
 	for _, nc := range newContracts {
 		//  保存新的 contract
 		key := append(constants.CONTRACT_PREFIX, nc.ContractId...)
-		err := storage.StoreToRlpBytes(m.statedb, key, &nc)
+		err := storage.StoreToRlpBytes(m.statedb, key, nc)
 		if err != nil {
 			return err
 		}
@@ -162,7 +162,7 @@ func (m *Migration104beta_105alpha) upgradeContractInfoInStatedb() error {
 				key2 := append(key1, nc.ContractId...)
 				log.Debugf("save contract id = %v with jury address = %s,key1 = %v", nc.ContractId, juryAddr.String(), key1)
 				//  保存陪审员对应的状态
-				err := storage.StoreToRlpBytes(m.statedb, key2, &nc)
+				err := storage.StoreToRlpBytes(m.statedb, key2, nc)
 				if err != nil {
 					return err
 				}
