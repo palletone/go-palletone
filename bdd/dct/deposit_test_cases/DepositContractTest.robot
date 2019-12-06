@@ -494,13 +494,19 @@ Business_12
     log    ${amount}    #108.66235，866,235,000是质押增发的，没有变化
 
 PledgeTest02
-    [Documentation]    1.3个地址质押，每个地址质押100ptn
-    ...    2.第一次将3个地址添加
-    ...    3.继续有3个新地址质押，每个地址质押100ptn，这个时候，前面有两个地址分别继续质押并赎回相同ptn数量
-    ...    4.这里第一次分红：质押总量=30000000000，日分红总量=288745000，得288745000/30000000000=0.0096248333333333
-    ...    5.这里是第二次分红：质押总量=30000000000+30000000000+288745000=60288744999，日分红总量=288745000，得288745000/60288744999=0.0047893682312476
+    [Documentation]    1.质押为 3 ，阈值为 2
+    ...    2.添加到分红列表
+    ...    3.1.新地址质押：3，阈值为2
+    ...    3.2.原来质押的继续质押2
+    ...    3.3.原来质押的继续提取2
+    ...    4.分红
+    ...    5.添加新地址到分红列表
+    ...    6.变为质押6，阈值2
+    ...    7.分红
+    ...    8.提取3
+    ...    9.分红
     ${depositOne}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
-    log    ${depositOne}
+    log    ${depositOne}    #100，上一个测试的结果
     ${result}    queryPledgeStatusByAddr    ${votedAddress01}    #查看某地址的质押结果
     log    ${result}
     ${result}    QueryPledgeHistoryByAddr    ${votedAddress01}
@@ -594,7 +600,13 @@ PledgeTest02
     log    ${result}
     Should Be Equal As Strings    ${result}    false
     sleep    5
-    ${result}    HandlePledgeReward    ${votedAddress01}    #1
+    ${result}    HandlePledgeReward    ${votedAddress}    #1
+    log    ${result}
+    sleep    5
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${votedAddress}    #1
     log    ${result}
     sleep    5
     ${result}    isFinishAllocated
@@ -742,7 +754,18 @@ PledgeTest02
     ${result}    HandlePledgeReward    ${foundationAddr}    #1
     log    ${result}
     sleep    5
-    log    chuli2
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
     ${result}    isFinishAllocated
     log    ${result}
     sleep    5
@@ -814,7 +837,18 @@ PledgeTest02
     log    ${result}
     ${amount}    Get From Dictionary    ${result}    ${mediatorAddress}
     sleep    1
-    log    第二次分红
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
     ${result}    isFinishAllocated
     log    ${result}
     sleep    5
@@ -934,6 +968,18 @@ PledgeTest02
     ${result}    isFinishAllocated
     log    ${result}
     sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
     ${result}    queryPledgeStatusByAddr    ${votedAddress01}    #查看某地址的质押结果
     log    ${result}
     ${resultJson}    To Json    ${result}
@@ -1001,7 +1047,18 @@ PledgeTest02
     ${result}    HandlePledgeReward    ${foundationAddr}    #1
     log    ${result}
     sleep    5
-    log    chuli32
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
+    ${result}    isFinishAllocated
+    log    ${result}
+    sleep    5
+    ${result}    HandlePledgeReward    ${foundationAddr}    #1
+    log    ${result}
+    sleep    5
     ${result}    isFinishAllocated
     log    ${result}
     sleep    5
