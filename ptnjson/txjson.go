@@ -76,7 +76,6 @@ type DeployJson struct {
 	DuringTime   uint64 `json:"during_time"`
 	ErrorCode    uint32 `json:"error_code"`
 	ErrorMessage string `json:"error_message"`
-	Version string `json:"version"`
 }
 type InvokeJson struct {
 	Number       int    `json:"row_number"`
@@ -266,7 +265,6 @@ func convertDeploy2Json(deploy *modules.ContractDeployPayload) *DeployJson {
 	djson.DuringTime = deploy.DuringTime
 	djson.ErrorCode = deploy.ErrMsg.Code
 	djson.ErrorMessage = deploy.ErrMsg.Message
-	djson.Version = deploy.Version
 	return djson
 }
 

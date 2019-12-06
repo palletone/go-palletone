@@ -36,7 +36,7 @@ type Contract struct {
 	Version      string
 }
 
-func NewContract(templateId []byte, deploy *ContractDeployPayload, creator common.Address, unitTime uint64) *Contract {
+func NewContract(templateId []byte, deploy *ContractDeployPayload, creator common.Address, unitTime uint64, version string) *Contract {
 	c := &Contract{
 		ContractId:   deploy.ContractId,
 		TemplateId:   templateId,
@@ -44,7 +44,7 @@ func NewContract(templateId []byte, deploy *ContractDeployPayload, creator commo
 		Status:       1,
 		Creator:      creator.Bytes(),
 		CreationTime: unitTime,
-		Version:      deploy.Version,
+		Version:      version,
 		//DuringTime:   uint64(time.Now().Unix())+deploy.DuringTime,
 	}
 	if deploy.DuringTime != 0 {

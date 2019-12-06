@@ -140,7 +140,6 @@ func CopyMessage(cpyMsg *Message) *Message {
 			DuringTime: payload.DuringTime,
 			EleNode:    payload.EleNode,
 			ErrMsg:     payload.ErrMsg,
-			Version:    payload.Version,
 		}
 		if len(payload.Args) > 0 {
 			newPayload.Args = make([][]byte, 0)
@@ -517,7 +516,6 @@ type ContractDeployPayload struct {
 	WriteSet   []ContractWriteSet `json:"write_set"`     // the set data of write, and value could be any type
 	DuringTime uint64             `json:"during_time"`
 	ErrMsg     ContractError      `json:"contract_error"` // contract error message
-	Version    string             `json:"version"`
 }
 
 // Contract invoke message

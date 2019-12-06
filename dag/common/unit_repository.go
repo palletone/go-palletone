@@ -1288,7 +1288,16 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 			return false
 		}
 	}
-	contract := modules.NewContract(templateId, payload, requester, uint64(unitTime))
+	v := ""
+	if len(templateId) != 0 {
+		temC, err := rep.statedb.GetContractTpl(templateId)
+		if err != nil {
+			log.Errorf("get contract template with id = %x, error:%s", templateId, err.Error())
+			return false
+		}
+		v = temC.Version
+	}
+	contract := modules.NewContract(templateId, payload, requester, uint64(unitTime), v)
 	err := rep.statedb.SaveContract(contract)
 	if err != nil {
 		log.Errorf("Save contract[%x] error:%s", payload.ContractId, err.Error())

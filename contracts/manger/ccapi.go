@@ -186,7 +186,6 @@ func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byt
 		log.Errorf("chainID[%s] converRwTxResult2DagUnit failed", chainID)
 		return nil, nil, errors.WithMessage(err, "Conver RwSet to dag unit fail")
 	}
-	unit.Version = templateCC.Version
 	return depId.Bytes(), unit, err
 }
 
