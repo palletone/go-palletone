@@ -109,8 +109,7 @@ func CopyMessage(cpyMsg *Message) *Message {
 				temp.Extra = common.CopyBytes(in.Extra)
 				temp.SignatureScript = common.CopyBytes(in.SignatureScript)
 				if in.PreviousOutPoint != nil { // 创币message的previous outpoint 为空
-					temp.PreviousOutPoint = &OutPoint{TxHash: in.PreviousOutPoint.TxHash, MessageIndex:
-					in.PreviousOutPoint.MessageIndex, OutIndex: in.PreviousOutPoint.OutIndex}
+					temp.PreviousOutPoint = &OutPoint{TxHash: in.PreviousOutPoint.TxHash, MessageIndex: in.PreviousOutPoint.MessageIndex, OutIndex: in.PreviousOutPoint.OutIndex}
 				}
 				payment.Inputs = append(payment.Inputs, &temp)
 			}

@@ -721,3 +721,18 @@ func (s *PublicContractAPI) GetContractFeeLevel(ctx context.Context) (*ContractF
 	}
 	return feeLevel, nil
 }
+
+//获取所担任的用户合约相关信息
+func (s *PublicContractAPI) GetContractsWithJuryAddress(ctx context.Context, addr string) ([]*ptnjson.ContractJson, error) {
+	a, err := common.StringToAddress(addr)
+	if err != nil {
+		return nil, err
+	}
+	log.Debugf("jury address %s", a.String())
+	cs := s.b.GetContractsWithJuryAddr(a)
+	cj := make([]*ptnjson.ContractJson, 0, len(cs))
+	for _, c := range cs {
+		cj = append(cj, ptnjson.ConvertContract2Json(c))
+	}
+	return cj, nil
+}

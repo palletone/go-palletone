@@ -1,12 +1,13 @@
 package ucc
 
 import (
+	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	"time"
 
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/contracts/comm"
 	cfg "github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/core"
 	"github.com/palletone/go-palletone/contracts/platforms"
@@ -119,33 +120,23 @@ func GetUserCCPayload(usrcc *UserChaincode) (payload []byte, err error) {
 	return chaincodeData, nil
 }
 
-func RecoverChainCodeFromDb(chainID string, templateId []byte) (*UserChaincode, []byte, error) {
+func RecoverChainCodeFromDb(dag dag.IDag,templateId []byte) (*modules.ContractTemplate, []byte, error) {
 	//todo, for test
 	if cfg.DebugTest {
-		usrCC1 := &UserChaincode{}
+		usrCC1 := &modules.ContractTemplate{}
 		return usrCC1, nil, nil
 	}
 
-	dag, err := comm.GetCcDagHand()
-	if err != nil {
-		log.Error("getCcDagHand err:", "error", err)
-		return nil, nil, err
-	}
 	tpl, err := dag.GetContractTpl(templateId)
 	if err != nil {
 		return nil, nil, errors.New("GetContractTpl contract template err")
 	}
+
 	chaincodeData, err := dag.GetContractTplCode(templateId)
 	if err != nil {
 		return nil, nil, errors.New("GetContractTpl contract code err")
 	}
-	usrCC := &UserChaincode{
-		Name:     tpl.TplName,
-		Version:  tpl.Version,
-		Path:     tpl.Path,
-		Language: tpl.Language,
-	}
-	return usrCC, chaincodeData, nil
+	return tpl, chaincodeData, nil
 
 	//todo, For future testing, please don't delete this code.
 	//envpath, err := platforms.GetPlatformEnvPath(spec)

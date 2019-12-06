@@ -22,6 +22,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/palletone/go-palletone/contracts/comm"
 	"math/big"
 	"sync"
 	"time"
@@ -32,7 +33,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
-	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/contracts/ucc"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/errors"
@@ -335,7 +335,9 @@ func (p *Processor) ContractQuery(id []byte, args [][]byte, timeout time.Duratio
 		//cas, _ := utils.GetAllContainerAddr(cons, "Up")
 		cas, _ := p.pDocker.GetAllContainersAddrsWithStatus(cons, "Up")
 		for _, ca := range cas {
-			if ca.Equal(addr) { //use first
+			name := ca[:35]
+			contractAddr, _ := common.StringToAddress(name)
+			if contractAddr.Equal(addr) { //use first
 				log.Debugf("ContractQuery, contractId[%s],find container(Up)", addr.String())
 				exist = true
 				break
@@ -368,7 +370,12 @@ func (p *Processor) ContractQuery(id []byte, args [][]byte, timeout time.Duratio
 			spec.CpuQuota = cp.UccCpuQuota
 			spec.CpuShare = cp.UccCpuShares
 			spec.Memory = cp.UccMemory
-			_, chaincodeData, err := ucc.RecoverChainCodeFromDb(chainId, cc.TemplateId)
+			dag, err := comm.GetCcDagHand()
+			if err != nil {
+				log.Error("getCcDagHand err:", "error", err)
+				return nil, err
+			}
+			_, chaincodeData, err := ucc.RecoverChainCodeFromDb(dag, cc.TemplateId)
 			if err != nil {
 				log.Error("ContractQuery", "chainid:", chainId, "templateId:", cc.TemplateId, "RecoverChainCodeFromDb err", err)
 				return nil, err
@@ -378,28 +385,28 @@ func (p *Processor) ContractQuery(id []byte, args [][]byte, timeout time.Duratio
 				log.Error("ContractQuery ", "DeployUserCC error", err)
 				return nil, nil
 			}
-			juryAddrs := p.GetLocalJuryAddrs()
-			juryAddr := ""
-			if len(juryAddrs) != 0 {
-				juryAddr = juryAddrs[0].String()
-			}
-			cInf := &list.CCInfo{
-				Id:       addr.Bytes(),
-				Name:     addr.String(),
-				Path:     ct.Path,
-				TempleId: ct.TplId,
-				Version:  cv,
-				Language: ct.Language,
-				SysCC:    false,
-				Address:  juryAddr,
-			}
-			_, err = p.dag.GetChaincode(addr)
-			if err != nil {
-				err = p.dag.SaveChaincode(addr, cInf)
-				if err != nil {
-					log.Debugf("ContractQuery, SaveChaincode err:%s", err.Error())
-				}
-			}
+			//juryAddrs := p.GetLocalJuryAddrs()
+			//juryAddr := ""
+			//if len(juryAddrs) != 0 {
+			//	juryAddr = juryAddrs[0].String()
+			//}
+			//cInf := &list.CCInfo{
+			//	Id:       addr.Bytes(),
+			//	Name:     addr.String(),
+			//	Path:     ct.Path,
+			//	TempleId: ct.TplId,
+			//	Version:  cv,
+			//	Language: ct.Language,
+			//	SysCC:    false,
+			//	Address:  juryAddr,
+			//}
+			//_,err = p.dag.GetContract(addr.Bytes())
+			//if err != nil {
+			//	err = p.dag.SaveChaincode(addr, cInf)
+			//	if err != nil {
+			//		log.Debugf("ContractQuery, SaveChaincode err:%s", err.Error())
+			//	}
+			//}
 		}
 	}
 

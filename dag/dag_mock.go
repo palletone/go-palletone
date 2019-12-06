@@ -9,7 +9,6 @@ import (
 	common "github.com/palletone/go-palletone/common"
 	event "github.com/palletone/go-palletone/common/event"
 	discover "github.com/palletone/go-palletone/common/p2p/discover"
-	list "github.com/palletone/go-palletone/contracts/list"
 	core "github.com/palletone/go-palletone/core"
 	modules "github.com/palletone/go-palletone/dag/modules"
 	txspool "github.com/palletone/go-palletone/txspool"
@@ -948,6 +947,20 @@ func (mr *MockIDagMockRecorder) GetAllContractTpl() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllContractTpl", reflect.TypeOf((*MockIDag)(nil).GetAllContractTpl))
 }
 
+// SaveContract mocks base method
+func (m *MockIDag) SaveContract(contract *modules.Contract) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveContract", contract)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveContract indicates an expected call of SaveContract
+func (mr *MockIDagMockRecorder) SaveContract(contract interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveContract", reflect.TypeOf((*MockIDag)(nil).SaveContract), contract)
+}
+
 // GetContract mocks base method
 func (m *MockIDag) GetContract(id []byte) (*modules.Contract, error) {
 	m.ctrl.T.Helper()
@@ -1454,50 +1467,6 @@ func (m *MockIDag) GetIrreversibleUnitNum(id modules.AssetId) uint64 {
 func (mr *MockIDagMockRecorder) GetIrreversibleUnitNum(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIrreversibleUnitNum", reflect.TypeOf((*MockIDag)(nil).GetIrreversibleUnitNum), id)
-}
-
-// SaveChaincode mocks base method
-func (m *MockIDag) SaveChaincode(contractId common.Address, cc *list.CCInfo) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SaveChaincode", contractId, cc)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SaveChaincode indicates an expected call of SaveChaincode
-func (mr *MockIDagMockRecorder) SaveChaincode(contractId, cc interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveChaincode", reflect.TypeOf((*MockIDag)(nil).SaveChaincode), contractId, cc)
-}
-
-// GetChaincode mocks base method
-func (m *MockIDag) GetChaincode(contractId common.Address) (*list.CCInfo, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetChaincode", contractId)
-	ret0, _ := ret[0].(*list.CCInfo)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetChaincode indicates an expected call of GetChaincode
-func (mr *MockIDagMockRecorder) GetChaincode(contractId interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChaincode", reflect.TypeOf((*MockIDag)(nil).GetChaincode), contractId)
-}
-
-// RetrieveChaincodes mocks base method
-func (m *MockIDag) RetrieveChaincodes() ([]*list.CCInfo, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RetrieveChaincodes")
-	ret0, _ := ret[0].([]*list.CCInfo)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// RetrieveChaincodes indicates an expected call of RetrieveChaincodes
-func (mr *MockIDagMockRecorder) RetrieveChaincodes() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RetrieveChaincodes", reflect.TypeOf((*MockIDag)(nil).RetrieveChaincodes))
 }
 
 // GetPartitionChains mocks base method
@@ -2090,4 +2059,18 @@ func (m *MockIDag) SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.Uns
 func (mr *MockIDagMockRecorder) SubscribeUnstableRepositoryUpdatedEvent(ch interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeUnstableRepositoryUpdatedEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeUnstableRepositoryUpdatedEvent), ch)
+}
+
+// GetContractsWithJuryAddr mocks base method
+func (m *MockIDag) GetContractsWithJuryAddr(addr common.Address) []*modules.Contract {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetContractsWithJuryAddr", addr)
+	ret0, _ := ret[0].([]*modules.Contract)
+	return ret0
+}
+
+// GetContractsWithJuryAddr indicates an expected call of GetContractsWithJuryAddr
+func (mr *MockIDagMockRecorder) GetContractsWithJuryAddr(addr interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractsWithJuryAddr", reflect.TypeOf((*MockIDag)(nil).GetContractsWithJuryAddr), addr)
 }

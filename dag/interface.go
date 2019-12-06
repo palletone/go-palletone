@@ -27,7 +27,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/txspool"
@@ -111,6 +110,7 @@ type IDag interface {
 	GetContractTplCode(tplId []byte) ([]byte, error)
 	GetAllContractTpl() ([]*modules.ContractTemplate, error)
 
+	SaveContract(contract *modules.Contract) error
 	GetContract(id []byte) (*modules.Contract, error)
 	GetAllContracts() ([]*modules.Contract, error)
 	GetContractsByTpl(tplId []byte) ([]*modules.Contract, error)
@@ -159,9 +159,6 @@ type IDag interface {
 	HeadUnitHash() common.Hash
 	GetIrreversibleUnitNum(id modules.AssetId) uint64
 
-	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
-	GetChaincode(contractId common.Address) (*list.CCInfo, error)
-	RetrieveChaincodes() ([]*list.CCInfo, error)
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
 
@@ -215,4 +212,6 @@ type IDag interface {
 	GetJurorReward(jurorAdd common.Address) common.Address
 
 	SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription
+
+	GetContractsWithJuryAddr(addr common.Address) []*modules.Contract
 }
