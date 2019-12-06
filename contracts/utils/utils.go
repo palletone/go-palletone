@@ -98,7 +98,7 @@ func (pD *PalletOneDocker) RestartUserContractsWhenStartGptn(n1 chan struct{}, n
 			log.Debugf("now time %v", time.Now().UTC())
 			log.Debugf("now during time = %d, contract during time %d", time.Now().Unix()-int64(c.CreationTime), c.DuringTime)
 			duration := time.Now().Unix() - int64(c.CreationTime)
-			if uint64(duration) >= c.DuringTime {
+			if uint64(duration) < c.DuringTime {
 				//expiredTime := time.Unix(time.Now().Unix()+int64(c.DuringTime), 0).UTC()
 				//nowTime := time.Now().UTC()
 				//log.Debugf("expiredTime = %s", expiredTime)
