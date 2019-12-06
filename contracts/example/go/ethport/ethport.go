@@ -37,6 +37,7 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	dm "github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/shopspring/decimal"
 
 	"github.com/palletone/adaptor"
 )
@@ -45,6 +46,16 @@ type ETHPort struct {
 }
 
 func (p *ETHPort) Init(stub shim.ChaincodeStubInterface) pb.Response {
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
+	}
+	err = stub.PutState(symbolsOwner, []byte(invokeAddr.String()))
+	if err != nil {
+		return shim.Error("write symbolsOwner failed: " + err.Error())
+	}
+
 	return shim.Success(nil)
 }
 
@@ -114,6 +125,20 @@ func (p *ETHPort) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			return shim.Error("need 1 args (Key)")
 		}
 		return p.Get(stub, args[0])
+
+	case "withdrawAmount":
+		if len(args) < 2 {
+			return shim.Error("need 2  args (PTNAddress,ETHTokenAmount)")
+		}
+		withdrawAddr, err := common.StringToAddress(args[0])
+		if err != nil {
+			return shim.Error("Invalid address string:" + args[0])
+		}
+		amount, err := decimal.NewFromString(args[1])
+		if err != nil {
+			return shim.Error("Invalid amount:" + args[1])
+		}
+		return p.WithdrawAmount(stub, withdrawAddr, amount)
 	default:
 		jsonResp := "{\"Error\":\"Unknown function " + f + "\"}"
 		return shim.Error(jsonResp)
@@ -340,12 +365,35 @@ func (p *ETHPort) SetETHContract(ethContractAddr string, stub shim.ChaincodeStub
 }
 
 func (p *ETHPort) SetOwner(ptnAddr string, stub shim.ChaincodeStubInterface) pb.Response {
-	err := stub.PutState(symbolsOwner, []byte(ptnAddr))
+	//only owner can set
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
+	}
+	owner, err := getOwner(stub)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	if owner != invokeAddr.String() {
+		return shim.Error("Only owner can set")
+	}
+	err = stub.PutState(symbolsOwner, []byte(ptnAddr))
 	if err != nil {
 		return shim.Error("write symbolsOwner failed: " + err.Error())
 	}
 	return shim.Success([]byte("Success"))
 }
+
+func getOwner(stub shim.ChaincodeStubInterface) (string, error) {
+	result, _ := stub.GetState(symbolsOwner)
+	if len(result) == 0 {
+		return "", errors.New("Need set Owner")
+	}
+
+	return string(result), nil
+}
+
 func getETHContract(stub shim.ChaincodeStubInterface) string {
 	result, _ := stub.GetState(symbolsETHContract)
 	if len(result) == 0 {
@@ -432,6 +480,9 @@ func (p *ETHPort) PayoutETHTokenByAddr(ethAddr string, stub shim.ChaincodeStubIn
 
 	var amt uint64
 	for _, txResult := range txResults.Txs {
+		if !txResult.IsSuccess {
+			continue
+		}
 		txIDHex := hex.EncodeToString(txResult.TxID)
 		//check confirms
 		if curHeight-txResult.BlockHeight < Confirms {
@@ -566,6 +617,16 @@ func (p *ETHPort) PayoutETHTokenByTxID(ethTxID string, stub shim.ChaincodeStubIn
 	if strings.ToLower(txResult.Tx.TargetAddress) != mapAddr {
 		log.Debugf("The tx is't transfer to eth port contract")
 		return shim.Error("The tx is't transfer to eth port contract")
+	}
+
+	//check confirms
+	curHeight, err := getHeight(stub)
+	if curHeight == 0 || err != nil {
+		return shim.Error("getHeight failed")
+	}
+	if curHeight-txResult.Tx.BlockHeight < Confirms {
+		log.Debugf("Need more confirms")
+		return shim.Error("Need more confirms")
 	}
 
 	//get the mapping ptnAddr
@@ -1294,6 +1355,38 @@ func (p *ETHPort) GetWithdrawData(stub shim.ChaincodeStubInterface, reqid string
 func (p *ETHPort) Get(stub shim.ChaincodeStubInterface, key string) pb.Response {
 	result, _ := stub.GetState(key)
 	return shim.Success(result)
+}
+
+func (p *ETHPort) WithdrawAmount(stub shim.ChaincodeStubInterface, withdrawAddr common.Address, amount decimal.Decimal) pb.Response {
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
+	}
+	owner, err := getOwner(stub)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	if owner != invokeAddr.String() {
+		return shim.Error("Only owner can withdraw")
+	}
+
+	//
+	ethTokenAsset := getETHTokenAsset(stub)
+	if ethTokenAsset == nil {
+		return shim.Error("need call setETHTokenAsset()")
+	}
+
+	//contractAddr
+	amount = amount.Mul(decimal.New(100000000, 0))
+	amtToken := &dm.AmountAsset{Amount: uint64(amount.IntPart()), Asset: ethTokenAsset}
+	err = stub.PayOutToken(withdrawAddr.String(), amtToken, 0)
+	if err != nil {
+		log.Debugf("PayOutToken failed: %s", err.Error())
+		return shim.Error("PayOutToken failed: " + err.Error())
+	}
+
+	return shim.Success([]byte("Success"))
 }
 
 func main() {
