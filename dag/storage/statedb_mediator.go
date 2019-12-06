@@ -40,6 +40,17 @@ func (statedb *StateDb) StoreMediator(med *core.Mediator) error {
 	return statedb.StoreMediatorInfo(med.Address, mi)
 }
 
+func (statedb *StateDb) UpdateMediatorInfoExpand(med *core.Mediator) error {
+	mi, err := statedb.RetrieveMediatorInfo(med.Address)
+	if err != nil {
+		log.Errorf(err.Error())
+		return nil
+	}
+
+	mi.MediatorInfoExpand = med.MediatorInfoExpand
+	return statedb.StoreMediatorInfo(med.Address, mi)
+}
+
 func (statedb *StateDb) StoreMediatorInfo(add common.Address, mi *modules.MediatorInfo) error {
 	err := StoreToRlpBytes(statedb.db, mediatorKey(add), mi)
 	if err != nil {

@@ -82,23 +82,23 @@ func (mp *MediatorPlugin) startVSSProtocol() {
 	// 开启处理其他 mediator 的 deals 的循环，准备完成vss协议
 	mp.launchVSSDealLoops()
 
-	interval := mp.dag.GetGlobalProp().ChainParameters.MediatorInterval
-	sleepTime := time.Second * time.Duration(interval)
+	cp := mp.dag.GetGlobalProp().ChainParameters
+	margin := (cp.MediatorInterval+1)/2
 
-	// 隔1个生产间隔，等待其他节点接收新unit，并做好vss协议相关准备工作
+	// 隔半个生产间隔，等待其他节点接收新unit，并做好vss协议相关准备工作
 	select {
 	case <-mp.quit:
 		return
-	case <-time.After(sleepTime):
+	case <-time.After(time.Second * time.Duration(margin)):
 		// 广播 vss deal 给其他节点，并处理来自其他节点的deal
 		go mp.broadcastVSSDeals()
 	}
 
-	// 再隔1个生产间隔，才处理response，防止对应的 deal 还没收到的情况
+	// 再隔 MaintenanceSkipSlots 个生产间隔，才处理response，防止对应的 deal 还没收到的情况
 	select {
 	case <-mp.quit:
 		return
-	case <-time.After(sleepTime):
+	case <-time.After(time.Second * time.Duration(cp.MaintenanceSkipSlots * cp.MediatorInterval)):
 		go mp.launchVSSRespLoops()
 	}
 
@@ -106,7 +106,7 @@ func (mp *MediatorPlugin) startVSSProtocol() {
 	select {
 	case <-mp.quit:
 		return
-	case <-time.After(time.Second * time.Duration((interval+1)/2)):
+	case <-time.After(time.Second * time.Duration(cp.MediatorInterval-margin)):
 		go mp.completeVSSProtocol()
 	}
 }
@@ -290,6 +290,8 @@ func (mp *MediatorPlugin) AddToDealBuf(dealEvent *VSSDealEvent) {
 		vrfrMed := dag.GetActiveMediatorAddr(int(deal.Index))
 		log.Debugf("the mediator(%v) received the vss deal from the mediator(%v)",
 			localMed.Str(), vrfrMed.Str())
+	} else {
+		log.Debugf("the mediator(%v)'s dealBuf is cleared", localMed.Str())
 	}
 	//log.Debugf("vssBufLock.Unlock()")
 	mp.vssBufLock.Unlock()
@@ -325,6 +327,8 @@ func (mp *MediatorPlugin) AddToResponseBuf(respEvent *VSSResponseEvent) {
 			respCh <- resp
 			log.Debugf("the mediator(%v) received the vss response from the mediator(%v) to the mediator(%v)",
 				localMed.Str(), srcMed.Str(), vrfrMed.Str())
+		} else {
+			log.Debugf("the mediator(%v)'s respBuf is cleared", localMed.Str())
 		}
 		//log.Debugf("vssBufLock.Unlock()")
 		mp.vssBufLock.Unlock()

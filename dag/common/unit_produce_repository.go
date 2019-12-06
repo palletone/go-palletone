@@ -158,14 +158,17 @@ func (rep *UnitProduceRepository) PushUnit(newUnit *modules.Unit) error {
 	if err != nil {
 		return err
 	}
+
 	if !newUnit.ContainsParent(uHash) {
 		return errors.New(fmt.Sprintf("PushUnit[%s] parent is not newest unit[%s] %d",
-			newUnit.DisplayId(), uHash.String(),uIndex.Index))
+			newUnit.DisplayId(), uHash.String(), uIndex.Index))
 	}
-	if newUnit.NumberU64()-1 != uIndex.Index {
+
+	if newUnit.NumberU64() != uIndex.Index + 1 {
 		return errors.New(fmt.Sprintf("PushUnit[%s] height:%d, but newest unit height:%d",
 			newUnit.Hash().String(), newUnit.NumberU64(), uIndex.Index))
 	}
+
 	//更新数据库
 	err = rep.unitRep.SaveUnit(newUnit, false)
 	if err != nil {
@@ -236,7 +239,7 @@ func (rep *UnitProduceRepository) updateMediatorMissedUnits(unit *modules.Unit) 
 
 			med := rep.GetMediator(mediatorMissed)
 			med.TotalMissed++
-			rep.stateRep.StoreMediator(med)
+			rep.stateRep.UpdateMediatorInfoExpand(med)
 		}
 	}
 
@@ -287,7 +290,7 @@ func (rep *UnitProduceRepository) updateSigningMediator(newUnit *modules.Unit) {
 
 	lastConfirmedUnitNum := uint32(newUnit.NumberU64())
 	med.LastConfirmedUnitNum = lastConfirmedUnitNum
-	rep.stateRep.StoreMediator(med)
+	rep.stateRep.UpdateMediatorInfoExpand(med)
 
 	log.Debugf("the LastConfirmedUnitNum of mediator(%v) is: %v", med.Address.Str(), lastConfirmedUnitNum)
 }
@@ -543,7 +546,7 @@ func (dag *UnitProduceRepository) updateActiveMediators() bool {
 			log.Errorf("Cannot get mediator by:%s", voteTally.candidate.String())
 		}
 		med.TotalVotes = voteTally.votedCount
-		dag.stateRep.StoreMediator(med)
+		dag.stateRep.UpdateMediatorInfoExpand(med)
 	}
 
 	// 4. 更新 global property 中的 active mediator 和 Preceding Mediators
