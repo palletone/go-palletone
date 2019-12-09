@@ -682,7 +682,7 @@ func markTxsIllegal(dag storage.IStateDb, txs []*modules.Transaction) {
 				contractId = common.CopyBytes(payload.ContractId)
 			}
 		}
-		valid := checkReadSetValid(dag, contractId, readSet)
+		valid := checkReadSetIsValid(dag, contractId, &readSet)
 		tx.SetIllegal(!valid)
 	}
 }

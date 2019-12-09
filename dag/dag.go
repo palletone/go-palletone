@@ -1337,6 +1337,11 @@ func (d *Dag) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfEx
 func (d *Dag) GetAssetReference(asset []byte) ([]*modules.ProofOfExistence, error) {
 	return d.unstableUnitRep.GetAssetReference(asset)
 }
+
+func (d *Dag) CheckReadSetValid(contractId []byte, readSet *[]modules.ContractReadSet) bool {
+	return d.unstableUnitRep.CheckReadSetValid(contractId, readSet)
+}
+
 func (d *Dag) CheckHeaderCorrect(number int) error {
 	ptn := modules.PTNCOIN
 	if number == 0 {

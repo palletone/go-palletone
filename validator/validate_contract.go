@@ -35,23 +35,10 @@ import (
 To validate read set and write set of one transaction in unit'
 */
 func (validate *Validate) validateContractState(contractID []byte, readSet *[]modules.ContractReadSet, writeSet *[]modules.ContractWriteSet) ValidationCode {
-	// check read set, if read field in worldTmpState then the transaction is invalid
-	//contractState, cOk := (*worldTmpState)[hexutil.Encode(contractID[:])]
-	//if cOk && readSet != nil {
-	//	for _, rs := range *readSet {
-	//		if _, ok := contractState[rs.Key]; ok == true {
-	//			return TxValidationCode_CHAINCODE_VERSION_CONFLICT
-	//		}
-	//	}
-	//}
-	//// save write set to worldTmpState
-	//if !cOk && writeSet != nil {
-	//	(*worldTmpState)[hexutil.Encode(contractID[:])] = map[string]interface{}{}
-	//}
-	//
-	//for _, ws := range *writeSet {
-	//	(*worldTmpState)[hexutil.Encode(contractID[:])][ws.Key] = ws.Value
-	//}
+	if !validate.dagquery.CheckReadSetValid(contractID , readSet) {
+		return TxValidationCode_CHAINCODE_VERSION_CONFLICT
+	}
+
 	return TxValidationCode_VALID
 }
 

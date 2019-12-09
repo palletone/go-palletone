@@ -192,6 +192,7 @@ type IDag interface {
 	StoreDataVersion(dv *modules.DataVersion) error
 	QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error)
 	GetAssetReference(asset []byte) ([]*modules.ProofOfExistence, error)
+	CheckReadSetValid(contractId []byte, readSet *[]modules.ContractReadSet) bool
 
 	IsActiveJury(addr common.Address) bool
 	JuryCount() uint

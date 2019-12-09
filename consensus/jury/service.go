@@ -103,6 +103,8 @@ type iDag interface {
 	GetScheduledMediator(slotNum uint32) common.Address
 	GetSlotAtTime(when time.Time) uint32
 	GetJurorReward(jurorAdd common.Address) common.Address
+
+	CheckReadSetValid(contractId []byte, readSet *[]modules.ContractReadSet) bool
 }
 
 type electionVrf struct {
