@@ -156,7 +156,7 @@ func TestSaveUnit(t *testing.T) {
 	tx1 := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_CONTRACT_TPL, contractTplPayload)})
 	t.Logf("Tx Hash:%s", tx1.Hash().String())
 	//tx1.TxHash = tx1.Hash()
-	tx2 := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_CONTRACT_DEPLOY, deployPayload, )})
+	tx2 := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_CONTRACT_DEPLOY, deployPayload)})
 	//tx2.TxHash = tx2.Hash()
 	t.Logf("Tx Hash:%s", tx2.Hash().String())
 
@@ -682,7 +682,7 @@ func markTxsIllegal(dag storage.IStateDb, txs []*modules.Transaction) {
 				contractId = common.CopyBytes(payload.ContractId)
 			}
 		}
-		valid := checkReadSetIsValid(dag, contractId, &readSet)
+		valid := checkReadSetIsValid(dag, contractId, readSet)
 		tx.SetIllegal(!valid)
 	}
 }

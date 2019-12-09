@@ -109,7 +109,7 @@ type IUnitRepository interface {
 	SaveCommon(key, val []byte) error
 	RebuildAddrTxIndex() error
 
-	CheckReadSetValid(contractId []byte, readSet *[]modules.ContractReadSet) bool
+	CheckReadSetValid(contractId []byte, readSet []modules.ContractReadSet) bool
 }
 type UnitRepository struct {
 	dagdb          storage.IDagDb
@@ -589,12 +589,12 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 	return unit, nil
 }
 
-func (rep *UnitRepository)CheckReadSetValid(contractId []byte, readSet *[]modules.ContractReadSet) bool{
+func (rep *UnitRepository) CheckReadSetValid(contractId []byte, readSet []modules.ContractReadSet) bool {
 	return checkReadSetIsValid(rep.statedb, contractId, readSet)
 }
 
-func checkReadSetIsValid(dag storage.IStateDb, contractId []byte, readSet *[]modules.ContractReadSet) bool {
-	for _, rd := range *readSet {
+func checkReadSetIsValid(dag storage.IStateDb, contractId []byte, readSet []modules.ContractReadSet) bool {
+	for _, rd := range readSet {
 		_, v, err := dag.GetContractState(contractId, rd.Key)
 		if err != nil {
 			log.Debug("checkReadSetIsValid", "GetContractState fail, contractId", contractId)
@@ -637,7 +637,7 @@ func markTxIllegal(dag storage.IStateDb, tx *modules.Transaction) {
 			contractId = common.CopyBytes(payload.ContractId)
 		}
 	}
-	valid := checkReadSetIsValid(dag, contractId, &readSet)
+	valid := checkReadSetIsValid(dag, contractId, readSet)
 	tx.SetIllegal(!valid)
 }
 

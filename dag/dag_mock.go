@@ -1988,6 +1988,21 @@ func (mr *MockIDagMockRecorder) CheckUnitsCorrect(assetId, number interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckUnitsCorrect", reflect.TypeOf((*MockIDag)(nil).CheckUnitsCorrect), assetId, number)
 }
 
+// CheckReadSetValid mocks base method
+func (m *MockIDag) CheckReadSetValid(contractId []byte, readSet []modules.ContractReadSet) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckReadSetValid", contractId, readSet)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// CheckReadSetValid indicates an expected call of CheckReadSetValid
+func (mr *MockIDagMockRecorder) CheckReadSetValid(contractId, readSet interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckReadSetValid",
+		reflect.TypeOf((*MockIDag)(nil).CheckReadSetValid), contractId, readSet)
+}
+
 // GetBlacklistAddress mocks base method
 func (m *MockIDag) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error) {
 	m.ctrl.T.Helper()

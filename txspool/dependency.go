@@ -57,7 +57,7 @@ type dags interface {
 	GetJurorByAddrHash(addrHash common.Hash) (*modules.JurorDeposit, error)
 	GetJurorReward(jurorAdd common.Address) common.Address
 
-	CheckReadSetValid(contractId []byte, readSet *[]modules.ContractReadSet)bool
+	CheckReadSetValid(contractId []byte, readSet []modules.ContractReadSet) bool
 }
 
 type IValidator interface {

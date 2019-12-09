@@ -49,8 +49,7 @@ type IDagQuery interface {
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	IsTransactionExist(hash common.Hash) (bool, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
-	//GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
-	CheckReadSetValid(contractId []byte, readSet *[]modules.ContractReadSet) bool
+	CheckReadSetValid(contractId []byte, readSet []modules.ContractReadSet) bool
 }
 
 type IPropQuery interface {

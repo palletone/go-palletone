@@ -1338,7 +1338,7 @@ func (d *Dag) GetAssetReference(asset []byte) ([]*modules.ProofOfExistence, erro
 	return d.unstableUnitRep.GetAssetReference(asset)
 }
 
-func (d *Dag) CheckReadSetValid(contractId []byte, readSet *[]modules.ContractReadSet) bool {
+func (d *Dag) CheckReadSetValid(contractId []byte, readSet []modules.ContractReadSet) bool {
 	return d.unstableUnitRep.CheckReadSetValid(contractId, readSet)
 }
 

@@ -26,17 +26,17 @@ import (
 	"fmt"
 	"log"
 	"testing"
+	"time"
 
 	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/stretchr/testify/assert"
-	"time"
-	"github.com/palletone/go-palletone/core"
 )
 
 var privKeyBytes, _ = hex.DecodeString("2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644")
@@ -54,6 +54,9 @@ func (id *mockiDagQuery) GetHeaderByHash(common.Hash) (*modules.Header, error) {
 }
 func (id *mockiDagQuery) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error) {
 	return &modules.AmountAsset{Amount: 15000, Asset: modules.NewPTNAsset()}, nil
+}
+func (id *mockiDagQuery) CheckReadSetValid(contractId []byte, readSet []modules.ContractReadSet) bool {
+	return true
 }
 
 type mockiPropQuery struct{}

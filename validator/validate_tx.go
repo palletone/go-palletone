@@ -32,8 +32,8 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/constants"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 /**
@@ -126,13 +126,13 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 			}
 		case modules.APP_CONTRACT_DEPLOY:
 			payload, _ := msg.Payload.(*modules.ContractDeployPayload)
-			validateCode := validate.validateContractState(payload.ContractId, &payload.ReadSet, &payload.WriteSet)
+			validateCode := validate.validateContractState(payload.ContractId, payload.ReadSet, payload.WriteSet)
 			if validateCode != TxValidationCode_VALID {
 				return validateCode, txFee
 			}
 		case modules.APP_CONTRACT_INVOKE:
 			payload, _ := msg.Payload.(*modules.ContractInvokePayload)
-			validateCode := validate.validateContractState(payload.ContractId, &payload.ReadSet, &payload.WriteSet)
+			validateCode := validate.validateContractState(payload.ContractId, payload.ReadSet, payload.WriteSet)
 			if validateCode != TxValidationCode_VALID {
 				return validateCode, txFee
 			}
@@ -191,7 +191,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 			requestMsgIndex = msgIdx
 		case modules.APP_CONTRACT_STOP:
 			payload, _ := msg.Payload.(*modules.ContractStopPayload)
-			validateCode := validate.validateContractState(payload.ContractId, &payload.ReadSet, &payload.WriteSet)
+			validateCode := validate.validateContractState(payload.ContractId, payload.ReadSet, payload.WriteSet)
 			if validateCode != TxValidationCode_VALID {
 				return validateCode, txFee
 			}
@@ -297,7 +297,6 @@ func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize f
 		log.Errorf("Tx[%s] [%s]validateTxFeeEnough, GetTxFee err:%s", tx.Hash().String(), reqId.String()[:8], err.Error())
 		return false //todo ?
 	}
-
 
 	cp := validate.propquery.GetChainParameters()
 	timeUnitFee := float64(cp.ContractTxTimeoutUnitFee)
