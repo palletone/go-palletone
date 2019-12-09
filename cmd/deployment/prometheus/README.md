@@ -31,4 +31,3 @@
 Refer:
 1 https://blog.csdn.net/hjxzb/article/details/81044583
 
----- sudo apt-get install -y adduser libfontconfig
