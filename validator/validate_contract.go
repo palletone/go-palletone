@@ -38,7 +38,7 @@ func (validate *Validate) validateContractState(contractID []byte, readSet []mod
 	if !validate.dagquery.CheckReadSetValid(contractID, readSet) {
 		return TxValidationCode_CHAINCODE_VERSION_CONFLICT
 	}
-
+	log.Debugf("write set[%v]", writeSet)
 	return TxValidationCode_VALID
 }
 
