@@ -154,7 +154,7 @@ type ProtocolManager struct {
 	toGroupSignCh  chan modules.ToGroupSignEvent
 	toGroupSignSub event.Subscription
 
-	pDocker        *utils.PalletOneDocker
+	pDocker *utils.PalletOneDocker
 
 	unstableRepositoryUpdatedCh  chan modules.UnstableRepositoryUpdatedEvent
 	unstableRepositoryUpdatedSub event.Subscription
@@ -914,10 +914,10 @@ func (pm *ProtocolManager) dockerLoop(n chan struct{}) {
 				log.Debugf("GetAllContainers error %s", err.Error())
 				continue
 			}
-			//  重启退出且不过期容器
+			//  重启退出容器
 			pm.pDocker.RestartExitedAndUnExpiredContainers(cons)
 			//  删除过期容器
-			pm.pDocker.RemoveExpiredContainers(cons)
+			//pm.pDocker.RemoveExpiredContainers(cons)
 		}
 	}
 }

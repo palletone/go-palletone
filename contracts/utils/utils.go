@@ -97,20 +97,12 @@ func (pD *PalletOneDocker) RestartUserContractsWhenStartGptn(n1 chan struct{}, n
 			log.Debugf("create time %v", time.Unix(int64(c.CreationTime), 0).UTC())
 			log.Debugf("now time %v", time.Now().UTC())
 			log.Debugf("now during time = %d, contract during time %d", time.Now().Unix()-int64(c.CreationTime), c.DuringTime)
-			duration := time.Now().Unix() - int64(c.CreationTime)
-			if uint64(duration) < c.DuringTime {
-				//expiredTime := time.Unix(time.Now().Unix()+int64(c.DuringTime), 0).UTC()
-				//nowTime := time.Now().UTC()
-				//log.Debugf("expiredTime = %s", expiredTime)
-				//log.Debugf("nowTime = %s", nowTime)
-				//isExpired := time.Now().UTC().After(expiredTime)
-				//if !isExpired {
-				//if c.Status == 1 {
+			if c.Status == 1 {
 				log.Debugf("restart container %s with jury address %s", c.Name, juryAddr.String())
 				address := common.NewAddress(c.ContractId, common.ContractHash)
 				_, _ = manger.RestartContainer(pD.dag, "palletone", address, txid.String())
 			} else {
-				log.Debugf("contract name = %s was expired", c.Name)
+				log.Debugf("contract name = %s was stopped", c.Name)
 			}
 		}
 		return
