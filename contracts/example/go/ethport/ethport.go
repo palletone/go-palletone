@@ -483,6 +483,9 @@ func (p *ETHPort) PayoutETHTokenByAddr(ethAddr string, stub shim.ChaincodeStubIn
 		if !txResult.IsSuccess {
 			continue
 		}
+		if 0 == txResult.Amount.Amount.Uint64() {
+			continue
+		}
 		txIDHex := hex.EncodeToString(txResult.TxID)
 		//check confirms
 		if curHeight-txResult.BlockHeight < Confirms {
