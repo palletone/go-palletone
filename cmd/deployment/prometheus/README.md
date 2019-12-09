@@ -29,13 +29,10 @@
 
 
 
-#2.1 wget https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana_5.1.4_amd64.deb
-#
-#2.2 sudo apt-get install -y adduser libfontconfig
-#
-#2.3 sudo dpkg -i grafana_5.1.4_amd64.deb
-#
-#2.4 service grafana start
+--2.1 wget https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana_5.1.4_amd64.deb
+--2.2 sudo apt-get install -y adduser libfontconfig
+-2.3 sudo dpkg -i grafana_5.1.4_amd64.deb
+-2.4 service grafana start
 
 Refer:
 1 https://blog.csdn.net/hjxzb/article/details/81044583
