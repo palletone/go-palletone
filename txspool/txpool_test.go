@@ -213,6 +213,9 @@ func (ud *UnitDag4Test) GetContractState(id []byte, field string) ([]byte, *modu
 func (ud *UnitDag4Test) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
 	return nil, nil
 }
+func (ud *UnitDag4Test) CheckReadSetValid(contractId []byte, readSet []modules.ContractReadSet) bool {
+	return true
+}
 
 // create txs
 func createTxs(address string) []*modules.Transaction {
