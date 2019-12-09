@@ -34,11 +34,12 @@ import (
 对unit中某个交易的读写集进行验证
 To validate read set and write set of one transaction in unit'
 */
-func (validate *Validate) validateContractState(contractID []byte, readSet []modules.ContractReadSet, writeSet []modules.ContractWriteSet) ValidationCode {
-	if !validate.dagquery.CheckReadSetValid(contractID, readSet) {
-		return TxValidationCode_CHAINCODE_VERSION_CONFLICT
-	}
-	log.Debugf("write set[%v]", writeSet)
+func (validate *Validate) validateContractState(contractID []byte, readSet []modules.ContractReadSet,
+	writeSet []modules.ContractWriteSet) ValidationCode {
+	//if !validate.dagquery.CheckReadSetValid(contractID, readSet) {
+	//	return TxValidationCode_CHAINCODE_VERSION_CONFLICT
+	//}
+	log.Debugf("contractID[%v], read set[%v]write set[%v]", contractID, readSet, writeSet)
 	return TxValidationCode_VALID
 }
 
