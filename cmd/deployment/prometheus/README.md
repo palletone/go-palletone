@@ -4,7 +4,7 @@
 
 1.2 wget https://github.com/prometheus/prometheus/releases/download/v2.14.0/prometheus-2.14.0.linux-amd64.tar.gz
 
-1.3 tar xf prometheus-2.14.0.linux-amd64.tar.gz
+1.3 tar xzvf prometheus-2.14.0.linux-amd64.tar.gz
 
 1.4 mv prometheus-2.14.0.linux-amd64 /usr/local/prometheus
 
@@ -15,14 +15,28 @@
 
 2 install grafana
 
-2.1 wget https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana_5.1.4_amd64.deb
+2.1 https://grafana.com/grafana/download
 
-2.2 sudo apt-get install -y adduser libfontconfig
+2.2 wget https://dl.grafana.com/oss/release/grafana-6.5.1.linux-amd64.tar.gz
 
-2.3 sudo dpkg -i grafana_5.1.4_amd64.deb
+2.3 tar xzvf grafana-6.5.1.linux-amd64.tar.gz
 
-2.4 service grafana start
+2.4 mv grafana-6.5.1 /usr/local/grafana
+
+2.5 cd /usr/local/grafana/bin
+
+2.6 start grafana-server
+
+
+
+#2.1 wget https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana_5.1.4_amd64.deb
+#
+#2.2 sudo apt-get install -y adduser libfontconfig
+#
+#2.3 sudo dpkg -i grafana_5.1.4_amd64.deb
+#
+#2.4 service grafana start
 
 Refer:
 1 https://blog.csdn.net/hjxzb/article/details/81044583
-
+2 https://grafana.com/grafana/download
