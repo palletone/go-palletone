@@ -333,7 +333,7 @@ func (chain *MemDag) setNextStableUnit(unit *modules.Unit, txpool txspool.ITxPoo
 	if !chain.saveHeaderOnly && len(unit.Txs) > 1 {
 		go txpool.SendStoredTxs(unit.Txs.GetTxIds())
 	}
-	log.Debugf("Remove unit[%s] from chainUnits", hash.String())
+	log.Debugf("Remove unit index[%d],hash[%s] from chainUnits", height, hash.String())
 	//remove new stable unit
 	chain.chainUnits.Delete(hash)
 	//Set stable unit
@@ -507,7 +507,7 @@ func (chain *MemDag) removeUnitAndChildren(chain_units map[common.Hash]*modules.
 			}
 			chain.chainUnits.Delete(h)
 			delete(chain_units, h)
-			log.Debugf("Remove unit[%s] from chainUnits", hash.String())
+			log.Debugf("Remove unit index[%d],hash[%s] from chainUnits", unit.NumberU64(), hash.String())
 		} else if unit.ParentHash()[0] == hash {
 			chain.removeUnitAndChildren(chain_units, h, txpool)
 		}
@@ -759,7 +759,8 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 		}
 	} else {
 		//add unit to orphan
-		log.Debugf("This unit[%s] is an orphan unit", uHash.String())
+		log.Debugf("This unit[%s] is an orphan unit,the lastMainChainUnit[%s], stableunit[%s]", uHash.String(),
+			chain.lastMainChainUnit.Hash().String(), chain.stableUnitHash.String())
 		chain.orphanUnits.Store(uHash, unit)
 		chain.orphanUnitsParants.Store(unit.ParentHash()[0], uHash)
 	}
