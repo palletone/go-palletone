@@ -1624,7 +1624,7 @@ func (d *Downloader) deliver(id string, destCh chan dataPack, packet dataPack, i
 	defer func() {
 		if err != nil {
 			log.Debug("dropMeter.Mark", "id", id)
-			dropMeter.Inc(float64(packet.Items()))
+			dropMeter.Add(float64(packet.Items()))
 		}
 	}()
 	// Deliver or abort if the sync is canceled while queuing
