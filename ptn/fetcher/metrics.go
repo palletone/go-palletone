@@ -20,24 +20,82 @@ package fetcher
 
 import (
 	"github.com/palletone/go-palletone/statistics/metrics"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 var (
-	propAnnounceInMeter   = metrics.NewRegisteredMeter("ptn/fetcher/prop/announces/in", nil)
 	propAnnounceOutTimer  = metrics.NewRegisteredTimer("ptn/fetcher/prop/announces/out", nil)
-	propAnnounceDropMeter = metrics.NewRegisteredMeter("ptn/fetcher/prop/announces/drop", nil)
-	propAnnounceDOSMeter  = metrics.NewRegisteredMeter("ptn/fetcher/prop/announces/dos", nil)
-
-	propBroadcastInMeter   = metrics.NewRegisteredMeter("ptn/fetcher/prop/broadcasts/in", nil)
-	propBroadcastOutTimer  = metrics.NewRegisteredTimer("ptn/fetcher/prop/broadcasts/out", nil)
-	propBroadcastDropMeter = metrics.NewRegisteredMeter("ptn/fetcher/prop/broadcasts/drop", nil)
-	propBroadcastDOSMeter  = metrics.NewRegisteredMeter("ptn/fetcher/prop/broadcasts/dos", nil)
-
-	headerFetchMeter = metrics.NewRegisteredMeter("ptn/fetcher/fetch/headers", nil)
-	bodyFetchMeter   = metrics.NewRegisteredMeter("ptn/fetcher/fetch/bodies", nil)
-
-	headerFilterInMeter  = metrics.NewRegisteredMeter("ptn/fetcher/filter/headers/in", nil)
-	headerFilterOutMeter = metrics.NewRegisteredMeter("ptn/fetcher/filter/headers/out", nil)
-	bodyFilterInMeter    = metrics.NewRegisteredMeter("ptn/fetcher/filter/bodies/in", nil)
-	bodyFilterOutMeter   = metrics.NewRegisteredMeter("ptn/fetcher/filter/bodies/out", nil)
+	propBroadcastOutTimer = metrics.NewRegisteredTimer("ptn/fetcher/prop/broadcasts/out", nil)
 )
+
+var (
+	propAnnounceInPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:fetcher:prop:announces:in",
+		Help: "fetcher prop announces in",
+	})
+	propAnnounceDropPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:fetcher:prop:announces:drop",
+		Help: "fetcher prop announces drop",
+	})
+	propAnnounceDOSPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:fetcher:prop:announces:dos",
+		Help: "fetcher prop announces dos",
+	})
+
+	propBroadcastInPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:fetcher:prop:broadcasts:in",
+		Help: "fetcher prop broadcasts in",
+	})
+	propBroadcastDropPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:fetcher:prop:broadcasts:drop",
+		Help: "fetcher prop broadcasts drop",
+	})
+	propBroadcastDOSPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:fetcher:prop:broadcasts:dos",
+		Help: "fetcher prop broadcasts dos",
+	})
+
+	headerFetchPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:fetcher:headers",
+		Help: "fetcher headers",
+	})
+	bodyFetchPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:fetcher:bodies",
+		Help: "fetcher bodies",
+	})
+
+	headerFilterInPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:fetcher:filter:headers:in",
+		Help: "fetcher filter headers in",
+	})
+	headerFilterOutPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:fetcher:filter:headers:out",
+		Help: "fetcher filter headers out",
+	})
+	bodyFilterInPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:fetcher:filter:bodies:in",
+		Help: "fetcher filter bodies in",
+	})
+	bodyFilterOutPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:fetcher:filter:bodies:out",
+		Help: "fetcher filter bodies out",
+	})
+)
+
+func init() {
+	prometheus.MustRegister(propAnnounceInPrometheus)
+	prometheus.MustRegister(propAnnounceDropPrometheus)
+	prometheus.MustRegister(propAnnounceDOSPrometheus)
+
+	prometheus.MustRegister(propBroadcastInPrometheus)
+	prometheus.MustRegister(propBroadcastDropPrometheus)
+	prometheus.MustRegister(propBroadcastDOSPrometheus)
+
+	prometheus.MustRegister(headerFetchPrometheus)
+	prometheus.MustRegister(bodyFetchPrometheus)
+
+	prometheus.MustRegister(headerFilterInPrometheus)
+	prometheus.MustRegister(headerFilterOutPrometheus)
+	prometheus.MustRegister(bodyFilterInPrometheus)
+	prometheus.MustRegister(bodyFilterOutPrometheus)
+}

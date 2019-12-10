@@ -218,9 +218,9 @@ func CreateDB(ctx *node.ServiceContext, config *Config /*, name string*/) (palle
 		return nil, err
 	}
 
-	//	if db, ok := db.(*palletdb.LDBDatabase); ok {
-	//		db.Meter("eth/db/chaindata/")
-	//	}
+	if db, ok := db.(*ptndb.LDBDatabase); ok {
+		db.Meter("ptn:db")
+	}
 
 	return db, nil
 }

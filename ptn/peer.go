@@ -24,7 +24,6 @@ import (
 	"time"
 
 	set "github.com/deckarep/golang-set"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
@@ -324,9 +323,9 @@ func (p *peer) SendNodeData(data [][]byte) error {
 
 // SendReceiptsRLP sends a batch of transaction receipts, corresponding to the
 // ones requested from an already RLP encoded format.
-func (p *peer) SendReceiptsRLP(receipts []rlp.RawValue) error {
-	return p2p.Send(p.rw, ReceiptsMsg, receipts)
-}
+//func (p *peer) SendReceiptsRLP(receipts []rlp.RawValue) error {
+//	return p2p.Send(p.rw, ReceiptsMsg, receipts)
+//}
 
 // RequestOneHeader is a wrapper around the header query functions to fetch a
 // single header. It is used solely by the fetcher.
@@ -380,10 +379,10 @@ func (p *peer) RequestNodeData(hashes []common.Hash) error {
 }
 
 // RequestReceipts fetches a batch of transaction receipts from a remote node.
-func (p *peer) RequestReceipts(hashes []common.Hash) error {
-	log.Debug("Fetching batch of receipts", "count", len(hashes))
-	return p2p.Send(p.rw, GetReceiptsMsg, hashes)
-}
+//func (p *peer) RequestReceipts(hashes []common.Hash) error {
+//	log.Debug("Fetching batch of receipts", "count", len(hashes))
+//	return p2p.Send(p.rw, GetReceiptsMsg, hashes)
+//}
 
 // Handshake executes the ptn protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.

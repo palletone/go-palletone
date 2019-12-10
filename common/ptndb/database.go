@@ -25,6 +25,7 @@ import (
 
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/statistics/metrics"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/syndtr/goleveldb/leveldb/filter"
@@ -47,13 +48,13 @@ type LDBDatabase struct {
 	fn string      // filename for reporting
 	db *leveldb.DB // LevelDB instance
 
-	compTimeMeter    metrics.Meter // Meter for measuring the total time spent in database compaction
-	compReadMeter    metrics.Meter // Meter for measuring the data read during compaction
-	compWriteMeter   metrics.Meter // Meter for measuring the data written during compaction
-	writeDelayNMeter metrics.Meter // Meter for measuring the write delay number due to database compaction
-	writeDelayMeter  metrics.Meter // Meter for measuring the write delay duration due to database compaction
-	diskReadMeter    metrics.Meter // Meter for measuring the effective amount of data read
-	diskWriteMeter   metrics.Meter // Meter for measuring the effective amount of data written
+	compTimePrometheus    prometheus.Gauge // Meter for measuring the total time spent in database compaction
+	compReadPrometheus    prometheus.Gauge // Meter for measuring the data read during compaction
+	compWritePrometheus   prometheus.Gauge // Meter for measuring the data written during compaction
+	writeDelayNPrometheus prometheus.Gauge // Meter for measuring the write delay number due to database compaction
+	writeDelayPrometheus  prometheus.Gauge // Meter for measuring the write delay duration due to database compaction
+	diskReadPrometheus    prometheus.Gauge // Meter for measuring the effective amount of data read
+	diskWritePrometheus   prometheus.Gauge // Meter for measuring the effective amount of data written
 
 	quitLock sync.Mutex      // Mutex protecting the quit channel access
 	quitChan chan chan error // Quit channel to stop the metrics collection before closing the database
@@ -159,13 +160,46 @@ func (db *LDBDatabase) LDB() *leveldb.DB {
 // Meter configures the database metrics collectors and
 func (db *LDBDatabase) Meter(prefix string) {
 	// Initialize all the metrics collector at the requested prefix
-	db.compTimeMeter = metrics.NewRegisteredMeter(prefix+"compact/time", nil)
-	db.compReadMeter = metrics.NewRegisteredMeter(prefix+"compact/input", nil)
-	db.compWriteMeter = metrics.NewRegisteredMeter(prefix+"compact/output", nil)
-	db.diskReadMeter = metrics.NewRegisteredMeter(prefix+"disk/read", nil)
-	db.diskWriteMeter = metrics.NewRegisteredMeter(prefix+"disk/write", nil)
-	db.writeDelayMeter = metrics.NewRegisteredMeter(prefix+"compact/writedelay/duration", nil)
-	db.writeDelayNMeter = metrics.NewRegisteredMeter(prefix+"compact/writedelay/counter", nil)
+	if metrics.Enabled {
+		db.compTimePrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "prometheus:" + prefix + ":compact:time",
+			Help: prefix + ":compact:time",
+		})
+		db.compReadPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "prometheus:" + prefix + ":compact:input",
+			Help: prefix + ":compact:input",
+		})
+		db.compWritePrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "prometheus:" + prefix + ":compact:output",
+			Help: prefix + ":compact:output",
+		})
+		db.diskReadPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "prometheus:" + prefix + ":disk:read",
+			Help: prefix + ":disk:read",
+		})
+		db.diskWritePrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "prometheus:" + prefix + ":disk:write",
+			Help: prefix + ":disk:write",
+		})
+
+		prometheus.MustRegister(db.compTimePrometheus)
+		prometheus.MustRegister(db.compReadPrometheus)
+		prometheus.MustRegister(db.compWritePrometheus)
+		prometheus.MustRegister(db.diskReadPrometheus)
+		prometheus.MustRegister(db.diskWritePrometheus)
+	}
+	//db.writeDelayMeter = metrics.NewRegisteredMeter(prefix+"compact/writedelay/duration", nil)
+	//db.writeDelayNMeter = metrics.NewRegisteredMeter(prefix+"compact/writedelay/counter", nil)
+	db.writeDelayPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:" + prefix + ":writedelay:duration",
+		Help: prefix + ":writedelay:duration",
+	})
+	db.writeDelayNPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:" + prefix + ":writedelay:counter",
+		Help: prefix + ":writedelay:counter",
+	})
+	prometheus.MustRegister(db.writeDelayPrometheus)
+	prometheus.MustRegister(db.writeDelayNPrometheus)
 
 	// Create a quit channel for the periodic collector and run it
 	db.quitLock.Lock()
@@ -253,14 +287,14 @@ func (db *LDBDatabase) meter(refresh time.Duration) {
 			}
 		}
 		// Update all the requested meters
-		if db.compTimeMeter != nil {
-			db.compTimeMeter.Mark(int64((compactions[i%2][0] - compactions[(i-1)%2][0]) * 1000 * 1000 * 1000))
+		if db.compTimePrometheus != nil {
+			db.compTimePrometheus.Add(float64((compactions[i%2][0] - compactions[(i-1)%2][0]) * 1000 * 1000 * 1000))
 		}
-		if db.compReadMeter != nil {
-			db.compReadMeter.Mark(int64((compactions[i%2][1] - compactions[(i-1)%2][1]) * 1024 * 1024))
+		if db.compReadPrometheus != nil {
+			db.compReadPrometheus.Add(float64((compactions[i%2][1] - compactions[(i-1)%2][1]) * 1024 * 1024))
 		}
-		if db.compWriteMeter != nil {
-			db.compWriteMeter.Mark(int64((compactions[i%2][2] - compactions[(i-1)%2][2]) * 1024 * 1024))
+		if db.compWritePrometheus != nil {
+			db.compWritePrometheus.Add(float64((compactions[i%2][2] - compactions[(i-1)%2][2]) * 1024 * 1024))
 		}
 
 		// Retrieve the write delay statistic
@@ -288,11 +322,11 @@ func (db *LDBDatabase) meter(refresh time.Duration) {
 			merr = err
 			continue
 		}
-		if db.writeDelayNMeter != nil {
-			db.writeDelayNMeter.Mark(delayN - delaystats[0])
+		if db.writeDelayNPrometheus != nil {
+			db.writeDelayNPrometheus.Add(float64(delayN - delaystats[0]))
 		}
-		if db.writeDelayMeter != nil {
-			db.writeDelayMeter.Mark(duration.Nanoseconds() - delaystats[1])
+		if db.writeDelayPrometheus != nil {
+			db.writeDelayPrometheus.Add(float64(duration.Nanoseconds() - delaystats[1]))
 		}
 		// If a warning that db is performing compaction has been displayed, any subsequent
 		// warnings will be withheld for one minute not to overwhelm the user.
@@ -327,11 +361,12 @@ func (db *LDBDatabase) meter(refresh time.Duration) {
 			merr = err
 			continue
 		}
-		if db.diskReadMeter != nil {
-			db.diskReadMeter.Mark(int64((nRead - iostats[0]) * 1024 * 1024))
+		if db.diskReadPrometheus != nil {
+			log.Debug("LDBDatabase Meter", "diskReadPrometheus add", float64((nRead-iostats[0])*1024*1024))
+			db.diskReadPrometheus.Add(float64((nRead - iostats[0]) * 1024 * 1024))
 		}
-		if db.diskWriteMeter != nil {
-			db.diskWriteMeter.Mark(int64((nWrite - iostats[1]) * 1024 * 1024))
+		if db.diskWritePrometheus != nil {
+			db.diskWritePrometheus.Add(float64((nWrite - iostats[1]) * 1024 * 1024))
 		}
 		iostats[0], iostats[1] = nRead, nWrite
 

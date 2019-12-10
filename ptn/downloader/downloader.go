@@ -1618,13 +1618,13 @@ func (d *Downloader) DeliverNodeData(id string, data [][]byte) (err error) {
 
 // deliver injects a new batch of data received from a remote node.
 func (d *Downloader) deliver(id string, destCh chan dataPack, packet dataPack, inMeter,
-	dropMeter prometheus.Gauge /*metrics.Meter*/) (err error) {
+	dropMeter prometheus.Gauge) (err error) {
 	// Update the delivery metrics for both good and failed deliveries
 	inMeter.Add(float64(packet.Items()))
 	defer func() {
 		if err != nil {
 			log.Debug("dropMeter.Mark", "id", id)
-			dropMeter.Sub(float64(packet.Items()))
+			dropMeter.Add(float64(packet.Items()))
 		}
 	}()
 	// Deliver or abort if the sync is canceled while queuing

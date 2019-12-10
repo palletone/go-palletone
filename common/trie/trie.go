@@ -25,6 +25,7 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/statistics/metrics"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 var (
@@ -39,6 +40,22 @@ var (
 	cacheMissCounter   = metrics.NewRegisteredCounter("trie/cachemiss", nil)
 	cacheUnloadCounter = metrics.NewRegisteredCounter("trie/cacheunload", nil)
 )
+
+var (
+	cacheMissCounterPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:ptn:trie:cachemiss",
+		Help: "ptn trie cachemiss",
+	})
+	cacheUnloadCounterPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:ptn:trie:cacheunload",
+		Help: "ptn trie cacheunload",
+	})
+)
+
+func init() {
+	prometheus.MustRegister(cacheMissCounterPrometheus)
+	prometheus.MustRegister(cacheUnloadCounterPrometheus)
+}
 
 // CacheMisses retrieves a global counter measuring the number of cache misses
 // the trie had since process startup. This isn't useful for anything apart from
@@ -431,6 +448,7 @@ func (t *Trie) resolve(n node, prefix []byte) (node, error) {
 
 func (t *Trie) resolveHash(n hashNode, prefix []byte) (node, error) {
 	cacheMissCounter.Inc(1)
+	//cacheMissCounterPrometheus.Add(1)
 
 	hash := common.BytesToHash(n)
 

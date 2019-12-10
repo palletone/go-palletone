@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/dag/parameter"
 	"github.com/palletone/go-palletone/tokenengine"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
 
@@ -78,6 +79,48 @@ var (
 	// making the transaction invalid, rather a DOS protection.
 	ErrOversizedData = errors.New("oversized data")
 )
+
+var (
+	txValidPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:txpool:tx:valid",
+		Help: "txpool tx valid",
+	})
+	txInvalidPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:txpool:tx:invalid",
+		Help: "txpool tx invalid",
+	})
+
+	txAlreadyPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:txpool:tx:already",
+		Help: "txpool tx already",
+	})
+
+	txOrphanKnownPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:txpool:tx:orphan:known",
+		Help: "txpool tx orphan known",
+	})
+	txOrphanValidPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:txpool:tx:orphan:valid",
+		Help: "txpool tx orphan valid",
+	})
+
+	txCoinbasePrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:txpool:tx:coinbase",
+		Help: "txpool tx coinbase",
+	})
+)
+
+func init() {
+	prometheus.MustRegister(txValidPrometheus)
+	prometheus.MustRegister(txInvalidPrometheus)
+
+	prometheus.MustRegister(txAlreadyPrometheus)
+
+	prometheus.MustRegister(txOrphanKnownPrometheus)
+	prometheus.MustRegister(txOrphanValidPrometheus)
+
+	prometheus.MustRegister(txCoinbasePrometheus)
+}
 
 type TxPool struct {
 	config      TxPoolConfig
@@ -487,15 +530,18 @@ func TxtoTxpoolTx(tx *modules.Transaction) *TxPoolTransaction {
 func (pool *TxPool) add(tx *TxPoolTransaction, local bool) (bool, error) {
 	msgs := tx.Tx.TxMessages()
 	if msgs[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
+		txCoinbasePrometheus.Add(1)
 		return true, nil
 	}
 	// Don't accept the transaction if it already in the pool .
 	hash := tx.Tx.Hash()
 	if _, has := pool.all.Load(hash); has {
+		txAlreadyPrometheus.Add(1)
 		log.Trace("Discarding already known transaction", "hash", hash.String())
 		return false, fmt.Errorf("known transaction: %s", hash.String())
 	}
 	if pool.isOrphanInPool(hash) {
+		txOrphanKnownPrometheus.Add(1)
 		return false, fmt.Errorf("know orphanTx: %s", hash.String())
 	}
 	if has, _ := pool.unit.IsTransactionExist(hash); has {
@@ -505,11 +551,13 @@ func (pool *TxPool) add(tx *TxPoolTransaction, local bool) (bool, error) {
 	if addition, code, err := pool.validateTx(tx, local); err != nil {
 		if code == validator.TxValidationCode_ORPHAN {
 			if ok, _ := pool.ValidateOrphanTx(tx.Tx); ok {
+				txOrphanValidPrometheus.Add(1)
 				log.Debug("validated the orphanTx", "hash", hash.String())
 				pool.addOrphan(tx, 0)
 				return true, nil
 			}
 		}
+		txInvalidPrometheus.Add(1)
 		log.Trace("Discarding invalid transaction", "hash", hash.String(), "err", err.Error())
 		return false, err
 	} else {
@@ -544,7 +592,7 @@ func (pool *TxPool) add(tx *TxPoolTransaction, local bool) (bool, error) {
 	pool.all.Store(hash, tx)
 	pool.addCache(tx)
 	go pool.journalTx(tx)
-
+	txValidPrometheus.Add(1)
 	// We've directly injected a replacement transaction, notify subsystems
 	go pool.txFeed.Send(modules.TxPreEvent{Tx: tx.Tx})
 	return true, nil
