@@ -20,25 +20,26 @@
 package storage
 
 import (
-	palletdb "github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 )
 
 var DBPath = dagconfig.DefaultDataDir()
 
-func Init(path string, cache int, handles int) (*palletdb.LDBDatabase, error) {
+func Init(path string, cache int, handles int) (ptndb.Database, error) {
 	var err error
 	if path == "" {
 		path = DBPath
 	}
 
-	Dbconn, err := palletdb.NewLDBDatabase(path, cache, handles)
+	Dbconn, err := ptndb.NewLDBDatabase(path, cache, handles)
 	return Dbconn, err
 }
-func ReNewDbConn(path string) *palletdb.LDBDatabase {
-	if dbconn, err := palletdb.NewLDBDatabase(path, 0, 0); err != nil {
-		return nil
-	} else {
-		return dbconn
-	}
-}
+
+//func ReNewDbConn(path string) ptndb.LDBDatabase {
+//	if dbconn, err := ptndb.NewLDBDatabase(path, 0, 0); err != nil {
+//		return ptndb.LDBDatabase{}
+//	} else {
+//		return dbconn
+//	}
+//}
