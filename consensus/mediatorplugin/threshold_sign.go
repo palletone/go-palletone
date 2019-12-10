@@ -83,8 +83,8 @@ func (mp *MediatorPlugin) AddToTBLSSignBufs(newHash common.Hash) {
 	}
 
 	for _, localMed := range ms {
-		log.Debugf("the mediator(%v) received a unit(%v) to be group-signed",
-			localMed.Str(), newHash.TerminalString())
+		log.Debugf("the mediator(%v) received a unit(hash: %v , # %v) to be group-signed",
+			localMed.Str(), newHash.TerminalString(), header.NumberU64())
 		go mp.addToTBLSSignBuf(localMed, newHash)
 	}
 }
@@ -128,8 +128,8 @@ func (mp *MediatorPlugin) SubscribeSigShareEvent(ch chan<- SigShareEvent) event.
 
 func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.Hash) {
 	mp.toTBLSBufLock.Lock()
-	log.Debugf("toTBLSBufLock.Lock()")
-	defer log.Debugf("toTBLSBufLock.Unlock()")
+	//log.Debugf("toTBLSBufLock.Lock()")
+	//defer log.Debugf("toTBLSBufLock.Unlock()")
 	defer mp.toTBLSBufLock.Unlock()
 
 	medUnitsBuf, ok := mp.toTBLSSignBuf[localMed]
@@ -181,7 +181,8 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 		// 如果单元没有群公钥， 则跳过群签名
 		pkb := header.GetGroupPubKeyByte()
 		if len(pkb) == 0 {
-			err := fmt.Errorf("this unit(%v)'s group public key is null", unitHash.TerminalString())
+			err := fmt.Errorf("this unit(hash: %v , #%v )'s group public key is null",
+				unitHash.TerminalString(), header.NumberU64())
 			log.Debug(err.Error())
 			return
 		}
@@ -189,7 +190,7 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 		// 判断父 unit 是否不可逆
 		parentHash := header.ParentHash()[0]
 		isStable, err := dag.IsIrreversibleUnit(parentHash)
-		if err!= nil {
+		if err != nil {
 			return
 		}
 		if !isStable {
@@ -213,8 +214,8 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 	}
 
 	// 4. 群签名成功后的处理
-	log.Debugf("the mediator(%v) signed-group the unit(%v)", localMed.Str(),
-		unitHash.TerminalString())
+	log.Debugf("the mediator(%v) signed-group the unit(hash: %v , # %v)", localMed.Str(),
+		unitHash.TerminalString(), header.NumberU64())
 	delete(mp.toTBLSSignBuf[localMed], unitHash)
 
 	event := SigShareEvent{
@@ -297,8 +298,8 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	}
 
 	sigShareSet.lock()
-	log.Debugf("sigShareSet.lock()")
-	defer log.Debugf("sigShareSet.unlock()")
+	//log.Debugf("sigShareSet.lock()")
+	//defer log.Debugf("sigShareSet.unlock()")
 	defer sigShareSet.unlock()
 
 	// 2. 获取阈值、mediator数量、DKG

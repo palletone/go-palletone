@@ -504,7 +504,7 @@ func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 	if !pm.dag.IsSynced(false) {
 		log.Debugf(errStr)
 
-		pm.BroadcastSigShare(&sigShare)
+		go pm.BroadcastSigShare(&sigShare)
 		//return fmt.Errorf(errStr)
 		return nil
 	}
@@ -517,10 +517,11 @@ func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 	}
 
 	if !pm.producer.IsLocalMediator(header.Author()) {
-		pm.BroadcastSigShare(&sigShare)
+		go pm.BroadcastSigShare(&sigShare)
+	} else {
+		go pm.producer.AddToTBLSRecoverBuf(&sigShare)
 	}
 
-	go pm.producer.AddToTBLSRecoverBuf(&sigShare)
 	return nil
 }
 
@@ -544,7 +545,7 @@ func (pm *ProtocolManager) VSSDealMsg(msg p2p.Msg, p *peer) error {
 	// 判断是否同步, 如果没同步完成，接收到的 vss deal 对当前节点来说是超前的
 	if !pm.dag.IsSynced(true) {
 		log.Debugf(errStr)
-		pm.BroadcastVSSDeal(&deal)
+		go pm.BroadcastVSSDeal(&deal)
 
 		//return fmt.Errorf(errStr)
 		return nil
@@ -552,10 +553,11 @@ func (pm *ProtocolManager) VSSDealMsg(msg p2p.Msg, p *peer) error {
 
 	ma := pm.dag.GetActiveMediatorAddr(int(deal.DstIndex))
 	if !pm.producer.IsLocalMediator(ma) {
-		pm.BroadcastVSSDeal(&deal)
+		go pm.BroadcastVSSDeal(&deal)
+	} else {
+		go pm.producer.AddToDealBuf(&deal)
 	}
 
-	go pm.producer.AddToDealBuf(&deal)
 	return nil
 }
 

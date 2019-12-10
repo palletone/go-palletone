@@ -95,6 +95,8 @@ func (pm *ProtocolManager) sigShareTransmitLoop() {
 	for {
 		select {
 		case event := <-pm.sigShareCh:
+			pm.IsExistInCache(event.Hash().Bytes())
+			go pm.producer.AddToTBLSRecoverBuf(&event)
 			go pm.transmitSigShare(&event)
 
 			// Err() channel will be closed when unsubscribing.
@@ -121,12 +123,6 @@ func (pm *ProtocolManager) transmitSigShare(sigShare *mp.SigShareEvent) {
 	}
 
 	peer, self := pm.GetPeer(med.Node)
-	if self {
-		pm.IsExistInCache(sigShare.Hash().Bytes())
-		go pm.producer.AddToTBLSRecoverBuf(sigShare)
-		return
-	}
-
 	if peer != nil {
 		err := peer.SendSigShare(sigShare)
 		if err != nil {
