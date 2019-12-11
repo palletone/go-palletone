@@ -286,7 +286,7 @@ func (rep *UnitRepository) getUnit(hash common.Hash) (*modules.Unit, error) {
 		UnitHeader: uHeader,
 		Txs:        txs,
 	}
-	unit.UnitSize = unit.Size()
+	unit.Size()
 	return unit, nil
 }
 
@@ -429,7 +429,7 @@ func NewGenesisUnit(txs modules.Transactions, time int64, asset *modules.Asset, 
 	// copy txs
 	gUnit.CopyBody(txs)
 	// set unit size
-	gUnit.UnitSize = gUnit.Size()
+	gUnit.Size()
 	return gUnit
 }
 

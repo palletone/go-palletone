@@ -137,14 +137,11 @@ func newDag(db ptndb.Database, gunit *modules.Unit, number int, seed byte) (modu
 }
 
 func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
-	if unit.UnitSize == 0 || unit.Size() == 0 {
+	if unit.Size() == 0 {
 		log.Println("Unit is null")
 		return fmt.Errorf("Unit is null")
 	}
-	if unit.UnitSize != unit.Size() {
-		log.Println("Validate size", "error", "Size is invalid")
-		return modules.ErrUnit(-1)
-	}
+
 	//_, isSuccess, err := dag.ValidateTransactions(&unit.Txs, isGenesis)
 	//if isSuccess != true {
 	//	fmt.Errorf("Validate unit(%s) transactions failed: %v", unit.UnitHash.String(), err)

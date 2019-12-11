@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"go.dedis.ch/kyber/v3"
 	"io"
+	"sync/atomic"
 )
 
 // unit state
@@ -320,10 +321,9 @@ func (s Units) Swap(i, j int) {
 
 // key: unit.UnitHash(unit)
 type Unit struct {
-	UnitHeader *Header            `json:"unit_header"`       // unit header
-	Txs        Transactions       `json:"transactions"`      // transaction list
-	UnitHash   common.Hash        `json:"unit_hash" rlp:"-"` // unit hash
-	UnitSize   common.StorageSize `json:"unit_size" rlp:"-"` // unit size
+	UnitHeader *Header      `json:"unit_header"`  // unit header
+	Txs        Transactions `json:"transactions"` // transaction list
+	unit_size  atomic.Value
 	// These fields are used by package ptn to track
 	// inter-peer block relay.
 	ReceivedAt   time.Time   `json:"received_at"`
@@ -423,7 +423,7 @@ func NewUnit(header *Header, txs Transactions) *Unit {
 		UnitHeader: header,
 		Txs:        CopyTransactions(txs),
 	}
-	u.UnitSize = u.Size()
+	u.Size()
 	return u
 }
 
@@ -464,9 +464,10 @@ func (u *Unit) DisplayId() string {
 
 // function Size, return the unit's StorageSize.
 func (u *Unit) Size() common.StorageSize {
-	if u.UnitSize > 0 {
-		return u.UnitSize
+	if hash := u.unit_size.Load(); hash != nil {
+		return hash.(common.StorageSize)
 	}
+
 	emptyUnit := &Unit{}
 	emptyUnit.UnitHeader = new(Header)
 	emptyUnit.UnitHeader.CopyHeader(u.Header())
@@ -479,10 +480,11 @@ func (u *Unit) Size() common.StorageSize {
 		log.Errorf("rlp encode Unit error:%s", err.Error())
 		return common.StorageSize(0)
 	} else {
+		size := common.StorageSize(len(b))
 		if len(b) > 0 {
-			u.UnitSize = common.StorageSize(len(b))
+			u.unit_size.Store(size)
 		}
-		return common.StorageSize(len(b))
+		return size
 	}
 }
 
@@ -586,7 +588,7 @@ func (b *Unit) WithBody(transactions []*Transaction) *Unit {
 	//}
 	// set unit body
 	b.Txs = CopyTransactions(txs)
-	b.UnitSize = b.Size()
+	b.Size()
 	return b
 }
 

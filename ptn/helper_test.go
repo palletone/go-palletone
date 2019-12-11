@@ -491,13 +491,9 @@ func CreateCoinbase() (*modules.Transaction, error) {
 }
 
 func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
-	if unit.UnitSize == 0 || unit.Size() == 0 {
+	if unit.Size() == 0 {
 		log.Println("Unit is null")
 		return fmt.Errorf("Unit is null")
-	}
-	if unit.UnitSize != unit.Size() {
-		log.Println("Validate size", "error", "Size is invalid")
-		return modules.ErrUnit(-1)
 	}
 	//_, isSuccess, err := dag.ValidateTransactions(&unit.Txs, isGenesis)
 	//if isSuccess != true {
@@ -567,7 +563,7 @@ func NewUnit(header *modules.Header, txs modules.Transactions) *modules.Unit {
 		Txs:        txs,
 	}
 	u.ReceivedAt = time.Now()
-	u.UnitSize = u.Size()
+	u.Size()
 	return u
 }
 func NewHeader(parents []common.Hash, root common.Hash, pub, sig, extra, cry []byte, asset modules.AssetId,
