@@ -182,24 +182,26 @@ func (db *LDBDatabase) Meter(prefix string) {
 			Help: prefix + ":disk:write",
 		})
 
+		db.writeDelayPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "prometheus:" + prefix + ":writedelay:duration",
+			Help: prefix + ":writedelay:duration",
+		})
+		db.writeDelayNPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "prometheus:" + prefix + ":writedelay:counter",
+			Help: prefix + ":writedelay:counter",
+		})
+
 		prometheus.MustRegister(db.compTimePrometheus)
 		prometheus.MustRegister(db.compReadPrometheus)
 		prometheus.MustRegister(db.compWritePrometheus)
 		prometheus.MustRegister(db.diskReadPrometheus)
 		prometheus.MustRegister(db.diskWritePrometheus)
+
+		prometheus.MustRegister(db.writeDelayPrometheus)
+		prometheus.MustRegister(db.writeDelayNPrometheus)
 	}
 	//db.writeDelayMeter = metrics.NewRegisteredMeter(prefix+"compact/writedelay/duration", nil)
 	//db.writeDelayNMeter = metrics.NewRegisteredMeter(prefix+"compact/writedelay/counter", nil)
-	db.writeDelayPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "prometheus:" + prefix + ":writedelay:duration",
-		Help: prefix + ":writedelay:duration",
-	})
-	db.writeDelayNPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "prometheus:" + prefix + ":writedelay:counter",
-		Help: prefix + ":writedelay:counter",
-	})
-	prometheus.MustRegister(db.writeDelayPrometheus)
-	prometheus.MustRegister(db.writeDelayNPrometheus)
 
 	// Create a quit channel for the periodic collector and run it
 	db.quitLock.Lock()
@@ -288,13 +290,13 @@ func (db *LDBDatabase) meter(refresh time.Duration) {
 		}
 		// Update all the requested meters
 		if db.compTimePrometheus != nil {
-			db.compTimePrometheus.Add(float64((compactions[i%2][0] - compactions[(i-1)%2][0]) * 1000 * 1000 * 1000))
+			db.compTimePrometheus.Add((compactions[i%2][0] - compactions[(i-1)%2][0]) * 1000 * 1000 * 1000)
 		}
 		if db.compReadPrometheus != nil {
-			db.compReadPrometheus.Add(float64((compactions[i%2][1] - compactions[(i-1)%2][1]) * 1024 * 1024))
+			db.compReadPrometheus.Add((compactions[i%2][1] - compactions[(i-1)%2][1]) * 1024 * 1024)
 		}
 		if db.compWritePrometheus != nil {
-			db.compWritePrometheus.Add(float64((compactions[i%2][2] - compactions[(i-1)%2][2]) * 1024 * 1024))
+			db.compWritePrometheus.Add((compactions[i%2][2] - compactions[(i-1)%2][2]) * 1024 * 1024)
 		}
 
 		// Retrieve the write delay statistic
@@ -362,11 +364,11 @@ func (db *LDBDatabase) meter(refresh time.Duration) {
 			continue
 		}
 		if db.diskReadPrometheus != nil {
-			log.Debug("LDBDatabase Meter", "diskReadPrometheus add", float64((nRead-iostats[0])*1024*1024))
-			db.diskReadPrometheus.Add(float64((nRead - iostats[0]) * 1024 * 1024))
+			log.Debug("LDBDatabase Meter", "diskReadPrometheus add", (nRead-iostats[0])*1024*1024)
+			db.diskReadPrometheus.Add((nRead - iostats[0]) * 1024 * 1024)
 		}
 		if db.diskWritePrometheus != nil {
-			db.diskWritePrometheus.Add(float64((nWrite - iostats[1]) * 1024 * 1024))
+			db.diskWritePrometheus.Add((nWrite - iostats[1]) * 1024 * 1024)
 		}
 		iostats[0], iostats[1] = nRead, nWrite
 
