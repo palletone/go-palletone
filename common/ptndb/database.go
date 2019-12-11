@@ -364,11 +364,11 @@ func (db *LDBDatabase) meter(refresh time.Duration) {
 			continue
 		}
 		if db.diskReadPrometheus != nil {
-			log.Debug("LDBDatabase Meter", "diskReadPrometheus add", float64((nRead-iostats[0])*1024*1024))
-			db.diskReadPrometheus.Add(float64((nRead - iostats[0]) * 1024 * 1024))
+			log.Debug("LDBDatabase Meter", "diskReadPrometheus add", (nRead-iostats[0])*1024*1024)
+			db.diskReadPrometheus.Add((nRead - iostats[0]) * 1024 * 1024)
 		}
 		if db.diskWritePrometheus != nil {
-			db.diskWritePrometheus.Add(float64((nWrite - iostats[1]) * 1024 * 1024))
+			db.diskWritePrometheus.Add((nWrite - iostats[1]) * 1024 * 1024)
 		}
 		iostats[0], iostats[1] = nRead, nWrite
 
