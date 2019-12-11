@@ -131,12 +131,12 @@ func (d *Dag) GetCurrentUnit(assetId modules.AssetId) *modules.Unit {
 	curUnit := d.CurrentUnit(assetId)
 
 	if curUnit == nil {
-		log.Warnf("curUnit is nil. memunit[%s]", memUnit.Hash().String())
+		log.Warnf("curUnit is nil.asset_id[%s], memunit[%s]", assetId.String(), memUnit.Hash().String())
 		return memUnit
 	}
 
 	if memUnit == nil {
-		log.Warnf("memUnit is nil. curunit[%s]", curUnit.Hash().String())
+		log.Warnf("memUnit is nil.asset_id[%s], curunit[%s]", assetId.String(), curUnit.Hash().String())
 		return curUnit
 	}
 
