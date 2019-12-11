@@ -118,7 +118,7 @@ func newDag(db ptndb.Database, gunit *modules.Unit, number int, seed byte) (modu
 	par := gunit
 	for i := 0; i < number; i++ {
 		b := []byte{}
-		header := modules.NewHeader([]common.Hash{par.UnitHash}, common.Hash{}, b, b, []byte{seed}, b, []uint16{},
+		header := modules.NewHeader([]common.Hash{par.Hash()}, common.Hash{}, b, b, []byte{seed}, b, []uint16{},
 			par.UnitHeader.GetNumber().AssetID, par.UnitHeader.GetNumber().Index+1, time.Now().Unix())
 		header.SetGroupSign([]byte{})
 		header.SetGroupPubkey([]byte{})
@@ -174,7 +174,7 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 	if err := dagDb.SaveTxLookupEntry(unit); err != nil {
 		return err
 	}
-	if err := saveHashByIndex(db, unit.UnitHash, unit.UnitHeader.GetNumber().Index); err != nil {
+	if err := saveHashByIndex(db, unit.Hash(), unit.UnitHeader.GetNumber().Index); err != nil {
 		return err
 	}
 	// update state

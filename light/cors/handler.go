@@ -141,7 +141,7 @@ func NewCorsProtocolManager(lightSync bool, networkId uint64, gasToken modules.A
 				}
 			},
 			NodeInfo: func() interface{} {
-				return manager.NodeInfo(genesis.UnitHash)
+				return manager.NodeInfo(genesis.Hash())
 			},
 			PeerInfo: func(id discover.NodeID) interface{} {
 				if p := manager.peers.Peer(id.TerminalString()); p != nil {

@@ -35,7 +35,7 @@ func (pm *ProtocolManager) newProducedUnitBroadcastLoop() {
 		select {
 		case event := <-pm.newProducedUnitCh:
 			log.Debugf("receive NewProducedUnitEvent")
-			pm.IsExistInCache(event.Unit.UnitHash.Bytes())
+			pm.IsExistInCache(event.Unit.Hash().Bytes())
 			go pm.BroadcastUnit(event.Unit, true)
 			//self.BroadcastCorsHeader(event.Unit.Header(), self.SubProtocols[0].Name)
 

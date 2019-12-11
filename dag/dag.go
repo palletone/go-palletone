@@ -131,7 +131,7 @@ func (d *Dag) GetCurrentUnit(assetId modules.AssetId) *modules.Unit {
 	curUnit := d.CurrentUnit(assetId)
 
 	if curUnit == nil {
-		return nil
+		return memUnit
 	}
 
 	if memUnit == nil {
@@ -315,7 +315,7 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 
 		t1 := time.Now()
 		timestamp := time.Unix(u.Timestamp(), 0)
-		log.Debugf("Start InsertDag unit(%v) #%v parent(%v) @%v signed by %v", u.UnitHash.TerminalString(),
+		log.Debugf("Start InsertDag unit(%v) #%v parent(%v) @%v signed by %v", u.Hash().TerminalString(),
 			u.NumberU64(), u.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
 			u.Author().Str())
 
@@ -329,7 +329,7 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 			if a, b, c, dd, e, err := d.Memdag.AddUnit(u, txpool, false); err != nil {
 				//return count, err
 				log.Errorf("Memdag addUnit[%s] #%d signed by %v error:%s",
-					u.UnitHash.String(), u.NumberU64(), u.Author().Str(), err.Error())
+					u.Hash().String(), u.NumberU64(), u.Author().Str(), err.Error())
 				return count, err
 			} else {
 				if a != nil {
@@ -347,10 +347,10 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 			}
 		}
 
-		log.Debugf("InsertDag[%s] #%d spent time:%s", u.UnitHash.String(), u.NumberU64(), time.Since(t1))
+		log.Debugf("InsertDag[%s] #%d spent time:%s", u.Hash().String(), u.NumberU64(), time.Since(t1))
 
 		if !is_stable && u.NumberU64()%1000 == 0 {
-			log.Infof("Insert unit[%s] #%d to local", u.UnitHash.TerminalString(), u.NumberU64())
+			log.Infof("Insert unit[%s] #%d to local", u.Hash().TerminalString(), u.NumberU64())
 		}
 
 		count += 1

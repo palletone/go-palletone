@@ -226,7 +226,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 				}
 			},
 			NodeInfo: func() interface{} {
-				return manager.NodeInfo(genesis.UnitHash)
+				return manager.NodeInfo(genesis.Hash())
 			},
 			PeerInfo: func(id discover.NodeID) interface{} {
 				if p := manager.peers.Peer(id.TerminalString()); p != nil {
@@ -304,7 +304,7 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 					events = make([]interface{}, 0, 2)
 				)
 				events = append(events, modules.ChainHeadEvent{Unit: blocks[0]})
-				events = append(events, modules.ChainEvent{Unit: blocks[0], Hash: blocks[0].UnitHash})
+				events = append(events, modules.ChainEvent{Unit: blocks[0], Hash: blocks[0].Hash()})
 				pm.dag.PostChainEvents(events)
 			}()
 		}
@@ -865,7 +865,7 @@ func (pm *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
 	)
 	if unit != nil {
 		index = unit.Number().Index
-		hash = unit.UnitHash
+		hash = unit.Hash()
 	}
 
 	return &NodeInfo{

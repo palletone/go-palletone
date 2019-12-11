@@ -21,15 +21,15 @@ package modules
 
 import (
 	"encoding/hex"
-	"fmt"
-	"log"
-	"reflect"
-	"testing"
 	"encoding/json"
+	"fmt"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/stretchr/testify/assert"
+	"log"
+	"reflect"
+	"testing"
 )
 
 var tt = int64(1574390000)
@@ -43,14 +43,8 @@ func TestNewUnit(t *testing.T) {
 	fmt.Println(tt)
 	unit := NewUnit(h, txs)
 	hash := unit.Hash()
-	unit.UnitHash = common.Hash{}
-	if unit.UnitHash != (common.Hash{}) {
+	if hash != (common.Hash{}) {
 		t.Fatal("unit hash initialized failed.")
-	}
-	unit.UnitHash.Set(unit.UnitHeader.Hash())
-
-	if unit.UnitHash != hash {
-		t.Fatal("wrong unit hash.")
 	}
 }
 

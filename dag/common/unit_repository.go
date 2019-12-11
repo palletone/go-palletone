@@ -284,7 +284,6 @@ func (rep *UnitRepository) getUnit(hash common.Hash) (*modules.Unit, error) {
 	// generate unit
 	unit := &modules.Unit{
 		UnitHeader: uHeader,
-		UnitHash:   hash,
 		Txs:        txs,
 	}
 	unit.UnitSize = unit.Size()
@@ -431,8 +430,6 @@ func NewGenesisUnit(txs modules.Transactions, time int64, asset *modules.Asset, 
 	gUnit.CopyBody(txs)
 	// set unit size
 	gUnit.UnitSize = gUnit.Size()
-	// set unit hash
-	gUnit.UnitHash = gUnit.Hash()
 	return gUnit
 }
 
@@ -585,7 +582,7 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 	unit := modules.NewUnit(header, txs)
 
 	log.Debugf("mediator:[%s] create unit[%s] and create unit unlock unitRepository cost time %s,txs[%d]",
-		unit.Author().String(), unit.UnitHash.String(), time.Since(begin), len(txs))
+		unit.Author().String(), unit.Hash().String(), time.Since(begin), len(txs))
 	return unit, nil
 }
 
@@ -898,7 +895,7 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 	tt := time.Now()
 	rep.lock.Lock()
 	//log.Debugf("saveUnit[%s] lock unitRepository.", unit.UnitHash.String())
-	defer log.Debugf("save Unit[%s] cost time: %s", unit.UnitHash.String(), time.Since(tt))
+	defer log.Debugf("save Unit[%s] cost time: %s", unit.Hash().String(), time.Since(tt))
 	defer rep.lock.Unlock()
 	uHash := unit.Hash()
 	// step1. save unit header

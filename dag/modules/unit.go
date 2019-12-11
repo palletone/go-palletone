@@ -74,12 +74,12 @@ func initHeaderSdw(parents []common.Hash, tx_root common.Hash, pubkey, sig, extr
 }
 func new_header_sdw() *header_sdw {
 	return &header_sdw{ParentsHash: make([]common.Hash, 0),
-		Authors: Authentifier{},
-		TxRoot: common.Hash{},
+		Authors:    Authentifier{},
+		TxRoot:     common.Hash{},
 		TxsIllegal: make([]uint16, 0),
-		Number: new(ChainIndex),
-		Extra: make([]byte, 0),
-		CryptoLib: make([]byte, 0)}
+		Number:     new(ChainIndex),
+		Extra:      make([]byte, 0),
+		CryptoLib:  make([]byte, 0)}
 }
 func NewHeader(parents []common.Hash, tx_root common.Hash, pubkey, sig, extra, crypto_lib []byte,
 	txs_illgal []uint16, asset_id AssetId, index uint64, t int64) *Header {
@@ -320,10 +320,10 @@ func (s Units) Swap(i, j int) {
 
 // key: unit.UnitHash(unit)
 type Unit struct {
-	UnitHeader *Header            `json:"unit_header"`  // unit header
-	Txs        Transactions       `json:"transactions"` // transaction list
-	UnitHash   common.Hash        `json:"unit_hash"`    // unit hash
-	UnitSize   common.StorageSize `json:"unit_size"`    // unit size
+	UnitHeader *Header            `json:"unit_header"`       // unit header
+	Txs        Transactions       `json:"transactions"`      // transaction list
+	UnitHash   common.Hash        `json:"unit_hash" rlp:"-"` // unit hash
+	UnitSize   common.StorageSize `json:"unit_size" rlp:"-"` // unit size
 	// These fields are used by package ptn to track
 	// inter-peer block relay.
 	ReceivedAt   time.Time   `json:"received_at"`
@@ -424,7 +424,6 @@ func NewUnit(header *Header, txs Transactions) *Unit {
 		Txs:        CopyTransactions(txs),
 	}
 	u.UnitSize = u.Size()
-	u.UnitHash = header.Hash()
 	return u
 }
 
@@ -457,10 +456,7 @@ func (u *Unit) Transaction(hash common.Hash) *Transaction {
 
 // function Hash, return the unit's hash.
 func (u *Unit) Hash() common.Hash {
-	if u.UnitHash == (common.Hash{}) {
-		u.UnitHash.Set(u.UnitHeader.Hash())
-	}
-	return u.UnitHash
+	return u.UnitHeader.Hash()
 }
 func (u *Unit) DisplayId() string {
 	return fmt.Sprintf("%s-%d", u.Hash().String(), u.NumberU64())
@@ -591,7 +587,6 @@ func (b *Unit) WithBody(transactions []*Transaction) *Unit {
 	// set unit body
 	b.Txs = CopyTransactions(txs)
 	b.UnitSize = b.Size()
-	b.UnitHash = b.Hash()
 	return b
 }
 

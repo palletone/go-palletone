@@ -392,7 +392,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		for _, tx := range unit.Txs {
 			txids = append(txids, tx.Hash())
 		}
-		return fmt.Sprintf("NewBlockMsg, received unit hash %s, txs:[%x]", unit.UnitHash.String(), txids)
+		return fmt.Sprintf("NewBlockMsg, received unit hash %s, txs:[%x]", unit.Hash().String(), txids)
 	})
 
 	rwset.Init()
@@ -421,7 +421,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	unit.ReceivedFrom = p
 
 	// Mark the peer as owning the block and schedule it for import
-	p.MarkUnit(unit.UnitHash)
+	p.MarkUnit(unit.Hash())
 	pm.fetcher.Enqueue(p.id, unit)
 
 	requestNumber := unit.Number()
