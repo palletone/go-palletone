@@ -194,8 +194,8 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 			return
 		}
 		if !isStable {
-			log.Debugf("the unit's(%v) parent unit(%v) is not irreversible",
-				unitHash.TerminalString(), parentHash.TerminalString())
+			log.Debugf("the unit(hash: %v , # %v )'s parent unit(%v) is not irreversible",
+				unitHash.TerminalString(), header.NumberU64(), parentHash.TerminalString())
 			return
 		}
 	}
@@ -233,11 +233,13 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(event *SigShareEvent) {
 		return
 	}
 
-	dag := mp.dag
 	newUnitHash := event.UnitHash
+	log.Debugf("received the sign shares of the unit(%v)", newUnitHash.TerminalString())
+
+	dag := mp.dag
 	header, err := dag.GetHeaderByHash(newUnitHash)
 	if header == nil {
-		err = fmt.Errorf("fail to get unit by hash: %v, err: %v", newUnitHash.TerminalString(), err.Error())
+		err = fmt.Errorf("fail to get unit(%v), err: %v", newUnitHash.TerminalString(), err.Error())
 		log.Errorf(err.Error())
 		return
 	}
@@ -251,19 +253,18 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(event *SigShareEvent) {
 	medSigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
 		// 不是本地mediator生产的 unit
-		//err = fmt.Errorf("the mediator(%v) is not local", localMed.Str())
-		//log.Debugf(err.Error())
+		err = fmt.Errorf("the mediator(%v) of the unit(hash: %v, # %v ) is not local",
+			localMed.Str(), newUnitHash.TerminalString(), header.NumberU64())
+		log.Debugf(err.Error())
 		return
 	}
-
-	log.Debugf("received the sign shares of the unit(%v)", newUnitHash.TerminalString())
 
 	// 当buf不存在时，说明已经成功recover出群签名, 或者已经过了unit确认时间，不需要群签名，忽略该签名分片
 	sigShareSet, ok := medSigSharesBuf[newUnitHash]
 	if !ok {
-		//err = fmt.Errorf("the unit(%v) has already recovered the group signature",
-		//	newUnitHash.TerminalString())
-		//log.Debugf(err.Error())
+		err = fmt.Errorf("the unit(hash: %v, # %v ) need not to group-signed",
+			newUnitHash.TerminalString(), header.NumberU64())
+		log.Debugf(err.Error())
 		return
 	}
 
@@ -335,9 +336,10 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	}
 
 	// 3. 判断是否达到群签名的各种条件
-	if sigShareSet.len() < threshold {
-		log.Debugf("the count of sign shares of the unit(hash: %v , # %v ) does not reach the threshold(%v)",
-			unitHash.TerminalString(), header.NumberU64(), threshold)
+	count := sigShareSet.len()
+	if count < threshold {
+		log.Debugf("the count(%v) of sign shares of the unit(hash: %v , # %v) does not reach the threshold(%v)",
+			count, unitHash.TerminalString(), header.NumberU64(), threshold)
 		return
 	}
 
