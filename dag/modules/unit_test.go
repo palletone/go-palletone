@@ -43,7 +43,7 @@ func TestNewUnit(t *testing.T) {
 	fmt.Println(tt)
 	unit := NewUnit(h, txs)
 	hash := unit.Hash()
-	if hash != (common.Hash{}) {
+	if hash == (common.Hash{}) {
 		t.Fatal("unit hash initialized failed.")
 	}
 }
