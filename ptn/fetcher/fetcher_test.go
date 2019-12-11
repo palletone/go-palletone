@@ -84,7 +84,7 @@ func newDag(db ptndb.Database, gunit *modules.Unit, number int) (modules.Units, 
 	par := gunit
 	for i := 0; i < number; i++ {
 		b := []byte{}
-		header := modules.NewHeader([]common.Hash{par.UnitHash}, common.Hash{}, b, b, b, b, []uint16{},
+		header := modules.NewHeader([]common.Hash{par.Hash()}, common.Hash{}, b, b, b, b, []uint16{},
 			par.UnitHeader.GetNumber().AssetID, par.UnitHeader.GetNumber().Index+1, int64(1598766666))
 		header.SetGroupSign([]byte{})
 		header.SetGroupPubkey([]byte{})
@@ -103,13 +103,9 @@ func newDag(db ptndb.Database, gunit *modules.Unit, number int) (modules.Units, 
 }
 
 func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
-	if unit.UnitSize == 0 || unit.Size() == 0 {
+	if unit.Size() == 0 {
 		log.Println("Unit is null")
 		return fmt.Errorf("Unit is null")
-	}
-	if unit.UnitSize != unit.Size() {
-		log.Println("Validate size", "error", "Size is invalid")
-		return modules.ErrUnit(-1)
 	}
 	//_, isSuccess, err := dag.ValidateTransactions(&unit.Txs, isGenesis)
 	//if isSuccess != true {
@@ -140,7 +136,7 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 	if err := dagDb.SaveTxLookupEntry(unit); err != nil {
 		return err
 	}
-	if err := saveHashByIndex(db, unit.UnitHash, unit.UnitHeader.GetNumber().Index); err != nil {
+	if err := saveHashByIndex(db, unit.Hash(), unit.UnitHeader.GetNumber().Index); err != nil {
 		return err
 	}
 	// update state

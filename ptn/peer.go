@@ -284,7 +284,7 @@ func (p *peer) SendNewUnitHashes(hashes []common.Hash, numbers []*modules.ChainI
 
 // SendNewBlock propagates an entire block to a remote peer.
 func (p *peer) SendNewRawUnit(unit *modules.Unit, data []byte) error {
-	p.knownBlocks.Add(unit.UnitHash)
+	p.knownBlocks.Add(unit.Hash())
 	return p2p.Send(p.rw, NewBlockMsg, data)
 }
 

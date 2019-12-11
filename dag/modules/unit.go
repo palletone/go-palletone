@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"go.dedis.ch/kyber/v3"
 	"io"
+	"sync/atomic"
 )
 
 // unit state
@@ -74,12 +75,12 @@ func initHeaderSdw(parents []common.Hash, tx_root common.Hash, pubkey, sig, extr
 }
 func new_header_sdw() *header_sdw {
 	return &header_sdw{ParentsHash: make([]common.Hash, 0),
-		Authors: Authentifier{},
-		TxRoot: common.Hash{},
+		Authors:    Authentifier{},
+		TxRoot:     common.Hash{},
 		TxsIllegal: make([]uint16, 0),
-		Number: new(ChainIndex),
-		Extra: make([]byte, 0),
-		CryptoLib: make([]byte, 0)}
+		Number:     new(ChainIndex),
+		Extra:      make([]byte, 0),
+		CryptoLib:  make([]byte, 0)}
 }
 func NewHeader(parents []common.Hash, tx_root common.Hash, pubkey, sig, extra, crypto_lib []byte,
 	txs_illgal []uint16, asset_id AssetId, index uint64, t int64) *Header {
@@ -320,10 +321,9 @@ func (s Units) Swap(i, j int) {
 
 // key: unit.UnitHash(unit)
 type Unit struct {
-	UnitHeader *Header            `json:"unit_header"`  // unit header
-	Txs        Transactions       `json:"transactions"` // transaction list
-	UnitHash   common.Hash        `json:"unit_hash"`    // unit hash
-	UnitSize   common.StorageSize `json:"unit_size"`    // unit size
+	UnitHeader *Header      `json:"unit_header"`  // unit header
+	Txs        Transactions `json:"transactions"` // transaction list
+	unit_size  atomic.Value
 	// These fields are used by package ptn to track
 	// inter-peer block relay.
 	ReceivedAt   time.Time   `json:"received_at"`
@@ -423,8 +423,7 @@ func NewUnit(header *Header, txs Transactions) *Unit {
 		UnitHeader: header,
 		Txs:        CopyTransactions(txs),
 	}
-	u.UnitSize = u.Size()
-	u.UnitHash = header.Hash()
+	u.Size()
 	return u
 }
 
@@ -457,10 +456,7 @@ func (u *Unit) Transaction(hash common.Hash) *Transaction {
 
 // function Hash, return the unit's hash.
 func (u *Unit) Hash() common.Hash {
-	if u.UnitHash == (common.Hash{}) {
-		u.UnitHash.Set(u.UnitHeader.Hash())
-	}
-	return u.UnitHash
+	return u.UnitHeader.Hash()
 }
 func (u *Unit) DisplayId() string {
 	return fmt.Sprintf("%s-%d", u.Hash().String(), u.NumberU64())
@@ -468,9 +464,10 @@ func (u *Unit) DisplayId() string {
 
 // function Size, return the unit's StorageSize.
 func (u *Unit) Size() common.StorageSize {
-	if u.UnitSize > 0 {
-		return u.UnitSize
+	if hash := u.unit_size.Load(); hash != nil {
+		return hash.(common.StorageSize)
 	}
+
 	emptyUnit := &Unit{}
 	emptyUnit.UnitHeader = new(Header)
 	emptyUnit.UnitHeader.CopyHeader(u.Header())
@@ -483,10 +480,11 @@ func (u *Unit) Size() common.StorageSize {
 		log.Errorf("rlp encode Unit error:%s", err.Error())
 		return common.StorageSize(0)
 	} else {
+		size := common.StorageSize(len(b))
 		if len(b) > 0 {
-			u.UnitSize = common.StorageSize(len(b))
+			u.unit_size.Store(size)
 		}
-		return common.StorageSize(len(b))
+		return size
 	}
 }
 
@@ -590,8 +588,7 @@ func (b *Unit) WithBody(transactions []*Transaction) *Unit {
 	//}
 	// set unit body
 	b.Txs = CopyTransactions(txs)
-	b.UnitSize = b.Size()
-	b.UnitHash = b.Hash()
+	b.Size()
 	return b
 }
 

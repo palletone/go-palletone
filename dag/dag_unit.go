@@ -61,9 +61,9 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	sign_unit.UnitHeader.SetGroupPubkey(groupPubKey)
 
 	sign_unit.Hash()
-	sign_unit.UnitSize = sign_unit.Size()
+	sign_unit.Size()
 	log.Debugf("Generate new unit index:[%d],hash:[%s],size:%s, parent unit[%s],txs[%d], spent time: %s ",
-		sign_unit.NumberU64(), sign_unit.Hash().String(), sign_unit.UnitSize.String(),
+		sign_unit.NumberU64(), sign_unit.Hash().String(), sign_unit.Size().String(),
 		sign_unit.UnitHeader.ParentHash()[0].String(), sign_unit.Txs.Len(), time.Since(t0).String())
 
 	//3.将新单元添加到MemDag中
@@ -95,7 +95,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 			events = make([]interface{}, 0, 2)
 		)
 		events = append(events, modules.ChainHeadEvent{Unit: sign_unit})
-		events = append(events, modules.ChainEvent{Unit: sign_unit, Hash: sign_unit.UnitHash})
+		events = append(events, modules.ChainEvent{Unit: sign_unit, Hash: sign_unit.Hash()})
 		dag.PostChainEvents(events)
 	}()
 
@@ -104,7 +104,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 
 // createUnit, create a unit when mediator being produced
 func (d *Dag) createUnit(mAddr common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore,
-	when time.Time)(*modules.Unit, error) {
+	when time.Time) (*modules.Unit, error) {
 
 	med, err := d.unstableStateRep.RetrieveMediator(mAddr)
 	if err != nil {
@@ -112,6 +112,6 @@ func (d *Dag) createUnit(mAddr common.Address, txpool txspool.ITxPool, ks *keyst
 	}
 
 	//return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool, rep, state.GetJurorReward)
-	return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool,ks,when,
+	return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool, ks, when,
 		d.unstablePropRep, d.unstableStateRep.GetJurorReward)
 }

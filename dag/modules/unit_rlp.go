@@ -100,9 +100,6 @@ func (input *Unit) DecodeRLP(s *rlp.Stream) error {
 
 	input.UnitHeader = temp.UnitHeader
 	input.Txs = temp.Txs
-	input.UnitHash = temp.UnitHash
-	input.UnitSize = common.StorageSize(temp.UnitSize)
-
 	input.ReceivedAt = time.Unix(int64(temp.ReceivedAt), 0)
 	//todo  ReceivedFrom
 	return nil
@@ -111,8 +108,6 @@ func (input *Unit) EncodeRLP(w io.Writer) error {
 	temp := &unitTemp{}
 	temp.UnitHeader = input.UnitHeader
 	temp.Txs = input.Txs
-	temp.UnitHash = input.UnitHash
-	temp.UnitSize = uint32(input.UnitSize)
 	temp.ReceivedAt = uint32(input.ReceivedAt.Unix())
 
 	return rlp.Encode(w, temp)

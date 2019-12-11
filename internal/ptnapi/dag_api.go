@@ -298,11 +298,11 @@ func (s *PublicDagAPI) GetFastUnitIndex(ctx context.Context, assetid string) str
 	ustabeUnit := s.b.Dag().GetCurrentMemUnit(token, 0)
 	result := new(ptnjson.FastUnitJson)
 	if ustabeUnit != nil {
-		result.FastHash = ustabeUnit.UnitHash
+		result.FastHash = ustabeUnit.Hash()
 		result.FastIndex = ustabeUnit.NumberU64()
 	}
 	if stableUnit != nil {
-		result.StableHash = stableUnit.UnitHash
+		result.StableHash = stableUnit.Hash()
 		result.StableIndex = stableUnit.NumberU64()
 	}
 	content, err := json.Marshal(result)

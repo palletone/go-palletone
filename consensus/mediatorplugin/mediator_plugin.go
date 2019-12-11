@@ -250,7 +250,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 		return ExceptionProducing, detail
 	}
 
-	unitHash := newUnit.UnitHash
+	unitHash := newUnit.Hash()
 	detail["Num"] = strconv.FormatUint(newUnit.NumberU64(), 10)
 	time := time.Unix(newUnit.Timestamp(), 0)
 	detail["Timestamp"] = time.Format("2006-01-02 15:04:05")

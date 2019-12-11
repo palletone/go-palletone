@@ -352,7 +352,7 @@ func (chain *MemDag) checkUnitIrreversibleWithGroupSign(unit *modules.Unit) bool
 		return false
 	}
 
-	err = bls.Verify(core.Suite, pubKey, unit.UnitHash[:], unit.GetGroupSign())
+	err = bls.Verify(core.Suite, pubKey, unit.Hash().Bytes(), unit.GetGroupSign())
 	if err != nil {
 		log.Debug(err.Error())
 		return false
@@ -367,8 +367,8 @@ func (chain *MemDag) checkStableCondition(unit *modules.Unit, txpool txspool.ITx
 	// append by albert, 使用群签名判断是否稳定
 	if chain.checkUnitIrreversibleWithGroupSign(unit) {
 		log.Infof("the unit(%s) have group sign(%s), make it to irreversible.",
-			unit.UnitHash.TerminalString(), hexutil.Encode(unit.GetGroupSign()))
-		chain.setStableUnit(unit.UnitHash, unit.NumberU64(), txpool)
+			unit.Hash().TerminalString(), hexutil.Encode(unit.GetGroupSign()))
+		chain.setStableUnit(unit.Hash(), unit.NumberU64(), txpool)
 		return true
 	}
 
@@ -586,7 +586,7 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 	defer chain.lock.Unlock()
 	if unit.NumberU64() <= chain.stableUnitHeight {
 		log.Debugf("This unit is too old hight:%d,hash:%s .Ignore it,stable unit height:%d, stable hash:%s",
-			unit.Number().Index, unit.UnitHash.String(), chain.stableUnitHeight, chain.stableUnitHash.String())
+			unit.Number().Index, unit.Hash().String(), chain.stableUnitHeight, chain.stableUnitHash.String())
 		go txpool.ResetPendingTxs(unit.Transactions())
 		return nil, nil, nil, nil, nil, nil
 	}
@@ -745,7 +745,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 					main_chains := chain.getMainChainUnits()
 					hashs := make([]common.Hash, 0)
 					for _, u := range main_chains {
-						hashs = append(hashs, u.UnitHash)
+						hashs = append(hashs, u.Hash())
 					}
 					return fmt.Sprintf("switch chain end , main_chains:[%#x]", hashs)
 				})

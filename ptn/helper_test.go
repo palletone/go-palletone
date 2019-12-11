@@ -88,7 +88,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, idag dag.IDag,
 	}
 	genesisUint, _ := idag.GetUnitByNumber(index0)
 
-	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, modules.NewPTNIdType(), &testTxPool{added: newtx}, idag, typemux, pro, genesisUint, nil, nil, nil,&utils.PalletOneDocker{DockerClient:nil})
+	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, modules.NewPTNIdType(), &testTxPool{added: newtx}, idag, typemux, pro, genesisUint, nil, nil, nil, &utils.PalletOneDocker{DockerClient: nil})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -104,7 +104,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, idag dag.IDag,
 // channels for different events. In case of an error, the constructor force-
 // fails the test.
 func newTestProtocolManagerMust(t *testing.T, mode downloader.SyncMode, blocks int, dag dag.IDag, pro producer, newtx chan<- []*modules.Transaction, ju *jury.Processor) (*ProtocolManager, ptndb.Database) {
-	pm, db, err := newTestProtocolManager(mode, blocks /*generator,*/ , dag, pro, newtx)
+	pm, db, err := newTestProtocolManager(mode, blocks /*generator,*/, dag, pro, newtx)
 	if err != nil {
 		t.Fatalf("Failed to create protocol manager: %v", err)
 	}
@@ -411,7 +411,7 @@ func newDag(memdb ptndb.Database, gunit *modules.Unit, number int) (modules.Unit
 	b := []byte{}
 	tt := int64(1574390000)
 	for i := 0; i < number; i++ {
-		header := modules.NewHeader([]common.Hash{par.UnitHash}, common.Hash{}, b, b, b, b, []uint16{},
+		header := modules.NewHeader([]common.Hash{par.Hash()}, common.Hash{}, b, b, b, b, []uint16{},
 			par.UnitHeader.GetNumber().AssetID, par.UnitHeader.GetNumber().Index+1, tt)
 
 		header.SetGroupSign([]byte{})
@@ -491,13 +491,9 @@ func CreateCoinbase() (*modules.Transaction, error) {
 }
 
 func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
-	if unit.UnitSize == 0 || unit.Size() == 0 {
+	if unit.Size() == 0 {
 		log.Println("Unit is null")
 		return fmt.Errorf("Unit is null")
-	}
-	if unit.UnitSize != unit.Size() {
-		log.Println("Validate size", "error", "Size is invalid")
-		return modules.ErrUnit(-1)
 	}
 	//_, isSuccess, err := dag.ValidateTransactions(&unit.Txs, isGenesis)
 	//if isSuccess != true {
@@ -540,7 +536,7 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 	}
 
 	// step8. save unit body, the value only save txs' hash set, and the key is merkle root
-	if err := dagDb.SaveBody(unit.UnitHash, txHashSet); err != nil {
+	if err := dagDb.SaveBody(unit.Hash(), txHashSet); err != nil {
 		log.Println("SaveBody", "error", err.Error())
 		return err
 	}
@@ -550,7 +546,7 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 	if err := dagDb.SaveTxLookupEntry(unit); err != nil {
 		return err
 	}
-	if err := saveHashByIndex(db, unit.UnitHash, unit.UnitHeader.GetNumber().Index); err != nil {
+	if err := saveHashByIndex(db, unit.Hash(), unit.UnitHeader.GetNumber().Index); err != nil {
 		return err
 	}
 	// update state
@@ -567,8 +563,7 @@ func NewUnit(header *modules.Header, txs modules.Transactions) *modules.Unit {
 		Txs:        txs,
 	}
 	u.ReceivedAt = time.Now()
-	u.UnitSize = u.Size()
-	u.UnitHash = u.Hash()
+	u.Size()
 	return u
 }
 func NewHeader(parents []common.Hash, root common.Hash, pub, sig, extra, cry []byte, asset modules.AssetId,

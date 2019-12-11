@@ -298,7 +298,7 @@ func (f *Fetcher) loop() {
 		for !f.queue.Empty() {
 			op := f.queue.PopItem().(*inject)
 			if f.queueChangeHook != nil {
-				f.queueChangeHook(op.unit.UnitHash, false)
+				f.queueChangeHook(op.unit.Hash(), false)
 			}
 			// If too high up the chain or phase, continue later
 			//height = f.chainHeight(op.unit.Header().ChainIndex().AssetID)
