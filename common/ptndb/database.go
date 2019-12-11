@@ -182,24 +182,26 @@ func (db *LDBDatabase) Meter(prefix string) {
 			Help: prefix + ":disk:write",
 		})
 
+		db.writeDelayPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "prometheus:" + prefix + ":writedelay:duration",
+			Help: prefix + ":writedelay:duration",
+		})
+		db.writeDelayNPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "prometheus:" + prefix + ":writedelay:counter",
+			Help: prefix + ":writedelay:counter",
+		})
+
 		prometheus.MustRegister(db.compTimePrometheus)
 		prometheus.MustRegister(db.compReadPrometheus)
 		prometheus.MustRegister(db.compWritePrometheus)
 		prometheus.MustRegister(db.diskReadPrometheus)
 		prometheus.MustRegister(db.diskWritePrometheus)
+
+		prometheus.MustRegister(db.writeDelayPrometheus)
+		prometheus.MustRegister(db.writeDelayNPrometheus)
 	}
 	//db.writeDelayMeter = metrics.NewRegisteredMeter(prefix+"compact/writedelay/duration", nil)
 	//db.writeDelayNMeter = metrics.NewRegisteredMeter(prefix+"compact/writedelay/counter", nil)
-	db.writeDelayPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "prometheus:" + prefix + ":writedelay:duration",
-		Help: prefix + ":writedelay:duration",
-	})
-	db.writeDelayNPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "prometheus:" + prefix + ":writedelay:counter",
-		Help: prefix + ":writedelay:counter",
-	})
-	prometheus.MustRegister(db.writeDelayPrometheus)
-	prometheus.MustRegister(db.writeDelayNPrometheus)
 
 	// Create a quit channel for the periodic collector and run it
 	db.quitLock.Lock()
