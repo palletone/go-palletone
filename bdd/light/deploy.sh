@@ -124,19 +124,16 @@ function LoopDeploy()
     done  
     return 0;  
 }
+
 #path=`echo $GOPATH`
 #src=/src/github.com/palletone/go-palletone/build/bin/gptn
 #fullpath=$path$src
 #cp $fullpath .
 
 cp ../node/gptn .
+
 killall gptn
 n=3
-#if [ -n "$1" ]; then
-#    n=$1
-#else
-#    read -p "Please input the numbers of nodes you want: " n;
-#fi
 
 LoopDeploy $n;
 

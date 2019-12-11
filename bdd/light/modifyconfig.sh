@@ -170,8 +170,8 @@ function addBootstrapNodes()
         newarr=${array:0:$[$l-1]}
         newarr="$newarr]"
     fi
-    newBootstrapNodes="BootstrapNodes=$newarr"
-    #newBootstrapNodes="StaticNodes=$newarr"
+    #newBootstrapNodes="BootstrapNodes=$newarr"
+    newBootstrapNodes="StaticNodes=$newarr"
     echo $newBootstrapNodes
 }
 
@@ -184,8 +184,8 @@ function ModifyP2PConfig()
     while [ $count -le $1 ] ;
     do
         arrBootstrapNodes=`echo "$(addBootstrapNodes $1 $count)"`
-        sed -i '/^BootstrapNodes/c'$arrBootstrapNodes'' node$count/ptn-config.toml
-        #sed -i '/^StaticNodes/c'$arrBootstrapNodes'' node$count/ptn-config.toml
+        #sed -i '/^BootstrapNodes/c'$arrBootstrapNodes'' node$count/ptn-config.toml
+        sed -i '/^StaticNodes/c'$arrBootstrapNodes'' node$count/ptn-config.toml
 
 #	newGenesisHash="GenesisHash=\"$2\""
 #	sed -i '/^GenesisHash/c'$newGenesisHash'' node$count/ptn-config.toml
@@ -231,8 +231,8 @@ function MakeTestNet()
     cd ../
     #addBootstrapNodes $1 0
     newarrBootstrapNodes=`echo "$(addBootstrapNodes $1 $count)"`
-    sed -i '/^BootstrapNodes/c'$newarrBootstrapNodes'' node_test$1/ptn-config.toml
-    #sed -i '/^StaticNodes/c'$newarrBootstrapNodes'' node_test$1/ptn-config.toml
+    #sed -i '/^BootstrapNodes/c'$newarrBootstrapNodes'' node_test$1/ptn-config.toml
+    sed -i '/^StaticNodes/c'$newarrBootstrapNodes'' node_test$1/ptn-config.toml
 
     newInitPrivKey="InitPrivKey=\"\""
     sed -i '/^InitPrivKey/c'$newInitPrivKey'' node_test$1/ptn-config.toml
