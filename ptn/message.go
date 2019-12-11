@@ -516,10 +516,10 @@ func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	if !pm.producer.IsLocalMediator(header.Author()) {
-		go pm.BroadcastSigShare(&sigShare)
-	} else {
+	if pm.producer.IsLocalMediator(header.Author()) {
 		go pm.producer.AddToTBLSRecoverBuf(&sigShare)
+	} else {
+		go pm.BroadcastSigShare(&sigShare)
 	}
 
 	return nil
@@ -552,10 +552,10 @@ func (pm *ProtocolManager) VSSDealMsg(msg p2p.Msg, p *peer) error {
 	}
 
 	ma := pm.dag.GetActiveMediatorAddr(int(deal.DstIndex))
-	if !pm.producer.IsLocalMediator(ma) {
-		go pm.BroadcastVSSDeal(&deal)
-	} else {
+	if pm.producer.IsLocalMediator(ma) {
 		go pm.producer.AddToDealBuf(&deal)
+	} else {
+		go pm.BroadcastVSSDeal(&deal)
 	}
 
 	return nil
