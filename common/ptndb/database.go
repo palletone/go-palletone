@@ -290,13 +290,13 @@ func (db *LDBDatabase) meter(refresh time.Duration) {
 		}
 		// Update all the requested meters
 		if db.compTimePrometheus != nil {
-			db.compTimePrometheus.Add(float64((compactions[i%2][0] - compactions[(i-1)%2][0]) * 1000 * 1000 * 1000))
+			db.compTimePrometheus.Add((compactions[i%2][0] - compactions[(i-1)%2][0]) * 1000 * 1000 * 1000)
 		}
 		if db.compReadPrometheus != nil {
-			db.compReadPrometheus.Add(float64((compactions[i%2][1] - compactions[(i-1)%2][1]) * 1024 * 1024))
+			db.compReadPrometheus.Add((compactions[i%2][1] - compactions[(i-1)%2][1]) * 1024 * 1024)
 		}
 		if db.compWritePrometheus != nil {
-			db.compWritePrometheus.Add(float64((compactions[i%2][2] - compactions[(i-1)%2][2]) * 1024 * 1024))
+			db.compWritePrometheus.Add((compactions[i%2][2] - compactions[(i-1)%2][2]) * 1024 * 1024)
 		}
 
 		// Retrieve the write delay statistic
