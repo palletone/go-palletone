@@ -30,6 +30,7 @@ import (
 	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
@@ -47,7 +48,6 @@ import (
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/txspool"
-	"github.com/palletone/go-palletone/common/hexutil"
 )
 
 type Dag struct {
@@ -1134,9 +1134,8 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 	}
 
 	if isStable {
-		// 由于采用广播的形式，所以可能会很多次收到同一个unit的群签名
 		// 或者由于网络延迟，该单元在收到群签名之前，已经根据深度转为不可逆了
-		//log.Debugf("this unit(%v) is irreversible", unitHash.TerminalString())
+		log.Debugf("this unit(%v) is already irreversible", unitHash.TerminalString())
 		return nil
 	}
 

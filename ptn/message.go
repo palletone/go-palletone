@@ -578,7 +578,7 @@ func (pm *ProtocolManager) VSSResponseMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	pm.BroadcastVSSResponse(&resp)
+	go pm.BroadcastVSSResponse(&resp)
 
 	// 判断是否同步, 如果没同步完成，接收到的 vss response 对当前节点来说是超前的
 	if !pm.dag.IsSynced(true) {
@@ -609,7 +609,7 @@ func (pm *ProtocolManager) GroupSigMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	pm.BroadcastGroupSig(&gSign)
+	go pm.BroadcastGroupSig(&gSign)
 	go pm.dag.SetUnitGroupSign(gSign.UnitHash, gSign.GroupSig, pm.txpool)
 
 	return nil
