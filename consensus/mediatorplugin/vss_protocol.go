@@ -83,7 +83,7 @@ func (mp *MediatorPlugin) startVSSProtocol() {
 	mp.launchVSSDealLoops()
 
 	cp := mp.dag.GetGlobalProp().ChainParameters
-	margin := (cp.MediatorInterval+1)/2
+	margin := (cp.MediatorInterval + 1) / 2
 
 	// 隔半个生产间隔，等待其他节点接收新unit，并做好vss协议相关准备工作
 	select {
@@ -98,7 +98,7 @@ func (mp *MediatorPlugin) startVSSProtocol() {
 	select {
 	case <-mp.quit:
 		return
-	case <-time.After(time.Second * time.Duration(cp.MaintenanceSkipSlots * cp.MediatorInterval)):
+	case <-time.After(time.Second * time.Duration(cp.MaintenanceSkipSlots*cp.MediatorInterval)):
 		go mp.launchVSSRespLoops()
 	}
 
@@ -226,7 +226,7 @@ func (mp *MediatorPlugin) processVSSDeal(localMed common.Address, deal *dkg.Deal
 	}
 
 	if resp.Response.Status != vss.StatusApproval {
-		err = fmt.Errorf("dag gave this deal a complaint: %v", localMed.String())
+		err = fmt.Errorf("dkg gave this deal a complaint: %v", localMed.String())
 		log.Debugf(err.Error())
 		return
 	}

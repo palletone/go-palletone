@@ -151,7 +151,7 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 	{
 		_, ok := medUnitsBuf[unitHash]
 		if !ok {
-			log.Debugf("the mediator(%v) has no unit(%v) to sign TBLS",
+			log.Debugf("the mediator(%v) has no unit(%v) to sign TBLS, or the unit has been signed by mediator",
 				localMed.Str(), unitHash.TerminalString())
 			return
 		}
@@ -262,8 +262,8 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(event *SigShareEvent) {
 	// 当buf不存在时，说明已经成功recover出群签名, 或者已经过了unit确认时间，不需要群签名，忽略该签名分片
 	sigShareSet, ok := medSigSharesBuf[newUnitHash]
 	if !ok {
-		err = fmt.Errorf("the unit(hash: %v, # %v ) need not to group-signed",
-			newUnitHash.TerminalString(), header.NumberU64())
+		err = fmt.Errorf("the unit(hash: %v, # %v ) need not to recover group-sign by the mediator(%v)",
+			newUnitHash.TerminalString(), header.NumberU64(), localMed.Str())
 		log.Debugf(err.Error())
 		return
 	}
@@ -293,7 +293,8 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 
 	sigShareSet, ok := sigSharesBuf[unitHash]
 	if !ok {
-		log.Debugf("the mediator(%v) has not sign shares corresponding unit(%v) yet",
+		log.Debugf("the mediator(%v) need not to recover group-sign of the unit(%v), " +
+			"or this unit has been recovered to group-sign by this mediator",
 			localMed.Str(), unitHash.TerminalString())
 		return
 	}
