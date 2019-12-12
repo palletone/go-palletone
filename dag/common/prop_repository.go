@@ -158,9 +158,6 @@ func (pRep *PropRepository) UpdateMediatorSchedule() bool {
 	// 3. 初始化数据
 	meds := gp.GetActiveMediators()
 	copy(ms.CurrentShuffledMediators, meds)
-	//for i, add := range meds {
-	//	ms.CurrentShuffledMediators[i] = add
-	//}
 
 	// 4. 打乱证人的调度顺序
 	shuffleMediators(ms.CurrentShuffledMediators, binary.BigEndian.Uint64(hash[8:]))
@@ -261,11 +258,6 @@ func (pRep *PropRepository) GetSlotAtTime(when time.Time) uint32 {
 		log.Debugf("Retrieve Global Prop error: %v", err.Error())
 		return 0
 	}
-	//dgp, err := pRep.RetrieveDynGlobalProp()
-	//if err != nil {
-	//	log.Debugf("Retrieve Dyn Global Prop error: %v", err.Error())
-	//	return 0
-	//}
 
 	/**
 	返回值是所有满足 GetSlotTime（N）<= when 中最大的N
@@ -304,6 +296,7 @@ func (pRep *PropRepository) GetScheduledMediator(slotNum uint32) common.Address 
 	ms, _ := pRep.RetrieveMediatorSchl()
 	dgp, _ := pRep.RetrieveDynGlobalProp()
 	currentASlot := dgp.CurrentASlot + uint64(slotNum)
+
 	csmLen := len(ms.CurrentShuffledMediators)
 	if csmLen == 0 {
 		log.Debug("The current number of shuffled mediators is 0!")

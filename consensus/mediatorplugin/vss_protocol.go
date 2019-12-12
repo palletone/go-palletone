@@ -291,7 +291,7 @@ func (mp *MediatorPlugin) AddToDealBuf(dealEvent *VSSDealEvent) {
 		log.Debugf("the mediator(%v) received the vss deal from the mediator(%v)",
 			localMed.Str(), vrfrMed.Str())
 	} else {
-		log.Debugf("the mediator(%v)'s dealBuf is cleared", localMed.Str())
+		log.Debugf("the mediator(%v)'s dealBuf is cleared, or is not local mediator", localMed.Str())
 	}
 	//log.Debugf("vssBufLock.Unlock()")
 	mp.vssBufLock.Unlock()
@@ -328,7 +328,7 @@ func (mp *MediatorPlugin) AddToResponseBuf(respEvent *VSSResponseEvent) {
 			log.Debugf("the mediator(%v) received the vss response from the mediator(%v) to the mediator(%v)",
 				localMed.Str(), srcMed.Str(), vrfrMed.Str())
 		} else {
-			log.Debugf("the mediator(%v)'s respBuf is cleared", localMed.Str())
+			log.Debugf("the mediator(%v)'s respBuf is cleared, or is not local mediator", localMed.Str())
 		}
 		//log.Debugf("vssBufLock.Unlock()")
 		mp.vssBufLock.Unlock()

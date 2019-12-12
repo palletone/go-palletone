@@ -1495,17 +1495,12 @@ func (s *PublicWalletAPI) getFileInfo(filehash string) ([]*ptnjson.ProofOfExiste
 }
 
 //根据交易哈希 查询存证结果
-func (s *PublicWalletAPI) GetFileInfoByTxid(ctx context.Context, txid common.Hash) ([]*ptnjson.ProofOfExistenceJson, error) {
+func (s *PublicWalletAPI) GetFileInfoByTxid(ctx context.Context, txid common.Hash) (*ptnjson.ProofOfExistenceJson, error) {
 	tx, err := s.b.GetTxByHash(txid)
-	result := []*ptnjson.ProofOfExistenceJson{}
-	for _, data := range tx.Data {
-		poe, err := s.b.QueryProofOfExistenceByReference(data.Reference)
-		if err != nil {
-			return nil, err
-		}
-		result = append(result, poe...)
+	if err != nil {
+		return nil, err
 	}
-	return result, err
+	return ptnjson.ConvertTx2ProofOfExistence(tx), err
 }
 
 func (s *PublicWalletAPI) GetFileInfoByFileHash(ctx context.Context, filehash string) ([]*ptnjson.ProofOfExistenceJson, error) {

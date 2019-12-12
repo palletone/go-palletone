@@ -113,31 +113,40 @@ func (pm *ProtocolManager) transmitSigShare(sigShare *mp.SigShareEvent) {
 		return
 	}
 
-	ma := header.Author()
-	med := pm.dag.GetMediator(ma)
-	if med == nil {
-		log.Debugf("fail to get mediator(%v)", ma.Str())
-		return
-	}
+	pm.IsExistInCache(sigShare.Hash().Bytes())
 
-	peer, self := pm.GetPeer(med.Node)
-	if self {
-		pm.IsExistInCache(sigShare.Hash().Bytes())
+	// 判读该unit是否是本地mediator生产的
+	if pm.producer.IsLocalMediator(header.Author()) {
 		go pm.producer.AddToTBLSRecoverBuf(sigShare)
-		return
+	} else {
+		go pm.BroadcastSigShare(sigShare)
 	}
 
-	if peer != nil {
-		err := peer.SendSigShare(sigShare)
-		if err != nil {
-			log.Debug(err.Error())
-		}
-
-		return
-	}
-
-	// 如果没有和对应的mediator有网络连接，则进行转发
-	go pm.BroadcastSigShare(sigShare)
+	//ma := header.Author()
+	//med := pm.dag.GetMediator(ma)
+	//if med == nil {
+	//	log.Debugf("fail to get mediator(%v)", ma.Str())
+	//	return
+	//}
+	//
+	//peer, self := pm.GetPeer(med.Node)
+	//if self {
+	//	pm.IsExistInCache(sigShare.Hash().Bytes())
+	//	go pm.producer.AddToTBLSRecoverBuf(sigShare)
+	//	return
+	//}
+	//
+	//if peer != nil {
+	//	err := peer.SendSigShare(sigShare)
+	//	if err != nil {
+	//		log.Debug(err.Error())
+	//	}
+	//
+	//	return
+	//}
+	//
+	//// 如果没有和对应的mediator有网络连接，则进行转发
+	//go pm.BroadcastSigShare(sigShare)
 }
 
 // @author Albert·Gou
@@ -192,34 +201,36 @@ func (pm *ProtocolManager) transmitVSSDeal(deal *mp.VSSDealEvent) {
 		return
 	}
 
-	ma := pm.dag.GetActiveMediatorAddr(int(deal.DstIndex))
-	med := pm.dag.GetMediator(ma)
-	if med == nil {
-		log.Debugf("fail to get mediator(%v)", ma.Str())
-		return
-	}
-
-	//peer, self := pm.GetPeer(node)
-	peer, self := pm.GetPeer(med.Node)
-	if self {
-		pm.IsExistInCache(deal.Hash().Bytes())
-		go pm.producer.AddToDealBuf(deal)
-		return
-	}
-
-	if peer != nil {
-		err := peer.SendVSSDeal(deal)
-		if err != nil {
-			log.Debugf(err.Error())
-		}
-
-		return
-	}
-
-	// 如果没有和对应的mediator有网络连接，则进行转发
+	// vss deal 一定是请求其他mediator的消息
+	pm.IsExistInCache(deal.Hash().Bytes())
 	go pm.BroadcastVSSDeal(deal)
 
-	return
+	//ma := pm.dag.GetActiveMediatorAddr(int(deal.DstIndex))
+	//med := pm.dag.GetMediator(ma)
+	//if med == nil {
+	//	log.Debugf("fail to get mediator(%v)", ma.Str())
+	//	return
+	//}
+	//
+	////peer, self := pm.GetPeer(node)
+	//peer, self := pm.GetPeer(med.Node)
+	//if self {
+	//	pm.IsExistInCache(deal.Hash().Bytes())
+	//	go pm.producer.AddToDealBuf(deal)
+	//	return
+	//}
+	//
+	//if peer != nil {
+	//	err := peer.SendVSSDeal(deal)
+	//	if err != nil {
+	//		log.Debugf(err.Error())
+	//	}
+	//
+	//	return
+	//}
+	//
+	//// 如果没有和对应的mediator有网络连接，则进行转发
+	//go pm.BroadcastVSSDeal(deal)
 }
 
 // @author Albert·Gou
