@@ -40,7 +40,7 @@ type Migration104beta_105alpha struct {
 }
 
 func (m *Migration104beta_105alpha) FromVersion() string {
-	return "1.0.4-release"
+	return "1.0.4-rc1"
 }
 
 func (m *Migration104beta_105alpha) ToVersion() string {
