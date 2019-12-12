@@ -610,7 +610,6 @@ func (pm *ProtocolManager) GroupSigMsg(msg p2p.Msg, p *peer) error {
 	}
 
 	pm.BroadcastGroupSig(&gSign)
-
 	go pm.dag.SetUnitGroupSign(gSign.UnitHash, gSign.GroupSig, pm.txpool)
 
 	return nil

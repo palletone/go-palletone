@@ -64,7 +64,7 @@ const (
 	// The number is referenced from the size of tx pool.
 	txChanSize = 4096
 
-	cacheSize    = 5 * 1024 * 1024
+	cacheSize    = 10 * 1024 * 1024
 	cacheTimeout = 60 * 5
 )
 

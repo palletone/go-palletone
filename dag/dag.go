@@ -47,6 +47,7 @@ import (
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/txspool"
+	"github.com/palletone/go-palletone/common/hexutil"
 )
 
 type Dag struct {
@@ -1118,6 +1119,8 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 		return err
 	}
 
+	log.Debugf("receive unit(%v)'s group sign: %v", unitHash.TerminalString(), hexutil.Encode(groupSign))
+
 	// 判断本节点是否正在同步数据
 	if !d.IsSynced(false) {
 		err := "this node is synced"
@@ -1142,9 +1145,8 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 	if err != nil {
 		return err
 	}
+
 	// 群签之后， 更新memdag，将该unit和它的父单元们稳定存储。
-	//go d.Memdag.SetStableUnit(unitHash, groupSign[:], txpool)
-	log.Debugf("Try to update unit[%s] group sign", unitHash.String())
 	d.Memdag.SetUnitGroupSign(unitHash, groupSign, txpool)
 
 	//TODO albert 待合并

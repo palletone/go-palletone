@@ -228,13 +228,13 @@ func (d *Dag) GetIrreversibleUnitNum(id modules.AssetId) uint64 {
 func (d *Dag) VerifyUnitGroupSign(unitHash common.Hash, groupSign []byte) error {
 	header, err := d.GetHeaderByHash(unitHash)
 	if err != nil {
-		log.Debugf("get header of unit(%v) err: ", unitHash.TerminalString(), err.Error())
+		log.Debugf("get header of unit(%v) err: %v", unitHash.TerminalString(), err.Error())
 		return err
 	}
 
 	pubKey, err := header.GetGroupPubKey()
 	if err != nil {
-		log.Debugf("get pubKey of unit(%v) err: ", unitHash.TerminalString(), err.Error())
+		log.Debugf("get pubKey of unit(%v) err: %v", unitHash.TerminalString(), err.Error())
 		return err
 	}
 
