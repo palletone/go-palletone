@@ -224,6 +224,8 @@ func (p *Processor) contractCommitEvent(tx *modules.Transaction) (broadcast bool
 		log.Debugf("[%s]contractCommitEvent, rstTx already receive", shortId(reqId.String()))
 		return false, nil //rstTx already receive
 	}
+
+	log.Debugf("[%s]contractCommitEvent, rstTx receive", shortId(reqId.String()))
 	p.mtx[reqId].valid = true
 	p.mtx[reqId].rstTx = tx
 
