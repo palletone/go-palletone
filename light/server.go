@@ -48,7 +48,7 @@ const (
 type LesServer struct {
 	config          *ptn.Config
 	protocolManager *ProtocolManager
-	fcManager       *flowcontrol.ClientManager // nil if our node is client only
+	//fcManager       *flowcontrol.ClientManager // nil if our node is client only
 	//fcCostStats     *requestCostStats
 	defParams    *flowcontrol.ServerParams
 	srv          *p2p.Server
@@ -89,7 +89,7 @@ func NewLesServer(ptn *ptn.PalletOne, config *ptn.Config, protocolname string) (
 		BufLimit:    300000000,
 		MinRecharge: 50000,
 	}
-	srv.fcManager = flowcontrol.NewClientManager(uint64(config.LightServ), 10, 1000000000)
+	//srv.fcManager = flowcontrol.NewClientManager(uint64(config.LightServ), 10, 1000000000)
 	//srv.fcCostStats = newCostStats(ptn.UnitDb())
 	return srv, nil
 }
@@ -123,7 +123,7 @@ func (s *LesServer) Stop() {
 	//s.chtIndexer.Close()
 	//// bloom trie indexer is closed by parent bloombits indexer
 	//s.fcCostStats.store()
-	s.fcManager.Stop()
+	//s.fcManager.Stop()
 	go func() {
 		<-s.protocolManager.noMorePeers
 	}()
@@ -172,68 +172,6 @@ type requestCosts struct {
 }
 
 type requestCostTable map[uint64]*requestCosts
-
-//type RequestCostList []struct {
-//	MsgCode, BaseCost, ReqCost uint64
-//}
-
-//func (list RequestCostList) decode() requestCostTable {
-//	table := make(requestCostTable)
-//	for _, e := range list {
-//		table[e.MsgCode] = &requestCosts{
-//			baseCost: e.BaseCost,
-//			reqCost:  e.ReqCost,
-//		}
-//	}
-//	return table
-//}
-//
-//type linReg struct {
-//	sumX, sumY, sumXX, sumXY float64
-//	cnt                      uint64
-//}
-//
-//const linRegMaxCnt = 100000
-//
-//func (l *linReg) add(x, y float64) {
-//	if l.cnt >= linRegMaxCnt {
-//		sub := float64(l.cnt+1-linRegMaxCnt) / linRegMaxCnt
-//		l.sumX -= l.sumX * sub
-//		l.sumY -= l.sumY * sub
-//		l.sumXX -= l.sumXX * sub
-//		l.sumXY -= l.sumXY * sub
-//		l.cnt = linRegMaxCnt - 1
-//	}
-//	l.cnt++
-//	l.sumX += x
-//	l.sumY += y
-//	l.sumXX += x * x
-//	l.sumXY += x * y
-//}
-//
-//func (l *linReg) calc() (b, m float64) {
-//	if l.cnt == 0 {
-//		return 0, 0
-//	}
-//	cnt := float64(l.cnt)
-//	d := cnt*l.sumXX - l.sumX*l.sumX
-//	if d < 0.001 {
-//		return l.sumY / cnt, 0
-//	}
-//	m = (cnt*l.sumXY - l.sumX*l.sumY) / d
-//	b = (l.sumY / cnt) - (m * l.sumX / cnt)
-//	return b, m
-//}
-//
-//func (l *linReg) toBytes() []byte {
-//	var arr [40]byte
-//	binary.BigEndian.PutUint64(arr[0:8], math.Float64bits(l.sumX))
-//	binary.BigEndian.PutUint64(arr[8:16], math.Float64bits(l.sumY))
-//	binary.BigEndian.PutUint64(arr[16:24], math.Float64bits(l.sumXX))
-//	binary.BigEndian.PutUint64(arr[24:32], math.Float64bits(l.sumXY))
-//	binary.BigEndian.PutUint64(arr[32:40], l.cnt)
-//	return arr[:]
-//}
 
 func (pm *ProtocolManager) blockLoop() {
 	pm.wg.Add(1)

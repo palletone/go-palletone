@@ -68,11 +68,11 @@ type peer struct {
 	hasBlock func(common.Hash, uint64) bool
 	//	responseErrors int
 
-	fcClient       *flowcontrol.ClientNode // nil if the peer is server only
-	fcServer       *flowcontrol.ServerNode // nil if the peer is client only
-	fcServerParams *flowcontrol.ServerParams
-	fcCosts        requestCostTable
-	fullnode       bool
+	//fcClient       *flowcontrol.ClientNode // nil if the peer is server only
+	//fcServer       *flowcontrol.ServerNode // nil if the peer is client only
+	//fcServerParams *flowcontrol.ServerParams
+	//fcCosts        requestCostTable
+	fullnode bool
 }
 
 func newPeer(version int, network uint64, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
@@ -146,16 +146,16 @@ func sendResponse(w p2p.MsgWriter, msgcode, reqID, bv uint64, data interface{}) 
 	return p2p.Send(w, msgcode, resp{reqID, bv, data})
 }
 
-func (p *peer) GetRequestCost(msgcode uint64, amount int) uint64 {
-	p.lightlock.RLock()
-	defer p.lightlock.RUnlock()
-
-	cost := p.fcCosts[msgcode].baseCost + p.fcCosts[msgcode].reqCost*uint64(amount)
-	if cost > p.fcServerParams.BufLimit {
-		cost = p.fcServerParams.BufLimit
-	}
-	return cost
-}
+//func (p *peer) GetRequestCost(msgcode uint64, amount int) uint64 {
+//	p.lightlock.RLock()
+//	defer p.lightlock.RUnlock()
+//
+//	cost := p.fcCosts[msgcode].baseCost + p.fcCosts[msgcode].reqCost*uint64(amount)
+//	if cost > p.fcServerParams.BufLimit {
+//		cost = p.fcServerParams.BufLimit
+//	}
+//	return cost
+//}
 
 // HasBlock checks if the peer has a given block
 func (p *peer) HasBlock(hash common.Hash, number uint64) bool {
@@ -379,7 +379,7 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 		if recv.get("announceType", &p.announceType) != nil {
 			p.announceType = announceTypeSimple
 		}
-		p.fcClient = flowcontrol.NewClientNode(server.fcManager, server.defParams)
+		//p.fcClient = flowcontrol.NewClientNode(server.fcManager, server.defParams)
 	} else {
 		if recv.get("serveChainSince", nil) != nil {
 			return errResp(ErrUselessPeer, "peer cannot serve chain")
@@ -401,8 +401,8 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 		//if err := recv.get("flowControl/MRC", &MRC); err != nil {
 		//	return err
 		//}
-		p.fcServerParams = params
-		p.fcServer = flowcontrol.NewServerNode(params)
+		//p.fcServerParams = params
+		//p.fcServer = flowcontrol.NewServerNode(params)
 		//p.fcCosts = MRC.decode()
 	}
 

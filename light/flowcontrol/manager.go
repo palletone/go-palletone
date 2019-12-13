@@ -17,6 +17,7 @@
 // Package flowcontrol implements a client side flow control mechanism
 package flowcontrol
 
+/*
 import (
 	"sync"
 	"time"
@@ -222,3 +223,4 @@ func (pm *ClientManager) processed(node *cmNode, time mclock.AbsTime) (rcValue, 
 	pm.stop(node, time)
 	return uint64(node.rcValue), uint64(node.rcValue - node.startValue)
 }
+*/

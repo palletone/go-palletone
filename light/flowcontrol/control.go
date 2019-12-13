@@ -17,6 +17,7 @@
 // Package flowcontrol implements a client side flow control mechanism
 package flowcontrol
 
+/*
 import (
 	"sync"
 	"time"
@@ -181,4 +182,8 @@ func (peer *ServerNode) GotReply(reqID, bv uint64) {
 		peer.bufEstimate = bv - cc
 	}
 	peer.lastTime = mclock.Now()
+}
+*/
+type ServerParams struct {
+	BufLimit, MinRecharge uint64
 }

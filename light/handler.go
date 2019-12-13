@@ -367,9 +367,9 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		return err
 	}
 	defer func() {
-		if pm.server != nil && pm.server.fcManager != nil && p.fcClient != nil {
-			p.fcClient.Remove(pm.server.fcManager)
-		}
+		//if pm.server != nil && pm.server.fcManager != nil && p.fcClient != nil {
+		//	p.fcClient.Remove(pm.server.fcManager)
+		//}
 		pm.removePeer(p.id)
 	}()
 	// Register the peer in the downloader. If the downloader considers it banned, we disconnect
