@@ -642,11 +642,11 @@ func (p *Processor) ContractTxCheckForValidator(tx *modules.Transaction) bool {
 			return true
 		}
 	}
-	if len(tx.TxMessages()) < 3 {
-		log.Debugf("[%s]ContractTxCheckForValidator, msg len < 3", shortId(reqId.String()))
+	_, m, _ := getContractTxContractInfo(tx, modules.APP_CONTRACT_INVOKE)
+	if m == nil {
+		log.Debugf("[%s]ContractTxCheckForValidator, msg not include invoke payload", shortId(reqId.String()))
 		return true
 	}
-
 	if contractTx, ok := p.mtx[reqId]; ok && contractTx.rstTx != nil {
 		log.Debugf("[%s]ContractTxCheckForValidator, already exit rstTx", shortId(reqId.String()))
 		return msgsCompareInvoke(tx.TxMessages(), contractTx.rstTx.TxMessages())
