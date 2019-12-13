@@ -597,7 +597,7 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 
 	if contractTx, ok := p.mtx[reqId]; ok && contractTx.rstTx != nil {
 		log.Debugf("[%s]CheckContractTxValid, already exit rstTx", shortId(reqId.String()))
-		return msgsCompare(tx.TxMessages(), contractTx.rstTx.TxMessages(), modules.APP_CONTRACT_INVOKE)
+		return msgsCompareInvoke(tx.TxMessages(), contractTx.rstTx.TxMessages())
 	}
 
 	msgs, err := runContractCmd(rwM, p.dag, p.contract, tx, nil, p.errMsgEnable) // long time ...
@@ -611,7 +611,7 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 		log.Errorf("[%s]CheckContractTxValid, GenContractTransction, error:%s", shortId(reqId.String()), err.Error())
 		return false
 	}
-	return msgsCompare(txTmp.TxMessages(), tx.TxMessages(), modules.APP_CONTRACT_INVOKE)
+	return msgsCompareInvoke(txTmp.TxMessages(), tx.TxMessages())
 }
 
 func (p *Processor) ContractTxCheckForValidator(tx *modules.Transaction) bool {
@@ -649,7 +649,7 @@ func (p *Processor) ContractTxCheckForValidator(tx *modules.Transaction) bool {
 
 	if contractTx, ok := p.mtx[reqId]; ok && contractTx.rstTx != nil {
 		log.Debugf("[%s]ContractTxCheckForValidator, already exit rstTx", shortId(reqId.String()))
-		return msgsCompare(tx.TxMessages(), contractTx.rstTx.TxMessages(), modules.APP_CONTRACT_INVOKE)
+		return msgsCompareInvoke(tx.TxMessages(), contractTx.rstTx.TxMessages())
 	}
 	msgs, err := runContractCmd(rwset.RwM, p.dag, p.contract, tx, nil, p.errMsgEnable) // long time ...
 	if err != nil {
@@ -666,7 +666,7 @@ func (p *Processor) ContractTxCheckForValidator(tx *modules.Transaction) bool {
 	p.mtx[reqId].reqTx = reqTx
 	p.mtx[reqId].rstTx = txTmp
 
-	return msgsCompare(txTmp.TxMessages(), tx.TxMessages(), modules.APP_CONTRACT_INVOKE)
+	return msgsCompareInvoke(txTmp.TxMessages(), tx.TxMessages())
 }
 
 func (p *Processor) IsSystemContractTx(tx *modules.Transaction) bool {

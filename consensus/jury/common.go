@@ -600,11 +600,12 @@ func checkTxReceived(all []*modules.Transaction, tx *modules.Transaction) bool {
 	return false
 }
 
-func msgsCompare(msgsA []*modules.Message, msgsB []*modules.Message, msgType modules.MessageType) bool {
+func msgsCompareInvoke(msgsA []*modules.Message, msgsB []*modules.Message/*, msgType modules.MessageType*/) bool {
 	if msgsA == nil || msgsB == nil {
 		log.Error("msgsCompare", "param is nil")
 		return false
 	}
+	msgType := modules.APP_CONTRACT_INVOKE
 	var msg1, msg2 *modules.Message
 	for _, v := range msgsA {
 		if v.App == msgType {
