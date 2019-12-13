@@ -30,6 +30,7 @@ import (
 	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
@@ -131,10 +132,12 @@ func (d *Dag) GetCurrentUnit(assetId modules.AssetId) *modules.Unit {
 	curUnit := d.CurrentUnit(assetId)
 
 	if curUnit == nil {
+		log.Warnf("curUnit is nil.asset_id[%s], memunit[%s]", assetId.String(), memUnit.Hash().String())
 		return memUnit
 	}
 
 	if memUnit == nil {
+		log.Warnf("memUnit is nil.asset_id[%s], curunit[%s]", assetId.String(), curUnit.Hash().String())
 		return curUnit
 	}
 
@@ -1125,6 +1128,8 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 		return err
 	}
 
+	log.Debugf("receive unit(%v)'s group sign: %v", unitHash.TerminalString(), hexutil.Encode(groupSign))
+
 	// 判断本节点是否正在同步数据
 	if !d.IsSynced(false) {
 		err := "this node is synced"
@@ -1138,9 +1143,8 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 	}
 
 	if isStable {
-		// 由于采用广播的形式，所以可能会很多次收到同一个unit的群签名
 		// 或者由于网络延迟，该单元在收到群签名之前，已经根据深度转为不可逆了
-		//log.Debugf("this unit(%v) is irreversible", unitHash.TerminalString())
+		log.Debugf("this unit(%v) is already irreversible", unitHash.TerminalString())
 		return nil
 	}
 
@@ -1149,9 +1153,8 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 	if err != nil {
 		return err
 	}
+
 	// 群签之后， 更新memdag，将该unit和它的父单元们稳定存储。
-	//go d.Memdag.SetStableUnit(unitHash, groupSign[:], txpool)
-	log.Debugf("Try to update unit[%s] group sign", unitHash.String())
 	d.Memdag.SetUnitGroupSign(unitHash, groupSign, txpool)
 
 	//TODO albert 待合并

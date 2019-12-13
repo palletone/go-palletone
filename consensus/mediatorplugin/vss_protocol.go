@@ -83,7 +83,7 @@ func (mp *MediatorPlugin) startVSSProtocol() {
 	mp.launchVSSDealLoops()
 
 	cp := mp.dag.GetGlobalProp().ChainParameters
-	margin := (cp.MediatorInterval+1)/2
+	margin := (cp.MediatorInterval + 1) / 2
 
 	// 隔半个生产间隔，等待其他节点接收新unit，并做好vss协议相关准备工作
 	select {
@@ -98,7 +98,7 @@ func (mp *MediatorPlugin) startVSSProtocol() {
 	select {
 	case <-mp.quit:
 		return
-	case <-time.After(time.Second * time.Duration(cp.MaintenanceSkipSlots * cp.MediatorInterval)):
+	case <-time.After(time.Second * time.Duration(cp.MaintenanceSkipSlots*cp.MediatorInterval)):
 		go mp.launchVSSRespLoops()
 	}
 
@@ -226,7 +226,7 @@ func (mp *MediatorPlugin) processVSSDeal(localMed common.Address, deal *dkg.Deal
 	}
 
 	if resp.Response.Status != vss.StatusApproval {
-		err = fmt.Errorf("dag gave this deal a complaint: %v", localMed.String())
+		err = fmt.Errorf("dkg gave this deal a complaint: %v", localMed.String())
 		log.Debugf(err.Error())
 		return
 	}
@@ -291,7 +291,7 @@ func (mp *MediatorPlugin) AddToDealBuf(dealEvent *VSSDealEvent) {
 		log.Debugf("the mediator(%v) received the vss deal from the mediator(%v)",
 			localMed.Str(), vrfrMed.Str())
 	} else {
-		log.Debugf("the mediator(%v)'s dealBuf is cleared", localMed.Str())
+		log.Debugf("the mediator(%v)'s dealBuf is cleared, or is not local mediator", localMed.Str())
 	}
 	//log.Debugf("vssBufLock.Unlock()")
 	mp.vssBufLock.Unlock()
@@ -328,7 +328,7 @@ func (mp *MediatorPlugin) AddToResponseBuf(respEvent *VSSResponseEvent) {
 			log.Debugf("the mediator(%v) received the vss response from the mediator(%v) to the mediator(%v)",
 				localMed.Str(), srcMed.Str(), vrfrMed.Str())
 		} else {
-			log.Debugf("the mediator(%v)'s respBuf is cleared", localMed.Str())
+			log.Debugf("the mediator(%v)'s respBuf is cleared, or is not local mediator", localMed.Str())
 		}
 		//log.Debugf("vssBufLock.Unlock()")
 		mp.vssBufLock.Unlock()

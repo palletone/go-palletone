@@ -134,14 +134,14 @@ func (validate *Validate) validateMediatorSchedule(header *modules.Header) Valid
 
 	slotNum := validate.propquery.GetSlotAtTime(time.Unix(header.Timestamp(), 0))
 	if slotNum == 0 {
-		log.Info("invalidated unit's slot")
+		log.Warnf("invalidated unit's slot(%v), slotNum must be greater than 0", slotNum)
 		return UNIT_STATE_INVALID_MEDIATOR_SCHEDULE
 	}
 
 	scheduledMediator := validate.propquery.GetScheduledMediator(slotNum)
 	if !scheduledMediator.Equal(header.Author()) {
-		errStr := fmt.Sprintf("mediator(%v) produced unit at wrong time,scheduled slot number:%d, mediator is %v",
-			header.Author().Str(), slotNum, scheduledMediator.String())
+		errStr := fmt.Sprintf("mediator(%v) produced unit at wrong time, scheduled slot number:%d, " +
+			"scheduled mediator is %v",	header.Author().Str(), slotNum, scheduledMediator.String())
 		log.Warn(errStr)
 		return UNIT_STATE_INVALID_MEDIATOR_SCHEDULE
 	}
