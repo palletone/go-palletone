@@ -98,7 +98,7 @@ type GetAddrTxHistoryResult struct {
 // &startblock=0&endblock=99999999&page=1&offset=10&sort=asc
 func GetAddrTxHistoryHTTP(apiURL string, input *adaptor.GetAddrTxHistoryInput) (*adaptor.GetAddrTxHistoryOutput, error) {
 	request := apiURL
-	request += "&module=account&action=tokentx&address=" + input.FromAddress + "&startblock=0&endblock=99999999"
+	request += "&module=account&action=txlist&address=" + input.FromAddress + "&startblock=0&endblock=99999999"
 	if input.PageIndex != 0 && input.PageSize != 0 {
 		request += "&page=" + fmt.Sprintf("%d", input.PageIndex)
 		request += "&offset=" + fmt.Sprintf("%d", input.PageSize)
@@ -125,8 +125,9 @@ func GetAddrTxHistoryHTTP(apiURL string, input *adaptor.GetAddrTxHistoryInput) (
 	//result for return
 	var result adaptor.GetAddrTxHistoryOutput
 	if input.AddressLogicAndOr {
+		toAddr := strings.ToLower(input.ToAddress)
+		//fmt.Println(len(txResult.Result))
 		for i := range txResult.Result {
-			toAddr := strings.ToLower(input.ToAddress)
 			if txResult.Result[i].To == toAddr || txResult.Result[i].ContractAddress == toAddr {
 				tx := convertSimpleTx(&txResult.Result[i])
 				result.Txs = append(result.Txs, tx)

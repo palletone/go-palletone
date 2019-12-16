@@ -128,7 +128,7 @@ github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/timestamp
 # github.com/golang/snappy v0.0.1
 github.com/golang/snappy
-# github.com/gomodule/redigo v0.0.0-20180627144507-2cd21d9966bf
+# github.com/gomodule/redigo v2.0.0+incompatible
 github.com/gomodule/redigo/internal
 github.com/gomodule/redigo/redis
 # github.com/google/certificate-transparency-go v1.0.21
@@ -211,12 +211,12 @@ github.com/opencontainers/image-spec/specs-go
 github.com/opencontainers/image-spec/specs-go/v1
 # github.com/opencontainers/runc v0.1.1
 github.com/opencontainers/runc/libcontainer/user
-# github.com/palletone/adaptor v1.0.0
+# github.com/palletone/adaptor v1.0.1-0.20191204100220-740fe858e09b
 github.com/palletone/adaptor
 # github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb
 github.com/palletone/digital-identity/client
 github.com/palletone/digital-identity/config
-# github.com/palletone/eth-adaptor v1.1.0
+# github.com/palletone/eth-adaptor v1.1.1-0.20191206103711-9434db2f87c6
 github.com/palletone/eth-adaptor
 github.com/palletone/eth-adaptor/bind
 github.com/palletone/eth-adaptor/ethclient

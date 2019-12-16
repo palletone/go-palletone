@@ -27,7 +27,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.1 // indirect
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/onsi/gomega v1.5.0 // indirect
-	github.com/palletone/adaptor v1.0.0
+	github.com/palletone/adaptor v1.0.1-0.20191204100220-740fe858e09b
 	github.com/pborman/uuid v1.2.0 // indirect
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/prometheus/tsdb v0.10.0 // indirect

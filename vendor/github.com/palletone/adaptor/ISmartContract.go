@@ -63,24 +63,36 @@ type CreateContractInitialTxOutput struct {
 	Extra          []byte `json:"extra"`
 }
 type CreateContractInvokeTxInput struct {
-	Address         string       `json:"address"`
-	Fee             *AmountAsset `json:"fee"`
-	ContractAddress string       `json:"contract_address"`
-	Function        string       `json:"function"`
-	Args            [][]byte     `json:"args"`
-	Extra           []byte       `json:"extra"`
+	//合约调用的发起方地址
+	Address string `json:"address"`
+	//调用合约时转了多少Token给合约
+	Amount *AmountAsset `json:"amount"`
+	//调用合约时支付的手续费
+	Fee *AmountAsset `json:"fee"`
+	//被调用的合约地址
+	ContractAddress string `json:"contract_address"`
+	//调用合约的函数名
+	Function string `json:"function"`
+	//调用合约时传入的参数
+	Args  [][]byte `json:"args"`
+	Extra []byte   `json:"extra"`
 }
 type CreateContractInvokeTxOutput struct {
 	RawTransaction []byte `json:"raw_transaction"`
 	Extra          []byte `json:"extra"`
 }
 type QueryContractInput struct {
-	Address         string       `json:"address"`
-	Fee             *AmountAsset `json:"fee"`
-	ContractAddress string       `json:"contract_address"`
-	Function        string       `json:"function"`
-	Args            [][]byte     `json:"args"`
-	Extra           []byte       `json:"extra"`
+	//合约查询的发起方
+	Address string `json:"address"`
+	////查询合约支付的手续费
+	//Fee             *AmountAsset `json:"fee"`
+	//查询的合约地址
+	ContractAddress string `json:"contract_address"`
+	//合约的查询函数
+	Function string `json:"function"`
+	//查询参数
+	Args  [][]byte `json:"args"`
+	Extra []byte   `json:"extra"`
 }
 type QueryContractOutput struct {
 	QueryResult []byte `json:"query_result"`

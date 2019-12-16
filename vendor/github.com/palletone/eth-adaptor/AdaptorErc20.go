@@ -88,8 +88,7 @@ func (aerc20 *AdaptorErc20) GetAddress(key *adaptor.GetAddressInput) (*adaptor.G
 	return &result, nil
 }
 
-func GetMappAddr(addr *adaptor.GetPalletOneMappingAddressInput,
-	rpcParams *RPCParams, queryContractAddr string) (
+func GetMappAddr(addr *adaptor.GetPalletOneMappingAddressInput, rpcParams *RPCParams) (
 	*adaptor.GetPalletOneMappingAddressOutput, error) {
 	const MapAddrABI = `[
 	{
@@ -135,7 +134,7 @@ func GetMappAddr(addr *adaptor.GetPalletOneMappingAddressInput,
 	var result adaptor.GetPalletOneMappingAddressOutput
 
 	var input adaptor.QueryContractInput
-	input.ContractAddress = queryContractAddr
+	input.ContractAddress = addr.MappingDataSource
 	input.Extra = []byte(MapAddrABI)
 	if len(addr.ChainAddress) != 0 { //ETH地址
 		//
@@ -179,12 +178,12 @@ func GetMappAddr(addr *adaptor.GetPalletOneMappingAddressInput,
 	}
 	return &result, nil
 }
-func (aerc20 *AdaptorErc20) GetPalletOneMappingAddress(addr *adaptor.GetPalletOneMappingAddressInput) (
+func (aerc20 *AdaptorErc20) GetPalletOneMappingAddress(addrInput *adaptor.GetPalletOneMappingAddressInput) (
 	*adaptor.GetPalletOneMappingAddressOutput, error) {
-	if len(addr.MappingDataSource) == 0 {
-		return nil, errors.New("you must define mapping contract address in MappingDataSource")
+	if len(addrInput.MappingDataSource) == 0 {
+		return nil, errors.New("you must set mapping contract address in MappingDataSource of addrInput")
 	}
-	return GetMappAddr(addr, &aerc20.RPCParams, addr.MappingDataSource)
+	return GetMappAddr(addrInput, &aerc20.RPCParams)
 }
 
 //对一条交易进行签名，并返回签名结果
@@ -201,6 +200,10 @@ func (aerc20 *AdaptorErc20) SignTransaction(input *adaptor.SignTransactionInput)
 		return &adaptor.SignTransactionOutput{Signature: result.Signature}, nil
 	}
 	return SignTransaction(input)
+}
+
+func (aerc20 *AdaptorErc20) HashMessage(input *adaptor.HashMessageInput) (*adaptor.HashMessageOutput, error) {
+	return HashMessage(input)
 }
 
 //对一条消息进行签名
@@ -306,6 +309,13 @@ func (aerc20 *AdaptorErc20) CreateMultiSigAddress(input *adaptor.CreateMultiSigA
 	*adaptor.CreateMultiSigAddressOutput, error) {
 	//return &adaptor.CreateMultiSigAddressOutput{Address: aerc20.lockContractAddress}, nil
 	return nil, errors.New("please deploy multi-sign contract yourself")
+}
+
+//构造一个从多签地址付出Token的交易
+func (aerc20 *AdaptorErc20) CreateMultiSigPayoutTx(input *adaptor.CreateMultiSigPayoutTxInput) (
+	*adaptor.CreateMultiSigPayoutTxOutput, error) {
+	//return &adaptor.CreateMultiSigAddressOutput{Address: aerc20.lockContractAddress}, nil
+	return nil, errors.New("not implement")
 }
 
 //获取最新区块头

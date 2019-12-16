@@ -105,8 +105,8 @@ github.com/onsi/ginkgo v1.8.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+W
 github.com/onsi/gomega v1.4.3/go.mod h1:ex+gbHU/CVuBBDIJjb2X0qEXbFg53c61hWP/1CpauHY=
 github.com/onsi/gomega v1.5.0 h1:izbySO9zDPmjJ8rDjLvkA2zJHIo+HkYXHnf7eN7SSyo=
 github.com/onsi/gomega v1.5.0/go.mod h1:ex+gbHU/CVuBBDIJjb2X0qEXbFg53c61hWP/1CpauHY=
-github.com/palletone/adaptor v1.0.0 h1:d5r9WCW26f1fkhXIOSe76XMfYJv1CQEgX4xw9tBgykI=
-github.com/palletone/adaptor v1.0.0/go.mod h1:k6ZNhpJIeCj4ycLncQy6ww9MdyWva3f7xPgSwaTdyoU=
+github.com/palletone/adaptor v1.0.1-0.20191204100220-740fe858e09b h1:PzI4SlgBXDaQUHQfk+nAHec+7MSr6Nn3uaO18Kdqm5c=
+github.com/palletone/adaptor v1.0.1-0.20191204100220-740fe858e09b/go.mod h1:k6ZNhpJIeCj4ycLncQy6ww9MdyWva3f7xPgSwaTdyoU=
 github.com/pborman/uuid v1.2.0 h1:J7Q5mO4ysT1dv8hyrUGHb9+ooztCXu1D8MY8DZYsu3g=
 github.com/pborman/uuid v1.2.0/go.mod h1:X/NO0urCmaxf9VXbdlT7C2Yzkj2IKimNn4k+gtPdI/k=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
