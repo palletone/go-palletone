@@ -32,7 +32,6 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/light/flowcontrol"
 	"github.com/palletone/go-palletone/ptn"
 	"math/rand"
 	"time"
@@ -50,7 +49,7 @@ type LesServer struct {
 	protocolManager *ProtocolManager
 	//fcManager       *flowcontrol.ClientManager // nil if our node is client only
 	//fcCostStats     *requestCostStats
-	defParams    *flowcontrol.ServerParams
+	defParams    *ServerParams
 	srv          *p2p.Server
 	corss        *p2p.Server
 	privateKey   *ecdsa.PrivateKey
@@ -85,7 +84,7 @@ func NewLesServer(ptn *ptn.PalletOne, config *ptn.Config, protocolname string) (
 
 	pm.server = srv
 
-	srv.defParams = &flowcontrol.ServerParams{
+	srv.defParams = &ServerParams{
 		BufLimit:    300000000,
 		MinRecharge: 50000,
 	}

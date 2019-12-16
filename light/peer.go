@@ -26,7 +26,6 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/light/flowcontrol"
 	"github.com/palletone/go-palletone/ptn"
 	"sync"
 )
@@ -41,6 +40,10 @@ const (
 	announceTypeSimple = iota + 1
 	announceTypeSigned
 )
+
+type ServerParams struct {
+	BufLimit, MinRecharge uint64
+}
 
 type peer struct {
 	*p2p.Peer
@@ -390,7 +393,7 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, server
 		if recv.get("txRelay", nil) != nil {
 			return errResp(ErrUselessPeer, "peer cannot relay transactions")
 		}
-		params := &flowcontrol.ServerParams{}
+		params := &ServerParams{}
 		if err := recv.get("flowControl/BL", &params.BufLimit); err != nil {
 			return err
 		}
