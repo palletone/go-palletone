@@ -166,11 +166,11 @@ func (s *LesServer) loopCors() {
 	}()
 }
 
-type requestCosts struct {
-	baseCost, reqCost uint64
-}
+//type requestCosts struct {
+//	baseCost, reqCost uint64
+//}
 
-type requestCostTable map[uint64]*requestCosts
+//type requestCostTable map[uint64]*requestCosts
 
 func (pm *ProtocolManager) blockLoop() {
 	pm.wg.Add(1)

@@ -32,6 +32,10 @@ import (
 	"sync"
 )
 
+type ContractTxCheckFunc func(tx *modules.Transaction) bool
+
+var ContractCheckFun ContractTxCheckFunc
+
 type Validate struct {
 	utxoquery               IUtxoQuery
 	statequery              IStateQuery
@@ -262,4 +266,14 @@ func (validate *Validate) checkTxIsExist(tx *modules.Transaction) bool {
 		}
 	}
 	return false
+}
+func (validate *Validate) ContractTxCheck(tx *modules.Transaction) bool {
+	if ContractCheckFun != nil {
+		return ContractCheckFun(tx)
+	}
+	return true
+}
+func (validate *Validate) SetContractTxCheckFun(checkFun ContractTxCheckFunc) {
+	ContractCheckFun = checkFun
+	log.Debug("SetContractTxCheckFun ok")
 }

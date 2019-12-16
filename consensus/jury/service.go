@@ -152,6 +152,8 @@ type Processor struct {
 	pDocker           *utils.PalletOneDocker
 }
 
+var instanceProcessor *Processor
+
 func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract, cfg *Config) (*Processor, error) {
 	if ptn == nil || dag == nil {
 		return nil, errors.New("NewContractProcessor, param is nil")
@@ -187,6 +189,9 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 		validator:    val,
 		errMsgEnable: true,
 	}
+
+	val.SetContractTxCheckFun(CheckTxContract)
+	instanceProcessor = p
 	log.Info("NewContractProcessor ok", "local address:", p.local)
 
 	return p, nil
@@ -261,6 +266,11 @@ func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode)
 		p.locker.Unlock()
 		return fmt.Errorf("runContractReq param is nil, reqId[%s]", reqId)
 	}
+	if ctx.rstTx != nil && ctx.rstTx.IsSystemContract() {
+		log.Debugf("[%s]runContractReq, tstTx already exist", shortId(reqId.String()))
+		p.locker.Unlock()
+		return nil
+	}
 	reqTx := ctx.reqTx.Clone()
 	p.locker.Unlock()
 
@@ -281,6 +291,7 @@ func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode)
 	//如果系统合约，直接添加到缓存池
 	//如果用户合约，需要签名，添加到缓存池并广播
 	if tx.IsSystemContract() {
+		log.Debugf("[%s]runContractReq, is system contract, add rstTx", shortId(reqId.String()))
 		ctx.rstTx = tx
 	} else {
 		account := p.getLocalJuryAccount()
@@ -583,6 +594,12 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 		log.Debugf("[%s]CheckContractTxValid, nodeContractExecutable false", shortId(reqId.String()))
 		return false
 	}
+
+	if contractTx, ok := p.mtx[reqId]; ok && contractTx.rstTx != nil {
+		log.Debugf("[%s]CheckContractTxValid, already exit rstTx", shortId(reqId.String()))
+		return msgsCompareInvoke(tx.TxMessages(), contractTx.rstTx.TxMessages())
+	}
+
 	msgs, err := runContractCmd(rwM, p.dag, p.contract, tx, nil, p.errMsgEnable) // long time ...
 	if err != nil {
 		log.Errorf("[%s]CheckContractTxValid, runContractCmd,error:%s", shortId(reqId.String()), err.Error())
@@ -591,10 +608,74 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 	reqTx := tx.GetRequestTx()
 	txTmp, err := p.GenContractTransaction(reqTx, msgs)
 	if err != nil {
-		log.Errorf("[%s]CheckContractTxValid, GenContractTransction,error:%s", shortId(reqId.String()), err.Error())
+		log.Errorf("[%s]CheckContractTxValid, GenContractTransction, error:%s", shortId(reqId.String()), err.Error())
 		return false
 	}
-	return msgsCompare(txTmp.TxMessages(), tx.TxMessages(), modules.APP_CONTRACT_INVOKE)
+	return msgsCompareInvoke(txTmp.TxMessages(), tx.TxMessages())
+}
+
+func (p *Processor) ContractTxCheckForValidator(tx *modules.Transaction) bool {
+	if tx == nil {
+		log.Error("ContractTxCheckForValidator, param is nil")
+		return false
+	}
+	reqId := tx.RequestHash()
+
+	p.locker.Lock()
+	defer p.locker.Unlock()
+	log.Debugf("[%s]ContractTxCheckForValidator enter", shortId(reqId.String()))
+
+	if !tx.IsSystemContract() {
+		return true
+	}
+	if !p.ptn.LocalHaveActiveMediator() { //只有mediator处理系统合约
+		return true
+	}
+	if p.checkTxReqIdIsExist(tx.RequestHash()) {
+		return false
+	}
+	if p.validator.CheckTxIsExist(tx) {
+		return false
+	}
+	if txType, err := getContractTxType(tx); err == nil { //只检查invoke类型
+		if txType != modules.APP_CONTRACT_INVOKE_REQUEST {
+			return true
+		}
+	}
+	_, m, _ := getContractTxContractInfo(tx, modules.APP_CONTRACT_INVOKE)
+	if m == nil {
+		log.Debugf("[%s]ContractTxCheckForValidator, msg not include invoke payload", shortId(reqId.String()))
+		return true
+	}
+	if contractTx, ok := p.mtx[reqId]; ok && contractTx.rstTx != nil {
+		log.Debugf("[%s]ContractTxCheckForValidator, already exit rstTx", shortId(reqId.String()))
+		return msgsCompareInvoke(tx.TxMessages(), contractTx.rstTx.TxMessages())
+	}
+	msgs, err := runContractCmd(rwset.RwM, p.dag, p.contract, tx, nil, p.errMsgEnable) // long time ...
+	if err != nil {
+		log.Errorf("[%s]ContractTxCheckForValidator, runContractCmd,error:%s", shortId(reqId.String()), err.Error())
+		return false
+	}
+	reqTx := tx.GetRequestTx()
+	txTmp, err := p.GenContractTransaction(reqTx, msgs)
+	if err != nil {
+		log.Errorf("[%s]ContractTxCheckForValidator, GenContractTransction,error:%s", shortId(reqId.String()), err.Error())
+		return false
+	}
+	log.Debugf("[%s]ContractTxCheckForValidator, add rstTx", shortId(reqId.String()))
+
+	if p.mtx[reqId] == nil {
+		p.mtx[reqId] = &contractTx{
+			rstTx:  nil,
+			tm:     time.Now(),
+			valid:  true,
+			adaInf: make(map[uint32]*AdapterInf),
+		}
+	}
+	p.mtx[reqId].reqTx = reqTx
+	p.mtx[reqId].rstTx = txTmp
+
+	return msgsCompareInvoke(txTmp.TxMessages(), tx.TxMessages())
 }
 
 func (p *Processor) IsSystemContractTx(tx *modules.Transaction) bool {
@@ -880,4 +961,11 @@ func (p *Processor) getContractAssignElectionList(tx *modules.Transaction) ([]mo
 		eels = append(eels, e)
 	}
 	return eels, nil
+}
+
+func CheckTxContract(tx *modules.Transaction) bool {
+	if instanceProcessor != nil {
+		return instanceProcessor.ContractTxCheckForValidator(tx)
+	}
+	return true //todo false
 }
