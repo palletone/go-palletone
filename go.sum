@@ -97,7 +97,6 @@ github.com/fsouza/go-dockerclient v1.4.2 h1:dl6GfIWS5Qn4C6OfSnnoe6YuOV8lvKAE8W/Y
 github.com/fsouza/go-dockerclient v1.4.2/go.mod h1:COunfLZrsdwX/j3YVDAG8gIw3KutrI0x1+vGEJ5zxdI=
 github.com/gballet/go-libpcsclite v0.0.0-20190607065134-2772fd86a8ff h1:tY80oXqGNY4FhTFhk+o9oFHGINQ/+vhlm8HFzi6znCI=
 github.com/gballet/go-libpcsclite v0.0.0-20190607065134-2772fd86a8ff/go.mod h1:x7DCsMOv1taUwEWCzT4cmDeAkigA5/QCwUodaVOe8Ww=
-github.com/gizak/termui v0.0.0-20170117222342-991cd3d38091 h1:PIGFpDHzhN36ZSQi2Xn7yU3X1tyNCjJJjoYvGdl66jM=
 github.com/gizak/termui v0.0.0-20170117222342-991cd3d38091/go.mod h1:PkJoWUt/zacQKysNfQtcw1RW+eK2SxkieVBtl+4ovLA=
 github.com/go-kit/kit v0.8.0 h1:Wz+5lgoB0kkuqLEc6NVmwRknTKP6dTGbSqvhZtBI/j0=
 github.com/go-kit/kit v0.8.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
@@ -126,7 +125,6 @@ github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db h1:woRePGFeVFfLKN/pO
 github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEWrmP2Q=
 github.com/golang/snappy v0.0.1 h1:Qgr9rKW7uDUkrbSmQeiDsGa8SjGyCOGtuasMWwvp2P4=
 github.com/golang/snappy v0.0.1/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEWrmP2Q=
-github.com/gomodule/redigo v0.0.0-20180627144507-2cd21d9966bf h1:QiyWcEIeOkPTyeLwN4mguSULP/PWjmejPsU9elZAOeY=
 github.com/gomodule/redigo v0.0.0-20180627144507-2cd21d9966bf/go.mod h1:B4C85qUVwatsJoIUNIfCRsp7qO0iAmpGFZ4EELWSbC4=
 github.com/gomodule/redigo v2.0.0+incompatible h1:K/R+8tc58AaqLkqG2Ol3Qk+DR/TlNuhuh457pBFPtt0=
 github.com/gomodule/redigo v2.0.0+incompatible/go.mod h1:B4C85qUVwatsJoIUNIfCRsp7qO0iAmpGFZ4EELWSbC4=
@@ -187,9 +185,7 @@ github.com/magiconair/properties v1.8.0 h1:LLgXmsheXeRoUOBOjtwPQCWIYqM/LU1ayDtDe
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
 github.com/martinlindhe/base36 v0.0.0-20180729042928-5cda0030da17 h1:p63hV5GaWH3hLNf2h1/PgWQFy0JnkyHpm4vsnQESR1k=
 github.com/martinlindhe/base36 v0.0.0-20180729042928-5cda0030da17/go.mod h1:+AtEs8xrBpCeYgSLoY/aJ6Wf37jtBuR0s35750M27+8=
-github.com/maruel/panicparse v0.0.0-20160720141634-ad661195ed0e h1:e2z/lz9pvtRrEOgKWaLW2Dw02Nqd3/fqv0qWTQ8ByZE=
 github.com/maruel/panicparse v0.0.0-20160720141634-ad661195ed0e/go.mod h1:nty42YY5QByNC5MM7q/nj938VbgPU7avs45z6NClpxI=
-github.com/maruel/ut v1.0.0 h1:Tg5f5waOijrohsOwnMlr1bZmv+wHEbuMEacNBE8kQ7k=
 github.com/maruel/ut v1.0.0/go.mod h1:I68ffiAt5qre9obEVTy7S2/fj2dJku2NYLvzPuY0gqE=
 github.com/mattn/go-colorable v0.0.9 h1:UVL0vNpWh04HeJXV0KLcaT7r06gOH2l4OW6ddYRUIY4=
 github.com/mattn/go-colorable v0.0.9/go.mod h1:9vuHe8Xs5qXnSaW/c/ABM9alt+Vo+STaOChaDxuIBZU=
@@ -200,7 +196,6 @@ github.com/mattn/go-runewidth v0.0.4/go.mod h1:LwmH8dsx7+W8Uxz3IHJYH5QSwggIsqBzp
 github.com/mattn/go-sqlite3 v1.10.0/go.mod h1:FPy6KqzDD04eiIsT53CuJW3U88zkxoIYsOqkbpncsNc=
 github.com/matttproud/golang_protobuf_extensions v1.0.1 h1:4hp9jkHxhMHkqkrB3Ix0jegS5sx/RkqARlsWZ6pIwiU=
 github.com/matttproud/golang_protobuf_extensions v1.0.1/go.mod h1:D8He9yQNgCq6Z5Ld7szi9bcBfOoFv/3dc6xSMkL2PC0=
-github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7 h1:DpOJ2HYzCv8LZP15IdmG+YdwD2luVPHITV96TkirNBM=
 github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7/go.mod h1:ZXFpozHsX6DPmq2I0TCekCxypsnAUbP2oI0UX1GXzOo=
 github.com/mitchellh/mapstructure v1.1.2 h1:fmNYVwqnSfB9mZU6OS2O6GsXM+wcskZDuKQzvN1EDeE=
 github.com/mitchellh/mapstructure v1.1.2/go.mod h1:FVVH3fgwuzCH5S8UJGiWEs2h04kUh9fWfEaFds41c1Y=
@@ -211,7 +206,6 @@ github.com/naoina/go-stringutil v0.1.0 h1:rCUeRUHjBjGTSHl0VC00jUPLz8/F9dDzYI70Hz
 github.com/naoina/go-stringutil v0.1.0/go.mod h1:XJ2SJL9jCtBh+P9q5btrd/Ylo8XwT/h1USek5+NqSA0=
 github.com/naoina/toml v0.0.0-20170410220130-ac014c6b6502 h1:3Xbn6ESD9cTQTK0qDYNkfQFVp62qEHAvw9jaGjddDnE=
 github.com/naoina/toml v0.0.0-20170410220130-ac014c6b6502/go.mod h1:NBIhNtsFMo3G2szEBne+bO4gS192HuIYRqfvOWb4i1E=
-github.com/nsf/termbox-go v0.0.0-20170211012700-3540b76b9c77 h1:gKl78uP/I7JZ56OFtRf7nc4m1icV38hwV0In5pEGzeA=
 github.com/nsf/termbox-go v0.0.0-20170211012700-3540b76b9c77/go.mod h1:IuKpRQcYE1Tfu+oAQqaLisqDeXgjyyltCfsaoYN18NQ=
 github.com/oklog/ulid v1.3.1/go.mod h1:CirwcVhetQ6Lv90oh/F+FBtV6XMibvdAFo93nm5qn4U=
 github.com/olekukonko/tablewriter v0.0.1 h1:b3iUnf1v+ppJiOfNX4yxxqfWKMQPZR5yoh8urCTFX88=
@@ -231,11 +225,9 @@ github.com/opencontainers/image-spec v1.0.1 h1:JMemWkRwHx4Zj+fVxWoMCFm/8sYGGrUVo
 github.com/opencontainers/image-spec v1.0.1/go.mod h1:BtxoFyWECRxE4U/7sNtV5W15zMzWCbyJoFRP3s7yZA0=
 github.com/opencontainers/runc v0.1.1 h1:GlxAyO6x8rfZYN9Tt0Kti5a/cP41iuiO2yYT0IJGY8Y=
 github.com/opencontainers/runc v0.1.1/go.mod h1:qT5XzbpPznkRYVz/mWwUaVBUv2rmF59PVA73FjuZG0U=
-github.com/palletone/adaptor v1.0.0 h1:d5r9WCW26f1fkhXIOSe76XMfYJv1CQEgX4xw9tBgykI=
 github.com/palletone/adaptor v1.0.0/go.mod h1:k6ZNhpJIeCj4ycLncQy6ww9MdyWva3f7xPgSwaTdyoU=
 github.com/palletone/adaptor v1.0.1-0.20191204100220-740fe858e09b h1:PzI4SlgBXDaQUHQfk+nAHec+7MSr6Nn3uaO18Kdqm5c=
 github.com/palletone/adaptor v1.0.1-0.20191204100220-740fe858e09b/go.mod h1:k6ZNhpJIeCj4ycLncQy6ww9MdyWva3f7xPgSwaTdyoU=
-github.com/palletone/btc-adaptor v1.0.0 h1:ptb9vUVgiT0XTZ9XM8I12ylo0uyDxcrrA98G4RoyD8k=
 github.com/palletone/btc-adaptor v1.0.0/go.mod h1:8huh5nXVG9dTKdobA6Lz5Lqnnei/t4ivoaQ0X2yWG1E=
 github.com/palletone/btc-adaptor v1.0.1-0.20191216081955-97bd51b3efca h1:YV1aiHn3v4qfPpbxjOXuvIaL5Mmgyizy0EINzSc2Hqc=
 github.com/palletone/btc-adaptor v1.0.1-0.20191216081955-97bd51b3efca/go.mod h1:V2oKGKUsiwtV0vIg45X/i7OZ9LY+0K4bZS5a75NJbr8=
@@ -243,11 +235,6 @@ github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb h1:P4
 github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb h1:P4IhYnVAuD+BcmDRKBM3gPha9aybD2UQhLmCSQjoBjM=
 github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb/go.mod h1:nU+KRc545ru0otQl5XbRlV8YiwjS3rHUySM1FMtvq9Y=
 github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb/go.mod h1:nU+KRc545ru0otQl5XbRlV8YiwjS3rHUySM1FMtvq9Y=
-github.com/palletone/eth-adaptor v1.0.0 h1:MGVKUeLs/x20aoHzZvnVDJtg9GxdpBpArpvt+lZio/4=
-github.com/palletone/eth-adaptor v1.0.0/go.mod h1:g9jTKBCiofy0AmP5rmuCZGm91Z8sTTnjzyBg8oPcas0=
-github.com/palletone/eth-adaptor v1.0.1-0.20191024055153-b0b022477802 h1:FbwPfCqh8iuMm1ZTXtN3uwiI/kDN58VAcmGwtPP3j/Y=
-github.com/palletone/eth-adaptor v1.0.1-0.20191024055153-b0b022477802/go.mod h1:g9jTKBCiofy0AmP5rmuCZGm91Z8sTTnjzyBg8oPcas0=
-github.com/palletone/eth-adaptor v1.1.0 h1:zY+wrwYNo86Phx6Tb5uBqR4J85D9NIAN+2AyCchu77E=
 github.com/palletone/eth-adaptor v1.1.0/go.mod h1:g9jTKBCiofy0AmP5rmuCZGm91Z8sTTnjzyBg8oPcas0=
 github.com/palletone/eth-adaptor v1.1.1-0.20191206103711-9434db2f87c6 h1:tZMoo04G6VqKUQiU19P78PY6nTXpAx+zQgr8H1IumZw=
 github.com/palletone/eth-adaptor v1.1.1-0.20191206103711-9434db2f87c6/go.mod h1:i7Eq3JTzzDJTMuLBUKDw2w6WgU4DI1YHtRohFkeAQK0=

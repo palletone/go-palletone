@@ -15,7 +15,6 @@ require (
 	github.com/fatih/color v1.6.0
 	github.com/fjl/memsize v0.0.0-20180418122429-ca190fb6ffbc
 	github.com/fsouza/go-dockerclient v1.4.2
-	github.com/gizak/termui v0.0.0-20170117222342-991cd3d38091
 	github.com/golang/mock v1.3.1
 	github.com/golang/protobuf v1.3.2
 	github.com/golang/snappy v0.0.1
