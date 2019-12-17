@@ -348,6 +348,7 @@ func handleMediatorForfeitureDeposit(stub shim.ChaincodeStubInterface, foundatio
 	if md == nil {
 		return fmt.Errorf("node is nil")
 	}
+
 	//cp, err := stub.GetSystemConfig()
 	//if err != nil {
 	//	//log.Error("strconv.ParseUint err:", "error", err)
@@ -360,6 +361,7 @@ func handleMediatorForfeitureDeposit(stub shim.ChaincodeStubInterface, foundatio
 		log.Error("stub.PayOutToken err:", "error", err)
 		return err
 	}
+
 	//  移除列表
 	err = moveCandidate(modules.MediatorList, forfeitureAddr, stub)
 	if err != nil {
@@ -371,15 +373,18 @@ func handleMediatorForfeitureDeposit(stub shim.ChaincodeStubInterface, foundatio
 		log.Error("MoveCandidate err:", "error", err)
 		return err
 	}
+
 	//  更新
 	md.Status = modules.Quited
 	md.Balance = 0
-	md.EnterTime = ""
+	//md.EnterTime = ""
+
 	//  保存
 	err = saveMediatorDeposit(stub, forfeitureAddr, md)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -433,44 +438,82 @@ func hanldeNodeRemoveFromAgreeList(stub shim.ChaincodeStubInterface, address str
 //}
 
 func handleNodeInList(stub shim.ChaincodeStubInterface, addresses []string, role string) pb.Response {
-	if len(addresses) > 0 {
-		if !isFoundationInvoke(stub) {
-			log.Debugf("please use foundation address")
-			return shim.Error("please use foundation address")
+	if len(addresses) == 0 {
+		return shim.Error("invoke err")
+	}
+
+	if !isFoundationInvoke(stub) {
+		log.Debugf("please use foundation address")
+		return shim.Error("please use foundation address")
+	}
+
+	//
+	list := ""
+	switch role {
+	case modules.Mediator:
+		list = modules.MediatorList
+	case modules.Jury:
+		list = modules.JuryList
+	case modules.Developer:
+		list = modules.DeveloperList
+	}
+
+	for _, a := range addresses {
+		// 判断地址是否合法
+		_, err := common.StringToAddress(a)
+		if err != nil {
+			log.Debugf("string to address error: %s", err.Error())
+			return shim.Error(err.Error())
 		}
-		//
-		list := ""
-		switch role {
-		case modules.Mediator:
-			list = modules.MediatorList
-		case modules.Jury:
-			list = modules.JuryList
-		case modules.Developer:
-			list = modules.DeveloperList
+		//  从候选列表中移除
+		err = moveCandidate(list, a, stub)
+		if err != nil {
+			log.Debugf("move list error: %s", err.Error())
+			return shim.Error(err.Error())
 		}
-		for _, a := range addresses {
-			// 判断地址是否合法
-			_, err := common.StringToAddress(a)
-			if err != nil {
-				log.Debugf("string to address error: %s", err.Error())
-				return shim.Error(err.Error())
-			}
-			//  从候选列表中移除
-			err = moveCandidate(list, a, stub)
+
+		if list == modules.MediatorList {
+			// 从jury列表中删除
+			err = moveCandidate(modules.JuryList, a, stub)
 			if err != nil {
 				log.Debugf("move list error: %s", err.Error())
 				return shim.Error(err.Error())
 			}
-			if list == modules.MediatorList {
-				//  对应jury
-				err = moveCandidate(modules.JuryList, a, stub)
-				if err != nil {
-					log.Debugf("move list error: %s", err.Error())
-					return shim.Error(err.Error())
-				}
+
+			// 处理该mediator的保证金
+			foundationA, err := stub.GetInvokeAddress()
+			if err != nil {
+				jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+				return shim.Error(jsonResp)
+			}
+
+			md, err := getMediatorDeposit(stub, a)
+			if err != nil {
+				log.Error("get mediator deposit error " + err.Error())
+				return shim.Error(err.Error())
+			}
+			if md == nil {
+				return shim.Error(a + " is nil")
+			}
+
+			//  调用从合约把token转到请求地址
+			gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
+			err = stub.PayOutToken(foundationA.Str(), modules.NewAmountAsset(md.Balance, gasToken), 0)
+			if err != nil {
+				log.Error("stub.PayOutToken err:", "error", err)
+				return shim.Error(err.Error())
+			}
+
+			// 更新mediator信息
+			md.Status = modules.Quited
+			md.Balance = 0
+			err = saveMediatorDeposit(stub, a, md)
+			if err != nil {
+				log.Error("save mediator info err: ", "error", err)
+				return shim.Error(err.Error())
 			}
 		}
-		return shim.Success(nil)
 	}
-	return shim.Error("invoke err")
+
+	return shim.Success(nil)
 }
