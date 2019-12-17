@@ -52,6 +52,7 @@ var (
 	PledgeListLastDate = "PledgeListLastDate"
 	PledgeList         = "PledgeList-"
 	BlacklistAddress   = "BlacklistAddress"
+	ExchangelistAddress   = "ExchangelistAddress"
 	AddNewAddress      = "AddNewAddress"
 
 	OldTestNetGenesisMediatorAndPubKey = make(map[string]string) // 测试网上genesis中定义的mediator

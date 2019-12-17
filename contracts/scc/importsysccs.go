@@ -17,6 +17,7 @@ package scc
 import (
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/contracts/syscontract/blacklistcc"
+	"github.com/palletone/go-palletone/contracts/syscontract/exchangecc"
 	"github.com/palletone/go-palletone/contracts/syscontract/coinbasecc"
 	"github.com/palletone/go-palletone/contracts/syscontract/debugcc"
 	"github.com/palletone/go-palletone/contracts/syscontract/deposit"
@@ -160,6 +161,15 @@ var systemChaincodes = []*SystemChaincode{
 		Version:   "ptn001",
 		InitArgs:  [][]byte{},
 		Chaincode: &blacklistcc.BlacklistMgr{},
+	},
+	{
+		Id:        syscontract.ExchangeContractAddress.Bytes(),
+		Enabled:   true,
+		Name:      "exchange_sycc",
+		Path:      "./ExchangeContractAddress",
+		Version:   "ptn001",
+		InitArgs:  [][]byte{},
+		Chaincode: &exchangecc.ExchangeMgr{},
 	},
 	//TODO add other system chaincodes ...
 }
