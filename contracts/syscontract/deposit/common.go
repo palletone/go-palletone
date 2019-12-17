@@ -383,7 +383,7 @@ func getToday(stub shim.ChaincodeStubInterface) string {
 }
 
 //  社区申请没收某节点的保证金数量
-func applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, forfeitureAddress string, role string, reason string) pb.Response {
+func applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, forfeitureAddress, role, reason string) pb.Response {
 	log.Info("ApplyForForfeitureDeposit")
 
 	//  需要判断是否基金会发起的
@@ -393,7 +393,7 @@ func applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, forfeitureAddre
 	//}
 	//  被没收地址
 	//  判断没收地址是否正确
-	f, err := common.StringToAddress(forfeitureAddress)
+	_, err := common.StringToAddress(forfeitureAddress)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -407,7 +407,7 @@ func applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, forfeitureAddre
 		listForForfeiture = make(map[string]*modules.Forfeiture)
 	} else {
 		//
-		if _, ok := listForForfeiture[f.String()]; ok {
+		if _, ok := listForForfeiture[forfeitureAddress]; ok {
 			return shim.Error("node was in the forfeiture list")
 		}
 	}
@@ -420,13 +420,40 @@ func applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, forfeitureAddre
 		log.Error("Stub.GetInvokeAddress err:", "error", err)
 		return shim.Error(err.Error())
 	}
+
+	// 判断 forfeitureAddress 是否在 role 列表中
+	list := ""
+	switch strings.ToLower(role) {
+	case strings.ToLower(modules.Mediator):
+		list = modules.MediatorList
+	case strings.ToLower(modules.Jury):
+		list = modules.JuryList
+	case strings.ToLower(modules.Developer):
+		list = modules.DeveloperList
+	default:
+		errStr := fmt.Sprintf("%v is unexpected role, please enter validate role.", role)
+		log.Debugf(errStr)
+		return shim.Error(errStr)
+	}
+
+	b, err := isInCandidate(stub, forfeitureAddress, list)
+	if err != nil {
+		log.Debugf("isInCandidate error: %s", err.Error())
+		return shim.Error(err.Error())
+	}
+	if !b {
+		log.Debugf("isInCandidate error: %s", err.Error())
+		return shim.Error(err.Error())
+	}
+
 	//  存储信息
 	forfeiture := &modules.Forfeiture{}
 	forfeiture.ApplyAddress = invokeAddr.String()
 	forfeiture.ForfeitureRole = role
 	forfeiture.Extra = reason
 	forfeiture.ApplyTime = getTime(stub)
-	listForForfeiture[f.String()] = forfeiture
+	listForForfeiture[forfeitureAddress] = forfeiture
+
 	//  保存列表
 	err = saveListForForfeiture(stub, listForForfeiture)
 	if err != nil {

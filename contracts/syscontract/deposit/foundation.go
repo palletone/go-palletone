@@ -204,7 +204,7 @@ func handleForForfeitureApplication(stub shim.ChaincodeStubInterface, address st
 	}
 	//  处理没收地址
 	//  判断没收地址是否正确
-	f, err := common.StringToAddress(address)
+	_, err := common.StringToAddress(address)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -224,17 +224,17 @@ func handleForForfeitureApplication(stub shim.ChaincodeStubInterface, address st
 		return shim.Error("was not in the list")
 	} else {
 		//
-		if _, ok := listForForfeiture[f.String()]; !ok {
+		if _, ok := listForForfeiture[address]; !ok {
 			return shim.Error("node was not in the forfeiture list")
 		}
 	}
 	//获取节点信息
-	forfeitureNode := listForForfeiture[f.String()]
+	forfeitureNode := listForForfeiture[address]
 	//  处理操作ok or no
 	isOk := strings.ToLower(okOrNo)
 	//check 如果为ok，则同意此申请，如果为no，则不同意此申请
 	if isOk == modules.Ok {
-		err = agreeForApplyForfeiture(stub, invokeAddr.String(), f.String(), forfeitureNode.ForfeitureRole)
+		err = agreeForApplyForfeiture(stub, invokeAddr.String(), address, forfeitureNode.ForfeitureRole)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
