@@ -11,7 +11,7 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 
 	"github.com/palletone/adaptor"
-	//"github.com/palletone/btc-adaptor"
+	"github.com/palletone/btc-adaptor"
 	"github.com/palletone/eth-adaptor"
 )
 
@@ -34,14 +34,13 @@ type Callback func() adaptor.ICryptoCurrency
 type CallbackExcpet func(chaincodeID, chainName string, params []byte) (string, error)
 
 func GetBTCAdaptor() adaptor.ICryptoCurrency {
-	//var btcAdaptor adaptorbtc.AdaptorBTC
-	//btcAdaptor.NetID = cfg.Ada.Btc.NetID
-	//btcAdaptor.Host = cfg.Ada.Btc.Host //
-	//btcAdaptor.RPCUser = cfg.Ada.Btc.RPCUser
-	//btcAdaptor.RPCPasswd = cfg.Ada.Btc.RPCPasswd
-	//btcAdaptor.CertPath = cfg.Ada.Btc.CertPath
-	//return &btcAdaptor
-	return nil
+	var btcAdaptor btcadaptor.AdaptorBTC
+	btcAdaptor.NetID = cfg.Ada.Btc.NetID
+	btcAdaptor.Host = cfg.Ada.Btc.Host //
+	btcAdaptor.RPCUser = cfg.Ada.Btc.RPCUser
+	btcAdaptor.RPCPasswd = cfg.Ada.Btc.RPCPasswd
+	btcAdaptor.CertPath = cfg.Ada.Btc.CertPath
+	return &btcAdaptor
 }
 func GetETHAdaptor() adaptor.ICryptoCurrency {
 	var ethAdaptor ethadaptor.AdaptorETH

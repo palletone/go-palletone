@@ -95,7 +95,7 @@ func (p *ETHPort) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 	case "withdrawETH":
 		if len(args) < 1 {
-			return shim.Error("need 1 args (reqid)")
+			return shim.Error("need 1 args (PTNTransferTxID)")
 		}
 		ethAddrInput := ""
 		if len(args) > 1 {
@@ -641,6 +641,11 @@ func (p *ETHPort) PayoutETHTokenByTxID(ethTxID string, stub shim.ChaincodeStubIn
 
 	bigIntAmount := txResult.Tx.Amount.Amount
 	bigIntAmount = bigIntAmount.Div(bigIntAmount, big.NewInt(1e10)) //ethToken in PTN is decimal is 8
+	ethAmount := bigIntAmount.Uint64()
+	if ethAmount == 0 {
+		return shim.Error("You need deposit bigger than 0")
+	}
+
 	//
 	err = stub.PutState(symbolsDeposit+ethTxID, []byte(ptnAddr+"-"+bigIntAmount.String()))
 	if err != nil {
@@ -648,10 +653,6 @@ func (p *ETHPort) PayoutETHTokenByTxID(ethTxID string, stub shim.ChaincodeStubIn
 		return shim.Error("PutState sigHash failed")
 	}
 
-	ethAmount := bigIntAmount.Uint64()
-	if ethAmount == 0 {
-		return shim.Error("You need deposit or need wait confirm")
-	}
 	//
 	ethTokenAsset := getETHTokenAsset(stub)
 	if ethTokenAsset == nil {
