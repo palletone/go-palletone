@@ -25,6 +25,7 @@ require (
 	github.com/jackpal/go-nat-pmp v1.0.1
 	github.com/julienschmidt/httprouter v1.2.0
 	github.com/looplab/fsm v0.0.0-20180515091235-f980bdb68a89
+	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/martinlindhe/base36 v0.0.0-20180729042928-5cda0030da17
 	github.com/mattn/go-colorable v0.0.9
 	github.com/naoina/toml v0.0.0-20170410220130-ac014c6b6502
@@ -41,14 +42,19 @@ require (
 	github.com/robertkrimen/otto v0.0.0-20170205013659-6a77b7cbc37d
 	github.com/rs/cors v1.7.0
 	github.com/shopspring/decimal v0.0.0-20180709203117-cd690d0c9e24
+	github.com/spf13/afero v1.2.2 // indirect
+	github.com/spf13/jwalterweatherman v1.1.0 // indirect
+	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.0.2
 	github.com/stretchr/testify v1.3.0
 	github.com/syndtr/goleveldb v1.0.0
 	go.dedis.ch/kyber/v3 v3.0.3
+	go.uber.org/atomic v1.5.1 // indirect
+	go.uber.org/multierr v1.4.0 // indirect
 	go.uber.org/zap v0.0.0-20180531205250-88c71ae3d702
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
 	golang.org/x/net v0.0.0-20190724013045-ca1201d0de80
-	golang.org/x/tools v0.0.0-20190524140312-2c0ae7006135
+	golang.org/x/tools v0.0.0-20191029190741-b9c20aec41a5
 	google.golang.org/grpc v1.22.0
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
 	gopkg.in/errgo.v1 v1.0.1
