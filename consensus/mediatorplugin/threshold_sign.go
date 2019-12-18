@@ -203,13 +203,14 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 	// 3. 群签名
 	dks, err := dkgr.DistKeyShare()
 	if err != nil {
-		log.Debugf(err.Error())
+		log.Debugf("the mediator(%v)'s dkg get dks err:%v", localMed.Str(), err.Error())
 		return
 	}
 
 	sigShare, err := tbls.Sign(mp.suite, dks.PriShare(), unitHash[:])
 	if err != nil {
-		log.Debugf(err.Error())
+		log.Debugf("the mediator(%v)'s TBLS sign the unit(%v) err:%v",
+			localMed.Str(), unitHash.TerminalString(), err.Error())
 		return
 	}
 
@@ -253,18 +254,18 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(event *SigShareEvent) {
 	medSigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
 		// 不是本地mediator生产的 unit
-		err = fmt.Errorf("the mediator(%v) of the unit(hash: %v, # %v ) is not local",
+		errStr := fmt.Errorf("the mediator(%v) of the unit(hash: %v, # %v ) is not local",
 			localMed.Str(), newUnitHash.TerminalString(), header.NumberU64())
-		log.Debugf(err.Error())
+		log.Debugf(errStr.Error())
 		return
 	}
 
 	// 当buf不存在时，说明已经成功recover出群签名, 或者已经过了unit确认时间，不需要群签名，忽略该签名分片
 	sigShareSet, ok := medSigSharesBuf[newUnitHash]
 	if !ok {
-		err = fmt.Errorf("the unit(hash: %v, # %v ) need not to recover group-sign by the mediator(%v)",
+		errStr := fmt.Errorf("the unit(hash: %v, # %v ) need not to recover group-sign by the mediator(%v)",
 			newUnitHash.TerminalString(), header.NumberU64(), localMed.Str())
-		log.Debugf(err.Error())
+		log.Debugf(errStr.Error())
 		return
 	}
 
@@ -293,7 +294,7 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 
 	sigShareSet, ok := sigSharesBuf[unitHash]
 	if !ok {
-		log.Debugf("the mediator(%v) need not to recover group-sign of the unit(%v), " +
+		log.Debugf("the mediator(%v) need not to recover group-sign of the unit(%v), "+
 			"or this unit has been recovered to group-sign by this mediator",
 			localMed.Str(), unitHash.TerminalString())
 		return
@@ -308,8 +309,9 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	mp.dkgLock.RLock()
 	defer mp.dkgLock.RUnlock()
 	var (
-		mSize, threshold int
-		dkgr             *dkg.DistKeyGenerator
+		mSize     int
+		threshold int
+		dkgr      *dkg.DistKeyGenerator
 	)
 
 	dag := mp.dag
@@ -346,7 +348,7 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 
 	dks, err := dkgr.DistKeyShare()
 	if err != nil {
-		log.Debugf(err.Error())
+		log.Debugf("the mediator(%v)'s dkg get dks err:%v", localMed.Str(), err.Error())
 		return
 	}
 
@@ -355,7 +357,8 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	pubPoly := share.NewPubPoly(suite, suite.Point().Base(), dks.Commitments())
 	groupSig, err := tbls.Recover(suite, pubPoly, unitHash[:], sigShareSet.popSigShares(), threshold, mSize)
 	if err != nil {
-		log.Debugf(err.Error())
+		log.Debugf("the mediator(%v)'s TBLS recover the unit(%v) group-sign err:%v",
+			localMed.Str(), unitHash.TerminalString(), err.Error())
 		return
 	}
 
