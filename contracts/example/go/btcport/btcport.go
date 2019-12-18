@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"math/big"
 	"sort"
+	"strings"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -81,6 +82,12 @@ func (p *BTCPort) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			btcAddrInput = args[1]
 		}
 		return p.WithdrawBTC(args[0], btcAddrInput, stub)
+
+	case "withdrawSubmit":
+		if len(args) < 1 {
+			return shim.Error("need 1 args (BTCTxID)")
+		}
+		return p.WithdrawSubmit(args[0], stub)
 
 	case "get":
 		if len(args) < 1 {
@@ -143,6 +150,7 @@ const symbolsOwner = "owner_"
 const symbolsDeposit = "deposit_"
 
 const symbolsWithdraw = "withdraw_"
+const symbolsUTXO = "utxo_"
 
 const consultM = 3
 const consultN = 4
@@ -312,8 +320,8 @@ func (p *BTCPort) PayoutBTCTokenByTxID(btcTxHash string, stub shim.ChaincodeStub
 	//
 	txResult, err := getBTCTx(txIDByte, stub)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Have get token\"}"
-		return shim.Success([]byte(jsonResp))
+		log.Debugf("getBTCTx failed : " + err.Error())
+		return shim.Error("getBTCTx failed : " + err.Error())
 	}
 	if txResult.Tx.TargetAddress != depositAddr {
 		log.Debugf("The tx is't transfer to btc port contract")
@@ -360,11 +368,21 @@ func (p *BTCPort) PayoutBTCTokenByTxID(btcTxHash string, stub shim.ChaincodeStub
 	return shim.Success([]byte("get success"))
 }
 
+func getUTXOAll(stub shim.ChaincodeStubInterface) []byte {
+	KVs, _ := stub.GetStateByPrefix(symbolsUTXO)
+	utxoAll := make([]byte, 0, len(KVs)*2*33)
+	for _, oneKV := range KVs {
+		utxoAll = append(utxoAll, oneKV.Value...)
+	}
+	return utxoAll
+}
 func genRawTx(prepare *WithdrawPrepare, depositAddr string, stub shim.ChaincodeStubInterface) (*adaptor.CreateMultiSigPayoutTxOutput, error) {
+	utxoAllExcept := getUTXOAll(stub)
 	//
 	input := adaptor.CreateTransferTokenTxInput{FromAddress: depositAddr, ToAddress: prepare.BtcAddr}
 	input.Amount = adaptor.NewAmountAssetUint64(prepare.BtcAmount, "BTC")
 	input.Fee = adaptor.NewAmountAssetUint64(prepare.BtcFee, "BTC")
+	input.Extra = utxoAllExcept
 
 	inputBytes, err := json.Marshal(input)
 	if err != nil {
@@ -637,7 +655,7 @@ func (p *BTCPort) WithdrawBTC(txID, btcAddrInput string, stub shim.ChaincodeStub
 	}
 
 	// 产生交易
-	rawTx, err := genRawTx(prepare, depositAddr, stub) //todo utxo 过滤
+	rawTx, err := genRawTx(prepare, depositAddr, stub)
 	if nil != err {
 		log.Debugf("genRawTx failed : " + err.Error())
 		return shim.Error("genRawTx failed : " + err.Error())
@@ -691,12 +709,67 @@ func (p *BTCPort) WithdrawBTC(txID, btcAddrInput string, stub shim.ChaincodeStub
 		log.Debugf("save withdraw failed: " + err.Error())
 		return shim.Error("save withdraw failed: " + err.Error())
 	}
+
+	txHash := crypto.Keccak256(txMerged.SignedTx)
+	txHashHex := fmt.Sprintf("%x", txHash)
+
+	err = stub.PutState(symbolsUTXO+txHashHex, rawTx.Extra)
+	if err != nil {
+		log.Debugf("save utxo failed: " + err.Error())
+		return shim.Error("save utxo failed: " + err.Error())
+	}
+
 	return shim.Success(withdrawBytes)
 }
 
 func (p *BTCPort) Get(stub shim.ChaincodeStubInterface, key string) pb.Response {
 	result, _ := stub.GetState(key)
 	return shim.Success(result)
+}
+
+func (p *BTCPort) WithdrawSubmit(btcTxID string, stub shim.ChaincodeStubInterface) pb.Response {
+	//
+	if "0x" == btcTxID[0:2] || "0X" == btcTxID[0:2] {
+		btcTxID = btcTxID[2:]
+	}
+
+	//get sender receiver amount
+	txIDByte, err := hex.DecodeString(btcTxID)
+	if err != nil {
+		log.Debugf("txid invalid: %s", err.Error())
+		return shim.Error(fmt.Sprintf("txid invalid: %s", err.Error()))
+	}
+
+	txResult, err := getBTCTx(txIDByte, stub)
+	if err != nil {
+		log.Debugf("getBTCTx failed : " + err.Error())
+		return shim.Error("getBTCTx failed : " + err.Error())
+	}
+	//check tx status
+	if !txResult.Tx.IsStable {
+		log.Debugf("The tx is not Stable")
+		return shim.Error("The tx is not Stable")
+	}
+
+	depositAddr := getDepositAddr(stub)
+	if "" == depositAddr {
+		return shim.Error("need call InitDepositAddr")
+	}
+	if strings.ToLower(txResult.Tx.FromAddress) != depositAddr {
+		log.Debugf("The tx is't payout from btc port contract")
+		return shim.Error("The tx is't payout from btc port contract")
+	}
+
+	txHash := crypto.Keccak256(txResult.Tx.TxRawData)
+	txHashHex := fmt.Sprintf("%x", txHash)
+	//
+	err = stub.DelState(symbolsUTXO + txHashHex)
+	if err != nil {
+		log.Debugf("DelState symbolsUTXO failed err: %s", err.Error())
+		return shim.Error("DelState symbolsUTXO failed " + err.Error())
+	}
+
+	return shim.Success([]byte("Success"))
 }
 
 func main() {

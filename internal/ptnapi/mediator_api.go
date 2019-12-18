@@ -112,14 +112,19 @@ func (a *PublicMediatorAPI) ListVoteResults() map[string]uint64 {
 }
 
 func (a *PublicMediatorAPI) ListVotingFor(addStr string) (map[string]uint64, error) {
-	mediator, err := common.StringToAddress(addStr)
+	_, err := common.StringToAddress(addStr)
 	if err != nil {
 		return nil, err
 	}
 
-	if !a.Dag().IsMediator(mediator) {
-		return nil, fmt.Errorf("%v is not mediator", addStr)
-	}
+	//mediator, err := common.StringToAddress(addStr)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//if !a.Dag().IsMediator(mediator) {
+	//	return nil, fmt.Errorf("%v is not mediator", addStr)
+	//}
 
 	res, _ := a.Dag().GetVotingForMediator(addStr)
 	return res, nil
