@@ -195,7 +195,28 @@ func (rep *UnitRepository) SaveHeader(header *modules.Header) error {
 	return rep.dagdb.SaveHeader(header)
 }
 func (rep *UnitRepository) SaveNewestHeader(header *modules.Header) error {
-	err := rep.dagdb.SaveHeader(header)
+	//要增加的Unit必须是NewestUnit后的一个单元，否则报错
+	uHash, uIndex, _, err := rep.propdb.GetNewestUnit(header.GetAssetId())
+	if err != nil {
+		return err
+	}
+	var continuty bool
+	for _, h := range header.ParentHash() {
+		if h == uHash {
+			continuty = true
+			break
+		}
+	}
+	if !continuty {
+		return errors.New(fmt.Sprintf("PushUnit[%s] parent is not newest unit[%s] %d",
+			header.Hash().String(), uHash.String(), uIndex.Index))
+	}
+
+	if header.NumberU64() != uIndex.Index+1 {
+		return errors.New(fmt.Sprintf("PushUnit[%s] height:%d, but newest unit height:%d",
+			header.Hash().String(), uIndex.Index, uIndex.Index))
+	}
+	err = rep.dagdb.SaveHeader(header)
 	if err != nil {
 		return err
 	}
