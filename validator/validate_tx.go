@@ -76,7 +76,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 		return TxValidationCode_NOT_COMPARE_SIZE, txFee
 	}
 	//验证合约执行结果是够正常
-	if true { //isFullTx
+	if isFullTx { //todo isFullTx
 		if !validate.ContractTxCheck(tx) {
 			log.Debugf("[%s]ContractTxCheck fail", shortId(reqId.String()))
 			return TxValidationCode_INVALID_CONTRACT, txFee
