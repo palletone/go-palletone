@@ -643,7 +643,7 @@ Business_11
 Business_12
     [Documentation]    没收上一个测试用例的jury dev节点，但是基金会不同意
     log    jury
-    ${result}    applyForForfeitureDeposit    ${foundationAddr}    ${juryAddr_01}    Developer    nothing to do    #某个地址申请没收该节点保证金（全部）
+    ${result}    applyForForfeitureDeposit    ${foundationAddr}    ${juryAddr_01}    Jury    nothing to do    #某个地址申请没收该节点保证金（全部）
     log    ${result}
     ${result}    getListForForfeitureApplication
     log    ${result}
