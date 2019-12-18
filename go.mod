@@ -30,7 +30,7 @@ require (
 	github.com/mattn/go-colorable v0.0.9
 	github.com/naoina/toml v0.0.0-20170410220130-ac014c6b6502
 	github.com/palletone/adaptor v1.0.1-0.20191204100220-740fe858e09b
-	github.com/palletone/btc-adaptor v1.0.1-0.20191216081955-97bd51b3efca // indirect
+	github.com/palletone/btc-adaptor v1.0.1-0.20191216081955-97bd51b3efca
 	github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb
 	github.com/palletone/eth-adaptor v1.1.1-0.20191206103711-9434db2f87c6
 	github.com/pborman/uuid v1.2.0
@@ -43,6 +43,7 @@ require (
 	github.com/rs/cors v1.7.0
 	github.com/shopspring/decimal v0.0.0-20180709203117-cd690d0c9e24
 	github.com/spf13/afero v1.2.2 // indirect
+	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.0.2
