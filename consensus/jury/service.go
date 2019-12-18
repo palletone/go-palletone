@@ -612,6 +612,18 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 		log.Errorf("[%s]CheckContractTxValid, GenContractTransction, error:%s", shortId(reqId.String()), err.Error())
 		return false
 	}
+
+	if p.mtx[reqId] == nil {
+		p.mtx[reqId] = &contractTx{
+			rstTx:  nil,
+			tm:     time.Now(),
+			valid:  true,
+			adaInf: make(map[uint32]*AdapterInf),
+		}
+	}
+	p.mtx[reqId].reqTx = reqTx
+	p.mtx[reqId].rstTx = txTmp
+
 	return msgsCompareInvoke(txTmp.TxMessages(), tx.TxMessages())
 }
 
