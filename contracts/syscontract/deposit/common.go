@@ -442,8 +442,9 @@ func applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, forfeitureAddre
 		return shim.Error(err.Error())
 	}
 	if !b {
-		log.Debugf("isInCandidate error: %s", err.Error())
-		return shim.Error(err.Error())
+		errStr := fmt.Sprintf("%v is not in %v list", forfeitureAddress, role)
+		log.Debugf(errStr)
+		return shim.Error(errStr)
 	}
 
 	//  存储信息
