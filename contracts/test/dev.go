@@ -230,7 +230,7 @@ func Stop(contractid []byte, chainID string, deployId []byte, txid string, delet
 	log.Info("Stop enter", "contractid", contractid, "chainID", chainID, "deployId", deployId, "txid", txid)
 	defer log.Info("Stop enter", "contractid", contractid, "chainID", chainID, "deployId", deployId, "txid", txid)
 
-	setChainId := "palletone"
+	setChainId := dag.ContractChainId
 	if chainID != "" {
 		setChainId = chainID
 	}

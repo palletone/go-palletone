@@ -46,6 +46,7 @@ import (
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/txspool"
 	"github.com/palletone/go-palletone/validator"
+	"github.com/palletone/go-palletone/dag"
 )
 
 type PalletOne interface {
@@ -499,7 +500,7 @@ func GetTxSig(tx *modules.Transaction, ks *keystore.KeyStore, signer common.Addr
 }
 func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool, addr common.Address,
 	ks *keystore.KeyStore) error {
-	setChainId := "palletone"
+	setChainId := dag.ContractChainId
 	index := 0
 	for _, ctx := range p.mtx {
 		if !ctx.valid || ctx.reqTx == nil {
