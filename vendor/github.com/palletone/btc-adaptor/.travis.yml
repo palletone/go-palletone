@@ -1,0 +1,23 @@
+language: go
+matrix:
+  include:
+    - os: linux
+      dist: xenial
+      go: 1.10.x
+      script:
+        - go get -u github.com/palletone/adaptor
+        - go test ./...
+    - os: linux
+      dist: xenial
+      go: 1.12.x
+      env: GO111MODULE=on  
+      script:
+        - go get -u github.com/palletone/adaptor
+        - go test -mod=vendor ./...
+    - os: linux
+      dist: xenial
+      go: 1.12.x
+      env: GO111MODULE=on  
+      script:
+        - curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $(go env GOPATH)/bin v1.19.0
+        - golangci-lint run .

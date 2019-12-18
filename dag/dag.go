@@ -87,6 +87,8 @@ type Dag struct {
 	unstableRepositoryUpdatedScope event.SubscriptionScope
 }
 
+var ContractChainId = "palletone"
+
 func cache() palletcache.ICache {
 	return freecache.NewCache(1000 * 1024)
 }
