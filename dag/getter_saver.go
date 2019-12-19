@@ -160,6 +160,8 @@ func (dag *Dag) HeadUnitTime() int64 {
 
 	t, _ := dag.unstablePropRep.GetNewestUnitTimestamp(gasToken)
 	return t
+
+	//return dag.unstableUnitProduceRep.HeadUnitTime()
 }
 
 func (dag *Dag) HeadUnitNum() uint64 {

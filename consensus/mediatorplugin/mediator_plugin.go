@@ -169,7 +169,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	// if this assert triggers, there is a serious bug in dag.GetSlotAtTime()
 	// which would result in allowing a later unit to have a timestamp
 	// less than or equal to the previous unit
-	if !(now.Unix() > dag.HeadUnitTime()) {
+	if !(dag.HeadUnitTime() < now.Unix()) {
 		detail["Msg"] = "The property database is being updated because the new unit is received synchronously."
 		return ExceptionProducing, detail
 	}

@@ -95,6 +95,7 @@ func (pm *ProtocolManager) sigShareTransmitLoop() {
 	for {
 		select {
 		case event := <-pm.sigShareCh:
+			pm.IsExistInCache(event.Hash().Bytes())
 			go pm.transmitSigShare(&event)
 
 			// Err() channel will be closed when unsubscribing.
@@ -112,8 +113,6 @@ func (pm *ProtocolManager) transmitSigShare(sigShare *mp.SigShareEvent) {
 		log.Debugf("fail to get header of unit(%v), err: %v", unitHash.TerminalString(), err.Error())
 		return
 	}
-
-	pm.IsExistInCache(sigShare.Hash().Bytes())
 
 	// 判读该unit是否是本地mediator生产的
 	if pm.producer.IsLocalMediator(header.Author()) {
@@ -195,15 +194,24 @@ func (pm *ProtocolManager) vssDealTransmitLoop() {
 
 // @author Albert·Gou
 func (pm *ProtocolManager) transmitVSSDeal(deal *mp.VSSDealEvent) {
-	// 判断是否同步, 如果没同步完成，发起的vss deal是无效的，浪费带宽
-	if !pm.dag.IsSynced(true) {
-		log.Debugf(errStr)
-		return
-	}
+	// 重复判断
+	//// 判断是否同步, 如果没同步完成，发起的vss deal是无效的，浪费带宽
+	//if !pm.dag.IsSynced(true) {
+	//	log.Debugf(errStr)
+	//	return
+	//}
 
 	// vss deal 一定是请求其他mediator的消息
 	pm.IsExistInCache(deal.Hash().Bytes())
 	go pm.BroadcastVSSDeal(deal)
+
+	//// 判读该deal是否是发给本地mediator的
+	//ma := pm.dag.GetActiveMediatorAddr(int(deal.DstIndex))
+	//if pm.producer.IsLocalMediator(ma) {
+	//	go pm.producer.AddToDealBuf(deal)
+	//} else {
+	//	go pm.BroadcastVSSDeal(deal)
+	//}
 
 	//ma := pm.dag.GetActiveMediatorAddr(int(deal.DstIndex))
 	//med := pm.dag.GetMediator(ma)
