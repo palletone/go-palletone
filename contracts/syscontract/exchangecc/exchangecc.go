@@ -3,7 +3,6 @@ package exchangecc
 import (
 	"encoding/json"
 	"errors"
-	"bytes"
 	"fmt"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -22,13 +21,31 @@ type ExchangeMgr struct {
 	SaleAmount        uint64
 	Want        *modules.Asset 
 	WantAmount        uint64
-	ExchangeSn []byte
+	ExchangeSn string
+}
+type ExchangeSheetJson struct {
+	Address     common.Address
+	Sale        *modules.Asset 
+	SaleAmount        decimal.Decimal
+	Want        *modules.Asset 
+	WantAmount        decimal.Decimal
+	ExchangeSn  string
 }
 const EXCHANGELIST_RECORD = "Exchangelist-"
 func saveRecord(stub shim.ChaincodeStubInterface, record *ExchangeMgr) error {
 	data, _ := rlp.EncodeToBytes(record)
-	str := fmt.Sprintf("%x", record.ExchangeSn)
-	return stub.PutState(EXCHANGELIST_RECORD/*+record.Address.String()*/+str, data)
+	return stub.PutState(EXCHANGELIST_RECORD/*+record.Address.String()*/+record.ExchangeSn, data)
+}
+
+func  convertSheet(exm ExchangeMgr) *ExchangeSheetJson{
+	   newSheet := ExchangeSheetJson{}
+	   newSheet.Address = exm.Address
+	   newSheet.Sale = exm.Sale
+	   newSheet.SaleAmount = decimal.New(int64(exm.SaleAmount), 0)
+	   newSheet.Want = exm.Want
+	   newSheet.WantAmount = decimal.New(int64(exm.WantAmount), 0)
+	   newSheet.ExchangeSn = exm.ExchangeSn
+	   return &newSheet
 }
 func (p *ExchangeMgr) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(nil)
@@ -65,11 +82,12 @@ func (p *ExchangeMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		newsheet := ExchangeMgr{}
 		newsheet.Address = addr
 		newsheet.Sale = sale
+		//amount = amount.Mul(decimal.New(100000000, 0))
 		newsheet.SaleAmount = uint64(sale_amount.IntPart())
 		newsheet.Want = want 
 		newsheet.WantAmount = uint64(want_amount.IntPart())
 		txid := stub.GetTxID()
-	    newsheet.ExchangeSn = common.Hex2Bytes(txid[2:])
+		newsheet.ExchangeSn = fmt.Sprintf("%x", common.Hex2Bytes(txid[2:]))
 		err = p.AddExchangelist(stub, &newsheet)
 		if err != nil {
 			return shim.Error("AddExchangelist error:" + err.Error())
@@ -80,15 +98,38 @@ func (p *ExchangeMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if len(args) != 5 {
 			return shim.Error("must input 2 args: AddExchangelist, reason")
 		}
-		//maker_sheet,err := p.FindInExchangelist(stub,exchange_sn)
-		//want := maker_sheet.want
-		
-		
-		//want_amount:= maker_sheet.want_amount
-		//sale:= maker_sheet.sale
-		//sale_amount:= maker_sheet.sale_amount
-		
+		taker_addr, err := common.StringToAddress(args[0])
+		if err != nil {
+			return shim.Error("Invalid address string:" + args[0])
+		}
+		taker_addr=taker_addr
+		want, err := modules.StringToAsset(args[1])
+		if err != nil {
+			return shim.Error("Invalid address string:" + args[0])
+		}
+		want=want
+		want_amount, err := decimal.NewFromString(args[2])
+		if err != nil {
+			return shim.Error("Invalid address string:" + args[0])
+		}
+		want_amount = want_amount
+		sale, err := modules.StringToAsset(args[3])
+		if err != nil {
+			return shim.Error("Invalid address string:" + args[0])
+		}
+		sale=sale
+		sale_amount, err := decimal.NewFromString(args[4])
+		if err != nil {
+			return shim.Error("Invalid address string:" + args[0])
+		}
+		sale_amount=sale_amount
+		ExchangeSn, err := decimal.NewFromString(args[5])
+		if err != nil {
+			return shim.Error("Invalid address string:" + args[0])
+		}
+		ExchangeSn = ExchangeSn
 		//todo  check if have maker want token
+
 		//todo  send to maker contract addr  want token  
 		    return shim.Success(nil)
 	case "getExchangelist": //列出黑名单地址列表
@@ -98,6 +139,15 @@ func (p *ExchangeMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		data, _ := json.Marshal(result)
 		return shim.Success(data)
+	case "withDrawExchange": //列出黑名单地址列表
+		if len(args) != 1 {
+			return shim.Error("must input 1 args: exchange_sn")
+		}
+	    result := p.DelExchangeRecord(stub,args[0])
+	    if result != true {
+			return shim.Error("Invalid exchange_sn :" + args[0])
+		}
+		return shim.Success([]byte("1"))
 	case "payout": //付出Token
 		if len(args) != 3 {
 			return shim.Error("must input 3 args: Address,Amount,Asset")
@@ -123,7 +173,7 @@ func (p *ExchangeMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if len(args) != 1 {
 			return shim.Error("must input 1 args: Address")
 		}
-		exchange_sn := []byte(args[0])
+		exchange_sn := args[0]
 		
 		result, err := p.QueryIsInExchangelist(stub, exchange_sn)
 		if err != nil {
@@ -139,19 +189,20 @@ func (p *ExchangeMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(jsonResp)
 	}
 }
-func getExchangeRecords(stub shim.ChaincodeStubInterface) ([]*ExchangeMgr, error) {
+func getExchangeRecords(stub shim.ChaincodeStubInterface) ([]*ExchangeSheetJson, error) {
 	kvs, err := stub.GetStateByPrefix(EXCHANGELIST_RECORD)
 	if err != nil {
 		return nil, err
 	}
-	result := make([]*ExchangeMgr, 0, len(kvs))
+	result := make([]*ExchangeSheetJson, 0, len(kvs))
 	for _, kv := range kvs {
 		record := &ExchangeMgr{}
 		err = rlp.DecodeBytes(kv.Value, record)
 		if err != nil {
 			return nil, err
 		}
-		result = append(result, record)
+		jsSheet := convertSheet(*record)
+		result = append(result, jsSheet)
 	}
 	return result, nil
 }
@@ -179,7 +230,7 @@ func isFoundationInvoke(stub shim.ChaincodeStubInterface) bool {
 	return true
 }
 
-func (p *ExchangeMgr) GetExchangeMgrs(stub shim.ChaincodeStubInterface) ([]*ExchangeMgr, error) {
+func (p *ExchangeMgr) GetExchangeMgrs(stub shim.ChaincodeStubInterface) ([]*ExchangeSheetJson, error) {
 	return getExchangeRecords(stub)
 }
 func (p *ExchangeMgr) GetExchangelist(stub shim.ChaincodeStubInterface) ([]*ExchangeMgr, error) {
@@ -195,26 +246,32 @@ func (p *ExchangeMgr) Payout(stub shim.ChaincodeStubInterface, addr common.Addre
 		Asset:  asset,
 	}, 0)
 }
-func (p *ExchangeMgr) QueryIsInExchangelist(stub shim.ChaincodeStubInterface, exchange_sn []byte) (bool, error) {
+func (p *ExchangeMgr) QueryIsInExchangelist(stub shim.ChaincodeStubInterface, exchange_sn string) (bool, error) {
 	exchangelist, err := getExchangelistAddress(stub)
 	if err != nil {
 		return false, err
 	}
 	for _, b := range exchangelist {
-		if bytes.Equal(b.ExchangeSn,exchange_sn) {
+		if b.ExchangeSn == exchange_sn {
 			return true, nil
 		}
 	}
 	return false, nil
 }
-
-func (p *ExchangeMgr) FindInExchangelist(stub shim.ChaincodeStubInterface, exchange_sn []byte) (*ExchangeMgr, error) {
+func (p *ExchangeMgr) DelExchangeRecord(stub shim.ChaincodeStubInterface, exchange_sn string) bool {
+	err := stub.DelState(EXCHANGELIST_RECORD+exchange_sn)
+	if err == nil {
+		return true
+	}
+	return false
+}
+func (p *ExchangeMgr) FindInExchangelist(stub shim.ChaincodeStubInterface, exchange_sn string) (*ExchangeMgr, error) {
 	exchangelist, err := getExchangelistAddress(stub)
 	if err != nil {
 		return nil, err
 	}
 	for _, b := range exchangelist {
-		if bytes.Equal(b.ExchangeSn,exchange_sn) {
+		if b.ExchangeSn == exchange_sn {
 			return b, nil
 		}
 	}
@@ -252,10 +309,10 @@ func (p *ExchangeMgr) AddExchangelist(stub shim.ChaincodeStubInterface, sheet *E
 	if err != nil {
 		return errors.New("saveRecord error:" + err.Error())
 	}
-	err = updateExchangeAddressList(stub, record)
+	/*err = updateExchangeAddressList(stub, record)
 	if err != nil {
 		return errors.New("updateExchangeAddressList error:" + err.Error())
-	}
+	}*/
 	return nil
 }
 
