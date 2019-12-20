@@ -43,6 +43,7 @@ type IStateQuery interface {
 	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
 	GetJurorByAddrHash(addrHash common.Hash) (*modules.JurorDeposit, error)
 	GetJurorReward(jurorAdd common.Address) common.Address
+	IsContractDeveloper(addr common.Address) bool
 }
 
 type IDagQuery interface {
@@ -50,6 +51,7 @@ type IDagQuery interface {
 	IsTransactionExist(hash common.Hash) (bool, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
 	CheckReadSetValid(contractId []byte, readSet []modules.ContractReadSet) bool
+	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
 }
 
 type IPropQuery interface {

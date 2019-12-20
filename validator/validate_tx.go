@@ -42,6 +42,7 @@ func shortId(id string) string {
 	}
 	return id[0:8]
 }
+
 /**
 验证某个交易，tx具有以下规则：
 Tx的第一条Msg必须是Payment
@@ -54,7 +55,7 @@ To validate one transaction
 如果isFullTx为false，意味着这个Tx还没有被陪审团处理完，所以结果部分的Payment不验证
 */
 func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (ValidationCode, []*modules.Addition) {
-	if tx == nil{
+	if tx == nil {
 		return TxValidationCode_VALID, nil
 	}
 	reqId := tx.RequestHash()
@@ -76,7 +77,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 		return TxValidationCode_NOT_COMPARE_SIZE, txFee
 	}
 	//验证合约执行结果是够正常
-	if isFullTx { //todo isFullTx
+	if isFullTx {
 		if !validate.ContractTxCheck(tx) {
 			log.Debugf("[%s]ContractTxCheck fail", shortId(reqId.String()))
 			return TxValidationCode_INVALID_CONTRACT, txFee
@@ -161,6 +162,13 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 			payload, _ := msg.Payload.(*modules.ContractInstallRequestPayload)
 			if payload.TplName == "" || payload.Path == "" || payload.Version == "" {
 				return TxValidationCode_INVALID_CONTRACT, txFee
+			}
+			reqAddr, err := validate.dagquery.GetTxRequesterAddress(tx)
+			if err != nil {
+				return TxValidationCode_INVALID_CONTRACT, txFee
+			}
+			if !validate.statequery.IsContractDeveloper(reqAddr) {
+				return TxValidationCode_NOT_TPL_DEVELOPER, txFee
 			}
 		case modules.APP_CONTRACT_DEPLOY_REQUEST:
 			if hasRequestMsg { //一个Tx只有一个Request

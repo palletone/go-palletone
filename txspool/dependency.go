@@ -45,6 +45,8 @@ type dags interface {
 	GetContractJury(contractId []byte) (*modules.ElectionNode, error)
 	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
+	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
+	IsContractDeveloper(addr common.Address) bool
 
 	GetMediators() map[common.Address]bool
 	GetChainParameters() *core.ChainParameters

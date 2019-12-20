@@ -63,8 +63,9 @@ const (
 	TxValidationCode_INVALID_DOUBLE_SPEND         ValidationCode = 35
 	TxValidationCode_INVALID_TOKEN_STATUS         ValidationCode = 36
 	TxValidationCode_NOT_COMPARE_SIZE             ValidationCode = 37
-	TxValidationCode_ORPHAN                       ValidationCode = 255
+	TxValidationCode_NOT_TPL_DEVELOPER            ValidationCode = 38
 
+	TxValidationCode_ORPHAN               ValidationCode = 255
 	TxValidationCode_INVALID_OTHER_REASON ValidationCode = 251
 	TxValidationCode_NOT_VALIDATED        ValidationCode = 250
 	UNIT_STATE_AUTHOR_SIGNATURE_PASSED    ValidationCode = 101
