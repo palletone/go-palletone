@@ -102,35 +102,44 @@ func (p *ExchangeMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if err != nil {
 			return shim.Error("Invalid address string:" + args[0])
 		}
-		taker_addr=taker_addr
-		want, err := modules.StringToAsset(args[1])
-		if err != nil {
-			return shim.Error("Invalid address string:" + args[0])
+
+		Exchange ,err := p.FindInExchangelist(stub,args[1])
+        if err != nil {
+			return shim.Error("Invalid address string:" + args[1])
 		}
-		want=want
-		want_amount, err := decimal.NewFromString(args[2])
+		taker_sale, err := modules.StringToAsset(args[2])
 		if err != nil {
-			return shim.Error("Invalid address string:" + args[0])
+			return shim.Error("Invalid address string:" + args[2])
 		}
-		want_amount = want_amount
-		sale, err := modules.StringToAsset(args[3])
+		taker_amount, err := decimal.NewFromString(args[3])
 		if err != nil {
-			return shim.Error("Invalid address string:" + args[0])
+			return shim.Error("Invalid address string:" + args[3])
 		}
-		sale=sale
-		sale_amount, err := decimal.NewFromString(args[4])
-		if err != nil {
-			return shim.Error("Invalid address string:" + args[0])
+		invoketokens ,err := stub.GetTokenBalance("P19CbJzdeR2m98pYhsbEKJExr6DPcS7oket",taker_sale)
+        if err != nil {
+			return shim.Error("Invalid invoketokens string")
 		}
-		sale_amount=sale_amount
-		ExchangeSn, err := decimal.NewFromString(args[5])
-		if err != nil {
-			return shim.Error("Invalid address string:" + args[0])
-		}
-		ExchangeSn = ExchangeSn
 		//todo  check if have maker want token
 
 		//todo  send to maker contract addr  want token  
+		if invoketokens[0].Amount < uint64(taker_amount.IntPart()) {
+			return shim.Error("not enough amount to exchange")
+		}
+		if !taker_sale.IsSameAssetId(invoketokens[0].Asset) {
+            return shim.Error("not right asset to exchange")
+		}
+		//pay taker_sale taker_amount  to maker ,address is Exchange.Address
+        err = p.Payout(stub, Exchange.Address, taker_amount, taker_sale)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+
+        //pay maker_sale maker_amount  to taker ,address is taker_addr
+        esc := decimal.New(int64(Exchange.SaleAmount), 0)
+		err = p.Payout(stub, taker_addr, esc, Exchange.Sale)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
 		    return shim.Success(nil)
 	case "getExchangelist": //列出黑名单地址列表
 		result, err := p.GetExchangeMgrs(stub)
