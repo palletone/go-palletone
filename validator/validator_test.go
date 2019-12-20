@@ -93,6 +93,14 @@ func (q *mockStatedbQuery) GetJurorReward(jurorAdd common.Address) common.Addres
 	return jurorAdd
 }
 
+func (q *mockStatedbQuery) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
+	return common.Address{}, nil
+}
+
+func (q *mockStatedbQuery) IsContractDeveloper(addr common.Address) bool {
+	return true
+}
+
 type mockUtxoQuery struct {
 }
 

@@ -59,6 +59,10 @@ func (id *mockiDagQuery) CheckReadSetValid(contractId []byte, readSet []modules.
 	return true
 }
 
+func (id *mockiDagQuery) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
+	return common.Address{}, nil
+}
+
 type mockiPropQuery struct{}
 
 func (ip *mockiPropQuery) GetSlotAtTime(when time.Time) uint32 {
