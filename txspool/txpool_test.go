@@ -190,7 +190,6 @@ func (ud *UnitDag4Test) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset
 }
 
 func (ud *UnitDag4Test) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error) {
-
 	return nil, nil
 }
 func (ud *UnitDag4Test) GetTransactionOnly(hash common.Hash) (*modules.Transaction, error) {
@@ -214,6 +213,12 @@ func (ud *UnitDag4Test) GetContractStatesByPrefix(id []byte, prefix string) (map
 	return nil, nil
 }
 func (ud *UnitDag4Test) CheckReadSetValid(contractId []byte, readSet []modules.ContractReadSet) bool {
+	return true
+}
+func (ud *UnitDag4Test) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
+	return common.Address{}, nil
+}
+func (ud *UnitDag4Test)  IsContractDeveloper(addr common.Address) bool{
 	return true
 }
 
