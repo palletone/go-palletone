@@ -30,9 +30,9 @@ require (
 	github.com/mattn/go-colorable v0.0.9
 	github.com/naoina/toml v0.0.0-20170410220130-ac014c6b6502
 	github.com/palletone/adaptor v1.0.1-0.20191204100220-740fe858e09b
-	github.com/palletone/btc-adaptor v1.0.1-0.20191216081955-97bd51b3efca
+	github.com/palletone/btc-adaptor v1.0.1-0.20191220082020-b686397b9623
 	github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb
-	github.com/palletone/eth-adaptor v1.1.1-0.20191206103711-9434db2f87c6
+	github.com/palletone/eth-adaptor v1.1.1-0.20191220081203-275de08ec98b
 	github.com/pborman/uuid v1.2.0
 	github.com/peterh/liner v0.0.0-20170902204657-a37ad3984311
 	github.com/pkg/errors v0.8.1
