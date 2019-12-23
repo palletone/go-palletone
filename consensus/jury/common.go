@@ -335,7 +335,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
 				}
-				toContractPayments, err := resultToContractPayments(dag, result)
+				toContractPayments, err := resultToContractPayments(dag, tx.GetRequestTx(), result)
 				if err != nil {
 					return genContractErrorMsg(dag, tx, err, errMsgEnable)
 				}
@@ -600,7 +600,7 @@ func checkTxReceived(all []*modules.Transaction, tx *modules.Transaction) bool {
 	return false
 }
 
-func msgsCompareInvoke(msgsA []*modules.Message, msgsB []*modules.Message/*, msgType modules.MessageType*/) bool {
+func msgsCompareInvoke(msgsA []*modules.Message, msgsB []*modules.Message /*, msgType modules.MessageType*/) bool {
 	if msgsA == nil || msgsB == nil {
 		log.Error("msgsCompare", "param is nil")
 		return false
