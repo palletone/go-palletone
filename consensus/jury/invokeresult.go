@@ -81,7 +81,8 @@ func resultToContractPayments(dag iDag, requestTx *modules.Transaction, result *
 	if result.TokenPayOut != nil && len(result.TokenPayOut) > 0 {
 		payouts := tokenPayOutGroupByAsset(result.TokenPayOut)
 		for ast, aa := range payouts {
-			asset := &ast
+			ast1 := ast
+			asset := &ast1
 			utxos, err := dag.GetAddr1TokenUtxos(addr, asset)
 			if err != nil {
 				return nil, err
