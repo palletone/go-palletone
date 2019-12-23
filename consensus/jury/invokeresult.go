@@ -88,7 +88,8 @@ func resultToContractPayments(dag iDag, requestTx *modules.Transaction, result *
 			}
 			//本次Request付款到合约的Utxo，可以在Result中马上Payout
 			for out, utxo := range paytoContractUtxo {
-				if utxo.Asset.Equal(asset) {
+				toAddr, _ := tokenengine.Instance.GetAddressFromScript(utxo.PkScript)
+				if utxo.Asset.Equal(asset) && toAddr == addr {
 					out.TxHash = common.NewSelfHash()
 					utxos[out] = utxo
 				}
