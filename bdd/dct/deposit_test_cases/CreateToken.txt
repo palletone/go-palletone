@@ -24,8 +24,8 @@ ccquery
 invokeToken
     [Arguments]    ${address}    ${assetId}
     ${one}    Create List    MediatorPayToDepositContract
-    ${two}    Create List    ${address}    ${address}    ${depositContractAddress}    ${amount}    ${fee}
-    ...    ${assetId}    50    ${depositContractAddress}    ${one}
+    ${two}    Create List    ${address}    ${depositContractAddress}    ${assetId}    50    ${fee}
+    ...    ${depositContractAddress}    ${one}
     ${result}    创建公用的POST请求    contract_ccinvokeToken    getTokenInfo    ${two}
     log    ${result}
     #    To Json    ${result}

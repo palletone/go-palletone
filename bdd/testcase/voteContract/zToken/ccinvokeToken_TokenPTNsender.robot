@@ -35,8 +35,8 @@ Request getbalance before create token
 Ccinvoke token of vote contract
     #[Arguments]    ${geneAdd}
     ${supportList}    Create List    support    ${supportSection}
-    ${ccList}    Create List    ${listAccounts[0]}    ${recieverAdd}    ${destructionAdd}    ${votePTN}    ${PTNPoundage}
-    ...    ${voteToken}    ${voteAmount}    ${voteContractId}    ${supportList}
+    ${ccList}    Create List    ${listAccounts[0]}    ${recieverAdd}    ${voteToken}    ${votePTN}    ${PTNPoundage}
+    ...    ${voteToken}    ${voteContractId}    ${supportList}
     ${resp}    setPostRequest    ${host}    ${invokeTokenMethod}    ${ccList}
     log    ${resp.content}
 
