@@ -32,8 +32,8 @@ import (
 type IMemDag interface {
 	//增加一个稳定单元
 	AddStableUnit(unit *modules.Unit) error
-	//设置MemDag的稳定单元
-	SetStableUnit(unit *modules.Unit, isGenesis bool)
+	////设置MemDag的稳定单元
+	//SetStableUnit(unit *modules.Unit, isGenesis bool)
 	//增加一个单元到MemDag
 	AddUnit(unit *modules.Unit, txpool txspool.ITxPool, isProd bool) (common2.IUnitRepository, common2.IUtxoRepository,
 		common2.IStateRepository, common2.IPropRepository, common2.IUnitProduceRepository, error)

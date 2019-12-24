@@ -284,6 +284,7 @@ func (chain *MemDag) setStableUnit(hash common.Hash, height uint64, txpool txspo
 		log.Debug("Current stable height is %d, impossible set stable height to %d", stable_height, height)
 		return
 	}
+
 	newStableUnits := make([]*modules.Unit, stableCount)
 	stbHash := hash
 	chain_units := chain.getChainUnits()
@@ -293,6 +294,7 @@ func (chain *MemDag) setStableUnit(hash common.Hash, height uint64, txpool txspo
 			stbHash = u.ParentHash()[0]
 		}
 	}
+
 	//Save stable unit and it's parent
 	max_height := height
 	for _, unit := range newStableUnits {
@@ -300,8 +302,8 @@ func (chain *MemDag) setStableUnit(hash common.Hash, height uint64, txpool txspo
 			max_height = unit.NumberU64()
 		}
 		chain.setNextStableUnit(unit, txpool)
-
 	}
+
 	// 更新tempdb ，将低于稳定单元的分叉链都删除
 	go chain.delHeightUnitsAndTemp(max_height)
 	log.DebugDynamic(func() string {
@@ -316,6 +318,7 @@ func (chain *MemDag) setStableUnit(hash common.Hash, height uint64, txpool txspo
 			chain.removeUnitAndChildren(allChainUnits, funit.Hash(), txpool)
 		}
 	}
+
 	//remove too low orphan unit
 	go chain.removeLowOrphanUnit(max_height, txpool)
 }
@@ -342,7 +345,12 @@ func (chain *MemDag) setNextStableUnit(unit *modules.Unit, txpool txspool.ITxPoo
 }
 
 func (chain *MemDag) checkUnitIrreversibleWithGroupSign(unit *modules.Unit) bool {
-	if unit.GetGroupPubKeyByte() == nil || unit.GetGroupSign() == nil {
+	//if unit.GetGroupPubKeyByte() == nil || unit.GetGroupSign() == nil {
+	//	return false
+	//}
+
+	groupSign := unit.GetGroupSign()
+	if len(groupSign) == 0 {
 		return false
 	}
 
@@ -352,7 +360,7 @@ func (chain *MemDag) checkUnitIrreversibleWithGroupSign(unit *modules.Unit) bool
 		return false
 	}
 
-	err = bls.Verify(core.Suite, pubKey, unit.UnitHash[:], unit.GetGroupSign())
+	err = bls.Verify(core.Suite, pubKey, unit.UnitHash[:], groupSign)
 	if err != nil {
 		log.Debug(err.Error())
 		return false
@@ -513,23 +521,25 @@ func (chain *MemDag) removeUnitAndChildren(chain_units map[common.Hash]*modules.
 		}
 	}
 }
-func (chain *MemDag) SetStableUnit(unit *modules.Unit, isGenesis bool) {
-	chain.lock.Lock()
-	defer chain.lock.Unlock()
-	hash := unit.Hash()
-	log.Debugf("set stable unit to memdag, hash[%s], index:%d", hash.String(), unit.NumberU64())
-	//Set stable unit
-	chain.stableUnitHash = hash
-	chain.stableUnitHeight = unit.NumberU64()
-	if isGenesis {
-		chain.setLastMainchainUnit(unit)
-		// set tempdb
-		temp_db, _ := NewChainTempDb(chain.db, chain.cache, chain.tokenEngine, chain.saveHeaderOnly)
-		chain.tempdb.Store(hash, temp_db)
-		chain.chainUnits.Store(hash, temp_db)
-		chain.addUnitHeight(unit)
-	}
-}
+
+//func (chain *MemDag) SetStableUnit(unit *modules.Unit, isGenesis bool) {
+//	chain.lock.Lock()
+//	defer chain.lock.Unlock()
+//	hash := unit.Hash()
+//	log.Debugf("set stable unit to memdag, hash[%s], index:%d", hash.String(), unit.NumberU64())
+//	//Set stable unit
+//	chain.stableUnitHash = hash
+//	chain.stableUnitHeight = unit.NumberU64()
+//	if isGenesis {
+//		chain.setLastMainchainUnit(unit)
+//		// set tempdb
+//		temp_db, _ := NewChainTempDb(chain.db, chain.cache, chain.tokenEngine, chain.saveHeaderOnly)
+//		chain.tempdb.Store(hash, temp_db)
+//		chain.chainUnits.Store(hash, temp_db)
+//		chain.addUnitHeight(unit)
+//	}
+//}
+
 func (chain *MemDag) AddStableUnit(unit *modules.Unit) error {
 	chain.lock.Lock()
 	defer chain.lock.Unlock()
