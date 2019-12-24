@@ -123,7 +123,7 @@ func TestGetTransferTx(t *testing.T) {
 	//txID, _ := hex.DecodeString("51121d1124fb844132f994ef5067ec73f9bbe92b41c12720ae073401f746dc99") //eth transfer
 	//txID, _ := hex.DecodeString("498b634c39fbd19af340d66c8866623c124eb0e2160a45aa433644adc636bedb") //eth pending transfer
 	//txID, _ := hex.DecodeString("61cded704bd23d8ff7cbe0ac4b62b940bd76f3709f784db695c95efa8074b7df") //panz transfer
-	txID, _ := hex.DecodeString("6b2c4379b326757dd5b847f3c584170c5fe2649e6e33f962cf7e9826f77f07b6") //btc op_return
+	txID, _ := hex.DecodeString("52dab174e0d719704316c9301f146e1e90e7797ec8fe9f357a5fdfb0a62a1ab4") //btc op_return
 	//txID, _ := hex.DecodeString("4ef356ce0fc244ffb43cc0a941ca293c5b80e91254ad70474ba27acb9eb7b8fd")//panz approve
 	input := adaptor.GetTransferTxInput{TxID: txID}
 	inputBytes, err := json.Marshal(input)

@@ -238,6 +238,10 @@ github.com/palletone/btc-adaptor v1.0.1-0.20191220081515-b31693fbbaac h1:4gbgvOq
 github.com/palletone/btc-adaptor v1.0.1-0.20191220081515-b31693fbbaac/go.mod h1:YpYn81UkvCAWdjHmoSLwNRmQqWJyyOeNQ7rOcT9zF5I=
 github.com/palletone/btc-adaptor v1.0.1-0.20191220082020-b686397b9623 h1:xt3QhVGaoxiSmot+U1B7x7rX3J1cfuE295ZragWogEs=
 github.com/palletone/btc-adaptor v1.0.1-0.20191220082020-b686397b9623/go.mod h1:YpYn81UkvCAWdjHmoSLwNRmQqWJyyOeNQ7rOcT9zF5I=
+github.com/palletone/btc-adaptor v1.0.1-0.20191224040620-270de1704df9 h1:0XYvo8PCyLxrxupLEdDsi+pyBokxdxk+jfjR5UmeWCs=
+github.com/palletone/btc-adaptor v1.0.1-0.20191224040620-270de1704df9/go.mod h1:YpYn81UkvCAWdjHmoSLwNRmQqWJyyOeNQ7rOcT9zF5I=
+github.com/palletone/btc-adaptor v1.0.1-0.20191224041536-3348ea137f6e h1:aRIh+v5uF21KjrgJYxslp3l3E5v3V+wnIJ7uSlUQt0E=
+github.com/palletone/btc-adaptor v1.0.1-0.20191224041536-3348ea137f6e/go.mod h1:YpYn81UkvCAWdjHmoSLwNRmQqWJyyOeNQ7rOcT9zF5I=
 github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb h1:P4IhYnVAuD+BcmDRKBM3gPha9aybD2UQhLmCSQjoBjM=
 github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb h1:P4IhYnVAuD+BcmDRKBM3gPha9aybD2UQhLmCSQjoBjM=
 github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb/go.mod h1:nU+KRc545ru0otQl5XbRlV8YiwjS3rHUySM1FMtvq9Y=

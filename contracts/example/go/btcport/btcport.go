@@ -24,7 +24,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"sort"
 	"strings"
 
@@ -89,6 +88,11 @@ func (p *BTCPort) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		return p.WithdrawSubmit(args[0], stub)
 
+	case "Set":
+		if len(args) < 2 {
+			return shim.Error("need 2 args (Key, Value)")
+		}
+		return p.Set(stub, args[0], args[1])
 	case "get":
 		if len(args) < 1 {
 			return shim.Error("need 1 args (Key)")
@@ -110,7 +114,7 @@ func creatMulti(juryMsg []JuryMsgAddr, stub shim.ChaincodeStubInterface) (*adapt
 	//
 	answers := make([]string, 0, len(juryMsg))
 	for i := range juryMsg {
-		answers = append(answers, string(juryMsg[i].Answer))
+		answers = append(answers, hex.EncodeToString(juryMsg[i].Answer))
 	}
 	a := sort.StringSlice(answers[0:])
 	sort.Sort(a)
@@ -125,6 +129,7 @@ func creatMulti(juryMsg []JuryMsgAddr, stub shim.ChaincodeStubInterface) (*adapt
 	if err != nil {
 		return nil, err
 	}
+	log.Debugf("inputBytes : %s", string(inputBytes))
 	result, err := stub.OutChainCall("btc", "CreateMultiSigAddress", inputBytes)
 	if err != nil {
 		return nil, errors.New("OutChainCall CreateMultiSigAddress failed: " + err.Error())
@@ -176,7 +181,7 @@ func (p *BTCPort) InitDepositAddr(stub shim.ChaincodeStubInterface) pb.Response 
 	log.Debugf("juryPubkey.PublicKey: %x", juryPubkey.PublicKey)
 
 	//
-	recvResult, err := consult(stub, []byte("juryBTCPubkey"), result)
+	recvResult, err := consult(stub, []byte("juryBTCPubkey"), juryPubkey.PublicKey)
 	if err != nil {
 		log.Debugf("consult juryBTCPubkey failed: " + err.Error())
 		return shim.Error("consult juryBTCPubkey failed: " + err.Error())
@@ -189,6 +194,7 @@ func (p *BTCPort) InitDepositAddr(stub shim.ChaincodeStubInterface) pb.Response 
 	if len(juryMsg) != consultN {
 		return shim.Error("RecvJury result's len not enough")
 	}
+	log.Debugf("len(juryMsg) : %d", len(juryMsg))
 
 	//
 	createResult, err := creatMulti(juryMsg, stub)
@@ -201,7 +207,7 @@ func (p *BTCPort) InitDepositAddr(stub shim.ChaincodeStubInterface) pb.Response 
 	if err != nil {
 		return shim.Error("write " + symbolsDepositAddr + " failed: " + err.Error())
 	}
-	err = stub.PutState(symbolsDepositRedeem, []byte(createResult.Extra))
+	err = stub.PutState(symbolsDepositRedeem, []byte(hex.EncodeToString(createResult.Extra)))
 	if err != nil {
 		return shim.Error("write " + symbolsDepositRedeem + " failed: " + err.Error())
 	}
@@ -332,9 +338,9 @@ func (p *BTCPort) PayoutBTCTokenByTxID(btcTxHash string, stub shim.ChaincodeStub
 		return shim.Error("Need more confirms")
 	}
 
-	bigIntAmount := txResult.Tx.Amount.Amount
-	bigIntAmount = bigIntAmount.Div(bigIntAmount, big.NewInt(1e10)) //btcToken in PTN is decimal is 8
-	btcAmount := bigIntAmount.Uint64()
+	//bigIntAmount := txResult.Tx.Amount.Amount
+	//bigIntAmount = bigIntAmount.Div(bigIntAmount, big.NewInt(1e10)) //btcToken in PTN is decimal is 8
+	btcAmount := txResult.Tx.Amount.Amount.Uint64()
 	if btcAmount == 0 {
 		return shim.Error("need deposit bigger than 0")
 	}
@@ -345,7 +351,7 @@ func (p *BTCPort) PayoutBTCTokenByTxID(btcTxHash string, stub shim.ChaincodeStub
 		return shim.Error("need set ptn address in op_return")
 	}
 	//
-	err = stub.PutState(symbolsDeposit+btcTxHash, []byte(ptnAddr+"-"+bigIntAmount.String()))
+	err = stub.PutState(symbolsDeposit+btcTxHash, []byte(ptnAddr+"-"+txResult.Tx.Amount.Amount.String()))
 	if err != nil {
 		log.Debugf("PutState txhash failed err: %s", err.Error())
 		return shim.Error("PutState txhash failed")
@@ -725,6 +731,13 @@ func (p *BTCPort) WithdrawBTC(txID, btcAddrInput string, stub shim.ChaincodeStub
 func (p *BTCPort) Get(stub shim.ChaincodeStubInterface, key string) pb.Response {
 	result, _ := stub.GetState(key)
 	return shim.Success(result)
+}
+func (p *BTCPort) Set(stub shim.ChaincodeStubInterface, key string, value string) pb.Response {
+	err := stub.PutState(key, []byte(value))
+	if err != nil {
+		return shim.Error(fmt.Sprintf("PutState failed: %s", err.Error()))
+	}
+	return shim.Success([]byte("Success"))
 }
 
 func (p *BTCPort) WithdrawSubmit(btcTxID string, stub shim.ChaincodeStubInterface) pb.Response {
