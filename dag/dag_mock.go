@@ -1151,17 +1151,17 @@ func (mr *MockIDagMockRecorder) SubscribeToGroupSignEvent(ch interface{}) *gomoc
 }
 
 // IsSynced mocks base method
-func (m *MockIDag) IsSynced(isStrict bool) bool {
+func (m *MockIDag) IsSynced(toStrictly bool) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsSynced", isStrict)
+	ret := m.ctrl.Call(m, "IsSynced", toStrictly)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
 // IsSynced indicates an expected call of IsSynced
-func (mr *MockIDagMockRecorder) IsSynced(isStrict interface{}) *gomock.Call {
+func (mr *MockIDagMockRecorder) IsSynced(toStrictly interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSynced", reflect.TypeOf((*MockIDag)(nil).IsSynced), isStrict)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSynced", reflect.TypeOf((*MockIDag)(nil).IsSynced), toStrictly)
 }
 
 // SubscribeActiveMediatorsUpdatedEvent mocks base method
@@ -1843,6 +1843,20 @@ func (mr *MockIDagMockRecorder) GetAssetReference(asset interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssetReference", reflect.TypeOf((*MockIDag)(nil).GetAssetReference), asset)
 }
 
+// CheckReadSetValid mocks base method
+func (m *MockIDag) CheckReadSetValid(contractId []byte, readSet []modules.ContractReadSet) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckReadSetValid", contractId, readSet)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// CheckReadSetValid indicates an expected call of CheckReadSetValid
+func (mr *MockIDagMockRecorder) CheckReadSetValid(contractId, readSet interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckReadSetValid", reflect.TypeOf((*MockIDag)(nil).CheckReadSetValid), contractId, readSet)
+}
+
 // IsActiveJury mocks base method
 func (m *MockIDag) IsActiveJury(addr common.Address) bool {
 	m.ctrl.T.Helper()
@@ -1931,9 +1945,9 @@ func (mr *MockIDagMockRecorder) CreateGenericTransaction(from, to, daoAmount, da
 }
 
 // CreateTokenTransaction mocks base method
-func (m *MockIDag) CreateTokenTransaction(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string, msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
+func (m *MockIDag) CreateTokenTransaction(from, to common.Address, token *modules.Asset, daoAmountToken, daoFee uint64, msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateTokenTransaction", from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, msg, txPool)
+	ret := m.ctrl.Call(m, "CreateTokenTransaction", from, to, token, daoAmountToken, daoFee, msg, txPool)
 	ret0, _ := ret[0].(*modules.Transaction)
 	ret1, _ := ret[1].(uint64)
 	ret2, _ := ret[2].(error)
@@ -1941,9 +1955,9 @@ func (m *MockIDag) CreateTokenTransaction(from, to, toToken common.Address, daoA
 }
 
 // CreateTokenTransaction indicates an expected call of CreateTokenTransaction
-func (mr *MockIDagMockRecorder) CreateTokenTransaction(from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, msg, txPool interface{}) *gomock.Call {
+func (mr *MockIDagMockRecorder) CreateTokenTransaction(from, to, token, daoAmountToken, daoFee, msg, txPool interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTokenTransaction", reflect.TypeOf((*MockIDag)(nil).CreateTokenTransaction), from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, msg, txPool)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTokenTransaction", reflect.TypeOf((*MockIDag)(nil).CreateTokenTransaction), from, to, token, daoAmountToken, daoFee, msg, txPool)
 }
 
 // ChainThreshold mocks base method
@@ -1986,21 +2000,6 @@ func (m *MockIDag) CheckUnitsCorrect(assetId string, number int) error {
 func (mr *MockIDagMockRecorder) CheckUnitsCorrect(assetId, number interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckUnitsCorrect", reflect.TypeOf((*MockIDag)(nil).CheckUnitsCorrect), assetId, number)
-}
-
-// CheckReadSetValid mocks base method
-func (m *MockIDag) CheckReadSetValid(contractId []byte, readSet []modules.ContractReadSet) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckReadSetValid", contractId, readSet)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// CheckReadSetValid indicates an expected call of CheckReadSetValid
-func (mr *MockIDagMockRecorder) CheckReadSetValid(contractId, readSet interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckReadSetValid",
-		reflect.TypeOf((*MockIDag)(nil).CheckReadSetValid), contractId, readSet)
 }
 
 // GetBlacklistAddress mocks base method

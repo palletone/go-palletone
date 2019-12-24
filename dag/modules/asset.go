@@ -21,10 +21,10 @@
 package modules
 
 import (
-	"fmt"
-	"strings"
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"strings"
 
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/shopspring/decimal"
@@ -43,7 +43,7 @@ type Asset struct {
 type AssetType byte
 
 const (
-	AssetType_FungibleToken    AssetType = iota
+	AssetType_FungibleToken AssetType = iota
 	AssetType_NonFungibleToken
 	AssetType_VoteToken
 )
@@ -181,4 +181,11 @@ func (asset *Asset) DisplayAmount(amount uint64) decimal.Decimal {
 		d = d.Div(decimal.New(10, 0))
 	}
 	return d
+}
+func (asset *Asset) Uint64Amount(amt decimal.Decimal) uint64 {
+	dec := asset.GetDecimal()
+	for i := 0; i < int(dec); i++ {
+		amt = amt.Mul(decimal.New(10, 0))
+	}
+	return uint64(amt.IntPart())
 }

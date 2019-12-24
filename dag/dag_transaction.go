@@ -122,20 +122,20 @@ func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee
 	return tx, nil
 }
 
-func (dag *Dag) createTokenTransaction(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64,
-	assetToken string, txPool txspool.ITxPool) (*modules.Transaction, error) {
+func (dag *Dag) createTokenTransaction(from, to common.Address, token *modules.Asset, daoAmountToken, daoFee uint64,
+	txPool txspool.ITxPool) (*modules.Transaction, error) {
 	// 条件判断
 	if daoFee == 0 {
 		return nil, fmt.Errorf("transaction fee cannot be 0")
 	}
 
-	daoTotal := daoAmount + daoFee
+	daoTotal := daoFee
 	if daoTotal > dag.GetPtnBalance(from) {
 		return nil, fmt.Errorf("the ptn balance of the account is not enough %v", daoTotal)
 	}
 
 	// 1. 获取转出账户所有的PTN utxo
-	coreUtxos, tokenUtxos, err := dag.getAddrCoreUtxosToken(from, assetToken, txPool)
+	coreUtxos, tokenUtxos, err := dag.getAddrCoreUtxosToken(from, token, txPool)
 	if err != nil {
 		return nil, err
 	}
@@ -147,11 +147,11 @@ func (dag *Dag) createTokenTransaction(from, to, toToken common.Address, daoAmou
 		return nil, fmt.Errorf("%v 's  utxo of this Token is empty", from.Str())
 	}
 	//2. 获取 PaymentPayload
-	ploadPTN, err := dag.getPayload(from, to, daoAmount, daoFee, coreUtxos)
+	ploadPTN, err := dag.getPayload(from, from, 0, daoFee, coreUtxos)
 	if err != nil {
 		return nil, err
 	}
-	ploadToken, err := dag.getPayload(from, toToken, daoAmountToken, 0, tokenUtxos)
+	ploadToken, err := dag.getPayload(from, to, daoAmountToken, 0, tokenUtxos)
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +255,7 @@ func (dag *Dag) getAddrCoreUtxos(addr common.Address,
 	return coreUtxos, nil
 }
 
-func (dag *Dag) getAddrCoreUtxosToken(addr common.Address, assetToken string,
+func (dag *Dag) getAddrCoreUtxosToken(addr common.Address, assetToken *modules.Asset,
 	txPool txspool.ITxPool) (map[modules.OutPoint]*modules.Utxo, map[modules.OutPoint]*modules.Utxo, error) {
 	// todo 待优化
 	allTxos, err := dag.GetAddrUtxos(addr)
@@ -271,7 +271,7 @@ func (dag *Dag) getAddrCoreUtxosToken(addr common.Address, assetToken string,
 		// 剔除非PTN资产
 		isPTN := true
 		if !utxo.Asset.AssetId.Equal(assetId) {
-			if utxo.Asset.String() != assetToken {
+			if !utxo.Asset.Equal(assetToken) {
 				continue
 			}
 			isPTN = false
@@ -319,14 +319,13 @@ func (dag *Dag) CreateGenericTransaction(from, to common.Address, daoAmount, dao
 }
 
 // to build a transfer transactions by the token, from to fee
-func (dag *Dag) CreateTokenTransaction(from, to, toToken common.Address, daoAmount, daoFee uint64,
-	daoAmountToken uint64,
-	assetToken string, msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
+func (dag *Dag) CreateTokenTransaction(from, to common.Address, token *modules.Asset, daoAmountToken, daoFee uint64,
+	msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
 	// 如果是 text，则增加费用，以防止用户任意增加文本，导致网络负担加重
 	if msg.App == modules.APP_DATA {
 		daoFee += dag.calculateDataFee(msg.Payload)
 	}
-	tx, err := dag.createTokenTransaction(from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, txPool)
+	tx, err := dag.createTokenTransaction(from, to, token, daoAmountToken, daoFee, txPool)
 	if err != nil {
 		return nil, 0, err
 	}

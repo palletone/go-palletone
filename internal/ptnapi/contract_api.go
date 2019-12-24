@@ -275,19 +275,19 @@ func (s *PrivateContractAPI) Ccinvoketx(ctx context.Context, from, to string, am
 	return rsp1, err
 }
 
-func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, toToken string, amount, fee decimal.Decimal,
-	assetToken, amountToken, deployId string, param []string) (*ContractDeployRsp, error) {
-	contractAddr, _ := common.StringToAddress(deployId)
+func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token string, amountToken, fee decimal.Decimal,
+	contractAddress string, param []string) (*ContractDeployRsp, error) {
+	contractAddr, _ := common.StringToAddress(contractAddress)
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
-	toAddrToken, _ := common.StringToAddress(toToken)
-	daoAmount := ptnjson.Ptn2Dao(amount)
 	daoFee := ptnjson.Ptn2Dao(fee)
-	amountOfToken, _ := strconv.ParseUint(amountToken, 10, 64)
+	asset, err := modules.StringToAsset(token)
+	if err != nil {
+		return nil, errors.New("Invalid asset string:" + token)
+	}
+	amountOfToken := asset.Uint64Amount(amountToken)
 	log.Info("CcinvokeToken info:")
 	log.Infof("   fromAddr[%s], toAddr[%s]", fromAddr.String(), toAddr.String())
-	log.Infof("   daoAmount[%d], daoFee[%d]", daoAmount, daoFee)
-	log.Infof("   toAddrToken[%s], amountVote[%d]", toAddrToken.String(), amountOfToken)
 	log.Infof("   contractId[%s]", contractAddr.String())
 	log.Infof("   param len[%d]", len(param))
 	args := make([][]byte, len(param))
@@ -295,12 +295,12 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, toToke
 		args[i] = []byte(arg)
 		log.Infof("      index[%d], value[%s]\n", i, arg)
 	}
-	reqId, err := s.b.ContractInvokeReqTokenTx(fromAddr, toAddr, toAddrToken, daoAmount, daoFee,
-		amountOfToken, assetToken, contractAddr, args, 0)
+	reqId, err := s.b.ContractInvokeReqTokenTx(fromAddr, toAddr, asset, amountOfToken, daoFee,
+		contractAddr, args, 0)
 	log.Infof("   reqId[%s]", hex.EncodeToString(reqId[:]))
 	rsp1 := &ContractDeployRsp{
 		ReqId:      hex.EncodeToString(reqId[:]),
-		ContractId: deployId,
+		ContractId: contractAddress,
 	}
 	return rsp1, err
 }

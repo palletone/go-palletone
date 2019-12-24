@@ -221,9 +221,10 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 	return reqId, nil
 }
 
-func (p *Processor) ContractInvokeReqToken(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64,
-	assetToken string, contractId common.Address, args [][]byte, timeout uint32) (common.Hash, error) {
-	if from == (common.Address{}) || to == (common.Address{}) || contractId == (common.Address{}) || args == nil {
+func (p *Processor) ContractInvokeReqToken(from, to common.Address, token *modules.Asset, daoAmount, daoFee uint64,
+	contractAddress common.Address, args [][]byte, timeout uint32) (common.Hash, error) {
+
+	if from == (common.Address{}) || to == (common.Address{}) || contractAddress == (common.Address{}) || args == nil {
 		log.Error("ContractInvokeReqToken, param is error")
 		return common.Hash{}, errors.New("ContractInvokeReqToken request param is error")
 	}
@@ -238,7 +239,7 @@ func (p *Processor) ContractInvokeReqToken(from, to, toToken common.Address, dao
 		}
 	}
 	if daoFee == 0 { //dynamic calculation fee
-		fee, _, _, err := p.ContractInvokeReqFee(from, to, daoAmount, daoFee, nil, contractId, args, timeout)
+		fee, _, _, err := p.ContractInvokeReqFee(from, to, daoAmount, daoFee, nil, contractAddress, args, timeout)
 		if err != nil {
 			return common.Hash{}, fmt.Errorf("ContractInvokeReqToken, ContractInvokeReqFee err:%s", err.Error())
 		}
@@ -248,18 +249,17 @@ func (p *Processor) ContractInvokeReqToken(from, to, toToken common.Address, dao
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_INVOKE_REQUEST,
 		Payload: &modules.ContractInvokeRequestPayload{
-			ContractId: contractId.Bytes(),
+			ContractId: contractAddress.Bytes(),
 			Args:       args,
 			Timeout:    timeout,
 		},
 	}
-	reqId, tx, err := p.createContractTxReqToken(contractId, from, to, toToken, daoAmount, daoFee,
-		daoAmountToken, assetToken, msgReq)
+	reqId, tx, err := p.createContractTxReqToken(contractAddress, from, to, token, daoAmount, daoFee, msgReq)
 	if err != nil {
 		return common.Hash{}, err
 	}
 	log.Infof("[%s]ContractInvokeReqToken ok, reqId[%s] contractId[%s]",
-		shortId(reqId.String()), reqId.String(), contractId.Bytes())
+		shortId(reqId.String()), reqId.String(), contractAddress.Bytes())
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_EXEC, Ele: p.mtx[reqId].eleNode, Tx: tx}, true)
 	return reqId, nil

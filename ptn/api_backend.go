@@ -736,11 +736,9 @@ func (b *PtnApiBackend) SendContractInvokeReqTx(requestTx *modules.Transaction) 
 	go b.ptn.ContractBroadcast(jury.ContractEvent{Ele: nil, CType: jury.CONTRACT_EVENT_EXEC, Tx: requestTx}, true)
 	return requestTx.RequestHash(), nil
 }
-func (b *PtnApiBackend) ContractInvokeReqTokenTx(from, to, toToken common.Address, daoAmount, daoFee,
-	daoAmountToken uint64, assetToken string, contractAddress common.Address, args [][]byte,
-	timeout uint32) (reqId common.Hash, err error) {
-	return b.ptn.contractPorcessor.ContractInvokeReqToken(from, to, toToken, daoAmount, daoFee, daoAmountToken,
-		assetToken, contractAddress, args, timeout)
+func (b *PtnApiBackend) ContractInvokeReqTokenTx(from, to common.Address, token *modules.Asset,
+	amountToken, fee uint64, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
+	return b.ptn.contractPorcessor.ContractInvokeReqToken(from, to, token, amountToken, fee, contractAddress, args, timeout)
 }
 func (b *PtnApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address,
 	deleteImage bool) (reqId common.Hash, err error) {
