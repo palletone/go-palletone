@@ -14,13 +14,13 @@ import (
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
-	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	"github.com/naoina/toml"
 
 	"github.com/palletone/adaptor"
 	"github.com/palletone/btc-adaptor"
+	"github.com/palletone/btc-adaptor/txscript"
 )
 
 type BTCConfig struct {
