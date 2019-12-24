@@ -102,7 +102,7 @@ func cancelExchangeOrder(stub shim.ChaincodeStubInterface, order *ExchangeOrder)
 }
 
 //获得订单列表
-func getExchangeRecords(stub shim.ChaincodeStubInterface) ([]*ExchangeOrderJson, error) {
+func getAllExchangeOrder(stub shim.ChaincodeStubInterface) ([]*ExchangeOrderJson, error) {
 	kvs, err := stub.GetStateByPrefix(EXCHANGELIST_RECORD)
 	if err != nil {
 		return nil, err
@@ -116,6 +116,28 @@ func getExchangeRecords(stub shim.ChaincodeStubInterface) ([]*ExchangeOrderJson,
 		}
 		jsSheet := convertSheet(*record)
 		result = append(result, jsSheet)
+	}
+	return result, nil
+}
+
+//查询某地址的订单，
+//TODO 全表扫描，大量订单时，性能有问题
+func getExchangeOrderByAddress(stub shim.ChaincodeStubInterface, addr common.Address) ([]*ExchangeOrderJson, error) {
+	kvs, err := stub.GetStateByPrefix(EXCHANGELIST_RECORD)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*ExchangeOrderJson, 0, len(kvs))
+	for _, kv := range kvs {
+		record := &ExchangeOrder{}
+		err = rlp.DecodeBytes(kv.Value, record)
+		if err != nil {
+			return nil, err
+		}
+		if record.Address == addr {
+			jsSheet := convertSheet(*record)
+			result = append(result, jsSheet)
+		}
 	}
 	return result, nil
 }
@@ -142,4 +164,21 @@ func saveExchangeOrderHistory(stub shim.ChaincodeStubInterface, order *ExchangeO
 	data, _ := rlp.EncodeToBytes(order)
 	key := EXCHANGELIST_HISTORY + order.ExchangeSn
 	return stub.PutState(key, data)
+}
+func getAllHistoryOrder(stub shim.ChaincodeStubInterface) ([]*ExchangeOrderJson, error) {
+	kvs, err := stub.GetStateByPrefix(EXCHANGELIST_HISTORY)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*ExchangeOrderJson, 0, len(kvs))
+	for _, kv := range kvs {
+		record := &ExchangeOrder{}
+		err = rlp.DecodeBytes(kv.Value, record)
+		if err != nil {
+			return nil, err
+		}
+		jsSheet := convertSheet(*record)
+		result = append(result, jsSheet)
+	}
+	return result, nil
 }

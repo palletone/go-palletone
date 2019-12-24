@@ -67,3 +67,17 @@ func getMatchRecordByOrderSn(stub shim.ChaincodeStubInterface, orderSn string) (
 	}
 	return result, nil
 }
+func getAllMatchRecord(stub shim.ChaincodeStubInterface) ([]*MatchRecordJson, error) {
+	key := MatchRecordPrefix
+	rows, err := stub.GetStateByPrefix(key)
+	if err != nil {
+		return nil, err
+	}
+	result := []*MatchRecordJson{}
+	for _, row := range rows {
+		record := &MatchRecord{}
+		rlp.DecodeBytes(row.Value, record)
+		result = append(result, convertMatchRecord(record))
+	}
+	return result, nil
+}

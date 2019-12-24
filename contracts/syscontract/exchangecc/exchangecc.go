@@ -28,7 +28,7 @@ func getPayToContract(stub shim.ChaincodeStubInterface) (*modules.Asset, uint64,
 			return invokeAA.Asset, invokeAA.Amount, nil
 		}
 	}
-	return nil, 0, errors.New("No pay to contract token")
+	return nil, 0, errors.New("no pay to contract token")
 }
 func (p *ExchangeMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	f, args := stub.GetFunctionAndParameters()
@@ -55,6 +55,20 @@ func (p *ExchangeMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Success(nil)
 	case "getActiveOrderList": //列出订单列表
 		result, err := p.GetActiveOrderList(stub)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		data, _ := json.Marshal(result)
+		return shim.Success(data)
+	case "getActiveOrdersByMaker": //列出订单列表
+		if len(args) != 1 {
+			return shim.Error("must input 1 args: [maker address]")
+		}
+		addr, err := common.StringToAddress(args[0])
+		if err != nil {
+			return shim.Error("Invalid address:" + err.Error())
+		}
+		result, err := p.GetActiveOrdersByMaker(stub, addr)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -88,6 +102,16 @@ func (p *ExchangeMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		data, _ := json.Marshal(result)
 		return shim.Success(data)
+	case "getAllMatchList": //列出订单的成交记录
+		if len(args) != 0 {
+			return shim.Error("must input 0 arg")
+		}
+		result, err := p.GetAllMatchList(stub)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		data, _ := json.Marshal(result)
+		return shim.Success(data)
 	case "payout": //付出Token
 		if len(args) != 3 {
 			return shim.Error("must input 3 args: Address,Amount,Asset")
@@ -112,6 +136,13 @@ func (p *ExchangeMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			return shim.Error(err.Error())
 		}
 		return shim.Success(nil)
+	case "getHistoryOrderList": //列出订单列表
+		result, err := p.GetHistoryOrderList(stub)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		data, _ := json.Marshal(result)
+		return shim.Success(data)
 	default:
 		jsonResp := "{\"Error\":\"Unknown function " + f + "\"}"
 		return shim.Error(jsonResp)
@@ -129,18 +160,18 @@ func (p *ExchangeMgr) Maker(stub shim.ChaincodeStubInterface, wantAsset *modules
 		return err
 	}
 
-	newsheet := &ExchangeOrder{}
-	newsheet.Address = addr
-	newsheet.SaleAsset = saleToken
-	newsheet.SaleAmount = saleAmount
-	newsheet.WantAsset = wantAsset
-	newsheet.WantAmount = wantAsset.Uint64Amount(wantAmount)
+	order := &ExchangeOrder{}
+	order.Address = addr
+	order.SaleAsset = saleToken
+	order.SaleAmount = saleAmount
+	order.WantAsset = wantAsset
+	order.WantAmount = wantAsset.Uint64Amount(wantAmount)
 	txid := stub.GetTxID()
-	newsheet.ExchangeSn = txid
-	newsheet.Status = 1
-	newsheet.CurrentWantAmount = newsheet.WantAmount
-	newsheet.CurrentSaleAmount = newsheet.SaleAmount
-	return p.AddExchangeOrder(stub, newsheet)
+	order.ExchangeSn = txid
+	order.Status = 1
+	order.CurrentWantAmount = order.WantAmount
+	order.CurrentSaleAmount = order.SaleAmount
+	return p.AddExchangeOrder(stub, order)
 }
 
 func (p *ExchangeMgr) Taker(stub shim.ChaincodeStubInterface, orderSn string) error {
@@ -216,13 +247,24 @@ func (p *ExchangeMgr) Taker(stub shim.ChaincodeStubInterface, orderSn string) er
 	}
 	return nil
 }
-
 func (p *ExchangeMgr) GetActiveOrderList(stub shim.ChaincodeStubInterface) ([]*ExchangeOrderJson, error) {
-	return getExchangeRecords(stub)
+	return getAllExchangeOrder(stub)
 }
+func (p *ExchangeMgr) GetActiveOrdersByMaker(stub shim.ChaincodeStubInterface, addr common.Address) ([]*ExchangeOrderJson, error) {
+	return getExchangeOrderByAddress(stub, addr)
+}
+
+func (p *ExchangeMgr) GetHistoryOrderList(stub shim.ChaincodeStubInterface) ([]*ExchangeOrderJson, error) {
+	return getAllHistoryOrder(stub)
+}
+
 func (p *ExchangeMgr) GetOrderMatchList(stub shim.ChaincodeStubInterface, orderSn string) ([]*MatchRecordJson, error) {
 	return getMatchRecordByOrderSn(stub, orderSn)
 }
+func (p *ExchangeMgr) GetAllMatchList(stub shim.ChaincodeStubInterface) ([]*MatchRecordJson, error) {
+	return getAllMatchRecord(stub)
+}
+
 func (p *ExchangeMgr) Cancel(stub shim.ChaincodeStubInterface, orderSn string) error {
 	exchange, err := getExchangeRecordBySn(stub, orderSn)
 	if err != nil {
