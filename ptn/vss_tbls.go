@@ -19,9 +19,12 @@
 package ptn
 
 import (
+	"time"
+
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
+	"github.com/palletone/go-palletone/common/util"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -31,7 +34,9 @@ func (pm *ProtocolManager) newProducedUnitBroadcastLoop() {
 	for {
 		select {
 		case event := <-pm.newProducedUnitCh:
-			pm.BroadcastUnit(event.Unit, true)
+			log.Debugf("receive NewProducedUnitEvent")
+			pm.IsExistInCache(event.Unit.UnitHash.Bytes())
+			go pm.BroadcastUnit(event.Unit, true)
 			//self.BroadcastCorsHeader(event.Unit.Header(), self.SubProtocols[0].Name)
 
 		case <-pm.newProducedUnitSub.Err():
@@ -58,8 +63,8 @@ func (pm *ProtocolManager) toGroupSign(event modules.ToGroupSignEvent) {
 	log.Debugf("receive toGroupSign event")
 
 	// 判断是否满足群签名的条件
-	if !pm.dag.IsSynced() {
-		log.Debugf("dag is not synced")
+	if !pm.dag.IsSynced(false) {
+		log.Debugf(errStr)
 		return
 	}
 
@@ -79,7 +84,10 @@ func (pm *ProtocolManager) toGroupSign(event modules.ToGroupSignEvent) {
 		return
 	}
 
-	pm.producer.AddToTBLSSignBufs(newHash)
+	if pm.IsExistInCache(util.RlpHash(newHash).Bytes()) {
+		return
+	}
+	go pm.producer.AddToTBLSSignBufs(newHash)
 }
 
 // @author Albert·Gou
@@ -87,6 +95,7 @@ func (pm *ProtocolManager) sigShareTransmitLoop() {
 	for {
 		select {
 		case event := <-pm.sigShareCh:
+			pm.IsExistInCache(event.Hash().Bytes())
 			go pm.transmitSigShare(&event)
 
 			// Err() channel will be closed when unsubscribing.
@@ -105,30 +114,38 @@ func (pm *ProtocolManager) transmitSigShare(sigShare *mp.SigShareEvent) {
 		return
 	}
 
-	ma := header.Author()
-	med := pm.dag.GetMediator(ma)
-	if med == nil {
-		log.Debugf("fail to get mediator(%v)", ma.Str())
-		return
+	// 判读该unit是否是本地mediator生产的
+	if pm.producer.IsLocalMediator(header.Author()) {
+		go pm.producer.AddToTBLSRecoverBuf(sigShare)
+	} else {
+		go pm.BroadcastSigShare(sigShare)
 	}
 
-	peer, self := pm.GetPeer(med.Node)
-	if self {
-		pm.producer.AddToTBLSRecoverBuf(sigShare)
-		return
-	}
-
-	if peer != nil {
-		err := peer.SendSigShare(sigShare)
-		if err != nil {
-			log.Debug(err.Error())
-		}
-
-		return
-	}
-
-	// 如果没有和对应的mediator有网络连接，则进行转发
-	pm.BroadcastSigShare(sigShare)
+	//ma := header.Author()
+	//med := pm.dag.GetMediator(ma)
+	//if med == nil {
+	//	log.Debugf("fail to get mediator(%v)", ma.Str())
+	//	return
+	//}
+	//
+	//peer, self := pm.GetPeer(med.Node)
+	//if self {
+	//	pm.IsExistInCache(sigShare.Hash().Bytes())
+	//	go pm.producer.AddToTBLSRecoverBuf(sigShare)
+	//	return
+	//}
+	//
+	//if peer != nil {
+	//	err := peer.SendSigShare(sigShare)
+	//	if err != nil {
+	//		log.Debug(err.Error())
+	//	}
+	//
+	//	return
+	//}
+	//
+	//// 如果没有和对应的mediator有网络连接，则进行转发
+	//go pm.BroadcastSigShare(sigShare)
 }
 
 // @author Albert·Gou
@@ -136,7 +153,8 @@ func (pm *ProtocolManager) groupSigBroadcastLoop() {
 	for {
 		select {
 		case event := <-pm.groupSigCh:
-			pm.dag.SetUnitGroupSign(event.UnitHash, event.GroupSig, pm.txpool)
+			pm.IsExistInCache(event.Hash().Bytes())
+			go pm.dag.SetUnitGroupSign(event.UnitHash, event.GroupSig, pm.txpool)
 			go pm.BroadcastGroupSig(&event)
 
 		// Err() channel will be closed when unsubscribing.
@@ -149,9 +167,14 @@ func (pm *ProtocolManager) groupSigBroadcastLoop() {
 // @author Albert·Gou
 // BroadcastGroupSig will propagate the group signature of unit to p2p network
 func (pm *ProtocolManager) BroadcastGroupSig(groupSig *mp.GroupSigEvent) {
+	now := uint64(time.Now().Unix())
+	if now > groupSig.Deadline {
+		return
+	}
+
 	peers := pm.peers.PeersWithoutGroupSig(groupSig.Hash())
 	for _, peer := range peers {
-		peer.SendGroupSig(groupSig)
+		go peer.SendGroupSig(groupSig)
 	}
 }
 
@@ -171,39 +194,51 @@ func (pm *ProtocolManager) vssDealTransmitLoop() {
 
 // @author Albert·Gou
 func (pm *ProtocolManager) transmitVSSDeal(deal *mp.VSSDealEvent) {
-	// 判断是否同步, 如果没同步完成，发起的vss deal是无效的，浪费带宽
-	if !pm.dag.IsSynced() {
-		log.Debugf("this node is not synced")
-		return
-	}
+	// 重复判断
+	//// 判断是否同步, 如果没同步完成，发起的vss deal是无效的，浪费带宽
+	//if !pm.dag.IsSynced(true) {
+	//	log.Debugf(errStr)
+	//	return
+	//}
 
-	ma := pm.dag.GetActiveMediatorAddr(int(deal.DstIndex))
-	med := pm.dag.GetMediator(ma)
-	if med == nil {
-		log.Debugf("fail to get mediator(%v)", ma.Str())
-		return
-	}
+	// vss deal 一定是请求其他mediator的消息
+	pm.IsExistInCache(deal.Hash().Bytes())
+	go pm.BroadcastVSSDeal(deal)
 
-	//peer, self := pm.GetPeer(node)
-	peer, self := pm.GetPeer(med.Node)
-	if self {
-		pm.producer.AddToDealBuf(deal)
-		return
-	}
+	//// 判读该deal是否是发给本地mediator的
+	//ma := pm.dag.GetActiveMediatorAddr(int(deal.DstIndex))
+	//if pm.producer.IsLocalMediator(ma) {
+	//	go pm.producer.AddToDealBuf(deal)
+	//} else {
+	//	go pm.BroadcastVSSDeal(deal)
+	//}
 
-	if peer != nil {
-		err := peer.SendVSSDeal(deal)
-		if err != nil {
-			log.Debugf(err.Error())
-		}
-
-		return
-	}
-
-	// 如果没有和对应的mediator有网络连接，则进行转发
-	pm.BroadcastVSSDeal(deal)
-
-	return
+	//ma := pm.dag.GetActiveMediatorAddr(int(deal.DstIndex))
+	//med := pm.dag.GetMediator(ma)
+	//if med == nil {
+	//	log.Debugf("fail to get mediator(%v)", ma.Str())
+	//	return
+	//}
+	//
+	////peer, self := pm.GetPeer(node)
+	//peer, self := pm.GetPeer(med.Node)
+	//if self {
+	//	pm.IsExistInCache(deal.Hash().Bytes())
+	//	go pm.producer.AddToDealBuf(deal)
+	//	return
+	//}
+	//
+	//if peer != nil {
+	//	err := peer.SendVSSDeal(deal)
+	//	if err != nil {
+	//		log.Debugf(err.Error())
+	//	}
+	//
+	//	return
+	//}
+	//
+	//// 如果没有和对应的mediator有网络连接，则进行转发
+	//go pm.BroadcastVSSDeal(deal)
 }
 
 // @author Albert·Gou
@@ -235,8 +270,9 @@ func (pm *ProtocolManager) broadcastVssResp(resp *mp.VSSResponseEvent) {
 	//	}
 	//}
 
-	pm.producer.AddToResponseBuf(resp)
-	pm.BroadcastVSSResponse(resp)
+	pm.IsExistInCache(resp.Hash().Bytes())
+	go pm.producer.AddToResponseBuf(resp)
+	go pm.BroadcastVSSResponse(resp)
 }
 
 // GetPeer, retrieve specified peer. If it is the node itself, p is nil and self is true

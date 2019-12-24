@@ -233,7 +233,7 @@ func (statedb *StateDb) GetContractStatesByPrefix(id []byte,
 		realKey := dbkey[len(key):]
 		if realKey != "" {
 			result[realKey] = &modules.ContractStateValue{Value: state, Version: version}
-			log.Debug("the contract's state get info.", "key", realKey)
+			log.Debug("get the contract's state", "key", realKey)
 		}
 	}
 	return result, err
@@ -327,9 +327,10 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 			mi := modules.NewMediatorInfo()
 			mi.MediatorInfoBase = mco.MediatorInfoBase
 			mi.MediatorApplyInfo = mco.MediatorApplyInfo
-			if mi.RewardAdd == "" {
-				mi.RewardAdd = mi.AddStr
-			}
+
+			//if mi.RewardAdd == "" {
+			//	mi.RewardAdd = mi.AddStr
+			//}
 
 			// 判断是否是1.0.2之前的mediator
 			if pubKey, isFind := constants.OldMainNetMediatorAndPubKey[mco.AddStr]; isFind {

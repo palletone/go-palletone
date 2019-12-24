@@ -130,39 +130,45 @@ func (d *Dag) GetMediator(add common.Address) *core.Mediator {
 }
 
 func (dag *Dag) GetSlotAtTime(when time.Time) uint32 {
-	_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
-	return rep.GetSlotAtTime(when)
-	//return dag.unstablePropRep.GetSlotAtTime(when)
+	//_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
+	//return rep.GetSlotAtTime(when)
+	return dag.unstablePropRep.GetSlotAtTime(when)
 }
 
 func (dag *Dag) GetNewestUnitTimestamp(token modules.AssetId) (int64, error) {
-	_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
-	return rep.GetNewestUnitTimestamp(token)
+	//_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
+	//return rep.GetNewestUnitTimestamp(token)
+	return dag.unstablePropRep.GetNewestUnitTimestamp(token)
 }
 
 func (dag *Dag) GetSlotTime(slotNum uint32) time.Time {
-	_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
-	return rep.GetSlotTime(slotNum)
-	//return dag.unstablePropRep.GetSlotTime(slotNum)
+	//_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
+	//return rep.GetSlotTime(slotNum)
+	return dag.unstablePropRep.GetSlotTime(slotNum)
 }
 
 func (dag *Dag) GetScheduledMediator(slotNum uint32) common.Address {
-	_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
-	return rep.GetScheduledMediator(slotNum)
-	//return dag.unstablePropRep.GetScheduledMediator(slotNum)
+	//_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
+	//return rep.GetScheduledMediator(slotNum)
+	return dag.unstablePropRep.GetScheduledMediator(slotNum)
 }
 
 func (dag *Dag) HeadUnitTime() int64 {
 	gasToken := dagconfig.DagConfig.GetGasToken()
-	_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
-	t, _ := rep.GetNewestUnitTimestamp(gasToken)
+	//_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
+	//t, _ := rep.GetNewestUnitTimestamp(gasToken)
+
+	t, _ := dag.unstablePropRep.GetNewestUnitTimestamp(gasToken)
 	return t
+
+	//return dag.unstableUnitProduceRep.HeadUnitTime()
 }
 
 func (dag *Dag) HeadUnitNum() uint64 {
 	gasToken := dagconfig.DagConfig.GetGasToken()
-	_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
-	_, idx, _ := rep.GetNewestUnit(gasToken)
+	//_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
+	//_, idx, _ := rep.GetNewestUnit(gasToken)
+	_, idx, _ := dag.unstablePropRep.GetNewestUnit(gasToken)
 	return idx.Index
 }
 
@@ -172,43 +178,40 @@ func (dag *Dag) LastMaintenanceTime() int64 {
 
 func (dag *Dag) HeadUnitHash() common.Hash {
 	gasToken := dagconfig.DagConfig.GetGasToken()
-	_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
-	hash, _, _ := rep.GetNewestUnit(gasToken)
+	//_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
+	//hash, _, _ := rep.GetNewestUnit(gasToken)
+	hash, _, _ := dag.unstablePropRep.GetNewestUnit(gasToken)
 	return hash
 }
 
 func (dag *Dag) GetMediators() map[common.Address]bool {
-	_, _, state, _, _ := dag.Memdag.GetUnstableRepositories()
-
-	return state.GetMediators()
-	//return dag.unstableStateRep.GetMediators()
+	//_, _, state, _, _ := dag.Memdag.GetUnstableRepositories()
+	//return state.GetMediators()
+	return dag.unstableStateRep.GetMediators()
 }
 
 func (dag *Dag) GetMediatorCount() int {
-	_, _, state, _, _ := dag.Memdag.GetUnstableRepositories()
-
-	return len(state.GetMediators())
-	//return len(dag.unstableStateRep.GetMediators())
+	//_, _, state, _, _ := dag.Memdag.GetUnstableRepositories()
+	//return len(state.GetMediators())
+	return len(dag.unstableStateRep.GetMediators())
 }
 
 func (dag *Dag) LookupMediatorInfo() []*modules.MediatorInfo {
-	_, _, state, _, _ := dag.Memdag.GetUnstableRepositories()
-
-	return state.LookupMediatorInfo()
-	//return dag.unstableStateRep.LookupMediatorInfo()
+	//_, _, state, _, _ := dag.Memdag.GetUnstableRepositories()
+	//return state.LookupMediatorInfo()
+	return dag.unstableStateRep.LookupMediatorInfo()
 }
 
 func (dag *Dag) IsMediator(address common.Address) bool {
-	_, _, state, _, _ := dag.Memdag.GetUnstableRepositories()
-
-	return state.IsMediator(address)
-	//return dag.unstableStateRep.IsMediator(address)
+	//_, _, state, _, _ := dag.Memdag.GetUnstableRepositories()
+	//return state.IsMediator(address)
+	return dag.unstableStateRep.IsMediator(address)
 }
 
 func (dag *Dag) GetChainParameters() *core.ChainParameters {
-	_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
-	return rep.GetChainParameters()
-	//return dag.unstablePropRep.GetChainParameters()
+	//_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
+	//return rep.GetChainParameters()
+	return dag.unstablePropRep.GetChainParameters()
 }
 
 func (dag *Dag) GetImmutableChainParameters() *core.ImmutableChainParameters {
@@ -216,9 +219,9 @@ func (dag *Dag) GetImmutableChainParameters() *core.ImmutableChainParameters {
 }
 
 func (dag *Dag) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
-	rep, _, _, _, _ := dag.Memdag.GetUnstableRepositories()
-	unit, err := rep.GetUnit(hash)
-	//unit, err := dag.unstableUnitRep.GetUnit(hash)
+	//rep, _, _, _, _ := dag.Memdag.GetUnstableRepositories()
+	//unit, err := rep.GetUnit(hash)
+	unit, err := dag.unstableUnitRep.GetUnit(hash)
 
 	if err != nil {
 		log.Debug("get unit by hash is failed.", "hash", hash)
@@ -241,16 +244,15 @@ func (d *Dag) GetPrecedingMediatorNodes() map[string]*discover.Node {
 }
 
 func (d *Dag) GetAccountVotedMediators(addr common.Address) map[string]bool {
-	_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
-	return state.GetAccountVotedMediators(addr)
-	//return d.unstableStateRep.GetAccountVotedMediators(addr)
+	//_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
+	//return state.GetAccountVotedMediators(addr)
+	return d.unstableStateRep.GetAccountVotedMediators(addr)
 }
 
 func (d *Dag) GetPtnBalance(addr common.Address) uint64 {
-	_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
-
-	return state.GetAccountBalance(addr)
-	//return d.unstableStateRep.GetAccountBalance(addr)
+	//_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
+	//return state.GetAccountBalance(addr)
+	return d.unstableStateRep.GetAccountBalance(addr)
 }
 
 func (d *Dag) GetMediatorInfo(address common.Address) *modules.MediatorInfo {
@@ -294,19 +296,26 @@ func (d *Dag) IsContractDeveloper(addr common.Address) bool {
 }
 
 func (d *Dag) GetUnitHash(number *modules.ChainIndex) (common.Hash, error) {
-	unitRep, _, _, _, _ := d.Memdag.GetUnstableRepositories()
-	return unitRep.GetHashByNumber(number)
-	//return d.unstableUnitRep.GetHashByNumber(number)
+	//unitRep, _, _, _, _ := d.Memdag.GetUnstableRepositories()
+	//return unitRep.GetHashByNumber(number)
+	return d.unstableUnitRep.GetHashByNumber(number)
 }
 
 // return all mediators voted results
 func (d *Dag) MediatorVotedResults() (map[string]uint64, error) {
-	_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
-	return state.GetMediatorVotedResults()
-	//return d.unstableStateRep.GetMediatorVotedResults()
+	//_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
+	//return state.GetMediatorVotedResults()
+	return d.unstableStateRep.GetMediatorVotedResults()
 }
 
 func (d *Dag) GetVotingForMediator(addStr string) (map[string]uint64, error) {
-	_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
-	return state.GetVotingForMediator(addStr)
+	//_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
+	//return state.GetVotingForMediator(addStr)
+	return d.unstableStateRep.GetVotingForMediator(addStr)
+}
+
+func (d *Dag) GetJurorReward(jurorAdd common.Address) common.Address {
+	//_, _, state, _, _ := d.Memdag.GetUnstableRepositories()
+	//return state.GetJurorReward(jurorAdd)
+	return d.unstableStateRep.GetJurorReward(jurorAdd)
 }

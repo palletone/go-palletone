@@ -5,9 +5,9 @@ FROM palletone/baseimg
 MAINTAINER palletOne "contract@pallet.one"
 
 #安装相应的软件
-RUN wget -o download.log https://studygolang.com/dl/golang/go1.10.linux-amd64.tar.gz \
-    && tar -C /usr/local -zxvf go1.10.linux-amd64.tar.gz >> download.log \
-    && rm go1.10.linux-amd64.tar.gz download.log \
+RUN wget -o download.log https://studygolang.com/dl/golang/go1.12.linux-amd64.tar.gz \
+    && tar -C /usr/local -zxvf go1.12.linux-amd64.tar.gz >> download.log \
+    && rm go1.12.linux-amd64.tar.gz download.log \
     && mkdir -p /gopath/bin /gopath/src /gopath/pkg /chaincode/input
 
 #设置环境变量

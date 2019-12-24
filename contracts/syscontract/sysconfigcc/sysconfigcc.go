@@ -92,12 +92,13 @@ func (s *SysConfigChainCode) Invoke(stub shim.ChaincodeStubInterface) peer.Respo
 		return shim.Success(resultByte)
 	case "getVotesResult":
 		log.Info("Start getVotesResult Invoke")
-		resultByte, err := s.GetVotesResult(stub /*, args*/)
+		result, err := s.GetVotesResult(stub /*, args*/)
 		if err != nil {
 			jsonResp := "{\"Error\":\"getVotesResult err: " + err.Error() + "\"}"
-			return shim.Success([]byte(jsonResp))
+			return shim.Error(jsonResp)
 		}
-		return shim.Success(resultByte)
+		data, _ := json.Marshal(result)
+		return shim.Success(data)
 	case CreateVotesTokens:
 		if len(args) != 5 {
 			err := "need 5 args (Name,TotalSupply,LeastNum,VoteEndTime,VoteContentJson)"
@@ -151,15 +152,27 @@ func (s *SysConfigChainCode) Invoke(stub shim.ChaincodeStubInterface) peer.Respo
 func (s *SysConfigChainCode) GetWithoutVoteResult(stub shim.ChaincodeStubInterface) ([]byte, error) {
 	return stub.GetState(modules.DesiredSysParamsWithoutVote)
 }
-func (s *SysConfigChainCode) GetVotesResult(stub shim.ChaincodeStubInterface /*, args []string*/) ([]byte, error) {
-	//log.Debug("getVotesResult", args)
-	//params check
-	//if len(args) < 1 {
-	//	return nil, fmt.Errorf("need 1 args (AssetID String)")
-	//}
 
-	//assetIDStr
-	//assetIDStr := strings.ToUpper(args[0])
+type SysTokenIDInfo struct {
+	CreateAddr     string
+	TotalSupply    uint64
+	LeastNum       uint64
+	AssetID        string
+	CreateTime     int64
+	IsVoteEnd      bool
+	SupportResults []*SysSupportResult
+}
+type SysSupportResult struct {
+	TopicIndex  uint64
+	TopicTitle  string
+	VoteResults []*SysVoteResult
+}
+type SysVoteResult struct {
+	SelectOption string
+	Num          uint64
+}
+
+func (s *SysConfigChainCode) GetVotesResult(stub shim.ChaincodeStubInterface /*, args []string*/) (*SysTokenIDInfo, error) {
 	//check name is exist or not
 	tkInfo := getSymbols(stub)
 	if tkInfo == nil {
@@ -183,9 +196,9 @@ func (s *SysConfigChainCode) GetVotesResult(stub shim.ChaincodeStubInterface /*,
 		isVoteEnd = true
 	}
 	//calculate result
-	supportResults := make([]*modules.SysSupportResult, 0, len(topicSupports))
+	supportResults := make([]*SysSupportResult, 0, len(topicSupports))
 	for i, oneTopicSupport := range topicSupports {
-		oneResult := &modules.SysSupportResult{}
+		oneResult := &SysSupportResult{}
 		oneResult.TopicIndex = uint64(i) + 1
 		oneResult.TopicTitle = oneTopicSupport.TopicTitle
 		oneResultSort := sortSupportByCount(oneTopicSupport.VoteResults)
@@ -198,15 +211,9 @@ func (s *SysConfigChainCode) GetVotesResult(stub shim.ChaincodeStubInterface /*,
 
 	//token
 	asset := tkInfo.AssetID
-	tkID := modules.SysTokenIDInfo{IsVoteEnd: isVoteEnd, CreateAddr: tkInfo.CreateAddr, TotalSupply: tkInfo.TotalSupply,
-		SupportResults: supportResults, AssetID: asset.String(), CreateTime: tkInfo.VoteEndTime.UTC(), LeastNum: tkInfo.LeastNum}
-
-	//return json
-	tkJson, err := json.Marshal(tkID)
-	if err != nil {
-		return nil, fmt.Errorf(err.Error())
-	}
-	return tkJson, nil //test
+	tkID := SysTokenIDInfo{IsVoteEnd: isVoteEnd, CreateAddr: tkInfo.CreateAddr, TotalSupply: tkInfo.TotalSupply,
+		SupportResults: supportResults, AssetID: asset.String(), CreateTime: tkInfo.VoteEndTime.UTC().Unix(), LeastNum: tkInfo.LeastNum}
+	return &tkID, nil
 }
 
 func (s *SysConfigChainCode) CreateVotesTokens(stub shim.ChaincodeStubInterface, name string, totalSupply uint64,
@@ -273,7 +280,7 @@ func (s *SysConfigChainCode) CreateVotesTokens(stub shim.ChaincodeStubInterface,
 				return nil, err
 			}
 
-			oneResult := &modules.SysVoteResult{}
+			oneResult := &SysVoteResult{}
 			oneResult.SelectOption = oneOption
 			oneSupport.VoteResults = append(oneSupport.VoteResults, oneResult)
 		}
@@ -582,7 +589,7 @@ func setSymbols(stub shim.ChaincodeStubInterface, tkInfo *SysTokenInfo) error {
 }
 
 // A slice of TopicResult that implements sort.Interface to sort by Value.
-type voteResultList []*modules.SysVoteResult
+type voteResultList []*SysVoteResult
 
 func (p voteResultList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 func (p voteResultList) Len() int           { return len(p) }

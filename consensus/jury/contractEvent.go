@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/validator"
 )
 
 func (p *Processor) SubscribeContractEvent(ch chan<- ContractEvent) event.Subscription {
@@ -47,9 +48,9 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) (bool, error) {
 		return false, fmt.Errorf("[%s]ProcessContractEvent, event Tx reqId is exist, txId:%s",
 			shortId(reqId.String()), event.Tx.Hash().String())
 	}
-	if !p.checkTxValid(event.Tx) {
-		return false, fmt.Errorf("[%s]ProcessContractEvent, event Tx is invalid, txId:%s",
-			shortId(reqId.String()), event.Tx.Hash().String())
+	if _, v, err := p.validator.ValidateTx(event.Tx, false); v != validator.TxValidationCode_VALID {
+		return false, fmt.Errorf("[%s]ProcessContractEvent, event Tx is invalid, txId:%s, err:%s",
+			shortId(reqId.String()), event.Tx.Hash().String(), err.Error())
 	}
 	if !p.checkTxAddrValid(event.Tx) {
 		return true, fmt.Errorf("[%s]ProcessContractEvent, event Tx addr is invalid, txId:%s",
@@ -59,6 +60,7 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) (bool, error) {
 		log.Debugf("[%s]ProcessContractEvent, contractEventExecutable is false", shortId(reqId.String()))
 		return true, nil
 	}
+
 	log.Debugf("[%s]ProcessContractEvent, event type:%v ", shortId(reqId.String()), event.CType)
 	switch event.CType {
 	case CONTRACT_EVENT_EXEC:

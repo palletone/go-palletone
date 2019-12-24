@@ -66,9 +66,9 @@ func createUnit() (*modules.Unit, error) {
 	txs := modules.Transactions{tx}
 	// new unit
 
-	unit, err := dagcomm.NewGenesisUnit(txs, 1536451201, asset, -1, common.Hash{})
-	log.Info("create unit success.", "error", err, "hash", unit.Hash().String())
-	return unit, err
+	unit := dagcomm.NewGenesisUnit(txs, 1536451201, asset, -1, common.Hash{})
+	log.Info("create unit success.", "hash", unit.Hash().String())
+	return unit, nil
 }
 
 func TestTxCountAndUnitSize(t *testing.T) {

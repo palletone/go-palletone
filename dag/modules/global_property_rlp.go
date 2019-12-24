@@ -25,6 +25,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/core"
 )
 
 func (gp *GlobalProperty) DecodeRLP(s *rlp.Stream) error {
@@ -39,7 +40,11 @@ func (gp *GlobalProperty) DecodeRLP(s *rlp.Stream) error {
 		return err
 	}
 
-	gpt.getGP(gp)
+	err = gpt.getGP(gp)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -50,59 +55,71 @@ func (gp *GlobalProperty) EncodeRLP(w io.Writer) error {
 
 // only for serialization(storage/p2p)
 type GlobalPropertyTemp struct {
-	GlobalPropBase
+	GlobalPropBaseTemp
+	GlobalPropExtraTemp
+}
 
+type GlobalPropExtraTemp struct {
 	ActiveJuries       []common.Address
 	ActiveMediators    []common.Address
 	PrecedingMediators []common.Address
 }
 
+type GlobalPropBaseTemp struct {
+	ImmutableParameters core.ImmutableChainParameters
+	ChainParametersTemp core.ChainParametersTemp
+}
+
 func (gp *GlobalProperty) getGPT() *GlobalPropertyTemp {
-	ajs := make([]common.Address, 0)
-	ams := make([]common.Address, 0)
-	pms := make([]common.Address, 0)
-
-	for juryAdd := range gp.ActiveJuries {
-		ajs = append(ajs, juryAdd)
+	gpbt := GlobalPropBaseTemp{
+		ImmutableParameters: gp.ImmutableParameters,
+		ChainParametersTemp: *gp.ChainParameters.GetCPT(),
 	}
 
-	for medAdd := range gp.ActiveMediators {
-		ams = append(ams, medAdd)
-	}
-
-	for medAdd := range gp.PrecedingMediators {
-		pms = append(pms, medAdd)
+	gpet := GlobalPropExtraTemp{
+		ActiveJuries:       make([]common.Address, 0, len(gp.ActiveJuries)),
+		ActiveMediators:    make([]common.Address, 0, len(gp.ActiveMediators)),
+		PrecedingMediators: make([]common.Address, 0, len(gp.PrecedingMediators)),
 	}
 
 	gpt := &GlobalPropertyTemp{
-		GlobalPropBase:     gp.GlobalPropBase,
-		ActiveJuries:       ajs,
-		ActiveMediators:    ams,
-		PrecedingMediators: pms,
+		GlobalPropBaseTemp:  gpbt,
+		GlobalPropExtraTemp: gpet,
+	}
+
+	for juryAdd := range gp.ActiveJuries {
+		gpt.ActiveJuries = append(gpt.ActiveJuries, juryAdd)
+	}
+
+	for medAdd := range gp.ActiveMediators {
+		gpt.ActiveMediators = append(gpt.ActiveMediators, medAdd)
+	}
+
+	for medAdd := range gp.PrecedingMediators {
+		gpt.PrecedingMediators = append(gpt.PrecedingMediators, medAdd)
 	}
 
 	return gpt
 }
 
-func (gpt *GlobalPropertyTemp) getGP(gp *GlobalProperty) {
-	ajs := make(map[common.Address]bool)
-	ams := make(map[common.Address]bool)
-	pms := make(map[common.Address]bool)
+func (gpt *GlobalPropertyTemp) getGP(gp *GlobalProperty) error {
+	gp.ActiveJuries = make(map[common.Address]bool)
+	gp.ActiveMediators = make(map[common.Address]bool)
+	gp.PrecedingMediators = make(map[common.Address]bool)
 
 	for _, addStr := range gpt.ActiveJuries {
-		ajs[addStr] = true
+		gp.ActiveJuries[addStr] = true
 	}
 
 	for _, addStr := range gpt.ActiveMediators {
-		ams[addStr] = true
+		gp.ActiveMediators[addStr] = true
 	}
 
 	for _, addStr := range gpt.PrecedingMediators {
-		pms[addStr] = true
+		gp.PrecedingMediators[addStr] = true
 	}
 
-	gp.GlobalPropBase = gpt.GlobalPropBase
-	gp.ActiveJuries = ajs
-	gp.ActiveMediators = ams
-	gp.PrecedingMediators = pms
+	gp.ImmutableParameters = gpt.ImmutableParameters
+
+	return gpt.ChainParametersTemp.GetCP(&gp.ChainParameters)
 }

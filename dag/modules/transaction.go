@@ -22,6 +22,7 @@ package modules
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/palletone/go-palletone/dag/constants"
 	"io"
 	"math"
 	"time"
@@ -237,6 +238,8 @@ type Transaction struct {
 type QueryUtxoFunc func(outpoint *OutPoint) (*Utxo, error)
 type GetAddressFromScriptFunc func(lockScript []byte) (common.Address, error)
 type GetScriptSignersFunc func(tx *Transaction, msgIdx, inputIndex int) ([]common.Address, error)
+type QueryStateByVersionFunc func(id []byte, field string, version *StateVersion) ([]byte, error)
+type GetJurorRewardAddFunc func(jurorAdd common.Address) common.Address
 
 //计算该交易的手续费，基于UTXO，所以传入查询UTXO的函数指针
 func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, error) {
@@ -300,6 +303,80 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 	return &AmountAsset{Amount: fees, Asset: feeAsset}, nil
 }
 
+func (tx *Transaction) GetCoinbaseReward(versionFunc QueryStateByVersionFunc,
+	scriptFunc GetAddressFromScriptFunc) (*AmountAsset, error) {
+	writeMap := make(map[string][]AmountAsset)
+	readMap := make(map[string][]AmountAsset)
+	if len(tx.TxMessages) == 2 && tx.TxMessages[0].App == APP_PAYMENT &&
+		tx.TxMessages[1].App == APP_CONTRACT_INVOKE { //进行了汇总付款
+		invoke := tx.TxMessages[1].Payload.(*ContractInvokePayload)
+		for _, read := range invoke.ReadSet {
+			readResult, err := versionFunc(read.ContractId, read.Key, read.Version)
+			if err != nil {
+				return nil, err
+			}
+			var aa []AmountAsset
+			err = rlp.DecodeBytes(readResult, &aa)
+			if err != nil {
+				return nil, err
+			}
+			addr := read.Key[len(constants.RewardAddressPrefix):]
+			readMap[addr] = aa
+		}
+		payment := tx.TxMessages[0].Payload.(*PaymentPayload)
+		for _, out := range payment.Outputs {
+			aa := AmountAsset{
+				Amount: out.Value,
+				Asset:  out.Asset,
+			}
+			addr, _ := scriptFunc(out.PkScript)
+			writeMap[addr.String()] = []AmountAsset{aa}
+		}
+	} else if tx.TxMessages[0].App == APP_CONTRACT_INVOKE { //进行了记账
+		invoke := tx.TxMessages[0].Payload.(*ContractInvokePayload)
+		for _, write := range invoke.WriteSet {
+			var aa []AmountAsset
+			err := rlp.DecodeBytes(write.Value, &aa)
+			if err != nil {
+				return nil, err
+			}
+			addr := write.Key[len(constants.RewardAddressPrefix):]
+			writeMap[addr] = aa
+		}
+
+		for _, read := range invoke.ReadSet {
+			readResult, err := versionFunc(read.ContractId, read.Key, read.Version)
+			if err != nil {
+				return nil, err
+			}
+			var aa []AmountAsset
+			err = rlp.DecodeBytes(readResult, &aa)
+			if err != nil {
+				return nil, err
+			}
+			addr := read.Key[len(constants.RewardAddressPrefix):]
+			readMap[addr] = aa
+		}
+	} else {
+		return &AmountAsset{Asset: NewPTNAsset()}, nil
+	}
+	//计算Write Map和Read Map的差，获得Reward值
+	reward := &AmountAsset{}
+	for writeAddr, writeAA := range writeMap {
+		reward.Asset = writeAA[0].Asset
+		if readAA, ok := readMap[writeAddr]; ok {
+			readAmt := uint64(0)
+			if len(readAA) != 0 { //上一次没有清空
+				readAmt = readAA[0].Amount
+			}
+			reward.Amount += writeAA[0].Amount - readAmt
+		} else {
+			reward.Amount += writeAA[0].Amount
+		}
+	}
+	return reward, nil
+}
+
 //该Tx如果保存后，会产生的新的Utxo
 func (tx *Transaction) GetNewUtxos() map[OutPoint]*Utxo {
 	result := map[OutPoint]*Utxo{}
@@ -329,6 +406,8 @@ func (tx *Transaction) GetNewUtxos() map[OutPoint]*Utxo {
 	}
 	return result
 }
+
+//获取一个交易中花费了哪些OutPoint
 func (tx *Transaction) GetSpendOutpoints() []*OutPoint {
 	result := []*OutPoint{}
 	for _, msg := range tx.TxMessages {
@@ -339,12 +418,19 @@ func (tx *Transaction) GetSpendOutpoints() []*OutPoint {
 		inputs := pay.Inputs
 		for _, input := range inputs {
 			if input.PreviousOutPoint != nil {
-				result = append(result, input.PreviousOutPoint)
+				if input.PreviousOutPoint.TxHash.IsSelfHash() { //合约Payback的情形
+					op := NewOutPoint(tx.Hash(), input.PreviousOutPoint.MessageIndex, input.PreviousOutPoint.OutIndex)
+					result = append(result, op)
+				} else {
+					result = append(result, input.PreviousOutPoint)
+				}
 			}
 		}
 	}
 	return result
 }
+
+//获得合约交易的签名对应的陪审员地址
 func (tx *Transaction) GetContractTxSignatureAddress() []common.Address {
 	if !tx.IsContractTx() {
 		return nil
@@ -372,7 +458,6 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 				payload := new(ContractInstallRequestPayload)
 				obj.DeepCopy(payload, msg.Payload)
 				request.AddMessage(NewMessage(msg.App, payload))
-
 			} else if msg.App == APP_CONTRACT_DEPLOY_REQUEST {
 				payload := new(ContractDeployRequestPayload)
 				obj.DeepCopy(payload, msg.Payload)
@@ -381,7 +466,6 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 				payload := new(ContractInvokeRequestPayload)
 				obj.DeepCopy(payload, msg.Payload)
 				request.AddMessage(NewMessage(msg.App, payload))
-
 			} else if msg.App == APP_CONTRACT_STOP_REQUEST {
 				payload := new(ContractStopRequestPayload)
 				obj.DeepCopy(payload, msg.Payload)
@@ -461,18 +545,18 @@ func (tx *Transaction) GetResultRawTx() *Transaction {
 	return result
 }
 
-func (tx *Transaction) GetResultTx() *Transaction {
-	txCopy := tx.Clone()
-	result := &Transaction{}
-	result.CertId = tx.CertId
-	for _, msg := range txCopy.TxMessages {
-		if msg.App == APP_SIGNATURE {
-			continue //移除SignaturePayload
-		}
-		result.TxMessages = append(result.TxMessages, msg)
-	}
-	return result
-}
+//func (tx *Transaction) GetResultTx() *Transaction {
+//	txCopy := tx.Clone()
+//	result := &Transaction{}
+//	result.CertId = tx.CertId
+//	for _, msg := range txCopy.TxMessages {
+//		if msg.App == APP_SIGNATURE {
+//			continue //移除SignaturePayload
+//		}
+//		result.TxMessages = append(result.TxMessages, msg)
+//	}
+//	return result
+//}
 
 //Request 这条Message的Index是多少
 func (tx *Transaction) GetRequestMsgIndex() int {
@@ -502,6 +586,7 @@ func (tx *Transaction) HasContractPayoutMsg() (bool, *PaymentPayload) {
 	return false, nil
 }
 
+//对于合约调用Tx，获得调用的合约ID，如果不是合约调用Tx，则返回nil
 func (tx *Transaction) InvokeContractId() []byte {
 	for _, msg := range tx.TxMessages {
 		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
@@ -695,9 +780,19 @@ func (tx *Transaction) GetContractInvokeReqMsgIdx() int {
 	return -1
 }
 
+//获得被调用的合约ID
+func (tx *Transaction) GetInvokeContractId() []byte {
+	for _, msg := range tx.TxMessages {
+		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
+			return msg.Payload.(*ContractInvokeRequestPayload).ContractId
+		}
+	}
+	return nil
+}
+
 //之前的费用分配有Bug，在ContractInstall的时候会分配错误。在V2中解决了这个问题，但是由于测试网已经有历史数据了，所以需要保留历史计算方法。
 func (tx *Transaction) GetTxFeeAllocateLegacyV1(queryUtxoFunc QueryUtxoFunc, getSignerFunc GetScriptSignersFunc,
-	mediatorAddr common.Address) ([]*Addition, error) {
+	mediatorReward common.Address) ([]*Addition, error) {
 	fee, err := tx.GetTxFee(queryUtxoFunc)
 	result := []*Addition{}
 	if err != nil {
@@ -706,6 +801,7 @@ func (tx *Transaction) GetTxFeeAllocateLegacyV1(queryUtxoFunc QueryUtxoFunc, get
 	if fee.Amount == 0 {
 		return result, nil
 	}
+
 	isResultMsg := false
 	jury := []common.Address{}
 	for msgIdx, msg := range tx.TxMessages {
@@ -729,38 +825,48 @@ func (tx *Transaction) GetTxFeeAllocateLegacyV1(queryUtxoFunc QueryUtxoFunc, get
 			}
 		}
 	}
+
+	juryAllocatedAmt := uint64(0)
 	if isResultMsg { //合约执行，Fee需要分配给Jury
 		juryAmount := float64(fee.Amount) * parameter.CurrentSysParameters.ContractFeeJuryPercent
-		juryAllocatedAmt := uint64(0)
 		juryCount := float64(len(jury))
-		for _, jurior := range jury {
+		for _, juror := range jury {
 			jIncome := &Addition{
-				Addr:   jurior,
+				Addr:   juror,
 				Amount: uint64(juryAmount / juryCount),
 				Asset:  fee.Asset,
 			}
 			juryAllocatedAmt += jIncome.Amount
 			result = append(result, jIncome)
 		}
-		mediatorIncome := &Addition{
-			Addr:   mediatorAddr,
-			Amount: fee.Amount - juryAllocatedAmt,
-			Asset:  fee.Asset,
-		}
-		result = append(result, mediatorIncome)
-	} else { //没有合约执行，全部分配给Mediator
-		mediatorIncome := &Addition{
-			Addr:   mediatorAddr,
-			Amount: fee.Amount,
-			Asset:  fee.Asset,
-		}
-		result = append(result, mediatorIncome)
+		//	mediatorIncome := &Addition{
+		//		Addr:   mediatorAddr,
+		//		Amount: fee.Amount - juryAllocatedAmt,
+		//		Asset:  fee.Asset,
+		//	}
+		//	result = append(result, mediatorIncome)
+		//} else { //没有合约执行，全部分配给Mediator
+		//	mediatorIncome := &Addition{
+		//		Addr:   mediatorAddr,
+		//		Amount: fee.Amount,
+		//		Asset:  fee.Asset,
+		//	}
+		//	result = append(result, mediatorIncome)
 	}
+
+	mediatorIncome := &Addition{
+		Addr:   mediatorReward,
+		Amount: fee.Amount - juryAllocatedAmt,
+		Asset:  fee.Asset,
+	}
+	result = append(result, mediatorIncome)
+
 	return result, nil
 }
 
+//获得一笔交易的手续费分配情况,包括Mediator的打包费，Juror的合约执行费
 func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFunc GetScriptSignersFunc,
-	mediatorAddr common.Address) ([]*Addition, error) {
+	mediatorReward common.Address, getJurorRewardFunc GetJurorRewardAddFunc) ([]*Addition, error) {
 	fee, err := tx.GetTxFee(queryUtxoFunc)
 	result := []*Addition{}
 	if err != nil {
@@ -769,6 +875,7 @@ func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFu
 	if fee.Amount == 0 {
 		return result, nil
 	}
+
 	isJuryInside := false
 	jury := []common.Address{}
 	for msgIdx, msg := range tx.TxMessages {
@@ -795,33 +902,43 @@ func (tx *Transaction) GetTxFeeAllocate(queryUtxoFunc QueryUtxoFunc, getSignerFu
 			}
 		}
 	}
+
+	juryAllocatedAmt := uint64(0)
 	if isJuryInside { //合约执行，Fee需要分配给Jury
 		juryAmount := float64(fee.Amount) * parameter.CurrentSysParameters.ContractFeeJuryPercent
-		juryAllocatedAmt := uint64(0)
 		juryCount := float64(len(jury))
-		for _, jurior := range jury {
+		for _, juror := range jury {
 			jIncome := &Addition{
-				Addr:   jurior,
+				//Addr:   juror,
+				Addr:   getJurorRewardFunc(juror),
 				Amount: uint64(juryAmount / juryCount),
 				Asset:  fee.Asset,
 			}
 			juryAllocatedAmt += jIncome.Amount
 			result = append(result, jIncome)
 		}
-		mediatorIncome := &Addition{
-			Addr:   mediatorAddr,
-			Amount: fee.Amount - juryAllocatedAmt,
-			Asset:  fee.Asset,
-		}
-		result = append(result, mediatorIncome)
-	} else { //没有合约部署或者执行，全部分配给Mediator
-		mediatorIncome := &Addition{
-			Addr:   mediatorAddr,
-			Amount: fee.Amount,
-			Asset:  fee.Asset,
-		}
-		result = append(result, mediatorIncome)
+		//	mediatorIncome := &Addition{
+		//		Addr:   mediatorAddr,
+		//		Amount: fee.Amount - juryAllocatedAmt,
+		//		Asset:  fee.Asset,
+		//	}
+		//	result = append(result, mediatorIncome)
+		//} else { //没有合约部署或者执行，全部分配给Mediator
+		//	mediatorIncome := &Addition{
+		//		Addr:   mediatorAddr,
+		//		Amount: fee.Amount,
+		//		Asset:  fee.Asset,
+		//	}
+		//	result = append(result, mediatorIncome)
 	}
+
+	mediatorIncome := &Addition{
+		Addr:   mediatorReward,
+		Amount: fee.Amount - juryAllocatedAmt,
+		Asset:  fee.Asset,
+	}
+	result = append(result, mediatorIncome)
+
 	return result, nil
 }
 

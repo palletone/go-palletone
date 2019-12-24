@@ -38,6 +38,8 @@ import (
 
 type Tag uint64
 
+const errStr = "this node is not synced"
+
 func (pm *ProtocolManager) StatusMsg(msg p2p.Msg, p *peer) error {
 	// Status messages should never arrive after the handshake
 	return errResp(ErrExtraStatusMsg, "uncontrolled status message")
@@ -343,6 +345,47 @@ func (pm *ProtocolManager) NewBlockHashesMsg(msg p2p.Msg, p *peer) error {
 	return nil
 }
 
+func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
+	log.Debug("Enter ProtocolManager TxMsg")
+	defer log.Debug("End ProtocolManager TxMsg")
+	// Transactions arrived, make sure we have a valid and fresh chain to handle them
+	if atomic.LoadUint32(&pm.acceptTxs) == 0 {
+		log.Debug("ProtocolManager handlmsg TxMsg pm.acceptTxs==0")
+		return nil
+	}
+	// Transactions can be processed, parse all of them and deliver to the pool
+	var txs []*modules.Transaction
+	if err := msg.Decode(&txs); err != nil {
+		log.Debug("ProtocolManager handlmsg TxMsg", "Decode err:", err, "msg:", msg)
+		return errResp(ErrDecode, "msg %v: %v", msg, err)
+	}
+	for i, tx := range txs {
+		// Validate and mark the remote transaction
+		if tx == nil {
+			return errResp(ErrDecode, "transaction %d is nil", i)
+		}
+
+		txHash := tx.Hash()
+		p.MarkTransaction(txHash)
+
+		if pm.IsExistInCache(txHash.Bytes()) {
+			return nil
+		}
+
+		if tx.IsContractTx() {
+			if pm.contractProc.IsSystemContractTx(tx) {
+				continue
+			}
+		}
+		_, err := pm.txpool.ProcessTransaction(tx, true, true, 0 /*pm.txpool.Tag(peer.ID())*/)
+		if err != nil {
+			log.Infof("the transaction %s not accepteable, err:%s", tx.Hash().String(), err.Error())
+		}
+	}
+
+	return nil
+}
+
 func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	// Retrieve and decode the propagated block
 	//unit := &modules.Unit{}
@@ -363,9 +406,21 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	// append by Albert·Gou
+	unitHash := unit.Hash()
+	p.MarkUnit(unitHash)
+	p.SetHead(unitHash, unit.Number(), nil)
+
+	if pm.IsExistInCache(unitHash.Bytes()) {
+		//log.Debugf("Received unit(%v) again, ignore it", unitHash.TerminalString())
+		return nil
+	}
+
 	timestamp := time.Unix(unit.Timestamp(), 0)
-	//latency := time.Now().Sub(timestamp)
+	log.Infof("Received unit(%v) #%v parent(%v) @%v signed by %v", unitHash.TerminalString(),
+		unit.NumberU64(), unit.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
+		unit.Author().Str())
+
+	// append by Albert·Gou
 	latency := time.Since(timestamp)
 	if latency < -5*time.Second {
 		errStr := fmt.Sprintf("Rejecting unit #%v with timestamp(%v) in the future signed by %v",
@@ -373,18 +428,6 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		log.Debugf(errStr)
 		return fmt.Errorf(errStr)
 	}
-
-	unitHash := unit.Hash()
-	if pm.IsExistInCache(unitHash.Bytes()) {
-		//log.Debugf("Received unit(%v) again, ignore it", unitHash.TerminalString())
-		p.MarkUnit(unitHash)
-		p.SetHead(unitHash, unit.Number(), nil)
-		return nil
-	}
-
-	log.Infof("Received unit(%v) #%v parent(%v) @%v signed by %v", unitHash.TerminalString(),
-		unit.NumberU64(), unit.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
-		unit.Author().Str())
 
 	log.DebugDynamic(func() string {
 		txids := []common.Hash{}
@@ -420,15 +463,15 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	unit.ReceivedFrom = p
 
 	// Mark the peer as owning the block and schedule it for import
-	p.MarkUnit(unit.UnitHash)
+	//p.MarkUnit(unit.UnitHash)
 	pm.fetcher.Enqueue(p.id, unit)
 
 	requestNumber := unit.Number()
-	hash, number := p.Head(unit.Number().AssetID)
+	hash, number := p.Head(requestNumber.AssetID)
 	if common.EmptyHash(hash) || (!common.EmptyHash(hash) && requestNumber.Index > number.Index) {
 		log.Debug("ProtocolManager", "NewBlockMsg SetHead request.Index:", requestNumber.Index,
 			"local peer index:", number.Index)
-		p.SetHead(unit.Hash(), requestNumber, nil)
+		//p.SetHead(unit.Hash(), requestNumber, nil)
 
 		//currentUnitIndex := pm.dag.GetCurrentUnit(unit.Number().AssetID).UnitHeader.Number.Index
 		currentUnitIndex := pm.dag.HeadUnitNum()
@@ -436,45 +479,8 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 			log.Debug("ProtocolManager", "NewBlockMsg synchronize request.Index:", requestNumber.Index,
 				"current unit index+1:", currentUnitIndex+1)
 			go func() {
-				pm.synchronize(p, unit.Number().AssetID, nil)
+				pm.synchronize(p, requestNumber.AssetID, nil)
 			}()
-		}
-	}
-	return nil
-}
-
-func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
-	log.Debug("Enter ProtocolManager TxMsg")
-	defer log.Debug("End ProtocolManager TxMsg")
-	// Transactions arrived, make sure we have a valid and fresh chain to handle them
-	if atomic.LoadUint32(&pm.acceptTxs) == 0 {
-		log.Debug("ProtocolManager handlmsg TxMsg pm.acceptTxs==0")
-		return nil
-	}
-	// Transactions can be processed, parse all of them and deliver to the pool
-	var txs []*modules.Transaction
-	if err := msg.Decode(&txs); err != nil {
-		log.Debug("ProtocolManager handlmsg TxMsg", "Decode err:", err, "msg:", msg)
-		return errResp(ErrDecode, "msg %v: %v", msg, err)
-	}
-	for i, tx := range txs {
-		// Validate and mark the remote transaction
-		if tx == nil {
-			return errResp(ErrDecode, "transaction %d is nil", i)
-		}
-		txHash := tx.Hash()
-		if pm.IsExistInCache(txHash.Bytes()) {
-			return nil
-		}
-		if tx.IsContractTx() {
-			if pm.contractProc.IsSystemContractTx(tx) {
-				continue
-			}
-		}
-		p.MarkTransaction(tx.Hash())
-		_, err := pm.txpool.ProcessTransaction(tx, true, true, 0 /*pm.txpool.Tag(peer.ID())*/)
-		if err != nil {
-			log.Infof("the transaction %s not accepteable, err:%s", tx.Hash().String(), err.Error())
 		}
 	}
 
@@ -494,6 +500,19 @@ func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 	hash := sigShare.Hash()
 	p.MarkSigShare(hash)
 
+	if pm.IsExistInCache(hash.Bytes()) {
+		return nil
+	}
+
+	// 判断是否同步, 如果没同步完成，接收到的 sigShare 对当前节点来说是超前的
+	if !pm.dag.IsSynced(false) {
+		log.Debugf(errStr)
+
+		go pm.BroadcastSigShare(&sigShare)
+		//return fmt.Errorf(errStr)
+		return nil
+	}
+
 	unitHash := sigShare.UnitHash
 	header, err := pm.dag.GetHeaderByHash(unitHash)
 	if err != nil {
@@ -501,86 +520,12 @@ func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	if !pm.producer.IsLocalMediator(header.Author()) {
-		pm.BroadcastSigShare(&sigShare)
+	if pm.producer.IsLocalMediator(header.Author()) {
+		go pm.producer.AddToTBLSRecoverBuf(&sigShare)
+	} else {
+		go pm.BroadcastSigShare(&sigShare)
 	}
 
-	if pm.IsExistInCache(hash.Bytes()) {
-		return nil
-	}
-
-	// 判断是否同步, 如果没同步完成，接收到的 sigShare 对当前节点来说是超前的
-	if !pm.dag.IsSynced() {
-		errStr := "this node is not synced"
-		log.Debugf(errStr)
-		//return fmt.Errorf(errStr)
-		return nil
-	}
-
-	go pm.producer.AddToTBLSRecoverBuf(&sigShare)
-	return nil
-}
-
-func (pm *ProtocolManager) VSSDealMsg(msg p2p.Msg, p *peer) error {
-	var deal mp.VSSDealEvent
-	if err := msg.Decode(&deal); err != nil {
-		errStr := fmt.Sprintf("VSSDealMsg: %v, err: %v", msg, err)
-		log.Debugf(errStr)
-
-		//return fmt.Errorf(errStr)
-		return nil
-	}
-
-	hash := deal.Hash()
-	p.MarkVSSDeal(hash)
-	ma := pm.dag.GetActiveMediatorAddr(int(deal.DstIndex))
-	if !pm.producer.IsLocalMediator(ma) {
-		pm.BroadcastVSSDeal(&deal)
-	}
-
-	if pm.IsExistInCache(hash.Bytes()) {
-		return nil
-	}
-
-	// 判断是否同步, 如果没同步完成，接收到的 vss deal 对当前节点来说是超前的
-	if !pm.dag.IsSynced() {
-		errStr := "we are not synced"
-		log.Debugf(errStr)
-		//return fmt.Errorf(errStr)
-		return nil
-	}
-
-	go pm.producer.AddToDealBuf(&deal)
-	return nil
-}
-
-func (pm *ProtocolManager) VSSResponseMsg(msg p2p.Msg, p *peer) error {
-	var resp mp.VSSResponseEvent
-	if err := msg.Decode(&resp); err != nil {
-		errStr := fmt.Sprintf("VSSResponseMsg: %v, err: %v", msg, err)
-		log.Debugf(errStr)
-
-		//return fmt.Errorf(errStr)
-		return nil
-	}
-
-	hash := resp.Hash()
-	p.MarkVSSResponse(hash)
-	pm.BroadcastVSSResponse(&resp)
-
-	if pm.IsExistInCache(hash.Bytes()) {
-		return nil
-	}
-
-	// 判断是否同步, 如果没同步完成，接收到的 vss response 对当前节点来说是超前的
-	if !pm.dag.IsSynced() {
-		errStr := "not synced"
-		log.Debugf(errStr)
-		//return fmt.Errorf(errStr)
-		return nil
-	}
-
-	go pm.producer.AddToResponseBuf(&resp)
 	return nil
 }
 
@@ -597,14 +542,80 @@ func (pm *ProtocolManager) GroupSigMsg(msg p2p.Msg, p *peer) error {
 
 	hash := gSign.Hash()
 	p.MarkGroupSig(hash)
-	pm.BroadcastGroupSig(&gSign)
 
 	if pm.IsExistInCache(hash.Bytes()) {
 		return nil
 	}
 
+	go pm.BroadcastGroupSig(&gSign)
 	go pm.dag.SetUnitGroupSign(gSign.UnitHash, gSign.GroupSig, pm.txpool)
 
+	return nil
+}
+
+func (pm *ProtocolManager) VSSDealMsg(msg p2p.Msg, p *peer) error {
+	var deal mp.VSSDealEvent
+	if err := msg.Decode(&deal); err != nil {
+		errStr := fmt.Sprintf("VSSDealMsg: %v, err: %v", msg, err)
+		log.Debugf(errStr)
+
+		//return fmt.Errorf(errStr)
+		return nil
+	}
+
+	hash := deal.Hash()
+	p.MarkVSSDeal(hash)
+
+	if pm.IsExistInCache(hash.Bytes()) {
+		return nil
+	}
+
+	// 判断是否同步, 如果没同步完成，接收到的 vss deal 对当前节点来说是超前的
+	if !pm.dag.IsSynced(true) {
+		log.Debugf(errStr)
+		go pm.BroadcastVSSDeal(&deal)
+
+		//return fmt.Errorf(errStr)
+		return nil
+	}
+
+	ma := pm.dag.GetActiveMediatorAddr(int(deal.DstIndex))
+	if pm.producer.IsLocalMediator(ma) {
+		go pm.producer.AddToDealBuf(&deal)
+	} else {
+		go pm.BroadcastVSSDeal(&deal)
+	}
+
+	return nil
+}
+
+func (pm *ProtocolManager) VSSResponseMsg(msg p2p.Msg, p *peer) error {
+	var resp mp.VSSResponseEvent
+	if err := msg.Decode(&resp); err != nil {
+		errStr := fmt.Sprintf("VSSResponseMsg: %v, err: %v", msg, err)
+		log.Debugf(errStr)
+
+		//return fmt.Errorf(errStr)
+		return nil
+	}
+
+	hash := resp.Hash()
+	p.MarkVSSResponse(hash)
+
+	if pm.IsExistInCache(hash.Bytes()) {
+		return nil
+	}
+
+	go pm.BroadcastVSSResponse(&resp)
+
+	// 判断是否同步, 如果没同步完成，接收到的 vss response 对当前节点来说是超前的
+	if !pm.dag.IsSynced(true) {
+		log.Debugf(errStr)
+		//return fmt.Errorf(errStr)
+		return nil
+	}
+
+	go pm.producer.AddToResponseBuf(&resp)
 	return nil
 }
 
@@ -616,6 +627,13 @@ func (pm *ProtocolManager) ContractMsg(msg p2p.Msg, p *peer) error {
 	}
 	if pm.IsExistInCache(event.Hash().Bytes()) {
 		//log.Debugf("Received event(%v) again, ignore it", event.Hash().String())
+		return nil
+	}
+
+	// 判断是否同步, 如果没同步完成，接收到的 ContractMsg 对当前节点来说是超前的
+	if !pm.dag.IsSynced(false) {
+		log.Debugf(errStr)
+		//return fmt.Errorf(errStr)
 		return nil
 	}
 
@@ -646,6 +664,14 @@ func (pm *ProtocolManager) ElectionMsg(msg p2p.Msg, p *peer) error {
 	if pm.IsExistInCache(evs.Hash().Bytes()) {
 		return nil
 	}
+
+	// 判断是否同步, 如果没同步完成，接收到的 ElectionMsg 对当前节点来说是超前的
+	if !pm.dag.IsSynced(false) {
+		log.Debugf(errStr)
+		//return fmt.Errorf(errStr)
+		return nil
+	}
+
 	event, err := evs.ToElectionEvent()
 	if err != nil {
 		log.Debug("ElectionMsg, ToElectionEvent fail")

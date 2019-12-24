@@ -15,17 +15,16 @@
 package deposit
 
 import (
-	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/math"
-	"github.com/palletone/go-palletone/contracts/syscontract"
-	"github.com/palletone/go-palletone/dag/dagconfig"
+	"encoding/json"
 	"regexp"
 	"strconv"
 	"strings"
 
-	"encoding/json"
+	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -58,45 +57,31 @@ func processPledgeDeposit(stub shim.ChaincodeStubInterface) pb.Response {
 }
 
 //  每天计算各节点收益
-func handlePledgeReward(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	if len(args) != 0 {
-		return shim.Error("need 0 args")
-	}
+func handlePledgeReward(stub shim.ChaincodeStubInterface) pb.Response {
 	gp, err := stub.GetSystemConfig()
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 	depositDailyReward := gp.ChainParameters.PledgeDailyReward
 
-	err = handleRewardAllocation(stub, depositDailyReward)
+	err = handleRewardAllocation(stub, depositDailyReward,gp.ChainParameters.PledgeAllocateThreshold)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	if depositDailyReward > 0 {
-		//增发到合约
-		log.Debugf("Create coinbase %d to pledge contract", depositDailyReward)
-		err = stub.SupplyToken(dagconfig.DagConfig.GetGasToken().Bytes(),
-			[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, depositDailyReward, syscontract.DepositContractAddress.String())
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-	}
+
 	return shim.Success(nil)
 
 }
 
 //  普通节点申请提取PTN
-func processPledgeWithdraw(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	if len(args) != 1 {
-		return shim.Error("need 1 arg, withdraw Dao amount")
-	}
+func processPledgeWithdraw(stub shim.ChaincodeStubInterface, amount string) pb.Response {
+
 	//  获取请求地址
 	inAddr, err := stub.GetInvokeAddress()
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 
-	amount := args[0]
 	ptnAccount := uint64(0)
 	if strings.ToLower(amount) == ALL {
 		ptnAccount = math.MaxUint64
@@ -114,33 +99,25 @@ func processPledgeWithdraw(stub shim.ChaincodeStubInterface, args []string) pb.R
 	return shim.Success(nil)
 }
 
-func queryPledgeStatusByAddr(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	if len(args) != 1 {
-		return shim.Error("need 1 arg, Address")
+func queryPledgeStatusByAddr(stub shim.ChaincodeStubInterface, address string) (*modules.PledgeStatusJson, error) {
+	if strings.ToLower(address) == ALL{
+		status,err := getTotalPledgeStatus(stub)
+		if err != nil {
+			return nil, err
+		}
+		pjson := convertPledgeStatus2Json(status)
+		return pjson, nil
 	}
-	var status *modules.PledgeStatus
-	var err error
-	if strings.ToLower(args[0]) == ALL || len(args[0]) == 0 { //查询整个网络的质押情况
-		status, err = getTotalPledgeStatus(stub)
-	} else {
-		status, err = getPledgeStatus(stub, args[0])
-	}
+	status, err := getPledgeStatus(stub, address)
 	if err != nil {
-		return shim.Error(err.Error())
+		return nil, err
 	}
 	pjson := convertPledgeStatus2Json(status)
-	data, _ := json.Marshal(pjson)
-	return shim.Success(data)
+	return pjson, nil
 }
 
-func queryAllPledgeHistory(stub shim.ChaincodeStubInterface) pb.Response {
-
-	history, err := getAllPledgeRewardHistory(stub)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	data, _ := json.Marshal(history)
-	return shim.Success(data)
+func queryAllPledgeHistory(stub shim.ChaincodeStubInterface) ([]*modules.PledgeList, error) {
+	return getAllPledgeRewardHistory(stub)
 }
 func queryPledgeHistoryByAddr(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	if len(args) != 1 {
@@ -170,27 +147,16 @@ func queryPledgeHistoryByAddr(stub shim.ChaincodeStubInterface, args []string) p
 	return shim.Success(data)
 }
 
-func queryPledgeList(stub shim.ChaincodeStubInterface) pb.Response {
-	list, err := getLastPledgeList(stub)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	result, _ := json.Marshal(list)
-	return shim.Success(result)
+func queryPledgeList(stub shim.ChaincodeStubInterface) (*modules.PledgeList, error) {
+	return getLastPledgeList(stub)
 }
 
-func queryPledgeListByDate(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	date := args[0]
+func queryPledgeListByDate(stub shim.ChaincodeStubInterface, date string) (*modules.PledgeList, error) {
 	reg := regexp.MustCompile(`[\d]{8}`)
 	if !reg.Match([]byte(date)) {
-		return shim.Error("must use YYYYMMDD format")
+		return nil, errors.New("must use YYYYMMDD format")
 	}
-	list, err := getPledgeListByDate(stub, date)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	result, _ := json.Marshal(list)
-	return shim.Success(result)
+	return getPledgeListByDate(stub, date)
 }
 
 func convertPledgeStatus2Json(p *modules.PledgeStatus) *modules.PledgeStatusJson {

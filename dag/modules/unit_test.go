@@ -21,13 +21,13 @@ package modules
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log"
 	"reflect"
 	"testing"
 	"time"
 	"unsafe"
-	"encoding/json"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -37,7 +37,7 @@ import (
 
 func TestNewUnit(t *testing.T) {
 	txs := make(Transactions, 0)
-	unit := NewUnit(&Header{Extra: []byte("hello"), Time: time.Now().Unix()}, txs)
+	unit := NewUnit(&Header{Number: &ChainIndex{NewPTNIdType(), 1}, Extra: []byte("hello"), Time: time.Now().Unix()}, txs)
 	hash := unit.Hash()
 	unit.UnitHash = common.Hash{}
 	if unit.UnitHash != (common.Hash{}) {
@@ -224,31 +224,30 @@ func assertEqualRlp(t *testing.T, a, b interface{}) {
 	assert.Equal(t, aa, bb)
 }
 
-
 func TestHeader_Copy(t *testing.T) {
-	h:=mockHeader()
-	data,_:= json.Marshal(h)
-	t.Log("Header1",string(data))
-	headerHash:="0x4dcf5cffcc5eb4f103d9222d4551e337c73f7f5d0c4f50de170920cc42db302b"
-	t.Logf("Header Hash:%s",h.Hash().String())
-	assert.Equal(t,headerHash,h.Hash().String())
-	h2:=&Header{}
-	h2.CopyHeader(h)
-	data,_= json.Marshal(h2)
-	t.Log("Header2", string(data))
-	assert.Equal(t,headerHash,h2.Hash().String())
-	h2.ParentsHash=append(h2.ParentsHash,common.HexToHash(headerHash))
-	h2.Authors.PubKey=[]byte("Test")
-	h2.Number.Index=999
-	h2.Extra=[]byte("dddd")
-	data,_= json.Marshal(h)
+	h := mockHeader()
+	data, _ := json.Marshal(h)
 	t.Log("Header1", string(data))
-	assert.Equal(t,headerHash,h.Hash().String())
+	headerHash := "0x4dcf5cffcc5eb4f103d9222d4551e337c73f7f5d0c4f50de170920cc42db302b"
+	t.Logf("Header Hash:%s", h.Hash().String())
+	assert.Equal(t, headerHash, h.Hash().String())
+	h2 := &Header{}
+	h2.CopyHeader(h)
+	data, _ = json.Marshal(h2)
+	t.Log("Header2", string(data))
+	assert.Equal(t, headerHash, h2.Hash().String())
+	h2.ParentsHash = append(h2.ParentsHash, common.HexToHash(headerHash))
+	h2.Authors.PubKey = []byte("Test")
+	h2.Number.Index = 999
+	h2.Extra = []byte("dddd")
+	data, _ = json.Marshal(h)
+	t.Log("Header1", string(data))
+	assert.Equal(t, headerHash, h.Hash().String())
 }
-func mockHeader() *Header{
+func mockHeader() *Header {
 	key, _ := hex.DecodeString("ebe665c202f9393b85fe9bddbc31f39f7ad9a1eb14149a60f4ff23e806c111a6")
 	pubKey, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(key)
-	h:=&Header{}
+	h := &Header{}
 	h.GroupSign = []byte("group_sign")
 	h.GroupPubKey = []byte("group_pubKey")
 	h.Number = &ChainIndex{}
@@ -256,7 +255,7 @@ func mockHeader() *Header{
 	h.Number.Index = uint64(123)
 	h.Extra = []byte("Extra")
 	h.CryptoLib = []byte{0x1, 0x2}
-	h.ParentsHash =[]common.Hash{
+	h.ParentsHash = []common.Hash{
 		common.HexToHash("57c56162990aac482ae2b66196cd1f5129e6f026578470ab105042bf42d6a2dc")}
 	h.TxRoot = common.HexToHash("c35639062e40f8891cef2526b387f42e353b8f403b930106bb5aa3519e59e35f")
 	sig, _ := crypto.MyCryptoLib.Sign(key, h.TxRoot[:])
@@ -265,6 +264,6 @@ func mockHeader() *Header{
 	au.PubKey = pubKey
 	h.Authors = au
 	h.Time = 123
-	h.TxsIllegal=[]uint16{666}
+	h.TxsIllegal = []uint16{666}
 	return h
 }

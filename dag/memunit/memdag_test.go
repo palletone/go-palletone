@@ -60,7 +60,7 @@ func TestMemDag_AddUnit(t *testing.T) {
 	unitRep.SaveUnit(lastHeader, false)
 	propRep := dagcommon.NewPropRepository(propDb)
 	propRep.StoreGlobalProp(modules.NewGlobalProp())
-	stateRep := dagcommon.NewStateRepository(stateDb)
+	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 	gasToken := dagconfig.DagConfig.GetGasToken()
 	memdag := NewMemDag(gasToken, 2, false,
 		db, unitRep, propRep, stateRep, cache(), tokenengine.Instance)
@@ -85,7 +85,7 @@ func BenchmarkMemDag_AddUnit(b *testing.B) {
 	unitRep.SaveUnit(lastHeader, false)
 	propRep := dagcommon.NewPropRepository(propDb)
 	propRep.StoreGlobalProp(modules.NewGlobalProp())
-	stateRep := dagcommon.NewStateRepository(stateDb)
+	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 	gasToken := modules.PTNCOIN
 	memdag := NewMemDag(gasToken, 2, false,
 		db, unitRep, propRep, stateRep, cache(), tokenengine.Instance)
@@ -166,7 +166,7 @@ func TestMemDag_AddOrphanUnit(t *testing.T) {
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenengine.Instance)
 	unitRep.SaveUnit(lastHeader, false)
 	propRep := dagcommon.NewPropRepository(propDb)
-	stateRep := dagcommon.NewStateRepository(stateDb)
+	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 	gasToken := modules.PTNCOIN
 	memdag := NewMemDag(gasToken, 2, false,
 		db, unitRep, propRep, stateRep, cache(), tokenengine.Instance)
@@ -211,7 +211,7 @@ func TestMemDag_SwitchMainChain(t *testing.T) {
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenengine.Instance)
 	unitRep.SaveUnit(u0, false)
 	propRep := dagcommon.NewPropRepository(propDb)
-	stateRep := dagcommon.NewStateRepository(stateDb)
+	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 	gasToken := modules.PTNCOIN
 	memdag := NewMemDag(gasToken, 2,
 		false, db, unitRep, propRep, stateRep, cache(), tokenengine.Instance)
@@ -240,11 +240,11 @@ func TestMemDag_SwitchMainChain(t *testing.T) {
 func mockMediatorInit(statedb storage.IStateDb, propDb storage.IPropertyDb) {
 	point, _ := core.StrToPoint("Dsn4gF2xpsM79R6kBfsR1joZD4BoPfBGREJGStCAz1bFfUnB5QXBGbNfudxyCWz6uWZZ8c43BYWkxiezyF5uifhv1diiykrxzgFhLMSAvppx34RjJwzjmXAXnYMuQX3Jy2P3ygehcKmATAyXQCVoXde6Xo3tkA2Jv8Zb8zDcdGjbFyd")
 	node, _ := core.StrToMedNode("pnode://f056aca66625c286ae444add82f44b9eb74f18a8a96572360cb70df9b6d64d9bd2c58a345e570beb2bcffb037cd0a075f548b73083d31c12f1f4564865372534@127.0.0.1:30303")
-	m1 := &core.Mediator{Address: addr1, InitPubKey: point, Node: node,
+	m1 := &core.Mediator{MediatorBase: core.MediatorBase{Address: addr1, InitPubKey: point, Node: node},
 		MediatorApplyInfo: core.NewMediatorApplyInfo(), MediatorInfoExpand: core.NewMediatorInfoExpand()}
 
 	statedb.StoreMediator(m1)
-	m2 := &core.Mediator{Address: addr2, InitPubKey: point, Node: node,
+	m2 := &core.Mediator{MediatorBase: core.MediatorBase{Address: addr2, InitPubKey: point, Node: node},
 		MediatorApplyInfo: core.NewMediatorApplyInfo(), MediatorInfoExpand: core.NewMediatorInfoExpand()}
 	statedb.StoreMediator(m2)
 	gp := modules.NewGlobalProp()
@@ -261,6 +261,7 @@ func mockMediatorInit(statedb storage.IStateDb, propDb storage.IPropertyDb) {
 	ms.CurrentShuffledMediators = append(ms.CurrentShuffledMediators, addr2)
 	propDb.StoreMediatorSchl(ms)
 }
+
 func mockValidator() validator.Validator {
 	return &mockValidate{}
 }
@@ -288,4 +289,7 @@ func (v mockValidate) ValidateUnitGroupSign(h *modules.Header) error {
 }
 func (v mockValidate) CheckTxIsExist(tx *modules.Transaction) bool {
 	return false
+}
+func (v mockValidate) ValidateTxFeeEnough(tx *modules.Transaction, extSize float64, extTime float64) bool {
+	return true
 }

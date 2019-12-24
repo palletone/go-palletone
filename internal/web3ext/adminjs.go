@@ -89,6 +89,11 @@ web3._extend({
 			call: 'admin_corsPeers',
 			params: 1
 		}),
+        new web3._extend.Method({
+            name: 'getAllData',
+            call: 'admin_getAllData',
+            params: 0,
+        }),
 	],
 	properties: [
 		new web3._extend.Property({

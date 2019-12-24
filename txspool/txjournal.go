@@ -20,19 +20,19 @@
 package txspool
 
 import (
-	"errors"
 	"io"
 	"os"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/common/log"
+	"path/filepath"
 )
 
 // errNoActiveJournal is returned if a transaction is attempted to be inserted
 // into the journal, but no such file is currently open.
 var errNoActiveJournal = errors.New("no active journal")
-
 // devNull is a WriteCloser that just discards anything written into it. Its
 // goal is to allow the transaction journal to write into a fake journal when
 // loading transactions on startup without printing warnings due to no file
@@ -55,6 +55,14 @@ func newTxJournal(path string) *txJournal {
 		path: path,
 	}
 }
+func getFileSize(filename string) int64 {
+	var size int64
+	filepath.Walk(filename, func(path string, f os.FileInfo, err error) error {
+		size = f.Size()
+		return nil
+	})
+	return size
+}
 
 // load parses a transaction journal dump from disk, loading its contents into
 // the specified pool.
@@ -63,6 +71,11 @@ func (journal *txJournal) load(add func(*TxPoolTransaction) error) error {
 	if _, err := os.Stat(journal.path); os.IsNotExist(err) {
 		return nil
 	}
+	if getFileSize(journal.path) <= 0 {
+		log.Infof("the transaction.rlp is empty file.")
+		return nil
+	}
+
 	// Open the journal for loading any past transactions
 	input, err := os.Open(journal.path)
 	if err != nil {
@@ -78,13 +91,14 @@ func (journal *txJournal) load(add func(*TxPoolTransaction) error) error {
 	stream := rlp.NewStream(input, 0)
 	total, dropped := 0, 0
 
-	var failure error
 	for {
 		// Parse the next transaction and terminate on error
 		tx := new(TxPoolTransaction)
 		if err = stream.Decode(tx); err != nil {
-			if err != io.EOF {
-				failure = err
+			if err.Error() == errors.ErrEOF.Error() {
+				err = nil
+			} else {
+				log.Infof("decode error:%s", err.Error())
 			}
 			break
 		}
@@ -102,7 +116,7 @@ func (journal *txJournal) load(add func(*TxPoolTransaction) error) error {
 	}
 	log.Info("Loaded local transaction journal", "transactions", total, "dropped", dropped)
 
-	return failure
+	return err
 }
 
 // insert adds the specified transaction to the local disk journal.

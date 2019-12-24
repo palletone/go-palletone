@@ -43,19 +43,28 @@ func NewGlobalPropBase() GlobalPropBase {
 // 全局属性的结构体定义
 type GlobalProperty struct {
 	GlobalPropBase
+	GlobalPropExtra
+}
 
+type GlobalPropExtra struct {
 	// todo albert 待重构为数组，提高效率
 	ActiveJuries       map[common.Address]bool // 当前活跃Jury集合
 	ActiveMediators    map[common.Address]bool // 当前活跃 mediator 集合；每个维护间隔更新一次
 	PrecedingMediators map[common.Address]bool // 上一届 mediator
 }
 
-func NewGlobalProp() *GlobalProperty {
-	return &GlobalProperty{
-		GlobalPropBase:     NewGlobalPropBase(),
+func NewGlobalPropExtra() GlobalPropExtra {
+	return GlobalPropExtra{
 		ActiveJuries:       make(map[common.Address]bool),
 		ActiveMediators:    make(map[common.Address]bool),
 		PrecedingMediators: make(map[common.Address]bool),
+	}
+}
+
+func NewGlobalProp() *GlobalProperty {
+	return &GlobalProperty{
+		GlobalPropBase:  NewGlobalPropBase(),
+		GlobalPropExtra: NewGlobalPropExtra(),
 	}
 }
 
@@ -154,6 +163,8 @@ func (gp *GlobalProperty) IsPrecedingMediator(add common.Address) bool {
 func (gp *GlobalProperty) GetActiveMediatorAddr(index int) common.Address {
 	if index < 0 || index > gp.ActiveMediatorsCount()-1 {
 		log.Errorf("%v is out of the bounds of active mediator list!", index)
+
+		return common.Address{}
 	}
 
 	meds := gp.GetActiveMediators()
@@ -199,7 +210,7 @@ func InitGlobalProp(genesis *core.Genesis) *GlobalProperty {
 	return gp
 }
 
-func InitDynGlobalProp(genesis *Unit) *DynamicGlobalProperty {
+func InitDynGlobalProp() *DynamicGlobalProperty {
 	log.Debug("initialize dynamic global property...")
 	dgp := NewDynGlobalProp()
 

@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/consensus"
 	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
@@ -108,7 +109,7 @@ func (p *PalletOne) AddCorsServer(cs LesServer) *PalletOne {
 
 // New creates a new PalletOne object (including the
 // initialisation of the common PalletOne object)
-func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache) (*PalletOne, error) {
+func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isTestNet bool) (*PalletOne, error) {
 	if !config.SyncMode.IsValid() {
 		return nil, fmt.Errorf("invalid sync mode %d", config.SyncMode)
 	}
@@ -118,10 +119,28 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache) (*P
 		log.Error("PalletOne New", "CreateDB err:", err)
 		return nil, err
 	}
+	if has, _ := db.Has([]byte("gpGlobalProperty")); !has {
+		keys, values := make([]string, 0), make([]string, 0)
+		if isTestNet {
+			keys = append(keys, TestNetKeys...)
+			values = append(values, TestNetValues...)
+		} else {
+			keys = append(keys, MainNetKeys...)
+			values = append(values, MainNetValues...)
+		}
+		err := initGenesisData(keys, values, db)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	dag, err := dag.NewDag(db, cache, false)
 	if err != nil {
 		log.Error("PalletOne New", "NewDag err:", err)
 		return nil, err
+	} else {
+		hash, height := dag.Memdag.GetLastStableUnitInfo()
+		log.Debugf("init dag success,index:%d, genesis: %s", height, hash.String())
 	}
 
 	dag.RefreshSysParameters()
@@ -142,7 +161,7 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache) (*P
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
 	//val:=validator.NewValidate(ptn.dag,ptn.dag,ptn.dag,ptn.dag,cache)
-	ptn.txPool = txspool.NewTxPool(config.TxPool, cache, ptn.dag)
+	ptn.txPool = txspool.NewTxPool(config.TxPool, cache, dag)
 
 	//Test for P2P
 	ptn.engine = consensus.New(dag, ptn.txPool)
@@ -453,7 +472,7 @@ func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal,
 	}
 
 	// 判断本节点是否同步完成，数据是否最新
-	if !p.dag.IsSynced() {
+	if !p.dag.IsSynced(false) {
 		return nil, fmt.Errorf("the data of this node is not synced, and can't transfer now")
 	}
 
@@ -484,4 +503,16 @@ func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal,
 	res.Warning = ptnapi.DefaultResult
 
 	return res, nil
+}
+func initGenesisData(keys, values []string, db ptndb.Putter) error {
+	k := len(keys)
+
+	for i := 0; i < k; i++ {
+		key := util.Hex2Bytes(keys[i])
+		value := util.Hex2Bytes(values[i])
+		if err := db.Put(key, value); err != nil {
+			return err
+		}
+	}
+	return nil
 }

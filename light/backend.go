@@ -37,6 +37,7 @@ import (
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/node"
 	//"github.com/palletone/go-palletone/core/types"
+	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag"
@@ -85,13 +86,28 @@ type LightPalletone struct {
 	txSub event.Subscription
 }
 
-func New(ctx *node.ServiceContext, config *ptn.Config, protocolname string, cache palletcache.ICache) (*LightPalletone,
-	error) {
-	chainDb, err := ptn.CreateDB(ctx, config /*, "lightchaindata"*/)
+func New(ctx *node.ServiceContext, config *ptn.Config, protocolname string, cache palletcache.ICache,
+	isTestNet bool) (*LightPalletone, error) {
+	db, err := ptn.CreateDB(ctx, config /*, "lightchaindata"*/)
 	if err != nil {
 		return nil, err
 	}
-	dag, err := dag.NewDag(chainDb, cache, true)
+	if has, _ := db.Has([]byte("gpGlobalProperty")); !has {
+		keys, values := make([]string, 0), make([]string, 0)
+		if isTestNet {
+			keys = append(keys, ptn.TestNetKeys...)
+			values = append(values, ptn.TestNetValues...)
+		} else {
+			keys = append(keys, ptn.MainNetKeys...)
+			values = append(values, ptn.MainNetValues...)
+		}
+		err := initGenesisData(keys, values, db)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	dag, err := dag.NewDag(db, cache, true)
 	if err != nil {
 		log.Error("PalletOne New", "NewDag err:", err)
 		return nil, err
@@ -109,7 +125,7 @@ func New(ctx *node.ServiceContext, config *ptn.Config, protocolname string, cach
 	lptn := &LightPalletone{
 		config: config,
 		//chainConfig:      chainConfig,
-		unitDb:   chainDb,
+		unitDb:   db,
 		eventMux: ctx.EventMux,
 		peers:    peers,
 		//reqDist:          newRequestDistributor(peers, quitSync),
@@ -258,4 +274,16 @@ func (p *LightPalletone) txBroadcastLoop() {
 			return
 		}
 	}
+}
+func initGenesisData(keys, values []string, db ptndb.Putter) error {
+	k := len(keys)
+
+	for i := 0; i < k; i++ {
+		key := util.Hex2Bytes(keys[i])
+		value := util.Hex2Bytes(values[i])
+		if err := db.Put(key, value); err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -1,7 +1,8 @@
 # Build Gptn in a stock Go builder container
-FROM golang:1.10-alpine as builder
+FROM golang:1.12-alpine as builder
 
-RUN apk add --no-cache make gcc musl-dev linux-headers
+#RUN apk add --no-cache make gcc musl-dev linux-headers git
+RUN apk add make gcc musl-dev linux-headers git
 
 ADD . /go-palletone
 RUN cd /go-palletone && make gptn

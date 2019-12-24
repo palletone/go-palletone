@@ -44,10 +44,10 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	}(t0)
 
 	// 1. 判断是否满足生产的若干条件
-	log.Debugf("generate unit ...")
+	//log.Debugf("generate unit ...")
 
 	// 2. 生产unit，添加交易集、时间戳、签名
-	newUnit, err := dag.CreateUnit(producer, txpool, when)
+	newUnit, err := dag.createUnit(producer, txpool)
 	if err != nil {
 		errStr := fmt.Sprintf("GenerateUnit error: %v", err.Error())
 		log.Debug(errStr)
@@ -73,13 +73,18 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	}
 
 	sign_unit.UnitSize = sign_unit.Size()
-	log.Infof("Generate new unit index:[%d],hash:[%s],size:%s, parent unit[%s],txs[%d], spent time: %s",
+	log.Debugf("Generate new unit index:[%d],hash:[%s],size:%s, parent unit[%s],txs[%d], spent time: %s ",
 		sign_unit.NumberU64(), sign_unit.Hash().String(), sign_unit.UnitSize.String(),
 		sign_unit.UnitHeader.ParentsHash[0].String(), sign_unit.Txs.Len(), time.Since(t0).String())
 
 	//3.将新单元添加到MemDag中
 	a, b, c, d, e, err := dag.Memdag.AddUnit(sign_unit, txpool, true)
 	if a != nil && err == nil {
+		if dag.unstableUnitProduceRep != e {
+			log.Debugf("send UnstableRepositoryUpdatedEvent")
+			go dag.unstableRepositoryUpdatedFeed.Send(modules.UnstableRepositoryUpdatedEvent{})
+		}
+
 		dag.unstableUnitRep = a
 		dag.unstableUtxoRep = b
 		dag.unstableStateRep = c
@@ -106,4 +111,19 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	}()
 
 	return sign_unit, nil
+}
+
+// createUnit, create a unit when mediator being produced
+func (d *Dag) createUnit(mAddr common.Address, txpool txspool.ITxPool) (*modules.Unit, error) {
+	//_, _, state, rep, _ := d.Memdag.GetUnstableRepositories()
+	//med, err := state.RetrieveMediator(mAddr)
+
+	med, err := d.unstableStateRep.RetrieveMediator(mAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	//return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool, rep, state.GetJurorReward)
+	return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool,
+		d.unstablePropRep, d.unstableStateRep.GetJurorReward)
 }

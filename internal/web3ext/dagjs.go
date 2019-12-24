@@ -34,6 +34,12 @@ web3._extend({
         	params: 1,
         	inputFormatter: [null]
 		}),
+        new web3._extend.Method({
+			name: 'getUnitJsonByIndex',
+        	call: 'dag_getUnitJsonByIndex',
+        	params: 2,
+        	inputFormatter: [null,null]
+		}),
 		new web3._extend.Method({
 			name: 'getUnitsByIndex',
         	call: 'dag_getUnitsByIndex',
@@ -68,6 +74,11 @@ web3._extend({
        		call: 'dag_getHeaderByNumber',
         	params: 1,
         	inputFormatter: [null]
+		}),
+		new web3._extend.Method({
+			name: 'getHeaderByAuthor',
+       		call: 'dag_getHeaderByAuthor',
+        	params: 3,
 		}),
 		new web3._extend.Method({
 		    name: 'getTxHashByReqId',
@@ -119,6 +130,11 @@ web3._extend({
             // inputFormatter: [null, formatters.inputDefaultBlockNumberFormatter],
             // outputFormatter: utils.toDecimal
         }), 
+        new web3._extend.Method({
+            name: 'getTxStatusByHash',
+            call: 'dag_getTxStatusByHash',  
+            params: 1,
+        }),
         new web3._extend.Method({
             name: 'getUtxoEntry',
             call: 'dag_getUtxoEntry',
@@ -196,6 +212,16 @@ web3._extend({
 		new web3._extend.Method({
             name: 'rebuildAddrTxIndex',
             call: 'dag_rebuildAddrTxIndex',
+            params: 0,
+        }),
+        new web3._extend.Method({
+            name: 'getGenesisData',
+            call: 'dag_getGenesisData',
+            params: 0,
+        }),
+        new web3._extend.Method({
+            name: 'memdagInfos',
+            call: 'dag_memdagInfos',
             params: 0,
         }),
 	],

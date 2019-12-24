@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/consensus/jury"
 	"github.com/palletone/go-palletone/dag/modules"
+	"sort"
 )
 
 var (
@@ -53,7 +54,8 @@ const (
 
 	maxKnownVSSDeal     = 21 * 20
 	maxKnownVSSResponse = 21 * 20
-	maxKnownSigShare    = 21 * 15
+	maxKnownSigShare    = 21 * 2
+	maxKnownGroupSign   = 21 * 15
 )
 
 // PeerInfo represents a short summary of the PalletOne sub-protocol metadata known
@@ -203,7 +205,7 @@ func (p *peer) MarkUnit(hash common.Hash) {
 }
 
 func (p *peer) MarkGroupSig(hash common.Hash) {
-	for p.knownGroupSig.Cardinality() >= maxKnownBlocks {
+	for p.knownGroupSig.Cardinality() >= maxKnownGroupSign {
 		p.knownGroupSig.Pop()
 	}
 	p.knownGroupSig.Add(hash)
@@ -385,6 +387,44 @@ func (p *peer) RequestReceipts(hashes []common.Hash) error {
 
 // Handshake executes the ptn protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
+func (p *peer) Handshakev103(network uint64, index *modules.ChainIndex, genesis common.Hash, headHash common.Hash,
+	stable *modules.ChainIndex) error {
+	// Send out own handshake in a new thread
+	errc := make(chan error, 2)
+	var status statusDatav103 // safe to read after two values have been received from errc
+
+	go func() {
+		errc <- p2p.Send(p.rw, StatusMsg, &statusDatav103{
+			ProtocolVersion: uint32(p.version),
+			NetworkId:       network,
+			Index:           index,
+			GenesisUnit:     genesis,
+			CurrentHeader:   headHash,
+			StableIndex:     stable,
+		})
+	}()
+	go func() {
+		errc <- p.readStatus(network, &status, genesis)
+	}()
+	timeout := time.NewTimer(handshakeTimeout)
+	defer timeout.Stop()
+	for i := 0; i < 2; i++ {
+		select {
+		case err := <-errc:
+			if err != nil {
+				return err
+			}
+		case <-timeout.C:
+			return p2p.DiscReadTimeout
+		}
+	}
+	//stableIndex :=&modules.ChainIndex{Index:uint64(1085100)}
+	//stableIndex := &modules.ChainIndex{AssetID: modules.PTNCOIN, Index: uint64(1)}
+	log.Debug("peer Handshakev103", "p.id", p.id, "index", status.Index, "stable", status.StableIndex)
+	p.SetHead(status.CurrentHeader, status.Index, status.StableIndex)
+	return nil
+}
+
 func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis common.Hash, headHash common.Hash,
 	stable *modules.ChainIndex) error {
 	// Send out own handshake in a new thread
@@ -416,14 +456,13 @@ func (p *peer) Handshake(network uint64, index *modules.ChainIndex, genesis comm
 			return p2p.DiscReadTimeout
 		}
 	}
-	//stableIndex :=&modules.ChainIndex{Index:uint64(1085100)}
-	stableIndex := &modules.ChainIndex{Index: uint64(1)}
-	log.Debug("peer Handshake", "p.id", p.id, "index", status.Index, "stable", stableIndex) //status.StableIndex)
-	p.SetHead(status.CurrentHeader, status.Index, stableIndex)                              //status.StableIndex)
+
+	log.Debug("peer Handshake", "p.id", p.id, "index", status.Index, "stable", stable.Index)
+	p.SetHead(status.CurrentHeader, status.Index, stable)
 	return nil
 }
 
-func (p *peer) readStatus(network uint64, status *statusData, genesis common.Hash) (err error) {
+func (p *peer) readStatus(network uint64, status interface{}, genesis common.Hash) (err error) {
 	msg, err := p.rw.ReadMsg()
 	if err != nil {
 		return err
@@ -434,18 +473,38 @@ func (p *peer) readStatus(network uint64, status *statusData, genesis common.Has
 	if msg.Size > ProtocolMaxMsgSize {
 		return errResp(ErrMsgTooLarge, "%v > %v", msg.Size, ProtocolMaxMsgSize)
 	}
-	// Decode the handshake and make sure everything matches
-	if err := msg.Decode(&status); err != nil {
-		return errResp(ErrDecode, "msg %v: %v", msg, err)
+	if status1, ok := status.(*statusData); ok {
+		// Decode the handshake and make sure everything matches
+		if err := msg.Decode(&status1); err != nil {
+			return errResp(ErrDecode, "msg %v: %v", msg, err)
+		}
+
+		if status1.GenesisUnit != genesis {
+			return errResp(ErrGenesisBlockMismatch, "%x (!= %x)", status1.GenesisUnit[:8], genesis[:8])
+		}
+		if status1.NetworkId != network {
+			return errResp(ErrNetworkIdMismatch, "%d (!= %d)", status1.NetworkId, network)
+		}
+		if int(status1.ProtocolVersion) != p.version {
+			return errResp(ErrProtocolVersionMismatch, "%d (!= %d)", status1.ProtocolVersion, p.version)
+		}
 	}
-	if status.GenesisUnit != genesis {
-		return errResp(ErrGenesisBlockMismatch, "%x (!= %x)", status.GenesisUnit[:8], genesis[:8])
-	}
-	if status.NetworkId != network {
-		return errResp(ErrNetworkIdMismatch, "%d (!= %d)", status.NetworkId, network)
-	}
-	if int(status.ProtocolVersion) != p.version {
-		return errResp(ErrProtocolVersionMismatch, "%d (!= %d)", status.ProtocolVersion, p.version)
+
+	if status103, ok := status.(*statusDatav103); ok {
+		// Decode the handshake and make sure everything matches
+		if err := msg.Decode(&status103); err != nil {
+			return errResp(ErrDecode, "msg %v: %v", msg, err)
+		}
+
+		if status103.GenesisUnit != genesis {
+			return errResp(ErrGenesisBlockMismatch, "%x (!= %x)", status103.GenesisUnit[:8], genesis[:8])
+		}
+		if status103.NetworkId != network {
+			return errResp(ErrNetworkIdMismatch, "%d (!= %d)", status103.NetworkId, network)
+		}
+		if int(status103.ProtocolVersion) != p.version {
+			return errResp(ErrProtocolVersionMismatch, "%d (!= %d)", status103.ProtocolVersion, p.version)
+		}
 	}
 
 	return nil
@@ -593,21 +652,37 @@ func (ps *peerSet) BestPeer(assetId modules.AssetId) *peer {
 	return bestPeer
 }
 
+type stableIndex []uint64
+
+func (si stableIndex) Len() int {
+	return len(si)
+}
+func (si stableIndex) Less(i, j int) bool {
+	return si[i] < si[j]
+}
+func (si stableIndex) Swap(i, j int) {
+	si[i], si[j] = si[j], si[i]
+}
+
 func (ps *peerSet) StableIndex(assetId modules.AssetId) uint64 {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()
 
-	var index uint64
+	var indexs stableIndex
 	for _, p := range ps.peers {
 		if stable := p.StableIndex(assetId); stable != nil {
-			if index == 0 {
-				index = stable.Index
-			} else if stable.Index >= 1 && index > stable.Index {
-				index = stable.Index
-			}
+			indexs = append(indexs, stable.Index)
 		}
 	}
-	return index
+	length := indexs.Len()
+	if length == 0 {
+		return 0
+	}
+	sort.Sort(indexs)
+	if length%2 == 0 {
+		return (indexs[(length/2)-1] + indexs[length/2]) / 2
+	}
+	return indexs[length/2]
 }
 
 // Close disconnects all peers.

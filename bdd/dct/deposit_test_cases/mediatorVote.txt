@@ -1,0 +1,10 @@
+*** Settings ***
+Resource          publicParams.txt
+
+*** Keywords ***
+mediatorVote
+    [Arguments]    ${votedAddress}    ${mediatorAddress}
+    ${contractParam}    Create List    ${mediatorAddress}
+    ${param}    Create List    ${votedAddress}    ${contractParam}
+    ${result}    创建公用的POST请求    mediator_vote    mediator_vote    ${param}
+    [Return]    ${result}

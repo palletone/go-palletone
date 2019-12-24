@@ -1,0 +1,11 @@
+*** Settings ***
+Resource          publicParams.txt
+
+*** Keywords ***
+pledgeDeposit
+    [Arguments]    ${votedAddress}    ${PTN}
+    ${contractParam}    Create List    PledgeDeposit
+    ${param}    Create List    ${votedAddress}    ${depositContractAddress}    ${PTN}    1    ${depositContractAddress}
+    ...    ${contractParam}    \    10
+    ${result}    创建公用的POST请求    contract_ccinvoketx    contract_ccinvoketx    ${param}
+    [Return]    ${result}

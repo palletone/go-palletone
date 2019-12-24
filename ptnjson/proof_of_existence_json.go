@@ -22,31 +22,49 @@
 package ptnjson
 
 import (
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"time"
 )
 
 type ProofOfExistenceJson struct {
-	Creator    string      `json:"creator"`
-	MainData   string      `json:"main_data"`
-	ExtraData  string      `json:"extra_data"`
-	Reference  string      `json:"reference"`
-	UintHeight uint64      `json:"unit_index"`
-	TxId       common.Hash `json:"tx_id"`
-	UnitHash   common.Hash `json:"unit_hash"`
-	Timestamp  time.Time   `json:"timestamp"`
+	Creator    string    `json:"creator"`
+	MainData   string    `json:"main_data"`
+	ExtraData  string    `json:"extra_data"`
+	Reference  string    `json:"reference"`
+	UintHeight uint64    `json:"unit_index"`
+	TxId       string    `json:"tx_hash"`
+	UnitHash   string    `json:"unit_hash"`
+	Timestamp  time.Time `json:"timestamp"`
 }
 
 func ConvertProofOfExistence2Json(poe *modules.ProofOfExistence) *ProofOfExistenceJson {
 	return &ProofOfExistenceJson{
-		Creator:   poe.Creator.String(),
-		MainData:  string(poe.MainData),
-		ExtraData: string(poe.ExtraData),
-		Reference: string(poe.Reference),
-		UintHeight:poe.UintHeight,
-		TxId:      poe.TxId,
-		UnitHash:  poe.UnitHash,
-		Timestamp: time.Unix(int64(poe.Timestamp), 0),
+		Creator:    poe.Creator.String(),
+		MainData:   string(poe.MainData),
+		ExtraData:  string(poe.ExtraData),
+		Reference:  string(poe.Reference),
+		UintHeight: poe.UintHeight,
+		TxId:       poe.TxId.String(),
+		UnitHash:   poe.UnitHash.String(),
+		Timestamp:  time.Unix(int64(poe.Timestamp), 0),
 	}
+}
+
+func ConvertTx2ProofOfExistence(tx *TxWithUnitInfoJson) *ProofOfExistenceJson {
+	res := &ProofOfExistenceJson{}
+	for _, payment := range tx.Payment {
+		for _, input := range payment.Inputs {
+			res.Creator = input.FromAddress
+			res.TxId = tx.TxHash
+			res.UnitHash = tx.UnitHash
+			res.UintHeight = tx.UnitHeight
+			res.Timestamp = tx.Timestamp
+		}
+	}
+	for _, data := range tx.Data {
+		res.MainData = data.MainData
+		res.ExtraData = data.ExtraData
+		res.Reference = data.Reference
+	}
+	return res
 }

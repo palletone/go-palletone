@@ -42,12 +42,14 @@ type IStateQuery interface {
 	GetMediator(add common.Address) *core.Mediator
 	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
 	GetJurorByAddrHash(addrHash common.Hash) (*modules.JurorDeposit, error)
+	GetJurorReward(jurorAdd common.Address) common.Address
 }
 
 type IDagQuery interface {
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	IsTransactionExist(hash common.Hash) (bool, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
+	//GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
 }
 
 type IPropQuery interface {

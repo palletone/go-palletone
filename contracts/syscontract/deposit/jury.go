@@ -27,14 +27,10 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) peer.Response {
-	log.Debug("Start entering juryPayToDepositContract func")
-	if len(args) != 1 {
-		return shim.Error("need 1 parameter")
-	}
-
+func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args string) peer.Response {
+	log.Debug("Start entering JuryPayToDepositContract func")
 	var jdej core.JurorDepositExtraJson
-	err := json.Unmarshal([]byte(args[0]), &jdej)
+	err := json.Unmarshal([]byte(args), &jdej)
 	if err != nil {
 		errStr := fmt.Sprintf("invalid args: %v", err.Error())
 		log.Errorf(errStr)
@@ -49,12 +45,6 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 	}
 
 	invokeAddrStr := invokeAddr.String()
-	jde, err := jdej.Validate(invokeAddrStr)
-	if err != nil {
-		errStr := fmt.Sprintf("invalid args: %v", err.Error())
-		log.Errorf(errStr)
-		return shim.Error(errStr)
-	}
 
 	//  判断是否交付保证金交易
 	invokeTokens, err := isContainDepositContractAddr(stub)
@@ -77,6 +67,13 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 	}
 	//  第一次想加入
 	if balance == nil {
+		jde, err := jdej.Validate(invokeAddrStr)
+		if err != nil {
+			errStr := fmt.Sprintf("invalid args: %v", err.Error())
+			log.Errorf(errStr)
+			return shim.Error(errStr)
+		}
+
 		//  可以加入列表
 		if invokeTokens.Amount != cp.DepositAmountForJury {
 			str := fmt.Errorf("jury needs to pay only %d  deposit.", cp.DepositAmountForJury)
@@ -97,12 +94,6 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 		balance.Role = modules.Jury
 		balance.Address = invokeAddrStr
 		balance.JurorDepositExtra = jde
-		err = SaveJuryBalance(stub, invokeAddrStr, balance)
-		if err != nil {
-			log.Error("save node balance err: ", "error", err)
-			return shim.Error(err.Error())
-		}
-		return shim.Success(nil)
 	} else {
 		//  追缴逻辑
 		//if balance.Role != Jury {
@@ -129,23 +120,25 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args []string) p
 			}
 		}
 		balance.Balance = all
-		err = SaveJuryBalance(stub, invokeAddrStr, balance)
-		if err != nil {
-			log.Error("save node balance err: ", "error", err)
-			return shim.Error(err.Error())
-		}
-		return shim.Success(nil)
 	}
+
+	err = saveJuryBalance(stub, invokeAddrStr, balance)
+	if err != nil {
+		log.Error("save node balance err: ", "error", err)
+		return shim.Error(err.Error())
+	}
+
+	return shim.Success(nil)
 }
 
 func juryApplyQuit(stub shim.ChaincodeStubInterface) peer.Response {
-	log.Debug("juryApplyQuit")
+	log.Debug("JuryApplyQuit")
 	err := applyQuitList(modules.Jury, stub)
 	if err != nil {
 		log.Error("applyQuitList err: ", "error", err)
 		return shim.Error(err.Error())
 	}
-	return shim.Success([]byte(nil))
+	return shim.Success(nil)
 }
 
 //  处理
@@ -166,34 +159,53 @@ func convertJuryDeposit2Json(juror *modules.JurorDeposit) *modules.JuryDepositJs
 
 func convertJuryDepositExtra2Json(extra *core.JurorDepositExtra) (json core.JurorDepositExtraJson) {
 	json.PublicKey = hex.EncodeToString(extra.PublicKey)
+	if extra.RewardAddr == (common.Address{}) {
+		json.RewardAddr = ""
+	} else {
+		json.RewardAddr = extra.RewardAddr.Str()
+	}
+
 	return
 }
 
-//func updateJuryInfo(stub shim.ChaincodeStubInterface, args []string) peer.Response {
-//	addr, err := stub.GetInvokeAddress()
-//	if err != nil {
-//		return shim.Error(err.Error())
-//	}
-//	b, err := GetJuryBalance(stub, addr.String())
-//	if err != nil {
-//		return shim.Error(err.Error())
-//	}
-//	//  TODO
-//	if len(args) != 1 {
-//		return shim.Error("need 1 parameter")
-//	}
-//	if len(args[0]) != 68 {
-//		return shim.Error("public key is error")
-//	}
-//	//TODO 验证公钥和地址的关系
-//	byte, err := hexutil.Decode(args[0])
-//	if err != nil {
-//		return shim.Error(err.Error())
-//	}
-//	b.PublicKey = byte
-//	err = SaveJuryBalance(stub, addr.String(), b)
-//	if err != nil {
-//		return shim.Error(err.Error())
-//	}
-//	return shim.Success(nil)
-//}
+// 更新 juror 信息所需参数
+type JurorUpdateArgs struct {
+	RewardAddr *string `json:"reward_address"` // 奖励地址，用于奖励
+}
+
+func updateJuryInfo(stub shim.ChaincodeStubInterface, args string) peer.Response {
+	addr, err := stub.GetInvokeAddress()
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	addStr := addr.String()
+
+	b, err := GetJuryBalance(stub, addStr)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	var jua JurorUpdateArgs
+	err = json.Unmarshal([]byte(args), &jua)
+	if err != nil {
+		errStr := fmt.Sprintf("invalid args: %v", err.Error())
+		log.Errorf(errStr)
+		return shim.Error(errStr)
+	}
+
+	if jua.RewardAddr != nil {
+		add, err := common.StringToAddress(*jua.RewardAddr)
+		if err != nil {
+			errStr := fmt.Sprintf("invalid args: %v", err.Error())
+			log.Errorf(errStr)
+			return shim.Error(errStr)
+		}
+		b.RewardAddr = add
+	}
+
+	err = saveJuryBalance(stub, addStr, b)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	return shim.Success(nil)
+}

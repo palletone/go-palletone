@@ -19,7 +19,9 @@
  */
 package migration
 
-import "github.com/palletone/go-palletone/common/ptndb"
+import (
+	"github.com/palletone/go-palletone/common/ptndb"
+)
 
 func NewMigrations(db ptndb.Database) map[string]IMigration {
 	// 将所有待升级的migration版本，在这里实例化。
@@ -62,8 +64,22 @@ func NewMigrations(db ptndb.Database) map[string]IMigration {
 
 	m_103_gamma := NewMigration103beta_103gamma(db)
 	migrations[m_103_gamma.FromVersion()] = m_103_gamma
+
 	m_103_gamma_release := NewNothingMigration("1.0.3-gamma", "1.0.3-release")
 	migrations[m_103_gamma_release.FromVersion()] = m_103_gamma_release
+
+	m_104_alpha := NewNothingMigration("1.0.3-release", "1.0.4-alpha")
+	migrations[m_104_alpha.FromVersion()] = m_104_alpha
+
+	m_104_beta := NewMigration104alpha_104beta(db)
+	migrations[m_104_beta.FromVersion()] = m_104_beta
+
+	m_104_release := NewNothingMigration("1.0.4-beta", "1.0.4-release")
+	migrations[m_104_release.FromVersion()] = m_104_release
+
+	m_104_rc1 := NewNothingMigration("1.0.4-release", "1.0.4-rc1")
+	migrations[m_104_rc1.FromVersion()] = m_104_rc1
+
 	return migrations
 }
 
@@ -97,4 +113,8 @@ func NewMigration103alpha_103beta(db ptndb.Database) *Migration103alpha_103beta 
 
 func NewMigration103beta_103gamma(db ptndb.Database) *Migration103beta_103gamma {
 	return &Migration103beta_103gamma{dagdb: db, idxdb: db, utxodb: db, statedb: db, propdb: db}
+}
+
+func NewMigration104alpha_104beta(db ptndb.Database) *Migration104alpha_104beta {
+	return &Migration104alpha_104beta{dagdb: db, idxdb: db, utxodb: db, statedb: db, propdb: db}
 }

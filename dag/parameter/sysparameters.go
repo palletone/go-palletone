@@ -26,7 +26,7 @@ type SysParameters struct {
 	GenerateUnitReward     uint64 //每产生一个Unit奖励多少Dao的Token
 	RewardHeight           uint64
 	UnitMaxSize            uint64
-	ContractFeeJuryPercent float64 //合约执行的手续费中，有多少比例是分给Mediator
+	ContractFeeJuryPercent float64 //合约执行的手续费中，有多少比例是分给Jury
 }
 
 var CurrentSysParameters = &SysParameters{

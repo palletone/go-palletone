@@ -42,9 +42,11 @@ func DefaultDigitalIdentityConfig() DigitalIdentityConfig {
 }
 
 type Genesis struct {
-	Version     string `json:"version"`
-	GasToken    string `json:"gasToken"`
-	TokenAmount string `json:"tokenAmount"`
+	Version      string `json:"version"`
+	GasToken     string `json:"gasToken"`
+	TokenAmount  string `json:"tokenAmount"`
+	PublicKey    string `json:"mediator_pubkey"`
+	MediatorSign string `json:"mediator_sign"`
 	//TokenAmount uint64 `json:"tokenAmount"`
 	//TokenDecimal              uint32                   `json:"tokenDecimal"`
 	//DecimalUnit               string                   `json:"decimal_unit"`
@@ -129,7 +131,6 @@ func (mib *MediatorInfoBase) Validate() (common.Address, error) {
 // genesis 文件定义的mediator结构体
 type InitialMediator struct {
 	*MediatorInfoBase
-	//*MediatorApplyInfo
 	JurorDepositExtraJson
 }
 
@@ -152,7 +153,6 @@ func (im *InitialMediator) Validate() (common.Address, JurorDepositExtra, error)
 func NewInitialMediator() *InitialMediator {
 	return &InitialMediator{
 		MediatorInfoBase: NewMediatorInfoBase(),
-		//MediatorApplyInfo: NewMediatorApplyInfo(),
 		JurorDepositExtraJson: NewJurorDepositExtraJson(),
 	}
 }

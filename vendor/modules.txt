@@ -13,8 +13,21 @@ github.com/allegro/bigcache/queue
 github.com/aristanetworks/goarista/monotime
 # github.com/btcsuite/btcd v0.0.0-20190807005414-4063feeff79a
 github.com/btcsuite/btcd/btcec
+github.com/btcsuite/btcd/rpcclient
+github.com/btcsuite/btcd/btcjson
+github.com/btcsuite/btcd/chaincfg
+github.com/btcsuite/btcd/chaincfg/chainhash
+github.com/btcsuite/btcd/wire
+# github.com/btcsuite/btclog v0.0.0-20170628155309-84c8d2346e9f
+github.com/btcsuite/btclog
 # github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
 github.com/btcsuite/btcutil/base58
+github.com/btcsuite/btcutil
+github.com/btcsuite/btcutil/bech32
+# github.com/btcsuite/go-socks v0.0.0-20170105172521-4720035b7bfd
+github.com/btcsuite/go-socks/socks
+# github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792
+github.com/btcsuite/websocket
 # github.com/cespare/xxhash v1.1.0
 github.com/cespare/xxhash
 # github.com/cloudflare/cfssl v0.0.0-20190726000631-633726f6bcb7
@@ -199,7 +212,7 @@ github.com/palletone/adaptor
 # github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb
 github.com/palletone/digital-identity/client
 github.com/palletone/digital-identity/config
-# github.com/palletone/eth-adaptor v1.0.1-0.20191024055153-b0b022477802
+# github.com/palletone/eth-adaptor v1.1.0
 github.com/palletone/eth-adaptor
 github.com/palletone/eth-adaptor/bind
 github.com/palletone/eth-adaptor/ethclient
@@ -349,6 +362,9 @@ golang.org/x/text/internal/language/compact
 golang.org/x/text/secure/bidirule
 golang.org/x/text/unicode/bidi
 golang.org/x/text/internal/tag
+# golang.org/x/tools v0.0.0-20190524140312-2c0ae7006135
+golang.org/x/tools/go/gcexportdata
+golang.org/x/tools/go/internal/gcimporter
 # google.golang.org/genproto v0.0.0-20190716160619-c506a9f90610
 google.golang.org/genproto/googleapis/rpc/status
 # google.golang.org/grpc v1.22.0

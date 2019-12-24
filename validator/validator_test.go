@@ -49,7 +49,7 @@ func TestValidate_ValidateUnitTxs(t *testing.T) {
 
 	utxoQuery := &mockUtxoQuery{}
 	mockStatedbQuery := &mockStatedbQuery{}
-	validate := NewValidate(nil, utxoQuery, mockStatedbQuery, nil, newCache())
+	validate := NewValidate(nil, utxoQuery, mockStatedbQuery, nil, newCache(), false)
 	addr, _ := common.StringToAddress("P1HXNZReTByQHgWQNGMXotMyTkMG9XeEQfX")
 	code := validate.validateTransactions(txs, time.Now().Unix(), addr)
 	assert.Equal(t, code, TxValidationCode_VALID)
@@ -75,14 +75,21 @@ func (q *mockStatedbQuery) GetBlacklistAddress() ([]common.Address, *modules.Sta
 func (q *mockStatedbQuery) GetContractJury(contractId []byte) (*modules.ElectionNode, error) {
 	return nil, nil
 }
+
 func (q *mockStatedbQuery) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {
 	return nil, nil, nil
 }
+
 func (q *mockStatedbQuery) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
 	return map[string]*modules.ContractStateValue{}, nil
 }
+
 func (q *mockStatedbQuery) GetJurorByAddrHash(addrHash common.Hash) (*modules.JurorDeposit, error) {
 	return nil, nil
+}
+
+func (q *mockStatedbQuery) GetJurorReward(jurorAdd common.Address) common.Address {
+	return jurorAdd
 }
 
 type mockUtxoQuery struct {
@@ -222,19 +229,20 @@ func newHeader(txs modules.Transactions) *modules.Header {
 	header := &modules.Header{}
 	header.ParentsHash = []common.Hash{hash}
 	header.TxRoot = core.DeriveSha(txs)
+	header.Number = &modules.ChainIndex{modules.NewPTNIdType(), 1}
 	headerHash := header.HashWithoutAuthor()
 	sign, _ := crypto.Sign(headerHash[:], privKey)
 	header.Authors = modules.Authentifier{PubKey: pubKey, Signature: sign}
 	header.Time = time.Now().Unix()
-	header.Number = &modules.ChainIndex{modules.NewPTNIdType(), 1}
 	return header
 }
 func TestValidate_ValidateHeader(t *testing.T) {
 	tx := newTx1(t)
 
 	header := newHeader(modules.Transactions{tx})
-	v := NewValidate(nil, nil, nil, nil, newCache())
-	vresult := v.validateHeaderExceptGroupSig(header)
+	stateQ := &mockStatedbQuery{}
+	v := NewValidate(nil, nil, stateQ, nil, newCache(), true)
+	vresult := v.validateHeaderExceptGroupSig(header, false)
 	t.Log(vresult)
 	assert.Equal(t, vresult, TxValidationCode_VALID)
 }
@@ -297,7 +305,9 @@ func TestSignAndVerifyATx(t *testing.T) {
 
 }
 func TestTime(t *testing.T) {
-	ti, _ := time.ParseInLocation("2006-01-02 15:04:05", "2019-10-12 17:00:00", time.Local)
+	ti, _ := time.ParseInLocation("2006-01-02 15:04:05", "2019-12-01 00:00:00", time.Local)
 	t.Log(ti.Format("2006-01-02 15:04:05"))
 	t.Log(ti.Unix())
+	t2:=time.Unix(1570870800,0)
+	t.Logf("Time2:%v", t2.Format("2006-01-02 15:04:05"))
 }

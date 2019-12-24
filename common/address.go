@@ -37,6 +37,9 @@ const (
 	AddressLength = 21 //byte[0:20] is hash160, byte[20] is AddressType
 )
 
+//销毁地址 P1111111111111111111114oLvT2
+var DestroyAddress = Address{}
+
 //var (
 //	addressT = reflect.TypeOf(Address{})
 //)
@@ -63,13 +66,32 @@ func (a *Address) GetType() AddressType {
 
 //如果是合约地址，那么是不是一个系统合约地址？
 func (a *Address) IsSystemContractAddress() bool {
-	return IsSystemContractAddress(a.Bytes())
+	return IsSystemContractId(a.Bytes())
 }
-func IsSystemContractAddress(addr []byte) bool {
+
+//判断一个合约是不是系统合约
+func IsSystemContractId(contractId []byte) bool {
+	if len(contractId) != 20 {
+		return false
+	}
+	if contractId[18] == 0 && contractId[19] == 0 {
+		return false
+	}
 	bb := make([]byte, 20)
 	bb[18] = 0xff
 	bb[19] = 0xff
-	return bytes.Compare(addr, bb) < 0
+	return bytes.Compare(contractId, bb) < 0
+}
+
+//判断一个合约是不是用户合约
+func IsUserContractId(contractId []byte) bool {
+	if len(contractId) != 20 {
+		return false
+	}
+	bb := make([]byte, 20)
+	bb[18] = 0xff
+	bb[19] = 0xff
+	return bytes.Compare(contractId, bb) > 0
 }
 func NewAddress(hash160 []byte, ty AddressType) Address {
 	newBytes := make([]byte, 21)

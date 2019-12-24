@@ -19,20 +19,27 @@
 package jury
 
 import (
-	"encoding/hex"
 	"fmt"
-	"math/big"
 	"time"
+	"sync"
+	"math/big"
+	"encoding/json"
+	"encoding/hex"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
-
-	"encoding/json"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/rwset"
+	"github.com/palletone/go-palletone/contracts/utils"
+	com "github.com/palletone/go-palletone/vm/common"
+	"github.com/palletone/go-palletone/contracts/ucc"
+	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/contracts/contractcfg"
+	"github.com/palletone/go-palletone/contracts/list"
 )
 
 func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string,
@@ -67,6 +74,15 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 		addrHash = append(addrHash, util.RlpHash(addr))
 	}
 	log.Debug("ContractInstallReq", "enter, tplName ", tplName, "path", path, "version", version, "addrHash", addrHash)
+
+	if daoFee == 0 { //dynamic calculation fee
+		fee, _, _, err := p.ContractInstallReqFee(from, to, daoAmount, daoFee, tplName, path, version, description, abi, language, local, addrs)
+		if err != nil {
+			return common.Hash{}, nil, fmt.Errorf("ContractInstallReq, ContractInstallReqFee err:%s", err.Error())
+		}
+		daoFee = uint64(fee) + 1
+		log.Debug("ContractInstallReq", "dynamic calculation fee:", daoFee)
+	}
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_TPL_REQUEST,
 		Payload: &modules.ContractInstallRequestPayload{
@@ -129,6 +145,14 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 			return common.Hash{}, common.Address{}, errors.New("ContractDeployReq request param len overflow")
 		}
 	}
+	if daoFee == 0 { //dynamic calculation fee
+		fee, _, _, err := p.ContractDeployReqFee(from, to, daoAmount, daoFee, templateId, args, extData, timeout)
+		if err != nil {
+			return common.Hash{}, common.Address{}, fmt.Errorf("ContractDeployReq, ContractDeployReqFee err:%s", err.Error())
+		}
+		daoFee = uint64(fee) + 1
+		log.Debug("ContractDeployReq", "dynamic calculation fee:", daoFee)
+	}
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_DEPLOY_REQUEST,
 		Payload: &modules.ContractDeployRequestPayload{
@@ -166,6 +190,14 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 			log.Error("ContractInvokeReq", "request param len overflow,len(arg)", len(arg))
 			return common.Hash{}, errors.New("ContractInvokeReq request param args len overflow")
 		}
+	}
+	if daoFee == 0 { //dynamic calculation fee
+		fee, _, _, err := p.ContractInvokeReqFee(from, to, daoAmount, daoFee, certID, contractId, args, timeout)
+		if err != nil {
+			return common.Hash{}, fmt.Errorf("ContractInvokeReq, ContractInvokeReqFee err:%s", err.Error())
+		}
+		daoFee = uint64(fee) + 1
+		log.Debug("ContractInvokeReq", "dynamic calculation fee:", daoFee)
 	}
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_INVOKE_REQUEST,
@@ -207,6 +239,14 @@ func (p *Processor) ContractInvokeReqToken(from, to, toToken common.Address, dao
 			return common.Hash{}, errors.New("ContractInvokeReqToken request param args len overflow")
 		}
 	}
+	if daoFee == 0 { //dynamic calculation fee
+		fee, _, _, err := p.ContractInvokeReqFee(from, to, daoAmount, daoFee, nil, contractId, args, timeout)
+		if err != nil {
+			return common.Hash{}, fmt.Errorf("ContractInvokeReqToken, ContractInvokeReqFee err:%s", err.Error())
+		}
+		daoFee = uint64(fee) + 1
+		log.Debug("ContractInvokeReqToken", "dynamic calculation fee:", daoFee)
+	}
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_INVOKE_REQUEST,
 		Payload: &modules.ContractInvokeRequestPayload{
@@ -237,6 +277,14 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 	if err != nil {
 		return common.Hash{}, errors.New("ContractStopReq, GetRandomNonce error")
 	}
+	if daoFee == 0 { //dynamic calculation fee
+		fee, _, _, err := p.ContractStopReqFee(from, to, daoAmount, daoFee, contractId, deleteImage)
+		if err != nil {
+			return common.Hash{}, fmt.Errorf("ContractStopReq, ContractStopReqFee err:%s", err.Error())
+		}
+		daoFee = uint64(fee) + 1
+		log.Debug("ContractStopReq", "dynamic calculation fee:", daoFee)
+	}
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_STOP_REQUEST,
 		Payload: &modules.ContractStopRequestPayload{
@@ -254,6 +302,122 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_EXEC, Ele: p.mtx[reqId].eleNode, Tx: tx}, true)
 	return reqId, nil
+}
+
+//deploy -->invoke
+func (p *Processor) ContractQuery(id []byte, args [][]byte, timeout time.Duration) (rsp []byte, err error) {
+	exist := false
+	chainId := rwset.ChainId
+
+	var lock sync.Mutex
+	lock.Lock()
+	defer lock.Unlock()
+
+	rd1, _ := crypto.GetRandomBytes(32)
+	rd2, _ := crypto.GetRandomBytes(32)
+	depTxId := util.RlpHash(rd1)
+	invTxId := util.RlpHash(rd2)
+
+	addr, err := common.StringToAddress(string(id))
+	if err != nil {
+		return nil, err
+	}
+
+	log.Debugf("ContractQuery enter, addr[%s][%v]", addr.String(), id)
+
+	if addr.IsSystemContractAddress() {
+		log.Debugf("ContractQuery, is system contract, addr[%s]", addr.String())
+	} else {
+		client, err := com.NewDockerClient()
+		if err != nil {
+			log.Errorf("ContractQuery, id[%s], NewDockerClient err:%s", addr.String(), err.Error())
+			return nil, err
+		}
+		cons, err := utils.GetAllContainers(client)
+		if err != nil {
+			log.Errorf("ContractQuery, id[%s], GetAllContainers err:%s", addr.String(), err.Error())
+			return nil, err
+		}
+		cas, _ := utils.GetAllContainerAddr(cons, "Up")
+		for _, ca := range cas {
+			if ca.Equal(addr) { //use first
+				log.Debugf("ContractQuery, contractId[%s],find container(Up)", addr.String())
+				exist = true
+				break
+			}
+		}
+		if !exist {
+			cc, err := p.dag.GetContract(addr.Bytes())
+			if err != nil {
+				log.Errorf("ContractQuery, GetContract err:%s ", err.Error())
+				return nil, err
+			}
+			ct, err := p.dag.GetContractTpl(cc.TemplateId)
+			if err != nil {
+				log.Errorf("ContractQuery, GetContractTpl err:%s ", err.Error())
+				return nil, err
+			}
+			cv := ct.Version + ":" + contractcfg.GetConfig().ContractAddress
+			spec := &pb.ChaincodeSpec{
+				Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]),
+				Input: &pb.ChaincodeInput{
+					Args: [][]byte{},
+				},
+				ChaincodeId: &pb.ChaincodeID{
+					Name:    addr.String(),
+					Path:    ct.Path,
+					Version: cv,
+				},
+			}
+			cp := p.dag.GetChainParameters()
+			spec.CpuQuota = cp.UccCpuQuota
+			spec.CpuShare = cp.UccCpuShares
+			spec.Memory = cp.UccMemory
+			_, chaincodeData, err := ucc.RecoverChainCodeFromDb(chainId, cc.TemplateId)
+			if err != nil {
+				log.Error("ContractQuery", "chainid:", chainId, "templateId:", cc.TemplateId, "RecoverChainCodeFromDb err", err)
+				return nil, err
+			}
+			err = ucc.DeployUserCC(addr.Bytes(), chaincodeData, spec, chainId, depTxId.String(), nil, timeout)
+			if err != nil {
+				log.Error("ContractQuery ", "DeployUserCC error", err)
+				return nil, nil
+			}
+			juryAddrs := p.GetLocalJuryAddrs()
+			juryAddr := ""
+			if len(juryAddrs) != 0 {
+				juryAddr = juryAddrs[0].String()
+			}
+			cInf := &list.CCInfo{
+				Id:       addr.Bytes(),
+				Name:     addr.String(),
+				Path:     ct.Path,
+				TempleId: ct.TplId,
+				Version:  cv,
+				Language: ct.Language,
+				SysCC:    false,
+				Address:  juryAddr,
+			}
+			_, err = p.dag.GetChaincode(addr)
+			if err != nil {
+				err = p.dag.SaveChaincode(addr, cInf)
+				if err != nil {
+					log.Debugf("ContractQuery, SaveChaincode err:%s", err.Error())
+				}
+			}
+		}
+	}
+
+	log.Debugf("ContractQuery, begin to invoke contract:%s", addr.String())
+	rst, err := p.contract.Invoke(rwset.RwM, chainId, addr.Bytes(), invTxId.String(), args, timeout)
+	rwset.RwM.CloseTxSimulator(chainId, invTxId.String())
+	rwset.RwM.Close()
+	if err != nil {
+		log.Errorf("ContractQuery, id[%s], Invoke err:%s", addr.String(), err.Error())
+		return nil, err
+	}
+	log.Debugf("ContractQuery, id[%s], query result:%s", addr.String(), hex.EncodeToString(rst.Payload))
+	return rst.Payload, nil
 }
 
 func (p *Processor) ElectionVrfReq(id uint32) ([]byte, error) {

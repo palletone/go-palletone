@@ -9,15 +9,12 @@ ${two}            ${EMPTY}
 
 *** Test Cases ***
 blacklist
-    ${f}    getBalance    ${foundation}    PTN
-    log    ${f}
-    Should Be Equal As Numbers    ${f}    999940044
     ${o}    getBalance    ${one}    PTN
     log    ${o}
-    Should Be Equal As Numbers    ${o}    9989
+    Should Be Equal As Numbers    ${o}    10000    #Should Be Equal As Numbers
     ${t}    getBalance    ${two}    PTN
     log    ${t}
-    Should Be Equal As Numbers    ${t}    9998
+    Should Be Equal As Numbers    ${t}    10000
     ${b}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF    PTN
     log    ${b}
     Should Be Equal As Numbers    ${b}    0
@@ -26,7 +23,7 @@ blacklist
     sleep    5
     ${b}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF    PTN
     log    ${b}
-    Should Be Equal As Numbers    ${b}    9989
+    Should Be Equal As Numbers    ${b}    10000
     ${res}    getBlacklistRecords
     log    ${res}
     ${res}    getBlacklistAddress
@@ -41,15 +38,12 @@ blacklist
     ${res}    payout    ${two}    ${o}    PTN
     log    ${res}
     sleep    5
-    ${f}    getBalance    ${foundation}    PTN
-    log    ${f}
-    Should Be Equal As Numbers    ${f}    999940042
     ${o}    getBalance    ${one}    PTN
     log    ${o}
-    Should Be Equal As Numbers    ${o}    9989
+    Should Be Equal As Numbers    ${o}    10000
     ${t}    getBalance    ${two}    PTN
     log    ${t}
-    Should Be Equal As Numbers    ${t}    19987
+    Should Be Equal As Numbers    ${t}    20000
     ${b}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF    PTN
     log    ${b}
     Should Be Equal As Numbers    ${b}    0

@@ -22,7 +22,6 @@ package common
 
 import (
 	"fmt"
-	"github.com/palletone/go-palletone/tokenengine"
 	"reflect"
 	"strconv"
 	"time"
@@ -33,10 +32,11 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/sort"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/parameter"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/tokenengine"
 )
 
 type IUnitProduceRepository interface {
@@ -46,6 +46,7 @@ type IUnitProduceRepository interface {
 	SubscribeChainMaintenanceEvent(ob AfterChainMaintenanceEventFunc)
 	SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription
 	RefreshSysParameters()
+	//HeadUnitTime() int64
 }
 
 type UnitProduceRepository struct {
@@ -83,7 +84,7 @@ func NewUnitProduceRepository4Db(db ptndb.Database,
 
 	unitRep := NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenEngine)
 	propRep := NewPropRepository(propDb)
-	stateRep := NewStateRepository(stateDb)
+	stateRep := NewStateRepository(stateDb, dagDb)
 
 	return &UnitProduceRepository{
 		unitRep:  unitRep,
@@ -148,12 +149,28 @@ func (d *UnitProduceRepository) Close() {
  * push unit is successful the block is appended to the chain database on disk.
  *
  * 推块“可能会失败”，在这种情况下，每个部分地更改都会撤销。 推块成功后，该块将附加到磁盘上的链数据库。
- *
+ * 推块必须连续，如果不连续的推块，会返回错误
  * @return true if we switched forks as a result of this push.
  */
 func (rep *UnitProduceRepository) PushUnit(newUnit *modules.Unit) error {
+	//要增加的Unit必须是NewestUnit后的一个单元，否则报错
+	uHash, uIndex, err := rep.propRep.GetNewestUnit(newUnit.GetAssetId())
+	if err != nil {
+		return err
+	}
+
+	if !newUnit.ContainsParent(uHash) {
+		return errors.New(fmt.Sprintf("PushUnit[%s] parent is not newest unit[%s] %d",
+			newUnit.DisplayId(), uHash.String(), uIndex.Index))
+	}
+
+	if newUnit.NumberU64() != uIndex.Index+1 {
+		return errors.New(fmt.Sprintf("PushUnit[%s] height:%d, but newest unit height:%d",
+			newUnit.Hash().String(), newUnit.NumberU64(), uIndex.Index))
+	}
+
 	//更新数据库
-	err := rep.unitRep.SaveUnit(newUnit, false)
+	err = rep.unitRep.SaveUnit(newUnit, false)
 	if err != nil {
 		return err
 	}
@@ -176,7 +193,7 @@ func (rep *UnitProduceRepository) ApplyUnit(nextUnit *modules.Unit) error {
 	// 计算当前 unit 到上一个 unit 之间的缺失数量，并更新每个mediator的unit的缺失数量
 	missed := rep.updateMediatorMissedUnits(nextUnit)
 
-	// 更新全局动态属性值
+	// 更新全局动态属性值，包括最新单元等
 	rep.updateDynGlobalProp(nextUnit, missed)
 
 	// 更新 mediator 的相关数据
@@ -222,7 +239,7 @@ func (rep *UnitProduceRepository) updateMediatorMissedUnits(unit *modules.Unit) 
 
 			med := rep.GetMediator(mediatorMissed)
 			med.TotalMissed++
-			rep.stateRep.StoreMediator(med)
+			rep.stateRep.UpdateMediatorInfoExpand(med)
 		}
 	}
 
@@ -273,7 +290,7 @@ func (rep *UnitProduceRepository) updateSigningMediator(newUnit *modules.Unit) {
 
 	lastConfirmedUnitNum := uint32(newUnit.NumberU64())
 	med.LastConfirmedUnitNum = lastConfirmedUnitNum
-	rep.stateRep.StoreMediator(med)
+	rep.stateRep.UpdateMediatorInfoExpand(med)
 
 	log.Debugf("the LastConfirmedUnitNum of mediator(%v) is: %v", med.Address.Str(), lastConfirmedUnitNum)
 }
@@ -529,7 +546,7 @@ func (dag *UnitProduceRepository) updateActiveMediators() bool {
 			log.Errorf("Cannot get mediator by:%s", voteTally.candidate.String())
 		}
 		med.TotalVotes = voteTally.votedCount
-		dag.stateRep.StoreMediator(med)
+		dag.stateRep.UpdateMediatorInfoExpand(med)
 	}
 
 	// 4. 更新 global property 中的 active mediator 和 Preceding Mediators
@@ -584,9 +601,13 @@ func (dag *UnitProduceRepository) updateNextMaintenanceTime(nextUnit *modules.Un
 	nextMaintenanceTime := dgp.NextMaintenanceTime
 	maintenanceInterval := int64(gp.ChainParameters.MaintenanceInterval)
 
+	// 第一次换届是在第一个unit生产后进行的一次特殊换届
+	// 第二次换届是在第一次换届后的整maintenanceInterval时刻
+	// 后面的换届都是在前一次换届时间上加上n个maintenanceInterval
+	headTime := nextUnit.Timestamp()
 	if nextUnit.NumberU64() == 1 {
-		// 对第一个unit之后的特殊换届，进行调整，让其回到普通换届时间来
-		nextMaintenanceTime = uint32((nextUnit.Timestamp()/maintenanceInterval + 1) * maintenanceInterval)
+		// 对第一个unit之后的特殊换届，进行调整，让下一次换届回到整maintenanceInterval时刻
+		nextMaintenanceTime = uint32((headTime/maintenanceInterval + 1) * maintenanceInterval)
 	} else {
 		// We want to find the smallest k such that nextMaintenanceTime + k * maintenanceInterval > HeadUnitTime()
 		//  This implies k > ( HeadUnitTime() - nextMaintenanceTime ) / maintenanceInterval
@@ -604,7 +625,9 @@ func (dag *UnitProduceRepository) updateNextMaintenanceTime(nextUnit *modules.Un
 		// So this k suffices.
 		//
 
-		y := (dag.HeadUnitTime() - int64(nextMaintenanceTime)) / maintenanceInterval
+		// y 不一定等于0，是由于可能会存在如下情况：在某次换届后，整条链全部停止大于1个maintenanceInterval时间不产块
+		//y := (dag.HeadUnitTime() - int64(nextMaintenanceTime)) / maintenanceInterval
+		y := (headTime - int64(nextMaintenanceTime)) / maintenanceInterval
 		nextMaintenanceTime += uint32((y + 1) * maintenanceInterval)
 	}
 
@@ -624,11 +647,11 @@ func (dag *UnitProduceRepository) updateMaintenanceFlag(newMaintenanceFlag bool)
 	dag.propRep.StoreDynGlobalProp(dgp)
 }
 
-func (dag *UnitProduceRepository) HeadUnitTime() int64 {
-	gasToken := dagconfig.DagConfig.GetGasToken()
-	t, _ := dag.propRep.GetNewestUnitTimestamp(gasToken)
-	return t
-}
+//func (dag *UnitProduceRepository) HeadUnitTime() int64 {
+//	gasToken := dagconfig.DagConfig.GetGasToken()
+//	t, _ := dag.propRep.GetNewestUnitTimestamp(gasToken)
+//	return t
+//}
 
 // 判断新一届mediator和上一届mediator是否有变化
 //func isActiveMediatorsChanged(gp *modules.GlobalProperty) bool {

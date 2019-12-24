@@ -22,12 +22,15 @@ package txspool
 
 import (
 	"fmt"
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/dag/modules"
+	"io"
 	"math/big"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 type TxPoolTransaction struct {
@@ -41,9 +44,9 @@ type TxPoolTransaction struct {
 	Pending      bool
 	Confirmed    bool
 	IsOrphan     bool
-	Discarded    bool        // will remove
+	Discarded    bool                // will remove
 	TxFee        []*modules.Addition `json:"tx_fee"`
-	Index        uint64      `json:"index"` // index 是该Unit位置。
+	Index        uint64              `json:"index"` // index 是该Unit位置。
 	Extra        []byte
 	Tag          uint64
 	Expiration   time.Time
@@ -101,6 +104,7 @@ func (tx *TxPoolTransaction) GetTxFee() *big.Int {
 	}
 	return big.NewInt(int64(fee))
 }
+
 //type Transactions []*Transaction
 type TxPoolTxs []*TxPoolTransaction
 
@@ -144,7 +148,6 @@ type TxByCreationDate []*TxPoolTransaction
 func (tc TxByCreationDate) Len() int           { return len(tc) }
 func (tc TxByCreationDate) Less(i, j int) bool { return tc[i].Priority_lvl > tc[j].Priority_lvl }
 func (tc TxByCreationDate) Swap(i, j int)      { tc[i], tc[j] = tc[j], tc[i] }
-
 
 type SequeueTxPoolTxs struct {
 	seqtxs []*TxPoolTransaction
@@ -208,4 +211,222 @@ func (seqTxs *SequeueTxPoolTxs) All() []*TxPoolTransaction {
 	items := (*seqTxs).seqtxs[:]
 	(*seqTxs).seqtxs = make([]*TxPoolTransaction, 0)
 	return items
+}
+
+type txpoolTransactionTemp struct {
+	Msgs    []messageTemp
+	CertId  []byte
+	Illegal bool
+
+	From         []modules.OutPoint
+	CreationDate time.Time `json:"creation_date"`
+	Priority_lvl string    `json:"priority_lvl"`
+	UnitHash     common.Hash
+	UnitIndex    uint64
+	Pending      bool
+	Confirmed    bool
+	IsOrphan     bool
+	Discarded    bool               // will remove
+	TxFee        []modules.Addition `json:"tx_fee"`
+	Index        uint64             `json:"index"`
+	Extra        []byte
+	Tag          uint64
+	Expiration   time.Time
+	DependOnTxs  []common.Hash
+}
+
+type messageTemp struct {
+	App  modules.MessageType
+	Data []byte
+}
+
+func (pooltx *TxPoolTransaction) EncodeRLP(w io.Writer) error {
+	temp := &txpoolTransactionTemp{}
+	msgs := pooltx.Tx.Messages()
+	for _, m := range msgs {
+		m1 := messageTemp{
+			App: m.App,
+		}
+		d, err := rlp.EncodeToBytes(m.Payload)
+		if err != nil {
+			return err
+		}
+		m1.Data = d
+		temp.Msgs = append(temp.Msgs, m1)
+	}
+	temp.CertId = common.CopyBytes(pooltx.Tx.CertId)
+	temp.Illegal = pooltx.Tx.Illegal
+	for _, from := range pooltx.From {
+		temp.From = append(temp.From, *from)
+	}
+	temp.CreationDate = pooltx.CreationDate
+	temp.Priority_lvl = pooltx.Priority_lvl
+	temp.UnitHash = pooltx.UnitHash
+	temp.UnitIndex = pooltx.UnitIndex
+	temp.Pending = pooltx.Pending
+	temp.Confirmed = pooltx.Confirmed
+	temp.IsOrphan = pooltx.IsOrphan
+	temp.Discarded = pooltx.Discarded
+	for _, addition := range pooltx.TxFee {
+		temp.TxFee = append(temp.TxFee, *addition)
+	}
+	temp.Index = pooltx.Index
+	temp.Extra = pooltx.Extra
+	temp.Tag = pooltx.Tag
+	temp.Expiration = pooltx.Expiration
+	if len(pooltx.DependOnTxs) > 0 {
+		temp.DependOnTxs = append(temp.DependOnTxs, pooltx.DependOnTxs...)
+	}
+	return rlp.Encode(w, temp)
+}
+func (pooltx *TxPoolTransaction) DecodeRLP(s *rlp.Stream) error {
+	raw, err := s.Raw()
+	if err != nil {
+		return err
+	}
+	temp := &txpoolTransactionTemp{}
+	err = rlp.DecodeBytes(raw, temp)
+	if err != nil {
+		return err
+	}
+	msgs := make([]*modules.Message, 0)
+
+	for _, m := range temp.Msgs {
+		m1 := &modules.Message{
+			App: m.App,
+		}
+		if m.App == modules.APP_PAYMENT {
+			var pay modules.PaymentPayload
+			err := rlp.DecodeBytes(m.Data, &pay)
+			if err != nil {
+				return err
+			}
+			m1.Payload = &pay
+		} else if m.App == modules.APP_DATA {
+			var text modules.DataPayload
+			err := rlp.DecodeBytes(m.Data, &text)
+			if err != nil {
+				return err
+			}
+			m1.Payload = &text
+		} else if m.App == modules.APP_CONTRACT_TPL_REQUEST {
+			var payload modules.ContractInstallRequestPayload
+			err := rlp.DecodeBytes(m.Data, &payload)
+			if err != nil {
+				return err
+			}
+			m1.Payload = &payload
+		} else if m.App == modules.APP_CONTRACT_TPL {
+			var payload modules.ContractTplPayload
+			err := rlp.DecodeBytes(m.Data, &payload)
+			if err != nil {
+				return err
+			}
+			m1.Payload = &payload
+		} else if m.App == modules.APP_CONTRACT_DEPLOY_REQUEST {
+			var payload modules.ContractDeployRequestPayload
+			err := rlp.DecodeBytes(m.Data, &payload)
+			if err != nil {
+				return err
+			}
+			m1.Payload = &payload
+		} else if m.App == modules.APP_CONTRACT_DEPLOY {
+			var payload modules.ContractDeployPayload
+			err := rlp.DecodeBytes(m.Data, &payload)
+			if err != nil {
+				temp := &modules.ContractDeployPayloadV1{}
+				err = rlp.DecodeBytes(m.Data, temp)
+				if err != nil {
+					return err
+				}
+
+				payload.TemplateId = temp.TemplateId
+				payload.ContractId = temp.ContractId
+				payload.Name = temp.Name
+				payload.Args = temp.Args
+				payload.EleNode.EleList = temp.EleList
+				payload.ReadSet = temp.ReadSet
+				payload.WriteSet = temp.WriteSet
+				payload.ErrMsg = temp.ErrMsg
+			}
+			m1.Payload = &payload
+		} else if m.App == modules.APP_CONTRACT_INVOKE_REQUEST {
+			var payload modules.ContractInvokeRequestPayload
+			err := rlp.DecodeBytes(m.Data, &payload)
+			if err != nil {
+				return err
+			}
+			m1.Payload = &payload
+		} else if m.App == modules.APP_CONTRACT_INVOKE {
+			var payload modules.ContractInvokePayload
+			err := rlp.DecodeBytes(m.Data, &payload)
+			if err != nil {
+				return err
+			}
+			m1.Payload = &payload
+		} else if m.App == modules.APP_CONTRACT_STOP_REQUEST {
+			var payload modules.ContractStopRequestPayload
+			err := rlp.DecodeBytes(m.Data, &payload)
+			if err != nil {
+				return err
+			}
+			m1.Payload = &payload
+		} else if m.App == modules.APP_CONTRACT_STOP {
+			var payload modules.ContractStopPayload
+			err := rlp.DecodeBytes(m.Data, &payload)
+			if err != nil {
+				return err
+			}
+			m1.Payload = &payload
+		} else if m.App == modules.APP_SIGNATURE {
+			var sigPayload modules.SignaturePayload
+			err := rlp.DecodeBytes(m.Data, &sigPayload)
+			if err != nil {
+				return err
+			}
+			m1.Payload = &sigPayload
+		} else if m.App == modules.APP_ACCOUNT_UPDATE {
+			var accountUpdateOp modules.AccountStateUpdatePayload
+			err := rlp.DecodeBytes(m.Data, &accountUpdateOp)
+			if err != nil {
+				return err
+			}
+			m1.Payload = &accountUpdateOp
+		} else {
+			fmt.Println("Unknown message app type:", m.App)
+		}
+		msgs = append(msgs, m1)
+	}
+
+	pooltx.Tx = modules.NewTransaction(msgs)
+	pooltx.Tx.Illegal = temp.Illegal
+	pooltx.Tx.CertId = common.CopyBytes(temp.CertId)
+
+	pooltx.From = make([]*modules.OutPoint, 0)
+	for _, from := range temp.From {
+		f := from
+		pooltx.From = append(pooltx.From, &f)
+	}
+	pooltx.CreationDate = temp.CreationDate
+	pooltx.Priority_lvl = temp.Priority_lvl
+	pooltx.UnitHash = temp.UnitHash
+	pooltx.UnitIndex = temp.UnitIndex
+	pooltx.Pending = temp.Pending
+	pooltx.Confirmed = temp.Confirmed
+	pooltx.IsOrphan = temp.IsOrphan
+	pooltx.Discarded = temp.Discarded
+	pooltx.TxFee = make([]*modules.Addition, 0)
+	for _, addition := range temp.TxFee {
+		a := addition
+		pooltx.TxFee = append(pooltx.TxFee, &a)
+	}
+	pooltx.Index = temp.Index
+	pooltx.Extra = common.CopyBytes(temp.Extra)
+	pooltx.Tag = temp.Tag
+	pooltx.Expiration = temp.Expiration
+	if len(temp.DependOnTxs) > 0 {
+		pooltx.DependOnTxs = append(temp.DependOnTxs, temp.DependOnTxs...)
+	}
+
+	return nil
 }

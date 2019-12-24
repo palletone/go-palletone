@@ -70,7 +70,7 @@ type iDag interface {
 		txpool txspool.ITxPool) (*modules.Unit, error)
 
 	IsPrecedingMediator(add common.Address) bool
-	IsIrreversibleUnit(hash common.Hash) bool
+	IsIrreversibleUnit(hash common.Hash) (bool, error)
 	IsMediator(address common.Address) bool
 
 	PrecedingThreshold() int
@@ -219,6 +219,8 @@ func (mp *MediatorPlugin) launchProduction() {
 
 func (mp *MediatorPlugin) Stop() error {
 	close(mp.quit)
+	close(mp.stopProduce)
+	close(mp.stopVSS)
 
 	mp.newProducedUnitScope.Close()
 	mp.vssDealScope.Close()
@@ -281,6 +283,7 @@ func NewMediatorPlugin( /*ctx *node.ServiceContext, */ cfg *Config, ptn PalletOn
 		precedingDKGs:       make(map[common.Address]*dkg.DistKeyGenerator),
 		lastMaintenanceTime: dag.LastMaintenanceTime(),
 		dkgLock:             new(sync.RWMutex),
+		stopVSS:             make(chan struct{}),
 	}
 
 	mp.initLocalConfigMediator(cfg.Mediators /*, ctx.AccountManager*/)
@@ -328,7 +331,6 @@ func (mp *MediatorPlugin) initGroupSignBuf() {
 
 	mp.dealBuf = make(map[common.Address]chan *dkg.Deal, lamc)
 	mp.respBuf = make(map[common.Address]map[common.Address]chan *dkg.Response, lamc)
-	mp.stopVSS = make(chan struct{})
 	mp.vssBufLock = new(sync.RWMutex)
 
 	mp.toTBLSSignBuf = make(map[common.Address]map[common.Hash]bool, lamc)
@@ -345,8 +347,10 @@ func (mp *MediatorPlugin) UpdateMediatorsDKG(isRenew bool) {
 
 	// 保存旧的 dkg ， 用于之前的unit群签名确认
 	mp.dkgLock.Lock()
+	//log.Debugf("dkgLock.Lock()")
 	mp.precedingDKGs = mp.activeDKGs
 	mp.lastMaintenanceTime = mp.dag.LastMaintenanceTime()
+	//log.Debugf("dkgLock.Unlock()")
 	mp.dkgLock.Unlock()
 
 	// 判断是否重新 初始化DKG 和 VSS 协议

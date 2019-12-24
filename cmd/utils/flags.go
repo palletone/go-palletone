@@ -799,7 +799,7 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 	if ctx.GlobalIsSet(MaxPendingPeersFlag.Name) {
 		cfg.MaxPendingPeers = ctx.GlobalInt(MaxPendingPeersFlag.Name)
 	}
-	if ctx.GlobalIsSet(NoDiscoverFlag.Name) || lightClient {
+	if ctx.GlobalIsSet(NoDiscoverFlag.Name) { //|| lightClient {
 		cfg.NoDiscovery = true
 	}
 
@@ -1192,11 +1192,11 @@ func RegisterPtnService(stack *node.Node, cfg *ptn.Config) {
 	var err error
 	if cfg.SyncMode == downloader.LightSync {
 		err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-			return light.New(ctx, cfg, configure.LPSProtocol, stack.CacheDb)
+			return light.New(ctx, cfg, configure.LPSProtocol, stack.CacheDb, stack.IsTestNet)
 		})
 	} else {
 		err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-			fullNode, err := ptn.New(ctx, cfg, stack.CacheDb)
+			fullNode, err := ptn.New(ctx, cfg, stack.CacheDb, stack.IsTestNet)
 			if fullNode != nil && cfg.LightServ > 0 {
 				ls, _ := light.NewLesServer(fullNode, cfg, configure.LPSProtocol)
 				fullNode.AddLesServer(ls)

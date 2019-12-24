@@ -176,7 +176,9 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 	}
 
 	db.Close()
-	if err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) { return ptn.New(ctx, ptnConf, stack.CacheDb) }); err != nil {
+	if err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
+		return ptn.New(ctx, ptnConf, stack.CacheDb, stack.IsTestNet)
+	}); err != nil {
 		t.Fatalf("failed to register PalletOne protocol: %v", err)
 	}
 	// Start the node and assemble the JavaScript console around it
@@ -326,7 +328,8 @@ func TestPrettyPrint(t *testing.T) {
 	tester := newTester(t, nil)
 	defer tester.Close(t)
 
-	tester.console.Evaluate("obj = {int: 1, string: 'two', list: [3, 3, 3], obj: {null: null, func: function(){}}}")
+	tester.console.Evaluate(`obj = {int: 1, string: 'two', list: [3, 3, 3], obj: ` +
+		`{null: null, func: function(){}}}`)
 
 	// Define some specially formatted fields
 	var (

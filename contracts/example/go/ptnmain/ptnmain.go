@@ -26,11 +26,13 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/shopspring/decimal"
 
 	"github.com/palletone/adaptor"
 )
@@ -67,17 +69,52 @@ func (p *PTNMain) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 	switch f {
 	case "setOwner":
-		return _setOwner(args, stub)
+		if len(args) < 1 {
+			return shim.Error("need 1 args (PTNAddr)")
+		}
+		return p.SetOwner(args[0], stub)
 	case "setETHContract":
-		return _setETHContract(args, stub)
+		if len(args) < 1 {
+			return shim.Error("need 1 args (MapContractAddr)")
+		}
+		return p.SetETHContract(args[0], stub)
 
 	case "payoutPTNByETHAddr":
-		return _payoutPTNByETHAddr(args, stub)
+		if len(args) < 1 {
+			return shim.Error("need 1 args (ETHAddr)")
+		}
+		return p.PayoutPTNByETHAddr(args[0], stub)
 	case "payoutPTNByTxID":
-		return _payoutPTNByTxID(args, stub)
+		if len(args) < 1 {
+			return shim.Error("need 1 args (ERC20TransferTxID)")
+		}
+		return p.PayoutPTNByTxID(args[0], stub)
+
+	case "withdrawAmount":
+		if len(args) < 2 {
+			return shim.Error("need 2  args (PTNAddress,PTNAmount)")
+		}
+		withdrawAddr, err := common.StringToAddress(args[0])
+		if err != nil {
+			return shim.Error("Invalid address string:" + args[0])
+		}
+		amount, err := decimal.NewFromString(args[1])
+		if err != nil {
+			return shim.Error("Invalid amount:" + args[1])
+		}
+		return p.WithdrawAmount(stub, withdrawAddr, amount)
+
+	case "getPayout":
+		if len(args) < 1 {
+			return shim.Error("need 1 args (ERC20TransferTxID)")
+		}
+		return p.GetPayout(args[0], stub)
 
 	case "get":
-		return get(args, stub)
+		if len(args) < 1 {
+			return shim.Error("need 1 args (Key)")
+		}
+		return p.Get(stub, args[0])
 	default:
 		jsonResp := "{\"Error\":\"Unknown function " + f + "\"}"
 		return shim.Error(jsonResp)
@@ -85,26 +122,31 @@ func (p *PTNMain) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 }
 
 //todo modify PTN ERC20 address
-const PTN_ERC20Addr = "0xa54880da9a63cdd2ddacf25af68daf31a1bcc0c9"
+const PTN_ERC20Addr = "0xfe76be9cec465ed3219a9972c21655d57d21aec6"
 
 //todo modify conforms 15
-const Confirms = uint(1)
+const Confirms = uint(15)
 
 const symbolsOwner = "owner_"
 const symbolsContractMap = "eth_map"
 
 const symbolsPayout = "payout_"
 
-func _setOwner(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 1 {
-		return shim.Error("need 1 args (PTNAddr)")
+func (p *PTNMain) SetOwner(ptnAddr string, stub shim.ChaincodeStubInterface) pb.Response {
+	//only owner can set
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
 	}
-	_, err := getOwner(stub)
-	if err == nil {
-		return shim.Error("Owner has been set")
+	owner, err := getOwner(stub)
+	if err != nil {
+		return shim.Error(err.Error())
 	}
-	err = stub.PutState(symbolsOwner, []byte(args[0]))
+	if owner != invokeAddr.String() {
+		return shim.Error("Only owner can set")
+	}
+	err = stub.PutState(symbolsOwner, []byte(ptnAddr))
 	if err != nil {
 		return shim.Error("write symbolsOwner failed: " + err.Error())
 	}
@@ -120,12 +162,7 @@ func getOwner(stub shim.ChaincodeStubInterface) (string, error) {
 	return string(result), nil
 }
 
-func _setETHContract(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 1 {
-		return shim.Error("need 1 args (MapContractAddr)")
-	}
-
+func (p *PTNMain) SetETHContract(mapContractAddr string, stub shim.ChaincodeStubInterface) pb.Response {
 	//only owner can set
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
@@ -140,7 +177,7 @@ func _setETHContract(args []string, stub shim.ChaincodeStubInterface) pb.Respons
 		return shim.Error("Only owner can set")
 	}
 
-	err = stub.PutState(symbolsContractMap, []byte(args[0]))
+	err = stub.PutState(symbolsContractMap, []byte(mapContractAddr))
 	if err != nil {
 		return shim.Error("write symbolsContractMap failed: " + err.Error())
 	}
@@ -157,30 +194,24 @@ func getMapAddr(stub shim.ChaincodeStubInterface) (string, error) {
 	return string(result), nil
 }
 
-func _payoutPTNByTxID(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 1 {
-		return shim.Error("need 1  args (transferTxID)")
-	}
-
+func (p *PTNMain) PayoutPTNByTxID(ethTxID string, stub shim.ChaincodeStubInterface) pb.Response {
 	//
-	txIDHex := args[0]
-	if "0x" == txIDHex[0:2] || "0X" == txIDHex[0:2] {
-		txIDHex = txIDHex[2:]
+	if "0x" == ethTxID[0:2] || "0X" == ethTxID[0:2] {
+		ethTxID = ethTxID[2:]
 	}
-	result, _ := stub.GetState(symbolsPayout + txIDHex)
+	result, _ := stub.GetState(symbolsPayout + ethTxID)
 	if len(result) != 0 {
 		log.Debugf("The tx has been payout")
 		return shim.Error("The tx has been payout")
 	}
 
 	//get sender receiver amount
-	txID, err := hex.DecodeString(txIDHex)
+	txIDByte, err := hex.DecodeString(ethTxID)
 	if err != nil {
 		log.Debugf("txid invalid: %s", err.Error())
 		return shim.Error(fmt.Sprintf("txid invalid: %s", err.Error()))
 	}
-	txResult, err := GetErc20Tx(txID, stub)
+	txResult, err := GetErc20Tx(txIDByte, stub)
 	if err != nil {
 		log.Debugf("GetErc20Tx failed: %s", err.Error())
 		return shim.Error(err.Error())
@@ -193,8 +224,8 @@ func _payoutPTNByTxID(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 	}
 	//check contract address, must be ptn erc20 contract address
 	if strings.ToLower(txResult.Tx.TargetAddress) != PTN_ERC20Addr {
-		log.Debugf("The tx is't PTN contract")
-		return shim.Error("The tx is't PTN contract")
+		log.Debugf("The tx is't ERC20 contract transfer of PTN")
+		return shim.Error("The tx is't ERC20 contract transfer of PTN")
 	}
 	//check receiver, must be ptnmap contract address
 	mapAddr, err := getMapAddr(stub)
@@ -208,15 +239,15 @@ func _payoutPTNByTxID(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 		return shim.Error("Not send token to the Map contract")
 	}
 	//check token amount
-	bigIntAmout := txResult.Tx.Amount.Amount.Div(txResult.Tx.Amount.Amount, big.NewInt(1e10)) //Token's decimal is 18, PTN's decimal is 8
-	amt := txResult.Tx.Amount.Amount.Uint64()
+	bigIntAmount := txResult.Tx.Amount.Amount.Div(txResult.Tx.Amount.Amount, big.NewInt(1e10)) //Token's decimal is 18, PTN's decimal is 8
+	amt := bigIntAmount.Uint64()
 	if amt == 0 {
 		log.Debugf("Amount is 0")
 		return shim.Error("Amount is 0")
 	}
 
 	//check confirms
-	curHeight, err := getHight(stub)
+	curHeight, err := getHeight(stub)
 	if curHeight == 0 || err != nil {
 		return shim.Error("getHeight failed")
 	}
@@ -240,7 +271,7 @@ func _payoutPTNByTxID(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 		return shim.Error("Need transfer 1 PTNMap for bind address")
 	}
 	//save payout history
-	err = stub.PutState(symbolsPayout+txIDHex, []byte(ptnAddr+"-"+bigIntAmout.String()))
+	err = stub.PutState(symbolsPayout+ethTxID, []byte(ptnAddr+"-"+bigIntAmount.String()))
 	if err != nil {
 		log.Debugf("write symbolsPayout failed: %s", err.Error())
 		return shim.Error("write symbolsPayout failed: " + err.Error())
@@ -259,15 +290,7 @@ func _payoutPTNByTxID(args []string, stub shim.ChaincodeStubInterface) pb.Respon
 	return shim.Success([]byte("Success"))
 }
 
-func _payoutPTNByETHAddr(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 1 {
-		return shim.Error("need 1  args (ETHAddr)")
-	}
-
-	//
-	ethAddr := args[0]
-
+func (p *PTNMain) PayoutPTNByETHAddr(ethAddr string, stub shim.ChaincodeStubInterface) pb.Response {
 	//
 	mapAddr, err := getMapAddr(stub)
 	if err != nil {
@@ -294,7 +317,7 @@ func _payoutPTNByETHAddr(args []string, stub shim.ChaincodeStubInterface) pb.Res
 		return shim.Error(err.Error())
 	}
 
-	curHeight, err := getHight(stub)
+	curHeight, err := getHeight(stub)
 	if curHeight == 0 || err != nil {
 		return shim.Error("getHeight failed")
 	}
@@ -354,7 +377,7 @@ func GetErc20Tx(txID []byte, stub shim.ChaincodeStubInterface) (*adaptor.GetTran
 	//
 	result, err := stub.OutChainCall("erc20", "GetTransferTx", inputBytes)
 	if err != nil {
-		return nil, errors.New("GetTransferTx error")
+		return nil, errors.New("GetTransferTx error: " + err.Error())
 	}
 	log.Debugf("result : %s", string(result))
 
@@ -377,7 +400,7 @@ func GetAddrHistory(ethAddrFrom, mapAddrTo string, stub shim.ChaincodeStubInterf
 	//
 	result, err := stub.OutChainCall("erc20", "GetAddrTxHistory", inputBytes)
 	if err != nil {
-		return nil, errors.New("GetAddrHistory error")
+		return nil, errors.New("GetAddrHistory error: " + err.Error())
 	}
 	log.Debugf("result : %s", string(result))
 	//
@@ -389,7 +412,7 @@ func GetAddrHistory(ethAddrFrom, mapAddrTo string, stub shim.ChaincodeStubInterf
 	return &output, nil
 }
 
-func getHight(stub shim.ChaincodeStubInterface) (uint, error) {
+func getHeight(stub shim.ChaincodeStubInterface) (uint, error) {
 	//
 	input := adaptor.GetBlockInfoInput{Latest: true} //get best hight
 	//
@@ -400,7 +423,7 @@ func getHight(stub shim.ChaincodeStubInterface) (uint, error) {
 	//adaptor.
 	result, err := stub.OutChainCall("erc20", "GetBlockInfo", inputBytes)
 	if err != nil {
-		return 0, err
+		return 0, errors.New("GetBlockInfo error: " + err.Error())
 	}
 	//
 	var output adaptor.GetBlockInfoOutput
@@ -428,7 +451,7 @@ func getPTNMapAddr(mapAddr, fromAddr string, stub shim.ChaincodeStubInterface) (
 	//
 	result, err := stub.OutChainCall("erc20", "GetPalletOneMappingAddress", inputBytes)
 	if err != nil {
-		return "", errors.New("GetPalletOneMappingAddress failed")
+		return "", errors.New("GetPalletOneMappingAddress failed: " + err.Error())
 	}
 	//
 	var output adaptor.GetPalletOneMappingAddressOutput
@@ -443,13 +466,43 @@ func getPTNMapAddr(mapAddr, fromAddr string, stub shim.ChaincodeStubInterface) (
 	return output.PalletOneAddress, nil
 }
 
-func get(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	if len(args) > 0 {
-		result, _ := stub.GetState(args[0])
-		return shim.Success(result) //test
+func (p *PTNMain) GetPayout(ethTxID string, stub shim.ChaincodeStubInterface) pb.Response {
+	if "0x" == ethTxID[0:2] || "0X" == ethTxID[0:2] {
+		ethTxID = ethTxID[2:]
 	}
-	result, _ := stub.GetState("result")
+	result, _ := stub.GetState(symbolsPayout + ethTxID)
 	return shim.Success(result)
+}
+
+func (p *PTNMain) Get(stub shim.ChaincodeStubInterface, key string) pb.Response {
+	result, _ := stub.GetState(key)
+	return shim.Success(result)
+}
+
+func (p *PTNMain) WithdrawAmount(stub shim.ChaincodeStubInterface, withdrawAddr common.Address, amount decimal.Decimal) pb.Response {
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
+	}
+	owner, err := getOwner(stub)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	if owner != invokeAddr.String() {
+		return shim.Error("Only owner can withdraw")
+	}
+
+	//contractAddr
+	amount = amount.Mul(decimal.New(100000000, 0))
+	amtToken := &modules.AmountAsset{Amount: uint64(amount.IntPart()), Asset: modules.NewPTNAsset()}
+	err = stub.PayOutToken(withdrawAddr.String(), amtToken, 0)
+	if err != nil {
+		log.Debugf("PayOutToken failed: %s", err.Error())
+		return shim.Error("PayOutToken failed: " + err.Error())
+	}
+
+	return shim.Success([]byte("Success"))
 }
 
 func main() {

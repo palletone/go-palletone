@@ -17,15 +17,11 @@
 package ptn
 
 import (
-	"time"
-
 	"github.com/palletone/go-palletone/common"
 	//"github.com/palletone/go-palletone/common/bitutil"
 	"github.com/palletone/go-palletone/common/bloombits"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/ptn/indexer"
 )
 
 var (
@@ -68,13 +64,13 @@ var (
 //}
 
 const (
-	// bloomConfirms is the number of confirmation blocks before a bloom section is
-	// considered probably final and its rotated bits are calculated.
-	bloomConfirms = 256
+// bloomConfirms is the number of confirmation blocks before a bloom section is
+// considered probably final and its rotated bits are calculated.
+//bloomConfirms = 256
 
-	// bloomThrottling is the time to wait between processing two consecutive index
-	// sections. It's useful during chain upgrades to prevent disk overload.
-	bloomThrottling = 100 * time.Millisecond
+// bloomThrottling is the time to wait between processing two consecutive index
+// sections. It's useful during chain upgrades to prevent disk overload.
+//bloomThrottling = 100 * time.Millisecond
 )
 
 // BloomIndexer implements a core.ChainIndexer, building up a rotated bloom bits index
@@ -82,7 +78,7 @@ const (
 type BloomIndexer struct {
 	size uint64 // section size to generate bloombits for
 
-	db  ptndb.Database       // database instance to write index data and metadata into
+	//db  ptndb.Database       // database instance to write index data and metadata into
 	gen *bloombits.Generator // generator to rotate the bloom bits crating the bloom index
 
 	section uint64      // Section is the section number being processed currently
@@ -91,15 +87,15 @@ type BloomIndexer struct {
 
 // NewBloomIndexer returns a chain indexer that generates bloom bits data for the
 // canonical chain for fast logs filtering.
-func NewBloomIndexer(db ptndb.Database, size uint64) *indexer.ChainIndexer {
-	backend := &BloomIndexer{
-		db:   db,
-		size: size,
-	}
-	table := ptndb.NewTable(db, string(BloomBitsIndexPrefix))
-
-	return indexer.NewChainIndexer(db, table, backend, size, bloomConfirms, bloomThrottling, "bloombits")
-}
+//func NewBloomIndexer(db ptndb.Database, size uint64) *indexer.ChainIndexer {
+//	backend := &BloomIndexer{
+//		db:   db,
+//		size: size,
+//	}
+//	table := ptndb.NewTable(db, string(BloomBitsIndexPrefix))
+//
+//	return indexer.NewChainIndexer(db, table, backend, size, bloomConfirms, bloomThrottling, "bloombits")
+//}
 
 // Reset implements core.ChainIndexerBackend, starting a new bloombits index
 // section.

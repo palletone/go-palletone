@@ -69,7 +69,8 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 			txForSign = tx.GetRequestTx()
 			log.Debugf("msgIdx %d, GetRequestTx 1", msgIdx)
 		} else if invokeReqMsgIdx > 0 && msgIdx > invokeReqMsgIdx {
-			txForSign = tx.GetResultTx()
+			txCopy:=tx.Clone()
+			txForSign =&txCopy
 			log.Debugf("msgIdx %d, GetResultTx 1", msgIdx)
 		}
 
@@ -84,7 +85,7 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 
 			usedUtxoKey := in.PreviousOutPoint.String()
 			if _, exist := usedUtxo[usedUtxoKey]; exist {
-				log.Error("double spend utxo:", usedUtxoKey)
+				log.Errorf("double spend utxo:%s", usedUtxoKey)
 				return TxValidationCode_INVALID_DOUBLE_SPEND
 			}
 			usedUtxo[usedUtxoKey] = true

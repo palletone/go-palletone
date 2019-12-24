@@ -50,7 +50,7 @@ func (mp *MediatorPlugin) SubscribeNewProducedUnitEvent(ch chan<- NewProducedUni
 }
 
 func (mp *MediatorPlugin) scheduleProductionLoop() {
-	log.Debugf("launch scheduleProductionLoop")
+	//log.Debugf("launch scheduleProductionLoop")
 	// 1. 计算下一秒的滴答时刻，如果少于50毫秒，则多等一秒开始
 	now := time.Now()
 	timeToNextSecond := time.Second - time.Duration(now.Nanosecond())
@@ -91,7 +91,7 @@ const (
 )
 
 func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
-	log.Debugf("launch unitProductionLoop")
+	//log.Debugf("launch unitProductionLoop")
 	mp.wg.Add(1)
 	defer mp.wg.Done()
 
@@ -136,7 +136,7 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 }
 
 func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]string) {
-	log.Debugf("try to produce unit")
+	//log.Debugf("try to produce unit")
 	detail := make(map[string]string)
 	dag := mp.dag
 
@@ -169,7 +169,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	// if this assert triggers, there is a serious bug in dag.GetSlotAtTime()
 	// which would result in allowing a later unit to have a timestamp
 	// less than or equal to the previous unit
-	if !(now.Unix() > dag.HeadUnitTime()) {
+	if !(dag.HeadUnitTime() < now.Unix()) {
 		detail["Msg"] = "The property database is being updated because the new unit is received synchronously."
 		return ExceptionProducing, detail
 	}
@@ -263,6 +263,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 
 	// 4. 异步向区块链网络广播新unit
 	go mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit: newUnit})
+	log.Debugf("send NewProducedUnitEvent")
 
 	return Produced, detail
 }

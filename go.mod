@@ -6,7 +6,7 @@ require (
 	github.com/aristanetworks/goarista v0.0.0-20190712234253-ed1100a1c015
 	github.com/btcsuite/btcd v0.0.0-20190807005414-4063feeff79a
 	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
-	github.com/cloudflare/cfssl v0.0.0-20190726000631-633726f6bcb7
+	github.com/cloudflare/cfssl v0.0.0-20190726000631-633726f6bcb7 // indirect
 	github.com/containerd/continuity v0.0.0-20190426062206-aaeac12a7ffc // indirect
 	github.com/coocood/freecache v0.0.0-20180304015925-036298587d3a
 	github.com/davecgh/go-spew v1.1.1
@@ -44,7 +44,7 @@ require (
 	github.com/palletone/adaptor v1.0.0
 	github.com/palletone/btc-adaptor v1.0.0 // indirect
 	github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb
-	github.com/palletone/eth-adaptor v1.0.1-0.20191024055153-b0b022477802
+	github.com/palletone/eth-adaptor v1.1.0
 	github.com/pborman/uuid v1.2.0
 	github.com/pelletier/go-toml v1.2.0 // indirect
 	github.com/peterh/liner v0.0.0-20170902204657-a37ad3984311

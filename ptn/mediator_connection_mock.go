@@ -168,3 +168,15 @@ func (m *Mockproducer) UpdateMediatorsDKG(isRenew bool) {
 func (mr *MockproducerMockRecorder) UpdateMediatorsDKG(isRenew interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMediatorsDKG", reflect.TypeOf((*Mockproducer)(nil).UpdateMediatorsDKG), isRenew)
 }
+
+// IsLocalMediator mocks base method
+func (m *Mockproducer) IsLocalMediator(add common.Address) bool {
+	ret := m.ctrl.Call(m, "IsLocalMediator", add)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsLocalMediator indicates an expected call of IsLocalMediator
+func (mr *MockproducerMockRecorder) IsLocalMediator(add interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsLocalMediator", reflect.TypeOf((*Mockproducer)(nil).IsLocalMediator), add)
+}

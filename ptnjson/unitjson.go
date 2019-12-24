@@ -23,7 +23,10 @@ package ptnjson
 import (
 	"encoding/hex"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/shopspring/decimal"
 	"strconv"
 	"time"
 )
@@ -33,6 +36,7 @@ type UnitJson struct {
 	Txs        []*TxJson          `json:"transactions"` // transaction list
 	UnitHash   common.Hash        `json:"unit_hash"`    // unit hash
 	UnitSize   common.StorageSize `json:"unit_size"`    // unit size
+	Reward     decimal.Decimal    `json:"reward"`       //区块奖励
 }
 type FastUnitJson struct {
 	FastHash    common.Hash `json:"fast_hash"`
@@ -59,18 +63,24 @@ type ChainIndexJson struct {
 	Index   uint64 `json:"index"`
 }
 
-func ConvertUnit2Json(unit *modules.Unit, utxoQuery modules.QueryUtxoFunc) *UnitJson {
+func ConvertUnit2Json(unit *modules.Unit, utxoQuery modules.QueryUtxoFunc,
+	versionFunc modules.QueryStateByVersionFunc) *UnitJson {
 	json := &UnitJson{
 		UnitHash:   unit.Hash(),
 		UnitSize:   unit.Size(),
 		UnitHeader: ConvertUnitHeader2Json(unit.UnitHeader),
 		Txs:        []*TxJson{},
 	}
-
 	for _, tx := range unit.Txs {
 		txjson := ConvertTx2FullJson(tx, utxoQuery)
 		json.Txs = append(json.Txs, txjson)
 	}
+	reward, err := unit.Txs[0].GetCoinbaseReward(versionFunc, tokenengine.Instance.GetAddressFromScript)
+	if err != nil {
+		log.Error(err.Error())
+		return json
+	}
+	json.Reward = reward.Asset.DisplayAmount(reward.Amount)
 	return json
 }
 func ConvertUnitHeader2Json(header *modules.Header) *HeaderJson {

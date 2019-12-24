@@ -48,9 +48,9 @@ func NewChainTempDb(db ptndb.Database,
 	tstateRep := comm2.NewStateRepository4Db(tempdb)
 	tpropRep := comm2.NewPropRepository4Db(tempdb)
 	tunitProduceRep := comm2.NewUnitProduceRepository(trep, tpropRep, tstateRep)
-	val := validator.NewValidate(trep, tutxoRep, tstateRep, tpropRep, cache)
+	val := validator.NewValidate(trep, tutxoRep, tstateRep, tpropRep, cache, false)
 	if saveHeaderOnly { //轻节点，只有Header数据，无法做高级验证
-		val = validator.NewValidate(trep, nil, nil, nil, cache)
+		val = validator.NewValidate(trep, nil, nil, nil, cache, true)
 	}
 	return &ChainTempDb{
 		Tempdb:         tempdb,

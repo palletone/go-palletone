@@ -34,7 +34,6 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/consensus/jury"
-	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
@@ -253,10 +252,8 @@ func (b *PtnApiBackend) GetContract(addr common.Address) (*ptnjson.ContractJson,
 		return nil, err
 	}
 	cjson := ptnjson.ConvertContract2Json(contract)
-	if addr == syscontract.CreateTokenContractAddress {
-		cjson.Template = ptnjson.GetSysContractTemplate_PRC20()
-	} else {
-
+	cjson.Template = ptnjson.GetSysContractABI(addr.String())
+	if nil == cjson.Template {
 		tpl, err := b.ptn.dag.GetContractTpl(contract.TemplateId)
 		if err != nil {
 			return cjson, nil
@@ -348,6 +345,9 @@ func (b *PtnApiBackend) GetAssetExistence(asset string) ([]*ptnjson.ProofOfExist
 //	return b.ptn.dag.GetHeadFastUnitHash()
 //}
 
+func (b *PtnApiBackend) MemdagInfos() (*modules.MemdagInfos, error) {
+	return b.ptn.dag.MemdagInfos()
+}
 func (b *PtnApiBackend) GetTrieSyncProgress() (uint64, error) {
 	return b.ptn.dag.GetTrieSyncProgress()
 }
@@ -449,6 +449,9 @@ func (b *PtnApiBackend) GetTxSearchEntry(hash common.Hash) (*ptnjson.TxSerachEnt
 // GetPoolTxByHash return a json of the tx in pool.
 func (b *PtnApiBackend) GetTxPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJson, error) {
 	tx, unit_hash := b.ptn.txPool.Get(hash)
+	if tx == nil {
+		return nil, fmt.Errorf("the tx[%s] is not exist in txppol.", hash.String())
+	}
 	return ptnjson.ConvertTxPoolTx2Json(tx, unit_hash), nil
 }
 
@@ -479,7 +482,7 @@ func (b *PtnApiBackend) GetHeaderByNumber(number *modules.ChainIndex) (*modules.
 }
 
 func (b *PtnApiBackend) GetPrefix(prefix string) map[string][]byte {
-	return b.ptn.dag.GetCommonByPrefix([]byte(prefix),false)
+	return b.ptn.dag.GetCommonByPrefix([]byte(prefix), false)
 } //getprefix
 
 func (b *PtnApiBackend) GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error) {
@@ -699,20 +702,6 @@ func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, args [][]by
 	return unit.Payload, err
 }
 
-func (b *PtnApiBackend) ContractQuery(contractId []byte, txid string, args [][]byte,
-	timeout time.Duration) (rspPayload []byte, err error) {
-	rsp, err := b.ptn.contract.Invoke(rwset.RwM, rwset.ChainId, contractId, txid, args, timeout)
-	rwset.RwM.CloseTxSimulator(rwset.ChainId, txid)
-	rwset.RwM.Close()
-
-	if err != nil {
-		log.Debugf(" err!=nil =====>ContractQuery:contractId[%s]txid[%s]", hex.EncodeToString(contractId), txid)
-		return nil, err
-	}
-	log.Debugf("=====>ContractQuery:contractId[%s]txid[%s]", hex.EncodeToString(contractId), txid)
-	return rsp.Payload, nil
-}
-
 func (b *PtnApiBackend) ContractStop(deployId []byte, txid string, deleteImage bool) error {
 	log.Debugf("======>ContractStop:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
 	_, err := b.ptn.contract.Stop(rwset.RwM, "palletone", deployId, txid, deleteImage)
@@ -776,6 +765,9 @@ func (b *PtnApiBackend) ContractStopReqTxFee(from, to common.Address, daoAmount,
 	deleteImage bool) (fee float64, size float64, tm uint32, err error) {
 	return b.ptn.contractPorcessor.ContractStopReqFee(from, to, daoAmount, daoFee, contractId, deleteImage)
 }
+func (b *PtnApiBackend) ContractQuery(id []byte, args [][]byte, timeout time.Duration) (rspPayload []byte, err error) {
+	return b.ptn.contractPorcessor.ContractQuery(id, args, timeout)
+}
 
 func (b *PtnApiBackend) ElectionVrf(id uint32) ([]byte, error) {
 	return b.ptn.contractPorcessor.ElectionVrfReq(id)
@@ -790,12 +782,15 @@ func (b *PtnApiBackend) GetJuryAccount() []common.Address {
 func (b *PtnApiBackend) SaveCommon(key, val []byte) error {
 	return b.ptn.dag.SaveCommon(key, val)
 }
-func (b *PtnApiBackend) GetCommon(key []byte,stableDb bool) ([]byte, error) {
-	return b.ptn.dag.GetCommon(key,stableDb)
+func (b *PtnApiBackend) GetCommon(key []byte, stableDb bool) ([]byte, error) {
+	return b.ptn.dag.GetCommon(key, stableDb)
 }
 
-func (b *PtnApiBackend) GetCommonByPrefix(prefix []byte,stableDb bool) map[string][]byte {
-	return b.ptn.dag.GetCommonByPrefix(prefix,stableDb)
+func (b *PtnApiBackend) GetCommonByPrefix(prefix []byte, stableDb bool) map[string][]byte {
+	return b.ptn.dag.GetCommonByPrefix(prefix, stableDb)
+}
+func (b *PtnApiBackend) GetAllData() ([][]byte, [][]byte) {
+	return b.ptn.dag.GetAllData()
 }
 func (b *PtnApiBackend) DecodeTx(hexStr string) (string, error) {
 	tx := &modules.Transaction{}

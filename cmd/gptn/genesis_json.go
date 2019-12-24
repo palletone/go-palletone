@@ -128,8 +128,9 @@ func createExampleMediators(ctx *cli.Context, mcLen int) ([]*mp.MediatorConf, []
 		account, _ := ks.NewAccount(password)
 		secStr, pubStr := core.CreateInitDKS()
 
+		addStr := account.Address.Str()
 		exampleMediators[i] = &mp.MediatorConf{
-			Address:     account.Address.Str(),
+			Address:     addStr,
 			Password:    password,
 			InitPrivKey: secStr,
 			InitPubKey:  pubStr,
@@ -140,6 +141,7 @@ func createExampleMediators(ctx *cli.Context, mcLen int) ([]*mp.MediatorConf, []
 
 		jdes[i] = core.JurorDepositExtraJson{
 			PublicKey: hex.EncodeToString(b),
+			RewardAddr: addStr,
 		}
 	}
 
@@ -165,7 +167,7 @@ func createGenesisJson(ctx *cli.Context) error {
 	genesisState.TokenHolder = account
 	genesisState.InitialParameters.FoundationAddress = account
 	genesisState.DigitalIdentityConfig.RootCAHolder = account
-	genesisState.ImmutableParameters.MinMaintSkipSlots = 2
+	//genesisState.ImmutableParameters.MinMaintSkipSlots = 0
 
 	genesisState.InitialParameters.MediatorInterval = 3
 	genesisState.InitialTimestamp = genesisState.InitialTimestamp / 3 * 3
@@ -353,7 +355,7 @@ func initialMediatorCandidates(mediators []*mp.MediatorConf, nodeInfo string,
 		m := mediators[i]
 		im := core.NewInitialMediator()
 		im.AddStr = m.Address
-		im.RewardAdd = m.Address
+		//im.RewardAdd = m.Address
 		im.InitPubKey = m.InitPubKey
 		im.Node = nodeInfo
 		im.JurorDepositExtraJson = jdes[i]

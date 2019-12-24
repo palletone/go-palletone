@@ -31,6 +31,17 @@ import (
 type ChainParametersTemp struct {
 	ChainParametersBase
 
+	ChainParametersExtraTemp
+}
+
+type ChainParametersExtraTemp struct {
+	ChainParametersExtraTemp104alpha
+
+	PledgeAllocateThreshold string
+	PledgeRecordsThreshold  string
+}
+
+type ChainParametersExtraTemp104alpha struct {
 	// TxCoinYearRate     string
 	//DepositDailyReward string
 	//DepositPeriod      string
@@ -61,15 +72,13 @@ type ChainParametersTemp struct {
 }
 
 func (cp *ChainParameters) EncodeRLP(w io.Writer) error {
-	cpt := cp.getCPT()
+	cpt := cp.GetCPT()
 
 	return rlp.Encode(w, cpt)
 }
 
-func (cp *ChainParameters) getCPT() *ChainParametersTemp {
-	return &ChainParametersTemp{
-		ChainParametersBase: cp.ChainParametersBase,
-
+func (cp *ChainParametersExtra104alpha) GetCPT() *ChainParametersExtraTemp104alpha {
+	return &ChainParametersExtraTemp104alpha{
 		// TxCoinYearRate:     strconv.FormatFloat(float64(cp.TxCoinYearRate), 'f', -1, 64),
 		//DepositDailyReward: strconv.FormatInt(int64(cp.PledgeDailyReward), 10),
 		//DepositPeriod:      strconv.FormatInt(int64(cp.DepositPeriod), 10),
@@ -97,9 +106,24 @@ func (cp *ChainParameters) getCPT() *ChainParametersTemp {
 	}
 }
 
-func (cpt *ChainParametersTemp) getCP(cp *ChainParameters) error {
-	cp.ChainParametersBase = cpt.ChainParametersBase
+func (cp *ChainParametersExtra) GetCPT() *ChainParametersExtraTemp {
+	return &ChainParametersExtraTemp{
+		ChainParametersExtraTemp104alpha: *cp.ChainParametersExtra104alpha.GetCPT(),
 
+		PledgeAllocateThreshold: strconv.FormatInt(int64(cp.PledgeAllocateThreshold), 10),
+		PledgeRecordsThreshold:  strconv.FormatInt(int64(cp.PledgeRecordsThreshold), 10),
+	}
+}
+
+func (cp *ChainParameters) GetCPT() *ChainParametersTemp {
+	return &ChainParametersTemp{
+		ChainParametersBase: cp.ChainParametersBase,
+
+		ChainParametersExtraTemp: *cp.ChainParametersExtra.GetCPT(),
+	}
+}
+
+func (cpt *ChainParametersExtraTemp104alpha) GetCP(cp *ChainParametersExtra104alpha) error {
 	// TxCoinYearRate, err := strconv.ParseFloat(cpt.TxCoinYearRate, 64)
 	// if err != nil {
 	// 	return err
@@ -170,8 +194,9 @@ func (cpt *ChainParametersTemp) getCP(cp *ChainParameters) error {
 	if err != nil {
 		return err
 	}
-	cp.ContractSystemVersion = cpt.ContractSystemVersion
 	cp.ContractSignatureNum = int(ContractSignatureNum)
+
+	cp.ContractSystemVersion = cpt.ContractSystemVersion
 
 	ContractElectionNum, err := strconv.ParseInt(cpt.ContractElectionNum, 10, 64)
 	if err != nil {
@@ -218,6 +243,38 @@ func (cpt *ChainParametersTemp) getCP(cp *ChainParameters) error {
 	return nil
 }
 
+func (cpt *ChainParametersExtraTemp) GetCP(cp *ChainParametersExtra) error {
+	err := cpt.ChainParametersExtraTemp104alpha.GetCP(&cp.ChainParametersExtra104alpha)
+	if err != nil {
+		return err
+	}
+
+	PledgeAllocateThreshold, err := strconv.ParseInt(cpt.PledgeAllocateThreshold, 10, 64)
+	if err != nil {
+		return err
+	}
+	cp.PledgeAllocateThreshold = int(PledgeAllocateThreshold)
+
+	PledgeRecordsThreshold, err := strconv.ParseInt(cpt.PledgeRecordsThreshold, 10, 64)
+	if err != nil {
+		return err
+	}
+	cp.PledgeRecordsThreshold = int(PledgeRecordsThreshold)
+
+	return nil
+}
+
+func (cpt *ChainParametersTemp) GetCP(cp *ChainParameters) error {
+	cp.ChainParametersBase = cpt.ChainParametersBase
+
+	err := cpt.ChainParametersExtraTemp.GetCP(&cp.ChainParametersExtra)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (cp *ChainParameters) DecodeRLP(s *rlp.Stream) error {
 	raw, err := s.Raw()
 	if err != nil {
@@ -230,7 +287,7 @@ func (cp *ChainParameters) DecodeRLP(s *rlp.Stream) error {
 		return err
 	}
 
-	err = cpt.getCP(cp)
+	err = cpt.GetCP(cp)
 	if err != nil {
 		return err
 	}

@@ -30,6 +30,7 @@ import (
 	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
+	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/configure"
@@ -60,13 +61,13 @@ type Dag struct {
 	unstablePropRep        dagcommon.IPropRepository
 	unstableUnitProduceRep dagcommon.IUnitProduceRepository
 
-	stableUnitRep  dagcommon.IUnitRepository
-	stableUtxoRep  dagcommon.IUtxoRepository
-	stableStateRep dagcommon.IStateRepository
-	stablePropRep  dagcommon.IPropRepository
-
+	stableUnitRep        dagcommon.IUnitRepository
+	stableUtxoRep        dagcommon.IUtxoRepository
+	stableStateRep       dagcommon.IStateRepository
+	stablePropRep        dagcommon.IPropRepository
 	stableUnitProduceRep dagcommon.IUnitProduceRepository
-	ChainHeadFeed        *event.Feed
+
+	ChainHeadFeed *event.Feed
 
 	Mutex           sync.RWMutex
 	Memdag          memunit.IMemDag                     // memory unit
@@ -77,15 +78,20 @@ type Dag struct {
 	//SPV
 	rmLogsFeed event.Feed
 	chainFeed  event.Feed
+
 	//chainSideFeed event.Feed
 	chainHeadFeed event.Feed
 	logsFeed      event.Feed
 	scope         event.SubscriptionScope
+
+	unstableRepositoryUpdatedFeed  event.Feed
+	unstableRepositoryUpdatedScope event.SubscriptionScope
 }
 
 func cache() palletcache.ICache {
 	return freecache.NewCache(1000 * 1024)
 }
+
 func (d *Dag) IsEmpty() bool {
 	it := d.Db.NewIterator()
 	return !it.Next()
@@ -98,13 +104,16 @@ func (d *Dag) CurrentUnit(token modules.AssetId) *modules.Unit {
 		log.Errorf("Get CurrentUnit by token[%s] error:%s", token.String(), err.Error())
 		return nil
 	}
+
 	stable_hash, _ := memdag.GetLastStableUnitInfo()
 	unit, err := d.GetUnitByHash(stable_hash)
 	if err != nil {
 		return nil
 	}
+
 	return unit
 }
+
 func (d *Dag) GetStableChainIndex(token modules.AssetId) *modules.ChainIndex {
 	memdag, err := d.getMemDag(token)
 	if err != nil {
@@ -123,14 +132,20 @@ func (d *Dag) GetMainCurrentUnit() *modules.Unit {
 // return higher unit in memdag
 func (d *Dag) GetCurrentUnit(assetId modules.AssetId) *modules.Unit {
 	memUnit := d.GetCurrentMemUnit(assetId, 0)
-	//curUnit := d.CurrentUnit(assetId)
-	//
-	//if memUnit == nil {
-	//	return curUnit
-	//}
-	//if curUnit.NumberU64() >= memUnit.NumberU64() {
-	//	return curUnit
-	//}
+	curUnit := d.CurrentUnit(assetId)
+
+	if curUnit == nil {
+		return nil
+	}
+
+	if memUnit == nil {
+		return curUnit
+	}
+
+	if curUnit.NumberU64() >= memUnit.NumberU64() {
+		return curUnit
+	}
+
 	return memUnit
 }
 
@@ -223,6 +238,9 @@ func (d *Dag) GetHeaderByHash(hash common.Hash) (*modules.Header, error) {
 
 	return uHeader, nil
 }
+func (d *Dag) GetHeadersByAuthor(authorAddr common.Address, startHeight, count uint64) ([]*modules.Header, error) {
+	return d.unstableUnitRep.GetHeadersByAuthor(authorAddr, startHeight, count)
+}
 
 // return the header by hash in memdag
 func (d *Dag) getHeaderByHashFromPMemDag(hash common.Hash) (*modules.Header, error) {
@@ -284,26 +302,33 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 	count := int(0)
 
 	for i, u := range units {
-		// all units must be continuous
-		if i > 0 && units[i].UnitHeader.Number.Index != units[i-1].UnitHeader.Number.Index+1 {
-			return count, fmt.Errorf("Insert dag error: child height are not continuous, "+
-				"parent unit number=%d, hash=%s; "+"child unit number=%d, hash=%s",
-				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash.String(),
-				units[i].UnitHeader.Number.Index, units[i].UnitHash.String())
-		}
-		if i > 0 && !u.ContainsParent(units[i-1].UnitHash) {
-			return count, fmt.Errorf("Insert dag error: child parents are not continuous, "+
-				"parent unit number=%d, hash=%s; "+"child unit number=%d, hash=%s",
-				units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash.String(),
-				units[i].UnitHeader.Number.Index, units[i].UnitHash.String())
-		}
+		// 重复验证 comment by albert
+		//// all units must be continuous
+		//if i > 0 && units[i].UnitHeader.Number.Index != units[i-1].UnitHeader.Number.Index+1 {
+		//	return count, fmt.Errorf("Insert dag error: child height are not continuous, "+
+		//		"parent unit number=%d, hash=%s; "+"child unit number=%d, hash=%s",
+		//		units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash.String(),
+		//		units[i].UnitHeader.Number.Index, units[i].UnitHash.String())
+		//}
+		//if i > 0 && !u.ContainsParent(units[i-1].UnitHash) {
+		//	return count, fmt.Errorf("Insert dag error: child parents are not continuous, "+
+		//		"parent unit number=%d, hash=%s; "+"child unit number=%d, hash=%s",
+		//		units[i-1].UnitHeader.Number.Index, units[i-1].UnitHash.String(),
+		//		units[i].UnitHeader.Number.Index, units[i].UnitHash.String())
+		//}
+
 		t1 := time.Now()
 		timestamp := time.Unix(u.Timestamp(), 0)
 		log.Debugf("Start InsertDag unit(%v) #%v parent(%v) @%v signed by %v", u.UnitHash.TerminalString(),
 			u.NumberU64(), u.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
 			u.Author().Str())
+
 		if is_stable {
-			d.Memdag.AddStableUnit(u)
+			err := d.Memdag.AddStableUnit(u)
+			if err != nil {
+				log.Errorf("AddStableUnit failed,error:%s", err.Error())
+				return i, err
+			}
 		} else {
 			if a, b, c, dd, e, err := d.Memdag.AddUnit(u, txpool, false); err != nil {
 				//return count, err
@@ -312,6 +337,11 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 				return count, err
 			} else {
 				if a != nil {
+					if d.unstableUnitProduceRep != e {
+						log.Debugf("send UnstableRepositoryUpdatedEvent")
+						go d.unstableRepositoryUpdatedFeed.Send(modules.UnstableRepositoryUpdatedEvent{})
+					}
+
 					d.unstableUnitRep = a
 					d.unstableUtxoRep = b
 					d.unstableStateRep = c
@@ -320,11 +350,28 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 				}
 			}
 		}
+
 		log.Debugf("InsertDag[%s] #%d spent time:%s", u.UnitHash.String(), u.NumberU64(), time.Since(t1))
-		if u.NumberU64()%1000 == 0 {
-			log.Infof("Insert unit[%s] #%d to local", u.UnitHash.String(), u.NumberU64())
+
+		if !is_stable && u.NumberU64()%1000 == 0 {
+			log.Infof("Insert unit[%s] #%d to local", u.UnitHash.TerminalString(), u.NumberU64())
 		}
+
 		count += 1
+	}
+
+	if is_stable {
+		tunitRep, tutxoRep, tstateRep, tpropRep, tUnitProduceRep := d.Memdag.GetUnstableRepositories()
+		if tUnitProduceRep != d.unstableUnitProduceRep {
+			log.Debugf("send UnstableRepositoryUpdatedEvent")
+			go d.unstableRepositoryUpdatedFeed.Send(modules.UnstableRepositoryUpdatedEvent{})
+		}
+
+		d.unstableUnitRep = tunitRep
+		d.unstableUtxoRep = tutxoRep
+		d.unstableStateRep = tstateRep
+		d.unstablePropRep = tpropRep
+		d.unstableUnitProduceRep = tUnitProduceRep
 	}
 
 	return count, nil
@@ -375,7 +422,17 @@ func (d *Dag) CurrentHeader(token modules.AssetId) *modules.Header {
 	}
 	// 从memdag 获取最新的header
 	unit := memdag.GetLastMainChainUnit()
-	return unit.Header()
+	stable_hash, s_index := memdag.GetLastStableUnitInfo()
+	if unit != nil {
+		if unit.NumberU64() >= s_index {
+			return unit.Header()
+		}
+	}
+	if stable_header, err := d.GetHeaderByHash(stable_hash); err != nil {
+		return nil
+	} else {
+		return stable_header
+	}
 }
 
 // return unit's body , all transactions of unit by hash
@@ -428,13 +485,15 @@ func (d *Dag) InsertHeaderDag(headers []*modules.Header) (int, error) {
 		if err != nil {
 			return i, fmt.Errorf("InsertHeaderDag, on header:%d, at saveHeader Error:%s", i, err.Error())
 		}
-
+		if header.NumberU64()%2000 == 0 {
+			log.Infof("Insert header[%s] #%d", header.Hash().String(), header.NumberU64())
+		}
 	}
 	return len(headers), nil
 }
 
 // refresh partition memdag when newdag or system contract state be changed.
-func (d *Dag) refreshPartitionMemDag() {
+func (d *Dag) RefreshPartitionMemDag() {
 	db := d.Db
 	unitRep := d.stableUnitRep
 	propRep := d.stablePropRep
@@ -546,7 +605,7 @@ func NewDag(db ptndb.Database, cache palletcache.ICache, light bool) (*Dag, erro
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb, tokenEngine)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenEngine)
 	propRep := dagcommon.NewPropRepository(propDb)
-	stateRep := dagcommon.NewStateRepository(stateDb)
+	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 	stableUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
 	gasToken := dagconfig.DagConfig.GetGasToken()
 	threshold, _ := propRep.GetChainThreshold()
@@ -573,11 +632,11 @@ func NewDag(db ptndb.Database, cache palletcache.ICache, light bool) (*Dag, erro
 	}
 	dag.stableUnitRep.SubscribeSysContractStateChangeEvent(dag.AfterSysContractStateChangeEvent)
 	dag.stableUnitProduceRep.SubscribeChainMaintenanceEvent(dag.AfterChainMaintenanceEvent)
-
-	hash, chainIndex, _ := dag.stablePropRep.GetNewestUnit(gasToken)
-	log.Infof("newDag success, current unit[%s], chain index info[%d]", hash.String(), chainIndex.Index)
+	dag.Memdag.SubscribeSwitchMainChainEvent(dag.SwitchMainChainEvent)
+	//hash, chainIndex, _ := dag.stablePropRep.GetNewestUnit(gasToken)
+	log.Infof("newDag success, current unit, chain info[%s]", gasToken.String())
 	// init partition memdag
-	dag.refreshPartitionMemDag()
+	dag.RefreshPartitionMemDag()
 	return dag, nil
 }
 
@@ -636,7 +695,7 @@ func (dag *Dag) AfterSysContractStateChangeEvent(arg *modules.SysContractStateCh
 	log.Debug("Process AfterSysContractStateChangeEvent")
 	if bytes.Equal(arg.ContractId, syscontract.PartitionContractAddress.Bytes()) {
 		//分区合约进行了修改，刷新PartitionMemDag
-		dag.refreshPartitionMemDag()
+		dag.RefreshPartitionMemDag()
 	}
 }
 
@@ -646,6 +705,11 @@ func (dag *Dag) AfterChainMaintenanceEvent(arg *modules.ChainMaintenanceEvent) {
 	//换届完成，dag需要进行的操作：
 	threshold, _ := dag.stablePropRep.GetChainThreshold()
 	dag.Memdag.SetStableThreshold(threshold)
+}
+
+func (dag *Dag) SwitchMainChainEvent(arg *memunit.SwitchMainChainEvent) {
+	log.Debugf("Switch main chain event!!! old unit:%s %d,new unit:%s %d", arg.OldLastUnit.Hash().TerminalString(),
+		arg.OldLastUnit.NumberU64(), arg.NewLastUnit.Hash().TerminalString(), arg.NewLastUnit.NumberU64())
 }
 
 // to build a new dag when init genesis
@@ -660,7 +724,7 @@ func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb, tokenEngine)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenEngine)
 	propRep := dagcommon.NewPropRepository(propDb)
-	stateRep := dagcommon.NewStateRepository(stateDb)
+	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 
 	statleUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
 
@@ -691,7 +755,7 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 	propDb := storage.NewPropertyDb(db)
 
 	propRep := dagcommon.NewPropRepository(propDb)
-	stateRep := dagcommon.NewStateRepository(stateDb)
+	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb, tokenEngine)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenEngine)
 	statleUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
@@ -910,6 +974,9 @@ func (d *Dag) GetAddrTransactions(addr common.Address) ([]*modules.TransactionWi
 func (d *Dag) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {
 	return d.unstableStateRep.GetContractState(id, field)
 }
+func (d *Dag) GetContractStateByVersion(id []byte, field string, version *modules.StateVersion) ([]byte, error) {
+	return d.unstableStateRep.GetContractStateByVersion(id, field, version)
+}
 
 // get contract all state
 func (d *Dag) GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error) {
@@ -924,17 +991,6 @@ func (d *Dag) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*m
 // return electionInfo by contractId
 func (d *Dag) GetContractJury(contractId []byte) (*modules.ElectionNode, error) {
 	return d.unstableStateRep.GetContractJury(contractId)
-}
-
-// createUnit, create a unit when mediator being produced
-func (d *Dag) CreateUnit(mAddr common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error) {
-	_, _, state, rep, _ := d.Memdag.GetUnstableRepositories()
-	med, err := state.RetrieveMediator(mAddr)
-	if err != nil {
-		return nil, err
-	}
-
-	return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool, rep, t)
 }
 
 // save header
@@ -980,6 +1036,7 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 	}
 	if isGenesis {
 		d.stableUnitRep.SaveUnit(unit, true)
+		// set memdag state
 		return nil
 	}
 
@@ -987,6 +1044,11 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 		return fmt.Errorf("Save MemDag, occurred error: %s", err.Error())
 	} else {
 		if a != nil {
+			if d.unstableUnitProduceRep != e {
+				log.Debugf("send UnstableRepositoryUpdatedEvent")
+				go d.unstableRepositoryUpdatedFeed.Send(modules.UnstableRepositoryUpdatedEvent{})
+			}
+
 			d.unstableUnitRep = a
 			d.unstableUtxoRep = b
 			d.unstableStateRep = c
@@ -1040,6 +1102,9 @@ func (d *Dag) GetCommonByPrefix(prefix []byte, stableDb bool) map[string][]byte 
 	}
 	return d.unstableUnitRep.GetCommonByPrefix(prefix)
 }
+func (d *Dag) GetAllData() ([][]byte, [][]byte) {
+	return d.stableUnitRep.GetAllData()
+}
 
 // save the key, value
 func (d *Dag) SaveCommon(key, val []byte) error {
@@ -1054,27 +1119,33 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 		return err
 	}
 
+	log.Debugf("receive unit(%v)'s group sign: %v", unitHash.TerminalString(), hexutil.Encode(groupSign))
+
 	// 判断本节点是否正在同步数据
-	if !d.IsSynced() {
-		err := "this node is syncing"
+	if !d.IsSynced(false) {
+		err := "this node is synced"
 		log.Debugf(err)
 		return fmt.Errorf(err)
 	}
 
-	if d.IsIrreversibleUnit(unitHash) {
-		// 由于采用广播的形式，所以可能会很多次收到同一个unit的群签名
-		//log.Debugf("this unit(%v) is irreversible", unitHash.TerminalString())
+	isStable, err := d.IsIrreversibleUnit(unitHash)
+	if err != nil {
+		return err
+	}
+
+	if isStable {
+		// 或者由于网络延迟，该单元在收到群签名之前，已经根据深度转为不可逆了
+		log.Debugf("this unit(%v) is already irreversible", unitHash.TerminalString())
 		return nil
 	}
 
 	// 验证群签名：
-	err := d.VerifyUnitGroupSign(unitHash, groupSign)
+	err = d.VerifyUnitGroupSign(unitHash, groupSign)
 	if err != nil {
 		return err
 	}
+
 	// 群签之后， 更新memdag，将该unit和它的父单元们稳定存储。
-	//go d.Memdag.SetStableUnit(unitHash, groupSign[:], txpool)
-	log.Debugf("Try to update unit[%s] group sign", unitHash.String())
 	d.Memdag.SetUnitGroupSign(unitHash, groupSign, txpool)
 
 	//TODO albert 待合并
@@ -1225,15 +1296,13 @@ func (d *Dag) GetContractsByTpl(tplId []byte) ([]*modules.Contract, error) {
 	return d.unstableStateRep.GetContractsByTpl(tplId)
 }
 
-// subscribe active mediators updated event
-func (d *Dag) SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription {
-	return d.unstableUnitProduceRep.SubscribeActiveMediatorsUpdatedEvent(ch)
-}
-
 // close a dag
 func (d *Dag) Close() {
 	d.unstableUnitProduceRep.Close()
 	d.Memdag.Close()
+
+	d.scope.Close()
+	d.unstableRepositoryUpdatedScope.Close()
 
 	for _, pmg := range d.PartitionMemDag {
 		pmg.Close()
@@ -1377,4 +1446,27 @@ func (d *Dag) RebuildAddrTxIndex() error {
 }
 func (d *Dag) GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, error) {
 	return d.stableStateRep.GetJurorByAddrHash(hash)
+}
+
+func (d *Dag) MemdagInfos() (*modules.MemdagInfos, error) {
+	ptn_memdag := d.Memdag
+	memdag_infos := new(modules.MemdagInfos)
+	memdag_infos.MemStatus = make(map[string]*modules.MemdagStatus)
+	if ptn_status, err := ptn_memdag.Info(); err != nil {
+		log.Errorf("get [%s] memdag status failed, error:[%s]", modules.PTNCOIN.String(), err.Error())
+		return nil, err
+	} else {
+		memdag_infos.MemStatus[ptn_status.Token.String()] = ptn_status
+	}
+	for token, memdag := range d.PartitionMemDag {
+		if token == modules.PTNCOIN {
+			continue
+		}
+		if status, err := memdag.Info(); err == nil {
+			memdag_infos.MemStatus[token.String()] = status
+		} else {
+			log.Errorf("get [%s] memdag status failed, error:[%s]", modules.PTNCOIN.String(), err.Error())
+		}
+	}
+	return memdag_infos, nil
 }

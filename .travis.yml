@@ -91,13 +91,9 @@ matrix:
         - nohup ./gptn &
         - sleep 15
         - netstat -ap | grep gptn
-        - if [ $IS_RUN_DEPOSIT == 'true' ]; then
-          cd ../dct;
-          ./deposit_test.sh 6;
-          fi
         - if [ $IS_RUN_BLACKLIST == 'true' ]; then
           cd ../blacklist;
-          ./blacklist_test.sh;
+          ./blacklist_test.sh 2;
           fi
         - if [ $IS_RUN_TESTCONTRACTCASES == 'true' ];then
           cd ../contract/testcases;
@@ -131,8 +127,14 @@ matrix:
           python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ./DigitalIdentityCert;
           fi
 
+        - if [ $IS_RUN_DEPOSIT == 'true' ]; then
+          cd ./dct;
+          ./deposit_test.sh 13;
+          fi
+
         - if [ $IS_RUN_GASTOKEN == 'true' ]; then
-          cd ./GasToken;
+          cd ../GasToken;
+          killall -9 gptn;
           chmod +x ./init_gas_token.sh;
           ./init_gas_token.sh;
           sleep 15;
@@ -144,10 +146,12 @@ matrix:
         - cd ${BASE_DIR}
         - zip -j ./bdd/logs/oneNode_log.zip ./bdd/node/log/*
         - zip -j ./bdd/logs/gasToken_log.zip ./bdd/GasToken/node/log/*
+        - cd ${BASE_DIR}/bdd
+        - ./targz_node.sh oneNode
         - |
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
-            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH} ${TRAVIS_BUILD_NUMBER};
+            ./upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH} ${TRAVIS_BUILD_NUMBER};
             # echo ftp address
             echo "The path of all bdd log in vsftpd is 'ftp://182.92.193.121"
             echo "If you want to open it in explorer, you should close VPN first."
@@ -162,16 +166,16 @@ matrix:
         - sudo -H pip install pexpect
         - sudo -H apt-get install expect
         - sudo -H apt-get install lftp
-        - chmod +x bdd/upload2Ftp.sh
+        - chmod +x bdd/upload2Ftp.sh bdd/targz_node.sh
     - os: linux
       dist: xenial
       go: 1.12.9
       env: multiple_nodes_bdd
       script:
-        #- go build -mod=vendor ./cmd/gptn
+        # - go build -mod=vendor ./cmd/gptn
         - make gptn
         #- cp bdd/light/testcases/!(preset.sh) bdd/node
-        - cp build/bin/gptn bdd/node
+        # - cp ./gptn bdd/node
         - cd bdd/node
         - chmod -R +x *
         - sudo -H chmod +w /etc/hosts
@@ -197,12 +201,12 @@ matrix:
         - sleep 2
         - cd ${BASE_DIR}
         - zip -j ./bdd/logs/zMulti-node.zip ./logs/zMulti-node/*
-        - |
-          if [ $IS_UPLOAD == 'true' ]; then
-            # uplaod all log
-            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH} ${TRAVIS_BUILD_NUMBER};
+        # - |
+        #   if [ $IS_UPLOAD == 'true' ]; then
+        #     # uplaod all log
+        #     ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH} ${TRAVIS_BUILD_NUMBER};
         - cd ${BASE_DIR}/bdd
-        - source ./targz_node.sh
+        - ./targz_node.sh multiNode
         - |
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
@@ -222,7 +226,7 @@ matrix:
         - sudo -H apt-get install jq
         - sudo -H apt-get install tcl tk expect
         - sudo -H apt-get install lftp
-        - chmod +x bdd/upload2Ftp.sh
+        - chmod +x bdd/upload2Ftp.sh bdd/targz_node.sh
     - os: linux
       dist: xenial
       go: 1.12.9
@@ -241,13 +245,15 @@ matrix:
       after_script:
         - killall gptn
         - sleep 2
-        - cd ${BASE_DIR}
-        - zip -j ./bdd/logs/mediatorVote_log.zip ./bdd/mediator-vote/node/log/*
+        - cd ${BASE_DIR}/bdd/mediator-vote
+#        - zip -j ./logs/mediatorVote_log.zip ./mediator-vote/node/log/*
+        - ./targz_node.sh mediatorVote
+        - cd ${BASE_DIR}/bdd
         - |
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
-            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH} ${TRAVIS_BUILD_NUMBER};
-            echo "The path of all bdd log in vsftpd is 'ftp://182.92.193.121"
+            ./upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH} ${TRAVIS_BUILD_NUMBER};
+            echo "The path of all bdd log in vsftpd is 'ftp://182.92.193.121";
           fi
       install:
         - sudo -H pip install --upgrade pip
@@ -258,7 +264,7 @@ matrix:
         - sudo -H pip install pexpect
         - sudo -H apt-get install expect
         - sudo -H apt-get install lftp
-        - chmod +x bdd/upload2Ftp.sh
+        - chmod +x bdd/upload2Ftp.sh bdd/mediator-vote/targz_node.sh
     - os: linux
       dist: xenial
       go: 1.12.9
@@ -277,13 +283,14 @@ matrix:
       after_script:
         - killall gptn
         - sleep 2
-        - cd ${BASE_DIR}
-        - zip -j ./bdd/logs/application_log.zip ./bdd/application/node/log/*
+        - cd ${BASE_DIR}/bdd
+        - zip -j ./logs/application_log.zip ./application/node/log/*
+        - ./targz_node.sh applicationBdd
         - |
           if [ $IS_UPLOAD == 'true' ]; then
             # uplaod all log
-            ./bdd/upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH} ${TRAVIS_BUILD_NUMBER};
-            echo "The path of all bdd log in vsftpd is 'ftp://182.92.193.121"
+            ./upload2Ftp.sh ${FTP_PWD} ${TRAVIS_BRANCH} ${TRAVIS_BUILD_NUMBER};
+            echo "The path of all bdd log in vsftpd is 'ftp://182.92.193.121";
           fi
       install:
         - sudo -H pip install --upgrade pip
@@ -294,7 +301,7 @@ matrix:
         - sudo -H pip install pexpect
         - sudo -H apt-get install expect
         - sudo -H apt-get install lftp
-        - chmod +x bdd/upload2Ftp.sh
+        - chmod +x bdd/upload2Ftp.sh bdd/targz_node.sh
     - os: linux
       env: usercontract_bdd_3-3
       dist: xenial
@@ -348,7 +355,7 @@ matrix:
         - sudo -H pip install pexpect
         - sudo -H apt-get install expect
         - sudo -H apt-get install lftp
-        - chmod +x bdd/upload2Ftp.sh
+        - chmod +x bdd/upload2Ftp.sh bdd/targz_node.sh
 
     # before_install:
     #     - go get -u github.com/palletone/adaptor

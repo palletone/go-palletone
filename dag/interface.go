@@ -39,7 +39,9 @@ type IDag interface {
 	GetCommon(key []byte, stableDb bool) ([]byte, error)
 	GetCommonByPrefix(prefix []byte, stableDb bool) map[string][]byte
 	SaveCommon(key, val []byte) error
+	GetAllData() ([][]byte, [][]byte)
 
+	MemdagInfos() (*modules.MemdagInfos, error)
 	IsEmpty() bool
 	GetStableChainIndex(token modules.AssetId) *modules.ChainIndex
 	CurrentUnit(token modules.AssetId) *modules.Unit
@@ -51,6 +53,7 @@ type IDag interface {
 	HasHeader(common.Hash, uint64) bool
 	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
+	GetHeadersByAuthor(authorAddr common.Address, startHeight, count uint64) ([]*modules.Header, error)
 	GetUnstableUnits() []*modules.Unit
 
 	CurrentHeader(token modules.AssetId) *modules.Header
@@ -69,12 +72,14 @@ type IDag interface {
 	ParentsIsConfirmByHash(hash common.Hash) bool
 	IsHeaderExist(hash common.Hash) bool
 	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error
-	CreateUnit(mAddr common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error)
+	//CreateUnit(mAddr common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error)
 
 	FastSyncCommitHead(common.Hash) error
 	GetGenesisUnit() (*modules.Unit, error)
 
 	GetContractState(contractid []byte, field string) ([]byte, *modules.StateVersion, error)
+	GetContractStateByVersion(id []byte, field string, version *modules.StateVersion) ([]byte, error)
+
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 	GetContractJury(contractId []byte) (*modules.ElectionNode, error)
@@ -120,7 +125,7 @@ type IDag interface {
 	SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error
 	SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription
 
-	IsSynced() bool
+	IsSynced(toStrictly bool) bool
 	SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription
 	GetPrecedingMediatorNodes() map[string]*discover.Node
 	UnitIrreversibleTime() time.Duration
@@ -142,7 +147,8 @@ type IDag interface {
 	GetLightChainHeight(assetId modules.AssetId) uint64
 	InsertLightHeader(headers []*modules.Header) (int, error)
 	GetAllLeafNodes() ([]*modules.Header, error)
-	ClearUtxo(addr common.Address) error
+	ClearUtxo() error
+	ClearAddrUtxo(addr common.Address) error
 	SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error
 
 	HeadUnitTime() int64
@@ -197,9 +203,13 @@ type IDag interface {
 	CreateTokenTransaction(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string,
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	ChainThreshold() int
+
 	CheckHeaderCorrect(number int) error
 	CheckUnitsCorrect(assetId string, number int) error
 	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
 	RebuildAddrTxIndex() error
 	GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, error)
+	GetJurorReward(jurorAdd common.Address) common.Address
+
+	SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription
 }

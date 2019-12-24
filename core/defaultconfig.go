@@ -25,6 +25,13 @@ const (
 	//DefaultTokenDecimal              = 8
 	DefaultChainID           = 1
 	DefaultPledgeDailyReward = 288745000
+	//DefaultPledgeDailyReward = 300000000
+	//当 t = 2 时，即按批分红，且继续质押，且提取时，tx_size = 2644 b,当前单元大小为 5 m = 5120 kb =>1,982.934947049924
+	//  即 t = 1时，tx_size = 1322 b unit =5120 kb,t = 3,872.919818456884
+	DefaultPledgeAllocateThreshold = 1000
+	//  当添加新质押地址 t = 2 时，tx_size = 1267 b,当前单元大小为 5 m = 5120 kb =>3,236.345679012346
+	//  即 t = 1 时， tx_size = 633.5 b,当前单元大小为 5 m = 5120 kb =>8,088.467614533965
+	DefaultPledgeRecordsThreshold = 2000
 	// DefaultTxCoinYearRate            = 0
 	DefaultRewardHeight              = 100
 	DefaultGenerateUnitReward        = 15000
@@ -66,7 +73,7 @@ const (
 	DefaultActiveMediatorCount = 5 //21
 	DefaultMinMediatorCount    = 1 //21
 	DefaultMinMediatorInterval = 1
-	DefaultMinMaintSkipSlots   = 2
+	DefaultMinMaintSkipSlots   = 0
 
 	//contract
 	DefaultContractSystemVersion = "" //contractId1:v1;contractId2:v2;contractId3:v3
@@ -137,11 +144,10 @@ const (
 	DefaultMaintenanceInterval  = 60 * 5 // 60 * 60 * 24 // seconds, aka: 1 day
 	DefaultMaintenanceSkipSlots = 0      //Devin: Don't change // 1 // number of slots to skip for maintenance interval
 
-	DefaultMediatorCreateFee  = 50000
-	DefaultAccountUpdateFee   = 5000
-	DefaultTransferPtnBaseFee = 5000
-	//DefaultTransferPtnPricePerKByte = 30000
-	DefaultTransferPtnPricePerKByte = 15000
+	DefaultMediatorCreateFee        = 50000
+	DefaultAccountUpdateFee         = 1000000
+	DefaultTransferPtnBaseFee       = 5000
+	DefaultTransferPtnPricePerKByte = 30000
 	DefaultContractInvokeFee        = 100000000
 
 	DefaultUnitMaxSize = 5 * 1024 * 1024 //5M

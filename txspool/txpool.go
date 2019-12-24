@@ -130,8 +130,9 @@ type TxDesc struct {
 func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit dags) *TxPool {
 	tokenEngine := tokenengine.Instance
 	pool := NewTxPool4DI(config, cachedb, unit, tokenEngine, nil)
-	val := validator.NewValidate(unit, pool, unit, unit, cachedb)
+	val := validator.NewValidate(unit, pool, unit, unit, cachedb, false)
 	pool.txValidator = val
+	pool.startJournal(config)
 	return pool
 }
 
@@ -157,6 +158,9 @@ func NewTxPool4DI(config TxPoolConfig, cachedb palletcache.ICache, unit dags,
 	pool.priority_sorted = newTxPrioritiedList(&pool.all)
 	pool.txValidator = validator
 
+	return pool
+}
+func (pool *TxPool) startJournal(config TxPoolConfig) {
 	// If local transactions and journaling is enabled, load from disk
 	if !config.NoLocals && config.Journal != "" {
 		log.Info("Journal path:" + config.Journal)
@@ -172,8 +176,6 @@ func NewTxPool4DI(config TxPoolConfig, cachedb palletcache.ICache, unit dags,
 	// Start the event loop and return
 	pool.wg.Add(1)
 	go pool.loop()
-
-	return pool
 }
 
 // return a utxo by the outpoint in txpool
@@ -552,6 +554,9 @@ func (pool *TxPool) add(tx *TxPoolTransaction, local bool) (bool, error) {
 // deemed to have been sent from a local account.
 func (pool *TxPool) journalTx(tx *TxPoolTransaction) {
 	// Only journal if it's enabled and the transaction is local
+	if pool.config.NoLocals {
+		return
+	}
 	if len(tx.From) > 0 {
 		if pool.journal == nil {
 			log.Trace("Pool journal is nil.", "journal", pool.journal.path)
@@ -787,7 +792,7 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction, rateLimit bo
 		return nil, err
 	}
 	_, err1 := pool.add(p_tx, !pool.config.NoLocals)
-	log.Debug("accepted tx and add pool.", "info", err1, "rateLimit", rateLimit)
+	log.Debug("accepted tx and add pool.", "err", err1, "rateLimit", rateLimit)
 	txdesc := new(TxDesc)
 	txdesc.Tx = tx
 	txdesc.Added = p_tx.CreationDate
@@ -971,10 +976,10 @@ func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*TxPoolTransaction, error) 
 // and nil otherwise.
 func (pool *TxPool) Get(hash common.Hash) (*TxPoolTransaction, common.Hash) {
 	var u_hash common.Hash
-	tx := new(TxPoolTransaction)
+	//tx := new(TxPoolTransaction)
 	interTx, has := pool.all.Load(hash)
 	if has {
-		tx = interTx.(*TxPoolTransaction)
+		tx := interTx.(*TxPoolTransaction)
 		if tx.Tx.Hash() != hash {
 			pool.all.Delete(hash)
 			pool.priority_sorted.Removed()
@@ -992,7 +997,7 @@ func (pool *TxPool) Get(hash common.Hash) (*TxPoolTransaction, common.Hash) {
 			return tx, u_hash
 		}
 	}
-	return tx, u_hash
+	return nil, u_hash
 }
 
 // DeleteTx
@@ -1192,6 +1197,9 @@ func (pool *TxPool) checkPoolDoubleSpend(tx *TxPoolTransaction) error {
 }
 
 func (pool *TxPool) OutPointIsSpend(outPoint *modules.OutPoint) (bool, error) {
+	if outPoint.TxHash.IsSelfHash() {
+		return false, nil
+	}
 	if tx, ok := pool.outpoints.Load(*outPoint); ok {
 		str := fmt.Sprintf("output %v already spent by "+
 			"transaction %x in the txpool",
@@ -1524,6 +1532,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 			tx.Pending = true
 			tx.UnitHash = hash
 			tx.UnitIndex = index
+			tx.IsOrphan = false
 			pool.all.Store(txhash, tx)
 			pool.orphans.Delete(txhash)
 			list = append(list, tx)

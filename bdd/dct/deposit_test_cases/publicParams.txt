@@ -31,6 +31,22 @@ Resource          GetAllMediators.txt
 Resource          GetAllNodes.txt
 Resource          getJuryBalance.txt
 Resource          getAllJury.txt
+Resource          mediatorListAll.txt
+Resource          mediatorListVoteResults.txt
+Resource          mediatorVote.txt
+Resource          mediatorGetVoted.txt
+Resource          pledgeDeposit.txt
+Resource          queryPledgeStatusByAddr.txt
+Resource          queryPledgeList.txt
+Resource          queryPledgeListByDate.txt
+Resource          queryAllPledgeHistory.txt
+Resource          PledgeWithdraw.txt
+Resource          HandlePledgeReward.txt
+Resource          isFinishAllocated.txt
+Resource          AddNewAddrPledgeRecords.txt
+Resource          AddNewAddrPledgeRecords.txt
+Resource          IsFinishAddNewRecords.txt
+Resource          QueryPledgeHistoryByAddr.txt
 
 *** Variables ***
 ${depositContractQuery}    contract_depositContractQuery

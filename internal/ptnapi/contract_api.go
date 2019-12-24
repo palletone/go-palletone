@@ -130,22 +130,26 @@ func (s *PrivateContractAPI) Ccinvoke(ctx context.Context, contractAddr string, 
 	return string(rsp), err
 }
 
-func (s *PublicContractAPI) Ccquery(ctx context.Context, contractAddr string, param []string, timeout uint32) (string, error) {
-	contractId, _ := common.StringToAddress(contractAddr)
-	//contractId, _ := hex.DecodeString(contractAddr)
-	rd, _ := crypto.GetRandomBytes(32)
-	txid := util.RlpHash(rd)
-	log.Info("Ccquery", "contractId", contractId, "txid", txid.String())
+func (s *PublicContractAPI) Ccquery(ctx context.Context, id string, param []string, timeout uint32) (string, error) {
+	var idByte []byte
+
+	log.Debugf("Ccquery, id len:%d, id[%s]", len(id), id)
+	//if len(id) > 35 {
+	//	idByte, _ = hex.DecodeString(id)
+	//}else{
+	//	idByte = []byte(id)
+	//}
+	idByte = []byte(id)
 	args := make([][]byte, len(param))
 	for i, arg := range param {
 		args[i] = []byte(arg)
-		log.Info("Ccquery", "param index:", i, "arg", arg)
+		log.Debug("Ccquery", "param index:", i, "arg", arg)
 	}
-
 	//参数前面加入msg0和msg1,这里为空
 	fullArgs := [][]byte{defaultMsg0, defaultMsg1}
 	fullArgs = append(fullArgs, args...)
-	rsp, err := s.b.ContractQuery(contractId.Bytes(), txid.String(), fullArgs, time.Duration(timeout)*time.Second)
+
+	rsp, err := s.b.ContractQuery(idByte, fullArgs, time.Duration(timeout)*time.Second)
 	if err != nil {
 		return "", err
 	}
@@ -602,7 +606,9 @@ func (s *PrivateContractAPI) DepositContractInvoke(ctx context.Context, from, to
 
 	rsp, err := s.Ccinvoketx(ctx, from, to, amount, fee, syscontract.DepositContractAddress.String(),
 		param, "", "0")
-
+	if err != nil {
+		return "", err
+	}
 	return rsp.ReqId, err
 }
 
@@ -684,7 +690,9 @@ func (s *PrivateContractAPI) SysConfigContractInvoke(ctx context.Context, from, 
 
 	rsp, err := s.Ccinvoketx(ctx, from, to, amount, fee, syscontract.SysConfigContractAddress.String(),
 		param, "", "0")
-
+	if err != nil {
+		return "", err
+	}
 	return rsp.ReqId, err
 }
 

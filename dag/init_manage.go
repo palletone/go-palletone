@@ -57,7 +57,7 @@ func (dag *Dag) InitPropertyDB(genesis *core.Genesis, unit *modules.Unit) error 
 
 	//  动态全局属性不是交易，不需要放在Unit中
 	// @author Albert·Gou
-	dgp := modules.InitDynGlobalProp(unit)
+	dgp := modules.InitDynGlobalProp()
 	if err := dag.stablePropRep.StoreDynGlobalProp(dgp); err != nil {
 		return err
 	}
@@ -93,7 +93,6 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, head *modules.Header) error {
 
 		mi := modules.NewMediatorInfo()
 		mi.MediatorInfoBase = imc.MediatorInfoBase
-		//*mi.MediatorApplyInfo = *imc.MediatorApplyInfo
 
 		err = dag.stableStateRep.StoreMediatorInfo(addr, mi)
 		if err != nil {
@@ -170,18 +169,18 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, head *modules.Header) error {
 	return nil
 }
 
-func (dag *Dag) IsSynced() bool {
-	//gp := dag.GetGlobalProp()
-	//dgp := dag.GetDynGlobalProp()
+func (dag *Dag) IsSynced(toStrictly bool) bool {
+	var now, nextSlotTime time.Time
 
-	//nowFine := time.Now()
-	//now := time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
-	now := time.Now()
-	// 防止误判，获取之后的第2个生产槽时间
-	//nextSlotTime := dag.unstablePropRep.GetSlotTime(gp, dgp, 1)
-	nextSlotTime := dag.unstablePropRep.GetSlotTime(2)
-	//_, _, _, rep, _ := dag.Memdag.GetUnstableRepositories()
-	//nextSlotTime := rep.GetSlotTime(2)
+	if toStrictly {
+		nowFine := time.Now()
+		now = time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
+		nextSlotTime = dag.unstablePropRep.GetSlotTime(1)
+	} else {
+		// 防止误判，获取之后的第3个生产槽时间
+		now = time.Now()
+		nextSlotTime = dag.unstablePropRep.GetSlotTime(3)
+	}
 
 	return nextSlotTime.After(now)
 }
@@ -202,22 +201,18 @@ func (d *Dag) UnitIrreversibleTime() time.Duration {
 	return time.Duration(it) * time.Second
 }
 
-func (d *Dag) IsIrreversibleUnit(hash common.Hash) bool {
+func (d *Dag) IsIrreversibleUnit(hash common.Hash) (bool, error) {
 	header, err := d.unstableUnitRep.GetHeaderByHash(hash)
 	if err != nil {
-		//return false // 存在于memdag，不稳定
-		header, err = d.stableUnitRep.GetHeaderByHash(hash)
-		if err != nil {
-			log.Debugf("UnitRep GetHeaderByHash error:%s", err.Error())
-			return false // 不存在该unit
-		}
+		log.Debugf("UnitRep GetHeaderByHash error:%s", err.Error())
+		return false, err // 不存在该unit
 	}
 
 	if header.NumberU64() > d.GetIrreversibleUnitNum(header.GetAssetId()) {
-		return false
+		return false, nil
 	}
 
-	return true
+	return true, nil
 }
 
 func (d *Dag) GetIrreversibleUnitNum(id modules.AssetId) uint64 {
@@ -233,20 +228,20 @@ func (d *Dag) GetIrreversibleUnitNum(id modules.AssetId) uint64 {
 func (d *Dag) VerifyUnitGroupSign(unitHash common.Hash, groupSign []byte) error {
 	header, err := d.GetHeaderByHash(unitHash)
 	if err != nil {
-		log.Debug(err.Error())
+		log.Debugf("get header of unit(%v) err: %v", unitHash.TerminalString(), err.Error())
 		return err
 	}
 
 	pubKey, err := header.GetGroupPubKey()
 	if err != nil {
-		log.Debug(err.Error())
+		log.Debugf("get pubKey of unit(%v) err: %v", unitHash.TerminalString(), err.Error())
 		return err
 	}
 
 	err = bls.Verify(core.Suite, pubKey, unitHash[:], groupSign)
 	if err != nil {
-		log.Debug("the group signature: " + hexutil.Encode(groupSign) + " of the Unit that hash: " +
-			unitHash.Hex() + " is verified that an error has occurred: " + err.Error())
+		log.Debugf("the group signature(%v)  of the unit(hash: %v , # %v )  have an error when verifying: %v",
+			hexutil.Encode(groupSign), unitHash.TerminalString(), header.NumberU64(), err.Error())
 		return err
 	}
 	return nil
@@ -271,4 +266,13 @@ func (dag *Dag) MediatorParticipationRate() uint32 {
 	participationRate := core.PalletOne100Percent * int(recentSlotsFilled.PopCount()) / 128
 
 	return uint32(participationRate)
+}
+
+// subscribe active mediators updated event
+func (d *Dag) SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription {
+	return d.unstableUnitProduceRep.SubscribeActiveMediatorsUpdatedEvent(ch)
+}
+
+func (d *Dag) SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription {
+	return d.unstableRepositoryUpdatedScope.Track(d.unstableRepositoryUpdatedFeed.Subscribe(ch))
 }

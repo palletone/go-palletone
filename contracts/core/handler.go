@@ -1589,8 +1589,8 @@ func (handler *Handler) enterBusyState(e *fsm.Event, state string) {
 
 			// Execute the chaincode... this CANNOT be an init at least for now
 			response, execErr := handler.chaincodeSupport.Execute(ctxt, cccid, ccMsg, timeout)
-			log.Infof("----------------2-------------------------------%s\n\n\n\n\n", response)
-			log.Infof("-----------------2------------------------------%s\n\n\n\n\n", string(response.Payload))
+			//log.Infof("----------------2-------------------------------%s\n\n\n\n\n", response)
+			//log.Infof("-----------------2------------------------------%s\n\n\n\n\n", string(response.Payload))
 			//payload is marshaled and send to the calling chaincode's shim which unmarshals and
 			//sends it to chaincode
 			res = nil
@@ -1956,7 +1956,7 @@ func (handler *Handler) handleMessage(msg *pb.ChaincodeMessage) error {
 }
 
 func (handler *Handler) sendExecuteMessage(ctxt context.Context, chainID string, msg *pb.ChaincodeMessage, signedProp *pb.SignedProposal, prop *pb.Proposal) (chan *pb.ChaincodeMessage, error) {
-	log.Infof("+++++++++++++++++ msg.Txid[%s]", msg.Txid)
+	log.Debugf("+++++++++++++++++ msg.Txid[%s]", msg.Txid)
 
 	txctx, err := handler.createTxContext(ctxt, chainID, msg.Txid, signedProp, prop)
 	if err != nil {

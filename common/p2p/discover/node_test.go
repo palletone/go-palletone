@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/stretchr/testify/require"
 )
 
 func ExampleNewNode() {
@@ -332,4 +333,21 @@ func (NodeID) Generate(rand *rand.Rand, size int) reflect.Value {
 		id[i] = byte(rand.Uint32())
 	}
 	return reflect.ValueOf(id)
+}
+
+func TestNodeParseAndString(t *testing.T) {
+	nodeStr := "pnode://6c328211322f6c7c804536223555a3c03a8f806a20eecfb635b9f82e34e70a7baeeff6e6ad0f6b67bea" +
+		"310b8ff2229028e5d6bad55005bbc9cacbc589e655aad@ptn.gravitypool.io:30303"
+
+	node, err := ParseNode(nodeStr)
+	if err != nil {
+		t.Logf("test %q:\n  unexpected error: %v", nodeStr, err)
+	}
+
+	str := node.String()
+	if str != nodeStr {
+		t.Logf("test Node.String() mismatch: \n got:  %s \n want: %s", str, nodeStr)
+	}
+
+	require.NotEqual(t, str, nodeStr)
 }

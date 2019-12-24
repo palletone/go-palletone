@@ -53,7 +53,8 @@ type IUnitRepository interface {
 	GetGenesisUnit() (*modules.Unit, error)
 	//GenesisHeight() modules.ChainIndex
 	SaveUnit(unit *modules.Unit, isGenesis bool) error
-	CreateUnit(mAddr common.Address, txpool txspool.ITxPool, propdb IPropRepository, t time.Time) (*modules.Unit, error)
+	CreateUnit(mediatorReward common.Address, txpool txspool.ITxPool, propdb IPropRepository,
+		getJurorRewardFunc modules.GetJurorRewardAddFunc) (*modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
 	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
@@ -62,6 +63,7 @@ type IUnitRepository interface {
 	SaveNewestHeader(header *modules.Header) error
 	SaveHeaders(headers []*modules.Header) error
 	GetHeaderByNumber(index *modules.ChainIndex) (*modules.Header, error)
+	GetHeadersByAuthor(authorAddr common.Address, startHeight, count uint64) ([]*modules.Header, error)
 	IsHeaderExist(uHash common.Hash) (bool, error)
 	GetHashByNumber(number *modules.ChainIndex) (common.Hash, error)
 
@@ -75,6 +77,7 @@ type IUnitRepository interface {
 	GetTxLookupEntry(hash common.Hash) (*modules.TxLookupEntry, error)
 	GetCommon(key []byte) ([]byte, error)
 	GetCommonByPrefix(prefix []byte) map[string][]byte
+	GetAllData() ([][]byte, [][]byte)
 	//GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	//GetAddrOutput(addr string) ([]modules.Output, error)
@@ -166,9 +169,9 @@ func (rep *UnitRepository) GetHeaderByHash(hash common.Hash) (*modules.Header, e
 	return rep.dagdb.GetHeaderByHash(hash)
 }
 func (rep *UnitRepository) GetHeaderList(hash common.Hash, parentCount int) ([]*modules.Header, error) {
-	log.Debugf("GetHeaderList unitRepository lock [%s].", hash.String())
 	rep.lock.RLock()
-	defer log.Debugf("GetHeaderList unitRepository unlock [%s].", hash.String())
+	//log.Debugf("GetHeaderList unitRepository lock [%s].", hash.String())
+	//defer log.Debugf("GetHeaderList unitRepository unlock [%s].", hash.String())
 	defer rep.lock.RUnlock()
 	result := []*modules.Header{}
 	uhash := hash
@@ -199,15 +202,53 @@ func (rep *UnitRepository) SaveHeaders(headers []*modules.Header) error {
 	return rep.dagdb.SaveHeaders(headers)
 }
 func (rep *UnitRepository) GetHeaderByNumber(index *modules.ChainIndex) (*modules.Header, error) {
-	log.Debugf("GetHeaderByNumber unitRepository lock [%s].", index.String())
 	rep.lock.RLock()
-	defer log.Debugf("GetHeaderByNumber unitRepository unlock [%s].", index.String())
+	//log.Debugf("GetHeaderByNumber unitRepository lock [%s].", index.String())
+	//defer log.Debugf("GetHeaderByNumber unitRepository unlock [%s].", index.String())
 	defer rep.lock.RUnlock()
 	hash, err := rep.dagdb.GetHashByNumber(index)
 	if err != nil {
 		return nil, err
 	}
 	return rep.dagdb.GetHeaderByHash(hash)
+}
+func (rep *UnitRepository) GetHeadersByAuthor(authorAddr common.Address, startHeight, count uint64) ([]*modules.Header, error) {
+	token := dagconfig.DefaultConfig.GetGasToken()
+	var uHash common.Hash
+	var err error
+	if startHeight == 0 {
+		hash, _, _, err := rep.propdb.GetNewestUnit(token)
+		if err != nil {
+			return nil, err
+		}
+		uHash = hash
+	} else {
+		uHash, err = rep.dagdb.GetHashByNumber(modules.NewChainIndex(token, startHeight))
+		if err != nil {
+			return nil, err
+		}
+	}
+	result := []*modules.Header{}
+	findCount := uint64(0)
+	for {
+		header, err := rep.dagdb.GetHeaderByHash(uHash)
+		if err != nil {
+			return nil, err
+		}
+		if header.NumberU64() == 0 {
+			break
+		}
+		uHash = header.ParentsHash[0]
+		author := header.Author()
+		if author.Equal(authorAddr) {
+			result = append(result, header)
+			findCount++
+		}
+		if findCount == count {
+			break
+		}
+	}
+	return result, nil
 }
 
 func (rep *UnitRepository) IsHeaderExist(uHash common.Hash) (bool, error) {
@@ -219,9 +260,9 @@ func (rep *UnitRepository) IsTransactionExist(txHash common.Hash) (bool, error) 
 }
 
 func (rep *UnitRepository) GetUnit(hash common.Hash) (*modules.Unit, error) {
-	log.Debugf("GetUnit unitRepository lock [%s].", hash.String())
 	rep.lock.RLock()
-	defer log.Debugf("GetUnit unitRepository unlock [%s].", hash.String())
+	//log.Debugf("GetUnit unitRepository lock [%s].", hash.String())
+	//defer log.Debugf("GetUnit unitRepository unlock [%s].", hash.String())
 	defer rep.lock.RUnlock()
 	return rep.getUnit(hash)
 }
@@ -277,6 +318,9 @@ func (rep *UnitRepository) GetCommon(key []byte) ([]byte, error) { return rep.da
 func (rep *UnitRepository) GetCommonByPrefix(prefix []byte) map[string][]byte {
 	return rep.dagdb.GetCommonByPrefix(prefix)
 }
+func (rep *UnitRepository) GetAllData() ([][]byte, [][]byte) {
+	return rep.dagdb.GetAllData()
+}
 func (rep *UnitRepository) SaveCommon(key, val []byte) error {
 	return rep.dagdb.SaveCommon(key, val)
 }
@@ -326,6 +370,10 @@ func (rep *UnitRepository) GetAssetTxHistory(asset *modules.Asset) ([]*modules.T
 	return result, nil
 }
 
+func (rep *UnitRepository) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error) {
+	return rep.utxoRepository.ComputeTxFee(pay)
+}
+
 //func (rep *UnitRepository) SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error {
 //	return rep.dagdb.SaveNumberByHash(uHash, number)
 //}
@@ -357,7 +405,7 @@ generate genesis unit, need genesis unit configure fields and transactions list
 parentUnitHeight=-1,means don't have parent unit
 */
 func NewGenesisUnit(txs modules.Transactions, time int64, asset *modules.Asset, parentUnitHeight int64,
-	parentUnitHash common.Hash) (*modules.Unit, error) {
+	parentUnitHash common.Hash) *modules.Unit {
 	gUnit := &modules.Unit{}
 
 	// genesis unit height
@@ -383,7 +431,7 @@ func NewGenesisUnit(txs modules.Transactions, time int64, asset *modules.Asset, 
 	gUnit.UnitSize = gUnit.Size()
 	// set unit hash
 	gUnit.UnitHash = gUnit.Hash()
-	return gUnit, nil
+	return gUnit
 }
 
 // WithSignature, returns a new unit with the given signature.
@@ -425,9 +473,9 @@ create common unit
 @param mAddr is minner addr
 return: correct if error is nil, and otherwise is incorrect
 */
-func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPool,
-	propdb IPropRepository, t time.Time) (*modules.Unit, error) {
-	log.Debug("create unit lock unitRepository.")
+func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txspool.ITxPool,
+	propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc) (*modules.Unit, error) {
+	//log.Debug("create unit lock unitRepository.")
 	rep.lock.RLock()
 	defer rep.lock.RUnlock()
 	begin := time.Now()
@@ -453,7 +501,7 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 	}
 	header.ParentsHash = append(header.ParentsHash, phash)
 	h_hash := header.HashWithOutTxRoot()
-	log.Infof("Start txpool.GetSortedTxs..., parent hash:%s", phash.String())
+	log.Debugf("Start txpool.GetSortedTxs..., parent hash:%s", phash.String())
 
 	// step4. get transactions from txspool
 	poolTxs, _ := txpool.GetSortedTxs(h_hash, chainIndex.Index)
@@ -466,7 +514,7 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 	for _, tx := range poolTxs {
 		txs2 = append(txs2, tx.Tx)
 	}
-	ads, err := rep.ComputeTxFeesAllocate(mAddr, txs2)
+	ads, err := rep.ComputeTxFeesAllocate(mediatorReward, txs2, getJurorRewardFunc)
 	if err != nil {
 		txs2Ids := ""
 		for _, tx := range txs2 {
@@ -482,7 +530,7 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 	}
 
 	//出块奖励
-	rewardAd := rep.ComputeGenerateUnitReward(mAddr, assetId.ToAsset())
+	rewardAd := rep.ComputeGenerateUnitReward(mediatorReward, assetId.ToAsset())
 	if rewardAd != nil && rewardAd.Amount > 0 {
 		ads = append(ads, rewardAd)
 	}
@@ -496,8 +544,7 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 	}
 	txs := make(modules.Transactions, 0)
 	if len(outAds) > 0 {
-		log.Debug("=======================Is rewards && coinbase tx info ================",
-			"amount", rewards, "hash", coinbase.Hash().String())
+		log.Debug("rewards && coinbase tx: ", "amount", rewards, "hash", coinbase.Hash().String())
 		txs = append(txs, coinbase)
 	}
 
@@ -538,7 +585,8 @@ func (rep *UnitRepository) CreateUnit(mAddr common.Address, txpool txspool.ITxPo
 
 	// step11. set size
 	unit.UnitSize = unit.Size()
-	log.Debugf("CreateUnit[%s] and create unit unlock unitRepository cost time %s", unit.UnitHash.String(), time.Since(begin))
+	log.Debugf("Create Unit[%s]  cost time %s", unit.UnitHash.String(), time.Since(begin))
+
 	return unit, nil
 }
 
@@ -601,8 +649,9 @@ func (txs *tempTxs) getUtxoEntryFromTxs(outpoint *modules.OutPoint) (*modules.Ut
 	}
 	return txs.rep.GetUtxoEntry(outpoint)
 }
-func (rep *UnitRepository) ComputeTxFeesAllocate(m common.Address, txs []*modules.Transaction) (
-	[]*modules.Addition, error) {
+
+func (rep *UnitRepository) ComputeTxFeesAllocate(mediatorReward common.Address, txs []*modules.Transaction,
+	getJurorRewardFunc modules.GetJurorRewardAddFunc) ([]*modules.Addition, error) {
 
 	ads := make([]*modules.Addition, 0)
 	tempTxs := &tempTxs{allUtxo: make(map[modules.OutPoint]*modules.Utxo), rep: rep.utxoRepository}
@@ -611,7 +660,8 @@ func (rep *UnitRepository) ComputeTxFeesAllocate(m common.Address, txs []*module
 		for o, u := range utxos {
 			tempTxs.allUtxo[o] = u
 		}
-		allowcate, err := tx.GetTxFeeAllocate(tempTxs.getUtxoEntryFromTxs, rep.tokenEngine.GetScriptSigners, m)
+		allowcate, err := tx.GetTxFeeAllocate(tempTxs.getUtxoEntryFromTxs,
+			rep.tokenEngine.GetScriptSigners, mediatorReward, getJurorRewardFunc)
 		if err != nil {
 			return nil, err
 		}
@@ -622,9 +672,9 @@ func (rep *UnitRepository) ComputeTxFeesAllocate(m common.Address, txs []*module
 }
 
 //,Mediator奖励
-func (rep *UnitRepository) ComputeGenerateUnitReward(m common.Address, asset *modules.Asset) *modules.Addition {
+func (rep *UnitRepository) ComputeGenerateUnitReward(mediatorReward common.Address, asset *modules.Asset) *modules.Addition {
 	a := &modules.Addition{
-		Addr:   m,
+		Addr:   mediatorReward,
 		Amount: ComputeGenerateUnitReward(),
 		Asset:  asset,
 	}
@@ -843,9 +893,9 @@ save genesis unit data
 */
 func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 	tt := time.Now()
-	log.Debugf("saveUnit[%s] lock unitRepository.", unit.UnitHash.String())
 	rep.lock.Lock()
-	defer log.Debugf("saveUnit[%s] and unlock unitRepository cost time: %s", unit.UnitHash.String(), time.Since(tt))
+	//log.Debugf("saveUnit[%s] lock unitRepository.", unit.UnitHash.String())
+	defer log.Debugf("save Unit[%s] cost time: %s", unit.UnitHash.String(), time.Since(tt))
 	defer rep.lock.Unlock()
 	uHash := unit.Hash()
 	// step1. save unit header
@@ -1206,7 +1256,7 @@ func (rep *UnitRepository) saveContractInvokePayload(tx *modules.Transaction, he
 		return false
 	}
 
-	if common.IsSystemContractAddress(payload.ContractId) && payload.ErrMsg.Code == 0 {
+	if common.IsSystemContractId(payload.ContractId) && payload.ErrMsg.Code == 0 {
 		eventArg := &modules.SysContractStateChangeEvent{ContractId: payload.ContractId, WriteSet: payload.WriteSet}
 		for _, eventFunc := range rep.observers {
 			eventFunc(eventArg)
@@ -1581,9 +1631,9 @@ To Sign transaction
 
 // GetAddrTransactions containing from && to address
 func (rep *UnitRepository) GetAddrTransactions(address common.Address) ([]*modules.TransactionWithUnitInfo, error) {
-	log.Debug("getAddrTxs unitRepository lock.")
 	rep.lock.RLock()
-	defer log.Debug("getAddrTxs unitRepository unlock.")
+	//log.Debug("getAddrTxs unitRepository lock.")
+	//defer log.Debug("getAddrTxs unitRepository unlock.")
 	defer rep.lock.RUnlock()
 	hashs, err := rep.idxdb.GetAddressTxIds(address)
 	if err != nil {
@@ -1642,9 +1692,9 @@ func (rep *UnitRepository) GetFileInfoByHash(hashs []common.Hash) ([]*modules.Fi
 }
 
 func (rep *UnitRepository) GetLastIrreversibleUnit(assetID modules.AssetId) (*modules.Unit, error) {
-	log.Debug("GetLastIrreversibleUnit unitRepository lock.")
 	rep.lock.RLock()
-	defer log.Debug("GetLastIrreversibleUnit unitRepository unlock.")
+	//log.Debug("GetLastIrreversibleUnit unitRepository lock.")
+	//defer log.Debug("GetLastIrreversibleUnit unitRepository unlock.")
 	defer rep.lock.RUnlock()
 	hash, _, _, err := rep.propdb.GetNewestUnit(assetID)
 	if err != nil {
@@ -1654,9 +1704,9 @@ func (rep *UnitRepository) GetLastIrreversibleUnit(assetID modules.AssetId) (*mo
 }
 
 func (rep *UnitRepository) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error) {
-	log.Debug("GetTxFromAddress unitRepository lock.")
 	rep.lock.RLock()
-	defer log.Debug("GetTxFromAddress unitRepository unlock.")
+	//log.Debug("GetTxFromAddress unitRepository lock.")
+	//defer log.Debug("GetTxFromAddress unitRepository unlock.")
 	defer rep.lock.RUnlock()
 	result := []common.Address{}
 	for _, msg := range tx.TxMessages {
@@ -1677,12 +1727,13 @@ func (rep *UnitRepository) GetTxFromAddress(tx *modules.Transaction) ([]common.A
 	return result, nil
 }
 func (rep *UnitRepository) RefreshAddrTxIndex() error {
-	log.Debugf("RefreshAddrTxIndex unitRepository lock.")
 	rep.lock.RLock()
+	//log.Debugf("RefreshAddrTxIndex unitRepository lock.")
 	defer func() {
 		rep.lock.RUnlock()
-		log.Debug("RefreshAddrTxIndex unitRepository unlock.")
+		//log.Debug("RefreshAddrTxIndex unitRepository unlock.")
 	}()
+
 	if !dagconfig.DagConfig.AddrTxsIndex {
 		return errors.New("Please enable AddrTxsIndex in toml DagConfig")
 	}

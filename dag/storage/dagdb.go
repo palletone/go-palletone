@@ -69,6 +69,7 @@ type IDagDb interface {
 	GetCommon(key []byte) ([]byte, error)
 	GetCommonByPrefix(prefix []byte) map[string][]byte
 	SaveCommon(key, val []byte) error
+	GetAllData() ([][]byte, [][]byte)
 	// get txhash  and save index
 	//GetReqIdByTxHash(hash common.Hash) (common.Hash, error)
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
@@ -101,6 +102,11 @@ func (dagdb *DagDb) GetCommonByPrefix(prefix []byte) map[string][]byte {
 	}
 	return result
 }
+
+func (dagdb *DagDb) GetAllData() ([][]byte, [][]byte) {
+	return getAllData(dagdb.db)
+}
+
 func (dagdb *DagDb) GetGenesisUnitHash() (common.Hash, error) {
 	hash := common.Hash{}
 	hashb, err := dagdb.db.Get(constants.GenesisUnitHash)

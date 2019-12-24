@@ -88,6 +88,32 @@ func (mr *MockIDagMockRecorder) SaveCommon(key, val interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveCommon", reflect.TypeOf((*MockIDag)(nil).SaveCommon), key, val)
 }
 
+// GetAllData mocks base method
+func (m *MockIDag) GetAllData() ([][]byte, [][]byte) {
+	ret := m.ctrl.Call(m, "GetAllData")
+	ret0, _ := ret[0].([][]byte)
+	ret1, _ := ret[1].([][]byte)
+	return ret0, ret1
+}
+
+// GetAllData indicates an expected call of GetAllData
+func (mr *MockIDagMockRecorder) GetAllData() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllData", reflect.TypeOf((*MockIDag)(nil).GetAllData))
+}
+
+// MemdagInfos mocks base method
+func (m *MockIDag) MemdagInfos() (*modules.MemdagInfos, error) {
+	ret := m.ctrl.Call(m, "MemdagInfos")
+	ret0, _ := ret[0].(*modules.MemdagInfos)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MemdagInfos indicates an expected call of MemdagInfos
+func (mr *MockIDagMockRecorder) MemdagInfos() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MemdagInfos", reflect.TypeOf((*MockIDag)(nil).MemdagInfos))
+}
+
 // IsEmpty mocks base method
 func (m *MockIDag) IsEmpty() bool {
 	ret := m.ctrl.Call(m, "IsEmpty")
@@ -222,6 +248,19 @@ func (m *MockIDag) GetHeaderByHash(arg0 common.Hash) (*modules.Header, error) {
 // GetHeaderByHash indicates an expected call of GetHeaderByHash
 func (mr *MockIDagMockRecorder) GetHeaderByHash(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeaderByHash", reflect.TypeOf((*MockIDag)(nil).GetHeaderByHash), arg0)
+}
+
+// GetHeadersByAuthor mocks base method
+func (m *MockIDag) GetHeadersByAuthor(authorAddr common.Address, startHeight, count uint64) ([]*modules.Header, error) {
+	ret := m.ctrl.Call(m, "GetHeadersByAuthor", authorAddr, startHeight, count)
+	ret0, _ := ret[0].([]*modules.Header)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetHeadersByAuthor indicates an expected call of GetHeadersByAuthor
+func (mr *MockIDagMockRecorder) GetHeadersByAuthor(authorAddr, startHeight, count interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeadersByAuthor", reflect.TypeOf((*MockIDag)(nil).GetHeadersByAuthor), authorAddr, startHeight, count)
 }
 
 // GetUnstableUnits mocks base method
@@ -400,19 +439,6 @@ func (mr *MockIDagMockRecorder) SaveUnit(unit, txpool, isGenesis interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveUnit", reflect.TypeOf((*MockIDag)(nil).SaveUnit), unit, txpool, isGenesis)
 }
 
-// CreateUnit mocks base method
-func (m *MockIDag) CreateUnit(mAddr common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error) {
-	ret := m.ctrl.Call(m, "CreateUnit", mAddr, txpool, t)
-	ret0, _ := ret[0].(*modules.Unit)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreateUnit indicates an expected call of CreateUnit
-func (mr *MockIDagMockRecorder) CreateUnit(mAddr, txpool, t interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUnit", reflect.TypeOf((*MockIDag)(nil).CreateUnit), mAddr, txpool, t)
-}
-
 // FastSyncCommitHead mocks base method
 func (m *MockIDag) FastSyncCommitHead(arg0 common.Hash) error {
 	ret := m.ctrl.Call(m, "FastSyncCommitHead", arg0)
@@ -450,6 +476,19 @@ func (m *MockIDag) GetContractState(contractid []byte, field string) ([]byte, *m
 // GetContractState indicates an expected call of GetContractState
 func (mr *MockIDagMockRecorder) GetContractState(contractid, field interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractState", reflect.TypeOf((*MockIDag)(nil).GetContractState), contractid, field)
+}
+
+// GetContractStateByVersion mocks base method
+func (m *MockIDag) GetContractStateByVersion(id []byte, field string, version *modules.StateVersion) ([]byte, error) {
+	ret := m.ctrl.Call(m, "GetContractStateByVersion", id, field, version)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetContractStateByVersion indicates an expected call of GetContractStateByVersion
+func (mr *MockIDagMockRecorder) GetContractStateByVersion(id, field, version interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractStateByVersion", reflect.TypeOf((*MockIDag)(nil).GetContractStateByVersion), id, field, version)
 }
 
 // GetContractStatesById mocks base method
@@ -910,15 +949,15 @@ func (mr *MockIDagMockRecorder) SubscribeToGroupSignEvent(ch interface{}) *gomoc
 }
 
 // IsSynced mocks base method
-func (m *MockIDag) IsSynced() bool {
-	ret := m.ctrl.Call(m, "IsSynced")
+func (m *MockIDag) IsSynced(isStrict bool) bool {
+	ret := m.ctrl.Call(m, "IsSynced", isStrict)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
 // IsSynced indicates an expected call of IsSynced
-func (mr *MockIDagMockRecorder) IsSynced() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSynced", reflect.TypeOf((*MockIDag)(nil).IsSynced))
+func (mr *MockIDagMockRecorder) IsSynced(isStrict interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSynced", reflect.TypeOf((*MockIDag)(nil).IsSynced), isStrict)
 }
 
 // SubscribeActiveMediatorsUpdatedEvent mocks base method
@@ -1101,15 +1140,27 @@ func (mr *MockIDagMockRecorder) GetAllLeafNodes() *gomock.Call {
 }
 
 // ClearUtxo mocks base method
-func (m *MockIDag) ClearUtxo(addr common.Address) error {
-	ret := m.ctrl.Call(m, "ClearUtxo", addr)
+func (m *MockIDag) ClearUtxo() error {
+	ret := m.ctrl.Call(m, "ClearUtxo")
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ClearUtxo indicates an expected call of ClearUtxo
-func (mr *MockIDagMockRecorder) ClearUtxo(addr interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearUtxo", reflect.TypeOf((*MockIDag)(nil).ClearUtxo), addr)
+func (mr *MockIDagMockRecorder) ClearUtxo() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearUtxo", reflect.TypeOf((*MockIDag)(nil).ClearUtxo))
+}
+
+// ClearAddrUtxo mocks base method
+func (m *MockIDag) ClearAddrUtxo(addr common.Address) error {
+	ret := m.ctrl.Call(m, "ClearAddrUtxo", addr)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ClearAddrUtxo indicates an expected call of ClearAddrUtxo
+func (mr *MockIDagMockRecorder) ClearAddrUtxo(addr interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearAddrUtxo", reflect.TypeOf((*MockIDag)(nil).ClearAddrUtxo), addr)
 }
 
 // SaveUtxoView mocks base method
@@ -1694,4 +1745,28 @@ func (m *MockIDag) GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, 
 // GetJurorByAddrHash indicates an expected call of GetJurorByAddrHash
 func (mr *MockIDagMockRecorder) GetJurorByAddrHash(hash interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetJurorByAddrHash", reflect.TypeOf((*MockIDag)(nil).GetJurorByAddrHash), hash)
+}
+
+// GetJurorReward mocks base method
+func (m *MockIDag) GetJurorReward(jurorAdd common.Address) common.Address {
+	ret := m.ctrl.Call(m, "GetJurorReward", jurorAdd)
+	ret0, _ := ret[0].(common.Address)
+	return ret0
+}
+
+// GetJurorReward indicates an expected call of GetJurorReward
+func (mr *MockIDagMockRecorder) GetJurorReward(jurorAdd interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetJurorReward", reflect.TypeOf((*MockIDag)(nil).GetJurorReward), jurorAdd)
+}
+
+// SubscribeUnstableRepositoryUpdatedEvent mocks base method
+func (m *MockIDag) SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription {
+	ret := m.ctrl.Call(m, "SubscribeUnstableRepositoryUpdatedEvent", ch)
+	ret0, _ := ret[0].(event.Subscription)
+	return ret0
+}
+
+// SubscribeUnstableRepositoryUpdatedEvent indicates an expected call of SubscribeUnstableRepositoryUpdatedEvent
+func (mr *MockIDagMockRecorder) SubscribeUnstableRepositoryUpdatedEvent(ch interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeUnstableRepositoryUpdatedEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeUnstableRepositoryUpdatedEvent), ch)
 }

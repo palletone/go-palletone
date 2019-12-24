@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developer Albert·Gou <dev@pallet.one>
  * @date 2018/11/05
@@ -22,7 +23,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -45,10 +45,10 @@ func NewPublicMediatorAPI(b Backend) *PublicMediatorAPI {
 func (a *PublicMediatorAPI) IsApproved(addStr string) (string, error) {
 	// 构建参数
 	cArgs := [][]byte{defaultMsg0, defaultMsg1, []byte(modules.IsApproved), []byte(addStr)}
-	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
+	//txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(100000000))
 
 	// 调用系统合约
-	rsp, err := a.ContractQuery(syscontract.DepositContractAddress.Bytes(), txid[:], cArgs, 0)
+	rsp, err := a.ContractQuery([]byte(syscontract.DepositContractAddress.Str()), cArgs, 0)
 	if err != nil {
 		return "", err
 	}
@@ -59,10 +59,10 @@ func (a *PublicMediatorAPI) IsApproved(addStr string) (string, error) {
 func getDeposit(addStr string, a Backend) (*modules.MediatorDepositJson, error) {
 	// 构建参数
 	cArgs := [][]byte{defaultMsg0, defaultMsg1, []byte(modules.GetMediatorDeposit), []byte(addStr)}
-	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().Unix())).Int31n(100000000))
+	//txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().Unix())).Int31n(100000000))
 
 	// 调用系统合约
-	rsp, err := a.ContractQuery(syscontract.DepositContractAddress.Bytes(), txid[:], cArgs, 0)
+	rsp, err := a.ContractQuery([]byte(syscontract.DepositContractAddress.Str()), cArgs, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -112,14 +112,19 @@ func (a *PublicMediatorAPI) ListVoteResults() map[string]uint64 {
 }
 
 func (a *PublicMediatorAPI) ListVotingFor(addStr string) (map[string]uint64, error) {
-	mediator, err := common.StringToAddress(addStr)
+	_, err := common.StringToAddress(addStr)
 	if err != nil {
 		return nil, err
 	}
 
-	if !a.Dag().IsMediator(mediator) {
-		return nil, fmt.Errorf("%v is not mediator", addStr)
-	}
+	//mediator, err := common.StringToAddress(addStr)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//if !a.Dag().IsMediator(mediator) {
+	//	return nil, fmt.Errorf("%v is not mediator", addStr)
+	//}
 
 	res, _ := a.Dag().GetVotingForMediator(addStr)
 	return res, nil
@@ -167,9 +172,9 @@ func (a *PublicMediatorAPI) GetVoted(addStr string) ([]string, error) {
 
 func (a *PublicMediatorAPI) GetNextUpdateTime() string {
 	dgp := a.Dag().GetDynGlobalProp()
-	time := time.Unix(int64(dgp.NextMaintenanceTime), 0)
+	t := time.Unix(int64(dgp.NextMaintenanceTime), 0)
 
-	return time.Format("2006-01-02 15:04:05")
+	return t.Format("2006-01-02 15:04:05")
 }
 
 func (a *PublicMediatorAPI) GetInfo(addStr string) (*modules.MediatorInfo, error) {
@@ -205,47 +210,40 @@ type TxExecuteResult struct {
 	Warning   string      `json:"warning"`   // 警告
 }
 
-func (a *PrivateMediatorAPI) Apply(args modules.MediatorCreateArgs) (*TxExecuteResult, error) {
+func (a *PrivateMediatorAPI) Apply(args modules.MediatorCreateArgs, fee decimal.Decimal) (*TxExecuteResult, error) {
 	// 参数补全
 	if args.MediatorApplyInfo == nil {
 		args.MediatorApplyInfo = core.NewMediatorApplyInfo()
 	}
-
 	// 参数验证
 	if args.MediatorInfoBase == nil {
 		return nil, fmt.Errorf("invalid args, is null")
 	}
-
 	addr, _, err := args.Validate()
 	if err != nil {
 		return nil, err
 	}
-
 	// 判断本节点是否同步完成，数据是否最新
-	if !a.Dag().IsSynced() {
+	if !a.Dag().IsSynced(false) {
 		return nil, fmt.Errorf("this node is not synced, and can't apply mediator now")
 	}
-
 	// 判断是否已经是mediator
 	if a.Dag().IsMediator(addr) {
 		return nil, fmt.Errorf("account %v is already a mediator", args.AddStr)
 	}
-
 	// 参数序列化
 	argsB, err := json.Marshal(args)
 	if err != nil {
 		return nil, err
 	}
 	cArgs := [][]byte{[]byte(modules.ApplyMediator), argsB}
-
+	daofee := ptnjson.Ptn2Dao(fee)
 	// 调用系统合约
-	fee := a.Dag().GetChainParameters().MediatorCreateFee
-	reqId, err := a.ContractInvokeReqTx(addr, addr, 0, fee, nil,
+	reqId, err := a.ContractInvokeReqTx(addr, addr, 0, daofee, nil,
 		syscontract.DepositContractAddress, cArgs, 0)
 	if err != nil {
 		return nil, err
 	}
-
 	// 返回执行结果
 	res := &TxExecuteResult{}
 	res.TxContent = fmt.Sprintf("account(%v) apply mediator with rewardAdd: %v, initPubKey: %v, node: %v, "+
@@ -271,7 +269,7 @@ func (a *PrivateMediatorAPI) PayDeposit(from string, amount decimal.Decimal) (*T
 	}
 
 	// 判断本节点是否同步完成，数据是否最新
-	if !a.Dag().IsSynced() {
+	if !a.Dag().IsSynced(false) {
 		return nil, fmt.Errorf("this node is not synced, and can't pay deposit now")
 	}
 
@@ -323,7 +321,7 @@ func (a *PrivateMediatorAPI) Quit(medAddStr string) (*TxExecuteResult, error) {
 	}
 
 	// 判断本节点是否同步完成，数据是否最新
-	if !a.Dag().IsSynced() {
+	if !a.Dag().IsSynced(false) {
 		return nil, fmt.Errorf("this node is not synced, and can't quit now")
 	}
 
@@ -360,7 +358,7 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxEx
 	}
 
 	// 判断本节点是否同步完成，数据是否最新
-	if !a.Dag().IsSynced() {
+	if !a.Dag().IsSynced(false) {
 		return nil, fmt.Errorf("this node is not synced, and can't vote now")
 	}
 
@@ -421,7 +419,7 @@ func (a *PrivateMediatorAPI) Update(args modules.MediatorUpdateArgs) (*TxExecute
 	}
 
 	// 判断本节点是否同步完成，数据是否最新
-	if !a.Dag().IsSynced() {
+	if !a.Dag().IsSynced(false) {
 		return nil, fmt.Errorf("this node is not synced, and can't update mediator now")
 	}
 

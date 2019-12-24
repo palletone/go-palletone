@@ -27,9 +27,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"math/rand"
 	"strconv"
-	"time"
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
@@ -166,10 +164,10 @@ func (s *PublicBlockChainAPI) GetPledge(addStr string) (*modules.PledgeStatusJso
 
 	// 构建参数
 	cArgs := [][]byte{defaultMsg0, defaultMsg1, []byte(modules.QueryPledgeStatusByAddr), []byte(addStr)}
-	txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().Unix())).Int31n(100000000))
+	//txid := fmt.Sprintf("%08v", rand.New(rand.NewSource(time.Now().Unix())).Int31n(100000000))
 
 	// 调用系统合约
-	rsp, err := s.b.ContractQuery(syscontract.DepositContractAddress.Bytes(), txid[:], cArgs, 0)
+	rsp, err := s.b.ContractQuery([]byte(syscontract.DepositContractAddress.Str()), cArgs, 0)
 	if err != nil {
 		return nil, err
 	}

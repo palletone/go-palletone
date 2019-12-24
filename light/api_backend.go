@@ -199,6 +199,10 @@ func (b *LesApiBackend) AccountManager() *accounts.Manager {
 	return b.ptn.accountManager
 }
 
+func (b *LesApiBackend) MemdagInfos() (*modules.MemdagInfos, error) {
+	return b.ptn.dag.MemdagInfos()
+}
+
 func (b *LesApiBackend) GetUnstableUnits() []*ptnjson.UnitSummaryJson {
 	units := b.ptn.dag.GetUnstableUnits()
 	result := make([]*ptnjson.UnitSummaryJson, len(units))
@@ -232,14 +236,17 @@ func (b *LesApiBackend) SaveCommon(key, val []byte) error {
 }
 
 // dag's get common
-func (b *LesApiBackend) GetCommon(key []byte,stableDb bool) ([]byte, error) {
-	return b.ptn.dag.GetCommon(key,stableDb)
+func (b *LesApiBackend) GetCommon(key []byte, stableDb bool) ([]byte, error) {
+	return b.ptn.dag.GetCommon(key, stableDb)
 }
-func (b *LesApiBackend) GetCommonByPrefix(prefix []byte,stableDb bool) map[string][]byte {
-	return b.ptn.dag.GetCommonByPrefix(prefix,stableDb)
+func (b *LesApiBackend) GetCommonByPrefix(prefix []byte, stableDb bool) map[string][]byte {
+	return b.ptn.dag.GetCommonByPrefix(prefix, stableDb)
 }
 func (b *LesApiBackend) GetContractStateJsonByPrefix(contractid []byte, prefix string) ([]ptnjson.ContractStateJson, error) {
 	return nil, nil
+}
+func (b *LesApiBackend) GetAllData() ([][]byte, [][]byte) {
+	return b.ptn.dag.GetAllData()
 }
 
 // Get Contract Api
@@ -463,7 +470,7 @@ func (b *LesApiBackend) GetJuryAccount() []common.Address {
 	return nil
 }
 
-func (b *LesApiBackend) ContractQuery(contractId []byte, txid string, args [][]byte,
+func (b *LesApiBackend) ContractQuery(id []byte, args [][]byte,
 	timeout time.Duration) (rspPayload []byte, err error) {
 	return nil, nil
 }
