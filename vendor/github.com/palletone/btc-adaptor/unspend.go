@@ -20,14 +20,16 @@ package btcadaptor
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcd/rpcclient"
-	"github.com/btcsuite/btcutil"
 	"io/ioutil"
 	"math/big"
 	"path/filepath"
 	"strings"
+
+	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcd/rpcclient"
+	"github.com/btcsuite/btcutil"
+	"github.com/shopspring/decimal"
 
 	"github.com/palletone/adaptor"
 )
@@ -121,6 +123,9 @@ func getAllUnspend(client *rpcclient.Client, addr btcutil.Address) (map[string]f
 
 		//transaction outputs
 		for _, out := range msgTx.Vout {
+			if 0 == len(out.ScriptPubKey.Addresses) {
+				continue
+			}
 			if out.ScriptPubKey.Addresses[0] == addrStr {
 				outputIndex[msgTx.Txid+fmt.Sprintf("%02x", out.N)] = out.Value
 			}
@@ -163,7 +168,7 @@ func GetBalance(input *adaptor.GetBalanceInput, rpcParams *RPCParams, netID int)
 
 	//
 	bigInt := new(big.Int)
-	bigInt.SetUint64(uint64(allAmount * 1e8))
+	bigInt.SetUint64(uint64(uint64(decimal.NewFromFloat(allAmount).Mul(decimal.New(1, 8)).IntPart())))
 	result.Balance.Amount = bigInt
 	result.Balance.Asset = "BTC"
 
@@ -271,17 +276,28 @@ func GetTransactions(input *adaptor.GetAddrTxHistoryInput, rpcParams *RPCParams,
 			msgIndex[idIndex] = out.Value //save in map
 
 			if input.FromAddress == out.ScriptPubKey.Addresses[0] {
-				change = out.Value
+				change += out.Value
 				continue
 			}
-			if input.ToAddress != out.ScriptPubKey.Addresses[0] {
-				amountOther += out.Value
-				continue
+			if "" != input.ToAddress {
+				if input.ToAddress == out.ScriptPubKey.Addresses[0] {
+					isTo = true
+					tx.ToAddress = input.ToAddress
+					amount += out.Value
+					continue
+				}
+				amountOther += out.Value //todo no to address?empty
+			} else {
+				if "" == tx.ToAddress { //first recv address
+					tx.ToAddress = out.ScriptPubKey.Addresses[0]
+					amount = out.Value
+					continue
+				} else if tx.ToAddress == out.ScriptPubKey.Addresses[0] {
+					amount += out.Value
+					continue
+				}
+				amountOther += out.Value //todo amountOther?
 			}
-			isTo = true
-			tx.ToAddress = input.ToAddress
-			amount = out.Value
-			break
 		}
 		if isFilter && !isTo {
 			continue
@@ -312,14 +328,14 @@ func GetTransactions(input *adaptor.GetAddrTxHistoryInput, rpcParams *RPCParams,
 			}
 			inputAmount += txPreResult.Vout[msgTx.Vin[i].Vout].Value
 		}
-		fee := inputAmount - change - amount
+		fee := inputAmount - change - amount - amountOther
 
 		//turn to big int
 		bigIntAmount := new(big.Int)
-		bigIntAmount.SetUint64(uint64(amount * 1e8))
+		bigIntAmount.SetUint64(uint64(uint64(decimal.NewFromFloat(amount).Mul(decimal.New(1, 8)).IntPart())))
 		tx.Amount = adaptor.NewAmountAsset(bigIntAmount, "BTC")
 		bigIntFee := new(big.Int)
-		bigIntFee.SetUint64(uint64(fee * 1e8))
+		bigIntFee.SetUint64(uint64(uint64(decimal.NewFromFloat(fee).Mul(decimal.New(1, 8)).IntPart())))
 		tx.Fee = adaptor.NewAmountAsset(bigIntFee, "BTC")
 
 		tx.TxID, _ = hex.DecodeString(msgTx.Txid)

@@ -43,6 +43,16 @@ type BTCPort struct {
 }
 
 func (p *BTCPort) Init(stub shim.ChaincodeStubInterface) pb.Response {
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
+	}
+	err = stub.PutState(symbolsOwner, []byte(invokeAddr.String()))
+	if err != nil {
+		return shim.Error("write symbolsOwner failed: " + err.Error())
+	}
+
 	return shim.Success(nil)
 }
 
@@ -386,7 +396,7 @@ func genRawTx(prepare *WithdrawPrepare, depositAddr string, stub shim.ChaincodeS
 	utxoAllExcept := getUTXOAll(stub)
 	//
 	input := adaptor.CreateTransferTokenTxInput{FromAddress: depositAddr, ToAddress: prepare.BtcAddr}
-	input.Amount = adaptor.NewAmountAssetUint64(prepare.BtcAmount, "BTC")
+	input.Amount = adaptor.NewAmountAssetUint64(prepare.BtcAmount-prepare.BtcFee, "BTC")
 	input.Fee = adaptor.NewAmountAssetUint64(prepare.BtcFee, "BTC")
 	input.Extra = utxoAllExcept
 
@@ -461,9 +471,9 @@ func mergeTx(tx []byte, redeemHex string, juryMsg []JuryMsgAddr, stub shim.Chain
 	}
 	for i := 0; i < num; i++ {
 		input.SignedTxs = [][]byte{}
-		input.SignedTxs = append(input.SignedTxs, answersByte[array[i][0]])
-		input.SignedTxs = append(input.SignedTxs, answersByte[array[i][1]])
-		input.SignedTxs = append(input.SignedTxs, answersByte[array[i][2]])
+		input.SignedTxs = append(input.SignedTxs, answersByte[array[i][0]-1])
+		input.SignedTxs = append(input.SignedTxs, answersByte[array[i][1]-1])
+		input.SignedTxs = append(input.SignedTxs, answersByte[array[i][2]-1])
 		//
 		reqBytes, err := json.Marshal(input)
 		if err != nil {
@@ -681,7 +691,7 @@ func (p *BTCPort) WithdrawBTC(txID, btcAddrInput string, stub shim.ChaincodeStub
 	tempHashHex := fmt.Sprintf("%x", tempHash)
 
 	//用交易哈希协商交易签名，作适当安全防护
-	recvResult, err := consult(stub, []byte(tempHashHex), []byte(hex.EncodeToString(rawTxSign.Extra)))
+	recvResult, err := consult(stub, []byte(tempHashHex), []byte(hex.EncodeToString(rawTxSign.SignedTx)))
 	if err != nil {
 		log.Debugf("consult tempHashHex failed: " + err.Error())
 		return shim.Error("consult tempHashHex failed: " + err.Error())

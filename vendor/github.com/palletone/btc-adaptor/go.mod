@@ -13,6 +13,7 @@ require (
 	github.com/palletone/adaptor v1.0.1-0.20191204100220-740fe858e09b
 	github.com/palletone/go-palletone v1.0.4 // indirect
 	github.com/shiena/ansicolor v0.0.0-20151119151921-a422bbe96644 // indirect
+	github.com/shopspring/decimal v0.0.0-20180709203117-cd690d0c9e24
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
 	gopkg.in/go-playground/validator.v8 v8.18.2 // indirect
 )
