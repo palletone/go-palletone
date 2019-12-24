@@ -94,19 +94,22 @@ func (p *ExchangeMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 
 		return shim.Success(nil)
-	case "taker": //获取挂单信息,token互换
-		if len(args) != 5 {
+	case "taker": //获取挂单信息,token互换]
+		if len(args) != 4 {
 			return shim.Error("must input 2 args: AddExchangelist, reason")
 		}
 		taker_addr, err := common.StringToAddress(args[0])
 		if err != nil {
 			return shim.Error("Invalid address string:" + args[0])
 		}
-
 		Exchange ,err := p.FindInExchangelist(stub,args[1])
         if err != nil {
 			return shim.Error("Invalid address string:" + args[1])
 		}
+		//result, err := p.GetExchangeMgrs(stub)
+		//if err != nil {
+		//return shim.Error(err.Error())
+		//}
 		taker_sale, err := modules.StringToAsset(args[2])
 		if err != nil {
 			return shim.Error("Invalid address string:" + args[2])
@@ -115,7 +118,7 @@ func (p *ExchangeMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if err != nil {
 			return shim.Error("Invalid address string:" + args[3])
 		}
-		invoketokens ,err := stub.GetTokenBalance("P19CbJzdeR2m98pYhsbEKJExr6DPcS7oket",taker_sale)
+		invoketokens ,err := stub.GetTokenBalance(taker_addr.String(),taker_sale)
         if err != nil {
 			return shim.Error("Invalid invoketokens string")
 		}
@@ -133,10 +136,10 @@ func (p *ExchangeMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-
         //pay maker_sale maker_amount  to taker ,address is taker_addr
-        esc := decimal.New(int64(Exchange.SaleAmount), 0)
-		err = p.Payout(stub, taker_addr, esc, Exchange.Sale)
+        //esc := decimal.New(int64(Exchange.SaleAmount), 0)
+
+		err = p.Payout(stub, taker_addr, Exchange.SaleAmount, Exchange.Sale)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -246,9 +249,6 @@ func (p *ExchangeMgr) GetExchangelist(stub shim.ChaincodeStubInterface) ([]*Exch
 	return getExchangelistAddress(stub)
 }
 func (p *ExchangeMgr) Payout(stub shim.ChaincodeStubInterface, addr common.Address, amount decimal.Decimal, asset *modules.Asset) error {
-	if !isFoundationInvoke(stub) {
-		return errors.New("only foundation address can call this function")
-	}
 	uint64Amt := ptnjson.JsonAmt2AssetAmt(asset, amount)
 	return stub.PayOutToken(addr.String(), &modules.AmountAsset{
 		Amount: uint64Amt,
@@ -274,8 +274,8 @@ func (p *ExchangeMgr) DelExchangeRecord(stub shim.ChaincodeStubInterface, exchan
 	}
 	return false
 }
-func (p *ExchangeMgr) FindInExchangelist(stub shim.ChaincodeStubInterface, exchange_sn string) (*ExchangeMgr, error) {
-	exchangelist, err := getExchangelistAddress(stub)
+func (p *ExchangeMgr) FindInExchangelist(stub shim.ChaincodeStubInterface, exchange_sn string) (*ExchangeSheetJson, error) {
+	exchangelist, err := getExchangeRecords(stub)
 	if err != nil {
 		return nil, err
 	}

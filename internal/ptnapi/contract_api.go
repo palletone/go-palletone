@@ -284,13 +284,11 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, toToke
 	daoAmount := ptnjson.Ptn2Dao(amount)
 	daoFee := ptnjson.Ptn2Dao(fee)
 	amountOfToken, _ := strconv.ParseUint(amountToken, 10, 64)
-
 	log.Info("CcinvokeToken info:")
 	log.Infof("   fromAddr[%s], toAddr[%s]", fromAddr.String(), toAddr.String())
 	log.Infof("   daoAmount[%d], daoFee[%d]", daoAmount, daoFee)
 	log.Infof("   toAddrToken[%s], amountVote[%d]", toAddrToken.String(), amountOfToken)
 	log.Infof("   contractId[%s]", contractAddr.String())
-
 	log.Infof("   param len[%d]", len(param))
 	args := make([][]byte, len(param))
 	for i, arg := range param {
