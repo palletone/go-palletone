@@ -3,166 +3,97 @@ package exchangecc
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
 )
 
+var myContractAddr = syscontract.ExchangeContractAddress.String()
+
+//PCGTta3M4t3yXu8uRgkKvaWd2d8DS36t3ba
 type ExchangeMgr struct {
-	Address     common.Address
-	Sale        *modules.Asset 
-	SaleAmount        uint64
-	Want        *modules.Asset 
-	WantAmount        uint64
-	ExchangeSn string
-}
-type ExchangeSheetJson struct {
-	Address     common.Address
-	Sale        *modules.Asset 
-	SaleAmount        decimal.Decimal
-	Want        *modules.Asset 
-	WantAmount        decimal.Decimal
-	ExchangeSn  string
-}
-const EXCHANGELIST_RECORD = "Exchangelist-"
-func saveRecord(stub shim.ChaincodeStubInterface, record *ExchangeMgr) error {
-	data, _ := rlp.EncodeToBytes(record)
-	return stub.PutState(EXCHANGELIST_RECORD/*+record.Address.String()*/+record.ExchangeSn, data)
 }
 
-func  convertSheet(exm ExchangeMgr) *ExchangeSheetJson{
-	   newSheet := ExchangeSheetJson{}
-	   newSheet.Address = exm.Address
-	   newSheet.Sale = exm.Sale
-	   newSheet.SaleAmount = decimal.New(int64(exm.SaleAmount), 0)
-	   newSheet.Want = exm.Want
-	   newSheet.WantAmount = decimal.New(int64(exm.WantAmount), 0)
-	   newSheet.ExchangeSn = exm.ExchangeSn
-	   return &newSheet
-}
 func (p *ExchangeMgr) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(nil)
 }
-
+func getPayToContract(stub shim.ChaincodeStubInterface) (*modules.Asset, uint64, error) {
+	payAssets, _ := stub.GetInvokeTokens()
+	for _, invokeAA := range payAssets {
+		if invokeAA.Address == myContractAddr {
+			return invokeAA.Asset, invokeAA.Amount, nil
+		}
+	}
+	return nil, 0, errors.New("No pay to contract token")
+}
 func (p *ExchangeMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	f, args := stub.GetFunctionAndParameters()
 
 	switch f {
 	case "maker": //create a maker
-		if len(args) != 5 {
-			return shim.Error("must input 5 args: blackAddress, reason")
+		if len(args) != 2 {
+			return shim.Error("must input 2 args: [WantAsset][WantAmount]")
 		}
-		addr, err := common.StringToAddress(args[0])
+
+		wantToken, err := modules.StringToAsset(args[0])
 		if err != nil {
 			return shim.Error("Invalid address string:" + args[0])
 		}
-		want, err := modules.StringToAsset(args[1])
+		wantAmount, err := decimal.NewFromString(args[1])
 		if err != nil {
 			return shim.Error("Invalid address string:" + args[0])
 		}
-		want_amount, err := decimal.NewFromString(args[2])
+		err = p.Maker(stub, wantToken, wantAmount)
 		if err != nil {
-			return shim.Error("Invalid address string:" + args[0])
-		}
-		sale, err := modules.StringToAsset(args[3])
-		if err != nil {
-			return shim.Error("Invalid address string:" + args[0])
-		}
-		sale_amount, err := decimal.NewFromString(args[4])
-		if err != nil {
-			return shim.Error("Invalid address string:" + args[0])
-		}
-		newsheet := ExchangeMgr{}
-		newsheet.Address = addr
-		newsheet.Sale = sale
-		//amount = amount.Mul(decimal.New(100000000, 0))
-		newsheet.SaleAmount = uint64(sale_amount.IntPart())
-		newsheet.Want = want 
-		newsheet.WantAmount = uint64(want_amount.IntPart())
-		txid := stub.GetTxID()
-		newsheet.ExchangeSn = fmt.Sprintf("%x", common.Hex2Bytes(txid[2:]))
-		err = p.AddExchangelist(stub, &newsheet)
-		if err != nil {
-			return shim.Error("AddExchangelist error:" + err.Error())
+			return shim.Error("AddExchangeOrder error:" + err.Error())
 		}
 
 		return shim.Success(nil)
-	case "taker": //获取挂单信息,token互换]
-		if len(args) != 4 {
-			return shim.Error("must input 2 args: AddExchangelist, reason")
-		}
-		taker_addr, err := common.StringToAddress(args[0])
-		if err != nil {
-			return shim.Error("Invalid address string:" + args[0])
-		}
-		Exchange ,err := p.FindInExchangelist(stub,args[1])
-        if err != nil {
-			return shim.Error("Invalid address string:" + args[1])
-		}
-		//result, err := p.GetExchangeMgrs(stub)
-		//if err != nil {
-		//return shim.Error(err.Error())
-		//}
-		taker_sale, err := modules.StringToAsset(args[2])
-		if err != nil {
-			return shim.Error("Invalid address string:" + args[2])
-		}
-		taker_amount, err := decimal.NewFromString(args[3])
-		if err != nil {
-			return shim.Error("Invalid address string:" + args[3])
-		}
-		invoketokens ,err := stub.GetTokenBalance(taker_addr.String(),taker_sale)
-        if err != nil {
-			return shim.Error("Invalid invoketokens string")
-		}
-		//todo  check if have maker want token
-
-		//todo  send to maker contract addr  want token  
-		if invoketokens[0].Amount < uint64(taker_amount.IntPart()) {
-			return shim.Error("not enough amount to exchange")
-		}
-		if !taker_sale.IsSameAssetId(invoketokens[0].Asset) {
-            return shim.Error("not right asset to exchange")
-		}
-		//pay taker_sale taker_amount  to maker ,address is Exchange.Address
-        err = p.Payout(stub, Exchange.Address, taker_amount, taker_sale)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-        //pay maker_sale maker_amount  to taker ,address is taker_addr
-        //esc := decimal.New(int64(Exchange.SaleAmount), 0)
-
-		err = p.Payout(stub, taker_addr, Exchange.SaleAmount, Exchange.Sale)
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-		    return shim.Success(nil)
-	case "getExchangelist": //列出黑名单地址列表
-		result, err := p.GetExchangeMgrs(stub)
+	case "getActiveOrderList": //列出订单列表
+		result, err := p.GetActiveOrderList(stub)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
 		data, _ := json.Marshal(result)
 		return shim.Success(data)
-	case "withDrawExchange": //列出黑名单地址列表
+	case "taker": //获取挂单信息,token互换
 		if len(args) != 1 {
-			return shim.Error("must input 1 args: exchange_sn")
+			return shim.Error("must input 1 args: [ExchangeSN]")
 		}
-	    result := p.DelExchangeRecord(stub,args[0])
-	    if result != true {
-			return shim.Error("Invalid exchange_sn :" + args[0])
+		err := p.Taker(stub, args[0])
+		if err != nil {
+			return shim.Error(err.Error())
 		}
-		return shim.Success([]byte("1"))
+		return shim.Success(nil)
+	case "cancel": //撤销订单
+		if len(args) != 1 {
+			return shim.Error("must input 1 args: [ExchangeSN]")
+		}
+		err := p.Cancel(stub, args[0])
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		return shim.Success(nil)
+	case "getOrderMatchList": //列出订单的成交记录
+		if len(args) != 1 {
+			return shim.Error("must input 1 args: [ExchangeSN]")
+		}
+		result, err := p.GetOrderMatchList(stub, args[0])
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		data, _ := json.Marshal(result)
+		return shim.Success(data)
 	case "payout": //付出Token
 		if len(args) != 3 {
 			return shim.Error("must input 3 args: Address,Amount,Asset")
+		}
+		if !isFoundationInvoke(stub) {
+			return shim.Error("Foundation only")
 		}
 		addr, err := common.StringToAddress(args[0])
 		if err != nil {
@@ -181,72 +112,139 @@ func (p *ExchangeMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			return shim.Error(err.Error())
 		}
 		return shim.Success(nil)
-	case "QueryIsInExchangelist": //判断某地址是否在黑名单中
-		if len(args) != 1 {
-			return shim.Error("must input 1 args: Address")
-		}
-		exchange_sn := args[0]
-		
-		result, err := p.QueryIsInExchangelist(stub, exchange_sn)
-		if err != nil {
-			return shim.Error("QueryIsInBlacklist error:" + err.Error())
-		}
-		if result {
-			return shim.Success([]byte("true"))
-		} else {
-			return shim.Success([]byte("false"))
-		}
 	default:
 		jsonResp := "{\"Error\":\"Unknown function " + f + "\"}"
 		return shim.Error(jsonResp)
 	}
 }
-func getExchangeRecords(stub shim.ChaincodeStubInterface) ([]*ExchangeSheetJson, error) {
-	kvs, err := stub.GetStateByPrefix(EXCHANGELIST_RECORD)
+func (p *ExchangeMgr) Maker(stub shim.ChaincodeStubInterface, wantAsset *modules.Asset, wantAmount decimal.Decimal) error {
+	addr, err := stub.GetInvokeAddress()
 	if err != nil {
-		return nil, err
+		return errors.New("Invalid address string:" + err.Error())
 	}
-	result := make([]*ExchangeSheetJson, 0, len(kvs))
-	for _, kv := range kvs {
-		record := &ExchangeMgr{}
-		err = rlp.DecodeBytes(kv.Value, record)
+
+	saleToken, saleAmount, err := getPayToContract(stub)
+
+	if err != nil {
+		return err
+	}
+
+	newsheet := &ExchangeOrder{}
+	newsheet.Address = addr
+	newsheet.SaleAsset = saleToken
+	newsheet.SaleAmount = saleAmount
+	newsheet.WantAsset = wantAsset
+	newsheet.WantAmount = wantAsset.Uint64Amount(wantAmount)
+	txid := stub.GetTxID()
+	newsheet.ExchangeSn = txid
+	newsheet.Status = 1
+	newsheet.CurrentWantAmount = newsheet.WantAmount
+	newsheet.CurrentSaleAmount = newsheet.SaleAmount
+	return p.AddExchangeOrder(stub, newsheet)
+}
+
+func (p *ExchangeMgr) Taker(stub shim.ChaincodeStubInterface, orderSn string) error {
+	takerAddress, _ := stub.GetInvokeAddress()
+	exchange, err := getExchangeRecordBySn(stub, orderSn)
+	if err != nil {
+		return errors.New("invalid/sold out/canceled exchange SN:" + orderSn)
+	}
+	takerPayAsset, takerPayAmount, err := getPayToContract(stub)
+	if err != nil {
+		return err
+	}
+	if !takerPayAsset.Equal(exchange.WantAsset) {
+		return errors.New("current asset not match exchange order want asset")
+	}
+	//计算成交额，取Min（订单的CurrentSaleAmount，Taker支付的Amount）
+	takerDealAmount := takerPayAmount
+	if exchange.CurrentWantAmount < takerDealAmount {
+		takerDealAmount = exchange.CurrentWantAmount
+	}
+	//已知Taker的成交额，计算Maker按汇率能获得多少Amount
+	makerDealAmount := uint64(float64(takerDealAmount) * float64(exchange.SaleAmount) / float64(exchange.WantAmount))
+	if takerDealAmount == exchange.CurrentWantAmount { //处理精度误差
+		makerDealAmount = exchange.CurrentSaleAmount
+	}
+	//更新状态数据
+	matchRecord := &MatchRecord{
+		ExchangeOrderSn:  exchange.ExchangeSn,
+		TakerReqId:       stub.GetTxID(),
+		MakerMatchAmount: makerDealAmount,
+		MakerMatchAsset:  exchange.SaleAsset,
+		MakerAddress:     exchange.Address,
+		TakerMatchAmount: takerDealAmount,
+		TakerMatchAsset:  exchange.WantAsset,
+		TakerAddress:     takerAddress,
+	}
+	err = saveMatchRecord(stub, matchRecord)
+	if err != nil {
+		return err
+	}
+	exchange.CurrentSaleAmount = exchange.CurrentSaleAmount - makerDealAmount
+	exchange.CurrentWantAmount = exchange.CurrentWantAmount - takerDealAmount
+	err = UpdateExchangeOrder(stub, exchange)
+	if err != nil {
+		return err
+	}
+	//产生对应的Payout
+	takerChangeAmount := takerPayAmount - takerDealAmount
+	if takerChangeAmount > 0 { //部分成交，剩余的打回
+		err = stub.PayOutToken(takerAddress.String(), &modules.AmountAsset{
+			Amount: takerChangeAmount,
+			Asset:  takerPayAsset,
+		}, 0)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		jsSheet := convertSheet(*record)
-		result = append(result, jsSheet)
 	}
-	return result, nil
+	//Taker成交的部分付款
+	err = stub.PayOutToken(takerAddress.String(), &modules.AmountAsset{
+		Amount: makerDealAmount,
+		Asset:  exchange.SaleAsset,
+	}, 0)
+	if err != nil {
+		return err
+	}
+	//Maker成交的部分付款
+	err = stub.PayOutToken(exchange.Address.String(), &modules.AmountAsset{
+		Amount: takerDealAmount,
+		Asset:  takerPayAsset,
+	}, 0)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-//  判断是否基金会发起的
-func isFoundationInvoke(stub shim.ChaincodeStubInterface) bool {
-	//  判断是否基金会发起的
-	invokeAddr, err := stub.GetInvokeAddress()
-	if err != nil {
-		log.Error("get invoke address err: ", "error", err)
-		return false
-	}
-	//  获取
-	gp, err := stub.GetSystemConfig()
-	if err != nil {
-		//log.Error("strconv.ParseUint err:", "error", err)
-		return false
-	}
-	foundationAddress := gp.ChainParameters.FoundationAddress
-	// 判断当前请求的是否为基金会
-	if invokeAddr.String() != foundationAddress {
-		log.Error("please use foundation address")
-		return false
-	}
-	return true
-}
-
-func (p *ExchangeMgr) GetExchangeMgrs(stub shim.ChaincodeStubInterface) ([]*ExchangeSheetJson, error) {
+func (p *ExchangeMgr) GetActiveOrderList(stub shim.ChaincodeStubInterface) ([]*ExchangeOrderJson, error) {
 	return getExchangeRecords(stub)
 }
-func (p *ExchangeMgr) GetExchangelist(stub shim.ChaincodeStubInterface) ([]*ExchangeMgr, error) {
-	return getExchangelistAddress(stub)
+func (p *ExchangeMgr) GetOrderMatchList(stub shim.ChaincodeStubInterface, orderSn string) ([]*MatchRecordJson, error) {
+	return getMatchRecordByOrderSn(stub, orderSn)
+}
+func (p *ExchangeMgr) Cancel(stub shim.ChaincodeStubInterface, orderSn string) error {
+	exchange, err := getExchangeRecordBySn(stub, orderSn)
+	if err != nil {
+		return errors.New("invalid/sold out/canceled exchange SN:" + orderSn)
+	}
+	addr, err := stub.GetInvokeAddress()
+	if addr != exchange.Address {
+		return errors.New("you are not the owner")
+	}
+	err = cancelExchangeOrder(stub, exchange)
+	if err != nil {
+		return err
+	}
+	//未成交的金额退回
+	err = stub.PayOutToken(exchange.Address.String(), &modules.AmountAsset{
+		Amount: exchange.CurrentSaleAmount,
+		Asset:  exchange.SaleAsset,
+	}, 0)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 func (p *ExchangeMgr) Payout(stub shim.ChaincodeStubInterface, addr common.Address, amount decimal.Decimal, asset *modules.Asset) error {
 	uint64Amt := ptnjson.JsonAmt2AssetAmt(asset, amount)
@@ -255,86 +253,15 @@ func (p *ExchangeMgr) Payout(stub shim.ChaincodeStubInterface, addr common.Addre
 		Asset:  asset,
 	}, 0)
 }
-func (p *ExchangeMgr) QueryIsInExchangelist(stub shim.ChaincodeStubInterface, exchange_sn string) (bool, error) {
-	exchangelist, err := getExchangelistAddress(stub)
-	if err != nil {
-		return false, err
-	}
-	for _, b := range exchangelist {
-		if b.ExchangeSn == exchange_sn {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-func (p *ExchangeMgr) DelExchangeRecord(stub shim.ChaincodeStubInterface, exchange_sn string) bool {
-	err := stub.DelState(EXCHANGELIST_RECORD+exchange_sn)
-	if err == nil {
-		return true
-	}
-	return false
-}
-func (p *ExchangeMgr) FindInExchangelist(stub shim.ChaincodeStubInterface, exchange_sn string) (*ExchangeSheetJson, error) {
-	exchangelist, err := getExchangeRecords(stub)
-	if err != nil {
-		return nil, err
-	}
-	for _, b := range exchangelist {
-		if b.ExchangeSn == exchange_sn {
-			return b, nil
-		}
-	}
-	return nil, nil
-}
-func updateExchangeAddressList(stub shim.ChaincodeStubInterface, sheet *ExchangeMgr) error {
-	list, _ := getExchangelistAddress(stub)
-	list = append(list, sheet)
-	data, _ := rlp.EncodeToBytes(list)
-	return stub.PutState(constants.ExchangelistAddress, data)
-}
-func (p *ExchangeMgr) AddExchangelist(stub shim.ChaincodeStubInterface, sheet *ExchangeMgr) error {
+
+func (p *ExchangeMgr) AddExchangeOrder(stub shim.ChaincodeStubInterface, sheet *ExchangeOrder) error {
 	addr := sheet.Address
-	exist, _ := p.QueryIsInExchangelist(stub, sheet.ExchangeSn)
-	if exist { //不可重复添加同一个交易单
-		return errors.New(addr.String() + " already exist in exchangelist")
+	if !KycUser(addr) {
+		return errors.New("Please verify your ID")
 	}
-	tokenBalance, err := stub.GetTokenBalance(addr.String(), nil)
-	if err != nil {
-		return errors.New("GetTokenBalance error:" + err.Error())
-	}
-	balance := make(map[modules.Asset]uint64)
-	for _, aa := range tokenBalance {
-		balance[*aa.Asset] = aa.Amount
-	}
-	record := &ExchangeMgr{
-		Address  :  sheet.Address,
-	    Sale     :  sheet.Sale,
-	    SaleAmount:sheet.SaleAmount,
-	    Want     :  sheet.Want,
-	    WantAmount:sheet.WantAmount,
-	    ExchangeSn:sheet.ExchangeSn,
-	}
-	err = saveRecord(stub, record)
+	err := SaveExchangeOrder(stub, sheet)
 	if err != nil {
 		return errors.New("saveRecord error:" + err.Error())
 	}
-	/*err = updateExchangeAddressList(stub, record)
-	if err != nil {
-		return errors.New("updateExchangeAddressList error:" + err.Error())
-	}*/
 	return nil
-}
-
-
-func getExchangelistAddress(stub shim.ChaincodeStubInterface) ([]*ExchangeMgr, error) {
-	list := []*ExchangeMgr{} 
-	dblist, err := stub.GetState(constants.ExchangelistAddress)
-	if err == nil && len(dblist) > 0 {
-		err = rlp.DecodeBytes(dblist, &list)
-		if err != nil {
-			log.Errorf("rlp decode data[%x] to  []common.Address error", dblist)
-			return nil, errors.New("rlp decode error:" + err.Error())
-		}
-	}
-	return list, nil
 }

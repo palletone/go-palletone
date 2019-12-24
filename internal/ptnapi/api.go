@@ -64,6 +64,10 @@ type ContractDeployRsp struct {
 	ReqId      string `json:"reqId"`
 	ContractId string `json:"ContractId"`
 }
+type ContractInvokeRsp struct {
+	ReqId      string `json:"reqId"`
+	ContractId string `json:"ContractId"`
+}
 
 type ContractFeeRsp struct {
 	TxSize         float64 `json:"tx_size(byte)"`

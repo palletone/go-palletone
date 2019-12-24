@@ -276,7 +276,7 @@ func (s *PrivateContractAPI) Ccinvoketx(ctx context.Context, from, to string, am
 }
 
 func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token string, amountToken, fee decimal.Decimal,
-	contractAddress string, param []string) (*ContractDeployRsp, error) {
+	contractAddress string, param []string) (*ContractInvokeRsp, error) {
 	contractAddr, _ := common.StringToAddress(contractAddress)
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
@@ -298,7 +298,7 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 	reqId, err := s.b.ContractInvokeReqTokenTx(fromAddr, toAddr, asset, amountOfToken, daoFee,
 		contractAddr, args, 0)
 	log.Infof("   reqId[%s]", hex.EncodeToString(reqId[:]))
-	rsp1 := &ContractDeployRsp{
+	rsp1 := &ContractInvokeRsp{
 		ReqId:      hex.EncodeToString(reqId[:]),
 		ContractId: contractAddress,
 	}
