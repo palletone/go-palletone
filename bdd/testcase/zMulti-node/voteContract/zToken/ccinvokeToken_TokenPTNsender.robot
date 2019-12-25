@@ -41,7 +41,7 @@ Ccinvoke token of vote contract
 
 Calculate gain of recieverAdd
     [Arguments]    ${PTN1}    ${item1}
-    ${item'}    Evaluate    ${item1}-${gain}
+    ${item'}    Evaluate    ${item1}
     ${totalGain}    Evaluate    int(${PTNPoundage})+int(${PTNAmount})
     ${GAIN}    countRecieverPTN    ${totalGain}
     ${PTN'}    Evaluate    decimal.Decimal('${PTN1}')-decimal.Decimal('${GAIN}')    decimal

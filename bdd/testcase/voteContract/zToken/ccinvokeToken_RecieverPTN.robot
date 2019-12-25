@@ -42,7 +42,7 @@ Create token of vote contract
 Calculate gain of recieverAdd
     [Arguments]    ${PTN2P}
     ${GAIN}    countRecieverPTN    ${votePTN}
-    ${PTN2'}    Evaluate    decimal.Decimal('${PTN2P}')+decimal.Decimal('${GAIN}')    decimal
+    ${PTN2'}    Evaluate    decimal.Decimal('${PTN2P}')    decimal
     [Return]    ${PTN2'}
 
 Request getbalance after create token
