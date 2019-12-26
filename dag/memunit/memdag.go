@@ -281,29 +281,40 @@ func (chain *MemDag) setStableUnit(hash common.Hash, height uint64, txpool txspo
 	log.Debugf("Set stable unit to %s,height:%d", hash.String(), height)
 	stable_height := chain.stableUnitHeight
 	stableCount := int(height - stable_height)
-	if stableCount <= 0 {
+	if !(stableCount > 0) {
 		log.Debug("Current stable height is %d, impossible set stable height to %d", stable_height, height)
 		return
 	}
 
-	newStableUnits := make([]*modules.Unit, stableCount)
-	stbHash := hash
 	chain_units := chain.getChainUnits()
+	stbHash := hash
 	for i := 0; i < stableCount; i++ {
-		if u, has := chain_units[stbHash]; has {
-			newStableUnits[stableCount-i-1] = u
-			stbHash = u.ParentHash()[0]
+		if unit, has := chain_units[stbHash]; has {
+			chain.setNextStableUnit(unit, txpool)
+			stbHash = unit.ParentHash()[0]
 		}
 	}
-
-	//Save stable unit and it's parent
 	max_height := height
-	for _, unit := range newStableUnits {
-		if unit.NumberU64() > max_height {
-			max_height = unit.NumberU64()
-		}
-		chain.setNextStableUnit(unit, txpool)
-	}
+
+	// comment by albert, 有中间缓存，两次for循环，效率低下
+	//newStableUnits := make([]*modules.Unit, stableCount)
+	//stbHash := hash
+	//chain_units := chain.getChainUnits()
+	//for i := 0; i < stableCount; i++ {
+	//	if u, has := chain_units[stbHash]; has {
+	//		newStableUnits[stableCount-i-1] = u
+	//		stbHash = u.ParentHash()[0]
+	//	}
+	//}
+	//
+	////Save stable unit and it's parent
+	//max_height := height
+	//for _, unit := range newStableUnits {
+	//	if unit.NumberU64() > max_height {
+	//		max_height = unit.NumberU64()
+	//	}
+	//	chain.setNextStableUnit(unit, txpool)
+	//}
 
 	// 更新tempdb ，将低于稳定单元的分叉链都删除
 	go chain.delHeightUnitsAndTemp(max_height)
@@ -382,12 +393,6 @@ func (chain *MemDag) checkStableCondition(tempDB *ChainTempDb, unit *modules.Uni
 	}
 
 	// 计算 稳定的深度阈值
-	//gp, err := tempDB.PropRep.RetrieveGlobalProp()
-	//if err != nil {
-	//	log.Errorf("RetrieveGlobalProp err: %v", err.Error())
-	//}
-	//aSize := gp.ActiveMediatorsCount()
-
 	if !(chain.threshold > 0) {
 		log.Debugf("stable threshold(%v) must be nonzero", chain.threshold)
 		return false
