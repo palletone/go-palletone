@@ -3,9 +3,9 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
-	"github.com/shopspring/decimal"
 	"math/big"
 	"os"
 	"sort"
@@ -17,6 +17,7 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	"github.com/naoina/toml"
+	"github.com/shopspring/decimal"
 
 	"github.com/palletone/adaptor"
 	"github.com/palletone/btc-adaptor"
@@ -312,9 +313,10 @@ func CreateTransferTokenTx(input *CreateTransferTokenTxInput, rpcParams *btcadap
 }
 
 func helper() {
-	fmt.Println("functions : init, give, getbalance, sendtomulti, spendmulti, spendmultidouble")
+	fmt.Println("functions : init, spendmulti, sendTx")
 	fmt.Println("Params : init")
 	fmt.Println("Params : sendToMulti, multiSigAddr, amount, fee, ptnAddr, btcPrivateKey")
+	fmt.Println("Params : sendTx, signedTx")
 }
 
 func getAllUnspend(client *rpcclient.Client, addr btcutil.Address) (map[string]float64, error) {
@@ -453,6 +455,24 @@ func aliceSendBTCToMultiSigAddr(multiAddr, amount, fee, ptnAddr, prikeyHex strin
 	return signAndSend(btc, resultTx.Transaction, prikey, "")
 }
 
+func sendTx(signedTxBase64 string) error {
+	rpc := btcadaptor.RPCParams{Host: gWallet.BtcConfig.Host, RPCUser: gWallet.BtcConfig.RPCUser,
+		RPCPasswd: gWallet.BtcConfig.RPCPasswd, CertPath: gWallet.BtcConfig.CertPath}
+	btc := btcadaptor.NewAdaptorBTC(gWallet.BtcConfig.NetID, rpc)
+
+	tx, _ := base64.StdEncoding.DecodeString(signedTxBase64)
+	var sendTransactionParams adaptor.SendTransactionInput
+	sendTransactionParams.Transaction = tx
+	resultSend, err := btc.SendTransaction(&sendTransactionParams)
+	if err != nil {
+		fmt.Println("SendTransaction failed : ", err.Error())
+		return err
+	} else {
+		fmt.Printf("txid : %x\n", resultSend.TxID)
+	}
+	return nil
+}
+
 func main() {
 	f, err := os.Open(gWalletFile)
 	if err != nil && os.IsNotExist(err) { //check wallet config file
@@ -485,7 +505,19 @@ func main() {
 		if err != nil {
 			fmt.Println(err.Error())
 		}
+	case "sendtx": //send signedTx
+		if len(args) < 2 {
+			fmt.Println("Params : sendTx, signedTx")
+			return
+		}
+		err := sendTx(args[2])
+		if err != nil {
+			fmt.Println(err.Error())
+		}
 	default:
+		if strings.ToLower(cmd) != cmd {
+			fmt.Println("Please input short " + cmd)
+		}
 		fmt.Println("Invalid cmd.")
 		helper()
 	}

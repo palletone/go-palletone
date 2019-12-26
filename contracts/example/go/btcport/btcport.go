@@ -452,7 +452,7 @@ func mergeTx(tx []byte, redeemHex string, juryMsg []JuryMsgAddr, stub shim.Chain
 	//
 	answers := make([]string, 0, len(juryMsg))
 	for i := range juryMsg {
-		answers = append(answers, hex.EncodeToString(juryMsg[i].Answer))
+		answers = append(answers, string(juryMsg[i].Answer))
 	}
 	a := sort.StringSlice(answers[0:])
 	sort.Sort(a)
@@ -686,7 +686,10 @@ func (p *BTCPort) WithdrawBTC(txID, btcAddrInput string, stub shim.ChaincodeStub
 
 	// 签名交易
 	rawTxSign, err := signTx(rawTx.Transaction, redeemHex, stub)
-
+	if err != nil {
+		log.Debugf("signTx rawTxSign failed: " + err.Error())
+		return shim.Error("signTx rawTxSign failed: " + err.Error())
+	}
 	tempHash := crypto.Keccak256([]byte(rawTx.Extra))
 	tempHashHex := fmt.Sprintf("%x", tempHash)
 
@@ -701,14 +704,14 @@ func (p *BTCPort) WithdrawBTC(txID, btcAddrInput string, stub shim.ChaincodeStub
 	if err != nil {
 		return shim.Error("Unmarshal result failed: " + err.Error())
 	}
-	if len(juryMsg) != consultM {
+	if len(juryMsg) < consultM {
 		return shim.Error("RecvJury result's len not enough")
 	}
 
 	// 合并交易
 	txMerged, err := mergeTx(rawTx.Transaction, redeemHex, juryMsg, stub)
 	if err != nil {
-		return shim.Success([]byte("mergeTx failed: " + err.Error()))
+		return shim.Error("mergeTx failed: " + err.Error())
 	}
 
 	var withdraw Withdraw
