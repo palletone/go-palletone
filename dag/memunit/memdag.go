@@ -22,21 +22,22 @@ package memunit
 
 import (
 	"fmt"
+	"sort"
 	"sync"
 	"time"
-
-	"github.com/palletone/go-palletone/tokenengine"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+	csort "github.com/palletone/go-palletone/common/sort"
 	"github.com/palletone/go-palletone/core"
 	common2 "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/palletcache"
+	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/txspool"
 	"github.com/palletone/go-palletone/validator"
 	"go.dedis.ch/kyber/v3/sign/bls"
@@ -371,48 +372,91 @@ func (chain *MemDag) checkUnitIrreversibleWithGroupSign(unit *modules.Unit) bool
 
 // 判断当前主链上的单元是否有满足稳定单元的确认数，如果有，则更新稳定单元，并重建Temp数据库，返回True
 // 如果没有，则不进行任何操作，返回False
-func (chain *MemDag) checkStableCondition(unit *modules.Unit, txpool txspool.ITxPool) bool {
+func (chain *MemDag) checkStableCondition(tempDB *ChainTempDb, unit *modules.Unit, txpool txspool.ITxPool) bool {
 	// append by albert, 使用群签名判断是否稳定
 	if chain.checkUnitIrreversibleWithGroupSign(unit) {
-		log.Infof("the unit(%s) have group sign(%s), make it to irreversible.",
+		log.Debugf("the unit(%s) have group sign(%s), make it to irreversible.",
 			unit.UnitHash.TerminalString(), hexutil.Encode(unit.GetGroupSign()))
 		chain.setStableUnit(unit.UnitHash, unit.NumberU64(), txpool)
 		return true
 	}
 
-	unstableCount := int(unit.NumberU64() - chain.stableUnitHeight)
-	//每个单元被多少个地址确认过(包括自己)
-	unstableCofirmAddrs := make(map[common.Hash]map[common.Address]bool)
-	childrenCofirmAddrs := make(map[common.Address]bool)
-	ustbHash := unit.Hash()
-	childrenCofirmAddrs[unit.Author()] = true
-	units := chain.getChainUnits()
-	// todo Albert·gou 待重做 优化逻辑
-	for i := 0; i < unstableCount; i++ {
-		u := units[ustbHash]
-		if u == nil {
-			continue
-		}
-		hs := unstableCofirmAddrs[ustbHash]
-		if hs == nil {
-			hs = make(map[common.Address]bool)
-			unstableCofirmAddrs[ustbHash] = hs
-		}
-		hs[u.Author()] = true
-		for addr := range childrenCofirmAddrs {
-			hs[addr] = true
-		}
-		childrenCofirmAddrs[u.Author()] = true
+	// 计算 稳定的深度阈值
+	//gp, err := tempDB.PropRep.RetrieveGlobalProp()
+	//if err != nil {
+	//	log.Errorf("RetrieveGlobalProp err: %v", err.Error())
+	//}
+	//aSize := gp.ActiveMediatorsCount()
 
-		if len(hs) >= chain.threshold {
-			log.Debugf("Unit[%s] height:%d has enough confirm address count=%d, make it to stable.",
-				ustbHash.String(), unit.NumberU64(), len(hs))
-			chain.setStableUnit(ustbHash, u.NumberU64(), txpool)
-			return true
-		}
-		ustbHash = u.ParentHash()[0]
+	if !(chain.threshold > 0) {
+		log.Debugf("stable threshold(%v) must be nonzero", chain.threshold)
+		return false
 	}
-	return false
+	mis := tempDB.StateRep.LookupMediatorInfo()
+	mCount := len(mis)
+	offset := mCount - chain.threshold
+
+	// 获取所有 mediator 最后确认unit编号
+	if !(offset > 0) {
+		log.Debugf("stable threshold(%v) must be less than the count(%v) of mediators", chain.threshold, mCount)
+		return false
+	}
+	lastConfirmedUnitNums := make([]int, 0, mCount)
+	for _, mi := range mis {
+		lastConfirmedUnitNums = append(lastConfirmedUnitNums, int(mi.LastConfirmedUnitNum))
+	}
+
+	// 排序，使用第n大元素的方法
+	csort.Element(sort.IntSlice(lastConfirmedUnitNums), offset)
+	newLastStableUnitNum := uint64(lastConfirmedUnitNums[offset])
+	if !(newLastStableUnitNum > chain.stableUnitHeight) {
+		// 新的稳定高度不变
+		return false
+	}
+	log.Debugf("new last stable unit number is: %v", newLastStableUnitNum)
+
+	// 设该unit为稳定状态
+	header, err := tempDB.UnitRep.GetHeaderByNumber(modules.NewChainIndex(unit.GetAssetId(), newLastStableUnitNum))
+	if err != nil {
+		log.Errorf("GetHeaderByNumber err: %v", err.Error())
+		return false
+	}
+	chain.setStableUnit(header.Hash(), header.NumberU64(), txpool)
+
+	//unstableCount := int(unit.NumberU64() - chain.stableUnitHeight)
+	////每个单元被多少个地址确认过(包括自己)
+	//unstableCofirmAddrs := make(map[common.Hash]map[common.Address]bool)
+	//childrenCofirmAddrs := make(map[common.Address]bool)
+	//ustbHash := unit.Hash()
+	//childrenCofirmAddrs[unit.Author()] = true
+	//units := chain.getChainUnits()
+	//for i := 0; i < unstableCount; i++ {
+	//	u := units[ustbHash]
+	//	if u == nil {
+	//		continue
+	//	}
+	//	hs := unstableCofirmAddrs[ustbHash]
+	//	if hs == nil {
+	//		hs = make(map[common.Address]bool)
+	//		unstableCofirmAddrs[ustbHash] = hs
+	//	}
+	//	hs[u.Author()] = true
+	//	for addr := range childrenCofirmAddrs {
+	//		hs[addr] = true
+	//	}
+	//	childrenCofirmAddrs[u.Author()] = true
+	//
+	//	if len(hs) >= chain.threshold {
+	//		log.Debugf("Unit[%s] height:%d has enough confirm address count=%d, make it to stable.",
+	//			ustbHash.String(), unit.NumberU64(), len(hs))
+	//		chain.setStableUnit(ustbHash, u.NumberU64(), txpool)
+	//		return true
+	//	}
+	//	ustbHash = u.ParentHash()[0]
+	//}
+	//return false
+
+	return true
 }
 
 //清空主链的Tempdb，然后基于稳定单元到最新主链单元的路径，构建新的Tempdb
@@ -685,21 +729,21 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 				}
 			}
 
-			tempdb, err := temp_db.AddUnit(unit, chain.saveHeaderOnly)
+			tempDB, err := temp_db.AddUnit(unit, chain.saveHeaderOnly)
 			if err != nil {
 				log.Error(err.Error())
 				return nil, nil, nil, nil, nil, err, isOrphan
 			}
 
 			// go tempdb.AddUnit(unit, chain.saveHeaderOnly)
-			chain.tempdb.Store(uHash, tempdb)
-			chain.chainUnits.Store(uHash, tempdb)
+			chain.tempdb.Store(uHash, tempDB)
+			chain.chainUnits.Store(uHash, tempDB)
 			if has {
 				chain.tempdb.Delete(parentHash)
 				chain.setLastMainchainUnit(unit)
 
 				start := time.Now()
-				if chain.checkStableCondition(unit, txpool) { //增加了单元后检查是否满足稳定单元的条件
+				if chain.checkStableCondition(tempDB, unit, txpool) { //增加了单元后检查是否满足稳定单元的条件
 					// comment by albert 重复操作
 					//// 进行下一个unit的群签名
 					//log.Debugf("send toGroupSign event")
