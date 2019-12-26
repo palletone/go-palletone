@@ -25,7 +25,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
-	"strings"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -781,7 +780,7 @@ func (p *BTCPort) WithdrawSubmit(btcTxID string, stub shim.ChaincodeStubInterfac
 	if "" == depositAddr {
 		return shim.Error("need call InitDepositAddr")
 	}
-	if strings.ToLower(txResult.Tx.FromAddress) != depositAddr {
+	if txResult.Tx.FromAddress != depositAddr {
 		log.Debugf("The tx is't payout from btc port contract")
 		return shim.Error("The tx is't payout from btc port contract")
 	}
