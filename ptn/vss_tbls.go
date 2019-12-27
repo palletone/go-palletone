@@ -120,32 +120,6 @@ func (pm *ProtocolManager) transmitSigShare(sigShare *mp.SigShareEvent) {
 	} else {
 		go pm.BroadcastSigShare(sigShare)
 	}
-
-	//ma := header.Author()
-	//med := pm.dag.GetMediator(ma)
-	//if med == nil {
-	//	log.Debugf("fail to get mediator(%v)", ma.Str())
-	//	return
-	//}
-	//
-	//peer, self := pm.GetPeer(med.Node)
-	//if self {
-	//	pm.IsExistInCache(sigShare.Hash().Bytes())
-	//	go pm.producer.AddToTBLSRecoverBuf(sigShare)
-	//	return
-	//}
-	//
-	//if peer != nil {
-	//	err := peer.SendSigShare(sigShare)
-	//	if err != nil {
-	//		log.Debug(err.Error())
-	//	}
-	//
-	//	return
-	//}
-	//
-	//// 如果没有和对应的mediator有网络连接，则进行转发
-	//go pm.BroadcastSigShare(sigShare)
 }
 
 // @author Albert·Gou
@@ -203,42 +177,15 @@ func (pm *ProtocolManager) transmitVSSDeal(deal *mp.VSSDealEvent) {
 
 	// vss deal 一定是请求其他mediator的消息
 	pm.IsExistInCache(deal.Hash().Bytes())
-	go pm.BroadcastVSSDeal(deal)
-
-	//// 判读该deal是否是发给本地mediator的
-	//ma := pm.dag.GetActiveMediatorAddr(int(deal.DstIndex))
-	//if pm.producer.IsLocalMediator(ma) {
-	//	go pm.producer.AddToDealBuf(deal)
-	//} else {
-	//	go pm.BroadcastVSSDeal(deal)
-	//}
-
-	//ma := pm.dag.GetActiveMediatorAddr(int(deal.DstIndex))
-	//med := pm.dag.GetMediator(ma)
-	//if med == nil {
-	//	log.Debugf("fail to get mediator(%v)", ma.Str())
-	//	return
-	//}
-	//
-	////peer, self := pm.GetPeer(node)
-	//peer, self := pm.GetPeer(med.Node)
-	//if self {
-	//	pm.IsExistInCache(deal.Hash().Bytes())
-	//	go pm.producer.AddToDealBuf(deal)
-	//	return
-	//}
-	//
-	//if peer != nil {
-	//	err := peer.SendVSSDeal(deal)
-	//	if err != nil {
-	//		log.Debugf(err.Error())
-	//	}
-	//
-	//	return
-	//}
-	//
-	//// 如果没有和对应的mediator有网络连接，则进行转发
 	//go pm.BroadcastVSSDeal(deal)
+
+	// 处理 同一个节点配置多个mediator的情况
+	ma := pm.dag.GetActiveMediatorAddr(int(deal.DstIndex))
+	if pm.producer.IsLocalMediator(ma) {
+		go pm.producer.AddToDealBuf(deal)
+	} else {
+		go pm.BroadcastVSSDeal(deal)
+	}
 }
 
 // @author Albert·Gou
