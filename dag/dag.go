@@ -702,7 +702,7 @@ func (dag *Dag) AfterSysContractStateChangeEvent(arg *modules.SysContractStateCh
 func (dag *Dag) AfterChainMaintenanceEvent(arg *modules.ChainMaintenanceEvent) {
 	log.Debug("Process AfterChainMaintenanceEvent")
 	//换届完成，dag需要进行的操作：
-	threshold, _ := dag.stablePropRep.GetChainThreshold()
+	threshold, _ := dag.unstablePropRep.GetChainThreshold()
 	dag.Memdag.SetStableThreshold(threshold)
 }
 

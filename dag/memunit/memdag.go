@@ -228,16 +228,6 @@ func (chain *MemDag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Hea
 	return nil, errors.New("not found")
 }
 
-//func (chain *MemDag) getHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error) {
-//	chain_units := chain.getChainUnits()
-//	for _, unit := range chain_units {
-//		if index := unit.UnitHeader.ChainIndex(); index.Equal(number) {
-//			return unit.Header(), nil
-//		}
-//	}
-//	return nil, fmt.Errorf("the header[%s] not exist.", number.String())
-//}
-
 func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error {
 	chain.lock.Lock()
 	defer chain.lock.Unlock()
@@ -292,27 +282,6 @@ func (chain *MemDag) setStableUnit(hash common.Hash, height uint64, txpool txspo
 		return
 	}
 	chain.setNextStableUnit(chain_units, unit, txpool)
-
-
-	// comment by albert, 有中间缓存，两次for循环，效率低下
-	//newStableUnits := make([]*modules.Unit, stableCount)
-	//stbHash := hash
-	//chain_units := chain.getChainUnits()
-	//for i := 0; i < stableCount; i++ {
-	//	if u, has := chain_units[stbHash]; has {
-	//		newStableUnits[stableCount-i-1] = u
-	//		stbHash = u.ParentHash()[0]
-	//	}
-	//}
-	//
-	////Save stable unit and it's parent
-	//max_height := height
-	//for _, unit := range newStableUnits {
-	//	if unit.NumberU64() > max_height {
-	//		max_height = unit.NumberU64()
-	//	}
-	//	chain.setNextStableUnit(unit, txpool)
-	//}
 
 	// 更新tempdb ，将低于稳定单元的分叉链都删除
 	go chain.delHeightUnitsAndTemp(height)
@@ -434,39 +403,6 @@ func (chain *MemDag) checkStableCondition(tempDB *ChainTempDb, unit *modules.Uni
 		return false
 	}
 	chain.setStableUnit(header.Hash(), header.NumberU64(), txpool)
-
-	//unstableCount := int(unit.NumberU64() - chain.stableUnitHeight)
-	////每个单元被多少个地址确认过(包括自己)
-	//unstableCofirmAddrs := make(map[common.Hash]map[common.Address]bool)
-	//childrenCofirmAddrs := make(map[common.Address]bool)
-	//ustbHash := unit.Hash()
-	//childrenCofirmAddrs[unit.Author()] = true
-	//units := chain.getChainUnits()
-	//for i := 0; i < unstableCount; i++ {
-	//	u := units[ustbHash]
-	//	if u == nil {
-	//		continue
-	//	}
-	//	hs := unstableCofirmAddrs[ustbHash]
-	//	if hs == nil {
-	//		hs = make(map[common.Address]bool)
-	//		unstableCofirmAddrs[ustbHash] = hs
-	//	}
-	//	hs[u.Author()] = true
-	//	for addr := range childrenCofirmAddrs {
-	//		hs[addr] = true
-	//	}
-	//	childrenCofirmAddrs[u.Author()] = true
-	//
-	//	if len(hs) >= chain.threshold {
-	//		log.Debugf("Unit[%s] height:%d has enough confirm address count=%d, make it to stable.",
-	//			ustbHash.String(), unit.NumberU64(), len(hs))
-	//		chain.setStableUnit(ustbHash, u.NumberU64(), txpool)
-	//		return true
-	//	}
-	//	ustbHash = u.ParentHash()[0]
-	//}
-	//return false
 
 	return true
 }
