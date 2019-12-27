@@ -307,7 +307,7 @@ func (chain *MemDag) setStableUnit(hash common.Hash, height uint64, txpool txspo
 func (chain *MemDag) setNextStableUnit(chain_units map[common.Hash]*modules.Unit, unit *modules.Unit, txpool txspool.ITxPool) {
 	hash := unit.Hash()
 	height := unit.NumberU64()
-	if hash == chain.stableUnitHash {
+	if hash == chain.GetLastStableUnitHash() {
 		return
 	}
 
@@ -364,8 +364,8 @@ func (chain *MemDag) checkStableCondition(tempDB *ChainTempDb, unit *modules.Uni
 	// append by albert, 使用群签名判断是否稳定
 	if chain.checkUnitIrreversibleWithGroupSign(unit) {
 		log.Debugf("the unit(%s) have group sign(%s), make it to irreversible.",
-			unit.UnitHash.TerminalString(), hexutil.Encode(unit.GetGroupSign()))
-		chain.setStableUnit(unit.UnitHash, unit.NumberU64(), txpool)
+			unit.Hash().TerminalString(), hexutil.Encode(unit.GetGroupSign()))
+		chain.setStableUnit(unit.Hash(), unit.NumberU64(), txpool)
 		return true
 	}
 
@@ -391,7 +391,7 @@ func (chain *MemDag) checkStableCondition(tempDB *ChainTempDb, unit *modules.Uni
 	// 排序，使用第n大元素的方法
 	csort.Element(sort.IntSlice(lastConfirmedUnitNums), offset)
 	newLastStableUnitNum := uint64(lastConfirmedUnitNums[offset])
-	if !(newLastStableUnitNum > chain.stableUnitHeight) {
+	if !(newLastStableUnitNum > chain.GetLastStableUnitHeight()) {
 		// 新的稳定高度不变
 		return false
 	}
