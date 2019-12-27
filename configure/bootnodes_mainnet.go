@@ -32,7 +32,7 @@ var GenesisHash = []byte("")
 // the main PalletOne network.
 var MainnetBootnodes = []string{
 	"pnode://53d198682fd6e7335e52056952cbbeb77df0dc97909512266d64409dc1a4d9dfa331e6f5c2cd486bcb8a91a9abd4ae7989c5a1682a824ac67ce670e60707284e@hub1.pallet.one:30309",
-	"pnode://e54c8ebf2be0786f837dfcae09692ed49b7d25c6b7ffdccaca93f8c6c825d418c70cb39c706457ca19e0b472b0583f9fa35badc610cdd03958fe759e656f4ad7@hub2.pallet.one:30309",
+	"pnode://fc541a39fe5443adaa797c42ecf05a0b0a1d29af9f4843531adee999dffdc19509a810ebc7c85502d90030f0497bdb3b29fb254d1259c9b57be25a7edb30b8aa@hub2.pallet.one:30303",
 	"pnode://7acd09b54f40aacbbf082de5a3cd13157d67747f771d20857320ab0f8a8cc48174277a5a7c2da96914388dfaf0eaadadb9aae219274a31cd72f7eebe3f3c73fa@hub3.pallet.one:30303",
 }
 
