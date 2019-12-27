@@ -312,11 +312,17 @@ func (rep *UnitRepository) getUnit(hash common.Hash) (*modules.Unit, error) {
 }
 
 func (rep *UnitRepository) GetHashByNumber(number *modules.ChainIndex) (common.Hash, error) {
+	rep.lock.RLock()
+	defer rep.lock.RUnlock()
 	return rep.dagdb.GetHashByNumber(number)
 }
+
 func (rep *UnitRepository) GetBody(unitHash common.Hash) ([]common.Hash, error) {
+	rep.lock.RLock()
+	defer rep.lock.RUnlock()
 	return rep.dagdb.GetBody(unitHash)
 }
+
 func (rep *UnitRepository) GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error) {
 	tx, err := rep.dagdb.GetTransactionOnly(hash)
 	if err != nil {
@@ -331,19 +337,25 @@ func (rep *UnitRepository) GetTransaction(hash common.Hash) (*modules.Transactio
 		UnitIndex: txlookup.UnitIndex, TxIndex: txlookup.Index, Timestamp: txlookup.Timestamp}
 	return resultTx, nil
 }
+
 func (rep *UnitRepository) GetTransactionOnly(hash common.Hash) (*modules.Transaction, error) {
 	return rep.dagdb.GetTransactionOnly(hash)
 }
+
 func (rep *UnitRepository) GetTxLookupEntry(hash common.Hash) (*modules.TxLookupEntry, error) {
 	return rep.dagdb.GetTxLookupEntry(hash)
 }
+
 func (rep *UnitRepository) GetCommon(key []byte) ([]byte, error) { return rep.dagdb.GetCommon(key) }
+
 func (rep *UnitRepository) GetCommonByPrefix(prefix []byte) map[string][]byte {
 	return rep.dagdb.GetCommonByPrefix(prefix)
 }
+
 func (rep *UnitRepository) GetAllData() ([][]byte, [][]byte) {
 	return rep.dagdb.GetAllData()
 }
+
 func (rep *UnitRepository) SaveCommon(key, val []byte) error {
 	return rep.dagdb.SaveCommon(key, val)
 }

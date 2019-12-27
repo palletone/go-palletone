@@ -1481,15 +1481,12 @@ func (s *PublicWalletAPI) getFileInfo(filehash string) ([]*ptnjson.ProofOfExiste
 	}
 	result := []*ptnjson.ProofOfExistenceJson{}
 	for _, file := range files {
-		poe, err := s.b.QueryProofOfExistenceByReference(file.Reference)
+		tx, err := s.b.GetTxByHash(file.Txid)
 		if err != nil {
 			return nil, err
 		}
-		result = append(result, poe...)
-	}
-
-	for _, file := range files {
-		return s.b.QueryProofOfExistenceByReference(file.Reference)
+		poe:= ptnjson.ConvertTx2ProofOfExistence(tx)
+		result = append(result, poe)
 	}
 	return result, nil
 }

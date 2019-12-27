@@ -23,7 +23,7 @@ if [ -e "$jsonFile" ]; then
     sed -i "s/\"initial_active_mediators\": 5/\"initial_active_mediators\": 3/g" $jsonFile
     sed -i "s/\"min_mediator_count\": 5/\"min_mediator_count\": 3/g" $jsonFile
     sed -i "s/\"maintenance_interval\": [0-9]*/\"maintenance_interval\": 150/g" $jsonFile
-    sed -i "s/\"maintenance_skip_slots\": 2/\"maintenance_skip_slots\": 0/g" $jsonFile
+    sed -i "s/\"maintenance_skip_slots\": 1/\"maintenance_skip_slots\": 0/g" $jsonFile
     sed -i "s/\"mediator_interval\": 3,/\"mediator_interval\": 2,/g" $jsonFile
     sed -i "s/\"initialTimestamp\": [0-9]*,/\"initialTimestamp\": 1566269000,/g" $jsonFile
 else
