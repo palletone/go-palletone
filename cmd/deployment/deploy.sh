@@ -139,8 +139,7 @@ fi
 
 getJuryIp=`./gptn getJuryIp`
 tempinfo=`echo $getJuryIp | sed -n '$p'| awk '{print $NF}'`
-ip=`echo ${tempinfo//
-/}`
+ip=`echo ${tempinfo///}`
 
 LoopDeploy $n $ip;
 
