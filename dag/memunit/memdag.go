@@ -642,25 +642,29 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 	if unit == nil {
 		return nil, nil, nil, nil, nil, errors.ErrNullPoint
 	}
+
 	chain.lock.Lock()
 	defer chain.lock.Unlock()
+
 	if unit.NumberU64() <= chain.stableUnitHeight {
 		log.Debugf("This unit is too old hight:%d,hash:%s .Ignore it,stable unit height:%d, stable hash:%s",
 			unit.Number().Index, unit.UnitHash.String(), chain.stableUnitHeight, chain.stableUnitHash.String())
 		go txpool.ResetPendingTxs(unit.Transactions())
 		return nil, nil, nil, nil, nil, nil
 	}
+
 	chain_units := chain.getChainUnits()
 	if _, has := chain_units[unit.Hash()]; has { // 不重复添加
 		log.Debugf("MemDag[%s] received a repeated unit, hash[%s] ", chain.token.String(), unit.Hash().String())
 		return nil, nil, nil, nil, nil, nil
 	}
 
-	// leveldb 查重
-	if h, err := chain.ldbunitRep.GetHeaderByHash(unit.Hash()); err == nil && h != nil {
-		log.Debugf("Dag[%s] received a repeated unit, hash[%s] ", chain.token.String(), unit.Hash().String())
-		return nil, nil, nil, nil, nil, nil
-	}
+	// comment by albert, 重复判断 stableUnitHeight判断，已经排除了在leveldb重复可能
+	//// leveldb 查重
+	//if h, err := chain.ldbunitRep.GetHeaderByHash(unit.Hash()); err == nil && h != nil {
+	//	log.Debugf("Dag[%s] received a repeated unit, hash[%s] ", chain.token.String(), unit.Hash().String())
+	//	return nil, nil, nil, nil, nil, nil
+	//}
 
 	a, b, c, d, e, err, isOrphan := chain.addUnit(unit, txpool, isGenerate)
 	log.DebugDynamic(func() string {
@@ -789,6 +793,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 				} else {
 					validateCode = main_temp.Validator.ValidateUnitExceptGroupSig(unit)
 				}
+
 				if validateCode != validator.TxValidationCode_VALID {
 					vali_err := validator.NewValidateError(validateCode)
 					log.Debugf("validate fork unit error, %s, unit hash:%s", vali_err.Error(), uHash.String())

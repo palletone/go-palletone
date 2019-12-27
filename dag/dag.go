@@ -330,24 +330,23 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 				return i, err
 			}
 		} else {
-			if a, b, c, dd, e, err := d.Memdag.AddUnit(u, txpool, false); err != nil {
+			a, b, c, dd, e, err := d.Memdag.AddUnit(u, txpool, false)
+			if err != nil {
 				//return count, err
 				log.Errorf("Memdag addUnit[%s] #%d signed by %v error:%s",
 					u.UnitHash.String(), u.NumberU64(), u.Author().Str(), err.Error())
 				return count, err
-			} else {
-				if a != nil {
-					if d.unstableUnitProduceRep != e {
-						log.Debugf("send UnstableRepositoryUpdatedEvent")
-						go d.unstableRepositoryUpdatedFeed.Send(modules.UnstableRepositoryUpdatedEvent{})
-					}
-
-					d.unstableUnitRep = a
-					d.unstableUtxoRep = b
-					d.unstableStateRep = c
-					d.unstablePropRep = dd
-					d.unstableUnitProduceRep = e
+			} else if a != nil {
+				if d.unstableUnitProduceRep != e {
+					log.Debugf("send UnstableRepositoryUpdatedEvent")
+					go d.unstableRepositoryUpdatedFeed.Send(modules.UnstableRepositoryUpdatedEvent{})
 				}
+
+				d.unstableUnitRep = a
+				d.unstableUtxoRep = b
+				d.unstableStateRep = c
+				d.unstablePropRep = dd
+				d.unstableUnitProduceRep = e
 			}
 		}
 
