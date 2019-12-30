@@ -102,8 +102,8 @@ func TestCopyHeader(t *testing.T) {
 	newH.SetGroupSign([]byte("sign123"))
 	newH.SetGroupPubkey([]byte("sign123"))
 	assert.NotEqual(t, h.Hash().String(), newH.Hash().String())
-	log.Printf("\n newh=%v,hash:%s \n oldH=%v ,hash:%s \n ", *newH.Header(), newH.Hash().String(),
-		h.Header(), h.Hash().String())
+	//log.Printf("\n newh=%v,hash:%s \n oldH=%v ,hash:%s \n ", *newH.Header(), newH.Hash().String(),
+	//	h.Header(), h.Hash().String())
 }
 
 // test unit's size of header
@@ -185,7 +185,7 @@ func assertEqualRlp(t *testing.T, a, b interface{}) {
 
 func TestHeader_Copy(t *testing.T) {
 	h := mockHeader()
-	data, _ := json.Marshal(h.Header())
+	data, _ := json.Marshal(h)
 	t.Log("Header1", string(data))
 	headerHash := "0x4dcf5cffcc5eb4f103d9222d4551e337c73f7f5d0c4f50de170920cc42db302b"
 	t.Logf("Header Hash:%s, sign:%s", h.Hash().String(), string(h.group_sign))
@@ -193,14 +193,14 @@ func TestHeader_Copy(t *testing.T) {
 	//h2 := new(Header)
 	//h2.CopyHeader(h)
 	h2 := CopyHeader(h)
-	data, _ = json.Marshal(h2.Header())
+	data, _ = json.Marshal(h2)
 	t.Log("Header2", string(data), "h2_hash", h2.Hash().String(), string(h2.group_sign))
 	assert.Equal(t, headerHash, h2.Hash().String())
 	h.hash = common.Hash{}
 	h2.hash = common.Hash{}
 
 	h2.SetAuthor(Authentifier{PubKey: []byte("Test")})
-	data, _ = json.Marshal(h.Header())
+	data, _ = json.Marshal(h)
 	t.Log("Header1", string(data), "h_hash", h.Hash().String(), string(h.group_sign))
 	assert.Equal(t, headerHash, h.Hash().String())
 }

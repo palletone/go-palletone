@@ -160,6 +160,32 @@ func (h *Header) GetGroupPubKeyByte() []byte {
 	return h.group_pubKey
 }
 
+func (h *Header) GetGroupPubkey() []byte {
+	return common.CopyBytes(h.group_pubKey)
+}
+
+func (h *Header) SetGroupPubkey(key []byte) {
+	h.group_pubKey = make([]byte, 0)
+	if len(key) > 0 {
+		h.group_pubKey = append(h.group_pubKey, key...)
+	}
+}
+
+func (h *Header) ParentHash() []common.Hash {
+	return h.header.ParentsHash
+}
+
+func (h *Header) SetGroupSign(sign []byte) {
+	h.group_sign = make([]byte, 0)
+	if len(sign) > 0 {
+		h.group_sign = append(h.group_sign, sign...)
+	}
+}
+
+func (h *Header) GetGroupSign() []byte {
+	return common.CopyBytes(h.group_sign)
+}
+
 func (h *Header) GetGroupPubKey() (kyber.Point, error) {
 	pubKeyB := h.group_pubKey
 	if len(pubKeyB) == 0 {
@@ -169,28 +195,35 @@ func (h *Header) GetGroupPubKey() (kyber.Point, error) {
 	err := pubKey.UnmarshalBinary(pubKeyB)
 	return pubKey, err
 }
-
+func (h *Header) ResetHash() {
+	h.hash = common.Hash{}
+}
 func (h *Header) SetTxRoot(txroot common.Hash) {
 	// init header
-	author := h.GetAuthors()
-	sdw := initHeaderSdw(h.header.ParentsHash, txroot, author.PubKey, author.Signature, h.Extra(),
-		h.header.CryptoLib, h.header.TxsIllegal, h.GetNumber().AssetID, h.GetNumber().Index, h.Timestamp())
-	h.header = sdw
+	//author := h.GetAuthors()
+	//sdw := initHeaderSdw(h.header.ParentsHash, txroot, author.PubKey, author.Signature, h.Extra(),
+	//	h.header.CryptoLib, h.header.TxsIllegal, h.GetNumber().AssetID, h.GetNumber().Index, h.Timestamp())
+	//h.header = sdw
+	h.header.TxRoot = txroot
+	h.ResetHash()
 }
 func (h *Header) SetAuthor(author Authentifier) {
-	sdw := initHeaderSdw(h.header.ParentsHash, h.header.TxRoot, author.PubKey, author.Signature, h.Extra(),
-		h.header.CryptoLib, h.header.TxsIllegal, h.GetNumber().AssetID, h.GetNumber().Index, h.Timestamp())
-
-	h.header = sdw
-
+	//sdw := initHeaderSdw(h.header.ParentsHash, h.header.TxRoot, author.PubKey, author.Signature, h.Extra(),
+	//	h.header.CryptoLib, h.header.TxsIllegal, h.GetNumber().AssetID, h.GetNumber().Index, h.Timestamp())
+	//
+	//h.header = sdw
+	h.header.Authors = author
+	h.ResetHash()
 }
 
 func (h *Header) SetTxsIllegal(txsillegal []uint16) {
-	author := h.GetAuthors()
-	sdw := initHeaderSdw(h.header.ParentsHash, h.header.TxRoot, author.PubKey, author.Signature, h.Extra(),
-		h.header.CryptoLib, txsillegal, h.GetNumber().AssetID, h.GetNumber().Index, h.Timestamp())
-
-	h.header = sdw
+	//author := h.GetAuthors()
+	//sdw := initHeaderSdw(h.header.ParentsHash, h.header.TxRoot, author.PubKey, author.Signature, h.Extra(),
+	//	h.header.CryptoLib, txsillegal, h.GetNumber().AssetID, h.GetNumber().Index, h.Timestamp())
+	//
+	//h.header = sdw
+	h.header.TxsIllegal = txsillegal
+	h.ResetHash()
 }
 
 func (h *Header) Hash() common.Hash {
@@ -508,43 +541,11 @@ func (u *Unit) Timestamp() int64 {
 func (u *Unit) ParentHash() []common.Hash {
 	return u.UnitHeader.ParentHash()
 }
-
-func (h *Header) ParentHash() []common.Hash {
-	return h.header.ParentsHash
-}
-func (h *Header) Header() *header_sdw {
-	if h.header == nil {
-		h.header = new_header_sdw()
-	}
-	return h.header
-}
-func (h *Header) SetGroupSign(sign []byte) {
-	h.group_sign = make([]byte, 0)
-	if len(sign) > 0 {
-		h.group_sign = append(h.group_sign, sign...)
-	}
-}
-
 func (u *Unit) GetGroupSign() []byte {
 	return u.UnitHeader.GetGroupSign()
 }
-
-func (h *Header) GetGroupSign() []byte {
-	return common.CopyBytes(h.group_sign)
-}
-func (h *Header) SetGroupPubkey(key []byte) {
-	h.group_pubKey = make([]byte, 0)
-	if len(key) > 0 {
-		h.group_pubKey = append(h.group_pubKey, key...)
-	}
-}
-
 func (u *Unit) GetGroupPubkey() []byte {
 	return u.UnitHeader.GetGroupPubkey()
-}
-
-func (h *Header) GetGroupPubkey() []byte {
-	return common.CopyBytes(h.group_pubKey)
 }
 
 type ErrUnit float64

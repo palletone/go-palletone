@@ -39,7 +39,7 @@ const ENABLE_CONTRACT_SIGN_CHECK_TIME = 1575129600 //2019-12-1
 验证unit的签名，需要比对见证人列表
 To validate unit's signature, and mediators' signature
 */
-func validateUnitSignature(h *modules.Header) ValidationCode {
+func validateUnitSignature(header *modules.Header) ValidationCode {
 	// copy unit's header
 	//header := modules.CopyHeader(h)
 	// signature does not contain authors and witness fields
@@ -47,13 +47,13 @@ func validateUnitSignature(h *modules.Header) ValidationCode {
 	//header.GroupSign = make([]byte, 0)
 	// recover signature
 	//if h.Authors == nil {
-	header := h.Header()
-	if header.Authors.Empty() {
+	author := header.GetAuthors()
+	if author.Empty() {
 		log.Debug("Verify unit signature ,header's authors is nil.")
 		return UNIT_STATE_INVALID_AUTHOR_SIGNATURE
 	}
 
-	hash := h.HashWithoutAuthor()
+	hash := header.HashWithoutAuthor()
 	//pubKey, err := modules.RSVtoPublicKey(hash[:], h.Authors.R[:], h.Authors.S[:], h.Authors.V[:])
 	//if err != nil {
 	//	log.Debug("Verify unit signature when recover pubkey", "error", err.Error())
@@ -62,12 +62,12 @@ func validateUnitSignature(h *modules.Header) ValidationCode {
 	//  pubKey to pubKey_bytes
 	//pubKey_bytes := crypto.CompressPubkey(pubKey)
 
-	if pass, _ := crypto.MyCryptoLib.Verify(header.Authors.PubKey, header.Authors.Signature, hash.Bytes()); !pass {
+	if pass, _ := crypto.MyCryptoLib.Verify(author.PubKey, author.Signature, hash.Bytes()); !pass {
 		log.Debug("Verify unit signature error.")
 		return UNIT_STATE_INVALID_AUTHOR_SIGNATURE
 	}
 	// if genesis unit just return
-	if len(header.ParentsHash) == 0 {
+	if len(header.ParentHash()) == 0 {
 		return TxValidationCode_VALID
 	}
 
@@ -103,7 +103,7 @@ func (validate *Validate) validateUnitAuthor(h *modules.Header) ValidationCode {
 	}
 
 	mediators := validate.statequery.GetMediators()
-	authorAddr := h.Header().Authors.Address()
+	authorAddr := h.Author()
 	if !mediators[authorAddr] {
 		mediatorAddrs := ""
 		for m := range mediators {
@@ -140,8 +140,8 @@ func (validate *Validate) validateMediatorSchedule(header *modules.Header) Valid
 
 	scheduledMediator := validate.propquery.GetScheduledMediator(slotNum)
 	if !scheduledMediator.Equal(header.Author()) {
-		errStr := fmt.Sprintf("mediator(%v) produced unit at wrong time, scheduled slot number:%d, " +
-			"scheduled mediator is %v",	header.Author().Str(), slotNum, scheduledMediator.String())
+		errStr := fmt.Sprintf("mediator(%v) produced unit at wrong time, scheduled slot number:%d, "+
+			"scheduled mediator is %v", header.Author().Str(), slotNum, scheduledMediator.String())
 		log.Warn(errStr)
 		return UNIT_STATE_INVALID_MEDIATOR_SCHEDULE
 	}

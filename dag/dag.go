@@ -1045,7 +1045,10 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 		}
 	}
 	if isGenesis {
-		d.stableUnitRep.SaveUnit(unit, true)
+		err := d.stableUnitRep.SaveUnit(unit, true)
+		if err != nil {
+			return err
+		}
 		// set memdag state
 		return nil
 	}
