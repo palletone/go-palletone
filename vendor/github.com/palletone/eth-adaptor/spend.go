@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"math/big"
 
@@ -126,11 +127,15 @@ func BindTxAndSignature(input *adaptor.BindTxAndSignatureInput) (*adaptor.BindTx
 }
 
 func CalcTxHash(input *adaptor.CalcTxHashInput) (*adaptor.CalcTxHashOutput, error) {
-	hash := crypto.Keccak256Hash(input.Transaction)
+	var tx types.Transaction
+	err := rlp.DecodeBytes(input.Transaction, &tx)
+	if err != nil {
+		return nil, fmt.Errorf("rlp.DecodeBytes failed : %s", err.Error())
+	}
 
 	//save result
 	var result adaptor.CalcTxHashOutput
-	result.Hash = hash.Bytes()
+	result.Hash = tx.Hash().Bytes()
 
 	return &result, nil
 }
@@ -192,7 +197,7 @@ func CreateETHTx(input *adaptor.CreateTransferTokenTxInput, rpcParams *RPCParams
 		input.Amount.Amount, //in wei
 		gasLimitU64,
 		gasPrice, //in wei
-		nil)
+		nil)      //todo
 
 	rlpTXBytes, err := rlp.EncodeToBytes(tx)
 	if err != nil {

@@ -146,6 +146,20 @@ password to file or expose in any other way.
 `,
 			},
 			{
+				Name:   "newhd",
+				Usage:  "Create a new HD account",
+				Action: utils.MigrateFlags(hdAccountCreate),
+				Flags: []cli.Flag{
+					utils.DataDirFlag,
+					utils.KeyStoreDirFlag,
+					utils.PasswordFileFlag,
+					utils.LightKDFFlag,
+				},
+				Description: `
+    gptn account newhd
+`,
+			},
+			{
 				Name:      "multi",
 				Usage:     "Create a new multisign account",
 				Action:    utils.MigrateFlags(accountMultiCreate),
@@ -456,7 +470,28 @@ func createAccount(ctx *cli.Context, password string) (common.Address, error) {
 
 	return address, nil
 }
+func createHdAccount(ctx *cli.Context, password string) (common.Address, error) {
+	var err error
+	var cfg FullConfig
+	var configDir string
+	// Load config file.
+	if cfg, configDir, err = maybeLoadConfig(ctx); err != nil {
+		utils.Fatalf("%v", err)
+		return common.Address{}, err
+	}
 
+	cfg.Node.P2P = cfg.P2P
+	utils.SetNodeConfig(ctx, &cfg.Node, configDir)
+	scryptN, scryptP, keydir, _ := cfg.Node.AccountConfig()
+
+	address, err := keystore.StoreHdSeed(keydir, password, scryptN, scryptP)
+	if err != nil {
+		utils.Fatalf("Failed to create account: %v", err)
+		return common.Address{}, err
+	}
+
+	return address, nil
+}
 // accountCreate creates a new account into the keystore defined by the CLI flags.
 func createMultiAccount(ctx *cli.Context, pubkey [][]byte, check int) ([]byte, []byte, common.Address, error) {
 	var err error
@@ -483,6 +518,17 @@ func newAccount(ctx *cli.Context) (common.Address, error) {
 		"Do not forget this password.", true, 0, utils.MakePasswordList(ctx))
 
 	address, err := createAccount(ctx, password)
+	if err != nil {
+		return common.Address{}, err
+	}
+
+	return address, nil
+}
+func newHdAccount(ctx *cli.Context) (common.Address, error) {
+	password := getPassPhrase("Your new account is locked with a password. Please give a password. "+
+		"Do not forget this password.", true, 0, utils.MakePasswordList(ctx))
+
+	address, err := createHdAccount(ctx, password)
 	if err != nil {
 		return common.Address{}, err
 	}
@@ -540,6 +586,16 @@ func newMultiAccount(ctx *cli.Context) ([]byte, []byte, common.Address, error) {
 // accountCreate creates a new account into the keystore defined by the CLI flags.
 func accountCreate(ctx *cli.Context) error {
 	address, err := newAccount(ctx)
+	if err != nil {
+		utils.Fatalf("%v", err)
+	}
+
+	//	fmt.Printf("Address Hex: {%x}\n", address)
+	fmt.Printf("Address: %s\n", address.String())
+	return nil
+}
+func hdAccountCreate(ctx *cli.Context) error {
+	address, err := newHdAccount(ctx)
 	if err != nil {
 		utils.Fatalf("%v", err)
 	}

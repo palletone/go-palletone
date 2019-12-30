@@ -99,7 +99,12 @@ func StoreKey(dir, auth string, scryptN, scryptP int) (common.Address, error) {
 	// log.Debug("Address:" + a.Address.Str())
 	return a.Address, err
 }
-
+func StoreHdSeed(dir, auth string, scryptN, scryptP int) (common.Address, error) {
+	_, a, err := storeNewHdSeed(&keyStorePassphrase{dir, scryptN, scryptP},  auth)
+	// log.Debug("Dir: " + dir + " Auth: " + auth + " scryptN: " + strconv.Itoa(scryptN) + " scryptP: " + strconv.Itoa(scryptP))
+	// log.Debug("Address:" + a.Address.Str())
+	return a.Address, err
+}
 func (ks keyStorePassphrase) StoreKey(filename string, key *Key, auth string) error {
 	keyjson, err := EncryptKey(key, auth, ks.scryptN, ks.scryptP)
 	if err != nil {
