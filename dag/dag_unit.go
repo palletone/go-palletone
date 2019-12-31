@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ethereum/go-ethereum/rlp"
+	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -46,21 +47,20 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	//log.Debugf("generate unit ...")
 
 	// 2. 生产unit，添加交易集、时间戳、签名
-	sign_unit, err := dag.createUnit(producer, txpool, ks, when)
+	unsign_unit, err := dag.createUnit(producer, txpool, when)
 	if err != nil {
 		errStr := fmt.Sprintf("GenerateUnit error: %v", err.Error())
 		log.Debug(errStr)
 		return nil, fmt.Errorf(errStr)
 	}
-	if sign_unit == nil || sign_unit.IsEmpty() {
+	if unsign_unit == nil || unsign_unit.IsEmpty() {
 		errStr := fmt.Sprintf("No unit need to be packaged for now.")
 		log.Debug(errStr)
 		return nil, fmt.Errorf(errStr)
 	}
-
+	sign_unit, err := dagcommon.GetUnitWithSig(unsign_unit, ks, producer)
 	sign_unit.UnitHeader.SetGroupPubkey(groupPubKey)
 
-	sign_unit.Hash()
 	sign_unit.Size()
 	log.Debugf("Generate new unit index:[%d],hash:[%s],size:%s, parent unit[%s],txs[%d], spent time: %s ",
 		sign_unit.NumberU64(), sign_unit.Hash().String(), sign_unit.Size().String(),
@@ -103,7 +103,8 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 }
 
 // createUnit, create a unit when mediator being produced
-func (d *Dag) createUnit(mAddr common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore,
+//创建未签名的Unit
+func (d *Dag) createUnit(mAddr common.Address, txpool txspool.ITxPool,
 	when time.Time) (*modules.Unit, error) {
 
 	med, err := d.unstableStateRep.RetrieveMediator(mAddr)
@@ -112,6 +113,6 @@ func (d *Dag) createUnit(mAddr common.Address, txpool txspool.ITxPool, ks *keyst
 	}
 
 	//return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool, rep, state.GetJurorReward)
-	return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool, ks, when,
+	return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool, when,
 		d.unstablePropRep, d.unstableStateRep.GetJurorReward)
 }

@@ -54,7 +54,7 @@ type IUnitRepository interface {
 	GetGenesisUnit() (*modules.Unit, error)
 	//GenesisHeight() modules.ChainIndex
 	SaveUnit(unit *modules.Unit, isGenesis bool) error
-	CreateUnit(mediatorReward common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore, when time.Time,
+	CreateUnit(mediatorReward common.Address, txpool txspool.ITxPool, when time.Time,
 		propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc) (*modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
@@ -502,12 +502,12 @@ func sigHeader(h *modules.Header, ks *keystore.KeyStore, signer common.Address) 
 }
 
 /**
-创建单元
+创建单元,但是未签名
 create common unit
 @param mAddr is minner addr
 return: correct if error is nil, and otherwise is incorrect
 */
-func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txspool.ITxPool, ks *keystore.KeyStore,
+func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txspool.ITxPool,
 	when time.Time, propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc) (*modules.Unit, error) {
 	log.Debug("create unit lock unitRepository.")
 	rep.lock.RLock()
@@ -532,11 +532,11 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 	b := []byte{}
 	header := modules.NewHeader([]common.Hash{phash}, common.Hash{}, b, b, b, b, []uint16{},
 		chainIndex.AssetID, chainIndex.Index, when.Unix())
-	if err := sigHeader(header, ks, mediatorReward); err != nil {
-		errStr := fmt.Sprintf("GetUnitWithSig error: %v", err.Error())
-		log.Debug(errStr)
-		return nil, fmt.Errorf(errStr)
-	}
+	//if err := sigHeader(header, ks, mediatorReward); err != nil {
+	//	errStr := fmt.Sprintf("GetUnitWithSig error: %v", err.Error())
+	//	log.Debug(errStr)
+	//	return nil, fmt.Errorf(errStr)
+	//}
 	h_hash := header.HashWithOutTxRoot()
 
 	log.Debugf("Start txpool.GetSortedTxs..., parent hash:%s", phash.String())
