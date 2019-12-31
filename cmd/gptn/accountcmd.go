@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/tokenengine"
@@ -157,6 +158,20 @@ password to file or expose in any other way.
 				},
 				Description: `
     gptn account newhd
+`,
+			},
+			{
+				Name:   "getHdAccount",
+				Usage:  "get HD account by account index",
+				Action: utils.MigrateFlags(hdAccountGet),
+				Flags: []cli.Flag{
+					utils.DataDirFlag,
+					utils.KeyStoreDirFlag,
+					utils.PasswordFileFlag,
+					utils.LightKDFFlag,
+				},
+				Description: `
+    gptn account getHdAccount P1XXXXX userId
 `,
 			},
 			{
@@ -492,6 +507,7 @@ func createHdAccount(ctx *cli.Context, password string) (common.Address, error) 
 
 	return address, nil
 }
+
 // accountCreate creates a new account into the keystore defined by the CLI flags.
 func createMultiAccount(ctx *cli.Context, pubkey [][]byte, check int) ([]byte, []byte, common.Address, error) {
 	var err error
@@ -535,6 +551,7 @@ func newHdAccount(ctx *cli.Context) (common.Address, error) {
 
 	return address, nil
 }
+
 func IntToByte(num int64) []byte {
 	var buffer bytes.Buffer
 	err := binary.Write(&buffer, binary.BigEndian, num)
@@ -604,7 +621,30 @@ func hdAccountCreate(ctx *cli.Context) error {
 	fmt.Printf("Address: %s\n", address.String())
 	return nil
 }
+func hdAccountGet(ctx *cli.Context) error {
+	if len(ctx.Args()) == 0 {
+		utils.Fatalf("No accounts specified to update")
+	}
 
+	stack, _ := makeConfigNode(ctx, false)
+	ks := stack.GetKeyStore()
+	addr := ctx.Args().First()
+	account, _ := utils.MakeAddress(ks, addr)
+	pwd := getPassPhrase("Please give a password to unlock your account", false, 0, nil)
+
+	userId := ctx.Args()[1]
+	accountIndex, err := strconv.Atoi(userId)
+	if err != nil {
+		return errors.New("invalid argument, args 1 must be a number")
+	}
+
+	hdAccount, err := ks.GetHdAccountWithPassphrase(account, pwd, uint32(accountIndex))
+	if err != nil {
+		utils.Fatalf("get HD account error:%s", err)
+	}
+	fmt.Println(hdAccount.Address.String())
+	return nil
+}
 func accountMultiCreate(ctx *cli.Context) error {
 	lockscript, redeem, address, err := newMultiAccount(ctx)
 	if err != nil {

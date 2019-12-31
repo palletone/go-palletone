@@ -45,6 +45,7 @@ func newKeyFromHdSeed(hdSeed []byte) *Key {
 		Id:         id,
 		Address:    crypto.PubkeyBytesToAddress(pubKey),
 		PrivateKey: hdSeed,
+		KeyType:    KeyType_HD_Seed,
 	}
 	return key
 }
@@ -54,6 +55,19 @@ func newKey0(seed []byte) (*bip32.Key, error) {
 		return nil, err
 	}
 	return NewKeyFromMasterKey(masterKey, PTN_COIN_TYPE, ACCOUNT0, 0, 0)
+}
+
+//根据AccountIndex，返回私钥，公钥
+func newAccountKey(seed []byte, accountIndex uint32) ([]byte, []byte, error) {
+	masterKey, err := bip32.NewMasterKey(seed)
+	if err != nil {
+		return nil, nil, err
+	}
+	accountKey, err := NewKeyFromMasterKey(masterKey, PTN_COIN_TYPE, ACCOUNT0+accountIndex, 0, 0)
+	if err != nil {
+		return nil, nil, err
+	}
+	return accountKey.Key, accountKey.PublicKey().Key, nil
 }
 
 const Purpose uint32 = 0x8000002C

@@ -578,6 +578,22 @@ func (ks *KeyStore) GetPublicKey(address common.Address) ([]byte, error) {
 	return crypto.MyCryptoLib.PrivateKeyToPubKey(unlockedKey.PrivateKey)
 	//return crypto.CompressPubkey(&unlockedKey.PrivateKey.PublicKey), nil
 }
+func (ks *KeyStore) GetHdAccountWithPassphrase(a accounts.Account, passphrase string, accountIndex uint32) (
+	accounts.Account, error) {
+	_, key, err := ks.getDecryptedKey(a, passphrase)
+	if err != nil {
+		return accounts.Account{}, err
+	}
+	defer ZeroKey(key.PrivateKey)
+	_, pubKey, err := newAccountKey(key.PrivateKey, accountIndex)
+	if err != nil {
+		return accounts.Account{}, err
+	}
+	addr := crypto.PubkeyBytesToAddress(pubKey)
+	hdAccount := accounts.Account{Address: addr, URL: accounts.URL{Scheme: KeyStoreScheme,
+		Path: ks.storage.JoinPath(keyFileName(addr))}}
+	return hdAccount, nil
+}
 
 func (ks *KeyStore) SigUnit(unitHeader *modules.Header, address common.Address) ([]byte, error) {
 	emptyHeader := modules.CopyHeader(unitHeader)

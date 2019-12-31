@@ -100,7 +100,7 @@ func StoreKey(dir, auth string, scryptN, scryptP int) (common.Address, error) {
 	return a.Address, err
 }
 func StoreHdSeed(dir, auth string, scryptN, scryptP int) (common.Address, error) {
-	_, a, err := storeNewHdSeed(&keyStorePassphrase{dir, scryptN, scryptP},  auth)
+	_, a, err := storeNewHdSeed(&keyStorePassphrase{dir, scryptN, scryptP}, auth)
 	// log.Debug("Dir: " + dir + " Auth: " + auth + " scryptN: " + strconv.Itoa(scryptN) + " scryptP: " + strconv.Itoa(scryptP))
 	// log.Debug("Address:" + a.Address.Str())
 	return a.Address, err
@@ -166,6 +166,7 @@ func EncryptKey(key *Key, auth string, scryptN, scryptP int) ([]byte, error) {
 		cryptoStruct,
 		key.Id.String(),
 		version,
+		key.KeyType,
 	}
 	return json.Marshal(encryptedKeyJSONV3)
 }
@@ -181,6 +182,7 @@ func DecryptKey(keyjson []byte, auth string) (*Key, error) {
 	var (
 		keyBytes, keyId []byte
 		err             error
+		keyType         string
 	)
 	if version, ok := m["version"].(string); ok && version == "1" {
 		k := new(encryptedKeyJSONV1)
@@ -188,23 +190,32 @@ func DecryptKey(keyjson []byte, auth string) (*Key, error) {
 			return nil, err
 		}
 		keyBytes, keyId, err = decryptKeyV1(k, auth)
+		keyType = k.KeyType
 	} else {
 		k := new(encryptedKeyJSONV3)
 		if err := json.Unmarshal(keyjson, k); err != nil {
 			return nil, err
 		}
 		keyBytes, keyId, err = decryptKeyV3(k, auth)
+		keyType = k.KeyType
 	}
 	// Handle any decryption errors and return the key
 	if err != nil {
 		return nil, err
 	}
+	pubKey := []byte{}
 	//key := crypto.ToECDSAUnsafe(keyBytes)
-	pubKey, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(keyBytes)
+	if keyType == KeyType_HD_Seed {
+		_, pubKey, _ = newAccountKey(keyBytes, 0)
+	}
+	if keyType == KeyType_ECDSA_KEY {
+		pubKey, _ = crypto.MyCryptoLib.PrivateKeyToPubKey(keyBytes)
+	}
 	return &Key{
 		Id:         uuid.UUID(keyId),
 		Address:    crypto.PubkeyBytesToAddress(pubKey),
 		PrivateKey: keyBytes,
+		KeyType:    keyType,
 	}, nil
 }
 
