@@ -280,7 +280,7 @@ func (rep *UnitProduceRepository) updateMediatorSchedule() {
 }
 
 func (rep *UnitProduceRepository) updateSigningMediator(newUnit *modules.Unit) {
-	// 1. 更新 签名mediator 的LastConfirmedUnitNum
+	// 更新签名 mediator 的 LastConfirmedUnitNum 和 TotalProduct
 	signingMediator := newUnit.Author()
 	med := rep.GetMediator(signingMediator)
 	if med == nil {
@@ -289,6 +289,7 @@ func (rep *UnitProduceRepository) updateSigningMediator(newUnit *modules.Unit) {
 	}
 
 	lastConfirmedUnitNum := uint32(newUnit.NumberU64())
+	med.TotalProduct++
 	med.LastConfirmedUnitNum = lastConfirmedUnitNum
 	rep.stateRep.UpdateMediatorInfoExpand(med)
 
