@@ -363,6 +363,7 @@ func (rep *UnitRepository) SaveCommon(key, val []byte) error {
 //func (rep *UnitRepository) GetReqIdByTxHash(hash common.Hash) (common.Hash, error) {
 //	return rep.dagdb.GetReqIdByTxHash(hash)
 //}
+
 func (rep *UnitRepository) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
 	return rep.dagdb.GetTxHashByReqId(reqid)
 }
@@ -370,6 +371,7 @@ func (rep *UnitRepository) GetTxHashByReqId(reqid common.Hash) (common.Hash, err
 //func (rep *UnitRepository) GetAddrOutput(addr string) ([]modules.Output, error) {
 //	return rep.dagdb.GetAddrOutput(addr)
 //}
+
 func (rep *UnitRepository) GetTrieSyncProgress() (uint64, error) {
 	return rep.dagdb.GetTrieSyncProgress()
 }
@@ -381,6 +383,7 @@ func (rep *UnitRepository) GetTrieSyncProgress() (uint64, error) {
 //func (rep *UnitRepository) GetHeadFastUnitHash() (common.Hash, error) {
 //	return rep.dagdb.GetHeadFastUnitHash()
 //}
+
 func (rep *UnitRepository) GetNumberWithUnitHash(hash common.Hash) (*modules.ChainIndex, error) {
 	header, err := rep.dagdb.GetHeaderByHash(hash)
 	if err != nil {
@@ -485,21 +488,22 @@ func GetUnitWithSig(unit *modules.Unit, ks *keystore.KeyStore, signer common.Add
 
 	return unit, nil
 }
-func sigHeader(h *modules.Header, ks *keystore.KeyStore, signer common.Address) error {
-	// signature unit: only sign header data(without witness and authors fields)
-	sign, err1 := ks.SigUnit(h, signer)
-	if err1 != nil {
-		msg := fmt.Sprintf("Failed to Sig Unit:%v", err1.Error())
-		log.Error(msg)
-		return err1
-	}
-	pubKey, err := ks.GetPublicKey(signer)
-	if err != nil {
-		return err
-	}
-	h.SetAuthor(modules.Authentifier{PubKey: pubKey, Signature: sign})
-	return nil
-}
+
+//func sigHeader(h *modules.Header, ks *keystore.KeyStore, signer common.Address) error {
+//	// signature unit: only sign header data(without witness and authors fields)
+//	sign, err1 := ks.SigUnit(h, signer)
+//	if err1 != nil {
+//		msg := fmt.Sprintf("Failed to Sig Unit:%v", err1.Error())
+//		log.Error(msg)
+//		return err1
+//	}
+//	pubKey, err := ks.GetPublicKey(signer)
+//	if err != nil {
+//		return err
+//	}
+//	h.SetAuthor(modules.Authentifier{PubKey: pubKey, Signature: sign})
+//	return nil
+//}
 
 /**
 创建单元,但是未签名
