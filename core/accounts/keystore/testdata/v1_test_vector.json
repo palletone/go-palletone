@@ -20,7 +20,8 @@
             },
             "address": "cb61d5a9c4896fb9658090b597ef0e7be6f7b67e",
             "id": "e25f7c1f-d318-4f29-b62c-687190d4d299",
-            "version": "1"
+            "version": "1",
+            "keytype":"ECDSA"
         },
         "password": "g",
         "priv": "d1b1178d3529626a1a93e073f65028370d14c7eb0936eb42abef05db6f37ad7d"

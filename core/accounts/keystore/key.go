@@ -34,13 +34,16 @@ import (
 )
 
 const (
-	version = 3
+	version           = 3
+	KeyType_HD_Seed   = "HDSeed"
+	KeyType_ECDSA_KEY = "ECDSA"
 )
 
 type Key struct {
 	Id uuid.UUID // Version 4 "random" for unique id not derived from key data
 	// to simplify lookups we also store the address
 	Address common.Address
+	KeyType string
 	// we only store privkey as pubkey/address can be derived from it
 	// privkey in this struct is always in plaintext
 	PrivateKey []byte
@@ -58,6 +61,7 @@ type keyStore interface {
 type plainKeyJSON struct {
 	Address    string `json:"address"`
 	PrivateKey string `json:"privatekey"`
+	KeyType    string `json:"keytype"`
 	Id         string `json:"id"`
 	Version    int    `json:"version"`
 }
@@ -67,6 +71,7 @@ type encryptedKeyJSONV3 struct {
 	Crypto  cryptoJSON `json:"crypto"`
 	Id      string     `json:"id"`
 	Version int        `json:"version"`
+	KeyType string     `json:"keytype"`
 }
 
 type encryptedKeyJSONV1 struct {
@@ -74,6 +79,7 @@ type encryptedKeyJSONV1 struct {
 	Crypto  cryptoJSON `json:"crypto"`
 	Id      string     `json:"id"`
 	Version string     `json:"version"`
+	KeyType string     `json:"keytype"`
 }
 
 type cryptoJSON struct {
@@ -93,6 +99,7 @@ func (k *Key) MarshalJSON() (j []byte, err error) {
 	jStruct := plainKeyJSON{
 		hex.EncodeToString(k.Address[:]),
 		hex.EncodeToString(k.PrivateKey),
+		k.KeyType,
 		k.Id.String(),
 		version,
 	}
@@ -121,7 +128,7 @@ func (k *Key) UnmarshalJSON(j []byte) (err error) {
 
 	k.Address = common.BytesToAddress(addr)
 	k.PrivateKey = privkey
-
+	k.KeyType = keyJSON.KeyType
 	return nil
 }
 
@@ -132,6 +139,7 @@ func newKeyFromECDSA(privateKeyECDSA []byte) *Key {
 		Id:         id,
 		Address:    crypto.PubkeyBytesToAddress(pubKey),
 		PrivateKey: privateKeyECDSA,
+		KeyType:KeyType_ECDSA_KEY,
 	}
 	return key
 }

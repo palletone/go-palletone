@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/tokenengine"
@@ -143,6 +144,34 @@ For non-interactive use the passphrase can be specified with the --password flag
 
 Note, this is meant to be used for testing only, it is a bad idea to save your
 password to file or expose in any other way.
+`,
+			},
+			{
+				Name:   "newhd",
+				Usage:  "Create a new HD account",
+				Action: utils.MigrateFlags(hdAccountCreate),
+				Flags: []cli.Flag{
+					utils.DataDirFlag,
+					utils.KeyStoreDirFlag,
+					utils.PasswordFileFlag,
+					utils.LightKDFFlag,
+				},
+				Description: `
+    gptn account newhd
+`,
+			},
+			{
+				Name:   "getHdAccount",
+				Usage:  "get HD account by account index",
+				Action: utils.MigrateFlags(hdAccountGet),
+				Flags: []cli.Flag{
+					utils.DataDirFlag,
+					utils.KeyStoreDirFlag,
+					utils.PasswordFileFlag,
+					utils.LightKDFFlag,
+				},
+				Description: `
+    gptn account getHdAccount P1XXXXX userId
 `,
 			},
 			{
@@ -456,6 +485,28 @@ func createAccount(ctx *cli.Context, password string) (common.Address, error) {
 
 	return address, nil
 }
+func createHdAccount(ctx *cli.Context, password string) (common.Address, error) {
+	var err error
+	var cfg FullConfig
+	var configDir string
+	// Load config file.
+	if cfg, configDir, err = maybeLoadConfig(ctx); err != nil {
+		utils.Fatalf("%v", err)
+		return common.Address{}, err
+	}
+
+	cfg.Node.P2P = cfg.P2P
+	utils.SetNodeConfig(ctx, &cfg.Node, configDir)
+	scryptN, scryptP, keydir, _ := cfg.Node.AccountConfig()
+
+	address, err := keystore.StoreHdSeed(keydir, password, scryptN, scryptP)
+	if err != nil {
+		utils.Fatalf("Failed to create account: %v", err)
+		return common.Address{}, err
+	}
+
+	return address, nil
+}
 
 // accountCreate creates a new account into the keystore defined by the CLI flags.
 func createMultiAccount(ctx *cli.Context, pubkey [][]byte, check int) ([]byte, []byte, common.Address, error) {
@@ -489,6 +540,18 @@ func newAccount(ctx *cli.Context) (common.Address, error) {
 
 	return address, nil
 }
+func newHdAccount(ctx *cli.Context) (common.Address, error) {
+	password := getPassPhrase("Your new account is locked with a password. Please give a password. "+
+		"Do not forget this password.", true, 0, utils.MakePasswordList(ctx))
+
+	address, err := createHdAccount(ctx, password)
+	if err != nil {
+		return common.Address{}, err
+	}
+
+	return address, nil
+}
+
 func IntToByte(num int64) []byte {
 	var buffer bytes.Buffer
 	err := binary.Write(&buffer, binary.BigEndian, num)
@@ -548,7 +611,40 @@ func accountCreate(ctx *cli.Context) error {
 	fmt.Printf("Address: %s\n", address.String())
 	return nil
 }
+func hdAccountCreate(ctx *cli.Context) error {
+	address, err := newHdAccount(ctx)
+	if err != nil {
+		utils.Fatalf("%v", err)
+	}
 
+	//	fmt.Printf("Address Hex: {%x}\n", address)
+	fmt.Printf("Address: %s\n", address.String())
+	return nil
+}
+func hdAccountGet(ctx *cli.Context) error {
+	if len(ctx.Args()) == 0 {
+		utils.Fatalf("No accounts specified to update")
+	}
+
+	stack, _ := makeConfigNode(ctx, false)
+	ks := stack.GetKeyStore()
+	addr := ctx.Args().First()
+	account, _ := utils.MakeAddress(ks, addr)
+	pwd := getPassPhrase("Please give a password to unlock your account", false, 0, nil)
+
+	userId := ctx.Args()[1]
+	accountIndex, err := strconv.Atoi(userId)
+	if err != nil {
+		return errors.New("invalid argument, args 1 must be a number")
+	}
+
+	hdAccount, err := ks.GetHdAccountWithPassphrase(account, pwd, uint32(accountIndex))
+	if err != nil {
+		utils.Fatalf("get HD account error:%s", err)
+	}
+	fmt.Println(hdAccount.Address.String())
+	return nil
+}
 func accountMultiCreate(ctx *cli.Context) error {
 	lockscript, redeem, address, err := newMultiAccount(ctx)
 	if err != nil {
