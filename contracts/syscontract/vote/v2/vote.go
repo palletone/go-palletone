@@ -18,7 +18,7 @@
  * @date 2018
  */
 
-package vote
+package v2
 
 import (
 	"encoding/json"

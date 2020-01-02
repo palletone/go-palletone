@@ -19,6 +19,7 @@ package ptn
 import (
 	"errors"
 	"fmt"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -411,7 +412,7 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 	}
 
 	//  container related
-	if pm.pDocker.DockerClient != nil {
+	if pm.pDocker.DockerClient != nil && runtime.GOOS == "linux" {
 		log.Debug("start docker service...")
 		defer log.Debug("end docker service...")
 		//

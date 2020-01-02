@@ -63,6 +63,11 @@ func NeweMediatorBase() MediatorBase {
 
 // mediator扩展信息
 type MediatorInfoExpand struct {
+	MediatorInfoExpand105alpha
+	TotalProduct uint64 `json:"totalProduct"` // 当前mediator生产区块的总量
+}
+
+type MediatorInfoExpand105alpha struct {
 	TotalMissed          uint64 `json:"totalMissed"`          // 当前mediator未能按照调度生产区块的总个数
 	LastConfirmedUnitNum uint32 `json:"lastConfirmedUnitNum"` // 当前mediator最新生产的区块编号
 	TotalVotes           uint64 `json:"totalVotes"`           // 当前mediator的总共得票数量
@@ -70,6 +75,13 @@ type MediatorInfoExpand struct {
 
 func NewMediatorInfoExpand() *MediatorInfoExpand {
 	return &MediatorInfoExpand{
+		MediatorInfoExpand105alpha: *NewMediatorInfoExpand105alpha(),
+		TotalProduct:               0,
+	}
+}
+
+func NewMediatorInfoExpand105alpha() *MediatorInfoExpand105alpha {
+	return &MediatorInfoExpand105alpha{
 		TotalMissed:          0,
 		LastConfirmedUnitNum: 0,
 		TotalVotes:           0,
@@ -78,7 +90,7 @@ func NewMediatorInfoExpand() *MediatorInfoExpand {
 
 func NewMediator() *Mediator {
 	return &Mediator{
-		MediatorBase: NeweMediatorBase(),
+		MediatorBase:       NeweMediatorBase(),
 		MediatorApplyInfo:  NewMediatorApplyInfo(),
 		MediatorInfoExpand: NewMediatorInfoExpand(),
 	}

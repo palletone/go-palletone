@@ -148,7 +148,7 @@ func (m *Migration100_101) upgradeMediatorInfo() error {
 		newMediator := &MediatorInfo101{
 			MediatorInfoBase101: oldMediator.MediatorInfoBase101,
 			MediatorApplyInfo:   &core.MediatorApplyInfo{Description: oldMediator.ApplyInfo},
-			MediatorInfoExpand:  oldMediator.MediatorInfoExpand,
+			MediatorInfoExpand105alpha:  oldMediator.MediatorInfoExpand105alpha,
 		}
 
 		err = storage.StoreToRlpBytes(m.statedb, oldMediatorsIterator.Key(), newMediator)
@@ -164,7 +164,7 @@ func (m *Migration100_101) upgradeMediatorInfo() error {
 type MediatorInfo100 struct {
 	*MediatorInfoBase101
 	*MediatorApplyInfo100
-	*core.MediatorInfoExpand
+	*core.MediatorInfoExpand105alpha
 }
 
 type MediatorApplyInfo100 struct {

@@ -45,6 +45,7 @@ type Validate struct {
 	cache                   *ValidatorCache
 	enableTxFeeCheck        bool
 	enableContractSignCheck bool
+	enableDeveloperCheck    bool
 	light                   bool
 }
 
@@ -61,6 +62,7 @@ func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propq
 		tokenEngine:             tokenengine.Instance,
 		enableTxFeeCheck:        true,
 		enableContractSignCheck: true,
+		enableDeveloperCheck:    true,
 		light:                   light,
 	}
 }
@@ -212,6 +214,7 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, isFullTx bool) ([]
 	}
 	validate.enableTxFeeCheck = true
 	validate.enableContractSignCheck = true
+	validate.enableDeveloperCheck = true
 	code, addition := validate.validateTx(tx, isFullTx)
 	if code == TxValidationCode_VALID {
 		validate.cache.AddTxValidateResult(txId, addition)

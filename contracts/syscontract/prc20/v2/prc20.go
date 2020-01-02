@@ -18,7 +18,7 @@
  * @date 2018
  */
 
-package prc20
+package v2
 
 import (
 	"encoding/json"

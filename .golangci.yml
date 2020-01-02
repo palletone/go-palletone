@@ -258,7 +258,9 @@ issues:
     - linters:
         - staticcheck
       text: "SA1019:"
-
+    - linters:
+        - dupl
+      text: "prc20|prc721|vote"
 #     # Exclude some linters from running on tests files.
 #     - path: _test\.go
 #       linters:

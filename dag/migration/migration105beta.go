@@ -13,7 +13,7 @@
  *    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
  * /
  *
- *  * @author PalletOne core developers <dev@pallet.one>
+ *  * @author PalletOne core developer albert <dev@pallet.one>
  *  * @date 2018-2019
  *
  */
@@ -25,10 +25,11 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 )
 
-type Migration102beta_102gamma struct {
+type Migration105alpha_105beta struct {
 	dagdb   ptndb.Database
 	idxdb   ptndb.Database
 	utxodb  ptndb.Database
@@ -36,15 +37,15 @@ type Migration102beta_102gamma struct {
 	propdb  ptndb.Database
 }
 
-func (m *Migration102beta_102gamma) FromVersion() string {
-	return "1.0.2-beta"
+func (m *Migration105alpha_105beta) FromVersion() string {
+	return "1.0.5-alpha"
 }
 
-func (m *Migration102beta_102gamma) ToVersion() string {
-	return "1.0.2-gamma"
+func (m *Migration105alpha_105beta) ToVersion() string {
+	return "1.0.5-beta"
 }
 
-func (m *Migration102beta_102gamma) ExecuteUpgrade() error {
+func (m *Migration105alpha_105beta) ExecuteUpgrade() error {
 	// 转换mediator结构体
 	if err := m.upgradeMediatorInfo(); err != nil {
 		return err
@@ -53,28 +54,23 @@ func (m *Migration102beta_102gamma) ExecuteUpgrade() error {
 	return nil
 }
 
-func (m *Migration102beta_102gamma) upgradeMediatorInfo() error {
+func (m *Migration105alpha_105beta) upgradeMediatorInfo() error {
 	oldMediatorsIterator := m.statedb.NewIteratorWithPrefix(constants.MEDIATOR_INFO_PREFIX)
 	for oldMediatorsIterator.Next() {
-		oldMediator := &MediatorInfo101{}
+		oldMediator := &MediatorInfo105alpha{}
 		err := rlp.DecodeBytes(oldMediatorsIterator.Value(), oldMediator)
 		if err != nil {
 			log.Debugf(err.Error())
 			return err
 		}
 
-		mib := &core.MediatorInfoBase{
-			AddStr:     oldMediator.AddStr,
-			//RewardAdd:  oldMediator.AddStr,
-			RewardAdd:  "",
-			InitPubKey: oldMediator.InitPubKey,
-			Node:       oldMediator.Node,
-		}
+		mie := core.NewMediatorInfoExpand()
+		mie.MediatorInfoExpand105alpha = *oldMediator.MediatorInfoExpand105alpha
 
-		newMediator := &MediatorInfo105alpha{
-			MediatorInfoBase:   mib,
+		newMediator := &modules.MediatorInfo{
+			MediatorInfoBase:   oldMediator.MediatorInfoBase,
 			MediatorApplyInfo:  oldMediator.MediatorApplyInfo,
-			MediatorInfoExpand105alpha: oldMediator.MediatorInfoExpand105alpha,
+			MediatorInfoExpand: mie,
 		}
 
 		err = storage.StoreToRlpBytes(m.statedb, oldMediatorsIterator.Key(), newMediator)
@@ -87,14 +83,8 @@ func (m *Migration102beta_102gamma) upgradeMediatorInfo() error {
 	return nil
 }
 
-type MediatorInfoBase101 struct {
-	AddStr     string `json:"account"`    // mediator账户地址
-	InitPubKey string `json:"initPubKey"` // mediator的群签名初始公钥
-	Node       string `json:"node"`       // mediator节点网络信息，包括ip和端口等
-}
-
-type MediatorInfo101 struct {
-	*MediatorInfoBase101
+type MediatorInfo105alpha struct {
+	*core.MediatorInfoBase
 	*core.MediatorApplyInfo
 	*core.MediatorInfoExpand105alpha
 }
