@@ -17,7 +17,7 @@
  * @date 2018
  */
 
-package prc721
+package v1
 
 import (
 	"encoding/binary"
@@ -43,13 +43,22 @@ const jsonResp3 = "{\"Error\":\"Token not exist\"}"
 const jsonResp4 = "{\"Error\":\"Asset_TokenID invalid\"}"
 const jsonResp5 = "{\"Error\":\"Failed to get invoke address\"}"
 
+type GlobalTokenInfo struct {
+	Symbol      string
+	TokenType   uint8 //1:prc20 2:prc721 3:vote 4:SysVote
+	Status      uint8
+	CreateAddr  string
+	TotalSupply uint64
+	SupplyAddr  string
+	AssetID     dm.AssetId
+}
+
 //PRC721 chainCode name
 type PRC721 struct {
 }
 
 type tokenInfo struct {
 	Symbol      string
-	Name        string
 	TokenType   uint8
 	TokenMax    uint64 //only use when TokenType is Sequence
 	CreateAddr  string
@@ -175,7 +184,7 @@ func (p *PRC721) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 }
 
 func setGlobal(stub shim.ChaincodeStubInterface, tkInfo *tokenInfo) error {
-	gTkInfo := dm.GlobalTokenInfo{Symbol: tkInfo.Symbol, Name: tkInfo.Name, TokenType: 2, Status: 0, CreateAddr: tkInfo.CreateAddr,
+	gTkInfo := GlobalTokenInfo{Symbol: tkInfo.Symbol, TokenType: 2, Status: 0, CreateAddr: tkInfo.CreateAddr,
 		TotalSupply: tkInfo.TotalSupply, SupplyAddr: tkInfo.SupplyAddr, AssetID: tkInfo.AssetID}
 	val, err := json.Marshal(gTkInfo)
 	if err != nil {
@@ -185,9 +194,9 @@ func setGlobal(stub shim.ChaincodeStubInterface, tkInfo *tokenInfo) error {
 	return err
 }
 
-func getGlobal(stub shim.ChaincodeStubInterface, symbol string) *dm.GlobalTokenInfo {
+func getGlobal(stub shim.ChaincodeStubInterface, symbol string) *GlobalTokenInfo {
 	//
-	gTkInfo := dm.GlobalTokenInfo{}
+	gTkInfo := GlobalTokenInfo{}
 	tkInfoBytes, _ := stub.GetGlobalState(dm.GlobalPrefix + symbol)
 	if len(tkInfoBytes) == 0 {
 		return nil
@@ -451,7 +460,7 @@ func (p *PRC721) CreateToken(stub shim.ChaincodeStubInterface, name string, symb
 			return shim.Error(jsonResp)
 		}
 	}
-	info := tokenInfo{nonFungible.Symbol, name, byte(idType), totalSupply, createAddr.String(), totalSupply,
+	info := tokenInfo{nonFungible.Symbol, byte(idType), totalSupply, createAddr.String(), totalSupply,
 		nonFungible.SupplyAddress, assetID}
 	err = setSymbols(stub, &info)
 	if err != nil {
@@ -640,7 +649,6 @@ func (p *PRC721) ChangeSupplyAddr(stub shim.ChaincodeStubInterface, symbol, supp
 
 type tokenIDInfo struct {
 	Symbol      string
-	Name        string
 	CreateAddr  string
 	TokenType   uint8 //no
 	TotalSupply uint64
@@ -727,7 +735,7 @@ func (p *PRC721) GetOneTokenInfo(stub shim.ChaincodeStubInterface, symbol string
 	sort.Strings(tkIDs)
 
 	//
-	tkIDInfo := tokenIDInfo{symbol, tkInfo.Name, tkInfo.CreateAddr, tkInfo.TokenType,
+	tkIDInfo := tokenIDInfo{symbol, tkInfo.CreateAddr, tkInfo.TokenType,
 		tkInfo.TotalSupply, tkInfo.SupplyAddr, tkInfo.AssetID.String(), tkIDs}
 	return &tkIDInfo, nil
 }
@@ -738,7 +746,7 @@ func (p *PRC721) GetAllTokenInfo(stub shim.ChaincodeStubInterface) []tokenIDInfo
 	tkIDInfos := make([]tokenIDInfo, 0, len(tkInfos))
 	tkIDs := []string{"Only return simple information"}
 	for _, tkInfo := range tkInfos {
-		tkIDInfo := tokenIDInfo{tkInfo.Symbol, tkInfo.Name, tkInfo.CreateAddr,
+		tkIDInfo := tokenIDInfo{tkInfo.Symbol, tkInfo.CreateAddr,
 			tkInfo.TokenType, tkInfo.TotalSupply,
 			tkInfo.SupplyAddr, tkInfo.AssetID.String(), tkIDs}
 		tkIDInfos = append(tkIDInfos, tkIDInfo)
