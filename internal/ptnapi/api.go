@@ -56,17 +56,17 @@ const (
 )
 
 type ContractInstallRsp struct {
-	ReqId string `json:"reqId"`
-	TplId string `json:"tplId"`
+	ReqId string `json:"request_id"`
+	TplId string `json:"template_id"`
 }
 
 type ContractDeployRsp struct {
-	ReqId      string `json:"reqId"`
-	ContractId string `json:"ContractId"`
+	ReqId      string `json:"request_id"`
+	ContractId string `json:"contract_id"`
 }
 type ContractInvokeRsp struct {
-	ReqId      string `json:"reqId"`
-	ContractId string `json:"ContractId"`
+	ReqId      string `json:"request_id"`
+	ContractId string `json:"contract_id"`
 }
 
 type ContractFeeRsp struct {
