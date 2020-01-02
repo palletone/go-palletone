@@ -636,7 +636,7 @@ func (p *Processor) ContractTxCheckForValidator(tx *modules.Transaction) bool {
 
 	p.locker.Lock()
 	defer p.locker.Unlock()
-	log.Debugf("[%s]ContractTxCheckForValidator enter", shortId(reqId.String()))
+	log.Debugf("ContractTxCheckForValidator enter reqId: [%s]", shortId(reqId.String()))
 
 	if !tx.IsSystemContract() {
 		return true
