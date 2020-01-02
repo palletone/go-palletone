@@ -3,6 +3,7 @@ package list
 import (
 	"bytes"
 	"fmt"
+	"sort"
 	"sync"
 
 	"github.com/palletone/go-palletone/common/log"
@@ -91,14 +92,27 @@ func GetChaincode(cid string, deployId []byte, version string) (*CCInfo, error) 
 		return nil, errors.New("param is nil")
 	}
 	if chains.Clist[cid] != nil {
+		multiVersionInfo := []*CCInfo{}
 		clist := chains.Clist[cid]
 		for _, v := range clist.CClist {
 			log.Debug("GetChaincode", "find chaincode,name", v.Name, "version", v.Version, "list id", v.Id, "depId", deployId)
 			if bytes.Equal(v.Id, deployId) {
-				if version == "" || (version != "" && v.Version == version) {
-					return v, nil
+				if version == "" { //不指定版本，则找出所有版本，然后再从其中找到最小的
+					multiVersionInfo = append(multiVersionInfo, v)
+				} else {
+					if v.Version == version { //指定版本，找到了，则是这个版本
+						return v, nil
+					}
 				}
 			}
+		}
+		if len(multiVersionInfo) > 0 {
+			sort.Slice(multiVersionInfo, func(i, j int) bool {
+				return multiVersionInfo[i].Version < multiVersionInfo[j].Version
+			})
+			log.Debugf("Don't point out version, contract[%s] use min version: %s",
+				multiVersionInfo[0].Name, multiVersionInfo[0].Version)
+			return multiVersionInfo[0], nil
 		}
 	}
 	errmsg := fmt.Sprintf("not find chainId[%s], deployId[%x] in chains", cid, deployId)
