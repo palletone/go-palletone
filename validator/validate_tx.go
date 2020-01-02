@@ -167,8 +167,10 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 			if err != nil {
 				return TxValidationCode_INVALID_CONTRACT, txFee
 			}
-			if !validate.statequery.IsContractDeveloper(reqAddr) {
-				return TxValidationCode_NOT_TPL_DEVELOPER, txFee
+			if validate.enableDeveloperCheck {
+				if !validate.statequery.IsContractDeveloper(reqAddr) {
+					return TxValidationCode_NOT_TPL_DEVELOPER, txFee
+				}
 			}
 		case modules.APP_CONTRACT_DEPLOY_REQUEST:
 			if hasRequestMsg { //一个Tx只有一个Request
