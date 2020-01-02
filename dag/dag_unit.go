@@ -49,7 +49,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	// 2. 生产unit，添加交易集、时间戳、签名
 	unsign_unit, err := dag.createUnit(producer, txpool, when)
 	if err != nil {
-		errStr := fmt.Sprintf("GenerateUnit error: %v", err.Error())
+		errStr := fmt.Sprintf("createUnit error: %v", err.Error())
 		log.Debug(errStr)
 		return nil, fmt.Errorf(errStr)
 	}
@@ -58,7 +58,13 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 		log.Debug(errStr)
 		return nil, fmt.Errorf(errStr)
 	}
+
 	sign_unit, err := dagcommon.GetUnitWithSig(unsign_unit, ks, producer)
+	if err != nil {
+		errStr := fmt.Sprintf("GetUnitWithSig error: %v", err.Error())
+		log.Debug(errStr)
+		return nil, fmt.Errorf(errStr)
+	}
 	sign_unit.UnitHeader.SetGroupPubkey(groupPubKey)
 
 	sign_unit.Size()
