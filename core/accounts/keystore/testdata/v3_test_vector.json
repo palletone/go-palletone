@@ -18,7 +18,8 @@
                 "mac" : "2103ac29920d71da29f15d75b4a16dbe95cfd7ff8faea1056c33131d846e3097"
             },
             "id" : "3198bc9c-6672-5ab3-d995-4942343ae5b6",
-            "version" : 3
+            "version" : 3,
+            "keytype":"ECDSA"
         },
         "password": "testpassword",
         "priv": "7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d"
@@ -41,7 +42,8 @@
                 "mac" : "517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2"
             },
             "id" : "3198bc9c-6672-5ab3-d995-4942343ae5b6",
-            "version" : 3
+            "version" : 3,
+            "keytype":"ECDSA"
         },
         "password": "testpassword",
         "priv": "7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d"
@@ -65,7 +67,8 @@
                 "mac" : "d5e116151c6aa71470e67a7d42c9620c75c4d23229847dcc127794f0732b0db5"
             },
             "id" : "fecfc4ce-e956-48fd-953b-30f8b52ed66c",
-            "version" : 3
+            "version" : 3,
+            "keytype":"ECDSA"
         },
         "password": "foo",
         "priv": "fa7b3db73dc7dfdf8c5fbdb796d741e4488628c41fc4febd9160a866ba0f35"
@@ -89,7 +92,8 @@
                 "mac" : "75d0e6759f7b3cefa319c3be41680ab6beea7d8328653474bd06706d4cc67420"
             },
             "id" : "a37e1559-5955-450d-8075-7b8931b392b2",
-            "version" : 3
+            "version" : 3,
+            "keytype":"ECDSA"
         },
         "password": "foo",
         "priv": "81c29e8142bb6a81bef5a92bda7a8328a5c85bb2f9542e76f9b0f94fc018"

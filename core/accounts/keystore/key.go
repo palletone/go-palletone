@@ -139,6 +139,7 @@ func newKeyFromECDSA(privateKeyECDSA []byte) *Key {
 		Id:         id,
 		Address:    crypto.PubkeyBytesToAddress(pubKey),
 		PrivateKey: privateKeyECDSA,
+		KeyType:KeyType_ECDSA_KEY,
 	}
 	return key
 }
