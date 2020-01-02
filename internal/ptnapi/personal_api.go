@@ -35,6 +35,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 
 	"github.com/shopspring/decimal"
+	"strconv"
 )
 
 // PrivateAccountAPI provides an API to access accounts managed by this node.
@@ -134,6 +135,31 @@ func (s *PrivateAccountAPI) NewAccount(password string) (string, error) {
 		return acc.Address.String(), nil
 	}
 	return "ERROR", err
+}
+
+func (s *PrivateAccountAPI) NewHdAccount(password string) (string, error) {
+	acc, err := fetchKeystore(s.am).NewHdAccount(password)
+	if err == nil {
+		return acc.Address.String(), nil
+	}
+	return "ERROR", err
+}
+
+func (s *PrivateAccountAPI ) GetHdAccount(addr,password,userId string) (string,error) {
+	_,err := common.StringToAddress(addr)
+	if err != nil {
+		return "",err
+	}
+	account, _ := MakeAddress(fetchKeystore(s.am), addr)
+	accountIndex, err := strconv.Atoi(userId)
+	if err != nil {
+		return "",errors.New("invalid argument, args 2 must be a number")
+	}
+	acc, err := fetchKeystore(s.am).GetHdAccountWithPassphrase(account,password,uint32(accountIndex))
+	if err != nil {
+		return "",err
+	}
+	return acc.Address.String(),nil
 }
 
 // fetchKeystore retrives the encrypted keystore from the account manager.

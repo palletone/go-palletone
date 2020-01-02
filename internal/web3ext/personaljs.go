@@ -61,6 +61,18 @@ web3._extend({
 			params: 1,
 			inputFormatter: [null]
 		}),
+		new web3._extend.Method({
+			name: 'newHdAccount',
+			call: 'personal_newHdAccount',
+			params: 1,
+			inputFormatter: [null]
+		}),
+		new web3._extend.Method({
+			name: 'getHdAccount',
+			call: 'personal_getHdAccount',
+			params: 3,
+			inputFormatter: [null, null, null]
+		}),
 	   	new web3._extend.Method({
 			name: 'unlockAccount',
 			call: 'personal_unlockAccount',
