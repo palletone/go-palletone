@@ -25,6 +25,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/pborman/uuid"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -268,6 +269,22 @@ func (ks *KeyStore) SignMessage(addr common.Address, msg []byte) ([]byte, error)
 	return crypto.MyCryptoLib.Sign(unlockedKey.PrivateKey, msg)
 	// Sign the hash using plain ECDSA operations
 	//return crypto.Sign(hash, unlockedKey.PrivateKey)
+}
+func (ks *KeyStore) SignMessageByHdAccount(addr common.Address, accountIndex uint32, msg []byte) ([]byte, error) {
+	// Look up the key to sign with and abort if it cannot be found
+	ks.mu.RLock()
+	defer ks.mu.RUnlock()
+
+	unlockedKey, found := ks.unlocked[addr]
+	if !found {
+		return nil, ErrLocked
+	}
+	seed := unlockedKey.PrivateKey
+	prvKey, _, err := newAccountKey(seed, accountIndex)
+	if err != nil {
+		return nil, err
+	}
+	return crypto.MyCryptoLib.Sign(prvKey, msg)
 }
 
 // SignTx signs the given transaction with the requested account.
@@ -585,16 +602,39 @@ func (ks *KeyStore) GetHdAccountWithPassphrase(a accounts.Account, passphrase st
 		return accounts.Account{}, err
 	}
 	defer ZeroKey(key.PrivateKey)
-	_, pubKey, err := newAccountKey(key.PrivateKey, accountIndex)
+	prvKey, pubKey, err := newAccountKey(key.PrivateKey, accountIndex)
 	if err != nil {
 		return accounts.Account{}, err
 	}
+
 	addr := crypto.PubkeyBytesToAddress(pubKey)
+	accountKey := &Key{
+		Id:         uuid.NewRandom(),
+		Address:    addr,
+		KeyType:    KeyType_ECDSA_KEY,
+		PrivateKey: prvKey,
+	}
+	ks.unlocked[addr] = &unlocked{Key: accountKey}
 	hdAccount := accounts.Account{Address: addr, URL: accounts.URL{Scheme: KeyStoreScheme,
 		Path: ks.storage.JoinPath(keyFileName(addr))}}
 	return hdAccount, nil
 }
 
+//返回HDWallet的私钥、公钥、地址
+func (ks *KeyStore) GetHdAccountKeys(a accounts.Account, passphrase string, accountIndex uint32) (
+	[]byte, []byte, common.Address, error) {
+	_, key, err := ks.getDecryptedKey(a, passphrase)
+	if err != nil {
+		return nil, nil, common.Address{}, err
+	}
+	defer ZeroKey(key.PrivateKey)
+	prvKey, pubKey, err := newAccountKey(key.PrivateKey, accountIndex)
+	if err != nil {
+		return nil, nil, common.Address{}, err
+	}
+	addr := crypto.PubkeyBytesToAddress(pubKey)
+	return prvKey, pubKey, addr, nil
+}
 func (ks *KeyStore) SigUnit(unitHeader *modules.Header, address common.Address) ([]byte, error) {
 	emptyHeader := modules.CopyHeader(unitHeader)
 	emptyHeader.SetAuthor(modules.Authentifier{}) //Clear exist sign

@@ -204,7 +204,9 @@ func DecryptKey(keyjson []byte, auth string) (*Key, error) {
 		return nil, err
 	}
 	pubKey := []byte{}
-	//key := crypto.ToECDSAUnsafe(keyBytes)
+	if len(keyType) == 0 { //default ECDSA
+		keyType = KeyType_ECDSA_KEY
+	}
 	if keyType == KeyType_HD_Seed {
 		_, pubKey, _ = newAccountKey(keyBytes, 0)
 	}

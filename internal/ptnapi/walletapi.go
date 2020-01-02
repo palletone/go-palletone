@@ -17,10 +17,10 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/math"
-	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -486,8 +486,8 @@ func (s *PrivateWalletAPI) MultiSignRawTransaction(ctx context.Context, params, 
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, errors.New("redeemScript is invalid")
 	}
-    bls := tokenengine.Instance.GenerateP2SHLockScript(crypto.Hash160(rs))
-    lockScript := hex.EncodeToString(bls)
+	bls := tokenengine.Instance.GenerateP2SHLockScript(crypto.Hash160(rs))
+	lockScript := hex.EncodeToString(bls)
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
 		//TODO use keystore
 		ks := s.b.GetKeyStore()
@@ -522,7 +522,7 @@ func (s *PrivateWalletAPI) MultiSignRawTransaction(ctx context.Context, params, 
 			//PkScriptHex := trimx(uvu.PkScriptHex)
 			PkScriptHex := trimx(lockScript)
 			input := ptnjson.RawTxInput{Txid: TxHash, Vout: uvu.OutIndex, MessageIndex: uvu.MessageIndex,
-			ScriptPubKey: PkScriptHex, RedeemScript: redeemScript}
+				ScriptPubKey: PkScriptHex, RedeemScript: redeemScript}
 			srawinputs = append(srawinputs, input)
 		}
 	}
@@ -1316,8 +1316,44 @@ func (s *PrivateWalletAPI) TransferPtn(ctx context.Context, from string, to stri
 	return s.TransferToken(ctx, gasToken, from, to, amount, fee, Extra, password, duration)
 }
 
-func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from string, to string,
+func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, fromStr string, toStr string,
 	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint64) (common.Hash, error) {
+
+	toArray := strings.Split(toStr, ":")
+	to := toArray[0]
+	ks := s.b.GetKeyStore()
+	if len(toArray) == 2 { //HD wallet address format
+		toAccountIndex, err := strconv.Atoi(toArray[1])
+		if err != nil {
+			return common.Hash{}, errors.New("invalid to address format")
+		}
+		toAddr, err := common.StringToAddress(toArray[0])
+		if err != nil {
+			return common.Hash{}, errors.New("invalid to address format")
+		}
+		toAccount, err := ks.GetHdAccountWithPassphrase(accounts.Account{Address: toAddr}, password, uint32(toAccountIndex))
+		if err != nil {
+			return common.Hash{}, errors.New("GetHdAccountWithPassphrase error:" + err.Error())
+		}
+		to = toAccount.Address.String()
+	}
+	fromArray := strings.Split(fromStr, ":")
+	from := fromArray[0]
+	if len(fromArray) == 2 {
+		fromAccountIndex, err := strconv.Atoi(fromArray[1])
+		if err != nil {
+			return common.Hash{}, errors.New("invalid to address format")
+		}
+		fromAddr, err := common.StringToAddress(fromArray[0])
+		if err != nil {
+			return common.Hash{}, errors.New("invalid to address format")
+		}
+		fromAccount, err := ks.GetHdAccountWithPassphrase(accounts.Account{Address: fromAddr}, password, uint32(fromAccountIndex))
+		if err != nil {
+			return common.Hash{}, errors.New("GetHdAccountWithPassphrase error:" + err.Error())
+		}
+		from = fromAccount.Address.String()
+	}
 	rawTx, usedUtxo, err := s.buildRawTransferTx(asset, from, to, amount, fee)
 	if err != nil {
 		return common.Hash{}, err
@@ -1330,26 +1366,25 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 	}
 	//lockscript
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
-		//TODO use keystore
-		ks := s.b.GetKeyStore()
 		return ks.GetPublicKey(addr)
 	}
 	//sign tx
 	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
-		ks := s.b.GetKeyStore()
 		return ks.SignMessage(addr, msg)
 	}
 	utxoLockScripts := make(map[modules.OutPoint][]byte)
 	for _, utxo := range usedUtxo {
 		utxoLockScripts[utxo.OutPoint] = utxo.PkScript
 	}
-	fromAddr, err := common.StringToAddress(from)
-	if err != nil {
-		return common.Hash{}, err
-	}
-	err = s.unlockKS(fromAddr, password, duration)
-	if err != nil {
-		return common.Hash{}, err
+	if len(fromArray) == 1 {
+		fromAddr, err := common.StringToAddress(from)
+		if err != nil {
+			return common.Hash{}, err
+		}
+		err = s.unlockKS(fromAddr, password, duration)
+		if err != nil {
+			return common.Hash{}, err
+		}
 	}
 	//3.
 	_, err = tokenengine.Instance.SignTxAllPaymentInput(rawTx, 1, utxoLockScripts, nil, getPubKeyFn, getSignFn)
@@ -1485,7 +1520,7 @@ func (s *PublicWalletAPI) getFileInfo(filehash string) ([]*ptnjson.ProofOfExiste
 		if err != nil {
 			return nil, err
 		}
-		poe:= ptnjson.ConvertTx2ProofOfExistence(tx)
+		poe := ptnjson.ConvertTx2ProofOfExistence(tx)
 		result = append(result, poe)
 	}
 	return result, nil
