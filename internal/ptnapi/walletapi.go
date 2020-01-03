@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"io"
 	"math/big"
 	"math/rand"
@@ -941,7 +942,12 @@ func (s *PublicWalletAPI) GetAddrUtxos2(ctx context.Context, addr string) (strin
 	return string(result_json), nil
 
 }
-func (s *PublicWalletAPI) GetBalance(ctx context.Context, address string) (map[string]decimal.Decimal, error) {
+func (s *PublicWalletAPI) GetBalance(ctx context.Context, addr string) (map[string]decimal.Decimal, error) {
+	realAddr, err := getRealAddress(s.b.GetKeyStore(), addr)
+	if err != nil {
+		return nil, err
+	}
+	address := realAddr.String()
 	utxos, err := s.b.GetAddrUtxos(address)
 	if err != nil {
 		return nil, err
@@ -957,7 +963,12 @@ func (s *PublicWalletAPI) GetBalance(ctx context.Context, address string) (map[s
 	}
 	return result, nil
 }
-func (s *PublicWalletAPI) GetBalance2(ctx context.Context, address string) (*walletjson.StableUnstable, error) {
+func (s *PublicWalletAPI) GetBalance2(ctx context.Context, addr string) (*walletjson.StableUnstable, error) {
+	realAddr, err := getRealAddress(s.b.GetKeyStore(), addr)
+	if err != nil {
+		return nil, err
+	}
+	address := realAddr.String()
 	utxos, err := s.b.GetAddrUtxos2(address)
 	if err != nil {
 		return nil, err
@@ -1315,7 +1326,31 @@ func (s *PrivateWalletAPI) TransferPtn(ctx context.Context, from string, to stri
 	gasToken := dagconfig.DagConfig.GasToken
 	return s.TransferToken(ctx, gasToken, from, to, amount, fee, Extra, password, duration)
 }
-
+func getRealAddress(ks *keystore.KeyStore, addr string) (common.Address, error) {
+	toArray := strings.Split(addr, ":")
+	to := toArray[0]
+	if len(toArray) == 2 { //HD wallet address format
+		toAccountIndex, err := strconv.Atoi(toArray[1])
+		if err != nil {
+			return common.Address{}, errors.New("invalid to address format")
+		}
+		toAddr, err := common.StringToAddress(toArray[0])
+		if err != nil {
+			return common.Address{}, errors.New("invalid to address format")
+		}
+		var toAccount accounts.Account
+		if ks.IsUnlock(toAddr) {
+			toAccount, err = ks.GetHdAccount(accounts.Account{Address: toAddr}, uint32(toAccountIndex))
+		} else {
+			return common.Address{}, errors.New("First, please unlock address :" + addr)
+		}
+		if err != nil {
+			return common.Address{}, errors.New("GetHdAccountWithPassphrase error:" + err.Error())
+		}
+		return toAccount.Address, nil
+	}
+	return common.StringToAddress(to)
+}
 func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, fromStr string, toStr string,
 	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint64) (common.Hash, error) {
 
