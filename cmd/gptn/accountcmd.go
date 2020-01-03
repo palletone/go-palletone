@@ -147,7 +147,7 @@ password to file or expose in any other way.
 `,
 			},
 			{
-				Name:   "newhd",
+				Name:   "newHd",
 				Usage:  "Create a new HD account",
 				Action: utils.MigrateFlags(hdAccountCreate),
 				Flags: []cli.Flag{
@@ -157,7 +157,7 @@ password to file or expose in any other way.
 					utils.LightKDFFlag,
 				},
 				Description: `
-    gptn account newhd
+    gptn account newHd
 `,
 			},
 			{
@@ -171,7 +171,7 @@ password to file or expose in any other way.
 					utils.LightKDFFlag,
 				},
 				Description: `
-    gptn account getHdAccount P1XXXXX userId
+    gptn account getHdAccount P1XXXXX accountIndex
 `,
 			},
 			{
@@ -331,6 +331,22 @@ this import mechanism is not needed when you transfer an account between
 nodes.
 `,
 			},
+			{
+				Name:   "importHd",
+				Usage:  "Import a mnemonic into a new HD wallet account",
+				Action: utils.MigrateFlags(accountImportHd),
+				Flags: []cli.Flag{
+					utils.DataDirFlag,
+					utils.KeyStoreDirFlag,
+					utils.PasswordFileFlag,
+					utils.LightKDFFlag,
+				},
+				ArgsUsage: "mnemonic string",
+				Description: `
+    gptn account importhd "mnemonic"
+`,
+			},
+
 			{
 				Name:      "dumppubkey",
 				Usage:     "Dump the public key",
@@ -499,12 +515,12 @@ func createHdAccount(ctx *cli.Context, password string) (common.Address, error) 
 	utils.SetNodeConfig(ctx, &cfg.Node, configDir)
 	scryptN, scryptP, keydir, _ := cfg.Node.AccountConfig()
 
-	address, err := keystore.StoreHdSeed(keydir, password, scryptN, scryptP)
+	address, mnemonic, err := keystore.StoreHdSeed(keydir, password, scryptN, scryptP)
 	if err != nil {
 		utils.Fatalf("Failed to create account: %v", err)
 		return common.Address{}, err
 	}
-
+	fmt.Println("Please remember your mnemonic is: " + mnemonic)
 	return address, nil
 }
 
@@ -702,12 +718,21 @@ func accountDumpKey(ctx *cli.Context) error {
 	addr := ctx.Args().First()
 	account, _ := utils.MakeAddress(ks, addr)
 	pwd := getPassPhrase("Please give a password to unlock your account", false, 0, nil)
-	prvKey, _ := ks.DumpKey(account, pwd)
-	wif := crypto.ToWIF(prvKey)
-	fmt.Printf("Your private key hex is : {%x}, WIF is {%s}\n", prvKey, wif)
-	//pK, _ := crypto.ToECDSA(prvKey)
-	pubBytes, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(prvKey)
-	fmt.Printf("Compressed public key hex is {%x}", pubBytes)
+	prvKey, keyType, err := ks.DumpKey(account, pwd)
+	if err != nil {
+		return err
+	}
+	if keyType == keystore.KeyType_ECDSA_KEY {
+
+		wif := crypto.ToWIF(prvKey)
+		fmt.Printf("Your private key hex is : {%x}, WIF is {%s}\n", prvKey, wif)
+		//pK, _ := crypto.ToECDSA(prvKey)
+		pubBytes, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(prvKey)
+		fmt.Printf("Compressed public key hex is {%x}", pubBytes)
+	}
+	if keyType == keystore.KeyType_HD_Seed {
+		fmt.Printf("Your HD wallet seed hex:%x\r\n", prvKey)
+	}
 	return nil
 }
 
@@ -720,12 +745,18 @@ func accountDumpPubKey(ctx *cli.Context) error {
 	addr := ctx.Args().First()
 	account, _ := utils.MakeAddress(ks, addr)
 	pwd := getPassPhrase("Please give a password to unlock your account", false, 0, nil)
-	prvKey, _ := ks.DumpKey(account, pwd)
-	b, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(prvKey)
-	//ks.Unlock(account, pwd)
-	//a, _ := common.StringToAddress(addr)
-	//b, _ := ks.GetPublicKey(a)
-	fmt.Println(hex.EncodeToString(b))
+	prvKey, keyType, _ := ks.DumpKey(account, pwd)
+	if keyType == keystore.KeyType_ECDSA_KEY {
+		b, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(prvKey)
+		fmt.Println(hex.EncodeToString(b))
+	}
+	if keyType == keystore.KeyType_HD_Seed {
+		_, pubKey, err := keystore.NewAccountKey(prvKey, 0)
+		if err != nil {
+			return err
+		}
+		fmt.Println(hex.EncodeToString(pubKey))
+	}
 	return nil
 }
 
@@ -924,6 +955,24 @@ func accountImport(ctx *cli.Context) error {
 	if err != nil {
 		utils.Fatalf("Could not create the account: %v", err)
 	}
-	fmt.Printf("Address: {%s}\n", acct.Address)
+	fmt.Printf("Address: {%s}\n", acct.Address.String())
+	return nil
+}
+func accountImportHd(ctx *cli.Context) error {
+	mnemonic := ctx.Args().First()
+	if len(mnemonic) == 0 {
+		utils.Fatalf("mnemonic must be given as argument")
+	}
+
+	stack, _ := makeConfigNode(ctx, false)
+	passphrase := getPassPhrase("Your new account is locked with a password. "+
+		"Please give a password. Do not forget this password.", true, 0, utils.MakePasswordList(ctx))
+
+	ks := stack.GetKeyStore()
+	acct, err := ks.ImportHdSeedFromMnemonic(mnemonic, passphrase)
+	if err != nil {
+		utils.Fatalf("Could not create the account: %v", err)
+	}
+	fmt.Printf("HD wallet account0 address: {%s}\n", acct.Address.String())
 	return nil
 }
