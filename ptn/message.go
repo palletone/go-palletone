@@ -699,6 +699,10 @@ func (pm *ProtocolManager) AdapterMsg(msg p2p.Msg, p *peer) error {
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
 
+	if pm.IsExistInCache(avs.Hash().Bytes()) {
+		return nil
+	}
+
 	event, err := avs.ToAdapterEvent()
 	if err != nil {
 		log.Debug("ProtocolManager AdapterMsg, ToAdapterEvent fail")
