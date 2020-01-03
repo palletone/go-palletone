@@ -639,11 +639,24 @@ func (ks *KeyStore) GetHdAccountWithPassphrase(a accounts.Account, passphrase st
 		return accounts.Account{}, err
 	}
 	defer ZeroKey(key.PrivateKey)
-	prvKey, pubKey, err := NewAccountKey(key.PrivateKey, accountIndex)
+	return ks.getHdAccount(key.PrivateKey, accountIndex)
+}
+func (ks *KeyStore) GetHdAccount(a accounts.Account, accountIndex uint32) (
+	accounts.Account, error) {
+	address := a.Address
+	ks.mu.RLock()
+	defer ks.mu.RUnlock()
+	unlockedKey, found := ks.unlocked[address]
+	if !found {
+		return accounts.Account{}, ErrLocked
+	}
+	return ks.getHdAccount(unlockedKey.PrivateKey, accountIndex)
+}
+func (ks *KeyStore) getHdAccount(seed []byte, accountIndex uint32) (accounts.Account, error) {
+	prvKey, pubKey, err := NewAccountKey(seed, accountIndex)
 	if err != nil {
 		return accounts.Account{}, err
 	}
-
 	addr := crypto.PubkeyBytesToAddress(pubKey)
 	accountKey := &Key{
 		Id:         uuid.NewRandom(),

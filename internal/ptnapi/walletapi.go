@@ -1331,7 +1331,14 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 		if err != nil {
 			return common.Hash{}, errors.New("invalid to address format")
 		}
-		toAccount, err := ks.GetHdAccountWithPassphrase(accounts.Account{Address: toAddr}, password, uint32(toAccountIndex))
+		var toAccount accounts.Account
+		if ks.IsUnlock(toAddr) {
+			toAccount, err = ks.GetHdAccount(accounts.Account{Address: toAddr}, uint32(toAccountIndex))
+
+		} else {
+			toAccount, err = ks.GetHdAccountWithPassphrase(accounts.Account{Address: toAddr}, password, uint32(toAccountIndex))
+
+		}
 		if err != nil {
 			return common.Hash{}, errors.New("GetHdAccountWithPassphrase error:" + err.Error())
 		}
@@ -1348,7 +1355,14 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 		if err != nil {
 			return common.Hash{}, errors.New("invalid to address format")
 		}
-		fromAccount, err := ks.GetHdAccountWithPassphrase(accounts.Account{Address: fromAddr}, password, uint32(fromAccountIndex))
+		var fromAccount accounts.Account
+		if ks.IsUnlock(fromAddr) {
+			fromAccount, err = ks.GetHdAccount(accounts.Account{Address: fromAddr}, uint32(fromAccountIndex))
+
+		} else {
+			fromAccount, err = ks.GetHdAccountWithPassphrase(accounts.Account{Address: fromAddr}, password, uint32(fromAccountIndex))
+
+		}
 		if err != nil {
 			return common.Hash{}, errors.New("GetHdAccountWithPassphrase error:" + err.Error())
 		}

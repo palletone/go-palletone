@@ -160,7 +160,13 @@ func (s *PrivateAccountAPI) GetHdAccount(addr, password, userId string) (string,
 	if err != nil {
 		return "", errors.New("invalid argument, args 2 must be a number")
 	}
-	acc, err := fetchKeystore(s.am).GetHdAccountWithPassphrase(account, password, uint32(accountIndex))
+	ks := fetchKeystore(s.am)
+	var acc accounts.Account
+	if ks.IsUnlock(account.Address) {
+		acc, err = ks.GetHdAccount(account, uint32(accountIndex))
+	} else {
+		acc, err = ks.GetHdAccountWithPassphrase(account, password, uint32(accountIndex))
+	}
 	if err != nil {
 		return "", err
 	}
