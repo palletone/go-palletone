@@ -191,7 +191,8 @@ value: all transactions hash set's rlp encoding bytes
 */
 func (dagdb *DagDb) SaveBody(unitHash common.Hash, txsHash []common.Hash) error {
 	key := append(constants.BODY_PREFIX, unitHash.Bytes()...)
-	log.Debugf("Save unit[%s] body,txs:%x", unitHash.String(), txsHash)
+	//log.Debugf("Save unit[%s] body,txs:%x", unitHash.String(), txsHash)
+	log.Debugf("Save unit[%s] body", unitHash.String())
 	return StoreToRlpBytes(dagdb.db, key, txsHash)
 }
 
