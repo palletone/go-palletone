@@ -557,6 +557,31 @@ func (ks *KeyStore) ImportECDSA(priv []byte, passphrase string) (accounts.Accoun
 	return ks.importKey(key, passphrase)
 }
 
+//根据助记词，导入HD种子并保存，返回0号账号的地址
+func (ks *KeyStore) ImportHdSeedFromMnemonic(mnemonic string, passphrase string) (accounts.Account, error) {
+	seed, err := MnemonicToSeed(mnemonic)
+	if err != nil {
+		return accounts.Account{}, err
+	}
+	key := newKeyFromHdSeed(seed)
+	if ks.cache.hasAddress(key.Address) {
+		return accounts.Account{}, fmt.Errorf("account already exists")
+	}
+	return ks.importKey(key, passphrase)
+}
+
+//根据助记词，导入0号账号0号地址对应的私钥
+func (ks *KeyStore) ImportMnemonic(mnemonic string, passphrase string) (accounts.Account, error) {
+	seed, err := MnemonicToSeed(mnemonic)
+	if err != nil {
+		return accounts.Account{}, err
+	}
+	key := newKeyFromHdAccount0(seed)
+	if ks.cache.hasAddress(key.Address) {
+		return accounts.Account{}, fmt.Errorf("account already exists")
+	}
+	return ks.importKey(key, passphrase)
+}
 func (ks *KeyStore) importKey(key *Key, passphrase string) (accounts.Account, error) {
 	a := accounts.Account{Address: key.Address, URL: accounts.URL{Scheme: KeyStoreScheme,
 		Path: ks.storage.JoinPath(keyFileName(key.Address))}}

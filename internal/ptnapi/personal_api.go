@@ -145,21 +145,21 @@ func (s *PrivateAccountAPI) NewHdAccount(password string) (string, error) {
 	return "ERROR", err
 }
 
-func (s *PrivateAccountAPI ) GetHdAccount(addr,password,userId string) (string,error) {
-	_,err := common.StringToAddress(addr)
+func (s *PrivateAccountAPI) GetHdAccount(addr, password, userId string) (string, error) {
+	_, err := common.StringToAddress(addr)
 	if err != nil {
-		return "",err
+		return "", err
 	}
 	account, _ := MakeAddress(fetchKeystore(s.am), addr)
 	accountIndex, err := strconv.Atoi(userId)
 	if err != nil {
-		return "",errors.New("invalid argument, args 2 must be a number")
+		return "", errors.New("invalid argument, args 2 must be a number")
 	}
-	acc, err := fetchKeystore(s.am).GetHdAccountWithPassphrase(account,password,uint32(accountIndex))
+	acc, err := fetchKeystore(s.am).GetHdAccountWithPassphrase(account, password, uint32(accountIndex))
 	if err != nil {
-		return "",err
+		return "", err
 	}
-	return acc.Address.String(),nil
+	return acc.Address.String(), nil
 }
 
 // fetchKeystore retrives the encrypted keystore from the account manager.
@@ -175,6 +175,14 @@ func (s *PrivateAccountAPI) ImportRawKey(privkey string, password string) (strin
 		return "", err
 	}
 	acc, err := fetchKeystore(s.am).ImportECDSA(key, password)
+	return acc.Address.String(), err
+}
+func (s *PrivateAccountAPI) ImportMnemonic(mnemonic string, password string) (string, error) {
+	acc, err := fetchKeystore(s.am).ImportMnemonic(mnemonic, password)
+	return acc.Address.String(), err
+}
+func (s *PrivateAccountAPI) ImportHdAccountMnemonic(mnemonic string, password string) (string, error) {
+	acc, err := fetchKeystore(s.am).ImportHdSeedFromMnemonic(mnemonic, password)
 	return acc.Address.String(), err
 }
 

@@ -36,6 +36,10 @@ func newSeed() (*Key, error) {
 	seed := bip39.NewSeed(mnemonic, "")
 	return newKeyFromHdSeed(seed), nil
 }
+func MnemonicToSeed(mnemonic string) ([]byte, error) {
+	return bip39.NewSeedWithErrorChecking(mnemonic, "")
+}
+
 func newKeyFromHdSeed(hdSeed []byte) *Key {
 	id := uuid.NewRandom()
 	key0, _ := newKey0(hdSeed)
@@ -46,6 +50,19 @@ func newKeyFromHdSeed(hdSeed []byte) *Key {
 		Address:    crypto.PubkeyBytesToAddress(pubKey),
 		PrivateKey: hdSeed,
 		KeyType:    KeyType_HD_Seed,
+	}
+	return key
+}
+func newKeyFromHdAccount0(hdSeed []byte) *Key {
+	id := uuid.NewRandom()
+	key0, _ := newKey0(hdSeed)
+	pubKey := key0.PublicKey().Key
+
+	key := &Key{
+		Id:         id,
+		Address:    crypto.PubkeyBytesToAddress(pubKey),
+		PrivateKey: key0.Key,
+		KeyType:    KeyType_ECDSA_KEY,
 	}
 	return key
 }

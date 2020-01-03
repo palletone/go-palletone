@@ -31,7 +31,7 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'importRawKey',
 			call: 'personal_importRawKey',
-			params: 2
+			params: 2,
 		}),
 		new web3._extend.Method({
 			name: 'sign',
@@ -42,14 +42,18 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'openWallet',
 			call: 'personal_openWallet',
-			params: 2
+			params: 2,
 		}),
-		//new web3._extend.Method({
-		//	name: 'deriveAccount',
-		//	call: 'personal_deriveAccount',
-		//	params: 3
-		//}),
-
+		new web3._extend.Method({
+			name: 'importMnemonic',
+			call: 'personal_importMnemonic',
+			params: 2,
+		}),
+		new web3._extend.Method({
+			name: 'importHdAccountMnemonic',
+			call: 'personal_importHdAccountMnemonic',
+			params: 2,
+		}),
 		new web3._extend.Method({
 			name: 'transferPtn',
 			call: 'personal_transferPtn',
