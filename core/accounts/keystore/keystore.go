@@ -25,7 +25,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/pborman/uuid"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -33,6 +32,8 @@ import (
 	"runtime"
 	"sync"
 	"time"
+
+	"github.com/pborman/uuid"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -44,9 +45,10 @@ import (
 )
 
 var (
-	ErrLocked  = accounts.NewAuthNeededError("password or unlock")
-	ErrNoMatch = errors.New("no key for given address or file")
-	ErrDecrypt = errors.New("could not decrypt key with given passphrase")
+	ErrLocked      = accounts.NewAuthNeededError("password or unlock")
+	ErrNoMatch     = errors.New("no key for given address or file")
+	ErrTypeNoMatch = errors.New("no key type for given address or file")
+	ErrDecrypt     = errors.New("could not decrypt key with given passphrase")
 )
 
 // KeyStoreType is the reflect type of a keystore backend.
@@ -141,7 +143,7 @@ func (ks *KeyStore) refreshWallets() {
 
 	// Transform the current list of wallets into the new one
 	wallets := make([]accounts.Wallet, 0, len(accs))
-	events := []accounts.WalletEvent{}
+	var events []accounts.WalletEvent
 
 	for _, account := range accs {
 		// Drop wallets while they were in front of the next account
@@ -270,7 +272,7 @@ func (ks *KeyStore) SignMessage(addr common.Address, msg []byte) ([]byte, error)
 	if unlockedKey.KeyType == KeyType_HD_Seed {
 		prvKey, _ = convertHdSeed2Account0PrivateKey(prvKey)
 	}
-	return crypto.MyCryptoLib.Sign(unlockedKey.PrivateKey, msg)
+	return crypto.MyCryptoLib.Sign(prvKey, msg)
 	// Sign the hash using plain ECDSA operations
 	//return crypto.Sign(hash, unlockedKey.PrivateKey)
 }
@@ -665,6 +667,9 @@ func (ks *KeyStore) GetHdAccount(a accounts.Account, accountIndex uint32) (
 	if !found {
 		return accounts.Account{}, ErrLocked
 	}
+	if unlockedKey.KeyType != KeyType_HD_Seed {
+		return accounts.Account{}, ErrTypeNoMatch
+	}
 	return ks.getHdAccount(unlockedKey.PrivateKey, accountIndex)
 }
 func (ks *KeyStore) getHdAccount(seed []byte, accountIndex uint32) (accounts.Account, error) {
@@ -679,7 +684,9 @@ func (ks *KeyStore) getHdAccount(seed []byte, accountIndex uint32) (accounts.Acc
 		KeyType:    KeyType_ECDSA_KEY,
 		PrivateKey: prvKey,
 	}
-	ks.unlocked[addr] = &unlocked{Key: accountKey}
+	if accountIndex != 0 {
+		ks.unlocked[addr] = &unlocked{Key: accountKey}
+	}
 	hdAccount := accounts.Account{Address: addr, URL: accounts.URL{Scheme: KeyStoreScheme,
 		Path: ks.storage.JoinPath(keyFileName(addr))}}
 	return hdAccount, nil
