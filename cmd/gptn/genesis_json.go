@@ -136,7 +136,7 @@ func createExampleMediators(ctx *cli.Context, mcLen int) ([]*mp.MediatorConf, []
 			InitPubKey:  pubStr,
 		}
 
-		prvKey, _ := ks.DumpKey(account, password)
+		prvKey, _, _ := ks.DumpKey(account, password)
 		b, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(prvKey)
 
 		jdes[i] = core.JurorDepositExtraJson{

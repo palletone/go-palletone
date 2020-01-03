@@ -99,11 +99,11 @@ func StoreKey(dir, auth string, scryptN, scryptP int) (common.Address, error) {
 	// log.Debug("Address:" + a.Address.Str())
 	return a.Address, err
 }
-func StoreHdSeed(dir, auth string, scryptN, scryptP int) (common.Address, error) {
-	_, a, err := storeNewHdSeed(&keyStorePassphrase{dir, scryptN, scryptP}, auth)
+func StoreHdSeed(dir, auth string, scryptN, scryptP int) (common.Address, string, error) {
+	_, a, mnemonic, err := storeNewHdSeed(&keyStorePassphrase{dir, scryptN, scryptP}, auth)
 	// log.Debug("Dir: " + dir + " Auth: " + auth + " scryptN: " + strconv.Itoa(scryptN) + " scryptP: " + strconv.Itoa(scryptP))
 	// log.Debug("Address:" + a.Address.Str())
-	return a.Address, err
+	return a.Address, mnemonic, err
 }
 func (ks keyStorePassphrase) StoreKey(filename string, key *Key, auth string) error {
 	keyjson, err := EncryptKey(key, auth, ks.scryptN, ks.scryptP)
@@ -208,7 +208,7 @@ func DecryptKey(keyjson []byte, auth string) (*Key, error) {
 		keyType = KeyType_ECDSA_KEY
 	}
 	if keyType == KeyType_HD_Seed {
-		_, pubKey, _ = newAccountKey(keyBytes, 0)
+		_, pubKey, _ = NewAccountKey(keyBytes, 0)
 	}
 	if keyType == KeyType_ECDSA_KEY {
 		pubKey, _ = crypto.MyCryptoLib.PrivateKeyToPubKey(keyBytes)

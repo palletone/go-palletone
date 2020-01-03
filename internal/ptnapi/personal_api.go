@@ -137,12 +137,17 @@ func (s *PrivateAccountAPI) NewAccount(password string) (string, error) {
 	return "ERROR", err
 }
 
-func (s *PrivateAccountAPI) NewHdAccount(password string) (string, error) {
-	acc, err := fetchKeystore(s.am).NewHdAccount(password)
-	if err == nil {
-		return acc.Address.String(), nil
+type NewHdAccountResult struct {
+	Address  common.Address
+	Mnemonic string
+}
+
+func (s *PrivateAccountAPI) NewHdAccount(password string) (*NewHdAccountResult, error) {
+	acc, mnemonic, err := fetchKeystore(s.am).NewHdAccount(password)
+	if err != nil {
+		return nil, err
 	}
-	return "ERROR", err
+	return &NewHdAccountResult{Address: acc.Address, Mnemonic: mnemonic}, nil
 }
 
 func (s *PrivateAccountAPI) GetHdAccount(addr, password, userId string) (string, error) {
@@ -155,7 +160,13 @@ func (s *PrivateAccountAPI) GetHdAccount(addr, password, userId string) (string,
 	if err != nil {
 		return "", errors.New("invalid argument, args 2 must be a number")
 	}
-	acc, err := fetchKeystore(s.am).GetHdAccountWithPassphrase(account, password, uint32(accountIndex))
+	ks := fetchKeystore(s.am)
+	var acc accounts.Account
+	if ks.IsUnlock(account.Address) {
+		acc, err = ks.GetHdAccount(account, uint32(accountIndex))
+	} else {
+		acc, err = ks.GetHdAccountWithPassphrase(account, password, uint32(accountIndex))
+	}
 	if err != nil {
 		return "", err
 	}

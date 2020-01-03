@@ -280,7 +280,7 @@ func (ks *KeyStore) SignMessageByHdAccount(addr common.Address, accountIndex uin
 		return nil, ErrLocked
 	}
 	seed := unlockedKey.PrivateKey
-	prvKey, _, err := newAccountKey(seed, accountIndex)
+	prvKey, _, err := NewAccountKey(seed, accountIndex)
 	if err != nil {
 		return nil, err
 	}
@@ -476,16 +476,16 @@ func (ks *KeyStore) NewAccount(passphrase string) (accounts.Account, error) {
 	return account, nil
 }
 
-func (ks *KeyStore) NewHdAccount(passphrase string) (accounts.Account, error) {
-	_, account, err := storeNewHdSeed(ks.storage, passphrase)
+func (ks *KeyStore) NewHdAccount(passphrase string) (accounts.Account, string, error) {
+	_, account, mnemonic, err := storeNewHdSeed(ks.storage, passphrase)
 	if err != nil {
-		return accounts.Account{}, err
+		return accounts.Account{}, "", err
 	}
 	// Add the account to the cache immediately rather
 	// than waiting for file system notifications to pick it up.
 	ks.cache.add(account)
 	ks.refreshWallets()
-	return account, nil
+	return account, mnemonic, nil
 }
 
 // Export exports as a JSON key, encrypted with newPassphrase.
@@ -503,12 +503,12 @@ func (ks *KeyStore) Export(a accounts.Account, passphrase, newPassphrase string)
 	return EncryptKey(key, newPassphrase, N, P)
 }
 
-func (ks *KeyStore) DumpKey(a accounts.Account, passphrase string) (privateKey []byte, err error) {
+func (ks *KeyStore) DumpKey(a accounts.Account, passphrase string) (privateKey []byte, keyType string, err error) {
 	_, key, err := ks.getDecryptedKey(a, passphrase)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	return key.PrivateKey, nil
+	return key.PrivateKey, key.KeyType, nil
 
 }
 func (ks *KeyStore) DumpPrivateKey(a accounts.Account, passphrase string) (privateKey interface{}, err error) {
@@ -639,11 +639,24 @@ func (ks *KeyStore) GetHdAccountWithPassphrase(a accounts.Account, passphrase st
 		return accounts.Account{}, err
 	}
 	defer ZeroKey(key.PrivateKey)
-	prvKey, pubKey, err := newAccountKey(key.PrivateKey, accountIndex)
+	return ks.getHdAccount(key.PrivateKey, accountIndex)
+}
+func (ks *KeyStore) GetHdAccount(a accounts.Account, accountIndex uint32) (
+	accounts.Account, error) {
+	address := a.Address
+	ks.mu.RLock()
+	defer ks.mu.RUnlock()
+	unlockedKey, found := ks.unlocked[address]
+	if !found {
+		return accounts.Account{}, ErrLocked
+	}
+	return ks.getHdAccount(unlockedKey.PrivateKey, accountIndex)
+}
+func (ks *KeyStore) getHdAccount(seed []byte, accountIndex uint32) (accounts.Account, error) {
+	prvKey, pubKey, err := NewAccountKey(seed, accountIndex)
 	if err != nil {
 		return accounts.Account{}, err
 	}
-
 	addr := crypto.PubkeyBytesToAddress(pubKey)
 	accountKey := &Key{
 		Id:         uuid.NewRandom(),
@@ -665,7 +678,7 @@ func (ks *KeyStore) GetHdAccountKeys(a accounts.Account, passphrase string, acco
 		return nil, nil, common.Address{}, err
 	}
 	defer ZeroKey(key.PrivateKey)
-	prvKey, pubKey, err := newAccountKey(key.PrivateKey, accountIndex)
+	prvKey, pubKey, err := NewAccountKey(key.PrivateKey, accountIndex)
 	if err != nil {
 		return nil, nil, common.Address{}, err
 	}

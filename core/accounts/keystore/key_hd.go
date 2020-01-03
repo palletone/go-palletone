@@ -8,33 +8,33 @@ import (
 	"github.com/tyler-smith/go-bip39"
 )
 
-func storeNewHdSeed(ks keyStore, auth string) (*Key, accounts.Account, error) {
+func storeNewHdSeed(ks keyStore, auth string) (*Key, accounts.Account, string, error) {
 
-	key, err := newSeed()
+	key, mnemonic, err := newSeed()
 	if err != nil {
-		return nil, accounts.Account{}, err
+		return nil, accounts.Account{}, "", err
 	}
 
 	a := accounts.Account{Address: key.Address, URL: accounts.URL{Scheme: KeyStoreScheme,
 		Path: ks.JoinPath(keyFileName(key.Address))}}
 	if err := ks.StoreKey(a.URL.Path, key, auth); err != nil {
 		ZeroKey(key.PrivateKey)
-		return nil, a, err
+		return nil, a, mnemonic, err
 	}
-	return key, a, err
+	return key, a, mnemonic, err
 }
-func newSeed() (*Key, error) {
+func newSeed() (*Key, string, error) {
 	entropy, err := bip39.NewEntropy(256)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	mnemonic, err := bip39.NewMnemonic(entropy)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	// Generate a Bip32 HD wallet for the mnemonic and a user supplied password
 	seed := bip39.NewSeed(mnemonic, "")
-	return newKeyFromHdSeed(seed), nil
+	return newKeyFromHdSeed(seed), mnemonic, nil
 }
 func MnemonicToSeed(mnemonic string) ([]byte, error) {
 	return bip39.NewSeedWithErrorChecking(mnemonic, "")
@@ -75,7 +75,7 @@ func newKey0(seed []byte) (*bip32.Key, error) {
 }
 
 //根据AccountIndex，返回私钥，公钥
-func newAccountKey(seed []byte, accountIndex uint32) ([]byte, []byte, error) {
+func NewAccountKey(seed []byte, accountIndex uint32) ([]byte, []byte, error) {
 	masterKey, err := bip32.NewMasterKey(seed)
 	if err != nil {
 		return nil, nil, err
