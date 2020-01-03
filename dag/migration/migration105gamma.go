@@ -20,11 +20,12 @@
 package migration
 
 import (
+	"fmt"
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/storage"
 )
 
@@ -54,9 +55,28 @@ func (m *Migration105beta_105gamma) ExecuteUpgrade() error {
 }
 
 func (m *Migration105beta_105gamma) countMediatorTotalProduct() error {
+	// 获取所有的 mediator信息
+	mediatorInfoMap := make(map[[22]byte]*modules.MediatorInfo)
+	mediatorInfoIter := m.statedb.NewIteratorWithPrefix(constants.MEDIATOR_INFO_PREFIX)
+
+	for mediatorInfoIter.Next() {
+		mediatorInfo := &modules.MediatorInfo{}
+		err := rlp.DecodeBytes(mediatorInfoIter.Value(), mediatorInfo)
+		if err != nil {
+			log.Errorf(err.Error())
+			return err
+		}
+
+		var key [22]byte
+		copy(key[:], mediatorInfoIter.Key()[0:22])
+		mediatorInfoMap[key] = mediatorInfo
+	}
+
 	// 遍历所有的 unit header
 	headers := m.dagdb.NewIteratorWithPrefix(constants.HEADER_PREFIX)
-	for headers.Next()  {
+	count := 0 // 计数器打印日志
+	for headers.Next() {
+		// 解析 header
 		header := new(modules.Header)
 		err := rlp.DecodeBytes(headers.Value(), header)
 		if err != nil {
@@ -65,35 +85,32 @@ func (m *Migration105beta_105gamma) countMediatorTotalProduct() error {
 		}
 
 		// 获取生产该 unit 的mediator
-		key := append(constants.MEDIATOR_INFO_PREFIX, header.Author().Bytes()...)
-		mi := modules.NewMediatorInfo()
-		err = storage.RetrieveFromRlpBytes(m.statedb, key, mi)
-		if err != nil {
-			log.Errorf(err.Error())
-			return err
+		var key [22]byte
+		med := header.Author()
+		copy(key[:], storage.GetMmediatorKey(med)[0:22])
+		mi, found := mediatorInfoMap[key]
+		if !found && header.NumberU64() != 0 {
+			errStr := fmt.Sprintf("cannot find mediator info: %v", med.Str())
+			log.Errorf(errStr)
+			return fmt.Errorf(errStr)
 		}
 
 		// 将 mediator的 TotalProduct 加1
 		mi.TotalProduct++
-		err = storage.StoreToRlpBytes(m.statedb, key, mi)
+
+		count++
+		if count%100000 == 0 {
+			log.Debugf("mediator info of %v units has been counted", count)
+		}
+	}
+
+	// 存储所有mediator信息
+	for key, mi := range mediatorInfoMap {
+		err := storage.StoreToRlpBytes(m.statedb, key[:], mi)
 		if err != nil {
 			log.Errorf(err.Error())
 			return err
 		}
-
-		//stateDb := storage.NewStateDb(m.statedb)
-		//med := header.Author()
-		//mi, err := stateDb.RetrieveMediatorInfo(med)
-		//if err != nil {
-		//	log.Errorf(err.Error())
-		//	return err
-		//}
-		//
-		//mi.TotalProduct++
-		//err = stateDb.StoreMediatorInfo(med, mi)
-		//if err != nil {
-		//	return err
-		//}
 	}
 
 	return nil
