@@ -173,13 +173,13 @@ func (api *PrivateAdminAPI) StartRPC(host *string, port *int, cors *string, apis
 		}
 	}
 
-	allowedVHosts := api.node.config.HTTPVirtualHosts
-	if vhosts != nil {
-		allowedVHosts = nil
-		for _, vhost := range strings.Split(*host, ",") {
-			allowedVHosts = append(allowedVHosts, strings.TrimSpace(vhost))
-		}
-	}
+	//allowedVHosts := api.node.config.HTTPVirtualHosts
+	//if vhosts != nil {
+	//	allowedVHosts = nil
+	//	for _, vhost := range strings.Split(*host, ",") {
+	//		allowedVHosts = append(allowedVHosts, strings.TrimSpace(vhost))
+	//	}
+	//}
 
 	modules := api.node.httpWhitelist
 	if apis != nil {
@@ -190,7 +190,7 @@ func (api *PrivateAdminAPI) StartRPC(host *string, port *int, cors *string, apis
 	}
 
 	if err := api.node.startHTTP(fmt.Sprintf("%s:%d", *host, *port), api.node.rpcAPIs, modules,
-		allowedOrigins, allowedVHosts); err != nil {
+		allowedOrigins, []string{} /*allowedVHosts*/); err != nil {
 		return false, err
 	}
 	return true, nil

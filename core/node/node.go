@@ -110,14 +110,7 @@ func New(conf *Config) (*Node, error) {
 	// working directory don't affect the node.
 	confCopy := *conf
 	conf = &confCopy
-	// 把datadir转成绝对路径
-	//if conf.DataDir != "" {
-	//	absdatadir, err := filepath.Abs(conf.DataDir)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	conf.DataDir = absdatadir
-	//}
+
 	// Ensure that the instance name doesn't cause weird conflicts with
 	// other files in the data directory.
 	if strings.ContainsAny(conf.Name, `/\`) {
@@ -334,7 +327,7 @@ func (n *Node) startRPC(services map[reflect.Type]Service) error {
 	}
 	// 3. 启动 HTTP，用于 HTTP 的交互通信
 	if err := n.startHTTP(n.httpEndpoint, apis, n.config.HTTPModules, n.config.HTTPCors,
-		n.config.HTTPVirtualHosts); err != nil {
+		/*n.config.HTTPVirtualHosts*/ []string{}); err != nil {
 		log.Error("startRPC startHTTP err:", err.Error())
 		n.stopIPC()
 		n.stopInProc()

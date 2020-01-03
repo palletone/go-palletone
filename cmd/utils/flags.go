@@ -361,7 +361,7 @@ var (
 		Name: "rpcvhosts",
 		Usage: "Comma separated list of virtual hostnames from which to accept requests (server enforced). " +
 			"Accepts '*' wildcard.",
-		Value: strings.Join(node.DefaultConfig.HTTPVirtualHosts, ","),
+		Value: "", //strings.Join(node.DefaultConfig.HTTPVirtualHosts, ","),
 	}
 	RPCApiFlag = cli.StringFlag{
 		Name:  "rpcapi",
