@@ -89,7 +89,11 @@ func (m *Migration105beta_105gamma) countMediatorTotalProduct() error {
 		med := header.Author()
 		copy(key[:], storage.GetMmediatorKey(med)[0:22])
 		mi, found := mediatorInfoMap[key]
-		if !found && header.NumberU64() != 0 {
+		if !found {
+			if header.NumberU64() == 0 {
+				continue
+			}
+
 			errStr := fmt.Sprintf("cannot find mediator info: %v", med.Str())
 			log.Errorf(errStr)
 			return fmt.Errorf(errStr)
