@@ -266,6 +266,10 @@ func (ks *KeyStore) SignMessage(addr common.Address, msg []byte) ([]byte, error)
 	if !found {
 		return nil, ErrLocked
 	}
+	prvKey := unlockedKey.PrivateKey
+	if unlockedKey.KeyType == KeyType_HD_Seed {
+		prvKey, _ = convertHdSeed2Account0PrivateKey(prvKey)
+	}
 	return crypto.MyCryptoLib.Sign(unlockedKey.PrivateKey, msg)
 	// Sign the hash using plain ECDSA operations
 	//return crypto.Sign(hash, unlockedKey.PrivateKey)
@@ -319,7 +323,11 @@ func (ks *KeyStore) SignMessageWithPassphrase(a accounts.Account, passphrase str
 		return nil, err
 	}
 	defer ZeroKey(key.PrivateKey)
-	return crypto.MyCryptoLib.Sign(key.PrivateKey, msg)
+	prvKey := key.PrivateKey
+	if key.KeyType == KeyType_HD_Seed {
+		prvKey, _ = convertHdSeed2Account0PrivateKey(prvKey)
+	}
+	return crypto.MyCryptoLib.Sign(prvKey, msg)
 	//return crypto.Sign(hash, key.PrivateKey)
 }
 func (ks *KeyStore) VerifySignatureWithPassphrase(a accounts.Account, passphrase string, hash []byte,
@@ -329,8 +337,11 @@ func (ks *KeyStore) VerifySignatureWithPassphrase(a accounts.Account, passphrase
 		return false, err
 	}
 	defer ZeroKey(key.PrivateKey)
-
-	pk, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(key.PrivateKey)
+	prvKey := key.PrivateKey
+	if key.KeyType == KeyType_HD_Seed {
+		prvKey, _ = convertHdSeed2Account0PrivateKey(prvKey)
+	}
+	pk, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(prvKey)
 	return crypto.MyCryptoLib.Verify(pk, signature, hash)
 	//sig := signature[:len(signature)-1] // remove recovery id
 	//return crypto.VerifySignature(crypto.FromECDSAPub(&pk), hash, sig), nil
@@ -629,7 +640,11 @@ func (ks *KeyStore) GetPublicKey(address common.Address) ([]byte, error) {
 	if !found {
 		return nil, ErrLocked
 	}
-	return crypto.MyCryptoLib.PrivateKeyToPubKey(unlockedKey.PrivateKey)
+	prvKey := unlockedKey.PrivateKey
+	if unlockedKey.KeyType == KeyType_HD_Seed {
+		prvKey, _ = convertHdSeed2Account0PrivateKey(unlockedKey.PrivateKey)
+	}
+	return crypto.MyCryptoLib.PrivateKeyToPubKey(prvKey)
 	//return crypto.CompressPubkey(&unlockedKey.PrivateKey.PublicKey), nil
 }
 func (ks *KeyStore) GetHdAccountWithPassphrase(a accounts.Account, passphrase string, accountIndex uint32) (

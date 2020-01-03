@@ -73,6 +73,17 @@ func newKey0(seed []byte) (*bip32.Key, error) {
 	}
 	return NewKeyFromMasterKey(masterKey, PTN_COIN_TYPE, ACCOUNT0, 0, 0)
 }
+func convertHdSeed2Account0PrivateKey(seed []byte) ([]byte, error) {
+	masterKey, err := bip32.NewMasterKey(seed)
+	if err != nil {
+		return nil, err
+	}
+	key, err := NewKeyFromMasterKey(masterKey, PTN_COIN_TYPE, ACCOUNT0, 0, 0)
+	if err != nil {
+		return nil, err
+	}
+	return key.Key, nil
+}
 
 //根据AccountIndex，返回私钥，公钥
 func NewAccountKey(seed []byte, accountIndex uint32) ([]byte, []byte, error) {
