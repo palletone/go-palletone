@@ -785,7 +785,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	ks := s.b.GetKeyStore()
 	err = ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
 	if err != nil {
-		return common.Hash{}, errors.New("get addr by outpoint is err")
+		return common.Hash{}, errors.New("TimedUnlock Account err")
 	}
 
 	newsign := ptnjson.NewSignRawTransactionCmd(result, &srawinputs, &keys, ptnjson.String(ALL))
@@ -1198,7 +1198,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 	err = ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
 	if err != nil {
 		//return nil, err
-		return common.Hash{}, errors.New("get addr by outpoint is err")
+		return common.Hash{}, errors.New("TimedUnlock Account err")
 	}
 
 	newsign := ptnjson.NewSignRawTransactionCmd(result, &srawinputs, &keys, ptnjson.String(ALL))
@@ -1316,7 +1316,7 @@ func (s *PrivateWalletAPI) unlockKS(addr common.Address, password string, durati
 	ks := s.b.GetKeyStore()
 	err := ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
 	if err != nil {
-		return errors.New("get addr by outpoint is err")
+		return errors.New("TimedUnlock Account err")
 	}
 	return nil
 }

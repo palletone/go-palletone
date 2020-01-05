@@ -513,7 +513,7 @@ func (s *PrivateContractAPI) unlockKS(addr common.Address, password string, dura
 	ks := s.b.GetKeyStore()
 	err := ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
 	if err != nil {
-		return fmt.Errorf("get addr by outpoint is err: %v", err.Error())
+		return fmt.Errorf("TimedUnlock Account err: %v", err.Error())
 	}
 	return nil
 }
