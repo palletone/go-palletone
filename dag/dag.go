@@ -1492,3 +1492,7 @@ func (d *Dag) MemdagInfos() (*modules.MemdagInfos, error) {
 func (d *Dag) GetContractsWithJuryAddr(addr common.Address) []*modules.Contract {
 	return d.stableStateRep.GetContractsWithJuryAddr(addr)
 }
+
+func (d *Dag) GetAddressCount() int {
+	return d.stableUnitRep.GetAddressCount()
+}

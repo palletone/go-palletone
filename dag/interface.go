@@ -214,4 +214,6 @@ type IDag interface {
 
 	SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription
 	GetContractsWithJuryAddr(addr common.Address) []*modules.Contract
+
+	GetAddressCount() int
 }

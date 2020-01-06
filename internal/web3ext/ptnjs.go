@@ -40,6 +40,11 @@ web3._extend({
 			params: 2
 		}),
 		new web3._extend.Method({
+			name: 'addressCount',
+			call: 'ptn_addressCount',
+			params: 0
+		}),
+		new web3._extend.Method({
 			name: 'encodeTx',
 			call: 'ptn_encodeTx',
 			params: 1

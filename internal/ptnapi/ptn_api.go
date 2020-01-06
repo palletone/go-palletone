@@ -31,6 +31,7 @@ import (
 	"unsafe"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/rpc"
@@ -40,7 +41,6 @@ import (
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/ptnjson/statistics"
 	"github.com/shopspring/decimal"
-	"github.com/palletone/go-palletone/common/crypto"
 )
 
 // PublicPalletOneAPI provides an API to access PalletOne related information.
@@ -188,7 +188,7 @@ func (s *PublicBlockChainAPI) GetAddressWithPublicKey(pubkey string) (addStr str
 	}
 
 	addStr = crypto.PubkeyBytesToAddress(byte).String()
-	return 
+	return
 }
 
 func (s *PublicBlockChainAPI) AddressBalanceStatistics(ctx context.Context, token string,
@@ -196,6 +196,11 @@ func (s *PublicBlockChainAPI) AddressBalanceStatistics(ctx context.Context, toke
 	result, err := s.b.GetAddressBalanceStatistics(token, topN)
 
 	return result, err
+}
+func (s *PublicBlockChainAPI) AddressCount() (int, error) {
+	result := s.b.GetAddressCount()
+
+	return result, nil
 }
 
 //

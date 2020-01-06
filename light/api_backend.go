@@ -556,3 +556,6 @@ func (b *LesApiBackend) GetContractTpl(tplId []byte) (*modules.ContractTemplate,
 func (b *LesApiBackend) GetContractsWithJuryAddr(addr common.Address) []*modules.Contract {
 	return nil
 }
+func (b *LesApiBackend) GetAddressCount() int {
+	return 0
+}

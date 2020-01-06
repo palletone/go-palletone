@@ -70,7 +70,7 @@ type IUnitRepository interface {
 
 	GetUnitTransactions(hash common.Hash) (modules.Transactions, error)
 	GetUnit(hash common.Hash) (*modules.Unit, error)
-
+	GetAddressCount() int
 	GetBody(unitHash common.Hash) ([]common.Hash, error)
 	GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
@@ -1072,6 +1072,7 @@ func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Trans
 	addresses := rep.getPayToAddresses(tx)
 	for _, addr := range addresses {
 		rep.idxdb.SaveAddressTxId(addr, txHash)
+		rep.idxdb.SaveAddress(addr)
 	}
 	//Index from address to txid
 	fromAddrs := rep.getPayFromAddresses(tx)
@@ -1804,4 +1805,7 @@ func (rep *UnitRepository) GetAssetReference(asset []byte) ([]*modules.ProofOfEx
 
 func (rep *UnitRepository) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error) {
 	return rep.idxdb.QueryProofOfExistenceByReference(ref)
+}
+func (rep *UnitRepository) GetAddressCount() int {
+	return rep.idxdb.GetAddressCount()
 }
