@@ -75,7 +75,11 @@ func (m *Migration105gamma_105delta) upgradeContracts() error {
 	if err != nil {
 		return err
 	}
-	log.Debugf("jury list len = %d", len(list))
+	if list == nil {
+		log.Debug("list is nil")
+		return nil
+	}
+		log.Debugf("jury list len = %d", len(list))
 	//  获取对应的模板
 	//  获取陪审员地址
 	contractNameAndJuryAddr := make(map[string][]common.Address, 0)
@@ -129,7 +133,7 @@ func getjurycandidatelist(db storage.DatabaseReader) (map[string]bool, error) {
 	data, err := db.Get(key)
 	if err != nil {
 		log.Error(err.Error())
-		return nil, err
+		return nil, nil
 	}
 	if len(data) < 28 {
 		return nil, errors.New("the data is irregular.")
