@@ -28,6 +28,9 @@ type ITokenEngine interface {
 	//对一个未签名的tx进行签名，将所有input的解锁脚本填充完毕
 	SignTxAllPaymentInput(tx *modules.Transaction, hashType uint32, utxoLockScripts map[modules.OutPoint][]byte,
 		redeemScript []byte, pubKeyFn AddressGetPubKey, hashFn AddressGetSign) ([]common.SignatureError, error)
+	//对一个未签名交易的某条Message进行签名
+	SignTx1MsgPaymentInput(tx *modules.Transaction, msgIdx int, hashType uint32, utxoLockScripts map[modules.OutPoint][]byte,
+		redeemScript []byte, pubKeyFn AddressGetPubKey, hashFn AddressGetSign) ([]common.SignatureError, error)
 	//对tx的某个多签input进行签名，如果已经有别人签名，则合并
 	MultiSignOnePaymentInput(tx *modules.Transaction,
 		hashType uint32, msgIdx, id int,

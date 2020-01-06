@@ -31,6 +31,7 @@ const (
 	SigHashSingle       SigHashType = 0x3
 	SigHashRaw          SigHashType = 0x4 //直接对构造好的不包含任何签名信息的Tx签名
 	SigHashAnyOneCanPay SigHashType = 0x80
+	SigHashOneMessage   SigHashType = 0x40 //只对当前Message进行签名，其他Message完全忽略
 
 	// sigHashMask defines the number of bits of the hash type which is used
 	// to identify which outputs are signed.
@@ -291,7 +292,18 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType,
 // engine instance, calculate the signature hash to be used for signing and
 // verification.
 func calcSignatureData(script []parsedOpcode, hashType SigHashType,
-	tx *modules.Transaction, msgIdx, idx int) []byte {
+	otx *modules.Transaction, omsgIdx, idx int) []byte {
+		tx:=otx
+		msgIdx:=omsgIdx
+	if hashType & SigHashOneMessage== SigHashOneMessage{
+		msg:= otx.Messages()[omsgIdx]
+		tx=&modules.Transaction{}
+		tx.AddMessage(msg)
+		msgIdx=0
+
+	}
+
+
 	pay := tx.Messages()[msgIdx].Payload.(*modules.PaymentPayload)
 	// The SigHashSingle signature type signs only the corresponding input
 	// and output (the output with the same index number as the input).
@@ -397,6 +409,11 @@ func calcSignatureData(script []parsedOpcode, hashType SigHashType,
 	//payCopy.Serialize(&wbuf)
 	//binary.Write(&wbuf, binary.LittleEndian, hashType)
 	//return wire.DoubleSha256(wbuf.Bytes())
+
+	// log.DebugDynamic(func() string {
+	// 	data,_:=json.Marshal(txCopy)
+	// 	return "tx for hash:"+string(data)
+	// })
 	data, err := rlp.EncodeToBytes(txCopy)
 	if err != nil {
 		log.Error("Rlp encode tx error:" + err.Error())

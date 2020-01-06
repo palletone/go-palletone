@@ -42,6 +42,7 @@ const (
 	SigHashNone         uint32 = 0x2
 	SigHashSingle       uint32 = 0x3
 	SigHashRaw          uint32 = 0x4
+	SigHashOneMessage uint32=0x40
 	SigHashAnyOneCanPay uint32 = 0x80
 	// sigHashMask defines the number of bits of the hash type which is used
 	// to identify which outputs are signed.
@@ -392,6 +393,58 @@ func (engine *TokenEngine) SignTxAllPaymentInput(tx *modules.Transaction, hashTy
 	var signErrors []common.SignatureError
 	for i, msg := range tx.TxMessages() {
 		if msg.App == modules.APP_PAYMENT {
+			pay, ok := msg.Payload.(*modules.PaymentPayload)
+			if !ok {
+				return nil, errors.New("Invalid payment message")
+			}
+			for j, input := range pay.Inputs {
+				if len(input.SignatureScript) > 0 {
+					//已经签名了，不需要再次签名
+					//判断是否是多签，处理多签的情况
+					continue
+				}
+				utxoLockScript, find := utxoLockScripts[*input.PreviousOutPoint]
+				if !find {
+					errMsg := fmt.Sprintf("Don't find utxo for outpoint[%s]", input.PreviousOutPoint.String())
+					log.Error(errMsg)
+					return nil, errors.New(errMsg)
+				}
+				checkscript := make([]byte, len(utxoLockScript))
+				copy(checkscript, utxoLockScript)
+				if (hashType&uint32(txscript.SigHashSingle)) != uint32(txscript.SigHashSingle) || j < len(pay.Outputs) {
+					sigScript, err := txscript.SignTxOutput(tx, i, j, checkscript, txscript.SigHashType(hashType),
+						tmpAcc, txscript.ScriptClosure(lookupRedeemScript), input.SignatureScript)
+					if err != nil {
+						signErrors = append(signErrors, common.SignatureError{
+							InputIndex: uint32(j),
+							MsgIndex:   uint32(i),
+							Error:      err,
+						})
+						return signErrors, err
+					}
+					input.SignatureScript = sigScript
+					// modified msg
+					tx.ModifiedMsg(i, msg)
+					//checkscript = make([]byte, 0)
+				}
+			}
+		}
+	}
+	return signErrors, nil
+}
+
+//Sign a message of transaction
+func (engine *TokenEngine) SignTx1MsgPaymentInput(tx *modules.Transaction, msgIdx int, hashType uint32, utxoLockScripts map[modules.OutPoint][]byte,
+	redeemScript []byte, pubKeyFn AddressGetPubKey, hashFn AddressGetSign) ([]common.SignatureError, error) {
+
+	lookupRedeemScript := func(a common.Address) ([]byte, error) {
+
+		return redeemScript, nil
+	}
+	tmpAcc := &account{pubKeyFn: pubKeyFn, signFn: hashFn}
+	var signErrors []common.SignatureError
+	for i, msg := range tx.TxMessages() {
+		if i==msgIdx && msg.App == modules.APP_PAYMENT {
 			pay, ok := msg.Payload.(*modules.PaymentPayload)
 			if !ok {
 				return nil, errors.New("Invalid payment message")

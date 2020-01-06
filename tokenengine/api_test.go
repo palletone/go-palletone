@@ -854,3 +854,118 @@ func BenchmarkScriptValidate(b *testing.B) {
 //	}
 //	t.Logf("Cost time:%v", time.Since(start))
 //}
+func TestSign1Msg(t *testing.T) {
+	lockScript := Instance.GenerateLockScript(address1)
+	t.Logf("UTXO lock script:%x", lockScript)
+
+	payment := &modules.PaymentPayload{}
+	utxoTxId := common.HexToHash("5651870aa8c894376dbd960a22171d0ad7be057a730e14d7103ed4a6dbb34873")
+	outPoint := modules.NewOutPoint(utxoTxId, 0, 0)
+	txIn := modules.NewTxIn(outPoint, []byte{})
+	payment.AddTxIn(txIn)
+	asset0,_ := modules.StringToAsset("ABC")
+	payment.AddTxOut(modules.NewTxOut(1, lockScript, asset0))
+	m1 := modules.NewMessage(modules.APP_PAYMENT, payment)
+	tx := modules.NewTransaction([]*modules.Message{m1})
+	//tx.TxMessages = append(tx.TxMessages, modules.NewMessage(modules.APP_DATA, &modules.DataPayload{MainData: []byte("Hello PalletOne")}))
+
+	lockScripts := map[modules.OutPoint][]byte{
+		*outPoint: lockScript[:],
+	}
+
+	getPubKeyFn := func(addr common.Address) ([]byte, error) {
+		if addr==address1 {
+			return pubKey1B, nil
+		}
+
+			return pubKey2B,nil
+
+	}
+	getSignFn := func(addr common.Address, hash []byte) ([]byte, error) {
+		if addr==address1 {
+			return crypto.MyCryptoLib.Sign(prvKey1B, hash)
+		}
+		return crypto.MyCryptoLib.Sign(prvKey2B, hash)
+	}
+	var hashtype uint32
+	hashtype = SigHashAll| SigHashOneMessage
+	log.Debug("Try to sign 1 payment tx")
+	_, err := Instance.SignTxAllPaymentInput(tx, hashtype, lockScripts, nil, getPubKeyFn, getSignFn)
+	if err != nil {
+		t.Logf("Sign error:%s", err)
+	}
+	unlockScript := tx.TxMessages()[0].Payload.(*modules.PaymentPayload).Inputs[0].SignatureScript
+	t.Logf("UnlockScript:%x", unlockScript)
+	s, _ := Instance.DisasmString(unlockScript)
+	t.Logf("UnlockScript string:%s", s)
+	log.Debug("Try to validate 1 payment tx")
+	err = Instance.ScriptValidate(lockScript, nil, tx, 0, 0)
+	if err != nil {
+		t.Logf("validate error:%s", err)
+	}
+	assert.Nil(t,err)
+	paymentFee := &modules.PaymentPayload{}
+	outPoint0 := modules.NewOutPoint(utxoTxId, 1, 0)
+	txIn0 := modules.NewTxIn(outPoint0, []byte{})
+	paymentFee.AddTxIn(txIn0)
+	ptn := modules.NewPTNAsset()
+	paymentFee.AddTxOut(modules.NewTxOut(1, lockScript, ptn))
+	m0 := modules.NewMessage(modules.APP_PAYMENT, paymentFee)
+	assert.Nil(t, err, fmt.Sprintf("validate error:%s", err))
+	newtx := modules.NewTransaction([]*modules.Message{m0,tx.Messages()[0]})
+	hashtype = SigHashAll
+	lockScript2 := Instance.GenerateLockScript(address2)
+	lockScripts = map[modules.OutPoint][]byte{
+		*outPoint: lockScript[:],
+		*outPoint0:lockScript2,
+	}
+	log.Debug("Try to sign 2 payment tx")
+	_, err = Instance.SignTx1MsgPaymentInput(newtx, 0,hashtype, lockScripts, nil, getPubKeyFn, getSignFn)
+	if err != nil {
+		t.Logf("Sign error:%s", err)
+	}
+	assert.Nil(t,err)
+	data,_:=json.Marshal(newtx)
+	t.Log(string(data))
+	log.Debug("Try to validate 2 payment tx")
+	err = Instance.ScriptValidate(lockScript2, nil, newtx, 0, 0)
+	if err != nil {
+		t.Logf("validate error:%s", err)
+	}
+	assert.Nil(t,err)
+	err = Instance.ScriptValidate(lockScript, nil, newtx, 1, 0)
+	if err != nil {
+		t.Logf("validate error:%s", err)
+	}
+	assert.Nil(t,err)
+	msgs:= newtx.Messages()
+	for _,m:=range msgs{
+		p:=m.Payload.(*modules.PaymentPayload)
+		p.Inputs[0].SignatureScript=nil
+	}
+	rawTx:=modules.NewTransaction(msgs)
+	data,_=json.Marshal(rawTx)
+	t.Logf("Raw tx:%s",string(data))
+	_, err = Instance.SignTx1MsgPaymentInput(rawTx, 0,SigHashAll, lockScripts, nil, getPubKeyFn, getSignFn)
+	if err != nil {
+		t.Logf("Sign error:%s", err)
+	}
+	assert.Nil(t,err)
+	_, err = Instance.SignTx1MsgPaymentInput(rawTx, 1,SigHashAll|SigHashOneMessage, lockScripts, nil, getPubKeyFn, getSignFn)
+	if err != nil {
+		t.Logf("Sign error:%s", err)
+	}
+	assert.Nil(t,err)
+	err = Instance.ScriptValidate(lockScript2, nil, rawTx, 0, 0)
+	if err != nil {
+		t.Logf("validate error:%s", err)
+	}
+	assert.Nil(t,err)
+	err = Instance.ScriptValidate(lockScript, nil, rawTx, 1, 0)
+	if err != nil {
+		t.Logf("validate error:%s", err)
+	}
+	assert.Nil(t,err)
+	data,_=json.Marshal(rawTx)
+	log.Debugf("Signed tx:%s",string(data))
+}
