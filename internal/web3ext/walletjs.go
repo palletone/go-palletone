@@ -103,6 +103,12 @@ const Wallet_JS = `
 			inputFormatter: [null,null,null,null,null,null,null,null]
 		}),
 		new web3._extend.Method({
+			name: 'transferToken2',
+			call: 'wallet_transferToken2',
+			params: 9,
+			inputFormatter: [null,null,null,null,null,null,null,null,null]
+		}),
+		new web3._extend.Method({
 			name: 'transferPTN',
 			call: 'wallet_transferPtn',
 			params: 7,
