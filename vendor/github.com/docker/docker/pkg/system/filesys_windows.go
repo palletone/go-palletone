@@ -101,6 +101,7 @@ func mkdirall(path string, applyACL bool, sddl string) error {
 // access, with inheritance, to any subfolder/file for Built-in Administrators
 // and Local System.
 func mkdirWithACL(name string, sddl string) error {
+
 	sa := windows.SecurityAttributes{Length: 0}
 	sd, err := winio.SddlToSecurityDescriptor(sddl)
 	if err != nil {
@@ -119,6 +120,7 @@ func mkdirWithACL(name string, sddl string) error {
 	if e != nil {
 		return &os.PathError{Op: "mkdir", Path: name, Err: e}
 	}
+	
 	return nil
 }
 

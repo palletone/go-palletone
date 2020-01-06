@@ -1,0 +1,11 @@
+---
+url: http://114.67.98.69:7064
+skipTLSValidation: true
+mspId: immediateca
+crypto:
+  family: ecdsa
+  algorithm: P256-SHA256
+  hash: SHA2-256
+filepath: ./
+admin: lk
+adminpw: 123

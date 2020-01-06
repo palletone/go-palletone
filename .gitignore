@@ -79,3 +79,4 @@ gptn/
 dag/transactions.rlp.new
 dag/transactions.rlp
 ofile
+go-interpreter
