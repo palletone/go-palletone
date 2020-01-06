@@ -195,6 +195,7 @@ func (s *PrivateWalletAPI) buildRawTransferTx(tokenId, from, to string, amount, 
 }
 func createPayment(fromAddr, toAddr common.Address, amountToken uint64, feePTN uint64,
 	utxosPTN map[modules.OutPoint]*modules.Utxo) (*modules.PaymentPayload, []*modules.UtxoWithOutPoint, error) {
+
 	if len(utxosPTN) == 0 {
 		return nil, nil, fmt.Errorf("No PTN Utxo or No Token Utxo")
 	}
@@ -217,6 +218,7 @@ func createPayment(fromAddr, toAddr common.Address, amountToken uint64, feePTN u
 		txInput := modules.NewTxIn(prevOut, []byte{})
 		payPTN.AddTxIn(txInput)
 	}
+
 	//ptn outputs
 	if amountToken > 0 {
 		payPTN.AddTxOut(modules.NewTxOut(amountToken, tokenengine.Instance.GenerateLockScript(toAddr), asset))
@@ -1351,6 +1353,7 @@ func getRealAddress(ks *keystore.KeyStore, addr string) (common.Address, error) 
 	}
 	return common.StringToAddress(to)
 }
+
 func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, fromStr string, toStr string,
 	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint64) (common.Hash, error) {
 
@@ -1404,6 +1407,101 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 		from = fromAccount.Address.String()
 	}
 	rawTx, usedUtxo, err := s.buildRawTransferTx(asset, from, to, amount, fee)
+	if err != nil {
+		return common.Hash{}, err
+	}
+	if Extra != "" {
+		textPayload := new(modules.DataPayload)
+		textPayload.Reference = []byte(asset)
+		textPayload.MainData = []byte(Extra)
+		rawTx.AddMessage(modules.NewMessage(modules.APP_DATA, textPayload))
+	}
+	//lockscript
+	getPubKeyFn := func(addr common.Address) ([]byte, error) {
+		return ks.GetPublicKey(addr)
+	}
+	//sign tx
+	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
+		return ks.SignMessage(addr, msg)
+	}
+	utxoLockScripts := make(map[modules.OutPoint][]byte)
+	for _, utxo := range usedUtxo {
+		utxoLockScripts[utxo.OutPoint] = utxo.PkScript
+	}
+	if len(fromArray) == 1 {
+		fromAddr, err := common.StringToAddress(from)
+		if err != nil {
+			return common.Hash{}, err
+		}
+		err = s.unlockKS(fromAddr, password, duration)
+		if err != nil {
+			return common.Hash{}, err
+		}
+	}
+	//3.
+	_, err = tokenengine.Instance.SignTxAllPaymentInput(rawTx, 1, utxoLockScripts, nil, getPubKeyFn, getSignFn)
+	if err != nil {
+		return common.Hash{}, err
+	}
+	txJson, _ := json.Marshal(rawTx)
+	log.DebugDynamic(func() string { return "SignedTx:" + string(txJson) })
+	//4.
+	return submitTransaction(ctx, s.b, rawTx)
+}
+
+func (s *PrivateWalletAPI) TransferToken2(ctx context.Context, asset string, fromStr string, toStr string, gasFrom string,
+	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint64) (common.Hash, error) {
+
+	toArray := strings.Split(toStr, ":")
+	to := toArray[0]
+	ks := s.b.GetKeyStore()
+	if len(toArray) == 2 { //HD wallet address format
+		toAccountIndex, err := strconv.Atoi(toArray[1])
+		if err != nil {
+			return common.Hash{}, errors.New("invalid to address format")
+		}
+		toAddr, err := common.StringToAddress(toArray[0])
+		if err != nil {
+			return common.Hash{}, errors.New("invalid to address format")
+		}
+		var toAccount accounts.Account
+		if ks.IsUnlock(toAddr) {
+			toAccount, err = ks.GetHdAccount(accounts.Account{Address: toAddr}, uint32(toAccountIndex))
+
+		} else {
+			toAccount, err = ks.GetHdAccountWithPassphrase(accounts.Account{Address: toAddr}, password, uint32(toAccountIndex))
+
+		}
+		if err != nil {
+			return common.Hash{}, errors.New("GetHdAccountWithPassphrase error:" + err.Error())
+		}
+		to = toAccount.Address.String()
+	}
+	fromArray := strings.Split(fromStr, ":")
+	from := fromArray[0]
+	if len(fromArray) == 2 {
+		fromAccountIndex, err := strconv.Atoi(fromArray[1])
+		if err != nil {
+			return common.Hash{}, errors.New("invalid to address format")
+		}
+		fromAddr, err := common.StringToAddress(fromArray[0])
+		if err != nil {
+			return common.Hash{}, errors.New("invalid to address format")
+		}
+		var fromAccount accounts.Account
+		if ks.IsUnlock(fromAddr) {
+			fromAccount, err = ks.GetHdAccount(accounts.Account{Address: fromAddr}, uint32(fromAccountIndex))
+
+		} else {
+			fromAccount, err = ks.GetHdAccountWithPassphrase(accounts.Account{Address: fromAddr}, password, uint32(fromAccountIndex))
+
+		}
+		if err != nil {
+			return common.Hash{}, errors.New("GetHdAccountWithPassphrase error:" + err.Error())
+		}
+		from = fromAccount.Address.String()
+	}
+	rawTx, usedUtxo, err := s.buildRawTransferTx2(asset, from, to, gasFrom, amount, fee)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -1793,4 +1891,82 @@ func (s *PrivateWalletAPI) generateTx(payment *modules.PaymentPayload, address c
 		return nil, err
 	}
 	return tx, nil
+}
+
+//构造2笔Message，Msg0的FromAddress是商家，Msg1的FromAddress是用户
+func (s *PrivateWalletAPI) buildRawTransferTx2(tokenId, from, to, gasFrom string, amount, gasFee decimal.Decimal) (*modules.Transaction, []*modules.UtxoWithOutPoint, error) {
+	//参数检查
+	tokenAsset, err := modules.StringToAsset(tokenId)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !gasFee.IsPositive() {
+		return nil, nil, fmt.Errorf("fee is ZERO ")
+	}
+	//
+	fromAddr, err := common.StringToAddress(from)
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, nil, err
+	}
+	toAddr, err := common.StringToAddress(to)
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, nil, err
+	}
+	gasAddr, err := common.StringToAddress(gasFrom)
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, nil, err
+	}
+	ptnAmount := uint64(0)
+	ptn := dagconfig.DagConfig.GasToken
+	if tokenId == ptn {
+		ptnAmount = ptnjson.Ptn2Dao(amount)
+	}
+
+	//构造转移PTN的Message0
+	//FromAddress是商家
+	dbUtxos, err := s.b.GetAddrRawUtxos(gasFrom)
+	if err != nil {
+		return nil, nil, fmt.Errorf("GetAddrRawUtxos utxo err")
+	}
+	poolTxs, _ := s.b.GetPoolTxsByAddr(gasFrom)
+
+	utxosPTN, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, gasFrom, ptn)
+	if err != nil {
+		return nil, nil, fmt.Errorf("SelectUtxoFromDagAndPool utxo err")
+	}
+	feeAmount := ptnjson.Ptn2Dao(gasFee)
+	pay1, usedUtxo1, err := createPayment(gasAddr, toAddr, ptnAmount, feeAmount, utxosPTN)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	tx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, pay1)})
+	if tokenId == ptn {
+		return tx, usedUtxo1, nil
+	}
+	//构造转移Token的Message1
+	//FromAddress是用户
+	//构造转移Token的Message1
+	dbUtxos2, err := s.b.GetAddrRawUtxos(from)
+	if err != nil {
+		return nil, nil, fmt.Errorf("GetAddrRawUtxos utxo err")
+	}
+	poolTxs2, _ := s.b.GetPoolTxsByAddr(from)
+	utxosToken, err := SelectUtxoFromDagAndPool(dbUtxos2, poolTxs2, from, tokenId)
+	if err != nil {
+		return nil, nil, fmt.Errorf("SelectUtxoFromDagAndPool token utxo err")
+	}
+	tokenAmount := ptnjson.JsonAmt2AssetAmt(tokenAsset, amount)
+	pay2, usedUtxo2, err := createPayment(fromAddr, toAddr, tokenAmount, 0, utxosToken)
+	if err != nil {
+		return nil, nil, err
+	}
+	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay2))
+	//for _, u := range usedUtxo2 {
+	usedUtxo1 = append(usedUtxo1, usedUtxo2...)
+	//}
+	return tx, usedUtxo1, nil
 }
