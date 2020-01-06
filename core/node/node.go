@@ -26,6 +26,7 @@ import (
 	"strings"
 	"sync"
 
+	"context"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
@@ -39,6 +40,7 @@ import (
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/internal/debug"
 	flock "github.com/prometheus/tsdb/fileutil"
+	"net/http"
 )
 
 // Node is a container on which services can be registered.
@@ -75,6 +77,8 @@ type Node struct {
 	// IPC API 消息处理
 	ipcHandler *rpc.Server // IPC RPC request handler to process the API requests
 
+	//HTTPs
+	httpsServer *http.Server
 	// HTTP 端点
 	httpEndpoint string // HTTP endpoint (interface + port) to listen at (empty = HTTP disabled)
 	// HTTP 白名单
@@ -325,17 +329,26 @@ func (n *Node) startRPC(services map[reflect.Type]Service) error {
 		n.stopInProc()
 		return err
 	}
-	// 3. 启动 HTTP，用于 HTTP 的交互通信
-	if err := n.startHTTP(n.httpEndpoint, apis, n.config.HTTPModules, n.config.HTTPCors,
-		/*n.config.HTTPVirtualHosts*/ []string{}); err != nil {
-		log.Error("startRPC startHTTP err:", err.Error())
-		n.stopIPC()
-		n.stopInProc()
-		return err
+	if !n.config.HTTPs {
+		if err := n.startHTTP(n.httpEndpoint, apis, n.config.HTTPModules, n.config.HTTPCors, []string{}); err != nil {
+			log.Error("startRPC startHTTP err:", err.Error())
+			n.stopIPC()
+			n.stopInProc()
+			return err
+		}
+	} else {
+		if err := n.startHTTPS(n.httpEndpoint, apis, n.config.HTTPModules, n.config.HTTPCors, n.config.HttpsCertFile,
+			n.config.HttpsKeyFile); err != nil {
+			log.Error("startRPC startHTTPS err:", err.Error())
+			n.stopIPC()
+			n.stopInProc()
+			return err
+		}
 	}
 	// 4. 启动 WebSocket，用于浏览器与服务器的 TCP 全双工通信
 	if err := n.startWS(n.wsEndpoint, apis, n.config.WSModules, n.config.WSOrigins, n.config.WSExposeAll); err != nil {
 		n.stopHTTP()
+		n.stopHTTPS()
 		n.stopIPC()
 		n.stopInProc()
 		return err
@@ -435,6 +448,39 @@ func (n *Node) stopHTTP() {
 	}
 }
 
+// startHTTP initializes and starts the HTTP RPC endpoint.
+func (n *Node) startHTTPS(endpoint string, apis []rpc.API, modules []string, cors []string, cert, key string) error {
+	// Short circuit if the HTTP endpoint isn't being exposed
+	if endpoint == "" {
+		log.Info("HTTP endpoint is null")
+		return nil
+	}
+	server, err := rpc.StartHTTPSEndpoint(endpoint, apis, modules, cors, cert, key)
+	if err != nil {
+		log.Info("HTTP endpoint StartHTTPEndpoint err:", err)
+		return err
+	}
+	log.Info("HTTP endpoint opened", "url", fmt.Sprintf("http://%s", endpoint), "cors",
+		strings.Join(cors, ","))
+	// All listeners booted successfully
+	n.httpEndpoint = endpoint
+	n.httpsServer = server
+	//n.httpListener = listener
+	//n.httpHandler = handler
+
+	return nil
+}
+
+// stopHTTP terminates the HTTP RPC endpoint.
+func (n *Node) stopHTTPS() {
+	if n.httpsServer != nil {
+		n.httpsServer.Shutdown(context.Background())
+		n.httpsServer = nil
+
+		log.Info("HTTP endpoint closed", "url", fmt.Sprintf("http://%s", n.httpEndpoint))
+	}
+}
+
 // startWS initializes and starts the websocket RPC endpoint.
 func (n *Node) startWS(endpoint string, apis []rpc.API, modules []string, wsOrigins []string, exposeAll bool) error {
 	// Short circuit if the WS endpoint isn't being exposed
@@ -482,6 +528,7 @@ func (n *Node) Stop() error {
 	// Terminate the API, services and the p2p server.
 	n.stopWS()
 	n.stopHTTP()
+	n.stopHTTPS()
 	n.stopIPC()
 	n.rpcAPIs = nil
 	failure := &StopError{

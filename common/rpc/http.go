@@ -168,6 +168,19 @@ func NewHTTPServer(cors []string, vhosts []string, srv *Server) *http.Server {
 	return &http.Server{Handler: handler}
 }
 
+func NewHTTPSServer(endpoint string, cors []string, srv *Server, cert, key string) (*http.Server, error) {
+	handler := newCorsHandler(srv, cors)
+	server := &http.Server{
+		Addr:    endpoint,
+		Handler: handler,
+	}
+
+	if err := server.ListenAndServeTLS(cert, key); err != nil {
+		return nil, err
+	}
+	return server, nil
+}
+
 // ServeHTTP serves JSON-RPC requests over HTTP.
 func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Permit dumb empty requests for remote health-checks (AWS)
