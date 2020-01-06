@@ -670,10 +670,12 @@ func checkDbMigration(db ptndb.Database, stateDb storage.IStateDb) error {
 		return nil
 	}
 	log.Debugf("the database version is:%s", old_vertion.Version)
+	//fmt.Printf("the database version is:%s\n", old_vertion.Version)
 
 	// 获取当前gptn版本号
 	now_version := configure.Version
 	log.Debugf("the program version is:%s", now_version)
+	//fmt.Printf("the program version is:%s\n", now_version)
 	next_version := old_vertion.Version
 
 	if next_version != now_version {

@@ -50,7 +50,7 @@ func (m *Migration105gamma_105delta) ToVersion() string {
 }
 
 func (m *Migration105gamma_105delta) ExecuteUpgrade() error {
-	// 将 statebd 中的指定陪审员的合约实例关联到对应陪审员
+	// 将 statedb 中的指定陪审员的合约实例关联到对应陪审员
 	if err := m.upgradeContracts(); err != nil {
 		return err
 	}
@@ -79,7 +79,7 @@ func (m *Migration105gamma_105delta) upgradeContracts() error {
 		log.Debug("list is nil")
 		return nil
 	}
-		log.Debugf("jury list len = %d", len(list))
+	log.Debugf("jury list len = %d", len(list))
 	//  获取对应的模板
 	//  获取陪审员地址
 	contractNameAndJuryAddr := make(map[string][]common.Address, 0)
@@ -132,7 +132,8 @@ func getjurycandidatelist(db storage.DatabaseReader) (map[string]bool, error) {
 	key := getContractStateKey(depositeContractAddress.Bytes(), modules.JuryList)
 	data, err := db.Get(key)
 	if err != nil {
-		log.Error(err.Error())
+		log.Debugf(err.Error())
+		// 特殊错误处理，可能JuryList为空，忽略该err
 		return nil, nil
 	}
 	if len(data) < 28 {
