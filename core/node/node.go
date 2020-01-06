@@ -330,7 +330,8 @@ func (n *Node) startRPC(services map[reflect.Type]Service) error {
 		return err
 	}
 	if !n.config.HTTPs {
-		if err := n.startHTTP(n.httpEndpoint, apis, n.config.HTTPModules, n.config.HTTPCors, []string{}); err != nil {
+		if err := n.startHTTP(n.httpEndpoint, apis, n.config.HTTPModules, n.config.HTTPCors,
+			n.config.HTTPVirtualHosts); err != nil {
 			log.Error("startRPC startHTTP err:", err.Error())
 			n.stopIPC()
 			n.stopInProc()

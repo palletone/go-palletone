@@ -24,7 +24,8 @@ import (
 )
 
 // StartHTTPEndpoint starts the HTTP RPC endpoint, configured with cors/vhosts/modules
-func StartHTTPEndpoint(endpoint string, apis []API, modules []string, cors []string, vhosts []string) (net.Listener, *Server, error) {
+func StartHTTPEndpoint(endpoint string, apis []API, modules []string, cors []string,
+	vhosts []string) (net.Listener, *Server, error) {
 	// Generate the whitelist based on the allowed modules
 	// 根据(配置信息)允许的模块生成白名单
 	whitelist := make(map[string]bool)

@@ -25,17 +25,18 @@ const (
 
 // DefaultConfig contains reasonable default settings.
 var DefaultConfig = Config{
-	DataDir:       DefaultDataDir(),
-	HTTPHost:      DefaultHTTPHost,
-	HTTPPort:      DefaultHTTPPort,
-	HTTPModules:   []string{"net", "web3", "wallet", "dag", "personal", "mediator", "contract"},
-	HTTPs:         false,
-	HttpsCertFile: "",
-	HttpsKeyFile:  "",
-	WSHost:        DefaultWSHost,
-	WSPort:        DefaultWSPort,
-	WSModules:     []string{"net", "web3", "dag"},
-	WSExposeAll:   false,
+	DataDir:          DefaultDataDir(),
+	HTTPVirtualHosts: []string{"localhost"},
+	HTTPHost:         DefaultHTTPHost,
+	HTTPPort:         DefaultHTTPPort,
+	HTTPModules:      []string{"net", "web3", "wallet", "dag", "personal", "mediator", "contract"},
+	HTTPs:            false,
+	HttpsCertFile:    "",
+	HttpsKeyFile:     "",
+	WSHost:           DefaultWSHost,
+	WSPort:           DefaultWSPort,
+	WSModules:        []string{"net", "web3", "dag"},
+	WSExposeAll:      false,
 }
 
 // DefaultDataDir is the default data directory to use for the databases and other
