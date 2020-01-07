@@ -282,11 +282,13 @@ func (s *PublicDagAPI) GetFastUnitIndex(ctx context.Context, assetid string) str
 	if assetid == "" {
 		assetid = "PTN"
 	}
+
 	assetid = strings.ToUpper(assetid)
 	token, _, err := modules.String2AssetId(assetid)
 	if err != nil {
 		return "unknow assetid:" + assetid + ". " + err.Error()
 	}
+
 	if assetid != "PTN" {
 		GlobalStateContractId := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 		val, _, err := s.b.GetContractState(GlobalStateContractId, modules.GlobalPrefix+strings.ToUpper(token.GetSymbol()))
@@ -294,22 +296,32 @@ func (s *PublicDagAPI) GetFastUnitIndex(ctx context.Context, assetid string) str
 			return "unknow assetid: " + assetid + ", " + err.Error()
 		}
 	}
-	stableUnit := s.b.Dag().CurrentUnit(token)
-	ustabeUnit := s.b.Dag().GetCurrentMemUnit(token)
+
 	result := new(ptnjson.FastUnitJson)
+	//stableUnit := s.b.Dag().CurrentUnit(token)
+	//ustabeUnit := s.b.Dag().GetCurrentMemUnit(token)
+	stableUnit, _ := s.b.Dag().UnstableHeadUnitProperty(token)
+	ustabeUnit, _ := s.b.Dag().StableHeadUnitProperty(token)
+
 	if ustabeUnit != nil {
-		result.FastHash = ustabeUnit.Hash()
-		result.FastIndex = ustabeUnit.NumberU64()
+		//result.FastHash = ustabeUnit.Hash()
+		//result.FastIndex = ustabeUnit.NumberU64()
+		result.FastHash = ustabeUnit.Hash
+		result.FastIndex = ustabeUnit.ChainIndex.Index
 	}
 	if stableUnit != nil {
-		result.StableHash = stableUnit.Hash()
-		result.StableIndex = stableUnit.NumberU64()
+		//result.StableHash = stableUnit.Hash()
+		//result.StableIndex = stableUnit.NumberU64()
+		result.StableHash = stableUnit.Hash
+		result.StableIndex = stableUnit.ChainIndex.Index
 	}
+
 	content, err := json.Marshal(result)
 	if err != nil {
 		log.Info("PublicDagAPI", "GetFastUnitIndex Marshal err:", err)
 		return "result Marshal err"
 	}
+
 	return string(content)
 }
 func (s *PublicDagAPI) GetUnitSummaryByNumber(ctx context.Context, condition string) string {
