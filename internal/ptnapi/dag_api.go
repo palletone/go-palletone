@@ -455,18 +455,20 @@ func (s *PublicDagAPI) GetTxStatusByHash(ctx context.Context, hex string) (*ptnj
 		return nil, fmt.Errorf("the hex[%s] is illegal.", hex)
 	}
 	hash := common.HexToHash(hex)
-
+	
 	tx_status := new(ptnjson.TxPoolTxJson)
 	item, err := s.b.GetTxPoolTxByHash(hash)
 	if err != nil {
-		if tx_info, err := s.b.Dag().GetTransaction(hash); err != nil {
-			tx_status.NotExsit = true
-			log.Debugf("the txhash[%s] is not exist in dag,error[%s]", hash.String(), err.Error())
-			tx_status.TxHash = hex
-			return tx_status, nil
-		} else {
+		if tx_info, err := s.b.Dag().GetTxByReqId(hash); err == nil {
 			return ptnjson.ConvertTxWithInfo2Json(tx_info), nil
 		}
+		if tx_info, err := s.b.Dag().GetTransaction(hash); err == nil {
+			return ptnjson.ConvertTxWithInfo2Json(tx_info), nil
+		}
+		tx_status.NotExsit = true
+		log.Debugf("the txhash[%s] is not exist in dag,error[%s]", hash.String(), err.Error())
+		tx_status.TxHash = hex
+		return tx_status, nil
 	}
 	return item, nil
 }
