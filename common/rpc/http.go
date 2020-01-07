@@ -31,6 +31,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/rs/cors"
 )
 
@@ -174,8 +175,9 @@ func NewHTTPSServer(endpoint string, cors []string, srv *Server, cert, key strin
 		Addr:    endpoint,
 		Handler: handler,
 	}
-
+	log.Debug("NewHTTPSServer", "cert", cert, "key", key)
 	if err := server.ListenAndServeTLS(cert, key); err != nil {
+		log.Error("NewHTTPSServer ListenAndServeTLS", "err", err)
 		return nil, err
 	}
 	return server, nil

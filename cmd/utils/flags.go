@@ -808,6 +808,17 @@ func SetNodeConfig(ctx *cli.Context, cfg *node.Config, configDir string) string 
 		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "testnet")
 	}
 
+	if !filepath.IsAbs(cfg.HttpsCertFile) {
+		cfg.HttpsCertFile = filepath.Join(configDir, cfg.HttpsCertFile)
+	}
+	cfg.HttpsCertFile = common.GetAbsPath(cfg.HttpsCertFile)
+
+	if !filepath.IsAbs(cfg.HttpsKeyFile) {
+		cfg.HttpsKeyFile = filepath.Join(configDir, cfg.HttpsKeyFile)
+	}
+	cfg.HttpsKeyFile = common.GetAbsPath(cfg.HttpsKeyFile)
+
+
 	// 重新计算为绝对路径
 	if !filepath.IsAbs(cfg.DataDir) {
 		path := filepath.Join(configDir, cfg.DataDir)

@@ -319,20 +319,20 @@ func (n *Node) startRPC(services map[reflect.Type]Service) error {
 	// Start the various API endpoints, terminating all in case of errors
 	// 1. 启动 InProc，用于进程内部的通信，严格来说这种不能算是RPC, 出于架构上的统一
 	if err := n.startInProc(apis); err != nil {
-		log.Error("startRPC startInProc err:", err.Error())
+		log.Error("startRPC startInProc ", "err:", err.Error())
 		return err
 	}
 
 	// 2. 启动 IPC，用于节点内进程间的通信
 	if err := n.startIPC(apis); err != nil {
-		log.Error("startRPC startIPC err:", err.Error())
+		log.Error("startRPC startIPC ", "err:", err.Error())
 		n.stopInProc()
 		return err
 	}
 	if !n.config.HTTPs {
 		if err := n.startHTTP(n.httpEndpoint, apis, n.config.HTTPModules, n.config.HTTPCors,
 			n.config.HTTPVirtualHosts); err != nil {
-			log.Error("startRPC startHTTP err:", err.Error())
+			log.Error("startRPC startHTTP", "err:", err.Error())
 			n.stopIPC()
 			n.stopInProc()
 			return err
@@ -340,7 +340,7 @@ func (n *Node) startRPC(services map[reflect.Type]Service) error {
 	} else {
 		if err := n.startHTTPS(n.httpEndpoint, apis, n.config.HTTPModules, n.config.HTTPCors, n.config.HttpsCertFile,
 			n.config.HttpsKeyFile); err != nil {
-			log.Error("startRPC startHTTPS err:", err.Error())
+			log.Error("startRPC startHTTPS", "err:", err.Error())
 			n.stopIPC()
 			n.stopInProc()
 			return err
@@ -390,7 +390,7 @@ func (n *Node) startIPC(apis []rpc.API) error {
 	}
 	listener, handler, err := rpc.StartIPCEndpoint(n.ipcEndpoint, apis)
 	if err != nil {
-		log.Info("startIPC StartIPCEndpoint err:", err.Error())
+		log.Info("startIPC StartIPCEndpoint ", "err:", err.Error())
 		return err
 	}
 	n.ipcListener = listener
@@ -458,7 +458,7 @@ func (n *Node) startHTTPS(endpoint string, apis []rpc.API, modules []string, cor
 	}
 	server, err := rpc.StartHTTPSEndpoint(endpoint, apis, modules, cors, cert, key)
 	if err != nil {
-		log.Info("HTTP endpoint StartHTTPEndpoint err:", err)
+		log.Error("HTTP endpoint StartHTTPEndpoint ", "err:", err)
 		return err
 	}
 	log.Info("HTTP endpoint opened", "url", fmt.Sprintf("http://%s", endpoint), "cors",
