@@ -575,7 +575,8 @@ func (p *Processor) checkTxAddrValid(tx *modules.Transaction) bool {
 		if err != nil {
 			return false
 		}
-		if !bytes.Equal(contract.Creator, reqAddr.Bytes()) {
+		jjhAd := p.dag.GetChainParameters().FoundationAddress
+		if jjhAd != reqAddr.String() || !bytes.Equal(contract.Creator, reqAddr.Bytes()) {
 			log.Debugf("[%s]checkTxAddrValid, addr is not equal, Creator[%v], reqAddr[%v]",
 				shortId(reqId.String()), contract.Creator, reqAddr.Bytes())
 			return false
