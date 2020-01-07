@@ -314,7 +314,7 @@ func (chain *MemDag) setStableUnit(hash common.Hash, height uint64, txpool txspo
 }
 
 //设置当前稳定单元的指定父单元为稳定单元
-func (chain *MemDag) setNextStableUnit(chain_units map[common.Hash]*modules.Unit, unit *modules.Unit, 
+func (chain *MemDag) setNextStableUnit(chain_units map[common.Hash]*modules.Unit, unit *modules.Unit,
 	txpool txspool.ITxPool) bool {
 	hash := unit.Hash()
 	height := unit.NumberU64()
@@ -327,7 +327,6 @@ func (chain *MemDag) setNextStableUnit(chain_units map[common.Hash]*modules.Unit
 		chain.setNextStableUnit(chain_units, parentUnit, txpool)
 	}
 
-	// memdag不依赖apply unit的存储，因此用协程提高setStable的效率
 	// 虽然与memdag无关，但是下一个unit的 apply 处理依赖上一个unit apply的结果，所以不能用协程并发处理
 	err := chain.saveUnitToDb(chain.ldbunitRep, chain.ldbUnitProduceRep, unit)
 	if err != nil {
@@ -346,7 +345,7 @@ func (chain *MemDag) setNextStableUnit(chain_units map[common.Hash]*modules.Unit
 	//Set stable unit
 	chain.stableUnitHash.Store(hash)
 	chain.stableUnitHeight.Store(height)
-	
+
 	return true
 }
 
