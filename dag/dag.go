@@ -65,8 +65,8 @@ type Dag struct {
 	stableStateRep       dagcommon.IStateRepository
 	stablePropRep        dagcommon.IPropRepository
 	stableUnitProduceRep dagcommon.IUnitProduceRepository
-
-	ChainHeadFeed *event.Feed
+	localRep             dagcommon.ILocalRepository
+	ChainHeadFeed        *event.Feed
 
 	Mutex           sync.RWMutex
 	Memdag          memunit.IMemDag                     // memory unit
@@ -609,19 +609,19 @@ func (d *Dag) initDataForMainChainHeader(mainChain *modules.MainChain) {
 
 // newDag, with db , light to build a new dag
 // firstly to check db migration, is updated ptn database.
-func NewDag(db ptndb.Database, cache palletcache.ICache, light bool) (*Dag, error) {
+func NewDag(db ptndb.Database, localdb ptndb.Database, cache palletcache.ICache, light bool) (*Dag, error) {
 	tokenEngine := tokenengine.Instance //TODO Devin tokenENgine from parmeter
 	dagDb := storage.NewDagDb(db)
 	utxoDb := storage.NewUtxoDb(db, tokenEngine)
 	stateDb := storage.NewStateDb(db)
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
-
+	localDb := storage.NewLocalDb(localdb)
 	err := checkDbMigration(db, stateDb)
 	if err != nil {
 		return nil, err
 	}
-
+	localRep := dagcommon.NewLocalRepository(localDb)
 	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb, tokenEngine)
 	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenEngine)
 	propRep := dagcommon.NewPropRepository(propDb)
@@ -649,6 +649,7 @@ func NewDag(db ptndb.Database, cache palletcache.ICache, light bool) (*Dag, erro
 		stableUnitProduceRep:   stableUnitProduceRep,
 		ChainHeadFeed:          new(event.Feed),
 		Memdag:                 unstableChain,
+		localRep:               localRep,
 	}
 	dag.stableUnitRep.SubscribeSysContractStateChangeEvent(dag.AfterSysContractStateChangeEvent)
 	dag.stableUnitProduceRep.SubscribeChainMaintenanceEvent(dag.AfterChainMaintenanceEvent)
