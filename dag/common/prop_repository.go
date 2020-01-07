@@ -44,17 +44,20 @@ type IPropRepository interface {
 	RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error)
 	StoreMediatorSchl(ms *modules.MediatorSchedule) error
 	RetrieveMediatorSchl() (*modules.MediatorSchedule, error)
-	GetChainThreshold() (int, error)
+
 	// SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error
 	// GetLastStableUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
 	SetNewestUnit(header *modules.Header) error
 	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
 	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
+	GetHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error)
+
 	GetScheduledMediator(slotNum uint32) common.Address
 	UpdateMediatorSchedule() bool
 	GetSlotTime(slotNum uint32) time.Time
 	GetSlotAtTime(when time.Time) uint32
 
+	GetChainThreshold() (int, error)
 	GetChainParameters() *core.ChainParameters
 }
 
@@ -112,13 +115,21 @@ func (pRep *PropRepository) SetNewestUnit(header *modules.Header) error {
 }
 
 func (pRep *PropRepository) GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
-	hash, index, _, e := pRep.db.GetNewestUnit(token)
-	return hash, index, e
+	//hash, index, _, e := pRep.db.GetNewestUnit(token)
+	//return hash, index, e
+	unitProperty, err := pRep.db.GetNewestUnit(token)
+	return unitProperty.Hash, unitProperty.Index, err
 }
 
 func (pRep *PropRepository) GetNewestUnitTimestamp(token modules.AssetId) (int64, error) {
-	_, _, t, e := pRep.db.GetNewestUnit(token)
-	return t, e
+	//_, _, t, e := pRep.db.GetNewestUnit(token)
+	//return t, e
+	unitProperty, err := pRep.db.GetNewestUnit(token)
+	return int64(unitProperty.Timestamp), err
+}
+
+func (pRep *PropRepository) GetHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error) {
+	return pRep.db.GetNewestUnit(asset)
 }
 
 // 洗牌算法，更新mediator的调度顺序
@@ -135,7 +146,7 @@ func (pRep *PropRepository) UpdateMediatorSchedule() bool {
 	}
 
 	token := dagconfig.DagConfig.GetGasToken()
-	hash, idx, _, err := pRep.db.GetNewestUnit(token)
+	hash, idx, err := pRep.GetNewestUnit(token)
 	if err != nil {
 		log.Debugf("GetNewestUnit error:" + err.Error())
 		return false
@@ -217,9 +228,16 @@ func (pRep *PropRepository) GetSlotTime(slotNum uint32) time.Time {
 		return time.Unix(0, 0)
 	}
 
-	interval := gp.ChainParameters.MediatorInterval
 	gasToken := dagconfig.DagConfig.GetGasToken()
-	_, idx, ts, _ := pRep.db.GetNewestUnit(gasToken)
+	unitProperty, err := pRep.db.GetNewestUnit(gasToken)
+	if err != nil {
+		log.Debugf("GetNewestUnit error: %v", err.Error())
+		return time.Unix(0, 0)
+	}
+
+	idx := unitProperty.Index
+	ts := int64(unitProperty.Timestamp)
+	interval := gp.ChainParameters.MediatorInterval
 	// 本条件是用来生产第一个unit
 	if idx.Index == 0 {
 		/**

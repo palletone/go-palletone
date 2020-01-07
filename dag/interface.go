@@ -48,6 +48,7 @@ type IDag interface {
 	GetMainCurrentUnit() *modules.Unit
 	//GetCurrentMemUnit(assetId modules.AssetId, index uint64) *modules.Unit
 	GetCurrentMemUnit(assetId modules.AssetId) *modules.Unit
+
 	InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable bool) (int, error)
 	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
 	HasHeader(common.Hash, uint64) bool
@@ -159,6 +160,8 @@ type IDag interface {
 	HeadUnitNum() uint64
 	HeadUnitHash() common.Hash
 	GetIrreversibleUnitNum(id modules.AssetId) uint64
+	StableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error)
+	UnstableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error)
 
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)

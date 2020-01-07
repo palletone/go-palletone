@@ -249,3 +249,11 @@ func (d *Dag) GetVotingForMediator(addStr string) (map[string]uint64, error) {
 func (d *Dag) GetJurorReward(jurorAdd common.Address) common.Address {
 	return d.unstableStateRep.GetJurorReward(jurorAdd)
 }
+
+func (d *Dag) UnstableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error) {
+	return d.unstablePropRep.GetHeadUnitProperty(asset)
+}
+
+func (d *Dag) StableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error) {
+	return d.stablePropRep.GetHeadUnitProperty(asset)
+}
