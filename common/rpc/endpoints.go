@@ -129,5 +129,6 @@ func StartHTTPSEndpoint(endpoint string, apis []API, modules []string, cors []st
 		}
 	}
 	// All APIs registered, start the HTTP listener
-	return NewHTTPSServer(endpoint, cors, handler, cert, key)
+	go NewHTTPSServer(endpoint, cors, handler, cert, key)
+	return nil, nil
 }
