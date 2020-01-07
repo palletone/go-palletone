@@ -380,6 +380,11 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 }
 
 func contractPayBack(tx *modules.Transaction, addr []byte, queryUtxoFunc modules.QueryUtxoFunc) []*modules.Message {
+	if tx == nil {
+		log.Error("contractPayBack, tx is nil")
+		return nil
+	}
+	reqId := tx.RequestHash()
 	messages := []*modules.Message{}
 	for msgIdx, msg := range tx.TxMessages() {
 		if msg.App.IsRequest() {
@@ -389,11 +394,23 @@ func contractPayBack(tx *modules.Transaction, addr []byte, queryUtxoFunc modules
 		if msg.App == modules.APP_PAYMENT {
 			payment := msg.Payload.(*modules.PaymentPayload)
 			for outIdx, out := range payment.Outputs {
-				toAddr, _ := tokenengine.Instance.GetAddressFromScript(out.PkScript)
+				toAddr, err := tokenengine.Instance.GetAddressFromScript(out.PkScript)
+				if err != nil {
+					log.Errorf("[%s]contractPayBack, GetAddressFromScript fail：%s", shortId(reqId.String()), err.Error())
+					return nil
+				}
 				if addr != nil && bytes.Equal(toAddr.Bytes(), addr) {
 					input := modules.NewTxIn(modules.NewOutPoint(common.NewSelfHash(), uint32(msgIdx), uint32(outIdx)), nil)
-					inputUtxo, _ := queryUtxoFunc(payment.Inputs[0].PreviousOutPoint)
-					fromAddr, _ := tokenengine.Instance.GetAddressFromScript(inputUtxo.PkScript)
+					inputUtxo, err := queryUtxoFunc(payment.Inputs[0].PreviousOutPoint)
+					if err != nil {
+						log.Errorf("[%s]contractPayBack, queryUtxoFunc fail：%s", shortId(reqId.String()), err.Error())
+						return nil
+					}
+					fromAddr, err := tokenengine.Instance.GetAddressFromScript(inputUtxo.PkScript)
+					if err != nil {
+						log.Errorf("[%s]contractPayBack, GetAddressFromScript fail：%s", shortId(reqId.String()), err.Error())
+						return nil
+					}
 					output := modules.NewTxOut(out.Value, tokenengine.Instance.GenerateLockScript(fromAddr), out.Asset)
 					payback := modules.NewPaymentPayload([]*modules.Input{input}, []*modules.Output{output})
 					messages = append(messages, modules.NewMessage(modules.APP_PAYMENT, payback))
