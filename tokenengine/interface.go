@@ -27,15 +27,15 @@ type ITokenEngine interface {
 	GetScriptSigners(tx *modules.Transaction, msgIdx, inputIndex int) ([]common.Address, error)
 	//对一个未签名的tx进行签名，将所有input的解锁脚本填充完毕
 	SignTxAllPaymentInput(tx *modules.Transaction, hashType uint32, utxoLockScripts map[modules.OutPoint][]byte,
-		redeemScript []byte, pubKeyFn AddressGetPubKey, hashFn AddressGetSign) ([]common.SignatureError, error)
-	//对一个未签名交易的某条Message进行签名
+		redeemScript []byte, pubKeyFn AddressGetPubKey, signFunc AddressGetSign) ([]common.SignatureError, error)
+	//对一个未签名交易的某条Message进行签名，如果msgIdx==-1表示对所有的Message进行签名
 	SignTx1MsgPaymentInput(tx *modules.Transaction, msgIdx int, hashType uint32, utxoLockScripts map[modules.OutPoint][]byte,
-		redeemScript []byte, pubKeyFn AddressGetPubKey, hashFn AddressGetSign) ([]common.SignatureError, error)
+		redeemScript []byte, pubKeyFn AddressGetPubKey, signFunc AddressGetSign) ([]common.SignatureError, error)
 	//对tx的某个多签input进行签名，如果已经有别人签名，则合并
 	MultiSignOnePaymentInput(tx *modules.Transaction,
 		hashType uint32, msgIdx, id int,
 		utxoLockScript []byte, redeemScript []byte,
-		pubKeyFn AddressGetPubKey, hashFn AddressGetSign, previousScript []byte) ([]byte, error)
+		pubKeyFn AddressGetPubKey, signFunc AddressGetSign, previousScript []byte) ([]byte, error)
 	//当用户合约需要解锁Token时，收集到了jury签名列表和赎回脚本，组合成合约的解锁脚本
 	MergeContractUnlockScript(signs [][]byte, redeemScript []byte) []byte
 	//验证一个tx的指定input的解锁脚本是否正确
