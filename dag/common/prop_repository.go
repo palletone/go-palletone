@@ -118,7 +118,7 @@ func (pRep *PropRepository) GetNewestUnit(token modules.AssetId) (common.Hash, *
 	//hash, index, _, e := pRep.db.GetNewestUnit(token)
 	//return hash, index, e
 	unitProperty, err := pRep.db.GetNewestUnit(token)
-	return unitProperty.Hash, unitProperty.Index, err
+	return unitProperty.Hash, unitProperty.ChainIndex, err
 }
 
 func (pRep *PropRepository) GetNewestUnitTimestamp(token modules.AssetId) (int64, error) {
@@ -235,7 +235,7 @@ func (pRep *PropRepository) GetSlotTime(slotNum uint32) time.Time {
 		return time.Unix(0, 0)
 	}
 
-	idx := unitProperty.Index
+	idx := unitProperty.ChainIndex
 	ts := int64(unitProperty.Timestamp)
 	interval := gp.ChainParameters.MediatorInterval
 	// 本条件是用来生产第一个unit

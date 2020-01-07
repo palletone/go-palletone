@@ -203,7 +203,7 @@ func (rep *UnitRepository) SaveNewestHeader(header *modules.Header) error {
 	}
 
 	uHash := unitProperty.Hash
-	uIndex := unitProperty.Index
+	uIndex := unitProperty.ChainIndex
 	var continuty bool
 	for _, h := range header.ParentHash() {
 		if h == uHash {
