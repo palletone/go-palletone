@@ -116,7 +116,7 @@ func (d *Dag) CurrentUnit(token modules.AssetId) *modules.Unit {
 func (d *Dag) GetStableChainIndex(token modules.AssetId) *modules.ChainIndex {
 	memdag, err := d.getMemDag(token)
 	if err != nil {
-		log.Errorf("Get CurrentUnit by token[%s] error:%s", token.String(), err.Error())
+		log.Errorf("GetStableChainIndex by token[%s] error:%s", token.String(), err.Error())
 		return nil
 	}
 	_, height := memdag.GetLastStableUnitInfo()
@@ -130,7 +130,7 @@ func (d *Dag) GetMainCurrentUnit() *modules.Unit {
 
 // return higher unit in memdag
 func (d *Dag) GetCurrentUnit(assetId modules.AssetId) *modules.Unit {
-	memUnit := d.GetCurrentMemUnit(assetId, 0)
+	memUnit := d.GetCurrentMemUnit(assetId)
 	curUnit := d.CurrentUnit(assetId)
 
 	if curUnit == nil {
@@ -151,13 +151,25 @@ func (d *Dag) GetCurrentUnit(assetId modules.AssetId) *modules.Unit {
 }
 
 // return latest unit in the memdag of assetid
-func (d *Dag) GetCurrentMemUnit(assetId modules.AssetId, index uint64) *modules.Unit {
-	memdag, err := d.getMemDag(assetId)
+//func (d *Dag) GetCurrentMemUnit(assetId modules.AssetId, index uint64) *modules.Unit {
+func (d *Dag) GetCurrentMemUnit(assetId modules.AssetId) *modules.Unit {
+	//memdag, err := d.getMemDag(assetId)
+	//if err != nil {
+	//	log.Errorf("GetCurrentMemUnit by token[%s] error:%s", assetId.String(), err.Error())
+	//	return nil
+	//}
+	//curUnit := memdag.GetLastMainChainUnit()
+
+	hash, _, err := d.unstablePropRep.GetNewestUnit(assetId)
 	if err != nil {
-		log.Errorf("Get CurrentUnit by token[%s] error:%s", assetId.String(), err.Error())
+		log.Errorf("GetNewestUnit by token[%s] error:%s", assetId.String(), err.Error())
 		return nil
 	}
-	curUnit := memdag.GetLastMainChainUnit()
+
+	curUnit, err := d.GetUnitByHash(hash)
+	if err != nil {
+		return nil
+	}
 
 	return curUnit
 }
@@ -417,7 +429,7 @@ func (d *Dag) IsHeaderExist(hash common.Hash) bool {
 func (d *Dag) CurrentHeader(token modules.AssetId) *modules.Header {
 	memdag, err := d.getMemDag(token)
 	if err != nil {
-		log.Errorf("Get CurrentUnit by token[%s] error:%s", token.String(), err.Error())
+		log.Errorf("CurrentHeader by token[%s] error:%s", token.String(), err.Error())
 		return nil
 	}
 	// 从memdag 获取最新的header
