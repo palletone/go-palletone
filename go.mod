@@ -3,101 +3,63 @@ module github.com/palletone/go-palletone
 go 1.12
 
 require (
-	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
-	github.com/BurntSushi/toml v0.3.1
-	github.com/FactomProject/basen v0.0.0-20150613233007-fe3947df716e
-	github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec
-	github.com/Microsoft/go-winio v0.4.13
-	github.com/Microsoft/hcsshim v0.8.6
-	github.com/allegro/bigcache v1.2.1
+	github.com/FactomProject/basen v0.0.0-20150613233007-fe3947df716e // indirect
+	github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec // indirect
 	github.com/aristanetworks/goarista v0.0.0-20190712234253-ed1100a1c015
-	github.com/beorn7/perks v1.0.0
 	github.com/btcsuite/btcd v0.0.0-20190807005414-4063feeff79a
-	github.com/btcsuite/btclog v0.0.0-20170628155309-84c8d2346e9f
 	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
-	github.com/btcsuite/go-socks v0.0.0-20170105172521-4720035b7bfd
-	github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792
-	github.com/cespare/xxhash v1.1.0
-	github.com/cloudflare/cfssl v0.0.0-20190726000631-633726f6bcb7
-	github.com/containerd/continuity v0.0.0-20190426062206-aaeac12a7ffc
 	github.com/coocood/freecache v0.0.0-20180304015925-036298587d3a
 	github.com/davecgh/go-spew v1.1.1
 	github.com/deckarep/golang-set v1.7.1
-	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/docker v1.4.2-0.20190710153559-aa8249ae1b8b
-	github.com/docker/go-connections v0.4.0
-	github.com/docker/go-units v0.4.0
 	github.com/elastic/gosigar v0.10.4
 	github.com/ethereum/go-ethereum v1.9.0
 	github.com/fatih/color v1.6.0
 	github.com/fjl/memsize v0.0.0-20180418122429-ca190fb6ffbc
-	github.com/fsnotify/fsnotify v1.4.7
 	github.com/fsouza/go-dockerclient v1.4.2
 	github.com/go-interpreter/wagon v0.6.0 // indirect
-	github.com/go-stack/stack v1.8.0
-	github.com/gogo/protobuf v1.2.1
 	github.com/golang/mock v1.3.1
 	github.com/golang/protobuf v1.3.2
 	github.com/golang/snappy v0.0.1
 	github.com/gomodule/redigo v2.0.0+incompatible
-	github.com/google/certificate-transparency-go v1.0.21
 	github.com/hashicorp/golang-lru v0.5.3
-	github.com/hashicorp/hcl v1.0.0
 	github.com/huin/goupnp v1.0.0
 	github.com/influxdata/influxdb v0.0.0-20180221223340-01288bdb0883
 	github.com/jackpal/go-nat-pmp v1.0.1
 	github.com/julienschmidt/httprouter v1.2.0
-	github.com/kr/pretty v0.1.0
 	github.com/looplab/fsm v0.0.0-20180515091235-f980bdb68a89
-	github.com/magiconair/properties v1.8.1
+	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/martinlindhe/base36 v0.0.0-20180729042928-5cda0030da17
 	github.com/mattn/go-colorable v0.0.9
-	github.com/mattn/go-isatty v0.0.3
-	github.com/matttproud/golang_protobuf_extensions v1.0.1
-	github.com/mitchellh/mapstructure v1.1.2
-	github.com/naoina/go-stringutil v0.1.0
 	github.com/naoina/toml v0.0.0-20170410220130-ac014c6b6502
-	github.com/opencontainers/go-digest v1.0.0-rc1
-	github.com/opencontainers/image-spec v1.0.1
-	github.com/opencontainers/runc v0.1.1
 	github.com/palletone/adaptor v1.0.1-0.20191204100220-740fe858e09b
 	github.com/palletone/btc-adaptor v1.0.1-0.20191224041536-3348ea137f6e
 	github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb
 	github.com/palletone/eth-adaptor v1.1.1-0.20191220081203-275de08ec98b
 	github.com/pborman/uuid v1.2.0
-	github.com/pelletier/go-toml v1.2.0
 	github.com/peterh/liner v0.0.0-20170902204657-a37ad3984311
 	github.com/pkg/errors v0.8.1
-	github.com/pmezard/go-difflib v1.0.0
 	github.com/prometheus/client_golang v1.0.0
-	github.com/prometheus/client_model v0.0.0-20190129233127-fd36f4220a90
-	github.com/prometheus/common v0.4.1
-	github.com/prometheus/procfs v0.0.2
 	github.com/prometheus/tsdb v0.10.0
 	github.com/rjeczalik/notify v0.9.2
 	github.com/robertkrimen/otto v0.0.0-20170205013659-6a77b7cbc37d
 	github.com/rs/cors v1.7.0
 	github.com/shopspring/decimal v0.0.0-20180709203117-cd690d0c9e24
-	github.com/sirupsen/logrus v1.4.2
-	github.com/spf13/afero v1.2.2
-	github.com/spf13/cast v1.3.1
-	github.com/spf13/jwalterweatherman v1.1.0
-	github.com/spf13/pflag v1.0.5
+	github.com/spf13/afero v1.2.2 // indirect
+	github.com/spf13/cast v1.3.1 // indirect
+	github.com/spf13/jwalterweatherman v1.1.0 // indirect
+	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.0.2
-	github.com/steakknife/bloomfilter v0.0.0-20180922174646-6819c0d2a570
-	github.com/steakknife/hamming v0.0.0-20180906055917-c99c65617cd3
 	github.com/stretchr/testify v1.3.0
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/tyler-smith/go-bip32 v0.0.0-20170922074101-2c9cfd177564
 	github.com/tyler-smith/go-bip39 v1.0.2
 	go.dedis.ch/kyber/v3 v3.0.3
-	go.uber.org/atomic v1.5.1
-	go.uber.org/multierr v1.4.0
+	go.uber.org/atomic v1.5.1 // indirect
+	go.uber.org/multierr v1.4.0 // indirect
 	go.uber.org/zap v0.0.0-20180531205250-88c71ae3d702
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
 	golang.org/x/net v0.0.0-20190724013045-ca1201d0de80
-	golang.org/x/sys v0.0.0-20190726091711-fc99dfbffb4e
-	golang.org/x/text v0.3.2
 	golang.org/x/tools v0.0.0-20191029190741-b9c20aec41a5
 	google.golang.org/grpc v1.22.0
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
@@ -105,8 +67,5 @@ require (
 	gopkg.in/karalabe/cookiejar.v2 v2.0.0-20150724131613-8dcd6a7f4951
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0-20170531160350-a96e63847dc3
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce
-	gopkg.in/sourcemap.v1 v1.0.5
 	gopkg.in/urfave/cli.v1 v1.20.0
-	gopkg.in/yaml.v2 v2.2.2
-	honnef.co/go/tools v0.0.1-2019.2.3
 )
