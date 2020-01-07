@@ -1449,7 +1449,8 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 	return submitTransaction(ctx, s.b, rawTx)
 }
 
-func (s *PrivateWalletAPI) TransferToken2(ctx context.Context, asset string, fromStr string, toStr string, gasFrom string,
+func (s *PrivateWalletAPI) TransferToken2(ctx context.Context, asset string, fromStr string, toStr string,
+	gasFromStr string,
 	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint64) (common.Hash, error) {
 
 	toArray := strings.Split(toStr, ":")
@@ -1500,6 +1501,30 @@ func (s *PrivateWalletAPI) TransferToken2(ctx context.Context, asset string, fro
 			return common.Hash{}, errors.New("GetHdAccountWithPassphrase error:" + err.Error())
 		}
 		from = fromAccount.Address.String()
+	}
+	gasFromArray := strings.Split(gasFromStr, ":")
+	gasFrom := gasFromArray[0]
+	if len(gasFromArray) == 2 {
+		gasFromAccountIndex, err := strconv.Atoi(gasFromArray[1])
+		if err != nil {
+			return common.Hash{}, errors.New("invalid to address format")
+		}
+		gasFromAddr, err := common.StringToAddress(gasFromArray[0])
+		if err != nil {
+			return common.Hash{}, errors.New("invalid to address format")
+		}
+		var fromAccount accounts.Account
+		if ks.IsUnlock(gasFromAddr) {
+			fromAccount, err = ks.GetHdAccount(accounts.Account{Address: gasFromAddr}, uint32(gasFromAccountIndex))
+
+		} else {
+			fromAccount, err = ks.GetHdAccountWithPassphrase(accounts.Account{Address: gasFromAddr}, password, uint32(gasFromAccountIndex))
+
+		}
+		if err != nil {
+			return common.Hash{}, errors.New("GetHdAccountWithPassphrase error:" + err.Error())
+		}
+		gasFrom = fromAccount.Address.String()
 	}
 	rawTx, usedUtxo, err := s.buildRawTransferTx2(asset, from, to, gasFrom, amount, fee)
 	if err != nil {

@@ -1079,3 +1079,6 @@ func (a addressBalanceList) Less(i, j int) bool { // 重写 Less() 方法， 从
 func (b *PtnApiBackend) GetContractsWithJuryAddr(addr common.Address) []*modules.Contract {
 	return b.Dag().GetContractsWithJuryAddr(addr)
 }
+func (b *PtnApiBackend) GetAddressCount() int {
+	return b.Dag().GetAddressCount()
+}

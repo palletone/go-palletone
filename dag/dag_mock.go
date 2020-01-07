@@ -2088,3 +2088,17 @@ func (mr *MockIDagMockRecorder) GetContractsWithJuryAddr(addr interface{}) *gomo
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractsWithJuryAddr", reflect.TypeOf((*MockIDag)(nil).GetContractsWithJuryAddr), addr)
 }
+
+// GetAddressCount mocks base method
+func (m *MockIDag) GetAddressCount() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAddressCount")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// GetAddressCount indicates an expected call of GetAddressCount
+func (mr *MockIDagMockRecorder) GetAddressCount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddressCount", reflect.TypeOf((*MockIDag)(nil).GetAddressCount))
+}

@@ -130,6 +130,7 @@ type Backend interface {
 	GetAddrRawUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAllUtxos() ([]*ptnjson.UtxoJson, error)
 	GetAddressBalanceStatistics(token string, topN int) (*statistics.TokenAddressBalanceJson, error)
+	GetAddressCount() int
 	GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson, error)
 	GetContractInvokeHistory(addr string) ([]*ptnjson.ContractInvokeHistoryJson, error)
 	GetAddrTokenFlow(addr, token string) ([]*ptnjson.TokenFlowJson, error)

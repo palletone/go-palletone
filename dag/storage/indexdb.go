@@ -48,8 +48,17 @@ type IIndexDb interface {
 	GetMainDataTxIds(maindata []byte) ([]common.Hash, error)
 	SaveProofOfExistence(poe *modules.ProofOfExistence) error
 	QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error)
+	SaveAddress(address common.Address) error
+	GetAddressCount() int
 }
 
+func (db *IndexDb) SaveAddress(address common.Address) error {
+	key := append(constants.ADDRESS_PREFIX, address.Bytes()...)
+	return db.db.Put(key, nil)
+}
+func (db *IndexDb) GetAddressCount() int {
+	return getCountByPrefix(db.db, constants.ADDRESS_PREFIX)
+}
 func (db *IndexDb) SaveAddressTxId(address common.Address, txid common.Hash) error {
 	key := append(constants.ADDR_TXID_PREFIX, address.Bytes()...)
 	key = append(key, txid[:]...)
