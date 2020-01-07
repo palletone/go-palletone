@@ -246,9 +246,6 @@ func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupSign []byte, txpoo
 	}
 
 	log.Infof("Unit(hash: %v , #%v) has group sign, make it stable.", uHash.TerminalString(), unit.NumberU64())
-	if err := chain.setStableUnit(uHash, unit.NumberU64(), txpool); err != nil {
-		return err
-	}
 
 	if !chain.setStableUnit(uHash, unit.NumberU64(), txpool) {
 		log.Debugf("fail to set unit(hash: %v , #%v) stable ", uHash.TerminalString(), unit.NumberU64())
@@ -275,14 +272,12 @@ func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupSign []byte, txpoo
 
 //设置某个单元和高度为稳定单元。设置后会更新当前的稳定单元，并将所有稳定单元写入到StableDB中，并且将ChainUnit中的稳定单元删除。
 //然后基于最新的稳定单元，重建Tempdb数据库
-func (chain *MemDag) setStableUnit(hash common.Hash, height uint64, txpool txspool.ITxPool) error {
 func (chain *MemDag) setStableUnit(hash common.Hash, height uint64, txpool txspool.ITxPool) bool {
 	tt := time.Now()
 	log.Debugf("Set stable unit to %s,height:%d", hash.String(), height)
 	stableHeight := chain.GetLastStableUnitHeight()
 	if !(height > stableHeight) {
 		log.Debugf("current stable height is %d, impossible to set stable height to %d", stableHeight, height)
-		return nil
 		return false
 	}
 
@@ -319,7 +314,7 @@ func (chain *MemDag) setStableUnit(hash common.Hash, height uint64, txpool txspo
 }
 
 //设置当前稳定单元的指定父单元为稳定单元
-func (chain *MemDag) setNextStableUnit(chain_units map[common.Hash]*modules.Unit, unit *modules.Unit, 
+func (chain *MemDag) setNextStableUnit(chain_units map[common.Hash]*modules.Unit, unit *modules.Unit,
 	txpool txspool.ITxPool) bool {
 	hash := unit.Hash()
 	height := unit.NumberU64()
@@ -329,9 +324,7 @@ func (chain *MemDag) setNextStableUnit(chain_units map[common.Hash]*modules.Unit
 
 	parentHash := unit.ParentHash()[0]
 	if parentUnit, has := chain_units[parentHash]; has {
-		if err := chain.setNextStableUnit(chain_units, parentUnit, txpool); err != nil {
-			return err
-		}
+		chain.setNextStableUnit(chain_units, parentUnit, txpool)
 	}
 
 	// 虽然与memdag无关，但是下一个unit的 apply 处理依赖上一个unit apply的结果，所以不能用协程并发处理
@@ -352,7 +345,7 @@ func (chain *MemDag) setNextStableUnit(chain_units map[common.Hash]*modules.Unit
 	//Set stable unit
 	chain.stableUnitHash.Store(hash)
 	chain.stableUnitHeight.Store(height)
-	
+
 	return true
 }
 
