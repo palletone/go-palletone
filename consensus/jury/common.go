@@ -197,7 +197,7 @@ func getSignature(tx *modules.Transaction) ([][]byte, [][]byte) {
 	return nil, nil
 }
 
-func genContractErrorMsg(dag iDag, tx *modules.Transaction,
+func genContractErrorMsg( tx *modules.Transaction,
 	errIn error, errMsgEnable bool) ([]*modules.Message, error) {
 	reqType, _ := getContractTxType(tx)
 	errString := fmt.Sprintf("[%s]genContractErrorMsg, reqType:%d,err:%s",
@@ -269,7 +269,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 				}
 				installResult, err := ContractProcess(rwM, contract, req)
 				if err != nil {
-					return genContractErrorMsg(dag, tx, err, errMsgEnable)
+					return genContractErrorMsg( tx, err, errMsgEnable)
 				}
 				payload := installResult.(*modules.ContractTplPayload)
 				//payload.AddrHash = req.addrHash
@@ -294,7 +294,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 				req.args = fullArgs
 				deployResult, err := ContractProcess(rwM, contract, req)
 				if err != nil {
-					return genContractErrorMsg(dag, tx, err, errMsgEnable)
+					return genContractErrorMsg( tx, err, errMsgEnable)
 				}
 				payload := deployResult.(*modules.ContractDeployPayload)
 				if ele != nil {
@@ -327,7 +327,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 				req.args = newFullArgs
 				invokeResult, err := ContractProcess(rwM, contract, req)
 				if err != nil {
-					return genContractErrorMsg(dag, tx, err, errMsgEnable)
+					return genContractErrorMsg( tx, err, errMsgEnable)
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
 				payload := modules.NewContractInvokePayload(result.ContractId, result.ReadSet, result.WriteSet,
@@ -337,7 +337,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 				}
 				toContractPayments, err := resultToContractPayments(dag, tx.GetRequestTx(), result)
 				if err != nil {
-					return genContractErrorMsg(dag, tx, err, errMsgEnable)
+					return genContractErrorMsg( tx, err, errMsgEnable)
 				}
 				if len(toContractPayments) > 0 {
 					for _, contractPayment := range toContractPayments {
@@ -346,7 +346,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 				}
 				cs, err := resultToCoinbase(result)
 				if err != nil {
-					return genContractErrorMsg(dag, tx, err, errMsgEnable)
+					return genContractErrorMsg( tx, err, errMsgEnable)
 				}
 				if len(cs) > 0 {
 					for _, coinbase := range cs {
@@ -367,7 +367,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 				}
 				stopResult, err := ContractProcess(rwM, contract, req)
 				if err != nil {
-					return genContractErrorMsg(dag, tx, err, errMsgEnable)
+					return genContractErrorMsg( tx, err, errMsgEnable)
 				}
 				payload := stopResult.(*modules.ContractStopPayload)
 				msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_STOP, payload))
