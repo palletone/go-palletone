@@ -22,6 +22,7 @@ require (
 	github.com/golang/snappy v0.0.1
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/hashicorp/golang-lru v0.5.3
+	github.com/hashicorp/hcl v1.0.0
 	github.com/huin/goupnp v1.0.0
 	github.com/influxdata/influxdb v0.0.0-20180221223340-01288bdb0883
 	github.com/jackpal/go-nat-pmp v1.0.1
@@ -30,6 +31,8 @@ require (
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/martinlindhe/base36 v0.0.0-20180729042928-5cda0030da17
 	github.com/mattn/go-colorable v0.0.9
+	github.com/mitchellh/mapstructure v1.1.2
+	github.com/naoina/go-stringutil v0.1.0
 	github.com/naoina/toml v0.0.0-20170410220130-ac014c6b6502
 	github.com/palletone/adaptor v1.0.1-0.20191204100220-740fe858e09b
 	github.com/palletone/btc-adaptor v1.0.1-0.20191224041536-3348ea137f6e
@@ -66,5 +69,6 @@ require (
 	gopkg.in/karalabe/cookiejar.v2 v2.0.0-20150724131613-8dcd6a7f4951
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0-20170531160350-a96e63847dc3
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce
+	gopkg.in/sourcemap.v1 v1.0.5
 	gopkg.in/urfave/cli.v1 v1.20.0
 )
