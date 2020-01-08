@@ -395,8 +395,9 @@ func (chain *MemDag) checkStableCondition(tempDB *ChainTempDb, unit *modules.Uni
 	offset := mCount - chain.threshold
 
 	// 获取所有 mediator 最后确认unit编号
-	if !(offset > 0) {
-		log.Debugf("stable threshold(%v) must be less than the count(%v) of mediators", chain.threshold, mCount)
+	if offset < 0 {
+		log.Debugf("stable threshold(%v) cannot be bigger than the count(%v) of mediators",
+			chain.threshold, mCount)
 		return false
 	}
 	lastConfirmedUnitNums := make([]int, 0, mCount)
