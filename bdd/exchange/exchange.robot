@@ -42,6 +42,37 @@ exchangemaker
     log    ${aftertwobalance}
     ${takeramount}=    Set Variable If    ${aftertwobalance}==100    0    0
     log    ${takeramount}
+
+    maker    ${one}    ${onetoken}    200    ${twotoken}    4000
+    sleep    10
+    exchangequery
+    ${respJson}    addrexchangequery    ${one}
+    ${reJson}    To Json    ${respJson}
+    ${len}    Get Length    ${reJson}
+    ${exchsn2}=    Get From Dictionary    ${reJson[0]}    ExchangeSn 
+    log    ${exchsn2}
+
+    taker    ${two}    ${twotoken}    2000    ${exchsn2}
+    sleep    10
+    ${afteronebalance2}=    getBalance    ${one}    ${twotoken}
+    log    ${afteronebalance2}
+    ${makeramount}=    Set Variable If    ${afteronebalance2}==4000    0    0
+    log    ${makeramount}
+    ${aftertwobalance}=    getBalance    ${two}    ${onetoken}
+    log    ${aftertwobalance}
+    ${takeramount}=    Set Variable If    ${aftertwobalance}==200    0    0
+    log    ${takeramount}
+
+    ${respJson}    addrexchangequery    ${one}
+    ${reJson}    To Json    ${respJson}
+    ${len}    Get Length    ${reJson}
+    ${exchsn3}=    Get From Dictionary    ${reJson[0]}    ExchangeSn 
+    log    ${exchsn3}
+    cancel    ${one}    ${onetoken}    ${exchsn3}
+    sleep    10
+    ${respJson}    addrexchangequery    ${one}
+    log    ${respJson}
+
 *** Keywords ***
 getBalance
     [Arguments]    ${address}    ${assetId}

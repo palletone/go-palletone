@@ -134,3 +134,11 @@ taker
     ${resp}=    sendRpcPost    ${exchangeMethod}    ${params}    exchangeToken
     log    ${resp}
     [Return]    ${resp}
+
+cancel
+    [Arguments]    ${makeraddr}    ${saleassert}    ${exchangesn}
+    ${args}=    Create List    cancel    ${exchangesn}
+    ${params}=    genInvokeExchangeParams    ${makeraddr}    ${makeraddr}    ${saleassert}    0    ${fee}    ${exchangeContractAddr}    ${args}
+    ${resp}=    sendRpcPost    ${exchangeMethod}    ${params}    exchangeCancel
+    log    ${resp}
+    [Return]    ${resp}
