@@ -211,7 +211,7 @@ func genContractErrorMsg(dag iDag, tx *modules.Transaction,
 	msgs = append(msgs, errMsg)
 	addr := tx.GetContractId()
 	//合约发生错误，检查有没有支付到合约的Token，有则原路返回
-	paybacks := contractPayBack(tx, addr, dag.GetUtxoEntry)
+	paybacks := contractPayBack(tx, addr)
 	msgs = append(msgs, paybacks...)
 
 	return msgs, nil
@@ -379,7 +379,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 	return nil, errors.New(fmt.Sprintf("runContractCmd err, txid=%s", tx.RequestHash().String()))
 }
 
-func contractPayBack(tx *modules.Transaction, addr []byte, queryUtxoFunc modules.QueryUtxoFunc) []*modules.Message {
+func contractPayBack(tx *modules.Transaction, addr []byte) []*modules.Message {
 	if tx == nil {
 		log.Error("contractPayBack, tx is nil")
 		return nil
@@ -399,18 +399,19 @@ func contractPayBack(tx *modules.Transaction, addr []byte, queryUtxoFunc modules
 					log.Errorf("[%s]contractPayBack, GetAddressFromScript fail：%s", shortId(reqId.String()), err.Error())
 					return nil
 				}
-				if addr != nil && bytes.Equal(toAddr.Bytes(), addr) {
-					input := modules.NewTxIn(modules.NewOutPoint(common.NewSelfHash(), uint32(msgIdx), uint32(outIdx)), nil)
-					inputUtxo, err := queryUtxoFunc(payment.Inputs[0].PreviousOutPoint)
-					if err != nil {
-						log.Errorf("[%s]contractPayBack, queryUtxoFunc fail：%s", shortId(reqId.String()), err.Error())
-						return nil
-					}
-					fromAddr, err := tokenengine.Instance.GetAddressFromScript(inputUtxo.PkScript)
+				if addr != nil && bytes.Equal(toAddr.Bytes(), addr) { //付款到了合约
+					//找出付款的发送地址
+					//inputUtxo, err := queryUtxoFunc(payment.Inputs[0].PreviousOutPoint)
+					//if err != nil {
+					//	log.Errorf("[%s]contractPayBack, queryUtxoFunc fail：%s", shortId(reqId.String()), err.Error())
+					//	return nil
+					//}
+					fromAddr, err := tokenengine.Instance.GetAddressFromUnlockScript(payment.Inputs[0].SignatureScript)
 					if err != nil {
 						log.Errorf("[%s]contractPayBack, GetAddressFromScript fail：%s", shortId(reqId.String()), err.Error())
 						return nil
 					}
+					input := modules.NewTxIn(modules.NewOutPoint(common.NewSelfHash(), uint32(msgIdx), uint32(outIdx)), nil)
 					output := modules.NewTxOut(out.Value, tokenengine.Instance.GenerateLockScript(fromAddr), out.Asset)
 					payback := modules.NewPaymentPayload([]*modules.Input{input}, []*modules.Output{output})
 					messages = append(messages, modules.NewMessage(modules.APP_PAYMENT, payback))

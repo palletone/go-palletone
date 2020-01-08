@@ -16,6 +16,8 @@ type ITokenEngine interface {
 	GenerateLockScript(address common.Address) []byte
 	//根据锁定脚本，得出对应的地址
 	GetAddressFromScript(lockScript []byte) (common.Address, error)
+	//根据解锁脚本，计算出地址
+	GetAddressFromUnlockScript(unlockScript []byte) (common.Address, error)
 	//根据公钥列表和需要的签名数，获得赎回脚本
 	GenerateRedeemScript(needed byte, pubKeys [][]byte) []byte
 	//将一个脚本二进制解析为字符串形式
