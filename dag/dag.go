@@ -675,7 +675,7 @@ func NewDag(db ptndb.Database, cache palletcache.ICache, light bool) (*Dag, erro
 // check db migration ,to upgrade ptn database
 func checkDbMigration(db ptndb.Database, stateDb storage.IStateDb) error {
 	// 获取旧的gptn版本号
-	t := time.Now()
+	//t := time.Now()
 	old_vertion, err := stateDb.GetDataVersion()
 	if err != nil {
 		log.Warn("Don't have database version, Ignore data migration")
@@ -707,14 +707,16 @@ func checkDbMigration(db ptndb.Database, stateDb storage.IStateDb) error {
 				data_version.Version = next_version
 				stateDb.SaveDataVersion(data_version)
 			}
+
 			if next_version == now_version {
 				break
 			}
-			// 版本升级超时处理
-			if now := time.Now(); now.After(t.Add(1 * time.Minute)) {
-				log.Infof("upgrade gptn failed. error: timeout[%s]", time.Since(t))
-				break
-			}
+
+			//// 版本升级超时处理
+			//if now := time.Now(); now.After(t.Add(1 * time.Minute)) {
+			//	log.Infof("upgrade gptn failed. error: timeout[%s]", time.Since(t))
+			//	break
+			//}
 		}
 
 		log.Infof("Complete migration, spent time:%s", time.Since(t))
