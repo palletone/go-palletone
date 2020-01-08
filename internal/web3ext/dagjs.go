@@ -191,7 +191,7 @@ web3._extend({
         }),
         new web3._extend.Method({
             name: 'getStableUnit',
-            call: 'dag_getStableUnitNum',
+            call: 'dag_getStableUnit',
             params: 0,
         }),
         new web3._extend.Method({

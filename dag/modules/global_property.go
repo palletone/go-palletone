@@ -110,9 +110,9 @@ type DynamicGlobalProperty struct {
 }
 
 type UnitProperty struct {
-	Hash       common.Hash // 最近的单元hash
-	ChainIndex *ChainIndex // 最近的单元编号(数量)
-	Timestamp  uint32      // 最近的单元时间
+	Hash       common.Hash `json:"hash"`        // 最近的单元hash
+	ChainIndex *ChainIndex `json:"chain_Index"` // 最近的单元编号(数量)
+	Timestamp  uint32      `json:"timestamp"`   // 最近的单元时间
 }
 
 func NewDynGlobalProp() *DynamicGlobalProperty {

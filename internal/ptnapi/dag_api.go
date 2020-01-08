@@ -541,6 +541,21 @@ func (s *PublicDagAPI) GetStableUnit() (*ptnjson.UnitPropertyJson, error) {
 	return nil, nil
 }
 
+func (s *PublicDagAPI) GetHeadUnit() (*ptnjson.UnitPropertyJson, error) {
+	dag := s.b.Dag()
+	if dag != nil {
+		gasToken := dagconfig.DagConfig.GetGasToken()
+		unitProperty, err := dag.UnstableHeadUnitProperty(gasToken)
+		if err!=nil || unitProperty ==nil {
+			return nil, err
+		}
+
+		return ptnjson.UnitPropertyToJson(unitProperty), nil
+	}
+
+	return nil, nil
+}
+
 func (s *PublicDagAPI) IsSynced() bool {
 	dag := s.b.Dag()
 	if dag != nil {

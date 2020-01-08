@@ -161,18 +161,26 @@ func (db *PropertyDb) SetNewestUnit(header *modules.Header) error {
 	hash := header.Hash()
 	index := header.GetNumber()
 	timestamp := uint32(header.Timestamp())
+
 	data := &modules.UnitProperty{Hash: hash, ChainIndex: index, Timestamp: timestamp}
-	key := append(constants.LastUnitInfo, index.AssetID.Bytes()...)
+	//key := append(constants.LastUnitInfo, index.AssetID.Bytes()...)
 	log.Debugf("DB[%s]Save newest unit %s,index:%s", reflect.TypeOf(db.db).String(), hash.String(), index.String())
 
-	return StoreToRlpBytes(db.db, key, data)
+	//return StoreToRlpBytes(db.db, key, data)
+	return StoreToRlpBytes(db.db, getNewestUnit(index.AssetID), data)
+}
+
+func getNewestUnit(asset modules.AssetId) []byte {
+	return append(constants.LastUnitInfo, asset.Bytes()...)
 }
 
 //func (db *PropertyDb) GetNewestUnit(asset modules.AssetId) (common.Hash, *modules.ChainIndex, int64, error) {
 func (db *PropertyDb) GetNewestUnit(asset modules.AssetId) (*modules.UnitProperty, error) {
-	key := append(constants.LastUnitInfo, asset.Bytes()...)
 	data := &modules.UnitProperty{}
-	err := RetrieveFromRlpBytes(db.db, key, data)
+	//key := append(constants.LastUnitInfo, asset.Bytes()...)
+	//err := RetrieveFromRlpBytes(db.db, key, data)
+
+	err := RetrieveFromRlpBytes(db.db, getNewestUnit(asset), data)
 	if err != nil {
 		//return common.Hash{}, nil, 0, err
 		return nil, err
