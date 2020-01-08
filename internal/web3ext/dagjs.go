@@ -190,11 +190,16 @@ web3._extend({
             // inputFormatter: [null]
         }),
         new web3._extend.Method({
-            name: 'stableUnitNum',
-            call: 'dag_stableUnitNum',
+            name: 'getStableUnit',
+            call: 'dag_getStableUnitNum',
             params: 0,
         }),
         new web3._extend.Method({
+            name: 'getHeadUnit',
+            call: 'dag_getHeadUnit',
+            params: 0,
+        }),
+         new web3._extend.Method({
             name: 'isSynced',
             call: 'dag_isSynced',
             params: 0,
