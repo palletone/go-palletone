@@ -72,6 +72,7 @@ exchangemaker
     sleep    10
     ${respJson}    addrexchangequery    ${one}
     log    ${respJson}
+    run keyword if    ''    in ${respJson}
 
 *** Keywords ***
 getBalance
