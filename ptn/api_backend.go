@@ -132,6 +132,61 @@ func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transactio
 	if err != nil {
 		log.Errorf("Try to send tx[%s] get an error:%s", signedTx.Hash().String(), err.Error())
 	}
+	//先将状态改为交易池中
+	err = b.Dag().SaveLocalTxStatus(signedTx.Hash(), modules.TxStatus_InPool)
+	if err != nil {
+		log.Warnf("Save tx[%s] status to local err:%s", signedTx.Hash().String(), err.Error())
+	}
+	//更新Tx的状态到LocalDB
+	go func() {
+		saveUnitCh := make(chan modules.SaveUnitEvent)
+		defer close(saveUnitCh)
+		saveUnitSub := b.Dag().SubscribeSaveUnitEvent(saveUnitCh)
+		headCh := make(chan modules.SaveUnitEvent)
+		defer close(headCh)
+		headSub := b.Dag().SubscribeSaveStableUnitEvent(headCh)
+		defer saveUnitSub.Unsubscribe()
+		defer headSub.Unsubscribe()
+		timeout := time.NewTimer(100 * time.Second)
+		for {
+			select {
+			case u := <-saveUnitCh:
+				log.Infof("SubscribeSaveUnitEvent received unit:%s", u.Unit.DisplayId())
+				for _, utx := range u.Unit.Transactions() {
+					if utx.Hash() == signedTx.Hash() {
+						log.Debugf("Change local tx[%s] status to unstable", utx.Hash().String())
+						err = b.Dag().SaveLocalTxStatus(signedTx.Hash(), modules.TxStatus_Unstable)
+						if err != nil {
+							log.Warnf("Save tx[%s] status to local err:%s", utx.Hash().String(), err.Error())
+						}
+					}
+				}
+			case u := <-headCh:
+				log.Infof("SubscribeSaveStableUnitEvent received unit:%s", u.Unit.DisplayId())
+				for _, utx := range u.Unit.Transactions() {
+					if utx.Hash() == signedTx.Hash() {
+						log.Debugf("Change local tx[%s] status to stable", utx.Hash().String())
+						err = b.Dag().SaveLocalTxStatus(signedTx.Hash(), modules.TxStatus_Stable)
+						if err != nil {
+							log.Warnf("Save tx[%s] status to local err:%s", utx.Hash().String(), err.Error())
+						}
+						return
+					}
+				}
+			case <-timeout.C:
+				log.Warn("SubscribeSaveStableUnitEvent timeout")
+				return
+			// Err() channel will be closed when unsubscribing.
+			case err0 := <-headSub.Err():
+				log.Warnf("SubscribeSaveStableUnitEvent err:", err0.Error())
+				return
+			case err1 := <-saveUnitSub.Err():
+				log.Warnf("SubscribeSaveUnitEvent err:", err1.Error())
+				return
+			}
+		}
+	}()
+
 	return nil
 }
 

@@ -91,6 +91,8 @@ type IDag interface {
 	IsUtxoSpent(outpoint *modules.OutPoint) (bool, error)
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
 	SubscribeChainEvent(ch chan<- modules.ChainEvent) event.Subscription
+	SubscribeSaveStableUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription
+
 	PostChainEvents(events []interface{})
 
 	GetTrieSyncProgress() (uint64, error)
@@ -219,6 +221,6 @@ type IDag interface {
 
 	//localdb
 	SaveLocalTx(tx *modules.Transaction) error
-	GetLocalTx(txId common.Hash) (*modules.Transaction, byte, error)
-	SaveLocalTxStatus(txId common.Hash, status byte) error
+	GetLocalTx(txId common.Hash) (*modules.Transaction, modules.TxStatus, error)
+	SaveLocalTxStatus(txId common.Hash, status modules.TxStatus) error
 }

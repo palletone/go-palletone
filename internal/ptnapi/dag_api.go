@@ -569,3 +569,34 @@ func (s *PrivateDagAPI) RebuildAddrTxIndex() error {
 	dag := s.b.Dag()
 	return dag.RebuildAddrTxIndex()
 }
+
+type TxAndStatus struct {
+	Tx     *ptnjson.TxJson
+	Status string
+}
+
+func (s *PrivateDagAPI) GetLocalTx(txId string) (*TxAndStatus, error) {
+	txhash := common.HexToHash(txId)
+	tx, status, err := s.b.Dag().GetLocalTx(txhash)
+	if err != nil {
+		return nil, err
+	}
+	txjson := ptnjson.ConvertTx2FullJson(tx, nil)
+	return &TxAndStatus{
+		Tx:     txjson,
+		Status: TxStatus2String(status),
+	}, nil
+}
+func TxStatus2String(s modules.TxStatus) string {
+	switch s {
+	case modules.TxStatus_NotFound:
+		return "NotFound"
+	case modules.TxStatus_InPool:
+		return "InPool"
+	case modules.TxStatus_Unstable:
+		return "Unstable"
+	case modules.TxStatus_Stable:
+		return "Stable"
+	}
+	return "Unknown"
+}

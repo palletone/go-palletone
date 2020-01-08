@@ -32,11 +32,11 @@ func (dag *Dag) SaveLocalTx(tx *modules.Transaction) error {
 }
 
 //查询某交易的内容和状态
-func (dag *Dag) GetLocalTx(txId common.Hash) (*modules.Transaction, byte, error) {
+func (dag *Dag) GetLocalTx(txId common.Hash) (*modules.Transaction, modules.TxStatus, error) {
 	return dag.localRep.GetLocalTx(txId)
 }
 
 //保存某交易的状态
-func (dag *Dag) SaveLocalTxStatus(txId common.Hash, status byte) error {
+func (dag *Dag) SaveLocalTxStatus(txId common.Hash, status modules.TxStatus) error {
 	return dag.localRep.SaveLocalTxStatus(txId, status)
 }

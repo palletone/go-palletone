@@ -725,6 +725,20 @@ func (mr *MockIDagMockRecorder) SubscribeChainEvent(ch interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeChainEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeChainEvent), ch)
 }
 
+// SubscribeSaveStableUnitEvent mocks base method
+func (m *MockIDag) SubscribeSaveStableUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubscribeSaveStableUnitEvent", ch)
+	ret0, _ := ret[0].(event.Subscription)
+	return ret0
+}
+
+// SubscribeSaveStableUnitEvent indicates an expected call of SubscribeSaveStableUnitEvent
+func (mr *MockIDagMockRecorder) SubscribeSaveStableUnitEvent(ch interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeSaveStableUnitEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeSaveStableUnitEvent), ch)
+}
+
 // PostChainEvents mocks base method
 func (m *MockIDag) PostChainEvents(events []interface{}) {
 	m.ctrl.T.Helper()
@@ -2132,11 +2146,11 @@ func (mr *MockIDagMockRecorder) SaveLocalTx(tx interface{}) *gomock.Call {
 }
 
 // GetLocalTx mocks base method
-func (m *MockIDag) GetLocalTx(txId common.Hash) (*modules.Transaction, byte, error) {
+func (m *MockIDag) GetLocalTx(txId common.Hash) (*modules.Transaction, modules.TxStatus, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLocalTx", txId)
 	ret0, _ := ret[0].(*modules.Transaction)
-	ret1, _ := ret[1].(byte)
+	ret1, _ := ret[1].(modules.TxStatus)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
@@ -2148,7 +2162,7 @@ func (mr *MockIDagMockRecorder) GetLocalTx(txId interface{}) *gomock.Call {
 }
 
 // SaveLocalTxStatus mocks base method
-func (m *MockIDag) SaveLocalTxStatus(txId common.Hash, status byte) error {
+func (m *MockIDag) SaveLocalTxStatus(txId common.Hash, status modules.TxStatus) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SaveLocalTxStatus", txId, status)
 	ret0, _ := ret[0].(error)

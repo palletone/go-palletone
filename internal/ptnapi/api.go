@@ -504,6 +504,7 @@ func submitTransactionSync(ctx context.Context, b Backend, tx *modules.Transacti
 		return nil, err
 	}
 	headCh := make(chan modules.SaveUnitEvent)
+	defer close(headCh)
 	headSub := b.Dag().SubscribeSaveUnitEvent(headCh)
 	defer headSub.Unsubscribe()
 	timeout := time.NewTimer(10 * time.Second)

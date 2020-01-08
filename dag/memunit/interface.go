@@ -61,6 +61,7 @@ type IMemDag interface {
 	//订阅切换主链事件
 	SubscribeSwitchMainChainEvent(ob SwitchMainChainEventFunc)
 	SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription
+	SubscribeSaveStableUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription
 	//关闭
 	Close()
 }

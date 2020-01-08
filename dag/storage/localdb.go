@@ -41,8 +41,8 @@ func NewLocalDb(db ptndb.Database) *LocalDb {
 type ILocalDb interface {
 	SaveLocalTx(tx *modules.Transaction) error
 	GetLocalTx(txId common.Hash) (*modules.Transaction, error)
-	SaveLocalTxStatus(txId common.Hash, status byte) error
-	GetLocalTxStatus(txId common.Hash) (byte, error)
+	SaveLocalTxStatus(txId common.Hash, status modules.TxStatus) error
+	GetLocalTxStatus(txId common.Hash) (modules.TxStatus, error)
 }
 
 //通过本地RPC创建或广播的交易
@@ -73,12 +73,12 @@ func (db *LocalDb) GetLocalTx(hash common.Hash) (*modules.Transaction, error) {
 }
 
 //保存某交易的状态
-func (db *LocalDb) SaveLocalTxStatus(txId common.Hash, status byte) error {
+func (db *LocalDb) SaveLocalTxStatus(txId common.Hash, status modules.TxStatus) error {
 	key := append(constants.LOCAL_TX_STATUS_PREFIX, txId.Bytes()...)
-	return db.db.Put(key, []byte{status})
+	return db.db.Put(key, []byte{byte(status)})
 }
 
-func (db *LocalDb) GetLocalTxStatus(txId common.Hash) (byte, error) {
+func (db *LocalDb) GetLocalTxStatus(txId common.Hash) (modules.TxStatus, error) {
 	key := append(constants.LOCAL_TX_STATUS_PREFIX, txId.Bytes()...)
 	value, err := db.db.Get(key)
 	if err != nil {
@@ -88,5 +88,5 @@ func (db *LocalDb) GetLocalTxStatus(txId common.Hash) (byte, error) {
 	if len(value) != 1 {
 		return 0, fmt.Errorf("invalid tx[%s] status value:%x", txId.String(), value)
 	}
-	return value[0], nil
+	return modules.TxStatus(value[0]), nil
 }

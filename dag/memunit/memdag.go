@@ -63,12 +63,13 @@ type MemDag struct {
 	lock               sync.RWMutex
 	cache              palletcache.ICache
 	// append by albert·gou 用于通知群签名
-	toGroupSignFeed  event.Feed
-	toGroupSignScope event.SubscriptionScope
-	db               ptndb.Database
-	tokenEngine      tokenengine.ITokenEngine
-	quit             chan struct{} // used for exit
-	observers        []SwitchMainChainEventFunc
+	toGroupSignFeed    event.Feed
+	saveStableUnitFeed event.Feed
+	toGroupSignScope   event.SubscriptionScope
+	db                 ptndb.Database
+	tokenEngine        tokenengine.ITokenEngine
+	quit               chan struct{} // used for exit
+	observers          []SwitchMainChainEventFunc
 }
 
 func (pmg *MemDag) SubscribeSwitchMainChainEvent(ob SwitchMainChainEventFunc) {
@@ -85,7 +86,9 @@ func (pmg *MemDag) Close() {
 func (pmg *MemDag) SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription {
 	return pmg.toGroupSignScope.Track(pmg.toGroupSignFeed.Subscribe(ch))
 }
-
+func (pmg *MemDag) SubscribeSaveStableUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription {
+	return pmg.saveStableUnitFeed.Subscribe(ch)
+}
 func (pmg *MemDag) SetStableThreshold(count int) {
 	pmg.lock.Lock()
 	defer pmg.lock.Unlock()
@@ -325,6 +328,7 @@ func (chain *MemDag) setNextStableUnit(chain_units map[common.Hash]*modules.Unit
 	if !chain.saveHeaderOnly && len(unit.Txs) > 1 {
 		go txpool.SendStoredTxs(unit.Txs.GetTxIds())
 	}
+	go chain.saveStableUnitFeed.Send(modules.SaveUnitEvent{Unit: unit})
 	log.Debugf("Remove unit index[%d],hash[%s] from chainUnits", height, hash.String())
 	//remove new stable unit
 	chain.chainUnits.Delete(hash)
@@ -531,7 +535,7 @@ func (chain *MemDag) AddStableUnit(unit *modules.Unit) error {
 	if err != nil {
 		return err
 	}
-
+	go chain.saveStableUnitFeed.Send(modules.SaveUnitEvent{Unit: unit})
 	if number%1000 == 0 {
 		log.Infof("add stable unit to dag, index: %d , hash[%s]", number, hash.TerminalString())
 	}

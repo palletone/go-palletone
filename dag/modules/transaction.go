@@ -43,6 +43,16 @@ var (
 	TX_BASESIZE = 100 * 1024 //100kb
 )
 
+//一个交易的状态
+type TxStatus byte
+
+const (
+	TxStatus_NotFound TxStatus = iota //找不到该交易
+	TxStatus_InPool                   //未打包
+	TxStatus_Unstable                 //已打包未稳定
+	TxStatus_Stable                   //已打包，已稳定
+)
+
 //var DepositContractLockScript = common.Hex2Bytes("140000000000000000000000000000000000000001c8")
 
 // TxOut defines a bitcoin transaction output.

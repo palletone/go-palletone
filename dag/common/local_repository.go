@@ -34,8 +34,8 @@ type LocalRepository struct {
 
 type ILocalRepository interface {
 	SaveLocalTx(tx *modules.Transaction) error
-	GetLocalTx(txId common.Hash) (*modules.Transaction, byte, error)
-	SaveLocalTxStatus(txId common.Hash, status byte) error
+	GetLocalTx(txId common.Hash) (*modules.Transaction, modules.TxStatus, error)
+	SaveLocalTxStatus(txId common.Hash, status modules.TxStatus) error
 }
 
 func NewLocalRepository(localdb storage.ILocalDb) *LocalRepository {
@@ -48,7 +48,7 @@ func (rep *LocalRepository) SaveLocalTx(tx *modules.Transaction) error {
 }
 
 //查询某交易的内容和状态
-func (rep *LocalRepository) GetLocalTx(txId common.Hash) (*modules.Transaction, byte, error) {
+func (rep *LocalRepository) GetLocalTx(txId common.Hash) (*modules.Transaction, modules.TxStatus, error) {
 	tx, err := rep.db.GetLocalTx(txId)
 	if err != nil {
 		return nil, 0, err
@@ -62,6 +62,6 @@ func (rep *LocalRepository) GetLocalTx(txId common.Hash) (*modules.Transaction, 
 }
 
 //保存某交易的状态
-func (rep *LocalRepository) SaveLocalTxStatus(txId common.Hash, status byte) error {
+func (rep *LocalRepository) SaveLocalTxStatus(txId common.Hash, status modules.TxStatus) error {
 	return rep.db.SaveLocalTxStatus(txId, status)
 }
