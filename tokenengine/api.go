@@ -42,6 +42,7 @@ const (
 	SigHashNone         uint32 = 0x2
 	SigHashSingle       uint32 = 0x3
 	SigHashRaw          uint32 = 0x4
+	SigHashOneMessage   uint32 = 0x40
 	SigHashAnyOneCanPay uint32 = 0x80
 	// sigHashMask defines the number of bits of the hash type which is used
 	// to identify which outputs are signed.
@@ -97,6 +98,25 @@ func (engine *TokenEngine) GetAddressFromScript(lockScript []byte) (common.Addre
 		return common.Address{}, err
 	}
 	return addrs[0].Address, nil
+}
+func (engine *TokenEngine) GetAddressFromUnlockScript(unlockScript []byte) (common.Address, error) {
+	scriptStr, err := txscript.DisasmString(unlockScript)
+	if err != nil {
+		return common.Address{}, err
+	}
+	scriptArray := strings.Split(scriptStr, " ")
+	if len(scriptArray) == 2 { //sig pubKey
+		pubKey := scriptArray[1]
+		pubB, _ := hex.DecodeString(pubKey)
+		return crypto.PubkeyBytesToAddress(pubB), nil
+	}
+	if len(scriptArray) < 2 {
+		return common.Address{}, errors.New("invalid unlock script")
+	}
+	//sig1 sig2 ... redeem
+	redeemStr := scriptArray[len(scriptArray)-1]
+	redeemB, _ := hex.DecodeString(redeemStr)
+	return crypto.ScriptToAddress(redeemB), nil
 }
 
 type PubKey4Sort [][]byte
@@ -382,16 +402,23 @@ func (engine *TokenEngine) CalcSignatureHash(tx *modules.Transaction, hashType u
 
 //Sign a full transaction
 func (engine *TokenEngine) SignTxAllPaymentInput(tx *modules.Transaction, hashType uint32, utxoLockScripts map[modules.OutPoint][]byte,
-	redeemScript []byte, pubKeyFn AddressGetPubKey, hashFn AddressGetSign) ([]common.SignatureError, error) {
+	redeemScript []byte, pubKeyFn AddressGetPubKey, signFn AddressGetSign) ([]common.SignatureError, error) {
+
+	return engine.SignTx1MsgPaymentInput(tx, -1, hashType, utxoLockScripts, redeemScript, pubKeyFn, signFn)
+}
+
+//Sign a message of transaction
+func (engine *TokenEngine) SignTx1MsgPaymentInput(tx *modules.Transaction, msgIdx int, hashType uint32, utxoLockScripts map[modules.OutPoint][]byte,
+	redeemScript []byte, pubKeyFn AddressGetPubKey, signFn AddressGetSign) ([]common.SignatureError, error) {
 
 	lookupRedeemScript := func(a common.Address) ([]byte, error) {
 
 		return redeemScript, nil
 	}
-	tmpAcc := &account{pubKeyFn: pubKeyFn, signFn: hashFn}
+	tmpAcc := &account{pubKeyFn: pubKeyFn, signFn: signFn}
 	var signErrors []common.SignatureError
 	for i, msg := range tx.TxMessages() {
-		if msg.App == modules.APP_PAYMENT {
+		if (i == msgIdx || msgIdx == -1) && msg.App == modules.APP_PAYMENT {
 			pay, ok := msg.Payload.(*modules.PaymentPayload)
 			if !ok {
 				return nil, errors.New("Invalid payment message")
