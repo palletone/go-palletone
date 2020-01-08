@@ -104,7 +104,7 @@ func (m *Migration105beta_105gamma) countMediatorTotalProduct() error {
 
 		count++
 		if count%100000 == 0 {
-			log.Infof("mediator info of %v units has been counted", count)
+			log.Infof("author info of %v units has been counted", count)
 		}
 	}
 
