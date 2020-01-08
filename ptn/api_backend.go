@@ -124,7 +124,15 @@ func (b *PtnApiBackend) SendConsensus(ctx context.Context) error {
 }
 
 func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transaction) error {
-	return b.ptn.txPool.AddLocal(signedTx)
+	err := b.ptn.txPool.AddLocal(signedTx)
+	if err != nil {
+		return err
+	}
+	err = b.Dag().SaveLocalTx(signedTx)
+	if err != nil {
+		log.Errorf("Try to send tx[%s] get an error:%s", signedTx.Hash().String(), err.Error())
+	}
+	return nil
 }
 
 func (b *PtnApiBackend) SendTxs(ctx context.Context, signedTxs []*modules.Transaction) []error {
@@ -728,12 +736,16 @@ func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, 
 	contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
 	return b.ptn.contractPorcessor.ContractInvokeReq(from, to, daoAmount, daoFee, certID, contractAddress, args, timeout)
 }
-func (b *PtnApiBackend) SendContractInvokeReqTx(requestTx *modules.Transaction) (reqId common.Hash, err error) {
+func (b *PtnApiBackend) SendContractInvokeReqTx(requestTx *modules.Transaction) (common.Hash, error) {
 	if !b.ptn.contractPorcessor.CheckTxValid(requestTx) {
 		err := fmt.Sprintf("ProcessContractEvent, event Tx is invalid, txId:%s", requestTx.Hash().String())
 		return common.Hash{}, errors.New(err)
 	}
 	go b.ptn.ContractBroadcast(jury.ContractEvent{Ele: nil, CType: jury.CONTRACT_EVENT_EXEC, Tx: requestTx}, true)
+	err := b.Dag().SaveLocalTx(requestTx)
+	if err != nil {
+		log.Errorf("Try to save request[%s] error:%s", requestTx.Hash().String(), err.Error())
+	}
 	return requestTx.RequestHash(), nil
 }
 func (b *PtnApiBackend) ContractInvokeReqTokenTx(from, to common.Address, token *modules.Asset,

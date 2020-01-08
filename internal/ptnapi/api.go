@@ -493,6 +493,49 @@ func submitTransaction(ctx context.Context, b Backend, tx *modules.Transaction) 
 	}
 	return tx.Hash(), nil
 }
+
+func submitTransactionSync(ctx context.Context, b Backend, tx *modules.Transaction) (*ptnjson.TxHashWithUnitInfoJson, error) {
+	if tx.IsNewContractInvokeRequest() {
+		_, err := b.SendContractInvokeReqTx(tx)
+		return nil, err
+	}
+
+	if err := b.SendTx(ctx, tx); err != nil {
+		return nil, err
+	}
+	headCh := make(chan modules.SaveUnitEvent)
+	headSub := b.Dag().SubscribeSaveUnitEvent(headCh)
+	defer headSub.Unsubscribe()
+	timeout := time.NewTimer(10 * time.Second)
+	for {
+		select {
+		case u := <-headCh:
+			log.Infof("SubscribeSaveUnitEvent received unit:%s", u.Unit.DisplayId())
+			for i, utx := range u.Unit.Transactions() {
+				if utx.Hash() == tx.Hash() {
+					txInfo := &ptnjson.TxHashWithUnitInfoJson{
+						Timestamp:   time.Unix(u.Unit.Timestamp(), 0),
+						UnitHash:    u.Unit.Hash().String(),
+						UnitHeight:  u.Unit.NumberU64(),
+						TxIndex:     uint64(i),
+						TxHash:      tx.Hash().String(),
+						RequestHash: tx.RequestHash().String(),
+					}
+
+					return txInfo, nil
+				}
+			}
+		case <-timeout.C:
+			return nil, errors.New("get tx package status timeout")
+		// Err() channel will be closed when unsubscribing.
+		case err := <-headSub.Err():
+			return nil, err
+		}
+	}
+
+	return nil, errors.New("Tx not found")
+}
+
 func submitTxs(ctx context.Context, b Backend, txs []*modules.Transaction) []error {
 	errs := b.SendTxs(ctx, txs)
 	if errs != nil {

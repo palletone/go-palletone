@@ -2061,6 +2061,20 @@ func (mr *MockIDagMockRecorder) GetJurorReward(jurorAdd interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetJurorReward", reflect.TypeOf((*MockIDag)(nil).GetJurorReward), jurorAdd)
 }
 
+// SubscribeSaveUnitEvent mocks base method
+func (m *MockIDag) SubscribeSaveUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubscribeSaveUnitEvent", ch)
+	ret0, _ := ret[0].(event.Subscription)
+	return ret0
+}
+
+// SubscribeSaveUnitEvent indicates an expected call of SubscribeSaveUnitEvent
+func (mr *MockIDagMockRecorder) SubscribeSaveUnitEvent(ch interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeSaveUnitEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeSaveUnitEvent), ch)
+}
+
 // SubscribeUnstableRepositoryUpdatedEvent mocks base method
 func (m *MockIDag) SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription {
 	m.ctrl.T.Helper()
@@ -2101,4 +2115,48 @@ func (m *MockIDag) GetAddressCount() int {
 func (mr *MockIDagMockRecorder) GetAddressCount() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddressCount", reflect.TypeOf((*MockIDag)(nil).GetAddressCount))
+}
+
+// SaveLocalTx mocks base method
+func (m *MockIDag) SaveLocalTx(tx *modules.Transaction) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveLocalTx", tx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveLocalTx indicates an expected call of SaveLocalTx
+func (mr *MockIDagMockRecorder) SaveLocalTx(tx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveLocalTx", reflect.TypeOf((*MockIDag)(nil).SaveLocalTx), tx)
+}
+
+// GetLocalTx mocks base method
+func (m *MockIDag) GetLocalTx(txId common.Hash) (*modules.Transaction, byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLocalTx", txId)
+	ret0, _ := ret[0].(*modules.Transaction)
+	ret1, _ := ret[1].(byte)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetLocalTx indicates an expected call of GetLocalTx
+func (mr *MockIDagMockRecorder) GetLocalTx(txId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLocalTx", reflect.TypeOf((*MockIDag)(nil).GetLocalTx), txId)
+}
+
+// SaveLocalTxStatus mocks base method
+func (m *MockIDag) SaveLocalTxStatus(txId common.Hash, status byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveLocalTxStatus", txId, status)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveLocalTxStatus indicates an expected call of SaveLocalTxStatus
+func (mr *MockIDagMockRecorder) SaveLocalTxStatus(txId, status interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveLocalTxStatus", reflect.TypeOf((*MockIDag)(nil).SaveLocalTxStatus), txId, status)
 }

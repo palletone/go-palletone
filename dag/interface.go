@@ -211,9 +211,14 @@ type IDag interface {
 	RebuildAddrTxIndex() error
 	GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, error)
 	GetJurorReward(jurorAdd common.Address) common.Address
-
+	SubscribeSaveUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription
 	SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription
 	GetContractsWithJuryAddr(addr common.Address) []*modules.Contract
 
 	GetAddressCount() int
+
+	//localdb
+	SaveLocalTx(tx *modules.Transaction) error
+	GetLocalTx(txId common.Hash) (*modules.Transaction, byte, error)
+	SaveLocalTxStatus(txId common.Hash, status byte) error
 }

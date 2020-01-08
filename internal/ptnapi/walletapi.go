@@ -1354,20 +1354,20 @@ func getRealAddress(ks *keystore.KeyStore, addr string) (common.Address, error) 
 	return common.StringToAddress(to)
 }
 
-func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, fromStr string, toStr string,
-	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint64) (common.Hash, error) {
+func (s *PrivateWalletAPI) buildTransferTokenTx(asset string, fromStr string, toStr string,
+	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint64) (*modules.Transaction, error) {
+	ks := s.b.GetKeyStore()
 
 	toArray := strings.Split(toStr, ":")
 	to := toArray[0]
-	ks := s.b.GetKeyStore()
 	if len(toArray) == 2 { //HD wallet address format
 		toAccountIndex, err := strconv.Atoi(toArray[1])
 		if err != nil {
-			return common.Hash{}, errors.New("invalid to address format")
+			return nil, errors.New("invalid to address format")
 		}
 		toAddr, err := common.StringToAddress(toArray[0])
 		if err != nil {
-			return common.Hash{}, errors.New("invalid to address format")
+			return nil, errors.New("invalid to address format")
 		}
 		var toAccount accounts.Account
 		if ks.IsUnlock(toAddr) {
@@ -1378,7 +1378,7 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 
 		}
 		if err != nil {
-			return common.Hash{}, errors.New("GetHdAccountWithPassphrase error:" + err.Error())
+			return nil, errors.New("GetHdAccountWithPassphrase error:" + err.Error())
 		}
 		to = toAccount.Address.String()
 	}
@@ -1387,11 +1387,11 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 	if len(fromArray) == 2 {
 		fromAccountIndex, err := strconv.Atoi(fromArray[1])
 		if err != nil {
-			return common.Hash{}, errors.New("invalid to address format")
+			return nil, errors.New("invalid to address format")
 		}
 		fromAddr, err := common.StringToAddress(fromArray[0])
 		if err != nil {
-			return common.Hash{}, errors.New("invalid to address format")
+			return nil, errors.New("invalid to address format")
 		}
 		var fromAccount accounts.Account
 		if ks.IsUnlock(fromAddr) {
@@ -1402,13 +1402,13 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 
 		}
 		if err != nil {
-			return common.Hash{}, errors.New("GetHdAccountWithPassphrase error:" + err.Error())
+			return nil, errors.New("GetHdAccountWithPassphrase error:" + err.Error())
 		}
 		from = fromAccount.Address.String()
 	}
 	rawTx, usedUtxo, err := s.buildRawTransferTx(asset, from, to, amount, fee)
 	if err != nil {
-		return common.Hash{}, err
+		return nil, err
 	}
 	if Extra != "" {
 		textPayload := new(modules.DataPayload)
@@ -1431,22 +1431,45 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 	if len(fromArray) == 1 {
 		fromAddr, err := common.StringToAddress(from)
 		if err != nil {
-			return common.Hash{}, err
+			return nil, err
 		}
 		err = s.unlockKS(fromAddr, password, duration)
 		if err != nil {
-			return common.Hash{}, err
+			return nil, err
 		}
 	}
 	//3.
 	_, err = tokenengine.Instance.SignTxAllPaymentInput(rawTx, 1, utxoLockScripts, nil, getPubKeyFn, getSignFn)
 	if err != nil {
+		return nil, err
+	}
+
+	log.DebugDynamic(func() string {
+		txJson, _ := json.Marshal(rawTx)
+		return "SignedTx:" + string(txJson)
+	})
+	return rawTx, nil
+}
+
+func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, fromStr string, toStr string,
+	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint64) (common.Hash, error) {
+	signedTx, err := s.buildTransferTokenTx(asset, fromStr, toStr, amount, fee, Extra, password, duration)
+	if err != nil {
 		return common.Hash{}, err
 	}
-	txJson, _ := json.Marshal(rawTx)
-	log.DebugDynamic(func() string { return "SignedTx:" + string(txJson) })
 	//4.
-	return submitTransaction(ctx, s.b, rawTx)
+	return submitTransaction(ctx, s.b, signedTx)
+}
+
+//转移Token，并确认打包后返回
+func (s *PrivateWalletAPI) TransferTokenSync(ctx context.Context, asset string, fromStr string, toStr string,
+	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint64) (*ptnjson.TxHashWithUnitInfoJson, error) {
+	signedTx, err := s.buildTransferTokenTx(asset, fromStr, toStr, amount, fee, Extra, password, duration)
+	if err != nil {
+		return nil, err
+	}
+	//4.
+	return submitTransactionSync(ctx, s.b, signedTx)
 }
 
 func (s *PrivateWalletAPI) TransferToken2(ctx context.Context, asset string, fromStr string, toStr string,

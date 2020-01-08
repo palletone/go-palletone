@@ -48,3 +48,4 @@ type ToGroupSignEvent struct {
 
 type UnstableRepositoryUpdatedEvent struct {
 }
+type SaveUnitEvent struct{ Unit *Unit }
