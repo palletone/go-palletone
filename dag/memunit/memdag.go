@@ -221,6 +221,7 @@ func (chain *MemDag) GetHeaderByHash(hash common.Hash) (*modules.Header, error) 
 	}
 	return nil, errors.New("not found")
 }
+
 func (chain *MemDag) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error) {
 	if inter, has := chain.tempdb.Load(chain.GetLastMainChainUnit().Hash()); has {
 		temp := inter.(*ChainTempDb)
@@ -245,7 +246,11 @@ func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupSign []byte, txpoo
 	}
 
 	log.Infof("Unit(hash: %v , #%v) has group sign, make it stable.", uHash.TerminalString(), unit.NumberU64())
-	chain.setStableUnit(uHash, unit.NumberU64(), txpool)
+
+	if !chain.setStableUnit(uHash, unit.NumberU64(), txpool) {
+		log.Debugf("fail to set unit(hash: %v , #%v) stable ", uHash.TerminalString(), unit.NumberU64())
+		return nil
+	}
 
 	//2. Update unit.groupSign
 	log.Debugf("Try to update unit[%s] header group sign", uHash.String())
@@ -267,22 +272,25 @@ func (chain *MemDag) SetUnitGroupSign(uHash common.Hash, groupSign []byte, txpoo
 
 //设置某个单元和高度为稳定单元。设置后会更新当前的稳定单元，并将所有稳定单元写入到StableDB中，并且将ChainUnit中的稳定单元删除。
 //然后基于最新的稳定单元，重建Tempdb数据库
-func (chain *MemDag) setStableUnit(hash common.Hash, height uint64, txpool txspool.ITxPool) {
+func (chain *MemDag) setStableUnit(hash common.Hash, height uint64, txpool txspool.ITxPool) bool {
 	tt := time.Now()
 	log.Debugf("Set stable unit to %s,height:%d", hash.String(), height)
 	stableHeight := chain.GetLastStableUnitHeight()
 	if !(height > stableHeight) {
 		log.Debugf("current stable height is %d, impossible to set stable height to %d", stableHeight, height)
-		return
+		return false
 	}
 
 	chain_units := chain.getChainUnits()
 	unit, found := chain_units[hash]
 	if !found {
 		log.Debugf("cannot find unit(hash: %v, # %v) in memDag", hash, height)
-		return
+		return false
 	}
-	chain.setNextStableUnit(chain_units, unit, txpool)
+
+	if !chain.setNextStableUnit(chain_units, unit, txpool) {
+		return false
+	}
 
 	// 更新tempdb ，将低于稳定单元的分叉链都删除
 	go chain.delHeightUnitsAndTemp(height)
@@ -301,14 +309,17 @@ func (chain *MemDag) setStableUnit(hash common.Hash, height uint64, txpool txspo
 
 	//remove too low orphan unit
 	go chain.removeLowOrphanUnit(height, txpool)
+
+	return true
 }
 
 //设置当前稳定单元的指定父单元为稳定单元
-func (chain *MemDag) setNextStableUnit(chain_units map[common.Hash]*modules.Unit, unit *modules.Unit, txpool txspool.ITxPool) {
+func (chain *MemDag) setNextStableUnit(chain_units map[common.Hash]*modules.Unit, unit *modules.Unit,
+	txpool txspool.ITxPool) bool {
 	hash := unit.Hash()
 	height := unit.NumberU64()
 	if hash == chain.GetLastStableUnitHash() {
-		return
+		return false
 	}
 
 	parentHash := unit.ParentHash()[0]
@@ -316,21 +327,26 @@ func (chain *MemDag) setNextStableUnit(chain_units map[common.Hash]*modules.Unit
 		chain.setNextStableUnit(chain_units, parentUnit, txpool)
 	}
 
-	// memdag不依赖apply unit的存储，因此用协程提高setStable的效率
 	// 虽然与memdag无关，但是下一个unit的 apply 处理依赖上一个unit apply的结果，所以不能用协程并发处理
 	err := chain.saveUnitToDb(chain.ldbunitRep, chain.ldbUnitProduceRep, unit)
 	if err != nil {
 		log.Errorf("Save unit to db error:%s", err.Error())
+		return false
 	}
+
 	if !chain.saveHeaderOnly && len(unit.Txs) > 1 {
 		go txpool.SendStoredTxs(unit.Txs.GetTxIds())
 	}
+
 	log.Debugf("Remove unit index[%d],hash[%s] from chainUnits", height, hash.String())
+
 	//remove new stable unit
 	chain.chainUnits.Delete(hash)
 	//Set stable unit
 	chain.stableUnitHash.Store(hash)
 	chain.stableUnitHeight.Store(height)
+
+	return true
 }
 
 func (chain *MemDag) checkUnitIrreversibleWithGroupSign(unit *modules.Unit) bool {
@@ -365,8 +381,8 @@ func (chain *MemDag) checkStableCondition(tempDB *ChainTempDb, unit *modules.Uni
 	if chain.checkUnitIrreversibleWithGroupSign(unit) {
 		log.Debugf("the unit(%s) have group sign(%s), make it to irreversible.",
 			unit.Hash().TerminalString(), hexutil.Encode(unit.GetGroupSign()))
-		chain.setStableUnit(unit.Hash(), unit.NumberU64(), txpool)
-		return true
+		return chain.setStableUnit(unit.Hash(), unit.NumberU64(), txpool)
+		//return true
 	}
 
 	// 计算 稳定的深度阈值
@@ -379,8 +395,9 @@ func (chain *MemDag) checkStableCondition(tempDB *ChainTempDb, unit *modules.Uni
 	offset := mCount - chain.threshold
 
 	// 获取所有 mediator 最后确认unit编号
-	if !(offset > 0) {
-		log.Debugf("stable threshold(%v) must be less than the count(%v) of mediators", chain.threshold, mCount)
+	if offset < 0 {
+		log.Debugf("stable threshold(%v) cannot be bigger than the count(%v) of mediators",
+			chain.threshold, mCount)
 		return false
 	}
 	lastConfirmedUnitNums := make([]int, 0, mCount)
@@ -403,9 +420,9 @@ func (chain *MemDag) checkStableCondition(tempDB *ChainTempDb, unit *modules.Uni
 		log.Errorf("GetHeaderByNumber err: %v", err.Error())
 		return false
 	}
-	chain.setStableUnit(header.Hash(), header.NumberU64(), txpool)
 
-	return true
+	return chain.setStableUnit(header.Hash(), header.NumberU64(), txpool)
+	//return true
 }
 
 //清空主链的Tempdb，然后基于稳定单元到最新主链单元的路径，构建新的Tempdb

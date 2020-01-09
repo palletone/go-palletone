@@ -116,7 +116,7 @@ func (d *Dag) CurrentUnit(token modules.AssetId) *modules.Unit {
 func (d *Dag) GetStableChainIndex(token modules.AssetId) *modules.ChainIndex {
 	memdag, err := d.getMemDag(token)
 	if err != nil {
-		log.Errorf("Get CurrentUnit by token[%s] error:%s", token.String(), err.Error())
+		log.Errorf("GetStableChainIndex by token[%s] error:%s", token.String(), err.Error())
 		return nil
 	}
 	_, height := memdag.GetLastStableUnitInfo()
@@ -130,7 +130,7 @@ func (d *Dag) GetMainCurrentUnit() *modules.Unit {
 
 // return higher unit in memdag
 func (d *Dag) GetCurrentUnit(assetId modules.AssetId) *modules.Unit {
-	memUnit := d.GetCurrentMemUnit(assetId, 0)
+	memUnit := d.GetCurrentMemUnit(assetId)
 	curUnit := d.CurrentUnit(assetId)
 
 	if curUnit == nil {
@@ -151,13 +151,25 @@ func (d *Dag) GetCurrentUnit(assetId modules.AssetId) *modules.Unit {
 }
 
 // return latest unit in the memdag of assetid
-func (d *Dag) GetCurrentMemUnit(assetId modules.AssetId, index uint64) *modules.Unit {
-	memdag, err := d.getMemDag(assetId)
+//func (d *Dag) GetCurrentMemUnit(assetId modules.AssetId, index uint64) *modules.Unit {
+func (d *Dag) GetCurrentMemUnit(assetId modules.AssetId) *modules.Unit {
+	//memdag, err := d.getMemDag(assetId)
+	//if err != nil {
+	//	log.Errorf("GetCurrentMemUnit by token[%s] error:%s", assetId.String(), err.Error())
+	//	return nil
+	//}
+	//curUnit := memdag.GetLastMainChainUnit()
+
+	hash, _, err := d.unstablePropRep.GetNewestUnit(assetId)
 	if err != nil {
-		log.Errorf("Get CurrentUnit by token[%s] error:%s", assetId.String(), err.Error())
+		log.Errorf("GetNewestUnit by token[%s] error:%s", assetId.String(), err.Error())
 		return nil
 	}
-	curUnit := memdag.GetLastMainChainUnit()
+
+	curUnit, err := d.GetUnitByHash(hash)
+	if err != nil {
+		return nil
+	}
 
 	return curUnit
 }
@@ -417,7 +429,7 @@ func (d *Dag) IsHeaderExist(hash common.Hash) bool {
 func (d *Dag) CurrentHeader(token modules.AssetId) *modules.Header {
 	memdag, err := d.getMemDag(token)
 	if err != nil {
-		log.Errorf("Get CurrentUnit by token[%s] error:%s", token.String(), err.Error())
+		log.Errorf("CurrentHeader by token[%s] error:%s", token.String(), err.Error())
 		return nil
 	}
 	// 从memdag 获取最新的header
@@ -663,20 +675,22 @@ func NewDag(db ptndb.Database, cache palletcache.ICache, light bool) (*Dag, erro
 // check db migration ,to upgrade ptn database
 func checkDbMigration(db ptndb.Database, stateDb storage.IStateDb) error {
 	// 获取旧的gptn版本号
-	t := time.Now()
 	old_vertion, err := stateDb.GetDataVersion()
 	if err != nil {
 		log.Warn("Don't have database version, Ignore data migration")
 		return nil
 	}
 	log.Debugf("the database version is:%s", old_vertion.Version)
+	//fmt.Printf("the database version is:%s\n", old_vertion.Version)
 
 	// 获取当前gptn版本号
 	now_version := configure.Version
 	log.Debugf("the program version is:%s", now_version)
+	//fmt.Printf("the program version is:%s\n", now_version)
 	next_version := old_vertion.Version
 
 	if next_version != now_version {
+		t := time.Now()
 		log.Infof("Start migration,upgrade gtpn vertion[%s] to [%s], it may spend a long time, please wait...",
 			next_version, now_version)
 		// migrations
@@ -693,14 +707,16 @@ func checkDbMigration(db ptndb.Database, stateDb storage.IStateDb) error {
 				data_version.Version = next_version
 				stateDb.SaveDataVersion(data_version)
 			}
+
 			if next_version == now_version {
 				break
 			}
-			// 版本升级超时处理
-			if now := time.Now(); now.After(t.Add(1 * time.Minute)) {
-				log.Infof("upgrade gptn failed. error: timeout[%s]", time.Since(t))
-				break
-			}
+
+			//// 版本升级超时处理
+			//if now := time.Now(); now.After(t.Add(1 * time.Minute)) {
+			//	log.Infof("upgrade gptn failed. error: timeout[%s]", time.Since(t))
+			//	break
+			//}
 		}
 
 		log.Infof("Complete migration, spent time:%s", time.Since(t))

@@ -74,6 +74,9 @@ type Server struct {
 	run      int32
 	codecsMu sync.Mutex
 	codecs   set.Set
+
+	ishttps   bool
+	secretkey string
 }
 
 // rpcRequest represents a raw incoming RPC request

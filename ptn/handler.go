@@ -859,14 +859,21 @@ type NodeInfo struct {
 
 // NodeInfo retrieves some protocol metadata about the running host node.
 func (pm *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
-	unit := pm.dag.GetCurrentUnit(pm.mainAssetId)
 	var (
 		index = uint64(0)
 		hash  = common.Hash{}
 	)
-	if unit != nil {
-		index = unit.Number().Index
-		hash = unit.Hash()
+
+	//unit := pm.dag.GetCurrentUnit(pm.mainAssetId)
+	//if unit != nil {
+	//	index = unit.Number().Index
+	//	hash = unit.Hash()
+	//}
+
+	unitProperty, _ := pm.dag.UnstableHeadUnitProperty(pm.mainAssetId)
+	if unitProperty != nil {
+		index = unitProperty.ChainIndex.Index
+		hash = unitProperty.Hash
 	}
 
 	return &NodeInfo{
