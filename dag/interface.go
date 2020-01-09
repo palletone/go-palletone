@@ -172,6 +172,7 @@ type IDag interface {
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
 	GetGlobalProp() *modules.GlobalProperty
+	GetMediatorSchl() *modules.MediatorSchedule
 	GetMediatorCount() int
 
 	IsMediator(address common.Address) bool

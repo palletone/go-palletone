@@ -199,7 +199,12 @@ web3._extend({
             call: 'dag_getHeadUnit',
             params: 0,
         }),
-         new web3._extend.Method({
+		new web3._extend.Method({
+            name: 'getMediatorSchedule',
+            call: 'dag_getMediatorSchedule',
+            params: 0,
+        }),
+		new web3._extend.Method({
             name: 'isSynced',
             call: 'dag_isSynced',
             params: 0,

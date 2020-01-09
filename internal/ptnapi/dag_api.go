@@ -556,6 +556,15 @@ func (s *PublicDagAPI) GetHeadUnit() (*ptnjson.UnitPropertyJson, error) {
 	return nil, nil
 }
 
+func (s *PublicDagAPI) GetMediatorSchedule() (*modules.MediatorSchedule, error) {
+	dag := s.b.Dag()
+	if dag != nil {
+		return dag.GetMediatorSchl(), nil
+	}
+
+	return nil, nil
+}
+
 func (s *PublicDagAPI) IsSynced() bool {
 	dag := s.b.Dag()
 	if dag != nil {
@@ -581,6 +590,7 @@ func (s *PrivateDagAPI) GetAllUtxos(ctx context.Context) (string, error) {
 
 	return string(result_json), nil
 }
+
 func (s *PrivateDagAPI) CheckHeader(ctx context.Context, number int) (bool, error) {
 	dag := s.b.Dag()
 	err := dag.CheckHeaderCorrect(number)
@@ -589,6 +599,7 @@ func (s *PrivateDagAPI) CheckHeader(ctx context.Context, number int) (bool, erro
 	}
 	return true, nil
 }
+
 func (s *PrivateDagAPI) CheckUnits(ctx context.Context, assetId string, number int) (bool, error) {
 	dag := s.b.Dag()
 	err := dag.CheckUnitsCorrect(assetId, number)
