@@ -24,7 +24,7 @@ exchangemaker
     #Given Bob issues her #personal token, amount is 1000, decimal is 1 succeed    ${two}    ${twotoken}
     unlockAccount    ${one}
     maker    ${one}    ${onetoken}    100    ${twotoken}    2000
-    sleep    3
+    sleep    10
     exchangequery
     ${respJson}    addrexchangequery    ${one}
     ${reJson}    To Json    ${respJson}
@@ -73,6 +73,12 @@ exchangemaker
     ${respJson}    addrexchangequery    ${one}
     log    ${respJson}
     run keyword if    ''    in ${respJson}
+    ${allmatchquery}    allmatchquery
+    log    ${allmatchquery}
+    ${matchqueryrespJson}    matchquery    ${one}
+    log    ${matchqueryrespJson}
+    ${respJson}    historyexchangequery
+    log    ${respJson}
 
 *** Keywords ***
 getBalance

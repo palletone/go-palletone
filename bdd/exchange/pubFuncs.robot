@@ -110,21 +110,20 @@ addrexchangequery
 historyexchangequery
     ${args}=    Create List    getHistoryOrderList
     ${params}=    Create List    ${exchangeContractAddr}    ${args}    ${1}
-    ${resp}=    sendRpcPost    ${queryMethod}    ${params}    exchangeQuery
+    ${resp}=    sendRpcPost    ${queryMethod}    ${params}    historyexchangequery
     [Return]    ${resp}
 
 matchquery
     [Arguments]    ${exchange_sn}
     ${args}=    Create List    getOrderMatchList    ${exchange_sn}
     ${params}=    Create List    ${exchangeContractAddr}    ${args}    ${1}
-    ${resp}=    sendRpcPost    ${queryMethod}    ${params}    exchangeQuery
+    ${resp}=    sendRpcPost    ${queryMethod}    ${params}    matchquery
     [Return]    ${resp}
 
 allmatchquery
-    [Arguments]    ${exchange_sn}
-    ${args}=    Create List    getAllMatchList    ${exchange_sn}
+    ${args}=    Create List    getAllMatchList
     ${params}=    Create List    ${exchangeContractAddr}    ${args}    ${1}
-    ${resp}=    sendRpcPost    ${queryMethod}    ${params}    exchangeQuery
+    ${resp}=    sendRpcPost    ${queryMethod}    ${params}    allmatchQuery
     [Return]    ${resp}
 
 taker
