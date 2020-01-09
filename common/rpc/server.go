@@ -48,6 +48,7 @@ func NewServer() *Server {
 		services: make(serviceRegistry),
 		codecs:   set.NewSet(),
 		run:      1,
+		ishttps:  false,
 	}
 
 	// register a default service which will provide meta information about the RPC service such as the services and

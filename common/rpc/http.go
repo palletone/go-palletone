@@ -198,9 +198,12 @@ func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), code)
 		return
 	}
-	if !(srv.IsHttpsRequest() && (r.Header.Get(ptnSecretKey) == srv.GetSecretKey())) {
-		http.Error(w, "ptn secret key failed", http.StatusBadRequest)
-		return
+
+	if srv.IsHttpsRequest() {
+		if r.Header.Get(ptnSecretKey) != srv.GetSecretKey() {
+			http.Error(w, "ptn secret key failed", http.StatusBadRequest)
+			return
+		}
 	}
 	// All checks passed, create a codec that reads direct from the request body
 	// untilEOF and writes the response to w and order the server to process a
