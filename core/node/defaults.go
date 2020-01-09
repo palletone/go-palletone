@@ -33,6 +33,7 @@ var DefaultConfig = Config{
 	HTTPs:            false,
 	HttpsCertFile:    "",
 	HttpsKeyFile:     "",
+	HttpsSecretKey:   "abc",
 	WSHost:           DefaultWSHost,
 	WSPort:           DefaultWSPort,
 	WSModules:        []string{"net", "web3", "dag"},

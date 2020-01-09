@@ -108,7 +108,8 @@ func StartIPCEndpoint(ipcEndpoint string, apis []API) (net.Listener, *Server, er
 }
 
 // StartHTTPEndpoint starts the HTTP RPC endpoint, configured with cors/vhosts/modules
-func StartHTTPSEndpoint(endpoint string, apis []API, modules []string, cors []string, cert, key string) (
+func StartHTTPSEndpoint(endpoint string, apis []API, modules []string, cors []string, cert, key string,
+	secretkey string) (
 	*http.Server, error) {
 	// Generate the whitelist based on the allowed modules
 	// 根据(配置信息)允许的模块生成白名单
@@ -128,7 +129,7 @@ func StartHTTPSEndpoint(endpoint string, apis []API, modules []string, cors []st
 			log.Debug("HTTP registered", "namespace", api.Namespace)
 		}
 	}
+	handler.SetSecretKey(secretkey)
 	// All APIs registered, start the HTTP listener
-	go NewHTTPSServer(endpoint, cors, handler, cert, key)
-	return nil, nil
+	return NewHTTPSServer(endpoint, cors, handler, cert, key)
 }

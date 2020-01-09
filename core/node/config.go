@@ -95,9 +95,10 @@ type Config struct {
 	IPCPath string `toml:",omitempty"`
 
 	//HTTPS
-	HTTPs         bool   //`toml:",omitempty"`
-	HttpsCertFile string //`toml:",omitempty"`
-	HttpsKeyFile  string //`toml:",omitempty"`
+	HTTPs          bool   //`toml:",omitempty"`
+	HttpsCertFile  string //`toml:",omitempty"`
+	HttpsKeyFile   string //`toml:",omitempty"`
+	HttpsSecretKey string
 
 	// HTTPHost is the host interface on which to start the HTTP RPC server. If this
 	// field is empty, no HTTP API endpoint will be started.
