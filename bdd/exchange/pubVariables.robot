@@ -25,7 +25,7 @@ ${fee}            1
 ${pwd}            1
 ${res}            ${null}
 ${duration}       600000000
-${AliceToken}     ALICE
+${AliceToken}     BVC
 ${BobToken}       BOB
 ${CarolToken}     CAROL
 ${exchangesn}     ExchangeSn

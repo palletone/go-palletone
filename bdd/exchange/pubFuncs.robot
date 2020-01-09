@@ -8,6 +8,11 @@ genInvoketxParams
     ${params}=    Create List    ${caCertHolder}    ${caCertHolder}    ${from}    ${to}    ${certContractAddr}    ${args}    ${certid}
     [Return]    ${params}
 
+genIssuetxParams
+    [Arguments]    ${caCertHolder}    ${caCertHolder}    ${from}    ${to}    ${certContractAddr}    ${args}    ${certid}    ${timeout}
+    ${params}=    Create List    ${caCertHolder}    ${caCertHolder}    ${from}    ${to}    ${certContractAddr}    ${args}    ${certid}    ${timeout}
+    [Return]    ${params}
+
 genInvokeExchangeParams
     [Arguments]    ${from}    ${to}    ${assertid}    ${saleamount}    ${fee}    ${exchangeContractAddr}    ${args}
     ${params}=    Create List    ${from}    ${to}    ${assertid}    ${saleamount}    ${fee}    ${exchangeContractAddr}    ${args}
@@ -54,8 +59,8 @@ unlockAccount
 issueToken
     [Arguments]    ${addr}    ${name}    ${amount}    ${decimal}    ${des}
     ${args}=    Create List    createToken    ${des}    ${name}    ${decimal}    ${amount}    ${addr}
-    ${params}=    genInvoketxParams    ${addr}    ${addr}    100    1    ${prc720ContractAddr}    ${args}    ${null}
-    ${respJson}=    sendRpcPost    ${invokeMethod}    ${params}    issueToken
+    ${params}=    genIssuetxParams    ${addr}    ${addr}    100    1    ${prc720ContractAddr}    ${args}    1    1
+    ${respJson}=    sendRpcPost    ${invokeMethod}    ${params}     issueToken   
     log    ${respJson}
     Dictionary Should Contain Key    ${respJson}    result
     [Return]    ${respJson}
