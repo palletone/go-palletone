@@ -147,6 +147,9 @@ func (s *PublicBlockChainAPI) GetAssetExistence(ctx context.Context,
 
 func (s *PublicBlockChainAPI) ListSysConfig() ([]*ptnjson.ConfigJson, error) {
 	cp := s.b.Dag().GetChainParameters()
+	if cp == nil {
+		return nil, fmt.Errorf("GetChainParameters is nil")
+	}
 
 	return ptnjson.ConvertAllSysConfigToJson(cp), nil
 }
@@ -161,6 +164,15 @@ func (s *PublicBlockChainAPI) GetImmutableParameters() (*core.ImmutableChainPara
 
 func (s *PublicBlockChainAPI) GetGlobalProperty() (*modules.GlobalProperty, error) {
 	return s.b.Dag().GetGlobalProp(), nil
+}
+
+func (s *PublicBlockChainAPI) GetDynamicGlobalProperty() (*ptnjson.DynamicGlobalPropertyJson, error) {
+	dgp := s.b.Dag().GetDynGlobalProp()
+	if dgp == nil {
+		return nil, fmt.Errorf("GetDynGlobalProp is nil")
+	}
+
+	return ptnjson.DynGlobalPropToJson(dgp) , nil
 }
 
 func (s *PublicBlockChainAPI) GetPledge(addStr string) (*modules.PledgeStatusJson, error) {

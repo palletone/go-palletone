@@ -67,20 +67,6 @@ type ChainIndexJson struct {
 	Index   uint64 `json:"index"`
 }
 
-type UnitPropertyJson struct {
-	Hash      common.Hash `json:"hash"`
-	Number    uint64      `json:"number"`
-	Timestamp string      `json:"timestamp"`
-}
-
-func UnitPropertyToJson(up *modules.UnitProperty) *UnitPropertyJson {
-	return &UnitPropertyJson{
-		Hash: up.Hash,
-		Number: up.ChainIndex.Index,
-		Timestamp: time.Unix(int64(up.Timestamp), 0).Format("2006-01-02 15:04:05 -0700 MST"),
-	}
-}
-
 func ConvertUnit2Json(unit *modules.Unit, utxoQuery modules.QueryUtxoFunc,
 	versionFunc modules.QueryStateByVersionFunc) *UnitJson {
 	json := &UnitJson{

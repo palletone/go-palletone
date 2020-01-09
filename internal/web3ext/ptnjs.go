@@ -205,6 +205,11 @@ web3._extend({
 			call: 'ptn_getGlobalProperty'
 			params: 0,
 		}),
+		new web3._extend.Method({
+			name: 'getDynamicGlobalProperty',
+			call: 'ptn_getDynamicGlobalProperty'
+			params: 0,
+		}),
 	],
 
 	properties: [

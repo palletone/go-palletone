@@ -467,7 +467,7 @@ func (s *PublicDagAPI) GetTxStatusByHash(ctx context.Context, hex string) (*ptnj
 		return nil, fmt.Errorf("the hex[%s] is illegal.", hex)
 	}
 	hash := common.HexToHash(hex)
-	
+
 	tx_status := new(ptnjson.TxPoolTxJson)
 	item, err := s.b.GetTxPoolTxByHash(hash)
 	if err != nil {
@@ -531,7 +531,7 @@ func (s *PublicDagAPI) GetStableUnit() (*ptnjson.UnitPropertyJson, error) {
 	if dag != nil {
 		gasToken := dagconfig.DagConfig.GetGasToken()
 		unitProperty, err := dag.StableHeadUnitProperty(gasToken)
-		if err!=nil || unitProperty ==nil {
+		if err != nil || unitProperty == nil {
 			return nil, err
 		}
 
@@ -546,7 +546,7 @@ func (s *PublicDagAPI) GetHeadUnit() (*ptnjson.UnitPropertyJson, error) {
 	if dag != nil {
 		gasToken := dagconfig.DagConfig.GetGasToken()
 		unitProperty, err := dag.UnstableHeadUnitProperty(gasToken)
-		if err!=nil || unitProperty ==nil {
+		if err != nil || unitProperty == nil {
 			return nil, err
 		}
 
