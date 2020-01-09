@@ -155,6 +155,14 @@ func (s *PublicBlockChainAPI) GetChainParameters() (*core.ChainParameters, error
 	return s.b.Dag().GetChainParameters(), nil
 }
 
+func (s *PublicBlockChainAPI) GetImmutableParameters() (*core.ImmutableChainParameters, error) {
+	return s.b.Dag().GetImmutableChainParameters(), nil
+}
+
+func (s *PublicBlockChainAPI) GetGlobalProperty() (*modules.GlobalProperty, error) {
+	return s.b.Dag().GetGlobalProp(), nil
+}
+
 func (s *PublicBlockChainAPI) GetPledge(addStr string) (*modules.PledgeStatusJson, error) {
 	// 参数检查
 	_, err := common.StringToAddress(addStr)

@@ -29,8 +29,8 @@ import (
 )
 
 type GlobalPropBase struct {
-	ImmutableParameters core.ImmutableChainParameters // 不可改变的区块链网络参数
-	ChainParameters     core.ChainParameters          // 区块链网络参数
+	ImmutableParameters core.ImmutableChainParameters `json:"immutableParameters"` // 不可改变的区块链网络参数
+	ChainParameters     core.ChainParameters          `json:"chainParameters"`     // 区块链网络参数
 }
 
 func NewGlobalPropBase() GlobalPropBase {
@@ -48,9 +48,9 @@ type GlobalProperty struct {
 
 type GlobalPropExtra struct {
 	// todo albert 待重构为数组，提高效率
-	ActiveJuries       map[common.Address]bool // 当前活跃Jury集合
-	ActiveMediators    map[common.Address]bool // 当前活跃 mediator 集合；每个维护间隔更新一次
-	PrecedingMediators map[common.Address]bool // 上一届 mediator
+	ActiveJuries       map[common.Address]bool `json:"activeJuries"`       // 当前活跃Jury集合
+	ActiveMediators    map[common.Address]bool `json:"activeMediators"`    // 当前活跃 mediator 集合；每个维护间隔更新一次
+	PrecedingMediators map[common.Address]bool `json:"precedingMediators"` // 上一届 mediator
 }
 
 func NewGlobalPropExtra() GlobalPropExtra {
