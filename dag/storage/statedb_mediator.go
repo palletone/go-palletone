@@ -30,7 +30,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-func mediatorKey(address common.Address) []byte {
+func GetMmediatorKey(address common.Address) []byte {
 	key := append(constants.MEDIATOR_INFO_PREFIX, address.Bytes()...)
 	return key
 }
@@ -52,7 +52,7 @@ func (statedb *StateDb) UpdateMediatorInfoExpand(med *core.Mediator) error {
 }
 
 func (statedb *StateDb) StoreMediatorInfo(add common.Address, mi *modules.MediatorInfo) error {
-	err := StoreToRlpBytes(statedb.db, mediatorKey(add), mi)
+	err := StoreToRlpBytes(statedb.db, GetMmediatorKey(add), mi)
 	if err != nil {
 		return err
 	}
@@ -62,7 +62,7 @@ func (statedb *StateDb) StoreMediatorInfo(add common.Address, mi *modules.Mediat
 
 func (statedb *StateDb) RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error) {
 	mi := modules.NewMediatorInfo()
-	err := RetrieveFromRlpBytes(statedb.db, mediatorKey(address), mi)
+	err := RetrieveFromRlpBytes(statedb.db, GetMmediatorKey(address), mi)
 	if err != nil {
 		return nil, err
 	}

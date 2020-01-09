@@ -97,7 +97,7 @@ type IUnitRepository interface {
 	GetFileInfo(filehash []byte) ([]*modules.FileInfo, error)
 
 	//获得某个分区上的最新不可逆单元
-	GetLastIrreversibleUnit(assetID modules.AssetId) (*modules.Unit, error)
+	//GetLastIrreversibleUnit(assetID modules.AssetId) (*modules.Unit, error)
 
 	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
 	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
@@ -196,10 +196,14 @@ func (rep *UnitRepository) SaveHeader(header *modules.Header) error {
 }
 func (rep *UnitRepository) SaveNewestHeader(header *modules.Header) error {
 	//要增加的Unit必须是NewestUnit后的一个单元，否则报错
-	uHash, uIndex, _, err := rep.propdb.GetNewestUnit(header.GetAssetId())
+	//uHash, uIndex, _, err := rep.propdb.GetNewestUnit(header.GetAssetId())
+	unitProperty, err := rep.propdb.GetNewestUnit(header.GetAssetId())
 	if err != nil {
 		return err
 	}
+
+	uHash := unitProperty.Hash
+	uIndex := unitProperty.ChainIndex
 	var continuty bool
 	for _, h := range header.ParentHash() {
 		if h == uHash {
@@ -241,11 +245,14 @@ func (rep *UnitRepository) GetHeadersByAuthor(authorAddr common.Address, startHe
 	var uHash common.Hash
 	var err error
 	if startHeight == 0 {
-		hash, _, _, err := rep.propdb.GetNewestUnit(token)
+		//hash, _, _, err := rep.propdb.GetNewestUnit(token)
+		unitProperty, err := rep.propdb.GetNewestUnit(token)
 		if err != nil {
 			return nil, err
 		}
-		uHash = hash
+
+		//uHash = hash
+		uHash = unitProperty.Hash
 	} else {
 		uHash, err = rep.dagdb.GetHashByNumber(modules.NewChainIndex(token, startHeight))
 		if err != nil {
@@ -527,7 +534,7 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 	phash, chainIndex, err := propdb.GetNewestUnit(assetId)
 	if err != nil {
 		chainIndex = &modules.ChainIndex{AssetID: assetId, Index: index + 1}
-		log.Error("GetCurrentChainIndex is failed.", "error", err)
+		log.Error("GetNewestUnit is failed.", "error", err)
 	} else {
 		chainIndex.Index += 1
 	}
@@ -759,13 +766,13 @@ func arrangeAdditionFeeList(ads []*modules.Addition) []*modules.Addition {
 	return result
 }
 
-func (rep *UnitRepository) GetCurrentChainIndex(assetId modules.AssetId) (*modules.ChainIndex, error) {
-	_, idx, _, err := rep.propdb.GetNewestUnit(assetId)
-	if err != nil {
-		return nil, err
-	}
-	return idx, nil
-}
+//func (rep *UnitRepository) GetCurrentChainIndex(assetId modules.AssetId) (*modules.ChainIndex, error) {
+//	_, idx, _, err := rep.propdb.GetNewestUnit(assetId)
+//	if err != nil {
+//		return nil, err
+//	}
+//	return idx, nil
+//}
 
 /**
 从leveldb中查询GenesisUnit信息
@@ -1743,17 +1750,17 @@ func (rep *UnitRepository) GetFileInfoByHash(hashs []common.Hash) ([]*modules.Fi
 	return mds, nil
 }
 
-func (rep *UnitRepository) GetLastIrreversibleUnit(assetID modules.AssetId) (*modules.Unit, error) {
-	rep.lock.RLock()
-	//log.Debug("GetLastIrreversibleUnit unitRepository lock.")
-	//defer log.Debug("GetLastIrreversibleUnit unitRepository unlock.")
-	defer rep.lock.RUnlock()
-	hash, _, _, err := rep.propdb.GetNewestUnit(assetID)
-	if err != nil {
-		return nil, err
-	}
-	return rep.getUnit(hash)
-}
+//func (rep *UnitRepository) GetLastIrreversibleUnit(assetID modules.AssetId) (*modules.Unit, error) {
+//	rep.lock.RLock()
+//	//log.Debug("GetLastIrreversibleUnit unitRepository lock.")
+//	//defer log.Debug("GetLastIrreversibleUnit unitRepository unlock.")
+//	defer rep.lock.RUnlock()
+//	hash, _, _, err := rep.propdb.GetNewestUnit(assetID)
+//	if err != nil {
+//		return nil, err
+//	}
+//	return rep.getUnit(hash)
+//}
 
 func (rep *UnitRepository) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error) {
 	rep.lock.RLock()

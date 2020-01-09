@@ -25,7 +25,6 @@ import (
 	"reflect"
 
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
@@ -48,7 +47,8 @@ type IPropertyDb interface {
 	RetrieveGlobalPropHistories() ([]*modules.GlobalPropertyHistory, error)
 
 	SetNewestUnit(header *modules.Header) error
-	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, int64, error)
+	//GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, int64, error)
+	GetNewestUnit(token modules.AssetId) (*modules.UnitProperty, error)
 
 	GetChainParameters() *core.ChainParameters
 }
@@ -161,21 +161,25 @@ func (db *PropertyDb) SetNewestUnit(header *modules.Header) error {
 	hash := header.Hash()
 	index := header.GetNumber()
 	timestamp := uint32(header.Timestamp())
-	data := &modules.UnitProperty{Hash: hash, Index: index, Timestamp: timestamp}
+	data := &modules.UnitProperty{Hash: hash, ChainIndex: index, Timestamp: timestamp}
 	key := append(constants.LastUnitInfo, index.AssetID.Bytes()...)
 	log.Debugf("DB[%s]Save newest unit %s,index:%s", reflect.TypeOf(db.db).String(), hash.String(), index.String())
 
 	return StoreToRlpBytes(db.db, key, data)
 }
 
-func (db *PropertyDb) GetNewestUnit(asset modules.AssetId) (common.Hash, *modules.ChainIndex, int64, error) {
+//func (db *PropertyDb) GetNewestUnit(asset modules.AssetId) (common.Hash, *modules.ChainIndex, int64, error) {
+func (db *PropertyDb) GetNewestUnit(asset modules.AssetId) (*modules.UnitProperty, error) {
 	key := append(constants.LastUnitInfo, asset.Bytes()...)
 	data := &modules.UnitProperty{}
 	err := RetrieveFromRlpBytes(db.db, key, data)
 	if err != nil {
-		return common.Hash{}, nil, 0, err
+		//return common.Hash{}, nil, 0, err
+		return nil, err
 	}
+
 	log.Debugf("DB[%s] GetNewestUnit: %s,Index:%s,timestamp:%d", reflect.TypeOf(db.db).String(),
-		data.Hash.String(), data.Index.String(), data.Timestamp)
-	return data.Hash, data.Index, int64(data.Timestamp), nil
+		data.Hash.String(), data.ChainIndex.String(), data.Timestamp)
+	//return data.Hash, data.Index, int64(data.Timestamp), nil
+	return data, nil
 }

@@ -108,10 +108,11 @@ type DynamicGlobalProperty struct {
 	// This flag answers the question, "Was maintenance performed in the last call to ApplyUnit()?"
 	MaintenanceFlag bool
 }
+
 type UnitProperty struct {
-	Hash      common.Hash // 最近的单元hash
-	Index     *ChainIndex // 最近的单元编号(数量)
-	Timestamp uint32      // 最近的单元时间
+	Hash       common.Hash // 最近的单元hash
+	ChainIndex *ChainIndex // 最近的单元编号(数量)
+	Timestamp  uint32      // 最近的单元时间
 }
 
 func NewDynGlobalProp() *DynamicGlobalProperty {

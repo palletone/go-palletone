@@ -745,7 +745,20 @@ func (p *BTCPort) Get(stub shim.ChaincodeStubInterface, key string) pb.Response 
 	return shim.Success(result)
 }
 func (p *BTCPort) Set(stub shim.ChaincodeStubInterface, key string, value string) pb.Response {
-	err := stub.PutState(key, []byte(value))
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
+	}
+	owner, err := getOwner(stub)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	if owner != invokeAddr.String() {
+		return shim.Error("Only owner can withdraw")
+	}
+
+	err = stub.PutState(key, []byte(value))
 	if err != nil {
 		return shim.Error(fmt.Sprintf("PutState failed: %s", err.Error()))
 	}
