@@ -21,10 +21,8 @@
 package storage
 
 import (
-	"encoding/binary"
 	"reflect"
 
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
@@ -43,8 +41,8 @@ type IPropertyDb interface {
 	StoreMediatorSchl(ms *modules.MediatorSchedule) error
 	RetrieveMediatorSchl() (*modules.MediatorSchedule, error)
 
-	StoreGlobalPropHistory(gp *modules.GlobalPropertyHistory) error
-	RetrieveGlobalPropHistories() ([]*modules.GlobalPropertyHistory, error)
+	//StoreGlobalPropHistory(gp *modules.GlobalPropertyHistory) error
+	//RetrieveGlobalPropHistories() ([]*modules.GlobalPropertyHistory, error)
 
 	SetNewestUnit(header *modules.Header) error
 	//GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, int64, error)
@@ -129,33 +127,33 @@ func (propdb *PropertyDb) RetrieveMediatorSchl() (*modules.MediatorSchedule, err
 	return ms, err
 }
 
-func makeGlobalPropHistoryKey(gp *modules.GlobalPropertyHistory) []byte {
-	b := make([]byte, 8)
-	binary.LittleEndian.PutUint64(b, gp.EffectiveTime)
-	return append(constants.GLOBAL_PROPERTY_HISTORY_PREFIX, b...)
-}
-
-func (propdb *PropertyDb) StoreGlobalPropHistory(gp *modules.GlobalPropertyHistory) error {
-	log.Debugf("DB[%s] Save global property history to db.", reflect.TypeOf(propdb.db).String())
-	key := makeGlobalPropHistoryKey(gp)
-	err := StoreToRlpBytes(propdb.db, key, gp)
-	if err != nil {
-		log.Debugf("Store global properties history error: %v", err.Error())
-	}
-
-	return err
-}
-
-func (propdb *PropertyDb) RetrieveGlobalPropHistories() ([]*modules.GlobalPropertyHistory, error) {
-	kv := getprefix(propdb.db, constants.GLOBAL_PROPERTY_HISTORY_PREFIX)
-	result := make([]*modules.GlobalPropertyHistory, 0)
-	for _, v := range kv {
-		gp := &modules.GlobalPropertyHistory{}
-		rlp.DecodeBytes(v, gp)
-		result = append(result, gp)
-	}
-	return result, nil
-}
+//func makeGlobalPropHistoryKey(gp *modules.GlobalPropertyHistory) []byte {
+//	b := make([]byte, 8)
+//	binary.LittleEndian.PutUint64(b, gp.EffectiveTime)
+//	return append(constants.GLOBAL_PROPERTY_HISTORY_PREFIX, b...)
+//}
+//
+//func (propdb *PropertyDb) StoreGlobalPropHistory(gp *modules.GlobalPropertyHistory) error {
+//	log.Debugf("DB[%s] Save global property history to db.", reflect.TypeOf(propdb.db).String())
+//	key := makeGlobalPropHistoryKey(gp)
+//	err := StoreToRlpBytes(propdb.db, key, gp)
+//	if err != nil {
+//		log.Debugf("Store global properties history error: %v", err.Error())
+//	}
+//
+//	return err
+//}
+//
+//func (propdb *PropertyDb) RetrieveGlobalPropHistories() ([]*modules.GlobalPropertyHistory, error) {
+//	kv := getprefix(propdb.db, constants.GLOBAL_PROPERTY_HISTORY_PREFIX)
+//	result := make([]*modules.GlobalPropertyHistory, 0)
+//	for _, v := range kv {
+//		gp := &modules.GlobalPropertyHistory{}
+//		rlp.DecodeBytes(v, gp)
+//		result = append(result, gp)
+//	}
+//	return result, nil
+//}
 
 func (db *PropertyDb) SetNewestUnit(header *modules.Header) error {
 	hash := header.Hash()
