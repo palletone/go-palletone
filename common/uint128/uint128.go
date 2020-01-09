@@ -20,6 +20,7 @@ package uint128
 
 import (
 	"encoding/binary"
+	"fmt"
 	"math/big"
 	"math/bits"
 )
@@ -251,6 +252,11 @@ func (u Uint128) String() string {
 		}
 		u = q
 	}
+}
+
+// String returns the base-2 representation of u as a string.
+func (u Uint128) BinaryStr() string {
+	return fmt.Sprintf("%b%b", u.hi, u.lo)
 }
 
 // PutBytes stores u in b in little-endian order. It panics if len(b) < 16.

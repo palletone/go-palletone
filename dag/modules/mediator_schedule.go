@@ -20,7 +20,6 @@
 package modules
 
 import (
-	"encoding/json"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 )
@@ -30,10 +29,11 @@ type MediatorSchedule struct {
 	CurrentShuffledMediators []common.Address
 }
 
-func (ms *MediatorSchedule) String() string {
-	data, _ := json.Marshal(ms.CurrentShuffledMediators)
-	return string(data)
-}
+//func (ms *MediatorSchedule) String() string {
+//	data, _ := json.Marshal(ms.CurrentShuffledMediators)
+//	return string(data)
+//}
+
 func InitMediatorSchl(gp *GlobalProperty, dgp *DynamicGlobalProperty) *MediatorSchedule {
 	log.Debug("initialize mediator schedule...")
 	ms := NewMediatorSchl()

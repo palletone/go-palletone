@@ -1375,6 +1375,18 @@ func (mr *MockIDagMockRecorder) GetGlobalProp() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGlobalProp", reflect.TypeOf((*MockIDag)(nil).GetGlobalProp))
 }
 
+// GetMediatorSchl mocks base method
+func (m *MockIDag) GetMediatorSchl() *modules.MediatorSchedule {
+	ret := m.ctrl.Call(m, "GetMediatorSchl")
+	ret0, _ := ret[0].(*modules.MediatorSchedule)
+	return ret0
+}
+
+// GetMediatorSchl indicates an expected call of GetMediatorSchl
+func (mr *MockIDagMockRecorder) GetMediatorSchl() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMediatorSchl", reflect.TypeOf((*MockIDag)(nil).GetMediatorSchl))
+}
+
 // GetMediatorCount mocks base method
 func (m *MockIDag) GetMediatorCount() int {
 	ret := m.ctrl.Call(m, "GetMediatorCount")

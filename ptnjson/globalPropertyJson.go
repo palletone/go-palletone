@@ -57,7 +57,7 @@ func DynGlobalPropToJson(dgp *modules.DynamicGlobalProperty) *DynamicGlobalPrope
 		NextMaintenanceTime: time.Unix(int64(dgp.NextMaintenanceTime), 0).Format("2006-01-02 15:04:05 -0700 MST"),
 		LastMaintenanceTime: time.Unix(int64(dgp.LastMaintenanceTime), 0).Format("2006-01-02 15:04:05 -0700 MST"),
 		CurrentAbsoluteSlot: dgp.CurrentASlot,
-		RecentSlotsFilled:   dgp.RecentSlotsFilled.String(),
+		RecentSlotsFilled:   dgp.RecentSlotsFilled.BinaryStr(),
 		MaintenanceFlag:     dgp.MaintenanceFlag,
 	}
 }
