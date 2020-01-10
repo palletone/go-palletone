@@ -300,8 +300,8 @@ func (s *PublicDagAPI) GetFastUnitIndex(ctx context.Context, assetid string) str
 	result := new(ptnjson.FastUnitJson)
 	//stableUnit := s.b.Dag().CurrentUnit(token)
 	//ustabeUnit := s.b.Dag().GetCurrentMemUnit(token)
-	stableUnit, _ := s.b.Dag().UnstableHeadUnitProperty(token)
-	ustabeUnit, _ := s.b.Dag().StableHeadUnitProperty(token)
+	stableUnit, _ := s.b.Dag().StableHeadUnitProperty(token)
+	ustabeUnit, _ := s.b.Dag().UnstableHeadUnitProperty(token)
 
 	if ustabeUnit != nil {
 		//result.FastHash = ustabeUnit.Hash()
