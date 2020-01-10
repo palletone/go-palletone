@@ -313,7 +313,7 @@ If slotNum == 2, return the next scheduled mediator after 1 uint gap.
 func (pRep *PropRepository) GetScheduledMediator(slotNum uint32) common.Address {
 	ms, _ := pRep.RetrieveMediatorSchl()
 	dgp, _ := pRep.RetrieveDynGlobalProp()
-	currentASlot := dgp.CurrentASlot + uint64(slotNum)
+	currentAbsoluteSlot := dgp.CurrentAbsoluteSlot + uint64(slotNum)
 
 	csmLen := len(ms.CurrentShuffledMediators)
 	if csmLen == 0 {
@@ -322,6 +322,6 @@ func (pRep *PropRepository) GetScheduledMediator(slotNum uint32) common.Address 
 	}
 
 	// 由于创世单元不是有mediator生产，所以这里需要减1
-	index := (currentASlot - 1) % uint64(csmLen)
+	index := (currentAbsoluteSlot - 1) % uint64(csmLen)
 	return ms.CurrentShuffledMediators[index]
 }

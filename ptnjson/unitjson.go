@@ -39,12 +39,14 @@ type UnitJson struct {
 	UnitSize   common.StorageSize `json:"unit_size"`    // unit size
 	Reward     decimal.Decimal    `json:"reward"`       //区块奖励
 }
+
 type FastUnitJson struct {
 	FastHash    common.Hash `json:"fast_hash"`
 	FastIndex   uint64      `json:"fast_index"`
 	StableHash  common.Hash `json:"stable_hash"`
 	StableIndex uint64      `json:"stable_index"`
 }
+
 type HeaderJson struct {
 	ParentsHash   []common.Hash  `json:"parents_hash"`
 	Hash          string         `json:"hash"`
@@ -59,6 +61,7 @@ type HeaderJson struct {
 	Extra         string         `json:"extra"`
 	CreationTime  time.Time      `json:"creation_time"` // unit create time
 }
+
 type ChainIndexJson struct {
 	AssetID string `json:"asset_id"`
 	Index   uint64 `json:"index"`
@@ -84,6 +87,7 @@ func ConvertUnit2Json(unit *modules.Unit, utxoQuery modules.QueryUtxoFunc,
 	json.Reward = reward.Asset.DisplayAmount(reward.Amount)
 	return json
 }
+
 func ConvertUnitHeader2Json(header *modules.Header) *HeaderJson {
 	json := &HeaderJson{
 		ParentsHash:   header.ParentHash(),
