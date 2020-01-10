@@ -255,7 +255,7 @@ func (p *ETHPort) InitDepositAddr(stub shim.ChaincodeStubInterface) pb.Response 
 	myPubkeyAddr := pubkeyAddr{string(juryAddr), juryPubkey.PublicKey}
 	myPubkeyAddrJSON, err := json.Marshal(myPubkeyAddr)
 	if err != nil {
-		log.Debugf("myPubkeyAddr Marshal failed: " + err.Error())
+		log.Debugf("myPubkeyAddr Marshal failed: %s", err.Error())
 		return shim.Error("myPubkeyAddr Marshal failed: " + err.Error())
 	}
 	log.Debugf("myPubkeyAddrJSON: %s", string(myPubkeyAddrJSON))
@@ -263,7 +263,7 @@ func (p *ETHPort) InitDepositAddr(stub shim.ChaincodeStubInterface) pb.Response 
 	//
 	recvResult, err := consult(stub, []byte("juryETHPubkey"), myPubkeyAddrJSON)
 	if err != nil {
-		log.Debugf("consult juryETHPubkey failed: " + err.Error())
+		log.Debugf("consult juryETHPubkey failed: %s", err.Error())
 		return shim.Error("consult juryETHPubkey failed: " + err.Error())
 	}
 	var juryMsg []JuryMsgAddr
@@ -332,7 +332,20 @@ func getETHAddrs(stub shim.ChaincodeStubInterface) []pubkeyAddr {
 }
 
 func (p *ETHPort) SetETHTokenAsset(assetStr string, stub shim.ChaincodeStubInterface) pb.Response {
-	err := stub.PutState(symbolsETHAsset, []byte(assetStr))
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
+	}
+	owner, err := getOwner(stub)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	if owner != invokeAddr.String() {
+		return shim.Error("Only owner can withdraw")
+	}
+
+	err = stub.PutState(symbolsETHAsset, []byte(assetStr))
 	if err != nil {
 		return shim.Error("write symbolsETHAsset failed: " + err.Error())
 	}
@@ -514,7 +527,7 @@ func (p *ETHPort) PayoutETHTokenByAddr(ethAddr string, stub shim.ChaincodeStubIn
 	}
 
 	if amt == 0 {
-		log.Debugf("You need deposit or need wait confirm")
+		log.Debugf("Your address %s need deposit or need wait confirm%s", ethAddr)
 		return shim.Error("You need deposit or need wait confirm")
 	}
 
@@ -591,7 +604,7 @@ func (p *ETHPort) PayoutETHTokenByTxID(ethTxID string, stub shim.ChaincodeStubIn
 	}
 	result, _ := stub.GetState(symbolsDeposit + ethTxID)
 	if len(result) != 0 {
-		log.Debugf("The tx has been payout")
+		log.Debugf("The tx %s has been payout", ethTxID)
 		return shim.Error("The tx has been payout")
 	}
 
@@ -613,12 +626,12 @@ func (p *ETHPort) PayoutETHTokenByTxID(ethTxID string, stub shim.ChaincodeStubIn
 	}
 	//check tx status
 	if !txResult.Tx.IsSuccess {
-		log.Debugf("The tx is failed")
+		log.Debugf("The tx %s is failed", ethTxID)
 		return shim.Error("The tx is failed")
 	}
 	//check contract address, must be ptn eth port contract address
 	if strings.ToLower(txResult.Tx.TargetAddress) != mapAddr {
-		log.Debugf("The tx is't transfer to eth port contract")
+		log.Debugf("The tx %s is't transfer to eth port contract", ethTxID)
 		return shim.Error("The tx is't transfer to eth port contract")
 	}
 
@@ -628,7 +641,7 @@ func (p *ETHPort) PayoutETHTokenByTxID(ethTxID string, stub shim.ChaincodeStubIn
 		return shim.Error("getHeight failed")
 	}
 	if curHeight-txResult.Tx.BlockHeight < Confirms {
-		log.Debugf("Need more confirms")
+		log.Debugf("The tx %s need more confirms", ethTxID)
 		return shim.Error("Need more confirms")
 	}
 
@@ -687,7 +700,7 @@ func updateFeeAdd(fee uint64, ptnAddr string, stub shim.ChaincodeStubInterface) 
 	feeStr := fmt.Sprintf("%d", feeCur)
 	err := stub.PutState(symbolsWithdrawFee+ptnAddr, []byte(feeStr))
 	if err != nil {
-		log.Debugf("updateFee failed: " + err.Error())
+		log.Debugf("updateFee failed: %s", err.Error())
 		return fmt.Errorf("updateFee failed: " + err.Error())
 	}
 	return nil
@@ -711,7 +724,7 @@ func updateFeeSub(fee uint64, ptnAddr string, stub shim.ChaincodeStubInterface) 
 	feeStr := fmt.Sprintf("%d", feeCur)
 	err := stub.PutState(symbolsWithdrawFee+ptnAddr, []byte(feeStr))
 	if err != nil {
-		log.Debugf("updateFee failed: " + err.Error())
+		log.Debugf("updateFee failed: %s", err.Error())
 		return fmt.Errorf("updateFee failed: " + err.Error())
 	}
 	return nil
@@ -940,29 +953,26 @@ func processWithdrawSig(txID, reqidNew, recvAddr string, ethAmount uint64, stub 
 	myPubkeySigBytes, _ := json.Marshal(myPubkeySig)
 	recvResult, err := consult(stub, []byte(tempHashHex), myPubkeySigBytes)
 	if err != nil {
-		log.Debugf("consult sig failed: " + err.Error())
+		log.Debugf("consult sig failed: %s", err.Error())
 		return []string{}, fmt.Errorf("consult sig failed: " + err.Error())
 	}
 	var juryMsg []JuryMsgAddr
 	err = json.Unmarshal(recvResult, &juryMsg)
 	if err != nil {
-		log.Debugf("Unmarshal sig result failed: " + err.Error())
+		log.Debugf("Unmarshal sig result failed: %s", err.Error())
 		return []string{}, fmt.Errorf("Unmarshal sig result failed: " + err.Error())
 	}
 	if len(juryMsg) < consultM {
-		log.Debugf("RecvJury sig result's len not enough")
 		return []string{}, fmt.Errorf("RecvJury sig result's len not enough")
 	}
 
 	//验证收集到的所有eth签名
 	pubkeyAddrs := getETHAddrs(stub)
 	if len(pubkeyAddrs) != consultN {
-		log.Debugf("getETHAddrs result's len not enough")
 		return []string{}, fmt.Errorf("getETHAddrs result's len not enough")
 	}
 	sigs := verifySigs(padderBytes, juryMsg, pubkeyAddrs, stub)
 	if len(sigs) < consultM {
-		log.Debugf("verifySigs result's len not enough")
 		return []string{}, fmt.Errorf("verifySigs result's len not enough")
 	}
 	sigsStr := sigs[0]
@@ -976,17 +986,16 @@ func processWithdrawSig(txID, reqidNew, recvAddr string, ethAmount uint64, stub 
 	//用签名列表的哈希协商最终的3个交易签名，作适当安全防护
 	txResult, err := consult(stub, []byte(sigHashHex), []byte("sigHash"))
 	if err != nil {
-		log.Debugf("consult sigHash failed: " + err.Error())
+		log.Debugf("consult sigHash failed: %s", err.Error())
 		return []string{}, fmt.Errorf("consult sigHash failed: " + err.Error())
 	}
 	var txJuryMsg []JuryMsgAddr
 	err = json.Unmarshal(txResult, &txJuryMsg)
 	if err != nil {
-		log.Debugf("Unmarshal sigHash result failed: " + err.Error())
+		log.Debugf("Unmarshal sigHash result failed: %s", err.Error())
 		return []string{}, fmt.Errorf("Unmarshal sigHash result failed: " + err.Error())
 	}
 	if len(txJuryMsg) < consultM {
-		log.Debugf("RecvJury sigHash result's len not enough")
 		return []string{}, fmt.Errorf("RecvJury sigHash result's len not enough")
 	}
 	////协商两次 保证协商一致后才写入签名结果
@@ -1098,7 +1107,7 @@ func (p *ETHPort) WithdrawETH(txID, ethAddrInput string, stub shim.ChaincodeStub
 		}
 		err = stub.PutState(symbolsWithdraw+txID, withdrawBytes)
 		if err != nil {
-			log.Debugf("save withdraw failed: " + err.Error())
+			log.Debugf("save withdraw failed: %s", err.Error())
 			return shim.Error("save withdraw failed: " + err.Error())
 		}
 		return shim.Success(withdrawBytes)
@@ -1123,7 +1132,7 @@ func (p *ETHPort) WithdrawETH(txID, ethAddrInput string, stub shim.ChaincodeStub
 	}
 	err = stub.PutState(symbolsWithdraw+txID, withdrawBytes)
 	if err != nil {
-		log.Debugf("save withdraw failed: " + err.Error())
+		log.Debugf("save withdraw failed: %s", err.Error())
 		return shim.Error("save withdraw failed: " + err.Error())
 	}
 
@@ -1159,7 +1168,7 @@ func (p *ETHPort) WithdrawSubmit(ethTxID string, stub shim.ChaincodeStubInterfac
 	}
 	result, _ := stub.GetState(symbolsSubmit + ethTxID)
 	if len(result) != 0 {
-		log.Debugf("The fee has been payout")
+		log.Debugf("The tx %s fee has been payout", ethTxID)
 		return shim.Error("The fee has been payout")
 	}
 
@@ -1181,17 +1190,17 @@ func (p *ETHPort) WithdrawSubmit(ethTxID string, stub shim.ChaincodeStubInterfac
 	}
 	//check tx status
 	if !txResult.Tx.IsSuccess {
-		log.Debugf("The tx is failed")
+		log.Debugf("The tx %s is failed", ethTxID)
 		return shim.Error("The tx is failed")
 	}
 	//check contract address, must be ptn eth port contract address
 	if strings.ToLower(txResult.Tx.TargetAddress) != mapAddr {
-		log.Debugf("The tx is't transfer to eth port contract")
+		log.Debugf("The tx %s is't transfer to eth port contract", ethTxID)
 		return shim.Error("The tx is't transfer to eth port contract")
 	}
 	withdrawMethodId := Hex2Bytes("73432d0a")
 	if !bytes.HasPrefix(txResult.Tx.TxRawData, withdrawMethodId) {
-		log.Debugf("The tx is't call withdraw")
+		log.Debugf("The tx %s is't call withdraw", ethTxID)
 		return shim.Error("The tx is't call withdraw")
 	}
 
