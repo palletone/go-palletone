@@ -175,6 +175,8 @@ type BlockDag interface {
 	//InsertDag(modules.Units) (int, error)
 	InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable bool) (int, error)
 
+	UnstableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error)
+
 	//TODO :
 	//LightDag
 	//HasBlock(common.Hash, uint64) bool
@@ -252,8 +254,11 @@ func (d *Downloader) Progress() palletone.SyncProgress {
 	defer d.syncStatsLock.RUnlock()
 
 	current := uint64(0)
-	if unit := d.dag.GetCurrentUnit(modules.PTNCOIN); unit != nil {
-		current = unit.Number().Index
+	//if unit := d.dag.GetCurrentUnit(modules.PTNCOIN); unit != nil {
+	//	current = unit.Number().Index
+	//}
+	if ustabeUnit, _ := d.dag.UnstableHeadUnitProperty(modules.PTNCOIN); ustabeUnit != nil {
+		current = ustabeUnit.ChainIndex.Index
 	}
 
 	return palletone.SyncProgress{
@@ -1274,9 +1279,14 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, index uint64, a
 				// L: Request new headers up from 11 (R's TD was higher, it must have something)
 				// R: Nothing to give
 				if d.mode != LightSync {
-					unit := d.dag.GetCurrentUnit(assetId)
-					//dbhead, _ := d.dag.GetHeaderByHash(head.Hash())
-					if !gotHeaders && index > unit.Number().Index {
+					//unit := d.dag.GetCurrentUnit(assetId)
+					////dbhead, _ := d.dag.GetHeaderByHash(head.Hash())
+					//if !gotHeaders && index > unit.Number().Index {
+					//	return errStallingPeer
+					//}
+
+					ustabeUnit, _ := d.dag.UnstableHeadUnitProperty(assetId)
+					if !gotHeaders && ustabeUnit != nil && index > ustabeUnit.ChainIndex.Index {
 						return errStallingPeer
 					}
 				}

@@ -51,8 +51,10 @@ type VersionedValue struct {
 func NewBasedTxSimulator(idag dag.IDag, hash common.Hash) *RwSetTxSimulator {
 	rwsetBuilder := NewRWSetBuilder()
 	gasToken := dagconfig.DagConfig.GetGasToken()
-	unit := idag.GetCurrentUnit(gasToken)
-	cIndex := unit.Header().GetNumber()
+	//unit := idag.GetCurrentUnit(gasToken)
+	//cIndex := unit.Header().GetNumber()
+	ustabeUnit, _ := idag.UnstableHeadUnitProperty(gasToken)
+	cIndex := ustabeUnit.ChainIndex
 	return &RwSetTxSimulator{chainIndex: modules.NewChainIndex(cIndex.AssetID, cIndex.Index), txid: hash,
 		rwsetBuilder: rwsetBuilder, write_cache: make(map[string][]byte), dag: idag}
 }
