@@ -938,26 +938,32 @@ save genesis unit data
 func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 	tt := time.Now()
 	rep.lock.Lock()
-	//log.Debugf("saveUnit[%s] lock unitRepository.", unit.UnitHash.String())
-	defer log.Debugf("save Unit[%s] cost time: %s", unit.Hash().String(), time.Since(tt))
+
 	defer rep.lock.Unlock()
 	uHash := unit.Hash()
+	height := unit.NumberU64()
+	time_stamp := unit.Timestamp()
 	// step1. save unit header
 	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
 	if err := rep.dagdb.SaveHeader(unit.UnitHeader); err != nil {
 		log.Info("SaveHeader:", "error", err.Error())
 		return modules.ErrUnit(-3)
 	}
-
-	// step2. traverse transactions and save them
+	wg := sync.WaitGroup{}
+	wg.Add(len(unit.Txs))
+	// step2. traverse transactions and save tx lookup entry
 	txHashSet := []common.Hash{}
 	for txIndex, tx := range unit.Txs {
-		err := rep.saveTx4Unit(unit, txIndex, tx)
-		if err != nil {
-			log.Debugf(err.Error())
-			return err
-		}
-		//log.Debugf("save transaction, hash[%s] tx_index[%d]", tx.Hash().String(), txIndex)
+		go func() {
+			if err := rep.saveTx4Unit(unit, txIndex, tx); err != nil {
+				log.Errorf("save tx failed,error: %s", err.Error())
+			}
+			if err := rep.dagdb.SaveTxLookupEntry(uHash, height, uint64(time_stamp), txIndex, tx);
+				err != nil {
+				log.Errorf("save tx lookup failed,error: %s", err.Error())
+			}
+			wg.Done()
+		}()
 		txHashSet = append(txHashSet, tx.Hash())
 	}
 	// step3. save unit body, the value only save txs' hash set, and the key is merkle root
@@ -965,18 +971,15 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		log.Info("SaveBody", "error", err.Error())
 		return err
 	}
-	// step4  save txlookupEntry
-	if err := rep.dagdb.SaveTxLookupEntry(unit); err != nil {
-		log.Info("SaveTxLookupEntry", "error", err.Error())
-		return err
-	}
-	//step5  Special process genesis unit
+	//step4  Special process genesis unit
 	if isGenesis {
 		if err := rep.propdb.SetNewestUnit(unit.Header()); err != nil {
 			log.Errorf("Save ChainIndex for genesis error:%s", err.Error())
 		}
-		rep.dagdb.SaveGenesisUnitHash(unit.Hash())
+		rep.dagdb.SaveGenesisUnitHash(uHash)
 	}
+	wg.Wait()
+	log.Infof("save Unit[%s] cost time: %s", uHash.String(), time.Since(tt))
 	return nil
 }
 
