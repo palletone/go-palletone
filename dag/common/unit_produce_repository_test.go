@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/common/uint128"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -146,4 +147,19 @@ func Test_updateAndSaveRecentSlotsFilled(t *testing.T) {
 		t.Error(err.Error())
 	}
 	t.Log(dgp1.RecentSlotsFilled.BinaryStr())
+}
+
+func Test_LowAndHightDisplayOfRecentSlotsFilled(t *testing.T) {
+	dgp := modules.NewDynGlobalProp()
+	dgp.RecentSlotsFilled = uint128.New(1, 0)
+	t.Log(dgp.RecentSlotsFilled.BinaryStr())
+
+	dgp.RecentSlotsFilled = dgp.RecentSlotsFilled.Lsh(10).Add64(1)
+	t.Log(dgp.RecentSlotsFilled.BinaryStr())
+
+	dgp.RecentSlotsFilled = uint128.New(0, 1)
+	t.Log(dgp.RecentSlotsFilled.BinaryStr())
+
+	dgp.RecentSlotsFilled = dgp.RecentSlotsFilled.Lsh(10).Add64(1)
+	t.Log(dgp.RecentSlotsFilled.BinaryStr())
 }

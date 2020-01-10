@@ -258,7 +258,7 @@ func (u Uint128) String() string {
 
 // String returns the base-2 representation of u as a string.
 func (u Uint128) BinaryStr() string {
-	return fmt.Sprintf("%b%b", u.hi, u.lo)
+	return fmt.Sprintf("%064b%064b", u.hi, u.lo)
 }
 
 // PutBytes stores u in b in little-endian order. It panics if len(b) < 16.
