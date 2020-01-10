@@ -165,12 +165,18 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 	//	log.Println("SaveNumberByHash:", "error", err.Error())
 	//	return fmt.Errorf("Save unit hash and number error")
 	//}
-	if err := dagDb.SaveTxLookupEntry(unit); err != nil {
-		return err
+	hash := unit.Hash()
+	height := unit.NumberU64()
+	time := unit.Timestamp()
+	for txIndex, tx := range unit.Txs {
+		if err := dagDb.SaveTransaction(tx); err != nil {
+			return err
+		}
+		if err := dagDb.SaveTxLookupEntry(hash, height, uint64(time), txIndex, tx); err != nil {
+			return err
+		}
 	}
-	if err := dagDb.SaveTxLookupEntry(unit); err != nil {
-		return err
-	}
+
 	if err := saveHashByIndex(db, unit.Hash(), unit.UnitHeader.GetNumber().Index); err != nil {
 		return err
 	}
