@@ -21,6 +21,8 @@ package uint128
 import (
 	"encoding/binary"
 	"fmt"
+	"github.com/ethereum/go-ethereum/rlp"
+	"io"
 	"math/big"
 	"math/bits"
 )
@@ -326,4 +328,36 @@ func PopCount64(x uint64) uint8 {
 // PopCount, count how many bits of a binary form corresponding to a Uint128 type number are 1
 func (u Uint128) PopCount() uint8 {
 	return PopCount64(u.lo) + PopCount64(u.hi)
+}
+
+type Uint128Temp struct {
+	Hight uint64
+	Low   uint64
+}
+
+func (u *Uint128) EncodeRLP(w io.Writer) error {
+	temp := &Uint128Temp{
+		Hight: u.hi,
+		Low:   u.lo,
+	}
+
+	return rlp.Encode(w, temp)
+}
+
+func (u *Uint128) DecodeRLP(s *rlp.Stream) error {
+	raw, err := s.Raw()
+	if err != nil {
+		return err
+	}
+
+	ut := &Uint128Temp{}
+	err = rlp.DecodeBytes(raw, ut)
+	if err != nil {
+		return err
+	}
+
+	u.hi = ut.Hight
+	u.lo = ut.Low
+
+	return nil
 }
