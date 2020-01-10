@@ -1694,18 +1694,6 @@ func (mr *MockIDagMockRecorder) IsContractDeveloper(addr interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsContractDeveloper", reflect.TypeOf((*MockIDag)(nil).IsContractDeveloper), addr)
 }
 
-// GetActiveJuries mocks base method
-func (m *MockIDag) GetActiveJuries() []common.Address {
-	ret := m.ctrl.Call(m, "GetActiveJuries")
-	ret0, _ := ret[0].([]common.Address)
-	return ret0
-}
-
-// GetActiveJuries indicates an expected call of GetActiveJuries
-func (mr *MockIDagMockRecorder) GetActiveJuries() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveJuries", reflect.TypeOf((*MockIDag)(nil).GetActiveJuries))
-}
-
 // CreateGenericTransaction mocks base method
 func (m *MockIDag) CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
 	ret := m.ctrl.Call(m, "CreateGenericTransaction", from, to, daoAmount, daoFee, certID, msg, txPool)

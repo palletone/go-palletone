@@ -48,14 +48,14 @@ type GlobalProperty struct {
 
 type GlobalPropExtra struct {
 	// todo albert 待重构为数组，提高效率
-	ActiveJuries       map[common.Address]bool `json:"activeJuries"`       // 当前活跃Jury集合
+	//ActiveJuries       map[common.Address]bool `json:"activeJuries"`       // 当前活跃Jury集合
 	ActiveMediators    map[common.Address]bool `json:"activeMediators"`    // 当前活跃 mediator 集合；每个维护间隔更新一次
 	PrecedingMediators map[common.Address]bool `json:"precedingMediators"` // 上一届 mediator
 }
 
 func NewGlobalPropExtra() GlobalPropExtra {
 	return GlobalPropExtra{
-		ActiveJuries:       make(map[common.Address]bool),
+		//ActiveJuries:       make(map[common.Address]bool),
 		ActiveMediators:    make(map[common.Address]bool),
 		PrecedingMediators: make(map[common.Address]bool),
 	}
@@ -95,7 +95,7 @@ type DynamicGlobalProperty struct {
 	LastMaintenanceTime uint32 `json:"lastMaintenanceTime"` // 上一次系统维护时间
 
 	// 当前的绝对时间槽数量，== 从创世开始所有的时间槽数量 == UnitNum + 丢失的槽数量
-	CurrentASlot uint64 `json:"currentASlot"`
+	CurrentAbsoluteSlot uint64 `json:"currentAbsoluteSlot"`
 
 	// 记录每个生产slot的unit生产情况，用于计算mediator的参与率。
 	// 每一位表示一个生产slot，mediator正常生产unit则值为1，否则为0。
@@ -122,7 +122,7 @@ func NewDynGlobalProp() *DynamicGlobalProperty {
 
 		NextMaintenanceTime: 0,
 		LastMaintenanceTime: 0,
-		CurrentASlot:        0,
+		CurrentAbsoluteSlot:        0,
 
 		RecentSlotsFilled: uint128.MaxValue,
 

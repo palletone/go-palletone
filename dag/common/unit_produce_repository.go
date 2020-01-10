@@ -261,7 +261,7 @@ func (rep *UnitProduceRepository) updateDynGlobalProp(unit *modules.Unit, missed
 
 	totalSlot := missedUnits + 1
 	dgp.RecentSlotsFilled = dgp.RecentSlotsFilled.Lsh(uint(totalSlot)).Add64(1)
-	dgp.CurrentASlot += totalSlot
+	dgp.CurrentAbsoluteSlot += totalSlot
 
 	rep.propRep.StoreDynGlobalProp(dgp)
 }

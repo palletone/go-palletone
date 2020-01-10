@@ -203,7 +203,7 @@ type IDag interface {
 	JuryCount() uint
 	GetContractDevelopers() ([]common.Address, error)
 	IsContractDeveloper(addr common.Address) bool
-	GetActiveJuries() []common.Address
+	//GetActiveJuries() []common.Address
 	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	CreateTokenTransaction(from, to common.Address, token *modules.Asset, daoAmountToken, daoFee uint64,
