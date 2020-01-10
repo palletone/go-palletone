@@ -60,7 +60,7 @@ type GlobalPropertyTemp struct {
 }
 
 type GlobalPropExtraTemp struct {
-	ActiveJuries       []common.Address
+	//ActiveJuries       []common.Address
 	ActiveMediators    []common.Address
 	PrecedingMediators []common.Address
 }
@@ -77,7 +77,7 @@ func (gp *GlobalProperty) getGPT() *GlobalPropertyTemp {
 	}
 
 	gpet := GlobalPropExtraTemp{
-		ActiveJuries:       make([]common.Address, 0, len(gp.ActiveJuries)),
+		//ActiveJuries:       make([]common.Address, 0, len(gp.ActiveJuries)),
 		ActiveMediators:    make([]common.Address, 0, len(gp.ActiveMediators)),
 		PrecedingMediators: make([]common.Address, 0, len(gp.PrecedingMediators)),
 	}
@@ -87,9 +87,9 @@ func (gp *GlobalProperty) getGPT() *GlobalPropertyTemp {
 		GlobalPropExtraTemp: gpet,
 	}
 
-	for juryAdd := range gp.ActiveJuries {
-		gpt.ActiveJuries = append(gpt.ActiveJuries, juryAdd)
-	}
+	//for juryAdd := range gp.ActiveJuries {
+	//	gpt.ActiveJuries = append(gpt.ActiveJuries, juryAdd)
+	//}
 
 	for medAdd := range gp.ActiveMediators {
 		gpt.ActiveMediators = append(gpt.ActiveMediators, medAdd)
@@ -103,13 +103,13 @@ func (gp *GlobalProperty) getGPT() *GlobalPropertyTemp {
 }
 
 func (gpt *GlobalPropertyTemp) getGP(gp *GlobalProperty) error {
-	gp.ActiveJuries = make(map[common.Address]bool)
+	//gp.ActiveJuries = make(map[common.Address]bool)
 	gp.ActiveMediators = make(map[common.Address]bool)
 	gp.PrecedingMediators = make(map[common.Address]bool)
 
-	for _, addStr := range gpt.ActiveJuries {
-		gp.ActiveJuries[addStr] = true
-	}
+	//for _, addStr := range gpt.ActiveJuries {
+	//	gp.ActiveJuries[addStr] = true
+	//}
 
 	for _, addStr := range gpt.ActiveMediators {
 		gp.ActiveMediators[addStr] = true

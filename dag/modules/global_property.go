@@ -48,14 +48,14 @@ type GlobalProperty struct {
 
 type GlobalPropExtra struct {
 	// todo albert 待重构为数组，提高效率
-	ActiveJuries       map[common.Address]bool `json:"activeJuries"`       // 当前活跃Jury集合
+	//ActiveJuries       map[common.Address]bool `json:"activeJuries"`       // 当前活跃Jury集合
 	ActiveMediators    map[common.Address]bool `json:"activeMediators"`    // 当前活跃 mediator 集合；每个维护间隔更新一次
 	PrecedingMediators map[common.Address]bool `json:"precedingMediators"` // 上一届 mediator
 }
 
 func NewGlobalPropExtra() GlobalPropExtra {
 	return GlobalPropExtra{
-		ActiveJuries:       make(map[common.Address]bool),
+		//ActiveJuries:       make(map[common.Address]bool),
 		ActiveMediators:    make(map[common.Address]bool),
 		PrecedingMediators: make(map[common.Address]bool),
 	}
