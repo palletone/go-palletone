@@ -53,6 +53,20 @@ const (
 	TxStatus_Stable                   //已打包，已稳定
 )
 
+func (s TxStatus) String() string {
+	switch s {
+	case TxStatus_NotFound:
+		return "NotFound"
+	case TxStatus_InPool:
+		return "InPool"
+	case TxStatus_Unstable:
+		return "Unstable"
+	case TxStatus_Stable:
+		return "Stable"
+	}
+	return "Unknown"
+}
+
 //var DepositContractLockScript = common.Hex2Bytes("140000000000000000000000000000000000000001c8")
 
 // TxOut defines a bitcoin transaction output.

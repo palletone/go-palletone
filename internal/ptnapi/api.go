@@ -534,7 +534,7 @@ func submitTransactionSync(ctx context.Context, b Backend, tx *modules.Transacti
 		}
 	}
 
-	return nil, errors.New("Tx not found")
+	// return nil, errors.New("Tx not found")
 }
 
 func submitTxs(ctx context.Context, b Backend, txs []*modules.Transaction) []error {

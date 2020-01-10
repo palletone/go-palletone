@@ -584,19 +584,6 @@ func (s *PrivateDagAPI) GetLocalTx(txId string) (*TxAndStatus, error) {
 	txjson := ptnjson.ConvertTx2FullJson(tx, nil)
 	return &TxAndStatus{
 		Tx:     txjson,
-		Status: TxStatus2String(status),
+		Status: status.String(),
 	}, nil
-}
-func TxStatus2String(s modules.TxStatus) string {
-	switch s {
-	case modules.TxStatus_NotFound:
-		return "NotFound"
-	case modules.TxStatus_InPool:
-		return "InPool"
-	case modules.TxStatus_Unstable:
-		return "Unstable"
-	case modules.TxStatus_Stable:
-		return "Stable"
-	}
-	return "Unknown"
 }
