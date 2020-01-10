@@ -14,7 +14,7 @@
  * /
  *
  *  * @author PalletOne core developers <dev@pallet.one>
- *  * @date 2018-2019
+ *  * @date 2019-2020
  *
  */
 package migration
@@ -25,7 +25,6 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 	"strconv"
 )
@@ -63,7 +62,7 @@ func (m *Migration104alpha_104beta) upgradeGP() error {
 		return err
 	}
 
-	newData := &modules.GlobalPropertyTemp{}
+	newData := &GlobalProperty105delta{}
 
 	//newData.GlobalPropExtraTemp = oldGp.GlobalPropExtraTemp
 	newData.ActiveJuries = oldGp.ActiveJuries
