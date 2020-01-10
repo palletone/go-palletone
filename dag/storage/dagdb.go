@@ -214,7 +214,7 @@ func (dagdb *DagDb) SaveTxLookupEntry(hash common.Hash, height, timestamp uint64
 		UnitHash:  hash,
 		UnitIndex: height,
 		Index:     uint64(index),
-		Timestamp: uint64(timestamp),
+		Timestamp: timestamp,
 	}
 	key := append(constants.LOOKUP_PREFIX, tx.Hash().Bytes()...)
 	return StoreToRlpBytes(dagdb.db, key, in)
