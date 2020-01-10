@@ -24,9 +24,9 @@ newAccount
     Dictionary Should Contain Key    ${respJson}    result
     [Return]    ${respJson["result"]}
 
-transferPtnTo
-    [Arguments]    ${to}
-    ${params}=    Create List    ${tokenHolder}    ${to}    ${amount}    ${fee}    ${null}    ${pwd}
+transferPtn
+    [Arguments]    ${from}    ${to}    ${amount}
+    ${params}=    Create List    ${from}    ${to}    ${amount}    ${fee}    ${null}    ${pwd}
     ${respJson}=    sendRpcPost    ${transferPTNMethod}    ${params}    transferPTN
     Dictionary Should Contain Key    ${respJson}    result
 
@@ -41,7 +41,6 @@ getAllBalance
     ${params}=    Create List    ${addr}
     ${respJson}=    sendRpcPost    ${getBalanceMethod}    ${params}    getBalance
     Dictionary Should Contain Key    ${respJson}    result
-    Dictionary Should Contain Key    ${respJson["result"]}    ${gasToken}
     ${result}=    Get From Dictionary    ${respJson}    result
     [Return]    ${result}
 

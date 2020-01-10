@@ -14,18 +14,8 @@ ${twotoken}       ${EMPTY}
 addrexchangequery
     log    ${addr}
     unlockAccount    ${addr}
-    #${reJson}=    Alice issues her personal token, amount is 1000, decimal is 1 succeed    ${addr}
+    ${AliceTokenID}=    Alice issues her personal token, amount is 1000, decimal is 1 succeed    ${addr}
     log    ${addr}
-    #issueToken    ${addr}    ${AliceToken}    1000    1    Alice's token
-    #Wait for transaction being packaged
-    ${balance}=    getAllBalance    ${addr}
-    log    ${balance}
-    ${tokenIDs}=    Get Dictionary Keys    ${balance}
-    :FOR    ${id}    IN    @{tokenIDs}
-    \    log    ${id[0:3]}
-    \    log    ${AliceToken}
-    \    Set Global Variable    ${AliceTokenID}    ${id}
-    \    run keyword if    '${id[0:3]}'=='${AliceToken}'    exit for loop
     log    ${AliceTokenID}
 
     #${balance}=    getBalance    ${addr}    ${AliceToken}
@@ -47,20 +37,20 @@ addrexchangequery
     #${afteronebalance}=    getBalance    ${addr}    ${twotoken}
     
 
-    ${respJson}    exchangequery
-    log    ${respJson}
-    ${respJson}    addrexchangequery    ${addr}
-    log    ${respJson}
-    run keyword if    ''    in ${respJson}
-    ${respJson}    addrexchangequery    ${addr}
-    log    ${respJson}
-    run keyword if    ''    in ${respJson}
-    ${allmatchquery}    allmatchquery
-    log    ${allmatchquery}
-    ${matchqueryrespJson}    matchquery    ${addr}
-    log    ${matchqueryrespJson}
-    ${respJson}    historyexchangequery
-    log    ${respJson}
+    #${respJson}    exchangequery
+    #log    ${respJson}
+    #${respJson}    addrexchangequery    ${addr}
+    #log    ${respJson}
+    #run keyword if    ''    in ${respJson}
+    #${respJson}    addrexchangequery    ${addr}
+    #log    ${respJson}
+    #run keyword if    ''    in ${respJson}
+    #${allmatchquery}    allmatchquery
+    #log    ${allmatchquery}
+    #${matchqueryrespJson}    matchquery    ${addr}
+    #log    ${matchqueryrespJson}
+    #${respJson}    historyexchangequery
+    #log    ${respJson}
 
 *** Keywords ***
 getBalance
@@ -96,9 +86,15 @@ post
  Alice issues her personal token, amount is 1000, decimal is 1 succeed
     [Arguments]    ${addr}
     log    ${addr}
-    ${balance}=    issueToken    ${addr}    ${AliceToken}    1000    1    addr's
+    issueToken    ${addr}    ${AliceToken}    1000    1    addr's
     Wait for transaction being packaged
-    ${balance}=    getBalance    ${addr}    ${AliceToken} 
-    #${tokenIDs}=    Get Dictionary Keys    ${balance}
-    #FOR    ${id}    IN    @{tokenIDs}
-    [Return]    ${balance}
+    ${balance}=    getAllBalance    ${addr}
+    log    ${balance}
+    ${tokenIDs}=    Get Dictionary Keys    ${balance}
+    :FOR    ${id}    IN    @{tokenIDs}
+    \    log    ${id[0:3]}
+    \    log    ${AliceToken}
+    \    Set Global Variable    ${AliceTokenID}    ${id}
+    \    run keyword if    '${id[0:3]}'=='${AliceToken}'    exit for loop
+    log    ${AliceTokenID}
+    [Return]    ${AliceTokenID}
