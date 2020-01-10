@@ -409,6 +409,25 @@ func (dl *downloadTester) GetCurrentUnit(token modules.AssetId) *modules.Unit {
 	return dl.genesis
 }
 
+// CurrentBlock retrieves the current head block from the canonical chain.
+func (dl *downloadTester) UnstableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error) {
+	dl.lock.RLock()
+	defer dl.lock.RUnlock()
+
+	unit := dl.GetCurrentUnit(asset)
+	if unit == nil {
+		return nil, nil
+	}
+
+	unitProperty := &modules.UnitProperty{
+		Hash:       unit.Hash(),
+		ChainIndex: unit.Number(),
+		Timestamp:  uint32(unit.Timestamp()),
+	}
+
+	return unitProperty, nil
+}
+
 // CurrentFastBlock retrieves the current head fast-sync block from the canonical chain.
 func (dl *downloadTester) CurrentFastBlock() *modules.Unit {
 	dl.lock.RLock()
