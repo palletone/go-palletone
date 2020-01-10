@@ -20,13 +20,15 @@
 package common
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/palletone/go-palletone/common/crypto"
 	"reflect"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
@@ -40,10 +42,6 @@ import (
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/txspool"
-
-	//"github.com/palletone/go-palletone/validator"
-	"encoding/json"
-	"sync"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
@@ -941,29 +939,18 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 
 	defer rep.lock.Unlock()
 	uHash := unit.Hash()
-	height := unit.NumberU64()
-	time_stamp := unit.Timestamp()
 	// step1. save unit header
 	// key is like "[HEADER_PREFIX][chain index number]_[chain index]_[unit hash]"
 	if err := rep.dagdb.SaveHeader(unit.UnitHeader); err != nil {
 		log.Info("SaveHeader:", "error", err.Error())
 		return modules.ErrUnit(-3)
 	}
-	wg := sync.WaitGroup{}
-	wg.Add(len(unit.Txs))
 	// step2. traverse transactions and save tx lookup entry
 	txHashSet := []common.Hash{}
 	for txIndex, tx := range unit.Txs {
-		go func() {
-			if err := rep.saveTx4Unit(unit, txIndex, tx); err != nil {
-				log.Errorf("save tx failed,error: %s", err.Error())
-			}
-			if err := rep.dagdb.SaveTxLookupEntry(uHash, height, uint64(time_stamp), txIndex, tx);
-				err != nil {
-				log.Errorf("save tx lookup failed,error: %s", err.Error())
-			}
-			wg.Done()
-		}()
+		if err := rep.saveTx4Unit(unit, txIndex, tx); err != nil {
+			log.Errorf("save tx failed,error: %s", err.Error())
+		}
 		txHashSet = append(txHashSet, tx.Hash())
 	}
 	// step3. save unit body, the value only save txs' hash set, and the key is merkle root
@@ -978,7 +965,6 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		}
 		rep.dagdb.SaveGenesisUnitHash(uHash)
 	}
-	wg.Wait()
 	log.Infof("save Unit[%s] cost time: %s", uHash.String(), time.Since(tt))
 	return nil
 }
@@ -1068,6 +1054,11 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 	// step6. save transaction
 	if err := rep.dagdb.SaveTransaction(tx); err != nil {
 		log.Info("Save transaction:", "error", err.Error())
+		return err
+	}
+	// step7. save tx lookup
+	if err := rep.dagdb.SaveTxLookupEntry(unitHash, unitHeight, uint64(unitTime), txIndex, tx); err != nil {
+		log.Errorf("save tx lookup failed,error: %s", err.Error())
 		return err
 	}
 	//Index
