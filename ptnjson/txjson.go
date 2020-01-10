@@ -57,6 +57,15 @@ type TxWithUnitInfoJson struct {
 	Timestamp  time.Time `json:"timestamp"`
 	TxIndex    uint64    `json:"tx_index"`
 }
+
+type TxHashWithUnitInfoJson struct {
+	TxHash      string    `json:"tx_hash"`
+	RequestHash string    `json:"request_hash"`
+	UnitHash    string    `json:"unit_hash"`
+	UnitHeight  uint64    `json:"unit_height"`
+	Timestamp   time.Time `json:"timestamp"`
+	TxIndex     uint64    `json:"tx_index"`
+}
 type TplJson struct {
 	Number       int    `json:"row_number"`
 	TemplateId   string `json:"template_id"`

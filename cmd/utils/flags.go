@@ -818,7 +818,6 @@ func SetNodeConfig(ctx *cli.Context, cfg *node.Config, configDir string) string 
 	}
 	cfg.HttpsKeyFile = common.GetAbsPath(cfg.HttpsKeyFile)
 
-
 	// 重新计算为绝对路径
 	if !filepath.IsAbs(cfg.DataDir) {
 		path := filepath.Join(configDir, cfg.DataDir)
@@ -956,7 +955,10 @@ func SetDagConfig(ctx *cli.Context, cfg *dagconfig.Config, dataDir string) {
 		path := filepath.Join(dataDir, cfg.DbPath)
 		cfg.DbPath = common.GetAbsPath(path)
 	}
-
+	if !filepath.IsAbs(cfg.LocalDbPath) {
+		path := filepath.Join(dataDir, cfg.LocalDbPath)
+		cfg.LocalDbPath = common.GetAbsPath(path)
+	}
 	dagconfig.DagConfig = *cfg
 }
 

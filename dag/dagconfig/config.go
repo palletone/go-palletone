@@ -38,6 +38,7 @@ var (
 
 var DefaultConfig = Config{
 	DbPath:                       "./leveldb",
+	LocalDbPath:                  "./localdb",
 	DbCache:                      30 * 1024 * 1024, // cache size: 50mb  31,457,280‬
 	UtxoIndex:                    true,
 	MemoryUnitSize:               1280,
@@ -53,9 +54,10 @@ var DefaultConfig = Config{
 
 // global configuration of dag modules
 type Config struct {
-	DbPath    string
-	DbCache   int // cache db size
-	DbHandles int
+	DbPath      string
+	LocalDbPath string
+	DbCache     int // cache db size
+	DbHandles   int
 
 	// cache
 	CacheSource string

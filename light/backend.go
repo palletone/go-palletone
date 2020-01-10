@@ -88,7 +88,7 @@ type LightPalletone struct {
 
 func New(ctx *node.ServiceContext, config *ptn.Config, protocolname string, cache palletcache.ICache,
 	isTestNet bool) (*LightPalletone, error) {
-	db, err := ptn.CreateDB(ctx, config /*, "lightchaindata"*/)
+	db, localdb, err := ptn.CreateDB(ctx, config /*, "lightchaindata"*/)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func New(ctx *node.ServiceContext, config *ptn.Config, protocolname string, cach
 		}
 	}
 
-	dag, err := dag.NewDag(db, cache, true)
+	dag, err := dag.NewDag(db, localdb, cache, true)
 	if err != nil {
 		log.Error("PalletOne New", "NewDag err:", err)
 		return nil, err

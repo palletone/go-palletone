@@ -1,18 +1,18 @@
-// Copyright 2016 The go-ethereum Authors
-// This file is part of the go-ethereum library.
+// Copyright 2016 The go-gptn Authors
+// This file is part of the go-gptn library.
 //
-// The go-ethereum library is free software: you can redistribute it and/or modify
+// The go-gptn library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The go-ethereum library is distributed in the hope that it will be useful,
+// The go-gptn library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
+// along with the go-gptn library. If not, see <http://www.gnu.org/licenses/>.
 
 package console
 
@@ -199,33 +199,33 @@ func (c *Console) init(preload []string) error {
 		//	return errr
 		//}
 		//if obj := ptn.Object(); obj != nil { // make sure the admin api is enabled over the interface
-			//if _, err = c.jsre.Run(`jptn.signRawTransaction = ptn.signRawTransaction;`); err != nil {
-			//	return fmt.Errorf("ptn.signRawTransaction: %v", err)
-			//}
-			//obj.Set("signRawTransaction", bridge.SignRawTransaction)
-			//if _, err = c.jsre.Run(`jptn.getPtnTestCoin = wallet.getPtnTestCoin;`); err != nil {
-			//	return fmt.Errorf("ptn.getPtnTestCoin: %v", err)
-			//}
-			//obj.Set("getPtnTestCoin", bridge.GetPtnTestCoin)
-			// if _, err = c.jsre.Run(`jptn.transferToken = ptn.transferToken;`); err != nil {
-			// 	return fmt.Errorf("ptn.transferToken: %v", err)
-			// }
-			// obj.Set("transferToken", bridge.TransferToken)
+		//if _, err = c.jsre.Run(`jptn.signRawTransaction = ptn.signRawTransaction;`); err != nil {
+		//	return fmt.Errorf("ptn.signRawTransaction: %v", err)
+		//}
+		//obj.Set("signRawTransaction", bridge.SignRawTransaction)
+		//if _, err = c.jsre.Run(`jptn.getPtnTestCoin = wallet.getPtnTestCoin;`); err != nil {
+		//	return fmt.Errorf("ptn.getPtnTestCoin: %v", err)
+		//}
+		//obj.Set("getPtnTestCoin", bridge.GetPtnTestCoin)
+		// if _, err = c.jsre.Run(`jptn.transferToken = ptn.transferToken;`); err != nil {
+		// 	return fmt.Errorf("ptn.transferToken: %v", err)
+		// }
+		// obj.Set("transferToken", bridge.TransferToken)
 		//}
 		wallet, err := c.jsre.Get("wallet")
 		if err != nil {
 			return err
 		}
 		if obj := wallet.Object(); obj != nil { // make sure the admin api is enabled over the interface
-            if _, err = c.jsre.Run(`jptn.signRawTransaction = wallet.signRawTransaction;`); err != nil {
-                    return fmt.Errorf("wallet.signRawTransaction: %v", err)
-            }
-            obj.Set("signRawTransaction", bridge.SignRawTransaction)
+			if _, err = c.jsre.Run(`jptn.signRawTransaction = wallet.signRawTransaction;`); err != nil {
+				return fmt.Errorf("wallet.signRawTransaction: %v", err)
+			}
+			obj.Set("signRawTransaction", bridge.SignRawTransaction)
 
-            if _, err = c.jsre.Run(`jptn.multiSignRawTransaction = wallet.multiSignRawTransaction;`); err != nil {
-                    return fmt.Errorf("wallet.multisignRawTransaction: %v", err)
-            }
-            obj.Set("multiSignRawTransaction", bridge.MultiSignRawTransaction)
+			if _, err = c.jsre.Run(`jptn.multiSignRawTransaction = wallet.multiSignRawTransaction;`); err != nil {
+				return fmt.Errorf("wallet.multisignRawTransaction: %v", err)
+			}
+			obj.Set("multiSignRawTransaction", bridge.MultiSignRawTransaction)
 
 			if _, err = c.jsre.Run(`jptn.transferToken = wallet.transferToken;`); err != nil {
 				return fmt.Errorf("wallet.transferToken: %v", err)

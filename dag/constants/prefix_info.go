@@ -89,3 +89,10 @@ var (
 	CERT_SUBJECT_SYMBOL = "certsubject_"
 	CRL_BYTES_SYMBOL    = "crlbytes_"
 )
+
+//local db
+//Start with "L"
+var (
+	LOCAL_TX_PREFIX        = []byte("Ltx")
+	LOCAL_TX_STATUS_PREFIX = []byte("Lts")
+)

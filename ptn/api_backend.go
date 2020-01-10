@@ -124,7 +124,70 @@ func (b *PtnApiBackend) SendConsensus(ctx context.Context) error {
 }
 
 func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transaction) error {
-	return b.ptn.txPool.AddLocal(signedTx)
+	err := b.ptn.txPool.AddLocal(signedTx)
+	if err != nil {
+		return err
+	}
+	err = b.Dag().SaveLocalTx(signedTx)
+	if err != nil {
+		log.Errorf("Try to send tx[%s] get an error:%s", signedTx.Hash().String(), err.Error())
+	}
+	//先将状态改为交易池中
+	err = b.Dag().SaveLocalTxStatus(signedTx.Hash(), modules.TxStatus_InPool)
+	if err != nil {
+		log.Warnf("Save tx[%s] status to local err:%s", signedTx.Hash().String(), err.Error())
+	}
+	//更新Tx的状态到LocalDB
+	go func() {
+		saveUnitCh := make(chan modules.SaveUnitEvent)
+		defer close(saveUnitCh)
+		saveUnitSub := b.Dag().SubscribeSaveUnitEvent(saveUnitCh)
+		headCh := make(chan modules.SaveUnitEvent)
+		defer close(headCh)
+		headSub := b.Dag().SubscribeSaveStableUnitEvent(headCh)
+		defer saveUnitSub.Unsubscribe()
+		defer headSub.Unsubscribe()
+		timeout := time.NewTimer(100 * time.Second)
+		for {
+			select {
+			case u := <-saveUnitCh:
+				log.Infof("SubscribeSaveUnitEvent received unit:%s", u.Unit.DisplayId())
+				for _, utx := range u.Unit.Transactions() {
+					if utx.Hash() == signedTx.Hash() {
+						log.Debugf("Change local tx[%s] status to unstable", utx.Hash().String())
+						err = b.Dag().SaveLocalTxStatus(signedTx.Hash(), modules.TxStatus_Unstable)
+						if err != nil {
+							log.Warnf("Save tx[%s] status to local err:%s", utx.Hash().String(), err.Error())
+						}
+					}
+				}
+			case u := <-headCh:
+				log.Infof("SubscribeSaveStableUnitEvent received unit:%s", u.Unit.DisplayId())
+				for _, utx := range u.Unit.Transactions() {
+					if utx.Hash() == signedTx.Hash() {
+						log.Debugf("Change local tx[%s] status to stable", utx.Hash().String())
+						err = b.Dag().SaveLocalTxStatus(signedTx.Hash(), modules.TxStatus_Stable)
+						if err != nil {
+							log.Warnf("Save tx[%s] status to local err:%s", utx.Hash().String(), err.Error())
+						}
+						return
+					}
+				}
+			case <-timeout.C:
+				log.Warn("SubscribeSaveStableUnitEvent timeout")
+				return
+			// Err() channel will be closed when unsubscribing.
+			case err0 := <-headSub.Err():
+				log.Warnf("SubscribeSaveStableUnitEvent err:%s", err0.Error())
+				return
+			case err1 := <-saveUnitSub.Err():
+				log.Warnf("SubscribeSaveUnitEvent err:%s", err1.Error())
+				return
+			}
+		}
+	}()
+
+	return nil
 }
 
 func (b *PtnApiBackend) SendTxs(ctx context.Context, signedTxs []*modules.Transaction) []error {
@@ -728,12 +791,16 @@ func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, 
 	contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
 	return b.ptn.contractPorcessor.ContractInvokeReq(from, to, daoAmount, daoFee, certID, contractAddress, args, timeout)
 }
-func (b *PtnApiBackend) SendContractInvokeReqTx(requestTx *modules.Transaction) (reqId common.Hash, err error) {
+func (b *PtnApiBackend) SendContractInvokeReqTx(requestTx *modules.Transaction) (common.Hash, error) {
 	if !b.ptn.contractPorcessor.CheckTxValid(requestTx) {
 		err := fmt.Sprintf("ProcessContractEvent, event Tx is invalid, txId:%s", requestTx.Hash().String())
 		return common.Hash{}, errors.New(err)
 	}
 	go b.ptn.ContractBroadcast(jury.ContractEvent{Ele: nil, CType: jury.CONTRACT_EVENT_EXEC, Tx: requestTx}, true)
+	err := b.Dag().SaveLocalTx(requestTx)
+	if err != nil {
+		log.Errorf("Try to save request[%s] error:%s", requestTx.Hash().String(), err.Error())
+	}
 	return requestTx.RequestHash(), nil
 }
 func (b *PtnApiBackend) ContractInvokeReqTokenTx(from, to common.Address, token *modules.Asset,

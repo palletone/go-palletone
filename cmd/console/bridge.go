@@ -1,18 +1,18 @@
-// Copyright 2016 The go-ethereum Authors
-// This file is part of the go-ethereum library.
+// Copyright 2016 The go-gptn Authors
+// This file is part of the go-gptn library.
 //
-// The go-ethereum library is free software: you can redistribute it and/or modify
+// The go-gptn library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The go-ethereum library is distributed in the hope that it will be useful,
+// The go-gptn library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
+// along with the go-gptn library. If not, see <http://www.gnu.org/licenses/>.
 
 package console
 
@@ -229,6 +229,7 @@ func (b *bridge) SignRawTransaction(call otto.FunctionCall) (response otto.Value
 	}
 	return val
 }
+
 //add by wzhyuan
 func (b *bridge) MultiSignRawTransaction(call otto.FunctionCall) (response otto.Value) {
 	// Make sure we have an account specified to unlock
@@ -238,7 +239,7 @@ func (b *bridge) MultiSignRawTransaction(call otto.FunctionCall) (response otto.
 	rawtx := call.Argument(0)
 	//lockscript := call.Argument(1)
 	redeemscript := call.Argument(1)
-	addr  := call.Argument(2)
+	addr := call.Argument(2)
 
 	if !call.Argument(3).IsString() {
 		throwJSException("second argument must be the hashtype ")
@@ -271,12 +272,13 @@ func (b *bridge) MultiSignRawTransaction(call otto.FunctionCall) (response otto.
 	}
 	// Send the request to the backend and return
 	// sencond CHAR must upper
-	val, err := call.Otto.Call("jptn.multiSignRawTransaction", nil, rawtx,redeemscript,addr,hashtype,passwd,duration)
+	val, err := call.Otto.Call("jptn.multiSignRawTransaction", nil, rawtx, redeemscript, addr, hashtype, passwd, duration)
 	if err != nil {
 		throwJSException(err.Error())
 	}
 	return val
 }
+
 //add by wzhyuan
 func (b *bridge) GetPtnTestCoin(call otto.FunctionCall) (response otto.Value) {
 	// Make sure we have an account specified to unlock
