@@ -965,7 +965,7 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		}
 		rep.dagdb.SaveGenesisUnitHash(uHash)
 	}
-	log.Infof("save Unit[%s] cost time: %s", uHash.String(), time.Since(tt))
+	log.Debug("save Unit[%s] cost time: %s", uHash.String(), time.Since(tt))
 	return nil
 }
 
