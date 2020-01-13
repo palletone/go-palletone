@@ -31,6 +31,8 @@ import (
 	"sync"
 	"time"
 
+	"crypto/tls"
+	"crypto/x509"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/rs/cors"
 	"os"
@@ -39,7 +41,7 @@ import (
 const (
 	contentType             = "application/json"
 	maxRequestContentLength = 1024 * 128
-	ptnSecretKey            = "Ptn-SecretKey"
+	//ptnSecretKey            = "Ptn-SecretKey"
 )
 
 var nullAddr, _ = net.ResolveTCPAddr("tcp", "127.0.0.1:0")
@@ -171,13 +173,28 @@ func NewHTTPServer(cors []string, vhosts []string, srv *Server) *http.Server {
 	return &http.Server{Handler: handler}
 }
 
-func NewHTTPSServer(endpoint string, cors []string, srv *Server, cert, key string) (*http.Server, error) {
+func NewHTTPSServer(endpoint string, cors []string, srv *Server, cert, key, ca string) (*http.Server, error) {
 	handler := newCorsHandler(srv, cors)
+
+	pool := x509.NewCertPool()
+	caCertPath := ca
+
+	caCrt, err := ioutil.ReadFile(caCertPath)
+	if err != nil {
+		log.Error("NewHTTPSServer ReadFile ", "err:", err)
+		os.Exit(1)
+	}
+	pool.AppendCertsFromPEM(caCrt)
+
 	server := &http.Server{
 		Addr:    endpoint,
 		Handler: handler,
+		TLSConfig: &tls.Config{
+			ClientCAs:  pool,
+			ClientAuth: tls.RequireAndVerifyClientCert,
+		},
 	}
-	log.Debug("NewHTTPSServer", "cert", cert, "key", key)
+	log.Debug("NewHTTPSServer", "cert", cert, "key", key, "ca", ca)
 	go func() {
 		if err := server.ListenAndServeTLS(cert, key); err != nil {
 			log.Error("NewHTTPSServer ListenAndServeTLS", "err", err)
@@ -199,12 +216,12 @@ func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if srv.IsHttpsRequest() {
-		if r.Header.Get(ptnSecretKey) != srv.GetSecretKey() {
-			http.Error(w, "ptn secret key failed", http.StatusBadRequest)
-			return
-		}
-	}
+	//if srv.IsHttpsRequest() {
+	//	if r.Header.Get(ptnSecretKey) != srv.GetSecretKey() {
+	//		http.Error(w, "ptn secret key failed", http.StatusBadRequest)
+	//		return
+	//	}
+	//}
 	// All checks passed, create a codec that reads direct from the request body
 	// untilEOF and writes the response to w and order the server to process a
 	// single request.
@@ -224,10 +241,6 @@ func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // validateRequest returns a non-zero response code and error message if the
 // request is invalid.
 func validateRequest(r *http.Request) (int, error) {
-	for k, v := range r.Header {
-		fmt.Println("======validateRequest", "k", k, "v", v)
-	}
-
 	if r.Method == http.MethodPut || r.Method == http.MethodDelete {
 		return http.StatusMethodNotAllowed, errors.New("method not allowed")
 	}
