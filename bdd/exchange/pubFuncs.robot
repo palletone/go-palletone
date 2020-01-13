@@ -80,6 +80,7 @@ sendRpcPost
     ${resp}    Post Request    ${alias}    ${host}    data=${data}    headers=${header}
     log    ${resp.content}
     ${respJson}    To Json    ${resp.content}
+    Dictionary Should Not Contain Key    ${respJson}    error
     [Return]    ${respJson}
 
 Wait for transaction being packaged
