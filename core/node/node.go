@@ -339,7 +339,7 @@ func (n *Node) startRPC(services map[reflect.Type]Service) error {
 		}
 	} else {
 		if err := n.startHTTPS(n.httpEndpoint, apis, n.config.HTTPModules, n.config.HTTPCors, n.config.HttpsCertFile,
-			n.config.HttpsKeyFile, n.config.HttpsSecretKey); err != nil {
+			n.config.HttpsKeyFile); err != nil {
 			log.Error("startRPC startHTTPS", "err:", err.Error())
 			n.stopIPC()
 			n.stopInProc()
@@ -450,14 +450,13 @@ func (n *Node) stopHTTP() {
 }
 
 // startHTTP initializes and starts the HTTP RPC endpoint.
-func (n *Node) startHTTPS(endpoint string, apis []rpc.API, modules []string, cors []string, cert, key string,
-	secretkey string) error {
+func (n *Node) startHTTPS(endpoint string, apis []rpc.API, modules []string, cors []string, cert, key string) error {
 	// Short circuit if the HTTP endpoint isn't being exposed
 	if endpoint == "" {
 		log.Info("HTTP endpoint is null")
 		return nil
 	}
-	server, err := rpc.StartHTTPSEndpoint(endpoint, apis, modules, cors, cert, key, secretkey)
+	server, err := rpc.StartHTTPSEndpoint(endpoint, apis, modules, cors, cert, key)
 	if err != nil {
 		log.Error("HTTP endpoint StartHTTPEndpoint ", "err:", err)
 		return err
