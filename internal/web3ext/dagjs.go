@@ -47,6 +47,11 @@ web3._extend({
         	//inputFormatter: [null]
 		}),
 		new web3._extend.Method({
+			name: 'getLocalTx',
+        	call: 'dag_getLocalTx',
+        	params: 1,
+		}),
+		new web3._extend.Method({
 			name: 'getUnitSummaryByNumber',
         	call: 'dag_getUnitSummaryByNumber',
         	params: 1,
@@ -190,11 +195,21 @@ web3._extend({
             // inputFormatter: [null]
         }),
         new web3._extend.Method({
-            name: 'stableUnitNum',
-            call: 'dag_stableUnitNum',
+            name: 'getStableUnit',
+            call: 'dag_getStableUnit',
             params: 0,
         }),
         new web3._extend.Method({
+            name: 'getHeadUnit',
+            call: 'dag_getHeadUnit',
+            params: 0,
+        }),
+		new web3._extend.Method({
+            name: 'getMediatorSchedule',
+            call: 'dag_getMediatorSchedule',
+            params: 0,
+        }),
+		new web3._extend.Method({
             name: 'isSynced',
             call: 'dag_isSynced',
             params: 0,

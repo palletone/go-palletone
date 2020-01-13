@@ -45,7 +45,7 @@ func TestGlobalProperty_Rlp(t *testing.T) {
 	gp.ChainParameters.MaximumMediatorCount = 21
 	gp.ActiveMediators[addr1] = true
 	gp.ActiveMediators[addr2] = false
-	gp.ActiveJuries[addr1] = true
+	//gp.ActiveJuries[addr1] = true
 	data, err := rlp.EncodeToBytes(gp)
 	assert.Nil(t, err)
 	t.Logf("%x", data)

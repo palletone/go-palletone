@@ -99,6 +99,25 @@ func (engine *TokenEngine) GetAddressFromScript(lockScript []byte) (common.Addre
 	}
 	return addrs[0].Address, nil
 }
+func (engine *TokenEngine) GetAddressFromUnlockScript(unlockScript []byte) (common.Address, error) {
+	scriptStr, err := txscript.DisasmString(unlockScript)
+	if err != nil {
+		return common.Address{}, err
+	}
+	scriptArray := strings.Split(scriptStr, " ")
+	if len(scriptArray) == 2 { //sig pubKey
+		pubKey := scriptArray[1]
+		pubB, _ := hex.DecodeString(pubKey)
+		return crypto.PubkeyBytesToAddress(pubB), nil
+	}
+	if len(scriptArray) < 2 {
+		return common.Address{}, errors.New("invalid unlock script")
+	}
+	//sig1 sig2 ... redeem
+	redeemStr := scriptArray[len(scriptArray)-1]
+	redeemB, _ := hex.DecodeString(redeemStr)
+	return crypto.ScriptToAddress(redeemB), nil
+}
 
 type PubKey4Sort [][]byte
 

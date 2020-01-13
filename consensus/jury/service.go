@@ -74,7 +74,7 @@ type iDag interface {
 	GetContractDevelopers() ([]common.Address, error)
 	IsContractDeveloper(addr common.Address) bool
 	GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error)
-	GetActiveJuries() []common.Address
+	//GetActiveJuries() []common.Address
 	IsActiveMediator(addr common.Address) bool
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
@@ -358,7 +358,7 @@ func (p *Processor) GenContractTransaction(orgTx *modules.Transaction, msgs []*m
 	extSize := ContractDefaultSignatureSize + ContractDefaultPayInputSignatureSize*float64(payInputNum)
 
 	if !p.validator.ValidateTxFeeEnough(tx, extSize, 0) {
-		msgs, err = genContractErrorMsg(p.dag, tx, errors.New("tx fee is invalid"), true)
+		msgs, err = genContractErrorMsg(tx, errors.New("tx fee is invalid"), true)
 		if err != nil {
 			log.Errorf("[%s]GenContractTransaction, genContractErrorMsg,error:%s", shortId(reqId.String()), err.Error())
 			return nil, err

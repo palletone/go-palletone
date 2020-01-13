@@ -93,6 +93,8 @@ type IDag interface {
 	IsUtxoSpent(outpoint *modules.OutPoint) (bool, error)
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
 	SubscribeChainEvent(ch chan<- modules.ChainEvent) event.Subscription
+	SubscribeSaveStableUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription
+
 	PostChainEvents(events []interface{})
 
 	GetTrieSyncProgress() (uint64, error)
@@ -172,6 +174,7 @@ type IDag interface {
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
 	GetGlobalProp() *modules.GlobalProperty
+	GetMediatorSchl() *modules.MediatorSchedule
 	GetMediatorCount() int
 
 	IsMediator(address common.Address) bool
@@ -202,7 +205,7 @@ type IDag interface {
 	JuryCount() uint
 	GetContractDevelopers() ([]common.Address, error)
 	IsContractDeveloper(addr common.Address) bool
-	GetActiveJuries() []common.Address
+	//GetActiveJuries() []common.Address
 	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	CreateTokenTransaction(from, to common.Address, token *modules.Asset, daoAmountToken, daoFee uint64,
@@ -215,9 +218,14 @@ type IDag interface {
 	RebuildAddrTxIndex() error
 	GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, error)
 	GetJurorReward(jurorAdd common.Address) common.Address
-
+	SubscribeSaveUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription
 	SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription
 	GetContractsWithJuryAddr(addr common.Address) []*modules.Contract
 
 	GetAddressCount() int
+
+	//localdb
+	SaveLocalTx(tx *modules.Transaction) error
+	GetLocalTx(txId common.Hash) (*modules.Transaction, modules.TxStatus, error)
+	SaveLocalTxStatus(txId common.Hash, status modules.TxStatus) error
 }

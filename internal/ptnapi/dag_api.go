@@ -300,8 +300,8 @@ func (s *PublicDagAPI) GetFastUnitIndex(ctx context.Context, assetid string) str
 	result := new(ptnjson.FastUnitJson)
 	//stableUnit := s.b.Dag().CurrentUnit(token)
 	//ustabeUnit := s.b.Dag().GetCurrentMemUnit(token)
-	stableUnit, _ := s.b.Dag().UnstableHeadUnitProperty(token)
-	ustabeUnit, _ := s.b.Dag().StableHeadUnitProperty(token)
+	stableUnit, _ := s.b.Dag().StableHeadUnitProperty(token)
+	ustabeUnit, _ := s.b.Dag().UnstableHeadUnitProperty(token)
 
 	if ustabeUnit != nil {
 		//result.FastHash = ustabeUnit.Hash()
@@ -467,7 +467,7 @@ func (s *PublicDagAPI) GetTxStatusByHash(ctx context.Context, hex string) (*ptnj
 		return nil, fmt.Errorf("the hex[%s] is illegal.", hex)
 	}
 	hash := common.HexToHash(hex)
-	
+
 	tx_status := new(ptnjson.TxPoolTxJson)
 	item, err := s.b.GetTxPoolTxByHash(hash)
 	if err != nil {
@@ -526,14 +526,43 @@ func (s *PublicDagAPI) HeadUnitNum() uint64 {
 	return uint64(0)
 }
 
-func (s *PublicDagAPI) StableUnitNum() uint64 {
+func (s *PublicDagAPI) GetStableUnit() (*ptnjson.UnitPropertyJson, error) {
 	dag := s.b.Dag()
 	if dag != nil {
 		gasToken := dagconfig.DagConfig.GetGasToken()
-		return dag.GetIrreversibleUnitNum(gasToken)
+		unitProperty, err := dag.StableHeadUnitProperty(gasToken)
+		if err != nil || unitProperty == nil {
+			return nil, err
+		}
+
+		return ptnjson.UnitPropertyToJson(unitProperty), nil
 	}
 
-	return uint64(0)
+	return nil, nil
+}
+
+func (s *PublicDagAPI) GetHeadUnit() (*ptnjson.UnitPropertyJson, error) {
+	dag := s.b.Dag()
+	if dag != nil {
+		gasToken := dagconfig.DagConfig.GetGasToken()
+		unitProperty, err := dag.UnstableHeadUnitProperty(gasToken)
+		if err != nil || unitProperty == nil {
+			return nil, err
+		}
+
+		return ptnjson.UnitPropertyToJson(unitProperty), nil
+	}
+
+	return nil, nil
+}
+
+func (s *PublicDagAPI) GetMediatorSchedule() (*modules.MediatorSchedule, error) {
+	dag := s.b.Dag()
+	if dag != nil {
+		return dag.GetMediatorSchl(), nil
+	}
+
+	return nil, nil
 }
 
 func (s *PublicDagAPI) IsSynced() bool {
@@ -561,6 +590,7 @@ func (s *PrivateDagAPI) GetAllUtxos(ctx context.Context) (string, error) {
 
 	return string(result_json), nil
 }
+
 func (s *PrivateDagAPI) CheckHeader(ctx context.Context, number int) (bool, error) {
 	dag := s.b.Dag()
 	err := dag.CheckHeaderCorrect(number)
@@ -569,6 +599,7 @@ func (s *PrivateDagAPI) CheckHeader(ctx context.Context, number int) (bool, erro
 	}
 	return true, nil
 }
+
 func (s *PrivateDagAPI) CheckUnits(ctx context.Context, assetId string, number int) (bool, error) {
 	dag := s.b.Dag()
 	err := dag.CheckUnitsCorrect(assetId, number)
@@ -582,4 +613,22 @@ func (s *PrivateDagAPI) CheckUnits(ctx context.Context, assetId string, number i
 func (s *PrivateDagAPI) RebuildAddrTxIndex() error {
 	dag := s.b.Dag()
 	return dag.RebuildAddrTxIndex()
+}
+
+type TxAndStatus struct {
+	Tx     *ptnjson.TxJson
+	Status string
+}
+
+func (s *PrivateDagAPI) GetLocalTx(txId string) (*TxAndStatus, error) {
+	txhash := common.HexToHash(txId)
+	tx, status, err := s.b.Dag().GetLocalTx(txhash)
+	if err != nil {
+		return nil, err
+	}
+	txjson := ptnjson.ConvertTx2FullJson(tx, nil)
+	return &TxAndStatus{
+		Tx:     txjson,
+		Status: status.String(),
+	}, nil
 }

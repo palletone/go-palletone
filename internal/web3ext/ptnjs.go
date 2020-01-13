@@ -200,6 +200,21 @@ web3._extend({
 			call: 'ptn_getAddressWithPublicKey'
 			params: 1,
 		}),
+		new web3._extend.Method({
+			name: 'getImmutableParameters',
+			call: 'ptn_getImmutableParameters'
+			params: 0,
+		}),
+		new web3._extend.Method({
+			name: 'getGlobalProperty',
+			call: 'ptn_getGlobalProperty'
+			params: 0,
+		}),
+		new web3._extend.Method({
+			name: 'getDynamicGlobalProperty',
+			call: 'ptn_getDynamicGlobalProperty'
+			params: 0,
+		}),
 	],
 
 	properties: [

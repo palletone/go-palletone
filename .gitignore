@@ -8,6 +8,7 @@
 **/data1
 *.log
 !bdd/node/*
+!.travis.yml
 */**/*un~
 */**/*.test
 log.txt

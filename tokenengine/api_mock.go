@@ -36,7 +36,6 @@ func (m *MockITokenEngine) EXPECT() *MockITokenEngineMockRecorder {
 
 // GenerateP2PKHLockScript mocks base method
 func (m *MockITokenEngine) GenerateP2PKHLockScript(pubKeyHash []byte) []byte {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GenerateP2PKHLockScript", pubKeyHash)
 	ret0, _ := ret[0].([]byte)
 	return ret0
@@ -44,13 +43,11 @@ func (m *MockITokenEngine) GenerateP2PKHLockScript(pubKeyHash []byte) []byte {
 
 // GenerateP2PKHLockScript indicates an expected call of GenerateP2PKHLockScript
 func (mr *MockITokenEngineMockRecorder) GenerateP2PKHLockScript(pubKeyHash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateP2PKHLockScript", reflect.TypeOf((*MockITokenEngine)(nil).GenerateP2PKHLockScript), pubKeyHash)
 }
 
 // GenerateP2SHLockScript mocks base method
 func (m *MockITokenEngine) GenerateP2SHLockScript(redeemScriptHash []byte) []byte {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GenerateP2SHLockScript", redeemScriptHash)
 	ret0, _ := ret[0].([]byte)
 	return ret0
@@ -58,13 +55,11 @@ func (m *MockITokenEngine) GenerateP2SHLockScript(redeemScriptHash []byte) []byt
 
 // GenerateP2SHLockScript indicates an expected call of GenerateP2SHLockScript
 func (mr *MockITokenEngineMockRecorder) GenerateP2SHLockScript(redeemScriptHash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateP2SHLockScript", reflect.TypeOf((*MockITokenEngine)(nil).GenerateP2SHLockScript), redeemScriptHash)
 }
 
 // GenerateP2CHLockScript mocks base method
 func (m *MockITokenEngine) GenerateP2CHLockScript(contractId common.Address) []byte {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GenerateP2CHLockScript", contractId)
 	ret0, _ := ret[0].([]byte)
 	return ret0
@@ -72,13 +67,11 @@ func (m *MockITokenEngine) GenerateP2CHLockScript(contractId common.Address) []b
 
 // GenerateP2CHLockScript indicates an expected call of GenerateP2CHLockScript
 func (mr *MockITokenEngineMockRecorder) GenerateP2CHLockScript(contractId interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateP2CHLockScript", reflect.TypeOf((*MockITokenEngine)(nil).GenerateP2CHLockScript), contractId)
 }
 
 // GenerateLockScript mocks base method
 func (m *MockITokenEngine) GenerateLockScript(address common.Address) []byte {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GenerateLockScript", address)
 	ret0, _ := ret[0].([]byte)
 	return ret0
@@ -86,13 +79,11 @@ func (m *MockITokenEngine) GenerateLockScript(address common.Address) []byte {
 
 // GenerateLockScript indicates an expected call of GenerateLockScript
 func (mr *MockITokenEngineMockRecorder) GenerateLockScript(address interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateLockScript", reflect.TypeOf((*MockITokenEngine)(nil).GenerateLockScript), address)
 }
 
 // GetAddressFromScript mocks base method
 func (m *MockITokenEngine) GetAddressFromScript(lockScript []byte) (common.Address, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAddressFromScript", lockScript)
 	ret0, _ := ret[0].(common.Address)
 	ret1, _ := ret[1].(error)
@@ -101,13 +92,24 @@ func (m *MockITokenEngine) GetAddressFromScript(lockScript []byte) (common.Addre
 
 // GetAddressFromScript indicates an expected call of GetAddressFromScript
 func (mr *MockITokenEngineMockRecorder) GetAddressFromScript(lockScript interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddressFromScript", reflect.TypeOf((*MockITokenEngine)(nil).GetAddressFromScript), lockScript)
+}
+
+// GetAddressFromUnlockScript mocks base method
+func (m *MockITokenEngine) GetAddressFromUnlockScript(unlockScript []byte) (common.Address, error) {
+	ret := m.ctrl.Call(m, "GetAddressFromUnlockScript", unlockScript)
+	ret0, _ := ret[0].(common.Address)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAddressFromUnlockScript indicates an expected call of GetAddressFromUnlockScript
+func (mr *MockITokenEngineMockRecorder) GetAddressFromUnlockScript(unlockScript interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddressFromUnlockScript", reflect.TypeOf((*MockITokenEngine)(nil).GetAddressFromUnlockScript), unlockScript)
 }
 
 // GenerateRedeemScript mocks base method
 func (m *MockITokenEngine) GenerateRedeemScript(needed byte, pubKeys [][]byte) []byte {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GenerateRedeemScript", needed, pubKeys)
 	ret0, _ := ret[0].([]byte)
 	return ret0
@@ -115,13 +117,11 @@ func (m *MockITokenEngine) GenerateRedeemScript(needed byte, pubKeys [][]byte) [
 
 // GenerateRedeemScript indicates an expected call of GenerateRedeemScript
 func (mr *MockITokenEngineMockRecorder) GenerateRedeemScript(needed, pubKeys interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateRedeemScript", reflect.TypeOf((*MockITokenEngine)(nil).GenerateRedeemScript), needed, pubKeys)
 }
 
 // DisasmString mocks base method
 func (m *MockITokenEngine) DisasmString(script []byte) (string, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DisasmString", script)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
@@ -130,13 +130,11 @@ func (m *MockITokenEngine) DisasmString(script []byte) (string, error) {
 
 // DisasmString indicates an expected call of DisasmString
 func (mr *MockITokenEngineMockRecorder) DisasmString(script interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DisasmString", reflect.TypeOf((*MockITokenEngine)(nil).DisasmString), script)
 }
 
 // CalcSignatureHash mocks base method
 func (m *MockITokenEngine) CalcSignatureHash(tx *modules.Transaction, hashType uint32, msgIdx, inputIdx int, lockOrRedeemScript []byte) ([]byte, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CalcSignatureHash", tx, hashType, msgIdx, inputIdx, lockOrRedeemScript)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
@@ -145,13 +143,11 @@ func (m *MockITokenEngine) CalcSignatureHash(tx *modules.Transaction, hashType u
 
 // CalcSignatureHash indicates an expected call of CalcSignatureHash
 func (mr *MockITokenEngineMockRecorder) CalcSignatureHash(tx, hashType, msgIdx, inputIdx, lockOrRedeemScript interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CalcSignatureHash", reflect.TypeOf((*MockITokenEngine)(nil).CalcSignatureHash), tx, hashType, msgIdx, inputIdx, lockOrRedeemScript)
 }
 
 // GetScriptSigners mocks base method
 func (m *MockITokenEngine) GetScriptSigners(tx *modules.Transaction, msgIdx, inputIndex int) ([]common.Address, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetScriptSigners", tx, msgIdx, inputIndex)
 	ret0, _ := ret[0].([]common.Address)
 	ret1, _ := ret[1].(error)
@@ -160,58 +156,50 @@ func (m *MockITokenEngine) GetScriptSigners(tx *modules.Transaction, msgIdx, inp
 
 // GetScriptSigners indicates an expected call of GetScriptSigners
 func (mr *MockITokenEngineMockRecorder) GetScriptSigners(tx, msgIdx, inputIndex interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScriptSigners", reflect.TypeOf((*MockITokenEngine)(nil).GetScriptSigners), tx, msgIdx, inputIndex)
 }
 
 // SignTxAllPaymentInput mocks base method
-func (m *MockITokenEngine) SignTxAllPaymentInput(tx *modules.Transaction, hashType uint32, utxoLockScripts map[modules.OutPoint][]byte, redeemScript []byte, pubKeyFn AddressGetPubKey, hashFn AddressGetSign) ([]common.SignatureError, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SignTxAllPaymentInput", tx, hashType, utxoLockScripts, redeemScript, pubKeyFn, hashFn)
+func (m *MockITokenEngine) SignTxAllPaymentInput(tx *modules.Transaction, hashType uint32, utxoLockScripts map[modules.OutPoint][]byte, redeemScript []byte, pubKeyFn AddressGetPubKey, signFunc AddressGetSign) ([]common.SignatureError, error) {
+	ret := m.ctrl.Call(m, "SignTxAllPaymentInput", tx, hashType, utxoLockScripts, redeemScript, pubKeyFn, signFunc)
 	ret0, _ := ret[0].([]common.SignatureError)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SignTxAllPaymentInput indicates an expected call of SignTxAllPaymentInput
-func (mr *MockITokenEngineMockRecorder) SignTxAllPaymentInput(tx, hashType, utxoLockScripts, redeemScript, pubKeyFn, hashFn interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignTxAllPaymentInput", reflect.TypeOf((*MockITokenEngine)(nil).SignTxAllPaymentInput), tx, hashType, utxoLockScripts, redeemScript, pubKeyFn, hashFn)
+func (mr *MockITokenEngineMockRecorder) SignTxAllPaymentInput(tx, hashType, utxoLockScripts, redeemScript, pubKeyFn, signFunc interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignTxAllPaymentInput", reflect.TypeOf((*MockITokenEngine)(nil).SignTxAllPaymentInput), tx, hashType, utxoLockScripts, redeemScript, pubKeyFn, signFunc)
 }
 
 // SignTx1MsgPaymentInput mocks base method
-func (m *MockITokenEngine) SignTx1MsgPaymentInput(tx *modules.Transaction, msgIdx int, hashType uint32, utxoLockScripts map[modules.OutPoint][]byte, redeemScript []byte, pubKeyFn AddressGetPubKey, hashFn AddressGetSign) ([]common.SignatureError, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SignTx1MsgPaymentInput", tx, msgIdx, hashType, utxoLockScripts, redeemScript, pubKeyFn, hashFn)
+func (m *MockITokenEngine) SignTx1MsgPaymentInput(tx *modules.Transaction, msgIdx int, hashType uint32, utxoLockScripts map[modules.OutPoint][]byte, redeemScript []byte, pubKeyFn AddressGetPubKey, signFunc AddressGetSign) ([]common.SignatureError, error) {
+	ret := m.ctrl.Call(m, "SignTx1MsgPaymentInput", tx, msgIdx, hashType, utxoLockScripts, redeemScript, pubKeyFn, signFunc)
 	ret0, _ := ret[0].([]common.SignatureError)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SignTx1MsgPaymentInput indicates an expected call of SignTx1MsgPaymentInput
-func (mr *MockITokenEngineMockRecorder) SignTx1MsgPaymentInput(tx, msgIdx, hashType, utxoLockScripts, redeemScript, pubKeyFn, hashFn interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignTx1MsgPaymentInput", reflect.TypeOf((*MockITokenEngine)(nil).SignTx1MsgPaymentInput), tx, msgIdx, hashType, utxoLockScripts, redeemScript, pubKeyFn, hashFn)
+func (mr *MockITokenEngineMockRecorder) SignTx1MsgPaymentInput(tx, msgIdx, hashType, utxoLockScripts, redeemScript, pubKeyFn, signFunc interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignTx1MsgPaymentInput", reflect.TypeOf((*MockITokenEngine)(nil).SignTx1MsgPaymentInput), tx, msgIdx, hashType, utxoLockScripts, redeemScript, pubKeyFn, signFunc)
 }
 
 // MultiSignOnePaymentInput mocks base method
-func (m *MockITokenEngine) MultiSignOnePaymentInput(tx *modules.Transaction, hashType uint32, msgIdx, id int, utxoLockScript, redeemScript []byte, pubKeyFn AddressGetPubKey, hashFn AddressGetSign, previousScript []byte) ([]byte, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MultiSignOnePaymentInput", tx, hashType, msgIdx, id, utxoLockScript, redeemScript, pubKeyFn, hashFn, previousScript)
+func (m *MockITokenEngine) MultiSignOnePaymentInput(tx *modules.Transaction, hashType uint32, msgIdx, id int, utxoLockScript, redeemScript []byte, pubKeyFn AddressGetPubKey, signFunc AddressGetSign, previousScript []byte) ([]byte, error) {
+	ret := m.ctrl.Call(m, "MultiSignOnePaymentInput", tx, hashType, msgIdx, id, utxoLockScript, redeemScript, pubKeyFn, signFunc, previousScript)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // MultiSignOnePaymentInput indicates an expected call of MultiSignOnePaymentInput
-func (mr *MockITokenEngineMockRecorder) MultiSignOnePaymentInput(tx, hashType, msgIdx, id, utxoLockScript, redeemScript, pubKeyFn, hashFn, previousScript interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MultiSignOnePaymentInput", reflect.TypeOf((*MockITokenEngine)(nil).MultiSignOnePaymentInput), tx, hashType, msgIdx, id, utxoLockScript, redeemScript, pubKeyFn, hashFn, previousScript)
+func (mr *MockITokenEngineMockRecorder) MultiSignOnePaymentInput(tx, hashType, msgIdx, id, utxoLockScript, redeemScript, pubKeyFn, signFunc, previousScript interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MultiSignOnePaymentInput", reflect.TypeOf((*MockITokenEngine)(nil).MultiSignOnePaymentInput), tx, hashType, msgIdx, id, utxoLockScript, redeemScript, pubKeyFn, signFunc, previousScript)
 }
 
 // MergeContractUnlockScript mocks base method
 func (m *MockITokenEngine) MergeContractUnlockScript(signs [][]byte, redeemScript []byte) []byte {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MergeContractUnlockScript", signs, redeemScript)
 	ret0, _ := ret[0].([]byte)
 	return ret0
@@ -219,13 +207,11 @@ func (m *MockITokenEngine) MergeContractUnlockScript(signs [][]byte, redeemScrip
 
 // MergeContractUnlockScript indicates an expected call of MergeContractUnlockScript
 func (mr *MockITokenEngineMockRecorder) MergeContractUnlockScript(signs, redeemScript interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MergeContractUnlockScript", reflect.TypeOf((*MockITokenEngine)(nil).MergeContractUnlockScript), signs, redeemScript)
 }
 
 // ScriptValidate mocks base method
 func (m *MockITokenEngine) ScriptValidate(utxoLockScript []byte, pickupJuryRedeemScript PickupJuryRedeemScript, tx *modules.Transaction, msgIdx, inputIndex int) error {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ScriptValidate", utxoLockScript, pickupJuryRedeemScript, tx, msgIdx, inputIndex)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -233,13 +219,11 @@ func (m *MockITokenEngine) ScriptValidate(utxoLockScript []byte, pickupJuryRedee
 
 // ScriptValidate indicates an expected call of ScriptValidate
 func (mr *MockITokenEngineMockRecorder) ScriptValidate(utxoLockScript, pickupJuryRedeemScript, tx, msgIdx, inputIndex interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScriptValidate", reflect.TypeOf((*MockITokenEngine)(nil).ScriptValidate), utxoLockScript, pickupJuryRedeemScript, tx, msgIdx, inputIndex)
 }
 
 // ScriptValidate1Msg mocks base method
 func (m *MockITokenEngine) ScriptValidate1Msg(utxoLockScripts map[string][]byte, pickupJuryRedeemScript PickupJuryRedeemScript, tx *modules.Transaction, msgIdx int) error {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ScriptValidate1Msg", utxoLockScripts, pickupJuryRedeemScript, tx, msgIdx)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -247,6 +231,5 @@ func (m *MockITokenEngine) ScriptValidate1Msg(utxoLockScripts map[string][]byte,
 
 // ScriptValidate1Msg indicates an expected call of ScriptValidate1Msg
 func (mr *MockITokenEngineMockRecorder) ScriptValidate1Msg(utxoLockScripts, pickupJuryRedeemScript, tx, msgIdx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScriptValidate1Msg", reflect.TypeOf((*MockITokenEngine)(nil).ScriptValidate1Msg), utxoLockScripts, pickupJuryRedeemScript, tx, msgIdx)
 }

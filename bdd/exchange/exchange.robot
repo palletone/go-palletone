@@ -11,20 +11,30 @@ ${one}            ${EMPTY}
 ${two}            ${EMPTY}
 ${onetoken}       ${EMPTY}
 ${twotoken}       ${EMPTY}
+${foundation}     ${EMPTY}
 
 *** Test Cases ***
 exchangemaker
+    unlockAccount    ${foundation}
+    transferPtn    ${foundation}    ${one}    2000
     log    ${one}
     log    ${onetoken}
-    ${onebalance}=    getBalance    ${one}    ${onetoken}
-    log    ${onebalance}
-    ${twobalance}=    getBalance    ${two}    ${twotoken}
-    log    ${twobalance}
-    #Given Alice issues her personal token, amount is 1000, decimal is 1 succeed    ${one}    ${onetoken}
-    #Given Bob issues her #personal token, amount is 1000, decimal is 1 succeed    ${two}    ${twotoken}
+    transferPtn    ${foundation}    ${two}    2000
+    sleep    1
     unlockAccount    ${one}
-    maker    ${one}    ${onetoken}    100    ${twotoken}    2000
-    sleep    10
+    ${onetokenId}=    Alice issues her personal token, amount is 10000, decimal is 1 succeed    ${one}    ${onetoken}
+    sleep    5
+    unlockAccount    ${two}
+    ${twotokenId}=    Bob issues her personal token, amount is 10000, decimal is 1 succeed    ${two}    ${twotoken}
+
+    ${onebalance}=    getBalance    ${one}    ${onetokenId}
+    log    ${onebalance}
+    ${twobalance}=    getBalance    ${two}    ${twotokenId}
+    log    ${twobalance}
+
+    unlockAccount    ${one}
+    maker    ${one}    ${onetokenId}    100    ${twotokenId}    2000
+    sleep    5
     exchangequery
     ${respJson}    addrexchangequery    ${one}
     ${reJson}    To Json    ${respJson}
@@ -32,19 +42,19 @@ exchangemaker
     ${exchsn}=    Get From Dictionary    ${reJson[0]}    ExchangeSn 
     log    ${exchsn}
 
-    taker    ${two}    ${twotoken}    2000    ${exchsn}
-    sleep    10
-    ${afteronebalance}=    getBalance    ${one}    ${twotoken}
+    taker    ${two}    ${twotokenId}    2000    ${exchsn}
+    sleep    5
+    ${afteronebalance}=    getBalance    ${one}    ${twotokenId}
     log    ${afteronebalance}
     ${makeramount}=    Set Variable If    ${afteronebalance}==2000    0    0
     log    ${makeramount}
-    ${aftertwobalance}=    getBalance    ${two}    ${onetoken}
+    ${aftertwobalance}=    getBalance    ${two}    ${onetokenId}
     log    ${aftertwobalance}
     ${takeramount}=    Set Variable If    ${aftertwobalance}==100    0    0
     log    ${takeramount}
 
-    maker    ${one}    ${onetoken}    200    ${twotoken}    4000
-    sleep    10
+    maker    ${one}    ${onetokenId}    200    ${twotokenId}    4000
+    sleep    5
     exchangequery
     ${respJson}    addrexchangequery    ${one}
     ${reJson}    To Json    ${respJson}
@@ -52,13 +62,13 @@ exchangemaker
     ${exchsn2}=    Get From Dictionary    ${reJson[0]}    ExchangeSn 
     log    ${exchsn2}
 
-    taker    ${two}    ${twotoken}    2000    ${exchsn2}
-    sleep    10
-    ${afteronebalance2}=    getBalance    ${one}    ${twotoken}
+    taker    ${two}    ${twotokenId}    2000    ${exchsn2}
+    sleep    5
+    ${afteronebalance2}=    getBalance    ${one}    ${twotokenId}
     log    ${afteronebalance2}
     ${makeramount}=    Set Variable If    ${afteronebalance2}==4000    0    0
     log    ${makeramount}
-    ${aftertwobalance}=    getBalance    ${two}    ${onetoken}
+    ${aftertwobalance}=    getBalance    ${two}    ${onetokenId}
     log    ${aftertwobalance}
     ${takeramount}=    Set Variable If    ${aftertwobalance}==200    0    0
     log    ${takeramount}
@@ -68,8 +78,8 @@ exchangemaker
     ${len}    Get Length    ${reJson}
     ${exchsn3}=    Get From Dictionary    ${reJson[0]}    ExchangeSn 
     log    ${exchsn3}
-    cancel    ${one}    ${onetoken}    ${exchsn3}
-    sleep    10
+    cancel    ${one}    ${onetokenId}    ${exchsn3}
+    sleep    5
     ${respJson}    addrexchangequery    ${one}
     log    ${respJson}
     run keyword if    ''    in ${respJson}
@@ -100,20 +110,34 @@ post
     ${res}    Get From Dictionary    ${respJson}    result
     [Return]    ${res}
 
-Alice issues her personal token, amount is 1000, decimal is 1 succeed
-    unlockAccount    ${Alice}
-    log    ${Alice}
-    issueToken    ${Alice}    ${AliceToken}    1000    1    Alice's token
+Alice issues her personal token, amount is 10000, decimal is 1 succeed
+    [Arguments]    ${addr}    ${AliceToken}
+    log    ${addr}
+    issueToken    ${addr}    ${AliceToken}    10000    1    addr's
     Wait for transaction being packaged
-    ${balance}=    getAllBalance    ${Alice}
+    ${balance}=    getAllBalance    ${addr}
+    log    ${balance}
     ${tokenIDs}=    Get Dictionary Keys    ${balance}
-    FOR    ${id}    IN    @{tokenIDs}
+    :FOR    ${id}    IN    @{tokenIDs}
+    \    log    ${id[0:3]}
+    \    log    ${AliceToken}
+    \    Set Global Variable    ${AliceTokenID}    ${id}
+    \    run keyword if    '${id[0:3]}'=='${AliceToken}'    exit for loop
+    log    ${AliceTokenID}
+    [Return]    ${AliceTokenID}
 
-Bob issues her personal token, amount is 1000, decimal is 1 succeed
-    unlockAccount    ${Bob}
-    issueToken    ${Bob}    ${BobToken}    1000    1    Bob's token
+Bob issues her personal token, amount is 10000, decimal is 1 succeed
+    [Arguments]    ${addr}    ${BobToken}
+    log    ${addr}
+    issueToken    ${addr}    ${BobToken}    10000    1    addr's
     Wait for transaction being packaged
-    ${balance}=    getAllBalance    ${Bob}
+    ${balance}=    getAllBalance    ${addr}
+    log    ${balance}
     ${tokenIDs}=    Get Dictionary Keys    ${balance}
-    FOR    ${id}    IN    @{tokenIDs}
-    [Return]    ${res}
+    :FOR    ${id}    IN    @{tokenIDs}
+    \    log    ${id[0:3]}
+    \    log    ${BobToken}
+    \    Set Global Variable    ${BobTokenID}    ${id}
+    \    run keyword if    '${id[0:3]}'=='${BobToken}'    exit for loop
+    log    ${BobTokenID}
+    [Return]    ${BobTokenID}

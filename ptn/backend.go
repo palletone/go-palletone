@@ -116,7 +116,7 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 		return nil, fmt.Errorf("invalid sync mode %d", config.SyncMode)
 	}
 
-	db, err := CreateDB(ctx, config)
+	db, localdb, err := CreateDB(ctx, config)
 	if err != nil {
 		log.Error("PalletOne New", "CreateDB err:", err)
 		return nil, err
@@ -138,7 +138,7 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 		}
 	}
 
-	dag, err := dag.NewDag(db, cache, false)
+	dag, err := dag.NewDag(db, localdb, cache, false)
 	if err != nil {
 		log.Error("PalletOne New", "NewDag err:", err)
 		return nil, err
@@ -210,7 +210,7 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 }
 
 // CreateDB creates the chain database.
-func CreateDB(ctx *node.ServiceContext, config *Config /*, name string*/) (palletdb.Database, error) {
+func CreateDB(ctx *node.ServiceContext, config *Config /*, name string*/) (palletdb.Database, palletdb.Database, error) {
 	//db, err := ptndb.NewLDBDatabase(ctx.config.resolvePath(name), cache, handles)
 	//path := ctx.DatabasePath(name)
 	path := dagconfig.DagConfig.DbPath
@@ -218,14 +218,18 @@ func CreateDB(ctx *node.ServiceContext, config *Config /*, name string*/) (palle
 	log.Debugf("Open leveldb path: %s", path)
 	db, err := storage.Init(path, config.DatabaseCache, config.DatabaseHandles)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-
 	if db, ok := db.(*ptndb.LDBDatabase); ok {
 		db.Meter("ptn:db")
 	}
+	localDbPath := dagconfig.DagConfig.LocalDbPath
+	ldb, err := storage.Init(localDbPath, config.DatabaseCache, config.DatabaseHandles)
+	if err != nil {
+		return nil, nil, err
+	}
 
-	return db, nil
+	return db, ldb, nil
 }
 
 // APIs returns the collection of RPC services the ethereum package offers.

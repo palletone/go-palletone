@@ -215,11 +215,11 @@ func (d *Dag) JuryCount() uint {
 	return uint(len(juryList))
 }
 
-func (d *Dag) GetActiveJuries() []common.Address {
-	return nil //todo
-
-	//return d.unstableStateRep.GetJuryCandidateList()
-}
+//func (d *Dag) GetActiveJuries() []common.Address {
+//	return nil //todo
+//
+//	//return d.unstableStateRep.GetJuryCandidateList()
+//}
 
 func (d *Dag) IsActiveJury(addr common.Address) bool {
 	return d.unstableStateRep.IsJury(addr)
