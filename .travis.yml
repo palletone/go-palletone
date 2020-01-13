@@ -19,6 +19,7 @@ env:
     - APPLICATION_DIR=application
     - USER_CONTRACT_DIR=usercontract
     - BLACKLIST_DIR=blacklist
+    - EXCHANGE_DIR=exchange
     - LOG_NAME=log.html
     - REPORT_NAME=report.html
     ##########  control testcase  ##############
@@ -36,6 +37,7 @@ env:
     - IS_RUN_APPLICATION=true
     - IS_RUN_LIGHT=false
     - IS_RUN_BLACKLIST=true
+    - IS_RUN_EXCHANGE=true
     - GO111MODULE=on
     - IS_UPLOAD=true
     - IS_RUN_HDWALLET=true
@@ -95,6 +97,10 @@ matrix:
         - if [ $IS_RUN_BLACKLIST == 'true' ]; then
           cd ../blacklist;
           ./blacklist_test.sh 2;
+          fi
+        - if [ $IS_RUN_EXCHANGE == 'true' ]; then
+          cd ../exchange;
+          ./exchange_test.sh BTC LTC;
           fi
         - if [ $IS_RUN_TESTCONTRACTCASES == 'true' ];then
           cd ../contract/testcases;
