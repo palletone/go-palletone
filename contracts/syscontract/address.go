@@ -57,11 +57,14 @@ var (
 	//9分区管理合约
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DRxVdGDZ
 	PartitionContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000091C")
-    
-    //10Token互换合约
+
+	//10Token互换合约
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DS36t3ba
 	ExchangeContractAddress = common.HexToAddress("0x000000000000000000000000000000000000000A1C")
-	
+	//11 红包合约
+	//
+	PacketContractAddress = common.HexToAddress("0x000000000000000000000000000000000000000B1C")
+
 	//15测试调试用
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DSfQdUHf
 	TestContractAddress = common.HexToAddress("0x000000000000000000000000000000000000000F1C")
