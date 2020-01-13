@@ -1389,6 +1389,18 @@ func (mr *MockIDagMockRecorder) GetGlobalProp() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGlobalProp", reflect.TypeOf((*MockIDag)(nil).GetGlobalProp))
 }
 
+// GetMediatorSchl mocks base method
+func (m *MockIDag) GetMediatorSchl() *modules.MediatorSchedule {
+	ret := m.ctrl.Call(m, "GetMediatorSchl")
+	ret0, _ := ret[0].(*modules.MediatorSchedule)
+	return ret0
+}
+
+// GetMediatorSchl indicates an expected call of GetMediatorSchl
+func (mr *MockIDagMockRecorder) GetMediatorSchl() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMediatorSchl", reflect.TypeOf((*MockIDag)(nil).GetMediatorSchl))
+}
+
 // GetMediatorCount mocks base method
 func (m *MockIDag) GetMediatorCount() int {
 	ret := m.ctrl.Call(m, "GetMediatorCount")
@@ -1694,18 +1706,6 @@ func (m *MockIDag) IsContractDeveloper(addr common.Address) bool {
 // IsContractDeveloper indicates an expected call of IsContractDeveloper
 func (mr *MockIDagMockRecorder) IsContractDeveloper(addr interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsContractDeveloper", reflect.TypeOf((*MockIDag)(nil).IsContractDeveloper), addr)
-}
-
-// GetActiveJuries mocks base method
-func (m *MockIDag) GetActiveJuries() []common.Address {
-	ret := m.ctrl.Call(m, "GetActiveJuries")
-	ret0, _ := ret[0].([]common.Address)
-	return ret0
-}
-
-// GetActiveJuries indicates an expected call of GetActiveJuries
-func (mr *MockIDagMockRecorder) GetActiveJuries() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveJuries", reflect.TypeOf((*MockIDag)(nil).GetActiveJuries))
 }
 
 // CreateGenericTransaction mocks base method

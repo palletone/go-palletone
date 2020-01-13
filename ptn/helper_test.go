@@ -522,14 +522,17 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 	//}
 
 	// step6. traverse transactions and save them
+	hash := unit.Hash()
+	height := unit.NumberU64()
+	time := unit.Timestamp()
 	txHashSet := []common.Hash{}
-	for _, tx := range unit.Txs {
-		// traverse messages
-
-		//fmt.Println("tx==", tx.TxHash)
+	for index, tx := range unit.Txs {
 		// step7. save transaction
 		if err := dagDb.SaveTransaction(tx); err != nil {
 			log.Println("Save transaction:", "error", err.Error())
+			return err
+		}
+		if err := dagDb.SaveTxLookupEntry(hash, height, uint64(time), index, tx); err != nil {
 			return err
 		}
 		txHashSet = append(txHashSet, tx.Hash())
@@ -538,12 +541,6 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 	// step8. save unit body, the value only save txs' hash set, and the key is merkle root
 	if err := dagDb.SaveBody(unit.Hash(), txHashSet); err != nil {
 		log.Println("SaveBody", "error", err.Error())
-		return err
-	}
-	if err := dagDb.SaveTxLookupEntry(unit); err != nil {
-		return err
-	}
-	if err := dagDb.SaveTxLookupEntry(unit); err != nil {
 		return err
 	}
 	if err := saveHashByIndex(db, unit.Hash(), unit.UnitHeader.GetNumber().Index); err != nil {

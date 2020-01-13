@@ -27,12 +27,12 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/common/uint128"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
 func Test_UnitProduceRepository_UpdateSysParams(t *testing.T) {
 	// 初始化 环境
-	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123}, TxIndex: 1}
 	db, err := ptndb.NewMemDatabase()
 	if err != nil {
 		t.Error(err.Error())
@@ -49,6 +49,7 @@ func Test_UnitProduceRepository_UpdateSysParams(t *testing.T) {
 		t.Error(err.Error())
 	}
 
+	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123}, TxIndex: 1}
 	// 1, 不通过投票修改参数
 	modifies := make(map[string]string)
 	// modifies["TxCoinYearRate"] = "0.02"
@@ -122,4 +123,43 @@ func Test_UnitProduceRepository_UpdateSysParams(t *testing.T) {
 	} else {
 		t.Log("update sysParams success")
 	}
+}
+
+func Test_updateAndSaveRecentSlotsFilled(t *testing.T) {
+	dgp := modules.NewDynGlobalProp()
+	t.Log(dgp.RecentSlotsFilled.BinaryStr())
+
+	missedUnits := 10
+	totalSlot := missedUnits + 1
+	dgp.RecentSlotsFilled = dgp.RecentSlotsFilled.Lsh(uint(totalSlot)).Add64(1)
+	t.Log(dgp.RecentSlotsFilled.BinaryStr())
+
+	// 初始化 环境
+	db, err := ptndb.NewMemDatabase()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	upRep := NewUnitProduceRepository4Db(db, tokenengine.Instance)
+
+	upRep.propRep.StoreDynGlobalProp(dgp)
+	dgp1, err := upRep.propRep.RetrieveDynGlobalProp()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	t.Log(dgp1.RecentSlotsFilled.BinaryStr())
+}
+
+func Test_LowAndHightDisplayOfRecentSlotsFilled(t *testing.T) {
+	dgp := modules.NewDynGlobalProp()
+	dgp.RecentSlotsFilled = uint128.New(1, 0)
+	t.Log(dgp.RecentSlotsFilled.BinaryStr())
+
+	dgp.RecentSlotsFilled = dgp.RecentSlotsFilled.Lsh(10).Add64(1)
+	t.Log(dgp.RecentSlotsFilled.BinaryStr())
+
+	dgp.RecentSlotsFilled = uint128.New(0, 1)
+	t.Log(dgp.RecentSlotsFilled.BinaryStr())
+
+	dgp.RecentSlotsFilled = dgp.RecentSlotsFilled.Lsh(10).Add64(1)
+	t.Log(dgp.RecentSlotsFilled.BinaryStr())
 }

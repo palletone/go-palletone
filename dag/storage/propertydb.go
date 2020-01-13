@@ -21,10 +21,8 @@
 package storage
 
 import (
-	"encoding/binary"
 	"reflect"
 
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
@@ -43,8 +41,8 @@ type IPropertyDb interface {
 	StoreMediatorSchl(ms *modules.MediatorSchedule) error
 	RetrieveMediatorSchl() (*modules.MediatorSchedule, error)
 
-	StoreGlobalPropHistory(gp *modules.GlobalPropertyHistory) error
-	RetrieveGlobalPropHistories() ([]*modules.GlobalPropertyHistory, error)
+	//StoreGlobalPropHistory(gp *modules.GlobalPropertyHistory) error
+	//RetrieveGlobalPropHistories() ([]*modules.GlobalPropertyHistory, error)
 
 	SetNewestUnit(header *modules.Header) error
 	//GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, int64, error)
@@ -102,7 +100,7 @@ func (propdb *PropertyDb) RetrieveGlobalProp() (*modules.GlobalProperty, error) 
 	gp := modules.NewGlobalProp()
 	err := RetrieveFromRlpBytes(propdb.db, constants.GLOBALPROPERTY_KEY, gp)
 	if err != nil {
-		log.Debugf("Retrieve global properties error: %v", err.Error())
+		log.Errorf("Retrieve global properties error: %v", err.Error())
 	}
 
 	return gp, err
@@ -110,10 +108,9 @@ func (propdb *PropertyDb) RetrieveGlobalProp() (*modules.GlobalProperty, error) 
 
 func (propdb *PropertyDb) RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error) {
 	dgp := modules.NewDynGlobalProp()
-
 	err := RetrieveFromRlpBytes(propdb.db, constants.DYNAMIC_GLOBALPROPERTY_KEY, dgp)
 	if err != nil {
-		log.Debugf("Retrieve dynamic global properties error: %v", err.Error())
+		log.Errorf("Retrieve dynamic global properties error: %v", err.Error())
 	}
 
 	return dgp, err
@@ -123,56 +120,64 @@ func (propdb *PropertyDb) RetrieveMediatorSchl() (*modules.MediatorSchedule, err
 	ms := modules.NewMediatorSchl()
 	err := RetrieveFromRlpBytes(propdb.db, constants.MEDIATOR_SCHEDULE_KEY, ms)
 	if err != nil {
-		log.Debugf("Retrieve mediator schedule error: %v", err.Error())
+		log.Errorf("Retrieve mediator schedule error: %v", err.Error())
 	}
 
 	return ms, err
 }
 
-func makeGlobalPropHistoryKey(gp *modules.GlobalPropertyHistory) []byte {
-	b := make([]byte, 8)
-	binary.LittleEndian.PutUint64(b, gp.EffectiveTime)
-	return append(constants.GLOBAL_PROPERTY_HISTORY_PREFIX, b...)
-}
-
-func (propdb *PropertyDb) StoreGlobalPropHistory(gp *modules.GlobalPropertyHistory) error {
-	log.Debugf("DB[%s] Save global property history to db.", reflect.TypeOf(propdb.db).String())
-	key := makeGlobalPropHistoryKey(gp)
-	err := StoreToRlpBytes(propdb.db, key, gp)
-	if err != nil {
-		log.Debugf("Store global properties history error: %v", err.Error())
-	}
-
-	return err
-}
-
-func (propdb *PropertyDb) RetrieveGlobalPropHistories() ([]*modules.GlobalPropertyHistory, error) {
-	kv := getprefix(propdb.db, constants.GLOBAL_PROPERTY_HISTORY_PREFIX)
-	result := make([]*modules.GlobalPropertyHistory, 0)
-	for _, v := range kv {
-		gp := &modules.GlobalPropertyHistory{}
-		rlp.DecodeBytes(v, gp)
-		result = append(result, gp)
-	}
-	return result, nil
-}
+//func makeGlobalPropHistoryKey(gp *modules.GlobalPropertyHistory) []byte {
+//	b := make([]byte, 8)
+//	binary.LittleEndian.PutUint64(b, gp.EffectiveTime)
+//	return append(constants.GLOBAL_PROPERTY_HISTORY_PREFIX, b...)
+//}
+//
+//func (propdb *PropertyDb) StoreGlobalPropHistory(gp *modules.GlobalPropertyHistory) error {
+//	log.Debugf("DB[%s] Save global property history to db.", reflect.TypeOf(propdb.db).String())
+//	key := makeGlobalPropHistoryKey(gp)
+//	err := StoreToRlpBytes(propdb.db, key, gp)
+//	if err != nil {
+//		log.Debugf("Store global properties history error: %v", err.Error())
+//	}
+//
+//	return err
+//}
+//
+//func (propdb *PropertyDb) RetrieveGlobalPropHistories() ([]*modules.GlobalPropertyHistory, error) {
+//	kv := getprefix(propdb.db, constants.GLOBAL_PROPERTY_HISTORY_PREFIX)
+//	result := make([]*modules.GlobalPropertyHistory, 0)
+//	for _, v := range kv {
+//		gp := &modules.GlobalPropertyHistory{}
+//		rlp.DecodeBytes(v, gp)
+//		result = append(result, gp)
+//	}
+//	return result, nil
+//}
 
 func (db *PropertyDb) SetNewestUnit(header *modules.Header) error {
 	hash := header.Hash()
 	index := header.GetNumber()
 	timestamp := uint32(header.Timestamp())
+
 	data := &modules.UnitProperty{Hash: hash, ChainIndex: index, Timestamp: timestamp}
-	key := append(constants.LastUnitInfo, index.AssetID.Bytes()...)
+	//key := append(constants.LastUnitInfo, index.AssetID.Bytes()...)
 	log.Debugf("DB[%s]Save newest unit %s,index:%s", reflect.TypeOf(db.db).String(), hash.String(), index.String())
 
-	return StoreToRlpBytes(db.db, key, data)
+	//return StoreToRlpBytes(db.db, key, data)
+	return StoreToRlpBytes(db.db, getNewestUnit(index.AssetID), data)
+}
+
+func getNewestUnit(asset modules.AssetId) []byte {
+	return append(constants.LastUnitInfo, asset.Bytes()...)
 }
 
 //func (db *PropertyDb) GetNewestUnit(asset modules.AssetId) (common.Hash, *modules.ChainIndex, int64, error) {
 func (db *PropertyDb) GetNewestUnit(asset modules.AssetId) (*modules.UnitProperty, error) {
-	key := append(constants.LastUnitInfo, asset.Bytes()...)
 	data := &modules.UnitProperty{}
-	err := RetrieveFromRlpBytes(db.db, key, data)
+	//key := append(constants.LastUnitInfo, asset.Bytes()...)
+	//err := RetrieveFromRlpBytes(db.db, key, data)
+
+	err := RetrieveFromRlpBytes(db.db, getNewestUnit(asset), data)
 	if err != nil {
 		//return common.Hash{}, nil, 0, err
 		return nil, err

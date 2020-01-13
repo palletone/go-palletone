@@ -50,7 +50,7 @@ type IDagDb interface {
 	GetAllTxs() ([]*modules.Transaction, error)
 	SaveBody(unitHash common.Hash, txsHash []common.Hash) error
 	GetBody(unitHash common.Hash) ([]common.Hash, error)
-	SaveTxLookupEntry(unit *modules.Unit) error
+	SaveTxLookupEntry(hash common.Hash, height, timestamp uint64, index int, tx *modules.Transaction) error
 
 	PutTrieSyncProgress(count uint64) error
 
@@ -208,27 +208,16 @@ func (dagdb *DagDb) GetBody(unitHash common.Hash) ([]common.Hash, error) {
 	return txHashs, nil
 }
 
-func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
-	if len(unit.Txs) == 0 {
-		//log.Debugf("No tx in unit[%s] need to save lookup", unit.Hash().String())
-		return nil
+func (dagdb *DagDb) SaveTxLookupEntry(hash common.Hash, height, timestamp uint64, index int,
+	tx *modules.Transaction) error {
+	in := &modules.TxLookupEntry{
+		UnitHash:  hash,
+		UnitIndex: height,
+		Index:     uint64(index),
+		Timestamp: timestamp,
 	}
-	//log.Debugf("Batch save tx lookup entry, tx count:%d", len(unit.Txs))
-	batch := dagdb.db.NewBatch()
-	for i, tx := range unit.Transactions() {
-		in := &modules.TxLookupEntry{
-			UnitHash:  unit.Hash(),
-			UnitIndex: unit.NumberU64(),
-			Index:     uint64(i),
-			Timestamp: uint64(unit.UnitHeader.Timestamp()),
-		}
-		key := append(constants.LOOKUP_PREFIX, tx.Hash().Bytes()...)
-
-		if err := StoreToRlpBytes(batch, key, in); err != nil {
-			return err
-		}
-	}
-	return batch.Write()
+	key := append(constants.LOOKUP_PREFIX, tx.Hash().Bytes()...)
+	return StoreToRlpBytes(dagdb.db, key, in)
 }
 func (dagdb *DagDb) GetTxLookupEntry(txHash common.Hash) (*modules.TxLookupEntry, error) {
 	key := append(constants.LOOKUP_PREFIX, txHash.Bytes()...)

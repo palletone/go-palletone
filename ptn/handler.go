@@ -273,9 +273,13 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 	heighter := func(assetId modules.AssetId) uint64 {
 		log.Debug("Enter PalletOne Fetcher heighter")
 		defer log.Debug("End PalletOne Fetcher heighter")
-		unit := pm.dag.GetCurrentUnit(assetId)
-		if unit != nil {
-			return unit.NumberU64()
+		//unit := pm.dag.GetCurrentUnit(assetId)
+		//if unit != nil {
+		//	return unit.NumberU64()
+		//}
+		ustabeUnit, _ := pm.dag.UnstableHeadUnitProperty(assetId)
+		if ustabeUnit != nil {
+			return ustabeUnit.ChainIndex.Index
 		}
 		return uint64(0)
 	}
