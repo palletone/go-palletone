@@ -95,7 +95,8 @@ type Config struct {
 	IPCPath string `toml:",omitempty"`
 
 	//HTTPS
-	HTTPs         bool   //`toml:",omitempty"`
+	HTTPs         bool //`toml:",omitempty"`
+	HttpsCAFile   string
 	HttpsCertFile string //`toml:",omitempty"`
 	HttpsKeyFile  string //`toml:",omitempty"`
 

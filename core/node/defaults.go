@@ -31,6 +31,7 @@ var DefaultConfig = Config{
 	HTTPPort:         DefaultHTTPPort,
 	HTTPModules:      []string{"net", "web3", "wallet", "dag", "personal", "mediator", "contract"},
 	HTTPs:            false,
+	HttpsCAFile:      "",
 	HttpsCertFile:    "",
 	HttpsKeyFile:     "",
 	WSHost:           DefaultWSHost,
