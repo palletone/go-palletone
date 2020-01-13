@@ -33,11 +33,9 @@ all:
 
 	
 golang-baseimage: 
-	docker pull palletone/goimg
+	./images/goimg/pull.sh
 golang-baseimage-dev:
-	vm/baseimages/dev/tarPro.sh
-	docker build -t palletone/goimg vm/baseimages/dev/
-	vm/baseimages/dev/del.sh
+	./images/dev/dev.sh
 docker:
 	@mkdir -p $(BUILD_DIR)/images/gptn
 	@cat images/gptn/Dockerfile.in \
