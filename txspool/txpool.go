@@ -470,10 +470,9 @@ func (pool *TxPool) validateTx(tx *TxPoolTransaction, local bool) ([]*modules.Ad
 	validator.ValidationCode, error) {
 	// 交易池不需要验证交易存不存在。
 
-	if local {
-		// todo 以后备用
-		local =	!local
-	}
+	// todo 以后备用
+	//if local {
+	//}
 
 	return pool.txValidator.ValidateTx(tx.Tx, true)
 }
