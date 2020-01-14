@@ -95,15 +95,16 @@ matrix:
         - sleep 15
         - netstat -ap | grep gptn
         - if [ $IS_RUN_BLACKLIST == 'true' ]; then
-          cd ../blacklist;
+          cd ${BASE_DIR}/bdd/blacklist;
           ./blacklist_test.sh 2;
           fi
         - if [ $IS_RUN_EXCHANGE == 'true' ]; then
-          cd ../exchange;
+          cd ${BASE_DIR}/bdd/exchange;
+          chmod +x ./exchange_test.sh;
           ./exchange_test.sh BTC LTC;
           fi
         - if [ $IS_RUN_TESTCONTRACTCASES == 'true' ];then
-          cd ../contract/testcases;
+          cd ${BASE_DIR}/bdd/contract/testcases;
           chmod +x ./test_start.sh;
           ./test_start.sh;
           fi
