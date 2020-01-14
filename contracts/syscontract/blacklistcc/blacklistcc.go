@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
+	"fmt"
 )
 
 type BlacklistMgr struct {
@@ -166,6 +167,18 @@ func (p *BlacklistMgr) Payout(stub shim.ChaincodeStubInterface, addr common.Addr
 	if !isFoundationInvoke(stub) {
 		return errors.New("only foundation address can call this function")
 	}
+
+	result, err := p.QueryIsInBlacklist(stub, addr)
+	if err != nil {
+		log.Warnf(err.Error())
+		return err
+	}
+	if result {
+		errStr := fmt.Sprintf("address[%s] is in blacklist", addr.String())
+		log.Warnf(errStr)
+		return fmt.Errorf(errStr)
+	}
+
 	uint64Amt := ptnjson.JsonAmt2AssetAmt(asset, amount)
 	return stub.PayOutToken(addr.String(), &modules.AmountAsset{
 		Amount: uint64Amt,
