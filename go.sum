@@ -241,6 +241,8 @@ github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb/go.mo
 github.com/palletone/eth-adaptor v1.1.0/go.mod h1:g9jTKBCiofy0AmP5rmuCZGm91Z8sTTnjzyBg8oPcas0=
 github.com/palletone/eth-adaptor v1.1.1-0.20191220081203-275de08ec98b h1:ASnC1Ef92L7fZbMBv+COXO86qJJ3OCKRQwQurWJhkzk=
 github.com/palletone/eth-adaptor v1.1.1-0.20191220081203-275de08ec98b/go.mod h1:i7Eq3JTzzDJTMuLBUKDw2w6WgU4DI1YHtRohFkeAQK0=
+github.com/palletone/eth-adaptor v1.1.1-0.20200114040401-8226d1a11f3f h1:gR0Wb+HsPqR5efdo/tLfln4WrnhXiwtADAfv3ObMS6k=
+github.com/palletone/eth-adaptor v1.1.1-0.20200114040401-8226d1a11f3f/go.mod h1:i7Eq3JTzzDJTMuLBUKDw2w6WgU4DI1YHtRohFkeAQK0=
 github.com/palletone/go-palletone v1.0.4/go.mod h1:kkJ40TJ3ii7ZqP+Hc3Mwneb5MUK3hgDu7fWIIupoIkU=
 github.com/pborman/uuid v1.2.0 h1:J7Q5mO4ysT1dv8hyrUGHb9+ooztCXu1D8MY8DZYsu3g=
 github.com/pborman/uuid v1.2.0/go.mod h1:X/NO0urCmaxf9VXbdlT7C2Yzkj2IKimNn4k+gtPdI/k=

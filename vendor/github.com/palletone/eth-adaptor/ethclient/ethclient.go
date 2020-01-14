@@ -204,23 +204,26 @@ func (ec *Client) TransactionByHash(ctx context.Context, hash common.Hash) (tx *
 	}
 	return json.tx, json.BlockNumber == nil, nil
 }
-func (ec *Client) TransactionsByHash(ctx context.Context, hash common.Hash) (tx *types.Transaction, blockNumber string, blockHash string, err error) {
+func (ec *Client) TransactionsByHash(ctx context.Context, hash common.Hash) (tx *types.Transaction, blockNumber string, blockHash string, fromAddr string, err error) {
 	var json *rpcTransaction
 	err = ec.c.CallContext(ctx, &json, "eth_getTransactionByHash", hash)
 	if err != nil {
-		return nil, "", "", err
+		return nil, "", "", "", err
 	} else if json == nil {
-		return nil, "", "", ethereum.NotFound
+		return nil, "", "", "", ethereum.NotFound
 	} else if _, r, _ := json.tx.RawSignatureValues(); r == nil {
-		return nil, "", "", fmt.Errorf("server returned transaction without signature")
+		return nil, "", "", "", fmt.Errorf("server returned transaction without signature")
 	}
-	if json.From != nil && json.BlockHash != nil {
-		setSenderFromServer(json.tx, *json.From, *json.BlockHash)
+	//if json.From != nil && json.BlockHash != nil {
+	//	setSenderFromServer(json.tx, *json.From, *json.BlockHash)
+	//}
+	if json.From != nil {
+		fromAddr = json.From.String()
 	}
 	if json.BlockHash == nil {
-		return json.tx, "", "", nil
+		return json.tx, "", "", fromAddr, nil
 	}
-	return json.tx, *json.BlockNumber, json.BlockHash.String(), nil
+	return json.tx, *json.BlockNumber, json.BlockHash.String(), fromAddr, nil
 }
 
 // TransactionSender returns the sender address of the given transaction. The transaction
