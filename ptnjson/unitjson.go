@@ -40,11 +40,13 @@ type UnitJson struct {
 	Reward     decimal.Decimal    `json:"reward"`       //区块奖励
 }
 
-type FastUnitJson struct {
-	FastHash    common.Hash `json:"fast_hash"`
-	FastIndex   uint64      `json:"fast_index"`
-	StableHash  common.Hash `json:"stable_hash"`
-	StableIndex uint64      `json:"stable_index"`
+type ChainUnitPropertyJson struct {
+	FastHash        common.Hash `json:"fast_hash"`
+	FastIndex       uint64      `json:"fast_index"`
+	StableHash      common.Hash `json:"stable_hash"`
+	StableIndex     uint64      `json:"stable_index"`
+	FastTimestamp   string      `json:"fast_timestamp"`
+	StableTimestamp string      `json:"stable_timestamp"`
 }
 
 type HeaderJson struct {
