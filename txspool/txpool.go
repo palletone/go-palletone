@@ -472,6 +472,7 @@ func (pool *TxPool) validateTx(tx *TxPoolTransaction, local bool) ([]*modules.Ad
 
 	if local {
 		// todo 以后备用
+		local =	!local
 	}
 
 	return pool.txValidator.ValidateTx(tx.Tx, true)
