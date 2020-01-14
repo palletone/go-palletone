@@ -1,6 +1,7 @@
 # Supported tags and respective Dockerfile links
 
 - [latest](https://github.com/palletone/go-palletone/blob/master/images/goimg/Dockerfile)
+- [1.0.5](https://github.com/palletone/go-palletone/blob/master/images/goimg/Dockerfile)
 - [1.0.4](https://github.com/palletone/go-palletone/blob/master/images/goimg/Dockerfile)
 - [1.0.3](https://github.com/palletone/go-palletone/blob/master/images/goimg/Dockerfile)
 - [1.0.2](https://github.com/palletone/go-palletone/blob/master/images/goimg/Dockerfile)
