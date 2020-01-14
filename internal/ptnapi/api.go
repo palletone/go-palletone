@@ -569,6 +569,9 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 
 		prevOut := modules.NewOutPoint(txHash, input.MessageIndex, input.Vout)
 		txInput := modules.NewTxIn(prevOut, []byte{})
+		if c.LockTime != nil && *c.LockTime != 0 {
+		    txInput.Sequence = MaxTxInSequenceNum - 1
+	    }
 		pload.AddTxIn(txInput)
 	}
 	// Add all transaction outputs to the transaction after performing
