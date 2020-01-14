@@ -25,12 +25,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/palletone/go-palletone/common/crypto"
 	"sort"
 	"strconv"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts/shim"
@@ -103,6 +103,7 @@ func (p *PacketMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			return shim.Error("Invalid pub key string:" + args[0])
 		}
 		message := args[1]
+		//signature := []byte("signature")
 		signature, err := hex.DecodeString(args[2])
 		if err != nil {
 			return shim.Error("Invalid signature hex string:" + args[2])
@@ -276,7 +277,7 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	}
 	//检查红包是否过期
 	currentTime, _ := stub.GetTxTimestamp(10)
-	if packet.ExpiredTime != 0 && packet.ExpiredTime > uint64(currentTime.Seconds) {
+	if packet.ExpiredTime != 0 && packet.ExpiredTime <= uint64(currentTime.Seconds) {
 		return errors.New("Packet already expired")
 	}
 	pass, err := crypto.MyCryptoLib.Verify(pubKey, signature, []byte(msg))
@@ -286,6 +287,12 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	balanceAmount, balanceCount, err := getPacketBalance(stub, packet.PubKey)
 	if err != nil {
 		return err
+	}
+	if balanceCount == 0 {
+		return errors.New("Packet count is zero")
+	}
+	if balanceAmount == 0 {
+		return errors.New("Packet balance is zero")
 	}
 	//验证通过，发送红包
 	hash := common.HexToHash(stub.GetTxID())
@@ -376,7 +383,7 @@ func (p *PacketMgr) RecyclePacket(stub shim.ChaincodeStubInterface, pubKey []byt
 		return err
 	}
 	now, _ := stub.GetTxTimestamp(10)
-	if packet.ExpiredTime <= uint64(now.Seconds) { //红包未过期
+	if packet.ExpiredTime > uint64(now.Seconds) { //红包未过期
 		return errors.New("packet not expired")
 	}
 	balanceAmount, _, err := getPacketBalance(stub, pubKey)

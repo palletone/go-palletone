@@ -62,7 +62,7 @@ var (
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DS36t3ba
 	ExchangeContractAddress = common.HexToAddress("0x000000000000000000000000000000000000000A1C")
 	//11 红包合约
-	//
+	//PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99
 	PacketContractAddress = common.HexToAddress("0x000000000000000000000000000000000000000B1C")
 
 	//15测试调试用

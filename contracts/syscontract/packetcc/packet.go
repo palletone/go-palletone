@@ -53,6 +53,9 @@ func (p *Packet) GetPullAmount(seed int64, amount uint64, count uint32) uint64 {
 		return p.MaxPacketAmount
 	}
 	if count == 1 {
+		if amount > p.MaxPacketAmount {
+			return p.MaxPacketAmount
+		}
 		return amount
 	}
 	expect := amount / uint64(count)
