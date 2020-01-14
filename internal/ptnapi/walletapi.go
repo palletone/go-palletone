@@ -54,10 +54,10 @@ func NewPublicWalletAPI(b Backend) *PublicWalletAPI {
 func NewPrivateWalletAPI(b Backend) *PrivateWalletAPI {
 	return &PrivateWalletAPI{b}
 }
-func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string, to string, amount, fee decimal.Decimal) (string, error) {
+func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string, to string, amount, fee decimal.Decimal,lockTime int64 ) (string, error) {
 
 	//realNet := &chaincfg.MainNetParams
-	var LockTime int64
+	//var LockTime int64
 	//LockTime = 0
 
 	amounts := []ptnjson.AddressAmt{}
@@ -123,7 +123,7 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 		amounts = append(amounts, ptnjson.AddressAmt{Address: from, Amount: ptnjson.Dao2Ptn(change)})
 	}
 
-	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &LockTime)
+	arg := ptnjson.NewCreateRawTransactionCmd(inputs, amounts, &lockTime)
 	result, _ := CreateRawTransaction(arg)
 
 	return result, nil
@@ -275,6 +275,9 @@ func WalletCreateTransaction(c *ptnjson.CreateRawTransactionCmd) (string, error)
 		//inputjson = append(inputjson, walletjson.InputJson{TxHash: input.Txid, MessageIndex: input.MessageIndex, OutIndex: input.Vout, HashForSign: "", Signature: ""})
 		prevOut := modules.NewOutPoint(txHash, input.MessageIndex, input.Vout)
 		txInput := modules.NewTxIn(prevOut, []byte{})
+		if c.LockTime != nil && *c.LockTime != 0 {
+			txInput.Sequence = MaxTxInSequenceNum - 1
+		}
 		pload.AddTxIn(txInput)
 	}
 	//var OutputJson []walletjson.OutputJson
