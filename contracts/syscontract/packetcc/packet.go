@@ -127,6 +127,9 @@ func savePacketBalance(stub shim.ChaincodeStubInterface, pubKey []byte, balanceA
 func getPacketBalance(stub shim.ChaincodeStubInterface, pubKey []byte) (uint64, uint32, error) {
 	key := PacketBalancePrefix + hex.EncodeToString(pubKey)
 	value, err := stub.GetState(key)
+	if err != nil {
+		return 0, 0, err
+	}
 	b := PacketBalance{}
 	err = rlp.DecodeBytes(value, &b)
 	if err != nil {

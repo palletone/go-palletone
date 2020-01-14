@@ -177,8 +177,8 @@ func (p *PacketMgr) CreatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 		return errors.New("Please pay one kind of token to this contract.")
 	}
 	tokenToPacket := tokenToPackets[0]
-	_, err = getPacket(stub, pubKey)
-	if p != nil {
+	pk, _ := getPacket(stub, pubKey)
+	if pk != nil {
 		return errors.New("PubKey already exist")
 	}
 	packet := &Packet{
@@ -274,6 +274,7 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	if err != nil {
 		return errors.New("Packet not found")
 	}
+	//检查红包是否过期
 	currentTime, _ := stub.GetTxTimestamp(10)
 	if packet.ExpiredTime != 0 && packet.ExpiredTime > uint64(currentTime.Seconds) {
 		return errors.New("Packet already expired")

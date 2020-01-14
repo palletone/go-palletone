@@ -50,20 +50,21 @@ func savePacketAllocationRecord(stub shim.ChaincodeStubInterface, record *Packet
 	}
 	return stub.PutState(key, value)
 }
-func getPacketAllocationRecord(stub shim.ChaincodeStubInterface, pubKey []byte, message string) (
-	*PacketAllocationRecord, error) {
-	key := PacketAllocationRecordPrefix + hex.EncodeToString(pubKey) + "-" + message
-	value, err := stub.GetState(key)
-	if err != nil {
-		return nil, err
-	}
-	p := PacketAllocationRecord{}
-	err = rlp.DecodeBytes(value, &p)
-	if err != nil {
-		return nil, err
-	}
-	return &p, nil
-}
+
+//func getPacketAllocationRecord(stub shim.ChaincodeStubInterface, pubKey []byte, message string) (
+//	*PacketAllocationRecord, error) {
+//	key := PacketAllocationRecordPrefix + hex.EncodeToString(pubKey) + "-" + message
+//	value, err := stub.GetState(key)
+//	if err != nil {
+//		return nil, err
+//	}
+//	p := PacketAllocationRecord{}
+//	err = rlp.DecodeBytes(value, &p)
+//	if err != nil {
+//		return nil, err
+//	}
+//	return &p, nil
+//}
 func getPacketAllocationHistory(stub shim.ChaincodeStubInterface, pubKey []byte) (
 	[]*PacketAllocationRecord, error) {
 	key := PacketAllocationRecordPrefix + hex.EncodeToString(pubKey) + "-"
