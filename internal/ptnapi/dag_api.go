@@ -297,7 +297,7 @@ func (s *PublicDagAPI) GetFastUnitIndex(ctx context.Context, assetid string) str
 		}
 	}
 
-	result := new(ptnjson.FastUnitJson)
+	result := new(ptnjson.ChainUnitPropertyJson)
 	//stableUnit := s.b.Dag().CurrentUnit(token)
 	//ustabeUnit := s.b.Dag().GetCurrentMemUnit(token)
 	stableUnit, _ := s.b.Dag().StableHeadUnitProperty(token)
@@ -308,12 +308,16 @@ func (s *PublicDagAPI) GetFastUnitIndex(ctx context.Context, assetid string) str
 		//result.FastIndex = ustabeUnit.NumberU64()
 		result.FastHash = ustabeUnit.Hash
 		result.FastIndex = ustabeUnit.ChainIndex.Index
+		result.FastTimestamp = time.Unix(int64(ustabeUnit.Timestamp),
+			0).Format("2006-01-02 15:04:05 -0700 MST")
 	}
 	if stableUnit != nil {
 		//result.StableHash = stableUnit.Hash()
 		//result.StableIndex = stableUnit.NumberU64()
 		result.StableHash = stableUnit.Hash
 		result.StableIndex = stableUnit.ChainIndex.Index
+		result.StableTimestamp = time.Unix(int64(stableUnit.Timestamp),
+			0).Format("2006-01-02 15:04:05 -0700 MST")
 	}
 
 	content, err := json.Marshal(result)
