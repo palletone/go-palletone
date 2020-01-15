@@ -754,7 +754,7 @@ func updateStateDbJurys(db ptndb.Database) error{
 func checkDbMigration(db ptndb.Database, stateDb storage.IStateDb) error {
 	//特殊处理
 	//  获取陪审员列表
-	updateStateDbJurys(db)
+	//updateStateDbJurys(db)
 
 	// 获取旧的gptn版本号
 	old_vertion, err := stateDb.GetDataVersion()
