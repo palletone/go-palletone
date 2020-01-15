@@ -31,8 +31,6 @@ import (
 	"sync"
 	"time"
 
-	"crypto/tls"
-	"crypto/x509"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/rs/cors"
 	"os"
@@ -173,28 +171,34 @@ func NewHTTPServer(cors []string, vhosts []string, srv *Server) *http.Server {
 	return &http.Server{Handler: handler}
 }
 
-func NewHTTPSServer(endpoint string, cors []string, srv *Server, cert, key, ca string) (*http.Server, error) {
+func NewHTTPSServer(endpoint string, cors []string, srv *Server, cert, key string) (*http.Server, error) {
 	handler := newCorsHandler(srv, cors)
 
-	pool := x509.NewCertPool()
-	caCertPath := ca
-
-	caCrt, err := ioutil.ReadFile(caCertPath)
-	if err != nil {
-		log.Error("NewHTTPSServer ReadFile ", "err:", err)
-		os.Exit(1)
-	}
-	pool.AppendCertsFromPEM(caCrt)
+	//pool := x509.NewCertPool()
+	//caCertPath := ca
+	//
+	//caCrt, err := ioutil.ReadFile(caCertPath)
+	//if err != nil {
+	//	log.Error("NewHTTPSServer ReadFile ", "err:", err)
+	//	os.Exit(1)
+	//}
+	//pool.AppendCertsFromPEM(caCrt)
+	//
+	//server := &http.Server{
+	//	Addr:    endpoint,
+	//	Handler: handler,
+	//	TLSConfig: &tls.Config{
+	//		ClientCAs:  pool,
+	//		ClientAuth: tls.RequireAndVerifyClientCert,
+	//	},
+	//}
 
 	server := &http.Server{
 		Addr:    endpoint,
 		Handler: handler,
-		TLSConfig: &tls.Config{
-			ClientCAs:  pool,
-			ClientAuth: tls.RequireAndVerifyClientCert,
-		},
 	}
-	log.Debug("NewHTTPSServer", "cert", cert, "key", key, "ca", ca)
+
+	log.Debug("NewHTTPSServer", "cert", cert, "key", key)
 	go func() {
 		if err := server.ListenAndServeTLS(cert, key); err != nil {
 			log.Error("NewHTTPSServer ListenAndServeTLS", "err", err)
