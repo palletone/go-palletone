@@ -818,10 +818,10 @@ func SetNodeConfig(ctx *cli.Context, cfg *node.Config, configDir string) string 
 	}
 	cfg.HttpsKeyFile = common.GetAbsPath(cfg.HttpsKeyFile)
 
-	if !filepath.IsAbs(cfg.HttpsCAFile) {
-		cfg.HttpsCAFile = filepath.Join(configDir, cfg.HttpsCAFile)
-	}
-	cfg.HttpsCAFile = common.GetAbsPath(cfg.HttpsCAFile)
+	//if !filepath.IsAbs(cfg.HttpsCAFile) {
+	//	cfg.HttpsCAFile = filepath.Join(configDir, cfg.HttpsCAFile)
+	//}
+	//cfg.HttpsCAFile = common.GetAbsPath(cfg.HttpsCAFile)
 
 	// 重新计算为绝对路径
 	if !filepath.IsAbs(cfg.DataDir) {
