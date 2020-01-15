@@ -14,7 +14,7 @@ Scenario: createTrans - Send Transaction
     [Tags]    normal
     sleep    4
     ${PTN1}    Given Request getbalance before create transaction
-    ${ret1}    And normalCrtTrans    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
+    ${ret1}    And normalCrtTrans    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}    ${locktime}
     ${ret2}    And normalSignTrans    ${ret1}    ${signType}    ${pwd}
     ${ret3}    And normalSendTrans    ${ret2}
     sleep    4

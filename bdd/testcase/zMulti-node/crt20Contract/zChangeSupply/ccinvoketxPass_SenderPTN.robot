@@ -28,7 +28,7 @@ Send PTN to recieverAdd
     Set Suite Variable    ${geneAdd}    ${geneAdd}
     ${jsonRes}    newAccount
     Set Suite Variable    ${reciever}    ${jsonRes['result']}
-    ${ret1}    And normalCrtTrans    ${geneAdd}    ${reciever}    10000    ${PTNPoundage}
+    ${ret1}    And normalCrtTrans    ${geneAdd}    ${reciever}    10000    ${PTNPoundage}    ${locktime}
     ${ret2}    And normalSignTrans    ${ret1}    ${signType}    ${pwd}
     ${ret3}    And normalSendTrans    ${ret2}
     sleep    4

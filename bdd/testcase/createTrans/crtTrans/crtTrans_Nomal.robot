@@ -13,6 +13,6 @@ Scenario: createTrans - Create Transaction
     [Tags]    normal
     ${geneAdd}    getGeneAdd    ${host}
     Set Suite Variable    ${geneAdd}    ${geneAdd}
-    ${result}    normalCrtTrans    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
+    ${result}    normalCrtTrans    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}    ${locktime}
 
 *** Keywords ***
