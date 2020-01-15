@@ -557,6 +557,7 @@ func (t *SimpleChaincode) test_SendRecvJury(stub shim.ChaincodeStubInterface) pb
 }
 
 func main() {
+	fmt.Println("=======================enter testshimuc test")
 	err := shim.Start(new(SimpleChaincode))
 	if err != nil {
 		fmt.Printf("Error starting Simple chaincode: %s", err)

@@ -96,7 +96,7 @@ var streamGetter peerStreamGetter
 
 //the non-mock user CC stream establishment func
 func userChaincodeStreamGetter(name string) (PeerChaincodeStream, error) {
-	flag.StringVar(&peerAddress, "peer.address", "", "peer address")
+	flag.StringVar(&peerAddress, "peer.address", "127.0.0.1:12345", "peer address")
 	if comm.TLSEnabled() {
 		keyPath := viper.GetString("tls.client.key.path")
 		certPath := viper.GetString("tls.client.cert.path")
@@ -147,7 +147,8 @@ func Start(cc Chaincode) error {
 	viper.SetEnvKeyReplacer(replacer)
 	chaincodename := viper.GetString("chaincode.id.name")
 	if chaincodename == "" {
-		return errors.New("error chaincode id not provided")
+		chaincodename = "palletone"
+		//return errors.New("error chaincode id not provided") //tmp
 	}
 	//mock stream not set up ... get real stream
 	if streamGetter == nil {
@@ -244,6 +245,8 @@ func getPeerAddress() string {
 	//	log.Error("peer.address not configured, can't connect to peer")
 	//}
 	peerAddress = viper.GetString("chaincode.peer.address")
+
+	peerAddress = "127.0.0.1:12346"
 	return peerAddress
 }
 
