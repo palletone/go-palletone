@@ -13,7 +13,7 @@ Resource          ../../utilKwd/behaveKwd.txt
 Scenario: Multi-node Minor Create Transaction
     [Tags]    normal
     ${PTNGAIN}    Given Get multi-node genesis address
-    ${ret1}    And normalCrtTrans    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
+    ${ret1}    And normalCrtTrans    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}    ${locktime}
     ${ret2}    And normalSignTrans    ${ret1}    ${signType}    ${pwd}
     ${ret3}    And normalSendTrans    ${ret2}
     Then Assert PTN from another node    ${PTNGAIN}
