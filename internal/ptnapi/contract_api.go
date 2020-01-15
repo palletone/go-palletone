@@ -727,7 +727,7 @@ func (s *PublicContractAPI) GetContractsWithJuryAddress(ctx context.Context, add
 		return nil, err
 	}
 	log.Debugf("jury address %s", a.String())
-	cs := s.b.GetContractsWithJuryAddr(a)
+	cs := s.b.GetContractsWithJuryAddr(util.RlpHash(a))
 	cj := make([]*ptnjson.ContractJson, 0, len(cs))
 	for _, c := range cs {
 		cj = append(cj, ptnjson.ConvertContract2Json(c))

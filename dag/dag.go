@@ -21,7 +21,11 @@ package dag
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common/util"
+	"github.com/palletone/go-palletone/dag/constants"
 	"sort"
 	"sync"
 	"sync/atomic"
@@ -672,8 +676,86 @@ func NewDag(db ptndb.Database, cache palletcache.ICache, light bool) (*Dag, erro
 	return dag, nil
 }
 
+func getprefix(db storage.DatabaseReader, prefix []byte) map[string][]byte {
+	iter := db.NewIteratorWithPrefix(prefix)
+	result := make(map[string][]byte)
+	for iter.Next() {
+		key := make([]byte, 0)
+		value := make([]byte, 0)
+		key = append(key, iter.Key()...)
+		result[string(key)] = append(value, iter.Value()...)
+	}
+	return result
+}
+
+func getContractStateKey(id []byte, field string) []byte {
+	key := append(constants.CONTRACT_STATE_PREFIX, id...)
+	return append(key, field...)
+}
+
+func getjurycandidatelist(db storage.DatabaseReader) (map[string]bool, error) {
+	depositeContractAddress := syscontract.DepositContractAddress
+	key := getContractStateKey(depositeContractAddress.Bytes(), modules.JuryList)
+	data, err := db.Get(key)
+	if err != nil {
+		log.Debugf(err.Error())
+		// 特殊错误处理，可能JuryList为空，忽略该err
+		return nil, nil
+	}
+	if len(data) < 28 {
+		return nil, errors.New("the data is irregular.")
+	}
+	verBytes := data[:28]
+	objData := data[28:]
+	version := &modules.StateVersion{}
+	version.SetBytes(verBytes)
+	//return objData, version, nil
+	candidateList := make(map[string]bool)
+	err = json.Unmarshal(objData, &candidateList)
+	if err != nil {
+		log.Error(err.Error())
+		return nil, err
+	}
+	return candidateList, nil
+}
+
+func updateStateDbJurys(db ptndb.Database) error{
+	list, err := getjurycandidatelist(db)
+	if err != nil {
+		return err
+	}
+	if list == nil {
+		log.Debug("list is nil")
+		return nil
+	}
+	log.Debugf("jury list len = %d", len(list))
+	for k,_ := range list {
+		a,_ := common.StringToAddress(k)
+		key := append(constants.CONTRACT_JURY_PREFIX, a.Bytes()...)
+		log.Debugf("get contracts with key = %v", key)
+		rows := getprefix(db, key)
+		for _, v := range rows {
+			contract := modules.Contract{}
+			rlp.DecodeBytes(v, &contract)
+			key1 := append(constants.CONTRACT_JURY_PREFIX, util.RlpHash(a).Bytes()...)
+			key2 := append(key1, contract.ContractId...)
+			log.Debugf("save contract id = %v with jury address hash = %s,key1 = %v", contract.ContractId, util.RlpHash(a).String(), key1)
+			//  保存陪审员对应的状态
+			err := storage.StoreToRlpBytes(db, key2, &contract)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // check db migration ,to upgrade ptn database
 func checkDbMigration(db ptndb.Database, stateDb storage.IStateDb) error {
+	//特殊处理
+	//  获取陪审员列表
+	updateStateDbJurys(db)
+
 	// 获取旧的gptn版本号
 	old_vertion, err := stateDb.GetDataVersion()
 	if err != nil {
@@ -1505,6 +1587,6 @@ func (d *Dag) MemdagInfos() (*modules.MemdagInfos, error) {
 	return memdag_infos, nil
 }
 
-func (d *Dag) GetContractsWithJuryAddr(addr common.Address) []*modules.Contract {
+func (d *Dag) GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract {
 	return d.stableStateRep.GetContractsWithJuryAddr(addr)
 }

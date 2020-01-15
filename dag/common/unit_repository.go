@@ -28,7 +28,6 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
@@ -1353,10 +1352,9 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 			log.Errorf("Save jury for contract[%x] error:%s", payload.ContractId, err.Error())
 			return false
 		}
-		//
+		///
 		for _, node := range payload.EleNode.EleList {
-			ja := crypto.PubkeyBytesToAddress(node.PublicKey)
-			err := rep.statedb.SaveContractWithJuryAddr(ja, contract)
+			err := rep.statedb.SaveContractWithJuryAddr(node.AddrHash, contract)
 			if err != nil {
 				log.Errorf("SaveContractWithJuryAddr error: %s", err.Error())
 				return false
