@@ -39,21 +39,25 @@ type ContractJson struct {
 	CreationTime    time.Time             `json:"creation_time"` // creation date
 	DuringTime      uint64                `json:"during_time"`   // deploy during date
 	Template        *ContractTemplateJson `json:"template"`
+	Version         string                `json:"version"`
 }
 
 func ConvertContract2Json(contract *modules.Contract) *ContractJson {
 	addr := common.NewAddress(contract.ContractId, common.ContractHash)
 	creatorAddr := common.NewAddress(contract.Creator, common.PublicKeyHash)
-	return &ContractJson{
+
+	c := &ContractJson{
 		ContractId:      hex.EncodeToString(contract.ContractId),
 		ContractAddress: addr.String(),
 		TemplateId:      hex.EncodeToString(contract.TemplateId),
 		Name:            contract.Name,
 		Status:          contract.Status,
 		Creator:         creatorAddr.String(),
-		CreationTime:    time.Unix(int64(contract.CreationTime), 0),
+		CreationTime:    time.Unix(int64(contract.CreationTime), 0).UTC(),
 		DuringTime:      contract.DuringTime,
+		Version:         contract.Version,
 	}
+	return c
 }
 
 type ContractTemplateJson struct {

@@ -20,24 +20,48 @@ package downloader
 
 import (
 	"github.com/palletone/go-palletone/statistics/metrics"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 var (
-	headerInMeter      = metrics.NewRegisteredMeter("ptn/downloader/headers/in", nil)
-	headerReqTimer     = metrics.NewRegisteredTimer("ptn/downloader/headers/req", nil)
-	headerDropMeter    = metrics.NewRegisteredMeter("ptn/downloader/headers/drop", nil)
-	headerTimeoutMeter = metrics.NewRegisteredMeter("ptn/downloader/headers/timeout", nil)
-
-	bodyInMeter      = metrics.NewRegisteredMeter("ptn/downloader/bodies/in", nil)
-	bodyReqTimer     = metrics.NewRegisteredTimer("ptn/downloader/bodies/req", nil)
-	bodyDropMeter    = metrics.NewRegisteredMeter("ptn/downloader/bodies/drop", nil)
-	bodyTimeoutMeter = metrics.NewRegisteredMeter("ptn/downloader/bodies/timeout", nil)
-
-	stateInMeter   = metrics.NewRegisteredMeter("ptn/downloader/states/in", nil)
-	stateDropMeter = metrics.NewRegisteredMeter("ptn/downloader/states/drop", nil)
-
-	//receiptInMeter      = metrics.NewRegisteredMeter("ptn/downloader/receipts/in", nil)
-	//receiptReqTimer     = metrics.NewRegisteredTimer("ptn/downloader/receipts/req", nil)
-	//receiptDropMeter    = metrics.NewRegisteredMeter("ptn/downloader/receipts/drop", nil)
-	//receiptTimeoutMeter = metrics.NewRegisteredMeter("ptn/downloader/receipts/timeout", nil)
+	headerReqTimer = metrics.NewRegisteredTimer("ptn/downloader/headers/req", nil)
+	bodyReqTimer   = metrics.NewRegisteredTimer("ptn/downloader/bodies/req", nil)
 )
+
+var (
+	headerInPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:downloader:headers:in",
+		Help: "headers in",
+	})
+	headerDropPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:downloader:headers:drop",
+		Help: "headers drop",
+	})
+	headerTimeoutPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:downloader:headers:timeout",
+		Help: "headers timeout",
+	})
+
+	bodyInPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:downloader:bodies:in",
+		Help: "bodies in",
+	})
+	bodyDropPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:downloader:bodies:drop",
+		Help: "bodies drop",
+	})
+	bodyTimeoutPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:downloader:bodies:timeout",
+		Help: "bodies timeout",
+	})
+)
+
+func init() {
+	prometheus.MustRegister(headerInPrometheus)
+	prometheus.MustRegister(headerDropPrometheus)
+	prometheus.MustRegister(headerTimeoutPrometheus)
+
+	prometheus.MustRegister(bodyInPrometheus)
+	prometheus.MustRegister(bodyDropPrometheus)
+	prometheus.MustRegister(bodyTimeoutPrometheus)
+}

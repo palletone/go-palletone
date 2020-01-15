@@ -51,11 +51,12 @@ type VersionedValue struct {
 func NewBasedTxSimulator(idag dag.IDag, hash common.Hash) *RwSetTxSimulator {
 	rwsetBuilder := NewRWSetBuilder()
 	gasToken := dagconfig.DagConfig.GetGasToken()
-	unit := idag.GetCurrentUnit(gasToken)
-	cIndex := unit.Header().Number
-	log.Debugf("constructing new tx simulator txid = [%s]", hash.String())
-	return &RwSetTxSimulator{chainIndex: cIndex, txid: hash, rwsetBuilder: rwsetBuilder,
-		write_cache: make(map[string][]byte), dag: idag}
+	//unit := idag.GetCurrentUnit(gasToken)
+	//cIndex := unit.Header().GetNumber()
+	ustabeUnit, _ := idag.UnstableHeadUnitProperty(gasToken)
+	cIndex := ustabeUnit.ChainIndex
+	return &RwSetTxSimulator{chainIndex: modules.NewChainIndex(cIndex.AssetID, cIndex.Index), txid: hash,
+		rwsetBuilder: rwsetBuilder, write_cache: make(map[string][]byte), dag: idag}
 }
 
 //func (s *RwSetTxSimulator) GetChainParameters() ([]byte, error) {
@@ -131,7 +132,7 @@ func (s *RwSetTxSimulator) GetStatesByPrefix(contractid []byte, ns string, prefi
 		}
 	}
 
-	log.Debugf("RW:GetStatesByPrefix,ns[%s]--contractid[%x]---prefix[%s]", ns, contractid, prefix)
+	//log.Debugf("RW:GetStatesByPrefix,ns[%s]--contractid[%x]---prefix[%s]", ns, contractid, prefix)
 
 	return result, nil
 }
@@ -144,13 +145,13 @@ func (s *RwSetTxSimulator) GetTimestamp(ns string, rangeNumber uint32) ([]byte, 
 	}
 	gasToken := dagconfig.DagConfig.GetGasToken()
 	header := s.dag.CurrentHeader(gasToken)
-	timeIndex := header.Number.Index / uint64(rangeNumber) * uint64(rangeNumber)
-	timeHeader, err := s.dag.GetHeaderByNumber(&modules.ChainIndex{AssetID: header.Number.AssetID, Index: timeIndex})
+	timeIndex := header.GetNumber().Index / uint64(rangeNumber) * uint64(rangeNumber)
+	timeHeader, err := s.dag.GetHeaderByNumber(&modules.ChainIndex{AssetID: header.GetNumber().AssetID, Index: timeIndex})
 	if err != nil {
 		return nil, errors.New("GetHeaderByNumber failed" + err.Error())
 	}
 
-	return []byte(fmt.Sprintf("%d", timeHeader.Time)), nil
+	return []byte(fmt.Sprintf("%d", timeHeader.Timestamp())), nil
 }
 func (s *RwSetTxSimulator) SetState(contractId []byte, ns string, key string, value []byte) error {
 	if err := s.CheckDone(); err != nil {
@@ -176,6 +177,7 @@ func (s *RwSetTxSimulator) GetRwData(ns string) ([]*KVRead, []*KVWrite, error) {
 	log.Debug("GetRwData", "ns info", ns)
 
 	if s.rwsetBuilder != nil {
+		s.rwsetBuilder.locker.RLock()
 		if s.rwsetBuilder.pubRwBuilderMap != nil {
 			if s.rwsetBuilder.pubRwBuilderMap[ns] != nil {
 				pubRwBuilderMap, ok := s.rwsetBuilder.pubRwBuilderMap[ns]
@@ -183,10 +185,12 @@ func (s *RwSetTxSimulator) GetRwData(ns string) ([]*KVRead, []*KVWrite, error) {
 					rd = pubRwBuilderMap.readMap
 					wt = pubRwBuilderMap.writeMap
 				} else {
+					s.rwsetBuilder.locker.RUnlock()
 					return nil, nil, errors.New("rw_data not found.")
 				}
 			}
 		}
+		s.rwsetBuilder.locker.RUnlock()
 	}
 	//sort keys and convert map to slice
 	return convertReadMap2Slice(rd), convertWriteMap2Slice(wt), nil
@@ -259,6 +263,18 @@ func (s *RwSetTxSimulator) GetTokenBalance(ns string, addr common.Address, asset
 	return convertUtxo2Balance(utxos), nil
 }
 
+func (s *RwSetTxSimulator) GetStableTransactionByHash(ns string, hash common.Hash) (*modules.Transaction, error) {
+	return s.dag.GetStableTransactionOnly(hash)
+}
+
+func (s *RwSetTxSimulator) GetStableUnit(ns string, hash common.Hash, unitNumber uint64) (*modules.Unit, error) {
+	if !hash.IsZero() {
+		return s.dag.GetStableUnit(hash)
+	}
+	gasToken := dagconfig.DagConfig.GetGasToken()
+	number := &modules.ChainIndex{AssetID: gasToken, Index: unitNumber}
+	return s.dag.GetStableUnitByNumber(number)
+}
 func convertUtxo2Balance(utxos map[modules.OutPoint]*modules.Utxo) map[modules.Asset]uint64 {
 	result := map[modules.Asset]uint64{}
 	for _, v := range utxos {

@@ -126,7 +126,7 @@ func (p *peer) HeadAndNumber(assetId modules.AssetId) (hash common.Hash, number 
 func (p *peer) SetHead(header *modules.Header) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
-	p.headInfo = peerMsg{head: header.Hash(), number: header.Number}
+	p.headInfo = peerMsg{head: header.Hash(), number: header.GetNumber()}
 }
 
 // HasBlock checks if the peer has a given block

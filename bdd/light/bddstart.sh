@@ -70,7 +70,7 @@ sleep 5
 
 syncutxocommand=`./gptn --exec "ptn.syncUTXOByAddr($account6)"  attach node_test6/palletone/gptn6.ipc`
 syncutxoinfo=`echo $syncutxocommand`
-value="\"OK\""
+value="\"ok\""
 if [ $syncutxoinfo = $value ];then
     echo "============syncUTXOByAddr account6 ok============"
     python  -m robot.run -d ./logs --test success ./light.robot
@@ -104,7 +104,7 @@ sleep 5
 
 syncutxocommand=`./gptn --exec "ptn.syncUTXOByAddr($account7)"  attach node_test7/palletone/gptn7.ipc`
 syncutxoinfo=`echo $syncutxocommand`
-value="\"OK\""
+value="\"ok\""
 if [ $syncutxoinfo = $value ];then
     echo "============syncUTXOByAddr account7 ok============"
     python  -m robot.run -d ./logs --test success ./light.robot

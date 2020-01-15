@@ -31,6 +31,7 @@ const (
 	SigHashSingle       SigHashType = 0x3
 	SigHashRaw          SigHashType = 0x4 //直接对构造好的不包含任何签名信息的Tx签名
 	SigHashAnyOneCanPay SigHashType = 0x80
+	SigHashOneMessage   SigHashType = 0x40 //只对当前Message进行签名，其他Message完全忽略
 
 	// sigHashMask defines the number of bits of the hash type which is used
 	// to identify which outputs are signed.
@@ -124,7 +125,7 @@ func parseScriptTemplate(script []byte, opcodes *[256]opcode) ([]parsedOpcode, e
 		case op.length == 1:
 			i++
 
-		// Data pushes of specific lengths -- OP_DATA_[1-75].
+			// Data pushes of specific lengths -- OP_DATA_[1-75].
 		case op.length > 1:
 			if len(script[i:]) < op.length {
 				return retScript, ErrStackShortScript
@@ -134,7 +135,7 @@ func parseScriptTemplate(script []byte, opcodes *[256]opcode) ([]parsedOpcode, e
 			pop.data = script[i+1 : i+op.length]
 			i += op.length
 
-		// Data pushes with parsed lengths -- OP_PUSHDATAP{1,2,4}.
+			// Data pushes with parsed lengths -- OP_PUSHDATAP{1,2,4}.
 		case op.length < 0:
 			var l uint
 			off := i + 1
@@ -271,8 +272,8 @@ func removeOpcodeByData(pkscript []parsedOpcode, data []byte) []parsedOpcode {
 	return retScript
 
 }
-func CalcSignatureHash(script []byte, hashType SigHashType, 
-	tx *modules.Transaction, msgIdx, idx int, 
+func CalcSignatureHash(script []byte, hashType SigHashType,
+	tx *modules.Transaction, msgIdx, idx int,
 	crypto ICrypto) ([]byte, error) {
 	parsedScript, err := parseScript(script)
 	if err != nil {
@@ -280,7 +281,7 @@ func CalcSignatureHash(script []byte, hashType SigHashType,
 	}
 	return calcSignatureHash(parsedScript, hashType, tx, msgIdx, idx, crypto), nil
 }
-func calcSignatureHash(script []parsedOpcode, hashType SigHashType, 
+func calcSignatureHash(script []parsedOpcode, hashType SigHashType,
 	tx *modules.Transaction, msgIdx, idx int, crypto ICrypto) []byte {
 	data := calcSignatureData(script, hashType, tx, msgIdx, idx)
 	hash, _ := crypto.Hash(data)
@@ -290,9 +291,18 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType,
 // calcSignatureHash will, given a script and hash type for the current script
 // engine instance, calculate the signature hash to be used for signing and
 // verification.
-func calcSignatureData(script []parsedOpcode, hashType SigHashType, 
-	tx *modules.Transaction, msgIdx, idx int) []byte {
-	pay := tx.TxMessages[msgIdx].Payload.(*modules.PaymentPayload)
+func calcSignatureData(script []parsedOpcode, hashType SigHashType,	otx *modules.Transaction, omsgIdx, idx int) []byte {
+	tx := otx
+	msgIdx := omsgIdx
+	if hashType&SigHashOneMessage == SigHashOneMessage {
+		msg := otx.Messages()[omsgIdx]
+		tx = &modules.Transaction{}
+		tx.AddMessage(msg)
+		msgIdx = 0
+
+	}
+
+	pay := tx.Messages()[msgIdx].Payload.(*modules.PaymentPayload)
 	// The SigHashSingle signature type signs only the corresponding input
 	// and output (the output with the same index number as the input).
 	//
@@ -326,16 +336,17 @@ func calcSignatureData(script []parsedOpcode, hashType SigHashType,
 	// inputs that are not currently being processed.
 
 	txCopy := tx.Clone()
-	payCopy := txCopy.TxMessages[msgIdx].Payload.(*modules.PaymentPayload)
+	msgs := txCopy.Messages()
+	payCopy := msgs[msgIdx].Payload.(*modules.PaymentPayload)
 	requestIndex := tx.GetRequestMsgIndex()
 	isInResult := false
 	if msgIdx > requestIndex && requestIndex != -1 {
 		isInResult = true
 	}
 
-	for mIdx, mCopy := range txCopy.TxMessages {
+	for mIdx, mCopy := range msgs {
 		if mCopy.App == modules.APP_PAYMENT {
-			pay := txCopy.TxMessages[mIdx].Payload.(*modules.PaymentPayload)
+			pay := msgs[mIdx].Payload.(*modules.PaymentPayload)
 			if isInResult && mIdx < requestIndex {
 				continue // 对于请求部分的Payment，不做任何处理
 			}
@@ -377,8 +388,8 @@ func calcSignatureData(script []parsedOpcode, hashType SigHashType,
 		//		payCopy.TxIn[i].Sequence = 0
 		//	}
 		//}
-        default:
-                fallthrough
+	default:
+		fallthrough
 	case SigHashOld:
 		fallthrough
 	case SigHashAll:
@@ -396,7 +407,12 @@ func calcSignatureData(script []parsedOpcode, hashType SigHashType,
 	//payCopy.Serialize(&wbuf)
 	//binary.Write(&wbuf, binary.LittleEndian, hashType)
 	//return wire.DoubleSha256(wbuf.Bytes())
-	data, err := rlp.EncodeToBytes(&txCopy)
+
+	// log.DebugDynamic(func() string {
+	// 	data,_:=json.Marshal(txCopy)
+	// 	return "tx for hash:"+string(data)
+	// })
+	data, err := rlp.EncodeToBytes(txCopy)
 	if err != nil {
 		log.Error("Rlp encode tx error:" + err.Error())
 	}

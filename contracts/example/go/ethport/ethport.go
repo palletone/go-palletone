@@ -20,6 +20,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -34,12 +36,26 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/errors"
 	dm "github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/shopspring/decimal"
+
+	"github.com/palletone/adaptor"
 )
 
 type ETHPort struct {
 }
 
 func (p *ETHPort) Init(stub shim.ChaincodeStubInterface) pb.Response {
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
+	}
+	err = stub.PutState(symbolsOwner, []byte(invokeAddr.String()))
+	if err != nil {
+		return shim.Error("write symbolsOwner failed: " + err.Error())
+	}
+
 	return shim.Success(nil)
 }
 
@@ -48,24 +64,81 @@ func (p *ETHPort) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 	switch f {
 	case "initDepositAddr":
-		return _initDepositAddr(stub)
+		return p.InitDepositAddr(stub)
+
 	case "setETHTokenAsset":
-		return _setETHTokenAsset(args, stub)
-	case "getETHToken":
-		return _getETHToken(stub)
+		if len(args) < 1 {
+			return shim.Error("need 1 args (AssetStr)")
+		}
+		return p.SetETHTokenAsset(args[0], stub)
+	case "payoutETHTokenByAddr":
+		if len(args) < 1 {
+			return shim.Error("need 1 args (ETHAddr)")
+		}
+		return p.PayoutETHTokenByAddr(args[0], stub)
+	case "payoutETHTokenByTxID":
+		if len(args) < 1 {
+			return shim.Error("need 1 args (ETHTransferTxID)")
+		}
+		return p.PayoutETHTokenByTxID(args[0], stub)
+
 	case "setETHContract":
-		return _setETHContract(args, stub)
+		if len(args) < 1 {
+			return shim.Error("need 1 args (ETHContractAddr)")
+		}
+		return p.SetETHContract(args[0], stub)
 	case "setOwner":
-		return _setOwner(args, stub)
-	case "withdrawPrepare":
-		return _withdrawPrepare(args, stub)
+		if len(args) < 1 {
+			return shim.Error("need 1 args (PTNAddr)")
+		}
+		return p.SetOwner(args[0], stub)
+
 	case "withdrawETH":
-		return _withdrawETH(args, stub)
+		if len(args) < 1 {
+			return shim.Error("need 1 args (PTNTransferTxID)")
+		}
+		ethAddrInput := ""
+		if len(args) > 1 {
+			ethAddrInput = args[1]
+		}
+		return p.WithdrawETH(args[0], ethAddrInput, stub)
+
+	case "withdrawSubmit":
+		if len(args) < 1 {
+			return shim.Error("need 1 args (ETHTxID)")
+		}
+		return p.WithdrawSubmit(args[0], stub)
 	case "withdrawFee":
-		return _withdrawFee(args, stub)
+		if len(args) < 1 {
+			return shim.Error("need 1 args (ethAddr)")
+		}
+		return p.WithdrawFee(args[0], stub)
+
+	case "getWithdrawData":
+		if len(args) < 1 {
+			return shim.Error("need 1 args (reqID (from withdrawPrepare))")
+		}
+		return p.GetWithdrawData(stub, args[0])
 
 	case "get":
-		return get(args, stub)
+		if len(args) < 1 {
+			return shim.Error("need 1 args (Key)")
+		}
+		return p.Get(stub, args[0])
+
+	case "withdrawAmount":
+		if len(args) < 2 {
+			return shim.Error("need 2  args (PTNAddress,ETHTokenAmount)")
+		}
+		withdrawAddr, err := common.StringToAddress(args[0])
+		if err != nil {
+			return shim.Error("Invalid address string:" + args[0])
+		}
+		amount, err := decimal.NewFromString(args[1])
+		if err != nil {
+			return shim.Error("Invalid amount:" + args[1])
+		}
+		return p.WithdrawAmount(stub, withdrawAddr, amount)
 	default:
 		jsonResp := "{\"Error\":\"Unknown function " + f + "\"}"
 		return shim.Error(jsonResp)
@@ -77,12 +150,17 @@ type JuryMsgAddr struct {
 	Answer  []byte
 }
 
+//todo modify conforms 15
+const Confirms = uint(1)
+
 const symbolsJuryAddress = "juryAddress"
+const symbolsJuryPubkeyAddress = "juryPubkeyAddress"
 
 const symbolsETHAsset = "eth_asset"
 const symbolsETHContract = "eth_contract"
 
 const symbolsDeposit = "deposit_"
+const symbolsSubmit = "submit_"
 
 const symbolsWithdrawPrepare = "withdrawPrepare_"
 
@@ -118,76 +196,156 @@ func consult(stub shim.ChaincodeStubInterface, content []byte, myAnswer []byte) 
 	return recvResult, nil
 }
 
-func _initDepositAddr(stub shim.ChaincodeStubInterface) pb.Response {
+type pubkeyAddr struct {
+	Addr   string
+	Pubkey []byte
+}
+type pubkeyAddrWrapper struct {
+	pubAddr []pubkeyAddr
+	by      func(p, q *pubkeyAddr) bool
+}
+type SortBy func(p, q *pubkeyAddr) bool
+
+func (pw pubkeyAddrWrapper) Len() int { // 重写 Len() 方法
+	return len(pw.pubAddr)
+}
+func (pw pubkeyAddrWrapper) Swap(i, j int) { // 重写 Swap() 方法
+	pw.pubAddr[i], pw.pubAddr[j] = pw.pubAddr[j], pw.pubAddr[i]
+}
+func (pw pubkeyAddrWrapper) Less(i, j int) bool { // 重写 Less() 方法
+	return pw.by(&pw.pubAddr[i], &pw.pubAddr[j])
+}
+
+func sortPubAddr(thePubAddr []pubkeyAddr, by SortBy) { // sortPubAddr 方法
+	sort.Sort(pubkeyAddrWrapper{thePubAddr, by})
+}
+
+func addrIncrease(p, q *pubkeyAddr) bool {
+	return p.Addr < q.Addr // addr increase sort
+}
+
+func (p *ETHPort) InitDepositAddr(stub shim.ChaincodeStubInterface) pb.Response {
 	//
-	saveResult, _ := stub.GetState(symbolsJuryAddress)
+	saveResult, _ := stub.GetState(symbolsJuryPubkeyAddress)
 	if len(saveResult) != 0 {
 		return shim.Error("DepositAddr has been init")
 	}
 
 	//Method:GetJuryETHAddr, return address string
-	result, err := stub.OutChainCall("eth", "GetJuryETHAddr", []byte(""))
+	juryAddr, err := stub.OutChainCall("eth", "GetJuryAddr", []byte(""))
 	if err != nil {
 		log.Debugf("OutChainCall GetJuryETHAddr err: %s", err.Error())
-		return shim.Error("OutChainCall GetJuryETHAddr failed")
+		return shim.Error("OutChainCall GetJuryETHAddr failed " + err.Error())
 	}
+	log.Debugf("juryAddr: %s", string(juryAddr))
+
+	result, err := stub.OutChainCall("eth", "GetJuryPubkey", []byte(""))
+	if err != nil {
+		log.Debugf("OutChainCall GetJuryPubkey err: %s", err.Error())
+		return shim.Error("OutChainCall GetJuryPubkey failed " + err.Error())
+	}
+	var juryPubkey adaptor.GetPublicKeyOutput
+	err = json.Unmarshal(result, &juryPubkey)
+	if err != nil {
+		log.Debugf("OutChainCall GetJuryPubkey Unmarshal err: %s", err.Error())
+		return shim.Error("OutChainCall GetJuryPubkey Unmarshal failed " + err.Error())
+	}
+	log.Debugf("juryPubkey.PublicKey: %x", juryPubkey.PublicKey)
+
+	myPubkeyAddr := pubkeyAddr{string(juryAddr), juryPubkey.PublicKey}
+	myPubkeyAddrJSON, err := json.Marshal(myPubkeyAddr)
+	if err != nil {
+		log.Debugf("myPubkeyAddr Marshal failed: %s", err.Error())
+		return shim.Error("myPubkeyAddr Marshal failed: " + err.Error())
+	}
+	log.Debugf("myPubkeyAddrJSON: %s", string(myPubkeyAddrJSON))
 
 	//
-	recvResult, err := consult(stub, []byte("juryETHAddr"), result)
+	recvResult, err := consult(stub, []byte("juryETHPubkey"), myPubkeyAddrJSON)
 	if err != nil {
-		log.Debugf("consult juryETHAddr failed: " + err.Error())
-		return shim.Error("consult juryETHAddr failed: " + err.Error())
+		log.Debugf("consult juryETHPubkey failed: %s", err.Error())
+		return shim.Error("consult juryETHPubkey failed: " + err.Error())
 	}
 	var juryMsg []JuryMsgAddr
 	err = json.Unmarshal(recvResult, &juryMsg)
 	if err != nil {
 		return shim.Error("Unmarshal result failed: " + err.Error())
 	}
-	//stub.PutState("recvResult", recvResult)
 	if len(juryMsg) != consultN {
 		return shim.Error("RecvJury result's len not enough")
 	}
 
 	//
-	address := make([]string, 0, len(juryMsg))
+	pubkeyAddrs := make([]pubkeyAddr, 0, len(juryMsg))
 	for i := range juryMsg {
-		address = append(address, string(juryMsg[i].Answer))
+		var onePubkeyAddr pubkeyAddr
+		err := json.Unmarshal(juryMsg[i].Answer, &onePubkeyAddr)
+		if err != nil {
+			continue
+		}
+		pubkeyAddrs = append(pubkeyAddrs, onePubkeyAddr)
 	}
-	a := sort.StringSlice(address[0:])
-	sort.Sort(a)
+	if len(pubkeyAddrs) != consultN {
+		return shim.Error("pubkeyAddrs result's len not enough")
+	}
+	sortPubAddr(pubkeyAddrs, addrIncrease)
 
-	addressJson, err := json.Marshal(address)
+	address := make([]string, 0, len(pubkeyAddrs))
+	for i := range pubkeyAddrs {
+		address = append(address, pubkeyAddrs[i].Addr)
+	}
+	addressJSON, err := json.Marshal(address)
 	if err != nil {
 		return shim.Error("address Marshal failed: " + err.Error())
 	}
+	log.Debugf("addressJSON: %s", string(addressJSON))
+	pubkeyAddrsJSON, err := json.Marshal(pubkeyAddrs)
+	if err != nil {
+		return shim.Error("pubkeyAddrs Marshal failed: " + err.Error())
+	}
+	log.Debugf("pubkeyAddrsJson: %s", string(pubkeyAddrsJSON))
 
 	// Write the state to the ledger
-	err = stub.PutState(symbolsJuryAddress, addressJson)
+	err = stub.PutState(symbolsJuryAddress, addressJSON)
 	if err != nil {
 		return shim.Error("write " + symbolsJuryAddress + " failed: " + err.Error())
 	}
-	return shim.Success(addressJson)
-}
-
-func getETHAddrs(stub shim.ChaincodeStubInterface) []string {
-	result, _ := stub.GetState(symbolsJuryAddress)
-	if len(result) == 0 {
-		return []string{}
-	}
-	var address []string
-	err := json.Unmarshal(result, &address)
+	err = stub.PutState(symbolsJuryPubkeyAddress, pubkeyAddrsJSON)
 	if err != nil {
-		return []string{}
+		return shim.Error("write " + symbolsJuryPubkeyAddress + " failed: " + err.Error())
 	}
-	return address
+
+	return shim.Success(addressJSON)
 }
 
-func _setETHTokenAsset(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 1 {
-		return shim.Error("need 1 args (AssetStr)")
+func getETHAddrs(stub shim.ChaincodeStubInterface) []pubkeyAddr {
+	result, _ := stub.GetState(symbolsJuryPubkeyAddress)
+	if len(result) == 0 {
+		return []pubkeyAddr{}
 	}
-	err := stub.PutState(symbolsETHAsset, []byte(args[0]))
+	var pubkeyAddrs []pubkeyAddr
+	err := json.Unmarshal(result, &pubkeyAddrs)
+	if err != nil {
+		return []pubkeyAddr{}
+	}
+	return pubkeyAddrs
+}
+
+func (p *ETHPort) SetETHTokenAsset(assetStr string, stub shim.ChaincodeStubInterface) pb.Response {
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
+	}
+	owner, err := getOwner(stub)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	if owner != invokeAddr.String() {
+		return shim.Error("Only owner can withdraw")
+	}
+
+	err = stub.PutState(symbolsETHAsset, []byte(assetStr))
 	if err != nil {
 		return shim.Error("write symbolsETHAsset failed: " + err.Error())
 	}
@@ -205,35 +363,50 @@ func getETHTokenAsset(stub shim.ChaincodeStubInterface) *dm.Asset {
 	return asset
 }
 
-func _setETHContract(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 1 {
-		return shim.Error("need 1 args (ETHContractAddr)")
-	}
+func (p *ETHPort) SetETHContract(ethContractAddr string, stub shim.ChaincodeStubInterface) pb.Response {
 	//
 	saveResult, _ := stub.GetState(symbolsETHContract)
 	if len(saveResult) != 0 {
 		return shim.Error("TokenAsset has been init")
 	}
 
-	err := stub.PutState(symbolsETHContract, []byte(args[0]))
+	err := stub.PutState(symbolsETHContract, []byte(strings.ToLower(ethContractAddr)))
 	if err != nil {
 		return shim.Error("write symbolsETHContract failed: " + err.Error())
 	}
 	return shim.Success([]byte("Success"))
 }
 
-func _setOwner(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 1 {
-		return shim.Error("need 1 args (PTNAddr)")
+func (p *ETHPort) SetOwner(ptnAddr string, stub shim.ChaincodeStubInterface) pb.Response {
+	//only owner can set
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
 	}
-	err := stub.PutState(symbolsOwner, []byte(args[0]))
+	owner, err := getOwner(stub)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	if owner != invokeAddr.String() {
+		return shim.Error("Only owner can set")
+	}
+	err = stub.PutState(symbolsOwner, []byte(ptnAddr))
 	if err != nil {
 		return shim.Error("write symbolsOwner failed: " + err.Error())
 	}
 	return shim.Success([]byte("Success"))
 }
+
+func getOwner(stub shim.ChaincodeStubInterface) (string, error) {
+	result, _ := stub.GetState(symbolsOwner)
+	if len(result) == 0 {
+		return "", errors.New("Need set Owner")
+	}
+
+	return string(result), nil
+}
+
 func getETHContract(stub shim.ChaincodeStubInterface) string {
 	result, _ := stub.GetState(symbolsETHContract)
 	if len(result) == 0 {
@@ -244,176 +417,255 @@ func getETHContract(stub shim.ChaincodeStubInterface) string {
 	return string(result)
 }
 
-//refer to the struct GetBestHeaderParams in "github.com/palletone/adaptor/AdaptorETH.go",
-type ETHQuery_GetBestHeader struct { //GetBestHeaderParams
-	Number string `json:"Number"` //if empty, return the best header
-}
-
-type GetBestHeaderResult struct {
-	Number string `json:"number"`
-}
-
-func getHight(stub shim.ChaincodeStubInterface) (string, string, error) {
-	//
-	getheader := ETHQuery_GetBestHeader{""} //get best hight
-	//
-	reqBytes, err := json.Marshal(getheader)
-	if err != nil {
-		return "", "", err
-	}
-	//
-	result, err := stub.OutChainCall("eth", "GetBestHeader", reqBytes)
-	if err != nil {
-		return "", "", err
-	}
-	//
-	var getheadresult GetBestHeaderResult
-	err = json.Unmarshal(result, &getheadresult)
-	if err != nil {
-		return "", "", err
-	}
-
-	if getheadresult.Number == "" {
-		return "", "", errors.New("{\"Error\":\"Failed to get eth height\"}")
-	}
-
-	curHeight, err := strconv.ParseUint(getheadresult.Number, 10, 64)
-	if err != nil {
-		return "", "", errors.New("{\"Error\":\"Failed to parse eth height\"}")
-	}
-	curBefore30d := curHeight - 172800 // 30 days
-	//curHeight -= 6
-
-	curBefore30dStr := strconv.FormatUint(curBefore30d, 10)
-	curHeightStr := strconv.FormatUint(curHeight, 10)
-	return curBefore30dStr, curHeightStr, nil
-}
-
-//refer to the struct GetEventByAddressParams in "github.com/palletone/adaptor/AdaptorETH.go",
-//add 'method' member.
-type ETHTransaction_getevent struct { //GetEventByAddressParams
-	Method       string `json:"method"`
-	ContractABI  string `json:"contractABI"`
-	ContractAddr string `json:"contractAddr"`
-	ConcernAddr  string `json:"concernaddr"`
-	StartHeight  string `json:"startheight"`
-	EndHeight    string `json:"endheight"`
-	EventName    string `json:"eventname"`
-}
-
-type GetEventByAddressResult struct {
-	Events    []string `json:"events"`
-	Txhashs   []string `json:"txhashs"`
-	Blocknums []uint64 `json:"blocknums"`
-}
-
-type DepositETHInfo struct {
-	Txhash string
-	Amount uint64
-}
-
-//need check confirms
-func getDepositETHInfo(contractAddr, ptnAddr string, stub shim.ChaincodeStubInterface) ([]DepositETHInfo, error) {
-	startHeight, endHeight, err := getHight(stub)
-	if err != nil {
-		log.Debugf("getHight failed %s", err.Error())
-		return nil, err
-	}
-	log.Debugf("startHeight %s, endHeight %s", startHeight, endHeight)
-	//get doposit event log
-	var getevent ETHTransaction_getevent // GetJuryAddress
-	getevent.ContractABI = contractABI
-	getevent.ContractAddr = contractAddr
-	getevent.ConcernAddr = ptnAddr
-	getevent.EventName = "Deposit"
-	getevent.StartHeight = startHeight
-	getevent.EndHeight = endHeight
-	//
-	reqBytes, err := json.Marshal(getevent)
+func GetAddrHistory(ethAddrFrom, mapAddrTo string, stub shim.ChaincodeStubInterface) (*adaptor.GetAddrTxHistoryOutput, error) {
+	input := adaptor.GetAddrTxHistoryInput{FromAddress: ethAddrFrom, ToAddress: mapAddrTo, Asset: "ETH",
+		AddressLogicAndOr: true}
+	inputBytes, err := json.Marshal(input)
 	if err != nil {
 		return nil, err
 	}
 	//
-	result, err := stub.OutChainCall("eth", "GetEventByAddress", reqBytes)
+	result, err := stub.OutChainCall("eth", "GetAddrTxHistory", inputBytes)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("GetAddrHistory error: " + err.Error())
 	}
+	log.Debugf("result : %s", string(result))
 	//
-	var geteventresult GetEventByAddressResult
-	err = json.Unmarshal(result, &geteventresult)
+	var output adaptor.GetAddrTxHistoryOutput
+	err = json.Unmarshal(result, &output)
 	if err != nil {
 		return nil, err
 	}
-
-	//event Deposit(address token, address user, uint amount, string ptnaddr);
-	endBlockNum, _ := strconv.ParseUint(endHeight, 10, 64)
-	depositInfo := make([]DepositETHInfo, 0, len(geteventresult.Events))
-	for i, event := range geteventresult.Events {
-		//Event example : ["0x0000000000000000000000000000000000000000","0x7d7116a8706ae08baa7f4909e26728fa7a5f0365",500000000000000000,"P1DXLJmJh9j3LFNUZ7MmfLVNWHoLzDUHM9A"]
-		strArray := strings.Split(event, ",")
-		if len(strArray) != 4 {
-			log.Debugf("len(strArray) %d", len(strArray))
-			continue
-		}
-		//confirm
-		if geteventresult.Blocknums[i]+10 > endBlockNum {
-			log.Debugf("geteventresult.Blocknums[i] %d, endBlockNum %d", geteventresult.Blocknums[i], endBlockNum)
-			continue
-		}
-		//deposit amount, example : 500000000000000000
-		str2 := strArray[2]
-		bigInt := new(big.Int)
-		bigInt.SetString(str2, 10)
-		bigInt = bigInt.Div(bigInt, big.NewInt(10000000000)) //ethToken's decimal is 8
-		//
-		depositInfo = append(depositInfo, DepositETHInfo{geteventresult.Txhashs[i], bigInt.Uint64()})
-	}
-	if len(depositInfo) == 0 {
-		log.Debugf("len(depositInfo) is 0")
-		return nil, nil
-	}
-
-	return depositInfo, nil
-
+	return &output, nil
 }
 
-func _getETHToken(stub shim.ChaincodeStubInterface) pb.Response {
+func getHeight(stub shim.ChaincodeStubInterface) (uint, error) {
 	//
-	invokeAddr, err := stub.GetInvokeAddress()
+	input := adaptor.GetBlockInfoInput{Latest: true} //get best hight
+	//
+	inputBytes, err := json.Marshal(input)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
-		return shim.Error(jsonResp)
+		return 0, err
+	}
+	//adaptor.
+	result, err := stub.OutChainCall("eth", "GetBlockInfo", inputBytes)
+	if err != nil {
+		return 0, errors.New("GetBlockInfo error: " + err.Error())
+	}
+	//
+	var output adaptor.GetBlockInfoOutput
+	err = json.Unmarshal(result, &output)
+	if err != nil {
+		return 0, err
 	}
 
-	contractAddr := getETHContract(stub)
-	if contractAddr == "" {
+	if output.Block.BlockHeight == 0 {
+		return 0, errors.New("{\"Error\":\"Failed to get eth height\"}")
+	}
+
+	return output.Block.BlockHeight, nil
+}
+
+func (p *ETHPort) PayoutETHTokenByAddr(ethAddr string, stub shim.ChaincodeStubInterface) pb.Response {
+	//
+	mapAddr := getETHContract(stub)
+	if mapAddr == "" {
 		return shim.Error(jsonResp1)
 	}
 
-	depositInfo, err := getDepositETHInfo(contractAddr, invokeAddr.String(), stub)
-	if depositInfo == nil || err != nil {
-		return shim.Error("You need deposit")
+	//get the mapping ptnAddr
+	ptnAddr, err := getPTNMapAddr(mapAddr, ethAddr, stub)
+	if err != nil {
+		log.Debugf("getPTNMapAddr failed: %s", err.Error())
+		return shim.Error(err.Error())
 	}
-	log.Debugf("len(depositInfo) is %d", len(depositInfo))
-	//
-	ethAmount := uint64(0)
-	for i := range depositInfo {
-		deposit, _ := stub.GetState(symbolsDeposit + depositInfo[i].Txhash)
-		if len(deposit) != 0 {
+
+	txResults, err := GetAddrHistory(ethAddr, mapAddr, stub)
+	if err != nil {
+		log.Debugf("GetAddrHistory failed: %s", err.Error())
+		return shim.Error(err.Error())
+	}
+
+	curHeight, err := getHeight(stub)
+	if curHeight == 0 || err != nil {
+		return shim.Error("getHeight failed")
+	}
+
+	var amt uint64
+	for _, txResult := range txResults.Txs {
+		if !txResult.IsSuccess {
+			continue
+		}
+		if 0 == txResult.Amount.Amount.Uint64() {
+			continue
+		}
+		txIDHex := hex.EncodeToString(txResult.TxID)
+		//check confirms
+		if curHeight-txResult.BlockHeight < Confirms {
+			log.Debugf("Need more confirms %s", txIDHex)
 			continue
 		}
 		//
-		err = stub.PutState(symbolsDeposit+depositInfo[i].Txhash, []byte(invokeAddr.String()))
-		if err != nil {
-			log.Debugf("PutState sigHash failed err: %s", err.Error())
-			return shim.Error("PutState sigHash failed")
+		result, _ := stub.GetState(symbolsDeposit + txIDHex)
+		if len(result) != 0 {
+			log.Debugf("The tx %s has been payout", txIDHex)
+			continue
 		}
-		ethAmount += depositInfo[i].Amount
+		log.Debugf("The tx %s need be payout", txIDHex)
+
+		//check token amount
+		bigIntAmout := txResult.Amount.Amount.Div(txResult.Amount.Amount, big.NewInt(1e10)) //eth's decimal is 18, ethToken in PTN is decimal is 8
+		amt += txResult.Amount.Amount.Uint64()
+
+		//save payout history
+		err = stub.PutState(symbolsDeposit+txIDHex, []byte(ptnAddr+"-"+bigIntAmout.String()))
+		if err != nil {
+			log.Debugf("write symbolsPayout failed: %s", err.Error())
+			return shim.Error("write symbolsPayout failed: " + err.Error())
+		}
+
 	}
 
-	if ethAmount == 0 {
+	if amt == 0 {
+		log.Debugf("Your address %s need deposit or need wait confirm", ethAddr)
 		return shim.Error("You need deposit or need wait confirm")
 	}
+
+	//
+	ethTokenAsset := getETHTokenAsset(stub)
+	if ethTokenAsset == nil {
+		return shim.Error("need call setETHTokenAsset()")
+	}
+	invokeTokens := new(dm.AmountAsset)
+	invokeTokens.Amount = amt
+	invokeTokens.Asset = ethTokenAsset
+	err = stub.PayOutToken(ptnAddr, invokeTokens, 0)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to call stub.PayOutToken\"}"
+		return shim.Error(jsonResp)
+	}
+
+	return shim.Success([]byte("get success"))
+}
+
+func getPTNMapAddr(mapAddr, fromAddr string, stub shim.ChaincodeStubInterface) (string, error) {
+	var input adaptor.GetPalletOneMappingAddressInput
+	input.MappingDataSource = mapAddr
+	input.ChainAddress = fromAddr
+
+	inputBytes, err := json.Marshal(input)
+	if err != nil {
+		return "", err
+	}
+	//
+	result, err := stub.OutChainCall("eth", "GetPalletOneMappingAddress", inputBytes)
+	if err != nil {
+		return "", errors.New("GetPalletOneMappingAddress failed: " + err.Error())
+	}
+	//
+	var output adaptor.GetPalletOneMappingAddressOutput
+	err = json.Unmarshal(result, &output)
+	if err != nil {
+		return "", err
+	}
+	if output.PalletOneAddress == "" {
+		return "", errors.New("GetPalletOneMappingAddress result empty")
+	}
+
+	return output.PalletOneAddress, nil
+}
+
+func GetETHTx(txID []byte, stub shim.ChaincodeStubInterface) (*adaptor.GetTransferTxOutput, error) {
+	input := adaptor.GetTransferTxInput{TxID: txID}
+	inputBytes, err := json.Marshal(input)
+	if err != nil {
+		return nil, err
+	}
+	//
+	result, err := stub.OutChainCall("eth", "GetTransferTx", inputBytes)
+	if err != nil {
+		return nil, errors.New("GetTransferTx error: " + err.Error())
+	}
+	log.Debugf("result : %s", string(result))
+
+	//
+	var output adaptor.GetTransferTxOutput
+	err = json.Unmarshal(result, &output)
+	if err != nil {
+		return nil, err
+	}
+	return &output, nil
+}
+
+func (p *ETHPort) PayoutETHTokenByTxID(ethTxID string, stub shim.ChaincodeStubInterface) pb.Response {
+	//
+	if "0x" == ethTxID[0:2] || "0X" == ethTxID[0:2] {
+		ethTxID = ethTxID[2:]
+	}
+	result, _ := stub.GetState(symbolsDeposit + ethTxID)
+	if len(result) != 0 {
+		log.Debugf("The tx %s has been payout", ethTxID)
+		return shim.Error("The tx has been payout")
+	}
+
+	//get sender receiver amount
+	txIDByte, err := hex.DecodeString(ethTxID)
+	if err != nil {
+		log.Debugf("txid invalid: %s", err.Error())
+		return shim.Error(fmt.Sprintf("txid invalid: %s", err.Error()))
+	}
+
+	mapAddr := getETHContract(stub)
+	if mapAddr == "" {
+		return shim.Error(jsonResp1)
+	}
+	txResult, err := GetETHTx(txIDByte, stub)
+	if err != nil {
+		log.Debugf("GetETHTx failed: %s", err.Error())
+		return shim.Error(err.Error())
+	}
+	//check tx status
+	if !txResult.Tx.IsSuccess {
+		log.Debugf("The tx %s is failed", ethTxID)
+		return shim.Error("The tx is failed")
+	}
+	//check contract address, must be ptn eth port contract address
+	if strings.ToLower(txResult.Tx.TargetAddress) != mapAddr {
+		log.Debugf("The tx %s is't transfer to eth port contract", ethTxID)
+		return shim.Error("The tx is't transfer to eth port contract")
+	}
+
+	//check confirms
+	curHeight, err := getHeight(stub)
+	if curHeight == 0 || err != nil {
+		return shim.Error("getHeight failed")
+	}
+	if curHeight-txResult.Tx.BlockHeight < Confirms {
+		log.Debugf("The tx %s need more confirms", ethTxID)
+		return shim.Error("Need more confirms")
+	}
+
+	//get the mapping ptnAddr
+	ptnAddr, err := getPTNMapAddr(mapAddr, txResult.Tx.FromAddress, stub)
+	if err != nil {
+		log.Debugf("getPTNMapAddr failed: %s", err.Error())
+		return shim.Error(err.Error())
+	}
+
+	bigIntAmount := txResult.Tx.Amount.Amount
+	bigIntAmount = bigIntAmount.Div(bigIntAmount, big.NewInt(1e10)) //ethToken in PTN is decimal is 8
+	ethAmount := bigIntAmount.Uint64()
+	if ethAmount == 0 {
+		return shim.Error("You need deposit bigger than 0")
+	}
+
+	//
+	err = stub.PutState(symbolsDeposit+ethTxID, []byte(ptnAddr+"-"+bigIntAmount.String()))
+	if err != nil {
+		log.Debugf("PutState sigHash failed err: %s", err.Error())
+		return shim.Error("PutState sigHash failed")
+	}
+
 	//
 	ethTokenAsset := getETHTokenAsset(stub)
 	if ethTokenAsset == nil {
@@ -422,7 +674,7 @@ func _getETHToken(stub shim.ChaincodeStubInterface) pb.Response {
 	invokeTokens := new(dm.AmountAsset)
 	invokeTokens.Amount = ethAmount
 	invokeTokens.Asset = ethTokenAsset
-	err = stub.PayOutToken(invokeAddr.String(), invokeTokens, 0)
+	err = stub.PayOutToken(ptnAddr, invokeTokens, 0)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to call stub.PayOutToken\"}"
 		return shim.Error(jsonResp)
@@ -437,116 +689,50 @@ type WithdrawPrepare struct {
 	EthFee    uint64
 }
 
-func _withdrawPrepare(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 1 {
-		return shim.Error("need 1 args (ethAddr, [ethFee(>10000)])")
-	}
-	ethAddr := args[0]
-	ethFee := uint64(0)
-	if len(args) > 1 {
-		ethFee, _ = strconv.ParseUint(args[1], 10, 64)
-	}
-	if ethFee <= 10000 { //0.0001eth
-		ethFee = 10000
-	}
-	//
-	ethTokenAsset := getETHTokenAsset(stub)
-	if ethTokenAsset == nil {
-		return shim.Error("need call setETHTokenAsset()")
-	}
-	//contractAddr
-	_, contractAddr := stub.GetContractID()
-
-	//check token
-	invokeTokens, err := stub.GetInvokeTokens()
-	if err != nil {
-		jsonResp := "{\"Error\":\"GetInvokeTokens failed\"}"
-		return shim.Error(jsonResp)
-	}
-
-	ethTokenAmount := uint64(0)
-	log.Debugf("contractAddr %s", contractAddr)
-	for i := 0; i < len(invokeTokens); i++ {
-		log.Debugf("invokeTokens[i].Address %s", invokeTokens[i].Address)
-		if invokeTokens[i].Address == contractAddr {
-			if invokeTokens[i].Asset.AssetId == ethTokenAsset.AssetId {
-				ethTokenAmount += invokeTokens[i].Amount
-			}
-		}
-	}
-	if ethTokenAmount == 0 {
-		log.Debugf("You need send contractAddr ethToken")
-		jsonResp := "{\"Error\":\"You need send contractAddr ethToken\"}"
-		return shim.Error(jsonResp)
-	}
-	log.Debugf("ethTokenAmount %d", ethTokenAmount)
-
-	reqid := stub.GetTxID()
-	// 产生交易
-	rawTx := fmt.Sprintf("%s %d %s", ethAddr, ethTokenAmount, reqid)
-	log.Debugf("rawTx:%s", rawTx)
-
-	tempHash := crypto.Keccak256([]byte(rawTx), []byte("prepare"))
-	tempHashHex := fmt.Sprintf("%x", tempHash)
-	log.Debugf("tempHashHex:%s", tempHashHex)
-
-	//协商交易
-	recvResult, err := consult(stub, []byte(tempHashHex), []byte("rawTx"))
-	if err != nil {
-		log.Debugf("consult rawTx failed: " + err.Error())
-		return shim.Error("consult rawTx failed: " + err.Error())
-	}
-	var juryMsg []JuryMsgAddr
-	err = json.Unmarshal(recvResult, &juryMsg)
-	if err != nil {
-		log.Debugf("Unmarshal rawTx result failed: " + err.Error())
-		return shim.Error("Unmarshal rawTx result failed: " + err.Error())
-	}
-	if len(juryMsg) < consultM {
-		log.Debugf("RecvJury rawTx result's len not enough")
-		return shim.Error("RecvJury rawTx result's len not enough")
-	}
-
-	// 记录Prepare
-	var prepare WithdrawPrepare
-	prepare.EthAddr = ethAddr
-	prepare.EthAmount = ethTokenAmount
-	prepare.EthFee = ethFee
-	prepareByte, err := json.Marshal(prepare)
-	if err != nil {
-		log.Debugf("Marshal prepare failed: " + err.Error())
-		return shim.Error("Marshal prepare failed: " + err.Error())
-	}
-	err = stub.PutState(symbolsWithdrawPrepare+reqid, prepareByte)
-	if err != nil {
-		log.Debugf("save symbolsWithdrawPrepare failed: " + err.Error())
-		return shim.Error("save symbolsWithdrawPrepare failed: " + err.Error())
-	}
-
-	updateFee(ethFee, stub)
-
-	return shim.Success([]byte("Withdraw is ready, please invoke withdrawETH"))
-}
-
-func updateFee(fee uint64, stub shim.ChaincodeStubInterface) {
+func updateFeeAdd(fee uint64, ptnAddr string, stub shim.ChaincodeStubInterface) error {
 	feeCur := uint64(0)
-	result, _ := stub.GetState(symbolsWithdrawFee)
+	result, _ := stub.GetState(symbolsWithdrawFee + ptnAddr)
 	if len(result) != 0 {
 		log.Debugf("updateFee fee current : %s ", string(result))
 		feeCur, _ = strconv.ParseUint(string(result), 10, 64)
 	}
-	fee += feeCur
-	feeStr := fmt.Sprintf("%d", fee)
-	err := stub.PutState(symbolsWithdrawFee, []byte(feeStr))
+	feeCur += fee
+	feeStr := fmt.Sprintf("%d", feeCur)
+	err := stub.PutState(symbolsWithdrawFee+ptnAddr, []byte(feeStr))
 	if err != nil {
-		log.Debugf("updateFee failed: " + err.Error())
+		log.Debugf("updateFee failed: %s", err.Error())
+		return fmt.Errorf("updateFee failed: " + err.Error())
 	}
+	return nil
 }
 
-func getFee(stub shim.ChaincodeStubInterface) uint64 {
+//fee == 0, clear
+func updateFeeSub(fee uint64, ptnAddr string, stub shim.ChaincodeStubInterface) error {
 	feeCur := uint64(0)
-	result, _ := stub.GetState(symbolsWithdrawFee)
+	if fee != 0 {
+		result, _ := stub.GetState(symbolsWithdrawFee + ptnAddr)
+		if len(result) != 0 {
+			log.Debugf("updateFee fee current : %s ", string(result))
+			feeCur, _ = strconv.ParseUint(string(result), 10, 64)
+		}
+		if feeCur < fee {
+			return fmt.Errorf("current fee is small")
+		}
+		feeCur -= fee
+	}
+
+	feeStr := fmt.Sprintf("%d", feeCur)
+	err := stub.PutState(symbolsWithdrawFee+ptnAddr, []byte(feeStr))
+	if err != nil {
+		log.Debugf("updateFee failed: %s", err.Error())
+		return fmt.Errorf("updateFee failed: " + err.Error())
+	}
+	return nil
+}
+
+func getFee(ptnAddr string, stub shim.ChaincodeStubInterface) uint64 {
+	feeCur := uint64(0)
+	result, _ := stub.GetState(symbolsWithdrawFee + ptnAddr)
 	if len(result) != 0 {
 		log.Debugf("getFee fee current : %s ", string(result))
 		feeCur, _ = strconv.ParseUint(string(result), 10, 64)
@@ -554,104 +740,168 @@ func getFee(stub shim.ChaincodeStubInterface) uint64 {
 	return feeCur
 }
 
-//refer to the struct Keccak256HashPackedSigParams in "github.com/palletone/adaptor/AdaptorETH.go",
-//Remove 'PrivateKeyHex', Jury will set it when sign.
-type ETHTransaction_Keccak256HashPackedSig struct {
-	ParamTypes string `json:"paramtypes"`
-	Params     string `json:"params"`
+func LeftPadBytes(slice []byte, l int) []byte {
+	if l <= len(slice) {
+		return slice
+	}
+
+	padded := make([]byte, l)
+	copy(padded[l-len(slice):], slice)
+
+	return padded
 }
-type Keccak256HashPackedSigResult struct {
-	Hash      string `json:"hash"`
-	Signature string `json:"signature"`
+
+// Lengths of hashes and addresses in bytes.
+const (
+	// HashLength is the expected length of the hash
+	HashLength = 32
+	// AddressLength is the expected length of the address
+	AddressLength = 20
+)
+
+// Address represents the 20 byte address of an Ethereum account.
+type ETHAddress [AddressLength]byte
+
+// BytesToAddress returns Address with value b.
+// If b is larger than len(h), b will be cropped from the left.
+func BytesToAddress(b []byte) ETHAddress {
+	var a ETHAddress
+	a.SetBytes(b)
+	return a
 }
 
-func calSig(contractAddr, reqid, ethAddr string, ethAmount uint64, stub shim.ChaincodeStubInterface) (string, string, error) {
-	//keccak256(abi.encodePacked(address(this), recver, amount, reqid));
-	paramTypesArray := []string{"Address", "Address", "Uint", "String"} //eth
-	paramTypesJson, err := json.Marshal(paramTypesArray)
+// SetBytes sets the address to the value of b.
+// If b is larger than len(a) it will panic.
+func (a *ETHAddress) SetBytes(b []byte) {
+	if len(b) > len(a) {
+		b = b[len(b)-AddressLength:]
+	}
+	copy(a[AddressLength-len(b):], b)
+}
+
+// HexToAddress returns Address with byte values of s.
+// If s is larger than len(h), s will be cropped from the left.
+func HexToAddress(s string) ETHAddress { return BytesToAddress(FromHex(s)) }
+
+// FromHex returns the bytes represented by the hexadecimal string s.
+// s may be prefixed with "0x".
+func FromHex(s string) []byte {
+	if len(s) > 1 {
+		if s[0:2] == "0x" || s[0:2] == "0X" {
+			s = s[2:]
+		}
+	}
+	if len(s)%2 == 1 {
+		s = "0" + s
+	}
+	return Hex2Bytes(s)
+}
+
+// Hex2Bytes returns the bytes represented by the hexadecimal string str.
+func Hex2Bytes(str string) []byte {
+	h, _ := hex.DecodeString(str)
+	return h
+}
+
+// Bytes gets the string representation of the underlying address.
+func (a ETHAddress) Bytes() []byte { return a[:] }
+
+func getPadderBytes(contractAddr, reqid, recvAddr string, ethAmount uint64) []byte {
+	var allBytes []byte
+	ethContractAddr := HexToAddress(contractAddr)
+	allBytes = append(allBytes, ethContractAddr.Bytes()...)
+
+	ethRecvAddr := HexToAddress(recvAddr)
+	allBytes = append(allBytes, ethRecvAddr.Bytes()...)
+
+	paramBigInt := new(big.Int)
+	paramBigInt.SetUint64(ethAmount)
+	paramBigInt.Mul(paramBigInt, big.NewInt(1e10)) //eth's decimal is 18, ethToken in PTN is decimal is 8
+	paramBigIntBytes := LeftPadBytes(paramBigInt.Bytes(), 32)
+	allBytes = append(allBytes, paramBigIntBytes...)
+
+	reqHash := common.HexToHash(reqid)
+	allBytes = append(allBytes, reqHash.Bytes()...)
+	return allBytes
+}
+func calSig(msg []byte, stub shim.ChaincodeStubInterface) ([]byte, error) {
+	//
+
+	input := adaptor.SignMessageInput{Message: msg}
+	inputBytes, err := json.Marshal(input)
 	if err != nil {
-		return "", "", err
+		return []byte{}, err
 	}
 
 	//
-	var paramsArray []string
-	paramsArray = append(paramsArray, contractAddr)
-	paramsArray = append(paramsArray, ethAddr)
-	ethAmountStr := fmt.Sprintf("%d", ethAmount)
-	ethAmountStr = ethAmountStr + "0000000000"
-	paramsArray = append(paramsArray, ethAmountStr)
-	paramsArray = append(paramsArray, reqid)
-	paramsJson, err := json.Marshal(paramsArray)
+	result, err := stub.OutChainCall("eth", "SignMessage", inputBytes)
 	if err != nil {
-		return "", "", err
-	}
-	log.Debugf("paramsJson %s", string(paramsJson))
-
-	ethTX := ETHTransaction_Keccak256HashPackedSig{string(paramTypesJson), string(paramsJson)}
-	reqBytes, err := json.Marshal(ethTX)
-	if err != nil {
-		return "", "", err
+		return []byte{}, errors.New("SignMessage error" + err.Error())
 	}
 	//
-	result, err := stub.OutChainCall("eth", "Keccak256HashPackedSig", reqBytes)
-	if err != nil {
-		return "", "", errors.New("Keccak256HashPackedSig error")
-	}
-	//
-	var sigResult Keccak256HashPackedSigResult
+	var sigResult adaptor.SignMessageOutput
 	err = json.Unmarshal(result, &sigResult)
 	if err != nil {
-		return "", "", err
+		return []byte{}, err
 	}
-	return sigResult.Hash, sigResult.Signature, nil
+	return sigResult.Signature, nil
 }
 
-//refer to the struct RecoverParams in "github.com/palletone/adaptor/AdaptorETH.go",
-type ETHTransaction_RecoverAddr struct {
-	Hash      string `json:"hash"`
-	Signature string `json:"signature"`
-}
-type RecoverResult struct {
-	Addr string `json:"addr"`
-}
+func recoverAddr(msg, pubkey, sig []byte, stub shim.ChaincodeStubInterface) (bool, error) {
+	log.Debugf("recover %x-%x-%x", msg, pubkey, sig)
 
-func recoverAddr(hash, sig string, stub shim.ChaincodeStubInterface) (string, error) {
-	ethTX := ETHTransaction_RecoverAddr{hash, sig}
+	ethTX := adaptor.VerifySignatureInput{Message: msg, Signature: sig, PublicKey: pubkey}
 	reqBytes, err := json.Marshal(ethTX)
 	if err != nil {
-		return "", err
+		return false, err
 	}
 	//
-	result, err := stub.OutChainCall("eth", "RecoverAddr", reqBytes)
+	result, err := stub.OutChainCall("eth", "VerifySignature", reqBytes)
 	if err != nil {
-		return "", errors.New("RecoverAddr error")
+		return false, errors.New("RecoverAddr error" + err.Error())
 	}
 	//
-	var recoverResult RecoverResult
+	var recoverResult adaptor.VerifySignatureOutput
 	err = json.Unmarshal(result, &recoverResult)
 	if err != nil {
-		return "", err
+		return false, err
 	}
-	return recoverResult.Addr, nil
+	return recoverResult.Pass, nil
 }
 
-func verifySigs(juryMsg []JuryMsgAddr, hash string, addrs []string, stub shim.ChaincodeStubInterface) []string {
+func verifySigs(msg []byte, juryMsg []JuryMsgAddr, pubkeyAddrs []pubkeyAddr, stub shim.ChaincodeStubInterface) []string {
 	//
 	var sigs []string
 	for i := range juryMsg {
-		addr, err := recoverAddr(hash, string(juryMsg[i].Answer), stub)
+		var onePubkeySig pubkeySig
+		err := json.Unmarshal(juryMsg[i].Answer, &onePubkeySig)
 		if err != nil {
 			continue
 		}
-		for j := range addrs {
-			if addr == addrs[j] {
-				sigs = append(sigs, string(juryMsg[i].Answer))
+		log.Debugf("verifySigs %x-%x", onePubkeySig.Pubkey, onePubkeySig.Sig)
+		isJuryETHPubkey := false
+		for j := range pubkeyAddrs {
+			if bytes.Equal(pubkeyAddrs[j].Pubkey, onePubkeySig.Pubkey) {
+				isJuryETHPubkey = true
 			}
 		}
+		if !isJuryETHPubkey {
+			continue
+		}
+		valid, err := recoverAddr(msg, onePubkeySig.Pubkey, onePubkeySig.Sig, stub)
+		if err != nil {
+			continue
+		}
+		if valid {
+			sigs = append(sigs, fmt.Sprintf("%x", onePubkeySig.Sig))
+		}
 	}
+	log.Debugf("sigs : %s", sigs)
+
 	//sort
 	a := sort.StringSlice(sigs[0:])
 	sort.Sort(a)
+	log.Debugf("sigs sort : %s", sigs)
 	return sigs
 }
 
@@ -662,76 +912,68 @@ type Withdraw struct {
 	Sigs      []string
 }
 
-func _withdrawETH(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 1 {
-		return shim.Error("need 1 args (reqid)")
-	}
-	reqid := args[0]
-	if "0x" != reqid[0:2] {
-		reqid = "0x" + reqid
-	}
+type pubkeySig struct {
+	Pubkey []byte
+	Sig    []byte
+}
 
-	result, _ := stub.GetState(symbolsWithdrawPrepare + reqid)
-	if len(result) == 0 {
-		return shim.Error("Please invoke withdrawPrepare first")
-	}
-
-	// 检查交易
-	var prepare WithdrawPrepare
-	err := json.Unmarshal(result, &prepare)
-	if nil != err {
-		jsonResp := "Unmarshal WithdrawPrepare failed"
-		return shim.Error(jsonResp)
-	}
-
+func processWithdrawSig(txID, reqidNew, recvAddr string, ethAmount uint64, stub shim.ChaincodeStubInterface) ([]string, error) {
 	contractAddr := getETHContract(stub)
 	if contractAddr == "" {
-		return shim.Error(jsonResp1)
+		return []string{}, fmt.Errorf(jsonResp1)
 	}
 
 	// 计算签名
-	hash, sig, err := calSig(contractAddr, reqid, prepare.EthAddr, prepare.EthAmount-prepare.EthFee, stub)
+	padderBytes := getPadderBytes(contractAddr, txID, recvAddr, ethAmount)
+	sig, err := calSig(padderBytes, stub)
 	if err != nil {
-		return shim.Error("calSig failed: " + err.Error())
+		return []string{}, fmt.Errorf("calSig failed: " + err.Error())
 	}
-	log.Debugf("hash: %s, sig: %s", hash, sig)
+	log.Debugf("sig: %s", sig)
 
-	//
-	reqidNew := stub.GetTxID()
-	rawTx := fmt.Sprintf("%s %d %s", prepare.EthAddr, prepare.EthAmount-prepare.EthFee, reqidNew)
+	//获取自己的eth公钥
+	resultPubkey, err := stub.OutChainCall("eth", "GetJuryPubkey", []byte(""))
+	if err != nil {
+		log.Debugf("OutChainCall GetJuryPubkey err: %s", err.Error())
+		return []string{}, fmt.Errorf("OutChainCall GetJuryPubkey failed " + err.Error())
+	}
+	var juryPubkey adaptor.GetPublicKeyOutput
+	err = json.Unmarshal(resultPubkey, &juryPubkey)
+	if err != nil {
+		log.Debugf("OutChainCall GetJuryPubkey Unmarshal err: %s", err.Error())
+		return []string{}, fmt.Errorf("OutChainCall GetJuryPubkey Unmarshal failed " + err.Error())
+	}
+	//计算交易哈希
+	rawTx := fmt.Sprintf("%s %d %s", recvAddr, ethAmount, reqidNew)
 	tempHash := crypto.Keccak256([]byte(rawTx))
 	tempHashHex := fmt.Sprintf("%x", tempHash)
 	log.Debugf("tempHashHex:%s", tempHashHex)
-
-	//协商交易
-	recvResult, err := consult(stub, []byte(tempHashHex), []byte(sig))
+	//用交易哈希协商交易签名，作适当安全防护
+	myPubkeySig := pubkeySig{Pubkey: juryPubkey.PublicKey, Sig: sig}
+	myPubkeySigBytes, _ := json.Marshal(myPubkeySig)
+	recvResult, err := consult(stub, []byte(tempHashHex), myPubkeySigBytes)
 	if err != nil {
-		log.Debugf("consult sig failed: " + err.Error())
-		return shim.Error("consult sig failed: " + err.Error())
+		log.Debugf("consult sig failed: %s", err.Error())
+		return []string{}, fmt.Errorf("consult sig failed: " + err.Error())
 	}
 	var juryMsg []JuryMsgAddr
 	err = json.Unmarshal(recvResult, &juryMsg)
 	if err != nil {
-		log.Debugf("Unmarshal sig result failed: " + err.Error())
-		return shim.Error("Unmarshal sig result failed: " + err.Error())
+		log.Debugf("Unmarshal sig result failed: %s", err.Error())
+		return []string{}, fmt.Errorf("Unmarshal sig result failed: " + err.Error())
 	}
-	//stub.PutState("recvResult", recvResult)
 	if len(juryMsg) < consultM {
-		log.Debugf("RecvJury sig result's len not enough")
-		return shim.Error("RecvJury sig result's len not enough")
+		return []string{}, fmt.Errorf("RecvJury sig result's len not enough")
 	}
 
-	addrs := getETHAddrs(stub)
-	if len(addrs) != consultN {
-		log.Debugf("getETHAddrs result's len not enough")
-		return shim.Error("getETHAddrs result's len not enough")
+	//验证收集到的所有eth签名
+	pubkeyAddrs := getETHAddrs(stub)
+	if len(pubkeyAddrs) != consultN {
+		return []string{}, fmt.Errorf("getETHAddrs result's len not enough")
 	}
-
-	sigs := verifySigs(juryMsg, hash, addrs, stub)
+	sigs := verifySigs(padderBytes, juryMsg, pubkeyAddrs, stub)
 	if len(sigs) < consultM {
-		log.Debugf("verifySigs result's len not enough")
-		return shim.Error("verifySigs result's len not enough")
+		return []string{}, fmt.Errorf("verifySigs result's len not enough")
 	}
 	sigsStr := sigs[0]
 	for i := 1; i < consultM; i++ {
@@ -741,37 +983,141 @@ func _withdrawETH(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	sigHashHex := fmt.Sprintf("%x", sigHash)
 	log.Debugf("start consult sigHashHex %s", sigHashHex)
 
-	//协商 发送交易哈希
+	//用签名列表的哈希协商最终的3个交易签名，作适当安全防护
 	txResult, err := consult(stub, []byte(sigHashHex), []byte("sigHash"))
 	if err != nil {
-		log.Debugf("consult sigHash failed: " + err.Error())
-		return shim.Error("consult sigHash failed: " + err.Error())
+		log.Debugf("consult sigHash failed: %s", err.Error())
+		return []string{}, fmt.Errorf("consult sigHash failed: " + err.Error())
 	}
 	var txJuryMsg []JuryMsgAddr
 	err = json.Unmarshal(txResult, &txJuryMsg)
 	if err != nil {
-		log.Debugf("Unmarshal sigHash result failed: " + err.Error())
-		return shim.Error("Unmarshal sigHash result failed: " + err.Error())
+		log.Debugf("Unmarshal sigHash result failed: %s", err.Error())
+		return []string{}, fmt.Errorf("Unmarshal sigHash result failed: " + err.Error())
 	}
 	if len(txJuryMsg) < consultM {
-		log.Debugf("RecvJury sigHash result's len not enough")
-		return shim.Error("RecvJury sigHash result's len not enough")
+		return []string{}, fmt.Errorf("RecvJury sigHash result's len not enough")
 	}
-	//协商 保证协商一致后才写入签名结果
-	txResult2, err := consult(stub, []byte(sigHashHex+"twice"), []byte("sigHash2"))
-	if err != nil {
-		log.Debugf("consult sigHash2 failed: " + err.Error())
-		return shim.Error("consult sigHash2 failed: " + err.Error())
+	////协商两次 保证协商一致后才写入签名结果
+	//txResult2, err := consult(stub, []byte(sigHashHex+"twice"), []byte("sigHash2"))
+	//if err != nil {
+	//	log.Debugf("consult sigHash2 failed: " + err.Error())
+	//	return []string{}, fmt.Errorf("consult sigHash2 failed: " + err.Error())
+	//}
+	//var txJuryMsg2 []JuryMsgAddr
+	//err = json.Unmarshal(txResult2, &txJuryMsg2)
+	//if err != nil {
+	//	log.Debugf("Unmarshal sigHash2 result failed: " + err.Error())
+	//	return []string{}, fmt.Errorf("Unmarshal sigHash2 result failed: " + err.Error())
+	//}
+	//if len(txJuryMsg2) < consultM {
+	//	log.Debugf("RecvJury sigHash2 result's len not enough")
+	//	return []string{}, fmt.Errorf("RecvJury sigHash2 result's len not enough")
+	//}
+	return sigs, nil
+}
+
+func getWithdrawPrepare(txID, ethAddrInput string, stub shim.ChaincodeStubInterface) (*WithdrawPrepare, error) {
+	ethTokenAsset := getETHTokenAsset(stub)
+	if ethTokenAsset == nil {
+		return nil, fmt.Errorf("need call setETHTokenAsset()")
 	}
-	var txJuryMsg2 []JuryMsgAddr
-	err = json.Unmarshal(txResult2, &txJuryMsg2)
-	if err != nil {
-		log.Debugf("Unmarshal sigHash2 result failed: " + err.Error())
-		return shim.Error("Unmarshal sigHash2 result failed: " + err.Error())
+
+	// 1 get this tx
+	tx, err := stub.GetStableTransactionByHash(txID)
+	if nil != err {
+		return nil, fmt.Errorf("GetStableTransactionByHash failed " + err.Error())
 	}
-	if len(txJuryMsg2) < consultM {
-		log.Debugf("RecvJury sigHash2 result's len not enough")
-		return shim.Error("RecvJury sigHash2 result's len not enough")
+
+	//2 sender address, get it from txPre output
+	txMsgs := tx.TxMessages()
+	payment := txMsgs[0].Payload.(*dm.PaymentPayload)
+	outPoint := payment.Inputs[0].PreviousOutPoint
+	txPre, err := stub.GetStableTransactionByHash(outPoint.TxHash.String())
+	if nil != err {
+		return nil, fmt.Errorf("GetStableTransactionByHash txPre failed " + err.Error())
+	}
+	txPreMsgs := txPre.TxMessages()
+	paymentPre := txPreMsgs[outPoint.MessageIndex].Payload.(*dm.PaymentPayload)
+	outputPre := paymentPre.Outputs[outPoint.OutIndex]
+	toAddr, _ := tokenengine.Instance.GetAddressFromScript(outputPre.PkScript)
+
+	//3 amount, get it from tx output
+	_, contractAddr := stub.GetContractID()
+	amount := uint64(0)
+	newOutpointMapUTXOs := tx.GetNewUtxos()
+	for _, utxo := range newOutpointMapUTXOs {
+		recvAddr, _ := tokenengine.Instance.GetAddressFromScript(utxo.PkScript)
+		if recvAddr.String() != contractAddr {
+			continue
+		}
+		if !utxo.Asset.IsSameAssetId(ethTokenAsset) {
+			continue
+		}
+		amount += utxo.Amount
+	}
+
+	//4 op_return
+	ethAddr := ""
+	for _, msg := range txMsgs {
+		if msg.App == dm.APP_DATA {
+			text := msg.Payload.(*dm.DataPayload)
+			ethAddr = string(text.MainData)
+			break
+		}
+	}
+	if ethAddr == "" {
+		if ethAddrInput == "" {
+			return nil, fmt.Errorf("Get ethAddr failed")
+		}
+		ethAddr = ethAddrInput
+	}
+
+	//get all result
+	var prepare WithdrawPrepare
+	prepare.EthFee = 50000 // 0.0005 eth token
+	prepare.EthAddr = ethAddr
+	prepare.EthAmount = amount
+
+	log.Debugf("%s-%d-%s", toAddr.String(), amount, ethAddr)
+	return &prepare, nil
+}
+func (p *ETHPort) WithdrawETH(txID, ethAddrInput string, stub shim.ChaincodeStubInterface) pb.Response {
+	if "0x" == txID[0:2] || "0X" == txID[0:2] {
+		txID = txID[2:]
+	}
+
+	resultWithdraw, _ := stub.GetState(symbolsWithdraw + txID)
+	if len(resultWithdraw) != 0 {
+		return shim.Error("The txID has been withdraw")
+	}
+
+	prepare, err := getWithdrawPrepare(txID, ethAddrInput, stub)
+	if nil != err {
+		return shim.Error(err.Error())
+	}
+	if prepare.EthAmount <= prepare.EthFee {
+		var withdraw Withdraw
+		withdraw.EthAddr = prepare.EthAddr
+		withdraw.EthAmount = prepare.EthAmount
+		withdraw.EthFee = prepare.EthFee
+		withdrawBytes, err := json.Marshal(withdraw)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		err = stub.PutState(symbolsWithdraw+txID, withdrawBytes)
+		if err != nil {
+			log.Debugf("save withdraw failed: %s", err.Error())
+			return shim.Error("save withdraw failed: " + err.Error())
+		}
+		return shim.Success(withdrawBytes)
+	}
+
+	reqidNew := stub.GetTxID()
+	sigs, err := processWithdrawSig(txID, reqidNew, prepare.EthAddr, prepare.EthAmount-prepare.EthFee, stub)
+	if nil != err {
+		jsonResp := "processWithdrawSig failed " + err.Error()
+		return shim.Error(jsonResp)
 	}
 
 	//记录签名
@@ -784,164 +1130,276 @@ func _withdrawETH(args []string, stub shim.ChaincodeStubInterface) pb.Response {
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	err = stub.PutState(symbolsWithdraw+reqidNew, withdrawBytes)
+	err = stub.PutState(symbolsWithdraw+txID, withdrawBytes)
 	if err != nil {
-		log.Debugf("save withdraw failed: " + err.Error())
+		log.Debugf("save withdraw failed: %s", err.Error())
 		return shim.Error("save withdraw failed: " + err.Error())
-	}
-
-	//删除Prepare
-	err = stub.DelState(symbolsWithdrawPrepare + reqid)
-	if err != nil {
-		log.Debugf("delete WithdrawPrepare failed: " + err.Error())
-		return shim.Error("delete WithdrawPrepare failed: " + err.Error())
 	}
 
 	return shim.Success(withdrawBytes)
 }
 
-func _withdrawFee(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	//params check
-	if len(args) < 1 {
-		return shim.Error("need 1 args (ethAddr)")
+func GetETHContractTx(txID []byte, stub shim.ChaincodeStubInterface) (*adaptor.GetTxBasicInfoOutput, error) {
+	input := adaptor.GetTxBasicInfoInput{TxID: txID}
+	inputBytes, err := json.Marshal(input)
+	if err != nil {
+		return nil, err
 	}
-	ethAddr := args[0]
+	//
+	result, err := stub.OutChainCall("eth", "GetTxBasicInfo", inputBytes)
+	if err != nil {
+		return nil, errors.New("GetTransferTx error: " + err.Error())
+	}
+	log.Debugf("result : %s", string(result))
 
+	//
+	var output adaptor.GetTxBasicInfoOutput
+	err = json.Unmarshal(result, &output)
+	if err != nil {
+		return nil, err
+	}
+	return &output, nil
+}
+
+func (p *ETHPort) WithdrawSubmit(ethTxID string, stub shim.ChaincodeStubInterface) pb.Response {
+	//
+	if "0x" == ethTxID[0:2] || "0X" == ethTxID[0:2] {
+		ethTxID = ethTxID[2:]
+	}
+	result, _ := stub.GetState(symbolsSubmit + ethTxID)
+	if len(result) != 0 {
+		log.Debugf("The tx %s fee has been payout", ethTxID)
+		return shim.Error("The fee has been payout")
+	}
+
+	//get sender receiver amount
+	txIDByte, err := hex.DecodeString(ethTxID)
+	if err != nil {
+		log.Debugf("txid invalid: %s", err.Error())
+		return shim.Error(fmt.Sprintf("txid invalid: %s", err.Error()))
+	}
+
+	mapAddr := getETHContract(stub)
+	if mapAddr == "" {
+		return shim.Error(jsonResp1)
+	}
+	txResult, err := GetETHContractTx(txIDByte, stub)
+	if err != nil {
+		log.Debugf("GetETHContractTx failed: %s", err.Error())
+		return shim.Error(err.Error())
+	}
+	//check tx status
+	if !txResult.Tx.IsSuccess {
+		log.Debugf("The tx %s is failed", ethTxID)
+		return shim.Error("The tx is failed")
+	}
+	//check contract address, must be ptn eth port contract address
+	if strings.ToLower(txResult.Tx.TargetAddress) != mapAddr {
+		log.Debugf("The tx %s is't transfer to eth port contract", ethTxID)
+		return shim.Error("The tx is't transfer to eth port contract")
+	}
+	withdrawMethodId := Hex2Bytes("73432d0a")
+	if !bytes.HasPrefix(txResult.Tx.TxRawData, withdrawMethodId) {
+		log.Debugf("The tx %s is't call withdraw", ethTxID)
+		return shim.Error("The tx is't call withdraw")
+	}
+
+	//get the mapping ptnAddr
+	ptnAddr, err := getPTNMapAddr(mapAddr, txResult.Tx.CreatorAddress, stub)
+	if err != nil {
+		log.Debugf("getPTNMapAddr failed: %s", err.Error())
+		return shim.Error(err.Error())
+	}
+
+	reqid := hex.EncodeToString(txResult.Tx.TxRawData[68:100]) //4method+32recvAddr+32amount+32reqid
+	resultWithdraw, _ := stub.GetState(symbolsWithdraw + reqid)
+	if len(resultWithdraw) == 0 {
+		return shim.Error("Not exist withdraw of reqid : " + reqid)
+	}
+	// 检查交易
+	var withdraw Withdraw
+	err = json.Unmarshal(resultWithdraw, &withdraw)
+	if nil != err {
+		jsonResp := "Unmarshal withdraw failed"
+		return shim.Error(jsonResp)
+	}
+	//
+	err = stub.PutState(symbolsSubmit+ethTxID, []byte(ptnAddr+"-"+fmt.Sprintf("%d", withdraw.EthFee)))
+	if err != nil {
+		log.Debugf("PutState symbolsSubmit failed err: %s", err.Error())
+		return shim.Error("PutState symbolsSubmit failed " + err.Error())
+	}
+
+	//
+	err = updateFeeAdd(withdraw.EthFee, ptnAddr, stub)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	return shim.Success([]byte("Success"))
+}
+
+func (p *ETHPort) WithdrawFee(ptnRecvAddr string, stub shim.ChaincodeStubInterface) pb.Response {
 	//
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
 		return shim.Error(jsonResp)
 	}
-	result, _ := stub.GetState(symbolsOwner)
-	if len(result) == 0 {
-		return shim.Error("Owner is not set")
-	}
-	if string(result) != invokeAddr.String() {
-		return shim.Error("Must is the Owner")
-	}
+	ptnAddr := invokeAddr.String()
 
 	//
-	ethAmount := getFee(stub)
-	if ethAmount == 0 {
+	ethTokenAmount := getFee(ptnAddr, stub)
+	if ethTokenAmount == 0 {
 		jsonResp := "{\"Error\":\"fee is 0\"}"
 		return shim.Error(jsonResp)
 	}
-	contractAddr := getETHContract(stub)
-	if contractAddr == "" {
-		return shim.Error(jsonResp1)
-	}
 
 	//
-	reqid := stub.GetTxID()
-	// 计算签名
-	hash, sig, err := calSig(contractAddr, reqid, ethAddr, ethAmount, stub)
-	if err != nil {
-		return shim.Error("calSig failed: " + err.Error())
+	ethTokenAsset := getETHTokenAsset(stub)
+	if ethTokenAsset == nil {
+		return shim.Error("need call setETHTokenAsset()")
 	}
-	log.Debugf("sig:%s", sig)
-
-	rawTx := fmt.Sprintf("%s %d %s", ethAddr, ethAmount, reqid)
-	tempHash := crypto.Keccak256([]byte(rawTx))
-	tempHashHex := fmt.Sprintf("%x", tempHash)
-	log.Debugf("tempHashHex:%s", tempHashHex)
-
-	//协商交易
-	recvResult, err := consult(stub, []byte(tempHashHex), []byte(sig))
+	invokeTokens := new(dm.AmountAsset)
+	invokeTokens.Amount = ethTokenAmount
+	invokeTokens.Asset = ethTokenAsset
+	err = stub.PayOutToken(ptnRecvAddr, invokeTokens, 0)
 	if err != nil {
-		log.Debugf("consult sig failed: " + err.Error())
-		return shim.Error("consult sig failed: " + err.Error())
-	}
-	var juryMsg []JuryMsgAddr
-	err = json.Unmarshal(recvResult, &juryMsg)
-	if err != nil {
-		log.Debugf("Unmarshal sig result failed: " + err.Error())
-		return shim.Error("Unmarshal sig result failed: " + err.Error())
-	}
-	//stub.PutState("recvResult", recvResult)
-	if len(juryMsg) < consultM {
-		log.Debugf("RecvJury sig result's len not enough")
-		return shim.Error("RecvJury sig result's len not enough")
+		jsonResp := "{\"Error\":\"Failed to call stub.PayOutToken\"}"
+		return shim.Error(jsonResp)
 	}
 
-	addrs := getETHAddrs(stub)
-	if len(addrs) != consultN {
-		log.Debugf("getETHAddrs result's len not enough")
-		return shim.Error("getETHAddrs result's len not enough")
-	}
-
-	sigs := verifySigs(juryMsg, hash, addrs, stub)
-	if len(sigs) < consultM {
-		log.Debugf("verifySigs result's len not enough")
-		return shim.Error("verifySigs result's len not enough")
-	}
-	sigsStr := sigs[0]
-	for i := 1; i < consultM; i++ {
-		sigsStr = sigsStr + sigs[i]
-	}
-	sigHash := crypto.Keccak256([]byte(sigsStr))
-	sigHashHex := fmt.Sprintf("%x", sigHash)
-	log.Debugf("start consult sigHashHex %s", sigHashHex)
-
-	//协商 发送交易哈希
-	txResult, err := consult(stub, []byte(sigHashHex), []byte("sigHash"))
-	if err != nil {
-		log.Debugf("consult sigHash failed: " + err.Error())
-		return shim.Error("consult sigHash failed: " + err.Error())
-	}
-	var txJuryMsg []JuryMsgAddr
-	err = json.Unmarshal(txResult, &txJuryMsg)
-	if err != nil {
-		log.Debugf("Unmarshal sigHash result failed: " + err.Error())
-		return shim.Error("Unmarshal sigHash result failed: " + err.Error())
-	}
-	if len(txJuryMsg) < consultM {
-		log.Debugf("RecvJury sigHash result's len not enough")
-		return shim.Error("RecvJury sigHash result's len not enough")
-	}
-	//协商 保证协商一致后才写入签名结果
-	txResult2, err := consult(stub, []byte(sigHashHex+"twice"), []byte("sigHash2"))
-	if err != nil {
-		log.Debugf("consult sigHash2 failed: " + err.Error())
-		return shim.Error("consult sigHash2 failed: " + err.Error())
-	}
-	var txJuryMsg2 []JuryMsgAddr
-	err = json.Unmarshal(txResult2, &txJuryMsg2)
-	if err != nil {
-		log.Debugf("Unmarshal sigHash2 result failed: " + err.Error())
-		return shim.Error("Unmarshal sigHash2 result failed: " + err.Error())
-	}
-	if len(txJuryMsg2) < consultM {
-		log.Debugf("RecvJury sigHash2 result's len not enough")
-		return shim.Error("RecvJury sigHash2 result's len not enough")
-	}
-
-	//记录签名
-	var withdraw Withdraw
-	withdraw.EthAddr = ethAddr
-	withdraw.EthAmount = ethAmount
-	withdraw.EthFee = 0
-	withdraw.Sigs = append(withdraw.Sigs, sigs[0:consultM]...)
-	withdrawBytes, err := json.Marshal(withdraw)
+	err = updateFeeSub(0, ptnAddr, stub)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	err = stub.PutState(symbolsWithdraw+reqid, withdrawBytes)
-	if err != nil {
-		log.Debugf("save withdraw failed: " + err.Error())
-		return shim.Error("save withdraw failed: " + err.Error())
-	}
-
-	return shim.Success(withdrawBytes)
+	return shim.Success([]byte("Success"))
 }
 
-func get(args []string, stub shim.ChaincodeStubInterface) pb.Response {
-	if len(args) > 0 {
-		result, _ := stub.GetState(args[0])
-		return shim.Success(result) //test
+func getInputData(contractAddr, reqid, recvAddr string, ethAmount uint64, sig1, sig2, sig3 string, stub shim.ChaincodeStubInterface) (string, error) {
+	const withdrawABI = `[{
+		"constant": false,
+		"inputs": [{
+			"name": "recver",
+			"type": "address"
+		}, {
+			"name": "amount",
+			"type": "uint256"
+		}, {
+			"name": "reqid",
+			"type": "bytes32"
+		}, {
+			"name": "sigstr1",
+			"type": "bytes"
+		}, {
+			"name": "sigstr2",
+			"type": "bytes"
+		}, {
+			"name": "sigstr3",
+			"type": "bytes"
+		}],
+		"name": "withdraw",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	}]`
+
+	callerAddr := "0x7D7116A8706Ae08bAA7F4909e26728fa7A5f0365"
+
+	//
+	var invokeInput adaptor.CreateContractInvokeTxInput
+	invokeInput.Address = callerAddr
+	invokeInput.ContractAddress = contractAddr
+	amt := new(big.Int)
+	amt.SetString("21000000000000000", 10) //10000000000 10gwei*2100000
+	invokeInput.Fee = adaptor.NewAmountAsset(amt, "ETH")
+	invokeInput.Function = "withdraw"
+	invokeInput.Extra = []byte(withdrawABI)
+	invokeInput.Args = append(invokeInput.Args, []byte(recvAddr))
+	amountBigInt := new(big.Int)
+	amountBigInt.SetUint64(ethAmount)
+	amountBigInt.Mul(amountBigInt, big.NewInt(1e10)) //eth's decimal is 18, ethToken in PTN is decimal is 8
+	invokeInput.Args = append(invokeInput.Args, []byte(amountBigInt.String()))
+	invokeInput.Args = append(invokeInput.Args, []byte(reqid))
+	invokeInput.Args = append(invokeInput.Args, []byte(sig1))
+	invokeInput.Args = append(invokeInput.Args, []byte(sig2))
+	invokeInput.Args = append(invokeInput.Args, []byte(sig3))
+
+	invokeInputJSON, _ := json.Marshal(invokeInput)
+	invokeTxJSON, err := stub.OutChainCall("eth", "CreateContractInvokeTx", invokeInputJSON)
+	if err != nil {
+		log.Debugf("OutChainCall CreateContractInvokeTx err: %s", err.Error())
+		return "", fmt.Errorf("OutChainCall CreateContractInvokeTx failed " + err.Error())
 	}
-	result, _ := stub.GetState("result")
+
+	invokeOutput := adaptor.CreateContractInvokeTxOutput{}
+	json.Unmarshal(invokeTxJSON, &invokeOutput)
+
+	return fmt.Sprintf("%x", invokeOutput.Extra), nil
+}
+
+func (p *ETHPort) GetWithdrawData(stub shim.ChaincodeStubInterface, reqid string) pb.Response {
+	if "0x" == reqid[0:2] || "0X" == reqid[0:2] {
+		reqid = reqid[2:]
+	}
+	result, _ := stub.GetState(symbolsWithdraw + reqid)
+	if len(result) == 0 {
+		return shim.Success([]byte{})
+	}
+
+	mapAddr := getETHContract(stub)
+	if mapAddr == "" {
+		return shim.Error(jsonResp1)
+	}
+
+	var withdraw Withdraw
+	err := json.Unmarshal(result, &withdraw)
+	if err != nil {
+		return shim.Success([]byte{})
+	}
+	data, err := getInputData(mapAddr, reqid, withdraw.EthAddr, withdraw.EthAmount-withdraw.EthFee, withdraw.Sigs[0],
+		withdraw.Sigs[1], withdraw.Sigs[2], stub)
+	if err != nil {
+		return shim.Success([]byte{})
+	}
+	return shim.Success([]byte(data))
+}
+
+func (p *ETHPort) Get(stub shim.ChaincodeStubInterface, key string) pb.Response {
+	result, _ := stub.GetState(key)
 	return shim.Success(result)
+}
+
+func (p *ETHPort) WithdrawAmount(stub shim.ChaincodeStubInterface, withdrawAddr common.Address, amount decimal.Decimal) pb.Response {
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
+	}
+	owner, err := getOwner(stub)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	if owner != invokeAddr.String() {
+		return shim.Error("Only owner can withdraw")
+	}
+
+	//
+	ethTokenAsset := getETHTokenAsset(stub)
+	if ethTokenAsset == nil {
+		return shim.Error("need call setETHTokenAsset()")
+	}
+
+	//contractAddr
+	amount = amount.Mul(decimal.New(100000000, 0))
+	amtToken := &dm.AmountAsset{Amount: uint64(amount.IntPart()), Asset: ethTokenAsset}
+	err = stub.PayOutToken(withdrawAddr.String(), amtToken, 0)
+	if err != nil {
+		log.Debugf("PayOutToken failed: %s", err.Error())
+		return shim.Error("PayOutToken failed: " + err.Error())
+	}
+
+	return shim.Success([]byte("Success"))
 }
 
 func main() {

@@ -31,7 +31,7 @@ func (pm *ProtocolManager) AnnounceMsg(msg p2p.Msg, p *peer) error {
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
 
-	if err := json.Unmarshal(data, &req.Header); err != nil {
+	if err := rlp.DecodeBytes(data, &req.Header); err != nil {
 		log.Error("AnnounceMsg", "Unmarshal err", err, "data", data)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
@@ -50,25 +50,25 @@ func (pm *ProtocolManager) AnnounceMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	log.Debug("Light PalletOne Announce message content", "p.id", p.id, "assetid", req.Header.Number.AssetID,
-		"index", req.Header.Number.Index, "hash", req.Header.Hash())
+	log.Debug("Light PalletOne Announce message content", "p.id", p.id, "assetid", req.Header.GetNumber().AssetID,
+		"index", req.Header.GetNumber().Index, "hash", req.Header.Hash())
 
-	if pm.lightSync || pm.assetId != req.Header.Number.AssetID {
+	if pm.lightSync || pm.assetId != req.Header.GetNumber().AssetID {
 		pm.fetcher.Enqueue(p, &req.Header)
-		localheader := pm.dag.CurrentHeader(req.Header.Number.AssetID)
+		localheader := pm.dag.CurrentHeader(req.Header.GetNumber().AssetID)
 		if localheader != nil {
 			log.Debug("Light PalletOne Announce message pre synchronize", "localheader index",
-				localheader.Number.Index, "req.Header.Number.Index-1", req.Header.Number.Index-1)
+				localheader.GetNumber().Index, "req.Header.Number.Index-1", req.Header.GetNumber().Index-1)
 		} else {
 			log.Debug("Light PalletOne Announce message pre synchronize",
-				"localheader is ni.req.Header.Number.Index-1", req.Header.Number.Index-1)
+				"localheader is ni.req.Header.Number.Index-1", req.Header.GetNumber().Index-1)
 		}
 
-		if localheader == nil || localheader.Number.Index < req.Header.Number.Index-1 {
+		if localheader == nil || localheader.GetNumber().Index < req.Header.GetNumber().Index-1 {
 			p.SetHead(&req)
 			go func() {
 				log.Debug("Light PalletOne Announce message Enter synchronize")
-				pm.synchronize(p, req.Header.Number.AssetID)
+				pm.synchronize(p, req.Header.GetNumber().AssetID)
 			}()
 		}
 	}
@@ -113,9 +113,9 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 		if origin == nil {
 			break
 		}
-		log.Debug("ProtocolManager", "GetBlockHeadersMsg origin index:", origin.Number.Index)
+		log.Debug("ProtocolManager", "GetBlockHeadersMsg origin index:", origin.GetNumber().Index)
 
-		number := origin.Number.Index
+		number := origin.GetNumber().Index
 		headers = append(headers, origin)
 		bytes += estHeaderRlpSize
 
@@ -127,7 +127,7 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 			for i := 0; i < int(query.Skip)+1; i++ {
 				if header, err := pm.dag.GetHeaderByHash(query.Origin.Hash); err == nil && header != nil {
 					if number != 0 {
-						query.Origin.Hash = header.ParentsHash[0]
+						query.Origin.Hash = header.ParentHash()[0]
 					}
 					number--
 				} else {
@@ -139,9 +139,9 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 			// Hash based traversal towards the leaf block
 			log.Debug("Light ProtocolManager GetBlockHeadersMsg Hash based towards the leaf block")
 			var (
-				current = origin.Number.Index
+				current = origin.GetNumber().Index
 				next    = current + query.Skip + 1
-				index   = origin.Number
+				index   = origin.GetNumber()
 			)
 			log.Debug("Light ProtocolManager GetBlockHeadersMsg", "next", next, "current:", current)
 			if next <= current {
@@ -155,7 +155,7 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 				if header, _ := pm.dag.GetHeaderByNumber(index); header != nil {
 					hashs := pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)
 					log.Debug("Light ProtocolManager", "GetUnitHashesFromHash len(hashs):", len(hashs),
-						"header.index:", header.Number.Index, "header.hash:", header.Hash().String(),
+						"header.index:", header.GetNumber().Index, "header.hash:", header.Hash().String(),
 						"query.Skip+1", query.Skip+1)
 					if len(hashs) > int(query.Skip) && (hashs[query.Skip] == query.Origin.Hash) {
 						query.Origin.Hash = header.Hash()
@@ -191,7 +191,7 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 	number := len(headers)
 	if number > 0 {
 		log.Debug("Light ProtocolManager GetBlockHeadersMsg", "query.Amount", query.Amount, "send number:",
-			number, "start:", headers[0].Number.Index, "end:", headers[number-1].Number.Index,
+			number, "start:", headers[0].GetNumber().Index, "end:", headers[number-1].GetNumber().Index,
 			" getBlockHeadersData:", query)
 	}
 	log.Debug("Light ProtocolManager GetBlockHeadersMsg", "query.Amount", query.Amount, "send number:", 0,

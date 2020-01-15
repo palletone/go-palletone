@@ -45,10 +45,10 @@ const (
 )
 
 func localIsMinSignature(tx *modules.Transaction) bool {
-	if tx == nil || len(tx.TxMessages) < 3 {
+	if tx == nil || len(tx.Messages()) < 3 {
 		return false
 	}
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.Messages() {
 		if msg.App == modules.APP_SIGNATURE {
 			sigPayload := msg.Payload.(*modules.SignaturePayload)
 			sigs := sigPayload.Signatures
@@ -93,7 +93,7 @@ func (p *Processor) processContractPayout(tx *modules.Transaction, ele *modules.
 		return
 	}
 	reqId := tx.RequestHash()
-	if has, payout := tx.HasContractPayoutMsg(); has {
+	if has, index, payout_msg := tx.HasContractPayoutMsg(); has {
 		pubkeys, signs := getSignature(tx)
 		redeem := p.generateJuryRedeemScript(ele)
 
@@ -104,18 +104,19 @@ func (p *Processor) processContractPayout(tx *modules.Transaction, ele *modules.
 			return fmt.Sprintf("[%s]processContractPayout, Move sign payload to contract payout unlock script:%s",
 				shortId(reqId.String()), unlockStr)
 		})
-		for _, input := range payout.Inputs {
+		for _, input := range payout_msg.Payload.(*modules.PaymentPayload).Inputs {
 			input.SignatureScript = unlock
 		}
+		tx.ModifiedMsg(index, payout_msg)
 		//remove signature payload
 		msgs := []*modules.Message{}
-		for _, msg := range tx.TxMessages {
+		for _, msg := range tx.Messages() {
 			if msg.App != modules.APP_SIGNATURE {
 				msgs = append(msgs, msg)
 			}
 		}
+		tx.SetMessages(msgs)
 		log.Debugf("[%s]processContractPayout, Remove SignaturePayload from req[%s]", shortId(reqId.String()), reqId.String())
-		tx.TxMessages = msgs
 	}
 }
 
@@ -181,7 +182,7 @@ func SortSigs(pubkeys [][]byte, signs [][]byte, redeem []byte) [][]byte {
 }
 
 func getSignature(tx *modules.Transaction) ([][]byte, [][]byte) {
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.Messages() {
 		if msg.App == modules.APP_SIGNATURE {
 			sig := msg.Payload.(*modules.SignaturePayload)
 			pubKeys := [][]byte{}
@@ -196,7 +197,7 @@ func getSignature(tx *modules.Transaction) ([][]byte, [][]byte) {
 	return nil, nil
 }
 
-func genContractErrorMsg(dag iDag, tx *modules.Transaction,
+func genContractErrorMsg( tx *modules.Transaction,
 	errIn error, errMsgEnable bool) ([]*modules.Message, error) {
 	reqType, _ := getContractTxType(tx)
 	errString := fmt.Sprintf("[%s]genContractErrorMsg, reqType:%d,err:%s",
@@ -208,9 +209,9 @@ func genContractErrorMsg(dag iDag, tx *modules.Transaction,
 	msgs := make([]*modules.Message, 0)
 	errMsg := createContractErrorPayloadMsg(tx, errIn)
 	msgs = append(msgs, errMsg)
-	addr := tx.GetInvokeContractId()
+	addr := tx.GetContractId()
 	//合约发生错误，检查有没有支付到合约的Token，有则原路返回
-	paybacks := contractPayBack(tx, addr, dag.GetUtxoEntry)
+	paybacks := contractPayBack(tx, addr)
 	msgs = append(msgs, paybacks...)
 
 	return msgs, nil
@@ -222,22 +223,21 @@ func createContractErrorPayloadMsg(tx *modules.Transaction, errIn error) *module
 		Message: errIn.Error(),
 	}
 	reqType, _ := getContractTxType(tx)
-	contractReq, _ := getContractTxContractInfo(tx, reqType)
+	_, contractReq, _ := getContractTxContractInfo(tx, reqType)
 	switch reqType {
 	case modules.APP_CONTRACT_TPL_REQUEST:
-		//req := contractReq.(*modules.ContractInstallRequestPayload)
-		payload := modules.NewContractTplPayload(nil, 0, nil, contractErr)
+		payload := contractReq.Payload.(*modules.ContractInstallRequestPayload)
 		return modules.NewMessage(modules.APP_CONTRACT_TPL, payload)
 	case modules.APP_CONTRACT_DEPLOY_REQUEST:
-		req := contractReq.(*modules.ContractDeployRequestPayload)
+		req := contractReq.Payload.(*modules.ContractDeployRequestPayload)
 		payload := modules.NewContractDeployPayload(req.TemplateId, nil, "", req.Args, nil, nil, nil, contractErr)
 		return modules.NewMessage(modules.APP_CONTRACT_DEPLOY, payload)
 	case modules.APP_CONTRACT_INVOKE_REQUEST:
-		req := contractReq.(*modules.ContractInvokeRequestPayload)
+		req := contractReq.Payload.(*modules.ContractInvokeRequestPayload)
 		payload := modules.NewContractInvokePayload(req.ContractId, nil, nil, nil, contractErr)
 		return modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload)
 	case modules.APP_CONTRACT_STOP_REQUEST:
-		req := contractReq.(*modules.ContractStopRequestPayload)
+		req := contractReq.Payload.(*modules.ContractStopRequestPayload)
 		payload := modules.NewContractStopPayload(req.ContractId, nil, nil, contractErr)
 		return modules.NewMessage(modules.APP_CONTRACT_STOP, payload)
 	}
@@ -248,10 +248,10 @@ func createContractErrorPayloadMsg(tx *modules.Transaction, errIn error) *module
 //执行合约命令:install、deploy、invoke、stop，同时只支持一种类型
 func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract, tx *modules.Transaction,
 	ele *modules.ElectionNode, errMsgEnable bool) ([]*modules.Message, error) {
-	if tx == nil || len(tx.TxMessages) <= 0 {
+	if tx == nil || len(tx.Messages()) <= 0 {
 		return nil, errors.New("runContractCmd transaction or msg is nil")
 	}
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		switch msg.App {
 		case modules.APP_CONTRACT_TPL_REQUEST:
 			{
@@ -269,7 +269,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 				}
 				installResult, err := ContractProcess(rwM, contract, req)
 				if err != nil {
-					return genContractErrorMsg(dag, tx, err, errMsgEnable)
+					return genContractErrorMsg( tx, err, errMsgEnable)
 				}
 				payload := installResult.(*modules.ContractTplPayload)
 				//payload.AddrHash = req.addrHash
@@ -294,7 +294,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 				req.args = fullArgs
 				deployResult, err := ContractProcess(rwM, contract, req)
 				if err != nil {
-					return genContractErrorMsg(dag, tx, err, errMsgEnable)
+					return genContractErrorMsg( tx, err, errMsgEnable)
 				}
 				payload := deployResult.(*modules.ContractDeployPayload)
 				if ele != nil {
@@ -327,7 +327,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 				req.args = newFullArgs
 				invokeResult, err := ContractProcess(rwM, contract, req)
 				if err != nil {
-					return genContractErrorMsg(dag, tx, err, errMsgEnable)
+					return genContractErrorMsg( tx, err, errMsgEnable)
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
 				payload := modules.NewContractInvokePayload(result.ContractId, result.ReadSet, result.WriteSet,
@@ -335,9 +335,9 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
 				}
-				toContractPayments, err := resultToContractPayments(dag, result)
+				toContractPayments, err := resultToContractPayments(dag, tx.GetRequestTx(), result)
 				if err != nil {
-					return genContractErrorMsg(dag, tx, err, errMsgEnable)
+					return genContractErrorMsg( tx, err, errMsgEnable)
 				}
 				if len(toContractPayments) > 0 {
 					for _, contractPayment := range toContractPayments {
@@ -346,7 +346,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 				}
 				cs, err := resultToCoinbase(result)
 				if err != nil {
-					return genContractErrorMsg(dag, tx, err, errMsgEnable)
+					return genContractErrorMsg( tx, err, errMsgEnable)
 				}
 				if len(cs) > 0 {
 					for _, coinbase := range cs {
@@ -367,7 +367,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 				}
 				stopResult, err := ContractProcess(rwM, contract, req)
 				if err != nil {
-					return genContractErrorMsg(dag, tx, err, errMsgEnable)
+					return genContractErrorMsg( tx, err, errMsgEnable)
 				}
 				payload := stopResult.(*modules.ContractStopPayload)
 				msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_STOP, payload))
@@ -379,9 +379,14 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 	return nil, errors.New(fmt.Sprintf("runContractCmd err, txid=%s", tx.RequestHash().String()))
 }
 
-func contractPayBack(tx *modules.Transaction, addr []byte, queryUtxoFunc modules.QueryUtxoFunc) []*modules.Message {
+func contractPayBack(tx *modules.Transaction, addr []byte) []*modules.Message {
+	if tx == nil {
+		log.Error("contractPayBack, tx is nil")
+		return nil
+	}
+	reqId := tx.RequestHash()
 	messages := []*modules.Message{}
-	for msgIdx, msg := range tx.TxMessages {
+	for msgIdx, msg := range tx.TxMessages() {
 		if msg.App.IsRequest() {
 			break
 		}
@@ -389,11 +394,24 @@ func contractPayBack(tx *modules.Transaction, addr []byte, queryUtxoFunc modules
 		if msg.App == modules.APP_PAYMENT {
 			payment := msg.Payload.(*modules.PaymentPayload)
 			for outIdx, out := range payment.Outputs {
-				toAddr, _ := tokenengine.Instance.GetAddressFromScript(out.PkScript)
-				if addr != nil && bytes.Equal(toAddr.Bytes(), addr) {
+				toAddr, err := tokenengine.Instance.GetAddressFromScript(out.PkScript)
+				if err != nil {
+					log.Errorf("[%s]contractPayBack, GetAddressFromScript fail：%s", shortId(reqId.String()), err.Error())
+					return nil
+				}
+				if addr != nil && bytes.Equal(toAddr.Bytes(), addr) { //付款到了合约
+					//找出付款的发送地址
+					//inputUtxo, err := queryUtxoFunc(payment.Inputs[0].PreviousOutPoint)
+					//if err != nil {
+					//	log.Errorf("[%s]contractPayBack, queryUtxoFunc fail：%s", shortId(reqId.String()), err.Error())
+					//	return nil
+					//}
+					fromAddr, err := tokenengine.Instance.GetAddressFromUnlockScript(payment.Inputs[0].SignatureScript)
+					if err != nil {
+						log.Errorf("[%s]contractPayBack, GetAddressFromScript fail：%s", shortId(reqId.String()), err.Error())
+						return nil
+					}
 					input := modules.NewTxIn(modules.NewOutPoint(common.NewSelfHash(), uint32(msgIdx), uint32(outIdx)), nil)
-					inputUtxo, _ := queryUtxoFunc(payment.Inputs[0].PreviousOutPoint)
-					fromAddr, _ := tokenengine.Instance.GetAddressFromScript(inputUtxo.PkScript)
 					output := modules.NewTxOut(out.Value, tokenengine.Instance.GenerateLockScript(fromAddr), out.Asset)
 					payback := modules.NewPaymentPayload([]*modules.Input{input}, []*modules.Output{output})
 					messages = append(messages, modules.NewMessage(modules.APP_PAYMENT, payback))
@@ -406,16 +424,17 @@ func contractPayBack(tx *modules.Transaction, addr []byte, queryUtxoFunc modules
 func handleMsg0(tx *modules.Transaction, dag iDag, reqArgs [][]byte) ([][]byte, error) {
 	var txArgs [][]byte
 	invokeInfo := modules.InvokeInfo{}
-	lenTxMsgs := len(tx.TxMessages)
+	msgs := tx.TxMessages()
+	lenTxMsgs := len(msgs)
 	if lenTxMsgs > 0 {
-		msg0 := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+		msg0 := msgs[0].Payload.(*modules.PaymentPayload)
 		invokeAddr, err := dag.GetAddrByOutPoint(msg0.Inputs[0].PreviousOutPoint)
 		if err != nil {
 			return nil, err
 		}
 		var invokeTokensAll []*modules.InvokeTokens
 		for i := 0; i < lenTxMsgs; i++ {
-			msg, ok := tx.TxMessages[i].Payload.(*modules.PaymentPayload)
+			msg, ok := msgs[i].Payload.(*modules.PaymentPayload)
 			if !ok {
 				continue
 			}
@@ -465,7 +484,7 @@ func handleArg1(tx *modules.Transaction, reqArgs [][]byte) ([][]byte, error) {
 	}
 	newReqArgs := [][]byte{}
 	newReqArgs = append(newReqArgs, reqArgs[0])
-	newReqArgs = append(newReqArgs, tx.CertId)
+	newReqArgs = append(newReqArgs, tx.CertId())
 	newReqArgs = append(newReqArgs, reqArgs[1:]...)
 	return newReqArgs, nil
 }
@@ -480,24 +499,25 @@ func checkAndAddTxSigMsgData(local *modules.Transaction, recv *modules.Transacti
 		return false, errors.New("checkAndAddTxSigMsgData param is nil")
 	}
 	reqId := local.RequestHash()
-
-	if len(local.TxMessages) != len(recv.TxMessages) {
+	msgs := local.TxMessages()
+	recv_msgs := recv.TxMessages()
+	if len(msgs) != len(recv_msgs) {
 		return false, fmt.Errorf("[%s]checkAndAddTxSigMsgData tx msg is invalid,local msg len[%d],recv msg len[%d]",
-			shortId(reqId.String()), len(local.TxMessages), len(recv.TxMessages))
+			shortId(reqId.String()), len(msgs), len(recv_msgs))
 	}
-	for i := 0; i < len(local.TxMessages); i++ {
-		if recv.TxMessages[i].App == modules.APP_SIGNATURE {
-			recvSigMsg = recv.TxMessages[i]
-		} else if !local.TxMessages[i].CompareMessages(recv.TxMessages[i]) {
-			log.Info("checkAndAddTxSigMsgData", "reqId", shortId(reqId.String()), "local:", local.TxMessages[i],
-				"recv:", recv.TxMessages[i])
+	for i := 0; i < len(msgs); i++ {
+		if recv_msgs[i].App == modules.APP_SIGNATURE {
+			recvSigMsg = recv_msgs[i]
+		} else if !msgs[i].CompareMessages(recv_msgs[i]) {
+			log.Info("checkAndAddTxSigMsgData", "reqId", shortId(reqId.String()), "local:", msgs[i],
+				"recv:", recv_msgs[i])
 			return false, fmt.Errorf("[%s]checkAndAddTxSigMsgData tx msg[%d] is not equal", shortId(reqId.String()), i)
 		}
 	}
 	if recvSigMsg == nil {
 		return false, fmt.Errorf("[%s]checkAndAddTxSigMsgData not find recv sig msg", shortId(reqId.String()))
 	}
-	for i, msg := range local.TxMessages {
+	for i, msg := range msgs {
 		if msg.App == modules.APP_SIGNATURE {
 			sigPayload := msg.Payload.(*modules.SignaturePayload)
 			sigs := sigPayload.Signatures
@@ -512,7 +532,8 @@ func checkAndAddTxSigMsgData(local *modules.Transaction, recv *modules.Transacti
 			if len(recvSigMsg.Payload.(*modules.SignaturePayload).Signatures) > 0 {
 				sigPayload.Signatures = append(sigs, recvSigMsg.Payload.(*modules.SignaturePayload).Signatures[0])
 			}
-			local.TxMessages[i].Payload = sigPayload
+			msg.Payload = sigPayload
+			local.ModifiedMsg(i, msg)
 			log.Infof("[%s]checkAndAddTxSigMsgData, add sig payload, len(Signatures)=%d, Signatures[%s]",
 				shortId(reqId.String()), len(sigPayload.Signatures), sigPayload.Signatures)
 			return true, nil
@@ -523,7 +544,7 @@ func checkAndAddTxSigMsgData(local *modules.Transaction, recv *modules.Transacti
 
 func getTxSigNum(tx *modules.Transaction) int {
 	if tx != nil {
-		for _, msg := range tx.TxMessages {
+		for _, msg := range tx.Messages() {
 			if msg.App == modules.APP_SIGNATURE {
 				return len(msg.Payload.(*modules.SignaturePayload).Signatures)
 			}
@@ -562,7 +583,7 @@ func (p *Processor) checkTxAddrValid(tx *modules.Transaction) bool {
 	case modules.APP_CONTRACT_DEPLOY_REQUEST:
 	case modules.APP_CONTRACT_INVOKE_REQUEST:
 	case modules.APP_CONTRACT_STOP_REQUEST:
-		contractId := tx.ContractIdBytes()
+		contractId := tx.GetContractId()
 		contract, err := p.dag.GetContract(contractId)
 		if err != nil {
 			log.Debugf("[%s]checkTxAddrValid, GetContract fail, contractId[%v]", shortId(reqId.String()), contractId)
@@ -572,7 +593,8 @@ func (p *Processor) checkTxAddrValid(tx *modules.Transaction) bool {
 		if err != nil {
 			return false
 		}
-		if !bytes.Equal(contract.Creator, reqAddr.Bytes()) {
+		jjhAd := p.dag.GetChainParameters().FoundationAddress
+		if jjhAd != reqAddr.String() && !bytes.Equal(contract.Creator, reqAddr.Bytes()) {
 			log.Debugf("[%s]checkTxAddrValid, addr is not equal, Creator[%v], reqAddr[%v]",
 				shortId(reqId.String()), contract.Creator, reqAddr.Bytes())
 			return false
@@ -597,11 +619,12 @@ func checkTxReceived(all []*modules.Transaction, tx *modules.Transaction) bool {
 	return false
 }
 
-func msgsCompare(msgsA []*modules.Message, msgsB []*modules.Message, msgType modules.MessageType) bool {
+func msgsCompareInvoke(msgsA []*modules.Message, msgsB []*modules.Message /*, msgType modules.MessageType*/) bool {
 	if msgsA == nil || msgsB == nil {
 		log.Error("msgsCompare", "param is nil")
 		return false
 	}
+	msgType := modules.APP_CONTRACT_INVOKE
 	var msg1, msg2 *modules.Message
 	for _, v := range msgsA {
 		if v.App == msgType {
@@ -619,7 +642,8 @@ func msgsCompare(msgsA []*modules.Message, msgsB []*modules.Message, msgType mod
 			return true
 		}
 	}
-	log.Debug("msgsCompare,msg is not equal", "msg1", msg1.Payload, "msg2", msg2.Payload) //todo del
+	log.Debug("msgsCompare,msg is not equal", "msg1", msg1, "msg2", msg2)
+
 	return false
 }
 
@@ -664,7 +688,7 @@ func getContractTxType(tx *modules.Transaction) (modules.MessageType, error) {
 	if tx == nil {
 		return modules.APP_UNKNOW, errors.New("getContractTxType get param is nil")
 	}
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.Messages() {
 		if msg.App >= modules.APP_CONTRACT_TPL_REQUEST && msg.App <= modules.APP_CONTRACT_STOP_REQUEST {
 			return msg.App, nil
 		}
@@ -672,17 +696,42 @@ func getContractTxType(tx *modules.Transaction) (modules.MessageType, error) {
 	return modules.APP_UNKNOW, fmt.Errorf("getContractTxType not contract Tx, txHash[%s]", shortId(tx.Hash().String()))
 }
 
-func getContractTxContractInfo(tx *modules.Transaction, msgType modules.MessageType) (interface{}, error) {
+func getContractTxContractInfo(tx *modules.Transaction, msgType modules.MessageType) (int, *modules.Message, error) {
 	if tx == nil {
-		return nil, errors.New("getContractTxType get param is nil")
+		return 0, nil, errors.New("getContractTxType get param is nil")
 	}
-	for _, msg := range tx.TxMessages {
+	for i, msg := range tx.TxMessages() {
 		if msg.App == msgType {
-			return msg.Payload, nil
+			return i, msg, nil
 		}
 	}
 	log.Debugf("[%s]getContractTxContractInfo,  not find msgType[%v]", shortId(tx.RequestHash().String()), msgType)
-	return nil, nil
+	return 0, nil, nil
+}
+
+func getContractInvokeMulPaymentInputNum(tx *modules.Transaction) int {
+	afterReq := false
+	isSysContract := false
+	cnt := 0
+	msgs := tx.TxMessages()
+	for _, msg := range msgs {
+		if msg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
+			afterReq = true
+			requestMsg := msg.Payload.(*modules.ContractInvokeRequestPayload)
+			isSysContract = common.IsSystemContractId(requestMsg.ContractId)
+			continue
+		}
+		if afterReq {
+			if msg.App == modules.APP_PAYMENT {
+				//Contract result里面的Payment只有2种，创币或者从合约付出
+				payment := msg.Payload.(*modules.PaymentPayload)
+				if !payment.IsCoinbase() && isSysContract {
+					cnt += len(payment.Inputs)
+				}
+			}
+		}
+	}
+	return cnt
 }
 
 func getElectionSeedData(in common.Hash) []byte {
@@ -869,11 +918,39 @@ func addContractDeployDuringTime(dag iDag, tx *modules.Transaction) error {
 	if err != nil {
 		return fmt.Errorf("addContractDeployDuringTime, err:%s", err)
 	}
-	payload, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_DEPLOY)
+	index, msg, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_DEPLOY)
 	if err != nil {
 		return errors.New("addContractDeployDuringTime, getContractTxContractInfo fail")
 	}
-	payload.(*modules.ContractDeployPayload).DuringTime = duringTime
+	msg.Payload.(*modules.ContractDeployPayload).DuringTime = duringTime
+	tx.ModifiedMsg(index, msg)
+	//
+	return nil
+}
+
+func addContractSignatureSet(tx *modules.Transaction, sigSet *modules.SignatureSet) error {
+	if tx == nil || sigSet == nil {
+		log.Error("addContractSignatureSet, param is nil")
+		return fmt.Errorf("addContractSignatureSet, param is nil")
+	}
+	index, sigMsg, err := getContractTxContractInfo(tx, modules.APP_SIGNATURE)
+	if err != nil {
+		return err
+	}
+	if sigMsg != nil {
+		sigMsg.Payload.(*modules.SignaturePayload).Signatures = append(sigMsg.Payload.(*modules.SignaturePayload).Signatures, *sigSet)
+		tx.ModifiedMsg(index, sigMsg)
+	} else {
+		sigs := make([]modules.SignatureSet, 0)
+		sigs = append(sigs, *sigSet)
+		msgSig := &modules.Message{
+			App: modules.APP_SIGNATURE,
+			Payload: &modules.SignaturePayload{
+				Signatures: sigs,
+			},
+		}
+		tx.AddMessage(msgSig)
+	}
 	return nil
 }
 

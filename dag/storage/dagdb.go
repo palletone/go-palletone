@@ -50,7 +50,7 @@ type IDagDb interface {
 	GetAllTxs() ([]*modules.Transaction, error)
 	SaveBody(unitHash common.Hash, txsHash []common.Hash) error
 	GetBody(unitHash common.Hash) ([]common.Hash, error)
-	SaveTxLookupEntry(unit *modules.Unit) error
+	SaveTxLookupEntry(hash common.Hash, height, timestamp uint64, index int, tx *modules.Transaction) error
 
 	PutTrieSyncProgress(count uint64) error
 
@@ -164,14 +164,14 @@ func (dagdb *DagDb) saveHeader(putter ptndb.Putter, h *modules.Header) error {
 
 //为Unit的Height建立索引,这个索引是必须的，所以在dagdb中实现，而不是在indexdb实现。
 func (dagdb *DagDb) saveHeaderChainIndex(putter ptndb.Putter, h *modules.Header) error {
-	idxKey := append(constants.HEADER_HEIGTH_PREFIX, h.Number.Bytes()...)
+	idxKey := append(constants.HEADER_HEIGTH_PREFIX, h.GetNumber().Bytes()...)
 	uHash := h.Hash()
 	err := StoreToRlpBytes(putter, idxKey, uHash)
 	if err != nil {
 		log.Error("Save Header height index error", err.Error())
 		return err
 	}
-	log.Debugf("Save header number %s for unit: %#x", h.Number.String(), uHash.Bytes())
+	log.Debugf("Save header number %s for unit: %#x", h.GetNumber().String(), uHash.Bytes())
 	return nil
 }
 func (dagdb *DagDb) GetHashByNumber(number *modules.ChainIndex) (common.Hash, error) {
@@ -191,7 +191,8 @@ value: all transactions hash set's rlp encoding bytes
 */
 func (dagdb *DagDb) SaveBody(unitHash common.Hash, txsHash []common.Hash) error {
 	key := append(constants.BODY_PREFIX, unitHash.Bytes()...)
-	log.Debugf("Save unit[%s] body,txs:%x",unitHash.String(),txsHash)
+	//log.Debugf("Save unit[%s] body,txs:%x", unitHash.String(), txsHash)
+	log.Debugf("Save unit[%s] body", unitHash.String())
 	return StoreToRlpBytes(dagdb.db, key, txsHash)
 }
 
@@ -207,27 +208,16 @@ func (dagdb *DagDb) GetBody(unitHash common.Hash) ([]common.Hash, error) {
 	return txHashs, nil
 }
 
-func (dagdb *DagDb) SaveTxLookupEntry(unit *modules.Unit) error {
-	if len(unit.Txs) == 0 {
-		//log.Debugf("No tx in unit[%s] need to save lookup", unit.Hash().String())
-		return nil
+func (dagdb *DagDb) SaveTxLookupEntry(hash common.Hash, height, timestamp uint64, index int,
+	tx *modules.Transaction) error {
+	in := &modules.TxLookupEntry{
+		UnitHash:  hash,
+		UnitIndex: height,
+		Index:     uint64(index),
+		Timestamp: timestamp,
 	}
-	//log.Debugf("Batch save tx lookup entry, tx count:%d", len(unit.Txs))
-	batch := dagdb.db.NewBatch()
-	for i, tx := range unit.Transactions() {
-		in := &modules.TxLookupEntry{
-			UnitHash:  unit.Hash(),
-			UnitIndex: unit.NumberU64(),
-			Index:     uint64(i),
-			Timestamp: uint64(unit.UnitHeader.Time),
-		}
-		key := append(constants.LOOKUP_PREFIX, tx.Hash().Bytes()...)
-
-		if err := StoreToRlpBytes(batch, key, in); err != nil {
-			return err
-		}
-	}
-	return batch.Write()
+	key := append(constants.LOOKUP_PREFIX, tx.Hash().Bytes()...)
+	return StoreToRlpBytes(dagdb.db, key, in)
 }
 func (dagdb *DagDb) GetTxLookupEntry(txHash common.Hash) (*modules.TxLookupEntry, error) {
 	key := append(constants.LOOKUP_PREFIX, txHash.Bytes()...)

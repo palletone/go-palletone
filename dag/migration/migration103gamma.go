@@ -13,8 +13,8 @@
  *    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
  * /
  *
- *  * @author PalletOne core developers <dev@pallet.one>
- *  * @date 2018-2019
+ *  * @author PalletOne core developer albert <dev@pallet.one>
+ *  * @date 2019-2020
  *
  */
 package migration
@@ -23,9 +23,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/common/uint128"
 	"github.com/palletone/go-palletone/dag/constants"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 )
 
@@ -62,7 +60,7 @@ func (m *Migration103beta_103gamma) upgradeDGP() error {
 		return err
 	}
 
-	newData := &modules.DynamicGlobalProperty{}
+	newData := &DynamicGlobalProperty105delta{}
 	newData.LastMediator = oldDgp.LastMediator
 	newData.IsShuffledSchedule = oldDgp.IsShuffledSchedule
 	newData.NextMaintenanceTime = oldDgp.NextMaintenanceTime
@@ -70,7 +68,7 @@ func (m *Migration103beta_103gamma) upgradeDGP() error {
 	newData.CurrentASlot = oldDgp.CurrentASlot
 	newData.MaintenanceFlag = oldDgp.MaintenanceFlag
 
-	newData.RecentSlotsFilled = uint128.New(oldDgp.RecentSlotsFilled, ^uint64(0))
+	newData.RecentSlotsFilled = Uint128_105delta{oldDgp.RecentSlotsFilled, ^uint64(0)}
 
 	err = storage.StoreToRlpBytes(m.propdb, constants.DYNAMIC_GLOBALPROPERTY_KEY, newData)
 	if err != nil {

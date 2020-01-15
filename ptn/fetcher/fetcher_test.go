@@ -37,19 +37,15 @@ var (
 )
 
 func newGenesisForTest(db ptndb.Database) *modules.Unit {
-	header := modules.NewHeader([]common.Hash{}, 1, []byte{})
+	b := []byte{}
+	header := modules.NewHeader([]common.Hash{}, common.Hash{}, b, b, b, b, []uint16{},
+		modules.PTNCOIN, 0, int64(1598766666))
 
-	header.Number.AssetID = modules.PTNCOIN
-	//header.Number.IsMain = true
-	header.Number.Index = 0
-	header.Authors = modules.Authentifier{[]byte{}, []byte{}}
-	header.GroupSign = []byte{}
-	header.GroupPubKey = []byte{}
+	header.SetGroupSign([]byte{})
+	header.SetGroupPubkey([]byte{})
 	tx, _ := NewCoinbaseTransaction()
 	txs := modules.Transactions{tx}
 	genesisUnit := modules.NewUnit(header, txs)
-	//fmt.Println("genesisUnit=", genesisUnit.Hash())
-	//fmt.Println("genesisUTx=", genesisUnit.Transactions()[0])
 	err := SaveGenesis(db, genesisUnit)
 	if err != nil {
 		log.Println("SaveGenesis, err", err)
@@ -70,31 +66,28 @@ func SaveGenesis(db ptndb.Database, unit *modules.Unit) error {
 }
 func NewCoinbaseTransaction() (*modules.Transaction, error) {
 	input := &modules.Input{}
-	output := &modules.Output{}
+	output := modules.NewTxOut(1, []byte{}, modules.NewPTNAsset())
 	payload := modules.PaymentPayload{
 		Inputs:  []*modules.Input{input},
 		Outputs: []*modules.Output{output},
 	}
 	msg := modules.Message{
 		App:     modules.APP_PAYMENT,
-		Payload: payload,
+		Payload: &payload,
 	}
-	var coinbase modules.Transaction
-	coinbase.TxMessages = append(coinbase.TxMessages, &msg)
-	//coinbase.TxHash = coinbase.Hash()
-	return &coinbase, nil
+
+	coinbase := modules.NewTransaction([]*modules.Message{&msg})
+	return coinbase, nil
 }
 func newDag(db ptndb.Database, gunit *modules.Unit, number int) (modules.Units, error) {
 	units := make(modules.Units, number)
 	par := gunit
 	for i := 0; i < number; i++ {
-		header := modules.NewHeader([]common.Hash{par.UnitHash}, 1, []byte{})
-		header.Number.AssetID = par.UnitHeader.Number.AssetID
-		//header.Number.IsMain = par.UnitHeader.Number.IsMain
-		header.Number.Index = par.UnitHeader.Number.Index + 1
-		header.Authors = modules.Authentifier{[]byte{}, []byte{}}
-		header.GroupSign = []byte{}
-		header.GroupPubKey = []byte{}
+		b := []byte{}
+		header := modules.NewHeader([]common.Hash{par.Hash()}, common.Hash{}, b, b, b, b, []uint16{},
+			par.UnitHeader.GetNumber().AssetID, par.UnitHeader.GetNumber().Index+1, int64(1598766666))
+		header.SetGroupSign([]byte{})
+		header.SetGroupPubkey([]byte{})
 		tx, _ := NewCoinbaseTransaction()
 		txs := modules.Transactions{tx}
 		unit := modules.NewUnit(header, txs)
@@ -110,13 +103,9 @@ func newDag(db ptndb.Database, gunit *modules.Unit, number int) (modules.Units, 
 }
 
 func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
-	if unit.UnitSize == 0 || unit.Size() == 0 {
+	if unit.Size() == 0 {
 		log.Println("Unit is null")
 		return fmt.Errorf("Unit is null")
-	}
-	if unit.UnitSize != unit.Size() {
-		log.Println("Validate size", "error", "Size is invalid")
-		return modules.ErrUnit(-1)
 	}
 	//_, isSuccess, err := dag.ValidateTransactions(&unit.Txs, isGenesis)
 	//if isSuccess != true {
@@ -131,6 +120,17 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 		log.Println("SaveHeader:", "error", err.Error())
 		return modules.ErrUnit(-3)
 	}
+	hash := unit.Hash()
+	height := unit.NumberU64()
+	time := unit.Timestamp()
+	for txIndex, tx := range unit.Txs {
+		if err := dagDb.SaveTransaction(tx); err != nil {
+			return err
+		}
+		if err := dagDb.SaveTxLookupEntry(hash, height, uint64(time), txIndex, tx); err != nil {
+			return err
+		}
+	}
 	// step5. save unit hash and chain index relation
 	// key is like "[UNIT_HASH_NUMBER][unit_hash]"
 	//if err := dagDb.SaveNumberByHash(unit.UnitHash, unit.UnitHeader.Number); err != nil {
@@ -141,13 +141,7 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 	//	log.Println("SaveNumberByHash:", "error", err.Error())
 	//	return fmt.Errorf("Save unit hash and number error")
 	//}
-	if err := dagDb.SaveTxLookupEntry(unit); err != nil {
-		return err
-	}
-	if err := dagDb.SaveTxLookupEntry(unit); err != nil {
-		return err
-	}
-	if err := saveHashByIndex(db, unit.UnitHash, unit.UnitHeader.Number.Index); err != nil {
+	if err := saveHashByIndex(db, unit.Hash(), unit.UnitHeader.GetNumber().Index); err != nil {
 		return err
 	}
 	// update state

@@ -89,24 +89,25 @@ func (m *Migration103alpha_103beta) upgradeDefaultMediatorsWithJurorInfo() error
 	}
 
 	// 此处将mediator加入jury列表没有意义，因为系统合约已经在过去执行时读集为空，会在新的写集里置空
-	//juryList := make(map[string]bool, len(oldGenesisMediatorAndPubKey))
-	//for add := range oldGenesisMediatorAndPubKey {
-	//	juryList[add] = true
-	//}
-	//
-	//juryListB, err := json.Marshal(juryList)
-	//if err != nil {
-	//	log.Errorf(err.Error())
-	//	return err
-	//}
+	// 虽然没有意义，但是为了程序完备性，还得启动该处理逻辑
+	juryList := make(map[string]bool, len(oldGenesisMediatorAndPubKey))
+	for add := range oldGenesisMediatorAndPubKey {
+		juryList[add] = true
+	}
+
+	juryListB, err := json.Marshal(juryList)
+	if err != nil {
+		log.Errorf(err.Error())
+		return err
+	}
 
 	stateDb := storage.NewStateDb(m.statedb)
-	//ws := modules.NewWriteSet(modules.JuryList, juryListB)
-	//err = stateDb.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws, genesisVersion)
-	//if err != nil {
-	//	log.Errorf(err.Error())
-	//	return err
-	//}
+	ws := modules.NewWriteSet(modules.JuryList, juryListB)
+	err = stateDb.SaveContractState(syscontract.DepositContractAddress.Bytes(), ws, genesisVersion)
+	if err != nil {
+		log.Errorf(err.Error())
+		return err
+	}
 
 	// 获取mediator候选列表
 	list, err := stateDb.GetCandidateMediatorList()
@@ -115,7 +116,7 @@ func (m *Migration103alpha_103beta) upgradeDefaultMediatorsWithJurorInfo() error
 		return err
 	}
 
-	genesisTime := time.Unix(uHeader.Time, 0).UTC().Format(modules.Layout2)
+	genesisTime := time.Unix(uHeader.Timestamp(), 0).UTC().Format(modules.Layout2)
 	for addr := range list {
 		var pubKey string
 		var isFind bool

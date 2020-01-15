@@ -83,8 +83,8 @@ func (mp *MediatorPlugin) AddToTBLSSignBufs(newHash common.Hash) {
 	}
 
 	for _, localMed := range ms {
-		log.Debugf("the mediator(%v) received a unit(%v) to be group-signed",
-			localMed.Str(), newHash.TerminalString())
+		log.Debugf("the mediator(%v) received a unit(hash: %v , # %v) to be group-signed",
+			localMed.Str(), newHash.TerminalString(), header.NumberU64())
 		go mp.addToTBLSSignBuf(localMed, newHash)
 	}
 }
@@ -128,8 +128,8 @@ func (mp *MediatorPlugin) SubscribeSigShareEvent(ch chan<- SigShareEvent) event.
 
 func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.Hash) {
 	mp.toTBLSBufLock.Lock()
-	log.Debugf("toTBLSBufLock.Lock()")
-	defer log.Debugf("toTBLSBufLock.Unlock()")
+	//log.Debugf("toTBLSBufLock.Lock()")
+	//defer log.Debugf("toTBLSBufLock.Unlock()")
 	defer mp.toTBLSBufLock.Unlock()
 
 	medUnitsBuf, ok := mp.toTBLSSignBuf[localMed]
@@ -151,7 +151,7 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 	{
 		_, ok := medUnitsBuf[unitHash]
 		if !ok {
-			log.Debugf("the mediator(%v) has no unit(%v) to sign TBLS",
+			log.Debugf("the mediator(%v) has no unit(%v) to sign TBLS, or the unit has been signed by mediator",
 				localMed.Str(), unitHash.TerminalString())
 			return
 		}
@@ -181,7 +181,8 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 		// 如果单元没有群公钥， 则跳过群签名
 		pkb := header.GetGroupPubKeyByte()
 		if len(pkb) == 0 {
-			err := fmt.Errorf("this unit(%v)'s group public key is null", unitHash.TerminalString())
+			err := fmt.Errorf("this unit(hash: %v , # %v )'s group public key is null",
+				unitHash.TerminalString(), header.NumberU64())
 			log.Debug(err.Error())
 			return
 		}
@@ -189,12 +190,12 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 		// 判断父 unit 是否不可逆
 		parentHash := header.ParentHash()[0]
 		isStable, err := dag.IsIrreversibleUnit(parentHash)
-		if err!= nil {
+		if err != nil {
 			return
 		}
 		if !isStable {
-			log.Debugf("the unit's(%v) parent unit(%v) is not irreversible",
-				unitHash.TerminalString(), parentHash.TerminalString())
+			log.Debugf("the unit(hash: %v , # %v )'s parent unit(%v) is not irreversible",
+				unitHash.TerminalString(), header.NumberU64(), parentHash.TerminalString())
 			return
 		}
 	}
@@ -202,19 +203,20 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 	// 3. 群签名
 	dks, err := dkgr.DistKeyShare()
 	if err != nil {
-		log.Debugf(err.Error())
+		log.Debugf("the mediator(%v)'s dkg get dks err:%v", localMed.Str(), err.Error())
 		return
 	}
 
 	sigShare, err := tbls.Sign(mp.suite, dks.PriShare(), unitHash[:])
 	if err != nil {
-		log.Debugf(err.Error())
+		log.Debugf("the mediator(%v)'s TBLS sign the unit(%v) err:%v",
+			localMed.Str(), unitHash.TerminalString(), err.Error())
 		return
 	}
 
 	// 4. 群签名成功后的处理
-	log.Debugf("the mediator(%v) signed-group the unit(%v)", localMed.Str(),
-		unitHash.TerminalString())
+	log.Debugf("the mediator(%v) signed-group the unit(hash: %v , # %v)", localMed.Str(),
+		unitHash.TerminalString(), header.NumberU64())
 	delete(mp.toTBLSSignBuf[localMed], unitHash)
 
 	event := SigShareEvent{
@@ -232,11 +234,13 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(event *SigShareEvent) {
 		return
 	}
 
-	dag := mp.dag
 	newUnitHash := event.UnitHash
+	log.Debugf("received the sign shares of the unit(%v)", newUnitHash.TerminalString())
+
+	dag := mp.dag
 	header, err := dag.GetHeaderByHash(newUnitHash)
 	if header == nil {
-		err = fmt.Errorf("fail to get unit by hash: %v, err: %v", newUnitHash.TerminalString(), err.Error())
+		err = fmt.Errorf("fail to get unit(%v), err: %v", newUnitHash.TerminalString(), err.Error())
 		log.Errorf(err.Error())
 		return
 	}
@@ -250,19 +254,18 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(event *SigShareEvent) {
 	medSigSharesBuf, ok := mp.toTBLSRecoverBuf[localMed]
 	if !ok {
 		// 不是本地mediator生产的 unit
-		//err = fmt.Errorf("the mediator(%v) is not local", localMed.Str())
-		//log.Debugf(err.Error())
+		errStr := fmt.Errorf("the mediator(%v) of the unit(hash: %v, # %v ) is not local",
+			localMed.Str(), newUnitHash.TerminalString(), header.NumberU64())
+		log.Debugf(errStr.Error())
 		return
 	}
-
-	log.Debugf("received the sign shares of the unit(%v)", newUnitHash.TerminalString())
 
 	// 当buf不存在时，说明已经成功recover出群签名, 或者已经过了unit确认时间，不需要群签名，忽略该签名分片
 	sigShareSet, ok := medSigSharesBuf[newUnitHash]
 	if !ok {
-		//err = fmt.Errorf("the unit(%v) has already recovered the group signature",
-		//	newUnitHash.TerminalString())
-		//log.Debugf(err.Error())
+		errStr := fmt.Errorf("the unit(hash: %v, # %v ) need not to recover group-sign by the mediator(%v)",
+			newUnitHash.TerminalString(), header.NumberU64(), localMed.Str())
+		log.Debugf(errStr.Error())
 		return
 	}
 
@@ -291,60 +294,61 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 
 	sigShareSet, ok := sigSharesBuf[unitHash]
 	if !ok {
-		log.Debugf("the mediator(%v) has not sign shares corresponding unit(%v) yet",
+		log.Debugf("the mediator(%v) need not to recover group-sign of the unit(%v), "+
+			"or this unit has been recovered to group-sign by this mediator",
 			localMed.Str(), unitHash.TerminalString())
 		return
 	}
 
 	sigShareSet.lock()
-	log.Debugf("sigShareSet.lock()")
-	defer log.Debugf("sigShareSet.unlock()")
+	//log.Debugf("sigShareSet.lock()")
+	//defer log.Debugf("sigShareSet.unlock()")
 	defer sigShareSet.unlock()
 
 	// 2. 获取阈值、mediator数量、DKG
 	mp.dkgLock.RLock()
 	defer mp.dkgLock.RUnlock()
 	var (
-		mSize, threshold int
-		dkgr             *dkg.DistKeyGenerator
+		mSize     int
+		threshold int
+		dkgr      *dkg.DistKeyGenerator
 	)
 
-	{
-		dag := mp.dag
-		header, err := dag.GetHeaderByHash(unitHash)
-		if header == nil {
-			err = fmt.Errorf("fail to get header by hash: %v, err: %v", unitHash.TerminalString(), err.Error())
-			log.Errorf(err.Error())
-			return
-		}
+	dag := mp.dag
+	header, err := dag.GetHeaderByHash(unitHash)
+	if header == nil {
+		err = fmt.Errorf("fail to get header by hash: %v, err: %v", unitHash.TerminalString(), err.Error())
+		log.Errorf(err.Error())
+		return
+	}
 
-		// 判断是否是换届前的单元
-		if header.Timestamp() > mp.lastMaintenanceTime {
-			mSize = dag.ActiveMediatorsCount()
-			threshold = dag.ChainThreshold()
-			dkgr, ok = mp.activeDKGs[localMed]
-		} else {
-			mSize = dag.PrecedingMediatorsCount()
-			threshold = dag.PrecedingThreshold()
-			dkgr, ok = mp.precedingDKGs[localMed]
-		}
+	// 判断是否是换届前的单元
+	if header.Timestamp() > mp.lastMaintenanceTime {
+		mSize = dag.ActiveMediatorsCount()
+		threshold = dag.ChainThreshold()
+		dkgr, ok = mp.activeDKGs[localMed]
+	} else {
+		mSize = dag.PrecedingMediatorsCount()
+		threshold = dag.PrecedingThreshold()
+		dkgr, ok = mp.precedingDKGs[localMed]
+	}
 
-		if !ok {
-			log.Debugf("the mediator(%v)'s dkg is not existed", localMed.Str())
-			return
-		}
+	if !ok {
+		log.Debugf("the mediator(%v)'s dkg is not existed", localMed.Str())
+		return
 	}
 
 	// 3. 判断是否达到群签名的各种条件
-	if sigShareSet.len() < threshold {
-		log.Debugf("the count of sign shares of the unit(%v) does not reach the threshold(%v)",
-			unitHash.TerminalString(), threshold)
+	count := sigShareSet.len()
+	if count < threshold {
+		log.Debugf("the count(%v) of sign shares of the unit(hash: %v , # %v) does not reach the threshold(%v)",
+			count, unitHash.TerminalString(), header.NumberU64(), threshold)
 		return
 	}
 
 	dks, err := dkgr.DistKeyShare()
 	if err != nil {
-		log.Debugf(err.Error())
+		log.Debugf("the mediator(%v)'s dkg get dks err:%v", localMed.Str(), err.Error())
 		return
 	}
 
@@ -353,12 +357,13 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	pubPoly := share.NewPubPoly(suite, suite.Point().Base(), dks.Commitments())
 	groupSig, err := tbls.Recover(suite, pubPoly, unitHash[:], sigShareSet.popSigShares(), threshold, mSize)
 	if err != nil {
-		log.Debugf(err.Error())
+		log.Debugf("the mediator(%v)'s TBLS recover the unit(%v) group-sign err:%v",
+			localMed.Str(), unitHash.TerminalString(), err.Error())
 		return
 	}
 
-	log.Debugf("Recovered the Unit(%v)'s the Group-sign: %v",
-		unitHash.TerminalString(), hexutil.Encode(groupSig))
+	log.Debugf("Recovered the Unit(hash: %v , # %v )'s the Group-sign: %v",
+		unitHash.TerminalString(), header.NumberU64(), hexutil.Encode(groupSig))
 
 	// 5. recover后的相关处理
 	// recover后 删除buf

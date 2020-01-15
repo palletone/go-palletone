@@ -51,7 +51,7 @@ import (
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/statistics/dashboard"
 	"github.com/palletone/go-palletone/statistics/metrics"
-	"github.com/palletone/go-palletone/statistics/ptnstats"
+	"github.com/palletone/go-palletone/statistics/metrics/prometheus"
 	"github.com/palletone/go-palletone/txspool"
 	"gopkg.in/urfave/cli.v1"
 )
@@ -473,35 +473,6 @@ var (
 		Value: ".",
 	}
 
-	// Gas price oracle settings
-	// GpoBlocksFlag = cli.IntFlag{
-	// 	Name:  "gpoblocks",
-	// 	Usage: "Number of recent blocks to check for gas prices",
-	// 	Value: ptn.DefaultConfig.GPO.Blocks,
-	// }
-	// GpoPercentileFlag = cli.IntFlag{
-	// 	Name:  "gpopercentile",
-	// 	Usage: "Suggested gas price is the given percentile of a set of recent transaction gas prices",
-	// 	Value: ptn.DefaultConfig.GPO.Percentile,
-	// }
-
-	//ConsensusEngineFlag = cli.StringFlag{
-	//	Name:  "consensus.engine",
-	//	Usage: "Consensus Engine: solo or dpos",
-	//	Value: ptn.DefaultConfig.Consensus.Engine,
-	//}
-
-	//	DagValue1Flag = cli.StringFlag{
-	//		Name:  "dag.dbpath",
-	//		Usage: "Dag dbapth",
-	//		Value: ptn.DefaultConfig.Dag.DbPath,
-	//	}
-
-	//	DagValue2Flag = cli.StringFlag{
-	//		Name:  "dag.dbname",
-	//		Usage: "Dag dbname",
-	//		Value: ptn.DefaultConfig.Dag.DbName,
-	//	}
 	DagValue3Flag = cli.IntFlag{
 		Name:  "dag.dbcache",
 		Usage: "Dag dbcache",
@@ -1181,10 +1152,10 @@ func SetPtnConfig(ctx *cli.Context, stack *node.Node, cfg *ptn.Config) {
 }
 
 // SetDashboardConfig applies dashboard related command line flags to the config.
-func SetDashboardConfig(ctx *cli.Context, cfg *dashboard.Config) {
-	cfg.Host = ctx.GlobalString(DashboardAddrFlag.Name)
-	cfg.Port = ctx.GlobalInt(DashboardPortFlag.Name)
-	cfg.Refresh = ctx.GlobalDuration(DashboardRefreshFlag.Name)
+func SetPrometheusConfig(ctx *cli.Context, cfg *prometheus.Config) {
+	//cfg.Host = ctx.GlobalString(DashboardAddrFlag.Name)
+	//cfg.Port = ctx.GlobalInt(DashboardPortFlag.Name)
+	//cfg.Refresh = ctx.GlobalDuration(DashboardRefreshFlag.Name)
 }
 
 // RegisterPtnService adds an PalletOne client to the stack.
@@ -1222,18 +1193,24 @@ func RegisterDashboardService(stack *node.Node, cfg *dashboard.Config, commit st
 
 // RegisterPtnStatsService configures the PalletOne Stats daemon and adds it to
 // th egiven node.
-func RegisterPtnStatsService(stack *node.Node, url string) {
-	err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-		// Retrieve ptn service
-		var ptnServ *ptn.PalletOne
-		ctx.Service(&ptnServ)
+//func RegisterPtnStatsService(stack *node.Node, url string) {
+//	err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
+//		// Retrieve ptn service
+//		var ptnServ *ptn.PalletOne
+//		ctx.Service(&ptnServ)
+//
+//		return ptnstats.New(url, ptnServ)
+//	})
+//
+//	if err != nil {
+//		Fatalf("Failed to register the PalletOne Stats service: %v", err)
+//	}
+//}
 
-		return ptnstats.New(url, ptnServ)
+func RegisterPrometheusService(stack *node.Node, config prometheus.Config) {
+	stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
+		return prometheus.New(config)
 	})
-
-	if err != nil {
-		Fatalf("Failed to register the PalletOne Stats service: %v", err)
-	}
 }
 
 // SetupNetwork configures the system for either the main net or some test network.

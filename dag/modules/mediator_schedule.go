@@ -31,9 +31,10 @@ type MediatorSchedule struct {
 }
 
 func (ms *MediatorSchedule) String() string {
-	data, _ := json.Marshal(ms.CurrentShuffledMediators)
+	data, _ := json.Marshal(ms)
 	return string(data)
 }
+
 func InitMediatorSchl(gp *GlobalProperty, dgp *DynamicGlobalProperty) *MediatorSchedule {
 	log.Debug("initialize mediator schedule...")
 	ms := NewMediatorSchl()

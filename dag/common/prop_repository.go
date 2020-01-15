@@ -27,7 +27,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -45,20 +44,20 @@ type IPropRepository interface {
 	RetrieveDynGlobalProp() (*modules.DynamicGlobalProperty, error)
 	StoreMediatorSchl(ms *modules.MediatorSchedule) error
 	RetrieveMediatorSchl() (*modules.MediatorSchedule, error)
-	GetChainThreshold() (int, error)
+
 	// SetLastStableUnit(hash common.Hash, index *modules.ChainIndex) error
 	// GetLastStableUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
 	SetNewestUnit(header *modules.Header) error
 	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
 	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
+	GetHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error)
+
 	GetScheduledMediator(slotNum uint32) common.Address
 	UpdateMediatorSchedule() bool
 	GetSlotTime(slotNum uint32) time.Time
 	GetSlotAtTime(when time.Time) uint32
 
-	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
-	GetChaincode(contractId common.Address) (*list.CCInfo, error)
-	RetrieveChaincodes() ([]*list.CCInfo, error)
+	GetChainThreshold() (int, error)
 	GetChainParameters() *core.ChainParameters
 }
 
@@ -66,17 +65,6 @@ func (pRep *PropRepository) GetChainParameters() *core.ChainParameters {
 	return pRep.db.GetChainParameters()
 }
 
-func (pRep *PropRepository) GetChaincode(contractId common.Address) (*list.CCInfo, error) {
-	return pRep.db.GetChaincode(contractId)
-}
-
-func (pRep *PropRepository) SaveChaincode(contractId common.Address, cc *list.CCInfo) error {
-	return pRep.db.SaveChaincode(contractId, cc)
-}
-
-func (pRep *PropRepository) RetrieveChaincodes() ([]*list.CCInfo, error) {
-	return pRep.db.RetrieveChaincodes()
-}
 func NewPropRepository(db storage.IPropertyDb) *PropRepository {
 	return &PropRepository{db: db}
 }
@@ -127,13 +115,21 @@ func (pRep *PropRepository) SetNewestUnit(header *modules.Header) error {
 }
 
 func (pRep *PropRepository) GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
-	hash, index, _, e := pRep.db.GetNewestUnit(token)
-	return hash, index, e
+	//hash, index, _, e := pRep.db.GetNewestUnit(token)
+	//return hash, index, e
+	unitProperty, err := pRep.db.GetNewestUnit(token)
+	return unitProperty.Hash, unitProperty.ChainIndex, err
 }
 
 func (pRep *PropRepository) GetNewestUnitTimestamp(token modules.AssetId) (int64, error) {
-	_, _, t, e := pRep.db.GetNewestUnit(token)
-	return t, e
+	//_, _, t, e := pRep.db.GetNewestUnit(token)
+	//return t, e
+	unitProperty, err := pRep.db.GetNewestUnit(token)
+	return int64(unitProperty.Timestamp), err
+}
+
+func (pRep *PropRepository) GetHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error) {
+	return pRep.db.GetNewestUnit(asset)
 }
 
 // 洗牌算法，更新mediator的调度顺序
@@ -150,7 +146,7 @@ func (pRep *PropRepository) UpdateMediatorSchedule() bool {
 	}
 
 	token := dagconfig.DagConfig.GetGasToken()
-	hash, idx, _, err := pRep.db.GetNewestUnit(token)
+	hash, idx, err := pRep.GetNewestUnit(token)
 	if err != nil {
 		log.Debugf("GetNewestUnit error:" + err.Error())
 		return false
@@ -232,9 +228,16 @@ func (pRep *PropRepository) GetSlotTime(slotNum uint32) time.Time {
 		return time.Unix(0, 0)
 	}
 
-	interval := gp.ChainParameters.MediatorInterval
 	gasToken := dagconfig.DagConfig.GetGasToken()
-	_, idx, ts, _ := pRep.db.GetNewestUnit(gasToken)
+	unitProperty, err := pRep.db.GetNewestUnit(gasToken)
+	if err != nil {
+		log.Debugf("GetNewestUnit error: %v", err.Error())
+		return time.Unix(0, 0)
+	}
+
+	idx := unitProperty.ChainIndex
+	ts := int64(unitProperty.Timestamp)
+	interval := gp.ChainParameters.MediatorInterval
 	// 本条件是用来生产第一个unit
 	if idx.Index == 0 {
 		/**
@@ -310,7 +313,7 @@ If slotNum == 2, return the next scheduled mediator after 1 uint gap.
 func (pRep *PropRepository) GetScheduledMediator(slotNum uint32) common.Address {
 	ms, _ := pRep.RetrieveMediatorSchl()
 	dgp, _ := pRep.RetrieveDynGlobalProp()
-	currentASlot := dgp.CurrentASlot + uint64(slotNum)
+	currentAbsoluteSlot := dgp.CurrentAbsoluteSlot + uint64(slotNum)
 
 	csmLen := len(ms.CurrentShuffledMediators)
 	if csmLen == 0 {
@@ -319,6 +322,6 @@ func (pRep *PropRepository) GetScheduledMediator(slotNum uint32) common.Address 
 	}
 
 	// 由于创世单元不是有mediator生产，所以这里需要减1
-	index := (currentASlot - 1) % uint64(csmLen)
+	index := (currentAbsoluteSlot - 1) % uint64(csmLen)
 	return ms.CurrentShuffledMediators[index]
 }

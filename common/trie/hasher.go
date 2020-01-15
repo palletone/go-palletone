@@ -63,6 +63,7 @@ func (h *hasher) hash(n node, db *Database, force bool) (node, node, error) {
 			// Unload the node from cache. All of its subnodes will have a lower or equal
 			// cache generation number.
 			cacheUnloadCounter.Inc(1)
+			//cacheUnloadCounterPrometheus.Add(1)
 			return hash, hash, nil
 		}
 		if !dirty {

@@ -45,7 +45,6 @@ func NewRwSetMgr(name string) (*RwSetTxMgr, error) {
 
 // NewTxSimulator implements method in interface `txmgmt.TxMgr`
 func (m *RwSetTxMgr) NewTxSimulator(idag dag.IDag, chainid string, txid string, is_sys bool) (TxSimulator, error) {
-	log.Debugf("constructing new tx simulator")
 	hash := common.HexToHash(txid)
 	if !is_sys { // 用户合约
 		m.rwLock.RLock()

@@ -48,7 +48,7 @@ func ConvertTx2HistoryJson(tx *modules.TransactionWithUnitInfo, utxoQuery module
 		TxSize:   float64(tx.Size()),
 		UnitHeight:tx.UnitIndex,
 	}
-	for _, m := range tx.TxMessages {
+	for _, m := range tx.TxMessages() {
 		if m.App == modules.APP_PAYMENT {
 			pay := m.Payload.(*modules.PaymentPayload)
 			if utxoQuery == nil {

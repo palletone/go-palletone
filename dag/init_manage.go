@@ -104,7 +104,7 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, head *modules.Header) error {
 		md := modules.NewMediatorDeposit()
 		md.Status = modules.Agree
 		md.Role = modules.Mediator
-		md.ApplyEnterTime = time.Unix(head.Time, 0).UTC().Format(modules.Layout2)
+		md.ApplyEnterTime = time.Unix(head.Timestamp(), 0).UTC().Format(modules.Layout2)
 
 		byte, err := json.Marshal(md)
 		if err != nil {
@@ -228,20 +228,20 @@ func (d *Dag) GetIrreversibleUnitNum(id modules.AssetId) uint64 {
 func (d *Dag) VerifyUnitGroupSign(unitHash common.Hash, groupSign []byte) error {
 	header, err := d.GetHeaderByHash(unitHash)
 	if err != nil {
-		log.Debug(err.Error())
+		log.Debugf("get header of unit(%v) err: %v", unitHash.TerminalString(), err.Error())
 		return err
 	}
 
 	pubKey, err := header.GetGroupPubKey()
 	if err != nil {
-		log.Debug(err.Error())
+		log.Debugf("get pubKey of unit(%v) err: %v", unitHash.TerminalString(), err.Error())
 		return err
 	}
 
 	err = bls.Verify(core.Suite, pubKey, unitHash[:], groupSign)
 	if err != nil {
-		log.Debug("the group signature: " + hexutil.Encode(groupSign) + " of the Unit that hash: " +
-			unitHash.Hex() + " is verified that an error has occurred: " + err.Error())
+		log.Debugf("the group signature(%v)  of the unit(hash: %v , # %v )  have an error when verifying: %v",
+			hexutil.Encode(groupSign), unitHash.TerminalString(), header.NumberU64(), err.Error())
 		return err
 	}
 	return nil

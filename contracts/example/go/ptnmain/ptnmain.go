@@ -324,6 +324,12 @@ func (p *PTNMain) PayoutPTNByETHAddr(ethAddr string, stub shim.ChaincodeStubInte
 
 	var amt uint64
 	for _, txResult := range txResults.Txs {
+		if !txResult.IsSuccess {
+			continue
+		}
+		if 0 == txResult.Amount.Amount.Uint64() {
+			continue
+		}
 		txIDHex := hex.EncodeToString(txResult.TxID)
 		//check confirms
 		if curHeight-txResult.BlockHeight < Confirms {

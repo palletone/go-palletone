@@ -25,7 +25,6 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 )
 
@@ -72,10 +71,10 @@ func (m *Migration102beta_102gamma) upgradeMediatorInfo() error {
 			Node:       oldMediator.Node,
 		}
 
-		newMediator := &modules.MediatorInfo{
+		newMediator := &MediatorInfo105alpha{
 			MediatorInfoBase:   mib,
 			MediatorApplyInfo:  oldMediator.MediatorApplyInfo,
-			MediatorInfoExpand: oldMediator.MediatorInfoExpand,
+			MediatorInfoExpand105alpha: oldMediator.MediatorInfoExpand105alpha,
 		}
 
 		err = storage.StoreToRlpBytes(m.statedb, oldMediatorsIterator.Key(), newMediator)
@@ -97,5 +96,5 @@ type MediatorInfoBase101 struct {
 type MediatorInfo101 struct {
 	*MediatorInfoBase101
 	*core.MediatorApplyInfo
-	*core.MediatorInfoExpand
+	*core.MediatorInfoExpand105alpha
 }

@@ -37,7 +37,7 @@ func testStatusMsgErrors(t *testing.T, protocol int) {
 	var (
 		genesis, _ = pm.dag.GetGenesisUnit()
 		head       = pm.dag.CurrentHeader(modules.PTNCOIN)
-		index      = head.Number
+		index      = head.GetNumber()
 	)
 	defer pm.Stop()
 	tests := []struct {

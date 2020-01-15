@@ -30,6 +30,8 @@ type IUtility interface {
 	GetAddress(key *GetAddressInput) (*GetAddressOutput, error)
 	//获得原链的地址和PalletOne的地址的映射
 	GetPalletOneMappingAddress(addr *GetPalletOneMappingAddressInput) (*GetPalletOneMappingAddressOutput, error)
+	//计算一条消息的Hash值
+	HashMessage(input *HashMessageInput) (*HashMessageOutput, error)
 	//对一条消息进行签名
 	SignMessage(input *SignMessageInput) (*SignMessageOutput, error)
 	//对签名进行验证
@@ -48,7 +50,9 @@ type IUtility interface {
 	GetBlockInfo(input *GetBlockInfoInput) (*GetBlockInfoOutput, error)
 }
 type NewPrivateKeyInput struct {
-	Extra []byte `json:"extra"`
+	//随机数的种子，如果不指定，则使用默认实现
+	RandomSeed []byte `json:"random_seed"`
+	Extra      []byte `json:"extra"`
 }
 type NewPrivateKeyOutput struct {
 	PrivateKey []byte `json:"private_key"`
@@ -81,6 +85,14 @@ type GetPalletOneMappingAddressOutput struct {
 	ChainAddress     string `json:"chain_address"`
 	Extra            []byte `json:"extra"`
 }
+type HashMessageInput struct {
+	Message []byte `json:"message"`
+	Extra   []byte `json:"extra"`
+}
+type HashMessageOutput struct {
+	Hash  []byte `json:"hash"`
+	Extra []byte `json:"extra"`
+}
 type SignMessageInput struct {
 	PrivateKey []byte `json:"private_key"`
 	Message    []byte `json:"message"`
@@ -103,16 +115,24 @@ type VerifySignatureOutput struct {
 type SignTransactionInput struct {
 	PrivateKey  []byte `json:"private_key"`
 	Transaction []byte `json:"transaction"`
-	Extra       []byte `json:"extra"`
+	//BTC： 如果Input只有1个，那么可以为空，如果是多个，那么必须使用Extra指定InputIndex
+	Extra []byte `json:"extra"`
 }
 type SignTransactionOutput struct {
 	Signature []byte `json:"signature"`
-	Extra     []byte `json:"extra"`
+	SignedTx  []byte `json:"signed_tx"`
+	//BTC： 与Input的Extra相同
+	Extra []byte `json:"extra"`
 }
 type BindTxAndSignatureInput struct {
-	Transaction []byte   `json:"transaction"`
-	Signs       [][]byte `json:"signs"`
-	Extra       []byte   `json:"extra"`
+	//未签名的交易
+	Transaction []byte `json:"transaction"`
+	//多个签名
+	Signatures [][]byte `json:"signatures"`
+	SignedTxs  [][]byte `json:"signed_txs"`
+	//BTC：如果是单签地址付出，那么Extra是公钥，如果是多签地址付出，那么Extra是RedeemScript
+	//ETH: 暂时用不到
+	Extra []byte `json:"extra"`
 }
 type BindTxAndSignatureOutput struct {
 	SignedTx []byte `json:"signed_tx"`

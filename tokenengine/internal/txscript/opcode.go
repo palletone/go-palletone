@@ -414,7 +414,8 @@ var opcodeArray = [256]opcode{
 	OP_ELSE:                {OP_ELSE, "OP_ELSE", 1, opcodeElse},
 	OP_ENDIF:               {OP_ENDIF, "OP_ENDIF", 1, opcodeEndif},
 	OP_VERIFY:              {OP_VERIFY, "OP_VERIFY", 1, opcodeVerify},
-	OP_RETURN:              {OP_RETURN, "OP_RETURN", 1, opcodeReturn},
+	//OP_RETURN:              {OP_RETURN, "OP_RETURN", 1, opcodeReturn},
+        OP_RETURN:              {OP_RETURN, "OP_RETURN", 1, opcodeFalse},
 	OP_CHECKLOCKTIMEVERIFY: {OP_CHECKLOCKTIMEVERIFY, "OP_CHECKLOCKTIMEVERIFY", 1, opcodeCheckLockTimeVerify},
 
 	// Stack opcodes.
@@ -771,7 +772,7 @@ func (pop *parsedOpcode) bytes() ([]byte, error) {
 	if pop.opcode.length > 0 {
 		retbytes = make([]byte, 1, pop.opcode.length)
 	} else {
-		retbytes = make([]byte, 1, 1+len(pop.data)-
+		retbytes = make([]byte, 1, 1 + len(pop.data)-
 			pop.opcode.length)
 	}
 
@@ -1055,7 +1056,7 @@ func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
 	//
 	// The lockTimes in both the script and transaction must be of the same
 	// type.
-	msg0 := vm.tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+	msg0 := vm.tx.TxMessages()[0].Payload.(*modules.PaymentPayload)
 	txlockTime := msg0.LockTime
 	if !((txlockTime < LockTimeThreshold && int64(lockTime) < int64(LockTimeThreshold)) ||
 		(txlockTime >= LockTimeThreshold && int64(lockTime) >= int64(LockTimeThreshold))) {

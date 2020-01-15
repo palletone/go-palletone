@@ -140,7 +140,7 @@ func createExampleMediators(ctx *cli.Context, mcLen int) ([]*mp.MediatorConf, []
 		b, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(prvKey)
 
 		jdes[i] = core.JurorDepositExtraJson{
-			PublicKey: hex.EncodeToString(b),
+			PublicKey:  hex.EncodeToString(b),
 			RewardAddr: addStr,
 		}
 	}
@@ -171,7 +171,7 @@ func createGenesisJson(ctx *cli.Context) error {
 
 	genesisState.InitialParameters.MediatorInterval = 3
 	genesisState.InitialTimestamp = genesisState.InitialTimestamp / 3 * 3
-	genesisState.InitialParameters.MaintenanceSkipSlots = 2
+	genesisState.InitialParameters.MaintenanceSkipSlots = 1
 	genesisState.InitialMediatorCandidates = initialMediatorCandidates(mcs, nodeStr, jdes)
 
 	//配置测试的基金会地址及密码

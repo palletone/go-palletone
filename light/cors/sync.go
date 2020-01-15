@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * @author PalletOne core developer Jiyou Wang <dev@pallet.one>
  * @date 2018
@@ -109,13 +110,13 @@ func (pm *ProtocolManager) pushSync() (uint64, []*modules.Header) {
 	}
 
 	flag = 0
-	if pheader.Number.Index <= maxQueueDist {
+	if pheader.GetNumber().Index <= maxQueueDist {
 		index = 0
 	} else {
-		index = pheader.Number.Index - maxQueueDist
+		index = pheader.GetNumber().Index - maxQueueDist
 	}
 
-	log.Debug("Cors ProtocolManager", "pheader.index", pheader.Number.Index,
+	log.Debug("Cors ProtocolManager", "pheader.index", pheader.GetNumber().Index,
 		"push index", index, "pushSync fetchHeader header", pheader)
 
 	number := &modules.ChainIndex{AssetID: pm.assetId, Index: index}
@@ -146,10 +147,9 @@ func (pm *ProtocolManager) pushSync() (uint64, []*modules.Header) {
 		p := peers[x]
 		log.Info("Cors ProtocolManager", "pushSync SendHeaders len(headers)", len(headers), "index", index)
 		if len(headers) == 0 {
-			header := modules.Header{}
-			number := modules.ChainIndex{AssetID: pm.assetId, Index: 0}
-			header.Number = &number
-			headers = append(headers, &header)
+			b := []byte{}
+			header := modules.NewHeader([]common.Hash{}, common.Hash{}, b, b, b, b, []uint16{}, pm.assetId, 0, 0)
+			headers = append(headers, header)
 		}
 		p.SendHeaders(headers)
 		if flag == 1 {
@@ -251,7 +251,7 @@ func (pm *ProtocolManager) pullSync(peer *peer) {
 
 	if lheader != nil {
 		hash = lheader.Hash()
-		index = lheader.Number.Index
+		index = lheader.GetNumber().Index
 	}
 
 	if err := pm.downloader.Synchronize(peer.id, hash, index, downloader.LightSync, modules.PTNCOIN); err != nil {

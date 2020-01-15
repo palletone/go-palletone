@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
+	"fmt"
 )
 
 type BlacklistMgr struct {
@@ -115,6 +116,7 @@ func (p *BlacklistMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(jsonResp)
 	}
 }
+
 func (p *BlacklistMgr) AddBlacklist(stub shim.ChaincodeStubInterface, blackAddr common.Address, reason string) error {
 	if !isFoundationInvoke(stub) {
 		return errors.New("only foundation address can call this function")
@@ -159,19 +161,34 @@ func (p *BlacklistMgr) AddBlacklist(stub shim.ChaincodeStubInterface, blackAddr 
 func (p *BlacklistMgr) GetBlacklistRecords(stub shim.ChaincodeStubInterface) ([]*BlacklistRecord, error) {
 	return getAllRecords(stub)
 }
+
 func (p *BlacklistMgr) GetBlacklistAddress(stub shim.ChaincodeStubInterface) ([]common.Address, error) {
 	return getBlacklistAddress(stub)
 }
+
 func (p *BlacklistMgr) Payout(stub shim.ChaincodeStubInterface, addr common.Address, amount decimal.Decimal, asset *modules.Asset) error {
 	if !isFoundationInvoke(stub) {
 		return errors.New("only foundation address can call this function")
 	}
+
+	result, err := p.QueryIsInBlacklist(stub, addr)
+	if err != nil {
+		log.Warnf(err.Error())
+		return err
+	}
+	if result {
+		errStr := fmt.Sprintf("address[%s] is in blacklist", addr.String())
+		log.Warnf(errStr)
+		return fmt.Errorf(errStr)
+	}
+
 	uint64Amt := ptnjson.JsonAmt2AssetAmt(asset, amount)
 	return stub.PayOutToken(addr.String(), &modules.AmountAsset{
 		Amount: uint64Amt,
 		Asset:  asset,
 	}, 0)
 }
+
 func (p *BlacklistMgr) QueryIsInBlacklist(stub shim.ChaincodeStubInterface, addr common.Address) (bool, error) {
 	blacklist, err := getBlacklistAddress(stub)
 	if err != nil {

@@ -27,7 +27,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/p2p/discover"
-	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/txspool"
@@ -47,7 +46,9 @@ type IDag interface {
 	CurrentUnit(token modules.AssetId) *modules.Unit
 	GetCurrentUnit(assetId modules.AssetId) *modules.Unit
 	GetMainCurrentUnit() *modules.Unit
-	GetCurrentMemUnit(assetId modules.AssetId, index uint64) *modules.Unit
+	//GetCurrentMemUnit(assetId modules.AssetId, index uint64) *modules.Unit
+	GetCurrentMemUnit(assetId modules.AssetId) *modules.Unit
+
 	InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable bool) (int, error)
 	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
 	HasHeader(common.Hash, uint64) bool
@@ -61,6 +62,9 @@ type IDag interface {
 	GetUnitTxsHash(hash common.Hash) ([]common.Hash, error)
 	GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
+	GetStableTransactionOnly(hash common.Hash) (*modules.Transaction, error)
+	GetStableUnit(hash common.Hash) (*modules.Unit, error)
+	GetStableUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error)
 	IsTransactionExist(hash common.Hash) (bool, error)
 	GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error)
 	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
@@ -108,6 +112,7 @@ type IDag interface {
 	GetContractTplCode(tplId []byte) ([]byte, error)
 	GetAllContractTpl() ([]*modules.ContractTemplate, error)
 
+	SaveContract(contract *modules.Contract) error
 	GetContract(id []byte) (*modules.Contract, error)
 	GetAllContracts() ([]*modules.Contract, error)
 	GetContractsByTpl(tplId []byte) ([]*modules.Contract, error)
@@ -155,10 +160,9 @@ type IDag interface {
 	HeadUnitNum() uint64
 	HeadUnitHash() common.Hash
 	GetIrreversibleUnitNum(id modules.AssetId) uint64
+	StableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error)
+	UnstableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error)
 
-	SaveChaincode(contractId common.Address, cc *list.CCInfo) error
-	GetChaincode(contractId common.Address) (*list.CCInfo, error)
-	RetrieveChaincodes() ([]*list.CCInfo, error)
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
 
@@ -168,6 +172,7 @@ type IDag interface {
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
 	GetGlobalProp() *modules.GlobalProperty
+	GetMediatorSchl() *modules.MediatorSchedule
 	GetMediatorCount() int
 
 	IsMediator(address common.Address) bool
@@ -192,15 +197,16 @@ type IDag interface {
 	StoreDataVersion(dv *modules.DataVersion) error
 	QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error)
 	GetAssetReference(asset []byte) ([]*modules.ProofOfExistence, error)
+	CheckReadSetValid(contractId []byte, readSet []modules.ContractReadSet) bool
 
 	IsActiveJury(addr common.Address) bool
 	JuryCount() uint
 	GetContractDevelopers() ([]common.Address, error)
 	IsContractDeveloper(addr common.Address) bool
-	GetActiveJuries() []common.Address
+	//GetActiveJuries() []common.Address
 	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
-	CreateTokenTransaction(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string,
+	CreateTokenTransaction(from, to common.Address, token *modules.Asset, daoAmountToken, daoFee uint64,
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	ChainThreshold() int
 
@@ -212,4 +218,5 @@ type IDag interface {
 	GetJurorReward(jurorAdd common.Address) common.Address
 
 	SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription
+	GetContractsWithJuryAddr(addr common.Address) []*modules.Contract
 }

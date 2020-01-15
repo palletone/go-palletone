@@ -44,10 +44,9 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/txspool"
-	//"github.com/palletone/go-palletone/ptnjson"
+	"github.com/palletone/go-palletone/statistics/metrics/prometheus"
 	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/ptn/downloader"
-	"github.com/palletone/go-palletone/statistics/dashboard"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -124,7 +123,7 @@ type FullConfig struct {
 	TxPool         txspool.TxPoolConfig
 	Node           node.Config
 	Ptnstats       ptnstatsConfig
-	Dashboard      dashboard.Config
+	Prometheus     prometheus.Config
 	Jury           jury.Config
 	MediatorPlugin mp.Config
 	Log            log.Config // log的配置比较特殊，不属于任何模块，顶级配置，程序开始运行就使用
@@ -272,7 +271,7 @@ func makeConfigNode(ctx *cli.Context, isInConsole bool) (*node.Node, FullConfig)
 	if ctx.GlobalIsSet(utils.EthStatsURLFlag.Name) {
 		cfg.Ptnstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
 	}
-	utils.SetDashboardConfig(ctx, &cfg.Dashboard)
+	//utils.SetDashboardConfig(ctx, &cfg.Dashboard)
 	//  init node.cache
 	stack.CacheDb = freecache.NewCache(cfg.Dag.DbCache)
 	return stack, cfg
@@ -289,15 +288,8 @@ func makeFullNode(ctx *cli.Context, isInConsole bool) *node.Node {
 	// 并注册到 Node 的 serviceFuncs 中，然后在 stack.Start() 执行的时候会调用这些 service
 	// 所有的 service 必须实现 node.Service 接口中定义的所有方法
 	utils.RegisterPtnService(stack, &cfg.Ptn)
-	if ctx.GlobalBool(utils.DashboardEnabledFlag.Name) {
-		//注册dashboard仪表盘服务，Dashboard会开启端口监听
-		utils.RegisterDashboardService(stack, &cfg.Dashboard, gitCommit)
-	}
-
-	// Add the PalletOne Stats daemon if requested.
-	if cfg.Ptnstats.URL != "" {
-		// 注册状态服务。 默认情况下是没有启动的。
-		utils.RegisterPtnStatsService(stack, cfg.Ptnstats.URL)
+	if ctx.GlobalBool(utils.MetricsEnabledFlag.Name) {
+		utils.RegisterPrometheusService(stack, cfg.Prometheus)
 	}
 
 	return stack
@@ -356,7 +348,7 @@ func DefaultConfig() FullConfig {
 		Ptn:            ptn.DefaultConfig,
 		TxPool:         txspool.DefaultTxPoolConfig,
 		Node:           defaultNodeConfig(),
-		Dashboard:      dashboard.DefaultConfig,
+		Prometheus:     prometheus.DefaultConfig,
 		P2P:            p2p.DefaultConfig,
 		Jury:           jury.DefaultConfig,
 		MediatorPlugin: mp.DefaultConfig,

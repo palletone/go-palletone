@@ -39,6 +39,7 @@ type IStateRepository interface {
 	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStateByVersion(id []byte, field string, version *modules.StateVersion) ([]byte, error)
 
+	SaveContract(contract *modules.Contract) error
 	SaveContractState(id []byte, w *modules.ContractWriteSet, version *modules.StateVersion) error
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
@@ -92,6 +93,9 @@ type IStateRepository interface {
 	GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)
 	SaveSysConfigContract(key string, val []byte, ver *modules.StateVersion) error
 	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
+
+	SaveContractWithJuryAddr(addr common.Address, contract *modules.Contract) error
+	GetContractsWithJuryAddr(addr common.Address) []*modules.Contract
 }
 
 type StateRepository struct {
@@ -134,7 +138,7 @@ func (rep *StateRepository) GetContractStateByVersion(id []byte,
 	if err != nil {
 		return nil, err
 	}
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		if msg.App == modules.APP_CONTRACT_INVOKE {
 			invoke := msg.Payload.(*modules.ContractInvokePayload)
 			//if bytes.Equal(	invoke.ContractId,id){
@@ -178,6 +182,10 @@ func (rep *StateRepository) GetContractStatesByPrefix(id []byte,
 
 func (rep *StateRepository) GetContract(id []byte) (*modules.Contract, error) {
 	return rep.statedb.GetContract(id)
+}
+
+func (rep *StateRepository) SaveContract(contract *modules.Contract) error {
+	return rep.statedb.SaveContract(contract)
 }
 
 func (rep *StateRepository) GetAllContracts() ([]*modules.Contract, error) {
@@ -513,4 +521,11 @@ func (rep *StateRepository) GetDataVersion() (*modules.DataVersion, error) {
 }
 func (rep *StateRepository) StoreDataVersion(dv *modules.DataVersion) error {
 	return rep.statedb.SaveDataVersion(dv)
+}
+func (rep *StateRepository) SaveContractWithJuryAddr(addr common.Address, contract *modules.Contract) error {
+	return rep.statedb.SaveContractWithJuryAddr(addr, contract)
+}
+
+func (rep *StateRepository) GetContractsWithJuryAddr(addr common.Address) []*modules.Contract {
+	return rep.statedb.GetContractsWithJuryAddr(addr)
 }

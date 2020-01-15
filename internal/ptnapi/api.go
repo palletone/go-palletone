@@ -64,6 +64,10 @@ type ContractDeployRsp struct {
 	ReqId      string `json:"reqId"`
 	ContractId string `json:"ContractId"`
 }
+type ContractInvokeRsp struct {
+	ReqId      string `json:"reqId"`
+	ContractId string `json:"ContractId"`
+}
 
 type ContractFeeRsp struct {
 	TxSize         float64 `json:"tx_size(byte)"`
@@ -577,10 +581,7 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 	//	// is intentionally not directly returning because the first return
 	//	// value is a string and it would result in returning an empty string to
 	//	// the client instead of nothing (nil) in the case of an error.
-	mtx := &modules.Transaction{
-		TxMessages: make([]*modules.Message, 0),
-	}
-	mtx.TxMessages = append(mtx.TxMessages, modules.NewMessage(modules.APP_PAYMENT, pload))
+	mtx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, pload)})
 	//mtx.TxHash = mtx.Hash()
 	mtxbt, err := rlp.EncodeToBytes(mtx)
 	if err != nil {
@@ -610,7 +611,7 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, poolTxs
 	}
 
 	for _, tx := range poolTxs {
-		for msgindex, msg := range tx.Tx.TxMessages {
+		for msgindex, msg := range tx.Tx.TxMessages() {
 			if msg.App == modules.APP_PAYMENT {
 				pay := msg.Payload.(*modules.PaymentPayload)
 
@@ -1025,9 +1026,7 @@ func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, err
 	}
-	tx := &modules.Transaction{
-		TxMessages: make([]*modules.Message, 0),
-	}
+	tx := modules.NewTransaction(make([]*modules.Message, 0))
 	if err := rlp.DecodeBytes(serializedTx, tx); err != nil {
 		return ptnjson.SignRawTransactionResult{}, err
 	}
@@ -1118,7 +1117,7 @@ func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
 	}
-	for msgidx, msg := range tx.TxMessages {
+	for msgidx, msg := range tx.TxMessages() { // msg的改动会更改tx内部数据，所以要用深拷贝
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if !ok {
 			continue
@@ -1128,6 +1127,137 @@ func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine
 			if err != nil {
 				return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
 			}
+		}
+
+		for k := range payload.Outputs {
+			switch hashType & 0x1f {
+			case tokenengine.SigHashNone:
+				payload.Outputs[k].PkScript = payload.Outputs[k].PkScript[0:0] // Empty slice.
+			case tokenengine.SigHashSingle:
+				// Resize output array to up to and including requested index.
+				payload.Outputs = payload.Outputs[:1+1]
+				pk_addr, err := tokenengine.Instance.GetAddressFromScript(payload.Outputs[k].PkScript)
+				if err != nil {
+					return ptnjson.SignRawTransactionResult{}, errors.New("Get addr FromScript is err when signtx")
+				}
+				// All but current output get zeroed out.
+				if pk_addr != addr {
+					payload.Outputs[k].PkScript = nil
+					payload.Outputs[k].Value = 0
+					payload.Outputs[k].Asset = &modules.Asset{}
+				}
+			}
+		}
+		// 更新msg
+		tx.ModifiedMsg(msgidx, msg)
+	}
+	// All returned errors (not OOM, which panics) encountered during
+	// bytes.Buffer writes are unexpected.
+	mtxbt, err := rlp.EncodeToBytes(tx)
+	if err != nil {
+		return ptnjson.SignRawTransactionResult{}, err
+	}
+	signedHex := hex.EncodeToString(mtxbt)
+	signErrors := make([]ptnjson.SignRawTransactionError, 0, len(signErrs))
+	return ptnjson.SignRawTransactionResult{
+		Hex:      signedHex,
+		Txid:     tx.Hash().String(),
+		Complete: len(signErrors) == 0,
+		Errors:   signErrors,
+	}, nil
+}
+
+func MultiSignRawTransaction(cmd *ptnjson.MultiSignRawTransactionCmd, pubKeyFn tokenengine.AddressGetPubKey, hashFn tokenengine.AddressGetSign, addr common.Address) (ptnjson.SignRawTransactionResult, error) {
+	serializedTx, err := decodeHexStr(cmd.RawTx)
+	if err != nil {
+		return ptnjson.SignRawTransactionResult{}, err
+	}
+	tx := new(modules.Transaction)
+	if err := rlp.DecodeBytes(serializedTx, tx); err != nil {
+		return ptnjson.SignRawTransactionResult{}, err
+	}
+	//log.Debugf("InputOne txid:{%+v}", tx.TxMessages[0].Payload.(*modules.PaymentPayload).Input[0])
+
+	var hashType uint32
+	switch strings.ToUpper(*cmd.Flags) {
+	case ALL:
+		hashType = tokenengine.SigHashAll
+	case NONE:
+		hashType = tokenengine.SigHashNone
+	case SINGLE:
+		hashType = tokenengine.SigHashSingle
+	case "ALL|ANYONECANPAY":
+		hashType = tokenengine.SigHashAll | tokenengine.SigHashAnyOneCanPay
+	case "NONE|ANYONECANPAY":
+		hashType = tokenengine.SigHashNone | tokenengine.SigHashAnyOneCanPay
+	case "SINGLE|ANYONECANPAY":
+		hashType = tokenengine.SigHashSingle | tokenengine.SigHashAnyOneCanPay
+	default:
+		//e := errors.New("Invalid sighash parameter")
+		return ptnjson.SignRawTransactionResult{}, err
+	}
+
+	inputpoints := make(map[modules.OutPoint][]byte)
+	//scripts := make(map[string][]byte)
+	//var params *chaincfg.Params
+	var cmdInputs []ptnjson.RawTxInput
+	if cmd.Inputs != nil {
+		cmdInputs = *cmd.Inputs
+	}
+	var redeem []byte
+	var PkScript []byte
+	for _, rti := range cmdInputs {
+		inputHash := common.HexToHash(rti.Txid)
+		script, err := decodeHexStr(trimx(rti.ScriptPubKey))
+		if err != nil {
+			return ptnjson.SignRawTransactionResult{}, err
+		}
+		// redeemScript is only actually used iff the user provided
+		// private keys. In which case, it is used to get the scripts
+		// for signing. If the user did not provide keys then we always
+		// get scripts from the wallet.
+		//		// Empty strings are ok for this one and hex.DecodeString will
+		//		// DTRT.
+		if rti.RedeemScript != "" {
+			redeemScript, err := decodeHexStr(rti.RedeemScript)
+			if err != nil {
+				return ptnjson.SignRawTransactionResult{}, err
+			}
+			//lockScript := tokenengine.GenerateP2SHLockScript(crypto.Hash160(redeemScript))
+			//addressMulti,err:=tokenengine.GetAddressFromScript(lockScript)
+			//if err != nil {
+			//	return nil, DeserializationError{err}
+			//}
+			//mutiAddr = addressMulti
+			//scripts[addressMulti.Str()] = redeemScript
+			redeem = redeemScript
+		}
+		inputpoints[modules.OutPoint{
+			TxHash:       inputHash,
+			OutIndex:     rti.Vout,
+			MessageIndex: rti.MessageIndex,
+		}] = script
+		PkScript = script
+	}
+
+	var signErrs []common.SignatureError
+
+	for msgidx, msg := range tx.Messages() {
+		payload, ok := msg.Payload.(*modules.PaymentPayload)
+		if !ok {
+			continue
+		}
+		for inputindex := range payload.Inputs {
+			signed, err := tokenengine.Instance.MultiSignOnePaymentInput(tx, hashType, msgidx, inputindex, PkScript,
+				redeem, pubKeyFn, hashFn, payload.Inputs[inputindex].SignatureScript)
+			if err != nil {
+				return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
+			}
+			payload.Inputs[inputindex].SignatureScript = signed
+			//err = tokenengine.Instance.ScriptValidate(PkScript, nil, tx, msgidx, inputindex)
+			//if err != nil {
+			//	return ptnjson.SignRawTransactionResult{}, DeserializationError{err}
+			//}
 		}
 
 		for k := range payload.Outputs {
@@ -1229,13 +1359,12 @@ func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, f
 	result := []string{}
 	asset := dagconfig.DagConfig.GetGasToken().ToAsset()
 	for i := 0; i < count; i++ {
-		tx := &modules.Transaction{}
 		pay := &modules.PaymentPayload{}
 		outPoint := modules.NewOutPoint(txHash, 0, uint32(i))
 		pay.AddTxIn(modules.NewTxIn(outPoint, []byte{}))
 		lockScript := tokenengine.Instance.GenerateLockScript(toAddr)
 		pay.AddTxOut(modules.NewTxOut(uint64(amount), lockScript, asset))
-		tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay))
+		tx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, pay)})
 		utxoLookup := map[modules.OutPoint][]byte{}
 		utxoLookup[*outPoint] = utxoScript
 		errs, err := tokenengine.Instance.SignTxAllPaymentInput(tx, tokenengine.SigHashAll, utxoLookup, nil, func(addresses common.Address) ([]byte, error) {

@@ -31,8 +31,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/params"
-
 	"github.com/palletone/adaptor"
 )
 
@@ -98,7 +96,7 @@ type GetAddrTxHistoryResult struct {
 // &startblock=0&endblock=99999999&page=1&offset=10&sort=asc
 func GetAddrTxHistoryHTTP(apiURL string, input *adaptor.GetAddrTxHistoryInput) (*adaptor.GetAddrTxHistoryOutput, error) {
 	request := apiURL
-	request += "&module=account&action=tokentx&address=" + input.FromAddress + "&startblock=0&endblock=99999999"
+	request += "&module=account&action=txlist&address=" + input.FromAddress + "&startblock=0&endblock=99999999"
 	if input.PageIndex != 0 && input.PageSize != 0 {
 		request += "&page=" + fmt.Sprintf("%d", input.PageIndex)
 		request += "&offset=" + fmt.Sprintf("%d", input.PageSize)
@@ -125,8 +123,9 @@ func GetAddrTxHistoryHTTP(apiURL string, input *adaptor.GetAddrTxHistoryInput) (
 	//result for return
 	var result adaptor.GetAddrTxHistoryOutput
 	if input.AddressLogicAndOr {
+		toAddr := strings.ToLower(input.ToAddress)
+		//fmt.Println(len(txResult.Result))
 		for i := range txResult.Result {
-			toAddr := strings.ToLower(input.ToAddress)
 			if txResult.Result[i].To == toAddr || txResult.Result[i].ContractAddress == toAddr {
 				tx := convertSimpleTx(&txResult.Result[i])
 				result.Txs = append(result.Txs, tx)
@@ -285,27 +284,27 @@ func GetTxBasicInfo(input *adaptor.GetTxBasicInfoInput, rpcParams *RPCParams, ne
 
 	//call eth method
 	hash := common.BytesToHash(input.TxID)
-	tx, blockNumber, blockHash, err := client.TransactionsByHash(context.Background(), hash)
+	tx, blockNumber, blockHash, fromAddr, err := client.TransactionsByHash(context.Background(), hash)
 	if err != nil {
 		//fmt.Println("0")//pending not found
 		return nil, err
 	}
 
-	//conver to msg for from address
+	//conver to msg for fromAddr address
 	bigIntBlockNum := new(big.Int)
 	bigIntBlockNum.SetString(blockNumber, 0)
 
-	var signer types.Signer
-	if netID == NETID_MAIN {
-		signer = types.MakeSigner(params.MainnetChainConfig, bigIntBlockNum)
-	} else {
-		signer = types.MakeSigner(params.TestnetChainConfig, bigIntBlockNum)
-	}
-
-	msg, err := tx.AsMessage(signer)
-	if err != nil {
-		return nil, err
-	}
+	//var signer types.Signer
+	//if netID == NETID_MAIN {
+	//	signer = types.MakeSigner(params.MainnetChainConfig, bigIntBlockNum)
+	//} else {
+	//	signer = types.MakeSigner(params.TestnetChainConfig, bigIntBlockNum)
+	//}
+	//
+	//msg, err := tx.AsMessage(signer)
+	////if err != nil {
+	////	return nil, err
+	////}
 
 	receipt, err := client.TransactionReceipt(context.Background(), hash)
 	if err != nil {
@@ -316,10 +315,10 @@ func GetTxBasicInfo(input *adaptor.GetTxBasicInfoInput, rpcParams *RPCParams, ne
 	var result adaptor.GetTxBasicInfoOutput
 	result.Tx.TxID = tx.Hash().Bytes()
 	result.Tx.TxRawData = tx.Data()
-	result.Tx.CreatorAddress = msg.From().String()
-	toAddr := msg.To()
+	result.Tx.CreatorAddress = fromAddr //msg.From().String()
+	toAddr := tx.To()                   //msg.To()
 	if toAddr != nil {
-		result.Tx.TargetAddress = msg.To().String()
+		result.Tx.TargetAddress = toAddr.String() //msg.To().String()
 	}
 	result.Tx.IsInBlock = true
 	if receipt.Status > 0 {
@@ -350,7 +349,7 @@ func GetTransferTx(input *adaptor.GetTransferTxInput, rpcParams *RPCParams, netI
 
 	//call eth method
 	hash := common.BytesToHash(input.TxID)
-	tx, blockNumber, blockHash, err := client.TransactionsByHash(context.Background(), hash)
+	tx, blockNumber, blockHash, fromAddr, err := client.TransactionsByHash(context.Background(), hash)
 	if err != nil {
 		//fmt.Println("0")//pending not found
 		return nil, err
@@ -367,21 +366,21 @@ func GetTransferTx(input *adaptor.GetTransferTxInput, rpcParams *RPCParams, netI
 	bigIntBlockNum := new(big.Int)
 	bigIntBlockNum.SetString(blockNumber, 0)
 
-	var signer types.Signer
-	if tx.Protected() {
-		signer = types.NewEIP155Signer(tx.ChainId())
-	} else {
-		if netID == NETID_MAIN {
-			signer = types.MakeSigner(params.MainnetChainConfig, bigIntBlockNum)
-		} else {
-			signer = types.MakeSigner(params.TestnetChainConfig, bigIntBlockNum)
-		}
-	}
-
-	from, err := types.Sender(signer, tx)
-	if err != nil {
-		return nil, err
-	}
+	//var signer types.Signer
+	//if tx.Protected() {
+	//	signer = types.NewEIP155Signer(tx.ChainId())
+	//} else {
+	//	if netID == NETID_MAIN {
+	//		signer = types.MakeSigner(params.MainnetChainConfig, bigIntBlockNum)
+	//	} else {
+	//		signer = types.MakeSigner(params.TestnetChainConfig, bigIntBlockNum)
+	//	}
+	//}
+	//
+	//from, err := types.Sender(signer, tx)
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	//save result
 	var result adaptor.GetTransferTxOutput
@@ -391,7 +390,7 @@ func GetTransferTx(input *adaptor.GetTransferTxInput, rpcParams *RPCParams, netI
 	toAddr := tx.To().String()
 	result.Tx.TargetAddress = toAddr
 	result.Tx.ToAddress = toAddr
-	fromAddr := from.String()
+	//fromAddr := from.String()
 	result.Tx.CreatorAddress = fromAddr
 	result.Tx.FromAddress = fromAddr
 
@@ -479,7 +478,7 @@ func GetContractInitialTx(input *adaptor.GetContractInitialTxInput, rpcParams *R
 
 	//call eth method
 	hash := common.BytesToHash(input.TxID)
-	tx, blockNumber, blockHash, err := client.TransactionsByHash(context.Background(), hash)
+	tx, blockNumber, blockHash, fromAddr, err := client.TransactionsByHash(context.Background(), hash)
 	if err != nil {
 		//fmt.Println("0")//pending not found
 		return nil, err
@@ -489,17 +488,17 @@ func GetContractInitialTx(input *adaptor.GetContractInitialTxInput, rpcParams *R
 	bigIntBlockNum := new(big.Int)
 	bigIntBlockNum.SetString(blockNumber, 0)
 
-	var signer types.Signer
-	if netID == NETID_MAIN {
-		signer = types.MakeSigner(params.MainnetChainConfig, bigIntBlockNum)
-	} else {
-		signer = types.MakeSigner(params.TestnetChainConfig, bigIntBlockNum)
-	}
-
-	msg, err := tx.AsMessage(signer)
-	if err != nil {
-		return nil, err
-	}
+	//var signer types.Signer
+	//if netID == NETID_MAIN {
+	//	signer = types.MakeSigner(params.MainnetChainConfig, bigIntBlockNum)
+	//} else {
+	//	signer = types.MakeSigner(params.TestnetChainConfig, bigIntBlockNum)
+	//}
+	//
+	//msg, err := tx.AsMessage(signer)
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	receipt, err := client.TransactionReceipt(context.Background(), hash)
 	if err != nil {
@@ -510,10 +509,10 @@ func GetContractInitialTx(input *adaptor.GetContractInitialTxInput, rpcParams *R
 	var result adaptor.GetContractInitialTxOutput
 	result.TxID = tx.Hash().Bytes()
 	result.TxRawData = tx.Data()
-	result.CreatorAddress = msg.From().String()
-	toAddr := msg.To()
+	result.CreatorAddress = fromAddr //msg.From().String()
+	toAddr := tx.To()                //msg.To()
 	if toAddr != nil {
-		result.TargetAddress = msg.To().String()
+		result.TargetAddress = toAddr.String() //msg.To().String()
 	}
 	result.IsInBlock = true
 	if receipt.Status > 0 {

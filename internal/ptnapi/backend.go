@@ -137,7 +137,7 @@ type Backend interface {
 	GetAssetExistence(asset string) ([]*ptnjson.ProofOfExistenceJson, error)
 	//contract control
 	ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi,
-	ccLanguage string) (TemplateId []byte, err error)
+		ccLanguage string) (TemplateId []byte, err error)
 	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)
 	ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 	ContractStop(deployId []byte, txid string, deleteImage bool) error
@@ -153,8 +153,8 @@ type Backend interface {
 	ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
 		contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error)
 	SendContractInvokeReqTx(requestTx *modules.Transaction) (reqId common.Hash, err error)
-	ContractInvokeReqTokenTx(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64,
-		asset string, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error)
+	ContractInvokeReqTokenTx(from, to common.Address, token *modules.Asset, amountToken, fee uint64,
+		contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error)
 	ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address,
 		deleteImage bool) (reqId common.Hash, err error)
 	ContractInstallReqTxFee(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string,
@@ -199,6 +199,8 @@ type Backend interface {
 	ProofTransactionByRlptx(rlptx [][]byte) (string, error)
 	SyncUTXOByAddr(addr string) string
 	StartCorsSync() (string, error)
+
+	GetContractsWithJuryAddr(addr common.Address) []*modules.Contract
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {

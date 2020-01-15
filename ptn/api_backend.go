@@ -164,7 +164,7 @@ func (b *PtnApiBackend) GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, e
 	//	hex_hash = unitHash.String()
 	//}
 	var txresult []byte
-	for _, msgcopy := range tx.TxMessages {
+	for _, msgcopy := range tx.TxMessages() {
 		if msgcopy.App == modules.APP_DATA {
 			if msg, ok := msgcopy.Payload.(*modules.DataPayload); ok {
 				txresult = msg.MainData
@@ -409,7 +409,7 @@ func (b *PtnApiBackend) GetUnitTxsInfo(hash common.Hash) ([]*ptnjson.TxSummaryJs
 	txs_json := make([]*ptnjson.TxSummaryJson, 0)
 
 	for txIdx, tx := range txs {
-		txs_json = append(txs_json, ptnjson.ConvertTx2SummaryJson(tx, hash, header.Number.Index, header.Time,
+		txs_json = append(txs_json, ptnjson.ConvertTx2SummaryJson(tx, hash, header.GetNumber().Index, header.Timestamp(),
 			uint64(txIdx), b.ptn.dag.GetTxOutput))
 	}
 	return txs_json, nil
@@ -736,11 +736,9 @@ func (b *PtnApiBackend) SendContractInvokeReqTx(requestTx *modules.Transaction) 
 	go b.ptn.ContractBroadcast(jury.ContractEvent{Ele: nil, CType: jury.CONTRACT_EVENT_EXEC, Tx: requestTx}, true)
 	return requestTx.RequestHash(), nil
 }
-func (b *PtnApiBackend) ContractInvokeReqTokenTx(from, to, toToken common.Address, daoAmount, daoFee,
-	daoAmountToken uint64, assetToken string, contractAddress common.Address, args [][]byte,
-	timeout uint32) (reqId common.Hash, err error) {
-	return b.ptn.contractPorcessor.ContractInvokeReqToken(from, to, toToken, daoAmount, daoFee, daoAmountToken,
-		assetToken, contractAddress, args, timeout)
+func (b *PtnApiBackend) ContractInvokeReqTokenTx(from, to common.Address, token *modules.Asset,
+	amountToken, fee uint64, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
+	return b.ptn.contractPorcessor.ContractInvokeReqToken(from, to, token, amountToken, fee, contractAddress, args, timeout)
 }
 func (b *PtnApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address,
 	deleteImage bool) (reqId common.Hash, err error) {
@@ -816,9 +814,7 @@ func (b *PtnApiBackend) DecodeJsonTx(hexStr string) (string, error) {
 	if err := rlp.DecodeBytes(decoded, &btxjson); err != nil {
 		return "", errors.New("RLP Decode To Byte is invalid")
 	}
-	tx := &modules.Transaction{
-		TxMessages: make([]*modules.Message, 0),
-	}
+	tx := modules.NewTransaction(make([]*modules.Message, 0))
 	err = json.Unmarshal(btxjson, tx)
 	if err != nil {
 		return "", errors.New("Json Unmarshal To Tx is invalid")
@@ -892,9 +888,9 @@ func (s *PtnApiBackend) GetProofTxInfoByHash(strtxhash string) ([][]byte, error)
 		return [][]byte{[]byte(fmt.Sprintf("Get Trie err %v", err))}, err
 	}
 
-	if trieRootHash.String() != unit.UnitHeader.TxRoot.String() {
+	if trieRootHash.String() != unit.UnitHeader.TxRoot().String() {
 		log.Debug("Light PalletOne", "GetProofTxInfoByHash hash is not equal.trieRootHash.String()",
-			trieRootHash.String(), "unit.UnitHeader.TxRoot.String()", unit.UnitHeader.TxRoot.String())
+			trieRootHash.String(), "unit.UnitHeader.TxRoot.String()", unit.UnitHeader.TxRoot().String())
 		return [][]byte{[]byte("trie root hash is not equal")}, errors.New("hash not equal")
 	}
 
@@ -1078,4 +1074,8 @@ func (a addressBalanceList) Swap(i, j int) { // 重写 Swap() 方法
 }
 func (a addressBalanceList) Less(i, j int) bool { // 重写 Less() 方法， 从大到小排序
 	return a[j].Balance < a[i].Balance
+}
+
+func (b *PtnApiBackend) GetContractsWithJuryAddr(addr common.Address) []*modules.Contract {
+	return b.Dag().GetContractsWithJuryAddr(addr)
 }

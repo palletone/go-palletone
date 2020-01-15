@@ -111,7 +111,7 @@ func (v *Validation) Check(resp *proofsRespData) (int, error) {
 	//}
 	log.Debug("Light PalletOne", "key", resp.key, "proof", resp.pathData)
 	nodeSet := resp.pathData.NodeSet()
-	_, err, _ = trie.VerifyProof(header.TxRoot, resp.key, nodeSet)
+	_, err, _ = trie.VerifyProof(header.TxRoot(), resp.key, nodeSet)
 	if err != nil {
 		log.Debug("Light PalletOne", "Validation->Check VerifyProof err", err)
 		return 0, err

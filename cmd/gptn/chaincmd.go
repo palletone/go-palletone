@@ -164,6 +164,6 @@ func initGenesis(ctx *cli.Context) error {
 	dag.StoreDataVersion(dv)
 
 	//MUST DO NOT MODIFY THIS LOG. For deploy.sh
-	log.Infof("gptn (version[%s] hash[%s]) init success", dv.Version, unit.UnitHash.Hex())
+	log.Infof("gptn (version[%s] hash[%s]) init success", dv.Version, unit.Hash().Hex())
 	return nil
 }

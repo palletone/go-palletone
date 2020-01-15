@@ -22,14 +22,40 @@ import (
 	"net"
 
 	"github.com/palletone/go-palletone/statistics/metrics"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
+//var (
+//	ingressConnectMeter = metrics.NewRegisteredMeter("p2p/InboundConnects", nil)
+//	ingressTrafficMeter = metrics.NewRegisteredMeter("p2p/InboundTraffic", nil)
+//	egressConnectMeter  = metrics.NewRegisteredMeter("p2p/OutboundConnects", nil)
+//	egressTrafficMeter  = metrics.NewRegisteredMeter("p2p/OutboundTraffic", nil)
+//)
+
 var (
-	ingressConnectMeter = metrics.NewRegisteredMeter("p2p/InboundConnects", nil)
-	ingressTrafficMeter = metrics.NewRegisteredMeter("p2p/InboundTraffic", nil)
-	egressConnectMeter  = metrics.NewRegisteredMeter("p2p/OutboundConnects", nil)
-	egressTrafficMeter  = metrics.NewRegisteredMeter("p2p/OutboundTraffic", nil)
+	ingressConnectPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:p2p:InboundConnects",
+		Help: "p2p InboundConnects"})
+	ingressTrafficPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:p2p:InboundTraffic",
+		Help: "p2p InboundTraffic"})
+
+	egressConnectPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:p2p:OutboundConnects",
+		Help: "p2p OutboundConnects"})
+
+	egressTrafficPrometheus = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "prometheus:p2p:OutboundTraffic",
+		Help: "p2p OutboundTraffic"})
 )
+
+func init() {
+	prometheus.MustRegister(ingressConnectPrometheus)
+	prometheus.MustRegister(ingressTrafficPrometheus)
+
+	prometheus.MustRegister(egressConnectPrometheus)
+	prometheus.MustRegister(egressTrafficPrometheus)
+}
 
 // meteredConn is a wrapper around a network TCP connection that meters both the
 // inbound and outbound network traffic.
@@ -47,9 +73,9 @@ func newMeteredConn(conn net.Conn, ingress bool) net.Conn {
 	}
 	// Otherwise bump the connection counters and wrap the connection
 	if ingress {
-		ingressConnectMeter.Mark(1)
+		ingressConnectPrometheus.Add(1)
 	} else {
-		egressConnectMeter.Mark(1)
+		egressConnectPrometheus.Add(1)
 	}
 	return &meteredConn{conn.(*net.TCPConn)}
 }
@@ -58,7 +84,7 @@ func newMeteredConn(conn net.Conn, ingress bool) net.Conn {
 // traffic meter along the way.
 func (c *meteredConn) Read(b []byte) (n int, err error) {
 	n, err = c.TCPConn.Read(b)
-	ingressTrafficMeter.Mark(int64(n))
+	ingressTrafficPrometheus.Add(float64(n))
 	return
 }
 
@@ -66,6 +92,6 @@ func (c *meteredConn) Read(b []byte) (n int, err error) {
 // egress traffic meter along the way.
 func (c *meteredConn) Write(b []byte) (n int, err error) {
 	n, err = c.TCPConn.Write(b)
-	egressTrafficMeter.Mark(int64(n))
+	egressTrafficPrometheus.Add(float64(n))
 	return
 }

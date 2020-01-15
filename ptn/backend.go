@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/contracts"
+	"github.com/palletone/go-palletone/contracts/utils"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
@@ -47,6 +48,7 @@ import (
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/txspool"
 	"github.com/shopspring/decimal"
+	"github.com/palletone/go-palletone/dag/constants"
 )
 
 type LesServer interface {
@@ -119,7 +121,9 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 		log.Error("PalletOne New", "CreateDB err:", err)
 		return nil, err
 	}
-	if has, _ := db.Has([]byte("gpGlobalProperty")); !has {
+
+	//当leveldb不存在时，使用使用创世主网或者测试网数据
+	if has, _ := db.Has(constants.GLOBALPROPERTY_KEY); !has {
 		keys, values := make([]string, 0), make([]string, 0)
 		if isTestNet {
 			keys = append(keys, TestNetKeys...)
@@ -171,7 +175,6 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 		log.Error("Initialize mediator plugin err:", "error", err)
 		return nil, err
 	}
-
 	ptn.contractPorcessor, err = jury.NewContractProcessor(ptn, dag, nil, &config.Jury)
 	if err != nil {
 		log.Error("contract processor creat:", "error", err)
@@ -186,6 +189,9 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 	}
 	ptn.contractPorcessor.SetContract(ptn.contract)
 
+	pDocker := utils.NewPalletOneDocker(dag, ptn.contract.IAdapterJury)
+	ptn.contractPorcessor.SetDocker(pDocker)
+
 	genesis, err := ptn.dag.GetGenesisUnit()
 	if err != nil {
 		log.Error("PalletOne New", "get genesis err:", err)
@@ -194,7 +200,7 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 
 	gasToken := config.Dag.GetGasToken()
 	if ptn.protocolManager, err = NewProtocolManager(config.SyncMode, config.NetworkId, gasToken, ptn.txPool,
-		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine, ptn.contract); err != nil {
+		ptn.dag, ptn.eventMux, ptn.mediatorPlugin, genesis, ptn.contractPorcessor, ptn.engine, ptn.contract, pDocker); err != nil {
 		log.Error("NewProtocolManager err:", "error", err)
 		return nil, err
 	}
@@ -209,15 +215,15 @@ func CreateDB(ctx *node.ServiceContext, config *Config /*, name string*/) (palle
 	//path := ctx.DatabasePath(name)
 	path := dagconfig.DagConfig.DbPath
 
-	log.Debug("Open leveldb path:", "path", path)
+	log.Debugf("Open leveldb path: %s", path)
 	db, err := storage.Init(path, config.DatabaseCache, config.DatabaseHandles)
 	if err != nil {
 		return nil, err
 	}
 
-	//	if db, ok := db.(*palletdb.LDBDatabase); ok {
-	//		db.Meter("eth/db/chaindata/")
-	//	}
+	if db, ok := db.(*ptndb.LDBDatabase); ok {
+		db.Meter("ptn:db")
+	}
 
 	return db, nil
 }
@@ -396,9 +402,9 @@ func (p *PalletOne) GetKeyStore() *keystore.KeyStore {
 func (p *PalletOne) SignGenericTransaction(from common.Address, tx *modules.Transaction) (*modules.Transaction, error) {
 	inputpoints := make(map[modules.OutPoint][]byte)
 
-	for i := 0; i < len(tx.TxMessages); i++ {
+	for i := 0; i < len(tx.Messages()); i++ {
 		// 1. 获取PaymentPayload
-		msg := tx.TxMessages[i]
+		msg := tx.TxMessages()[i]
 		if msg.App != modules.APP_PAYMENT {
 			continue
 		}

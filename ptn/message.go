@@ -81,9 +81,9 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 		if origin == nil {
 			break
 		}
-		log.Debug("ProtocolManager", "GetBlockHeadersMsg origin index:", origin.Number.Index)
+		log.Debug("ProtocolManager", "GetBlockHeadersMsg origin index:", origin.GetNumber().Index)
 
-		number := origin.Number.Index
+		number := origin.GetNumber().Index
 		headers = append(headers, origin)
 		bytes += estHeaderRlpSize
 
@@ -94,7 +94,7 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 			for i := 0; i < int(query.Skip)+1; i++ {
 				if header, err := pm.dag.GetHeaderByHash(query.Origin.Hash); err == nil && header != nil {
 					if number != 0 {
-						query.Origin.Hash = header.ParentsHash[0]
+						query.Origin.Hash = header.ParentHash()[0]
 					}
 					number--
 				} else {
@@ -106,9 +106,9 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 			// Hash based traversal towards the leaf block
 			//log.Debug("ProtocolManager", "GetBlockHeadersMsg ", "Hash based towards the leaf block")
 			var (
-				current = origin.Number.Index
+				current = origin.GetNumber().Index
 				next    = current + query.Skip + 1
-				index   = origin.Number
+				index   = origin.GetNumber()
 			)
 			//log.Debug("ProtocolManager", "GetBlockHeadersMsg next", next, "current:", current)
 			if next <= current {
@@ -122,7 +122,7 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 				if header, _ := pm.dag.GetHeaderByNumber(index); header != nil {
 					hashs := pm.dag.GetUnitHashesFromHash(header.Hash(), query.Skip+1)
 					log.Debug("ProtocolManager", "GetUnitHashesFromHash len(hashs):", len(hashs),
-						"header.index:", header.Number.Index, "header.hash:", header.Hash().String(),
+						"header.index:", header.GetNumber().Index, "header.hash:", header.Hash().String(),
 						"query.Skip+1", query.Skip+1)
 					if len(hashs) > int(query.Skip) && (hashs[query.Skip] == query.Origin.Hash) {
 						query.Origin.Hash = header.Hash()
@@ -159,7 +159,7 @@ func (pm *ProtocolManager) GetBlockHeadersMsg(msg p2p.Msg, p *peer) error {
 	number := len(headers)
 	if number > 0 {
 		log.Debug("ProtocolManager", "GetBlockHeadersMsg query.Amount", query.Amount, "send number:", number,
-			"start:", headers[0].Number.Index, "end:", headers[number-1].Number.Index, " getBlockHeadersData:", query)
+			"start:", headers[0].GetNumber().Index, "end:", headers[number-1].GetNumber().Index, " getBlockHeadersData:", query)
 	} else {
 		log.Debug("ProtocolManager", "GetBlockHeadersMsg query.Amount", query.Amount, "send number:", 0,
 			" getBlockHeadersData:", query)
@@ -262,7 +262,6 @@ func (pm *ProtocolManager) BlockBodiesMsg(msg p2p.Msg, p *peer) error {
 		}
 
 		transactions[i] = txs
-		log.Debug("BlockBodiesMsg", "i", i, "txs size:", len(txs))
 	}
 	log.Debug("Full ProtocolManager BlockBodiesMsg", "len(transactions:)", len(transactions))
 	// Filter out any explicitly requested bodies, deliver the rest to the downloader
@@ -345,6 +344,47 @@ func (pm *ProtocolManager) NewBlockHashesMsg(msg p2p.Msg, p *peer) error {
 	return nil
 }
 
+func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
+	log.Debug("Enter ProtocolManager TxMsg")
+	defer log.Debug("End ProtocolManager TxMsg")
+	// Transactions arrived, make sure we have a valid and fresh chain to handle them
+	if atomic.LoadUint32(&pm.acceptTxs) == 0 {
+		log.Debug("ProtocolManager handlmsg TxMsg pm.acceptTxs==0")
+		return nil
+	}
+	// Transactions can be processed, parse all of them and deliver to the pool
+	var txs []*modules.Transaction
+	if err := msg.Decode(&txs); err != nil {
+		log.Debug("ProtocolManager handlmsg TxMsg", "Decode err:", err, "msg:", msg)
+		return errResp(ErrDecode, "msg %v: %v", msg, err)
+	}
+	for i, tx := range txs {
+		// Validate and mark the remote transaction
+		if tx == nil {
+			return errResp(ErrDecode, "transaction %d is nil", i)
+		}
+
+		txHash := tx.Hash()
+		p.MarkTransaction(txHash)
+
+		if pm.IsExistInCache(txHash.Bytes()) {
+			return nil
+		}
+
+		if tx.IsContractTx() {
+			if pm.contractProc.IsSystemContractTx(tx) {
+				continue
+			}
+		}
+		_, err := pm.txpool.ProcessTransaction(tx, true, true, 0 /*pm.txpool.Tag(peer.ID())*/)
+		if err != nil {
+			log.Infof("the transaction %s not accepteable, err:%s", tx.Hash().String(), err.Error())
+		}
+	}
+
+	return nil
+}
+
 func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	// Retrieve and decode the propagated block
 	//unit := &modules.Unit{}
@@ -365,9 +405,21 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	// append by Albert·Gou
+	unitHash := unit.Hash()
+	p.MarkUnit(unitHash)
+	p.SetHead(unitHash, unit.Number(), nil)
+
+	if pm.IsExistInCache(unitHash.Bytes()) {
+		//log.Debugf("Received unit(%v) again, ignore it", unitHash.TerminalString())
+		return nil
+	}
+
 	timestamp := time.Unix(unit.Timestamp(), 0)
-	//latency := time.Now().Sub(timestamp)
+	log.Infof("Received unit(%v) #%v parent(%v) @%v signed by %v", unitHash.TerminalString(),
+		unit.NumberU64(), unit.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
+		unit.Author().Str())
+
+	// append by Albert·Gou
 	latency := time.Since(timestamp)
 	if latency < -5*time.Second {
 		errStr := fmt.Sprintf("Rejecting unit #%v with timestamp(%v) in the future signed by %v",
@@ -376,24 +428,12 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		return fmt.Errorf(errStr)
 	}
 
-	unitHash := unit.Hash()
-	if pm.IsExistInCache(unitHash.Bytes()) {
-		//log.Debugf("Received unit(%v) again, ignore it", unitHash.TerminalString())
-		p.MarkUnit(unitHash)
-		p.SetHead(unitHash, unit.Number(), nil)
-		return nil
-	}
-
-	log.Infof("Received unit(%v) #%v parent(%v) @%v signed by %v", unitHash.TerminalString(),
-		unit.NumberU64(), unit.ParentHash()[0].TerminalString(), timestamp.Format("2006-01-02 15:04:05"),
-		unit.Author().Str())
-
 	log.DebugDynamic(func() string {
 		txids := []common.Hash{}
 		for _, tx := range unit.Txs {
 			txids = append(txids, tx.Hash())
 		}
-		return fmt.Sprintf("NewBlockMsg, received unit hash %s, txs:[%x]", unit.UnitHash.String(), txids)
+		return fmt.Sprintf("NewBlockMsg, received unit hash %s, txs:[%x]", unit.Hash().String(), txids)
 	})
 
 	rwset.Init()
@@ -422,15 +462,15 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	unit.ReceivedFrom = p
 
 	// Mark the peer as owning the block and schedule it for import
-	p.MarkUnit(unit.UnitHash)
+	//p.MarkUnit(unit.UnitHash)
 	pm.fetcher.Enqueue(p.id, unit)
 
 	requestNumber := unit.Number()
-	hash, number := p.Head(unit.Number().AssetID)
+	hash, number := p.Head(requestNumber.AssetID)
 	if common.EmptyHash(hash) || (!common.EmptyHash(hash) && requestNumber.Index > number.Index) {
 		log.Debug("ProtocolManager", "NewBlockMsg SetHead request.Index:", requestNumber.Index,
 			"local peer index:", number.Index)
-		p.SetHead(unit.Hash(), requestNumber, nil)
+		//p.SetHead(unit.Hash(), requestNumber, nil)
 
 		//currentUnitIndex := pm.dag.GetCurrentUnit(unit.Number().AssetID).UnitHeader.Number.Index
 		currentUnitIndex := pm.dag.HeadUnitNum()
@@ -438,45 +478,8 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 			log.Debug("ProtocolManager", "NewBlockMsg synchronize request.Index:", requestNumber.Index,
 				"current unit index+1:", currentUnitIndex+1)
 			go func() {
-				pm.synchronize(p, unit.Number().AssetID, nil)
+				pm.synchronize(p, requestNumber.AssetID, nil)
 			}()
-		}
-	}
-	return nil
-}
-
-func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
-	log.Debug("Enter ProtocolManager TxMsg")
-	defer log.Debug("End ProtocolManager TxMsg")
-	// Transactions arrived, make sure we have a valid and fresh chain to handle them
-	if atomic.LoadUint32(&pm.acceptTxs) == 0 {
-		log.Debug("ProtocolManager handlmsg TxMsg pm.acceptTxs==0")
-		return nil
-	}
-	// Transactions can be processed, parse all of them and deliver to the pool
-	var txs []*modules.Transaction
-	if err := msg.Decode(&txs); err != nil {
-		log.Debug("ProtocolManager handlmsg TxMsg", "Decode err:", err, "msg:", msg)
-		return errResp(ErrDecode, "msg %v: %v", msg, err)
-	}
-	for i, tx := range txs {
-		// Validate and mark the remote transaction
-		if tx == nil {
-			return errResp(ErrDecode, "transaction %d is nil", i)
-		}
-		txHash := tx.Hash()
-		if pm.IsExistInCache(txHash.Bytes()) {
-			return nil
-		}
-		if tx.IsContractTx() {
-			if pm.contractProc.IsSystemContractTx(tx) {
-				continue
-			}
-		}
-		p.MarkTransaction(tx.Hash())
-		_, err := pm.txpool.ProcessTransaction(tx, true, true, 0 /*pm.txpool.Tag(peer.ID())*/)
-		if err != nil {
-			log.Infof("the transaction %s not accepteable, err:%s", tx.Hash().String(), err.Error())
 		}
 	}
 
@@ -504,7 +507,7 @@ func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 	if !pm.dag.IsSynced(false) {
 		log.Debugf(errStr)
 
-		pm.BroadcastSigShare(&sigShare)
+		go pm.BroadcastSigShare(&sigShare)
 		//return fmt.Errorf(errStr)
 		return nil
 	}
@@ -516,11 +519,36 @@ func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	if !pm.producer.IsLocalMediator(header.Author()) {
-		pm.BroadcastSigShare(&sigShare)
+	if pm.producer.IsLocalMediator(header.Author()) {
+		go pm.producer.AddToTBLSRecoverBuf(&sigShare)
+	} else {
+		go pm.BroadcastSigShare(&sigShare)
 	}
 
-	go pm.producer.AddToTBLSRecoverBuf(&sigShare)
+	return nil
+}
+
+//GroupSigMsg
+func (pm *ProtocolManager) GroupSigMsg(msg p2p.Msg, p *peer) error {
+	var gSign mp.GroupSigEvent
+	if err := msg.Decode(&gSign); err != nil {
+		errStr := fmt.Sprintf("GroupSigMsg: %v, err: %v", msg, err)
+		log.Debugf(errStr)
+
+		//return fmt.Errorf(errStr)
+		return nil
+	}
+
+	hash := gSign.Hash()
+	p.MarkGroupSig(hash)
+
+	if pm.IsExistInCache(hash.Bytes()) {
+		return nil
+	}
+
+	go pm.BroadcastGroupSig(&gSign)
+	go pm.dag.SetUnitGroupSign(gSign.UnitHash, gSign.GroupSig, pm.txpool)
+
 	return nil
 }
 
@@ -544,18 +572,19 @@ func (pm *ProtocolManager) VSSDealMsg(msg p2p.Msg, p *peer) error {
 	// 判断是否同步, 如果没同步完成，接收到的 vss deal 对当前节点来说是超前的
 	if !pm.dag.IsSynced(true) {
 		log.Debugf(errStr)
-		pm.BroadcastVSSDeal(&deal)
+		go pm.BroadcastVSSDeal(&deal)
 
 		//return fmt.Errorf(errStr)
 		return nil
 	}
 
 	ma := pm.dag.GetActiveMediatorAddr(int(deal.DstIndex))
-	if !pm.producer.IsLocalMediator(ma) {
-		pm.BroadcastVSSDeal(&deal)
+	if pm.producer.IsLocalMediator(ma) {
+		go pm.producer.AddToDealBuf(&deal)
+	} else {
+		go pm.BroadcastVSSDeal(&deal)
 	}
 
-	go pm.producer.AddToDealBuf(&deal)
 	return nil
 }
 
@@ -576,7 +605,7 @@ func (pm *ProtocolManager) VSSResponseMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	pm.BroadcastVSSResponse(&resp)
+	go pm.BroadcastVSSResponse(&resp)
 
 	// 判断是否同步, 如果没同步完成，接收到的 vss response 对当前节点来说是超前的
 	if !pm.dag.IsSynced(true) {
@@ -586,31 +615,6 @@ func (pm *ProtocolManager) VSSResponseMsg(msg p2p.Msg, p *peer) error {
 	}
 
 	go pm.producer.AddToResponseBuf(&resp)
-	return nil
-}
-
-//GroupSigMsg
-func (pm *ProtocolManager) GroupSigMsg(msg p2p.Msg, p *peer) error {
-	var gSign mp.GroupSigEvent
-	if err := msg.Decode(&gSign); err != nil {
-		errStr := fmt.Sprintf("GroupSigMsg: %v, err: %v", msg, err)
-		log.Debugf(errStr)
-
-		//return fmt.Errorf(errStr)
-		return nil
-	}
-
-	hash := gSign.Hash()
-	p.MarkGroupSig(hash)
-
-	if pm.IsExistInCache(hash.Bytes()) {
-		return nil
-	}
-
-	pm.BroadcastGroupSig(&gSign)
-
-	go pm.dag.SetUnitGroupSign(gSign.UnitHash, gSign.GroupSig, pm.txpool)
-
 	return nil
 }
 
@@ -693,6 +697,10 @@ func (pm *ProtocolManager) AdapterMsg(msg p2p.Msg, p *peer) error {
 	if err := msg.Decode(&avs); err != nil {
 		log.Info("ProtocolManager AdapterMsg", "err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
+	}
+
+	if pm.IsExistInCache(avs.Hash().Bytes()) {
+		return nil
 	}
 
 	event, err := avs.ToAdapterEvent()

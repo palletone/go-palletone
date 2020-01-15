@@ -35,6 +35,8 @@ type ICryptoCurrency interface {
 	GetTransferTx(input *GetTransferTxInput) (*GetTransferTxOutput, error)
 	//创建一个多签地址，该地址必须要满足signCount个签名才能解锁
 	CreateMultiSigAddress(input *CreateMultiSigAddressInput) (*CreateMultiSigAddressOutput, error)
+	//构造一个从多签地址付出Token的交易
+	CreateMultiSigPayoutTx(input *CreateMultiSigPayoutTxInput) (*CreateMultiSigPayoutTxOutput, error)
 }
 
 //查询余额时的输入参数
@@ -103,4 +105,18 @@ type GetTransferTxInput struct {
 type GetTransferTxOutput struct {
 	Tx    SimpleTransferTokenTx `json:"transaction"`
 	Extra []byte                `json:"extra"`
+}
+type CreateMultiSigPayoutTxInput struct {
+	FromAddress string       `json:"from_address"`
+	ToAddress   string       `json:"to_address"`
+	Amount      *AmountAsset `json:"amount"`
+	Fee         *AmountAsset `json:"fee"`
+	//BTC: 可以指定要排除的UTXO
+	Extra []byte `json:"extra"`
+}
+
+type CreateMultiSigPayoutTxOutput struct {
+	Transaction []byte `json:"transaction"`
+	//本交易包含的UTXO
+	Extra []byte `json:"extra"`
 }

@@ -134,7 +134,7 @@ func (statedb *StateDb) GetBlacklistAddress() ([]common.Address, *modules.StateV
 	id := syscontract.BlacklistContractAddress.Bytes()
 	data, v, err := statedb.GetContractState(id, constants.BlacklistAddress)
 	if err != nil { //未初始化黑名单
-		log.Debug("Don't have blacklist:" + err.Error())
+		//log.Debug("Don't have blacklist:" + err.Error())
 		return []common.Address{}, nil, nil
 	}
 	result := []common.Address{}

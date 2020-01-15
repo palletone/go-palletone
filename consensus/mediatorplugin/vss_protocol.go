@@ -57,7 +57,7 @@ func (mp *MediatorPlugin) newDKGAndInitVSSBuf() {
 		initSec := mp.mediators[localMed].InitPrivKey
 		dkgr, err := dkg.NewDistKeyGenerator(mp.suite, initSec, initPubs, curThreshold)
 		if err != nil {
-			log.Debugf(err.Error())
+			log.Debugf("New the mediator(%v)'s DistKeyGenerator get err: %v", localMed.Str(), err.Error())
 			continue
 		}
 		mp.activeDKGs[localMed] = dkgr
@@ -83,7 +83,7 @@ func (mp *MediatorPlugin) startVSSProtocol() {
 	mp.launchVSSDealLoops()
 
 	cp := mp.dag.GetGlobalProp().ChainParameters
-	margin := (cp.MediatorInterval+1)/2
+	margin := (cp.MediatorInterval + 1) / 2
 
 	// 隔半个生产间隔，等待其他节点接收新unit，并做好vss协议相关准备工作
 	select {
@@ -98,7 +98,7 @@ func (mp *MediatorPlugin) startVSSProtocol() {
 	select {
 	case <-mp.quit:
 		return
-	case <-time.After(time.Second * time.Duration(cp.MaintenanceSkipSlots * cp.MediatorInterval)):
+	case <-time.After(time.Second * time.Duration(cp.MaintenanceSkipSlots*cp.MediatorInterval)):
 		go mp.launchVSSRespLoops()
 	}
 
@@ -211,7 +211,7 @@ func (mp *MediatorPlugin) processVSSDeal(localMed common.Address, deal *dkg.Deal
 
 	dkgr, ok := mp.activeDKGs[localMed]
 	if !ok || dkgr == nil {
-		log.Debugf("the mediator(%v)'s dkg is not existed, or it is not active", localMed.String())
+		log.Debugf("the mediator(%v)'s dkg is not existed, or it is not active mediator", localMed.String())
 		return
 	}
 
@@ -221,13 +221,15 @@ func (mp *MediatorPlugin) processVSSDeal(localMed common.Address, deal *dkg.Deal
 
 	resp, err := dkgr.ProcessDeal(deal)
 	if err != nil {
-		log.Debugf("dkg cannot process this deal: " + err.Error())
+		log.Debugf("the mediator(%v)'s dkg cannot process the mediator(%v)'s deal: %v",
+			localMed.Str(), vrfrMed.Str(), err.Error())
 		return
 	}
 
 	if resp.Response.Status != vss.StatusApproval {
-		err = fmt.Errorf("dag gave this deal a complaint: %v", localMed.String())
-		log.Debugf(err.Error())
+		errStr := fmt.Errorf("the mediator(%v)'s dkg gave the mediator(%v)'s deal a complaint: %v",
+			localMed.Str(), vrfrMed.Str(), resp.Response.Status)
+		log.Debugf(errStr.Error())
 		return
 	}
 
@@ -251,7 +253,7 @@ func (mp *MediatorPlugin) broadcastVSSDeals() {
 	for localMed, dkg := range mp.activeDKGs {
 		deals, err := dkg.Deals()
 		if err != nil {
-			log.Debugf(err.Error())
+			log.Debugf("the mediator(%v)'s dkg get deals err: %v", localMed.Str(), err.Error())
 			continue
 		}
 		log.Debugf("the mediator(%v) broadcast vss deals", localMed.Str())
@@ -291,7 +293,7 @@ func (mp *MediatorPlugin) AddToDealBuf(dealEvent *VSSDealEvent) {
 		log.Debugf("the mediator(%v) received the vss deal from the mediator(%v)",
 			localMed.Str(), vrfrMed.Str())
 	} else {
-		log.Debugf("the mediator(%v)'s dealBuf is cleared", localMed.Str())
+		log.Debugf("the mediator(%v)'s dealBuf is cleared, or is not local mediator", localMed.Str())
 	}
 	//log.Debugf("vssBufLock.Unlock()")
 	mp.vssBufLock.Unlock()
@@ -328,7 +330,7 @@ func (mp *MediatorPlugin) AddToResponseBuf(respEvent *VSSResponseEvent) {
 			log.Debugf("the mediator(%v) received the vss response from the mediator(%v) to the mediator(%v)",
 				localMed.Str(), srcMed.Str(), vrfrMed.Str())
 		} else {
-			log.Debugf("the mediator(%v)'s respBuf is cleared", localMed.Str())
+			log.Debugf("the mediator(%v)'s respBuf is cleared, or is not local mediator", localMed.Str())
 		}
 		//log.Debugf("vssBufLock.Unlock()")
 		mp.vssBufLock.Unlock()
@@ -375,7 +377,7 @@ func (mp *MediatorPlugin) processVSSResp(localMed common.Address, resp *dkg.Resp
 
 	jstf, err := dkgr.ProcessResponse(resp)
 	if err != nil {
-		log.Debugf(err.Error())
+		log.Debugf("the mediator(%v)'s dkg process response err: %v", localMed.Str(), err.Error())
 		return
 	}
 

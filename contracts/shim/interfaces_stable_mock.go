@@ -424,6 +424,32 @@ func (mr *MockChaincodeStubInterfaceMockRecorder) GetTokenBalance(address, token
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTokenBalance", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetTokenBalance), address, token)
 }
 
+// GetStableTransactionByHash mocks base method
+func (m *MockChaincodeStubInterface) GetStableTransactionByHash(txHash string) (*modules.Transaction, error) {
+	ret := m.ctrl.Call(m, "GetStableTransactionByHash", txHash)
+	ret0, _ := ret[0].(*modules.Transaction)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetStableTransactionByHash indicates an expected call of GetStableTransactionByHash
+func (mr *MockChaincodeStubInterfaceMockRecorder) GetStableTransactionByHash(txHash interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStableTransactionByHash", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetStableTransactionByHash), txHash)
+}
+
+// GetStableUnit mocks base method
+func (m *MockChaincodeStubInterface) GetStableUnit(unitHash string, unitNumber uint64) (*modules.Unit, error) {
+	ret := m.ctrl.Call(m, "GetStableUnit", unitHash, unitNumber)
+	ret0, _ := ret[0].(*modules.Unit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetStableUnit indicates an expected call of GetStableUnit
+func (mr *MockChaincodeStubInterfaceMockRecorder) GetStableUnit(unitHash, unitNumber interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStableUnit", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetStableUnit), unitHash, unitNumber)
+}
+
 // PayOutToken mocks base method
 func (m *MockChaincodeStubInterface) PayOutToken(addr string, invokeTokens *modules.AmountAsset, lockTime uint32) error {
 	ret := m.ctrl.Call(m, "PayOutToken", addr, invokeTokens, lockTime)

@@ -24,12 +24,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ethereum/go-ethereum/rlp"
+	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
-	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/txspool"
 )
@@ -47,35 +47,30 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	//log.Debugf("generate unit ...")
 
 	// 2. 生产unit，添加交易集、时间戳、签名
-	newUnit, err := dag.createUnit(producer, txpool)
+	unsign_unit, err := dag.createUnit(producer, txpool, when)
 	if err != nil {
-		errStr := fmt.Sprintf("GenerateUnit error: %v", err.Error())
+		errStr := fmt.Sprintf("createUnit error: %v", err.Error())
 		log.Debug(errStr)
 		return nil, fmt.Errorf(errStr)
 	}
-	// added by yangyu, 2018.8.9
-	if newUnit == nil || newUnit.IsEmpty() {
+	if unsign_unit == nil || unsign_unit.IsEmpty() {
 		errStr := fmt.Sprintf("No unit need to be packaged for now.")
 		log.Debug(errStr)
-		//log.Info("No unit need to be packaged for now.", "unit", newUnit)
 		return nil, fmt.Errorf(errStr)
 	}
 
-	newUnit.UnitHeader.Time = when.Unix()
-	newUnit.UnitHeader.GroupPubKey = groupPubKey
-	newUnit.Hash()
-
-	sign_unit, err := dagcommon.GetUnitWithSig(newUnit, ks, producer)
+	sign_unit, err := dagcommon.GetUnitWithSig(unsign_unit, ks, producer)
 	if err != nil {
 		errStr := fmt.Sprintf("GetUnitWithSig error: %v", err.Error())
 		log.Debug(errStr)
 		return nil, fmt.Errorf(errStr)
 	}
+	sign_unit.UnitHeader.SetGroupPubkey(groupPubKey)
 
-	sign_unit.UnitSize = sign_unit.Size()
+	sign_unit.Size()
 	log.Debugf("Generate new unit index:[%d],hash:[%s],size:%s, parent unit[%s],txs[%d], spent time: %s ",
-		sign_unit.NumberU64(), sign_unit.Hash().String(), sign_unit.UnitSize.String(),
-		sign_unit.UnitHeader.ParentsHash[0].String(), sign_unit.Txs.Len(), time.Since(t0).String())
+		sign_unit.NumberU64(), sign_unit.Hash().String(), sign_unit.Size().String(),
+		sign_unit.UnitHeader.ParentHash()[0].String(), sign_unit.Txs.Len(), time.Since(t0).String())
 
 	//3.将新单元添加到MemDag中
 	a, b, c, d, e, err := dag.Memdag.AddUnit(sign_unit, txpool, true)
@@ -106,7 +101,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 			events = make([]interface{}, 0, 2)
 		)
 		events = append(events, modules.ChainHeadEvent{Unit: sign_unit})
-		events = append(events, modules.ChainEvent{Unit: sign_unit, Hash: sign_unit.UnitHash})
+		events = append(events, modules.ChainEvent{Unit: sign_unit, Hash: sign_unit.Hash()})
 		dag.PostChainEvents(events)
 	}()
 
@@ -114,9 +109,9 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 }
 
 // createUnit, create a unit when mediator being produced
-func (d *Dag) createUnit(mAddr common.Address, txpool txspool.ITxPool) (*modules.Unit, error) {
-	//_, _, state, rep, _ := d.Memdag.GetUnstableRepositories()
-	//med, err := state.RetrieveMediator(mAddr)
+//创建未签名的Unit
+func (d *Dag) createUnit(mAddr common.Address, txpool txspool.ITxPool,
+	when time.Time) (*modules.Unit, error) {
 
 	med, err := d.unstableStateRep.RetrieveMediator(mAddr)
 	if err != nil {
@@ -124,6 +119,6 @@ func (d *Dag) createUnit(mAddr common.Address, txpool txspool.ITxPool) (*modules
 	}
 
 	//return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool, rep, state.GetJurorReward)
-	return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool,
+	return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool, when,
 		d.unstablePropRep, d.unstableStateRep.GetJurorReward)
 }

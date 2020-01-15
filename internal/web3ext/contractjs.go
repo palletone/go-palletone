@@ -45,7 +45,7 @@ web3._extend({
 			name: 'ccinvoketx',
         	call: 'contract_ccinvoketx',
         	params: 8, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"], certid, timeout
-			inputFormatter: [null, null, null,null, null, null, null, null]
+			inputFormatter: [null, null, null,null, null, null,null,null]
 		}),
         new web3._extend.Method({
 			name: 'ccinvoketxPass',
@@ -56,8 +56,8 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'ccinvokeToken',
         	call: 'contract_ccinvokeToken',
-        	params: 9, //from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, contractAddr, args[]string------>["fun", "key", "value"]
-			inputFormatter: [null, null, null,null, null, null,null, null, null]
+        	params: 7, //from, to, token, daoAmountToken, daoFee, contractAddr, args[]string------>["fun", "key", "value"]
+			inputFormatter: [null, null, null,null, null, null,null]
 		}),
 		new web3._extend.Method({
 			name: 'ccstoptx',
@@ -172,6 +172,11 @@ web3._extend({
 			name: 'getContractState',
 			call: 'contract_getContractState',
 			params: 2
+		}),
+        new web3._extend.Method({
+			name: 'getContractsWithJuryAddress',
+			call: 'contract_getContractsWithJuryAddress',
+			params: 1
 		}),
 	],
 	properties: [

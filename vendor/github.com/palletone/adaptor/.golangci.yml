@@ -186,6 +186,7 @@ linters:
     - unused
     - goimports
     - gofmt
+    - dupl
   disable-all: false
   # presets:
   #   - bugs

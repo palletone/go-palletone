@@ -88,12 +88,16 @@ func (aeth *AdaptorETH) GetAddress(key *adaptor.GetAddressInput) (
 	result := adaptor.GetAddressOutput{Address: addr}
 	return &result, nil
 }
-func (aeth *AdaptorETH) GetPalletOneMappingAddress(addr *adaptor.GetPalletOneMappingAddressInput) (
+func (aeth *AdaptorETH) GetPalletOneMappingAddress(addrInput *adaptor.GetPalletOneMappingAddressInput) (
 	*adaptor.GetPalletOneMappingAddressOutput, error) {
-	if len(addr.MappingDataSource) == 0 {
-		return nil, errors.New("you must define mapping contract address in MappingDataSource")
+	if len(addrInput.MappingDataSource) == 0 {
+		return nil, errors.New("you must set mapping contract address in MappingDataSource of addrInput")
 	}
-	return GetMappAddr(addr, &aeth.RPCParams, addr.MappingDataSource)
+	return GetMappAddr(addrInput, &aeth.RPCParams)
+}
+
+func (aerc20 *AdaptorETH) HashMessage(input *adaptor.HashMessageInput) (*adaptor.HashMessageOutput, error) {
+	return HashMessage(input)
 }
 
 //对一条消息进行签名
@@ -148,7 +152,7 @@ func (aeth *AdaptorETH) GetTxBasicInfo(input *adaptor.GetTxBasicInfoInput) (*ada
 
 //获取最新区块头
 func (aeth *AdaptorETH) GetBlockInfo(input *adaptor.GetBlockInfoInput) (*adaptor.GetBlockInfoOutput, error) {
-	return nil, errors.New("todo") //todo
+	return GetBlockInfo(input, &aeth.RPCParams)
 }
 
 /*ICryptoCurrency*/
@@ -164,10 +168,10 @@ func (aeth *AdaptorETH) GetAssetDecimal(asset *adaptor.GetAssetDecimalInput) (
 	return &result, nil
 }
 
-//创建一个转账交易，但是未签名 //contract tx pack --> packed msg
+//创建一个转账交易，但是未签名 //send eth tx, not sign
 func (aeth *AdaptorETH) CreateTransferTokenTx(input *adaptor.CreateTransferTokenTxInput) (
 	*adaptor.CreateTransferTokenTxOutput, error) {
-	return CreateTx(input) //add m and pack, return msg
+	return CreateETHTx(input, &aeth.RPCParams)
 }
 
 //获取某个地址对某种Token的交易历史,支持分页和升序降序排列
@@ -181,50 +185,57 @@ func (aeth *AdaptorETH) GetTransferTx(input *adaptor.GetTransferTxInput) (*adapt
 	return GetTransferTx(input, &aeth.RPCParams, aeth.NetID, false)
 }
 
-//创建一个多签地址，该地址必须要满足signCount个签名才能解锁 //eth没有多签，not implement
+//创建一个多签地址，该地址必须要满足signCount个签名才能解锁 //eth没有多签，需要自己部署多签合约
 func (aeth *AdaptorETH) CreateMultiSigAddress(input *adaptor.CreateMultiSigAddressInput) (
 	*adaptor.CreateMultiSigAddressOutput, error) {
 	return nil, errors.New("please deploy multi-sign contract yourself")
 }
 
+//构造一个从多签地址付出Token的交易
+func (aerc20 *AdaptorETH) CreateMultiSigPayoutTx(input *adaptor.CreateMultiSigPayoutTxInput) (
+	*adaptor.CreateMultiSigPayoutTxOutput, error) {
+	//return &adaptor.CreateMultiSigAddressOutput{Address: aerc20.lockContractAddress}, nil
+	return nil, errors.New("to do") //todo
+}
+
 /*ISmartContract*/
-//创建一个安装合约的交易，未签名 //erc20合约没有安装， not implement
+//创建一个安装合约的交易，未签名 //使用eth合约创建交易，没有安装， not implement
 func (aeth *AdaptorETH) CreateContractInstallTx(input *adaptor.CreateContractInstallTxInput) (
 	*adaptor.CreateContractInstallTxOutput, error) {
-	return nil, errors.New("todo") //todo
+	return nil, errors.New("not implement")
 }
 
-//查询合约安装的结果的交易 //erc20合约没有安装， not implement
+//查询合约安装的结果的交易 //使用eth合约创建交易，没有安装， not implement
 func (aeth *AdaptorETH) GetContractInstallTx(input *adaptor.GetContractInstallTxInput) (
 	*adaptor.GetContractInstallTxOutput, error) {
-	return nil, errors.New("todo") //todo
+	return nil, errors.New("not implement")
 }
 
-//初始化合约实例 //erc20合约创建交易的生成
+//初始化合约实例 //eth合约创建交易的生成
 func (aeth *AdaptorETH) CreateContractInitialTx(input *adaptor.CreateContractInitialTxInput) (
 	*adaptor.CreateContractInitialTxOutput, error) {
 	return CreateContractInitialTx(input, &aeth.RPCParams, aeth.NetID)
 }
 
-//查询初始化合约实例的交易 //查询erc20合约创建交易
+//查询初始化合约实例的交易 //查询eth合约创建交易，是合约查询的封装
 func (aeth *AdaptorETH) GetContractInitialTx(input *adaptor.GetContractInitialTxInput) (
 	*adaptor.GetContractInitialTxOutput, error) {
 	return GetContractInitialTx(input, &aeth.RPCParams, aeth.NetID)
 }
 
-//调用合约方法 //erc20合约调用交易的生成
+//调用合约方法 //eth合约调用交易的生成
 func (aeth *AdaptorETH) CreateContractInvokeTx(input *adaptor.CreateContractInvokeTxInput) (
 	*adaptor.CreateContractInvokeTxOutput, error) {
 	return CreateContractInvokeTx(input, &aeth.RPCParams, aeth.NetID)
 }
 
-//查询调用合约方法的交易 //erc20合约查询不用产生交易， not implement
+//查询调用合约方法的交易 //eth合约查询不产生交易， not implement
 func (aeth *AdaptorETH) GetContractInvokeTx(input *adaptor.GetContractInvokeTxInput) (
 	*adaptor.GetContractInvokeTxOutput, error) {
-	return nil, errors.New("todo") //todo
+	return nil, errors.New("not implement")
 }
 
-//调用合约的查询方法 //rc20合约查询交易的生成
+//调用合约的查询方法 //eth合约查询的生成
 func (aeth *AdaptorETH) QueryContract(input *adaptor.QueryContractInput) (
 	*adaptor.QueryContractOutput, error) {
 	return QueryContract(input, &aeth.RPCParams)

@@ -20,7 +20,6 @@ package modules
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -34,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"go.dedis.ch/kyber/v3"
 	"io"
+	"sync/atomic"
 )
 
 // unit state
@@ -44,10 +44,14 @@ const (
 )
 
 type Header struct {
+	header       *header_sdw
+	hash         common.Hash
+	group_sign   []byte // 群签名, 用于加快单元确认速度
+	group_pubKey []byte // 群公钥, 用于验证群签名
+}
+type header_sdw struct {
 	ParentsHash []common.Hash `json:"parents_hash"`
-	Authors     Authentifier  `json:"mediator"`     // the unit creation authors
-	GroupSign   []byte        `json:"group_sign"`   // 群签名, 用于加快单元确认速度
-	GroupPubKey []byte        `json:"group_pubKey"` // 群公钥, 用于验证群签名
+	Authors     Authentifier  `json:"mediator"` // the unit creation authors
 	TxRoot      common.Hash   `json:"root"`
 	TxsIllegal  []uint16      `json:"txs_illegal"` //Unit中非法交易索引
 	Number      *ChainIndex   `json:"index"`
@@ -56,158 +60,260 @@ type Header struct {
 	CryptoLib   []byte        `json:"crypto_lib"`    //该区块使用的加解密算法和哈希算法，0位表示非对称加密算法，1位表示Hash算法
 }
 
+func initHeaderSdw(parents []common.Hash, tx_root common.Hash, pubkey, sig, extra, crypto_lib []byte,
+	txs_illgal []uint16, asset_id AssetId, index uint64, t int64) *header_sdw {
+	h := header_sdw{ParentsHash: parents, TxRoot: tx_root, CryptoLib: crypto_lib, Extra: extra, Time: t}
+	h.Authors.PubKey = pubkey
+	h.Authors.Signature = sig
+	h.Number = &ChainIndex{
+		AssetID: asset_id,
+		Index:   index,
+	}
+	h.TxsIllegal = txs_illgal
+	return &h
+
+}
+func new_header_sdw() *header_sdw {
+	return &header_sdw{ParentsHash: make([]common.Hash, 0),
+		Authors:    Authentifier{},
+		TxRoot:     common.Hash{},
+		TxsIllegal: make([]uint16, 0),
+		Number:     new(ChainIndex),
+		Extra:      make([]byte, 0),
+		CryptoLib:  make([]byte, 0)}
+}
+func NewHeader(parents []common.Hash, tx_root common.Hash, pubkey, sig, extra, crypto_lib []byte,
+	txs_illgal []uint16, asset_id AssetId, index uint64, t int64) *Header {
+	// init header
+	sdw := initHeaderSdw(parents, tx_root, pubkey, sig, extra, crypto_lib, txs_illgal, asset_id, index, t)
+	h := Header{header: sdw}
+
+	return &h
+}
+func (h *Header) Index() uint64 {
+	if h.header == nil {
+		log.Error("the Unit Header pointer is nil!")
+	}
+	return h.header.Number.Index
+}
+func (h *Header) ChainIndex() *ChainIndex {
+	if h.header == nil {
+		log.Error("the Unit Header pointer is nil!")
+	}
+	return h.header.Number
+}
+func (h *Header) TxRoot() common.Hash {
+	if h.header == nil {
+		log.Error("the Unit Header pointer is nil!")
+	}
+	return h.header.TxRoot
+}
 func (h *Header) NumberU64() uint64 {
-	return h.Number.Index
+	if h.header == nil {
+		log.Error("the Unit Header pointer is nil!")
+	}
+	return h.header.Number.Index
 }
-
+func (h *Header) GetAssetId() AssetId {
+	if h.header == nil {
+		log.Error("the Unit Header pointer is nil!")
+	}
+	return h.header.Number.AssetID
+}
+func (h *Header) Extra() []byte {
+	if h.header == nil {
+		log.Error("the Unit Header pointer is nil!")
+	}
+	return h.header.Extra
+}
+func (h *Header) GetAuthors() Authentifier {
+	if h.header == nil {
+		log.Error("the Unit Header pointer is nil!")
+	}
+	return h.header.Authors
+}
+func (h *Header) GetTxsIllegal() []uint16 {
+	if h.header == nil {
+		log.Error("the Unit Header pointer is nil!")
+	}
+	return h.header.TxsIllegal
+}
+func (h *Header) Author() common.Address {
+	if h == nil {
+		log.Error("the Unit Header pointer is nil!")
+	}
+	return crypto.PubkeyBytesToAddress(h.header.Authors.PubKey)
+}
 func (h *Header) Timestamp() int64 {
-	return h.Time
+	if h.header == nil {
+		log.Error("the Unit Header pointer is nil!")
+	}
+	return h.header.Time
+}
+func (h *Header) Cryptolib() []byte {
+	if h.header == nil {
+		log.Error("the Unit Header pointer is nil!")
+	}
+	return h.header.CryptoLib
+}
+func (h *Header) GetGroupPubKeyByte() []byte {
+	return h.group_pubKey
 }
 
-func (h *Header) GetGroupPubKeyByte() []byte {
-	return h.GroupPubKey
+func (h *Header) GetGroupPubkey() []byte {
+	return common.CopyBytes(h.group_pubKey)
+}
+
+func (h *Header) SetGroupPubkey(key []byte) {
+	h.group_pubKey = make([]byte, 0)
+	if len(key) > 0 {
+		h.group_pubKey = append(h.group_pubKey, key...)
+	}
+}
+
+func (h *Header) ParentHash() []common.Hash {
+	return h.header.ParentsHash
+}
+
+func (h *Header) SetGroupSign(sign []byte) {
+	h.group_sign = make([]byte, 0)
+	if len(sign) > 0 {
+		h.group_sign = append(h.group_sign, sign...)
+	}
+}
+
+func (h *Header) GetGroupSign() []byte {
+	return common.CopyBytes(h.group_sign)
 }
 
 func (h *Header) GetGroupPubKey() (kyber.Point, error) {
-	pubKeyB := h.GroupPubKey
+	pubKeyB := h.group_pubKey
 	if len(pubKeyB) == 0 {
 		return nil, errors.New("group public key is null")
 	}
-
 	pubKey := core.Suite.Point()
 	err := pubKey.UnmarshalBinary(pubKeyB)
-
 	return pubKey, err
 }
-
-func (cpy *Header) CopyHeader(h *Header) {
-	index := new(ChainIndex)
-	index.Index = h.Number.Index
-	index.AssetID = h.Number.AssetID
-	*cpy = *h
-	cpy.Number = index
+func (h *Header) ResetHash() {
+	h.hash = common.Hash{}
+}
+func (h *Header) SetTxRoot(txroot common.Hash) {
+	// init header
+	//author := h.GetAuthors()
+	//sdw := initHeaderSdw(h.header.ParentsHash, txroot, author.PubKey, author.Signature, h.Extra(),
+	//	h.header.CryptoLib, h.header.TxsIllegal, h.GetNumber().AssetID, h.GetNumber().Index, h.Timestamp())
+	//h.header = sdw
+	h.header.TxRoot = txroot
+	h.ResetHash()
+}
+func (h *Header) SetAuthor(author Authentifier) {
+	//sdw := initHeaderSdw(h.header.ParentsHash, h.header.TxRoot, author.PubKey, author.Signature, h.Extra(),
+	//	h.header.CryptoLib, h.header.TxsIllegal, h.GetNumber().AssetID, h.GetNumber().Index, h.Timestamp())
+	//
+	//h.header = sdw
+	h.header.Authors = author
+	h.ResetHash()
 }
 
-func NewHeader(parents []common.Hash, used uint64, extra []byte) *Header {
-	hashs := make([]common.Hash, 0)
-	hashs = append(hashs, parents...) // 切片指针传递的问题，这里得再review一下。
-	var b []byte
-	number := &ChainIndex{}
-	return &Header{ParentsHash: hashs, Number: number, Extra: append(b, extra...)}
-}
-
-func (h *Header) Index() uint64 {
-	return h.Number.Index
-}
-func (h *Header) ChainIndex() *ChainIndex {
-	return h.Number
+func (h *Header) SetTxsIllegal(txsillegal []uint16) {
+	//author := h.GetAuthors()
+	//sdw := initHeaderSdw(h.header.ParentsHash, h.header.TxRoot, author.PubKey, author.Signature, h.Extra(),
+	//	h.header.CryptoLib, txsillegal, h.GetNumber().AssetID, h.GetNumber().Index, h.Timestamp())
+	//
+	//h.header = sdw
+	h.header.TxsIllegal = txsillegal
+	h.ResetHash()
 }
 
 func (h *Header) Hash() common.Hash {
-	// 计算header’hash时 剔除群签
-	groupSign := h.GroupSign
-	groupPubKey := h.GroupPubKey
-	h.GroupSign = make([]byte, 0)
-	h.GroupPubKey = make([]byte, 0)
-	hash := util.RlpHash(h)
-	h.GroupSign = append(h.GroupSign, groupSign...)
-	h.GroupPubKey = append(h.GroupPubKey, groupPubKey...)
+	if h.hash == (common.Hash{}) {
+		// 计算header’hash时 剔除群签
+		groupSign := h.group_sign
+		groupPubKey := h.group_pubKey
+		h.group_sign = make([]byte, 0)
+		h.group_pubKey = make([]byte, 0)
+		h.hash = util.RlpHash(h)
+		h.group_sign = append(h.group_sign, groupSign...)
+		h.group_pubKey = append(h.group_pubKey, groupPubKey...)
+	}
+	return h.hash
 
-	return hash
 }
 func (h *Header) HashWithoutAuthor() common.Hash {
-	groupSign := h.GroupSign
-	groupPubKey := h.GroupPubKey
-	author := h.Authors
-	h.GroupSign = make([]byte, 0)
-	h.GroupPubKey = make([]byte, 0)
-	h.Authors = Authentifier{}
+	groupSign := h.group_sign
+	groupPubKey := h.group_pubKey
+	author := h.header.Authors
+	h.group_sign = make([]byte, 0)
+	h.group_pubKey = make([]byte, 0)
+	h.header.Authors = Authentifier{}
 	hash := util.RlpHash(h)
-	h.GroupSign = append(h.GroupSign, groupSign...)
-	h.GroupPubKey = append(h.GroupPubKey, groupPubKey...)
-	h.Authors.PubKey = author.PubKey[:]
-	h.Authors.Signature = author.Signature[:]
+	h.group_sign = append(h.group_sign, groupSign...)
+	h.group_pubKey = append(h.group_pubKey, groupPubKey...)
+	h.header.Authors.PubKey = author.PubKey[:]
+	h.header.Authors.Signature = author.Signature[:]
 	return hash
 }
 
 // HashWithOutTxRoot return  header's hash without txs root.
 func (h *Header) HashWithOutTxRoot() common.Hash {
-	groupSign := h.GroupSign
-	groupPubKey := h.GroupPubKey
-	author := h.Authors
-	txroot := h.TxRoot
-	h.GroupSign = make([]byte, 0)
-	h.GroupPubKey = make([]byte, 0)
-	h.Authors = Authentifier{}
-	h.TxRoot = common.Hash{}
+	groupSign := h.group_sign
+	groupPubKey := h.group_pubKey
+	txroot := h.header.TxRoot
+	h.group_sign = make([]byte, 0)
+	h.group_pubKey = make([]byte, 0)
+	h.header.TxRoot = common.Hash{}
 
-	b, err := json.Marshal(h)
-	if err != nil {
-		log.Error("json marshal error", "error", err)
-		return common.Hash{}
-	}
-	hash := util.RlpHash(b[:])
-	h.GroupSign = append(h.GroupSign, groupSign...)
-	h.GroupPubKey = append(h.GroupPubKey, groupPubKey...)
-	h.Authors.PubKey = author.PubKey[:]
-	h.Authors.Signature = author.Signature[:]
-	h.TxRoot = txroot
+	hash := util.RlpHash(h)
+	h.group_sign = append(h.group_sign, groupSign...)
+	h.group_pubKey = append(h.group_pubKey, groupPubKey...)
+	h.header.TxRoot = txroot
 	return hash
 }
 
 func (h *Header) Size() common.StorageSize {
-	return common.StorageSize(unsafe.Sizeof(*h)) + common.StorageSize(len(h.Extra)/8)
+	header := h.header
+	return common.StorageSize(unsafe.Sizeof(*header)) + common.StorageSize(len(header.Extra)/8)
 }
 
 // CopyHeader creates a deep copy of a block header to prevent side effects from
 // modifying a header variable.
-func CopyChainIndex(index *ChainIndex) *ChainIndex {
-	cop := new(ChainIndex)
-	cop.AssetID = index.AssetID
-	//cop.IsMain = index.IsMain
-	cop.Index = index.Index
-	return cop
+
+func (cpy *Header) CopyHeader(h *Header) {
+	if cpy.header == nil {
+		cpy.header = new_header_sdw()
+	}
+	author := h.GetAuthors()
+	sdw := initHeaderSdw(h.ParentHash(), h.TxRoot(), author.PubKey, author.Signature, h.Extra(), h.Cryptolib(),
+		h.GetTxsIllegal(), h.ChainIndex().AssetID, h.ChainIndex().Index, h.Timestamp())
+	cpy.header = sdw
+	cpy.group_sign = make([]byte, len(h.group_sign))
+	if len(h.group_sign) > 0 {
+		copy(cpy.group_sign, h.group_sign)
+	}
+	cpy.group_pubKey = make([]byte, len(h.group_pubKey))
+	if len(h.group_pubKey) > 0 {
+		copy(cpy.group_pubKey, h.group_pubKey)
+	}
+
 }
 func CopyHeader(h *Header) *Header {
 	if h == nil {
 		return nil
 	}
-	cpy := Header{}
-	//	cpy.Number = h.Number
-	if h.Number != nil {
-		cpy.Number = CopyChainIndex(h.Number)
-	}
-	cpy.Extra = h.Extra[:]
-	cpy.Time = h.Time
-	cpy.Authors = h.Authors
+	author := h.GetAuthors()
+	sdw := initHeaderSdw(h.ParentHash(), h.TxRoot(), author.PubKey, author.Signature, h.Extra(), h.Cryptolib(),
+		h.GetTxsIllegal(), h.ChainIndex().AssetID, h.ChainIndex().Index, h.Timestamp())
+	cpy := Header{header: sdw}
 
-	if len(h.ParentsHash) > 0 {
-		cpy.ParentsHash = make([]common.Hash, len(h.ParentsHash))
-		for i := 0; i < len(h.ParentsHash); i++ {
-			cpy.ParentsHash[i].Set(h.ParentsHash[i])
-		}
+	if len(h.group_sign) > 0 {
+		cpy.group_sign = make([]byte, len(h.group_sign))
+		copy(cpy.group_sign, h.group_sign)
 	}
 
-	if len(h.GroupSign) > 0 {
-		cpy.GroupSign = make([]byte, len(h.GroupSign))
-		copy(cpy.GroupSign, h.GroupSign)
-	}
-
-	if len(h.GroupPubKey) > 0 {
-		cpy.GroupPubKey = make([]byte, len(h.GroupPubKey))
-		copy(cpy.GroupPubKey, h.GroupPubKey)
-	}
-
-	if len(h.TxRoot) > 0 {
-		cpy.TxRoot.Set(h.TxRoot)
-	}
-
-	if len(h.TxsIllegal) > 0 {
-		cpy.TxsIllegal = make([]uint16, 0)
-		//for _, txsI := range h.TxsIllegal {
-		//	cpy.TxsIllegal = append(cpy.TxsIllegal, txsI)
-		//}
-		cpy.TxsIllegal = append(cpy.TxsIllegal, h.TxsIllegal...)
+	if len(h.group_pubKey) > 0 {
+		cpy.group_pubKey = make([]byte, len(h.group_pubKey))
+		copy(cpy.group_pubKey, h.group_pubKey)
 	}
 
 	return &cpy
@@ -217,18 +323,15 @@ func (u *Unit) CopyBody(txs Transactions) Transactions {
 	if len(txs) > 0 {
 		u.Txs = make([]*Transaction, len(txs))
 		for i, pTx := range txs {
-			//hash := pTx.Hash()
-
-			tx := Transaction{}
-			if len(pTx.TxMessages) > 0 {
-				tx.TxMessages = make([]*Message, len(pTx.TxMessages))
-				for j := 0; j < len(pTx.TxMessages); j++ {
-					tx.TxMessages[j] = pTx.TxMessages[j]
-				}
+			msgs := pTx.TxMessages()
+			sdw := transaction_sdw{}
+			if len(msgs) > 0 {
+				sdw.TxMessages = make([]*Message, len(msgs))
+				copy(sdw.TxMessages, msgs)
 			}
-			tx.CertId = pTx.CertId
-			tx.Illegal = pTx.Illegal
-			u.Txs[i] = &tx
+			sdw.CertId = pTx.CertId()
+			sdw.Illegal = pTx.Illegal()
+			u.Txs[i] = &Transaction{txdata: sdw}
 		}
 	}
 	return u.Txs
@@ -251,29 +354,17 @@ func (s Units) Swap(i, j int) {
 
 // key: unit.UnitHash(unit)
 type Unit struct {
-	UnitHeader *Header            `json:"unit_header"`  // unit header
-	Txs        Transactions       `json:"transactions"` // transaction list
-	UnitHash   common.Hash        `json:"unit_hash"`    // unit hash
-	UnitSize   common.StorageSize `json:"unit_size"`    // unit size
+	UnitHeader *Header      `json:"unit_header"`  // unit header
+	Txs        Transactions `json:"transactions"` // transaction list
+	unit_size  atomic.Value
 	// These fields are used by package ptn to track
 	// inter-peer block relay.
 	ReceivedAt   time.Time   `json:"received_at"`
 	ReceivedFrom interface{} `json:"received_from"`
 }
 
-func (h *Header) GetAssetId() AssetId {
-	return h.Number.AssetID
-}
-
 func (unit *Unit) GetAssetId() AssetId {
 	return unit.UnitHeader.GetAssetId()
-}
-
-func (h *Header) Author() common.Address {
-	if h == nil {
-		log.Error("the Unit Header pointer is nil!")
-	}
-	return crypto.PubkeyBytesToAddress(h.Authors.PubKey)
 }
 
 func (unit *Unit) Author() common.Address {
@@ -362,11 +453,10 @@ func (au *Authentifier) Address() common.Address {
 
 func NewUnit(header *Header, txs Transactions) *Unit {
 	u := &Unit{
-		UnitHeader: CopyHeader(header),
+		UnitHeader: header,
 		Txs:        CopyTransactions(txs),
 	}
-	u.UnitSize = u.Size()
-	u.UnitHash = u.Hash()
+	u.Size()
 	return u
 }
 
@@ -399,25 +489,23 @@ func (u *Unit) Transaction(hash common.Hash) *Transaction {
 
 // function Hash, return the unit's hash.
 func (u *Unit) Hash() common.Hash {
-	headerHash := u.UnitHeader.Hash()
-	if u.UnitHash != headerHash {
-		u.UnitHash = common.Hash{}
-		u.UnitHash.Set(headerHash)
-	}
-	return u.UnitHash
+	return u.UnitHeader.Hash()
 }
 func (u *Unit) DisplayId() string {
-	return fmt.Sprintf("%s-%d",u.Hash().String(),u.NumberU64())
+	return fmt.Sprintf("%s-%d", u.Hash().String(), u.NumberU64())
 }
+
 // function Size, return the unit's StorageSize.
 func (u *Unit) Size() common.StorageSize {
-	if u.UnitSize > 0 {
-		return u.UnitSize
+	if hash := u.unit_size.Load(); hash != nil {
+		return hash.(common.StorageSize)
 	}
+
 	emptyUnit := &Unit{}
-	emptyUnit.UnitHeader = u.UnitHeader
-	//emptyUnit.UnitHeader.Authors = nil
-	emptyUnit.UnitHeader.GroupSign = make([]byte, 0)
+	emptyUnit.UnitHeader = new(Header)
+	emptyUnit.UnitHeader.CopyHeader(u.Header())
+	emptyUnit.UnitHeader.group_sign = make([]byte, 0)
+	emptyUnit.UnitHeader.group_pubKey = make([]byte, 0)
 	emptyUnit.CopyBody(u.Txs[:])
 
 	b, err := rlp.EncodeToBytes(emptyUnit)
@@ -425,20 +513,20 @@ func (u *Unit) Size() common.StorageSize {
 		log.Errorf("rlp encode Unit error:%s", err.Error())
 		return common.StorageSize(0)
 	} else {
+		size := common.StorageSize(len(b))
 		if len(b) > 0 {
-			u.UnitSize = common.StorageSize(len(b))
+			u.unit_size.Store(size)
 		}
-		return common.StorageSize(len(b))
+		return size
 	}
 }
 
-//func (u *Unit) NumberU64() uint64 { return u.Head.Number.Uint64() }
 func (u *Unit) Number() *ChainIndex {
 	return u.UnitHeader.GetNumber()
 }
 
 func (h *Header) GetNumber() *ChainIndex {
-	return h.Number
+	return h.header.Number
 }
 
 func (u *Unit) NumberU64() uint64 {
@@ -453,23 +541,11 @@ func (u *Unit) Timestamp() int64 {
 func (u *Unit) ParentHash() []common.Hash {
 	return u.UnitHeader.ParentHash()
 }
-
-func (h *Header) ParentHash() []common.Hash {
-	return h.ParentsHash
-}
-
-//func (u *Unit) SetGroupSign(sign []byte) {
-//	if len(sign) > 0 {
-//		u.UnitHeader.GroupSign = sign
-//	}
-//}
-
 func (u *Unit) GetGroupSign() []byte {
 	return u.UnitHeader.GetGroupSign()
 }
-
-func (h *Header) GetGroupSign() []byte {
-	return h.GroupSign
+func (u *Unit) GetGroupPubkey() []byte {
+	return u.UnitHeader.GetGroupPubkey()
 }
 
 type ErrUnit float64
@@ -513,17 +589,12 @@ func (b *Unit) WithBody(transactions []*Transaction) *Unit {
 	//}
 	// set unit body
 	b.Txs = CopyTransactions(txs)
-	b.UnitSize = b.Size()
-	b.UnitHash = b.Hash()
+	b.Size()
 	return b
 }
 
 func (u *Unit) ContainsParent(pHash common.Hash) bool {
-	//ps := pHash.String()
-	for _, hash := range u.UnitHeader.ParentsHash {
-		//if strings.Compare(hash.String(), ps) == 0 {
-		//	return true
-		//}
+	for _, hash := range u.UnitHeader.header.ParentsHash {
 		if pHash == hash {
 			return true
 		}
@@ -534,7 +605,6 @@ func (u *Unit) ContainsParent(pHash common.Hash) bool {
 func MsgstoAddress(msgs []*Message) common.Address {
 	forms := make([]common.Address, 0)
 	//payment load to address.
-
 	for _, msg := range msgs {
 		payment, ok := msg.Payload.(PaymentPayload)
 		if !ok {
@@ -554,15 +624,6 @@ func MsgstoAddress(msgs []*Message) common.Address {
 }
 
 /*
-func RSVtoPublicKey(hash, r, s, v []byte) (*ecdsa.PublicKey, error) {
-	sig := make([]byte, 65)
-	copy(sig[32-len(r):32], r)
-	copy(sig[64-len(s):64], s)
-	copy(sig[64:], v)
-	return crypto.SigToPub(hash, sig)
-}
-*/
-/**
 根据大端规则填充字节
 To full fill bytes according bigendian
 */
@@ -589,7 +650,6 @@ func (input *ChainIndex) DecodeRLP(s *rlp.Stream) error {
 	if err != nil {
 		return err
 	}
-
 	input.AssetID = temp.AssetID
 	input.Index = temp.Index
 
@@ -597,8 +657,10 @@ func (input *ChainIndex) DecodeRLP(s *rlp.Stream) error {
 }
 func (input *ChainIndex) EncodeRLP(w io.Writer) error {
 	temp := &ChainIndexTemp{}
-	temp.AssetID = input.AssetID
-	temp.Index = input.Index
-
-	return rlp.Encode(w, temp)
+	if input != nil {
+		temp.AssetID = input.AssetID
+		temp.Index = input.Index
+		return rlp.Encode(w, temp)
+	}
+	return nil
 }

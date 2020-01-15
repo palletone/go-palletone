@@ -130,7 +130,7 @@ func StringToAddressGodBlessMe(a string) Address {
 }
 
 func (a Address) Validate() (AddressType, error) {
-	var ty AddressType = AddressType(a[20])
+	var ty = AddressType(a[20])
 	return ty, nil
 }
 

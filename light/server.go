@@ -32,7 +32,6 @@ import (
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/light/flowcontrol"
 	"github.com/palletone/go-palletone/ptn"
 	"math/rand"
 	"time"
@@ -48,9 +47,9 @@ const (
 type LesServer struct {
 	config          *ptn.Config
 	protocolManager *ProtocolManager
-	fcManager       *flowcontrol.ClientManager // nil if our node is client only
+	//fcManager       *flowcontrol.ClientManager // nil if our node is client only
 	//fcCostStats     *requestCostStats
-	defParams    *flowcontrol.ServerParams
+	defParams    *ServerParams
 	srv          *p2p.Server
 	corss        *p2p.Server
 	privateKey   *ecdsa.PrivateKey
@@ -85,11 +84,11 @@ func NewLesServer(ptn *ptn.PalletOne, config *ptn.Config, protocolname string) (
 
 	pm.server = srv
 
-	srv.defParams = &flowcontrol.ServerParams{
+	srv.defParams = &ServerParams{
 		BufLimit:    300000000,
 		MinRecharge: 50000,
 	}
-	srv.fcManager = flowcontrol.NewClientManager(uint64(config.LightServ), 10, 1000000000)
+	//srv.fcManager = flowcontrol.NewClientManager(uint64(config.LightServ), 10, 1000000000)
 	//srv.fcCostStats = newCostStats(ptn.UnitDb())
 	return srv, nil
 }
@@ -123,7 +122,7 @@ func (s *LesServer) Stop() {
 	//s.chtIndexer.Close()
 	//// bloom trie indexer is closed by parent bloombits indexer
 	//s.fcCostStats.store()
-	s.fcManager.Stop()
+	//s.fcManager.Stop()
 	go func() {
 		<-s.protocolManager.noMorePeers
 	}()
@@ -143,9 +142,9 @@ func (s *LesServer) loopCors() {
 			case header := <-headCh:
 				peers := s.protocolManager.peers.AllPeers(s.protocolManager.assetId)
 				log.Debug("LesServer loopCors Light recv Cors header", "len(peers)", len(peers), "assetid",
-					header.Number.AssetID, "index", header.Number.Index, "hash", header.Hash())
+					header.GetNumber().AssetID, "index", header.GetNumber().Index, "hash", header.Hash())
 				if len(peers) > 0 {
-					announce := announceData{Hash: header.Hash(), Number: *header.Number, Header: *header}
+					announce := announceData{Hash: header.Hash(), Number: *header.GetNumber(), Header: *header}
 					for _, p := range peers {
 						p.announceChn <- announce
 						//switch p.announceType {
@@ -167,73 +166,11 @@ func (s *LesServer) loopCors() {
 	}()
 }
 
-type requestCosts struct {
-	baseCost, reqCost uint64
-}
-
-type requestCostTable map[uint64]*requestCosts
-
-//type RequestCostList []struct {
-//	MsgCode, BaseCost, ReqCost uint64
+//type requestCosts struct {
+//	baseCost, reqCost uint64
 //}
 
-//func (list RequestCostList) decode() requestCostTable {
-//	table := make(requestCostTable)
-//	for _, e := range list {
-//		table[e.MsgCode] = &requestCosts{
-//			baseCost: e.BaseCost,
-//			reqCost:  e.ReqCost,
-//		}
-//	}
-//	return table
-//}
-//
-//type linReg struct {
-//	sumX, sumY, sumXX, sumXY float64
-//	cnt                      uint64
-//}
-//
-//const linRegMaxCnt = 100000
-//
-//func (l *linReg) add(x, y float64) {
-//	if l.cnt >= linRegMaxCnt {
-//		sub := float64(l.cnt+1-linRegMaxCnt) / linRegMaxCnt
-//		l.sumX -= l.sumX * sub
-//		l.sumY -= l.sumY * sub
-//		l.sumXX -= l.sumXX * sub
-//		l.sumXY -= l.sumXY * sub
-//		l.cnt = linRegMaxCnt - 1
-//	}
-//	l.cnt++
-//	l.sumX += x
-//	l.sumY += y
-//	l.sumXX += x * x
-//	l.sumXY += x * y
-//}
-//
-//func (l *linReg) calc() (b, m float64) {
-//	if l.cnt == 0 {
-//		return 0, 0
-//	}
-//	cnt := float64(l.cnt)
-//	d := cnt*l.sumXX - l.sumX*l.sumX
-//	if d < 0.001 {
-//		return l.sumY / cnt, 0
-//	}
-//	m = (cnt*l.sumXY - l.sumX*l.sumY) / d
-//	b = (l.sumY / cnt) - (m * l.sumX / cnt)
-//	return b, m
-//}
-//
-//func (l *linReg) toBytes() []byte {
-//	var arr [40]byte
-//	binary.BigEndian.PutUint64(arr[0:8], math.Float64bits(l.sumX))
-//	binary.BigEndian.PutUint64(arr[8:16], math.Float64bits(l.sumY))
-//	binary.BigEndian.PutUint64(arr[16:24], math.Float64bits(l.sumXX))
-//	binary.BigEndian.PutUint64(arr[24:32], math.Float64bits(l.sumXY))
-//	binary.BigEndian.PutUint64(arr[32:40], l.cnt)
-//	return arr[:]
-//}
+//type requestCostTable map[uint64]*requestCosts
 
 func (pm *ProtocolManager) blockLoop() {
 	pm.wg.Add(1)
@@ -245,17 +182,17 @@ func (pm *ProtocolManager) blockLoop() {
 		for {
 			select {
 			case ev := <-headCh:
-				peers := pm.peers.AllPeers(ev.Unit.UnitHeader.Number.AssetID)
+				peers := pm.peers.AllPeers(ev.Unit.UnitHeader.GetNumber().AssetID)
 				if len(peers) > 0 {
 					header := ev.Unit.Header()
 					hash := header.Hash()
-					number := header.Number.Index
+					number := header.GetNumber().Index
 					//td := core.GetTd(pm.chainDb, hash, number)
-					if lastHead == nil || (header.Number.Index > lastHead.Number.Index) {
+					if lastHead == nil || (header.GetNumber().Index > lastHead.GetNumber().Index) {
 						lastHead = header
 						log.Debug("Announcing block to peers", "number", number, "hash", hash)
 
-						announce := announceData{Hash: hash, Number: *lastHead.Number, Header: *lastHead}
+						announce := announceData{Hash: hash, Number: *lastHead.GetNumber(), Header: *lastHead}
 						var (
 							signed         bool
 							signedAnnounce announceData

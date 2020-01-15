@@ -131,11 +131,11 @@ func (pm *ProtocolManager) blockLoop() {
 				if len(peers) > 0 && atomic.LoadUint32(&pm.corsSync) == 0 {
 					header := ev.Unit.Header()
 					hash := ev.Hash
-					number := header.Number.Index
-					if lastHead == nil || (header.Number.Index > lastHead.Number.Index) {
+					number := header.GetNumber().Index
+					if lastHead == nil || (header.GetNumber().Index > lastHead.GetNumber().Index) {
 						lastHead = header
 						log.Debug("Announcing block to peers", "number", number, "hash", hash)
-						announce := announceData{Hash: hash, Number: *lastHead.Number, Header: *lastHead}
+						announce := announceData{Hash: hash, Number: *lastHead.GetNumber(), Header: *lastHead}
 
 						for _, p := range peers {
 							log.Debug("Cors Palletone", "ProtocolManager->blockLoop p.ID", p.ID())

@@ -25,13 +25,16 @@ import (
 	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/dag/parameter"
 	"github.com/palletone/go-palletone/tokenengine"
 	"sync"
 )
+
+type ContractTxCheckFunc func(tx *modules.Transaction) bool
+
+var ContractCheckFun ContractTxCheckFunc
 
 type Validate struct {
 	utxoquery               IUtxoQuery
@@ -42,6 +45,7 @@ type Validate struct {
 	cache                   *ValidatorCache
 	enableTxFeeCheck        bool
 	enableContractSignCheck bool
+	enableDeveloperCheck    bool
 	light                   bool
 }
 
@@ -58,6 +62,7 @@ func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propq
 		tokenEngine:             tokenengine.Instance,
 		enableTxFeeCheck:        true,
 		enableContractSignCheck: true,
+		enableDeveloperCheck:    true,
 		light:                   light,
 	}
 }
@@ -83,7 +88,7 @@ func (validate *Validate) setUtxoQuery(q IUtxoQuery) {
 
 //逐条验证每一个Tx，并返回总手续费的分配情况，然后与Coinbase进行比较
 func (validate *Validate) validateTransactions(txs modules.Transactions, unitTime int64, unitAuthor common.Address) ValidationCode {
-	ads := []*modules.Addition{}
+	ads := make([]*modules.Addition, 0)
 
 	oldUtxoQuery := validate.utxoquery
 
@@ -141,7 +146,7 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 		a := &modules.Addition{
 			Addr:   unitAuthor,
 			Amount: parameter.CurrentSysParameters.GenerateUnitReward,
-			Asset:  dagconfig.DagConfig.GetGasToken().ToAsset(),
+			Asset:  modules.NewPTNAsset(), // dagconfig.DagConfig.GetGasToken().ToAsset(),
 		}
 		ads = append(ads, a)
 		out := arrangeAdditionFeeList(ads)
@@ -184,7 +189,7 @@ func arrangeAdditionFeeList(ads []*modules.Addition) []*modules.Addition {
 	if len(out) < 1 {
 		return nil
 	}
-	result := []*modules.Addition{}
+	result := make([]*modules.Addition, 0)
 	for _, v := range out {
 		result = append(result, v)
 	}
@@ -209,6 +214,7 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, isFullTx bool) ([]
 	}
 	validate.enableTxFeeCheck = true
 	validate.enableContractSignCheck = true
+	validate.enableDeveloperCheck = true
 	code, addition := validate.validateTx(tx, isFullTx)
 	if code == TxValidationCode_VALID {
 		validate.cache.AddTxValidateResult(txId, addition)
@@ -227,7 +233,7 @@ func (validate *Validate) validateTxAndCache(tx *modules.Transaction, isFullTx b
 		validate.cache.AddTxValidateResult(txId, addition)
 		return addition, code, nil
 	}
-	return addition, code, NewValidateError(code)
+	return nil, code, NewValidateError(code)
 }
 
 // todo
@@ -251,7 +257,7 @@ func (validate *Validate) CheckTxIsExist(tx *modules.Transaction) bool {
 	return validate.checkTxIsExist(tx)
 }
 func (validate *Validate) checkTxIsExist(tx *modules.Transaction) bool {
-	if len(tx.TxMessages) > 2 {
+	if len(tx.TxMessages()) > 2 {
 		txHash := tx.Hash()
 		if validate.dagquery == nil {
 			log.Warnf("Validate DagQuery doesn't set, cannot check tx[%s] is exist or not", txHash.String())
@@ -263,4 +269,14 @@ func (validate *Validate) checkTxIsExist(tx *modules.Transaction) bool {
 		}
 	}
 	return false
+}
+func (validate *Validate) ContractTxCheck(tx *modules.Transaction) bool {
+	if ContractCheckFun != nil {
+		return ContractCheckFun(tx)
+	}
+	return true
+}
+func (validate *Validate) SetContractTxCheckFun(checkFun ContractTxCheckFunc) {
+	ContractCheckFun = checkFun
+	log.Debug("SetContractTxCheckFun ok")
 }

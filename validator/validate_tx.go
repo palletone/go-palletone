@@ -24,8 +24,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum/go-ethereum/rlp"
 	"math"
+
+	"github.com/ethereum/go-ethereum/rlp"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -34,6 +35,13 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
+
+func shortId(id string) string {
+	if len(id) < 8 {
+		return id
+	}
+	return id[0:8]
+}
 
 /**
 验证某个交易，tx具有以下规则：
@@ -47,12 +55,16 @@ To validate one transaction
 如果isFullTx为false，意味着这个Tx还没有被陪审团处理完，所以结果部分的Payment不验证
 */
 func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (ValidationCode, []*modules.Addition) {
-	txHash := tx.Hash()
-	if len(tx.TxMessages) == 0 {
+	if tx == nil {
+		return TxValidationCode_VALID, nil
+	}
+	reqId := tx.RequestHash()
+	msgs := tx.TxMessages()
+	if len(msgs) == 0 {
 		return TxValidationCode_INVALID_MSG, nil
 	}
 	isOrphanTx := false
-	if tx.TxMessages[0].App != modules.APP_PAYMENT { // 交易费
+	if msgs[0].App != modules.APP_PAYMENT { // 交易费
 		return TxValidationCode_INVALID_MSG, nil
 	}
 	txFeePass, txFee := validate.validateTxFeeValid(tx)
@@ -61,14 +73,21 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 	}
 	// validate tx size
 	if tx.Size().Float64() > float64(modules.TX_MAXSIZE) {
-		log.Debug("Tx size is to big.")
+		log.Debugf("[%s]Tx size is to big.", shortId(reqId.String()))
 		return TxValidationCode_NOT_COMPARE_SIZE, txFee
+	}
+	//验证合约执行结果是够正常
+	if isFullTx {
+		if !validate.ContractTxCheck(tx) {
+			log.Debugf("[%s]ContractTxCheck fail", shortId(reqId.String()))
+			return TxValidationCode_INVALID_CONTRACT, txFee
+		}
 	}
 	//合约的执行结果必须有Jury签名
 	if validate.enableContractSignCheck && isFullTx && tx.IsContractTx() {
 		isResultMsg := false
 		hasSignMsg := false
-		for _, msg := range tx.TxMessages {
+		for _, msg := range tx.TxMessages() {
 			if msg.App.IsRequest() {
 				isResultMsg = true
 				continue
@@ -78,7 +97,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 			}
 		}
 		if !hasSignMsg {
-			log.Warnf("Tx[%s] is an user contract invoke, but don't have jury signature", txHash.String())
+			log.Warnf("[%s]tx is an user contract invoke, but don't have jury signature", shortId(reqId.String()))
 			return TxValidationCode_INVALID_CONTRACT_SIGN, txFee
 		}
 	}
@@ -86,12 +105,11 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 	requestMsgIndex := 9999
 	isSysContractCall := false
 	usedUtxo := make(map[string]bool) //Cached all used utxo in this tx
-	for msgIdx, msg := range tx.TxMessages {
+	for msgIdx, msg := range msgs {
 		// check message type and payload
 		if !validateMessageType(msg.App, msg.Payload) {
 			return TxValidationCode_UNKNOWN_TX_TYPE, txFee
 		}
-
 		// validate every type payload
 		switch msg.App {
 		case modules.APP_PAYMENT:
@@ -101,7 +119,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 			}
 			//如果是合约执行结果中的Payment，只有是完整交易的情况下才检查解锁脚本
 			if msgIdx > requestMsgIndex && !isFullTx {
-				log.Debugf("Tx reqid[%s] is processing tx, don't need validate result payment", tx.RequestHash().String())
+				log.Debugf("[%s]tx is processing tx, don't need validate result payment", shortId(reqId.String()))
 			} else {
 				validateCode := validate.validatePaymentPayload(tx, msgIdx, payment, usedUtxo)
 				if validateCode != TxValidationCode_VALID {
@@ -113,7 +131,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 				}
 				//检查一个Tx是否包含了发币的Payment，如果有，那么检查是否是系统合约调用的结果
 				if msgIdx != 0 && payment.IsCoinbase() && !isSysContractCall {
-					log.Error("Invalid Coinbase message")
+					log.Errorf("[%s]Invalid Coinbase message", shortId(reqId.String()))
 					return TxValidationCode_INVALID_COINBASE, txFee
 				}
 			}
@@ -125,13 +143,13 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 			}
 		case modules.APP_CONTRACT_DEPLOY:
 			payload, _ := msg.Payload.(*modules.ContractDeployPayload)
-			validateCode := validate.validateContractState(payload.ContractId, &payload.ReadSet, &payload.WriteSet)
+			validateCode := validate.validateContractState(payload.ContractId, payload.ReadSet, payload.WriteSet)
 			if validateCode != TxValidationCode_VALID {
 				return validateCode, txFee
 			}
 		case modules.APP_CONTRACT_INVOKE:
 			payload, _ := msg.Payload.(*modules.ContractInvokePayload)
-			validateCode := validate.validateContractState(payload.ContractId, &payload.ReadSet, &payload.WriteSet)
+			validateCode := validate.validateContractState(payload.ContractId, payload.ReadSet, payload.WriteSet)
 			if validateCode != TxValidationCode_VALID {
 				return validateCode, txFee
 			}
@@ -145,7 +163,15 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 			if payload.TplName == "" || payload.Path == "" || payload.Version == "" {
 				return TxValidationCode_INVALID_CONTRACT, txFee
 			}
-
+			reqAddr, err := validate.dagquery.GetTxRequesterAddress(tx)
+			if err != nil {
+				return TxValidationCode_INVALID_CONTRACT, txFee
+			}
+			if validate.enableDeveloperCheck {
+				if !validate.statequery.IsContractDeveloper(reqAddr) {
+					return TxValidationCode_NOT_TPL_DEVELOPER, txFee
+				}
+			}
 		case modules.APP_CONTRACT_DEPLOY_REQUEST:
 			if hasRequestMsg { //一个Tx只有一个Request
 				return TxValidationCode_INVALID_MSG, txFee
@@ -157,12 +183,10 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 			if len(payload.TemplateId) == 0 {
 				return TxValidationCode_INVALID_CONTRACT, txFee
 			}
-
 			validateCode := validate.validateContractDeploy(payload.TemplateId)
 			if validateCode != TxValidationCode_VALID {
 				return validateCode, txFee
 			}
-
 		case modules.APP_CONTRACT_INVOKE_REQUEST:
 			if hasRequestMsg { //一个Tx只有一个Request
 				return TxValidationCode_INVALID_MSG, txFee
@@ -190,7 +214,7 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 			requestMsgIndex = msgIdx
 		case modules.APP_CONTRACT_STOP:
 			payload, _ := msg.Payload.(*modules.ContractStopPayload)
-			validateCode := validate.validateContractState(payload.ContractId, &payload.ReadSet, &payload.WriteSet)
+			validateCode := validate.validateContractState(payload.ContractId, payload.ReadSet, payload.WriteSet)
 			if validateCode != TxValidationCode_VALID {
 				return validateCode, txFee
 			}
@@ -201,17 +225,14 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 			if validateCode != TxValidationCode_VALID {
 				return validateCode, txFee
 			}
-
 		case modules.APP_DATA:
 			payload, _ := msg.Payload.(*modules.DataPayload)
 			validateCode := validate.validateDataPayload(payload)
 			if validateCode != TxValidationCode_VALID {
 				return validateCode, txFee
 			}
-
 		case modules.APP_ACCOUNT_UPDATE:
 			return validate.validateVoteMediatorTx(msg.Payload), txFee
-
 		default:
 			return TxValidationCode_UNKNOWN_TX_TYPE, txFee
 		}
@@ -228,19 +249,16 @@ func (validate *Validate) validateVoteMediatorTx(payload interface{}) Validation
 		log.Errorf("tx payload do not match type")
 		return TxValidationCode_UNSUPPORTED_TX_PAYLOAD
 	}
-
 	for _, writeSet := range accountUpdate.WriteSet {
 		if writeSet.Key != constants.VOTED_MEDIATORS {
 			continue
 		}
-
 		var mediators map[string]bool
 		err := json.Unmarshal(writeSet.Value, &mediators)
 		if err != nil {
 			log.Errorf("writeSet value do not match key")
 			return TxValidationCode_UNSUPPORTED_TX_PAYLOAD
 		}
-
 		maxMediatorCount := int(validate.propquery.GetChainParameters().MaximumMediatorCount)
 		mediatorCount := len(mediators)
 		if mediatorCount > maxMediatorCount {
@@ -248,20 +266,17 @@ func (validate *Validate) validateVoteMediatorTx(payload interface{}) Validation
 				mediatorCount, maxMediatorCount)
 			return TxValidationCode_UNSUPPORTED_TX_PAYLOAD
 		}
-
 		mp := validate.statequery.GetMediators()
 		for mediatorStr, ok := range mediators {
 			if !ok {
 				log.Errorf("the value of map can only be true")
 				return TxValidationCode_UNSUPPORTED_TX_PAYLOAD
 			}
-
 			mediator, err := common.StringToAddress(mediatorStr)
 			if err != nil {
 				log.Errorf("invalid account address: %v", mediatorStr)
 				return TxValidationCode_UNSUPPORTED_TX_PAYLOAD
 			}
-
 			if !mp[mediator] {
 				log.Errorf("%v is not mediator", mediatorStr)
 				return TxValidationCode_UNSUPPORTED_TX_PAYLOAD
@@ -277,6 +292,9 @@ func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize f
 	if tx == nil {
 		return false
 	}
+	if !validate.enableTxFeeCheck {
+		return true
+	}
 
 	var onlyPayment = true
 	var timeout uint32
@@ -284,19 +302,20 @@ func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize f
 	reqId := tx.RequestHash()
 	txSize := tx.Size().Float64()
 
-	if validate.dagquery == nil || validate.propquery == nil {
-		log.Warnf("[%s]ValidateTxFeeEnough, Cannot validate tx fee, your validate dagquery or propquery not set", reqId.String()[:8])
+	if validate.propquery == nil || validate.utxoquery == nil {
+		log.Warnf("[%s]ValidateTxFeeEnough, Cannot validate tx fee, your validate utxoquery or propquery not set", shortId(reqId.String()))
 		return true //todo ?
 	}
-	fees, err := tx.GetTxFee(validate.utxoquery.GetUtxoEntry)
+	fees, err := tx.GetTxFee(validate.utxoquery.GetUtxoEntry) //validate.dagquery.GetTxFee(tx)
 	if err != nil {
-		log.Errorf("Tx[%s] [%s]validateTxFeeEnough, GetTxFee err:%s", tx.Hash().String(), reqId.String()[:8], err.Error())
+		log.Errorf("[%s]validateTxFeeEnough, GetTxFee err:%s", shortId(reqId.String()), err.Error())
 		return false //todo ?
 	}
+
 	cp := validate.propquery.GetChainParameters()
 	timeUnitFee := float64(cp.ContractTxTimeoutUnitFee)
 	sizeUnitFee := float64(cp.ContractTxSizeUnitFee)
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		switch msg.App {
 		case modules.APP_CONTRACT_TPL_REQUEST:
 			onlyPayment = false
@@ -330,13 +349,13 @@ func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize f
 	if !val {
 		log.Errorf("[%s]validateTxFeeEnough invalid, fee amount[%f]-fees[%f] (%f + %f + %f + %f), "+
 			"txSize[%f], timeout[%d], extSize[%f], extTime[%f]",
-			reqId.String()[:8], float64(fees.Amount), allFee, sizeFee, timeFee, accountUpdateFee, appDataFee,
+			shortId(reqId.String()), float64(fees.Amount), allFee, sizeFee, timeFee, accountUpdateFee, appDataFee,
 			txSize, timeout, extSize, extTime)
 	}
 
 	log.Debugf("[%s]validateTxFeeEnough is %v, fee amount[%f]-fees[%f](%f + %f + %f + %f), "+
 		"txSize[%f], timeout[%d], extSize[%f], extTime[%f]",
-		reqId.String()[:8], val, float64(fees.Amount), allFee, sizeFee, timeFee, accountUpdateFee, appDataFee,
+		shortId(reqId.String()), val, float64(fees.Amount), allFee, sizeFee, timeFee, accountUpdateFee, appDataFee,
 		txSize, timeout, extSize, extTime)
 	return val
 }
@@ -349,40 +368,52 @@ func (validate *Validate) validateTxFeeValid(tx *modules.Transaction) (bool, []*
 	}
 	reqId := tx.RequestHash()
 	if validate.utxoquery == nil {
-		log.Warnf("[%s]validateTxFeeValid, Cannot validate tx fee, your validate utxoquery not set", reqId.String()[:8])
+		log.Warnf("[%s]validateTxFeeValid, Cannot validate tx fee, your validate utxoquery not set", shortId(reqId.String()))
 		return true, nil
 	}
 
 	//check fee is or not enough
-	var feeAllocate []*modules.Addition
-	var err error
+	assetId := dagconfig.DagConfig.GetGasToken()
 	if validate.enableTxFeeCheck {
 		if !validate.ValidateTxFeeEnough(tx, 0, 0) {
 			log.Warnf("validateTxFeeValid, Tx[%s] fee is not enough", tx.Hash().String())
 			return false, nil
 		}
-		feeAllocate, err = tx.GetTxFeeAllocate(validate.utxoquery.GetUtxoEntry,
+		feeAllocate, err := tx.GetTxFeeAllocate(validate.utxoquery.GetUtxoEntry,
 			validate.tokenEngine.GetScriptSigners, common.Address{}, validate.statequery.GetJurorReward)
+		if err != nil {
+			log.Warnf("[%s]validateTxFeeValid, compute tx[%s] fee error:%s", shortId(reqId.String()), tx.Hash().String(), err.Error())
+			return false, nil
+		}
+		//check fee type is ok
+
+		for _, feeAsset := range feeAllocate {
+			if feeAsset.Asset.String() != assetId.String() {
+				log.Warnf("[%s]validateTxFeeValid, assetId is not equal, feeAsset:%s, cfg asset:%s", shortId(reqId.String()),
+					feeAsset.Asset.String(), assetId.String())
+				return false, feeAllocate
+			}
+		}
+
+		return true, feeAllocate
 	} else {
-		feeAllocate, err = tx.GetTxFeeAllocateLegacyV1(validate.utxoquery.GetUtxoEntry,
+		feeAllocate, err := tx.GetTxFeeAllocateLegacyV1(validate.utxoquery.GetUtxoEntry,
 			validate.tokenEngine.GetScriptSigners, common.Address{})
-	}
-	if err != nil {
-		log.Warnf("[%s]validateTxFeeValid, compute tx[%s] fee error:%s", reqId.String()[:8], tx.Hash().String(), err.Error())
-		return false, nil
+		if err != nil {
+			log.Warnf("[%s]validateTxFeeValid, compute tx[%s] fee error:%s", shortId(reqId.String()), tx.Hash().String(), err.Error())
+			return false, nil
+		}
+		//check fee type is ok
+		for _, feeAsset := range feeAllocate {
+			if feeAsset.Asset.String() != assetId.String() {
+				log.Warnf("[%s]validateTxFeeValid, assetId is not equal, feeAsset:%s, cfg asset:%s", shortId(reqId.String()),
+					feeAsset.Asset.String(), assetId.String())
+				return false, feeAllocate
+			}
+		}
+		return true, feeAllocate
 	}
 
-	//check fee type is ok
-	assetId := dagconfig.DagConfig.GetGasToken()
-	var feeAsset *modules.Asset
-	for _, a := range feeAllocate {
-		feeAsset = a.Asset //?
-	}
-	if feeAsset.String() != assetId.String() {
-		log.Warnf("[%s]validateTxFeeValid, assetId is not equal, feeAsset:%s, cfg asset:%s", reqId.String()[:8], feeAsset.String(), assetId.String())
-		return false, feeAllocate
-	}
-	return true, feeAllocate
 }
 
 /**
@@ -448,7 +479,8 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 }
 func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modules.Addition) ValidationCode {
 	contractId := syscontract.CoinbaseContractAddress.Bytes()
-	if tx.TxMessages[0].App == modules.APP_PAYMENT { //到达一定高度，Account转UTXO
+	msgs := tx.TxMessages()
+	if msgs[0].App == modules.APP_PAYMENT { //到达一定高度，Account转UTXO
 
 		//在Coinbase合约的StateDB中保存每个Mediator和Jury的奖励值，
 		//key为奖励地址，Value为[]AmountAsset
@@ -478,7 +510,7 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			rewards[ad.Addr] = reward
 		}
 		//Check payment output is correct
-		payment := tx.TxMessages[0].Payload.(*modules.PaymentPayload)
+		payment := msgs[0].Payload.(*modules.PaymentPayload)
 		if !validate.compareRewardAndOutput(rewards, payment.Outputs) {
 			log.Errorf("Coinbase tx[%s] Output not match", tx.Hash().String())
 			log.DebugDynamic(func() string {
@@ -491,7 +523,7 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 		}
 		//Check statedb should clear
 		if len(addrMap) > 0 {
-			clearStateInvoke := tx.TxMessages[1].Payload.(*modules.ContractInvokePayload)
+			clearStateInvoke := msgs[1].Payload.(*modules.ContractInvokePayload)
 			if !bytes.Equal(clearStateInvoke.ContractId, contractId) {
 				log.Errorf("Coinbase tx[%s] contract id not correct", tx.Hash().String())
 				return TxValidationCode_INVALID_COINBASE
@@ -507,7 +539,7 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 		}
 		return TxValidationCode_VALID
 	}
-	if tx.TxMessages[0].App == modules.APP_CONTRACT_INVOKE { //Account模型记账
+	if msgs[0].App == modules.APP_CONTRACT_INVOKE { //Account模型记账
 		//传入的ads,集合StateDB的历史，生成新的Reward记录
 		rewards := map[common.Address][]modules.AmountAsset{}
 		for _, v := range ads {
@@ -517,17 +549,16 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			if err == nil { //之前有奖励
 				rlp.DecodeBytes(data, &income)
 			}
-			v1 := *v
-			log.DebugDynamic(func() string {
-				data, _ := json.Marshal(income)
-				return v1.Addr.String() + " Coinbase History reward:" + string(data) + " version:" + version.String()
-			})
+			//data = [] byte{}
+			data, _ = json.Marshal(income)
+			log.Debug(v.Addr.String() + ": Coinbase History reward:" + string(data) + " version:" + version.String())
 			log.Debugf("Add reward %d %s to %s", v.Amount, v.Asset.String(), v.Addr.String())
+
 			newValue := validate.addIncome(income, v.Amount, v.Asset)
 			rewards[v.Addr] = newValue
 		}
 		//比对reward和writeset是否一致
-		invoke := tx.TxMessages[0].Payload.(*modules.ContractInvokePayload)
+		invoke := msgs[0].Payload.(*modules.ContractInvokePayload)
 		if !bytes.Equal(invoke.ContractId, contractId) {
 			log.Errorf("Coinbase tx[%s] contract id not correct", tx.Hash().String())
 			return TxValidationCode_INVALID_COINBASE

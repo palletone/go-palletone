@@ -34,7 +34,7 @@ func (p *Processor) SubscribeContractEvent(ch chan<- ContractEvent) event.Subscr
 }
 
 func (p *Processor) ProcessContractEvent(event *ContractEvent) (bool, error) {
-	if event == nil || event.Tx == nil || len(event.Tx.TxMessages) < 1 {
+	if event == nil || event.Tx == nil || len(event.Tx.Messages()) < 1 {
 		return false, errors.New("ProcessContractEvent param is nil")
 	}
 	var err error
@@ -224,6 +224,8 @@ func (p *Processor) contractCommitEvent(tx *modules.Transaction) (broadcast bool
 		log.Debugf("[%s]contractCommitEvent, rstTx already receive", shortId(reqId.String()))
 		return false, nil //rstTx already receive
 	}
+
+	log.Debugf("[%s]contractCommitEvent, rstTx receive", shortId(reqId.String()))
 	p.mtx[reqId].valid = true
 	p.mtx[reqId].rstTx = tx
 

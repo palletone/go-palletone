@@ -26,19 +26,58 @@ import (
 	"fmt"
 	"log"
 	"testing"
+	"time"
 
 	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/stretchr/testify/assert"
-	"time"
 )
 
 var privKeyBytes, _ = hex.DecodeString("2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644")
+
+type mockiDagQuery struct{}
+
+func (id *mockiDagQuery) GetTransactionOnly(hash common.Hash) (*modules.Transaction, error) {
+	return nil, nil
+}
+func (id *mockiDagQuery) IsTransactionExist(hash common.Hash) (bool, error) {
+	return true, nil
+}
+func (id *mockiDagQuery) GetHeaderByHash(common.Hash) (*modules.Header, error) {
+	return nil, nil
+}
+func (id *mockiDagQuery) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error) {
+	return &modules.AmountAsset{Amount: 15000, Asset: modules.NewPTNAsset()}, nil
+}
+func (id *mockiDagQuery) CheckReadSetValid(contractId []byte, readSet []modules.ContractReadSet) bool {
+	return true
+}
+
+func (id *mockiDagQuery) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
+	return common.Address{}, nil
+}
+
+type mockiPropQuery struct{}
+
+func (ip *mockiPropQuery) GetSlotAtTime(when time.Time) uint32 {
+	return 0
+}
+func (ip *mockiPropQuery) GetScheduledMediator(slotNum uint32) common.Address {
+	return common.Address{}
+}
+func (ip *mockiPropQuery) GetNewestUnitTimestamp(token modules.AssetId) (int64, error) {
+	return 0, nil
+}
+func (ip *mockiPropQuery) GetChainParameters() *core.ChainParameters {
+	cp := core.NewChainParams()
+	return &cp
+}
 
 func getAccount() (*ecdsa.PrivateKey, []byte, common.Address) {
 	privKey, _ := crypto.ToECDSA(privKeyBytes)
@@ -52,7 +91,9 @@ func newCache() palletcache.ICache {
 func TestValidate_ValidateTx_EmptyTx_NoPayment(t *testing.T) {
 	tx := &modules.Transaction{} //Empty Tx
 	stateQ := &mockStatedbQuery{}
-	validat := NewValidate(nil, nil, stateQ, nil, newCache(), false)
+	dagq := &mockiDagQuery{}
+	propQ := &mockiPropQuery{}
+	validat := NewValidate(dagq, nil, stateQ, propQ, newCache(), false)
 	_, _, err := validat.ValidateTx(tx, true)
 	assert.NotNil(t, err)
 	t.Log(err)
@@ -61,38 +102,8 @@ func TestValidate_ValidateTx_EmptyTx_NoPayment(t *testing.T) {
 	assert.NotNil(t, err)
 	t.Log(err)
 }
-func TestValidate_ValidateTx_MsgCodeIncorrect(t *testing.T) {
-	//tx := &modules.Transaction{}
-	//tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, &modules.DataPayload{MainData: []byte("m")}))
-	//utxoq := &testutxoQuery{}
-	//validat := NewValidate(nil, utxoq, nil, nil, newCache())
-	//_, _, err := validat.ValidateTx(tx, true)
-	//assert.NotNil(t, err)
-	//t.Log(err)
-
-}
 
 var hash1 = common.HexToHash("0x76a914bd05274d98bb768c0e87a55d9a6024f76beb462a88ac")
-
-// func TestValidate_ValidateTx_IncorrectFee(t *testing.T) {
-// 	tx := &modules.Transaction{}
-// 	outPoint := &modules.OutPoint{hash1, 0, 1}
-// 	pay1 := newTestPayment(outPoint, 2000)
-// 	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay1))
-// 	signTx(tx, outPoint)
-// 	utxoq := &testutxoQuery{}
-// 	validat := NewValidate(nil, utxoq, nil)
-// 	err := validat.ValidateTx(tx, false)
-// 	assert.NotNil(t, err)
-// 	t.Log(err)
-
-// 	pay1.Outputs[0].Value = 999
-// 	signTx(tx, outPoint)
-// 	err = validat.ValidateTx(tx, false)
-// 	assert.Nil(t, err)
-// 	t.Log(err)
-
-// }
 
 func signTx(tx *modules.Transaction, outPoint *modules.OutPoint) {
 	privKey, _, addr := getAccount()
@@ -123,7 +134,7 @@ func (u *testutxoQuery) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo,
 	_, _, addr := getAccount()
 	lockScript := tokenengine.Instance.GenerateLockScript(addr)
 	if outpoint.TxHash == hash1 {
-		return &modules.Utxo{Asset: modules.NewPTNAsset(), Amount: 1000, PkScript: lockScript}, nil
+		return &modules.Utxo{Asset: modules.NewPTNAsset(), Amount: 5001, PkScript: lockScript}, nil
 	}
 	return nil, errors.New("Incorrect Hash")
 }
@@ -138,8 +149,10 @@ func newTestPayment(point *modules.OutPoint, outAmt uint64) *modules.PaymentPayl
 
 	output := modules.NewTxOut(outAmt, common.Hex2Bytes("0x76a914bd05274d98bb768c0e87a55d9a6024f76beb462a88ac"), a)
 	pay1s.AddTxOut(output)
-	i := modules.NewTxIn(point, []byte{})
-	pay1s.AddTxIn(i)
+	if point != nil {
+		i := modules.NewTxIn(point, []byte{})
+		pay1s.AddTxIn(i)
+	}
 	return pay1s
 }
 
@@ -150,7 +163,8 @@ func TestGetRequestTx(t *testing.T) {
 	msg.App = modules.APP_PAYMENT
 	input := make([]*modules.Input, 0)
 	out := make([]*modules.Output, 0)
-	input = []*modules.Input{{PreviousOutPoint: modules.NewOutPoint(common.HexToHash("0xb17041fe6ef735b8be14f1f54b7b888b663c3074730cc8f82455d69450a533bf"), 0, 0), SignatureScript: []byte("test_sig"), Extra: []byte("jay")}}
+	input = []*modules.Input{{PreviousOutPoint: modules.NewOutPoint(common.HexToHash("0xb17041fe6ef735b8be14f1f54b7b888b663c3074730cc8f82455d69450a533bf"), 0, 0),
+		SignatureScript: []byte("test_sig"), Extra: []byte("jay")}}
 	out = []*modules.Output{{Value: 10000, PkScript: []byte("test_pk"), Asset: modules.NewPTNAsset()}}
 	pay := modules.NewPaymentPayload(input, out)
 	msg.Payload = pay
@@ -185,8 +199,8 @@ func TestGetRequestTx(t *testing.T) {
 		return
 	}
 
-	t_msgs := tx.Messages()
-	r_msgs := req_tx.Messages()
+	t_msgs := tx.TxMessages()
+	r_msgs := req_tx.TxMessages()
 	t_hash := tx.Hash()
 	r_hash := req_tx.Hash()
 	if t_hash != r_hash {
@@ -208,20 +222,22 @@ func TestGetRequestTx(t *testing.T) {
 func TestValidateDoubleSpendOn1Tx(t *testing.T) {
 	outPoint := modules.NewOutPoint(hash1, 0, 1)
 	pay1 := newTestPayment(outPoint, 1)
-
-	tx := &modules.Transaction{}
-	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay1))
+	m1 := modules.NewMessage(modules.APP_PAYMENT, pay1)
+	tx := modules.NewTransaction([]*modules.Message{m1})
 
 	signTx(tx, outPoint)
 	utxoq := &testutxoQuery{}
 	stateQ := &mockStatedbQuery{}
-	validate := NewValidate(nil, utxoq, stateQ, nil, newCache(), false)
+	dagq := &mockiDagQuery{}
+	propQ := &mockiPropQuery{}
+	validate := NewValidate(dagq, utxoq, stateQ, propQ, newCache(), false)
 	_, _, err := validate.ValidateTx(tx, true)
 	assert.Nil(t, err)
 	pay2 := newTestPayment(outPoint, 2)
-	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay2))
-	signTx(tx, outPoint)
-	_, _, err1 := validate.ValidateTx(tx, true)
+	m2 := modules.NewMessage(modules.APP_PAYMENT, pay2)
+	tx1 := modules.NewTransaction([]*modules.Message{m1, m2})
+	signTx(tx1, outPoint)
+	_, _, err1 := validate.ValidateTx(tx1, true)
 	assert.NotNil(t, err1)
 	t.Log(err1)
 }
@@ -229,7 +245,6 @@ func TestValidateDoubleSpendOn1Tx(t *testing.T) {
 //构造一个上千Input的交易，验证时间要多久？
 func TestValidateLargeInputPayment(t *testing.T) {
 	N := 1000
-	tx := &modules.Transaction{}
 	pay := &modules.PaymentPayload{Inputs: []*modules.Input{}, Outputs: []*modules.Output{}}
 	lockScripts := map[modules.OutPoint][]byte{}
 	privKey, _, addr := getAccount()
@@ -242,7 +257,7 @@ func TestValidateLargeInputPayment(t *testing.T) {
 	}
 	output := modules.NewTxOut(100, common.Hex2Bytes("0x76a914bd05274d98bb768c0e87a55d9a6024f76beb462a88ac"), modules.NewPTNAsset())
 	pay.AddTxOut(output)
-	tx.TxMessages = []*modules.Message{modules.NewMessage(modules.APP_PAYMENT, pay)}
+	tx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, pay)})
 	getPubKeyFn := func(common.Address) ([]byte, error) {
 		return crypto.CompressPubkey(&privKey.PublicKey), nil
 	}
@@ -256,12 +271,12 @@ func TestValidateLargeInputPayment(t *testing.T) {
 	if e != nil {
 		fmt.Println(e.Error())
 	}
-	//data, _ := json.Marshal(tx)
-	//t.Logf("Signed Tx:%s", string(data))
 
 	utxoq := &testutxoQuery{}
 	stateQ := &mockStatedbQuery{}
-	validate := NewValidate(nil, utxoq, stateQ, nil, newCache(), false)
+	dagq := &mockiDagQuery{}
+	propQ := &mockiPropQuery{}
+	validate := NewValidate(dagq, utxoq, stateQ, propQ, newCache(), false)
 	_, _, err := validate.ValidateTx(tx, true)
 
 	t1 := time.Now()

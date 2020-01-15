@@ -45,6 +45,8 @@ type dags interface {
 	GetContractJury(contractId []byte) (*modules.ElectionNode, error)
 	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
+	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
+	IsContractDeveloper(addr common.Address) bool
 
 	GetMediators() map[common.Address]bool
 	GetChainParameters() *core.ChainParameters
@@ -56,6 +58,8 @@ type dags interface {
 	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
 	GetJurorByAddrHash(addrHash common.Hash) (*modules.JurorDeposit, error)
 	GetJurorReward(jurorAdd common.Address) common.Address
+
+	CheckReadSetValid(contractId []byte, readSet []modules.ContractReadSet) bool
 }
 
 type IValidator interface {

@@ -46,31 +46,33 @@ func (input *Header) DecodeRLP(s *rlp.Stream) error {
 	if err != nil {
 		return err
 	}
-
-	input.ParentsHash = temp.ParentsHash
-	input.Authors = temp.Authors
-	input.GroupSign = temp.GroupSign
-	input.GroupPubKey = temp.GroupPubKey
-	input.TxRoot = temp.TxRoot
-	input.TxsIllegal = temp.TxsIllegal
-	input.Number = temp.Number
-	input.Extra = temp.Extra
-	input.Time = int64(temp.Time)
-	input.CryptoLib = temp.CryptoLib
+	if input.header == nil {
+		input.header = new_header_sdw()
+	}
+	input.header.ParentsHash = temp.ParentsHash
+	input.header.Authors = temp.Authors
+	input.group_sign = temp.GroupSign
+	input.group_pubKey = temp.GroupPubKey
+	input.header.TxRoot = temp.TxRoot
+	input.header.TxsIllegal = temp.TxsIllegal
+	input.header.Number = temp.Number
+	input.header.Extra = temp.Extra
+	input.header.Time = int64(temp.Time)
+	input.header.CryptoLib = temp.CryptoLib
 	return nil
 }
 func (input *Header) EncodeRLP(w io.Writer) error {
 	temp := &headerTemp{}
-	temp.ParentsHash = input.ParentsHash
-	temp.Authors = input.Authors
-	temp.GroupSign = input.GroupSign
-	temp.GroupPubKey = input.GroupPubKey
-	temp.TxRoot = input.TxRoot
-	temp.TxsIllegal = input.TxsIllegal
-	temp.Number = input.Number
-	temp.Extra = input.Extra
-	temp.Time = uint32(input.Time)
-	temp.CryptoLib = input.CryptoLib
+	temp.ParentsHash = input.header.ParentsHash
+	temp.Authors = input.header.Authors
+	temp.GroupSign = input.group_sign
+	temp.GroupPubKey = input.group_pubKey
+	temp.TxRoot = input.header.TxRoot
+	temp.TxsIllegal = input.header.TxsIllegal
+	temp.Number = input.header.Number
+	temp.Extra = input.header.Extra
+	temp.Time = uint32(input.header.Time)
+	temp.CryptoLib = input.header.CryptoLib
 	return rlp.Encode(w, temp)
 }
 
@@ -98,9 +100,6 @@ func (input *Unit) DecodeRLP(s *rlp.Stream) error {
 
 	input.UnitHeader = temp.UnitHeader
 	input.Txs = temp.Txs
-	input.UnitHash = temp.UnitHash
-	input.UnitSize = common.StorageSize(temp.UnitSize)
-
 	input.ReceivedAt = time.Unix(int64(temp.ReceivedAt), 0)
 	//todo  ReceivedFrom
 	return nil
@@ -109,8 +108,6 @@ func (input *Unit) EncodeRLP(w io.Writer) error {
 	temp := &unitTemp{}
 	temp.UnitHeader = input.UnitHeader
 	temp.Txs = input.Txs
-	temp.UnitHash = input.UnitHash
-	temp.UnitSize = uint32(input.UnitSize)
 	temp.ReceivedAt = uint32(input.ReceivedAt.Unix())
 
 	return rlp.Encode(w, temp)

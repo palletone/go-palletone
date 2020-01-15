@@ -543,6 +543,85 @@ func (handler *Handler) handleGetTokenBalance(address string, token *modules.Ass
 	return nil, errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s or %s",
 		shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
 }
+
+func (handler *Handler) handleGetStableTransactionByHash(txHash string, contractid []byte,
+	channelId string, txid string) (*modules.Transaction, error) {
+	par := &pb.GetStableTransaction{TxHash: txHash}
+	payloadBytes, _ := proto.Marshal(par)
+
+	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_STABLE_TRANSACTION, Payload: payloadBytes, Txid: txid,
+		ChannelId: channelId, ContractId: contractid}
+	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_STABLE_TRANSACTION)
+
+	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
+	if err != nil {
+		return nil, errors.WithMessage(err, fmt.Sprintf("[%s]error sending GET_STABLE_TRANSACTION", shorttxid(txid)))
+	}
+
+	if responseMsg.Type.String() == pb.ChaincodeMessage_RESPONSE.String() {
+		// Success response
+		log.Debugf("[%s]GET_STABLE_TRANSACTION received payload %s", shorttxid(responseMsg.Txid),
+			pb.ChaincodeMessage_RESPONSE)
+		tx := modules.Transaction{}
+		err = rlp.DecodeBytes(responseMsg.Payload, &tx)
+		if err != nil {
+			return nil, err
+		}
+
+		return &tx, nil
+
+	}
+	if responseMsg.Type.String() == pb.ChaincodeMessage_ERROR.String() {
+		// Error response
+		log.Errorf("[%s]GET_STABLE_TRANSACTION received error %s", shorttxid(responseMsg.Txid),
+			pb.ChaincodeMessage_ERROR)
+		return nil, errors.New(string(responseMsg.Payload[:]))
+	}
+
+	// Incorrect chaincode message received
+	return nil, errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s or %s",
+		shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
+}
+
+func (handler *Handler) handleGetStableUnit(unitHash string, unitNumber uint64, contractid []byte,
+	channelId string, txid string) (*modules.Unit, error) {
+	par := &pb.GetStableUnit{UnitHash: unitHash, UnitNumber: unitNumber}
+	payloadBytes, _ := proto.Marshal(par)
+
+	msg := &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_GET_STABLE_UNIT, Payload: payloadBytes, Txid: txid,
+		ChannelId: channelId, ContractId: contractid}
+	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.ChaincodeMessage_GET_STABLE_UNIT)
+
+	responseMsg, err := handler.callPeerWithChaincodeMsg(msg, channelId, txid)
+	if err != nil {
+		return nil, errors.WithMessage(err, fmt.Sprintf("[%s]error sending GET_STABLE_UNIT", shorttxid(txid)))
+	}
+
+	if responseMsg.Type.String() == pb.ChaincodeMessage_RESPONSE.String() {
+		// Success response
+		log.Debugf("[%s]GET_STABLE_UNIT received payload %s", shorttxid(responseMsg.Txid),
+			pb.ChaincodeMessage_RESPONSE)
+		unit := modules.Unit{}
+		err = rlp.DecodeBytes(responseMsg.Payload, &unit)
+		if err != nil {
+			return nil, err
+		}
+
+		return &unit, nil
+
+	}
+	if responseMsg.Type.String() == pb.ChaincodeMessage_ERROR.String() {
+		// Error response
+		log.Errorf("[%s]GET_STABLE_UNIT received error %s", shorttxid(responseMsg.Txid),
+			pb.ChaincodeMessage_ERROR)
+		return nil, errors.New(string(responseMsg.Payload[:]))
+	}
+
+	// Incorrect chaincode message received
+	return nil, errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s or %s",
+		shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
+}
+
 func (handler *Handler) handlePayOutToken(collection string, addr string, invokeTokens *modules.AmountAsset,
 	lockTime uint32, contractid []byte, channelId string, txid string) error {
 	log.Debugf("collection %s", collection)
@@ -576,6 +655,7 @@ func (handler *Handler) handlePayOutToken(collection string, addr string, invoke
 	return errors.Errorf("[%s]incorrect chaincode message %s received. Expecting %s or %s",
 		shorttxid(responseMsg.Txid), responseMsg.Type, pb.ChaincodeMessage_RESPONSE, pb.ChaincodeMessage_ERROR)
 }
+
 func (handler *Handler) handleDefineToken(tokenType byte, define []byte, creator string, contractid []byte,
 	channelId string, txid string) error {
 	par := &pb.DefineToken{TokenType: int32(tokenType), Define: define, Creator: creator}

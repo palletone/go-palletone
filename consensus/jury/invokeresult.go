@@ -23,13 +23,13 @@ package jury
 import (
 	"encoding/json"
 
+	"fmt"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
-	"fmt"
 )
 
 func selectUtxo(mUtxos map[modules.OutPoint]*modules.Utxo, num int) (modules.Asset, []*modules.UtxoWithOutPoint) {
@@ -51,7 +51,7 @@ func selectUtxo(mUtxos map[modules.OutPoint]*modules.Utxo, num int) (modules.Ass
 }
 
 //func mergeUtxo(dag iDag, addr common.Address, limitNum int) (*modules.PaymentPayload, error) {
-func mergeUtxo(addr common.Address, utxos map[modules.OutPoint]*modules.Utxo, limitNum int) (*modules.PaymentPayload) {
+func mergeUtxo(addr common.Address, utxos map[modules.OutPoint]*modules.Utxo, limitNum int) *modules.PaymentPayload {
 	var amount uint64
 	asset, selected := selectUtxo(utxos, limitNum)
 	if selected == nil {
@@ -71,16 +71,29 @@ func mergeUtxo(addr common.Address, utxos map[modules.OutPoint]*modules.Utxo, li
 }
 
 //将ContractInvokeResult中合约付款出去的请求转换为UTXO对应的Payment
-func resultToContractPayments(dag iDag, result *modules.ContractInvokeResult) ([]*modules.PaymentPayload, error) {
+func resultToContractPayments(dag iDag, requestTx *modules.Transaction, result *modules.ContractInvokeResult) ([]*modules.PaymentPayload, error) {
 	addr := common.NewAddress(result.ContractId, common.ContractHash)
 	payments := []*modules.PaymentPayload{}
+	paytoContractUtxo := map[modules.OutPoint]*modules.Utxo{}
+	if requestTx != nil {
+		paytoContractUtxo = requestTx.GetNewUtxos()
+	}
 	if result.TokenPayOut != nil && len(result.TokenPayOut) > 0 {
 		payouts := tokenPayOutGroupByAsset(result.TokenPayOut)
 		for ast, aa := range payouts {
-			asset := ast
-			utxos, err := dag.GetAddr1TokenUtxos(addr, &asset)
+			ast1 := ast
+			asset := &ast1
+			utxos, err := dag.GetAddr1TokenUtxos(addr, asset)
 			if err != nil {
 				return nil, err
+			}
+			//本次Request付款到合约的Utxo，可以在Result中马上Payout
+			for out, utxo := range paytoContractUtxo {
+				toAddr, _ := tokenengine.Instance.GetAddressFromScript(utxo.PkScript)
+				if utxo.Asset.Equal(asset) && toAddr == addr {
+					out.TxHash = common.NewSelfHash()
+					utxos[out] = utxo
+				}
 			}
 			utxo2 := convertMapUtxo(utxos)
 			us := core.Utxos{}
@@ -102,12 +115,12 @@ func resultToContractPayments(dag iDag, result *modules.ContractInvokeResult) ([
 				payment.AddTxIn(in)
 			}
 			for _, a := range aa {
-				out := modules.NewTxOut(a.Amount, tokenengine.Instance.GenerateLockScript(a.Address), &asset)
+				out := modules.NewTxOut(a.Amount, tokenengine.Instance.GenerateLockScript(a.Address), asset)
 				payment.AddTxOut(out)
 			}
 			//Change
 			if change > 0 {
-				out2 := modules.NewTxOut(change, tokenengine.Instance.GenerateLockScript(addr), &asset)
+				out2 := modules.NewTxOut(change, tokenengine.Instance.GenerateLockScript(addr), asset)
 				payment.AddTxOut(out2)
 			}
 			payments = append(payments, payment)

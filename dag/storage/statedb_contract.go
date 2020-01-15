@@ -142,6 +142,30 @@ func (statedb *StateDb) SaveContractJury(contractId []byte, jury modules.Electio
 	return storeBytesWithVersion(statedb.db, key, version, juryb)
 }
 
+func (statedb *StateDb) SaveContractWithJuryAddr(addr common.Address, contract *modules.Contract) error {
+	key1 := append(constants.CONTRACT_JURY_PREFIX, addr.Bytes()...)
+	key2 := append(key1, contract.ContractId...)
+	log.Debugf("save contract id = %v with jury address = %s,key1 = %v", contract.ContractId, addr.String(), key1)
+	err := StoreToRlpBytes(statedb.db, key2, contract)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (statedb *StateDb) GetContractsWithJuryAddr(addr common.Address) []*modules.Contract {
+	key := append(constants.CONTRACT_JURY_PREFIX, addr.Bytes()...)
+	log.Debugf("get contracts with key = %v", key)
+	rows := getprefix(statedb.db, key)
+	result := make([]*modules.Contract, 0, len(rows))
+	for _, v := range rows {
+		contract := &modules.Contract{}
+		rlp.DecodeBytes(v, contract)
+		result = append(result, contract)
+	}
+	return result
+}
+
 /**
 保存合约属性信息,合约属性有CONTRACT_STATE_PREFIX+contractId+key 作为Key
 To save contract

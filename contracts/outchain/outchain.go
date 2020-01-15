@@ -193,6 +193,9 @@ func saveConfigTest() error {
 }
 
 func getNewKey(params []byte, iadaptor adaptor.ICryptoCurrency) ([]byte, string, error) {
+	if len(params) == 0 {
+		params = []byte("{}")
+	}
 	var input adaptor.NewPrivateKeyInput
 	err := json.Unmarshal(params, &input)
 	if err != nil {
@@ -214,6 +217,20 @@ func getNewKey(params []byte, iadaptor adaptor.ICryptoCurrency) ([]byte, string,
 		return []byte{}, "", err
 	}
 	return outputKey.PrivateKey, outputAddr.Address, nil
+}
+
+func getAddrByKey(params []byte, iadaptor adaptor.ICryptoCurrency) (string, error) {
+	outputPub, err := iadaptor.GetPublicKey(&adaptor.GetPublicKeyInput{PrivateKey: params})
+	if err != nil {
+		log.Error("NewPrivateKey() failed !!!!!!")
+		return "", err
+	}
+	outputAddr, err := iadaptor.GetAddress(&adaptor.GetAddressInput{Key: outputPub.PublicKey})
+	if err != nil {
+		log.Error("GetAddress() failed !!!!!!")
+		return "", err
+	}
+	return outputAddr.Address, nil
 }
 
 func GetJuryKeyInfo(chaincode, chainName string, params []byte, iadaptor adaptor.ICryptoCurrency) ([]byte, error) {
@@ -253,19 +270,23 @@ func GetJuryAddress(chaincode, chainName string, params []byte, iadaptor adaptor
 		return "", err
 	}
 
-	if _, ok := cfg.Ada.ChainKeyKV[chainName]; ok {
-		for addr := range cfg.Ada.ChainKeyKV[chainName].AddressKeys {
-			return addr, nil
+	if _, ok := cfg.Ada.ChainKeyKV[chainName]; !ok {
+		cfg.Ada.ChainKeyKV[chainName] = KeyInfo{
+			ChaincodeKeys: map[string][]byte{},
+			AddressKeys:   map[string][]byte{},
 		}
-		return "", err
+	}
+
+	if priKey, ok := cfg.Ada.ChainKeyKV[chainName].ChaincodeKeys[chaincode]; ok {
+		return getAddrByKey(priKey, iadaptor)
 	} else {
-		priKey, addr, err := getNewKey(params, iadaptor)
+		newPriKey, addr, err := getNewKey(params, iadaptor)
 		if err != nil {
-			log.Error("getNewKey() failed !!!!!!")
+			log.Error("getNewKey() failed %s !!!!!!", err.Error())
 			return "", err
 		}
-		cfg.Ada.ChainKeyKV[chainName].ChaincodeKeys[chaincode] = priKey
-		cfg.Ada.ChainKeyKV[chainName].AddressKeys[addr] = priKey
+		cfg.Ada.ChainKeyKV[chainName].ChaincodeKeys[chaincode] = newPriKey
+		cfg.Ada.ChainKeyKV[chainName].AddressKeys[addr] = newPriKey
 		// todo save config
 		saveConfigTest()
 		return addr, nil

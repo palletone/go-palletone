@@ -24,9 +24,10 @@ invoke     229      496
 */
 
 const (
-	ContractDefaultSignatureSize = 256.0
-	ContractDefaultElectionSize  = 768.0
-	ContractDefaultRWSize        = 512.0
+	ContractDefaultSignatureSize         = 256.0
+	ContractDefaultElectionSize          = 768.0
+	ContractDefaultRWSize                = 512.0
+	ContractDefaultPayInputSignatureSize = 256.0
 )
 
 func (p *Processor) getTxContractFee(tx *modules.Transaction, extDataSize float64, timeout uint32) (fee float64,

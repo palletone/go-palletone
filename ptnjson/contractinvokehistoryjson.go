@@ -66,7 +66,7 @@ func ConvertTx2ContractInvokeHistoryJson(tx *modules.TransactionWithUnitInfo,
 		TxSize:    float64(tx.Size()),
 		RequestId: tx.RequestHash().String(),
 	}
-	for _, m := range tx.TxMessages {
+	for _, m := range tx.TxMessages() {
 		if m.App == modules.APP_PAYMENT {
 			pay := m.Payload.(*modules.PaymentPayload)
 

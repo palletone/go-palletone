@@ -254,8 +254,8 @@ func (pooltx *TxPoolTransaction) EncodeRLP(w io.Writer) error {
 		m1.Data = d
 		temp.Msgs = append(temp.Msgs, m1)
 	}
-	temp.CertId = common.CopyBytes(pooltx.Tx.CertId)
-	temp.Illegal = pooltx.Tx.Illegal
+	temp.CertId = common.CopyBytes(pooltx.Tx.CertId())
+	temp.Illegal = pooltx.Tx.Illegal()
 	for _, from := range pooltx.From {
 		temp.From = append(temp.From, *from)
 	}
@@ -399,9 +399,8 @@ func (pooltx *TxPoolTransaction) DecodeRLP(s *rlp.Stream) error {
 	}
 
 	pooltx.Tx = modules.NewTransaction(msgs)
-	pooltx.Tx.Illegal = temp.Illegal
-	pooltx.Tx.CertId = common.CopyBytes(temp.CertId)
-
+	pooltx.Tx.SetIllegal(temp.Illegal)
+	pooltx.Tx.SetCertId(common.CopyBytes(temp.CertId))
 	pooltx.From = make([]*modules.OutPoint, 0)
 	for _, from := range temp.From {
 		f := from

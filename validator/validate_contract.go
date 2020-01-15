@@ -34,24 +34,12 @@ import (
 对unit中某个交易的读写集进行验证
 To validate read set and write set of one transaction in unit'
 */
-func (validate *Validate) validateContractState(contractID []byte, readSet *[]modules.ContractReadSet, writeSet *[]modules.ContractWriteSet) ValidationCode {
-	// check read set, if read field in worldTmpState then the transaction is invalid
-	//contractState, cOk := (*worldTmpState)[hexutil.Encode(contractID[:])]
-	//if cOk && readSet != nil {
-	//	for _, rs := range *readSet {
-	//		if _, ok := contractState[rs.Key]; ok == true {
-	//			return TxValidationCode_CHAINCODE_VERSION_CONFLICT
-	//		}
-	//	}
+func (validate *Validate) validateContractState(contractID []byte, readSet []modules.ContractReadSet,
+	writeSet []modules.ContractWriteSet) ValidationCode {
+	//if !validate.dagquery.CheckReadSetValid(contractID, readSet) {
+	//	return TxValidationCode_CHAINCODE_VERSION_CONFLICT
 	//}
-	//// save write set to worldTmpState
-	//if !cOk && writeSet != nil {
-	//	(*worldTmpState)[hexutil.Encode(contractID[:])] = map[string]interface{}{}
-	//}
-	//
-	//for _, ws := range *writeSet {
-	//	(*worldTmpState)[hexutil.Encode(contractID[:])][ws.Key] = ws.Value
-	//}
+	log.Debugf("contractID[%v], read set[%v]write set[%v]", contractID, readSet, writeSet)
 	return TxValidationCode_VALID
 }
 
@@ -79,14 +67,14 @@ func (validate *Validate) validateContractDeploy(tplId []byte) ValidationCode {
 //验证陪审团签名是否有效
 func (validate *Validate) validateContractSignature(signatures []modules.SignatureSet,
 	tx *modules.Transaction, isFullTx bool) ValidationCode {
-	//contractId := tx.ContractIdBytes()
+	//contractId := tx.GetContractId()
 	txHash := tx.Hash().String()
 	needSign := 1
 	//如果是Deploy，那么Jury在DeployPayload里面
 	var jury *modules.ElectionNode
 	var err error
 	var contractId []byte
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		if msg.App == modules.APP_CONTRACT_DEPLOY {
 			deploy := msg.Payload.(*modules.ContractDeployPayload)
 			jury = &deploy.EleNode

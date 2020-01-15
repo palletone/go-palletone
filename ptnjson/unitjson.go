@@ -22,13 +22,14 @@ package ptnjson
 
 import (
 	"encoding/hex"
+	"strconv"
+	"time"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/shopspring/decimal"
-	"strconv"
-	"time"
 )
 
 type UnitJson struct {
@@ -38,12 +39,16 @@ type UnitJson struct {
 	UnitSize   common.StorageSize `json:"unit_size"`    // unit size
 	Reward     decimal.Decimal    `json:"reward"`       //区块奖励
 }
-type FastUnitJson struct {
-	FastHash    common.Hash `json:"fast_hash"`
-	FastIndex   uint64      `json:"fast_index"`
-	StableHash  common.Hash `json:"stable_hash"`
-	StableIndex uint64      `json:"stable_index"`
+
+type ChainUnitPropertyJson struct {
+	FastHash        common.Hash `json:"fast_hash"`
+	FastIndex       uint64      `json:"fast_index"`
+	StableHash      common.Hash `json:"stable_hash"`
+	StableIndex     uint64      `json:"stable_index"`
+	FastTimestamp   string      `json:"fast_timestamp"`
+	StableTimestamp string      `json:"stable_timestamp"`
 }
+
 type HeaderJson struct {
 	ParentsHash   []common.Hash  `json:"parents_hash"`
 	Hash          string         `json:"hash"`
@@ -58,6 +63,7 @@ type HeaderJson struct {
 	Extra         string         `json:"extra"`
 	CreationTime  time.Time      `json:"creation_time"` // unit create time
 }
+
 type ChainIndexJson struct {
 	AssetID string `json:"asset_id"`
 	Index   uint64 `json:"index"`
@@ -83,26 +89,27 @@ func ConvertUnit2Json(unit *modules.Unit, utxoQuery modules.QueryUtxoFunc,
 	json.Reward = reward.Asset.DisplayAmount(reward.Amount)
 	return json
 }
+
 func ConvertUnitHeader2Json(header *modules.Header) *HeaderJson {
 	json := &HeaderJson{
-		ParentsHash:   header.ParentsHash,
+		ParentsHash:   header.ParentHash(),
 		Hash:          header.Hash().String(),
-		AuthorAddress: header.Authors.Address().String(),
-		AuthorPubKey:  hex.EncodeToString(header.Authors.PubKey),
-		AuthorSign:    hex.EncodeToString(header.Authors.Signature),
-		GroupSign:     hex.EncodeToString(header.GroupSign),
-		GroupPubKey:   hex.EncodeToString(header.GroupPubKey),
-		TxRoot:        header.TxRoot,
+		AuthorAddress: header.Author().String(),
+		AuthorPubKey:  hex.EncodeToString(header.GetAuthors().PubKey),
+		AuthorSign:    hex.EncodeToString(header.GetAuthors().Signature),
+		GroupSign:     hex.EncodeToString(header.GetGroupSign()),
+		GroupPubKey:   hex.EncodeToString(header.GetGroupPubkey()),
+		TxRoot:        header.TxRoot(),
 		TxsIllegal:    make([]string, 0),
-		Extra:         hex.EncodeToString(header.Extra),
-		CreationTime:  time.Unix(header.Time, 0),
+		Extra:         hex.EncodeToString(header.Extra()),
+		CreationTime:  time.Unix(header.Timestamp(), 0),
 	}
-	for _, txI := range header.TxsIllegal {
+	for _, txI := range header.GetTxsIllegal() {
 		json.TxsIllegal = append(json.TxsIllegal, strconv.Itoa(int(txI)))
 	}
 	json.Number = ChainIndexJson{
-		AssetID: header.Number.AssetID.String(),
-		Index:   header.Number.Index,
+		AssetID: header.GetNumber().AssetID.String(),
+		Index:   header.GetNumber().Index,
 	}
 	return json
 }

@@ -13,8 +13,8 @@
  *    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
  * /
  *
- *  * @author PalletOne core developer <dev@pallet.one>
- *  * @date 2018-2019
+ *  * @author PalletOne core developers <dev@pallet.one>
+ *  * @date 2019-2020
  *
  */
 

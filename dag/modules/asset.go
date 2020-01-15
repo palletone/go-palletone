@@ -21,11 +21,11 @@
 package modules
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"strings"
 
-	"bytes"
-	"encoding/json"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/shopspring/decimal"
 )
@@ -58,14 +58,12 @@ func NewPTNAsset() *Asset {
 }
 func NewAsset(symbol string, assetType AssetType, decimal byte, requestId []byte,
 	uidType UniqueIdType, uniqueId UniqueId) (*Asset, error) {
-	asset := &Asset{}
+
 	assetId, err := NewAssetId(symbol, assetType, decimal, requestId, uidType)
 	if err != nil {
 		return nil, err
 	}
-	asset.AssetId = assetId
-	asset.UniqueId = uniqueId
-	return asset, nil
+	return &Asset{AssetId: assetId, UniqueId: uniqueId}, nil
 }
 
 func NewPTNIdType() AssetId {
@@ -183,4 +181,11 @@ func (asset *Asset) DisplayAmount(amount uint64) decimal.Decimal {
 		d = d.Div(decimal.New(10, 0))
 	}
 	return d
+}
+func (asset *Asset) Uint64Amount(amt decimal.Decimal) uint64 {
+	dec := asset.GetDecimal()
+	for i := 0; i < int(dec); i++ {
+		amt = amt.Mul(decimal.New(10, 0))
+	}
+	return uint64(amt.IntPart())
 }

@@ -463,15 +463,16 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		//	}
 		//	st := strconv.FormatInt(b, 10)
 		//	return shim.Success([]byte(st))
-	case modules.HandleMediatorInCandidateList:
-		log.Info("Enter DepositChaincode Contract " + modules.HandleMediatorInCandidateList + " Invoke")
-		return d.HandleMediatorInCandidateList(stub, args)
-	case modules.HandleJuryInCandidateList:
-		log.Info("Enter DepositChaincode Contract " + modules.HandleJuryInCandidateList + " Invoke")
-		return d.HandleJuryInCandidateList(stub, args)
-	case modules.HandleDevInList:
-		log.Info("Enter DepositChaincode Contract " + modules.HandleDevInList + " Invoke")
-		return d.HandleDevInList(stub, args)
+	// comment by albert, 重复的接口（并且有漏洞），请走没收流程
+	//case modules.HandleMediatorInCandidateList:
+	//	log.Info("Enter DepositChaincode Contract " + modules.HandleMediatorInCandidateList + " Invoke")
+	//	return d.HandleMediatorInCandidateList(stub, args)
+	//case modules.HandleJuryInCandidateList:
+	//	log.Info("Enter DepositChaincode Contract " + modules.HandleJuryInCandidateList + " Invoke")
+	//	return d.HandleJuryInCandidateList(stub, args)
+	//case modules.HandleDevInList:
+	//	log.Info("Enter DepositChaincode Contract " + modules.HandleDevInList + " Invoke")
+	//	return d.HandleDevInList(stub, args)
 	case modules.GetAllMediator:
 		log.Info("Enter DepositChaincode Contract " + modules.GetAllMediator + " Query")
 		return d.GetAllMediator(stub)
@@ -798,20 +799,21 @@ func (d DepositChaincode) QueryPledgeWithdraw(stub shim.ChaincodeStubInterface) 
 
 //  质押
 
-//  移除超级节点候选列表
-func (d DepositChaincode) HandleMediatorInCandidateList(stub shim.ChaincodeStubInterface, addresses []string) pb.Response {
-	return handleNodeInList(stub, addresses, modules.Mediator)
-}
-
-//  移除陪审员候选列表
-func (d DepositChaincode) HandleJuryInCandidateList(stub shim.ChaincodeStubInterface, addresses []string) pb.Response {
-	return handleNodeInList(stub, addresses, modules.Jury)
-}
-
-//  移除开发者列表
-func (d DepositChaincode) HandleDevInList(stub shim.ChaincodeStubInterface, addresses []string) pb.Response {
-	return handleNodeInList(stub, addresses, modules.Developer)
-}
+// comment by albert, 重复的接口（并且有漏洞），请走没收流程
+////  移除超级节点候选列表
+//func (d DepositChaincode) HandleMediatorInCandidateList(stub shim.ChaincodeStubInterface, addresses []string) pb.Response {
+//	return handleNodeInList(stub, addresses, modules.Mediator)
+//}
+//
+////  移除陪审员候选列表
+//func (d DepositChaincode) HandleJuryInCandidateList(stub shim.ChaincodeStubInterface, addresses []string) pb.Response {
+//	return handleNodeInList(stub, addresses, modules.Jury)
+//}
+//
+////  移除开发者列表
+//func (d DepositChaincode) HandleDevInList(stub shim.ChaincodeStubInterface, addresses []string) pb.Response {
+//	return handleNodeInList(stub, addresses, modules.Developer)
+//}
 
 func (d DepositChaincode) GetAllMediator(stub shim.ChaincodeStubInterface) pb.Response {
 	values, err := stub.GetStateByPrefix(string(constants.MEDIATOR_INFO_PREFIX) +
@@ -942,6 +944,7 @@ func (d DepositChaincode) IsFinishAllocated(stub shim.ChaincodeStubInterface) bo
 	log.Infof("allocate = %s, today = %s, lastDate = %s, newdate = %s, depositList length = %d", finish, today, lastDate, newdate, len(depositList))
 	return false
 }
+
 
 func (d DepositChaincode) IsFinishAddNewRecords(stub shim.ChaincodeStubInterface) bool {
 	h, err := stub.GetState("haveAllocatedCount")

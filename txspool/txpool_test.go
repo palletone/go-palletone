@@ -74,9 +74,9 @@ func NewUnitDag4Test() *UnitDag4Test {
 
 	propdb := storage.NewPropertyDb(db)
 	hash := common.HexToHash("0x0e7e7e3bd7c1e9ce440089712d61de38f925eb039f152ae03c6688ed714af729")
-	idx := &modules.ChainIndex{AssetID: modules.PTNCOIN, Index: 0}
-	h := modules.NewHeader([]common.Hash{hash}, uint64(1), []byte("hello"))
-	h.Number = idx
+	b := []byte("hello")
+	h := modules.NewHeader([]common.Hash{hash}, common.Hash{}, b, b, b, b, []uint16{},
+		modules.PTNCOIN, 0, int64(1598766666))
 	propdb.SetNewestUnit(h)
 	mutex := new(sync.RWMutex)
 
@@ -85,10 +85,10 @@ func NewUnitDag4Test() *UnitDag4Test {
 }
 
 func (ud *UnitDag4Test) CurrentUnit(token modules.AssetId) *modules.Unit {
-	return modules.NewUnit(&modules.Header{
-		Number: &modules.ChainIndex{AssetID: token},
-		Extra:  []byte("test pool"),
-	}, nil)
+	b := []byte("test pool")
+	h := modules.NewHeader([]common.Hash{}, common.Hash{}, b, b, b, b, []uint16{},
+		token, 0, int64(1598766666))
+	return modules.NewUnit(h, nil)
 }
 
 func (ud *UnitDag4Test) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
@@ -155,7 +155,7 @@ func (ud *UnitDag4Test) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo,
 func (ud *UnitDag4Test) GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error) {
 	neededSet := make(map[modules.OutPoint]struct{})
 	preout := modules.OutPoint{TxHash: tx.Hash()}
-	for i, msgcopy := range tx.TxMessages {
+	for i, msgcopy := range tx.TxMessages() {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
 				msgIdx := uint32(i)
@@ -190,7 +190,6 @@ func (ud *UnitDag4Test) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset
 }
 
 func (ud *UnitDag4Test) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error) {
-
 	return nil, nil
 }
 func (ud *UnitDag4Test) GetTransactionOnly(hash common.Hash) (*modules.Transaction, error) {
@@ -213,6 +212,15 @@ func (ud *UnitDag4Test) GetContractState(id []byte, field string) ([]byte, *modu
 func (ud *UnitDag4Test) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
 	return nil, nil
 }
+func (ud *UnitDag4Test) CheckReadSetValid(contractId []byte, readSet []modules.ContractReadSet) bool {
+	return true
+}
+func (ud *UnitDag4Test) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
+	return common.Address{}, nil
+}
+func (ud *UnitDag4Test)  IsContractDeveloper(addr common.Address) bool{
+	return true
+}
 
 // create txs
 func createTxs(address string) []*modules.Transaction {
@@ -225,10 +233,10 @@ func createTxs(address string) []*modules.Transaction {
 	addr, _ := common.StringToAddress(address)
 	lockScript := tokenengine.Instance.GenerateLockScript(addr)
 	for j := 0; j < 16; j++ {
-		tx := modules.NewTransaction([]*modules.Message{})
 		output := modules.NewTxOut(uint64(j+10), lockScript, a)
-		tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, modules.NewPaymentPayload([]*modules.Input{modules.NewTxIn(modules.NewOutPoint(common.NewSelfHash(),
-			0, 0), unlockScript)}, []*modules.Output{output})))
+		m := modules.NewMessage(modules.APP_PAYMENT, modules.NewPaymentPayload([]*modules.Input{modules.NewTxIn(
+			modules.NewOutPoint(common.NewSelfHash(), 0, 0), unlockScript)}, []*modules.Output{output}))
+		tx := modules.NewTransaction([]*modules.Message{m})
 		txs = append(txs, tx)
 	}
 	return txs

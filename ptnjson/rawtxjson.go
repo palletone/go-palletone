@@ -124,7 +124,7 @@ type RawTransactionGenParams struct {
 	Locktime int64 `json:"locktime"`
 }
 type ProofTransactionGenParams struct {
-	From    string `json:"from"`
+	From string `json:"from"`
 	Outputs []struct {
 		Address string          `json:"address"`
 		Amount  decimal.Decimal `json:"amount"`
@@ -176,7 +176,6 @@ func ConvertRawTxJson2Paymsg(rawTxJson RawTransactionGenParams) (*modules.Paymen
 
 func ConvertRawTxJson2Tx(rawTxJson RawTransactionGenParams) *modules.Transaction {
 	pay, _ := ConvertRawTxJson2Paymsg(rawTxJson)
-	tx := modules.NewTransaction([]*modules.Message{})
-	tx.AddMessage(&modules.Message{App: modules.APP_PAYMENT, Payload: pay})
+	tx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, pay)})
 	return tx
 }

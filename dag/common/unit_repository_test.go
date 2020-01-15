@@ -64,11 +64,11 @@ func TestGenesisUnit(t *testing.T) {
 	gUnit := NewGenesisUnit(modules.Transactions{tx}, time.Now().Unix(), asset, -1, common.Hash{})
 
 	log.Debug("Genesis unit struct:")
-	log.Debugf("parent units:%#x", gUnit.UnitHeader.ParentsHash)
+	log.Debugf("parent units:%#x", gUnit.UnitHeader.ParentHash())
 	//log.Println("asset ids:", gUnit.UnitHeader.AssetIDs)
-	log.Debugf("group_sign:%x", gUnit.UnitHeader.GroupSign)
-	log.Debugf("Root:%x", gUnit.UnitHeader.TxRoot)
-	log.Debugf("Number:%s", gUnit.UnitHeader.Number.String())
+	log.Debugf("group_sign:%x", gUnit.UnitHeader.GetGroupSign())
+	log.Debugf("Root:%x", gUnit.UnitHeader.TxRoot())
+	log.Debugf("Number:%s", gUnit.UnitHeader.GetNumber().String())
 
 }
 
@@ -104,22 +104,20 @@ func TestSaveUnit(t *testing.T) {
 	p.SetString("0000000000000000000000000000000")
 	aid := modules.AssetId{}
 	aid.SetBytes([]byte("xxxxxxxxxxxxxxxxxx"))
-	header := new(modules.Header)
-	header.ParentsHash = append(header.ParentsHash, p)
-	header.Number = &modules.ChainIndex{AssetID: modules.PTNCOIN, Index: 0}
-	//header.AssetIDs = []modules.AssetId{aid}
+	b := []byte{}
+	header := modules.NewHeader([]common.Hash{p}, common.Hash{}, b, b, b, b, []uint16{}, modules.PTNCOIN,
+		0, int64(1598766666))
 	key, _ := crypto.GenerateKey()
-	//addr0 := crypto.PubkeyToAddress(&key.PublicKey)
 
 	sig, err := crypto.Sign(header.Hash().Bytes(), key)
 	if err != nil {
 		log.Debug("sign header occured error: ", err)
 	}
-	auth := new(modules.Authentifier)
+	auth := modules.Authentifier{}
 	auth.Signature = sig
 	auth.PubKey = crypto.CompressPubkey(&key.PublicKey)
 
-	header.Authors = *auth
+	header.SetAuthor(auth)
 	contractTplPayload := modules.NewContractTplPayload([]byte("contract_template0000"),
 		1024,
 		[]byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159}, modules.ContractError{})
@@ -155,46 +153,25 @@ func TestSaveUnit(t *testing.T) {
 			},
 		},
 	}
-	tx1 := modules.Transaction{
-		TxMessages: []*modules.Message{
-			{
-				App:     modules.APP_CONTRACT_TPL,
-				Payload: contractTplPayload,
-			},
-		},
-	}
+	tx1 := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_CONTRACT_TPL, contractTplPayload)})
 	t.Logf("Tx Hash:%s", tx1.Hash().String())
 	//tx1.TxHash = tx1.Hash()
-
-	tx2 := modules.Transaction{
-		TxMessages: []*modules.Message{
-			{
-				App:     modules.APP_CONTRACT_DEPLOY,
-				Payload: deployPayload,
-			},
-		},
-	}
+	tx2 := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_CONTRACT_DEPLOY, deployPayload)})
 	//tx2.TxHash = tx2.Hash()
 	t.Logf("Tx Hash:%s", tx2.Hash().String())
-	tx3 := modules.Transaction{
-		TxMessages: []*modules.Message{
-			{
-				App:     modules.APP_CONTRACT_INVOKE,
-				Payload: invokePayload,
-			},
-		}}
+
+	tx3 := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_CONTRACT_INVOKE, invokePayload)})
 	//tx3.TxHash = tx3.Hash()
 	t.Logf("Tx Hash:%s", tx3.Hash().String())
 	txs := modules.Transactions{}
 	//txs = append(txs, &tx1)
-	txs = append(txs, &tx2)
+	txs = append(txs, tx2)
 	//txs = append(txs, &tx3)
 	unit := &modules.Unit{
 		UnitHeader: header,
 		Txs:        txs,
 	}
-	unit.UnitSize = unit.Size()
-	unit.UnitHash = unit.Hash()
+	unit.Size()
 
 	if err := rep.SaveUnit(unit, true); err != nil {
 		log.Debug("TestSaveUnit", "err", err)
@@ -306,38 +283,15 @@ func TestPaymentTransactionRLP(t *testing.T) {
 		Outputs:  []*modules.Output{&txout},
 		LockTime: 12,
 	}
-
-	tx2 := modules.Transaction{
-		TxMessages: []*modules.Message{
-			{
-				App:     modules.APP_PAYMENT,
-				Payload: payment,
-			},
-		},
-	}
+	tx2 := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, payment)})
 	//tx2.TxHash = tx2.Hash()
 	fmt.Println("Original data:", payment)
 	t.Log("data", tx2)
 	b, _ := rlp.EncodeToBytes(&tx2)
 	t.Log("rlp", b)
 	var tx modules.Transaction
-	//if err := rlp.DecodeBytes(b, &tx); err != nil {
-	//	fmt.Println("TestPaymentTransactionRLP error:", err.Error())
-	//} else {
-	//	for _, msg := range tx.TxMessages {
-	//		if msg.App == modules.APP_PAYMENT {
-	//			var pl *modules.PaymentPayload
-	//			pl, ok := msg.Payload.(*modules.PaymentPayload)
-	//			if !ok {
-	//				fmt.Println("Payment payload ExtractFrInterface error:", err.Error())
-	//			} else {
-	//				fmt.Println("Payment payload:", pl)
-	//			}
-	//		}
-	//	}
-	//}
 	err := rlp.DecodeBytes(b, &tx)
-	for _, msg := range tx.TxMessages {
+	for _, msg := range tx.TxMessages() {
 		if msg.App == modules.APP_PAYMENT {
 			var pl *modules.PaymentPayload
 			pl, ok := msg.Payload.(*modules.PaymentPayload)
@@ -370,19 +324,13 @@ func TestContractTplPayloadTransactionRLP(t *testing.T) {
 		Height:  &modules.ChainIndex{},
 		TxIndex: 0,
 	}})
-	tx1 := modules.Transaction{
-		TxMessages: []*modules.Message{
-			{
-				App:     modules.APP_CONTRACT_TPL,
-				Payload: contractTplPayload,
-			},
-		},
-	}
+	tx1 := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_CONTRACT_TPL, &contractTplPayload)})
+
 	//tx1.TxHash = tx1.Hash()
 
 	fmt.Println(">>>>>>>>  Original transaction:")
 	fmt.Println(">>>>>>>>  hash:", tx1.Hash())
-	for index, msg := range tx1.TxMessages {
+	for index, msg := range tx1.TxMessages() {
 		fmt.Printf(">>>>>>>>  message[%d]:%v\n", index, msg)
 		fmt.Println(">>>>>>>> payload type:", reflect.TypeOf(msg.Payload))
 		fmt.Printf(">>>>>>>>  message[%d] payload:%v\n", index, msg.Payload)
@@ -397,7 +345,7 @@ func TestContractTplPayloadTransactionRLP(t *testing.T) {
 		} else {
 			fmt.Println("======== Decode transaction:")
 			fmt.Println("======== hash:", txDecode.Hash())
-			for index, msg := range txDecode.TxMessages {
+			for index, msg := range txDecode.TxMessages() {
 				fmt.Printf("======== message[%d]:%v\n", index, msg)
 				switch msg.App {
 				case modules.APP_CONTRACT_TPL:
@@ -443,19 +391,12 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 		ReadSet:  readSet,
 		WriteSet: writeSet,
 	}
-	tx1 := modules.Transaction{
-		TxMessages: []*modules.Message{
-			{
-				App:     modules.APP_CONTRACT_DEPLOY,
-				Payload: deployPayload,
-			},
-		},
-	}
+	tx1 := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_CONTRACT_DEPLOY, &deployPayload)})
 	//tx1.TxHash = tx1.Hash()
 
 	fmt.Println(">>>>>>>>  Original transaction:")
 	fmt.Println(">>>>>>>>  hash:", tx1.Hash())
-	for index, msg := range tx1.TxMessages {
+	for index, msg := range tx1.TxMessages() {
 		fmt.Printf(">>>>>>>>  message[%d]:%v\n", index, msg)
 		fmt.Println(">>>>>>>> payload type:", reflect.TypeOf(msg.Payload))
 		fmt.Printf(">>>>>>>>  message[%d] payload:%v\n", index, msg.Payload)
@@ -471,7 +412,7 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 		} else {
 			fmt.Println("======== Decode transaction:")
 			fmt.Println("======== hash:", txDecode.Hash())
-			for index, msg := range txDecode.TxMessages {
+			for index, msg := range txDecode.TxMessages() {
 				fmt.Printf("======== message[%d]:%v\n", index, msg)
 				switch msg.App {
 				case modules.APP_CONTRACT_DEPLOY:
@@ -490,9 +431,7 @@ func TestContractDeployPayloadTransactionRLP(t *testing.T) {
 }
 
 func creatFeeTx(isContractTx bool, pubKey [][]byte, amount uint64, aid modules.AssetId) *txspool.TxPoolTransaction {
-	tx := modules.Transaction{
-		TxMessages: make([]*modules.Message, 0),
-	}
+	msgs := make([]*modules.Message, 0)
 	if isContractTx {
 		sigs := make([]modules.SignatureSet, 0)
 		for _, pk := range pubKey {
@@ -510,12 +449,12 @@ func creatFeeTx(isContractTx bool, pubKey [][]byte, amount uint64, aid modules.A
 				Signatures: sigs,
 			},
 		}
-		tx.TxMessages = append(tx.TxMessages, conSig)
-		tx.TxMessages = append(tx.TxMessages, msgSig)
+		msgs = append(msgs, conSig)
+		msgs = append(msgs, msgSig)
 	}
-
+	tx := modules.NewTransaction(msgs)
 	txPTx := &txspool.TxPoolTransaction{
-		Tx:    &tx,
+		Tx:    tx,
 		TxFee: make([]*modules.Addition, 0),
 	}
 	txPTx.TxFee = append(txPTx.TxFee, &modules.Addition{
@@ -692,18 +631,12 @@ func TestContractTxsIllegal(t *testing.T) {
 		ReadSet:    readSet,
 		WriteSet:   writeSet,
 	}
-	tx1 := &modules.Transaction{
-		TxMessages: []*modules.Message{
-			{
-				App:     modules.APP_CONTRACT_DEPLOY_REQUEST,
-				Payload: nil,
-			},
-			{
-				App:     modules.APP_CONTRACT_DEPLOY,
-				Payload: deployPayload,
-			},
-		},
+	requestPayload := &modules.ContractDeployRequestPayload{
+		TemplateId: []byte("contract_template0000"),
 	}
+	m1 := modules.NewMessage(modules.APP_CONTRACT_DEPLOY_REQUEST, requestPayload)
+	m2 := modules.NewMessage(modules.APP_CONTRACT_DEPLOY, deployPayload)
+	tx1 := modules.NewTransaction([]*modules.Message{m1, m2})
 	txs := make([]*modules.Transaction, 0)
 	txs = append(txs, tx1)
 
@@ -732,24 +665,24 @@ func markTxsIllegal(dag storage.IStateDb, txs []*modules.Transaction) {
 		var readSet []modules.ContractReadSet
 		var contractId []byte
 
-		for _, msg := range tx.TxMessages {
+		for _, msg := range tx.Messages() {
 			switch msg.App {
 			case modules.APP_CONTRACT_DEPLOY:
 				payload := msg.Payload.(*modules.ContractDeployPayload)
 				readSet = payload.ReadSet
-				contractId = payload.ContractId
+				contractId = common.CopyBytes(payload.ContractId)
 			case modules.APP_CONTRACT_INVOKE:
 				payload := msg.Payload.(*modules.ContractInvokePayload)
 				readSet = payload.ReadSet
-				contractId = payload.ContractId
+				contractId = common.CopyBytes(payload.ContractId)
 			case modules.APP_CONTRACT_STOP:
 				payload := msg.Payload.(*modules.ContractStopPayload)
 				readSet = payload.ReadSet
-				contractId = payload.ContractId
+				contractId = common.CopyBytes(payload.ContractId)
 			}
 		}
-		valid := checkReadSetValid(dag, contractId, readSet)
-		tx.Illegal = !valid
+		valid := checkReadSetIsValid(dag, contractId, readSet)
+		tx.SetIllegal(!valid)
 	}
 }
 

@@ -29,8 +29,8 @@ import (
 
 type transactionTemp struct {
 	TxMessages []messageTemp
-	CertId     []byte `json:"cert_id"` // should be big.Int byte
-	Illegal    bool   `json:"Illegal"` // not hash, 1:no valid, 0:ok
+	CertId     []byte // should be big.Int byte
+	Illegal    bool   // not hash, 1:no valid, 0:ok
 }
 type messageTemp struct {
 	App  MessageType
@@ -57,11 +57,11 @@ func (tx *Transaction) EncodeRLP(w io.Writer) error {
 	return rlp.Encode(w, temp)
 }
 func tx2Temp(tx *Transaction) (*transactionTemp, error) {
-	temp := &transactionTemp{}
-	temp.Illegal = tx.Illegal
-	temp.CertId = tx.CertId
+	temp := transactionTemp{}
+	temp.Illegal = tx.Illegal()
+	temp.CertId = tx.CertId()
 
-	for _, m := range tx.TxMessages {
+	for _, m := range tx.Messages() {
 		m1 := messageTemp{
 			App: m.App,
 		}
@@ -74,20 +74,20 @@ func tx2Temp(tx *Transaction) (*transactionTemp, error) {
 		temp.TxMessages = append(temp.TxMessages, m1)
 
 	}
-	return temp, nil
+	return &temp, nil
 }
 func temp2Tx(temp *transactionTemp, tx *Transaction) error {
+	d := transaction_sdw{}
 	for _, m := range temp.TxMessages {
-		m1 := &Message{
-			App: m.App,
-		}
+		m1 := new(Message)
+		m1.App = m.App
 		if m.App == APP_PAYMENT {
-			var pay PaymentPayload
-			err := rlp.DecodeBytes(m.Data, &pay)
+			pay := new(PaymentPayload)
+			err := rlp.DecodeBytes(m.Data, pay)
 			if err != nil {
 				return err
 			}
-			m1.Payload = &pay
+			m1.Payload = pay
 		} else if m.App == APP_DATA {
 			var text DataPayload
 			err := rlp.DecodeBytes(m.Data, &text)
@@ -188,11 +188,13 @@ func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 		} else {
 			fmt.Println("Unknown message app type:", m.App)
 		}
-		tx.TxMessages = append(tx.TxMessages, m1)
+		d.TxMessages = append(d.TxMessages, m1)
 
 	}
-	tx.Illegal = temp.Illegal
-	tx.CertId = temp.CertId
+	d.Illegal = temp.Illegal
+	d.CertId = temp.CertId
+	// init tx
+	tx.txdata = d
 	return nil
 
 }

@@ -29,7 +29,6 @@ import (
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"time"
 )
 
 //验证一个Payment
@@ -64,14 +63,13 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 		isInputnil = true
 	} else {
 		invokeReqMsgIdx := tx.GetContractInvokeReqMsgIdx()
-		txForSign := tx
+		txForSign := tx.Clone()
 		if msgIdx < invokeReqMsgIdx {
 			txForSign = tx.GetRequestTx()
 			log.Debugf("msgIdx %d, GetRequestTx 1", msgIdx)
 		} else if invokeReqMsgIdx > 0 && msgIdx > invokeReqMsgIdx {
-			txCopy:=tx.Clone()
-			txForSign =&txCopy
-			log.Debugf("msgIdx %d, GetResultTx 1", msgIdx)
+			//txForSign := tx.Clone()
+			log.Debugf("msgIdx %d, Clone 1", msgIdx)
 		}
 
 		statusValid := false
@@ -85,7 +83,7 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 
 			usedUtxoKey := in.PreviousOutPoint.String()
 			if _, exist := usedUtxo[usedUtxoKey]; exist {
-				log.Errorf("double spend utxo:%s", usedUtxoKey)
+				log.Warnf("double spend utxo:%s", usedUtxoKey)
 				return TxValidationCode_INVALID_DOUBLE_SPEND
 			}
 			usedUtxo[usedUtxoKey] = true
@@ -93,7 +91,8 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 			var utxo *modules.Utxo
 			var err error
 			if in.PreviousOutPoint.TxHash.IsSelfHash() {
-				output := tx.TxMessages[in.PreviousOutPoint.MessageIndex].Payload.(*modules.PaymentPayload).Outputs[in.PreviousOutPoint.OutIndex]
+				output := tx.Messages()[in.PreviousOutPoint.MessageIndex].Payload.(*modules.PaymentPayload).Outputs[in.
+					PreviousOutPoint.OutIndex]
 				utxo = &modules.Utxo{
 					Amount:    output.Value,
 					Asset:     output.Asset,
@@ -145,12 +144,9 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 			utxoScriptMap[in.PreviousOutPoint.String()] = utxo.PkScript
 
 		}
-		t1 := time.Now()
 		err := validate.tokenEngine.ScriptValidate1Msg(utxoScriptMap, validate.pickJuryFn, txForSign, msgIdx)
 		if err != nil {
 			return TxValidationCode_INVALID_PAYMMENT_INPUT
-		} else {
-			log.Debugf("Unlock script validated! tx[%s],%d, spend time:%s", tx.Hash().String(), msgIdx, time.Since(t1))
 		}
 	}
 

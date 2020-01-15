@@ -9,7 +9,6 @@ import (
 	common "github.com/palletone/go-palletone/common"
 	event "github.com/palletone/go-palletone/common/event"
 	discover "github.com/palletone/go-palletone/common/p2p/discover"
-	list "github.com/palletone/go-palletone/contracts/list"
 	core "github.com/palletone/go-palletone/core"
 	modules "github.com/palletone/go-palletone/dag/modules"
 	txspool "github.com/palletone/go-palletone/txspool"
@@ -175,15 +174,15 @@ func (mr *MockIDagMockRecorder) GetMainCurrentUnit() *gomock.Call {
 }
 
 // GetCurrentMemUnit mocks base method
-func (m *MockIDag) GetCurrentMemUnit(assetId modules.AssetId, index uint64) *modules.Unit {
-	ret := m.ctrl.Call(m, "GetCurrentMemUnit", assetId, index)
+func (m *MockIDag) GetCurrentMemUnit(assetId modules.AssetId) *modules.Unit {
+	ret := m.ctrl.Call(m, "GetCurrentMemUnit", assetId)
 	ret0, _ := ret[0].(*modules.Unit)
 	return ret0
 }
 
 // GetCurrentMemUnit indicates an expected call of GetCurrentMemUnit
-func (mr *MockIDagMockRecorder) GetCurrentMemUnit(assetId, index interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentMemUnit", reflect.TypeOf((*MockIDag)(nil).GetCurrentMemUnit), assetId, index)
+func (mr *MockIDagMockRecorder) GetCurrentMemUnit(assetId interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentMemUnit", reflect.TypeOf((*MockIDag)(nil).GetCurrentMemUnit), assetId)
 }
 
 // InsertDag mocks base method
@@ -337,6 +336,45 @@ func (m *MockIDag) GetTransactionOnly(hash common.Hash) (*modules.Transaction, e
 // GetTransactionOnly indicates an expected call of GetTransactionOnly
 func (mr *MockIDagMockRecorder) GetTransactionOnly(hash interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactionOnly", reflect.TypeOf((*MockIDag)(nil).GetTransactionOnly), hash)
+}
+
+// GetStableTransactionOnly mocks base method
+func (m *MockIDag) GetStableTransactionOnly(hash common.Hash) (*modules.Transaction, error) {
+	ret := m.ctrl.Call(m, "GetStableTransactionOnly", hash)
+	ret0, _ := ret[0].(*modules.Transaction)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetStableTransactionOnly indicates an expected call of GetStableTransactionOnly
+func (mr *MockIDagMockRecorder) GetStableTransactionOnly(hash interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStableTransactionOnly", reflect.TypeOf((*MockIDag)(nil).GetStableTransactionOnly), hash)
+}
+
+// GetStableUnit mocks base method
+func (m *MockIDag) GetStableUnit(hash common.Hash) (*modules.Unit, error) {
+	ret := m.ctrl.Call(m, "GetStableUnit", hash)
+	ret0, _ := ret[0].(*modules.Unit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetStableUnit indicates an expected call of GetStableUnit
+func (mr *MockIDagMockRecorder) GetStableUnit(hash interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStableUnit", reflect.TypeOf((*MockIDag)(nil).GetStableUnit), hash)
+}
+
+// GetStableUnitByNumber mocks base method
+func (m *MockIDag) GetStableUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error) {
+	ret := m.ctrl.Call(m, "GetStableUnitByNumber", number)
+	ret0, _ := ret[0].(*modules.Unit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetStableUnitByNumber indicates an expected call of GetStableUnitByNumber
+func (mr *MockIDagMockRecorder) GetStableUnitByNumber(number interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStableUnitByNumber", reflect.TypeOf((*MockIDag)(nil).GetStableUnitByNumber), number)
 }
 
 // IsTransactionExist mocks base method
@@ -785,6 +823,18 @@ func (mr *MockIDagMockRecorder) GetAllContractTpl() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllContractTpl", reflect.TypeOf((*MockIDag)(nil).GetAllContractTpl))
 }
 
+// SaveContract mocks base method
+func (m *MockIDag) SaveContract(contract *modules.Contract) error {
+	ret := m.ctrl.Call(m, "SaveContract", contract)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveContract indicates an expected call of SaveContract
+func (mr *MockIDagMockRecorder) SaveContract(contract interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveContract", reflect.TypeOf((*MockIDag)(nil).SaveContract), contract)
+}
+
 // GetContract mocks base method
 func (m *MockIDag) GetContract(id []byte) (*modules.Contract, error) {
 	ret := m.ctrl.Call(m, "GetContract", id)
@@ -949,15 +999,15 @@ func (mr *MockIDagMockRecorder) SubscribeToGroupSignEvent(ch interface{}) *gomoc
 }
 
 // IsSynced mocks base method
-func (m *MockIDag) IsSynced(isStrict bool) bool {
-	ret := m.ctrl.Call(m, "IsSynced", isStrict)
+func (m *MockIDag) IsSynced(toStrictly bool) bool {
+	ret := m.ctrl.Call(m, "IsSynced", toStrictly)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
 // IsSynced indicates an expected call of IsSynced
-func (mr *MockIDagMockRecorder) IsSynced(isStrict interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSynced", reflect.TypeOf((*MockIDag)(nil).IsSynced), isStrict)
+func (mr *MockIDagMockRecorder) IsSynced(toStrictly interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSynced", reflect.TypeOf((*MockIDag)(nil).IsSynced), toStrictly)
 }
 
 // SubscribeActiveMediatorsUpdatedEvent mocks base method
@@ -1223,42 +1273,30 @@ func (mr *MockIDagMockRecorder) GetIrreversibleUnitNum(id interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIrreversibleUnitNum", reflect.TypeOf((*MockIDag)(nil).GetIrreversibleUnitNum), id)
 }
 
-// SaveChaincode mocks base method
-func (m *MockIDag) SaveChaincode(contractId common.Address, cc *list.CCInfo) error {
-	ret := m.ctrl.Call(m, "SaveChaincode", contractId, cc)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SaveChaincode indicates an expected call of SaveChaincode
-func (mr *MockIDagMockRecorder) SaveChaincode(contractId, cc interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveChaincode", reflect.TypeOf((*MockIDag)(nil).SaveChaincode), contractId, cc)
-}
-
-// GetChaincode mocks base method
-func (m *MockIDag) GetChaincode(contractId common.Address) (*list.CCInfo, error) {
-	ret := m.ctrl.Call(m, "GetChaincode", contractId)
-	ret0, _ := ret[0].(*list.CCInfo)
+// StableHeadUnitProperty mocks base method
+func (m *MockIDag) StableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error) {
+	ret := m.ctrl.Call(m, "StableHeadUnitProperty", asset)
+	ret0, _ := ret[0].(*modules.UnitProperty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetChaincode indicates an expected call of GetChaincode
-func (mr *MockIDagMockRecorder) GetChaincode(contractId interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChaincode", reflect.TypeOf((*MockIDag)(nil).GetChaincode), contractId)
+// StableHeadUnitProperty indicates an expected call of StableHeadUnitProperty
+func (mr *MockIDagMockRecorder) StableHeadUnitProperty(asset interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StableHeadUnitProperty", reflect.TypeOf((*MockIDag)(nil).StableHeadUnitProperty), asset)
 }
 
-// RetrieveChaincodes mocks base method
-func (m *MockIDag) RetrieveChaincodes() ([]*list.CCInfo, error) {
-	ret := m.ctrl.Call(m, "RetrieveChaincodes")
-	ret0, _ := ret[0].([]*list.CCInfo)
+// UnstableHeadUnitProperty mocks base method
+func (m *MockIDag) UnstableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error) {
+	ret := m.ctrl.Call(m, "UnstableHeadUnitProperty", asset)
+	ret0, _ := ret[0].(*modules.UnitProperty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// RetrieveChaincodes indicates an expected call of RetrieveChaincodes
-func (mr *MockIDagMockRecorder) RetrieveChaincodes() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RetrieveChaincodes", reflect.TypeOf((*MockIDag)(nil).RetrieveChaincodes))
+// UnstableHeadUnitProperty indicates an expected call of UnstableHeadUnitProperty
+func (mr *MockIDagMockRecorder) UnstableHeadUnitProperty(asset interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnstableHeadUnitProperty", reflect.TypeOf((*MockIDag)(nil).UnstableHeadUnitProperty), asset)
 }
 
 // GetPartitionChains mocks base method
@@ -1335,6 +1373,18 @@ func (m *MockIDag) GetGlobalProp() *modules.GlobalProperty {
 // GetGlobalProp indicates an expected call of GetGlobalProp
 func (mr *MockIDagMockRecorder) GetGlobalProp() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGlobalProp", reflect.TypeOf((*MockIDag)(nil).GetGlobalProp))
+}
+
+// GetMediatorSchl mocks base method
+func (m *MockIDag) GetMediatorSchl() *modules.MediatorSchedule {
+	ret := m.ctrl.Call(m, "GetMediatorSchl")
+	ret0, _ := ret[0].(*modules.MediatorSchedule)
+	return ret0
+}
+
+// GetMediatorSchl indicates an expected call of GetMediatorSchl
+func (mr *MockIDagMockRecorder) GetMediatorSchl() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMediatorSchl", reflect.TypeOf((*MockIDag)(nil).GetMediatorSchl))
 }
 
 // GetMediatorCount mocks base method
@@ -1583,6 +1633,18 @@ func (mr *MockIDagMockRecorder) GetAssetReference(asset interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssetReference", reflect.TypeOf((*MockIDag)(nil).GetAssetReference), asset)
 }
 
+// CheckReadSetValid mocks base method
+func (m *MockIDag) CheckReadSetValid(contractId []byte, readSet []modules.ContractReadSet) bool {
+	ret := m.ctrl.Call(m, "CheckReadSetValid", contractId, readSet)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// CheckReadSetValid indicates an expected call of CheckReadSetValid
+func (mr *MockIDagMockRecorder) CheckReadSetValid(contractId, readSet interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckReadSetValid", reflect.TypeOf((*MockIDag)(nil).CheckReadSetValid), contractId, readSet)
+}
+
 // IsActiveJury mocks base method
 func (m *MockIDag) IsActiveJury(addr common.Address) bool {
 	ret := m.ctrl.Call(m, "IsActiveJury", addr)
@@ -1632,18 +1694,6 @@ func (mr *MockIDagMockRecorder) IsContractDeveloper(addr interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsContractDeveloper", reflect.TypeOf((*MockIDag)(nil).IsContractDeveloper), addr)
 }
 
-// GetActiveJuries mocks base method
-func (m *MockIDag) GetActiveJuries() []common.Address {
-	ret := m.ctrl.Call(m, "GetActiveJuries")
-	ret0, _ := ret[0].([]common.Address)
-	return ret0
-}
-
-// GetActiveJuries indicates an expected call of GetActiveJuries
-func (mr *MockIDagMockRecorder) GetActiveJuries() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveJuries", reflect.TypeOf((*MockIDag)(nil).GetActiveJuries))
-}
-
 // CreateGenericTransaction mocks base method
 func (m *MockIDag) CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
 	ret := m.ctrl.Call(m, "CreateGenericTransaction", from, to, daoAmount, daoFee, certID, msg, txPool)
@@ -1659,8 +1709,8 @@ func (mr *MockIDagMockRecorder) CreateGenericTransaction(from, to, daoAmount, da
 }
 
 // CreateTokenTransaction mocks base method
-func (m *MockIDag) CreateTokenTransaction(from, to, toToken common.Address, daoAmount, daoFee, daoAmountToken uint64, assetToken string, msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
-	ret := m.ctrl.Call(m, "CreateTokenTransaction", from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, msg, txPool)
+func (m *MockIDag) CreateTokenTransaction(from, to common.Address, token *modules.Asset, daoAmountToken, daoFee uint64, msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
+	ret := m.ctrl.Call(m, "CreateTokenTransaction", from, to, token, daoAmountToken, daoFee, msg, txPool)
 	ret0, _ := ret[0].(*modules.Transaction)
 	ret1, _ := ret[1].(uint64)
 	ret2, _ := ret[2].(error)
@@ -1668,8 +1718,8 @@ func (m *MockIDag) CreateTokenTransaction(from, to, toToken common.Address, daoA
 }
 
 // CreateTokenTransaction indicates an expected call of CreateTokenTransaction
-func (mr *MockIDagMockRecorder) CreateTokenTransaction(from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, msg, txPool interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTokenTransaction", reflect.TypeOf((*MockIDag)(nil).CreateTokenTransaction), from, to, toToken, daoAmount, daoFee, daoAmountToken, assetToken, msg, txPool)
+func (mr *MockIDagMockRecorder) CreateTokenTransaction(from, to, token, daoAmountToken, daoFee, msg, txPool interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTokenTransaction", reflect.TypeOf((*MockIDag)(nil).CreateTokenTransaction), from, to, token, daoAmountToken, daoFee, msg, txPool)
 }
 
 // ChainThreshold mocks base method
@@ -1769,4 +1819,16 @@ func (m *MockIDag) SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.Uns
 // SubscribeUnstableRepositoryUpdatedEvent indicates an expected call of SubscribeUnstableRepositoryUpdatedEvent
 func (mr *MockIDagMockRecorder) SubscribeUnstableRepositoryUpdatedEvent(ch interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeUnstableRepositoryUpdatedEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeUnstableRepositoryUpdatedEvent), ch)
+}
+
+// GetContractsWithJuryAddr mocks base method
+func (m *MockIDag) GetContractsWithJuryAddr(addr common.Address) []*modules.Contract {
+	ret := m.ctrl.Call(m, "GetContractsWithJuryAddr", addr)
+	ret0, _ := ret[0].([]*modules.Contract)
+	return ret0
+}
+
+// GetContractsWithJuryAddr indicates an expected call of GetContractsWithJuryAddr
+func (mr *MockIDagMockRecorder) GetContractsWithJuryAddr(addr interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractsWithJuryAddr", reflect.TypeOf((*MockIDag)(nil).GetContractsWithJuryAddr), addr)
 }

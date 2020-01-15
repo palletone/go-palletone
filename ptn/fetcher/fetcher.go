@@ -298,7 +298,7 @@ func (f *Fetcher) loop() {
 		for !f.queue.Empty() {
 			op := f.queue.PopItem().(*inject)
 			if f.queueChangeHook != nil {
-				f.queueChangeHook(op.unit.UnitHash, false)
+				f.queueChangeHook(op.unit.Hash(), false)
 			}
 			// If too high up the chain or phase, continue later
 			//height = f.chainHeight(op.unit.Header().ChainIndex().AssetID)
@@ -327,12 +327,12 @@ func (f *Fetcher) loop() {
 
 		case notification := <-f.notify:
 			// A block was announced, make sure the peer isn't DOSing us
-			propAnnounceInMeter.Mark(1)
+			propAnnounceInPrometheus.Add(1)
 
 			count := f.announces[notification.origin] + 1
 			if count > hashLimit {
 				log.Debug("Peer exceeded outstanding announces", "peer", notification.origin, "limit", hashLimit)
-				propAnnounceDOSMeter.Mark(1)
+				propAnnounceDOSPrometheus.Add(1)
 				break
 			}
 			// If we have a valid block number, check that it's potentially useful
@@ -341,7 +341,7 @@ func (f *Fetcher) loop() {
 					int64(f.chainHeight(notification.number.AssetID)); dist < -maxUncleDist || dist > maxQueueDist {
 					log.Debug("Peer discarded announcement", "peer", notification.origin, "number",
 						notification.number, "hash", notification.hash, "distance", dist)
-					propAnnounceDropMeter.Mark(1)
+					propAnnounceDropPrometheus.Add(1)
 					break
 				}
 			}
@@ -364,7 +364,7 @@ func (f *Fetcher) loop() {
 
 		case op := <-f.inject:
 			// A direct block insertion was requested, try and fill any pending gaps
-			propBroadcastInMeter.Mark(1)
+			propBroadcastInPrometheus.Add(1)
 			f.enqueue(op.origin, op.unit)
 
 		case hash := <-f.done:
@@ -401,7 +401,7 @@ func (f *Fetcher) loop() {
 						f.fetchingHook(hashes)
 					}
 					for _, hash := range hashes {
-						headerFetchMeter.Mark(1)
+						headerFetchPrometheus.Add(1)
 						fetchHeader(hash) // Suboptimal, but protocol doesn't allow batch header retrievals
 					}
 				}(fetchHeader, hashes)
@@ -433,7 +433,7 @@ func (f *Fetcher) loop() {
 				if f.completingHook != nil {
 					f.completingHook(hashes)
 				}
-				bodyFetchMeter.Mark(int64(len(hashes)))
+				bodyFetchPrometheus.Add(float64(len(hashes)))
 				go f.completing[hashes[0]].fetchBodies(hashes)
 			}
 			// Schedule the next fetch if blocks are still pending
@@ -449,7 +449,7 @@ func (f *Fetcher) loop() {
 			case <-f.quit:
 				return
 			}
-			headerFilterInMeter.Mark(int64(len(task.headers)))
+			headerFilterInPrometheus.Add(float64(len(task.headers)))
 
 			// Split the batch of headers into unknown ones (to return to the caller),
 			// known incomplete ones (requiring body retrievals) and completed blocks.
@@ -461,10 +461,10 @@ func (f *Fetcher) loop() {
 				if announce := f.fetching[hash]; announce != nil && announce.origin == task.peer && f.fetched[hash] == nil &&
 					f.completing[hash] == nil && f.queued[hash] == nil {
 					// If the delivered header does not match the promised number, drop the announcer
-					if header.Number.Index != announce.number.Index &&
-						header.Number.AssetID == announce.number.AssetID {
+					if header.GetNumber().Index != announce.number.Index &&
+						header.GetNumber().AssetID == announce.number.AssetID {
 						log.Trace("Invalid block number fetched", "peer", announce.origin, "hash",
-							header.Hash(), "announced", announce.number, "provided", header.Number)
+							header.Hash(), "announced", announce.number, "provided", header.GetNumber())
 						f.dropPeer(announce.origin)
 						f.forgetHash(hash)
 						continue
@@ -477,9 +477,9 @@ func (f *Fetcher) loop() {
 
 						// If the block is empty (header only), short circuit into the final import queue
 						//TODO modify
-						if header.TxRoot == core.DeriveSha(modules.Transactions{}) {
+						if header.TxRoot() == core.DeriveSha(modules.Transactions{}) {
 							log.Trace("Block empty, skipping body retrieval", "peer", announce.origin,
-								"number", header.Number, "hash", header.Hash())
+								"number", header.GetNumber(), "hash", header.Hash())
 
 							block := modules.NewUnitWithHeader(header)
 							block.ReceivedAt = task.time
@@ -492,7 +492,7 @@ func (f *Fetcher) loop() {
 						incomplete = append(incomplete, announce)
 					} else {
 						log.Trace("Block already imported, discarding header", "peer", announce.origin,
-							"number", header.Number, "hash", header.Hash())
+							"number", header.GetNumber(), "hash", header.Hash())
 						f.forgetHash(hash)
 					}
 				} else {
@@ -500,7 +500,7 @@ func (f *Fetcher) loop() {
 					unknown = append(unknown, header)
 				}
 			}
-			headerFilterOutMeter.Mark(int64(len(unknown)))
+			headerFilterOutPrometheus.Add(float64(len(unknown)))
 			select {
 			case filter <- &headerFilterTask{headers: unknown, time: task.time}:
 			case <-f.quit:
@@ -532,7 +532,7 @@ func (f *Fetcher) loop() {
 			case <-f.quit:
 				return
 			}
-			bodyFilterInMeter.Mark(int64(len(task.transactions)))
+			bodyFilterInPrometheus.Add(float64(len(task.transactions)))
 			blocks := []*modules.Unit{}
 
 			for i := 0; i < len(task.transactions); i++ {
@@ -569,7 +569,7 @@ func (f *Fetcher) loop() {
 				}
 			}
 
-			bodyFilterOutMeter.Mark(int64(len(task.transactions)))
+			bodyFilterOutPrometheus.Add(float64(len(task.transactions)))
 			select {
 			case filter <- task:
 			case <-f.quit:
@@ -628,7 +628,7 @@ func (f *Fetcher) enqueue(peer string, block *modules.Unit) {
 	if count > blockLimit {
 		log.Debug("Discarded propagated block, exceeded allowance", "peer", peer, "number", block.Number(),
 			"hash", hash, "limit", blockLimit)
-		propBroadcastDOSMeter.Mark(1)
+		propBroadcastDOSPrometheus.Add(1)
 		f.forgetHash(hash)
 		return
 	}
@@ -637,7 +637,7 @@ func (f *Fetcher) enqueue(peer string, block *modules.Unit) {
 	if dist := int64(block.Number().Index) - heightChain; dist < -maxUncleDist || dist > maxQueueDist {
 		log.Debug("Discarded propagated block, too far away", "peer", peer, "number", block.Number().Index,
 			"heightChain", heightChain, "distance", dist)
-		propBroadcastDropMeter.Mark(1)
+		propBroadcastDropPrometheus.Add(1)
 		f.forgetHash(hash)
 		return
 	}
