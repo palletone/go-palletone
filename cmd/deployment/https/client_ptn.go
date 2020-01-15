@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func test_main() {
+func test_main_1() {
 	pool := x509.NewCertPool()
 	caCertPath := "ca.crt"
 

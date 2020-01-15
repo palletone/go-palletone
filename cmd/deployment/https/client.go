@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func main() {
+func test_main_0() {
 	pool := x509.NewCertPool()
 	caCertPath := "ca.crt"
 
