@@ -146,3 +146,33 @@ cancel
     ${resp}=    sendRpcPost    ${exchangeMethod}    ${params}    exchangeCancel
     log    ${resp}
     [Return]    ${resp}
+
+Alice issues her personal token, amount is 100000, decimal is 1 succeed
+    [Arguments]    ${addr}    ${AliceToken}
+    log    ${addr}
+    issueToken    ${addr}    ${AliceToken}    100000    1    addr's
+    Wait for transaction being packaged
+    ${AliceTokenID}    FindTokenId    ${addr}    ${AliceToken} 
+    [Return]    ${AliceTokenID}
+
+Bob issues her personal token, amount is 100000, decimal is 1 succeed
+    [Arguments]    ${addr}    ${BobToken}
+    log    ${addr}
+    issueToken    ${addr}    ${BobToken}    100000    1    addr's
+    Wait for transaction being packaged
+    ${BobTokenID}    FindTokenId    ${addr}    ${BobToken} 
+    [Return]    ${BobTokenID}
+
+FindTokenId
+    [Arguments]    ${addr}    ${TokenName}
+    ${balance}=    getAllBalance    ${addr}
+    log    ${balance}
+    log    ${TokenName}
+    ${tokenIDs}=    Get Dictionary Keys    ${balance}
+    :FOR    ${id}    IN    @{tokenIDs}
+    \    log    ${id[0:3]}
+    \    log    ${TokenName}
+    \    Set Global Variable    ${TokenID}    ${id}
+    \    run keyword if    '${id[0:3]}'=='${TokenName}'    exit for loop
+    log    ${TokenID}
+    [Return]    ${TokenID}

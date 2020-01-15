@@ -25,15 +25,13 @@ tokenHolder=`echo ${tH//\"/}`
 echo "tokenHolder=" $tokenHolder
 
 o=`echo $accountsList | jq ".[$num]"`
-one=`echo ${o//\"/}`
-echo "one=" $one
+Alice=`echo ${o//\"/}`
+echo "Alice=" $Alice
 
 num2=$[$num + 1]
 t=`echo $accountsList | jq ".[$num2]"`
-two=`echo ${t//\"/}`
-echo "two=" $two
-
-
+Bob=`echo ${t//\"/}`
+echo "Bob=" $Bob
 #./createtoken.sh $one 100 $1 1  5000000 
 #sleep 5
 #lgbalance=`../node/gptn --exec "wallet.getBalance(\"$one\")" attach ../node/palletone/gptn.ipc`
@@ -49,4 +47,5 @@ echo "two=" $two
 #echo $twotoken 
 
 
-pybot -d ../logs/exchange  -v foundation:$tokenHolder    -v one:${one} -v two:${two} -v onetoken:$1 -v twotoken:$2 exchange.robot
+pybot -d ../logs/exchange  -v foundation:$tokenHolder    -v Alice:${Alice} -v Bob:${Bob} -v AliceToken:${1} -v BobToken:${2} exchange.robot
+#pybot -d ../logs/exchange  -v foundation:$tokenHolder    -v Alice:${Alice} -v Bob:${Bob}  random_action.robot

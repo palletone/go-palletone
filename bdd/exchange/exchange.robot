@@ -7,105 +7,99 @@ Resource          setups.robot
 Library           BuiltIn
 
 *** Variables ***
-${one}            ${EMPTY}
-${two}            ${EMPTY}
-${onetoken}       ${EMPTY}
-${twotoken}       ${EMPTY}
-${foundation}     ${EMPTY}
+${Alice}            ${EMPTY}
+${Bob}              ${EMPTY}
+${AliceToken}       ${EMPTY}
+${BobToken}         ${EMPTY}
+${foundation}       ${EMPTY}
 
 *** Test Cases ***
 exchangemaker
     unlockAccount    ${foundation}
-    transferPtn    ${foundation}    ${one}    2000
-    log    ${one}
-    log    ${onetoken}
-    transferPtn    ${foundation}    ${two}    2000
+    transferPtn    ${foundation}    ${Alice}    2000
+    log    ${Alice}
+    log    ${AliceToken}
+    transferPtn    ${foundation}    ${Bob}    2000
     sleep    1
-    unlockAccount    ${one}
-    ${onetokenId}=    Alice issues her personal token, amount is 100000, decimal is 1 succeed    ${one}    ${onetoken}
+    unlockAccount    ${Alice}
+    ${AliceTokenID}    Alice issues her personal token, amount is 100000, decimal is 1 succeed    ${Alice}    ${AliceToken}
     sleep    5
-    unlockAccount    ${two}
-    ${twotokenId}=    Bob issues her personal token, amount is 100000, decimal is 1 succeed    ${two}    ${twotoken}
-
-    ${onebalance}=    getBalance    ${one}    ${onetokenId}
+    unlockAccount    ${Bob}
+    ${BobTokenID}    Bob issues her personal token, amount is 100000, decimal is 1 succeed    ${Bob}    ${BobToken}
+    ${onebalance}=    getBalance    ${Alice}    ${AliceTokenID}
     log    ${onebalance}
-    ${twobalance}=    getBalance    ${two}    ${twotokenId}
+    ${twobalance}=    getBalance    ${Bob}    ${BobTokenID}
     log    ${twobalance}
-
-    unlockAccount    ${one}
-    maker    ${one}    ${onetokenId}    100    ${twotokenId}    2000
+    unlockAccount    ${Alice}
+    maker    ${Alice}    ${AliceTokenID}    100    ${BobTokenID}    2000
     sleep    5
     exchangequery
-    ${respJson}    addrexchangequery    ${one}
+    ${respJson}    addrexchangequery    ${Alice}
     ${reJson}    To Json    ${respJson}
     ${len}    Get Length    ${reJson}
-    ${exchsn}=    Get From Dictionary    ${reJson[0]}    ExchangeSn 
+    ${exchsn}=    Get From Dictionary    ${reJson[0]}    ExchangeSn
     log    ${exchsn}
-
-    taker    ${two}    ${twotokenId}    2000    ${exchsn}
+    taker    ${Bob}    ${BobTokenID}    2000    ${exchsn}
     sleep    5
-    ${afteronebalance}=    getBalance    ${one}    ${twotokenId}
+    ${afteronebalance}=    getBalance    ${Alice}    ${BobTokenID}
     log    ${afteronebalance}
     ${makeramount}=    Set Variable If    ${afteronebalance}==2000    0    0
     log    ${makeramount}
-    ${aftertwobalance}=    getBalance    ${two}    ${onetokenId}
+    ${aftertwobalance}=    getBalance    ${Bob}    ${AliceTokenID}
     log    ${aftertwobalance}
     ${takeramount}=    Set Variable If    ${aftertwobalance}==100    0    0
     log    ${takeramount}
-
-    maker    ${one}    ${onetokenId}    200    ${twotokenId}    4000
+    maker    ${Alice}    ${AliceTokenID}    200    ${BobTokenID}    4000
     sleep    5
     exchangequery
-    ${respJson}    addrexchangequery    ${one}
+    ${respJson}    addrexchangequery    ${Alice}
     ${reJson}    To Json    ${respJson}
     ${len}    Get Length    ${reJson}
-    ${exchsn2}=    Get From Dictionary    ${reJson[0]}    ExchangeSn 
+    ${exchsn2}=    Get From Dictionary    ${reJson[0]}    ExchangeSn
     log    ${exchsn2}
-
-    taker    ${two}    ${twotokenId}    2000    ${exchsn2}
+    taker    ${Bob}    ${BobTokenID}    2000    ${exchsn2}
     sleep    5
-    ${afteronebalance2}=    getBalance    ${one}    ${twotokenId}
+    ${afteronebalance2}=    getBalance    ${Alice}    ${BobTokenID}
     log    ${afteronebalance2}
     ${makeramount}=    Set Variable If    ${afteronebalance2}==4000    0    0
     log    ${makeramount}
-    ${aftertwobalance}=    getBalance    ${two}    ${onetokenId}
+    ${aftertwobalance}=    getBalance    ${Bob}    ${AliceTokenID}
     log    ${aftertwobalance}
     ${takeramount}=    Set Variable If    ${aftertwobalance}==200    0    0
     log    ${takeramount}
-
-    ${respJson}    addrexchangequery    ${one}
+    ${respJson}    addrexchangequery    ${Alice}
     ${reJson}    To Json    ${respJson}
     ${len}    Get Length    ${reJson}
-    ${exchsn3}=    Get From Dictionary    ${reJson[0]}    ExchangeSn 
+    ${exchsn3}=    Get From Dictionary    ${reJson[0]}    ExchangeSn
     log    ${exchsn3}
-    cancel    ${one}    ${onetokenId}    ${exchsn3}
+    cancel    ${Alice}    ${AliceTokenID}    ${exchsn3}
     sleep    5
-    ${respJson}    addrexchangequery    ${one}
+    ${respJson}    addrexchangequery    ${Alice}
     log    ${respJson}
     run keyword if    ''    in ${respJson}
     ${allmatchquery}    allmatchquery
     log    ${allmatchquery}
-    ${matchqueryrespJson}    matchquery    ${one}
+    ${matchqueryrespJson}    matchquery    ${Alice}
     log    ${matchqueryrespJson}
     ${respJson}    historyexchangequery
     log    ${respJson}
 
-    maker    ${one}    ${onetokenId}    300    ${twotokenId}    9000
+    maker    ${Alice}    ${AliceTokenID}    300    ${BobTokenID}    9000
     sleep    5
     exchangequery
-    ${respJson}    addrexchangequery    ${one}
+    ${respJson}    addrexchangequery    ${Alice}
     ${reJson}    To Json    ${respJson}
     ${len}    Get Length    ${reJson}
     ${exchsn4}=    Get From Dictionary    ${reJson[0]}    ExchangeSn 
     log    ${exchsn4}
 
-    taker    ${two}    ${twotokenId}    8000    ${exchsn4}
+    taker    ${Bob}    ${BobTokenID}    8000    ${exchsn4}
     sleep    5
-    ${afteronebalance4}=    getBalance    ${one}    ${twotokenId}
+    ${afteronebalance4}=    getBalance    ${Alice}    ${BobTokenID}
     log    ${afteronebalance4}
     ${makeramount}=    Set Variable If    ${afteronebalance4}=="12000"    true    false     
     log    ${makeramount}
-    ${aftertwobalance4}=    getBalance    ${two}    ${onetokenId}
+    ${aftertwobalance4}=    getBalance    ${Bob}    ${AliceTokenID}
     log    ${aftertwobalance4}
     ${takeramount}=    Set Variable If    ${aftertwobalance4}=="466.6"    true    false
     log    ${takeramount}
@@ -119,6 +113,7 @@ getBalance
     ${len}    Get Length    ${result}
     ${amount}    Set Variable If    ${len}==0    0    ${result["${assetId}"]}
     [Return]    ${amount}
+
 post
     [Arguments]    ${method}    ${alias}    ${params}
     ${header}    Create Dictionary    Content-Type=application/json
@@ -129,35 +124,3 @@ post
     Dictionary Should Contain Key    ${respJson}    result
     ${res}    Get From Dictionary    ${respJson}    result
     [Return]    ${res}
-
-Alice issues her personal token, amount is 100000, decimal is 1 succeed
-    [Arguments]    ${addr}    ${AliceToken}
-    log    ${addr}
-    issueToken    ${addr}    ${AliceToken}    100000    1    addr's
-    Wait for transaction being packaged
-    ${balance}=    getAllBalance    ${addr}
-    log    ${balance}
-    ${tokenIDs}=    Get Dictionary Keys    ${balance}
-    :FOR    ${id}    IN    @{tokenIDs}
-    \    log    ${id[0:3]}
-    \    log    ${AliceToken}
-    \    Set Global Variable    ${AliceTokenID}    ${id}
-    \    run keyword if    '${id[0:3]}'=='${AliceToken}'    exit for loop
-    log    ${AliceTokenID}
-    [Return]    ${AliceTokenID}
-
-Bob issues her personal token, amount is 100000, decimal is 1 succeed
-    [Arguments]    ${addr}    ${BobToken}
-    log    ${addr}
-    issueToken    ${addr}    ${BobToken}    100000    1    addr's
-    Wait for transaction being packaged
-    ${balance}=    getAllBalance    ${addr}
-    log    ${balance}
-    ${tokenIDs}=    Get Dictionary Keys    ${balance}
-    :FOR    ${id}    IN    @{tokenIDs}
-    \    log    ${id[0:3]}
-    \    log    ${BobToken}
-    \    Set Global Variable    ${BobTokenID}    ${id}
-    \    run keyword if    '${id[0:3]}'=='${BobToken}'    exit for loop
-    log    ${BobTokenID}
-    [Return]    ${BobTokenID}
