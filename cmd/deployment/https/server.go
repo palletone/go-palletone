@@ -15,7 +15,7 @@ func (h *myhandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hi, This is an example of http service in golang!\n")
 }
 
-func main() {
+func test_main() {
 	pool := x509.NewCertPool()
 	caCertPath := "ca.crt"
 
