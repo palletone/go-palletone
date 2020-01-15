@@ -680,7 +680,7 @@ func (validate *Validate) rewardExist(addr common.Address, aa []modules.AmountAs
 }
 
 func (validate *Validate) addIncome(income []modules.AmountAsset, newAmount uint64, asset *modules.Asset) []modules.AmountAsset {
-	var newValue []modules.AmountAsset
+	newValue := make([]modules.AmountAsset, 0, len(income))
 	hasOldValue := false
 	for _, aa := range income {
 		if aa.Asset.Equal(asset) {

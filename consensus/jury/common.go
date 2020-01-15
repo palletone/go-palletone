@@ -74,7 +74,7 @@ func (p *Processor) generateJuryRedeemScript(jury *modules.ElectionNode) []byte 
 	}
 	count := len(jury.EleList)
 	needed := byte(math.Ceil((float64(count)*2 + 1) / 3))
-	var pubKeys [][]byte
+	pubKeys := make([][]byte, 0, len(jury.EleList))
 	for _, ju := range jury.EleList {
 		juror, err := p.dag.GetJurorByAddrHash(ju.AddrHash)
 		if err != nil {
