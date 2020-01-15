@@ -527,7 +527,7 @@ func (p *ETHPort) PayoutETHTokenByAddr(ethAddr string, stub shim.ChaincodeStubIn
 	}
 
 	if amt == 0 {
-		log.Debugf("Your address %s need deposit or need wait confirm%s", ethAddr)
+		log.Debugf("Your address %s need deposit or need wait confirm", ethAddr)
 		return shim.Error("You need deposit or need wait confirm")
 	}
 

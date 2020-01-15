@@ -1,7 +1,7 @@
 *** Keywords ***
 normalCrtTrans
-    [Arguments]    ${senderAddr}    ${recieverAddr}    ${senderPTN}    ${Poundage}
-    ${jsonRes}    Request create transaction    ${senderAddr}    ${recieverAddr}    ${senderPTN}    ${Poundage}
+    [Arguments]    ${senderAddr}    ${recieverAddr}    ${senderPTN}    ${Poundage}    ${locktime}
+    ${jsonRes}    Request create transaction    ${senderAddr}    ${recieverAddr}    ${senderPTN}    ${Poundage}    ${locktime}
     ${ret}    Should Match Regexp    ${jsonRes['result']}    ${commonResultCode}    msg="result:does't match Result expression"
     [Return]    ${jsonRes['result']}
 

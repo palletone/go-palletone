@@ -1,4 +1,4 @@
-#!#!/bin/bash
+#!/bin/bash
 
 ./test_case_setup.sh 2
 

@@ -218,7 +218,7 @@ linters:
     - prealloc
     - scopelint
     - unconvert
-    - unparam
+  #  - unparam
   enable-all: false
   disable-all: true
   # presets:

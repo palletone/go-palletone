@@ -1,7 +1,8 @@
 *** Keywords ***
 InvalidCrtTrans
-    [Arguments]    ${senderAddr}    ${recieverAddr}    ${senderPTN}    ${Poundage}    ${error_code}    ${error_message}
-    ${jsonRes}    Request create transaction    ${senderAddr}    ${recieverAddr}    ${senderPTN}    ${Poundage}
+    [Arguments]    ${senderAddr}    ${recieverAddr}    ${senderPTN}    ${Poundage}    ${locktime}    ${error_code}
+    ...    ${error_message}
+    ${jsonRes}    Request create transaction    ${senderAddr}    ${recieverAddr}    ${senderPTN}    ${Poundage}    ${locktime}
     #${type}    Evaluate    type(${jsonRes['error']['code']})
     assertErrorMessage    ${jsonRes}    ${error_code}    ${error_message}
     [Return]    ${jsonRes}
@@ -13,7 +14,6 @@ InvalidSignTrans
     ${code}    Should Match Regexp    ${resp.content}['error']['code']    ${error_code}    msg="result:does't match Result expression"
     ${message}    Should Match Regexp    ${resp.content}['error']['message']    ${error_message}    msg="result:does't match Result expression"
     [Return]    ${resp.content}['error']
-
 
 InvalidSendTrans
     [Arguments]    ${i}    ${error_code}    ${error_message}
@@ -50,7 +50,7 @@ InvalidTransferToken
     ${resp}    When I_post_TransferToken_request    ${ret}
     ${resultCrt}    Then I_get_the_TransferToken_result    ${resp}    ${error_code}    ${error_message}
     [Return]    ${resultCrt}
-	
+
 InvalidCcqueryById
 
 setInvalidSignPass
@@ -91,8 +91,6 @@ I set sendTrans result
     ${resp}    setPostRequest    ${host}    ${method}    @{transList}
     [Return]    ${resp}
 
-
-
 I_set_TransferToken_params
     [Arguments]    ${tokenId}    ${tokenAmount}    ${tokenFee}    ${desc}    ${pwd}    ${locktime}
     ...    ${senderAdd}    ${recieverAdd}
@@ -119,16 +117,14 @@ I_set_TransferToken_params_to_Normal
     ${ret}    Should Match Regexp    ${resp.content}['error']['code']    ${result_code}    msg="result:does't match Result expression"
     Request Ccquery
     [Return]    ${ret}
-	
-	
+
 I set getBalance params
     [Arguments]    ${i}
     ${transList}    Create List    ${i}
     ${resp}    setPostRequest    ${host}    ${method}    ${transList}
     log    ${resp.content}
     assertBalanceInvalid    ${resp}    ${error_code}    ${error_message}
-	
-	
+
 Request Ccquery result error
     [Arguments]    ${error_code}    ${error_message}    ${resp}
     log    ${resp.content}

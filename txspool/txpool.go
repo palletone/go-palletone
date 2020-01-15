@@ -470,7 +470,11 @@ func (pool *TxPool) validateTx(tx *TxPoolTransaction, local bool) ([]*modules.Ad
 	validator.ValidationCode, error) {
 	// 交易池不需要验证交易存不存在。
 
-	return pool.txValidator.ValidateTx(tx.Tx, local)
+	// todo 以后备用
+	//if local {
+	//}
+
+	return pool.txValidator.ValidateTx(tx.Tx, true)
 }
 
 // This function MUST be called with the txpool lock held (for reads).
@@ -842,6 +846,10 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction, rateLimit bo
 	}
 	_, err1 := pool.add(p_tx, !pool.config.NoLocals)
 	log.Debug("accepted tx and add pool.", "err", err1, "rateLimit", rateLimit)
+	if err1 != nil {
+		return nil, err1
+	}
+
 	txdesc := new(TxDesc)
 	txdesc.Tx = tx
 	txdesc.Added = p_tx.CreationDate
@@ -1621,7 +1629,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 	return list, total
 }
 func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
-orphanTxs map[common.Hash]*TxPoolTransaction) []*TxPoolTransaction {
+	orphanTxs map[common.Hash]*TxPoolTransaction) []*TxPoolTransaction {
 	pretxs := make([]*TxPoolTransaction, 0)
 	for _, msg := range tx.Tx.TxMessages() {
 		if msg.App == modules.APP_PAYMENT {

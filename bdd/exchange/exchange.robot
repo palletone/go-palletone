@@ -22,10 +22,10 @@ exchangemaker
     transferPtn    ${foundation}    ${two}    2000
     sleep    1
     unlockAccount    ${one}
-    ${onetokenId}=    Alice issues her personal token, amount is 10000, decimal is 1 succeed    ${one}    ${onetoken}
+    ${onetokenId}=    Alice issues her personal token, amount is 100000, decimal is 1 succeed    ${one}    ${onetoken}
     sleep    5
     unlockAccount    ${two}
-    ${twotokenId}=    Bob issues her personal token, amount is 10000, decimal is 1 succeed    ${two}    ${twotoken}
+    ${twotokenId}=    Bob issues her personal token, amount is 100000, decimal is 1 succeed    ${two}    ${twotoken}
 
     ${onebalance}=    getBalance    ${one}    ${onetokenId}
     log    ${onebalance}
@@ -90,6 +90,26 @@ exchangemaker
     ${respJson}    historyexchangequery
     log    ${respJson}
 
+    maker    ${one}    ${onetokenId}    300    ${twotokenId}    9000
+    sleep    5
+    exchangequery
+    ${respJson}    addrexchangequery    ${one}
+    ${reJson}    To Json    ${respJson}
+    ${len}    Get Length    ${reJson}
+    ${exchsn4}=    Get From Dictionary    ${reJson[0]}    ExchangeSn 
+    log    ${exchsn4}
+
+    taker    ${two}    ${twotokenId}    8000    ${exchsn4}
+    sleep    5
+    ${afteronebalance4}=    getBalance    ${one}    ${twotokenId}
+    log    ${afteronebalance4}
+    ${makeramount}=    Set Variable If    ${afteronebalance4}=="12000"    true    false     
+    log    ${makeramount}
+    ${aftertwobalance4}=    getBalance    ${two}    ${onetokenId}
+    log    ${aftertwobalance4}
+    ${takeramount}=    Set Variable If    ${aftertwobalance4}=="466.6"    true    false
+    log    ${takeramount}
+
 *** Keywords ***
 getBalance
     [Arguments]    ${address}    ${assetId}
@@ -110,10 +130,10 @@ post
     ${res}    Get From Dictionary    ${respJson}    result
     [Return]    ${res}
 
-Alice issues her personal token, amount is 10000, decimal is 1 succeed
+Alice issues her personal token, amount is 100000, decimal is 1 succeed
     [Arguments]    ${addr}    ${AliceToken}
     log    ${addr}
-    issueToken    ${addr}    ${AliceToken}    10000    1    addr's
+    issueToken    ${addr}    ${AliceToken}    100000    1    addr's
     Wait for transaction being packaged
     ${balance}=    getAllBalance    ${addr}
     log    ${balance}
@@ -126,10 +146,10 @@ Alice issues her personal token, amount is 10000, decimal is 1 succeed
     log    ${AliceTokenID}
     [Return]    ${AliceTokenID}
 
-Bob issues her personal token, amount is 10000, decimal is 1 succeed
+Bob issues her personal token, amount is 100000, decimal is 1 succeed
     [Arguments]    ${addr}    ${BobToken}
     log    ${addr}
-    issueToken    ${addr}    ${BobToken}    10000    1    addr's
+    issueToken    ${addr}    ${BobToken}    100000    1    addr's
     Wait for transaction being packaged
     ${balance}=    getAllBalance    ${addr}
     log    ${balance}

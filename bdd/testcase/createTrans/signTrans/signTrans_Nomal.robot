@@ -13,7 +13,7 @@ Scenario: createTrans - Sign Transaction
     [Tags]    normal
     ${geneAdd}    getGeneAdd    ${host}
     Set Suite Variable    ${geneAdd}    ${geneAdd}
-    ${ret1}    normalCrtTrans    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
+    ${ret1}    normalCrtTrans    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}    ${locktime}
     ${ret2}    normalSignTrans    ${ret1}    ${signType}    ${pwd}
 
 *** Keywords ***
