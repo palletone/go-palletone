@@ -35,6 +35,7 @@ import (
 const ENABLE_TX_FEE_CHECK_TIME = 1570870800             //2019-10-12 17:00:00
 const ENABLE_CONTRACT_SIGN_CHECK_TIME = 1575129600      //2019-12-1
 const ENABLE_CONTRACT_DEVELOPER_CHECK_TIME = 1577808000 //2020-1-1
+const ENABLE_CONTRACT_RWSET_CHECK_TIME = 1579104000     //2020-1-16
 
 /**
 验证unit的签名，需要比对见证人列表
@@ -245,7 +246,7 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) Validat
 	validate.enableTxFeeCheck = unit.Timestamp() > ENABLE_TX_FEE_CHECK_TIME                 // 1.0.3升级，支持交易费检查
 	validate.enableContractSignCheck = unit.Timestamp() > ENABLE_CONTRACT_SIGN_CHECK_TIME   // 1.0.4升级，支持交易费检查
 	validate.enableDeveloperCheck = unit.Timestamp() > ENABLE_CONTRACT_DEVELOPER_CHECK_TIME // 1.0.5升级，支持合约模板部署时的开发者角色检查
-
+	validate.enableContractRwSetCheck = unit.Timestamp() > ENABLE_CONTRACT_RWSET_CHECK_TIME
 	//if validate.enableTxFeeCheck{
 	//	log.Infof("Enable tx fee check since %d",unit.Timestamp())
 	//}

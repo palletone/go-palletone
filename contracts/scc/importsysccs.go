@@ -26,9 +26,13 @@ import (
 	"github.com/palletone/go-palletone/contracts/syscontract/exchangecc"
 	"github.com/palletone/go-palletone/contracts/syscontract/partitioncc"
 	prc20v1 "github.com/palletone/go-palletone/contracts/syscontract/prc20/v1"
+	prc20v2 "github.com/palletone/go-palletone/contracts/syscontract/prc20/v2"
+
 	prc721v1 "github.com/palletone/go-palletone/contracts/syscontract/prc721/v1"
+	prc721v2 "github.com/palletone/go-palletone/contracts/syscontract/prc721/v2"
 	"github.com/palletone/go-palletone/contracts/syscontract/sysconfigcc"
 	votev1 "github.com/palletone/go-palletone/contracts/syscontract/vote/v1"
+	votev2 "github.com/palletone/go-palletone/contracts/syscontract/vote/v2"
 )
 
 var systemChaincodes = []*SystemChaincode{
@@ -90,15 +94,15 @@ var systemChaincodes = []*SystemChaincode{
 		InitArgs:  [][]byte{},
 		Chaincode: &prc20v1.PRC20{},
 	},
-	//{
-	//	Id:        syscontract.CreateTokenContractAddress.Bytes(), //合约ID为20字节
-	//	Enabled:   true,
-	//	Name:      "createToken_sycc",
-	//	Path:      "../syscontract/prc20/prc20_2",
-	//	Version:   "ptn002",
-	//	InitArgs:  [][]byte{},
-	//	Chaincode: &prc20v2.PRC20{},
-	//},
+	{
+		Id:        syscontract.CreateTokenContractAddress.Bytes(), //合约ID为20字节
+		Enabled:   true,
+		Name:      "createToken_sycc",
+		Path:      "../syscontract/prc20/prc20_2",
+		Version:   "ptn002",
+		InitArgs:  [][]byte{},
+		Chaincode: &prc20v2.PRC20{},
+	},
 	{
 		Id:        syscontract.VoteTokenContractAddress.Bytes(), //合约ID为20字节
 		Enabled:   true,
@@ -108,15 +112,15 @@ var systemChaincodes = []*SystemChaincode{
 		InitArgs:  [][]byte{},
 		Chaincode: &votev1.Vote{},
 	},
-	//{
-	//	Id:        syscontract.VoteTokenContractAddress.Bytes(), //合约ID为20字节
-	//	Enabled:   true,
-	//	Name:      "voteToken_sycc",
-	//	Path:      "../syscontract/vote/voteV2",
-	//	Version:   "ptn002",
-	//	InitArgs:  [][]byte{},
-	//	Chaincode: &votev2.Vote{},
-	//},
+	{
+		Id:        syscontract.VoteTokenContractAddress.Bytes(), //合约ID为20字节
+		Enabled:   true,
+		Name:      "voteToken_sycc",
+		Path:      "../syscontract/vote/voteV2",
+		Version:   "ptn002",
+		InitArgs:  [][]byte{},
+		Chaincode: &votev2.Vote{},
+	},
 	{
 		Id:        syscontract.SysConfigContractAddress.Bytes(),
 		Enabled:   true,
@@ -135,15 +139,15 @@ var systemChaincodes = []*SystemChaincode{
 		InitArgs:  [][]byte{},
 		Chaincode: &prc721v1.PRC721{},
 	},
-	//{
-	//	Id:        syscontract.CreateToken721ContractAddress.Bytes(), //合约ID为20字节
-	//	Enabled:   true,
-	//	Name:      "createToken721_sycc",
-	//	Path:      "../syscontract/prc721/prc721_v2",
-	//	Version:   "ptn002",
-	//	InitArgs:  [][]byte{},
-	//	Chaincode: &prc721v2.PRC721{},
-	//},
+	{
+		Id:        syscontract.CreateToken721ContractAddress.Bytes(), //合约ID为20字节
+		Enabled:   true,
+		Name:      "createToken721_sycc",
+		Path:      "../syscontract/prc721/prc721_v2",
+		Version:   "ptn002",
+		InitArgs:  [][]byte{},
+		Chaincode: &prc721v2.PRC721{},
+	},
 	{
 		Id:        syscontract.DigitalIdentityContractAddress.Bytes(),
 		Enabled:   true,
