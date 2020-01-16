@@ -46,7 +46,9 @@ type IDag interface {
 	CurrentUnit(token modules.AssetId) *modules.Unit
 	GetCurrentUnit(assetId modules.AssetId) *modules.Unit
 	GetMainCurrentUnit() *modules.Unit
-	GetCurrentMemUnit(assetId modules.AssetId, index uint64) *modules.Unit
+	//GetCurrentMemUnit(assetId modules.AssetId, index uint64) *modules.Unit
+	GetCurrentMemUnit(assetId modules.AssetId) *modules.Unit
+
 	InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable bool) (int, error)
 	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
 	HasHeader(common.Hash, uint64) bool
@@ -160,6 +162,8 @@ type IDag interface {
 	HeadUnitNum() uint64
 	HeadUnitHash() common.Hash
 	GetIrreversibleUnitNum(id modules.AssetId) uint64
+	StableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error)
+	UnstableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error)
 
 	GetPartitionChains() ([]*modules.PartitionChain, error)
 	GetMainChain() (*modules.MainChain, error)
@@ -170,6 +174,7 @@ type IDag interface {
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
 	GetGlobalProp() *modules.GlobalProperty
+	GetMediatorSchl() *modules.MediatorSchedule
 	GetMediatorCount() int
 
 	IsMediator(address common.Address) bool
@@ -200,7 +205,7 @@ type IDag interface {
 	JuryCount() uint
 	GetContractDevelopers() ([]common.Address, error)
 	IsContractDeveloper(addr common.Address) bool
-	GetActiveJuries() []common.Address
+	//GetActiveJuries() []common.Address
 	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	CreateTokenTransaction(from, to common.Address, token *modules.Asset, daoAmountToken, daoFee uint64,
@@ -215,8 +220,7 @@ type IDag interface {
 	GetJurorReward(jurorAdd common.Address) common.Address
 	SubscribeSaveUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription
 	SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription
-	GetContractsWithJuryAddr(addr common.Address) []*modules.Contract
-
+	GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract
 	GetAddressCount() int
 
 	//localdb

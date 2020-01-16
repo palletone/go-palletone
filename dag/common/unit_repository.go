@@ -20,10 +20,11 @@
 package common
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/palletone/go-palletone/common/crypto"
 	"reflect"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -40,10 +41,6 @@ import (
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/txspool"
-
-	//"github.com/palletone/go-palletone/validator"
-	"encoding/json"
-	"sync"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/dag/constants"
@@ -97,7 +94,7 @@ type IUnitRepository interface {
 	GetFileInfo(filehash []byte) ([]*modules.FileInfo, error)
 
 	//获得某个分区上的最新不可逆单元
-	GetLastIrreversibleUnit(assetID modules.AssetId) (*modules.Unit, error)
+	//GetLastIrreversibleUnit(assetID modules.AssetId) (*modules.Unit, error)
 
 	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
 	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
@@ -196,10 +193,14 @@ func (rep *UnitRepository) SaveHeader(header *modules.Header) error {
 }
 func (rep *UnitRepository) SaveNewestHeader(header *modules.Header) error {
 	//要增加的Unit必须是NewestUnit后的一个单元，否则报错
-	uHash, uIndex, _, err := rep.propdb.GetNewestUnit(header.GetAssetId())
+	//uHash, uIndex, _, err := rep.propdb.GetNewestUnit(header.GetAssetId())
+	unitProperty, err := rep.propdb.GetNewestUnit(header.GetAssetId())
 	if err != nil {
 		return err
 	}
+
+	uHash := unitProperty.Hash
+	uIndex := unitProperty.ChainIndex
 	var continuty bool
 	for _, h := range header.ParentHash() {
 		if h == uHash {
@@ -241,11 +242,14 @@ func (rep *UnitRepository) GetHeadersByAuthor(authorAddr common.Address, startHe
 	var uHash common.Hash
 	var err error
 	if startHeight == 0 {
-		hash, _, _, err := rep.propdb.GetNewestUnit(token)
+		//hash, _, _, err := rep.propdb.GetNewestUnit(token)
+		unitProperty, err := rep.propdb.GetNewestUnit(token)
 		if err != nil {
 			return nil, err
 		}
-		uHash = hash
+
+		//uHash = hash
+		uHash = unitProperty.Hash
 	} else {
 		uHash, err = rep.dagdb.GetHashByNumber(modules.NewChainIndex(token, startHeight))
 		if err != nil {
@@ -527,7 +531,7 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 	phash, chainIndex, err := propdb.GetNewestUnit(assetId)
 	if err != nil {
 		chainIndex = &modules.ChainIndex{AssetID: assetId, Index: index + 1}
-		log.Error("GetCurrentChainIndex is failed.", "error", err)
+		log.Error("GetNewestUnit is failed.", "error", err)
 	} else {
 		chainIndex.Index += 1
 	}
@@ -759,13 +763,13 @@ func arrangeAdditionFeeList(ads []*modules.Addition) []*modules.Addition {
 	return result
 }
 
-func (rep *UnitRepository) GetCurrentChainIndex(assetId modules.AssetId) (*modules.ChainIndex, error) {
-	_, idx, _, err := rep.propdb.GetNewestUnit(assetId)
-	if err != nil {
-		return nil, err
-	}
-	return idx, nil
-}
+//func (rep *UnitRepository) GetCurrentChainIndex(assetId modules.AssetId) (*modules.ChainIndex, error) {
+//	_, idx, _, err := rep.propdb.GetNewestUnit(assetId)
+//	if err != nil {
+//		return nil, err
+//	}
+//	return idx, nil
+//}
 
 /**
 从leveldb中查询GenesisUnit信息
@@ -931,8 +935,7 @@ save genesis unit data
 func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 	tt := time.Now()
 	rep.lock.Lock()
-	//log.Debugf("saveUnit[%s] lock unitRepository.", unit.UnitHash.String())
-	defer log.Debugf("save Unit[%s] cost time: %s", unit.Hash().String(), time.Since(tt))
+
 	defer rep.lock.Unlock()
 	uHash := unit.Hash()
 	// step1. save unit header
@@ -941,16 +944,12 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		log.Info("SaveHeader:", "error", err.Error())
 		return modules.ErrUnit(-3)
 	}
-
-	// step2. traverse transactions and save them
+	// step2. traverse transactions and save tx lookup entry
 	txHashSet := []common.Hash{}
 	for txIndex, tx := range unit.Txs {
-		err := rep.saveTx4Unit(unit, txIndex, tx)
-		if err != nil {
-			log.Debugf(err.Error())
-			return err
+		if err := rep.saveTx4Unit(unit, txIndex, tx); err != nil {
+			log.Errorf("save tx failed,error: %s", err.Error())
 		}
-		//log.Debugf("save transaction, hash[%s] tx_index[%d]", tx.Hash().String(), txIndex)
 		txHashSet = append(txHashSet, tx.Hash())
 	}
 	// step3. save unit body, the value only save txs' hash set, and the key is merkle root
@@ -958,18 +957,14 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		log.Info("SaveBody", "error", err.Error())
 		return err
 	}
-	// step4  save txlookupEntry
-	if err := rep.dagdb.SaveTxLookupEntry(unit); err != nil {
-		log.Info("SaveTxLookupEntry", "error", err.Error())
-		return err
-	}
-	//step5  Special process genesis unit
+	//step4  Special process genesis unit
 	if isGenesis {
 		if err := rep.propdb.SetNewestUnit(unit.Header()); err != nil {
 			log.Errorf("Save ChainIndex for genesis error:%s", err.Error())
 		}
-		rep.dagdb.SaveGenesisUnitHash(unit.Hash())
+		rep.dagdb.SaveGenesisUnitHash(uHash)
 	}
+	log.Debug("save Unit[%s] cost time: %s", uHash.String(), time.Since(tt))
 	return nil
 }
 
@@ -1058,6 +1053,11 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 	// step6. save transaction
 	if err := rep.dagdb.SaveTransaction(tx); err != nil {
 		log.Info("Save transaction:", "error", err.Error())
+		return err
+	}
+	// step7. save tx lookup
+	if err := rep.dagdb.SaveTxLookupEntry(unitHash, unitHeight, uint64(unitTime), txIndex, tx); err != nil {
+		log.Errorf("save tx lookup failed,error: %s", err.Error())
 		return err
 	}
 	//Index
@@ -1353,10 +1353,9 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 			log.Errorf("Save jury for contract[%x] error:%s", payload.ContractId, err.Error())
 			return false
 		}
-		//
+		///
 		for _, node := range payload.EleNode.EleList {
-			ja := crypto.PubkeyBytesToAddress(node.PublicKey)
-			err := rep.statedb.SaveContractWithJuryAddr(ja, contract)
+			err := rep.statedb.SaveContractWithJuryAddr(node.AddrHash, contract)
 			if err != nil {
 				log.Errorf("SaveContractWithJuryAddr error: %s", err.Error())
 				return false
@@ -1743,17 +1742,17 @@ func (rep *UnitRepository) GetFileInfoByHash(hashs []common.Hash) ([]*modules.Fi
 	return mds, nil
 }
 
-func (rep *UnitRepository) GetLastIrreversibleUnit(assetID modules.AssetId) (*modules.Unit, error) {
-	rep.lock.RLock()
-	//log.Debug("GetLastIrreversibleUnit unitRepository lock.")
-	//defer log.Debug("GetLastIrreversibleUnit unitRepository unlock.")
-	defer rep.lock.RUnlock()
-	hash, _, _, err := rep.propdb.GetNewestUnit(assetID)
-	if err != nil {
-		return nil, err
-	}
-	return rep.getUnit(hash)
-}
+//func (rep *UnitRepository) GetLastIrreversibleUnit(assetID modules.AssetId) (*modules.Unit, error) {
+//	rep.lock.RLock()
+//	//log.Debug("GetLastIrreversibleUnit unitRepository lock.")
+//	//defer log.Debug("GetLastIrreversibleUnit unitRepository unlock.")
+//	defer rep.lock.RUnlock()
+//	hash, _, _, err := rep.propdb.GetNewestUnit(assetID)
+//	if err != nil {
+//		return nil, err
+//	}
+//	return rep.getUnit(hash)
+//}
 
 func (rep *UnitRepository) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error) {
 	rep.lock.RLock()

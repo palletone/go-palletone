@@ -48,6 +48,7 @@ import (
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/txspool"
 	"github.com/shopspring/decimal"
+	"github.com/palletone/go-palletone/dag/constants"
 )
 
 type LesServer interface {
@@ -120,7 +121,9 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 		log.Error("PalletOne New", "CreateDB err:", err)
 		return nil, err
 	}
-	if has, _ := db.Has([]byte("gpGlobalProperty")); !has {
+
+	//当leveldb不存在时，使用使用创世主网或者测试网数据
+	if has, _ := db.Has(constants.GLOBALPROPERTY_KEY); !has {
 		keys, values := make([]string, 0), make([]string, 0)
 		if isTestNet {
 			keys = append(keys, TestNetKeys...)

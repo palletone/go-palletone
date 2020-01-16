@@ -273,9 +273,13 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 	heighter := func(assetId modules.AssetId) uint64 {
 		log.Debug("Enter PalletOne Fetcher heighter")
 		defer log.Debug("End PalletOne Fetcher heighter")
-		unit := pm.dag.GetCurrentUnit(assetId)
-		if unit != nil {
-			return unit.NumberU64()
+		//unit := pm.dag.GetCurrentUnit(assetId)
+		//if unit != nil {
+		//	return unit.NumberU64()
+		//}
+		ustabeUnit, _ := pm.dag.UnstableHeadUnitProperty(assetId)
+		if ustabeUnit != nil {
+			return ustabeUnit.ChainIndex.Index
 		}
 		return uint64(0)
 	}
@@ -859,14 +863,21 @@ type NodeInfo struct {
 
 // NodeInfo retrieves some protocol metadata about the running host node.
 func (pm *ProtocolManager) NodeInfo(genesisHash common.Hash) *NodeInfo {
-	unit := pm.dag.GetCurrentUnit(pm.mainAssetId)
 	var (
 		index = uint64(0)
 		hash  = common.Hash{}
 	)
-	if unit != nil {
-		index = unit.Number().Index
-		hash = unit.Hash()
+
+	//unit := pm.dag.GetCurrentUnit(pm.mainAssetId)
+	//if unit != nil {
+	//	index = unit.Number().Index
+	//	hash = unit.Hash()
+	//}
+
+	unitProperty, _ := pm.dag.UnstableHeadUnitProperty(pm.mainAssetId)
+	if unitProperty != nil {
+		index = unitProperty.ChainIndex.Index
+		hash = unitProperty.Hash
 	}
 
 	return &NodeInfo{

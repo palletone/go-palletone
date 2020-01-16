@@ -143,15 +143,17 @@ func (a *PublicMediatorAPI) IsActive(addStr string) (bool, error) {
 	return a.Dag().IsActiveMediator(mediator), nil
 }
 
-func (a *PublicMediatorAPI) ListActives() []string {
-	addStrs := make([]string, 0)
-	ms := a.Dag().GetActiveMediators()
+func (a *PublicMediatorAPI) ListActives() []common.Address {
+	//addStrs := make([]string, 0)
+	//ms := a.Dag().GetActiveMediators()
+	//
+	//for _, medAdd := range ms {
+	//	addStrs = append(addStrs, medAdd.Str())
+	//}
+	//
+	//return addStrs
 
-	for _, medAdd := range ms {
-		addStrs = append(addStrs, medAdd.Str())
-	}
-
-	return addStrs
+	return a.Dag().GetActiveMediators()
 }
 
 func (a *PublicMediatorAPI) GetVoted(addStr string) ([]string, error) {

@@ -74,7 +74,7 @@ type iDag interface {
 	GetContractDevelopers() ([]common.Address, error)
 	IsContractDeveloper(addr common.Address) bool
 	GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error)
-	GetActiveJuries() []common.Address
+	//GetActiveJuries() []common.Address
 	IsActiveMediator(addr common.Address) bool
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
@@ -358,7 +358,7 @@ func (p *Processor) GenContractTransaction(orgTx *modules.Transaction, msgs []*m
 	extSize := ContractDefaultSignatureSize + ContractDefaultPayInputSignatureSize*float64(payInputNum)
 
 	if !p.validator.ValidateTxFeeEnough(tx, extSize, 0) {
-		msgs, err = genContractErrorMsg(p.dag, tx, errors.New("tx fee is invalid"), true)
+		msgs, err = genContractErrorMsg(tx, errors.New("tx fee is invalid"), true)
 		if err != nil {
 			log.Errorf("[%s]GenContractTransaction, genContractErrorMsg,error:%s", shortId(reqId.String()), err.Error())
 			return nil, err
@@ -579,6 +579,9 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 	if p.validator.CheckTxIsExist(tx) {
 		return false
 	}
+
+	defer rwM.CloseTxSimulator(dag.ContractChainId, reqId.String())
+
 	if _, v, err := p.validator.ValidateTx(tx, false); v != validator.TxValidationCode_VALID && err != nil {
 		log.Errorf("[%s]CheckContractTxValid checkTxValid fail, err:%s", shortId(reqId.String()), err.Error())
 		return false
@@ -664,6 +667,8 @@ func (p *Processor) ContractTxCheckForValidator(tx *modules.Transaction) bool {
 		log.Debugf("[%s]ContractTxCheckForValidator, already exit rstTx", shortId(reqId.String()))
 		return msgsCompareInvoke(tx.TxMessages(), contractTx.rstTx.TxMessages())
 	}
+	defer rwset.RwM.CloseTxSimulator(dag.ContractChainId, reqId.String())
+
 	msgs, err := runContractCmd(rwset.RwM, p.dag, p.contract, tx, nil, p.errMsgEnable) // long time ...
 	if err != nil {
 		log.Errorf("[%s]ContractTxCheckForValidator, runContractCmd,error:%s", shortId(reqId.String()), err.Error())

@@ -271,7 +271,10 @@ func GetJuryAddress(chaincode, chainName string, params []byte, iadaptor adaptor
 	}
 
 	if _, ok := cfg.Ada.ChainKeyKV[chainName]; !ok {
-		return "", fmt.Errorf("Not implement this Chain")
+		cfg.Ada.ChainKeyKV[chainName] = KeyInfo{
+			ChaincodeKeys: map[string][]byte{},
+			AddressKeys:   map[string][]byte{},
+		}
 	}
 
 	if priKey, ok := cfg.Ada.ChainKeyKV[chainName].ChaincodeKeys[chaincode]; ok {

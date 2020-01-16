@@ -282,11 +282,13 @@ func (s *PublicDagAPI) GetFastUnitIndex(ctx context.Context, assetid string) str
 	if assetid == "" {
 		assetid = "PTN"
 	}
+
 	assetid = strings.ToUpper(assetid)
 	token, _, err := modules.String2AssetId(assetid)
 	if err != nil {
 		return "unknow assetid:" + assetid + ". " + err.Error()
 	}
+
 	if assetid != "PTN" {
 		GlobalStateContractId := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 		val, _, err := s.b.GetContractState(GlobalStateContractId, modules.GlobalPrefix+strings.ToUpper(token.GetSymbol()))
@@ -294,22 +296,36 @@ func (s *PublicDagAPI) GetFastUnitIndex(ctx context.Context, assetid string) str
 			return "unknow assetid: " + assetid + ", " + err.Error()
 		}
 	}
-	stableUnit := s.b.Dag().CurrentUnit(token)
-	ustabeUnit := s.b.Dag().GetCurrentMemUnit(token, 0)
-	result := new(ptnjson.FastUnitJson)
+
+	result := new(ptnjson.ChainUnitPropertyJson)
+	//stableUnit := s.b.Dag().CurrentUnit(token)
+	//ustabeUnit := s.b.Dag().GetCurrentMemUnit(token)
+	stableUnit, _ := s.b.Dag().StableHeadUnitProperty(token)
+	ustabeUnit, _ := s.b.Dag().UnstableHeadUnitProperty(token)
+
 	if ustabeUnit != nil {
-		result.FastHash = ustabeUnit.Hash()
-		result.FastIndex = ustabeUnit.NumberU64()
+		//result.FastHash = ustabeUnit.Hash()
+		//result.FastIndex = ustabeUnit.NumberU64()
+		result.FastHash = ustabeUnit.Hash
+		result.FastIndex = ustabeUnit.ChainIndex.Index
+		result.FastTimestamp = time.Unix(int64(ustabeUnit.Timestamp),
+			0).Format("2006-01-02 15:04:05 -0700 MST")
 	}
 	if stableUnit != nil {
-		result.StableHash = stableUnit.Hash()
-		result.StableIndex = stableUnit.NumberU64()
+		//result.StableHash = stableUnit.Hash()
+		//result.StableIndex = stableUnit.NumberU64()
+		result.StableHash = stableUnit.Hash
+		result.StableIndex = stableUnit.ChainIndex.Index
+		result.StableTimestamp = time.Unix(int64(stableUnit.Timestamp),
+			0).Format("2006-01-02 15:04:05 -0700 MST")
 	}
+
 	content, err := json.Marshal(result)
 	if err != nil {
 		log.Info("PublicDagAPI", "GetFastUnitIndex Marshal err:", err)
 		return "result Marshal err"
 	}
+
 	return string(content)
 }
 func (s *PublicDagAPI) GetUnitSummaryByNumber(ctx context.Context, condition string) string {
@@ -459,14 +475,16 @@ func (s *PublicDagAPI) GetTxStatusByHash(ctx context.Context, hex string) (*ptnj
 	tx_status := new(ptnjson.TxPoolTxJson)
 	item, err := s.b.GetTxPoolTxByHash(hash)
 	if err != nil {
-		if tx_info, err := s.b.Dag().GetTransaction(hash); err != nil {
-			tx_status.NotExsit = true
-			log.Debugf("the txhash[%s] is not exist in dag,error[%s]", hash.String(), err.Error())
-			tx_status.TxHash = hex
-			return tx_status, nil
-		} else {
+		if tx_info, err := s.b.Dag().GetTxByReqId(hash); err == nil {
 			return ptnjson.ConvertTxWithInfo2Json(tx_info), nil
 		}
+		if tx_info, err := s.b.Dag().GetTransaction(hash); err == nil {
+			return ptnjson.ConvertTxWithInfo2Json(tx_info), nil
+		}
+		tx_status.NotExsit = true
+		log.Debugf("the txhash[%s] is not exist in dag,error[%s]", hash.String(), err.Error())
+		tx_status.TxHash = hex
+		return tx_status, nil
 	}
 	return item, nil
 }
@@ -512,14 +530,43 @@ func (s *PublicDagAPI) HeadUnitNum() uint64 {
 	return uint64(0)
 }
 
-func (s *PublicDagAPI) StableUnitNum() uint64 {
+func (s *PublicDagAPI) GetStableUnit() (*ptnjson.UnitPropertyJson, error) {
 	dag := s.b.Dag()
 	if dag != nil {
 		gasToken := dagconfig.DagConfig.GetGasToken()
-		return dag.GetIrreversibleUnitNum(gasToken)
+		unitProperty, err := dag.StableHeadUnitProperty(gasToken)
+		if err != nil || unitProperty == nil {
+			return nil, err
+		}
+
+		return ptnjson.UnitPropertyToJson(unitProperty), nil
 	}
 
-	return uint64(0)
+	return nil, nil
+}
+
+func (s *PublicDagAPI) GetHeadUnit() (*ptnjson.UnitPropertyJson, error) {
+	dag := s.b.Dag()
+	if dag != nil {
+		gasToken := dagconfig.DagConfig.GetGasToken()
+		unitProperty, err := dag.UnstableHeadUnitProperty(gasToken)
+		if err != nil || unitProperty == nil {
+			return nil, err
+		}
+
+		return ptnjson.UnitPropertyToJson(unitProperty), nil
+	}
+
+	return nil, nil
+}
+
+func (s *PublicDagAPI) GetMediatorSchedule() (*modules.MediatorSchedule, error) {
+	dag := s.b.Dag()
+	if dag != nil {
+		return dag.GetMediatorSchl(), nil
+	}
+
+	return nil, nil
 }
 
 func (s *PublicDagAPI) IsSynced() bool {
@@ -547,6 +594,7 @@ func (s *PrivateDagAPI) GetAllUtxos(ctx context.Context) (string, error) {
 
 	return string(result_json), nil
 }
+
 func (s *PrivateDagAPI) CheckHeader(ctx context.Context, number int) (bool, error) {
 	dag := s.b.Dag()
 	err := dag.CheckHeaderCorrect(number)
@@ -555,6 +603,7 @@ func (s *PrivateDagAPI) CheckHeader(ctx context.Context, number int) (bool, erro
 	}
 	return true, nil
 }
+
 func (s *PrivateDagAPI) CheckUnits(ctx context.Context, assetId string, number int) (bool, error) {
 	dag := s.b.Dag()
 	err := dag.CheckUnitsCorrect(assetId, number)

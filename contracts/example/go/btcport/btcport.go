@@ -192,7 +192,7 @@ func (p *BTCPort) InitDepositAddr(stub shim.ChaincodeStubInterface) pb.Response 
 	//
 	recvResult, err := consult(stub, []byte("juryBTCPubkey"), juryPubkey.PublicKey)
 	if err != nil {
-		log.Debugf("consult juryBTCPubkey failed: " + err.Error())
+		log.Debugf("consult juryBTCPubkey failed: %s", err.Error())
 		return shim.Error("consult juryBTCPubkey failed: " + err.Error())
 	}
 	var juryMsg []JuryMsgAddr
@@ -224,7 +224,20 @@ func (p *BTCPort) InitDepositAddr(stub shim.ChaincodeStubInterface) pb.Response 
 }
 
 func (p *BTCPort) SetBTCTokenAsset(assetStr string, stub shim.ChaincodeStubInterface) pb.Response {
-	err := stub.PutState(symbolsBTCAsset, []byte(assetStr))
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
+	}
+	owner, err := getOwner(stub)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	if owner != invokeAddr.String() {
+		return shim.Error("Only owner can withdraw")
+	}
+
+	err = stub.PutState(symbolsBTCAsset, []byte(assetStr))
 	if err != nil {
 		return shim.Error("write symbolsBTCAsset failed: " + err.Error())
 	}
@@ -318,7 +331,7 @@ func (p *BTCPort) PayoutBTCTokenByTxID(btcTxHash string, stub shim.ChaincodeStub
 	//
 	result, _ := stub.GetState(symbolsDeposit + btcTxHash)
 	if len(result) != 0 {
-		log.Debugf("The tx has been payout")
+		log.Debugf("The tx %s has been payout", btcTxHash)
 		return shim.Error("The tx has been payout")
 	}
 
@@ -335,7 +348,7 @@ func (p *BTCPort) PayoutBTCTokenByTxID(btcTxHash string, stub shim.ChaincodeStub
 	//
 	txResult, err := getBTCTx(txIDByte, stub)
 	if err != nil {
-		log.Debugf("getBTCTx failed : " + err.Error())
+		log.Debugf("getBTCTx failed : %s", err.Error())
 		return shim.Error("getBTCTx failed : " + err.Error())
 	}
 	if txResult.Tx.TargetAddress != depositAddr {
@@ -343,7 +356,7 @@ func (p *BTCPort) PayoutBTCTokenByTxID(btcTxHash string, stub shim.ChaincodeStub
 		return shim.Error("The tx is't transfer to btc port contract")
 	}
 	if !txResult.Tx.IsStable {
-		log.Debugf("Need more confirms")
+		log.Debugf("Need more confirms %s", btcTxHash)
 		return shim.Error("Need more confirms")
 	}
 
@@ -640,7 +653,7 @@ func (p *BTCPort) WithdrawBTC(txID, btcAddrInput string, stub shim.ChaincodeStub
 
 	prepare, err := getWithdrawPrepare(txID, btcAddrInput, stub)
 	if nil != err {
-		log.Debugf("getWithdrawPrepare failed : " + err.Error())
+		log.Debugf("getWithdrawPrepare failed :%s", err.Error())
 		return shim.Error("getWithdrawPrepare failed : " + err.Error())
 	}
 	if prepare.BtcAmount <= prepare.BtcFee {
@@ -654,7 +667,7 @@ func (p *BTCPort) WithdrawBTC(txID, btcAddrInput string, stub shim.ChaincodeStub
 		}
 		err = stub.PutState(symbolsWithdraw+txID, withdrawBytes)
 		if err != nil {
-			log.Debugf("save withdraw failed: " + err.Error())
+			log.Debugf("save withdraw failed: %s", err.Error())
 			return shim.Error("save withdraw failed: " + err.Error())
 		}
 		return shim.Success(withdrawBytes)
@@ -672,7 +685,7 @@ func (p *BTCPort) WithdrawBTC(txID, btcAddrInput string, stub shim.ChaincodeStub
 	// 产生交易
 	rawTx, err := genRawTx(prepare, depositAddr, stub)
 	if nil != err {
-		log.Debugf("genRawTx failed : " + err.Error())
+		log.Debugf("genRawTx failed : %s", err.Error())
 		return shim.Error("genRawTx failed : " + err.Error())
 	}
 
@@ -686,7 +699,7 @@ func (p *BTCPort) WithdrawBTC(txID, btcAddrInput string, stub shim.ChaincodeStub
 	// 签名交易
 	rawTxSign, err := signTx(rawTx.Transaction, redeemHex, stub)
 	if err != nil {
-		log.Debugf("signTx rawTxSign failed: " + err.Error())
+		log.Debugf("signTx rawTxSign failed: %s", err.Error())
 		return shim.Error("signTx rawTxSign failed: " + err.Error())
 	}
 	tempHash := crypto.Keccak256([]byte(rawTx.Extra))
@@ -695,7 +708,7 @@ func (p *BTCPort) WithdrawBTC(txID, btcAddrInput string, stub shim.ChaincodeStub
 	//用交易哈希协商交易签名，作适当安全防护
 	recvResult, err := consult(stub, []byte(tempHashHex), []byte(hex.EncodeToString(rawTxSign.SignedTx)))
 	if err != nil {
-		log.Debugf("consult tempHashHex failed: " + err.Error())
+		log.Debugf("consult tempHashHex failed: %s", err.Error())
 		return shim.Error("consult tempHashHex failed: " + err.Error())
 	}
 	var juryMsg []JuryMsgAddr
@@ -724,7 +737,7 @@ func (p *BTCPort) WithdrawBTC(txID, btcAddrInput string, stub shim.ChaincodeStub
 	}
 	err = stub.PutState(symbolsWithdraw+txID, withdrawBytes)
 	if err != nil {
-		log.Debugf("save withdraw failed: " + err.Error())
+		log.Debugf("save withdraw failed: %s", err.Error())
 		return shim.Error("save withdraw failed: " + err.Error())
 	}
 
@@ -733,7 +746,7 @@ func (p *BTCPort) WithdrawBTC(txID, btcAddrInput string, stub shim.ChaincodeStub
 
 	err = stub.PutState(symbolsUTXO+txHashHex, rawTx.Extra)
 	if err != nil {
-		log.Debugf("save utxo failed: " + err.Error())
+		log.Debugf("save utxo failed: %s", err.Error())
 		return shim.Error("save utxo failed: " + err.Error())
 	}
 
@@ -745,7 +758,20 @@ func (p *BTCPort) Get(stub shim.ChaincodeStubInterface, key string) pb.Response 
 	return shim.Success(result)
 }
 func (p *BTCPort) Set(stub shim.ChaincodeStubInterface, key string, value string) pb.Response {
-	err := stub.PutState(key, []byte(value))
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
+	}
+	owner, err := getOwner(stub)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	if owner != invokeAddr.String() {
+		return shim.Error("Only owner can withdraw")
+	}
+
+	err = stub.PutState(key, []byte(value))
 	if err != nil {
 		return shim.Error(fmt.Sprintf("PutState failed: %s", err.Error()))
 	}
@@ -767,12 +793,12 @@ func (p *BTCPort) WithdrawSubmit(btcTxID string, stub shim.ChaincodeStubInterfac
 
 	txResult, err := getBTCTx(txIDByte, stub)
 	if err != nil {
-		log.Debugf("getBTCTx failed : " + err.Error())
+		log.Debugf("getBTCTx failed : %s", err.Error())
 		return shim.Error("getBTCTx failed : " + err.Error())
 	}
 	//check tx status
 	if !txResult.Tx.IsStable {
-		log.Debugf("The tx is not Stable")
+		log.Debugf("The tx %s is not Stable", btcTxID)
 		return shim.Error("The tx is not Stable")
 	}
 
@@ -781,7 +807,7 @@ func (p *BTCPort) WithdrawSubmit(btcTxID string, stub shim.ChaincodeStubInterfac
 		return shim.Error("need call InitDepositAddr")
 	}
 	if txResult.Tx.FromAddress != depositAddr {
-		log.Debugf("The tx is't payout from btc port contract")
+		log.Debugf("The tx %s is't payout from btc port contract", btcTxID)
 		return shim.Error("The tx is't payout from btc port contract")
 	}
 

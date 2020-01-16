@@ -142,10 +142,10 @@ func (statedb *StateDb) SaveContractJury(contractId []byte, jury modules.Electio
 	return storeBytesWithVersion(statedb.db, key, version, juryb)
 }
 
-func (statedb *StateDb) SaveContractWithJuryAddr(addr common.Address, contract *modules.Contract) error {
+func (statedb *StateDb) SaveContractWithJuryAddr(addr common.Hash, contract *modules.Contract) error {
 	key1 := append(constants.CONTRACT_JURY_PREFIX, addr.Bytes()...)
 	key2 := append(key1, contract.ContractId...)
-	log.Debugf("save contract id = %v with jury address = %s,key1 = %v", contract.ContractId, addr.String(), key1)
+	log.Debugf("save contract id = %v with jury address hash = %s,key1 = %v", contract.ContractId, addr.String(), key1)
 	err := StoreToRlpBytes(statedb.db, key2, contract)
 	if err != nil {
 		return err
@@ -153,7 +153,7 @@ func (statedb *StateDb) SaveContractWithJuryAddr(addr common.Address, contract *
 	return nil
 }
 
-func (statedb *StateDb) GetContractsWithJuryAddr(addr common.Address) []*modules.Contract {
+func (statedb *StateDb) GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract {
 	key := append(constants.CONTRACT_JURY_PREFIX, addr.Bytes()...)
 	log.Debugf("get contracts with key = %v", key)
 	rows := getprefix(statedb.db, key)

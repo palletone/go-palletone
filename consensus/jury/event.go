@@ -21,8 +21,8 @@ package jury
 import (
 	"encoding/json"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/common/util"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 type ContractEventType uint8
@@ -189,4 +189,8 @@ func (es *AdapterEventBytes) ToAdapterEvent() (*AdapterEvent, error) {
 	event.Event = &req
 
 	return &event, nil
+}
+
+func (es *AdapterEventBytes) Hash() common.Hash {
+	return util.RlpHash(es)
 }

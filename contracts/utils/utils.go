@@ -85,7 +85,7 @@ func (pD *PalletOneDocker) RestartUserContractsWhenStartGptn(n1 chan struct{}, n
 	if len(juryAddrs) != 0 {
 		juryAddr = juryAddrs[0]
 	}
-	contracts := pD.dag.GetContractsWithJuryAddr(juryAddr)
+	contracts := pD.dag.GetContractsWithJuryAddr(util2.RlpHash(juryAddr))
 	//  启动退出的容器，包括本地有的和本地没有的
 	if len(contracts) != 0 {
 		log.Debugf("contracts length = %d", len(contracts))
@@ -132,7 +132,7 @@ func (pD *PalletOneDocker) RestartExitedAndUnExpiredContainers(cons []docker.API
 	if len(juryAddrs) != 0 {
 		juryAddr = juryAddrs[0]
 	}
-	contracts := pD.dag.GetContractsWithJuryAddr(juryAddr)
+	contracts := pD.dag.GetContractsWithJuryAddr(util2.RlpHash(juryAddr))
 	if len(contracts) == 0 {
 		log.Debugf("without any contact")
 		return

@@ -86,6 +86,18 @@ func NewMigrations(db ptndb.Database) map[string]IMigration {
 	m_105_beta := NewMigration105alpha_105beta(db)
 	migrations[m_105_beta.FromVersion()] = m_105_beta
 
+	m_105_gamma := NewMigration105beta_105gamma(db)
+	migrations[m_105_gamma.FromVersion()] = m_105_gamma
+
+	m_105_delta := NewMigration105gamma_105delta(db)
+	migrations[m_105_delta.FromVersion()] = m_105_delta
+
+	m_105_rc1 := NewMigration105delta_105rc1(db)
+	migrations[m_105_rc1.FromVersion()] = m_105_rc1
+
+	m_105_release := NewNothingMigration("1.0.5-rc1", "1.0.5-release")
+	migrations[m_105_release.FromVersion()] = m_105_release
+
 	return migrations
 }
 
@@ -131,4 +143,16 @@ func NewMigration104beta_105alpha(db ptndb.Database) *Migration104beta_105alpha 
 
 func NewMigration105alpha_105beta(db ptndb.Database) *Migration105alpha_105beta {
 	return &Migration105alpha_105beta{dagdb: db, idxdb: db, utxodb: db, statedb: db, propdb: db}
+}
+
+func NewMigration105beta_105gamma(db ptndb.Database) *Migration105beta_105gamma {
+	return &Migration105beta_105gamma{dagdb: db, idxdb: db, utxodb: db, statedb: db, propdb: db}
+}
+
+func NewMigration105gamma_105delta(db ptndb.Database) *Migration105gamma_105delta {
+	return &Migration105gamma_105delta{dagdb: db, idxdb: db, utxodb: db, statedb: db, propdb: db}
+}
+
+func NewMigration105delta_105rc1(db ptndb.Database) *Migration105delta_105rc1 {
+	return &Migration105delta_105rc1{dagdb: db, idxdb: db, utxodb: db, statedb: db, propdb: db}
 }

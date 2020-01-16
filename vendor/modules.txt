@@ -3,10 +3,13 @@ github.com/Azure/go-ansiterm
 github.com/Azure/go-ansiterm/winterm
 # github.com/BurntSushi/toml v0.3.1
 github.com/BurntSushi/toml
+<<<<<<< HEAD
 # github.com/FactomProject/basen v0.0.0-20150613233007-fe3947df716e
 github.com/FactomProject/basen
 # github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec
 github.com/FactomProject/btcutilecc
+=======
+>>>>>>> testnet
 # github.com/Microsoft/go-winio v0.4.13
 github.com/Microsoft/go-winio
 github.com/Microsoft/go-winio/pkg/guid
@@ -215,7 +218,11 @@ github.com/palletone/btc-adaptor/txscript
 # github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb
 github.com/palletone/digital-identity/client
 github.com/palletone/digital-identity/config
+<<<<<<< HEAD
 # github.com/palletone/eth-adaptor v1.1.1-0.20191220081203-275de08ec98b
+=======
+# github.com/palletone/eth-adaptor v1.1.1-0.20200114040401-8226d1a11f3f
+>>>>>>> testnet
 github.com/palletone/eth-adaptor
 github.com/palletone/eth-adaptor/bind
 github.com/palletone/eth-adaptor/ethclient

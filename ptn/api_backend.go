@@ -1143,7 +1143,7 @@ func (a addressBalanceList) Less(i, j int) bool { // 重写 Less() 方法， 从
 	return a[j].Balance < a[i].Balance
 }
 
-func (b *PtnApiBackend) GetContractsWithJuryAddr(addr common.Address) []*modules.Contract {
+func (b *PtnApiBackend) GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract {
 	return b.Dag().GetContractsWithJuryAddr(addr)
 }
 func (b *PtnApiBackend) GetAddressCount() int {

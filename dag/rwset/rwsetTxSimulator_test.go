@@ -82,7 +82,13 @@ func TestNewTxMgr(t *testing.T) {
 	simulator := &RwSetTxSimulator{}
 	simulator.dag = dag
 	mockUnit := getCurrentUnit()
-	dag.EXPECT().GetCurrentUnit(gomock.Any()).Return(mockUnit).AnyTimes()
+	//dag.EXPECT().GetCurrentUnit(gomock.Any()).Return(mockUnit).AnyTimes()
+	mockUnitProperty := &modules.UnitProperty{
+		Hash:       mockUnit.Hash(),
+		ChainIndex: mockUnit.Number(),
+		Timestamp:  uint32(mockUnit.Timestamp()),
+	}
+	dag.EXPECT().UnstableHeadUnitProperty(gomock.Any()).Return(mockUnitProperty, nil).AnyTimes()
 	tx := createTx()
 	asid, _ := modules.NewAssetId("12345", modules.AssetType_FungibleToken, 0, tx.RequestHash().Bytes(), modules.UniqueIdType_Null)
 

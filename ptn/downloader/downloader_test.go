@@ -165,12 +165,18 @@ func SaveUnit(db ptndb.Database, unit *modules.Unit, isGenesis bool) error {
 	//	log.Println("SaveNumberByHash:", "error", err.Error())
 	//	return fmt.Errorf("Save unit hash and number error")
 	//}
-	if err := dagDb.SaveTxLookupEntry(unit); err != nil {
-		return err
+	hash := unit.Hash()
+	height := unit.NumberU64()
+	time := unit.Timestamp()
+	for txIndex, tx := range unit.Txs {
+		if err := dagDb.SaveTransaction(tx); err != nil {
+			return err
+		}
+		if err := dagDb.SaveTxLookupEntry(hash, height, uint64(time), txIndex, tx); err != nil {
+			return err
+		}
 	}
-	if err := dagDb.SaveTxLookupEntry(unit); err != nil {
-		return err
-	}
+
 	if err := saveHashByIndex(db, unit.Hash(), unit.UnitHeader.GetNumber().Index); err != nil {
 		return err
 	}
@@ -401,6 +407,25 @@ func (dl *downloadTester) GetCurrentUnit(token modules.AssetId) *modules.Unit {
 		}
 	}
 	return dl.genesis
+}
+
+// CurrentBlock retrieves the current head block from the canonical chain.
+func (dl *downloadTester) UnstableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error) {
+	dl.lock.RLock()
+	defer dl.lock.RUnlock()
+
+	unit := dl.GetCurrentUnit(asset)
+	if unit == nil {
+		return nil, nil
+	}
+
+	unitProperty := &modules.UnitProperty{
+		Hash:       unit.Hash(),
+		ChainIndex: unit.Number(),
+		Timestamp:  uint32(unit.Timestamp()),
+	}
+
+	return unitProperty, nil
 }
 
 // CurrentFastBlock retrieves the current head fast-sync block from the canonical chain.
