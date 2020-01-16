@@ -14,43 +14,41 @@ ${twotoken}       ${EMPTY}
 addrexchangequery
     log    ${addr}
     unlockAccount    ${addr}
-    ${AliceTokenID}=    Alice issues her personal token, amount is 1000, decimal is 1 succeed    ${addr}
+    ${AliceTokenID}=    Alice issues her personal token, amount is 1000, decimal is 1 succeed        ${addr}
     log    ${addr}
     log    ${AliceTokenID}
 
-    #${balance}=    getBalance    ${addr}    ${AliceToken}
-    #log     ${balance}
-    #${tokenIDs}=    Get Dictionary Keys    ${balance}
-    #FOR    ${id}    IN    @{tokenIDs}
+    ${balance}=    getBalance    ${addr}    ${AliceTokenID}
+    log     ${balance}
 
-    #${args}=    Create List    getActiveOrdersByMaker    ${addr}
-    #${params}=    Create List    ${exchangeContractAddr}    ${args}    ${1}
-    #${addr}    sendRpcPost    ${queryMethod}    ${params}    exchangeQuery
-    #log    ${respJson}
-    #log    ${res}
-    #Dictionary Should Contain Key    ${respJson}    result
-    #${res}    Get From Dictionary    ${respJson}    result
-    #${reJson}    To Json    ${res}
-    #${len}    Get Length    ${reJson}
-    #${exchsn}=    Get From Dictionary    ${reJson[0]}    ExchangeSn
-    #log    ${exchsn}
-    #${afteronebalance}=    getBalance    ${addr}    ${twotoken}
+    ${args}=    Create List    getActiveOrdersByMaker    ${addr}
+    ${params}=    Create List    ${exchangeContractAddr}    ${args}    ${1}
+    ${addr}    sendRpcPost    ${queryMethod}    ${params}    exchangeQuery
+    log    ${respJson}
+    log    ${res}
+    Dictionary Should Contain Key    ${respJson}    result
+    ${res}    Get From Dictionary    ${respJson}    result
+    ${reJson}    To Json    ${res}
+    ${len}    Get Length    ${reJson}
+    ${exchsn}=    Get From Dictionary    ${reJson[0]}    ExchangeSn
+    log    ${exchsn}
+    ${afteronebalance}=    getBalance    ${addr}    ${twotoken}
     
 
-    #${respJson}    exchangequery
-    #log    ${respJson}
-    #${respJson}    addrexchangequery    ${addr}
-    #log    ${respJson}
-    #run keyword if    ''    in ${respJson}
-    #${respJson}    addrexchangequery    ${addr}
-    #log    ${respJson}
-    #run keyword if    ''    in ${respJson}
-    #${allmatchquery}    allmatchquery
-    #log    ${allmatchquery}
-    #${matchqueryrespJson}    matchquery    ${addr}
-    #log    ${matchqueryrespJson}
-    #${respJson}    historyexchangequery
-    #log    ${respJson}
+    ${respJson}    exchangequery
+    log    ${respJson}
+    ${respJson}    addrexchangequery    ${addr}
+    log    ${respJson}
+    run keyword if    ''    in ${respJson}
+    ${respJson}    addrexchangequery    ${addr}
+    log    ${respJson}
+    run keyword if    ''    in ${respJson}
+    ${allmatchquery}    allmatchquery
+    log    ${allmatchquery}
+    ${matchqueryrespJson}    matchquery    ${addr}
+    log    ${matchqueryrespJson}
+    ${respJson}    historyexchangequery
+    log    ${respJson}
 
 *** Keywords ***
 getBalance

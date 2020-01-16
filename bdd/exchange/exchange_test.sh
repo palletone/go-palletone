@@ -47,5 +47,5 @@ echo "Bob=" $Bob
 #echo $twotoken 
 
 
-pybot -d ../logs/exchange  -v foundation:$tokenHolder    -v Alice:${Alice} -v Bob:${Bob} -v AliceToken:${1} -v BobToken:${2} exchange.robot
+pybot -d ../logs/exchange  -v foundation:$tokenHolder    -v Alice:${Alice} -v Bob:${Bob} -v AliceToken:${1} -v BobToken:${2} exchange.robot random_action.robot
 #pybot -d ../logs/exchange  -v foundation:$tokenHolder    -v Alice:${Alice} -v Bob:${Bob}  random_action.robot

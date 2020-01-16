@@ -29,6 +29,6 @@ ${duration}       600000000
 #${BobToken}       ${null}
 ${CarolToken}     CAROL
 ${exchangesn}     ExchangeSn
-#${AliceTokenID}    ${null}
-#${BobTokenID}     ${null}
+${AliceTokenID}    ${null}
+${BobTokenID}      ${null}
 ${CarolTokenID}    ${null}

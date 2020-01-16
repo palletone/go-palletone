@@ -152,16 +152,16 @@ Alice issues her personal token, amount is 100000, decimal is 1 succeed
     log    ${addr}
     issueToken    ${addr}    ${AliceToken}    100000    1    addr's
     Wait for transaction being packaged
-    ${AliceTokenID}    FindTokenId    ${addr}    ${AliceToken} 
-    [Return]    ${AliceTokenID}
+    ${ReturnID}    FindTokenId    ${addr}    ${AliceToken} 
+    [Return]    ${ReturnID}
 
 Bob issues her personal token, amount is 100000, decimal is 1 succeed
     [Arguments]    ${addr}    ${BobToken}
     log    ${addr}
     issueToken    ${addr}    ${BobToken}    100000    1    addr's
     Wait for transaction being packaged
-    ${BobTokenID}    FindTokenId    ${addr}    ${BobToken} 
-    [Return]    ${BobTokenID}
+    ${ReturnID}    FindTokenId    ${addr}    ${BobToken} 
+    [Return]    ${ReturnID}
 
 FindTokenId
     [Arguments]    ${addr}    ${TokenName}
