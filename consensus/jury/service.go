@@ -580,8 +580,6 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 		return false
 	}
 
-	defer rwM.CloseTxSimulator(dag.ContractChainId, reqId.String())
-
 	if _, v, err := p.validator.ValidateTx(tx, false); v != validator.TxValidationCode_VALID && err != nil {
 		log.Errorf("[%s]CheckContractTxValid checkTxValid fail, err:%s", shortId(reqId.String()), err.Error())
 		return false
@@ -667,7 +665,6 @@ func (p *Processor) ContractTxCheckForValidator(tx *modules.Transaction) bool {
 		log.Debugf("[%s]ContractTxCheckForValidator, already exit rstTx", shortId(reqId.String()))
 		return msgsCompareInvoke(tx.TxMessages(), contractTx.rstTx.TxMessages())
 	}
-	defer rwset.RwM.CloseTxSimulator(dag.ContractChainId, reqId.String())
 
 	msgs, err := runContractCmd(rwset.RwM, p.dag, p.contract, tx, nil, p.errMsgEnable) // long time ...
 	if err != nil {
