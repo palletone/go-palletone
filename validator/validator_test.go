@@ -306,7 +306,7 @@ func TestSignAndVerifyATx(t *testing.T) {
 
 }
 func TestTime(t *testing.T) {
-	ti, _ := time.ParseInLocation("2006-01-02 15:04:05", "2020-01-01 00:00:00", time.Local)
+	ti, _ := time.ParseInLocation("2006-01-02 15:04:05", "2020-01-16 00:00:00", time.Local)
 	t.Log(ti.Format("2006-01-02 15:04:05"))
 	t.Log(ti.Unix())
 	t2 := time.Unix(1570870800, 0)
