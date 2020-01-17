@@ -112,7 +112,7 @@ func (m *Migration105gamma_105delta) upgradeContracts() error {
 		for _, nc := range contracts {
 			//  保存对应的陪审员地址
 			for _, juryAddr := range contractNameAndJuryAddr[nc.Name] {
-				key1 := append(constants.CONTRACT_JURY_PREFIX, juryAddr.Bytes()...)
+				key1 := append(constants.CONTRACT_JURY_PREFIX, util.RlpHash(juryAddr).Bytes()...)
 				key2 := append(key1, nc.ContractId...)
 				log.Debugf("save contract id = %v with jury address = %s,key1 = %v", nc.ContractId, juryAddr.String(), key1)
 				//  保存陪审员对应的状态

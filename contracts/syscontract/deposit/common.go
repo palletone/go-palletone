@@ -350,7 +350,7 @@ func isFoundationInvoke(stub shim.ChaincodeStubInterface) bool {
 	//  判断是否基金会发起的
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
-		log.Error("get invoke address err: ", "error", err)
+		//log.Error("get invoke address err: ", "error", err)
 		return false
 	}
 	//  获取
@@ -362,7 +362,7 @@ func isFoundationInvoke(stub shim.ChaincodeStubInterface) bool {
 	foundationAddress := gp.ChainParameters.FoundationAddress
 	// 判断当前请求的是否为基金会
 	if invokeAddr.String() != foundationAddress {
-		log.Error("please use foundation address")
+		//log.Error("please use foundation address")
 		return false
 	}
 	return true

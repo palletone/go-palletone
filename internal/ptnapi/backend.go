@@ -202,7 +202,7 @@ type Backend interface {
 	SyncUTXOByAddr(addr string) string
 	StartCorsSync() (string, error)
 
-	GetContractsWithJuryAddr(addr common.Address) []*modules.Contract
+	GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {

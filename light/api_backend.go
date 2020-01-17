@@ -553,7 +553,7 @@ func (b *LesApiBackend) GetAddressBalanceStatistics(token string, topN int) (*st
 func (b *LesApiBackend) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
 	return nil, nil
 }
-func (b *LesApiBackend) GetContractsWithJuryAddr(addr common.Address) []*modules.Contract {
+func (b *LesApiBackend) GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract {
 	return nil
 }
 func (b *LesApiBackend) GetAddressCount() int {

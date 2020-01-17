@@ -104,6 +104,6 @@ type IStateDb interface {
 	GetSysParamsWithVotes() (*modules.SysTokenIDInfo, error)
 	SaveSysConfigContract(key string, val []byte, ver *modules.StateVersion) error
 
-	SaveContractWithJuryAddr(addr common.Address, contract *modules.Contract) error
-	GetContractsWithJuryAddr(addr common.Address) []*modules.Contract
+	SaveContractWithJuryAddr(addr common.Hash, contract *modules.Contract) error
+	GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract
 }
