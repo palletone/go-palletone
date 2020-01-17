@@ -1,15 +1,32 @@
+/*
+	This file is part of go-palletone.
+	go-palletone is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	go-palletone is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+	You should have received a copy of the GNU General Public License
+	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/*
+ * @author PalletOne core developers <dev@pallet.one>
+ * @date 2018-2020
+ */
 package rwset
 
 import (
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
 type TxManager interface {
 	Close()
-	CloseTxSimulator(chainid, txid string) error
-	NewTxSimulator(idag dag.IDag, chainid string, txid string, is_sys bool) (TxSimulator, error)
+	CloseTxSimulator(unitId string) error
+	NewTxSimulator(idag IDataQuery, unitId string) (TxSimulator, error)
 }
 
 type TxSimulator interface {
@@ -29,7 +46,7 @@ type TxSimulator interface {
 	GetPayOutData(ns string) ([]*modules.TokenPayOut, error)
 	GetTokenDefineData(ns string) (*modules.TokenDefine, error)
 	GetTokenSupplyData(ns string) ([]*modules.TokenSupply, error)
-	GetTxSimulationResults() ([]byte, error)
+	//GetTxSimulationResults() ([]byte, error)
 	CheckDone() error
 	Done()
 	String() string

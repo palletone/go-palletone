@@ -147,7 +147,7 @@ func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byt
 	}
 
 	mksupt := &SupportImpl{}
-	txsim, err := mksupt.GetTxSimulator(rwM, idag, chainID, txId)
+	txsim, err := mksupt.GetTxSimulator(rwM, idag, chainID)
 	if err != nil {
 		log.Error("getTxSimulator err:", "error", err)
 		return nil, nil, errors.WithMessage(err, "GetTxSimulator error")

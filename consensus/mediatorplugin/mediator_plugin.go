@@ -220,16 +220,16 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 		detail["Now"] = now.Format("2006-01-02 15:04:05")
 		return Lag, detail
 	}
-
-	// todo 待调整处理逻辑
+	unitNumber:= dag.HeadUnitNum()+1
+	unitId:=fmt.Sprintf("%d",unitNumber)
 	// 重置rwManager
-	rwset.Init()
+	rwset.RwM.NewTxSimulator(dag,unitId)
 	// execute contract
 	if err := mp.ptn.ContractProcessor().AddContractLoop(rwset.RwM, mp.ptn.TxPool(), scheduledMediator, ks); err != nil {
 		log.Debugf("MaybeProduceUnit RunContractLoop err: %v", err.Error())
 	}
 	// close tx simulator (系统合约)
-	rwset.RwM.CloseTxSimulator(rwset.ChainId, "")
+	rwset.RwM.CloseTxSimulator(unitId)
 	rwset.RwM.Close()
 
 	//广播节点选取签名请求事件

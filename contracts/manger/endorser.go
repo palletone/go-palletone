@@ -50,7 +50,7 @@ type Support interface {
 	IsSysCCAndNotInvokableExternal(name string) bool
 	// GetTxSimulator returns the transaction simulator ,they are made unique
 	// by way of the supplied txid
-	GetTxSimulator(rwM rwset.TxManager, idag dag.IDag, chainid string, txid string) (rwset.TxSimulator, error)
+	GetTxSimulator(rwM rwset.TxManager, idag dag.IDag, unitId string) (rwset.TxSimulator, error)
 
 	IsSysCC(name string) bool
 
@@ -221,7 +221,7 @@ func (e *Endorser) ProcessProposal(rwM rwset.TxManager, idag dag.IDag, deployId 
 	}
 	txid := result.txid
 	if chainID != "" {
-		if txsim, err = e.s.GetTxSimulator(rwM, idag, chainID, txid); err != nil {
+		if txsim, err = e.s.GetTxSimulator(rwM, idag, chainID); err != nil {
 			return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, nil, err
 		}
 		//defer txsim.Done()

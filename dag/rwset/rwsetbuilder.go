@@ -14,7 +14,7 @@
 
 /*
  * @author PalletOne core developers <dev@pallet.one>
- * @date 2018
+ * @date 2018-2020
  */
 
 package rwset

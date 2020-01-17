@@ -20,6 +20,8 @@
 package rwset
 
 import (
+	"bytes"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"sort"
@@ -27,35 +29,81 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/dag"
+
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
 type RwSetTxSimulator struct {
 	chainIndex   *modules.ChainIndex
-	txid         common.Hash
+	requestIds         []common.Hash
 	rwsetBuilder *RWSetBuilder
-	write_cache  map[string][]byte
-	dag          dag.IDag
+	write_cache  map[string][]byte //本合约的写缓存
+	global_state map[string][]byte //全局合约的写缓存
+	changedData []*ContractChangedData //每个Request造成的合约数据变化
+	dag          IDataQuery
 	//writePerformed          bool   // 没用到，注释掉
-	pvtdataQueriesPerformed bool
+	//pvtdataQueriesPerformed bool
 	doneInvoked             bool
 }
 
-type VersionedValue struct {
-	Value   []byte
-	Version *Version
+//用于缓存一个合约调用结束后的状态和Token变化
+type ContractChangedData struct{
+	WriteState map[string]map[string][]byte //map[ContractIdHex]map[Key]value
+	UsedUtxo []*modules.OutPoint
+	NewUtxo map[modules.OutPoint]*modules.Utxo //因为TxHash还没有生成，所以OutPoint里面的TxHash是RequestId
+}
+func NewContractChangedData() *ContractChangedData{
+	return &ContractChangedData{
+		WriteState:make(map[string]map[string][]byte),
+		UsedUtxo:make([]*modules.OutPoint,0,0),
+		NewUtxo:make(map[modules.OutPoint]*modules.Utxo),
+	}
+}
+func (d *ContractChangedData) GetState(contractid []byte, key string) []byte{
+	contractHex:=hex.EncodeToString(contractid)
+	kvMap,ok:= d.WriteState[contractHex]
+	if ok{
+		return kvMap[key]
+	}
+	return nil
 }
 
-func NewBasedTxSimulator(idag dag.IDag, hash common.Hash) *RwSetTxSimulator {
+func (d *ContractChangedData) SetState(contractid []byte, key string,value []byte){
+	contractHex:=hex.EncodeToString(contractid)
+	kvMap,ok:= d.WriteState[contractHex]
+	if ok{
+		 kvMap[key]=value
+		 return
+	}
+	newKv:=make(map[string][]byte)
+	newKv[key]=value
+	d.WriteState[contractHex]=newKv
+}
+func (d *ContractChangedData) SpendUtxo(op *modules.OutPoint) {
+	d.UsedUtxo=append(d.UsedUtxo,op)
+}
+func (d *ContractChangedData) AddNewUtxo(newUtxos map[modules.OutPoint]*modules.Utxo) {
+	for o,u:=range newUtxos{
+		d.NewUtxo[o]=u
+	}
+}
+//type VersionedValue struct {
+//	Value   []byte
+//	Version *Version
+//}
+func IsGlobalStateContract(contractId []byte) bool{
+	return bytes.Equal(contractId,[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
+}
+
+func NewBasedTxSimulator(idag IDataQuery) *RwSetTxSimulator {
 	rwsetBuilder := NewRWSetBuilder()
 	gasToken := dagconfig.DagConfig.GetGasToken()
 	//unit := idag.GetCurrentUnit(gasToken)
 	//cIndex := unit.Header().GetNumber()
 	ustabeUnit, _ := idag.UnstableHeadUnitProperty(gasToken)
 	cIndex := ustabeUnit.ChainIndex
-	return &RwSetTxSimulator{chainIndex: modules.NewChainIndex(cIndex.AssetID, cIndex.Index), txid: hash,
+	return &RwSetTxSimulator{chainIndex: modules.NewChainIndex(cIndex.AssetID, cIndex.Index), requestIds: []common.Hash{},
 		rwsetBuilder: rwsetBuilder, write_cache: make(map[string][]byte), dag: idag}
 }
 
@@ -87,12 +135,17 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 	if err := s.CheckDone(); err != nil {
 		return nil, err
 	}
-	if value, has := s.write_cache[key]; has {
-		if s.rwsetBuilder != nil {
-			s.rwsetBuilder.AddToReadSet(contractid, ns, key, nil)
-		}
-		return value, nil
+	cacheState:=s.global_state
+	if !IsGlobalStateContract(contractid){
+		cacheState=s.write_cache
 	}
+		if value, has := cacheState[key]; has {
+			if s.rwsetBuilder != nil {
+				s.rwsetBuilder.AddToReadSet(contractid, ns, key, nil)
+			}
+			return value, nil
+		}
+
 	val, ver, err := s.dag.GetContractState(contractid, key)
 	//TODO 这里证明数据库里面没有该账户信息，需要返回nil,nil
 	if err != nil {
@@ -157,18 +210,22 @@ func (s *RwSetTxSimulator) SetState(contractId []byte, ns string, key string, va
 	if err := s.CheckDone(); err != nil {
 		return err
 	}
-	if s.pvtdataQueriesPerformed {
-		return errors.New("pvtdata Queries Performed")
-	}
+
 	//todo ValidateKeyValue
 	s.rwsetBuilder.AddToWriteSet(contractId, ns, key, value)
-	s.write_cache[key] = value
+
+	cacheState:=s.global_state
+	if !IsGlobalStateContract(contractId){
+		cacheState=s.write_cache
+	}
+	cacheState[key] = value
 	return nil
 }
 
 // DeleteState implements method in interface `ledger.TxSimulator`
 func (s *RwSetTxSimulator) DeleteState(contractId []byte, ns string, key string) error {
 	return s.SetState(contractId, ns, key, nil)
+	//TODO Devin
 }
 
 func (s *RwSetTxSimulator) GetRwData(ns string) ([]*KVRead, []*KVWrite, error) {
@@ -241,16 +298,16 @@ func (h *RwSetTxSimulator) Done() {
 func (s *RwSetTxSimulator) Close() {
 	item := new(RwSetTxSimulator)
 	s.chainIndex = item.chainIndex
-	s.txid = item.txid
+	//s.txid = item.txid
 	s.rwsetBuilder = item.rwsetBuilder
 	s.write_cache = item.write_cache
 	s.dag = item.dag
 }
 
-func (h *RwSetTxSimulator) GetTxSimulationResults() ([]byte, error) {
-
-	return nil, nil
-}
+//func (h *RwSetTxSimulator) GetTxSimulationResults() ([]byte, error) {
+//
+//	return nil, nil
+//}
 
 func (s *RwSetTxSimulator) GetTokenBalance(ns string, addr common.Address, asset *modules.Asset) (
 	map[modules.Asset]uint64, error) {

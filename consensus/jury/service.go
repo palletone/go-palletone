@@ -508,7 +508,7 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 		}
 		reqId := ctx.reqTx.RequestHash()
 		if !ctx.reqTx.IsSystemContract() {
-			defer rwM.CloseTxSimulator(setChainId, reqId.String())
+			defer rwM.CloseTxSimulator(setChainId)
 		}
 		if ctx.reqTx.IsSystemContract() && p.contractEventExecutable(CONTRACT_EVENT_EXEC, ctx.reqTx, nil) {
 			if cType, err := getContractTxType(ctx.reqTx); err == nil && cType != modules.APP_CONTRACT_TPL_REQUEST {

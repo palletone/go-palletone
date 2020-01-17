@@ -532,7 +532,9 @@ func (h *Header) GetNumber() *ChainIndex {
 func (u *Unit) NumberU64() uint64 {
 	return u.UnitHeader.NumberU64()
 }
-
+func (u *Unit) NumberString() string {
+	return fmt.Sprintf("%d", u.UnitHeader.NumberU64())
+}
 func (u *Unit) Timestamp() int64 {
 	return u.UnitHeader.Timestamp()
 }
