@@ -18,24 +18,30 @@ random_action
     log    ${Alice}
     log    ${AAAliceTokenID}
     transferPtn    ${foundation}    ${Bob}    2000
-    #FindTokenId    ${Alice}    ${AAAliceTokenID}
-    ${onebalance}=    getBalance    ${Alice}    ${AAAliceTokenID}
-    log    ${onebalance}
-    ${twobalance}=    getBalance    ${Bob}    ${BBBobTokenID}
-    log    ${twobalance}
+    ${alicealicebalance}=    getBalance    ${Alice}    ${AAAliceTokenID}
+    log    ${alicealicebalance}
+    Should Be Equal    ${alicealicebalance}    99500
+    ${bobbobbalance}=    getBalance    ${Bob}    ${BBBobTokenID}
+    log    ${bobbobbalance}
+    Should Be Equal    ${bobbobbalance}    88000
+
+
+    ${alicebobbalance}=    getBalance    ${Alice}    ${BBBobTokenID}
+    log    ${alicebobbalance}
+    Should Be Equal    ${alicebobbalance}    12000
+
+    ${bobalicebalance}=    getBalance    ${Bob}    ${AAAliceTokenID}
+    log    ${bobalicebalance}
+    Should Be Equal    ${bobalicebalance}    466.6
 
     ${taker_resp}=    taker    ${Bob}    ${BBBobTokenID}    2000    0x123456567
     log    ${taker_resp}
     sleep    5
-    ${afteronebalance}=    getBalance    ${Alice}    ${BBBobTokenID}
-    log    ${afteronebalance}
+    ${alicebobbalance2}=    getBalance    ${Alice}    ${BBBobTokenID}
+    log    ${alicebobbalance2}
+    Should Be Equal    ${alicebobbalance2}    12000
+    Should Be Equal    ${alicebobbalance}    ${alicebobbalance2}
 
-    ${makeramount}=    Set Variable If    ${afteronebalance}==2000    0    0
-    log    ${makeramount}
-    ${aftertwobalance}=    getBalance    ${Bob}    ${AAAliceTokenID}
-    log    ${aftertwobalance}
-    ${takeramount}=    Set Variable If    ${aftertwobalance}==100    0    0
-    log    ${takeramount}
 
     unlockAccount    ${Alice}
     maker    ${Alice}    ${AAAliceTokenID}    100    ${BBBobTokenID}    2000
@@ -45,20 +51,32 @@ random_action
     ${respJson}    addrexchangequery    ${Alice}
     ${reJson}    To Json    ${respJson}
     ${len}    Get Length    ${reJson}
+    # here is error  find a wrong ExchangeSn
+
     ${exchsn}=    Get From Dictionary    ${reJson[0]}    ExchangeSn 
     log    ${exchsn}
 
-    taker    ${Bob}    ${BBBobTokenID}    2000    ${exchsn}
+    :FOR    ${id}    IN    @{reJson}
+    \    log    ${id}
+    \    ${SaleAmount}=    Get From Dictionary    ${id}    SaleAmount
+    \    ${WantAmount}=    Get From Dictionary    ${id}    WantAmount
+    \    ${exchsn}=    Get From Dictionary    ${id}    ExchangeSn
+    \    ${rate}=    Evaluate    ${WantAmount}/${SaleAmount}
+    \    ${old_rate}=    Set Variable    ${2000/100}
+    \    run keyword if    '${old_rate}'=='${rate}'    exit for loop
+
+    log    ${exchsn}
+
+    taker    ${Bob}    ${BBBobTokenID}    4000    ${exchsn}
     sleep    5
 
-    ${afteronebalance}=    getBalance    ${Alice}    ${BBBobTokenID}
-    log    ${afteronebalance}
-    ${makeramount}=    Set Variable If    ${afteronebalance}==2000    0    0
-    log    ${makeramount}
-    ${aftertwobalance}=    getBalance    ${Bob}    ${AAAliceTokenID}
-    log    ${aftertwobalance}
-    ${takeramount}=    Set Variable If    ${aftertwobalance}==100    0    0
-    log    ${takeramount}
+    ${alicebobbalance3}=    getBalance    ${Alice}    ${BBBobTokenID}
+    log    ${alicebobbalance3}
+    Should Be Equal    ${alicebobbalance3}    14000
+
+    ${bobalicebalance3}=    getBalance    ${Bob}    ${AAAliceTokenID}
+    log    ${bobalicebalance3}
+    Should Be Equal    ${bobalicebalance3}    566.6
 
     maker    ${Alice}    ${AAAliceTokenID}    200    ${BBBobTokenID}    4000
     sleep    5
@@ -71,22 +89,29 @@ random_action
 
     taker    ${Bob}    ${BBBobTokenID}    2000    ${exchsn2}
     sleep    5
-    ${afteronebalance2}=    getBalance    ${Alice}    ${BBBobTokenID}
-    log    ${afteronebalance2}
-    ${makeramount}=    Set Variable If    ${afteronebalance2}==4000    0    0
-    log    ${makeramount}
-    ${aftertwobalance}=    getBalance    ${Bob}    ${AAAliceTokenID}
-    log    ${aftertwobalance}
-    ${takeramount}=    Set Variable If    ${aftertwobalance}==200    0    0
-    log    ${takeramount}
+    ${alicebobbalance4}=    getBalance    ${Alice}    ${BBBobTokenID}
+    log    ${alicebobbalance4}
+    Should Be Equal    ${alicebobbalance4}    16000
+
+    ${bobalicebalance4}=    getBalance    ${Bob}    ${AAAliceTokenID}
+    log    ${bobalicebalance4}
+    Should Be Equal    ${bobalicebalance4}    666.6
 
     ${respJson}    addrexchangequery    ${Alice}
     ${reJson}    To Json    ${respJson}
     ${len}    Get Length    ${reJson}
     ${exchsn3}=    Get From Dictionary    ${reJson[0]}    ExchangeSn 
     log    ${exchsn3}
+
+    ${alicealicebalance}=    getBalance    ${Alice}    ${AAAliceTokenID}
+    log    ${alicealicebalance}
+
     cancel    ${Alice}    ${AAAliceTokenID}    ${exchsn3}
     sleep    5
+
+    ${alicealicebalance}=    getBalance    ${Alice}    ${AAAliceTokenID}
+    log    ${alicealicebalance}
+
     ${respJson}    addrexchangequery    ${Alice}
     log    ${respJson}
     run keyword if    ''    in ${respJson}
@@ -96,6 +121,15 @@ random_action
     log    ${matchqueryrespJson}
     ${respJson}    historyexchangequery
     log    ${respJson}
+
+    taker    ${Bob}    ${BBBobTokenID}    2000    ${exchsn2}
+    sleep    5
+    ${alicebobbalance5}=    getBalance    ${Alice}    ${BBBobTokenID}
+    log    ${alicebobbalance5}
+    Should Be Equal    ${alicebobbalance5}    16000
+    ${bobalicebalance5}=    getBalance    ${Bob}    ${AAAliceTokenID}
+    log    ${bobalicebalance5}
+    Should Be Equal    ${bobalicebalance5}    666.6
 
 *** Keywords ***
 getBalance
