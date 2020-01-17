@@ -9,9 +9,9 @@ import (
 	reflect "reflect"
 	time "time"
 
+	event "github.com/ethereum/go-ethereum/event"
 	gomock "github.com/golang/mock/gomock"
 	common "github.com/palletone/go-palletone/common"
-	event "github.com/palletone/go-palletone/common/event"
 	discover "github.com/palletone/go-palletone/common/p2p/discover"
 	core "github.com/palletone/go-palletone/core"
 	modules "github.com/palletone/go-palletone/dag/modules"

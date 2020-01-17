@@ -5,9 +5,9 @@
 package txspool
 
 import (
+	event "github.com/ethereum/go-ethereum/event"
 	gomock "github.com/golang/mock/gomock"
 	common "github.com/palletone/go-palletone/common"
-	event "github.com/palletone/go-palletone/common/event"
 	modules "github.com/palletone/go-palletone/dag/modules"
 	reflect "reflect"
 )

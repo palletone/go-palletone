@@ -29,8 +29,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/julienschmidt/httprouter"
-	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/p2p/simulations/adapters"

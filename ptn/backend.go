@@ -20,8 +20,8 @@ package ptn
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/ptndb"
@@ -38,6 +38,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/palletcache"
@@ -48,7 +49,6 @@ import (
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/txspool"
 	"github.com/shopspring/decimal"
-	"github.com/palletone/go-palletone/dag/constants"
 )
 
 type LesServer interface {

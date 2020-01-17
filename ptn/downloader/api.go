@@ -20,8 +20,8 @@ import (
 	"context"
 	"sync"
 
+	"github.com/ethereum/go-ethereum/event"
 	ethereum "github.com/palletone/go-palletone"
-	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/rpc"
 )
 

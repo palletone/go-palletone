@@ -1,8 +1,8 @@
 package consensus
 
 import (
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/consensus/jury"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/modules"

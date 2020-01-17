@@ -21,7 +21,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/palletone/go-palletone/common/event"
+	"github.com/ethereum/go-ethereum/event"
 )
 
 // Manager is an overarching account manager that can communicate with various
@@ -189,7 +189,7 @@ func merge(slice []Wallet, wallets ...Wallet) []Wallet {
 // cache and removes the ones specified.
 func drop(slice []Wallet, wallets ...Wallet) []Wallet {
 	for _, wallet := range wallets {
-		w:=wallet
+		w := wallet
 		n := sort.Search(len(slice), func(i int) bool { return slice[i].URL().Cmp(w.URL()) >= 0 })
 		if n == len(slice) {
 			// Wallet not found, may happen during startup

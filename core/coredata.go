@@ -20,7 +20,7 @@
 package core
 
 import (
-	"github.com/palletone/go-palletone/common/event"
+	"github.com/ethereum/go-ethereum/event"
 )
 
 type ConsensusEngine interface {

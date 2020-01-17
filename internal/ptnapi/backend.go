@@ -22,8 +22,8 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/accounts"

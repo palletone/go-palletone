@@ -5,9 +5,9 @@
 package ptn
 
 import (
+	event "github.com/ethereum/go-ethereum/event"
 	gomock "github.com/golang/mock/gomock"
 	common "github.com/palletone/go-palletone/common"
-	event "github.com/palletone/go-palletone/common/event"
 	mediatorplugin "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	reflect "reflect"
 )

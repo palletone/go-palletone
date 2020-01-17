@@ -27,8 +27,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/p2p/simulations/adapters"
