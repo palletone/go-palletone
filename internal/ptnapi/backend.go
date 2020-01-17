@@ -22,8 +22,8 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/accounts"
@@ -126,6 +126,7 @@ type Backend interface {
 	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
 	GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error)
+	GetAddrUtxoTxs(addr string) ([]*ptnjson.TxWithUnitInfoJson, error)
 	GetAddrUtxos2(addr string) ([]*ptnjson.UtxoJson, error)
 	GetAddrRawUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAllUtxos() ([]*ptnjson.UtxoJson, error)
@@ -201,7 +202,7 @@ type Backend interface {
 	SyncUTXOByAddr(addr string) string
 	StartCorsSync() (string, error)
 
-	GetContractsWithJuryAddr(addr common.Address) []*modules.Contract
+	GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {

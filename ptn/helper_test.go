@@ -28,8 +28,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/ptndb"
@@ -200,7 +200,7 @@ func (p *testTxPool) Content() (map[common.Hash]*txspool.TxPoolTransaction, map[
 }
 
 func (p *testTxPool) Get(hash common.Hash) (*txspool.TxPoolTransaction, common.Hash) {
-	return nil, (common.Hash{})
+	return nil, common.Hash{}
 }
 
 func (p *testTxPool) GetPoolTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error) {

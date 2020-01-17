@@ -25,8 +25,8 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
@@ -553,9 +553,12 @@ func (b *LesApiBackend) GetAddressBalanceStatistics(token string, topN int) (*st
 func (b *LesApiBackend) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
 	return nil, nil
 }
-func (b *LesApiBackend) GetContractsWithJuryAddr(addr common.Address) []*modules.Contract {
+func (b *LesApiBackend) GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract {
 	return nil
 }
 func (b *LesApiBackend) GetAddressCount() int {
 	return 0
+}
+func (b *LesApiBackend) GetAddrUtxoTxs(addr string) ([]*ptnjson.TxWithUnitInfoJson, error) {
+	return nil, errors.New("not implement")
 }

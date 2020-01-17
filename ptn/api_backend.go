@@ -26,10 +26,10 @@ import (
 	"sort"
 	"time"
 
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/bloombits"
-	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
@@ -592,6 +592,22 @@ func (b *PtnApiBackend) GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
 	result := covertUtxos2Json(utxos)
 	return result, nil
 }
+func (b *PtnApiBackend) GetAddrUtxoTxs(addr string) ([]*ptnjson.TxWithUnitInfoJson, error) {
+	address, err := common.StringToAddress(addr)
+	if err != nil {
+		return nil, err
+	}
+
+	txs, _ := b.ptn.dag.GetAddrUtxoTxs(address)
+	result := make([]*ptnjson.TxWithUnitInfoJson, 0, len(txs))
+	for _, tx := range txs {
+
+		txjson := ptnjson.ConvertTxWithUnitInfo2FullJson(tx, b.ptn.dag.GetUtxoEntry)
+		result = append(result, txjson)
+	}
+	return result, nil
+}
+
 func covertUtxos2Json(utxos map[modules.OutPoint]*modules.Utxo) []*ptnjson.UtxoJson {
 	result := []*ptnjson.UtxoJson{}
 	for o, u := range utxos {
@@ -1143,7 +1159,7 @@ func (a addressBalanceList) Less(i, j int) bool { // 重写 Less() 方法， 从
 	return a[j].Balance < a[i].Balance
 }
 
-func (b *PtnApiBackend) GetContractsWithJuryAddr(addr common.Address) []*modules.Contract {
+func (b *PtnApiBackend) GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract {
 	return b.Dag().GetContractsWithJuryAddr(addr)
 }
 func (b *PtnApiBackend) GetAddressCount() int {

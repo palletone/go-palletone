@@ -164,6 +164,11 @@ web3._extend({
             params: 1,
             // inputFormatter: [null]
         }),
+		 new web3._extend.Method({
+            name: 'getAddrUtxoTxs',
+            call: 'dag_getAddrUtxoTxs',
+            params: 1
+        }),
         new web3._extend.Method({
             name: 'getAllUtxos',
             call: 'dag_getAllUtxos',

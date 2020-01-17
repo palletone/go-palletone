@@ -30,8 +30,8 @@ import (
 	"time"
 
 	"github.com/coocood/freecache"
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
@@ -218,7 +218,7 @@ func (ud *UnitDag4Test) CheckReadSetValid(contractId []byte, readSet []modules.C
 func (ud *UnitDag4Test) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
 	return common.Address{}, nil
 }
-func (ud *UnitDag4Test)  IsContractDeveloper(addr common.Address) bool{
+func (ud *UnitDag4Test) IsContractDeveloper(addr common.Address) bool {
 	return true
 }
 

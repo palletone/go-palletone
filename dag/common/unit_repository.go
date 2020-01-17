@@ -28,7 +28,6 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
@@ -56,6 +55,7 @@ type IUnitRepository interface {
 		propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc) (*modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
+	GetAddrUtxoTxs(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
 	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
 	GetHeaderList(hash common.Hash, parentCount int) ([]*modules.Header, error)
 	SaveHeader(header *modules.Header) error
@@ -1354,10 +1354,9 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 			log.Errorf("Save jury for contract[%x] error:%s", payload.ContractId, err.Error())
 			return false
 		}
-		//
+		///
 		for _, node := range payload.EleNode.EleList {
-			ja := crypto.PubkeyBytesToAddress(node.PublicKey)
-			err := rep.statedb.SaveContractWithJuryAddr(ja, contract)
+			err := rep.statedb.SaveContractWithJuryAddr(node.AddrHash, contract)
 			if err != nil {
 				log.Errorf("SaveContractWithJuryAddr error: %s", err.Error())
 				return false
@@ -1702,7 +1701,23 @@ func (rep *UnitRepository) GetAddrTransactions(address common.Address) ([]*modul
 	}
 	return txs, err
 }
-
+func (rep *UnitRepository) GetAddrUtxoTxs(addr common.Address) ([]*modules.TransactionWithUnitInfo, error) {
+	rep.lock.RLock()
+	defer rep.lock.RUnlock()
+	utxoMap, err := rep.utxoRepository.GetAddrUtxos(addr, nil)
+	if err != nil {
+		return nil, err
+	}
+	txs := make([]*modules.TransactionWithUnitInfo, 0, len(utxoMap))
+	for o := range utxoMap {
+		tx, err := rep.GetTransaction(o.TxHash)
+		if err != nil {
+			return nil, err
+		}
+		txs = append(txs, tx)
+	}
+	return txs, err
+}
 func (rep *UnitRepository) GetFileInfo(filehash []byte) ([]*modules.FileInfo, error) {
 	rep.lock.RLock()
 	defer rep.lock.RUnlock()

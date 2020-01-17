@@ -33,7 +33,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	//"github.com/palletone/go-palletone/common/mclock"
 	//"github.com/palletone/go-palletone/consensus"
-	"github.com/palletone/go-palletone/common/event"
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/rpc"

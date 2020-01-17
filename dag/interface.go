@@ -24,8 +24,8 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -109,7 +109,7 @@ type IDag interface {
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
 	GetAssetTxHistory(asset *modules.Asset) ([]*modules.TransactionWithUnitInfo, error)
-
+	GetAddrUtxoTxs(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
 	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
 	GetContractTplCode(tplId []byte) ([]byte, error)
 	GetAllContractTpl() ([]*modules.ContractTemplate, error)
@@ -220,8 +220,7 @@ type IDag interface {
 	GetJurorReward(jurorAdd common.Address) common.Address
 	SubscribeSaveUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription
 	SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription
-	GetContractsWithJuryAddr(addr common.Address) []*modules.Contract
-
+	GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract
 	GetAddressCount() int
 
 	//localdb

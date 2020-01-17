@@ -22,14 +22,15 @@ package dag
 import (
 	"bytes"
 	"fmt"
+
 	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/coocood/freecache"
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
@@ -678,6 +679,10 @@ func NewDag(db ptndb.Database, localdb ptndb.Database, cache palletcache.ICache,
 
 // check db migration ,to upgrade ptn database
 func checkDbMigration(db ptndb.Database, stateDb storage.IStateDb) error {
+	//特殊处理
+	//  获取陪审员列表
+	//updateStateDbJurys(db)
+
 	// 获取旧的gptn版本号
 	old_vertion, err := stateDb.GetDataVersion()
 	if err != nil {
@@ -999,6 +1004,10 @@ func (d *Dag) RefreshSysParameters() {
 func (d *Dag) GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error) {
 	return d.unstableUnitRep.GetAddrTransactions(addr)
 }
+func (d *Dag) GetAddrUtxoTxs(addr common.Address) ([]*modules.TransactionWithUnitInfo, error) {
+	return d.unstableUnitRep.GetAddrUtxoTxs(addr)
+
+}
 
 // get contract state return codes, state version by contractId and field
 func (d *Dag) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {
@@ -1197,7 +1206,7 @@ func (d *Dag) QueryDbByKey(key []byte) ([]byte, error) {
 func (d *Dag) QueryDbByPrefix(prefix []byte) ([]*modules.DbRow, error) {
 
 	iter := d.Db.NewIteratorWithPrefix(prefix)
-	result := []*modules.DbRow{}
+	var result []*modules.DbRow
 	for iter.Next() {
 		key := iter.Key()
 		value := iter.Value()
@@ -1247,7 +1256,7 @@ func (d *Dag) InsertLightHeader(headers []*modules.Header) (int, error) {
 func (d *Dag) GetAllLeafNodes() ([]*modules.Header, error) {
 	// step1: get all AssetId
 	partitions, _ := d.unstableStateRep.GetPartitionChains()
-	leafs := []*modules.Header{}
+	var leafs []*modules.Header
 	for _, partition := range partitions {
 		tokenId := partition.GasToken
 		pMemdag, ok := d.PartitionMemDag[tokenId]
@@ -1519,7 +1528,7 @@ func (d *Dag) MemdagInfos() (*modules.MemdagInfos, error) {
 	return memdag_infos, nil
 }
 
-func (d *Dag) GetContractsWithJuryAddr(addr common.Address) []*modules.Contract {
+func (d *Dag) GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract {
 	return d.stableStateRep.GetContractsWithJuryAddr(addr)
 }
 

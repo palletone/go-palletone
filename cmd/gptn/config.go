@@ -123,7 +123,7 @@ type FullConfig struct {
 	TxPool         txspool.TxPoolConfig
 	Node           node.Config
 	Ptnstats       ptnstatsConfig
-	Prometheus     prometheus.Config
+	Dashboard      prometheus.Config
 	Jury           jury.Config
 	MediatorPlugin mp.Config
 	Log            log.Config // log的配置比较特殊，不属于任何模块，顶级配置，程序开始运行就使用
@@ -284,12 +284,12 @@ func makeFullNode(ctx *cli.Context, isInConsole bool) *node.Node {
 	// 1. 根据默认配置、命令行参数和配置文件的配置来创建一个node, 并获取相关配置
 	stack, cfg := makeConfigNode(ctx, isInConsole)
 
-	// 2. 创建 Ptn service、DashBoard service以及 PtnStats service 等 service ,
+	// 2. 创建 Ptn service、Dashboard service以及 PtnStats service 等 service ,
 	// 并注册到 Node 的 serviceFuncs 中，然后在 stack.Start() 执行的时候会调用这些 service
 	// 所有的 service 必须实现 node.Service 接口中定义的所有方法
 	utils.RegisterPtnService(stack, &cfg.Ptn)
 	if ctx.GlobalBool(utils.MetricsEnabledFlag.Name) {
-		utils.RegisterPrometheusService(stack, cfg.Prometheus)
+		utils.RegisterPrometheusService(stack, cfg.Dashboard)
 	}
 
 	return stack
@@ -348,7 +348,7 @@ func DefaultConfig() FullConfig {
 		Ptn:            ptn.DefaultConfig,
 		TxPool:         txspool.DefaultTxPoolConfig,
 		Node:           defaultNodeConfig(),
-		Prometheus:     prometheus.DefaultConfig,
+		Dashboard:      prometheus.DefaultConfig,
 		P2P:            p2p.DefaultConfig,
 		Jury:           jury.DefaultConfig,
 		MediatorPlugin: mp.DefaultConfig,
