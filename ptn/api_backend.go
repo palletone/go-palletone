@@ -592,6 +592,22 @@ func (b *PtnApiBackend) GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
 	result := covertUtxos2Json(utxos)
 	return result, nil
 }
+func (b *PtnApiBackend) GetAddrUtxoTxs(addr string) ([]*ptnjson.TxWithUnitInfoJson, error) {
+	address, err := common.StringToAddress(addr)
+	if err != nil {
+		return nil, err
+	}
+
+	txs, _ := b.ptn.dag.GetAddrUtxoTxs(address)
+	result := make([]*ptnjson.TxWithUnitInfoJson, 0, len(txs))
+	for _, tx := range txs {
+
+		txjson := ptnjson.ConvertTxWithUnitInfo2FullJson(tx, b.ptn.dag.GetUtxoEntry)
+		result = append(result, txjson)
+	}
+	return result, nil
+}
+
 func covertUtxos2Json(utxos map[modules.OutPoint]*modules.Utxo) []*ptnjson.UtxoJson {
 	result := []*ptnjson.UtxoJson{}
 	for o, u := range utxos {

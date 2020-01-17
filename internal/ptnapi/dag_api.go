@@ -432,6 +432,10 @@ func (s *PublicDagAPI) GetAddrUtxos(ctx context.Context, addr string) (string, e
 	return string(result_json), nil
 }
 
+func (s *PublicDagAPI) GetAddrUtxoTxs(ctx context.Context, addr string) ([]*ptnjson.TxWithUnitInfoJson, error) {
+	return s.b.GetAddrUtxoTxs(addr)
+}
+
 func (s *PublicDagAPI) GetTransactionsByTxid(ctx context.Context, txid string) (*ptnjson.GetTxIdResult, error) {
 	tx, err := s.b.GetTxByTxid_back(txid)
 	if err != nil {

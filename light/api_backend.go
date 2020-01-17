@@ -559,3 +559,6 @@ func (b *LesApiBackend) GetContractsWithJuryAddr(addr common.Address) []*modules
 func (b *LesApiBackend) GetAddressCount() int {
 	return 0
 }
+func (b *LesApiBackend) GetAddrUtxoTxs(addr string) ([]*ptnjson.TxWithUnitInfoJson, error) {
+	return nil, errors.New("not implement")
+}

@@ -999,6 +999,10 @@ func (d *Dag) RefreshSysParameters() {
 func (d *Dag) GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error) {
 	return d.unstableUnitRep.GetAddrTransactions(addr)
 }
+func (d *Dag) GetAddrUtxoTxs(addr common.Address) ([]*modules.TransactionWithUnitInfo, error) {
+	return d.unstableUnitRep.GetAddrUtxoTxs(addr)
+
+}
 
 // get contract state return codes, state version by contractId and field
 func (d *Dag) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {

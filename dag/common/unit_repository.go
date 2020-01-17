@@ -56,6 +56,7 @@ type IUnitRepository interface {
 		propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc) (*modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
+	GetAddrUtxoTxs(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
 	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
 	GetHeaderList(hash common.Hash, parentCount int) ([]*modules.Header, error)
 	SaveHeader(header *modules.Header) error
@@ -1702,7 +1703,23 @@ func (rep *UnitRepository) GetAddrTransactions(address common.Address) ([]*modul
 	}
 	return txs, err
 }
-
+func (rep *UnitRepository) GetAddrUtxoTxs(addr common.Address) ([]*modules.TransactionWithUnitInfo, error) {
+	rep.lock.RLock()
+	defer rep.lock.RUnlock()
+	utxoMap, err := rep.utxoRepository.GetAddrUtxos(addr, nil)
+	if err != nil {
+		return nil, err
+	}
+	txs := make([]*modules.TransactionWithUnitInfo, 0, len(utxoMap))
+	for o := range utxoMap {
+		tx, err := rep.GetTransaction(o.TxHash)
+		if err != nil {
+			return nil, err
+		}
+		txs = append(txs, tx)
+	}
+	return txs, err
+}
 func (rep *UnitRepository) GetFileInfo(filehash []byte) ([]*modules.FileInfo, error) {
 	rep.lock.RLock()
 	defer rep.lock.RUnlock()

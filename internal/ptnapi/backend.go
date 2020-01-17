@@ -126,6 +126,7 @@ type Backend interface {
 	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
 	GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error)
+	GetAddrUtxoTxs(addr string) ([]*ptnjson.TxWithUnitInfoJson, error)
 	GetAddrUtxos2(addr string) ([]*ptnjson.UtxoJson, error)
 	GetAddrRawUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAllUtxos() ([]*ptnjson.UtxoJson, error)
