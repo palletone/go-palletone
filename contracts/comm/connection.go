@@ -210,23 +210,27 @@ func NewClientConnectionWithAddress(peerAddress string, block bool, tslEnabled b
 		// set to the default options
 		opts = ClientKeepaliveOptions(DefaultKeepaliveOptions())
 	}
-
 	if tslEnabled {
 		opts = append(opts, grpc.WithTransportCredentials(creds))
 	} else {
 		opts = append(opts, grpc.WithInsecure())
 	}
 	if block {
-		opts = append(opts, grpc.WithBlock())
+		//opts = append(opts, grpc.WithBlock()) //这个导致grpc建联失败
 	}
 	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(MaxRecvMsgSize()),
 		grpc.MaxCallSendMsgSize(MaxSendMsgSize())))
+
 	ctx := context.Background()
 	ctx, _ = context.WithTimeout(ctx, defaultTimeout)
 	conn, err := grpc.DialContext(ctx, peerAddress, opts...)
+	//conn, err := grpc.DialContext(ctx, "127.0.0.1:18882", opts...)
+	//conn, err := grpc.Dial("127.0.0.1:18882", grpc.WithInsecure()) //ok
 	if err != nil {
+		fmt.Println("connect fail !!!!")
 		return nil, err
 	}
+	fmt.Println("connect sucess !!!!")
 	return conn, err
 }
 

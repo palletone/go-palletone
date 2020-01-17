@@ -96,7 +96,7 @@ var streamGetter peerStreamGetter
 
 //the non-mock user CC stream establishment func
 func userChaincodeStreamGetter(name string) (PeerChaincodeStream, error) {
-	flag.StringVar(&peerAddress, "peer.address", "127.0.0.1:12345", "peer address")
+	flag.StringVar(&peerAddress, "peer.address", "127.0.0.1:18882", "peer address")
 	if comm.TLSEnabled() {
 		keyPath := viper.GetString("tls.client.key.path")
 		certPath := viper.GetString("tls.client.cert.path")
@@ -127,9 +127,11 @@ func userChaincodeStreamGetter(name string) (PeerChaincodeStream, error) {
 	}
 	log.Debugf("os.Args returns: %s", os.Args)
 	chaincodeSupportClient := pb.NewChaincodeSupportClient(clientConn)
+
 	// Establish stream with validating peer
 	stream, err := chaincodeSupportClient.Register(context.Background())
 	if err != nil {
+		log.Debugf("chaincodeSupportClient.Register error: %s", err.Error())
 		return nil, errors.WithMessage(err, fmt.Sprintf("error chatting with leader at address=%s",
 			getPeerAddress()))
 	}
@@ -246,7 +248,7 @@ func getPeerAddress() string {
 	//}
 	peerAddress = viper.GetString("chaincode.peer.address")
 
-	peerAddress = "127.0.0.1:12346"
+	peerAddress = "127.0.0.1:18882"
 	return peerAddress
 }
 
