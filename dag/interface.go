@@ -220,8 +220,6 @@ type IDag interface {
 	GetJurorReward(jurorAdd common.Address) common.Address
 	SubscribeSaveUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription
 	SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription
-
-	// GetContractsWithJuryAddr(addr common.Address) []*modules.Contract
 	GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract
 	GetAddressCount() int
 

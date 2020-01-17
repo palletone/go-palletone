@@ -503,14 +503,14 @@ func submitTransactionSync(ctx context.Context, b Backend, tx *modules.Transacti
 	if err := b.SendTx(ctx, tx); err != nil {
 		return nil, err
 	}
-	headCh := make(chan modules.SaveUnitEvent)
-	defer close(headCh)
-	headSub := b.Dag().SubscribeSaveUnitEvent(headCh)
-	defer headSub.Unsubscribe()
-	timeout := time.NewTimer(10 * time.Second)
+	saveUnitChan := make(chan modules.SaveUnitEvent)
+	defer close(saveUnitChan)
+	subscribeSaveUnitEvent := b.Dag().SubscribeSaveUnitEvent(saveUnitChan)
+	defer subscribeSaveUnitEvent.Unsubscribe()
+	timeout := time.NewTimer(30 * time.Second)
 	for {
 		select {
-		case u := <-headCh:
+		case u := <-saveUnitChan:
 			log.Infof("SubscribeSaveUnitEvent received unit:%s", u.Unit.DisplayId())
 			for i, utx := range u.Unit.Transactions() {
 				if utx.Hash() == tx.Hash() {
@@ -522,14 +522,14 @@ func submitTransactionSync(ctx context.Context, b Backend, tx *modules.Transacti
 						TxHash:      tx.Hash().String(),
 						RequestHash: tx.RequestHash().String(),
 					}
-
 					return txInfo, nil
 				}
 			}
 		case <-timeout.C:
+			log.Errorf("get tx[%s] package status timeout",tx.Hash().String())
 			return nil, errors.New("get tx package status timeout")
 		// Err() channel will be closed when unsubscribing.
-		case err := <-headSub.Err():
+		case err := <-subscribeSaveUnitEvent.Err():
 			return nil, err
 		}
 	}
