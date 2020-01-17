@@ -289,20 +289,29 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	if err != nil || !pass {
 		return errors.New("validate signature failed")
 	}
+
 	balanceAmount, balanceCount, err := getPacketBalance(stub, packet.PubKey)
 	if err != nil {
 		return err
 	}
-	if balanceCount == 0 {
-		return errors.New("Packet count is zero")
+	//验证通过，发送红包
+	hash := common.HexToHash(stub.GetTxID())
+	seed := util.BytesToUInt64(hash[0:8])
+	var payAmt uint64
+	//
+	if packet.Count != 0 {
+		//
+		if balanceCount == 0 {
+			return errors.New("Packet count is zero")
+		}
+		payAmt = packet.GetPullAmount(int64(seed), balanceAmount, balanceCount)
+		balanceCount-=1
+	}else {  // 无限领取，最大值
+		payAmt = packet.GetPullAmount(int64(seed), balanceAmount, 1)
 	}
 	if balanceAmount == 0 {
 		return errors.New("Packet balance is zero")
 	}
-	//验证通过，发送红包
-	hash := common.HexToHash(stub.GetTxID())
-	seed := util.BytesToUInt64(hash[0:8])
-	payAmt := packet.GetPullAmount(int64(seed), balanceAmount, balanceCount)
 	err = stub.PayOutToken(pullAddr.String(), &modules.AmountAsset{
 		Amount: payAmt,
 		Asset:  packet.Token,
@@ -311,7 +320,7 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 		return err
 	}
 	//调整红包余额
-	err = savePacketBalance(stub, packet.PubKey, balanceAmount-payAmt, balanceCount-1)
+	err = savePacketBalance(stub, packet.PubKey, balanceAmount-payAmt, balanceCount)
 	if err != nil {
 		return err
 	}
