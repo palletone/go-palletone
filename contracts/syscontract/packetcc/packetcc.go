@@ -271,6 +271,11 @@ func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	pubKey []byte, msg string, signature []byte,
 	pullAddr common.Address) error {
+	invokeAddr,_ := stub.GetInvokeAddress()
+	//是否已经领取了
+	if isPulledPacket(stub,pubKey,invokeAddr) {
+		return errors.New("You had pulled packet")
+	}
 	packet, err := getPacket(stub, pubKey)
 	if err != nil {
 		return errors.New("Packet not found")
@@ -322,7 +327,7 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 		RequestHash: reqId,
 		Timestamp:   uint64(timestamp.Seconds),
 	}
-	err = savePacketAllocationRecord(stub, record)
+	err = savePacketAllocationRecord(stub, record,invokeAddr)
 	if err != nil {
 		return err
 	}
