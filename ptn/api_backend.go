@@ -139,10 +139,10 @@ func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transactio
 	}
 	//更新Tx的状态到LocalDB
 	go func() {
-		saveUnitCh := make(chan modules.SaveUnitEvent)
+		saveUnitCh := make(chan modules.SaveUnitEvent,10)
 		defer close(saveUnitCh)
 		saveUnitSub := b.Dag().SubscribeSaveUnitEvent(saveUnitCh)
-		headCh := make(chan modules.SaveUnitEvent)
+		headCh := make(chan modules.SaveUnitEvent,10)
 		defer close(headCh)
 		headSub := b.Dag().SubscribeSaveStableUnitEvent(headCh)
 		defer saveUnitSub.Unsubscribe()

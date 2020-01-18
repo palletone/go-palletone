@@ -503,11 +503,11 @@ func submitTransactionSync(ctx context.Context, b Backend, tx *modules.Transacti
 	if err := b.SendTx(ctx, tx); err != nil {
 		return nil, err
 	}
-	headCh := make(chan modules.SaveUnitEvent)
+	headCh := make(chan modules.SaveUnitEvent,10)
 	defer close(headCh)
 	headSub := b.Dag().SubscribeSaveUnitEvent(headCh)
 	defer headSub.Unsubscribe()
-	timeout := time.NewTimer(10 * time.Second)
+	timeout := time.NewTimer(20 * time.Second)
 	for {
 		select {
 		case u := <-headCh:

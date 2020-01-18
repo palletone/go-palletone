@@ -1466,10 +1466,16 @@ func (s *PrivateWalletAPI) TransferTokenSync(ctx context.Context, asset string, 
 	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint64) (*ptnjson.TxHashWithUnitInfoJson, error) {
 	signedTx, err := s.buildTransferTokenTx(asset, fromStr, toStr, amount, fee, Extra, password, duration)
 	if err != nil {
+		log.Errorf("TransferTokenSync error:%s",err.Error())
 		return nil, err
 	}
-	//4.
-	return submitTransactionSync(ctx, s.b, signedTx)
+
+	result,err:= submitTransactionSync(ctx, s.b, signedTx)
+	if err != nil {
+		log.Errorf("TransferTokenSync submit error:%s",err.Error())
+		return nil, err
+	}
+	return result,nil
 }
 
 func (s *PrivateWalletAPI) TransferToken2(ctx context.Context, asset string, fromStr string, toStr string,
