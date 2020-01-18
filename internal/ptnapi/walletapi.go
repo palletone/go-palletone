@@ -1332,9 +1332,11 @@ func (s *PrivateWalletAPI) TransferTokenSync(ctx context.Context, asset string, 
 	start := time.Now()
 	log.Infof("Received transfer token request from:%s, to:%s,amount:%s", fromStr, toStr, amount.String())
 	s.lock.Lock()
+	log.Infof("Wait for lock time spend:%s", time.Since(start).String())
 	tx, err := s.buildTransferTokenTx(asset, fromStr, toStr, amount, fee, Extra, password, duration)
 	if err != nil {
 		log.Errorf("TransferTokenSync error:%s", err.Error())
+		s.lock.Unlock()
 		return nil, err
 	}
 	log.Infof("TransferTokenSync generate tx[%s]", tx.Hash().String())
@@ -1382,10 +1384,6 @@ func (s *PrivateWalletAPI) TransferTokenSync(ctx context.Context, asset string, 
 			return nil, err
 		}
 	}
-}
-
-func (s *PrivateWalletAPI) submitTransactionSync(ctx context.Context, b Backend, tx *modules.Transaction) (*ptnjson.TxHashWithUnitInfoJson, error) {
-
 }
 
 func (s *PrivateWalletAPI) TransferToken2(ctx context.Context, asset string, fromStr string, toStr string,
