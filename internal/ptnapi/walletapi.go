@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"io"
 	"math/big"
 	"math/rand"
@@ -16,6 +15,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/palletone/go-palletone/core/accounts/keystore"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -46,7 +47,7 @@ type PublicWalletAPI struct {
 }
 
 type PrivateWalletAPI struct {
-	b Backend
+	b    Backend
 	lock sync.Mutex
 }
 
@@ -54,7 +55,7 @@ func NewPublicWalletAPI(b Backend) *PublicWalletAPI {
 	return &PublicWalletAPI{b}
 }
 func NewPrivateWalletAPI(b Backend) *PrivateWalletAPI {
-	return &PrivateWalletAPI{b:b}
+	return &PrivateWalletAPI{b: b}
 }
 func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string, to string, amount, fee decimal.Decimal) (string, error) {
 
@@ -1328,35 +1329,30 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 //转移Token，并确认打包后返回
 func (s *PrivateWalletAPI) TransferTokenSync(ctx context.Context, asset string, fromStr string, toStr string,
 	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint64) (*ptnjson.TxHashWithUnitInfoJson, error) {
+	start := time.Now()
+	log.Infof("Received transfer token request from:%s, to:%s,amount:%s", fromStr, toStr, amount.String())
 	s.lock.Lock()
-	signedTx, err := s.buildTransferTokenTx(asset, fromStr, toStr, amount, fee, Extra, password, duration)
+	tx, err := s.buildTransferTokenTx(asset, fromStr, toStr, amount, fee, Extra, password, duration)
 	if err != nil {
-		log.Errorf("TransferTokenSync error:%s",err.Error())
+		log.Errorf("TransferTokenSync error:%s", err.Error())
 		return nil, err
 	}
-	log.Infof("TransferTokenSync generate tx[%s]",signedTx.Hash().String())
-	result,err:= s.submitTransactionSync(ctx, s.b, signedTx)
-	if err != nil {
-		log.Errorf("TransferTokenSync tx[%s] submitSync error:%s",signedTx.Hash().String(), err.Error())
-		return nil, err
-	}
-	return result,nil
-}
+	log.Infof("TransferTokenSync generate tx[%s]", tx.Hash().String())
 
-func  (s *PrivateWalletAPI) submitTransactionSync(ctx context.Context, b Backend, tx *modules.Transaction) (*ptnjson.TxHashWithUnitInfoJson, error) {
 	if tx.IsNewContractInvokeRequest() {
-		_, err := b.SendContractInvokeReqTx(tx)
+		_, err := s.b.SendContractInvokeReqTx(tx)
 		return nil, err
 	}
-	err := b.SendTx(ctx, tx)
+	err = s.b.SendTx(ctx, tx)
 	s.lock.Unlock()
-
-	if  err != nil {
+	log.Infof("Generate and send tx[%s] spend time:%s", tx.Hash().String(), time.Since(start).String())
+	if err != nil {
 		return nil, err
 	}
-	headCh := make(chan modules.SaveUnitEvent,10)
+	start2 := time.Now()
+	headCh := make(chan modules.SaveUnitEvent, 10)
 	defer close(headCh)
-	headSub := b.Dag().SubscribeSaveUnitEvent(headCh)
+	headSub := s.b.Dag().SubscribeSaveUnitEvent(headCh)
 	defer headSub.Unsubscribe()
 	timeout := time.NewTimer(20 * time.Second)
 	for {
@@ -1373,19 +1369,23 @@ func  (s *PrivateWalletAPI) submitTransactionSync(ctx context.Context, b Backend
 						TxHash:      tx.Hash().String(),
 						RequestHash: tx.RequestHash().String(),
 					}
-
+					log.Infof("receive tx[%s] packed event, spend time:%s, total spend:%s",
+						tx.Hash().String(), time.Since(start2).String(),
+						time.Since(start).String())
 					return txInfo, nil
 				}
 			}
 		case <-timeout.C:
-			return nil, errors.New(fmt.Sprintf("get tx[%s] package status timeout",tx.Hash().String()))
+			return nil, errors.New(fmt.Sprintf("get tx[%s] package status timeout", tx.Hash().String()))
 		// Err() channel will be closed when unsubscribing.
 		case err := <-headSub.Err():
 			return nil, err
 		}
 	}
+}
 
-	// return nil, errors.New("Tx not found")
+func (s *PrivateWalletAPI) submitTransactionSync(ctx context.Context, b Backend, tx *modules.Transaction) (*ptnjson.TxHashWithUnitInfoJson, error) {
+
 }
 
 func (s *PrivateWalletAPI) TransferToken2(ctx context.Context, asset string, fromStr string, toStr string,
