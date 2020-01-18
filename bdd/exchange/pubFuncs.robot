@@ -134,7 +134,9 @@ allmatchquery
 taker
     [Arguments]    ${takeraddr}    ${saleassert}    ${saleamount}    ${exchangesn}
     ${args}=    Create List    taker    ${exchangesn}
+    log    ${args}
     ${params}=    genInvokeExchangeParams    ${takeraddr}    ${exchangeContractAddr}    ${saleassert}    ${saleamount}    ${fee}    ${exchangeContractAddr}    ${args}
+    log    ${params}
     ${resp}=    sendRpcPost    ${exchangeMethod}    ${params}    exchangeToken
     log    ${resp}
     [Return]    ${resp}
