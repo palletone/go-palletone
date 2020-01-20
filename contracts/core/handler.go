@@ -381,7 +381,7 @@ func (handler *Handler) enterGetContractAllState(e *fsm.Event) {
 			chaincodeID, txContext.chainID)
 		//返回 map[modules.StateVersion][]byte
 		//contractAllStates := make(map[modules.StateVersion][]byte, 0)
-		contractAllStates, err := txContext.txsimulator.GetContractStatesById(msg.ContractId)
+		contractAllStates, err := txContext.txsimulator.GetContractStatesById(msg.ContractId, chaincodeID)
 
 		//res, err := txContext.txsimulator.GetState(msg.ContractId, chaincodeID, getState.Key)
 		if err != nil {
