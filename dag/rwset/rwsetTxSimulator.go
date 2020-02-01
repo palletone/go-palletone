@@ -35,8 +35,8 @@ import (
 )
 
 type RwSetTxSimulator struct {
-	chainIndex   *modules.ChainIndex
-	requestIds   []common.Hash
+	//chainIndex   *modules.ChainIndex
+	//requestIds   []common.Hash
 	rwsetBuilder *RWSetBuilder
 	//write_cache  map[string][]byte      //本合约的写缓存
 	//global_state map[string][]byte      //全局合约的写缓存
@@ -101,14 +101,14 @@ func IsGlobalStateContract(contractId []byte) bool {
 
 func NewBasedTxSimulator(idag IDataQuery, stateQ IStateQuery) *RwSetTxSimulator {
 	rwsetBuilder := NewRWSetBuilder()
-	gasToken := dagconfig.DagConfig.GetGasToken()
+	//gasToken := dagconfig.DagConfig.GetGasToken()
 	//unit := idag.GetCurrentUnit(gasToken)
 	//cIndex := unit.Header().GetNumber()
-	ustabeUnit, _ := idag.UnstableHeadUnitProperty(gasToken)
-	cIndex := ustabeUnit.ChainIndex
+	//ustabeUnit, _ := idag.UnstableHeadUnitProperty(gasToken)
+	//cIndex := ustabeUnit.ChainIndex
 	return &RwSetTxSimulator{
-		chainIndex:   modules.NewChainIndex(cIndex.AssetID, cIndex.Index),
-		requestIds:   []common.Hash{},
+		//chainIndex:   modules.NewChainIndex(cIndex.AssetID, cIndex.Index),
+		//requestIds:   []common.Hash{},
 		rwsetBuilder: rwsetBuilder,
 		stateQuery:   stateQ,
 		dag:          idag}
@@ -142,7 +142,7 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 	if err := s.CheckDone(); err != nil {
 		return nil, err
 	}
-	val, ver, err := s.stateQuery.GetContractState(contractid, key)
+	val, ver, err := s.GetContractState(contractid, key)
 	//TODO 这里证明数据库里面没有该账户信息，需要返回nil,nil
 	if err != nil {
 		log.Debugf("get value from db[%s] failed,key:%s", ns, key)
@@ -164,7 +164,7 @@ func (s *RwSetTxSimulator) GetStatesByPrefix(contractid []byte, ns string, prefi
 		return nil, err
 	}
 
-	data, err := s.stateQuery.GetContractStatesByPrefix(contractid, prefix)
+	data, err := s.GetContractStatesByPrefix(contractid, prefix)
 
 	if err != nil {
 		log.Debugf("get value from db[%s] failed,prefix:%s,error:[%s]", ns, prefix, err.Error())
@@ -270,7 +270,7 @@ func convertWriteMap2Slice(rd map[string]map[string]*KVWrite) []*KVWrite {
 
 //get all dag
 func (s *RwSetTxSimulator) GetAllStates(contractid []byte, ns string) (map[string]*modules.ContractStateValue, error) {
-	return s.stateQuery.GetContractStatesById(contractid)
+	return s.GetContractStatesById(contractid)
 }
 
 func (s *RwSetTxSimulator) CheckDone() error {
@@ -288,7 +288,7 @@ func (h *RwSetTxSimulator) Done() {
 }
 func (s *RwSetTxSimulator) Close() {
 	item := new(RwSetTxSimulator)
-	s.chainIndex = item.chainIndex
+	//s.chainIndex = item.chainIndex
 	//s.txid = item.txid
 	s.rwsetBuilder = item.rwsetBuilder
 	//s.write_cache = item.write_cache
@@ -296,7 +296,7 @@ func (s *RwSetTxSimulator) Close() {
 }
 
 func (s *RwSetTxSimulator) Rollback() error {
-	//TODO Devin
+	s.rwsetBuilder.pubRwBuilderMap = make(map[string]*nsPubRwBuilder)
 	return nil
 }
 
@@ -371,10 +371,14 @@ func (s *RwSetTxSimulator) String() string {
 func (s *RwSetTxSimulator) GetContractStatesById(contractid []byte) (map[string]*modules.ContractStateValue, error) {
 	//查询出所有Temp的KeyValue
 	writes, _ := s.rwsetBuilder.GetWriteSets(contractid)
-
+	deleted := make(map[string]bool)
 	result := make(map[string]*modules.ContractStateValue)
 	for _, write := range writes {
-		result[write.key] = &modules.ContractStateValue{Value: write.value}
+		if write.isDelete {
+			deleted[write.key] = true
+		} else {
+			result[write.key] = &modules.ContractStateValue{Value: write.value}
+		}
 	}
 
 	dbkv, err := s.stateQuery.GetContractStatesById(contractid)
@@ -383,6 +387,9 @@ func (s *RwSetTxSimulator) GetContractStatesById(contractid []byte) (map[string]
 	}
 	for k, v := range dbkv {
 		if _, ok := result[k]; ok {
+			continue
+		}
+		if _, ok := deleted[k]; ok {
 			continue
 		}
 		result[k] = v
@@ -399,11 +406,15 @@ func (s *RwSetTxSimulator) GetContractState(contractid []byte, field string) ([]
 func (s *RwSetTxSimulator) GetContractStatesByPrefix(contractid []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
 	//查询出所有Temp的KeyValue
 	writes, _ := s.rwsetBuilder.GetWriteSets(contractid)
-
+	deleted := make(map[string]bool)
 	result := make(map[string]*modules.ContractStateValue)
 	for _, write := range writes {
 		if strings.HasPrefix(write.key, prefix) {
-			result[write.key] = &modules.ContractStateValue{Value: write.value}
+			if write.isDelete {
+				deleted[write.key] = true
+			} else {
+				result[write.key] = &modules.ContractStateValue{Value: write.value}
+			}
 		}
 	}
 
@@ -413,6 +424,9 @@ func (s *RwSetTxSimulator) GetContractStatesByPrefix(contractid []byte, prefix s
 	}
 	for k, v := range dbkv {
 		if _, ok := result[k]; ok {
+			continue
+		}
+		if _, ok := deleted[k]; ok {
 			continue
 		}
 		result[k] = v

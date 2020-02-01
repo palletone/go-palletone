@@ -217,3 +217,59 @@ func TestConvertReadMap2Slice(t *testing.T) {
 		t.Logf("%d,%#v", i, r)
 	}
 }
+func TestRwSetTxSimulator_Rollback(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	dag := dag.NewMockIDag(mockCtrl)
+
+	mockData := make(map[string]*modules.ContractStateValue)
+	mockData["A"] = &modules.ContractStateValue{
+		Value: []byte("10"),
+		Version: &modules.StateVersion{
+			Height:  modules.NewChainIndex(modules.PTNCOIN, 90),
+			TxIndex: 1,
+		},
+	}
+	mockData["C"] = &modules.ContractStateValue{
+		Value: []byte("33"),
+		Version: &modules.StateVersion{
+			Height:  modules.NewChainIndex(modules.PTNCOIN, 100),
+			TxIndex: 1,
+		},
+	}
+	dag.EXPECT().GetContractStatesById(gomock.Any()).Return(mockData, nil).AnyTimes()
+
+	mgr, _ := NewRwSetMgr("default")
+	simulator, _ := mgr.NewTxSimulator(dag, "tx0")
+	allStates, _ := simulator.GetAllStates(nil, "ns")
+	for k, v := range allStates {
+		t.Logf("Dag State:key[%s],value[%s]", k, string(v.Value))
+	}
+	assert.Equal(t, 2, len(allStates))
+	simulator.SetState([]byte("global"), "ns", "A", []byte("1"))
+	simulator.SetState(nil, "ns", "A", []byte("11"))
+	simulator.SetState(nil, "ns", "B", []byte("22"))
+	simulator.DeleteState(nil, "ns", "C")
+	allStates, _ = simulator.GetAllStates(nil, "ns")
+	for k, v := range allStates {
+		t.Logf("Tx0 State:key[%s],value[%s]", k, string(v.Value))
+	}
+	assert.Equal(t, 2, len(allStates))
+	err := simulator.Rollback()
+	assert.Nil(t, err)
+	allStates, _ = simulator.GetAllStates(nil, "ns")
+	for k, v := range allStates {
+		t.Logf("Rollback Tx0, State:key[%s],value[%s]", k, string(v.Value))
+	}
+	assert.Equal(t, 2, len(allStates))
+	s1, _ := mgr.NewTxSimulator(dag, "tx1")
+	s1.SetState(nil, "ns", "A", []byte("111"))
+	s1.SetState(nil, "ns", "C", []byte("333"))
+	allStates, _ = s1.GetAllStates(nil, "ns")
+	for k, v := range allStates {
+		t.Logf("Tx1 State:key[%s],value[%s]", k, string(v.Value))
+	}
+	assert.Equal(t, 2, len(allStates))
+
+}
