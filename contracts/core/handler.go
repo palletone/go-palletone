@@ -22,13 +22,14 @@ package core
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
-	"github.com/palletone/go-palletone/contracts/syscontract"
 	"io"
 	"sync"
 	"time"
 
-	"encoding/json"
+	"github.com/palletone/go-palletone/contracts/syscontract"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/golang/protobuf/proto"
 	"github.com/looplab/fsm"
@@ -381,7 +382,7 @@ func (handler *Handler) enterGetContractAllState(e *fsm.Event) {
 			chaincodeID, txContext.chainID)
 		//返回 map[modules.StateVersion][]byte
 		//contractAllStates := make(map[modules.StateVersion][]byte, 0)
-		contractAllStates, err := txContext.txsimulator.GetContractStatesById(msg.ContractId, chaincodeID)
+		contractAllStates, err := txContext.txsimulator.GetAllStates(msg.ContractId, chaincodeID)
 
 		//res, err := txContext.txsimulator.GetState(msg.ContractId, chaincodeID, getState.Key)
 		if err != nil {

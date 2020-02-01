@@ -25,12 +25,15 @@ import (
 
 type TxManager interface {
 	Close()
-	CloseTxSimulator(unitId string) error
-	NewTxSimulator(idag IDataQuery, unitId string) (TxSimulator, error)
+	CloseTxSimulator(txId string) error
+	NewTxSimulator(idag IDataQuery, txId string) (TxSimulator, error)
+	GetTxSimulator(txId string) (TxSimulator, error)
 }
 
 type TxSimulator interface {
+	IStateQuery
 	GetState(contractId []byte, ns string, key string) ([]byte, error)
+	GetAllStates(contractId []byte, ns string) (map[string]*modules.ContractStateValue, error)
 	GetStatesByPrefix(contractId []byte, ns string, prefix string) ([]*modules.KeyValue, error)
 	GetTimestamp(ns string, rangeNumber uint32) ([]byte, error)
 	SetState(contractid []byte, ns string, key string, value []byte) error
@@ -41,7 +44,7 @@ type TxSimulator interface {
 	DefineToken(ns string, tokenType int32, define []byte, creator string) error
 	SupplyToken(ns string, assetId, uniqueId []byte, amt uint64, creator string) error
 	DeleteState(contractId []byte, ns string, key string) error
-	GetContractStatesById(contractId []byte, ns string) (map[string]*modules.ContractStateValue, error)
+
 	GetRwData(ns string) ([]*KVRead, []*KVWrite, error)
 	GetPayOutData(ns string) ([]*modules.TokenPayOut, error)
 	GetTokenDefineData(ns string) (*modules.TokenDefine, error)
@@ -49,10 +52,8 @@ type TxSimulator interface {
 	//GetTxSimulationResults() ([]byte, error)
 	CheckDone() error
 	Done()
+	Rollback() error
 	String() string
-	//合约最终失败，之前的所有读写集全部取消
-	Cancel(ns string) error
-
 	//GetChainParameters() ([]byte, error)
 	GetGlobalProp() ([]byte, error)
 }

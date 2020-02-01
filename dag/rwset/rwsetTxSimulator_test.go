@@ -99,7 +99,7 @@ func TestNewTxMgr(t *testing.T) {
 	}
 	chain_id := asid.String()
 	log.Println("chainId:", chain_id)
-	ts, err1 := rwm.NewTxSimulator(dag, chain_id, tx.Hash().String(), true)
+	ts, err1 := rwm.NewTxSimulator(dag, tx.Hash().String())
 	if err1 != nil {
 		t.Fatal(err1)
 		return
@@ -131,7 +131,7 @@ func TestNewTxMgr(t *testing.T) {
 	dag.EXPECT().Close().Return().AnyTimes()
 	ts.Done()
 	// txsimulator 执行结束后关闭它
-	assert.Nil(t, rwm.CloseTxSimulator(chain_id, tx.Hash().String()))
+	assert.Nil(t, rwm.CloseTxSimulator(tx.Hash().String()))
 }
 func getCurrentUnit() *modules.Unit {
 	txs := modules.Transactions{createTx()}
@@ -208,7 +208,9 @@ func TestConvertReadMap2Slice(t *testing.T) {
 	rd["bbb"] = r1
 	rd["ccc"] = r2
 	rd["aaa"] = r3
-	result := convertReadMap2Slice(rd)
+	crd := make(map[string]map[string]*KVRead)
+	crd[""] = rd
+	result := convertReadMap2Slice(crd)
 	assert.Equal(t, 3, len(result))
 	assert.Equal(t, "aaa", result[0].GetKey())
 	for i, r := range result {

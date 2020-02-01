@@ -21,7 +21,6 @@ package rwset
 
 import (
 	"errors"
-
 	"sync"
 
 	"github.com/palletone/go-palletone/common/log"
@@ -31,38 +30,52 @@ var RwM TxManager
 var ChainId = "palletone"
 
 type RwSetTxMgr struct {
-	name      string
-	baseTxSim map[string]TxSimulator //key: unitHash or Height
-	closed    bool
-	rwLock    *sync.RWMutex
-	wg        sync.WaitGroup
+	name        string
+	baseTxSim   map[string]TxSimulator //key txId
+	closed      bool
+	rwLock      *sync.RWMutex
+	wg          sync.WaitGroup
+	currentTxId string
 }
 
 func NewRwSetMgr(name string) (*RwSetTxMgr, error) {
 	return &RwSetTxMgr{name: name, baseTxSim: make(map[string]TxSimulator), rwLock: new(sync.RWMutex)}, nil
 }
+func (m *RwSetTxMgr) GetTxSimulator(txId string) (TxSimulator, error) {
+	if txId == "" {
+		return m.baseTxSim[m.currentTxId], nil
+	}
+	return m.baseTxSim[txId], nil
+}
 
 // NewTxSimulator implements method in interface `txmgmt.TxMgr`
-func (m *RwSetTxMgr) NewTxSimulator(idag IDataQuery, unitId string) (TxSimulator, error) {
+func (m *RwSetTxMgr) NewTxSimulator(idag IDataQuery, txId string) (TxSimulator, error) {
 
-		m.rwLock.RLock()
-		ts, ok := m.baseTxSim[unitId]
-		m.rwLock.RUnlock()
-		if ok {
-			log.Infof("unitId[%s] already exit, don't create txsimulator again.", unitId)
-			return ts, nil
-		}
-		t := NewBasedTxSimulator(idag)
-		if t == nil {
-			return nil, errors.New("NewBaseTxSimulator is failed.")
-		}
-		m.rwLock.Lock()
-		m.baseTxSim[unitId] = t
-		m.wg.Add(1)
-		m.rwLock.Unlock()
-		log.Debugf("creat sys rwSetTx [%s]", unitId)
+	m.rwLock.RLock()
+	ts, ok := m.baseTxSim[txId]
+	m.rwLock.RUnlock()
+	if ok {
+		log.Infof("Tx[%s] already exit, don't create txsimulator again.", txId)
+		return ts, nil
+	}
+	var stateQuery IStateQuery
+	if m.currentTxId != "" {
+		stateQuery = m.baseTxSim[m.currentTxId]
+	} else {
+		stateQuery = idag
+	}
+	t := NewBasedTxSimulator(idag, stateQuery)
+	if t == nil {
+		return nil, errors.New("NewBaseTxSimulator is failed.")
+	}
+	m.rwLock.Lock()
+	m.baseTxSim[txId] = t
+	m.currentTxId = txId
+	m.wg.Add(1)
+	m.rwLock.Unlock()
+	log.Debugf("creat sys rwSetTx [%s]", txId)
 
-		return t, nil
+	return t, nil
 
 }
 
@@ -71,12 +84,12 @@ func (m *RwSetTxMgr) NewTxSimulator(idag IDataQuery, unitId string) (TxSimulator
 //}
 
 // 每次产块结束后，需要关闭该chainId的txsimulator.
-func (m *RwSetTxMgr) CloseTxSimulator(unitId string) error {
+func (m *RwSetTxMgr) CloseTxSimulator(txId string) error {
 	m.rwLock.Lock()
 	defer m.rwLock.Unlock()
-	if ts, ok := m.baseTxSim[unitId]; ok {
+	if ts, ok := m.baseTxSim[txId]; ok {
 		ts.Done()
-		delete(m.baseTxSim, unitId)
+		delete(m.baseTxSim, txId)
 		m.wg.Done()
 	}
 	return nil

@@ -23,13 +23,11 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
-type IDataQuery interface{
+type IDataQuery interface {
+	IStateQuery
 	UnstableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error)
 	GetGlobalProp() *modules.GlobalProperty
 
-	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
-	GetContractState(contractid []byte, field string) ([]byte, *modules.StateVersion, error)
-	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 	CurrentHeader(token modules.AssetId) *modules.Header
 	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)
 
@@ -38,4 +36,9 @@ type IDataQuery interface{
 	GetStableTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	GetStableUnit(hash common.Hash) (*modules.Unit, error)
 	GetStableUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error)
+}
+type IStateQuery interface {
+	GetContractStatesById(contractid []byte) (map[string]*modules.ContractStateValue, error)
+	GetContractState(contractid []byte, field string) ([]byte, *modules.StateVersion, error)
+	GetContractStatesByPrefix(contractid []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 }
