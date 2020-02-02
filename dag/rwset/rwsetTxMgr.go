@@ -109,13 +109,13 @@ func (m *RwSetTxMgr) Close() {
 	m.closed = true
 }
 
-//func Init() {
-//	var err error
-//	RwM, err = NewRwSetMgr("default")
-//	if err != nil {
-//		log.Error("fail!")
-//	}
-//}
+func Init() {
+	var err error
+	RwM, err = NewRwSetMgr("default")
+	if err != nil {
+		log.Error("fail!")
+	}
+}
 
 func init() {
 	RwM, _ = NewRwSetMgr("default")

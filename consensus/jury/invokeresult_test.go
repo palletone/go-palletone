@@ -24,13 +24,14 @@ package jury
 import (
 	"encoding/json"
 	"fmt"
+	"testing"
+
 	"github.com/golang/mock/gomock"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 var (
@@ -93,7 +94,7 @@ func TestResultToContractPayments(t *testing.T) {
 	}
 	result := &modules.ContractInvokeResult{TokenPayOut: payouts}
 
-	payment, err := resultToContractPayments(mdag, nil, result)
+	payment, err := resultToContractPayments(mdag.GetAddr1TokenUtxos, nil, result)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(payment))
 	d, _ := json.Marshal(payment)

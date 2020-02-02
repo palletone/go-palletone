@@ -335,7 +335,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
 				}
-				toContractPayments, err := resultToContractPayments(dag, tx.GetRequestTx(), result)
+				toContractPayments, err := resultToContractPayments(dag.GetAddr1TokenUtxos, tx.GetRequestTx(), result)
 				if err != nil {
 					return genContractErrorMsg(tx, err, errMsgEnable)
 				}

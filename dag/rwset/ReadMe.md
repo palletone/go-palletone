@@ -1,8 +1,9 @@
 ## TxSimulator设计思路
 
-1. 开始创建一个新单元时创建TxSimulator实例
-2. 一个单元中包含多笔系统合约的Invoke时，使用同一个TxSimulator实例。接口中的ns为RequestId
-3. 单元创建完毕时，需要关闭TxSimulator
+1. 开始创建一个新单元时创建TxMgr实例
+2. 一个单元中包含多笔系统合约的Invoke时，每个Tx使用一个新的TxSimulator实例，新的实例基于DAG或者上一个TxSimulator实例。
+交易完成后需要调用TxSimulator的Done或者Rollback
+3. 单元创建完毕时，需要关闭所有TxSimulator和对应的TxMgr
 
 ## 连续交易涉及问题
 除了合约的读写集，还涉及到合约相关的UTXO，如果是连续交易，下一个合约应该可以用上一个合约的写集和生成的UTXO

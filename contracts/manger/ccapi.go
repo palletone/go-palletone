@@ -5,24 +5,25 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 
-	"github.com/palletone/go-palletone/contracts/core"
+	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/dag"
-	"github.com/palletone/go-palletone/dag/rwset"
+	db "github.com/palletone/go-palletone/contracts/comm"
+	"github.com/palletone/go-palletone/contracts/contractcfg"
+	"github.com/palletone/go-palletone/contracts/core"
+	cclist "github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/contracts/ucc"
-	"github.com/palletone/go-palletone/contracts/contractcfg"
-	"github.com/fsouza/go-dockerclient"
-	"github.com/palletone/go-palletone/vm/common"
-	db "github.com/palletone/go-palletone/contracts/comm"
-	cclist "github.com/palletone/go-palletone/contracts/list"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag"
 	md "github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/rwset"
+	"github.com/palletone/go-palletone/vm/common"
 )
 
 //type TempCC struct {
@@ -251,6 +252,7 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 	rsp, unit, err := es.ProcessProposal(rwM, idag, deployId, context.Background(), sprop, prop, chainID, cid, timeout)
 	if err != nil {
 		log.Infof("ProcessProposal error[%v]", err)
+
 		return nil, err
 	}
 	if !address.IsSystemContractAddress() {

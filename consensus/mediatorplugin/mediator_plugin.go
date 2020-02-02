@@ -220,10 +220,11 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 		detail["Now"] = now.Format("2006-01-02 15:04:05")
 		return Lag, detail
 	}
-	unitNumber:= dag.HeadUnitNum()+1
-	unitId:=fmt.Sprintf("%d",unitNumber)
+	unitNumber := dag.HeadUnitNum() + 1
+	unitId := fmt.Sprintf("%d", unitNumber)
 	// 重置rwManager
-	rwset.RwM.NewTxSimulator(dag,unitId)
+	rwset.Init()
+	//rwset.RwM.NewTxSimulator(dag,unitId)
 	// execute contract
 	if err := mp.ptn.ContractProcessor().AddContractLoop(rwset.RwM, mp.ptn.TxPool(), scheduledMediator, ks); err != nil {
 		log.Debugf("MaybeProduceUnit RunContractLoop err: %v", err.Error())

@@ -20,13 +20,14 @@ package jury
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
-	"github.com/palletone/go-palletone/contracts/utils"
 	"math/big"
 	"sync"
 	"time"
 
-	"encoding/json"
+	"github.com/palletone/go-palletone/contracts/utils"
+
 	"github.com/coocood/freecache"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -139,11 +140,12 @@ type Processor struct {
 	validator validator.Validator
 	contract  *contracts.Contract
 
-	local   map[common.Address]*JuryAccount          //[]common.Address //local jury account addr
-	mtx     map[common.Hash]*contractTx              //all contract buffer
-	mel     map[common.Hash]*electionVrf             //election vrf inform
-	lockVrf map[common.Address][]modules.ElectionInf //contractId/deployId ----vrfInfo, jury VRF
-
+	local        map[common.Address]*JuryAccount          //[]common.Address //local jury account addr
+	mtx          map[common.Hash]*contractTx              //all contract buffer
+	mel          map[common.Hash]*electionVrf             //election vrf inform
+	lockVrf      map[common.Address][]modules.ElectionInf //contractId/deployId ----vrfInfo, jury VRF
+	stxo         map[modules.OutPoint]bool
+	utxo         map[modules.OutPoint]*modules.Utxo
 	quit         chan struct{}
 	locker       *sync.Mutex //locker       *sync.Mutex  RWMutex
 	errMsgEnable bool        //package contract execution error information into the transaction
@@ -282,6 +284,7 @@ func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode)
 	}
 	p.locker.Lock()
 	defer p.locker.Unlock()
+	//TODO update utxo,stxo
 
 	tx, err := p.GenContractTransaction(reqTx, msgs)
 	if err != nil {
@@ -502,6 +505,8 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 	ks *keystore.KeyStore) error {
 	setChainId := dag.ContractChainId
 	index := 0
+	p.stxo = make(map[modules.OutPoint]bool)
+	p.utxo = make(map[modules.OutPoint]*modules.Utxo)
 	for _, ctx := range p.mtx {
 		if !ctx.valid || ctx.reqTx == nil {
 			continue

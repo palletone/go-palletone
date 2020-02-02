@@ -20,9 +20,10 @@
 package manger
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
-	"time"
 
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/core"
@@ -50,7 +51,7 @@ type Support interface {
 	IsSysCCAndNotInvokableExternal(name string) bool
 	// GetTxSimulator returns the transaction simulator ,they are made unique
 	// by way of the supplied txid
-	GetTxSimulator(rwM rwset.TxManager, idag dag.IDag, unitId string) (rwset.TxSimulator, error)
+	GetTxSimulator(rwM rwset.TxManager, idag dag.IDag, txId string) (rwset.TxSimulator, error)
 
 	IsSysCC(name string) bool
 
@@ -204,7 +205,9 @@ func (e *Endorser) validateProcess(signedProp *pb.SignedProposal) (*validateResu
 
 // ProcessProposal process the Proposal
 //func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedProposal) (*pb.ProposalResponse, error) {
-func (e *Endorser) ProcessProposal(rwM rwset.TxManager, idag dag.IDag, deployId []byte, ctx context.Context, signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, cid *pb.ChaincodeID, tmout time.Duration) (*pb.ProposalResponse, *modules.ContractInvokeResult, error) {
+func (e *Endorser) ProcessProposal(rwM rwset.TxManager, idag dag.IDag, deployId []byte, ctx context.Context,
+	signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, cid *pb.ChaincodeID, tmout time.Duration) (
+	*pb.ProposalResponse, *modules.ContractInvokeResult, error) {
 	log.Debugf("process proposal enter")
 	var txsim rwset.TxSimulator
 
@@ -221,7 +224,7 @@ func (e *Endorser) ProcessProposal(rwM rwset.TxManager, idag dag.IDag, deployId 
 	}
 	txid := result.txid
 	if chainID != "" {
-		if txsim, err = e.s.GetTxSimulator(rwM, idag, chainID); err != nil {
+		if txsim, err = e.s.GetTxSimulator(rwM, idag, txid); err != nil {
 			return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, nil, err
 		}
 		//defer txsim.Done()
@@ -234,6 +237,7 @@ func (e *Endorser) ProcessProposal(rwM rwset.TxManager, idag dag.IDag, deployId 
 	res, _, _, err := e.simulateProposal(deployId, ctx, chainID, txid, signedProp, prop, cid, txsim, tmout)
 	log.Debugf("simulate proposal")
 	if err != nil {
+		txsim.Rollback()
 		return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, nil, err
 	}
 	if res != nil {
@@ -244,28 +248,34 @@ func (e *Endorser) ProcessProposal(rwM rwset.TxManager, idag dag.IDag, deployId 
 			resp := &pb.ProposalResponse{
 				Payload:  nil,
 				Response: &pb.Response{Status: 500, Message: res.Message}}
+			txsim.Rollback()
 			return resp, nil, errors.New("Chaincode Error:" + res.Message)
 		}
 	} else {
 		log.Error("simulateProposal response is nil")
+		txsim.Rollback()
 		return &pb.ProposalResponse{
-			Payload: nil, Response: &pb.Response{Status: 500, Message: "simulateProposal response is nil"}}, nil, errors.New("Chaincode Error:simulateProposal response is nil")
+				Payload: nil, Response: &pb.Response{Status: 500, Message: "simulateProposal response is nil"}}, nil,
+			errors.New("Chaincode Error:simulateProposal response is nil")
 	}
 
 	//2 -- endorse and get a marshaled ProposalResponse message
 	pResp := &pb.ProposalResponse{Response: res}
 	cis, err := putils.GetChaincodeInvocationSpec(prop)
 	if err != nil {
+		txsim.Rollback()
 		return nil, nil, err
 	}
-	unit, err := RwTxResult2DagInvokeUnit(txsim, txid, cis.ChaincodeSpec.ChaincodeId.Name, deployId, cis.ChaincodeSpec.Input.Args, tmout)
+	invokeResult, err := RwTxResult2DagInvokeUnit(txsim, txid, cis.ChaincodeSpec.ChaincodeId.Name, deployId,
+		cis.ChaincodeSpec.Input.Args, tmout)
 	if err != nil {
 		log.Errorf("chainID[%s] converRwTxResult2DagUnit failed", chainID)
+		txsim.Rollback()
 		return nil, nil, errors.New("Conver RwSet to dag unit fail")
 	}
 
 	pResp.Response.Payload = res.Payload
-	unit.Payload = res.Payload
-
-	return pResp, unit, nil
+	invokeResult.Payload = res.Payload
+	txsim.Done()
+	return pResp, invokeResult, nil
 }

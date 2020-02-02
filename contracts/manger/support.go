@@ -49,8 +49,8 @@ func (s *SupportImpl) IsSysCCAndNotInvokableExternal(name string) bool {
 // GetTxSimulator returns the transaction simulator for the specified ledger
 // a client may obtain more than one such simulator; they are made unique
 // by way of the supplied txid
-func (s *SupportImpl) GetTxSimulator(rwM rwset.TxManager, idag dag.IDag, chainid string) (rwset.TxSimulator, error) {
-	return rwM.NewTxSimulator(idag, chainid)
+func (s *SupportImpl) GetTxSimulator(rwM rwset.TxManager, idag dag.IDag, txId string) (rwset.TxSimulator, error) {
+	return rwM.NewTxSimulator(idag, txId)
 }
 
 //IsSysCC returns true if the name matches a system chaincode's
