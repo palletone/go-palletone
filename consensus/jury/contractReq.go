@@ -411,9 +411,9 @@ func (p *Processor) ContractQuery(id []byte, args [][]byte, timeout time.Duratio
 	}
 
 	log.Debugf("ContractQuery, begin to invoke contract:%s", addr.String())
-	rst, err := p.contract.Invoke(rwset.RwM, chainId, addr.Bytes(), invTxId.String(), args, timeout)
-	rwset.RwM.CloseTxSimulator(chainId)
-	rwset.RwM.Close()
+	rwM, _:= rwset.NewRwSetMgr("query")
+	rst, err := p.contract.Invoke(rwM, chainId, addr.Bytes(), invTxId.String(), args, timeout)
+	rwM.Close()
 	if err != nil {
 		log.Errorf("ContractQuery, id[%s], Invoke err:%s", addr.String(), err.Error())
 		return nil, err
