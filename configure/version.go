@@ -25,7 +25,7 @@ const (
 	VersionMajor = 1         // Major version component of the current release
 	VersionMinor = 0         // Minor version component of the current release
 	VersionPatch = 5         // Patch version component of the current release
-	VersionMeta  = "release" // Version metadata to append to the version string
+	VersionMeta  = "hotfix1" // Version metadata to append to the version string
 
 )
 
