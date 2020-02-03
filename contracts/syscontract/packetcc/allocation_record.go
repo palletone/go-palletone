@@ -42,8 +42,8 @@ type PacketAllocationRecord struct {
 	Timestamp   uint64         //领取的时间戳，主要用于排序
 }
 
-func savePacketAllocationRecord(stub shim.ChaincodeStubInterface, record *PacketAllocationRecord,addr common.Address) error {
-	key := PacketAllocationRecordPrefix + hex.EncodeToString(record.PubKey) +"-"+addr.String() + "-" + record.Message
+func savePacketAllocationRecord(stub shim.ChaincodeStubInterface, record *PacketAllocationRecord) error {
+	key := PacketAllocationRecordPrefix + hex.EncodeToString(record.PubKey) +"-" + record.Message
 	value, err := rlp.EncodeToBytes(record)
 	if err != nil {
 		return err
@@ -107,9 +107,9 @@ func convertAllocationRecord2Json(record *PacketAllocationRecord) *PacketAllocat
 	}
 }
 
-func isPulledPacket(stub shim.ChaincodeStubInterface,pubKey []byte,addr common.Address) bool {
-	key := PacketAllocationRecordPrefix + hex.EncodeToString(pubKey) + "-" +addr.String()
-	byte,_ := stub.GetStateByPrefix(key)
+func isPulledPacket(stub shim.ChaincodeStubInterface,pubKey []byte,message string) bool {
+	key := PacketAllocationRecordPrefix + hex.EncodeToString(pubKey) + "-" +message
+	byte,_ := stub.GetState(key)
 	if byte == nil {
 		return false
 	}

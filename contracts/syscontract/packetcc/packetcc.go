@@ -162,6 +162,20 @@ func (p *PacketMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			return shim.Error("QueryIsInBlacklist error:" + err.Error())
 		}
 		return shim.Success(nil)
+	case "isPulledPacket":  //查看message是否存在
+		if len(args) != 2 {
+			return shim.Error("must input 2 args: pubKeyHex,message")
+		}
+		pubKey, err := hex.DecodeString(args[0])
+		if err != nil {
+			return shim.Error("Invalid pub key string:" + args[0])
+		}
+		message := args[1]
+		if p.IsPulledPacket(stub,pubKey,message){
+			return shim.Success([]byte("true"))
+		}
+		return shim.Success([]byte("false"))
+
 	default:
 		jsonResp := "{\"Error\":\"Unknown function " + f + "\"}"
 		return shim.Error(jsonResp)
@@ -271,9 +285,8 @@ func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	pubKey []byte, msg string, signature []byte,
 	pullAddr common.Address) error {
-	invokeAddr,_ := stub.GetInvokeAddress()
-	//是否已经领取了
-	if isPulledPacket(stub,pubKey,invokeAddr) {
+	//是否已经存在了
+	if isPulledPacket(stub,pubKey,msg) {
 		return errors.New("You had pulled packet")
 	}
 	packet, err := getPacket(stub, pubKey)
@@ -336,7 +349,7 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 		RequestHash: reqId,
 		Timestamp:   uint64(timestamp.Seconds),
 	}
-	err = savePacketAllocationRecord(stub, record,invokeAddr)
+	err = savePacketAllocationRecord(stub, record)
 	if err != nil {
 		return err
 	}
@@ -413,4 +426,8 @@ func (p *PacketMgr) RecyclePacket(stub shim.ChaincodeStubInterface, pubKey []byt
 	}
 	//更新余额
 	return savePacketBalance(stub, pubKey, 0, 0)
+}
+
+func (p *PacketMgr) IsPulledPacket(stub shim.ChaincodeStubInterface,pubKey []byte,msg string) bool {
+	return isPulledPacket(stub,pubKey,msg)
 }
