@@ -6,3 +6,4 @@ mockgen -source=./txspool/interface.go -destination=./txspool/txpool_mock.go -pa
 mockgen -source=./ptn/mediator_connection.go  -destination=./ptn/mediator_connection_mock.go -package=ptn
 mockgen -source=./contracts/shim/interfaces_stable.go  -destination=./contracts/shim/interfaces_stable_mock.go -package=shim -self_package="github.com/palletone/go-palletone/contracts/shim"
 mockgen -source=./tokenengine/interface.go -destination=./tokenengine/api_mock.go -package=tokenengine -self_package="github.com/palletone/go-palletone/tokenengine"
+mockgen -source=./dag/rwset/dependency.go -destination=./dag/rwset/dependency_mock.go -package=rwset -self_package="github.com/palletone/go-palletone/dag/rwset"

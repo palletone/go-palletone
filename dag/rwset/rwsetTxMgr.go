@@ -64,7 +64,7 @@ func (m *RwSetTxMgr) NewTxSimulator(idag IDataQuery, txId string) (TxSimulator, 
 	} else {
 		stateQuery = idag
 	}
-	t := NewBasedTxSimulator(idag, stateQuery)
+	t := NewBasedTxSimulator(txId, idag, stateQuery)
 	if t == nil {
 		return nil, errors.New("NewBaseTxSimulator is failed.")
 	}
@@ -89,6 +89,7 @@ func (m *RwSetTxMgr) CloseTxSimulator(txId string) error {
 	defer m.rwLock.Unlock()
 	if ts, ok := m.baseTxSim[txId]; ok {
 		ts.Done()
+		ts.Close()
 		delete(m.baseTxSim, txId)
 		m.wg.Done()
 	}

@@ -20,7 +20,6 @@
 package rwset
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"sort"
@@ -35,95 +34,20 @@ import (
 )
 
 type RwSetTxSimulator struct {
-	//chainIndex   *modules.ChainIndex
-	//requestIds   []common.Hash
+	txId         string
 	rwsetBuilder *RWSetBuilder
-	//write_cache  map[string][]byte      //本合约的写缓存
-	//global_state map[string][]byte      //全局合约的写缓存
-	//changedData  []*ContractChangedData //每个Request造成的合约数据变化
-	dag        IDataQuery
-	stateQuery IStateQuery
-	//writePerformed          bool   // 没用到，注释掉
-	//pvtdataQueriesPerformed bool
-	doneInvoked bool
+	dag          IDataQuery
+	stateQuery   IStateQuery
+	doneInvoked  bool
 }
 
-//用于缓存一个合约调用结束后的状态和Token变化
-//type ContractChangedData struct {
-//	WriteState map[string]map[string][]byte //map[ContractIdHex]map[Key]value
-//	UsedUtxo   []*modules.OutPoint
-//	NewUtxo    map[modules.OutPoint]*modules.Utxo //因为TxHash还没有生成，所以OutPoint里面的TxHash是RequestId
-//}
-//
-//func NewContractChangedData() *ContractChangedData {
-//	return &ContractChangedData{
-//		WriteState: make(map[string]map[string][]byte),
-//		UsedUtxo:   make([]*modules.OutPoint, 0, 0),
-//		NewUtxo:    make(map[modules.OutPoint]*modules.Utxo),
-//	}
-//}
-//func (d *ContractChangedData) GetState(contractid []byte, key string) []byte {
-//	contractHex := hex.EncodeToString(contractid)
-//	kvMap, ok := d.WriteState[contractHex]
-//	if ok {
-//		return kvMap[key]
-//	}
-//	return nil
-//}
-//
-//func (d *ContractChangedData) SetState(contractid []byte, key string, value []byte) {
-//	contractHex := hex.EncodeToString(contractid)
-//	kvMap, ok := d.WriteState[contractHex]
-//	if ok {
-//		kvMap[key] = value
-//		return
-//	}
-//	newKv := make(map[string][]byte)
-//	newKv[key] = value
-//	d.WriteState[contractHex] = newKv
-//}
-//func (d *ContractChangedData) SpendUtxo(op *modules.OutPoint) {
-//	d.UsedUtxo = append(d.UsedUtxo, op)
-//}
-//func (d *ContractChangedData) AddNewUtxo(newUtxos map[modules.OutPoint]*modules.Utxo) {
-//	for o, u := range newUtxos {
-//		d.NewUtxo[o] = u
-//	}
-//}
-
-//type VersionedValue struct {
-//	Value   []byte
-//	Version *Version
-//}
-func IsGlobalStateContract(contractId []byte) bool {
-	return bytes.Equal(contractId, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
-}
-
-func NewBasedTxSimulator(idag IDataQuery, stateQ IStateQuery) *RwSetTxSimulator {
-	rwsetBuilder := NewRWSetBuilder()
-	//gasToken := dagconfig.DagConfig.GetGasToken()
-	//unit := idag.GetCurrentUnit(gasToken)
-	//cIndex := unit.Header().GetNumber()
-	//ustabeUnit, _ := idag.UnstableHeadUnitProperty(gasToken)
-	//cIndex := ustabeUnit.ChainIndex
+func NewBasedTxSimulator(txId string, idag IDataQuery, stateQ IStateQuery) *RwSetTxSimulator {
 	return &RwSetTxSimulator{
-		//chainIndex:   modules.NewChainIndex(cIndex.AssetID, cIndex.Index),
-		//requestIds:   []common.Hash{},
-		rwsetBuilder: rwsetBuilder,
+		txId:         txId,
+		rwsetBuilder: NewRWSetBuilder(),
 		stateQuery:   stateQ,
 		dag:          idag}
 }
-
-//func (s *RwSetTxSimulator) GetChainParameters() ([]byte, error) {
-//	cp := s.dag.GetChainParameters()
-//
-//	data, err := rlp.EncodeToBytes(cp)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return data, nil
-//}
 
 func (s *RwSetTxSimulator) GetGlobalProp() ([]byte, error) {
 	gp := s.dag.GetGlobalProp()
@@ -279,14 +203,19 @@ func (s *RwSetTxSimulator) CheckDone() error {
 	}
 	return nil
 }
+
+//标记为完成，不能再进行PutState等写操作了
 func (h *RwSetTxSimulator) Done() {
 	if h.doneInvoked {
 		return
 	}
-	h.Close()
+	//h.Close()
 	h.doneInvoked = true
 }
+
+//关闭，回收资源，不能再进行读和写
 func (s *RwSetTxSimulator) Close() {
+	log.Debugf("Close RwSetTxSimulator[%s]", s.txId)
 	item := new(RwSetTxSimulator)
 	//s.chainIndex = item.chainIndex
 	//s.txid = item.txid
@@ -297,6 +226,7 @@ func (s *RwSetTxSimulator) Close() {
 
 func (s *RwSetTxSimulator) Rollback() error {
 	s.rwsetBuilder.pubRwBuilderMap = make(map[string]*nsPubRwBuilder)
+	log.Infof("Rollback tx simulator[%s]", s.txId)
 	return nil
 }
 

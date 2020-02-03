@@ -52,6 +52,7 @@ type TxSimulator interface {
 	//GetTxSimulationResults() ([]byte, error)
 	CheckDone() error
 	Done()
+	Close()
 	Rollback() error
 	String() string
 	//GetChainParameters() ([]byte, error)

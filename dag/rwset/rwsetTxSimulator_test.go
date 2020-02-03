@@ -13,7 +13,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/stretchr/testify/assert"
@@ -23,7 +22,7 @@ func TestRwSetTxSimulator_GetTokenBalance(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	dag := dag.NewMockIDag(mockCtrl)
+	dag := NewMockIDataQuery(mockCtrl)
 	simulator := &RwSetTxSimulator{}
 	simulator.dag = dag
 	mockUtxos := mockUtxos()
@@ -78,7 +77,7 @@ func TestNewTxMgr(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	dag := dag.NewMockIDag(mockCtrl)
+	dag := NewMockIDataQuery(mockCtrl)
 	simulator := &RwSetTxSimulator{}
 	simulator.dag = dag
 	mockUnit := getCurrentUnit()
@@ -128,7 +127,7 @@ func TestNewTxMgr(t *testing.T) {
 		log.Printf("asstid:%s ,amount:%d", assid.String(), amount)
 	}
 	// done && close
-	dag.EXPECT().Close().Return().AnyTimes()
+	//dag.EXPECT().Close().Return().AnyTimes()
 	ts.Done()
 	// txsimulator 执行结束后关闭它
 	assert.Nil(t, rwm.CloseTxSimulator(tx.Hash().String()))
@@ -221,7 +220,7 @@ func TestRwSetTxSimulator_Rollback(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	dag := dag.NewMockIDag(mockCtrl)
+	dag := NewMockIDataQuery(mockCtrl)
 
 	mockData := make(map[string]*modules.ContractStateValue)
 	mockData["A"] = &modules.ContractStateValue{
