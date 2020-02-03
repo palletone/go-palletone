@@ -42,6 +42,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
@@ -239,7 +240,7 @@ func (s *PrivateContractAPI) Ccdeploytx(ctx context.Context, from, to string, am
 }
 
 func (s *PrivateContractAPI) Ccinvoketx(ctx context.Context, from, to string, amount, fee decimal.Decimal,
-	deployId string, param []string, certID string, timeout string) (*ContractDeployRsp, error) {
+	deployId string, param []string, certID string, timeout string) (*ContractInvokeRsp, error) {
 	contractAddr, _ := common.StringToAddress(deployId)
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
@@ -255,7 +256,7 @@ func (s *PrivateContractAPI) Ccinvoketx(ctx context.Context, from, to string, am
 	intCertID := new(big.Int)
 	if len(certID) > 0 {
 		if _, ok := intCertID.SetString(certID, 10); !ok {
-			return &ContractDeployRsp{}, fmt.Errorf("certid is invalid")
+			return &ContractInvokeRsp{}, fmt.Errorf("certid is invalid")
 		}
 	}
 
@@ -268,7 +269,7 @@ func (s *PrivateContractAPI) Ccinvoketx(ctx context.Context, from, to string, am
 	reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, daoAmount, daoFee, intCertID, contractAddr, args, uint32(timeout64))
 	//log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(reqId[:]))
 	log.Infof("   reqId[%s]", hex.EncodeToString(reqId[:]))
-	rsp1 := &ContractDeployRsp{
+	rsp1 := &ContractInvokeRsp{
 		ReqId:      hex.EncodeToString(reqId[:]),
 		ContractId: deployId,
 	}
@@ -277,6 +278,11 @@ func (s *PrivateContractAPI) Ccinvoketx(ctx context.Context, from, to string, am
 
 func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token string, amountToken, fee decimal.Decimal,
 	contractAddress string, param []string) (*ContractInvokeRsp, error) {
+	gasToken := dagconfig.DagConfig.GasToken
+	if token == gasToken {
+		return s.Ccinvoketx(ctx, from, to, amountToken, fee, contractAddress, param, "", "0")
+	}
+
 	contractAddr, _ := common.StringToAddress(contractAddress)
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
