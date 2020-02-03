@@ -25,7 +25,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+//	"log"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -260,6 +260,7 @@ func (v *Viper) OnConfigChange(run func(in fsnotify.Event)) {
 
 func WatchConfig() { v.WatchConfig() }
 func (v *Viper) WatchConfig() {
+/*
 	go func() {
 		watcher, err := fsnotify.NewWatcher()
 		if err != nil {
@@ -301,6 +302,7 @@ func (v *Viper) WatchConfig() {
 		watcher.Add(configDir)
 		<-done
 	}()
+*/
 }
 
 // SetConfigFile explicitly defines the path, name and extension of the config file.

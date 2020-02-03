@@ -11,6 +11,7 @@
 	You should have received a copy of the GNU General Public License
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /*
  * Copyright IBM Corp. All Rights Reserved.
  * @author PalletOne core developers <dev@pallet.one>
@@ -35,7 +36,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-const defaultTimeout = time.Second * 3
+const defaultTimeout = time.Second * 5
 
 //var log = flogging.MustGetLogger("comm")
 var credSupport *CredentialSupport
@@ -199,30 +200,54 @@ func (cs *CredentialSupport) GetPeerCredentials() credentials.TransportCredentia
 //	}
 //}
 
+func dialContext(peerAddress string) (*grpc.ClientConn, error) {
+	var opts []grpc.DialOption
+
+	fmt.Println("dial context enter...")
+	opts = append(opts, grpc.WithInsecure())
+	opts = append(opts, grpc.WithBlock())
+	//opts = ClientKeepaliveOptions(DefaultKeepaliveOptions())
+	ctx := context.Background()
+	ctx, _ = context.WithTimeout(ctx, defaultTimeout)
+
+	fmt.Println("len(opts)", len(opts))
+	conn, err := grpc.DialContext(ctx, peerAddress, opts...)
+	if err != nil {
+		fmt.Println("connect fail !!!!")
+		return nil, err
+	}
+	fmt.Println("connect sucess !!!!")
+	return conn, err
+}
+
 // NewClientConnectionWithAddress Returns a new grpc.ClientConn to the given address
 func NewClientConnectionWithAddress(peerAddress string, block bool, tslEnabled bool,
 	creds credentials.TransportCredentials, ka *KeepaliveOptions) (*grpc.ClientConn, error) {
 	var opts []grpc.DialOption
 
+	return dialContext(peerAddress)
+
 	if ka != nil {
-		opts = ClientKeepaliveOptions(ka)
+		//	opts = ClientKeepaliveOptions(ka)
 	} else {
 		// set to the default options
-		opts = ClientKeepaliveOptions(DefaultKeepaliveOptions())
+		//	opts = ClientKeepaliveOptions(DefaultKeepaliveOptions())
 	}
 	if tslEnabled {
-		opts = append(opts, grpc.WithTransportCredentials(creds))
+		//opts = append(opts, grpc.WithTransportCredentials(creds))
 	} else {
 		opts = append(opts, grpc.WithInsecure())
 	}
 	if block {
-		//opts = append(opts, grpc.WithBlock()) //这个导致grpc建联失败
+		opts = append(opts, grpc.WithBlock()) //这个导致grpc建联失败
 	}
-	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(MaxRecvMsgSize()),
-		grpc.MaxCallSendMsgSize(MaxSendMsgSize())))
+	//opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(MaxRecvMsgSize()),
+	//	grpc.MaxCallSendMsgSize(MaxSendMsgSize())))
 
 	ctx := context.Background()
 	ctx, _ = context.WithTimeout(ctx, defaultTimeout)
+
+	fmt.Println("len(opts)", len(opts))
 	conn, err := grpc.DialContext(ctx, peerAddress, opts...)
 	//conn, err := grpc.DialContext(ctx, "127.0.0.1:18882", opts...)
 	//conn, err := grpc.Dial("127.0.0.1:18882", grpc.WithInsecure()) //ok
