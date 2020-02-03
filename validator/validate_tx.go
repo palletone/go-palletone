@@ -34,6 +34,7 @@ import (
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/rwset"
 )
 
 func shortId(id string) string {
@@ -54,7 +55,7 @@ Tx的第一条Msg必须是Payment
 To validate one transaction
 如果isFullTx为false，意味着这个Tx还没有被陪审团处理完，所以结果部分的Payment不验证
 */
-func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (ValidationCode, []*modules.Addition) {
+func (validate *Validate) validateTx(rwM *rwset.RwSetTxMgr, tx *modules.Transaction, isFullTx bool) (ValidationCode, []*modules.Addition) {
 	if tx == nil {
 		return TxValidationCode_VALID, nil
 	}
@@ -80,7 +81,11 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 	//合约的执行结果必须有Jury签名
 	if validate.enableContractSignCheck && isFullTx && tx.IsContractTx() {
 		if validate.enableContractRwSetCheck {
-			if !validate.ContractTxCheck(tx) { //验证合约执行结果是够正常
+			rwMag := rwM
+			if rwMag == nil {
+				rwMag = rwset.DefaultRwSetMgr()
+			}
+			if !validate.ContractTxCheck(rwMag, tx) { //验证合约执行结果是够正常
 				log.Debugf("[%s]ContractTxCheck fail", shortId(reqId.String()))
 				return TxValidationCode_INVALID_CONTRACT, txFee
 			}

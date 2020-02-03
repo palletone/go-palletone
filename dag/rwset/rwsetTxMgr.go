@@ -109,6 +109,15 @@ func (m *RwSetTxMgr) Close() {
 	m.closed = true
 }
 
+var defRwSetM *RwSetTxMgr
+
+func DefaultRwSetMgr() *RwSetTxMgr {
+	if defRwSetM == nil {
+		defRwSetM, _ = NewRwSetMgr("default")
+	}
+	return defRwSetM
+}
+
 func Init() {
 	var err error
 	RwM, err = NewRwSetMgr("default")

@@ -437,7 +437,11 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	})
 
 	//rwset.Init()
-	rwset.RwM.NewTxSimulator(pm.dag,unit.DisplayId())
+	rwM, err := rwset.NewRwSetMgr(unit.NumberString())
+	if err != nil{
+		return fmt.Errorf("NewBlockMsg, received unit hash %s, NewRwSetMgr err:%s ", unit.Hash().String(), err.Error())
+	}
+	//rwset.RwM.NewTxSimulator(pm.dag,unit.DisplayId())
 	var temptxs modules.Transactions
 	index := 0
 	for i, tx := range unit.Txs {
@@ -449,14 +453,14 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 			reqId := tx.RequestHash()
 			log.Debugf("[%s]NewBlockMsg, index[%x],txHash[%s]", reqId.String()[0:8], index, tx.Hash().String())
 			index++
-			if !pm.contractProc.CheckContractTxValid(rwset.RwM, tx, true) {
+			if !pm.contractProc.CheckContractTxValid(rwM, tx, true) {
 				log.Debugf("[%s]NewBlockMsg, CheckContractTxValid is false.", reqId.String()[0:8])
 				continue
 			}
 		}
 		temptxs = append(temptxs, tx)
 	}
-	rwset.RwM.CloseTxSimulator(unit.DisplayId())
+	rwM.Close()
 	unit.Txs = temptxs
 
 	unit.ReceivedAt = msg.ReceivedAt

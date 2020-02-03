@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/dag/parameter"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/stretchr/testify/assert"
+	"github.com/palletone/go-palletone/dag/rwset"
 )
 
 func TestValidate_ValidateUnitTxs(t *testing.T) {
@@ -52,7 +53,7 @@ func TestValidate_ValidateUnitTxs(t *testing.T) {
 	prop := &mockiPropQuery{}
 	validate := NewValidate(dagq, utxoQuery, mockStatedbQuery, prop, newCache(), false)
 	addr, _ := common.StringToAddress("P1HXNZReTByQHgWQNGMXotMyTkMG9XeEQfX")
-	code := validate.validateTransactions(txs, 1564675200, addr)
+	code := validate.validateTransactions(rwset.DefaultRwSetMgr(), txs, 1564675200, addr)
 	assert.Equal(t, code, TxValidationCode_VALID)
 }
 

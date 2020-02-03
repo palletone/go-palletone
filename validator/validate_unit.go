@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/rwset"
 )
 
 const ENABLE_TX_FEE_CHECK_TIME = 1570870800             //2019-10-12 17:00:00
@@ -250,7 +251,9 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) Validat
 	//if validate.enableTxFeeCheck{
 	//	log.Infof("Enable tx fee check since %d",unit.Timestamp())
 	//}
-	code := validate.validateTransactions(unit.Txs, unit.Timestamp(), med.GetRewardAdd())
+	rwM, _ := rwset.NewRwSetMgr(unit.NumberString()) // err ?
+	code := validate.validateTransactions(rwM, unit.Txs, unit.Timestamp(), med.GetRewardAdd())
+	rwM.Close()
 	if code != TxValidationCode_VALID {
 		msg := fmt.Sprintf("Validate unit(%s) transactions failed code: %v", unit.DisplayId(), code)
 		log.Error(msg)

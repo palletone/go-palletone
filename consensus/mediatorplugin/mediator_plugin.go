@@ -79,7 +79,7 @@ type ProductionCondition uint8
 
 // unit生产的状态枚举
 const (
-	Produced ProductionCondition = iota // 正常生产unit
+	Produced           ProductionCondition = iota // 正常生产unit
 	NotSynced
 	NotMyTurn
 	NotTimeYet
@@ -142,7 +142,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 
 	// 整秒调整，四舍五入
 	nowFine := time.Now()
-	now := time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
+	now := time.Unix(nowFine.Add(500 * time.Millisecond).Unix(), 0)
 
 	// 1. 判断是否满足生产的各个条件
 	nextSlotTime := dag.GetSlotTime(1)
@@ -222,16 +222,18 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	}
 	unitNumber := dag.HeadUnitNum() + 1
 	unitId := fmt.Sprintf("%d", unitNumber)
-	// 重置rwManager
-	rwset.Init()
-	//rwset.RwM.NewTxSimulator(dag,unitId)
-	// execute contract
-	if err := mp.ptn.ContractProcessor().AddContractLoop(rwset.RwM, mp.ptn.TxPool(), scheduledMediator, ks); err != nil {
+
+	rwM, err := rwset.NewRwSetMgr(unitId)
+	if err != nil {
+		log.Errorf("MaybeProduceUnit NewRwSetMgr err: %v", err.Error())
+		return ExceptionProducing, detail
+	}
+
+	if err := mp.ptn.ContractProcessor().AddContractLoop(rwM, mp.ptn.TxPool(), scheduledMediator, ks); err != nil {
 		log.Debugf("MaybeProduceUnit RunContractLoop err: %v", err.Error())
 	}
 	// close tx simulator (系统合约)
-	rwset.RwM.CloseTxSimulator(unitId)
-	rwset.RwM.Close()
+	rwM.Close()
 
 	//广播节点选取签名请求事件
 	go mp.ptn.ContractProcessor().BroadcastElectionSigRequestEvent()

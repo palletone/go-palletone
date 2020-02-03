@@ -30,9 +30,10 @@ import (
 	"github.com/palletone/go-palletone/dag/parameter"
 	"github.com/palletone/go-palletone/tokenengine"
 	"sync"
+	"github.com/palletone/go-palletone/dag/rwset"
 )
 
-type ContractTxCheckFunc func(tx *modules.Transaction) bool
+type ContractTxCheckFunc func(rwM *rwset.RwSetTxMgr, tx *modules.Transaction) bool
 
 var ContractCheckFun ContractTxCheckFunc
 
@@ -89,7 +90,7 @@ func (validate *Validate) setUtxoQuery(q IUtxoQuery) {
 }
 
 //逐条验证每一个Tx，并返回总手续费的分配情况，然后与Coinbase进行比较
-func (validate *Validate) validateTransactions(txs modules.Transactions, unitTime int64, unitAuthor common.Address) ValidationCode {
+func (validate *Validate) validateTransactions(rwM *rwset.RwSetTxMgr, txs modules.Transactions, unitTime int64, unitAuthor common.Address) ValidationCode {
 	ads := make([]*modules.Addition, 0)
 
 	oldUtxoQuery := validate.utxoquery
@@ -112,7 +113,7 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 			//每个单元的第一条交易比较特殊，是Coinbase交易，其包含增发和收集的手续费
 
 		}
-		txFeeAllocate, txCode, _ := validate.validateTxAndCache(tx, true)
+		txFeeAllocate, txCode, _ := validate.validateTxAndCache(rwM, tx, true)
 		if txCode != TxValidationCode_VALID {
 			log.Debug("ValidateTx", "txhash", txHash, "error validate code", txCode)
 			return txCode
@@ -218,20 +219,20 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, isFullTx bool) ([]
 	validate.enableContractSignCheck = true
 	validate.enableDeveloperCheck = true
 	validate.enableContractRwSetCheck = true
-	code, addition := validate.validateTx(tx, isFullTx)
+	code, addition := validate.validateTx(nil, tx, isFullTx)
 	if code == TxValidationCode_VALID {
 		validate.cache.AddTxValidateResult(txId, addition)
 		return addition, code, nil
 	}
 	return addition, code, NewValidateError(code)
 }
-func (validate *Validate) validateTxAndCache(tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, ValidationCode, error) {
+func (validate *Validate) validateTxAndCache(rwM *rwset.RwSetTxMgr, tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, ValidationCode, error) {
 	txId := tx.Hash()
 	has, add := validate.cache.HasTxValidateResult(txId)
 	if has {
 		return add, TxValidationCode_VALID, nil
 	}
-	code, addition := validate.validateTx(tx, isFullTx)
+	code, addition := validate.validateTx(rwM, tx, isFullTx)
 	if code == TxValidationCode_VALID {
 		validate.cache.AddTxValidateResult(txId, addition)
 		return addition, code, nil
@@ -273,9 +274,9 @@ func (validate *Validate) checkTxIsExist(tx *modules.Transaction) bool {
 	}
 	return false
 }
-func (validate *Validate) ContractTxCheck(tx *modules.Transaction) bool {
+func (validate *Validate) ContractTxCheck(rwM *rwset.RwSetTxMgr, tx *modules.Transaction) bool {
 	if ContractCheckFun != nil {
-		return ContractCheckFun(tx)
+		return ContractCheckFun(rwM, tx)
 	}
 	return true
 }
