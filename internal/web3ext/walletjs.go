@@ -64,7 +64,7 @@ const Wallet_JS = `
 		new web3._extend.Method({
 			name: 'createRawTransaction',
 			call: 'wallet_createRawTransaction',
-			params: 4
+			params: 5
 		}),
         new web3._extend.Method({
 		    name: 'sendRawTransaction',
