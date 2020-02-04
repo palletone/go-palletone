@@ -50,7 +50,6 @@ func (m *RwSetTxMgr) GetTxSimulator(txId string) (TxSimulator, error) {
 
 // NewTxSimulator implements method in interface `txmgmt.TxMgr`
 func (m *RwSetTxMgr) NewTxSimulator(idag IDataQuery, txId string) (TxSimulator, error) {
-
 	m.rwLock.RLock()
 	ts, ok := m.baseTxSim[txId]
 	m.rwLock.RUnlock()
@@ -93,6 +92,7 @@ func (m *RwSetTxMgr) CloseTxSimulator(txId string) error {
 		delete(m.baseTxSim, txId)
 		m.wg.Done()
 	}
+	log.Debugf("CloseTxSimulator, txId:%s", txId)
 	return nil
 }
 func (m *RwSetTxMgr) Close() {
@@ -101,13 +101,20 @@ func (m *RwSetTxMgr) Close() {
 	if m.closed {
 		return
 	}
-	for _, ts := range m.baseTxSim {
-		if ts.CheckDone() != nil {
-			continue
-		}
+	for txId, ts := range m.baseTxSim {
+		ts.Done()
+		ts.Close()
+		delete(m.baseTxSim, txId)
+		m.wg.Done()
+		log.Debugf("RwSetTxMgr Close, name:%s, close txId:%s", m.name, txId)
+		//if ts.CheckDone() != nil {
+		//	continue
+		//}
 	}
-	m.baseTxSim = make(map[string]TxSimulator)
+	//	m.baseTxSim = make(map[string]TxSimulator)
 	m.closed = true
+
+	log.Debugf("RwSetTxMgr Close, name:%s", m.name)
 }
 
 var defRwSetM *RwSetTxMgr
