@@ -24,14 +24,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/palletone/go-palletone/common/crypto"
 	"sort"
 	"strconv"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
@@ -103,7 +101,6 @@ func (p *PacketMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			return shim.Error("Invalid pub key string:" + args[0])
 		}
 		message := args[1]
-		//signature := []byte("signature")
 		signature, err := hex.DecodeString(args[2])
 		if err != nil {
 			return shim.Error("Invalid signature hex string:" + args[2])
@@ -121,7 +118,6 @@ func (p *PacketMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if len(args) != 1 {
 			return shim.Error("must input 1 args: pubKeyHex")
 		}
-
 		pubKey, err := hex.DecodeString(args[0])
 		if err != nil {
 			return shim.Error("Invalid pub key string:" + args[0])
@@ -136,7 +132,6 @@ func (p *PacketMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if len(args) != 1 {
 			return shim.Error("must input 1 args: pubKeyHex")
 		}
-
 		pubKey, err := hex.DecodeString(args[0])
 		if err != nil {
 			return shim.Error("Invalid pub key string:" + args[0])
@@ -152,7 +147,6 @@ func (p *PacketMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if len(args) != 1 {
 			return shim.Error("must input 1 args: pubKeyHex")
 		}
-
 		pubKey, err := hex.DecodeString(args[0])
 		if err != nil {
 			return shim.Error("Invalid pub key string:" + args[0])
@@ -175,7 +169,6 @@ func (p *PacketMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			return shim.Success([]byte("true"))
 		}
 		return shim.Success([]byte("false"))
-
 	default:
 		jsonResp := "{\"Error\":\"Unknown function " + f + "\"}"
 		return shim.Error(jsonResp)
@@ -233,7 +226,7 @@ func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 	if packet.Creator != creator && !isFoundationInvoke(stub) {
 		return errors.New("Only creator or admin can update")
 	}
-	adjustCount := int32(count) - int32(packet.Count)
+	//adjustCount := int32(count) - int32(packet.Count)
 	packet.Count = uint32(count)
 	packet.MinPacketAmount = packet.Token.Uint64Amount(minAmount)
 	packet.MaxPacketAmount = packet.Token.Uint64Amount(maxAmount)
@@ -247,36 +240,40 @@ func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 	if err != nil {
 		return err
 	}
-	if len(tokenToPackets) == 0 { //只调整参数，不增加额度
-		err = savePacket(stub, packet)
-		if err != nil {
-			return err
+	//if len(tokenToPackets) == 0 { //只调整参数，不增加额度
+	//	err = savePacket(stub, packet)
+	//	if err != nil {
+	//		return err
+	//	}
+	//
+	//	return nil
+	//}
+	bAmount, _, err := getPacketBalance(stub, pubKey)
+	if err != nil {
+		return err
+	}
+	if len(tokenToPackets) != 0 {
+		if len(tokenToPackets) != 1 {
+			return errors.New("Please pay one kind of token to this contract.")
 		}
-		return nil
+		tokenToPacket := tokenToPackets[0]
+		if !tokenToPacket.Asset.Equal(packet.Token) {
+			return errors.New("Please pay " + packet.Token.String() + " to this contract.")
+		}
+		packet.Amount += tokenToPacket.Amount
+		bAmount +=tokenToPacket.Amount
 	}
-
-	if len(tokenToPackets) != 1 {
-		return errors.New("Please pay one kind of token to this contract.")
-	}
-	tokenToPacket := tokenToPackets[0]
-	if !tokenToPacket.Asset.Equal(packet.Token) {
-		return errors.New("Please pay " + packet.Token.String() + " to this contract.")
-	}
-	packet.Amount += tokenToPacket.Amount
 
 	err = savePacket(stub, packet)
 	if err != nil {
 		return err
 	}
-	bAmount, bCount, err := getPacketBalance(stub, pubKey)
-	if err != nil {
-		return err
-	}
-	newCount := int32(bCount) + adjustCount
-	if newCount < 0 {
-		return errors.New(fmt.Sprintf("Count must >=%d", bCount))
-	}
-	err = savePacketBalance(stub, pubKey, bAmount+tokenToPacket.Amount, uint32(newCount))
+
+	//newCount := int32(bCount) + adjustCount
+	//if newCount < 0 {
+	//	return errors.New(fmt.Sprintf("Count must >=%d", bCount))
+	//}
+	err = savePacketBalance(stub, pubKey, bAmount, uint32(count))
 	if err != nil {
 		return err
 	}
@@ -287,7 +284,7 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	pullAddr common.Address) error {
 	//是否已经存在了
 	if isPulledPacket(stub,pubKey,msg) {
-		return errors.New("You had pulled packet")
+		return errors.New("Packet had been pulled")
 	}
 	packet, err := getPacket(stub, pubKey)
 	if err != nil {
@@ -361,19 +358,16 @@ func isFoundationInvoke(stub shim.ChaincodeStubInterface) bool {
 	//  判断是否基金会发起的
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
-		log.Error("get invoke address err: ", "error", err)
 		return false
 	}
 	//  获取
 	gp, err := stub.GetSystemConfig()
 	if err != nil {
-		//log.Error("strconv.ParseUint err:", "error", err)
 		return false
 	}
 	foundationAddress := gp.ChainParameters.FoundationAddress
 	// 判断当前请求的是否为基金会
 	if invokeAddr.String() != foundationAddress {
-		log.Error("please use foundation address")
 		return false
 	}
 	return true
