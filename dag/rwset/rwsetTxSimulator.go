@@ -178,9 +178,6 @@ func convertReadMap2Slice(rd map[string]map[string]*KVRead) []*KVRead {
 		return result[i].key < result[j].key
 	})
 
-	for _, kv := range result{
-		log.Debugf("KVRead:%s", kv.String())
-	}
 	return result
 }
 func convertWriteMap2Slice(rd map[string]map[string]*KVWrite) []*KVWrite {
@@ -194,9 +191,6 @@ func convertWriteMap2Slice(rd map[string]map[string]*KVWrite) []*KVWrite {
 		return result[i].key < result[j].key
 	})
 
-	for _, kv := range result{
-		log.Debugf("KVWrite:%s", kv.String())
-	}
 	return result
 }
 
