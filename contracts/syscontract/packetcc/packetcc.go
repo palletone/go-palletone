@@ -62,7 +62,7 @@ func (p *PacketMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if err != nil {
 			return shim.Error("Invalid pub key string:" + args[0])
 		}
-		count, err := strconv.Atoi(args[1])
+		count, err := strconv.ParseUint(args[1],10,32)
 		if err != nil {
 			return shim.Error("Invalid packet count string:" + args[1])
 		}
@@ -83,9 +83,9 @@ func (p *PacketMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			exp = &ti
 		}
 		if f == "createPacket" {
-			err = p.CreatePacket(stub, pubKey, count, minAmount, maxAmount, exp, args[5])
+			err = p.CreatePacket(stub, pubKey, uint32(count), minAmount, maxAmount, exp, args[5])
 		} else { //update
-			err = p.UpdatePacket(stub, pubKey, count, minAmount, maxAmount, exp, args[5])
+			err = p.UpdatePacket(stub, pubKey, uint32(count), minAmount, maxAmount, exp, args[5])
 		}
 		if err != nil {
 			return shim.Error("CreatePacket error:" + err.Error())
@@ -174,7 +174,7 @@ func (p *PacketMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(jsonResp)
 	}
 }
-func (p *PacketMgr) CreatePacket(stub shim.ChaincodeStubInterface, pubKey []byte, count int,
+func (p *PacketMgr) CreatePacket(stub shim.ChaincodeStubInterface, pubKey []byte, count uint32,
 	minAmount, maxAmount decimal.Decimal, expiredTime *time.Time, remark string) error {
 	creator, _ := stub.GetInvokeAddress()
 	tokenToPackets, err := stub.GetInvokeTokens()
@@ -194,7 +194,7 @@ func (p *PacketMgr) CreatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 		Creator:         creator,
 		Token:           tokenToPacket.Asset,
 		Amount:          tokenToPacket.Amount,
-		Count:           uint32(count),
+		Count:           count,
 		MinPacketAmount: tokenToPacket.Asset.Uint64Amount(minAmount),
 		MaxPacketAmount: tokenToPacket.Asset.Uint64Amount(maxAmount),
 		Remark:          remark,
@@ -216,7 +216,7 @@ func (p *PacketMgr) CreatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 }
 
 //增加额度，调整红包产生等
-func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte, count int,
+func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte, count uint32,
 	minAmount, maxAmount decimal.Decimal, expiredTime *time.Time, remark string) error {
 	creator, _ := stub.GetInvokeAddress()
 	packet, err := getPacket(stub, pubKey)
@@ -227,7 +227,7 @@ func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 		return errors.New("Only creator or admin can update")
 	}
 	//adjustCount := int32(count) - int32(packet.Count)
-	packet.Count = uint32(count)
+	packet.Count = count
 	packet.MinPacketAmount = packet.Token.Uint64Amount(minAmount)
 	packet.MaxPacketAmount = packet.Token.Uint64Amount(maxAmount)
 	packet.Remark = remark
