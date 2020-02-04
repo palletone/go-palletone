@@ -633,7 +633,7 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 	return msgsCompareInvoke(txTmp.TxMessages(), tx.TxMessages())
 }
 
-func (p *Processor) ContractTxCheckForValidator(rwM *rwset.RwSetTxMgr, tx *modules.Transaction) bool {
+func (p *Processor) ContractTxCheckForValidator(rwM rwset.TxManager, tx *modules.Transaction) bool {
 	if tx == nil {
 		log.Error("ContractTxCheckForValidator, param is nil")
 		return false
@@ -982,7 +982,7 @@ func (p *Processor) getContractAssignElectionList(tx *modules.Transaction) ([]mo
 	return eels, nil
 }
 
-func CheckTxContract(rwM *rwset.RwSetTxMgr, tx *modules.Transaction) bool {
+func CheckTxContract(rwM rwset.TxManager, tx *modules.Transaction) bool {
 	if instanceProcessor != nil {
 		return instanceProcessor.ContractTxCheckForValidator(rwM, tx)
 	}

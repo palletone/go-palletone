@@ -251,7 +251,11 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) Validat
 	//if validate.enableTxFeeCheck{
 	//	log.Infof("Enable tx fee check since %d",unit.Timestamp())
 	//}
-	rwM, _ := rwset.NewRwSetMgr(unit.NumberString()) // err ?
+	rwM, err := rwset.NewRwSetMgr(unit.NumberString())
+	if err != nil {
+		log.Errorf("NewRwSetMgr error:%s", err.Error())
+		return TxValidationCode_INVALID_OTHER_REASON
+	}
 	code := validate.validateTransactions(rwM, unit.Txs, unit.Timestamp(), med.GetRewardAdd())
 	rwM.Close()
 	if code != TxValidationCode_VALID {

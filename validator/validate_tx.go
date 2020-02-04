@@ -55,7 +55,7 @@ Tx的第一条Msg必须是Payment
 To validate one transaction
 如果isFullTx为false，意味着这个Tx还没有被陪审团处理完，所以结果部分的Payment不验证
 */
-func (validate *Validate) validateTx(rwM *rwset.RwSetTxMgr, tx *modules.Transaction, isFullTx bool) (ValidationCode, []*modules.Addition) {
+func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transaction, isFullTx bool) (ValidationCode, []*modules.Addition) {
 	if tx == nil {
 		return TxValidationCode_VALID, nil
 	}
@@ -83,6 +83,7 @@ func (validate *Validate) validateTx(rwM *rwset.RwSetTxMgr, tx *modules.Transact
 		if validate.enableContractRwSetCheck {
 			rwMag := rwM
 			if rwMag == nil {
+				log.Debugf("validate tx not in unit, use new default TxManager")
 				rwMag = rwset.DefaultRwSetMgr()
 			}
 			if !validate.ContractTxCheck(rwMag, tx) { //验证合约执行结果是够正常

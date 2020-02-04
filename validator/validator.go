@@ -23,17 +23,18 @@ package validator
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/dag/parameter"
-	"github.com/palletone/go-palletone/tokenengine"
-	"sync"
 	"github.com/palletone/go-palletone/dag/rwset"
+	"github.com/palletone/go-palletone/tokenengine"
 )
 
-type ContractTxCheckFunc func(rwM *rwset.RwSetTxMgr, tx *modules.Transaction) bool
+type ContractTxCheckFunc func(rwM rwset.TxManager, tx *modules.Transaction) bool
 
 var ContractCheckFun ContractTxCheckFunc
 
@@ -90,7 +91,7 @@ func (validate *Validate) setUtxoQuery(q IUtxoQuery) {
 }
 
 //逐条验证每一个Tx，并返回总手续费的分配情况，然后与Coinbase进行比较
-func (validate *Validate) validateTransactions(rwM *rwset.RwSetTxMgr, txs modules.Transactions, unitTime int64, unitAuthor common.Address) ValidationCode {
+func (validate *Validate) validateTransactions(rwM rwset.TxManager, txs modules.Transactions, unitTime int64, unitAuthor common.Address) ValidationCode {
 	ads := make([]*modules.Addition, 0)
 
 	oldUtxoQuery := validate.utxoquery
@@ -226,7 +227,7 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, isFullTx bool) ([]
 	}
 	return addition, code, NewValidateError(code)
 }
-func (validate *Validate) validateTxAndCache(rwM *rwset.RwSetTxMgr, tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, ValidationCode, error) {
+func (validate *Validate) validateTxAndCache(rwM rwset.TxManager, tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, ValidationCode, error) {
 	txId := tx.Hash()
 	has, add := validate.cache.HasTxValidateResult(txId)
 	if has {
@@ -274,7 +275,7 @@ func (validate *Validate) checkTxIsExist(tx *modules.Transaction) bool {
 	}
 	return false
 }
-func (validate *Validate) ContractTxCheck(rwM *rwset.RwSetTxMgr, tx *modules.Transaction) bool {
+func (validate *Validate) ContractTxCheck(rwM rwset.TxManager, tx *modules.Transaction) bool {
 	if ContractCheckFun != nil {
 		return ContractCheckFun(rwM, tx)
 	}
