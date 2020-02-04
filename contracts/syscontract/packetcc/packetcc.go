@@ -283,7 +283,7 @@ func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 	//if newCount < 0 {
 	//	return errors.New(fmt.Sprintf("Count must >=%d", bCount))
 	//}
-	err = savePacketBalance(stub, pubKey, bAmount, uint32(count))
+	err = savePacketBalance(stub, pubKey, bAmount, count)
 	if err != nil {
 		return err
 	}
