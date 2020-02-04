@@ -24,6 +24,7 @@ package packetcc
 import (
 	"encoding/hex"
 	"math/rand"
+	"strconv"
 	"time"
 
 	"github.com/ethereum/go-ethereum/rlp"
@@ -43,6 +44,7 @@ type Packet struct {
 	MaxPacketAmount uint64         //单个红包最大额,最大额最小额相同，则说明不是随机红包,0则表示完全随机
 	ExpiredTime     uint64         //红包过期时间，0表示永不过期
 	Remark          string         //红包的备注
+	Constant        bool           //是否固定数额
 }
 
 func (p *Packet) IsFixAmount() bool {
@@ -151,6 +153,7 @@ type PacketJson struct {
 	MaxPacketAmount decimal.Decimal //单个红包最大额,最大额最小额相同，则说明不是随机红包
 	ExpiredTime     string          //红包过期时间，0表示永不过期
 	Remark          string          //红包的备注
+	IsConstant      string          //是否固定数额
 	BalanceAmount   decimal.Decimal //红包剩余额度
 	BalanceCount    uint32          //红包剩余次数
 }
@@ -165,11 +168,13 @@ func convertPacket2Json(packet *Packet, balanceAmount uint64, balanceCount uint3
 		MaxPacketAmount: packet.Token.DisplayAmount(packet.MaxPacketAmount),
 		PacketCount:     packet.Count,
 		Remark:          packet.Remark,
+		IsConstant:      strconv.FormatBool(packet.Constant),
 		BalanceAmount:   packet.Token.DisplayAmount(balanceAmount),
 		BalanceCount:    balanceCount,
 	}
 	if packet.ExpiredTime != 0 {
 		js.ExpiredTime = time.Unix(int64(packet.ExpiredTime), 0).String()
 	}
+
 	return js
 }
