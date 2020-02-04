@@ -140,6 +140,15 @@ func BytesToInt(b []byte) int {
 	binary.Read(bytesBuffer, binary.BigEndian, &tmp)
 	return int(tmp)
 }
+func UInt64ToBytes(i uint64) []byte {
+	var buf = make([]byte, 8)
+	binary.BigEndian.PutUint64(buf, i)
+	return buf
+}
+
+func BytesToUInt64(buf []byte) uint64 {
+	return binary.BigEndian.Uint64(buf)
+}
 
 //YiRan
 //Returns true when the contents of the two []byte are exactly the same
