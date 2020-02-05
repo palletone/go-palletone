@@ -101,7 +101,7 @@ matrix:
         - if [ $IS_RUN_EXCHANGE == 'true' ]; then
           cd ${BASE_DIR}/bdd/exchange;
           chmod +x ./exchange_test.sh;
-          ./exchange_test.sh BTC LTC;
+          ./exchange_test.sh BYC LYC;
           fi
         - if [ $IS_RUN_TESTCONTRACTCASES == 'true' ];then
           cd ${BASE_DIR}/bdd/contract/testcases;
