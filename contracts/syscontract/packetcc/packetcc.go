@@ -292,6 +292,9 @@ func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	pubKey []byte, msg string, signature []byte,
 	pullAddr common.Address,amount string) error {
+	if amount != "0" {
+		msg += amount
+	}
 	//是否已经存在了
 	if isPulledPacket(stub,pubKey,msg) {
 		return errors.New("Packet had been pulled")
@@ -317,7 +320,6 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 		return errors.New("Packet balance is zero")
 	}
 	if packet.Constant {
-		msg += amount
 		temp, _ := decimal.NewFromString(amount)
 		payAmt = packet.Token.Uint64Amount(temp)
 	}else {
