@@ -72,11 +72,11 @@ random_action
 
     ${alicebobbalance3}=    getBalance    ${Alice}    ${BBBobTokenID}
     log    ${alicebobbalance3}
-    #Should Be Equal    ${alicebobbalance3}    14000
+    Should Be Equal    ${alicebobbalance3}    14000
 
     ${bobalicebalance3}=    getBalance    ${Bob}    ${AAAliceTokenID}
     log    ${bobalicebalance3}
-    #Should Be Equal    ${bobalicebalance3}    566.6
+    Should Be Equal    ${bobalicebalance3}    566.6
 
     maker    ${Alice}    ${AAAliceTokenID}    200    ${BBBobTokenID}    4000
     sleep    5
@@ -91,11 +91,11 @@ random_action
     sleep    5
     ${alicebobbalance4}=    getBalance    ${Alice}    ${BBBobTokenID}
     log    ${alicebobbalance4}
-    #Should Be Equal    ${alicebobbalance4}    15000
+    Should Be Equal    ${alicebobbalance4}    15000
 
     ${bobalicebalance4}=    getBalance    ${Bob}    ${AAAliceTokenID}
     log    ${bobalicebalance4}
-    #Should Be Equal    ${bobalicebalance4}    600
+    Should Be Equal    ${bobalicebalance4}    600
 
     ${respJson}    addrexchangequery    ${Alice}
     ${reJson}    To Json    ${respJson}
@@ -126,10 +126,10 @@ random_action
     sleep    5
     ${alicebobbalance5}=    getBalance    ${Alice}    ${BBBobTokenID}
     log    ${alicebobbalance5}
-    #Should Be Equal    ${alicebobbalance5}    16000
+    Should Be Equal    ${alicebobbalance5}    15000
     ${bobalicebalance5}=    getBalance    ${Bob}    ${AAAliceTokenID}
     log    ${bobalicebalance5}
-    #Should Be Equal    ${bobalicebalance5}    666.6
+    Should Be Equal    ${bobalicebalance5}    600
 
 *** Keywords ***
 getBalance
