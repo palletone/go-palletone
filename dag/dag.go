@@ -1057,7 +1057,7 @@ func (d *Dag) getMemDag(asset modules.AssetId) (memunit.IMemDag, error) {
 	return memdag, nil
 }
 func (d *Dag) SaveTransaction(tx *modules.Transaction) error {
-	return d.unstableUnitRep.SaveTransaction(tx)
+	return d.stableUnitRep.SaveTransaction(tx)
 }
 
 // save unit, 目前只用来存创世unit
