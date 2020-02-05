@@ -40,6 +40,12 @@ web3._extend({
 			inputFormatter: [null, null, null]
 		}),
 		new web3._extend.Method({
+			name: 'signHex',
+			call: 'personal_signHex',
+			params: 3,
+			inputFormatter: [null, null, null]
+		}),
+		new web3._extend.Method({
 			name: 'openWallet',
 			call: 'personal_openWallet',
 			params: 2,

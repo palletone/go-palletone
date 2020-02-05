@@ -294,6 +294,7 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 	amountOfToken := asset.Uint64Amount(amountToken)
 	log.Info("CcinvokeToken info:")
 	log.Infof("   fromAddr[%s], toAddr[%s]", fromAddr.String(), toAddr.String())
+	log.Infof("   assetid[%s]",asset.AssetId.String())
 	log.Infof("   contractId[%s]", contractAddr.String())
 	log.Infof("   param len[%d]", len(param))
 	args := make([][]byte, len(param))

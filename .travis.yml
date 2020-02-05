@@ -41,6 +41,7 @@ env:
     - GO111MODULE=on
     - IS_UPLOAD=true
     - IS_RUN_HDWALLET=true
+    - IS_RUN_PACKET=true
 #    - 'SFTP_KEY=[base64-encoded-rsa-key]'
 matrix:
   include:
@@ -137,6 +138,10 @@ matrix:
 
         - if [ IS_RUN_HDWALLET == 'true' ]; then
           python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ./hdWallet;
+          fi
+
+        - if [ IS_RUN_PACKET == 'true' ]; then
+          python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ./packet;
           fi
 
         - if [ $IS_RUN_DEPOSIT == 'true' ]; then
