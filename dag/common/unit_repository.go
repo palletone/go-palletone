@@ -29,6 +29,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 
@@ -51,6 +52,7 @@ type IUnitRepository interface {
 	GetGenesisUnit() (*modules.Unit, error)
 	//GenesisHeight() modules.ChainIndex
 	SaveUnit(unit *modules.Unit, isGenesis bool) error
+	SaveTransaction(tx *modules.Transaction) error
 	CreateUnit(mediatorReward common.Address, txpool txspool.ITxPool, when time.Time,
 		propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc) (*modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
@@ -968,6 +970,17 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 	return nil
 }
 
+//Mock一个Unit，然后保存Tx，主要用于内存模拟操作
+func (rep *UnitRepository) SaveTransaction(tx *modules.Transaction) error {
+	mockHeader := modules.NewEmptyHeader()
+	mockHeader.SetTimestamp(time.Now().Unix())
+	mockHeader.SetHeight(modules.PTNCOIN, math.MaxUint64)
+	mockUnit := &modules.Unit{
+		UnitHeader: mockHeader,
+	}
+	return rep.saveTx4Unit(mockUnit, 0, tx)
+}
+
 //Save tx in unit
 func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modules.Transaction) error {
 	var requester common.Address
@@ -995,13 +1008,13 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 		}
 		switch msg.App {
 		case modules.APP_PAYMENT:
-			if ok := rep.savePaymentPayload(unit.Timestamp(), txHash, msg.Payload.(*modules.PaymentPayload),
+			if ok := rep.savePaymentPayload(unitTime, txHash, msg.Payload.(*modules.PaymentPayload),
 				uint32(msgIndex)); !ok {
 				return fmt.Errorf("Save payment payload error.")
 			}
 		case modules.APP_CONTRACT_TPL:
 			tpl := msg.Payload.(*modules.ContractTplPayload)
-			if ok := rep.saveContractTpl(unit.Number(), uint32(txIndex), installReq, tpl); !ok {
+			if ok := rep.saveContractTpl(uint32(txIndex), installReq, tpl); !ok {
 				return fmt.Errorf("Save contract template error.")
 			}
 		case modules.APP_CONTRACT_DEPLOY:
@@ -1368,13 +1381,13 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 保存合约模板代码
 To save contract template code
 */
-func (rep *UnitRepository) saveContractTpl(height *modules.ChainIndex, txIndex uint32,
+func (rep *UnitRepository) saveContractTpl(txIndex uint32,
 	installReq *modules.ContractInstallRequestPayload, tpl *modules.ContractTplPayload) bool {
 
 	template := modules.NewContractTemplate(installReq, tpl)
 	err := rep.statedb.SaveContractTpl(template)
 	if err != nil {
-		log.Errorf("Save contract template fail,height:%s,txIndex:%d,error:%s", height.String(), txIndex, err.Error())
+		log.Errorf("Save contract template fail,txIndex:%d,error:%s", txIndex, err.Error())
 		return false
 	}
 	err = rep.statedb.SaveContractTplCode(tpl.TemplateId, tpl.ByteCode)

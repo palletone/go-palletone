@@ -547,6 +547,20 @@ func (mr *MockIDagMockRecorder) SaveUnit(unit, txpool, isGenesis interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveUnit", reflect.TypeOf((*MockIDag)(nil).SaveUnit), unit, txpool, isGenesis)
 }
 
+// SaveTransaction mocks base method
+func (m *MockIDag) SaveTransaction(tx *modules.Transaction) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveTransaction", tx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveTransaction indicates an expected call of SaveTransaction
+func (mr *MockIDagMockRecorder) SaveTransaction(tx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveTransaction", reflect.TypeOf((*MockIDag)(nil).SaveTransaction), tx)
+}
+
 // FastSyncCommitHead mocks base method
 func (m *MockIDag) FastSyncCommitHead(arg0 common.Hash) error {
 	m.ctrl.T.Helper()

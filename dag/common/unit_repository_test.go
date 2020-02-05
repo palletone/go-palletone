@@ -21,13 +21,13 @@
 package common
 
 import (
-	"github.com/palletone/go-palletone/tokenengine"
-	"github.com/palletone/go-palletone/txspool"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
 
-	"fmt"
+	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/txspool"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -726,3 +726,80 @@ func markTxsIllegal(dag storage.IStateDb, txs []*modules.Transaction) {
 // 	}
 // 	return txs
 // }
+func TestUnitRepository_SaveTransaction(t *testing.T) {
+	rep := mockUnitRepository()
+
+	addr := common.Address{}
+	addr.SetString("P12EA8oRMJbAtKHbaXGy8MGgzM8AMPYxkN1")
+	//ks := keystore.NewKeyStore("./keystore", 1<<18, 1)
+
+	p := common.Hash{}
+	p.SetString("0000000000000000000000000000000")
+	aid := modules.AssetId{}
+	aid.SetBytes([]byte("xxxxxxxxxxxxxxxxxx"))
+	installReq := &modules.ContractInstallRequestPayload{
+		TplName:        "test",
+		TplDescription: "desc",
+		Path:           "./contract/test1",
+		Version:        "v1.0.0",
+		Abi:            "",
+		Language:       "Go",
+		AddrHash:       nil,
+		Creator:        "",
+	}
+
+	contractTplPayload := modules.NewContractTplPayload([]byte("contract_template0000"),
+		1024,
+		[]byte{175, 52, 23, 180, 156, 109, 17, 232, 166, 226, 84, 225, 173, 184, 229, 159}, modules.ContractError{})
+
+	tx1 := modules.NewTransaction([]*modules.Message{
+		modules.NewMessage(modules.APP_CONTRACT_TPL_REQUEST, installReq),
+		modules.NewMessage(modules.APP_CONTRACT_TPL, contractTplPayload),
+	})
+	t.Logf("Tx Hash:%s", tx1.Hash().String())
+	err := rep.SaveTransaction(tx1)
+	assert.Nil(t, err)
+
+	readSet := []modules.ContractReadSet{}
+	readSet = append(readSet, modules.ContractReadSet{Key: "name", Version: &modules.StateVersion{
+		Height:  &modules.ChainIndex{},
+		TxIndex: 0,
+	}})
+	writeSet := []modules.ContractWriteSet{
+		{
+			Key:   "name",
+			Value: modules.ToPayloadMapValueBytes("Joe"),
+		},
+		{
+			Key:   "age",
+			Value: modules.ToPayloadMapValueBytes(10),
+		},
+	}
+	deployPayload := modules.NewContractDeployPayload([]byte("contract_template0000"), []byte("contract0000"),
+		"testDeploy", nil, nil, readSet, writeSet, modules.ContractError{})
+	tx2 := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_CONTRACT_DEPLOY, deployPayload)})
+	err = rep.SaveTransaction(tx2)
+	assert.Nil(t, err)
+	t.Logf("Tx Hash:%s", tx2.Hash().String())
+
+	invokePayload := &modules.ContractInvokePayload{
+		ContractId: []byte("contract0000"),
+		ReadSet:    readSet,
+		WriteSet: []modules.ContractWriteSet{
+			{
+				Key:   "name",
+				Value: modules.ToPayloadMapValueBytes("Alice"),
+			},
+			{
+				Key:      "age",
+				IsDelete: true,
+			},
+		},
+	}
+
+	tx3 := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_CONTRACT_INVOKE, invokePayload)})
+	err = rep.SaveTransaction(tx3)
+	assert.Nil(t, err)
+	t.Logf("Tx Hash:%s", tx3.Hash().String())
+
+}

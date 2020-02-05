@@ -118,7 +118,7 @@ func initGenesis(ctx *cli.Context) error {
 	if err != nil {
 		return errors.New("leveldb init failed")
 	}
-	dag, _ := dag.NewDag4GenesisInit(Dbconn)
+	dag, _ := dag.NewDagSimple(Dbconn)
 	ks := node.GetKeyStore()
 	account, password := unlockAccount(ks, genesis.TokenHolder, 0, nil)
 	err = ks.Unlock(account, password)

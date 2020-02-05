@@ -753,7 +753,8 @@ func (dag *Dag) SwitchMainChainEvent(arg *memunit.SwitchMainChainEvent) {
 }
 
 // to build a new dag when init genesis
-func NewDag4GenesisInit(db ptndb.Database) (*Dag, error) {
+//构造一个简单Dag，主要用于创世，内存操作等
+func NewDagSimple(db ptndb.Database) (*Dag, error) {
 	tokenEngine := tokenengine.Instance
 	dagDb := storage.NewDagDb(db)
 	utxoDb := storage.NewUtxoDb(db, tokenEngine)
@@ -1054,6 +1055,9 @@ func (d *Dag) getMemDag(asset modules.AssetId) (memunit.IMemDag, error) {
 		}
 	}
 	return memdag, nil
+}
+func (d *Dag) SaveTransaction(tx *modules.Transaction) error {
+	return d.stableUnitRep.SaveTransaction(tx)
 }
 
 // save unit, 目前只用来存创世unit

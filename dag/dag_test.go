@@ -1,10 +1,10 @@
 package dag
 
 import (
-	"testing"
-
 	"crypto/ecdsa"
 	"encoding/hex"
+	"testing"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
@@ -24,7 +24,7 @@ func TestCreateUnit(t *testing.T) {
 	}
 	unit, _ := createUnit()
 	// save unit
-	test_dag, err := NewDag4GenesisInit(db)
+	test_dag, err := NewDagSimple(db)
 	if err != nil {
 		log.Error("New dag error", "error", err.Error())
 		return
@@ -129,7 +129,7 @@ func setupDag() (*Dag, error) {
 	}
 	unit, _ := createUnit()
 	// save unit
-	initDag, err := NewDag4GenesisInit(db)
+	initDag, err := NewDagSimple(db)
 	if err != nil {
 		log.Error("New dag error", "error", err.Error())
 		return nil, err
@@ -140,4 +140,27 @@ func setupDag() (*Dag, error) {
 	}
 	test_dag, err := NewDagForTest(db)
 	return test_dag, err
+}
+func TestDag_SaveTransaction(t *testing.T) {
+	db, _ := ptndb.NewMemDatabase()
+	dag, err := NewDagSimple(db)
+	assert.Nil(t, err)
+	invokePayload := &modules.ContractInvokePayload{
+		ContractId: []byte("contract0000"),
+		ReadSet:    nil,
+		WriteSet: []modules.ContractWriteSet{
+			{
+				Key:   "name",
+				Value: modules.ToPayloadMapValueBytes("Alice"),
+			},
+			{
+				Key:      "age",
+				IsDelete: true,
+			},
+		},
+	}
+
+	tx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_CONTRACT_INVOKE, invokePayload)})
+	err = dag.SaveTransaction(tx)
+	assert.Nil(t, err)
 }

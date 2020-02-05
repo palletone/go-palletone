@@ -22,6 +22,8 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"io"
+	"sync/atomic"
 	"time"
 	"unsafe"
 
@@ -32,8 +34,6 @@ import (
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core"
 	"go.dedis.ch/kyber/v3"
-	"io"
-	"sync/atomic"
 )
 
 // unit state
@@ -88,6 +88,11 @@ func NewHeader(parents []common.Hash, tx_root common.Hash, pubkey, sig, extra, c
 	sdw := initHeaderSdw(parents, tx_root, pubkey, sig, extra, crypto_lib, txs_illgal, asset_id, index, t)
 	h := Header{header: sdw}
 
+	return &h
+}
+func NewEmptyHeader() *Header {
+	sdw := new_header_sdw()
+	h := Header{header: sdw}
 	return &h
 }
 func (h *Header) Index() uint64 {
@@ -199,29 +204,23 @@ func (h *Header) ResetHash() {
 	h.hash = common.Hash{}
 }
 func (h *Header) SetTxRoot(txroot common.Hash) {
-	// init header
-	//author := h.GetAuthors()
-	//sdw := initHeaderSdw(h.header.ParentsHash, txroot, author.PubKey, author.Signature, h.Extra(),
-	//	h.header.CryptoLib, h.header.TxsIllegal, h.GetNumber().AssetID, h.GetNumber().Index, h.Timestamp())
-	//h.header = sdw
 	h.header.TxRoot = txroot
 	h.ResetHash()
 }
+func (h *Header) SetHeight(assetId AssetId, index uint64) {
+	h.header.Number = NewChainIndex(assetId, index)
+	h.ResetHash()
+}
+func (h *Header) SetTimestamp(timestamp int64) {
+	h.header.Time = timestamp
+	h.ResetHash()
+}
 func (h *Header) SetAuthor(author Authentifier) {
-	//sdw := initHeaderSdw(h.header.ParentsHash, h.header.TxRoot, author.PubKey, author.Signature, h.Extra(),
-	//	h.header.CryptoLib, h.header.TxsIllegal, h.GetNumber().AssetID, h.GetNumber().Index, h.Timestamp())
-	//
-	//h.header = sdw
 	h.header.Authors = author
 	h.ResetHash()
 }
 
 func (h *Header) SetTxsIllegal(txsillegal []uint16) {
-	//author := h.GetAuthors()
-	//sdw := initHeaderSdw(h.header.ParentsHash, h.header.TxRoot, author.PubKey, author.Signature, h.Extra(),
-	//	h.header.CryptoLib, txsillegal, h.GetNumber().AssetID, h.GetNumber().Index, h.Timestamp())
-	//
-	//h.header = sdw
 	h.header.TxsIllegal = txsillegal
 	h.ResetHash()
 }

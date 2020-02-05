@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -36,7 +37,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/internal/jsre"
 	"github.com/palletone/go-palletone/ptn"
-	"path/filepath"
 )
 
 const (
@@ -150,7 +150,7 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 
 	db, _ := stack.OpenDatabase(dbPath, 0, 0)
 	// db, _ := ptndb.NewMemDatabase()
-	dag, _ := dag2.NewDag4GenesisInit(db)
+	dag, _ := dag2.NewDagSimple(db)
 	err = ks.Unlock(account, password)
 	if err != nil {
 		fmt.Printf("Failed to unlock account: %v, address: %v \n", err, account.Address.Str())
