@@ -639,6 +639,15 @@ func (tx *Transaction) GetRequesterAddr(queryUtxoFunc QueryUtxoFunc, getAddrFunc
 
 }
 
+ func (tx *Transaction) GetContractTxType() (MessageType, error) {
+	for _, msg := range tx.Messages() {
+		if msg.App >= APP_CONTRACT_TPL_REQUEST && msg.App <= APP_CONTRACT_STOP_REQUEST {
+			return msg.App, nil
+		}
+	}
+	return APP_UNKNOW, fmt.Errorf("GetContractTxType, not contract Tx, txHash[%s]", tx.Hash().String())
+}
+
 type Addition struct {
 	Addr   common.Address `json:"address"`
 	Amount uint64         `json:"amount"`

@@ -296,10 +296,13 @@ func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode)
 	//如果用户合约，需要签名，添加到缓存池并广播
 	if tx.IsSystemContract() {
 		log.Debugf("[%s]runContractReq, is system contract, add rstTx", shortId(reqId.String()))
-		err = p.dag.SaveTransaction(tx)
-		if err != nil {
-			log.Errorf("[%s]runContractReq, SaveTransaction err:%s", shortId(reqId.String()), err.Error())
-			return err
+		reqType, _ := tx.GetContractTxType()
+		if reqType != modules.APP_CONTRACT_TPL_REQUEST {//合约模板交易需要签名生成最终交易
+			err = p.dag.SaveTransaction(tx)
+			if err != nil {
+				log.Errorf("[%s]runContractReq, SaveTransaction err:%s", shortId(reqId.String()), err.Error())
+				return err
+			}
 		}
 		ctx.rstTx = tx
 	} else {

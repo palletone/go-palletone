@@ -36,7 +36,7 @@ func (p *Processor) getTxContractFee(tx *modules.Transaction, extDataSize float6
 		return 0, 0, 0, errors.New("getTxContractFee, param is nil")
 	}
 	reqId := tx.RequestHash()
-	txType, err := getContractTxType(tx)
+	txType, err := tx.GetContractTxType()
 	if err != nil {
 		log.Errorf("[%s]getTxContractFee,getContractTxType err:%s", shortId(reqId.String()), err.Error())
 		return 0, 0, 0, err
