@@ -99,7 +99,7 @@ type iDag interface {
 	GetMediator(add common.Address) *core.Mediator
 	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
 	GetJurorByAddrHash(addrHash common.Hash) (*modules.JurorDeposit, error)
-
+	SaveTransaction(tx *modules.Transaction) error
 	//nouse
 	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
 	GetScheduledMediator(slotNum uint32) common.Address
@@ -296,6 +296,11 @@ func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode)
 	//如果用户合约，需要签名，添加到缓存池并广播
 	if tx.IsSystemContract() {
 		log.Debugf("[%s]runContractReq, is system contract, add rstTx", shortId(reqId.String()))
+		err = p.dag.SaveTransaction(tx)
+		if err != nil {
+			log.Errorf("[%s]runContractReq, SaveTransaction err:%s", shortId(reqId.String()), err.Error())
+			return err
+		}
 		ctx.rstTx = tx
 	} else {
 		account := p.getLocalJuryAccount()
@@ -627,6 +632,11 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 			adaInf: make(map[uint32]*AdapterInf),
 		}
 	}
+	err = p.dag.SaveTransaction(txTmp)
+	if err != nil {
+		log.Errorf("[%s]CheckContractTxValid, SaveTransaction err:%s", shortId(reqId.String()), err.Error())
+		return false
+	}
 	p.mtx[reqId].reqTx = reqTx
 	p.mtx[reqId].rstTx = txTmp
 
@@ -691,6 +701,11 @@ func (p *Processor) ContractTxCheckForValidator(rwM rwset.TxManager, tx *modules
 			valid:  true,
 			adaInf: make(map[uint32]*AdapterInf),
 		}
+	}
+	err = p.dag.SaveTransaction(txTmp)
+	if err != nil {
+		log.Errorf("[%s]ContractTxCheckForValidator, SaveTransaction err:%s", shortId(reqId.String()), err.Error())
+		return false
 	}
 	p.mtx[reqId].reqTx = reqTx
 	p.mtx[reqId].rstTx = txTmp

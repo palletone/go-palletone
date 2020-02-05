@@ -103,18 +103,23 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 		if err = p.runContractReq(reqId, nil); err != nil {
 			return common.Hash{}, nil, err
 		}
-
-		ctx := p.mtx[reqId]
-		ctx.rstTx, err = p.GenContractSigTransaction(from, "", ctx.rstTx, p.ptn.GetKeyStore())
+		tx, err := p.GenContractSigTransaction(from, "", ctx.rstTx, p.ptn.GetKeyStore())
 		if err != nil {
 			return common.Hash{}, nil, err
 		}
-		tx := ctx.rstTx
+		err = p.dag.SaveTransaction(tx)
+		if err != nil {
+			log.Errorf("[%s]ContractInstallReq, SaveTransaction err:%s", shortId(reqId.String()), err.Error())
+			return common.Hash{}, nil, err
+		}
+		ctx := p.mtx[reqId]
+		ctx.rstTx = tx
 		_, tpl, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_TPL)
 		if err != nil || tpl == nil {
-			errMsg := fmt.Sprintf("[%s]getContractTxContractInfo fail, tpl Name[%s]", shortId(reqId.String()), tplName)
+			errMsg := fmt.Sprintf("[%s]ContractInstallReq getContractTxContractInfo fail, tpl Name[%s]", shortId(reqId.String()), tplName)
 			return common.Hash{}, nil, errors.New(errMsg)
 		}
+
 		templateId := tpl.Payload.(*modules.ContractTplPayload).TemplateId
 		log.Infof("[%s]ContractInstallReq ok, reqId[%s] templateId[%x]", shortId(reqId.String()), reqId.String(), templateId)
 		//broadcast
@@ -411,7 +416,7 @@ func (p *Processor) ContractQuery(id []byte, args [][]byte, timeout time.Duratio
 	}
 
 	log.Debugf("ContractQuery, begin to invoke contract:%s", addr.String())
-	rwM, _:= rwset.NewRwSetMgr("query")
+	rwM, _ := rwset.NewRwSetMgr("query")
 	rst, err := p.contract.Invoke(rwM, chainId, addr.Bytes(), invTxId.String(), args, timeout)
 	rwM.Close()
 	if err != nil {

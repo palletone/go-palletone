@@ -435,13 +435,11 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		}
 		return fmt.Sprintf("NewBlockMsg, received unit hash %s, txs:[%x]", unit.Hash().String(), txids)
 	})
-
-	//rwset.Init()
 	rwM, err := rwset.NewRwSetMgr(unit.NumberString())
-	if err != nil{
+	if err != nil {
 		return fmt.Errorf("NewBlockMsg, received unit hash %s, NewRwSetMgr err:%s ", unit.Hash().String(), err.Error())
 	}
-	//rwset.RwM.NewTxSimulator(pm.dag,unit.DisplayId())
+
 	var temptxs modules.Transactions
 	index := 0
 	for i, tx := range unit.Txs {
@@ -462,7 +460,6 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 	}
 	rwM.Close()
 	unit.Txs = temptxs
-
 	unit.ReceivedAt = msg.ReceivedAt
 	unit.ReceivedFrom = p
 

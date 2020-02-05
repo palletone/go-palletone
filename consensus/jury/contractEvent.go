@@ -226,6 +226,11 @@ func (p *Processor) contractCommitEvent(tx *modules.Transaction) (broadcast bool
 	}
 
 	log.Debugf("[%s]contractCommitEvent, rstTx receive", shortId(reqId.String()))
+	err = p.dag.SaveTransaction(tx)
+	if  err != nil{
+		log.Errorf("[%s]contractCommitEvent SaveTransaction err:%s", shortId(reqId.String()),err.Error())
+		return false,  err
+	}
 	p.mtx[reqId].valid = true
 	p.mtx[reqId].rstTx = tx
 
