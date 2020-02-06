@@ -20,14 +20,15 @@ package cors
 import (
 	"crypto/ecdsa"
 	"fmt"
-	"github.com/palletone/go-palletone/common/event"
+	"sync/atomic"
+	"time"
+
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn"
-	"sync/atomic"
-	"time"
 )
 
 var (

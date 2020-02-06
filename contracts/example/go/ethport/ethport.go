@@ -342,7 +342,7 @@ func (p *ETHPort) SetETHTokenAsset(assetStr string, stub shim.ChaincodeStubInter
 		return shim.Error(err.Error())
 	}
 	if owner != invokeAddr.String() {
-		return shim.Error("Only owner can withdraw")
+		return shim.Error("Only owner can set")
 	}
 
 	err = stub.PutState(symbolsETHAsset, []byte(assetStr))

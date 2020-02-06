@@ -19,6 +19,7 @@ env:
     - APPLICATION_DIR=application
     - USER_CONTRACT_DIR=usercontract
     - BLACKLIST_DIR=blacklist
+    - EXCHANGE_DIR=exchange
     - LOG_NAME=log.html
     - REPORT_NAME=report.html
     ##########  control testcase  ##############
@@ -34,10 +35,13 @@ env:
     - IS_RUN_GASTOKEN=true
     - IS_RUN_MEDIATOR_VOTE=true
     - IS_RUN_APPLICATION=true
-    - IS_RUN_LIGHT=false
+    - IS_RUN_LIGHT=true
     - IS_RUN_BLACKLIST=true
+    - IS_RUN_EXCHANGE=true
     - GO111MODULE=on
     - IS_UPLOAD=true
+    - IS_RUN_HDWALLET=true
+    - IS_RUN_PACKET=true
 #    - 'SFTP_KEY=[base64-encoded-rsa-key]'
 matrix:
   include:
@@ -92,11 +96,16 @@ matrix:
         - sleep 15
         - netstat -ap | grep gptn
         - if [ $IS_RUN_BLACKLIST == 'true' ]; then
-          cd ../blacklist;
+          cd ${BASE_DIR}/bdd/blacklist;
           ./blacklist_test.sh 2;
           fi
+        - if [ $IS_RUN_EXCHANGE == 'true' ]; then
+          cd ${BASE_DIR}/bdd/exchange;
+          chmod +x ./exchange_test.sh;
+          ./exchange_test.sh BYC LYC;
+          fi
         - if [ $IS_RUN_TESTCONTRACTCASES == 'true' ];then
-          cd ../contract/testcases;
+          cd ${BASE_DIR}/bdd/contract/testcases;
           chmod +x ./test_start.sh;
           ./test_start.sh;
           fi
@@ -125,6 +134,14 @@ matrix:
 
         - if [ $IS_RUN_DIGITAL == 'true' ]; then
           python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ./DigitalIdentityCert;
+          fi
+
+        - if [ IS_RUN_HDWALLET == 'true' ]; then
+          python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ./hdWallet;
+          fi
+
+        - if [ IS_RUN_PACKET == 'true' ]; then
+          python -m robot.run -d ${BDD_LOG_PATH}/${DIGITAL_IDENTITY_DIR} ./packet;
           fi
 
         - if [ $IS_RUN_DEPOSIT == 'true' ]; then

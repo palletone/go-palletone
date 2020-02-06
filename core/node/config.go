@@ -94,6 +94,12 @@ type Config struct {
 	// relative), then that specific path is enforced. An empty path disables IPC.
 	IPCPath string `toml:",omitempty"`
 
+	//HTTPS
+	HTTPs bool //`toml:",omitempty"`
+	//HttpsCAFile   string
+	HttpsCertFile string //`toml:",omitempty"`
+	HttpsKeyFile  string //`toml:",omitempty"`
+
 	// HTTPHost is the host interface on which to start the HTTP RPC server. If this
 	// field is empty, no HTTP API endpoint will be started.
 	HTTPHost string `toml:",omitempty"`
@@ -204,10 +210,10 @@ func (c *Config) HTTPEndpoint() string {
 }
 
 // DefaultHTTPEndpoint returns the HTTP endpoint used by default.
-func DefaultHTTPEndpoint() string {
-	config := &Config{HTTPHost: DefaultHTTPHost, HTTPPort: DefaultHTTPPort}
-	return config.HTTPEndpoint()
-}
+//func DefaultHTTPEndpoint() string {
+//	config := &Config{HTTPHost: DefaultHTTPHost, HTTPPort: DefaultHTTPPort}
+//	return config.HTTPEndpoint()
+//}
 
 // WSEndpoint resolves a websocket endpoint based on the configured host interface
 // and port parameters.
@@ -419,20 +425,6 @@ func makeAccountManager(conf *Config) (*accounts.Manager, string, error) {
 	backends := []accounts.Backend{
 		keystore.NewKeyStore(keydir, scryptN, scryptP),
 	}
-	/*
-		if !conf.NoUSB {
-			// Start a USB hub for Ledger hardware wallets
-			if ledgerhub, err := usbwallet.NewLedgerHub(); err != nil {
-				log.Warn(fmt.Sprintf("Failed to start Ledger hub, disabling: %v", err))
-			} else {
-				backends = append(backends, ledgerhub)
-			}
-			// Start a USB hub for Trezor hardware wallets
-			if trezorhub, err := usbwallet.NewTrezorHub(); err != nil {
-				log.Warn(fmt.Sprintf("Failed to start Trezor hub, disabling: %v", err))
-			} else {
-				backends = append(backends, trezorhub)
-			}
-		}*/
+
 	return accounts.NewManager(backends...), ephemeral, nil
 }

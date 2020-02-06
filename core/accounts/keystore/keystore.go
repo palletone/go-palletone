@@ -33,19 +33,22 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pborman/uuid"
+
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
-	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
 var (
-	ErrLocked  = accounts.NewAuthNeededError("password or unlock")
-	ErrNoMatch = errors.New("no key for given address or file")
-	ErrDecrypt = errors.New("could not decrypt key with given passphrase")
+	ErrLocked      = accounts.NewAuthNeededError("password or unlock")
+	ErrNoMatch     = errors.New("no key for given address or file")
+	ErrTypeNoMatch = errors.New("no key type for given address or file")
+	ErrDecrypt     = errors.New("could not decrypt key with given passphrase")
 )
 
 // KeyStoreType is the reflect type of a keystore backend.
@@ -140,7 +143,7 @@ func (ks *KeyStore) refreshWallets() {
 
 	// Transform the current list of wallets into the new one
 	wallets := make([]accounts.Wallet, 0, len(accs))
-	events := []accounts.WalletEvent{}
+	events := make([]accounts.WalletEvent, 0, len(accs))
 
 	for _, account := range accs {
 		// Drop wallets while they were in front of the next account
@@ -265,9 +268,29 @@ func (ks *KeyStore) SignMessage(addr common.Address, msg []byte) ([]byte, error)
 	if !found {
 		return nil, ErrLocked
 	}
-	return crypto.MyCryptoLib.Sign(unlockedKey.PrivateKey, msg)
+	prvKey := unlockedKey.PrivateKey
+	if unlockedKey.KeyType == KeyType_HD_Seed {
+		prvKey, _ = convertHdSeed2Account0PrivateKey(prvKey)
+	}
+	return crypto.MyCryptoLib.Sign(prvKey, msg)
 	// Sign the hash using plain ECDSA operations
 	//return crypto.Sign(hash, unlockedKey.PrivateKey)
+}
+func (ks *KeyStore) SignMessageByHdAccount(addr common.Address, accountIndex uint32, msg []byte) ([]byte, error) {
+	// Look up the key to sign with and abort if it cannot be found
+	ks.mu.RLock()
+	defer ks.mu.RUnlock()
+
+	unlockedKey, found := ks.unlocked[addr]
+	if !found {
+		return nil, ErrLocked
+	}
+	seed := unlockedKey.PrivateKey
+	prvKey, _, err := NewAccountKey(seed, accountIndex)
+	if err != nil {
+		return nil, err
+	}
+	return crypto.MyCryptoLib.Sign(prvKey, msg)
 }
 
 // SignTx signs the given transaction with the requested account.
@@ -302,7 +325,11 @@ func (ks *KeyStore) SignMessageWithPassphrase(a accounts.Account, passphrase str
 		return nil, err
 	}
 	defer ZeroKey(key.PrivateKey)
-	return crypto.MyCryptoLib.Sign(key.PrivateKey, msg)
+	prvKey := key.PrivateKey
+	if key.KeyType == KeyType_HD_Seed {
+		prvKey, _ = convertHdSeed2Account0PrivateKey(prvKey)
+	}
+	return crypto.MyCryptoLib.Sign(prvKey, msg)
 	//return crypto.Sign(hash, key.PrivateKey)
 }
 func (ks *KeyStore) VerifySignatureWithPassphrase(a accounts.Account, passphrase string, hash []byte,
@@ -312,8 +339,11 @@ func (ks *KeyStore) VerifySignatureWithPassphrase(a accounts.Account, passphrase
 		return false, err
 	}
 	defer ZeroKey(key.PrivateKey)
-
-	pk, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(key.PrivateKey)
+	prvKey := key.PrivateKey
+	if key.KeyType == KeyType_HD_Seed {
+		prvKey, _ = convertHdSeed2Account0PrivateKey(prvKey)
+	}
+	pk, _ := crypto.MyCryptoLib.PrivateKeyToPubKey(prvKey)
 	return crypto.MyCryptoLib.Verify(pk, signature, hash)
 	//sig := signature[:len(signature)-1] // remove recovery id
 	//return crypto.VerifySignature(crypto.FromECDSAPub(&pk), hash, sig), nil
@@ -459,6 +489,18 @@ func (ks *KeyStore) NewAccount(passphrase string) (accounts.Account, error) {
 	return account, nil
 }
 
+func (ks *KeyStore) NewHdAccount(passphrase string) (accounts.Account, string, error) {
+	_, account, mnemonic, err := storeNewHdSeed(ks.storage, passphrase)
+	if err != nil {
+		return accounts.Account{}, "", err
+	}
+	// Add the account to the cache immediately rather
+	// than waiting for file system notifications to pick it up.
+	ks.cache.add(account)
+	ks.refreshWallets()
+	return account, mnemonic, nil
+}
+
 // Export exports as a JSON key, encrypted with newPassphrase.
 func (ks *KeyStore) Export(a accounts.Account, passphrase, newPassphrase string) (keyJSON []byte, err error) {
 	_, key, err := ks.getDecryptedKey(a, passphrase)
@@ -474,12 +516,12 @@ func (ks *KeyStore) Export(a accounts.Account, passphrase, newPassphrase string)
 	return EncryptKey(key, newPassphrase, N, P)
 }
 
-func (ks *KeyStore) DumpKey(a accounts.Account, passphrase string) (privateKey []byte, err error) {
+func (ks *KeyStore) DumpKey(a accounts.Account, passphrase string) (privateKey []byte, keyType string, err error) {
 	_, key, err := ks.getDecryptedKey(a, passphrase)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	return key.PrivateKey, nil
+	return key.PrivateKey, key.KeyType, nil
 
 }
 func (ks *KeyStore) DumpPrivateKey(a accounts.Account, passphrase string) (privateKey interface{}, err error) {
@@ -528,6 +570,31 @@ func (ks *KeyStore) ImportECDSA(priv []byte, passphrase string) (accounts.Accoun
 	return ks.importKey(key, passphrase)
 }
 
+//根据助记词，导入HD种子并保存，返回0号账号的地址
+func (ks *KeyStore) ImportHdSeedFromMnemonic(mnemonic string, passphrase string) (accounts.Account, error) {
+	seed, err := MnemonicToSeed(mnemonic)
+	if err != nil {
+		return accounts.Account{}, err
+	}
+	key := newKeyFromHdSeed(seed)
+	if ks.cache.hasAddress(key.Address) {
+		return accounts.Account{}, fmt.Errorf("account already exists")
+	}
+	return ks.importKey(key, passphrase)
+}
+
+//根据助记词，导入0号账号0号地址对应的私钥
+func (ks *KeyStore) ImportMnemonic(mnemonic string, passphrase string) (accounts.Account, error) {
+	seed, err := MnemonicToSeed(mnemonic)
+	if err != nil {
+		return accounts.Account{}, err
+	}
+	key := newKeyFromHdAccount0(seed)
+	if ks.cache.hasAddress(key.Address) {
+		return accounts.Account{}, fmt.Errorf("account already exists")
+	}
+	return ks.importKey(key, passphrase)
+}
 func (ks *KeyStore) importKey(key *Key, passphrase string) (accounts.Account, error) {
 	a := accounts.Account{Address: key.Address, URL: accounts.URL{Scheme: KeyStoreScheme,
 		Path: ks.storage.JoinPath(keyFileName(key.Address))}}
@@ -575,10 +642,71 @@ func (ks *KeyStore) GetPublicKey(address common.Address) ([]byte, error) {
 	if !found {
 		return nil, ErrLocked
 	}
-	return crypto.MyCryptoLib.PrivateKeyToPubKey(unlockedKey.PrivateKey)
+	prvKey := unlockedKey.PrivateKey
+	if unlockedKey.KeyType == KeyType_HD_Seed {
+		prvKey, _ = convertHdSeed2Account0PrivateKey(unlockedKey.PrivateKey)
+	}
+	return crypto.MyCryptoLib.PrivateKeyToPubKey(prvKey)
 	//return crypto.CompressPubkey(&unlockedKey.PrivateKey.PublicKey), nil
 }
+func (ks *KeyStore) GetHdAccountWithPassphrase(a accounts.Account, passphrase string, accountIndex uint32) (
+	accounts.Account, error) {
+	_, key, err := ks.getDecryptedKey(a, passphrase)
+	if err != nil {
+		return accounts.Account{}, err
+	}
+	defer ZeroKey(key.PrivateKey)
+	return ks.getHdAccount(key.PrivateKey, accountIndex)
+}
+func (ks *KeyStore) GetHdAccount(a accounts.Account, accountIndex uint32) (
+	accounts.Account, error) {
+	address := a.Address
+	ks.mu.RLock()
+	defer ks.mu.RUnlock()
+	unlockedKey, found := ks.unlocked[address]
+	if !found {
+		return accounts.Account{}, ErrLocked
+	}
+	if unlockedKey.KeyType != KeyType_HD_Seed {
+		return accounts.Account{}, ErrTypeNoMatch
+	}
+	return ks.getHdAccount(unlockedKey.PrivateKey, accountIndex)
+}
+func (ks *KeyStore) getHdAccount(seed []byte, accountIndex uint32) (accounts.Account, error) {
+	prvKey, pubKey, err := NewAccountKey(seed, accountIndex)
+	if err != nil {
+		return accounts.Account{}, err
+	}
+	addr := crypto.PubkeyBytesToAddress(pubKey)
+	accountKey := &Key{
+		Id:         uuid.NewRandom(),
+		Address:    addr,
+		KeyType:    KeyType_ECDSA_KEY,
+		PrivateKey: prvKey,
+	}
+	if accountIndex != 0 {
+		ks.unlocked[addr] = &unlocked{Key: accountKey}
+	}
+	hdAccount := accounts.Account{Address: addr, URL: accounts.URL{Scheme: KeyStoreScheme,
+		Path: ks.storage.JoinPath(keyFileName(addr))}}
+	return hdAccount, nil
+}
 
+//返回HDWallet的私钥、公钥、地址
+func (ks *KeyStore) GetHdAccountKeys(a accounts.Account, passphrase string, accountIndex uint32) (
+	[]byte, []byte, common.Address, error) {
+	_, key, err := ks.getDecryptedKey(a, passphrase)
+	if err != nil {
+		return nil, nil, common.Address{}, err
+	}
+	defer ZeroKey(key.PrivateKey)
+	prvKey, pubKey, err := NewAccountKey(key.PrivateKey, accountIndex)
+	if err != nil {
+		return nil, nil, common.Address{}, err
+	}
+	addr := crypto.PubkeyBytesToAddress(pubKey)
+	return prvKey, pubKey, addr, nil
+}
 func (ks *KeyStore) SigUnit(unitHeader *modules.Header, address common.Address) ([]byte, error) {
 	emptyHeader := modules.CopyHeader(unitHeader)
 	emptyHeader.SetAuthor(modules.Authentifier{}) //Clear exist sign

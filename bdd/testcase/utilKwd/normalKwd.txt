@@ -1,7 +1,7 @@
 *** Keywords ***
 Request create transaction
-    [Arguments]    ${senderAddr}    ${recieverAddr}    ${senderPTN}    ${Poundage}
-    ${transList}    Create List    ${senderAddr}    ${recieverAddr}    ${senderPTN}    ${Poundage}
+    [Arguments]    ${senderAddr}    ${recieverAddr}    ${senderPTN}    ${Poundage}    ${locktime}
+    ${transList}    Create List    ${senderAddr}    ${recieverAddr}    ${senderPTN}    ${Poundage}    ${locktime}
     ${resp}    setPostRequest    ${host}    wallet_createRawTransaction    ${transList}
     ${jsonRes}    resultToJson    ${resp}
     #${ret}    Should Match Regexp    ${jsonRes['result']}    ${result_code}    msg="result:does't match Result expression"
@@ -96,7 +96,7 @@ Request transfer token of vote
     #Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
     #Should Contain    ${resp.content}['id']    1    msg="id:failed"
     #${ret}    Should Match Regexp    ${resp.content}['result']    ${commonResultCode}    msg="result:does't match Result expression"
-    [Return]   ${jsonRes['result']}
+    [Return]    ${jsonRes['result']}
 
 Request CcinvokePass
     [Arguments]    ${commonResultCode}    ${senderAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}    ${ContractId}

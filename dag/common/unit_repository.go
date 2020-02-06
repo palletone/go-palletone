@@ -57,6 +57,7 @@ type IUnitRepository interface {
 		propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc) (*modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
+	GetAddrUtxoTxs(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
 	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
 	GetHeaderList(hash common.Hash, parentCount int) ([]*modules.Header, error)
 	SaveHeader(header *modules.Header) error
@@ -69,7 +70,7 @@ type IUnitRepository interface {
 
 	GetUnitTransactions(hash common.Hash) (modules.Transactions, error)
 	GetUnit(hash common.Hash) (*modules.Unit, error)
-
+	GetAddressCount() int
 	GetBody(unitHash common.Hash) ([]common.Hash, error)
 	GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
@@ -1085,6 +1086,7 @@ func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Trans
 	addresses := rep.getPayToAddresses(tx)
 	for _, addr := range addresses {
 		rep.idxdb.SaveAddressTxId(addr, txHash)
+		rep.idxdb.SaveAddress(addr)
 	}
 	//Index from address to txid
 	fromAddrs := rep.getPayFromAddresses(tx)
@@ -1712,7 +1714,23 @@ func (rep *UnitRepository) GetAddrTransactions(address common.Address) ([]*modul
 	}
 	return txs, err
 }
-
+func (rep *UnitRepository) GetAddrUtxoTxs(addr common.Address) ([]*modules.TransactionWithUnitInfo, error) {
+	rep.lock.RLock()
+	defer rep.lock.RUnlock()
+	utxoMap, err := rep.utxoRepository.GetAddrUtxos(addr, nil)
+	if err != nil {
+		return nil, err
+	}
+	txs := make([]*modules.TransactionWithUnitInfo, 0, len(utxoMap))
+	for o := range utxoMap {
+		tx, err := rep.GetTransaction(o.TxHash)
+		if err != nil {
+			return nil, err
+		}
+		txs = append(txs, tx)
+	}
+	return txs, err
+}
 func (rep *UnitRepository) GetFileInfo(filehash []byte) ([]*modules.FileInfo, error) {
 	rep.lock.RLock()
 	defer rep.lock.RUnlock()
@@ -1816,4 +1834,7 @@ func (rep *UnitRepository) GetAssetReference(asset []byte) ([]*modules.ProofOfEx
 
 func (rep *UnitRepository) QueryProofOfExistenceByReference(ref []byte) ([]*modules.ProofOfExistence, error) {
 	return rep.idxdb.QueryProofOfExistenceByReference(ref)
+}
+func (rep *UnitRepository) GetAddressCount() int {
+	return rep.idxdb.GetAddressCount()
 }

@@ -19,15 +19,14 @@ package utils
 
 import (
 	"crypto/ecdsa"
+	"encoding/hex"
 	"fmt"
 	"io/ioutil"
-
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 
-	"encoding/hex"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/fdlimit"
@@ -808,6 +807,21 @@ func SetNodeConfig(ctx *cli.Context, cfg *node.Config, configDir string) string 
 		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "testnet")
 	}
 
+	if !filepath.IsAbs(cfg.HttpsCertFile) {
+		cfg.HttpsCertFile = filepath.Join(configDir, cfg.HttpsCertFile)
+	}
+	cfg.HttpsCertFile = common.GetAbsPath(cfg.HttpsCertFile)
+
+	if !filepath.IsAbs(cfg.HttpsKeyFile) {
+		cfg.HttpsKeyFile = filepath.Join(configDir, cfg.HttpsKeyFile)
+	}
+	cfg.HttpsKeyFile = common.GetAbsPath(cfg.HttpsKeyFile)
+
+	//if !filepath.IsAbs(cfg.HttpsCAFile) {
+	//	cfg.HttpsCAFile = filepath.Join(configDir, cfg.HttpsCAFile)
+	//}
+	//cfg.HttpsCAFile = common.GetAbsPath(cfg.HttpsCAFile)
+
 	// 重新计算为绝对路径
 	if !filepath.IsAbs(cfg.DataDir) {
 		path := filepath.Join(configDir, cfg.DataDir)
@@ -945,7 +959,10 @@ func SetDagConfig(ctx *cli.Context, cfg *dagconfig.Config, dataDir string) {
 		path := filepath.Join(dataDir, cfg.DbPath)
 		cfg.DbPath = common.GetAbsPath(path)
 	}
-
+	if !filepath.IsAbs(cfg.LocalDbPath) {
+		path := filepath.Join(dataDir, cfg.LocalDbPath)
+		cfg.LocalDbPath = common.GetAbsPath(path)
+	}
 	dagconfig.DagConfig = *cfg
 }
 

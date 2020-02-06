@@ -17,11 +17,12 @@
 package ptn
 
 import (
+	"time"
+
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/txspool"
-	"time"
 )
 
 // Constants to match up protocol versions and messages

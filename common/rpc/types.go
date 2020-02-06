@@ -18,12 +18,13 @@ package rpc
 
 import (
 	"fmt"
-	set "github.com/deckarep/golang-set"
-	"github.com/palletone/go-palletone/common/hexutil"
 	"math"
 	"reflect"
 	"strings"
 	"sync"
+
+	set "github.com/deckarep/golang-set"
+	"github.com/palletone/go-palletone/common/hexutil"
 )
 
 // API describes the set of methods offered over the RPC interface
@@ -74,6 +75,9 @@ type Server struct {
 	run      int32
 	codecsMu sync.Mutex
 	codecs   set.Set
+
+	//ishttps   bool
+	//secretkey string
 }
 
 // rpcRequest represents a raw incoming RPC request

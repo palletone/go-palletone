@@ -1,1 +1,22 @@
-{"address":"0449f2917e2c2a7203d0a662ca16544f39b663d800","crypto":{"cipher":"aes-128-ctr","ciphertext":"1ac7cd93a216ca9e14d326db2c1d8902634d8fedb506e8e153144d1f12c50e72","cipherparams":{"iv":"039f29d0256ece1a78ac5d24e2108a61"},"kdf":"scrypt","kdfparams":{"dklen":32,"n":262144,"p":1,"r":8,"salt":"96bd51b5f5abef608d891013c182e9634fca230064ac972e79e5b3f4f1dd4fd0"},"mac":"a98e07130efa228a9d358ccb73155ae96a2d9fb72bce7f36d6c853b41bcd2e20"},"id":"9a174b5f-e933-488c-8327-c47702087d3f","version":3}
+{
+  "address": "0449f2917e2c2a7203d0a662ca16544f39b663d800",
+  "crypto": {
+    "cipher": "aes-128-ctr",
+    "ciphertext": "1ac7cd93a216ca9e14d326db2c1d8902634d8fedb506e8e153144d1f12c50e72",
+    "cipherparams": {
+      "iv": "039f29d0256ece1a78ac5d24e2108a61"
+    },
+    "kdf": "scrypt",
+    "kdfparams": {
+      "dklen": 32,
+      "n": 262144,
+      "p": 1,
+      "r": 8,
+      "salt": "96bd51b5f5abef608d891013c182e9634fca230064ac972e79e5b3f4f1dd4fd0"
+    },
+    "mac": "a98e07130efa228a9d358ccb73155ae96a2d9fb72bce7f36d6c853b41bcd2e20"
+  },
+  "id": "9a174b5f-e933-488c-8327-c47702087d3f",
+  "version": 3,
+  "keytype": "ECDSA"
+}

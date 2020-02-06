@@ -124,8 +124,8 @@ Test set_event by contract
     ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    100    ${gContractId}
     ...    ${args}
     ${result}=    Get From Dictionary    ${respJson}    result
-    ${reqId}=    Get From Dictionary    ${result}    reqId
-    ${contractId}=    Get From Dictionary    ${result}    ContractId
+    ${reqId}=    Get From Dictionary    ${result}    request_id
+    ${contractId}=    Get From Dictionary    ${result}    contract_id
     Should Be Equal    ${gContractId}    ${contractId}
     [Return]    ${reqId}
 
@@ -134,8 +134,8 @@ Test send and recv jury by contract
     ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    100    ${gContractId}
     ...    ${args}
     ${result}=    Get From Dictionary    ${respJson}    result
-    ${reqId}=    Get From Dictionary    ${result}    reqId
-    ${contractId}=    Get From Dictionary    ${result}    ContractId
+    ${reqId}=    Get From Dictionary    ${result}    request_id
+    ${contractId}=    Get From Dictionary    ${result}    contract_id
     Should Be Equal    ${gContractId}    ${contractId}
     [Return]    ${reqId}
 
@@ -144,8 +144,8 @@ User use cert to invoke contract
     ${respJson}=    invokeContract    ${caCertHolder}    ${caCertHolder}    100    100    ${gContractId}
     ...    ${args}    ${caCertID}
     ${result}=    Get From Dictionary    ${respJson}    result
-    ${reqId}=    Get From Dictionary    ${result}    reqId
-    ${contractId}=    Get From Dictionary    ${result}    ContractId
+    ${reqId}=    Get From Dictionary    ${result}    request_id
+    ${contractId}=    Get From Dictionary    ${result}    contract_id
     Should Be Equal    ${gContractId}    ${contractId}
     [Return]    ${reqId}
 
@@ -156,8 +156,8 @@ User get invoke info
     ${respJson}=    invokeContract    ${tokenHolder}    ${newAddr}    100    100    ${gContractId}
     ...    ${newArgs}
     ${result}=    Get From Dictionary    ${respJson}    result
-    ${reqId}=    Get From Dictionary    ${result}    reqId
-    ${contractId}=    Get From Dictionary    ${result}    ContractId
+    ${reqId}=    Get From Dictionary    ${result}    request_id
+    ${contractId}=    Get From Dictionary    ${result}    contract_id
     Should Be Equal    ${gContractId}    ${contractId}
     [Return]    ${reqId}
 
@@ -235,8 +235,8 @@ User define token
     ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    100    ${gContractId}
     ...    ${args}
     ${result}=    Get From Dictionary    ${respJson}    result
-    ${reqId}=    Get From Dictionary    ${result}    reqId
-    ${contractId}=    Get From Dictionary    ${result}    ContractId
+    ${reqId}=    Get From Dictionary    ${result}    request_id
+    ${contractId}=    Get From Dictionary    ${result}    contract_id
     Should Be Equal    ${gContractId}    ${contractId}
     [Return]    ${reqId}
 
@@ -246,8 +246,8 @@ User supply token
     ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    100    ${gContractId}
     ...    ${args}
     ${result}=    Get From Dictionary    ${respJson}    result
-    ${reqId}=    Get From Dictionary    ${result}    reqId
-    ${contractId}=    Get From Dictionary    ${result}    ContractId
+    ${reqId}=    Get From Dictionary    ${result}    request_id
+    ${contractId}=    Get From Dictionary    ${result}    contract_id
     Should Be Equal    ${gContractId}    ${contractId}
     [Return]    ${reqId}
 
@@ -257,8 +257,8 @@ User pay out token
     ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    100    ${gContractId}
     ...    ${args}
     ${result}=    Get From Dictionary    ${respJson}    result
-    ${reqId}=    Get From Dictionary    ${result}    reqId
-    ${contractId}=    Get From Dictionary    ${result}    ContractId
+    ${reqId}=    Get From Dictionary    ${result}    request_id
+    ${contractId}=    Get From Dictionary    ${result}    contract_id
     Should Be Equal    ${gContractId}    ${contractId}
     [Return]    ${reqId}
 
@@ -280,8 +280,8 @@ User put state
     ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    100    ${gContractId}
     ...    ${args}
     ${result}=    Get From Dictionary    ${respJson}    result
-    ${reqId}=    Get From Dictionary    ${result}    reqId
-    ${contractId}=    Get From Dictionary    ${result}    ContractId
+    ${reqId}=    Get From Dictionary    ${result}    request_id
+    ${contractId}=    Get From Dictionary    ${result}    contract_id
     Should Be Equal    ${gContractId}    ${contractId}
     [Return]    ${reqId}
 
@@ -291,8 +291,8 @@ User delete state
     ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    100    ${gContractId}
     ...    ${args}
     ${result}=    Get From Dictionary    ${respJson}    result
-    ${reqId}=    Get From Dictionary    ${result}    reqId
-    ${contractId}=    Get From Dictionary    ${result}    ContractId
+    ${reqId}=    Get From Dictionary    ${result}    request_id
+    ${contractId}=    Get From Dictionary    ${result}    contract_id
     Should Be Equal    ${gContractId}    ${contractId}
     [Return]    ${reqId}
 

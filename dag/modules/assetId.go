@@ -25,10 +25,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/martinlindhe/base36"
 	"github.com/palletone/go-palletone/common/bitutil"
+	"github.com/shopspring/decimal"
 )
 
 var (
@@ -180,4 +182,19 @@ func (assetId *AssetId) UnmarshalJSON(data []byte) error {
 	}
 	assetId.SetBytes(a.Bytes())
 	return nil
+}
+func (asset AssetId) DisplayAmount(amount uint64) decimal.Decimal {
+	dec := asset.GetDecimal()
+	d, _ := decimal.NewFromString(fmt.Sprintf("%d", amount))
+	for i := 0; i < int(dec); i++ {
+		d = d.Div(decimal.New(10, 0))
+	}
+	return d
+}
+func (asset AssetId) Uint64Amount(amt decimal.Decimal) uint64 {
+	dec := asset.GetDecimal()
+	for i := 0; i < int(dec); i++ {
+		amt = amt.Mul(decimal.New(10, 0))
+	}
+	return uint64(amt.IntPart())
 }

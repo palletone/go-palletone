@@ -24,8 +24,8 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
@@ -95,6 +95,8 @@ type IDag interface {
 	IsUtxoSpent(outpoint *modules.OutPoint) (bool, error)
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
 	SubscribeChainEvent(ch chan<- modules.ChainEvent) event.Subscription
+	SubscribeSaveStableUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription
+
 	PostChainEvents(events []interface{})
 
 	GetTrieSyncProgress() (uint64, error)
@@ -109,7 +111,7 @@ type IDag interface {
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
 	GetAssetTxHistory(asset *modules.Asset) ([]*modules.TransactionWithUnitInfo, error)
-
+	GetAddrUtxoTxs(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
 	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
 	GetContractTplCode(tplId []byte) ([]byte, error)
 	GetAllContractTpl() ([]*modules.ContractTemplate, error)
@@ -218,9 +220,15 @@ type IDag interface {
 	RebuildAddrTxIndex() error
 	GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, error)
 	GetJurorReward(jurorAdd common.Address) common.Address
-
+	SubscribeSaveUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription
 	SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription
 	GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract
+	GetAddressCount() int
+
+	//localdb
+	SaveLocalTx(tx *modules.Transaction) error
+	GetLocalTx(txId common.Hash) (*modules.Transaction, modules.TxStatus, error)
+	SaveLocalTxStatus(txId common.Hash, status modules.TxStatus) error
 }
 
 type IContractDag interface {

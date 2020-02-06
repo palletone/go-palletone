@@ -27,8 +27,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
@@ -63,12 +63,13 @@ type MemDag struct {
 	lock               sync.RWMutex
 	cache              palletcache.ICache
 	// append by albert·gou 用于通知群签名
-	toGroupSignFeed  event.Feed
-	toGroupSignScope event.SubscriptionScope
-	db               ptndb.Database
-	tokenEngine      tokenengine.ITokenEngine
-	quit             chan struct{} // used for exit
-	observers        []SwitchMainChainEventFunc
+	toGroupSignFeed    event.Feed
+	saveStableUnitFeed event.Feed
+	toGroupSignScope   event.SubscriptionScope
+	db                 ptndb.Database
+	tokenEngine        tokenengine.ITokenEngine
+	quit               chan struct{} // used for exit
+	observers          []SwitchMainChainEventFunc
 }
 
 func (pmg *MemDag) SubscribeSwitchMainChainEvent(ob SwitchMainChainEventFunc) {
@@ -85,7 +86,9 @@ func (pmg *MemDag) Close() {
 func (pmg *MemDag) SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription {
 	return pmg.toGroupSignScope.Track(pmg.toGroupSignFeed.Subscribe(ch))
 }
-
+func (pmg *MemDag) SubscribeSaveStableUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription {
+	return pmg.saveStableUnitFeed.Subscribe(ch)
+}
 func (pmg *MemDag) SetStableThreshold(count int) {
 	pmg.lock.Lock()
 	defer pmg.lock.Unlock()
@@ -338,6 +341,7 @@ func (chain *MemDag) setNextStableUnit(chain_units map[common.Hash]*modules.Unit
 		go txpool.SendStoredTxs(unit.Txs.GetTxIds())
 	}
 
+	go chain.saveStableUnitFeed.Send(modules.SaveUnitEvent{Unit: unit})
 	log.Debugf("Remove unit index[%d],hash[%s] from chainUnits", height, hash.String())
 
 	//remove new stable unit
@@ -548,7 +552,7 @@ func (chain *MemDag) AddStableUnit(unit *modules.Unit) error {
 	if err != nil {
 		return err
 	}
-
+	go chain.saveStableUnitFeed.Send(modules.SaveUnitEvent{Unit: unit})
 	if number%1000 == 0 {
 		log.Infof("add stable unit to dag, index: %d , hash[%s]", number, hash.TerminalString())
 	}

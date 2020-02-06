@@ -21,13 +21,14 @@ package txspool
 
 import (
 	"fmt"
-	"github.com/palletone/go-palletone/validator"
 	"sort"
 	"sync"
 	"time"
 
+	"github.com/palletone/go-palletone/validator"
+
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"

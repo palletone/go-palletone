@@ -27,7 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/bitutil"
 	"github.com/palletone/go-palletone/common/bloombits"
-	"github.com/palletone/go-palletone/common/event"
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/core/node"

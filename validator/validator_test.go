@@ -31,9 +31,9 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/parameter"
+	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/stretchr/testify/assert"
-	"github.com/palletone/go-palletone/dag/rwset"
 )
 
 func TestValidate_ValidateUnitTxs(t *testing.T) {
@@ -307,7 +307,7 @@ func TestSignAndVerifyATx(t *testing.T) {
 
 }
 func TestTime(t *testing.T) {
-	ti, _ := time.ParseInLocation("2006-01-02 15:04:05", "2020-01-16 00:00:00", time.Local)
+	ti, _ := time.ParseInLocation("2006-01-02 15:04:05", "2020-03-01 00:00:00", time.Local)
 	t.Log(ti.Format("2006-01-02 15:04:05"))
 	t.Log(ti.Unix())
 	t2 := time.Unix(1570870800, 0)

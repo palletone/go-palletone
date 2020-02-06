@@ -22,8 +22,9 @@ package common
 
 import (
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAddressValidate(t *testing.T) {
@@ -79,6 +80,22 @@ func TestHexToAddrString(t *testing.T) {
 
 	addr = HexToAddress("0x00000000000000000000000000000000000000091C")
 	t.Logf("0x9 contract address: %s", addr.String()) //PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX
+	t.Logf("Is system contract:%t", addr.IsSystemContractAddress())
+
+	addr = HexToAddress("0x00000000000000000000000000000000000000091C")
+	t.Logf("0x9 contract address: %s", addr.String()) //PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX
+	t.Logf("Is system contract:%t", addr.IsSystemContractAddress())
+
+	addr = HexToAddress("0x00000000000000000000000000000000000000091C")
+	t.Logf("0x9 contract address: %s", addr.String()) //PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX
+	t.Logf("Is system contract:%t", addr.IsSystemContractAddress())
+
+	addr = HexToAddress("0x000000000000000000000000000000000000000A1C")
+	t.Logf("0xA contract address: %s", addr.String()) //PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX
+	t.Logf("Is system contract:%t", addr.IsSystemContractAddress())
+
+	addr = HexToAddress("0x000000000000000000000000000000000000000B1C")
+	t.Logf("0xB contract address: %s", addr.String()) //PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX
 	t.Logf("Is system contract:%t", addr.IsSystemContractAddress())
 
 	addr = HexToAddress("0x000000000000000000000000000000000000000F1C")

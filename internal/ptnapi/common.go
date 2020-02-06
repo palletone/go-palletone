@@ -3,7 +3,10 @@ package ptnapi
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -17,7 +20,33 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-func buildRawTransferTx(b Backend, tokenId, from, to string, amount, gasFee decimal.Decimal) (
+func parseAddressStr(addr string, ks *keystore.KeyStore, password string) (common.Address, error) {
+	addrArray := strings.Split(addr, ":")
+	addrString := addrArray[0]
+	if len(addrArray) == 2 { //HD wallet address format
+		toAccountIndex, err := strconv.Atoi(addrArray[1])
+		if err != nil {
+			return common.Address{}, errors.New("invalid addrString address format")
+		}
+		hdBaseAddr, err := common.StringToAddress(addrArray[0])
+		if err != nil {
+			return common.Address{}, errors.New("invalid addrString address format")
+		}
+		var toAccount accounts.Account
+		if ks.IsUnlock(hdBaseAddr) {
+			toAccount, err = ks.GetHdAccount(accounts.Account{Address: hdBaseAddr}, uint32(toAccountIndex))
+		} else {
+			toAccount, err = ks.GetHdAccountWithPassphrase(accounts.Account{Address: hdBaseAddr}, password, uint32(toAccountIndex))
+		}
+		if err != nil {
+			return common.Address{}, errors.New("GetHdAccountWithPassphrase error:" + err.Error())
+		}
+		addrString = toAccount.Address.String()
+	}
+	return common.StringToAddress(addrString)
+}
+
+func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFee decimal.Decimal, password string) (
 	*modules.Transaction, []*modules.UtxoWithOutPoint, error) {
 	//参数检查
 	tokenAsset, err := modules.StringToAsset(tokenId)
@@ -28,33 +57,32 @@ func buildRawTransferTx(b Backend, tokenId, from, to string, amount, gasFee deci
 		return nil, nil, fmt.Errorf("fee is ZERO ")
 	}
 	//
-	fromAddr, err := common.StringToAddress(from)
+	fromAddr, err := parseAddressStr(fromStr, b.GetKeyStore(), password)
 	if err != nil {
 		fmt.Println(err.Error())
 		return nil, nil, err
 	}
-	toAddr, err := common.StringToAddress(to)
+	from := fromAddr.String()
+	toAddr, err := parseAddressStr(toStr, b.GetKeyStore(), password)
 	if err != nil {
 		fmt.Println(err.Error())
 		return nil, nil, err
 	}
+	//to:=toAddr.String()
 	ptnAmount := uint64(0)
-	ptn := dagconfig.DagConfig.GasToken
-	if tokenId == ptn {
-		ptnAmount = ptnjson.Ptn2Dao(amount)
+	gasToken := dagconfig.DagConfig.GasToken
+	gasAsset := dagconfig.DefaultConfig.GetGasToken()
+	if tokenId == gasToken {
+		ptnAmount = gasAsset.Uint64Amount(amount)
 	}
-
 	//构造转移PTN的Message0
 	dbUtxos, err := b.GetAddrRawUtxos(from)
 	if err != nil {
 		return nil, nil, fmt.Errorf("GetAddrRawUtxos utxo err")
 	}
 	poolTxs, _ := b.GetPoolTxsByAddr(from)
-	//if len(poolTxs) == 0 {
-	//       return nil, nil, fmt.Errorf("GetPoolTxsByAddr utxo err")
-	//}
 
-	utxosPTN, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, from, ptn)
+	utxosPTN, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, from, gasToken)
 	if err != nil {
 		return nil, nil, fmt.Errorf("SelectUtxoFromDagAndPool utxo err")
 	}
@@ -64,7 +92,7 @@ func buildRawTransferTx(b Backend, tokenId, from, to string, amount, gasFee deci
 		return nil, nil, err
 	}
 	tx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, pay1)})
-	if tokenId == ptn {
+	if tokenId == gasToken {
 		return tx, usedUtxo1, nil
 	}
 	//构造转移Token的Message1
@@ -72,19 +100,18 @@ func buildRawTransferTx(b Backend, tokenId, from, to string, amount, gasFee deci
 	if err != nil {
 		return nil, nil, fmt.Errorf("SelectUtxoFromDagAndPool token utxo err")
 	}
-	tokenAmount := ptnjson.JsonAmt2AssetAmt(tokenAsset, amount)
+	tokenAmount := tokenAsset.Uint64Amount(amount)
 	pay2, usedUtxo2, err := createPayment(fromAddr, toAddr, tokenAmount, 0, utxosToken)
 	if err != nil {
 		return nil, nil, err
 	}
 	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay2))
-	//for _, u := range usedUtxo2 {
 	usedUtxo1 = append(usedUtxo1, usedUtxo2...)
-	//}
+
 	return tx, usedUtxo1, nil
 }
 func signRawTransaction(rawTx *modules.Transaction,
-	ks *keystore.KeyStore, from, password string, duration time.Duration, hashType uint32,
+	ks *keystore.KeyStore, fromStr, password string, duration time.Duration, hashType uint32,
 	usedUtxo []*modules.UtxoWithOutPoint) error {
 	//lockscript
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
@@ -98,7 +125,7 @@ func signRawTransaction(rawTx *modules.Transaction,
 	for _, utxo := range usedUtxo {
 		utxoLockScripts[utxo.OutPoint] = utxo.PkScript
 	}
-	fromAddr, err := common.StringToAddress(from)
+	fromAddr, err := parseAddressStr(fromStr, ks, password)
 	if err != nil {
 		return err
 	}

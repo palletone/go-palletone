@@ -21,10 +21,11 @@
 package ptnapi
 
 import (
+	"context"
 	"encoding/hex"
 	"errors"
 	"fmt"
-
+	"strconv"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -136,6 +137,42 @@ func (s *PrivateAccountAPI) NewAccount(password string) (string, error) {
 	return "ERROR", err
 }
 
+type NewHdAccountResult struct {
+	Address  common.Address
+	Mnemonic string
+}
+
+func (s *PrivateAccountAPI) NewHdAccount(password string) (*NewHdAccountResult, error) {
+	acc, mnemonic, err := fetchKeystore(s.am).NewHdAccount(password)
+	if err != nil {
+		return nil, err
+	}
+	return &NewHdAccountResult{Address: acc.Address, Mnemonic: mnemonic}, nil
+}
+
+func (s *PrivateAccountAPI) GetHdAccount(addr, password, userId string) (string, error) {
+	_, err := common.StringToAddress(addr)
+	if err != nil {
+		return "", err
+	}
+	account, _ := MakeAddress(fetchKeystore(s.am), addr)
+	accountIndex, err := strconv.Atoi(userId)
+	if err != nil {
+		return "", errors.New("invalid argument, args 2 must be a number")
+	}
+	ks := fetchKeystore(s.am)
+	var acc accounts.Account
+	if ks.IsUnlock(account.Address) {
+		acc, err = ks.GetHdAccount(account, uint32(accountIndex))
+	} else {
+		acc, err = ks.GetHdAccountWithPassphrase(account, password, uint32(accountIndex))
+	}
+	if err != nil {
+		return "", err
+	}
+	return acc.Address.String(), nil
+}
+
 // fetchKeystore retrives the encrypted keystore from the account manager.
 func fetchKeystore(am *accounts.Manager) *keystore.KeyStore {
 	return am.Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
@@ -149,6 +186,14 @@ func (s *PrivateAccountAPI) ImportRawKey(privkey string, password string) (strin
 		return "", err
 	}
 	acc, err := fetchKeystore(s.am).ImportECDSA(key, password)
+	return acc.Address.String(), err
+}
+func (s *PrivateAccountAPI) ImportMnemonic(mnemonic string, password string) (string, error) {
+	acc, err := fetchKeystore(s.am).ImportMnemonic(mnemonic, password)
+	return acc.Address.String(), err
+}
+func (s *PrivateAccountAPI) ImportHdAccountMnemonic(mnemonic string, password string) (string, error) {
+	acc, err := fetchKeystore(s.am).ImportHdSeedFromMnemonic(mnemonic, password)
 	return acc.Address.String(), err
 }
 
@@ -176,28 +221,15 @@ func (s *PrivateAccountAPI) LockAccount(addrStr string) bool {
 	return fetchKeystore(s.am).Lock(addr) == nil
 }
 
-// signHash is a helper function that calculates a hash for the given message that can be
-// safely used to calculate a signature from.
-//
-// The hash is calulcated as
-//   keccak256("\x19Ethereum Signed Message:\n"${message length}${message}).
-//
-// This gives context to the signed message and prevents signing of transactions.
-//func signHash(data []byte) []byte {
-//	msg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(data), data)
-//	return crypto.Keccak256([]byte(msg))
-//}
+//对一个文本进行签名
+func (s *PrivateAccountAPI) Sign(ctx context.Context, data string, addr string,
+	passwd string) (hexutil.Bytes, error) {
+	bytes := []byte(data)
+	return s.SignHex(ctx, bytes, addr, passwd)
+}
 
-// Sign calculates an PalletOne ECDSA signature for:
-// keccack256("\x19Ethereum Signed Message:\n" + len(message) + message))
-//
-// Note, the produced signature conforms to the secp256k1 curve R, S and V values,
-// where the V value will be 27 or 28 for legacy reasons.
-//
-// The key used to calculate the signature is decrypted with the given password.
-//
-// https://github.com/palletone/go-palletone/wiki/Management-APIs#personal_sign
-/*func (s *PrivateAccountAPI) Sign(ctx context.Context, data hexutil.Bytes, addr string,
+//对16进制数据进行签名
+func (s *PrivateAccountAPI) SignHex(ctx context.Context, data hexutil.Bytes, addr string,
 	passwd string) (hexutil.Bytes, error) {
 	// Look up the wallet containing the requested signer
 	address, _ := common.StringToAddress(addr)
@@ -212,39 +244,9 @@ func (s *PrivateAccountAPI) LockAccount(addrStr string) bool {
 	if err != nil {
 		return nil, err
 	}
-	signature[64] += 27 // Transform V from 0/1 to 27/28 according to the yellow paper
+
 	return signature, nil
-}*/
-
-/*
-// EcRecover returns the address for the account that was used to create the signature.
-// Note, this function is compatible with eth_sign and personal_sign. As such it recovers
-// the address of:
-// hash = keccak256("\x19Ethereum Signed Message:\n"${message length}${message})
-// addr = ecrecover(hash, signature)
-//
-// Note, the signature must conform to the secp256k1 curve R, S and V values, where
-// the V value must be be 27 or 28 for legacy reasons.
-//
-// https://github.com/palletone/go-palletone/wiki/Management-APIs#personal_ecRecover
-func (s *PrivateAccountAPI) EcRecover(ctx context.Context, data, sig hexutil.Bytes) (common.Address, error) {
-	if len(sig) != 65 {
-		return common.Address{}, fmt.Errorf("signature must be 65 bytes long")
-	}
-	if sig[64] != 27 && sig[64] != 28 {
-		return common.Address{}, fmt.Errorf("invalid PalletOne signature (V is not 27 or 28)")
-	}
-	sig[64] -= 27 // Transform yellow paper V from 27/28 to 0/1
-
-	rpk, err := crypto.Ecrecover(signHash(data), sig)
-	if err != nil {
-		return common.Address{}, err
-	}
-	pubKey := crypto.ToECDSAPub(rpk)
-	recoveredAddr := crypto.PubkeyToAddress(pubKey)
-	return recoveredAddr, nil
 }
-*/
 
 // appended by albert·gou
 func (s *PrivateAccountAPI) TransferPtn(from, to string, amount decimal.Decimal, text *string,

@@ -47,6 +47,11 @@ web3._extend({
         	//inputFormatter: [null]
 		}),
 		new web3._extend.Method({
+			name: 'getLocalTx',
+        	call: 'dag_getLocalTx',
+        	params: 1,
+		}),
+		new web3._extend.Method({
 			name: 'getUnitSummaryByNumber',
         	call: 'dag_getUnitSummaryByNumber',
         	params: 1,
@@ -158,6 +163,11 @@ web3._extend({
             call: 'dag_getAddrUtxos',
             params: 1,
             // inputFormatter: [null]
+        }),
+		 new web3._extend.Method({
+            name: 'getAddrUtxoTxs',
+            call: 'dag_getAddrUtxoTxs',
+            params: 1
         }),
         new web3._extend.Method({
             name: 'getAllUtxos',

@@ -248,11 +248,10 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 	contractAddress string, param []string, timeout string) (*ContractInvokeRsp, error) {
 	contractAddr, _ := common.StringToAddress(contractAddress)
 
-	tx, usedUtxo, err := buildRawTransferTx(s.b, token, from, to, amountToken, fee)
+	tx, usedUtxo, err := buildRawTransferTx(s.b, token, from, to, amountToken, fee, "")
 	if err != nil {
 		return nil, err
 	}
-
 	log.Infof("   param len[%d]", len(param))
 	args := make([][]byte, len(param))
 	for i, arg := range param {
@@ -494,7 +493,7 @@ func (s *PrivateContractAPI) unlockKS(addr common.Address, password string, dura
 	ks := s.b.GetKeyStore()
 	err := ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
 	if err != nil {
-		return fmt.Errorf("get addr by outpoint is err: %v", err.Error())
+		return fmt.Errorf("TimedUnlock Account err: %v", err.Error())
 	}
 	return nil
 }

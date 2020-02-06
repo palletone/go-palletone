@@ -226,7 +226,7 @@ func createContractErrorPayloadMsg(tx *modules.Transaction, errIn error) *module
 	_, contractReq, _ := getContractTxContractInfo(tx, reqType)
 	switch reqType {
 	case modules.APP_CONTRACT_TPL_REQUEST:
-		payload := contractReq.Payload.(*modules.ContractInstallRequestPayload)
+		payload := modules.NewContractTplPayload(nil, 0, nil, contractErr)
 		return modules.NewMessage(modules.APP_CONTRACT_TPL, payload)
 	case modules.APP_CONTRACT_DEPLOY_REQUEST:
 		req := contractReq.Payload.(*modules.ContractDeployRequestPayload)
@@ -712,7 +712,7 @@ func getContractInvokeMulPaymentInputNum(tx *modules.Transaction) int {
 	afterReq := false
 	isSysContract := false
 	cnt := 0
-	msgs := tx.TxMessages()
+	msgs := tx.Messages()
 	for _, msg := range msgs {
 		if msg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
 			afterReq = true

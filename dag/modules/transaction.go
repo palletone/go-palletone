@@ -43,6 +43,30 @@ var (
 	TX_BASESIZE = 100 * 1024 //100kb
 )
 
+//一个交易的状态
+type TxStatus byte
+
+const (
+	TxStatus_NotFound TxStatus = iota //找不到该交易
+	TxStatus_InPool                   //未打包
+	TxStatus_Unstable                 //已打包未稳定
+	TxStatus_Stable                   //已打包，已稳定
+)
+
+func (s TxStatus) String() string {
+	switch s {
+	case TxStatus_NotFound:
+		return "NotFound"
+	case TxStatus_InPool:
+		return "InPool"
+	case TxStatus_Unstable:
+		return "Unstable"
+	case TxStatus_Stable:
+		return "Stable"
+	}
+	return "Unknown"
+}
+
 //var DepositContractLockScript = common.Hex2Bytes("140000000000000000000000000000000000000001c8")
 
 // TxOut defines a bitcoin transaction output.
@@ -145,6 +169,16 @@ func (tx *Transaction) Messages() []*Message {
 	msgs := make([]*Message, len(tx.txdata.TxMessages))
 	copy(msgs, tx.txdata.TxMessages)
 	return msgs
+}
+
+// 深拷贝
+func (tx *Transaction) TxMessages() []*Message {
+	temp_msgs := make([]*Message, 0)
+	for _, msg := range tx.txdata.TxMessages {
+		temp_msgs = append(temp_msgs, CopyMessage(msg))
+	}
+
+	return temp_msgs
 }
 
 // Size returns the true RLP encoded storage UnitSize of the transaction, either by
@@ -303,15 +337,6 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 	return &AmountAsset{Amount: fees, Asset: feeAsset}, nil
 }
 
-// 深拷贝
-func (tx *Transaction) TxMessages() []*Message {
-	temp_msgs := make([]*Message, 0)
-	for _, msg := range tx.txdata.TxMessages {
-		temp_msgs = append(temp_msgs, CopyMessage(msg))
-	}
-
-	return temp_msgs
-}
 func (tx *Transaction) CertId() []byte { return common.CopyBytes(tx.txdata.CertId) }
 func (tx *Transaction) Illegal() bool  { return tx.txdata.Illegal }
 func (tx *Transaction) SetMessages(msgs []*Message) {
@@ -639,7 +664,7 @@ func (tx *Transaction) GetRequesterAddr(queryUtxoFunc QueryUtxoFunc, getAddrFunc
 
 }
 
- func (tx *Transaction) GetContractTxType() (MessageType, error) {
+func (tx *Transaction) GetContractTxType() (MessageType, error) {
 	for _, msg := range tx.Messages() {
 		if msg.App >= APP_CONTRACT_TPL_REQUEST && msg.App <= APP_CONTRACT_STOP_REQUEST {
 			return msg.App, nil

@@ -28,6 +28,7 @@ var (
 	BODY_PREFIX                 = []byte("ub")
 	TRANSACTION_PREFIX          = []byte("tx")
 	ADDR_TXID_PREFIX            = []byte("at") // to addr  transactions hash prefix
+	ADDRESS_PREFIX              = []byte("ad") // to addr
 	ADDR_OUTPOINT_PREFIX        = []byte("ap") // addr outpoint
 	OUTPOINT_ADDR_PREFIX        = []byte("pa") // outpoint addr
 	CONTRACT_STATE_PREFIX       = []byte("cs")
@@ -87,4 +88,11 @@ var (
 	CERT_BYTES_SYMBOL   = "certbytes_"
 	CERT_SUBJECT_SYMBOL = "certsubject_"
 	CRL_BYTES_SYMBOL    = "crlbytes_"
+)
+
+//local db
+//Start with "L"
+var (
+	LOCAL_TX_PREFIX        = []byte("Ltx")
+	LOCAL_TX_STATUS_PREFIX = []byte("Lts")
 )

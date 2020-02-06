@@ -20,9 +20,9 @@ package accounts
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/event"
 	ethereum "github.com/palletone/go-palletone"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 

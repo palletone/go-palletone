@@ -19,14 +19,15 @@ package rpc
 import (
 	"context"
 	"fmt"
-	set "github.com/deckarep/golang-set"
-	"github.com/palletone/go-palletone/common/log"
 	"reflect"
 	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	set "github.com/deckarep/golang-set"
+	"github.com/palletone/go-palletone/common/log"
 )
 
 const MetadataApi = "rpc"
@@ -72,6 +73,19 @@ func (s *RPCService) Modules() map[string]string {
 	}
 	return modules
 }
+
+//func (s *Server) SetSecretKey(secretkey string) {
+//	s.ishttps = true
+//	s.secretkey = secretkey
+//}
+//
+//func (s *Server) GetSecretKey() string {
+//	return s.secretkey
+//}
+//
+//func (s *Server) IsHttpsRequest() bool {
+//	return s.ishttps
+//}
 
 // RegisterName will create a service for the given rcvr type under the given name. When no methods on the given rcvr
 // match the criteria to be either a RPC method or a subscription an error is returned. Otherwise a new service is

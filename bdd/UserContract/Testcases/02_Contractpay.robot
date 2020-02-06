@@ -55,8 +55,8 @@ User put status into contractpay
     ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    100    ${gContractId}
     ...    ${args}
     ${result}=    Get From Dictionary    ${respJson}    result
-    ${reqId}=    Get From Dictionary    ${result}    reqId
-    ${contractId}=    Get From Dictionary    ${result}    ContractId
+    ${reqId}=    Get From Dictionary    ${result}    request_id
+    ${contractId}=    Get From Dictionary    ${result}    contract_id
     Should Be Equal    ${gContractId}    ${contractId}
     [Return]    ${reqId}
 
@@ -85,7 +85,7 @@ Use contractpay to transfer PTN to user2
     ${respJson}=    invokeContract    ${tokenHolder}    ${tokenHolder}    100    100    ${gContractId}
     ...    ${args}
     ${result}=    Get From Dictionary    ${respJson}    result
-    ${reqId}=    Get From Dictionary    ${result}    reqId
+    ${reqId}=    Get From Dictionary    ${result}    request_id
     [Return]    ${newAddr}    ${reqId}
 
 Query user2 balance

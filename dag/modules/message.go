@@ -21,10 +21,11 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"strings"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"strings"
 )
 
 type MessageType byte
@@ -96,6 +97,9 @@ func NewMessage(app MessageType, payload interface{}) *Message {
 func CopyMessage(cpyMsg *Message) *Message {
 	msg := *cpyMsg
 
+	if msg.Payload == nil {
+		return nil
+	}
 	switch cpyMsg.App {
 	default:
 		msg.Payload = cpyMsg.Payload

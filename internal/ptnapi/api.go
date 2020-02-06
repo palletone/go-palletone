@@ -57,17 +57,17 @@ const (
 )
 
 type ContractInstallRsp struct {
-	ReqId string `json:"reqId"`
-	TplId string `json:"tplId"`
+	ReqId string `json:"request_id"`
+	TplId string `json:"template_id"`
 }
 
 type ContractDeployRsp struct {
-	ReqId      string `json:"reqId"`
-	ContractId string `json:"ContractId"`
+	ReqId      string `json:"request_id"`
+	ContractId string `json:"contract_id"`
 }
 type ContractInvokeRsp struct {
-	ReqId      string `json:"reqId"`
-	ContractId string `json:"ContractId"`
+	ReqId      string `json:"request_id"`
+	ContractId string `json:"contract_id"`
 }
 
 type ContractFeeRsp struct {
@@ -514,6 +514,9 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 
 		prevOut := modules.NewOutPoint(txHash, input.MessageIndex, input.Vout)
 		txInput := modules.NewTxIn(prevOut, []byte{})
+		if c.LockTime != nil && *c.LockTime != 0 {
+			txInput.Sequence = MaxTxInSequenceNum - 1
+		}
 		pload.AddTxIn(txInput)
 	}
 	// Add all transaction outputs to the transaction after performing

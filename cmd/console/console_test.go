@@ -1,18 +1,18 @@
-// Copyright 2015 The go-ethereum Authors
-// This file is part of the go-ethereum library.
+// Copyright 2015 The go-gptn Authors
+// This file is part of the go-gptn library.
 //
-// The go-ethereum library is free software: you can redistribute it and/or modify
+// The go-gptn library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The go-ethereum library is distributed in the hope that it will be useful,
+// The go-gptn library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
+// along with the go-gptn library. If not, see <http://www.gnu.org/licenses/>.
 
 package console
 
@@ -80,7 +80,7 @@ func (p *hookedPrompter) SetWordCompleter(completer WordCompleter) {}
 type tester struct {
 	workspace string
 	stack     *node.Node
-	ethereum  *ptn.PalletOne
+	gptn      *ptn.PalletOne
 	console   *Console
 	input     *hookedPrompter
 	output    *bytes.Buffer
@@ -141,6 +141,15 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 		fmt.Println("mkdir error:", err)
 		return nil
 	}
+	//localdb
+	ldbPath := filepath.Join(workspace, "./localdb")
+	log.Debugf("workspace path:%s, local dbpath:%s", workspace, ldbPath)
+	dagconfig.DagConfig.LocalDbPath = ldbPath
+	if err := os.MkdirAll(ldbPath, 0777); err != nil {
+		fmt.Println("mkdir error:", err)
+		return nil
+	}
+
 	ks := stack.GetKeyStore()
 	password := "123456"
 	account, err := ks.NewAccount(password)
@@ -209,13 +218,13 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 		t.Fatalf("failed to create JavaScript console: %v", err)
 	}
 	// Create the final tester and return
-	var ethereum *ptn.PalletOne
-	stack.Service(&ethereum)
+	var palletone *ptn.PalletOne
+	stack.Service(&palletone)
 
 	return &tester{
 		workspace: workspace,
 		stack:     stack,
-		ethereum:  ethereum,
+		gptn:      palletone,
 		console:   console,
 		input:     prompter,
 		output:    printer,

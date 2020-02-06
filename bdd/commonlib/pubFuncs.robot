@@ -115,8 +115,8 @@ installContractTpl
     ${respJson}=    sendRpcPost    ${host}    ${ccinstallMethod}    ${params}    InstallContractTpl
     Dictionary Should Contain Key    ${respJson}    result
     ${result}=    Get From Dictionary    ${respJson}    result
-    Dictionary Should Contain Key    ${result}    reqId
-    Dictionary Should Contain Key    ${result}    tplId
+    Dictionary Should Contain Key    ${result}    request_id
+    Dictionary Should Contain Key    ${result}    template_id
     [Return]    ${respJson}
 
 deployContract
@@ -126,8 +126,8 @@ deployContract
     ${respJson}=    sendRpcPost    ${host}    ${ccdeployMethod}    ${params}    DeployContract
     Dictionary Should Contain Key    ${respJson}    result
     ${result}=    Get From Dictionary    ${respJson}    result
-    Dictionary Should Contain Key    ${result}    ContractId
-    Dictionary Should Contain Key    ${result}    reqId
+    Dictionary Should Contain Key    ${result}    contract_id
+    Dictionary Should Contain Key    ${result}    request_id
     [Return]    ${respJson}
 
 invokeContract
@@ -138,8 +138,8 @@ invokeContract
     ${respJson}=    sendRpcPost    ${host}    ${ccinvokeMethod}    ${params}    InvokeContract
     Dictionary Should Contain Key    ${respJson}    result
     ${result}=    Get From Dictionary    ${respJson}    result
-    Dictionary Should Contain Key    ${result}    ContractId
-    Dictionary Should Contain Key    ${result}    reqId
+    Dictionary Should Contain Key    ${result}    contract_id
+    Dictionary Should Contain Key    ${result}    request_id
     [Return]    ${respJson}
 
 stopContract
@@ -190,8 +190,8 @@ User installs contract template
     ${respJson}=    installContractTpl    ${tokenHolder}    ${tokenHolder}    100    100    jury06
     ...    ${path}    ${name}
     ${result}=    Get From Dictionary    ${respJson}    result
-    ${reqId}=    Get From Dictionary    ${result}    reqId
-    ${tplId}=    Get From Dictionary    ${result}    tplId
+    ${reqId}=    Get From Dictionary    ${result}    request_id
+    ${tplId}=    Get From Dictionary    ${result}    template_id
     Run Keyword If    '${tplId}'=='${EMPTY}'    Fail    "Install Contract Error"
     Set Global Variable    ${gTplId}    ${tplId}
     [Return]    ${reqId}
@@ -201,8 +201,8 @@ User deploys contract
     ${respJson}=    deployContract    ${tokenHolder}    ${tokenHolder}    1000    100    ${gTplId}
     ...    ${args}
     ${result}=    Get From Dictionary    ${respJson}    result
-    ${reqId}=    Get From Dictionary    ${result}    reqId
-    ${contractId}=    Get From Dictionary    ${result}    ContractId
+    ${reqId}=    Get From Dictionary    ${result}    request_id
+    ${contractId}=    Get From Dictionary    ${result}    contract_id
     Run Keyword If    '${contractId}'=='${EMPTY}'    Fail    "Deploy Contract Error"
     Set Global Variable    ${gContractId}    ${contractId}
     [Return]    ${reqId}
@@ -212,8 +212,8 @@ User stops contract
     ${respJson}=    deployContract    ${tokenHolder}    ${tokenHolder}    1000    100    ${gTplId}
     ...    ${args}
     ${result}=    Get From Dictionary    ${respJson}    result
-    ${reqId}=    Get From Dictionary    ${result}    reqId
-    ${contractId}=    Get From Dictionary    ${result}    ContractId
+    ${reqId}=    Get From Dictionary    ${result}    request_id
+    ${contractId}=    Get From Dictionary    ${result}    contract_id
     Run Keyword If    '${contractId}'=='${EMPTY}'    Fail    "Deploy Contract Error"
     Set Global Variable    ${gContractId}    ${contractId}
     [Return]    ${reqId}

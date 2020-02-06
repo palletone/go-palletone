@@ -31,7 +31,7 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'importRawKey',
 			call: 'personal_importRawKey',
-			params: 2
+			params: 2,
 		}),
 		new web3._extend.Method({
 			name: 'sign',
@@ -40,16 +40,26 @@ web3._extend({
 			inputFormatter: [null, null, null]
 		}),
 		new web3._extend.Method({
+			name: 'signHex',
+			call: 'personal_signHex',
+			params: 3,
+			inputFormatter: [null, null, null]
+		}),
+		new web3._extend.Method({
 			name: 'openWallet',
 			call: 'personal_openWallet',
-			params: 2
+			params: 2,
 		}),
-		//new web3._extend.Method({
-		//	name: 'deriveAccount',
-		//	call: 'personal_deriveAccount',
-		//	params: 3
-		//}),
-
+		new web3._extend.Method({
+			name: 'importMnemonic',
+			call: 'personal_importMnemonic',
+			params: 2,
+		}),
+		new web3._extend.Method({
+			name: 'importHdAccountMnemonic',
+			call: 'personal_importHdAccountMnemonic',
+			params: 2,
+		}),
 		new web3._extend.Method({
 			name: 'transferPtn',
 			call: 'personal_transferPtn',
@@ -60,6 +70,18 @@ web3._extend({
 			call: 'personal_newAccount',
 			params: 1,
 			inputFormatter: [null]
+		}),
+		new web3._extend.Method({
+			name: 'newHdAccount',
+			call: 'personal_newHdAccount',
+			params: 1,
+			inputFormatter: [null]
+		}),
+		new web3._extend.Method({
+			name: 'getHdAccount',
+			call: 'personal_getHdAccount',
+			params: 3,
+			inputFormatter: [null, null, null]
 		}),
 	   	new web3._extend.Method({
 			name: 'unlockAccount',

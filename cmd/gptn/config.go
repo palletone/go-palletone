@@ -19,6 +19,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
 	"os"
@@ -26,7 +27,7 @@ import (
 	"reflect"
 	"unicode"
 
-	"bytes"
+	"github.com/coocood/freecache"
 	"github.com/naoina/toml"
 	"github.com/palletone/go-palletone/adaptor"
 	"github.com/palletone/go-palletone/cmd/utils"
@@ -43,10 +44,9 @@ import (
 	"github.com/palletone/go-palletone/core/node"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/ptn"
-	"github.com/palletone/go-palletone/txspool"
-	"github.com/palletone/go-palletone/statistics/metrics/prometheus"
-	"github.com/coocood/freecache"
 	"github.com/palletone/go-palletone/ptn/downloader"
+	"github.com/palletone/go-palletone/statistics/metrics/prometheus"
+	"github.com/palletone/go-palletone/txspool"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -271,7 +271,7 @@ func makeConfigNode(ctx *cli.Context, isInConsole bool) (*node.Node, FullConfig)
 	if ctx.GlobalIsSet(utils.EthStatsURLFlag.Name) {
 		cfg.Ptnstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
 	}
-	//utils.SetDashboardConfig(ctx, &cfg.Dashboard)
+
 	//  init node.cache
 	stack.CacheDb = freecache.NewCache(cfg.Dag.DbCache)
 	return stack, cfg

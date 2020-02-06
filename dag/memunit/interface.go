@@ -21,8 +21,8 @@
 package memunit
 
 import (
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
 	common2 "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/txspool"
@@ -61,6 +61,7 @@ type IMemDag interface {
 	//订阅切换主链事件
 	SubscribeSwitchMainChainEvent(ob SwitchMainChainEventFunc)
 	SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription
+	SubscribeSaveStableUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription
 	//关闭
 	Close()
 }

@@ -22,8 +22,8 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core/accounts"
@@ -126,10 +126,12 @@ type Backend interface {
 	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
 	GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error)
+	GetAddrUtxoTxs(addr string) ([]*ptnjson.TxWithUnitInfoJson, error)
 	GetAddrUtxos2(addr string) ([]*ptnjson.UtxoJson, error)
 	GetAddrRawUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAllUtxos() ([]*ptnjson.UtxoJson, error)
 	GetAddressBalanceStatistics(token string, topN int) (*statistics.TokenAddressBalanceJson, error)
+	GetAddressCount() int
 	GetAddrTxHistory(addr string) ([]*ptnjson.TxHistoryJson, error)
 	GetContractInvokeHistory(addr string) ([]*ptnjson.ContractInvokeHistoryJson, error)
 	GetAddrTokenFlow(addr, token string) ([]*ptnjson.TokenFlowJson, error)

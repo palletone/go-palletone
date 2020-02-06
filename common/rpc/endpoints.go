@@ -18,12 +18,14 @@ package rpc
 
 import (
 	"net"
+	"net/http"
 
 	"github.com/palletone/go-palletone/common/log"
 )
 
 // StartHTTPEndpoint starts the HTTP RPC endpoint, configured with cors/vhosts/modules
-func StartHTTPEndpoint(endpoint string, apis []API, modules []string, cors []string, vhosts []string) (net.Listener, *Server, error) {
+func StartHTTPEndpoint(endpoint string, apis []API, modules []string, cors []string,
+	vhosts []string) (net.Listener, *Server, error) {
 	// Generate the whitelist based on the allowed modules
 	// 根据(配置信息)允许的模块生成白名单
 	whitelist := make(map[string]bool)
@@ -103,4 +105,30 @@ func StartIPCEndpoint(ipcEndpoint string, apis []API) (net.Listener, *Server, er
 	}
 	go handler.ServeListener(listener)
 	return listener, handler, nil
+}
+
+// StartHTTPEndpoint starts the HTTP RPC endpoint, configured with cors/vhosts/modules
+func StartHTTPSEndpoint(endpoint string, apis []API, modules []string, cors []string, cert, key string) (
+	*http.Server, error) {
+	// Generate the whitelist based on the allowed modules
+	// 根据(配置信息)允许的模块生成白名单
+	whitelist := make(map[string]bool)
+	for _, module := range modules {
+		whitelist[module] = true
+	}
+	// Register all the APIs exposed by the services
+	// 注册服务公开的所有API
+	handler := NewServer()
+	for _, api := range apis {
+		if whitelist[api.Namespace] || (len(whitelist) == 0 && api.Public) {
+			// 只有这几种情况下才会把这个api进行注册
+			if err := handler.RegisterName(api.Namespace, api.Service); err != nil {
+				return nil, err
+			}
+			log.Debug("HTTP registered", "namespace", api.Namespace)
+		}
+	}
+	//handler.SetSecretKey(secretkey)
+	// All APIs registered, start the HTTP listener
+	return NewHTTPSServer(endpoint, cors, handler, cert, key)
 }

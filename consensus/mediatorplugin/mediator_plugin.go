@@ -24,8 +24,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/rwset"
@@ -79,7 +79,7 @@ type ProductionCondition uint8
 
 // unit生产的状态枚举
 const (
-	Produced           ProductionCondition = iota // 正常生产unit
+	Produced ProductionCondition = iota // 正常生产unit
 	NotSynced
 	NotMyTurn
 	NotTimeYet
@@ -142,7 +142,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 
 	// 整秒调整，四舍五入
 	nowFine := time.Now()
-	now := time.Unix(nowFine.Add(500 * time.Millisecond).Unix(), 0)
+	now := time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
 
 	// 1. 判断是否满足生产的各个条件
 	nextSlotTime := dag.GetSlotTime(1)

@@ -21,13 +21,14 @@
 package ptnjson
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/palletone/go-palletone/contracts/syscontract"
 	"time"
 
-	"encoding/hex"
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/contracts/syscontract"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -56,6 +57,15 @@ type TxWithUnitInfoJson struct {
 	UnitHeight uint64    `json:"unit_height"`
 	Timestamp  time.Time `json:"timestamp"`
 	TxIndex    uint64    `json:"tx_index"`
+}
+
+type TxHashWithUnitInfoJson struct {
+	TxHash      string    `json:"tx_hash"`
+	RequestHash string    `json:"request_hash"`
+	UnitHash    string    `json:"unit_hash"`
+	UnitHeight  uint64    `json:"unit_height"`
+	Timestamp   time.Time `json:"timestamp"`
+	TxIndex     uint64    `json:"tx_index"`
 }
 type TplJson struct {
 	Number       int    `json:"row_number"`

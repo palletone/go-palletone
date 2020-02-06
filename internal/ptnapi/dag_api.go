@@ -25,6 +25,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/rlp"
@@ -36,7 +37,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
-	"strings"
 )
 
 type PublicDagAPI struct {
@@ -432,6 +432,10 @@ func (s *PublicDagAPI) GetAddrUtxos(ctx context.Context, addr string) (string, e
 	return string(result_json), nil
 }
 
+func (s *PublicDagAPI) GetAddrUtxoTxs(ctx context.Context, addr string) ([]*ptnjson.TxWithUnitInfoJson, error) {
+	return s.b.GetAddrUtxoTxs(addr)
+}
+
 func (s *PublicDagAPI) GetTransactionsByTxid(ctx context.Context, txid string) (*ptnjson.GetTxIdResult, error) {
 	tx, err := s.b.GetTxByTxid_back(txid)
 	if err != nil {
@@ -617,4 +621,22 @@ func (s *PrivateDagAPI) CheckUnits(ctx context.Context, assetId string, number i
 func (s *PrivateDagAPI) RebuildAddrTxIndex() error {
 	dag := s.b.Dag()
 	return dag.RebuildAddrTxIndex()
+}
+
+type TxAndStatus struct {
+	Tx     *ptnjson.TxJson
+	Status string
+}
+
+func (s *PrivateDagAPI) GetLocalTx(txId string) (*TxAndStatus, error) {
+	txhash := common.HexToHash(txId)
+	tx, status, err := s.b.Dag().GetLocalTx(txhash)
+	if err != nil {
+		return nil, err
+	}
+	txjson := ptnjson.ConvertTx2FullJson(tx, nil)
+	return &TxAndStatus{
+		Tx:     txjson,
+		Status: status.String(),
+	}, nil
 }

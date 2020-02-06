@@ -64,7 +64,7 @@ const Wallet_JS = `
 		new web3._extend.Method({
 			name: 'createRawTransaction',
 			call: 'wallet_createRawTransaction',
-			params: 4
+			params: 5
 		}),
         new web3._extend.Method({
 		    name: 'sendRawTransaction',
@@ -101,6 +101,18 @@ const Wallet_JS = `
 			call: 'wallet_transferToken',
 			params: 8,
 			inputFormatter: [null,null,null,null,null,null,null,null]
+		}),
+		new web3._extend.Method({
+			name: 'transferTokenSync',
+			call: 'wallet_transferTokenSync',
+			params: 8,
+			inputFormatter: [null,null,null,null,null,null,null,null]
+		}),
+		new web3._extend.Method({
+			name: 'transferToken2',
+			call: 'wallet_transferToken2',
+			params: 9,
+			inputFormatter: [null,null,null,null,null,null,null,null,null]
 		}),
 		new web3._extend.Method({
 			name: 'transferPTN',

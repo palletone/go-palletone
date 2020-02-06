@@ -57,6 +57,9 @@ func (d *Dag) GetActiveMediatorNodes() map[string]*discover.Node {
 			continue
 		}
 		node := med.Node
+		if node == nil {
+			continue
+		}
 		nodes[node.ID.TerminalString()] = node
 	}
 	return nodes
