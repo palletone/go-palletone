@@ -51,7 +51,7 @@ type Support interface {
 	IsSysCCAndNotInvokableExternal(name string) bool
 	// GetTxSimulator returns the transaction simulator ,they are made unique
 	// by way of the supplied txid
-	GetTxSimulator(rwM rwset.TxManager, idag dag.IDag, txId string) (rwset.TxSimulator, error)
+	GetTxSimulator(rwM rwset.TxManager, idag dag.IContractDag, txId string) (rwset.TxSimulator, error)
 
 	IsSysCC(name string) bool
 
@@ -205,7 +205,7 @@ func (e *Endorser) validateProcess(signedProp *pb.SignedProposal) (*validateResu
 
 // ProcessProposal process the Proposal
 //func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedProposal) (*pb.ProposalResponse, error) {
-func (e *Endorser) ProcessProposal(rwM rwset.TxManager, idag dag.IDag, deployId []byte, ctx context.Context,
+func (e *Endorser) ProcessProposal(rwM rwset.TxManager, idag dag.IContractDag, deployId []byte, ctx context.Context,
 	signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, cid *pb.ChaincodeID, tmout time.Duration) (
 	*pb.ProposalResponse, *modules.ContractInvokeResult, error) {
 	log.Debugf("process proposal enter")

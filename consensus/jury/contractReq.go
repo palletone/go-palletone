@@ -22,10 +22,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/palletone/go-palletone/contracts/comm"
 	"math/big"
 	"sync"
 	"time"
+
+	"github.com/palletone/go-palletone/contracts"
+	"github.com/palletone/go-palletone/contracts/comm"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -100,11 +102,11 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 	}
 	isLocal := true //todo
 	if isLocal {
-		if err = p.runContractReq(reqId, nil); err != nil {
+		if err = p.runContractReq(reqId, nil, p.dag); err != nil {
 			return common.Hash{}, nil, err
 		}
 		ctx := p.mtx[reqId]
-		ctx.rstTx, err = p.GenContractSigTransaction(from, "", ctx.rstTx, p.ptn.GetKeyStore())
+		ctx.rstTx, err = p.GenContractSigTransaction(from, "", ctx.rstTx, p.ptn.GetKeyStore(), p.dag.GetUtxoEntry)
 		if err != nil {
 			return common.Hash{}, nil, err
 		}
@@ -417,7 +419,9 @@ func (p *Processor) ContractQuery(id []byte, args [][]byte, timeout time.Duratio
 
 	log.Debugf("ContractQuery, begin to invoke contract:%s", addr.String())
 	rwM, _ := rwset.NewRwSetMgr("query")
-	rst, err := p.contract.Invoke(rwM, chainId, addr.Bytes(), invTxId.String(), args, timeout)
+	ctx := &contracts.ContractProcessContext{RwM: rwM, Dag: p.dag}
+
+	rst, err := p.contract.Invoke(ctx, chainId, addr.Bytes(), invTxId.String(), args, timeout)
 	rwM.Close()
 	if err != nil {
 		log.Errorf("ContractQuery, id[%s], Invoke err:%s", addr.String(), err.Error())

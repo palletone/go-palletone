@@ -24,9 +24,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/palletone/go-palletone/txspool"
 	"strings"
 	"time"
+
+	"github.com/palletone/go-palletone/txspool"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -481,18 +482,6 @@ func forking(ctx context.Context, b Backend) uint64 {
 //	return ""
 //}
 
-// submitTransaction is a helper function that submits tx to txPool and logs a message.
-func submitTransaction(ctx context.Context, b Backend, tx *modules.Transaction) (common.Hash, error) {
-	if tx.IsNewContractInvokeRequest() {
-		reqId, err := b.SendContractInvokeReqTx(tx)
-		return reqId, err
-	}
-
-	if err := b.SendTx(ctx, tx); err != nil {
-		return common.Hash{}, err
-	}
-	return tx.Hash(), nil
-}
 func submitTxs(ctx context.Context, b Backend, txs []*modules.Transaction) []error {
 	errs := b.SendTxs(ctx, txs)
 	if errs != nil {
@@ -1020,7 +1009,7 @@ func (s *PublicTransactionPoolAPI) CreateRawTransaction(ctx context.Context, par
 }*/
 
 //sign rawtranscation
-func SignRawTransaction(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine.AddressGetPubKey, hashFn tokenengine.AddressGetSign, addr common.Address) (ptnjson.SignRawTransactionResult, error) {
+func SignRawTransactionOld(cmd *ptnjson.SignRawTransactionCmd, pubKeyFn tokenengine.AddressGetPubKey, hashFn tokenengine.AddressGetSign, addr common.Address) (ptnjson.SignRawTransactionResult, error) {
 
 	serializedTx, err := decodeHexStr(cmd.RawTx)
 	if err != nil {
@@ -1384,7 +1373,7 @@ func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, f
 
 //sign rawtranscation
 //create raw transction
-/*func (s *PublicTransactionPoolAPI) SignRawTransaction(ctx context.Context, params string, hashtype string, password string, duration *uint64) (ptnjson.SignRawTransactionResult, error) {
+/*func (s *PublicTransactionPoolAPI) signRawTransaction(ctx context.Context, params string, hashtype string, password string, duration *uint64) (ptnjson.SignRawTransactionResult, error) {
 
 	//transaction inputs
 	if params == "" {
@@ -1475,7 +1464,7 @@ func (s *PublicTransactionPoolAPI) BatchSign(ctx context.Context, txid string, f
 	}
 
 	newsign := ptnjson.NewSignRawTransactionCmd(params, &srawinputs, &keys, ptnjson.String(hashtype))
-	result, err := SignRawTransaction(newsign, getPubKeyFn, getSignFn, addr)
+	result, err := signRawTransaction(newsign, getPubKeyFn, getSignFn, addr)
 	if !result.Complete {
 		log.Error("Not complete!!!")
 		for _, e := range result.Errors {

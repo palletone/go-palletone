@@ -91,7 +91,7 @@ func GetSysCCList() (ccInf []cclist.CCInfo, ccCount int, errs error) {
 }
 
 //install but not into db
-func Install(dag dag.IDag, chainID, ccName, ccPath, ccVersion, ccLanguage string) (payload *md.ContractTplPayload, err error) {
+func Install(dag dag.IContractDag, chainID, ccName, ccPath, ccVersion, ccLanguage string) (payload *md.ContractTplPayload, err error) {
 	log.Info("Install enter", "chainID", chainID, "name", ccName, "path", ccPath, "version", ccVersion, "cclanguage", ccLanguage)
 	defer log.Info("Install exit", "chainID", chainID, "name", ccName, "path", ccPath, "version", ccVersion, "cclanguage", ccLanguage)
 
@@ -132,7 +132,9 @@ func Install(dag dag.IDag, chainID, ccName, ccPath, ccVersion, ccLanguage string
 	return payloadUnit, nil
 }
 
-func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
+func Deploy(rwM rwset.TxManager, idag dag.IContractDag, chainID string, templateId []byte,
+	txId string, args [][]byte, timeout time.Duration) (
+	deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
 	log.Info("Deploy enter", "chainID", chainID, "templateId", templateId, "txId", txId)
 	defer log.Info("Deploy exit", "chainID", chainID, "templateId", templateId, "txId", txId)
 	setTimeOut := time.Duration(30) * time.Second
@@ -204,7 +206,7 @@ func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byt
 //timeout:ms
 // ccName can be contract Id
 //func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
-func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
+func Invoke(rwM rwset.TxManager, idag dag.IContractDag, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
 	log.Debugf("Invoke enter")
 	log.Info("Invoke enter", "chainID", chainID, "deployId", deployId, "txid", txid, "timeout", timeout)
 	defer log.Info("Invoke exit", "chainID", chainID, "deployId", deployId, "txid", txid, "timeout", timeout)
@@ -271,7 +273,7 @@ func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte,
 	return unit, nil
 }
 
-func Stop(rwM rwset.TxManager, idag dag.IDag, contractid []byte, chainID string, txid string, deleteImage bool, dontRmCon bool) (*md.ContractStopPayload, error) {
+func Stop(rwM rwset.TxManager, idag dag.IContractDag, contractid []byte, chainID string, txid string, deleteImage bool, dontRmCon bool) (*md.ContractStopPayload, error) {
 	log.Info("Stop enter", "contractid", contractid, "chainID", chainID, "deployId", contractid, "txid", txid)
 	defer log.Info("Stop enter", "contractid", contractid, "chainID", chainID, "deployId", contractid, "txid", txid)
 
@@ -362,7 +364,7 @@ func RestartContainer(idag dag.IDag, chainID string, addr common.Address, txId s
 }
 
 //  调用的时候，若调用完发现磁盘使用超过系统上限，则kill掉并移除
-func removeConWhenOverDisk(containerName string, dag dag.IDag) (sizeRW int64, disk int64, isOver bool) {
+func removeConWhenOverDisk(containerName string, dag dag.IContractDag) (sizeRW int64, disk int64, isOver bool) {
 	log.Debugf("start KillAndRmWhenOver")
 	defer log.Debugf("end KillAndRmWhenOver")
 	client, err := util.NewDockerClient()

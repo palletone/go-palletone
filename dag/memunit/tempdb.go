@@ -21,12 +21,13 @@
 package memunit
 
 import (
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/syndtr/goleveldb/leveldb/iterator"
 	"reflect"
 	"strings"
 	"sync"
+
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/syndtr/goleveldb/leveldb/iterator"
 
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/errors"
@@ -185,11 +186,13 @@ func (db *Tempdb) Get(key []byte) ([]byte, error) {
 	defer db.lock.RUnlock()
 	_, del := db.deleted[string(key)]
 	if del {
+		log.Debugf("deleted key[%x] in tempdb,return error not found", key)
 		return nil, errors.ErrNotFound
 	}
 	if entry, ok := db.kv[string(key)]; ok {
 		return common.CopyBytes(entry), nil
 	}
+	log.Debugf("key[%x] not in tempdb, try inner db", key)
 	return db.db.Get(key)
 }
 

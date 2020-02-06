@@ -33,9 +33,9 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/tokenengine"
 )
 
@@ -246,8 +246,7 @@ func createContractErrorPayloadMsg(tx *modules.Transaction, errIn error) *module
 }
 
 //执行合约命令:install、deploy、invoke、stop，同时只支持一种类型
-func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract, tx *modules.Transaction,
-	ele *modules.ElectionNode, errMsgEnable bool) ([]*modules.Message, error) {
+func runContractCmd(ctx *contracts.ContractProcessContext, tx *modules.Transaction) ([]*modules.Message, error) {
 	if tx == nil || len(tx.Messages()) <= 0 {
 		return nil, errors.New("runContractCmd transaction or msg is nil")
 	}
@@ -267,9 +266,9 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					ccAbi:         reqPay.Abi,
 					ccLanguage:    reqPay.Language,
 				}
-				installResult, err := ContractProcess(rwM, contract, req)
+				installResult, err := ContractProcess(ctx, req)
 				if err != nil {
-					return genContractErrorMsg(tx, err, errMsgEnable)
+					return genContractErrorMsg(tx, err, ctx.ErrMsgEnable)
 				}
 				payload := installResult.(*modules.ContractTplPayload)
 				//payload.AddrHash = req.addrHash
@@ -287,18 +286,18 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					args:       reqPay.Args,
 					timeout:    time.Duration(reqPay.Timeout) * time.Second,
 				}
-				fullArgs, err := handleMsg0(tx, dag, req.args)
+				fullArgs, err := handleMsg0(tx, ctx.Dag, req.args)
 				if err != nil {
 					return nil, err
 				}
 				req.args = fullArgs
-				deployResult, err := ContractProcess(rwM, contract, req)
+				deployResult, err := ContractProcess(ctx, req)
 				if err != nil {
-					return genContractErrorMsg(tx, err, errMsgEnable)
+					return genContractErrorMsg(tx, err, ctx.ErrMsgEnable)
 				}
 				payload := deployResult.(*modules.ContractDeployPayload)
-				if ele != nil {
-					payload.EleNode = *ele
+				if ctx.Ele != nil {
+					payload.EleNode = *ctx.Ele
 				}
 				msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_DEPLOY, payload))
 				return msgs, nil
@@ -315,7 +314,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					timeout:  time.Duration(reqPay.Timeout) * time.Second,
 				}
 
-				fullArgs, err := handleMsg0(tx, dag, req.args)
+				fullArgs, err := handleMsg0(tx, ctx.Dag, req.args)
 				if err != nil {
 					return nil, err
 				}
@@ -325,9 +324,9 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					return nil, err
 				}
 				req.args = newFullArgs
-				invokeResult, err := ContractProcess(rwM, contract, req)
+				invokeResult, err := ContractProcess(ctx, req)
 				if err != nil {
-					return genContractErrorMsg(tx, err, errMsgEnable)
+					return genContractErrorMsg(tx, err, ctx.ErrMsgEnable)
 				}
 				result := invokeResult.(*modules.ContractInvokeResult)
 				payload := modules.NewContractInvokePayload(result.ContractId, result.ReadSet, result.WriteSet,
@@ -335,9 +334,9 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 				if payload != nil {
 					msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_INVOKE, payload))
 				}
-				toContractPayments, err := resultToContractPayments(dag.GetAddr1TokenUtxos, tx.GetRequestTx(), result)
+				toContractPayments, err := resultToContractPayments(ctx.Dag.GetAddr1TokenUtxos, tx.GetRequestTx(), result)
 				if err != nil {
-					return genContractErrorMsg(tx, err, errMsgEnable)
+					return genContractErrorMsg(tx, err, ctx.ErrMsgEnable)
 				}
 				if len(toContractPayments) > 0 {
 					for _, contractPayment := range toContractPayments {
@@ -346,7 +345,7 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 				}
 				cs, err := resultToCoinbase(result)
 				if err != nil {
-					return genContractErrorMsg(tx, err, errMsgEnable)
+					return genContractErrorMsg(tx, err, ctx.ErrMsgEnable)
 				}
 				if len(cs) > 0 {
 					for _, coinbase := range cs {
@@ -365,9 +364,9 @@ func runContractCmd(rwM rwset.TxManager, dag iDag, contract *contracts.Contract,
 					txid:        tx.RequestHash().String(),
 					deleteImage: reqPay.DeleteImage,
 				}
-				stopResult, err := ContractProcess(rwM, contract, req)
+				stopResult, err := ContractProcess(ctx, req)
 				if err != nil {
-					return genContractErrorMsg(tx, err, errMsgEnable)
+					return genContractErrorMsg(tx, err, ctx.ErrMsgEnable)
 				}
 				payload := stopResult.(*modules.ContractStopPayload)
 				msgs = append(msgs, modules.NewMessage(modules.APP_CONTRACT_STOP, payload))
@@ -421,7 +420,7 @@ func contractPayBack(tx *modules.Transaction, addr []byte) []*modules.Message {
 	}
 	return messages
 }
-func handleMsg0(tx *modules.Transaction, dag iDag, reqArgs [][]byte) ([][]byte, error) {
+func handleMsg0(tx *modules.Transaction, dag dag.IContractDag, reqArgs [][]byte) ([][]byte, error) {
 	var txArgs [][]byte
 	invokeInfo := modules.InvokeInfo{}
 	msgs := tx.TxMessages()

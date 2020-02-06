@@ -5,6 +5,8 @@ import (
 	"container/list"
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
@@ -17,7 +19,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
 	errors2 "github.com/pkg/errors"
-	"time"
 )
 
 type TempCC struct {
@@ -177,7 +178,7 @@ func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byt
 	}
 	return cc.Id, unit, err
 }
-func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte, txid string, args [][]byte) (*modules.ContractInvokeResult, error) {
+func Invoke(rwM rwset.TxManager, idag dag.IContractDag, chainID string, deployId []byte, txid string, args [][]byte) (*modules.ContractInvokeResult, error) {
 	log.Info("Invoke enter", "chainID", chainID, "deployId", deployId, "txid", txid)
 	defer log.Info("Invoke exit", "chainID", chainID, "deployId", deployId, "txid", txid)
 	setTimeOut := time.Duration(30) * time.Second

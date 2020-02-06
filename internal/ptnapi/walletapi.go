@@ -17,10 +17,10 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/math"
-	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -126,71 +126,6 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 	result, _ := CreateRawTransaction(arg)
 
 	return result, nil
-}
-func (s *PrivateWalletAPI) buildRawTransferTx(tokenId, from, to string, amount, gasFee decimal.Decimal) (*modules.Transaction, []*modules.UtxoWithOutPoint, error) {
-	//参数检查
-	tokenAsset, err := modules.StringToAsset(tokenId)
-	if err != nil {
-		return nil, nil, err
-	}
-	if !gasFee.IsPositive() {
-		return nil, nil, fmt.Errorf("fee is ZERO ")
-	}
-	//
-	fromAddr, err := common.StringToAddress(from)
-	if err != nil {
-		fmt.Println(err.Error())
-		return nil, nil, err
-	}
-	toAddr, err := common.StringToAddress(to)
-	if err != nil {
-		fmt.Println(err.Error())
-		return nil, nil, err
-	}
-	ptnAmount := uint64(0)
-	ptn := dagconfig.DagConfig.GasToken
-	if tokenId == ptn {
-		ptnAmount = ptnjson.Ptn2Dao(amount)
-	}
-
-	//构造转移PTN的Message0
-	dbUtxos, err := s.b.GetAddrRawUtxos(from)
-	if err != nil {
-		return nil, nil, fmt.Errorf("GetAddrRawUtxos utxo err")
-	}
-	poolTxs, _ := s.b.GetPoolTxsByAddr(from)
-	//if len(poolTxs) == 0 {
-	//       return nil, nil, fmt.Errorf("GetPoolTxsByAddr utxo err")
-	//}
-
-	utxosPTN, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, from, ptn)
-	if err != nil {
-		return nil, nil, fmt.Errorf("SelectUtxoFromDagAndPool utxo err")
-	}
-	feeAmount := ptnjson.Ptn2Dao(gasFee)
-	pay1, usedUtxo1, err := createPayment(fromAddr, toAddr, ptnAmount, feeAmount, utxosPTN)
-	if err != nil {
-		return nil, nil, err
-	}
-	tx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, pay1)})
-	if tokenId == ptn {
-		return tx, usedUtxo1, nil
-	}
-	//构造转移Token的Message1
-	utxosToken, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, from, tokenId)
-	if err != nil {
-		return nil, nil, fmt.Errorf("SelectUtxoFromDagAndPool token utxo err")
-	}
-	tokenAmount := ptnjson.JsonAmt2AssetAmt(tokenAsset, amount)
-	pay2, usedUtxo2, err := createPayment(fromAddr, toAddr, tokenAmount, 0, utxosToken)
-	if err != nil {
-		return nil, nil, err
-	}
-	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay2))
-	//for _, u := range usedUtxo2 {
-	usedUtxo1 = append(usedUtxo1, usedUtxo2...)
-	//}
-	return tx, usedUtxo1, nil
 }
 func createPayment(fromAddr, toAddr common.Address, amountToken uint64, feePTN uint64,
 	utxosPTN map[modules.OutPoint]*modules.Utxo) (*modules.PaymentPayload, []*modules.UtxoWithOutPoint, error) {
@@ -453,7 +388,7 @@ func (s *PrivateWalletAPI) SignRawTransaction(ctx context.Context, params string
 	}
 
 	newsign := ptnjson.NewSignRawTransactionCmd(params, &srawinputs, &keys, ptnjson.String(hashtype))
-	result, err := SignRawTransaction(newsign, getPubKeyFn, getSignFn, addr)
+	result, err := SignRawTransactionOld(newsign, getPubKeyFn, getSignFn, addr)
 	if !result.Complete {
 		log.Error("Not complete!!!")
 		for _, e := range result.Errors {
@@ -486,8 +421,8 @@ func (s *PrivateWalletAPI) MultiSignRawTransaction(ctx context.Context, params, 
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, errors.New("redeemScript is invalid")
 	}
-    bls := tokenengine.Instance.GenerateP2SHLockScript(crypto.Hash160(rs))
-    lockScript := hex.EncodeToString(bls)
+	bls := tokenengine.Instance.GenerateP2SHLockScript(crypto.Hash160(rs))
+	lockScript := hex.EncodeToString(bls)
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
 		//TODO use keystore
 		ks := s.b.GetKeyStore()
@@ -522,7 +457,7 @@ func (s *PrivateWalletAPI) MultiSignRawTransaction(ctx context.Context, params, 
 			//PkScriptHex := trimx(uvu.PkScriptHex)
 			PkScriptHex := trimx(lockScript)
 			input := ptnjson.RawTxInput{Txid: TxHash, Vout: uvu.OutIndex, MessageIndex: uvu.MessageIndex,
-			ScriptPubKey: PkScriptHex, RedeemScript: redeemScript}
+				ScriptPubKey: PkScriptHex, RedeemScript: redeemScript}
 			srawinputs = append(srawinputs, input)
 		}
 	}
@@ -788,7 +723,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 	}
 
 	newsign := ptnjson.NewSignRawTransactionCmd(result, &srawinputs, &keys, ptnjson.String(ALL))
-	signresult, _ := SignRawTransaction(newsign, getPubKeyFn, getSignFn, addr)
+	signresult, _ := SignRawTransactionOld(newsign, getPubKeyFn, getSignFn, addr)
 
 	stx := new(modules.Transaction)
 
@@ -1191,7 +1126,7 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 	}
 
 	newsign := ptnjson.NewSignRawTransactionCmd(result, &srawinputs, &keys, ptnjson.String(ALL))
-	signresult, _ := SignRawTransaction(newsign, getPubKeyFn, getSignFn, addr)
+	signresult, _ := SignRawTransactionOld(newsign, getPubKeyFn, getSignFn, addr)
 
 	fmt.Println(signresult)
 	stx := new(modules.Transaction)
@@ -1311,54 +1246,29 @@ func (s *PrivateWalletAPI) unlockKS(addr common.Address, password string, durati
 }
 
 func (s *PrivateWalletAPI) TransferPtn(ctx context.Context, from string, to string,
-	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint64) (common.Hash, error) {
+	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration time.Duration) (common.Hash, error) {
 	gasToken := dagconfig.DagConfig.GasToken
 	return s.TransferToken(ctx, gasToken, from, to, amount, fee, Extra, password, duration)
 }
 
 func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from string, to string,
-	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint64) (common.Hash, error) {
-	rawTx, usedUtxo, err := s.buildRawTransferTx(asset, from, to, amount, fee)
+	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration time.Duration) (common.Hash, error) {
+	//1. build payment tx
+	rawTx, usedUtxo, err := buildRawTransferTx(s.b, asset, from, to, amount, fee)
 	if err != nil {
 		return common.Hash{}, err
 	}
+	//2. append data payload
 	if Extra != "" {
 		textPayload := new(modules.DataPayload)
 		textPayload.Reference = []byte(asset)
 		textPayload.MainData = []byte(Extra)
 		rawTx.AddMessage(modules.NewMessage(modules.APP_DATA, textPayload))
 	}
-	//lockscript
-	getPubKeyFn := func(addr common.Address) ([]byte, error) {
-		//TODO use keystore
-		ks := s.b.GetKeyStore()
-		return ks.GetPublicKey(addr)
-	}
-	//sign tx
-	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
-		ks := s.b.GetKeyStore()
-		return ks.SignMessage(addr, msg)
-	}
-	utxoLockScripts := make(map[modules.OutPoint][]byte)
-	for _, utxo := range usedUtxo {
-		utxoLockScripts[utxo.OutPoint] = utxo.PkScript
-	}
-	fromAddr, err := common.StringToAddress(from)
-	if err != nil {
-		return common.Hash{}, err
-	}
-	err = s.unlockKS(fromAddr, password, duration)
-	if err != nil {
-		return common.Hash{}, err
-	}
-	//3.
-	_, err = tokenengine.Instance.SignTxAllPaymentInput(rawTx, 1, utxoLockScripts, nil, getPubKeyFn, getSignFn)
-	if err != nil {
-		return common.Hash{}, err
-	}
-	txJson, _ := json.Marshal(rawTx)
-	log.DebugDynamic(func() string { return "SignedTx:" + string(txJson) })
-	//4.
+	//3. sign
+	ks := s.b.GetKeyStore()
+	signRawTransaction(rawTx, ks, from, password, duration, 1, usedUtxo)
+	//4. send
 	return submitTransaction(ctx, s.b, rawTx)
 }
 
@@ -1366,7 +1276,7 @@ func (s *PrivateWalletAPI) CreateProofOfExistenceTx(ctx context.Context, addr st
 	mainData, extraData, reference string, password string) (common.Hash, error) {
 	gasToken := dagconfig.DagConfig.GasToken
 	ptn1 := decimal.New(1, -2)
-	rawTx, usedUtxo, err := s.buildRawTransferTx(gasToken, addr, addr, decimal.New(0, 0), ptn1)
+	rawTx, usedUtxo, err := buildRawTransferTx(s.b, gasToken, addr, addr, decimal.New(0, 0), ptn1)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -1417,7 +1327,7 @@ func (s *PrivateWalletAPI) CreateTraceability(ctx context.Context, addr, uid, sy
 	str := "[{\"TokenID\":\"" + uid + "\",\"MetaData\":\"\"}]"
 	gasToken := dagconfig.DagConfig.GasToken
 	ptn1 := decimal.New(1, -1)
-	rawTx, usedUtxo, err := s.buildRawTransferTx(gasToken, addr, addr, decimal.New(0, 0), ptn1)
+	rawTx, usedUtxo, err := buildRawTransferTx(s.b, gasToken, addr, addr, decimal.New(0, 0), ptn1)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -1485,7 +1395,7 @@ func (s *PublicWalletAPI) getFileInfo(filehash string) ([]*ptnjson.ProofOfExiste
 		if err != nil {
 			return nil, err
 		}
-		poe:= ptnjson.ConvertTx2ProofOfExistence(tx)
+		poe := ptnjson.ConvertTx2ProofOfExistence(tx)
 		result = append(result, poe)
 	}
 	return result, nil

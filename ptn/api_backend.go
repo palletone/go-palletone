@@ -34,6 +34,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/consensus/jury"
+	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
@@ -695,7 +696,8 @@ func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, args [][]by
 	timeout time.Duration) ([]byte, error) {
 	log.Debugf("======>ContractInvoke:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
 	//channelId := "palletone"
-	unit, err := b.ptn.contract.Invoke(rwset.RwM, channelId, deployId, txid, args, timeout)
+	ctx := &contracts.ContractProcessContext{RwM: rwset.RwM, Dag: b.Dag()}
+	unit, err := b.ptn.contract.Invoke(ctx, channelId, deployId, txid, args, timeout)
 	if err != nil {
 		return nil, err
 	}

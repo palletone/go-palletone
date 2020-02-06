@@ -10,5 +10,5 @@ import (
 )
 
 type EndorserServer interface {
-	ProcessProposal(rwset.TxManager, dag.IDag, []byte, context.Context, *SignedProposal, *Proposal, string, *ChaincodeID, time.Duration) (*ProposalResponse, *modules.ContractInvokeResult, error)
+	ProcessProposal(rwset.TxManager, dag.IContractDag, []byte, context.Context, *SignedProposal, *Proposal, string, *ChaincodeID, time.Duration) (*ProposalResponse, *modules.ContractInvokeResult, error)
 }

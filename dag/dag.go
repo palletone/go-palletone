@@ -97,6 +97,9 @@ func (d *Dag) IsEmpty() bool {
 	it := d.Db.NewIterator()
 	return !it.Next()
 }
+func (d *Dag) GetDb() ptndb.Database {
+	return d.Db
+}
 
 // return stable unit in dag
 func (d *Dag) CurrentUnit(token modules.AssetId) *modules.Unit {
@@ -1057,6 +1060,7 @@ func (d *Dag) getMemDag(asset modules.AssetId) (memunit.IMemDag, error) {
 	return memdag, nil
 }
 func (d *Dag) SaveTransaction(tx *modules.Transaction) error {
+	log.Debugf("Save req[%s] tx[%s] to db", tx.RequestHash().String(), tx.Hash().String())
 	return d.stableUnitRep.SaveTransaction(tx)
 }
 

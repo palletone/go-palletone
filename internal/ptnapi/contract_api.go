@@ -42,6 +42,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
@@ -239,64 +240,44 @@ func (s *PrivateContractAPI) Ccdeploytx(ctx context.Context, from, to string, am
 }
 
 func (s *PrivateContractAPI) Ccinvoketx(ctx context.Context, from, to string, amount, fee decimal.Decimal,
-	deployId string, param []string, certID string, timeout string) (*ContractDeployRsp, error) {
-	contractAddr, _ := common.StringToAddress(deployId)
-	fromAddr, _ := common.StringToAddress(from)
-	toAddr, _ := common.StringToAddress(to)
-	daoAmount := ptnjson.Ptn2Dao(amount)
-	daoFee := ptnjson.Ptn2Dao(fee)
-	timeout64, _ := strconv.ParseUint(timeout, 10, 64)
-
-	log.Info("Ccinvoketx info:")
-	log.Infof("   fromAddr[%s], toAddr[%s]", fromAddr.String(), toAddr.String())
-	log.Infof("   daoAmount[%d], daoFee[%d]", daoAmount, daoFee)
-	log.Infof("   contractId[%s], certID[%s], timeout[%s]", contractAddr.String(), certID, timeout)
-
-	intCertID := new(big.Int)
-	if len(certID) > 0 {
-		if _, ok := intCertID.SetString(certID, 10); !ok {
-			return &ContractDeployRsp{}, fmt.Errorf("certid is invalid")
-		}
-	}
-
-	log.Infof("   param len[%d]", len(param))
-	args := make([][]byte, len(param))
-	for i, arg := range param {
-		args[i] = []byte(arg)
-		log.Infof("      index[%d], value[%s]\n", i, arg)
-	}
-	reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, daoAmount, daoFee, intCertID, contractAddr, args, uint32(timeout64))
-	//log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(reqId[:]))
-	log.Infof("   reqId[%s]", hex.EncodeToString(reqId[:]))
-	rsp1 := &ContractDeployRsp{
-		ReqId:      hex.EncodeToString(reqId[:]),
-		ContractId: deployId,
-	}
-	return rsp1, err
+	contractAddress string, param []string, certID string, timeout string) (*ContractInvokeRsp, error) {
+	return s.CcinvokeToken(ctx, from, to, dagconfig.DefaultConfig.GasToken, amount, fee, contractAddress, param, timeout)
 }
 
 func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token string, amountToken, fee decimal.Decimal,
-	contractAddress string, param []string) (*ContractInvokeRsp, error) {
+	contractAddress string, param []string, timeout string) (*ContractInvokeRsp, error) {
 	contractAddr, _ := common.StringToAddress(contractAddress)
-	fromAddr, _ := common.StringToAddress(from)
-	toAddr, _ := common.StringToAddress(to)
-	daoFee := ptnjson.Ptn2Dao(fee)
-	asset, err := modules.StringToAsset(token)
+
+	tx, usedUtxo, err := buildRawTransferTx(s.b, token, from, to, amountToken, fee)
 	if err != nil {
-		return nil, errors.New("Invalid asset string:" + token)
+		return nil, err
 	}
-	amountOfToken := asset.Uint64Amount(amountToken)
-	log.Info("CcinvokeToken info:")
-	log.Infof("   fromAddr[%s], toAddr[%s]", fromAddr.String(), toAddr.String())
-	log.Infof("   contractId[%s]", contractAddr.String())
+
 	log.Infof("   param len[%d]", len(param))
 	args := make([][]byte, len(param))
 	for i, arg := range param {
 		args[i] = []byte(arg)
 		log.Infof("      index[%d], value[%s]\n", i, arg)
 	}
-	reqId, err := s.b.ContractInvokeReqTokenTx(fromAddr, toAddr, asset, amountOfToken, daoFee,
-		contractAddr, args, 0)
+	timeout64, _ := strconv.ParseUint(timeout, 10, 64)
+	msgReq := &modules.Message{
+		App: modules.APP_CONTRACT_INVOKE_REQUEST,
+		Payload: &modules.ContractInvokeRequestPayload{
+			ContractId: contractAddr.Bytes(),
+			Args:       args,
+			Timeout:    uint32(timeout64),
+		},
+	}
+	tx.AddMessage(msgReq)
+	//3. sign
+	err = signRawTransaction(tx, s.b.GetKeyStore(), from, "", 0, 1, usedUtxo)
+	if err != nil {
+		return nil, err
+	}
+	//4. send
+	reqId, err := submitTransaction(ctx, s.b, tx)
+	//reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, daoAmount, daoFee, intCertID, contractAddr, args, uint32(timeout64))
+	//log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(reqId[:]))
 	log.Infof("   reqId[%s]", hex.EncodeToString(reqId[:]))
 	rsp1 := &ContractInvokeRsp{
 		ReqId:      hex.EncodeToString(reqId[:]),

@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/event"
 	"github.com/palletone/go-palletone/common/p2p/discover"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/txspool"
@@ -34,7 +35,7 @@ import (
 
 type IDag interface {
 	Close()
-
+	GetDb() ptndb.Database
 	GetCommon(key []byte, stableDb bool) ([]byte, error)
 	GetCommonByPrefix(prefix []byte, stableDb bool) map[string][]byte
 	SaveCommon(key, val []byte) error
@@ -220,4 +221,30 @@ type IDag interface {
 
 	SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription
 	GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract
+}
+
+type IContractDag interface {
+	GetContractStatesById(contractid []byte) (map[string]*modules.ContractStateValue, error)
+	GetContractState(contractid []byte, field string) ([]byte, *modules.StateVersion, error)
+	GetContractStatesByPrefix(contractid []byte, prefix string) (map[string]*modules.ContractStateValue, error)
+
+	UnstableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error)
+	GetGlobalProp() *modules.GlobalProperty
+
+	CurrentHeader(token modules.AssetId) *modules.Header
+	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)
+
+	GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
+	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
+	GetStableTransactionOnly(hash common.Hash) (*modules.Transaction, error)
+	GetStableUnit(hash common.Hash) (*modules.Unit, error)
+	GetStableUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error)
+	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
+	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
+	GetContract(id []byte) (*modules.Contract, error)
+	GetChainParameters() *core.ChainParameters
+	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
+	GetContractTplCode(tplId []byte) ([]byte, error)
+	SaveTransaction(tx *modules.Transaction) error
+	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 }

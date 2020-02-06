@@ -275,13 +275,15 @@ func (validate *Validate) checkTxIsExist(tx *modules.Transaction) bool {
 	}
 	return false
 }
-func (validate *Validate) ContractTxCheck(rwM rwset.TxManager, tx *modules.Transaction) bool {
-	if ContractCheckFun != nil {
-		return ContractCheckFun(rwM, tx)
-	}
-	return true
-}
-func (validate *Validate) SetContractTxCheckFun(checkFun ContractTxCheckFunc) {
-	ContractCheckFun = checkFun
-	log.Debug("SetContractTxCheckFun ok")
-}
+
+//TODO Devin
+//func (validate *Validate) ContractTxCheck(rwM rwset.TxManager, tx *modules.Transaction) bool {
+//	if ContractCheckFun != nil {
+//		return ContractCheckFun(rwM, tx)
+//	}
+//	return true
+//}
+//func (validate *Validate) SetContractTxCheckFun(checkFun ContractTxCheckFunc) {
+//	ContractCheckFun = checkFun
+//	log.Debug("SetContractTxCheckFun ok")
+//}
