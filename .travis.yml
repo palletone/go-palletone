@@ -35,7 +35,7 @@ env:
     - IS_RUN_GASTOKEN=true
     - IS_RUN_MEDIATOR_VOTE=true
     - IS_RUN_APPLICATION=true
-    - IS_RUN_LIGHT=false
+    - IS_RUN_LIGHT=true
     - IS_RUN_BLACKLIST=true
     - IS_RUN_EXCHANGE=true
     - GO111MODULE=on
