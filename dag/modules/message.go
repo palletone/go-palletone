@@ -96,6 +96,9 @@ func NewMessage(app MessageType, payload interface{}) *Message {
 func CopyMessage(cpyMsg *Message) *Message {
 	msg := *cpyMsg
 
+	if msg.Payload == nil{
+		return nil
+	}
 	switch cpyMsg.App {
 	default:
 		msg.Payload = cpyMsg.Payload

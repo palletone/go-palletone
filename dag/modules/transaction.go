@@ -171,6 +171,16 @@ func (tx *Transaction) Messages() []*Message {
 	return msgs
 }
 
+// 深拷贝
+func (tx *Transaction) TxMessages() []*Message {
+	temp_msgs := make([]*Message, 0)
+	for _, msg := range tx.txdata.TxMessages {
+		temp_msgs = append(temp_msgs, CopyMessage(msg))
+	}
+
+	return temp_msgs
+}
+
 // Size returns the true RLP encoded storage UnitSize of the transaction, either by
 // encoding and returning it, or returning a previsouly cached value.
 func (tx *Transaction) Size() common.StorageSize {
@@ -327,15 +337,7 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 	return &AmountAsset{Amount: fees, Asset: feeAsset}, nil
 }
 
-// 深拷贝
-func (tx *Transaction) TxMessages() []*Message {
-	temp_msgs := make([]*Message, 0)
-	for _, msg := range tx.txdata.TxMessages {
-		temp_msgs = append(temp_msgs, CopyMessage(msg))
-	}
 
-	return temp_msgs
-}
 func (tx *Transaction) CertId() []byte { return common.CopyBytes(tx.txdata.CertId) }
 func (tx *Transaction) Illegal() bool  { return tx.txdata.Illegal }
 func (tx *Transaction) SetMessages(msgs []*Message) {
