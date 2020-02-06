@@ -70,7 +70,7 @@ func (p *Trace) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		return p.AddProof(stub, args[0], args[1], args[2], args[3], ownerAddr)
 	case "delProof":
-		if len(args) < 4 {
+		if len(args) < 2 {
 			return shim.Error("need 5 args (Category,Key,OwnerAddress)")
 		}
 		if len(args[0]) == 0 {
@@ -79,11 +79,7 @@ func (p *Trace) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if len(args[1]) == 0 {
 			return shim.Error("Key is empty")
 		}
-		ownerAddr, err := common.StringToAddress(args[2])
-		if err != nil {
-			return shim.Error("Invalid address string:" + args[2])
-		}
-		return p.DelProof(stub, args[0], args[1], ownerAddr)
+		return p.DelProof(stub, args[0], args[1])
 
 	case "getProof":
 		if len(args) < 2 {
@@ -181,20 +177,21 @@ type proof struct {
 
 func (p *Trace) AddProof(stub shim.ChaincodeStubInterface, category, key,
 	value, reference string, ownerAddr common.Address) pb.Response {
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
+	}
 	isAdmin := false
-	result, _ := stub.GetState(symbolsOwner + ownerAddr.String())
+	result, _ := stub.GetState(symbolsOwner + invokeAddr.String())
 	if len(result) == 0 {
 		admin, _ := getAdmin(stub)
-		if admin != ownerAddr.String() {
+		if admin != invokeAddr.String() {
 			return shim.Error("Only Admin or Owner can add")
 		}
 		isAdmin = true
-	}
-
-	//
-	saveResult, _ := stub.GetState(category + SEP + key)
-	if len(saveResult) != 0 {
-		return shim.Success([]byte("This Key has been set"))
+	} else if !ownerAddr.Equal(invokeAddr) {
+		return shim.Error("Owner only can add proof by your address")
 	}
 
 	// save owner
@@ -208,7 +205,7 @@ func (p *Trace) AddProof(stub shim.ChaincodeStubInterface, category, key,
 	// save proof
 	pf := proof{Value: value, Reference: reference, OwnerAddr: ownerAddr.String()}
 	pfJSON, _ := json.Marshal(pf)
-	err := stub.PutState(category+SEP+key, pfJSON)
+	err = stub.PutState(category+SEP+key, pfJSON)
 	if err != nil {
 		return shim.Error("write category + key proof failed: " + err.Error())
 	}
@@ -223,12 +220,16 @@ func (p *Trace) AddProof(stub shim.ChaincodeStubInterface, category, key,
 	return shim.Success([]byte("Success"))
 }
 
-func (p *Trace) DelProof(stub shim.ChaincodeStubInterface, category, key string,
-	ownerAddr common.Address) pb.Response {
-	result, _ := stub.GetState(symbolsOwner + ownerAddr.String())
+func (p *Trace) DelProof(stub shim.ChaincodeStubInterface, category, key string) pb.Response {
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
+		return shim.Error(jsonResp)
+	}
+	result, _ := stub.GetState(symbolsOwner + invokeAddr.String())
 	if len(result) == 0 {
 		admin, _ := getAdmin(stub)
-		if admin != ownerAddr.String() {
+		if admin != invokeAddr.String() {
 			return shim.Error("Only Admin or Owner can delete")
 		}
 	}
@@ -241,7 +242,7 @@ func (p *Trace) DelProof(stub shim.ChaincodeStubInterface, category, key string,
 
 	// save proof
 	var pf proof
-	err := json.Unmarshal(saveResult, &proof{})
+	err = json.Unmarshal(saveResult, &proof{})
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -251,7 +252,7 @@ func (p *Trace) DelProof(stub shim.ChaincodeStubInterface, category, key string,
 	if err != nil {
 		return shim.Error("write category + key proof failed: " + err.Error())
 	}
-	err = stub.PutState(ownerAddr.String()+SEP+category+SEP+key, pfJSON)
+	err = stub.PutState(invokeAddr.String()+SEP+category+SEP+key, pfJSON)
 	if err != nil {
 		return shim.Error("write  ownerAddr proof failed: " + err.Error())
 	}
@@ -350,7 +351,7 @@ func (p *Trace) GetProofByReference(stub shim.ChaincodeStubInterface, reference 
 }
 
 func (p *Trace) SetAdmin(ptnAddr string, stub shim.ChaincodeStubInterface) pb.Response {
-	//only owner can set
+	//only admin can set
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
