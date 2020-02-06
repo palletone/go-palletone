@@ -530,6 +530,15 @@ func (s *PublicDagAPI) HeadUnitNum() uint64 {
 	return uint64(0)
 }
 
+func (s *PublicDagAPI) StableUnitNum() uint64 {
+	dag := s.b.Dag()
+	if dag != nil {
+		gasToken := dagconfig.DagConfig.GetGasToken()
+		return dag.GetIrreversibleUnitNum(gasToken)
+	}
+	return uint64(0)
+}
+
 func (s *PublicDagAPI) GetStableUnit() (*ptnjson.UnitPropertyJson, error) {
 	dag := s.b.Dag()
 	if dag != nil {
