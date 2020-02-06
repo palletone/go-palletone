@@ -252,7 +252,7 @@ func (p *Trace) DelProof(stub shim.ChaincodeStubInterface, category, key string)
 	if err != nil {
 		return shim.Error("write category + key proof failed: " + err.Error())
 	}
-	err = stub.PutState(invokeAddr.String()+SEP+category+SEP+key, pfJSON)
+	err = stub.PutState(pf.OwnerAddr+SEP+category+SEP+key, pfJSON)
 	if err != nil {
 		return shim.Error("write  ownerAddr proof failed: " + err.Error())
 	}
