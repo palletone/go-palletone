@@ -1190,7 +1190,10 @@ func (s *PrivateWalletAPI) TransferTokenSync(ctx context.Context, asset string, 
 	s.lock.Lock()
 	log.Infof("Wait for lock time spend:%s", time.Since(start).String())
 	tx, usedUtxo, err := buildRawTransferTx(s.b, asset, fromStr, toStr, amount, fee, password)
-
+	if err != nil {
+		s.lock.Unlock()
+		return nil, err
+	}
 	//2. append data payload
 	if Extra != "" {
 		textPayload := new(modules.DataPayload)
