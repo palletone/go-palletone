@@ -24,6 +24,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/syscontract/deposit"
 	"github.com/palletone/go-palletone/contracts/syscontract/digitalidcc"
 	"github.com/palletone/go-palletone/contracts/syscontract/exchangecc"
+	"github.com/palletone/go-palletone/contracts/syscontract/packetcc"
 	"github.com/palletone/go-palletone/contracts/syscontract/partitioncc"
 	prc20v1 "github.com/palletone/go-palletone/contracts/syscontract/prc20/v1"
 	prc20v2 "github.com/palletone/go-palletone/contracts/syscontract/prc20/v2"
@@ -201,6 +202,15 @@ var systemChaincodes = []*SystemChaincode{
 		Version:   "ptn001",
 		InitArgs:  [][]byte{},
 		Chaincode: &exchangecc.ExchangeMgr{},
+	},
+	{
+		Id:        syscontract.PacketContractAddress.Bytes(),
+		Enabled:   true,
+		Name:      "packet_sycc",
+		Path:      "./Packet",
+		Version:   "ptn001",
+		InitArgs:  [][]byte{},
+		Chaincode: &packetcc.PacketMgr{},
 	},
 	//TODO add other system chaincodes ...
 }
