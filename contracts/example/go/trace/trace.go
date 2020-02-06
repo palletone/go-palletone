@@ -71,7 +71,7 @@ func (p *Trace) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return p.AddProof(stub, args[0], args[1], args[2], args[3], ownerAddr)
 	case "delProof":
 		if len(args) < 2 {
-			return shim.Error("need 5 args (Category,Key,OwnerAddress)")
+			return shim.Error("need 2 args (Category,Key)")
 		}
 		if len(args[0]) == 0 {
 			return shim.Error("Category is empty")
@@ -242,7 +242,7 @@ func (p *Trace) DelProof(stub shim.ChaincodeStubInterface, category, key string)
 
 	// save proof
 	var pf proof
-	err = json.Unmarshal(saveResult, &proof{})
+	err = json.Unmarshal(saveResult, &pf)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
