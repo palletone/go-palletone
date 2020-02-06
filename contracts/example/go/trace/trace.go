@@ -177,6 +177,7 @@ type proof struct {
 
 func (p *Trace) AddProof(stub shim.ChaincodeStubInterface, category, key,
 	value, reference string, ownerAddr common.Address) pb.Response {
+	//check is 'owner' & 'admin' or not
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
@@ -190,33 +191,86 @@ func (p *Trace) AddProof(stub shim.ChaincodeStubInterface, category, key,
 			return shim.Error("Only Admin or Owner can add")
 		}
 		isAdmin = true
-	} else if !ownerAddr.Equal(invokeAddr) {
-		return shim.Error("Owner only can add proof by your address")
 	}
 
-	// save owner
+	ownerInput := ownerAddr.String()
 	if isAdmin {
-		err := stub.PutState(symbolsOwner+ownerAddr.String(), []byte("owner"))
-		if err != nil {
-			return shim.Error("write " + symbolsOwner + "failed: " + err.Error())
+		result, _ := stub.GetState(symbolsOwner + ownerInput)
+		// save new owner
+		if len(result) == 0 {
+			err := stub.PutState(symbolsOwner+ownerInput, []byte("owner"))
+			if err != nil {
+				return shim.Error("write new owner failed: " + err.Error())
+			}
 		}
 	}
 
-	// save proof
-	pf := proof{Value: value, Reference: reference, OwnerAddr: ownerAddr.String()}
+	//
+	isModify := false
+	var pfOld proof
+	saveResult, _ := stub.GetState(category + SEP + key)
+	if len(saveResult) != 0 { //modify old proof
+		err = json.Unmarshal(saveResult, &pfOld)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		if !isAdmin && pfOld.OwnerAddr != invokeAddr.String() {
+			return shim.Error("Owner only can modify you own proofs")
+		}
+		isModify = true
+	} else { //add new proof
+		if !isAdmin && !ownerAddr.Equal(invokeAddr) {
+			return shim.Error("Owner only can add proof by your address")
+		}
+	}
+
+	//check is put state with 'owner' & 'reference' or not
+	needPutOwner := true
+	needPutReference := true
+	if isModify {
+		if ownerInput != pfOld.OwnerAddr { //transfer
+			if !isAdmin {
+				result, _ := stub.GetState(symbolsOwner + ownerInput)
+				if len(result) == 0 {
+					return shim.Error("OwnerAddress is not owner yet, transfer failed")
+				}
+			}
+			err = stub.DelState(pfOld.OwnerAddr + SEP + category + SEP + key)
+			if err != nil {
+				return shim.Error("delete old ownerAddr proof failed: " + err.Error())
+			}
+		} else {
+			needPutOwner = false
+		}
+		if reference != pfOld.Reference {
+			err = stub.DelState(pfOld.Reference + SEP + category + SEP + key)
+			if err != nil {
+				return shim.Error("delete old reference proof failed: " + err.Error())
+			}
+		} else {
+			needPutReference = false
+		}
+	}
+	//add new proof
+	pf := proof{Value: value, Reference: reference, OwnerAddr: ownerInput}
 	pfJSON, _ := json.Marshal(pf)
 	err = stub.PutState(category+SEP+key, pfJSON)
 	if err != nil {
 		return shim.Error("write category + key proof failed: " + err.Error())
 	}
-	err = stub.PutState(ownerAddr.String()+SEP+category+SEP+key, pfJSON)
-	if err != nil {
-		return shim.Error("write  ownerAddr proof failed: " + err.Error())
+	if needPutOwner {
+		err = stub.PutState(ownerInput+SEP+category+SEP+key, pfJSON)
+		if err != nil {
+			return shim.Error("write ownerAddr proof failed: " + err.Error())
+		}
 	}
-	err = stub.PutState(reference+SEP+category+SEP+key, pfJSON)
-	if err != nil {
-		return shim.Error("write reference proof failed: " + err.Error())
+	if needPutReference {
+		err = stub.PutState(reference+SEP+category+SEP+key, pfJSON)
+		if err != nil {
+			return shim.Error("write reference proof failed: " + err.Error())
+		}
 	}
+
 	return shim.Success([]byte("Success"))
 }
 
