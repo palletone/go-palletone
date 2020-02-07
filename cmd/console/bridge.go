@@ -517,6 +517,37 @@ func (b *bridge) TransferPtn(call otto.FunctionCall) (response otto.Value) {
 
 	return val
 }
+func (b *bridge) GetPublicKey(call otto.FunctionCall) (response otto.Value) {
+	var (
+		addr     = call.Argument(0)
+		password = call.Argument(1)
+	)
+
+	if !addr.IsString() {
+		throwJSException("first argument must be the account")
+	}
+
+	// if the password is not given or null ask the user and ensure password is a string
+	if password.IsUndefined() || password.IsNull() {
+		fmt.Fprintf(b.printer, "Give password for account %s\n", addr)
+		if input, err := b.prompter.PromptPassword("Passphrase: "); err != nil {
+			throwJSException(err.Error())
+		} else {
+			password, _ = otto.ToValue(input)
+		}
+	}
+	if !password.IsString() {
+		throwJSException("third argument must be the password to unlock the account")
+	}
+
+	// Send the request to the backend and return
+	val, err := call.Otto.Call("jptn.getPublicKey", nil, addr, password)
+	if err != nil {
+		throwJSException(err.Error())
+	}
+
+	return val
+}
 
 // Sign is a wrapper around the personal.sign RPC method that uses a non-echoing password
 // prompt to acquire the passphrase and executes the original RPC method (saved in

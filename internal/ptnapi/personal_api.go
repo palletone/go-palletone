@@ -25,7 +25,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-
+	"strconv"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -36,7 +36,6 @@ import (
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 
 	"github.com/shopspring/decimal"
-	"strconv"
 )
 
 // PrivateAccountAPI provides an API to access accounts managed by this node.
@@ -270,12 +269,19 @@ func (s *PrivateAccountAPI) TransferPtn(from, to string, amount decimal.Decimal,
 
 	return s.b.TransferPtn(from, to, amount, text)
 }
-func (s *PrivateAccountAPI) GetPublicKey(address string) (string, error) {
+func (s *PrivateAccountAPI) GetPublicKey(address string, password string) (string, error) {
 	addr, err := common.StringToAddress(address)
 	if err != nil {
 		return "", err
 	}
-	byte, err := s.b.GetKeyStore().GetPublicKey(addr)
+	ks := s.b.GetKeyStore()
+	if !ks.IsUnlock(addr) {
+		err = ks.Unlock(accounts.Account{Address: addr}, password)
+		if err != nil {
+			return "", err
+		}
+	}
+	byte, err := ks.GetPublicKey(addr)
 	if err != nil {
 		return "", err
 	}

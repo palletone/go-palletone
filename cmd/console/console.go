@@ -180,6 +180,9 @@ func (c *Console) init(preload []string) error {
 			if _, err = c.jsre.Run(`jptn.newAccount = personal.newAccount;`); err != nil {
 				return fmt.Errorf("personal.newAccount: %v", err)
 			}
+			if _, err = c.jsre.Run(`jptn.getPublicKey = personal.getPublicKey;`); err != nil {
+				return fmt.Errorf("personal.getPublicKey: %v", err)
+			}
 			if _, err = c.jsre.Run(`jptn.sign = personal.sign;`); err != nil {
 				return fmt.Errorf("personal.sign: %v", err)
 			}
@@ -191,6 +194,7 @@ func (c *Console) init(preload []string) error {
 			obj.Set("unlockAccount", bridge.UnlockAccount)
 			obj.Set("newAccount", bridge.NewAccount)
 			obj.Set("sign", bridge.Sign)
+			obj.Set("getPublicKey", bridge.GetPublicKey)
 			obj.Set("transferPtn", bridge.TransferPtn)
 
 		}

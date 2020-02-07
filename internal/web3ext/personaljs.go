@@ -97,8 +97,8 @@ web3._extend({
         new web3._extend.Method({
 			name: 'getPublicKey',
 			call: 'personal_getPublicKey',
-			params: 1,
-			inputFormatter: [null]
+			params: 2,
+			inputFormatter: [null,null]
 		}),
 		new web3._extend.Method({
 			name: 'convertAccount',
