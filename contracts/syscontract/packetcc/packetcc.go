@@ -292,9 +292,6 @@ func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	pubKey []byte, msg string, signature []byte,
 	pullAddr common.Address,amount string) error {
-	if amount != "0" {
-		msg += amount
-	}
 	//是否已经存在了
 	if isPulledPacket(stub,pubKey,msg) {
 		return errors.New("Packet had been pulled")
@@ -335,8 +332,11 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 			payAmt = packet.GetPullAmount(int64(seed), balanceAmount, 1)
 		}
 	}
-
-	pass, err := crypto.MyCryptoLib.Verify(pubKey, signature, []byte(msg))
+	message := msg
+	if amount != "0" {
+		message +=amount
+	}
+	pass, err := crypto.MyCryptoLib.Verify(pubKey, signature, []byte(message))
 	if err != nil || !pass {
 		return errors.New("validate signature failed")
 	}
@@ -421,6 +421,13 @@ func (p *PacketMgr) RecyclePacket(stub shim.ChaincodeStubInterface, pubKey []byt
 	packet, err := getPacket(stub, pubKey)
 	if err != nil {
 		return err
+	}
+	invokeAddr,err := stub.GetInvokeAddress()
+	if err != nil {
+		return err
+	}
+	if !invokeAddr.Equal(packet.Creator) {
+		return errors.New("should be the creator of the packet")
 	}
 	now, _ := stub.GetTxTimestamp(10)
 	if packet.ExpiredTime > uint64(now.Seconds) { //红包未过期

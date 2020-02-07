@@ -444,6 +444,9 @@ packet4
     Should Be Equal As Strings    ${result["BalanceAmount"]}    894
     sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
+    sleep    3
+    ${pulled}    isPulledPacket    ${tokenHolderPubKey}    3
+    Should Be Equal As Strings    ${pulled}    true
 
 packet5
     [Documentation]    红包过期退回
@@ -471,7 +474,7 @@ packet5
     sleep    5
     getBalance    ${twoAddr}
     sleep    10
-    recyclePacket    ${tokenHolder}    ${tokenHolderPubKey}
+    recyclePacket    ${twoAddr}    ${tokenHolderPubKey}
     sleep    3
     ${result}    getPacketInfo    ${tokenHolderPubKey}
     Should Be Equal As Strings    ${result["BalanceAmount"]}    0
@@ -480,7 +483,7 @@ packet5
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sleep    3
     ${amount}    getBalance    ${twoAddr}
-    Should Be Equal As Numbers    ${amount}    9999
+    Should Be Equal As Numbers    ${amount}    9998
     sleep    3
     sign    ${twoAddr}    1
     sleep    3
