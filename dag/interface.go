@@ -130,7 +130,7 @@ type IDag interface {
 	GetActiveMediatorNodes() map[string]*discover.Node
 
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
-	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
+	//GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
 	SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error
 	SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription
 
@@ -232,6 +232,7 @@ type IDag interface {
 }
 
 type IContractDag interface {
+	GetDb() ptndb.Database
 	GetContractStatesById(contractid []byte) (map[string]*modules.ContractStateValue, error)
 	GetContractState(contractid []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesByPrefix(contractid []byte, prefix string) (map[string]*modules.ContractStateValue, error)
@@ -248,7 +249,7 @@ type IContractDag interface {
 	GetStableUnit(hash common.Hash) (*modules.Unit, error)
 	GetStableUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error)
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
-	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
+	//GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
 	GetContract(id []byte) (*modules.Contract, error)
 	GetChainParameters() *core.ChainParameters
 	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)

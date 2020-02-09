@@ -151,9 +151,19 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 	tutxoRep := common2.NewUtxoRepository4Db(db, tokenEngine)
 	tstateRep := common2.NewStateRepository4Db(db)
 	tpropRep := common2.NewPropRepository4Db(db)
-	memdag.ldbValidator = validator.NewValidate(trep, tutxoRep, tstateRep, tpropRep, cache, saveHeaderOnly)
+	val := validator.NewValidate(trep, tutxoRep, tstateRep, tpropRep, cache, saveHeaderOnly)
+	val.SetBuildTempContractDagFunc(buildTempContractDagFunc)
+	//val.SetContractTxCheckFun()
+	//TODO Devin
+	memdag.ldbValidator = val
+
 	go memdag.loopRebuildTmpDb()
 	return memdag
+}
+func buildTempContractDagFunc(dag validator.IContractDag) validator.IContractDag {
+	tempdb, _ := ptndb.NewTempdb(dag.GetDb())
+	log.Debug("Build a temp db for contract process")
+	return NewContractSupportRepository(tempdb)
 }
 func (chain *MemDag) loopRebuildTmpDb() {
 	rebuild := time.NewTicker(10 * time.Minute)
@@ -179,7 +189,7 @@ func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2
 	defer chain.lock.RUnlock()
 	if chain.GetLastMainChainUnit() == nil {
 		log.Infof("the last_unit is nil, want rebuild memdag repository by db.")
-		tempdb, _ := NewTempdb(chain.db)
+		tempdb, _ := ptndb.NewTempdb(chain.db)
 		trep := common2.NewUnitRepository4Db(tempdb, chain.tokenEngine)
 		tutxoRep := common2.NewUtxoRepository4Db(tempdb, chain.tokenEngine)
 		tstateRep := common2.NewStateRepository4Db(tempdb)
@@ -193,7 +203,7 @@ func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2
 		temp_inter, has := chain.tempdb.Load(last_main_hash)
 		if !has {
 			log.Warnf("the last_unit: %s , is not exist in memdag", last_main_hash.String())
-			tempdb, _ := NewTempdb(chain.db)
+			tempdb, _ := ptndb.NewTempdb(chain.db)
 			trep := common2.NewUnitRepository4Db(tempdb, chain.tokenEngine)
 			tutxoRep := common2.NewUtxoRepository4Db(tempdb, chain.tokenEngine)
 			tstateRep := common2.NewStateRepository4Db(tempdb)
@@ -205,7 +215,7 @@ func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2
 		return tempdb.UnitRep, tempdb.UtxoRep, tempdb.StateRep, tempdb.PropRep, tempdb.UnitProduceRep
 	} else { // 如果lastmainUnit很久没更新了，既快速同步刚结束时，使用stalbeUnit重构tempdb状态
 		if temp_rep.Unit.NumberU64() < chain.GetLastStableUnitHeight() {
-			tempdb, _ := NewTempdb(chain.db)
+			tempdb, _ := ptndb.NewTempdb(chain.db)
 			trep := common2.NewUnitRepository4Db(tempdb, chain.tokenEngine)
 			tutxoRep := common2.NewUtxoRepository4Db(tempdb, chain.tokenEngine)
 			tstateRep := common2.NewStateRepository4Db(tempdb)

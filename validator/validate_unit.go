@@ -211,10 +211,16 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) Validat
 	if has, code := validate.cache.HasUnitValidateResult(unitHash); has {
 		return code
 	}
-	start := time.Now()
-	defer func() {
-		log.Debugf("ValidateUnitExceptGroupSig unit[%s],cost:%s", unitHash.String(), time.Since(start))
-	}()
+	//start := time.Now()
+	////为每个Unit创建一个Tempdb
+	//tempdb,_:=ptndb.NewTempdb(validate.db)
+	//origindb:=validate.db
+	//validate.db=tempdb
+	//defer func() {
+	//	validate.db=origindb
+	//	log.Debugf("ValidateUnitExceptGroupSig unit[%s],cost:%s", unitHash.String(), time.Since(start))
+	//}()
+
 	// 1568197800 2019-09-11 18:30:00 testNet分叉修复后，统一的leveldb
 	// 2019-07-11 12:56:46 849c2cb5c7b3fbd37b2ac5f318716f90613259f2 将洗牌算法的种子由时间戳改成hash
 	// 并在 1.0.1 版本升级后，在主网和测试网中使用新的调度策略

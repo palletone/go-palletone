@@ -81,17 +81,18 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 	//合约的执行结果必须有Jury签名
 	if validate.enableContractSignCheck && isFullTx && tx.IsContractTx() {
 		//TODO Devin
-		//if validate.enableContractRwSetCheck {
-		//	rwMag := rwM
-		//	if rwMag == nil {
-		//		log.Debugf("validate tx not in unit, use new default TxManager")
-		//		rwMag = rwset.DefaultRwSetMgr()
-		//	}
-		//	if !validate.ContractTxCheck(rwMag, tx) { //验证合约执行结果是够正常
-		//		log.Debugf("[%s]ContractTxCheck fail", shortId(reqId.String()))
-		//		return TxValidationCode_INVALID_CONTRACT, txFee
-		//	}
-		//}
+		if validate.enableContractRwSetCheck {
+			//rwMag := rwM
+			//if rwMag == nil {
+			//	log.Debugf("validate tx not in unit, use new default TxManager")
+			//	rwMag = rwset.DefaultRwSetMgr()
+			//}
+			//验证合约执行结果是够正常
+			if validate.contractCheckFun != nil && !validate.contractCheckFun(rwM, validate.contractquery, tx) {
+				log.Debugf("[%s]ContractTxCheck fail", shortId(reqId.String()))
+				return TxValidationCode_INVALID_CONTRACT, txFee
+			}
+		}
 		isResultMsg := false
 		hasSignMsg := false
 		for _, msg := range tx.TxMessages() {

@@ -75,7 +75,7 @@ type IUtxoRepository interface {
 	GetUxto(txin modules.Input) *modules.Utxo
 	UpdateUtxo(unitTime int64, txHash common.Hash, payment *modules.PaymentPayload, msgIndex uint32) error
 	IsUtxoSpent(outpoint *modules.OutPoint) (bool, error)
-	ComputeTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
+	//ComputeTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
 	GetUxtoSetByInputs(txins []modules.Input) (map[modules.OutPoint]*modules.Utxo, uint64)
 	//GetAccountTokens(addr common.Address) (map[string]*modules.AccountToken, error)
 	//WalletBalance(addr common.Address, asset modules.Asset) uint64
@@ -663,9 +663,9 @@ To compute transactions' fees
 // }
 
 //计算一笔Tx中包含多少手续费
-func (repository *UtxoRepository) ComputeTxFee(tx *modules.Transaction) (*modules.AmountAsset, error) {
-	return tx.GetTxFee(repository.utxodb.GetUtxoEntry)
-}
+//func (repository *UtxoRepository) ComputeTxFee(tx *modules.Transaction) (*modules.AmountAsset, error) {
+//	return tx.GetTxFee(repository.utxodb.GetUtxoEntry)
+//}
 
 /**
 计算Mediator的出块奖励

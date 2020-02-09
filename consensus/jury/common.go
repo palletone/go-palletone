@@ -452,7 +452,8 @@ func handleMsg0(tx *modules.Transaction, dag dag.IContractDag, reqArgs [][]byte)
 			}
 		}
 		invokeInfo.InvokeTokens = invokeTokensAll
-		invokeFees, err := dag.GetTxFee(tx)
+		//invokeFees, err := dag.GetTxFee(tx)
+		invokeFees, err := tx.GetTxFee(dag.GetUtxoEntry)
 		if err != nil {
 			return nil, err
 		}
@@ -885,7 +886,8 @@ func calculateContractDeployDuringTime(dag iDag, tx *modules.Transaction) (uint6
 		return 0, errors.New("calculateContractDeployDuringTime, param is nil")
 	}
 	txSize := tx.Size()
-	fees, err := dag.GetTxFee(tx)
+	//fees, err := dag.GetTxFee(tx)
+	fees, err := tx.GetTxFee(dag.GetUtxoEntry)
 	if err != nil {
 		return 0, errors.New("calculateContractDeployDuringTime, GetTxFee fail")
 	}

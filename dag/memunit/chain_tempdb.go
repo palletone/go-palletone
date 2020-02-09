@@ -30,7 +30,7 @@ import (
 )
 
 type ChainTempDb struct {
-	Tempdb         *Tempdb
+	Tempdb         *ptndb.Tempdb
 	UnitRep        comm2.IUnitRepository
 	UtxoRep        comm2.IUtxoRepository
 	StateRep       comm2.IStateRepository
@@ -42,7 +42,7 @@ type ChainTempDb struct {
 
 func NewChainTempDb(db ptndb.Database,
 	cache palletcache.ICache, tokenEngine tokenengine.ITokenEngine, saveHeaderOnly bool) (*ChainTempDb, error) {
-	tempdb, _ := NewTempdb(db)
+	tempdb, _ := ptndb.NewTempdb(db)
 	trep := comm2.NewUnitRepository4Db(tempdb, tokenEngine)
 	tutxoRep := comm2.NewUtxoRepository4Db(tempdb, tokenEngine)
 	tstateRep := comm2.NewStateRepository4Db(tempdb)
@@ -52,6 +52,7 @@ func NewChainTempDb(db ptndb.Database,
 	if saveHeaderOnly { //轻节点，只有Header数据，无法做高级验证
 		val = validator.NewValidate(trep, nil, nil, nil, cache, true)
 	}
+	val.SetBuildTempContractDagFunc(buildTempContractDagFunc)
 	return &ChainTempDb{
 		Tempdb:         tempdb,
 		UnitRep:        trep,

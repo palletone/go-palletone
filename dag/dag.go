@@ -965,9 +965,9 @@ func (d *Dag) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, err
 }
 
 // return the transaction's fee ,
-func (d *Dag) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error) {
-	return d.unstableUtxoRep.ComputeTxFee(pay)
-}
+//func (d *Dag) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error) {
+//	return d.unstableUtxoRep.ComputeTxFee(pay)
+//}
 
 // return all address by the transaction
 func (d *Dag) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error) {

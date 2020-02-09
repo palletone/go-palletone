@@ -1165,21 +1165,6 @@ func (mr *MockIDagMockRecorder) GetAddrByOutPoint(outPoint interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddrByOutPoint", reflect.TypeOf((*MockIDag)(nil).GetAddrByOutPoint), outPoint)
 }
 
-// GetTxFee mocks base method
-func (m *MockIDag) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTxFee", pay)
-	ret0, _ := ret[0].(*modules.AmountAsset)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetTxFee indicates an expected call of GetTxFee
-func (mr *MockIDagMockRecorder) GetTxFee(pay interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxFee", reflect.TypeOf((*MockIDag)(nil).GetTxFee), pay)
-}
-
 // SetUnitGroupSign mocks base method
 func (m *MockIDag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error {
 	m.ctrl.T.Helper()
@@ -2464,21 +2449,6 @@ func (m *MockIContractDag) GetAddrByOutPoint(outPoint *modules.OutPoint) (common
 func (mr *MockIContractDagMockRecorder) GetAddrByOutPoint(outPoint interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddrByOutPoint", reflect.TypeOf((*MockIContractDag)(nil).GetAddrByOutPoint), outPoint)
-}
-
-// GetTxFee mocks base method
-func (m *MockIContractDag) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTxFee", pay)
-	ret0, _ := ret[0].(*modules.AmountAsset)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetTxFee indicates an expected call of GetTxFee
-func (mr *MockIContractDagMockRecorder) GetTxFee(pay interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxFee", reflect.TypeOf((*MockIContractDag)(nil).GetTxFee), pay)
 }
 
 // GetContract mocks base method

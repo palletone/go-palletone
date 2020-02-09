@@ -26,10 +26,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/contracts/utils"
-	"github.com/palletone/go-palletone/dag/memunit"
-
 	"github.com/coocood/freecache"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -37,8 +33,10 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts"
+	"github.com/palletone/go-palletone/contracts/utils"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
@@ -78,7 +76,7 @@ type iDag interface {
 	GetStableUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error)
 	UnstableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error)
 	GetDb() ptndb.Database
-	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
+	//GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
 	GetActiveMediators() []common.Address
@@ -191,6 +189,9 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 
 	cache := freecache.NewCache(20 * 1024 * 1024)
 	val := validator.NewValidate(dag, dag, dag, dag, cache, false)
+	//val.SetContractTxCheckFun(CheckTxContract)
+	//TODO Devin
+
 	p := &Processor{
 		name:         "contractProcessor",
 		ptn:          ptn,
@@ -205,8 +206,6 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 		validator:    val,
 		errMsgEnable: true,
 	}
-	//TODO Devin
-	//val.SetContractTxCheckFun(CheckTxContract)
 	instanceProcessor = p
 	log.Info("NewContractProcessor ok", "local address:", p.local)
 
@@ -535,7 +534,7 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 	ks *keystore.KeyStore) error {
 	setChainId := dag.ContractChainId
 	index := 0
-	tempdb, err := memunit.NewTempdb(p.dag.GetDb())
+	tempdb, err := ptndb.NewTempdb(p.dag.GetDb())
 	if err != nil {
 		log.Errorf("Init tempdb error:%s", err.Error())
 	}
@@ -753,11 +752,11 @@ func (p *Processor) ContractTxCheckForValidator(rwM rwset.TxManager, tx *modules
 			adaInf: make(map[uint32]*AdapterInf),
 		}
 	}
-	err = dag.SaveTransaction(txTmp)
-	if err != nil {
-		log.Errorf("[%s]ContractTxCheckForValidator, SaveTransaction err:%s", shortId(reqId.String()), err.Error())
-		return false
-	}
+	//err = dag.SaveTransaction(txTmp)
+	//if err != nil {
+	//	log.Errorf("[%s]ContractTxCheckForValidator, SaveTransaction err:%s", shortId(reqId.String()), err.Error())
+	//	return false
+	//}
 	p.mtx[reqId].reqTx = reqTx
 	p.mtx[reqId].rstTx = txTmp
 
@@ -1048,7 +1047,7 @@ func (p *Processor) getContractAssignElectionList(tx *modules.Transaction) ([]mo
 	return eels, nil
 }
 
-func CheckTxContract(rwM rwset.TxManager, tx *modules.Transaction, dag dag.IContractDag) bool {
+func CheckTxContract(rwM rwset.TxManager, dag dag.IContractDag, tx *modules.Transaction) bool {
 	if instanceProcessor != nil {
 		return instanceProcessor.ContractTxCheckForValidator(rwM, tx, dag)
 	}

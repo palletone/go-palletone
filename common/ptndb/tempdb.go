@@ -18,7 +18,7 @@
  *
  */
 
-package memunit
+package ptndb
 
 import (
 	"reflect"
@@ -26,7 +26,6 @@ import (
 	"sync"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/syndtr/goleveldb/leveldb/iterator"
 
 	"github.com/palletone/go-palletone/common/log"
@@ -37,11 +36,11 @@ import (
 type Tempdb struct {
 	kv      map[string][]byte //Key value
 	deleted map[string]bool   //Deleted Keys
-	db      ptndb.Database
+	db      Database
 	lock    sync.RWMutex
 }
 
-func NewTempdb(db ptndb.Database) (*Tempdb, error) {
+func NewTempdb(db Database) (*Tempdb, error) {
 	tempdb := &Tempdb{kv: make(map[string][]byte), deleted: make(map[string]bool), db: db}
 	return tempdb, nil
 }
@@ -51,10 +50,6 @@ func (db *Tempdb) Clear() {
 
 	db.kv = make(map[string][]byte)
 	db.deleted = make(map[string]bool)
-}
-
-type KeyValue struct {
-	Key, Value []byte
 }
 
 type TempdbIterator struct {
@@ -146,7 +141,7 @@ func (db *Tempdb) NewIteratorWithPrefix(prefix []byte) iterator.Iterator {
 }
 
 // get prefix
-func getprefix(db ptndb.Database, prefix []byte) map[string][]byte {
+func getprefix(db Database, prefix []byte) map[string][]byte {
 	iter := db.NewIteratorWithPrefix(prefix)
 	result := make(map[string][]byte)
 	for iter.Next() {
@@ -206,16 +201,11 @@ func (db *Tempdb) Delete(key []byte) error {
 
 func (db *Tempdb) Close() {}
 
-func (db *Tempdb) NewBatch() ptndb.Batch {
+func (db *Tempdb) NewBatch() Batch {
 	return &tempBatch{db: db}
 }
 
 func (db *Tempdb) Len() int { return len(db.kv) }
-
-type kv struct {
-	k, v []byte
-	del  bool
-}
 
 type tempBatch struct {
 	db     *Tempdb

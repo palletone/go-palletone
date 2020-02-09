@@ -34,15 +34,14 @@ import (
 	"github.com/palletone/go-palletone/tokenengine"
 )
 
-type ContractTxCheckFunc func(rwM rwset.TxManager, tx *modules.Transaction) bool
-
-var ContractCheckFun ContractTxCheckFunc
-
+type ContractTxCheckFunc func(rwM rwset.TxManager, dag IContractDag, tx *modules.Transaction) bool
+type BuildTempContractDagFunc func(dag IContractDag) IContractDag
 type Validate struct {
 	utxoquery                IUtxoQuery
 	statequery               IStateQuery
 	dagquery                 IDagQuery
 	propquery                IPropQuery
+	contractquery            IContractDag
 	tokenEngine              tokenengine.ITokenEngine
 	cache                    *ValidatorCache
 	enableTxFeeCheck         bool
@@ -50,6 +49,8 @@ type Validate struct {
 	enableDeveloperCheck     bool
 	enableContractRwSetCheck bool
 	light                    bool
+	contractCheckFun         ContractTxCheckFunc      //合约检查函数，通过Set方法注入
+	buildTempDagFunc         BuildTempContractDagFunc //为合约运行构造临时Db的方法，通过Set注入
 }
 
 func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propquery IPropQuery,
@@ -57,11 +58,12 @@ func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propq
 	//cache := freecache.NewCache(20 * 1024 * 1024)
 	vcache := NewValidatorCache(cache)
 	return &Validate{
-		cache:                    vcache,
-		dagquery:                 dagdb,
-		utxoquery:                utxoRep,
-		statequery:               statedb,
-		propquery:                propquery,
+		cache:      vcache,
+		dagquery:   dagdb,
+		utxoquery:  utxoRep,
+		statequery: statedb,
+		propquery:  propquery,
+
 		tokenEngine:              tokenengine.Instance,
 		enableTxFeeCheck:         true,
 		enableContractSignCheck:  true,
@@ -102,6 +104,17 @@ func (validate *Validate) validateTransactions(rwM rwset.TxManager, txs modules.
 	defer validate.setUtxoQuery(oldUtxoQuery)
 	spendOutpointMap := make(map[*modules.OutPoint]bool)
 	var coinbase *modules.Transaction
+	//构造TempDag用于存储Tx的结果
+	validate.contractquery = validate.buildTempDagFunc(validate.contractquery)
+	//tempdb, err := ptndb.NewTempdb(validate.db)
+	//if err != nil {
+	//	log.Errorf("Init tempdb error:%s", err.Error())
+	//}
+	//tempDag := common2.NewUnitRepository4Db(tempdb,tokenengine.Instance)
+	//if err != nil {
+	//	log.Errorf("Init temp dag error:%s", err.Error())
+	//}
+	//validate.contractquery=tempDag
 	for txIndex, tx := range txs {
 		//先检查普通交易并计算手续费，最后检查Coinbase
 		txHash := tx.Hash()
@@ -141,6 +154,8 @@ func (validate *Validate) validateTransactions(rwM rwset.TxManager, txs modules.
 			log.Debugf("Add tx utxo for key:%s", outPoint.String())
 			unitUtxo.Store(outPoint, utxo)
 		}
+		validate.contractquery.SaveTransaction(tx)
+		//tempDag.SaveTransaction(tx)
 		//newUtxoQuery.unitUtxo = unitUtxo
 		//validate.utxoquery = newUtxoQuery
 	}
@@ -276,14 +291,17 @@ func (validate *Validate) checkTxIsExist(tx *modules.Transaction) bool {
 	return false
 }
 
-//TODO Devin
 //func (validate *Validate) ContractTxCheck(rwM rwset.TxManager, tx *modules.Transaction) bool {
-//	if ContractCheckFun != nil {
-//		return ContractCheckFun(rwM, tx)
+//	if validate.contractCheckFun != nil {
+//		return validate.contractCheckFun(rwM,dag, tx)
 //	}
 //	return true
 //}
-//func (validate *Validate) SetContractTxCheckFun(checkFun ContractTxCheckFunc) {
-//	ContractCheckFun = checkFun
-//	log.Debug("SetContractTxCheckFun ok")
-//}
+func (validate *Validate) SetContractTxCheckFun(checkFun ContractTxCheckFunc) {
+	validate.contractCheckFun = checkFun
+	log.Debug("SetContractTxCheckFun ok")
+}
+func (v *Validate) SetBuildTempContractDagFunc(buildFunc BuildTempContractDagFunc) {
+	v.buildTempDagFunc = buildFunc
+	log.Debug("SetBuildTempContractDagFunc ok")
+}

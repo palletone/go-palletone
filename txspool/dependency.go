@@ -25,12 +25,14 @@ import (
 
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/validator"
 )
 
 type dags interface {
+	GetDb() ptndb.Database
 	CurrentUnit(token modules.AssetId) *modules.Unit
 	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
 	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
@@ -40,7 +42,7 @@ type dags interface {
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
 	// getTxfee
-	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
+	//GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
 	GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error)
 	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
 	GetContractJury(contractId []byte) (*modules.ElectionNode, error)
