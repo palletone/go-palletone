@@ -25,7 +25,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-
+	"time"
 	"github.com/ethereum/go-ethereum/rlp"
 
 	"github.com/palletone/go-palletone/common"
@@ -117,6 +117,11 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 			if !ok {
 				return TxValidationCode_INVALID_PAYMMENTLOAD, txFee
 			}
+			time_intel := int64(payment.LockTime) - time.Now().Unix()
+            if time_intel > 0 {
+            
+               return TxValidationCode_ORPHAN, txFee
+            }
 			//如果是合约执行结果中的Payment，只有是完整交易的情况下才检查解锁脚本
 			if msgIdx > requestMsgIndex && !isFullTx {
 				log.Debugf("[%s]tx is processing tx, don't need validate result payment", shortId(reqId.String()))

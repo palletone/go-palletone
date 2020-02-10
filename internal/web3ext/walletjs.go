@@ -66,6 +66,18 @@ const Wallet_JS = `
 			call: 'wallet_createRawTransaction',
 			params: 5
 		}),
+		new web3._extend.Method({
+			name: 'createTxWithOutFee',
+			call: 'wallet_createTxWithOutFee',
+			params: 7,
+			inputFormatter: [null,null,null,null,null,null,null]
+		}),
+		new web3._extend.Method({
+			name: 'signAndFeeTransaction',
+			call: 'wallet_signAndFeeTransaction',
+			params: 7,
+			inputFormatter: [null,null,null,null,null,null,null]
+		}),
         new web3._extend.Method({
 		    name: 'sendRawTransaction',
 		    call: 'wallet_sendRawTransaction',

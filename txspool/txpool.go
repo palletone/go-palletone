@@ -1583,6 +1583,29 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 			pool.orphans.Delete(txhash)
 			continue
 		}
+		for _, msgcopy := range tx.Tx.TxMessages(){
+            if msgcopy.App != modules.APP_PAYMENT {
+                 continue
+            }
+        	if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
+                time_intel := int64(msg.LockTime) - time.Now().Unix()
+                if time_intel < 0 {
+                    tx.Pending = true
+				    tx.UnitHash = hash
+				    tx.UnitIndex = index
+				    tx.IsOrphan = false
+				    pool.all.Store(txhash, tx)
+				    pool.orphans.Delete(txhash)
+				    list = append(list, tx)
+				    total += tx.Tx.Size()
+			        if total > unit_size {
+			            break
+			        }
+                }
+            }
+
+	        }
+	
 		ok, err := pool.ValidateOrphanTx(tx.Tx)
 		if !ok && err == nil {
 			//  更改孤儿交易的状态
@@ -1853,6 +1876,11 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 		if msg.App == modules.APP_PAYMENT {
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			if ok {
+			    time_intel := int64(payment.LockTime)- time.Now().Unix()
+			    if time_intel < 0 {
+				    isOrphan = false
+				    break
+			    }
 				for _, in := range payment.Inputs {
 					_, err1 := pool.GetUtxoEntry(in.PreviousOutPoint)
 					if err1 != nil {
