@@ -337,7 +337,6 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 	return &AmountAsset{Amount: fees, Asset: feeAsset}, nil
 }
 
-
 func (tx *Transaction) CertId() []byte { return common.CopyBytes(tx.txdata.CertId) }
 func (tx *Transaction) Illegal() bool  { return tx.txdata.Illegal }
 func (tx *Transaction) SetMessages(msgs []*Message) {
@@ -663,6 +662,19 @@ func (tx *Transaction) GetRequesterAddr(queryUtxoFunc QueryUtxoFunc, getAddrFunc
 	}
 	return getAddrFunc(utxo.PkScript)
 
+}
+
+// 获取locktime
+func (tx *Transaction) GetLocktime() int64 {
+	for _, msgcopy := range tx.Messages() {
+		if msgcopy.App != APP_PAYMENT {
+			continue
+		}
+		if msg, ok := msgcopy.Payload.(*PaymentPayload); ok {
+			return int64(msg.LockTime)
+		}
+	}
+	return 0
 }
 
 type Addition struct {
