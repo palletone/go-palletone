@@ -280,12 +280,14 @@ func (p *Trace) DelProof(stub shim.ChaincodeStubInterface, category, key string)
 		jsonResp := "{\"Error\":\"Failed to get invoke address\"}"
 		return shim.Error(jsonResp)
 	}
+	isAdmin := false
 	result, _ := stub.GetState(symbolsOwner + invokeAddr.String())
 	if len(result) == 0 {
 		admin, _ := getAdmin(stub)
 		if admin != invokeAddr.String() {
 			return shim.Error("Only Admin or Owner can delete")
 		}
+		isAdmin = true
 	}
 
 	//
@@ -294,12 +296,16 @@ func (p *Trace) DelProof(stub shim.ChaincodeStubInterface, category, key string)
 		return shim.Success([]byte("Not exist"))
 	}
 
-	// save proof
 	var pf proof
 	err = json.Unmarshal(saveResult, &pf)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
+	if !isAdmin && pf.OwnerAddr != invokeAddr.String() {
+		return shim.Error("Owner only can modify you own proofs")
+	}
+
+	// save proof
 	pf.Value = ""
 	pfJSON, _ := json.Marshal(pf)
 	err = stub.PutState(category+SEP+key, pfJSON)

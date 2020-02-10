@@ -672,6 +672,18 @@ func (tx *Transaction) GetContractTxType() (MessageType, error) {
 	}
 	return APP_UNKNOW, fmt.Errorf("GetContractTxType, not contract Tx, txHash[%s]", tx.Hash().String())
 }
+// 获取locktime
+func (tx *Transaction) GetLocktime() int64 {
+	for _, msgcopy := range tx.Messages() {
+		if msgcopy.App != APP_PAYMENT {
+			continue
+		}
+		if msg, ok := msgcopy.Payload.(*PaymentPayload); ok {
+			return int64(msg.LockTime)
+		}
+	}
+	return 0
+}
 
 type Addition struct {
 	Addr   common.Address `json:"address"`

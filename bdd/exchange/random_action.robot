@@ -87,20 +87,41 @@ random_action
     ${exchsn2}=    Get From Dictionary    ${reJson[0]}    ExchangeSn 
     log    ${exchsn2}
 
+    :FOR    ${id}    IN    @{reJson}
+    \    log    ${id}
+    \    ${SaleAmount}=    Get From Dictionary    ${id}    SaleAmount
+    \    ${WantAmount}=    Get From Dictionary    ${id}    WantAmount
+    \    ${exchsn2}=    Get From Dictionary    ${id}    ExchangeSn
+    \    ${rate}=    Evaluate    ${WantAmount}/${SaleAmount}
+    \    ${old_rate}=    Set Variable    ${2000/100}
+    \    run keyword if    '${old_rate}'=='${rate}'    exit for loop
+
+    log    ${exchsn2}
+
     taker    ${Bob}    ${BBBobTokenID}    2000    ${exchsn2}
     sleep    5
     ${alicebobbalance4}=    getBalance    ${Alice}    ${BBBobTokenID}
     log    ${alicebobbalance4}
-    Should Be Equal    ${alicebobbalance4}    15000
+    Should Be Equal    ${alicebobbalance4}    16000
 
     ${bobalicebalance4}=    getBalance    ${Bob}    ${AAAliceTokenID}
     log    ${bobalicebalance4}
-    Should Be Equal    ${bobalicebalance4}    600
+    Should Be Equal    ${bobalicebalance4}    666.6
 
     ${respJson}    addrexchangequery    ${Alice}
     ${reJson}    To Json    ${respJson}
     ${len}    Get Length    ${reJson}
     ${exchsn3}=    Get From Dictionary    ${reJson[0]}    ExchangeSn 
+    log    ${exchsn3}
+    :FOR    ${id}    IN    @{reJson}
+    \    log    ${id}
+    \    ${SaleAmount}=    Get From Dictionary    ${id}    SaleAmount
+    \    ${WantAmount}=    Get From Dictionary    ${id}    WantAmount
+    \    ${exchsn3}=    Get From Dictionary    ${id}    ExchangeSn
+    \    ${rate}=    Evaluate    ${WantAmount}/${SaleAmount}
+    \    ${old_rate}=    Set Variable    ${2000/100}
+    \    run keyword if    '${old_rate}'=='${rate}'    exit for loop
+
     log    ${exchsn3}
 
     ${alicealicebalance}=    getBalance    ${Alice}    ${AAAliceTokenID}
@@ -122,14 +143,14 @@ random_action
     ${respJson}    historyexchangequery
     log    ${respJson}
 
-    taker    ${Bob}    ${BBBobTokenID}    2000    ${exchsn2}
+    taker    ${Bob}    ${BBBobTokenID}    2000    ${exchsn3}
     sleep    5
     ${alicebobbalance5}=    getBalance    ${Alice}    ${BBBobTokenID}
     log    ${alicebobbalance5}
-    Should Be Equal    ${alicebobbalance5}    15000
+    Should Be Equal    ${alicebobbalance5}    16000
     ${bobalicebalance5}=    getBalance    ${Bob}    ${AAAliceTokenID}
     log    ${bobalicebalance5}
-    Should Be Equal    ${bobalicebalance5}    600
+    Should Be Equal    ${bobalicebalance5}    666.6
 
 *** Keywords ***
 getBalance

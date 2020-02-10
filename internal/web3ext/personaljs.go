@@ -94,11 +94,16 @@ web3._extend({
 			call: 'personal_lockAccount',
 			params: 1
 		}),
+		new web3._extend.Method({
+			name: 'isUnlock',
+			call: 'personal_isUnlock',
+			params: 1
+		}),
         new web3._extend.Method({
 			name: 'getPublicKey',
 			call: 'personal_getPublicKey',
-			params: 1,
-			inputFormatter: [null]
+			params: 2,
+			inputFormatter: [null,null]
 		}),
 		new web3._extend.Method({
 			name: 'convertAccount',

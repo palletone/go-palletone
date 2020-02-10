@@ -180,6 +180,9 @@ func (c *Console) init(preload []string) error {
 			if _, err = c.jsre.Run(`jptn.newAccount = personal.newAccount;`); err != nil {
 				return fmt.Errorf("personal.newAccount: %v", err)
 			}
+			if _, err = c.jsre.Run(`jptn.getPublicKey = personal.getPublicKey;`); err != nil {
+				return fmt.Errorf("personal.getPublicKey: %v", err)
+			}
 			if _, err = c.jsre.Run(`jptn.sign = personal.sign;`); err != nil {
 				return fmt.Errorf("personal.sign: %v", err)
 			}
@@ -191,6 +194,7 @@ func (c *Console) init(preload []string) error {
 			obj.Set("unlockAccount", bridge.UnlockAccount)
 			obj.Set("newAccount", bridge.NewAccount)
 			obj.Set("sign", bridge.Sign)
+			obj.Set("getPublicKey", bridge.GetPublicKey)
 			obj.Set("transferPtn", bridge.TransferPtn)
 
 		}
@@ -221,6 +225,11 @@ func (c *Console) init(preload []string) error {
 				return fmt.Errorf("wallet.signRawTransaction: %v", err)
 			}
 			obj.Set("signRawTransaction", bridge.SignRawTransaction)
+
+            if _, err = c.jsre.Run(`jptn.signAndFeeTransaction = wallet.signAndFeeTransaction;`); err != nil {
+				return fmt.Errorf("wallet.signAndFeeTransaction: %v", err)
+			}
+			obj.Set("signAndFeeTransaction", bridge.SignAndFeeTransaction)
 
 			if _, err = c.jsre.Run(`jptn.multiSignRawTransaction = wallet.multiSignRawTransaction;`); err != nil {
 				return fmt.Errorf("wallet.multisignRawTransaction: %v", err)
