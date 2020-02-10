@@ -87,6 +87,17 @@ random_action
     ${exchsn2}=    Get From Dictionary    ${reJson[0]}    ExchangeSn 
     log    ${exchsn2}
 
+    :FOR    ${id}    IN    @{reJson}
+    \    log    ${id}
+    \    ${SaleAmount}=    Get From Dictionary    ${id}    SaleAmount
+    \    ${WantAmount}=    Get From Dictionary    ${id}    WantAmount
+    \    ${exchsn2}=    Get From Dictionary    ${id}    ExchangeSn
+    \    ${rate}=    Evaluate    ${WantAmount}/${SaleAmount}
+    \    ${old_rate}=    Set Variable    ${2000/100}
+    \    run keyword if    '${old_rate}'=='${rate}'    exit for loop
+
+    log    ${exchsn2}
+
     taker    ${Bob}    ${BBBobTokenID}    2000    ${exchsn2}
     sleep    5
     ${alicebobbalance4}=    getBalance    ${Alice}    ${BBBobTokenID}
