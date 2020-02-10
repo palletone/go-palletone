@@ -68,7 +68,10 @@ type ContractInvokeRsp struct {
 	ReqId      string `json:"request_id"`
 	ContractId string `json:"contract_id"`
 }
-
+type ContractStopRsp struct {
+	ReqId      string `json:"request_id"`
+	ContractId string `json:"contract_id"`
+}
 type ContractFeeRsp struct {
 	TxSize         float64 `json:"tx_size(byte)"`
 	TimeOut        uint32  `json:"time_out(s)"`
@@ -527,8 +530,8 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 		prevOut := modules.NewOutPoint(txHash, input.MessageIndex, input.Vout)
 		txInput := modules.NewTxIn(prevOut, []byte{})
 		if c.LockTime != nil && *c.LockTime != 0 {
-		    txInput.Sequence = MaxTxInSequenceNum - 1
-	    }
+			txInput.Sequence = MaxTxInSequenceNum - 1
+		}
 		pload.AddTxIn(txInput)
 	}
 	// Add all transaction outputs to the transaction after performing
