@@ -1132,24 +1132,19 @@ func (rep *UnitRepository) getPayFromAddresses(tx *modules.Transaction) []common
 			for _, input := range pay.Inputs {
 				if input.PreviousOutPoint != nil {
 					var lockScript []byte
-					utxo, err := rep.utxoRepository.GetUtxoEntry(input.PreviousOutPoint)
-					if err == nil {
-						lockScript = utxo.PkScript
-					}
+					txo, err := rep.utxoRepository.GetTxOutput(input.PreviousOutPoint)
 					if err != nil {
-						stxo, err := rep.utxoRepository.GetStxoEntry(input.PreviousOutPoint)
-						if err != nil {
-							if input.PreviousOutPoint.TxHash.IsSelfHash() {
-								out := msgs[input.PreviousOutPoint.MessageIndex].Payload.(*modules.PaymentPayload).Outputs[input.PreviousOutPoint.OutIndex]
-								lockScript = out.PkScript
-							} else {
-								log.Errorf("Cannot find txo by:%s", input.PreviousOutPoint.String())
-								return []common.Address{}
-							}
+						if input.PreviousOutPoint.TxHash.IsSelfHash() {
+							out := msgs[input.PreviousOutPoint.MessageIndex].Payload.(*modules.PaymentPayload).Outputs[input.PreviousOutPoint.OutIndex]
+							lockScript = out.PkScript
 						} else {
-							lockScript = stxo.PkScript
+							log.Errorf("Cannot find txo by:%s", input.PreviousOutPoint.String())
+							return []common.Address{}
 						}
+					} else {
+						lockScript = txo.PkScript
 					}
+
 					addr, _ := rep.tokenEngine.GetAddressFromScript(lockScript)
 					if _, ok := resultMap[addr]; !ok {
 						resultMap[addr] = 1

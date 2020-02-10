@@ -69,6 +69,7 @@ func NewUtxoRepository4Db(db ptndb.Database, tokenEngine tokenengine.ITokenEngin
 type IUtxoRepository interface {
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error)
+	GetTxOutput(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error)
 	GetAddrUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
@@ -88,11 +89,34 @@ type IUtxoRepository interface {
 }
 
 func (repository *UtxoRepository) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
-	return repository.utxodb.GetUtxoEntry(outpoint)
+	data, err := repository.utxodb.GetUtxoEntry(outpoint)
+	log.Warnf("retrieve utxo[%s] get error:%s", outpoint.String(), err.Error())
+	return data, err
 }
 func (repository *UtxoRepository) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error) {
 	return repository.utxodb.GetStxoEntry(outpoint)
 }
+
+//获得消费的和未消费的交易输出
+func (repository *UtxoRepository) GetTxOutput(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	utxo, err := repository.utxodb.GetUtxoEntry(outpoint)
+	if err != nil {
+		stxo, err := repository.utxodb.GetStxoEntry(outpoint)
+		if err != nil {
+			return nil, err
+		}
+		return &modules.Utxo{
+			Amount:    stxo.Amount,
+			Asset:     stxo.Asset,
+			PkScript:  stxo.PkScript,
+			LockTime:  stxo.LockTime,
+			Timestamp: stxo.Timestamp,
+			Flags:     2,
+		}, nil
+	}
+	return utxo, nil
+}
+
 func (repository *UtxoRepository) IsUtxoSpent(outpoint *modules.OutPoint) (bool, error) {
 	return repository.utxodb.IsUtxoSpent(outpoint)
 }
