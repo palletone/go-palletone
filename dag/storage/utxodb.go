@@ -166,6 +166,7 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 
 	err := RetrieveFromRlpBytes(utxodb.db, key, utxo)
 	if err != nil {
+		log.Warnf("retrieve utxo[%s] get error:%s", outpoint.String(), err.Error())
 		if errors.IsNotFoundError(err) {
 			return nil, errors.ErrUtxoNotFound
 		}
