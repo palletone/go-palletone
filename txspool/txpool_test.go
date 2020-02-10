@@ -34,6 +34,7 @@ import (
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/ptndb"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -95,9 +96,11 @@ func (ud *UnitDag4Test) CurrentUnit(token modules.AssetId) *modules.Unit {
 func (ud *UnitDag4Test) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
 	return ud.CurrentUnit(modules.PTNCOIN), nil
 }
-
 func (q *UnitDag4Test) GetMediators() map[common.Address]bool {
 	return nil
+}
+func (q *UnitDag4Test) GetDb() ptndb.Database {
+	return q.Db
 }
 
 func (q *UnitDag4Test) GetJurorReward(jurorAdd common.Address) common.Address {

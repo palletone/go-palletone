@@ -88,7 +88,7 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 			//	rwMag = rwset.DefaultRwSetMgr()
 			//}
 			//验证合约执行结果是够正常
-			if validate.contractCheckFun != nil && !validate.contractCheckFun(rwM, validate.contractquery, tx) {
+			if validate.contractCheckFun != nil && !validate.contractCheckFun(rwM, validate.contractDb, tx) {
 				log.Debugf("[%s]ContractTxCheck fail", shortId(reqId.String()))
 				return TxValidationCode_INVALID_CONTRACT, txFee
 			}

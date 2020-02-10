@@ -41,7 +41,7 @@ type Validate struct {
 	statequery               IStateQuery
 	dagquery                 IDagQuery
 	propquery                IPropQuery
-	contractquery            IContractDag
+	contractDb               IContractDag
 	tokenEngine              tokenengine.ITokenEngine
 	cache                    *ValidatorCache
 	enableTxFeeCheck         bool
@@ -105,7 +105,9 @@ func (validate *Validate) validateTransactions(rwM rwset.TxManager, txs modules.
 	spendOutpointMap := make(map[*modules.OutPoint]bool)
 	var coinbase *modules.Transaction
 	//构造TempDag用于存储Tx的结果
-	validate.contractquery = validate.buildTempDagFunc(validate.contractquery)
+	if validate.buildTempDagFunc != nil {
+		validate.contractDb = validate.buildTempDagFunc(validate.contractDb)
+	}
 	//tempdb, err := ptndb.NewTempdb(validate.db)
 	//if err != nil {
 	//	log.Errorf("Init tempdb error:%s", err.Error())
@@ -114,7 +116,7 @@ func (validate *Validate) validateTransactions(rwM rwset.TxManager, txs modules.
 	//if err != nil {
 	//	log.Errorf("Init temp dag error:%s", err.Error())
 	//}
-	//validate.contractquery=tempDag
+	//validate.contractDb=tempDag
 	for txIndex, tx := range txs {
 		//先检查普通交易并计算手续费，最后检查Coinbase
 		txHash := tx.Hash()
@@ -154,7 +156,9 @@ func (validate *Validate) validateTransactions(rwM rwset.TxManager, txs modules.
 			log.Debugf("Add tx utxo for key:%s", outPoint.String())
 			unitUtxo.Store(outPoint, utxo)
 		}
-		validate.contractquery.SaveTransaction(tx)
+		if validate.contractDb != nil {
+			validate.contractDb.SaveTransaction(tx)
+		}
 		//tempDag.SaveTransaction(tx)
 		//newUtxoQuery.unitUtxo = unitUtxo
 		//validate.utxoquery = newUtxoQuery
