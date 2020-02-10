@@ -113,6 +113,16 @@ random_action
     ${len}    Get Length    ${reJson}
     ${exchsn3}=    Get From Dictionary    ${reJson[0]}    ExchangeSn 
     log    ${exchsn3}
+    :FOR    ${id}    IN    @{reJson}
+    \    log    ${id}
+    \    ${SaleAmount}=    Get From Dictionary    ${id}    SaleAmount
+    \    ${WantAmount}=    Get From Dictionary    ${id}    WantAmount
+    \    ${exchsn3}=    Get From Dictionary    ${id}    ExchangeSn
+    \    ${rate}=    Evaluate    ${WantAmount}/${SaleAmount}
+    \    ${old_rate}=    Set Variable    ${2000/100}
+    \    run keyword if    '${old_rate}'=='${rate}'    exit for loop
+
+    log    ${exchsn3}
 
     ${alicealicebalance}=    getBalance    ${Alice}    ${AAAliceTokenID}
     log    ${alicealicebalance}
@@ -133,7 +143,7 @@ random_action
     ${respJson}    historyexchangequery
     log    ${respJson}
 
-    taker    ${Bob}    ${BBBobTokenID}    2000    ${exchsn2}
+    taker    ${Bob}    ${BBBobTokenID}    2000    ${exchsn3}
     sleep    5
     ${alicebobbalance5}=    getBalance    ${Alice}    ${BBBobTokenID}
     log    ${alicebobbalance5}
