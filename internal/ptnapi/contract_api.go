@@ -44,6 +44,8 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
+	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/common/math"
 )
 
 var (
@@ -309,7 +311,43 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 	}
 	return rsp1, err
 }
+func (s *PrivateContractAPI) CcinvoketxPass(ctx context.Context, from, to string, amount, fee decimal.Decimal,
+	deployId string, param []string, password string, duration *uint64, certID string) (string, error) {
+	contractAddr, _ := common.StringToAddress(deployId)
+	fromAddr, _ := common.StringToAddress(from)
+	toAddr, _ := common.StringToAddress(to)
+	daoAmount := ptnjson.Ptn2Dao(amount)
+	daoFee := ptnjson.Ptn2Dao(fee)
 
+	log.Info("CcinvoketxPass info:")
+	log.Infof("   fromAddr[%s], toAddr[%s]", fromAddr.String(), toAddr.String())
+	log.Infof("   daoAmount[%d], daoFee[%d]", daoAmount, daoFee)
+	log.Infof("   contractId[%s], certID[%s], password[%s]", contractAddr.String(), certID, password)
+
+	intCertID := new(big.Int)
+	if len(certID) > 0 {
+		if _, ok := intCertID.SetString(certID, 10); !ok {
+			return "", fmt.Errorf("certid is invalid")
+		}
+	}
+	log.Infof("   param len[%d]", len(param))
+	args := make([][]byte, len(param))
+	for i, arg := range param {
+		args[i] = []byte(arg)
+		log.Infof("      index[%d], value[%s]\n", i, arg)
+	}
+
+	//2.
+	err := s.unlockKS(fromAddr, password, duration)
+	if err != nil {
+		return "", err
+	}
+
+	reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, daoAmount, daoFee, intCertID, contractAddr, args, 0)
+	log.Infof("   reqId[%s]", hex.EncodeToString(reqId[:]))
+
+	return hex.EncodeToString(reqId[:]), err
+}
 func (s *PrivateContractAPI) Ccstoptx(ctx context.Context, from, to string, amount, fee decimal.Decimal, contractId string) (*ContractStopRsp, error) {
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
@@ -469,6 +507,23 @@ func (s *PrivateContractAPI) Ccstoptxfee(ctx context.Context, from, to string, a
 	}
 	log.Infof("   fee[%f]", afee)
 	return rsp, nil
+}
+func (s *PrivateContractAPI) unlockKS(addr common.Address, password string, duration *uint64) error {
+	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
+	var d time.Duration
+	if duration == nil {
+		d = 300 * time.Second
+	} else if *duration > max {
+		return errors.New("unlock duration too large")
+	} else {
+		d = time.Duration(*duration) * time.Second
+	}
+	ks := s.b.GetKeyStore()
+	err := ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
+	if err != nil {
+		return fmt.Errorf("TimedUnlock Account err: %v", err.Error())
+	}
+	return nil
 }
 
 //  TODO
