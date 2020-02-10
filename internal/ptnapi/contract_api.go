@@ -26,7 +26,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
 	"math/big"
 	"strconv"
 	"strings"
@@ -40,12 +39,13 @@ import (
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/contracts/syscontract/sysconfigcc"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
+	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/common/math"
 )
 
 var (
@@ -294,7 +294,7 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 	amountOfToken := asset.Uint64Amount(amountToken)
 	log.Info("CcinvokeToken info:")
 	log.Infof("   fromAddr[%s], toAddr[%s]", fromAddr.String(), toAddr.String())
-	log.Infof("   assetid[%s]",asset.AssetId.String())
+	log.Infof("   assetid[%s]", asset.AssetId.String())
 	log.Infof("   contractId[%s]", contractAddr.String())
 	log.Infof("   param len[%d]", len(param))
 	args := make([][]byte, len(param))
@@ -311,7 +311,6 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 	}
 	return rsp1, err
 }
-
 func (s *PrivateContractAPI) CcinvoketxPass(ctx context.Context, from, to string, amount, fee decimal.Decimal,
 	deployId string, param []string, password string, duration *uint64, certID string) (string, error) {
 	contractAddr, _ := common.StringToAddress(deployId)
@@ -349,8 +348,7 @@ func (s *PrivateContractAPI) CcinvoketxPass(ctx context.Context, from, to string
 
 	return hex.EncodeToString(reqId[:]), err
 }
-
-func (s *PrivateContractAPI) Ccstoptx(ctx context.Context, from, to string, amount, fee decimal.Decimal, contractId string) (string, error) {
+func (s *PrivateContractAPI) Ccstoptx(ctx context.Context, from, to string, amount, fee decimal.Decimal, contractId string) (*ContractStopRsp, error) {
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
 	daoAmount := ptnjson.Ptn2Dao(amount)
@@ -364,7 +362,11 @@ func (s *PrivateContractAPI) Ccstoptx(ctx context.Context, from, to string, amou
 
 	reqId, err := s.b.ContractStopReqTx(fromAddr, toAddr, daoAmount, daoFee, contractAddr, false)
 	log.Infof("   reqId[%s]", hex.EncodeToString(reqId[:]))
-	return hex.EncodeToString(reqId[:]), err
+	rsp := &ContractStopRsp{
+		ReqId:      hex.EncodeToString(reqId[:]),
+		ContractId: contractId,
+	}
+	return rsp, err
 }
 
 func (s *PrivateContractAPI) Ccinstalltxfee(ctx context.Context, from, to string, amount, fee decimal.Decimal,
@@ -506,7 +508,6 @@ func (s *PrivateContractAPI) Ccstoptxfee(ctx context.Context, from, to string, a
 	log.Infof("   fee[%f]", afee)
 	return rsp, nil
 }
-
 func (s *PrivateContractAPI) unlockKS(addr common.Address, password string, duration *uint64) error {
 	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
 	var d time.Duration
