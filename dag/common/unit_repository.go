@@ -1781,26 +1781,8 @@ func (rep *UnitRepository) GetFileInfoByHash(hashs []common.Hash) ([]*modules.Fi
 
 func (rep *UnitRepository) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error) {
 	rep.lock.RLock()
-	//log.Debug("GetTxFromAddress unitRepository lock.")
-	//defer log.Debug("GetTxFromAddress unitRepository unlock.")
 	defer rep.lock.RUnlock()
-	result := []common.Address{}
-	for _, msg := range tx.TxMessages() {
-		if msg.App == modules.APP_PAYMENT {
-			pay := msg.Payload.(*modules.PaymentPayload)
-			for _, input := range pay.Inputs {
-				if input.PreviousOutPoint != nil {
-					utxo, err := rep.utxoRepository.GetUtxoEntry(input.PreviousOutPoint)
-					if err != nil {
-						return nil, errors.New("Get utxo by " + input.PreviousOutPoint.String() + " error:" + err.Error())
-					}
-					addr, _ := rep.tokenEngine.GetAddressFromScript(utxo.PkScript)
-					result = append(result, addr)
-				}
-			}
-		}
-	}
-	return result, nil
+	return rep.getPayFromAddresses(tx), nil
 }
 func (rep *UnitRepository) RefreshAddrTxIndex() error {
 	rep.lock.RLock()
