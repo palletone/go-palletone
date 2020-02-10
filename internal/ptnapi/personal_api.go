@@ -172,6 +172,14 @@ func (s *PrivateAccountAPI) GetHdAccount(addr, password, userId string) (string,
 	}
 	return acc.Address.String(), nil
 }
+func (s *PrivateAccountAPI) IsUnlock(addrStr string) (bool, error) {
+	ks := s.b.GetKeyStore()
+	addr, err := common.StringToAddress(addrStr)
+	if err != nil {
+		return false, err
+	}
+	return ks.IsUnlock(addr), nil
+}
 
 // fetchKeystore retrives the encrypted keystore from the account manager.
 func fetchKeystore(am *accounts.Manager) *keystore.KeyStore {
