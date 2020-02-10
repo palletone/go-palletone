@@ -90,7 +90,9 @@ type IUtxoRepository interface {
 
 func (repository *UtxoRepository) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	data, err := repository.utxodb.GetUtxoEntry(outpoint)
-	log.Warnf("retrieve utxo[%s] get error:%s", outpoint.String(), err.Error())
+	if err != nil {
+		log.Warnf("retrieve utxo[%s] get error:%s", outpoint.String(), err.Error())
+	}
 	return data, err
 }
 func (repository *UtxoRepository) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error) {
