@@ -59,10 +59,8 @@ func (c *ContractSupportRepository) GetGlobalProp() *modules.GlobalProperty {
 	return gp
 }
 
-func (c *ContractSupportRepository) CurrentHeader(token modules.AssetId) *modules.Header {
-	hash, _, _ := c.propRep.GetNewestUnit(token)
-	header, _ := c.unitRep.GetHeaderByHash(hash)
-	return header
+func (c *ContractSupportRepository) GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
+	return c.propRep.GetNewestUnit(token)
 }
 
 func (c *ContractSupportRepository) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error) {

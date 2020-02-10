@@ -491,6 +491,22 @@ func (mr *MockIDagMockRecorder) GetTxRequesterAddress(tx interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxRequesterAddress", reflect.TypeOf((*MockIDag)(nil).GetTxRequesterAddress), tx)
 }
 
+// GetNewestUnit mocks base method
+func (m *MockIDag) GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNewestUnit", token)
+	ret0, _ := ret[0].(common.Hash)
+	ret1, _ := ret[1].(*modules.ChainIndex)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetNewestUnit indicates an expected call of GetNewestUnit
+func (mr *MockIDagMockRecorder) GetNewestUnit(token interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNewestUnit", reflect.TypeOf((*MockIDag)(nil).GetNewestUnit), token)
+}
+
 // InsertHeaderDag mocks base method
 func (m *MockIDag) InsertHeaderDag(arg0 []*modules.Header) (int, error) {
 	m.ctrl.T.Helper()
@@ -2257,6 +2273,20 @@ func (m *MockIContractDag) EXPECT() *MockIContractDagMockRecorder {
 	return m.recorder
 }
 
+// GetDb mocks base method
+func (m *MockIContractDag) GetDb() ptndb.Database {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDb")
+	ret0, _ := ret[0].(ptndb.Database)
+	return ret0
+}
+
+// GetDb indicates an expected call of GetDb
+func (mr *MockIContractDagMockRecorder) GetDb() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDb", reflect.TypeOf((*MockIContractDag)(nil).GetDb))
+}
+
 // GetContractStatesById mocks base method
 func (m *MockIContractDag) GetContractStatesById(contractid []byte) (map[string]*modules.ContractStateValue, error) {
 	m.ctrl.T.Helper()
@@ -2332,18 +2362,20 @@ func (mr *MockIContractDagMockRecorder) GetGlobalProp() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGlobalProp", reflect.TypeOf((*MockIContractDag)(nil).GetGlobalProp))
 }
 
-// CurrentHeader mocks base method
-func (m *MockIContractDag) CurrentHeader(token modules.AssetId) *modules.Header {
+// GetNewestUnit mocks base method
+func (m *MockIContractDag) GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CurrentHeader", token)
-	ret0, _ := ret[0].(*modules.Header)
-	return ret0
+	ret := m.ctrl.Call(m, "GetNewestUnit", token)
+	ret0, _ := ret[0].(common.Hash)
+	ret1, _ := ret[1].(*modules.ChainIndex)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
-// CurrentHeader indicates an expected call of CurrentHeader
-func (mr *MockIContractDagMockRecorder) CurrentHeader(token interface{}) *gomock.Call {
+// GetNewestUnit indicates an expected call of GetNewestUnit
+func (mr *MockIContractDagMockRecorder) GetNewestUnit(token interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentHeader", reflect.TypeOf((*MockIContractDag)(nil).CurrentHeader), token)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNewestUnit", reflect.TypeOf((*MockIContractDag)(nil).GetNewestUnit), token)
 }
 
 // GetHeaderByNumber mocks base method

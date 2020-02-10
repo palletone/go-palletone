@@ -71,7 +71,7 @@ type IContractDag interface {
 	UnstableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error)
 	GetGlobalProp() *modules.GlobalProperty
 
-	CurrentHeader(token modules.AssetId) *modules.Header
+	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
 	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)
 
 	GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)

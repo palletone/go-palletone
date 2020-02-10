@@ -28,9 +28,8 @@ type IDataQuery interface {
 	UnstableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error)
 	GetGlobalProp() *modules.GlobalProperty
 
-	CurrentHeader(token modules.AssetId) *modules.Header
+	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
 	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)
-
 	GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	GetStableTransactionOnly(hash common.Hash) (*modules.Transaction, error)

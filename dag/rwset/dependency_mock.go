@@ -109,18 +109,20 @@ func (mr *MockIDataQueryMockRecorder) GetGlobalProp() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGlobalProp", reflect.TypeOf((*MockIDataQuery)(nil).GetGlobalProp))
 }
 
-// CurrentHeader mocks base method
-func (m *MockIDataQuery) CurrentHeader(token modules.AssetId) *modules.Header {
+// GetNewestUnit mocks base method
+func (m *MockIDataQuery) GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CurrentHeader", token)
-	ret0, _ := ret[0].(*modules.Header)
-	return ret0
+	ret := m.ctrl.Call(m, "GetNewestUnit", token)
+	ret0, _ := ret[0].(common.Hash)
+	ret1, _ := ret[1].(*modules.ChainIndex)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
-// CurrentHeader indicates an expected call of CurrentHeader
-func (mr *MockIDataQueryMockRecorder) CurrentHeader(token interface{}) *gomock.Call {
+// GetNewestUnit indicates an expected call of GetNewestUnit
+func (mr *MockIDataQueryMockRecorder) GetNewestUnit(token interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentHeader", reflect.TypeOf((*MockIDataQuery)(nil).CurrentHeader), token)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNewestUnit", reflect.TypeOf((*MockIDataQuery)(nil).GetNewestUnit), token)
 }
 
 // GetHeaderByNumber mocks base method

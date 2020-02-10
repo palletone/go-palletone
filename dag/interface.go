@@ -69,7 +69,7 @@ type IDag interface {
 	IsTransactionExist(hash common.Hash) (bool, error)
 	GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error)
 	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
-
+	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
 	// InsertHeaderDag inserts a batch of headers into the local chain.
 	InsertHeaderDag([]*modules.Header) (int, error)
 	HasUnit(hash common.Hash) bool
@@ -240,7 +240,7 @@ type IContractDag interface {
 	UnstableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error)
 	GetGlobalProp() *modules.GlobalProperty
 
-	CurrentHeader(token modules.AssetId) *modules.Header
+	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
 	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)
 
 	GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)

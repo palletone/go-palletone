@@ -65,7 +65,8 @@ type PalletOne interface {
 }
 
 type iDag interface {
-	CurrentHeader(token modules.AssetId) *modules.Header
+	//CurrentHeader(token modules.AssetId) *modules.Header
+	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
 	GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetContractTplCode(tplId []byte) ([]byte, error)

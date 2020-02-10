@@ -117,9 +117,9 @@ func (s *RwSetTxSimulator) GetTimestamp(ns string, rangeNumber uint32) ([]byte, 
 		return nil, err
 	}
 	gasToken := dagconfig.DagConfig.GetGasToken()
-	header := s.dag.CurrentHeader(gasToken)
-	timeIndex := header.GetNumber().Index / uint64(rangeNumber) * uint64(rangeNumber)
-	timeHeader, err := s.dag.GetHeaderByNumber(&modules.ChainIndex{AssetID: header.GetNumber().AssetID, Index: timeIndex})
+	_, index, _ := s.dag.GetNewestUnit(gasToken)
+	timeIndex := index.Index / uint64(rangeNumber) * uint64(rangeNumber)
+	timeHeader, err := s.dag.GetHeaderByNumber(&modules.ChainIndex{AssetID: index.AssetID, Index: timeIndex})
 	if err != nil {
 		return nil, errors.New("GetHeaderByNumber failed" + err.Error())
 	}

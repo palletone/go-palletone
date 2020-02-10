@@ -124,3 +124,6 @@ func (d *Dag) createUnit(mAddr common.Address, txpool txspool.ITxPool,
 	return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool, when,
 		d.unstablePropRep, d.unstableStateRep.GetJurorReward)
 }
+func (d *Dag) GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
+	return d.unstablePropRep.GetNewestUnit(token)
+}
