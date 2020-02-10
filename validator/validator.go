@@ -54,16 +54,17 @@ type Validate struct {
 }
 
 func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propquery IPropQuery,
+	contractDag IContractDag,
 	cache palletcache.ICache, light bool) *Validate {
 	//cache := freecache.NewCache(20 * 1024 * 1024)
 	vcache := NewValidatorCache(cache)
 	return &Validate{
-		cache:      vcache,
-		dagquery:   dagdb,
-		utxoquery:  utxoRep,
-		statequery: statedb,
-		propquery:  propquery,
-
+		cache:                    vcache,
+		dagquery:                 dagdb,
+		utxoquery:                utxoRep,
+		statequery:               statedb,
+		propquery:                propquery,
+		contractDb:               contractDag,
 		tokenEngine:              tokenengine.Instance,
 		enableTxFeeCheck:         true,
 		enableContractSignCheck:  true,
@@ -105,7 +106,7 @@ func (validate *Validate) validateTransactions(rwM rwset.TxManager, txs modules.
 	spendOutpointMap := make(map[*modules.OutPoint]bool)
 	var coinbase *modules.Transaction
 	//构造TempDag用于存储Tx的结果
-	if validate.buildTempDagFunc != nil {
+	if validate.buildTempDagFunc != nil && validate.contractDb != nil {
 		validate.contractDb = validate.buildTempDagFunc(validate.contractDb)
 	}
 	//tempdb, err := ptndb.NewTempdb(validate.db)

@@ -189,7 +189,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 	log.Debug("NewContractProcessor", "contractEleNum", cfgEleNum, "contractSigNum", cfgSigNum)
 
 	cache := freecache.NewCache(20 * 1024 * 1024)
-	val := validator.NewValidate(dag, dag, dag, dag, cache, false)
+	val := validator.NewValidate(dag, dag, dag, dag, dag, cache, false)
 	//val.SetContractTxCheckFun(CheckTxContract)
 	//TODO Devin
 

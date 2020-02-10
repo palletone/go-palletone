@@ -174,7 +174,7 @@ type TxDesc struct {
 func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit dags) *TxPool {
 	tokenEngine := tokenengine.Instance
 	pool := NewTxPool4DI(config, cachedb, unit, tokenEngine, nil)
-	val := validator.NewValidate(unit, pool, unit, unit, cachedb, false)
+	val := validator.NewValidate(unit, pool, unit, unit, nil, cachedb, false)
 	pool.txValidator = val
 	pool.startJournal(config)
 	return pool

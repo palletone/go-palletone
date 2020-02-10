@@ -151,8 +151,10 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 	tutxoRep := common2.NewUtxoRepository4Db(db, tokenEngine)
 	tstateRep := common2.NewStateRepository4Db(db)
 	tpropRep := common2.NewPropRepository4Db(db)
-	val := validator.NewValidate(trep, tutxoRep, tstateRep, tpropRep, cache, saveHeaderOnly)
+	contractDag := NewContractSupportRepository(db)
+	val := validator.NewValidate(trep, tutxoRep, tstateRep, tpropRep, contractDag, cache, saveHeaderOnly)
 	val.SetBuildTempContractDagFunc(buildTempContractDagFunc)
+
 	//val.SetContractTxCheckFun()
 	//TODO Devin
 	memdag.ldbValidator = val

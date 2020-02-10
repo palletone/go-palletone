@@ -51,7 +51,7 @@ func TestValidate_ValidateUnitTxs(t *testing.T) {
 	utxoQuery := &mockUtxoQuery{}
 	mockStatedbQuery := &mockStatedbQuery{}
 	prop := &mockiPropQuery{}
-	validate := NewValidate(dagq, utxoQuery, mockStatedbQuery, prop, newCache(), false)
+	validate := NewValidate(dagq, utxoQuery, mockStatedbQuery, prop, nil, newCache(), false)
 	addr, _ := common.StringToAddress("P1HXNZReTByQHgWQNGMXotMyTkMG9XeEQfX")
 	code := validate.validateTransactions(rwset.DefaultRwSetMgr(), txs, 1564675200, addr)
 	assert.Equal(t, code, TxValidationCode_VALID)
@@ -246,7 +246,7 @@ func TestValidate_ValidateHeader(t *testing.T) {
 
 	header := newHeader(modules.Transactions{tx})
 	stateQ := &mockStatedbQuery{}
-	v := NewValidate(nil, nil, stateQ, nil, newCache(), true)
+	v := NewValidate(nil, nil, stateQ, nil, nil, newCache(), true)
 	vresult := v.validateHeaderExceptGroupSig(header, false)
 	t.Log(vresult)
 	assert.Equal(t, vresult, TxValidationCode_VALID)
