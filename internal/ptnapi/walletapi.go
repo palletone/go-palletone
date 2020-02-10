@@ -1124,7 +1124,7 @@ func (s *PrivateWalletAPI) unlockKS(addr common.Address, password string, durati
 }
 
 func (s *PrivateWalletAPI) TransferPtn(ctx context.Context, from string, to string,
-	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration time.Duration) (common.Hash, error) {
+	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *time.Duration) (common.Hash, error) {
 	gasToken := dagconfig.DagConfig.GasToken
 	return s.TransferToken(ctx, gasToken, from, to, amount, fee, Extra, password, duration)
 }
@@ -1155,7 +1155,7 @@ func getRealAddress(ks *keystore.KeyStore, addr string) (common.Address, error) 
 }
 
 func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from string, to string,
-	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration time.Duration) (common.Hash, error) {
+	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *time.Duration) (common.Hash, error) {
 	//1. build payment tx
 	start := time.Now()
 	rawTx, usedUtxo, err := buildRawTransferTx(s.b, asset, from, to, amount, fee, password)
@@ -1184,7 +1184,7 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 
 //转移Token，并确认打包后返回
 func (s *PrivateWalletAPI) TransferTokenSync(ctx context.Context, asset string, fromStr string, toStr string,
-	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration time.Duration) (*ptnjson.TxHashWithUnitInfoJson, error) {
+	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *time.Duration) (*ptnjson.TxHashWithUnitInfoJson, error) {
 	start := time.Now()
 	log.Infof("Received transfer token request from:%s, to:%s,amount:%s", fromStr, toStr, amount.String())
 	s.lock.Lock()

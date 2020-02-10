@@ -269,7 +269,7 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 	}
 	tx.AddMessage(msgReq)
 	//3. sign
-	err = signRawTransaction(tx, s.b.GetKeyStore(), from, "", 0, 1, usedUtxo)
+	err = signRawTransaction(tx, s.b.GetKeyStore(), from, "", nil, 1, usedUtxo)
 	if err != nil {
 		return nil, err
 	}
