@@ -91,11 +91,11 @@ random_action
     sleep    5
     ${alicebobbalance4}=    getBalance    ${Alice}    ${BBBobTokenID}
     log    ${alicebobbalance4}
-    Should Be Equal    ${alicebobbalance4}    15000
+    Should Be Equal    ${alicebobbalance4}    16000
 
     ${bobalicebalance4}=    getBalance    ${Bob}    ${AAAliceTokenID}
     log    ${bobalicebalance4}
-    Should Be Equal    ${bobalicebalance4}    600
+    Should Be Equal    ${bobalicebalance4}    666.6
 
     ${respJson}    addrexchangequery    ${Alice}
     ${reJson}    To Json    ${respJson}
@@ -126,10 +126,10 @@ random_action
     sleep    5
     ${alicebobbalance5}=    getBalance    ${Alice}    ${BBBobTokenID}
     log    ${alicebobbalance5}
-    Should Be Equal    ${alicebobbalance5}    15000
+    Should Be Equal    ${alicebobbalance5}    16000
     ${bobalicebalance5}=    getBalance    ${Bob}    ${AAAliceTokenID}
     log    ${bobalicebalance5}
-    Should Be Equal    ${bobalicebalance5}    600
+    Should Be Equal    ${bobalicebalance5}    666.6
 
 *** Keywords ***
 getBalance
