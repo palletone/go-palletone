@@ -277,33 +277,53 @@ type GetJurorRewardAddFunc func(jurorAdd common.Address) common.Address
 
 //计算该交易的手续费，基于UTXO，所以传入查询UTXO的函数指针
 func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, error) {
-	msg0 := tx.txdata.TxMessages[0]
-	if msg0.App != APP_PAYMENT {
-		return nil, errors.New("Tx message 0 must a payment payload")
-	}
-	payload := msg0.Payload.(*PaymentPayload)
+	inAmount := uint64(0)
+	outAmount := uint64(0)
+	fees:= uint64(0)
+	fee := uint64(0)
+	//var feeAsset *Asset
+	feeAsset:=NewPTNAsset()
+	for _, msg0 := range tx.txdata.TxMessages {
+		//msg0 := tx.txdata.TxMessages[0]
+		if msg0.App != APP_PAYMENT {
+			//return nil, errors.New("Tx message 0 must a payment payload")
+			continue
+		}
+		payload := msg0.Payload.(*PaymentPayload)
 
 	if payload.IsCoinbase() {
 		return NewAmountAsset(0, NewPTNAsset()), nil
 	}
-	inAmount := uint64(0)
-	outAmount := uint64(0)
-	var feeAsset *Asset
-	for _, txin := range payload.Inputs {
-		utxo, err := queryUtxoFunc(txin.PreviousOutPoint)
-		if err != nil {
-			return nil, fmt.Errorf("Txin(txhash=%s, msgindex=%v, outindex=%v)'s utxo is empty:%s",
-				txin.PreviousOutPoint.TxHash.String(),
-				txin.PreviousOutPoint.MessageIndex,
-				txin.PreviousOutPoint.OutIndex,
-				err.Error())
+	    utxo0, err:= queryUtxoFunc(payload.Inputs[0].PreviousOutPoint)
+	    if err != nil {
+				return nil, fmt.Errorf("Txin(txhash=%s, msgindex=%v, outindex=%v)'s utxo is empty:%s",
+					payload.Inputs[0].PreviousOutPoint.TxHash.String(),
+					payload.Inputs[0].PreviousOutPoint.MessageIndex,
+					payload.Inputs[0].PreviousOutPoint.OutIndex,
+					err.Error())
+			}
+	    if !feeAsset.IsSameAssetId(utxo0.Asset){
+		    	continue
 		}
-		feeAsset = utxo.Asset
-		// check overflow
-		if inAmount+utxo.Amount > (1<<64 - 1) {
-			return nil, fmt.Errorf("Compute fees: txin total overflow")
-		}
-		inAmount += utxo.Amount
+		for _, txin := range payload.Inputs {
+			utxo, err := queryUtxoFunc(txin.PreviousOutPoint)
+			fmt.Printf("%+v\n",utxo)
+			if err != nil {
+				return nil, fmt.Errorf("Txin(txhash=%s, msgindex=%v, outindex=%v)'s utxo is empty:%s",
+					txin.PreviousOutPoint.TxHash.String(),
+					txin.PreviousOutPoint.MessageIndex,
+					txin.PreviousOutPoint.OutIndex,
+					err.Error())
+			}
+			
+		    if err != nil {
+			     return nil, err
+		    }
+			// check overflow
+			if inAmount+utxo.Amount > (1<<64 - 1) {
+				return nil, fmt.Errorf("Compute fees: txin total overflow")
+			}
+			inAmount += utxo.Amount
 
 		//if unitTime > 0 {
 		//	//计算币龄利息
@@ -332,8 +352,9 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 		return nil, fmt.Errorf("Compute fees: tx %s txin amount less than txout amount. amount:%d ,outAmount:%d ",
 			tx.Hash().String(), inAmount, outAmount)
 	}
-	fees := inAmount - outAmount
-
+	    fee = inAmount - outAmount
+        fees+=fee 
+    }
 	return &AmountAsset{Amount: fees, Asset: feeAsset}, nil
 }
 
