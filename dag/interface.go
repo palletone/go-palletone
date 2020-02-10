@@ -148,7 +148,7 @@ type IDag interface {
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	GetTxByReqId(reqid common.Hash) (*modules.TransactionWithUnitInfo, error)
 
-	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
+	//GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
 
 	GetFileInfo(filehash []byte) ([]*modules.FileInfo, error)
 

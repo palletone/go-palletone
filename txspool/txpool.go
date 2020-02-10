@@ -961,12 +961,12 @@ func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*TxPoolTransaction, error) 
 				if msg.App == modules.APP_PAYMENT {
 					payment, ok := msg.Payload.(*modules.PaymentPayload)
 					if ok {
-						if addrs, err := tx.Tx.GetFromAddrs(pool.GetUtxoEntry, pool.tokenEngine.GetAddressFromScript); err == nil {
-							for _, addr := range addrs {
-								addr1 := addr.String()
-								txs[addr1] = append(txs[addr1], tx)
-							}
+						addrs := tx.Tx.GetFromAddrs(pool.GetUtxoEntry, pool.tokenEngine.GetAddressFromScript)
+						for _, addr := range addrs {
+							addr1 := addr.String()
+							txs[addr1] = append(txs[addr1], tx)
 						}
+
 						for _, out := range payment.Outputs {
 							address, err1 := pool.tokenEngine.GetAddressFromScript(out.PkScript[:])
 							if err1 == nil {
@@ -989,12 +989,13 @@ func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*TxPoolTransaction, error) 
 			if msg.App == modules.APP_PAYMENT {
 				payment, ok := msg.Payload.(*modules.PaymentPayload)
 				if ok {
-					if addrs, err := pool.unit.GetTxFromAddress(tx.Tx); err == nil {
-						for _, addr := range addrs {
-							addr1 := addr.String()
-							txs[addr1] = append(txs[addr1], tx)
-						}
+					addrs := tx.Tx.GetFromAddrs(pool.GetUtxoEntry, pool.tokenEngine.GetAddressFromScript)
+					//if addrs, err := pool.unit.GetTxFromAddress(tx.Tx); err == nil {
+					for _, addr := range addrs {
+						addr1 := addr.String()
+						txs[addr1] = append(txs[addr1], tx)
 					}
+					//}
 					for _, out := range payment.Outputs {
 						address, err1 := pool.tokenEngine.GetAddressFromScript(out.PkScript[:])
 						if err1 == nil {

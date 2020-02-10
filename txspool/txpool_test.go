@@ -193,9 +193,6 @@ func (ud *UnitDag4Test) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset
 	return &modules.AmountAsset{}, nil
 }
 
-func (ud *UnitDag4Test) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error) {
-	return nil, nil
-}
 func (ud *UnitDag4Test) GetTransactionOnly(hash common.Hash) (*modules.Transaction, error) {
 	return nil, nil
 }

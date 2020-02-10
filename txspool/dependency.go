@@ -35,7 +35,7 @@ type dags interface {
 	GetDb() ptndb.Database
 	CurrentUnit(token modules.AssetId) *modules.Unit
 	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
-	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
+	//GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	IsTransactionExist(hash common.Hash) (bool, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)

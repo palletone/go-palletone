@@ -99,7 +99,7 @@ type IUnitRepository interface {
 	//获得某个分区上的最新不可逆单元
 	//GetLastIrreversibleUnit(assetID modules.AssetId) (*modules.Unit, error)
 
-	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
+	//GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
 	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
 	//根据现有Tx数据，重新构建地址和Tx的关系索引
 	RefreshAddrTxIndex() error
@@ -1089,7 +1089,8 @@ func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Trans
 		rep.idxdb.SaveAddress(addr)
 	}
 	//Index from address to txid
-	fromAddrs := rep.getPayFromAddresses(tx)
+	fromAddrs := tx.GetFromAddrs(rep.utxoRepository.GetTxOutput, rep.tokenEngine.GetAddressFromScript)
+
 	for _, addr := range fromAddrs {
 		rep.idxdb.SaveAddressTxId(addr, txHash)
 	}
@@ -1123,43 +1124,43 @@ func (rep *UnitRepository) getPayToAddresses(tx *modules.Transaction) []common.A
 	return keys
 }
 
-func (rep *UnitRepository) getPayFromAddresses(tx *modules.Transaction) []common.Address {
-	resultMap := map[common.Address]int{}
-	msgs := tx.TxMessages()
-	for _, msg := range msgs {
-		if msg.App == modules.APP_PAYMENT {
-			pay := msg.Payload.(*modules.PaymentPayload)
-			for _, input := range pay.Inputs {
-				if input.PreviousOutPoint != nil {
-					var lockScript []byte
-					txo, err := rep.utxoRepository.GetTxOutput(input.PreviousOutPoint)
-					if err != nil {
-						if input.PreviousOutPoint.TxHash.IsSelfHash() {
-							out := msgs[input.PreviousOutPoint.MessageIndex].Payload.(*modules.PaymentPayload).Outputs[input.PreviousOutPoint.OutIndex]
-							lockScript = out.PkScript
-						} else {
-							log.Errorf("Cannot find txo by:%s", input.PreviousOutPoint.String())
-							return []common.Address{}
-						}
-					} else {
-						lockScript = txo.PkScript
-					}
-
-					addr, _ := rep.tokenEngine.GetAddressFromScript(lockScript)
-					if _, ok := resultMap[addr]; !ok {
-						resultMap[addr] = 1
-					}
-				}
-
-			}
-		}
-	}
-	keys := make([]common.Address, 0, len(resultMap))
-	for k := range resultMap {
-		keys = append(keys, k)
-	}
-	return keys
-}
+//func (rep *UnitRepository) getPayFromAddresses(tx *modules.Transaction) []common.Address {
+//	resultMap := map[common.Address]int{}
+//	msgs := tx.TxMessages()
+//	for _, msg := range msgs {
+//		if msg.App == modules.APP_PAYMENT {
+//			pay := msg.Payload.(*modules.PaymentPayload)
+//			for _, input := range pay.Inputs {
+//				if input.PreviousOutPoint != nil {
+//					var lockScript []byte
+//					txo, err := rep.utxoRepository.GetTxOutput(input.PreviousOutPoint)
+//					if err != nil {
+//						if input.PreviousOutPoint.TxHash.IsSelfHash() {
+//							out := msgs[input.PreviousOutPoint.MessageIndex].Payload.(*modules.PaymentPayload).Outputs[input.PreviousOutPoint.OutIndex]
+//							lockScript = out.PkScript
+//						} else {
+//							log.Errorf("Cannot find txo by:%s", input.PreviousOutPoint.String())
+//							return []common.Address{}
+//						}
+//					} else {
+//						lockScript = txo.PkScript
+//					}
+//
+//					addr, _ := rep.tokenEngine.GetAddressFromScript(lockScript)
+//					if _, ok := resultMap[addr]; !ok {
+//						resultMap[addr] = 1
+//					}
+//				}
+//
+//			}
+//		}
+//	}
+//	keys := make([]common.Address, 0, len(resultMap))
+//	for k := range resultMap {
+//		keys = append(keys, k)
+//	}
+//	return keys
+//}
 
 func (rep *UnitRepository) RebuildAddrTxIndex() error {
 	log.Info("Star rebuild address tx index. truncate old index data...")
@@ -1779,11 +1780,11 @@ func (rep *UnitRepository) GetFileInfoByHash(hashs []common.Hash) ([]*modules.Fi
 //	return rep.getUnit(hash)
 //}
 
-func (rep *UnitRepository) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error) {
-	rep.lock.RLock()
-	defer rep.lock.RUnlock()
-	return rep.getPayFromAddresses(tx), nil
-}
+//func (rep *UnitRepository) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error) {
+//	rep.lock.RLock()
+//	defer rep.lock.RUnlock()
+//	return rep.getPayFromAddresses(tx), nil
+//}
 func (rep *UnitRepository) RefreshAddrTxIndex() error {
 	rep.lock.RLock()
 	//log.Debugf("RefreshAddrTxIndex unitRepository lock.")

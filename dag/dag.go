@@ -956,9 +956,9 @@ func (d *Dag) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, err
 //}
 
 // return all address by the transaction
-func (d *Dag) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error) {
-	return d.unstableUnitRep.GetTxFromAddress(tx)
-}
+//func (d *Dag) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error) {
+//	return d.unstableUnitRep.GetTxFromAddress(tx)
+//}
 
 // return all transaction with unit info by asset
 func (d *Dag) GetAssetTxHistory(asset *modules.Asset) ([]*modules.TransactionWithUnitInfo, error) {
