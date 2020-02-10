@@ -166,7 +166,13 @@ func (b *bridge) UnlockAccount(call otto.FunctionCall) (response otto.Value) {
 	}
 	return val
 }
-
+func isUnlock(call otto.FunctionCall, account otto.Value) (bool, error) {
+	val, err := call.Otto.Call("personal.isUnlock", nil, account)
+	if err != nil {
+		return false, err
+	}
+	return val.ToBoolean()
+}
 func (b *bridge) GetUnitsByIndex(call otto.FunctionCall) (response otto.Value) {
 	if !call.Argument(0).IsNumber() || !call.Argument(1).IsNumber() {
 		throwJSException("the argument must be number.")
@@ -242,7 +248,7 @@ func (b *bridge) SignAndFeeTransaction(call otto.FunctionCall) (response otto.Va
 	hashtype := call.Argument(1)
 	gasfrom := call.Argument(2)
 	to := call.Argument(3)
-    gasfee := call.Argument(4)
+	gasfee := call.Argument(4)
 	// If password is not given or is the null value, prompt the user for it
 	var passwd otto.Value
 
@@ -268,7 +274,7 @@ func (b *bridge) SignAndFeeTransaction(call otto.FunctionCall) (response otto.Va
 		duration = call.Argument(6)
 	}
 	// Send the request to the backend and return
-	val, err := call.Otto.Call("jptn.signAndFeeTransaction", nil, rawtx, hashtype, gasfrom,to,gasfee,passwd,duration)
+	val, err := call.Otto.Call("jptn.signAndFeeTransaction", nil, rawtx, hashtype, gasfrom, to, gasfee, passwd, duration)
 	if err != nil {
 		throwJSException(err.Error())
 	}
@@ -571,20 +577,21 @@ func (b *bridge) GetPublicKey(call otto.FunctionCall) (response otto.Value) {
 	if !addr.IsString() {
 		throwJSException("first argument must be the account")
 	}
-
-	// if the password is not given or null ask the user and ensure password is a string
-	if password.IsUndefined() || password.IsNull() {
-		fmt.Fprintf(b.printer, "Give password for account %s\n", addr)
-		if input, err := b.prompter.PromptPassword("Passphrase: "); err != nil {
-			throwJSException(err.Error())
-		} else {
-			password, _ = otto.ToValue(input)
+	unlock, _ := isUnlock(call, addr)
+	if !unlock {
+		// if the password is not given or null ask the user and ensure password is a string
+		if password.IsUndefined() || password.IsNull() {
+			fmt.Fprintf(b.printer, "Give password for account %s\n", addr)
+			if input, err := b.prompter.PromptPassword("Passphrase: "); err != nil {
+				throwJSException(err.Error())
+			} else {
+				password, _ = otto.ToValue(input)
+			}
+		}
+		if !password.IsString() {
+			throwJSException("2nd argument must be the password to unlock the account")
 		}
 	}
-	if !password.IsString() {
-		throwJSException("third argument must be the password to unlock the account")
-	}
-
 	// Send the request to the backend and return
 	val, err := call.Otto.Call("jptn.getPublicKey", nil, addr, password)
 	if err != nil {
