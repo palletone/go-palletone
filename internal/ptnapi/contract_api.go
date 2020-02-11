@@ -252,7 +252,7 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 	if pwd != nil {
 		password = *pwd
 	}
-	tx, usedUtxo, err := buildRawTransferTx(s.b, token, from, to, amountToken, fee, password)
+	tx, usedUtxo, err := buildRawTransferTx(s.b, token, from, to, amountToken, fee, password, true)
 	if err != nil {
 		return nil, err
 	}
@@ -282,6 +282,13 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 	}
 	//4. send
 	reqId, err := submitTransaction(ctx, s.b, tx)
+
+	err = s.b.MDag().SaveTransaction(tx)
+	if err != nil {
+		log.Errorf("CcinvokeToken err:%s", err.Error())
+		return nil, err
+	}
+
 	//reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, daoAmount, daoFee, intCertID, contractAddr, args, uint32(timeout64))
 	//log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(reqId[:]))
 	log.Infof("   reqId[%s]", hex.EncodeToString(reqId[:]))

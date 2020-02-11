@@ -83,7 +83,8 @@ type PalletOne struct {
 	networkId     uint64
 	netRPCService *ptnapi.PublicNetAPI
 
-	dag dag.IDag
+	dag  dag.IDag
+	mdag dag.IDag //内存dag，用于记录未完成的交易
 	// DB interfaces
 	unitDb ptndb.Database // Block chain database
 
@@ -138,6 +139,11 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 			return nil, err
 		}
 	}
+	memDag, err := dag.NewDagSimple(localdb)
+	if err != nil {
+		log.Error("PalletOne New", "NewDagSimple err:", err)
+		return nil, err
+	}
 
 	dag, err := dag.NewDag(db, localdb, cache, false)
 	if err != nil {
@@ -157,6 +163,7 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 		shutdownChan:   make(chan bool),
 		networkId:      config.NetworkId,
 		dag:            dag,
+		mdag:           memDag,
 		unitDb:         db,
 		syncCh:         make(chan bool, 1),
 	}
