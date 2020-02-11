@@ -49,6 +49,7 @@ import (
 )
 
 type IUnitRepository interface {
+	GetDb() ptndb.Database
 	GetGenesisUnit() (*modules.Unit, error)
 	//GenesisHeight() modules.ChainIndex
 	SaveUnit(unit *modules.Unit, isGenesis bool) error
@@ -112,6 +113,7 @@ type IUnitRepository interface {
 	CheckReadSetValid(contractId []byte, readSet []modules.ContractReadSet) bool
 }
 type UnitRepository struct {
+	db             ptndb.Database
 	dagdb          storage.IDagDb
 	idxdb          storage.IIndexDb
 	statedb        storage.IStateDb
@@ -133,7 +135,9 @@ func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb,
 	propdb storage.IPropertyDb,
 	engine tokenengine.ITokenEngine) *UnitRepository {
 	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, propdb, engine)
+
 	return &UnitRepository{
+		db:             dagdb.GetDb(),
 		dagdb:          dagdb,
 		idxdb:          idxdb,
 		statedb:        statedb,
@@ -151,6 +155,7 @@ func NewUnitRepository4Db(db ptndb.Database, tokenEngine tokenengine.ITokenEngin
 	propdb := storage.NewPropertyDb(db)
 	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, propdb, tokenEngine)
 	return &UnitRepository{
+		db:             db,
 		dagdb:          dagdb,
 		idxdb:          idxdb,
 		statedb:        statedb,
@@ -159,7 +164,9 @@ func NewUnitRepository4Db(db ptndb.Database, tokenEngine tokenengine.ITokenEngin
 		tokenEngine:    tokenEngine,
 	}
 }
-
+func (rep *UnitRepository) GetDb() ptndb.Database {
+	return rep.db
+}
 func (rep *UnitRepository) SubscribeSysContractStateChangeEvent(ob AfterSysContractStateChangeEventFunc) {
 	if rep.observers == nil {
 		rep.observers = []AfterSysContractStateChangeEventFunc{}

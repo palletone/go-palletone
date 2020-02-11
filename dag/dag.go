@@ -98,8 +98,9 @@ func (d *Dag) IsEmpty() bool {
 	it := d.Db.NewIterator()
 	return !it.Next()
 }
+
 func (d *Dag) GetDb() ptndb.Database {
-	return d.Db
+	return d.unstableUnitRep.GetDb()
 }
 
 // return stable unit in dag

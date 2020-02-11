@@ -208,6 +208,9 @@ func (p *testTxPool) GetPoolTxsByAddr(addr string) ([]*txspool.TxPoolTransaction
 	return nil, nil
 }
 
+func (p *testTxPool) GetUnpackedTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error) {
+	return nil, nil
+}
 func (p *testTxPool) GetNonce(hash common.Hash) uint64 {
 	return 0
 }
