@@ -2103,7 +2103,14 @@ func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params str
 		return ptnjson.SignRawTransactionResult{}, errors.New("fee createPayment  err")
 	}
 
-    tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay1))
+    //tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay1))
+
+    newtx := modules.NewTransaction(make([]*modules.Message, 0))
+    newtx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay1))
+
+    for _, msg := range tx.TxMessages() {
+		newtx.AddMessage(msg)
+	}
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
 		//TODO use keystore
 		ks := s.b.GetKeyStore()
@@ -2124,7 +2131,7 @@ func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params str
 	var addr common.Address
 	//var keys []string
 	utxoLockScripts := make(map[modules.OutPoint][]byte)
-	for _, msg := range tx.TxMessages() {
+	for _, msg := range newtx.TxMessages() {
 		fmt.Println("-------2216-----")
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if !ok {
@@ -2179,7 +2186,7 @@ func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params str
 	}
 
     //3.
-	signErrs, err := tokenengine.Instance.SignTxAllPaymentInput(tx, 1, utxoLockScripts, nil, getPubKeyFn, getSignFn)
+	signErrs, err := tokenengine.Instance.SignTxAllPaymentInput(newtx, 1, utxoLockScripts, nil, getPubKeyFn, getSignFn)
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, err
 	}
@@ -2187,7 +2194,7 @@ func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params str
 	//log.DebugDynamic(func() string { return "SignedTx:" + string(txJson) })
 	//4.
 	//return submitTransaction(ctx, s.b, tx)
-	mtxbt, err := rlp.EncodeToBytes(tx)
+	mtxbt, err := rlp.EncodeToBytes(newtx)
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, err
 	}
@@ -2195,7 +2202,7 @@ func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params str
 	signErrors := make([]ptnjson.SignRawTransactionError, 0, len(signErrs))
 	return ptnjson.SignRawTransactionResult{
 		Hex:      signedHex,
-		Txid:     tx.Hash().String(),
+		Txid:     newtx.Hash().String(),
 		Complete: len(signErrors) == 0,
 		Errors:   signErrors,
 	},err
