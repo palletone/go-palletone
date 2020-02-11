@@ -26,7 +26,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
 	"math/big"
 	"strconv"
 	"strings"
@@ -40,7 +39,6 @@ import (
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/contracts/syscontract/sysconfigcc"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -243,15 +241,15 @@ func (s *PrivateContractAPI) Ccdeploytx(ctx context.Context, from, to string, am
 }
 
 func (s *PrivateContractAPI) Ccinvoketx(ctx context.Context, from, to string, amount, fee decimal.Decimal,
-	contractAddress string, param []string, certID string, timeout string) (*ContractInvokeRsp, error) {
-	return s.CcinvokeToken(ctx, from, to, dagconfig.DefaultConfig.GasToken, amount, fee, contractAddress, param, timeout)
+	contractAddress string, param []string, password string, timeout *uint32) (*ContractInvokeRsp, error) {
+	return s.CcinvokeToken(ctx, from, to, dagconfig.DefaultConfig.GasToken, amount, fee, contractAddress, param, password, timeout)
 }
 
 func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token string, amountToken, fee decimal.Decimal,
-	contractAddress string, param []string, timeout string) (*ContractInvokeRsp, error) {
+	contractAddress string, param []string, password string, timeout *uint32) (*ContractInvokeRsp, error) {
 	contractAddr, _ := common.StringToAddress(contractAddress)
 
-	tx, usedUtxo, err := buildRawTransferTx(s.b, token, from, to, amountToken, fee, "")
+	tx, usedUtxo, err := buildRawTransferTx(s.b, token, from, to, amountToken, fee, password)
 	if err != nil {
 		return nil, err
 	}
@@ -261,18 +259,21 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 		args[i] = []byte(arg)
 		log.Infof("      index[%d], value[%s]\n", i, arg)
 	}
-	timeout64, _ := strconv.ParseUint(timeout, 10, 64)
+	exeTimeout := uint32(0)
+	if timeout != nil {
+		exeTimeout = *timeout
+	}
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_INVOKE_REQUEST,
 		Payload: &modules.ContractInvokeRequestPayload{
 			ContractId: contractAddr.Bytes(),
 			Args:       args,
-			Timeout:    uint32(timeout64),
+			Timeout:    exeTimeout,
 		},
 	}
 	tx.AddMessage(msgReq)
 	//3. sign
-	err = signRawTransaction(tx, s.b.GetKeyStore(), from, "", nil, 1, usedUtxo)
+	err = signRawTransaction(s.b, tx, from, password, timeout, 1, usedUtxo)
 	if err != nil {
 		return nil, err
 	}
@@ -289,7 +290,7 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 }
 
 func (s *PrivateContractAPI) CcinvoketxPass(ctx context.Context, from, to string, amount, fee decimal.Decimal,
-	deployId string, param []string, password string, duration *uint64, certID string) (string, error) {
+	deployId string, param []string, password string, duration *uint32, certID string) (string, error) {
 	contractAddr, _ := common.StringToAddress(deployId)
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
@@ -315,7 +316,7 @@ func (s *PrivateContractAPI) CcinvoketxPass(ctx context.Context, from, to string
 	}
 
 	//2.
-	err := s.unlockKS(fromAddr, password, duration)
+	err := unlockKS(s.b, fromAddr, password, duration)
 	if err != nil {
 		return "", err
 	}
@@ -483,24 +484,6 @@ func (s *PrivateContractAPI) Ccstoptxfee(ctx context.Context, from, to string, a
 	return rsp, nil
 }
 
-func (s *PrivateContractAPI) unlockKS(addr common.Address, password string, duration *uint64) error {
-	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
-	var d time.Duration
-	if duration == nil {
-		d = 300 * time.Second
-	} else if *duration > max {
-		return errors.New("unlock duration too large")
-	} else {
-		d = time.Duration(*duration) * time.Second
-	}
-	ks := s.b.GetKeyStore()
-	err := ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
-	if err != nil {
-		return fmt.Errorf("TimedUnlock Account err: %v", err.Error())
-	}
-	return nil
-}
-
 //  TODO
 func (s *PublicContractAPI) ListAllContractTemplates(ctx context.Context) ([]*ptnjson.ContractTemplateJson, error) {
 	return s.b.GetAllContractTpl()
@@ -586,7 +569,7 @@ func (s *PrivateContractAPI) DepositContractInvoke(ctx context.Context, from, to
 	}
 
 	rsp, err := s.Ccinvoketx(ctx, from, to, amount, fee, syscontract.DepositContractAddress.String(),
-		param, "", "0")
+		param, "", nil)
 	if err != nil {
 		return "", err
 	}
@@ -670,7 +653,7 @@ func (s *PrivateContractAPI) SysConfigContractInvoke(ctx context.Context, from, 
 	}
 
 	rsp, err := s.Ccinvoketx(ctx, from, to, amount, fee, syscontract.SysConfigContractAddress.String(),
-		param, "", "0")
+		param, "", nil)
 	if err != nil {
 		return "", err
 	}

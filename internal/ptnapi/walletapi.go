@@ -249,7 +249,7 @@ func (s *PrivateWalletAPI) SignRawTransaction(ctx context.Context, params string
 	//}
 	//ks := s.b.GetKeyStore()
 	//err = ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
-	err = s.unlockKS(addr, password, duration)
+	err = unlockKS(s.b, addr, password, duration)
 	if err != nil {
 		newErr := errors.New("get addr by outpoint get err:" + err.Error())
 		log.Error(newErr.Error())
@@ -330,7 +330,7 @@ func (s *PrivateWalletAPI) MultiSignRawTransaction(ctx context.Context, params, 
 			srawinputs = append(srawinputs, input)
 		}
 	}
-	err = s.unlockKS(addr, password, duration)
+	err = unlockKS(s.b, addr, password, duration)
 	if err != nil {
 		newErr := errors.New("get addr by outpoint get err:" + err.Error())
 		log.Error(newErr.Error())
@@ -572,7 +572,7 @@ func (s *PrivateWalletAPI) CreateProofTransaction(ctx context.Context, params st
 			}
 		}
 	}
-	err = s.unlockKS(addr, password, nil)
+	err = unlockKS(s.b, addr, password, nil)
 	if err != nil {
 		return common.Hash{}, errors.New("TimedUnlock Account err")
 	}
@@ -986,7 +986,7 @@ func (s *PrivateWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to s
 	//}
 	//ks := s.b.GetKeyStore()
 	//err = ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
-	err = s.unlockKS(addr, password, duration)
+	err = unlockKS(s.b, addr, password, duration)
 	if err != nil {
 		//return nil, err
 		return common.Hash{}, errors.New("TimedUnlock Account err")
@@ -1094,16 +1094,6 @@ func RandFromString(value string) (decimal.Decimal, error) {
 	return result, nil
 }
 
-func (s *PrivateWalletAPI) unlockKS(addr common.Address, password string, timeout *uint32) error {
-	ks := s.b.GetKeyStore()
-	if timeout == nil {
-		return ks.Unlock(accounts.Account{Address: addr}, password)
-	} else {
-		d := time.Duration(*timeout) * time.Second
-		return ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
-	}
-}
-
 func (s *PrivateWalletAPI) TransferPtn(ctx context.Context, from string, to string,
 	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint32) (common.Hash, error) {
 	gasToken := dagconfig.DagConfig.GasToken
@@ -1153,8 +1143,8 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 	}
 	//3. sign
 	start = time.Now()
-	ks := s.b.GetKeyStore()
-	err = signRawTransaction(rawTx, ks, from, password, duration, 1, usedUtxo)
+	//ks := s.b.GetKeyStore()
+	err = signRawTransaction(s.b, rawTx, from, password, duration, 1, usedUtxo)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -1183,8 +1173,8 @@ func (s *PrivateWalletAPI) TransferTokenSync(ctx context.Context, asset string, 
 		tx.AddMessage(modules.NewMessage(modules.APP_DATA, textPayload))
 	}
 	//3. sign
-	ks := s.b.GetKeyStore()
-	err = signRawTransaction(tx, ks, fromStr, password, timeout, 1, usedUtxo)
+	//ks := s.b.GetKeyStore()
+	err = signRawTransaction(s.b, tx, fromStr, password, timeout, 1, usedUtxo)
 	if err != nil {
 		log.Errorf("TransferTokenSync error:%s", err.Error())
 		s.lock.Unlock()
@@ -1338,7 +1328,7 @@ func (s *PrivateWalletAPI) TransferToken2(ctx context.Context, asset string, fro
 		if err != nil {
 			return common.Hash{}, err
 		}
-		err = s.unlockKS(fromAddr, password, timeout)
+		err = unlockKS(s.b, fromAddr, password, timeout)
 		if err != nil {
 			return common.Hash{}, err
 		}
@@ -1449,7 +1439,7 @@ func (s *PrivateWalletAPI) CreateProofOfExistenceTx(ctx context.Context, addr st
 	if err != nil {
 		return common.Hash{}, err
 	}
-	err = s.unlockKS(fromAddr, password, nil)
+	err = unlockKS(s.b, fromAddr, password, nil)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -1511,7 +1501,7 @@ func (s *PrivateWalletAPI) CreateTraceability(ctx context.Context, addr, uid, sy
 	if err != nil {
 		return common.Hash{}, err
 	}
-	err = s.unlockKS(fromAddr, "1", nil)
+	err = unlockKS(s.b, fromAddr, "1", nil)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -2007,7 +1997,7 @@ func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params str
 			}
 		}*/
 	}
-	err = s.unlockKS(addr, password, duration)
+	err = unlockKS(s.b, addr, password, duration)
 	if err != nil {
 		newErr := errors.New("get addr by outpoint get err:" + err.Error())
 		log.Error(newErr.Error())

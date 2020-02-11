@@ -19,6 +19,19 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+func unlockKS(b Backend, addr common.Address, password string, timeout *uint32) error {
+	ks := b.GetKeyStore()
+	if password != "" {
+		if timeout == nil {
+			return ks.Unlock(accounts.Account{Address: addr}, password)
+		} else {
+			d := time.Duration(*timeout) * time.Second
+			return ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
+		}
+	}
+	return nil
+}
+
 func parseAddressStr(addr string, ks *keystore.KeyStore, password string) (common.Address, error) {
 	addrArray := strings.Split(addr, ":")
 	addrString := addrArray[0]
@@ -109,9 +122,9 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 
 	return tx, usedUtxo1, nil
 }
-func signRawTransaction(rawTx *modules.Transaction,
-	ks *keystore.KeyStore, fromStr, password string, timeout *uint32, hashType uint32,
+func signRawTransaction(b Backend, rawTx *modules.Transaction, fromStr, password string, timeout *uint32, hashType uint32,
 	usedUtxo []*modules.UtxoWithOutPoint) error {
+	ks := b.GetKeyStore()
 	//lockscript
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
 		return ks.GetPublicKey(addr)
@@ -128,15 +141,9 @@ func signRawTransaction(rawTx *modules.Transaction,
 	if err != nil {
 		return err
 	}
-	if password != "" {
-		if timeout != nil {
-			err = ks.TimedUnlock(accounts.Account{Address: fromAddr}, password, time.Duration(*timeout)*time.Second)
-		} else {
-			err = ks.Unlock(accounts.Account{Address: fromAddr}, password)
-		}
-		if err != nil {
-			return err
-		}
+	err = unlockKS(b, fromAddr, password, timeout)
+	if err != nil {
+		return err
 	}
 	//Sign tx
 	_, err = tokenengine.Instance.SignTxAllPaymentInput(rawTx, hashType, utxoLockScripts, nil, getPubKeyFn, getSignFn)
