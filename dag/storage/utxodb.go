@@ -21,6 +21,9 @@
 package storage
 
 import (
+	"fmt"
+	"reflect"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -97,7 +100,7 @@ func (utxodb *UtxoDb) SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.U
 	if err != nil {
 		return err
 	}
-
+	log.Debugf("save utxo[%s]", outpoint.String())
 	return utxodb.saveUtxoOutpoint(address, outpoint)
 }
 
@@ -167,6 +170,10 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 
 	err := RetrieveFromRlpBytes(utxodb.db, key, utxo)
 	if err != nil {
+		log.DebugDynamic(func() string {
+			return fmt.Sprintf("DB[%s] get utxo[%s] error:%s",
+				reflect.TypeOf(utxodb.db).String(), outpoint.String(), err.Error())
+		})
 		if errors.IsNotFoundError(err) {
 			return nil, errors.ErrUtxoNotFound
 		}
