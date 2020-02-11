@@ -35,17 +35,17 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/contracts/syscontract/sysconfigcc"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
-	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/common/math"
 )
 
 var (
@@ -277,7 +277,7 @@ func (s *PrivateContractAPI) Ccinvoketx(ctx context.Context, from, to string, am
 }
 
 func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token string, amountToken, fee decimal.Decimal,
-	contractAddress string, param []string) (*ContractInvokeRsp, error) {
+	contractAddress string, param []string, pwd *string) (*ContractInvokeRsp, error) {
 	gasToken := dagconfig.DagConfig.GasToken
 	if token == gasToken {
 		return s.Ccinvoketx(ctx, from, to, amountToken, fee, contractAddress, param, "", "0")
@@ -301,6 +301,11 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 	for i, arg := range param {
 		args[i] = []byte(arg)
 		log.Infof("      index[%d], value[%s]\n", i, arg)
+	}
+	if pwd != nil {
+		if err := s.unlockKS(fromAddr, *pwd, nil); err != nil {
+			return nil, err
+		}
 	}
 	reqId, err := s.b.ContractInvokeReqTokenTx(fromAddr, toAddr, asset, amountOfToken, daoFee,
 		contractAddr, args, 0)
