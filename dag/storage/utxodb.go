@@ -139,16 +139,17 @@ func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint, spentTxId common.Ha
 		return err
 	}
 	key := outpoint.ToKey()
-
+	//1 delete UTXO
 	err = utxodb.db.Delete(key)
 	if err != nil {
 		return err
 	}
-	//log.Debugf("Try delete utxo by key:%s, move to spent table", outpoint.String())
+	//2 create stxo
 	utxodb.SaveUtxoSpent(outpoint, utxo, spentTxId, spentTime)
-
+	//3 delete index
 	address, _ := utxodb.tokenEngine.GetAddressFromScript(utxo.PkScript[:])
 	utxodb.deleteUtxoOutpoint(address, outpoint)
+	log.Debugf("delete utxo by key:%s, spend by tx[%s]", outpoint.String(), spentTxId.String())
 	return nil
 }
 
