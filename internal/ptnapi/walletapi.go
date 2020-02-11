@@ -90,9 +90,9 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 
 	ptn := dagconfig.DagConfig.GasToken
 
-	poolTxs, _ := s.b.GetPoolTxsByAddr(from)
+	poolTxs, _ := s.b.GetUnpackedTxsByAddr(from)
 	//if len(poolTxs) == 0 {
-	//      return "", fmt.Errorf("GetPoolTxsByAddr Err")
+	//      return "", fmt.Errorf("GetUnpackedTxsByAddr Err")
 	//}
 	allutxos, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, from, ptn)
 	if err != nil {
@@ -475,7 +475,7 @@ func (s *PrivateWalletAPI) CreateProofTransaction(ctx context.Context, params st
 	if err != nil {
 		return common.Hash{}, err
 	}
-	poolTxs, _ := s.b.GetPoolTxsByAddr(proofTransactionGenParams.From)
+	poolTxs, _ := s.b.GetUnpackedTxsByAddr(proofTransactionGenParams.From)
 	//if len(poolTxs) == 0 {
 	//return common.Hash{}, fmt.Errorf("Select utxo err")
 	//} // end of pooltx is not nil
@@ -1803,7 +1803,7 @@ func (s *PrivateWalletAPI) buildRawTransferTx2(tokenId, from, to, gasFrom string
 	if err != nil {
 		return nil, nil, fmt.Errorf("GetAddrRawUtxos utxo err")
 	}
-	poolTxs, _ := s.b.GetPoolTxsByAddr(gasFrom)
+	poolTxs, _ := s.b.GetUnpackedTxsByAddr(gasFrom)
 
 	utxosPTN, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, gasFrom, ptn)
 	if err != nil {
@@ -1826,7 +1826,7 @@ func (s *PrivateWalletAPI) buildRawTransferTx2(tokenId, from, to, gasFrom string
 	if err != nil {
 		return nil, nil, fmt.Errorf("GetAddrRawUtxos utxo err")
 	}
-	poolTxs2, _ := s.b.GetPoolTxsByAddr(from)
+	poolTxs2, _ := s.b.GetUnpackedTxsByAddr(from)
 	utxosToken, err := SelectUtxoFromDagAndPool(dbUtxos2, poolTxs2, from, tokenId)
 	if err != nil {
 		return nil, nil, fmt.Errorf("SelectUtxoFromDagAndPool token utxo err")
@@ -1869,7 +1869,7 @@ func (s *PrivateWalletAPI) buildRawTxWithoutFee(tokenId, from, to string, amount
 	if err != nil {
 		return "", fmt.Errorf("GetAddrRawUtxos utxo err")
 	}
-	poolTxs2, _ := s.b.GetPoolTxsByAddr(from)
+	poolTxs2, _ := s.b.GetUnpackedTxsByAddr(from)
 	utxosToken, err := SelectUtxoFromDagAndPool(dbUtxos2, poolTxs2, from, tokenId)
 	if err != nil {
 		return "", fmt.Errorf("SelectUtxoFromDagAndPool token utxo err")
@@ -1924,7 +1924,7 @@ func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params str
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, errors.New("GetAddrRawUtxos utxo err")
 	}
-	poolTxs, _ := s.b.GetPoolTxsByAddr(gasFrom)
+	poolTxs, _ := s.b.GetUnpackedTxsByAddr(gasFrom)
 
 	ptn := dagconfig.DagConfig.GasToken
 

@@ -685,7 +685,7 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, poolTxs
 	if err != nil {
 		return "", err
 	}
-	poolTxs, err := s.b.GetPoolTxsByAddr(from)
+	poolTxs, err := s.b.GetUnpackedTxsByAddr(from)
 	if err != nil {
 		return "", err
 	}
@@ -841,7 +841,7 @@ func (s *PrivateTransactionPoolAPI) unlockKS(addr common.Address, password strin
 //	if err != nil {
 //		return common.Hash{}, err
 //	}
-//	poolTxs, err := s.b.GetPoolTxsByAddr(from)
+//	poolTxs, err := s.b.GetUnpackedTxsByAddr(from)
 //	if err != nil {
 //		return common.Hash{}, err
 //	}

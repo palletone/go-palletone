@@ -44,6 +44,8 @@ type dags interface {
 	// getTxfee
 	//GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
 	GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error)
+	GetTxOutput(outpoint *modules.OutPoint) (*modules.Utxo, error)
+
 	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
 	GetContractJury(contractId []byte) (*modules.ElectionNode, error)
 	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)

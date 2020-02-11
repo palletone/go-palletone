@@ -156,6 +156,9 @@ func (ud *UnitDag4Test) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo,
 func (ud *UnitDag4Test) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error) {
 	return nil, nil
 }
+func (ud *UnitDag4Test) GetTxOutput(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	return ud.GetUtxoEntry(outpoint)
+}
 func (ud *UnitDag4Test) GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error) {
 	neededSet := make(map[modules.OutPoint]struct{})
 	preout := modules.OutPoint{TxHash: tx.Hash()}

@@ -53,6 +53,8 @@ type ITxPool interface {
 	GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTransaction, common.StorageSize)
 	Get(hash common.Hash) (*TxPoolTransaction, common.Hash)
 	GetPoolTxsByAddr(addr string) ([]*TxPoolTransaction, error)
+	//获得一个地址的未打包的交易
+	GetUnpackedTxsByAddr(addr string) ([]*TxPoolTransaction, error)
 	Stats() (int, int, int)
 	Content() (map[common.Hash]*TxPoolTransaction, map[common.Hash]*TxPoolTransaction)
 	GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)

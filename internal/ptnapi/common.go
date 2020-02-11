@@ -92,7 +92,7 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 	if err != nil {
 		return nil, nil, fmt.Errorf("GetAddrRawUtxos utxo err")
 	}
-	poolTxs, _ := b.GetPoolTxsByAddr(from)
+	poolTxs, _ := b.GetUnpackedTxsByAddr(from)
 
 	utxosPTN, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, from, gasToken)
 	if err != nil {

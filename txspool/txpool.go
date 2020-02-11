@@ -235,6 +235,13 @@ func (pool *TxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, err
 func (pool *TxPool) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error) {
 	return pool.unit.GetStxoEntry(outpoint)
 }
+func (pool *TxPool) GetTxOutput(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	if inter, ok := pool.outputs.Load(*outpoint); ok {
+		utxo := inter.(*modules.Utxo)
+		return utxo, nil
+	}
+	return pool.unit.GetTxOutput(outpoint)
+}
 
 // loop is the transaction pool's main event loop, waiting for and reacting to
 // outside blockchain events as well as for various reporting and transaction
@@ -944,24 +951,35 @@ func (pool *TxPool) Status(hashes []common.Hash) []TxStatus {
 	return status
 }
 
-// GetPoolTxsByAddr returns all tx by addr.
+// GetUnpackedTxsByAddr returns all tx by addr.
 func (pool *TxPool) GetPoolTxsByAddr(addr string) ([]*TxPoolTransaction, error) {
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
-	return pool.getPoolTxsByAddr(addr)
+	return pool.getPoolTxsByAddr(addr, false)
 }
 
-func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*TxPoolTransaction, error) {
+func (pool *TxPool) GetUnpackedTxsByAddr(addr string) ([]*TxPoolTransaction, error) {
+	pool.mu.RLock()
+	defer pool.mu.RUnlock()
+	return pool.getPoolTxsByAddr(addr, true)
+}
+
+func (pool *TxPool) getPoolTxsByAddr(addr string, onlyUnpacked bool) ([]*TxPoolTransaction, error) {
 	txs := make(map[string][]*TxPoolTransaction)
 	// 将交易按地址分类
 	poolTxs := pool.AllTxpoolTxs()
 	for _, tx := range poolTxs {
 		if !tx.Confirmed {
+			if onlyUnpacked {
+				if tx.Pending {
+					continue //已打包，忽略
+				}
+			}
 			for _, msg := range tx.Tx.TxMessages() {
 				if msg.App == modules.APP_PAYMENT {
 					payment, ok := msg.Payload.(*modules.PaymentPayload)
 					if ok {
-						addrs := tx.Tx.GetFromAddrs(pool.GetUtxoEntry, pool.tokenEngine.GetAddressFromScript)
+						addrs := tx.Tx.GetFromAddrs(pool.GetTxOutput, pool.tokenEngine.GetAddressFromScript)
 						for _, addr := range addrs {
 							addr1 := addr.String()
 							txs[addr1] = append(txs[addr1], tx)
@@ -989,7 +1007,7 @@ func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*TxPoolTransaction, error) 
 			if msg.App == modules.APP_PAYMENT {
 				payment, ok := msg.Payload.(*modules.PaymentPayload)
 				if ok {
-					addrs := tx.Tx.GetFromAddrs(pool.GetUtxoEntry, pool.tokenEngine.GetAddressFromScript)
+					addrs := tx.Tx.GetFromAddrs(pool.GetTxOutput, pool.tokenEngine.GetAddressFromScript)
 					//if addrs, err := pool.unit.GetTxFromAddress(tx.Tx); err == nil {
 					for _, addr := range addrs {
 						addr1 := addr.String()
@@ -1711,7 +1729,7 @@ func (pool *TxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subs
 }
 
 func (pool *TxPool) GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error) {
-	return tx.GetTxFee(pool.GetUtxoEntry)
+	return tx.GetTxFee(pool.GetTxOutput)
 }
 
 func (pool *TxPool) limitNumberOrphans() {

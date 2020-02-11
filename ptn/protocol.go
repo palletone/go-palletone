@@ -140,6 +140,7 @@ type txPool interface {
 	Content() (map[common.Hash]*txspool.TxPoolTransaction, map[common.Hash]*txspool.TxPoolTransaction)
 	Get(hash common.Hash) (*txspool.TxPoolTransaction, common.Hash)
 	GetPoolTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error)
+	GetUnpackedTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error)
 	Stats() (int, int, int)
 	GetSortedTxs(hash common.Hash, index uint64) ([]*txspool.TxPoolTransaction, common.StorageSize)
 	SendStoredTxs(hashs []common.Hash) error

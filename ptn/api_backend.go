@@ -519,8 +519,8 @@ func (b *PtnApiBackend) GetTxPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJs
 	return ptnjson.ConvertTxPoolTx2Json(tx, unit_hash), nil
 }
 
-func (b *PtnApiBackend) GetPoolTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error) {
-	tx, err := b.ptn.txPool.GetPoolTxsByAddr(addr)
+func (b *PtnApiBackend) GetUnpackedTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error) {
+	tx, err := b.ptn.txPool.GetUnpackedTxsByAddr(addr)
 	return tx, err
 }
 
