@@ -21,6 +21,7 @@
 package ptndb
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 	"sync"
@@ -187,7 +188,9 @@ func (db *Tempdb) Get(key []byte) ([]byte, error) {
 	if entry, ok := db.kv[string(key)]; ok {
 		return common.CopyBytes(entry), nil
 	}
-	log.Debugf("key[%x] not in tempdb, try inner db", key)
+	log.DebugDynamic(func() string {
+		return fmt.Sprintf("key[%x] not in tempdb, try inner db[%s]", key,reflect.TypeOf(db.db).String())
+	})
 	return db.db.Get(key)
 }
 

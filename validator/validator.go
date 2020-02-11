@@ -103,7 +103,7 @@ func (validate *Validate) validateTransactions(rwM rwset.TxManager, txs modules.
 	newUtxoQuery := &newUtxoQuery{oldUtxoQuery: oldUtxoQuery, unitUtxo: unitUtxo}
 	validate.utxoquery = newUtxoQuery
 	defer validate.setUtxoQuery(oldUtxoQuery)
-	spendOutpointMap := make(map[*modules.OutPoint]bool)
+	spendOutpointMap := make(map[*modules.OutPoint]common.Hash)
 	var coinbase *modules.Transaction
 	//构造TempDag用于存储Tx的结果
 	if validate.buildTempDagFunc != nil && validate.contractDb != nil {
@@ -137,13 +137,15 @@ func (validate *Validate) validateTransactions(rwM rwset.TxManager, txs modules.
 		}
 		// 验证双花
 		for _, outpoint := range tx.GetSpendOutpoints() {
-			if _, ok := spendOutpointMap[outpoint]; ok {
+			if spentTx, ok := spendOutpointMap[outpoint]; ok {
+				log.Errorf("Utxo[%s] spent by tx[%s]", outpoint.String(), spentTx.String())
 				return TxValidationCode_INVALID_DOUBLE_SPEND
 			}
 			if stxo, _ := validate.utxoquery.GetStxoEntry(outpoint); stxo != nil {
+				log.Errorf("Utxo[%s] spent by tx[%s]", outpoint.String(), stxo.SpentByTxId.String())
 				return TxValidationCode_INVALID_DOUBLE_SPEND
 			}
-			spendOutpointMap[outpoint] = true
+			spendOutpointMap[outpoint] = txHash
 		}
 
 		for _, a := range txFeeAllocate {
