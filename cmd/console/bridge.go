@@ -500,17 +500,28 @@ func (b *bridge) Ccinvoketx(call otto.FunctionCall) (response otto.Value) {
 
 	params := call.Argument(5)
 
-	certID := otto.NullValue()
-	if call.Argument(6).IsDefined() && !call.Argument(6).IsNull() {
-		certID = call.Argument(6)
+	password := call.Argument(6)
+	unlock, _ := isUnlock(call, from)
+	if !unlock {
+		// if the password is not given or null ask the user and ensure password is a string
+		if password.IsUndefined() || password.IsNull() {
+			fmt.Fprintf(b.printer, "Give password for account %s\n", from)
+			if input, err := b.prompter.PromptPassword("Passphrase: "); err != nil {
+				throwJSException(err.Error())
+			} else {
+				password, _ = otto.ToValue(input)
+			}
+		}
+		if !password.IsString() {
+			throwJSException("the password must be a string")
+		}
 	}
-
 	timeout := otto.NullValue()
 	if call.Argument(7).IsDefined() && !call.Argument(7).IsNull() {
 		timeout = call.Argument(7)
 	}
 	// Send the request to the backend and return
-	val, err := call.Otto.Call("jptn.ccinvoketx", nil, from, to, amount, fee, deployId, params, certID, timeout)
+	val, err := call.Otto.Call("jptn.ccinvoketx", nil, from, to, amount, fee, deployId, params, password, timeout)
 	if err != nil {
 		throwJSException(err.Error())
 	}
@@ -589,10 +600,9 @@ func (b *bridge) GetPublicKey(call otto.FunctionCall) (response otto.Value) {
 			}
 		}
 		if !password.IsString() {
-			throwJSException("2nd argument must be the password to unlock the account")
+			throwJSException("the password must be a string")
 		}
-	}
-	// Send the request to the backend and return
+	} // Send the request to the backend and return
 	val, err := call.Otto.Call("jptn.getPublicKey", nil, addr, password)
 	if err != nil {
 		throwJSException(err.Error())

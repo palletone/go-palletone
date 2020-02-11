@@ -1095,7 +1095,7 @@ func RandFromString(value string) (decimal.Decimal, error) {
 }
 
 func (s *PrivateWalletAPI) TransferPtn(ctx context.Context, from string, to string,
-	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint32) (common.Hash, error) {
+	amount decimal.Decimal, fee decimal.Decimal, Extra *string, password *string, duration *uint32) (common.Hash, error) {
 	gasToken := dagconfig.DagConfig.GasToken
 	return s.TransferToken(ctx, gasToken, from, to, amount, fee, Extra, password, duration)
 }
@@ -1126,7 +1126,11 @@ func getRealAddress(ks *keystore.KeyStore, addr string) (common.Address, error) 
 }
 
 func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from string, to string,
-	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint32) (common.Hash, error) {
+	amount decimal.Decimal, fee decimal.Decimal, Extra *string, pwd *string, duration *uint32) (common.Hash, error) {
+	password := ""
+	if pwd != nil {
+		password = *pwd
+	}
 	//1. build payment tx
 	start := time.Now()
 	rawTx, usedUtxo, err := buildRawTransferTx(s.b, asset, from, to, amount, fee, password)
@@ -1135,10 +1139,10 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 	}
 	log.Debugf("build raw tx spend:%v", time.Since(start))
 	//2. append data payload
-	if Extra != "" {
+	if Extra != nil {
 		textPayload := new(modules.DataPayload)
 		textPayload.Reference = []byte(asset)
-		textPayload.MainData = []byte(Extra)
+		textPayload.MainData = []byte(*Extra)
 		rawTx.AddMessage(modules.NewMessage(modules.APP_DATA, textPayload))
 	}
 	//3. sign
@@ -1155,7 +1159,11 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 
 //转移Token，并确认打包后返回
 func (s *PrivateWalletAPI) TransferTokenSync(ctx context.Context, asset string, fromStr string, toStr string,
-	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, timeout *uint32) (*ptnjson.TxHashWithUnitInfoJson, error) {
+	amount decimal.Decimal, fee decimal.Decimal, Extra *string, pwd *string, timeout *uint32) (*ptnjson.TxHashWithUnitInfoJson, error) {
+	password := ""
+	if pwd != nil {
+		password = *pwd
+	}
 	start := time.Now()
 	log.Infof("Received transfer token request from:%s, to:%s,amount:%s", fromStr, toStr, amount.String())
 	s.lock.Lock()
@@ -1166,10 +1174,10 @@ func (s *PrivateWalletAPI) TransferTokenSync(ctx context.Context, asset string, 
 		return nil, err
 	}
 	//2. append data payload
-	if Extra != "" {
+	if Extra != nil {
 		textPayload := new(modules.DataPayload)
 		textPayload.Reference = []byte(asset)
-		textPayload.MainData = []byte(Extra)
+		textPayload.MainData = []byte(*Extra)
 		tx.AddMessage(modules.NewMessage(modules.APP_DATA, textPayload))
 	}
 	//3. sign
@@ -1225,9 +1233,12 @@ func (s *PrivateWalletAPI) TransferTokenSync(ctx context.Context, asset string, 
 
 //构造手续费代付的交易并广播
 func (s *PrivateWalletAPI) TransferToken2(ctx context.Context, asset string, fromStr string, toStr string,
-	gasFromStr string, amount decimal.Decimal, fee decimal.Decimal, Extra string,
-	password string, timeout *uint32) (common.Hash, error) {
-
+	gasFromStr string, amount decimal.Decimal, fee decimal.Decimal, Extra *string,
+	pwd *string, timeout *uint32) (common.Hash, error) {
+	password := ""
+	if pwd != nil {
+		password = *pwd
+	}
 	toArray := strings.Split(toStr, ":")
 	to := toArray[0]
 	ks := s.b.GetKeyStore()
@@ -1305,10 +1316,10 @@ func (s *PrivateWalletAPI) TransferToken2(ctx context.Context, asset string, fro
 	if err != nil {
 		return common.Hash{}, err
 	}
-	if Extra != "" {
+	if Extra != nil {
 		textPayload := new(modules.DataPayload)
 		textPayload.Reference = []byte(asset)
-		textPayload.MainData = []byte(Extra)
+		textPayload.MainData = []byte(*Extra)
 		rawTx.AddMessage(modules.NewMessage(modules.APP_DATA, textPayload))
 	}
 	//lockscript

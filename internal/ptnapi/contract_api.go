@@ -241,14 +241,17 @@ func (s *PrivateContractAPI) Ccdeploytx(ctx context.Context, from, to string, am
 }
 
 func (s *PrivateContractAPI) Ccinvoketx(ctx context.Context, from, to string, amount, fee decimal.Decimal,
-	contractAddress string, param []string, password string, timeout *uint32) (*ContractInvokeRsp, error) {
+	contractAddress string, param []string, password *string, timeout *uint32) (*ContractInvokeRsp, error) {
 	return s.CcinvokeToken(ctx, from, to, dagconfig.DefaultConfig.GasToken, amount, fee, contractAddress, param, password, timeout)
 }
 
 func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token string, amountToken, fee decimal.Decimal,
-	contractAddress string, param []string, password string, timeout *uint32) (*ContractInvokeRsp, error) {
+	contractAddress string, param []string, pwd *string, timeout *uint32) (*ContractInvokeRsp, error) {
 	contractAddr, _ := common.StringToAddress(contractAddress)
-
+	password := ""
+	if pwd != nil {
+		password = *pwd
+	}
 	tx, usedUtxo, err := buildRawTransferTx(s.b, token, from, to, amountToken, fee, password)
 	if err != nil {
 		return nil, err
@@ -569,7 +572,7 @@ func (s *PrivateContractAPI) DepositContractInvoke(ctx context.Context, from, to
 	}
 
 	rsp, err := s.Ccinvoketx(ctx, from, to, amount, fee, syscontract.DepositContractAddress.String(),
-		param, "", nil)
+		param, nil, nil)
 	if err != nil {
 		return "", err
 	}
@@ -653,7 +656,7 @@ func (s *PrivateContractAPI) SysConfigContractInvoke(ctx context.Context, from, 
 	}
 
 	rsp, err := s.Ccinvoketx(ctx, from, to, amount, fee, syscontract.SysConfigContractAddress.String(),
-		param, "", nil)
+		param, nil, nil)
 	if err != nil {
 		return "", err
 	}
