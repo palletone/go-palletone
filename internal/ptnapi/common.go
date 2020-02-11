@@ -58,7 +58,7 @@ func parseAddressStr(addr string, ks *keystore.KeyStore, password string) (commo
 	return common.StringToAddress(addrString)
 }
 
-func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFee decimal.Decimal, password string) (
+func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFee decimal.Decimal, password string, useMemoryDag bool) (
 	*modules.Transaction, []*modules.UtxoWithOutPoint, error) {
 	//参数检查
 	tokenAsset, err := modules.StringToAsset(tokenId)
@@ -87,8 +87,15 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 	if tokenId == gasToken {
 		ptnAmount = gasAsset.Uint64Amount(amount)
 	}
+
 	//构造转移PTN的Message0
-	dbUtxos, err := b.GetAddrRawUtxos(from)
+	var dbUtxos map[modules.OutPoint]*modules.Utxo
+	//dbUtxos, err := b.GetAddrRawUtxos(from)
+	if useMemoryDag {
+		dbUtxos, err = b.MDag().GetAddrUtxos(fromAddr)
+	} else {
+		dbUtxos, err = b.Dag().GetAddrUtxos(fromAddr)
+	}
 	if err != nil {
 		return nil, nil, fmt.Errorf("GetAddrRawUtxos utxo err")
 	}
