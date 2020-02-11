@@ -111,10 +111,10 @@ type SignatureJson struct {
 }
 
 type InvokeRequestJson struct {
-	Number       int           `json:"row_number"`
-	ContractAddr string        `json:"contract_addr"`
-	Args         []string      `json:"arg_set"`
-	Timeout      time.Duration `json:"timeout"`
+	Number       int      `json:"row_number"`
+	ContractAddr string   `json:"contract_addr"`
+	Args         []string `json:"arg_set"`
+	Timeout      uint32   `json:"timeout"`
 }
 
 type InstallRequestJson struct {
@@ -348,7 +348,7 @@ func convertInvokeRequest2Json(req *modules.ContractInvokeRequestPayload) *Invok
 	for _, arg := range req.Args {
 		reqJson.Args = append(reqJson.Args, string(arg))
 	}
-	reqJson.Timeout = time.Duration(req.Timeout) * time.Second
+	reqJson.Timeout = req.Timeout
 	return reqJson
 }
 

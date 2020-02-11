@@ -131,7 +131,7 @@ func (s *PrivateContractAPI) Ccinvoke(ctx context.Context, contractAddr string, 
 	return string(rsp), err
 }
 
-func (s *PublicContractAPI) Ccquery(ctx context.Context, id string, param []string, timeout uint32) (string, error) {
+func (s *PublicContractAPI) Ccquery(ctx context.Context, id string, param []string, timeout *uint32) (string, error) {
 	var idByte []byte
 
 	log.Debugf("Ccquery, id len:%d, id[%s]", len(id), id)
@@ -149,8 +149,11 @@ func (s *PublicContractAPI) Ccquery(ctx context.Context, id string, param []stri
 	//参数前面加入msg0和msg1,这里为空
 	fullArgs := [][]byte{defaultMsg0, defaultMsg1}
 	fullArgs = append(fullArgs, args...)
-
-	rsp, err := s.b.ContractQuery(idByte, fullArgs, time.Duration(timeout)*time.Second)
+	duration := time.Duration(0)
+	if timeout != nil {
+		duration = time.Duration(*timeout) * time.Second
+	}
+	rsp, err := s.b.ContractQuery(idByte, fullArgs, duration)
 	if err != nil {
 		return "", err
 	}
@@ -592,12 +595,12 @@ func (s *PrivateContractAPI) DepositContractInvoke(ctx context.Context, from, to
 
 func (s *PublicContractAPI) DepositContractQuery(ctx context.Context, param []string) (string, error) {
 	log.Debug("---enter DepositContractQuery---")
-	return s.Ccquery(ctx, syscontract.DepositContractAddress.String(), param, 0)
+	return s.Ccquery(ctx, syscontract.DepositContractAddress.String(), param, nil)
 }
 
 func (s *PublicContractAPI) SysConfigContractQuery(ctx context.Context, param []string) (string, error) {
 	log.Debugf("---enter SysConfigContractQuery---")
-	return s.Ccquery(ctx, syscontract.SysConfigContractAddress.String(), param, 0)
+	return s.Ccquery(ctx, syscontract.SysConfigContractAddress.String(), param, nil)
 }
 
 func (s *PrivateContractAPI) SysConfigContractInvoke(ctx context.Context, from, to string, amount, fee decimal.Decimal,

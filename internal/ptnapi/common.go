@@ -110,7 +110,7 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 	return tx, usedUtxo1, nil
 }
 func signRawTransaction(rawTx *modules.Transaction,
-	ks *keystore.KeyStore, fromStr, password string, duration *time.Duration, hashType uint32,
+	ks *keystore.KeyStore, fromStr, password string, timeout *uint32, hashType uint32,
 	usedUtxo []*modules.UtxoWithOutPoint) error {
 	//lockscript
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
@@ -129,8 +129,8 @@ func signRawTransaction(rawTx *modules.Transaction,
 		return err
 	}
 	if password != "" {
-		if duration != nil {
-			err = ks.TimedUnlock(accounts.Account{Address: fromAddr}, password, *duration)
+		if timeout != nil {
+			err = ks.TimedUnlock(accounts.Account{Address: fromAddr}, password, time.Duration(*timeout)*time.Second)
 		} else {
 			err = ks.Unlock(accounts.Account{Address: fromAddr}, password)
 		}

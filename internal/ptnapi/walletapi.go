@@ -167,7 +167,7 @@ func createPayment(fromAddr, toAddr common.Address, amountToken uint64, feePTN u
 	return payPTN, usedUtxo, nil
 }
 
-func (s *PrivateWalletAPI) SignRawTransaction(ctx context.Context, params string, hashtype string, password string, duration *uint64) (ptnjson.SignRawTransactionResult, error) {
+func (s *PrivateWalletAPI) SignRawTransaction(ctx context.Context, params string, hashtype string, password string, duration *uint32) (ptnjson.SignRawTransactionResult, error) {
 
 	//transaction inputs
 	if params == "" {
@@ -238,17 +238,18 @@ func (s *PrivateWalletAPI) SignRawTransaction(ctx context.Context, params string
 			}
 		}*/
 	}
-	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
-	var d time.Duration
-	if duration == nil {
-		d = 300 * time.Second
-	} else if *duration > max {
-		return ptnjson.SignRawTransactionResult{}, errors.New("unlock duration too large")
-	} else {
-		d = time.Duration(*duration) * time.Second
-	}
-	ks := s.b.GetKeyStore()
-	err = ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
+	//const max = uint64(time.Duration(math.MaxInt64) / time.Second)
+	//var d time.Duration
+	//if duration == nil {
+	//	d = 300 * time.Second
+	//} else if *duration > max {
+	//	return ptnjson.SignRawTransactionResult{}, errors.New("unlock duration too large")
+	//} else {
+	//	d = time.Duration(*duration) * time.Second
+	//}
+	//ks := s.b.GetKeyStore()
+	//err = ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
+	err = s.unlockKS(addr, password, duration)
 	if err != nil {
 		newErr := errors.New("get addr by outpoint get err:" + err.Error())
 		log.Error(newErr.Error())
@@ -266,7 +267,7 @@ func (s *PrivateWalletAPI) SignRawTransaction(ctx context.Context, params string
 	return result, err
 }
 
-func (s *PrivateWalletAPI) MultiSignRawTransaction(ctx context.Context, params, redeemScript string, addr common.Address, hashtype string, password string, duration *uint64) (ptnjson.SignRawTransactionResult, error) {
+func (s *PrivateWalletAPI) MultiSignRawTransaction(ctx context.Context, params, redeemScript string, addr common.Address, hashtype string, password string, duration *uint32) (ptnjson.SignRawTransactionResult, error) {
 
 	//transaction inputs
 	if params == "" {
@@ -329,17 +330,7 @@ func (s *PrivateWalletAPI) MultiSignRawTransaction(ctx context.Context, params, 
 			srawinputs = append(srawinputs, input)
 		}
 	}
-	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
-	var d time.Duration
-	if duration == nil {
-		d = 300 * time.Second
-	} else if *duration > max {
-		return ptnjson.SignRawTransactionResult{}, errors.New("unlock duration too large")
-	} else {
-		d = time.Duration(*duration) * time.Second
-	}
-	ks := s.b.GetKeyStore()
-	err = ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
+	err = s.unlockKS(addr, password, duration)
 	if err != nil {
 		newErr := errors.New("get addr by outpoint get err:" + err.Error())
 		log.Error(newErr.Error())
@@ -459,7 +450,7 @@ func (s *PublicWalletAPI) SendRlpTransaction(ctx context.Context, encodedTx stri
 	return submitTransaction(ctx, s.b, tx)
 }
 
-func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params string, password string) (common.Hash, error) {
+func (s *PrivateWalletAPI) CreateProofTransaction(ctx context.Context, params string, password string) (common.Hash, error) {
 
 	var proofTransactionGenParams ptnjson.ProofTransactionGenParams
 	err := json.Unmarshal([]byte(params), &proofTransactionGenParams)
@@ -581,11 +572,7 @@ func (s *PublicWalletAPI) CreateProofTransaction(ctx context.Context, params str
 			}
 		}
 	}
-	//const max = uint64(time.Duration(math.MaxInt64) / time.Second)
-	d := 300 * time.Second
-
-	ks := s.b.GetKeyStore()
-	err = ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
+	err = s.unlockKS(addr, password, nil)
 	if err != nil {
 		return common.Hash{}, errors.New("TimedUnlock Account err")
 	}
@@ -872,7 +859,8 @@ func (s *PublicWalletAPI) GetAddrTokenFlow(ctx context.Context, addr string, tok
 
 //sign rawtranscation
 //create raw transction
-func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to string, amount, password string, duration *uint64) (common.Hash, error) {
+func (s *PrivateWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to string, amount,
+	password string, duration *uint32) (common.Hash, error) {
 	//var LockTime int64
 	LockTime := int64(0)
 
@@ -986,18 +974,19 @@ func (s *PublicWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to st
 			}
 		}
 	}
-	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
-	var d time.Duration
-	if duration == nil {
-		d = 300 * time.Second
-	} else if *duration > max {
-		//return false, errors.New("unlock duration too large")
-		return common.Hash{}, err
-	} else {
-		d = time.Duration(*duration) * time.Second
-	}
-	ks := s.b.GetKeyStore()
-	err = ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
+	//const max = uint64(time.Duration(math.MaxInt64) / time.Second)
+	//var d time.Duration
+	//if duration == nil {
+	//	d = 300 * time.Second
+	//} else if *duration > max {
+	//	//return false, errors.New("unlock duration too large")
+	//	return common.Hash{}, err
+	//} else {
+	//	d = time.Duration(*duration) * time.Second
+	//}
+	//ks := s.b.GetKeyStore()
+	//err = ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
+	err = s.unlockKS(addr, password, duration)
 	if err != nil {
 		//return nil, err
 		return common.Hash{}, errors.New("TimedUnlock Account err")
@@ -1105,26 +1094,18 @@ func RandFromString(value string) (decimal.Decimal, error) {
 	return result, nil
 }
 
-func (s *PrivateWalletAPI) unlockKS(addr common.Address, password string, duration *uint64) error {
-	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
-	var d time.Duration
-	if duration == nil {
-		d = 300 * time.Second
-	} else if *duration > max {
-		return errors.New("unlock duration too large")
-	} else {
-		d = time.Duration(*duration) * time.Second
-	}
+func (s *PrivateWalletAPI) unlockKS(addr common.Address, password string, timeout *uint32) error {
 	ks := s.b.GetKeyStore()
-	err := ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
-	if err != nil {
-		return errors.New("TimedUnlock Account err")
+	if timeout == nil {
+		return ks.Unlock(accounts.Account{Address: addr}, password)
+	} else {
+		d := time.Duration(*timeout) * time.Second
+		return ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
 	}
-	return nil
 }
 
 func (s *PrivateWalletAPI) TransferPtn(ctx context.Context, from string, to string,
-	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *time.Duration) (common.Hash, error) {
+	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint32) (common.Hash, error) {
 	gasToken := dagconfig.DagConfig.GasToken
 	return s.TransferToken(ctx, gasToken, from, to, amount, fee, Extra, password, duration)
 }
@@ -1155,7 +1136,7 @@ func getRealAddress(ks *keystore.KeyStore, addr string) (common.Address, error) 
 }
 
 func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from string, to string,
-	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *time.Duration) (common.Hash, error) {
+	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *uint32) (common.Hash, error) {
 	//1. build payment tx
 	start := time.Now()
 	rawTx, usedUtxo, err := buildRawTransferTx(s.b, asset, from, to, amount, fee, password)
@@ -1184,7 +1165,7 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 
 //转移Token，并确认打包后返回
 func (s *PrivateWalletAPI) TransferTokenSync(ctx context.Context, asset string, fromStr string, toStr string,
-	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, duration *time.Duration) (*ptnjson.TxHashWithUnitInfoJson, error) {
+	amount decimal.Decimal, fee decimal.Decimal, Extra string, password string, timeout *uint32) (*ptnjson.TxHashWithUnitInfoJson, error) {
 	start := time.Now()
 	log.Infof("Received transfer token request from:%s, to:%s,amount:%s", fromStr, toStr, amount.String())
 	s.lock.Lock()
@@ -1203,7 +1184,7 @@ func (s *PrivateWalletAPI) TransferTokenSync(ctx context.Context, asset string, 
 	}
 	//3. sign
 	ks := s.b.GetKeyStore()
-	err = signRawTransaction(tx, ks, fromStr, password, duration, 1, usedUtxo)
+	err = signRawTransaction(tx, ks, fromStr, password, timeout, 1, usedUtxo)
 	if err != nil {
 		log.Errorf("TransferTokenSync error:%s", err.Error())
 		s.lock.Unlock()
@@ -1222,7 +1203,7 @@ func (s *PrivateWalletAPI) TransferTokenSync(ctx context.Context, asset string, 
 	defer close(headCh)
 	headSub := s.b.Dag().SubscribeSaveUnitEvent(headCh)
 	defer headSub.Unsubscribe()
-	timeout := time.NewTimer(20 * time.Second)
+	timer := time.NewTimer(20 * time.Second)
 	for {
 		select {
 		case u := <-headCh:
@@ -1243,7 +1224,7 @@ func (s *PrivateWalletAPI) TransferTokenSync(ctx context.Context, asset string, 
 					return txInfo, nil
 				}
 			}
-		case <-timeout.C:
+		case <-timer.C:
 			return nil, errors.New(fmt.Sprintf("get tx[%s] package status timeout", tx.Hash().String()))
 		// Err() channel will be closed when unsubscribing.
 		case err := <-headSub.Err():
@@ -1255,7 +1236,7 @@ func (s *PrivateWalletAPI) TransferTokenSync(ctx context.Context, asset string, 
 //构造手续费代付的交易并广播
 func (s *PrivateWalletAPI) TransferToken2(ctx context.Context, asset string, fromStr string, toStr string,
 	gasFromStr string, amount decimal.Decimal, fee decimal.Decimal, Extra string,
-	password string, duration *uint64) (common.Hash, error) {
+	password string, timeout *uint32) (common.Hash, error) {
 
 	toArray := strings.Split(toStr, ":")
 	to := toArray[0]
@@ -1357,7 +1338,7 @@ func (s *PrivateWalletAPI) TransferToken2(ctx context.Context, asset string, fro
 		if err != nil {
 			return common.Hash{}, err
 		}
-		err = s.unlockKS(fromAddr, password, duration)
+		err = s.unlockKS(fromAddr, password, timeout)
 		if err != nil {
 			return common.Hash{}, err
 		}
@@ -1374,7 +1355,7 @@ func (s *PrivateWalletAPI) TransferToken2(ctx context.Context, asset string, fro
 }
 
 func (s *PrivateWalletAPI) CreateTxWithOutFee(ctx context.Context, asset string, fromStr string, toStr string,
-	amount decimal.Decimal, Extra string, password string, duration *uint64) (string, error) {
+	amount decimal.Decimal, Extra string, password string, duration *uint32) (string, error) {
 
 	toArray := strings.Split(toStr, ":")
 	to := toArray[0]
@@ -1425,13 +1406,13 @@ func (s *PrivateWalletAPI) CreateTxWithOutFee(ctx context.Context, asset string,
 		}
 		from = fromAccount.Address.String()
 	}
-	
-	rawTx, err := s.buildRawTxWithoutFee(asset, from, to, amount,Extra)
+
+	rawTx, err := s.buildRawTxWithoutFee(asset, from, to, amount, Extra)
 	if err != nil {
 		return "", err
 	}
-	
-	return rawTx,err
+
+	return rawTx, err
 }
 
 func (s *PrivateWalletAPI) CreateProofOfExistenceTx(ctx context.Context, addr string,
@@ -1862,7 +1843,7 @@ func (s *PrivateWalletAPI) buildRawTransferTx2(tokenId, from, to, gasFrom string
 }
 
 //构造1笔Message，Msg0的FromAddress是用户
-func (s *PrivateWalletAPI) buildRawTxWithoutFee(tokenId, from, to string, amount decimal.Decimal,Extra string) (string, error) {
+func (s *PrivateWalletAPI) buildRawTxWithoutFee(tokenId, from, to string, amount decimal.Decimal, Extra string) (string, error) {
 	//参数检查
 	tokenAsset, err := modules.StringToAsset(tokenId)
 	if err != nil {
@@ -1915,8 +1896,7 @@ func (s *PrivateWalletAPI) buildRawTxWithoutFee(tokenId, from, to string, amount
 	return mtxHex, nil
 }
 
-
-func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params string, hashtype string, gasFrom ,to string, gasFee decimal.Decimal,password string, duration *uint64) (ptnjson.SignRawTransactionResult, error) {
+func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params string, hashtype string, gasFrom, to string, gasFee decimal.Decimal, password string, duration *uint32) (ptnjson.SignRawTransactionResult, error) {
 
 	//transaction inputs
 	if params == "" {
@@ -1945,7 +1925,7 @@ func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params str
 	}
 	poolTxs, _ := s.b.GetPoolTxsByAddr(gasFrom)
 
-    ptn := dagconfig.DagConfig.GasToken
+	ptn := dagconfig.DagConfig.GasToken
 
 	utxosPTN, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, gasFrom, ptn)
 	if err != nil {
@@ -1957,20 +1937,20 @@ func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params str
 		return ptnjson.SignRawTransactionResult{}, errors.New("gasFrom addr err")
 	}
 
-    toAddr, err := common.StringToAddress(to)
+	toAddr, err := common.StringToAddress(to)
 	if err != nil {
 		fmt.Println(err.Error())
 		return ptnjson.SignRawTransactionResult{}, errors.New("gasTo addr err")
 	}
 
-    ptnAmount := uint64(0)
+	ptnAmount := uint64(0)
 	feeAmount := ptnjson.Ptn2Dao(gasFee)
 	pay1, _, err := createPayment(gasAddr, toAddr, ptnAmount, feeAmount, utxosPTN)
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, errors.New("fee createPayment  err")
 	}
 
-    tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay1))
+	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay1))
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
 		//TODO use keystore
 		ks := s.b.GetKeyStore()
@@ -2010,15 +1990,15 @@ func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params str
 			}
 			//TxHash := trimx(uvu.TxHash)
 			PkScriptHex := trimx(uvu.PkScriptHex)
-			utxoLockScripts[inpoint] = hexutil.MustDecode("0x"+PkScriptHex)
+			utxoLockScripts[inpoint] = hexutil.MustDecode("0x" + PkScriptHex)
 			//fmt.Println("-----------------------------------------")
 			//fmt.Println(PkScriptHex)
-	        //input := ptnjson.RawTxInput{Txid: TxHash, Vout: uvu.OutIndex, MessageIndex: uvu.MessageIndex, ScriptPubKey: PkScriptHex, RedeemScript: ""}
+			//input := ptnjson.RawTxInput{Txid: TxHash, Vout: uvu.OutIndex, MessageIndex: uvu.MessageIndex, ScriptPubKey: PkScriptHex, RedeemScript: ""}
 			//srawinputs = append(srawinputs, input)
 			addr, err = tokenengine.Instance.GetAddressFromScript(hexutil.MustDecode(uvu.PkScriptHex))
 			if err != nil {
 				log.Error(err.Error())
-				return ptnjson.SignRawTransactionResult{},  errors.New("get addr FromScript is err")
+				return ptnjson.SignRawTransactionResult{}, errors.New("get addr FromScript is err")
 			}
 		}
 		/*for _, txout := range payload.Outputs {
@@ -2027,25 +2007,14 @@ func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params str
 			}
 		}*/
 	}
-	//ptnjson.SignRawTransactionResult{},
-	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
-	var d time.Duration
-	if duration == nil {
-		d = 300 * time.Second
-	} else if *duration > max {
-		return ptnjson.SignRawTransactionResult{}, errors.New("unlock duration too large")
-	} else {
-		d = time.Duration(*duration) * time.Second
-	}
-	ks := s.b.GetKeyStore()
-	err = ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
+	err = s.unlockKS(addr, password, duration)
 	if err != nil {
 		newErr := errors.New("get addr by outpoint get err:" + err.Error())
 		log.Error(newErr.Error())
 		return ptnjson.SignRawTransactionResult{}, err
 	}
 
-    //3.
+	//3.
 	signErrs, err := tokenengine.Instance.SignTxAllPaymentInput(tx, 1, utxoLockScripts, nil, getPubKeyFn, getSignFn)
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, err
@@ -2065,5 +2034,5 @@ func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params str
 		Txid:     tx.Hash().String(),
 		Complete: len(signErrors) == 0,
 		Errors:   signErrors,
-	},err
+	}, err
 }
