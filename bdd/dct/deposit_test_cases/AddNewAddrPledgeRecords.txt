@@ -6,6 +6,6 @@ AddNewAddrPledgeRecords
     [Arguments]    ${votedAddress}
     ${contractParam}    Create List    AddNewAddrPledgeRecords
     ${param}    Create List    ${votedAddress}    ${votedAddress}    1    1    ${depositContractAddress}
-    ...    ${contractParam}    \    10
+    ...    ${contractParam}
     ${result}    创建公用的POST请求    contract_ccinvoketx    contract_ccinvoketx    ${param}
     [Return]    ${result}

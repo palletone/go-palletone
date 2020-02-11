@@ -7,7 +7,7 @@ createToken
     ${one}    Create List    createToken    depositTest    dpt    1    1000
     ...    ${address}
     ${two}    Create List    ${address}    ${address}    ${amount}    ${fee}    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43
-    ...    ${one}    \    20
+    ...    ${one}
     ${result}    创建公用的POST请求    contract_ccinvoketx    createToken    ${two}
     sleep    6
     [Return]    ${result}
