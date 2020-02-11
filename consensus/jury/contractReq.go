@@ -110,11 +110,11 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 		if err != nil {
 			return common.Hash{}, nil, err
 		}
-		err = p.dag.SaveTransaction(ctx.rstTx)
-		if err != nil {
-			log.Errorf("[%s]ContractInstallReq, SaveTransaction err:%s", shortId(reqId.String()), err.Error())
-			return common.Hash{}, nil, err
-		}
+		//err = p.dag.SaveTransaction(ctx.rstTx)
+		//if err != nil {
+		//	log.Errorf("[%s]ContractInstallReq, SaveTransaction err:%s", shortId(reqId.String()), err.Error())
+		//	return common.Hash{}, nil, err
+		//}
 		tx := ctx.rstTx
 		_, tpl, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_TPL)
 		if err != nil || tpl == nil {

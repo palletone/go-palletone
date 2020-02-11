@@ -676,11 +676,11 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 			adaInf: make(map[uint32]*AdapterInf),
 		}
 	}
-	err = p.dag.SaveTransaction(txTmp)
-	if err != nil {
-		log.Errorf("[%s]CheckContractTxValid, SaveTransaction err:%s", shortId(reqId.String()), err.Error())
-		return false
-	}
+	//err = p.dag.SaveTransaction(txTmp)
+	//if err != nil {
+	//	log.Errorf("[%s]CheckContractTxValid, SaveTransaction err:%s", shortId(reqId.String()), err.Error())
+	//	return false
+	//}
 	p.mtx[reqId].reqTx = reqTx
 	p.mtx[reqId].rstTx = txTmp
 
