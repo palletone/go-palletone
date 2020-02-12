@@ -736,6 +736,7 @@ PledgeTest02
     sleep    1
     ${result}    mediatorListVoteResults    #查看超级节点投票结果
     log    ${result}
+    log    第一次分红
     ${result}    isFinishAllocated
     log    ${result}
     sleep    5
@@ -752,7 +753,6 @@ PledgeTest02
     ${result}    isFinishAllocated
     log    ${result}
     sleep    5
-    log    第一次分红
     ${result}    queryPledgeStatusByAddr    ${votedAddress01}    #查看某地址的质押结果
     log    ${result}
     ${resultJson}    To Json    ${result}
@@ -1079,7 +1079,26 @@ PledgeTest02
     log    ${depositOne}
     #    Evaluate    ${depositTwo}-${depositOne}
     #    ${all}    311.5498
-    log    第四次分红
+    sleep    1
+    log    第五次分红
+    log    这是新增的
+    ${black}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF    PTN
+    log    ${black}
+    ${result}    getBalance    ${votedAddress01}    PTN
+    log    ${result}
+    ${res}    addBlacklist    ${votedAddress01}    lsls
+    log    ${res}
+    sleep    5
+    ${b}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF    PTN
+    log    ${b}
+    Should Be Equal As Numbers    ${b}    9893.99
+    ${result}    getBalance    ${votedAddress01}    PTN
+    log    ${result}
+    ${res}    getBlacklistRecords
+    log    ${res}
+    ${res}    getBlacklistAddress
+    log    ${res}
+    #    ${res}    ${one}
     ${result}    isFinishAllocated
     log    ${result}
     sleep    5
@@ -1096,12 +1115,15 @@ PledgeTest02
     ${result}    isFinishAllocated
     log    ${result}
     sleep    5
+    ${b}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF    PTN
+    log    ${b}
+    Should Be Equal As Numbers    ${b}    9995.93762699
     ${result}    queryPledgeStatusByAddr    ${votedAddress01}    #查看某地址的质押结果
     log    ${result}
     ${resultJson}    To Json    ${result}
     ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
     #    ${newDepositAmount}
-    #    ${newDepositAmount}    1.94762699
+    Should Be Equal As Strings    ${newDepositAmount}    0
     ${result}    QueryPledgeHistoryByAddr    ${votedAddress01}
     log    ${result}
     ${result}    getBalance    ${votedAddress01}    PTN
@@ -1111,7 +1133,7 @@ PledgeTest02
     ${resultJson}    To Json    ${result}
     ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
     log    ${newDepositAmount}
-    #    ${newDepositAmount}    1.94762699
+    Should Be Equal As Strings    ${newDepositAmount}    1.96579118
     ${result}    getBalance    ${votedAddress02}    PTN
     log    ${result}
     ${result}    queryPledgeStatusByAddr    ${votedAddress03}    #查看某地址的质押结果
@@ -1119,7 +1141,7 @@ PledgeTest02
     ${resultJson}    To Json    ${result}
     ${newDepositAmount}    Get From Dictionary    ${resultJson}    PledgeAmount
     log    ${newDepositAmount}
-    #    ${newDepositAmount}    102.88309904
+    Should Be Equal As Strings    ${newDepositAmount}    103.84262009
     ${result}    getBalance    ${votedAddress03}    PTN
     log    ${result}
     ${result}    queryPledgeStatusByAddr    ${votedAddress04}    #查看某地址的质押结果
@@ -1156,7 +1178,6 @@ PledgeTest02
     sleep    1
     ${result}    QueryAllPledgeHistory
     log    ${result}
-    sleep    1
 
 Business_08
     [Documentation]    退出候选列表的两个Mediator继续交付保证金
@@ -1206,3 +1227,36 @@ Business_08
     log    ${depositTwo}
     ${all}    Evaluate    ${depositTwo}-${depositOne}
     Should Be Equal As Numbers    ${all}    50
+
+*** Keywords ***
+addBlacklist
+    [Arguments]    ${address}    ${reason}
+    ${one}    Create List    addBlacklist    ${address}    ${reason}
+    ${two}    Create List    ${foundationAddr}    ${foundationAddr}    0    1    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF
+    ...    ${one}    \    10
+    ${res}    p    contract_ccinvoketx    addBlacklist    ${two}
+    [Return]    ${res}
+
+getBlacklistRecords
+    ${one}    Create List    getBlacklistRecords
+    ${two}    Create List    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF    ${one}    ${10}
+    ${res}    p    contract_ccquery    getBlacklistRecords    ${two}
+    [Return]    ${res}
+
+getBlacklistAddress
+    ${one}    Create List    getBlacklistAddress
+    ${two}    Create List    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF    ${one}    ${10}
+    ${res}    p    contract_ccquery    getBlacklistAddress    ${two}
+    ${addressMap}    To Json    ${res}
+    [Return]    ${addressMap}
+
+p
+    [Arguments]    ${method}    ${alias}    ${params}
+    ${header}    Create Dictionary    Content-Type=application/json
+    ${data}    Create Dictionary    jsonrpc=2.0    method=${method}    params=${params}    id=1
+    Create Session    ${alias}    http://127.0.0.1:8545
+    ${resp}    Post Request    ${alias}    http://127.0.0.1:8545    data=${data}    headers=${header}
+    ${respJson}    To Json    ${resp.content}
+    Dictionary Should Contain Key    ${respJson}    result
+    ${res}    Get From Dictionary    ${respJson}    result
+    [Return]    ${res}
