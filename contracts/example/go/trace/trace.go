@@ -140,13 +140,13 @@ func (p *Trace) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		data, _ := json.Marshal(result)
 		return shim.Success(data)
-
+	case "getAdmin":
+		return p.Get(stub,symbolsAdmin)
 	case "setAdmin":
 		if len(args) < 1 {
 			return shim.Error("need 1 args (PTNAddr)")
 		}
 		return p.SetAdmin(args[0], stub)
-
 	case "Set":
 		if len(args) < 2 {
 			return shim.Error("need 2 args (Key, Value)")
@@ -185,13 +185,26 @@ func (p *Trace) AddProof(stub shim.ChaincodeStubInterface, category, key,
 	}
 	isAdmin := false
 	result, _ := stub.GetState(symbolsOwner + invokeAddr.String())
+	admin, _ := getAdmin(stub)
 	if len(result) == 0 {
-		admin, _ := getAdmin(stub)
 		if admin != invokeAddr.String() {
 			return shim.Error("Only Admin or Owner can add")
 		}
 		isAdmin = true
+	}else{
+		if admin == invokeAddr.String() {
+			isAdmin = true
+		}
 	}
+	//  如果owner是admin，并且invokeAddr也是admin，就会报错
+	//result, _ := stub.GetState(symbolsOwner + invokeAddr.String())
+	//if len(result) == 0 {
+	//	admin, _ := getAdmin(stub)
+	//	if admin != invokeAddr.String() {
+	//		return shim.Error("Only Admin or Owner can add")
+	//	}
+	//	isAdmin = true
+	//}
 
 	ownerInput := ownerAddr.String()
 	if isAdmin {
@@ -282,12 +295,16 @@ func (p *Trace) DelProof(stub shim.ChaincodeStubInterface, category, key string)
 	}
 	isAdmin := false
 	result, _ := stub.GetState(symbolsOwner + invokeAddr.String())
+	admin, _ := getAdmin(stub)
 	if len(result) == 0 {
-		admin, _ := getAdmin(stub)
 		if admin != invokeAddr.String() {
-			return shim.Error("Only Admin or Owner can delete")
+			return shim.Error("Only Admin or Owner can add")
 		}
 		isAdmin = true
+	}else{
+		if admin == invokeAddr.String() {
+			isAdmin = true
+		}
 	}
 
 	//
@@ -469,6 +486,6 @@ func (p *Trace) Set(stub shim.ChaincodeStubInterface, key string, value string) 
 func main() {
 	err := shim.Start(new(Trace))
 	if err != nil {
-		fmt.Printf("Error starting Simple chaincode: %s", err)
+		fmt.Printf("Error starting Trace chaincode: %s", err)
 	}
 }
