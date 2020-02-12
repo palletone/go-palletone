@@ -2116,23 +2116,15 @@ func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params str
 		ks := s.b.GetKeyStore()
 
 		return ks.GetPublicKey(addr)
-		//privKey, _ := ks.DumpPrivateKey(account, "1")
-		//return crypto.CompressPubkey(&privKey.PublicKey), nil
 	}
 	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
 		ks := s.b.GetKeyStore()
-		//account, _ := MakeAddress(ks, addr.String())
-		//privKey, _ := ks.DumpPrivateKey(account, "1")
 		return ks.SignMessage(addr, msg)
-		//return crypto.Sign(hash, privKey)
 	}
-	//var srawinputs []ptnjson.RawTxInput
 
 	var addr common.Address
-	//var keys []string
 	utxoLockScripts := make(map[modules.OutPoint][]byte)
 	for _, msg := range newtx.TxMessages() {
-		fmt.Println("-------2216-----")
 		payload, ok := msg.Payload.(*modules.PaymentPayload)
 		if !ok {
 			continue
@@ -2148,24 +2140,14 @@ func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params str
 				log.Error(eerr.Error())
 				return ptnjson.SignRawTransactionResult{}, err
 			}
-			//TxHash := trimx(uvu.TxHash)
 			PkScriptHex := trimx(uvu.PkScriptHex)
 			utxoLockScripts[inpoint] = hexutil.MustDecode("0x"+PkScriptHex)
-			//fmt.Println("-----------------------------------------")
-			//fmt.Println(PkScriptHex)
-	        //input := ptnjson.RawTxInput{Txid: TxHash, Vout: uvu.OutIndex, MessageIndex: uvu.MessageIndex, ScriptPubKey: PkScriptHex, RedeemScript: ""}
-			//srawinputs = append(srawinputs, input)
 			addr, err = tokenengine.Instance.GetAddressFromScript(hexutil.MustDecode(uvu.PkScriptHex))
 			if err != nil {
 				log.Error(err.Error())
 				return ptnjson.SignRawTransactionResult{},  errors.New("get addr FromScript is err")
 			}
 		}
-		/*for _, txout := range payload.Outputs {
-			err = tokenengine.ScriptValidate(txout.PkScript, tx, 0, 0)
-			if err != nil {
-			}
-		}*/
 	}
 	//ptnjson.SignRawTransactionResult{},
 	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
