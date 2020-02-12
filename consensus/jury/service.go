@@ -389,7 +389,7 @@ func (p *Processor) GenContractTransaction(orgTx *modules.Transaction, msgs []*m
 	}
 	extSize := ContractDefaultSignatureSize + ContractDefaultPayInputSignatureSize*float64(payInputNum)
 
-	if !p.validator.ValidateTxFeeEnough(tx, extSize, 0) {
+	if p.validator.ValidateTxFeeEnough(tx, extSize, 0) != validator.TxValidationCode_VALID {
 		msgs, err = genContractErrorMsg(tx, errors.New("tx fee is invalid"), true)
 		if err != nil {
 			log.Errorf("[%s]GenContractTransaction, genContractErrorMsg,error:%s", shortId(reqId.String()), err.Error())
@@ -950,7 +950,8 @@ func (p *Processor) signGenericTx(contractId common.Address, from common.Address
 	defer p.locker.Unlock()
 
 	reqId := tx.RequestHash()
-	if !p.validator.ValidateTxFeeEnough(tx, ContractDefaultSignatureSize+ContractDefaultRWSize, 0) {
+	if p.validator.ValidateTxFeeEnough(tx, ContractDefaultSignatureSize+ContractDefaultRWSize,
+		0) != validator.TxValidationCode_VALID {
 		return common.Hash{}, nil, fmt.Errorf("signGenericTx, tx fee is invalid")
 	}
 	log.Debugf("[%s]signGenericTx, contractId[%s]", shortId(reqId.String()), contractId.String())
