@@ -139,7 +139,7 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 			return nil, err
 		}
 	}
-	memDag, err := dag.NewDagSimple(localdb)
+	memDag, err := dag.NewDagSimple(db)
 	if err != nil {
 		log.Error("PalletOne New", "NewDagSimple err:", err)
 		return nil, err
