@@ -196,16 +196,6 @@ func (p *Trace) AddProof(stub shim.ChaincodeStubInterface, category, key,
 			isAdmin = true
 		}
 	}
-	//  如果owner是admin，并且invokeAddr也是admin，就会报错
-	//result, _ := stub.GetState(symbolsOwner + invokeAddr.String())
-	//if len(result) == 0 {
-	//	admin, _ := getAdmin(stub)
-	//	if admin != invokeAddr.String() {
-	//		return shim.Error("Only Admin or Owner can add")
-	//	}
-	//	isAdmin = true
-	//}
-
 	ownerInput := ownerAddr.String()
 	if isAdmin {
 		result, _ := stub.GetState(symbolsOwner + ownerInput)
@@ -298,7 +288,7 @@ func (p *Trace) DelProof(stub shim.ChaincodeStubInterface, category, key string)
 	admin, _ := getAdmin(stub)
 	if len(result) == 0 {
 		if admin != invokeAddr.String() {
-			return shim.Error("Only Admin or Owner can add")
+			return shim.Error("Only Admin or Owner can delete")
 		}
 		isAdmin = true
 	}else{
