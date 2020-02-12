@@ -21,11 +21,13 @@
 package memunit
 
 import (
+	"testing"
+	"time"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/tokenengine"
-	"time"
 
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -40,7 +42,6 @@ import (
 	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/txspool"
 	"github.com/palletone/go-palletone/validator"
-	"testing"
 )
 
 func cache() palletcache.ICache {
@@ -259,33 +260,5 @@ func mockMediatorInit(statedb storage.IStateDb, propDb storage.IPropertyDb) {
 }
 
 func mockValidator() validator.Validator {
-	return &mockValidate{}
-}
-
-type mockValidate struct {
-}
-
-func (v mockValidate) ValidateTx(tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, validator.ValidationCode, error) {
-	return nil, validator.TxValidationCode_VALID, nil
-}
-
-func (v mockValidate) ValidateUnitExceptGroupSig(unit *modules.Unit) validator.ValidationCode {
-	return validator.TxValidationCode_VALID
-}
-func (v mockValidate) ValidateUnitExceptPayment(unit *modules.Unit) error {
-	return nil
-}
-
-//验证一个Header是否合法（Mediator签名有效）
-func (v mockValidate) ValidateHeader(h *modules.Header) validator.ValidationCode {
-	return validator.TxValidationCode_VALID
-}
-func (v mockValidate) ValidateUnitGroupSign(h *modules.Header) error {
-	return nil
-}
-func (v mockValidate) CheckTxIsExist(tx *modules.Transaction) bool {
-	return false
-}
-func (v mockValidate) ValidateTxFeeEnough(tx *modules.Transaction, extSize float64, extTime float64) bool {
-	return true
+	return &validator.ValidatorAllPass{}
 }
