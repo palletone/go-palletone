@@ -5,9 +5,8 @@ Library           Collections
 *** Keywords ***
 genInvoketxParams
     [Arguments]    ${caCertHolder}    ${caCertHolder}    ${from}    ${to}    ${certContractAddr}    ${args}
-    ...    ${certid}
     ${params}=    Create List    ${caCertHolder}    ${caCertHolder}    ${from}    ${to}    ${certContractAddr}
-    ...    ${args}    ${certid}    0
+    ...    ${args}
     [Return]    ${params}
 
 newAccount
@@ -63,7 +62,7 @@ issueToken
     ${args}=    Create List    createToken    ${des}    ${name}    ${decimal}    ${amount}
     ...    ${addr}
     ${params}=    genInvoketxParams    ${addr}    ${addr}    100    1    ${prc720ContractAddr}
-    ...    ${args}    ${null}
+    ...    ${args}
     ${respJson}=    sendRpcPost    ${invokeMethod}    ${params}    issueToken
     Dictionary Should Contain Key    ${respJson}    result
     [Return]    ${respJson}
@@ -72,7 +71,7 @@ supplyToken
     [Arguments]    ${addr}    ${tokenID}    ${amount}
     ${args}=    Create List    supplyToken    ${tokenID}    ${amount}    ${addr}
     ${params}=    genInvoketxParams    ${addr}    ${addr}    100    1    ${prc720ContractAddr}
-    ...    ${args}    ${null}
+    ...    ${args}
     ${respJson}=    sendRpcPost    ${invokeMethod}    ${params}    supplyToken
     Dictionary Should Contain Key    ${respJson}    result
     [Return]    ${respJson}
