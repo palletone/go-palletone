@@ -21,27 +21,33 @@
 package validator
 
 import "github.com/palletone/go-palletone/dag/modules"
-//ValidatorAllPass used for UT
-type ValidatorAllPass struct{
 
+//ValidatorAllPass used for UT
+type ValidatorAllPass struct {
 }
-func(v *ValidatorAllPass) ValidateTx(tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, ValidationCode, error){
+
+func (v *ValidatorAllPass) ValidateTx(tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, ValidationCode, error) {
 	return nil, TxValidationCode_VALID, nil
 }
+
 //验证一个Unit中的所有交易是否是合法交易
 //ValidateTransactions(txs modules.Transactions) error
 //除了群签名外，验证Unit是否是合法Unit,包括其中的所有交易都会逐一验证
-func(v *ValidatorAllPass)ValidateUnitExceptGroupSig(unit *modules.Unit) ValidationCode{
+func (v *ValidatorAllPass) ValidateUnitExceptGroupSig(unit *modules.Unit) ValidationCode {
 	return TxValidationCode_VALID
 }
+
 //ValidateUnitExceptPayment(unit *modules.Unit) error
 //验证一个Header是否合法（Mediator签名有效）
-func(v *ValidatorAllPass)ValidateHeader(h *modules.Header) ValidationCode{
+func (v *ValidatorAllPass) ValidateHeader(h *modules.Header) ValidationCode {
 	return TxValidationCode_VALID
 }
-func(v *ValidatorAllPass)ValidateUnitGroupSign(h *modules.Header) error{
+func (v *ValidatorAllPass) ValidateUnitGroupSign(h *modules.Header) error {
 	return nil
 }
-func(v *ValidatorAllPass)CheckTxIsExist(tx *modules.Transaction) bool{
+func (v *ValidatorAllPass) CheckTxIsExist(tx *modules.Transaction) bool {
 	return false
+}
+func (v *ValidatorAllPass) ValidateTxFeeEnough(tx *modules.Transaction, extSize float64, extTime float64) ValidationCode {
+	return TxValidationCode_VALID
 }

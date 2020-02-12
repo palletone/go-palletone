@@ -41,6 +41,7 @@ func NewDagDb(db ptndb.Database) *DagDb {
 }
 
 type IDagDb interface {
+	GetDb() ptndb.Database
 	GetGenesisUnitHash() (common.Hash, error)
 	SaveGenesisUnitHash(hash common.Hash) error
 
@@ -76,6 +77,9 @@ type IDagDb interface {
 	ForEachAllTxDo(txAction func(key []byte, transaction *modules.Transaction) error) error
 }
 
+func (dagdb *DagDb) GetDb() ptndb.Database {
+	return dagdb.db
+}
 func (dagdb *DagDb) IsHeaderExist(uHash common.Hash) (bool, error) {
 	key := append(constants.HEADER_PREFIX, uHash.Bytes()...)
 	return dagdb.db.Has(key)
