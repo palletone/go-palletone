@@ -110,6 +110,9 @@ func TestHexToAddrString(t *testing.T) {
 	addr = HexToAddress("0x3c5a9cd1dc2437342692de6ed2b948c5cbb3174800")
 	t.Logf("0x1 p2sh address: %s", addr.String())
 
+	addr = HexToAddress("0x628bed5975ddc3d0456fd7aa0b8636e6fb621233")
+	t.Logf("0x1 address: %s", addr.String())
+
 	t.Logf("Is system contract:%t", addr.IsSystemContractAddress())
 }
 func TestBytesListToAddressList(t *testing.T) {
