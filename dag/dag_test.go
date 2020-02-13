@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"testing"
+	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -145,6 +146,9 @@ func TestDag_SaveTransaction(t *testing.T) {
 	db, _ := ptndb.NewMemDatabase()
 	dag, err := NewDagSimple(db)
 	assert.Nil(t, err)
+	b := []byte{}
+	dag.unstablePropRep.SetNewestUnit(modules.NewHeader(nil, common.Hash{}, b, b, b, b, []uint16{},
+		modules.PTNCOIN, 100, time.Now().Unix()))
 	invokePayload := &modules.ContractInvokePayload{
 		ContractId: []byte("contract0000"),
 		ReadSet:    nil,

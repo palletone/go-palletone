@@ -43,6 +43,10 @@ import (
 
 func mockUnitRepository() *UnitRepository {
 	db, _ := ptndb.NewMemDatabase()
+	propRep := NewPropRepository4Db(db)
+	b := []byte{}
+	propRep.SetNewestUnit(modules.NewHeader(nil, common.Hash{}, b, b, b, b, []uint16{},
+		modules.PTNCOIN, 100, time.Now().Unix()))
 	//l := plog.NewTestLog()
 	return NewUnitRepository4Db(db, tokenengine.Instance)
 }
