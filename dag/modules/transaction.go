@@ -285,7 +285,7 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 	payload := msg0.Payload.(*PaymentPayload)
 
 	if payload.IsCoinbase() {
-		return NewAmountAsset(0, NewPTNAsset()), nil
+		return NewAmountAsset(0, nil), nil
 	}
 	inAmount := uint64(0)
 	outAmount := uint64(0)
@@ -449,7 +449,7 @@ func (tx *Transaction) GetCoinbaseReward(versionFunc QueryStateByVersionFunc,
 			readMap[addr] = aa
 		}
 	} else {
-		return &AmountAsset{Asset: NewPTNAsset()}, nil
+		return &AmountAsset{Amount: 0}, nil
 	}
 
 	//计算Write Map和Read Map的差，获得Reward值

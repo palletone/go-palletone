@@ -458,7 +458,10 @@ func (handler *Handler) handelGetStateByPrefix(prefix string, contractId []byte,
 			pb.ChaincodeMessage_RESPONSE)
 		rows := []*modules.KeyValue{}
 		err = json.Unmarshal(responseMsg.Payload, &rows)
-		return rows, err
+		if err != nil {
+			return nil,err
+		}
+		return rows, nil
 	}
 	if responseMsg.Type.String() == pb.ChaincodeMessage_ERROR.String() {
 		// Error response

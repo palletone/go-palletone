@@ -27,6 +27,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/dag/parameter"
@@ -172,7 +173,7 @@ func (validate *Validate) validateTransactions(rwM rwset.TxManager, txs modules.
 		a := &modules.Addition{
 			Addr:   unitAuthor,
 			Amount: parameter.CurrentSysParameters.GenerateUnitReward,
-			Asset:  modules.NewPTNAsset(), // dagconfig.DagConfig.GetGasToken().ToAsset(),
+			Asset:  dagconfig.DagConfig.GetGasToken().ToAsset(),
 		}
 		ads = append(ads, a)
 		out := arrangeAdditionFeeList(ads)

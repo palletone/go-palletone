@@ -147,7 +147,10 @@ stopContract
     ${respJson}=    sendRpcPost    ${host}    ${ccstopMethod}    ${params}    InvokeContract
     Dictionary Should Contain Key    ${respJson}    result
     ${result}=    Get From Dictionary    ${respJson}    result
-    [Return]    ${result}
+    Dictionary Should Contain Key    ${result}    contract_id
+    Dictionary Should Contain Key    ${result}    request_id
+    ${reqId}=    Get From Dictionary    ${result}    request_id
+    [Return]    ${reqId}
 
 queryContract
     [Arguments]    ${contractId}    ${args}
