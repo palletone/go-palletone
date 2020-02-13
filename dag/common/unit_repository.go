@@ -29,7 +29,6 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 
@@ -610,6 +609,7 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 		for idx, tx := range poolTxs {
 			t := tx.Tx
 			reqId := t.RequestHash()
+			//如果是合约的连续调用，可能存在读集版本的高度问题，这里进行修正。
 
 			//标记交易有效性
 			markTxIllegal(rep.statedb, t)
@@ -980,9 +980,13 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 
 //Mock一个Unit，然后保存Tx，主要用于内存模拟操作
 func (rep *UnitRepository) SaveTransaction(tx *modules.Transaction) error {
+	unitP, err := rep.propdb.GetNewestUnit(dagconfig.DagConfig.GetGasToken())
+	if err != nil {
+		return err
+	}
 	mockHeader := modules.NewEmptyHeader()
 	mockHeader.SetTimestamp(time.Now().Unix())
-	mockHeader.SetHeight(modules.PTNCOIN, math.MaxUint64)
+	mockHeader.SetHeight(unitP.ChainIndex.AssetID, unitP.ChainIndex.Index+1)
 	mockUnit := &modules.Unit{
 		UnitHeader: mockHeader,
 	}
