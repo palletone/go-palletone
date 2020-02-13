@@ -1233,7 +1233,7 @@ addBlacklist
     [Arguments]    ${address}    ${reason}
     ${one}    Create List    addBlacklist    ${address}    ${reason}
     ${two}    Create List    ${foundationAddr}    ${foundationAddr}    0    1    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF
-    ...    ${one}    \    10
+    ...    ${one}
     ${res}    p    contract_ccinvoketx    addBlacklist    ${two}
     [Return]    ${res}
 
