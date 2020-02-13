@@ -23,16 +23,18 @@ package blacklistcc
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
-	"fmt"
+	"sort"
 )
 
 type BlacklistMgr struct {
@@ -133,6 +135,15 @@ func (p *BlacklistMgr) AddBlacklist(stub shim.ChaincodeStubInterface, blackAddr 
 	for _, aa := range tokenBalance {
 		balance[*aa.Asset] = aa.Amount
 	}
+	//  从质押获取
+	list, _ := getLastPledgeList(stub)
+	depositAmount := list.GetAmount(blackAddr.String())
+		_,ok := balance[*modules.NewPTNAsset()]
+		if ok {
+			balance[*modules.NewPTNAsset()] += depositAmount
+		}else {
+			balance[*modules.NewPTNAsset()] = depositAmount
+		}
 	balanceJson, _ := json.Marshal(balance)
 	record := &BlacklistRecord{
 		Address:     blackAddr,
@@ -270,4 +281,48 @@ func getBlacklistAddress(stub shim.ChaincodeStubInterface) ([]common.Address, er
 		}
 	}
 	return list, nil
+}
+
+//获得最新的质押列表
+func getLastPledgeList(stub shim.ChaincodeStubInterface) (*modules.PledgeList, error) {
+	log.Info("try to get amount from deposit contract")
+	date, err := getLastPledgeListDate(stub)
+	if err != nil {
+		return nil, err
+	}
+	return getPledgeListByDate(stub, date)
+}
+func getPledgeListByDate(stub shim.ChaincodeStubInterface, date string) (*modules.PledgeList, error) {
+	b, err := stub.GetContractStateByPrefix(syscontract.DepositContractAddress,constants.PledgeList + date)
+	if err != nil {
+		return nil, err
+	}
+	if b == nil {
+		return nil, nil
+	}
+	allM := &modules.PledgeList{}
+	for _, kv := range b {
+		each := modules.PledgeList{}
+		err = json.Unmarshal(kv.Value, &each)
+		if err != nil {
+			return nil, err
+		}
+		allM.TotalAmount += each.TotalAmount
+		allM.Members = append(allM.Members, each.Members...)
+	}
+	//  排序
+	sort.Sort(allM.Members)
+	allM.Date = date
+	return allM, nil
+}
+//获得质押列表的最后更新日期yyyyMMdd
+func getLastPledgeListDate(stub shim.ChaincodeStubInterface) (string, error) {
+	date, err := stub.GetContractState(syscontract.DepositContractAddress,constants.PledgeListLastDate)
+	if err != nil {
+		return "", err
+	}
+	if date == nil {
+		return "", nil
+	}
+	return string(date), nil
 }
