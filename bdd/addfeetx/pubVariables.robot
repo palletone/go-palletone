@@ -7,6 +7,8 @@ ${host}           http://127.0.0.1:8545/
 ${invokeMethod}    contract_ccinvoketx
 ${exchangeMethod}    contract_ccinvokeToken
 ${createTxWithOutFee}    wallet_createTxWithOutFee
+${signAndFeeTransaction}    wallet_signAndFeeTransaction
+${sendRawTransaction}    wallet_sendRawTransaction
 ${transferPTNMethod}    wallet_transferPtn
 ${getBalanceMethod}    wallet_getBalance
 ${unlockAccountMethod}    personal_unlockAccount

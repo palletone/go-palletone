@@ -88,6 +88,14 @@ Alice create tx withoutfee
     ${paras}    Create List    ${TokenId}    ${Alice}    ${Bob}    ${amount}    ${extra}    ${pwd}
     ${res}    post    ${createTxWithOutFee}    ${createTxWithOutFee}    ${paras}
     log    ${res}
+    [Return]    ${res}
+
+Fee and signtx
+    [Arguments]    ${encoderawtx}    ${hashtype}    ${gasFrom}    ${to}    ${gasFee}    ${pwd}    ${duration}
+    ${params}=    Create List    ${encoderawtx}    ${hashtype}    ${gasFrom}    ${to}    ${gasFee}    ${pwd}
+    ${res}=    sendRpcPost    ${signAndFeeTransaction}    ${params}    signAndFeeTransaction
+    log    ${res}
+    [Return]    ${res}
 
 FindTokenId
     [Arguments]    ${addr}    ${TokenName}
