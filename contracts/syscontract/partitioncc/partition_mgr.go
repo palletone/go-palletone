@@ -80,7 +80,7 @@ func (p *PartitionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 				"StableThreshold,CrossChainToken,[]Peers)")
 		}
 		peers := []string{}
-		err := json.Unmarshal([]byte(args[10]), &peers)
+		err := json.Unmarshal([]byte(args[8]), &peers)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
