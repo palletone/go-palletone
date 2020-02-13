@@ -242,7 +242,7 @@ func (s *PrivateContractAPI) Ccdeploytx(ctx context.Context, from, to string, am
 
 func (s *PrivateContractAPI) Ccinvoketx(ctx context.Context, from, to string, amount, fee decimal.Decimal,
 	contractAddress string, param []string, password *string, timeout *uint32) (*ContractInvokeRsp, error) {
-	return s.CcinvokeToken(ctx, from, to, dagconfig.DefaultConfig.GasToken, amount, fee, contractAddress, param, password, timeout)
+	return s.CcinvokeToken(ctx, from, to, dagconfig.DagConfig.GasToken, amount, fee, contractAddress, param, password, timeout)
 }
 
 func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token string, amountToken, fee decimal.Decimal,

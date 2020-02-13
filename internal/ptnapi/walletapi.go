@@ -131,41 +131,6 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 
 	return result, nil
 }
-func createPayment(fromAddr, toAddr common.Address, amountToken uint64, feePTN uint64,
-	utxosPTN map[modules.OutPoint]*modules.Utxo) (*modules.PaymentPayload, []*modules.UtxoWithOutPoint, error) {
-
-	if len(utxosPTN) == 0 {
-		return nil, nil, fmt.Errorf("No PTN Utxo or No Token Utxo")
-	}
-
-	//PTN
-	utxoPTNView, asset := convertUtxoMap2Utxos(utxosPTN)
-
-	utxosPTNTaken, change, err := core.Select_utxo_Greedy(utxoPTNView, amountToken+feePTN)
-	if err != nil {
-		return nil, nil, fmt.Errorf("createPayment Select_utxo_Greedy utxo err")
-	}
-	usedUtxo := []*modules.UtxoWithOutPoint{}
-	//ptn payment
-	payPTN := &modules.PaymentPayload{}
-	//ptn inputs
-	for _, u := range utxosPTNTaken {
-		utxo := u.(*modules.UtxoWithOutPoint)
-		usedUtxo = append(usedUtxo, utxo)
-		prevOut := &utxo.OutPoint // modules.NewOutPoint(txHash, utxo.MessageIndex, utxo.OutIndex)
-		txInput := modules.NewTxIn(prevOut, []byte{})
-		payPTN.AddTxIn(txInput)
-	}
-
-	//ptn outputs
-	if amountToken > 0 {
-		payPTN.AddTxOut(modules.NewTxOut(amountToken, tokenengine.Instance.GenerateLockScript(toAddr), asset))
-	}
-	if change > 0 {
-		payPTN.AddTxOut(modules.NewTxOut(change, tokenengine.Instance.GenerateLockScript(fromAddr), asset))
-	}
-	return payPTN, usedUtxo, nil
-}
 
 func (s *PrivateWalletAPI) SignRawTransaction(ctx context.Context, params string, hashtype string, password string, duration *uint32) (ptnjson.SignRawTransactionResult, error) {
 

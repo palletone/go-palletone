@@ -11,6 +11,7 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -83,7 +84,7 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 	//to:=toAddr.String()
 	ptnAmount := uint64(0)
 	gasToken := dagconfig.DagConfig.GasToken
-	gasAsset := dagconfig.DefaultConfig.GetGasToken()
+	gasAsset := dagconfig.DagConfig.GetGasToken()
 	if tokenId == gasToken {
 		ptnAmount = gasAsset.Uint64Amount(amount)
 	}
@@ -107,6 +108,7 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 	if tokenId == gasToken {
 		return tx, usedUtxo1, nil
 	}
+	log.Debugf("gas token[%s], transfer token[%s], start build payment1", gasToken, tokenId)
 	//构造转移Token的Message1
 	utxosToken, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, from, tokenId)
 	if err != nil {
@@ -122,6 +124,44 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 
 	return tx, usedUtxo1, nil
 }
+
+func createPayment(fromAddr, toAddr common.Address, amountToken uint64, feePTN uint64,
+	utxosPTN map[modules.OutPoint]*modules.Utxo) (*modules.PaymentPayload, []*modules.UtxoWithOutPoint, error) {
+
+	if len(utxosPTN) == 0 {
+		log.Errorf("No PTN Utxo or No Token Utxo for %s", fromAddr.String())
+		return nil, nil, fmt.Errorf("No PTN Utxo or No Token Utxo")
+	}
+
+	//PTN
+	utxoPTNView, asset := convertUtxoMap2Utxos(utxosPTN)
+
+	utxosPTNTaken, change, err := core.Select_utxo_Greedy(utxoPTNView, amountToken+feePTN)
+	if err != nil {
+		return nil, nil, fmt.Errorf("createPayment Select_utxo_Greedy utxo err")
+	}
+	usedUtxo := []*modules.UtxoWithOutPoint{}
+	//ptn payment
+	payPTN := &modules.PaymentPayload{}
+	//ptn inputs
+	for _, u := range utxosPTNTaken {
+		utxo := u.(*modules.UtxoWithOutPoint)
+		usedUtxo = append(usedUtxo, utxo)
+		prevOut := &utxo.OutPoint // modules.NewOutPoint(txHash, utxo.MessageIndex, utxo.OutIndex)
+		txInput := modules.NewTxIn(prevOut, []byte{})
+		payPTN.AddTxIn(txInput)
+	}
+
+	//ptn outputs
+	if amountToken > 0 {
+		payPTN.AddTxOut(modules.NewTxOut(amountToken, tokenengine.Instance.GenerateLockScript(toAddr), asset))
+	}
+	if change > 0 {
+		payPTN.AddTxOut(modules.NewTxOut(change, tokenengine.Instance.GenerateLockScript(fromAddr), asset))
+	}
+	return payPTN, usedUtxo, nil
+}
+
 func signRawTransaction(b Backend, rawTx *modules.Transaction, fromStr, password string, timeout *uint32, hashType uint32,
 	usedUtxo []*modules.UtxoWithOutPoint) error {
 	ks := b.GetKeyStore()
