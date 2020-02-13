@@ -1091,7 +1091,7 @@ PledgeTest02
     sleep    5
     ${b}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF    PTN
     log    ${b}
-    Should Be Equal As Numbers    ${b}    9893.99
+    Should Be Equal As Numbers    ${b}    9995.93762699
     ${result}    getBalance    ${votedAddress01}    PTN
     log    ${result}
     ${res}    getBlacklistRecords

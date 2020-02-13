@@ -542,14 +542,7 @@ func filterFromBlacklist(stub shim.ChaincodeStubInterface,pledgeList *modules.Pl
 	}
 	newPledgeList := &modules.PledgeList{TotalAmount: 0, Members: []*modules.AddressRewardAmount{}}
 	for _, m := range pledgeList.Members {
-		if isInBlacklist(m.Address,address){
-			log.Infof("member address = %s,amount = %d",m.Address,m.Amount)
-			gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
-			err := stub.PayOutToken(syscontract.BlacklistContractAddress.String(), modules.NewAmountAsset(m.Amount, gasToken), 0)
-			if err != nil {
-				return pledgeList
-			}
-		}else {
+		if !isInBlacklist(m.Address,address){
 			newPledgeList.Add(m.Address,m.Amount,m.Reward)
 		}
 	}

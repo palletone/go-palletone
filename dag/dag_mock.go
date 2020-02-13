@@ -5,10 +5,6 @@
 package dag
 
 import (
-	big "math/big"
-	reflect "reflect"
-	time "time"
-
 	event "github.com/ethereum/go-ethereum/event"
 	gomock "github.com/golang/mock/gomock"
 	common "github.com/palletone/go-palletone/common"
@@ -16,6 +12,9 @@ import (
 	core "github.com/palletone/go-palletone/core"
 	modules "github.com/palletone/go-palletone/dag/modules"
 	txspool "github.com/palletone/go-palletone/txspool"
+	big "math/big"
+	reflect "reflect"
+	time "time"
 )
 
 // MockIDag is a mock of IDag interface
@@ -2150,7 +2149,6 @@ func (mr *MockIDagMockRecorder) SubscribeUnstableRepositoryUpdatedEvent(ch inter
 }
 
 // GetContractsWithJuryAddr mocks base method
-// func (m *MockIDag) GetContractsWithJuryAddr(addr common.Address) []*modules.Contract {
 func (m *MockIDag) GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContractsWithJuryAddr", addr)
