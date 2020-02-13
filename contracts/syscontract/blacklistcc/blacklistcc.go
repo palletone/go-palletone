@@ -137,13 +137,15 @@ func (p *BlacklistMgr) AddBlacklist(stub shim.ChaincodeStubInterface, blackAddr 
 	}
 	//  从质押获取
 	list, _ := getLastPledgeList(stub)
-	depositAmount := list.GetAmount(blackAddr.String())
+	if list != nil {
+		depositAmount := list.GetAmount(blackAddr.String())
 		_,ok := balance[*modules.NewPTNAsset()]
 		if ok {
 			balance[*modules.NewPTNAsset()] += depositAmount
 		}else {
 			balance[*modules.NewPTNAsset()] = depositAmount
 		}
+	}
 	balanceJson, _ := json.Marshal(balance)
 	record := &BlacklistRecord{
 		Address:     blackAddr,
