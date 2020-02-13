@@ -86,7 +86,9 @@ func ConvertUnit2Json(unit *modules.Unit, utxoQuery modules.QueryUtxoFunc,
 		log.Error(err.Error())
 		return json
 	}
-	json.Reward = reward.Asset.DisplayAmount(reward.Amount)
+	if reward.Amount != 0 {
+		json.Reward = reward.Asset.DisplayAmount(reward.Amount)
+	}
 	return json
 }
 

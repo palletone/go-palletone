@@ -175,6 +175,9 @@ func (asset Asset) MarshalText() ([]byte, error) {
 }
 
 func (asset *Asset) DisplayAmount(amount uint64) decimal.Decimal {
+	if amount == 0 {
+		return decimal.Zero
+	}
 	dec := asset.GetDecimal()
 	d, _ := decimal.NewFromString(fmt.Sprintf("%d", amount))
 	for i := 0; i < int(dec); i++ {
@@ -183,6 +186,9 @@ func (asset *Asset) DisplayAmount(amount uint64) decimal.Decimal {
 	return d
 }
 func (asset *Asset) Uint64Amount(amt decimal.Decimal) uint64 {
+	if amt.IsZero() {
+		return 0
+	}
 	dec := asset.GetDecimal()
 	for i := 0; i < int(dec); i++ {
 		amt = amt.Mul(decimal.New(10, 0))
