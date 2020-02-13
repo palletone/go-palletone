@@ -239,7 +239,7 @@ func (rep *UnitRepository) GetHeaderByNumber(index *modules.ChainIndex) (*module
 	return rep.dagdb.GetHeaderByHash(hash)
 }
 func (rep *UnitRepository) GetHeadersByAuthor(authorAddr common.Address, startHeight, count uint64) ([]*modules.Header, error) {
-	token := dagconfig.DefaultConfig.GetGasToken()
+	token := dagconfig.DagConfig.GetGasToken()
 	var uHash common.Hash
 	var err error
 	if startHeight == 0 {
@@ -1207,7 +1207,7 @@ func (rep *UnitRepository) savePaymentPayload(unitTime int64, txHash common.Hash
 	}
 
 	//对PRC721类型的通证的流转历史记录索引
-	if dagconfig.DefaultConfig.Token721TxIndex {
+	if dagconfig.DagConfig.Token721TxIndex {
 
 		for _, output := range msg.Outputs {
 			asset := output.Asset
