@@ -56,8 +56,8 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'ccinvokeToken',
         	call: 'contract_ccinvokeToken',
-        	params: 7, //from, to, token, daoAmountToken, daoFee, contractAddr, args[]string------>["fun", "key", "value"]
-			inputFormatter: [null, null, null,null, null, null,null]
+        	params: 8, //from, to, token, daoAmountToken, daoFee, contractAddr, args[]string------>["fun", "key", "value"]
+			inputFormatter: [null, null, null,null, null, null,null,null]
 		}),
 		new web3._extend.Method({
 			name: 'ccstoptx',
