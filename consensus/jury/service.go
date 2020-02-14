@@ -273,7 +273,7 @@ func (p *Processor) getLocalJuryAccount() *JuryAccount {
 	return nil
 }
 
-func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode, dag dag.IContractDag) error {
+func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode, txMgr rwset.TxManager, dag dag.IContractDag) error {
 	log.Debugf("[%s]runContractReq enter", shortId(reqId.String()))
 	defer log.Debugf("[%s]runContractReq exit", shortId(reqId.String()))
 	p.locker.Lock()
@@ -293,7 +293,7 @@ func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode,
 		RequestId:    reqTx.RequestHash(),
 		Dag:          dag,
 		Ele:          ele,
-		RwM:          rwset.RwM,
+		RwM:          txMgr,
 		Contract:     p.contract,
 		ErrMsgEnable: p.errMsgEnable,
 	}
@@ -559,7 +559,7 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 					log.Debugf("[%s]AddContractLoop ,ReqId is exist ", shortId(reqId.String()))
 					continue
 				}
-				if p.runContractReq(reqId, nil, tempDag) != nil {
+				if p.runContractReq(reqId, nil, rwM, tempDag) != nil {
 					continue
 				}
 			}

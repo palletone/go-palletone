@@ -43,6 +43,20 @@ func (d *DebugChainCode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 func (d *DebugChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	funcName, args := stub.GetFunctionAndParameters()
 	switch funcName {
+	case "putstate":
+		log.Debugf("put state key[%s],value[%s]", args[0], args[1])
+		err := stub.PutState(args[0], []byte(args[1]))
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		return shim.Success(nil)
+	case "getstate":
+		value, err := stub.GetState(args[0])
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		log.Debugf("get state key[%s],value[%s]", args[0], string(value))
+		return shim.Success(value)
 	case "add":
 		a, _ := strconv.Atoi(args[0])
 		b, _ := strconv.Atoi(args[1])

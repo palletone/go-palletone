@@ -102,7 +102,7 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 	}
 	isLocal := true //todo
 	if isLocal {
-		if err = p.runContractReq(reqId, nil, p.dag); err != nil {
+		if err = p.runContractReq(reqId, nil, rwset.RwM, p.dag); err != nil {
 			return common.Hash{}, nil, err
 		}
 		ctx := p.mtx[reqId]

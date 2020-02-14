@@ -72,8 +72,7 @@ func (m *RwSetTxMgr) NewTxSimulator(idag IDataQuery, txId string) (TxSimulator, 
 	m.currentTxId = txId
 	m.wg.Add(1)
 	m.rwLock.Unlock()
-	log.Debugf("creat sys rwSetTx [%s]", txId)
-
+	log.Debugf("creat TxSimulator[%s] in TxMgr[%s]", txId, m.name)
 	return t, nil
 
 }
@@ -117,22 +116,22 @@ func (m *RwSetTxMgr) Close() {
 	log.Debugf("RwSetTxMgr Close, name:%s", m.name)
 }
 
-var defRwSetM *RwSetTxMgr
-
-func DefaultRwSetMgr() *RwSetTxMgr {
-	if defRwSetM == nil {
-		defRwSetM, _ = NewRwSetMgr("default")
-	}
-	return defRwSetM
-}
-
-func Init() {
-	var err error
-	RwM, err = NewRwSetMgr("default")
-	if err != nil {
-		log.Error("fail!")
-	}
-}
+//var defRwSetM *RwSetTxMgr
+//
+//func DefaultRwSetMgr() *RwSetTxMgr {
+//	if defRwSetM == nil {
+//		defRwSetM, _ = NewRwSetMgr("default")
+//	}
+//	return defRwSetM
+//}
+//
+//func Init() {
+//	var err error
+//	RwM, err = NewRwSetMgr("default")
+//	if err != nil {
+//		log.Error("fail!")
+//	}
+//}
 
 func init() {
 	RwM, _ = NewRwSetMgr("default")

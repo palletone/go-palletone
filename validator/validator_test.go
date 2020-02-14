@@ -53,7 +53,7 @@ func TestValidate_ValidateUnitTxs(t *testing.T) {
 	prop := &mockiPropQuery{}
 	validate := NewValidate(dagq, utxoQuery, mockStatedbQuery, prop, nil, newCache(), false)
 	addr, _ := common.StringToAddress("P1HXNZReTByQHgWQNGMXotMyTkMG9XeEQfX")
-	code := validate.validateTransactions(rwset.DefaultRwSetMgr(), txs, 1564675200, addr)
+	code := validate.validateTransactions(rwset.RwM, txs, 1564675200, addr)
 	assert.Equal(t, code, TxValidationCode_VALID)
 }
 
