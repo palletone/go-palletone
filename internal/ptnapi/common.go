@@ -189,7 +189,7 @@ type synCacheTx struct {
 var cacheTx *synCacheTx
 
 func updateDag(b Backend, trs []*modules.Transaction) error {
-	log.Debugf("updateDag enter, transaction num:%d, cacheTx num:%d", len(trs), len(cacheTx.txs))
+	//log.Debugf("updateDag enter, transaction num:%d, cacheTx num:%d", len(trs), len(cacheTx.txs))
 	cacheTx.lock.Lock()
 	defer cacheTx.lock.Unlock()
 
@@ -235,10 +235,10 @@ func updateDag(b Backend, trs []*modules.Transaction) error {
 			}
 		}
 		if unitInfo != nil {
-			log.Debugf("updateDag, SaveTransaction tx[%s]", txHash)
+			log.Debugf("updateDag, SaveTransaction tx[%s]", txHash.String())
 			err := newDag.SaveTransaction(unitInfo.Transaction)
 			if err != nil {
-				log.Errorf("updateDag, SaveTransaction tx[%s] err:%s", txHash, err.Error())
+				log.Errorf("updateDag, SaveTransaction tx[%s] err:%s", txHash.String(), err.Error())
 				return err
 			}
 		}
@@ -246,7 +246,7 @@ func updateDag(b Backend, trs []*modules.Transaction) error {
 
 	//删除原来的内存数据库
 	cacheTx.mdag = newDag
-	log.Debug("updateDag, ok")
+	//log.Debug("updateDag, ok")
 	return nil
 }
 
@@ -265,29 +265,19 @@ func synDag(b Backend) error {
 	rcvDag := b.Dag()
 	headCh := make(chan modules.SaveUnitEvent, 10)
 	defer close(headCh)
-
 	headSub := rcvDag.SubscribeSaveUnitEvent(headCh)
 	defer headSub.Unsubscribe()
-	synDagInited = true
 
-	//timer := time.NewTimer(20 * time.Second)
+	synDagInited = true
 	for {
 		select {
 		case u := <-headCh:
-			log.Infof("synDag, SubscribeSaveUnitEvent received unit:%s, tx number:%d",
+			log.Debugf("synDag, SubscribeSaveUnitEvent received unit:%s, tx number:%d",
 				u.Unit.DisplayId(), len(u.Unit.Txs))
-			//todo  同步数据库，将已经打包在单元中的交易从内存数据库中删除，构建新的内存数据库
-			updateDag(b, u.Unit.Transactions())
-			//for i, utx := range u.Unit.Transactions() {
-			//	//if utx.Hash() == tx.Hash() {
-			//	//}
-			//	log.Debugf("i[%d], utx[%v]", i, utx)
-			//	return nil
-			//}
-			//case <-timer.C:
-			//	log.Debug("get tx package status timeout")
-			//	return errors.New("get txpackage status timeout")
-			// Err() channel will be closed when unsubscribing.
+			err := updateDag(b, u.Unit.Transactions())
+			if err != nil {
+				log.Warnf("synDag, SaveUnitEvent unit number[%s] updateDag err:%s", u.Unit.DisplayId(), err.Error())
+			}
 		case err := <-headSub.Err():
 			return err
 		}

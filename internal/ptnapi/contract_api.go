@@ -257,6 +257,8 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 	if err != nil {
 		return nil, err
 	}
+	//log.Debugf("CcinvokeToken, buildRawTransferTx tx[%s]:%s ", tx.Hash(), tx.String())
+
 	log.Infof("   param len[%d]", len(param))
 	args := make([][]byte, len(param))
 	for i, arg := range param {

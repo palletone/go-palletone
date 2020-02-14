@@ -25,7 +25,8 @@ import (
 	"io"
 	"math"
 	"sync/atomic"
-
+	"encoding/json"
+	
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -698,6 +699,15 @@ func (tx *Transaction) GetLocktime() int64 {
 		}
 	}
 	return 0
+}
+
+func (tx *Transaction) String() string {
+	data, err := json.Marshal(tx)
+	if err != nil {
+		log.Errorf("tx[%s] Marshal error:%s", tx.Hash(), err.Error())
+		return ""
+	}
+	return string(data)
 }
 
 type Addition struct {
