@@ -1341,6 +1341,21 @@ func (mr *MockIDagMockRecorder) GetTxByReqId(reqid interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxByReqId", reflect.TypeOf((*MockIDag)(nil).GetTxByReqId), reqid)
 }
 
+// GetTxPackInfo mocks base method
+func (m *MockIDag) GetTxPackInfo(txHash common.Hash) (*modules.TxPackInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTxPackInfo", txHash)
+	ret0, _ := ret[0].(*modules.TxPackInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTxPackInfo indicates an expected call of GetTxPackInfo
+func (mr *MockIDagMockRecorder) GetTxPackInfo(txHash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxPackInfo", reflect.TypeOf((*MockIDag)(nil).GetTxPackInfo), txHash)
+}
+
 // GetTxFromAddress mocks base method
 func (m *MockIDag) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error) {
 	m.ctrl.T.Helper()

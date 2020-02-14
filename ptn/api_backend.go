@@ -507,7 +507,17 @@ func (b *PtnApiBackend) GetTxByReqId(hash common.Hash) (*ptnjson.TxWithUnitInfoJ
 }
 func (b *PtnApiBackend) GetTxSearchEntry(hash common.Hash) (*ptnjson.TxSerachEntryJson, error) {
 	entry, err := b.ptn.dag.GetTxSearchEntry(hash)
+	if err != nil {
+		return nil, err
+	}
 	return ptnjson.ConvertTxEntry2Json(entry), err
+}
+func (b *PtnApiBackend) GetTxPackInfo(txHash common.Hash) (*ptnjson.TxPackInfoJson, error) {
+	entry, err := b.ptn.dag.GetTxPackInfo(txHash)
+	if err != nil {
+		return nil, err
+	}
+	return ptnjson.ConvertTxPackInfoJson(entry), err
 }
 
 // GetPoolTxByHash return a json of the tx in pool.

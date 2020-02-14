@@ -22,11 +22,11 @@ package ptnjson
 
 import (
 	"encoding/json"
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/dag/modules"
-
 	"time"
 	"unsafe"
+
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 type TxSummaryJson struct {
@@ -124,4 +124,23 @@ func ConvertGetTransactions2Json(gets []GetTransactions) string {
 		return ""
 	}
 	return *(*string)(unsafe.Pointer(&data))
+}
+
+type TxPackInfoJson struct {
+	UnitHash   string    `json:"unit_hash"`
+	UnitHeight uint64    `json:"unit_height"`
+	Timestamp  time.Time `json:"timestamp"`
+	TxIndex    uint64    `json:"tx_index"`
+	TxHash     string    `json:"tx_hash"`
+	//RequestHash string `json:"request_hash"`
+}
+
+func ConvertTxPackInfoJson(txInfo *modules.TxPackInfo) *TxPackInfoJson {
+	return &TxPackInfoJson{
+		UnitHash:   txInfo.UnitHash.String(),
+		UnitHeight: txInfo.UnitIndex,
+		Timestamp:  time.Unix(int64(txInfo.Timestamp), 0),
+		TxIndex:    txInfo.TxIndex,
+		TxHash:     txInfo.TxHash.String(),
+	}
 }

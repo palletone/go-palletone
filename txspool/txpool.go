@@ -1003,7 +1003,7 @@ func (pool *TxPool) getPoolTxsByAddr(addr string, onlyUnpacked bool) ([]*TxPoolT
 		if _, exist := pool.all.Load(or_hash); exist {
 			continue
 		}
-		for _, msg := range tx.Tx.TxMessages() {
+		for _, msg := range tx.Tx.Messages() {
 			if msg.App == modules.APP_PAYMENT {
 				payment, ok := msg.Payload.(*modules.PaymentPayload)
 				if ok {

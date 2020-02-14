@@ -113,7 +113,7 @@ type Backend interface {
 	GetTxByHash(hash common.Hash) (*ptnjson.TxWithUnitInfoJson, error)
 	GetTxByReqId(hash common.Hash) (*ptnjson.TxWithUnitInfoJson, error)
 	GetTxSearchEntry(hash common.Hash) (*ptnjson.TxSerachEntryJson, error)
-
+	GetTxPackInfo(txHash common.Hash) (*ptnjson.TxPackInfoJson, error)
 	//TODO wangjiyou
 	GetPrefix(prefix string) map[string][]byte //getprefix
 

@@ -3,7 +3,6 @@ Library           RequestsLibrary
 Library           Collections
 Resource          pubVariables.robot
 Resource          pubFuncs.robot
-Resource          setups.robot
 Library           BuiltIn
 
 *** Variables ***
@@ -27,7 +26,19 @@ addfeetx
     sleep    5
 
     unlockAccount    ${Alice}
-    Alice create tx withoutfee    ${AAAliceTokenID}    ${Alice}    ${Bob}    ${amount}    ${extra}    ${pwd}
+    ${rawtx}=    Alice create tx withoutfee    ${AAAliceTokenID}    ${Alice}    ${Bob}    ${amount}    ${extra}    ${pwd}
+    
+    unlockAccount    ${Alice}
+    ${signedtx}=    Fee and signtx    ${rawtx}    all    ${Alice}    ${Alice}    ${fee}    ${pwd}    ${duration}
+    log    ${signedtx}
+    log    ${signedtx["result"]}
+
+    ${complete}=    Get From Dictionary    ${signedtx["result"]}    complete
+    Should Be Equal    ${complete}    ${true}
+    ${signedhex}=    Get From Dictionary    ${signedtx["result"]}    hex
+    ${params}=    Create List    ${signedhex}   
+    ${res}=    sendRpcPost    ${sendRawTransaction}    ${params}    sendRawTransaction
+    log    ${res}
 
 *** Keywords ***
 getBalance
