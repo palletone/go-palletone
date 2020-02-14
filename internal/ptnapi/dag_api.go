@@ -25,6 +25,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/rlp"
@@ -36,7 +37,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
-	"strings"
 )
 
 type PublicDagAPI struct {
@@ -402,6 +402,11 @@ func (s *PublicDagAPI) GetTxByReqId(ctx context.Context, hashHex string) (string
 		return string(result_json), nil
 	}
 }
+func (s *PublicDagAPI) GetTxPackInfo(ctx context.Context, txHash string) (*ptnjson.TxPackInfoJson, error) {
+	hash := common.HexToHash(txHash)
+	return s.b.GetTxPackInfo(hash)
+}
+
 func (s *PublicDagAPI) GetTxSearchEntry(ctx context.Context, hashHex string) (string, error) {
 	hash := common.HexToHash(hashHex)
 	item, err := s.b.GetTxSearchEntry(hash)

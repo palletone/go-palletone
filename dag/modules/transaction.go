@@ -117,6 +117,15 @@ type TransactionWithUnitInfo struct {
 	TxIndex   uint64
 }
 
+type TxPackInfo struct {
+	TxHash common.Hash
+	//RequestHash common.Hash
+	UnitHash  common.Hash
+	UnitIndex uint64
+	Timestamp uint64
+	TxIndex   uint64
+}
+
 // Hash hashes the RLP encoding of tx.
 // It uniquely identifies the transaction.
 func (tx *Transaction) Hash() common.Hash {

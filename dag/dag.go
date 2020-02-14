@@ -22,7 +22,6 @@ package dag
 import (
 	"bytes"
 	"fmt"
-
 	"sort"
 	"sync"
 	"sync/atomic"
@@ -473,6 +472,24 @@ func (d *Dag) GetTxByReqId(reqid common.Hash) (*modules.TransactionWithUnitInfo,
 		return nil, err
 	}
 	return d.unstableUnitRep.GetTransaction(hash)
+}
+func (d *Dag) GetTxPackInfo(hash common.Hash) (*modules.TxPackInfo, error) {
+	txHash := hash
+	dbTxHash, err := d.unstableUnitRep.GetTxHashByReqId(hash)
+	if err == nil {
+		txHash = dbTxHash
+	}
+	lookup, err := d.unstableUnitRep.GetTxLookupEntry(txHash)
+	if err != nil {
+		return nil, err
+	}
+	return &modules.TxPackInfo{
+		UnitHash:  lookup.UnitHash,
+		UnitIndex: lookup.UnitIndex,
+		Timestamp: lookup.Timestamp,
+		TxIndex:   lookup.Index,
+		TxHash:    txHash,
+	}, nil
 }
 
 // return the transaction by hash

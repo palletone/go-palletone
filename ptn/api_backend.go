@@ -139,10 +139,10 @@ func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transactio
 	}
 	//更新Tx的状态到LocalDB
 	go func() {
-		saveUnitCh := make(chan modules.SaveUnitEvent,10)
+		saveUnitCh := make(chan modules.SaveUnitEvent, 10)
 		defer close(saveUnitCh)
 		saveUnitSub := b.Dag().SubscribeSaveUnitEvent(saveUnitCh)
-		headCh := make(chan modules.SaveUnitEvent,10)
+		headCh := make(chan modules.SaveUnitEvent, 10)
 		defer close(headCh)
 		headSub := b.Dag().SubscribeSaveStableUnitEvent(headCh)
 		defer saveUnitSub.Unsubscribe()
@@ -506,7 +506,17 @@ func (b *PtnApiBackend) GetTxByReqId(hash common.Hash) (*ptnjson.TxWithUnitInfoJ
 }
 func (b *PtnApiBackend) GetTxSearchEntry(hash common.Hash) (*ptnjson.TxSerachEntryJson, error) {
 	entry, err := b.ptn.dag.GetTxSearchEntry(hash)
+	if err != nil {
+		return nil, err
+	}
 	return ptnjson.ConvertTxEntry2Json(entry), err
+}
+func (b *PtnApiBackend) GetTxPackInfo(txHash common.Hash) (*ptnjson.TxPackInfoJson, error) {
+	entry, err := b.ptn.dag.GetTxPackInfo(txHash)
+	if err != nil {
+		return nil, err
+	}
+	return ptnjson.ConvertTxPackInfoJson(entry), err
 }
 
 // GetPoolTxByHash return a json of the tx in pool.
