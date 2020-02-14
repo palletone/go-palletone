@@ -76,20 +76,6 @@ HandleToken
     And Query balance by contract    ${tokenHolder}    PTN    ${exceptedAmount}
     And Query balance by contract    ${newAddr}    PTN    ${4500}
 
-UseDigitalCertificate
-    Sleep    120s
-    Given Unlock token holder succeed
-    And queryCAHolder
-    And queryCACertID
-    # -> use cert
-    ${reqId}=    Then User use cert to invoke contract
-    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
-    ${payload}=    Then Get invoke payload info    ${reqId}
-    ${compareBytes}=    And Replace String    ${caCertBytes}    \n    ${EMPTY}
-    ${compareBytes}=    And Replace String    ${compareBytes}    -----BEGIN CERTIFICATE-----    ${EMPTY}
-    ${compareBytes}=    And Replace String    ${compareBytes}    -----END CERTIFICATE-----    ${EMPTY}
-    And Should Be Equal    ${payload}    ${compareBytes}
-
 TestSendRecvJury
     Given Unlock token holder succeed
     ${reqId}=    When Test send and recv jury by contract
