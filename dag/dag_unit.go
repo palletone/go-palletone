@@ -67,7 +67,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	}
 	sign_unit.UnitHeader.SetGroupPubkey(groupPubKey)
 
-	sign_unit.Size()
+	// sign_unit.Size()
 	log.Debugf("Generate new unit index:[%d],hash:[%s],size:%s, parent unit[%s],txs[%d], spent time: %s ",
 		sign_unit.NumberU64(), sign_unit.Hash().String(), sign_unit.Size().String(),
 		sign_unit.UnitHeader.ParentHash()[0].String(), sign_unit.Txs.Len(), time.Since(t0).String())

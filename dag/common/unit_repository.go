@@ -623,8 +623,12 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 	header.SetTxRoot(root)
 	unit := modules.NewUnit(header, txs)
 
-	log.Debugf("mediator:[%s] create unit[%s] and create unit unlock unitRepository cost time %s,txs[%d]",
-		unit.Author().String(), unit.Hash().String(), time.Since(begin), len(txs))
+	// 由于此时unit还没签名，所以mediator地址获取不到，hash值也无效
+	//log.Debugf("mediator:[%s] create unit[%s] and create unit unlock unitRepository cost time %s,txs[%d]",
+	//	unit.Author().String(), unit.Hash().String(), time.Since(begin), len(txs))
+	log.Debugf("create unit unlock unitRepository cost time %s, txs[%d]",
+		time.Since(begin), len(txs))
+
 	return unit, nil
 }
 
