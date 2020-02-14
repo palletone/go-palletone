@@ -30,16 +30,18 @@ var RwM TxManager
 var ChainId = "palletone"
 
 type RwSetTxMgr struct {
-	name        string
-	baseTxSim   map[string]TxSimulator //key txId
-	closed      bool
-	rwLock      *sync.RWMutex
-	wg          sync.WaitGroup
-	currentTxId string
+	name         string
+	baseTxSim    map[string]TxSimulator //key txId
+	closed       bool
+	rwLock       *sync.RWMutex
+	wg           sync.WaitGroup
+	currentTxId  string
+	continuousTx bool //是否支持连续交易
 }
 
 func NewRwSetMgr(name string) (*RwSetTxMgr, error) {
-	return &RwSetTxMgr{name: name, baseTxSim: make(map[string]TxSimulator), rwLock: new(sync.RWMutex)}, nil
+	return &RwSetTxMgr{name: name, baseTxSim: make(map[string]TxSimulator),
+		rwLock: new(sync.RWMutex), continuousTx: true}, nil
 }
 func (m *RwSetTxMgr) GetTxSimulator(txId string) (TxSimulator, error) {
 	if txId == "" {
@@ -58,7 +60,7 @@ func (m *RwSetTxMgr) NewTxSimulator(idag IDataQuery, txId string) (TxSimulator, 
 		return ts, nil
 	}
 	var stateQuery IStateQuery
-	if m.currentTxId != "" {
+	if m.currentTxId != "" && m.continuousTx {
 		stateQuery = m.baseTxSim[m.currentTxId]
 	} else {
 		stateQuery = idag
@@ -134,5 +136,7 @@ func (m *RwSetTxMgr) Close() {
 //}
 
 func init() {
-	RwM, _ = NewRwSetMgr("default")
+	rwm, _ := NewRwSetMgr("default")
+	rwm.continuousTx = false
+	RwM = rwm
 }
