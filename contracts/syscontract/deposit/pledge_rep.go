@@ -25,6 +25,7 @@ package deposit
 
 import (
 	"encoding/json"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
@@ -344,6 +345,8 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward
 	if allM != nil && finish == nil {
 		//  这里需要合并列表中地址相同的成员
 		allM = mergeMember(allM)
+		//  这里需要剔除黑名单合约地址
+		allM = filterFromBlacklist(stub,allM)
 		log.Infof("allM is not nil, today = %s, lastDate = %s", today, lastDate)
 		//  当前的分红奖励与当前的分红数量的比例
 		rewardPerDao := float64(depositDailyReward) / float64(allM.TotalAmount)
@@ -530,4 +533,39 @@ func mergeMember(pledgeList *modules.PledgeList) *modules.PledgeList {
 		mergePledgeList.Add(m.Address, m.Amount, m.Reward)
 	}
 	return mergePledgeList
+}
+
+func filterFromBlacklist(stub shim.ChaincodeStubInterface,pledgeList *modules.PledgeList) *modules.PledgeList {
+	address := getBlacklistAddress(stub)
+	if address == nil {
+		return pledgeList
+	}
+	newPledgeList := &modules.PledgeList{TotalAmount: 0, Members: []*modules.AddressRewardAmount{}}
+	for _, m := range pledgeList.Members {
+		if !isInBlacklist(m.Address,address){
+			newPledgeList.Add(m.Address,m.Amount,m.Reward)
+		}
+	}
+	return newPledgeList
+}
+
+func getBlacklistAddress(stub shim.ChaincodeStubInterface) ([]common.Address) {
+	list := []common.Address{}
+	dblist, err := stub.GetContractState(syscontract.BlacklistContractAddress,constants.BlacklistAddress)
+	if err == nil && len(dblist) > 0 {
+		err = rlp.DecodeBytes(dblist, &list)
+		if err != nil {
+			return nil
+		}
+	}
+	return list
+}
+
+func isInBlacklist(addr string,addrs []common.Address) bool {
+	for _,a := range addrs {
+		if a.String() == addr {
+			return true
+		}
+	}
+	return false
 }

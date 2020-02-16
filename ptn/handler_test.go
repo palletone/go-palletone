@@ -22,6 +22,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/dag/mock"
+
 	//"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/p2p"
@@ -29,7 +31,6 @@ import (
 
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
 )
@@ -329,7 +330,7 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	dag := dag.NewMockIDag(mockCtrl)
+	dag := mock.NewMockIDag(mockCtrl)
 	pro := NewMockproducer(mockCtrl)
 	height := 10
 	mockUnit := unitForTest(height)

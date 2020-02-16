@@ -174,7 +174,11 @@ func (a Addresses) Swap(i, j int) {
 }
 
 func HexToAddress(s string) Address {
-	return BytesToAddress(FromHex(s))
+	b := FromHex(s)
+	if len(b) == 20 {
+		b = append(b, 0)
+	}
+	return BytesToAddress(b)
 }
 
 func PubKeyHashHexToAddress(s string) Address {

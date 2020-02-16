@@ -305,6 +305,9 @@ func (b *LesApiBackend) GetTxByHash(hash common.Hash) (*ptnjson.TxWithUnitInfoJs
 func (b *LesApiBackend) GetTxSearchEntry(hash common.Hash) (*ptnjson.TxSerachEntryJson, error) {
 	return nil, nil
 }
+func (b *LesApiBackend) GetTxPackInfo(txHash common.Hash) (*ptnjson.TxPackInfoJson, error) {
+	return nil, nil
+}
 
 //TODO wangjiyou
 func (b *LesApiBackend) GetPrefix(prefix string) map[string][]byte {

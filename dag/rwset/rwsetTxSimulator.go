@@ -22,6 +22,7 @@ package rwset
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"sort"
 	"strings"
 
@@ -73,6 +74,23 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 		return nil, nil
 		//errstr := fmt.Sprintf("GetContractState [%s]-[%s] failed", ns, key)
 		//		//return nil, errors.New(errstr)
+	}
+	if ver.TxIndex == 0 { //Devin Debug
+		log.DebugDynamic(func() string {
+			logStr := "call stack:"
+			var query = s.stateQuery
+			for {
+				if ss, ok := query.(*RwSetTxSimulator); ok {
+					query = ss.stateQuery
+					logStr += ss.txId + ";"
+				} else {
+					logStr += reflect.TypeOf(query).String()
+					break
+				}
+			}
+			return logStr
+		})
+		log.Warn("tx index==0")
 	}
 	if s.rwsetBuilder != nil {
 		s.rwsetBuilder.AddToReadSet(contractid, ns, key, ver)
@@ -333,6 +351,7 @@ func (s *RwSetTxSimulator) GetContractState(contractid []byte, field string) ([]
 	if err != nil {
 		return s.stateQuery.GetContractState(contractid, field)
 	}
+	log.Debugf("Get contract state key[%s] from rwset builder", field)
 	return value, nil, nil
 }
 func (s *RwSetTxSimulator) GetContractStatesByPrefix(contractid []byte, prefix string) (map[string]*modules.ContractStateValue, error) {

@@ -44,24 +44,28 @@ package crypto
 
 import (
 	"testing"
+
 	"github.com/stretchr/testify/assert"
 )
 
 func TestCryptoS256_Sign(t *testing.T) {
-	crypto:=&CryptoS256{}
-	h,err:=crypto.Hash([]byte("ABC"))
-	assert.Nil(t,err)
-	t.Logf("Hash:%x",h)
-	privKey,err:= crypto.KeyGen()
-	assert.Nil(t,err)
-	t.Logf("PrivateKey:%x",privKey)
-	sign,err:= crypto.Sign(privKey,h)
-	assert.Nil(t,err)
-	t.Logf("Signature:%x,len:%d",sign,len(sign))
-	pubKey,err:=crypto.PrivateKeyToPubKey(privKey)
-	assert.Nil(t,err)
-	t.Logf("Pubkey:%x,len:%d",pubKey,len(pubKey))
-	pass,err:= crypto.Verify(pubKey,sign,h)
-	assert.Nil(t,err)
-	assert.True(t,pass)
+	crypto := &CryptoS256{}
+	t.Log("Message:	abc100")
+	msg := []byte("abc100")
+	h, err := crypto.Hash(msg)
+	assert.Nil(t, err)
+	t.Logf("Sha3 256 Hash:	%x,len:%d", h, len(h))
+	privKey, err := crypto.KeyGen()
+	assert.Nil(t, err)
+	t.Logf("PrivateKey:	%x,len:%d", privKey, len(privKey))
+	pubKey, err := crypto.PrivateKeyToPubKey(privKey)
+	assert.Nil(t, err)
+	t.Logf("Pubkey:	%x,len:%d", pubKey, len(pubKey))
+	sign, err := crypto.Sign(privKey, msg)
+	assert.Nil(t, err)
+	t.Logf("Signature:	%x,len:%d", sign, len(sign))
+
+	pass, err := crypto.Verify(pubKey, sign, msg)
+	assert.Nil(t, err)
+	assert.True(t, pass)
 }

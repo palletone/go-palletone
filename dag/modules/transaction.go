@@ -119,6 +119,15 @@ type TransactionWithUnitInfo struct {
 	TxIndex   uint64
 }
 
+type TxPackInfo struct {
+	TxHash common.Hash
+	//RequestHash common.Hash
+	UnitHash  common.Hash
+	UnitIndex uint64
+	Timestamp uint64
+	TxIndex   uint64
+}
+
 // Hash hashes the RLP encoding of tx.
 // It uniquely identifies the transaction.
 func (tx *Transaction) Hash() common.Hash {
@@ -139,14 +148,8 @@ func (tx *Transaction) Hash() common.Hash {
 }
 
 func (tx *Transaction) RequestHash() common.Hash {
-	d := transaction_sdw{}
-	for _, msg := range tx.TxMessages() {
-		d.TxMessages = append(d.TxMessages, msg)
-		if msg.App >= APP_CONTRACT_TPL_REQUEST { //100以上的APPCode是请求
-			break
-		}
-	}
-	return util.RlpHash(&Transaction{txdata: d})
+	reqtx := tx.GetRequestTx()
+	return reqtx.Hash()
 }
 
 func (tx *Transaction) GetContractId() []byte {
@@ -286,7 +289,7 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 	payload := msg0.Payload.(*PaymentPayload)
 
 	if payload.IsCoinbase() {
-		return NewAmountAsset(0, NewPTNAsset()), nil
+		return NewAmountAsset(0, nil), nil
 	}
 	inAmount := uint64(0)
 	outAmount := uint64(0)
@@ -450,7 +453,7 @@ func (tx *Transaction) GetCoinbaseReward(versionFunc QueryStateByVersionFunc,
 			readMap[addr] = aa
 		}
 	} else {
-		return &AmountAsset{Asset: NewPTNAsset()}, nil
+		return &AmountAsset{Amount: 0}, nil
 	}
 
 	//计算Write Map和Read Map的差，获得Reward值

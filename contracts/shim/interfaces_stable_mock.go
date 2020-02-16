@@ -232,6 +232,21 @@ func (mr *MockChaincodeStubInterfaceMockRecorder) GetContractState(contractAddr,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractState", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetContractState), contractAddr, key)
 }
 
+// GetContractStateByPrefix mocks base method
+func (m *MockChaincodeStubInterface) GetContractStateByPrefix(contractAddr common.Address, key string) ([]*modules.KeyValue, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetContractStateByPrefix", contractAddr, key)
+	ret0, _ := ret[0].([]*modules.KeyValue)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetContractStateByPrefix indicates an expected call of GetContractStateByPrefix
+func (mr *MockChaincodeStubInterfaceMockRecorder) GetContractStateByPrefix(contractAddr, key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractStateByPrefix", reflect.TypeOf((*MockChaincodeStubInterface)(nil).GetContractStateByPrefix), contractAddr, key)
+}
+
 // GetStateByPrefix mocks base method
 func (m *MockChaincodeStubInterface) GetStateByPrefix(prefix string) ([]*modules.KeyValue, error) {
 	m.ctrl.T.Helper()

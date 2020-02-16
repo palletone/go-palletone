@@ -27,6 +27,8 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/dboperation"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/dag/parameter"
@@ -34,14 +36,14 @@ import (
 	"github.com/palletone/go-palletone/tokenengine"
 )
 
-type ContractTxCheckFunc func(rwM rwset.TxManager, dag IContractDag, tx *modules.Transaction) bool
-type BuildTempContractDagFunc func(dag IContractDag) IContractDag
+type ContractTxCheckFunc func(tx *modules.Transaction, rwM rwset.TxManager, dag dboperation.IContractDag) bool
+type BuildTempContractDagFunc func(dag dboperation.IContractDag) dboperation.IContractDag
 type Validate struct {
 	utxoquery                IUtxoQuery
 	statequery               IStateQuery
 	dagquery                 IDagQuery
 	propquery                IPropQuery
-	contractDb               IContractDag
+	contractDb               dboperation.IContractDag
 	tokenEngine              tokenengine.ITokenEngine
 	cache                    *ValidatorCache
 	enableTxFeeCheck         bool
@@ -49,13 +51,13 @@ type Validate struct {
 	enableDeveloperCheck     bool
 	enableContractRwSetCheck bool
 	light                    bool
-	contractCheckFun         ContractTxCheckFunc      //合约检查函数，通过Set方法注入
-	buildTempDagFunc         BuildTempContractDagFunc //为合约运行构造临时Db的方法，通过Set注入
+	contractCheckFun         ContractTxCheckFunc //合约检查函数，通过Set方法注入
+	//buildTempDagFunc         BuildTempContractDagFunc //为合约运行构造临时Db的方法，通过Set注入
 }
 
 func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propquery IPropQuery,
-	contractDag IContractDag,
-	cache palletcache.ICache, light bool) *Validate {
+	contractDag dboperation.IContractDag,
+	cache palletcache.ICache, light bool) Validator {
 	//cache := freecache.NewCache(20 * 1024 * 1024)
 	vcache := NewValidatorCache(cache)
 	return &Validate{
@@ -106,8 +108,8 @@ func (validate *Validate) validateTransactions(rwM rwset.TxManager, txs modules.
 	spendOutpointMap := make(map[*modules.OutPoint]common.Hash)
 	var coinbase *modules.Transaction
 	//构造TempDag用于存储Tx的结果
-	if validate.buildTempDagFunc != nil && validate.contractDb != nil {
-		validate.contractDb = validate.buildTempDagFunc(validate.contractDb)
+	if validate.contractDb != nil {
+		validate.contractDb, _ = validate.contractDb.NewTemp()
 	}
 	//tempdb, err := ptndb.NewTempdb(validate.db)
 	//if err != nil {
@@ -160,7 +162,7 @@ func (validate *Validate) validateTransactions(rwM rwset.TxManager, txs modules.
 			unitUtxo.Store(outPoint, utxo)
 		}
 		if validate.contractDb != nil {
-			validate.contractDb.SaveTransaction(tx)
+			validate.contractDb.SaveTransaction(tx, txIndex)
 		}
 		//tempDag.SaveTransaction(tx)
 		//newUtxoQuery.unitUtxo = unitUtxo
@@ -172,7 +174,7 @@ func (validate *Validate) validateTransactions(rwM rwset.TxManager, txs modules.
 		a := &modules.Addition{
 			Addr:   unitAuthor,
 			Amount: parameter.CurrentSysParameters.GenerateUnitReward,
-			Asset:  modules.NewPTNAsset(), // dagconfig.DagConfig.GetGasToken().ToAsset(),
+			Asset:  dagconfig.DagConfig.GetGasToken().ToAsset(),
 		}
 		ads = append(ads, a)
 		out := arrangeAdditionFeeList(ads)
@@ -308,7 +310,8 @@ func (validate *Validate) SetContractTxCheckFun(checkFun ContractTxCheckFunc) {
 	validate.contractCheckFun = checkFun
 	log.Debug("SetContractTxCheckFun ok")
 }
-func (v *Validate) SetBuildTempContractDagFunc(buildFunc BuildTempContractDagFunc) {
-	v.buildTempDagFunc = buildFunc
-	log.Debug("SetBuildTempContractDagFunc ok")
-}
+
+//func (v *Validate) SetBuildTempContractDagFunc(buildFunc BuildTempContractDagFunc) {
+//	v.buildTempDagFunc = buildFunc
+//	log.Debug("SetBuildTempContractDagFunc ok")
+//}

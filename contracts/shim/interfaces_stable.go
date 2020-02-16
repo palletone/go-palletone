@@ -97,6 +97,7 @@ type ChaincodeStubInterface interface {
 	GetState(key string) ([]byte, error)
 	GetGlobalState(key string) ([]byte, error)
 	GetContractState(contractAddr common.Address, key string) ([]byte, error)
+	GetContractStateByPrefix(contractAddr common.Address, key string) ([]*modules.KeyValue, error)
 	GetStateByPrefix(prefix string) ([]*modules.KeyValue, error)
 
 	// PutState puts the specified `key` and `value` into the transaction's

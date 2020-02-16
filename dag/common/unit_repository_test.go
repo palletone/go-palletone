@@ -43,6 +43,10 @@ import (
 
 func mockUnitRepository() *UnitRepository {
 	db, _ := ptndb.NewMemDatabase()
+	propRep := NewPropRepository4Db(db)
+	b := []byte{}
+	propRep.SetNewestUnit(modules.NewHeader(nil, common.Hash{}, b, b, b, b, []uint16{},
+		modules.PTNCOIN, 100, time.Now().Unix()))
 	//l := plog.NewTestLog()
 	return NewUnitRepository4Db(db, tokenengine.Instance)
 }
@@ -757,7 +761,7 @@ func TestUnitRepository_SaveTransaction(t *testing.T) {
 		modules.NewMessage(modules.APP_CONTRACT_TPL, contractTplPayload),
 	})
 	t.Logf("Tx Hash:%s", tx1.Hash().String())
-	err := rep.SaveTransaction(tx1)
+	err := rep.SaveTransaction(tx1, 0)
 	assert.Nil(t, err)
 
 	readSet := []modules.ContractReadSet{}
@@ -778,7 +782,7 @@ func TestUnitRepository_SaveTransaction(t *testing.T) {
 	deployPayload := modules.NewContractDeployPayload([]byte("contract_template0000"), []byte("contract0000"),
 		"testDeploy", nil, nil, readSet, writeSet, modules.ContractError{})
 	tx2 := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_CONTRACT_DEPLOY, deployPayload)})
-	err = rep.SaveTransaction(tx2)
+	err = rep.SaveTransaction(tx2, 0)
 	assert.Nil(t, err)
 	t.Logf("Tx Hash:%s", tx2.Hash().String())
 
@@ -798,7 +802,7 @@ func TestUnitRepository_SaveTransaction(t *testing.T) {
 	}
 
 	tx3 := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_CONTRACT_INVOKE, invokePayload)})
-	err = rep.SaveTransaction(tx3)
+	err = rep.SaveTransaction(tx3, 0)
 	assert.Nil(t, err)
 	t.Logf("Tx Hash:%s", tx3.Hash().String())
 

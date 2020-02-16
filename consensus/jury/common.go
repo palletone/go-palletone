@@ -33,7 +33,8 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/dboperation"
+
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
@@ -420,7 +421,7 @@ func contractPayBack(tx *modules.Transaction, addr []byte) []*modules.Message {
 	}
 	return messages
 }
-func handleMsg0(tx *modules.Transaction, dag dag.IContractDag, reqArgs [][]byte) ([][]byte, error) {
+func handleMsg0(tx *modules.Transaction, dag dboperation.IContractDag, reqArgs [][]byte) ([][]byte, error) {
 	var txArgs [][]byte
 	invokeInfo := modules.InvokeInfo{}
 	msgs := tx.TxMessages()

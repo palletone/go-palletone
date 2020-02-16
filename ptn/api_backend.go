@@ -511,7 +511,17 @@ func (b *PtnApiBackend) GetTxByReqId(hash common.Hash) (*ptnjson.TxWithUnitInfoJ
 }
 func (b *PtnApiBackend) GetTxSearchEntry(hash common.Hash) (*ptnjson.TxSerachEntryJson, error) {
 	entry, err := b.ptn.dag.GetTxSearchEntry(hash)
+	if err != nil {
+		return nil, err
+	}
 	return ptnjson.ConvertTxEntry2Json(entry), err
+}
+func (b *PtnApiBackend) GetTxPackInfo(txHash common.Hash) (*ptnjson.TxPackInfoJson, error) {
+	entry, err := b.ptn.dag.GetTxPackInfo(txHash)
+	if err != nil {
+		return nil, err
+	}
+	return ptnjson.ConvertTxPackInfoJson(entry), err
 }
 
 // GetPoolTxByHash return a json of the tx in pool.
@@ -819,7 +829,11 @@ func (b *PtnApiBackend) SendContractInvokeReqTx(requestTx *modules.Transaction) 
 	//	err := fmt.Sprintf("ProcessContractEvent, event Tx is invalid, txId:%s", requestTx.Hash().String())
 	//	return common.Hash{}, errors.New(err)
 	//}
-	go b.ptn.ContractBroadcast(jury.ContractEvent{Ele: nil, CType: jury.CONTRACT_EVENT_EXEC, Tx: requestTx}, true)
+	var ele *modules.ElectionNode
+	if !requestTx.IsSystemContract() {
+		ele, _ = b.Dag().GetContractJury(requestTx.GetContractId())
+	}
+	go b.ptn.ContractBroadcast(jury.ContractEvent{Ele: ele, CType: jury.CONTRACT_EVENT_EXEC, Tx: requestTx}, true)
 	err := b.Dag().SaveLocalTx(requestTx)
 	if err != nil {
 		log.Errorf("Try to save request[%s] error:%s", requestTx.Hash().String(), err.Error())

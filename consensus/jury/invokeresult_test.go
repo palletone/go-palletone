@@ -29,7 +29,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/mock"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
 )
@@ -80,7 +80,7 @@ func TestResultToContractPayments(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	mdag := dag.NewMockIDag(mockCtrl)
+	mdag := mock.NewMockIDag(mockCtrl)
 	mockResult := make(map[modules.OutPoint]*modules.Utxo)
 	mockResult[modules.OutPoint{MessageIndex: 0, OutIndex: 1}] = &modules.Utxo{Amount: 100, Asset: ptn}
 	mockResult[modules.OutPoint{MessageIndex: 0, OutIndex: 2}] = &modules.Utxo{Amount: 200, Asset: ptn}

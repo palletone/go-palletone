@@ -29,7 +29,6 @@ import (
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 
@@ -53,7 +52,7 @@ type IUnitRepository interface {
 	GetGenesisUnit() (*modules.Unit, error)
 	//GenesisHeight() modules.ChainIndex
 	SaveUnit(unit *modules.Unit, isGenesis bool) error
-	SaveTransaction(tx *modules.Transaction) error
+	SaveTransaction(tx *modules.Transaction, txIndex int) error
 	CreateUnit(mediatorReward common.Address, txpool txspool.ITxPool, when time.Time,
 		propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc) (*modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
@@ -248,7 +247,7 @@ func (rep *UnitRepository) GetHeaderByNumber(index *modules.ChainIndex) (*module
 	return rep.dagdb.GetHeaderByHash(hash)
 }
 func (rep *UnitRepository) GetHeadersByAuthor(authorAddr common.Address, startHeight, count uint64) ([]*modules.Header, error) {
-	token := dagconfig.DefaultConfig.GetGasToken()
+	token := dagconfig.DagConfig.GetGasToken()
 	var uHash common.Hash
 	var err error
 	if startHeight == 0 {
@@ -610,6 +609,7 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 		for idx, tx := range poolTxs {
 			t := tx.Tx
 			reqId := t.RequestHash()
+			//如果是合约的连续调用，可能存在读集版本的高度问题，这里进行修正。
 
 			//标记交易有效性
 			markTxIllegal(rep.statedb, t)
@@ -632,8 +632,12 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 	header.SetTxRoot(root)
 	unit := modules.NewUnit(header, txs)
 
-	log.Debugf("mediator:[%s] create unit[%s] and create unit unlock unitRepository cost time %s,txs[%d]",
-		unit.Author().String(), unit.Hash().String(), time.Since(begin), len(txs))
+	// 由于此时unit还没签名，所以mediator地址获取不到，hash值也无效
+	//log.Debugf("mediator:[%s] create unit[%s] and create unit unlock unitRepository cost time %s,txs[%d]",
+	//	unit.Author().String(), unit.Hash().String(), time.Since(begin), len(txs))
+	log.Debugf("create unit unlock unitRepository cost time %s, txs[%d]",
+		time.Since(begin), len(txs))
+
 	return unit, nil
 }
 
@@ -974,19 +978,23 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		}
 		rep.dagdb.SaveGenesisUnitHash(uHash)
 	}
-	log.Debug("save Unit[%s] cost time: %s", uHash.String(), time.Since(tt))
+	log.Debugf("save Unit[%s] cost time: %s", uHash.String(), time.Since(tt))
 	return nil
 }
 
 //Mock一个Unit，然后保存Tx，主要用于内存模拟操作
-func (rep *UnitRepository) SaveTransaction(tx *modules.Transaction) error {
+func (rep *UnitRepository) SaveTransaction(tx *modules.Transaction, txIndex int) error {
+	unitP, err := rep.propdb.GetNewestUnit(dagconfig.DagConfig.GetGasToken())
+	if err != nil {
+		return err
+	}
 	mockHeader := modules.NewEmptyHeader()
 	mockHeader.SetTimestamp(time.Now().Unix())
-	mockHeader.SetHeight(modules.PTNCOIN, math.MaxUint64)
+	mockHeader.SetHeight(unitP.ChainIndex.AssetID, unitP.ChainIndex.Index+1)
 	mockUnit := &modules.Unit{
 		UnitHeader: mockHeader,
 	}
-	return rep.saveTx4Unit(mockUnit, 0, tx)
+	return rep.saveTx4Unit(mockUnit, txIndex, tx)
 }
 
 //Save tx in unit
@@ -1223,7 +1231,7 @@ func (rep *UnitRepository) savePaymentPayload(unitTime int64, txHash common.Hash
 	}
 
 	//对PRC721类型的通证的流转历史记录索引
-	if dagconfig.DefaultConfig.Token721TxIndex {
+	if dagconfig.DagConfig.Token721TxIndex {
 
 		for _, output := range msg.Outputs {
 			asset := output.Asset

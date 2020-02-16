@@ -21,6 +21,7 @@ package rwset
 
 import (
 	"errors"
+	"reflect"
 	"sync"
 
 	"github.com/palletone/go-palletone/common/log"
@@ -30,16 +31,18 @@ var RwM TxManager
 var ChainId = "palletone"
 
 type RwSetTxMgr struct {
-	name        string
-	baseTxSim   map[string]TxSimulator //key txId
-	closed      bool
-	rwLock      *sync.RWMutex
-	wg          sync.WaitGroup
-	currentTxId string
+	name         string
+	baseTxSim    map[string]TxSimulator //key txId
+	closed       bool
+	rwLock       *sync.RWMutex
+	wg           sync.WaitGroup
+	currentTxId  string
+	continuousTx bool //是否支持连续交易
 }
 
 func NewRwSetMgr(name string) (*RwSetTxMgr, error) {
-	return &RwSetTxMgr{name: name, baseTxSim: make(map[string]TxSimulator), rwLock: new(sync.RWMutex)}, nil
+	return &RwSetTxMgr{name: name, baseTxSim: make(map[string]TxSimulator),
+		rwLock: new(sync.RWMutex), continuousTx: true}, nil
 }
 func (m *RwSetTxMgr) GetTxSimulator(txId string) (TxSimulator, error) {
 	if txId == "" {
@@ -58,7 +61,7 @@ func (m *RwSetTxMgr) NewTxSimulator(idag IDataQuery, txId string) (TxSimulator, 
 		return ts, nil
 	}
 	var stateQuery IStateQuery
-	if m.currentTxId != "" {
+	if m.currentTxId != "" && m.continuousTx {
 		stateQuery = m.baseTxSim[m.currentTxId]
 	} else {
 		stateQuery = idag
@@ -72,10 +75,8 @@ func (m *RwSetTxMgr) NewTxSimulator(idag IDataQuery, txId string) (TxSimulator, 
 	m.currentTxId = txId
 	m.wg.Add(1)
 	m.rwLock.Unlock()
-	log.Debugf("creat sys rwSetTx [%s]", txId)
-
+	log.Debugf("create TxSimulator[%s] in TxMgr[%s] based on %s", txId, m.name, reflect.TypeOf(stateQuery).String())
 	return t, nil
-
 }
 
 //func (m *RwSetTxMgr) BaseTxSim() map[string]TxSimulator {
@@ -117,23 +118,25 @@ func (m *RwSetTxMgr) Close() {
 	log.Debugf("RwSetTxMgr Close, name:%s", m.name)
 }
 
-var defRwSetM *RwSetTxMgr
-
-func DefaultRwSetMgr() *RwSetTxMgr {
-	if defRwSetM == nil {
-		defRwSetM, _ = NewRwSetMgr("default")
-	}
-	return defRwSetM
-}
-
-func Init() {
-	var err error
-	RwM, err = NewRwSetMgr("default")
-	if err != nil {
-		log.Error("fail!")
-	}
-}
+//var defRwSetM *RwSetTxMgr
+//
+//func DefaultRwSetMgr() *RwSetTxMgr {
+//	if defRwSetM == nil {
+//		defRwSetM, _ = NewRwSetMgr("default")
+//	}
+//	return defRwSetM
+//}
+//
+//func Init() {
+//	var err error
+//	RwM, err = NewRwSetMgr("default")
+//	if err != nil {
+//		log.Error("fail!")
+//	}
+//}
 
 func init() {
-	RwM, _ = NewRwSetMgr("default")
+	rwm, _ := NewRwSetMgr("default")
+	rwm.continuousTx = false
+	RwM = rwm
 }

@@ -411,6 +411,12 @@ func (stub *ChaincodeStub) GetContractState(contractAddr common.Address, key str
 	return stub.handler.handleGetState("", key, contractId, stub.ChannelId, stub.TxID)
 }
 
+func (stub *ChaincodeStub) GetContractStateByPrefix(contractAddr common.Address, prefix string) ([]*modules.KeyValue, error) {
+	contractId := contractAddr.Bytes()
+	return stub.handler.handelGetStateByPrefix(prefix, contractId, stub.ChannelId, stub.TxID)
+
+}
+
 func (stub *ChaincodeStub) GetStateByPrefix(prefix string) ([]*modules.KeyValue, error) {
 	return stub.handler.handelGetStateByPrefix(prefix, stub.ContractId, stub.ChannelId, stub.TxID)
 }

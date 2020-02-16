@@ -292,7 +292,7 @@ func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 }
 func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	pubKey []byte, msg string, signature []byte,
-	pullAddr common.Address,amount string) error {
+	pullAddr common.Address, amount string) error {
 	//是否已经存在了
 	if isPulledPacket(stub, pubKey, msg) {
 		return errors.New("Packet had been pulled")
@@ -302,9 +302,11 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 		return errors.New("Packet not found")
 	}
 	//检查红包是否过期
-	currentTime, _ := stub.GetTxTimestamp(10)
-	if packet.ExpiredTime != 0 && packet.ExpiredTime <= uint64(currentTime.Seconds) {
-		return errors.New("Packet already expired")
+	if packet.ExpiredTime != 0 { //红包有过期时间
+		currentTime, _ := stub.GetTxTimestamp(10)
+		if packet.ExpiredTime != 0 && packet.ExpiredTime <= uint64(currentTime.Seconds) {
+			return errors.New("Packet already expired")
+		}
 	}
 	//验证通过，发送红包
 	hash := common.HexToHash(stub.GetTxID())
@@ -335,7 +337,7 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	}
 	message := msg
 	if amount != "0" {
-		message +=amount
+		message += amount
 	}
 	pass, err := crypto.MyCryptoLib.Verify(pubKey, signature, []byte(message))
 	if err != nil || !pass {
@@ -423,7 +425,7 @@ func (p *PacketMgr) RecyclePacket(stub shim.ChaincodeStubInterface, pubKey []byt
 	if err != nil {
 		return err
 	}
-	invokeAddr,err := stub.GetInvokeAddress()
+	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
 		return err
 	}

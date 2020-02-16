@@ -69,7 +69,10 @@ type ContractInvokeRsp struct {
 	ReqId      string `json:"request_id"`
 	ContractId string `json:"contract_id"`
 }
-
+type ContractStopRsp struct {
+	ReqId      string `json:"request_id"`
+	ContractId string `json:"contract_id"`
+}
 type ContractFeeRsp struct {
 	TxSize         float64 `json:"tx_size(byte)"`
 	TimeOut        uint32  `json:"time_out(s)"`

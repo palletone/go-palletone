@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/dboperation"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/txspool"
 )
@@ -77,7 +78,7 @@ type IDag interface {
 	ParentsIsConfirmByHash(hash common.Hash) bool
 	IsHeaderExist(hash common.Hash) bool
 	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error
-	SaveTransaction(tx *modules.Transaction) error
+	SaveTransaction(tx *modules.Transaction, txIndex int) error
 	//CreateUnit(mAddr common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error)
 
 	FastSyncCommitHead(common.Hash) error
@@ -147,7 +148,7 @@ type IDag interface {
 	// SaveReqIdByTx
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	GetTxByReqId(reqid common.Hash) (*modules.TransactionWithUnitInfo, error)
-
+	GetTxPackInfo(txHash common.Hash) (*modules.TxPackInfo, error)
 	//GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
 
 	GetFileInfo(filehash []byte) ([]*modules.FileInfo, error)
@@ -224,36 +225,10 @@ type IDag interface {
 	SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription
 	GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract
 	GetAddressCount() int
+	NewTemp() (dboperation.IContractDag, error)
 
 	//localdb
 	SaveLocalTx(tx *modules.Transaction) error
 	GetLocalTx(txId common.Hash) (*modules.Transaction, modules.TxStatus, error)
 	SaveLocalTxStatus(txId common.Hash, status modules.TxStatus) error
-}
-
-type IContractDag interface {
-	GetDb() ptndb.Database
-	GetContractStatesById(contractid []byte) (map[string]*modules.ContractStateValue, error)
-	GetContractState(contractid []byte, field string) ([]byte, *modules.StateVersion, error)
-	GetContractStatesByPrefix(contractid []byte, prefix string) (map[string]*modules.ContractStateValue, error)
-
-	UnstableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error)
-	GetGlobalProp() *modules.GlobalProperty
-
-	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
-	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)
-
-	GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
-	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
-	GetStableTransactionOnly(hash common.Hash) (*modules.Transaction, error)
-	GetStableUnit(hash common.Hash) (*modules.Unit, error)
-	GetStableUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error)
-	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
-	//GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
-	GetContract(id []byte) (*modules.Contract, error)
-	GetChainParameters() *core.ChainParameters
-	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
-	GetContractTplCode(tplId []byte) ([]byte, error)
-	SaveTransaction(tx *modules.Transaction) error
-	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 }

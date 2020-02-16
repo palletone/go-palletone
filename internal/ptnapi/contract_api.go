@@ -243,7 +243,7 @@ func (s *PrivateContractAPI) Ccdeploytx(ctx context.Context, from, to string, am
 
 func (s *PrivateContractAPI) Ccinvoketx(ctx context.Context, from, to string, amount, fee decimal.Decimal,
 	contractAddress string, param []string, password *string, timeout *uint32) (*ContractInvokeRsp, error) {
-	return s.CcinvokeToken(ctx, from, to, dagconfig.DefaultConfig.GasToken, amount, fee, contractAddress, param, password, timeout)
+	return s.CcinvokeToken(ctx, from, to, dagconfig.DagConfig.GasToken, amount, fee, contractAddress, param, password, timeout)
 }
 
 func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token string, amountToken, fee decimal.Decimal,
@@ -301,7 +301,6 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 	}
 	return rsp1, err
 }
-
 func (s *PrivateContractAPI) CcinvoketxPass(ctx context.Context, from, to string, amount, fee decimal.Decimal,
 	deployId string, param []string, password string, duration *uint32, certID string) (string, error) {
 	contractAddr, _ := common.StringToAddress(deployId)
@@ -339,8 +338,7 @@ func (s *PrivateContractAPI) CcinvoketxPass(ctx context.Context, from, to string
 
 	return hex.EncodeToString(reqId[:]), err
 }
-
-func (s *PrivateContractAPI) Ccstoptx(ctx context.Context, from, to string, amount, fee decimal.Decimal, contractId string) (string, error) {
+func (s *PrivateContractAPI) Ccstoptx(ctx context.Context, from, to string, amount, fee decimal.Decimal, contractId string) (*ContractStopRsp, error) {
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
 	daoAmount := ptnjson.Ptn2Dao(amount)
@@ -354,7 +352,11 @@ func (s *PrivateContractAPI) Ccstoptx(ctx context.Context, from, to string, amou
 
 	reqId, err := s.b.ContractStopReqTx(fromAddr, toAddr, daoAmount, daoFee, contractAddr, false)
 	log.Infof("   reqId[%s]", hex.EncodeToString(reqId[:]))
-	return hex.EncodeToString(reqId[:]), err
+	rsp := &ContractStopRsp{
+		ReqId:      hex.EncodeToString(reqId[:]),
+		ContractId: contractId,
+	}
+	return rsp, err
 }
 
 func (s *PrivateContractAPI) Ccinstalltxfee(ctx context.Context, from, to string, amount, fee decimal.Decimal,

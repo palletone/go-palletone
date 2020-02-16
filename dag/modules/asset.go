@@ -175,8 +175,14 @@ func (asset Asset) MarshalText() ([]byte, error) {
 }
 
 func (asset *Asset) DisplayAmount(amount uint64) decimal.Decimal {
+	if amount == 0 {
+		return decimal.Zero
+	}
 	return asset.AssetId.DisplayAmount(amount)
 }
 func (asset *Asset) Uint64Amount(amt decimal.Decimal) uint64 {
+	if amt.IsZero(){
+		return 0
+	}
 	return asset.AssetId.Uint64Amount(amt)
 }
