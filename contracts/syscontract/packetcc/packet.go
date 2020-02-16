@@ -115,6 +115,23 @@ func getPacket(stub shim.ChaincodeStubInterface, pubKey []byte) (*Packet, error)
 	return &p, nil
 }
 
+func getPackets(stub shim.ChaincodeStubInterface) ([]*Packet,error) {
+	value, err := stub.GetStateByPrefix(PacketPrefix)
+	if err != nil {
+		return nil, err
+	}
+	ps := []*Packet{}
+	for _,pp := range value {
+		p := Packet{}
+		err = rlp.DecodeBytes(pp.Value, &p)
+		if err != nil {
+			return nil, err
+		}
+		ps = append(ps,&p)
+	}
+	return ps,nil
+}
+
 //红包余额
 type PacketBalance struct {
 	Amount uint64

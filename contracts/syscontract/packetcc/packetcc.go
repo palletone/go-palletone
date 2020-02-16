@@ -136,6 +136,13 @@ func (p *PacketMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		data, _ := json.Marshal(result)
 		return shim.Success(data)
+	case "getAllPacketInfo":
+		result,err := p.GetAllPacketInfo(stub)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		data, _ := json.Marshal(result)
+		return shim.Success(data)
 	case "getPacketAllocationHistory": //红包领取记录
 		if len(args) != 1 {
 			return shim.Error("must input 1 args: pubKeyHex")
@@ -402,6 +409,24 @@ func (p *PacketMgr) GetPacketInfo(stub shim.ChaincodeStubInterface, pubKey []byt
 	}
 	return convertPacket2Json(packet, balanceAmount, balanceCount), nil
 }
+
+func (p *PacketMgr) GetAllPacketInfo(stub shim.ChaincodeStubInterface) ([]*PacketJson,error) {
+	ps,err := getPackets(stub)
+	if err != nil {
+		return nil, err
+	}
+	pjs := []*PacketJson{}
+	for _,ppp := range ps {
+		balanceAmount, balanceCount, err := getPacketBalance(stub, ppp.PubKey)
+		if err != nil {
+			return nil, err
+		}
+		pjs = append(pjs,convertPacket2Json(ppp, balanceAmount, balanceCount))
+	}
+
+	return pjs, nil
+}
+
 func (p *PacketMgr) GetPacketAllocationHistory(stub shim.ChaincodeStubInterface,
 	pubKey []byte) ([]*PacketAllocationRecordJson, error) {
 	records, err := getPacketAllocationHistory(stub, pubKey)
