@@ -52,7 +52,7 @@ type IUnitRepository interface {
 	GetGenesisUnit() (*modules.Unit, error)
 	//GenesisHeight() modules.ChainIndex
 	SaveUnit(unit *modules.Unit, isGenesis bool) error
-	SaveTransaction(tx *modules.Transaction) error
+	SaveTransaction(tx *modules.Transaction, txIndex int) error
 	CreateUnit(mediatorReward common.Address, txpool txspool.ITxPool, when time.Time,
 		propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc) (*modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
@@ -983,7 +983,7 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 }
 
 //Mock一个Unit，然后保存Tx，主要用于内存模拟操作
-func (rep *UnitRepository) SaveTransaction(tx *modules.Transaction) error {
+func (rep *UnitRepository) SaveTransaction(tx *modules.Transaction, txIndex int) error {
 	unitP, err := rep.propdb.GetNewestUnit(dagconfig.DagConfig.GetGasToken())
 	if err != nil {
 		return err
@@ -994,7 +994,7 @@ func (rep *UnitRepository) SaveTransaction(tx *modules.Transaction) error {
 	mockUnit := &modules.Unit{
 		UnitHeader: mockHeader,
 	}
-	return rep.saveTx4Unit(mockUnit, 0, tx)
+	return rep.saveTx4Unit(mockUnit, txIndex, tx)
 }
 
 //Save tx in unit

@@ -162,7 +162,7 @@ func (validate *Validate) validateTransactions(rwM rwset.TxManager, txs modules.
 			unitUtxo.Store(outPoint, utxo)
 		}
 		if validate.contractDb != nil {
-			validate.contractDb.SaveTransaction(tx)
+			validate.contractDb.SaveTransaction(tx, txIndex)
 		}
 		//tempDag.SaveTransaction(tx)
 		//newUtxoQuery.unitUtxo = unitUtxo

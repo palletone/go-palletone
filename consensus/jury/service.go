@@ -111,7 +111,7 @@ type iDag interface {
 	GetMediator(add common.Address) *core.Mediator
 	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
 	GetJurorByAddrHash(addrHash common.Hash) (*modules.JurorDeposit, error)
-	SaveTransaction(tx *modules.Transaction) error
+	SaveTransaction(tx *modules.Transaction, txIndex int) error
 	//nouse
 	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
 	GetScheduledMediator(slotNum uint32) common.Address
@@ -171,7 +171,7 @@ type Processor struct {
 	pDocker           *utils.PalletOneDocker
 }
 
-var instanceProcessor *Processor
+//var instanceProcessor *Processor
 
 func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract, cfg *Config) (*Processor, error) {
 	if ptn == nil || dag == nil {
@@ -211,7 +211,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 		validator:    val,
 		errMsgEnable: true,
 	}
-	instanceProcessor = p
+	//instanceProcessor = p
 	log.Info("NewContractProcessor ok", "local address:", p.local)
 
 	return p, nil
@@ -548,6 +548,7 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 	if err != nil {
 		log.Errorf("Init temp dag error:%s", err.Error())
 	}
+	txIndex := 0
 	for _, ctx := range p.mtx {
 		if !ctx.valid || ctx.reqTx == nil {
 			continue
@@ -597,7 +598,8 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 			log.Errorf("[%s]AddContractLoop, error:%s", shortId(reqId.String()), err.Error())
 			continue
 		}
-		err = tempDag.SaveTransaction(tx)
+		txIndex++
+		err = tempDag.SaveTransaction(tx, txIndex)
 		if err != nil {
 			log.Errorf("save tx[%s] error:%s", tx.Hash().String(), err.Error())
 			continue

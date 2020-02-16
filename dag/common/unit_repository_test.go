@@ -761,7 +761,7 @@ func TestUnitRepository_SaveTransaction(t *testing.T) {
 		modules.NewMessage(modules.APP_CONTRACT_TPL, contractTplPayload),
 	})
 	t.Logf("Tx Hash:%s", tx1.Hash().String())
-	err := rep.SaveTransaction(tx1)
+	err := rep.SaveTransaction(tx1, 0)
 	assert.Nil(t, err)
 
 	readSet := []modules.ContractReadSet{}
@@ -782,7 +782,7 @@ func TestUnitRepository_SaveTransaction(t *testing.T) {
 	deployPayload := modules.NewContractDeployPayload([]byte("contract_template0000"), []byte("contract0000"),
 		"testDeploy", nil, nil, readSet, writeSet, modules.ContractError{})
 	tx2 := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_CONTRACT_DEPLOY, deployPayload)})
-	err = rep.SaveTransaction(tx2)
+	err = rep.SaveTransaction(tx2, 0)
 	assert.Nil(t, err)
 	t.Logf("Tx Hash:%s", tx2.Hash().String())
 
@@ -802,7 +802,7 @@ func TestUnitRepository_SaveTransaction(t *testing.T) {
 	}
 
 	tx3 := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_CONTRACT_INVOKE, invokePayload)})
-	err = rep.SaveTransaction(tx3)
+	err = rep.SaveTransaction(tx3, 0)
 	assert.Nil(t, err)
 	t.Logf("Tx Hash:%s", tx3.Hash().String())
 

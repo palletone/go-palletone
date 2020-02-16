@@ -165,6 +165,6 @@ func TestDag_SaveTransaction(t *testing.T) {
 	}
 
 	tx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_CONTRACT_INVOKE, invokePayload)})
-	err = dag.SaveTransaction(tx)
+	err = dag.SaveTransaction(tx, 0)
 	assert.Nil(t, err)
 }

@@ -39,6 +39,7 @@ func (c *ContractSupportRepository) NewTemp() (dboperation.IContractDag, error) 
 		log.Errorf("Init tempdb error:%s", err.Error())
 		return nil, err
 	}
+	log.Debug("New temp ContractSupportRepository")
 	tempDag := NewContractSupportRepository(tempdb)
 	return tempDag, nil
 }
@@ -140,8 +141,8 @@ func (c *ContractSupportRepository) GetContractTplCode(tplId []byte) ([]byte, er
 	return c.stateRep.GetContractTplCode(tplId)
 }
 
-func (c *ContractSupportRepository) SaveTransaction(tx *modules.Transaction) error {
-	return c.unitRep.SaveTransaction(tx)
+func (c *ContractSupportRepository) SaveTransaction(tx *modules.Transaction, txIndex int) error {
+	return c.unitRep.SaveTransaction(tx, txIndex)
 }
 
 func (c *ContractSupportRepository) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
