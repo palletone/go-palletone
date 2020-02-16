@@ -955,8 +955,8 @@ func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*TxPoolTransaction, error) 
 	// 将交易按地址分类
 	poolTxs := pool.AllTxpoolTxs()
 	for _, tx := range poolTxs {
-		if !tx.Confirmed {
-			for _, msg := range tx.Tx.TxMessages() {
+		if !tx.Pending {
+			for _, msg := range tx.Tx.Messages() {
 				if msg.App == modules.APP_PAYMENT {
 					payment, ok := msg.Payload.(*modules.PaymentPayload)
 					if ok {
@@ -984,7 +984,7 @@ func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*TxPoolTransaction, error) 
 		if _, exist := pool.all.Load(or_hash); exist {
 			continue
 		}
-		for _, msg := range tx.Tx.TxMessages() {
+		for _, msg := range tx.Tx.Messages() {
 			if msg.App == modules.APP_PAYMENT {
 				payment, ok := msg.Payload.(*modules.PaymentPayload)
 				if ok {

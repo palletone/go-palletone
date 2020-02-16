@@ -128,6 +128,11 @@ web3._extend({
             params: 1,  
             // inputFormatter: [null]
         }), 
+		new web3._extend.Method({   
+            name: 'getTxPackInfo',  
+            call: 'dag_getTxPackInfo',   
+            params: 1,
+        }), 
         new web3._extend.Method({
             name: 'getTxPoolTxByHash',
             call: 'dag_getTxPoolTxByHash',  
