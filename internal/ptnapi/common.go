@@ -7,20 +7,20 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/shopspring/decimal"
-	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/dag"
-	"sync"
 )
 
 func unlockKS(b Backend, addr common.Address, password string, timeout *uint32) error {
@@ -276,7 +276,7 @@ func updateDag(b Backend, trs []*modules.Transaction) error {
 		}
 		if unitInfo != nil {
 			log.Debugf("updateDag, SaveTransaction tx[%s]", txHash.String())
-			err := newDag.SaveTransaction(unitInfo.Transaction)
+			err := newDag.SaveTransaction(unitInfo.Transaction, 0)
 			if err != nil {
 				log.Errorf("updateDag, SaveTransaction tx[%s] err:%s", txHash.String(), err.Error())
 				return err
@@ -337,7 +337,7 @@ func saveTransaction2mDag(tx *modules.Transaction) error {
 			txHash = tx.Hash()
 			log.Debugf("saveTransaction2Mdag, save transaction:%s", txHash.String())
 		}
-		err := cacheTx.mdag.SaveTransaction(tx)
+		err := cacheTx.mdag.SaveTransaction(tx, 0)
 		if err != nil {
 			return fmt.Errorf("saveTransaction2Mdag,SaveTransaction[%s] err:%s", txHash.String(), err.Error())
 		}
