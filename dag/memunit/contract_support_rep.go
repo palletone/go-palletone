@@ -6,6 +6,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
+	"github.com/palletone/go-palletone/dag/dboperation"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
 )
@@ -17,6 +18,29 @@ type ContractSupportRepository struct {
 	stateRep    dagcommon.IStateRepository
 	utxoRep     dagcommon.IUtxoRepository
 	tokenEngine tokenengine.ITokenEngine
+}
+
+func (c *ContractSupportRepository) GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract {
+	return c.stateRep.GetContractsWithJuryAddr(addr)
+}
+
+func (c *ContractSupportRepository) SaveContract(contract *modules.Contract) error {
+	return c.stateRep.SaveContract(contract)
+}
+
+func (c *ContractSupportRepository) GetImmutableChainParameters() *core.ImmutableChainParameters {
+	gp, _ := c.propRep.RetrieveGlobalProp()
+	return &gp.ImmutableParameters
+}
+
+func (c *ContractSupportRepository) NewTemp() (dboperation.IContractDag, error) {
+	tempdb, err := ptndb.NewTempdb(c.GetDb())
+	if err != nil {
+		log.Errorf("Init tempdb error:%s", err.Error())
+		return nil, err
+	}
+	tempDag := NewContractSupportRepository(tempdb)
+	return tempDag, nil
 }
 
 func NewContractSupportRepository(db ptndb.Database) *ContractSupportRepository {

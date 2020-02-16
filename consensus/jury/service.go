@@ -41,7 +41,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
-	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/dboperation"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
@@ -119,6 +119,10 @@ type iDag interface {
 	GetJurorReward(jurorAdd common.Address) common.Address
 
 	CheckReadSetValid(contractId []byte, readSet []modules.ContractReadSet) bool
+	GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract
+	SaveContract(contract *modules.Contract) error
+	GetImmutableChainParameters() *core.ImmutableChainParameters
+	NewTemp() (dboperation.IContractDag, error)
 }
 
 type electionVrf struct {
@@ -273,7 +277,7 @@ func (p *Processor) getLocalJuryAccount() *JuryAccount {
 	return nil
 }
 
-func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode, txMgr rwset.TxManager, dag dag.IContractDag) error {
+func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode, txMgr rwset.TxManager, dag dboperation.IContractDag) error {
 	log.Debugf("[%s]runContractReq enter", shortId(reqId.String()))
 	defer log.Debugf("[%s]runContractReq exit", shortId(reqId.String()))
 	p.locker.Lock()
@@ -533,13 +537,14 @@ func GetTxSig(tx *modules.Transaction, ks *keystore.KeyStore, signer common.Addr
 }
 func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool, addr common.Address,
 	ks *keystore.KeyStore) error {
-	setChainId := dag.ContractChainId
+	setChainId := modules.ContractChainId
 	index := 0
-	tempdb, err := ptndb.NewTempdb(p.dag.GetDb())
-	if err != nil {
-		log.Errorf("Init tempdb error:%s", err.Error())
-	}
-	tempDag, err := dag.NewDagSimple(tempdb)
+	//tempdb, err := ptndb.NewTempdb(p.dag.GetDb())
+	//if err != nil {
+	//	log.Errorf("Init tempdb error:%s", err.Error())
+	//}
+
+	tempDag, err := p.dag.NewTemp()
 	if err != nil {
 		log.Errorf("Init temp dag error:%s", err.Error())
 	}
@@ -687,29 +692,20 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 	return msgsCompareInvoke(txTmp.TxMessages(), tx.TxMessages())
 }
 
-func (p *Processor) ContractTxCheckForValidator(rwM rwset.TxManager, tx *modules.Transaction, dag dag.IContractDag) bool {
+//验证一个系统合约的执行结果是否正确
+func CheckContractTxResult(tx *modules.Transaction, rwM rwset.TxManager, dag dboperation.IContractDag) bool {
 	if tx == nil {
 		log.Error("ContractTxCheckForValidator, param is nil")
 		return false
 	}
-	reqId := tx.RequestHash()
-
-	p.locker.Lock()
-	defer p.locker.Unlock()
+	reqTx := tx.GetRequestTx()
+	reqId := reqTx.Hash()
 	log.Debugf("ContractTxCheckForValidator enter reqId: [%s]", shortId(reqId.String()))
-
+	//只检查系统合约
 	if !tx.IsSystemContract() {
 		return true
 	}
-	if !p.ptn.LocalHaveActiveMediator() { //只有mediator处理系统合约
-		return true
-	}
-	if p.checkTxReqIdIsExist(tx.RequestHash()) {
-		return false
-	}
-	if p.validator.CheckTxIsExist(tx) {
-		return false
-	}
+
 	if txType, err := getContractTxType(tx); err == nil { //只检查invoke类型
 		if txType != modules.APP_CONTRACT_INVOKE_REQUEST {
 			return true
@@ -720,48 +716,33 @@ func (p *Processor) ContractTxCheckForValidator(rwM rwset.TxManager, tx *modules
 		log.Debugf("[%s]ContractTxCheckForValidator, msg not include invoke payload", shortId(reqId.String()))
 		return true
 	}
-	if contractTx, ok := p.mtx[reqId]; ok && contractTx.rstTx != nil {
-		log.Debugf("[%s]ContractTxCheckForValidator, already exit rstTx", shortId(reqId.String()))
-		return msgsCompareInvoke(tx.TxMessages(), contractTx.rstTx.TxMessages())
-	}
+
 	ctx := &contracts.ContractProcessContext{
-		RequestId:    tx.RequestHash(),
-		Dag:          p.dag,
+		RequestId:    reqId,
+		Dag:          dag,
 		Ele:          nil,
 		RwM:          rwM,
-		Contract:     p.contract,
-		ErrMsgEnable: p.errMsgEnable,
+		Contract:     &contracts.Contract{},
+		ErrMsgEnable: true,
 	}
 	msgs, err := runContractCmd(ctx, tx) // long time ...
 	if err != nil {
 		log.Errorf("[%s]ContractTxCheckForValidator, runContractCmd,error:%s", shortId(reqId.String()), err.Error())
 		return false
 	}
-	reqTx := tx.GetRequestTx()
-	txTmp, err := p.GenContractTransaction(reqTx, msgs)
-	if err != nil {
-		log.Errorf("[%s]ContractTxCheckForValidator, GenContractTransction,error:%s", shortId(reqId.String()), err.Error())
-		return false
-	}
-	log.Debugf("[%s]ContractTxCheckForValidator, add rstTx", shortId(reqId.String()))
-
-	if p.mtx[reqId] == nil {
-		p.mtx[reqId] = &contractTx{
-			rstTx:  nil,
-			tm:     time.Now(),
-			valid:  true,
-			adaInf: make(map[uint32]*AdapterInf),
+	resultMsgs := []*modules.Message{}
+	isResult := false
+	for _, msg := range tx.GetResultRawTx().TxMessages() {
+		if msg.App.IsRequest() {
+			isResult = true
+		}
+		if isResult {
+			resultMsgs = append(resultMsgs, msg)
 		}
 	}
-	//err = dag.SaveTransaction(txTmp)
-	//if err != nil {
-	//	log.Errorf("[%s]ContractTxCheckForValidator, SaveTransaction err:%s", shortId(reqId.String()), err.Error())
-	//	return false
-	//}
-	p.mtx[reqId].reqTx = reqTx
-	p.mtx[reqId].rstTx = txTmp
-
-	return msgsCompareInvoke(txTmp.TxMessages(), tx.TxMessages())
+	isMsgSame := msgsCompareInvoke(msgs, resultMsgs)
+	log.Debugf("compare request[%s] and execute result:%t", reqId.String(), isMsgSame)
+	return isMsgSame
 }
 
 func (p *Processor) IsSystemContractTx(tx *modules.Transaction) bool {
@@ -1049,9 +1030,9 @@ func (p *Processor) getContractAssignElectionList(tx *modules.Transaction) ([]mo
 	return eels, nil
 }
 
-func CheckTxContract(rwM rwset.TxManager, dag dag.IContractDag, tx *modules.Transaction) bool {
-	if instanceProcessor != nil {
-		return instanceProcessor.ContractTxCheckForValidator(rwM, tx, dag)
-	}
-	return true //todo false
-}
+//func CheckTxContract(rwM rwset.TxManager, dag dboperation.IContractDag, tx *modules.Transaction) bool {
+//	if instanceProcessor != nil {
+//		return instanceProcessor.ContractTxCheckForValidator(rwM, tx, dag)
+//	}
+//	return true //todo false
+//}

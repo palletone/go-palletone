@@ -21,6 +21,7 @@ package rwset
 
 import (
 	"errors"
+	"reflect"
 	"sync"
 
 	"github.com/palletone/go-palletone/common/log"
@@ -74,9 +75,8 @@ func (m *RwSetTxMgr) NewTxSimulator(idag IDataQuery, txId string) (TxSimulator, 
 	m.currentTxId = txId
 	m.wg.Add(1)
 	m.rwLock.Unlock()
-	log.Debugf("creat TxSimulator[%s] in TxMgr[%s]", txId, m.name)
+	log.Debugf("create TxSimulator[%s] in TxMgr[%s] based on %s", txId, m.name, reflect.TypeOf(stateQuery).String())
 	return t, nil
-
 }
 
 //func (m *RwSetTxMgr) BaseTxSim() map[string]TxSimulator {

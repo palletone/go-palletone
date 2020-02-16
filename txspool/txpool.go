@@ -484,6 +484,15 @@ func (pool *TxPool) validateTx(tx *TxPoolTransaction, local bool) ([]*modules.Ad
 
 	return pool.txValidator.ValidateTx(tx.Tx, true)
 }
+func (pool *TxPool) getTxFeeAllocate(tx *modules.Transaction) ([]*modules.Addition, error) {
+	feeAllocate, err := tx.GetTxFeeAllocate(pool.GetUtxoEntry,
+		pool.tokenEngine.GetScriptSigners, common.Address{}, pool.unit.GetJurorReward)
+	if err != nil {
+		log.Warnf("[%s]validateTxFeeValid, compute tx[%s] fee error:%s", tx.RequestHash().String(), tx.Hash().String(), err.Error())
+		return nil, err
+	}
+	return feeAllocate, nil
+}
 
 // This function MUST be called with the txpool lock held (for reads).
 func (pool *TxPool) isTransactionInPool(hash common.Hash) bool {
@@ -758,7 +767,7 @@ func (pool *TxPool) addSequenTx(p_tx *TxPoolTransaction) error {
 		return nil
 	}
 	// If the transaction fails basic validation, discard it
-	if addition, _, err := pool.validateTx(p_tx, false); err != nil {
+	if addition, err := pool.getTxFeeAllocate(p_tx.Tx); err != nil {
 		return err
 	} else {
 		if p_tx.TxFee != nil {

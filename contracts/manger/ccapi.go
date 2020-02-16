@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/palletone/go-palletone/dag/dboperation"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 
@@ -20,7 +21,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/contracts/ucc"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/palletone/go-palletone/dag"
+
 	md "github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/vm/common"
@@ -37,7 +38,7 @@ import (
 //}
 
 // contract manger module init
-func Init(dag dag.IDag, jury core.IAdapterJury) error {
+func Init(dag dboperation.IContractDag, jury core.IAdapterJury) error {
 	if err := db.SetCcDagHand(dag); err != nil {
 		return err
 	}
@@ -91,7 +92,7 @@ func GetSysCCList() (ccInf []cclist.CCInfo, ccCount int, errs error) {
 }
 
 //install but not into db
-func Install(dag dag.IContractDag, chainID, ccName, ccPath, ccVersion, ccLanguage string) (payload *md.ContractTplPayload, err error) {
+func Install(dag dboperation.IContractDag, chainID, ccName, ccPath, ccVersion, ccLanguage string) (payload *md.ContractTplPayload, err error) {
 	log.Info("Install enter", "chainID", chainID, "name", ccName, "path", ccPath, "version", ccVersion, "cclanguage", ccLanguage)
 	defer log.Info("Install exit", "chainID", chainID, "name", ccName, "path", ccPath, "version", ccVersion, "cclanguage", ccLanguage)
 
@@ -132,7 +133,7 @@ func Install(dag dag.IContractDag, chainID, ccName, ccPath, ccVersion, ccLanguag
 	return payloadUnit, nil
 }
 
-func Deploy(rwM rwset.TxManager, idag dag.IContractDag, chainID string, templateId []byte,
+func Deploy(rwM rwset.TxManager, idag dboperation.IContractDag, chainID string, templateId []byte,
 	txId string, args [][]byte, timeout time.Duration) (
 	deployId []byte, deployPayload *md.ContractDeployPayload, e error) {
 	log.Info("Deploy enter", "chainID", chainID, "templateId", templateId, "txId", txId)
@@ -206,7 +207,7 @@ func Deploy(rwM rwset.TxManager, idag dag.IContractDag, chainID string, template
 //timeout:ms
 // ccName can be contract Id
 //func Invoke(chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*peer.ContractInvokePayload, error) {
-func Invoke(rwM rwset.TxManager, idag dag.IContractDag, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
+func Invoke(rwM rwset.TxManager, idag dboperation.IContractDag, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
 	log.Debugf("Invoke enter")
 	log.Info("Invoke enter", "chainID", chainID, "deployId", deployId, "txid", txid, "timeout", timeout)
 	defer log.Info("Invoke exit", "chainID", chainID, "deployId", deployId, "txid", txid, "timeout", timeout)
@@ -273,11 +274,11 @@ func Invoke(rwM rwset.TxManager, idag dag.IContractDag, chainID string, deployId
 	return unit, nil
 }
 
-func Stop(rwM rwset.TxManager, idag dag.IContractDag, contractid []byte, chainID string, txid string, deleteImage bool, dontRmCon bool) (*md.ContractStopPayload, error) {
+func Stop(rwM rwset.TxManager, idag dboperation.IContractDag, contractid []byte, chainID string, txid string, deleteImage bool, dontRmCon bool) (*md.ContractStopPayload, error) {
 	log.Info("Stop enter", "contractid", contractid, "chainID", chainID, "deployId", contractid, "txid", txid)
 	defer log.Info("Stop enter", "contractid", contractid, "chainID", chainID, "deployId", contractid, "txid", txid)
 
-	setChainId := dag.ContractChainId
+	setChainId := md.ContractChainId
 	if chainID != "" {
 		setChainId = chainID
 	}
@@ -317,7 +318,7 @@ func StopByName(contractid []byte, chainID string, txid string, usercc *md.Contr
 	return stopResult, nil
 }
 
-func RestartContainer(idag dag.IDag, chainID string, addr common.Address, txId string) ([]byte, error) {
+func RestartContainer(idag dboperation.IContractDag, chainID string, addr common.Address, txId string) ([]byte, error) {
 	log.Info("enter RestartContainer", "chainID", chainID, "contract addr", addr.String(), "txId", txId)
 	defer log.Info("exit RestartContainer", "txId", txId)
 	//setChainId := "palletone"
@@ -364,7 +365,7 @@ func RestartContainer(idag dag.IDag, chainID string, addr common.Address, txId s
 }
 
 //  调用的时候，若调用完发现磁盘使用超过系统上限，则kill掉并移除
-func removeConWhenOverDisk(containerName string, dag dag.IContractDag) (sizeRW int64, disk int64, isOver bool) {
+func removeConWhenOverDisk(containerName string, dag dboperation.IContractDag) (sizeRW int64, disk int64, isOver bool) {
 	log.Debugf("start KillAndRmWhenOver")
 	defer log.Debugf("end KillAndRmWhenOver")
 	client, err := util.NewDockerClient()

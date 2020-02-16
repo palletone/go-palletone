@@ -110,6 +110,17 @@ func (d *DebugChainCode) Payout(stub shim.ChaincodeStubInterface, a uint64, addr
 	if err != nil {
 		return shim.Error("payout error:" + err.Error())
 	}
+	key := "Payout-" + addr.String()
+	paid := 0
+	val, err := stub.GetState(key)
+	if err == nil {
+		paid, _ = strconv.Atoi(string(val))
+	}
+	paid += int(a)
+	err = stub.PutState(key, []byte(strconv.Itoa(paid)))
+	if err != nil {
+		return shim.Error(err.Error())
+	}
 	return shim.Success(nil)
 }
 func (d *DebugChainCode) Getbalance(stub shim.ChaincodeStubInterface, addr string) pb.Response {

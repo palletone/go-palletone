@@ -22,6 +22,7 @@ package manger
 import (
 	"time"
 
+	"github.com/palletone/go-palletone/dag/dboperation"
 	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/proto"
@@ -30,7 +31,6 @@ import (
 	"github.com/palletone/go-palletone/contracts/scc"
 	"github.com/palletone/go-palletone/core/vmContractPub/ccprovider"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/palletone/go-palletone/dag"
 	md "github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
 )
@@ -49,7 +49,7 @@ func (s *SupportImpl) IsSysCCAndNotInvokableExternal(name string) bool {
 // GetTxSimulator returns the transaction simulator for the specified ledger
 // a client may obtain more than one such simulator; they are made unique
 // by way of the supplied txid
-func (s *SupportImpl) GetTxSimulator(rwM rwset.TxManager, idag dag.IContractDag, txId string) (rwset.TxSimulator, error) {
+func (s *SupportImpl) GetTxSimulator(rwM rwset.TxManager, idag dboperation.IContractDag, txId string) (rwset.TxSimulator, error) {
 	return rwM.NewTxSimulator(idag, txId)
 }
 

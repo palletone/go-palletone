@@ -20,10 +20,20 @@
 
 package validator
 
-import "github.com/palletone/go-palletone/dag/modules"
+import (
+	"github.com/palletone/go-palletone/dag/dboperation"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/palletcache"
+)
 
 //ValidatorAllPass used for UT
 type ValidatorAllPass struct {
+}
+
+func NewValidatorAllPass(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propquery IPropQuery,
+	contractDag dboperation.IContractDag,
+	cache palletcache.ICache, light bool) Validator {
+	return &ValidatorAllPass{}
 }
 
 func (v *ValidatorAllPass) ValidateTx(tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, ValidationCode, error) {
@@ -50,4 +60,7 @@ func (v *ValidatorAllPass) CheckTxIsExist(tx *modules.Transaction) bool {
 }
 func (v *ValidatorAllPass) ValidateTxFeeEnough(tx *modules.Transaction, extSize float64, extTime float64) ValidationCode {
 	return TxValidationCode_VALID
+}
+func (v *ValidatorAllPass) SetContractTxCheckFun(checkFun ContractTxCheckFunc) {
+
 }

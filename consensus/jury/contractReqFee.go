@@ -77,7 +77,7 @@ func (p *Processor) ContractInstallReqFee(from, to common.Address, daoAmount, da
 	ctx := &contracts.ContractProcessContext{RwM: rwset.RwM, Dag: p.dag, Contract: p.contract, ErrMsgEnable: p.errMsgEnable}
 	msgs, err := runContractCmd(ctx, reqTx)
 	if err != nil {
-		log.Error("ContractInstallReqFee", "runContractCmd err:", err)
+		log.Error("ContractInstallReqFee", "RunContractCmd err:", err)
 		return 0, 0, 0, err
 	}
 	tx, err := gen.GenContractTransction(reqTx, msgs)

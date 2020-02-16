@@ -39,6 +39,7 @@ import (
 	"github.com/palletone/go-palletone/core/types"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/dboperation"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/memunit"
 	"github.com/palletone/go-palletone/dag/migration"
@@ -47,6 +48,7 @@ import (
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/txspool"
+	"github.com/palletone/go-palletone/validator"
 )
 
 type Dag struct {
@@ -87,8 +89,6 @@ type Dag struct {
 	unstableRepositoryUpdatedFeed  event.Feed
 	unstableRepositoryUpdatedScope event.SubscriptionScope
 }
-
-var ContractChainId = "palletone"
 
 func cache() palletcache.ICache {
 	return freecache.NewCache(1000 * 1024)
@@ -318,7 +318,6 @@ func (d *Dag) FastSyncCommitHead(hash common.Hash) error {
 // reference : Eth InsertChain
 func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable bool) (int, error) {
 	count := int(0)
-
 	for i, u := range units {
 		// 重复验证 comment by albert
 		//// all units must be continuous
@@ -567,7 +566,7 @@ func (d *Dag) RefreshPartitionMemDag() {
 			d.initDataForMainChainHeader(mainChain)
 			log.Debugf("Init main chain mem dag for:%s", mainChain.GasToken.String())
 			pmemdag := memunit.NewMemDag(mainChain.GasToken, threshold, true, db, unitRep,
-				propRep, d.stableStateRep, cache(), d.tokenEngine)
+				propRep, d.stableStateRep, cache(), d.tokenEngine, validator.NewValidate)
 			//pmemdag.SetUnstableRepositories(d.unstableUnitRep, d.unstableUtxoRep, d.unstableStateRep,
 			// d.unstablePropRep, d.unstableUnitProduceRep)
 			d.PartitionMemDag[mainChain.GasToken] = pmemdag
@@ -593,7 +592,7 @@ func (d *Dag) RefreshPartitionMemDag() {
 			d.initDataForPartition(partition)
 			log.Debugf("Init partition mem dag for:%s", ptoken.String())
 			pmemdag := memunit.NewMemDag(ptoken, threshold, true, db, unitRep, propRep,
-				d.stableStateRep, cache(), d.tokenEngine)
+				d.stableStateRep, cache(), d.tokenEngine, validator.NewValidate)
 			//pmemdag.SetUnstableRepositories(d.unstableUnitRep, d.unstableUtxoRep, d.unstableStateRep,
 			// d.unstablePropRep, d.unstableUnitProduceRep)
 			partitionMemdag[ptoken] = pmemdag
@@ -611,7 +610,7 @@ func (d *Dag) RefreshPartitionMemDag() {
 			d.initDataForPartition(partition)
 			log.Debugf("Init partition mem dag for:%s", ptoken.String())
 			pmemdag := memunit.NewMemDag(ptoken, threshold, true, db, unitRep, propRep,
-				d.stableStateRep, cache(), d.tokenEngine)
+				d.stableStateRep, cache(), d.tokenEngine, validator.NewValidate)
 			//pmemdag.SetUnstableRepositories(d.unstableUnitRep, d.unstableUtxoRep, d.unstableStateRep,
 			// d.unstablePropRep, d.unstableUnitProduceRep)
 			d.PartitionMemDag[ptoken] = pmemdag
@@ -667,7 +666,7 @@ func NewDag(db ptndb.Database, localdb ptndb.Database, cache palletcache.ICache,
 	gasToken := dagconfig.DagConfig.GetGasToken()
 	threshold, _ := propRep.GetChainThreshold()
 	unstableChain := memunit.NewMemDag(gasToken, threshold, light, db,
-		unitRep, propRep, stateRep, cache, tokenEngine)
+		unitRep, propRep, stateRep, cache, tokenEngine, validator.NewValidate)
 	tunitRep, tutxoRep, tstateRep, tpropRep, tUnitProduceRep := unstableChain.GetUnstableRepositories()
 
 	dag := &Dag{
@@ -829,7 +828,7 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 
 	threshold, _ := propRep.GetChainThreshold()
 	unstableChain := memunit.NewMemDag(modules.PTNCOIN, threshold, false, db, unitRep,
-		propRep, stateRep, cache(), tokenEngine)
+		propRep, stateRep, cache(), tokenEngine, validator.NewValidate)
 	tunitRep, tutxoRep, tstateRep, tpropRep, tUnitProduceRep := unstableChain.GetUnstableRepositories()
 
 	dag := &Dag{
@@ -1546,4 +1545,17 @@ func (d *Dag) GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract {
 
 func (d *Dag) GetAddressCount() int {
 	return d.stableUnitRep.GetAddressCount()
+}
+func (dag *Dag) NewTemp() (dboperation.IContractDag, error) {
+	tempdb, err := ptndb.NewTempdb(dag.GetDb())
+	if err != nil {
+		log.Errorf("Init tempdb error:%s", err.Error())
+		return nil, err
+	}
+	tempDag, err := NewDagSimple(tempdb)
+	if err != nil {
+		log.Errorf("Init temp dag error:%s", err.Error())
+		return nil, err
+	}
+	return tempDag, nil
 }

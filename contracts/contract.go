@@ -27,17 +27,17 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	cc "github.com/palletone/go-palletone/contracts/manger"
+	"github.com/palletone/go-palletone/dag/dboperation"
 
 	"github.com/palletone/go-palletone/contracts/core"
 	"github.com/palletone/go-palletone/contracts/test"
-	"github.com/palletone/go-palletone/dag"
 	md "github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
 )
 
 type ContractProcessContext struct {
 	RequestId    common.Hash
-	Dag          dag.IContractDag
+	Dag          dboperation.IContractDag
 	Ele          *md.ElectionNode
 	RwM          rwset.TxManager
 	Contract     *Contract
@@ -49,7 +49,7 @@ var initFlag int32
 type Contract struct {
 	cfg  *contractcfg.Config
 	name string
-	dag  dag.IDag
+	dag  dboperation.IContractDag
 	core.IAdapterJury
 
 	//status int32 //   1:init   2:start
@@ -67,7 +67,7 @@ type ContractInf interface {
 // 由上层应用指定dag以及初始合约配置信息
 // Initialize the contract management module and load the system contract,
 // Specify dag and initial contract configuration information by the upper application
-func Initialize(idag dag.IDag, jury core.IAdapterJury, cfg *contractcfg.Config) (*Contract, error) {
+func Initialize(idag dboperation.IContractDag, jury core.IAdapterJury, cfg *contractcfg.Config) (*Contract, error) {
 	atomic.LoadInt32(&initFlag)
 	if initFlag > 0 {
 		//todo  tmp delete

@@ -147,14 +147,8 @@ func (tx *Transaction) Hash() common.Hash {
 }
 
 func (tx *Transaction) RequestHash() common.Hash {
-	d := transaction_sdw{}
-	for _, msg := range tx.TxMessages() {
-		d.TxMessages = append(d.TxMessages, msg)
-		if msg.App >= APP_CONTRACT_TPL_REQUEST { //100以上的APPCode是请求
-			break
-		}
-	}
-	return util.RlpHash(&Transaction{txdata: d})
+	reqtx := tx.GetRequestTx()
+	return reqtx.Hash()
 }
 
 func (tx *Transaction) GetContractId() []byte {
