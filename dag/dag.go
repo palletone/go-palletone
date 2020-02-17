@@ -368,13 +368,14 @@ func (d *Dag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable b
 		}
 
 		log.Debugf("InsertDag[%s] #%d spent time:%s", u.Hash().String(), u.NumberU64(), time.Since(t1))
-
 		if !is_stable && u.NumberU64()%1000 == 0 {
-			log.Infof("Insert unit[%s] #%d to local", u.Hash().TerminalString(), u.NumberU64())
+			log.Infof("save unit[%v] #%v to local", u.Hash().TerminalString(), u.NumberU64())
 		}
+
 		go func() {
 			d.PostChainEvents([]interface{}{modules.SaveUnitEvent{Unit: u}})
 		}()
+
 		count += 1
 	}
 

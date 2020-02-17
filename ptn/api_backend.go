@@ -178,11 +178,15 @@ func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transactio
 				log.Warn("SubscribeSaveStableUnitEvent timeout")
 				return
 			// Err() channel will be closed when unsubscribing.
-			case err0 := <-headSub.Err():
-				log.Warnf("SubscribeSaveStableUnitEvent err:%s", err0.Error())
+			//case err0 := <-headSub.Err():
+			//	log.Warnf("SubscribeSaveStableUnitEvent err:%s", err0.Error())
+			case <-headSub.Err():
+				log.Debugf("SubscribeSaveStableUnitEvent err")
 				return
-			case err1 := <-saveUnitSub.Err():
-				log.Warnf("SubscribeSaveUnitEvent err:%s", err1.Error())
+			//case err1 := <-saveUnitSub.Err():
+			//	log.Warnf("SubscribeSaveUnitEvent err:%s", err1.Error())
+			case <-saveUnitSub.Err():
+				log.Warnf("SubscribeSaveUnitEvent err")
 				return
 			}
 		}
