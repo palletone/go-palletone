@@ -295,6 +295,19 @@ func (s *PrivateAccountAPI) GetPublicKey(address string, password string) (strin
 	}
 	return hex.EncodeToString(byte), nil
 }
+
+func (s *PrivateAccountAPI) DumpPrivateKey(address string, password string) (string, error) {
+	addr, err := common.StringToAddress(address)
+	if err != nil {
+		return "", err
+	}
+	ks := s.b.GetKeyStore()
+	byte, _, err := ks.DumpKey(accounts.Account{Address: addr}, password)
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(byte), nil
+}
 func (s *PrivateAccountAPI) ConvertAccount(address string) (string, error) {
 	addr, err := common.StringToAddress(address)
 	if err != nil {

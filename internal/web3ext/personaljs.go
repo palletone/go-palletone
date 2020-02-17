@@ -106,6 +106,12 @@ web3._extend({
 			inputFormatter: [null,null]
 		}),
 		new web3._extend.Method({
+			name: 'dumpPrivateKey',
+			call: 'personal_dumpPrivateKey',
+			params: 2,
+			inputFormatter: [null,null]
+		}),
+		new web3._extend.Method({
 			name: 'convertAccount',
 			call: 'personal_convertAccount',
 			params: 1
