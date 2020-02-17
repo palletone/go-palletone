@@ -23,10 +23,13 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"fmt"
-	"github.com/palletone/go-palletone/contracts/utils"
 	"log"
+	"math/big"
 	"sync"
 	"testing"
+	"time"
+
+	"github.com/palletone/go-palletone/contracts/utils"
 
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
@@ -42,8 +45,6 @@ import (
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/txspool"
-	"math/big"
-	"time"
 )
 
 //var (
@@ -207,6 +208,9 @@ func (p *testTxPool) GetPoolTxsByAddr(addr string) ([]*txspool.TxPoolTransaction
 	return nil, nil
 }
 
+func (p *testTxPool) GetUnpackedTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error) {
+	return nil, nil
+}
 func (p *testTxPool) GetNonce(hash common.Hash) uint64 {
 	return 0
 }

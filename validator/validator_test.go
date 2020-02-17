@@ -31,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/parameter"
+	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/stretchr/testify/assert"
 )
@@ -50,9 +51,23 @@ func TestValidate_ValidateUnitTxs(t *testing.T) {
 	utxoQuery := &mockUtxoQuery{}
 	mockStatedbQuery := &mockStatedbQuery{}
 	prop := &mockiPropQuery{}
-	validate := NewValidate(dagq, utxoQuery, mockStatedbQuery, prop, newCache(), false)
+	vcache := NewValidatorCache(newCache())
+	validate := &Validate{
+		cache:                    vcache,
+		dagquery:                 dagq,
+		utxoquery:                utxoQuery,
+		statequery:               mockStatedbQuery,
+		propquery:                prop,
+		contractDb:               nil,
+		tokenEngine:              tokenengine.Instance,
+		enableTxFeeCheck:         true,
+		enableContractSignCheck:  true,
+		enableDeveloperCheck:     true,
+		enableContractRwSetCheck: true,
+		light:                    false,
+	}
 	addr, _ := common.StringToAddress("P1HXNZReTByQHgWQNGMXotMyTkMG9XeEQfX")
-	code := validate.validateTransactions(txs, 1564675200, addr)
+	code := validate.validateTransactions(rwset.RwM, txs, 1564675200, addr)
 	assert.Equal(t, code, TxValidationCode_VALID)
 }
 
@@ -242,10 +257,19 @@ func newHeader(txs modules.Transactions) *modules.Header {
 }
 func TestValidate_ValidateHeader(t *testing.T) {
 	tx := newTx1(t)
-
 	header := newHeader(modules.Transactions{tx})
 	stateQ := &mockStatedbQuery{}
-	v := NewValidate(nil, nil, stateQ, nil, newCache(), true)
+	vcache := NewValidatorCache(newCache())
+	v := &Validate{
+		cache:                    vcache,
+		statequery:               stateQ,
+		tokenEngine:              tokenengine.Instance,
+		enableTxFeeCheck:         true,
+		enableContractSignCheck:  true,
+		enableDeveloperCheck:     true,
+		enableContractRwSetCheck: true,
+		light:                    true,
+	}
 	vresult := v.validateHeaderExceptGroupSig(header, false)
 	t.Log(vresult)
 	assert.Equal(t, vresult, TxValidationCode_VALID)

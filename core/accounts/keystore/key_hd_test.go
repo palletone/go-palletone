@@ -1,9 +1,10 @@
 package keystore
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/tyler-smith/go-bip39"
-	"testing"
 )
 
 func TestSeedToMnemonic(t *testing.T) {

@@ -18,18 +18,6 @@
 
 package ptnapi
 
-import (
-//"fmt"
-//"eggncoding/json"
-//"github.com/palletone/go-palletone/ptnjson"
-//"strings"
-//"github.com/palletone/go-palletone/common/hexutil"
-//"github.com/palletone/go-palletone/dag/modules"
-//"testing"
-//"github.com/shopspring/decimal"
-// "github.com/palletone/go-palletone/tokenengine/btcd/btcjson"
-)
-
 //func TestHex(t *testing.T) {
 //	str := "ptn"
 //	hex := hexutil.Encode([]byte(str))
@@ -253,7 +241,7 @@ params := `{
 		return
 	}
 
-	resultTransToMultsigAddr, _ := SignRawTransaction(newsign)
+	resultTransToMultsigAddr, _ := signRawTransaction(newsign)
 	//	if !strings.Contains(resultTransToMultsigAddr, theComplete) {
 	//		t.Errorf("complete - got: false, want: true")
 	//	}

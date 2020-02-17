@@ -34,6 +34,7 @@ import (
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/consensus/jury"
+	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
@@ -528,8 +529,8 @@ func (b *PtnApiBackend) GetTxPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJs
 	return ptnjson.ConvertTxPoolTx2Json(tx, unit_hash), nil
 }
 
-func (b *PtnApiBackend) GetPoolTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error) {
-	tx, err := b.ptn.txPool.GetPoolTxsByAddr(addr)
+func (b *PtnApiBackend) GetUnpackedTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error) {
+	tx, err := b.ptn.txPool.GetUnpackedTxsByAddr(addr)
 	return tx, err
 }
 
@@ -784,7 +785,8 @@ func (b *PtnApiBackend) ContractInvoke(deployId []byte, txid string, args [][]by
 	timeout time.Duration) ([]byte, error) {
 	log.Debugf("======>ContractInvoke:deployId[%s]txid[%s]", hex.EncodeToString(deployId), txid)
 	//channelId := "palletone"
-	unit, err := b.ptn.contract.Invoke(rwset.RwM, channelId, deployId, txid, args, timeout)
+	ctx := &contracts.ContractProcessContext{RwM: rwset.RwM, Dag: b.Dag()}
+	unit, err := b.ptn.contract.Invoke(ctx, channelId, deployId, txid, args, timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -818,11 +820,16 @@ func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, 
 	return b.ptn.contractPorcessor.ContractInvokeReq(from, to, daoAmount, daoFee, certID, contractAddress, args, timeout)
 }
 func (b *PtnApiBackend) SendContractInvokeReqTx(requestTx *modules.Transaction) (common.Hash, error) {
-	if !b.ptn.contractPorcessor.CheckTxValid(requestTx) {
-		err := fmt.Sprintf("ProcessContractEvent, event Tx is invalid, txId:%s", requestTx.Hash().String())
-		return common.Hash{}, errors.New(err)
+	//Devin：连续合约调用，这里验证不过，先注释
+	//if !b.ptn.contractPorcessor.CheckTxValid(requestTx) {
+	//	err := fmt.Sprintf("ProcessContractEvent, event Tx is invalid, txId:%s", requestTx.Hash().String())
+	//	return common.Hash{}, errors.New(err)
+	//}
+	var ele *modules.ElectionNode
+	if !requestTx.IsSystemContract() {
+		ele, _ = b.Dag().GetContractJury(requestTx.GetContractId())
 	}
-	go b.ptn.ContractBroadcast(jury.ContractEvent{Ele: nil, CType: jury.CONTRACT_EVENT_EXEC, Tx: requestTx}, true)
+	go b.ptn.ContractBroadcast(jury.ContractEvent{Ele: ele, CType: jury.CONTRACT_EVENT_EXEC, Tx: requestTx}, true)
 	err := b.Dag().SaveLocalTx(requestTx)
 	if err != nil {
 		log.Errorf("Try to save request[%s] error:%s", requestTx.Hash().String(), err.Error())

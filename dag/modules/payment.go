@@ -21,9 +21,10 @@
 package modules
 
 const (
-	defaultTxInOutAlloc = 0
-	MaxTxInSequenceNum uint32 = 0xffffffff
+	defaultTxInOutAlloc        = 0
+	MaxTxInSequenceNum  uint32 = 0xffffffff
 )
+
 // Token exchange message and verify message
 // App: payment
 type PaymentPayload struct {
@@ -42,7 +43,7 @@ type Input struct {
 	// if user creating a new asset, this field should be it's config data. Otherwise it is null.
 	Extra            []byte    `json:"extra" rlp:"nil"`
 	PreviousOutPoint *OutPoint `json:"pre_outpoint"`
-	Sequence        uint32
+	Sequence         uint32
 }
 
 // NewTxIn returns a new ptn transaction input with the provided

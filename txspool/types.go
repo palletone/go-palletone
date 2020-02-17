@@ -41,8 +41,8 @@ type TxPoolTransaction struct {
 	Priority_lvl string    `json:"priority_lvl"` // 打包的优先级
 	UnitHash     common.Hash
 	UnitIndex    uint64
-	Pending      bool
-	Confirmed    bool
+	Pending      bool //in unit
+	Confirmed    bool //in unit and stable
 	IsOrphan     bool
 	Discarded    bool                // will remove
 	TxFee        []*modules.Addition `json:"tx_fee"`

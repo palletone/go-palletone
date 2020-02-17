@@ -28,21 +28,22 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/dagconfig"
+	"github.com/palletone/go-palletone/dag/dboperation"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/dag/parameter"
+	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/tokenengine"
 )
 
-type ContractTxCheckFunc func(tx *modules.Transaction) bool
-
-var ContractCheckFun ContractTxCheckFunc
-
+type ContractTxCheckFunc func(tx *modules.Transaction, rwM rwset.TxManager, dag dboperation.IContractDag) bool
+type BuildTempContractDagFunc func(dag dboperation.IContractDag) dboperation.IContractDag
 type Validate struct {
 	utxoquery                IUtxoQuery
 	statequery               IStateQuery
 	dagquery                 IDagQuery
 	propquery                IPropQuery
+	contractDb               dboperation.IContractDag
 	tokenEngine              tokenengine.ITokenEngine
 	cache                    *ValidatorCache
 	enableTxFeeCheck         bool
@@ -50,10 +51,13 @@ type Validate struct {
 	enableDeveloperCheck     bool
 	enableContractRwSetCheck bool
 	light                    bool
+	contractCheckFun         ContractTxCheckFunc //合约检查函数，通过Set方法注入
+	//buildTempDagFunc         BuildTempContractDagFunc //为合约运行构造临时Db的方法，通过Set注入
 }
 
 func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propquery IPropQuery,
-	cache palletcache.ICache, light bool) *Validate {
+	contractDag dboperation.IContractDag,
+	cache palletcache.ICache, light bool) Validator {
 	//cache := freecache.NewCache(20 * 1024 * 1024)
 	vcache := NewValidatorCache(cache)
 	return &Validate{
@@ -62,6 +66,7 @@ func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propq
 		utxoquery:                utxoRep,
 		statequery:               statedb,
 		propquery:                propquery,
+		contractDb:               contractDag,
 		tokenEngine:              tokenengine.Instance,
 		enableTxFeeCheck:         true,
 		enableContractSignCheck:  true,
@@ -91,7 +96,7 @@ func (validate *Validate) setUtxoQuery(q IUtxoQuery) {
 }
 
 //逐条验证每一个Tx，并返回总手续费的分配情况，然后与Coinbase进行比较
-func (validate *Validate) validateTransactions(txs modules.Transactions, unitTime int64, unitAuthor common.Address) ValidationCode {
+func (validate *Validate) validateTransactions(rwM rwset.TxManager, txs modules.Transactions, unitTime int64, unitAuthor common.Address) ValidationCode {
 	ads := make([]*modules.Addition, 0)
 
 	oldUtxoQuery := validate.utxoquery
@@ -100,8 +105,21 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 	newUtxoQuery := &newUtxoQuery{oldUtxoQuery: oldUtxoQuery, unitUtxo: unitUtxo}
 	validate.utxoquery = newUtxoQuery
 	defer validate.setUtxoQuery(oldUtxoQuery)
-	spendOutpointMap := make(map[*modules.OutPoint]bool)
+	spendOutpointMap := make(map[*modules.OutPoint]common.Hash)
 	var coinbase *modules.Transaction
+	//构造TempDag用于存储Tx的结果
+	if validate.contractDb != nil {
+		validate.contractDb, _ = validate.contractDb.NewTemp()
+	}
+	//tempdb, err := ptndb.NewTempdb(validate.db)
+	//if err != nil {
+	//	log.Errorf("Init tempdb error:%s", err.Error())
+	//}
+	//tempDag := common2.NewUnitRepository4Db(tempdb,tokenengine.Instance)
+	//if err != nil {
+	//	log.Errorf("Init temp dag error:%s", err.Error())
+	//}
+	//validate.contractDb=tempDag
 	for txIndex, tx := range txs {
 		//先检查普通交易并计算手续费，最后检查Coinbase
 		txHash := tx.Hash()
@@ -114,20 +132,22 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 			//每个单元的第一条交易比较特殊，是Coinbase交易，其包含增发和收集的手续费
 
 		}
-		txFeeAllocate, txCode, _ := validate.validateTxAndCache(tx, true)
+		txFeeAllocate, txCode, _ := validate.validateTxAndCache(rwM, tx, true)
 		if txCode != TxValidationCode_VALID {
 			log.Debug("ValidateTx", "txhash", txHash, "error validate code", txCode)
 			return txCode
 		}
 		// 验证双花
 		for _, outpoint := range tx.GetSpendOutpoints() {
-			if _, ok := spendOutpointMap[outpoint]; ok {
+			if spentTx, ok := spendOutpointMap[outpoint]; ok {
+				log.Errorf("Utxo[%s] spent by tx[%s]", outpoint.String(), spentTx.String())
 				return TxValidationCode_INVALID_DOUBLE_SPEND
 			}
 			if stxo, _ := validate.utxoquery.GetStxoEntry(outpoint); stxo != nil {
+				log.Errorf("Utxo[%s] spent by tx[%s]", outpoint.String(), stxo.SpentByTxId.String())
 				return TxValidationCode_INVALID_DOUBLE_SPEND
 			}
-			spendOutpointMap[outpoint] = true
+			spendOutpointMap[outpoint] = txHash
 		}
 
 		for _, a := range txFeeAllocate {
@@ -141,6 +161,10 @@ func (validate *Validate) validateTransactions(txs modules.Transactions, unitTim
 			log.Debugf("Add tx utxo for key:%s", outPoint.String())
 			unitUtxo.Store(outPoint, utxo)
 		}
+		if validate.contractDb != nil {
+			validate.contractDb.SaveTransaction(tx, txIndex)
+		}
+		//tempDag.SaveTransaction(tx)
 		//newUtxoQuery.unitUtxo = unitUtxo
 		//validate.utxoquery = newUtxoQuery
 	}
@@ -220,20 +244,20 @@ func (validate *Validate) ValidateTx(tx *modules.Transaction, isFullTx bool) ([]
 	validate.enableContractSignCheck = true
 	validate.enableDeveloperCheck = true
 	validate.enableContractRwSetCheck = true
-	code, addition := validate.validateTx(tx, isFullTx)
+	code, addition := validate.validateTx(nil, tx, isFullTx)
 	if code == TxValidationCode_VALID {
 		validate.cache.AddTxValidateResult(txId, addition)
 		return addition, code, nil
 	}
 	return addition, code, NewValidateError(code)
 }
-func (validate *Validate) validateTxAndCache(tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, ValidationCode, error) {
+func (validate *Validate) validateTxAndCache(rwM rwset.TxManager, tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, ValidationCode, error) {
 	txId := tx.Hash()
 	has, add := validate.cache.HasTxValidateResult(txId)
 	if has {
 		return add, TxValidationCode_VALID, nil
 	}
-	code, addition := validate.validateTx(tx, isFullTx)
+	code, addition := validate.validateTx(rwM, tx, isFullTx)
 	if code == TxValidationCode_VALID {
 		validate.cache.AddTxValidateResult(txId, addition)
 		return addition, code, nil
@@ -275,13 +299,19 @@ func (validate *Validate) checkTxIsExist(tx *modules.Transaction) bool {
 	}
 	return false
 }
-func (validate *Validate) ContractTxCheck(tx *modules.Transaction) bool {
-	if ContractCheckFun != nil {
-		return ContractCheckFun(tx)
-	}
-	return true
-}
+
+//func (validate *Validate) ContractTxCheck(rwM rwset.TxManager, tx *modules.Transaction) bool {
+//	if validate.contractCheckFun != nil {
+//		return validate.contractCheckFun(rwM,dag, tx)
+//	}
+//	return true
+//}
 func (validate *Validate) SetContractTxCheckFun(checkFun ContractTxCheckFunc) {
-	ContractCheckFun = checkFun
+	validate.contractCheckFun = checkFun
 	log.Debug("SetContractTxCheckFun ok")
 }
+
+//func (v *Validate) SetBuildTempContractDagFunc(buildFunc BuildTempContractDagFunc) {
+//	v.buildTempDagFunc = buildFunc
+//	log.Debug("SetBuildTempContractDagFunc ok")
+//}

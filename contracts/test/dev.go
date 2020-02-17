@@ -5,6 +5,8 @@ import (
 	"container/list"
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
@@ -12,12 +14,11 @@ import (
 	"github.com/palletone/go-palletone/contracts/manger"
 	"github.com/palletone/go-palletone/contracts/ucc"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/dboperation"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
 	errors2 "github.com/pkg/errors"
-	"time"
 )
 
 type TempCC struct {
@@ -88,7 +89,7 @@ func Install(chainID, ccName, ccPath, ccVersion, ccDescription, ccAbi, ccLanguag
 	listAdd(tcc)
 	return payloadUnit, nil
 }
-func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byte, txId string, args [][]byte) (deployId []byte, deployPayload *modules.ContractDeployPayload, e error) {
+func Deploy(rwM rwset.TxManager, idag dboperation.IContractDag, chainID string, templateId []byte, txId string, args [][]byte) (deployId []byte, deployPayload *modules.ContractDeployPayload, e error) {
 	log.Info("Deploy enter", "chainID", chainID, "templateId", templateId, "txId", txId)
 	defer log.Info("Deploy exit", "chainID", chainID, "templateId", templateId, "txId", txId)
 	var mksupt manger.Support = &manger.SupportImpl{}
@@ -120,7 +121,7 @@ func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byt
 		log.Error(errMsg)
 		return nil, nil, errors.New(errMsg)
 	}
-	txsim, err := mksupt.GetTxSimulator(rwM, idag, chainID, txId)
+	txsim, err := mksupt.GetTxSimulator(rwM, idag, chainID)
 	if err != nil {
 		log.Error("getTxSimulator err:", "error", err)
 		return nil, nil, errors2.WithMessage(err, "GetTxSimulator error")
@@ -177,7 +178,7 @@ func Deploy(rwM rwset.TxManager, idag dag.IDag, chainID string, templateId []byt
 	}
 	return cc.Id, unit, err
 }
-func Invoke(rwM rwset.TxManager, idag dag.IDag, chainID string, deployId []byte, txid string, args [][]byte) (*modules.ContractInvokeResult, error) {
+func Invoke(rwM rwset.TxManager, idag dboperation.IContractDag, chainID string, deployId []byte, txid string, args [][]byte) (*modules.ContractInvokeResult, error) {
 	log.Info("Invoke enter", "chainID", chainID, "deployId", deployId, "txid", txid)
 	defer log.Info("Invoke exit", "chainID", chainID, "deployId", deployId, "txid", txid)
 	setTimeOut := time.Duration(30) * time.Second
@@ -230,7 +231,7 @@ func Stop(contractid []byte, chainID string, deployId []byte, txid string, delet
 	log.Info("Stop enter", "contractid", contractid, "chainID", chainID, "deployId", deployId, "txid", txid)
 	defer log.Info("Stop enter", "contractid", contractid, "chainID", chainID, "deployId", deployId, "txid", txid)
 
-	setChainId := dag.ContractChainId
+	setChainId := modules.ContractChainId
 	if chainID != "" {
 		setChainId = chainID
 	}

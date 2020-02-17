@@ -24,7 +24,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -139,7 +138,7 @@ func newKeyFromECDSA(privateKeyECDSA []byte) *Key {
 		Id:         id,
 		Address:    crypto.PubkeyBytesToAddress(pubKey),
 		PrivateKey: privateKeyECDSA,
-		KeyType:KeyType_ECDSA_KEY,
+		KeyType:    KeyType_ECDSA_KEY,
 	}
 	return key
 }

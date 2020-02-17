@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/validator"
 )
 
@@ -156,7 +157,7 @@ func (p *Processor) contractExecEvent(tx *modules.Transaction, ele *modules.Elec
 	log.Debugf("[%s]contractExecEvent, add tx reqId:%s", shortId(reqId.String()), reqId.String())
 
 	if !tx.IsSystemContract() { //系统合约在UNIT构建前执行
-		go p.runContractReq(reqId, ele)
+		go p.runContractReq(reqId, ele, rwset.RwM, p.dag)
 	}
 	return true, nil
 }
@@ -226,6 +227,11 @@ func (p *Processor) contractCommitEvent(tx *modules.Transaction) (broadcast bool
 	}
 
 	log.Debugf("[%s]contractCommitEvent, rstTx receive", shortId(reqId.String()))
+	//err = p.dag.SaveTransaction(tx)
+	//if err != nil {
+	//	log.Errorf("[%s]contractCommitEvent SaveTransaction err:%s", shortId(reqId.String()), err.Error())
+	//	return false, err
+	//}
 	p.mtx[reqId].valid = true
 	p.mtx[reqId].rstTx = tx
 

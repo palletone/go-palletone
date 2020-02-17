@@ -21,7 +21,9 @@
 package validator
 
 import (
+	"github.com/palletone/go-palletone/dag/dboperation"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/palletcache"
 )
 
 type Validator interface {
@@ -37,9 +39,13 @@ type Validator interface {
 	//验证一个Header是否合法（Mediator签名有效）,主要用于轻节点
 	ValidateHeader(h *modules.Header) ValidationCode
 	ValidateUnitGroupSign(h *modules.Header) error
-	ValidateTxFeeEnough(tx *modules.Transaction, extSize float64, extTime float64) bool
+	ValidateTxFeeEnough(tx *modules.Transaction, extSize float64, extTime float64) ValidationCode
 	CheckTxIsExist(tx *modules.Transaction) bool
 
+	SetContractTxCheckFun(checkFun ContractTxCheckFunc)
 	//验证一个交易是否是双花交易
 	//ValidateTxDoubleSpend(tx *modules.Transaction) error
 }
+type ValidatorBuilderFunc func(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propquery IPropQuery,
+	contractDag dboperation.IContractDag,
+	cache palletcache.ICache, light bool) Validator

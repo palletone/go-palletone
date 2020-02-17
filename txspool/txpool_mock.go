@@ -334,6 +334,21 @@ func (mr *MockITxPoolMockRecorder) GetPoolTxsByAddr(addr interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPoolTxsByAddr", reflect.TypeOf((*MockITxPool)(nil).GetPoolTxsByAddr), addr)
 }
 
+// GetUnpackedTxsByAddr mocks base method
+func (m *MockITxPool) GetUnpackedTxsByAddr(addr string) ([]*TxPoolTransaction, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUnpackedTxsByAddr", addr)
+	ret0, _ := ret[0].([]*TxPoolTransaction)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUnpackedTxsByAddr indicates an expected call of GetUnpackedTxsByAddr
+func (mr *MockITxPoolMockRecorder) GetUnpackedTxsByAddr(addr interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnpackedTxsByAddr", reflect.TypeOf((*MockITxPool)(nil).GetUnpackedTxsByAddr), addr)
+}
+
 // Stats mocks base method
 func (m *MockITxPool) Stats() (int, int, int) {
 	m.ctrl.T.Helper()

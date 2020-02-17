@@ -69,13 +69,14 @@ func NewUtxoRepository4Db(db ptndb.Database, tokenEngine tokenengine.ITokenEngin
 type IUtxoRepository interface {
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error)
+	GetTxOutput(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error)
 	GetAddrUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	GetUxto(txin modules.Input) *modules.Utxo
 	UpdateUtxo(unitTime int64, txHash common.Hash, payment *modules.PaymentPayload, msgIndex uint32) error
 	IsUtxoSpent(outpoint *modules.OutPoint) (bool, error)
-	ComputeTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
+	//ComputeTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
 	GetUxtoSetByInputs(txins []modules.Input) (map[modules.OutPoint]*modules.Utxo, uint64)
 	//GetAccountTokens(addr common.Address) (map[string]*modules.AccountToken, error)
 	//WalletBalance(addr common.Address, asset modules.Asset) uint64
@@ -88,11 +89,36 @@ type IUtxoRepository interface {
 }
 
 func (repository *UtxoRepository) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
-	return repository.utxodb.GetUtxoEntry(outpoint)
+	data, err := repository.utxodb.GetUtxoEntry(outpoint)
+	if err != nil {
+		log.Warnf("retrieve utxo[%s] get error:%s", outpoint.String(), err.Error())
+	}
+	return data, err
 }
 func (repository *UtxoRepository) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error) {
 	return repository.utxodb.GetStxoEntry(outpoint)
 }
+
+//获得消费的和未消费的交易输出
+func (repository *UtxoRepository) GetTxOutput(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	utxo, err := repository.utxodb.GetUtxoEntry(outpoint)
+	if err != nil {
+		stxo, err := repository.utxodb.GetStxoEntry(outpoint)
+		if err != nil {
+			return nil, err
+		}
+		return &modules.Utxo{
+			Amount:    stxo.Amount,
+			Asset:     stxo.Asset,
+			PkScript:  stxo.PkScript,
+			LockTime:  stxo.LockTime,
+			Timestamp: stxo.Timestamp,
+			Flags:     2,
+		}, nil
+	}
+	return utxo, nil
+}
+
 func (repository *UtxoRepository) IsUtxoSpent(outpoint *modules.OutPoint) (bool, error) {
 	return repository.utxodb.IsUtxoSpent(outpoint)
 }
@@ -663,9 +689,9 @@ To compute transactions' fees
 // }
 
 //计算一笔Tx中包含多少手续费
-func (repository *UtxoRepository) ComputeTxFee(tx *modules.Transaction) (*modules.AmountAsset, error) {
-	return tx.GetTxFee(repository.utxodb.GetUtxoEntry)
-}
+//func (repository *UtxoRepository) ComputeTxFee(tx *modules.Transaction) (*modules.AmountAsset, error) {
+//	return tx.GetTxFee(repository.utxodb.GetUtxoEntry)
+//}
 
 /**
 计算Mediator的出块奖励

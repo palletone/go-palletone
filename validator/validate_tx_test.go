@@ -93,7 +93,7 @@ func TestValidate_ValidateTx_EmptyTx_NoPayment(t *testing.T) {
 	stateQ := &mockStatedbQuery{}
 	dagq := &mockiDagQuery{}
 	propQ := &mockiPropQuery{}
-	validat := NewValidate(dagq, nil, stateQ, propQ, newCache(), false)
+	validat := NewValidate(dagq, nil, stateQ, propQ, nil, newCache(), false)
 	_, _, err := validat.ValidateTx(tx, true)
 	assert.NotNil(t, err)
 	t.Log(err)
@@ -230,7 +230,7 @@ func TestValidateDoubleSpendOn1Tx(t *testing.T) {
 	stateQ := &mockStatedbQuery{}
 	dagq := &mockiDagQuery{}
 	propQ := &mockiPropQuery{}
-	validate := NewValidate(dagq, utxoq, stateQ, propQ, newCache(), false)
+	validate := NewValidate(dagq, utxoq, stateQ, propQ, nil, newCache(), false)
 	_, _, err := validate.ValidateTx(tx, true)
 	assert.Nil(t, err)
 	pay2 := newTestPayment(outPoint, 2)
@@ -276,7 +276,7 @@ func TestValidateLargeInputPayment(t *testing.T) {
 	stateQ := &mockStatedbQuery{}
 	dagq := &mockiDagQuery{}
 	propQ := &mockiPropQuery{}
-	validate := NewValidate(dagq, utxoq, stateQ, propQ, newCache(), false)
+	validate := NewValidate(dagq, utxoq, stateQ, propQ, nil, newCache(), false)
 	_, _, err := validate.ValidateTx(tx, true)
 
 	t1 := time.Now()

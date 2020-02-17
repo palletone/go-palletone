@@ -809,7 +809,7 @@ createPacket
     ${param}    Create List    createPacket    ${pubkey}    ${count}    ${min}    ${max}
     ...    ${expiredTime}    remark    ${isConstant}
     ${two}    Create List    ${addr}    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    ${amount}    1    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99
-    ...    ${param}    \    10
+    ...    ${param}
     ${res}    post    contract_ccinvoketx    createPacket    ${two}
     log    ${res}    #    #    Create List    createPacket    ${pubkey}
     ...    # ${count}    ${min}    ${max}    # ${expiredTime}    remark    #
@@ -866,7 +866,7 @@ pullPacket
     ${param}    Create List    pullPacket    ${tokenHolderPubKey}    ${message}    ${signature}    ${pullAddr}
     ...    ${amount}
     ${two}    Create List    ${addr}    ${addr}    1    1    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99
-    ...    ${param}    \    10
+    ...    ${param}
     ${res}    post    contract_ccinvoketx    pullPacket    ${two}
     log    ${res}
 
@@ -891,7 +891,7 @@ updatePacket
     ${param}    Create List    updatePacket    ${pubkey}    ${count}    ${min}    ${max}
     ...    ${expiredTime}    remark    ${isConstant}
     ${two}    Create List    ${addr}    ${toaddr}    ${amount}    1    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99
-    ...    ${param}    \    10
+    ...    ${param}
     ${res}    post    contract_ccinvoketx    updatePacket    ${two}
     log    ${res}
     [Return]    ${res}
@@ -900,7 +900,7 @@ recyclePacket
     [Arguments]    ${addr}    ${pubkey}
     ${param}    Create List    recyclePacket    ${pubkey}
     ${two}    Create List    ${addr}    ${addr}    0    1    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99
-    ...    ${param}    \    10
+    ...    ${param}
     ${res}    post    contract_ccinvoketx    recyclePacket    ${two}
     log    ${res}
 

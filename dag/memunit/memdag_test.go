@@ -21,11 +21,13 @@
 package memunit
 
 import (
+	"testing"
+	"time"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/tokenengine"
-	"time"
 
 	dagcommon "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -40,7 +42,6 @@ import (
 	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/txspool"
 	"github.com/palletone/go-palletone/validator"
-	"testing"
 )
 
 func cache() palletcache.ICache {
@@ -63,7 +64,7 @@ func TestMemDag_AddUnit(t *testing.T) {
 	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 	gasToken := dagconfig.DagConfig.GetGasToken()
 	memdag := NewMemDag(gasToken, 2, false,
-		db, unitRep, propRep, stateRep, cache(), tokenengine.Instance)
+		db, unitRep, propRep, stateRep, cache(), tokenengine.Instance, validator.NewValidatorAllPass)
 	parent := common.HexToHash("0x2c30cd5b06c4c6d184aae3e1ed76492f16a0fa335673dba99c8efa813c1a1e30")
 	_, _, _, _, _, err := memdag.AddUnit(newTestUnit(parent, 1, key2), nil, true)
 	assert.Nil(t, err)
@@ -88,7 +89,7 @@ func BenchmarkMemDag_AddUnit(b *testing.B) {
 	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 	gasToken := modules.PTNCOIN
 	memdag := NewMemDag(gasToken, 2, false,
-		db, unitRep, propRep, stateRep, cache(), tokenengine.Instance)
+		db, unitRep, propRep, stateRep, cache(), tokenengine.Instance, validator.NewValidatorAllPass)
 
 	parentHash := lastHeader.Hash()
 	for i := 0; i < b.N; i++ {
@@ -165,7 +166,7 @@ func TestMemDag_AddOrphanUnit(t *testing.T) {
 	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 	gasToken := modules.PTNCOIN
 	memdag := NewMemDag(gasToken, 2, false,
-		db, unitRep, propRep, stateRep, cache(), tokenengine.Instance)
+		db, unitRep, propRep, stateRep, cache(), tokenengine.Instance, validator.NewValidatorAllPass)
 	u1 := newTestUnit(lastHeader.Hash(), 1, key2)
 	log.Debugf("Try add unit[%x] to memdag, index: %d", u1.Hash(), u1.NumberU64())
 
@@ -210,7 +211,7 @@ func TestMemDag_SwitchMainChain(t *testing.T) {
 	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 	gasToken := modules.PTNCOIN
 	memdag := NewMemDag(gasToken, 2,
-		false, db, unitRep, propRep, stateRep, cache(), tokenengine.Instance)
+		false, db, unitRep, propRep, stateRep, cache(), tokenengine.Instance, validator.NewValidatorAllPass)
 
 	u1 := newTestUnit(u0.Hash(), 2, key2)
 	log.Debugf("Try add unit[%x] to memdag", u1.Hash())
@@ -259,33 +260,5 @@ func mockMediatorInit(statedb storage.IStateDb, propDb storage.IPropertyDb) {
 }
 
 func mockValidator() validator.Validator {
-	return &mockValidate{}
-}
-
-type mockValidate struct {
-}
-
-func (v mockValidate) ValidateTx(tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, validator.ValidationCode, error) {
-	return nil, validator.TxValidationCode_VALID, nil
-}
-
-func (v mockValidate) ValidateUnitExceptGroupSig(unit *modules.Unit) validator.ValidationCode {
-	return validator.TxValidationCode_VALID
-}
-func (v mockValidate) ValidateUnitExceptPayment(unit *modules.Unit) error {
-	return nil
-}
-
-//验证一个Header是否合法（Mediator签名有效）
-func (v mockValidate) ValidateHeader(h *modules.Header) validator.ValidationCode {
-	return validator.TxValidationCode_VALID
-}
-func (v mockValidate) ValidateUnitGroupSign(h *modules.Header) error {
-	return nil
-}
-func (v mockValidate) CheckTxIsExist(tx *modules.Transaction) bool {
-	return false
-}
-func (v mockValidate) ValidateTxFeeEnough(tx *modules.Transaction, extSize float64, extTime float64) bool {
-	return true
+	return &validator.ValidatorAllPass{}
 }

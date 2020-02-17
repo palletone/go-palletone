@@ -35,12 +35,10 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/contracts/syscontract/sysconfigcc"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -131,7 +129,7 @@ func (s *PrivateContractAPI) Ccinvoke(ctx context.Context, contractAddr string, 
 	return string(rsp), err
 }
 
-func (s *PublicContractAPI) Ccquery(ctx context.Context, id string, param []string, timeout uint32) (string, error) {
+func (s *PublicContractAPI) Ccquery(ctx context.Context, id string, param []string, timeout *uint32) (string, error) {
 	var idByte []byte
 
 	log.Debugf("Ccquery, id len:%d, id[%s]", len(id), id)
@@ -149,8 +147,11 @@ func (s *PublicContractAPI) Ccquery(ctx context.Context, id string, param []stri
 	//参数前面加入msg0和msg1,这里为空
 	fullArgs := [][]byte{defaultMsg0, defaultMsg1}
 	fullArgs = append(fullArgs, args...)
-
-	rsp, err := s.b.ContractQuery(idByte, fullArgs, time.Duration(timeout)*time.Second)
+	duration := time.Duration(0)
+	if timeout != nil {
+		duration = time.Duration(*timeout) * time.Second
+	}
+	rsp, err := s.b.ContractQuery(idByte, fullArgs, duration)
 	if err != nil {
 		return "", err
 	}
@@ -240,75 +241,49 @@ func (s *PrivateContractAPI) Ccdeploytx(ctx context.Context, from, to string, am
 }
 
 func (s *PrivateContractAPI) Ccinvoketx(ctx context.Context, from, to string, amount, fee decimal.Decimal,
-	deployId string, param []string, certID string, timeout string) (*ContractInvokeRsp, error) {
-	contractAddr, _ := common.StringToAddress(deployId)
-	fromAddr, _ := common.StringToAddress(from)
-	toAddr, _ := common.StringToAddress(to)
-	daoAmount := ptnjson.Ptn2Dao(amount)
-	daoFee := ptnjson.Ptn2Dao(fee)
-	timeout64, _ := strconv.ParseUint(timeout, 10, 64)
-
-	log.Info("Ccinvoketx info:")
-	log.Infof("   fromAddr[%s], toAddr[%s]", fromAddr.String(), toAddr.String())
-	log.Infof("   daoAmount[%d], daoFee[%d]", daoAmount, daoFee)
-	log.Infof("   contractId[%s], certID[%s], timeout[%s]", contractAddr.String(), certID, timeout)
-
-	intCertID := new(big.Int)
-	if len(certID) > 0 {
-		if _, ok := intCertID.SetString(certID, 10); !ok {
-			return &ContractInvokeRsp{}, fmt.Errorf("certid is invalid")
-		}
-	}
-
-	log.Infof("   param len[%d]", len(param))
-	args := make([][]byte, len(param))
-	for i, arg := range param {
-		args[i] = []byte(arg)
-		log.Infof("      index[%d], value[%s]\n", i, arg)
-	}
-	reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, daoAmount, daoFee, intCertID, contractAddr, args, uint32(timeout64))
-	//log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(reqId[:]))
-	log.Infof("   reqId[%s]", hex.EncodeToString(reqId[:]))
-	rsp1 := &ContractInvokeRsp{
-		ReqId:      hex.EncodeToString(reqId[:]),
-		ContractId: deployId,
-	}
-	return rsp1, err
+	contractAddress string, param []string, password *string, timeout *uint32) (*ContractInvokeRsp, error) {
+	return s.CcinvokeToken(ctx, from, to, dagconfig.DagConfig.GasToken, amount, fee, contractAddress, param, password, timeout)
 }
 
 func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token string, amountToken, fee decimal.Decimal,
-	contractAddress string, param []string, pwd *string) (*ContractInvokeRsp, error) {
-	gasToken := dagconfig.DagConfig.GasToken
-	if token == gasToken {
-		return s.Ccinvoketx(ctx, from, to, amountToken, fee, contractAddress, param, "", "0")
-	}
-
+	contractAddress string, param []string, pwd *string, timeout *uint32) (*ContractInvokeRsp, error) {
 	contractAddr, _ := common.StringToAddress(contractAddress)
-	fromAddr, _ := common.StringToAddress(from)
-	toAddr, _ := common.StringToAddress(to)
-	daoFee := ptnjson.Ptn2Dao(fee)
-	asset, err := modules.StringToAsset(token)
-	if err != nil {
-		return nil, errors.New("Invalid asset string:" + token)
+	password := ""
+	if pwd != nil {
+		password = *pwd
 	}
-	amountOfToken := asset.Uint64Amount(amountToken)
-	log.Info("CcinvokeToken info:")
-	log.Infof("   fromAddr[%s], toAddr[%s]", fromAddr.String(), toAddr.String())
-	log.Infof("   assetid[%s]", asset.AssetId.String())
-	log.Infof("   contractId[%s]", contractAddr.String())
+	tx, usedUtxo, err := buildRawTransferTx(s.b, token, from, to, amountToken, fee, password)
+	if err != nil {
+		return nil, err
+	}
 	log.Infof("   param len[%d]", len(param))
 	args := make([][]byte, len(param))
 	for i, arg := range param {
 		args[i] = []byte(arg)
 		log.Infof("      index[%d], value[%s]\n", i, arg)
 	}
-	if pwd != nil {
-		if err := s.unlockKS(fromAddr, *pwd, nil); err != nil {
-			return nil, err
-		}
+	exeTimeout := uint32(0)
+	if timeout != nil {
+		exeTimeout = *timeout
 	}
-	reqId, err := s.b.ContractInvokeReqTokenTx(fromAddr, toAddr, asset, amountOfToken, daoFee,
-		contractAddr, args, 0)
+	msgReq := &modules.Message{
+		App: modules.APP_CONTRACT_INVOKE_REQUEST,
+		Payload: &modules.ContractInvokeRequestPayload{
+			ContractId: contractAddr.Bytes(),
+			Args:       args,
+			Timeout:    exeTimeout,
+		},
+	}
+	tx.AddMessage(msgReq)
+	//3. sign
+	err = signRawTransaction(s.b, tx, from, password, timeout, 1, usedUtxo)
+	if err != nil {
+		return nil, err
+	}
+	//4. send
+	reqId, err := submitTransaction(ctx, s.b, tx)
+	//reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, daoAmount, daoFee, intCertID, contractAddr, args, uint32(timeout64))
+	//log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(reqId[:]))
 	log.Infof("   reqId[%s]", hex.EncodeToString(reqId[:]))
 	rsp1 := &ContractInvokeRsp{
 		ReqId:      hex.EncodeToString(reqId[:]),
@@ -317,7 +292,7 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 	return rsp1, err
 }
 func (s *PrivateContractAPI) CcinvoketxPass(ctx context.Context, from, to string, amount, fee decimal.Decimal,
-	deployId string, param []string, password string, duration *uint64, certID string) (string, error) {
+	deployId string, param []string, password string, duration *uint32, certID string) (string, error) {
 	contractAddr, _ := common.StringToAddress(deployId)
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
@@ -343,7 +318,7 @@ func (s *PrivateContractAPI) CcinvoketxPass(ctx context.Context, from, to string
 	}
 
 	//2.
-	err := s.unlockKS(fromAddr, password, duration)
+	err := unlockKS(s.b, fromAddr, password, duration)
 	if err != nil {
 		return "", err
 	}
@@ -513,23 +488,6 @@ func (s *PrivateContractAPI) Ccstoptxfee(ctx context.Context, from, to string, a
 	log.Infof("   fee[%f]", afee)
 	return rsp, nil
 }
-func (s *PrivateContractAPI) unlockKS(addr common.Address, password string, duration *uint64) error {
-	const max = uint64(time.Duration(math.MaxInt64) / time.Second)
-	var d time.Duration
-	if duration == nil {
-		d = 300 * time.Second
-	} else if *duration > max {
-		return errors.New("unlock duration too large")
-	} else {
-		d = time.Duration(*duration) * time.Second
-	}
-	ks := s.b.GetKeyStore()
-	err := ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
-	if err != nil {
-		return fmt.Errorf("TimedUnlock Account err: %v", err.Error())
-	}
-	return nil
-}
 
 //  TODO
 func (s *PublicContractAPI) ListAllContractTemplates(ctx context.Context) ([]*ptnjson.ContractTemplateJson, error) {
@@ -616,7 +574,7 @@ func (s *PrivateContractAPI) DepositContractInvoke(ctx context.Context, from, to
 	}
 
 	rsp, err := s.Ccinvoketx(ctx, from, to, amount, fee, syscontract.DepositContractAddress.String(),
-		param, "", "0")
+		param, nil, nil)
 	if err != nil {
 		return "", err
 	}
@@ -625,12 +583,12 @@ func (s *PrivateContractAPI) DepositContractInvoke(ctx context.Context, from, to
 
 func (s *PublicContractAPI) DepositContractQuery(ctx context.Context, param []string) (string, error) {
 	log.Debug("---enter DepositContractQuery---")
-	return s.Ccquery(ctx, syscontract.DepositContractAddress.String(), param, 0)
+	return s.Ccquery(ctx, syscontract.DepositContractAddress.String(), param, nil)
 }
 
 func (s *PublicContractAPI) SysConfigContractQuery(ctx context.Context, param []string) (string, error) {
 	log.Debugf("---enter SysConfigContractQuery---")
-	return s.Ccquery(ctx, syscontract.SysConfigContractAddress.String(), param, 0)
+	return s.Ccquery(ctx, syscontract.SysConfigContractAddress.String(), param, nil)
 }
 
 func (s *PrivateContractAPI) SysConfigContractInvoke(ctx context.Context, from, to string, amount, fee decimal.Decimal,
@@ -700,7 +658,7 @@ func (s *PrivateContractAPI) SysConfigContractInvoke(ctx context.Context, from, 
 	}
 
 	rsp, err := s.Ccinvoketx(ctx, from, to, amount, fee, syscontract.SysConfigContractAddress.String(),
-		param, "", "0")
+		param, nil, nil)
 	if err != nil {
 		return "", err
 	}

@@ -13,7 +13,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/stretchr/testify/assert"
@@ -23,7 +22,7 @@ func TestRwSetTxSimulator_GetTokenBalance(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	dag := dag.NewMockIDag(mockCtrl)
+	dag := NewMockIDataQuery(mockCtrl)
 	simulator := &RwSetTxSimulator{}
 	simulator.dag = dag
 	mockUtxos := mockUtxos()
@@ -78,7 +77,7 @@ func TestNewTxMgr(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	dag := dag.NewMockIDag(mockCtrl)
+	dag := NewMockIDataQuery(mockCtrl)
 	simulator := &RwSetTxSimulator{}
 	simulator.dag = dag
 	mockUnit := getCurrentUnit()
@@ -99,7 +98,7 @@ func TestNewTxMgr(t *testing.T) {
 	}
 	chain_id := asid.String()
 	log.Println("chainId:", chain_id)
-	ts, err1 := rwm.NewTxSimulator(dag, chain_id, tx.Hash().String(), true)
+	ts, err1 := rwm.NewTxSimulator(dag, tx.Hash().String())
 	if err1 != nil {
 		t.Fatal(err1)
 		return
@@ -128,10 +127,10 @@ func TestNewTxMgr(t *testing.T) {
 		log.Printf("asstid:%s ,amount:%d", assid.String(), amount)
 	}
 	// done && close
-	dag.EXPECT().Close().Return().AnyTimes()
+	//dag.EXPECT().Close().Return().AnyTimes()
 	ts.Done()
 	// txsimulator 执行结束后关闭它
-	assert.Nil(t, rwm.CloseTxSimulator(chain_id, tx.Hash().String()))
+	assert.Nil(t, rwm.CloseTxSimulator(tx.Hash().String()))
 }
 func getCurrentUnit() *modules.Unit {
 	txs := modules.Transactions{createTx()}
@@ -208,10 +207,68 @@ func TestConvertReadMap2Slice(t *testing.T) {
 	rd["bbb"] = r1
 	rd["ccc"] = r2
 	rd["aaa"] = r3
-	result := convertReadMap2Slice(rd)
+	crd := make(map[string]map[string]*KVRead)
+	crd[""] = rd
+	result := convertReadMap2Slice(crd)
 	assert.Equal(t, 3, len(result))
 	assert.Equal(t, "aaa", result[0].GetKey())
 	for i, r := range result {
 		t.Logf("%d,%#v", i, r)
 	}
+}
+func TestRwSetTxSimulator_Rollback(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	dag := NewMockIDataQuery(mockCtrl)
+
+	mockData := make(map[string]*modules.ContractStateValue)
+	mockData["A"] = &modules.ContractStateValue{
+		Value: []byte("10"),
+		Version: &modules.StateVersion{
+			Height:  modules.NewChainIndex(modules.PTNCOIN, 90),
+			TxIndex: 1,
+		},
+	}
+	mockData["C"] = &modules.ContractStateValue{
+		Value: []byte("33"),
+		Version: &modules.StateVersion{
+			Height:  modules.NewChainIndex(modules.PTNCOIN, 100),
+			TxIndex: 1,
+		},
+	}
+	dag.EXPECT().GetContractStatesById(gomock.Any()).Return(mockData, nil).AnyTimes()
+
+	mgr, _ := NewRwSetMgr("default")
+	simulator, _ := mgr.NewTxSimulator(dag, "tx0")
+	allStates, _ := simulator.GetAllStates(nil, "ns")
+	for k, v := range allStates {
+		t.Logf("Dag State:key[%s],value[%s]", k, string(v.Value))
+	}
+	assert.Equal(t, 2, len(allStates))
+	simulator.SetState([]byte("global"), "ns", "A", []byte("1"))
+	simulator.SetState(nil, "ns", "A", []byte("11"))
+	simulator.SetState(nil, "ns", "B", []byte("22"))
+	simulator.DeleteState(nil, "ns", "C")
+	allStates, _ = simulator.GetAllStates(nil, "ns")
+	for k, v := range allStates {
+		t.Logf("Tx0 State:key[%s],value[%s]", k, string(v.Value))
+	}
+	assert.Equal(t, 2, len(allStates))
+	err := simulator.Rollback()
+	assert.Nil(t, err)
+	allStates, _ = simulator.GetAllStates(nil, "ns")
+	for k, v := range allStates {
+		t.Logf("Rollback Tx0, State:key[%s],value[%s]", k, string(v.Value))
+	}
+	assert.Equal(t, 2, len(allStates))
+	s1, _ := mgr.NewTxSimulator(dag, "tx1")
+	s1.SetState(nil, "ns", "A", []byte("111"))
+	s1.SetState(nil, "ns", "C", []byte("333"))
+	allStates, _ = s1.GetAllStates(nil, "ns")
+	for k, v := range allStates {
+		t.Logf("Tx1 State:key[%s],value[%s]", k, string(v.Value))
+	}
+	assert.Equal(t, 2, len(allStates))
+
 }

@@ -18,12 +18,13 @@ package rpc
 
 import (
 	"fmt"
-	set "github.com/deckarep/golang-set"
-	"github.com/palletone/go-palletone/common/hexutil"
 	"math"
 	"reflect"
 	"strings"
 	"sync"
+
+	set "github.com/deckarep/golang-set"
+	"github.com/palletone/go-palletone/common/hexutil"
 )
 
 // API describes the set of methods offered over the RPC interface

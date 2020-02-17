@@ -22,8 +22,8 @@ package jury
 
 import (
 	"encoding/json"
-
 	"fmt"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
@@ -70,8 +70,10 @@ func mergeUtxo(addr common.Address, utxos map[modules.OutPoint]*modules.Utxo, li
 	return payment
 }
 
+type UtxoQuery func(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
+
 //将ContractInvokeResult中合约付款出去的请求转换为UTXO对应的Payment
-func resultToContractPayments(dag iDag, requestTx *modules.Transaction, result *modules.ContractInvokeResult) ([]*modules.PaymentPayload, error) {
+func resultToContractPayments(dag UtxoQuery, requestTx *modules.Transaction, result *modules.ContractInvokeResult) ([]*modules.PaymentPayload, error) {
 	addr := common.NewAddress(result.ContractId, common.ContractHash)
 	payments := []*modules.PaymentPayload{}
 	paytoContractUtxo := map[modules.OutPoint]*modules.Utxo{}
@@ -83,7 +85,7 @@ func resultToContractPayments(dag iDag, requestTx *modules.Transaction, result *
 		for ast, aa := range payouts {
 			ast1 := ast
 			asset := &ast1
-			utxos, err := dag.GetAddr1TokenUtxos(addr, asset)
+			utxos, err := dag(addr, asset)
 			if err != nil {
 				return nil, err
 			}
@@ -126,7 +128,7 @@ func resultToContractPayments(dag iDag, requestTx *modules.Transaction, result *
 			payments = append(payments, payment)
 		}
 	} else {
-		utxos, err := dag.GetAddr1TokenUtxos(addr, nil)
+		utxos, err := dag(addr, nil)
 		if err != nil {
 			return nil, fmt.Errorf("mergeUtxo, address:%s, GetAddr1TokenUtxos err:%s", addr.String(), err.Error())
 		}

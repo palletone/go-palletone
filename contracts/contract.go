@@ -20,25 +20,36 @@ package contracts
 
 import (
 	"errors"
+	"sync/atomic"
+	"time"
+
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	cc "github.com/palletone/go-palletone/contracts/manger"
+	"github.com/palletone/go-palletone/dag/dboperation"
 
 	"github.com/palletone/go-palletone/contracts/core"
 	"github.com/palletone/go-palletone/contracts/test"
-	"github.com/palletone/go-palletone/dag"
 	md "github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
-	"sync/atomic"
-	"time"
 )
+
+type ContractProcessContext struct {
+	RequestId    common.Hash
+	Dag          dboperation.IContractDag
+	Ele          *md.ElectionNode
+	RwM          rwset.TxManager
+	Contract     *Contract
+	ErrMsgEnable bool
+}
 
 var initFlag int32
 
 type Contract struct {
 	cfg  *contractcfg.Config
 	name string
-	dag  dag.IDag
+	dag  dboperation.IContractDag
 	core.IAdapterJury
 
 	//status int32 //   1:init   2:start
@@ -48,7 +59,7 @@ type ContractInf interface {
 	Close() error
 	Install(chainID string, ccName string, ccPath string, ccVersion string, ccDescription, ccAbi, ccLanguage string) (payload *md.ContractTplPayload, err error)
 	Deploy(rwM rwset.TxManager, chainID string, templateId []byte, txId string, args [][]byte, timeout time.Duration) (deployId []byte, deployPayload *md.ContractDeployPayload, e error)
-	Invoke(rwM rwset.TxManager, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error)
+	Invoke(ctx *ContractProcessContext, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error)
 	Stop(rwM rwset.TxManager, chainID string, deployId []byte, txid string, deleteImage bool) (*md.ContractStopPayload, error)
 }
 
@@ -56,7 +67,7 @@ type ContractInf interface {
 // 由上层应用指定dag以及初始合约配置信息
 // Initialize the contract management module and load the system contract,
 // Specify dag and initial contract configuration information by the upper application
-func Initialize(idag dag.IDag, jury core.IAdapterJury, cfg *contractcfg.Config) (*Contract, error) {
+func Initialize(idag dboperation.IContractDag, jury core.IAdapterJury, cfg *contractcfg.Config) (*Contract, error) {
 	atomic.LoadInt32(&initFlag)
 	if initFlag > 0 {
 		//todo  tmp delete
@@ -137,7 +148,7 @@ func (c *Contract) Deploy(rwM rwset.TxManager, chainID string, templateId []byte
 // Invoke 合约invoke调用，根据指定合约调用参数执行已经部署的合约，函数返回合约调用单元。
 // The contract invoke call, execute the deployed contract according to the specified contract call parameters,
 // and the function returns the contract call unit.
-func (c *Contract) Invoke(rwM rwset.TxManager, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
+func (c *Contract) Invoke(ctx *ContractProcessContext, chainID string, deployId []byte, txid string, args [][]byte, timeout time.Duration) (*md.ContractInvokeResult, error) {
 	log.Info("Enter Contract Invoke====", "chainID", chainID, "deployId", deployId, "txid", txid, "timeout", timeout)
 	defer log.Info("Exit Contract Invoke====", "chainID", chainID, "deployId", deployId, "txid", txid, "timeout", timeout)
 	atomic.LoadInt32(&initFlag)
@@ -147,9 +158,9 @@ func (c *Contract) Invoke(rwM rwset.TxManager, chainID string, deployId []byte, 
 	}
 	if contractcfg.DebugTest {
 		log.Info("contract test invoke")
-		return test.Invoke(rwM, c.dag, chainID, deployId, txid, args)
+		return test.Invoke(ctx.RwM, ctx.Dag, chainID, deployId, txid, args)
 	}
-	return cc.Invoke(rwM, c.dag, chainID, deployId, txid, args, timeout)
+	return cc.Invoke(ctx.RwM, ctx.Dag, chainID, deployId, txid, args, timeout)
 }
 
 // Stop 停止指定合约。根据需求可以对镜像文件进行删除操作

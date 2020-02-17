@@ -20,6 +20,8 @@
 package rwset
 
 import (
+	"encoding/json"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -28,13 +30,29 @@ type KVRWSet struct {
 	Reads  map[string]*KVRead  `protobuf:"bytes,1,rep,name=reads" json:"reads,omitempty"`
 	Writes map[string]*KVWrite `protobuf:"bytes,3,rep,name=writes" json:"writes,omitempty"`
 }
+type kvRWSet struct {
+	Reads  map[string]*kvRead  `json:"reads,omitempty"`
+	Writes map[string]*kvWrite `json:"writes,omitempty"`
+}
 
+func (m *KVRWSet) MarshalText() ([]byte, error) {
+	temp := &kvRWSet{make(map[string]*kvRead), make(map[string]*kvWrite)}
+	for k, v := range m.Reads {
+		temp.Reads[k] = &kvRead{v.key, v.version, v.value, v.ContractId}
+	}
+	for k, v := range m.Writes {
+		temp.Writes[k] = &kvWrite{v.key, v.isDelete, v.value, v.ContractId}
+	}
+	return json.Marshal(temp)
+}
 func (m *KVRWSet) Reset() {
 	m = new(KVRWSet)
 	m.Writes = make(map[string]*KVWrite)
 	m.Reads = make(map[string]*KVRead)
 }
-func (m *KVRWSet) String() string            { return proto.CompactTextString(m) }
+func (m *KVRWSet) String() string {
+	return proto.CompactTextString(m)
+}
 func (*KVRWSet) ProtoMessage()               {}
 func (*KVRWSet) Descriptor() ([]byte, []int) { return nil, nil }
 
@@ -58,7 +76,17 @@ type KVRead struct {
 	value      []byte                `protobuf:"bytes,3,opt,name=value,proto3"`
 	ContractId []byte                `protobuf:"bytes,4,opt,name=contract_id,proto3" json:"contract_id,omitempty"`
 }
+type kvRead struct {
+	Key        string
+	Version    *modules.StateVersion
+	Value      []byte
+	ContractId []byte
+}
 
+func (m *KVRead) MarshalText() ([]byte, error) {
+	temp := &kvRead{m.key, m.version, m.value, m.ContractId}
+	return json.Marshal(temp)
+}
 func (m *KVRead) Reset() {
 	n := new(KVRead)
 	m.key = n.key
@@ -66,7 +94,11 @@ func (m *KVRead) Reset() {
 	m.value = n.value
 	m.ContractId = n.ContractId
 }
-func (m *KVRead) String() string            { return proto.CompactTextString(m) }
+func (m *KVRead) String() string {
+	return proto.CompactTextString(m)
+	//data,_:=json.Marshal(m)
+	//return string(data)
+}
 func (*KVRead) ProtoMessage()               {}
 func (*KVRead) Descriptor() ([]byte, []int) { return nil, nil }
 
@@ -97,6 +129,12 @@ type KVWrite struct {
 	value      []byte `protobuf:"bytes,3,opt,name=value,proto3"`
 	ContractId []byte `protobuf:"bytes,4,opt,name=contract_id,proto3" json:"contract_id,omitempty"`
 }
+type kvWrite struct {
+	Key        string `protobuf:"bytes,1,opt,name=key"`
+	IsDelete   bool   `protobuf:"varint,2,opt,name=is_delete,json=isDelete"`
+	Value      []byte `protobuf:"bytes,3,opt,name=value,proto3"`
+	ContractId []byte `protobuf:"bytes,4,opt,name=contract_id,proto3" json:"contract_id,omitempty"`
+}
 
 func (m *KVWrite) Reset() {
 	n := new(KVWrite)
@@ -105,7 +143,9 @@ func (m *KVWrite) Reset() {
 	m.value = n.value
 	m.ContractId = n.ContractId
 }
-func (m *KVWrite) String() string            { return proto.CompactTextString(m) }
+func (m *KVWrite) String() string {
+	return proto.CompactTextString(m)
+}
 func (*KVWrite) ProtoMessage()               {}
 func (*KVWrite) Descriptor() ([]byte, []int) { return nil, nil }
 
@@ -130,10 +170,10 @@ func (m *KVWrite) GetValue() []byte {
 	return nil
 }
 
-type Version struct {
-	//chainId uint64 `protobuf:"varint,1,opt,name=block_num,json=blockNum"`
-	//txNum   uint64 `protobuf:"varint,2,opt,name=tx_num,json=txNum"`
-}
+//type Version struct {
+//chainId uint64 `protobuf:"varint,1,opt,name=block_num,json=blockNum"`
+//txNum   uint64 `protobuf:"varint,2,opt,name=tx_num,json=txNum"`
+//}
 
 // NewKVRead helps constructing proto message kvrwset.KVRead
 func NewKVRead(contractId []byte, key string, version *modules.StateVersion) *KVRead {

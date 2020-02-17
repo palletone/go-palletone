@@ -1,17 +1,19 @@
 package jury
 
 import (
-	"time"
-	"math/big"
 	"encoding/hex"
-	"github.com/palletone/go-palletone/dag/rwset"
-	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/core/gen"
-	"github.com/palletone/go-palletone/common/util"
-	"github.com/palletone/go-palletone/common/log"
+	"math/big"
+	"time"
+
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/util"
+	"github.com/palletone/go-palletone/contracts"
+	"github.com/palletone/go-palletone/core/gen"
+	"github.com/palletone/go-palletone/dag/errors"
+	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/rwset"
 )
 
 /*
@@ -36,7 +38,7 @@ func (p *Processor) getTxContractFee(tx *modules.Transaction, extDataSize float6
 		return 0, 0, 0, errors.New("getTxContractFee, param is nil")
 	}
 	reqId := tx.RequestHash()
-	txType, err := getContractTxType(tx)
+	txType, err := tx.GetContractTxType()
 	if err != nil {
 		log.Errorf("[%s]getTxContractFee,getContractTxType err:%s", shortId(reqId.String()), err.Error())
 		return 0, 0, 0, err
@@ -72,9 +74,10 @@ func (p *Processor) ContractInstallReqFee(from, to common.Address, daoAmount, da
 		log.Error("ContractInstallReqFee", "CreateGenericTransaction err:", err)
 		return 0, 0, 0, err
 	}
-	msgs, err := runContractCmd(rwset.RwM, p.dag, p.contract, reqTx, nil, p.errMsgEnable)
+	ctx := &contracts.ContractProcessContext{RwM: rwset.RwM, Dag: p.dag, Contract: p.contract, ErrMsgEnable: p.errMsgEnable}
+	msgs, err := runContractCmd(ctx, reqTx)
 	if err != nil {
-		log.Error("ContractInstallReqFee", "runContractCmd err:", err)
+		log.Error("ContractInstallReqFee", "RunContractCmd err:", err)
 		return 0, 0, 0, err
 	}
 	tx, err := gen.GenContractTransction(reqTx, msgs)

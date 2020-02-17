@@ -222,7 +222,7 @@ func (b *LesApiBackend) GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, e
 func (b *LesApiBackend) GetTxPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJson, error) {
 	return nil, nil
 }
-func (b *LesApiBackend) GetPoolTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error) {
+func (b *LesApiBackend) GetUnpackedTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error) {
 	return nil, nil
 }
 

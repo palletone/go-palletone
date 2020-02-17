@@ -29,6 +29,7 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/obj"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/core"
@@ -146,14 +147,8 @@ func (tx *Transaction) Hash() common.Hash {
 }
 
 func (tx *Transaction) RequestHash() common.Hash {
-	d := transaction_sdw{}
-	for _, msg := range tx.TxMessages() {
-		d.TxMessages = append(d.TxMessages, msg)
-		if msg.App >= APP_CONTRACT_TPL_REQUEST { //100以上的APPCode是请求
-			break
-		}
-	}
-	return util.RlpHash(&Transaction{txdata: d})
+	reqtx := tx.GetRequestTx()
+	return reqtx.Hash()
 }
 
 func (tx *Transaction) GetContractId() []byte {
@@ -631,29 +626,42 @@ func (tx *Transaction) HasContractPayoutMsg() (bool, int, *Message) {
 }
 
 //获取该交易的所有From地址
-func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc GetAddressFromScriptFunc) (
-	[]common.Address, error) {
-	addrMap := map[common.Address]bool{}
-	for _, msg := range tx.txdata.TxMessages {
+func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc GetAddressFromScriptFunc) []common.Address {
+	resultMap := map[common.Address]int{}
+	msgs := tx.TxMessages()
+	for _, msg := range msgs {
 		if msg.App == APP_PAYMENT {
 			pay := msg.Payload.(*PaymentPayload)
 			for _, input := range pay.Inputs {
 				if input.PreviousOutPoint != nil {
-					utxo, err := queryUtxoFunc(input.PreviousOutPoint)
+					var lockScript []byte
+					txo, err := queryUtxoFunc(input.PreviousOutPoint)
 					if err != nil {
-						return nil, errors.New("Get utxo by " + input.PreviousOutPoint.String() + " error:" + err.Error())
+						if input.PreviousOutPoint.TxHash.IsSelfHash() {
+							out := msgs[input.PreviousOutPoint.MessageIndex].Payload.(*PaymentPayload).Outputs[input.PreviousOutPoint.OutIndex]
+							lockScript = out.PkScript
+						} else {
+							log.Errorf("Cannot find txo by:%s", input.PreviousOutPoint.String())
+							return []common.Address{}
+						}
+					} else {
+						lockScript = txo.PkScript
 					}
-					addr, _ := getAddrFunc(utxo.PkScript)
-					addrMap[addr] = true
+
+					addr, _ := getAddrFunc(lockScript)
+					if _, ok := resultMap[addr]; !ok {
+						resultMap[addr] = 1
+					}
 				}
+
 			}
 		}
 	}
-	result := []common.Address{}
-	for k := range addrMap {
-		result = append(result, k)
+	keys := make([]common.Address, 0, len(resultMap))
+	for k := range resultMap {
+		keys = append(keys, k)
 	}
-	return result, nil
+	return keys
 }
 
 //获取该交易的发起人地址
@@ -671,6 +679,15 @@ func (tx *Transaction) GetRequesterAddr(queryUtxoFunc QueryUtxoFunc, getAddrFunc
 	}
 	return getAddrFunc(utxo.PkScript)
 
+}
+
+func (tx *Transaction) GetContractTxType() (MessageType, error) {
+	for _, msg := range tx.Messages() {
+		if msg.App >= APP_CONTRACT_TPL_REQUEST && msg.App <= APP_CONTRACT_STOP_REQUEST {
+			return msg.App, nil
+		}
+	}
+	return APP_UNKNOW, fmt.Errorf("GetContractTxType, not contract Tx, txHash[%s]", tx.Hash().String())
 }
 
 // 获取locktime

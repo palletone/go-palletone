@@ -19,14 +19,15 @@ package rpc
 import (
 	"context"
 	"fmt"
-	set "github.com/deckarep/golang-set"
-	"github.com/palletone/go-palletone/common/log"
 	"reflect"
 	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	set "github.com/deckarep/golang-set"
+	"github.com/palletone/go-palletone/common/log"
 )
 
 const MetadataApi = "rpc"

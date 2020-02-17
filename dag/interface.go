@@ -27,14 +27,16 @@ import (
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/p2p/discover"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/dboperation"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/txspool"
 )
 
 type IDag interface {
 	Close()
-
+	GetDb() ptndb.Database
 	GetCommon(key []byte, stableDb bool) ([]byte, error)
 	GetCommonByPrefix(prefix []byte, stableDb bool) map[string][]byte
 	SaveCommon(key, val []byte) error
@@ -68,7 +70,7 @@ type IDag interface {
 	IsTransactionExist(hash common.Hash) (bool, error)
 	GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error)
 	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
-
+	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
 	// InsertHeaderDag inserts a batch of headers into the local chain.
 	InsertHeaderDag([]*modules.Header) (int, error)
 	HasUnit(hash common.Hash) bool
@@ -76,6 +78,7 @@ type IDag interface {
 	ParentsIsConfirmByHash(hash common.Hash) bool
 	IsHeaderExist(hash common.Hash) bool
 	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error
+	SaveTransaction(tx *modules.Transaction, txIndex int) error
 	//CreateUnit(mAddr common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error)
 
 	FastSyncCommitHead(common.Hash) error
@@ -128,7 +131,7 @@ type IDag interface {
 	GetActiveMediatorNodes() map[string]*discover.Node
 
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
-	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
+	//GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
 	SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error
 	SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription
 
@@ -146,7 +149,7 @@ type IDag interface {
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	GetTxByReqId(reqid common.Hash) (*modules.TransactionWithUnitInfo, error)
 	GetTxPackInfo(txHash common.Hash) (*modules.TxPackInfo, error)
-	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
+	//GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
 
 	GetFileInfo(filehash []byte) ([]*modules.FileInfo, error)
 
@@ -222,6 +225,7 @@ type IDag interface {
 	SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription
 	GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract
 	GetAddressCount() int
+	NewTemp() (dboperation.IContractDag, error)
 
 	//localdb
 	SaveLocalTx(tx *modules.Transaction) error

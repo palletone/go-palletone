@@ -17,16 +17,17 @@
 package node
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"sync"
 
-	"context"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -40,7 +41,6 @@ import (
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/internal/debug"
 	flock "github.com/prometheus/tsdb/fileutil"
-	"net/http"
 )
 
 // Node is a container on which services can be registered.

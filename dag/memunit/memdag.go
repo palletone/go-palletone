@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	csort "github.com/palletone/go-palletone/common/sort"
+	"github.com/palletone/go-palletone/consensus/jury"
 	"github.com/palletone/go-palletone/core"
 	common2 "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/errors"
@@ -63,13 +64,14 @@ type MemDag struct {
 	lock               sync.RWMutex
 	cache              palletcache.ICache
 	// append by albert·gou 用于通知群签名
-	toGroupSignFeed    event.Feed
-	saveStableUnitFeed event.Feed
-	toGroupSignScope   event.SubscriptionScope
-	db                 ptndb.Database
-	tokenEngine        tokenengine.ITokenEngine
-	quit               chan struct{} // used for exit
-	observers          []SwitchMainChainEventFunc
+	toGroupSignFeed      event.Feed
+	saveStableUnitFeed   event.Feed
+	toGroupSignScope     event.SubscriptionScope
+	db                   ptndb.Database
+	tokenEngine          tokenengine.ITokenEngine
+	quit                 chan struct{} // used for exit
+	observers            []SwitchMainChainEventFunc
+	validatorBuilderFunc validator.ValidatorBuilderFunc //这里依赖于Validator的构造函数而不是Validator接口，是因为MemDag依赖于多个Validator实例，而不是一个。
 }
 
 func (pmg *MemDag) SubscribeSwitchMainChainEvent(ob SwitchMainChainEventFunc) {
@@ -98,7 +100,7 @@ func (pmg *MemDag) SetStableThreshold(count int) {
 func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptndb.Database,
 	stableUnitRep common2.IUnitRepository, propRep common2.IPropRepository,
 	stableStateRep common2.IStateRepository, cache palletcache.ICache,
-	tokenEngine tokenengine.ITokenEngine) *MemDag {
+	tokenEngine tokenengine.ITokenEngine, builderFunc validator.ValidatorBuilderFunc) *MemDag {
 	var stableUnit *modules.Unit
 	ldbUnitProduceRep := common2.NewUnitProduceRepository(stableUnitRep, propRep, stableStateRep)
 	stablehash, stbIndex, err := propRep.GetNewestUnit(token)
@@ -123,26 +125,27 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 		log.Debugf("last stable unit isn't exist, want to rebuild memdag.")
 	}
 	memdag := &MemDag{
-		token:              token,
-		threshold:          threshold,
-		ldbunitRep:         stableUnitRep,
-		ldbPropRep:         propRep,
-		tempdb:             sync.Map{},
-		height_hashs:       sync.Map{},
-		orphanUnits:        sync.Map{},
-		orphanUnitsParants: sync.Map{},
-		chainUnits:         sync.Map{},
-		saveHeaderOnly:     saveHeaderOnly,
-		cache:              cache,
-		ldbUnitProduceRep:  ldbUnitProduceRep,
-		db:                 db,
-		tokenEngine:        tokenEngine,
-		observers:          []SwitchMainChainEventFunc{},
+		token:                token,
+		threshold:            threshold,
+		ldbunitRep:           stableUnitRep,
+		ldbPropRep:           propRep,
+		tempdb:               sync.Map{},
+		height_hashs:         sync.Map{},
+		orphanUnits:          sync.Map{},
+		orphanUnitsParants:   sync.Map{},
+		chainUnits:           sync.Map{},
+		saveHeaderOnly:       saveHeaderOnly,
+		cache:                cache,
+		ldbUnitProduceRep:    ldbUnitProduceRep,
+		db:                   db,
+		validatorBuilderFunc: builderFunc,
+		tokenEngine:          tokenEngine,
+		observers:            []SwitchMainChainEventFunc{},
 	}
 	memdag.stableUnitHash.Store(stablehash)
 	memdag.stableUnitHeight.Store(index)
 	memdag.lastMainChainUnit.Store(stableUnit)
-	temp, _ := NewChainTempDb(db, cache, tokenEngine, saveHeaderOnly)
+	temp, _ := NewChainTempDb(db, cache, tokenEngine, saveHeaderOnly, builderFunc)
 	temp.Unit = stableUnit
 	memdag.tempdb.Store(stablehash, temp)
 	memdag.chainUnits.Store(stablehash, temp)
@@ -151,10 +154,22 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 	tutxoRep := common2.NewUtxoRepository4Db(db, tokenEngine)
 	tstateRep := common2.NewStateRepository4Db(db)
 	tpropRep := common2.NewPropRepository4Db(db)
-	memdag.ldbValidator = validator.NewValidate(trep, tutxoRep, tstateRep, tpropRep, cache, saveHeaderOnly)
+	contractDag := NewContractSupportRepository(db)
+	val := builderFunc(trep, tutxoRep, tstateRep, tpropRep, contractDag, cache, saveHeaderOnly)
+	//val.SetBuildTempContractDagFunc(buildTempContractDagFunc)
+	val.SetContractTxCheckFun(jury.CheckContractTxResult)
+	//TODO Devin
+	memdag.ldbValidator = val
+
 	go memdag.loopRebuildTmpDb()
 	return memdag
 }
+
+//func buildTempContractDagFunc(dag dboperation.IContractDag) dboperation.IContractDag {
+//	tempdb, _ := ptndb.NewTempdb(dag.GetDb())
+//	log.Debug("Build a temp db for contract process")
+//	return NewContractSupportRepository(tempdb)
+//}
 func (chain *MemDag) loopRebuildTmpDb() {
 	rebuild := time.NewTicker(10 * time.Minute)
 	defer rebuild.Stop()
@@ -179,7 +194,7 @@ func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2
 	defer chain.lock.RUnlock()
 	if chain.GetLastMainChainUnit() == nil {
 		log.Infof("the last_unit is nil, want rebuild memdag repository by db.")
-		tempdb, _ := NewTempdb(chain.db)
+		tempdb, _ := ptndb.NewTempdb(chain.db)
 		trep := common2.NewUnitRepository4Db(tempdb, chain.tokenEngine)
 		tutxoRep := common2.NewUtxoRepository4Db(tempdb, chain.tokenEngine)
 		tstateRep := common2.NewStateRepository4Db(tempdb)
@@ -193,7 +208,7 @@ func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2
 		temp_inter, has := chain.tempdb.Load(last_main_hash)
 		if !has {
 			log.Warnf("the last_unit: %s , is not exist in memdag", last_main_hash.String())
-			tempdb, _ := NewTempdb(chain.db)
+			tempdb, _ := ptndb.NewTempdb(chain.db)
 			trep := common2.NewUnitRepository4Db(tempdb, chain.tokenEngine)
 			tutxoRep := common2.NewUtxoRepository4Db(tempdb, chain.tokenEngine)
 			tstateRep := common2.NewStateRepository4Db(tempdb)
@@ -205,7 +220,7 @@ func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2
 		return tempdb.UnitRep, tempdb.UtxoRep, tempdb.StateRep, tempdb.PropRep, tempdb.UnitProduceRep
 	} else { // 如果lastmainUnit很久没更新了，既快速同步刚结束时，使用stalbeUnit重构tempdb状态
 		if temp_rep.Unit.NumberU64() < chain.GetLastStableUnitHeight() {
-			tempdb, _ := NewTempdb(chain.db)
+			tempdb, _ := ptndb.NewTempdb(chain.db)
 			trep := common2.NewUnitRepository4Db(tempdb, chain.tokenEngine)
 			tutxoRep := common2.NewUtxoRepository4Db(tempdb, chain.tokenEngine)
 			tstateRep := common2.NewStateRepository4Db(tempdb)
@@ -650,31 +665,31 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 			if !has { // 分叉链
 				if inter != nil {
 					p_temp := inter.(*ChainTempDb)
-					temp_db, _ = NewChainTempDb(p_temp.Tempdb, chain.cache, chain.tokenEngine, chain.saveHeaderOnly)
+					temp_db, _ = NewChainTempDb(p_temp.Tempdb, chain.cache, chain.tokenEngine, chain.saveHeaderOnly, chain.validatorBuilderFunc)
 				} else { // 父单元没有在memdag，节点重启后产的第一个单元
-					temp_db, _ = NewChainTempDb(chain.db, chain.cache, chain.tokenEngine, chain.saveHeaderOnly)
+					temp_db, _ = NewChainTempDb(chain.db, chain.cache, chain.tokenEngine, chain.saveHeaderOnly, chain.validatorBuilderFunc)
 				}
 			} else {
 				temp_db = inter_temp.(*ChainTempDb)
 			}
 
-			if !isGenerate {
-				var validateCode validator.ValidationCode
-				if chain.saveHeaderOnly {
-					validateCode = temp_db.Validator.ValidateHeader(unit.UnitHeader)
-				} else {
-					validateCode = temp_db.Validator.ValidateUnitExceptGroupSig(unit)
-				}
-
-				if validateCode != validator.TxValidationCode_VALID {
-					vali_err := validator.NewValidateError(validateCode)
-					log.Debugf("validate main chain unit error, %s, unit hash:%s",
-						vali_err.Error(), uHash.String())
-					// reset unit's txs
-					go txpool.ResetPendingTxs(unit.Transactions())
-					return nil, nil, nil, nil, nil, vali_err, isOrphan
-				}
+			//if !isGenerate {
+			var validateCode validator.ValidationCode
+			if chain.saveHeaderOnly {
+				validateCode = temp_db.Validator.ValidateHeader(unit.UnitHeader)
+			} else {
+				validateCode = temp_db.Validator.ValidateUnitExceptGroupSig(unit)
 			}
+
+			if validateCode != validator.TxValidationCode_VALID {
+				vali_err := validator.NewValidateError(validateCode)
+				log.Debugf("validate main chain unit error, %s, unit hash:%s",
+					vali_err.Error(), uHash.String())
+				// reset unit's txs
+				go txpool.ResetPendingTxs(unit.Transactions())
+				return nil, nil, nil, nil, nil, vali_err, isOrphan
+			}
+			//}
 
 			tempDB, err := temp_db.AddUnit(unit, chain.saveHeaderOnly)
 			if err != nil {
@@ -715,7 +730,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 			var main_temp *ChainTempDb
 			inter_main, has := chain.tempdb.Load(parentHash)
 			if !has { // 分叉
-				main_temp, _ = NewChainTempDb(chain.db, chain.cache, chain.tokenEngine, chain.saveHeaderOnly)
+				main_temp, _ = NewChainTempDb(chain.db, chain.cache, chain.tokenEngine, chain.saveHeaderOnly, chain.validatorBuilderFunc)
 				forks := chain.getForkUnits(unit)
 				for i := 0; i < len(forks)-1; i++ {
 					main_temp, _ = main_temp.AddUnit(forks[i], chain.saveHeaderOnly)
@@ -786,7 +801,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 	chain.addUnitHeight(unit)
 	inter_tmp, has := chain.chainUnits.Load(chain.GetLastMainChainUnit().Hash())
 	if !has {
-		temp, _ := NewChainTempDb(chain.db, chain.cache, chain.tokenEngine, chain.saveHeaderOnly)
+		temp, _ := NewChainTempDb(chain.db, chain.cache, chain.tokenEngine, chain.saveHeaderOnly, chain.validatorBuilderFunc)
 		return temp.UnitRep, temp.UtxoRep, temp.StateRep, temp.PropRep, temp.UnitProduceRep, nil, isOrphan
 	}
 

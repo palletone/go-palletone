@@ -22,53 +22,33 @@ package rwset
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"sort"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/dag"
+
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
 type RwSetTxSimulator struct {
-	chainIndex   *modules.ChainIndex
-	txid         common.Hash
+	txId         string
 	rwsetBuilder *RWSetBuilder
-	write_cache  map[string][]byte
-	dag          dag.IDag
-	//writePerformed          bool   // 没用到，注释掉
-	pvtdataQueriesPerformed bool
-	doneInvoked             bool
+	dag          IDataQuery
+	stateQuery   IStateQuery
+	doneInvoked  bool
 }
 
-type VersionedValue struct {
-	Value   []byte
-	Version *Version
+func NewBasedTxSimulator(txId string, idag IDataQuery, stateQ IStateQuery) *RwSetTxSimulator {
+	return &RwSetTxSimulator{
+		txId:         txId,
+		rwsetBuilder: NewRWSetBuilder(),
+		stateQuery:   stateQ,
+		dag:          idag}
 }
-
-func NewBasedTxSimulator(idag dag.IDag, hash common.Hash) *RwSetTxSimulator {
-	rwsetBuilder := NewRWSetBuilder()
-	gasToken := dagconfig.DagConfig.GetGasToken()
-	//unit := idag.GetCurrentUnit(gasToken)
-	//cIndex := unit.Header().GetNumber()
-	ustabeUnit, _ := idag.UnstableHeadUnitProperty(gasToken)
-	cIndex := ustabeUnit.ChainIndex
-	return &RwSetTxSimulator{chainIndex: modules.NewChainIndex(cIndex.AssetID, cIndex.Index), txid: hash,
-		rwsetBuilder: rwsetBuilder, write_cache: make(map[string][]byte), dag: idag}
-}
-
-//func (s *RwSetTxSimulator) GetChainParameters() ([]byte, error) {
-//	cp := s.dag.GetChainParameters()
-//
-//	data, err := rlp.EncodeToBytes(cp)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return data, nil
-//}
 
 func (s *RwSetTxSimulator) GetGlobalProp() ([]byte, error) {
 	gp := s.dag.GetGlobalProp()
@@ -87,19 +67,30 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 	if err := s.CheckDone(); err != nil {
 		return nil, err
 	}
-	if value, has := s.write_cache[key]; has {
-		if s.rwsetBuilder != nil {
-			s.rwsetBuilder.AddToReadSet(contractid, ns, key, nil)
-		}
-		return value, nil
-	}
-	val, ver, err := s.dag.GetContractState(contractid, key)
+	val, ver, err := s.GetContractState(contractid, key)
 	//TODO 这里证明数据库里面没有该账户信息，需要返回nil,nil
 	if err != nil {
 		log.Debugf("get value from db[%s] failed,key:%s", ns, key)
 		return nil, nil
 		//errstr := fmt.Sprintf("GetContractState [%s]-[%s] failed", ns, key)
 		//		//return nil, errors.New(errstr)
+	}
+	if ver.TxIndex == 0 { //Devin Debug
+		log.DebugDynamic(func() string {
+			logStr := "call stack:"
+			var query = s.stateQuery
+			for {
+				if ss, ok := query.(*RwSetTxSimulator); ok {
+					query = ss.stateQuery
+					logStr += ss.txId + ";"
+				} else {
+					logStr += reflect.TypeOf(query).String()
+					break
+				}
+			}
+			return logStr
+		})
+		log.Warn("tx index==0")
 	}
 	if s.rwsetBuilder != nil {
 		s.rwsetBuilder.AddToReadSet(contractid, ns, key, ver)
@@ -115,7 +106,7 @@ func (s *RwSetTxSimulator) GetStatesByPrefix(contractid []byte, ns string, prefi
 		return nil, err
 	}
 
-	data, err := s.dag.GetContractStatesByPrefix(contractid, prefix)
+	data, err := s.GetContractStatesByPrefix(contractid, prefix)
 
 	if err != nil {
 		log.Debugf("get value from db[%s] failed,prefix:%s,error:[%s]", ns, prefix, err.Error())
@@ -144,9 +135,9 @@ func (s *RwSetTxSimulator) GetTimestamp(ns string, rangeNumber uint32) ([]byte, 
 		return nil, err
 	}
 	gasToken := dagconfig.DagConfig.GetGasToken()
-	header := s.dag.CurrentHeader(gasToken)
-	timeIndex := header.GetNumber().Index / uint64(rangeNumber) * uint64(rangeNumber)
-	timeHeader, err := s.dag.GetHeaderByNumber(&modules.ChainIndex{AssetID: header.GetNumber().AssetID, Index: timeIndex})
+	_, index, _ := s.dag.GetNewestUnit(gasToken)
+	timeIndex := index.Index / uint64(rangeNumber) * uint64(rangeNumber)
+	timeHeader, err := s.dag.GetHeaderByNumber(&modules.ChainIndex{AssetID: index.AssetID, Index: timeIndex})
 	if err != nil {
 		return nil, errors.New("GetHeaderByNumber failed" + err.Error())
 	}
@@ -157,23 +148,22 @@ func (s *RwSetTxSimulator) SetState(contractId []byte, ns string, key string, va
 	if err := s.CheckDone(); err != nil {
 		return err
 	}
-	if s.pvtdataQueriesPerformed {
-		return errors.New("pvtdata Queries Performed")
-	}
+
 	//todo ValidateKeyValue
 	s.rwsetBuilder.AddToWriteSet(contractId, ns, key, value)
-	s.write_cache[key] = value
+
 	return nil
 }
 
 // DeleteState implements method in interface `ledger.TxSimulator`
 func (s *RwSetTxSimulator) DeleteState(contractId []byte, ns string, key string) error {
 	return s.SetState(contractId, ns, key, nil)
+	//TODO Devin
 }
 
 func (s *RwSetTxSimulator) GetRwData(ns string) ([]*KVRead, []*KVWrite, error) {
-	rd := make(map[string]*KVRead)
-	wt := make(map[string]*KVWrite)
+	rd := make(map[string]map[string]*KVRead)
+	wt := make(map[string]map[string]*KVWrite)
 	log.Debug("GetRwData", "ns info", ns)
 
 	if s.rwsetBuilder != nil {
@@ -195,34 +185,36 @@ func (s *RwSetTxSimulator) GetRwData(ns string) ([]*KVRead, []*KVWrite, error) {
 	//sort keys and convert map to slice
 	return convertReadMap2Slice(rd), convertWriteMap2Slice(wt), nil
 }
-func convertReadMap2Slice(rd map[string]*KVRead) []*KVRead {
-	keys := make([]string, 0)
-	for k := range rd {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
+func convertReadMap2Slice(rd map[string]map[string]*KVRead) []*KVRead {
 	result := make([]*KVRead, 0)
-	for _, key := range keys {
-		result = append(result, rd[key])
+	for _, kv := range rd {
+		for _, v := range kv {
+			result = append(result, v)
+		}
 	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].key < result[j].key
+	})
+
 	return result
 }
-func convertWriteMap2Slice(rd map[string]*KVWrite) []*KVWrite {
-	keys := make([]string, 0)
-	for k := range rd {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
+func convertWriteMap2Slice(rd map[string]map[string]*KVWrite) []*KVWrite {
 	result := make([]*KVWrite, 0)
-	for _, key := range keys {
-		result = append(result, rd[key])
+	for _, kv := range rd {
+		for _, v := range kv {
+			result = append(result, v)
+		}
 	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].key < result[j].key
+	})
+
 	return result
 }
 
 //get all dag
-func (s *RwSetTxSimulator) GetContractStatesById(contractid []byte) (map[string]*modules.ContractStateValue, error) {
-	return s.dag.GetContractStatesById(contractid)
+func (s *RwSetTxSimulator) GetAllStates(contractid []byte, ns string) (map[string]*modules.ContractStateValue, error) {
+	return s.GetContractStatesById(contractid)
 }
 
 func (s *RwSetTxSimulator) CheckDone() error {
@@ -231,25 +223,31 @@ func (s *RwSetTxSimulator) CheckDone() error {
 	}
 	return nil
 }
+
+//标记为完成，不能再进行PutState等写操作了
 func (h *RwSetTxSimulator) Done() {
 	if h.doneInvoked {
 		return
 	}
-	h.Close()
+	//h.Close()
 	h.doneInvoked = true
 }
+
+//关闭，回收资源，不能再进行读和写
 func (s *RwSetTxSimulator) Close() {
+	log.Debugf("Close RwSetTxSimulator[%s]", s.txId)
 	item := new(RwSetTxSimulator)
-	s.chainIndex = item.chainIndex
-	s.txid = item.txid
+	//s.chainIndex = item.chainIndex
+	//s.txid = item.txid
 	s.rwsetBuilder = item.rwsetBuilder
-	s.write_cache = item.write_cache
+	//s.write_cache = item.write_cache
 	s.dag = item.dag
 }
 
-func (h *RwSetTxSimulator) GetTxSimulationResults() ([]byte, error) {
-
-	return nil, nil
+func (s *RwSetTxSimulator) Rollback() error {
+	s.rwsetBuilder.pubRwBuilderMap = make(map[string]*nsPubRwBuilder)
+	log.Infof("Rollback tx simulator[%s]", s.txId)
+	return nil
 }
 
 func (s *RwSetTxSimulator) GetTokenBalance(ns string, addr common.Address, asset *modules.Asset) (
@@ -319,4 +317,70 @@ func (s *RwSetTxSimulator) String() string {
 		}
 	}
 	return str
+}
+func (s *RwSetTxSimulator) GetContractStatesById(contractid []byte) (map[string]*modules.ContractStateValue, error) {
+	//查询出所有Temp的KeyValue
+	writes, _ := s.rwsetBuilder.GetWriteSets(contractid)
+	deleted := make(map[string]bool)
+	result := make(map[string]*modules.ContractStateValue)
+	for _, write := range writes {
+		if write.isDelete {
+			deleted[write.key] = true
+		} else {
+			result[write.key] = &modules.ContractStateValue{Value: write.value}
+		}
+	}
+
+	dbkv, err := s.stateQuery.GetContractStatesById(contractid)
+	if err != nil {
+		return nil, err
+	}
+	for k, v := range dbkv {
+		if _, ok := result[k]; ok {
+			continue
+		}
+		if _, ok := deleted[k]; ok {
+			continue
+		}
+		result[k] = v
+	}
+	return result, nil
+}
+func (s *RwSetTxSimulator) GetContractState(contractid []byte, field string) ([]byte, *modules.StateVersion, error) {
+	value, err := s.rwsetBuilder.GetWriteSet(contractid, field)
+	if err != nil {
+		return s.stateQuery.GetContractState(contractid, field)
+	}
+	log.Debugf("Get contract state key[%s] from rwset builder", field)
+	return value, nil, nil
+}
+func (s *RwSetTxSimulator) GetContractStatesByPrefix(contractid []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
+	//查询出所有Temp的KeyValue
+	writes, _ := s.rwsetBuilder.GetWriteSets(contractid)
+	deleted := make(map[string]bool)
+	result := make(map[string]*modules.ContractStateValue)
+	for _, write := range writes {
+		if strings.HasPrefix(write.key, prefix) {
+			if write.isDelete {
+				deleted[write.key] = true
+			} else {
+				result[write.key] = &modules.ContractStateValue{Value: write.value}
+			}
+		}
+	}
+
+	dbkv, err := s.stateQuery.GetContractStatesByPrefix(contractid, prefix)
+	if err != nil {
+		return nil, err
+	}
+	for k, v := range dbkv {
+		if _, ok := result[k]; ok {
+			continue
+		}
+		if _, ok := deleted[k]; ok {
+			continue
+		}
+		result[k] = v
+	}
+	return result, nil
 }

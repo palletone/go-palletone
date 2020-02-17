@@ -19,6 +19,9 @@ package light
 
 import (
 	"crypto/ecdsa"
+	"math/rand"
+	"time"
+
 	//"sync"
 
 	//"github.com/palletone/go-palletone/dag/modules"
@@ -33,8 +36,6 @@ import (
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn"
-	"math/rand"
-	"time"
 )
 
 const (

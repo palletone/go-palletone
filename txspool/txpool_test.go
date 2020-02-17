@@ -22,17 +22,19 @@ package txspool
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/palletone/go-palletone/validator"
 	"math/rand"
 	"strconv"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/palletone/go-palletone/validator"
+
 	"github.com/coocood/freecache"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/ptndb"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -94,9 +96,11 @@ func (ud *UnitDag4Test) CurrentUnit(token modules.AssetId) *modules.Unit {
 func (ud *UnitDag4Test) GetUnitByHash(hash common.Hash) (*modules.Unit, error) {
 	return ud.CurrentUnit(modules.PTNCOIN), nil
 }
-
 func (q *UnitDag4Test) GetMediators() map[common.Address]bool {
 	return nil
+}
+func (q *UnitDag4Test) GetDb() ptndb.Database {
+	return q.Db
 }
 
 func (q *UnitDag4Test) GetJurorReward(jurorAdd common.Address) common.Address {
@@ -152,6 +156,9 @@ func (ud *UnitDag4Test) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo,
 func (ud *UnitDag4Test) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error) {
 	return nil, nil
 }
+func (ud *UnitDag4Test) GetTxOutput(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	return ud.GetUtxoEntry(outpoint)
+}
 func (ud *UnitDag4Test) GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error) {
 	neededSet := make(map[modules.OutPoint]struct{})
 	preout := modules.OutPoint{TxHash: tx.Hash()}
@@ -189,9 +196,6 @@ func (ud *UnitDag4Test) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset
 	return &modules.AmountAsset{}, nil
 }
 
-func (ud *UnitDag4Test) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error) {
-	return nil, nil
-}
 func (ud *UnitDag4Test) GetTransactionOnly(hash common.Hash) (*modules.Transaction, error) {
 	return nil, nil
 }
