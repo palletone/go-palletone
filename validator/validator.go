@@ -109,7 +109,10 @@ func (validate *Validate) validateTransactions(rwM rwset.TxManager, txs modules.
 	var coinbase *modules.Transaction
 	//构造TempDag用于存储Tx的结果
 	if validate.contractDb != nil {
+		log.Debug("create new temp dag for validate txs")
+		old := validate.contractDb
 		validate.contractDb, _ = validate.contractDb.NewTemp()
+		defer func() { validate.contractDb = old }()
 	}
 	//tempdb, err := ptndb.NewTempdb(validate.db)
 	//if err != nil {

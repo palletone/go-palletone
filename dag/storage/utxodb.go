@@ -123,7 +123,10 @@ func (utxodb *UtxoDb) SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.U
 	if err != nil {
 		return err
 	}
-	log.Debugf("db[req=%t] save utxo[%s]", utxodb.isRequest, outpoint.String())
+	log.DebugDynamic(func() string {
+		return fmt.Sprintf("DB[%s,%p,req=%t] save utxo[%s]",
+			reflect.TypeOf(utxodb.db).String(), utxodb.db, utxodb.isRequest, outpoint.String())
+	})
 	return utxodb.saveUtxoOutpoint(address, outpoint)
 }
 
@@ -194,8 +197,8 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 	err := RetrieveFromRlpBytes(utxodb.db, key, utxo)
 	if err != nil {
 		log.DebugDynamic(func() string {
-			return fmt.Sprintf("DB[%s,req=%t] get utxo[%s] error:%s",
-				reflect.TypeOf(utxodb.db).String(), utxodb.isRequest, outpoint.String(), err.Error())
+			return fmt.Sprintf("DB[%s,%p,req=%t] get utxo[%s] error:%s",
+				reflect.TypeOf(utxodb.db).String(), utxodb.db, utxodb.isRequest, outpoint.String(), err.Error())
 		})
 		if errors.IsNotFoundError(err) {
 			return nil, errors.ErrUtxoNotFound

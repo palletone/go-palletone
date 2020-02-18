@@ -234,6 +234,7 @@ func updateDag(b Backend, trs []*modules.Transaction) error {
 	defer cacheTx.lock.Unlock()
 
 	//基于最新单元重新构建新的临时内存数据库
+	log.Debug("create new tempdb and dag for api")
 	tempdb, err := ptndb.NewTempdb(b.Dag().GetDb())
 	if err != nil {
 		msg := fmt.Sprintf("updateDag, NewTempdb error:%s", err.Error())
