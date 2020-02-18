@@ -712,7 +712,7 @@ func (rep *UnitRepository) ComputeTxFeesAllocate(mediatorReward common.Address, 
 	ads := make([]*modules.Addition, 0)
 	tempTxs := &tempTxs{allUtxo: make(map[modules.OutPoint]*modules.Utxo), rep: rep.utxoRepository}
 	for _, tx := range txs {
-		utxos := tx.GetNewUtxos()
+		utxos := tx.GetNewTxUtxoAndReqUtxos()
 		for o, u := range utxos {
 			tempTxs.allUtxo[o] = u
 		}

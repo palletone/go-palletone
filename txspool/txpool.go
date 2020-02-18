@@ -136,6 +136,7 @@ type TxPool struct {
 	outpoints       sync.Map          // utxo标记池  map[modules.OutPoint]*TxPoolTransaction
 	orphans         sync.Map          // 孤儿交易缓存池
 	outputs         sync.Map          // 缓存 交易的outputs
+	reqOutputs      sync.Map          // 缓存 交易的outputs
 	sequenTxs       *SequeueTxPoolTxs
 
 	mu             sync.RWMutex
@@ -195,6 +196,7 @@ func NewTxPool4DI(config TxPoolConfig, cachedb palletcache.ICache, unit dags,
 		nextExpireScan: time.Now().Add(config.OrphanTTL),
 		orphans:        sync.Map{},
 		outputs:        sync.Map{},
+		reqOutputs:     sync.Map{},
 		cache:          cachedb,
 		tokenEngine:    tokenEngine,
 	}
@@ -225,6 +227,10 @@ func (pool *TxPool) startJournal(config TxPoolConfig) {
 // return a utxo by the outpoint in txpool
 func (pool *TxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	if inter, ok := pool.outputs.Load(*outpoint); ok {
+		utxo := inter.(*modules.Utxo)
+		return utxo, nil
+	}
+	if inter, ok := pool.reqOutputs.Load(*outpoint); ok {
 		utxo := inter.(*modules.Utxo)
 		return utxo, nil
 	}
@@ -1509,6 +1515,8 @@ func (pool *TxPool) addCache(tx *TxPoolTransaction) {
 	if tx == nil {
 		return
 	}
+	txHash := tx.Tx.Hash()
+	reqHash := tx.Tx.RequestHash()
 	for i, msgcopy := range tx.Tx.TxMessages() {
 		if msgcopy.App == modules.APP_PAYMENT {
 			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
@@ -1518,7 +1526,7 @@ func (pool *TxPool) addCache(tx *TxPoolTransaction) {
 					}
 				}
 				// add  outputs
-				preout := modules.OutPoint{TxHash: tx.Tx.Hash()}
+				preout := modules.OutPoint{TxHash: txHash}
 				for j, out := range msg.Outputs {
 					preout.MessageIndex = uint32(i)
 					preout.OutIndex = uint32(j)
@@ -1526,6 +1534,10 @@ func (pool *TxPool) addCache(tx *TxPoolTransaction) {
 						AssetId: out.Asset.AssetId, UniqueId: out.Asset.UniqueId},
 						PkScript: out.PkScript[:]}
 					pool.outputs.Store(preout, utxo)
+					if txHash != reqHash {
+						preout.TxHash = reqHash
+						pool.reqOutputs.Store(preout, utxo)
+					}
 				}
 			}
 		}

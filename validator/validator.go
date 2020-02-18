@@ -157,7 +157,7 @@ func (validate *Validate) validateTransactions(rwM rwset.TxManager, txs modules.
 			ads = append(ads, a)
 		}
 
-		for outPoint, utxo := range tx.GetNewUtxos() {
+		for outPoint, utxo := range tx.GetNewTxUtxoAndReqUtxos() {
 			log.Debugf("Add tx utxo for key:%s", outPoint.String())
 			unitUtxo.Store(outPoint, utxo)
 		}

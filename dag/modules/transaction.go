@@ -525,6 +525,42 @@ func (tx *Transaction) GetNewUtxos() map[OutPoint]*Utxo {
 	return result
 }
 
+//该Tx如果保存后，会产生的新的Utxo包括ReqUtxo
+func (tx *Transaction) GetNewTxUtxoAndReqUtxos() map[OutPoint]*Utxo {
+	result := map[OutPoint]*Utxo{}
+	txHash := tx.Hash()
+	reqHash := tx.RequestHash()
+	for msgIndex, msg := range tx.txdata.TxMessages {
+		if msg.App != APP_PAYMENT {
+			continue
+		}
+		pay := msg.Payload.(*PaymentPayload)
+		txouts := pay.Outputs
+		for outIndex, txout := range txouts {
+			utxo := &Utxo{
+				Amount:   txout.Value,
+				Asset:    txout.Asset,
+				PkScript: txout.PkScript,
+				LockTime: pay.LockTime,
+			}
+
+			// write to database
+			outpoint := OutPoint{
+				TxHash:       txHash,
+				MessageIndex: uint32(msgIndex),
+				OutIndex:     uint32(outIndex),
+			}
+			result[outpoint] = utxo
+			if reqHash != txHash {
+				outpoint2 := outpoint
+				outpoint2.TxHash = reqHash
+				result[outpoint2] = utxo
+			}
+		}
+	}
+	return result
+}
+
 //获取一个交易中花费了哪些OutPoint
 func (tx *Transaction) GetSpendOutpoints() []*OutPoint {
 	result := []*OutPoint{}
