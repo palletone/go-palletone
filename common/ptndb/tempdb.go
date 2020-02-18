@@ -43,6 +43,7 @@ type Tempdb struct {
 
 func NewTempdb(db Database) (*Tempdb, error) {
 	tempdb := &Tempdb{kv: make(map[string][]byte), deleted: make(map[string]bool), db: db}
+	log.Debugf("New Tempdb[%p] based on %s,%p", tempdb, reflect.TypeOf(db).String(), db)
 	return tempdb, nil
 }
 func (db *Tempdb) Clear() {
@@ -189,7 +190,8 @@ func (db *Tempdb) Get(key []byte) ([]byte, error) {
 		return common.CopyBytes(entry), nil
 	}
 	log.DebugDynamic(func() string {
-		return fmt.Sprintf("key[%x] not in tempdb, try inner db[%s]", key,reflect.TypeOf(db.db).String())
+		return fmt.Sprintf("key[%x] not in tempdb[%p], try inner db[%s,%p]",
+			key, db, reflect.TypeOf(db.db).String(), db.db)
 	})
 	return db.db.Get(key)
 }

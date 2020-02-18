@@ -391,27 +391,27 @@ func (p *Processor) GenContractTransaction(orgTx *modules.Transaction, msgs []*m
 	if payInputNum > 0 {
 		log.Debugf("[%s]GenContractTransaction,payInputNum[%d]", shortId(reqId.String()), payInputNum)
 	}
-	extSize := ContractDefaultSignatureSize + ContractDefaultPayInputSignatureSize*float64(payInputNum)
-
-	if p.validator.ValidateTxFeeEnough(tx, extSize, 0) != validator.TxValidationCode_VALID {
-		msgs, err = genContractErrorMsg(tx, errors.New("tx fee is invalid"), true)
-		if err != nil {
-			log.Errorf("[%s]GenContractTransaction, genContractErrorMsg,error:%s", shortId(reqId.String()), err.Error())
-			return nil, err
-		}
-		tx, err = gen.GenContractTransction(orgTx.GetRequestTx(), msgs)
-		if err != nil {
-			log.Error("[%s]GenContractTransaction,fee is not enough, GenContractTransaction error:%s",
-				shortId(reqId.String()), err.Error())
-			return nil, err
-		}
-	} else {
-		//计算交易费用，将deploy持续时间写入交易中
-		err = addContractDeployDuringTime(p.dag, tx)
-		if err != nil {
-			log.Debugf("[%s]runContractReq, addContractDeployDuringTime error:%s", shortId(reqId.String()), err.Error())
-		}
+	//extSize := ContractDefaultSignatureSize + ContractDefaultPayInputSignatureSize*float64(payInputNum)
+	//Devin:没有当前dag，无法正确ValidateTxFeeEnough
+	//if p.validator.ValidateTxFeeEnough(tx, extSize, 0) != validator.TxValidationCode_VALID {
+	//	msgs, err = genContractErrorMsg(tx, errors.New("tx fee is invalid"), true)
+	//	if err != nil {
+	//		log.Errorf("[%s]GenContractTransaction, genContractErrorMsg,error:%s", shortId(reqId.String()), err.Error())
+	//		return nil, err
+	//	}
+	//	tx, err = gen.GenContractTransction(orgTx.GetRequestTx(), msgs)
+	//	if err != nil {
+	//		log.Error("[%s]GenContractTransaction,fee is not enough, GenContractTransaction error:%s",
+	//			shortId(reqId.String()), err.Error())
+	//		return nil, err
+	//	}
+	//} else {
+	//计算交易费用，将deploy持续时间写入交易中
+	err = addContractDeployDuringTime(p.dag, tx)
+	if err != nil {
+		log.Debugf("[%s]runContractReq, addContractDeployDuringTime error:%s", shortId(reqId.String()), err.Error())
 	}
+	//}
 	return tx, nil
 }
 
@@ -545,6 +545,7 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 	//}
 
 	tempDag, err := p.dag.NewTemp()
+	log.Debug("create a new tempDag for generate unit AddContractLoop")
 	if err != nil {
 		log.Errorf("Init temp dag error:%s", err.Error())
 	}
@@ -599,7 +600,10 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 			continue
 		}
 		txIndex++
+		log.Debugf("executed req[%s] save result tx[%s] index:%d into tempdag",
+			reqId.String(), tx.Hash().String(), txIndex)
 		err = tempDag.SaveTransaction(tx, txIndex)
+		log.Debugf("save tx[%s] into tempdag done", tx.Hash().String())
 		if err != nil {
 			log.Errorf("save tx[%s] error:%s", tx.Hash().String(), err.Error())
 			continue

@@ -194,8 +194,8 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 	err := RetrieveFromRlpBytes(utxodb.db, key, utxo)
 	if err != nil {
 		log.DebugDynamic(func() string {
-			return fmt.Sprintf("DB[%s] get utxo[%s] error:%s",
-				reflect.TypeOf(utxodb.db).String(), outpoint.String(), err.Error())
+			return fmt.Sprintf("DB[%s,req=%t] get utxo[%s] error:%s",
+				reflect.TypeOf(utxodb.db).String(), utxodb.isRequest, outpoint.String(), err.Error())
 		})
 		if errors.IsNotFoundError(err) {
 			return nil, errors.ErrUtxoNotFound
