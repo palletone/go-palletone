@@ -651,7 +651,8 @@ func (d *Dag) initDataForMainChainHeader(mainChain *modules.MainChain) {
 func NewDag(db ptndb.Database, localdb ptndb.Database, cache palletcache.ICache, light bool) (*Dag, error) {
 	tokenEngine := tokenengine.Instance //TODO Devin tokenENgine from parmeter
 	dagDb := storage.NewDagDb(db)
-	utxoDb := storage.NewUtxoDb(db, tokenEngine)
+	txutxoDb := storage.NewUtxoDb(db, tokenEngine, false)
+	requtxoDb := storage.NewUtxoDb(db, tokenEngine, true)
 	stateDb := storage.NewStateDb(db)
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
@@ -661,8 +662,8 @@ func NewDag(db ptndb.Database, localdb ptndb.Database, cache palletcache.ICache,
 		return nil, err
 	}
 	localRep := dagcommon.NewLocalRepository(localDb)
-	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb, tokenEngine)
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenEngine)
+	utxoRep := dagcommon.NewUtxoRepository(txutxoDb, requtxoDb, idxDb, stateDb, propDb, tokenEngine)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, txutxoDb, requtxoDb, stateDb, propDb, tokenEngine)
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 	stableUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
@@ -785,13 +786,14 @@ func (dag *Dag) SwitchMainChainEvent(arg *memunit.SwitchMainChainEvent) {
 func NewDagSimple(db ptndb.Database) (*Dag, error) {
 	tokenEngine := tokenengine.Instance
 	dagDb := storage.NewDagDb(db)
-	utxoDb := storage.NewUtxoDb(db, tokenEngine)
+	txutxoDb := storage.NewUtxoDb(db, tokenEngine, false)
+	requtxoDb := storage.NewUtxoDb(db, tokenEngine, true)
 	stateDb := storage.NewStateDb(db)
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
 
-	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb, tokenEngine)
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenEngine)
+	utxoRep := dagcommon.NewUtxoRepository(txutxoDb, requtxoDb, idxDb, stateDb, propDb, tokenEngine)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, txutxoDb, requtxoDb, stateDb, propDb, tokenEngine)
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 
@@ -818,15 +820,16 @@ func NewDagSimple(db ptndb.Database) (*Dag, error) {
 func NewDagForTest(db ptndb.Database) (*Dag, error) {
 	tokenEngine := tokenengine.Instance
 	dagDb := storage.NewDagDb(db)
-	utxoDb := storage.NewUtxoDb(db, tokenEngine)
+	txutxoDb := storage.NewUtxoDb(db, tokenEngine, false)
+	requtxoDb := storage.NewUtxoDb(db, tokenEngine, true)
 	stateDb := storage.NewStateDb(db)
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
 
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
-	utxoRep := dagcommon.NewUtxoRepository(utxoDb, idxDb, stateDb, propDb, tokenEngine)
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, utxoDb, stateDb, propDb, tokenEngine)
+	utxoRep := dagcommon.NewUtxoRepository(txutxoDb, requtxoDb, idxDb, stateDb, propDb, tokenEngine)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, txutxoDb, requtxoDb, stateDb, propDb, tokenEngine)
 	statleUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
 
 	threshold, _ := propRep.GetChainThreshold()

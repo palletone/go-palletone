@@ -32,10 +32,11 @@ import (
 type utxoBaseGetOp interface {
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 }
-type utxoBaseOp interface {
-	utxoBaseGetOp
-	SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.Utxo) error
-}
+
+//type utxoBaseOp interface {
+//	utxoBaseGetOp
+//	SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.Utxo) error
+//}
 
 //  UtxoViewpoint
 type UtxoViewpoint struct {
@@ -68,29 +69,30 @@ func (view *UtxoViewpoint) LookupUtxo(outpoint modules.OutPoint) *modules.Utxo {
 	}
 	return view.entries[outpoint]
 }
-func (view *UtxoViewpoint) SpentUtxo(db utxoBaseOp, outpoints map[modules.OutPoint]struct{}) error {
-	if len(outpoints) == 0 {
-		return nil
-	}
-	for outpoint := range outpoints {
-		item := new(modules.OutPoint)
-		item.TxHash = outpoint.TxHash
-		item.MessageIndex = outpoint.MessageIndex
-		item.OutIndex = outpoint.OutIndex
-		if utxo, has := view.entries[outpoint]; has {
-			utxo.Spend()
-			db.SaveUtxoEntity(item, utxo)
-		} else {
-			utxo, err := db.GetUtxoEntry(item)
-			if err == nil {
-				utxo.Spend()
-				db.SaveUtxoEntity(item, utxo)
-			}
-		}
-		delete(view.entries, outpoint)
-	}
-	return nil
-}
+
+//func (view *UtxoViewpoint) SpentUtxo(db utxoBaseOp, outpoints map[modules.OutPoint]struct{}) error {
+//	if len(outpoints) == 0 {
+//		return nil
+//	}
+//	for outpoint := range outpoints {
+//		item := new(modules.OutPoint)
+//		item.TxHash = outpoint.TxHash
+//		item.MessageIndex = outpoint.MessageIndex
+//		item.OutIndex = outpoint.OutIndex
+//		if utxo, has := view.entries[outpoint]; has {
+//			utxo.Spend()
+//			db.SaveUtxoEntity(item, utxo)
+//		} else {
+//			utxo, err := db.GetUtxoEntry(item)
+//			if err == nil {
+//				utxo.Spend()
+//				db.SaveUtxoEntity(item, utxo)
+//			}
+//		}
+//		delete(view.entries, outpoint)
+//	}
+//	return nil
+//}
 func (view *UtxoViewpoint) FetchUnitUtxos(db utxoBaseGetOp, unit *modules.Unit) error {
 	transactions := unit.Transactions()
 	if len(transactions) <= 1 {
@@ -289,7 +291,7 @@ const (
 
 func CheckTransactionSanity(tx *modules.Transaction) error {
 	// A transaction must have at least one input.
-	msgs:=tx.TxMessages()
+	msgs := tx.TxMessages()
 	if len(msgs) == 0 {
 		return errors.New(fmt.Sprintf("transaction has no inputs,hash: %s", tx.Hash().String()))
 	}

@@ -95,7 +95,7 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 	//构造转移PTN的Message0
 	var dbUtxos map[modules.OutPoint]*modules.Utxo
 	if useMemoryDag && cacheTx != nil && cacheTx.mdag != nil {
-		dbUtxos, err = cacheTx.mdag.GetAddrUtxos(fromAddr)
+		dbUtxos, err = getAddrUtxofrommDag(fromAddr)
 	} else {
 		dbUtxos, err = b.Dag().GetAddrUtxos(fromAddr)
 	}
@@ -330,7 +330,7 @@ func saveTransaction2mDag(tx *modules.Transaction) error {
 		defer cacheTx.lock.Unlock()
 
 		var txHash common.Hash
-		if tx.IsContractTx() {
+		if tx.IsNewContractInvokeRequest() {
 			txHash = tx.RequestHash()
 			log.Debugf("saveTransaction2Mdag, save contract transaction:%s", txHash.String())
 		} else {
@@ -339,10 +339,20 @@ func saveTransaction2mDag(tx *modules.Transaction) error {
 		}
 		err := cacheTx.mdag.SaveTransaction(tx, 0)
 		if err != nil {
-			return fmt.Errorf("saveTransaction2Mdag,SaveTransaction[%s] err:%s", txHash.String(), err.Error())
+			data, _ := json.Marshal(tx)
+			return fmt.Errorf("saveTransaction2Mdag,SaveTransaction[%s] err:%s\r\ndata for debug:%s",
+				txHash.String(), err.Error(), string(data))
 		}
 		cacheTx.txs[txHash] = tx.IsContractTx()
 		return nil
 	}
 	return errors.New("saveTransaction2Mdag, no mdag")
+}
+func getAddrUtxofrommDag(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error) {
+	if cacheTx != nil && cacheTx.mdag != nil {
+		cacheTx.lock.Lock()
+		defer cacheTx.lock.Unlock()
+		return cacheTx.mdag.GetAddrUtxos(addr)
+	}
+	return nil, errors.New("no mdag")
 }

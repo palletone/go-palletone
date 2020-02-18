@@ -49,13 +49,16 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) (bool, error) {
 		return false, fmt.Errorf("[%s]ProcessContractEvent, event Tx reqId is exist, txId:%s",
 			shortId(reqId.String()), event.Tx.Hash().String())
 	}
-	if _, v, err := p.validator.ValidateTx(event.Tx, false); v != validator.TxValidationCode_VALID {
-		return false, fmt.Errorf("[%s]ProcessContractEvent, event Tx is invalid, txId:%s, err:%s",
-			shortId(reqId.String()), event.Tx.Hash().String(), err.Error())
-	}
-	if !p.checkTxAddrValid(event.Tx) {
-		return true, fmt.Errorf("[%s]ProcessContractEvent, event Tx addr is invalid, txId:%s",
-			shortId(reqId.String()), event.Tx.Hash().String())
+	if !event.Tx.IsSystemContract() {
+		if _, v, err := p.validator.ValidateTx(event.Tx, false); v != validator.TxValidationCode_VALID {
+			return false, fmt.Errorf("[%s]ProcessContractEvent, event Tx is invalid, txId:%s, err:%s",
+				shortId(reqId.String()), event.Tx.Hash().String(), err.Error())
+		}
+
+		if !p.checkTxAddrValid(event.Tx) {
+			return true, fmt.Errorf("[%s]ProcessContractEvent, event Tx addr is invalid, txId:%s",
+				shortId(reqId.String()), event.Tx.Hash().String())
+		}
 	}
 	if !p.contractEventExecutable(event.CType, event.Tx, event.Ele) {
 		log.Debugf("[%s]ProcessContractEvent, contractEventExecutable is false", shortId(reqId.String()))

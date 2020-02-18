@@ -20,9 +20,10 @@
 package storage
 
 import (
-	"github.com/palletone/go-palletone/tokenengine"
 	"log"
 	"testing"
+
+	"github.com/palletone/go-palletone/tokenengine"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/ptndb"
@@ -61,7 +62,7 @@ func TestSaveUtxos(t *testing.T) {
 		log.Println("Connect mem db error.")
 		return
 	}
-	utxodb := NewUtxoDb(Dbconn, tokenengine.Instance)
+	utxodb := NewUtxoDb(Dbconn, tokenengine.Instance, false)
 
 	//1. construct object
 	myplane := NewAirPlane()

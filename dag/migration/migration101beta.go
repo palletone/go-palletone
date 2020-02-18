@@ -22,7 +22,6 @@ package migration
 import (
 	"strconv"
 
-	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -31,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
+	"github.com/palletone/go-palletone/tokenengine"
 )
 
 type Migration100_101 struct {
@@ -51,7 +51,7 @@ func (m *Migration100_101) ToVersion() string {
 
 func (m *Migration100_101) utxoToStxo() error {
 	//删除已经花费的UTXO
-	dbop := storage.NewUtxoDb(m.utxodb, tokenengine.Instance)
+	dbop := storage.NewUtxoDb(m.utxodb, tokenengine.Instance, false)
 	utxos, err := dbop.GetAllUtxos()
 	if err != nil {
 		return err
@@ -146,9 +146,9 @@ func (m *Migration100_101) upgradeMediatorInfo() error {
 		}
 
 		newMediator := &MediatorInfo101{
-			MediatorInfoBase101: oldMediator.MediatorInfoBase101,
-			MediatorApplyInfo:   &core.MediatorApplyInfo{Description: oldMediator.ApplyInfo},
-			MediatorInfoExpand105alpha:  oldMediator.MediatorInfoExpand105alpha,
+			MediatorInfoBase101:        oldMediator.MediatorInfoBase101,
+			MediatorApplyInfo:          &core.MediatorApplyInfo{Description: oldMediator.ApplyInfo},
+			MediatorInfoExpand105alpha: oldMediator.MediatorInfoExpand105alpha,
 		}
 
 		err = storage.StoreToRlpBytes(m.statedb, oldMediatorsIterator.Key(), newMediator)

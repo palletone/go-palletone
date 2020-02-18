@@ -1194,7 +1194,7 @@ func (handler *Handler) handlePayOutToken(msg *pb.ChaincodeMessage) {
 		asset.SetBytes(payout.Asset)
 		chaincodeID := handler.getCCRootName()
 		log.Debugf("[%s] getting balance for chaincode %s, key %#v, channel %s",
-			shorttxid(msg.Txid), chaincodeID, asset, txContext.chainID)
+			shorttxid(msg.Txid), chaincodeID, asset.String(), txContext.chainID)
 		err := txContext.txsimulator.PayOutToken(chaincodeID, payout.Address, asset, payout.Amount, payout.Locktime)
 		if err != nil {
 			// Send error msg back to chaincode. GetState will not trigger event

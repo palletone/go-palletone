@@ -130,10 +130,10 @@ type UnitRepository struct {
 type AfterSysContractStateChangeEventFunc func(event *modules.SysContractStateChangeEvent)
 
 func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb,
-	utxodb storage.IUtxoDb, statedb storage.IStateDb,
+	txutxodb storage.IUtxoDb, requtxodb storage.IUtxoDb, statedb storage.IStateDb,
 	propdb storage.IPropertyDb,
 	engine tokenengine.ITokenEngine) *UnitRepository {
-	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, propdb, engine)
+	utxoRep := NewUtxoRepository(txutxodb, requtxodb, idxdb, statedb, propdb, engine)
 
 	return &UnitRepository{
 		db:             dagdb.GetDb(),
@@ -148,11 +148,12 @@ func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb,
 
 func NewUnitRepository4Db(db ptndb.Database, tokenEngine tokenengine.ITokenEngine) *UnitRepository {
 	dagdb := storage.NewDagDb(db)
-	utxodb := storage.NewUtxoDb(db, tokenEngine)
+	txutxodb := storage.NewUtxoDb(db, tokenEngine, false)
+	requtxodb := storage.NewUtxoDb(db, tokenEngine, true)
 	statedb := storage.NewStateDb(db)
 	idxdb := storage.NewIndexDb(db)
 	propdb := storage.NewPropertyDb(db)
-	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, propdb, tokenEngine)
+	utxoRep := NewUtxoRepository(txutxodb, requtxodb, idxdb, statedb, propdb, tokenEngine)
 	return &UnitRepository{
 		db:             db,
 		dagdb:          dagdb,
@@ -1008,7 +1009,8 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 		}
 	}
 	txHash := tx.Hash()
-	reqId := tx.RequestHash().Bytes()
+	reqHash := tx.RequestHash()
+	reqId := reqHash.Bytes()
 	unitHash := unit.Hash()
 	unitTime := unit.Timestamp()
 	unitHeight := unit.NumberU64()
@@ -1024,7 +1026,15 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 		}
 		switch msg.App {
 		case modules.APP_PAYMENT:
-			if ok := rep.savePaymentPayload(unitTime, txHash, msg.Payload.(*modules.PaymentPayload),
+			myTxHash := txHash
+			if tx.IsNewContractInvokeRequest() { //只是一个请求，TxHash还无法计算
+				myTxHash = common.Hash{}
+			}
+			myReqHash := reqHash
+			if reqIndex < 0 { //非合约交易 	//or 是合约结果部分的Payment，不需要ReqHash
+				myReqHash = common.Hash{}
+			}
+			if ok := rep.savePaymentPayload(unitTime, myTxHash, myReqHash, msg.Payload.(*modules.PaymentPayload),
 				uint32(msgIndex)); !ok {
 				return fmt.Errorf("Save payment payload error.")
 			}
@@ -1217,14 +1227,14 @@ func getDataPayload(tx *modules.Transaction) *modules.DataPayload {
 保存PaymentPayload
 save PaymentPayload data
 */
-func (rep *UnitRepository) savePaymentPayload(unitTime int64, txHash common.Hash, msg *modules.PaymentPayload,
+func (rep *UnitRepository) savePaymentPayload(unitTime int64, txHash, reqHash common.Hash, msg *modules.PaymentPayload,
 	msgIndex uint32) bool {
 	// if inputs is none then it is just a normal coinbase transaction
 	// otherwise, if inputs' length is 1, and it PreviousOutPoint should be none
 	// if this is a create token transaction, the Extra field should be AssetInfo struct's [rlp] encode bytes
 	// if this is a create token transaction, should be return a assetid
 	// save utxo
-	err := rep.utxoRepository.UpdateUtxo(unitTime, txHash, msg, msgIndex)
+	err := rep.utxoRepository.UpdateUtxo(unitTime, txHash, reqHash, msg, msgIndex)
 	if err != nil {
 		log.Error("Update utxo failed.", "error", err)
 		return false
