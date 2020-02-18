@@ -163,9 +163,31 @@ func (repository *UtxoRepository) GetAllUtxos() (map[modules.OutPoint]*modules.U
 func (repository *UtxoRepository) GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error) {
 	return repository.txUtxodb.GetAddrOutpoints(addr)
 }
+
+//活动一个地址的所有UTXO，包括完整交易的和Request的，存证交叉，需要通过Mapping过滤
 func (repository *UtxoRepository) GetAddrUtxos(addr common.Address, asset *modules.Asset) (
 	map[modules.OutPoint]*modules.Utxo, error) {
-	return repository.txUtxodb.GetAddrUtxos(addr, asset)
+	utxo1, err := repository.txUtxodb.GetAddrUtxos(addr, asset)
+	if err != nil {
+		return nil, err
+	}
+	mappingHashs := make(map[common.Hash]bool)
+	for o := range utxo1 {
+		mappingHash, err := repository.txUtxodb.GetRequestAndTxMapping(o.TxHash)
+		if err == nil {
+			mappingHashs[mappingHash] = true
+		}
+	}
+	utxo2, err := repository.reqUtxodb.GetAddrUtxos(addr, asset)
+	if err != nil {
+		return nil, err
+	}
+	for o, u := range utxo2 {
+		if _, has := mappingHashs[o.TxHash]; !has {
+			utxo1[o] = u
+		}
+	}
+	return utxo1, nil
 }
 func (repository *UtxoRepository) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error {
 	return repository.txUtxodb.SaveUtxoView(view)
