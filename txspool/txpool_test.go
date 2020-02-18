@@ -72,7 +72,7 @@ type UnitDag4Test struct {
 
 func NewUnitDag4Test() *UnitDag4Test {
 	db, _ := palletdb.NewMemDatabase()
-	utxodb := storage.NewUtxoDb(db, tokenengine.Instance)
+	utxodb := storage.NewUtxoDb(db, tokenengine.Instance, false)
 
 	propdb := storage.NewPropertyDb(db)
 	hash := common.HexToHash("0x0e7e7e3bd7c1e9ce440089712d61de38f925eb039f152ae03c6688ed714af729")
@@ -268,7 +268,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 
 	// Create the pool to test the limit enforcement with
 	db, _ := palletdb.NewMemDatabase()
-	utxodb := storage.NewUtxoDb(db, tokenengine.Instance)
+	utxodb := storage.NewUtxoDb(db, tokenengine.Instance, false)
 	mutex := new(sync.RWMutex)
 	unitchain := &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed), nil}
 	config := DefaultTxPoolConfig
