@@ -120,12 +120,13 @@ type TransactionWithUnitInfo struct {
 }
 
 type TxPackInfo struct {
-	TxHash common.Hash
-	//RequestHash common.Hash
-	UnitHash  common.Hash
-	UnitIndex uint64
-	Timestamp uint64
-	TxIndex   uint64
+	TxHash      common.Hash
+	RequestHash common.Hash
+	UnitHash    common.Hash
+	UnitIndex   uint64
+	Timestamp   uint64
+	TxIndex     uint64
+	Error       string
 }
 
 // Hash hashes the RLP encoding of tx.
@@ -150,6 +151,27 @@ func (tx *Transaction) Hash() common.Hash {
 func (tx *Transaction) RequestHash() common.Hash {
 	reqtx := tx.GetRequestTx()
 	return reqtx.Hash()
+}
+func (tx *Transaction) ErrorResult() string {
+	for _, msg := range tx.txdata.TxMessages {
+		if msg.App == APP_CONTRACT_INVOKE {
+			invoke := msg.Payload.(*ContractInvokePayload)
+			return invoke.ErrMsg.Message
+		}
+		if msg.App == APP_CONTRACT_DEPLOY {
+			dep := msg.Payload.(*ContractDeployPayload)
+			return dep.ErrMsg.Message
+		}
+		if msg.App == APP_CONTRACT_STOP {
+			stop := msg.Payload.(*ContractStopPayload)
+			return stop.ErrMsg.Message
+		}
+		if msg.App == APP_CONTRACT_TPL {
+			tpl := msg.Payload.(*ContractTplPayload)
+			return tpl.ErrMsg.Message
+		}
+	}
+	return ""
 }
 
 func (tx *Transaction) GetContractId() []byte {

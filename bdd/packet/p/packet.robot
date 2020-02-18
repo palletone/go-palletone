@@ -199,6 +199,7 @@ packet1
     Should Be Equal As Strings    ${result["BalanceCount"]}    11
     sleep    3
     getBalance    ${twoAddr}
+    getAllPacketInfo
 
 packet2
     [Documentation]    amount = 90
@@ -721,6 +722,7 @@ packet7
     sleep    3
     ${pulled}    isPulledPacket    ${tokenHolderPubKey}    3
     Should Be Equal As Strings    ${pulled}    true
+    getAllPacketInfo
 
 packet8
     [Documentation]    amount = 30
@@ -801,6 +803,7 @@ packet8
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sleep    3
     isPulledPacket    ${tokenHolderPubKey}    3
+    getAllPacketInfo
 
 *** Keywords ***
 createPacket
@@ -823,8 +826,8 @@ post
     [Arguments]    ${method}    ${alias}    ${params}
     ${header}    Create Dictionary    Content-Type=application/json
     ${data}    Create Dictionary    jsonrpc=2.0    method=${method}    params=${params}    id=1
-    Create Session    ${alias}    http://192.168.44.128:8545    #    http://127.0.0.1:8545    http://192.168.44.128:8545
-    ${resp}    Post Request    ${alias}    http://192.168.44.128:8545    data=${data}    headers=${header}
+    Create Session    ${alias}    http://127.0.0.1:8545    #    http://127.0.0.1:8545    http://192.168.44.128:8545
+    ${resp}    Post Request    ${alias}    http://127.0.0.1:8545    data=${data}    headers=${header}
     ${respJson}    To Json    ${resp.content}
     Dictionary Should Contain Key    ${respJson}    result
     ${res}    Get From Dictionary    ${respJson}    result
@@ -846,7 +849,7 @@ unlockAccount
 
 getPublicKey
     [Arguments]    ${addr}
-    ${param}    Create List    ${addr}
+    ${param}    Create List    ${addr}    1
     ${result}    post    personal_getPublicKey    personal_getPublicKey    ${param}
     log    ${result}
     Set Global Variable    ${tokenHolderPubKey}    ${result}
@@ -933,3 +936,11 @@ isPulledPacket
     ${res}    post    contract_ccquery    isPulledPacket    ${two}
     log    ${res}
     [Return]    ${res}
+
+getAllPacketInfo
+    ${param}    Create List    getAllPacketInfo
+    ${two}    Create List    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    ${param}    ${10}
+    ${res}    post    contract_ccquery    getAllPacketInfo    ${two}
+    log    ${res}
+    ${addressMap}    To Json    ${res}
+    log    ${addressMap}

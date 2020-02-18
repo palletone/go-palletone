@@ -127,20 +127,23 @@ func ConvertGetTransactions2Json(gets []GetTransactions) string {
 }
 
 type TxPackInfoJson struct {
-	UnitHash   string    `json:"unit_hash"`
-	UnitHeight uint64    `json:"unit_height"`
-	Timestamp  time.Time `json:"timestamp"`
-	TxIndex    uint64    `json:"tx_index"`
-	TxHash     string    `json:"tx_hash"`
-	//RequestHash string `json:"request_hash"`
+	UnitHash    string    `json:"unit_hash"`
+	RequestHash string    `json:"request_hash"`
+	UnitHeight  uint64    `json:"unit_height"`
+	Timestamp   time.Time `json:"timestamp"`
+	TxIndex     uint64    `json:"tx_index"`
+	TxHash      string    `json:"tx_hash"`
+	Error       string    `json:"error"`
 }
 
 func ConvertTxPackInfoJson(txInfo *modules.TxPackInfo) *TxPackInfoJson {
 	return &TxPackInfoJson{
-		UnitHash:   txInfo.UnitHash.String(),
-		UnitHeight: txInfo.UnitIndex,
-		Timestamp:  time.Unix(int64(txInfo.Timestamp), 0),
-		TxIndex:    txInfo.TxIndex,
-		TxHash:     txInfo.TxHash.String(),
+		UnitHash:    txInfo.UnitHash.String(),
+		UnitHeight:  txInfo.UnitIndex,
+		Timestamp:   time.Unix(int64(txInfo.Timestamp), 0),
+		TxIndex:     txInfo.TxIndex,
+		TxHash:      txInfo.TxHash.String(),
+		Error:       txInfo.Error,
+		RequestHash: txInfo.RequestHash.String(),
 	}
 }
