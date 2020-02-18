@@ -235,6 +235,55 @@ func (b *bridge) SignRawTransaction(call otto.FunctionCall) (response otto.Value
 	}
 	return val
 }
+
+func (b *bridge) CreateTxWithOutFee(call otto.FunctionCall) (response otto.Value) {
+	// Make sure we have an account specified to unlock
+	if !call.Argument(0).IsString() {
+		throwJSException("first argument must be the rawtx to sign")
+	}
+	tokenId := call.Argument(0)
+
+	if !call.Argument(1).IsString() {
+		throwJSException("second argument must be the hashtype ")
+	}
+	tokenfrom := call.Argument(1)
+	tokento   := call.Argument(2)
+	//to := call.Argument(3)
+	amount := call.Argument(3)
+	// If password is not given or is the null value, prompt the user for it
+	var password otto.Value
+	unlock, _ := isUnlock(call, tokenfrom)
+    if !unlock {
+		if call.Argument(4).IsUndefined() || call.Argument(4).IsNull() {
+			if input, err := b.prompter.PromptPassword("Passphrase: "); err != nil {
+				throwJSException(err.Error())
+			} else {
+				password, _ = otto.ToValue(input)
+			}
+	    } else {
+		    if !call.Argument(4).IsString() {
+			throwJSException("password must be a string")
+		    }
+		    password = call.Argument(4)
+	    }
+	}
+	
+	// Third argument is the duration how long the account must be unlocked.
+	duration := otto.NullValue()
+	if call.Argument(5).IsDefined() && !call.Argument(5).IsNull() {
+		if !call.Argument(5).IsNumber() {
+			throwJSException("unlock duration must be a number")
+		}
+		duration = call.Argument(5)
+	}
+	// Send the request to the backend and return
+	val, err := call.Otto.Call("jptn.createTxWithOutFee", nil, tokenId, tokenfrom, tokento, amount, password, duration)
+	if err != nil {
+		throwJSException(err.Error())
+	}
+	return val
+}
+
 func (b *bridge) SignAndFeeTransaction(call otto.FunctionCall) (response otto.Value) {
 	// Make sure we have an account specified to unlock
 	if !call.Argument(0).IsString() {
@@ -243,38 +292,40 @@ func (b *bridge) SignAndFeeTransaction(call otto.FunctionCall) (response otto.Va
 	rawtx := call.Argument(0)
 
 	if !call.Argument(1).IsString() {
-		throwJSException("second argument must be the hashtype ")
+		throwJSException("second argument must be the gas from address ")
 	}
-	hashtype := call.Argument(1)
-	gasfrom := call.Argument(2)
-	to := call.Argument(3)
-	gasfee := call.Argument(4)
+	gasfrom := call.Argument(1)
+	//to := call.Argument(3)
+	gasfee := call.Argument(2)
+	extra := call.Argument(3)
 	// If password is not given or is the null value, prompt the user for it
-	var passwd otto.Value
-
-	if call.Argument(5).IsUndefined() || call.Argument(5).IsNull() {
-		fmt.Fprintf(b.printer, "Sign rawtx %s\n", rawtx)
-		if input, err := b.prompter.PromptPassword("Passphrase: "); err != nil {
-			throwJSException(err.Error())
-		} else {
-			passwd, _ = otto.ToValue(input)
-		}
-	} else {
-		if !call.Argument(5).IsString() {
+	var password otto.Value
+	unlock, _ := isUnlock(call, gasfrom)
+    if !unlock {
+		// if the password is not given or null ask the user and ensure password is a string
+		if call.Argument(4).IsUndefined() || call.Argument(4).IsNull() {
+			if input, err := b.prompter.PromptPassword("Passphrase: "); err != nil {
+				throwJSException(err.Error())
+			} else {
+				password, _ = otto.ToValue(input)
+			}
+	    } else {
+		    if !call.Argument(4).IsString() {
 			throwJSException("password must be a string")
-		}
-		passwd = call.Argument(5)
+		    }
+		    password = call.Argument(4)
+	    }
 	}
 	// Third argument is the duration how long the account must be unlocked.
 	duration := otto.NullValue()
-	if call.Argument(6).IsDefined() && !call.Argument(6).IsNull() {
-		if !call.Argument(6).IsNumber() {
+	if call.Argument(5).IsDefined() && !call.Argument(5).IsNull() {
+		if !call.Argument(5).IsNumber() {
 			throwJSException("unlock duration must be a number")
 		}
-		duration = call.Argument(6)
+		duration = call.Argument(5)
 	}
 	// Send the request to the backend and return
-	val, err := call.Otto.Call("jptn.signAndFeeTransaction", nil, rawtx, hashtype, gasfrom, to, gasfee, passwd, duration)
+	val, err := call.Otto.Call("jptn.signAndFeeTransaction", nil, rawtx, gasfrom, gasfee,extra,password, duration)
 	if err != nil {
 		throwJSException(err.Error())
 	}

@@ -1320,20 +1320,22 @@ func (s *PrivateWalletAPI) TransferToken2(ctx context.Context, asset string, fro
 	return submitTransaction(ctx, s.b, rawTx)
 }
 
-func (s *PrivateWalletAPI) CreateTxWithOutFee(ctx context.Context, asset string, fromStr string, toStr string,
-	amount decimal.Decimal, Extra string, password string, duration *uint32) (string, error) {
-
+func (s *PrivateWalletAPI) CreateTxWithOutFee(ctx context.Context, asset , fromStr , toStr string,amount decimal.Decimal, pwd *string, duration *uint32) (ptnjson.SignRawTransactionResult, error) {
+	password := ""
+	if pwd != nil {
+		password = *pwd
+	}
 	toArray := strings.Split(toStr, ":")
 	to := toArray[0]
 	ks := s.b.GetKeyStore()
 	if len(toArray) == 2 { //HD wallet address format
 		toAccountIndex, err := strconv.Atoi(toArray[1])
 		if err != nil {
-			return "", errors.New("invalid to address format")
+			return ptnjson.SignRawTransactionResult{}, errors.New("invalid to address format")
 		}
 		toAddr, err := common.StringToAddress(toArray[0])
 		if err != nil {
-			return "", errors.New("invalid to address format")
+			return ptnjson.SignRawTransactionResult{}, errors.New("invalid to address format")
 		}
 		var toAccount accounts.Account
 		if ks.IsUnlock(toAddr) {
@@ -1344,41 +1346,90 @@ func (s *PrivateWalletAPI) CreateTxWithOutFee(ctx context.Context, asset string,
 
 		}
 		if err != nil {
-			return "", errors.New("GetHdAccountWithPassphrase error:" + err.Error())
+			return ptnjson.SignRawTransactionResult{}, errors.New("GetHdAccountWithPassphrase error:" + err.Error())
 		}
 		to = toAccount.Address.String()
 	}
+
+	getPubKeyFn := func(addr common.Address) ([]byte, error) {
+		//TODO use keystore
+		ks := s.b.GetKeyStore()
+		return ks.GetPublicKey(addr)
+	}
+	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
+		ks := s.b.GetKeyStore()
+		return ks.SignMessage(addr, msg)
+	}
+
 	fromArray := strings.Split(fromStr, ":")
 	from := fromArray[0]
 	if len(fromArray) == 2 {
 		fromAccountIndex, err := strconv.Atoi(fromArray[1])
 		if err != nil {
-			return "", errors.New("invalid to address format")
+			return ptnjson.SignRawTransactionResult{}, errors.New("invalid to address format")
 		}
 		fromAddr, err := common.StringToAddress(fromArray[0])
 		if err != nil {
-			return "", errors.New("invalid to address format")
+			return ptnjson.SignRawTransactionResult{}, errors.New("invalid to address format")
 		}
 		var fromAccount accounts.Account
 		if ks.IsUnlock(fromAddr) {
 			fromAccount, err = ks.GetHdAccount(accounts.Account{Address: fromAddr}, uint32(fromAccountIndex))
-
 		} else {
 			fromAccount, err = ks.GetHdAccountWithPassphrase(accounts.Account{Address: fromAddr}, password, uint32(fromAccountIndex))
 
 		}
 		if err != nil {
-			return "", errors.New("GetHdAccountWithPassphrase error:" + err.Error())
+			return ptnjson.SignRawTransactionResult{}, errors.New("GetHdAccountWithPassphrase error:" + err.Error())
 		}
 		from = fromAccount.Address.String()
 	}
 
-	rawTx, err := s.buildRawTxWithoutFee(asset, from, to, amount, Extra)
+    utxoLockScripts := make(map[modules.OutPoint][]byte)
+	payload, err := s.buildRawTxWithoutFee(asset, from, to, amount)
 	if err != nil {
-		return "", err
+		return ptnjson.SignRawTransactionResult{}, err
+	}
+	inpoint := modules.OutPoint{
+		TxHash:       payload.Inputs[0].PreviousOutPoint.TxHash,
+		OutIndex:     payload.Inputs[0].PreviousOutPoint.OutIndex,
+		MessageIndex: payload.Inputs[0].PreviousOutPoint.MessageIndex,
+	}
+	uvu, eerr := s.b.GetUtxoEntry(&inpoint)
+	if eerr != nil {
+		log.Error(eerr.Error())
+		return ptnjson.SignRawTransactionResult{}, err
+	}
+	PkScriptHex := trimx(uvu.PkScriptHex)
+	utxoLockScripts[inpoint] = hexutil.MustDecode("0x" + PkScriptHex)
+
+    
+    newtx := modules.NewTransaction(make([]*modules.Message, 0))
+	newtx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, payload))
+    //3.
+    fromAddr, err := common.StringToAddress(from)
+    err = unlockKS(s.b, fromAddr, password, duration)
+	if err != nil {
+		return ptnjson.SignRawTransactionResult{}, err
+	}
+	signErrs, err := tokenengine.Instance.SignTxAllPaymentInput(newtx, 0x41, utxoLockScripts, nil, getPubKeyFn, getSignFn)
+	if err != nil {
+		return ptnjson.SignRawTransactionResult{}, err
 	}
 
-	return rawTx, err
+	//log.Debugf("payload input outpoint:%s", pload.Input[0].PreviousOutPoint.TxHash.String())
+	mtxbt, err := rlp.EncodeToBytes(newtx)
+	if err != nil {
+		return ptnjson.SignRawTransactionResult{}, err
+	}
+	signedHex := hex.EncodeToString(mtxbt)
+	signErrors := make([]ptnjson.SignRawTransactionError, 0, len(signErrs))
+	return ptnjson.SignRawTransactionResult{
+		Hex:      signedHex,
+		Txid:     newtx.Hash().String(),
+		Complete: len(signErrors) == 0,
+		Errors:   signErrors,
+	}, err
 }
 
 func (s *PrivateWalletAPI) CreateProofOfExistenceTx(ctx context.Context, addr string,
@@ -1809,22 +1860,22 @@ func (s *PrivateWalletAPI) buildRawTransferTx2(tokenId, from, to, gasFrom string
 }
 
 //构造1笔Message，Msg0的FromAddress是用户
-func (s *PrivateWalletAPI) buildRawTxWithoutFee(tokenId, from, to string, amount decimal.Decimal, Extra string) (string, error) {
+func (s *PrivateWalletAPI) buildRawTxWithoutFee(tokenId, from, to string, amount decimal.Decimal) (*modules.PaymentPayload, error) {
 	//参数检查
 	tokenAsset, err := modules.StringToAsset(tokenId)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	//
 	fromAddr, err := common.StringToAddress(from)
 	if err != nil {
 		fmt.Println(err.Error())
-		return "", err
+		return nil, err
 	}
 	toAddr, err := common.StringToAddress(to)
 	if err != nil {
 		fmt.Println(err.Error())
-		return "", err
+		return nil, err
 	}
 
 	//构造转移Token的Message1
@@ -1832,54 +1883,51 @@ func (s *PrivateWalletAPI) buildRawTxWithoutFee(tokenId, from, to string, amount
 	//构造转移Token的Message1
 	dbUtxos2, err := s.b.GetAddrRawUtxos(from)
 	if err != nil {
-		return "", fmt.Errorf("GetAddrRawUtxos utxo err")
+		return nil, fmt.Errorf("GetAddrRawUtxos utxo err")
 	}
 	poolTxs2, _ := s.b.GetUnpackedTxsByAddr(from)
 	utxosToken, err := SelectUtxoFromDagAndPool(dbUtxos2, poolTxs2, from, tokenId)
 	if err != nil {
-		return "", fmt.Errorf("SelectUtxoFromDagAndPool token utxo err")
+		return nil, fmt.Errorf("SelectUtxoFromDagAndPool token utxo err")
 	}
 	tokenAmount := ptnjson.JsonAmt2AssetAmt(tokenAsset, amount)
 	pay2, _, err := createPayment(fromAddr, toAddr, tokenAmount, 0, utxosToken)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	//tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay2))
-	//mtx.TxHash = mtx.Hash()
-	mtx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, pay2)})
-	if Extra != "" {
-		textPayload := new(modules.DataPayload)
-		textPayload.Reference = []byte(tokenId)
-		textPayload.MainData = []byte(Extra)
-		mtx.AddMessage(modules.NewMessage(modules.APP_DATA, textPayload))
-	}
-	mtxbt, err := rlp.EncodeToBytes(mtx)
-	if err != nil {
-		return "", err
-	}
+	
+	//mtx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, pay2)})
+	
+	//mtxbt, err := rlp.EncodeToBytes(mtx)
+	//if err != nil {
+	//	return "", err
+	//}
 	//log.Debugf("payload input outpoint:%s", pload.Input[0].PreviousOutPoint.TxHash.String())
-	mtxHex := hex.EncodeToString(mtxbt)
-	return mtxHex, nil
+	//mtxHex := hex.EncodeToString(mtxbt)
+	return pay2, nil
 }
 
-func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params string, hashtype string, gasFrom, to string, gasFee decimal.Decimal, password string, duration *uint32) (ptnjson.SignRawTransactionResult, error) {
-
+func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params string,  gasFrom string, gasFee decimal.Decimal, Extra string, pwd *string, duration *uint32) (ptnjson.SignRawTransactionResult, error) {
 	//transaction inputs
+	password := ""
+	if pwd != nil {
+		password = *pwd
+	}
 	if params == "" {
 		return ptnjson.SignRawTransactionResult{}, errors.New("Params is empty")
 	}
-	upper_type := strings.ToUpper(hashtype)
+	upper_type := strings.ToUpper("all")
 	if upper_type != ALL && upper_type != NONE && upper_type != SINGLE {
-		return ptnjson.SignRawTransactionResult{}, errors.New("Hashtype is error,error type:" + hashtype)
+		return ptnjson.SignRawTransactionResult{}, errors.New("Hashtype is error,error type" )
 	}
 	serializedTx, err := decodeHexStr(params)
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, errors.New("Params is invalid")
 	}
 
-	tx := modules.NewTransaction(make([]*modules.Message, 0))
+	tokentx := modules.NewTransaction(make([]*modules.Message, 0))
 
-	if err := rlp.DecodeBytes(serializedTx, &tx); err != nil {
+	if err := rlp.DecodeBytes(serializedTx, &tokentx); err != nil {
 		return ptnjson.SignRawTransactionResult{}, errors.New("Params decode is invalid")
 	}
 
@@ -1903,31 +1951,23 @@ func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params str
 		return ptnjson.SignRawTransactionResult{}, errors.New("gasFrom addr err")
 	}
 
-	toAddr, err := common.StringToAddress(to)
-	if err != nil {
-		fmt.Println(err.Error())
-		return ptnjson.SignRawTransactionResult{}, errors.New("gasTo addr err")
-	}
-
 	ptnAmount := uint64(0)
 	feeAmount := ptnjson.Ptn2Dao(gasFee)
-	pay1, _, err := createPayment(gasAddr, toAddr, ptnAmount, feeAmount, utxosPTN)
+	gaspayload, _, err := createPayment(gasAddr, gasAddr, ptnAmount, feeAmount, utxosPTN)
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, errors.New("fee createPayment  err")
 	}
 
 	//tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay1))
 
-	newtx := modules.NewTransaction(make([]*modules.Message, 0))
-	newtx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay1))
-
-	for _, msg := range tx.TxMessages() {
-		newtx.AddMessage(msg)
-	}
+	gasfeetx := modules.NewTransaction(make([]*modules.Message, 0))
+    gasfeetx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, gaspayload))
+	//for _, msg := range tx.TxMessages() {
+	//	newtx.AddMessage(msg)
+	//}
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
 		//TODO use keystore
 		ks := s.b.GetKeyStore()
-
 		return ks.GetPublicKey(addr)
 	}
 	getSignFn := func(addr common.Address, msg []byte) ([]byte, error) {
@@ -1935,50 +1975,48 @@ func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params str
 		return ks.SignMessage(addr, msg)
 	}
 
-	var addr common.Address
 	utxoLockScripts := make(map[modules.OutPoint][]byte)
-	for _, msg := range newtx.TxMessages() {
-		payload, ok := msg.Payload.(*modules.PaymentPayload)
-		if !ok {
-			continue
-		}
-		for _, txin := range payload.Inputs {
-			inpoint := modules.OutPoint{
-				TxHash:       txin.PreviousOutPoint.TxHash,
-				OutIndex:     txin.PreviousOutPoint.OutIndex,
-				MessageIndex: txin.PreviousOutPoint.MessageIndex,
-			}
-			uvu, eerr := s.b.GetUtxoEntry(&inpoint)
-			if eerr != nil {
-				log.Error(eerr.Error())
-				return ptnjson.SignRawTransactionResult{}, err
-			}
-			PkScriptHex := trimx(uvu.PkScriptHex)
-			utxoLockScripts[inpoint] = hexutil.MustDecode("0x" + PkScriptHex)
-			addr, err = tokenengine.Instance.GetAddressFromScript(hexutil.MustDecode(uvu.PkScriptHex))
-			if err != nil {
-				log.Error(err.Error())
-				return ptnjson.SignRawTransactionResult{}, errors.New("get addr FromScript is err")
-			}
-		}
+	
+	inpoint := modules.OutPoint{
+		TxHash:       gaspayload.Inputs[0].PreviousOutPoint.TxHash,
+		OutIndex:     gaspayload.Inputs[0].PreviousOutPoint.OutIndex,
+		MessageIndex: gaspayload.Inputs[0].PreviousOutPoint.MessageIndex,
 	}
-	err = unlockKS(s.b, addr, password, duration)
+	uvu, eerr := s.b.GetUtxoEntry(&inpoint)
+	if eerr != nil {
+		log.Error(eerr.Error())
+		return ptnjson.SignRawTransactionResult{}, err
+	}
+	PkScriptHex := trimx(uvu.PkScriptHex)
+	utxoLockScripts[inpoint] = hexutil.MustDecode("0x" + PkScriptHex)
+
+	err = unlockKS(s.b, gasAddr, password, duration)
 	if err != nil {
 		newErr := errors.New("get addr by outpoint get err:" + err.Error())
 		log.Error(newErr.Error())
 		return ptnjson.SignRawTransactionResult{}, err
 	}
 
-	//3.
-	signErrs, err := tokenengine.Instance.SignTxAllPaymentInput(newtx, 1, utxoLockScripts, nil, getPubKeyFn, getSignFn)
+    if Extra != "" {
+		textPayload := new(modules.DataPayload)
+		textPayload.Reference = []byte(Extra)
+		textPayload.MainData = []byte(Extra)
+		gasfeetx.AddMessage(modules.NewMessage(modules.APP_DATA, textPayload))
+	}
+
+	for _, msg := range tokentx.TxMessages() {
+		gasfeetx.AddMessage(msg)
+	}
+    //3.
+	signErrs, err := tokenengine.Instance.SignTxAllPaymentInput(gasfeetx, 1, utxoLockScripts, nil, getPubKeyFn, getSignFn)
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, err
 	}
-	//txJson, _ := json.Marshal(tx)
-	//log.DebugDynamic(func() string { return "SignedTx:" + string(txJson) })
-	//4.
-	//return submitTransaction(ctx, s.b, tx)
-	mtxbt, err := rlp.EncodeToBytes(newtx)
+
+	//resulttx := modules.NewTransaction(make([]*modules.Message, 0))
+	//resulttx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay1))
+
+	mtxbt, err := rlp.EncodeToBytes(gasfeetx)
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, err
 	}
@@ -1986,7 +2024,7 @@ func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params str
 	signErrors := make([]ptnjson.SignRawTransactionError, 0, len(signErrs))
 	return ptnjson.SignRawTransactionResult{
 		Hex:      signedHex,
-		Txid:     newtx.Hash().String(),
+		Txid:     gasfeetx.Hash().String(),
 		Complete: len(signErrors) == 0,
 		Errors:   signErrors,
 	}, err
