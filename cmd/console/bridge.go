@@ -239,16 +239,15 @@ func (b *bridge) SignRawTransaction(call otto.FunctionCall) (response otto.Value
 func (b *bridge) CreateTxWithOutFee(call otto.FunctionCall) (response otto.Value) {
 	// Make sure we have an account specified to unlock
 	if !call.Argument(0).IsString() {
-		throwJSException("first argument must be the rawtx to sign")
+		throwJSException("first argument must be the tokenId")
 	}
 	tokenId := call.Argument(0)
 
-	if !call.Argument(1).IsString() {
-		throwJSException("second argument must be the hashtype ")
+	if !call.Argument(1).IsString()||!call.Argument(2).IsString() {
+		throwJSException("second argument must be the tokenfrom ")
 	}
 	tokenfrom := call.Argument(1)
 	tokento   := call.Argument(2)
-	//to := call.Argument(3)
 	amount := call.Argument(3)
 	// If password is not given or is the null value, prompt the user for it
 	var password otto.Value
