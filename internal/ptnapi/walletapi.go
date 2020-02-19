@@ -1407,8 +1407,11 @@ func (s *PrivateWalletAPI) CreateTxWithOutFee(ctx context.Context, asset , fromS
     newtx := modules.NewTransaction(make([]*modules.Message, 0))
 	newtx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, payload))
     //3.
-    fromAddr, err := common.StringToAddress(from)
-    err = unlockKS(s.b, fromAddr, password, duration)
+    from_Addr, err := common.StringToAddress(from)
+    if err != nil {
+		return ptnjson.SignRawTransactionResult{}, err
+	}
+    err = unlockKS(s.b, from_Addr, password, duration)
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, err
 	}
