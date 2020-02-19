@@ -29,7 +29,7 @@ import (
 
 type RWSetBuilder struct {
 	pubRwBuilderMap map[string]*nsPubRwBuilder
-	locker          *sync.RWMutex
+	locker          sync.RWMutex
 }
 
 type nsPubRwBuilder struct {
@@ -44,7 +44,6 @@ type nsPubRwBuilder struct {
 func NewRWSetBuilder() *RWSetBuilder {
 	return &RWSetBuilder{
 		pubRwBuilderMap: make(map[string]*nsPubRwBuilder),
-		locker:          new(sync.RWMutex),
 	}
 }
 
