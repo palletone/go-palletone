@@ -550,7 +550,8 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 		log.Errorf("Init temp dag error:%s", err.Error())
 	}
 	txIndex := 0
-	for _, ctx := range p.mtx {
+	sortedRequest := SortTxs(p.mtx)
+	for _, ctx := range sortedRequest {
 		if !ctx.valid || ctx.reqTx == nil {
 			continue
 		}
@@ -613,6 +614,34 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 		index++
 	}
 	return nil
+}
+
+func SortTxs(txs map[common.Hash]*contractTx) []*contractTx {
+	sortedTxHash := []common.Hash{}
+	for hash, tx := range txs {
+		ops := tx.reqTx.GetSpendOutpoints()
+		inserted := false
+		for _, op := range ops {
+			for i, stx := range sortedTxHash {
+				if stx == op.TxHash {
+					sortedTxHash = append(append(sortedTxHash[:i+1], hash), sortedTxHash[i+1:]...)
+					inserted = true
+					break
+				}
+			}
+			if inserted {
+				break
+			}
+		}
+		if !inserted {
+			sortedTxHash = append(sortedTxHash, hash)
+		}
+	}
+	sortedTx := []*contractTx{}
+	for _, h := range sortedTxHash {
+		sortedTx = append(sortedTx, txs[h])
+	}
+	return sortedTx
 }
 
 func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transaction, execute bool) bool {

@@ -1084,3 +1084,33 @@ func (a *Addition) Key() string {
 	}
 	return hex.EncodeToString(a.Addr.Bytes21())
 }
+
+//传入一堆交易，按依赖关系进行排序，并根据UTXO的使用情况，分为3类Tx：
+//1.排序后的正常交易，2.孤儿交易，3.因为双花需要丢弃的交易
+func SortTxs(txs map[common.Hash]*Transaction, utxoFunc QueryUtxoFunc) ([]*Transaction, []*Transaction, []*Transaction) {
+	sortedTxHash := []common.Hash{}
+	for hash, tx := range txs {
+		ops := tx.GetSpendOutpoints()
+		inserted := false
+		for _, op := range ops {
+			for i, stx := range sortedTxHash {
+				if stx == op.TxHash {
+					sortedTxHash = append(append(sortedTxHash[:i+1], hash), sortedTxHash[i+1:]...)
+					inserted = true
+					break
+				}
+			}
+			if inserted {
+				break
+			}
+		}
+		if !inserted {
+			sortedTxHash = append(sortedTxHash, hash)
+		}
+	}
+	sortedTx := []*Transaction{}
+	for _, h := range sortedTxHash {
+		sortedTx = append(sortedTx, txs[h])
+	}
+	return sortedTx, nil, nil
+}

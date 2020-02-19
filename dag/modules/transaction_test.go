@@ -340,3 +340,56 @@ func TestAdditionJson(t *testing.T) {
 	data, _ := json.Marshal(income)
 	t.Log(string(data))
 }
+func TestSortTxs(t *testing.T) {
+	hash0 := common.BytesToHash([]byte("0"))
+	txA := newTestPaymentTx(hash0)
+	t.Logf("Tx A:%s", txA.Hash().String())
+	txB := newTestPaymentTx(txA.Hash())
+	t.Logf("Tx B:%s", txB.Hash().String())
+	txC := newTestPaymentTx(txB.Hash())
+	t.Logf("Tx C:%s", txC.Hash().String())
+	txD := newTestPaymentTx(txC.Hash())
+	t.Logf("Tx D:%s", txD.Hash().String())
+	txMap := make(map[common.Hash]*Transaction)
+	txMap[txA.Hash()] = txA
+	txMap[txB.Hash()] = txB
+	txMap[txC.Hash()] = txC
+	txMap[txD.Hash()] = txD
+	for hash := range txMap {
+		t.Logf("map order tx[%s]", hash.String())
+	}
+	t.Log("begin sort tx...")
+	sortedTx, _, _ := SortTxs(txMap, nil)
+	for _, tx := range sortedTx {
+		t.Logf("sorted tx[%s]", tx.Hash().String())
+	}
+	assert.Equal(t, txA.Hash(), sortedTx[0].Hash())
+	assert.Equal(t, txB.Hash(), sortedTx[1].Hash())
+	assert.Equal(t, txC.Hash(), sortedTx[2].Hash())
+	assert.Equal(t, txD.Hash(), sortedTx[3].Hash())
+}
+
+func newTestPaymentTx(preTxHash common.Hash) *Transaction {
+	pay1s := &PaymentPayload{
+		LockTime: 0,
+	}
+
+	output := NewTxOut(Ptn2Dao(10), []byte{0xee, 0xbb}, NewPTNAsset())
+	pay1s.AddTxOut(output)
+
+	input := Input{}
+	input.PreviousOutPoint = NewOutPoint(preTxHash, 0, 1)
+	input.SignatureScript = []byte{}
+	input.Extra = []byte("Test")
+
+	pay1s.AddTxIn(&input)
+
+	msg := &Message{
+		App:     APP_PAYMENT,
+		Payload: pay1s,
+	}
+	tx := newTransaction(
+		[]*Message{msg},
+	)
+	return tx
+}
