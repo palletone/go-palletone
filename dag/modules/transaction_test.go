@@ -342,7 +342,7 @@ func TestAdditionJson(t *testing.T) {
 }
 func TestSortTxs(t *testing.T) {
 	hash0 := common.BytesToHash([]byte("0"))
-	//hash1 := common.BytesToHash([]byte("1"))
+	hash1 := common.BytesToHash([]byte("1"))
 	txA := newTestPaymentTx(hash0)
 	t.Logf("Tx A:%s", txA.Hash().String())
 	txB := newTestPaymentTx(txA.Hash())
@@ -351,8 +351,10 @@ func TestSortTxs(t *testing.T) {
 	t.Logf("Tx C:%s", txC.Hash().String())
 	txD := newTestPaymentTx(txC.Hash())
 	t.Logf("Tx D:%s", txD.Hash().String())
+	txX := newTestPaymentTx(hash1)
+	t.Logf("Tx X:%s", txX.Hash().String())
 	txMap := make(map[common.Hash]*Transaction)
-
+	txMap[txX.Hash()] = txX
 	txMap[txC.Hash()] = txC
 	txMap[txB.Hash()] = txB
 	txMap[txD.Hash()] = txD
@@ -381,7 +383,7 @@ func TestSortTxs(t *testing.T) {
 		assert.Equal(t, txC.Hash().String(), sortedTx[2].Hash().String())
 		assert.Equal(t, txD.Hash().String(), sortedTx[3].Hash().String())
 	}
-	assert.Equal(t, 0, len(orphanTxs))
+	assert.Equal(t, 1, len(orphanTxs))
 	assert.Equal(t, 0, len(doubleSpendTxs))
 }
 

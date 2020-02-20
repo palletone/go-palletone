@@ -178,7 +178,7 @@ func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint, spentTxId common.Ha
 	//3 delete index
 	address, _ := utxodb.tokenEngine.GetAddressFromScript(utxo.PkScript[:])
 	utxodb.deleteUtxoOutpoint(address, outpoint)
-	log.Debugf("db[req=%t] delete utxo by key:%s, spend by tx[%s]", utxodb.isRequest, outpoint.String(), spentTxId.String())
+	log.Debugf("DB[%p,req=%t] delete utxo by key:%s, spend by tx[%s]", utxodb.db, utxodb.isRequest, outpoint.String(), spentTxId.String())
 	return nil
 }
 
