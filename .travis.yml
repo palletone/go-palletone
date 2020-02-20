@@ -49,7 +49,7 @@ matrix:
   include:
     - os: linux
       dist: xenial
-      go: 1.12.x
+      go: 1.13.x
       env: UT
       script:
         # - go get github.com/mattn/goveralls
