@@ -28,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
 )
 
@@ -228,12 +229,11 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 		log.Errorf("MaybeProduceUnit NewRwSetMgr err: %v", err.Error())
 		return ExceptionProducing, detail
 	}
-
+	defer rwM.Close()
 	if err := mp.ptn.ContractProcessor().AddContractLoop(rwM, mp.ptn.TxPool(), scheduledMediator, ks); err != nil {
 		log.Debugf("MaybeProduceUnit RunContractLoop err: %v", err.Error())
 	}
 	// close tx simulator (系统合约)
-	rwM.Close()
 
 	//广播节点选取签名请求事件
 	go mp.ptn.ContractProcessor().BroadcastElectionSigRequestEvent()
@@ -246,8 +246,61 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 			log.Debugf("the groupPubKey is nil")
 		}
 	}
-
-	newUnit, err := dag.GenerateUnit(scheduledTime, scheduledMediator, groupPubKey, ks, mp.ptn.TxPool())
+	// 3.从TxPool抓取排序后的Tx，如果是系统合约请求，则执行
+	txpool := mp.ptn.TxPool()
+	p := mp.ptn.ContractProcessor()
+	poolTxs, _ := txpool.GetSortedTxs(common.Hash{}, unitNumber)
+	log.DebugDynamic(func() string {
+		txHash := ""
+		for _, tx := range poolTxs {
+			txHash += tx.Tx.Hash().String() + ";"
+		}
+		return "txpool GetSortedTxs return:" + txHash
+	})
+	//TODO Jay 这里的txpool.GetSortedTxs返回顺序有问题，所以再次排序
+	poolTxMap := make(map[common.Hash]*modules.Transaction)
+	for _, ptx := range poolTxs {
+		poolTxMap[ptx.Tx.Hash()] = ptx.Tx
+	}
+	sortedTxs, _, _ := modules.SortTxs(poolTxMap, mp.dag.GetUtxoEntry)
+	log.DebugDynamic(func() string {
+		txHash := ""
+		for _, tx := range sortedTxs {
+			txHash += tx.Hash().String() + ";"
+		}
+		return "modules.SortTxs return:" + txHash
+	})
+	//创建TempDAG，用于临时存储Tx执行的结果
+	tempDag, err := mp.dag.NewTemp()
+	log.Debug("create a new tempDag for generate unit")
+	if err != nil {
+		log.Errorf("Init temp dag error:%s", err.Error())
+	}
+	tx4Pack := []*modules.Transaction{}
+	for i, tx := range sortedTxs {
+		log.Debugf("pack tx[%s] into unit[#%d]", tx.RequestHash().String(), unitNumber)
+		if tx.IsSystemContract() && tx.IsNewContractInvokeRequest() { //是未执行的系统合约
+			signedTx, err := p.RunAndSignTx(tx, rwM, tempDag, scheduledMediator, ks)
+			if err != nil {
+				log.Errorf("run contract request[%s] fail:%s", tx.Hash(), err.Error())
+				continue
+			}
+			err = tempDag.SaveTransaction(signedTx, i+1) //第0条是Coinbase
+			if err != nil {
+				log.Errorf("save tx[%s] req[%s] get error:%s", signedTx.Hash().String(),
+					signedTx.RequestHash().String(), err.Error())
+			}
+			tx4Pack = append(tx4Pack, signedTx)
+		} else { //不需要执行，直接打包
+			err = tempDag.SaveTransaction(tx, i+1)
+			if err != nil {
+				log.Errorf("save tx[%s] req[%s] get error:%s", tx.Hash().String(),
+					tx.RequestHash().String(), err.Error())
+			}
+			tx4Pack = append(tx4Pack, tx)
+		}
+	}
+	newUnit, err := dag.GenerateUnit(scheduledTime, scheduledMediator, groupPubKey, ks, tx4Pack, txpool)
 	if err != nil {
 		detail["Msg"] = fmt.Sprintf("GenerateUnit err: %v", err.Error())
 		return ExceptionProducing, detail

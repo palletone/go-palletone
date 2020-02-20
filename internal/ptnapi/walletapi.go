@@ -825,7 +825,7 @@ func (s *PublicWalletAPI) GetAddrTokenFlow(ctx context.Context, addr string, tok
 //sign rawtranscation
 //create raw transction
 func (s *PrivateWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to string, amount,
-password string, duration *uint32) (common.Hash, error) {
+	password string, duration *uint32) (common.Hash, error) {
 	//var LockTime int64
 	LockTime := int64(0)
 
@@ -1118,11 +1118,11 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 		return common.Hash{}, err
 	}
 	//save tx to memory dag
-	err = saveTransaction2mDag(rawTx)
-	if err != nil {
-		log.Errorf("CcinvokeToken err:%s", err.Error())
-		return common.Hash{}, err
-	}
+	//err = saveTransaction2mDag(rawTx)
+	//if err != nil {
+	//	log.Errorf("CcinvokeToken err:%s", err.Error())
+	//	return common.Hash{}, err
+	//}
 
 	log.Debugf("sign raw tx spend:%v", time.Since(start))
 	//4. send

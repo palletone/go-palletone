@@ -512,7 +512,37 @@ func (p *Processor) GenContractSigTransaction(signer common.Address, password st
 
 	return tx, nil
 }
+func (p *Processor) RunAndSignTx(reqTx *modules.Transaction, txMgr rwset.TxManager, dag dboperation.IContractDag,
+	mediatorAddr common.Address, ks *keystore.KeyStore) (*modules.Transaction, error) {
+	cctx := &contracts.ContractProcessContext{
+		RequestId:    reqTx.RequestHash(),
+		Dag:          dag,
+		Ele:          nil,
+		RwM:          txMgr,
+		Contract:     p.contract,
+		ErrMsgEnable: p.errMsgEnable,
+	}
+	reqId := reqTx.Hash()
+	msgs, err := runContractCmd(cctx, reqTx) //contract exec long time...
+	if err != nil {
+		log.Errorf("[%s]runContractReq, runContractCmd reqTx, err：%s", shortId(reqId.String()), err.Error())
+		return nil, err
+	}
+	p.locker.Lock()
+	defer p.locker.Unlock()
 
+	tx, err := p.GenContractTransaction(reqTx, msgs)
+	if err != nil {
+		log.Error("[%s]runContractReq, GenContractSigTransactions error:%s", shortId(reqId.String()), err.Error())
+		return nil, err
+	}
+	sigTx, err := p.GenContractSigTransaction(mediatorAddr, "", tx, ks, dag.GetUtxoEntry)
+	if err != nil {
+		log.Error("GenContractSigTransctions", "error", err.Error())
+		return nil, err
+	}
+	return sigTx, nil
+}
 func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool, addr common.Address,
 	ks *keystore.KeyStore) error {
 	setChainId := modules.ContractChainId
@@ -542,6 +572,9 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 	}
 	for _, ctx := range sortedContractTx {
 		if !ctx.valid || ctx.reqTx == nil {
+			continue
+		}
+		if ctx.reqTx.IsSystemContract() { //系统合约的调用走普通打包流程
 			continue
 		}
 		reqId := ctx.reqTx.RequestHash()

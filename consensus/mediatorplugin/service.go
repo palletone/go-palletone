@@ -28,12 +28,14 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
+	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/consensus/jury"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/node"
+	"github.com/palletone/go-palletone/dag/dboperation"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/txspool"
 	"go.dedis.ch/kyber/v3"
@@ -69,7 +71,7 @@ type iDag interface {
 	IsActiveMediator(add common.Address) bool
 
 	GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte, ks *keystore.KeyStore,
-		txpool txspool.ITxPool) (*modules.Unit, error)
+		txs []*modules.Transaction, txpool txspool.ITxPool) (*modules.Unit, error)
 
 	IsPrecedingMediator(add common.Address) bool
 	IsIrreversibleUnit(hash common.Hash) (bool, error)
@@ -92,6 +94,19 @@ type iDag interface {
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
 	GetContractState(contractid []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
+	GetDb() ptndb.Database
+	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
+	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
+	GetContract(id []byte) (*modules.Contract, error)
+	GetChainParameters() *core.ChainParameters
+	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
+	GetContractTplCode(tplId []byte) ([]byte, error)
+	SaveTransaction(tx *modules.Transaction, txIndex int) error
+	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
+	GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract
+	SaveContract(contract *modules.Contract) error
+	GetImmutableChainParameters() *core.ImmutableChainParameters
+	NewTemp() (dboperation.IContractDag, error)
 }
 
 type MediatorPlugin struct {

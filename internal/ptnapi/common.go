@@ -7,16 +7,13 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
-	"github.com/palletone/go-palletone/dag"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
@@ -94,11 +91,11 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 
 	//构造转移PTN的Message0
 	var dbUtxos map[modules.OutPoint]*modules.Utxo
-	if useMemoryDag && cacheTx != nil && cacheTx.mdag != nil {
-		dbUtxos, err = getAddrUtxofrommDag(fromAddr)
-	} else {
-		dbUtxos, err = b.Dag().GetAddrUtxos(fromAddr)
-	}
+	//if useMemoryDag && cacheTx != nil && cacheTx.mdag != nil {
+	//	dbUtxos, err = getAddrUtxofrommDag(fromAddr)
+	//} else {
+	dbUtxos, err = b.Dag().GetAddrUtxos(fromAddr)
+	//}
 	if err != nil {
 		return nil, nil, fmt.Errorf("GetAddrRawUtxos utxo err")
 	}
@@ -209,178 +206,179 @@ func signRawTransaction(b Backend, rawTx *modules.Transaction, fromStr, password
 
 // submitTransaction is a helper function that submits tx to txPool and logs a message.
 func submitTransaction(ctx context.Context, b Backend, tx *modules.Transaction) (common.Hash, error) {
-	if tx.IsNewContractInvokeRequest() {
+	if tx.IsNewContractInvokeRequest() && !tx.IsSystemContract() {
 		reqId, err := b.SendContractInvokeReqTx(tx)
 		return reqId, err
 	}
-
+	//普通交易和系统合约交易，走交易池
 	if err := b.SendTx(ctx, tx); err != nil {
 		return common.Hash{}, err
 	}
 	return tx.Hash(), nil
 }
 
-type synCacheTx struct {
-	lock sync.RWMutex
-	txs  map[common.Hash]bool //txHash or reqId,  contract or not
-	mdag dag.IDag
-}
-
-var cacheTx *synCacheTx
-
-func updateDag(b Backend, trs []*modules.Transaction) error {
-	log.Debugf("updateDag enter, transaction num:%d, cacheTx num:%d", len(trs), len(cacheTx.txs))
-
-	//for idx, tx := range trs {
-	//	if tx.IsContractTx() {
-	//		log.Debugf("updateDag, is     contract Tx,index[%d]---tx[%s]", idx, tx.RequestHash().String())
-	//	} else {
-	//		log.Debugf("updateDag, is not contract Tx,index[%d]---tx[%s]", idx, tx.Hash().String())
-	//	}
-	//}
-
-	cacheTx.lock.Lock()
-	defer cacheTx.lock.Unlock()
-
-	//基于最新单元重新构建新的临时内存数据库
-	log.Debug("create new tempdb and dag for api")
-	tempdb, err := ptndb.NewTempdb(b.Dag().GetDb())
-	if err != nil {
-		msg := fmt.Sprintf("updateDag, NewTempdb error:%s", err.Error())
-		log.Error(msg)
-		return errors.New(msg)
-	}
-	newDag, err := dag.NewDagSimple(tempdb)
-	if err != nil {
-		msg := fmt.Sprintf("updateDag, NewDagSimple error:%s", err.Error())
-		log.Error(msg)
-		return errors.New(msg)
-	}
-
-	//将原来内存数据库中的未确认的交易添加到新的内存数据库中
-	for _, tx := range trs {
-		var txHash common.Hash
-		if tx.IsContractTx() {
-			txHash = tx.RequestHash()
-		} else {
-			txHash = tx.Hash()
-		}
-		if _, ok := cacheTx.txs[txHash]; ok {
-			log.Debugf("updateDag, delete tx[%s] from cache", txHash.String())
-			delete(cacheTx.txs, txHash)
-		}
-	}
-	oldDag := cacheTx.mdag
-	var unitInfo *modules.TransactionWithUnitInfo
-	for txHash, isContract := range cacheTx.txs {
-		if isContract {
-			unitInfo, err = oldDag.GetTxByReqId(txHash)
-			if err != nil {
-				log.Warnf("updateDag, GetTxByReqId[%s] err:%s", txHash.String(), err.Error())
-			}
-		} else {
-			unitInfo, err = oldDag.GetTransaction(txHash)
-			if err != nil {
-				log.Warnf("updateDag, GetTransaction[%s] err:%s", txHash.String(), err.Error())
-			}
-		}
-		if unitInfo != nil {
-			log.Debugf("updateDag, SaveTransaction tx[%s]", txHash.String())
-			err := newDag.SaveTransaction(unitInfo.Transaction, 0)
-			if err != nil {
-				log.Errorf("updateDag, SaveTransaction tx[%s] err:%s", txHash.String(), err.Error())
-				//return err
-				continue
-			}
-		}
-	}
-
-	//删除原来的内存数据库
-	cacheTx.mdag = newDag
-	//log.Debug("updateDag, ok")
-	return nil
-}
-
-var synDagInited = false
-
-func synDag(b Backend) error {
-	log.Debug("synDag enter")
-	if synDagInited {
-		return nil
-	}
-	cacheTx = &synCacheTx{
-		txs:  make(map[common.Hash]bool),
-		mdag: b.Dag(),
-	}
-
-	rcvDag := b.Dag()
-	headCh := make(chan modules.SaveUnitEvent, 10)
-	defer close(headCh)
-	headSub := rcvDag.SubscribeSaveUnitEvent(headCh)
-	defer headSub.Unsubscribe()
-
-	synDagInited = true
-	for {
-		select {
-		case u := <-headCh:
-			log.Debugf("synDag, SubscribeSaveUnitEvent received unit:%s, tx number:%d",
-				u.Unit.DisplayId(), len(u.Unit.Txs))
-			err := updateDag(b, u.Unit.Transactions())
-			if err != nil {
-				log.Warnf("synDag, SaveUnitEvent unit number[%s] updateDag err:%s", u.Unit.DisplayId(), err.Error())
-			}
-		case err := <-headSub.Err():
-			return err
-		}
-	}
-}
-
-func saveTransaction2mDag(tx *modules.Transaction) error {
-	if cacheTx != nil && cacheTx.mdag != nil {
-		cacheTx.lock.Lock()
-		defer cacheTx.lock.Unlock()
-
-		if !checkTxContinuous(cacheTx.mdag, tx) {
-			log.Errorf("saveTransaction2mDag, tx[%s] checkTxContinuous false", tx.RequestHash().String())
-		}
-
-		var txHash common.Hash
-		if tx.IsNewContractInvokeRequest() {
-			txHash = tx.RequestHash()
-			log.Debugf("saveTransaction2Mdag, save contract transaction:%s", txHash.String())
-		} else {
-			txHash = tx.Hash()
-			log.Debugf("saveTransaction2Mdag, save transaction:%s", txHash.String())
-		}
-		err := cacheTx.mdag.SaveTransaction(tx, 0)
-		if err != nil {
-			return fmt.Errorf("saveTransaction2Mdag,SaveTransaction[%s] err:%s", txHash.String(), err.Error())
-		}
-		cacheTx.txs[txHash] = tx.IsContractTx()
-		return nil
-	}
-	return errors.New("saveTransaction2Mdag, no mdag")
-}
-func checkTxContinuous(dag dag.IDag, tx *modules.Transaction) bool {
-	msgs := tx.TxMessages()
-	lenTxMsgs := len(msgs)
-	if lenTxMsgs > 0 {
-		msg0 := msgs[0].Payload.(*modules.PaymentPayload)
-		log.Debugf("checkTxContinuous tx[%s], PreviousOutPoint:%v", tx.RequestHash().String(), msg0.Inputs[0].PreviousOutPoint)
-		invokeAddr, err := dag.GetAddrByOutPoint(msg0.Inputs[0].PreviousOutPoint)
-		if err != nil {
-			log.Debugf("checkTxContinuous tx[%s], err:%s", tx.RequestHash().String(), err.Error())
-			return false
-		}
-		log.Debugf("checkTxContinuous tx[%s],invokeAddr[%s] ok", tx.RequestHash().String(), invokeAddr.String())
-	}
-	return true
-}
-func getAddrUtxofrommDag(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error) {
-	if cacheTx != nil && cacheTx.mdag != nil {
-		cacheTx.lock.Lock()
-		defer cacheTx.lock.Unlock()
-		return cacheTx.mdag.GetAddrUtxos(addr)
-	}
-	return nil, errors.New("no mdag")
-}
+//
+//type synCacheTx struct {
+//	lock sync.RWMutex
+//	txs  map[common.Hash]bool //txHash or reqId,  contract or not
+//	mdag dag.IDag
+//}
+//
+//var cacheTx *synCacheTx
+//
+//func updateDag(b Backend, trs []*modules.Transaction) error {
+//	log.Debugf("updateDag enter, transaction num:%d, cacheTx num:%d", len(trs), len(cacheTx.txs))
+//
+//	//for idx, tx := range trs {
+//	//	if tx.IsContractTx() {
+//	//		log.Debugf("updateDag, is     contract Tx,index[%d]---tx[%s]", idx, tx.RequestHash().String())
+//	//	} else {
+//	//		log.Debugf("updateDag, is not contract Tx,index[%d]---tx[%s]", idx, tx.Hash().String())
+//	//	}
+//	//}
+//
+//	cacheTx.lock.Lock()
+//	defer cacheTx.lock.Unlock()
+//
+//	//基于最新单元重新构建新的临时内存数据库
+//	log.Debug("create new tempdb and dag for api")
+//	tempdb, err := ptndb.NewTempdb(b.Dag().GetDb())
+//	if err != nil {
+//		msg := fmt.Sprintf("updateDag, NewTempdb error:%s", err.Error())
+//		log.Error(msg)
+//		return errors.New(msg)
+//	}
+//	newDag, err := dag.NewDagSimple(tempdb)
+//	if err != nil {
+//		msg := fmt.Sprintf("updateDag, NewDagSimple error:%s", err.Error())
+//		log.Error(msg)
+//		return errors.New(msg)
+//	}
+//
+//	//将原来内存数据库中的未确认的交易添加到新的内存数据库中
+//	for _, tx := range trs {
+//		var txHash common.Hash
+//		if tx.IsContractTx() {
+//			txHash = tx.RequestHash()
+//		} else {
+//			txHash = tx.Hash()
+//		}
+//		if _, ok := cacheTx.txs[txHash]; ok {
+//			log.Debugf("updateDag, delete tx[%s] from cache", txHash.String())
+//			delete(cacheTx.txs, txHash)
+//		}
+//	}
+//	oldDag := cacheTx.mdag
+//	var unitInfo *modules.TransactionWithUnitInfo
+//	for txHash, isContract := range cacheTx.txs {
+//		if isContract {
+//			unitInfo, err = oldDag.GetTxByReqId(txHash)
+//			if err != nil {
+//				log.Warnf("updateDag, GetTxByReqId[%s] err:%s", txHash.String(), err.Error())
+//			}
+//		} else {
+//			unitInfo, err = oldDag.GetTransaction(txHash)
+//			if err != nil {
+//				log.Warnf("updateDag, GetTransaction[%s] err:%s", txHash.String(), err.Error())
+//			}
+//		}
+//		if unitInfo != nil {
+//			log.Debugf("updateDag, SaveTransaction tx[%s]", txHash.String())
+//			err := newDag.SaveTransaction(unitInfo.Transaction, 0)
+//			if err != nil {
+//				log.Errorf("updateDag, SaveTransaction tx[%s] err:%s", txHash.String(), err.Error())
+//				//return err
+//				continue
+//			}
+//		}
+//	}
+//
+//	//删除原来的内存数据库
+//	cacheTx.mdag = newDag
+//	//log.Debug("updateDag, ok")
+//	return nil
+//}
+//
+//var synDagInited = false
+//
+//func synDag(b Backend) error {
+//	log.Debug("synDag enter")
+//	if synDagInited {
+//		return nil
+//	}
+//	cacheTx = &synCacheTx{
+//		txs:  make(map[common.Hash]bool),
+//		mdag: b.Dag(),
+//	}
+//
+//	rcvDag := b.Dag()
+//	headCh := make(chan modules.SaveUnitEvent, 10)
+//	defer close(headCh)
+//	headSub := rcvDag.SubscribeSaveUnitEvent(headCh)
+//	defer headSub.Unsubscribe()
+//
+//	synDagInited = true
+//	for {
+//		select {
+//		case u := <-headCh:
+//			log.Debugf("synDag, SubscribeSaveUnitEvent received unit:%s, tx number:%d",
+//				u.Unit.DisplayId(), len(u.Unit.Txs))
+//			err := updateDag(b, u.Unit.Transactions())
+//			if err != nil {
+//				log.Warnf("synDag, SaveUnitEvent unit number[%s] updateDag err:%s", u.Unit.DisplayId(), err.Error())
+//			}
+//		case err := <-headSub.Err():
+//			return err
+//		}
+//	}
+//}
+//
+//func saveTransaction2mDag(tx *modules.Transaction) error {
+//	if cacheTx != nil && cacheTx.mdag != nil {
+//		cacheTx.lock.Lock()
+//		defer cacheTx.lock.Unlock()
+//
+//		if !checkTxContinuous(cacheTx.mdag, tx) {
+//			log.Errorf("saveTransaction2mDag, tx[%s] checkTxContinuous false", tx.RequestHash().String())
+//		}
+//
+//		var txHash common.Hash
+//		if tx.IsNewContractInvokeRequest() {
+//			txHash = tx.RequestHash()
+//			log.Debugf("saveTransaction2Mdag, save contract transaction:%s", txHash.String())
+//		} else {
+//			txHash = tx.Hash()
+//			log.Debugf("saveTransaction2Mdag, save transaction:%s", txHash.String())
+//		}
+//		err := cacheTx.mdag.SaveTransaction(tx, 0)
+//		if err != nil {
+//			return fmt.Errorf("saveTransaction2Mdag,SaveTransaction[%s] err:%s", txHash.String(), err.Error())
+//		}
+//		cacheTx.txs[txHash] = tx.IsContractTx()
+//		return nil
+//	}
+//	return errors.New("saveTransaction2Mdag, no mdag")
+//}
+//func checkTxContinuous(dag dag.IDag, tx *modules.Transaction) bool {
+//	msgs := tx.TxMessages()
+//	lenTxMsgs := len(msgs)
+//	if lenTxMsgs > 0 {
+//		msg0 := msgs[0].Payload.(*modules.PaymentPayload)
+//		log.Debugf("checkTxContinuous tx[%s], PreviousOutPoint:%v", tx.RequestHash().String(), msg0.Inputs[0].PreviousOutPoint)
+//		invokeAddr, err := dag.GetAddrByOutPoint(msg0.Inputs[0].PreviousOutPoint)
+//		if err != nil {
+//			log.Debugf("checkTxContinuous tx[%s], err:%s", tx.RequestHash().String(), err.Error())
+//			return false
+//		}
+//		log.Debugf("checkTxContinuous tx[%s],invokeAddr[%s] ok", tx.RequestHash().String(), invokeAddr.String())
+//	}
+//	return true
+//}
+//func getAddrUtxofrommDag(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error) {
+//	if cacheTx != nil && cacheTx.mdag != nil {
+//		cacheTx.lock.Lock()
+//		defer cacheTx.lock.Unlock()
+//		return cacheTx.mdag.GetAddrUtxos(addr)
+//	}
+//	return nil, errors.New("no mdag")
+//}

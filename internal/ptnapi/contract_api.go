@@ -56,7 +56,7 @@ type PublicContractAPI struct {
 }
 
 func NewPublicContractAPI(b Backend) *PublicContractAPI {
-	go synDag(b)
+	//go synDag(b)
 	return &PublicContractAPI{b}
 }
 
@@ -285,15 +285,15 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 	}
 	//4. send
 	reqId, err := submitTransaction(ctx, s.b, tx)
-	if err != nil{
+	if err != nil {
 		log.Errorf("CcinvokeToken, submitTransaction err:%s", err.Error())
 		return nil, err
 	}
-	err = saveTransaction2mDag(tx)
-	if err != nil {
-		log.Errorf("CcinvokeToken err:%s", err.Error())
-		return nil, err
-	}
+	//err = saveTransaction2mDag(tx)
+	//if err != nil {
+	//	log.Errorf("CcinvokeToken err:%s", err.Error())
+	//	return nil, err
+	//}
 
 	//reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, daoAmount, daoFee, intCertID, contractAddr, args, uint32(timeout64))
 	//log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(reqId[:]))

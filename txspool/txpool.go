@@ -488,7 +488,7 @@ func (pool *TxPool) validateTx(tx *TxPoolTransaction, local bool) ([]*modules.Ad
 	//if local {
 	//}
 
-	return pool.txValidator.ValidateTx(tx.Tx, true)
+	return pool.txValidator.ValidateTx(tx.Tx, !tx.Tx.IsNewContractInvokeRequest())
 }
 func (pool *TxPool) getTxFeeAllocate(tx *modules.Transaction) ([]*modules.Addition, error) {
 	feeAllocate, err := tx.GetTxFeeAllocate(pool.GetUtxoEntry,
@@ -656,6 +656,7 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *TxPoolTransaction, number, i
 			tx.TxFee = append(tx.TxFee, &modules.Addition{Amount: amount.Amount, Asset: amount.Asset})
 		}
 	}
+	//TODO Devin 在打包交易后setPendingTx会在此找不到UTXO
 	pool.setPriorityLvl(tx)
 	interTx, has := pool.all.Load(tx_hash)
 	if has {
@@ -690,10 +691,10 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *TxPoolTransaction, number, i
 // the sender as a local one in the mean time, ensuring it goes around the local
 // pricing constraints.
 func (pool *TxPool) AddLocal(tx *modules.Transaction) error {
-	if tx.IsNewContractInvokeRequest() { //Request不能进入交易池
-		log.Infof("Tx[%s] is a request, do not allow add to txpool", tx.Hash().String())
-		return nil
-	}
+	//if tx.IsNewContractInvokeRequest() { //Request不能进入交易池
+	//	log.Infof("Tx[%s] is a request, do not allow add to txpool", tx.Hash().String())
+	//	return nil
+	//}
 	pool_tx := TxtoTxpoolTx(tx)
 	return pool.addLocal(pool_tx)
 }
@@ -1495,6 +1496,9 @@ func (pool *TxPool) SetPendingTxs(unit_hash common.Hash, num uint64, txs []*modu
 func (pool *TxPool) setPendingTx(unit_hash common.Hash, tx *modules.Transaction, number, index uint64) error {
 	hash := tx.Hash()
 	// in all pool
+	if tx.IsSystemContract() {
+		hash = tx.RequestHash()
+	}
 	if interTx, has := pool.all.Load(hash); has {
 		tx := interTx.(*TxPoolTransaction)
 		tx.Pending = true
@@ -1695,7 +1699,7 @@ func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
 			if ok {
 				for _, input := range payment.Inputs {
 					if input.PreviousOutPoint != nil {
-						utxo, err := pool.unit.GetUtxoEntry(input.PreviousOutPoint)
+						utxo, err := pool.GetUtxoEntry(input.PreviousOutPoint)
 						if err == nil && utxo != nil {
 							continue
 						}

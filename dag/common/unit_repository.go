@@ -38,13 +38,11 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 
-	"github.com/palletone/go-palletone/contracts/syscontract"
-	"github.com/palletone/go-palletone/tokenengine"
-	"github.com/palletone/go-palletone/txspool"
-
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/parameter"
+	"github.com/palletone/go-palletone/tokenengine"
 )
 
 type IUnitRepository interface {
@@ -53,7 +51,7 @@ type IUnitRepository interface {
 	//GenesisHeight() modules.ChainIndex
 	SaveUnit(unit *modules.Unit, isGenesis bool) error
 	SaveTransaction(tx *modules.Transaction, txIndex int) error
-	CreateUnit(mediatorReward common.Address, txpool txspool.ITxPool, when time.Time,
+	CreateUnit(mediatorReward common.Address, txs []*modules.Transaction, when time.Time,
 		propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc) (*modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
@@ -525,7 +523,7 @@ create common unit
 @param mAddr is minner addr
 return: correct if error is nil, and otherwise is incorrect
 */
-func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txspool.ITxPool,
+func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txs2 []*modules.Transaction,
 	when time.Time, propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc) (*modules.Unit, error) {
 	log.Debug("create unit lock unitRepository.")
 	rep.lock.RLock()
@@ -555,19 +553,19 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 	//	log.Debug(errStr)
 	//	return nil, fmt.Errorf(errStr)
 	//}
-	h_hash := header.HashWithOutTxRoot()
+	//h_hash := header.HashWithOutTxRoot()
 
 	log.Debugf("Start txpool.GetSortedTxs..., parent hash:%s", phash.String())
 
 	// step4. get transactions from txspool
-	poolTxs, _ := txpool.GetSortedTxs(h_hash, chainIndex.Index)
+	//poolTxs, _ := txpool.GetSortedTxs(h_hash, chainIndex.Index)
 
 	// step5. compute minner income: transaction fees + interest
 	//交易费用(包含利息)
-	txs2 := []*modules.Transaction{}
-	for _, tx := range poolTxs {
-		txs2 = append(txs2, tx.Tx)
-	}
+	//txs2 := []*modules.Transaction{}
+	//for _, tx := range poolTxs {
+	//	txs2 = append(txs2, tx.Tx)
+	//}
 	ads, err := rep.ComputeTxFeesAllocate(mediatorReward, txs2, getJurorRewardFunc)
 	if err != nil {
 		txs2Ids := ""
@@ -575,12 +573,11 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 			txs2Ids += tx.Hash().String() + ","
 		}
 
-		pooltxStatusStr := ""
-		for txid, pooltx := range txpool.AllTxpoolTxs() {
-			pooltxStatusStr += txid.String() + ":UnitHash[" + pooltx.UnitHash.String() + "];"
-		}
-		log.Error("CreateUnit", "ComputeTxFees is failed, error", err.Error(), "txs in this unit", txs2Ids,
-			"pool all tx:", pooltxStatusStr)
+		//pooltxStatusStr := ""
+		//for txid, pooltx := range txpool.AllTxpoolTxs() {
+		//	pooltxStatusStr += txid.String() + ":UnitHash[" + pooltx.UnitHash.String() + "];"
+		//}
+		log.Error("CreateUnit", "ComputeTxFees is failed, error", err.Error(), "txs in this unit", txs2Ids)
 		return nil, err
 	}
 
@@ -606,9 +603,9 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 	illegalTxs := make([]uint16, 0)
 	// step6 get unit's txs in txpool's txs
 	//TODO must recover
-	if len(poolTxs) > 0 {
-		for idx, tx := range poolTxs {
-			t := tx.Tx
+	if len(txs2) > 0 {
+		for idx, t := range txs2 {
+
 			reqId := t.RequestHash()
 			//如果是合约的连续调用，可能存在读集版本的高度问题，这里进行修正。
 
