@@ -1088,29 +1088,77 @@ func (a *Addition) Key() string {
 //传入一堆交易，按依赖关系进行排序，并根据UTXO的使用情况，分为3类Tx：
 //1.排序后的正常交易，2.孤儿交易，3.因为双花需要丢弃的交易
 func SortTxs(txs map[common.Hash]*Transaction, utxoFunc QueryUtxoFunc) ([]*Transaction, []*Transaction, []*Transaction) {
-	sortedTxHash := []common.Hash{}
+	sortedTxs := make([]*Transaction, 0)
+	doubleSpendTxs := make([]*Transaction, 0)
+	orphanTxs := make([]*Transaction, 0)
+	map_pretxs := make(map[common.Hash]int)
+	map_utxos := make(map[*OutPoint]common.Hash)
 	for hash, tx := range txs {
 		ops := tx.GetSpendOutpoints()
-		inserted := false
+		isOrphan := false
 		for _, op := range ops {
-			for i, stx := range sortedTxHash {
-				if stx == op.TxHash {
-					sortedTxHash = append(append(sortedTxHash[:i+1], hash), sortedTxHash[i+1:]...)
-					inserted = true
+			if _, ok := txs[op.TxHash]; !ok {
+				if _, err := utxoFunc(op); err != nil {
+					orphanTxs = append(orphanTxs, tx)
+					isOrphan = true
 					break
 				}
 			}
-			if inserted {
+
+			if _, has := map_utxos[op]; has {
+				doubleSpendTxs = append(doubleSpendTxs, tx)
+				break
+			}
+
+			map_utxos[op] = hash
+		}
+		if !isOrphan {
+			pre_txs := tx.GetPrecusorTxs(txs)
+			for i, tx := range pre_txs {
+				if _, has := map_pretxs[tx.Hash()]; !has {
+					map_pretxs[tx.Hash()] = i
+					sortedTxs = append(sortedTxs, tx)
+				}
+			}
+		}
+	}
+	//  重构孤儿交易列表
+	for _, otx := range orphanTxs {
+		for i, stx := range sortedTxs {
+			if otx.Hash() == stx.Hash() {
+				orphanTxs = append(orphanTxs, sortedTxs[i+1:]...)
 				break
 			}
 		}
-		if !inserted {
-			sortedTxHash = append(sortedTxHash, hash)
+	}
+	return sortedTxs, orphanTxs, doubleSpendTxs
+}
+
+func (tx *Transaction) GetPrecusorTxs(poolTxs map[common.Hash]*Transaction) []*Transaction {
+	pretxs := make([]*Transaction, 0)
+	for _, msg := range tx.Messages() {
+		if msg.App == APP_PAYMENT {
+			payment, ok := msg.Payload.(*PaymentPayload)
+			if ok {
+				for _, input := range payment.Inputs {
+					if input.PreviousOutPoint != nil {
+						sort_tx, has := poolTxs[input.PreviousOutPoint.TxHash]
+						if !has {
+							continue
+						}
+						if sort_tx != nil {
+							list := sort_tx.GetPrecusorTxs(poolTxs)
+							if len(list) > 0 {
+								pretxs = append(pretxs, list...)
+							}
+							pretxs = append(pretxs, sort_tx)
+						}
+					}
+				}
+			}
 		}
 	}
-	sortedTx := []*Transaction{}
-	for _, h := range sortedTxHash {
-		sortedTx = append(sortedTx, txs[h])
-	}
-	return sortedTx, nil, nil
+	//返回自己
+	pretxs = append(pretxs, tx)
+	return pretxs
 }

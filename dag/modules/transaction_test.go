@@ -342,6 +342,7 @@ func TestAdditionJson(t *testing.T) {
 }
 func TestSortTxs(t *testing.T) {
 	hash0 := common.BytesToHash([]byte("0"))
+	hash1 := common.BytesToHash([]byte("1"))
 	txA := newTestPaymentTx(hash0)
 	t.Logf("Tx A:%s", txA.Hash().String())
 	txB := newTestPaymentTx(txA.Hash())
@@ -351,22 +352,36 @@ func TestSortTxs(t *testing.T) {
 	txD := newTestPaymentTx(txC.Hash())
 	t.Logf("Tx D:%s", txD.Hash().String())
 	txMap := make(map[common.Hash]*Transaction)
-	txMap[txA.Hash()] = txA
-	txMap[txB.Hash()] = txB
+
 	txMap[txC.Hash()] = txC
+	txMap[txB.Hash()] = txB
 	txMap[txD.Hash()] = txD
+	txMap[txA.Hash()] = txA
 	for hash := range txMap {
 		t.Logf("map order tx[%s]", hash.String())
 	}
 	t.Log("begin sort tx...")
-	sortedTx, _, _ := SortTxs(txMap, nil)
-	for _, tx := range sortedTx {
-		t.Logf("sorted tx[%s]", tx.Hash().String())
+	utxoQueryFn := func(outpoint *OutPoint) (*Utxo, error) {
+		if outpoint.TxHash == hash1 {
+			t := time.Now().AddDate(0, 0, -1).Unix()
+			return &Utxo{Amount: Ptn2Dao(11), Timestamp: uint64(t), Asset: NewPTNAsset()}, nil
+		}
+		return nil, fmt.Errorf("utxo not found.")
 	}
-	assert.Equal(t, txA.Hash(), sortedTx[0].Hash())
-	assert.Equal(t, txB.Hash(), sortedTx[1].Hash())
-	assert.Equal(t, txC.Hash(), sortedTx[2].Hash())
-	assert.Equal(t, txD.Hash(), sortedTx[3].Hash())
+	sortedTx, orphanTxs, doubleSpendTxs := SortTxs(txMap, utxoQueryFn)
+	for i, tx := range sortedTx {
+		t.Logf("sorted index[%d] tx[%s]", i, tx.Hash().String())
+	}
+	for _, tx := range orphanTxs {
+		t.Logf("orphan tx[%s]", tx.Hash().String())
+	}
+	assert.Equal(t, txA.Hash().String(), sortedTx[0].Hash().String())
+	assert.Equal(t, txB.Hash().String(), sortedTx[1].Hash().String())
+	assert.Equal(t, txC.Hash().String(), sortedTx[2].Hash().String())
+	assert.Equal(t, txD.Hash().String(), sortedTx[3].Hash().String())
+
+	assert.Equal(t, 4, len(orphanTxs))
+	assert.Equal(t, 0, len(doubleSpendTxs))
 }
 
 func newTestPaymentTx(preTxHash common.Hash) *Transaction {
