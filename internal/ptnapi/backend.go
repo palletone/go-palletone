@@ -152,7 +152,7 @@ type Backend interface {
 		description, abi, language string, addrs []common.Address) (reqId common.Hash, tplId []byte, err error)
 	ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte,
 		extData []byte, timeout time.Duration) (reqId common.Hash, contractAddr common.Address, err error)
-	ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
+	ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64,
 		contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error)
 	SendContractInvokeReqTx(requestTx *modules.Transaction) (reqId common.Hash, err error)
 	ContractInvokeReqTokenTx(from, to common.Address, token *modules.Asset, amountToken, fee uint64,
@@ -163,7 +163,7 @@ type Backend interface {
 		description, abi, language string, addrs []common.Address) (fee float64, size float64, tm uint32, err error)
 	ContractDeployReqTxFee(from, to common.Address, daoAmount, daoFee uint64, templateId []byte,
 		args [][]byte, extData []byte, timeout time.Duration) (fee float64, size float64, tm uint32, err error)
-	ContractInvokeReqTxFee(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
+	ContractInvokeReqTxFee(from, to common.Address, daoAmount, daoFee uint64, 
 		contractAddress common.Address, args [][]byte, timeout uint32) (fee float64, size float64, tm uint32, err error)
 	ContractStopReqTxFee(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address,
 		deleteImage bool) (fee float64, size float64, tm uint32, err error)

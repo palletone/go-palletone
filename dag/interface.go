@@ -21,7 +21,7 @@
 package dag
 
 import (
-	"math/big"
+	//"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/event"
@@ -209,7 +209,7 @@ type IDag interface {
 	GetContractDevelopers() ([]common.Address, error)
 	IsContractDeveloper(addr common.Address) bool
 	//GetActiveJuries() []common.Address
-	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
+	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64,
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	CreateTokenTransaction(from, to common.Address, token *modules.Asset, daoAmountToken, daoFee uint64,
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)

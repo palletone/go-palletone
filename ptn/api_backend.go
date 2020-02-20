@@ -819,9 +819,9 @@ func (b *PtnApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, 
 	args [][]byte, extData []byte, timeout time.Duration) (common.Hash, common.Address, error) {
 	return b.ptn.contractPorcessor.ContractDeployReq(from, to, daoAmount, daoFee, templateId, args, extData, timeout)
 }
-func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
+func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, 
 	contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
-	return b.ptn.contractPorcessor.ContractInvokeReq(from, to, daoAmount, daoFee, certID, contractAddress, args, timeout)
+	return b.ptn.contractPorcessor.ContractInvokeReq(from, to, daoAmount, daoFee, contractAddress, args, timeout)
 }
 func (b *PtnApiBackend) SendContractInvokeReqTx(requestTx *modules.Transaction) (common.Hash, error) {
 	//Devin：连续合约调用，这里验证不过，先注释
@@ -859,9 +859,9 @@ func (b *PtnApiBackend) ContractDeployReqTxFee(from, to common.Address, daoAmoun
 	args [][]byte, extData []byte, timeout time.Duration) (fee float64, size float64, tm uint32, err error) {
 	return b.ptn.contractPorcessor.ContractDeployReqFee(from, to, daoAmount, daoFee, templateId, args, extData, timeout)
 }
-func (b *PtnApiBackend) ContractInvokeReqTxFee(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
+func (b *PtnApiBackend) ContractInvokeReqTxFee(from, to common.Address, daoAmount, daoFee uint64,
 	contractAddress common.Address, args [][]byte, timeout uint32) (fee float64, size float64, tm uint32, err error) {
-	return b.ptn.contractPorcessor.ContractInvokeReqFee(from, to, daoAmount, daoFee, certID, contractAddress, args, timeout)
+	return b.ptn.contractPorcessor.ContractInvokeReqFee(from, to, daoAmount, daoFee, contractAddress, args, timeout)
 }
 func (b *PtnApiBackend) ContractStopReqTxFee(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address,
 	deleteImage bool) (fee float64, size float64, tm uint32, err error) {
