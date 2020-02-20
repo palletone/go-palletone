@@ -871,7 +871,7 @@ func (msg *Transaction) baseSize() int {
 }
 func (tx *Transaction) IsContractTx() bool {
 	for _, m := range tx.txdata.TxMessages {
-		if m.App >= APP_CONTRACT_TPL && m.App <= APP_SIGNATURE {
+		if m.App >= APP_CONTRACT_TPL_REQUEST && m.App <= APP_CONTRACT_STOP_REQUEST {
 			return true
 		}
 	}

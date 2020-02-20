@@ -285,7 +285,10 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 	}
 	//4. send
 	reqId, err := submitTransaction(ctx, s.b, tx)
-
+	if err != nil{
+		log.Errorf("CcinvokeToken, submitTransaction err:%s", err.Error())
+		return nil, err
+	}
 	err = saveTransaction2mDag(tx)
 	if err != nil {
 		log.Errorf("CcinvokeToken err:%s", err.Error())
