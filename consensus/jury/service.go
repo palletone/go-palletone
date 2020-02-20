@@ -555,6 +555,9 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 	txIndex := 0
 	tx4Sort := make(map[common.Hash]*modules.Transaction)
 	for _, ctx := range p.mtx {
+		if ctx.reqTx.IsSystemContract() { //系统合约的调用走普通打包流程
+			continue
+		}
 		tx4Sort[ctx.reqTx.Hash()] = ctx.reqTx
 	}
 
@@ -572,9 +575,6 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 	}
 	for _, ctx := range sortedContractTx {
 		if !ctx.valid || ctx.reqTx == nil {
-			continue
-		}
-		if ctx.reqTx.IsSystemContract() { //系统合约的调用走普通打包流程
 			continue
 		}
 		reqId := ctx.reqTx.RequestHash()

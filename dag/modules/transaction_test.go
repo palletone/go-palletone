@@ -353,8 +353,11 @@ func TestSortTxs(t *testing.T) {
 	t.Logf("Tx D:%s", txD.Hash().String())
 	txX := newTestPaymentTx(hash1)
 	t.Logf("Tx X:%s", txX.Hash().String())
+	txY := newTestPaymentTx(txX.Hash())
+	t.Logf("Tx Y:%s", txY.Hash().String())
 	txMap := make(map[common.Hash]*Transaction)
 	txMap[txX.Hash()] = txX
+	txMap[txY.Hash()] = txY
 	txMap[txC.Hash()] = txC
 	txMap[txB.Hash()] = txB
 	txMap[txD.Hash()] = txD
@@ -373,7 +376,7 @@ func TestSortTxs(t *testing.T) {
 	utxoQueryFn1 := func(outpoint *OutPoint) (*Utxo, error) {
 		if outpoint.TxHash == hash1 {
 			t := time.Now().AddDate(0, 0, -1).Unix()
-			return &Utxo{Amount: Ptn2Dao(11), Timestamp: uint64(t), Asset: NewPTNAsset()}, nil
+			return &Utxo{Amount: Ptn2Dao(111), Timestamp: uint64(t), Asset: NewPTNAsset()}, nil
 		}
 		return nil, fmt.Errorf("utxo not found.")
 	}
@@ -390,7 +393,7 @@ func TestSortTxs(t *testing.T) {
 		assert.Equal(t, txC.Hash().String(), sortedTx[2].Hash().String())
 		assert.Equal(t, txD.Hash().String(), sortedTx[3].Hash().String())
 
-		assert.Equal(t, 1, len(orphanTxs))
+		assert.Equal(t, 2, len(orphanTxs))
 		assert.Equal(t, 0, len(doubleSpendTxs))
 	}
 	t.Log("begin sort orphan tx...")
@@ -402,7 +405,7 @@ func TestSortTxs(t *testing.T) {
 		t.Logf("orphan tx[%s]", tx.Hash().String())
 	}
 	if utxoQueryFn1 != nil {
-		assert.Equal(t, 1, len(sortedTx1))
+		assert.Equal(t, 2, len(sortedTx1))
 
 		assert.Equal(t, 4, len(orphanTxs1))
 		assert.Equal(t, 0, len(doubleSpendTxs1))
