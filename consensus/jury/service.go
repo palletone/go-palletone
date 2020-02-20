@@ -20,7 +20,6 @@ package jury
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"math/big"
 	"sync"
@@ -28,7 +27,6 @@ import (
 
 	"github.com/coocood/freecache"
 	"github.com/ethereum/go-ethereum/event"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
@@ -514,36 +512,11 @@ func (p *Processor) GenContractSigTransaction(signer common.Address, password st
 
 	return tx, nil
 }
-func GetTxSig(tx *modules.Transaction, ks *keystore.KeyStore, signer common.Address) ([]byte, error) {
-	reqId := tx.RequestHash()
 
-	sign, err := ks.SigData(tx, signer)
-	if err != nil {
-		return nil, fmt.Errorf("GetTxSig, Failed to singure transaction, reqId%s, err:%s", reqId.String(), err.Error())
-	}
-	log.DebugDynamic(func() string {
-		data, err := rlp.EncodeToBytes(tx)
-		if err != nil {
-			return err.Error()
-		}
-		js, err := json.Marshal(tx)
-		if err != nil {
-			return err.Error()
-		}
-		return fmt.Sprintf("Juror[%s] try to sign tx reqid:%s,signature:%x, tx json: %s\n rlpcode for debug: %x",
-			signer.String(), reqId.String(), sign, string(js), data)
-	})
-	return sign, nil
-}
 func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool, addr common.Address,
 	ks *keystore.KeyStore) error {
 	setChainId := modules.ContractChainId
 	index := 0
-	//tempdb, err := ptndb.NewTempdb(p.dag.GetDb())
-	//if err != nil {
-	//	log.Errorf("Init tempdb error:%s", err.Error())
-	//}
-
 	tempDag, err := p.dag.NewTemp()
 	log.Debug("create a new tempDag for generate unit AddContractLoop")
 	if err != nil {
