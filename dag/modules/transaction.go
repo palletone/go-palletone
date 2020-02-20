@@ -1122,15 +1122,17 @@ func SortTxs(txs map[common.Hash]*Transaction, utxoFunc QueryUtxoFunc) ([]*Trans
 			}
 		}
 	}
-	//  重构孤儿交易列表
+	//  重构sortedTxs、孤儿交易列表
 	for _, otx := range orphanTxs {
 		for i, stx := range sortedTxs {
 			if otx.Hash() == stx.Hash() {
 				orphanTxs = append(orphanTxs, sortedTxs[i+1:]...)
+				sortedTxs = sortedTxs[:i]
 				break
 			}
 		}
 	}
+
 	return sortedTxs, orphanTxs, doubleSpendTxs
 }
 
