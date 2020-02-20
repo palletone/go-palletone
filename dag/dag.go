@@ -483,16 +483,18 @@ func (d *Dag) GetTxPackInfo(hash common.Hash) (*modules.TxPackInfo, error) {
 	if err == nil {
 		txHash = dbTxHash
 	}
-	lookup, err := d.unstableUnitRep.GetTxLookupEntry(txHash)
+	tx, err := d.unstableUnitRep.GetTransaction(txHash)
 	if err != nil {
 		return nil, err
 	}
 	return &modules.TxPackInfo{
-		UnitHash:  lookup.UnitHash,
-		UnitIndex: lookup.UnitIndex,
-		Timestamp: lookup.Timestamp,
-		TxIndex:   lookup.Index,
-		TxHash:    txHash,
+		UnitHash:    tx.UnitHash,
+		UnitIndex:   tx.UnitIndex,
+		Timestamp:   tx.Timestamp,
+		TxIndex:     tx.TxIndex,
+		TxHash:      txHash,
+		RequestHash: tx.RequestHash(),
+		Error:       tx.ErrorResult(),
 	}, nil
 }
 

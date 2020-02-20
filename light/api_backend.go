@@ -427,7 +427,7 @@ func (b *LesApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, 
 	return
 }
 func (b *LesApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64,
-	certID *big.Int, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
+	 contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
 	return
 }
 func (b *LesApiBackend) SendContractInvokeReqTx(requestTx *modules.Transaction) (common.Hash, error) {
@@ -453,7 +453,7 @@ func (b *LesApiBackend) ContractDeployReqTxFee(from, to common.Address, daoAmoun
 	args [][]byte, extData []byte, timeout time.Duration) (fee float64, size float64, tm uint32, err error) {
 	return
 }
-func (b *LesApiBackend) ContractInvokeReqTxFee(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
+func (b *LesApiBackend) ContractInvokeReqTxFee(from, to common.Address, daoAmount, daoFee uint64,
 	contractAddress common.Address, args [][]byte, timeout uint32) (fee float64, size float64, tm uint32, err error) {
 	return
 }

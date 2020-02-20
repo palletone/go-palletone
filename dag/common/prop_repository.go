@@ -118,6 +118,9 @@ func (pRep *PropRepository) GetNewestUnit(token modules.AssetId) (common.Hash, *
 	//hash, index, _, e := pRep.db.GetNewestUnit(token)
 	//return hash, index, e
 	unitProperty, err := pRep.db.GetNewestUnit(token)
+	if err != nil {
+		return common.Hash{}, nil, err
+	}
 	return unitProperty.Hash, unitProperty.ChainIndex, err
 }
 

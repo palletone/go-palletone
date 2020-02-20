@@ -9,8 +9,8 @@ genInvoketxParams
     [Return]    ${params}
 
 genIssuetxParams
-    [Arguments]    ${caCertHolder}    ${caCertHolder}    ${from}    ${to}    ${certContractAddr}    ${args}    ${certid}    ${timeout}
-    ${params}=    Create List    ${caCertHolder}    ${caCertHolder}    ${from}    ${to}    ${certContractAddr}    ${args}    ${certid}    ${timeout}
+    [Arguments]    ${caCertHolder}    ${caCertHolder}    ${from}    ${to}    ${certContractAddr}    ${args}    ${timeout}
+    ${params}=    Create List    ${caCertHolder}    ${caCertHolder}    ${from}    ${to}    ${certContractAddr}    ${args}    ${timeout}
     [Return]    ${params}
 
 newAccount
@@ -45,7 +45,7 @@ unlockAccount
 issueToken
     [Arguments]    ${addr}    ${name}    ${amount}    ${decimal}    ${des}
     ${args}=    Create List    createToken    ${des}    ${name}    ${decimal}    ${amount}    ${addr}
-    ${params}=    genIssuetxParams    ${addr}    ${addr}    100    1    ${prc720ContractAddr}    ${args}    1    1
+    ${params}=    genIssuetxParams    ${addr}    ${addr}    100    1    ${prc720ContractAddr}    ${args}    1
     ${respJson}=    sendRpcPost    ${invokeMethod}    ${params}     issueToken   
     log    ${respJson}
     Dictionary Should Contain Key    ${respJson}    result
@@ -84,15 +84,15 @@ Bob issues her personal token, amount is 100000, decimal is 1 succeed
     [Return]    ${ReturnID}
 
 Alice create tx withoutfee
-    [Arguments]    ${TokenId}    ${Alice}    ${Bob}    ${amount}    ${extra}    ${pwd}
-    ${paras}    Create List    ${TokenId}    ${Alice}    ${Bob}    ${amount}    ${extra}    ${pwd}
+    [Arguments]    ${TokenId}    ${Alice}    ${Bob}    ${amount}    ${pwd}
+    ${paras}    Create List    ${TokenId}    ${Alice}    ${Bob}    ${amount}    ${pwd}
     ${res}    post    ${createTxWithOutFee}    ${createTxWithOutFee}    ${paras}
     log    ${res}
     [Return]    ${res}
 
 Fee and signtx
-    [Arguments]    ${encoderawtx}    ${hashtype}    ${gasFrom}    ${to}    ${gasFee}    ${pwd}    ${duration}
-    ${params}=    Create List    ${encoderawtx}    ${hashtype}    ${gasFrom}    ${to}    ${gasFee}    ${pwd}
+    [Arguments]    ${encoderawtx}    ${gasFrom}    ${gasFee}    ${extra}    ${pwd}
+    ${params}=    Create List    ${encoderawtx}    ${gasFrom}    ${gasFee}    ${extra}    ${pwd}
     ${res}=    sendRpcPost    ${signAndFeeTransaction}    ${params}    signAndFeeTransaction
     log    ${res}
     [Return]    ${res}
