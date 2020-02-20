@@ -342,7 +342,7 @@ func TestAdditionJson(t *testing.T) {
 }
 func TestSortTxs(t *testing.T) {
 	hash0 := common.BytesToHash([]byte("0"))
-	//hash1 := common.BytesToHash([]byte("1"))
+	hash1 := common.BytesToHash([]byte("1"))
 	txA := newTestPaymentTx(hash0)
 	t.Logf("Tx A:%s", txA.Hash().String())
 	txB := newTestPaymentTx(txA.Hash())
@@ -368,6 +368,13 @@ func TestSortTxs(t *testing.T) {
 		}
 		return nil, fmt.Errorf("utxo not found.")
 	}
+	utxoQueryFn1 := func(outpoint *OutPoint) (*Utxo, error) {
+		if outpoint.TxHash == hash1 {
+			t := time.Now().AddDate(0, 0, -1).Unix()
+			return &Utxo{Amount: Ptn2Dao(11), Timestamp: uint64(t), Asset: NewPTNAsset()}, nil
+		}
+		return nil, fmt.Errorf("utxo not found.")
+	}
 	sortedTx, orphanTxs, doubleSpendTxs := SortTxs(txMap, utxoQueryFn)
 	for i, tx := range sortedTx {
 		t.Logf("sorted index[%d] tx[%s]", i, tx.Hash().String())
@@ -375,14 +382,29 @@ func TestSortTxs(t *testing.T) {
 	for _, tx := range orphanTxs {
 		t.Logf("orphan tx[%s]", tx.Hash().String())
 	}
-	if len(sortedTx) >= 4 {
+	if utxoQueryFn != nil {
 		assert.Equal(t, txA.Hash().String(), sortedTx[0].Hash().String())
 		assert.Equal(t, txB.Hash().String(), sortedTx[1].Hash().String())
 		assert.Equal(t, txC.Hash().String(), sortedTx[2].Hash().String())
 		assert.Equal(t, txD.Hash().String(), sortedTx[3].Hash().String())
+
+		assert.Equal(t, 0, len(orphanTxs))
+		assert.Equal(t, 0, len(doubleSpendTxs))
 	}
-	assert.Equal(t, 0, len(orphanTxs))
-	assert.Equal(t, 0, len(doubleSpendTxs))
+	t.Log("begin sort orphan tx...")
+	sortedTx1, orphanTxs1, doubleSpendTxs1 := SortTxs(txMap, utxoQueryFn1)
+	for i, tx := range sortedTx1 {
+		t.Logf("sorted index[%d] tx[%s]", i, tx.Hash().String())
+	}
+	for _, tx := range orphanTxs1 {
+		t.Logf("orphan tx[%s]", tx.Hash().String())
+	}
+	if utxoQueryFn1 != nil {
+		assert.Equal(t, 0, len(sortedTx1))
+
+		assert.Equal(t, 4, len(orphanTxs1))
+		assert.Equal(t, 0, len(doubleSpendTxs1))
+	}
 }
 
 func newTestPaymentTx(preTxHash common.Hash) *Transaction {
