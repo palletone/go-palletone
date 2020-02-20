@@ -349,20 +349,22 @@ func (b *bridge) MultiSignRawTransaction(call otto.FunctionCall) (response otto.
 
 	// If password is not given or is the null value, prompt the user for it
 	var passwd otto.Value
-
-	if call.Argument(4).IsUndefined() || call.Argument(4).IsNull() {
-		fmt.Fprintf(b.printer, "Sign rawtx %s\n", rawtx)
-		if input, err := b.prompter.PromptPassword("Passphrase: "); err != nil {
-			throwJSException(err.Error())
+    unlock, _ := isUnlock(call, addr)
+    if !unlock {
+		if call.Argument(4).IsUndefined() || call.Argument(4).IsNull() {
+			fmt.Fprintf(b.printer, "Sign rawtx %s\n", rawtx)
+			if input, err := b.prompter.PromptPassword("Passphrase: "); err != nil {
+				throwJSException(err.Error())
+			} else {
+				passwd, _ = otto.ToValue(input)
+			}
 		} else {
-			passwd, _ = otto.ToValue(input)
+			if !call.Argument(4).IsString() {
+				throwJSException("password must be a string")
+			}
+			passwd = call.Argument(4)
 		}
-	} else {
-		if !call.Argument(4).IsString() {
-			throwJSException("password must be a string")
-		}
-		passwd = call.Argument(4)
-	}
+    }
 	// Third argument is the duration how long the account must be unlocked.
 	duration := otto.NullValue()
 	if call.Argument(5).IsDefined() && !call.Argument(3).IsNull() {
@@ -400,20 +402,22 @@ func (b *bridge) GetPtnTestCoin(call otto.FunctionCall) (response otto.Value) {
 
 	// If password is not given or is the null value, prompt the user for it
 	var passwd otto.Value
-
-	if call.Argument(3).IsUndefined() || call.Argument(3).IsNull() {
-		//fmt.Fprintf(b.printer, "Sign rawtx %s\n", rawtx)
-		if input, err := b.prompter.PromptPassword("Passphrase: "); err != nil {
-			throwJSException(err.Error())
+    unlock, _ := isUnlock(call, from)
+    if !unlock {
+		if call.Argument(3).IsUndefined() || call.Argument(3).IsNull() {
+			//fmt.Fprintf(b.printer, "Sign rawtx %s\n", rawtx)
+			if input, err := b.prompter.PromptPassword("Passphrase: "); err != nil {
+				throwJSException(err.Error())
+			} else {
+				passwd, _ = otto.ToValue(input)
+			}
 		} else {
-			passwd, _ = otto.ToValue(input)
+			if !call.Argument(3).IsString() {
+				throwJSException("password must be a string")
+			}
+			passwd = call.Argument(3)
 		}
-	} else {
-		if !call.Argument(3).IsString() {
-			throwJSException("password must be a string")
-		}
-		passwd = call.Argument(3)
-	}
+    }
 	// Third argument is the duration how long the account must be unlocked.
 	duration := otto.NullValue()
 	if call.Argument(4).IsDefined() && !call.Argument(4).IsNull() {
@@ -454,19 +458,22 @@ func (b *bridge) TransferToken(call otto.FunctionCall) (response otto.Value) {
 
 	// If password is not given or is the null value, prompt the user for it
 	var passwd otto.Value
-	if call.Argument(6).IsUndefined() || call.Argument(6).IsNull() {
-		fmt.Fprintf(b.printer, "asset: %s\n", asset)
-		if input, err := b.prompter.PromptPassword("Passphrase: "); err != nil {
-			throwJSException(err.Error())
+	unlock, _ := isUnlock(call, from)
+    if !unlock {
+		if call.Argument(6).IsUndefined() || call.Argument(6).IsNull() {
+			fmt.Fprintf(b.printer, "asset: %s\n", asset)
+			if input, err := b.prompter.PromptPassword("Passphrase: "); err != nil {
+				throwJSException(err.Error())
+			} else {
+				passwd, _ = otto.ToValue(input)
+			}
 		} else {
-			passwd, _ = otto.ToValue(input)
+			if !call.Argument(6).IsString() {
+				throwJSException("password must be a string")
+			}
+			passwd = call.Argument(6)
 		}
-	} else {
-		if !call.Argument(6).IsString() {
-			throwJSException("password must be a string")
-		}
-		passwd = call.Argument(6)
-	}
+    }
 	// Third argument is the duration how long the account must be unlocked.
 	duration := otto.NullValue()
 	if call.Argument(7).IsDefined() && !call.Argument(7).IsNull() {
@@ -504,18 +511,21 @@ func (b *bridge) TransferGasToken(call otto.FunctionCall) (response otto.Value) 
 
 	// If password is not given or is the null value, prompt the user for it
 	var passwd otto.Value
-	if call.Argument(5).IsUndefined() || call.Argument(5).IsNull() {
-		if input, err := b.prompter.PromptPassword("Passphrase: "); err != nil {
-			throwJSException(err.Error())
+	unlock, _ := isUnlock(call, from)
+    if !unlock {
+		if call.Argument(5).IsUndefined() || call.Argument(5).IsNull() {
+			if input, err := b.prompter.PromptPassword("Passphrase: "); err != nil {
+				throwJSException(err.Error())
+			} else {
+				passwd, _ = otto.ToValue(input)
+			}
 		} else {
-			passwd, _ = otto.ToValue(input)
+			if !call.Argument(5).IsString() {
+				throwJSException("password must be a string")
+			}
+			passwd = call.Argument(5)
 		}
-	} else {
-		if !call.Argument(5).IsString() {
-			throwJSException("password must be a string")
-		}
-		passwd = call.Argument(5)
-	}
+    }
 	// Third argument is the duration how long the account must be unlocked.
 	duration := otto.NullValue()
 	if call.Argument(6).IsDefined() && !call.Argument(6).IsNull() {
