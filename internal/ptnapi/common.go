@@ -231,13 +231,13 @@ var cacheTx *synCacheTx
 func updateDag(b Backend, trs []*modules.Transaction) error {
 	log.Debugf("updateDag enter, transaction num:%d, cacheTx num:%d", len(trs), len(cacheTx.txs))
 
-	//for idx, tx := range trs {
-	//	if tx.IsContractTx() {
-	//		log.Debugf("updateDag, is     contract Tx,index[%d]---tx[%s]", idx, tx.RequestHash().String())
-	//	} else {
-	//		log.Debugf("updateDag, is not contract Tx,index[%d]---tx[%s]", idx, tx.Hash().String())
-	//	}
-	//}
+	for idx, tx := range trs {
+		if tx.IsContractTx() {
+			log.Debugf("updateDag, is     contract Tx,index[%d]---tx[%s]", idx, tx.RequestHash().String())
+		} else {
+			log.Debugf("updateDag, is not contract Tx,index[%d]---tx[%s]", idx, tx.Hash().String())
+		}
+	}
 
 	cacheTx.lock.Lock()
 	defer cacheTx.lock.Unlock()
@@ -271,27 +271,41 @@ func updateDag(b Backend, trs []*modules.Transaction) error {
 		}
 	}
 	oldDag := cacheTx.mdag
-	var unitInfo *modules.TransactionWithUnitInfo
-	for txHash, isContract := range cacheTx.txs {
-		if isContract {
-			unitInfo, err = oldDag.GetTxByReqId(txHash)
-			if err != nil {
-				log.Warnf("updateDag, GetTxByReqId[%s] err:%s", txHash.String(), err.Error())
-			}
-		} else {
-			unitInfo, err = oldDag.GetTransaction(txHash)
-			if err != nil {
-				log.Warnf("updateDag, GetTransaction[%s] err:%s", txHash.String(), err.Error())
-			}
+	//var unitInfo *modules.TransactionWithUnitInfo
+	//for txHash, isContract := range cacheTx.txs {
+	//	if isContract {
+	//		unitInfo, err = oldDag.GetTxByReqId(txHash)//GetTxByReqId , GetStableTransactionOnly
+	//		if err != nil {
+	//			log.Warnf("updateDag, GetTxByReqId[%s] err:%s", txHash.String(), err.Error())
+	//		}
+	//	} else {
+	//		unitInfo, err = oldDag.GetTransaction(txHash)
+	//		if err != nil {
+	//			log.Warnf("updateDag, GetTransaction[%s] err:%s", txHash.String(), err.Error())
+	//		}
+	//	}
+	//	if unitInfo != nil {
+	//		log.Debugf("updateDag, SaveTransaction tx[%s]", txHash.String())
+	//		err := newDag.SaveTransaction(unitInfo.Transaction, 0)
+	//		if err != nil {
+	//			log.Errorf("updateDag, SaveTransaction tx[%s] err:%s", txHash.String(), err.Error())
+	//			//return err
+	//			continue
+	//		}
+	//	}
+	//}
+
+	for txHash, _ := range cacheTx.txs {
+		noPackTx, err := oldDag.GetStableTransactionOnly(txHash) //GetTxByReqId , GetStableTransactionOnly
+		if err != nil {
+			log.Warnf("updateDag, GetStableTransactionOnly tx[%s] err:%s",txHash.String(), err.Error())
+			continue
 		}
-		if unitInfo != nil {
-			log.Debugf("updateDag, SaveTransaction tx[%s]", txHash.String())
-			err := newDag.SaveTransaction(unitInfo.Transaction, 0)
-			if err != nil {
-				log.Errorf("updateDag, SaveTransaction tx[%s] err:%s", txHash.String(), err.Error())
-				//return err
-				continue
-			}
+		err = newDag.SaveTransaction(noPackTx, 0)
+		if err != nil {
+			log.Errorf("updateDag, SaveTransaction tx[%s] err:%s", txHash.String(), err.Error())
+			//return err
+			continue
 		}
 	}
 
@@ -343,20 +357,27 @@ func saveTransaction2mDag(tx *modules.Transaction) error {
 		if !checkTxContinuous(cacheTx.mdag, tx) {
 			log.Errorf("saveTransaction2mDag, tx[%s] checkTxContinuous false", tx.RequestHash().String())
 		}
-
-		var txHash common.Hash
-		if tx.IsNewContractInvokeRequest() {
-			txHash = tx.RequestHash()
-			log.Debugf("saveTransaction2Mdag, save contract transaction:%s", txHash.String())
-		} else {
-			txHash = tx.Hash()
-			log.Debugf("saveTransaction2Mdag, save transaction:%s", txHash.String())
-		}
+		//var txHash common.Hash
+		//if tx.IsContractTx() {
+		//	txHash = tx.RequestHash()
+		//	log.Debugf("saveTransaction2Mdag, save contract transaction:%s", txHash.String())
+		//} else {
+		//	txHash = tx.Hash()
+		//	log.Debugf("saveTransaction2Mdag, save transaction:%s", txHash.String())
+		//}
+		txHash := tx.Hash()
 		err := cacheTx.mdag.SaveTransaction(tx, 0)
 		if err != nil {
 			return fmt.Errorf("saveTransaction2Mdag,SaveTransaction[%s] err:%s", txHash.String(), err.Error())
 		}
 		cacheTx.txs[txHash] = tx.IsContractTx()
+
+		//todo del
+		_, err = cacheTx.mdag.GetStableTransactionOnly(tx.Hash())
+		if err != nil {
+			log.Warnf("saveTransaction2Mdag, GetStableTransactionOnly[%s] err:%s", txHash.String(), err.Error())
+		}
+
 		return nil
 	}
 	return errors.New("saveTransaction2Mdag, no mdag")
@@ -366,7 +387,7 @@ func checkTxContinuous(dag dag.IDag, tx *modules.Transaction) bool {
 	lenTxMsgs := len(msgs)
 	if lenTxMsgs > 0 {
 		msg0 := msgs[0].Payload.(*modules.PaymentPayload)
-		log.Debugf("checkTxContinuous tx[%s], PreviousOutPoint:%v", tx.RequestHash().String(), msg0.Inputs[0].PreviousOutPoint)
+		//log.Debugf("checkTxContinuous tx[%s], PreviousOutPoint:%v", tx.RequestHash().String(), msg0.Inputs[0].PreviousOutPoint)
 		invokeAddr, err := dag.GetAddrByOutPoint(msg0.Inputs[0].PreviousOutPoint)
 		if err != nil {
 			log.Debugf("checkTxContinuous tx[%s], err:%s", tx.RequestHash().String(), err.Error())
