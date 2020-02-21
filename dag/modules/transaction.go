@@ -869,6 +869,8 @@ func (msg *Transaction) baseSize() int {
 	b, _ := rlp.EncodeToBytes(msg)
 	return len(b)
 }
+
+//是否是合约交易
 func (tx *Transaction) IsContractTx() bool {
 	for _, m := range tx.txdata.TxMessages {
 		if m.App >= APP_CONTRACT_TPL_REQUEST && m.App <= APP_CONTRACT_STOP_REQUEST {
@@ -878,6 +880,7 @@ func (tx *Transaction) IsContractTx() bool {
 	return false
 }
 
+//是否是系统合约调用，只有在具有InvokeRequest或者TemplateRequest的时候才算系统合约
 func (tx *Transaction) IsSystemContract() bool {
 	for _, msg := range tx.txdata.TxMessages {
 		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
@@ -892,7 +895,7 @@ func (tx *Transaction) IsSystemContract() bool {
 			return false //, nil
 		}
 	}
-	return true //, errors.New("isSystemContract not find contract type")
+	return false //没有Request，当然就不是系统合约
 }
 
 //判断一个交易是否是一个合约请求交易，并且还没有被执行
