@@ -2021,7 +2021,7 @@ func (mr *MockIDagMockRecorder) IsContractDeveloper(addr interface{}) *gomock.Ca
 // CreateGenericTransaction mocks base method
 func (m *MockIDag) CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateGenericTransaction", from, to, daoAmount, daoFee, certID, msg, txPool)
+	ret := m.ctrl.Call(m, "CreateGenericTransaction", from, to, daoAmount, daoFee, msg, txPool)
 	ret0, _ := ret[0].(*modules.Transaction)
 	ret1, _ := ret[1].(uint64)
 	ret2, _ := ret[2].(error)
@@ -2031,7 +2031,7 @@ func (m *MockIDag) CreateGenericTransaction(from, to common.Address, daoAmount, 
 // CreateGenericTransaction indicates an expected call of CreateGenericTransaction
 func (mr *MockIDagMockRecorder) CreateGenericTransaction(from, to, daoAmount, daoFee, msg, txPool interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateGenericTransaction", reflect.TypeOf((*MockIDag)(nil).CreateGenericTransaction), from, to, daoAmount, daoFee, certID, msg, txPool)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateGenericTransaction", reflect.TypeOf((*MockIDag)(nil).CreateGenericTransaction), from, to, daoAmount, daoFee,  msg, txPool)
 }
 
 // CreateTokenTransaction mocks base method
