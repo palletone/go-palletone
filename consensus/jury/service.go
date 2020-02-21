@@ -22,7 +22,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	//"math/big"
+	"math/big"
 	"sync"
 	"time"
 
@@ -90,7 +90,7 @@ type iDag interface {
 	//GetActiveJuries() []common.Address
 	IsActiveMediator(addr common.Address) bool
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
-	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64,
+	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 	CreateTokenTransaction(from, to common.Address, token *modules.Asset, daoAmountToken, daoFee uint64,
 		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
@@ -899,9 +899,9 @@ func (p *Processor) createContractTxReqToken(contractId, from, to common.Address
 	return p.signGenericTx(contractId, from, tx)
 }
 
-func (p *Processor) createContractTxReq(contractId, from, to common.Address, daoAmount, daoFee uint64, 
+func (p *Processor) createContractTxReq(contractId, from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
 	msg *modules.Message) (common.Hash, *modules.Transaction, error) {
-	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, msg, p.ptn.TxPool())
+	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, certID, msg, p.ptn.TxPool())
 	if err != nil {
 		return common.Hash{}, nil, err
 	}

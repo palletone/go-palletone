@@ -26,7 +26,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	//"math/big"
+	"math/big"
 	"strconv"
 	"strings"
 	"time"
@@ -424,7 +424,7 @@ func (s *PrivateContractAPI) Ccdeploytxfee(ctx context.Context, from, to string,
 }
 
 func (s *PrivateContractAPI) Ccinvoketxfee(ctx context.Context, from, to string, amount, fee decimal.Decimal,
-	deployId string, param []string, timeout string) (*ContractFeeRsp, error) {
+	deployId string, param []string, certID string, timeout string) (*ContractFeeRsp, error) {
 	contractAddr, _ := common.StringToAddress(deployId)
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
@@ -435,14 +435,14 @@ func (s *PrivateContractAPI) Ccinvoketxfee(ctx context.Context, from, to string,
 	log.Info("CcInvokeTxFee info:")
 	log.Infof("   fromAddr[%s], toAddr[%s]", fromAddr.String(), toAddr.String())
 	log.Infof("   daoAmount[%d], daoFee[%d]", daoAmount, daoFee)
-	//log.Infof("   contractId[%s], certID[%s], timeout[%s]", contractAddr.String(), certID, timeout)
+	log.Infof("   contractId[%s], certID[%s], timeout[%s]", contractAddr.String(), certID, timeout)
 
-	//intCertID := new(big.Int)
-	//if len(certID) > 0 {
-	//	if _, ok := intCertID.SetString(certID, 10); !ok {
-	//		return nil, fmt.Errorf("certid is invalid")
-	//	}
-	//}
+	intCertID := new(big.Int)
+	if len(certID) > 0 {
+		if _, ok := intCertID.SetString(certID, 10); !ok {
+			return nil, fmt.Errorf("certid is invalid")
+		}
+	}
 
 	log.Infof("   param len[%d]", len(param))
 	args := make([][]byte, len(param))
@@ -450,7 +450,7 @@ func (s *PrivateContractAPI) Ccinvoketxfee(ctx context.Context, from, to string,
 		args[i] = []byte(arg)
 		log.Infof("      index[%d], value[%s]\n", i, arg)
 	}
-	afee, sz, tm, err := s.b.ContractInvokeReqTxFee(fromAddr, toAddr, daoAmount, daoFee, contractAddr, args, uint32(timeout64))
+	afee, sz, tm, err := s.b.ContractInvokeReqTxFee(fromAddr, toAddr, daoAmount, daoFee, intCertID, contractAddr, args, uint32(timeout64))
 	if err != nil {
 		return nil, err
 	}
