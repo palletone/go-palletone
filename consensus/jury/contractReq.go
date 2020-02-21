@@ -22,7 +22,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	//"math/big"
+	"math/big"
 	"sync"
 	"time"
 
@@ -96,7 +96,7 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 			Creator:        from.String(),
 		},
 	}
-	reqId, _, err = p.createContractTxReq(common.Address{}, from, to, daoAmount, daoFee,  msgReq)
+	reqId, _, err = p.createContractTxReq(common.Address{}, from, to, daoAmount, daoFee, nil, msgReq)
 	if err != nil {
 		return common.Hash{}, nil, err
 	}
@@ -167,7 +167,7 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 			Timeout:    uint32(timeout),
 		},
 	}
-	reqId, tx, err := p.createContractTxReq(common.Address{}, from, to, daoAmount, daoFee,  msgReq)
+	reqId, tx, err := p.createContractTxReq(common.Address{}, from, to, daoAmount, daoFee, nil, msgReq)
 	if err != nil {
 		return common.Hash{}, common.Address{}, err
 	}
@@ -180,7 +180,7 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 	return reqId, contractId, err
 }
 
-func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee uint64, 
+func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
 	contractId common.Address, args [][]byte, timeout uint32) (common.Hash, error) {
 	if from == (common.Address{}) || to == (common.Address{}) || contractId == (common.Address{}) || args == nil {
 		log.Error("ContractInvokeReq, param is error")
@@ -197,7 +197,7 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 		}
 	}
 	if daoFee == 0 { //dynamic calculation fee
-		fee, _, _, err := p.ContractInvokeReqFee(from, to, daoAmount, daoFee, contractId, args, timeout)
+		fee, _, _, err := p.ContractInvokeReqFee(from, to, daoAmount, daoFee, certID, contractId, args, timeout)
 		if err != nil {
 			return common.Hash{}, fmt.Errorf("ContractInvokeReq, ContractInvokeReqFee err:%s", err.Error())
 		}
@@ -212,7 +212,7 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 			Timeout:    timeout,
 		},
 	}
-	reqId, tx, err := p.createContractTxReq(contractId, from, to, daoAmount, daoFee,msgReq)
+	reqId, tx, err := p.createContractTxReq(contractId, from, to, daoAmount, daoFee, certID, msgReq)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -246,7 +246,7 @@ func (p *Processor) ContractInvokeReqToken(from, to common.Address, token *modul
 		}
 	}
 	if daoFee == 0 { //dynamic calculation fee
-		fee, _, _, err := p.ContractInvokeReqFee(from, to, daoAmount, daoFee, contractAddress, args, timeout)
+		fee, _, _, err := p.ContractInvokeReqFee(from, to, daoAmount, daoFee, nil, contractAddress, args, timeout)
 		if err != nil {
 			return common.Hash{}, fmt.Errorf("ContractInvokeReqToken, ContractInvokeReqFee err:%s", err.Error())
 		}
@@ -298,7 +298,7 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 			DeleteImage: deleteImage,
 		},
 	}
-	reqId, tx, err := p.createContractTxReq(contractId, from, to, daoAmount, daoFee, msgReq)
+	reqId, tx, err := p.createContractTxReq(contractId, from, to, daoAmount, daoFee, nil, msgReq)
 	if err != nil {
 		return common.Hash{}, err
 	}

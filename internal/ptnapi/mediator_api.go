@@ -241,7 +241,7 @@ func (a *PrivateMediatorAPI) Apply(args modules.MediatorCreateArgs, fee decimal.
 	cArgs := [][]byte{[]byte(modules.ApplyMediator), argsB}
 	daofee := ptnjson.Ptn2Dao(fee)
 	// 调用系统合约
-	reqId, err := a.ContractInvokeReqTx(addr, addr, 0, daofee, 
+	reqId, err := a.ContractInvokeReqTx(addr, addr, 0, daofee, nil,
 		syscontract.DepositContractAddress, cArgs, 0)
 	if err != nil {
 		return nil, err
@@ -302,7 +302,7 @@ func (a *PrivateMediatorAPI) PayDeposit(from string, amount decimal.Decimal, fee
 	// 调用系统合约
 	cArgs := [][]byte{[]byte(modules.MediatorPayDeposit)}
 	reqId, err := a.ContractInvokeReqTx(fromAdd, syscontract.DepositContractAddress, ptnjson.Ptn2Dao(amount),
-		inFee, syscontract.DepositContractAddress, cArgs, 0)
+		inFee, nil, syscontract.DepositContractAddress, cArgs, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -344,7 +344,7 @@ func (a *PrivateMediatorAPI) Quit(medAddStr string, fee decimal.Decimal) (*TxExe
 		inFee = a.Dag().GetChainParameters().TransferPtnBaseFee
 	}
 	reqId, err := a.ContractInvokeReqTx(medAdd, medAdd, 0, inFee,
-		syscontract.DepositContractAddress, cArgs, 0)
+		nil, syscontract.DepositContractAddress, cArgs, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -450,7 +450,7 @@ func (a *PrivateMediatorAPI) Update(args modules.MediatorUpdateArgs, fee decimal
 	if inFee == 0 {
 		inFee = a.Dag().GetChainParameters().TransferPtnBaseFee
 	}
-	reqId, err := a.ContractInvokeReqTx(addr, addr, 0, inFee,
+	reqId, err := a.ContractInvokeReqTx(addr, addr, 0, inFee, nil,
 		syscontract.DepositContractAddress, cArgs, 0)
 	if err != nil {
 		return nil, err

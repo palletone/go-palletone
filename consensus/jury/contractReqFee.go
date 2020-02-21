@@ -2,7 +2,7 @@ package jury
 
 import (
 	"encoding/hex"
-	//"math/big"
+	"math/big"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -69,7 +69,7 @@ func (p *Processor) ContractInstallReqFee(from, to common.Address, daoAmount, da
 			Creator:        from.String(),
 		},
 	}
-	reqTx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, msgReq, p.ptn.TxPool())
+	reqTx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, nil, msgReq, p.ptn.TxPool())
 	if err != nil {
 		log.Error("ContractInstallReqFee", "CreateGenericTransaction err:", err)
 		return 0, 0, 0, err
@@ -99,7 +99,7 @@ func (p *Processor) ContractDeployReqFee(from, to common.Address, daoAmount, dao
 			Timeout:    uint32(timeout),
 		},
 	}
-	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee,  msgReq, p.ptn.TxPool())
+	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, nil, msgReq, p.ptn.TxPool())
 	if err != nil {
 		log.Error("ContractDeployReqFee", "CreateGenericTransaction err:", err)
 		return 0, 0, 0, err
@@ -107,7 +107,7 @@ func (p *Processor) ContractDeployReqFee(from, to common.Address, daoAmount, dao
 	return p.getTxContractFee(tx, ContractDefaultSignatureSize+ContractDefaultElectionSize, 0)
 }
 
-func (p *Processor) ContractInvokeReqFee(from, to common.Address, daoAmount, daoFee uint64,
+func (p *Processor) ContractInvokeReqFee(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
 	contractId common.Address, args [][]byte, timeout uint32) (fee float64, size float64, tm uint32, err error) {
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_INVOKE_REQUEST,
@@ -117,7 +117,7 @@ func (p *Processor) ContractInvokeReqFee(from, to common.Address, daoAmount, dao
 			Timeout:    timeout,
 		},
 	}
-	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee,  msgReq, p.ptn.TxPool())
+	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, nil, msgReq, p.ptn.TxPool())
 	if err != nil {
 		log.Error("ContractInvokeReqFee", "CreateGenericTransaction err:", err)
 		return 0, 0, 0, err
@@ -139,7 +139,7 @@ func (p *Processor) ContractStopReqFee(from, to common.Address, daoAmount, daoFe
 			DeleteImage: deleteImage,
 		},
 	}
-	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, msgReq, p.ptn.TxPool())
+	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, nil, msgReq, p.ptn.TxPool())
 	if err != nil {
 		log.Error("ContractStopReqFee", "CreateGenericTransaction err:", err)
 		return 0, 0, 0, err
