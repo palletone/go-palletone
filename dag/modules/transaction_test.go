@@ -355,9 +355,15 @@ func TestSortTxs(t *testing.T) {
 	t.Logf("Tx X:%s", txX.Hash().String())
 	txY := newTestPaymentTx(txX.Hash())
 	t.Logf("Tx Y:%s", txY.Hash().String())
+	txW, txZ := newTestDoubleSpendTxs(txY.Hash())
+	t.Logf("Tx W:%s", txW.Hash().String())
+	t.Logf("Tx Z:%s", txZ.Hash().String())
+
 	txMap := make(map[common.Hash]*Transaction)
+	txMap[txW.Hash()] = txW
 	txMap[txX.Hash()] = txX
 	txMap[txY.Hash()] = txY
+	txMap[txZ.Hash()] = txZ
 	txMap[txC.Hash()] = txC
 	txMap[txB.Hash()] = txB
 	txMap[txD.Hash()] = txD
@@ -378,6 +384,10 @@ func TestSortTxs(t *testing.T) {
 			t := time.Now().AddDate(0, 0, -1).Unix()
 			return &Utxo{Amount: Ptn2Dao(111), Timestamp: uint64(t), Asset: NewPTNAsset()}, nil
 		}
+		if outpoint.TxHash.String() == "0x6f92f846d64925062f7897a9eda225aebddee486f1895989322e2c3d3984e5a2" {
+			t := time.Now().AddDate(0, 0, -1).Unix()
+			return &Utxo{Amount: Ptn2Dao(100), Timestamp: uint64(t), Asset: NewPTNAsset()}, nil
+		}
 		return nil, fmt.Errorf("utxo not found.")
 	}
 	sortedTx, orphanTxs, doubleSpendTxs := SortTxs(txMap, utxoQueryFn)
@@ -393,7 +403,8 @@ func TestSortTxs(t *testing.T) {
 		assert.Equal(t, txC.Hash().String(), sortedTx[2].Hash().String())
 		assert.Equal(t, txD.Hash().String(), sortedTx[3].Hash().String())
 
-		assert.Equal(t, 2, len(orphanTxs))
+		assert.Equal(t, 4, len(sortedTx))
+		assert.Equal(t, 4, len(orphanTxs))
 		assert.Equal(t, 0, len(doubleSpendTxs))
 	}
 	t.Log("begin sort orphan tx...")
@@ -405,10 +416,10 @@ func TestSortTxs(t *testing.T) {
 		t.Logf("orphan tx[%s]", tx.Hash().String())
 	}
 	if utxoQueryFn1 != nil {
-		assert.Equal(t, 2, len(sortedTx1))
+		assert.Equal(t, 3, len(sortedTx1))
 
 		assert.Equal(t, 4, len(orphanTxs1))
-		assert.Equal(t, 0, len(doubleSpendTxs1))
+		assert.Equal(t, 1, len(doubleSpendTxs1))
 	}
 }
 
@@ -435,4 +446,40 @@ func newTestPaymentTx(preTxHash common.Hash) *Transaction {
 		[]*Message{msg},
 	)
 	return tx
+}
+func newTestDoubleSpendTxs(preTxHash common.Hash) (*Transaction, *Transaction) {
+	pay1s := &PaymentPayload{
+		LockTime: 0,
+	}
+	pay2s := &PaymentPayload{
+		LockTime: 0,
+	}
+
+	output := NewTxOut(Ptn2Dao(10), []byte{0xee, 0xbb}, NewPTNAsset())
+	output2 := NewTxOut(Ptn2Dao(9), []byte{0xee, 0xbb}, NewPTNAsset())
+	pay1s.AddTxOut(output)
+	pay2s.AddTxOut(output2)
+
+	input := Input{}
+	input.PreviousOutPoint = NewOutPoint(preTxHash, 0, 1)
+	input.SignatureScript = []byte{}
+	input.Extra = []byte("Test")
+
+	pay1s.AddTxIn(&input)
+	pay2s.AddTxIn(&input)
+	msg := &Message{
+		App:     APP_PAYMENT,
+		Payload: pay1s,
+	}
+	msg2 := &Message{
+		App:     APP_PAYMENT,
+		Payload: pay2s,
+	}
+	tx1 := newTransaction(
+		[]*Message{msg},
+	)
+	tx2 := newTransaction(
+		[]*Message{msg2},
+	)
+	return tx1, tx2
 }

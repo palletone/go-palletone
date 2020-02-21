@@ -1091,46 +1091,76 @@ func SortTxs(txs map[common.Hash]*Transaction, utxoFunc QueryUtxoFunc) ([]*Trans
 	sortedTxs := make([]*Transaction, 0)
 	doubleSpendTxs := make([]*Transaction, 0)
 	orphanTxs := make([]*Transaction, 0)
+	map_orphans := make(map[common.Hash]common.Hash)
 	map_pretxs := make(map[common.Hash]int)
-	map_utxos := make(map[*OutPoint]common.Hash)
+	map_doubleTxs := make(map[*OutPoint]common.Hash)
 	for hash, tx := range txs {
 		ops := tx.GetSpendOutpoints()
 		isOrphan := false
+		hasDouble := false
 		for _, op := range ops {
-			if _, ok := txs[op.TxHash]; !ok {
-				if _, err := utxoFunc(op); err != nil {
-					orphanTxs = append(orphanTxs, tx)
-					isOrphan = true
-					break
-				}
-			}
-
-			if _, has := map_utxos[op]; has {
-				doubleSpendTxs = append(doubleSpendTxs, tx)
+			if _, has := map_orphans[op.TxHash]; has {
+				map_orphans[hash] = op.TxHash
+				orphanTxs = append(orphanTxs, tx)
+				isOrphan = true
 				break
 			}
+			if tx.isOrphanTx(txs, utxoFunc) {
+				map_orphans[hash] = op.TxHash
+				orphanTxs = append(orphanTxs, tx)
+				isOrphan = true
+				break
+			}
+			// 在双花交易中择优选择一个交易作为有效交易。
+			if d_hash, has := map_doubleTxs[op]; has {
+				hasDouble = true
+				p_tx := txs[d_hash]
+				if isPrefer, err := tx.preferTx(p_tx, utxoFunc); err == nil {
+					if isPrefer {
+						// delete p_tx
+						temp := make([]*Transaction, 0)
+						for i, stx := range sortedTxs {
+							if stx.Hash() == p_tx.Hash() {
+								temp = sortedTxs[:i]
+								temp = append(temp, sortedTxs[i+1:]...)
+								break
+							}
+						}
+						temp = append(temp, tx)
+						sortedTxs = temp[:]
 
-			map_utxos[op] = hash
+						doubleSpendTxs = append(doubleSpendTxs, p_tx)
+						for _, op := range tx.GetSpendOutpoints() {
+							map_doubleTxs[op] = tx.Hash()
+						}
+					} else {
+						doubleSpendTxs = append(doubleSpendTxs, tx)
+					}
+				}
+				continue
+			}
+			map_doubleTxs[op] = hash
 		}
-		if !isOrphan {
+		if !isOrphan && !hasDouble {
 			pre_txs := tx.GetPrecusorTxs(txs)
-			for i, tx := range pre_txs {
+			for _, tx := range pre_txs {
 				if _, has := map_pretxs[tx.Hash()]; !has {
-					map_pretxs[tx.Hash()] = i
+					map_pretxs[tx.Hash()] = len(sortedTxs)
+					fmt.Println("add sorted tx:", tx.Hash().String())
 					sortedTxs = append(sortedTxs, tx)
 				}
 			}
 		}
 	}
-	//  重构sortedTxs、孤儿交易列表
-	for _, otx := range orphanTxs {
-		for i, stx := range sortedTxs {
-			if otx.Hash() == stx.Hash() {
-				orphanTxs = append(orphanTxs, sortedTxs[i+1:]...)
-				sortedTxs = sortedTxs[:i]
-				break
-			}
-		}
+
+	for i, tx := range sortedTxs {
+		fmt.Println("sorted tx:", i, tx.Hash().String())
+	}
+	for i, tx := range orphanTxs {
+		fmt.Println("orphan tx:", i, tx.Hash().String())
+	}
+	for i, tx := range doubleSpendTxs {
+		fmt.Println("double spend tx:", i, tx.Hash().String())
 	}
 
 	return sortedTxs, orphanTxs, doubleSpendTxs
@@ -1163,4 +1193,38 @@ func (tx *Transaction) GetPrecusorTxs(poolTxs map[common.Hash]*Transaction) []*T
 	//返回自己
 	pretxs = append(pretxs, tx)
 	return pretxs
+}
+func (tx *Transaction) isOrphanTx(txs map[common.Hash]*Transaction, utxoFunc QueryUtxoFunc) bool {
+	for _, op := range tx.GetSpendOutpoints() {
+		if _, err := utxoFunc(op); err != nil {
+			if p_tx, has := txs[op.TxHash]; has {
+				return p_tx.isOrphanTx(txs, utxoFunc)
+			} else {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (tx *Transaction) preferTx(tx1 *Transaction, utxoFunc QueryUtxoFunc) (bool, error) {
+	fee, err := tx.GetTxFee(utxoFunc)
+	fee1, err1 := tx1.GetTxFee(utxoFunc)
+	if err != nil && err1 != nil {
+		return false, fmt.Errorf("all utxos are illegal.")
+	}
+	if err != nil {
+		return false, nil
+	}
+	if err1 != nil {
+		return true, nil
+	}
+	if fee.Asset.String() != fee1.Asset.String() {
+		return false, fmt.Errorf("this two transaction asset is different.")
+	}
+	if fee1.Amount > fee.Amount {
+		return false, nil
+	}
+	return true, nil
+
 }
