@@ -774,9 +774,9 @@ func CheckContractTxResult(tx *modules.Transaction, rwM rwset.TxManager, dag dbo
 	return isMsgSame
 }
 
-func (p *Processor) IsSystemContractTx(tx *modules.Transaction) bool {
-	return tx.IsSystemContract()
-}
+//func (p *Processor) IsSystemContractTx(tx *modules.Transaction) bool {
+//	return tx.IsSystemContract()
+//}
 
 func (p *Processor) isValidateElection(tx *modules.Transaction, ele *modules.ElectionNode, checkExit bool) bool {
 	if tx == nil || ele == nil {

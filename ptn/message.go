@@ -369,11 +369,10 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		if pm.IsExistInCache(txHash.Bytes()) {
 			return nil
 		}
-
-		if tx.IsContractTx() {
-			if pm.contractProc.IsSystemContractTx(tx) {
-				continue
-			}
+		//系统合约的请求可以P2P广播，但是包含结果的系统合约请求，只能在打包时生成，不能广播
+		if tx.IsSystemContract() && !tx.IsNewContractInvokeRequest() {
+			log.Warnf("Tx[%s] is a sys contract with result, don't need send by p2p", txHash.String())
+			continue
 		}
 		_, err := pm.txpool.ProcessTransaction(tx, true, true, 0 /*pm.txpool.Tag(peer.ID())*/)
 		if err != nil {
