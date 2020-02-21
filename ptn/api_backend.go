@@ -186,7 +186,7 @@ func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transactio
 			//case err1 := <-saveUnitSub.Err():
 			//	log.Warnf("SubscribeSaveUnitEvent err:%s", err1.Error())
 			case <-saveUnitSub.Err():
-				log.Warnf("SubscribeSaveUnitEvent err")
+				log.Debugf("SubscribeSaveUnitEvent err")
 				return
 			}
 		}

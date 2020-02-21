@@ -91,8 +91,8 @@ type DynamicGlobalProperty struct {
 	LastMediator       common.Address `json:"lastMediator"`       // 最新单元的生产 mediator
 	IsShuffledSchedule bool           `json:"isShuffledSchedule"` // 标记 mediator 的调度顺序是否刚被打乱
 
-	NextMaintenanceTime uint32 `json:"nextMaintenanceTime"` // 下一次系统维护时间
-	LastMaintenanceTime uint32 `json:"lastMaintenanceTime"` // 上一次系统维护时间
+	NextMaintenanceTime uint32 `json:"nextMaintenanceTime"` // 下一次系统维护时间(期望的换届时间)
+	LastMaintenanceTime uint32 `json:"lastMaintenanceTime"` // 上一次系统维护时间(实际的换届时间)
 
 	// 当前的绝对时间槽数量，== 从创世开始所有的时间槽数量 == UnitNum + 丢失的槽数量
 	CurrentAbsoluteSlot uint64 `json:"currentAbsoluteSlot"`
