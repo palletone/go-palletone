@@ -26,7 +26,7 @@ ${tokenHolder}    ${null}
 ${amount}         10000
 ${fee}            1
 ${pwd}            1
-${duration}       600000000
+${duration}       0
 # cert ids
 ${caCertID}       425566090740792125343006613097721207771083416073
 ${powerCertID}    307836019859253235118797514629984133398722874310

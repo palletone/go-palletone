@@ -22,7 +22,7 @@ ${fee}            10
 ${pwd}            1
 ${res}            ${null}
 ${extra}          "createtx"
-${duration}       600000000
+${duration}       0
 #${AliceToken}     ${null}
 #${BobToken}       ${null}
 ${AliceTokenID}    ${null}

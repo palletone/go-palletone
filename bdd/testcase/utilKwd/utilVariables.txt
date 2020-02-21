@@ -60,7 +60,7 @@ ${votePTN}        1000
 ${voteAmount}     2
 ${gain}           2
 ${pwd}            1
-${duration}       ${600000000}
+${duration}       ${0}
 ${evidence}       evidence
 ${SeqenceToken}    1
 ${UDIDToken}      2
