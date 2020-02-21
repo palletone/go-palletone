@@ -1146,22 +1146,22 @@ func SortTxs(txs map[common.Hash]*Transaction, utxoFunc QueryUtxoFunc) ([]*Trans
 			for _, tx := range pre_txs {
 				if _, has := map_pretxs[tx.Hash()]; !has {
 					map_pretxs[tx.Hash()] = len(sortedTxs)
-					fmt.Println("add sorted tx:", tx.Hash().String())
+					//fmt.Println("add sorted tx:", tx.Hash().String())
 					sortedTxs = append(sortedTxs, tx)
 				}
 			}
 		}
 	}
 
-	for i, tx := range sortedTxs {
-		fmt.Println("sorted tx:", i, tx.Hash().String())
-	}
-	for i, tx := range orphanTxs {
-		fmt.Println("orphan tx:", i, tx.Hash().String())
-	}
-	for i, tx := range doubleSpendTxs {
-		fmt.Println("double spend tx:", i, tx.Hash().String())
-	}
+	//for i, tx := range sortedTxs {
+	//	fmt.Println("sorted tx:", i, tx.Hash().String())
+	//}
+	//for i, tx := range orphanTxs {
+	//	fmt.Println("orphan tx:", i, tx.Hash().String())
+	//}
+	//for i, tx := range doubleSpendTxs {
+	//	fmt.Println("double spend tx:", i, tx.Hash().String())
+	//}
 
 	return sortedTxs, orphanTxs, doubleSpendTxs
 }
