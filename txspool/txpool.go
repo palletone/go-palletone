@@ -995,7 +995,10 @@ func (pool *TxPool) getPoolTxsByAddr(addr string, onlyUnpacked bool) ([]*TxPoolT
 				if msg.App == modules.APP_PAYMENT {
 					payment, ok := msg.Payload.(*modules.PaymentPayload)
 					if ok {
-						addrs := tx.Tx.GetFromAddrs(pool.GetTxOutput, pool.tokenEngine.GetAddressFromScript)
+						addrs, err := tx.Tx.GetFromAddrs(pool.GetTxOutput, pool.tokenEngine.GetAddressFromScript)
+						if err != nil {
+							return nil, err
+						}
 						for _, addr := range addrs {
 							addr1 := addr.String()
 							txs[addr1] = append(txs[addr1], tx)
@@ -1023,7 +1026,10 @@ func (pool *TxPool) getPoolTxsByAddr(addr string, onlyUnpacked bool) ([]*TxPoolT
 			if msg.App == modules.APP_PAYMENT {
 				payment, ok := msg.Payload.(*modules.PaymentPayload)
 				if ok {
-					addrs := tx.Tx.GetFromAddrs(pool.GetTxOutput, pool.tokenEngine.GetAddressFromScript)
+					addrs, err := tx.Tx.GetFromAddrs(pool.GetTxOutput, pool.tokenEngine.GetAddressFromScript)
+					if err != nil {
+						return nil, err
+					}
 					//if addrs, err := pool.unit.GetTxFromAddress(tx.Tx); err == nil {
 					for _, addr := range addrs {
 						addr1 := addr.String()

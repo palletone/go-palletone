@@ -1098,11 +1098,14 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 	}
 	//Index
 	if dagconfig.DagConfig.AddrTxsIndex {
-		rep.saveAddrTxIndex(txHash, tx)
+		err = rep.saveAddrTxIndex(txHash, tx)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
-func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Transaction) {
+func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Transaction) error {
 
 	//Index TxId for to address
 	addresses := rep.getPayToAddresses(tx)
@@ -1111,8 +1114,10 @@ func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Trans
 		rep.idxdb.SaveAddress(addr)
 	}
 	//Index from address to txid
-	fromAddrs := tx.GetFromAddrs(rep.utxoRepository.GetTxOutput, rep.tokenEngine.GetAddressFromScript)
-
+	fromAddrs, err := tx.GetFromAddrs(rep.utxoRepository.GetTxOutput, rep.tokenEngine.GetAddressFromScript)
+	if err != nil {
+		return err
+	}
 	for _, addr := range fromAddrs {
 		rep.idxdb.SaveAddressTxId(addr, txHash)
 	}
@@ -1124,6 +1129,7 @@ func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Trans
 			rep.idxdb.SaveAddressTxId(addr, txHash)
 		}
 	}
+	return nil
 }
 
 func (rep *UnitRepository) getPayToAddresses(tx *modules.Transaction) []common.Address {
