@@ -340,6 +340,7 @@ func TestAdditionJson(t *testing.T) {
 	data, _ := json.Marshal(income)
 	t.Log(string(data))
 }
+
 func TestSortTxs(t *testing.T) {
 	hash0 := common.BytesToHash([]byte("0"))
 	hash1 := common.BytesToHash([]byte("1"))
@@ -358,6 +359,12 @@ func TestSortTxs(t *testing.T) {
 	txW, txZ := newTestDoubleSpendTxs(txY.Hash())
 	t.Logf("Tx W:%s", txW.Hash().String())
 	t.Logf("Tx Z:%s", txZ.Hash().String())
+
+	txE1 := newTestPaymentTx(txD.Hash())
+	payE1 := txE1.txdata.TxMessages[0].Payload.(*PaymentPayload)
+	payE1.Inputs[0].PreviousOutPoint.OutIndex = 1
+	data, _ := json.Marshal(txE1)
+	t.Logf("Tx E1:%s", string(data)) //txE1.Hash().String())
 
 	txMap := make(map[common.Hash]*Transaction)
 	txMap[txW.Hash()] = txW
@@ -403,8 +410,8 @@ func TestSortTxs(t *testing.T) {
 		assert.Equal(t, txC.Hash().String(), sortedTx[2].Hash().String())
 		assert.Equal(t, txD.Hash().String(), sortedTx[3].Hash().String())
 
-		assert.Equal(t, 4, len(sortedTx))
-		assert.Equal(t, 4, len(orphanTxs))
+		assert.Equal(t, 4, len(sortedTx))  //a b c d
+		assert.Equal(t, 5, len(orphanTxs)) //x y z w e1
 		assert.Equal(t, 0, len(doubleSpendTxs))
 	}
 	t.Log("begin sort orphan tx...")
@@ -416,10 +423,10 @@ func TestSortTxs(t *testing.T) {
 		t.Logf("orphan tx[%s]", tx.Hash().String())
 	}
 	if utxoQueryFn1 != nil {
-		assert.Equal(t, 3, len(sortedTx1))
+		assert.Equal(t, 3, len(sortedTx1)) //x y z
 
-		assert.Equal(t, 4, len(orphanTxs1))
-		assert.Equal(t, 1, len(doubleSpendTxs1))
+		assert.Equal(t, 5, len(orphanTxs1))      //a b c d e1
+		assert.Equal(t, 1, len(doubleSpendTxs1)) //w
 	}
 }
 
@@ -432,7 +439,7 @@ func newTestPaymentTx(preTxHash common.Hash) *Transaction {
 	pay1s.AddTxOut(output)
 
 	input := Input{}
-	input.PreviousOutPoint = NewOutPoint(preTxHash, 0, 1)
+	input.PreviousOutPoint = NewOutPoint(preTxHash, 0, 0)
 	input.SignatureScript = []byte{}
 	input.Extra = []byte("Test")
 
@@ -446,6 +453,29 @@ func newTestPaymentTx(preTxHash common.Hash) *Transaction {
 		[]*Message{msg},
 	)
 	return tx
+}
+func newCcInvokeRequest(preTxHash common.Hash) *Transaction {
+	req := newTestPaymentTx(preTxHash)
+	invoke := &ContractInvokeRequestPayload{
+		ContractId: []byte("PC1"),
+		Args:       [][]byte{[]byte("put"), []byte("a")},
+		Timeout:    0,
+	}
+	req.AddMessage(NewMessage(APP_CONTRACT_INVOKE_REQUEST, invoke))
+	return req
+}
+func newCcInvokeFullTx(preTxHash common.Hash) *Transaction {
+	req := newCcInvokeRequest(preTxHash)
+	result := &ContractInvokePayload{
+		ContractId: []byte("PC1"),
+		Args:       [][]byte{[]byte("put"), []byte("a")},
+		ReadSet:    nil,
+		WriteSet:   nil,
+		Payload:    []byte("ok"),
+		ErrMsg:     ContractError{},
+	}
+	req.AddMessage(NewMessage(APP_CONTRACT_INVOKE, result))
+	return req
 }
 func newTestDoubleSpendTxs(preTxHash common.Hash) (*Transaction, *Transaction) {
 	pay1s := &PaymentPayload{
@@ -461,7 +491,7 @@ func newTestDoubleSpendTxs(preTxHash common.Hash) (*Transaction, *Transaction) {
 	pay2s.AddTxOut(output2)
 
 	input := Input{}
-	input.PreviousOutPoint = NewOutPoint(preTxHash, 0, 1)
+	input.PreviousOutPoint = NewOutPoint(preTxHash, 0, 0)
 	input.SignatureScript = []byte{}
 	input.Extra = []byte("Test")
 
@@ -482,4 +512,51 @@ func newTestDoubleSpendTxs(preTxHash common.Hash) (*Transaction, *Transaction) {
 		[]*Message{msg2},
 	)
 	return tx1, tx2
+}
+
+func TestSortTxAndRequests(t *testing.T) {
+	hash0 := common.BytesToHash([]byte("0"))
+	//hash1 := common.BytesToHash([]byte("1"))
+	txA := newTestPaymentTx(hash0)
+	t.Logf("Tx A:%s", txA.Hash().String())
+	txB := newCcInvokeRequest(txA.Hash())
+	t.Logf("Tx B:%s", txB.Hash().String())
+	txC := newCcInvokeFullTx(txB.Hash())
+	t.Logf("Tx C:%s", txC.Hash().String())
+	txD := newTestPaymentTx(txC.RequestHash()) //交易D是基于TxC在Request的时候的UTXO产生的
+	t.Logf("Tx D:%s", txD.Hash().String())
+
+	txMap := make(map[common.Hash]*Transaction)
+	txMap[txC.Hash()] = txC
+	txMap[txB.Hash()] = txB
+	txMap[txD.Hash()] = txD
+	txMap[txA.Hash()] = txA
+	for hash := range txMap {
+		t.Logf("map order tx[%s]", hash.String())
+	}
+	t.Log("begin sort tx...")
+	utxoQueryFn := func(outpoint *OutPoint) (*Utxo, error) {
+		if outpoint.TxHash == hash0 {
+			t := time.Now().AddDate(0, 0, -1).Unix()
+			return &Utxo{Amount: Ptn2Dao(11), Timestamp: uint64(t), Asset: NewPTNAsset()}, nil
+		}
+		return nil, fmt.Errorf("utxo not found.")
+	}
+
+	sortedTx, orphanTxs, doubleSpendTxs := SortTxs(txMap, utxoQueryFn)
+	for i, tx := range sortedTx {
+		t.Logf("sorted index[%d] tx[%s]", i, tx.Hash().String())
+	}
+	for _, tx := range orphanTxs {
+		t.Logf("orphan tx[%s]", tx.Hash().String())
+	}
+
+	assert.Equal(t, txA.Hash().String(), sortedTx[0].Hash().String())
+	assert.Equal(t, txB.Hash().String(), sortedTx[1].Hash().String())
+	assert.Equal(t, txC.Hash().String(), sortedTx[2].Hash().String())
+	assert.Equal(t, txD.Hash().String(), sortedTx[3].Hash().String())
+
+	assert.Equal(t, 4, len(sortedTx))
+	assert.Equal(t, 0, len(orphanTxs))
+	assert.Equal(t, 0, len(doubleSpendTxs))
 }
