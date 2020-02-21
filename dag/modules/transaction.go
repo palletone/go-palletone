@@ -685,7 +685,7 @@ func (tx *Transaction) HasContractPayoutMsg() (bool, int, *Message) {
 }
 
 //获取该交易的所有From地址
-func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc GetAddressFromScriptFunc) []common.Address {
+func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc GetAddressFromScriptFunc) ([]common.Address, error) {
 	resultMap := map[common.Address]int{}
 	msgs := tx.TxMessages()
 	for _, msg := range msgs {
@@ -701,7 +701,7 @@ func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc Get
 							lockScript = out.PkScript
 						} else {
 							log.Errorf("Cannot find txo by:%s", input.PreviousOutPoint.String())
-							return []common.Address{}
+							return nil, err
 						}
 					} else {
 						lockScript = txo.PkScript
@@ -720,7 +720,7 @@ func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc Get
 	for k := range resultMap {
 		keys = append(keys, k)
 	}
-	return keys
+	return keys, nil
 }
 
 //获取该交易的发起人地址

@@ -92,14 +92,17 @@ type IUtxoRepository interface {
 	//SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.Utxo) error
 }
 
-func (repository *UtxoRepository) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+func (repository *UtxoRepository) getUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	data, err := repository.txUtxodb.GetUtxoEntry(outpoint)
 	if err == nil {
 		return data, nil
 	}
 	log.Debugf("GetUtxoEntry(%s) not in TxUtxo, try ReqUtxo", outpoint.String())
 	//Tx UTXO找不到，试着去Req UTXO 找
-	data, err = repository.reqUtxodb.GetUtxoEntry(outpoint)
+	return repository.reqUtxodb.GetUtxoEntry(outpoint)
+}
+func (repository *UtxoRepository) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	data, err := repository.getUtxoEntry(outpoint)
 	if err != nil {
 		log.Warnf("GetUtxoEntry(%s) also not in ReqUtxo", outpoint.String())
 	} else {
@@ -142,7 +145,7 @@ func (repository *UtxoRepository) GetStxoEntry(outpoint *modules.OutPoint) (*mod
 
 //获得消费的和未消费的交易输出
 func (repository *UtxoRepository) GetTxOutput(outpoint *modules.OutPoint) (*modules.Utxo, error) {
-	utxo, err := repository.GetUtxoEntry(outpoint)
+	utxo, err := repository.getUtxoEntry(outpoint)
 	if err != nil {
 		stxo, err := repository.GetStxoEntry(outpoint)
 		if err != nil {
