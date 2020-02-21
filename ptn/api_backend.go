@@ -158,7 +158,7 @@ func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transactio
 			case u := <-saveUnitCh:
 				log.Infof("SubscribeSaveUnitEvent received unit:%s", u.Unit.DisplayId())
 				for _, utx := range u.Unit.Transactions() {
-					if utx.Hash() == txHash {
+					if utx.Hash() == txHash || utx.RequestHash() == txHash {
 						log.Debugf("Change local tx[%s] status to unstable", txHash.String())
 						err = b.Dag().SaveLocalTxStatus(txHash, modules.TxStatus_Unstable)
 						if err != nil {
@@ -169,7 +169,7 @@ func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transactio
 			case u := <-headCh:
 				log.Infof("SubscribeSaveStableUnitEvent received unit:%s", u.Unit.DisplayId())
 				for _, utx := range u.Unit.Transactions() {
-					if utx.Hash() == txHash {
+					if utx.Hash() == txHash || utx.RequestHash() == txHash {
 						log.Debugf("Change local tx[%s] status to stable", txHash.String())
 						err = b.Dag().SaveLocalTxStatus(txHash, modules.TxStatus_Stable)
 						if err != nil {
@@ -179,7 +179,7 @@ func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transactio
 					}
 				}
 			case <-timeout.C:
-				log.Warnf("SubscribeSaveStableUnitEvent timeout for tx[%s]", txHash)
+				log.Warnf("SubscribeSaveStableUnitEvent timeout for tx[%s]", txHash.String())
 				return
 			// Err() channel will be closed when unsubscribing.
 			//case err0 := <-headSub.Err():
