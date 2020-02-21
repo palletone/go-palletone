@@ -1199,13 +1199,14 @@ func (tx *Transaction) GetPrecusorTxs(poolTxs map[common.Hash]*Transaction) []*T
 }
 func (tx *Transaction) isOrphanTx(txs map[common.Hash]*Transaction, utxoFunc QueryUtxoFunc) bool {
 	for _, op := range tx.GetSpendOutpoints() {
-		if _, err := utxoFunc(op); err != nil {
-			if p_tx, has := txs[op.TxHash]; has {
-				return p_tx.isOrphanTx(txs, utxoFunc)
-			} else {
+		if p_tx, has := txs[op.TxHash]; has {
+			return p_tx.isOrphanTx(txs, utxoFunc)
+		} else {
+			if _, err := utxoFunc(op); err != nil {
 				return true
 			}
 		}
+
 	}
 	return false
 }
