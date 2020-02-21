@@ -304,42 +304,49 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 	}
 	return rsp1, err
 }
+
+//该方法即将废弃，请使用ccinvoketx
 func (s *PrivateContractAPI) CcinvoketxPass(ctx context.Context, from, to string, amount, fee decimal.Decimal,
 	deployId string, param []string, password string, duration *uint32, certID string) (string, error) {
-	contractAddr, _ := common.StringToAddress(deployId)
-	fromAddr, _ := common.StringToAddress(from)
-	toAddr, _ := common.StringToAddress(to)
-	daoAmount := ptnjson.Ptn2Dao(amount)
-	daoFee := ptnjson.Ptn2Dao(fee)
-
-	log.Info("CcinvoketxPass info:")
-	log.Infof("   fromAddr[%s], toAddr[%s]", fromAddr.String(), toAddr.String())
-	log.Infof("   daoAmount[%d], daoFee[%d]", daoAmount, daoFee)
-	log.Infof("   contractId[%s], certID[%s], password[%s]", contractAddr.String(), certID, password)
-
-	intCertID := new(big.Int)
-	if len(certID) > 0 {
-		if _, ok := intCertID.SetString(certID, 10); !ok {
-			return "", fmt.Errorf("certid is invalid")
-		}
-	}
-	log.Infof("   param len[%d]", len(param))
-	args := make([][]byte, len(param))
-	for i, arg := range param {
-		args[i] = []byte(arg)
-		log.Infof("      index[%d], value[%s]\n", i, arg)
-	}
-
-	//2.
-	err := unlockKS(s.b, fromAddr, password, duration)
+	result, err := s.Ccinvoketx(ctx, from, to, amount, fee, deployId, param, &password, duration)
 	if err != nil {
 		return "", err
 	}
-
-	reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, daoAmount, daoFee, intCertID, contractAddr, args, 0)
-	log.Infof("   reqId[%s]", hex.EncodeToString(reqId[:]))
-
-	return hex.EncodeToString(reqId[:]), err
+	return result.ReqId, nil
+	//contractAddr, _ := common.StringToAddress(deployId)
+	//fromAddr, _ := common.StringToAddress(from)
+	//toAddr, _ := common.StringToAddress(to)
+	//daoAmount := ptnjson.Ptn2Dao(amount)
+	//daoFee := ptnjson.Ptn2Dao(fee)
+	//
+	//log.Info("CcinvoketxPass info:")
+	//log.Infof("   fromAddr[%s], toAddr[%s]", fromAddr.String(), toAddr.String())
+	//log.Infof("   daoAmount[%d], daoFee[%d]", daoAmount, daoFee)
+	//log.Infof("   contractId[%s], certID[%s], password[%s]", contractAddr.String(), certID, password)
+	//
+	//intCertID := new(big.Int)
+	//if len(certID) > 0 {
+	//	if _, ok := intCertID.SetString(certID, 10); !ok {
+	//		return "", fmt.Errorf("certid is invalid")
+	//	}
+	//}
+	//log.Infof("   param len[%d]", len(param))
+	//args := make([][]byte, len(param))
+	//for i, arg := range param {
+	//	args[i] = []byte(arg)
+	//	log.Infof("      index[%d], value[%s]\n", i, arg)
+	//}
+	//
+	////2.
+	//err := unlockKS(s.b, fromAddr, password, duration)
+	//if err != nil {
+	//	return "", err
+	//}
+	//
+	//reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, daoAmount, daoFee, intCertID, contractAddr, args, 0)
+	//log.Infof("   reqId[%s]", hex.EncodeToString(reqId[:]))
+	//
+	//return hex.EncodeToString(reqId[:]), err
 }
 func (s *PrivateContractAPI) Ccstoptx(ctx context.Context, from, to string, amount, fee decimal.Decimal, contractId string) (*ContractStopRsp, error) {
 	fromAddr, _ := common.StringToAddress(from)
