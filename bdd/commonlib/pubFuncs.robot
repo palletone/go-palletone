@@ -15,16 +15,16 @@ queryCAHolder
     Set Global Variable    ${caCertHolder}    ${addr}
     [Return]    ${addr}
 
-queryCACertID
-    ${args}=    Create List    getHolderCertIDs    ${caCertHolder}
-    ${params}=    Create List    ${certContractAddr}    ${args}    ${0}
-    ${respJson}=    sendRpcPost    ${host}    ${ccqueryMethod}    ${params}    getCAHolder
-    ${result}=    Get From Dictionary    ${respJson}    result
-    ${info}=    To Json    ${result}
-    ${certId}=    Evaluate    ${info}["IntermediateCertIDs"][${0}]["CertID"]
-    Should Not Be Empty    ${certId}
-    Set Global Variable    ${caCertID}    ${certId}
-    [Return]    ${certId}
+#queryCACertID
+#    ${args}=    Create List    getHolderCertIDs    ${caCertHolder}
+#    ${params}=    Create List    ${certContractAddr}    ${args}    ${0}
+#    ${respJson}=    sendRpcPost    ${host}    ${ccqueryMethod}    ${params}    getCAHolder
+#    ${result}=    Get From Dictionary    ${respJson}    result
+#    ${info}=    To Json    ${result}
+#    ${certId}=    Evaluate    ${info}["IntermediateCertIDs"][${0}]["CertID"]
+#    Should Not Be Empty    ${certId}
+#    Set Global Variable    ${caCertID}    ${certId}
+#    [Return]    ${certId}
 
 genInvoketxParams
     [Arguments]    ${caCertHolder}    ${caCertHolder}    ${from}    ${to}    ${certContractAddr}    ${args}
