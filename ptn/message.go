@@ -522,7 +522,7 @@ func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 	}
 
 	if pm.producer.IsLocalMediator(header.Author()) {
-		go pm.producer.AddToTBLSRecoverBuf(&sigShare)
+		go pm.producer.AddToTBLSRecoverBuf(&sigShare, header)
 	} else {
 		go pm.BroadcastSigShare(&sigShare)
 	}

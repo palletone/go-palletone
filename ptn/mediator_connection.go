@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // @author Albert·Gou
@@ -38,7 +39,7 @@ type producer interface {
 	AddToTBLSSignBufs(newHash common.Hash)
 
 	SubscribeSigShareEvent(ch chan<- mp.SigShareEvent) event.Subscription
-	AddToTBLSRecoverBuf(sigShare *mp.SigShareEvent)
+	AddToTBLSRecoverBuf(sigShare *mp.SigShareEvent, header *modules.Header)
 
 	SubscribeVSSDealEvent(ch chan<- mp.VSSDealEvent) event.Subscription
 	AddToDealBuf(deal *mp.VSSDealEvent)

@@ -116,7 +116,7 @@ func (pm *ProtocolManager) transmitSigShare(sigShare *mp.SigShareEvent) {
 
 	// 判读该unit是否是本地mediator生产的
 	if pm.producer.IsLocalMediator(header.Author()) {
-		go pm.producer.AddToTBLSRecoverBuf(sigShare)
+		go pm.producer.AddToTBLSRecoverBuf(sigShare, header)
 	} else {
 		go pm.BroadcastSigShare(sigShare)
 	}
