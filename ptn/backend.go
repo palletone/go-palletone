@@ -213,7 +213,7 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 		return nil, err
 	}
 
-	ptn.ApiBackend = &PtnApiBackend{ptn}
+	ptn.ApiBackend = &PtnApiBackend{ptn: ptn}
 	return ptn, nil
 }
 

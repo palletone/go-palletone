@@ -1096,6 +1096,8 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 	if pwd != nil {
 		password = *pwd
 	}
+	s.b.Lock()
+	defer s.b.Unlock()
 	//1. build payment tx
 	start := time.Now()
 	rawTx, usedUtxo, err := buildRawTransferTx(s.b, asset, from, to, amount, fee, password, true)

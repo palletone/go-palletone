@@ -555,13 +555,27 @@ func TxtoTxpoolTx(tx *modules.Transaction) *TxPoolTransaction {
 // the pool due to pricing constraints.
 
 func (pool *TxPool) add(tx *TxPoolTransaction, local bool) (bool, error) {
+	hash := tx.Tx.Hash()
+	exitsInDb, err := pool.unit.IsTransactionExist(hash)
+	if err != nil {
+		return false, err
+	}
+	if exitsInDb {
+		log.Infof("Tx[%s] already exist in db", hash.String())
+		return false, nil
+	}
+	if _, err = pool.unit.GetTxHashByReqId(hash); err == nil {
+		log.Infof("Request[%s] already exist in db", hash.String())
+		return false, nil
+	}
+
 	msgs := tx.Tx.TxMessages()
 	if msgs[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
 		txCoinbasePrometheus.Add(1)
 		return true, nil
 	}
 	// Don't accept the transaction if it already in the pool .
-	hash := tx.Tx.Hash()
+
 	if _, has := pool.all.Load(hash); has {
 		txAlreadyPrometheus.Add(1)
 		log.Trace("Discarding already known transaction", "hash", hash.String())

@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"math/big"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/event"
@@ -57,10 +58,17 @@ const channelId = "palletone"
 
 // PtnApiBackend implements ethapi.Backend for full nodes
 type PtnApiBackend struct {
-	ptn *PalletOne
-	//gpo *gasprice.Oracle
+	ptn   *PalletOne
+	mutex sync.Mutex
 }
 
+func (b *PtnApiBackend) Lock() {
+	b.mutex.Lock()
+}
+
+func (b *PtnApiBackend) Unlock() {
+	b.mutex.Unlock()
+}
 func (b *PtnApiBackend) Dag() dag.IDag {
 	return b.ptn.dag
 }
