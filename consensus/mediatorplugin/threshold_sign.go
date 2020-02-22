@@ -266,7 +266,7 @@ func (mp *MediatorPlugin) AddToTBLSRecoverBuf(event *SigShareEvent, header *modu
 	// 当buf不存在时，说明已经成功recover出群签名, 或者已经过了unit确认时间，不需要群签名，忽略该签名分片
 	sigShareSet, ok := unitsSigSharesBuf[newUnitHash]
 	if !ok {
-		errStr := fmt.Errorf("the mediator(%v)'s unit(hash: %v, # %v ) need not to recover group-sign," +
+		errStr := fmt.Errorf("the mediator(%v)'s unit(hash: %v, # %v ) need not to recover group-sign,"+
 			" or it's unitsSigSharesBuf is cleared",
 			localMed.Str(), newUnitHash.TerminalString(), header.NumberU64())
 		log.Debugf(errStr.Error())

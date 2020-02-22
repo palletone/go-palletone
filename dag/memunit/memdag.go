@@ -65,8 +65,9 @@ type MemDag struct {
 	cache              palletcache.ICache
 	// append by albert·gou 用于通知群签名
 	toGroupSignFeed      event.Feed
-	saveStableUnitFeed   event.Feed
 	toGroupSignScope     event.SubscriptionScope
+	saveStableUnitFeed   event.Feed
+	saveStableUnitScope  event.SubscriptionScope
 	db                   ptndb.Database
 	tokenEngine          tokenengine.ITokenEngine
 	quit                 chan struct{} // used for exit
@@ -83,14 +84,17 @@ func (pmg *MemDag) SubscribeSwitchMainChainEvent(ob SwitchMainChainEventFunc) {
 
 func (pmg *MemDag) Close() {
 	pmg.toGroupSignScope.Close()
+	pmg.saveStableUnitScope.Close()
 }
 
 func (pmg *MemDag) SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription {
 	return pmg.toGroupSignScope.Track(pmg.toGroupSignFeed.Subscribe(ch))
 }
+
 func (pmg *MemDag) SubscribeSaveStableUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription {
-	return pmg.saveStableUnitFeed.Subscribe(ch)
+	return pmg.saveStableUnitScope.Track(pmg.saveStableUnitFeed.Subscribe(ch))
 }
+
 func (pmg *MemDag) SetStableThreshold(count int) {
 	pmg.lock.Lock()
 	defer pmg.lock.Unlock()
@@ -356,6 +360,7 @@ func (chain *MemDag) setNextStableUnit(chain_units map[common.Hash]*modules.Unit
 		go txpool.SendStoredTxs(unit.Txs.GetTxIds())
 	}
 
+	// 通知该unit已经稳定，以便做相应的处理，清理相关缓存等
 	go chain.saveStableUnitFeed.Send(modules.SaveUnitEvent{Unit: unit})
 	log.Debugf("Remove unit index[%d],hash[%s] from chainUnits", height, hash.String())
 
@@ -627,6 +632,8 @@ func (chain *MemDag) AddUnit(unit *modules.Unit, txpool txspool.ITxPool, isGener
 
 	if err == nil && !isOrphan {
 		// 进行下一个unit的群签名
+		// 一定要在此处通知群签名的原因是：让之前的所有的unit都被群签名群签名确认后，
+		// 由于新生产的unit一定满足不了确认的深度，唯有在此处通知才能被及时的群签名
 		log.Debugf("send toGroupSign event")
 		go chain.toGroupSignFeed.Send(modules.ToGroupSignEvent{})
 	}

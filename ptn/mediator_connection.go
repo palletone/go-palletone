@@ -85,6 +85,21 @@ func (pm *ProtocolManager) unstableRepositoryUpdatedRecvLoop() {
 	}
 }
 
+func (pm *ProtocolManager) saveStableUnitRecvLoop() {
+	log.Debugf("saveStableUnitRecvLoop")
+	for {
+		select {
+		case <-pm.saveStableUnitCh:
+			log.Debugf("receive saveStableUnitEvent")
+			// todo 做相应的处理
+
+			// Err() channel will be closed when unsubscribing.
+		case <-pm.saveStableUnitSub.Err():
+			return
+		}
+	}
+}
+
 func (pm *ProtocolManager) switchMediatorConnect(isChanged bool) {
 	log.Debug("switchMediatorConnect", "isChanged", isChanged)
 
