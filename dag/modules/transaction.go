@@ -740,13 +740,14 @@ func (tx *Transaction) GetRequesterAddr(queryUtxoFunc QueryUtxoFunc, getAddrFunc
 
 }
 
-func (tx *Transaction) GetContractTxType() (MessageType, error) {
+func (tx *Transaction) GetContractTxType() (MessageType) {
 	for _, msg := range tx.Messages() {
 		if msg.App >= APP_CONTRACT_TPL_REQUEST && msg.App <= APP_CONTRACT_STOP_REQUEST {
-			return msg.App, nil
+			return msg.App
 		}
 	}
-	return APP_UNKNOW, fmt.Errorf("GetContractTxType, not contract Tx, txHash[%s]", tx.Hash().String())
+	log.Debugf("GetContractTxType, not contract Tx, txHash[%s]", tx.Hash().String())
+	return APP_UNKNOW
 }
 
 // 获取locktime
