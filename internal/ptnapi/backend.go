@@ -177,7 +177,6 @@ type Backend interface {
 
 	TxPool() txspool.ITxPool
 	Dag() dag.IDag
-	MDag() dag.IDag
 	SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error
 	SignAndSendRequest(addr common.Address, tx *modules.Transaction) error
 

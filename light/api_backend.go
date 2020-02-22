@@ -490,11 +490,6 @@ func (b *LesApiBackend) Dag() dag.IDag {
 	return nil
 }
 
-func (b *LesApiBackend) MDag() dag.IDag {
-	//return b.MDag()
-	return nil
-}
-
 func (b *LesApiBackend) TxPool() txspool.ITxPool {
 	return b.ptn.txPool
 }

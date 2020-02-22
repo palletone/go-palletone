@@ -73,10 +73,6 @@ func (b *PtnApiBackend) Dag() dag.IDag {
 	return b.ptn.dag
 }
 
-func (b *PtnApiBackend) MDag() dag.IDag {
-	return b.ptn.mdag
-}
-
 func (b *PtnApiBackend) TxPool() txspool.ITxPool {
 	return b.ptn.txPool
 }

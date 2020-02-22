@@ -200,9 +200,14 @@ func (ud *UnitDag4Test) GetTransactionOnly(hash common.Hash) (*modules.Transacti
 	return nil, nil
 }
 
+func (ud *UnitDag4Test) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
+	return common.Hash{}, nil
+}
+
 func (ud *UnitDag4Test) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
 	return nil, nil
 }
+
 func (ud *UnitDag4Test) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error) {
 	return []common.Address{}, nil, nil
 }
