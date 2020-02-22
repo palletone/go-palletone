@@ -181,3 +181,13 @@ func (m *Mockproducer) IsLocalMediator(add common.Address) bool {
 func (mr *MockproducerMockRecorder) IsLocalMediator(add interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsLocalMediator", reflect.TypeOf((*Mockproducer)(nil).IsLocalMediator), add)
 }
+
+// ClearGroupSignBufs mocks base method
+func (m *Mockproducer) ClearGroupSignBufs(stableUnit *modules.Unit) {
+	m.ctrl.Call(m, "ClearGroupSignBufs", stableUnit)
+}
+
+// ClearGroupSignBufs indicates an expected call of ClearGroupSignBufs
+func (mr *MockproducerMockRecorder) ClearGroupSignBufs(stableUnit interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearGroupSignBufs", reflect.TypeOf((*Mockproducer)(nil).ClearGroupSignBufs), stableUnit)
+}

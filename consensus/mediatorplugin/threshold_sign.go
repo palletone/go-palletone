@@ -102,24 +102,24 @@ func (mp *MediatorPlugin) addToTBLSSignBuf(localMed common.Address, unitHash com
 
 	go mp.signUnitTBLS(localMed, unitHash)
 
-	// 当 unit 过了确认时间后，及时删除待群签名的 unit，防止内存溢出
-	expiration := mp.dag.UnitIrreversibleTime()
-	deleteBuf := time.NewTimer(expiration)
+	// // 当 unit 过了确认时间后，及时删除待群签名的 unit，防止内存溢出
+	// expiration := mp.dag.UnitIrreversibleTime()
+	// deleteBuf := time.NewTimer(expiration)
 
-	select {
-	case <-mp.quit:
-		return
-	case <-deleteBuf.C:
-		mp.toTBLSBufLock.Lock()
-		//log.Debugf("toTBLSBufLock.Lock()")
-		if _, ok := mp.toTBLSSignBuf[localMed][unitHash]; ok {
-			log.Debugf("the unit(%v) has expired confirmation time, no longer need the mediator(%v)"+
-				" to sign-group", unitHash.TerminalString(), localMed.Str())
-			delete(mp.toTBLSSignBuf[localMed], unitHash)
-		}
-		//log.Debugf("toTBLSBufLock.Unlock()")
-		mp.toTBLSBufLock.Unlock()
-	}
+	// select {
+	// case <-mp.quit:
+	// 	return
+	// case <-deleteBuf.C:
+	// 	mp.toTBLSBufLock.Lock()
+	// 	//log.Debugf("toTBLSBufLock.Lock()")
+	// 	if _, ok := mp.toTBLSSignBuf[localMed][unitHash]; ok {
+	// 		log.Debugf("the unit(%v) has expired confirmation time, no longer need the mediator(%v)"+
+	// 			" to sign-group", unitHash.TerminalString(), localMed.Str())
+	// 		delete(mp.toTBLSSignBuf[localMed], unitHash)
+	// 	}
+	// 	//log.Debugf("toTBLSBufLock.Unlock()")
+	// 	mp.toTBLSBufLock.Unlock()
+	// }
 }
 
 func (mp *MediatorPlugin) SubscribeSigShareEvent(ch chan<- SigShareEvent) event.Subscription {
@@ -398,24 +398,50 @@ func (mp *MediatorPlugin) groupSignUnit(localMed common.Address, unitHash common
 	//log.Debugf("toTBLSBufLock.Unlock()")
 	mp.toTBLSBufLock.Unlock()
 
-	// 2. 过了 unit 确认时间后，及时删除群签名分片的相关数据，防止内存溢出
-	go func() {
-		expiration := mp.dag.UnitIrreversibleTime()
-		deleteBuf := time.NewTimer(expiration)
+	// // 2. 过了 unit 确认时间后，及时删除群签名分片的相关数据，防止内存溢出
+	// go func() {
+	// 	expiration := mp.dag.UnitIrreversibleTime()
+	// 	deleteBuf := time.NewTimer(expiration)
 
-		select {
-		case <-mp.quit:
-			return
-		case <-deleteBuf.C:
-			mp.toTBLSBufLock.Lock()
-			//log.Debugf("toTBLSBufLock.Lock()")
-			if _, ok := mp.toTBLSRecoverBuf[localMed][unitHash]; ok {
-				log.Debugf("the unit(%v) has expired confirmation time, no longer need the mediator(%v) "+
-					"to recover group-sign", unitHash.TerminalString(), localMed.Str())
-				delete(mp.toTBLSRecoverBuf[localMed], unitHash)
-			}
-			//log.Debugf("toTBLSBufLock.Unlock()")
-			mp.toTBLSBufLock.Unlock()
-		}
-	}()
+	// 	select {
+	// 	case <-mp.quit:
+	// 		return
+	// 	case <-deleteBuf.C:
+	// 		mp.toTBLSBufLock.Lock()
+	// 		//log.Debugf("toTBLSBufLock.Lock()")
+	// 		if _, ok := mp.toTBLSRecoverBuf[localMed][unitHash]; ok {
+	// 			log.Debugf("the unit(%v) has expired confirmation time, no longer need the mediator(%v) "+
+	// 				"to recover group-sign", unitHash.TerminalString(), localMed.Str())
+	// 			delete(mp.toTBLSRecoverBuf[localMed], unitHash)
+	// 		}
+	// 		//log.Debugf("toTBLSBufLock.Unlock()")
+	// 		mp.toTBLSBufLock.Unlock()
+	// 	}
+	// }()
+}
+
+func (mp *MediatorPlugin) ClearGroupSignBufs(stableUnit *modules.Unit) {
+	if !mp.groupSigningEnabled {
+		return
+	}
+
+	localMed := stableUnit.Author()
+	unitHash := stableUnit.Hash()
+
+	// unit 已被确认时间，及时删除群签名相关bufs，防止内存溢出
+	mp.toTBLSBufLock.Lock()
+	//log.Debugf("toTBLSBufLock.Lock()")
+	if _, ok := mp.toTBLSRecoverBuf[localMed][unitHash]; ok {
+		log.Debugf("the unit(%v) has expired confirmation time, no longer need the mediator(%v) "+
+			"to recover group-sign", unitHash.TerminalString(), localMed.Str())
+		delete(mp.toTBLSRecoverBuf[localMed], unitHash)
+	}
+
+	if _, ok := mp.toTBLSSignBuf[localMed][unitHash]; ok {
+		log.Debugf("the unit(%v) has expired confirmation time, no longer need the mediator(%v)"+
+			" to sign-group", unitHash.TerminalString(), localMed.Str())
+		delete(mp.toTBLSSignBuf[localMed], unitHash)
+	}
+	//log.Debugf("toTBLSBufLock.Unlock()")
+	mp.toTBLSBufLock.Unlock()
 }

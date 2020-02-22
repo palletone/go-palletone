@@ -54,6 +54,7 @@ type producer interface {
 	UpdateMediatorsDKG(isRenew bool)
 
 	IsLocalMediator(add common.Address) bool
+	ClearGroupSignBufs(stableUnit *modules.Unit)
 }
 
 func (pm *ProtocolManager) activeMediatorsUpdatedEventRecvLoop() {
@@ -89,9 +90,9 @@ func (pm *ProtocolManager) saveStableUnitRecvLoop() {
 	log.Debugf("saveStableUnitRecvLoop")
 	for {
 		select {
-		case <-pm.saveStableUnitCh:
+		case event := <-pm.saveStableUnitCh:
 			log.Debugf("receive saveStableUnitEvent")
-			// todo 做相应的处理
+			go pm.producer.ClearGroupSignBufs(event.Unit)
 
 			// Err() channel will be closed when unsubscribing.
 		case <-pm.saveStableUnitSub.Err():

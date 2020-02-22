@@ -412,7 +412,7 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 	go pm.unstableRepositoryUpdatedRecvLoop()
 
 	pm.saveStableUnitCh = make(chan modules.SaveUnitEvent)
-	pm.saveStableUnitSub = pm.dag.SubscribeSaveStableUnitEvent(pm.saveStableUnitdCh)
+	pm.saveStableUnitSub = pm.dag.SubscribeSaveStableUnitEvent(pm.saveStableUnitCh)
 	go pm.saveStableUnitRecvLoop()
 
 	if pm.consEngine != nil {
