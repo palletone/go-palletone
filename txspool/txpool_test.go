@@ -200,9 +200,14 @@ func (ud *UnitDag4Test) GetTransactionOnly(hash common.Hash) (*modules.Transacti
 	return nil, nil
 }
 
+func (ud *UnitDag4Test) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
+	return common.Hash{}, nil
+}
+
 func (ud *UnitDag4Test) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
 	return nil, nil
 }
+
 func (ud *UnitDag4Test) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error) {
 	return []common.Address{}, nil, nil
 }
@@ -360,7 +365,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 
 		//  add tx : failed , and discared the tx.
 		err := p.addTx(pool_tx, !pool.config.NoLocals)
-		if err == nil {
+		if err != nil {
 			log.Errorf("test added tx failed, :%s", err.Error())
 			return
 		}
@@ -369,10 +374,10 @@ func TestTransactionAddingTxs(t *testing.T) {
 			log.Debug("resetPendingTx failed ", "error", err1)
 		}
 		err2 := p.addTx(pool_tx, !pool.config.NoLocals)
-		if err2 != nil {
-			log.Debug("addtx again info success", "error", err2)
+		if err2 == nil {
+			log.Debug("addtx again info success")
 		} else {
-			log.Error("test added tx failed.")
+			log.Error("test added tx failed.", "error", err2)
 		}
 		log.Debugf("data:%d,%d,%d,%d,%d", origin, all, pool.AllLength(), pending_cache, queue_cache)
 		fmt.Println("defer over.... spending time：", time.Now().Unix()-t0.Unix())

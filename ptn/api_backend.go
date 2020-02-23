@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"math/big"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/event"
@@ -57,16 +58,19 @@ const channelId = "palletone"
 
 // PtnApiBackend implements ethapi.Backend for full nodes
 type PtnApiBackend struct {
-	ptn *PalletOne
-	//gpo *gasprice.Oracle
+	ptn   *PalletOne
+	mutex sync.Mutex
 }
 
+func (b *PtnApiBackend) Lock() {
+	b.mutex.Lock()
+}
+
+func (b *PtnApiBackend) Unlock() {
+	b.mutex.Unlock()
+}
 func (b *PtnApiBackend) Dag() dag.IDag {
 	return b.ptn.dag
-}
-
-func (b *PtnApiBackend) MDag() dag.IDag {
-	return b.ptn.mdag
 }
 
 func (b *PtnApiBackend) TxPool() txspool.ITxPool {
@@ -158,7 +162,7 @@ func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transactio
 			case u := <-saveUnitCh:
 				log.Infof("SubscribeSaveUnitEvent received unit:%s", u.Unit.DisplayId())
 				for _, utx := range u.Unit.Transactions() {
-					if utx.Hash() == txHash {
+					if utx.Hash() == txHash || utx.RequestHash() == txHash {
 						log.Debugf("Change local tx[%s] status to unstable", txHash.String())
 						err = b.Dag().SaveLocalTxStatus(txHash, modules.TxStatus_Unstable)
 						if err != nil {
@@ -169,7 +173,7 @@ func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transactio
 			case u := <-headCh:
 				log.Infof("SubscribeSaveStableUnitEvent received unit:%s", u.Unit.DisplayId())
 				for _, utx := range u.Unit.Transactions() {
-					if utx.Hash() == txHash {
+					if utx.Hash() == txHash || utx.RequestHash() == txHash {
 						log.Debugf("Change local tx[%s] status to stable", txHash.String())
 						err = b.Dag().SaveLocalTxStatus(txHash, modules.TxStatus_Stable)
 						if err != nil {
@@ -179,7 +183,7 @@ func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transactio
 					}
 				}
 			case <-timeout.C:
-				log.Warnf("SubscribeSaveStableUnitEvent timeout for tx[%s]", txHash)
+				log.Warnf("SubscribeSaveStableUnitEvent timeout for tx[%s]", txHash.String())
 				return
 			// Err() channel will be closed when unsubscribing.
 			//case err0 := <-headSub.Err():

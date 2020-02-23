@@ -740,13 +740,14 @@ func (tx *Transaction) GetRequesterAddr(queryUtxoFunc QueryUtxoFunc, getAddrFunc
 
 }
 
-func (tx *Transaction) GetContractTxType() (MessageType, error) {
+func (tx *Transaction) GetContractTxType() (MessageType) {
 	for _, msg := range tx.Messages() {
 		if msg.App >= APP_CONTRACT_TPL_REQUEST && msg.App <= APP_CONTRACT_STOP_REQUEST {
-			return msg.App, nil
+			return msg.App
 		}
 	}
-	return APP_UNKNOW, fmt.Errorf("GetContractTxType, not contract Tx, txHash[%s]", tx.Hash().String())
+	log.Debugf("GetContractTxType, not contract Tx, txHash[%s]", tx.Hash().String())
+	return APP_UNKNOW
 }
 
 // 获取locktime
@@ -869,6 +870,8 @@ func (msg *Transaction) baseSize() int {
 	b, _ := rlp.EncodeToBytes(msg)
 	return len(b)
 }
+
+//是否是合约交易
 func (tx *Transaction) IsContractTx() bool {
 	for _, m := range tx.txdata.TxMessages {
 		if m.App >= APP_CONTRACT_TPL_REQUEST && m.App <= APP_CONTRACT_STOP_REQUEST {
@@ -878,6 +881,7 @@ func (tx *Transaction) IsContractTx() bool {
 	return false
 }
 
+//是否是系统合约调用，只有在具有InvokeRequest或者TemplateRequest的时候才算系统合约
 func (tx *Transaction) IsSystemContract() bool {
 	for _, msg := range tx.txdata.TxMessages {
 		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
@@ -892,7 +896,7 @@ func (tx *Transaction) IsSystemContract() bool {
 			return false //, nil
 		}
 	}
-	return true //, errors.New("isSystemContract not find contract type")
+	return false //没有Request，当然就不是系统合约
 }
 
 //判断一个交易是否是一个合约请求交易，并且还没有被执行
@@ -1196,13 +1200,14 @@ func (tx *Transaction) GetPrecusorTxs(poolTxs map[common.Hash]*Transaction) []*T
 }
 func (tx *Transaction) isOrphanTx(txs map[common.Hash]*Transaction, utxoFunc QueryUtxoFunc) bool {
 	for _, op := range tx.GetSpendOutpoints() {
-		if _, err := utxoFunc(op); err != nil {
-			if p_tx, has := txs[op.TxHash]; has {
-				return p_tx.isOrphanTx(txs, utxoFunc)
-			} else {
+		if p_tx, has := txs[op.TxHash]; has {
+			return p_tx.isOrphanTx(txs, utxoFunc)
+		} else {
+			if _, err := utxoFunc(op); err != nil {
 				return true
 			}
 		}
+
 	}
 	return false
 }

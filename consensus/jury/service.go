@@ -548,14 +548,16 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 	setChainId := modules.ContractChainId
 	index := 0
 	tempDag, err := p.dag.NewTemp()
-	log.Debug("create a new tempDag for generate unit AddContractLoop")
+	//log.Debug("create a new tempDag for generate unit AddContractLoop")
 	if err != nil {
 		log.Errorf("Init temp dag error:%s", err.Error())
+		return err
 	}
 	txIndex := 0
 	tx4Sort := make(map[common.Hash]*modules.Transaction)
 	for _, ctx := range p.mtx {
-		if ctx.reqTx.IsSystemContract() { //系统合约的调用走普通打包流程
+		if ctx.reqTx.IsSystemContract() && modules.APP_CONTRACT_TPL_REQUEST != ctx.reqTx.GetContractTxType() {
+			//系统合约的调用走普通打包流程
 			continue
 		}
 		tx4Sort[ctx.reqTx.Hash()] = ctx.reqTx

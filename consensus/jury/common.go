@@ -202,7 +202,7 @@ func getSignature(tx *modules.Transaction) ([][]byte, [][]byte) {
 
 func genContractErrorMsg(tx *modules.Transaction,
 	errIn error, errMsgEnable bool) ([]*modules.Message, error) {
-	reqType, _ := tx.GetContractTxType()
+	reqType:= tx.GetContractTxType()
 	errString := fmt.Sprintf("[%s]genContractErrorMsg, reqType:%d,err:%s",
 		shortId(tx.RequestHash().String()), reqType, errIn.Error())
 	log.Debug(errString)
@@ -225,7 +225,11 @@ func createContractErrorPayloadMsg(tx *modules.Transaction, errIn error) *module
 		Code:    500, //todo
 		Message: errIn.Error(),
 	}
-	reqType, _ := tx.GetContractTxType()
+	reqType := tx.GetContractTxType()
+	//if reqType == modules.APP_UNKNOW {
+	//	log.Error("createContractErrorPayloadMsg,GetContractTxType fail")
+	//	return nil
+	//}
 	_, contractReq, _ := getContractTxContractInfo(tx, reqType)
 	switch reqType {
 	case modules.APP_CONTRACT_TPL_REQUEST:
@@ -592,8 +596,8 @@ func (p *Processor) checkTxReqIdIsExist(reqId common.Hash) bool {
 
 func (p *Processor) checkTxAddrValid(tx *modules.Transaction) bool {
 	reqId := tx.RequestHash()
-	cType, err := tx.GetContractTxType()
-	if err != nil {
+	cType := tx.GetContractTxType()
+	if cType == modules.APP_UNKNOW {
 		log.Infof("[%s]checkTxAddrValid, getContractTxType fail", shortId(reqId.String()))
 		return false
 	}
@@ -699,6 +703,7 @@ func SortTxs(txs map[common.Hash]*contractTx) []*contractTx {
 	}
 	return sortedTx
 }
+
 //
 //func printTxInfo(tx *modules.Transaction) {
 //	if tx == nil {
@@ -963,7 +968,7 @@ func addContractDeployDuringTime(dag iDag, tx *modules.Transaction) error {
 	if tx == nil {
 		return errors.New("calculateContractDeployDuringTime, param is nil")
 	}
-	txType, _ := tx.GetContractTxType()
+	txType := tx.GetContractTxType()
 	if txType != modules.APP_CONTRACT_DEPLOY_REQUEST {
 		return nil
 	}

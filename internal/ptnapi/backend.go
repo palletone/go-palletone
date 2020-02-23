@@ -20,6 +20,7 @@ package ptnapi
 import (
 	"context"
 	"math/big"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/event"
@@ -41,6 +42,7 @@ import (
 // Backend interface provides the common API services (that are provided by
 // both full and light clients) with access to necessary functions.
 type Backend interface {
+	sync.Locker
 	// General PalletOne API
 	Downloader() *downloader.Downloader
 	ProtocolVersion() int
@@ -139,7 +141,7 @@ type Backend interface {
 	GetAssetExistence(asset string) ([]*ptnjson.ProofOfExistenceJson, error)
 	//contract control
 	ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi,
-	ccLanguage string) (TemplateId []byte, err error)
+		ccLanguage string) (TemplateId []byte, err error)
 	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)
 	ContractInvoke(deployId []byte, txid string, args [][]byte, timeout time.Duration) (rspPayload []byte, err error)
 	ContractStop(deployId []byte, txid string, deleteImage bool) error
@@ -175,7 +177,6 @@ type Backend interface {
 
 	TxPool() txspool.ITxPool
 	Dag() dag.IDag
-	MDag() dag.IDag
 	SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error
 	SignAndSendRequest(addr common.Address, tx *modules.Transaction) error
 

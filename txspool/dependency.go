@@ -38,6 +38,7 @@ type dags interface {
 	//GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	IsTransactionExist(hash common.Hash) (bool, error)
+	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
