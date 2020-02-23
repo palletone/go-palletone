@@ -1699,33 +1699,32 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
 	orphanTxs map[common.Hash]*TxPoolTransaction) []*TxPoolTransaction {
 	pretxs := make([]*TxPoolTransaction, 0)
-	for _, msg := range tx.Tx.TxMessages() {
+	for _, msg := range tx.Tx.Messages() {
 		if msg.App == modules.APP_PAYMENT {
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			if ok {
 				for _, input := range payment.Inputs {
 					if input.PreviousOutPoint != nil {
-						utxo, err := pool.GetUtxoEntry(input.PreviousOutPoint)
-						if err == nil && utxo != nil {
+						_, err := pool.GetUtxoEntry(input.PreviousOutPoint)
+						if err == nil {
 							continue
 						}
-						if err != nil { //  若该utxo在db里找不到
-							queue_tx, has := poolTxs[input.PreviousOutPoint.TxHash]
-							queue_otx, has1 := orphanTxs[input.PreviousOutPoint.TxHash]
-							if !has || queue_tx == nil {
-								if has1 {
-									queue_tx = queue_otx
-								} else {
-									continue
-								}
+						//  若该utxo在db里找不到
+						queue_tx, has := poolTxs[input.PreviousOutPoint.TxHash]
+						queue_otx, has1 := orphanTxs[input.PreviousOutPoint.TxHash]
+						if !has || queue_tx == nil {
+							if has1 {
+								queue_tx = queue_otx
+							} else {
+								continue
 							}
-							if !queue_tx.Pending {
-								list := pool.getPrecusorTxs(queue_tx, poolTxs, orphanTxs)
-								if len(list) > 0 {
-									pretxs = append(pretxs, list...)
-								}
-								pretxs = append(pretxs, queue_tx)
+						}
+						if !queue_tx.Pending {
+							list := pool.getPrecusorTxs(queue_tx, poolTxs, orphanTxs)
+							if len(list) > 0 {
+								pretxs = append(pretxs, list...)
 							}
+							pretxs = append(pretxs, queue_tx)
 						}
 					}
 				}
