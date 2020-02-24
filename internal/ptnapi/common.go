@@ -20,13 +20,13 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-func unlockKS(b Backend, addr common.Address, password string, timeout *uint32) error {
+func unlockKS(b Backend, addr common.Address, password string, timeout *Int) error {
 	ks := b.GetKeyStore()
 	if password != "" {
 		if timeout == nil {
 			return ks.Unlock(accounts.Account{Address: addr}, password)
 		} else {
-			d := time.Duration(*timeout) * time.Second
+			d := time.Duration(timeout.Uint32()) * time.Second
 			return ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
 		}
 	}
@@ -162,7 +162,7 @@ func createPayment(fromAddr, toAddr common.Address, amountToken uint64, feePTN u
 	return payPTN, usedUtxo, nil
 }
 
-func signRawTransaction(b Backend, rawTx *modules.Transaction, fromStr, password string, timeout *uint32, hashType uint32,
+func signRawTransaction(b Backend, rawTx *modules.Transaction, fromStr, password string, timeout *Int, hashType uint32,
 	usedUtxo []*modules.UtxoWithOutPoint) error {
 	ks := b.GetKeyStore()
 	//lockscript
@@ -209,4 +209,41 @@ func submitTransaction(ctx context.Context, b Backend, tx *modules.Transaction) 
 		return common.Hash{}, err
 	}
 	return tx.Hash(), nil
+}
+
+type Int struct {
+	i uint64
+}
+
+func (i *Int) Uint32() uint32 {
+	if i == nil {
+		return 0
+	}
+	return uint32(i.i)
+}
+func (i *Int) Uint64() uint64 {
+	if i == nil {
+		return 0
+	}
+	return i.i
+}
+func (d *Int) UnmarshalJSON(iBytes []byte) error {
+	if string(iBytes) == "null" {
+		return nil
+	}
+	if len(iBytes) == 0 {
+		d.i = 0
+		return nil
+	}
+	//log.Debugf("Int json[%s] hex:%x",string(iBytes),iBytes)
+	iStr := string(iBytes)
+	if iBytes[0] == byte('"') { // "1" -> 1
+		iStr = string(iBytes[1 : len(iBytes)-1])
+	}
+	input, err := strconv.ParseUint(iStr, 10, 64)
+	if err != nil {
+		return err
+	}
+	d.i = input
+	return nil
 }

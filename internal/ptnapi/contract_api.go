@@ -129,7 +129,7 @@ func (s *PrivateContractAPI) Ccinvoke(ctx context.Context, contractAddr string, 
 	return string(rsp), err
 }
 
-func (s *PublicContractAPI) Ccquery(ctx context.Context, id string, param []string, timeout *uint32) (string, error) {
+func (s *PublicContractAPI) Ccquery(ctx context.Context, id string, param []string, timeout *Int) (string, error) {
 	var idByte []byte
 
 	log.Debugf("Ccquery, id len:%d, id[%s]", len(id), id)
@@ -149,7 +149,7 @@ func (s *PublicContractAPI) Ccquery(ctx context.Context, id string, param []stri
 	fullArgs = append(fullArgs, args...)
 	duration := time.Duration(0)
 	if timeout != nil {
-		duration = time.Duration(*timeout) * time.Second
+		duration = time.Duration(timeout.Uint32()) * time.Second
 	}
 	rsp, err := s.b.ContractQuery(idByte, fullArgs, duration)
 	if err != nil {
@@ -241,12 +241,12 @@ func (s *PrivateContractAPI) Ccdeploytx(ctx context.Context, from, to string, am
 }
 
 func (s *PrivateContractAPI) Ccinvoketx(ctx context.Context, from, to string, amount, fee decimal.Decimal,
-	contractAddress string, param []string, password *string, timeout *uint32) (*ContractInvokeRsp, error) {
+	contractAddress string, param []string, password *string, timeout *Int) (*ContractInvokeRsp, error) {
 	return s.CcinvokeToken(ctx, from, to, dagconfig.DagConfig.GasToken, amount, fee, contractAddress, param, password, timeout)
 }
 
 func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token string, amountToken, fee decimal.Decimal,
-	contractAddress string, param []string, pwd *string, timeout *uint32) (*ContractInvokeRsp, error) {
+	contractAddress string, param []string, pwd *string, timeout *Int) (*ContractInvokeRsp, error) {
 	contractAddr, _ := common.StringToAddress(contractAddress)
 	password := ""
 	if pwd != nil {
@@ -262,10 +262,8 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 		args[i] = []byte(arg)
 		log.Infof("      index[%d], value[%s]\n", i, arg)
 	}
-	exeTimeout := uint32(0)
-	if timeout != nil {
-		exeTimeout = *timeout
-	}
+	exeTimeout := timeout.Uint32()
+
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_INVOKE_REQUEST,
 		Payload: &modules.ContractInvokeRequestPayload{
@@ -291,8 +289,9 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 	}
 	return rsp1, err
 }
+
 /*func (s *PrivateContractAPI) CcinvoketxPass(ctx context.Context, from, to string, amount, fee decimal.Decimal,
-	deployId string, param []string, password string, duration *uint32, certID string) (string, error) {
+	deployId string, param []string, password string, duration *Int, certID string) (string, error) {
 	contractAddr, _ := common.StringToAddress(deployId)
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
