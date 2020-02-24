@@ -11,7 +11,7 @@ Resource          ../../utilKwd/normalKwd.txt
 
 *** Variables ***
 ${host}           http://localhost:8545/
-${method}         contract_ccinvoketxPass
+${method}         contract_ccinvoketx
 
 *** Test Cases ***
 Scenario: invalidContrSenderAdd

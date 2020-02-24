@@ -55,7 +55,7 @@ class createToken():
 
         data = {
             "jsonrpc": "2.0",
-            "method": "contract_ccinvoketxPass",
+            "method": "contract_ccinvoketx",
             "params":
                 [senderAddr, recieverAddr, "10", "1", contractAddr, [self.funcName, self.assetId, str(tokenAmount)],"1", 6000000, ""],
             "id": 1
