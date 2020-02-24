@@ -23,7 +23,7 @@ ${crtTokenMethod}    createToken
 ${frozenTokenMethod}    frozenToken
 ${supplyTokenMethod}    supplyToken
 ${changeSupplyMethod}    changeSupplyAddr
-${invokePsMethod}    contract_ccinvoketxPass
+${invokePsMethod}    contract_ccinvoketx
 ${invokeMethod}    contract_ccinvoketx
 ${queryMethod}    contract_ccquery
 ${invokeTokenMethod}    contract_ccinvokeToken

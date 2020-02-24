@@ -35,7 +35,7 @@ InvalidCcinvoke
     ...    ${recieverAdd1}
     ${ccList}    Create List    ${senderAdd}    ${recieverAdd}    ${senderAmount}    ${poundage}    ${contractId}
     ...    ${ccTokenList}    ${pwd}    ${expiredTime}    ${certiId}
-    ${resp}    setPostRequest    ${host}    contract_ccinvoketxPass    ${ccList}
+    ${resp}    setPostRequest    ${host}    contract_ccinvoketx    ${ccList}
     log    ${resp.content}
     Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
     Should Contain    ${resp.content}['id']    1    msg="id:failed"
