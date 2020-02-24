@@ -17,7 +17,7 @@ ${queryMaindata}    wallet_getFileInfoByFileHash
 ${queryAddrHistory}    wallet_getAddrTxHistory
 ${queryTokenHistory}    ptn_getTokenTxHistory
 ${pledgeDeposit}    contract_ccinvoketx
-${createToken}    contract_ccinvoketxPass
+${createToken}    contract_ccinvoketx
 ${contractQuery}    contract_ccquery
 # common variables
 ${contractAddr}    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM
