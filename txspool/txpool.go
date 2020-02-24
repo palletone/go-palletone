@@ -1554,8 +1554,15 @@ func (pool *TxPool) resetPendingTx(tx *modules.Transaction) error {
 // GetSortedTxs returns 根据优先级返回list
 func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTransaction, common.StorageSize) {
 	t0 := time.Now()
+	canbe_packaged :=false
 	var total common.StorageSize
 	list := make([]*TxPoolTransaction, 0)
+	ptn_asset ,_:= modules.StringToAsset("PTN")
+	_,chainindex,err :=pool.unit.GetNewestUnit(ptn_asset.AssetId)
+	if err != nil {
+	    return nil, 0
+    }
+	unithigh := int64(chainindex.Index)
 	// get sequenTxs
 	stxs := pool.GetSequenTxs()
 	poolTxs := pool.AllTxpoolTxs()
@@ -1614,7 +1621,10 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 		}
 		locktime := tx.Tx.GetLocktime()
 		if locktime > 0 {
-			if locktime-time.Now().Unix() < 0 {
+			if locktime < 500000000 && unithigh >= locktime {
+				canbe_packaged = true
+			}
+			if locktime-time.Now().Unix() < 0 || canbe_packaged{
 				tx.Pending = true
 				tx.UnitHash = hash
 				tx.UnitIndex = index
@@ -1890,8 +1900,14 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 	if len(tx.Messages()) <= 0 {
 		return false, errors.New("this tx's message is null.")
 	}
+	ptn_asset ,_:= modules.StringToAsset("PTN")
+	_,chainindex,err :=pool.unit.GetNewestUnit(ptn_asset.AssetId)
+	if err != nil {
+	    return false, errors.New("can not get GetNewestUnit.")
+    }
+    unithigh := int64(chainindex.Index)
+
 	var isOrphan bool
-	var err error
 	for _, msg := range tx.Messages() {
 		if isOrphan {
 			break
@@ -1899,11 +1915,22 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 		if msg.App == modules.APP_PAYMENT {
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			if ok {
-				if payment.LockTime > 0 && (int64(payment.LockTime)-time.Now().Unix()) < 0 {
+			    if payment.LockTime < 0 {
+                    break
+			    }
+				if payment.LockTime > 500000000 &&(int64(payment.LockTime)-time.Now().Unix()) < 0 {
 					isOrphan = false
 					break
-				} else if payment.LockTime > 0 && (int64(payment.LockTime)-time.Now().Unix()) >= 0 {
+				} else if payment.LockTime > 500000000 && (int64(payment.LockTime)-time.Now().Unix()) >= 0 {
 					isOrphan = true
+					break
+				} else if payment.LockTime < 500000000 && (int64(payment.LockTime) < unithigh) {
+                    // if persent unit is high than lock unit ,not Orphan
+                    isOrphan = false
+					break
+				}else if payment.LockTime < 500000000 && (int64(payment.LockTime) > unithigh) {
+                    // if persent unit is low than lock unit ,not Orphan
+                    isOrphan = true
 					break
 				}
 				for _, in := range payment.Inputs {
