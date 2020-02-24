@@ -1219,11 +1219,11 @@ func (tx *Transaction) isOrphanTx(txs map[common.Hash]*Transaction, utxoFunc Que
 				if otx.RequestHash() == op.TxHash {
 					// 若requeshash等于op的txhash,则从otx的output里找utxo
 					isfound := false
-					for _, msg := range otx.txdata.TxMessages {
+					for i, msg := range otx.txdata.TxMessages {
 						if msg.App == APP_PAYMENT {
 							payment := msg.Payload.(*PaymentPayload)
 							for j := range payment.Outputs {
-								if op.OutIndex == uint32(j) {
+								if op.OutIndex == uint32(j) && op.MessageIndex == uint32(i) {
 									isfound = true
 									break
 								}
@@ -1243,11 +1243,11 @@ func (tx *Transaction) isOrphanTx(txs map[common.Hash]*Transaction, utxoFunc Que
 			} else {
 				// 找到该utxo
 				isfound := false
-				for _, msg := range p_tx.txdata.TxMessages {
+				for i, msg := range p_tx.txdata.TxMessages {
 					if msg.App == APP_PAYMENT {
 						payment := msg.Payload.(*PaymentPayload)
 						for j := range payment.Outputs {
-							if op.OutIndex == uint32(j) {
+							if op.OutIndex == uint32(j) && op.MessageIndex == uint32(i) {
 								isfound = true
 								break
 							}
