@@ -222,21 +222,38 @@ func resultToCoinbase(result *modules.ContractInvokeResult) ([]*modules.PaymentP
 		coinbases = append(coinbases, coinbase)
 	}
 	if result.TokenSupply != nil && len(result.TokenSupply) > 0 {
-		coinbase := &modules.PaymentPayload{}
-		for _, tokenSupply := range result.TokenSupply {
-			assetId := &modules.Asset{}
-			assetId.AssetId.SetBytes(tokenSupply.AssetId)
-			assetId.UniqueId.SetBytes(tokenSupply.UniqueId)
-			out := modules.NewTxOut(tokenSupply.Amount, tokenengine.Instance.GenerateLockScript(tokenSupply.Creator), assetId)
-			//
-			coinbase.AddTxOut(out)
+		groupSupply := groupTokenSupply(result.TokenSupply)
+		//如果合约中创建了多种Token，需要创建对应的多个Payment才行，不然验证不通过
+		for _, supplies := range groupSupply {
+			coinbase := &modules.PaymentPayload{}
+			for _, tokenSupply := range supplies {
+				assetId := &modules.Asset{}
+				assetId.AssetId.SetBytes(tokenSupply.AssetId)
+				assetId.UniqueId.SetBytes(tokenSupply.UniqueId)
+				out := modules.NewTxOut(tokenSupply.Amount,
+					tokenengine.Instance.GenerateLockScript(tokenSupply.Creator),
+					assetId)
+				//
+				coinbase.AddTxOut(out)
+			}
+			coinbases = append(coinbases, coinbase)
 		}
-		coinbases = append(coinbases, coinbase)
-
 	}
 	return coinbases, nil
 }
-
+func groupTokenSupply(tokenSupply []*modules.TokenSupply) map[modules.AssetId][]*modules.TokenSupply {
+	result := make(map[modules.AssetId][]*modules.TokenSupply)
+	for _, supply := range tokenSupply {
+		assetid := modules.AssetId{}
+		assetid.SetBytes(supply.AssetId)
+		if supply1Token, ok := result[assetid]; ok {
+			supply1Token = append(supply1Token, supply)
+		} else {
+			result[assetid] = []*modules.TokenSupply{supply}
+		}
+	}
+	return result
+}
 func convertMapUtxo(utxo map[modules.OutPoint]*modules.Utxo) []*modules.UtxoWithOutPoint {
 	result := make([]*modules.UtxoWithOutPoint, 0, len(utxo))
 	for o, u := range utxo {
