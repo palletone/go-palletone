@@ -519,8 +519,6 @@ func newTestDoubleSpendTxs(preTxHash common.Hash) (*Transaction, *Transaction) {
 }
 
 func TestSortTxAndRequests(t *testing.T) {
-	return //todo del
-
 	hash0 := common.BytesToHash([]byte("0"))
 	//hash1 := common.BytesToHash([]byte("1"))
 	txA := newTestPaymentTx(hash0)
@@ -529,6 +527,7 @@ func TestSortTxAndRequests(t *testing.T) {
 	t.Logf("Tx B:%s", txB.Hash().String())
 	txC := newCcInvokeFullTx(txB.Hash())
 	t.Logf("Tx C:%s", txC.Hash().String())
+	t.Logf("Tx C req:%s", txC.RequestHash().String())
 	txD := newTestPaymentTx(txC.RequestHash()) //交易D是基于TxC在Request的时候的UTXO产生的
 	t.Logf("Tx D:%s", txD.Hash().String())
 

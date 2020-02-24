@@ -1180,8 +1180,17 @@ func (tx *Transaction) GetPrecusorTxs(poolTxs map[common.Hash]*Transaction) []*T
 				for _, input := range payment.Inputs {
 					if input.PreviousOutPoint != nil {
 						sort_tx, has := poolTxs[input.PreviousOutPoint.TxHash]
+						isRequest := false
 						if !has {
-							continue
+							for _, sort_tx = range poolTxs {
+								if sort_tx.RequestHash() == input.PreviousOutPoint.TxHash {
+									isRequest = true
+									break
+								}
+							}
+							if !isRequest {
+								continue
+							}
 						}
 						if sort_tx != nil {
 							list := sort_tx.GetPrecusorTxs(poolTxs)
@@ -1206,6 +1215,27 @@ func (tx *Transaction) isOrphanTx(txs map[common.Hash]*Transaction, utxoFunc Que
 		}
 		// db里没有该utxo,则依次从tx的前驱交易里找,如果列表里没有前驱交易返回true
 		if p_tx, has := txs[op.TxHash]; !has {
+			for _, otx := range txs {
+				if otx.RequestHash() == op.TxHash {
+					// 若requeshash等于op的txhash,则从otx的output里找utxo
+					isfound := false
+					for _, msg := range otx.txdata.TxMessages {
+						if msg.App == APP_PAYMENT {
+							payment := msg.Payload.(*PaymentPayload)
+							for j := range payment.Outputs {
+								if op.OutIndex == uint32(j) {
+									isfound = true
+									break
+								}
+							}
+						}
+					}
+					if !isfound {
+						return true
+					}
+					return false
+				}
+			}
 			return true
 		} else {
 			if p_tx.isOrphanTx(txs, utxoFunc) {
