@@ -11,7 +11,7 @@ Resource          ../../utilKwd/normalKwd.txt
 
 *** Variables ***
 ${host}           http://localhost:8545/
-${method}         contract_ccinvoketx
+${method}         contract_ccinvoketxPass
 
 *** Test Cases ***
 Scenario: invalidContractId

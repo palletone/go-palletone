@@ -89,7 +89,7 @@ Request transfer token of vote
     ${ccTokenList}    Create List    ${crtTokenMethod}    ${note}    ${tokenDecimal}    ${tokenAmount}    ${voteTime}
     ...    ${commonVoteInfo}
     ${ccList}    Create List    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}    ${voteContractId}
-    ...    ${ccTokenList}    ${pwd}    ${duration}
+    ...    ${ccTokenList}    ${pwd}    ${duration}    ${EMPTY}
     ${resp}    setPostRequest    ${host}    ${invokePsMethod}    ${ccList}
     ${jsonRes}    resultToJson    ${resp}
     #log    ${resp.content}
@@ -101,11 +101,12 @@ Request transfer token of vote
 Request CcinvokePass
     [Arguments]    ${commonResultCode}    ${senderAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}    ${ContractId}
     ...    ${ccList}
-    #${ret}    ccinvokePass    ${senderAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}    ${ContractId}
+    #${ret}    Ccinvoketx    ${senderAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}    ${ContractId}
     #...    ${ccList}
     ${ccinvokeList}    Create List    ${senderAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}    ${ContractId}
     ...    ${ccList}    ${pwd}    ${duration}
-    ${resp}    setPostRequest    ${host}    ${invokePsMethod}    ${ccinvokeList}
+    ${resp}    setPostRequest    ${host}    ${invokeMethod}    ${ccinvokeList}
+    #${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
+    #${jsonRes}    To Json    ${jsonRes}
     ${jsonRes}    resultToJson    ${resp}
-    #${ret}    Should Match Regexp    ${jsonRes}    ${commonResultCode}    msg="result:does't match Result expression"
     [Return]    ${jsonRes}
