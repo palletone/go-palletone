@@ -1623,7 +1623,6 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 				p_txs := pool.getPrecusorTxs(tx, poolTxs, orphanTxs)
 				for _, p_tx := range p_txs {
 					if _, has := map_pretxs[p_tx.Tx.Hash()]; !has {
-						fmt.Println("tx hash:", tx.Tx.Hash().String(), "sorted hash:", p_tx.Tx.Hash().String())
 						map_pretxs[p_tx.Tx.Hash()] = len(list)
 						list = append(list, p_tx)
 						total += p_tx.Tx.Size()
@@ -1690,8 +1689,6 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 	indexL := make(map[int]common.Hash)
 	for i, tx := range list {
 		hash := tx.Tx.Hash()
-		fmt.Println("index:", i, "hash:", hash.String())
-
 		tx.Index = uint64(i)
 		indexL[i] = hash
 		m[hash] = tx
@@ -1735,13 +1732,11 @@ func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
 				isfound := false
 				for _, otx := range poolTxs {
 					if otx.Tx.RequestHash() == op.TxHash {
-						fmt.Println("yes1:", op.TxHash.String(), "hash:", otx.Tx.Hash().String())
 						for i, msg := range otx.Tx.Messages() {
 							if msg.App == modules.APP_PAYMENT {
 								payment := msg.Payload.(*modules.PaymentPayload)
 								for j := range payment.Outputs {
 									if op.OutIndex == uint32(j) && op.MessageIndex == uint32(i) {
-										fmt.Println("yes2:", op.TxHash.String(), "hash:", otx.Tx.Hash().String())
 										isfound = true
 										queue_tx = otx
 										break
