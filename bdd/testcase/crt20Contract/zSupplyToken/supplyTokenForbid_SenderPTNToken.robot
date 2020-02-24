@@ -38,7 +38,7 @@ Request getbalance before create token
 Create token of vote contract
     ${ccTokenList}    Create List    ${supplyTokenMethod}    ${preTokenId}    ${supplyTokenAmount}
     ${ccList}    Create List    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}    ${20ContractId}
-    ...    ${ccTokenList}    ${pwd}    ${duration}    ${EMPTY}
+    ...    ${ccTokenList}    ${pwd}    ${duration}
     ${resp}    setPostRequest    ${host}    ${invokePsMethod}    ${ccList}
     ${jsonRes}    resultToJson    ${resp}
     ${ret}    Should Match Regexp    ${jsonRes['result']}    ${commonResultCode}    msg="result:does't match Result expression"
