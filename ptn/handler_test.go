@@ -325,6 +325,7 @@ func testGetBlockHeaders(t *testing.T, protocol int) {
 
 // Tests that block contents can be retrieved from a remote chain based on their hashes.
 func TestGetBlockBodies1(t *testing.T) { testGetBlockBodies(t, 1) }
+
 func testGetBlockBodies(t *testing.T, protocol int) {
 
 	mockCtrl := gomock.NewController(t)
@@ -352,6 +353,7 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 	dag.EXPECT().GetStableChainIndex(gomock.Any()).Return(mockUnit.UnitHeader.GetNumber()).AnyTimes()
 	pro.EXPECT().LocalHaveActiveMediator().Return(false).AnyTimes()
 	dag.EXPECT().SubscribeUnstableRepositoryUpdatedEvent(gomock.Any()).Return(&rpc.ClientSubscription{}).AnyTimes()
+	dag.EXPECT().SubscribeSaveStableUnitEvent(gomock.Any()).Return(&rpc.ClientSubscription{}).AnyTimes()
 
 	/*
 		pro.EXPECT().SubscribeNewUnitEvent(gomock.Any()).DoAndReturn(func(ch chan<- mp.NewUnitEvent) event.Subscription {

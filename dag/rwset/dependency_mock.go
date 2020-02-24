@@ -36,7 +36,6 @@ func (m *MockIDataQuery) EXPECT() *MockIDataQueryMockRecorder {
 
 // GetContractStatesById mocks base method
 func (m *MockIDataQuery) GetContractStatesById(contractid []byte) (map[string]*modules.ContractStateValue, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContractStatesById", contractid)
 	ret0, _ := ret[0].(map[string]*modules.ContractStateValue)
 	ret1, _ := ret[1].(error)
@@ -45,13 +44,11 @@ func (m *MockIDataQuery) GetContractStatesById(contractid []byte) (map[string]*m
 
 // GetContractStatesById indicates an expected call of GetContractStatesById
 func (mr *MockIDataQueryMockRecorder) GetContractStatesById(contractid interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractStatesById", reflect.TypeOf((*MockIDataQuery)(nil).GetContractStatesById), contractid)
 }
 
 // GetContractState mocks base method
 func (m *MockIDataQuery) GetContractState(contractid []byte, field string) ([]byte, *modules.StateVersion, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContractState", contractid, field)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(*modules.StateVersion)
@@ -61,13 +58,11 @@ func (m *MockIDataQuery) GetContractState(contractid []byte, field string) ([]by
 
 // GetContractState indicates an expected call of GetContractState
 func (mr *MockIDataQueryMockRecorder) GetContractState(contractid, field interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractState", reflect.TypeOf((*MockIDataQuery)(nil).GetContractState), contractid, field)
 }
 
 // GetContractStatesByPrefix mocks base method
 func (m *MockIDataQuery) GetContractStatesByPrefix(contractid []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContractStatesByPrefix", contractid, prefix)
 	ret0, _ := ret[0].(map[string]*modules.ContractStateValue)
 	ret1, _ := ret[1].(error)
@@ -76,13 +71,11 @@ func (m *MockIDataQuery) GetContractStatesByPrefix(contractid []byte, prefix str
 
 // GetContractStatesByPrefix indicates an expected call of GetContractStatesByPrefix
 func (mr *MockIDataQueryMockRecorder) GetContractStatesByPrefix(contractid, prefix interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractStatesByPrefix", reflect.TypeOf((*MockIDataQuery)(nil).GetContractStatesByPrefix), contractid, prefix)
 }
 
 // UnstableHeadUnitProperty mocks base method
 func (m *MockIDataQuery) UnstableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UnstableHeadUnitProperty", asset)
 	ret0, _ := ret[0].(*modules.UnitProperty)
 	ret1, _ := ret[1].(error)
@@ -91,13 +84,11 @@ func (m *MockIDataQuery) UnstableHeadUnitProperty(asset modules.AssetId) (*modul
 
 // UnstableHeadUnitProperty indicates an expected call of UnstableHeadUnitProperty
 func (mr *MockIDataQueryMockRecorder) UnstableHeadUnitProperty(asset interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnstableHeadUnitProperty", reflect.TypeOf((*MockIDataQuery)(nil).UnstableHeadUnitProperty), asset)
 }
 
 // GetGlobalProp mocks base method
 func (m *MockIDataQuery) GetGlobalProp() *modules.GlobalProperty {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetGlobalProp")
 	ret0, _ := ret[0].(*modules.GlobalProperty)
 	return ret0
@@ -105,13 +96,11 @@ func (m *MockIDataQuery) GetGlobalProp() *modules.GlobalProperty {
 
 // GetGlobalProp indicates an expected call of GetGlobalProp
 func (mr *MockIDataQueryMockRecorder) GetGlobalProp() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGlobalProp", reflect.TypeOf((*MockIDataQuery)(nil).GetGlobalProp))
 }
 
 // GetNewestUnit mocks base method
 func (m *MockIDataQuery) GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetNewestUnit", token)
 	ret0, _ := ret[0].(common.Hash)
 	ret1, _ := ret[1].(*modules.ChainIndex)
@@ -121,13 +110,11 @@ func (m *MockIDataQuery) GetNewestUnit(token modules.AssetId) (common.Hash, *mod
 
 // GetNewestUnit indicates an expected call of GetNewestUnit
 func (mr *MockIDataQueryMockRecorder) GetNewestUnit(token interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNewestUnit", reflect.TypeOf((*MockIDataQuery)(nil).GetNewestUnit), token)
 }
 
 // GetHeaderByNumber mocks base method
 func (m *MockIDataQuery) GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetHeaderByNumber", number)
 	ret0, _ := ret[0].(*modules.Header)
 	ret1, _ := ret[1].(error)
@@ -136,13 +123,11 @@ func (m *MockIDataQuery) GetHeaderByNumber(number *modules.ChainIndex) (*modules
 
 // GetHeaderByNumber indicates an expected call of GetHeaderByNumber
 func (mr *MockIDataQueryMockRecorder) GetHeaderByNumber(number interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeaderByNumber", reflect.TypeOf((*MockIDataQuery)(nil).GetHeaderByNumber), number)
 }
 
 // GetAddrUtxos mocks base method
 func (m *MockIDataQuery) GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAddrUtxos", addr)
 	ret0, _ := ret[0].(map[modules.OutPoint]*modules.Utxo)
 	ret1, _ := ret[1].(error)
@@ -151,13 +136,11 @@ func (m *MockIDataQuery) GetAddrUtxos(addr common.Address) (map[modules.OutPoint
 
 // GetAddrUtxos indicates an expected call of GetAddrUtxos
 func (mr *MockIDataQueryMockRecorder) GetAddrUtxos(addr interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddrUtxos", reflect.TypeOf((*MockIDataQuery)(nil).GetAddrUtxos), addr)
 }
 
 // GetAddr1TokenUtxos mocks base method
 func (m *MockIDataQuery) GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAddr1TokenUtxos", addr, asset)
 	ret0, _ := ret[0].(map[modules.OutPoint]*modules.Utxo)
 	ret1, _ := ret[1].(error)
@@ -166,13 +149,11 @@ func (m *MockIDataQuery) GetAddr1TokenUtxos(addr common.Address, asset *modules.
 
 // GetAddr1TokenUtxos indicates an expected call of GetAddr1TokenUtxos
 func (mr *MockIDataQueryMockRecorder) GetAddr1TokenUtxos(addr, asset interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddr1TokenUtxos", reflect.TypeOf((*MockIDataQuery)(nil).GetAddr1TokenUtxos), addr, asset)
 }
 
 // GetStableTransactionOnly mocks base method
 func (m *MockIDataQuery) GetStableTransactionOnly(hash common.Hash) (*modules.Transaction, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetStableTransactionOnly", hash)
 	ret0, _ := ret[0].(*modules.Transaction)
 	ret1, _ := ret[1].(error)
@@ -181,13 +162,11 @@ func (m *MockIDataQuery) GetStableTransactionOnly(hash common.Hash) (*modules.Tr
 
 // GetStableTransactionOnly indicates an expected call of GetStableTransactionOnly
 func (mr *MockIDataQueryMockRecorder) GetStableTransactionOnly(hash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStableTransactionOnly", reflect.TypeOf((*MockIDataQuery)(nil).GetStableTransactionOnly), hash)
 }
 
 // GetStableUnit mocks base method
 func (m *MockIDataQuery) GetStableUnit(hash common.Hash) (*modules.Unit, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetStableUnit", hash)
 	ret0, _ := ret[0].(*modules.Unit)
 	ret1, _ := ret[1].(error)
@@ -196,13 +175,11 @@ func (m *MockIDataQuery) GetStableUnit(hash common.Hash) (*modules.Unit, error) 
 
 // GetStableUnit indicates an expected call of GetStableUnit
 func (mr *MockIDataQueryMockRecorder) GetStableUnit(hash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStableUnit", reflect.TypeOf((*MockIDataQuery)(nil).GetStableUnit), hash)
 }
 
 // GetStableUnitByNumber mocks base method
 func (m *MockIDataQuery) GetStableUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetStableUnitByNumber", number)
 	ret0, _ := ret[0].(*modules.Unit)
 	ret1, _ := ret[1].(error)
@@ -211,7 +188,6 @@ func (m *MockIDataQuery) GetStableUnitByNumber(number *modules.ChainIndex) (*mod
 
 // GetStableUnitByNumber indicates an expected call of GetStableUnitByNumber
 func (mr *MockIDataQueryMockRecorder) GetStableUnitByNumber(number interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStableUnitByNumber", reflect.TypeOf((*MockIDataQuery)(nil).GetStableUnitByNumber), number)
 }
 
@@ -240,7 +216,6 @@ func (m *MockIStateQuery) EXPECT() *MockIStateQueryMockRecorder {
 
 // GetContractStatesById mocks base method
 func (m *MockIStateQuery) GetContractStatesById(contractid []byte) (map[string]*modules.ContractStateValue, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContractStatesById", contractid)
 	ret0, _ := ret[0].(map[string]*modules.ContractStateValue)
 	ret1, _ := ret[1].(error)
@@ -249,13 +224,11 @@ func (m *MockIStateQuery) GetContractStatesById(contractid []byte) (map[string]*
 
 // GetContractStatesById indicates an expected call of GetContractStatesById
 func (mr *MockIStateQueryMockRecorder) GetContractStatesById(contractid interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractStatesById", reflect.TypeOf((*MockIStateQuery)(nil).GetContractStatesById), contractid)
 }
 
 // GetContractState mocks base method
 func (m *MockIStateQuery) GetContractState(contractid []byte, field string) ([]byte, *modules.StateVersion, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContractState", contractid, field)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(*modules.StateVersion)
@@ -265,13 +238,11 @@ func (m *MockIStateQuery) GetContractState(contractid []byte, field string) ([]b
 
 // GetContractState indicates an expected call of GetContractState
 func (mr *MockIStateQueryMockRecorder) GetContractState(contractid, field interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractState", reflect.TypeOf((*MockIStateQuery)(nil).GetContractState), contractid, field)
 }
 
 // GetContractStatesByPrefix mocks base method
 func (m *MockIStateQuery) GetContractStatesByPrefix(contractid []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContractStatesByPrefix", contractid, prefix)
 	ret0, _ := ret[0].(map[string]*modules.ContractStateValue)
 	ret1, _ := ret[1].(error)
@@ -280,6 +251,5 @@ func (m *MockIStateQuery) GetContractStatesByPrefix(contractid []byte, prefix st
 
 // GetContractStatesByPrefix indicates an expected call of GetContractStatesByPrefix
 func (mr *MockIStateQueryMockRecorder) GetContractStatesByPrefix(contractid, prefix interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContractStatesByPrefix", reflect.TypeOf((*MockIStateQuery)(nil).GetContractStatesByPrefix), contractid, prefix)
 }
