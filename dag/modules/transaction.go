@@ -740,7 +740,7 @@ func (tx *Transaction) GetRequesterAddr(queryUtxoFunc QueryUtxoFunc, getAddrFunc
 
 }
 
-func (tx *Transaction) GetContractTxType() (MessageType) {
+func (tx *Transaction) GetContractTxType() MessageType {
 	for _, msg := range tx.Messages() {
 		if msg.App >= APP_CONTRACT_TPL_REQUEST && msg.App <= APP_CONTRACT_STOP_REQUEST {
 			return msg.App
@@ -1098,6 +1098,7 @@ func SortTxs(txs map[common.Hash]*Transaction, utxoFunc QueryUtxoFunc) ([]*Trans
 	map_orphans := make(map[common.Hash]common.Hash)
 	map_pretxs := make(map[common.Hash]int)
 	map_doubleTxs := make(map[*OutPoint]common.Hash)
+	//map_utxos := make(map[*OutPoint]common.Hash)
 	for hash, tx := range txs {
 		ops := tx.GetSpendOutpoints()
 		isOrphan := false
@@ -1200,14 +1201,36 @@ func (tx *Transaction) GetPrecusorTxs(poolTxs map[common.Hash]*Transaction) []*T
 }
 func (tx *Transaction) isOrphanTx(txs map[common.Hash]*Transaction, utxoFunc QueryUtxoFunc) bool {
 	for _, op := range tx.GetSpendOutpoints() {
-		if p_tx, has := txs[op.TxHash]; has {
-			return p_tx.isOrphanTx(txs, utxoFunc)
+		if _, err := utxoFunc(op); err == nil {
+			continue
+		}
+		// db里没有该utxo,则依次从tx的前驱交易里找,如果列表里没有前驱交易返回true
+		if p_tx, has := txs[op.TxHash]; !has {
+			return true
 		} else {
-			if _, err := utxoFunc(op); err != nil {
+			if p_tx.isOrphanTx(txs, utxoFunc) {
 				return true
+			} else {
+				// 找到该utxo
+				isfound := false
+				for _, msg := range p_tx.txdata.TxMessages {
+					if msg.App == APP_PAYMENT {
+						payment := msg.Payload.(*PaymentPayload)
+						for j := range payment.Outputs {
+							if op.OutIndex == uint32(j) {
+								isfound = true
+								break
+							}
+						}
+					}
+				}
+				if !isfound {
+					return true
+				} else {
+					continue
+				}
 			}
 		}
-
 	}
 	return false
 }

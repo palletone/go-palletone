@@ -342,8 +342,6 @@ func TestAdditionJson(t *testing.T) {
 }
 
 func TestSortTxs(t *testing.T) {
-	return //todo del
-
 	hash0 := common.BytesToHash([]byte("0"))
 	hash1 := common.BytesToHash([]byte("1"))
 	txA := newTestPaymentTx(hash0)
@@ -366,7 +364,7 @@ func TestSortTxs(t *testing.T) {
 	payE1 := txE1.txdata.TxMessages[0].Payload.(*PaymentPayload)
 	payE1.Inputs[0].PreviousOutPoint.OutIndex = 1
 	data, _ := json.Marshal(txE1)
-	t.Logf("Tx E1:%s", string(data)) //txE1.Hash().String())
+	t.Logf("Tx hash:%s,  E1:%s, ", txE1.Hash().String(), string(data))
 
 	txMap := make(map[common.Hash]*Transaction)
 	txMap[txW.Hash()] = txW
@@ -377,6 +375,7 @@ func TestSortTxs(t *testing.T) {
 	txMap[txB.Hash()] = txB
 	txMap[txD.Hash()] = txD
 	txMap[txA.Hash()] = txA
+	txMap[txE1.Hash()] = txE1
 	for hash := range txMap {
 		t.Logf("map order tx[%s]", hash.String())
 	}
@@ -393,7 +392,7 @@ func TestSortTxs(t *testing.T) {
 			t := time.Now().AddDate(0, 0, -1).Unix()
 			return &Utxo{Amount: Ptn2Dao(111), Timestamp: uint64(t), Asset: NewPTNAsset()}, nil
 		}
-		if outpoint.TxHash.String() == "0x6f92f846d64925062f7897a9eda225aebddee486f1895989322e2c3d3984e5a2" {
+		if outpoint.TxHash.String() == "0x4c6906caa23e07ca04a257cbe84c8b3f138534f22d706470971dd81b564a860f" {
 			t := time.Now().AddDate(0, 0, -1).Unix()
 			return &Utxo{Amount: Ptn2Dao(100), Timestamp: uint64(t), Asset: NewPTNAsset()}, nil
 		}
@@ -423,6 +422,9 @@ func TestSortTxs(t *testing.T) {
 	}
 	for _, tx := range orphanTxs1 {
 		t.Logf("orphan tx[%s]", tx.Hash().String())
+	}
+	for i, tx := range doubleSpendTxs1 {
+		t.Logf("doubleSpend index[%d] tx[%s] is W.", i, tx.Hash().String())
 	}
 	if utxoQueryFn1 != nil {
 		assert.Equal(t, 3, len(sortedTx1)) //x y z
