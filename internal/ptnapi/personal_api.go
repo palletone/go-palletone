@@ -162,9 +162,9 @@ func (s *PrivateAccountAPI) GetHdAccount(addr, password string, userId Int) (str
 	ks := fetchKeystore(s.am)
 	var acc accounts.Account
 	if ks.IsUnlock(account.Address) {
-		acc, err = ks.GetHdAccount(account, uint32(accountIndex))
+		acc, err = ks.GetHdAccount(account, accountIndex)
 	} else {
-		acc, err = ks.GetHdAccountWithPassphrase(account, password, uint32(accountIndex))
+		acc, err = ks.GetHdAccountWithPassphrase(account, password, accountIndex)
 	}
 	if err != nil {
 		return "", err

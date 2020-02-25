@@ -1917,20 +1917,17 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 		if msg.App == modules.APP_PAYMENT {
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			if ok {
-			    if payment.LockTime < 0 {
-                    break
-			    }
 				if payment.LockTime > 500000000 &&(int64(payment.LockTime)-time.Now().Unix()) < 0 {
 					isOrphan = false
 					break
 				} else if payment.LockTime > 500000000 && (int64(payment.LockTime)-time.Now().Unix()) >= 0 {
 					isOrphan = true
 					break
-				} else if payment.LockTime < 500000000 && (int64(payment.LockTime) < unithigh) {
+				} else if payment.LockTime >0 && payment.LockTime < 500000000 && (int64(payment.LockTime) < unithigh) {
                     // if persent unit is high than lock unit ,not Orphan
                     isOrphan = false
 					break
-				}else if payment.LockTime < 500000000 && (int64(payment.LockTime) > unithigh) {
+				}else if payment.LockTime >0 && payment.LockTime < 500000000 && (int64(payment.LockTime) > unithigh) {
                     // if persent unit is low than lock unit ,not Orphan
                     isOrphan = true
 					break
