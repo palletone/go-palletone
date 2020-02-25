@@ -22,6 +22,7 @@ package blacklistcc
 
 import (
 	"encoding/json"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -29,7 +30,7 @@ import (
 
 func TestBalance2Json(t *testing.T) {
 	balance := make(map[modules.Asset]uint64)
-	balance[*modules.NewPTNAsset()] = 123456789
+	balance[*dagconfig.DagConfig.GetGasToken().ToAsset()] = 123456789
 	data, err := json.Marshal(balance)
 	assert.Nil(t, err)
 	t.Log(string(data))
