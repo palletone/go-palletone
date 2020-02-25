@@ -84,7 +84,7 @@ func TestGetBody(t *testing.T) {
 
 func TestRLPTxDecode(t *testing.T) {
 	pay1s := &modules.PaymentPayload{
-		LockTime: 12345,
+		LockTime: 0,
 	}
 	output := modules.NewTxOut(1, []byte{0xee, 0xbb}, modules.NewPTNAsset())
 	pay1s.AddTxOut(output)

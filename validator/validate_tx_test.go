@@ -150,7 +150,7 @@ func (u *testutxoQuery) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo,
 }
 func newTestPayment(point *modules.OutPoint, outAmt uint64) *modules.PaymentPayload {
 	pay1s := &modules.PaymentPayload{
-		LockTime: 12345,
+		LockTime: 0,
 	}
 	a := &modules.Asset{AssetId: modules.PTNCOIN}
 

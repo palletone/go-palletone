@@ -28,7 +28,7 @@ func TestTransactionHash(t *testing.T) {
 }
 func TestTransactionJson(t *testing.T) {
 	pay1s := &PaymentPayload{
-		LockTime: 12345,
+		LockTime: 0,
 	}
 	output := NewTxOut(99999999999999999, []byte{0xee, 0xbb}, NewPTNAsset())
 	pay1s.AddTxOut(output)
@@ -103,7 +103,7 @@ func TestTxClone(t *testing.T) {
 
 func newTestTx() *Transaction {
 	pay1s := &PaymentPayload{
-		LockTime: 12345,
+		LockTime: 0,
 	}
 
 	output := NewTxOut(Ptn2Dao(10), []byte{0xee, 0xbb}, NewPTNAsset())
@@ -252,7 +252,7 @@ func TestIDType16Hex(t *testing.T) {
 }
 func TestTransaction_EncodeRLP_Size(t *testing.T) {
 	pay1s := PaymentPayload{
-		LockTime: 12345,
+		LockTime: 0,
 	}
 	a := &Asset{AssetId: PTNCOIN}
 
@@ -317,7 +317,7 @@ func Ptn2Dao(ptn uint64) uint64 {
 }
 
 func newPaymenForTestt(includeCoinbase bool) *PaymentPayload {
-	pay := &PaymentPayload{LockTime: 123, Inputs: []*Input{}, Outputs: []*Output{}}
+	pay := &PaymentPayload{LockTime: 0, Inputs: []*Input{}, Outputs: []*Output{}}
 	if includeCoinbase {
 		pay.Inputs = append(pay.Inputs, &Input{SignatureScript: []byte("test"), Extra: []byte("Extra")})
 	}
