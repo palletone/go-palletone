@@ -24,10 +24,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"github.com/palletone/go-palletone/common/crypto"
 	"sort"
 	"strconv"
 	"time"
+
+	"github.com/palletone/go-palletone/common/crypto"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/util"
@@ -62,7 +63,7 @@ func (p *PacketMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if err != nil {
 			return shim.Error("Invalid pub key string:" + args[0])
 		}
-		count, err := strconv.ParseUint(args[1],10,32)
+		count, err := strconv.ParseUint(args[1], 10, 32)
 		if err != nil {
 			return shim.Error("Invalid packet count string:" + args[1])
 		}
@@ -82,14 +83,14 @@ func (p *PacketMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			}
 			exp = &ti
 		}
-		isConstant,err :=strconv.ParseBool(args[6])
+		isConstant, err := strconv.ParseBool(args[6])
 		if err != nil {
 			return shim.Error("Invalid constant bool:" + args[3])
 		}
 		if f == "createPacket" {
-			err = p.CreatePacket(stub, pubKey, uint32(count), minAmount, maxAmount, exp, args[5],isConstant)
+			err = p.CreatePacket(stub, pubKey, uint32(count), minAmount, maxAmount, exp, args[5], isConstant)
 		} else { //update
-			err = p.UpdatePacket(stub, pubKey, uint32(count), minAmount, maxAmount, exp, args[5],isConstant)
+			err = p.UpdatePacket(stub, pubKey, uint32(count), minAmount, maxAmount, exp, args[5], isConstant)
 		}
 		if err != nil {
 			return shim.Error("CreatePacket error:" + err.Error())
@@ -117,7 +118,7 @@ func (p *PacketMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if err != nil {
 			return shim.Error("Invalid min amount string:" + args[4])
 		}
-		err = p.PullPacket(stub, pubKey, message, signature, address,args[4])
+		err = p.PullPacket(stub, pubKey, message, signature, address, args[4])
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -171,7 +172,7 @@ func (p *PacketMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			return shim.Error("QueryIsInBlacklist error:" + err.Error())
 		}
 		return shim.Success(nil)
-	case "isPulledPacket":  //查看message是否存在
+	case "isPulledPacket": //查看message是否存在
 		if len(args) != 2 {
 			return shim.Error("must input 2 args: pubKeyHex,message")
 		}
@@ -180,7 +181,7 @@ func (p *PacketMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			return shim.Error("Invalid pub key string:" + args[0])
 		}
 		message := args[1]
-		if p.IsPulledPacket(stub,pubKey,message){
+		if p.IsPulledPacket(stub, pubKey, message) {
 			return shim.Success([]byte("true"))
 		}
 		return shim.Success([]byte("false"))
@@ -190,7 +191,7 @@ func (p *PacketMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	}
 }
 func (p *PacketMgr) CreatePacket(stub shim.ChaincodeStubInterface, pubKey []byte, count uint32,
-	minAmount, maxAmount decimal.Decimal, expiredTime *time.Time, remark string,isConstant bool) error {
+	minAmount, maxAmount decimal.Decimal, expiredTime *time.Time, remark string, isConstant bool) error {
 	creator, _ := stub.GetInvokeAddress()
 	tokenToPackets, err := stub.GetInvokeTokens()
 	if err != nil {
@@ -213,7 +214,7 @@ func (p *PacketMgr) CreatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 		MinPacketAmount: tokenToPacket.Asset.Uint64Amount(minAmount),
 		MaxPacketAmount: tokenToPacket.Asset.Uint64Amount(maxAmount),
 		Remark:          remark,
-		Constant:isConstant,
+		Constant:        isConstant,
 	}
 	if expiredTime == nil {
 		packet.ExpiredTime = 0
@@ -233,7 +234,7 @@ func (p *PacketMgr) CreatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 
 //增加额度，调整红包产生等
 func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte, count uint32,
-	minAmount, maxAmount decimal.Decimal, expiredTime *time.Time, remark string,isConstant bool) error {
+	minAmount, maxAmount decimal.Decimal, expiredTime *time.Time, remark string, isConstant bool) error {
 	creator, _ := stub.GetInvokeAddress()
 	packet, err := getPacket(stub, pubKey)
 	if err != nil {
@@ -278,7 +279,7 @@ func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 			return errors.New("Please pay " + packet.Token.String() + " to this contract.")
 		}
 		packet.Amount += tokenToPacket.Amount
-		bAmount +=tokenToPacket.Amount
+		bAmount += tokenToPacket.Amount
 	}
 
 	err = savePacket(stub, packet)
@@ -298,9 +299,9 @@ func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 }
 func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	pubKey []byte, msg string, signature []byte,
-	pullAddr common.Address,amount string) error {
+	pullAddr common.Address, amount string) error {
 	//是否已经存在了
-	if isPulledPacket(stub,pubKey,msg) {
+	if isPulledPacket(stub, pubKey, msg) {
 		return errors.New("Packet had been pulled")
 	}
 	packet, err := getPacket(stub, pubKey)
@@ -308,9 +309,11 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 		return errors.New("Packet not found")
 	}
 	//检查红包是否过期
-	currentTime, _ := stub.GetTxTimestamp(10)
-	if packet.ExpiredTime != 0 && packet.ExpiredTime <= uint64(currentTime.Seconds) {
-		return errors.New("Packet already expired")
+	if packet.ExpiredTime != 0 { //红包有过期时间
+		currentTime, _ := stub.GetTxTimestamp(10)
+		if packet.ExpiredTime != 0 && packet.ExpiredTime <= uint64(currentTime.Seconds) {
+			return errors.New("Packet already expired")
+		}
 	}
 	//验证通过，发送红包
 	hash := common.HexToHash(stub.GetTxID())
@@ -326,7 +329,7 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	if packet.Constant {
 		temp, _ := decimal.NewFromString(amount)
 		payAmt = packet.Token.Uint64Amount(temp)
-	}else {
+	} else {
 		//
 		if packet.Count != 0 {
 			//
@@ -334,14 +337,14 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 				return errors.New("Packet count is zero")
 			}
 			payAmt = packet.GetPullAmount(int64(seed), balanceAmount, balanceCount)
-			balanceCount-=1
-		}else {  // 无限领取，最大值
+			balanceCount -= 1
+		} else { // 无限领取，最大值
 			payAmt = packet.GetPullAmount(int64(seed), balanceAmount, 1)
 		}
 	}
 	message := msg
 	if amount != "0" {
-		message +=amount
+		message += amount
 	}
 	pass, err := crypto.MyCryptoLib.Verify(pubKey, signature, []byte(message))
 	if err != nil || !pass {
@@ -447,7 +450,7 @@ func (p *PacketMgr) RecyclePacket(stub shim.ChaincodeStubInterface, pubKey []byt
 	if err != nil {
 		return err
 	}
-	invokeAddr,err := stub.GetInvokeAddress()
+	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
 		return err
 	}
@@ -473,6 +476,6 @@ func (p *PacketMgr) RecyclePacket(stub shim.ChaincodeStubInterface, pubKey []byt
 	return savePacketBalance(stub, pubKey, 0, 0)
 }
 
-func (p *PacketMgr) IsPulledPacket(stub shim.ChaincodeStubInterface,pubKey []byte,msg string) bool {
-	return isPulledPacket(stub,pubKey,msg)
+func (p *PacketMgr) IsPulledPacket(stub shim.ChaincodeStubInterface, pubKey []byte, msg string) bool {
+	return isPulledPacket(stub, pubKey, msg)
 }

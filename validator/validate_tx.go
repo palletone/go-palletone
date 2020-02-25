@@ -34,6 +34,7 @@ import (
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/rwset"
 )
 
 func shortId(id string) string {
@@ -54,10 +55,16 @@ Tx的第一条Msg必须是Payment
 To validate one transaction
 如果isFullTx为false，意味着这个Tx还没有被陪审团处理完，所以结果部分的Payment不验证
 */
-func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (ValidationCode, []*modules.Addition) {
+func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transaction, isFullTx bool) (ValidationCode, []*modules.Addition) {
 	if tx == nil {
 		return TxValidationCode_VALID, nil
 	}
+    ptn := modules.NewPTNAsset()
+    _,chainindex,err := validate.propquery.GetNewestUnit(ptn.AssetId)
+    if err != nil {
+		return TxValidationCode_INVALID_MSG, nil
+	}
+    unithigh:=int64(chainindex.Index)
 	reqId := tx.RequestHash()
 	msgs := tx.TxMessages()
 	if len(msgs) == 0 {
@@ -68,8 +75,8 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 		return TxValidationCode_INVALID_MSG, nil
 	}
 	txFeePass, txFee := validate.validateTxFeeValid(tx)
-	if !txFeePass {
-		return TxValidationCode_INVALID_FEE, nil
+	if txFeePass != TxValidationCode_VALID {
+		return txFeePass, nil
 	}
 	// validate tx size
 	if tx.Size().Float64() > float64(modules.TX_MAXSIZE) {
@@ -79,11 +86,24 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 
 	//合约的执行结果必须有Jury签名
 	if validate.enableContractSignCheck && isFullTx && tx.IsContractTx() {
-		if validate.enableContractRwSetCheck {
-			if !validate.ContractTxCheck(tx) { //验证合约执行结果是够正常
-				log.Debugf("[%s]ContractTxCheck fail", shortId(reqId.String()))
-				return TxValidationCode_INVALID_CONTRACT, txFee
+		//TODO Devin
+		if validate.enableContractRwSetCheck && tx.IsSystemContract() {
+			//rwMag := rwM
+			//if rwMag == nil {
+			//	log.Debugf("validate tx not in unit, use new default TxManager")
+			//	rwMag = rwset.DefaultRwSetMgr()
+			//}
+			//验证合约执行结果是够正常
+			if validate.contractCheckFun != nil {
+				pass := validate.contractCheckFun(tx, rwM, validate.contractDb)
+				if !pass {
+					log.Debugf("[%s]ContractTxCheck fail", shortId(reqId.String()))
+					return TxValidationCode_INVALID_CONTRACT, txFee
+				}
+			} else {
+				log.Warnf("contract request[%s] cannot validate since contractCheckFun is null", reqId.String())
 			}
+			log.Debugf("validate contract request[%s] pass", tx.RequestHash().String())
 		}
 		isResultMsg := false
 		hasSignMsg := false
@@ -117,7 +137,11 @@ func (validate *Validate) validateTx(tx *modules.Transaction, isFullTx bool) (Va
 			if !ok {
 				return TxValidationCode_INVALID_PAYMMENTLOAD, txFee
 			}
-			if int64(payment.LockTime)-time.Now().Unix() > 0 {
+			if int64(payment.LockTime) >0 && int64(payment.LockTime)<500000000{
+                if unithigh < int64(payment.LockTime){
+                    return TxValidationCode_ORPHAN, txFee
+                }
+			}else if int64(payment.LockTime)-time.Now().Unix() > 0 {
 
 				return TxValidationCode_ORPHAN, txFee
 			}
@@ -292,12 +316,12 @@ func (validate *Validate) validateVoteMediatorTx(payload interface{}) Validation
 }
 
 //extSize :byte, extTime :s
-func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize float64, extTime float64) bool {
+func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize float64, extTime float64) ValidationCode {
 	if tx == nil {
-		return false
+		return TxValidationCode_UNKNOWN_TX_TYPE
 	}
 	if !validate.enableTxFeeCheck {
-		return true
+		return TxValidationCode_VALID
 	}
 
 	var onlyPayment = true
@@ -308,12 +332,27 @@ func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize f
 
 	if validate.propquery == nil || validate.utxoquery == nil {
 		log.Warnf("[%s]ValidateTxFeeEnough, Cannot validate tx fee, your validate utxoquery or propquery not set", shortId(reqId.String()))
-		return true //todo ?
+		return TxValidationCode_VALID //todo ?
 	}
+	//check orphan
+	//for _,msg:=range tx.Messages(){
+	//	if msg.App==modules.APP_PAYMENT{
+	//		payment:=msg.Payload.(*modules.PaymentPayload)
+	//		for _,input:=range payment.Inputs{
+	//			 u,err:=validate.utxoquery.GetUtxoEntry(input.PreviousOutPoint)
+	//			 if err!=nil{ //not found in utxo
+	//			 	s,err2:=validate.utxoquery.GetStxoEntry(input.PreviousOutPoint)
+	//			 	if err2!=nil{ //also not found in stxo
+	//			 		return TxValidationCode_ORPHAN
+	//				}
+	//			 }
+	//		}
+	//	}
+	//}
 	fees, err := tx.GetTxFee(validate.utxoquery.GetUtxoEntry) //validate.dagquery.GetTxFee(tx)
 	if err != nil {
 		log.Errorf("[%s]validateTxFeeEnough, GetTxFee err:%s", shortId(reqId.String()), err.Error())
-		return false //todo ?
+		return TxValidationCode_ORPHAN //todo ?
 	}
 
 	cp := validate.propquery.GetChainParameters()
@@ -361,33 +400,38 @@ func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize f
 		"txSize[%f], timeout[%d], extSize[%f], extTime[%f]",
 		shortId(reqId.String()), val, float64(fees.Amount), allFee, sizeFee, timeFee, accountUpdateFee, appDataFee,
 		txSize, timeout, extSize, extTime)
-	return val
+	if val {
+		return TxValidationCode_VALID
+	} else {
+		return TxValidationCode_INVALID_FEE
+	}
 }
 
 //验证手续费是否合法，并返回手续费的分配情况
-func (validate *Validate) validateTxFeeValid(tx *modules.Transaction) (bool, []*modules.Addition) {
+func (validate *Validate) validateTxFeeValid(tx *modules.Transaction) (ValidationCode, []*modules.Addition) {
 	if tx == nil {
 		log.Error("validateTxFeeValid, tx is nil")
-		return false, nil
+		return TxValidationCode_INVALID_OTHER_REASON, nil
 	}
 	reqId := tx.RequestHash()
 	if validate.utxoquery == nil {
 		log.Warnf("[%s]validateTxFeeValid, Cannot validate tx fee, your validate utxoquery not set", shortId(reqId.String()))
-		return true, nil
+		return TxValidationCode_VALID, nil
 	}
 
 	//check fee is or not enough
 	assetId := dagconfig.DagConfig.GetGasToken()
 	if validate.enableTxFeeCheck {
-		if !validate.ValidateTxFeeEnough(tx, 0, 0) {
+		code := validate.ValidateTxFeeEnough(tx, 0, 0)
+		if code != TxValidationCode_VALID {
 			log.Warnf("validateTxFeeValid, Tx[%s] fee is not enough", tx.Hash().String())
-			return false, nil
+			return code, nil
 		}
 		feeAllocate, err := tx.GetTxFeeAllocate(validate.utxoquery.GetUtxoEntry,
 			validate.tokenEngine.GetScriptSigners, common.Address{}, validate.statequery.GetJurorReward)
 		if err != nil {
 			log.Warnf("[%s]validateTxFeeValid, compute tx[%s] fee error:%s", shortId(reqId.String()), tx.Hash().String(), err.Error())
-			return false, nil
+			return TxValidationCode_INVALID_FEE, nil
 		}
 		//check fee type is ok
 
@@ -395,27 +439,27 @@ func (validate *Validate) validateTxFeeValid(tx *modules.Transaction) (bool, []*
 			if feeAsset.Asset.String() != assetId.String() {
 				log.Warnf("[%s]validateTxFeeValid, assetId is not equal, feeAsset:%s, cfg asset:%s", shortId(reqId.String()),
 					feeAsset.Asset.String(), assetId.String())
-				return false, feeAllocate
+				return TxValidationCode_INVALID_FEE, feeAllocate
 			}
 		}
 
-		return true, feeAllocate
+		return TxValidationCode_VALID, feeAllocate
 	} else {
 		feeAllocate, err := tx.GetTxFeeAllocateLegacyV1(validate.utxoquery.GetUtxoEntry,
 			validate.tokenEngine.GetScriptSigners, common.Address{})
 		if err != nil {
 			log.Warnf("[%s]validateTxFeeValid, compute tx[%s] fee error:%s", shortId(reqId.String()), tx.Hash().String(), err.Error())
-			return false, nil
+			return TxValidationCode_INVALID_FEE, nil
 		}
 		//check fee type is ok
 		for _, feeAsset := range feeAllocate {
 			if feeAsset.Asset.String() != assetId.String() {
 				log.Warnf("[%s]validateTxFeeValid, assetId is not equal, feeAsset:%s, cfg asset:%s", shortId(reqId.String()),
 					feeAsset.Asset.String(), assetId.String())
-				return false, feeAllocate
+				return TxValidationCode_INVALID_FEE, feeAllocate
 			}
 		}
-		return true, feeAllocate
+		return TxValidationCode_VALID, feeAllocate
 	}
 
 }

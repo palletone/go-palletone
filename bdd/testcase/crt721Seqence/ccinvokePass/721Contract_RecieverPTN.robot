@@ -1,10 +1,10 @@
 *** Settings ***
 Default Tags      normal
 Library           ../../utilFunc/createToken.py
-Resource          ../../utilKwd/utilVariables.txt
 Resource          ../../utilKwd/normalKwd.txt
 Resource          ../../utilKwd/utilDefined.txt
 Resource          ../../utilKwd/behaveKwd.txt
+Resource          ../../utilKwd/utilVariables.txt
 
 *** Variables ***
 ${preTokenId}     CA070

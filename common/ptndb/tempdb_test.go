@@ -18,16 +18,16 @@
  *
  */
 
-package memunit
+package ptndb
 
 import (
-	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTempdb_Get(t *testing.T) {
-	db, _ := ptndb.NewMemDatabase()
+	db, _ := NewMemDatabase()
 	tmpdb, _ := NewTempdb(db)
 	db.Put([]byte("A"), []byte("1"))
 	db.Put([]byte("AB"), []byte("1"))

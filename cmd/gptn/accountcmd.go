@@ -22,6 +22,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/palletone/go-palletone/cmd/console"
 	"github.com/palletone/go-palletone/cmd/utils"
 	"github.com/palletone/go-palletone/common"
@@ -35,8 +38,7 @@ import (
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/tokenengine"
 	"gopkg.in/urfave/cli.v1"
-	"strconv"
-	"strings"
+
 	//"github.com/btcsuite/btcd/btcjson"
 	"github.com/shopspring/decimal"
 )

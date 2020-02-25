@@ -53,6 +53,8 @@ type iDag interface {
 	GetSlotAtTime(when time.Time) uint32
 	GetSlotTime(slotNum uint32) time.Time
 	HeadUnitTime() int64
+	CurrentHeader(token modules.AssetId) *modules.Header
+	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)
 
 	GetScheduledMediator(slotNum uint32) common.Address
 	GetActiveMediatorInitPubs() []kyber.Point
@@ -80,6 +82,16 @@ type iDag interface {
 
 	IsConsecutiveMediator(nextMediator common.Address) bool
 	MediatorParticipationRate() uint32
+	UnstableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error)
+
+	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
+	GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
+	GetStableTransactionOnly(hash common.Hash) (*modules.Transaction, error)
+	GetStableUnit(hash common.Hash) (*modules.Unit, error)
+	GetStableUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error)
+	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
+	GetContractState(contractid []byte, field string) ([]byte, *modules.StateVersion, error)
+	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
 }
 
 type MediatorPlugin struct {

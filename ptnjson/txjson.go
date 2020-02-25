@@ -21,13 +21,14 @@
 package ptnjson
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/palletone/go-palletone/contracts/syscontract"
 	"time"
 
-	"encoding/hex"
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/contracts/syscontract"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -110,10 +111,10 @@ type SignatureJson struct {
 }
 
 type InvokeRequestJson struct {
-	Number       int           `json:"row_number"`
-	ContractAddr string        `json:"contract_addr"`
-	Args         []string      `json:"arg_set"`
-	Timeout      time.Duration `json:"timeout"`
+	Number       int      `json:"row_number"`
+	ContractAddr string   `json:"contract_addr"`
+	Args         []string `json:"arg_set"`
+	Timeout      uint32   `json:"timeout"`
 }
 
 type InstallRequestJson struct {
@@ -347,7 +348,7 @@ func convertInvokeRequest2Json(req *modules.ContractInvokeRequestPayload) *Invok
 	for _, arg := range req.Args {
 		reqJson.Args = append(reqJson.Args, string(arg))
 	}
-	reqJson.Timeout = time.Duration(req.Timeout) * time.Second
+	reqJson.Timeout = req.Timeout
 	return reqJson
 }
 

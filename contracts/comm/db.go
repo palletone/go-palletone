@@ -1,16 +1,16 @@
 package comm
 
 import (
-	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/dboperation"
 )
 
-var useDag dag.IDag
+var useDag dboperation.IContractDag
 
-func SetCcDagHand(dag dag.IDag) error {
+func SetCcDagHand(dag dboperation.IContractDag) error {
 	useDag = dag
 	return nil
 }
 
-func GetCcDagHand() (dag.IDag, error) {
+func GetCcDagHand() (dboperation.IContractDag, error) {
 	return useDag, nil
 }

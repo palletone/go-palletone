@@ -22,8 +22,8 @@ package jury
 
 import (
 	"encoding/json"
-
 	"fmt"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core"
@@ -70,8 +70,10 @@ func mergeUtxo(addr common.Address, utxos map[modules.OutPoint]*modules.Utxo, li
 	return payment
 }
 
+type UtxoQuery func(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
+
 //将ContractInvokeResult中合约付款出去的请求转换为UTXO对应的Payment
-func resultToContractPayments(dag iDag, requestTx *modules.Transaction, result *modules.ContractInvokeResult) ([]*modules.PaymentPayload, error) {
+func resultToContractPayments(dag UtxoQuery, requestTx *modules.Transaction, result *modules.ContractInvokeResult) ([]*modules.PaymentPayload, error) {
 	addr := common.NewAddress(result.ContractId, common.ContractHash)
 	payments := []*modules.PaymentPayload{}
 	paytoContractUtxo := map[modules.OutPoint]*modules.Utxo{}
@@ -83,7 +85,7 @@ func resultToContractPayments(dag iDag, requestTx *modules.Transaction, result *
 		for ast, aa := range payouts {
 			ast1 := ast
 			asset := &ast1
-			utxos, err := dag.GetAddr1TokenUtxos(addr, asset)
+			utxos, err := dag(addr, asset)
 			if err != nil {
 				return nil, err
 			}
@@ -126,7 +128,7 @@ func resultToContractPayments(dag iDag, requestTx *modules.Transaction, result *
 			payments = append(payments, payment)
 		}
 	} else {
-		utxos, err := dag.GetAddr1TokenUtxos(addr, nil)
+		utxos, err := dag(addr, nil)
 		if err != nil {
 			return nil, fmt.Errorf("mergeUtxo, address:%s, GetAddr1TokenUtxos err:%s", addr.String(), err.Error())
 		}
@@ -220,21 +222,38 @@ func resultToCoinbase(result *modules.ContractInvokeResult) ([]*modules.PaymentP
 		coinbases = append(coinbases, coinbase)
 	}
 	if result.TokenSupply != nil && len(result.TokenSupply) > 0 {
-		coinbase := &modules.PaymentPayload{}
-		for _, tokenSupply := range result.TokenSupply {
-			assetId := &modules.Asset{}
-			assetId.AssetId.SetBytes(tokenSupply.AssetId)
-			assetId.UniqueId.SetBytes(tokenSupply.UniqueId)
-			out := modules.NewTxOut(tokenSupply.Amount, tokenengine.Instance.GenerateLockScript(tokenSupply.Creator), assetId)
-			//
-			coinbase.AddTxOut(out)
+		groupSupply := groupTokenSupply(result.TokenSupply)
+		//如果合约中创建了多种Token，需要创建对应的多个Payment才行，不然验证不通过
+		for _, supplies := range groupSupply {
+			coinbase := &modules.PaymentPayload{}
+			for _, tokenSupply := range supplies {
+				assetId := &modules.Asset{}
+				assetId.AssetId.SetBytes(tokenSupply.AssetId)
+				assetId.UniqueId.SetBytes(tokenSupply.UniqueId)
+				out := modules.NewTxOut(tokenSupply.Amount,
+					tokenengine.Instance.GenerateLockScript(tokenSupply.Creator),
+					assetId)
+				//
+				coinbase.AddTxOut(out)
+			}
+			coinbases = append(coinbases, coinbase)
 		}
-		coinbases = append(coinbases, coinbase)
-
 	}
 	return coinbases, nil
 }
-
+func groupTokenSupply(tokenSupply []*modules.TokenSupply) map[modules.AssetId][]*modules.TokenSupply {
+	result := make(map[modules.AssetId][]*modules.TokenSupply)
+	for _, supply := range tokenSupply {
+		assetid := modules.AssetId{}
+		assetid.SetBytes(supply.AssetId)
+		if supply1Token, ok := result[assetid]; ok {
+			supply1Token = append(supply1Token, supply)
+		} else {
+			result[assetid] = []*modules.TokenSupply{supply}
+		}
+	}
+	return result
+}
 func convertMapUtxo(utxo map[modules.OutPoint]*modules.Utxo) []*modules.UtxoWithOutPoint {
 	result := make([]*modules.UtxoWithOutPoint, 0, len(utxo))
 	for o, u := range utxo {

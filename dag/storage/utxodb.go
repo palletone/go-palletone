@@ -21,6 +21,9 @@
 package storage
 
 import (
+	"fmt"
+	"reflect"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -97,7 +100,7 @@ func (utxodb *UtxoDb) SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.U
 	if err != nil {
 		return err
 	}
-
+	log.Debugf("save utxo[%s]", outpoint.String())
 	return utxodb.saveUtxoOutpoint(address, outpoint)
 }
 
@@ -139,16 +142,17 @@ func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint, spentTxId common.Ha
 		return err
 	}
 	key := outpoint.ToKey()
-
+	//1 delete UTXO
 	err = utxodb.db.Delete(key)
 	if err != nil {
 		return err
 	}
-	//log.Debugf("Try delete utxo by key:%s, move to spent table", outpoint.String())
+	//2 create stxo
 	utxodb.SaveUtxoSpent(outpoint, utxo, spentTxId, spentTime)
-
+	//3 delete index
 	address, _ := utxodb.tokenEngine.GetAddressFromScript(utxo.PkScript[:])
 	utxodb.deleteUtxoOutpoint(address, outpoint)
+	log.Debugf("delete utxo by key:%s, spend by tx[%s]", outpoint.String(), spentTxId.String())
 	return nil
 }
 
@@ -166,6 +170,10 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 
 	err := RetrieveFromRlpBytes(utxodb.db, key, utxo)
 	if err != nil {
+		log.DebugDynamic(func() string {
+			return fmt.Sprintf("DB[%s] get utxo[%s] error:%s",
+				reflect.TypeOf(utxodb.db).String(), outpoint.String(), err.Error())
+		})
 		if errors.IsNotFoundError(err) {
 			return nil, errors.ErrUtxoNotFound
 		}

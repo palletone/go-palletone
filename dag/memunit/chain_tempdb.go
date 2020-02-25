@@ -22,6 +22,7 @@ package memunit
 
 import (
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/consensus/jury"
 	comm2 "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/palletcache"
@@ -30,7 +31,7 @@ import (
 )
 
 type ChainTempDb struct {
-	Tempdb         *Tempdb
+	Tempdb         *ptndb.Tempdb
 	UnitRep        comm2.IUnitRepository
 	UtxoRep        comm2.IUtxoRepository
 	StateRep       comm2.IStateRepository
@@ -41,17 +42,20 @@ type ChainTempDb struct {
 }
 
 func NewChainTempDb(db ptndb.Database,
-	cache palletcache.ICache, tokenEngine tokenengine.ITokenEngine, saveHeaderOnly bool) (*ChainTempDb, error) {
-	tempdb, _ := NewTempdb(db)
+	cache palletcache.ICache, tokenEngine tokenengine.ITokenEngine, saveHeaderOnly bool,
+	builderFunc validator.ValidatorBuilderFunc) (*ChainTempDb, error) {
+	tempdb, _ := ptndb.NewTempdb(db)
 	trep := comm2.NewUnitRepository4Db(tempdb, tokenEngine)
 	tutxoRep := comm2.NewUtxoRepository4Db(tempdb, tokenEngine)
 	tstateRep := comm2.NewStateRepository4Db(tempdb)
 	tpropRep := comm2.NewPropRepository4Db(tempdb)
 	tunitProduceRep := comm2.NewUnitProduceRepository(trep, tpropRep, tstateRep)
-	val := validator.NewValidate(trep, tutxoRep, tstateRep, tpropRep, cache, false)
+	contractDag := NewContractSupportRepository(tempdb)
+	val := builderFunc(trep, tutxoRep, tstateRep, tpropRep, contractDag, cache, false)
 	if saveHeaderOnly { //轻节点，只有Header数据，无法做高级验证
-		val = validator.NewValidate(trep, nil, nil, nil, cache, true)
+		val = builderFunc(trep, nil, nil, nil, nil, cache, true)
 	}
+	val.SetContractTxCheckFun(jury.CheckContractTxResult)
 	return &ChainTempDb{
 		Tempdb:         tempdb,
 		UnitRep:        trep,

@@ -21,10 +21,11 @@ package txspool
 
 import (
 	"fmt"
-	"github.com/palletone/go-palletone/validator"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/palletone/go-palletone/validator"
 
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
@@ -173,7 +174,7 @@ type TxDesc struct {
 func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit dags) *TxPool {
 	tokenEngine := tokenengine.Instance
 	pool := NewTxPool4DI(config, cachedb, unit, tokenEngine, nil)
-	val := validator.NewValidate(unit, pool, unit, unit, cachedb, false)
+	val := validator.NewValidate(unit, pool, unit, unit, nil, cachedb, false)
 	pool.txValidator = val
 	pool.startJournal(config)
 	return pool
@@ -233,6 +234,13 @@ func (pool *TxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, err
 // return a stxo by the outpoint in txpool
 func (pool *TxPool) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error) {
 	return pool.unit.GetStxoEntry(outpoint)
+}
+func (pool *TxPool) GetTxOutput(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	if inter, ok := pool.outputs.Load(*outpoint); ok {
+		utxo := inter.(*modules.Utxo)
+		return utxo, nil
+	}
+	return pool.unit.GetTxOutput(outpoint)
 }
 
 // loop is the transaction pool's main event loop, waiting for and reacting to
@@ -475,6 +483,15 @@ func (pool *TxPool) validateTx(tx *TxPoolTransaction, local bool) ([]*modules.Ad
 	//}
 
 	return pool.txValidator.ValidateTx(tx.Tx, true)
+}
+func (pool *TxPool) getTxFeeAllocate(tx *modules.Transaction) ([]*modules.Addition, error) {
+	feeAllocate, err := tx.GetTxFeeAllocate(pool.GetUtxoEntry,
+		pool.tokenEngine.GetScriptSigners, common.Address{}, pool.unit.GetJurorReward)
+	if err != nil {
+		log.Warnf("[%s]validateTxFeeValid, compute tx[%s] fee error:%s", tx.RequestHash().String(), tx.Hash().String(), err.Error())
+		return nil, err
+	}
+	return feeAllocate, nil
 }
 
 // This function MUST be called with the txpool lock held (for reads).
@@ -750,7 +767,7 @@ func (pool *TxPool) addSequenTx(p_tx *TxPoolTransaction) error {
 		return nil
 	}
 	// If the transaction fails basic validation, discard it
-	if addition, _, err := pool.validateTx(p_tx, false); err != nil {
+	if addition, err := pool.getTxFeeAllocate(p_tx.Tx); err != nil {
 		return err
 	} else {
 		if p_tx.TxFee != nil {
@@ -943,29 +960,40 @@ func (pool *TxPool) Status(hashes []common.Hash) []TxStatus {
 	return status
 }
 
-// GetPoolTxsByAddr returns all tx by addr.
+// GetUnpackedTxsByAddr returns all tx by addr.
 func (pool *TxPool) GetPoolTxsByAddr(addr string) ([]*TxPoolTransaction, error) {
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
-	return pool.getPoolTxsByAddr(addr)
+	return pool.getPoolTxsByAddr(addr, false)
 }
 
-func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*TxPoolTransaction, error) {
+func (pool *TxPool) GetUnpackedTxsByAddr(addr string) ([]*TxPoolTransaction, error) {
+	pool.mu.RLock()
+	defer pool.mu.RUnlock()
+	return pool.getPoolTxsByAddr(addr, true)
+}
+
+func (pool *TxPool) getPoolTxsByAddr(addr string, onlyUnpacked bool) ([]*TxPoolTransaction, error) {
 	txs := make(map[string][]*TxPoolTransaction)
 	// 将交易按地址分类
 	poolTxs := pool.AllTxpoolTxs()
 	for _, tx := range poolTxs {
-		if !tx.Pending {
-			for _, msg := range tx.Tx.Messages() {
+		if !tx.Confirmed {
+			if onlyUnpacked {
+				if tx.Pending {
+					continue //已打包，忽略
+				}
+			}
+			for _, msg := range tx.Tx.TxMessages() {
 				if msg.App == modules.APP_PAYMENT {
 					payment, ok := msg.Payload.(*modules.PaymentPayload)
 					if ok {
-						if addrs, err := tx.Tx.GetFromAddrs(pool.GetUtxoEntry, pool.tokenEngine.GetAddressFromScript); err == nil {
-							for _, addr := range addrs {
-								addr1 := addr.String()
-								txs[addr1] = append(txs[addr1], tx)
-							}
+						addrs := tx.Tx.GetFromAddrs(pool.GetTxOutput, pool.tokenEngine.GetAddressFromScript)
+						for _, addr := range addrs {
+							addr1 := addr.String()
+							txs[addr1] = append(txs[addr1], tx)
 						}
+
 						for _, out := range payment.Outputs {
 							address, err1 := pool.tokenEngine.GetAddressFromScript(out.PkScript[:])
 							if err1 == nil {
@@ -988,12 +1016,13 @@ func (pool *TxPool) getPoolTxsByAddr(addr string) ([]*TxPoolTransaction, error) 
 			if msg.App == modules.APP_PAYMENT {
 				payment, ok := msg.Payload.(*modules.PaymentPayload)
 				if ok {
-					if addrs, err := pool.unit.GetTxFromAddress(tx.Tx); err == nil {
-						for _, addr := range addrs {
-							addr1 := addr.String()
-							txs[addr1] = append(txs[addr1], tx)
-						}
+					addrs := tx.Tx.GetFromAddrs(pool.GetTxOutput, pool.tokenEngine.GetAddressFromScript)
+					//if addrs, err := pool.unit.GetTxFromAddress(tx.Tx); err == nil {
+					for _, addr := range addrs {
+						addr1 := addr.String()
+						txs[addr1] = append(txs[addr1], tx)
 					}
+					//}
 					for _, out := range payment.Outputs {
 						address, err1 := pool.tokenEngine.GetAddressFromScript(out.PkScript[:])
 						if err1 == nil {
@@ -1525,8 +1554,15 @@ func (pool *TxPool) resetPendingTx(tx *modules.Transaction) error {
 // GetSortedTxs returns 根据优先级返回list
 func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTransaction, common.StorageSize) {
 	t0 := time.Now()
+	canbe_packaged :=false
 	var total common.StorageSize
 	list := make([]*TxPoolTransaction, 0)
+	ptn_asset ,_:= modules.StringToAsset("PTN")
+	_,chainindex,err :=pool.unit.GetNewestUnit(ptn_asset.AssetId)
+	if err != nil {
+	    return nil, 0
+    }
+	unithigh := int64(chainindex.Index)
 	// get sequenTxs
 	stxs := pool.GetSequenTxs()
 	poolTxs := pool.AllTxpoolTxs()
@@ -1585,7 +1621,10 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 		}
 		locktime := tx.Tx.GetLocktime()
 		if locktime > 0 {
-			if locktime-time.Now().Unix() < 0 {
+			if locktime < 500000000 && unithigh >= locktime {
+				canbe_packaged = true
+			}
+			if locktime-time.Now().Unix() < 0 || canbe_packaged{
 				tx.Pending = true
 				tx.UnitHash = hash
 				tx.UnitIndex = index
@@ -1709,7 +1748,7 @@ func (pool *TxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subs
 }
 
 func (pool *TxPool) GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error) {
-	return tx.GetTxFee(pool.GetUtxoEntry)
+	return tx.GetTxFee(pool.GetTxOutput)
 }
 
 func (pool *TxPool) limitNumberOrphans() {
@@ -1861,8 +1900,14 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 	if len(tx.Messages()) <= 0 {
 		return false, errors.New("this tx's message is null.")
 	}
+	ptn_asset ,_:= modules.StringToAsset("PTN")
+	_,chainindex,err :=pool.unit.GetNewestUnit(ptn_asset.AssetId)
+	if err != nil {
+	    return false, errors.New("can not get GetNewestUnit.")
+    }
+    unithigh := int64(chainindex.Index)
+
 	var isOrphan bool
-	var err error
 	for _, msg := range tx.Messages() {
 		if isOrphan {
 			break
@@ -1870,11 +1915,22 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 		if msg.App == modules.APP_PAYMENT {
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			if ok {
-				if payment.LockTime > 0 && (int64(payment.LockTime)-time.Now().Unix()) < 0 {
+			    if payment.LockTime < 0 {
+                    break
+			    }
+				if payment.LockTime > 500000000 &&(int64(payment.LockTime)-time.Now().Unix()) < 0 {
 					isOrphan = false
 					break
-				} else if payment.LockTime > 0 && (int64(payment.LockTime)-time.Now().Unix()) >= 0 {
+				} else if payment.LockTime > 500000000 && (int64(payment.LockTime)-time.Now().Unix()) >= 0 {
 					isOrphan = true
+					break
+				} else if payment.LockTime < 500000000 && (int64(payment.LockTime) < unithigh) {
+                    // if persent unit is high than lock unit ,not Orphan
+                    isOrphan = false
+					break
+				}else if payment.LockTime < 500000000 && (int64(payment.LockTime) > unithigh) {
+                    // if persent unit is low than lock unit ,not Orphan
+                    isOrphan = true
 					break
 				}
 				for _, in := range payment.Inputs {

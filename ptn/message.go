@@ -32,7 +32,6 @@ import (
 	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/ptn/downloader"
 )
 
@@ -435,29 +434,32 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		}
 		return fmt.Sprintf("NewBlockMsg, received unit hash %s, txs:[%x]", unit.Hash().String(), txids)
 	})
+	//Devin:收到新Unit后这里不需要进行合约验证，在Dag模块会验证的。
+	//rwM, err := rwset.NewRwSetMgr(unit.NumberString())
+	//if err != nil {
+	//	return fmt.Errorf("NewBlockMsg, received unit hash %s, NewRwSetMgr err:%s ", unit.Hash().String(), err.Error())
+	//}
 
-	rwset.Init()
-	var temptxs modules.Transactions
-	index := 0
-	for i, tx := range unit.Txs {
-		if i == 0 {
-			temptxs = append(temptxs, tx)
-			continue //coinbase
-		}
-		if tx.IsContractTx() {
-			reqId := tx.RequestHash()
-			log.Debugf("[%s]NewBlockMsg, index[%x],txHash[%s]", reqId.String()[0:8], index, tx.Hash().String())
-			index++
-			if !pm.contractProc.CheckContractTxValid(rwset.RwM, tx, true) {
-				log.Debugf("[%s]NewBlockMsg, CheckContractTxValid is false.", reqId.String()[0:8])
-				continue
-			}
-		}
-		temptxs = append(temptxs, tx)
-	}
-	rwset.RwM.Close()
-	unit.Txs = temptxs
-
+	//var temptxs modules.Transactions
+	//index := 0
+	//for i, tx := range unit.Txs {
+	//	if i == 0 {
+	//		temptxs = append(temptxs, tx)
+	//		continue //coinbase
+	//	}
+	//	if tx.IsContractTx() {
+	//		reqId := tx.RequestHash()
+	//		log.Debugf("[%s]NewBlockMsg, index[%x],txHash[%s]", reqId.String()[0:8], index, tx.Hash().String())
+	//		index++
+	//		if !pm.contractProc.CheckContractTxValid(rwM, tx, true) {
+	//			log.Debugf("[%s]NewBlockMsg, CheckContractTxValid is false.", reqId.String()[0:8])
+	//			continue
+	//		}
+	//	}
+	//	temptxs = append(temptxs, tx)
+	//}
+	//rwM.Close()
+	//unit.Txs = temptxs
 	unit.ReceivedAt = msg.ReceivedAt
 	unit.ReceivedFrom = p
 
@@ -520,7 +522,7 @@ func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 	}
 
 	if pm.producer.IsLocalMediator(header.Author()) {
-		go pm.producer.AddToTBLSRecoverBuf(&sigShare)
+		go pm.producer.AddToTBLSRecoverBuf(&sigShare, header)
 	} else {
 		go pm.BroadcastSigShare(&sigShare)
 	}

@@ -48,9 +48,11 @@ import (
 )
 
 type IUnitRepository interface {
+	GetDb() ptndb.Database
 	GetGenesisUnit() (*modules.Unit, error)
 	//GenesisHeight() modules.ChainIndex
 	SaveUnit(unit *modules.Unit, isGenesis bool) error
+	SaveTransaction(tx *modules.Transaction, txIndex int) error
 	CreateUnit(mediatorReward common.Address, txpool txspool.ITxPool, when time.Time,
 		propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc) (*modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
@@ -97,7 +99,7 @@ type IUnitRepository interface {
 	//获得某个分区上的最新不可逆单元
 	//GetLastIrreversibleUnit(assetID modules.AssetId) (*modules.Unit, error)
 
-	GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
+	//GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
 	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
 	//根据现有Tx数据，重新构建地址和Tx的关系索引
 	RefreshAddrTxIndex() error
@@ -110,6 +112,7 @@ type IUnitRepository interface {
 	CheckReadSetValid(contractId []byte, readSet []modules.ContractReadSet) bool
 }
 type UnitRepository struct {
+	db             ptndb.Database
 	dagdb          storage.IDagDb
 	idxdb          storage.IIndexDb
 	statedb        storage.IStateDb
@@ -131,7 +134,9 @@ func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb,
 	propdb storage.IPropertyDb,
 	engine tokenengine.ITokenEngine) *UnitRepository {
 	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, propdb, engine)
+
 	return &UnitRepository{
+		db:             dagdb.GetDb(),
 		dagdb:          dagdb,
 		idxdb:          idxdb,
 		statedb:        statedb,
@@ -149,6 +154,7 @@ func NewUnitRepository4Db(db ptndb.Database, tokenEngine tokenengine.ITokenEngin
 	propdb := storage.NewPropertyDb(db)
 	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, propdb, tokenEngine)
 	return &UnitRepository{
+		db:             db,
 		dagdb:          dagdb,
 		idxdb:          idxdb,
 		statedb:        statedb,
@@ -157,7 +163,9 @@ func NewUnitRepository4Db(db ptndb.Database, tokenEngine tokenengine.ITokenEngin
 		tokenEngine:    tokenEngine,
 	}
 }
-
+func (rep *UnitRepository) GetDb() ptndb.Database {
+	return rep.db
+}
 func (rep *UnitRepository) SubscribeSysContractStateChangeEvent(ob AfterSysContractStateChangeEventFunc) {
 	if rep.observers == nil {
 		rep.observers = []AfterSysContractStateChangeEventFunc{}
@@ -413,9 +421,9 @@ func (rep *UnitRepository) GetAssetTxHistory(asset *modules.Asset) ([]*modules.T
 	return result, nil
 }
 
-func (rep *UnitRepository) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error) {
-	return rep.utxoRepository.ComputeTxFee(pay)
-}
+//func (rep *UnitRepository) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error) {
+//	return rep.utxoRepository.ComputeTxFee(pay)
+//}
 
 //func (rep *UnitRepository) SaveNumberByHash(uHash common.Hash, number modules.ChainIndex) error {
 //	return rep.dagdb.SaveNumberByHash(uHash, number)
@@ -601,6 +609,7 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 		for idx, tx := range poolTxs {
 			t := tx.Tx
 			reqId := t.RequestHash()
+			//如果是合约的连续调用，可能存在读集版本的高度问题，这里进行修正。
 
 			//标记交易有效性
 			markTxIllegal(rep.statedb, t)
@@ -969,8 +978,23 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 		}
 		rep.dagdb.SaveGenesisUnitHash(uHash)
 	}
-	log.Debug("save Unit[%s] cost time: %s", uHash.String(), time.Since(tt))
+	log.Debugf("save Unit[%s] cost time: %s", uHash.String(), time.Since(tt))
 	return nil
+}
+
+//Mock一个Unit，然后保存Tx，主要用于内存模拟操作
+func (rep *UnitRepository) SaveTransaction(tx *modules.Transaction, txIndex int) error {
+	unitP, err := rep.propdb.GetNewestUnit(dagconfig.DagConfig.GetGasToken())
+	if err != nil {
+		return err
+	}
+	mockHeader := modules.NewEmptyHeader()
+	mockHeader.SetTimestamp(time.Now().Unix())
+	mockHeader.SetHeight(unitP.ChainIndex.AssetID, unitP.ChainIndex.Index+1)
+	mockUnit := &modules.Unit{
+		UnitHeader: mockHeader,
+	}
+	return rep.saveTx4Unit(mockUnit, txIndex, tx)
 }
 
 //Save tx in unit
@@ -1000,13 +1024,13 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 		}
 		switch msg.App {
 		case modules.APP_PAYMENT:
-			if ok := rep.savePaymentPayload(unit.Timestamp(), txHash, msg.Payload.(*modules.PaymentPayload),
+			if ok := rep.savePaymentPayload(unitTime, txHash, msg.Payload.(*modules.PaymentPayload),
 				uint32(msgIndex)); !ok {
 				return fmt.Errorf("Save payment payload error.")
 			}
 		case modules.APP_CONTRACT_TPL:
 			tpl := msg.Payload.(*modules.ContractTplPayload)
-			if ok := rep.saveContractTpl(unit.Number(), uint32(txIndex), installReq, tpl); !ok {
+			if ok := rep.saveContractTpl(uint32(txIndex), installReq, tpl); !ok {
 				return fmt.Errorf("Save contract template error.")
 			}
 		case modules.APP_CONTRACT_DEPLOY:
@@ -1080,7 +1104,8 @@ func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Trans
 		rep.idxdb.SaveAddress(addr)
 	}
 	//Index from address to txid
-	fromAddrs := rep.getPayFromAddresses(tx)
+	fromAddrs := tx.GetFromAddrs(rep.utxoRepository.GetTxOutput, rep.tokenEngine.GetAddressFromScript)
+
 	for _, addr := range fromAddrs {
 		rep.idxdb.SaveAddressTxId(addr, txHash)
 	}
@@ -1114,48 +1139,43 @@ func (rep *UnitRepository) getPayToAddresses(tx *modules.Transaction) []common.A
 	return keys
 }
 
-func (rep *UnitRepository) getPayFromAddresses(tx *modules.Transaction) []common.Address {
-	resultMap := map[common.Address]int{}
-	msgs := tx.TxMessages()
-	for _, msg := range msgs {
-		if msg.App == modules.APP_PAYMENT {
-			pay := msg.Payload.(*modules.PaymentPayload)
-			for _, input := range pay.Inputs {
-				if input.PreviousOutPoint != nil {
-					var lockScript []byte
-					utxo, err := rep.utxoRepository.GetUtxoEntry(input.PreviousOutPoint)
-					if err == nil {
-						lockScript = utxo.PkScript
-					}
-					if err != nil {
-						stxo, err := rep.utxoRepository.GetStxoEntry(input.PreviousOutPoint)
-						if err != nil {
-							if input.PreviousOutPoint.TxHash.IsSelfHash() {
-								out := msgs[input.PreviousOutPoint.MessageIndex].Payload.(*modules.PaymentPayload).Outputs[input.PreviousOutPoint.OutIndex]
-								lockScript = out.PkScript
-							} else {
-								log.Errorf("Cannot find txo by:%s", input.PreviousOutPoint.String())
-								return []common.Address{}
-							}
-						} else {
-							lockScript = stxo.PkScript
-						}
-					}
-					addr, _ := rep.tokenEngine.GetAddressFromScript(lockScript)
-					if _, ok := resultMap[addr]; !ok {
-						resultMap[addr] = 1
-					}
-				}
-
-			}
-		}
-	}
-	keys := make([]common.Address, 0, len(resultMap))
-	for k := range resultMap {
-		keys = append(keys, k)
-	}
-	return keys
-}
+//func (rep *UnitRepository) getPayFromAddresses(tx *modules.Transaction) []common.Address {
+//	resultMap := map[common.Address]int{}
+//	msgs := tx.TxMessages()
+//	for _, msg := range msgs {
+//		if msg.App == modules.APP_PAYMENT {
+//			pay := msg.Payload.(*modules.PaymentPayload)
+//			for _, input := range pay.Inputs {
+//				if input.PreviousOutPoint != nil {
+//					var lockScript []byte
+//					txo, err := rep.utxoRepository.GetTxOutput(input.PreviousOutPoint)
+//					if err != nil {
+//						if input.PreviousOutPoint.TxHash.IsSelfHash() {
+//							out := msgs[input.PreviousOutPoint.MessageIndex].Payload.(*modules.PaymentPayload).Outputs[input.PreviousOutPoint.OutIndex]
+//							lockScript = out.PkScript
+//						} else {
+//							log.Errorf("Cannot find txo by:%s", input.PreviousOutPoint.String())
+//							return []common.Address{}
+//						}
+//					} else {
+//						lockScript = txo.PkScript
+//					}
+//
+//					addr, _ := rep.tokenEngine.GetAddressFromScript(lockScript)
+//					if _, ok := resultMap[addr]; !ok {
+//						resultMap[addr] = 1
+//					}
+//				}
+//
+//			}
+//		}
+//	}
+//	keys := make([]common.Address, 0, len(resultMap))
+//	for k := range resultMap {
+//		keys = append(keys, k)
+//	}
+//	return keys
+//}
 
 func (rep *UnitRepository) RebuildAddrTxIndex() error {
 	log.Info("Star rebuild address tx index. truncate old index data...")
@@ -1374,13 +1394,13 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 保存合约模板代码
 To save contract template code
 */
-func (rep *UnitRepository) saveContractTpl(height *modules.ChainIndex, txIndex uint32,
+func (rep *UnitRepository) saveContractTpl(txIndex uint32,
 	installReq *modules.ContractInstallRequestPayload, tpl *modules.ContractTplPayload) bool {
 
 	template := modules.NewContractTemplate(installReq, tpl)
 	err := rep.statedb.SaveContractTpl(template)
 	if err != nil {
-		log.Errorf("Save contract template fail,height:%s,txIndex:%d,error:%s", height.String(), txIndex, err.Error())
+		log.Errorf("Save contract template fail,txIndex:%d,error:%s", txIndex, err.Error())
 		return false
 	}
 	err = rep.statedb.SaveContractTplCode(tpl.TemplateId, tpl.ByteCode)
@@ -1775,29 +1795,11 @@ func (rep *UnitRepository) GetFileInfoByHash(hashs []common.Hash) ([]*modules.Fi
 //	return rep.getUnit(hash)
 //}
 
-func (rep *UnitRepository) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error) {
-	rep.lock.RLock()
-	//log.Debug("GetTxFromAddress unitRepository lock.")
-	//defer log.Debug("GetTxFromAddress unitRepository unlock.")
-	defer rep.lock.RUnlock()
-	result := []common.Address{}
-	for _, msg := range tx.TxMessages() {
-		if msg.App == modules.APP_PAYMENT {
-			pay := msg.Payload.(*modules.PaymentPayload)
-			for _, input := range pay.Inputs {
-				if input.PreviousOutPoint != nil {
-					utxo, err := rep.utxoRepository.GetUtxoEntry(input.PreviousOutPoint)
-					if err != nil {
-						return nil, errors.New("Get utxo by " + input.PreviousOutPoint.String() + " error:" + err.Error())
-					}
-					addr, _ := rep.tokenEngine.GetAddressFromScript(utxo.PkScript)
-					result = append(result, addr)
-				}
-			}
-		}
-	}
-	return result, nil
-}
+//func (rep *UnitRepository) GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error) {
+//	rep.lock.RLock()
+//	defer rep.lock.RUnlock()
+//	return rep.getPayFromAddresses(tx), nil
+//}
 func (rep *UnitRepository) RefreshAddrTxIndex() error {
 	rep.lock.RLock()
 	//log.Debugf("RefreshAddrTxIndex unitRepository lock.")

@@ -220,17 +220,20 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 		detail["Now"] = now.Format("2006-01-02 15:04:05")
 		return Lag, detail
 	}
+	unitNumber := dag.HeadUnitNum() + 1
+	unitId := fmt.Sprintf("%d", unitNumber)
 
-	// todo 待调整处理逻辑
-	// 重置rwManager
-	rwset.Init()
-	// execute contract
-	if err := mp.ptn.ContractProcessor().AddContractLoop(rwset.RwM, mp.ptn.TxPool(), scheduledMediator, ks); err != nil {
+	rwM, err := rwset.NewRwSetMgr(unitId)
+	if err != nil {
+		log.Errorf("MaybeProduceUnit NewRwSetMgr err: %v", err.Error())
+		return ExceptionProducing, detail
+	}
+
+	if err := mp.ptn.ContractProcessor().AddContractLoop(rwM, mp.ptn.TxPool(), scheduledMediator, ks); err != nil {
 		log.Debugf("MaybeProduceUnit RunContractLoop err: %v", err.Error())
 	}
 	// close tx simulator (系统合约)
-	rwset.RwM.CloseTxSimulator(rwset.ChainId, "")
-	rwset.RwM.Close()
+	rwM.Close()
 
 	//广播节点选取签名请求事件
 	go mp.ptn.ContractProcessor().BroadcastElectionSigRequestEvent()
@@ -258,7 +261,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	detail["Hash"] = unitHash.TerminalString()
 	detail["ParentHash"] = newUnit.ParentHash()[0].TerminalString()
 
-	// 3. 对 unit 进行群签名和广播
+	// 3. 对 unit 进行群签名
 	go mp.groupSignUnit(scheduledMediator, unitHash)
 
 	// 4. 异步向区块链网络广播新unit

@@ -73,7 +73,7 @@ addBlacklist
     [Arguments]    ${address}    ${reason}
     ${one}    Create List    addBlacklist    ${address}    ${reason}
     ${two}    Create List    ${foundation}    ${foundation}    1    1    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF
-    ...    ${one}    \    10
+    ...    ${one}
     ${res}    post    contract_ccinvoketx    addBlacklist    ${two}
     [Return]    ${res}
 
@@ -94,7 +94,7 @@ payout
     [Arguments]    ${address}    ${amount}    ${assetId}
     ${one}    Create List    payout    ${address}    ${amount}    ${assetId}
     ${two}    Create List    ${foundation}    ${foundation}    1    1    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF
-    ...    ${one}    \    10
+    ...    ${one}
     ${res}    post    contract_ccinvoketx    payout    ${two}
     [Return]    ${res}
 

@@ -18,15 +18,16 @@
  *
  */
 
-package memunit
+package ptndb
 
 import (
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/syndtr/goleveldb/leveldb/iterator"
+	"fmt"
 	"reflect"
 	"strings"
 	"sync"
+
+	"github.com/palletone/go-palletone/common"
+	"github.com/syndtr/goleveldb/leveldb/iterator"
 
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/errors"
@@ -36,11 +37,11 @@ import (
 type Tempdb struct {
 	kv      map[string][]byte //Key value
 	deleted map[string]bool   //Deleted Keys
-	db      ptndb.Database
+	db      Database
 	lock    sync.RWMutex
 }
 
-func NewTempdb(db ptndb.Database) (*Tempdb, error) {
+func NewTempdb(db Database) (*Tempdb, error) {
 	tempdb := &Tempdb{kv: make(map[string][]byte), deleted: make(map[string]bool), db: db}
 	return tempdb, nil
 }
@@ -50,10 +51,6 @@ func (db *Tempdb) Clear() {
 
 	db.kv = make(map[string][]byte)
 	db.deleted = make(map[string]bool)
-}
-
-type KeyValue struct {
-	Key, Value []byte
 }
 
 type TempdbIterator struct {
@@ -145,7 +142,7 @@ func (db *Tempdb) NewIteratorWithPrefix(prefix []byte) iterator.Iterator {
 }
 
 // get prefix
-func getprefix(db ptndb.Database, prefix []byte) map[string][]byte {
+func getprefix(db Database, prefix []byte) map[string][]byte {
 	iter := db.NewIteratorWithPrefix(prefix)
 	result := make(map[string][]byte)
 	for iter.Next() {
@@ -185,11 +182,15 @@ func (db *Tempdb) Get(key []byte) ([]byte, error) {
 	defer db.lock.RUnlock()
 	_, del := db.deleted[string(key)]
 	if del {
+		log.Debugf("deleted key[%x] in tempdb,return error not found", key)
 		return nil, errors.ErrNotFound
 	}
 	if entry, ok := db.kv[string(key)]; ok {
 		return common.CopyBytes(entry), nil
 	}
+	log.DebugDynamic(func() string {
+		return fmt.Sprintf("key[%x] not in tempdb, try inner db[%s]", key,reflect.TypeOf(db.db).String())
+	})
 	return db.db.Get(key)
 }
 
@@ -203,16 +204,11 @@ func (db *Tempdb) Delete(key []byte) error {
 
 func (db *Tempdb) Close() {}
 
-func (db *Tempdb) NewBatch() ptndb.Batch {
+func (db *Tempdb) NewBatch() Batch {
 	return &tempBatch{db: db}
 }
 
 func (db *Tempdb) Len() int { return len(db.kv) }
-
-type kv struct {
-	k, v []byte
-	del  bool
-}
 
 type tempBatch struct {
 	db     *Tempdb

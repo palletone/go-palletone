@@ -2,6 +2,9 @@ package utils
 
 import (
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/fsouza/go-dockerclient"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
@@ -12,19 +15,18 @@ import (
 	"github.com/palletone/go-palletone/contracts/list"
 	"github.com/palletone/go-palletone/contracts/manger"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag"
+
+	"github.com/palletone/go-palletone/dag/dboperation"
 	"github.com/palletone/go-palletone/vm/common"
-	"strings"
-	"time"
 )
 
 type PalletOneDocker struct {
 	DockerClient *docker.Client
-	dag          dag.IDag
+	dag          dboperation.IContractDag
 	jury         core2.IAdapterJury
 }
 
-func NewPalletOneDocker(dag dag.IDag, jury core2.IAdapterJury) *PalletOneDocker {
+func NewPalletOneDocker(dag dboperation.IContractDag, jury core2.IAdapterJury) *PalletOneDocker {
 	log.Debug("start NewPalletOneDocker")
 	defer log.Debug("end NewPalletOneDocker")
 	dockerClient, err := util.NewDockerClient()

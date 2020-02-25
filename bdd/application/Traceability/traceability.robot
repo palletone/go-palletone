@@ -21,7 +21,7 @@ user create token
     ${args}=    Create List    ${createMethod}    ${str1}    ${symbol}    ${int2}    ${int1}
     ...    ${str2}    ${strnull}
     ${params}=    Create List    ${userAccount}    ${userAccount}    100    1    ${contractAddr2}
-    ...    ${args}    ${int1}    ${120}    ${strnull}
+    ...    ${args}    ${int1}    ${12}
     ${resp}=    sendRpcPost    ${createToken}    ${params}    users create token
     Sleep    5
     Log    user query token
@@ -54,7 +54,7 @@ user tranfer token
     Log    user tranfer token
     ${args}=    Create List
     ${params}=    Create List    ${token}    ${userAccount2}    ${userAccount3}    ${int1}    ${int1}
-    ...    ${strnull}    ${int1}    ${120}
+    ...    ${strnull}    ${int1}    ${12}
     ${resp}=    sendRpcPost    ${tranferToken}    ${params}    user tranfer token
     Sleep    5
 

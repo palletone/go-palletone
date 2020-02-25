@@ -44,15 +44,15 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'ccinvoketx',
         	call: 'contract_ccinvoketx',
-        	params: 8, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"], certid, timeout
+        	params: 8, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"], password, timeout
 			inputFormatter: [null, null, null,null, null, null,null,null]
 		}),
-        new web3._extend.Method({
-			name: 'ccinvoketxPass',
-			call: 'contract_ccinvoketxPass',
-			params: 9, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"],passwd,duration, certid
-			inputFormatter: [null, null, null,null, null, null, null, null, null]
-		}),
+        //new web3._extend.Method({
+		//	name: 'ccinvoketxPass',
+		//	call: 'contract_ccinvoketx',
+		//	params: 9, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"],passwd,duration, certid
+		//	inputFormatter: [null, null, null,null, null, null, null, null, null]
+		//}),
 		new web3._extend.Method({
 			name: 'ccinvokeToken',
         	call: 'contract_ccinvokeToken',

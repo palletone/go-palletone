@@ -7,14 +7,14 @@ Resource          ../../utilKwd/utilDefined.txt
 Resource          ../../utilKwd/behaveKwd.txt
 
 *** Variables ***
-${preTokenId}     QA258
+${preTokenId}     QA058
 
 *** Test Cases ***
 Scenario: 20Contract- Supply token
     [Documentation]    Verify Sender's PTN
     Given CcinvokePass normal
     ${PTN1}    ${key}    ${coinToken1}    And Request getbalance before create token
-    ${ret}    When Create token of vote contract
+    ${ret}    When Create token of vote contract    ${geneAdd}
     ${GAIN}    And Calculate gain of recieverAdd
     ${PTN2}    ${coinToken2}    And Request getbalance after create token    ${key}
     Then Assert gain of reciever    ${PTN1}    ${PTN2}    ${GAIN}    ${coinToken1}    ${coinToken2}    ${ret}
@@ -36,12 +36,10 @@ Request getbalance before create token
     [Return]    ${PTN1}    ${key}    ${coinToken1}
 
 Create token of vote contract
-    ${ccTokenList}    Create List    ${supplyTokenMethod}    ${preTokenId}    ${supplyTokenAmount}
-    ${ccList}    Create List    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}    ${20ContractId}
-    ...    ${ccTokenList}    ${pwd}    ${duration}    ${EMPTY}
-    ${resp}    setPostRequest    ${host}    ${invokePsMethod}    ${ccList}
-    ${jsonRes}    resultToJson    ${resp}
-    ${ret}    Should Match Regexp    ${jsonRes['result']}    ${commonResultCode}    msg="result:does't match Result expression"
+    [Arguments]    ${geneAdd}
+    ${ccList}    Create List    ${supplyTokenMethod}    ${preTokenId}    ${supplyTokenAmount}
+    ${ret}    normalCcinvokePass    ${commonResultCode}    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
+    ...    ${20ContractId}    ${ccList}
     [Return]    ${ret}
 
 Calculate gain of recieverAdd

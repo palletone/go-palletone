@@ -27,13 +27,13 @@ import (
 	"mime"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/rs/cors"
-	"os"
 )
 
 const (

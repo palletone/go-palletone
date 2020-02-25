@@ -279,8 +279,9 @@ func (s *PublicDagAPI) GetUnitsByIndex(ctx context.Context, start, end decimal.D
 
 func (s *PublicDagAPI) GetFastUnitIndex(ctx context.Context, assetid string) string {
 	log.Debug("PublicDagAPI", "GetUnitByNumber condition:", assetid)
+	gasToken := dagconfig.DagConfig.GasToken
 	if assetid == "" {
-		assetid = "PTN"
+		assetid = gasToken
 	}
 
 	assetid = strings.ToUpper(assetid)
@@ -289,7 +290,7 @@ func (s *PublicDagAPI) GetFastUnitIndex(ctx context.Context, assetid string) str
 		return "unknow assetid:" + assetid + ". " + err.Error()
 	}
 
-	if assetid != "PTN" {
+	if assetid != gasToken {
 		GlobalStateContractId := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 		val, _, err := s.b.GetContractState(GlobalStateContractId, modules.GlobalPrefix+strings.ToUpper(token.GetSymbol()))
 		if err != nil || len(val) == 0 {

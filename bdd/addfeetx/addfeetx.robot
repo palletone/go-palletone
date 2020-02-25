@@ -14,28 +14,36 @@ ${foundation}       ${EMPTY}
 
 *** Test Cases ***
 addfeetx
+    [Documentation]    通过Alice创建token=>创建token交易=>附加手续费交易并签名=》广播交易，校验积分付款是否可用。
+    #解锁创世单元并付给Alice和Bob 2000 PTN
     unlockAccount    ${foundation}
     transferPtn    ${foundation}    ${Alice}    2000
     log    ${Alice}
     log    ${AliceToken}
     transferPtn    ${foundation}    ${Bob}    2000
     sleep    1
+    #Alice 发行自己的Token
     unlockAccount    ${Alice}
     ${AliceTokenID}=    Alice issues her personal token, amount is 100000, decimal is 1 succeed    ${Alice}    ${AliceToken}
     Set Global Variable    ${AAAliceTokenID}    ${AliceTokenID}
     sleep    5
 
+    #Alice创建不含手续费的交易
     unlockAccount    ${Alice}
-    ${rawtx}=    Alice create tx withoutfee    ${AAAliceTokenID}    ${Alice}    ${Bob}    ${amount}    ${extra}    ${pwd}
-    
-    unlockAccount    ${Alice}
-    ${signedtx}=    Fee and signtx    ${rawtx}    all    ${Alice}    ${Alice}    ${fee}    ${pwd}    ${duration}
+    ${rawtx}=    Alice create tx withoutfee    ${AAAliceTokenID}    ${Alice}    ${Bob}    ${amount}    ${pwd}
+    log    ${rawtx["hex"]}
+    #Alice 将手续费附加到交易中并签名
+    unlockAccount    ${Bob}
+    ${signedtx}=    Fee and signtx    ${rawtx["hex"]}    ${Bob}    ${fee}    extra    ${pwd}  
     log    ${signedtx}
     log    ${signedtx["result"]}
 
+    #获取签名结果
     ${complete}=    Get From Dictionary    ${signedtx["result"]}    complete
     Should Be Equal    ${complete}    ${true}
     ${signedhex}=    Get From Dictionary    ${signedtx["result"]}    hex
+    Wait for transaction being packaged
+    #将签名结果广播并展示交易Hash
     ${params}=    Create List    ${signedhex}   
     ${res}=    sendRpcPost    ${sendRawTransaction}    ${params}    sendRawTransaction
     log    ${res}

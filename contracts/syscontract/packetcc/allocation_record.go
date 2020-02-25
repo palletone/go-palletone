@@ -43,7 +43,7 @@ type PacketAllocationRecord struct {
 }
 
 func savePacketAllocationRecord(stub shim.ChaincodeStubInterface, record *PacketAllocationRecord) error {
-	key := PacketAllocationRecordPrefix + hex.EncodeToString(record.PubKey) +"-" + record.Message
+	key := PacketAllocationRecordPrefix + hex.EncodeToString(record.PubKey) + "-" + record.Message
 	value, err := rlp.EncodeToBytes(record)
 	if err != nil {
 		return err
@@ -107,9 +107,9 @@ func convertAllocationRecord2Json(record *PacketAllocationRecord) *PacketAllocat
 	}
 }
 
-func isPulledPacket(stub shim.ChaincodeStubInterface,pubKey []byte,message string) bool {
-	key := PacketAllocationRecordPrefix + hex.EncodeToString(pubKey) + "-" +message
-	byte,_ := stub.GetState(key)
+func isPulledPacket(stub shim.ChaincodeStubInterface, pubKey []byte, message string) bool {
+	key := PacketAllocationRecordPrefix + hex.EncodeToString(pubKey) + "-" + message
+	byte, _ := stub.GetState(key)
 	if byte == nil {
 		return false
 	}

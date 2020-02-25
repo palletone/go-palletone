@@ -19,6 +19,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
 	"os"
@@ -26,7 +27,6 @@ import (
 	"reflect"
 	"unicode"
 
-	"bytes"
 	"github.com/coocood/freecache"
 	"github.com/naoina/toml"
 	"github.com/palletone/go-palletone/adaptor"

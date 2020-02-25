@@ -23,6 +23,8 @@ import (
 	"github.com/palletone/go-palletone/common"
 )
 
+var ContractChainId = "palletone"
+
 type Contract struct {
 	// 根据用户创建合约实例申请的RequestId截取其后20字节生成
 	ContractId   []byte

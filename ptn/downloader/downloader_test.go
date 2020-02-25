@@ -19,12 +19,13 @@ package downloader
 import (
 	"errors"
 	"fmt"
-	"github.com/palletone/go-palletone/txspool"
 	"log"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/palletone/go-palletone/txspool"
 
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"

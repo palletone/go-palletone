@@ -89,14 +89,14 @@ class createToken(object):
         result1 = json.loads(response.content)
         return result1
 
-    def ccinvokePass(self,senderAddr,recieverAddr,senderAmount,poundage,contractId,*params):
+    def Ccinvoketx(self,senderAddr,recieverAddr,senderAmount,poundage,contractId,*params):
         print params[0]
         print "Request method is: "+ params[0][0]
         data = {
                 "jsonrpc":"2.0",
-                "method":"contract_ccinvoketxPass",
+                "method":"contract_ccinvoketx",
                 "params":[
-                    senderAddr, recieverAddr, senderAmount, poundage, contractId, params[0],"1",60000000,""],
+                    senderAddr, recieverAddr, senderAmount, poundage, contractId, params[0],"1",60000000],
                 "id":1
             }
         data = json.dumps(data)

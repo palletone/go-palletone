@@ -20,6 +20,7 @@ package ptn
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"

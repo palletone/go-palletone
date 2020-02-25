@@ -22,6 +22,7 @@ package storage
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -44,6 +45,9 @@ func (dagdb *DagDb) SaveTransaction(tx *modules.Transaction) error {
 		log.Errorf("Save tx[%s] error:%s", txHash.Str(), err.Error())
 		return err
 	}
+	log.DebugDynamic(func() string {
+		return fmt.Sprintf("Save tx[%s] to db", txHash.String())
+	})
 	//Save reqid
 	if tx.IsContractTx() {
 		if err := dagdb.saveReqIdByTx(tx); err != nil {

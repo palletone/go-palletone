@@ -23,9 +23,10 @@ package dag
 import (
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	dagcommon "github.com/palletone/go-palletone/dag/common"
-	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -122,4 +123,7 @@ func (d *Dag) createUnit(mAddr common.Address, txpool txspool.ITxPool,
 	//return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool, rep, state.GetJurorReward)
 	return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool, when,
 		d.unstablePropRep, d.unstableStateRep.GetJurorReward)
+}
+func (d *Dag) GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
+	return d.unstablePropRep.GetNewestUnit(token)
 }

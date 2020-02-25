@@ -172,7 +172,7 @@ func (s *PublicBlockChainAPI) GetDynamicGlobalProperty() (*ptnjson.DynamicGlobal
 		return nil, fmt.Errorf("GetDynGlobalProp is nil")
 	}
 
-	return ptnjson.DynGlobalPropToJson(dgp) , nil
+	return ptnjson.DynGlobalPropToJson(dgp), nil
 }
 
 func (s *PublicBlockChainAPI) GetPledge(addStr string) (*modules.PledgeStatusJson, error) {

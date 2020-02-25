@@ -30,12 +30,13 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/dag/rwset"
 )
 
 const ENABLE_TX_FEE_CHECK_TIME = 1570870800             //2019-10-12 17:00:00
 const ENABLE_CONTRACT_SIGN_CHECK_TIME = 1575129600      //2019-12-1
 const ENABLE_CONTRACT_DEVELOPER_CHECK_TIME = 1577808000 //2020-1-1
-const ENABLE_CONTRACT_RWSET_CHECK_TIME = 1582992000     //2020-3-1
+const ENABLE_CONTRACT_RWSET_CHECK_TIME = 1577808000     //2020-3-1
 
 /**
 验证unit的签名，需要比对见证人列表
@@ -210,10 +211,16 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) Validat
 	if has, code := validate.cache.HasUnitValidateResult(unitHash); has {
 		return code
 	}
-	start := time.Now()
-	defer func() {
-		log.Debugf("ValidateUnitExceptGroupSig unit[%s],cost:%s", unitHash.String(), time.Since(start))
-	}()
+	//start := time.Now()
+	////为每个Unit创建一个Tempdb
+	//tempdb,_:=ptndb.NewTempdb(validate.db)
+	//origindb:=validate.db
+	//validate.db=tempdb
+	//defer func() {
+	//	validate.db=origindb
+	//	log.Debugf("ValidateUnitExceptGroupSig unit[%s],cost:%s", unitHash.String(), time.Since(start))
+	//}()
+
 	// 1568197800 2019-09-11 18:30:00 testNet分叉修复后，统一的leveldb
 	// 2019-07-11 12:56:46 849c2cb5c7b3fbd37b2ac5f318716f90613259f2 将洗牌算法的种子由时间戳改成hash
 	// 并在 1.0.1 版本升级后，在主网和测试网中使用新的调度策略
@@ -250,7 +257,13 @@ func (validate *Validate) ValidateUnitExceptGroupSig(unit *modules.Unit) Validat
 	//if validate.enableTxFeeCheck{
 	//	log.Infof("Enable tx fee check since %d",unit.Timestamp())
 	//}
-	code := validate.validateTransactions(unit.Txs, unit.Timestamp(), med.GetRewardAdd())
+	rwM, err := rwset.NewRwSetMgr(unit.NumberString())
+	if err != nil {
+		log.Errorf("NewRwSetMgr error:%s", err.Error())
+		return TxValidationCode_INVALID_OTHER_REASON
+	}
+	code := validate.validateTransactions(rwM, unit.Txs, unit.Timestamp(), med.GetRewardAdd())
+	rwM.Close()
 	if code != TxValidationCode_VALID {
 		msg := fmt.Sprintf("Validate unit(%s) transactions failed code: %v", unit.DisplayId(), code)
 		log.Error(msg)

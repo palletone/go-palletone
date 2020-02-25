@@ -18,9 +18,9 @@ package rpc
 
 import (
 	"net"
+	"net/http"
 
 	"github.com/palletone/go-palletone/common/log"
-	"net/http"
 )
 
 // StartHTTPEndpoint starts the HTTP RPC endpoint, configured with cors/vhosts/modules

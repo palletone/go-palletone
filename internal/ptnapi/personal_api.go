@@ -25,7 +25,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -150,13 +149,13 @@ func (s *PrivateAccountAPI) NewHdAccount(password string) (*NewHdAccountResult, 
 	return &NewHdAccountResult{Address: acc.Address, Mnemonic: mnemonic}, nil
 }
 
-func (s *PrivateAccountAPI) GetHdAccount(addr, password, userId string) (string, error) {
+func (s *PrivateAccountAPI) GetHdAccount(addr, password string, userId Int) (string, error) {
 	_, err := common.StringToAddress(addr)
 	if err != nil {
 		return "", err
 	}
 	account, _ := MakeAddress(fetchKeystore(s.am), addr)
-	accountIndex, err := strconv.Atoi(userId)
+	accountIndex := userId.Uint32()
 	if err != nil {
 		return "", errors.New("invalid argument, args 2 must be a number")
 	}
@@ -290,6 +289,19 @@ func (s *PrivateAccountAPI) GetPublicKey(address string, password string) (strin
 		}
 	}
 	byte, err := ks.GetPublicKey(addr)
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(byte), nil
+}
+
+func (s *PrivateAccountAPI) DumpPrivateKey(address string, password string) (string, error) {
+	addr, err := common.StringToAddress(address)
+	if err != nil {
+		return "", err
+	}
+	ks := s.b.GetKeyStore()
+	byte, _, err := ks.DumpKey(accounts.Account{Address: addr}, password)
 	if err != nil {
 		return "", err
 	}

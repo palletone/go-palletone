@@ -23,12 +23,16 @@ package debugcc
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
+
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"strconv"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
+//PCGTta3M4t3yXu8uRgkKvaWd2d8DSfQdUHf
 type DebugChainCode struct {
 }
 
@@ -39,10 +43,28 @@ func (d *DebugChainCode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 func (d *DebugChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	funcName, args := stub.GetFunctionAndParameters()
 	switch funcName {
+	case "putstate":
+		log.Debugf("put state key[%s],value[%s]", args[0], args[1])
+		err := stub.PutState(args[0], []byte(args[1]))
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		return shim.Success(nil)
+	case "getstate":
+		value, err := stub.GetState(args[0])
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		log.Debugf("get state key[%s],value[%s]", args[0], string(value))
+		return shim.Success(value)
 	case "add":
 		a, _ := strconv.Atoi(args[0])
 		b, _ := strconv.Atoi(args[1])
 		return d.Add(a, b)
+	case "payout":
+		amt, _ := strconv.Atoi(args[0])
+		addr, _ := common.StringToAddress(args[1])
+		return d.Payout(stub, uint64(amt), addr)
 	case "testError":
 		return d.Error(stub)
 	case "testAddBalance":
@@ -71,6 +93,35 @@ func (d *DebugChainCode) Add(a, b int) pb.Response {
 
 	rspStr := fmt.Sprintf("Value:%d", a+b)
 	return shim.Success([]byte(rspStr))
+}
+func (d *DebugChainCode) Payout(stub shim.ChaincodeStubInterface, a uint64, addr common.Address) pb.Response {
+	_, myAddr := stub.GetContractID()
+	balance, _ := stub.GetTokenBalance(myAddr, nil)
+	if len(balance) == 0 {
+		return shim.Error("don't have token balance")
+	}
+	if a > balance[0].Amount {
+		return shim.Error("balance not enough")
+	}
+	err := stub.PayOutToken(addr.String(), &modules.AmountAsset{
+		Amount: a,
+		Asset:  balance[0].Asset,
+	}, 0)
+	if err != nil {
+		return shim.Error("payout error:" + err.Error())
+	}
+	key := "Payout-" + addr.String()
+	paid := 0
+	val, err := stub.GetState(key)
+	if err == nil {
+		paid, _ = strconv.Atoi(string(val))
+	}
+	paid += int(a)
+	err = stub.PutState(key, []byte(strconv.Itoa(paid)))
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	return shim.Success(nil)
 }
 func (d *DebugChainCode) Getbalance(stub shim.ChaincodeStubInterface, addr string) pb.Response {
 	result, err := stub.GetTokenBalance(addr, nil)

@@ -22,10 +22,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/palletone/go-palletone/contracts/comm"
 	"math/big"
 	"sync"
 	"time"
+
+	"github.com/palletone/go-palletone/contracts"
+	"github.com/palletone/go-palletone/contracts/comm"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -100,21 +102,26 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 	}
 	isLocal := true //todo
 	if isLocal {
-		if err = p.runContractReq(reqId, nil); err != nil {
+		if err = p.runContractReq(reqId, nil, rwset.RwM, p.dag); err != nil {
 			return common.Hash{}, nil, err
 		}
-
 		ctx := p.mtx[reqId]
-		ctx.rstTx, err = p.GenContractSigTransaction(from, "", ctx.rstTx, p.ptn.GetKeyStore())
+		ctx.rstTx, err = p.GenContractSigTransaction(from, "", ctx.rstTx, p.ptn.GetKeyStore(), p.dag.GetUtxoEntry)
 		if err != nil {
 			return common.Hash{}, nil, err
 		}
+		//err = p.dag.SaveTransaction(ctx.rstTx)
+		//if err != nil {
+		//	log.Errorf("[%s]ContractInstallReq, SaveTransaction err:%s", shortId(reqId.String()), err.Error())
+		//	return common.Hash{}, nil, err
+		//}
 		tx := ctx.rstTx
 		_, tpl, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_TPL)
 		if err != nil || tpl == nil {
-			errMsg := fmt.Sprintf("[%s]getContractTxContractInfo fail, tpl Name[%s]", shortId(reqId.String()), tplName)
+			errMsg := fmt.Sprintf("[%s]ContractInstallReq getContractTxContractInfo fail, tpl Name[%s]", shortId(reqId.String()), tplName)
 			return common.Hash{}, nil, errors.New(errMsg)
 		}
+
 		templateId := tpl.Payload.(*modules.ContractTplPayload).TemplateId
 		log.Infof("[%s]ContractInstallReq ok, reqId[%s] templateId[%x]", shortId(reqId.String()), reqId.String(), templateId)
 		//broadcast
@@ -411,9 +418,11 @@ func (p *Processor) ContractQuery(id []byte, args [][]byte, timeout time.Duratio
 	}
 
 	log.Debugf("ContractQuery, begin to invoke contract:%s", addr.String())
-	rst, err := p.contract.Invoke(rwset.RwM, chainId, addr.Bytes(), invTxId.String(), args, timeout)
-	rwset.RwM.CloseTxSimulator(chainId, invTxId.String())
-	rwset.RwM.Close()
+	rwM, _ := rwset.NewRwSetMgr("query")
+	ctx := &contracts.ContractProcessContext{RwM: rwM, Dag: p.dag}
+
+	rst, err := p.contract.Invoke(ctx, chainId, addr.Bytes(), invTxId.String(), args, timeout)
+	rwM.Close()
 	if err != nil {
 		log.Errorf("ContractQuery, id[%s], Invoke err:%s", addr.String(), err.Error())
 		return nil, err
