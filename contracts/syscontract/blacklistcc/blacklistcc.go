@@ -31,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
@@ -137,13 +138,14 @@ func (p *BlacklistMgr) AddBlacklist(stub shim.ChaincodeStubInterface, blackAddr 
 	}
 	//  从质押获取
 	list, _ := getLastPledgeList(stub)
+	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
 	if list != nil {
 		depositAmount := list.GetAmount(blackAddr.String())
-		_,ok := balance[*modules.NewPTNAsset()]
+		_,ok := balance[*gasToken]
 		if ok {
-			balance[*modules.NewPTNAsset()] += depositAmount
+			balance[*gasToken] += depositAmount
 		}else {
-			balance[*modules.NewPTNAsset()] = depositAmount
+			balance[*gasToken] = depositAmount
 		}
 	}
 	balanceJson, _ := json.Marshal(balance)
