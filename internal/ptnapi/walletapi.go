@@ -132,7 +132,7 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 	return result, nil
 }
 
-func (s *PrivateWalletAPI) SignRawTransaction(ctx context.Context, params string, hashtype string, password string, duration *uint32) (ptnjson.SignRawTransactionResult, error) {
+func (s *PrivateWalletAPI) SignRawTransaction(ctx context.Context, params string, hashtype string, password string, duration *Int) (ptnjson.SignRawTransactionResult, error) {
 
 	//transaction inputs
 	if params == "" {
@@ -232,7 +232,7 @@ func (s *PrivateWalletAPI) SignRawTransaction(ctx context.Context, params string
 	return result, err
 }
 
-func (s *PrivateWalletAPI) MultiSignRawTransaction(ctx context.Context, params, redeemScript string, addr common.Address, hashtype string, password string, duration *uint32) (ptnjson.SignRawTransactionResult, error) {
+func (s *PrivateWalletAPI) MultiSignRawTransaction(ctx context.Context, params, redeemScript string, addr common.Address, hashtype string, password string, duration *Int) (ptnjson.SignRawTransactionResult, error) {
 
 	//transaction inputs
 	if params == "" {
@@ -825,7 +825,7 @@ func (s *PublicWalletAPI) GetAddrTokenFlow(ctx context.Context, addr string, tok
 //sign rawtranscation
 //create raw transction
 func (s *PrivateWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to string, amount,
-	password string, duration *uint32) (common.Hash, error) {
+	password string, duration *Int) (common.Hash, error) {
 	//var LockTime int64
 	LockTime := int64(0)
 
@@ -1060,7 +1060,7 @@ func RandFromString(value string) (decimal.Decimal, error) {
 }
 
 func (s *PrivateWalletAPI) TransferPtn(ctx context.Context, from string, to string,
-	amount decimal.Decimal, fee decimal.Decimal, data *string, password *string, duration *uint32) (common.Hash, error) {
+	amount decimal.Decimal, fee decimal.Decimal, data *string, password *string, duration *Int) (common.Hash, error) {
 	gasToken := dagconfig.DagConfig.GasToken
 	return s.TransferToken(ctx, gasToken, from, to, amount, fee, data, password, duration)
 }
@@ -1091,7 +1091,7 @@ func getRealAddress(ks *keystore.KeyStore, addr string) (common.Address, error) 
 }
 
 func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from string, to string,
-	amount decimal.Decimal, fee decimal.Decimal, data *string, pwd *string, duration *uint32) (common.Hash, error) {
+	amount decimal.Decimal, fee decimal.Decimal, data *string, pwd *string, duration *Int) (common.Hash, error) {
 	password := ""
 	if pwd != nil {
 		password = *pwd
@@ -1124,7 +1124,7 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 
 //转移Token，并确认打包后返回
 func (s *PrivateWalletAPI) TransferTokenSync(ctx context.Context, asset string, fromStr string, toStr string,
-	amount decimal.Decimal, fee decimal.Decimal, data *string, pwd *string, timeout *uint32) (*ptnjson.TxHashWithUnitInfoJson, error) {
+	amount decimal.Decimal, fee decimal.Decimal, data *string, pwd *string, timeout *Int) (*ptnjson.TxHashWithUnitInfoJson, error) {
 	password := ""
 	if pwd != nil {
 		password = *pwd
@@ -1199,7 +1199,7 @@ func (s *PrivateWalletAPI) TransferTokenSync(ctx context.Context, asset string, 
 //构造手续费代付的交易并广播
 func (s *PrivateWalletAPI) TransferToken2(ctx context.Context, asset string, fromStr string, toStr string,
 	gasFromStr string, amount decimal.Decimal, fee decimal.Decimal, data *string,
-	pwd *string, timeout *uint32) (common.Hash, error) {
+	pwd *string, timeout *Int) (common.Hash, error) {
 	password := ""
 	if pwd != nil {
 		password = *pwd
@@ -1320,7 +1320,7 @@ func (s *PrivateWalletAPI) TransferToken2(ctx context.Context, asset string, fro
 	return submitTransaction(ctx, s.b, rawTx)
 }
 
-func (s *PrivateWalletAPI) CreateTxWithOutFee(ctx context.Context, asset , fromStr , toStr string,amount decimal.Decimal, pwd *string, duration *uint32) (ptnjson.SignRawTransactionResult, error) {
+func (s *PrivateWalletAPI) CreateTxWithOutFee(ctx context.Context, asset, fromStr, toStr string, amount decimal.Decimal, pwd *string, duration *Int) (ptnjson.SignRawTransactionResult, error) {
 	password := ""
 	if pwd != nil {
 		password = *pwd
@@ -1385,7 +1385,7 @@ func (s *PrivateWalletAPI) CreateTxWithOutFee(ctx context.Context, asset , fromS
 		from = fromAccount.Address.String()
 	}
 
-    utxoLockScripts := make(map[modules.OutPoint][]byte)
+	utxoLockScripts := make(map[modules.OutPoint][]byte)
 	payload, err := s.buildRawTxWithoutFee(asset, from, to, amount)
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, err
@@ -1403,15 +1403,14 @@ func (s *PrivateWalletAPI) CreateTxWithOutFee(ctx context.Context, asset , fromS
 	PkScriptHex := trimx(uvu.PkScriptHex)
 	utxoLockScripts[inpoint] = hexutil.MustDecode("0x" + PkScriptHex)
 
-    
-    newtx := modules.NewTransaction(make([]*modules.Message, 0))
+	newtx := modules.NewTransaction(make([]*modules.Message, 0))
 	newtx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, payload))
-    //3.
-    from_Addr, err := common.StringToAddress(from)
-    if err != nil {
+	//3.
+	from_Addr, err := common.StringToAddress(from)
+	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, err
 	}
-    err = unlockKS(s.b, from_Addr, password, duration)
+	err = unlockKS(s.b, from_Addr, password, duration)
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, err
 	}
@@ -1898,9 +1897,9 @@ func (s *PrivateWalletAPI) buildRawTxWithoutFee(tokenId, from, to string, amount
 	if err != nil {
 		return nil, err
 	}
-	
+
 	//mtx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, pay2)})
-	
+
 	//mtxbt, err := rlp.EncodeToBytes(mtx)
 	//if err != nil {
 	//	return "", err
@@ -1910,7 +1909,7 @@ func (s *PrivateWalletAPI) buildRawTxWithoutFee(tokenId, from, to string, amount
 	return pay2, nil
 }
 
-func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params string,  gasFrom string, gasFee decimal.Decimal, Extra string, pwd *string, duration *uint32) (ptnjson.SignRawTransactionResult, error) {
+func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params string, gasFrom string, gasFee decimal.Decimal, Extra string, pwd *string, duration *Int) (ptnjson.SignRawTransactionResult, error) {
 	//transaction inputs
 	password := ""
 	if pwd != nil {
@@ -1921,7 +1920,7 @@ func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params str
 	}
 	upper_type := strings.ToUpper("all")
 	if upper_type != ALL && upper_type != NONE && upper_type != SINGLE {
-		return ptnjson.SignRawTransactionResult{}, errors.New("Hashtype is error,error type" )
+		return ptnjson.SignRawTransactionResult{}, errors.New("Hashtype is error,error type")
 	}
 	serializedTx, err := decodeHexStr(params)
 	if err != nil {
@@ -1964,7 +1963,7 @@ func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params str
 	//tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay1))
 
 	gasfeetx := modules.NewTransaction(make([]*modules.Message, 0))
-    gasfeetx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, gaspayload))
+	gasfeetx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, gaspayload))
 	//for _, msg := range tx.TxMessages() {
 	//	newtx.AddMessage(msg)
 	//}
@@ -1979,7 +1978,7 @@ func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params str
 	}
 
 	utxoLockScripts := make(map[modules.OutPoint][]byte)
-	
+
 	inpoint := modules.OutPoint{
 		TxHash:       gaspayload.Inputs[0].PreviousOutPoint.TxHash,
 		OutIndex:     gaspayload.Inputs[0].PreviousOutPoint.OutIndex,
@@ -2000,7 +1999,7 @@ func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params str
 		return ptnjson.SignRawTransactionResult{}, err
 	}
 
-    if Extra != "" {
+	if Extra != "" {
 		textPayload := new(modules.DataPayload)
 		textPayload.Reference = []byte(Extra)
 		textPayload.MainData = []byte(Extra)
@@ -2010,7 +2009,7 @@ func (s *PrivateWalletAPI) SignAndFeeTransaction(ctx context.Context, params str
 	for _, msg := range tokentx.TxMessages() {
 		gasfeetx.AddMessage(msg)
 	}
-    //3.
+	//3.
 	signErrs, err := tokenengine.Instance.SignTxAllPaymentInput(gasfeetx, 1, utxoLockScripts, nil, getPubKeyFn, getSignFn)
 	if err != nil {
 		return ptnjson.SignRawTransactionResult{}, err

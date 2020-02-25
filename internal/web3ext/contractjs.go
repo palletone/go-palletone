@@ -49,7 +49,7 @@ web3._extend({
 		}),
         //new web3._extend.Method({
 		//	name: 'ccinvoketxPass',
-		//	call: 'contract_ccinvoketxPass',
+		//	call: 'contract_ccinvoketx',
 		//	params: 9, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"],passwd,duration, certid
 		//	inputFormatter: [null, null, null,null, null, null, null, null, null]
 		//}),

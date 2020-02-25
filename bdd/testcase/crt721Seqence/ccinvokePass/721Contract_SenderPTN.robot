@@ -7,7 +7,7 @@ Resource          ../../utilKwd/utilDefined.txt
 Resource          ../../utilKwd/behaveKwd.txt
 
 *** Variables ***
-${preTokenId}     CA071
+${preTokenId}     CA371
 
 *** Test Cases ***
 Feature: 721 Contract - Create token
