@@ -1623,6 +1623,8 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 		if locktime > 0 {
 			if locktime < 500000000 && unithigh >= locktime {
 				canbe_packaged = true
+			}else if locktime < 500000000 && unithigh < locktime{
+				canbe_packaged = false
 			}
 			if (locktime >= 500000000 && locktime-time.Now().Unix() < 0)|| canbe_packaged{
 				tx.Pending = true
