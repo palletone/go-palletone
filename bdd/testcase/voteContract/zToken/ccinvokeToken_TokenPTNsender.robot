@@ -28,6 +28,7 @@ Get genesis address
 Request getbalance before create token
     #    [Arguments]    ${geneAdd}    ${voteToken}
     ${PTN1}    ${result1}    normalGetBalance    ${listAccounts[0]}
+    sleep    4
     ${voteToken}    getTokenId    ${voteId}    ${result1['result']}
     ${item1}    Get From Dictionary    ${result1['result']}    ${voteToken}
     [Return]    ${PTN1}    ${item1}    ${voteToken}
@@ -43,9 +44,9 @@ Ccinvoke token of vote contract
 Calculate gain of recieverAdd
     [Arguments]    ${PTN1}    ${item1}
     ${item'}    Evaluate    ${item1}-${votePTN}
-    #${totalGain}    Evaluate    int(${PTNPoundage})+int(${votePTN})
+    #${totalGain}    Evaluate    int(${votePTN})-int(${PTNPoundage})
     #${GAIN}    countRecieverPTN    ${totalGain}
-    ${PTN'}    Evaluate    decimal.Decimal('${PTN1}')-decimal.Decimal('${PTNPoundage}')    decimal
+    ${PTN'}    Evaluate    decimal.Decimal('${PTN1}')+decimal.Decimal('${votePTN}')    decimal
     [Return]    ${PTN'}    ${item'}
 
 Request getbalance after create token

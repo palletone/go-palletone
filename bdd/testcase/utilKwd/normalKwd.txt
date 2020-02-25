@@ -92,12 +92,10 @@ Request transfer token of vote
     ...    ${ccTokenList}    ${pwd}    ${duration}
     ${resp}    setPostRequest    ${host}    ${invokePsMethod}    ${ccList}
     ${jsonRes}    resultToJson    ${resp}
-    ${ret1}    Should Match Regexp    ${resp['result']['request_id']}    ${commonResultCode}    msg="request_id:does't match Result expression"
-    ${ret2}    Should Match Regexp    ${resp['result']['contract_id']}    ${ContractId}    msg="ContractId:does't match Result expression"
     #Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
     #Should Contain    ${resp.content}['id']    1    msg="id:failed"
     #${ret}    Should Match Regexp    ${resp.content}['result']    ${commonResultCode}    msg="result:does't match Result expression"
-    [Return]    ${ret1}
+    [Return]    ${jsonRes}
 
 Request CcinvokePass
     [Arguments]    ${commonResultCode}    ${senderAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}    ${ContractId}

@@ -24,7 +24,7 @@ Request getbalance before create token
     Set Suite Variable    ${geneAdd}    ${geneAdd}
     ${ret}    Request transfer token of vote    ${geneAdd}
     sleep    4
-    ${ReqRet}    getTxByReqId    ${ret}
+    ${ReqRet}    getTxByReqId    ${ret['result']['request_id']}
     ${voteToken}    getAssetFromDict    ${ReqRet['result']}
     Set Suite Variable    ${voteToken}    ${voteToken}
     ${PTN1}    ${result1}    normalGetBalance    ${geneAdd}    ${mutiHost1}
