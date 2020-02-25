@@ -33,6 +33,7 @@ getBalance
     [Arguments]    ${addr}
     ${params}=    Create List    ${addr}
     ${respJson}=    sendRpcPost    ${getBalanceMethod}    ${params}    getBalance
+    log    ${respJson}
     Dictionary Should Contain Key    ${respJson}    result
     Dictionary Should Contain Key    ${respJson["result"]}    ${gasToken}
     ${result}=    Get From Dictionary    ${respJson}    result
