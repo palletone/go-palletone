@@ -18,7 +18,7 @@ Scenario: Vote - Ccinvoke Token
     ${resp}    When Ccinvoke token of vote contract    ${voteToken}
     ${PTN'}    ${item'}    And Calculate gain of recieverAdd    ${PTN1}    ${item1}
     ${PTN2}    ${item2}    Request getbalance after create token    ${voteToken}
-    ${PTN22}    Evaluate    ${PTN2}+${1}
+    ${PTN22}    Evaluate    ${PTN2}+${1001}
     log    ${PTN22}
     Then Assert gain of reciever    ${PTN'}    ${PTN22}    ${item'}    ${item2}
 
