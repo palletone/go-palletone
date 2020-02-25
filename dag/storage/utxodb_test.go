@@ -21,9 +21,11 @@
 package storage
 
 import (
-	"github.com/palletone/go-palletone/tokenengine"
 	"log"
 	"testing"
+
+	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/palletone/go-palletone/tokenengine"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
@@ -34,7 +36,7 @@ import (
 func TestGetUtxos(t *testing.T) {
 
 	db, _ := ptndb.NewMemDatabase()
-	utxodb := NewUtxoDb(db, tokenengine.Instance)
+	utxodb := NewUtxoDb(db, tokenengine.Instance, false)
 	key := new(modules.OutPoint)
 	key.MessageIndex = 1
 	key.OutIndex = 0
@@ -56,7 +58,7 @@ func TestGetUtxos(t *testing.T) {
 	}
 	for key, u := range utxos {
 
-		log.Printf("key:%s", key.ToKey())
+		log.Printf("key:%s", key.ToKey(constants.UTXO_PREFIX))
 		log.Printf("utxo value:%#v", u)
 	}
 	queryUtxo, err := utxodb.GetUtxoEntry(key)

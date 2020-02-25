@@ -23,6 +23,7 @@ package light
 import (
 	"context"
 	"math/big"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/event"
@@ -46,10 +47,17 @@ import (
 )
 
 type LesApiBackend struct {
-	ptn *LightPalletone
-	//gpo *gasprice.Oracle
+	ptn   *LightPalletone
+	mutex sync.Mutex
 }
 
+func (b *LesApiBackend) Lock() {
+	b.mutex.Lock()
+}
+
+func (b *LesApiBackend) Unlock() {
+	b.mutex.Unlock()
+}
 func (b *LesApiBackend) SignAndSendRequest(addr common.Address, tx *modules.Transaction) error {
 	return nil
 }

@@ -56,6 +56,7 @@ type PublicContractAPI struct {
 }
 
 func NewPublicContractAPI(b Backend) *PublicContractAPI {
+	//go synDag(b)
 	return &PublicContractAPI{b}
 }
 
@@ -252,10 +253,14 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 	if pwd != nil {
 		password = *pwd
 	}
-	tx, usedUtxo, err := buildRawTransferTx(s.b, token, from, to, amountToken, fee, password)
+	s.b.Lock()
+	defer s.b.Unlock()
+	tx, usedUtxo, err := buildRawTransferTx(s.b, token, from, to, amountToken, fee, password, true)
 	if err != nil {
 		return nil, err
 	}
+	//log.Debugf("CcinvokeToken, buildRawTransferTx tx[%s]:%s ", tx.Hash(), tx.String())
+
 	log.Infof("   param len[%d]", len(param))
 	args := make([][]byte, len(param))
 	for i, arg := range param {
@@ -280,6 +285,16 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 	}
 	//4. send
 	reqId, err := submitTransaction(ctx, s.b, tx)
+	if err != nil {
+		log.Errorf("CcinvokeToken, submitTransaction err:%s", err.Error())
+		return nil, err
+	}
+	//err = saveTransaction2mDag(tx)
+	//if err != nil {
+	//	log.Errorf("CcinvokeToken err:%s", err.Error())
+	//	return nil, err
+	//}
+
 	//reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, daoAmount, daoFee, intCertID, contractAddr, args, uint32(timeout64))
 	//log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(reqId[:]))
 	log.Infof("   reqId[%s]", hex.EncodeToString(reqId[:]))

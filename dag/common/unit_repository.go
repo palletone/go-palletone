@@ -38,13 +38,11 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/storage"
 
-	"github.com/palletone/go-palletone/contracts/syscontract"
-	"github.com/palletone/go-palletone/tokenengine"
-	"github.com/palletone/go-palletone/txspool"
-
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/parameter"
+	"github.com/palletone/go-palletone/tokenengine"
 )
 
 type IUnitRepository interface {
@@ -53,7 +51,7 @@ type IUnitRepository interface {
 	//GenesisHeight() modules.ChainIndex
 	SaveUnit(unit *modules.Unit, isGenesis bool) error
 	SaveTransaction(tx *modules.Transaction, txIndex int) error
-	CreateUnit(mediatorReward common.Address, txpool txspool.ITxPool, when time.Time,
+	CreateUnit(mediatorReward common.Address, txs []*modules.Transaction, when time.Time,
 		propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc) (*modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
@@ -130,10 +128,10 @@ type UnitRepository struct {
 type AfterSysContractStateChangeEventFunc func(event *modules.SysContractStateChangeEvent)
 
 func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb,
-	utxodb storage.IUtxoDb, statedb storage.IStateDb,
+	txutxodb storage.IUtxoDb, requtxodb storage.IUtxoDb, statedb storage.IStateDb,
 	propdb storage.IPropertyDb,
 	engine tokenengine.ITokenEngine) *UnitRepository {
-	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, propdb, engine)
+	utxoRep := NewUtxoRepository(txutxodb, requtxodb, idxdb, statedb, propdb, engine)
 
 	return &UnitRepository{
 		db:             dagdb.GetDb(),
@@ -148,11 +146,12 @@ func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb,
 
 func NewUnitRepository4Db(db ptndb.Database, tokenEngine tokenengine.ITokenEngine) *UnitRepository {
 	dagdb := storage.NewDagDb(db)
-	utxodb := storage.NewUtxoDb(db, tokenEngine)
+	txutxodb := storage.NewUtxoDb(db, tokenEngine, false)
+	requtxodb := storage.NewUtxoDb(db, tokenEngine, true)
 	statedb := storage.NewStateDb(db)
 	idxdb := storage.NewIndexDb(db)
 	propdb := storage.NewPropertyDb(db)
-	utxoRep := NewUtxoRepository(utxodb, idxdb, statedb, propdb, tokenEngine)
+	utxoRep := NewUtxoRepository(txutxodb, requtxodb, idxdb, statedb, propdb, tokenEngine)
 	return &UnitRepository{
 		db:             db,
 		dagdb:          dagdb,
@@ -524,7 +523,7 @@ create common unit
 @param mAddr is minner addr
 return: correct if error is nil, and otherwise is incorrect
 */
-func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txspool.ITxPool,
+func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txs2 []*modules.Transaction,
 	when time.Time, propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc) (*modules.Unit, error) {
 	log.Debug("create unit lock unitRepository.")
 	rep.lock.RLock()
@@ -554,19 +553,19 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 	//	log.Debug(errStr)
 	//	return nil, fmt.Errorf(errStr)
 	//}
-	h_hash := header.HashWithOutTxRoot()
+	//h_hash := header.HashWithOutTxRoot()
 
 	log.Debugf("Start txpool.GetSortedTxs..., parent hash:%s", phash.String())
 
 	// step4. get transactions from txspool
-	poolTxs, _ := txpool.GetSortedTxs(h_hash, chainIndex.Index)
+	//poolTxs, _ := txpool.GetSortedTxs(h_hash, chainIndex.Index)
 
 	// step5. compute minner income: transaction fees + interest
 	//交易费用(包含利息)
-	txs2 := []*modules.Transaction{}
-	for _, tx := range poolTxs {
-		txs2 = append(txs2, tx.Tx)
-	}
+	//txs2 := []*modules.Transaction{}
+	//for _, tx := range poolTxs {
+	//	txs2 = append(txs2, tx.Tx)
+	//}
 	ads, err := rep.ComputeTxFeesAllocate(mediatorReward, txs2, getJurorRewardFunc)
 	if err != nil {
 		txs2Ids := ""
@@ -574,12 +573,11 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 			txs2Ids += tx.Hash().String() + ","
 		}
 
-		pooltxStatusStr := ""
-		for txid, pooltx := range txpool.AllTxpoolTxs() {
-			pooltxStatusStr += txid.String() + ":UnitHash[" + pooltx.UnitHash.String() + "];"
-		}
-		log.Error("CreateUnit", "ComputeTxFees is failed, error", err.Error(), "txs in this unit", txs2Ids,
-			"pool all tx:", pooltxStatusStr)
+		//pooltxStatusStr := ""
+		//for txid, pooltx := range txpool.AllTxpoolTxs() {
+		//	pooltxStatusStr += txid.String() + ":UnitHash[" + pooltx.UnitHash.String() + "];"
+		//}
+		log.Error("CreateUnit", "ComputeTxFees is failed, error", err.Error(), "txs in this unit", txs2Ids)
 		return nil, err
 	}
 
@@ -605,9 +603,9 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txpool txsp
 	illegalTxs := make([]uint16, 0)
 	// step6 get unit's txs in txpool's txs
 	//TODO must recover
-	if len(poolTxs) > 0 {
-		for idx, tx := range poolTxs {
-			t := tx.Tx
+	if len(txs2) > 0 {
+		for idx, t := range txs2 {
+
 			reqId := t.RequestHash()
 			//如果是合约的连续调用，可能存在读集版本的高度问题，这里进行修正。
 
@@ -711,7 +709,7 @@ func (rep *UnitRepository) ComputeTxFeesAllocate(mediatorReward common.Address, 
 	ads := make([]*modules.Addition, 0)
 	tempTxs := &tempTxs{allUtxo: make(map[modules.OutPoint]*modules.Utxo), rep: rep.utxoRepository}
 	for _, tx := range txs {
-		utxos := tx.GetNewUtxos()
+		utxos := tx.GetNewTxUtxoAndReqUtxos()
 		for o, u := range utxos {
 			tempTxs.allUtxo[o] = u
 		}
@@ -1008,7 +1006,8 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 		}
 	}
 	txHash := tx.Hash()
-	reqId := tx.RequestHash().Bytes()
+	reqHash := tx.RequestHash()
+	reqId := reqHash.Bytes()
 	unitHash := unit.Hash()
 	unitTime := unit.Timestamp()
 	unitHeight := unit.NumberU64()
@@ -1024,7 +1023,15 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 		}
 		switch msg.App {
 		case modules.APP_PAYMENT:
-			if ok := rep.savePaymentPayload(unitTime, txHash, msg.Payload.(*modules.PaymentPayload),
+			myTxHash := txHash
+			if tx.IsNewContractInvokeRequest() { //只是一个请求，TxHash还无法计算
+				myTxHash = common.Hash{}
+			}
+			myReqHash := reqHash
+			if reqIndex < 0 { //非合约交易 	//or 是合约结果部分的Payment，不需要ReqHash
+				myReqHash = common.Hash{}
+			}
+			if ok := rep.savePaymentPayload(unitTime, myTxHash, myReqHash, msg.Payload.(*modules.PaymentPayload),
 				uint32(msgIndex)); !ok {
 				return fmt.Errorf("Save payment payload error.")
 			}
@@ -1091,11 +1098,14 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 	}
 	//Index
 	if dagconfig.DagConfig.AddrTxsIndex {
-		rep.saveAddrTxIndex(txHash, tx)
+		err = rep.saveAddrTxIndex(txHash, tx)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
-func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Transaction) {
+func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Transaction) error {
 
 	//Index TxId for to address
 	addresses := rep.getPayToAddresses(tx)
@@ -1104,8 +1114,10 @@ func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Trans
 		rep.idxdb.SaveAddress(addr)
 	}
 	//Index from address to txid
-	fromAddrs := tx.GetFromAddrs(rep.utxoRepository.GetTxOutput, rep.tokenEngine.GetAddressFromScript)
-
+	fromAddrs, err := tx.GetFromAddrs(rep.utxoRepository.GetTxOutput, rep.tokenEngine.GetAddressFromScript)
+	if err != nil {
+		return err
+	}
 	for _, addr := range fromAddrs {
 		rep.idxdb.SaveAddressTxId(addr, txHash)
 	}
@@ -1117,6 +1129,7 @@ func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Trans
 			rep.idxdb.SaveAddressTxId(addr, txHash)
 		}
 	}
+	return nil
 }
 
 func (rep *UnitRepository) getPayToAddresses(tx *modules.Transaction) []common.Address {
@@ -1217,14 +1230,14 @@ func getDataPayload(tx *modules.Transaction) *modules.DataPayload {
 保存PaymentPayload
 save PaymentPayload data
 */
-func (rep *UnitRepository) savePaymentPayload(unitTime int64, txHash common.Hash, msg *modules.PaymentPayload,
+func (rep *UnitRepository) savePaymentPayload(unitTime int64, txHash, reqHash common.Hash, msg *modules.PaymentPayload,
 	msgIndex uint32) bool {
 	// if inputs is none then it is just a normal coinbase transaction
 	// otherwise, if inputs' length is 1, and it PreviousOutPoint should be none
 	// if this is a create token transaction, the Extra field should be AssetInfo struct's [rlp] encode bytes
 	// if this is a create token transaction, should be return a assetid
 	// save utxo
-	err := rep.utxoRepository.UpdateUtxo(unitTime, txHash, msg, msgIndex)
+	err := rep.utxoRepository.UpdateUtxo(unitTime, txHash, reqHash, msg, msgIndex)
 	if err != nil {
 		log.Error("Update utxo failed.", "error", err)
 		return false

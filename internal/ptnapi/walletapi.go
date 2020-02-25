@@ -1096,9 +1096,11 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 	if pwd != nil {
 		password = *pwd
 	}
+	s.b.Lock()
+	defer s.b.Unlock()
 	//1. build payment tx
 	start := time.Now()
-	rawTx, usedUtxo, err := buildRawTransferTx(s.b, asset, from, to, amount, fee, password)
+	rawTx, usedUtxo, err := buildRawTransferTx(s.b, asset, from, to, amount, fee, password, true)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -1117,6 +1119,13 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 	if err != nil {
 		return common.Hash{}, err
 	}
+	//save tx to memory dag
+	//err = saveTransaction2mDag(rawTx)
+	//if err != nil {
+	//	log.Errorf("CcinvokeToken err:%s", err.Error())
+	//	return common.Hash{}, err
+	//}
+
 	log.Debugf("sign raw tx spend:%v", time.Since(start))
 	//4. send
 	return submitTransaction(ctx, s.b, rawTx)
@@ -1133,7 +1142,7 @@ func (s *PrivateWalletAPI) TransferTokenSync(ctx context.Context, asset string, 
 	log.Infof("Received transfer token request from:%s, to:%s,amount:%s", fromStr, toStr, amount.String())
 	s.lock.Lock()
 	log.Infof("Wait for lock time spend:%s", time.Since(start).String())
-	tx, usedUtxo, err := buildRawTransferTx(s.b, asset, fromStr, toStr, amount, fee, password)
+	tx, usedUtxo, err := buildRawTransferTx(s.b, asset, fromStr, toStr, amount, fee, password, false)
 	if err != nil {
 		s.lock.Unlock()
 		return nil, err
@@ -1189,7 +1198,7 @@ func (s *PrivateWalletAPI) TransferTokenSync(ctx context.Context, asset string, 
 			}
 		case <-timer.C:
 			return nil, errors.New(fmt.Sprintf("get tx[%s] package status timeout", tx.Hash().String()))
-		// Err() channel will be closed when unsubscribing.
+			// Err() channel will be closed when unsubscribing.
 		case err := <-headSub.Err():
 			return nil, err
 		}
@@ -1438,7 +1447,7 @@ func (s *PrivateWalletAPI) CreateProofOfExistenceTx(ctx context.Context, addr st
 	mainData, extraData, reference string, password string) (common.Hash, error) {
 	gasToken := dagconfig.DagConfig.GasToken
 	ptn1 := decimal.New(1, -2)
-	rawTx, usedUtxo, err := buildRawTransferTx(s.b, gasToken, addr, addr, decimal.New(0, 0), ptn1, password)
+	rawTx, usedUtxo, err := buildRawTransferTx(s.b, gasToken, addr, addr, decimal.New(0, 0), ptn1, password, false)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -1477,8 +1486,7 @@ func (s *PrivateWalletAPI) CreateProofOfExistenceTx(ctx context.Context, addr st
 	if err != nil {
 		return common.Hash{}, err
 	}
-	txJson, _ := json.Marshal(rawTx)
-	log.DebugDynamic(func() string { return "SignedTx:" + string(txJson) })
+	log.DebugDynamic(func() string { return "SignedTx:" + rawTx.String() })
 	//4.
 	return submitTransaction(ctx, s.b, rawTx)
 }
@@ -1489,7 +1497,7 @@ func (s *PrivateWalletAPI) CreateTraceability(ctx context.Context, addr, uid, sy
 	str := "[{\"TokenID\":\"" + uid + "\",\"MetaData\":\"\"}]"
 	gasToken := dagconfig.DagConfig.GasToken
 	ptn1 := decimal.New(1, -1)
-	rawTx, usedUtxo, err := buildRawTransferTx(s.b, gasToken, addr, addr, decimal.New(0, 0), ptn1, "")
+	rawTx, usedUtxo, err := buildRawTransferTx(s.b, gasToken, addr, addr, decimal.New(0, 0), ptn1, "", false)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -1539,8 +1547,8 @@ func (s *PrivateWalletAPI) CreateTraceability(ctx context.Context, addr, uid, sy
 	if err != nil {
 		return common.Hash{}, err
 	}
-	txJson, _ := json.Marshal(rawTx)
-	log.DebugDynamic(func() string { return "SignedTx:" + string(txJson) })
+
+	log.DebugDynamic(func() string { return "SignedTx:" + rawTx.String() })
 	//4.
 	return submitTransaction(ctx, s.b, rawTx)
 }

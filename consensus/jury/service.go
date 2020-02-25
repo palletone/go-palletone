@@ -20,7 +20,6 @@ package jury
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"math/big"
 	"sync"
@@ -28,7 +27,6 @@ import (
 
 	"github.com/coocood/freecache"
 	"github.com/ethereum/go-ethereum/event"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
@@ -391,27 +389,27 @@ func (p *Processor) GenContractTransaction(orgTx *modules.Transaction, msgs []*m
 	if payInputNum > 0 {
 		log.Debugf("[%s]GenContractTransaction,payInputNum[%d]", shortId(reqId.String()), payInputNum)
 	}
-	extSize := ContractDefaultSignatureSize + ContractDefaultPayInputSignatureSize*float64(payInputNum)
-
-	if p.validator.ValidateTxFeeEnough(tx, extSize, 0) != validator.TxValidationCode_VALID {
-		msgs, err = genContractErrorMsg(tx, errors.New("tx fee is invalid"), true)
-		if err != nil {
-			log.Errorf("[%s]GenContractTransaction, genContractErrorMsg,error:%s", shortId(reqId.String()), err.Error())
-			return nil, err
-		}
-		tx, err = gen.GenContractTransction(orgTx.GetRequestTx(), msgs)
-		if err != nil {
-			log.Error("[%s]GenContractTransaction,fee is not enough, GenContractTransaction error:%s",
-				shortId(reqId.String()), err.Error())
-			return nil, err
-		}
-	} else {
-		//计算交易费用，将deploy持续时间写入交易中
-		err = addContractDeployDuringTime(p.dag, tx)
-		if err != nil {
-			log.Debugf("[%s]runContractReq, addContractDeployDuringTime error:%s", shortId(reqId.String()), err.Error())
-		}
+	//extSize := ContractDefaultSignatureSize + ContractDefaultPayInputSignatureSize*float64(payInputNum)
+	//Devin:没有当前dag，无法正确ValidateTxFeeEnough
+	//if p.validator.ValidateTxFeeEnough(tx, extSize, 0) != validator.TxValidationCode_VALID {
+	//	msgs, err = genContractErrorMsg(tx, errors.New("tx fee is invalid"), true)
+	//	if err != nil {
+	//		log.Errorf("[%s]GenContractTransaction, genContractErrorMsg,error:%s", shortId(reqId.String()), err.Error())
+	//		return nil, err
+	//	}
+	//	tx, err = gen.GenContractTransction(orgTx.GetRequestTx(), msgs)
+	//	if err != nil {
+	//		log.Error("[%s]GenContractTransaction,fee is not enough, GenContractTransaction error:%s",
+	//			shortId(reqId.String()), err.Error())
+	//		return nil, err
+	//	}
+	//} else {
+	//计算交易费用，将deploy持续时间写入交易中
+	err = addContractDeployDuringTime(p.dag, tx)
+	if err != nil {
+		log.Debugf("[%s]runContractReq, addContractDeployDuringTime error:%s", shortId(reqId.String()), err.Error())
 	}
+	//}
 	return tx, nil
 }
 
@@ -514,42 +512,70 @@ func (p *Processor) GenContractSigTransaction(signer common.Address, password st
 
 	return tx, nil
 }
-func GetTxSig(tx *modules.Transaction, ks *keystore.KeyStore, signer common.Address) ([]byte, error) {
-	reqId := tx.RequestHash()
-
-	sign, err := ks.SigData(tx, signer)
-	if err != nil {
-		return nil, fmt.Errorf("GetTxSig, Failed to singure transaction, reqId%s, err:%s", reqId.String(), err.Error())
+func (p *Processor) RunAndSignTx(reqTx *modules.Transaction, txMgr rwset.TxManager, dag dboperation.IContractDag,
+	mediatorAddr common.Address, ks *keystore.KeyStore) (*modules.Transaction, error) {
+	cctx := &contracts.ContractProcessContext{
+		RequestId:    reqTx.RequestHash(),
+		Dag:          dag,
+		Ele:          nil,
+		RwM:          txMgr,
+		Contract:     p.contract,
+		ErrMsgEnable: p.errMsgEnable,
 	}
-	log.DebugDynamic(func() string {
-		data, err := rlp.EncodeToBytes(tx)
-		if err != nil {
-			return err.Error()
-		}
-		js, err := json.Marshal(tx)
-		if err != nil {
-			return err.Error()
-		}
-		return fmt.Sprintf("Juror[%s] try to sign tx reqid:%s,signature:%x, tx json: %s\n rlpcode for debug: %x",
-			signer.String(), reqId.String(), sign, string(js), data)
-	})
-	return sign, nil
+	reqId := reqTx.Hash()
+	msgs, err := runContractCmd(cctx, reqTx) //contract exec long time...
+	if err != nil {
+		log.Errorf("[%s]runContractReq, runContractCmd reqTx, err：%s", shortId(reqId.String()), err.Error())
+		return nil, err
+	}
+	p.locker.Lock()
+	defer p.locker.Unlock()
+
+	tx, err := p.GenContractTransaction(reqTx, msgs)
+	if err != nil {
+		log.Error("[%s]runContractReq, GenContractSigTransactions error:%s", shortId(reqId.String()), err.Error())
+		return nil, err
+	}
+	sigTx, err := p.GenContractSigTransaction(mediatorAddr, "", tx, ks, dag.GetUtxoEntry)
+	if err != nil {
+		log.Error("GenContractSigTransctions", "error", err.Error())
+		return nil, err
+	}
+	return sigTx, nil
 }
 func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool, addr common.Address,
 	ks *keystore.KeyStore) error {
 	setChainId := modules.ContractChainId
 	index := 0
-	//tempdb, err := ptndb.NewTempdb(p.dag.GetDb())
-	//if err != nil {
-	//	log.Errorf("Init tempdb error:%s", err.Error())
-	//}
-
 	tempDag, err := p.dag.NewTemp()
+	//log.Debug("create a new tempDag for generate unit AddContractLoop")
 	if err != nil {
 		log.Errorf("Init temp dag error:%s", err.Error())
+		return err
 	}
 	txIndex := 0
+	tx4Sort := make(map[common.Hash]*modules.Transaction)
 	for _, ctx := range p.mtx {
+		if ctx.reqTx.IsSystemContract() && modules.APP_CONTRACT_TPL_REQUEST != ctx.reqTx.GetContractTxType() {
+			//系统合约的调用走普通打包流程
+			continue
+		}
+		tx4Sort[ctx.reqTx.Hash()] = ctx.reqTx
+	}
+
+	sortedRequests, orphanTxs, _ := modules.SortTxs(tx4Sort, p.dag.GetUtxoEntry)
+	if len(orphanTxs) > 0 {
+		oreq := ""
+		for _, or := range orphanTxs {
+			oreq += or.Hash().String() + ";"
+		}
+		log.Warnf("Find orphan requests:%s", oreq)
+	}
+	sortedContractTx := []*contractTx{}
+	for _, sr := range sortedRequests {
+		sortedContractTx = append(sortedContractTx, p.mtx[sr.Hash()])
+	}
+	for _, ctx := range sortedContractTx {
 		if !ctx.valid || ctx.reqTx == nil {
 			continue
 		}
@@ -599,7 +625,10 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 			continue
 		}
 		txIndex++
+		log.Debugf("executed req[%s] save result tx[%s] index:%d into tempdag",
+			reqId.String(), tx.Hash().String(), txIndex)
 		err = tempDag.SaveTransaction(tx, txIndex)
+		log.Debugf("save tx[%s] into tempdag done", tx.Hash().String())
 		if err != nil {
 			log.Errorf("save tx[%s] error:%s", tx.Hash().String(), err.Error())
 			continue
@@ -747,9 +776,9 @@ func CheckContractTxResult(tx *modules.Transaction, rwM rwset.TxManager, dag dbo
 	return isMsgSame
 }
 
-func (p *Processor) IsSystemContractTx(tx *modules.Transaction) bool {
-	return tx.IsSystemContract()
-}
+//func (p *Processor) IsSystemContractTx(tx *modules.Transaction) bool {
+//	return tx.IsSystemContract()
+//}
 
 func (p *Processor) isValidateElection(tx *modules.Transaction, ele *modules.ElectionNode, checkExit bool) bool {
 	if tx == nil || ele == nil {

@@ -37,7 +37,7 @@ env:
     - IS_RUN_GASTOKEN=true
     - IS_RUN_MEDIATOR_VOTE=true
     - IS_RUN_APPLICATION=true
-    - IS_RUN_LIGHT=true
+    - IS_RUN_LIGHT=false
     - IS_RUN_BLACKLIST=true
     - IS_RUN_EXCHANGE=true
     - GO111MODULE=on
@@ -49,7 +49,7 @@ matrix:
   include:
     - os: linux
       dist: xenial
-      go: 1.12.x
+      go: 1.13.x
       env: UT
       script:
         # - go get github.com/mattn/goveralls

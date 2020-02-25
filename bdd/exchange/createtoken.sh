@@ -9,7 +9,7 @@ set tokenamount [lindex $argv 4]
 sleep 1
 
 
-spawn ../node/gptn --exec "personal.unlockAccount(\"$tokenHolder\",'1',600000000)"  attach ../node/palletone/gptn.ipc
+spawn ../node/gptn --exec "personal.unlockAccount(\"$tokenHolder\",'1',0)"  attach ../node/palletone/gptn.ipc
 
 spawn ../node/gptn --exec "contract.ccinvoketx(\"$tokenHolder\",\"$tokenHolder\",\"$ptnamount\",'1','PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43',\['createToken', \"hahahah\",\"$tokenname\",\"$decimalpoint\",\"$tokenamount\",\"$tokenHolder\"\])" attach ../node/palletone/gptn.ipc
 sleep 1

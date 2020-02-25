@@ -38,6 +38,8 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 const (
@@ -200,7 +202,7 @@ func getSignature(tx *modules.Transaction) ([][]byte, [][]byte) {
 
 func genContractErrorMsg(tx *modules.Transaction,
 	errIn error, errMsgEnable bool) ([]*modules.Message, error) {
-	reqType, _ := tx.GetContractTxType()
+	reqType:= tx.GetContractTxType()
 	errString := fmt.Sprintf("[%s]genContractErrorMsg, reqType:%d,err:%s",
 		shortId(tx.RequestHash().String()), reqType, errIn.Error())
 	log.Debug(errString)
@@ -223,7 +225,11 @@ func createContractErrorPayloadMsg(tx *modules.Transaction, errIn error) *module
 		Code:    500, //todo
 		Message: errIn.Error(),
 	}
-	reqType, _ := tx.GetContractTxType()
+	reqType := tx.GetContractTxType()
+	//if reqType == modules.APP_UNKNOW {
+	//	log.Error("createContractErrorPayloadMsg,GetContractTxType fail")
+	//	return nil
+	//}
 	_, contractReq, _ := getContractTxContractInfo(tx, reqType)
 	switch reqType {
 	case modules.APP_CONTRACT_TPL_REQUEST:
@@ -554,6 +560,28 @@ func getTxSigNum(tx *modules.Transaction) int {
 	return 0
 }
 
+func GetTxSig(tx *modules.Transaction, ks *keystore.KeyStore, signer common.Address) ([]byte, error) {
+	reqId := tx.RequestHash()
+
+	sign, err := ks.SigData(tx, signer)
+	if err != nil {
+		return nil, fmt.Errorf("GetTxSig, Failed to singure transaction, reqId%s, err:%s", reqId.String(), err.Error())
+	}
+	log.DebugDynamic(func() string {
+		data, err := rlp.EncodeToBytes(tx)
+		if err != nil {
+			return err.Error()
+		}
+		js, err := json.Marshal(tx)
+		if err != nil {
+			return err.Error()
+		}
+		return fmt.Sprintf("Juror[%s] try to sign tx reqid:%s,signature:%x, tx json: %s\n rlpcode for debug: %x",
+			signer.String(), reqId.String(), sign, string(js), data)
+	})
+	return sign, nil
+}
+
 func (p *Processor) checkTxIsExist(tx *modules.Transaction) bool {
 	return p.validator.CheckTxIsExist(tx)
 }
@@ -568,8 +596,8 @@ func (p *Processor) checkTxReqIdIsExist(reqId common.Hash) bool {
 
 func (p *Processor) checkTxAddrValid(tx *modules.Transaction) bool {
 	reqId := tx.RequestHash()
-	cType, err := tx.GetContractTxType()
-	if err != nil {
+	cType := tx.GetContractTxType()
+	if cType == modules.APP_UNKNOW {
 		log.Infof("[%s]checkTxAddrValid, getContractTxType fail", shortId(reqId.String()))
 		return false
 	}
@@ -646,6 +674,34 @@ func msgsCompareInvoke(msgsA []*modules.Message, msgsB []*modules.Message /*, ms
 	log.Warn("msgsCompare,msg is not equal", "msg1", msg1, "msg2", msg2)
 
 	return false
+}
+
+func SortTxs(txs map[common.Hash]*contractTx) []*contractTx {
+	sortedTxHash := []common.Hash{}
+	for hash, tx := range txs {
+		ops := tx.reqTx.GetSpendOutpoints()
+		inserted := false
+		for _, op := range ops {
+			for i, stx := range sortedTxHash {
+				if stx == op.TxHash {
+					sortedTxHash = append(append(sortedTxHash[:i+1], hash), sortedTxHash[i+1:]...)
+					inserted = true
+					break
+				}
+			}
+			if inserted {
+				break
+			}
+		}
+		if !inserted {
+			sortedTxHash = append(sortedTxHash, hash)
+		}
+	}
+	sortedTx := []*contractTx{}
+	for _, h := range sortedTxHash {
+		sortedTx = append(sortedTx, txs[h])
+	}
+	return sortedTx
 }
 
 //
@@ -912,7 +968,7 @@ func addContractDeployDuringTime(dag iDag, tx *modules.Transaction) error {
 	if tx == nil {
 		return errors.New("calculateContractDeployDuringTime, param is nil")
 	}
-	txType, _ := tx.GetContractTxType()
+	txType := tx.GetContractTxType()
 	if txType != modules.APP_CONTRACT_DEPLOY_REQUEST {
 		return nil
 	}

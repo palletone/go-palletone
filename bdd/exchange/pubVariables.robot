@@ -24,7 +24,7 @@ ${amount}         10000
 ${fee}            1
 ${pwd}            1
 ${res}            ${null}
-${duration}       600000000
+${duration}       0
 #${AliceToken}     ${null}
 #${BobToken}       ${null}
 ${CarolToken}     CAROL

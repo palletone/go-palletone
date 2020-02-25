@@ -46,4 +46,4 @@ ${amount4}        40000
 ${amount5}        50000
 ${fee}            1
 ${pwd}            1
-${duration}       600000000
+${duration}       0

@@ -59,7 +59,7 @@ func parseAddressStr(addr string, ks *keystore.KeyStore, password string) (commo
 	return common.StringToAddress(addrString)
 }
 
-func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFee decimal.Decimal, password string) (
+func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFee decimal.Decimal, password string, useMemoryDag bool) (
 	*modules.Transaction, []*modules.UtxoWithOutPoint, error) {
 	//参数检查
 	tokenAsset, err := modules.StringToAsset(tokenId)
@@ -88,8 +88,14 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 	if tokenId == gasToken {
 		ptnAmount = gasAsset.Uint64Amount(amount)
 	}
+
 	//构造转移PTN的Message0
-	dbUtxos, err := b.GetAddrRawUtxos(from)
+	var dbUtxos map[modules.OutPoint]*modules.Utxo
+	//if useMemoryDag && cacheTx != nil && cacheTx.mdag != nil {
+	//	dbUtxos, err = getAddrUtxofrommDag(fromAddr)
+	//} else {
+	dbUtxos, err = b.Dag().GetAddrUtxos(fromAddr)
+	//}
 	if err != nil {
 		return nil, nil, fmt.Errorf("GetAddrRawUtxos utxo err")
 	}
@@ -200,11 +206,11 @@ func signRawTransaction(b Backend, rawTx *modules.Transaction, fromStr, password
 
 // submitTransaction is a helper function that submits tx to txPool and logs a message.
 func submitTransaction(ctx context.Context, b Backend, tx *modules.Transaction) (common.Hash, error) {
-	if tx.IsNewContractInvokeRequest() {
+	if tx.IsNewContractInvokeRequest() && !tx.IsSystemContract() {
 		reqId, err := b.SendContractInvokeReqTx(tx)
 		return reqId, err
 	}
-
+	//普通交易和系统合约交易，走交易池
 	if err := b.SendTx(ctx, tx); err != nil {
 		return common.Hash{}, err
 	}

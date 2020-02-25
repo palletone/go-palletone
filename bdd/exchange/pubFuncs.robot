@@ -46,7 +46,7 @@ getAllBalance
 
 unlockAccount
     [Arguments]    ${addr}
-    ${params}=    Create List    ${addr}    ${pwd}    ${600000000}
+    ${params}=    Create List    ${addr}    ${pwd}    ${0}
     ${respJson}=    sendRpcPost    ${unlockAccountMethod}    ${params}    unlockAccount
     log    ${respJson}
     #Dictionary Should Contain Key    ${respJson}    result

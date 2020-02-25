@@ -20,5 +20,5 @@ type ContractInf interface {
 	// msgType uint32, msg string) (interface{}, error)
 	AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool, addr common.Address, ks *keystore.KeyStore) error
 	CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transaction, execute bool) bool
-	IsSystemContractTx(tx *modules.Transaction) bool
+	//IsSystemContractTx(tx *modules.Transaction) bool
 }

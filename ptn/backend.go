@@ -83,7 +83,8 @@ type PalletOne struct {
 	networkId     uint64
 	netRPCService *ptnapi.PublicNetAPI
 
-	dag dag.IDag
+	dag  dag.IDag
+
 	// DB interfaces
 	unitDb ptndb.Database // Block chain database
 
@@ -138,7 +139,6 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 			return nil, err
 		}
 	}
-
 	dag, err := dag.NewDag(db, localdb, cache, false)
 	if err != nil {
 		log.Error("PalletOne New", "NewDag err:", err)
@@ -206,7 +206,7 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 		return nil, err
 	}
 
-	ptn.ApiBackend = &PtnApiBackend{ptn}
+	ptn.ApiBackend = &PtnApiBackend{ptn: ptn}
 	return ptn, nil
 }
 

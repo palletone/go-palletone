@@ -38,7 +38,7 @@ import (
 // GenerateUnit, generate unit
 // @author Albert·Gou
 func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte, ks *keystore.KeyStore,
-	txpool txspool.ITxPool) (*modules.Unit, error) {
+	txs []*modules.Transaction, txpool txspool.ITxPool) (*modules.Unit, error) {
 	t0 := time.Now()
 	defer func(start time.Time) {
 		log.Debugf("GenerateUnit cost time: %v", time.Since(start))
@@ -48,7 +48,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	//log.Debugf("generate unit ...")
 
 	// 2. 生产unit，添加交易集、时间戳、签名
-	unsign_unit, err := dag.createUnit(producer, txpool, when)
+	unsign_unit, err := dag.createUnit(producer, txs, when)
 	if err != nil {
 		errStr := fmt.Sprintf("createUnit error: %v", err.Error())
 		log.Debug(errStr)
@@ -112,7 +112,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 
 // createUnit, create a unit when mediator being produced
 //创建未签名的Unit
-func (d *Dag) createUnit(mAddr common.Address, txpool txspool.ITxPool,
+func (d *Dag) createUnit(mAddr common.Address, txs []*modules.Transaction,
 	when time.Time) (*modules.Unit, error) {
 
 	med, err := d.unstableStateRep.RetrieveMediator(mAddr)
@@ -121,7 +121,7 @@ func (d *Dag) createUnit(mAddr common.Address, txpool txspool.ITxPool,
 	}
 
 	//return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool, rep, state.GetJurorReward)
-	return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool, when,
+	return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txs, when,
 		d.unstablePropRep, d.unstableStateRep.GetJurorReward)
 }
 func (d *Dag) GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
