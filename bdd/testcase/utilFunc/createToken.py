@@ -79,7 +79,7 @@ class createToken(object):
     def ccinvokeCreateToken(self,senderAddr,recieverAddr,senderAmount,poundage,contractId,method,evidence,nickname,decimalAccuracy,tokenPoundage):
         data = {
                 "jsonrpc":"2.0",
-                "method":"contract_ccinvoketxPass",
+                "method":"contract_ccinvoketx",
                 "params":
                     [senderAddr,recieverAddr,str(senderAmount),str(poundage),contractId,[method,evidence,nickname,str(decimalAccuracy),str(tokenPoundage),senderAddr]],
                 "id":1

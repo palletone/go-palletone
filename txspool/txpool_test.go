@@ -123,6 +123,10 @@ func (q *UnitDag4Test) GetNewestUnitTimestamp(token modules.AssetId) (int64, err
 	return 0, nil
 }
 
+func (q *UnitDag4Test) GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
+	return common.Hash{}, &modules.ChainIndex{}, nil
+}
+
 func (q *UnitDag4Test) GetChainParameters() *core.ChainParameters {
 	return nil
 }

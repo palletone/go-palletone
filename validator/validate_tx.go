@@ -59,12 +59,13 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 	if tx == nil {
 		return TxValidationCode_VALID, nil
 	}
-    ptn := modules.NewPTNAsset()
-    _,chainindex,err := validate.propquery.GetNewestUnit(ptn.AssetId)
-    if err != nil {
+	//ptn := modules.NewPTNAsset()
+	ptn := dagconfig.DagConfig.GetGasToken()
+	_, chainindex, err := validate.propquery.GetNewestUnit(ptn)
+	if err != nil {
 		return TxValidationCode_INVALID_MSG, nil
 	}
-    unithigh:=int64(chainindex.Index)
+	unithigh := int64(chainindex.Index)
 	reqId := tx.RequestHash()
 	msgs := tx.TxMessages()
 	if len(msgs) == 0 {
@@ -137,11 +138,11 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 			if !ok {
 				return TxValidationCode_INVALID_PAYMMENTLOAD, txFee
 			}
-			if int64(payment.LockTime) >0 && int64(payment.LockTime)<500000000{
-                if unithigh < int64(payment.LockTime){
-                    return TxValidationCode_ORPHAN, txFee
-                }
-			}else if int64(payment.LockTime)-time.Now().Unix() > 0 {
+			if int64(payment.LockTime) > 0 && int64(payment.LockTime) < 500000000 {
+				if unithigh < int64(payment.LockTime) {
+					return TxValidationCode_ORPHAN, txFee
+				}
+			} else if int64(payment.LockTime)-time.Now().Unix() > 0 {
 
 				return TxValidationCode_ORPHAN, txFee
 			}

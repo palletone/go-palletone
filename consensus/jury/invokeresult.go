@@ -247,7 +247,7 @@ func groupTokenSupply(tokenSupply []*modules.TokenSupply) map[modules.AssetId][]
 		assetid := modules.AssetId{}
 		assetid.SetBytes(supply.AssetId)
 		if supply1Token, ok := result[assetid]; ok {
-			supply1Token = append(supply1Token, supply)
+			result[assetid] = append(supply1Token, supply)
 		} else {
 			result[assetid] = []*modules.TokenSupply{supply}
 		}

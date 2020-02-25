@@ -26,9 +26,10 @@ func TestTransactionHash(t *testing.T) {
 	payment.LockTime = 1
 	assert.NotEqual(t, uint32(1), tx.TxMessages()[3].Payload.(*PaymentPayload).LockTime)
 }
+
 func TestTransactionJson(t *testing.T) {
 	pay1s := &PaymentPayload{
-		LockTime: 12345,
+		LockTime: 0,
 	}
 	output := NewTxOut(99999999999999999, []byte{0xee, 0xbb}, NewPTNAsset())
 	pay1s.AddTxOut(output)
@@ -92,6 +93,7 @@ func TestTxHash(t *testing.T) {
 	}
 	assert.Equal(t, tx3.Hash().String(), tx2.Hash().String())
 }
+
 func TestTxClone(t *testing.T) {
 	tx := newTestTx()
 	tx2 := tx.Clone()
@@ -103,7 +105,7 @@ func TestTxClone(t *testing.T) {
 
 func newTestTx() *Transaction {
 	pay1s := &PaymentPayload{
-		LockTime: 12345,
+		LockTime: 12345, //测试需要，不设为0
 	}
 
 	output := NewTxOut(Ptn2Dao(10), []byte{0xee, 0xbb}, NewPTNAsset())
@@ -223,6 +225,7 @@ func TestTransactionEncode(t *testing.T) {
 	}
 	t.Log("ContractInvokeRequestPayload:", result)
 }
+
 func TestIDType16Hex(t *testing.T) {
 	PTNCOIN := AssetId{'p', 't', 'n', 'c', 'o', 'i', 'n'}
 	fmt.Println("ptn hex:", PTNCOIN.String())
@@ -252,7 +255,7 @@ func TestIDType16Hex(t *testing.T) {
 }
 func TestTransaction_EncodeRLP_Size(t *testing.T) {
 	pay1s := PaymentPayload{
-		LockTime: 12345,
+		LockTime: 0,
 	}
 	a := &Asset{AssetId: PTNCOIN}
 
@@ -312,12 +315,13 @@ func TestTransaction_GetTxFee(t *testing.T) {
 	t.Log(fee2.String())
 	assert.Equal(t, fee2.Amount, Ptn2Dao(1))
 }
+
 func Ptn2Dao(ptn uint64) uint64 {
 	return ptn * 100000000
 }
 
 func newPaymenForTestt(includeCoinbase bool) *PaymentPayload {
-	pay := &PaymentPayload{LockTime: 123, Inputs: []*Input{}, Outputs: []*Output{}}
+	pay := &PaymentPayload{LockTime: 0, Inputs: []*Input{}, Outputs: []*Output{}}
 	if includeCoinbase {
 		pay.Inputs = append(pay.Inputs, &Input{SignatureScript: []byte("test"), Extra: []byte("Extra")})
 	}

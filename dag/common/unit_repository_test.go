@@ -58,7 +58,7 @@ func mockUnitRepository() *UnitRepository {
 
 func TestGenesisUnit(t *testing.T) {
 	payload := new(modules.PaymentPayload)
-	payload.LockTime = 999
+	payload.LockTime = 0
 
 	msg := modules.NewMessage(modules.APP_PAYMENT, payload)
 	msgs := make([]*modules.Message, 0)
@@ -285,7 +285,7 @@ func TestPaymentTransactionRLP(t *testing.T) {
 	payment := &modules.PaymentPayload{
 		Inputs:   []*modules.Input{&txin},
 		Outputs:  []*modules.Output{&txout},
-		LockTime: 12,
+		LockTime: 0,
 	}
 	tx2 := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, payment)})
 	//tx2.TxHash = tx2.Hash()

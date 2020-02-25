@@ -68,12 +68,19 @@ type mockiPropQuery struct{}
 func (ip *mockiPropQuery) GetSlotAtTime(when time.Time) uint32 {
 	return 0
 }
+
 func (ip *mockiPropQuery) GetScheduledMediator(slotNum uint32) common.Address {
 	return common.Address{}
 }
+
 func (ip *mockiPropQuery) GetNewestUnitTimestamp(token modules.AssetId) (int64, error) {
 	return 0, nil
 }
+
+func (ip *mockiPropQuery) GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
+	return common.Hash{}, &modules.ChainIndex{}, nil
+}
+
 func (ip *mockiPropQuery) GetChainParameters() *core.ChainParameters {
 	cp := core.NewChainParams()
 	return &cp
@@ -143,7 +150,7 @@ func (u *testutxoQuery) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo,
 }
 func newTestPayment(point *modules.OutPoint, outAmt uint64) *modules.PaymentPayload {
 	pay1s := &modules.PaymentPayload{
-		LockTime: 12345,
+		LockTime: 0,
 	}
 	a := &modules.Asset{AssetId: modules.PTNCOIN}
 

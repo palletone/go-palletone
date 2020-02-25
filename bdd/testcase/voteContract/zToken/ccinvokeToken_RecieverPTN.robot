@@ -13,10 +13,10 @@ Ccinvoke Token
     [Documentation]    Scenario: Verify Reciever's PTN
     ${geneAdd}    Given Get genesis address
     ${PTN2P}    ${key}    And Request getbalance before create token    ${geneAdd}
-    When Create token of vote contract    ${geneAdd}
+    ${resp}    When Create token of vote contract    ${geneAdd}    ${key}
     ${PTN2'}    And Calculate gain of recieverAdd    ${PTN2P}
     ${PTN2}    Request getbalance after create token    ${geneAdd}
-    Then Assert gain of reciever    ${PTN2'}    ${PTN2}
+    Then Assert gain of reciever    ${PTN2'}    ${PTN2}    ${key}
 
 *** Keywords ***
 Get genesis address
@@ -32,12 +32,12 @@ Request getbalance before create token
     [Return]    ${PTN2P}    ${key}
 
 Create token of vote contract
-    [Arguments]    ${geneAdd}
+    [Arguments]    ${geneAdd}    ${key}
     ${supportList}    Create List    support    ${supportSection}
     ${ccList}    Create List    ${geneAdd}    ${recieverAdd}    ${key}    ${votePTN}    ${PTNPoundage}
     ...    ${voteContractId}    ${supportList}
     ${resp}    setPostRequest    ${host}    ${invokeTokenMethod}    ${ccList}
-    #[Return]    ${ret}
+    [Return]    ${resp}
 
 Calculate gain of recieverAdd
     [Arguments]    ${PTN2P}
@@ -52,7 +52,7 @@ Request getbalance after create token
     [Return]    ${PTN2}
 
 Assert gain of reciever
-    [Arguments]    ${PTN2'}    ${PTN2}
+    [Arguments]    ${PTN2'}    ${PTN2}    ${key}
     Should Be Equal As Strings    ${PTN2}    ${PTN2'}
     ${response}    normalCcqueryById    ${voteContractId}    getVoteResult    ${key}
     ccqueryVoteResult    ${response}    ${geneAdd}    ${key}    ${tokenAmount}
