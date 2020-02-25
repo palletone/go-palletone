@@ -12,9 +12,9 @@ Resource          ../../utilKwd/behaveKwd.txt
 Scenario: Vote Contract - Transfer Token
     [Documentation]    Verify Sender's PTN and VOTE value
     Given Get genesis address
-    When Transfer token of vote contract
+    ${resp}    When Transfer token of vote contract
     ${PTN1}    ${result1}    ${item1}    ${key}    And Request getbalance before create token
-    And Request transfer token
+    And Request transfer token    ${key}
     ${PTN'}    ${item'}    And Calculate gain of recieverAdd    ${PTN1}    ${item1}
     ${PTN2}    ${item2}    And Request getbalance after create token    ${key}
     Then Assert gain of reciever    ${PTN'}    ${PTN2}    ${item'}    ${item2}
