@@ -32,11 +32,11 @@ Request transfer token
     ${tokenId}    ${value}    getTokenStarts    ${preTokenId}    ${result}
     ${type}    Evaluate    type(${result})
     ${ccList}    Create List    ${tokenId}    ${geneAdd}    ${recieverAdd}    2    1
-    ...    description    1    ${6000000}
+    ...    description    1    ${10}
     ${resp}    setPostRequest    ${host}    wallet_transferToken    ${ccList}
-    ${jsonRes}    resultToJson    ${resp}
+    #${jsonRes}    resultToJson    ${resp}
     #${ret}    Should Match Regexp    ${resp.content}['result']    ${result_code}    msg="result:does't match Result expression"
-    [Return]    ${jsonRes}
+    [Return]    ${resp}
 
 Request getOneTokenInfo
     [Arguments]    ${preTokenId}
@@ -89,7 +89,7 @@ Request transfer token of vote
     ${ccTokenList}    Create List    ${crtTokenMethod}    ${note}    ${tokenDecimal}    ${tokenAmount}    ${voteTime}
     ...    ${commonVoteInfo}
     ${ccList}    Create List    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}    ${voteContractId}
-    ...    ${ccTokenList}    ${pwd}    ${duration}    ${EMPTY}
+    ...    ${ccTokenList}    ${pwd}    ${duration}
     ${resp}    setPostRequest    ${host}    ${invokePsMethod}    ${ccList}
     ${jsonRes}    resultToJson    ${resp}
     #log    ${resp.content}

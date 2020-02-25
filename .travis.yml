@@ -221,7 +221,7 @@ matrix:
         - sleep 2
         - cd ${BASE_DIR}
         - zip -j ./bdd/logs/zMulti-node.zip ./logs/zMulti-node/*
-        - zip -j ./bdd/logs/light.zip ./light/logs/*
+        - zip -j ./bdd/logs/light.zip ./logs/light/logs/*
         # - |
         #   if [ $IS_UPLOAD == 'true' ]; then
         #     # uplaod all log

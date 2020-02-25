@@ -14,10 +14,10 @@ ${votePTN}        1000
 Scenario: Vote - Ccinvoke Token
     [Documentation]    Verify Sender's PTN and VOTE value
     #${geneAdd}    Given Get genesis address
-    ${PTN1}    ${item1}    And Request getbalance before create token
-    When Ccinvoke token of vote contract
+    ${PTN1}    ${item1}    ${voteToken}    And Request getbalance before create token
+    ${resp}    When Ccinvoke token of vote contract    ${voteToken}
     ${PTN'}    ${item'}    And Calculate gain of recieverAdd    ${PTN1}    ${item1}
-    ${PTN2}    ${item2}    Request getbalance after create token
+    ${PTN2}    ${item2}    Request getbalance after create token    ${voteToken}
     Then Assert gain of reciever    ${PTN'}    ${PTN2}    ${item'}    ${item2}
 
 *** Keywords ***
@@ -28,17 +28,17 @@ Get genesis address
 Request getbalance before create token
     #    [Arguments]    ${geneAdd}    ${voteToken}
     ${PTN1}    ${result1}    normalGetBalance    ${listAccounts[0]}
-    #${key}    getTokenId    ${voteId}    ${result1['result']}
+    ${voteToken}    getTokenId    ${voteId}    ${result1['result']}
     ${item1}    Get From Dictionary    ${result1['result']}    ${voteToken}
-    [Return]    ${PTN1}    ${item1}
+    [Return]    ${PTN1}    ${item1}    ${voteToken}
 
 Ccinvoke token of vote contract
-    #[Arguments]    ${geneAdd}
+    [Arguments]    ${voteToken}
     ${supportList}    Create List    support    ${supportSection}
     ${ccList}    Create List    ${listAccounts[0]}    ${recieverAdd}    ${voteToken}    ${votePTN}    ${PTNPoundage}
-    ...    ${voteToken}    ${voteContractId}    ${supportList}
+    ...    ${voteContractId}    ${supportList}
     ${resp}    setPostRequest    ${host}    ${invokeTokenMethod}    ${ccList}
-    log    ${resp.content}
+    [Return]    ${resp}
 
 Calculate gain of recieverAdd
     [Arguments]    ${PTN1}    ${item1}
@@ -49,7 +49,7 @@ Calculate gain of recieverAdd
     [Return]    ${PTN'}    ${item'}
 
 Request getbalance after create token
-    #[Arguments]    ${geneAdd}    ${voteToken}
+    [Arguments]    ${voteToken}
     sleep    4
     ${PTN2}    ${result2}    normalGetBalance    ${listAccounts[0]}
     ${item2}    Get From Dictionary    ${result2['result']}    ${voteToken}

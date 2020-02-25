@@ -31,11 +31,7 @@ Transfer token of vote contract
     ${ccList}    Create List    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}    ${voteContractId}
     ...    ${ccTokenList}    ${pwd}    ${duration}
     ${resp}    setPostRequest    ${host}    ${invokePsMethod}    ${ccList}
-    log    ${resp.content}
-    Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
-    Should Contain    ${resp.content}['id']    1    msg="id:failed"
-    ${ret}    Should Match Regexp    ${resp.content}['result']    ${commonResultCode}    msg="result:does't match Result expression"
-    [Return]    ${ret}
+    [Return]    ${resp}
 
 Request getbalance before create token
     sleep    4
@@ -45,6 +41,7 @@ Request getbalance before create token
     [Return]    ${PTN1}    ${result1}    ${item1}    ${key}
 
 Request transfer token
+    [Arguments]    ${key}
     ${tokenResult}    transferToken    ${key}    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
     ...    ${evidence}    ${duration}
 

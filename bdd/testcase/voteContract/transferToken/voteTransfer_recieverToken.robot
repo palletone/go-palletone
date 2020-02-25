@@ -14,7 +14,7 @@ Scenario: Vote Contract - Transfer Token
     ${geneAdd}    Given Get genesis address
     #${ret}    When Create token of vote contract    ${geneAdd}
     ${key}    ${item1}    And Request getbalance before create token    ${geneAdd}
-    And Request transfer token
+    And Request transfer token    ${key}
     ${item1}    And Calculate gain of recieverAdd    ${item1}
     ${item2}    And Request getbalance after create token    ${key}
     Then Assert gain of reciever    ${item1}    ${item2}
@@ -39,6 +39,7 @@ Request getbalance before create token
     [Return]    ${key}    ${item1}
 
 Request transfer token
+    [Arguments]    ${key}
     ${tokenResult}    transferToken    ${key}    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
     ...    ${evidence}    ${duration}
 
