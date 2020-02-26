@@ -191,7 +191,13 @@ func (d *Dag) GetPrecedingMediatorNodes() map[string]*discover.Node {
 	pmds := d.GetGlobalProp().PrecedingMediators
 	for add := range pmds {
 		med := d.GetMediator(add)
+		if med == nil {
+			continue
+		}
 		node := med.Node
+		if node == nil {
+			continue
+		}
 		nodes[node.ID.TerminalString()] = node
 	}
 	return nodes
