@@ -113,10 +113,10 @@ class createToken():
             print 'transferToken Result: ' + str(result) + '\n'
             return result
 
-    def getTxHashByReqId(self, applyResult):
+    def getTxByReqId(self, applyResult):
         data = {
             "jsonrpc": "2.0",
-            "method": "dag_getTxHashByReqId",
+            "method": "dag_getTxByReqId",
             "params":
                 [
                     applyResult
@@ -129,9 +129,9 @@ class createToken():
         try:
             result = result1['result']
         except KeyError:
-            print "Request getTxHashByReqId failed.\n" + str(result1)
+            print "Request getTxByReqId failed.\n" + str(result1)
         else:
-            print 'getTxHashByReqId Result: ' + str(result) + '\n'
+            print 'getTxByReqId Result: ' + str(result) + '\n'
             return result
 
     def getTxByHash(self, txHashInfo):
@@ -180,5 +180,5 @@ if __name__ == '__main__':
     time.sleep(10)
     for id in reqIds:
         # print "reqid:" + str(id) + '\n'
-        createToken().getTxByHash(createToken().getTxHashByReqId(id))
+        createToken().getTxByReqId(id)
     #createToken().ccquery("PCGTta3M4t3yXu8uRgkKvaWd2d8DSfQdUHf", "payout", "")
