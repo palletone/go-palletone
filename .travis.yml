@@ -67,9 +67,9 @@ matrix:
         - grep "maintenance_skip_slots" node1/ptn-genesis.json
         - cd ${BASE_DIR}/bdd
         - mkdir -p ${BDD_LOG_PATH}
-        - if [ $IS_RUN_MULTIPLE == 'true' ]; then
-          python -m robot.run -d ${BDD_LOG_PATH}/${MULTIPLE_DIR} -i normal ./testcase/zMulti-node;
-          fi
+        #- if [ $IS_RUN_MULTIPLE == 'true' ]; then
+        #  python -m robot.run -d ${BDD_LOG_PATH}/${MULTIPLE_DIR} -i normal ./testcase/zMulti-node;
+        #  fi
 
         - if [ $IS_RUN_LIGHT == 'true' ]; then
           cd ./light;
@@ -81,8 +81,9 @@ matrix:
         - killall gptn
         - sleep 2
         - cd ${BASE_DIR}
-        - zip -j ./bdd/logs/zMulti-node.zip ./logs/zMulti-node/*
-        - zip -j ./bdd/logs/light.zip ./light/logs/*
+        #- zip -j ./bdd/logs/zMulti-node.zip ./logs/zMulti-node/*
+        - pwd
+        - zip -j ./bdd/logs/light.zip ./logs/light/logs/*
         # - |
         #   if [ $IS_UPLOAD == 'true' ]; then
         #     # uplaod all log
