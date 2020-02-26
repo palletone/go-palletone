@@ -7,3 +7,4 @@ spawn ../../node/gptn --exec "wallet.transferPTN($tokenHolder,$contractAddr,1,1)
 expect "Passphrase:"
 send "1\n"
 interact
+#chmod +x 
