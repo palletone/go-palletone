@@ -321,7 +321,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 		sortedtxs, total := p.GetSortedTxs(unit_hash, 1)
 		log.Debugf(" total size is :%v ,the cout:%d ", total, len(txs))
 		for i, tx := range sortedtxs {
-			if i < len(txs)-1 {
+			if i < len(sortedtxs)-1 {
 				if sortedtxs[i].Priority_lvl < sortedtxs[i+1].Priority_lvl {
 					t.Error("sorted failed.", i, tx.Priority_lvl)
 				}
