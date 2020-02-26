@@ -24,7 +24,7 @@ do
 	fi
 #	#echo $list | jq ".[$index]";
 done
-account2 = "PCGTta3M4t3yXu8uRgkKvaWd2d8DSfQdUHf"
+account2=`echo $"\"PCGTta3M4t3yXu8uRgkKvaWd2d8DSfQdUHf"\"`
 echo $account0
 echo $account1
 echo $account2
