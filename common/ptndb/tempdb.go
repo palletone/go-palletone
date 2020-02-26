@@ -43,6 +43,7 @@ type Tempdb struct {
 
 func NewTempdb(db Database) (*Tempdb, error) {
 	tempdb := &Tempdb{kv: make(map[string][]byte), deleted: make(map[string]bool), db: db}
+	log.Debugf("New Tempdb[%p] based on %s,%p", tempdb, reflect.TypeOf(db).String(), db)
 	return tempdb, nil
 }
 func (db *Tempdb) Clear() {
@@ -182,14 +183,16 @@ func (db *Tempdb) Get(key []byte) ([]byte, error) {
 	defer db.lock.RUnlock()
 	_, del := db.deleted[string(key)]
 	if del {
-		log.Debugf("deleted key[%x] in tempdb,return error not found", key)
+		log.Debugf("deleted key[%x] in tempdb[%p],return error not found", key, db)
 		return nil, errors.ErrNotFound
 	}
 	if entry, ok := db.kv[string(key)]; ok {
+		log.Debugf("find key[%x] in tempdb,return value", key)
 		return common.CopyBytes(entry), nil
 	}
 	log.DebugDynamic(func() string {
-		return fmt.Sprintf("key[%x] not in tempdb, try inner db[%s]", key,reflect.TypeOf(db.db).String())
+		return fmt.Sprintf("key[%x] not in tempdb[%p], try inner db[%s,%p]",
+			key, db, reflect.TypeOf(db.db).String(), db.db)
 	})
 	return db.db.Get(key)
 }
@@ -199,6 +202,7 @@ func (db *Tempdb) Delete(key []byte) error {
 	defer db.lock.Unlock()
 	db.deleted[string(key)] = true
 	delete(db.kv, string(key))
+	log.Debugf("try delete key[%x] in tempdb[%p]", key, db)
 	return nil
 }
 

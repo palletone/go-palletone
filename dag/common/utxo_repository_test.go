@@ -24,6 +24,7 @@ import (
 	"io/ioutil"
 	"log"
 	"testing"
+	"time"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
@@ -33,21 +34,21 @@ import (
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/stretchr/testify/assert"
-	"time"
 )
 
 func mockUtxoRepository() *UtxoRepository {
 	db, _ := ptndb.NewMemDatabase()
-	utxodb := storage.NewUtxoDb(db, tokenengine.Instance)
+	utxodb := storage.NewUtxoDb(db, tokenengine.Instance, false)
+	utxodb2 := storage.NewUtxoDb(db, tokenengine.Instance, true)
 	idxdb := storage.NewIndexDb(db)
 	statedb := storage.NewStateDb(db)
 	propDb := storage.NewPropertyDb(db)
-	return NewUtxoRepository(utxodb, idxdb, statedb, propDb, tokenengine.Instance)
+	return NewUtxoRepository(utxodb, utxodb2, idxdb, statedb, propDb, tokenengine.Instance)
 }
 
 func TestUpdateUtxo(t *testing.T) {
 	rep := mockUtxoRepository()
-	rep.UpdateUtxo(time.Now().Unix(), common.Hash{}, &modules.PaymentPayload{}, uint32(0))
+	rep.UpdateUtxo(time.Now().Unix(), common.Hash{}, common.BytesToHash([]byte("1")), &modules.PaymentPayload{}, uint32(0))
 }
 
 //func TestReadUtxos(t *testing.T) {

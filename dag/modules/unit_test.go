@@ -23,13 +23,15 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/crypto"
-	"github.com/stretchr/testify/assert"
 	"log"
 	"reflect"
 	"testing"
+
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/stretchr/testify/assert"
 )
 
 var tt = int64(1574390000)
@@ -130,7 +132,7 @@ func TestUnitSize(t *testing.T) {
 func TestOutPointToKey(t *testing.T) {
 
 	testPoint := OutPoint{TxHash: common.HexToHash("123567890acbdefg"), MessageIndex: 2147483647, OutIndex: 2147483647}
-	key := testPoint.ToKey()
+	key := testPoint.ToKey(constants.UTXO_PREFIX)
 
 	result := KeyToOutpoint(key)
 	if !reflect.DeepEqual(testPoint, *result) {

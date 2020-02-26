@@ -75,7 +75,7 @@ func (s *RwSetTxSimulator) GetState(contractid []byte, ns string, key string) ([
 		//errstr := fmt.Sprintf("GetContractState [%s]-[%s] failed", ns, key)
 		//		//return nil, errors.New(errstr)
 	}
-	if ver.TxIndex == 0 { //Devin Debug
+	if ver != nil && ver.TxIndex == 0 { //Devin Debug
 		log.DebugDynamic(func() string {
 			logStr := "call stack:"
 			var query = s.stateQuery

@@ -224,8 +224,8 @@ func (utxoIndex *UtxoIndex) ToKey() []byte {
 	return key[:]
 }
 
-func (outpoint *OutPoint) ToKey() []byte {
-	key := append(constants.UTXO_PREFIX, outpoint.Bytes()...)
+func (outpoint *OutPoint) ToKey(prefix []byte) []byte {
+	key := append(prefix, outpoint.Bytes()...)
 	return key[:]
 }
 

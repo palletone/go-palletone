@@ -424,7 +424,7 @@ func (p *Processor) ContractQuery(id []byte, args [][]byte, timeout time.Duratio
 	rst, err := p.contract.Invoke(ctx, chainId, addr.Bytes(), invTxId.String(), args, timeout)
 	rwM.Close()
 	if err != nil {
-		log.Errorf("ContractQuery, id[%s], Invoke err:%s", addr.String(), err.Error())
+		log.Warnf("ContractQuery, id[%s], Invoke err:%s", addr.String(), err.Error())
 		return nil, err
 	}
 	log.Debugf("ContractQuery, id[%s], query result:%s", addr.String(), hex.EncodeToString(rst.Payload))

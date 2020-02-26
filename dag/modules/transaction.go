@@ -21,6 +21,7 @@ package modules
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"math"
@@ -524,6 +525,42 @@ func (tx *Transaction) GetNewUtxos() map[OutPoint]*Utxo {
 	return result
 }
 
+//该Tx如果保存后，会产生的新的Utxo包括ReqUtxo
+func (tx *Transaction) GetNewTxUtxoAndReqUtxos() map[OutPoint]*Utxo {
+	result := map[OutPoint]*Utxo{}
+	txHash := tx.Hash()
+	reqHash := tx.RequestHash()
+	for msgIndex, msg := range tx.txdata.TxMessages {
+		if msg.App != APP_PAYMENT {
+			continue
+		}
+		pay := msg.Payload.(*PaymentPayload)
+		txouts := pay.Outputs
+		for outIndex, txout := range txouts {
+			utxo := &Utxo{
+				Amount:   txout.Value,
+				Asset:    txout.Asset,
+				PkScript: txout.PkScript,
+				LockTime: pay.LockTime,
+			}
+
+			// write to database
+			outpoint := OutPoint{
+				TxHash:       txHash,
+				MessageIndex: uint32(msgIndex),
+				OutIndex:     uint32(outIndex),
+			}
+			result[outpoint] = utxo
+			if reqHash != txHash {
+				outpoint2 := outpoint
+				outpoint2.TxHash = reqHash
+				result[outpoint2] = utxo
+			}
+		}
+	}
+	return result
+}
+
 //获取一个交易中花费了哪些OutPoint
 func (tx *Transaction) GetSpendOutpoints() []*OutPoint {
 	result := []*OutPoint{}
@@ -648,7 +685,7 @@ func (tx *Transaction) HasContractPayoutMsg() (bool, int, *Message) {
 }
 
 //获取该交易的所有From地址
-func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc GetAddressFromScriptFunc) []common.Address {
+func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc GetAddressFromScriptFunc) ([]common.Address, error) {
 	resultMap := map[common.Address]int{}
 	msgs := tx.TxMessages()
 	for _, msg := range msgs {
@@ -664,7 +701,7 @@ func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc Get
 							lockScript = out.PkScript
 						} else {
 							log.Errorf("Cannot find txo by:%s", input.PreviousOutPoint.String())
-							return []common.Address{}
+							return nil, err
 						}
 					} else {
 						lockScript = txo.PkScript
@@ -683,7 +720,7 @@ func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc Get
 	for k := range resultMap {
 		keys = append(keys, k)
 	}
-	return keys
+	return keys, nil
 }
 
 //获取该交易的发起人地址
@@ -703,13 +740,14 @@ func (tx *Transaction) GetRequesterAddr(queryUtxoFunc QueryUtxoFunc, getAddrFunc
 
 }
 
-func (tx *Transaction) GetContractTxType() (MessageType, error) {
+func (tx *Transaction) GetContractTxType() MessageType {
 	for _, msg := range tx.Messages() {
 		if msg.App >= APP_CONTRACT_TPL_REQUEST && msg.App <= APP_CONTRACT_STOP_REQUEST {
-			return msg.App, nil
+			return msg.App
 		}
 	}
-	return APP_UNKNOW, fmt.Errorf("GetContractTxType, not contract Tx, txHash[%s]", tx.Hash().String())
+	log.Debugf("GetContractTxType, not contract Tx, txHash[%s]", tx.Hash().String())
+	return APP_UNKNOW
 }
 
 // 获取locktime
@@ -723,6 +761,15 @@ func (tx *Transaction) GetLocktime() int64 {
 		}
 	}
 	return 0
+}
+
+func (tx *Transaction) String() string {
+	data, err := json.Marshal(tx)
+	if err != nil {
+		log.Errorf("tx[%s] Marshal error:%s", tx.Hash(), err.Error())
+		return ""
+	}
+	return string(data)
 }
 
 type Addition struct {
@@ -823,15 +870,18 @@ func (msg *Transaction) baseSize() int {
 	b, _ := rlp.EncodeToBytes(msg)
 	return len(b)
 }
+
+//是否是合约交易
 func (tx *Transaction) IsContractTx() bool {
 	for _, m := range tx.txdata.TxMessages {
-		if m.App >= APP_CONTRACT_TPL && m.App <= APP_SIGNATURE {
+		if m.App >= APP_CONTRACT_TPL_REQUEST && m.App <= APP_CONTRACT_STOP_REQUEST {
 			return true
 		}
 	}
 	return false
 }
 
+//是否是系统合约调用，只有在具有InvokeRequest或者TemplateRequest的时候才算系统合约
 func (tx *Transaction) IsSystemContract() bool {
 	for _, msg := range tx.txdata.TxMessages {
 		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
@@ -846,7 +896,7 @@ func (tx *Transaction) IsSystemContract() bool {
 			return false //, nil
 		}
 	}
-	return true //, errors.New("isSystemContract not find contract type")
+	return false //没有Request，当然就不是系统合约
 }
 
 //判断一个交易是否是一个合约请求交易，并且还没有被执行
@@ -1037,4 +1087,202 @@ func (a *Addition) Key() string {
 		return hex.EncodeToString(append(a.Addr.Bytes21(), a.Asset.Bytes()...))
 	}
 	return hex.EncodeToString(a.Addr.Bytes21())
+}
+
+//传入一堆交易，按依赖关系进行排序，并根据UTXO的使用情况，分为3类Tx：
+//1.排序后的正常交易，2.孤儿交易，3.因为双花需要丢弃的交易
+func SortTxs(txs map[common.Hash]*Transaction, utxoFunc QueryUtxoFunc) ([]*Transaction, []*Transaction, []*Transaction) {
+	sortedTxs := make([]*Transaction, 0)
+	doubleSpendTxs := make([]*Transaction, 0)
+	orphanTxs := make([]*Transaction, 0)
+	map_orphans := make(map[common.Hash]common.Hash)
+	map_pretxs := make(map[common.Hash]int)
+	map_doubleTxs := make(map[*OutPoint]common.Hash)
+	//map_utxos := make(map[*OutPoint]common.Hash)
+	for hash, tx := range txs {
+		ops := tx.GetSpendOutpoints()
+		isOrphan := false
+		hasDouble := false
+		for _, op := range ops {
+			if _, has := map_orphans[op.TxHash]; has {
+				map_orphans[hash] = op.TxHash
+				orphanTxs = append(orphanTxs, tx)
+				isOrphan = true
+				break
+			}
+			if tx.isOrphanTx(txs, utxoFunc) {
+				map_orphans[hash] = op.TxHash
+				orphanTxs = append(orphanTxs, tx)
+				isOrphan = true
+				break
+			}
+			// 在双花交易中择优选择一个交易作为有效交易。
+			if d_hash, has := map_doubleTxs[op]; has {
+				hasDouble = true
+				p_tx := txs[d_hash]
+				if isPrefer, err := tx.preferTx(p_tx, utxoFunc); err == nil {
+					if isPrefer {
+						// delete p_tx
+						temp := make([]*Transaction, 0)
+						for i, stx := range sortedTxs {
+							if stx.Hash() == p_tx.Hash() {
+								temp = sortedTxs[:i]
+								temp = append(temp, sortedTxs[i+1:]...)
+								break
+							}
+						}
+						temp = append(temp, tx)
+						sortedTxs = temp[:]
+
+						doubleSpendTxs = append(doubleSpendTxs, p_tx)
+						for _, op := range tx.GetSpendOutpoints() {
+							map_doubleTxs[op] = tx.Hash()
+						}
+					} else {
+						doubleSpendTxs = append(doubleSpendTxs, tx)
+					}
+				}
+				continue
+			}
+			map_doubleTxs[op] = hash
+		}
+		if !isOrphan && !hasDouble {
+			pre_txs := tx.GetPrecusorTxs(txs)
+			for _, tx := range pre_txs {
+				if _, has := map_pretxs[tx.Hash()]; !has {
+					map_pretxs[tx.Hash()] = len(sortedTxs)
+					//fmt.Println("add sorted tx:", tx.Hash().String())
+					sortedTxs = append(sortedTxs, tx)
+				}
+			}
+		}
+	}
+
+	//for i, tx := range sortedTxs {
+	//	fmt.Println("sorted tx:", i, tx.Hash().String())
+	//}
+	//for i, tx := range orphanTxs {
+	//	fmt.Println("orphan tx:", i, tx.Hash().String())
+	//}
+	//for i, tx := range doubleSpendTxs {
+	//	fmt.Println("double spend tx:", i, tx.Hash().String())
+	//}
+
+	return sortedTxs, orphanTxs, doubleSpendTxs
+}
+
+func (tx *Transaction) GetPrecusorTxs(poolTxs map[common.Hash]*Transaction) []*Transaction {
+	pretxs := make([]*Transaction, 0)
+	for _, msg := range tx.Messages() {
+		if msg.App == APP_PAYMENT {
+			payment, ok := msg.Payload.(*PaymentPayload)
+			if ok {
+				for _, input := range payment.Inputs {
+					if input.PreviousOutPoint != nil {
+						sort_tx, has := poolTxs[input.PreviousOutPoint.TxHash]
+						isRequest := false
+						if !has {
+							for _, sort_tx = range poolTxs {
+								if sort_tx.RequestHash() == input.PreviousOutPoint.TxHash {
+									isRequest = true
+									break
+								}
+							}
+							if !isRequest {
+								continue
+							}
+						}
+						if sort_tx != nil {
+							list := sort_tx.GetPrecusorTxs(poolTxs)
+							if len(list) > 0 {
+								pretxs = append(pretxs, list...)
+							}
+							pretxs = append(pretxs, sort_tx)
+						}
+					}
+				}
+			}
+		}
+	}
+	//返回自己
+	pretxs = append(pretxs, tx)
+	return pretxs
+}
+func (tx *Transaction) isOrphanTx(txs map[common.Hash]*Transaction, utxoFunc QueryUtxoFunc) bool {
+	for _, op := range tx.GetSpendOutpoints() {
+		if _, err := utxoFunc(op); err == nil {
+			continue
+		}
+		// db里没有该utxo,则依次从tx的前驱交易里找,如果列表里没有前驱交易返回true
+		if p_tx, has := txs[op.TxHash]; !has {
+			for _, otx := range txs {
+				if otx.RequestHash() == op.TxHash {
+					// 若requeshash等于op的txhash,则从otx的output里找utxo
+					isfound := false
+					for i, msg := range otx.txdata.TxMessages {
+						if msg.App == APP_PAYMENT {
+							payment := msg.Payload.(*PaymentPayload)
+							for j := range payment.Outputs {
+								if op.OutIndex == uint32(j) && op.MessageIndex == uint32(i) {
+									isfound = true
+									break
+								}
+							}
+						}
+					}
+					if !isfound {
+						return true
+					}
+					return false
+				}
+			}
+			return true
+		} else {
+			if p_tx.isOrphanTx(txs, utxoFunc) {
+				return true
+			} else {
+				// 找到该utxo
+				isfound := false
+				for i, msg := range p_tx.txdata.TxMessages {
+					if msg.App == APP_PAYMENT {
+						payment := msg.Payload.(*PaymentPayload)
+						for j := range payment.Outputs {
+							if op.OutIndex == uint32(j) && op.MessageIndex == uint32(i) {
+								isfound = true
+								break
+							}
+						}
+					}
+				}
+				if !isfound {
+					return true
+				} else {
+					continue
+				}
+			}
+		}
+	}
+	return false
+}
+
+func (tx *Transaction) preferTx(tx1 *Transaction, utxoFunc QueryUtxoFunc) (bool, error) {
+	fee, err := tx.GetTxFee(utxoFunc)
+	fee1, err1 := tx1.GetTxFee(utxoFunc)
+	if err != nil && err1 != nil {
+		return false, fmt.Errorf("all utxos are illegal.")
+	}
+	if err != nil {
+		return false, nil
+	}
+	if err1 != nil {
+		return true, nil
+	}
+	if fee.Asset.String() != fee1.Asset.String() {
+		return false, fmt.Errorf("this two transaction asset is different.")
+	}
+	if fee1.Amount > fee.Amount {
+		return false, nil
+	}
+	return true, nil
+
 }

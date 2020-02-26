@@ -21,7 +21,7 @@ ${Carol}          ${null}
 ${amount}         10000
 ${fee}            1
 ${pwd}            1
-${duration}       600000000
+${duration}       0
 ${gasToken}       WWW
 ${AliceToken}     ALICE
 ${BobToken}       BOB

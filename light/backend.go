@@ -151,7 +151,7 @@ func New(ctx *node.ServiceContext, config *ptn.Config, protocolname string, cach
 		return nil, err
 	}
 
-	lptn.ApiBackend = &LesApiBackend{lptn}
+	lptn.ApiBackend = &LesApiBackend{ptn: lptn}
 	return lptn, nil
 }
 

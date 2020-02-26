@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"math/big"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/event"
@@ -57,10 +58,17 @@ const channelId = "palletone"
 
 // PtnApiBackend implements ethapi.Backend for full nodes
 type PtnApiBackend struct {
-	ptn *PalletOne
-	//gpo *gasprice.Oracle
+	ptn   *PalletOne
+	mutex sync.Mutex
 }
 
+func (b *PtnApiBackend) Lock() {
+	b.mutex.Lock()
+}
+
+func (b *PtnApiBackend) Unlock() {
+	b.mutex.Unlock()
+}
 func (b *PtnApiBackend) Dag() dag.IDag {
 	return b.ptn.dag
 }
@@ -139,7 +147,7 @@ func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transactio
 		log.Warnf("Save tx[%s] status to local err:%s", signedTx.Hash().String(), err.Error())
 	}
 	//更新Tx的状态到LocalDB
-	go func() {
+	go func(txHash common.Hash) {
 		saveUnitCh := make(chan modules.SaveUnitEvent, 10)
 		defer close(saveUnitCh)
 		saveUnitSub := b.Dag().SubscribeSaveUnitEvent(saveUnitCh)
@@ -154,43 +162,43 @@ func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transactio
 			case u := <-saveUnitCh:
 				log.Infof("SubscribeSaveUnitEvent received unit:%s", u.Unit.DisplayId())
 				for _, utx := range u.Unit.Transactions() {
-					if utx.Hash() == signedTx.Hash() {
-						log.Debugf("Change local tx[%s] status to unstable", utx.Hash().String())
-						err = b.Dag().SaveLocalTxStatus(signedTx.Hash(), modules.TxStatus_Unstable)
+					if utx.Hash() == txHash || utx.RequestHash() == txHash {
+						log.Debugf("Change local tx[%s] status to unstable", txHash.String())
+						err = b.Dag().SaveLocalTxStatus(txHash, modules.TxStatus_Unstable)
 						if err != nil {
-							log.Warnf("Save tx[%s] status to local err:%s", utx.Hash().String(), err.Error())
+							log.Warnf("Save tx[%s] status to local err:%s", txHash.String(), err.Error())
 						}
 					}
 				}
 			case u := <-headCh:
 				log.Infof("SubscribeSaveStableUnitEvent received unit:%s", u.Unit.DisplayId())
 				for _, utx := range u.Unit.Transactions() {
-					if utx.Hash() == signedTx.Hash() {
-						log.Debugf("Change local tx[%s] status to stable", utx.Hash().String())
-						err = b.Dag().SaveLocalTxStatus(signedTx.Hash(), modules.TxStatus_Stable)
+					if utx.Hash() == txHash || utx.RequestHash() == txHash {
+						log.Debugf("Change local tx[%s] status to stable", txHash.String())
+						err = b.Dag().SaveLocalTxStatus(txHash, modules.TxStatus_Stable)
 						if err != nil {
-							log.Warnf("Save tx[%s] status to local err:%s", utx.Hash().String(), err.Error())
+							log.Warnf("Save tx[%s] status to local err:%s", txHash.String(), err.Error())
 						}
 						return
 					}
 				}
 			case <-timeout.C:
-				log.Warn("SubscribeSaveStableUnitEvent timeout")
+				log.Warnf("SubscribeSaveStableUnitEvent timeout for tx[%s]", txHash.String())
 				return
 			// Err() channel will be closed when unsubscribing.
 			//case err0 := <-headSub.Err():
 			//	log.Warnf("SubscribeSaveStableUnitEvent err:%s", err0.Error())
-			case <-headSub.Err():
-				log.Debugf("SubscribeSaveStableUnitEvent err")
+			case e := <-headSub.Err():
+				log.Warnf("SubscribeSaveStableUnitEvent err:%s", e.Error())
 				return
 			//case err1 := <-saveUnitSub.Err():
 			//	log.Warnf("SubscribeSaveUnitEvent err:%s", err1.Error())
-			case <-saveUnitSub.Err():
-				log.Debugf("SubscribeSaveUnitEvent err")
+			case e := <-saveUnitSub.Err():
+				log.Warnf("SubscribeSaveUnitEvent err:%s", e.Error())
 				return
 			}
 		}
-	}()
+	}(signedTx.Hash())
 
 	return nil
 }

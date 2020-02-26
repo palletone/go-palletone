@@ -20,6 +20,7 @@ package ptnapi
 import (
 	"context"
 	"math/big"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/event"
@@ -41,6 +42,7 @@ import (
 // Backend interface provides the common API services (that are provided by
 // both full and light clients) with access to necessary functions.
 type Backend interface {
+	sync.Locker
 	// General PalletOne API
 	Downloader() *downloader.Downloader
 	ProtocolVersion() int
