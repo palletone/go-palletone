@@ -36,8 +36,8 @@ Request getbalance before create token
 Ccinvoke token of vote contract
     [Arguments]    ${voteToken}
     ${supportList}    Create List    support    ${supportSection}
-    ${ccList}    Create List    ${listAccounts[0]}    ${recieverAdd}    ${voteToken}    ${votePTN}    ${PTNPoundage}
-    ...    ${voteContractId}    ${supportList}
+    ${ccList}    Create List    ${listAccounts[0]}    ${destructionAdd}    ${voteToken}    ${votePTN}    ${PTNPoundage}
+    ...    ${voteContractId}    ${supportList}    ${pwd}    ${duration}
     ${resp}    setPostRequest    ${host}    ${invokeTokenMethod}    ${ccList}
     [Return]    ${resp}
 
@@ -46,7 +46,7 @@ Calculate gain of recieverAdd
     ${item'}    Evaluate    ${item1}-${votePTN}
     #${totalGain}    Evaluate    int(${votePTN})-int(${PTNPoundage})
     #${GAIN}    countRecieverPTN    ${totalGain}
-    ${PTN'}    Evaluate    decimal.Decimal('${PTN1}')+decimal.Decimal('${votePTN}')    decimal
+    ${PTN'}    Evaluate    ${PTN1}-${PTNPoundage}
     [Return]    ${PTN'}    ${item'}
 
 Request getbalance after create token
