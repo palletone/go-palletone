@@ -39,7 +39,7 @@ import (
 const (
 	contentType             = "application/json"
 	maxRequestContentLength = 1024 * 128
-	//ptnSecretKey            = "Ptn-SecretKey"
+	ptnSecretKey            = "Ptn-SecretKey"
 )
 
 var nullAddr, _ = net.ResolveTCPAddr("tcp", "127.0.0.1:0")
@@ -220,12 +220,12 @@ func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//if srv.IsHttpsRequest() {
-	//	if r.Header.Get(ptnSecretKey) != srv.GetSecretKey() {
-	//		http.Error(w, "ptn secret key failed", http.StatusBadRequest)
-	//		return
-	//	}
-	//}
+	if srv.IsHttpsRequest() {
+		if r.Header.Get(ptnSecretKey) != srv.GetSecretKey() {
+			http.Error(w, "ptn secret key invalid", http.StatusBadRequest)
+			return
+		}
+	}
 	// All checks passed, create a codec that reads direct from the request body
 	// untilEOF and writes the response to w and order the server to process a
 	// single request.
