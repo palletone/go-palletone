@@ -33,6 +33,7 @@ import (
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
+	"github.com/palletone/go-palletone/dag/rwset"
 )
 
 type Tag uint64
@@ -342,7 +343,14 @@ func (pm *ProtocolManager) NewBlockHashesMsg(msg p2p.Msg, p *peer) error {
 	}
 	return nil
 }
-
+func includeContractTx(txs []*modules.Transaction) bool { //todo  sort
+	for _, tx := range txs {
+		if tx.IsContractTx() && tx.IsOnlyContractRequest() {
+			return true
+		}
+	}
+	return false
+}
 func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 	log.Debug("Enter ProtocolManager TxMsg")
 	defer log.Debug("End ProtocolManager TxMsg")
@@ -357,26 +365,56 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		log.Debug("ProtocolManager handlmsg TxMsg", "Decode err:", err, "msg:", msg)
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
+
+	log.Debugf("ProtocolManager, tx num[%d]", len(txs))
+	//incld := includeContractTx(txs)
+	//if incld {
+	unitNumber := pm.dag.HeadUnitNum() + 1
+	unitId := fmt.Sprintf("%d", unitNumber)
+	rwM, err := rwset.NewRwSetMgr(unitId)
+	if err != nil {
+		log.Errorf("ProtocolManager NewRwSetMgr err: %v", err.Error())
+		return nil
+	}
+	defer rwM.Close()
+	mDag, err := pm.dag.NewTemp()
+	//}
+
 	for i, tx := range txs {
-		// Validate and mark the remote transaction
 		if tx == nil {
 			return errResp(ErrDecode, "transaction %d is nil", i)
 		}
-
 		txHash := tx.Hash()
 		p.MarkTransaction(txHash)
-
 		if pm.IsExistInCache(txHash.Bytes()) {
 			return nil
 		}
 		//系统合约的请求可以P2P广播，但是包含结果的系统合约请求，只能在打包时生成，不能广播
-		if tx.IsSystemContract() && !tx.IsNewContractInvokeRequest() {
-			log.Warnf("Tx[%s] is a sys contract with result, don't need send by p2p", txHash.String())
+		if tx.IsSystemContract() && !tx.IsOnlyContractRequest() {
+			log.Warnf("ProtocolManager, Tx[%s] is a sys contract with result, don't need send by p2p", txHash.String())
 			continue
 		}
+		//只处理用户合约的Invoke请求交易
+		if !tx.IsSystemContract() && tx.IsOnlyContractRequest() && tx.GetContractTxType() == modules.APP_CONTRACT_INVOKE_REQUEST {
+			//if !pm.dag.IsSynced(false) {
+			//	log.Debugf(errStr)
+			//	//return fmt.Errorf(errStr)
+			//	return nil
+			//}
+			sigTx, err := pm.contractProc.ProcessContractTxMsg(tx, rwM, mDag)
+			if err != nil {
+				log.Errorf("ProtocolManager, Tx[%s] ProcessContractTxMsg err:%s", tx.RequestHash().String())
+			}
+			if sigTx != nil {
+				mDag.SaveTransaction(sigTx, i)
+			}
+		} else {
+			mDag.SaveTransaction(tx, i)
+		}
+
 		_, err := pm.txpool.ProcessTransaction(tx, true, true, 0 /*pm.txpool.Tag(peer.ID())*/)
 		if err != nil {
-			log.Infof("the transaction %s not accepteable, err:%s", tx.Hash().String(), err.Error())
+			log.Infof("ProtocolManager,the transaction %s not accepteable, err:%s", tx.Hash().String(), err.Error())
 		}
 	}
 

@@ -65,7 +65,7 @@ type Backend interface {
 	//SubscribeChainSideEvent(ch chan<- coredata.ChainSideEvent) event.Subscription
 	GetUnstableUnits() []*ptnjson.UnitSummaryJson
 	// TxPool API
-	SendTx(ctx context.Context, signedTx *modules.Transaction) error
+	SendTx(ctx context.Context, tx *modules.Transaction) error
 	SendTxs(ctx context.Context, signedTxs []*modules.Transaction) []error
 	GetPoolTransactions() (modules.Transactions, error)
 	GetPoolTransaction(txHash common.Hash) *modules.Transaction

@@ -121,6 +121,7 @@ type iDag interface {
 	SaveContract(contract *modules.Contract) error
 	GetImmutableChainParameters() *core.ImmutableChainParameters
 	NewTemp() (dboperation.IContractDag, error)
+	HeadUnitNum() uint64
 }
 
 type electionVrf struct {
@@ -548,7 +549,6 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 	setChainId := modules.ContractChainId
 	index := 0
 	tempDag, err := p.dag.NewTemp()
-	//log.Debug("create a new tempDag for generate unit AddContractLoop")
 	if err != nil {
 		log.Errorf("Init temp dag error:%s", err.Error())
 		return err
@@ -726,16 +726,17 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 //验证一个系统合约的执行结果是否正确
 func CheckContractTxResult(tx *modules.Transaction, rwM rwset.TxManager, dag dboperation.IContractDag) bool {
 	if tx == nil {
-		log.Error("ContractTxCheckForValidator, param is nil")
+		log.Error("CheckContractTxResult, param is nil")
 		return false
 	}
 	reqTx := tx.GetRequestTx()
 	reqId := reqTx.Hash()
-	log.Debugf("ContractTxCheckForValidator enter reqId: [%s]", shortId(reqId.String()))
+	log.Debugf("CheckContractTxResult enter reqId: [%s]", shortId(reqId.String()))
 	//只检查系统合约
 	if !tx.IsSystemContract() {
 		return true
 	}
+
 
 	if txType, err := getContractTxType(tx); err == nil { //只检查invoke类型
 		if txType != modules.APP_CONTRACT_INVOKE_REQUEST {
@@ -744,7 +745,7 @@ func CheckContractTxResult(tx *modules.Transaction, rwM rwset.TxManager, dag dbo
 	}
 	_, m, _ := getContractTxContractInfo(tx, modules.APP_CONTRACT_INVOKE)
 	if m == nil {
-		log.Debugf("[%s]ContractTxCheckForValidator, msg not include invoke payload", shortId(reqId.String()))
+		log.Debugf("[%s]CheckContractTxResult, msg not include invoke payload", shortId(reqId.String()))
 		return true
 	}
 
@@ -758,7 +759,7 @@ func CheckContractTxResult(tx *modules.Transaction, rwM rwset.TxManager, dag dbo
 	}
 	msgs, err := runContractCmd(ctx, tx) // long time ...
 	if err != nil {
-		log.Errorf("[%s]ContractTxCheckForValidator, runContractCmd,error:%s", shortId(reqId.String()), err.Error())
+		log.Errorf("[%s]CheckContractTxResult, runContractCmd,error:%s", shortId(reqId.String()), err.Error())
 		return false
 	}
 	resultMsgs := []*modules.Message{}
@@ -772,7 +773,7 @@ func CheckContractTxResult(tx *modules.Transaction, rwM rwset.TxManager, dag dbo
 		}
 	}
 	isMsgSame := msgsCompareInvoke(msgs, resultMsgs)
-	log.Debugf("compare request[%s] and execute result:%t", reqId.String(), isMsgSame)
+	log.Debugf("CheckContractTxResult, compare request[%s] and execute result:%t", reqId.String(), isMsgSame)
 	return isMsgSame
 }
 

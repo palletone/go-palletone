@@ -295,7 +295,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	tx4Pack := []*modules.Transaction{}
 	for i, tx := range sortedTxs {
 		log.Debugf("pack tx[%s] into unit[#%d]", tx.RequestHash().String(), unitNumber)
-		if tx.IsSystemContract() && tx.IsNewContractInvokeRequest() { //是未执行的系统合约
+		if tx.IsSystemContract() && tx.IsOnlyContractRequest() { //是未执行的系统合约			
 			signedTx, err := p.RunAndSignTx(tx, rwM, tempDag, scheduledMediator, ks)
 			if err != nil {
 				log.Errorf("run contract request[%s] fail:%s", tx.Hash(), err.Error())

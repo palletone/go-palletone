@@ -1024,7 +1024,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 		switch msg.App {
 		case modules.APP_PAYMENT:
 			myTxHash := txHash
-			if tx.IsNewContractInvokeRequest() { //只是一个请求，TxHash还无法计算
+			if tx.IsOnlyContractRequest() { //只是一个请求，TxHash还无法计算
 				myTxHash = common.Hash{}
 			}
 			myReqHash := reqHash

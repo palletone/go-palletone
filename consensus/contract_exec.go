@@ -8,10 +8,13 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/txspool"
+	"github.com/palletone/go-palletone/dag/dboperation"
 )
 
 type ContractInf interface {
 	SubscribeContractEvent(ch chan<- jury.ContractEvent) event.Subscription
+
+	ProcessContractTxMsg(tx *modules.Transaction, rw rwset.TxManager, dag dboperation.IContractDag) (*modules.Transaction, error)
 	ProcessContractEvent(event *jury.ContractEvent) (broadcast bool, err error)
 	ProcessElectionEvent(event *jury.ElectionEvent) (err error)
 	ProcessAdapterEvent(event *jury.AdapterEvent) (result *jury.AdapterEvent, err error)

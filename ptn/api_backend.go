@@ -132,22 +132,22 @@ func (b *PtnApiBackend) SendConsensus(ctx context.Context) error {
 	return nil
 }
 
-func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transaction) error {
-	err := b.ptn.txPool.AddLocal(signedTx)
+func (b *PtnApiBackend) SendTx(ctx context.Context, tx *modules.Transaction) error {
+	err := b.ptn.txPool.AddLocal(tx)
 	if err != nil {
 		return err
 	}
-	err = b.Dag().SaveLocalTx(signedTx)
+	err = b.Dag().SaveLocalTx(tx)
 	if err != nil {
-		log.Errorf("Try to send tx[%s] get an error:%s", signedTx.Hash().String(), err.Error())
+		log.Errorf("Try to send tx[%s] get an error:%s", tx.Hash().String(), err.Error())
 	}
 	//先将状态改为交易池中
-	err = b.Dag().SaveLocalTxStatus(signedTx.Hash(), modules.TxStatus_InPool)
+	err = b.Dag().SaveLocalTxStatus(tx.Hash(), modules.TxStatus_InPool)
 	if err != nil {
-		log.Warnf("Save tx[%s] status to local err:%s", signedTx.Hash().String(), err.Error())
+		log.Warnf("Save tx[%s] status to local err:%s", tx.Hash().String(), err.Error())
 	}
 	//更新Tx的状态到LocalDB
-	go func(txHash common.Hash) {
+		go func(txHash common.Hash) {
 		saveUnitCh := make(chan modules.SaveUnitEvent, 10)
 		defer close(saveUnitCh)
 		saveUnitSub := b.Dag().SubscribeSaveUnitEvent(saveUnitCh)
@@ -198,7 +198,7 @@ func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transactio
 				return
 			}
 		}
-	}(signedTx.Hash())
+	}(tx.Hash())
 
 	return nil
 }

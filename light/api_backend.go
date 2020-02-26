@@ -118,8 +118,8 @@ func (b *LesApiBackend) GetChainParameters() *core.ChainParameters {
 	return nil
 }
 
-func (b *LesApiBackend) SendTx(ctx context.Context, signedTx *modules.Transaction) error {
-	return b.ptn.txPool.AddLocal(signedTx)
+func (b *LesApiBackend) SendTx(ctx context.Context, tx *modules.Transaction) error {
+	return b.ptn.txPool.AddLocal(tx)
 }
 func (b *LesApiBackend) SendTxs(ctx context.Context, signedTxs []*modules.Transaction) []error {
 	return b.ptn.txPool.AddLocals(signedTxs)

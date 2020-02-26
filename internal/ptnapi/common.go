@@ -206,10 +206,12 @@ func signRawTransaction(b Backend, rawTx *modules.Transaction, fromStr, password
 
 // submitTransaction is a helper function that submits tx to txPool and logs a message.
 func submitTransaction(ctx context.Context, b Backend, tx *modules.Transaction) (common.Hash, error) {
-	if tx.IsNewContractInvokeRequest() && !tx.IsSystemContract() {
+	if tx.IsOnlyContractRequest() && tx.GetContractTxType() != modules.APP_CONTRACT_INVOKE_REQUEST {
+		log.Debugf("[%s]submitTransaction, not invoke Tx", tx.RequestHash().String()[:8])
 		reqId, err := b.SendContractInvokeReqTx(tx)
 		return reqId, err
 	}
+	log.Debugf("[%s]submitTransaction, is invoke Tx", tx.RequestHash().String()[:8])
 	//普通交易和系统合约交易，走交易池
 	if err := b.SendTx(ctx, tx); err != nil {
 		return common.Hash{}, err
