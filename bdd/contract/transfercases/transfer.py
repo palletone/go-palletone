@@ -182,4 +182,5 @@ if __name__ == '__main__':
     for id in reqIds:
         # print "reqid:" + str(id) + '\n'
         createToken().getTxByReqId(id)
+    print  "after transfer contract:"+ '\n'
     createToken().getBalance("PCGTta3M4t3yXu8uRgkKvaWd2d8DSfQdUHf")
