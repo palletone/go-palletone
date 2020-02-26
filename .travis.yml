@@ -84,6 +84,7 @@ matrix:
         #- zip -j ./bdd/logs/zMulti-node.zip ./logs/zMulti-node/*
         - pwd
         - zip -j ./bdd/logs/light.zip ./logs/light/logs/*
+        - ls -l ./bdd/logs/
         # - |
         #   if [ $IS_UPLOAD == 'true' ]; then
         #     # uplaod all log
