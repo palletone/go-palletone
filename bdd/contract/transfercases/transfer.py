@@ -174,6 +174,7 @@ for addr in addrs:
         threads.append(t1)
 
 if __name__ == '__main__':
+    createToken().getBalance("PCGTta3M4t3yXu8uRgkKvaWd2d8DSfQdUHf")
     for t in threads:
         t.setDaemon(True)
         t.start()
@@ -181,5 +182,4 @@ if __name__ == '__main__':
     for id in reqIds:
         # print "reqid:" + str(id) + '\n'
         createToken().getTxByReqId(id)
-    for addr in addrs:
-        createToken().getBalance(addr)
+    createToken().getBalance("PCGTta3M4t3yXu8uRgkKvaWd2d8DSfQdUHf")
