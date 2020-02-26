@@ -386,8 +386,15 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward
 func addNewAddrPledgeRecords(stub shim.ChaincodeStubInterface, date string) error {
 	// 增加新的质押
 	depositList, err := getAllPledgeDepositRecords(stub)
+
 	if err != nil {
 		log.Info("getAllPledgeDepositRecords error: ", err.Error())
+		return err
+	}
+	//  过滤黑名单中
+	depositList ,err = filterDepositRecordFromBlacklist(stub,depositList)
+	if err != nil {
+		log.Infof("filterDepositRecordFromBlacklist error: %s",err.Error())
 		return err
 	}
 	if len(depositList) != 0 {
@@ -534,7 +541,24 @@ func mergeMember(pledgeList *modules.PledgeList) *modules.PledgeList {
 	}
 	return mergePledgeList
 }
-
+func filterDepositRecordFromBlacklist(stub shim.ChaincodeStubInterface,depositRecords []*modules.AddressAmount) ([]*modules.AddressAmount,error) {
+	address := getBlacklistAddress(stub)
+	if address == nil {
+		return depositRecords,nil
+	}
+	newDepositRecords := []*modules.AddressAmount{}
+	for _,d := range depositRecords {
+		if !isInBlacklist(d.Address,address) {
+			newDepositRecords = append(newDepositRecords,d)
+		}else {
+			err := delPledgeDepositRecord(stub, d.Address)
+			if err != nil {
+				return nil,err
+			}
+		}
+	}
+	return newDepositRecords,nil
+}
 func filterFromBlacklist(stub shim.ChaincodeStubInterface,pledgeList *modules.PledgeList) *modules.PledgeList {
 	address := getBlacklistAddress(stub)
 	if address == nil {
