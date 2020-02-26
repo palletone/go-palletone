@@ -168,7 +168,7 @@ class createToken():
 threads = []
 for addr in addrs:
     print  "addr:" + str(addr)+ '\n'
-    for i in 5:
+    for i in range(5):
         print  "index:" + str(i)+ '\n'
         t1 = threading.Thread(target=createToken().ccinvoketx_create, args=(addr,addr,"PCGTta3M4t3yXu8uRgkKvaWd2d8DSfQdUHf",100,1))
         threads.append(t1)
