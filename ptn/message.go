@@ -403,7 +403,7 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 			//}
 			sigTx, err := pm.contractProc.ProcessContractTxMsg(tx, rwM, mDag)
 			if err != nil {
-				log.Errorf("ProtocolManager, Tx[%s] ProcessContractTxMsg err:%s", tx.RequestHash().String())
+				log.Errorf("ProtocolManager, Tx[%s] ProcessContractTxMsg err:%s", tx.RequestHash().String(), err.Error())
 			}
 			if sigTx != nil {
 				mDag.SaveTransaction(sigTx, i)
