@@ -690,6 +690,7 @@ func NewDag(db ptndb.Database, localdb ptndb.Database, cache palletcache.ICache,
 		ChainHeadFeed:          new(event.Feed),
 		Memdag:                 unstableChain,
 		localRep:               localRep,
+		PartitionMemDag:        make(map[modules.AssetId]memunit.IMemDag),
 	}
 	dag.stableUnitRep.SubscribeSysContractStateChangeEvent(dag.AfterSysContractStateChangeEvent)
 	dag.stableUnitProduceRep.SubscribeChainMaintenanceEvent(dag.AfterChainMaintenanceEvent)
@@ -812,6 +813,7 @@ func NewDagSimple(db ptndb.Database) (*Dag, error) {
 		unstablePropRep:      propRep,
 		unstableStateRep:     stateRep,
 		unstableUtxoRep:      utxoRep,
+		PartitionMemDag:      make(map[modules.AssetId]memunit.IMemDag),
 	}
 	return dag, nil
 }
@@ -852,6 +854,7 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 		unstableStateRep:       tstateRep,
 		unstablePropRep:        tpropRep,
 		unstableUnitProduceRep: tUnitProduceRep,
+		PartitionMemDag:        make(map[modules.AssetId]memunit.IMemDag),
 	}
 	return dag, nil
 }
