@@ -343,14 +343,14 @@ func (pm *ProtocolManager) NewBlockHashesMsg(msg p2p.Msg, p *peer) error {
 	}
 	return nil
 }
-func includeContractTx(txs []*modules.Transaction) bool { //todo  sort
-	for _, tx := range txs {
-		if tx.IsContractTx() && tx.IsOnlyContractRequest() {
-			return true
-		}
-	}
-	return false
-}
+//func includeContractTx(txs []*modules.Transaction) bool { //todo  sort
+//	for _, tx := range txs {
+//		if tx.IsContractTx() && tx.IsOnlyContractRequest() {
+//			return true
+//		}
+//	}
+//	return false
+//}
 func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 	log.Debug("Enter ProtocolManager TxMsg")
 	defer log.Debug("End ProtocolManager TxMsg")
@@ -373,11 +373,15 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 	unitId := fmt.Sprintf("%d", unitNumber)
 	rwM, err := rwset.NewRwSetMgr(unitId)
 	if err != nil {
-		log.Errorf("ProtocolManager NewRwSetMgr err: %v", err.Error())
-		return nil
+		log.Errorf("ProtocolManager NewRwSetMgr err: %s", err.Error())
+		return err
 	}
 	defer rwM.Close()
 	mDag, err := pm.dag.NewTemp()
+	if err != nil{
+		log.Errorf("ProtocolManager NewTemp err: %s", err.Error())
+		return err
+	}
 	//}
 
 	for i, tx := range txs {
