@@ -334,7 +334,7 @@ func getLastPledgeListDate(stub shim.ChaincodeStubInterface) (string, error) {
 }
 //  获取当前质押
 func getPledgeRecord(stub shim.ChaincodeStubInterface, prefix string, addr string) (*modules.AddressAmount, error) {
-	b, err := stub.GetState(prefix + addr)
+	b, err := stub.GetContractState(syscontract.DepositContractAddress,prefix + addr)
 	if err != nil {
 		return nil, err
 	}
