@@ -1,7 +1,7 @@
 #!/usr/bin/expect
 #!/bin/bash
 set timeout 30
-spawn ../node/gptn account new
+spawn ./gptn --exec "personal.newAccount()" attach ./node1/palletone/gptn.ipc
 expect "Passphrase:"
 send "1\n"
 expect "Repeat passphrase:"
