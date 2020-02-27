@@ -69,7 +69,7 @@ class createToken():
             print "Request addBalance failed. \naddr:" +str(senderAddr)+'\n' + str(result1)
         else:
             print 'testaddBalance Result: '+str(senderAddr) +'\n'+ str(result) + '\n'
-            reqIds.append(str(result))
+            reqIds.append(str(result['request_id']))
             return result
 
     def ccquery(self, address, funcName, assetId):
