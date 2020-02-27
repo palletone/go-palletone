@@ -77,6 +77,7 @@ type IUtxoRepository interface {
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error)
 	GetAddrUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
+	GetAddrUtxoAndReqMapping(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, map[common.Hash]common.Hash, error)
 	GetUxto(txin modules.Input) *modules.Utxo
 	UpdateUtxo(unitTime int64, txHash, reqHash common.Hash, payment *modules.PaymentPayload, msgIndex uint32) error
 	IsUtxoSpent(outpoint *modules.OutPoint) (bool, error)
@@ -197,6 +198,24 @@ func (repository *UtxoRepository) GetAddrUtxos(addr common.Address, asset *modul
 		}
 	}
 	return utxo1, nil
+}
+
+//返回一个地址的TxUtxo和该ReqHash对应的TxHash
+func (repository *UtxoRepository) GetAddrUtxoAndReqMapping(addr common.Address, asset *modules.Asset) (
+	map[modules.OutPoint]*modules.Utxo, map[common.Hash]common.Hash, error) {
+	utxo1, err := repository.txUtxodb.GetAddrUtxos(addr, asset)
+	if err != nil {
+		return nil, nil, err
+	}
+	mappingHashs := make(map[common.Hash]common.Hash)
+	for o := range utxo1 {
+		mappingHash, err := repository.txUtxodb.GetRequestAndTxMapping(o.TxHash)
+		if err == nil {
+			mappingHashs[mappingHash] = o.TxHash
+		}
+	}
+
+	return utxo1, mappingHashs, nil
 }
 func (repository *UtxoRepository) SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error {
 	return repository.txUtxodb.SaveUtxoView(view)
