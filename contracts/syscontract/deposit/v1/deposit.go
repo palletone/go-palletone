@@ -13,7 +13,7 @@
 */
 
 //  Package deposit implements some functions for deposit contract.
-package deposit
+package v1
 
 import (
 	"encoding/json"
@@ -944,7 +944,6 @@ func (d DepositChaincode) IsFinishAllocated(stub shim.ChaincodeStubInterface) bo
 	log.Infof("allocate = %s, today = %s, lastDate = %s, newdate = %s, depositList length = %d", finish, today, lastDate, newdate, len(depositList))
 	return false
 }
-
 
 func (d DepositChaincode) IsFinishAddNewRecords(stub shim.ChaincodeStubInterface) bool {
 	h, err := stub.GetState("haveAllocatedCount")

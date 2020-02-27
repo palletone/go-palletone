@@ -21,10 +21,17 @@
 //记录了所有用户的质押充币、提币、分红等过程
 //最新状态集
 //Advance：形成流水日志，
-package deposit
+package v2
 
 import (
 	"encoding/json"
+	//pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
+	//"github.com/palletone/go-palletone/dag/constants"
+	//"github.com/palletone/go-palletone/dag/modules"
+	//"github.com/shopspring/decimal"
+	"fmt"
+	"strconv"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -32,13 +39,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
-	"strconv"
 
-	//pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	//"github.com/palletone/go-palletone/dag/constants"
-	//"github.com/palletone/go-palletone/dag/modules"
-	//"github.com/shopspring/decimal"
-	"fmt"
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
@@ -346,7 +347,7 @@ func handleRewardAllocation(stub shim.ChaincodeStubInterface, depositDailyReward
 		//  这里需要合并列表中地址相同的成员
 		allM = mergeMember(allM)
 		//  这里需要剔除黑名单合约地址
-		allM = filterFromBlacklist(stub,allM)
+		allM = filterFromBlacklist(stub, allM)
 		log.Infof("allM is not nil, today = %s, lastDate = %s", today, lastDate)
 		//  当前的分红奖励与当前的分红数量的比例
 		rewardPerDao := float64(depositDailyReward) / float64(allM.TotalAmount)
@@ -392,9 +393,9 @@ func addNewAddrPledgeRecords(stub shim.ChaincodeStubInterface, date string) erro
 		return err
 	}
 	//  过滤黑名单中
-	depositList ,err = filterDepositRecordFromBlacklist(stub,depositList)
+	depositList, err = filterDepositRecordFromBlacklist(stub, depositList)
 	if err != nil {
-		log.Infof("filterDepositRecordFromBlacklist error: %s",err.Error())
+		log.Infof("filterDepositRecordFromBlacklist error: %s", err.Error())
 		return err
 	}
 	if len(depositList) != 0 {
@@ -541,41 +542,41 @@ func mergeMember(pledgeList *modules.PledgeList) *modules.PledgeList {
 	}
 	return mergePledgeList
 }
-func filterDepositRecordFromBlacklist(stub shim.ChaincodeStubInterface,depositRecords []*modules.AddressAmount) ([]*modules.AddressAmount,error) {
+func filterDepositRecordFromBlacklist(stub shim.ChaincodeStubInterface, depositRecords []*modules.AddressAmount) ([]*modules.AddressAmount, error) {
 	address := getBlacklistAddress(stub)
 	if address == nil {
-		return depositRecords,nil
+		return depositRecords, nil
 	}
 	newDepositRecords := []*modules.AddressAmount{}
-	for _,d := range depositRecords {
-		if !isInBlacklist(d.Address,address) {
-			newDepositRecords = append(newDepositRecords,d)
-		}else {
+	for _, d := range depositRecords {
+		if !isInBlacklist(d.Address, address) {
+			newDepositRecords = append(newDepositRecords, d)
+		} else {
 			err := delPledgeDepositRecord(stub, d.Address)
 			if err != nil {
-				return nil,err
+				return nil, err
 			}
 		}
 	}
-	return newDepositRecords,nil
+	return newDepositRecords, nil
 }
-func filterFromBlacklist(stub shim.ChaincodeStubInterface,pledgeList *modules.PledgeList) *modules.PledgeList {
+func filterFromBlacklist(stub shim.ChaincodeStubInterface, pledgeList *modules.PledgeList) *modules.PledgeList {
 	address := getBlacklistAddress(stub)
 	if address == nil {
 		return pledgeList
 	}
 	newPledgeList := &modules.PledgeList{TotalAmount: 0, Members: []*modules.AddressRewardAmount{}}
 	for _, m := range pledgeList.Members {
-		if !isInBlacklist(m.Address,address){
-			newPledgeList.Add(m.Address,m.Amount,m.Reward)
+		if !isInBlacklist(m.Address, address) {
+			newPledgeList.Add(m.Address, m.Amount, m.Reward)
 		}
 	}
 	return newPledgeList
 }
 
-func getBlacklistAddress(stub shim.ChaincodeStubInterface) ([]common.Address) {
+func getBlacklistAddress(stub shim.ChaincodeStubInterface) []common.Address {
 	list := []common.Address{}
-	dblist, err := stub.GetContractState(syscontract.BlacklistContractAddress,constants.BlacklistAddress)
+	dblist, err := stub.GetContractState(syscontract.BlacklistContractAddress, constants.BlacklistAddress)
 	if err == nil && len(dblist) > 0 {
 		err = rlp.DecodeBytes(dblist, &list)
 		if err != nil {
@@ -585,8 +586,8 @@ func getBlacklistAddress(stub shim.ChaincodeStubInterface) ([]common.Address) {
 	return list
 }
 
-func isInBlacklist(addr string,addrs []common.Address) bool {
-	for _,a := range addrs {
+func isInBlacklist(addr string, addrs []common.Address) bool {
+	for _, a := range addrs {
 		if a.String() == addr {
 			return true
 		}

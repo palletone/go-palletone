@@ -12,7 +12,7 @@
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package deposit
+package v2
 
 import (
 	"encoding/hex"
@@ -76,7 +76,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args string) pee
 
 		//  可以加入列表
 		if invokeTokens.Amount != cp.DepositAmountForJury {
-			str := fmt.Errorf("jury needs to pay only %d  deposit.", cp.DepositAmountForJury)
+			str := fmt.Errorf("jury needs to pay only %d  v2.", cp.DepositAmountForJury)
 			log.Error(str.Error())
 			return shim.Error(str.Error())
 		}
@@ -101,7 +101,7 @@ func juryPayToDepositContract(stub shim.ChaincodeStubInterface, args string) pee
 		//}
 		all := balance.Balance + invokeTokens.Amount
 		if all != cp.DepositAmountForJury {
-			str := fmt.Errorf("jury needs to pay only %d  deposit.", cp.DepositAmountForJury-balance.Balance)
+			str := fmt.Errorf("jury needs to pay only %d  v2.", cp.DepositAmountForJury-balance.Balance)
 			log.Error(str.Error())
 			return shim.Error(str.Error())
 		}

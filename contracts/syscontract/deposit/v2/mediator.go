@@ -12,14 +12,15 @@
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-//Package deposit implements some functions for deposit contract.
-package deposit
+//Package v2 implements some functions for v2 contract.
+package v2
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/palletone/go-palletone/dag/errors"
 	"strings"
+
+	"github.com/palletone/go-palletone/dag/errors"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -136,7 +137,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface) error {
 	//  判断是否是交付保证金到保证金合约地址
 	invokeTokens, err := isContainDepositContractAddr(stub)
 	if err != nil {
-		log.Error("get deposit invoke tokens err: ", "error", err)
+		log.Error("get v2 invoke tokens err: ", "error", err)
 		return err
 	}
 	//  获取交付地址
@@ -188,7 +189,7 @@ func mediatorPayToDepositContract(stub shim.ChaincodeStubInterface) error {
 
 	all := invokeTokens.Amount + md.Balance
 	if all != cp.DepositAmountForMediator {
-		str := fmt.Errorf("Mediator needs to pay only %d  deposit.", cp.DepositAmountForMediator-md.Balance)
+		str := fmt.Errorf("Mediator needs to pay only %d  v2.", cp.DepositAmountForMediator-md.Balance)
 		log.Warn(str.Error())
 		return str
 	}

@@ -12,17 +12,18 @@
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package deposit
+package v2
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"strings"
 )
 
 //  处理mediator申请退出保证金
@@ -43,7 +44,7 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, address stri
 	}
 	md, err := getMediatorDeposit(stub, addr.String())
 	if err != nil {
-		log.Error("get mediator deposit error " + err.Error())
+		log.Error("get mediator v2 error " + err.Error())
 		return shim.Error(err.Error())
 	}
 	if md == nil {
@@ -491,7 +492,7 @@ func hanldeNodeRemoveFromAgreeList(stub shim.ChaincodeStubInterface, address str
 //
 //			md, err := getMediatorDeposit(stub, a)
 //			if err != nil {
-//				log.Error("get mediator deposit error " + err.Error())
+//				log.Error("get mediator v2 error " + err.Error())
 //				return shim.Error(err.Error())
 //			}
 //			if md == nil {
