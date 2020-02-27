@@ -590,7 +590,7 @@ func nodePayToDepositContract(stub shim.ChaincodeStubInterface, role string) pb.
 		balance = &modules.DepositBalance{}
 		//  可以加入列表
 		if invokeTokens.Amount != depositAmount {
-			str := fmt.Errorf("%s needs to pay only %d  v2.", role, depositAmount)
+			str := fmt.Errorf("%s needs to pay only %d  deposit.", role, depositAmount)
 			log.Warn(str.Error())
 			return shim.Error(str.Error())
 		}
@@ -617,7 +617,7 @@ func nodePayToDepositContract(stub shim.ChaincodeStubInterface, role string) pb.
 		//}
 		all := balance.Balance + invokeTokens.Amount
 		if all != depositAmount {
-			str := fmt.Errorf("%s needs to pay only %d  v2.", role, depositAmount-balance.Balance)
+			str := fmt.Errorf("%s needs to pay only %d  deposit.", role, depositAmount-balance.Balance)
 			log.Warn(str.Error())
 			return shim.Error(str.Error())
 		}

@@ -44,7 +44,7 @@ func handleForApplyBecomeMediator(stub shim.ChaincodeStubInterface, address stri
 	}
 	md, err := getMediatorDeposit(stub, addr.String())
 	if err != nil {
-		log.Error("get mediator v2 error " + err.Error())
+		log.Error("get mediator deposit error " + err.Error())
 		return shim.Error(err.Error())
 	}
 	if md == nil {
