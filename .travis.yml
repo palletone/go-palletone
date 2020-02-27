@@ -27,6 +27,7 @@ env:
     ##########  control testcase  ##############
     - IS_RUN_DEPOSIT=true
     - IS_RUN_TESTCONTRACTCASES=true
+    - IS_RUN_TRANSFERCONTRACTCASES=true
     - IS_RUN_CREATE_TRANS=true
     - IS_RUN_20CONTRACT=true
     - IS_RUN_721SEQENCE=true
@@ -108,6 +109,11 @@ matrix:
           fi
         - if [ $IS_RUN_TESTCONTRACTCASES == 'true' ];then
           cd ${BASE_DIR}/bdd/contract/testcases;
+          chmod +x ./test_start.sh;
+          ./test_start.sh;
+          fi
+        - if [ $IS_RUN_TRANSFERCONTRACTCASES == 'true' ];then
+          cd ${BASE_DIR}/bdd/contract/transfercases;
           chmod +x ./test_start.sh;
           ./test_start.sh;
           fi
