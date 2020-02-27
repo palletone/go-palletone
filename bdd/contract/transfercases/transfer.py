@@ -121,7 +121,7 @@ class createToken():
         try:
             result = result1['result']
         except KeyError:
-            print "Request getTxByReqId failed.\n" + str(result1)
+            print "Request getTxByReqId failed.\n" + str(applyResult)+'\n'+ str(result1)
         else:
             print 'getTxByReqId Result: ' + str(result) + '\n'
             return result
