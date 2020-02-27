@@ -59,7 +59,7 @@ func parseAddressStr(addr string, ks *keystore.KeyStore, password string) (commo
 	return common.StringToAddress(addrString)
 }
 
-func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFee decimal.Decimal, password string, useMemoryDag bool) (
+func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFee decimal.Decimal, password string) (
 	*modules.Transaction, []*modules.UtxoWithOutPoint, error) {
 	//参数检查
 	tokenAsset, err := modules.StringToAsset(tokenId)
