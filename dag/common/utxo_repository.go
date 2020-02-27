@@ -368,7 +368,7 @@ func (repository *UtxoRepository) UpdateUtxo(unitTime int64, txHash, reqHash com
 */
 func (repository *UtxoRepository) writeUtxo(unitTime int64, txHash, reqHash common.Hash,
 	msgIndex uint32, txouts []*modules.Output, lockTime uint32) []error {
-	log.Infof("try to write new utxo for tx[%s],req[%s]", txHash.String(), reqHash.String())
+	log.Debugf("try to write new utxo for tx[%s],req[%s]", txHash.String(), reqHash.String())
 	var errs []error
 	for outIndex, txout := range txouts {
 		sAddr, _ := repository.tokenEngine.GetAddressFromScript(txout.PkScript)

@@ -589,6 +589,7 @@ func CreateRawTransaction( /*s *rpcServer*/ c *ptnjson.CreateRawTransactionCmd) 
 
 type GetUtxoEntry func(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error)
 
+//传入数据库获取的UTXO和从交易池获取的Tx，当前发送用户和Asset，过滤、合并处理UTXO，返回该用户能使用的UTXO
 func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, poolTxs []*txspool.TxPoolTransaction,
 	from string, asset string) (map[modules.OutPoint]*modules.Utxo, error) {
 	tokenAsset, err := modules.StringToAsset(asset)

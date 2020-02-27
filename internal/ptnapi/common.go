@@ -97,10 +97,26 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 	dbUtxos, err = b.Dag().GetAddrUtxos(fromAddr)
 	//}
 	if err != nil {
-		return nil, nil, fmt.Errorf("GetAddrRawUtxos utxo err")
+		return nil, nil, fmt.Errorf("GetAddrRawUtxos utxo err:%s", err.Error())
 	}
-	poolTxs, _ := b.GetUnpackedTxsByAddr(from)
-
+	log.DebugDynamic(func() string {
+		utxoKeys := ""
+		for o := range dbUtxos {
+			utxoKeys += o.String() + ";"
+		}
+		return "db utxo outpoints:" + utxoKeys
+	})
+	poolTxs, err := b.GetUnpackedTxsByAddr(from)
+	if err != nil {
+		return nil, nil, fmt.Errorf("GetUnpackedTxsByAddr err:", err.Error())
+	}
+	log.DebugDynamic(func() string {
+		txHashs := ""
+		for _, tx := range poolTxs {
+			txHashs += "[tx:" + tx.Tx.Hash().String() + "-req:" + tx.Tx.RequestHash().String() + "];"
+		}
+		return "txpool unpacked tx:" + txHashs
+	})
 	utxosPTN, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, from, gasToken)
 	if err != nil {
 		return nil, nil, fmt.Errorf("SelectUtxoFromDagAndPool utxo err")
