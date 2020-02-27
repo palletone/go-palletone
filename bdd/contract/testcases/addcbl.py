@@ -112,10 +112,10 @@ class createToken():
             print 'transferToken Result: ' + str(result) + '\n'
             return result
 
-    def getTxHashByReqId(self, applyResult):
+    def getTxByReqId(self, applyResult):
         data = {
             "jsonrpc": "2.0",
-            "method": "dag_getTxHashByReqId",
+            "method": "dag_getTxByReqId",
             "params":
                 [
                     applyResult
@@ -133,13 +133,12 @@ class createToken():
             print 'getTxHashByReqId Result: ' + str(result) + '\n'
             return result
 
-    def getTxByHash(self, txHashInfo):
-        txHashInfo = json.loads(txHashInfo)
+    def getTxByHash(self, txHash):
         data = {
             "jsonrpc": "2.0",
             "method": "dag_getTxByHash",
             "params": [
-                txHashInfo['info']
+                txHash
             ],
             "id": 1
         }
@@ -176,8 +175,8 @@ if __name__ == '__main__':
     for t in threads:
         t.setDaemon(True)
         t.start()
-    time.sleep(5)
+    time.sleep(6)
     for id in reqIds:
         # print "reqid:" + str(id) + '\n'
-        createToken().getTxByHash(createToken().getTxHashByReqId(id))
+        createToken().getTxByReqId(id)
     createToken().ccquery("PCGTta3M4t3yXu8uRgkKvaWd2d8DSfQdUHf", "testGetBalance", "jay")
