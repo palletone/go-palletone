@@ -18,15 +18,16 @@
  *
  */
 
-package deposit
+package v2
 
 import (
 	"encoding/json"
+	"sort"
+
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/modules"
-	"sort"
 )
 
 //质押相关的状态数据库操作，包括增加质押，质押分红，质押列表查询，质押提现等
@@ -213,20 +214,20 @@ func getAllPledgeRewardHistory(stub shim.ChaincodeStubInterface) ([]*modules.Ple
 	}
 
 	pledgeList := []*modules.PledgeList{}
-	for i :=  0 ;i < len(result);i++ {
-		if result[i].Date == ""{
+	for i := 0; i < len(result); i++ {
+		if result[i].Date == "" {
 			continue
 		}
-		for j := i+1; j < len(result);j++ {
+		for j := i + 1; j < len(result); j++ {
 			if result[i].Date == result[j].Date {
-				result[i].Members = append(result[i].Members,result[j].Members...)
+				result[i].Members = append(result[i].Members, result[j].Members...)
 				result[i].TotalAmount += result[j].TotalAmount
 				result[j].Date = ""
 			}
 		}
-		pledgeList = append(pledgeList,result[i])
+		pledgeList = append(pledgeList, result[i])
 	}
-	return pledgeList,nil
+	return pledgeList, nil
 
 	//return result, nil
 }

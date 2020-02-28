@@ -13,13 +13,14 @@
 */
 
 //Package deposit implements some functions for deposit contract.
-package deposit
+package v1
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/palletone/go-palletone/dag/errors"
 	"strings"
+
+	"github.com/palletone/go-palletone/dag/errors"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"

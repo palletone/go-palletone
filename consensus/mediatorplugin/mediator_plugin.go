@@ -298,7 +298,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 		if tx.IsSystemContract() && tx.IsNewContractInvokeRequest() { //是未执行的系统合约
 			signedTx, err := p.RunAndSignTx(tx, rwM, tempDag, scheduledMediator, ks)
 			if err != nil {
-				log.Errorf("run contract request[%s] fail:%s", tx.Hash(), err.Error())
+				log.Errorf("run contract request[%s] fail:%s", tx.Hash().String(), err.Error())
 				continue
 			}
 			err = tempDag.SaveTransaction(signedTx, i+1) //第0条是Coinbase

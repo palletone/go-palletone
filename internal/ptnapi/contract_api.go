@@ -255,7 +255,7 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 	}
 	s.b.Lock()
 	defer s.b.Unlock()
-	tx, usedUtxo, err := buildRawTransferTx(s.b, token, from, to, amountToken, fee, password, true)
+	tx, usedUtxo, err := buildRawTransferTx(s.b, token, from, to, amountToken, fee, password)
 	if err != nil {
 		return nil, err
 	}

@@ -379,6 +379,14 @@ func (tx *Transaction) SetMessages(msgs []*Message) {
 		tx.size.Store(temp.Size())
 	}
 }
+
+func (tx *Transaction) UpdateMessage(index int, msg *Message) {
+	tx.txdata.TxMessages[index] = msg
+	//TODO Devin: 清空缓存？
+	tx.hash.Store(tx.Hash())
+	tx.size.Store(tx.Size())
+
+}
 func (tx *Transaction) SetCertId(certid []byte) {
 	d := transaction_sdw{}
 	d.CertId = common.CopyBytes(certid)

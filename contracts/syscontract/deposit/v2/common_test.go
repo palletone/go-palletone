@@ -12,15 +12,16 @@
 //	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 //*/
 //
-package deposit
+package v2
 
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/palletone/go-palletone/common/crypto"
-	"github.com/palletone/go-palletone/common/hexutil"
 	"testing"
 	"time"
+
+	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/hexutil"
 )
 
 func TestTime(t *testing.T) {
