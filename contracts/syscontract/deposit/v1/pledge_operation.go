@@ -12,7 +12,7 @@
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package deposit
+package v1
 
 import (
 	"encoding/json"
@@ -64,7 +64,7 @@ func handlePledgeReward(stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	depositDailyReward := gp.ChainParameters.PledgeDailyReward
 
-	err = handleRewardAllocation(stub, depositDailyReward,gp.ChainParameters.PledgeAllocateThreshold)
+	err = handleRewardAllocation(stub, depositDailyReward, gp.ChainParameters.PledgeAllocateThreshold)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -100,8 +100,8 @@ func processPledgeWithdraw(stub shim.ChaincodeStubInterface, amount string) pb.R
 }
 
 func queryPledgeStatusByAddr(stub shim.ChaincodeStubInterface, address string) (*modules.PledgeStatusJson, error) {
-	if strings.ToLower(address) == ALL{
-		status,err := getTotalPledgeStatus(stub)
+	if strings.ToLower(address) == ALL {
+		status, err := getTotalPledgeStatus(stub)
 		if err != nil {
 			return nil, err
 		}

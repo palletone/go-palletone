@@ -24,7 +24,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -141,14 +140,9 @@ func (s *PublicDagAPI) GetHeaderByHash(ctx context.Context, condition string) (s
 	}
 	return string(content), nil
 }
-func (s *PublicDagAPI) GetHeaderByNumber(ctx context.Context, condition string) (string, error) {
+func (s *PublicDagAPI) GetHeaderByNumber(ctx context.Context, height Int) (string, error) {
 	number := &modules.ChainIndex{}
-	index, err := strconv.ParseInt(condition, 10, 64)
-	if err != nil {
-		log.Info("PublicBlockChainAPI", "GetHeaderByNumber strconv.ParseInt err:", err, "condition:", condition)
-		return "", err
-	}
-	number.Index = uint64(index)
+	number.Index = height.Uint64()
 	number.AssetID = dagconfig.DagConfig.GetGasToken()
 	header, err := s.b.GetHeaderByNumber(number)
 	if err != nil {
@@ -208,16 +202,12 @@ func (s *PublicDagAPI) GetUnitByHash(ctx context.Context, condition string) stri
 	return string(content)
 }
 
-func (s *PublicDagAPI) GetUnitByNumber(ctx context.Context, condition string) string {
-	log.Info("PublicDagAPI", "GetUnitByNumber condition:", condition)
+func (s *PublicDagAPI) GetUnitByNumber(ctx context.Context, height Int) string {
+	log.Info("PublicDagAPI", "GetUnitByNumber height:", height.Uint64())
 
 	number := &modules.ChainIndex{}
-	index, err := strconv.ParseInt(condition, 10, 64)
-	if err != nil {
-		log.Info("PublicBlockChainAPI", "GetUnitByNumber strconv.ParseInt err:", err, "condition:", condition)
-		return ""
-	}
-	number.Index = uint64(index)
+
+	number.Index = height.Uint64()
 
 	number.AssetID = dagconfig.DagConfig.GetGasToken()
 	log.Info("PublicBlockChainAPI info", "GetUnitByNumber_number.Index:", number.Index, "number:", number.String())
@@ -329,16 +319,11 @@ func (s *PublicDagAPI) GetFastUnitIndex(ctx context.Context, assetid string) str
 
 	return string(content)
 }
-func (s *PublicDagAPI) GetUnitSummaryByNumber(ctx context.Context, condition string) string {
-	log.Info("PublicBlockChainAPI", "GetUnitByNumber condition:", condition)
+func (s *PublicDagAPI) GetUnitSummaryByNumber(ctx context.Context, height Int) string {
+	log.Info("PublicBlockChainAPI", "GetUnitByNumber height:", height)
 
 	number := &modules.ChainIndex{}
-	index, err := strconv.ParseInt(condition, 10, 64)
-	if err != nil {
-		log.Info("PublicBlockChainAPI", "GetUnitByNumber strconv.ParseInt err:", err, "condition:", condition)
-		return ""
-	}
-	number.Index = uint64(index)
+	number.Index = height.Uint64()
 
 	number.AssetID = dagconfig.DagConfig.GetGasToken()
 	log.Info("PublicBlockChainAPI info", "GetUnitByNumber_number.Index:", number.Index, "number:", number.String())

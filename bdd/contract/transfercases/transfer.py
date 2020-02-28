@@ -15,16 +15,8 @@ class createToken():
     def __init__(self):
         self.domain = 'http://localhost:8545/'
         self.headers = {'Content-Type': 'application/json'}
-        self.genesisAddress = "P1FRZ2AVgCd2TwS5SYDy1ehe8YaXYn86J7U"
-        self.copygenesisAddress = "P1ATS6kLVuktJWT6qvASRsA8zAQqYUCshU6"  # A
-        self.recieverAddr1 = "P19eqechnFyLW4a2xtEMgxXPEGLjzuMg4od"  # B
-        self.recieverAddr2 = "P1MCApH2y7KRkWkutViSAA7WbVoZdF3EFaR"  # C
-        self.nickname = "QA580"
-        self.senderAddress = "P12rKwCpT2DuqHL2tGAXCVUAEtanszzPwve"
-        self.recieverAddress = "P12rKwCpT2DuqHL2tGAXCVUAEtanszzPwve"
         self.contractAddress = "PCGTta3M4t3yXu8uRgkKvaWd2d8DSfQdUHf"
         self.funcName = "payout"
-        self.assetId = "jay"
         self.pwd = "1"
 
     def runTest(self):
@@ -129,7 +121,7 @@ class createToken():
         try:
             result = result1['result']
         except KeyError:
-            print "Request getTxByReqId failed.\n" + str(result1)
+            print "Request getTxByReqId failed.\n" + str(applyResult)+'\n'+ str(result1)
         else:
             print 'getTxByReqId Result: ' + str(result) + '\n'
             return result

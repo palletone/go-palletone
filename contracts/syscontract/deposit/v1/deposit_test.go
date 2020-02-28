@@ -18,11 +18,12 @@
  *
  */
 
-package deposit
+package v1
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestUpperFirstChar(t *testing.T) {

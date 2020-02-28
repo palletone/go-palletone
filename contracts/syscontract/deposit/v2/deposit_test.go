@@ -18,20 +18,25 @@
  *
  */
 
-package blacklistcc
+package v2
 
 import (
-	"encoding/json"
-	"github.com/palletone/go-palletone/dag/dagconfig"
-	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func TestBalance2Json(t *testing.T) {
-	balance := make(map[modules.Asset]uint64)
-	balance[*dagconfig.DagConfig.GetGasToken().ToAsset()] += 123456789
-	data, err := json.Marshal(balance)
-	assert.Nil(t, err)
-	t.Log(string(data))
+func TestUpperFirstChar(t *testing.T) {
+	a := ""
+	a1 := UpperFirstChar(a)
+	assert.Equal(t, a, a1)
+	b := "a"
+	b1 := UpperFirstChar(b)
+	assert.Equal(t, "A", b1)
+	c := "aB"
+	c1 := UpperFirstChar(c)
+	assert.Equal(t, "AB", c1)
+	d := "AB"
+	d1 := UpperFirstChar(d)
+	assert.Equal(t, "AB", d1)
 }
