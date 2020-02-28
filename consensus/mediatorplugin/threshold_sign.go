@@ -377,7 +377,7 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	event := GroupSigEvent{
 		UnitHash: unitHash,
 		GroupSig: groupSig,
-		Deadline: uint64(deadline.Unix()),
+		//Deadline: uint64(deadline.Unix()),
 	}
 	go mp.groupSigFeed.Send(event)
 }
