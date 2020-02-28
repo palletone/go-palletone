@@ -1098,6 +1098,19 @@ func (mr *MockIDagMockRecorder) UnitIrreversibleTime() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnitIrreversibleTime", reflect.TypeOf((*MockIDag)(nil).UnitIrreversibleTime))
 }
 
+// IsIrreversibleUnit mocks base method
+func (m *MockIDag) IsIrreversibleUnit(hash common.Hash) (bool, error) {
+	ret := m.ctrl.Call(m, "IsIrreversibleUnit", hash)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsIrreversibleUnit indicates an expected call of IsIrreversibleUnit
+func (mr *MockIDagMockRecorder) IsIrreversibleUnit(hash interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsIrreversibleUnit", reflect.TypeOf((*MockIDag)(nil).IsIrreversibleUnit), hash)
+}
+
 // GenTransferPtnTx mocks base method
 func (m *MockIDag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
 	ret := m.ctrl.Call(m, "GenTransferPtnTx", from, to, daoAmount, text, txPool)

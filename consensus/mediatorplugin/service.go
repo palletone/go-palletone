@@ -79,7 +79,7 @@ type iDag interface {
 
 	PrecedingThreshold() int
 	PrecedingMediatorsCount() int
-	UnitIrreversibleTime() time.Duration
+	//UnitIrreversibleTime() time.Duration
 	LastMaintenanceTime() int64
 
 	IsConsecutiveMediator(nextMediator common.Address) bool
