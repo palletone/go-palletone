@@ -1284,6 +1284,7 @@ func (mr *MockIDagMockRecorder) UnitIrreversibleTime() *gomock.Call {
 
 // IsIrreversibleUnit mocks base method
 func (m *MockIDag) IsIrreversibleUnit(hash common.Hash) (bool, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsIrreversibleUnit", hash)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
@@ -1292,6 +1293,7 @@ func (m *MockIDag) IsIrreversibleUnit(hash common.Hash) (bool, error) {
 
 // IsIrreversibleUnit indicates an expected call of IsIrreversibleUnit
 func (mr *MockIDagMockRecorder) IsIrreversibleUnit(hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsIrreversibleUnit", reflect.TypeOf((*MockIDag)(nil).IsIrreversibleUnit), hash)
 }
 
@@ -1805,10 +1807,10 @@ func (mr *MockIDagMockRecorder) MediatorVotedResults() *gomock.Call {
 }
 
 // LookupMediatorInfo mocks base method
-func (m *MockIDag) LookupMediatorInfo() []*modules.MediatorInfo {
+func (m *MockIDag) LookupMediatorInfo() []*modules.MediatorInfo2 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "LookupMediatorInfo")
-	ret0, _ := ret[0].([]*modules.MediatorInfo)
+	ret0, _ := ret[0].([]*modules.MediatorInfo2)
 	return ret0
 }
 
