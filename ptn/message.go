@@ -343,6 +343,7 @@ func (pm *ProtocolManager) NewBlockHashesMsg(msg p2p.Msg, p *peer) error {
 	}
 	return nil
 }
+
 //func includeContractTx(txs []*modules.Transaction) bool { //todo  sort
 //	for _, tx := range txs {
 //		if tx.IsContractTx() && tx.IsOnlyContractRequest() {
@@ -378,16 +379,18 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 	}
 	defer rwM.Close()
 	mDag, err := pm.dag.NewTemp()
-	if err != nil{
+	if err != nil {
 		log.Errorf("ProtocolManager NewTemp err: %s", err.Error())
 		return err
 	}
 	//}
-
+	log.Debugf("ProtocolManager, TxMsg len(txs)[%d]", len(txs))
 	for i, tx := range txs {
 		if tx == nil {
 			return errResp(ErrDecode, "transaction %d is nil", i)
 		}
+		log.Debugf("ProtocolManager, idx[%d]  tx:%s", i, tx.String())
+
 		txHash := tx.Hash()
 		p.MarkTransaction(txHash)
 		if pm.IsExistInCache(txHash.Bytes()) {
@@ -398,6 +401,7 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 			log.Warnf("ProtocolManager, Tx[%s] is a sys contract with result, don't need send by p2p", txHash.String())
 			continue
 		}
+		log.Debugf("ProtocolManager, TxMsg tx[%d][%s]", i, tx.RequestHash().String())
 		//只处理用户合约的Invoke请求交易
 		if !tx.IsSystemContract() && tx.IsOnlyContractRequest() && tx.GetContractTxType() == modules.APP_CONTRACT_INVOKE_REQUEST {
 			//if !pm.dag.IsSynced(false) {
@@ -416,7 +420,14 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 			mDag.SaveTransaction(tx, i)
 		}
 
-		_, err := pm.txpool.ProcessTransaction(tx, true, true, 0 /*pm.txpool.Tag(peer.ID())*/)
+		//添加到本地交易
+		err := pm.contractProc.AddLocalTx(tx)
+		if err != nil {
+			log.Warnf("ProtocolManager, AddLocalTx[%s]-[%s] err:%s",
+				tx.RequestHash().String(), tx.Hash().String(), err.Error())
+		}
+
+		_, err = pm.txpool.ProcessTransaction(tx, true, true, 0 /*pm.txpool.Tag(peer.ID())*/)
 		if err != nil {
 			log.Infof("ProtocolManager,the transaction %s not accepteable, err:%s", tx.Hash().String(), err.Error())
 		}

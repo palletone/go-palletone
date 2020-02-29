@@ -122,6 +122,14 @@ type iDag interface {
 	GetImmutableChainParameters() *core.ImmutableChainParameters
 	NewTemp() (dboperation.IContractDag, error)
 	HeadUnitNum() uint64
+
+	SubscribeSaveUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription
+	//SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription
+	SubscribeSaveStableUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription
+	//localdb
+	SaveLocalTx(tx *modules.Transaction) error
+	GetLocalTx(txId common.Hash) (*modules.Transaction, modules.TxStatus, error)
+	SaveLocalTxStatus(txId common.Hash, status modules.TxStatus) error
 }
 
 type electionVrf struct {
@@ -556,14 +564,18 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 	txIndex := 0
 	tx4Sort := make(map[common.Hash]*modules.Transaction)
 	for _, ctx := range p.mtx {
+		if !ctx.valid {
+			continue
+		}
 		if ctx.reqTx.IsSystemContract() && modules.APP_CONTRACT_TPL_REQUEST != ctx.reqTx.GetContractTxType() {
 			//系统合约的调用走普通打包流程
 			continue
 		}
 		tx4Sort[ctx.reqTx.Hash()] = ctx.reqTx
+		log.Debugf("AddContractLoop, tx4Sort hash[%s]-tx:%s", ctx.reqTx.Hash().String(), ctx.reqTx.String())
 	}
 
-	sortedRequests, orphanTxs, _ := modules.SortTxs(tx4Sort, p.dag.GetUtxoEntry)
+	sortedRequests, orphanTxs, _ := modules.SortTxs(tx4Sort, tempDag.GetUtxoEntry)
 	if len(orphanTxs) > 0 {
 		oreq := ""
 		for _, or := range orphanTxs {
@@ -620,6 +632,9 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 			}
 			tx = sigTx
 		}
+
+		txpool.DiscardTxs([]common.Hash{reqId}) //todo  删除对应的请求交易
+		log.Debugf("AddContractLoop, DiscardTxs")
 		if err := txpool.AddSequenTx(tx); err != nil {
 			log.Errorf("[%s]AddContractLoop, error:%s", shortId(reqId.String()), err.Error())
 			continue
@@ -736,7 +751,6 @@ func CheckContractTxResult(tx *modules.Transaction, rwM rwset.TxManager, dag dbo
 	if !tx.IsSystemContract() {
 		return true
 	}
-
 
 	if txType, err := getContractTxType(tx); err == nil { //只检查invoke类型
 		if txType != modules.APP_CONTRACT_INVOKE_REQUEST {
@@ -1061,10 +1075,124 @@ func (p *Processor) getContractAssignElectionList(tx *modules.Transaction) ([]mo
 	}
 	return eels, nil
 }
+func (p *Processor) BuildUnitTxs(rwM *rwset.RwSetTxMgr, mDag dboperation.IContractDag, sortedTxs []*modules.Transaction, addr common.Address) ([]*modules.Transaction, error) {
+	txs := []*modules.Transaction{}
+	for i, tx := range sortedTxs {
+		var saveTx *modules.Transaction
 
-//func CheckTxContract(rwM rwset.TxManager, dag dboperation.IContractDag, tx *modules.Transaction) bool {
-//	if instanceProcessor != nil {
-//		return instanceProcessor.ContractTxCheckForValidator(rwM, tx, dag)
-//	}
-//	return true //todo false
-//}
+		log.Debugf("buildUnitTxs, idx[%d] txReqId[%s]-hash[%s]:IsContractTx[%v]",
+			i, tx.RequestHash().String(), tx.Hash().String(), tx.IsContractTx())
+		if tx.IsContractTx() && tx.IsOnlyContractRequest() { //只处理请求合约
+			if tx.IsSystemContract() { //执行系统合约
+				signedTx, err := p.RunAndSignTx(tx, rwM, mDag, addr, p.ptn.GetKeyStore())
+				if err != nil {
+					log.Errorf("BuildUnitTxs,run contract request[%s] fail:%s", tx.Hash(), err.Error())
+					continue
+				}
+				saveTx = signedTx
+			} else { //用户合约,需要从交易池中获取交易请求,根据请求Id再从Processor中获取最终执行后的交易
+				if mtx, ok := p.mtx[tx.RequestHash()]; ok {
+					if mtx.rstTx != nil {
+						saveTx = mtx.rstTx
+					}
+				}
+			}
+		} else { //直接保存交易
+			saveTx = tx
+		}
+
+		if saveTx == nil {
+			log.Debugf("buildUnitTxs,  saveTx is nil")
+			continue
+		}
+
+		err := mDag.SaveTransaction(saveTx, i+1) //第0条是Coinbase
+		if err != nil {
+			log.Errorf("buildUnitTxs, idx[%d] txReqId[%s]-hash[%s]:",
+				i, saveTx.RequestHash().String(), saveTx.Hash().String())
+		}
+		txs = append(txs, saveTx)
+		log.Debugf("buildUnitTxs, add idx[%d] txReqId[%s]-hash[%s]:",
+			i, saveTx.RequestHash().String(), saveTx.Hash().String())
+	}
+
+	return txs, nil
+}
+
+func (p *Processor) AddLocalTx(tx *modules.Transaction) error {
+	if tx == nil {
+		return errors.New("AddLocalTx, tx is nil")
+	}
+	reqId := tx.RequestHash()
+	err := p.ptn.TxPool().AddLocal(tx)
+	if err != nil {
+		log.Errorf("[%s]AddLocalTx, AddLocal err:%s", shortId(reqId.String()), err.Error())
+		return err
+	}
+	err = p.dag.SaveLocalTx(tx)
+	if err != nil {
+		log.Errorf("[%s]AddLocalTx, SaveLocalTx err:%s", shortId(reqId.String()), err.Error())
+	}
+	//先将状态改为交易池中
+	err = p.dag.SaveLocalTxStatus(tx.Hash(), modules.TxStatus_InPool)
+	if err != nil {
+		log.Warnf("[%s]AddLocalTx, SaveLocalTxStatus err:%s", shortId(reqId.String()), err.Error())
+	}
+	//更新Tx的状态到LocalDB
+	go func(txHash common.Hash) {
+		saveUnitCh := make(chan modules.SaveUnitEvent, 10)
+		defer close(saveUnitCh)
+		saveUnitSub := p.dag.SubscribeSaveUnitEvent(saveUnitCh)
+		headCh := make(chan modules.SaveUnitEvent, 10)
+		defer close(headCh)
+		headSub := p.dag.SubscribeSaveStableUnitEvent(headCh)
+		defer saveUnitSub.Unsubscribe()
+		defer headSub.Unsubscribe()
+		timeout := time.NewTimer(100 * time.Second)
+		for {
+			select {
+			case u := <-saveUnitCh:
+				log.Infof("AddLocalTx, SubscribeSaveUnitEvent received unit:%s", u.Unit.DisplayId())
+				for _, utx := range u.Unit.Transactions() {
+					if utx.Hash() == txHash || utx.RequestHash() == txHash {
+						log.Infof("[%s]AddLocalTx, Change local tx[%s] status to unstable",
+							shortId(reqId.String()),  txHash.String())
+						err = p.dag.SaveLocalTxStatus(txHash, modules.TxStatus_Unstable)
+						if err != nil {
+							log.Warnf("[%s]AddLocalTx, Save tx[%s] status to local err:%s",
+								shortId(reqId.String()),  txHash.String(), err.Error())
+						}
+					}
+				}
+			case u := <-headCh:
+				log.Infof("AddLocalTx, SubscribeSaveStableUnitEvent received unit:%s", u.Unit.DisplayId())
+				for _, utx := range u.Unit.Transactions() {
+					if utx.Hash() == txHash || utx.RequestHash() == txHash {
+						log.Debugf("[%s]AddLocalTx, Change local tx[%s] status to stable",
+							shortId(reqId.String()),  txHash.String())
+						err = p.dag.SaveLocalTxStatus(txHash, modules.TxStatus_Stable)
+						if err != nil {
+							log.Warnf("[%s]AddLocalTx, Save tx[%s] status to local err:%s",
+								shortId(reqId.String()),  txHash.String(), err.Error())
+						}
+						return
+					}
+				}
+			case <-timeout.C:
+				log.Warnf("[%s]AddLocalTx, SubscribeSaveStableUnitEvent timeout for tx[%s]",
+					shortId(reqId.String()),  txHash.String())
+				return
+			case e := <-headSub.Err():
+				log.Warnf("AddLocalTx, SubscribeSaveStableUnitEvent err:%s", e.Error())
+				return
+			case e := <-saveUnitSub.Err():
+				log.Warnf("AddLocalTx, SubscribeSaveUnitEvent err:%s", e.Error())
+				return
+			}
+		}
+	}(tx.Hash())
+
+	return nil
+}
+
+

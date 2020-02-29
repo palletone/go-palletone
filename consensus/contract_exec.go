@@ -24,4 +24,6 @@ type ContractInf interface {
 	AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool, addr common.Address, ks *keystore.KeyStore) error
 	CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transaction, execute bool) bool
 	//IsSystemContractTx(tx *modules.Transaction) bool
+
+	AddLocalTx(tx *modules.Transaction) error
 }

@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/validator"
 	"github.com/palletone/go-palletone/dag/dboperation"
+	"github.com/palletone/go-palletone/common/util"
 )
 
 func (p *Processor) SubscribeContractEvent(ch chan<- ContractEvent) event.Subscription {
@@ -51,7 +52,7 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) (bool, error) {
 		return false, fmt.Errorf("[%s]ProcessContractEvent, event Tx reqId is exist, txId:%s",
 			shortId(reqId.String()), tx.Hash().String())
 	}
-	if !tx.IsOnlyContractRequest() { //!tx.IsSystemContract()
+	if !tx.IsOnlyContractRequest() && modules.APP_CONTRACT_INVOKE_REQUEST != tx.GetContractTxType() { //!tx.IsSystemContract()
 		if _, v, err := p.validator.ValidateTx(tx, false); v != validator.TxValidationCode_VALID {
 			return false, fmt.Errorf("[%s]ProcessContractEvent, event Tx is invalid, txId:%s, err:%s",
 				shortId(reqId.String()), tx.Hash().String(), err.Error())
@@ -61,10 +62,10 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) (bool, error) {
 				shortId(reqId.String()), tx.Hash().String())
 		}
 	}
-	if !p.contractEventExecutable(event.CType, tx, event.Ele) {
-		log.Debugf("[%s]ProcessContractEvent, contractEventExecutable is false", shortId(reqId.String()))
-		return true, nil
-	}
+	//if !p.contractEventExecutable(event.CType, tx, event.Ele) {
+	//	log.Debugf("[%s]ProcessContractEvent, contractEventExecutable is false", shortId(reqId.String()))
+	//	return true, nil
+	//}
 
 	log.Debugf("[%s]ProcessContractEvent, event type:%v ", shortId(reqId.String()), event.CType)
 	switch event.CType {
@@ -88,7 +89,27 @@ func (p *Processor) ProcessContractTxMsg(tx *modules.Transaction, rw rwset.TxMan
 	reqId := tx.RequestHash()
 	log.Debugf("[%s]ProcessContractTxMsg enter", shortId(reqId.String()))
 
-	ele, _ := p.dag.GetContractJury(tx.GetContractId())
+	var ele *modules.ElectionNode
+	//ele, err := dag.GetContractJury(tx.GetContractId())
+	//if err != nil {
+	//	log.Errorf("[%s]ProcessContractTxMsg GetContractJury err:%s", shortId(reqId.String()), err.Error())
+
+	//todo del
+	sAddr := []string{"P1RS8EfWPxzQMcmjFJ1H7WBGy58FsdAdDF", "P184RUiG5VdY3Y8YUxTmrdsV92MbYQgaPpP", "P1PLs3Cr9Sk8KCV6YfoTTBXRmgMY628SFja"}
+	ele = &modules.ElectionNode{
+		JuryCount: 3,
+		EleList:   make([]modules.ElectionInf, 3),
+	}
+	for _, addr := range sAddr {
+		h := util.RlpHash(addr)
+		elf := modules.ElectionInf{
+			EType:    1,
+			AddrHash: h,
+		}
+		ele.EleList = append(ele.EleList, elf)
+	}
+	//}
+
 	if p.checkTxIsExist(tx) {
 		return nil, fmt.Errorf("[%s]ProcessContractTxMsg, event Tx is exist, txId:%s",
 			shortId(reqId.String()), tx.Hash().String())
@@ -97,10 +118,10 @@ func (p *Processor) ProcessContractTxMsg(tx *modules.Transaction, rw rwset.TxMan
 		return nil, fmt.Errorf("[%s]ProcessContractTxMsg, event Tx reqId is exist, txId:%s",
 			shortId(reqId.String()), tx.Hash().String())
 	}
-	if !p.contractEventExecutable(CONTRACT_EVENT_EXEC, tx, ele) {
-		log.Debugf("[%s]ProcessContractTxMsg, contractEventExecutable is false", shortId(reqId.String()))
-		return nil, nil
-	}
+	//if !p.contractEventExecutable(CONTRACT_EVENT_EXEC, tx, ele) {
+	//	log.Debugf("[%s]ProcessContractTxMsg, contractEventExecutable is false", shortId(reqId.String()))
+	//	return nil, nil
+	//}
 
 	return p.contractTxExec(tx, rw, dag, ele)
 }
@@ -192,7 +213,7 @@ func (p *Processor) contractTxExec(tx *modules.Transaction, rw rwset.TxManager, 
 	//}
 
 	account := p.getLocalJuryAccount()
-	if account == nil{
+	if account == nil {
 		return nil, fmt.Errorf("[%s]contractTxExec, getLocalJuryAccount is nil", shortId(reqId.String()))
 	}
 	sigTx, err := p.RunAndSignTx(tx, rw, dag, account.Address, p.ptn.GetKeyStore()) //long time ...

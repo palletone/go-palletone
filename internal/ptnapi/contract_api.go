@@ -260,7 +260,7 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 	log.Info("Ccinvoketx info:")
 	log.Infof("   fromAddr[%s], toAddr[%s]", fromAddr.String(), toAddr.String())
 	log.Infof("   token[%s], amountToken[%d], fee[%d]", token, amountToken, fee)
-	log.Infof("   contractAddr[%s]", contractAddr.String())
+	log.Infof("   contractAddr[%s], is systemContract[%v]", contractAddr.String(), contractAddr.IsSystemContractAddress())
 	log.Infof("   param len[%d]", len(param))
 	args := make([][]byte, len(param))
 	for i, arg := range param {

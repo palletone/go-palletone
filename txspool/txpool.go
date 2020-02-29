@@ -553,7 +553,6 @@ func TxtoTxpoolTx(tx *modules.Transaction) *TxPoolTransaction {
 // If a newly added transaction is marked as local, its sending account will be
 // whitelisted, preventing any associated transaction from being dropped out of
 // the pool due to pricing constraints.
-
 func (pool *TxPool) add(tx *TxPoolTransaction, local bool) (bool, error) {
 	hash := tx.Tx.Hash()
 	exitsInDb, err := pool.unit.IsTransactionExist(hash)
@@ -1713,7 +1712,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 	return list, total
 }
 func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
-	orphanTxs map[common.Hash]*TxPoolTransaction) []*TxPoolTransaction {
+orphanTxs map[common.Hash]*TxPoolTransaction) []*TxPoolTransaction {
 
 	pretxs := make([]*TxPoolTransaction, 0)
 	for _, op := range tx.Tx.GetSpendOutpoints() {
