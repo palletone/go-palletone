@@ -56,6 +56,7 @@ type dags interface {
 
 	GetMediators() map[common.Address]bool
 	GetChainParameters() *core.ChainParameters
+	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
 	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
 	GetScheduledMediator(slotNum uint32) common.Address
 	GetSlotAtTime(when time.Time) uint32

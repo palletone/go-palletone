@@ -59,6 +59,14 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 	if tx == nil {
 		return TxValidationCode_VALID, nil
 	}
+
+	//ptn := modules.NewPTNAsset()
+	ptn := dagconfig.DagConfig.GetGasToken()
+	_, chainindex, err := validate.propquery.GetNewestUnit(ptn)
+	if err != nil {
+		return TxValidationCode_INVALID_MSG, nil
+	}
+	unithigh := int64(chainindex.Index)
 	reqId := tx.RequestHash()
 	msgs := tx.TxMessages()
 	if len(msgs) == 0 {
@@ -77,7 +85,11 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 		log.Debugf("[%s]Tx size is to big.", shortId(reqId.String()))
 		return TxValidationCode_NOT_COMPARE_SIZE, txFee
 	}
-
+	//要求完整交易，但是tx只是一个Request
+	if isFullTx && tx.IsOnlyContractRequest() {
+		log.Warnf("Tx[%s] is a request, don't have result message", tx.Hash().String())
+		return TxValidationCode_INVALID_MSG, txFee
+	}
 	//合约的执行结果必须有Jury签名
 	if validate.enableContractSignCheck && isFullTx && tx.IsContractTx() {
 		//TODO Devin
@@ -131,7 +143,11 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 			if !ok {
 				return TxValidationCode_INVALID_PAYMMENTLOAD, txFee
 			}
-			if int64(payment.LockTime)-time.Now().Unix() > 0 {
+			if int64(payment.LockTime) > 0 && int64(payment.LockTime) < 500000000 {
+				if unithigh < int64(payment.LockTime) {
+					return TxValidationCode_ORPHAN, txFee
+				}
+			} else if int64(payment.LockTime)-time.Now().Unix() > 0 {
 
 				return TxValidationCode_ORPHAN, txFee
 			}

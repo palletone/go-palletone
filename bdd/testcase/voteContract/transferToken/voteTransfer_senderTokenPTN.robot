@@ -12,9 +12,9 @@ Resource          ../../utilKwd/behaveKwd.txt
 Scenario: Vote Contract - Transfer Token
     [Documentation]    Verify Sender's PTN and VOTE value
     Given Get genesis address
-    When Transfer token of vote contract
+    ${resp}    When Transfer token of vote contract
     ${PTN1}    ${result1}    ${item1}    ${key}    And Request getbalance before create token
-    And Request transfer token
+    And Request transfer token    ${key}
     ${PTN'}    ${item'}    And Calculate gain of recieverAdd    ${PTN1}    ${item1}
     ${PTN2}    ${item2}    And Request getbalance after create token    ${key}
     Then Assert gain of reciever    ${PTN'}    ${PTN2}    ${item'}    ${item2}
@@ -29,13 +29,9 @@ Transfer token of vote contract
     ${ccTokenList}    Create List    ${crtTokenMethod}    ${note}    ${tokenDecimal}    ${tokenAmount}    ${voteTime}
     ...    ${commonVoteInfo}
     ${ccList}    Create List    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}    ${voteContractId}
-    ...    ${ccTokenList}    ${pwd}    ${duration}    ${EMPTY}
+    ...    ${ccTokenList}    ${pwd}    ${duration}
     ${resp}    setPostRequest    ${host}    ${invokePsMethod}    ${ccList}
-    log    ${resp.content}
-    Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"
-    Should Contain    ${resp.content}['id']    1    msg="id:failed"
-    ${ret}    Should Match Regexp    ${resp.content}['result']    ${commonResultCode}    msg="result:does't match Result expression"
-    [Return]    ${ret}
+    [Return]    ${resp}
 
 Request getbalance before create token
     sleep    4
@@ -45,6 +41,7 @@ Request getbalance before create token
     [Return]    ${PTN1}    ${result1}    ${item1}    ${key}
 
 Request transfer token
+    [Arguments]    ${key}
     ${tokenResult}    transferToken    ${key}    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
     ...    ${evidence}    ${duration}
 

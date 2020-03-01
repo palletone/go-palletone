@@ -1,11 +1,11 @@
 #!/bin/bash
 
-cp ./createaccount.sh  ../../node
+cp ./createaccount_c.sh  ../../node
 
 cd ../../node
 
-./createaccount.sh $1
+./createaccount_c.sh $1
 
-rm ./createaccount.sh
+rm ./createaccount_c.sh
 
 cd ../contract/testcases

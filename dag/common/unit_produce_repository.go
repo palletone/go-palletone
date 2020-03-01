@@ -633,7 +633,9 @@ func (dag *UnitProduceRepository) updateNextMaintenanceTime(nextUnit *modules.Un
 		nextMaintenanceTime += uint32((y + 1) * maintenanceInterval)
 	}
 
-	dgp.LastMaintenanceTime = dgp.NextMaintenanceTime
+	// 由于可能不是连续产块，所以可能存在 headTime != NextMaintenanceTime
+	//dgp.LastMaintenanceTime = dgp.NextMaintenanceTime
+	dgp.LastMaintenanceTime = uint32(headTime)
 	dgp.NextMaintenanceTime = nextMaintenanceTime
 	dag.propRep.StoreDynGlobalProp(dgp)
 

@@ -54,7 +54,7 @@ Request getbalance after transfer token
     sleep    4
     ${PTN2}    ${result2}    normalGetBalance    ${geneAdd}
     ${key}    getTokenId    ${preTokenId}    ${result2['result']}
-    log    {key}
+    log    ${key}
     #${queryResult}    ccqueryById    ${721ContractId}    ${existToken}    ${key}
     #Should Be Equal As Strings    ${queryResult['result']}    True
     ${queryResult}    ccqueryById    ${721ContractId}    ${TokenInfoMethod}    ${preTokenId}

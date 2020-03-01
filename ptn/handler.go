@@ -158,6 +158,9 @@ type ProtocolManager struct {
 
 	unstableRepositoryUpdatedCh  chan modules.UnstableRepositoryUpdatedEvent
 	unstableRepositoryUpdatedSub event.Subscription
+
+	saveStableUnitCh  chan modules.SaveUnitEvent
+	saveStableUnitSub event.Subscription
 }
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
@@ -408,6 +411,10 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 	pm.unstableRepositoryUpdatedSub = pm.dag.SubscribeUnstableRepositoryUpdatedEvent(pm.unstableRepositoryUpdatedCh)
 	go pm.unstableRepositoryUpdatedRecvLoop()
 
+	pm.saveStableUnitCh = make(chan modules.SaveUnitEvent)
+	pm.saveStableUnitSub = pm.dag.SubscribeSaveStableUnitEvent(pm.saveStableUnitCh)
+	go pm.saveStableUnitRecvLoop()
+
 	if pm.consEngine != nil {
 		pm.ceCh = make(chan core.ConsensusEvent, txChanSize)
 		pm.ceSub = pm.consEngine.SubscribeCeEvent(pm.ceCh)
@@ -514,6 +521,7 @@ func (pm *ProtocolManager) Stop() {
 
 	pm.toGroupSignSub.Unsubscribe()
 	pm.unstableRepositoryUpdatedSub.Unsubscribe()
+	pm.saveStableUnitSub.Unsubscribe()
 
 	pm.contractSub.Unsubscribe()
 	pm.txSub.Unsubscribe() // quits txBroadcastLoop

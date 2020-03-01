@@ -11,10 +11,9 @@ Resource          ../../utilKwd/behaveKwd.txt
 *** Test Cases ***
 Scenario: Vote Contract - Transfer Token
     [Documentation]    Verify Reciever's Transfer PTN
-    ${geneAdd}    Given Get genesis address
-    #${ret}    When Create token of vote contract    ${geneAdd}
-    ${key}    ${item1}    And Request getbalance before create token    ${geneAdd}
-    And Request transfer token
+    Given Get genesis address
+    ${key}    ${item1}    And Request getbalance before create token
+    And Request transfer token    ${key}
     ${item1}    And Calculate gain of recieverAdd    ${item1}
     ${item2}    And Request getbalance after create token    ${key}
     Then Assert gain of reciever    ${item1}    ${item2}
@@ -22,10 +21,10 @@ Scenario: Vote Contract - Transfer Token
 *** Keywords ***
 Get genesis address
     ${geneAdd}    getGeneAdd    ${host}
-    [Return]    ${geneAdd}
+    Set Suite Variable    ${geneAdd}    ${geneAdd}
+    personalUnlockAccount    ${geneAdd}
 
 Request getbalance before create token
-    [Arguments]    ${geneAdd}
     ${PTN1}    ${result1}    normalGetBalance    ${geneAdd}
     ${key}    getTokenId    ${voteId}    ${result1['result']}
     ${PTN2}    ${result2}    normalGetBalance    ${recieverAdd}
@@ -39,6 +38,7 @@ Request getbalance before create token
     [Return]    ${key}    ${item1}
 
 Request transfer token
+    [Arguments]    ${key}
     ${tokenResult}    transferToken    ${key}    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}
     ...    ${evidence}    ${duration}
 

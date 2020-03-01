@@ -44,6 +44,9 @@ func (d *DebugChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	funcName, args := stub.GetFunctionAndParameters()
 	switch funcName {
 	case "putstate":
+		if len(args) != 2 {
+			return shim.Error("must input 2 args: key,value")
+		}
 		log.Debugf("put state key[%s],value[%s]", args[0], args[1])
 		err := stub.PutState(args[0], []byte(args[1]))
 		if err != nil {
@@ -51,6 +54,9 @@ func (d *DebugChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		return shim.Success(nil)
 	case "getstate":
+		if len(args) != 1 {
+			return shim.Error("must input 1 args: key")
+		}
 		value, err := stub.GetState(args[0])
 		if err != nil {
 			return shim.Error(err.Error())
@@ -58,20 +64,35 @@ func (d *DebugChainCode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		log.Debugf("get state key[%s],value[%s]", args[0], string(value))
 		return shim.Success(value)
 	case "add":
+		if len(args) != 2 {
+			return shim.Error("must input 2 args: a,b")
+		}
 		a, _ := strconv.Atoi(args[0])
 		b, _ := strconv.Atoi(args[1])
 		return d.Add(a, b)
 	case "payout":
+		if len(args) != 2 {
+			return shim.Error("must input 2 args: amount,address")
+		}
 		amt, _ := strconv.Atoi(args[0])
 		addr, _ := common.StringToAddress(args[1])
 		return d.Payout(stub, uint64(amt), addr)
 	case "testError":
 		return d.Error(stub)
 	case "testAddBalance":
+		if len(args) != 2 {
+			return shim.Error("must input 2 args: address,amount")
+		}
 		return d.AddBalance(stub, args[0], args[1])
 	case "testGetBalance":
+		if len(args) != 1 {
+			return shim.Error("must input 1 args: address")
+		}
 		return d.GetBalance(stub, args[0])
 	case "getbalance":
+		if len(args) != 1 {
+			return shim.Error("must input 1 args: address")
+		}
 		return d.Getbalance(stub, args[0])
 	case "getRequesterCert":
 		return d.GetRequesterCert(stub)

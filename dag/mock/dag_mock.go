@@ -887,6 +887,22 @@ func (mr *MockIDagMockRecorder) GetAddrUtxos(addr interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddrUtxos", reflect.TypeOf((*MockIDag)(nil).GetAddrUtxos), addr)
 }
 
+// GetAddrUtxoAndReqMapping mocks base method
+func (m *MockIDag) GetAddrUtxoAndReqMapping(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, map[common.Hash]common.Hash, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAddrUtxoAndReqMapping", addr, asset)
+	ret0, _ := ret[0].(map[modules.OutPoint]*modules.Utxo)
+	ret1, _ := ret[1].(map[common.Hash]common.Hash)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetAddrUtxoAndReqMapping indicates an expected call of GetAddrUtxoAndReqMapping
+func (mr *MockIDagMockRecorder) GetAddrUtxoAndReqMapping(addr, asset interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddrUtxoAndReqMapping", reflect.TypeOf((*MockIDag)(nil).GetAddrUtxoAndReqMapping), addr, asset)
+}
+
 // GetAddrStableUtxos mocks base method
 func (m *MockIDag) GetAddrStableUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error) {
 	m.ctrl.T.Helper()
@@ -1264,6 +1280,21 @@ func (m *MockIDag) UnitIrreversibleTime() time.Duration {
 func (mr *MockIDagMockRecorder) UnitIrreversibleTime() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnitIrreversibleTime", reflect.TypeOf((*MockIDag)(nil).UnitIrreversibleTime))
+}
+
+// IsIrreversibleUnit mocks base method
+func (m *MockIDag) IsIrreversibleUnit(hash common.Hash) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsIrreversibleUnit", hash)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsIrreversibleUnit indicates an expected call of IsIrreversibleUnit
+func (mr *MockIDagMockRecorder) IsIrreversibleUnit(hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsIrreversibleUnit", reflect.TypeOf((*MockIDag)(nil).IsIrreversibleUnit), hash)
 }
 
 // GenTransferPtnTx mocks base method
@@ -1776,10 +1807,10 @@ func (mr *MockIDagMockRecorder) MediatorVotedResults() *gomock.Call {
 }
 
 // LookupMediatorInfo mocks base method
-func (m *MockIDag) LookupMediatorInfo() []*modules.MediatorInfo {
+func (m *MockIDag) LookupMediatorInfo() []*modules.MediatorInfo2 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "LookupMediatorInfo")
-	ret0, _ := ret[0].([]*modules.MediatorInfo)
+	ret0, _ := ret[0].([]*modules.MediatorInfo2)
 	return ret0
 }
 

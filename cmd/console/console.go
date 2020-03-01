@@ -226,6 +226,10 @@ func (c *Console) init(preload []string) error {
 			}
 			obj.Set("signRawTransaction", bridge.SignRawTransaction)
 
+            if _, err = c.jsre.Run(`jptn.createTxWithOutFee = wallet.createTxWithOutFee;`); err != nil {
+				return fmt.Errorf("wallet.createTxWithOutFee: %v", err)
+			}
+			obj.Set("createTxWithOutFee", bridge.CreateTxWithOutFee)
             if _, err = c.jsre.Run(`jptn.signAndFeeTransaction = wallet.signAndFeeTransaction;`); err != nil {
 				return fmt.Errorf("wallet.signAndFeeTransaction: %v", err)
 			}

@@ -30,11 +30,11 @@ addfeetx
 
     #Alice创建不含手续费的交易
     unlockAccount    ${Alice}
-    ${rawtx}=    Alice create tx withoutfee    ${AAAliceTokenID}    ${Alice}    ${Bob}    ${amount}    ${extra}    ${pwd}
-    
+    ${rawtx}=    Alice create tx withoutfee    ${AAAliceTokenID}    ${Alice}    ${Bob}    ${amount}    ${pwd}
+    log    ${rawtx["hex"]}
     #Alice 将手续费附加到交易中并签名
-    unlockAccount    ${Alice}
-    ${signedtx}=    Fee and signtx    ${rawtx}    all    ${Alice}    ${Alice}    ${fee}    ${pwd}    ${duration}
+    unlockAccount    ${Bob}
+    ${signedtx}=    Fee and signtx    ${rawtx["hex"]}    ${Bob}    ${fee}    extra    ${pwd}  
     log    ${signedtx}
     log    ${signedtx["result"]}
 
@@ -42,7 +42,7 @@ addfeetx
     ${complete}=    Get From Dictionary    ${signedtx["result"]}    complete
     Should Be Equal    ${complete}    ${true}
     ${signedhex}=    Get From Dictionary    ${signedtx["result"]}    hex
-    
+    Wait for transaction being packaged
     #将签名结果广播并展示交易Hash
     ${params}=    Create List    ${signedhex}   
     ${res}=    sendRpcPost    ${sendRawTransaction}    ${params}    sendRawTransaction

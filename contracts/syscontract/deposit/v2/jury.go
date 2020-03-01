@@ -12,7 +12,7 @@
 	along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package deposit
+package v2
 
 import (
 	"encoding/hex"

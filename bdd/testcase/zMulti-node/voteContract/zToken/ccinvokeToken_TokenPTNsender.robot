@@ -12,7 +12,7 @@ Resource          ../../../utilKwd/behaveKwd.txt
 Scenario: Vote - Ccinvoke Token
     [Documentation]    Verify Sender's PTN and VOTE value
     ${PTN1}    ${item1}    And Request getbalance before create token
-    When Ccinvoke token of vote contract
+    ${resp}     When Ccinvoke token of vote contract
     ${PTN'}    ${item'}    And Calculate gain of recieverAdd    ${PTN1}    ${item1}
     ${PTN2}    ${item2}    Request getbalance after create token
     Then Assert gain of reciever    ${PTN'}    ${PTN2}    ${item'}    ${item2}
@@ -24,7 +24,7 @@ Request getbalance before create token
     Set Suite Variable    ${geneAdd}    ${geneAdd}
     ${ret}    Request transfer token of vote    ${geneAdd}
     sleep    4
-    ${ReqRet}    getTxByReqId    ${ret}
+    ${ReqRet}    getTxByReqId    ${ret['result']['request_id']}
     ${voteToken}    getAssetFromDict    ${ReqRet['result']}
     Set Suite Variable    ${voteToken}    ${voteToken}
     ${PTN1}    ${result1}    normalGetBalance    ${geneAdd}    ${mutiHost1}
@@ -38,6 +38,7 @@ Ccinvoke token of vote contract
     ...    ${voteContractId}    ${supportList}
     ${resp}    setPostRequest    ${host}    ${invokeTokenMethod}    ${ccList}
     sleep    4
+    [Return]    ${resp}
 
 Calculate gain of recieverAdd
     [Arguments]    ${PTN1}    ${item1}

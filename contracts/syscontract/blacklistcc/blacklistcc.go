@@ -31,6 +31,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/constants"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
@@ -135,17 +136,20 @@ func (p *BlacklistMgr) AddBlacklist(stub shim.ChaincodeStubInterface, blackAddr 
 	for _, aa := range tokenBalance {
 		balance[*aa.Asset] = aa.Amount
 	}
+	gasToken := dagconfig.DagConfig.GetGasToken().ToAsset()
+	depositAmount := uint64(0)
+	//  从当前新质押的获取
+	addrAmt, _ := getPledgeRecord(stub, string(constants.PLEDGE_DEPOSIT_PREFIX), blackAddr.String())
+	if addrAmt != nil {
+        depositAmount+=addrAmt.Amount
+	}
 	//  从质押获取
 	list, _ := getLastPledgeList(stub)
 	if list != nil {
-		depositAmount := list.GetAmount(blackAddr.String())
-		_,ok := balance[*modules.NewPTNAsset()]
-		if ok {
-			balance[*modules.NewPTNAsset()] += depositAmount
-		}else {
-			balance[*modules.NewPTNAsset()] = depositAmount
-		}
+		depositAmount += list.GetAmount(blackAddr.String())
 	}
+	balance[*gasToken] += depositAmount
+
 	balanceJson, _ := json.Marshal(balance)
 	record := &BlacklistRecord{
 		Address:     blackAddr,
@@ -327,4 +331,20 @@ func getLastPledgeListDate(stub shim.ChaincodeStubInterface) (string, error) {
 		return "", nil
 	}
 	return string(date), nil
+}
+//  获取当前质押
+func getPledgeRecord(stub shim.ChaincodeStubInterface, prefix string, addr string) (*modules.AddressAmount, error) {
+	b, err := stub.GetContractState(syscontract.DepositContractAddress,prefix + addr)
+	if err != nil {
+		return nil, err
+	}
+	if b == nil {
+		return nil, nil
+	}
+	node := &modules.AddressAmount{}
+	err = json.Unmarshal(b, node)
+	if err != nil {
+		return nil, err
+	}
+	return node, nil
 }

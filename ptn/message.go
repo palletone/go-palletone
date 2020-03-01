@@ -550,7 +550,7 @@ func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 	}
 
 	if pm.producer.IsLocalMediator(header.Author()) {
-		go pm.producer.AddToTBLSRecoverBuf(&sigShare)
+		go pm.producer.AddToTBLSRecoverBuf(&sigShare, header)
 	} else {
 		go pm.BroadcastSigShare(&sigShare)
 	}
@@ -576,7 +576,10 @@ func (pm *ProtocolManager) GroupSigMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
-	go pm.BroadcastGroupSig(&gSign)
+	isStable, _ := pm.dag.IsIrreversibleUnit(gSign.UnitHash)
+	if !isStable {
+		pm.BroadcastGroupSig(&gSign)
+	}
 	go pm.dag.SetUnitGroupSign(gSign.UnitHash, gSign.GroupSig, pm.txpool)
 
 	return nil

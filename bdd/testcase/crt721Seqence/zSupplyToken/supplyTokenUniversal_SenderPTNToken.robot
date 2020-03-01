@@ -26,7 +26,7 @@ CcinvokePass normal
     Set Suite Variable    ${geneAdd}    ${geneAdd}
     ${jsonRes}    newAccount
     Set Suite Variable    ${reciever}    ${jsonRes['result']}
-    ${ret1}    And normalCrtTrans    ${geneAdd}    ${reciever}    100000    ${PTNPoundage}
+    ${ret1}    And normalCrtTrans    ${geneAdd}    ${reciever}    100000    ${PTNPoundage}    ${locktime}
     ${ret2}    And normalSignTrans    ${ret1}    ${signType}    ${pwd}
     ${ret3}    And normalSendTrans    ${ret2}
     sleep    4
@@ -34,9 +34,7 @@ CcinvokePass normal
     ...    ${721MetaBefore}
     ${resp}    normalCcinvokePass    ${commonResultCode}    ${geneAdd}    ${reciever}    ${PTNAmount}    ${PTNPoundage}
     ...    ${721ContractId}    ${ccList}
-    ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
-    ${jsonRes}    To Json    ${jsonRes}
-    [Return]    ${jsonRes['result']}
+    [Return]    ${resp}
 
 Request getbalance before create token
     #${PTN1}    ${result1}    normalGetBalance    ${geneAdd}
@@ -49,7 +47,7 @@ Supply token of 721 contract
     ${ccList}    Create List    ${supplyTokenMethod}    ${preTokenId}    ${721TokenAmount}    ${721MetaAfter}
     ${resp}    Request CcinvokePass    ${commonResultCode}    ${reciever}    ${reciever}    ${PTNAmount}    ${PTNPoundage}
     ...    ${721ContractId}    ${ccList}
-    [Return]    ${reps}
+    [Return]    ${resp}
 
 Calculate gain
     [Arguments]    ${PTN1}

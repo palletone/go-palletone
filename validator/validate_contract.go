@@ -67,6 +67,10 @@ func (validate *Validate) validateContractDeploy(tplId []byte) ValidationCode {
 //验证陪审团签名是否有效
 func (validate *Validate) validateContractSignature(signatures []modules.SignatureSet,
 	tx *modules.Transaction, isFullTx bool) ValidationCode {
+
+	//todo del
+	//return TxValidationCode_VALID
+
 	//contractId := tx.GetContractId()
 	txHash := tx.Hash().String()
 	needSign := 1

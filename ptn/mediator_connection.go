@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
+	"github.com/palletone/go-palletone/dag/modules"
 )
 
 // @author Albert·Gou
@@ -38,7 +39,7 @@ type producer interface {
 	AddToTBLSSignBufs(newHash common.Hash)
 
 	SubscribeSigShareEvent(ch chan<- mp.SigShareEvent) event.Subscription
-	AddToTBLSRecoverBuf(sigShare *mp.SigShareEvent)
+	AddToTBLSRecoverBuf(sigShare *mp.SigShareEvent, header *modules.Header)
 
 	SubscribeVSSDealEvent(ch chan<- mp.VSSDealEvent) event.Subscription
 	AddToDealBuf(deal *mp.VSSDealEvent)
@@ -53,6 +54,7 @@ type producer interface {
 	UpdateMediatorsDKG(isRenew bool)
 
 	IsLocalMediator(add common.Address) bool
+	ClearGroupSignBufs(stableUnit *modules.Unit)
 }
 
 func (pm *ProtocolManager) activeMediatorsUpdatedEventRecvLoop() {
@@ -79,6 +81,21 @@ func (pm *ProtocolManager) unstableRepositoryUpdatedRecvLoop() {
 
 			// Err() channel will be closed when unsubscribing.
 		case <-pm.unstableRepositoryUpdatedSub.Err():
+			return
+		}
+	}
+}
+
+func (pm *ProtocolManager) saveStableUnitRecvLoop() {
+	log.Debugf("saveStableUnitRecvLoop")
+	for {
+		select {
+		case event := <-pm.saveStableUnitCh:
+			log.Debugf("receive saveStableUnitEvent")
+			go pm.producer.ClearGroupSignBufs(event.Unit)
+
+			// Err() channel will be closed when unsubscribing.
+		case <-pm.saveStableUnitSub.Err():
 			return
 		}
 	}

@@ -20,13 +20,16 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-func unlockKS(b Backend, addr common.Address, password string, timeout *uint32) error {
+func unlockKS(b Backend, addr common.Address, password string, timeout *Int) error {
 	ks := b.GetKeyStore()
+	if ks.IsUnlock(addr) {
+		return nil
+	}
 	if password != "" {
 		if timeout == nil {
 			return ks.Unlock(accounts.Account{Address: addr}, password)
 		} else {
-			d := time.Duration(*timeout) * time.Second
+			d := time.Duration(timeout.Uint32()) * time.Second
 			return ks.TimedUnlock(accounts.Account{Address: addr}, password, d)
 		}
 	}
@@ -59,7 +62,7 @@ func parseAddressStr(addr string, ks *keystore.KeyStore, password string) (commo
 	return common.StringToAddress(addrString)
 }
 
-func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFee decimal.Decimal, password string, useMemoryDag bool) (
+func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFee decimal.Decimal, password string) (
 	*modules.Transaction, []*modules.UtxoWithOutPoint, error) {
 	//参数检查
 	tokenAsset, err := modules.StringToAsset(tokenId)
@@ -91,19 +94,37 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 
 	//构造转移PTN的Message0
 	var dbUtxos map[modules.OutPoint]*modules.Utxo
-	//if useMemoryDag && cacheTx != nil && cacheTx.mdag != nil {
-	//	dbUtxos, err = getAddrUtxofrommDag(fromAddr)
-	//} else {
-	dbUtxos, err = b.Dag().GetAddrUtxos(fromAddr)
-	//}
-	if err != nil {
-		return nil, nil, fmt.Errorf("GetAddrRawUtxos utxo err")
-	}
-	poolTxs, _ := b.GetUnpackedTxsByAddr(from)
+	var reqTxMapping map[common.Hash]common.Hash
+	dbUtxos, reqTxMapping, err = b.Dag().GetAddrUtxoAndReqMapping(fromAddr, nil)
 
-	utxosPTN, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, from, gasToken)
 	if err != nil {
-		return nil, nil, fmt.Errorf("SelectUtxoFromDagAndPool utxo err")
+		return nil, nil, fmt.Errorf("GetAddrRawUtxos utxo err:%s", err.Error())
+	}
+	log.DebugDynamic(func() string {
+		utxoKeys := ""
+		for o := range dbUtxos {
+			utxoKeys += o.String() + ";"
+		}
+		mapping := ""
+		for req, tx := range reqTxMapping {
+			mapping += req.String() + ":" + tx.String() + ";"
+		}
+		return "db utxo outpoints:" + utxoKeys + " req:tx mapping :" + mapping
+	})
+	poolTxs, err := b.GetUnpackedTxsByAddr(from)
+	if err != nil {
+		return nil, nil, fmt.Errorf("GetUnpackedTxsByAddr err:%s", err.Error())
+	}
+	log.DebugDynamic(func() string {
+		txHashs := ""
+		for _, tx := range poolTxs {
+			txHashs += "[tx:" + tx.Tx.Hash().String() + "-req:" + tx.Tx.RequestHash().String() + "];"
+		}
+		return "txpool unpacked tx:" + txHashs
+	})
+	utxosPTN, err := SelectUtxoFromDagAndPool(dbUtxos, reqTxMapping, poolTxs, from, gasToken)
+	if err != nil {
+		return nil, nil, fmt.Errorf("SelectUtxoFromDagAndPool utxo err:%s", err.Error())
 	}
 	feeAmount := gasAsset.Uint64Amount(gasFee)
 	pay1, usedUtxo1, err := createPayment(fromAddr, toAddr, ptnAmount, feeAmount, utxosPTN)
@@ -116,9 +137,9 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 	}
 	log.Debugf("gas token[%s], transfer token[%s], start build payment1", gasToken, tokenId)
 	//构造转移Token的Message1
-	utxosToken, err := SelectUtxoFromDagAndPool(dbUtxos, poolTxs, from, tokenId)
+	utxosToken, err := SelectUtxoFromDagAndPool(dbUtxos, reqTxMapping, poolTxs, from, tokenId)
 	if err != nil {
-		return nil, nil, fmt.Errorf("SelectUtxoFromDagAndPool token utxo err")
+		return nil, nil, fmt.Errorf("SelectUtxoFromDagAndPool token utxo err:%s", err.Error())
 	}
 	tokenAmount := tokenAsset.Uint64Amount(amount)
 	pay2, usedUtxo2, err := createPayment(fromAddr, toAddr, tokenAmount, 0, utxosToken)
@@ -136,7 +157,7 @@ func createPayment(fromAddr, toAddr common.Address, amountToken uint64, feePTN u
 
 	if len(utxosPTN) == 0 {
 		log.Errorf("No PTN Utxo or No Token Utxo for %s", fromAddr.String())
-		return nil, nil, fmt.Errorf("No PTN Utxo or No Token Utxo")
+		return nil, nil, fmt.Errorf("No Utxo found for %s", fromAddr.String())
 	}
 
 	//PTN
@@ -144,7 +165,7 @@ func createPayment(fromAddr, toAddr common.Address, amountToken uint64, feePTN u
 
 	utxosPTNTaken, change, err := core.Select_utxo_Greedy(utxoPTNView, amountToken+feePTN)
 	if err != nil {
-		return nil, nil, fmt.Errorf("createPayment Select_utxo_Greedy utxo err")
+		return nil, nil, fmt.Errorf("createPayment Select_utxo_Greedy utxo err:%s", err.Error())
 	}
 	usedUtxo := []*modules.UtxoWithOutPoint{}
 	//ptn payment
@@ -168,7 +189,7 @@ func createPayment(fromAddr, toAddr common.Address, amountToken uint64, feePTN u
 	return payPTN, usedUtxo, nil
 }
 
-func signRawTransaction(b Backend, rawTx *modules.Transaction, fromStr, password string, timeout *uint32, hashType uint32,
+func signRawTransaction(b Backend, rawTx *modules.Transaction, fromStr, password string, timeout *Int, hashType uint32,
 	usedUtxo []*modules.UtxoWithOutPoint) error {
 	ks := b.GetKeyStore()
 	//lockscript
@@ -217,4 +238,41 @@ func submitTransaction(ctx context.Context, b Backend, tx *modules.Transaction) 
 		return common.Hash{}, err
 	}
 	return tx.Hash(), nil
+}
+
+type Int struct {
+	i uint64
+}
+
+func (i *Int) Uint32() uint32 {
+	if i == nil {
+		return 0
+	}
+	return uint32(i.i)
+}
+func (i *Int) Uint64() uint64 {
+	if i == nil {
+		return 0
+	}
+	return i.i
+}
+func (d *Int) UnmarshalJSON(iBytes []byte) error {
+	if string(iBytes) == "null" {
+		return nil
+	}
+	if len(iBytes) == 0 {
+		d.i = 0
+		return nil
+	}
+	//log.Debugf("Int json[%s] hex:%x",string(iBytes),iBytes)
+	iStr := string(iBytes)
+	if iBytes[0] == byte('"') { // "1" -> 1
+		iStr = string(iBytes[1 : len(iBytes)-1])
+	}
+	input, err := strconv.ParseUint(iStr, 10, 64)
+	if err != nil {
+		return err
+	}
+	d.i = input
+	return nil
 }

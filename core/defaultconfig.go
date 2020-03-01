@@ -75,8 +75,8 @@ const (
 	DefaultMinMediatorInterval = 1
 	DefaultMinMaintSkipSlots   = 0
 
-	//contract
-	DefaultContractSystemVersion = "" //contractId1:v1;contractId2:v2;contractId3:v3
+	//contract//contractId1:v1;contractId2:v2;contractId3:v3
+	DefaultContractSystemVersion = "PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM:ptn002;PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43:ptn002;PCGTta3M4t3yXu8uRgkKvaWd2d8DRijspoq:ptn002;PCGTta3M4t3yXu8uRgkKvaWd2d8DRLGbeyd:ptn002"
 
 	DefaultContractSignatureNum = 3
 	DefaultContractElectionNum  = 4

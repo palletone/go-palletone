@@ -29,7 +29,7 @@ Transfer token of vote contract
     ${ccTokenList}    Create List    ${crtTokenMethod}    ${note}    ${tokenDecimal}    ${tokenAmount}    ${voteTime}
     ...    ${commonVoteInfo}
     ${ccList}    Create List    ${geneAdd}    ${recieverAdd}    ${PTNAmount}    ${PTNPoundage}    ${voteContractId}
-    ...    ${ccTokenList}    ${pwd}    ${duration}    ${EMPTY}
+    ...    ${ccTokenList}    ${pwd}    ${duration}
     ${resp}    setPostRequest    ${host}    ${invokePsMethod}    ${ccList}
     log    ${resp.content}
     Should Contain    ${resp.content}['jsonrpc']    "2.0"    msg="jsonrpc:failed"

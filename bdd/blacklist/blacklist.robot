@@ -9,6 +9,7 @@ ${two}            ${EMPTY}
 
 *** Test Cases ***
 blacklist
+    [Documentation]    将地址1加入黑名单，然后将地址1的 TOKEN 转给地址2
     ${o}    getBalance    ${one}    PTN
     log    ${o}
     Should Be Equal As Numbers    ${o}    10000    #Should Be Equal As Numbers
@@ -45,6 +46,55 @@ blacklist
     log    ${t}
     Should Be Equal As Numbers    ${t}    20000
     ${b}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF    PTN
+    log    ${b}
+    Should Be Equal As Numbers    ${b}    0
+
+multiToken
+    [Documentation]    先给地址2增发 token，然后将地址2加入黑名单，然后把地址2的所有 token 转给地址 P1DQA485N7r8sjUB31pKDqE2x7ZEfJxCJ2A
+    ${b}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF    PTN
+    log    ${b}
+    Should Be Equal As Numbers    ${b}    0
+    ${t}    getBalance    ${two}    PTN
+    log    ${t}
+    Should Be Equal As Numbers    ${t}    20000
+    ${result}    createToken    ${two}
+    log    ${result}
+    sleep    5
+    ${assetId}    ccquery
+    ${t}    getBalance    ${two}    PTN
+    log    ${t}
+    ${t}    getBalance    ${two}    ${assetId}
+    log    ${t}
+    Should Be Equal As Numbers    ${t}    1000
+    ${res}    addBlacklist    ${two}    lsls
+    log    ${res}
+    sleep    5
+    ${pb}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF    PTN
+    log    ${pb}
+    Should Be Equal As Numbers    ${pb}    19999
+    ${bb}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF    ${assetId}
+    log    ${bb}
+    Should Be Equal As Numbers    ${bb}    1000
+    ${res}    getBlacklistRecords
+    log    ${res}
+    ${res}    getBlacklistAddress
+    log    ${res}
+    ${res}    payout    P1DQA485N7r8sjUB31pKDqE2x7ZEfJxCJ2A    ${pb}    PTN
+    log    ${res}
+    sleep    5
+    ${b}    getBalance    P1DQA485N7r8sjUB31pKDqE2x7ZEfJxCJ2A    PTN
+    log    ${b}
+    Should Be Equal As Numbers    ${b}    19999
+    ${res}    payout    P1DQA485N7r8sjUB31pKDqE2x7ZEfJxCJ2A    ${bb}    ${assetId}
+    log    ${res}
+    sleep    5
+    ${b}    getBalance    P1DQA485N7r8sjUB31pKDqE2x7ZEfJxCJ2A    ${assetId}
+    log    ${b}
+    Should Be Equal As Numbers    ${b}    1000
+    ${b}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF    PTN
+    log    ${b}
+    Should Be Equal As Numbers    ${b}    0
+    ${b}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF    ${assetId}
     log    ${b}
     Should Be Equal As Numbers    ${b}    0
 
@@ -112,3 +162,20 @@ transferPTN
     Dictionary Should Contain Key    ${res}    message
     ${res}    Get From Dictionary    ${res}    message
     [Return]    ${res}
+
+createToken
+    [Arguments]    ${address}
+    ${one}    Create List    createToken    BlackListTest    black    1    1000
+    ...    ${address}
+    ${two}    Create List    ${address}    ${address}    0    1    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43
+    ...    ${one}
+    ${result}    post    contract_ccinvoketx    createToken    ${two}
+    [Return]    ${result}
+
+ccquery
+    ${one}    Create List    getTokenInfo    black
+    ${two}    Create List    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43    ${one}    ${0}
+    ${result}    post    contract_ccquery    getTokenInfo    ${two}
+    ${addressMap}    To Json    ${result}
+    ${assetId}    Get From Dictionary    ${addressMap}    AssetID
+    [Return]    ${assetId}

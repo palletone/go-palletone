@@ -21,10 +21,10 @@
 package modules
 
 import (
+	"io"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
-	"io"
 )
 
 type ContractDeployPayloadV1 struct {
@@ -52,7 +52,7 @@ type ContractDeployPayloadV2 struct {
 func (input *ContractDeployPayload) EncodeRLP(w io.Writer) error {
 
 	if common.IsSystemContractId(input.ContractId) { //系统合约
-		log.Debugf("System contract[%x] deploy payload rlp", input.ContractId)
+		//log.Debugf("System contract[%x] deploy payload rlp", input.ContractId)
 		temp := &ContractDeployPayloadV1{}
 		temp.TemplateId = input.TemplateId
 		temp.ContractId = input.ContractId

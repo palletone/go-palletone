@@ -107,6 +107,7 @@ type IDag interface {
 	GetTxOutput(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	GetAddrOutpoints(addr common.Address) ([]modules.OutPoint, error)
 	GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
+	GetAddrUtxoAndReqMapping(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, map[common.Hash]common.Hash, error)
 	GetAddrStableUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAllUtxos() (map[modules.OutPoint]*modules.Utxo, error)
@@ -139,6 +140,7 @@ type IDag interface {
 	SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription
 	GetPrecedingMediatorNodes() map[string]*discover.Node
 	UnitIrreversibleTime() time.Duration
+	IsIrreversibleUnit(hash common.Hash) (bool, error)
 	GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string,
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 
@@ -188,7 +190,7 @@ type IDag interface {
 
 	GetVotingForMediator(addStr string) (map[string]uint64, error)
 	MediatorVotedResults() (map[string]uint64, error)
-	LookupMediatorInfo() []*modules.MediatorInfo
+	LookupMediatorInfo() []*modules.MediatorInfo2
 	IsActiveMediator(add common.Address) bool
 	GetMediator(add common.Address) *core.Mediator
 

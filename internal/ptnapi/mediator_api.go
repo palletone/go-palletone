@@ -130,7 +130,7 @@ func (a *PublicMediatorAPI) ListVotingFor(addStr string) (map[string]uint64, err
 	return res, nil
 }
 
-func (a *PublicMediatorAPI) LookupMediatorInfo() []*modules.MediatorInfo {
+func (a *PublicMediatorAPI) LookupMediatorInfo() []*modules.MediatorInfo2 {
 	return a.Dag().LookupMediatorInfo()
 }
 
