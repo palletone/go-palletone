@@ -98,7 +98,7 @@ func (p *Processor) ProcessContractTxMsg(tx *modules.Transaction, rw rwset.TxMan
 	sAddr := []string{"P1RS8EfWPxzQMcmjFJ1H7WBGy58FsdAdDF", "P184RUiG5VdY3Y8YUxTmrdsV92MbYQgaPpP", "P1PLs3Cr9Sk8KCV6YfoTTBXRmgMY628SFja"}
 	ele = &modules.ElectionNode{
 		JuryCount: 3,
-		EleList:   make([]modules.ElectionInf, 3),
+		EleList:   make([]modules.ElectionInf, 0),
 	}
 	for _, addr := range sAddr {
 		h := util.RlpHash(addr)

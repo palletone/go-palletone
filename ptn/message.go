@@ -389,13 +389,14 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		if tx == nil {
 			return errResp(ErrDecode, "transaction %d is nil", i)
 		}
-		log.Debugf("ProtocolManager, idx[%d]  tx:%s", i, tx.String())
 
 		txHash := tx.Hash()
 		p.MarkTransaction(txHash)
 		if pm.IsExistInCache(txHash.Bytes()) {
 			return nil
 		}
+
+		log.Debugf("ProtocolManager, idx[%d]  tx:%s", i, tx.String())
 		//系统合约的请求可以P2P广播，但是包含结果的系统合约请求，只能在打包时生成，不能广播
 		if tx.IsSystemContract() && !tx.IsOnlyContractRequest() {
 			log.Warnf("ProtocolManager, Tx[%s] is a sys contract with result, don't need send by p2p", txHash.String())
@@ -486,32 +487,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		}
 		return fmt.Sprintf("NewBlockMsg, received unit hash %s, txs:[%x]", unit.Hash().String(), txids)
 	})
-	//Devin:收到新Unit后这里不需要进行合约验证，在Dag模块会验证的。
-	//rwM, err := rwset.NewRwSetMgr(unit.NumberString())
-	//if err != nil {
-	//	return fmt.Errorf("NewBlockMsg, received unit hash %s, NewRwSetMgr err:%s ", unit.Hash().String(), err.Error())
-	//}
 
-	//var temptxs modules.Transactions
-	//index := 0
-	//for i, tx := range unit.Txs {
-	//	if i == 0 {
-	//		temptxs = append(temptxs, tx)
-	//		continue //coinbase
-	//	}
-	//	if tx.IsContractTx() {
-	//		reqId := tx.RequestHash()
-	//		log.Debugf("[%s]NewBlockMsg, index[%x],txHash[%s]", reqId.String()[0:8], index, tx.Hash().String())
-	//		index++
-	//		if !pm.contractProc.CheckContractTxValid(rwM, tx, true) {
-	//			log.Debugf("[%s]NewBlockMsg, CheckContractTxValid is false.", reqId.String()[0:8])
-	//			continue
-	//		}
-	//	}
-	//	temptxs = append(temptxs, tx)
-	//}
-	//rwM.Close()
-	//unit.Txs = temptxs
 	unit.ReceivedAt = msg.ReceivedAt
 	unit.ReceivedFrom = p
 

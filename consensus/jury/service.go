@@ -1156,11 +1156,11 @@ func (p *Processor) AddLocalTx(tx *modules.Transaction) error {
 				for _, utx := range u.Unit.Transactions() {
 					if utx.Hash() == txHash || utx.RequestHash() == txHash {
 						log.Infof("[%s]AddLocalTx, Change local tx[%s] status to unstable",
-							shortId(reqId.String()),  txHash.String())
+							shortId(reqId.String()), txHash.String())
 						err = p.dag.SaveLocalTxStatus(txHash, modules.TxStatus_Unstable)
 						if err != nil {
 							log.Warnf("[%s]AddLocalTx, Save tx[%s] status to local err:%s",
-								shortId(reqId.String()),  txHash.String(), err.Error())
+								shortId(reqId.String()), txHash.String(), err.Error())
 						}
 					}
 				}
@@ -1169,18 +1169,18 @@ func (p *Processor) AddLocalTx(tx *modules.Transaction) error {
 				for _, utx := range u.Unit.Transactions() {
 					if utx.Hash() == txHash || utx.RequestHash() == txHash {
 						log.Debugf("[%s]AddLocalTx, Change local tx[%s] status to stable",
-							shortId(reqId.String()),  txHash.String())
+							shortId(reqId.String()), txHash.String())
 						err = p.dag.SaveLocalTxStatus(txHash, modules.TxStatus_Stable)
 						if err != nil {
 							log.Warnf("[%s]AddLocalTx, Save tx[%s] status to local err:%s",
-								shortId(reqId.String()),  txHash.String(), err.Error())
+								shortId(reqId.String()), txHash.String(), err.Error())
 						}
 						return
 					}
 				}
 			case <-timeout.C:
 				log.Warnf("[%s]AddLocalTx, SubscribeSaveStableUnitEvent timeout for tx[%s]",
-					shortId(reqId.String()),  txHash.String())
+					shortId(reqId.String()), txHash.String())
 				return
 			case e := <-headSub.Err():
 				log.Warnf("AddLocalTx, SubscribeSaveStableUnitEvent err:%s", e.Error())
@@ -1194,5 +1194,3 @@ func (p *Processor) AddLocalTx(tx *modules.Transaction) error {
 
 	return nil
 }
-
-
