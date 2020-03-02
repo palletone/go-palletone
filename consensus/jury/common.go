@@ -437,6 +437,9 @@ func handleMsg0(tx *modules.Transaction, dag dboperation.IContractDag, txPool tx
 		msg0 := msgs[0].Payload.(*modules.PaymentPayload)
 		//invokeAddr, err := dag.GetAddrByOutPoint(msg0.Inputs[0].PreviousOutPoint)
 		preUtxo, err := txPool.GetUtxoEntry(msg0.Inputs[0].PreviousOutPoint)
+		if err != nil{
+			return nil, err
+		}
 		invokeAddr, err := tokenengine.Instance.GetAddressFromScript(preUtxo.PkScript)
 		if err != nil {
 			return nil, err

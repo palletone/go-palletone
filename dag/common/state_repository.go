@@ -110,7 +110,7 @@ type StateRepository struct {
 func NewStateRepository(statedb storage.IStateDb, dagdb storage.IDagDb) *StateRepository {
 	return &StateRepository{statedb: statedb,
 		mapHash2Address: make(map[common.Hash]common.Address),
-		dagdb:           dagdb,
+		dagdb: dagdb,
 	}
 }
 
@@ -429,7 +429,10 @@ func (rep *StateRepository) LookupMediatorInfo() []*modules.MediatorInfo2 {
 	for _, info := range infos {
 		hash, _ := rep.dagdb.GetHashByNumber(modules.NewChainIndex(gasToken, uint64(info.LastConfirmedUnitNum)))
 		header, _ := rep.dagdb.GetHeaderByHash(hash)
-		info2 := &modules.MediatorInfo2{*info, string(header.Extra())}
+		info2 := &modules.MediatorInfo2{
+			MediatorInfo: *info,
+			Version:      string(header.Extra()),
+		}
 		result = append(result, info2)
 	}
 	return result
