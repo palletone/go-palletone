@@ -1527,6 +1527,14 @@ func (pool *TxPool) setPendingTx(unit_hash common.Hash, tx *modules.Transaction,
 		tx.Index = index
 		pool.all.Store(hash, tx)
 		return nil
+	} else if interTx, has := pool.all.Load(tx.RequestHash()); has {
+		tx := interTx.(*TxPoolTransaction)
+		tx.Pending = true
+		tx.Confirmed = false
+		tx.Discarded = false
+		tx.Index = index
+		pool.all.Store(hash, tx)
+		return nil
 	}
 	// add in pool
 	p_tx := TxtoTxpoolTx(tx)
@@ -1726,7 +1734,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 	return list, total
 }
 func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
-orphanTxs map[common.Hash]*TxPoolTransaction) []*TxPoolTransaction {
+	orphanTxs map[common.Hash]*TxPoolTransaction) []*TxPoolTransaction {
 
 	pretxs := make([]*TxPoolTransaction, 0)
 	for _, op := range tx.Tx.GetSpendOutpoints() {
