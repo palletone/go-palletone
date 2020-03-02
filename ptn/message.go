@@ -547,11 +547,12 @@ func (pm *ProtocolManager) GroupSigMsg(msg p2p.Msg, p *peer) error {
 		return nil
 	}
 
+	// 或者由于网络延迟，该单元在收到群签名之前，已经根据深度转为不可逆了
 	isStable, _ := pm.dag.IsIrreversibleUnit(gSign.UnitHash)
 	if !isStable {
 		pm.BroadcastGroupSig(&gSign)
+		go pm.dag.SetUnitGroupSign(gSign.UnitHash, gSign.GroupSig, pm.txpool)
 	}
-	go pm.dag.SetUnitGroupSign(gSign.UnitHash, gSign.GroupSig, pm.txpool)
 
 	return nil
 }

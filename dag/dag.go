@@ -1194,16 +1194,17 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 		return fmt.Errorf(err)
 	}
 
-	isStable, err := d.IsIrreversibleUnit(unitHash)
-	if err != nil {
-		return err
-	}
-
-	if isStable {
-		// 或者由于网络延迟，该单元在收到群签名之前，已经根据深度转为不可逆了
-		log.Debugf("this unit(%v) is already irreversible", unitHash.TerminalString())
-		return nil
-	}
+	// 重复判断
+	//isStable, err := d.IsIrreversibleUnit(unitHash)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//if isStable {
+	//	// 或者由于网络延迟，该单元在收到群签名之前，已经根据深度转为不可逆了
+	//	log.Debugf("this unit(%v) is already irreversible", unitHash.TerminalString())
+	//	return nil
+	//}
 
 	// 验证群签名：
 	err = d.VerifyUnitGroupSign(unitHash, groupSign)
