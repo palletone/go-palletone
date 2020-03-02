@@ -29,7 +29,6 @@ import (
 	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/validator"
 	"github.com/palletone/go-palletone/dag/dboperation"
-	"github.com/palletone/go-palletone/common/util"
 )
 
 func (p *Processor) SubscribeContractEvent(ch chan<- ContractEvent) event.Subscription {
@@ -90,25 +89,25 @@ func (p *Processor) ProcessContractTxMsg(tx *modules.Transaction, rw rwset.TxMan
 	log.Debugf("[%s]ProcessContractTxMsg enter", shortId(reqId.String()))
 
 	var ele *modules.ElectionNode
-	//ele, err := dag.GetContractJury(tx.GetContractId())
-	//if err != nil {
-	//	log.Errorf("[%s]ProcessContractTxMsg GetContractJury err:%s", shortId(reqId.String()), err.Error())
-
+	ele, err := p.dag.GetContractJury(tx.GetContractId())
+	if err != nil {
+		log.Errorf("[%s]ProcessContractTxMsg GetContractJury err:%s", shortId(reqId.String()), err.Error())
+	}
 	//todo del
-	sAddr := []string{"P1RS8EfWPxzQMcmjFJ1H7WBGy58FsdAdDF", "P184RUiG5VdY3Y8YUxTmrdsV92MbYQgaPpP", "P1PLs3Cr9Sk8KCV6YfoTTBXRmgMY628SFja"}
-	ele = &modules.ElectionNode{
-		JuryCount: 3,
-		EleList:   make([]modules.ElectionInf, 0),
-	}
-	for _, addr := range sAddr {
-		h := util.RlpHash(addr)
-		elf := modules.ElectionInf{
-			EType:    1,
-			AddrHash: h,
-		}
-		ele.EleList = append(ele.EleList, elf)
-	}
+	//sAddr := []string{"P1RS8EfWPxzQMcmjFJ1H7WBGy58FsdAdDF", "P184RUiG5VdY3Y8YUxTmrdsV92MbYQgaPpP", "P1PLs3Cr9Sk8KCV6YfoTTBXRmgMY628SFja"}
+	//ele = &modules.ElectionNode{
+	//	JuryCount: 3,
+	//	EleList:   make([]modules.ElectionInf, 0),
 	//}
+	//for _, addr := range sAddr {
+	//	h := util.RlpHash(addr)
+	//	elf := modules.ElectionInf{
+	//		EType:    1,
+	//		AddrHash: h,
+	//	}
+	//	ele.EleList = append(ele.EleList, elf)
+	//}
+
 
 	if p.checkTxIsExist(tx) {
 		return nil, fmt.Errorf("[%s]ProcessContractTxMsg, event Tx is exist, txId:%s",

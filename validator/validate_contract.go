@@ -68,9 +68,6 @@ func (validate *Validate) validateContractDeploy(tplId []byte) ValidationCode {
 func (validate *Validate) validateContractSignature(signatures []modules.SignatureSet,
 	tx *modules.Transaction, isFullTx bool) ValidationCode {
 
-	//todo del
-	//return TxValidationCode_VALID
-
 	//contractId := tx.GetContractId()
 	txHash := tx.Hash().String()
 	needSign := 1
