@@ -190,7 +190,7 @@ type IDag interface {
 
 	GetVotingForMediator(addStr string) (map[string]uint64, error)
 	MediatorVotedResults() (map[string]uint64, error)
-	LookupMediatorInfo() []*modules.MediatorInfo
+	LookupMediatorInfo() []*modules.MediatorInfo2
 	IsActiveMediator(add common.Address) bool
 	GetMediator(add common.Address) *core.Mediator
 

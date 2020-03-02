@@ -22,6 +22,9 @@ import (
 
 func unlockKS(b Backend, addr common.Address, password string, timeout *Int) error {
 	ks := b.GetKeyStore()
+	if ks.IsUnlock(addr) {
+		return nil
+	}
 	if password != "" {
 		if timeout == nil {
 			return ks.Unlock(accounts.Account{Address: addr}, password)
