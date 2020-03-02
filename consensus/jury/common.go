@@ -40,6 +40,7 @@ import (
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/txspool"
 )
 
 const (
@@ -202,7 +203,7 @@ func getSignature(tx *modules.Transaction) ([][]byte, [][]byte) {
 
 func genContractErrorMsg(tx *modules.Transaction,
 	errIn error, errMsgEnable bool) ([]*modules.Message, error) {
-	reqType:= tx.GetContractTxType()
+	reqType := tx.GetContractTxType()
 	errString := fmt.Sprintf("[%s]genContractErrorMsg, reqType:%d,err:%s",
 		shortId(tx.RequestHash().String()), reqType, errIn.Error())
 	log.Debug(errString)
@@ -293,7 +294,7 @@ func runContractCmd(ctx *contracts.ContractProcessContext, tx *modules.Transacti
 					args:       reqPay.Args,
 					timeout:    time.Duration(reqPay.Timeout) * time.Second,
 				}
-				fullArgs, err := handleMsg0(tx, ctx.Dag, req.args)
+				fullArgs, err := handleMsg0(tx, ctx.Dag, ctx.TxPool, req.args)
 				if err != nil {
 					return nil, err
 				}
@@ -321,7 +322,7 @@ func runContractCmd(ctx *contracts.ContractProcessContext, tx *modules.Transacti
 					timeout:  time.Duration(reqPay.Timeout) * time.Second,
 				}
 
-				fullArgs, err := handleMsg0(tx, ctx.Dag, req.args)
+				fullArgs, err := handleMsg0(tx, ctx.Dag, ctx.TxPool, req.args)
 				if err != nil {
 					return nil, err
 				}
@@ -427,14 +428,16 @@ func contractPayBack(tx *modules.Transaction, addr []byte) []*modules.Message {
 	}
 	return messages
 }
-func handleMsg0(tx *modules.Transaction, dag dboperation.IContractDag, reqArgs [][]byte) ([][]byte, error) {
+func handleMsg0(tx *modules.Transaction, dag dboperation.IContractDag, txPool txspool.ITxPool, reqArgs [][]byte) ([][]byte, error) {
 	var txArgs [][]byte
 	invokeInfo := modules.InvokeInfo{}
 	msgs := tx.TxMessages()
 	lenTxMsgs := len(msgs)
 	if lenTxMsgs > 0 {
 		msg0 := msgs[0].Payload.(*modules.PaymentPayload)
-		invokeAddr, err := dag.GetAddrByOutPoint(msg0.Inputs[0].PreviousOutPoint)
+		//invokeAddr, err := dag.GetAddrByOutPoint(msg0.Inputs[0].PreviousOutPoint)
+		preUtxo, err := txPool.GetUtxoEntry(msg0.Inputs[0].PreviousOutPoint)
+		invokeAddr, err := tokenengine.Instance.GetAddressFromScript(preUtxo.PkScript)
 		if err != nil {
 			return nil, err
 		}
@@ -460,11 +463,12 @@ func handleMsg0(tx *modules.Transaction, dag dboperation.IContractDag, reqArgs [
 		}
 		invokeInfo.InvokeTokens = invokeTokensAll
 		//invokeFees, err := dag.GetTxFee(tx)
-		invokeFees, err := tx.GetTxFee(dag.GetUtxoEntry)
+		//invokeFees, err := tx.GetTxFee(dag.GetUtxoEntry)
+		invokeFees, err := tx.GetTxFee(txPool.GetUtxoEntry)
 		if err != nil {
+			log.Warnf("handleMsg0, GetTxFee err:%s", err.Error())
 			return nil, err
 		}
-
 		invokeInfo.InvokeAddress = invokeAddr
 		invokeInfo.InvokeFees = invokeFees
 

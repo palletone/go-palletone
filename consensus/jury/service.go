@@ -530,6 +530,7 @@ func (p *Processor) RunAndSignTx(reqTx *modules.Transaction, txMgr rwset.TxManag
 		RwM:          txMgr,
 		Contract:     p.contract,
 		ErrMsgEnable: p.errMsgEnable,
+		TxPool:       p.ptn.TxPool(),
 	}
 	reqId := reqTx.Hash()
 	msgs, err := runContractCmd(cctx, reqTx) //contract exec long time...
