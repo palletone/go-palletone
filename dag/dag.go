@@ -1207,7 +1207,7 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 	//}
 
 	// 验证群签名：
-	err = d.VerifyUnitGroupSign(unitHash, groupSign)
+	err := d.VerifyUnitGroupSign(unitHash, groupSign)
 	if err != nil {
 		return err
 	}
