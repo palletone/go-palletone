@@ -138,17 +138,27 @@ func (statedb *StateDb) LookupMediatorInfo() []*modules.MediatorInfo {
 }
 
 func (statedb *StateDb) GetCandidateMediatorList() (map[string]bool, error) {
+
+	log.Info("-----------------------------------")
+
 	depositeContractAddress := syscontract.DepositContractAddress
 	val, _, err := statedb.GetContractState(depositeContractAddress.Bytes(), modules.MediatorList)
 	if err != nil {
+		log.Info("-----------------------------------1")
 		return nil, fmt.Errorf("mediator candidate list is nil")
 	}
-
-	candidateList := make(map[string]bool)
-	err = json.Unmarshal(val, &candidateList)
+	if len(val) == 0 {
+		return nil,fmt.Errorf("mediator candidate list is nil")
+	}
+	sliceVals := []string{}
+	err = json.Unmarshal(val, &sliceVals)
 	if err != nil {
+		log.Info("-----------------------------------2",err.Error())
 		return nil, err
 	}
-
+	candidateList := make(map[string]bool)
+	for _,v := range sliceVals {
+		candidateList[v] = true
+	}
 	return candidateList, nil
 }

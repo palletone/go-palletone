@@ -17,6 +17,7 @@ package v2
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -31,9 +32,15 @@ import (
 	"github.com/palletone/go-palletone/dag/storage"
 )
 
+
 //  保存相关列表
 func saveList(stub shim.ChaincodeStubInterface, key string, list map[string]bool) error {
-	listByte, err := json.Marshal(list)
+	listSlice := []string{}
+	for k := range list {
+		listSlice = append(listSlice,k)
+	}
+	sort.Strings(listSlice)
+	listByte, err := json.Marshal(listSlice)
 	if err != nil {
 		return err
 	}
@@ -53,10 +60,14 @@ func getList(stub shim.ChaincodeStubInterface, typeList string) (map[string]bool
 	if byte == nil {
 		return nil, nil
 	}
-	list := make(map[string]bool)
-	err = json.Unmarshal(byte, &list)
+	listSlice := []string{}
+	err = json.Unmarshal(byte, &listSlice)
 	if err != nil {
 		return nil, err
+	}
+	list := make(map[string]bool)
+	for _,v := range listSlice {
+		list[v] = true
 	}
 	return list, nil
 }
@@ -98,6 +109,7 @@ func applyQuitList(role string, stub shim.ChaincodeStubInterface) error {
 	quitNode := &modules.QuitNode{
 		Role: role,
 		Time: getTime(stub),
+		Address:invokeAddr.String(),
 	}
 
 	//  保存退还列表
@@ -127,11 +139,7 @@ func addCandaditeList(stub shim.ChaincodeStubInterface, invokeAddr common.Addres
 	//}
 
 	list[invokeAddr.String()] = true
-	listByte, err := json.Marshal(list)
-	if err != nil {
-		return err
-	}
-	err = stub.PutState(candidate, listByte)
+	err = saveList(stub,candidate,list)
 	if err != nil {
 		return err
 	}
@@ -166,7 +174,16 @@ func moveCandidate(candidate string, invokeFromAddr string, stub shim.ChaincodeS
 
 //  保存没收列表
 func saveListForForfeiture(stub shim.ChaincodeStubInterface, list map[string]*modules.Forfeiture) error {
-	byte, err := json.Marshal(list)
+	sliceKey := []string{}
+	for k := range list {
+		sliceKey =  append(sliceKey,k)
+	}
+	sort.Strings(sliceKey)
+	forFeitures := []*modules.Forfeiture{}
+	for _,v := range sliceKey {
+		forFeitures = append(forFeitures,list[v])
+	}
+	byte, err := json.Marshal(forFeitures)
 	if err != nil {
 		return err
 	}
@@ -186,17 +203,30 @@ func getListForForfeiture(stub shim.ChaincodeStubInterface) (map[string]*modules
 	if byte == nil {
 		return nil, nil
 	}
-	list := make(map[string]*modules.Forfeiture)
-	err = json.Unmarshal(byte, &list)
+	forFeitures := []*modules.Forfeiture{}
+	err = json.Unmarshal(byte, &forFeitures)
 	if err != nil {
 		return nil, err
+	}
+	list := make(map[string]*modules.Forfeiture)
+	for _,v := range forFeitures {
+		list[v.ForfeitureAddress] = v
 	}
 	return list, nil
 }
 
 //  保存退款列表
 func saveListForQuit(stub shim.ChaincodeStubInterface, list map[string]*modules.QuitNode) error {
-	byte, err := json.Marshal(list)
+	sliceKey := []string{}
+	for k := range list {
+		sliceKey =  append(sliceKey,k)
+	}
+	sort.Strings(sliceKey)
+	nodes := []*modules.QuitNode{}
+	for _,v := range sliceKey {
+		nodes = append(nodes,list[v])
+	}
+	byte, err := json.Marshal(nodes)
 	if err != nil {
 		return err
 	}
@@ -216,10 +246,14 @@ func getListForQuit(stub shim.ChaincodeStubInterface) (map[string]*modules.QuitN
 	if byte == nil {
 		return nil, nil
 	}
-	list := make(map[string]*modules.QuitNode)
-	err = json.Unmarshal(byte, &list)
+	nodes := []*modules.QuitNode{}
+	err = json.Unmarshal(byte, &nodes)
 	if err != nil {
 		return nil, err
+	}
+	list := make(map[string]*modules.QuitNode)
+	for _,v := range nodes {
+		list[v.Address] = v
 	}
 	return list, nil
 }
@@ -453,6 +487,7 @@ func applyForForfeitureDeposit(stub shim.ChaincodeStubInterface, forfeitureAddre
 	forfeiture.ForfeitureRole = role
 	forfeiture.Extra = reason
 	forfeiture.ApplyTime = getTime(stub)
+	forfeiture.ForfeitureAddress = forfeitureAddress
 	listForForfeiture[forfeitureAddress] = forfeiture
 
 	//  保存列表

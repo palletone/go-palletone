@@ -87,11 +87,14 @@ func (statedb *StateDb) GetJuryCandidateList() (map[string]bool, error) {
 	if err != nil {
 		return nil, fmt.Errorf("jury candidate list is nil.")
 	}
-
-	candidateList := make(map[string]bool)
-	err = json.Unmarshal(val, &candidateList)
+	sliceVals := []string{}
+	err = json.Unmarshal(val, &sliceVals)
 	if err != nil {
 		return nil, err
+	}
+	candidateList := make(map[string]bool)
+	for _,v := range sliceVals {
+		candidateList[v] = true
 	}
 	return candidateList, nil
 }
@@ -147,10 +150,14 @@ func (statedb *StateDb) GetContractDeveloperList() ([]common.Address, error) {
 	if err != nil {
 		return nil, fmt.Errorf("devCc candidate list is nil.")
 	}
-	depList := make(map[string]bool)
-	err = json.Unmarshal(val, &depList)
+	sliceVals := []string{}
+	err = json.Unmarshal(val, &sliceVals)
 	if err != nil {
 		return nil, err
+	}
+	depList := make(map[string]bool)
+	for _,v := range sliceVals {
+		depList[v] = true
 	}
 	res := make([]common.Address, len(depList))
 	for addStr := range depList {
