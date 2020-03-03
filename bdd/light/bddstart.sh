@@ -44,10 +44,10 @@ value="\"ok\""
 echo $syncutxoinfo
 if [ $syncutxoinfo = $value ];then
     echo "============syncUTXOByAddr account5 ok============"
-    python  -m robot.run -d ../logs/light --test success ./light.robot
+    pybot -d ../logs/light --test success ./light.robot
 else
     echo "============syncUTXOByAddr account5 err:"$syncutxoinfo
-    python  -m robot.run -d ../logs/light --test fail ./light.robot
+    pybot -d -v ../logs/light --test fail errorMessage:$syncutxoinfo ./light.robot
 fi
 
 #ptn.getBalance in light node5
@@ -59,10 +59,10 @@ num=$[$lenght-2]
 t1=`echo ${temp:0:$num} | sed 's/ //g' | sed 's/"//g'`
 if [ $t1 = 100 ];then
     echo "============getBalance account5 ok============"
-    python  -m robot.run -d ../logs/light --test success ./light.robot
+    pybot -d ../logs/light --test success ./light.robot
 else
     echo "============getBalance account5 err:"$t1
-    python  -m robot.run -d ../logs/light --test fail ./light.robot
+    pybot -d ../logs/light --test fail -v errorMessage:$t1 ./light.robot
 fi
 
 
@@ -77,10 +77,10 @@ syncutxoinfo=`echo $syncutxocommand`
 value="\"ok\""
 if [ $syncutxoinfo = $value ];then
     echo "============syncUTXOByAddr account6 ok============"
-    python  -m robot.run -d ../logs/light --test success ./light.robot
+    pybot -d ../logs/light --test success ./light.robot
 else
     echo "============syncUTXOByAddr account6 err:"$syncutxoinfo
-    python  -m robot.run -d ../logs/light --test fail ./light.robot
+    pybot -d ../logs/light --test fail -v errorMessage:$syncutxoinfo ./light.robot
 fi
 
 
@@ -92,10 +92,10 @@ num=$[$lenght-2]
 t1=`echo ${temp:0:$num} | sed 's/ //g' | sed 's/"//g'`
 if [ $t1 = 80 ];then
     echo "============getBalance account6 ok============"
-    python  -m robot.run -d ../logs/light --test success ./light.robot
+    pybot -d ../logs/light --test success ./light.robot
 else
     echo "============getBalance account6 err:"$t1
-    python  -m robot.run -d ../logs/light --test fail ./light.robot
+    pybot -d ../logs/light --test fail -v errorMessage:$t1 ./light.robot
 fi
 
 
@@ -111,10 +111,10 @@ syncutxoinfo=`echo $syncutxocommand`
 value="\"ok\""
 if [ $syncutxoinfo = $value ];then
     echo "============syncUTXOByAddr account7 ok============"
-    python  -m robot.run -d ../logs/light --test success ./light.robot
+    pybot -d ../logs/light --test success ./light.robot
 else
     echo "============syncUTXOByAddr account7 err:"$syncutxoinfo
-    python  -m robot.run -d ../logs/light --test fail ./light.robot
+    pybot -d ../logs/light --test fail -v errorMessage:$syncutxoinfo ./light.robot
 fi
 
 
@@ -126,10 +126,10 @@ num=$[$lenght-2]
 t1=`echo ${temp:0:$num} | sed 's/ //g' | sed 's/"//g'`
 if [ $t1 = 50 ];then
     echo "============getBalance account7 ok============"
-    python  -m robot.run -d ../logs/light --test success ./light.robot
+    pybot -d ../logs/light --test success ./light.robot
 else
     echo "============getBalance account7 err:"$t1
-    python  -m robot.run -d ../logs/light --test fail ./light.robot
+    pybot -d ../logs/light --test fail -v errorMessage:$t1 ./light.robot
 fi
 
 
