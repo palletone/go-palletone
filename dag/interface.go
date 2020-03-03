@@ -139,7 +139,8 @@ type IDag interface {
 	IsSynced(toStrictly bool) bool
 	SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription
 	GetPrecedingMediatorNodes() map[string]*discover.Node
-	UnitIrreversibleTime() time.Duration
+	//UnitIrreversibleTime() time.Duration
+	LastMaintenanceTime() int64
 	IsIrreversibleUnit(hash common.Hash) (bool, error)
 	GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string,
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
