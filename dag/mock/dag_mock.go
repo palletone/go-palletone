@@ -1705,6 +1705,18 @@ func (mr *MockIDagMockRecorder) GetMediatorCount() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMediatorCount", reflect.TypeOf((*MockIDag)(nil).GetMediatorCount))
 }
 
+// GetSlotTime mocks base method
+func (m *MockIDag) GetSlotTime(slotNum uint32) time.Time {
+	ret := m.ctrl.Call(m, "GetSlotTime", slotNum)
+	ret0, _ := ret[0].(time.Time)
+	return ret0
+}
+
+// GetSlotTime indicates an expected call of GetSlotTime
+func (mr *MockIDagMockRecorder) GetSlotTime(slotNum interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSlotTime", reflect.TypeOf((*MockIDag)(nil).GetSlotTime), slotNum)
+}
+
 // IsMediator mocks base method
 func (m *MockIDag) IsMediator(address common.Address) bool {
 	m.ctrl.T.Helper()

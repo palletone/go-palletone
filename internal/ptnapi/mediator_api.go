@@ -196,6 +196,13 @@ func (s *PublicMediatorAPI) GetSchedule() (*modules.MediatorSchedule, error) {
 	return s.Dag().GetMediatorSchl(), nil
 }
 
+func (s *PublicMediatorAPI) NextSlotTime() (int64, error) {
+	nextSlotTime := s.Dag().GetSlotTime(1)
+	diffSecs := nextSlotTime.Unix() - time.Now().Unix()
+
+	return diffSecs, nil
+}
+
 const DefaultResult = "Transaction executed locally, but may not be confirmed by the network yet!"
 
 type PrivateMediatorAPI struct {

@@ -182,6 +182,7 @@ type IDag interface {
 	GetGlobalProp() *modules.GlobalProperty
 	GetMediatorSchl() *modules.MediatorSchedule
 	GetMediatorCount() int
+	GetSlotTime(slotNum uint32) time.Time
 
 	IsMediator(address common.Address) bool
 	GetMediators() map[common.Address]bool
