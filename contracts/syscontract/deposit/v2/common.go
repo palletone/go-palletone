@@ -60,12 +60,18 @@ func getList(stub shim.ChaincodeStubInterface, typeList string) (map[string]bool
 	if byte == nil {
 		return nil, nil
 	}
+	//  兼容以前的数据
 	listSlice := []string{}
+	list := make(map[string]bool)
 	err = json.Unmarshal(byte, &listSlice)
 	if err != nil {
-		return nil, err
+		//  兼容以前的数据
+		err = json.Unmarshal(byte, &list)
+		if err != nil {
+			return nil, err
+		}
+		return list,nil
 	}
-	list := make(map[string]bool)
 	for _,v := range listSlice {
 		list[v] = true
 	}
@@ -204,11 +210,16 @@ func getListForForfeiture(stub shim.ChaincodeStubInterface) (map[string]*modules
 		return nil, nil
 	}
 	forFeitures := []*modules.Forfeiture{}
+	list := make(map[string]*modules.Forfeiture)
 	err = json.Unmarshal(byte, &forFeitures)
 	if err != nil {
-		return nil, err
+		//  兼容以前的数据
+		err = json.Unmarshal(byte, &list)
+		if err != nil {
+			return nil, err
+		}
+		return list,nil
 	}
-	list := make(map[string]*modules.Forfeiture)
 	for _,v := range forFeitures {
 		list[v.ForfeitureAddress] = v
 	}
@@ -247,11 +258,16 @@ func getListForQuit(stub shim.ChaincodeStubInterface) (map[string]*modules.QuitN
 		return nil, nil
 	}
 	nodes := []*modules.QuitNode{}
+	list := make(map[string]*modules.QuitNode)
 	err = json.Unmarshal(byte, &nodes)
 	if err != nil {
-		return nil, err
+		//  兼容以前的数据
+		err = json.Unmarshal(byte, &list)
+		if err != nil {
+			return nil, err
+		}
+		return list,nil
 	}
-	list := make(map[string]*modules.QuitNode)
 	for _,v := range nodes {
 		list[v.Address] = v
 	}
