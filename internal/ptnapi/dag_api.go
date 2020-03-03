@@ -590,15 +590,6 @@ func (s *PublicDagAPI) GetHeadUnit() (*ptnjson.UnitPropertyJson, error) {
 	return nil, nil
 }
 
-func (s *PublicDagAPI) GetMediatorSchedule() (*modules.MediatorSchedule, error) {
-	dag := s.b.Dag()
-	if dag != nil {
-		return dag.GetMediatorSchl(), nil
-	}
-
-	return nil, nil
-}
-
 func (s *PublicDagAPI) IsSynced() bool {
 	dag := s.b.Dag()
 	if dag != nil {

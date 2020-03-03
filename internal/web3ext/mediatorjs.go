@@ -121,6 +121,11 @@ web3._extend({
 			call: 'mediator_isActive',
 			params: 1,
 		}),
+		new web3._extend.Method({
+            name: 'getSchedule',
+            call: 'mediator_getSchedule',
+            params: 0,
+        }),
 	],
 	properties: [
 		new web3._extend.Property({

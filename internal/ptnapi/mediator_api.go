@@ -192,6 +192,10 @@ func (a *PublicMediatorAPI) GetInfo(addStr string) (*modules.MediatorInfo, error
 	return a.Dag().GetMediatorInfo(mediator), nil
 }
 
+func (s *PublicMediatorAPI) GetSchedule() (*modules.MediatorSchedule, error) {
+	return s.Dag().GetMediatorSchl(), nil
+}
+
 const DefaultResult = "Transaction executed locally, but may not be confirmed by the network yet!"
 
 type PrivateMediatorAPI struct {

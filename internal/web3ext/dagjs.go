@@ -212,7 +212,7 @@ web3._extend({
         new web3._extend.Method({
             name: 'getChainInfo',
             call: 'dag_getChainInfo',
-            params: 1,
+            params: 0,
         }),
         new web3._extend.Method({
             name: 'getStableUnit',
@@ -222,11 +222,6 @@ web3._extend({
         new web3._extend.Method({
             name: 'getHeadUnit',
             call: 'dag_getHeadUnit',
-            params: 0,
-        }),
-		new web3._extend.Method({
-            name: 'getMediatorSchedule',
-            call: 'dag_getMediatorSchedule',
             params: 0,
         }),
 		new web3._extend.Method({
