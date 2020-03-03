@@ -93,6 +93,7 @@ func (pm *ProtocolManager) saveStableUnitRecvLoop() {
 		case event := <-pm.saveStableUnitCh:
 			log.Debugf("receive saveStableUnitEvent")
 			go pm.producer.ClearGroupSignBufs(event.Unit)
+			go pm.delayDiscPrecedingMediator(event.Unit)
 
 			// Err() channel will be closed when unsubscribing.
 		case <-pm.saveStableUnitSub.Err():
@@ -123,18 +124,22 @@ func (pm *ProtocolManager) switchMediatorConnect(isChanged bool) {
 	//go pm.checkConnectedAndSynced()
 	go pm.producer.UpdateMediatorsDKG(true)
 
-	// 延迟关闭和旧活跃mediator节点的连接
-	go pm.delayDiscPrecedingMediator()
+	// 在其他地方当unit稳定后再关闭连接
+	//// 延迟关闭和旧活跃mediator节点的连接
+	//go pm.delayDiscPrecedingMediator()
 }
 
 func (pm *ProtocolManager) connectWitchActiveMediators() {
-	// 1. 判断本节点是否是活跃mediator
+	// 更新相关标记
+	pm.lastMaintenanceTime = pm.dag.LastMaintenanceTime()
+
+	// 判断本节点是否是活跃mediator
 	log.Debugf("to connected with all active mediator nodes")
 	if !pm.producer.LocalHaveActiveMediator() {
 		return
 	}
 
-	// 2. 和其他活跃mediator节点相连
+	// 和其他活跃mediator节点相连
 	peers := pm.dag.GetActiveMediatorNodes()
 	for _, peer := range peers {
 		// 仅当不是本节点，才做处理
@@ -143,6 +148,9 @@ func (pm *ProtocolManager) connectWitchActiveMediators() {
 			pm.srvr.AddPeer(peer)        // 建立连接
 		}
 	}
+
+	// 更新相关标记
+	pm.isConnectedNewMediator = true
 }
 
 /*func (pm *ProtocolManager) checkConnectedAndSynced() {
@@ -198,7 +206,15 @@ func (pm *ProtocolManager) connectWitchActiveMediators() {
 	}
 }*/
 
-func (pm *ProtocolManager) delayDiscPrecedingMediator() {
+func (pm *ProtocolManager) delayDiscPrecedingMediator(stableUnit *modules.Unit) {
+	if !pm.isConnectedNewMediator {
+		return
+	}
+
+	if !(stableUnit.Timestamp() > pm.lastMaintenanceTime) {
+		return
+	}
+
 	// 1. 判断当前节点是否是上一届活跃mediator
 	if !pm.producer.LocalHavePrecedingMediator() {
 		return
@@ -219,23 +235,26 @@ func (pm *ProtocolManager) delayDiscPrecedingMediator() {
 		}
 	}
 
-	// 3. 设置定时器延迟 将上一届的活跃mediator节点从Trusted列表中移除
 	disconnectFn := func() {
+		log.Debugf("disconnect with preceding mediator nodes")
 		for _, peer := range delayDiscNodes {
 			pm.srvr.RemoveTrustedPeer(peer)
 		}
 	}
 
-	expiration := pm.dag.UnitIrreversibleTime()
-	delayDisc := time.NewTimer(expiration)
+	//// 3. 设置定时器延迟 将上一届的活跃mediator节点从Trusted列表中移除
+	//expiration := pm.dag.UnitIrreversibleTime()
+	//delayDisc := time.NewTimer(expiration)
+	//
+	//select {
+	//case <-pm.quitSync:
+	//	return
+	//case <-delayDisc.C:
+	//	disconnectFn()
+	//}
 
-	select {
-	case <-pm.quitSync:
-		return
-	case <-delayDisc.C:
-		log.Debugf("disconnect with preceding mediator nodes")
-		disconnectFn()
-	}
+	disconnectFn()
+	pm.isConnectedNewMediator = false
 }
 
 func (p *peer) MarkVSSDeal(hash common.Hash) {
