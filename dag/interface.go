@@ -182,7 +182,6 @@ type IDag interface {
 	GetGlobalProp() *modules.GlobalProperty
 	GetMediatorSchl() *modules.MediatorSchedule
 	GetMediatorCount() int
-	GetSlotTime(slotNum uint32) time.Time
 
 	IsMediator(address common.Address) bool
 	GetMediators() map[common.Address]bool
@@ -199,6 +198,7 @@ type IDag interface {
 	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
 	GetScheduledMediator(slotNum uint32) common.Address
 	GetSlotAtTime(when time.Time) uint32
+	GetSlotTime(slotNum uint32) time.Time
 	GetChainParameters() *core.ChainParameters
 	GetImmutableChainParameters() *core.ImmutableChainParameters
 

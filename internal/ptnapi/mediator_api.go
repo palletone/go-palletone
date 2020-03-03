@@ -196,9 +196,20 @@ func (s *PublicMediatorAPI) GetSchedule() (*modules.MediatorSchedule, error) {
 	return s.Dag().GetMediatorSchl(), nil
 }
 
+// 返回距离下一个生产槽的时间差（秒）
 func (s *PublicMediatorAPI) NextSlotTime() (int64, error) {
-	nextSlotTime := s.Dag().GetSlotTime(1)
-	diffSecs := nextSlotTime.Unix() - time.Now().Unix()
+	// 获取当前的生产槽的编号
+	//nowFine := time.Now()
+	//now := nowFine.Add(500 * time.Millisecond)
+	now := time.Now()
+	slot := s.Dag().GetSlotAtTime(now)
+	//if slot == 0 {
+	//	slot = 1
+	//}
+
+	// 获取下个生产槽的时间
+	nextSlotTime := s.Dag().GetSlotTime(slot+1)
+	diffSecs := nextSlotTime.Unix() - now.Unix()
 
 	return diffSecs, nil
 }
