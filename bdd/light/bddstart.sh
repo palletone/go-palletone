@@ -52,7 +52,7 @@ if [ $syncutxoinfo = $value ];then
 else
     echo "============syncUTXOByAddr account5 err:"$syncutxoinfo
     python  -m robot.run -d $logpath --test fail -v errorMessage:$syncutxoinfo ./light.robot
-    return false
+    exit 0
 fi
 
 #ptn.getBalance in light node5
@@ -68,7 +68,7 @@ if [ $t1 = 100 ];then
 else
     echo "============getBalance account5 err:"$t1
     python  -m robot.run -d $logpath --test fail -v errorMessage:"getBalance $account5 failed" ./light.robot
-    return false
+    exit 0
 fi
 
 
@@ -87,7 +87,7 @@ if [ $syncutxoinfo = $value ];then
 else
     echo "============syncUTXOByAddr account6 err:"$syncutxoinfo
     python  -m robot.run -d $logpath --test fail -v errorMessage:$syncutxoinfo ./light.robot
-    return false
+    exit 0
 fi
 
 
@@ -103,7 +103,7 @@ if [ $t1 = 80 ];then
 else
     echo "============getBalance account6 err:"$t1
     python  -m robot.run -d $logpath --test fail -v errorMessage:"getBalance $account6 failed" ./light.robot
-    return false
+    exit 0
 fi
 
 
@@ -123,7 +123,7 @@ if [ $syncutxoinfo = $value ];then
 else
     echo "============syncUTXOByAddr account7 err:"$syncutxoinfo
     python  -m robot.run -d $logpath --test fail -v errorMessage:$syncutxoinfo ./light.robot
-    return false
+    exit 0
 fi
 
 
