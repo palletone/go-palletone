@@ -507,13 +507,19 @@ func (pm *ProtocolManager) SigShareMsg(msg p2p.Msg, p *peer) error {
 	// 判断是否同步, 如果没同步完成，接收到的 sigShare 对当前节点来说是超前的
 	if !pm.dag.IsSynced(false) {
 		log.Debugf(errStr)
-
 		go pm.BroadcastSigShare(&sigShare)
+
 		//return fmt.Errorf(errStr)
 		return nil
 	}
 
 	unitHash := sigShare.UnitHash
+	// 或者由于网络延迟，该单元在收到群签名之前，已经根据深度转为不可逆了
+	isStable, _ := pm.dag.IsIrreversibleUnit(unitHash)
+	if isStable {
+		return nil
+	}
+
 	header, err := pm.dag.GetHeaderByHash(unitHash)
 	if err != nil {
 		log.Debugf("fail to get header of unit(%v), err: %v", unitHash.TerminalString(), err.Error())

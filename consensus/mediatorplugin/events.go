@@ -30,16 +30,6 @@ type NewProducedUnitEvent struct {
 	Unit *modules.Unit
 }
 
-type SigShareEvent struct {
-	UnitHash common.Hash
-	SigShare []byte
-	Deadline uint64 // 被广播的截止日期
-}
-
-func (e *SigShareEvent) Hash() common.Hash {
-	return util.RlpHash(e)
-}
-
 type VSSDealEvent struct {
 	DstIndex uint32
 	Deal     *dkg.Deal
@@ -56,6 +46,16 @@ type VSSResponseEvent struct {
 }
 
 func (e *VSSResponseEvent) Hash() common.Hash {
+	return util.RlpHash(e)
+}
+
+type SigShareEvent struct {
+	UnitHash common.Hash
+	SigShare []byte
+	//Deadline uint64 // 被广播的截止日期
+}
+
+func (e *SigShareEvent) Hash() common.Hash {
 	return util.RlpHash(e)
 }
 

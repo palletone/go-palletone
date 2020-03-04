@@ -333,10 +333,10 @@ func (p *peer) MarkSigShare(hash common.Hash) {
 }
 
 func (pm *ProtocolManager) BroadcastSigShare(sigShare *mp.SigShareEvent) {
-	now := uint64(time.Now().Unix())
-	if now > sigShare.Deadline {
-		return
-	}
+	//now := uint64(time.Now().Unix())
+	//if now > sigShare.Deadline {
+	//	return
+	//}
 
 	peers := pm.peers.PeersWithoutSigShare(sigShare.UnitHash)
 	for _, peer := range peers {
