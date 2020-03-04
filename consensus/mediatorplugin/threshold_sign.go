@@ -221,7 +221,7 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 	event := SigShareEvent{
 		UnitHash: unitHash,
 		SigShare: sigShare,
-		Deadline: mp.getGroupSignMessageDeadline(),
+		//Deadline: mp.getGroupSignMessageDeadline(),
 	}
 
 	go mp.sigShareFeed.Send(event)
