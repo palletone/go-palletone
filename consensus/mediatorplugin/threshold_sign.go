@@ -435,11 +435,14 @@ func (mp *MediatorPlugin) ClearGroupSignBufs(stableUnit *modules.Unit) {
 		delete(mp.toTBLSRecoverBuf[localMed], unitHash)
 	}
 
-	if _, ok := mp.toTBLSSignBuf[localMed][unitHash]; ok {
-		log.Debugf("the unit(%v) has expired confirmation time, no longer need the mediator(%v)"+
-			" to sign-group", unitHash.TerminalString(), localMed.Str())
-		delete(mp.toTBLSSignBuf[localMed], unitHash)
+	for localMed := range mp.toTBLSSignBuf {
+		if _, ok := mp.toTBLSSignBuf[localMed][unitHash]; ok {
+			log.Debugf("the unit(%v) has expired confirmation time, no longer need the mediator(%v)"+
+				" to sign-group", unitHash.TerminalString(), localMed.Str())
+			delete(mp.toTBLSSignBuf[localMed], unitHash)
+		}
 	}
+
 	//log.Debugf("toTBLSBufLock.Unlock()")
 	mp.toTBLSBufLock.Unlock()
 }
