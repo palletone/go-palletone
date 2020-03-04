@@ -29,6 +29,7 @@ import (
 	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/validator"
 	"github.com/palletone/go-palletone/dag/dboperation"
+	"github.com/palletone/go-palletone/common/util"
 )
 
 func (p *Processor) SubscribeContractEvent(ch chan<- ContractEvent) event.Subscription {
@@ -81,7 +82,7 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) (bool, error) {
 }
 
 //只处理用户合约invoke,后期处理所有类型的用户合约
-func (p *Processor) ProcessContractTxMsg(tx *modules.Transaction, rw rwset.TxManager, dag dboperation.IContractDag) (*modules.Transaction, error) {
+func (p *Processor) ProcessUserContractTxMsg(tx *modules.Transaction, rw rwset.TxManager, dag dboperation.IContractDag) (*modules.Transaction, error) {
 	if tx == nil {
 		return nil, errors.New("ProcessContractTxMsg, tx is nil")
 	}
@@ -122,7 +123,8 @@ func (p *Processor) ProcessContractTxMsg(tx *modules.Transaction, rw rwset.TxMan
 	//	return nil, nil
 	//}
 
-	return p.contractTxExec(tx, rw, dag, ele)
+	go p.contractTxExec(tx, rw, dag, ele)
+	return tx, nil
 }
 
 func (p *Processor) contractEleEvent(tx *modules.Transaction) error {
@@ -176,6 +178,11 @@ func (p *Processor) contractEleEvent(tx *modules.Transaction) error {
 	return nil
 }
 
+//处理TxMsg中的Tx
+//install:接收请求交易，由commit事件进行处理
+//deploy:接收请求交易，需要进行election
+//invoke:执行请求交易，异步执行，将结果记录到rst
+//stop:执行请求交易，异步执行，将结果记录rst ???
 func (p *Processor) contractTxExec(tx *modules.Transaction, rw rwset.TxManager, dag dboperation.IContractDag, ele *modules.ElectionNode) (*modules.Transaction, error) {
 	if tx == nil {
 		return nil, errors.New("contractTxExec, tx is nil")
@@ -207,6 +214,11 @@ func (p *Processor) contractTxExec(tx *modules.Transaction, rw rwset.TxManager, 
 	p.locker.Unlock()
 
 	log.Debugf("[%s]contractTxExec, add tx reqId:%s", shortId(reqId.String()), reqId.String())
+
+	if tx.GetContractTxType() != modules.APP_CONTRACT_INVOKE_REQUEST {
+		return tx, nil
+	}
+
 	//if !tx.IsSystemContract() { //系统合约在UNIT构建前执行
 	//	go p.runContractReq(reqId, ele, rwset.RwM, p.dag)
 	//}
@@ -215,7 +227,7 @@ func (p *Processor) contractTxExec(tx *modules.Transaction, rw rwset.TxManager, 
 	if account == nil {
 		return nil, fmt.Errorf("[%s]contractTxExec, getLocalJuryAccount is nil", shortId(reqId.String()))
 	}
-	sigTx, err := p.RunAndSignTx(tx, rw, dag, account.Address, p.ptn.GetKeyStore()) //long time ...
+	sigTx, err := p.RunAndSignTx(tx, rw, dag, account.Address) //long time ...
 	if err != nil {
 		log.Errorf("[%s]contractTxExec, RunAndSignTx err:%s", shortId(reqId.String()), err.Error())
 		return nil, err

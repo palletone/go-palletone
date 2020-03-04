@@ -51,10 +51,14 @@ func (validate *Validate) validateContractTplPayload(contractTplPayload *modules
 	// to check template whether existing or not
 	stateDb := validate.statequery
 	if stateDb != nil {
-		tpl, _ := validate.statequery.GetContractTpl(contractTplPayload.TemplateId)
-		if tpl != nil {
-			log.Debug("validateContractTplPayload", "Contract template already exist!", contractTplPayload.TemplateId)
-			return TxValidationCode_INVALID_CONTRACT_TEMPLATE
+		if len(contractTplPayload.TemplateId) != 0 {
+			tpl, _ := validate.statequery.GetContractTpl(contractTplPayload.TemplateId)
+			if tpl != nil {
+				log.Debug("validateContractTplPayload", "Contract template already exist!!", contractTplPayload.TemplateId)
+				return TxValidationCode_INVALID_CONTRACT_TEMPLATE
+			}
+		} else { //交易错误信息处理时，TemplateId为空
+			log.Debug("validateContractTplPayload", "Contract template len is 0:", contractTplPayload.TemplateId)
 		}
 	}
 	return TxValidationCode_VALID

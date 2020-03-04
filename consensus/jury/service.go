@@ -522,7 +522,7 @@ func (p *Processor) GenContractSigTransaction(signer common.Address, password st
 	return tx, nil
 }
 func (p *Processor) RunAndSignTx(reqTx *modules.Transaction, txMgr rwset.TxManager, dag dboperation.IContractDag,
-	mediatorAddr common.Address, ks *keystore.KeyStore) (*modules.Transaction, error) {
+	addr common.Address) (*modules.Transaction, error) {
 	cctx := &contracts.ContractProcessContext{
 		RequestId:    reqTx.RequestHash(),
 		Dag:          dag,
@@ -546,7 +546,7 @@ func (p *Processor) RunAndSignTx(reqTx *modules.Transaction, txMgr rwset.TxManag
 		log.Error("[%s]runContractReq, GenContractSigTransactions error:%s", shortId(reqId.String()), err.Error())
 		return nil, err
 	}
-	sigTx, err := p.GenContractSigTransaction(mediatorAddr, "", tx, ks, dag.GetUtxoEntry)
+	sigTx, err := p.GenContractSigTransaction(addr, "", tx, p.ptn.GetKeyStore(), dag.GetUtxoEntry)
 	if err != nil {
 		log.Error("GenContractSigTransctions", "error", err.Error())
 		return nil, err
@@ -1081,11 +1081,11 @@ func (p *Processor) BuildUnitTxs(rwM *rwset.RwSetTxMgr, mDag dboperation.IContra
 	for i, tx := range sortedTxs {
 		var saveTx *modules.Transaction
 
-		log.Debugf("buildUnitTxs, idx[%d] txReqId[%s]-hash[%s]:IsContractTx[%v]",
-			i, tx.RequestHash().String(), tx.Hash().String(), tx.IsContractTx())
+		log.Debugf("buildUnitTxs, idx[%d] txReqId[%s]:IsContractTx[%v]",
+			i, tx.RequestHash().String(), tx.IsContractTx())
 		if tx.IsContractTx() && tx.IsOnlyContractRequest() { //只处理请求合约
 			if tx.IsSystemContract() { //执行系统合约
-				signedTx, err := p.RunAndSignTx(tx, rwM, mDag, addr, p.ptn.GetKeyStore())
+				signedTx, err := p.RunAndSignTx(tx, rwM, mDag, addr)
 				if err != nil {
 					log.Errorf("BuildUnitTxs,run contract request[%s] fail:%s", tx.Hash(), err.Error())
 					continue
@@ -1095,6 +1095,8 @@ func (p *Processor) BuildUnitTxs(rwM *rwset.RwSetTxMgr, mDag dboperation.IContra
 				if mtx, ok := p.mtx[tx.RequestHash()]; ok {
 					if mtx.rstTx != nil {
 						saveTx = mtx.rstTx
+
+						mtx.valid = false
 					}
 				}
 			}

@@ -397,30 +397,57 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		}
 
 		log.Debugf("ProtocolManager, idx[%d]  tx:%s", i, tx.String())
-		//系统合约的请求可以P2P广播，但是包含结果的系统合约请求，只能在打包时生成，不能广播
-		if tx.IsSystemContract() && !tx.IsOnlyContractRequest() {
-			log.Warnf("ProtocolManager, Tx[%s] is a sys contract with result, don't need send by p2p", txHash.String())
-			continue
+		if tx.IsContractTx() {
+			//系统合约的请求可以P2P广播，但是包含结果的系统合约请求，只能在打包时生成，不能广播
+			if tx.IsSystemContract() {
+				if !tx.IsOnlyContractRequest() {
+					log.Warnf("ProtocolManager, Tx[%s] is a sys contract with result, don't need send by p2p", txHash.String())
+					continue
+				}
+			} else {
+				if tx.IsOnlyContractRequest() {
+					_, err := pm.contractProc.ProcessUserContractTxMsg(tx, rwM, mDag)
+					if err != nil {
+						log.Errorf("ProtocolManager, Tx[%s] ProcessContractTxMsg err:%s", tx.RequestHash().String(), err.Error())
+					}
+
+					//if tx.GetContractTxType() == modules.APP_CONTRACT_INVOKE_REQUEST ||
+					//	tx.GetContractTxType() == modules.APP_CONTRACT_TPL_REQUEST {
+					//	sigTx, err := pm.contractProc.ProcessUserContractTxMsg(tx, rwM, mDag)
+					//	if err != nil {
+					//		log.Errorf("ProtocolManager, Tx[%s] ProcessContractTxMsg err:%s", tx.RequestHash().String(), err.Error())
+					//	}
+					//	if sigTx != nil {
+					//		//saveTx = sigTx
+					//	}
+					//}
+				}
+			}
 		}
-		log.Debugf("ProtocolManager, TxMsg tx[%d][%s]", i, tx.RequestHash().String())
-		//只处理用户合约的Invoke请求交易
-		if !tx.IsSystemContract() && tx.IsOnlyContractRequest() && tx.GetContractTxType() == modules.APP_CONTRACT_INVOKE_REQUEST {
-			//if !pm.dag.IsSynced(false) {
-			//	log.Debugf(errStr)
-			//	//return fmt.Errorf(errStr)
-			//	return nil
-			//}
-			sigTx, err := pm.contractProc.ProcessContractTxMsg(tx, rwM, mDag)
-			if err != nil {
-				log.Errorf("ProtocolManager, Tx[%s] ProcessContractTxMsg err:%s", tx.RequestHash().String(), err.Error())
-			}
-			if sigTx != nil {
-				mDag.SaveTransaction(sigTx, i)
-			}
-		} else {
+		//
+		//log.Debugf("ProtocolManager, TxMsg tx[%d][%s]", i, tx.RequestHash().String())
+		////只处理用户合约的Invoke请求交易
+		//if !tx.IsSystemContract() && tx.IsOnlyContractRequest() && tx.GetContractTxType() == modules.APP_CONTRACT_INVOKE_REQUEST {
+		//	//if !pm.dag.IsSynced(false) {
+		//	//	log.Debugf(errStr)
+		//	//	//return fmt.Errorf(errStr)
+		//	//	return nil
+		//	//}
+		//	sigTx, err := pm.contractProc.ProcessContractTxMsg(tx, rwM, mDag)
+		//	if err != nil {
+		//		log.Errorf("ProtocolManager, Tx[%s] ProcessContractTxMsg err:%s", tx.RequestHash().String(), err.Error())
+		//	}
+		//	if sigTx != nil {
+		//		mDag.SaveTransaction(sigTx, i)
+		//	}
+		//} else {
+		//	mDag.SaveTransaction(tx, i)
+		//}
+		//tx
+
+		if tx != nil {
 			mDag.SaveTransaction(tx, i)
 		}
-
 		//添加到本地交易
 		err := pm.contractProc.AddLocalTx(tx)
 		if err != nil {

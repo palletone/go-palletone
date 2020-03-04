@@ -898,11 +898,7 @@ func (tx *Transaction) IsSystemContract() bool {
 			//log.Debug("isSystemContract", "contract id", contractAddr, "len", len(contractAddr))
 			return contractAddr.IsSystemContractAddress() //, nil
 
-		} else if msg.App == APP_CONTRACT_TPL_REQUEST {
-			return true //todo  先期将install作为系统合约处理，只有Mediator可以安装，后期在扩展到所有节点
-		} else if msg.App >= APP_CONTRACT_DEPLOY_REQUEST {
-			return false //, nil
-		}
+		} 
 	}
 	return false //没有Request，当然就不是系统合约
 }
