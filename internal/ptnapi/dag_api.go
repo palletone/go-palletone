@@ -319,6 +319,32 @@ func (s *PublicDagAPI) GetFastUnitIndex(ctx context.Context, assetid string) str
 
 	return string(content)
 }
+
+func (s *PublicDagAPI) GetChainInfo() (*ptnjson.ChainInfo, error) {
+	gasToken := dagconfig.DagConfig.GetGasToken()
+
+	headUnit, err := s.b.Dag().UnstableHeadUnitProperty(gasToken)
+	if err != nil {
+		return nil, err
+	}
+	stableUnit, err := s.b.Dag().StableHeadUnitProperty(gasToken)
+	if err != nil {
+		return nil, err
+	}
+
+	ci := new(ptnjson.ChainInfo)
+	ci.HeadHash = headUnit.Hash
+	ci.HeadNum = headUnit.ChainIndex.Index
+	ci.HeadTime = time.Unix(int64(headUnit.Timestamp),
+		0).Format("2006-01-02 15:04:05 -0700 MST")
+	ci.StableHash = stableUnit.Hash
+	ci.StableIndex = stableUnit.ChainIndex.Index
+	ci.StableTime = time.Unix(int64(stableUnit.Timestamp),
+		0).Format("2006-01-02 15:04:05 -0700 MST")
+
+	return ci, nil
+}
+
 func (s *PublicDagAPI) GetUnitSummaryByNumber(ctx context.Context, height Int) string {
 	log.Info("PublicBlockChainAPI", "GetUnitByNumber height:", height)
 
@@ -559,15 +585,6 @@ func (s *PublicDagAPI) GetHeadUnit() (*ptnjson.UnitPropertyJson, error) {
 		}
 
 		return ptnjson.UnitPropertyToJson(unitProperty), nil
-	}
-
-	return nil, nil
-}
-
-func (s *PublicDagAPI) GetMediatorSchedule() (*modules.MediatorSchedule, error) {
-	dag := s.b.Dag()
-	if dag != nil {
-		return dag.GetMediatorSchl(), nil
 	}
 
 	return nil, nil

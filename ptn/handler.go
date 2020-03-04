@@ -161,6 +161,9 @@ type ProtocolManager struct {
 
 	saveStableUnitCh  chan modules.SaveUnitEvent
 	saveStableUnitSub event.Subscription
+
+	lastMaintenanceTime    int64
+	isConnectedNewMediator bool
 }
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
@@ -190,6 +193,9 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 		receivedCache:  freecache.NewCache(cacheSize),
 		contract:       contract,
 		pDocker:        pDocker,
+
+		lastMaintenanceTime: 0,
+		isConnectedNewMediator: false,
 	}
 	protocolName, _, _, _, _ := gasToken.ParseAssetId()
 	manager.mainAssetId = gasToken
@@ -363,31 +369,26 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 	// 启动广播的goroutine
 	go pm.txBroadcastLoop()
 
-	// append by Albert·Gou
 	// broadcast new unit produced by mediator
 	pm.newProducedUnitCh = make(chan mp.NewProducedUnitEvent)
 	pm.newProducedUnitSub = pm.producer.SubscribeNewProducedUnitEvent(pm.newProducedUnitCh)
 	go pm.newProducedUnitBroadcastLoop()
 
-	// append by Albert·Gou
 	// send signature share
 	pm.sigShareCh = make(chan mp.SigShareEvent)
 	pm.sigShareSub = pm.producer.SubscribeSigShareEvent(pm.sigShareCh)
 	go pm.sigShareTransmitLoop()
 
-	// append by Albert·Gou
 	// send unit group signature
 	pm.groupSigCh = make(chan mp.GroupSigEvent)
 	pm.groupSigSub = pm.producer.SubscribeGroupSigEvent(pm.groupSigCh)
 	go pm.groupSigBroadcastLoop()
 
-	// append by Albert·Gou
 	// send  VSS deal
 	pm.vssDealCh = make(chan mp.VSSDealEvent)
 	pm.vssDealSub = pm.producer.SubscribeVSSDealEvent(pm.vssDealCh)
 	go pm.vssDealTransmitLoop()
 
-	// append by Albert·Gou
 	// broadcast  VSS Response
 	pm.vssResponseCh = make(chan mp.VSSResponseEvent)
 	pm.vssResponseSub = pm.producer.SubscribeVSSResponseEvent(pm.vssResponseCh)

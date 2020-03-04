@@ -20,8 +20,6 @@ package mediatorplugin
 
 import (
 	"fmt"
-	"time"
-
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
@@ -373,11 +371,11 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	// recover后 删除buf
 	delete(mp.toTBLSRecoverBuf[localMed], unitHash)
 
-	deadline := time.Now().Add(mp.dag.UnitIrreversibleTime())
+	//deadline := time.Now().Add(mp.dag.UnitIrreversibleTime())
 	event := GroupSigEvent{
 		UnitHash: unitHash,
 		GroupSig: groupSig,
-		Deadline: uint64(deadline.Unix()),
+		//Deadline: uint64(deadline.Unix()),
 	}
 	go mp.groupSigFeed.Send(event)
 }

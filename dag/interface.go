@@ -139,7 +139,9 @@ type IDag interface {
 	IsSynced(toStrictly bool) bool
 	SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription
 	GetPrecedingMediatorNodes() map[string]*discover.Node
-	UnitIrreversibleTime() time.Duration
+	//UnitIrreversibleTime() time.Duration
+	LastMaintenanceTime() int64
+	IsIrreversibleUnit(hash common.Hash) (bool, error)
 	GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string,
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
 
@@ -189,13 +191,14 @@ type IDag interface {
 
 	GetVotingForMediator(addStr string) (map[string]uint64, error)
 	MediatorVotedResults() (map[string]uint64, error)
-	LookupMediatorInfo() []*modules.MediatorInfo
+	LookupMediatorInfo() []*modules.MediatorInfo2
 	IsActiveMediator(add common.Address) bool
 	GetMediator(add common.Address) *core.Mediator
 
 	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
 	GetScheduledMediator(slotNum uint32) common.Address
 	GetSlotAtTime(when time.Time) uint32
+	GetSlotTime(slotNum uint32) time.Time
 	GetChainParameters() *core.ChainParameters
 	GetImmutableChainParameters() *core.ImmutableChainParameters
 

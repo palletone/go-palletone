@@ -23,7 +23,9 @@ package common
 import (
 	"encoding/json"
 	"errors"
+
 	"github.com/palletone/go-palletone/common/util"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -65,7 +67,8 @@ type IStateRepository interface {
 	RetrieveMediator(address common.Address) (*core.Mediator, error)
 	UpdateMediatorInfoExpand(med *core.Mediator) error
 	GetMediators() map[common.Address]bool
-	LookupMediatorInfo() []*modules.MediatorInfo
+	LookupMediatorBaseInfo() []*modules.MediatorInfo
+	LookupMediatorInfo() []*modules.MediatorInfo2
 	IsMediator(address common.Address) bool
 	RetrieveMediatorInfo(address common.Address) (*modules.MediatorInfo, error)
 	StoreMediatorInfo(add common.Address, mi *modules.MediatorInfo) error
@@ -416,10 +419,21 @@ func (rep *StateRepository) RetrieveMediatorInfo(address common.Address) (*modul
 	return rep.statedb.RetrieveMediatorInfo(address)
 }
 
-func (rep *StateRepository) LookupMediatorInfo() []*modules.MediatorInfo {
+func (rep *StateRepository) LookupMediatorBaseInfo() []*modules.MediatorInfo {
 	return rep.statedb.LookupMediatorInfo()
 }
-
+func (rep *StateRepository) LookupMediatorInfo() []*modules.MediatorInfo2 {
+	infos := rep.statedb.LookupMediatorInfo()
+	result := []*modules.MediatorInfo2{}
+	gasToken := dagconfig.DagConfig.GetGasToken()
+	for _, info := range infos {
+		hash, _ := rep.dagdb.GetHashByNumber(modules.NewChainIndex(gasToken, uint64(info.LastConfirmedUnitNum)))
+		header, _ := rep.dagdb.GetHeaderByHash(hash)
+		info2 := &modules.MediatorInfo2{*info, string(header.Extra())}
+		result = append(result, info2)
+	}
+	return result
+}
 func (rep *StateRepository) StoreMediatorInfo(add common.Address, mi *modules.MediatorInfo) error {
 	return rep.statedb.StoreMediatorInfo(add, mi)
 }

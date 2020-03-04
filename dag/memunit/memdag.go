@@ -414,7 +414,7 @@ func (chain *MemDag) checkStableCondition(tempDB *ChainTempDb, unit *modules.Uni
 		log.Debugf("stable threshold(%v) must be nonzero", chain.threshold)
 		return false
 	}
-	mis := tempDB.StateRep.LookupMediatorInfo()
+	mis := tempDB.StateRep.LookupMediatorBaseInfo()
 	mCount := len(mis)
 	offset := mCount - chain.threshold
 
