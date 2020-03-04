@@ -29,7 +29,6 @@ import (
 	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/validator"
 	"github.com/palletone/go-palletone/dag/dboperation"
-	"github.com/palletone/go-palletone/common/util"
 )
 
 func (p *Processor) SubscribeContractEvent(ch chan<- ContractEvent) event.Subscription {
