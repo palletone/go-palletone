@@ -248,6 +248,47 @@ func (s *PublicDagAPI) GetUnitJsonByIndex(ctx context.Context, asset_id string, 
 	}
 	return string(content)
 }
+func (s *PublicDagAPI) GetUnitHexByIndex(ctx context.Context, asset_id string, index uint64) string {
+	number := &modules.ChainIndex{}
+	number.Index = index
+	assetId, _, err := modules.String2AssetId(asset_id)
+	if err != nil {
+		return fmt.Sprintf("the [%s] isn't unknow asset_id.", asset_id)
+	}
+	number.AssetID = assetId
+	log.Info("GetUnitHexByIndex info", "GetUnitHexByIndex:", index, "number:", number.String())
+
+	unit := s.b.GetUnitByNumber(number)
+	if unit == nil {
+		log.Info("GetUnitHexByIndex is failed,", "number:", number)
+		return "the unit isn't exist."
+	}
+	bytes, err := rlp.EncodeToBytes(unit)
+	if err != nil {
+		log.Info("getUnitHexByHash is failed,", "error", err.Error())
+		return err.Error()
+	}
+	return common.Bytes2Hex(bytes)
+}
+func (s *PublicDagAPI) GetUnitHexByHash(ctx context.Context, condition string) string {
+	log.Info("PublicDagAPI", "GetUnitHexByHash condition:", condition)
+	hash := common.Hash{}
+	if err := hash.SetHexString(condition); err != nil {
+		log.Info("GetUnitHexByHash SetHexString err:", "error:", err.Error(), "condition:", condition)
+		return "hash hex is illegal"
+	}
+	unit := s.b.GetUnitByHash(hash)
+	if unit == nil {
+		log.Info("getUnitHexByHash is failed,GetUnitHexByHash error:", "error", hash.String())
+		return "GetUnitByHash nil"
+	}
+	bytes, err := rlp.EncodeToBytes(unit)
+	if err != nil {
+		log.Info("getUnitHexByHash is failed,", "error", err.Error())
+		return err.Error()
+	}
+	return common.Bytes2Hex(bytes)
+}
 
 // getUnitsByIndex
 func (s *PublicDagAPI) GetUnitsByIndex(ctx context.Context, start, end decimal.Decimal, asset string) string {

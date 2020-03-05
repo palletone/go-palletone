@@ -86,7 +86,7 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 		return TxValidationCode_NOT_COMPARE_SIZE, txFee
 	}
 	//要求完整交易，但是tx只是一个Request
-	if isFullTx && tx.IsNewContractInvokeRequest() {
+	if validate.enableTxFullCheck && isFullTx && tx.IsNewContractInvokeRequest() {
 		log.Warnf("Tx[%s] is a request, don't have result message", tx.Hash().String())
 		return TxValidationCode_INVALID_MSG, txFee
 	}
