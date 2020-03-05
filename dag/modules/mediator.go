@@ -41,6 +41,10 @@ type MediatorInfo struct {
 	*core.MediatorApplyInfo
 	*core.MediatorInfoExpand
 }
+type MediatorInfo2 struct {
+	MediatorInfo
+	Version string
+}
 
 func NewMediatorInfo() *MediatorInfo {
 	return &MediatorInfo{

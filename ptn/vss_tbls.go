@@ -19,8 +19,6 @@
 package ptn
 
 import (
-	"time"
-
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/p2p"
 	"github.com/palletone/go-palletone/common/p2p/discover"
@@ -141,10 +139,10 @@ func (pm *ProtocolManager) groupSigBroadcastLoop() {
 // @author Albert·Gou
 // BroadcastGroupSig will propagate the group signature of unit to p2p network
 func (pm *ProtocolManager) BroadcastGroupSig(groupSig *mp.GroupSigEvent) {
-	now := uint64(time.Now().Unix())
-	if now > groupSig.Deadline {
-		return
-	}
+	//now := uint64(time.Now().Unix())
+	//if now > groupSig.Deadline {
+	//	return
+	//}
 
 	peers := pm.peers.PeersWithoutGroupSig(groupSig.Hash())
 	for _, peer := range peers {

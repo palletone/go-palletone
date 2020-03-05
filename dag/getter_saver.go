@@ -161,10 +161,9 @@ func (dag *Dag) GetMediatorCount() int {
 	return len(dag.unstableStateRep.GetMediators())
 }
 
-func (dag *Dag) LookupMediatorInfo() []*modules.MediatorInfo {
+func (dag *Dag) LookupMediatorInfo() []*modules.MediatorInfo2 {
 	return dag.unstableStateRep.LookupMediatorInfo()
 }
-
 func (dag *Dag) IsMediator(address common.Address) bool {
 	return dag.unstableStateRep.IsMediator(address)
 }

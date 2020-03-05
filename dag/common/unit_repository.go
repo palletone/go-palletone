@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
+	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core"
 
 	"github.com/palletone/go-palletone/core/accounts/keystore"
@@ -546,7 +547,8 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txs2 []*mod
 
 	// step3. generate genesis unit header
 	b := []byte{}
-	header := modules.NewHeader([]common.Hash{phash}, common.Hash{}, b, b, b, b, []uint16{},
+	extra := []byte(configure.Version)
+	header := modules.NewHeader([]common.Hash{phash}, common.Hash{}, b, b, extra, b, []uint16{},
 		chainIndex.AssetID, chainIndex.Index, when.Unix())
 	//if err := sigHeader(header, ks, mediatorReward); err != nil {
 	//	errStr := fmt.Sprintf("GetUnitWithSig error: %v", err.Error())

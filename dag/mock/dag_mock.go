@@ -5,6 +5,10 @@
 package mock
 
 import (
+	big "math/big"
+	reflect "reflect"
+	time "time"
+
 	event "github.com/ethereum/go-ethereum/event"
 	gomock "github.com/golang/mock/gomock"
 	common "github.com/palletone/go-palletone/common"
@@ -14,9 +18,6 @@ import (
 	dboperation "github.com/palletone/go-palletone/dag/dboperation"
 	modules "github.com/palletone/go-palletone/dag/modules"
 	txspool "github.com/palletone/go-palletone/txspool"
-	big "math/big"
-	reflect "reflect"
-	time "time"
 )
 
 // MockIDag is a mock of IDag interface
@@ -1268,18 +1269,31 @@ func (mr *MockIDagMockRecorder) GetPrecedingMediatorNodes() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPrecedingMediatorNodes", reflect.TypeOf((*MockIDag)(nil).GetPrecedingMediatorNodes))
 }
 
-// UnitIrreversibleTime mocks base method
-func (m *MockIDag) UnitIrreversibleTime() time.Duration {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UnitIrreversibleTime")
-	ret0, _ := ret[0].(time.Duration)
+// LastMaintenanceTime mocks base method
+func (m *MockIDag) LastMaintenanceTime() int64 {
+	ret := m.ctrl.Call(m, "LastMaintenanceTime")
+	ret0, _ := ret[0].(int64)
 	return ret0
 }
 
-// UnitIrreversibleTime indicates an expected call of UnitIrreversibleTime
-func (mr *MockIDagMockRecorder) UnitIrreversibleTime() *gomock.Call {
+// LastMaintenanceTime indicates an expected call of LastMaintenanceTime
+func (mr *MockIDagMockRecorder) LastMaintenanceTime() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LastMaintenanceTime", reflect.TypeOf((*MockIDag)(nil).LastMaintenanceTime))
+}
+
+// IsIrreversibleUnit mocks base method
+func (m *MockIDag) IsIrreversibleUnit(hash common.Hash) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsIrreversibleUnit", hash)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsIrreversibleUnit indicates an expected call of IsIrreversibleUnit
+func (mr *MockIDagMockRecorder) IsIrreversibleUnit(hash interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnitIrreversibleTime", reflect.TypeOf((*MockIDag)(nil).UnitIrreversibleTime))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsIrreversibleUnit", reflect.TypeOf((*MockIDag)(nil).IsIrreversibleUnit), hash)
 }
 
 // GenTransferPtnTx mocks base method
@@ -1792,10 +1806,10 @@ func (mr *MockIDagMockRecorder) MediatorVotedResults() *gomock.Call {
 }
 
 // LookupMediatorInfo mocks base method
-func (m *MockIDag) LookupMediatorInfo() []*modules.MediatorInfo {
+func (m *MockIDag) LookupMediatorInfo() []*modules.MediatorInfo2 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "LookupMediatorInfo")
-	ret0, _ := ret[0].([]*modules.MediatorInfo)
+	ret0, _ := ret[0].([]*modules.MediatorInfo2)
 	return ret0
 }
 
@@ -1874,6 +1888,18 @@ func (m *MockIDag) GetSlotAtTime(when time.Time) uint32 {
 func (mr *MockIDagMockRecorder) GetSlotAtTime(when interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSlotAtTime", reflect.TypeOf((*MockIDag)(nil).GetSlotAtTime), when)
+}
+
+// GetSlotTime mocks base method
+func (m *MockIDag) GetSlotTime(slotNum uint32) time.Time {
+	ret := m.ctrl.Call(m, "GetSlotTime", slotNum)
+	ret0, _ := ret[0].(time.Time)
+	return ret0
+}
+
+// GetSlotTime indicates an expected call of GetSlotTime
+func (mr *MockIDagMockRecorder) GetSlotTime(slotNum interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSlotTime", reflect.TypeOf((*MockIDag)(nil).GetSlotTime), slotNum)
 }
 
 // GetChainParameters mocks base method

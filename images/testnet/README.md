@@ -9,6 +9,6 @@
 - [1.0.1](https://github.com/palletone/go-palletone/blob/master/images/goimg/Dockerfile)
 - [1.0.0](https://github.com/palletone/go-palletone/blob/master/images/goimg/Dockerfile)
 
-# What is testnet-image
+# What is goimg
 
-testnet-image is used to build the user contract writting in the golang language...
+goimg is used to build the user contract writting in the golang language...

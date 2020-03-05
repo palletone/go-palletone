@@ -248,6 +248,47 @@ func (s *PublicDagAPI) GetUnitJsonByIndex(ctx context.Context, asset_id string, 
 	}
 	return string(content)
 }
+func (s *PublicDagAPI) GetUnitHexByIndex(ctx context.Context, asset_id string, index uint64) string {
+	number := &modules.ChainIndex{}
+	number.Index = index
+	assetId, _, err := modules.String2AssetId(asset_id)
+	if err != nil {
+		return fmt.Sprintf("the [%s] isn't unknow asset_id.", asset_id)
+	}
+	number.AssetID = assetId
+	log.Info("GetUnitHexByIndex info", "GetUnitHexByIndex:", index, "number:", number.String())
+
+	unit := s.b.GetUnitByNumber(number)
+	if unit == nil {
+		log.Info("GetUnitHexByIndex is failed,", "number:", number)
+		return "the unit isn't exist."
+	}
+	bytes, err := rlp.EncodeToBytes(unit)
+	if err != nil {
+		log.Info("getUnitHexByHash is failed,", "error", err.Error())
+		return err.Error()
+	}
+	return common.Bytes2Hex(bytes)
+}
+func (s *PublicDagAPI) GetUnitHexByHash(ctx context.Context, condition string) string {
+	log.Info("PublicDagAPI", "GetUnitHexByHash condition:", condition)
+	hash := common.Hash{}
+	if err := hash.SetHexString(condition); err != nil {
+		log.Info("GetUnitHexByHash SetHexString err:", "error:", err.Error(), "condition:", condition)
+		return "hash hex is illegal"
+	}
+	unit := s.b.GetUnitByHash(hash)
+	if unit == nil {
+		log.Info("getUnitHexByHash is failed,GetUnitHexByHash error:", "error", hash.String())
+		return "GetUnitByHash nil"
+	}
+	bytes, err := rlp.EncodeToBytes(unit)
+	if err != nil {
+		log.Info("getUnitHexByHash is failed,", "error", err.Error())
+		return err.Error()
+	}
+	return common.Bytes2Hex(bytes)
+}
 
 // getUnitsByIndex
 func (s *PublicDagAPI) GetUnitsByIndex(ctx context.Context, start, end decimal.Decimal, asset string) string {
@@ -319,6 +360,32 @@ func (s *PublicDagAPI) GetFastUnitIndex(ctx context.Context, assetid string) str
 
 	return string(content)
 }
+
+func (s *PublicDagAPI) GetChainInfo() (*ptnjson.ChainInfo, error) {
+	gasToken := dagconfig.DagConfig.GetGasToken()
+
+	headUnit, err := s.b.Dag().UnstableHeadUnitProperty(gasToken)
+	if err != nil {
+		return nil, err
+	}
+	stableUnit, err := s.b.Dag().StableHeadUnitProperty(gasToken)
+	if err != nil {
+		return nil, err
+	}
+
+	ci := new(ptnjson.ChainInfo)
+	ci.HeadHash = headUnit.Hash
+	ci.HeadNum = headUnit.ChainIndex.Index
+	ci.HeadTime = time.Unix(int64(headUnit.Timestamp),
+		0).Format("2006-01-02 15:04:05 -0700 MST")
+	ci.StableHash = stableUnit.Hash
+	ci.StableIndex = stableUnit.ChainIndex.Index
+	ci.StableTime = time.Unix(int64(stableUnit.Timestamp),
+		0).Format("2006-01-02 15:04:05 -0700 MST")
+
+	return ci, nil
+}
+
 func (s *PublicDagAPI) GetUnitSummaryByNumber(ctx context.Context, height Int) string {
 	log.Info("PublicBlockChainAPI", "GetUnitByNumber height:", height)
 
@@ -559,15 +626,6 @@ func (s *PublicDagAPI) GetHeadUnit() (*ptnjson.UnitPropertyJson, error) {
 		}
 
 		return ptnjson.UnitPropertyToJson(unitProperty), nil
-	}
-
-	return nil, nil
-}
-
-func (s *PublicDagAPI) GetMediatorSchedule() (*modules.MediatorSchedule, error) {
-	dag := s.b.Dag()
-	if dag != nil {
-		return dag.GetMediatorSchl(), nil
 	}
 
 	return nil, nil

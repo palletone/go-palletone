@@ -20,8 +20,6 @@ package mediatorplugin
 
 import (
 	"fmt"
-	"time"
-
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/hexutil"
@@ -223,7 +221,7 @@ func (mp *MediatorPlugin) signUnitTBLS(localMed common.Address, unitHash common.
 	event := SigShareEvent{
 		UnitHash: unitHash,
 		SigShare: sigShare,
-		Deadline: mp.getGroupSignMessageDeadline(),
+		//Deadline: mp.getGroupSignMessageDeadline(),
 	}
 
 	go mp.sigShareFeed.Send(event)
@@ -373,11 +371,11 @@ func (mp *MediatorPlugin) recoverUnitTBLS(localMed common.Address, unitHash comm
 	// recover后 删除buf
 	delete(mp.toTBLSRecoverBuf[localMed], unitHash)
 
-	deadline := time.Now().Add(mp.dag.UnitIrreversibleTime())
+	//deadline := time.Now().Add(mp.dag.UnitIrreversibleTime())
 	event := GroupSigEvent{
 		UnitHash: unitHash,
 		GroupSig: groupSig,
-		Deadline: uint64(deadline.Unix()),
+		//Deadline: uint64(deadline.Unix()),
 	}
 	go mp.groupSigFeed.Send(event)
 }
@@ -437,11 +435,14 @@ func (mp *MediatorPlugin) ClearGroupSignBufs(stableUnit *modules.Unit) {
 		delete(mp.toTBLSRecoverBuf[localMed], unitHash)
 	}
 
-	if _, ok := mp.toTBLSSignBuf[localMed][unitHash]; ok {
-		log.Debugf("the unit(%v) has expired confirmation time, no longer need the mediator(%v)"+
-			" to sign-group", unitHash.TerminalString(), localMed.Str())
-		delete(mp.toTBLSSignBuf[localMed], unitHash)
+	for localMed := range mp.toTBLSSignBuf {
+		if _, ok := mp.toTBLSSignBuf[localMed][unitHash]; ok {
+			log.Debugf("the unit(%v) has expired confirmation time, no longer need the mediator(%v)"+
+				" to sign-group", unitHash.TerminalString(), localMed.Str())
+			delete(mp.toTBLSSignBuf[localMed], unitHash)
+		}
 	}
+
 	//log.Debugf("toTBLSBufLock.Unlock()")
 	mp.toTBLSBufLock.Unlock()
 }
