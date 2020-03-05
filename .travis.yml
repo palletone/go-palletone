@@ -145,11 +145,11 @@ matrix:
           fi
 
         - if [ IS_RUN_HDWALLET == 'true' ]; then
-          python -m robot.run -d ${BDD_LOG_PATH}/${HD_WALLET_DIR} -i normal ./hdWallet/hd;
+          python -m robot.run -d ${BDD_LOG_PATH}/${HD_WALLET_DIR} ./hdWallet;
           fi
 
         - if [ IS_RUN_PACKET == 'true' ]; then
-          python -m robot.run -d ${BDD_LOG_PATH}/${PACKET_DIR} -i normal ./packet/p;
+          python -m robot.run -d ${BDD_LOG_PATH}/${PACKET_DIR} ./packet;
           fi
 
         - if [ $IS_RUN_DEPOSIT == 'true' ]; then
