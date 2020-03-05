@@ -173,6 +173,9 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 	log.Infof("[%s]ContractDeployReq ok, reqId[%s] templateId[%x],contractId[%s] ",
 		shortId(reqId.String()), reqId.String(), templateId, contractId.String())
 
+	//add local and broadcast
+	go p.AddLocalTx(tx)
+
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractEvent{Ele: nil, CType: CONTRACT_EVENT_ELE, Tx: tx}, true)
 	return reqId, contractId, err
@@ -302,6 +305,10 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 	}
 	log.Infof("[%s]ContractStopReq ok, reqId[%s], contractId[%s], txId[%s]",
 		shortId(reqId.String()), reqId.String(), contractId, hex.EncodeToString(randNum))
+
+	//add local and broadcast
+	go p.AddLocalTx(tx)
+
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_EXEC, Ele: p.mtx[reqId].eleNode, Tx: tx}, true)
 	return reqId, nil

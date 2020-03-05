@@ -248,6 +248,13 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	}
 	// 3.从TxPool抓取排序后的Tx，如果是系统合约请求，则执行
 	txpool := mp.ptn.TxPool()
+
+	mt := txpool.AllTxpoolTxs()
+	log.Debugf("txpool tx len(%d)", len(mt))
+	for m, t := range mt{
+		log.Debugf("------tx[%s]---req[%s]", m.String(), t.Tx.RequestHash().String())
+	}
+
 	p := mp.ptn.ContractProcessor()
 	poolTxs, _ := txpool.GetSortedTxs(common.Hash{}, unitNumber)
 	log.DebugDynamic(func() string {

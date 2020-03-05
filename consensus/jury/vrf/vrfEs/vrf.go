@@ -34,7 +34,7 @@ func (e *Es) VrfProve(priKey interface{}, msg []byte) (proof ,selData []byte, er
 		return nil, nil,err
 	}
 	idx, proof := siger.Evaluate(msg)
-	log.Debugf("VrfProve, msg[%v], idx[%v], proof[%v]", msg, idx, proof)
+	//log.Debugf("VrfProve, msg[%v], idx[%v], proof[%v]", msg, idx, proof)
 
 	return proof, idx[:],nil
 }
