@@ -289,6 +289,16 @@ func (s *PublicDagAPI) GetUnitHexByHash(ctx context.Context, condition string) s
 	}
 	return common.Bytes2Hex(bytes)
 }
+func (s *PublicDagAPI) InsertUnitByHex(ctx context.Context, unithex string) error {
+	bytes := common.FromHex(unithex)
+	unit := new(modules.Unit)
+	if err := rlp.DecodeBytes(bytes, &unit); err != nil {
+		log.Infof("Insert unit by hex failed, rlp decode error[%s].", err.Error())
+		return err
+	}
+	log.Infof("rlp decode success.hash[%s], unit[%s]", unit.Hash().String(), unit.String4Log())
+	return s.b.Dag().InsertUnit(unit)
+}
 
 // getUnitsByIndex
 func (s *PublicDagAPI) GetUnitsByIndex(ctx context.Context, start, end decimal.Decimal, asset string) string {
