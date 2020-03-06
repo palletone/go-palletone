@@ -1129,6 +1129,15 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 	return nil
 }
 
+// insert unit, 直接存储某单元，不关心memdag状态
+func (d *Dag) InsertUnit(unit *modules.Unit) error {
+	err := d.stableUnitRep.SaveUnit(unit, true)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // return genesis unit of ptn chain
 func (d *Dag) GetGenesisUnit() (*modules.Unit, error) {
 	return d.stableUnitRep.GetGenesisUnit()

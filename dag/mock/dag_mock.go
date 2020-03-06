@@ -566,6 +566,20 @@ func (mr *MockIDagMockRecorder) IsHeaderExist(hash interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsHeaderExist", reflect.TypeOf((*MockIDag)(nil).IsHeaderExist), hash)
 }
 
+// InsertUnit mocks base method
+func (m *MockIDag) InsertUnit(unit *modules.Unit) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InsertUnit", unit)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InsertUnit indicates an expected call of InsertUnit
+func (mr *MockIDagMockRecorder) InsertUnit(unit interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertUnit", reflect.TypeOf((*MockIDag)(nil).InsertUnit), unit)
+}
+
 // SaveUnit mocks base method
 func (m *MockIDag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error {
 	m.ctrl.T.Helper()

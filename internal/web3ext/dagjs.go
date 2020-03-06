@@ -52,6 +52,12 @@ web3._extend({
         	params: 2,
         	inputFormatter: [null,null]
 		}),
+        new web3._extend.Method({
+			name: 'insertUnitByHex',
+        	call: 'dag_insertUnitByHex',
+        	params: 1,
+        	inputFormatter: [null]
+		}),
 		new web3._extend.Method({
 			name: 'getUnitsByIndex',
         	call: 'dag_getUnitsByIndex',
