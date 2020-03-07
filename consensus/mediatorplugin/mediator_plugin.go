@@ -30,7 +30,6 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
-	"github.com/palletone/go-palletone/txspool"
 )
 
 func (mp *MediatorPlugin) newChainBanner() {
