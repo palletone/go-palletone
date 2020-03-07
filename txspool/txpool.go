@@ -705,10 +705,13 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *TxPoolTransaction, number, i
 // the sender as a local one in the mean time, ensuring it goes around the local
 // pricing constraints.
 func (pool *TxPool) AddLocal(tx *modules.Transaction) error {
-	//if tx.IsNewContractInvokeRequest() { //Request不能进入交易池
-	//	log.Infof("Tx[%s] is a request, do not allow add to txpool", tx.Hash().String())
-	//	return nil
-	//}
+	//删除请求交易，添加完整交易
+	if tx.RequestHash() != tx.Hash() {
+		if pool.IsTransactionInPool(tx.RequestHash()) {
+			pool.DeleteTxByHash(tx.RequestHash())
+		}
+	}
+
 	pool_tx := TxtoTxpoolTx(tx)
 	return pool.addLocal(pool_tx)
 }
@@ -1721,6 +1724,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 		if tx, has := m[t_hash]; has {
 			delete(m, t_hash)
 			if has, _ := pool.unit.IsTransactionExist(t_hash); has {
+				log.Debugf("GetSortedTxs, DeleteTxByHash[%s]", t_hash.String())
 				go pool.DeleteTxByHash(t_hash)
 				continue
 			}
@@ -1734,7 +1738,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 	return list, total
 }
 func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
-	orphanTxs map[common.Hash]*TxPoolTransaction) []*TxPoolTransaction {
+orphanTxs map[common.Hash]*TxPoolTransaction) []*TxPoolTransaction {
 
 	pretxs := make([]*TxPoolTransaction, 0)
 	for _, op := range tx.Tx.GetSpendOutpoints() {

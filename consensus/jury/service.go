@@ -1080,8 +1080,8 @@ func (p *Processor) getContractAssignElectionList(tx *modules.Transaction) ([]mo
 func (p *Processor) BuildUnitTxs(rwM *rwset.RwSetTxMgr, mDag dboperation.IContractDag, sortedTxs []*modules.Transaction, addr common.Address) ([]*modules.Transaction, error) {
 	txs := []*modules.Transaction{}
 	for i, tx := range sortedTxs {
-		var saveTx *modules.Transaction
-
+		//var saveTx *modules.Transaction
+		saveTx :=tx
 		log.Debugf("buildUnitTxs, idx[%d] txReqId[%s]:IsContractTx[%v]",
 			i, tx.RequestHash().String(), tx.IsContractTx())
 		if tx.IsContractTx() && tx.IsOnlyContractRequest() { //只处理请求合约
@@ -1093,18 +1093,21 @@ func (p *Processor) BuildUnitTxs(rwM *rwset.RwSetTxMgr, mDag dboperation.IContra
 				}
 				saveTx = signedTx
 			} else { //用户合约,需要从交易池中获取交易请求,根据请求Id再从Processor中获取最终执行后的交易
-				if mtx, ok := p.mtx[tx.RequestHash()]; ok {
-					log.Debugf("[%s]BuildUnitTxs, get tx from mtx", shortId(tx.RequestHash().String()))
 
-					if mtx.rstTx != nil {
-						saveTx = mtx.rstTx
-						mtx.valid = false
-						log.Debugf("[%s]BuildUnitTxs, mtx include tx", shortId(tx.RequestHash().String()))
-					}
-				}
+				//用户合约请求不打包到Unit中
+				continue
+				//if mtx, ok := p.mtx[tx.RequestHash()]; ok {
+				//	log.Debugf("[%s]BuildUnitTxs, get tx from mtx", shortId(tx.RequestHash().String()))
+				//
+				//	if mtx.rstTx != nil {
+				//		saveTx = mtx.rstTx
+				//		mtx.valid = false
+				//		log.Debugf("[%s]BuildUnitTxs, mtx include tx", shortId(tx.RequestHash().String()))
+				//	}
+				//}
 			}
 		} else { //直接保存交易
-			saveTx = tx
+			//saveTx = tx
 		}
 
 		if saveTx == nil {
@@ -1189,7 +1192,7 @@ func (p *Processor) AddLocalTx(tx *modules.Transaction) error {
 					shortId(reqId.String()), txHash.String())
 				return
 			case e := <-headSub.Err():
-				log.Warnf("AddLocalTx, SubscribeSaveStableUnitEvent err:%v",e)
+				log.Warnf("AddLocalTx, SubscribeSaveStableUnitEvent err:%v", e)
 				//log.Warnf("AddLocalTx, SubscribeSaveStableUnitEvent err:%s", e.Error())
 				return
 			case e := <-saveUnitSub.Err():

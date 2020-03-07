@@ -213,7 +213,6 @@ func (p *Processor) contractTxExec(tx *modules.Transaction, rw rwset.TxManager, 
 	p.locker.Unlock()
 
 	log.Debugf("[%s]contractTxExec, add tx reqId:%s", shortId(reqId.String()), reqId.String())
-
 	if tx.GetContractTxType() != modules.APP_CONTRACT_INVOKE_REQUEST {
 		return tx, nil
 	}
@@ -362,6 +361,11 @@ func (p *Processor) contractCommitEvent(tx *modules.Transaction) (broadcast bool
 		log.Debugf("[%s]contractCommitEvent, rstTx already receive", shortId(reqId.String()))
 		return false, nil //rstTx already receive
 	}
+
+	//添加到交易池，等待打包
+	log.Debug("contractCommitEvent", "tx:", tx)
+	tx1 := tx.Clone()
+	p.ptn.TxPool().AddLocal(tx1)
 
 	log.Debugf("[%s]contractCommitEvent, rstTx receive", shortId(reqId.String()))
 	//err = p.dag.SaveTransaction(tx)
