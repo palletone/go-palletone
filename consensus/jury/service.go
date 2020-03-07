@@ -1106,9 +1106,9 @@ func (p *Processor) BuildUnitTxs(rwM *rwset.RwSetTxMgr, mDag dboperation.IContra
 				//	}
 				//}
 			}
-		} else { //直接保存交易
+		}// else { //直接保存交易
 			//saveTx = tx
-		}
+		//}
 
 		if saveTx == nil {
 			log.Debugf("buildUnitTxs,  saveTx is nil, idx[%d]tx[%s]", i, tx.RequestHash().String())
