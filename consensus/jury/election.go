@@ -383,10 +383,10 @@ func (p *Processor) processElectionResultEvent(rstEvt *ElectionResultEvent) erro
 	}
 	//接收vrf
 	if ok {
-		log.Debugf("[%s]processElectionResultEvent, add ele, addHash[%s]",
-			shortId(reqId.String()), rstEvt.Ele.AddrHash.String())
 		mel.juryCnt = rstEvt.JuryCount
 		mel.rcvEle = append(mel.rcvEle, rstEvt.Ele)
+		log.Debugf("[%s]processElectionResultEvent, add ele, addHash[%s], recvNumber[%d]",
+			shortId(reqId.String()), rstEvt.Ele.AddrHash.String(), len(mel.rcvEle))
 	}
 	return nil
 }
@@ -432,7 +432,7 @@ func (p *Processor) processElectionSigRequestEvent(evt *ElectionSigRequestEvent)
 		go p.ptn.ElectionBroadcast(ElectionEvent{EType: ELECTION_EVENT_SIG_RESULT, Event: resultEvt}, true)
 	}
 	if e, ok := p.mel[reqId]; ok {
-		e.brded = true //关闭签名广播请求
+		//e.brded = true //关闭签名广播请求
 		e.sigReqEd = true
 	}
 	return nil

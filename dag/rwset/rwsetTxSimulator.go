@@ -245,7 +245,9 @@ func (s *RwSetTxSimulator) Close() {
 }
 
 func (s *RwSetTxSimulator) Rollback() error {
-	s.rwsetBuilder.pubRwBuilderMap = make(map[string]*nsPubRwBuilder)
+	if s.rwsetBuilder != nil {
+		s.rwsetBuilder.pubRwBuilderMap = make(map[string]*nsPubRwBuilder)
+	}
 	log.Infof("Rollback tx simulator[%s]", s.txId)
 	return nil
 }
