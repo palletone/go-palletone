@@ -44,6 +44,7 @@ type nsPubRwBuilder struct {
 func NewRWSetBuilder() *RWSetBuilder {
 	return &RWSetBuilder{
 		pubRwBuilderMap: make(map[string]*nsPubRwBuilder),
+		locker:          sync.RWMutex{},
 	}
 }
 
