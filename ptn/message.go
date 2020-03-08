@@ -32,8 +32,8 @@ import (
 	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/dag/rwset"
+	"github.com/palletone/go-palletone/ptn/downloader"
 )
 
 type Tag uint64
@@ -424,7 +424,7 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 				tx.RequestHash().String(), tx.Hash().String(), err.Error())
 		}
 
-		_, err = pm.txpool.ProcessTransaction(tx, true, true, 0 /*pm.txpool.Tag(peer.ID())*/)
+		err = pm.txpool.ProcessTransaction(tx)
 		if err != nil {
 			log.Infof("ProtocolManager,the transaction %s not accepteable, err:%s", tx.Hash().String(), err.Error())
 		}

@@ -148,29 +148,6 @@ type TxPool struct {
 	tokenEngine    tokenengine.ITokenEngine
 }
 
-type sTxDesc struct {
-	// Tx is the transaction associated with the entry.
-	Tx *modules.Transaction
-	// Added is the time when the entry was added to the source pool.
-	Added time.Time
-	// Height is the block height when the entry was added to the the source
-	// pool.
-	Height int32
-	// Fee is the total fee the transaction associated with the entry pays.
-	Fee int64
-	// FeePerKB is the fee the transaction pays in Satoshi per 1000 bytes.
-	FeePerKB int64
-}
-
-// TxDesc is a descriptor containing a transaction in the mempool along with
-// additional metadata.
-type TxDesc struct {
-	sTxDesc
-	// StartingPriority is the priority of the transaction when it was added
-	// to the pool.
-	StartingPriority float64
-}
-
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
 // transactions from the network.
 func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit dags) *TxPool {
@@ -810,17 +787,14 @@ func (pool *TxPool) addSequenTx(p_tx *TxPoolTransaction) error {
 	return nil
 }
 
-type Tag uint64
-
-func (pool *TxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool,
-	tag Tag) ([]*TxDesc, error) {
+func (pool *TxPool) ProcessTransaction(tx *modules.Transaction) error {
 	// Potentially accept the transaction to the memory pool.
-	_, err := pool.maybeAcceptTransaction(tx, rateLimit)
+	err := pool.maybeAcceptTransaction(tx)
 	if err != nil {
 		log.Info("txpool", "accept transaction err:", err)
-		return nil, err
+		return err
 	}
-	return nil, nil
+	return nil
 }
 
 func IsCoinBase(tx *modules.Transaction) bool {
@@ -840,7 +814,7 @@ func IsCoinBase(tx *modules.Transaction) bool {
 // more details.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction, rateLimit bool) (*TxDesc, error) {
+func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction) error {
 	txHash := tx.Hash()
 	// Don't accept the transaction if it already exists in the pool.  This
 	// applies to orphan transactions as well when the reject duplicate
@@ -849,7 +823,7 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction, rateLimit bo
 	if pool.isTransactionInPool(txHash) {
 		str := fmt.Sprintf("already have transaction %s", txHash.String())
 		log.Debug("txpool", "info", str)
-		return nil, nil
+		return nil
 	}
 
 	// Perform preliminary sanity checks on the transaction.  This makes
@@ -858,7 +832,7 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction, rateLimit bo
 	err := CheckTransactionSanity(tx)
 	if err != nil {
 		log.Info("Check Transaction Sanity err:", "error", err)
-		return nil, err
+		return err
 	}
 
 	// A standalone transaction must not be a coinbase transaction.
@@ -866,7 +840,7 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction, rateLimit bo
 		str := fmt.Sprintf("transaction %s is an individual coinbase",
 			txHash.String())
 		log.Info("txpool check coinbase tx.", "info", str)
-		return nil, nil
+		return nil
 	}
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
@@ -875,18 +849,13 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction, rateLimit bo
 	err = pool.checkPoolDoubleSpend(p_tx)
 	if err != nil {
 		log.Infof("the tx[%s] p2p send is double spend,don't add txpool. ", txHash.String())
-		return nil, err
+		return err
 	}
-	_, err1 := pool.add(p_tx, !pool.config.NoLocals)
-	log.Debug("accepted tx and add pool.", "err", err1, "rateLimit", rateLimit)
-	if err1 != nil {
-		return nil, err1
+	if _, err := pool.add(p_tx, !pool.config.NoLocals); err != nil {
+		return err
 	}
-
-	txdesc := new(TxDesc)
-	txdesc.Tx = tx
-	txdesc.Added = p_tx.CreationDate
-	return txdesc, err
+	log.Debug("accepted tx and add pool.", "err", err)
+	return nil
 }
 
 // addTx enqueues a single transaction into the pool if it is valid.
