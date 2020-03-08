@@ -542,10 +542,6 @@ func TxtoTxpoolTx(tx *modules.Transaction) *TxPoolTransaction {
 	return txpool_tx
 }
 
-//func PooltxToTx(pooltx *TxPoolTransaction) *modules.Transaction {
-//	return pooltx.Tx
-//}
-
 // add validates a transaction and inserts it into the non-executable queue for
 // later pending promotion and execution. If the transaction is a replacement for
 // an already pending or queued one, it overwrites the previous and returns this
@@ -564,7 +560,7 @@ func (pool *TxPool) add(tx *TxPoolTransaction, local bool) (bool, error) {
 		log.Infof("Tx[%s] already exist in db", hash.String())
 		return false, nil
 	}
-	if id, err1 := pool.unit.GetTxHashByReqId(hash); err1 == nil {
+	if id, err := pool.unit.GetTxHashByReqId(tx.Tx.RequestHash()); err == nil {
 		log.Infof("Request[%s] already exist in db,txhash[%s]", hash.String(), id.String())
 		return false, nil
 	}
@@ -584,9 +580,6 @@ func (pool *TxPool) add(tx *TxPoolTransaction, local bool) (bool, error) {
 	if pool.isOrphanInPool(hash) {
 		txOrphanKnownPrometheus.Add(1)
 		return false, fmt.Errorf("know orphanTx: %s", hash.String())
-	}
-	if has, _ := pool.unit.IsTransactionExist(hash); has {
-		return false, fmt.Errorf("the transactionx: %s has been packaged.", hash.String())
 	}
 	// If the transaction fails basic validation, discard it
 	if addition, code, err := pool.validateTx(tx, local); err != nil {
@@ -629,10 +622,12 @@ func (pool *TxPool) add(tx *TxPoolTransaction, local bool) (bool, error) {
 		}
 	}
 	// Add the transaction to the pool  and mark the referenced outpoints as spent by the pool.
-	go pool.priority_sorted.Put(tx)
+	if !tx.Tx.IsOnlyContractRequest() {
+		go pool.priority_sorted.Put(tx)
+		go pool.journalTx(tx)
+	}
 	pool.all.Store(hash, tx)
 	pool.addCache(tx)
-	go pool.journalTx(tx)
 	txValidPrometheus.Add(1)
 	// We've directly injected a replacement transaction, notify subsystems
 	go pool.txFeed.Send(modules.TxPreEvent{Tx: tx.Tx})
@@ -776,17 +771,14 @@ func (pool *TxPool) addSequenTx(p_tx *TxPoolTransaction) error {
 	// Don't accept the transaction if it already in the pool .
 	hash := p_tx.Tx.Hash()
 	if has, _ := pool.unit.IsTransactionExist(hash); has {
-		//return fmt.Errorf("the transactionx: %s has been packaged.", hash.String())
 		log.Infof("the transactionx: %s has been packaged.", hash.String())
 		return nil
 	}
 	if _, has := pool.all.Load(hash); has {
-		//return fmt.Errorf("known transaction: %#x", hash)
 		log.Infof("know sequen transaction: %s", hash.String())
 		return nil
 	}
 	if pool.isOrphanInPool(hash) {
-		//return fmt.Errorf("know orphanTx: %#x", hash)
 		log.Infof("know sequen orphan transaction: %s", hash.String())
 		return nil
 	}
@@ -1511,7 +1503,7 @@ func (pool *TxPool) SetPendingTxs(unit_hash common.Hash, num uint64, txs []*modu
 			return err
 		}
 	}
-	if len(txs) > 0 {
+	if len(txs) > 1 {
 		pool.priority_sorted.Removed()
 	}
 	return nil
@@ -1530,14 +1522,10 @@ func (pool *TxPool) setPendingTx(unit_hash common.Hash, tx *modules.Transaction,
 		tx.Index = index
 		pool.all.Store(hash, tx)
 		return nil
-	} else if interTx, has := pool.all.Load(tx.RequestHash()); has {
-		tx := interTx.(*TxPoolTransaction)
-		tx.Pending = true
-		tx.Confirmed = false
-		tx.Discarded = false
-		tx.Index = index
-		pool.all.Store(hash, tx)
-		return nil
+	} else if _, has := pool.all.Load(tx.RequestHash()); has {
+		pool.all.Delete(tx.RequestHash())
+		//todo  删除缓存的req utxo
+
 	}
 	// add in pool
 	p_tx := TxtoTxpoolTx(tx)
@@ -1738,7 +1726,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 	return list, total
 }
 func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
-orphanTxs map[common.Hash]*TxPoolTransaction) []*TxPoolTransaction {
+	orphanTxs map[common.Hash]*TxPoolTransaction) []*TxPoolTransaction {
 
 	pretxs := make([]*TxPoolTransaction, 0)
 	for _, op := range tx.Tx.GetSpendOutpoints() {
