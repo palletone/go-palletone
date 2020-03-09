@@ -122,7 +122,7 @@ func (p *Processor) ProcessUserContractTxMsg(tx *modules.Transaction, rw rwset.T
 	//	return nil, nil
 	//}
 
-	go p.contractTxExec(tx, rw, dag, ele)
+	p.contractTxExec(tx, rw, dag, ele)
 	return tx, nil
 }
 
