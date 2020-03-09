@@ -1,7 +1,7 @@
 #!/bin/bash
 
-logpath="/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/light"
-#logpath="../logs/light"
+#logpath="/home/travis/gopath/src/github.com/palletone/go-palletone/bdd/logs/light"
+logpath="../logs/light"
 
 ./preset.sh
 sleep 40
@@ -30,9 +30,21 @@ echo $moneyaccount
 echo $account5
 echo $account6
 echo $account7
+moneyaccount=`echo ${moneyaccount//\"/}`
+account5=`echo ${account5//\"/}`
+account6=`echo ${account6//\"/}`
+account7=`echo ${account7//\"/}`
+echo "==="
+echo $moneyaccount
+echo $account5
+echo $account6
+echo $account7
 
 startProduce=`./gptn --exec 'mediator.startProduce()'  attach node1/palletone/gptn.ipc`
 echo $startProduce
+
+python  -m robot.run -d $logpath -v moneyaccount:$moneyaccount -v account5:$account5 -v account6:$account6 -v account7:$account7 ./light.robot
+
 
 #full account transferPTN to light account5
 curl -H "Content-Type:application/json" -X POST -d  "{\"jsonrpc\":\"2.0\",\"method\":\"wallet_transferToken\",\"params\":[\"PTN\",$moneyaccount,$account5,\"100\",\"1\",\"1\",\"1\"],\"id\":1}" http://127.0.0.1:8545
