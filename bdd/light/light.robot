@@ -10,6 +10,9 @@ ${account7}       ${EMPTY}
 
 *** Test Cases ***
 ligth
+    [Documentation]    Light节点之间转账 UTXO同步 查询余额
+    ...
+    ...    tokenHolder转账100PTN到Light节点node_test5-》node_test5同步UTXO,并进行余额查询-》node_test5转账80PTN到Light节点node_test6-》node_test6同步UTXO,并进行余额查询-》node_test6转账50PTN到Light节点node_test7-》node_test7同步UTXO,并进行余额查询。结果：node_test7节点账户里余额有50PTN。
     transferPTN    ${moneyaccount}    ${account5}    100    1    1    http://127.0.0.1:8545
     sleep    5
     ${result}    syncUTXOByAddr    ${account5}    http://127.0.0.1:8595
