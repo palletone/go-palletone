@@ -91,8 +91,8 @@ func (l *txPrioritiedList) Put(tx *TxPoolTransaction) {
 	l.items.Push(tx)
 }
 func (l *txPrioritiedList) Get() *TxPoolTransaction {
-	l.mu.RLock()
-	defer l.mu.RUnlock()
+	l.mu.Lock()
+	defer l.mu.Unlock()
 	for len(*l.items) > 0 {
 		tx := l.items.Pop().(*TxPoolTransaction)
 		if _, ok := (*l.all).Load(tx.Tx.Hash()); !ok {

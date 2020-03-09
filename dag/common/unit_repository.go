@@ -985,9 +985,11 @@ func (rep *UnitRepository) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 //Mock一个Unit，然后保存Tx，主要用于内存模拟操作
 func (rep *UnitRepository) SaveTransaction(tx *modules.Transaction, txIndex int) error {
 	unitP, err := rep.propdb.GetNewestUnit(dagconfig.DagConfig.GetGasToken())
+	log.Debugf("UnitRepositorye SaveTransaction:------986")
 	if err != nil {
 		return err
 	}
+	log.Debugf("UnitRepositorye:SaveTransaction ------990")
 	mockHeader := modules.NewEmptyHeader()
 	mockHeader.SetTimestamp(time.Now().Unix())
 	mockHeader.SetHeight(unitP.ChainIndex.AssetID, unitP.ChainIndex.Index+1)
@@ -1002,6 +1004,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 	var requester common.Address
 	var err error
 	if txIndex > 0 { //coinbase don't have requester
+		log.Debugf("UnitRepositorye:------1005")
 		requester, err = rep.GetTxRequesterAddress(tx)
 		if err != nil {
 			return err

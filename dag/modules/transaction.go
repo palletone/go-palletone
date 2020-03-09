@@ -572,7 +572,10 @@ func (tx *Transaction) GetNewTxUtxoAndReqUtxos() map[OutPoint]*Utxo {
 //获取一个交易中花费了哪些OutPoint
 func (tx *Transaction) GetSpendOutpoints() []*OutPoint {
 	result := []*OutPoint{}
+	ch:=false
+	log.Debugf("--------GetSpendOutpoints-----575-----------------")
 	for _, msg := range tx.txdata.TxMessages {
+		log.Debugf("--------GetSpendOutpoints-----577-----------------")
 		if msg.App != APP_PAYMENT {
 			continue
 		}
@@ -584,7 +587,17 @@ func (tx *Transaction) GetSpendOutpoints() []*OutPoint {
 					op := NewOutPoint(tx.Hash(), input.PreviousOutPoint.MessageIndex, input.PreviousOutPoint.OutIndex)
 					result = append(result, op)
 				} else {
-					result = append(result, input.PreviousOutPoint)
+					for _,v :=range result {
+						if v.TxHash.String() == input.PreviousOutPoint.TxHash.String(){
+							log.Debugf("--------GetSpendOutpoints---chongfu--591------%s\n",input.PreviousOutPoint.TxHash.String())
+							ch=true 
+						}			
+					}
+					if ch==false{ 
+					    result = append(result, input.PreviousOutPoint)
+				    }
+				    ch=false
+					log.Debugf("--------GetSpendOutpoints-----594------%s\n",input.PreviousOutPoint.TxHash.String())
 				}
 			}
 		}

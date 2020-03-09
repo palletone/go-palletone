@@ -96,8 +96,10 @@ type IUtxoRepository interface {
 func (repository *UtxoRepository) getUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	data, err := repository.txUtxodb.GetUtxoEntry(outpoint)
 	if err == nil {
+		log.Debugf("GetUtxoEntry  in txUtxodb, -------------------99-")
 		return data, nil
 	}
+	log.Debugf("GetUtxoEntry not in TxUtxo, try ReqUtxo-------------------102-----")
 	log.Debugf("GetUtxoEntry(%s) not in TxUtxo, try ReqUtxo", outpoint.String())
 	//Tx UTXO找不到，试着去Req UTXO 找
 	return repository.reqUtxodb.GetUtxoEntry(outpoint)
@@ -105,9 +107,10 @@ func (repository *UtxoRepository) getUtxoEntry(outpoint *modules.OutPoint) (*mod
 func (repository *UtxoRepository) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	data, err := repository.getUtxoEntry(outpoint)
 	if err != nil {
+		log.Debugf("GetUtxoEntry from ReqUtxo---UtxoRepository------110----")
 		log.Warnf("GetUtxoEntry(%s) also not in ReqUtxo", outpoint.String())
 	} else {
-		log.Debugf("GetUtxoEntry(%s) from ReqUtxo, return value", outpoint.String())
+		log.Debugf("GetUtxoEntry(%s) success from ReqUtxo, return value", outpoint.String())
 	}
 	return data, err
 	//mapHash,err:= repository.txUtxodb.GetRequestAndTxMapping(outpoint.TxHash)
@@ -401,7 +404,7 @@ func (repository *UtxoRepository) writeUtxo(unitTime int64, txHash, reqHash comm
 			LockTime:  lockTime,
 			Timestamp: uint64(unitTime),
 		}
-
+        log.Debugf("--UtxoRepository---tx[%s]---407-----",txHash.String())
 		// write to database
 		outpoint := &modules.OutPoint{
 			TxHash:       txHash,

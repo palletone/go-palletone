@@ -96,7 +96,7 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 	var dbUtxos map[modules.OutPoint]*modules.Utxo
 	var reqTxMapping map[common.Hash]common.Hash
 	dbUtxos, reqTxMapping, err = b.Dag().GetAddrUtxoAndReqMapping(fromAddr, nil)
-
+    //reqTxMapping  一直为空
 	if err != nil {
 		return nil, nil, fmt.Errorf("GetAddrRawUtxos utxo err:%s", err.Error())
 	}
@@ -126,10 +126,17 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 	if err != nil {
 		return nil, nil, fmt.Errorf("SelectUtxoFromDagAndPool utxo err:%s", err.Error())
 	}
+	log.Debugf("buildRawTransferTx---126---%+v\n",utxosPTN)
 	feeAmount := gasAsset.Uint64Amount(gasFee)
 	pay1, usedUtxo1, err := createPayment(fromAddr, toAddr, ptnAmount, feeAmount, utxosPTN)
 	if err != nil {
 		return nil, nil, err
+	}
+	for _,tin :=range pay1.Inputs{
+	   log.Debugf("-----134----%+v\n",tin)
+	}
+	for _,tout :=range pay1.Outputs{
+	   log.Debugf("-----137----%+v\n",tout)
 	}
 	tx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, pay1)})
 	if tokenId == gasToken {
@@ -141,6 +148,7 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 	if err != nil {
 		return nil, nil, fmt.Errorf("SelectUtxoFromDagAndPool token utxo err:%s", err.Error())
 	}
+	log.Debugf("buildRawTransferTx---142---%+v\n",utxosToken)
 	tokenAmount := tokenAsset.Uint64Amount(amount)
 	pay2, usedUtxo2, err := createPayment(fromAddr, toAddr, tokenAmount, 0, utxosToken)
 	if err != nil {
@@ -148,7 +156,15 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 	}
 	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay2))
 	usedUtxo1 = append(usedUtxo1, usedUtxo2...)
-
+	
+	/*err=b.Dag().SaveUtxoView(utxosPTN)
+	if err != nil {
+	    return nil, nil, err
+    }
+    err=b.Dag().SaveUtxoView(utxosToken)
+	if err != nil {
+	    return nil, nil, err
+    }*/
 	return tx, usedUtxo1, nil
 }
 

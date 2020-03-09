@@ -602,8 +602,12 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, reqTxMa
 	inputsOutpoint := []modules.OutPoint{}
 	allUtxo := make(map[modules.OutPoint]*modules.Utxo)
 	for k, v := range dbUtxo {
-		if v.Asset.Equal(tokenAsset) {
+		if v.Asset.Equal(tokenAsset) &&!v.IsSpent(){
+			log.Debugf("--------606-----db---Payment output %+v\n",k.String())
+			log.Debugf("--------607-------db-utxo is  %+v\n",v)
+			v.Spend()
 			allUtxo[k] = v
+			log.Debugf("--------609-------db-utxo is  %+v\n",v)
 		}
 	}
 
@@ -635,16 +639,18 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, reqTxMa
 						return nil, err
 					}
 					if addr.String() == from {
+						//tx.Pending = true
+						log.Debugf("--------631--------pool op txhash  %+v\n",op.String())
 						allUtxo[op] = modules.NewUtxo(output, pay.LockTime, time.Now().Unix())
 					}
-
 				}
 				for _, input := range pay.Inputs {
 
 					if input.PreviousOutPoint != nil {
+						log.Debugf("--------649--------input optxhash---%+v\n",input.PreviousOutPoint.TxHash.String())
 						inputsOutpoint = append(inputsOutpoint, *input.PreviousOutPoint)
-
 						if preTxHash, ok := reqTxMapping[input.PreviousOutPoint.TxHash]; ok {
+							log.Debugf("--------652--------remove optxhash  %+v\n",preTxHash.String())
 							newOutpoint := modules.NewOutPoint(preTxHash, input.PreviousOutPoint.MessageIndex, input.PreviousOutPoint.OutIndex)
 							inputsOutpoint = append(inputsOutpoint, *newOutpoint)
 						}
@@ -655,6 +661,7 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, reqTxMa
 		}
 	}
 	for _, used := range inputsOutpoint {
+		log.Debugf("--------663--------remove optxhash  %+v\n",used.TxHash.String())
 		delete(allUtxo, used)
 	}
 	//vaildutxos := core.Utxos{}

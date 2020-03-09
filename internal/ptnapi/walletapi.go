@@ -1073,6 +1073,13 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 	//}
 
 	log.Debugf("sign raw tx spend:%v", time.Since(start))
+	mtxbt, err := rlp.EncodeToBytes(rawTx)
+	if err != nil {
+		return common.Hash{}, err
+	}
+
+	txstr := hex.EncodeToString(mtxbt)
+	log.Debugf("------1082-----sign raw tx spend:%s\n", txstr)
 	//4. send
 	return submitTransaction(ctx, s.b, rawTx)
 }

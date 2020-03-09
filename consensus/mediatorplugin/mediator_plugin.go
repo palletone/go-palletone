@@ -98,7 +98,7 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 
 	// 1. 尝试生产unit
 	result, detail := mp.maybeProduceUnit()
-
+    log.Debugf("-------unitProductionLoop--------101---------------")
 	// 2. 打印尝试结果
 	switch result {
 	case Produced:
@@ -140,7 +140,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	//log.Debugf("try to produce unit")
 	detail := make(map[string]string)
 	dag := mp.dag
-
+    log.Debugf("-------maybeProduceUnit--------143---------------")
 	// 整秒调整，四舍五入
 	nowFine := time.Now()
 	now := time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
@@ -249,6 +249,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	// 3.从TxPool抓取排序后的Tx，如果是系统合约请求，则执行
 	txpool := mp.ptn.TxPool()
 	p := mp.ptn.ContractProcessor()
+	log.Debugf("txpool GetSortedTxs unitNumber",unitNumber)
 	poolTxs, _ := txpool.GetSortedTxs(common.Hash{}, unitNumber)
 	log.DebugDynamic(func() string {
 		txHash := ""

@@ -167,6 +167,7 @@ func (utxodb *UtxoDb) DeleteUtxo(outpoint *modules.OutPoint, spentTxId common.Ha
 	if err != nil {
 		return err
 	}
+	log.Debugf("DB--------DeleteUtxo----------170---delete utxo-----------------")
 	key := outpoint.ToKey(utxodb.UTXO_PREFIX)
 	//1 delete UTXO
 	err = utxodb.db.Delete(key)
@@ -190,12 +191,13 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 	if outpoint == nil {
 		return nil, errors.ErrNullPoint
 	}
-
+    log.Debugf("GetUtxoEntry    try ReqUtxo------193------")
 	utxo := new(modules.Utxo)
 	key := outpoint.ToKey(utxodb.UTXO_PREFIX)
 
 	err := RetrieveFromRlpBytes(utxodb.db, key, utxo)
 	if err != nil {
+		log.Debugf("GetUtxoEntry not utxodb.db, try ReqUtxo------200------")
 		log.DebugDynamic(func() string {
 			return fmt.Sprintf("DB[%s,%p,req=%t] get utxo[%s] error:%s",
 				reflect.TypeOf(utxodb.db).String(), utxodb.db, utxodb.isRequest, outpoint.String(), err.Error())
@@ -205,6 +207,7 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 		}
 		return nil, err
 	}
+	log.Debugf("GetUtxoEntry utxodb.db, success------210---")
 	return utxo, nil
 }
 func (utxodb *UtxoDb) SaveUtxoSpent(outpoint *modules.OutPoint, utxo *modules.Utxo,
@@ -215,6 +218,7 @@ func (utxodb *UtxoDb) SaveUtxoSpent(outpoint *modules.OutPoint, utxo *modules.Ut
 func (utxodb *UtxoDb) SaveStxoEntry(outpoint *modules.OutPoint, stxo *modules.Stxo) error {
 	key := append(utxodb.SPENT_UTXO_PREFIX, outpoint.ToKey(utxodb.UTXO_PREFIX)...)
 	//stxo := modules.NewStxo(utxo, spentTxId, spentTime)
+	log.Debug("utxodb.db--SaveStxoEntry----221-----------------------")
 	return StoreToRlpBytes(utxodb.db, key, stxo)
 }
 func (utxodb *UtxoDb) IsUtxoSpent(outpoint *modules.OutPoint) (bool, error) {
