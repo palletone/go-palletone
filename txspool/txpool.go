@@ -1492,9 +1492,13 @@ func (pool *TxPool) setPendingTx(unit_hash common.Hash, tx *modules.Transaction,
 		pool.all.Store(hash, tx)
 		return nil
 	} else if _, has := pool.all.Load(tx.RequestHash()); has {
-		pool.all.Delete(tx.RequestHash())
-		//todo  删除缓存的req utxo
-
+		p_tx := TxtoTxpoolTx(tx)
+		p_tx.Pending = true
+		p_tx.Confirmed = false
+		p_tx.Discarded = false
+		p_tx.Index = index
+		pool.all.Store(hash, p_tx)
+		return nil
 	}
 	// add in pool
 	p_tx := TxtoTxpoolTx(tx)
@@ -2007,14 +2011,17 @@ func (pool *TxPool) deleteOrphanTxOutputs(outpoint modules.OutPoint) {
 }
 
 func (pool *TxPool) deletePoolUtxos(tx *modules.Transaction) {
-	for _, msg := range tx.TxMessages() {
+	for _, msg := range tx.Messages() {
 		if msg.App == modules.APP_PAYMENT {
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			if ok {
 				for _, in := range payment.Inputs {
 					pool.deleteOrphanTxOutputs(*in.PreviousOutPoint)
+					// 删除缓存的req utxo
+					pool.reqOutputs.Delete(*in.PreviousOutPoint)
 				}
 			}
 		}
 	}
+
 }
