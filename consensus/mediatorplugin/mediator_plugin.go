@@ -230,10 +230,6 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 		return ExceptionProducing, detail
 	}
 	defer rwM.Close()
-	//if err := mp.ptn.ContractProcessor().AddContractLoop(rwM, mp.ptn.TxPool(), scheduledMediator, ks); err != nil {
-	//	log.Debugf("MaybeProduceUnit RunContractLoop err: %v", err.Error())
-	//}
-	// close tx simulator (系统合约)
 
 	//广播节点选取签名请求事件
 	go mp.ptn.ContractProcessor().BroadcastElectionSigRequestEvent()

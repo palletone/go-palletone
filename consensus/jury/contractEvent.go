@@ -61,10 +61,10 @@ func (p *Processor) ProcessContractEvent(event *ContractEvent) (bool, error) {
 				shortId(reqId.String()), tx.Hash().String())
 		}
 	}
-	//if !p.contractEventExecutable(event.CType, tx, event.Ele) {
-	//	log.Debugf("[%s]ProcessContractEvent, contractEventExecutable is false", shortId(reqId.String()))
-	//	return true, nil
-	//}
+	if !p.contractEventExecutable(event.CType, tx, event.Ele) {
+		log.Debugf("[%s]ProcessContractEvent, contractEventExecutable is false", shortId(reqId.String()))
+		return true, nil
+	}
 
 	log.Debugf("[%s]ProcessContractEvent, event type:%v ", shortId(reqId.String()), event.CType)
 	switch event.CType {

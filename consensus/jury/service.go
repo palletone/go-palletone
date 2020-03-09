@@ -554,108 +554,6 @@ func (p *Processor) RunAndSignTx(reqTx *modules.Transaction, txMgr rwset.TxManag
 	}
 	return sigTx, nil
 }
-func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool, addr common.Address,
-	ks *keystore.KeyStore) error {
-	setChainId := modules.ContractChainId
-	index := 0
-	tempDag, err := p.dag.NewTemp()
-	if err != nil {
-		log.Errorf("Init temp dag error:%s", err.Error())
-		return err
-	}
-	txIndex := 0
-	tx4Sort := make(map[common.Hash]*modules.Transaction)
-	for _, ctx := range p.mtx {
-		if !ctx.valid {
-			continue
-		}
-		if ctx.reqTx.IsSystemContract() && modules.APP_CONTRACT_TPL_REQUEST != ctx.reqTx.GetContractTxType() {
-			//系统合约的调用走普通打包流程
-			continue
-		}
-		tx4Sort[ctx.reqTx.Hash()] = ctx.reqTx
-		log.Debugf("AddContractLoop, tx4Sort hash[%s]-tx:%s", ctx.reqTx.Hash().String(), ctx.reqTx.String())
-	}
-
-	sortedRequests, orphanTxs, _ := modules.SortTxs(tx4Sort, tempDag.GetUtxoEntry)
-	if len(orphanTxs) > 0 {
-		oreq := ""
-		for _, or := range orphanTxs {
-			oreq += or.Hash().String() + ";"
-		}
-		log.Warnf("Find orphan requests:%s", oreq)
-	}
-	sortedContractTx := []*contractTx{}
-	for _, sr := range sortedRequests {
-		sortedContractTx = append(sortedContractTx, p.mtx[sr.Hash()])
-	}
-	for _, ctx := range sortedContractTx {
-		if !ctx.valid || ctx.reqTx == nil {
-			continue
-		}
-		reqId := ctx.reqTx.RequestHash()
-		if !ctx.reqTx.IsSystemContract() {
-			defer rwM.CloseTxSimulator(setChainId)
-		}
-		if ctx.reqTx.IsSystemContract() && p.contractEventExecutable(CONTRACT_EVENT_EXEC, ctx.reqTx, nil) {
-			if cType, err := getContractTxType(ctx.reqTx); err == nil && cType != modules.APP_CONTRACT_TPL_REQUEST {
-				ctx.valid = false
-				log.Debugf("[%s]AddContractLoop, A enter mtx, addr[%s]", shortId(reqId.String()), addr.String())
-				if p.checkTxReqIdIsExist(reqId) {
-					log.Debugf("[%s]AddContractLoop ,ReqId is exist ", shortId(reqId.String()))
-					continue
-				}
-				if p.runContractReq(reqId, nil, rwM, tempDag) != nil {
-					continue
-				}
-			}
-		}
-		if ctx.rstTx == nil {
-			continue
-		}
-		ctx.valid = false
-
-		tx := ctx.rstTx
-		reqId = tx.RequestHash()
-		if p.checkTxReqIdIsExist(reqId) {
-			log.Debugf("[%s]AddContractLoop ,ReqId is exist, rst reqId[%s]", shortId(reqId.String()), reqId.String())
-			continue
-		}
-		if p.checkTxIsExist(tx) {
-			log.Debugf("[%s]AddContractLoop ,tx is exist, rst reqId[%s]", shortId(reqId.String()), reqId.String())
-			continue
-		}
-		log.Debugf("[%s]AddContractLoop, B enter mtx, addr[%s]", shortId(reqId.String()), addr.String())
-		if tx.IsSystemContract() {
-			sigTx, err := p.GenContractSigTransaction(addr, "", tx, ks, tempDag.GetUtxoEntry)
-			if err != nil {
-				log.Error("AddContractLoop GenContractSigTransctions", "error", err.Error())
-				continue
-			}
-			tx = sigTx
-		}
-
-		txpool.DiscardTxs([]common.Hash{reqId}) //todo  删除对应的请求交易
-		log.Debugf("AddContractLoop, DiscardTxs")
-		if err := txpool.AddSequenTx(tx); err != nil {
-			log.Errorf("[%s]AddContractLoop, error:%s", shortId(reqId.String()), err.Error())
-			continue
-		}
-		txIndex++
-		log.Debugf("executed req[%s] save result tx[%s] index:%d into tempdag",
-			reqId.String(), tx.Hash().String(), txIndex)
-		err = tempDag.SaveTransaction(tx, txIndex)
-		log.Debugf("save tx[%s] into tempdag done", tx.Hash().String())
-		if err != nil {
-			log.Errorf("save tx[%s] error:%s", tx.Hash().String(), err.Error())
-			continue
-		}
-		log.Debugf("[%s]AddContractLoop, OK, index[%d], Tx hash[%s], txSize[%f]", shortId(reqId.String()),
-			index, tx.Hash().String(), tx.Size().Float64())
-		index++
-	}
-	return nil
-}
 
 func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transaction, execute bool) bool {
 	if tx == nil {
@@ -1081,7 +979,7 @@ func (p *Processor) BuildUnitTxs(rwM *rwset.RwSetTxMgr, mDag dboperation.IContra
 	txs := []*modules.Transaction{}
 	for i, tx := range sortedTxs {
 		//var saveTx *modules.Transaction
-		saveTx :=tx
+		saveTx := tx
 		log.Debugf("buildUnitTxs, idx[%d] txReqId[%s]:IsContractTx[%v]",
 			i, tx.RequestHash().String(), tx.IsContractTx())
 		if tx.IsContractTx() && tx.IsOnlyContractRequest() { //只处理请求合约
@@ -1106,8 +1004,8 @@ func (p *Processor) BuildUnitTxs(rwM *rwset.RwSetTxMgr, mDag dboperation.IContra
 				//	}
 				//}
 			}
-		}// else { //直接保存交易
-			//saveTx = tx
+		} // else { //直接保存交易
+		//saveTx = tx
 		//}
 
 		if saveTx == nil {
@@ -1133,12 +1031,15 @@ func (p *Processor) AddLocalTx(tx *modules.Transaction) error {
 		return errors.New("AddLocalTx, tx is nil")
 	}
 	reqId := tx.RequestHash()
-	err := p.ptn.TxPool().AddLocal(tx)
-	if err != nil {
-		log.Errorf("[%s]AddLocalTx, AddLocal err:%s", shortId(reqId.String()), err.Error())
-		return err
+	poolTx, _:=p.ptn.TxPool().Get(tx.Hash())
+	if poolTx == nil { //tx not in txpool
+		err := p.ptn.TxPool().AddLocal(tx)
+		if err != nil {
+			log.Errorf("[%s]AddLocalTx, AddLocal err:%s", shortId(reqId.String()), err.Error())
+			return err
+		}
 	}
-	err = p.dag.SaveLocalTx(tx)
+	err := p.dag.SaveLocalTx(tx)
 	if err != nil {
 		log.Errorf("[%s]AddLocalTx, SaveLocalTx err:%s", shortId(reqId.String()), err.Error())
 	}
