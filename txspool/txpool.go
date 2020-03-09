@@ -599,7 +599,7 @@ func (pool *TxPool) add(tx *TxPoolTransaction, local bool) (bool, error) {
 		}
 	}
 	// Add the transaction to the pool  and mark the referenced outpoints as spent by the pool.
-	if !tx.Tx.IsOnlyContractRequest() {
+	if !(tx.Tx.RequestHash() == hash) {
 		go pool.priority_sorted.Put(tx)
 		go pool.journalTx(tx)
 	}
