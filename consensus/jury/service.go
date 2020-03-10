@@ -696,11 +696,18 @@ func CheckContractTxResult(tx *modules.Transaction, rwM rwset.TxManager, dag dbo
 //}
 
 func (p *Processor) isValidateElection(tx *modules.Transaction, ele *modules.ElectionNode, checkExit bool) bool {
-	if tx == nil || ele == nil {
-		log.Error("isValidateElection, param is nil")
+	if tx == nil {
+		log.Error("isValidateElection, param tx is nil")
 		return false
 	}
+	if tx.GetContractTxType() == modules.APP_CONTRACT_TPL_REQUEST {
+		return true
+	}
 	reqId := tx.RequestHash()
+	if ele == nil {
+		log.Errorf("[%s]isValidateElection, param ele is nil", shortId(reqId.String()))
+		return false
+	}
 	cfgEleNum := getSysCfgContractElectionNum(p.dag)
 	if len(ele.EleList) < cfgEleNum {
 		log.Infof("[%s]isValidateElection, ElectionInf number not enough ,len(ele)[%d], set electionNum[%d]",
@@ -1031,13 +1038,19 @@ func (p *Processor) AddLocalTx(tx *modules.Transaction) error {
 		return errors.New("AddLocalTx, tx is nil")
 	}
 	reqId := tx.RequestHash()
-	poolTx, _:=p.ptn.TxPool().Get(tx.Hash())
+	txHash := tx.Hash()
+	poolTx, _ := p.ptn.TxPool().Get(txHash)
 	if poolTx == nil { //tx not in txpool
 		err := p.ptn.TxPool().AddLocal(tx)
 		if err != nil {
 			log.Errorf("[%s]AddLocalTx, AddLocal err:%s", shortId(reqId.String()), err.Error())
 			return err
 		}
+	}
+	isExist, _ := p.dag.IsTransactionExist(txHash)
+	if isExist {
+		log.Debugf("[%s]AddLocalTx,tx already exist dag", shortId(reqId.String()))
+		return nil
 	}
 	err := p.dag.SaveLocalTx(tx)
 	if err != nil {
