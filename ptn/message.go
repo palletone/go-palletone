@@ -659,11 +659,11 @@ func (pm *ProtocolManager) ContractMsg(msg p2p.Msg, p *peer) error {
 	}
 
 	// 判断是否同步, 如果没同步完成，接收到的 ContractMsg 对当前节点来说是超前的
-	if !pm.dag.IsSynced(false) {
-		log.Debugf(errStr)
-		//return fmt.Errorf(errStr)
-		return nil
-	}
+	//if !pm.dag.IsSynced(false) {
+	//	log.Debugf(errStr)
+	//	//return fmt.Errorf(errStr)
+	//	return nil
+	//}
 
 	reqId := event.Tx.RequestHash()
 	log.Debugf("[%s] ProtocolManager ContractMsg, event type[%v]", reqId.String()[0:8], event.CType)

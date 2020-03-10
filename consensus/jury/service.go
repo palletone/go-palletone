@@ -1055,11 +1055,13 @@ func (p *Processor) AddLocalTx(tx *modules.Transaction) error {
 	err := p.dag.SaveLocalTx(tx)
 	if err != nil {
 		log.Errorf("[%s]AddLocalTx, SaveLocalTx err:%s", shortId(reqId.String()), err.Error())
+		return err
 	}
 	//先将状态改为交易池中
 	err = p.dag.SaveLocalTxStatus(tx.Hash(), modules.TxStatus_InPool)
 	if err != nil {
 		log.Warnf("[%s]AddLocalTx, SaveLocalTxStatus err:%s", shortId(reqId.String()), err.Error())
+		return err
 	}
 	//更新Tx的状态到LocalDB
 	go func(txHash common.Hash) {
