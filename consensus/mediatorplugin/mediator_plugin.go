@@ -252,8 +252,8 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	poolTxs, _ := txpool.GetSortedTxs(common.Hash{}, unitNumber)
 	log.DebugDynamic(func() string {
 		txHash := ""
-		for _, tx := range poolTxs {
-			txHash += tx.Tx.Hash().String() + ";"
+		for i, tx := range poolTxs {
+			txHash += fmt.Sprintf("\nindex:%d hash:%s ;", i, tx.Tx.Hash().String())
 		}
 		return "txpool GetSortedTxs return:" + txHash
 	})
