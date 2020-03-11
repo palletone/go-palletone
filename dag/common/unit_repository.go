@@ -809,8 +809,9 @@ func (unitRep *UnitRepository) IsGenesis(hash common.Hash) bool {
 }
 
 func (rep *UnitRepository) GetUnitTransactions(unitHash common.Hash) (modules.Transactions, error) {
-	rep.lock.RLock()
-	defer rep.lock.RUnlock()
+	//change by wzhyuan
+	rep.lock.Lock()
+	defer rep.lock.Unlock()
 	txs := modules.Transactions{}
 	// get body data: transaction list.
 	// if getbody return transactions list, then don't range txHashlist.
@@ -1725,10 +1726,11 @@ To Sign transaction
 
 // GetAddrTransactions containing from && to address
 func (rep *UnitRepository) GetAddrTransactions(address common.Address) ([]*modules.TransactionWithUnitInfo, error) {
-	rep.lock.RLock()
+	// change by wzhyuan 
+	rep.lock.Lock()
 	//log.Debug("getAddrTxs unitRepository lock.")
 	//defer log.Debug("getAddrTxs unitRepository unlock.")
-	defer rep.lock.RUnlock()
+	defer rep.lock.Unlock()
 	hashs, err := rep.idxdb.GetAddressTxIds(address)
 	if err != nil {
 		return nil, err

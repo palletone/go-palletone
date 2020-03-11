@@ -643,11 +643,12 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, reqTxMa
 						log.Debugf("--------631--------pool op txhash  %+v\n",op.String())
 						allUtxo[op] = modules.NewUtxo(output, pay.LockTime, time.Now().Unix())
 					}
+
 				}
 				for _, input := range pay.Inputs {
 
 					if input.PreviousOutPoint != nil {
-						log.Debugf("--------649--------input optxhash---%+v\n",input.PreviousOutPoint.TxHash.String())
+						log.Debugf("--------649--------used input optxhash---%+v\n",input.PreviousOutPoint.TxHash.String())
 						inputsOutpoint = append(inputsOutpoint, *input.PreviousOutPoint)
 						if preTxHash, ok := reqTxMapping[input.PreviousOutPoint.TxHash]; ok {
 							log.Debugf("--------652--------remove optxhash  %+v\n",preTxHash.String())

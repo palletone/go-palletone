@@ -164,7 +164,7 @@ func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transactio
 				for _, utx := range u.Unit.Transactions() {
 					if utx.Hash() == txHash || utx.RequestHash() == txHash {
 						log.Debugf("Change local tx[%s] status to unstable", txHash.String())
-						err = b.Dag().SaveLocalTxStatus(txHash, modules.TxStatus_Unstable)
+						err = b.Dag().SaveLocalTxStatus(txHash, modules.TxStatus_Stable)
 						if err != nil {
 							log.Warnf("Save tx[%s] status to local err:%s", txHash.String(), err.Error())
 						}

@@ -98,7 +98,7 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 
 	// 1. 尝试生产unit
 	result, detail := mp.maybeProduceUnit()
-    log.Debugf("-------unitProductionLoop--------101---------------")
+    log.Debugf("-------unitProductionLoop--------101---------------%+v\n",result)
 	// 2. 打印尝试结果
 	switch result {
 	case Produced:
@@ -253,39 +253,43 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	poolTxs, _ := txpool.GetSortedTxs(common.Hash{}, unitNumber)
 	log.DebugDynamic(func() string {
 		txHash := ""
-		for _, tx := range poolTxs {
-			txHash += tx.Tx.Hash().String() + ";"
+		for i, tx := range poolTxs {
+			txHash += fmt.Sprintf("\nindex:%d hash:%s ;", i, tx.Tx.Hash().String())
 		}
 		return "txpool GetSortedTxs return:" + txHash
 	})
-	//TODO Jay 这里的txpool.GetSortedTxs返回顺序有问题，所以再次排序
-	poolTxMap := make(map[common.Hash]*modules.Transaction)
-	for _, ptx := range poolTxs {
-		poolTxMap[ptx.Tx.Hash()] = ptx.Tx
-	}
-	sortedTxs, orphanTxs, dsTxs := modules.SortTxs(poolTxMap, mp.dag.GetUtxoEntry)
-	log.DebugDynamic(func() string {
-		txHash := ""
-		for _, tx := range sortedTxs {
-			txHash += tx.Hash().String() + ";"
-		}
-		return "modules.SortTxs return:" + txHash
-	})
-	if len(orphanTxs) > 0 {
-		log.InfoDynamic(func() string {
-			otxHash := ""
-			for _, tx := range orphanTxs {
-				otxHash += tx.Hash().String() + ";"
-			}
-			return "modules.SortTxs find orphan txs:" + otxHash
-		})
-	}
-	if len(dsTxs) > 0 {
-		otxHash := ""
-		for _, tx := range dsTxs {
-			otxHash += tx.Hash().String() + ";"
-		}
-		log.Warnf("modules.SortTxs find double spend txs:%s", otxHash)
+	////TODO Jay 这里的txpool.GetSortedTxs返回顺序有问题，所以再次排序
+	//poolTxMap := make(map[common.Hash]*modules.Transaction)
+	//for _, ptx := range poolTxs {
+	//	poolTxMap[ptx.Tx.Hash()] = ptx.Tx
+	//}
+	//sortedTxs, orphanTxs, dsTxs := modules.SortTxs(poolTxMap, mp.dag.GetUtxoEntry)
+	//log.DebugDynamic(func() string {
+	//	txHash := ""
+	//	for _, tx := range sortedTxs {
+	//		txHash += tx.Hash().String() + ";"
+	//	}
+	//	return "modules.SortTxs return:" + txHash
+	//})
+	//if len(orphanTxs) > 0 {
+	//	log.InfoDynamic(func() string {
+	//		otxHash := ""
+	//		for _, tx := range orphanTxs {
+	//			otxHash += tx.Hash().String() + ";"
+	//		}
+	//		return "modules.SortTxs find orphan txs:" + otxHash
+	//	})
+	//}
+	//if len(dsTxs) > 0 {
+	//	otxHash := ""
+	//	for _, tx := range dsTxs {
+	//		otxHash += tx.Hash().String() + ";"
+	//	}
+	//	log.Warnf("modules.SortTxs find double spend txs:%s", otxHash)
+	//}
+	sortedTxs := make([]*modules.Transaction, 0)
+	for _, tx := range poolTxs {
+		sortedTxs = append(sortedTxs, tx.Tx)
 	}
 	//创建TempDAG，用于临时存储Tx执行的结果
 	tempDag, err := mp.dag.NewTemp()
@@ -310,6 +314,8 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 			tx4Pack = append(tx4Pack, signedTx)
 		} else { //不需要执行，直接打包
 			err = tempDag.SaveTransaction(tx, i+1)
+			log.Debugf("gonna to save tx[%s] req[%s] ", tx.Hash().String(),
+					tx.RequestHash().String())
 			if err != nil {
 				log.Errorf("save tx[%s] req[%s] get error:%s", tx.Hash().String(),
 					tx.RequestHash().String(), err.Error())

@@ -107,7 +107,7 @@ func (repository *UtxoRepository) getUtxoEntry(outpoint *modules.OutPoint) (*mod
 func (repository *UtxoRepository) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	data, err := repository.getUtxoEntry(outpoint)
 	if err != nil {
-		log.Debugf("GetUtxoEntry from ReqUtxo---UtxoRepository------110----")
+		log.Debugf("GetUtxoEntryalso not in ReqUtxo---UtxoRepository------110----")
 		log.Warnf("GetUtxoEntry(%s) also not in ReqUtxo", outpoint.String())
 	} else {
 		log.Debugf("GetUtxoEntry(%s) success from ReqUtxo, return value", outpoint.String())
