@@ -2064,16 +2064,13 @@ func (pool *TxPool) deletePoolUtxos(tx *modules.Transaction) {
 }
 
 func (pool *TxPool) reflashOrphanTxs(tx *modules.Transaction, orphans map[common.Hash]*TxPoolTransaction) {
-	utxos := tx.GetNewTxUtxoAndReqUtxos()
 	for hash, otx := range orphans {
 		isOrphan := false
 		for _, op := range otx.Tx.GetSpendOutpoints() {
 			if _, err := pool.unit.GetUtxoEntry(op); err != nil {
 				if _, err := pool.GetUtxoEntry(op); err != nil {
-					if _, has := utxos[*op]; !has {
-						isOrphan = true
-						break
-					}
+					isOrphan = true
+					break
 				}
 			}
 		}
