@@ -897,8 +897,9 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction, rateLimit bo
 
 // addTx enqueues a single transaction into the pool if it is valid.
 func (pool *TxPool) addTx(tx *TxPoolTransaction, local bool) error {
-	pool.mu.RLock()
-	defer pool.mu.RUnlock()
+	//chaneg by wzhyuan 
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
 	// Try to inject the transaction and update any state
 	replace, err := pool.add(tx, local)
 	if err != nil {
@@ -913,8 +914,9 @@ func (pool *TxPool) addTx(tx *TxPoolTransaction, local bool) error {
 
 // addTxs attempts to queue a batch of transactions if they are valid.
 func (pool *TxPool) addTxs(txs []*TxPoolTransaction, local bool) []error {
-	pool.mu.RLock()
-	defer pool.mu.RUnlock()
+	//change by wzhyuan 
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
 
 	return pool.addTxsLocked(txs, local)
 }
@@ -984,14 +986,14 @@ func (pool *TxPool) Status(hashes []common.Hash) []TxStatus {
 
 // GetUnpackedTxsByAddr returns all tx by addr.
 func (pool *TxPool) GetPoolTxsByAddr(addr string) ([]*TxPoolTransaction, error) {
-	pool.mu.RLock()
-	defer pool.mu.RUnlock()
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
 	return pool.getPoolTxsByAddr(addr, false)
 }
 
 func (pool *TxPool) GetUnpackedTxsByAddr(addr string) ([]*TxPoolTransaction, error) {
-	pool.mu.RLock()
-	defer pool.mu.RUnlock()
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
 	return pool.getPoolTxsByAddr(addr, true)
 }
 
@@ -1601,11 +1603,22 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 		return nil, 0
 	}
 	unithigh := int64(chainindex.Index)
+	log.Debugf("unithigh-------1604----------%d\n",unithigh)
 	map_pretxs := make(map[common.Hash]int)
 	// get sequenTxs
 	stxs := pool.GetSequenTxs()
 	poolTxs := pool.AllTxpoolTxs()
 	orphanTxs := pool.AllOrphanTxs()
+
+	/*or_list := make(orList, 0)
+	for _, tx := range stxs {
+		or_list = append(or_list, tx)
+	}
+	// 按入池时间排序
+	if len(or_list) > 1 {
+		sort.Sort(or_list)
+	}*/
+
 	unit_size := common.StorageSize(parameter.CurrentSysParameters.UnitMaxSize)
 	for _, tx := range stxs {
 		list = append(list, tx)
@@ -1628,6 +1641,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 				if has, _ := pool.unit.IsTransactionExist(tx.Tx.Hash()); has {
 					continue
 				}
+				log.Debugf("pool tx  is not  nil      ")
 				// add precusorTxs 获取该交易的前驱交易列表
 				p_txs := pool.getPrecusorTxs(tx, poolTxs, orphanTxs)
 				for _, p_tx := range p_txs {
@@ -1651,8 +1665,8 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 		sort.Sort(or_list)
 	}
 	// pool rlock
-	pool.mu.RLock()
-	defer pool.mu.RUnlock()
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
 	for _, tx := range or_list {
 		txhash := tx.Tx.Hash()
 		if has, _ := pool.unit.IsTransactionExist(txhash); has {
@@ -1796,6 +1810,8 @@ func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
 			}
 		}
 		if queue_tx != nil {
+			poolTxs := pool.AllTxpoolTxs()
+	        orphanTxs := pool.AllOrphanTxs()
 			list := pool.getPrecusorTxs(queue_tx, poolTxs, orphanTxs)
 			if len(list) > 0 {
 				pretxs = append(pretxs, list...)
