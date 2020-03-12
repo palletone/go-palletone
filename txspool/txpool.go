@@ -1898,32 +1898,30 @@ func (pool *TxPool) addOrphan(otx *TxPoolTransaction, tag uint64) {
 	if pool.config.MaxOrphanTxs <= 0 {
 		return
 	}
-
 	//pool.limitNumberOrphans()
-
 	otx.Expiration = otx.CreationDate.Add(pool.config.OrphanTTL)
 	otx.Tag = tag
 	otx.IsOrphan = true
 	pool.orphans.Store(otx.Tx.Hash(), otx)
-
-	for i, msg := range otx.Tx.TxMessages() {
-		if msg.App == modules.APP_PAYMENT {
-			payment, ok := msg.Payload.(*modules.PaymentPayload)
-			if ok {
-				// add utxo in outputs
-				preout := modules.OutPoint{TxHash: otx.Tx.Hash()}
-				for j, out := range payment.Outputs {
-					preout.MessageIndex = uint32(i)
-					preout.OutIndex = uint32(j)
-					utxo := &modules.Utxo{Amount: out.Value, Asset: &modules.Asset{
-						AssetId: out.Asset.AssetId, UniqueId: out.Asset.UniqueId},
-						PkScript: out.PkScript[:]}
-					pool.outputs.Store(preout, utxo)
-				}
-				log.Debugf("Stored orphan tx's hash:[%s] (total: %d)", otx.Tx.Hash().String(), len(pool.AllOrphanTxs()))
-			}
-		}
-	}
+	log.Debugf("Stored orphan tx's hash:[%s] (total: %d)", otx.Tx.Hash().String(), len(pool.AllOrphanTxs()))
+	//for i, msg := range otx.Tx.TxMessages() {
+	//	if msg.App == modules.APP_PAYMENT {
+	//		payment, ok := msg.Payload.(*modules.PaymentPayload)
+	//		if ok {
+	//			// add utxo in outputs
+	//			preout := modules.OutPoint{TxHash: otx.Tx.Hash()}
+	//			for j, out := range payment.Outputs {
+	//				preout.MessageIndex = uint32(i)
+	//				preout.OutIndex = uint32(j)
+	//				utxo := &modules.Utxo{Amount: out.Value, Asset: &modules.Asset{
+	//					AssetId: out.Asset.AssetId, UniqueId: out.Asset.UniqueId},
+	//					PkScript: out.PkScript[:]}
+	//				pool.outputs.Store(preout, utxo)
+	//			}
+	//
+	//		}
+	//	}
+	//}
 }
 
 func (pool *TxPool) removeOrphan(tx *TxPoolTransaction, reRedeemers bool) {
