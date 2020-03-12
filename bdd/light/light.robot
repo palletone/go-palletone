@@ -33,7 +33,7 @@ ligth
     log    ${result}
     Should Be Equal As Integers    ${result}    80
     sleep    5
-    transferPTN    ${account6}    ${account7}    80    1    1    http://127.0.0.1:8605
+    transferPTN    ${account6}    ${account7}    50    1    1    http://127.0.0.1:8605
     sleep    5
     ${result}    syncUTXOByAddr    ${account7}    http://127.0.0.1:8615
     log    ${result}
