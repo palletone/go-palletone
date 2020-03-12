@@ -1630,7 +1630,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 			log.Infof("get sorted timeout spent times: %s , count: %d ", time.Since(t0), len(list))
 			break
 		}
-		if total >= unit_size/1024/5{
+		if total >= unit_size{
 			break
 		}
 		tx := pool.priority_sorted.Get()
