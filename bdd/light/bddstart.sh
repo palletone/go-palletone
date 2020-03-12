@@ -26,10 +26,10 @@ a7=`echo ${newaccount7command//
 /}`
 account7=`echo $a7`
 
-moneyaccount=`echo ${moneyaccount//\"/}`
-account5=`echo ${account5//\"/}`
-account6=`echo ${account6//\"/}`
-account7=`echo ${account7//\"/}`
+#moneyaccount=`echo ${moneyaccount//\"/}`
+#account5=`echo ${account5//\"/}`
+#account6=`echo ${account6//\"/}`
+#account7=`echo ${account7//\"/}`
 
 echo "tokenHolder: "$moneyaccount
 echo "light account5: "$account5
