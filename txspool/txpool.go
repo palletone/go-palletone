@@ -1742,67 +1742,47 @@ func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
 		} else {
 			isNotOriginal = true
 		}
-		//  若该utxo在db里找不到
+		//  若该utxo在db里找不到,try to find it in pool and ophans txs
 		queue_tx, has := poolTxs[op.TxHash]
-		//queue_otx, has1 := orphanTxs[op.TxHash]
 		if !has {
-			//if has1 {
-			//	log.Infof("find in orphanTxs,hash[%s],ohash[%s]", op.TxHash.String(), queue_otx.Tx.Hash().String())
-			//	queue_tx = queue_otx
-			//} else { // 判断是不是request tx
-			isfound := false
+			poolloop:
 			for _, otx := range poolTxs {
+				if otx.Tx.RequestHash() == op.TxHash {
+					for i, msg := range otx.Tx.Messages() {
+						if msg.App != modules.APP_PAYMENT {
+                            continue
+						}
+						payment := msg.Payload.(*modules.PaymentPayload)
+						for j := range payment.Outputs {
+							if op.OutIndex == uint32(j) && op.MessageIndex == uint32(i) {
+					
+								log.Debugf("found  in pool")
+								queue_tx = otx
+								break poolloop
+							}
+						}
+					}
+				}
+			}
+			orphTxsLOOP:
+			for _, otx := range orphanTxs {
 				if otx.Tx.RequestHash() == op.TxHash {
 					for i, msg := range otx.Tx.Messages() {
 						if msg.App == modules.APP_PAYMENT {
 							payment := msg.Payload.(*modules.PaymentPayload)
 							for j := range payment.Outputs {
 								if op.OutIndex == uint32(j) && op.MessageIndex == uint32(i) {
-									isfound = true
 									queue_tx = otx
-									break
+									break orphTxsLOOP
 								}
 							}
-						}
-						if isfound {
-							break
-						}
-					}
-					if isfound {
-						break
-					}
-				}
-			}
-			if !isfound {
-				for _, otx := range orphanTxs {
-					if otx.Tx.RequestHash() == op.TxHash {
-						for i, msg := range otx.Tx.Messages() {
-							if msg.App == modules.APP_PAYMENT {
-								payment := msg.Payload.(*modules.PaymentPayload)
-								for j := range payment.Outputs {
-									if op.OutIndex == uint32(j) && op.MessageIndex == uint32(i) {
-										isfound = true
-										queue_tx = otx
-										break
-									}
-								}
-							}
-							if isfound {
-								break
-							}
-						}
-						if isfound {
-							break
 						}
 					}
 				}
 			}
-			if !isfound {
-				continue
-			}
-			//}
 		}
-		if queue_tx != nil && has {
+		if queue_tx != nil {
+			//if find precusor tx  ,and go on to find its 
 			log.Info("find in precusor tx.", "hash", queue_tx.Tx.Hash().String(), "ohash", op.TxHash.String(),
 				"pending", tx.Pending)
 			if !queue_tx.Pending {
