@@ -1,0 +1,1788 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot generated="20200225 21:23:55.520" generator="Robot 3.0 (Python 2.7.16 on darwin)">
+<suite source="/Users/wzhyuan/Desktop/ptntx/go-palletone-master/bdd/addfeetx/addfeetx.robot" id="s1" name="Addfeetx">
+<test id="s1-t1" name="addfeetx">
+<kw name="unlockAccount" library="pubFuncs">
+<arguments>
+<arg>${foundation}</arg>
+</arguments>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>${addr}</arg>
+<arg>${pwd}</arg>
+<arg>${600000000}</arg>
+</arguments>
+<assign>
+<var>${params}</var>
+</assign>
+<msg timestamp="20200225 21:23:55.972" level="INFO">${params} = [u'P1Bbq1AVfZD66e7PD4APd7YSBqkmTmbBLWA', u'1', 600000000]</msg>
+<status status="PASS" endtime="20200225 21:23:55.972" starttime="20200225 21:23:55.972"></status>
+</kw>
+<kw name="sendRpcPost" library="pubFuncs">
+<arguments>
+<arg>${unlockAccountMethod}</arg>
+<arg>${params}</arg>
+<arg>unlockAccount</arg>
+</arguments>
+<assign>
+<var>${respJson}</var>
+</assign>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>Content-Type</arg>
+<arg>application/json</arg>
+</arguments>
+<assign>
+<var>${header}</var>
+</assign>
+<msg timestamp="20200225 21:23:55.973" level="WARN">Giving keys and values separately to 'Create Dictionary' keyword is deprecated. Use 'key=value' syntax instead.</msg>
+<msg timestamp="20200225 21:23:55.973" level="INFO">${header} = {u'Content-Type': u'application/json'}</msg>
+<status status="PASS" endtime="20200225 21:23:55.973" starttime="20200225 21:23:55.973"></status>
+</kw>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>jsonrpc=2.0</arg>
+<arg>method=${method}</arg>
+<arg>params=${params}</arg>
+<arg>id=1</arg>
+</arguments>
+<assign>
+<var>${data}</var>
+</assign>
+<msg timestamp="20200225 21:23:55.974" level="INFO">${data} = {u'jsonrpc': u'2.0', u'method': u'personal_unlockAccount', u'params': [u'P1Bbq1AVfZD66e7PD4APd7YSBqkmTmbBLWA', u'1', 600000000], u'id': u'1'}</msg>
+<status status="PASS" endtime="20200225 21:23:55.974" starttime="20200225 21:23:55.973"></status>
+</kw>
+<kw name="Create Session" library="RequestsLibrary">
+<doc>Create Session: create a HTTP session to a server</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>${host}</arg>
+</arguments>
+<msg timestamp="20200225 21:23:55.974" level="INFO">Creating Session using : alias=unlockAccount, url=http://127.0.0.1:8545/, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<status status="PASS" endtime="20200225 21:23:55.975" starttime="20200225 21:23:55.974"></status>
+</kw>
+<kw name="Post Request" library="RequestsLibrary">
+<doc>Send a POST request on the session object found using the</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>${host}</arg>
+<arg>data=${data}</arg>
+<arg>headers=${header}</arg>
+</arguments>
+<assign>
+<var>${resp}</var>
+</assign>
+<msg timestamp="20200225 21:23:55.975" level="INFO">POST Request using : uri=http://127.0.0.1:8545/, files=None, params=None, timeout=None, allow_redirects=True
+headers={'Connection': 'keep-alive', u'Content-Type': u'application/json', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'User-Agent': 'python-requests/2.22.0'} 
+data={"jsonrpc": "2.0", "method": "personal_unlockAccount", "params": ["P1Bbq1AVfZD66e7PD4APd7YSBqkmTmbBLWA", "1", 600000000], "id": "1"} 
+json=None</msg>
+<msg timestamp="20200225 21:23:56.858" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20200225 21:23:56.858" starttime="20200225 21:23:55.975"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<msg timestamp="20200225 21:23:56.860" level="INFO">{"jsonrpc":"2.0","id":"1","result":true}
+</msg>
+<status status="PASS" endtime="20200225 21:23:56.860" starttime="20200225 21:23:56.859"></status>
+</kw>
+<kw name="To Json" library="RequestsLibrary">
+<doc>Convert a string to a JSON object</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<assign>
+<var>${respJson}</var>
+</assign>
+<msg timestamp="20200225 21:23:56.861" level="INFO">To JSON using : content={"jsonrpc":"2.0","id":"1","result":true}
+ </msg>
+<msg timestamp="20200225 21:23:56.861" level="INFO">To JSON using : pretty_print=False </msg>
+<msg timestamp="20200225 21:23:56.861" level="INFO">${respJson} = {u'jsonrpc': u'2.0', u'id': u'1', u'result': True}</msg>
+<status status="PASS" endtime="20200225 21:23:56.861" starttime="20200225 21:23:56.860"></status>
+</kw>
+<kw name="Dictionary Should Not Contain Key" library="Collections">
+<doc>Fails if ``key`` is found from ``dictionary``.</doc>
+<arguments>
+<arg>${respJson}</arg>
+<arg>error</arg>
+</arguments>
+<status status="PASS" endtime="20200225 21:23:56.863" starttime="20200225 21:23:56.862"></status>
+</kw>
+<msg timestamp="20200225 21:23:56.865" level="INFO">${respJson} = {u'jsonrpc': u'2.0', u'id': u'1', u'result': True}</msg>
+<status status="PASS" endtime="20200225 21:23:56.865" starttime="20200225 21:23:55.972"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${respJson}</arg>
+</arguments>
+<msg timestamp="20200225 21:23:56.867" level="INFO">{u'jsonrpc': u'2.0', u'id': u'1', u'result': True}</msg>
+<status status="PASS" endtime="20200225 21:23:56.868" starttime="20200225 21:23:56.867"></status>
+</kw>
+<kw name="Should Be Equal" library="BuiltIn">
+<doc>Fails if the given objects are unequal.</doc>
+<arguments>
+<arg>${respJson["result"]}</arg>
+<arg>${true}</arg>
+</arguments>
+<status status="PASS" endtime="20200225 21:23:56.869" starttime="20200225 21:23:56.868"></status>
+</kw>
+<status status="PASS" endtime="20200225 21:23:56.872" starttime="20200225 21:23:55.971"></status>
+</kw>
+<kw name="transferPtn" library="pubFuncs">
+<arguments>
+<arg>${foundation}</arg>
+<arg>${Alice}</arg>
+<arg>2000</arg>
+</arguments>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>${from}</arg>
+<arg>${to}</arg>
+<arg>${amount}</arg>
+<arg>${fee}</arg>
+<arg>${null}</arg>
+<arg>${pwd}</arg>
+</arguments>
+<assign>
+<var>${params}</var>
+</assign>
+<msg timestamp="20200225 21:23:56.874" level="INFO">${params} = [u'P1Bbq1AVfZD66e7PD4APd7YSBqkmTmbBLWA', u'P1Kh2UNFUR6cgjV5hxpYN1YB11i97wTqAqm', u'2000', u'10', None, u'1']</msg>
+<status status="PASS" endtime="20200225 21:23:56.874" starttime="20200225 21:23:56.873"></status>
+</kw>
+<kw name="sendRpcPost" library="pubFuncs">
+<arguments>
+<arg>${transferPTNMethod}</arg>
+<arg>${params}</arg>
+<arg>transferPTN</arg>
+</arguments>
+<assign>
+<var>${respJson}</var>
+</assign>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>Content-Type</arg>
+<arg>application/json</arg>
+</arguments>
+<assign>
+<var>${header}</var>
+</assign>
+<msg timestamp="20200225 21:23:56.875" level="WARN">Giving keys and values separately to 'Create Dictionary' keyword is deprecated. Use 'key=value' syntax instead.</msg>
+<msg timestamp="20200225 21:23:56.875" level="INFO">${header} = {u'Content-Type': u'application/json'}</msg>
+<status status="PASS" endtime="20200225 21:23:56.875" starttime="20200225 21:23:56.875"></status>
+</kw>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>jsonrpc=2.0</arg>
+<arg>method=${method}</arg>
+<arg>params=${params}</arg>
+<arg>id=1</arg>
+</arguments>
+<assign>
+<var>${data}</var>
+</assign>
+<msg timestamp="20200225 21:23:56.876" level="INFO">${data} = {u'jsonrpc': u'2.0', u'method': u'wallet_transferPtn', u'params': [u'P1Bbq1AVfZD66e7PD4APd7YSBqkmTmbBLWA', u'P1Kh2UNFUR6cgjV5hxpYN1YB11i97wTqAqm', u'2000', u'10', None, u'1'], u'id': u'1'}</msg>
+<status status="PASS" endtime="20200225 21:23:56.876" starttime="20200225 21:23:56.875"></status>
+</kw>
+<kw name="Create Session" library="RequestsLibrary">
+<doc>Create Session: create a HTTP session to a server</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>${host}</arg>
+</arguments>
+<msg timestamp="20200225 21:23:56.877" level="INFO">Creating Session using : alias=transferPTN, url=http://127.0.0.1:8545/, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<status status="PASS" endtime="20200225 21:23:56.878" starttime="20200225 21:23:56.876"></status>
+</kw>
+<kw name="Post Request" library="RequestsLibrary">
+<doc>Send a POST request on the session object found using the</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>${host}</arg>
+<arg>data=${data}</arg>
+<arg>headers=${header}</arg>
+</arguments>
+<assign>
+<var>${resp}</var>
+</assign>
+<msg timestamp="20200225 21:23:56.880" level="INFO">POST Request using : uri=http://127.0.0.1:8545/, files=None, params=None, timeout=None, allow_redirects=True
+headers={'Connection': 'keep-alive', u'Content-Type': u'application/json', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'User-Agent': 'python-requests/2.22.0'} 
+data={"jsonrpc": "2.0", "method": "wallet_transferPtn", "params": ["P1Bbq1AVfZD66e7PD4APd7YSBqkmTmbBLWA", "P1Kh2UNFUR6cgjV5hxpYN1YB11i97wTqAqm", "2000", "10", null, "1"], "id": "1"} 
+json=None</msg>
+<msg timestamp="20200225 21:23:57.959" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20200225 21:23:57.959" starttime="20200225 21:23:56.878"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<msg timestamp="20200225 21:23:57.961" level="INFO">{"jsonrpc":"2.0","id":"1","result":"0x96a97c36b630e2d7044e105e78f7ece58c5f0cd801ec17949017e97256ad1702"}
+</msg>
+<status status="PASS" endtime="20200225 21:23:57.961" starttime="20200225 21:23:57.960"></status>
+</kw>
+<kw name="To Json" library="RequestsLibrary">
+<doc>Convert a string to a JSON object</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<assign>
+<var>${respJson}</var>
+</assign>
+<msg timestamp="20200225 21:23:57.962" level="INFO">To JSON using : content={"jsonrpc":"2.0","id":"1","result":"0x96a97c36b630e2d7044e105e78f7ece58c5f0cd801ec17949017e97256ad1702"}
+ </msg>
+<msg timestamp="20200225 21:23:57.962" level="INFO">To JSON using : pretty_print=False </msg>
+<msg timestamp="20200225 21:23:57.962" level="INFO">${respJson} = {u'jsonrpc': u'2.0', u'id': u'1', u'result': u'0x96a97c36b630e2d7044e105e78f7ece58c5f0cd801ec17949017e97256ad1702'}</msg>
+<status status="PASS" endtime="20200225 21:23:57.962" starttime="20200225 21:23:57.961"></status>
+</kw>
+<kw name="Dictionary Should Not Contain Key" library="Collections">
+<doc>Fails if ``key`` is found from ``dictionary``.</doc>
+<arguments>
+<arg>${respJson}</arg>
+<arg>error</arg>
+</arguments>
+<status status="PASS" endtime="20200225 21:23:57.963" starttime="20200225 21:23:57.963"></status>
+</kw>
+<msg timestamp="20200225 21:23:57.963" level="INFO">${respJson} = {u'jsonrpc': u'2.0', u'id': u'1', u'result': u'0x96a97c36b630e2d7044e105e78f7ece58c5f0cd801ec17949017e97256ad1702'}</msg>
+<status status="PASS" endtime="20200225 21:23:57.963" starttime="20200225 21:23:56.874"></status>
+</kw>
+<kw name="Dictionary Should Contain Key" library="Collections">
+<doc>Fails if ``key`` is not found from ``dictionary``.</doc>
+<arguments>
+<arg>${respJson}</arg>
+<arg>result</arg>
+</arguments>
+<status status="PASS" endtime="20200225 21:23:57.965" starttime="20200225 21:23:57.964"></status>
+</kw>
+<status status="PASS" endtime="20200225 21:23:57.965" starttime="20200225 21:23:56.873"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${Alice}</arg>
+</arguments>
+<msg timestamp="20200225 21:23:57.966" level="INFO">P1Kh2UNFUR6cgjV5hxpYN1YB11i97wTqAqm</msg>
+<status status="PASS" endtime="20200225 21:23:57.966" starttime="20200225 21:23:57.965"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${AliceToken}</arg>
+</arguments>
+<msg timestamp="20200225 21:23:57.967" level="INFO">BDF</msg>
+<status status="PASS" endtime="20200225 21:23:57.967" starttime="20200225 21:23:57.967"></status>
+</kw>
+<kw name="transferPtn" library="pubFuncs">
+<arguments>
+<arg>${foundation}</arg>
+<arg>${Bob}</arg>
+<arg>2000</arg>
+</arguments>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>${from}</arg>
+<arg>${to}</arg>
+<arg>${amount}</arg>
+<arg>${fee}</arg>
+<arg>${null}</arg>
+<arg>${pwd}</arg>
+</arguments>
+<assign>
+<var>${params}</var>
+</assign>
+<msg timestamp="20200225 21:23:57.971" level="INFO">${params} = [u'P1Bbq1AVfZD66e7PD4APd7YSBqkmTmbBLWA', u'P1Dj6GEzrvbucPJnJMpx13fAkHhtL3WHpsS', u'2000', u'10', None, u'1']</msg>
+<status status="PASS" endtime="20200225 21:23:57.971" starttime="20200225 21:23:57.969"></status>
+</kw>
+<kw name="sendRpcPost" library="pubFuncs">
+<arguments>
+<arg>${transferPTNMethod}</arg>
+<arg>${params}</arg>
+<arg>transferPTN</arg>
+</arguments>
+<assign>
+<var>${respJson}</var>
+</assign>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>Content-Type</arg>
+<arg>application/json</arg>
+</arguments>
+<assign>
+<var>${header}</var>
+</assign>
+<msg timestamp="20200225 21:23:57.973" level="WARN">Giving keys and values separately to 'Create Dictionary' keyword is deprecated. Use 'key=value' syntax instead.</msg>
+<msg timestamp="20200225 21:23:57.973" level="INFO">${header} = {u'Content-Type': u'application/json'}</msg>
+<status status="PASS" endtime="20200225 21:23:57.973" starttime="20200225 21:23:57.972"></status>
+</kw>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>jsonrpc=2.0</arg>
+<arg>method=${method}</arg>
+<arg>params=${params}</arg>
+<arg>id=1</arg>
+</arguments>
+<assign>
+<var>${data}</var>
+</assign>
+<msg timestamp="20200225 21:23:57.975" level="INFO">${data} = {u'jsonrpc': u'2.0', u'method': u'wallet_transferPtn', u'params': [u'P1Bbq1AVfZD66e7PD4APd7YSBqkmTmbBLWA', u'P1Dj6GEzrvbucPJnJMpx13fAkHhtL3WHpsS', u'2000', u'10', None, u'1'], u'id': u'1'}</msg>
+<status status="PASS" endtime="20200225 21:23:57.976" starttime="20200225 21:23:57.974"></status>
+</kw>
+<kw name="Create Session" library="RequestsLibrary">
+<doc>Create Session: create a HTTP session to a server</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>${host}</arg>
+</arguments>
+<msg timestamp="20200225 21:23:57.977" level="INFO">Creating Session using : alias=transferPTN, url=http://127.0.0.1:8545/, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<status status="PASS" endtime="20200225 21:23:57.979" starttime="20200225 21:23:57.976"></status>
+</kw>
+<kw name="Post Request" library="RequestsLibrary">
+<doc>Send a POST request on the session object found using the</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>${host}</arg>
+<arg>data=${data}</arg>
+<arg>headers=${header}</arg>
+</arguments>
+<assign>
+<var>${resp}</var>
+</assign>
+<msg timestamp="20200225 21:23:57.983" level="INFO">POST Request using : uri=http://127.0.0.1:8545/, files=None, params=None, timeout=None, allow_redirects=True
+headers={'Connection': 'keep-alive', u'Content-Type': u'application/json', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'User-Agent': 'python-requests/2.22.0'} 
+data={"jsonrpc": "2.0", "method": "wallet_transferPtn", "params": ["P1Bbq1AVfZD66e7PD4APd7YSBqkmTmbBLWA", "P1Dj6GEzrvbucPJnJMpx13fAkHhtL3WHpsS", "2000", "10", null, "1"], "id": "1"} 
+json=None</msg>
+<msg timestamp="20200225 21:23:58.823" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20200225 21:23:58.823" starttime="20200225 21:23:57.979"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<msg timestamp="20200225 21:23:58.825" level="INFO">{"jsonrpc":"2.0","id":"1","result":"0x05836cdac21832da2755d537732776f8c2d21da39e7943ceb28f2d4c20d5684f"}
+</msg>
+<status status="PASS" endtime="20200225 21:23:58.826" starttime="20200225 21:23:58.824"></status>
+</kw>
+<kw name="To Json" library="RequestsLibrary">
+<doc>Convert a string to a JSON object</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<assign>
+<var>${respJson}</var>
+</assign>
+<msg timestamp="20200225 21:23:58.827" level="INFO">To JSON using : content={"jsonrpc":"2.0","id":"1","result":"0x05836cdac21832da2755d537732776f8c2d21da39e7943ceb28f2d4c20d5684f"}
+ </msg>
+<msg timestamp="20200225 21:23:58.828" level="INFO">To JSON using : pretty_print=False </msg>
+<msg timestamp="20200225 21:23:58.828" level="INFO">${respJson} = {u'jsonrpc': u'2.0', u'id': u'1', u'result': u'0x05836cdac21832da2755d537732776f8c2d21da39e7943ceb28f2d4c20d5684f'}</msg>
+<status status="PASS" endtime="20200225 21:23:58.829" starttime="20200225 21:23:58.826"></status>
+</kw>
+<kw name="Dictionary Should Not Contain Key" library="Collections">
+<doc>Fails if ``key`` is found from ``dictionary``.</doc>
+<arguments>
+<arg>${respJson}</arg>
+<arg>error</arg>
+</arguments>
+<status status="PASS" endtime="20200225 21:23:58.831" starttime="20200225 21:23:58.830"></status>
+</kw>
+<msg timestamp="20200225 21:23:58.831" level="INFO">${respJson} = {u'jsonrpc': u'2.0', u'id': u'1', u'result': u'0x05836cdac21832da2755d537732776f8c2d21da39e7943ceb28f2d4c20d5684f'}</msg>
+<status status="PASS" endtime="20200225 21:23:58.832" starttime="20200225 21:23:57.971"></status>
+</kw>
+<kw name="Dictionary Should Contain Key" library="Collections">
+<doc>Fails if ``key`` is not found from ``dictionary``.</doc>
+<arguments>
+<arg>${respJson}</arg>
+<arg>result</arg>
+</arguments>
+<status status="PASS" endtime="20200225 21:23:58.832" starttime="20200225 21:23:58.832"></status>
+</kw>
+<status status="PASS" endtime="20200225 21:23:58.832" starttime="20200225 21:23:57.968"></status>
+</kw>
+<kw name="Sleep" library="BuiltIn">
+<doc>Pauses the test executed for the given time.</doc>
+<arguments>
+<arg>1</arg>
+</arguments>
+<msg timestamp="20200225 21:23:59.833" level="INFO">Slept 1 second</msg>
+<status status="PASS" endtime="20200225 21:23:59.834" starttime="20200225 21:23:58.832"></status>
+</kw>
+<kw name="unlockAccount" library="pubFuncs">
+<arguments>
+<arg>${Alice}</arg>
+</arguments>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>${addr}</arg>
+<arg>${pwd}</arg>
+<arg>${600000000}</arg>
+</arguments>
+<assign>
+<var>${params}</var>
+</assign>
+<msg timestamp="20200225 21:23:59.835" level="INFO">${params} = [u'P1Kh2UNFUR6cgjV5hxpYN1YB11i97wTqAqm', u'1', 600000000]</msg>
+<status status="PASS" endtime="20200225 21:23:59.835" starttime="20200225 21:23:59.835"></status>
+</kw>
+<kw name="sendRpcPost" library="pubFuncs">
+<arguments>
+<arg>${unlockAccountMethod}</arg>
+<arg>${params}</arg>
+<arg>unlockAccount</arg>
+</arguments>
+<assign>
+<var>${respJson}</var>
+</assign>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>Content-Type</arg>
+<arg>application/json</arg>
+</arguments>
+<assign>
+<var>${header}</var>
+</assign>
+<msg timestamp="20200225 21:23:59.837" level="WARN">Giving keys and values separately to 'Create Dictionary' keyword is deprecated. Use 'key=value' syntax instead.</msg>
+<msg timestamp="20200225 21:23:59.837" level="INFO">${header} = {u'Content-Type': u'application/json'}</msg>
+<status status="PASS" endtime="20200225 21:23:59.838" starttime="20200225 21:23:59.836"></status>
+</kw>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>jsonrpc=2.0</arg>
+<arg>method=${method}</arg>
+<arg>params=${params}</arg>
+<arg>id=1</arg>
+</arguments>
+<assign>
+<var>${data}</var>
+</assign>
+<msg timestamp="20200225 21:23:59.842" level="INFO">${data} = {u'jsonrpc': u'2.0', u'method': u'personal_unlockAccount', u'params': [u'P1Kh2UNFUR6cgjV5hxpYN1YB11i97wTqAqm', u'1', 600000000], u'id': u'1'}</msg>
+<status status="PASS" endtime="20200225 21:23:59.843" starttime="20200225 21:23:59.838"></status>
+</kw>
+<kw name="Create Session" library="RequestsLibrary">
+<doc>Create Session: create a HTTP session to a server</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>${host}</arg>
+</arguments>
+<msg timestamp="20200225 21:23:59.843" level="INFO">Creating Session using : alias=unlockAccount, url=http://127.0.0.1:8545/, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<status status="PASS" endtime="20200225 21:23:59.845" starttime="20200225 21:23:59.843"></status>
+</kw>
+<kw name="Post Request" library="RequestsLibrary">
+<doc>Send a POST request on the session object found using the</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>${host}</arg>
+<arg>data=${data}</arg>
+<arg>headers=${header}</arg>
+</arguments>
+<assign>
+<var>${resp}</var>
+</assign>
+<msg timestamp="20200225 21:23:59.850" level="INFO">POST Request using : uri=http://127.0.0.1:8545/, files=None, params=None, timeout=None, allow_redirects=True
+headers={'Connection': 'keep-alive', u'Content-Type': u'application/json', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'User-Agent': 'python-requests/2.22.0'} 
+data={"jsonrpc": "2.0", "method": "personal_unlockAccount", "params": ["P1Kh2UNFUR6cgjV5hxpYN1YB11i97wTqAqm", "1", 600000000], "id": "1"} 
+json=None</msg>
+<msg timestamp="20200225 21:24:00.709" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20200225 21:24:00.709" starttime="20200225 21:23:59.846"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:00.710" level="INFO">{"jsonrpc":"2.0","id":"1","result":true}
+</msg>
+<status status="PASS" endtime="20200225 21:24:00.711" starttime="20200225 21:24:00.710"></status>
+</kw>
+<kw name="To Json" library="RequestsLibrary">
+<doc>Convert a string to a JSON object</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<assign>
+<var>${respJson}</var>
+</assign>
+<msg timestamp="20200225 21:24:00.713" level="INFO">To JSON using : content={"jsonrpc":"2.0","id":"1","result":true}
+ </msg>
+<msg timestamp="20200225 21:24:00.713" level="INFO">To JSON using : pretty_print=False </msg>
+<msg timestamp="20200225 21:24:00.714" level="INFO">${respJson} = {u'jsonrpc': u'2.0', u'id': u'1', u'result': True}</msg>
+<status status="PASS" endtime="20200225 21:24:00.714" starttime="20200225 21:24:00.711"></status>
+</kw>
+<kw name="Dictionary Should Not Contain Key" library="Collections">
+<doc>Fails if ``key`` is found from ``dictionary``.</doc>
+<arguments>
+<arg>${respJson}</arg>
+<arg>error</arg>
+</arguments>
+<status status="PASS" endtime="20200225 21:24:00.717" starttime="20200225 21:24:00.715"></status>
+</kw>
+<msg timestamp="20200225 21:24:00.718" level="INFO">${respJson} = {u'jsonrpc': u'2.0', u'id': u'1', u'result': True}</msg>
+<status status="PASS" endtime="20200225 21:24:00.718" starttime="20200225 21:23:59.836"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${respJson}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:00.720" level="INFO">{u'jsonrpc': u'2.0', u'id': u'1', u'result': True}</msg>
+<status status="PASS" endtime="20200225 21:24:00.720" starttime="20200225 21:24:00.719"></status>
+</kw>
+<kw name="Should Be Equal" library="BuiltIn">
+<doc>Fails if the given objects are unequal.</doc>
+<arguments>
+<arg>${respJson["result"]}</arg>
+<arg>${true}</arg>
+</arguments>
+<status status="PASS" endtime="20200225 21:24:00.721" starttime="20200225 21:24:00.720"></status>
+</kw>
+<status status="PASS" endtime="20200225 21:24:00.721" starttime="20200225 21:23:59.834"></status>
+</kw>
+<kw name="Alice issues her personal token, amount is 100000, decimal is 1 succeed" library="pubFuncs">
+<arguments>
+<arg>${Alice}</arg>
+<arg>${AliceToken}</arg>
+</arguments>
+<assign>
+<var>${AliceTokenID}</var>
+</assign>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${addr}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:00.722" level="INFO">P1Kh2UNFUR6cgjV5hxpYN1YB11i97wTqAqm</msg>
+<status status="PASS" endtime="20200225 21:24:00.722" starttime="20200225 21:24:00.721"></status>
+</kw>
+<kw name="issueToken" library="pubFuncs">
+<arguments>
+<arg>${addr}</arg>
+<arg>${AliceToken}</arg>
+<arg>100000</arg>
+<arg>1</arg>
+<arg>addr's</arg>
+</arguments>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>createToken</arg>
+<arg>${des}</arg>
+<arg>${name}</arg>
+<arg>${decimal}</arg>
+<arg>${amount}</arg>
+<arg>${addr}</arg>
+</arguments>
+<assign>
+<var>${args}</var>
+</assign>
+<msg timestamp="20200225 21:24:00.723" level="INFO">${args} = [u'createToken', u"addr's", u'BDF', u'1', u'100000', u'P1Kh2UNFUR6cgjV5hxpYN1YB11i97wTqAqm']</msg>
+<status status="PASS" endtime="20200225 21:24:00.723" starttime="20200225 21:24:00.722"></status>
+</kw>
+<kw name="genIssuetxParams" library="pubFuncs">
+<arguments>
+<arg>${addr}</arg>
+<arg>${addr}</arg>
+<arg>100</arg>
+<arg>1</arg>
+<arg>${prc720ContractAddr}</arg>
+<arg>${args}</arg>
+<arg>1</arg>
+</arguments>
+<assign>
+<var>${params}</var>
+</assign>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>${caCertHolder}</arg>
+<arg>${caCertHolder}</arg>
+<arg>${from}</arg>
+<arg>${to}</arg>
+<arg>${certContractAddr}</arg>
+<arg>${args}</arg>
+<arg>${timeout}</arg>
+</arguments>
+<assign>
+<var>${params}</var>
+</assign>
+<msg timestamp="20200225 21:24:00.724" level="INFO">${params} = [u'P1Kh2UNFUR6cgjV5hxpYN1YB11i97wTqAqm', u'P1Kh2UNFUR6cgjV5hxpYN1YB11i97wTqAqm', u'100', u'1', u'PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43', [u'createToken', u"addr's", u'BDF', u'1', u'100000', u'P1Kh2UNFUR...</msg>
+<status status="PASS" endtime="20200225 21:24:00.724" starttime="20200225 21:24:00.724"></status>
+</kw>
+<msg timestamp="20200225 21:24:00.725" level="INFO">${params} = [u'P1Kh2UNFUR6cgjV5hxpYN1YB11i97wTqAqm', u'P1Kh2UNFUR6cgjV5hxpYN1YB11i97wTqAqm', u'100', u'1', u'PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43', [u'createToken', u"addr's", u'BDF', u'1', u'100000', u'P1Kh2UNFUR...</msg>
+<status status="PASS" endtime="20200225 21:24:00.725" starttime="20200225 21:24:00.723"></status>
+</kw>
+<kw name="sendRpcPost" library="pubFuncs">
+<arguments>
+<arg>${invokeMethod}</arg>
+<arg>${params}</arg>
+<arg>issueToken</arg>
+</arguments>
+<assign>
+<var>${respJson}</var>
+</assign>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>Content-Type</arg>
+<arg>application/json</arg>
+</arguments>
+<assign>
+<var>${header}</var>
+</assign>
+<msg timestamp="20200225 21:24:00.725" level="WARN">Giving keys and values separately to 'Create Dictionary' keyword is deprecated. Use 'key=value' syntax instead.</msg>
+<msg timestamp="20200225 21:24:00.726" level="INFO">${header} = {u'Content-Type': u'application/json'}</msg>
+<status status="PASS" endtime="20200225 21:24:00.726" starttime="20200225 21:24:00.725"></status>
+</kw>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>jsonrpc=2.0</arg>
+<arg>method=${method}</arg>
+<arg>params=${params}</arg>
+<arg>id=1</arg>
+</arguments>
+<assign>
+<var>${data}</var>
+</assign>
+<msg timestamp="20200225 21:24:00.727" level="INFO">${data} = {u'jsonrpc': u'2.0', u'method': u'contract_ccinvoketx', u'params': [u'P1Kh2UNFUR6cgjV5hxpYN1YB11i97wTqAqm', u'P1Kh2UNFUR6cgjV5hxpYN1YB11i97wTqAqm', u'100', u'1', u'PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43'...</msg>
+<status status="PASS" endtime="20200225 21:24:00.727" starttime="20200225 21:24:00.726"></status>
+</kw>
+<kw name="Create Session" library="RequestsLibrary">
+<doc>Create Session: create a HTTP session to a server</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>${host}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:00.727" level="INFO">Creating Session using : alias=issueToken, url=http://127.0.0.1:8545/, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<status status="PASS" endtime="20200225 21:24:00.728" starttime="20200225 21:24:00.727"></status>
+</kw>
+<kw name="Post Request" library="RequestsLibrary">
+<doc>Send a POST request on the session object found using the</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>${host}</arg>
+<arg>data=${data}</arg>
+<arg>headers=${header}</arg>
+</arguments>
+<assign>
+<var>${resp}</var>
+</assign>
+<msg timestamp="20200225 21:24:00.729" level="INFO">POST Request using : uri=http://127.0.0.1:8545/, files=None, params=None, timeout=None, allow_redirects=True
+headers={'Connection': 'keep-alive', u'Content-Type': u'application/json', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'User-Agent': 'python-requests/2.22.0'} 
+data={"jsonrpc": "2.0", "method": "contract_ccinvoketx", "params": ["P1Kh2UNFUR6cgjV5hxpYN1YB11i97wTqAqm", "P1Kh2UNFUR6cgjV5hxpYN1YB11i97wTqAqm", "100", "1", "PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43", ["createToken", "addr's", "BDF", "1", "100000", "P1Kh2UNFUR6cgjV5hxpYN1YB11i97wTqAqm"], "1"], "id": "1"} 
+json=None</msg>
+<msg timestamp="20200225 21:24:01.559" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20200225 21:24:01.559" starttime="20200225 21:24:00.728"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:01.560" level="INFO">{"jsonrpc":"2.0","id":"1","result":{"request_id":"2a705d6a9d5445b0867d9db04ecea93e74f7e34c6c0c17430a1b661e8bb3559a","contract_id":"PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43"}}
+</msg>
+<status status="PASS" endtime="20200225 21:24:01.561" starttime="20200225 21:24:01.560"></status>
+</kw>
+<kw name="To Json" library="RequestsLibrary">
+<doc>Convert a string to a JSON object</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<assign>
+<var>${respJson}</var>
+</assign>
+<msg timestamp="20200225 21:24:01.563" level="INFO">To JSON using : content={"jsonrpc":"2.0","id":"1","result":{"request_id":"2a705d6a9d5445b0867d9db04ecea93e74f7e34c6c0c17430a1b661e8bb3559a","contract_id":"PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43"}}
+ </msg>
+<msg timestamp="20200225 21:24:01.564" level="INFO">To JSON using : pretty_print=False </msg>
+<msg timestamp="20200225 21:24:01.564" level="INFO">${respJson} = {u'jsonrpc': u'2.0', u'id': u'1', u'result': {u'contract_id': u'PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43', u'request_id': u'2a705d6a9d5445b0867d9db04ecea93e74f7e34c6c0c17430a1b661e8bb3559a'}}</msg>
+<status status="PASS" endtime="20200225 21:24:01.565" starttime="20200225 21:24:01.562"></status>
+</kw>
+<kw name="Dictionary Should Not Contain Key" library="Collections">
+<doc>Fails if ``key`` is found from ``dictionary``.</doc>
+<arguments>
+<arg>${respJson}</arg>
+<arg>error</arg>
+</arguments>
+<status status="PASS" endtime="20200225 21:24:01.566" starttime="20200225 21:24:01.565"></status>
+</kw>
+<msg timestamp="20200225 21:24:01.566" level="INFO">${respJson} = {u'jsonrpc': u'2.0', u'id': u'1', u'result': {u'contract_id': u'PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43', u'request_id': u'2a705d6a9d5445b0867d9db04ecea93e74f7e34c6c0c17430a1b661e8bb3559a'}}</msg>
+<status status="PASS" endtime="20200225 21:24:01.566" starttime="20200225 21:24:00.725"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${respJson}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:01.567" level="INFO">{u'jsonrpc': u'2.0', u'id': u'1', u'result': {u'contract_id': u'PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43', u'request_id': u'2a705d6a9d5445b0867d9db04ecea93e74f7e34c6c0c17430a1b661e8bb3559a'}}</msg>
+<status status="PASS" endtime="20200225 21:24:01.567" starttime="20200225 21:24:01.566"></status>
+</kw>
+<kw name="Dictionary Should Contain Key" library="Collections">
+<doc>Fails if ``key`` is not found from ``dictionary``.</doc>
+<arguments>
+<arg>${respJson}</arg>
+<arg>result</arg>
+</arguments>
+<status status="PASS" endtime="20200225 21:24:01.568" starttime="20200225 21:24:01.567"></status>
+</kw>
+<status status="PASS" endtime="20200225 21:24:01.569" starttime="20200225 21:24:00.722"></status>
+</kw>
+<kw name="Wait for transaction being packaged" library="pubFuncs">
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>Wait for transaction being packaged</arg>
+</arguments>
+<msg timestamp="20200225 21:24:01.573" level="INFO">Wait for transaction being packaged</msg>
+<status status="PASS" endtime="20200225 21:24:01.573" starttime="20200225 21:24:01.572"></status>
+</kw>
+<kw name="Sleep" library="BuiltIn">
+<doc>Pauses the test executed for the given time.</doc>
+<arguments>
+<arg>6</arg>
+</arguments>
+<msg timestamp="20200225 21:24:07.574" level="INFO">Slept 6 seconds</msg>
+<status status="PASS" endtime="20200225 21:24:07.575" starttime="20200225 21:24:01.574"></status>
+</kw>
+<status status="PASS" endtime="20200225 21:24:07.575" starttime="20200225 21:24:01.570"></status>
+</kw>
+<kw name="FindTokenId" library="pubFuncs">
+<arguments>
+<arg>${addr}</arg>
+<arg>${AliceToken}</arg>
+</arguments>
+<assign>
+<var>${ReturnID}</var>
+</assign>
+<kw name="getAllBalance" library="pubFuncs">
+<arguments>
+<arg>${addr}</arg>
+</arguments>
+<assign>
+<var>${balance}</var>
+</assign>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>${addr}</arg>
+</arguments>
+<assign>
+<var>${params}</var>
+</assign>
+<msg timestamp="20200225 21:24:07.577" level="INFO">${params} = [u'P1Kh2UNFUR6cgjV5hxpYN1YB11i97wTqAqm']</msg>
+<status status="PASS" endtime="20200225 21:24:07.577" starttime="20200225 21:24:07.576"></status>
+</kw>
+<kw name="sendRpcPost" library="pubFuncs">
+<arguments>
+<arg>${getBalanceMethod}</arg>
+<arg>${params}</arg>
+<arg>getBalance</arg>
+</arguments>
+<assign>
+<var>${respJson}</var>
+</assign>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>Content-Type</arg>
+<arg>application/json</arg>
+</arguments>
+<assign>
+<var>${header}</var>
+</assign>
+<msg timestamp="20200225 21:24:07.578" level="WARN">Giving keys and values separately to 'Create Dictionary' keyword is deprecated. Use 'key=value' syntax instead.</msg>
+<msg timestamp="20200225 21:24:07.579" level="INFO">${header} = {u'Content-Type': u'application/json'}</msg>
+<status status="PASS" endtime="20200225 21:24:07.579" starttime="20200225 21:24:07.578"></status>
+</kw>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>jsonrpc=2.0</arg>
+<arg>method=${method}</arg>
+<arg>params=${params}</arg>
+<arg>id=1</arg>
+</arguments>
+<assign>
+<var>${data}</var>
+</assign>
+<msg timestamp="20200225 21:24:07.580" level="INFO">${data} = {u'jsonrpc': u'2.0', u'method': u'wallet_getBalance', u'params': [u'P1Kh2UNFUR6cgjV5hxpYN1YB11i97wTqAqm'], u'id': u'1'}</msg>
+<status status="PASS" endtime="20200225 21:24:07.580" starttime="20200225 21:24:07.579"></status>
+</kw>
+<kw name="Create Session" library="RequestsLibrary">
+<doc>Create Session: create a HTTP session to a server</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>${host}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:07.582" level="INFO">Creating Session using : alias=getBalance, url=http://127.0.0.1:8545/, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<status status="PASS" endtime="20200225 21:24:07.582" starttime="20200225 21:24:07.581"></status>
+</kw>
+<kw name="Post Request" library="RequestsLibrary">
+<doc>Send a POST request on the session object found using the</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>${host}</arg>
+<arg>data=${data}</arg>
+<arg>headers=${header}</arg>
+</arguments>
+<assign>
+<var>${resp}</var>
+</assign>
+<msg timestamp="20200225 21:24:07.584" level="INFO">POST Request using : uri=http://127.0.0.1:8545/, files=None, params=None, timeout=None, allow_redirects=True
+headers={'Connection': 'keep-alive', u'Content-Type': u'application/json', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'User-Agent': 'python-requests/2.22.0'} 
+data={"jsonrpc": "2.0", "method": "wallet_getBalance", "params": ["P1Kh2UNFUR6cgjV5hxpYN1YB11i97wTqAqm"], "id": "1"} 
+json=None</msg>
+<msg timestamp="20200225 21:24:07.594" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20200225 21:24:07.594" starttime="20200225 21:24:07.583"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:07.596" level="INFO">{"jsonrpc":"2.0","id":"1","result":{"BDF+106G2NXCV7030Z8K2HP":"100000","PTN":"1999"}}
+</msg>
+<status status="PASS" endtime="20200225 21:24:07.597" starttime="20200225 21:24:07.595"></status>
+</kw>
+<kw name="To Json" library="RequestsLibrary">
+<doc>Convert a string to a JSON object</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<assign>
+<var>${respJson}</var>
+</assign>
+<msg timestamp="20200225 21:24:07.600" level="INFO">To JSON using : content={"jsonrpc":"2.0","id":"1","result":{"BDF+106G2NXCV7030Z8K2HP":"100000","PTN":"1999"}}
+ </msg>
+<msg timestamp="20200225 21:24:07.600" level="INFO">To JSON using : pretty_print=False </msg>
+<msg timestamp="20200225 21:24:07.600" level="INFO">${respJson} = {u'jsonrpc': u'2.0', u'id': u'1', u'result': {u'PTN': u'1999', u'BDF+106G2NXCV7030Z8K2HP': u'100000'}}</msg>
+<status status="PASS" endtime="20200225 21:24:07.600" starttime="20200225 21:24:07.599"></status>
+</kw>
+<kw name="Dictionary Should Not Contain Key" library="Collections">
+<doc>Fails if ``key`` is found from ``dictionary``.</doc>
+<arguments>
+<arg>${respJson}</arg>
+<arg>error</arg>
+</arguments>
+<status status="PASS" endtime="20200225 21:24:07.602" starttime="20200225 21:24:07.600"></status>
+</kw>
+<msg timestamp="20200225 21:24:07.602" level="INFO">${respJson} = {u'jsonrpc': u'2.0', u'id': u'1', u'result': {u'PTN': u'1999', u'BDF+106G2NXCV7030Z8K2HP': u'100000'}}</msg>
+<status status="PASS" endtime="20200225 21:24:07.602" starttime="20200225 21:24:07.577"></status>
+</kw>
+<kw name="Dictionary Should Contain Key" library="Collections">
+<doc>Fails if ``key`` is not found from ``dictionary``.</doc>
+<arguments>
+<arg>${respJson}</arg>
+<arg>result</arg>
+</arguments>
+<status status="PASS" endtime="20200225 21:24:07.603" starttime="20200225 21:24:07.603"></status>
+</kw>
+<kw name="Get From Dictionary" library="Collections">
+<doc>Returns a value from the given ``dictionary`` based on the given ``key``.</doc>
+<arguments>
+<arg>${respJson}</arg>
+<arg>result</arg>
+</arguments>
+<assign>
+<var>${result}</var>
+</assign>
+<msg timestamp="20200225 21:24:07.609" level="INFO">${result} = {u'PTN': u'1999', u'BDF+106G2NXCV7030Z8K2HP': u'100000'}</msg>
+<status status="PASS" endtime="20200225 21:24:07.609" starttime="20200225 21:24:07.604"></status>
+</kw>
+<msg timestamp="20200225 21:24:07.612" level="INFO">${balance} = {u'PTN': u'1999', u'BDF+106G2NXCV7030Z8K2HP': u'100000'}</msg>
+<status status="PASS" endtime="20200225 21:24:07.612" starttime="20200225 21:24:07.576"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${balance}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:07.615" level="INFO">{u'PTN': u'1999', u'BDF+106G2NXCV7030Z8K2HP': u'100000'}</msg>
+<status status="PASS" endtime="20200225 21:24:07.615" starttime="20200225 21:24:07.613"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${TokenName}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:07.617" level="INFO">BDF</msg>
+<status status="PASS" endtime="20200225 21:24:07.617" starttime="20200225 21:24:07.616"></status>
+</kw>
+<kw name="Get Dictionary Keys" library="Collections">
+<doc>Returns keys of the given ``dictionary``.</doc>
+<arguments>
+<arg>${balance}</arg>
+</arguments>
+<assign>
+<var>${tokenIDs}</var>
+</assign>
+<msg timestamp="20200225 21:24:07.618" level="INFO">${tokenIDs} = [u'BDF+106G2NXCV7030Z8K2HP', u'PTN']</msg>
+<status status="PASS" endtime="20200225 21:24:07.618" starttime="20200225 21:24:07.617"></status>
+</kw>
+<kw type="for" name="${id} IN [ @{tokenIDs} ]">
+<kw type="foritem" name="${id} = BDF+106G2NXCV7030Z8K2HP">
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${id[0:3]}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:07.619" level="INFO">BDF</msg>
+<status status="PASS" endtime="20200225 21:24:07.619" starttime="20200225 21:24:07.618"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${TokenName}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:07.620" level="INFO">BDF</msg>
+<status status="PASS" endtime="20200225 21:24:07.620" starttime="20200225 21:24:07.620"></status>
+</kw>
+<kw name="Set Global Variable" library="BuiltIn">
+<doc>Makes a variable available globally in all tests and suites.</doc>
+<arguments>
+<arg>${TokenID}</arg>
+<arg>${id}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:07.623" level="INFO">${TokenID} = BDF+106G2NXCV7030Z8K2HP</msg>
+<status status="PASS" endtime="20200225 21:24:07.623" starttime="20200225 21:24:07.620"></status>
+</kw>
+<kw name="Run Keyword If" library="BuiltIn">
+<doc>Runs the given keyword with the given arguments, if ``condition`` is true.</doc>
+<arguments>
+<arg>'${id[0:3]}'=='${TokenName}'</arg>
+<arg>exit for loop</arg>
+</arguments>
+<kw name="Exit For Loop" library="BuiltIn">
+<doc>Stops executing the enclosing for loop.</doc>
+<msg timestamp="20200225 21:24:07.625" level="INFO">Exiting for loop altogether.</msg>
+<status status="PASS" endtime="20200225 21:24:07.625" starttime="20200225 21:24:07.624"></status>
+</kw>
+<status status="PASS" endtime="20200225 21:24:07.625" starttime="20200225 21:24:07.623"></status>
+</kw>
+<status status="PASS" endtime="20200225 21:24:07.625" starttime="20200225 21:24:07.618"></status>
+</kw>
+<status status="PASS" endtime="20200225 21:24:07.625" starttime="20200225 21:24:07.618"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${TokenID}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:07.625" level="INFO">BDF+106G2NXCV7030Z8K2HP</msg>
+<status status="PASS" endtime="20200225 21:24:07.625" starttime="20200225 21:24:07.625"></status>
+</kw>
+<msg timestamp="20200225 21:24:07.625" level="INFO">${ReturnID} = BDF+106G2NXCV7030Z8K2HP</msg>
+<status status="PASS" endtime="20200225 21:24:07.625" starttime="20200225 21:24:07.575"></status>
+</kw>
+<msg timestamp="20200225 21:24:07.626" level="INFO">${AliceTokenID} = BDF+106G2NXCV7030Z8K2HP</msg>
+<status status="PASS" endtime="20200225 21:24:07.626" starttime="20200225 21:24:00.721"></status>
+</kw>
+<kw name="Set Global Variable" library="BuiltIn">
+<doc>Makes a variable available globally in all tests and suites.</doc>
+<arguments>
+<arg>${AAAliceTokenID}</arg>
+<arg>${AliceTokenID}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:07.627" level="INFO">${AAAliceTokenID} = BDF+106G2NXCV7030Z8K2HP</msg>
+<status status="PASS" endtime="20200225 21:24:07.627" starttime="20200225 21:24:07.626"></status>
+</kw>
+<kw name="Sleep" library="BuiltIn">
+<doc>Pauses the test executed for the given time.</doc>
+<arguments>
+<arg>5</arg>
+</arguments>
+<msg timestamp="20200225 21:24:12.629" level="INFO">Slept 5 seconds</msg>
+<status status="PASS" endtime="20200225 21:24:12.630" starttime="20200225 21:24:07.627"></status>
+</kw>
+<kw name="unlockAccount" library="pubFuncs">
+<arguments>
+<arg>${Alice}</arg>
+</arguments>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>${addr}</arg>
+<arg>${pwd}</arg>
+<arg>${600000000}</arg>
+</arguments>
+<assign>
+<var>${params}</var>
+</assign>
+<msg timestamp="20200225 21:24:12.632" level="INFO">${params} = [u'P1Kh2UNFUR6cgjV5hxpYN1YB11i97wTqAqm', u'1', 600000000]</msg>
+<status status="PASS" endtime="20200225 21:24:12.632" starttime="20200225 21:24:12.631"></status>
+</kw>
+<kw name="sendRpcPost" library="pubFuncs">
+<arguments>
+<arg>${unlockAccountMethod}</arg>
+<arg>${params}</arg>
+<arg>unlockAccount</arg>
+</arguments>
+<assign>
+<var>${respJson}</var>
+</assign>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>Content-Type</arg>
+<arg>application/json</arg>
+</arguments>
+<assign>
+<var>${header}</var>
+</assign>
+<msg timestamp="20200225 21:24:12.634" level="WARN">Giving keys and values separately to 'Create Dictionary' keyword is deprecated. Use 'key=value' syntax instead.</msg>
+<msg timestamp="20200225 21:24:12.634" level="INFO">${header} = {u'Content-Type': u'application/json'}</msg>
+<status status="PASS" endtime="20200225 21:24:12.634" starttime="20200225 21:24:12.633"></status>
+</kw>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>jsonrpc=2.0</arg>
+<arg>method=${method}</arg>
+<arg>params=${params}</arg>
+<arg>id=1</arg>
+</arguments>
+<assign>
+<var>${data}</var>
+</assign>
+<msg timestamp="20200225 21:24:12.635" level="INFO">${data} = {u'jsonrpc': u'2.0', u'method': u'personal_unlockAccount', u'params': [u'P1Kh2UNFUR6cgjV5hxpYN1YB11i97wTqAqm', u'1', 600000000], u'id': u'1'}</msg>
+<status status="PASS" endtime="20200225 21:24:12.635" starttime="20200225 21:24:12.635"></status>
+</kw>
+<kw name="Create Session" library="RequestsLibrary">
+<doc>Create Session: create a HTTP session to a server</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>${host}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:12.636" level="INFO">Creating Session using : alias=unlockAccount, url=http://127.0.0.1:8545/, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<status status="PASS" endtime="20200225 21:24:12.638" starttime="20200225 21:24:12.635"></status>
+</kw>
+<kw name="Post Request" library="RequestsLibrary">
+<doc>Send a POST request on the session object found using the</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>${host}</arg>
+<arg>data=${data}</arg>
+<arg>headers=${header}</arg>
+</arguments>
+<assign>
+<var>${resp}</var>
+</assign>
+<msg timestamp="20200225 21:24:12.640" level="INFO">POST Request using : uri=http://127.0.0.1:8545/, files=None, params=None, timeout=None, allow_redirects=True
+headers={'Connection': 'keep-alive', u'Content-Type': u'application/json', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'User-Agent': 'python-requests/2.22.0'} 
+data={"jsonrpc": "2.0", "method": "personal_unlockAccount", "params": ["P1Kh2UNFUR6cgjV5hxpYN1YB11i97wTqAqm", "1", 600000000], "id": "1"} 
+json=None</msg>
+<msg timestamp="20200225 21:24:13.474" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20200225 21:24:13.474" starttime="20200225 21:24:12.639"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:13.474" level="INFO">{"jsonrpc":"2.0","id":"1","result":true}
+</msg>
+<status status="PASS" endtime="20200225 21:24:13.474" starttime="20200225 21:24:13.474"></status>
+</kw>
+<kw name="To Json" library="RequestsLibrary">
+<doc>Convert a string to a JSON object</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<assign>
+<var>${respJson}</var>
+</assign>
+<msg timestamp="20200225 21:24:13.475" level="INFO">To JSON using : content={"jsonrpc":"2.0","id":"1","result":true}
+ </msg>
+<msg timestamp="20200225 21:24:13.475" level="INFO">To JSON using : pretty_print=False </msg>
+<msg timestamp="20200225 21:24:13.475" level="INFO">${respJson} = {u'jsonrpc': u'2.0', u'id': u'1', u'result': True}</msg>
+<status status="PASS" endtime="20200225 21:24:13.475" starttime="20200225 21:24:13.474"></status>
+</kw>
+<kw name="Dictionary Should Not Contain Key" library="Collections">
+<doc>Fails if ``key`` is found from ``dictionary``.</doc>
+<arguments>
+<arg>${respJson}</arg>
+<arg>error</arg>
+</arguments>
+<status status="PASS" endtime="20200225 21:24:13.475" starttime="20200225 21:24:13.475"></status>
+</kw>
+<msg timestamp="20200225 21:24:13.476" level="INFO">${respJson} = {u'jsonrpc': u'2.0', u'id': u'1', u'result': True}</msg>
+<status status="PASS" endtime="20200225 21:24:13.476" starttime="20200225 21:24:12.632"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${respJson}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:13.476" level="INFO">{u'jsonrpc': u'2.0', u'id': u'1', u'result': True}</msg>
+<status status="PASS" endtime="20200225 21:24:13.476" starttime="20200225 21:24:13.476"></status>
+</kw>
+<kw name="Should Be Equal" library="BuiltIn">
+<doc>Fails if the given objects are unequal.</doc>
+<arguments>
+<arg>${respJson["result"]}</arg>
+<arg>${true}</arg>
+</arguments>
+<status status="PASS" endtime="20200225 21:24:13.477" starttime="20200225 21:24:13.476"></status>
+</kw>
+<status status="PASS" endtime="20200225 21:24:13.477" starttime="20200225 21:24:12.630"></status>
+</kw>
+<kw name="Alice create tx withoutfee" library="pubFuncs">
+<arguments>
+<arg>${AAAliceTokenID}</arg>
+<arg>${Alice}</arg>
+<arg>${Bob}</arg>
+<arg>${amount}</arg>
+<arg>${pwd}</arg>
+</arguments>
+<assign>
+<var>${rawtx}</var>
+</assign>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>${TokenId}</arg>
+<arg>${Alice}</arg>
+<arg>${Bob}</arg>
+<arg>${amount}</arg>
+<arg>${pwd}</arg>
+</arguments>
+<assign>
+<var>${paras}</var>
+</assign>
+<msg timestamp="20200225 21:24:13.478" level="INFO">${paras} = [u'BDF+106G2NXCV7030Z8K2HP', u'P1Kh2UNFUR6cgjV5hxpYN1YB11i97wTqAqm', u'P1Dj6GEzrvbucPJnJMpx13fAkHhtL3WHpsS', u'10000', u'1']</msg>
+<status status="PASS" endtime="20200225 21:24:13.478" starttime="20200225 21:24:13.478"></status>
+</kw>
+<kw name="post">
+<arguments>
+<arg>${createTxWithOutFee}</arg>
+<arg>${createTxWithOutFee}</arg>
+<arg>${paras}</arg>
+</arguments>
+<assign>
+<var>${res}</var>
+</assign>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>Content-Type=application/json</arg>
+</arguments>
+<assign>
+<var>${header}</var>
+</assign>
+<msg timestamp="20200225 21:24:13.479" level="INFO">${header} = {u'Content-Type': u'application/json'}</msg>
+<status status="PASS" endtime="20200225 21:24:13.479" starttime="20200225 21:24:13.479"></status>
+</kw>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>jsonrpc=2.0</arg>
+<arg>method=${method}</arg>
+<arg>params=${params}</arg>
+<arg>id=1</arg>
+</arguments>
+<assign>
+<var>${data}</var>
+</assign>
+<msg timestamp="20200225 21:24:13.480" level="INFO">${data} = {u'jsonrpc': u'2.0', u'method': u'wallet_createTxWithOutFee', u'params': [u'BDF+106G2NXCV7030Z8K2HP', u'P1Kh2UNFUR6cgjV5hxpYN1YB11i97wTqAqm', u'P1Dj6GEzrvbucPJnJMpx13fAkHhtL3WHpsS', u'10000', u'1'], u...</msg>
+<status status="PASS" endtime="20200225 21:24:13.480" starttime="20200225 21:24:13.479"></status>
+</kw>
+<kw name="Create Session" library="RequestsLibrary">
+<doc>Create Session: create a HTTP session to a server</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>http://127.0.0.1:8545</arg>
+</arguments>
+<msg timestamp="20200225 21:24:13.480" level="INFO">Creating Session using : alias=wallet_createTxWithOutFee, url=http://127.0.0.1:8545, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<status status="PASS" endtime="20200225 21:24:13.481" starttime="20200225 21:24:13.480"></status>
+</kw>
+<kw name="Post Request" library="RequestsLibrary">
+<doc>Send a POST request on the session object found using the</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>http://127.0.0.1:8545</arg>
+<arg>data=${data}</arg>
+<arg>headers=${header}</arg>
+</arguments>
+<assign>
+<var>${resp}</var>
+</assign>
+<msg timestamp="20200225 21:24:13.481" level="INFO">POST Request using : uri=http://127.0.0.1:8545, files=None, params=None, timeout=None, allow_redirects=True
+headers={'Connection': 'keep-alive', u'Content-Type': u'application/json', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'User-Agent': 'python-requests/2.22.0'} 
+data={"jsonrpc": "2.0", "method": "wallet_createTxWithOutFee", "params": ["BDF+106G2NXCV7030Z8K2HP", "P1Kh2UNFUR6cgjV5hxpYN1YB11i97wTqAqm", "P1Dj6GEzrvbucPJnJMpx13fAkHhtL3WHpsS", "10000", "1"], "id": "1"} 
+json=None</msg>
+<msg timestamp="20200225 21:24:14.317" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20200225 21:24:14.317" starttime="20200225 21:24:13.481"></status>
+</kw>
+<kw name="To Json" library="RequestsLibrary">
+<doc>Convert a string to a JSON object</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<assign>
+<var>${respJson}</var>
+</assign>
+<msg timestamp="20200225 21:24:14.319" level="INFO">To JSON using : content={"jsonrpc":"2.0","id":"1","result":{"hex":"f9012cf90127f9012480b90120f9011df892f890b86a47304402202e6656bc6af5c7a55f3bb635be0ffb6edeace49fa7f1de6bd3c384dc4d09c72002204d67d6ca9c9addcddf0c7b1c322b0d105d198f497679841843da88b1a049175c412103b8794a3441f9b8bf4795267eba0a1b15d56126390475f46a275695e3a39b25db80a084c738f3865dbc04b94d6e1a1c21758f674270fc6d145a075308fb215b17aed80380f886f841830186a09976a9148b975f799c95ca98679f766fcfaf3cb98870c20288ace29040003993012a705d6a9d5445b0867d9d9000000000000000000000000000000000f841830dbba09976a914cd042196a1b2b39765dee443ebc040ce2e96d24f88ace29040003993012a705d6a9d5445b0867d9d9000000000000000000000000000000000808080","txid":"0x744ae5f93b9011d4b56e46d8417f9b473324cfb4d9dd4ade473f44c6c31aef71","complete":true}}
+ </msg>
+<msg timestamp="20200225 21:24:14.319" level="INFO">To JSON using : pretty_print=False </msg>
+<msg timestamp="20200225 21:24:14.320" level="INFO">${respJson} = {u'jsonrpc': u'2.0', u'id': u'1', u'result': {u'hex': u'f9012cf90127f9012480b90120f9011df892f890b86a47304402202e6656bc6af5c7a55f3bb635be0ffb6edeace49fa7f1de6bd3c384dc4d09c72002204d67d6ca9c9addcddf0c7b...</msg>
+<status status="PASS" endtime="20200225 21:24:14.320" starttime="20200225 21:24:14.317"></status>
+</kw>
+<kw name="Dictionary Should Contain Key" library="Collections">
+<doc>Fails if ``key`` is not found from ``dictionary``.</doc>
+<arguments>
+<arg>${respJson}</arg>
+<arg>result</arg>
+</arguments>
+<status status="PASS" endtime="20200225 21:24:14.320" starttime="20200225 21:24:14.320"></status>
+</kw>
+<kw name="Get From Dictionary" library="Collections">
+<doc>Returns a value from the given ``dictionary`` based on the given ``key``.</doc>
+<arguments>
+<arg>${respJson}</arg>
+<arg>result</arg>
+</arguments>
+<assign>
+<var>${res}</var>
+</assign>
+<msg timestamp="20200225 21:24:14.320" level="INFO">${res} = {u'hex': u'f9012cf90127f9012480b90120f9011df892f890b86a47304402202e6656bc6af5c7a55f3bb635be0ffb6edeace49fa7f1de6bd3c384dc4d09c72002204d67d6ca9c9addcddf0c7b1c322b0d105d198f497679841843da88b1a049175c412...</msg>
+<status status="PASS" endtime="20200225 21:24:14.320" starttime="20200225 21:24:14.320"></status>
+</kw>
+<msg timestamp="20200225 21:24:14.321" level="INFO">${res} = {u'hex': u'f9012cf90127f9012480b90120f9011df892f890b86a47304402202e6656bc6af5c7a55f3bb635be0ffb6edeace49fa7f1de6bd3c384dc4d09c72002204d67d6ca9c9addcddf0c7b1c322b0d105d198f497679841843da88b1a049175c412...</msg>
+<status status="PASS" endtime="20200225 21:24:14.321" starttime="20200225 21:24:13.478"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${res}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:14.321" level="INFO">{u'hex': u'f9012cf90127f9012480b90120f9011df892f890b86a47304402202e6656bc6af5c7a55f3bb635be0ffb6edeace49fa7f1de6bd3c384dc4d09c72002204d67d6ca9c9addcddf0c7b1c322b0d105d198f497679841843da88b1a049175c412103b8794a3441f9b8bf4795267eba0a1b15d56126390475f46a275695e3a39b25db80a084c738f3865dbc04b94d6e1a1c21758f674270fc6d145a075308fb215b17aed80380f886f841830186a09976a9148b975f799c95ca98679f766fcfaf3cb98870c20288ace29040003993012a705d6a9d5445b0867d9d9000000000000000000000000000000000f841830dbba09976a914cd042196a1b2b39765dee443ebc040ce2e96d24f88ace29040003993012a705d6a9d5445b0867d9d9000000000000000000000000000000000808080', u'complete': True, u'txid': u'0x744ae5f93b9011d4b56e46d8417f9b473324cfb4d9dd4ade473f44c6c31aef71'}</msg>
+<status status="PASS" endtime="20200225 21:24:14.321" starttime="20200225 21:24:14.321"></status>
+</kw>
+<msg timestamp="20200225 21:24:14.321" level="INFO">${rawtx} = {u'hex': u'f9012cf90127f9012480b90120f9011df892f890b86a47304402202e6656bc6af5c7a55f3bb635be0ffb6edeace49fa7f1de6bd3c384dc4d09c72002204d67d6ca9c9addcddf0c7b1c322b0d105d198f497679841843da88b1a049175c412...</msg>
+<status status="PASS" endtime="20200225 21:24:14.321" starttime="20200225 21:24:13.477"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${rawtx["hex"]}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:14.322" level="INFO">f9012cf90127f9012480b90120f9011df892f890b86a47304402202e6656bc6af5c7a55f3bb635be0ffb6edeace49fa7f1de6bd3c384dc4d09c72002204d67d6ca9c9addcddf0c7b1c322b0d105d198f497679841843da88b1a049175c412103b8794a3441f9b8bf4795267eba0a1b15d56126390475f46a275695e3a39b25db80a084c738f3865dbc04b94d6e1a1c21758f674270fc6d145a075308fb215b17aed80380f886f841830186a09976a9148b975f799c95ca98679f766fcfaf3cb98870c20288ace29040003993012a705d6a9d5445b0867d9d9000000000000000000000000000000000f841830dbba09976a914cd042196a1b2b39765dee443ebc040ce2e96d24f88ace29040003993012a705d6a9d5445b0867d9d9000000000000000000000000000000000808080</msg>
+<status status="PASS" endtime="20200225 21:24:14.322" starttime="20200225 21:24:14.322"></status>
+</kw>
+<kw name="unlockAccount" library="pubFuncs">
+<arguments>
+<arg>${Bob}</arg>
+</arguments>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>${addr}</arg>
+<arg>${pwd}</arg>
+<arg>${600000000}</arg>
+</arguments>
+<assign>
+<var>${params}</var>
+</assign>
+<msg timestamp="20200225 21:24:14.323" level="INFO">${params} = [u'P1Dj6GEzrvbucPJnJMpx13fAkHhtL3WHpsS', u'1', 600000000]</msg>
+<status status="PASS" endtime="20200225 21:24:14.323" starttime="20200225 21:24:14.322"></status>
+</kw>
+<kw name="sendRpcPost" library="pubFuncs">
+<arguments>
+<arg>${unlockAccountMethod}</arg>
+<arg>${params}</arg>
+<arg>unlockAccount</arg>
+</arguments>
+<assign>
+<var>${respJson}</var>
+</assign>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>Content-Type</arg>
+<arg>application/json</arg>
+</arguments>
+<assign>
+<var>${header}</var>
+</assign>
+<msg timestamp="20200225 21:24:14.323" level="WARN">Giving keys and values separately to 'Create Dictionary' keyword is deprecated. Use 'key=value' syntax instead.</msg>
+<msg timestamp="20200225 21:24:14.324" level="INFO">${header} = {u'Content-Type': u'application/json'}</msg>
+<status status="PASS" endtime="20200225 21:24:14.324" starttime="20200225 21:24:14.323"></status>
+</kw>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>jsonrpc=2.0</arg>
+<arg>method=${method}</arg>
+<arg>params=${params}</arg>
+<arg>id=1</arg>
+</arguments>
+<assign>
+<var>${data}</var>
+</assign>
+<msg timestamp="20200225 21:24:14.327" level="INFO">${data} = {u'jsonrpc': u'2.0', u'method': u'personal_unlockAccount', u'params': [u'P1Dj6GEzrvbucPJnJMpx13fAkHhtL3WHpsS', u'1', 600000000], u'id': u'1'}</msg>
+<status status="PASS" endtime="20200225 21:24:14.328" starttime="20200225 21:24:14.325"></status>
+</kw>
+<kw name="Create Session" library="RequestsLibrary">
+<doc>Create Session: create a HTTP session to a server</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>${host}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:14.329" level="INFO">Creating Session using : alias=unlockAccount, url=http://127.0.0.1:8545/, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<status status="PASS" endtime="20200225 21:24:14.331" starttime="20200225 21:24:14.328"></status>
+</kw>
+<kw name="Post Request" library="RequestsLibrary">
+<doc>Send a POST request on the session object found using the</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>${host}</arg>
+<arg>data=${data}</arg>
+<arg>headers=${header}</arg>
+</arguments>
+<assign>
+<var>${resp}</var>
+</assign>
+<msg timestamp="20200225 21:24:14.333" level="INFO">POST Request using : uri=http://127.0.0.1:8545/, files=None, params=None, timeout=None, allow_redirects=True
+headers={'Connection': 'keep-alive', u'Content-Type': u'application/json', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'User-Agent': 'python-requests/2.22.0'} 
+data={"jsonrpc": "2.0", "method": "personal_unlockAccount", "params": ["P1Dj6GEzrvbucPJnJMpx13fAkHhtL3WHpsS", "1", 600000000], "id": "1"} 
+json=None</msg>
+<msg timestamp="20200225 21:24:15.182" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20200225 21:24:15.182" starttime="20200225 21:24:14.332"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:15.183" level="INFO">{"jsonrpc":"2.0","id":"1","result":true}
+</msg>
+<status status="PASS" endtime="20200225 21:24:15.183" starttime="20200225 21:24:15.182"></status>
+</kw>
+<kw name="To Json" library="RequestsLibrary">
+<doc>Convert a string to a JSON object</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<assign>
+<var>${respJson}</var>
+</assign>
+<msg timestamp="20200225 21:24:15.183" level="INFO">To JSON using : content={"jsonrpc":"2.0","id":"1","result":true}
+ </msg>
+<msg timestamp="20200225 21:24:15.183" level="INFO">To JSON using : pretty_print=False </msg>
+<msg timestamp="20200225 21:24:15.183" level="INFO">${respJson} = {u'jsonrpc': u'2.0', u'id': u'1', u'result': True}</msg>
+<status status="PASS" endtime="20200225 21:24:15.183" starttime="20200225 21:24:15.183"></status>
+</kw>
+<kw name="Dictionary Should Not Contain Key" library="Collections">
+<doc>Fails if ``key`` is found from ``dictionary``.</doc>
+<arguments>
+<arg>${respJson}</arg>
+<arg>error</arg>
+</arguments>
+<status status="PASS" endtime="20200225 21:24:15.184" starttime="20200225 21:24:15.184"></status>
+</kw>
+<msg timestamp="20200225 21:24:15.184" level="INFO">${respJson} = {u'jsonrpc': u'2.0', u'id': u'1', u'result': True}</msg>
+<status status="PASS" endtime="20200225 21:24:15.184" starttime="20200225 21:24:14.323"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${respJson}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:15.184" level="INFO">{u'jsonrpc': u'2.0', u'id': u'1', u'result': True}</msg>
+<status status="PASS" endtime="20200225 21:24:15.185" starttime="20200225 21:24:15.184"></status>
+</kw>
+<kw name="Should Be Equal" library="BuiltIn">
+<doc>Fails if the given objects are unequal.</doc>
+<arguments>
+<arg>${respJson["result"]}</arg>
+<arg>${true}</arg>
+</arguments>
+<status status="PASS" endtime="20200225 21:24:15.185" starttime="20200225 21:24:15.185"></status>
+</kw>
+<status status="PASS" endtime="20200225 21:24:15.185" starttime="20200225 21:24:14.322"></status>
+</kw>
+<kw name="Fee and signtx" library="pubFuncs">
+<arguments>
+<arg>${rawtx["hex"]}</arg>
+<arg>${Bob}</arg>
+<arg>${fee}</arg>
+<arg>extra</arg>
+<arg>${pwd}</arg>
+</arguments>
+<assign>
+<var>${signedtx}</var>
+</assign>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>${encoderawtx}</arg>
+<arg>${gasFrom}</arg>
+<arg>${gasFee}</arg>
+<arg>${extra}</arg>
+<arg>${pwd}</arg>
+</arguments>
+<assign>
+<var>${params}</var>
+</assign>
+<msg timestamp="20200225 21:24:15.186" level="INFO">${params} = [u'f9012cf90127f9012480b90120f9011df892f890b86a47304402202e6656bc6af5c7a55f3bb635be0ffb6edeace49fa7f1de6bd3c384dc4d09c72002204d67d6ca9c9addcddf0c7b1c322b0d105d198f497679841843da88b1a049175c412103b8794...</msg>
+<status status="PASS" endtime="20200225 21:24:15.186" starttime="20200225 21:24:15.186"></status>
+</kw>
+<kw name="sendRpcPost" library="pubFuncs">
+<arguments>
+<arg>${signAndFeeTransaction}</arg>
+<arg>${params}</arg>
+<arg>signAndFeeTransaction</arg>
+</arguments>
+<assign>
+<var>${res}</var>
+</assign>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>Content-Type</arg>
+<arg>application/json</arg>
+</arguments>
+<assign>
+<var>${header}</var>
+</assign>
+<msg timestamp="20200225 21:24:15.187" level="WARN">Giving keys and values separately to 'Create Dictionary' keyword is deprecated. Use 'key=value' syntax instead.</msg>
+<msg timestamp="20200225 21:24:15.187" level="INFO">${header} = {u'Content-Type': u'application/json'}</msg>
+<status status="PASS" endtime="20200225 21:24:15.188" starttime="20200225 21:24:15.187"></status>
+</kw>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>jsonrpc=2.0</arg>
+<arg>method=${method}</arg>
+<arg>params=${params}</arg>
+<arg>id=1</arg>
+</arguments>
+<assign>
+<var>${data}</var>
+</assign>
+<msg timestamp="20200225 21:24:15.188" level="INFO">${data} = {u'jsonrpc': u'2.0', u'method': u'wallet_signAndFeeTransaction', u'params': [u'f9012cf90127f9012480b90120f9011df892f890b86a47304402202e6656bc6af5c7a55f3bb635be0ffb6edeace49fa7f1de6bd3c384dc4d09c720022...</msg>
+<status status="PASS" endtime="20200225 21:24:15.188" starttime="20200225 21:24:15.188"></status>
+</kw>
+<kw name="Create Session" library="RequestsLibrary">
+<doc>Create Session: create a HTTP session to a server</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>${host}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:15.189" level="INFO">Creating Session using : alias=signAndFeeTransaction, url=http://127.0.0.1:8545/, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<status status="PASS" endtime="20200225 21:24:15.189" starttime="20200225 21:24:15.188"></status>
+</kw>
+<kw name="Post Request" library="RequestsLibrary">
+<doc>Send a POST request on the session object found using the</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>${host}</arg>
+<arg>data=${data}</arg>
+<arg>headers=${header}</arg>
+</arguments>
+<assign>
+<var>${resp}</var>
+</assign>
+<msg timestamp="20200225 21:24:15.190" level="INFO">POST Request using : uri=http://127.0.0.1:8545/, files=None, params=None, timeout=None, allow_redirects=True
+headers={'Connection': 'keep-alive', u'Content-Type': u'application/json', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'User-Agent': 'python-requests/2.22.0'} 
+data={"jsonrpc": "2.0", "method": "wallet_signAndFeeTransaction", "params": ["f9012cf90127f9012480b90120f9011df892f890b86a47304402202e6656bc6af5c7a55f3bb635be0ffb6edeace49fa7f1de6bd3c384dc4d09c72002204d67d6ca9c9addcddf0c7b1c322b0d105d198f497679841843da88b1a049175c412103b8794a3441f9b8bf4795267eba0a1b15d56126390475f46a275695e3a39b25db80a084c738f3865dbc04b94d6e1a1c21758f674270fc6d145a075308fb215b17aed80380f886f841830186a09976a9148b975f799c95ca98679f766fcfaf3cb98870c20288ace29040003993012a705d6a9d5445b0867d9d9000000000000000000000000000000000f841830dbba09976a914cd042196a1b2b39765dee443ebc040ce2e96d24f88ace29040003993012a705d6a9d5445b0867d9d9000000000000000000000000000000000808080", "P1Dj6GEzrvbucPJnJMpx13fAkHhtL3WHpsS", "10", "extra", "1"], "id": "1"} 
+json=None</msg>
+<msg timestamp="20200225 21:24:16.031" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20200225 21:24:16.031" starttime="20200225 21:24:15.189"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:16.031" level="INFO">{"jsonrpc":"2.0","id":"1","result":{"hex":"f90220f9021bf8e180b8def8dcf892f890b86a4730440220798bd66ab3e36a6fc0e68665e201c878ca58a368060e95639bc10fd0e781681702206ff022e16c3919f393dee24a87b4b3eea6b290320cb98e198c1893dd544d2deb012102261b85c15a07b5780e3d5f6b9815498dc7f47172e234a8e4a620295acac28b1480a005836cdac21832da2755d537732776f8c2d21da39e7943ceb28f2d4c20d5684f8080f845f843852e555306009976a9148b975f799c95ca98679f766fcfaf3cb98870c20288ace290400082bb080000000000000000000000900000000000000000000000000000000080d0068ecd85657874726180856578747261f9012480b90120f9011df892f890b86a47304402202e6656bc6af5c7a55f3bb635be0ffb6edeace49fa7f1de6bd3c384dc4d09c72002204d67d6ca9c9addcddf0c7b1c322b0d105d198f497679841843da88b1a049175c412103b8794a3441f9b8bf4795267eba0a1b15d56126390475f46a275695e3a39b25db80a084c738f3865dbc04b94d6e1a1c21758f674270fc6d145a075308fb215b17aed80380f886f841830186a09976a9148b975f799c95ca98679f766fcfaf3cb98870c20288ace29040003993012a705d6a9d5445b0867d9d9000000000000000000000000000000000f841830dbba09976a914cd042196a1b2b39765dee443ebc040ce2e96d24f88ace29040003993012a705d6a9d5445b0867d9d9000000000000000000000000000000000808080","txid":"0xf48c29b7e30edf59f45a771f7c3f4418770e3e2bc895884d35006ff71b1fcb55","complete":true}}
+</msg>
+<status status="PASS" endtime="20200225 21:24:16.031" starttime="20200225 21:24:16.031"></status>
+</kw>
+<kw name="To Json" library="RequestsLibrary">
+<doc>Convert a string to a JSON object</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<assign>
+<var>${respJson}</var>
+</assign>
+<msg timestamp="20200225 21:24:16.032" level="INFO">To JSON using : content={"jsonrpc":"2.0","id":"1","result":{"hex":"f90220f9021bf8e180b8def8dcf892f890b86a4730440220798bd66ab3e36a6fc0e68665e201c878ca58a368060e95639bc10fd0e781681702206ff022e16c3919f393dee24a87b4b3eea6b290320cb98e198c1893dd544d2deb012102261b85c15a07b5780e3d5f6b9815498dc7f47172e234a8e4a620295acac28b1480a005836cdac21832da2755d537732776f8c2d21da39e7943ceb28f2d4c20d5684f8080f845f843852e555306009976a9148b975f799c95ca98679f766fcfaf3cb98870c20288ace290400082bb080000000000000000000000900000000000000000000000000000000080d0068ecd85657874726180856578747261f9012480b90120f9011df892f890b86a47304402202e6656bc6af5c7a55f3bb635be0ffb6edeace49fa7f1de6bd3c384dc4d09c72002204d67d6ca9c9addcddf0c7b1c322b0d105d198f497679841843da88b1a049175c412103b8794a3441f9b8bf4795267eba0a1b15d56126390475f46a275695e3a39b25db80a084c738f3865dbc04b94d6e1a1c21758f674270fc6d145a075308fb215b17aed80380f886f841830186a09976a9148b975f799c95ca98679f766fcfaf3cb98870c20288ace29040003993012a705d6a9d5445b0867d9d9000000000000000000000000000000000f841830dbba09976a914cd042196a1b2b39765dee443ebc040ce2e96d24f88ace29040003993012a705d6a9d5445b0867d9d9000000000000000000000000000000000808080","txid":"0xf48c29b7e30edf59f45a771f7c3f4418770e3e2bc895884d35006ff71b1fcb55","complete":true}}
+ </msg>
+<msg timestamp="20200225 21:24:16.032" level="INFO">To JSON using : pretty_print=False </msg>
+<msg timestamp="20200225 21:24:16.032" level="INFO">${respJson} = {u'jsonrpc': u'2.0', u'id': u'1', u'result': {u'hex': u'f90220f9021bf8e180b8def8dcf892f890b86a4730440220798bd66ab3e36a6fc0e68665e201c878ca58a368060e95639bc10fd0e781681702206ff022e16c3919f393dee24a87b4...</msg>
+<status status="PASS" endtime="20200225 21:24:16.032" starttime="20200225 21:24:16.032"></status>
+</kw>
+<kw name="Dictionary Should Not Contain Key" library="Collections">
+<doc>Fails if ``key`` is found from ``dictionary``.</doc>
+<arguments>
+<arg>${respJson}</arg>
+<arg>error</arg>
+</arguments>
+<status status="PASS" endtime="20200225 21:24:16.033" starttime="20200225 21:24:16.032"></status>
+</kw>
+<msg timestamp="20200225 21:24:16.033" level="INFO">${res} = {u'jsonrpc': u'2.0', u'id': u'1', u'result': {u'hex': u'f90220f9021bf8e180b8def8dcf892f890b86a4730440220798bd66ab3e36a6fc0e68665e201c878ca58a368060e95639bc10fd0e781681702206ff022e16c3919f393dee24a87b4...</msg>
+<status status="PASS" endtime="20200225 21:24:16.033" starttime="20200225 21:24:15.187"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${res}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:16.035" level="INFO">{u'jsonrpc': u'2.0', u'id': u'1', u'result': {u'hex': u'f90220f9021bf8e180b8def8dcf892f890b86a4730440220798bd66ab3e36a6fc0e68665e201c878ca58a368060e95639bc10fd0e781681702206ff022e16c3919f393dee24a87b4b3eea6b290320cb98e198c1893dd544d2deb012102261b85c15a07b5780e3d5f6b9815498dc7f47172e234a8e4a620295acac28b1480a005836cdac21832da2755d537732776f8c2d21da39e7943ceb28f2d4c20d5684f8080f845f843852e555306009976a9148b975f799c95ca98679f766fcfaf3cb98870c20288ace290400082bb080000000000000000000000900000000000000000000000000000000080d0068ecd85657874726180856578747261f9012480b90120f9011df892f890b86a47304402202e6656bc6af5c7a55f3bb635be0ffb6edeace49fa7f1de6bd3c384dc4d09c72002204d67d6ca9c9addcddf0c7b1c322b0d105d198f497679841843da88b1a049175c412103b8794a3441f9b8bf4795267eba0a1b15d56126390475f46a275695e3a39b25db80a084c738f3865dbc04b94d6e1a1c21758f674270fc6d145a075308fb215b17aed80380f886f841830186a09976a9148b975f799c95ca98679f766fcfaf3cb98870c20288ace29040003993012a705d6a9d5445b0867d9d9000000000000000000000000000000000f841830dbba09976a914cd042196a1b2b39765dee443ebc040ce2e96d24f88ace29040003993012a705d6a9d5445b0867d9d9000000000000000000000000000000000808080', u'complete': True, u'txid': u'0xf48c29b7e30edf59f45a771f7c3f4418770e3e2bc895884d35006ff71b1fcb55'}}</msg>
+<status status="PASS" endtime="20200225 21:24:16.037" starttime="20200225 21:24:16.034"></status>
+</kw>
+<msg timestamp="20200225 21:24:16.037" level="INFO">${signedtx} = {u'jsonrpc': u'2.0', u'id': u'1', u'result': {u'hex': u'f90220f9021bf8e180b8def8dcf892f890b86a4730440220798bd66ab3e36a6fc0e68665e201c878ca58a368060e95639bc10fd0e781681702206ff022e16c3919f393dee24a87b4...</msg>
+<status status="PASS" endtime="20200225 21:24:16.038" starttime="20200225 21:24:15.185"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${signedtx}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:16.039" level="INFO">{u'jsonrpc': u'2.0', u'id': u'1', u'result': {u'hex': u'f90220f9021bf8e180b8def8dcf892f890b86a4730440220798bd66ab3e36a6fc0e68665e201c878ca58a368060e95639bc10fd0e781681702206ff022e16c3919f393dee24a87b4b3eea6b290320cb98e198c1893dd544d2deb012102261b85c15a07b5780e3d5f6b9815498dc7f47172e234a8e4a620295acac28b1480a005836cdac21832da2755d537732776f8c2d21da39e7943ceb28f2d4c20d5684f8080f845f843852e555306009976a9148b975f799c95ca98679f766fcfaf3cb98870c20288ace290400082bb080000000000000000000000900000000000000000000000000000000080d0068ecd85657874726180856578747261f9012480b90120f9011df892f890b86a47304402202e6656bc6af5c7a55f3bb635be0ffb6edeace49fa7f1de6bd3c384dc4d09c72002204d67d6ca9c9addcddf0c7b1c322b0d105d198f497679841843da88b1a049175c412103b8794a3441f9b8bf4795267eba0a1b15d56126390475f46a275695e3a39b25db80a084c738f3865dbc04b94d6e1a1c21758f674270fc6d145a075308fb215b17aed80380f886f841830186a09976a9148b975f799c95ca98679f766fcfaf3cb98870c20288ace29040003993012a705d6a9d5445b0867d9d9000000000000000000000000000000000f841830dbba09976a914cd042196a1b2b39765dee443ebc040ce2e96d24f88ace29040003993012a705d6a9d5445b0867d9d9000000000000000000000000000000000808080', u'complete': True, u'txid': u'0xf48c29b7e30edf59f45a771f7c3f4418770e3e2bc895884d35006ff71b1fcb55'}}</msg>
+<status status="PASS" endtime="20200225 21:24:16.040" starttime="20200225 21:24:16.039"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${signedtx["result"]}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:16.042" level="INFO">{u'hex': u'f90220f9021bf8e180b8def8dcf892f890b86a4730440220798bd66ab3e36a6fc0e68665e201c878ca58a368060e95639bc10fd0e781681702206ff022e16c3919f393dee24a87b4b3eea6b290320cb98e198c1893dd544d2deb012102261b85c15a07b5780e3d5f6b9815498dc7f47172e234a8e4a620295acac28b1480a005836cdac21832da2755d537732776f8c2d21da39e7943ceb28f2d4c20d5684f8080f845f843852e555306009976a9148b975f799c95ca98679f766fcfaf3cb98870c20288ace290400082bb080000000000000000000000900000000000000000000000000000000080d0068ecd85657874726180856578747261f9012480b90120f9011df892f890b86a47304402202e6656bc6af5c7a55f3bb635be0ffb6edeace49fa7f1de6bd3c384dc4d09c72002204d67d6ca9c9addcddf0c7b1c322b0d105d198f497679841843da88b1a049175c412103b8794a3441f9b8bf4795267eba0a1b15d56126390475f46a275695e3a39b25db80a084c738f3865dbc04b94d6e1a1c21758f674270fc6d145a075308fb215b17aed80380f886f841830186a09976a9148b975f799c95ca98679f766fcfaf3cb98870c20288ace29040003993012a705d6a9d5445b0867d9d9000000000000000000000000000000000f841830dbba09976a914cd042196a1b2b39765dee443ebc040ce2e96d24f88ace29040003993012a705d6a9d5445b0867d9d9000000000000000000000000000000000808080', u'complete': True, u'txid': u'0xf48c29b7e30edf59f45a771f7c3f4418770e3e2bc895884d35006ff71b1fcb55'}</msg>
+<status status="PASS" endtime="20200225 21:24:16.042" starttime="20200225 21:24:16.041"></status>
+</kw>
+<kw name="Get From Dictionary" library="Collections">
+<doc>Returns a value from the given ``dictionary`` based on the given ``key``.</doc>
+<arguments>
+<arg>${signedtx["result"]}</arg>
+<arg>complete</arg>
+</arguments>
+<assign>
+<var>${complete}</var>
+</assign>
+<msg timestamp="20200225 21:24:16.044" level="INFO">${complete} = True</msg>
+<status status="PASS" endtime="20200225 21:24:16.044" starttime="20200225 21:24:16.042"></status>
+</kw>
+<kw name="Should Be Equal" library="BuiltIn">
+<doc>Fails if the given objects are unequal.</doc>
+<arguments>
+<arg>${complete}</arg>
+<arg>${true}</arg>
+</arguments>
+<status status="PASS" endtime="20200225 21:24:16.047" starttime="20200225 21:24:16.045"></status>
+</kw>
+<kw name="Get From Dictionary" library="Collections">
+<doc>Returns a value from the given ``dictionary`` based on the given ``key``.</doc>
+<arguments>
+<arg>${signedtx["result"]}</arg>
+<arg>hex</arg>
+</arguments>
+<assign>
+<var>${signedhex}</var>
+</assign>
+<msg timestamp="20200225 21:24:16.048" level="INFO">${signedhex} = f90220f9021bf8e180b8def8dcf892f890b86a4730440220798bd66ab3e36a6fc0e68665e201c878ca58a368060e95639bc10fd0e781681702206ff022e16c3919f393dee24a87b4b3eea6b290320cb98e198c1893dd544d2deb012102261b85c15a07b5...</msg>
+<status status="PASS" endtime="20200225 21:24:16.049" starttime="20200225 21:24:16.047"></status>
+</kw>
+<kw name="Wait for transaction being packaged" library="pubFuncs">
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>Wait for transaction being packaged</arg>
+</arguments>
+<msg timestamp="20200225 21:24:16.051" level="INFO">Wait for transaction being packaged</msg>
+<status status="PASS" endtime="20200225 21:24:16.051" starttime="20200225 21:24:16.050"></status>
+</kw>
+<kw name="Sleep" library="BuiltIn">
+<doc>Pauses the test executed for the given time.</doc>
+<arguments>
+<arg>6</arg>
+</arguments>
+<msg timestamp="20200225 21:24:22.054" level="INFO">Slept 6 seconds</msg>
+<status status="PASS" endtime="20200225 21:24:22.054" starttime="20200225 21:24:16.052"></status>
+</kw>
+<status status="PASS" endtime="20200225 21:24:22.054" starttime="20200225 21:24:16.049"></status>
+</kw>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<arguments>
+<arg>${signedhex}</arg>
+</arguments>
+<assign>
+<var>${params}</var>
+</assign>
+<msg timestamp="20200225 21:24:22.055" level="INFO">${params} = [u'f90220f9021bf8e180b8def8dcf892f890b86a4730440220798bd66ab3e36a6fc0e68665e201c878ca58a368060e95639bc10fd0e781681702206ff022e16c3919f393dee24a87b4b3eea6b290320cb98e198c1893dd544d2deb012102261b85c15a0...</msg>
+<status status="PASS" endtime="20200225 21:24:22.055" starttime="20200225 21:24:22.055"></status>
+</kw>
+<kw name="sendRpcPost" library="pubFuncs">
+<arguments>
+<arg>${sendRawTransaction}</arg>
+<arg>${params}</arg>
+<arg>sendRawTransaction</arg>
+</arguments>
+<assign>
+<var>${res}</var>
+</assign>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>Content-Type</arg>
+<arg>application/json</arg>
+</arguments>
+<assign>
+<var>${header}</var>
+</assign>
+<msg timestamp="20200225 21:24:22.057" level="WARN">Giving keys and values separately to 'Create Dictionary' keyword is deprecated. Use 'key=value' syntax instead.</msg>
+<msg timestamp="20200225 21:24:22.057" level="INFO">${header} = {u'Content-Type': u'application/json'}</msg>
+<status status="PASS" endtime="20200225 21:24:22.057" starttime="20200225 21:24:22.056"></status>
+</kw>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on given items.</doc>
+<arguments>
+<arg>jsonrpc=2.0</arg>
+<arg>method=${method}</arg>
+<arg>params=${params}</arg>
+<arg>id=1</arg>
+</arguments>
+<assign>
+<var>${data}</var>
+</assign>
+<msg timestamp="20200225 21:24:22.060" level="INFO">${data} = {u'jsonrpc': u'2.0', u'method': u'wallet_sendRawTransaction', u'params': [u'f90220f9021bf8e180b8def8dcf892f890b86a4730440220798bd66ab3e36a6fc0e68665e201c878ca58a368060e95639bc10fd0e781681702206ff022e1...</msg>
+<status status="PASS" endtime="20200225 21:24:22.060" starttime="20200225 21:24:22.058"></status>
+</kw>
+<kw name="Create Session" library="RequestsLibrary">
+<doc>Create Session: create a HTTP session to a server</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>${host}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:22.063" level="INFO">Creating Session using : alias=sendRawTransaction, url=http://127.0.0.1:8545/, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<status status="PASS" endtime="20200225 21:24:22.072" starttime="20200225 21:24:22.061"></status>
+</kw>
+<kw name="Post Request" library="RequestsLibrary">
+<doc>Send a POST request on the session object found using the</doc>
+<arguments>
+<arg>${alias}</arg>
+<arg>${host}</arg>
+<arg>data=${data}</arg>
+<arg>headers=${header}</arg>
+</arguments>
+<assign>
+<var>${resp}</var>
+</assign>
+<msg timestamp="20200225 21:24:22.074" level="INFO">POST Request using : uri=http://127.0.0.1:8545/, files=None, params=None, timeout=None, allow_redirects=True
+headers={'Connection': 'keep-alive', u'Content-Type': u'application/json', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'User-Agent': 'python-requests/2.22.0'} 
+data={"jsonrpc": "2.0", "method": "wallet_sendRawTransaction", "params": ["f90220f9021bf8e180b8def8dcf892f890b86a4730440220798bd66ab3e36a6fc0e68665e201c878ca58a368060e95639bc10fd0e781681702206ff022e16c3919f393dee24a87b4b3eea6b290320cb98e198c1893dd544d2deb012102261b85c15a07b5780e3d5f6b9815498dc7f47172e234a8e4a620295acac28b1480a005836cdac21832da2755d537732776f8c2d21da39e7943ceb28f2d4c20d5684f8080f845f843852e555306009976a9148b975f799c95ca98679f766fcfaf3cb98870c20288ace290400082bb080000000000000000000000900000000000000000000000000000000080d0068ecd85657874726180856578747261f9012480b90120f9011df892f890b86a47304402202e6656bc6af5c7a55f3bb635be0ffb6edeace49fa7f1de6bd3c384dc4d09c72002204d67d6ca9c9addcddf0c7b1c322b0d105d198f497679841843da88b1a049175c412103b8794a3441f9b8bf4795267eba0a1b15d56126390475f46a275695e3a39b25db80a084c738f3865dbc04b94d6e1a1c21758f674270fc6d145a075308fb215b17aed80380f886f841830186a09976a9148b975f799c95ca98679f766fcfaf3cb98870c20288ace29040003993012a705d6a9d5445b0867d9d9000000000000000000000000000000000f841830dbba09976a914cd042196a1b2b39765dee443ebc040ce2e96d24f88ace29040003993012a705d6a9d5445b0867d9d9000000000000000000000000000000000808080"], "id": "1"} 
+json=None</msg>
+<msg timestamp="20200225 21:24:22.088" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<status status="PASS" endtime="20200225 21:24:22.088" starttime="20200225 21:24:22.073"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:22.088" level="INFO">{"jsonrpc":"2.0","id":"1","result":"0xf48c29b7e30edf59f45a771f7c3f4418770e3e2bc895884d35006ff71b1fcb55"}
+</msg>
+<status status="PASS" endtime="20200225 21:24:22.088" starttime="20200225 21:24:22.088"></status>
+</kw>
+<kw name="To Json" library="RequestsLibrary">
+<doc>Convert a string to a JSON object</doc>
+<arguments>
+<arg>${resp.content}</arg>
+</arguments>
+<assign>
+<var>${respJson}</var>
+</assign>
+<msg timestamp="20200225 21:24:22.089" level="INFO">To JSON using : content={"jsonrpc":"2.0","id":"1","result":"0xf48c29b7e30edf59f45a771f7c3f4418770e3e2bc895884d35006ff71b1fcb55"}
+ </msg>
+<msg timestamp="20200225 21:24:22.089" level="INFO">To JSON using : pretty_print=False </msg>
+<msg timestamp="20200225 21:24:22.089" level="INFO">${respJson} = {u'jsonrpc': u'2.0', u'id': u'1', u'result': u'0xf48c29b7e30edf59f45a771f7c3f4418770e3e2bc895884d35006ff71b1fcb55'}</msg>
+<status status="PASS" endtime="20200225 21:24:22.089" starttime="20200225 21:24:22.089"></status>
+</kw>
+<kw name="Dictionary Should Not Contain Key" library="Collections">
+<doc>Fails if ``key`` is found from ``dictionary``.</doc>
+<arguments>
+<arg>${respJson}</arg>
+<arg>error</arg>
+</arguments>
+<status status="PASS" endtime="20200225 21:24:22.089" starttime="20200225 21:24:22.089"></status>
+</kw>
+<msg timestamp="20200225 21:24:22.090" level="INFO">${res} = {u'jsonrpc': u'2.0', u'id': u'1', u'result': u'0xf48c29b7e30edf59f45a771f7c3f4418770e3e2bc895884d35006ff71b1fcb55'}</msg>
+<status status="PASS" endtime="20200225 21:24:22.090" starttime="20200225 21:24:22.055"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${res}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:22.090" level="INFO">{u'jsonrpc': u'2.0', u'id': u'1', u'result': u'0xf48c29b7e30edf59f45a771f7c3f4418770e3e2bc895884d35006ff71b1fcb55'}</msg>
+<status status="PASS" endtime="20200225 21:24:22.090" starttime="20200225 21:24:22.090"></status>
+</kw>
+<kw name="Set Variable" library="BuiltIn">
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<arguments>
+<arg>${4}</arg>
+</arguments>
+<assign>
+<var>${var1}</var>
+</assign>
+<msg timestamp="20200225 21:24:22.091" level="INFO">${var1} = 4</msg>
+<status status="PASS" endtime="20200225 21:24:22.091" starttime="20200225 21:24:22.090"></status>
+</kw>
+<kw name="Evaluate" library="BuiltIn">
+<doc>Evaluates the given expression in Python and returns the results.</doc>
+<arguments>
+<arg>${var1}+${5}</arg>
+</arguments>
+<assign>
+<var>${var2}</var>
+</assign>
+<msg timestamp="20200225 21:24:22.092" level="INFO">${var2} = 9</msg>
+<status status="PASS" endtime="20200225 21:24:22.093" starttime="20200225 21:24:22.091"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>${var2}</arg>
+</arguments>
+<msg timestamp="20200225 21:24:22.093" level="INFO">9</msg>
+<status status="PASS" endtime="20200225 21:24:22.093" starttime="20200225 21:24:22.093"></status>
+</kw>
+<doc>通过Alice创建token=&gt;创建token交易=&gt;附加手续费交易并签名=》广播交易，校验积分付款是否可用。</doc>
+<status status="PASS" endtime="20200225 21:24:22.094" critical="yes" starttime="20200225 21:23:55.969"></status>
+</test>
+<status status="PASS" endtime="20200225 21:24:22.095" starttime="20200225 21:23:55.522"></status>
+</suite>
+<statistics>
+<total>
+<stat fail="0" pass="1">Critical Tests</stat>
+<stat fail="0" pass="1">All Tests</stat>
+</total>
+<tag>
+</tag>
+<suite>
+<stat fail="0" id="s1" name="Addfeetx" pass="1">Addfeetx</stat>
+</suite>
+</statistics>
+<errors>
+<msg timestamp="20200225 21:23:55.973" level="WARN">Giving keys and values separately to 'Create Dictionary' keyword is deprecated. Use 'key=value' syntax instead.</msg>
+<msg timestamp="20200225 21:23:56.875" level="WARN">Giving keys and values separately to 'Create Dictionary' keyword is deprecated. Use 'key=value' syntax instead.</msg>
+<msg timestamp="20200225 21:23:57.973" level="WARN">Giving keys and values separately to 'Create Dictionary' keyword is deprecated. Use 'key=value' syntax instead.</msg>
+<msg timestamp="20200225 21:23:59.837" level="WARN">Giving keys and values separately to 'Create Dictionary' keyword is deprecated. Use 'key=value' syntax instead.</msg>
+<msg timestamp="20200225 21:24:00.725" level="WARN">Giving keys and values separately to 'Create Dictionary' keyword is deprecated. Use 'key=value' syntax instead.</msg>
+<msg timestamp="20200225 21:24:07.578" level="WARN">Giving keys and values separately to 'Create Dictionary' keyword is deprecated. Use 'key=value' syntax instead.</msg>
+<msg timestamp="20200225 21:24:12.634" level="WARN">Giving keys and values separately to 'Create Dictionary' keyword is deprecated. Use 'key=value' syntax instead.</msg>
+<msg timestamp="20200225 21:24:14.323" level="WARN">Giving keys and values separately to 'Create Dictionary' keyword is deprecated. Use 'key=value' syntax instead.</msg>
+<msg timestamp="20200225 21:24:15.187" level="WARN">Giving keys and values separately to 'Create Dictionary' keyword is deprecated. Use 'key=value' syntax instead.</msg>
+<msg timestamp="20200225 21:24:22.057" level="WARN">Giving keys and values separately to 'Create Dictionary' keyword is deprecated. Use 'key=value' syntax instead.</msg>
+</errors>
+</robot>

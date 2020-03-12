@@ -1085,7 +1085,7 @@ func (d *Dag) getMemDag(asset modules.AssetId) (memunit.IMemDag, error) {
 	return memdag, nil
 }
 func (d *Dag) SaveTransaction(tx *modules.Transaction, txIndex int) error {
-	log.Debugf("Save req[%s] tx[%s] to db", tx.RequestHash().String(), tx.Hash().String())
+	log.Debugf("form medi  302 Save req[%s] tx[%s] to db", tx.RequestHash().String(), tx.Hash().String())
 	return d.stableUnitRep.SaveTransaction(tx, txIndex)
 }
 

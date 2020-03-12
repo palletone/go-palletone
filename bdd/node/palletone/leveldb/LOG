@@ -1,0 +1,19 @@
+=============== Feb 25, 2020 (CST) ===============
+21:18:03.723367 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+21:18:03.745746 db@open opening
+21:18:03.747790 version@stat F·[] S·0B[] Sc·[]
+21:18:03.752195 db@janitor F·2 G·0
+21:18:03.752272 db@open done T·6.45485ms
+=============== Feb 25, 2020 (CST) ===============
+21:18:11.039730 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+21:18:11.040252 version@stat F·[] S·0B[] Sc·[]
+21:18:11.040312 db@open opening
+21:18:11.040477 journal@recovery F·1
+21:18:11.045219 journal@recovery recovering @1
+21:18:11.077272 memdb@flush created L0@2 N·53 S·10KiB "Gen..ash,v31":"uo\xcb..\x00\x00\x00,v3"
+21:18:11.081730 version@stat F·[1] S·10KiB[10KiB] Sc·[0.25]
+21:18:11.108571 db@janitor F·3 G·0
+21:18:11.108656 db@open done T·68.309935ms
+=============== Feb 26, 2020 (CST) ===============
+14:10:03.042755 db@close closing
+14:10:03.043633 db@close done T·873.536µs

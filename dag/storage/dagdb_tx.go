@@ -39,7 +39,7 @@ func (dagdb *DagDb) SaveTransaction(tx *modules.Transaction) error {
 	// save transaction
 	txHash := tx.Hash()
 	//Save tx to db
-	log.Debugf("SaveTransaction to ---------------42")
+	log.Debugf("SaveTransaction to ---------------42------")
 	key := append(constants.TRANSACTION_PREFIX, txHash.Bytes()...)
 	err := StoreToRlpBytes(dagdb.db, key, tx)
 	if err != nil {

@@ -933,7 +933,7 @@ func (rep *UnitRepository) GetTxRequesterAddress(tx *modules.Transaction) (commo
 		return common.Address{}, errors.New(errStr)
 	}
 	pay := msg0.Payload.(*modules.PaymentPayload)
-
+	log.Debugf("GetTxRequesterAddress-936----",pay.Inputs[0].PreviousOutPoint.String())
 	utxo, err := rep.utxoRepository.GetUtxoEntry(pay.Inputs[0].PreviousOutPoint)
 	if err != nil {
 		log.Debug(err.Error())

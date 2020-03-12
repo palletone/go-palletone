@@ -191,7 +191,7 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 	if outpoint == nil {
 		return nil, errors.ErrNullPoint
 	}
-    log.Debugf("GetUtxoEntry    try ReqUtxo------194------")
+    log.Debugf("Get outpoint from db------194------%s\n",outpoint.TxHash.String())
 	utxo := new(modules.Utxo)
 	key := outpoint.ToKey(utxodb.UTXO_PREFIX)
 

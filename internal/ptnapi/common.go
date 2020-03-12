@@ -122,6 +122,8 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 		}
 		return "txpool unpacked tx in  pool :" + txHashs
 	})
+	//pooltxs  paixu   
+	//dbutxo jiasuo  
 	utxosPTN, err := SelectUtxoFromDagAndPool(dbUtxos, reqTxMapping, poolTxs, from, gasToken)
 	if err != nil {
 		return nil, nil, fmt.Errorf("SelectUtxoFromDagAndPool utxo err:%s", err.Error())

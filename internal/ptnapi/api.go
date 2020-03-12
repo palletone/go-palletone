@@ -603,15 +603,18 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, reqTxMa
 	allUtxo := make(map[modules.OutPoint]*modules.Utxo)
 	for k, v := range dbUtxo {
 		if v.Asset.Equal(tokenAsset) &&!v.IsSpent(){
-			log.Debugf("--------606-----db---Payment output %+v\n",k.String())
-			log.Debugf("--------607-------db-utxo is  %+v\n",v)
+			//log.Debugf("--------606-----db---Payment output %+v\n",k.String())
+			//log.Debugf("--------607-------db-utxo is  %+v\n",v)
 			v.Spend()
 			allUtxo[k] = v
-			log.Debugf("--------609-------db-utxo is  %+v\n",v)
+			//log.Debugf("--------609-------db-utxo is  %+v\n",v)
 		}
 	}
 
 	for _, tx := range poolTxs {
+		//if tx.Tag == 111{
+		//	continue
+		//}
 		for msgindex, msg := range tx.Tx.TxMessages() {
 			if msg.App == modules.APP_PAYMENT {
 				pay := msg.Payload.(*modules.PaymentPayload)
@@ -638,8 +641,8 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, reqTxMa
 					if err != nil {
 						return nil, err
 					}
-					if addr.String() == from {
-						//tx.Pending = true
+					if addr.String() == from  {
+						//tx.Tag = 111
 						log.Debugf("--------631--------pool op txhash  %+v\n",op.String())
 						allUtxo[op] = modules.NewUtxo(output, pay.LockTime, time.Now().Unix())
 					}
@@ -670,6 +673,12 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, reqTxMa
 	//	json := modules.NewUtxoWithOutPoint( v,k)
 	//	vaildutxos = append(vaildutxos, json)
 	//}
+	//for k, v := range allUtxo {
+	//		log.Debugf("--------674-------select-utxo is  %+v\n",v)
+	//		v.Spend()
+	//		log.Debugf("--------676-------select-utxo is  %+v\n",v)
+	//		log.Debugf("--------677-------outpoint is  %+v\n",k.TxHash.String())
+	//	}
 	return allUtxo, nil
 }
 

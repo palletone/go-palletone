@@ -597,6 +597,7 @@ func (mr *MockIDagMockRecorder) SaveUnit(unit, txpool, isGenesis interface{}) *g
 // SaveTransaction mocks base method
 func (m *MockIDag) SaveTransaction(tx *modules.Transaction, txIndex int) error {
 	m.ctrl.T.Helper()
+	log.Errorf("save tx--------dag mock-------600-----------------------")
 	ret := m.ctrl.Call(m, "SaveTransaction", tx, txIndex)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -605,6 +606,7 @@ func (m *MockIDag) SaveTransaction(tx *modules.Transaction, txIndex int) error {
 // SaveTransaction indicates an expected call of SaveTransaction
 func (mr *MockIDagMockRecorder) SaveTransaction(tx, txIndex interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
+	log.Errorf("save tx--------dag mock-------609-----------------------")
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveTransaction", reflect.TypeOf((*MockIDag)(nil).SaveTransaction), tx, txIndex)
 }
 

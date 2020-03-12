@@ -299,7 +299,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	}
 	tx4Pack := []*modules.Transaction{}
 	for i, tx := range sortedTxs {
-		log.Debugf("pack tx[%s] into unit[#%d]", tx.RequestHash().String(), unitNumber)
+		log.Debugf("ganna to  pack tx[%s] into unit[#%d]", tx.RequestHash().String(), unitNumber)
 		if tx.IsSystemContract() && tx.IsNewContractInvokeRequest() { //是未执行的系统合约
 			signedTx, err := p.RunAndSignTx(tx, rwM, tempDag, scheduledMediator, ks)
 			if err != nil {
@@ -313,14 +313,16 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 			}
 			tx4Pack = append(tx4Pack, signedTx)
 		} else { //不需要执行，直接打包
+			mp.dkgLock.Lock()
 			err = tempDag.SaveTransaction(tx, i+1)
-			log.Debugf("gonna to save tx[%s] req[%s] ", tx.Hash().String(),
-					tx.RequestHash().String())
 			if err != nil {
 				log.Errorf("save tx[%s] req[%s] get error:%s", tx.Hash().String(),
 					tx.RequestHash().String(), err.Error())
 			}
+			log.Debugf("success to save tx[%s] req[%s] ", tx.Hash().String(),
+					tx.RequestHash().String())
 			tx4Pack = append(tx4Pack, tx)
+			mp.dkgLock.Unlock()
 		}
 	}
 	newUnit, err := dag.GenerateUnit(scheduledTime, scheduledMediator, groupPubKey, ks, tx4Pack, txpool)
