@@ -30,6 +30,7 @@ import (
 
 func TestBalance2Json(t *testing.T) {
 	balance := make(map[modules.Asset]uint64)
+	balance[*dagconfig.DagConfig.GetGasToken().ToAsset()] = 1
 	balance[*dagconfig.DagConfig.GetGasToken().ToAsset()] += 123456789
 	data, err := json.Marshal(balance)
 	assert.Nil(t, err)

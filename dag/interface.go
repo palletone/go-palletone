@@ -79,7 +79,7 @@ type IDag interface {
 	IsHeaderExist(hash common.Hash) bool
 	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error
 	SaveTransaction(tx *modules.Transaction, txIndex int) error
-	//CreateUnit(mAddr common.Address, txpool txspool.ITxPool, t time.Time) (*modules.Unit, error)
+	InsertUnit(unit *modules.Unit) error
 
 	FastSyncCommitHead(common.Hash) error
 	GetGenesisUnit() (*modules.Unit, error)
@@ -139,7 +139,8 @@ type IDag interface {
 	IsSynced(toStrictly bool) bool
 	SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription
 	GetPrecedingMediatorNodes() map[string]*discover.Node
-	UnitIrreversibleTime() time.Duration
+	//UnitIrreversibleTime() time.Duration
+	LastMaintenanceTime() int64
 	IsIrreversibleUnit(hash common.Hash) (bool, error)
 	GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string,
 		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
@@ -197,6 +198,7 @@ type IDag interface {
 	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
 	GetScheduledMediator(slotNum uint32) common.Address
 	GetSlotAtTime(when time.Time) uint32
+	GetSlotTime(slotNum uint32) time.Time
 	GetChainParameters() *core.ChainParameters
 	GetImmutableChainParameters() *core.ImmutableChainParameters
 

@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -34,7 +35,7 @@ import (
 var DAO uint64 = 100000000
 
 type txoFlags uint8
-
+var m *sync.RWMutex
 const (
 	tfCoinBase txoFlags = 1 << iota
 
@@ -144,6 +145,9 @@ func (utxo *Utxo) Spend() {
 	if utxo.IsSpent() {
 		return
 	}
+	m = new(sync.RWMutex)
+	m.Lock()
+	defer m.Unlock()
 	// Mark the output as spent and modified.
 	utxo.Flags |= tfSpent | tfModified
 

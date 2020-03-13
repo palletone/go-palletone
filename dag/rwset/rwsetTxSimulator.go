@@ -115,11 +115,13 @@ func (s *RwSetTxSimulator) GetStatesByPrefix(contractid []byte, ns string, prefi
 		//		//return nil, errors.New(errstr)
 	}
 	result := []*modules.KeyValue{}
-	for key, row := range data {
-		kv := &modules.KeyValue{Key: key, Value: row.Value}
+	//  保持 key 返回一致
+	sliceKeys := mapKeyToSlice(data)
+	for _, key := range sliceKeys {
+		kv := &modules.KeyValue{Key: key, Value: data[key].Value}
 		result = append(result, kv)
 		if s.rwsetBuilder != nil {
-			s.rwsetBuilder.AddToReadSet(contractid, ns, key, row.Version)
+			s.rwsetBuilder.AddToReadSet(contractid, ns, key, data[key].Version)
 		}
 	}
 
@@ -385,4 +387,12 @@ func (s *RwSetTxSimulator) GetContractStatesByPrefix(contractid []byte, prefix s
 		result[k] = v
 	}
 	return result, nil
+}
+func mapKeyToSlice(m map[string]*modules.ContractStateValue) []string {
+	sliceKeys := []string{}
+	for key := range m {
+		sliceKeys = append(sliceKeys,key)
+	}
+	sort.Strings(sliceKeys)
+	return sliceKeys
 }

@@ -144,7 +144,11 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, head *modules.Header) error {
 	}
 
 	// 存储 initMediatorCandidates/JuryCandidates
-	imcB, err := json.Marshal(list)
+	sliceList := []string{}
+	for k := range list {
+		sliceList = append(sliceList,k)
+	}
+	imcB, err := json.Marshal(sliceList)
 	if err != nil {
 		log.Debugf(err.Error())
 		return err
@@ -194,12 +198,12 @@ func (d *Dag) PrecedingThreshold() int {
 	return d.GetGlobalProp().PrecedingThreshold()
 }
 
-func (d *Dag) UnitIrreversibleTime() time.Duration {
-	gp := d.GetGlobalProp()
-	cp := gp.ChainParameters
-	it := uint(gp.ChainThreshold()+int(cp.MaintenanceSkipSlots)) * uint(cp.MediatorInterval)
-	return time.Duration(it) * time.Second
-}
+//func (d *Dag) UnitIrreversibleTime() time.Duration {
+//	gp := d.GetGlobalProp()
+//	cp := gp.ChainParameters
+//	it := uint(gp.ChainThreshold()+int(cp.MaintenanceSkipSlots)) * uint(cp.MediatorInterval)
+//	return time.Duration(it) * time.Second
+//}
 
 func (d *Dag) IsIrreversibleUnit(hash common.Hash) (bool, error) {
 	header, err := d.unstableUnitRep.GetHeaderByHash(hash)

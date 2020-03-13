@@ -462,14 +462,12 @@ func getMediatorCount(stub shim.ChaincodeStubInterface) int {
 	if len(byte) == 0 {
 		return 0
 	}
-
-	list := make(map[string]string)
-	err = json.Unmarshal(byte, &list)
+	listSlice := []string{}
+	err = json.Unmarshal(byte, &listSlice)
 	if err != nil {
 		return 0
 	}
-
-	return len(list)
+	return len(listSlice)
 }
 
 func (s *SysConfigChainCode) UpdateSysParamWithoutVote(stub shim.ChaincodeStubInterface, field, value string) ([]byte, error) {

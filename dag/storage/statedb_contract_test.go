@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sort"
 	"testing"
 	"time"
 
@@ -239,4 +240,42 @@ func TestJurors(t *testing.T) {
 	j, err := statedb.GetJurorByAddr(j1.Address)
 	assert.Nil(t, err)
 	assert.NotNil(t, j)
+}
+
+func TestMapToSlice(t *testing.T){
+	db, _ := ptndb.NewMemDatabase()
+	statedb := NewStateDb(db)
+	depositeContractAddress := syscontract.DepositContractAddress
+	contractId := depositeContractAddress.Bytes()
+	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123}, TxIndex: 1}
+	list := make(map[string]bool)
+	list["P18jiWZTYN3KzHknFpeqPGJ9h1Zc4Tp5F5Z"] = true
+	list["P154af9pTuUadTXhzgZewJRskqbRkuKW13f"] = true
+	lb, _ := json.Marshal(list)
+	ws3 := modules.NewWriteSet(modules.JuryList, lb)
+	ws := []modules.ContractWriteSet{}
+	ws = append(ws, *ws3)
+	err := statedb.SaveContractStates(contractId, ws, version)
+	assert.Nil(t, err)
+	jl, err := statedb.GetJuryCandidateList()
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(jl))
+	//前面是 map,先改为 slice
+	sliceKey := []string{}
+	for k := range jl {
+		fmt.Println("key = ",k)
+		sliceKey = append(sliceKey,k)
+	}
+	sort.Strings(sliceKey)
+	lb, _ = json.Marshal(sliceKey)
+	ws3 = modules.NewWriteSet(modules.JuryList, lb)
+	ws = []modules.ContractWriteSet{}
+	ws = append(ws, *ws3)
+	err = statedb.SaveContractStates(contractId, ws, version)
+	assert.Nil(t, err)
+	jl, err = statedb.GetJuryCandidateList()
+	assert.Nil(t, err)
+	for k := range jl {
+		fmt.Println("key = ",k)
+	}
 }

@@ -40,6 +40,24 @@ web3._extend({
         	params: 2,
         	inputFormatter: [null,null]
 		}),
+        new web3._extend.Method({
+			name: 'getUnitHexByHash',
+        	call: 'dag_getUnitHexByHash',
+        	params: 1,
+        	inputFormatter: [null]
+		}),
+        new web3._extend.Method({
+			name: 'getUnitHexByIndex',
+        	call: 'dag_getUnitHexByIndex',
+        	params: 2,
+        	inputFormatter: [null,null]
+		}),
+        new web3._extend.Method({
+			name: 'insertUnitByHex',
+        	call: 'dag_insertUnitByHex',
+        	params: 1,
+        	inputFormatter: [null]
+		}),
 		new web3._extend.Method({
 			name: 'getUnitsByIndex',
         	call: 'dag_getUnitsByIndex',
@@ -180,24 +198,24 @@ web3._extend({
             params: 0,
             // inputFormatter: [null]
         }),
-        new web3._extend.Method({
-            name: 'getHeadHeaderHash',
-            call: 'dag_getHeadHeaderHash',
-            params: 0,
-            // inputFormatter: [null]
-        }),
-        new web3._extend.Method({
-            name: 'getHeadUnitHash',
-            call: 'dag_getHeadUnitHash',
-            params: 0,
-            // inputFormatter: [null]
-        }),
-        new web3._extend.Method({
-            name: 'getHeadFastUnitHash',
-            call: 'dag_getHeadFastUnitHash',
-            params: 0,
-            // inputFormatter: [null]
-        }),
+        //new web3._extend.Method({
+        //    name: 'getHeadHeaderHash',
+        //    call: 'dag_getHeadHeaderHash',
+        //    params: 0,
+        //    // inputFormatter: [null]
+        //}),
+        //new web3._extend.Method({
+        //    name: 'getHeadUnitHash',
+        //    call: 'dag_getHeadUnitHash',
+        //    params: 0,
+        //    // inputFormatter: [null]
+        //}),
+        //new web3._extend.Method({
+        //    name: 'getHeadFastUnitHash',
+        //    call: 'dag_getHeadFastUnitHash',
+        //    params: 0,
+        //    // inputFormatter: [null]
+        //}),
         new web3._extend.Method({
             name: 'getFastUnitIndex',
             call: 'dag_getFastUnitIndex',
@@ -210,6 +228,11 @@ web3._extend({
             params: 0,
         }),
         new web3._extend.Method({
+            name: 'getChainInfo',
+            call: 'dag_getChainInfo',
+            params: 0,
+        }),
+        new web3._extend.Method({
             name: 'getStableUnit',
             call: 'dag_getStableUnit',
             params: 0,
@@ -217,11 +240,6 @@ web3._extend({
         new web3._extend.Method({
             name: 'getHeadUnit',
             call: 'dag_getHeadUnit',
-            params: 0,
-        }),
-		new web3._extend.Method({
-            name: 'getMediatorSchedule',
-            call: 'dag_getMediatorSchedule',
             params: 0,
         }),
 		new web3._extend.Method({

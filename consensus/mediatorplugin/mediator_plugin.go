@@ -255,39 +255,43 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	poolTxs, _ := txpool.GetSortedTxs(common.Hash{}, unitNumber)
 	log.DebugDynamic(func() string {
 		txHash := ""
-		for _, tx := range poolTxs {
-			txHash += tx.Tx.Hash().String() + ";"
+		for i, tx := range poolTxs {
+			txHash += fmt.Sprintf("\nindex:%d hash:%s ;", i, tx.Tx.Hash().String())
 		}
 		return "txpool GetSortedTxs return:" + txHash
 	})
-	//TODO Jay 这里的txpool.GetSortedTxs返回顺序有问题，所以再次排序
-	poolTxMap := make(map[common.Hash]*modules.Transaction)
-	for _, ptx := range poolTxs {
-		poolTxMap[ptx.Tx.Hash()] = ptx.Tx
-	}
-	sortedTxs, orphanTxs, dsTxs := modules.SortTxs(poolTxMap, mp.dag.GetUtxoEntry)
-	log.DebugDynamic(func() string {
-		txHash := ""
-		for _, tx := range sortedTxs {
-			txHash += tx.Hash().String() + ";"
-		}
-		return "modules.SortTxs return:" + txHash
-	})
-	if len(orphanTxs) > 0 {
-		log.InfoDynamic(func() string {
-			otxHash := ""
-			for _, tx := range orphanTxs {
-				otxHash += tx.Hash().String() + ";"
-			}
-			return "modules.SortTxs find orphan txs:" + otxHash
-		})
-	}
-	if len(dsTxs) > 0 {
-		otxHash := ""
-		for _, tx := range dsTxs {
-			otxHash += tx.Hash().String() + ";"
-		}
-		log.Warnf("modules.SortTxs find double spend txs:%s", otxHash)
+	////TODO Jay 这里的txpool.GetSortedTxs返回顺序有问题，所以再次排序
+	//poolTxMap := make(map[common.Hash]*modules.Transaction)
+	//for _, ptx := range poolTxs {
+	//	poolTxMap[ptx.Tx.Hash()] = ptx.Tx
+	//}
+	//sortedTxs, orphanTxs, dsTxs := modules.SortTxs(poolTxMap, mp.dag.GetUtxoEntry)
+	//log.DebugDynamic(func() string {
+	//	txHash := ""
+	//	for _, tx := range sortedTxs {
+	//		txHash += tx.Hash().String() + ";"
+	//	}
+	//	return "modules.SortTxs return:" + txHash
+	//})
+	//if len(orphanTxs) > 0 {
+	//	log.InfoDynamic(func() string {
+	//		otxHash := ""
+	//		for _, tx := range orphanTxs {
+	//			otxHash += tx.Hash().String() + ";"
+	//		}
+	//		return "modules.SortTxs find orphan txs:" + otxHash
+	//	})
+	//}
+	//if len(dsTxs) > 0 {
+	//	otxHash := ""
+	//	for _, tx := range dsTxs {
+	//		otxHash += tx.Hash().String() + ";"
+	//	}
+	//	log.Warnf("modules.SortTxs find double spend txs:%s", otxHash)
+	//}
+	sortedTxs := make([]*modules.Transaction, 0)
+	for _, tx := range poolTxs {
+		sortedTxs = append(sortedTxs, tx.Tx)
 	}
 	//创建TempDAG，用于临时存储Tx执行的结果
 	tempDag, err := mp.dag.NewTemp()

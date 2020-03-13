@@ -690,6 +690,7 @@ func NewDag(db ptndb.Database, localdb ptndb.Database, cache palletcache.ICache,
 		ChainHeadFeed:          new(event.Feed),
 		Memdag:                 unstableChain,
 		localRep:               localRep,
+		PartitionMemDag:        make(map[modules.AssetId]memunit.IMemDag),
 	}
 	dag.stableUnitRep.SubscribeSysContractStateChangeEvent(dag.AfterSysContractStateChangeEvent)
 	dag.stableUnitProduceRep.SubscribeChainMaintenanceEvent(dag.AfterChainMaintenanceEvent)
@@ -812,6 +813,7 @@ func NewDagSimple(db ptndb.Database) (*Dag, error) {
 		unstablePropRep:      propRep,
 		unstableStateRep:     stateRep,
 		unstableUtxoRep:      utxoRep,
+		PartitionMemDag:      make(map[modules.AssetId]memunit.IMemDag),
 	}
 	return dag, nil
 }
@@ -852,6 +854,7 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 		unstableStateRep:       tstateRep,
 		unstablePropRep:        tpropRep,
 		unstableUnitProduceRep: tUnitProduceRep,
+		PartitionMemDag:        make(map[modules.AssetId]memunit.IMemDag),
 	}
 	return dag, nil
 }
@@ -1126,6 +1129,15 @@ func (d *Dag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis boo
 	return nil
 }
 
+// insert unit, 直接存储某单元，不关心memdag状态
+func (d *Dag) InsertUnit(unit *modules.Unit) error {
+	err := d.stableUnitRep.SaveUnit(unit, true)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // return genesis unit of ptn chain
 func (d *Dag) GetGenesisUnit() (*modules.Unit, error) {
 	return d.stableUnitRep.GetGenesisUnit()
@@ -1194,19 +1206,20 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool tx
 		return fmt.Errorf(err)
 	}
 
-	isStable, err := d.IsIrreversibleUnit(unitHash)
-	if err != nil {
-		return err
-	}
-
-	if isStable {
-		// 或者由于网络延迟，该单元在收到群签名之前，已经根据深度转为不可逆了
-		log.Debugf("this unit(%v) is already irreversible", unitHash.TerminalString())
-		return nil
-	}
+	// 重复判断
+	//isStable, err := d.IsIrreversibleUnit(unitHash)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//if isStable {
+	//	// 或者由于网络延迟，该单元在收到群签名之前，已经根据深度转为不可逆了
+	//	log.Debugf("this unit(%v) is already irreversible", unitHash.TerminalString())
+	//	return nil
+	//}
 
 	// 验证群签名：
-	err = d.VerifyUnitGroupSign(unitHash, groupSign)
+	err := d.VerifyUnitGroupSign(unitHash, groupSign)
 	if err != nil {
 		return err
 	}

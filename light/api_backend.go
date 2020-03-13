@@ -486,8 +486,7 @@ func (b *LesApiBackend) ContractQuery(id []byte, args [][]byte,
 }
 
 func (b *LesApiBackend) Dag() dag.IDag {
-	//return b.Dag()
-	return nil
+	return b.ptn.dag
 }
 
 func (b *LesApiBackend) TxPool() txspool.ITxPool {
