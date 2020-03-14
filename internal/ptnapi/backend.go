@@ -180,7 +180,7 @@ type Backend interface {
 	SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error
 	SignAndSendRequest(addr common.Address, tx *modules.Transaction) error
 
-	TransferPtn(from, to string, amount decimal.Decimal, text *string) (*TxExecuteResult, error)
+	//TransferPtn(from, to string, amount decimal.Decimal, text *string) (*TxExecuteResult, error)
 	GetKeyStore() *keystore.KeyStore
 
 	// get tx hash by req id

@@ -44,7 +44,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/dag/state"
-	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/light/les"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
@@ -85,10 +84,10 @@ func (b *PtnApiBackend) GetKeyStore() *keystore.KeyStore {
 	return b.ptn.GetKeyStore()
 }
 
-func (b *PtnApiBackend) TransferPtn(from, to string, amount decimal.Decimal,
-	text *string) (*ptnapi.TxExecuteResult, error) {
-	return b.ptn.TransferPtn(from, to, amount, text)
-}
+//func (b *PtnApiBackend) TransferPtn(from, to string, amount decimal.Decimal,
+//	text *string) (*ptnapi.TxExecuteResult, error) {
+//	return b.ptn.TransferPtn(from, to, amount, text)
+//}
 
 //func (b *PtnApiBackend) ChainConfig() *configure.ChainConfig {
 //	return nil

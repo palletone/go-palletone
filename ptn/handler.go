@@ -194,7 +194,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 		contract:       contract,
 		pDocker:        pDocker,
 
-		lastMaintenanceTime: 0,
+		lastMaintenanceTime:    0,
 		isConnectedNewMediator: false,
 	}
 	protocolName, _, _, _, _ := gasToken.ParseAssetId()
@@ -310,7 +310,7 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 			pm.txpool.SetPendingTxs(hash, u.NumberU64(), u.Transactions())
 		}
 
-		account, err := pm.dag.InsertDag(blocks, pm.txpool, false)
+		account, err := pm.dag.InsertDag(blocks, false)
 		if err == nil {
 			go func() {
 				var (

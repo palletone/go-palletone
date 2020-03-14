@@ -208,7 +208,7 @@ func (s *PublicMediatorAPI) NextSlotTime() (int64, error) {
 	//}
 
 	// 获取下个生产槽的时间
-	nextSlotTime := s.Dag().GetSlotTime(slot+1)
+	nextSlotTime := s.Dag().GetSlotTime(slot + 1)
 	diffSecs := nextSlotTime.Unix() - now.Unix()
 
 	return diffSecs, nil
@@ -421,7 +421,7 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxEx
 	}
 
 	// 创建交易
-	tx, fee, err := a.Dag().GenVoteMediatorTx(voter, mp, a.TxPool())
+	tx, fee, err := a.Dag().GenVoteMediatorTx(voter, mp)
 	if err != nil {
 		return nil, err
 	}

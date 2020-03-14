@@ -64,3 +64,6 @@ func (v *ValidatorAllPass) ValidateTxFeeEnough(tx *modules.Transaction, extSize 
 func (v *ValidatorAllPass) SetContractTxCheckFun(checkFun ContractTxCheckFunc) {
 
 }
+func (v *ValidatorAllPass) SetUtxoQuery(query IUtxoQuery) {
+
+}

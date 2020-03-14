@@ -557,7 +557,7 @@ func (pm *ProtocolManager) GroupSigMsg(msg p2p.Msg, p *peer) error {
 	isStable, _ := pm.dag.IsIrreversibleUnit(gSign.UnitHash)
 	if !isStable {
 		pm.BroadcastGroupSig(&gSign)
-		go pm.dag.SetUnitGroupSign(gSign.UnitHash, gSign.GroupSig, pm.txpool)
+		go pm.dag.SetUnitGroupSign(gSign.UnitHash, gSign.GroupSig)
 	}
 
 	return nil

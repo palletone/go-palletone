@@ -61,11 +61,6 @@ web3._extend({
 			params: 2,
 		}),
 		new web3._extend.Method({
-			name: 'transferPtn',
-			call: 'personal_transferPtn',
-			params: 5,
-		}),
-		new web3._extend.Method({
 			name: 'newAccount',
 			call: 'personal_newAccount',
 			params: 1,

@@ -920,6 +920,22 @@ func (tx *Transaction) IsSystemContract() bool {
 	return false //没有Request，当然就不是系统合约
 }
 
+//是否是一个用户合约的交易
+func (tx *Transaction) IsUserContract() bool {
+	for _, msg := range tx.txdata.TxMessages {
+		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
+			contractId := msg.Payload.(*ContractInvokeRequestPayload).ContractId
+			contractAddr := common.NewAddress(contractId, common.ContractHash)
+			//log.Debug("isSystemContract", "contract id", contractAddr, "len", len(contractAddr))
+			return !contractAddr.IsSystemContractAddress() //, nil
+
+		} else if msg.App == APP_CONTRACT_DEPLOY_REQUEST || msg.App == APP_CONTRACT_STOP_REQUEST {
+			return true //只有用户合约才有deploy和stop
+		}
+	}
+	return false //没有Request，当然就不是合约
+}
+
 //判断一个交易是否是一个合约请求交易，并且还没有被执行
 func (tx *Transaction) IsNewContractInvokeRequest() bool {
 	lastMsg := tx.txdata.TxMessages[len(tx.txdata.TxMessages)-1]

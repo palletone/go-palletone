@@ -320,7 +320,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 			tx4Pack = append(tx4Pack, tx)
 		}
 	}
-	newUnit, err := dag.GenerateUnit(scheduledTime, scheduledMediator, groupPubKey, ks, tx4Pack, txpool)
+	newUnit, err := dag.GenerateUnit(scheduledTime, scheduledMediator, groupPubKey, ks, tx4Pack)
 	if err != nil {
 		detail["Msg"] = fmt.Sprintf("GenerateUnit err: %v", err.Error())
 		return ExceptionProducing, detail
