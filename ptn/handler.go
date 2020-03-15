@@ -165,6 +165,9 @@ type ProtocolManager struct {
 	saveUnitCh  chan modules.SaveUnitEvent
 	saveUnitSub event.Subscription
 
+	rollbackUnitCh  chan modules.RollbackUnitEvent
+	rollbackUnitSub event.Subscription
+
 	lastMaintenanceTime    int64
 	isConnectedNewMediator bool
 }
@@ -422,6 +425,10 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 	pm.saveUnitCh = make(chan modules.SaveUnitEvent)
 	pm.saveUnitSub = pm.dag.SubscribeSaveUnitEvent(pm.saveUnitCh)
 	go pm.saveUnitRecvLoop()
+
+	pm.rollbackUnitCh = make(chan modules.RollbackUnitEvent)
+	pm.rollbackUnitSub = pm.dag.SubscribeRollbackUnitEvent(pm.rollbackUnitCh)
+	go pm.rollbackUnitRecvLoop()
 
 	if pm.consEngine != nil {
 		pm.ceCh = make(chan core.ConsensusEvent, txChanSize)

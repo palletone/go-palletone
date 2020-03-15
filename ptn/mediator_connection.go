@@ -135,6 +135,29 @@ func (pm *ProtocolManager) saveUnitRecvLoop() {
 
 }
 
+func (pm *ProtocolManager) rollbackUnitRecvLoop() {
+	for {
+		select {
+		case u := <-pm.rollbackUnitCh:
+			log.Infof("SubscribeRollbackUnitEvent received unit:%s", u.Unit.DisplayId())
+			if len(u.Unit.Txs) > 1 {
+				err := pm.txpool.ResetPendingTxs(u.Unit.Transactions()) //UpdateTxStatusUnpacked
+				if err != nil {
+					log.Error(err.Error())
+				}
+			}
+
+		case err := <-pm.rollbackUnitSub.Err():
+			if err != nil {
+				log.Error(err.Error())
+			}
+			return
+		}
+
+	}
+
+}
+
 func (pm *ProtocolManager) switchMediatorConnect(isChanged bool) {
 	log.Debug("switchMediatorConnect", "isChanged", isChanged)
 
