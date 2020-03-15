@@ -135,8 +135,8 @@ type txPool interface {
 	AddLocals(txs []*modules.Transaction) []error
 	AddSequenTx(tx *modules.Transaction) error
 	AddSequenTxs(txs []*modules.Transaction) error
-	AllHashs() []*common.Hash
-	AllTxpoolTxs() map[common.Hash]*txspool.TxPoolTransaction
+	//AllHashs() []*common.Hash
+	//AllTxpoolTxs() map[common.Hash]*txspool.TxPoolTransaction
 	Content() (map[common.Hash]*txspool.TxPoolTransaction, map[common.Hash]*txspool.TxPoolTransaction)
 	Get(hash common.Hash) (*txspool.TxPoolTransaction, common.Hash)
 	GetPoolTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error)
@@ -149,8 +149,7 @@ type txPool interface {
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	AddRemote(tx *modules.Transaction) error
 	AddRemotes([]*modules.Transaction) []error
-	ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool,
-		tag txspool.Tag) ([]*txspool.TxDesc, error)
+	//ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag txspool.Tag) ([]*txspool.TxDesc, error)
 	// Pending should return pending transactions.
 	// The slice should be modifiable by the caller.
 	Pending() (map[common.Hash][]*txspool.TxPoolTransaction, error)
@@ -160,9 +159,9 @@ type txPool interface {
 	// SubscribeTxPreEvent should return an event subscription of
 	// TxPreEvent and send events to the given channel.
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
-	GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
-	OutPointIsSpend(outPoint *modules.OutPoint) (bool, error)
-	ValidateOrphanTx(tx *modules.Transaction) (bool, error)
+	//GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
+	//OutPointIsSpend(outPoint *modules.OutPoint) (bool, error)
+	//ValidateOrphanTx(tx *modules.Transaction) (bool, error)
 }
 
 // statusData is the network packet for the status message.

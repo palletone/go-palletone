@@ -33,13 +33,13 @@ type ITxPool interface {
 	AddLocals(txs []*modules.Transaction) []error
 	AddSequenTx(tx *modules.Transaction) error
 	AddSequenTxs(txs []*modules.Transaction) error
-	AllHashs() []*common.Hash
-	AllTxpoolTxs() map[common.Hash]*TxPoolTransaction
+	//AllHashs() []*common.Hash
+	//AllTxpoolTxs() map[common.Hash]*TxPoolTransaction
 
 	// AddRemotes should add the given transactions to the pool.
 	AddRemote(tx *modules.Transaction) error
 	AddRemotes([]*modules.Transaction) []error
-	ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag Tag) ([]*TxDesc, error)
+	//ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag Tag) ([]*TxDesc, error)
 
 	Pending() (map[common.Hash][]*TxPoolTransaction, error)
 	Queued() ([]*TxPoolTransaction, error)
@@ -59,7 +59,7 @@ type ITxPool interface {
 	GetUnpackedTxsByAddr(addr string) ([]*TxPoolTransaction, error)
 	Stats() (int, int, int)
 	Content() (map[common.Hash]*TxPoolTransaction, map[common.Hash]*TxPoolTransaction)
-	GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
-	OutPointIsSpend(outPoint *modules.OutPoint) (bool, error)
-	ValidateOrphanTx(tx *modules.Transaction) (bool, error)
+	//GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
+	//OutPointIsSpend(outPoint *modules.OutPoint) (bool, error)
+	//ValidateOrphanTx(tx *modules.Transaction) (bool, error)
 }
