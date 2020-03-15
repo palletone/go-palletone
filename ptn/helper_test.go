@@ -217,8 +217,8 @@ func (p *testTxPool) GetNonce(hash common.Hash) uint64 {
 func (p *testTxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	return nil, nil
 }
-func (p *testTxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*txspool.TxPoolTransaction, common.StorageSize) {
-	return nil, 0
+func (p *testTxPool) GetSortedTxs(processor func(tx *txspool.TxPoolTransaction) (getNext bool, err error)) error {
+	return nil
 }
 func (p *testTxPool) SendStoredTxs(hashs []common.Hash) error {
 	return nil

@@ -354,7 +354,8 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 	pro.EXPECT().LocalHaveActiveMediator().Return(false).AnyTimes()
 	dag.EXPECT().SubscribeUnstableRepositoryUpdatedEvent(gomock.Any()).Return(&rpc.ClientSubscription{}).AnyTimes()
 	dag.EXPECT().SubscribeSaveStableUnitEvent(gomock.Any()).Return(&rpc.ClientSubscription{}).AnyTimes()
-
+	dag.EXPECT().SubscribeSaveUnitEvent(gomock.Any()).Return(&rpc.ClientSubscription{}).AnyTimes()
+	dag.EXPECT().SubscribeRollbackUnitEvent(gomock.Any()).Return(&rpc.ClientSubscription{}).AnyTimes()
 	/*
 		pro.EXPECT().SubscribeNewUnitEvent(gomock.Any()).DoAndReturn(func(ch chan<- mp.NewUnitEvent) event.Subscription {
 			return nil

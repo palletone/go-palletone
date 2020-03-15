@@ -50,7 +50,9 @@ type ITxPool interface {
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
-	GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTransaction, common.StorageSize)
+	//GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTransaction, common.StorageSize)
+	//迭代获取未打包的排序好的Tx，迭代执行函数时，如果返回true就继续迭代，如果false停止迭代
+	GetSortedTxs(processor func(tx *TxPoolTransaction) (getNext bool, err error)) error
 	Get(hash common.Hash) (*TxPoolTransaction, common.Hash)
 	GetPoolTxsByAddr(addr string) ([]*TxPoolTransaction, error)
 	//获得一个地址的未打包的交易

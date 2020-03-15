@@ -142,7 +142,7 @@ type txPool interface {
 	GetPoolTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error)
 	GetUnpackedTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error)
 	Stats() (int, int, int)
-	GetSortedTxs(hash common.Hash, index uint64) ([]*txspool.TxPoolTransaction, common.StorageSize)
+	GetSortedTxs(processor func(tx *txspool.TxPoolTransaction) (getNext bool, err error)) error
 	SendStoredTxs(hashs []common.Hash) error
 	DiscardTxs(hashs []common.Hash) error
 	//DiscardTx(hash common.Hash) error

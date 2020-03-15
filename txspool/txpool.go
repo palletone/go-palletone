@@ -1591,7 +1591,8 @@ func (pool *TxPool) resetPendingTx(tx *modules.Transaction) error {
 
 /******  end utxoSet  *****/
 // GetSortedTxs returns 根据优先级返回list
-func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTransaction, common.StorageSize) {
+func (pool *TxPool) GetSortedTxs(processor func(tx *TxPoolTransaction) (getNext bool, err error)) error {
+	//GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTransaction, common.StorageSize) {
 	t0 := time.Now()
 	canbe_packaged := false
 	var total common.StorageSize
@@ -1600,7 +1601,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 	gasAsset := dagconfig.DagConfig.GetGasToken()
 	_, chainindex, err := pool.unit.GetNewestUnit(gasAsset)
 	if err != nil {
-		return nil, 0
+		return err
 	}
 	unithigh := int64(chainindex.Index)
 	map_pretxs := make(map[common.Hash]int)
@@ -1672,8 +1673,8 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 			}
 			if (locktime >= 500000000 && locktime-time.Now().Unix() < 0) || canbe_packaged {
 				tx.Pending = true
-				tx.UnitHash = hash
-				tx.UnitIndex = index
+				//tx.UnitHash = hash
+				//tx.UnitIndex = index
 				tx.IsOrphan = false
 				pool.all.Store(txhash, tx)
 				pool.orphans.Delete(txhash)
@@ -1689,8 +1690,8 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 		if !ok && err == nil {
 			//  更改孤儿交易的状态
 			tx.Pending = true
-			tx.UnitHash = hash
-			tx.UnitIndex = index
+			//tx.UnitHash = hash
+			//tx.UnitIndex = index
 			tx.IsOrphan = false
 			pool.all.Store(txhash, tx)
 			pool.orphans.Delete(txhash)
@@ -1722,13 +1723,22 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 				continue
 			}
 			list = append(list, tx)
-			go pool.promoteTx(hash, tx, index, uint64(i))
+			//go pool.promoteTx(hash, tx, index, uint64(i))
 		}
 	}
 	log.Debugf("get sorted and rm Orphan txs spent times: %s , count: %d ,t2: %s , txs_size %s,  "+
 		"total_size %s", time.Since(t0), len(list), time.Since(t2), total.String(), unit_size.String())
-
-	return list, total
+	for _, t := range list {
+		getnext, err := processor(t)
+		if err != nil {
+			log.Error(err.Error())
+		}
+		if !getnext {
+			return err
+		}
+	}
+	return nil
+	//return list, total
 }
 func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
 	orphanTxs map[common.Hash]*TxPoolTransaction) (bool, []*TxPoolTransaction) {
@@ -1745,17 +1755,17 @@ func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
 		//  若该utxo在db里找不到,try to find it in pool and ophans txs
 		queue_tx, has := poolTxs[op.TxHash]
 		if !has {
-			poolloop:
+		poolloop:
 			for _, otx := range poolTxs {
 				if otx.Tx.RequestHash() == op.TxHash {
 					for i, msg := range otx.Tx.Messages() {
 						if msg.App != modules.APP_PAYMENT {
-                            continue
+							continue
 						}
 						payment := msg.Payload.(*modules.PaymentPayload)
 						for j := range payment.Outputs {
 							if op.OutIndex == uint32(j) && op.MessageIndex == uint32(i) {
-					
+
 								log.Debugf("found  in pool")
 								queue_tx = otx
 								break poolloop
@@ -1764,7 +1774,7 @@ func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
 					}
 				}
 			}
-			orphTxsLOOP:
+		orphTxsLOOP:
 			for _, otx := range orphanTxs {
 				if otx.Tx.RequestHash() == op.TxHash {
 					for i, msg := range otx.Tx.Messages() {
@@ -1782,7 +1792,7 @@ func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
 			}
 		}
 		if queue_tx != nil {
-			//if find precusor tx  ,and go on to find its 
+			//if find precusor tx  ,and go on to find its
 			log.Info("find in precusor tx.", "hash", queue_tx.Tx.Hash().String(), "ohash", op.TxHash.String(),
 				"pending", tx.Pending)
 			if !queue_tx.Pending {
