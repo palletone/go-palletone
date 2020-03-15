@@ -1090,8 +1090,8 @@ func (pool *TxPool) getPoolTxsByAddr(addr string, onlyUnpacked bool) ([]*TxPoolT
 
 // Get returns a transaction if it is contained in the pool
 // and nil otherwise.
-func (pool *TxPool) Get(hash common.Hash) (*TxPoolTransaction, common.Hash) {
-	var u_hash common.Hash
+func (pool *TxPool) Get(hash common.Hash) (*TxPoolTransaction, error) {
+	//var u_hash common.Hash
 	//tx := new(TxPoolTransaction)
 	interTx, has := pool.all.Load(hash)
 	if has {
@@ -1099,21 +1099,21 @@ func (pool *TxPool) Get(hash common.Hash) (*TxPoolTransaction, common.Hash) {
 		if tx.Tx.Hash() != hash {
 			pool.all.Delete(hash)
 			pool.priority_sorted.Removed()
-			return nil, u_hash
+			return nil, errors.New("not found")
 		}
 		if tx.Pending {
 			log.Debug("get tx info by hash in txpool... tx in unit hash:", "unit_hash", tx.UnitHash, "p_tx", tx)
-			return tx, tx.UnitHash
+			return tx, nil
 		}
-		return tx, u_hash
+		return tx, nil
 	} else {
 		if itx, exist := pool.orphans.Load(hash); exist {
 			tx := itx.(*TxPoolTransaction)
 			log.Debug("get tx info by hash in orphan txpool... ", "txhash", tx.Tx.Hash(), "info", tx)
-			return tx, u_hash
+			return tx, nil
 		}
 	}
-	return nil, u_hash
+	return nil, errors.New("not found")
 }
 
 // DeleteTx

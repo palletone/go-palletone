@@ -533,11 +533,11 @@ func (b *PtnApiBackend) GetTxPackInfo(txHash common.Hash) (*ptnjson.TxPackInfoJs
 
 // GetPoolTxByHash return a json of the tx in pool.
 func (b *PtnApiBackend) GetTxPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJson, error) {
-	tx, unit_hash := b.ptn.txPool.Get(hash)
-	if tx == nil {
+	tx, err := b.ptn.txPool.Get(hash)
+	if err != nil {
 		return nil, fmt.Errorf("the tx[%s] is not exist in txppol.", hash.String())
 	}
-	return ptnjson.ConvertTxPoolTx2Json(tx, unit_hash), nil
+	return ptnjson.ConvertTxPoolTx2Json(tx, tx.UnitHash), nil
 }
 
 func (b *PtnApiBackend) GetUnpackedTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error) {

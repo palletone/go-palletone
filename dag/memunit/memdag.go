@@ -361,11 +361,6 @@ func (chain *MemDag) setNextStableUnit(chain_units map[common.Hash]*modules.Unit
 		return false
 	}
 
-	if !chain.saveHeaderOnly && len(unit.Txs) > 1 {
-		//go txpool.DiscardTxs(unit.Txs.GetTxIds())
-		//TODO Devin 触发稳定单元事件
-	}
-
 	// 通知该unit已经稳定，以便做相应的处理，清理相关缓存等
 	go chain.saveStableUnitFeed.Send(modules.SaveUnitEvent{Unit: unit})
 	log.Debugf("Remove unit index[%d],hash[%s] from chainUnits", height, hash.String())
