@@ -1004,11 +1004,11 @@ func (pool *TxPool) getPoolTxsByAddr(addr string, onlyUnpacked bool) ([]*TxPoolT
 	for _, tx := range poolTxs {
 		if !tx.Confirmed {
 			if onlyUnpacked {
-				if tx.Pending {
-					continue //已打包，忽略
-				}
+				//if tx.Pending {
+				//	continue //已打包，忽略
+				//}
 			}
-			for _, msg := range tx.Tx.TxMessages() {
+			for _, msg := range tx.Tx.Messages() {
 				if msg.App == modules.APP_PAYMENT {
 					payment, ok := msg.Payload.(*modules.PaymentPayload)
 					if ok {
@@ -1631,14 +1631,11 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 					continue
 				}
 				// add precusorTxs 获取该交易的前驱交易列表
-				_, p_txs := pool.getPrecusorTxs(tx, poolTxs, orphanTxs)
-				for _, p_tx := range p_txs {
+				pre_txs := pool.getPrecusorTxs(tx, poolTxs, map_pretxs)
+				for _, p_tx := range pre_txs {
 					if _, has := map_pretxs[p_tx.Tx.Hash()]; !has {
 						map_pretxs[p_tx.Tx.Hash()] = len(list)
-						if !p_tx.Pending {
-							list = append(list, p_tx)
-							total += p_tx.Tx.Size()
-						}
+						list = append(list, p_tx)
 					}
 				}
 			}
@@ -1722,7 +1719,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 				continue
 			}
 			list = append(list, tx)
-			go pool.promoteTx(hash, tx, index, uint64(i))
+			pool.promoteTx(hash, tx, index, uint64(i))
 		}
 	}
 	log.Debugf("get sorted and rm Orphan txs spent times: %s , count: %d ,t2: %s , txs_size %s,  "+
@@ -1730,75 +1727,57 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 
 	return list, total
 }
-func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
-	orphanTxs map[common.Hash]*TxPoolTransaction) (bool, []*TxPoolTransaction) {
-	var isNotOriginal bool
+func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs map[common.Hash]*TxPoolTransaction,
+	map_pres map[common.Hash]int) []*TxPoolTransaction {
 	pretxs := make([]*TxPoolTransaction, 0)
 	for _, op := range tx.Tx.GetSpendOutpoints() {
 		// 交易池做了utxo的缓存，包括request交易的缓存utxo，不能用pool.GetUtxoEntry
 		_, err := pool.unit.GetUtxoEntry(op)
 		if err == nil {
 			continue
-		} else {
-			isNotOriginal = true
 		}
 		//  若该utxo在db里找不到,try to find it in pool and ophans txs
 		queue_tx, has := poolTxs[op.TxHash]
 		if !has {
-			poolloop:
 			for _, otx := range poolTxs {
 				if otx.Tx.RequestHash() == op.TxHash {
 					for i, msg := range otx.Tx.Messages() {
 						if msg.App != modules.APP_PAYMENT {
-                            continue
+							continue
 						}
 						payment := msg.Payload.(*modules.PaymentPayload)
 						for j := range payment.Outputs {
 							if op.OutIndex == uint32(j) && op.MessageIndex == uint32(i) {
-					
 								log.Debugf("found  in pool")
 								queue_tx = otx
-								break poolloop
+								has = true
+								break
 							}
+						}
+						if has {
+							break
 						}
 					}
 				}
-			}
-			orphTxsLOOP:
-			for _, otx := range orphanTxs {
-				if otx.Tx.RequestHash() == op.TxHash {
-					for i, msg := range otx.Tx.Messages() {
-						if msg.App == modules.APP_PAYMENT {
-							payment := msg.Payload.(*modules.PaymentPayload)
-							for j := range payment.Outputs {
-								if op.OutIndex == uint32(j) && op.MessageIndex == uint32(i) {
-									queue_tx = otx
-									break orphTxsLOOP
-								}
-							}
-						}
-					}
+				if has {
+					break
 				}
 			}
 		}
-		if queue_tx != nil {
-			//if find precusor tx  ,and go on to find its 
-			log.Info("find in precusor tx.", "hash", queue_tx.Tx.Hash().String(), "ohash", op.TxHash.String(),
-				"pending", tx.Pending)
+		if queue_tx != nil && has {
+			//if find precusor tx  ,and go on to find its
 			if !queue_tx.Pending {
-				_, list := pool.getPrecusorTxs(queue_tx, poolTxs, orphanTxs)
-				for _, p_tx := range list {
-					pretxs = append(pretxs, p_tx)
-					delete(poolTxs, p_tx.Tx.Hash())
+				list := pool.getPrecusorTxs(queue_tx, poolTxs, map_pres)
+				for _, tx := range list {
+					if _, has := map_pres[tx.Tx.Hash()]; !has {
+						pretxs = append(pretxs, tx)
+					}
 				}
+				pretxs = append(pretxs, queue_tx)
 			}
 		}
 	}
-	if !isNotOriginal { //返回自己
-		delete(poolTxs, tx.Tx.Hash())
-	}
-	pretxs = append(pretxs, tx)
-	return isNotOriginal, pretxs
+	return pretxs
 }
 func (pool *TxPool) GetSequenTxs() []*TxPoolTransaction {
 	return pool.getSequenTxs()
