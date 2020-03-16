@@ -723,10 +723,10 @@ func (pool *TxPool) addLocal(tx *TxPoolTransaction) error {
 // sender is not among the locally tracked ones, full pricing constraints will
 // apply.
 func (pool *TxPool) AddRemote(tx *modules.Transaction) error {
-	if tx.IsNewContractInvokeRequest() { //Request不能进入交易池
-		log.Infof("Tx[%s] is a request, do not allow add to txpool", tx.Hash().String())
-		return nil
-	}
+	//if tx.IsNewContractInvokeRequest() { //Request不能进入交易池
+	//	log.Infof("Tx[%s] is a request, do not allow add to txpool", tx.Hash().String())
+	//	return nil
+	//}
 	if tx.TxMessages()[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
 		return nil
 	}

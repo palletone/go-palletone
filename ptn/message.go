@@ -374,7 +374,7 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 			log.Warnf("Tx[%s] is a sys contract with result, don't need send by p2p", txHash.String())
 			continue
 		}
-		_, err := pm.txpool.ProcessTransaction(tx, true, true, 0 /*pm.txpool.Tag(peer.ID())*/)
+		err := pm.txpool.AddRemote(tx)
 		if err != nil {
 			log.Infof("the transaction %s not accepteable, err:%s", tx.Hash().String(), err.Error())
 		}

@@ -39,7 +39,7 @@ type ITxPool interface {
 	// AddRemotes should add the given transactions to the pool.
 	AddRemote(tx *modules.Transaction) error
 	//AddRemotes([]*modules.Transaction) []error
-	ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag Tag) ([]*TxDesc, error)
+	//ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag Tag) ([]*TxDesc, error)
 	//查询已打包的交易
 	Pending() (map[common.Hash][]*TxPoolTransaction, error)
 	//查询孤儿交易
