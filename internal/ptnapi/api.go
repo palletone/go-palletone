@@ -602,7 +602,9 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, reqTxMa
 	inputsOutpoint := []modules.OutPoint{}
 	allUtxo := make(map[modules.OutPoint]*modules.Utxo)
 	for k, v := range dbUtxo {
-		if v.Asset.Equal(tokenAsset) {
+		if v.Asset.Equal(tokenAsset) &&!v.IsSpent(){
+			
+			v.Spend()
 			allUtxo[k] = v
 		}
 	}

@@ -1742,67 +1742,47 @@ func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
 		} else {
 			isNotOriginal = true
 		}
-		//  若该utxo在db里找不到
+		//  若该utxo在db里找不到,try to find it in pool and ophans txs
 		queue_tx, has := poolTxs[op.TxHash]
-		//queue_otx, has1 := orphanTxs[op.TxHash]
 		if !has {
-			//if has1 {
-			//	log.Infof("find in orphanTxs,hash[%s],ohash[%s]", op.TxHash.String(), queue_otx.Tx.Hash().String())
-			//	queue_tx = queue_otx
-			//} else { // 判断是不是request tx
-			isfound := false
+			poolloop:
 			for _, otx := range poolTxs {
+				if otx.Tx.RequestHash() == op.TxHash {
+					for i, msg := range otx.Tx.Messages() {
+						if msg.App != modules.APP_PAYMENT {
+                            continue
+						}
+						payment := msg.Payload.(*modules.PaymentPayload)
+						for j := range payment.Outputs {
+							if op.OutIndex == uint32(j) && op.MessageIndex == uint32(i) {
+					
+								log.Debugf("found  in pool")
+								queue_tx = otx
+								break poolloop
+							}
+						}
+					}
+				}
+			}
+			orphTxsLOOP:
+			for _, otx := range orphanTxs {
 				if otx.Tx.RequestHash() == op.TxHash {
 					for i, msg := range otx.Tx.Messages() {
 						if msg.App == modules.APP_PAYMENT {
 							payment := msg.Payload.(*modules.PaymentPayload)
 							for j := range payment.Outputs {
 								if op.OutIndex == uint32(j) && op.MessageIndex == uint32(i) {
-									isfound = true
 									queue_tx = otx
-									break
+									break orphTxsLOOP
 								}
 							}
-						}
-						if isfound {
-							break
-						}
-					}
-					if isfound {
-						break
-					}
-				}
-			}
-			if !isfound {
-				for _, otx := range orphanTxs {
-					if otx.Tx.RequestHash() == op.TxHash {
-						for i, msg := range otx.Tx.Messages() {
-							if msg.App == modules.APP_PAYMENT {
-								payment := msg.Payload.(*modules.PaymentPayload)
-								for j := range payment.Outputs {
-									if op.OutIndex == uint32(j) && op.MessageIndex == uint32(i) {
-										isfound = true
-										queue_tx = otx
-										break
-									}
-								}
-							}
-							if isfound {
-								break
-							}
-						}
-						if isfound {
-							break
 						}
 					}
 				}
 			}
-			if !isfound {
-				continue
-			}
-			//}
 		}
-		if queue_tx != nil && has {
+		if queue_tx != nil {
+			//if find precusor tx  ,and go on to find its 
 			log.Info("find in precusor tx.", "hash", queue_tx.Tx.Hash().String(), "ohash", op.TxHash.String(),
 				"pending", tx.Pending)
 			if !queue_tx.Pending {
@@ -1898,32 +1878,30 @@ func (pool *TxPool) addOrphan(otx *TxPoolTransaction, tag uint64) {
 	if pool.config.MaxOrphanTxs <= 0 {
 		return
 	}
-
 	//pool.limitNumberOrphans()
-
 	otx.Expiration = otx.CreationDate.Add(pool.config.OrphanTTL)
 	otx.Tag = tag
 	otx.IsOrphan = true
 	pool.orphans.Store(otx.Tx.Hash(), otx)
-
-	for i, msg := range otx.Tx.TxMessages() {
-		if msg.App == modules.APP_PAYMENT {
-			payment, ok := msg.Payload.(*modules.PaymentPayload)
-			if ok {
-				// add utxo in outputs
-				preout := modules.OutPoint{TxHash: otx.Tx.Hash()}
-				for j, out := range payment.Outputs {
-					preout.MessageIndex = uint32(i)
-					preout.OutIndex = uint32(j)
-					utxo := &modules.Utxo{Amount: out.Value, Asset: &modules.Asset{
-						AssetId: out.Asset.AssetId, UniqueId: out.Asset.UniqueId},
-						PkScript: out.PkScript[:]}
-					pool.outputs.Store(preout, utxo)
-				}
-				log.Debugf("Stored orphan tx's hash:[%s] (total: %d)", otx.Tx.Hash().String(), len(pool.AllOrphanTxs()))
-			}
-		}
-	}
+	log.Debugf("Stored orphan tx's hash:[%s] (total: %d)", otx.Tx.Hash().String(), len(pool.AllOrphanTxs()))
+	//for i, msg := range otx.Tx.TxMessages() {
+	//	if msg.App == modules.APP_PAYMENT {
+	//		payment, ok := msg.Payload.(*modules.PaymentPayload)
+	//		if ok {
+	//			// add utxo in outputs
+	//			preout := modules.OutPoint{TxHash: otx.Tx.Hash()}
+	//			for j, out := range payment.Outputs {
+	//				preout.MessageIndex = uint32(i)
+	//				preout.OutIndex = uint32(j)
+	//				utxo := &modules.Utxo{Amount: out.Value, Asset: &modules.Asset{
+	//					AssetId: out.Asset.AssetId, UniqueId: out.Asset.UniqueId},
+	//					PkScript: out.PkScript[:]}
+	//				pool.outputs.Store(preout, utxo)
+	//			}
+	//
+	//		}
+	//	}
+	//}
 }
 
 func (pool *TxPool) removeOrphan(tx *TxPoolTransaction, reRedeemers bool) {
