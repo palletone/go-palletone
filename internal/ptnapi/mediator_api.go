@@ -215,7 +215,7 @@ func (s *PublicMediatorAPI) NextSlotTime() (int64, error) {
 }
 
 // 返回当前离下一次换届的时间差（秒）
-func (s *PublicMediatorAPI) nextUpdateTime() (int64, error) {
+func (s *PublicMediatorAPI) NextUpdateTime() (int64, error) {
 	now := time.Now()
 
 	dgp := s.Dag().GetDynGlobalProp()
