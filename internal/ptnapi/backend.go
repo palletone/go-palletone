@@ -74,7 +74,7 @@ type Backend interface {
 	GetUnpackedTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error)
 
 	//GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error)
-	Stats() (int, int, int)
+	Status() (int, int, int)
 	TxPoolContent() (map[common.Hash]*txspool.TxPoolTransaction, map[common.Hash]*txspool.TxPoolTransaction)
 	Queued() ([]*txspool.TxPoolTransaction, error)
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription

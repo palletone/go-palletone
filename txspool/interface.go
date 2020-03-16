@@ -40,7 +40,7 @@ type ITxPool interface {
 	AddRemote(tx *modules.Transaction) error
 	//AddRemotes([]*modules.Transaction) []error
 	//ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag Tag) ([]*TxDesc, error)
-	//查询已打包的交易
+	//查询已打包的交易，以UnitHash为Key
 	Pending() (map[common.Hash][]*TxPoolTransaction, error)
 	//查询孤儿交易
 	Queued() ([]*TxPoolTransaction, error)
@@ -50,7 +50,7 @@ type ITxPool interface {
 	ResetPendingTxs(txs []*modules.Transaction) error
 	//SendStoredTxs(hashs []common.Hash) error
 	//将一堆交易标记为删除
-	DiscardTxs(hashs []common.Hash) error
+	DiscardTxs(txs []*modules.Transaction) error
 	//查询UTXO
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	//订阅事件
@@ -59,13 +59,13 @@ type ITxPool interface {
 	//迭代获取未打包的排序好的Tx，迭代执行函数时，如果返回true就继续迭代，如果false停止迭代
 	GetSortedTxs(processor func(tx *TxPoolTransaction) (getNext bool, err error)) error
 	//从交易池获取某个交易
-	Get(hash common.Hash) (*TxPoolTransaction, error)
+	GetTx(hash common.Hash) (*TxPoolTransaction, error)
 	//获取交易池中某个地址的所有交易
-	GetPoolTxsByAddr(addr string) ([]*TxPoolTransaction, error)
+	//GetPoolTxsByAddr(addr string) ([]*TxPoolTransaction, error)
 	//获得一个地址的未打包的交易
-	GetUnpackedTxsByAddr(addr string) ([]*TxPoolTransaction, error)
+	GetUnpackedTxsByAddr(addr common.Address) ([]*TxPoolTransaction, error)
 	//返回交易池中几种状态的交易数量
-	Stats() (int, int, int)
+	Status() (int, int, int)
 	//返回交易池中交易的内容
 	Content() (map[common.Hash]*TxPoolTransaction, map[common.Hash]*TxPoolTransaction)
 	//GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)

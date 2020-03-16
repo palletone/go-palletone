@@ -98,7 +98,7 @@ func (pm *ProtocolManager) saveStableUnitRecvLoop() {
 					return fmt.Sprintf("discard txs %#x from txpool by stable unit[%s]",
 						event.Unit.TxHashes(), event.Unit.DisplayId())
 				})
-				err := pm.txpool.DiscardTxs(event.Unit.TxHashes())
+				err := pm.txpool.DiscardTxs(event.Unit.Txs)
 				if err != nil {
 					log.Error(err.Error())
 				}

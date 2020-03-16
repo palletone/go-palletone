@@ -316,7 +316,7 @@ func (pool *TxPool) loop() {
 
 // Stats retrieves the current pool stats, namely the number of pending and the
 // number of queued (non-executable) transactions.
-func (pool *TxPool) Stats() (int, int, int) {
+func (pool *TxPool) Status() (int, int, int) {
 	return pool.stats()
 }
 
@@ -959,46 +959,46 @@ const (
 
 // Status returns the status (unknown/pending/queued) of a batch of transactions
 // identified by their hashes.
-func (pool *TxPool) Status(hashes []common.Hash) []TxStatus {
-	status := make([]TxStatus, len(hashes))
-	poolTxs := pool.AllTxpoolTxs()
-	for i, hash := range hashes {
-		if tx, has := poolTxs[hash]; has {
-			if tx != nil {
-				if tx.Pending {
-					status[i] = TxStatusPending
-				} else if tx.Confirmed {
-					status[i] = TxStatusConfirmed
-				} else if !tx.Discarded {
-					status[i] = TxStatusQueued
-				} else {
-					status[i] = TxStatusIncluded
-				}
-			} else {
-				status[i] = TxStatusUnKnow
-			}
-		} else {
-			status[i] = TxStatusNotIncluded
-		}
-	}
-	return status
-}
+//func (pool *TxPool) Status(hashes []common.Hash) []TxStatus {
+//	status := make([]TxStatus, len(hashes))
+//	poolTxs := pool.AllTxpoolTxs()
+//	for i, hash := range hashes {
+//		if tx, has := poolTxs[hash]; has {
+//			if tx != nil {
+//				if tx.Pending {
+//					status[i] = TxStatusPending
+//				} else if tx.Confirmed {
+//					status[i] = TxStatusConfirmed
+//				} else if !tx.Discarded {
+//					status[i] = TxStatusQueued
+//				} else {
+//					status[i] = TxStatusIncluded
+//				}
+//			} else {
+//				status[i] = TxStatusUnKnow
+//			}
+//		} else {
+//			status[i] = TxStatusNotIncluded
+//		}
+//	}
+//	return status
+//}
 
 // GetUnpackedTxsByAddr returns all tx by addr.
-func (pool *TxPool) GetPoolTxsByAddr(addr string) ([]*TxPoolTransaction, error) {
+func (pool *TxPool) GetPoolTxsByAddr(addr common.Address) ([]*TxPoolTransaction, error) {
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
 	return pool.getPoolTxsByAddr(addr, false)
 }
 
-func (pool *TxPool) GetUnpackedTxsByAddr(addr string) ([]*TxPoolTransaction, error) {
+func (pool *TxPool) GetUnpackedTxsByAddr(addr common.Address) ([]*TxPoolTransaction, error) {
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
 	return pool.getPoolTxsByAddr(addr, true)
 }
 
-func (pool *TxPool) getPoolTxsByAddr(addr string, onlyUnpacked bool) ([]*TxPoolTransaction, error) {
-	txs := make(map[string][]*TxPoolTransaction)
+func (pool *TxPool) getPoolTxsByAddr(addr common.Address, onlyUnpacked bool) ([]*TxPoolTransaction, error) {
+	txs := make(map[common.Address][]*TxPoolTransaction)
 	// 将交易按地址分类
 	poolTxs := pool.AllTxpoolTxs()
 	for _, tx := range poolTxs {
@@ -1016,15 +1016,14 @@ func (pool *TxPool) getPoolTxsByAddr(addr string, onlyUnpacked bool) ([]*TxPoolT
 						if err != nil {
 							return nil, err
 						}
-						for _, addr := range addrs {
-							addr1 := addr.String()
-							txs[addr1] = append(txs[addr1], tx)
+						for _, a := range addrs {
+							txs[a] = append(txs[a], tx)
 						}
 
 						for _, out := range payment.Outputs {
 							address, err1 := pool.tokenEngine.GetAddressFromScript(out.PkScript[:])
 							if err1 == nil {
-								txs[address.String()] = append(txs[address.String()], tx)
+								txs[address] = append(txs[address], tx)
 							} else {
 								log.Error("PKSCript to address failed.", "error", err1)
 							}
@@ -1048,15 +1047,14 @@ func (pool *TxPool) getPoolTxsByAddr(addr string, onlyUnpacked bool) ([]*TxPoolT
 						return nil, err
 					}
 					//if addrs, err := pool.unit.GetTxFromAddress(tx.Tx); err == nil {
-					for _, addr := range addrs {
-						addr1 := addr.String()
-						txs[addr1] = append(txs[addr1], tx)
+					for _, a := range addrs {
+						txs[a] = append(txs[a], tx)
 					}
 					//}
 					for _, out := range payment.Outputs {
 						address, err1 := pool.tokenEngine.GetAddressFromScript(out.PkScript[:])
 						if err1 == nil {
-							txs[address.String()] = append(txs[address.String()], tx)
+							txs[address] = append(txs[address], tx)
 						} else {
 							log.Error("PKSCript to address failed.", "error", err1)
 						}
@@ -1090,7 +1088,7 @@ func (pool *TxPool) getPoolTxsByAddr(addr string, onlyUnpacked bool) ([]*TxPoolT
 
 // Get returns a transaction if it is contained in the pool
 // and nil otherwise.
-func (pool *TxPool) Get(hash common.Hash) (*TxPoolTransaction, error) {
+func (pool *TxPool) GetTx(hash common.Hash) (*TxPoolTransaction, error) {
 	//var u_hash common.Hash
 	//tx := new(TxPoolTransaction)
 	interTx, has := pool.all.Load(hash)
@@ -1467,9 +1465,9 @@ func (pool *TxPool) SendStoredTxs(hashs []common.Hash) error {
 }
 
 // 打包后的没有被最终确认的交易，废弃处理
-func (pool *TxPool) DiscardTxs(hashs []common.Hash) error {
-	for _, hash := range hashs {
-		err := pool.discardTx(hash)
+func (pool *TxPool) DiscardTxs(txs []*modules.Transaction) error {
+	for _, tx := range txs {
+		err := pool.discardTx(tx.Hash())
 		if err != nil {
 			return err
 		}

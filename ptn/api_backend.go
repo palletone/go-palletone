@@ -228,7 +228,7 @@ func (b *PtnApiBackend) GetPoolTransactions() (modules.Transactions, error) {
 }
 
 func (b *PtnApiBackend) GetPoolTransaction(hash common.Hash) *modules.Transaction {
-	tx, _ := b.ptn.txPool.Get(hash)
+	tx, _ := b.ptn.txPool.GetTx(hash)
 	return tx.Tx
 }
 
@@ -267,8 +267,8 @@ func (b *PtnApiBackend) GetChainParameters() *core.ChainParameters {
 	return b.Dag().GetChainParameters()
 }
 
-func (b *PtnApiBackend) Stats() (int, int, int) {
-	return b.ptn.txPool.Stats()
+func (b *PtnApiBackend) Status() (int, int, int) {
+	return b.ptn.txPool.Status()
 }
 
 func (b *PtnApiBackend) TxPoolContent() (map[common.Hash]*txspool.TxPoolTransaction,
@@ -540,7 +540,7 @@ func (b *PtnApiBackend) GetTxPackInfo(txHash common.Hash) (*ptnjson.TxPackInfoJs
 
 // GetPoolTxByHash return a json of the tx in pool.
 func (b *PtnApiBackend) GetTxPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJson, error) {
-	tx, err := b.ptn.txPool.Get(hash)
+	tx, err := b.ptn.txPool.GetTx(hash)
 	if err != nil {
 		return nil, fmt.Errorf("the tx[%s] is not exist in txppol.", hash.String())
 	}
@@ -548,7 +548,8 @@ func (b *PtnApiBackend) GetTxPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJs
 }
 
 func (b *PtnApiBackend) GetUnpackedTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error) {
-	tx, err := b.ptn.txPool.GetUnpackedTxsByAddr(addr)
+	address, _ := common.StringToAddress(addr)
+	tx, err := b.ptn.txPool.GetUnpackedTxsByAddr(address)
 	return tx, err
 }
 

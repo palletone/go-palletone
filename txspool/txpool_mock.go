@@ -61,48 +61,6 @@ func (mr *MockITxPoolMockRecorder) AddLocal(tx interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddLocal", reflect.TypeOf((*MockITxPool)(nil).AddLocal), tx)
 }
 
-// AddLocals mocks base method
-func (m *MockITxPool) AddLocals(txs []*modules.Transaction) []error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddLocals", txs)
-	ret0, _ := ret[0].([]error)
-	return ret0
-}
-
-// AddLocals indicates an expected call of AddLocals
-func (mr *MockITxPoolMockRecorder) AddLocals(txs interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddLocals", reflect.TypeOf((*MockITxPool)(nil).AddLocals), txs)
-}
-
-// AddSequenTx mocks base method
-func (m *MockITxPool) AddSequenTx(tx *modules.Transaction) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddSequenTx", tx)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddSequenTx indicates an expected call of AddSequenTx
-func (mr *MockITxPoolMockRecorder) AddSequenTx(tx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddSequenTx", reflect.TypeOf((*MockITxPool)(nil).AddSequenTx), tx)
-}
-
-// AddSequenTxs mocks base method
-func (m *MockITxPool) AddSequenTxs(txs []*modules.Transaction) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddSequenTxs", txs)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddSequenTxs indicates an expected call of AddSequenTxs
-func (mr *MockITxPoolMockRecorder) AddSequenTxs(txs interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddSequenTxs", reflect.TypeOf((*MockITxPool)(nil).AddSequenTxs), txs)
-}
-
 // AddRemote mocks base method
 func (m *MockITxPool) AddRemote(tx *modules.Transaction) error {
 	m.ctrl.T.Helper()
@@ -115,35 +73,6 @@ func (m *MockITxPool) AddRemote(tx *modules.Transaction) error {
 func (mr *MockITxPoolMockRecorder) AddRemote(tx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRemote", reflect.TypeOf((*MockITxPool)(nil).AddRemote), tx)
-}
-
-// AddRemotes mocks base method
-func (m *MockITxPool) AddRemotes(arg0 []*modules.Transaction) []error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddRemotes", arg0)
-	ret0, _ := ret[0].([]error)
-	return ret0
-}
-
-// AddRemotes indicates an expected call of AddRemotes
-func (mr *MockITxPoolMockRecorder) AddRemotes(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRemotes", reflect.TypeOf((*MockITxPool)(nil).AddRemotes), arg0)
-}
-
-// ProcessTransaction mocks base method
-func (m *MockITxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan, rateLimit bool, tag Tag) ([]*TxDesc, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessTransaction", tx, allowOrphan, rateLimit, tag)
-	ret0, _ := ret[0].([]*TxDesc)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ProcessTransaction indicates an expected call of ProcessTransaction
-func (mr *MockITxPoolMockRecorder) ProcessTransaction(tx, allowOrphan, rateLimit, tag interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessTransaction", reflect.TypeOf((*MockITxPool)(nil).ProcessTransaction), tx, allowOrphan, rateLimit, tag)
 }
 
 // Pending mocks base method
@@ -205,17 +134,17 @@ func (mr *MockITxPoolMockRecorder) ResetPendingTxs(txs interface{}) *gomock.Call
 }
 
 // DiscardTxs mocks base method
-func (m *MockITxPool) DiscardTxs(hashs []common.Hash) error {
+func (m *MockITxPool) DiscardTxs(txs []*modules.Transaction) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DiscardTxs", hashs)
+	ret := m.ctrl.Call(m, "DiscardTxs", txs)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DiscardTxs indicates an expected call of DiscardTxs
-func (mr *MockITxPoolMockRecorder) DiscardTxs(hashs interface{}) *gomock.Call {
+func (mr *MockITxPoolMockRecorder) DiscardTxs(txs interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DiscardTxs", reflect.TypeOf((*MockITxPool)(nil).DiscardTxs), hashs)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DiscardTxs", reflect.TypeOf((*MockITxPool)(nil).DiscardTxs), txs)
 }
 
 // GetUtxoEntry mocks base method
@@ -261,38 +190,23 @@ func (mr *MockITxPoolMockRecorder) GetSortedTxs(processor interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSortedTxs", reflect.TypeOf((*MockITxPool)(nil).GetSortedTxs), processor)
 }
 
-// Get mocks base method
-func (m *MockITxPool) Get(hash common.Hash) (*TxPoolTransaction, error) {
+// GetTx mocks base method
+func (m *MockITxPool) GetTx(hash common.Hash) (*TxPoolTransaction, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", hash)
+	ret := m.ctrl.Call(m, "GetTx", hash)
 	ret0, _ := ret[0].(*TxPoolTransaction)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Get indicates an expected call of Get
-func (mr *MockITxPoolMockRecorder) Get(hash interface{}) *gomock.Call {
+// GetTx indicates an expected call of GetTx
+func (mr *MockITxPoolMockRecorder) GetTx(hash interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockITxPool)(nil).Get), hash)
-}
-
-// GetPoolTxsByAddr mocks base method
-func (m *MockITxPool) GetPoolTxsByAddr(addr string) ([]*TxPoolTransaction, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPoolTxsByAddr", addr)
-	ret0, _ := ret[0].([]*TxPoolTransaction)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetPoolTxsByAddr indicates an expected call of GetPoolTxsByAddr
-func (mr *MockITxPoolMockRecorder) GetPoolTxsByAddr(addr interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPoolTxsByAddr", reflect.TypeOf((*MockITxPool)(nil).GetPoolTxsByAddr), addr)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTx", reflect.TypeOf((*MockITxPool)(nil).GetTx), hash)
 }
 
 // GetUnpackedTxsByAddr mocks base method
-func (m *MockITxPool) GetUnpackedTxsByAddr(addr string) ([]*TxPoolTransaction, error) {
+func (m *MockITxPool) GetUnpackedTxsByAddr(addr common.Address) ([]*TxPoolTransaction, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUnpackedTxsByAddr", addr)
 	ret0, _ := ret[0].([]*TxPoolTransaction)
@@ -306,20 +220,20 @@ func (mr *MockITxPoolMockRecorder) GetUnpackedTxsByAddr(addr interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnpackedTxsByAddr", reflect.TypeOf((*MockITxPool)(nil).GetUnpackedTxsByAddr), addr)
 }
 
-// Stats mocks base method
-func (m *MockITxPool) Stats() (int, int, int) {
+// Status mocks base method
+func (m *MockITxPool) Status() (int, int, int) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Stats")
+	ret := m.ctrl.Call(m, "Status")
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(int)
 	ret2, _ := ret[2].(int)
 	return ret0, ret1, ret2
 }
 
-// Stats indicates an expected call of Stats
-func (mr *MockITxPoolMockRecorder) Stats() *gomock.Call {
+// Status indicates an expected call of Status
+func (mr *MockITxPoolMockRecorder) Status() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stats", reflect.TypeOf((*MockITxPool)(nil).Stats))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Status", reflect.TypeOf((*MockITxPool)(nil).Status))
 }
 
 // Content mocks base method

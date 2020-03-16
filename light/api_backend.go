@@ -144,7 +144,7 @@ func (b *LesApiBackend) GetPoolNonce(ctx context.Context, addr common.Address) (
 	return uint64(0), nil
 }
 
-func (b *LesApiBackend) Stats() (pending int, queued int, reserve int) {
+func (b *LesApiBackend) Status() (pending int, queued int, reserve int) {
 	//return b.ptn.txPool.Stats(), 0, 0
 	return 0, 0, 0
 }

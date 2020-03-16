@@ -126,7 +126,7 @@ func (s *PublicTxPoolAPI) Content() map[string]map[string]*RPCTransaction {
 
 // Status returns the number of pending and queued transaction in the pool.
 func (s *PublicTxPoolAPI) Status() map[string]hexutil.Uint {
-	pending, queue, orphans := s.b.Stats()
+	pending, queue, orphans := s.b.Status()
 	return map[string]hexutil.Uint{
 		"pending": hexutil.Uint(pending),
 		"queued":  hexutil.Uint(queue),
@@ -602,8 +602,8 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, reqTxMa
 	inputsOutpoint := []modules.OutPoint{}
 	allUtxo := make(map[modules.OutPoint]*modules.Utxo)
 	for k, v := range dbUtxo {
-		if v.Asset.Equal(tokenAsset) &&!v.IsSpent(){
-			
+		if v.Asset.Equal(tokenAsset) && !v.IsSpent() {
+
 			v.Spend()
 			allUtxo[k] = v
 		}
