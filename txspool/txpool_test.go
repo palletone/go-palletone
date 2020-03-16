@@ -321,17 +321,28 @@ func TestTransactionAddingTxs(t *testing.T) {
 	fmt.Println("addlocals over.... ", time.Now().Unix()-t0.Unix())
 	//  test GetSortedTxs{}
 	unit_hash := common.HexToHash("0x0e7e7e3bd7c1e9ce440089712d61de38f925eb039f152ae03c6688ed714af729")
+
 	defer func(p *TxPool) {
 		sortedtxs, total := p.GetSortedTxs(unit_hash, 1)
 		log.Debugf(" total size is :%v ,the cout:%d ", total, len(txs))
-		for i, tx := range sortedtxs {
-			if i < len(txs)-1 {
-				if sortedtxs[i].Priority_lvl < sortedtxs[i+1].Priority_lvl {
-					t.Error("sorted failed.", i, tx.Priority_lvl)
-				}
+
+		//for i, tx := range sortedtxs {
+		//	if i < len(txs)-1 {
+		//		if sortedtxs[i].Priority_lvl < sortedtxs[i+1].Priority_lvl {
+		//			t.Error("sorted failed.", i, tx.Priority_lvl)
+		//		}
+		//	}
+		//}
+		//all = len(sortedtxs)
+
+		all = len(sortedtxs)
+		for i:=0; i< all-1; i++{
+			txpl := sortedtxs[i].Priority_lvl
+			if txpl < sortedtxs[i+1].Priority_lvl {
+				t.Error("sorted failed.", i, txpl)
 			}
 		}
-		all = len(sortedtxs)
+
 		poolTxs := pool.AllTxpoolTxs()
 		for _, tx := range poolTxs {
 			if tx.Pending {
