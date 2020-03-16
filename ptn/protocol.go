@@ -132,9 +132,9 @@ type txPool interface {
 	// AddRemotes should add the given transactions to the pool.
 	Stop()
 	AddLocal(tx *modules.Transaction) error
-	AddLocals(txs []*modules.Transaction) []error
-	AddSequenTx(tx *modules.Transaction) error
-	AddSequenTxs(txs []*modules.Transaction) error
+	//AddLocals(txs []*modules.Transaction) []error
+	//AddSequenTx(tx *modules.Transaction) error
+	//AddSequenTxs(txs []*modules.Transaction) error
 	//AllHashs() []*common.Hash
 	//AllTxpoolTxs() map[common.Hash]*txspool.TxPoolTransaction
 	Content() (map[common.Hash]*txspool.TxPoolTransaction, map[common.Hash]*txspool.TxPoolTransaction)
@@ -148,7 +148,7 @@ type txPool interface {
 	//DiscardTx(hash common.Hash) error
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	AddRemote(tx *modules.Transaction) error
-	AddRemotes([]*modules.Transaction) []error
+	//AddRemotes([]*modules.Transaction) []error
 	ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag txspool.Tag) ([]*txspool.TxDesc, error)
 	// Pending should return pending transactions.
 	// The slice should be modifiable by the caller.

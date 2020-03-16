@@ -30,15 +30,15 @@ type ITxPool interface {
 	Stop()
 
 	AddLocal(tx *modules.Transaction) error
-	AddLocals(txs []*modules.Transaction) []error
-	AddSequenTx(tx *modules.Transaction) error
-	AddSequenTxs(txs []*modules.Transaction) error
+	//AddLocals(txs []*modules.Transaction) []error
+	//AddSequenTx(tx *modules.Transaction) error
+	//AddSequenTxs(txs []*modules.Transaction) error
 	//AllHashs() []*common.Hash
 	//AllTxpoolTxs() map[common.Hash]*TxPoolTransaction
 
 	// AddRemotes should add the given transactions to the pool.
 	AddRemote(tx *modules.Transaction) error
-	AddRemotes([]*modules.Transaction) []error
+	//AddRemotes([]*modules.Transaction) []error
 	ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag Tag) ([]*TxDesc, error)
 	//查询已打包的交易
 	Pending() (map[common.Hash][]*TxPoolTransaction, error)

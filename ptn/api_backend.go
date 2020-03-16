@@ -203,7 +203,14 @@ func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transactio
 }
 
 func (b *PtnApiBackend) SendTxs(ctx context.Context, signedTxs []*modules.Transaction) []error {
-	return b.ptn.txPool.AddLocals(signedTxs)
+	result := []error{}
+	for _, tx := range signedTxs {
+		err := b.ptn.txPool.AddLocal(tx)
+		if err != nil {
+			result = append(result, err)
+		}
+	}
+	return result
 }
 
 func (b *PtnApiBackend) GetPoolTransactions() (modules.Transactions, error) {
