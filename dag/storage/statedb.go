@@ -96,9 +96,9 @@ func (statedb *StateDb) GetJuryCandidateList() (map[string]bool, error) {
 		if err != nil {
 			return nil, err
 		}
-		return candidateList,nil
+		return candidateList, nil
 	}
-	for _,v := range sliceVals {
+	for _, v := range sliceVals {
 		candidateList[v] = true
 	}
 	return candidateList, nil
@@ -164,8 +164,8 @@ func (statedb *StateDb) GetContractDeveloperList() ([]common.Address, error) {
 		if err != nil {
 			return nil, err
 		}
-	}else {
-		for _,v := range sliceVals {
+	} else {
+		for _, v := range sliceVals {
 			depList[v] = true
 		}
 	}

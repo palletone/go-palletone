@@ -389,7 +389,7 @@ func (s *RwSetTxSimulator) GetContractStatesByPrefix(contractid []byte, prefix s
 func mapKeyToSlice(m map[string]*modules.ContractStateValue) []string {
 	sliceKeys := []string{}
 	for key := range m {
-		sliceKeys = append(sliceKeys,key)
+		sliceKeys = append(sliceKeys, key)
 	}
 	sort.Strings(sliceKeys)
 	return sliceKeys

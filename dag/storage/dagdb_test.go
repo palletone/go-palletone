@@ -63,7 +63,7 @@ func TestGetHeader(t *testing.T) {
 	au.PubKey = pubKey
 	h.SetAuthor(au)
 	t.Logf("%#v", h)
-	
+
 	db, _ := ptndb.NewMemDatabase()
 	dagdb := NewDagDb(db)
 
