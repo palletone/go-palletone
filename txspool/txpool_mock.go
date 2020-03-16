@@ -131,6 +131,21 @@ func (mr *MockITxPoolMockRecorder) AddRemotes(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRemotes", reflect.TypeOf((*MockITxPool)(nil).AddRemotes), arg0)
 }
 
+// ProcessTransaction mocks base method
+func (m *MockITxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan, rateLimit bool, tag Tag) ([]*TxDesc, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessTransaction", tx, allowOrphan, rateLimit, tag)
+	ret0, _ := ret[0].([]*TxDesc)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ProcessTransaction indicates an expected call of ProcessTransaction
+func (mr *MockITxPoolMockRecorder) ProcessTransaction(tx, allowOrphan, rateLimit, tag interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessTransaction", reflect.TypeOf((*MockITxPool)(nil).ProcessTransaction), tx, allowOrphan, rateLimit, tag)
+}
+
 // Pending mocks base method
 func (m *MockITxPool) Pending() (map[common.Hash][]*TxPoolTransaction, error) {
 	m.ctrl.T.Helper()
