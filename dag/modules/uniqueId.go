@@ -29,9 +29,11 @@ import (
 
 type UniqueId [ID_LENGTH]byte
 type UniqueIdType byte
+
 func ZeroUniqueId() UniqueId {
 	return UniqueId{}
 }
+
 const (
 	UniqueIdType_Null       UniqueIdType = iota
 	UniqueIdType_Sequence   UniqueIdType = 1

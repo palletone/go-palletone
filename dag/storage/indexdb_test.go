@@ -48,5 +48,3 @@ func TestIndexDb_QueryProofOfExistenceByReference(t *testing.T) {
 		t.Logf("%v", poe)
 	}
 }
-
-

@@ -144,7 +144,7 @@ func (statedb *StateDb) GetCandidateMediatorList() (map[string]bool, error) {
 		return nil, fmt.Errorf("mediator candidate list is nil")
 	}
 	if len(val) == 0 {
-		return nil,fmt.Errorf("mediator candidate list is nil")
+		return nil, fmt.Errorf("mediator candidate list is nil")
 	}
 	sliceVals := []string{}
 	candidateList := make(map[string]bool)
@@ -155,9 +155,9 @@ func (statedb *StateDb) GetCandidateMediatorList() (map[string]bool, error) {
 		if err != nil {
 			return nil, err
 		}
-		return candidateList,nil
+		return candidateList, nil
 	}
-	for _,v := range sliceVals {
+	for _, v := range sliceVals {
 		candidateList[v] = true
 	}
 	return candidateList, nil

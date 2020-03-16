@@ -181,7 +181,7 @@ func (asset *Asset) DisplayAmount(amount uint64) decimal.Decimal {
 	return asset.AssetId.DisplayAmount(amount)
 }
 func (asset *Asset) Uint64Amount(amt decimal.Decimal) uint64 {
-	if amt.IsZero(){
+	if amt.IsZero() {
 		return 0
 	}
 	return asset.AssetId.Uint64Amount(amt)

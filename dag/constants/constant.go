@@ -49,11 +49,11 @@ var (
 	TEXTCOIN_ASSET_CLAIM_BASE_MSG_FEE int = 158
 	VOTED_MEDIATORS                       = "VotedMediators"
 
-	PledgeListLastDate = "PledgeListLastDate"
-	PledgeList         = "PledgeList-"
-	BlacklistAddress   = "BlacklistAddress"
-	ExchangelistAddress   = "ExchangelistAddress"
-	AddNewAddress      = "AddNewAddress"
+	PledgeListLastDate  = "PledgeListLastDate"
+	PledgeList          = "PledgeList-"
+	BlacklistAddress    = "BlacklistAddress"
+	ExchangelistAddress = "ExchangelistAddress"
+	AddNewAddress       = "AddNewAddress"
 
 	OldTestNetGenesisMediatorAndPubKey = make(map[string]string) // 测试网上genesis中定义的mediator
 	OldMainNetGenesisMediatorAndPubKey = make(map[string]string) // 主网上genesis中定义的mediator
