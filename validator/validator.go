@@ -50,6 +50,7 @@ type Validate struct {
 	enableContractSignCheck  bool
 	enableDeveloperCheck     bool
 	enableContractRwSetCheck bool
+	enableTxFullCheck        bool
 	light                    bool
 	contractCheckFun         ContractTxCheckFunc //合约检查函数，通过Set方法注入
 	//buildTempDagFunc         BuildTempContractDagFunc //为合约运行构造临时Db的方法，通过Set注入
@@ -72,6 +73,7 @@ func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propq
 		enableContractSignCheck:  true,
 		enableDeveloperCheck:     true,
 		enableContractRwSetCheck: true,
+		enableTxFullCheck:        true,
 		light:                    light,
 	}
 }
