@@ -131,6 +131,11 @@ web3._extend({
             call: 'mediator_nextSlotTime',
             params: 0,
         }),
+		new web3._extend.Method({
+			name: 'nextUpdateTime',
+			call: 'mediator_nextUpdateTime',
+			params: 0,
+		}),
 	],
 	properties: [
 		new web3._extend.Property({
