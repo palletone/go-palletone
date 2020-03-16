@@ -194,7 +194,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 		contract:       contract,
 		pDocker:        pDocker,
 
-		lastMaintenanceTime: 0,
+		lastMaintenanceTime:    0,
 		isConnectedNewMediator: false,
 	}
 	protocolName, _, _, _, _ := gasToken.ParseAssetId()
@@ -366,8 +366,8 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 	pm.txCh = make(chan modules.TxPreEvent, txChanSize)
 	// 订阅的回执
 	pm.txSub = pm.txpool.SubscribeTxPreEvent(pm.txCh)
-	// 启动广播的goroutine
-	go pm.txBroadcastLoop()
+	// 交易处理
+	go pm.txProcessLoop()
 
 	// broadcast new unit produced by mediator
 	pm.newProducedUnitCh = make(chan mp.NewProducedUnitEvent)
@@ -776,10 +776,12 @@ func (pm *ProtocolManager) BroadcastTx(hash common.Hash, tx *modules.Transaction
 	log.Trace("Broadcast transaction", "hash", hash, "recipients", len(peers))
 }
 
-func (pm *ProtocolManager) txBroadcastLoop() {
+func (pm *ProtocolManager) txProcessLoop() {
 	for {
 		select {
 		case event := <-pm.txCh:
+			// add user contract request process
+			go pm.contractProc.ProcessUserContractInvokeReqTx(event.Tx)
 			pm.BroadcastTx(event.Tx.Hash(), event.Tx)
 
 			// Err() channel will be closed when unsubscribing.

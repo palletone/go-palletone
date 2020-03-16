@@ -32,7 +32,6 @@ import (
 	"github.com/palletone/go-palletone/consensus/jury"
 	mp "github.com/palletone/go-palletone/consensus/mediatorplugin"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/ptn/downloader"
 )
 
@@ -368,22 +367,21 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 	}
 
 	log.Debugf("ProtocolManager, tx num[%d]", len(txs))
-	//incld := includeContractTx(txs)
-	//if incld {
-	unitNumber := pm.dag.HeadUnitNum() + 1
-	unitId := fmt.Sprintf("%d", unitNumber)
-	rwM, err := rwset.NewRwSetMgr(unitId)
-	if err != nil {
-		log.Errorf("ProtocolManager NewRwSetMgr err: %s", err.Error())
-		return err
-	}
-	defer rwM.Close()
-	mDag, err := pm.dag.NewTemp()
-	if err != nil {
-		log.Errorf("ProtocolManager NewTemp err: %s", err.Error())
-		return err
-	}
+
+	//unitNumber := pm.dag.HeadUnitNum() + 1
+	//unitId := fmt.Sprintf("%d", unitNumber)
+	//rwM, err := rwset.NewRwSetMgr(unitId)
+	//if err != nil {
+	//	log.Errorf("ProtocolManager NewRwSetMgr err: %s", err.Error())
+	//	return err
 	//}
+	//defer rwM.Close()
+	//mDag, err := pm.dag.NewTemp()
+	//if err != nil {
+	//	log.Errorf("ProtocolManager NewTemp err: %s", err.Error())
+	//	return err
+	//}
+
 	log.Debugf("ProtocolManager, TxMsg len(txs)[%d]", len(txs))
 	for i, tx := range txs {
 		if tx == nil {
@@ -404,19 +402,21 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 					log.Warnf("ProtocolManager, Tx[%s] is a sys contract with result, don't need send by p2p", txHash.String())
 					continue
 				}
-			} else {
-				if tx.IsOnlyContractRequest() {
-					_, err := pm.contractProc.ProcessUserContractTxMsg(tx, rwM, mDag)
-					if err != nil {
-						log.Errorf("ProtocolManager, Tx[%s] ProcessContractTxMsg err:%s", tx.RequestHash().String(), err.Error())
-					}
-				}
 			}
 		}
-
-		if tx != nil {
-			mDag.SaveTransaction(tx, i)
-		}
+			//else {
+		//		if tx.IsOnlyContractRequest() {
+		//			_, err := pm.contractProc.ProcessUserContractTxMsg(tx, rwM, mDag)
+		//			if err != nil {
+		//				log.Errorf("ProtocolManager, Tx[%s] ProcessContractTxMsg err:%s", tx.RequestHash().String(), err.Error())
+		//			}
+		//		}
+		//	}
+		//}
+		//
+		//if tx != nil {
+		//	mDag.SaveTransaction(tx, i)
+		//}
 		//添加到本地交易
 		err := pm.contractProc.AddLocalTx(tx)
 		if err != nil {

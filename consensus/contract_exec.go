@@ -11,6 +11,7 @@ import (
 type ContractInf interface {
 	SubscribeContractEvent(ch chan<- jury.ContractEvent) event.Subscription
 
+	ProcessUserContractInvokeReqTx(tx *modules.Transaction) (error)
 	ProcessUserContractTxMsg(tx *modules.Transaction, rw rwset.TxManager, dag dboperation.IContractDag) (*modules.Transaction, error)
 	ProcessContractEvent(event *jury.ContractEvent) (broadcast bool, err error)
 	ProcessElectionEvent(event *jury.ElectionEvent) (err error)

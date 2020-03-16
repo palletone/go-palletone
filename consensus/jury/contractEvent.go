@@ -108,7 +108,6 @@ func (p *Processor) ProcessUserContractTxMsg(tx *modules.Transaction, rw rwset.T
 	//	ele.EleList = append(ele.EleList, elf)
 	//}
 
-
 	if p.checkTxIsExist(tx) {
 		return nil, fmt.Errorf("[%s]ProcessContractTxMsg, event Tx is exist, txId:%s",
 			shortId(reqId.String()), tx.Hash().String())
@@ -117,13 +116,60 @@ func (p *Processor) ProcessUserContractTxMsg(tx *modules.Transaction, rw rwset.T
 		return nil, fmt.Errorf("[%s]ProcessContractTxMsg, event Tx reqId is exist, txId:%s",
 			shortId(reqId.String()), tx.Hash().String())
 	}
-	//if !p.contractEventExecutable(CONTRACT_EVENT_EXEC, tx, ele) {
-	//	log.Debugf("[%s]ProcessContractTxMsg, contractEventExecutable is false", shortId(reqId.String()))
-	//	return nil, nil
-	//}
+	if !p.contractEventExecutable(CONTRACT_EVENT_EXEC, tx, ele) {
+		log.Debugf("[%s]ProcessContractTxMsg, contractEventExecutable is false", shortId(reqId.String()))
+		return nil, nil
+	}
 
 	p.contractTxExec(tx, rw, dag, ele)
 	return tx, nil
+}
+
+func (p *Processor) ProcessUserContractInvokeReqTx(tx *modules.Transaction) (error) {
+	if tx == nil {
+		return errors.New("ProcessUserContractInvokeReqTx, tx is nil")
+	}
+	reqId := tx.RequestHash()
+	log.Debugf("[%s]ProcessUserContractInvokeReqTx enter0", shortId(reqId.String()))
+
+	//检查是否为用户合约的请求交易
+	if !tx.IsContractTx() || tx.IsSystemContract() || tx.GetContractTxType() != modules.APP_CONTRACT_INVOKE_REQUEST ||
+		!tx.IsOnlyContractRequest() {
+		return nil
+	}
+	log.Debugf("[%s]ProcessUserContractInvokeReqTx enter", shortId(reqId.String()))
+	var ele *modules.ElectionNode
+	ele, err := p.dag.GetContractJury(tx.GetContractId())
+	if err != nil {
+		log.Errorf("[%s]ProcessUserContractInvokeReqTx GetContractJury err:%s", shortId(reqId.String()), err.Error())
+	}
+	event := &ContractEvent{
+		Ele:   ele,
+		CType: CONTRACT_EVENT_EXEC,
+		Tx:    tx,
+	}
+
+	//todo del
+	//sAddr := []string{"P1RS8EfWPxzQMcmjFJ1H7WBGy58FsdAdDF", "P184RUiG5VdY3Y8YUxTmrdsV92MbYQgaPpP", "P1PLs3Cr9Sk8KCV6YfoTTBXRmgMY628SFja"}
+	//ele = &modules.ElectionNode{
+	//	JuryCount: 3,
+	//	EleList:   make([]modules.ElectionInf, 0),
+	//}
+	//for _, addr := range sAddr {
+	//	h := util.RlpHash(addr)
+	//	elf := modules.ElectionInf{
+	//		EType:    1,
+	//		AddrHash: h,
+	//	}
+	//	ele.EleList = append(ele.EleList, elf)
+	//}
+
+	_, err = p.ProcessContractEvent(event)
+	if err != nil {
+		log.Errorf("[%s]ProcessUserContractInvokeReqTx, ProcessContractEvent err:%s", shortId(reqId.String()), err.Error())
+	}
+
+	return nil
 }
 
 func (p *Processor) contractEleEvent(tx *modules.Transaction) error {
