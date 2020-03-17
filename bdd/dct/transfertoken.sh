@@ -6,4 +6,4 @@ set another [lindex $argv 1]
 spawn ../node/gptn --exec "wallet.transferPTN($tokenHolder,$another,10000,1)" attach ../node/palletone/gptn.ipc
 expect "Passphrase:"
 send "1\n"
-interact
+expect eof

@@ -1,4 +1,4 @@
-#!/usr/bin/expect
+#!/usr/bin/expect -f
 #!/bin/bash
 
 set maker [lindex $argv 0]
