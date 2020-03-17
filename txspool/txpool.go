@@ -1003,6 +1003,11 @@ func (pool *TxPool) getPoolTxsByAddr(addr string, onlyUnpacked bool) ([]*TxPoolT
 	poolTxs := pool.AllTxpoolTxs()
 	for _, tx := range poolTxs {
 		if !tx.Confirmed {
+			if onlyUnpacked {
+				if tx.Pending {
+					continue //已打包，utxo已花费，忽略。
+				}
+			}
 			for _, msg := range tx.Tx.TxMessages() {
 				if msg.App == modules.APP_PAYMENT {
 					payment, ok := msg.Payload.(*modules.PaymentPayload)
