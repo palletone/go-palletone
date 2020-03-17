@@ -115,7 +115,8 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 		log.Info("try to add duplicate tx[%s] to tx pool", tx.Hash().String())
 		return nil
 	}
-	if tx.IsSystemContract() && !tx.IsNewContractInvokeRequest() {
+
+	if tx.IsSystemContract() && !tx.IsNewContractInvokeRequest() && tx.GetContractTxType() != modules.APP_CONTRACT_TPL_REQUEST {
 		log.Infof("tx[%s] is a full system contract invoke tx, don't support", tx.Hash().String())
 		return ErrNotSupport
 	}
